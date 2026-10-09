@@ -188,6 +188,7 @@ import {
 import { Bienvenue, type OngletBienvenue } from "./bienvenue";
 import { AvatarFantome, CarteDuSalon, fantomeDe, garderVusPropos, lireVusPropos, MenuDuSalon, PanneauPropositions, StylesSalonChat } from "./salon-chat";
 import { useCadeauDuSalon } from "@/components/direct/cadeau-du-salon";
+import { StylesDuel, useDuelDuSalon } from "@/components/direct/duel-salon";
 import { StylesCadeau } from "@/components/direct/cadeau-offert";
 import { monLook } from "@/lib/direct/look";
 import { PROFILS_CADEAU, profilCadeau } from "@/lib/site-internet/cadeau-offert";
@@ -6019,6 +6020,20 @@ export function ApercuHabitant({
               "conversation",
             )
         : undefined,
+  });
+  /**
+   * ⚔️ LE DUEL DU SALON — voir `duel-salon.tsx`. « Le lieu où une hésitation
+   * se transforme en décision, puis en action. » Le commerce dont on parle
+   * fournit le challenger, ses mots d'action et son numéro.
+   */
+  const duelSalon = useDuelDuSalon({
+    salon: salon && !salon.collectif && !soireeDuSalon ? salon : undefined,
+    carte: commerceCadeau,
+    reelle: !!reelle,
+    membre: !!salon && !lectureSalon,
+    autres: autresDuSalon,
+    fantomeDe: (qui, auteur) => (salon ? fantomeDe(salon, qui, false, auteur) : ""),
+    monFantome: monLook().image,
   });
   /** L'empreinte des propositions et de leurs voix : ce qui a changé depuis qu'on les a regardées. */
   const sigPropos = (salon?.propositions ?? []).map((x) => `${x.cle}:${x.voix.length}`).join(",");
@@ -12682,7 +12697,7 @@ export function ApercuHabitant({
                       photo={tete?.photo ?? salon.photo}
                       icone="📍"
                       titre={tete?.quoi ?? salon.annonce ?? (salon.ou && salon.ou !== "Lieu à décider" ? salon.ou : "Ce dont on parle")}
-                      quand={sortieDuSalon && salon.quand !== "À décider" ? salon.quand : undefined}
+                      quand={salon.boutique ? salon.prix : sortieDuSalon && salon.quand !== "À décider" ? salon.quand : undefined}
                       ligne={
                         demandeEnCours
                           ? `📅 ${cestMoi(demandeEnCours.qui) ? "Tu réserves" : `${demandeEnCours.qui} réserve`} pour ${demandeEnCours.combien}`
@@ -12694,7 +12709,8 @@ export function ApercuHabitant({
                       }
                       fort={!!demandeEnCours}
                       lien={sortieDuSalon ? "Voir les propositions" : "Voir en grand"}
-                      viens={sortieDuSalon && !lectureSalon ? jySuis(salon.viennent) : undefined}
+                      // UNE PIÈCE DE BOUTIQUE N'EST PAS UNE SORTIE : on la tranche, on n'y « vient » pas.
+                      viens={sortieDuSalon && !lectureSalon && !salon.boutique ? jySuis(salon.viennent) : undefined}
                       onVenir={venir}
                       onOuvrir={ouvrirPropositions}
                     />
@@ -13411,6 +13427,8 @@ export function ApercuHabitant({
                       ouvrirOptions={optionsAcces}
                     />
                   )}
+                  {/* ⚔️ LE DUEL : sa carte en tête du fil — proposée, en cours, ou réduite. */}
+                  {duelSalon.module}
                   {/* 🎁 LE GESTE DU COMMERÇANT (démonstration) ET MON TICKET, en tête du fil. */}
                   {(cadeauSalon.pastille || cadeauSalon.entete) && (
                     <div className="ap-sal-cadeau">
@@ -13419,8 +13437,11 @@ export function ApercuHabitant({
                     </div>
                   )}
                   <div className="ap-sal-fil">
-                    {salon.messages.map((m) =>
-                      m.cadeau ? (
+                    {duelSalon.apres(0)}
+                    {salon.messages.flatMap((m, i) => [
+                      m.duel ? (
+                        duelSalon.trace(m)
+                      ) : m.cadeau ? (
                         cadeauSalon.carte(m)
                       ) : m.carte ? (
                         <div
@@ -13492,7 +13513,10 @@ export function ApercuHabitant({
                           {m.voix === "ami" && <MenuDuMessage salon={salon} m={m} />}
                         </div>
                       ),
-                    )}
+                      // LES MOTS DU FANTÔME, LÀ OÙ IL LES A DITS.
+                      ...duelSalon.apres(i + 1),
+                    ])}
+                    {duelSalon.reste(salon.messages.length)}
                     {amisEcrivent.map((q) => (
                       <div className="ap-sal-m ami ecrit" key={`e-${q}`}>
                         <b>{q}</b>
@@ -13501,6 +13525,8 @@ export function ApercuHabitant({
                         </span>
                       </div>
                     ))}
+                    {/* 👻 LE PETIT FANTÔME, AU BORD DU CHAMP. */}
+                    {duelSalon.mini}
                   </div>
                   </div>
 
@@ -13715,6 +13741,8 @@ export function ApercuHabitant({
                 />
               )}
               {cadeauSalon.calques}
+              {duelSalon.calques}
+              <StylesDuel />
               {/* LA FEUILLE DE STYLE DES CADEAUX, ICI AUSSI. « Le bouton "Démo ·
                   côté boutique" ne fonctionne pas » : il ouvrait bien l'écran
                   du commerçant, mais sans sa feuille de style — montée

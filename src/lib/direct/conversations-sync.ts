@@ -306,6 +306,18 @@ async function demarche(cle: string | null, corps: Record<string, unknown>): Pro
   return typeof j?.erreur === "string" ? j.erreur : null;
 }
 
+/**
+ * ⚔️ LE LIEN OÙ LE COMMERÇANT RÉPOND à la demande née d'un duel que j'ai lancé
+ * (voir `lib/direct/reponse-commerce.ts`). Vraie ville seulement ; rien sinon,
+ * et la demande part alors sans lien — il répondra par WhatsApp.
+ */
+export async function lienReponseCommerce(cle: string, duel: string, cote: "a" | "b", chez: string): Promise<string | null> {
+  const id = idDuServeur(cle);
+  if (!id || !ville) return null;
+  const j = await poster({ action: "lienReponse", id, duel, cote, chez, qui: qui(), ville });
+  return typeof j?.url === "string" ? j.url : null;
+}
+
 /** Rejoindre un salon public pour y participer. */
 export const rejoindreSalon = (cle: string) => demarche(cle, { action: "rejoindre" });
 /**

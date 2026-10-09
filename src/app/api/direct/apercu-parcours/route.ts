@@ -70,6 +70,8 @@ const EVENEMENTS = new Set([
   "relooking",
   "tailles",
   "journee",
+  // ⚔️ L'entonnoir du duel d'un salon — voir `lib/direct/parcours.ts`.
+  "duel",
   "fin",
 ]);
 

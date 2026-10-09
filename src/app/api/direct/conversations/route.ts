@@ -49,6 +49,9 @@ import {
   type LigneMembre,
 } from "@/lib/direct/salons-acces";
 import type { BaseConversation, Geste, GesteLu } from "@/lib/direct/conversations";
+import type { ObjetDuel } from "@/lib/direct/duel";
+import { signerReponse } from "@/lib/direct/reponse-commerce";
+import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -59,6 +62,8 @@ type Ligne = Record<string, unknown>;
 const s = (v: unknown) => String(v ?? "").trim();
 const ID = /^[a-z0-9]{16}$/;
 const JETON = /^[a-f0-9]{24}$/;
+/** L'identifiant d'un duel, tel que le téléphone le fabrique (`lancerDuel`). */
+const DUEL = /^d[a-z0-9]{4,24}$/;
 /** Au plus tant de gestes par minute et par habitant : un téléphone qui boucle ne remplit pas la base. */
 const PAR_MINUTE = 40;
 /** Invitations, demandes, signalements : moins encore. */
@@ -204,6 +209,44 @@ async function nettoyer(conv: string, g: Record<string, unknown>): Promise<Geste
       return s(g.message) && s(g.emoji) ? { type: "reagir", message: texte(g.message, 40), emoji: texte(g.emoji, 8) } : null;
     case "voter":
       return s(g.option) ? { type: "voter", option: texte(g.option, 60) } : null;
+    // ─── ⚔️ LE DUEL — voir `lib/direct/duel.ts` ───
+    case "duel": {
+      const d = g.d && typeof g.d === "object" ? (g.d as Ligne) : null;
+      if (!d || !DUEL.test(s(d.id))) return null;
+      const objet = async (v: unknown): Promise<ObjetDuel | null> => {
+        const o = v && typeof v === "object" ? (v as Ligne) : null;
+        if (!o || !texte(o.nom, 120)) return null;
+        const [photo, essai] = await Promise.all([rangerPhoto(conv, o.photo), rangerPhoto(conv, o.essai)]);
+        return {
+          id: texte(o.id, 80) || "objet",
+          nom: texte(o.nom, 120),
+          ...(s(o.prix) ? { prix: texte(o.prix, 40) } : {}),
+          ...(photo ? { photo } : {}),
+          ...(essai ? { essai } : {}),
+        };
+      };
+      const [a, b] = await Promise.all([objet(d.a), objet(d.b)]);
+      if (!a || !b) return null;
+      return {
+        type: "duel",
+        d: {
+          id: s(d.id),
+          n: Math.max(1, Math.min(99, Math.round(Number(d.n)) || 1)),
+          a,
+          b,
+          ...(s(d.commerce) ? { commerce: texte(d.commerce, 80) } : {}),
+          ...(s(d.action) ? { action: texte(d.action, 40) } : {}),
+          ...(d.essaiRate ? { essaiRate: true } : {}),
+        },
+      };
+    }
+    case "duelVote":
+    case "duelFin":
+      return DUEL.test(s(g.duel)) && (g.cote === "a" || g.cote === "b") ? { type: s(g.type) as "duelVote" | "duelFin", duel: s(g.duel), cote: g.cote } : null;
+    case "duelDemande":
+      return DUEL.test(s(g.duel)) && (g.etat === "prete" || g.etat === "envoyee") ? { type: "duelDemande", duel: s(g.duel), etat: g.etat } : null;
+    // LA RÉPONSE DU COMMERÇANT (`duelReponse`) N'EST JAMAIS UN GESTE DE MEMBRE :
+    // elle arrive par `api/direct/reponse-commerce`, depuis le lien signé.
     // LA VISIBILITÉ NE PASSE PLUS PAR UN GESTE : voir l'action « rendre_prive ».
     default:
       return null;
@@ -574,6 +617,40 @@ export async function POST(request: Request) {
     if (error) return non("Enregistrement impossible.", 500);
     await supabase.from("human_conversations").update({ activite: new Date().toISOString() }).eq("id", c.id);
     return ok();
+  }
+
+  /**
+   * ⚔️ LE LIEN OÙ LE COMMERÇANT RÉPOND — pour le duel que J'AI lancé, dans un
+   * salon dont je suis membre. Voir `lib/direct/reponse-commerce.ts`.
+   */
+  if (action === "lienReponse" && c) {
+    if (!actif(m)) return non("Seuls les membres peuvent demander.");
+    const idDuel = s(p?.duel);
+    const cote = p?.cote === "a" ? "a" : "b";
+    if (!DUEL.test(idDuel)) return non("Duel inconnu.", 400);
+    const { data: miens } = await supabase
+      .from("human_conversation_gestes")
+      .select("geste")
+      .eq("conversation", c.id)
+      .eq("habitant", h.id)
+      .order("id", { ascending: false })
+      .limit(400);
+    const lance = ((miens ?? []) as Ligne[])
+      .map((r) => r.geste as Geste)
+      .find((x): x is Extract<Geste, { type: "duel" }> => x?.type === "duel" && x.d?.id === idDuel);
+    if (!lance) return non("Ce duel n'est pas le tien.", 403);
+    const objet = cote === "a" ? lance.d.a : lance.d.b;
+    const jeton = signerReponse({
+      c: c.id,
+      d: idDuel,
+      o: objet.nom,
+      ...(objet.prix ? { p: objet.prix } : {}),
+      ...(qui ? { q: qui } : {}),
+      ...(s(p?.chez) ? { m: texte(p?.chez, 80) } : {}),
+      ...(lance.d.action ? { a: lance.d.action } : {}),
+      t: Date.now(),
+    });
+    return ok(jeton ? { url: `${SITE_URL}/reponse/${jeton}` } : {});
   }
 
   if (action === "lien" && c) {

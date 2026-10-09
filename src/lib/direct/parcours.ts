@@ -98,6 +98,13 @@ export type Evenement =
    * — la valeur envoyée est le rang de la carte où l'annonce est apparue.
    */
   | "journee"
+  /**
+   * ⚔️ LE DUEL D'UN SALON — l'entonnoir de la décision, pas le temps passé.
+   * Le `contexte` dit l'étape (proposé, lancé, vote du propriétaire, vote
+   * d'un ami, résultat, action, demande envoyée, confirmé, refusé, « trouve-moi
+   * mieux ») ; la `valeur`, le rang du duel dans le salon.
+   */
+  | "duel"
   | "fin";
 
 type Ligne = { evenement: Evenement; valeur?: number; contexte?: string };

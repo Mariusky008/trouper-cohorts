@@ -47,6 +47,7 @@
 /** Qui parle. « moi » est la personne qui tient le téléphone. */
 import type { Geste as GesteConversation } from "@/lib/direct/conversations";
 import { SOIREES, type Soiree } from "@/lib/direct/soiree";
+import { MOI, type Cote, type Duel, type ObjetDuel } from "@/lib/direct/duel";
 
 export type Voix = "moi" | "ami" | "systeme";
 
@@ -62,6 +63,8 @@ export type MessageSalon = {
   photo?: string;
   /** 🎁 Le lancement de consos offertes dont ce message est la carte (voir `soiree-cadeaux.ts`). */
   cadeau?: string;
+  /** ⚔️ Le duel que ce message a lancé — sa trace dans le fil (voir `duel.ts`). */
+  duel?: string;
   /**
    * LES RÉACTIONS. Un cœur sous un message coûte un appui et dit ce qu'une
    * réponse écrite ne dirait pas mieux — c'est la moitié des échanges d'un
@@ -374,6 +377,12 @@ export type Salon = {
   ilYa?: number;
   /** Rangé dans les archives par son lecteur. Rien n'est effacé. */
   archive?: boolean;
+  /**
+   * ⚔️ LES DUELS DU SALON, dans l'ordre — le dernier est celui qui se joue.
+   * Voir `lib/direct/duel.ts` : A contre un seul challenger, le salon vote,
+   * celui qui hésite décide, puis il agit.
+   */
+  duels?: Duel[];
 };
 
 /**
@@ -643,6 +652,33 @@ export const SALONS_SEMES: Salon[] = [
      tenues, Karim et Thomas ont chacun une idée pour samedi. Voter, ou
      soutenir une idée, fait disparaître la carte — elle se lit dans le salon,
      elle n'est pas une seconde messagerie. */
+  /* ⚔️ LE SALON DES MAQUETTES DU DUEL — « Quelle veste ce soir ? ». Vous
+     hésitez sur la veste cirée kaki ; Emma veut voir autre chose, Tom propose
+     de trancher, Léa aime le kaki mais voudrait la comparer. C'est le moment
+     exact où le Fantôme propose de trancher (voir `duel-salon.tsx`), et le
+     challenger vient de la boutique dont parle le salon. Des amis de
+     démonstration, comme ceux des autres salons semés. */
+  {
+    cle: "duel|veste-ce-soir",
+    sujet: "Quelle veste ce soir ?",
+    ou: "Un prêt-à-porter homme",
+    parQui: "Vous",
+    quand: "Ce soir",
+    viennent: [],
+    presents: ["Vous", "Emma", "Tom", "Léa"],
+    prive: true,
+    ilYa: 4,
+    photo: "/direct/homme-veste-ciree-kaki.jpg",
+    annonce: "Veste cirée kaki",
+    prix: "89 €",
+    boutique: { id: "mode-homme", nom: "Un prêt-à-porter homme", lien: "/autour-de-moi/boutique?c=mode-homme#essayer" },
+    messages: [
+      { id: "v1", qui: "Emma", voix: "ami", texte: "Elle est cool mais je veux voir autre chose. 👀", quand: "18 h 12", reactions: { "❤️": 2 } },
+      { id: "v2", qui: "Tom", voix: "ami", texte: "On tranche ensemble ? 🤔", quand: "18 h 18", reactions: { "❤️": 1 } },
+      { id: "v3", qui: "Léa", voix: "ami", texte: "Le kaki passe partout, j'adore ! Mais je la verrais bien à côté d'une autre ✨", quand: "18 h 27", reactions: { "❤️": 3 } },
+    ],
+    ouvert: true,
+  },
   {
     cle: "avis|tenues-samedi",
     sujet: "Laquelle pour samedi ?",
@@ -1348,6 +1384,89 @@ export function voter(cle: string, option: string) {
     },
   });
   partage?.geste(cle, { type: "voter", option });
+}
+
+// ─── ⚔️ LE DUEL ─────────────────────────────────────────────────────────────
+//
+// Chaque geste change le salon sur ce téléphone, puis part au serveur dans la
+// vraie ville — où les gestes de tous sont rejoués (`conversations.ts`). Les
+// voix des amis de démonstration (`qui` donné) ne partent nulle part : elles
+// n'existent que dans la maquette.
+
+function changerDuel(cle: string, id: string, f: (d: Duel) => Duel): Salon | null {
+  const avant = chargerSalons();
+  const s = avant[cle];
+  if (!peutAgir(s) || !s.duels?.some((d) => d.id === id)) return null;
+  const suite = { ...s, duels: s.duels.map((d) => (d.id === id ? f(d) : d)), activite: Date.now() };
+  garder({ ...avant, [cle]: suite });
+  return suite;
+}
+
+/**
+ * LANCER UN DUEL : A contre B, et sa trace dans le fil. Celui qui le lance en
+ * est le propriétaire : c'est son hésitation, c'est lui qui décidera.
+ */
+export function lancerDuel(
+  cle: string,
+  o: { a: ObjetDuel; b: ObjetDuel; commerce?: string; action?: string; essaiRate?: boolean },
+): Duel | null {
+  const avant = chargerSalons();
+  const s = avant[cle];
+  if (!peutAgir(s)) return null;
+  const moi = monPrenom() || "Vous";
+  const id = `d${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+  const d: Duel = {
+    id,
+    n: (s.duels?.length ?? 0) + 1,
+    par: moi,
+    cleProprio: MOI,
+    a: o.a,
+    b: o.b,
+    ...(o.commerce ? { commerce: o.commerce } : {}),
+    ...(o.action ? { action: o.action } : {}),
+    ...(o.essaiRate ? { essaiRate: true } : {}),
+    votes: {},
+    votants: {},
+    quand: heureCourte(),
+  };
+  const trace: MessageSalon = { id: `m${Date.now()}${Math.random().toString(36).slice(2, 6)}`, qui: moi, voix: "moi", texte: "", quand: d.quand, duel: id };
+  garder({ ...avant, [cle]: { ...s, duels: [...(s.duels ?? []), d], messages: [...s.messages, trace], activite: Date.now(), archive: false } });
+  partage?.geste(cle, {
+    type: "duel",
+    d: { id, n: d.n, a: d.a, b: d.b, ...(d.commerce ? { commerce: d.commerce } : {}), ...(d.action ? { action: d.action } : {}), ...(d.essaiRate ? { essaiRate: true } : {}) },
+  });
+  return d;
+}
+
+/** Une voix, en un appui. `qui` : un ami de démonstration — sinon c'est moi. */
+export function voterDuel(cle: string, id: string, cote: Cote, qui?: string) {
+  const cleVote = qui ?? MOI;
+  const nom = qui ?? (monPrenom() || "Vous");
+  const fait = changerDuel(cle, id, (d) => (d.fin ? d : { ...d, votes: { ...d.votes, [cleVote]: cote }, votants: { ...d.votants, [cleVote]: nom } }));
+  if (fait && !qui) partage?.geste(cle, { type: "duelVote", duel: id, cote });
+}
+
+/** Le propriétaire garde l'un des deux : c'est le gagnant retenu. */
+export function finirDuel(cle: string, id: string, cote: Cote) {
+  const fait = changerDuel(cle, id, (d) => ({ ...d, fin: cote }));
+  if (fait) partage?.geste(cle, { type: "duelFin", duel: id, cote });
+}
+
+/** La demande au commerce : préparée dans WhatsApp, puis envoyée — sur sa parole. */
+export function demanderPourLeDuel(cle: string, id: string, etat: "prete" | "envoyee") {
+  const fait = changerDuel(cle, id, (d) => (d.demande === "envoyee" && etat === "prete" ? d : { ...d, demande: etat }));
+  if (fait) partage?.geste(cle, { type: "duelDemande", duel: id, etat });
+}
+
+/**
+ * LA RÉPONSE DU COMMERÇANT, DANS LA DÉMONSTRATION SEULEMENT — on y joue son
+ * côté sur le téléphone, comme pour le cadeau. Dans la vraie ville, elle
+ * n'arrive que du serveur, par le lien qu'il a reçu : aucun membre du salon ne
+ * peut l'écrire à sa place.
+ */
+export function repondreAuDuelEnDemo(cle: string, id: string, etat: "confirme" | "refuse") {
+  if (partage) return;
+  changerDuel(cle, id, (d) => ({ ...d, reponse: etat }));
 }
 
 /** Fait entrer quelqu'un dans le salon sans qu'il se prononce. */

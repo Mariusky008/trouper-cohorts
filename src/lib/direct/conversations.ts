@@ -22,9 +22,10 @@
  * FICHIER PARTAGÉ : aucune dépendance au navigateur.
  */
 import { heureCourte, type MessageSalon, type Proposition, type Salon } from "@/lib/direct/salons";
+import { MOI as MOI_DUEL, type Cote, type Duel, type ObjetDuel } from "@/lib/direct/duel";
 
 /** Le point de départ : tout le salon sauf ce que les gestes construisent. */
-export type BaseConversation = Omit<Salon, "messages" | "viennent" | "presents" | "ouvert" | "archive" | "activite" | "ilYa">;
+export type BaseConversation = Omit<Salon, "messages" | "viennent" | "presents" | "ouvert" | "archive" | "activite" | "ilYa" | "duels">;
 
 /** Ce qu'une personne fait dans une conversation. */
 export type Geste =
@@ -36,7 +37,14 @@ export type Geste =
   | { type: "entrer"; vient: boolean }
   | { type: "reagir"; message: string; emoji: string }
   | { type: "voter"; option: string }
-  | { type: "visibilite"; prive: boolean };
+  | { type: "visibilite"; prive: boolean }
+  /* ⚔️ LE DUEL — voir `duel.ts`. La réponse du commerçant n'est jamais un geste
+     de membre : seul le serveur l'écrit, depuis le lien qu'il a reçu. */
+  | { type: "duel"; d: { id: string; n: number; a: ObjetDuel; b: ObjetDuel; commerce?: string; action?: string; essaiRate?: boolean } }
+  | { type: "duelVote"; duel: string; cote: Cote }
+  | { type: "duelFin"; duel: string; cote: Cote }
+  | { type: "duelDemande"; duel: string; etat: "prete" | "envoyee" }
+  | { type: "duelReponse"; duel: string; etat: "confirme" | "refuse" };
 
 /** Un geste tel que le serveur le rend : qui, quand, et si c'est moi. */
 export type GesteLu = {
@@ -83,6 +91,10 @@ export function rejouer(
   // QUI A MIS QUELLE RÉACTION, QUI A VOTÉ QUOI — une seule par personne,
   // reconnue à son empreinte (et « moi » pour les miennes).
   const cleDe = (g: GesteLu) => (g.moi ? MOI : g.auteur || g.qui);
+  /** La même, dans la langue du duel (`MOI` de `duel.ts`). */
+  const cleDuel = (g: GesteLu) => (g.moi ? MOI_DUEL : g.auteur || g.qui);
+  const avecDuel = (x: Salon, id: string, f: (d: Duel) => Duel): Salon =>
+    x.duels?.some((d) => d.id === id) ? { ...x, duels: x.duels.map((d) => (d.id === id ? f(d) : d)) } : x;
   const reactions = new Map<string, Map<string, string>>();
   const votes = new Map<string, string>();
   let activite = 0;
@@ -151,6 +163,52 @@ export function rejouer(
         // SEUL CELUI QUI L'A OUVERTE LA REND PUBLIQUE OU PRIVÉE.
         if (qui === createur) s = { ...s, prive: x.prive };
         break;
+      // ─── ⚔️ LE DUEL ───
+      case "duel": {
+        if ((s.duels ?? []).some((d) => d.id === x.d.id)) break;
+        const quand = Number.isFinite(t) ? heureCourte(new Date(t)) : "";
+        const d: Duel = {
+          id: x.d.id,
+          n: (s.duels?.length ?? 0) + 1,
+          par: qui,
+          cleProprio: cleDuel(g),
+          a: x.d.a,
+          b: x.d.b,
+          ...(x.d.commerce ? { commerce: x.d.commerce } : {}),
+          ...(x.d.action ? { action: x.d.action } : {}),
+          ...(x.d.essaiRate ? { essaiRate: true } : {}),
+          votes: {},
+          votants: {},
+          quand,
+        };
+        const trace: MessageSalon = {
+          id: `g${g.id}`,
+          qui,
+          ...(g.auteur && !g.moi ? { auteur: g.auteur } : {}),
+          voix: g.moi ? "moi" : "ami",
+          texte: "",
+          quand,
+          duel: d.id,
+        };
+        s = { ...s, duels: [...(s.duels ?? []), d], messages: [...s.messages, trace] };
+        break;
+      }
+      case "duelVote":
+        s = avecDuel(s, x.duel, (d) => (d.fin ? d : { ...d, votes: { ...d.votes, [cleDuel(g)]: x.cote }, votants: { ...d.votants, [cleDuel(g)]: qui } }));
+        break;
+      // GARDER L'UN DES DEUX, DEMANDER AU COMMERCE : CELUI QUI A LANCÉ LE DUEL, ET LUI SEUL.
+      case "duelFin":
+        s = avecDuel(s, x.duel, (d) => (d.cleProprio === cleDuel(g) ? { ...d, fin: x.cote } : d));
+        break;
+      case "duelDemande":
+        s = avecDuel(s, x.duel, (d) =>
+          d.cleProprio !== cleDuel(g) || (d.demande === "envoyee" && x.etat === "prete") ? d : { ...d, demande: x.etat },
+        );
+        break;
+      // LA RÉPONSE DU COMMERÇANT : écrite par le serveur, sans habitant derrière.
+      case "duelReponse":
+        if (!g.auteur && !g.moi) s = avecDuel(s, x.duel, (d) => ({ ...d, reponse: x.etat }));
+        break;
     }
   }
 
@@ -186,8 +244,9 @@ export function baseDuSalon(s: Salon): BaseConversation {
     archive: _a,
     activite: _act,
     ilYa: _i,
+    duels: _d,
     ...base
   } = s;
-  void _m; void _v; void _p; void _o; void _a; void _act; void _i;
+  void _m; void _v; void _p; void _o; void _a; void _act; void _i; void _d;
   return base;
 }

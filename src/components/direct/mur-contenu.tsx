@@ -75,6 +75,7 @@ import { fantomesDuLieu, mesFantomes, poserFantome, tempsRestant } from "@/lib/d
 import { laMainEstPrete, poserVernis } from "@/lib/direct/ongles";
 import { MOTS, VISAGES, type FamilleReaction } from "@/lib/direct/reaction-fantome";
 import { essayerSurMoi, estUnRendu } from "@/lib/direct/essai-genere";
+import { retenirPhotoDEssai, retenirRendu } from "@/lib/direct/photo-essai";
 import { prevenirPourEssai, numeroDeFiction } from "@/lib/direct/prevenir";
 import { partagerLEssai, type Sortie } from "@/lib/direct/partager-essai";
 import { jouer } from "@/lib/direct/sons";
@@ -206,7 +207,7 @@ const LOOKS = [
  * vernis n'ont pas de « jusqu'où » : la question ne se pose que sur un corps
  * qu'on habille. Voir `couvre` dans `lib/direct/fantomes.ts`.
  */
-function zoneChangee(essai: TypeMur["essai"], piece: Piece | null): string | undefined {
+export function zoneChangee(essai: TypeMur["essai"], piece: Piece | null): string | undefined {
   if (!piece?.couvre) return essai?.change;
   if (piece.couvre === "silhouette") {
     return (
@@ -3433,6 +3434,9 @@ function Essai({
      */
     if (piece.reference && laPhoto) {
       setTelecharge(false);
+      // SA PHOTO, LE TEMPS DE LA VISITE : un duel dans un salon pourra lui
+      // montrer le challenger sur lui (voir `photo-essai.ts`). Jamais l'exemple du mur.
+      if (photo) retenirPhotoDEssai(photo, mur.cle);
       essayerSurMoi({
         photo: laPhoto,
         reference: piece.reference,
@@ -3456,15 +3460,16 @@ function Essai({
         decrire: piece.decrire,
         decrireEn: piece.decrireEn,
       })
-        .then((r) =>
-          estUnRendu(r)
+        .then((r) => {
+          if (estUnRendu(r) && photo) retenirRendu(mur.cle, piece.id, r.image);
+          return estUnRendu(r)
             ? finir({ image: r.image, ms: r.ms, envoye: true })
             : finir({
                 image: laPhoto,
                 ms: 0,
                 souci: r.pourquoi ? `${r.erreur} (${r.pourquoi})` : r.erreur,
-              }),
-        )
+              });
+        })
         .catch(() => finir({ image: laPhoto, ms: 0, souci: SOUCI_MOTEUR }));
       return () => {
         vivant = false;

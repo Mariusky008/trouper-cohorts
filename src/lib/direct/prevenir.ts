@@ -52,7 +52,7 @@ export function numeroDeFiction(id: string): string {
 }
 
 /** « 06 39 98 12 34 » → « 33639981234 », la seule forme que wa.me accepte. */
-function international(tel: string): string {
+export function international(tel: string): string {
   const chiffres = tel.replace(/\D/g, "");
   if (chiffres.startsWith("33")) return chiffres;
   if (chiffres.startsWith("0")) return `33${chiffres.slice(1)}`;
