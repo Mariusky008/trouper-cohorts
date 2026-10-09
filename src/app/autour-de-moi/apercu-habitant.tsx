@@ -6034,6 +6034,7 @@ export function ApercuHabitant({
     autres: autresDuSalon,
     fantomeDe: (qui, auteur) => (salon ? fantomeDe(salon, qui, false, auteur) : ""),
     monFantome: monLook().image,
+    ouvrirSalon: ouvrirSalonDeSoiree,
   });
   /** L'empreinte des propositions et de leurs voix : ce qui a changé depuis qu'on les a regardées. */
   const sigPropos = (salon?.propositions ?? []).map((x) => `${x.cle}:${x.voix.length}`).join(",");

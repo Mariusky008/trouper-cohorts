@@ -35,6 +35,8 @@
  * FICHIER PUR : ni fenêtre, ni horloge (on lui passe `maintenant`).
  */
 
+import { MOTS_ACTION, type GenreAction } from "@/lib/direct/duel";
+
 export type Humeur =
   | "idle"
   | "curious"
@@ -89,6 +91,10 @@ export type Evenement = {
   groupe?: boolean;
   /** « Mise de côté confirmée », « Réservation confirmée »… — ce que le magasin a dit. */
   confirme?: string;
+  /** Le commerce, comme on le désigne : « le magasin », « le restaurant », « le coiffeur ». */
+  chez?: string;
+  /** Le geste demandé (voir `genreDAction`) : une sortie n'a pas de commerçant qui réponde. */
+  genre?: GenreAction;
 };
 
 /** Le rôle de chaque phrase : ce qu'elle fait pour le salon. */
@@ -130,6 +136,14 @@ const CRITIQUES = new Set<TypeEvenement>([
   "merchant_declined",
   "essai_rate",
 ]);
+
+/** « le restaurant » → « au restaurant », « l'onglerie » → « à l'onglerie ». */
+export function versLeLieu(chez: string): string {
+  if (/^le\s/i.test(chez)) return `au ${chez.slice(3)}`;
+  if (/^les\s/i.test(chez)) return `aux ${chez.slice(4)}`;
+  if (/^(la\s|l['’])/i.test(chez)) return `à ${chez}`;
+  return `chez ${chez}`;
+}
 
 /**
  * LA TABLE DES RÉACTIONS — une ligne par événement. Les phrases tiennent sur
@@ -187,11 +201,22 @@ function reaction(e: Evenement): Intervention {
     case "reservation_requested":
       return { humeur: "thinking" };
     case "request_sent":
-      return { humeur: "celebrate", pendant: 3000, ligne: { texte: "C'est parti ✅ La demande est chez le magasin.", role: "accelerateur" } };
+      return {
+        humeur: "celebrate",
+        pendant: 3000,
+        ligne:
+          e.genre === "sortie"
+            ? { texte: "C'est décidé ✅ Vos amis le voient.", role: "accelerateur" }
+            : { texte: `C'est parti ✅ La demande est partie ${versLeLieu(e.chez ?? "le commerce")}.`, role: "accelerateur" },
+      };
     case "merchant_confirmed":
-      return { humeur: "celebrate", pendant: 3600, ligne: { texte: `${e.confirme ?? "Confirmé"} par le magasin ✅`, role: "revelateur" } };
+      return { humeur: "celebrate", pendant: 3600, ligne: { texte: `${e.confirme ?? "Confirmé"} par ${e.chez ?? "le commerce"} ✅`, role: "revelateur" } };
     case "merchant_declined":
-      return { humeur: "surprised", pendant: 2600, ligne: { texte: "Le magasin ne l'a plus. Je vous en trouve un autre ?", role: "conseiller" } };
+      return {
+        humeur: "surprised",
+        pendant: 2600,
+        ligne: { texte: `${MOTS_ACTION[e.genre ?? "cote"].refusDe(e.chez ?? "le commerce")} Je vous trouve autre chose ?`, role: "conseiller" },
+      };
     case "essai_rate":
       return { humeur: "whisper", pendant: 3200, ligne: { texte: "L'essayage n'a pas marché cette fois, mais on peut quand même trancher.", role: "conseiller" } };
     case "humans_talking":

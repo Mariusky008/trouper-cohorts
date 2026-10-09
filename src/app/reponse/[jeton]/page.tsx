@@ -8,6 +8,7 @@
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { lireJetonReponse } from "@/lib/direct/reponse-commerce";
+import { motsDeLAction } from "@/lib/direct/duel";
 import { BoutonsReponse } from "./boutons";
 
 export const dynamic = "force-dynamic";
@@ -35,15 +36,8 @@ export default async function Page({ params }: { params: Promise<{ jeton: string
   const { jeton } = await params;
   const j = lireJetonReponse(decodeURIComponent(jeton));
   const etat = j ? await dejaRepondu(j.c, j.d) : undefined;
-  const action = (j?.a || "Mettre de côté").toLowerCase();
-  /** Ce qu'il demande, dit comme une phrase : la suite de « Marie aimerait… ». */
-  const demande = /c[ôo]t[ée]/.test(action)
-    ? "que vous lui mettiez de côté"
-    : /rendez-vous/.test(action)
-      ? "prendre rendez-vous pour"
-      : /r[ée]serv/.test(action)
-        ? "réserver pour"
-        : "vous demander";
+  /** Ce qu'il demande, dit comme une phrase : la suite de « Marie aimerait… ». La chose elle-même suit, en dessous. */
+  const demande = motsDeLAction(j?.a || "Mettre de côté").demande;
   return (
     <main className="rc">
       <style>{STYLE}</style>

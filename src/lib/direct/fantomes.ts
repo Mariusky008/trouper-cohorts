@@ -431,6 +431,12 @@ export type Piece = {
    */
   couvre?: "buste" | "silhouette" | "bas";
   /**
+   * À QUI CETTE COUPE EST FAITE, QUAND LA PHOTO LE DIT. Sert au duel d'un
+   * salon : on n'oppose pas une coupe d'homme au carré qu'une amie hésite à
+   * faire. Absent : l'un ou l'autre — un motif rasé, un vernis, une monture.
+   */
+  pour?: "femme" | "homme";
+  /**
    * ═══ LES TAILLES QU'IL LUI RESTE ═══════════════════════════════════════════
    *
    * CE N'EST PAS LA PLAGE DU FABRICANT. « Tailles 36 à 44 » est vrai le jour de
@@ -1708,7 +1714,7 @@ export const MURS: Mur[] = [
          * qui débloquait le métier n'était pas un calcul : c'était deux images
          * prises du bon angle.
          */
-        { id: "c-homme", nom: "Boucles courtes, de face", decrire: "une coupe courte masculine, cheveux bouclés d'environ cinq centimètres sur le dessus, nuque et côtés plus courts, pas de raie marquée", prix: "26 €",
+        { id: "c-homme", pour: "homme", nom: "Boucles courtes, de face", decrire: "une coupe courte masculine, cheveux bouclés d'environ cinq centimètres sur le dessus, nuque et côtés plus courts, pas de raie marquée", prix: "26 €",
           photo: "/direct/coiffure-homme-face.jpg", reference: "/direct/coiffure-homme-face.jpg" },
         /* ═══ CETTE DESCRIPTION DÉCRIVAIT UNE AUTRE COUPE QUE SA PHOTO ══════
 
@@ -1799,7 +1805,7 @@ export const MURS: Mur[] = [
          * UNE RÈGLE QUE CE DOSSIER A PAYÉE DEUX FOIS NE SE CONTOURNE PAS SUR
          * une intuition. La description ne dit plus que ce qui DOIT être.
          */
-        { id: "c-femme", nom: "Carré long, de face", decrireEn: "near-black glossy hair, a center part, open curtain-like face-framing layers sweeping away from the forehead, a generous rounded and airy silhouette with volume around the cheeks and jaw, slightly layered ends curling inward, length ending at the lower jaw and upper neck, and nothing falling onto the shoulders", decrire: "un carré noir très foncé qui s'arrête à la base du cou, nettement au-dessus des épaules, avec une raie au milieu, des mèches souples qui s'ouvrent autour du visage, du volume arrondi sur les côtés, des pointes qui rentrent vers l'intérieur au niveau du cou, et aucune longueur qui descende sur les épaules", prix: "38 €",
+        { id: "c-femme", pour: "femme", nom: "Carré long, de face", decrireEn: "near-black glossy hair, a center part, open curtain-like face-framing layers sweeping away from the forehead, a generous rounded and airy silhouette with volume around the cheeks and jaw, slightly layered ends curling inward, length ending at the lower jaw and upper neck, and nothing falling onto the shoulders", decrire: "un carré noir très foncé qui s'arrête à la base du cou, nettement au-dessus des épaules, avec une raie au milieu, des mèches souples qui s'ouvrent autour du visage, du volume arrondi sur les côtés, des pointes qui rentrent vers l'intérieur au niveau du cou, et aucune longueur qui descende sur les épaules", prix: "38 €",
           photo: "/direct/coiffure-femme-face.jpg", reference: "/direct/coiffure-femme-face.jpg" },
         /**
          * LES DEUX DERNIÈRES « BIENTÔT » SONT TOMBÉES.
@@ -1814,9 +1820,9 @@ export const MURS: Mur[] = [
          * condition : on se photographie de face, donc la référence doit être
          * prise du même angle, sinon le modèle doit deviner un profil.
          */
-        { id: "c-boucles", nom: "Boucles longues, frange", decrire: "des cheveux très bouclés en petites boucles serrées, blond caramel, très volumineux, tombant jusqu'aux épaules, avec une frange bouclée qui couvre le front", prix: "68 €",
+        { id: "c-boucles", pour: "femme", nom: "Boucles longues, frange", decrire: "des cheveux très bouclés en petites boucles serrées, blond caramel, très volumineux, tombant jusqu'aux épaules, avec une frange bouclée qui couvre le front", prix: "68 €",
           photo: "/direct/coiffure1.jpg", reference: "/direct/coiffure1.jpg" },
-        { id: "c-cuivre", nom: "Carré cuivré, dégradé", decrire: "un carré dégradé au niveau du menton, très volumineux et ondulé, couleur cuivre roux, avec une frange épaisse", prix: "95 €",
+        { id: "c-cuivre", pour: "femme", nom: "Carré cuivré, dégradé", decrire: "un carré dégradé au niveau du menton, très volumineux et ondulé, couleur cuivre roux, avec une frange épaisse", prix: "95 €",
           photo: "/direct/coiffure2.jpg", reference: "/direct/coiffure2.jpg" },
       ],
     },

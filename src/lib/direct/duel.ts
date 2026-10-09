@@ -42,6 +42,8 @@ export type ObjetDuel = {
   photo?: string;
   /** La même, portée par la personne qui hésite, quand l'essayage a pu se faire. */
   essai?: string;
+  /** Pour une sortie : quand elle a lieu, tel qu'elle l'annonce (« Ce soir, 19 h »). */
+  quand?: string;
 };
 
 export type Duel = {
@@ -168,36 +170,89 @@ export type Candidat = {
   couvre?: string;
   decrire?: string;
   decrireEn?: string;
+  /** Une coupe de femme, une coupe d'homme — quand la photo le dit (voir `Piece.pour`). */
+  pour?: "femme" | "homme";
+  /** Une sortie : quand elle a lieu, et si c'est la fête ou un moment tranquille. */
+  quand?: string;
+  nature?: string;
 };
+
+/**
+ * DES MOTS ENTIERS, ACCENTS COMPRIS. `\b` ne connaît que les lettres sans
+ * accent : « carré » suivi d'une espace n'était pas un mot pour lui, et
+ * « Carrée écaille » (une monture) en devenait un — une coupe. Le début du mot
+ * se lit sans « regard en arrière » : les Safari d'avant 16.4 le refusent, et
+ * tout le module tomberait avec.
+ */
+const mots = (alternatives: string) => new RegExp(`(?:^|[^\\p{L}\\p{N}])(?:${alternatives})(?![\\p{L}\\p{N}])`, "iu");
 
 /** La famille d'une chose, d'après son nom : une veste ne se compare pas à un jean. */
 const FAMILLES: [string, RegExp][] = [
-  ["dessus", /\b(veste|surchemise|blouson|manteau|doudoune|parka|trench|caban|perfecto|bomber|kimono)\b/i],
-  ["haut", /\b(chemise|chemisier|blouse|polo|t-shirt|tee-shirt|top|marini[eè]re|d[ée]bardeur|body)\b/i],
-  ["maille", /\b(pull|gilet|cardigan|sweat|maille|col roul[ée])\b/i],
-  ["robe", /\b(robe|combinaison)\b/i],
-  ["bas", /\b(jean|pantalon|chino|jupe|short|legging)\b/i],
-  ["tenue", /\b(costume|tailleur|ensemble)\b/i],
-  ["accessoire", /\b([ée]charpe|sac|ceinture|bonnet|chapeau|foulard|bijou|collier|bracelet|boucles?)\b/i],
-  ["lunettes", /\b(lunettes?|monture|solaire)\b/i],
-  ["coupe", /\b(coupe|carr[ée]|frange|d[ée]grad[ée]|brushing|balayage|m[eè]ches|couleur|chignon|tresses?|boucles)\b/i],
-  ["ongles", /\b(pose|vernis|manucure|nail|ongles?|semi)\b/i],
-  ["plat", /\b(plat|menu|formule|dessert|entr[ée]e|burger|pizza|salade|magret|garbure|tarte)\b/i],
-  ["fleurs", /\b(bouquet|fleurs?|composition|plante)\b/i],
+  ["dessus", mots("veste|surchemise|blouson|manteau|doudoune|parka|trench|caban|perfecto|bomber|kimono")],
+  ["haut", mots("chemise|chemisier|blouse|polo|t-shirt|tee-shirt|top|marini[eè]re|d[ée]bardeur|body")],
+  ["maille", mots("pull|gilet|cardigan|sweat|maille|col roul[ée]")],
+  ["robe", mots("robe|combinaison")],
+  ["bas", mots("jean|pantalon|chino|jupe|short|legging")],
+  ["tenue", mots("costume|tailleur|ensemble")],
+  ["accessoire", mots("[ée]charpe|sac|ceinture|bonnet|chapeau|foulard|bijou|collier|bracelet|boucles d['’]oreilles?")],
+  ["lunettes", mots("lunettes?|monture|solaire")],
+  ["coupe", mots("coupe|carr[ée]|frange|d[ée]grad[ée]|brushing|balayage|m[eè]ches|chignon|tresses?|boucles")],
+  ["ongles", mots("pose|vernis|manucure|nail|ongles?|semi(-permanent)?")],
+  ["fleurs", mots("bouquet|fleurs?|composition|plante")],
 ];
-export function familleDe(nom: string): string {
+
+/**
+ * À TABLE, TOUT EST UN PLAT : ce qui compte, c'est le moment du repas. Un
+ * axoa se compare à un poulet basquaise, pas à un gâteau basque ni au pichet.
+ */
+const MOMENTS_DU_REPAS: [string, RegExp][] = [
+  ["dessert", mots("g[âa]teau|tarte|dessert|riz au lait|caf[ée] gourmand|mousse|cr[eè]me|glace|fondant|pastis landais|cannel[ée]s?|flan")],
+  ["boisson", mots("vins?|pichet|cocktails?|bi[eè]res?|verre|blanc|rouge|ros[ée]|jus|caf[ée]|th[ée]|sirop|limonade")],
+  ["entree", mots("entr[ée]e|soupe|velout[ée]|garbure|[œo]euf|terrine|tapas|planche")],
+  ["formule", mots("menu|formule|plateau|repas")],
+];
+
+/**
+ * LA FAMILLE, DANS LES MOTS DU MÉTIER QUAND ON LE CONNAÎT. Chez un coiffeur,
+ * « Boucles courtes » est une coupe, pas une paire de boucles d'oreilles ;
+ * chez un lunetier, « Carrée écaille » est une monture.
+ */
+export function familleDe(nom: string, metier?: string): string {
+  switch (metier) {
+    case "coiffure":
+      return "coupe";
+    case "ongles":
+      return "ongles";
+    case "lunettes":
+      return "lunettes";
+    case "fleurs":
+      return "fleurs";
+    case "sortie":
+      return "sortie";
+    case "table":
+    case "bar":
+      return MOMENTS_DU_REPAS.find(([, re]) => re.test(nom))?.[0] ?? "plat";
+  }
   return FAMILLES.find(([, re]) => re.test(nom))?.[0] ?? "autre";
 }
 
+/**
+ * UNE PRESTATION N'EST PAS UN STYLE. « Coupe femme », « Coupe + barbe » sont
+ * des lignes de tarif : leur photo illustre le salon, pas une coupe qu'on
+ * pourrait choisir. On ne les oppose à rien.
+ */
+const PRESTATION = /^(coupe( (femme|homme|enfant|mixte))?|coupe (et|\+) (brushing|barbe)|brushing|shampo\S*( .*)?|soin( .*)?|remplissage|beaut[ée] des (pieds|mains)|r[ée]paration( .*)?)$/i;
+export const estUnePrestation = (nom: string) => PRESTATION.test(nom.trim());
+
 /** La teinte, quand le nom la dit. Sert à proposer une vraie alternative, pas un doublon. */
 const TEINTES: [string, RegExp][] = [
-  ["vert", /\b(kaki|vert|olive|sapin|for[eê]t)\b/i],
-  ["clair", /\b(beige|sable|[ée]cru|cr[eè]me|camel|blanc|ivoire|naturel|lin)\b/i],
-  ["sombre", /\b(noir|marine|anthracite|gris fonc[ée]|brut)\b/i],
-  ["bleu", /\b(bleu|ciel|denim|jean)\b/i],
-  ["chaud", /\b(brique|rouge|bordeaux|rouille|orange|corail|terracotta)\b/i],
-  ["rose", /\b(rose|orchid[ée]e|fuchsia|lilas|violet)\b/i],
-  ["brun", /\b(marron|chocolat|cognac|caramel|tabac)\b/i],
+  ["vert", mots("kaki|vert|olive|sapin|for[eê]t")],
+  ["clair", mots("beige|sable|[ée]cru|cr[eè]me|camel|blanc|ivoire|naturel|lin")],
+  ["sombre", mots("noir|marine|anthracite|gris fonc[ée]|brut")],
+  ["bleu", mots("bleu|ciel|denim|jean")],
+  ["chaud", mots("brique|rouge|bordeaux|rouille|orange|corail|terracotta|cuivr[ée]|roux|rousse")],
+  ["rose", mots("rose|orchid[ée]e|fuchsia|lilas|violet")],
+  ["brun", mots("marron|chocolat|cognac|caramel|tabac|[ée]caille")],
 ];
 export function teinteDe(nom: string): string | undefined {
   return TEINTES.find(([, re]) => re.test(nom))?.[0];
@@ -211,6 +266,9 @@ export function prixEnNombre(prix?: string): number | undefined {
   return Number.isFinite(v) ? v : undefined;
 }
 
+/** « Ce soir, 19 h » → « ce soir » : le jour d'une sortie, sans l'heure. */
+const jourDe = (quand?: string) => (quand ?? "").split(",")[0].trim().toLowerCase() || undefined;
+
 /** Ce que ses duels passés disent de lui — seulement quand ils le disent plusieurs fois. */
 export type Preferences = { teinte?: string; famille?: string };
 
@@ -221,28 +279,39 @@ export type Preferences = { teinte?: string; famille?: string };
  * les classer ; générer uniquement le challenger choisi. »
  *
  * LE CLASSEMENT EST SIMPLE ET SE LIT : même famille d'abord (une veste contre
- * une veste), même partie du corps, un prix voisin, et une teinte différente —
+ * une veste, un plat contre un plat, une sortie de ce soir contre une autre de
+ * ce soir), même partie du corps, un prix voisin, et une teinte différente —
  * le challenger doit être une vraie alternative, pas le même article dans la
- * même couleur. Ce qui a déjà été mis en duel dans ce salon ne revient pas.
- * Ses préférences n'ajoutent qu'un demi-point, et seulement quand elles sont
- * observées plusieurs fois : on ne surinterprète pas un vote.
+ * même couleur. Ce qui a déjà été mis en duel dans ce salon ne revient pas,
+ * une prestation (« Coupe femme ») n'est pas un style, et une coupe d'homme
+ * n'est pas opposée à une coupe de femme. Ses préférences n'ajoutent qu'un
+ * demi-point, et seulement quand elles sont observées plusieurs fois : on ne
+ * surinterprète pas un vote.
+ *
+ * `metier` : la famille du commerce (`familleDuDouble`), ou « sortie ».
  */
 export function choisirChallenger(
-  a: Pick<ObjetDuel, "id" | "nom" | "prix" | "photo">,
+  a: Pick<ObjetDuel, "id" | "nom" | "prix" | "photo" | "quand">,
   pool: Candidat[],
   deja: Set<string>,
   prefs: Preferences = {},
+  metier?: string,
 ): Candidat | null {
-  const famA = familleDe(a.nom);
+  const famA = familleDe(a.nom, metier);
   const teinteA = teinteDe(a.nom);
   const prixA = prixEnNombre(a.prix);
-  const couvreA = pool.find((p) => p.id === a.id)?.couvre;
+  const chezLui = pool.find((p) => p.id === a.id);
+  const couvreA = chezLui?.couvre;
+  const pourA = chezLui?.pour;
+  const jourA = jourDe(a.quand ?? chezLui?.quand);
   let meilleur: Candidat | null = null;
   let note = -Infinity;
   for (const p of pool) {
     if (!p.photo || p.id === a.id || deja.has(p.id) || (a.photo && p.photo === a.photo) || p.nom === a.nom) continue;
+    if (estUnePrestation(p.nom)) continue;
+    if (pourA && p.pour && p.pour !== pourA) continue;
     let n = 0;
-    const fam = familleDe(p.nom);
+    const fam = familleDe(p.nom, metier);
     if (fam === famA && fam !== "autre") n += 3;
     else if (famA === "autre" || fam === "autre") n += 0.5;
     if (couvreA && p.couvre === couvreA) n += 1;
@@ -251,6 +320,8 @@ export function choisirChallenger(
       const ecart = Math.abs(prixP - prixA) / prixA;
       n += ecart <= 0.4 ? 1 : ecart <= 0.8 ? 0.5 : 0;
     }
+    if (jourA && jourDe(p.quand) === jourA) n += 1;
+    if (chezLui?.nature && p.nature === chezLui.nature) n += 0.5;
     const t = teinteDe(p.nom);
     if (t && teinteA && t !== teinteA) n += 0.5;
     if (prefs.teinte && t === prefs.teinte) n += 0.5;
@@ -271,12 +342,130 @@ export function retrouverDansLePool(pool: Candidat[], o: { nom?: string; photo?:
   );
 }
 
+/** Un candidat devenu l'un des deux côtés du duel : ce que le salon garde de lui. */
+export const enObjet = (c: Candidat): ObjetDuel => ({
+  id: c.id,
+  nom: c.nom,
+  ...(c.prix ? { prix: c.prix } : {}),
+  photo: c.photo,
+  ...(c.quand ? { quand: c.quand } : {}),
+});
+
 // ─── LES MOTS ──────────────────────────────────────────────────────────────
 
 /** « une adversaire », « un adversaire » : l'article suit la chose, pas le mot. */
 const FEMININS =
-  /^(la |l'|une )?(veste|surchemise|chemise|chemisier|blouse|robe|jupe|doudoune|parka|marini[eè]re|combinaison|[ée]charpe|coupe|frange|couleur|pose|manucure|table|soir[ée]e|formule|tarte|salade|pizza|composition|plante|monture|paire|tenue|pi[eè]ce|bougie)\b/i;
-export const estFeminin = (nom: string) => FEMININS.test(nom.trim());
+  /^(la |l'|une )?(veste|surchemise|chemise|chemisier|blouse|robe|jupe|doudoune|parka|marini[eè]re|combinaison|[ée]charpe|coupe|frange|couleur|pose|manucure|table|soir[ée]e|formule|tarte|salade|pizza|composition|plante|monture|paire|tenue|pi[eè]ce|bougie|terrasse|nocturne|garbure|lasagnes|tourte|part|boucles|carr[ée]e)\b/i;
+export const estFeminin = (nom: string) => {
+  const t = nom.trim();
+  if (/^une\s/i.test(t)) return true;
+  if (/^(un|le)\s/i.test(t)) return false;
+  return FEMININS.test(t);
+};
+
+/**
+ * ═══ LE GESTE QUI SUIT, DANS LES MOTS DE CHAQUE MÉTIER ════════════════════
+ *
+ * Le bouton dit `Duel.action` (« Mettre de côté », « Réserver »,
+ * « Rendez-vous », « Commander », « J'y vais ») ; tout le reste en découle :
+ * le message envoyé, ce que le commerçant peut répondre, ce que le salon
+ * affiche ensuite. Un rendez-vous confirmé n'est pas une « mise de côté », et
+ * un restaurant qui ne peut pas n'a pas « plus de stock » : il est complet.
+ *
+ * UNE SORTIE N'A PERSONNE À QUI DEMANDER. « J'y vais » est sa décision à lui,
+ * dite au salon : c'est vrai dès qu'il l'a dit, et rien d'autre ne l'est.
+ */
+export type GenreAction = "cote" | "table" | "rdv" | "commande" | "sortie";
+
+export function genreDAction(action?: string): GenreAction {
+  const a = (action ?? "").toLowerCase();
+  if (/j['’]y vais|on y va/.test(a)) return "sortie";
+  if (/rendez-vous/.test(a)) return "rdv";
+  if (/r[ée]serv/.test(a)) return "table";
+  if (/command/.test(a)) return "commande";
+  return "cote";
+}
+
+export type MotsAction = {
+  /** Le bouton du résultat. */
+  bouton: string;
+  emoji: string;
+  /** Ce que l'écran affiche quand le commerçant a dit oui… */
+  confirme: string;
+  /** …et quand il a dit non. */
+  refuse: string;
+  /** Le titre de la carte, une fois confirmé. */
+  titreConfirme: string;
+  /** La phrase, quand il a dit non : « {Le restaurant} est complet. » */
+  refusDe: (chez: string) => string;
+  /** Les deux boutons du commerçant. */
+  oui: string;
+  non: string;
+  /** Sur sa page : « Marie aimerait … » — la suite de la phrase. */
+  demande: string;
+};
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+export const MOTS_ACTION: Record<GenreAction, MotsAction> = {
+  cote: {
+    bouton: "Mettre de côté",
+    emoji: "🛍️",
+    confirme: "Mise de côté confirmée",
+    refuse: "Plus disponible",
+    titreConfirme: "C’est mis de côté !",
+    refusDe: (chez) => `${cap(chez)} ne l’a plus.`,
+    oui: "C’est mis de côté",
+    non: "Plus disponible",
+    demande: "que vous lui mettiez de côté",
+  },
+  table: {
+    bouton: "Réserver",
+    emoji: "📅",
+    confirme: "Réservation confirmée",
+    refuse: "Complet",
+    titreConfirme: "C’est réservé !",
+    refusDe: (chez) => `${cap(chez)} est complet.`,
+    oui: "C’est réservé",
+    non: "Complet",
+    demande: "réserver une table chez vous",
+  },
+  rdv: {
+    bouton: "Prendre rendez-vous",
+    emoji: "📅",
+    confirme: "Rendez-vous accepté",
+    refuse: "Pas de créneau",
+    titreConfirme: "C’est d’accord !",
+    refusDe: (chez) => `${cap(chez)} n’a pas de créneau pour l’instant.`,
+    oui: "C’est d’accord",
+    non: "Pas de créneau",
+    demande: "prendre rendez-vous",
+  },
+  commande: {
+    bouton: "Commander",
+    emoji: "🛍️",
+    confirme: "Commande confirmée",
+    refuse: "Pas possible",
+    titreConfirme: "C’est commandé !",
+    refusDe: (chez) => `${cap(chez)} ne peut pas le faire.`,
+    oui: "C’est noté",
+    non: "Pas possible",
+    demande: "vous commander",
+  },
+  sortie: {
+    bouton: "J’y vais",
+    emoji: "🎟️",
+    confirme: "Vous y allez",
+    refuse: "",
+    titreConfirme: "C’est décidé !",
+    refusDe: () => "",
+    oui: "",
+    non: "",
+    demande: "",
+  },
+};
+
+export const motsDeLAction = (action?: string) => MOTS_ACTION[genreDAction(action)];
 
 /**
  * LE MESSAGE AU COMMERCE, DANS LES MOTS DE SON MÉTIER.
@@ -286,29 +475,37 @@ export const estFeminin = (nom: string) => FEMININS.test(nom.trim());
  * lien, quand il y en a un — est la seule chose qui fera dire « confirmé ».
  */
 export function messageAuCommerce(o: {
-  famille: string;
+  action?: string;
   objet: Pick<ObjetDuel, "nom" | "prix">;
   prenom?: string;
   /** Le lien où il répond d'un appui (vraie ville seulement). */
   lien?: string;
 }): string {
-  const quoi = `« ${o.objet.nom} »${o.objet.prix ? ` (${o.objet.prix})` : ""}`;
+  const quoi = `« ${o.objet.nom} »${o.objet.prix ? ` (${o.objet.prix})` : ""}`;
   const signature = o.prenom ? ` — ${o.prenom}` : "";
   let corps: string;
-  if (o.famille === "coiffure" || o.famille === "ongles" || o.famille === "seance") {
-    corps = `Bonjour, je voudrais prendre rendez-vous pour ${quoi}, mon choix sur ClikMe. Quand auriez-vous un créneau ?`;
-  } else if (o.famille === "table" || o.famille === "bar") {
-    corps = `Bonjour, je voudrais réserver pour ${quoi}, notre choix sur ClikMe. Auriez-vous de la place ?`;
-  } else {
-    corps = `Bonjour, pourriez-vous me mettre de côté ${quoi} ? C'est mon choix sur ClikMe, je passe très vite.`;
+  switch (genreDAction(o.action)) {
+    case "rdv":
+      corps = `Bonjour, je voudrais prendre rendez-vous pour ${quoi}, mon choix sur ClikMe. Quand auriez-vous un créneau ?`;
+      break;
+    case "table":
+      corps = `Bonjour, nous aimerions réserver une table : on a choisi ${quoi} sur ClikMe. Quand auriez-vous de la place ?`;
+      break;
+    case "commande":
+      corps = `Bonjour, je voudrais commander ${quoi}, mon choix sur ClikMe. Quand pourrais-je passer le chercher ?`;
+      break;
+    default:
+      corps = `Bonjour, pourriez-vous me mettre de côté ${quoi} ? C'est mon choix sur ClikMe, je passe très vite.`;
   }
   return `${corps}${signature}${o.lien ? `\n\nRépondre en un appui : ${o.lien}` : ""}`;
 }
 
 /** Ce que l'écran dit de la demande, et rien de plus que ce qui s'est passé. */
 export function etatDeLaDemande(d: Duel): { mot: string; ton: "attente" | "envoyee" | "confirme" | "refuse" } | null {
-  if (d.reponse === "confirme") return { mot: d.action === "Réserver" || d.action === "Prendre rendez-vous" ? "Confirmé par le commerce" : "Mise de côté confirmée", ton: "confirme" };
-  if (d.reponse === "refuse") return { mot: "Plus disponible", ton: "refuse" };
+  const m = motsDeLAction(d.action);
+  if (genreDAction(d.action) === "sortie") return d.demande === "envoyee" ? { mot: m.confirme, ton: "confirme" } : null;
+  if (d.reponse === "confirme") return { mot: m.confirme, ton: "confirme" };
+  if (d.reponse === "refuse") return { mot: m.refuse, ton: "refuse" };
   if (d.demande === "envoyee") return { mot: "Demande envoyée", ton: "envoyee" };
   if (d.demande === "prete") return { mot: "Message prêt dans WhatsApp", ton: "attente" };
   return null;

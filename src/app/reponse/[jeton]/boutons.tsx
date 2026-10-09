@@ -3,6 +3,7 @@
 // Les deux réponses du commerçant. C'est l'appui qui répond, jamais l'ouverture
 // de la page — voir `page.tsx`.
 import { useState } from "react";
+import { motsDeLAction } from "@/lib/direct/duel";
 
 export function BoutonsReponse({
   jeton,
@@ -18,7 +19,7 @@ export function BoutonsReponse({
   const [etat, setEtat] = useState(initial);
   const [occupe, setOccupe] = useState(false);
   const [souci, setSouci] = useState("");
-  const oui = /c[ôo]t[ée]/i.test(action) ? "C’est mis de côté" : /r[ée]serv/i.test(action) ? "C’est réservé" : "C’est noté";
+  const { oui, non } = motsDeLAction(action);
 
   async function repondre(e: "confirme" | "refuse") {
     setOccupe(true);
@@ -44,7 +45,7 @@ export function BoutonsReponse({
       <style>{STYLE}</style>
       {etat && (
         <p className={`rcb-fait ${etat}`} role="status">
-          {etat === "confirme" ? `✅ ${oui}. ${client || "Le client"} le voit dans son salon.` : `Noté : plus disponible. ${client || "Le client"} est prévenu.`}
+          {etat === "confirme" ? `✅ ${oui}. ${client || "Le client"} le voit dans son salon.` : `Noté : ${non.toLowerCase()}. ${client || "Le client"} est prévenu.`}
         </p>
       )}
       <div className="rcb-b">
@@ -52,7 +53,7 @@ export function BoutonsReponse({
           ✅ {oui}
         </button>
         <button type="button" disabled={occupe || etat === "refuse"} onClick={() => repondre("refuse")}>
-          Plus disponible
+          {non}
         </button>
       </div>
       {souci && <p className="rcb-souci">{souci}</p>}

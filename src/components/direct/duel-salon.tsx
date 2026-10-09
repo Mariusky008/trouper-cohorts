@@ -38,6 +38,7 @@ import { photoDEssaiPour, renduPour } from "@/lib/direct/photo-essai";
 import { lienReponseCommerce } from "@/lib/direct/conversations-sync";
 import { noter } from "@/lib/direct/parcours";
 import {
+  cleSalonDeSoiree,
   demanderPourLeDuel,
   ecrireDansSalon,
   enTete,
@@ -55,14 +56,17 @@ import {
   choisirChallenger,
   compte,
   duelCourant,
+  enObjet,
   enTeteDuDuel,
   estFeminin,
   etatDeLaDemande,
   familleDe,
   gagnantDe,
+  genreDAction,
   lettre,
   messageAuCommerce,
   MOI,
+  motsDeLAction,
   objetDe,
   retrouverDansLePool,
   teinteDe,
@@ -74,7 +78,8 @@ import {
   type ObjetDuel,
   type Preferences,
 } from "@/lib/direct/duel";
-import { avisPartages, interpreter, lireMessage, MEMOIRE_NEUVE, type Evenement, type Humeur, type Memoire } from "@/lib/direct/fantome-salon";
+import { SOIREES } from "@/lib/direct/soiree";
+import { avisPartages, interpreter, lireMessage, MEMOIRE_NEUVE, versLeLieu, type Evenement, type Humeur, type Memoire } from "@/lib/direct/fantome-salon";
 import { zoneChangee } from "@/components/direct/mur-contenu";
 import { AvatarFantome } from "@/app/autour-de-moi/salon-chat";
 
@@ -164,11 +169,12 @@ function vivierDe(c: CarteAutour | undefined, reelle: boolean): { pool: Candidat
     .filter((p) => p.photo && p.nom)
     .map((p) => ({
       id: p.id,
-      nom: p.nom,
+      nom: nomPropre(p.nom),
       ...(p.prix ? { prix: p.prix } : {}),
       photo: p.photo,
       ...(p.reference ? { reference: p.reference } : {}),
       ...(p.couvre ? { couvre: p.couvre } : {}),
+      ...(p.pour ? { pour: p.pour } : {}),
       ...(p.decrire ? { decrire: p.decrire } : {}),
       ...(p.decrireEn ? { decrireEn: p.decrireEn } : {}),
     }));
@@ -181,6 +187,90 @@ function vivierDe(c: CarteAutour | undefined, reelle: boolean): { pool: Candidat
 }
 
 /**
+ * « Carré long, de face » → « Carré long ». L'angle de la photo de référence
+ * n'est pas le nom d'une coupe : il n'a rien à faire dans un duel, ni dans le
+ * message au coiffeur.
+ */
+const nomPropre = (nom: string) => nom.replace(/,\s*de face$/i, "");
+
+/**
+ * LES SORTIES DE LA VILLE, quand le salon parle de l'une d'elles : un concert,
+ * un bar, une nocturne. Seulement dans la démonstration — ce sont les soirées
+ * écrites de `soiree.ts`, et la vraie ville n'a pas encore les siennes.
+ */
+function vivierDesSorties(): Candidat[] {
+  return Object.values(SOIREES)
+    .filter((s) => s.photo)
+    .map((s) => ({
+      id: `soiree:${s.id}`,
+      nom: s.lieu,
+      ...(s.prix ? { prix: s.prix } : {}),
+      photo: s.photo as string,
+      quand: s.quand,
+      nature: s.nature ?? "festive",
+    }));
+}
+
+/** La soirée dont parle un salon d'amis (pas le salon public de la soirée elle-même). */
+function sortieDuSalon(s: Salon) {
+  if (s.cle.startsWith("soiree|") || s.collectif) return undefined;
+  return Object.values(SOIREES).find((x) => (s.photo && x.photo === s.photo) || (s.annonce && x.lieu === s.annonce));
+}
+
+/** La soirée d'un côté du duel, par son identifiant (`soiree:<id>`). */
+const soireeDeLObjet = (o: ObjetDuel) => (o.id.startsWith("soiree:") ? Object.values(SOIREES).find((x) => `soiree:${x.id}` === o.id) : undefined);
+
+/** Le commerce comme on le désigne dans une phrase. Chez un coiffeur, « le salon » se confondrait avec celui-ci. */
+function lieuDe(c: CarteAutour | undefined): string {
+  if (!c) return "le commerce";
+  return familleDuDouble(c) === "coiffure" ? "le coiffeur" : profilDuDouble(c).lieu;
+}
+
+/**
+ * CE QUE DISENT LES AMIS DE DÉMONSTRATION, dans les mots de ce qu'on choisit.
+ * « B est plus chic » ne se dit pas d'un poulet basquaise.
+ */
+function motsDesAmis(famille: string): { b: string[]; a: string; apres: [string, string] } {
+  switch (famille) {
+    case "coiffure":
+      return { b: ["B, ça t’irait trop bien ✨", "Team B, ose ! 😍", "B sans hésiter 👌"], a: "Moi je reste sur A, c’est tellement toi 😄", apres: ["Trop hâte de voir ça ! 😍", "Tu nous envoies une photo après ? 📸"] };
+    case "ongles":
+      return { b: ["B, trop jolie ✨", "Team B 💅", "B sans hésiter 👌"], a: "Moi je reste sur A, plus discrète 😄", apres: ["Trop hâte de voir ça ! 😍", "Tu nous montres après ? 💅"] };
+    case "table":
+    case "bar":
+      return { b: ["B, ça a l’air trop bon 😋", "Team B !", "B, sans hésiter 👌"], a: "Moi je reste sur A 😄", apres: ["Miam, bon choix 😋", "Gardez-moi une place ! 🙌"] };
+    case "sortie":
+      return { b: ["B, ça a l’air sympa 🎶", "Team B !", "Va pour B 👌"], a: "Moi je préfère A 😄", apres: ["J’arrive ! 🙌", "On se retrouve là-bas 😄"] };
+    case "mode":
+    case "createur":
+      return { b: ["B est plus chic ✨", "B aussi, ça te va mieux 😍", "Team B 👌"], a: "Moi je reste sur A, il passe partout 😄", apres: ["Parfait, bon choix 👌", "Trop hâte de la voir en vrai ! 😍"] };
+    default:
+      return { b: ["Team B ✨", "B pour moi 😍", "B 👌"], a: "Moi je reste sur A 😄", apres: ["Parfait, bon choix 👌", "Trop hâte de voir ça ! 😍"] };
+  }
+}
+
+/** Ce que le Fantôme va opposer, et où il le cherche. */
+function motsDeLaRecherche(famille: string): { oppose: string; cherche: string } {
+  switch (famille) {
+    case "coiffure":
+      return { oppose: "une autre coupe qu’on fait là-bas", cherche: "je regarde leurs coupes." };
+    case "ongles":
+      return { oppose: "une autre pose de l’onglerie", cherche: "je regarde leurs poses." };
+    case "table":
+    case "bar":
+      return { oppose: "un autre plat de la carte", cherche: "je regarde la carte." };
+    case "sortie":
+      return { oppose: "une autre sortie", cherche: "je regarde ce qui se passe en ville." };
+    case "fleurs":
+      return { oppose: "un autre bouquet de la boutique", cherche: "je regarde leurs bouquets." };
+    case "lunettes":
+      return { oppose: "une autre monture de la boutique", cherche: "je regarde leurs montures." };
+    default:
+      return { oppose: "un challenger du magasin", cherche: "je regarde dans la boutique." };
+  }
+}
+
+/**
  * CE DONT PARLE LE SALON, retrouvé parmi ses pièces quand c'est possible. Le
  * salon d'une boutique (« Chez … ») parle du commerce, pas d'une pièce : sans
  * pièce reconnue, il n'y a pas de « votre choix » à opposer — on n'en invente pas.
@@ -190,7 +280,7 @@ function sujetDe(s: Salon, pool: Candidat[], c: CarteAutour | undefined): ObjetD
   const nom = tete?.quoi ?? s.annonce ?? s.sujet;
   const photo = tete?.photo ?? s.photo;
   const trouve = retrouverDansLePool(pool, { nom, photo });
-  if (trouve) return { id: trouve.id, nom: trouve.nom, ...(trouve.prix ? { prix: trouve.prix } : {}), photo: trouve.photo };
+  if (trouve) return enObjet(trouve);
   const generique = !!s.boutique && (s.annonce === c?.metier || /^chez\s/i.test(s.sujet));
   if (generique || !photo) return null;
   const prix = tete?.prix ?? s.prix;
@@ -216,6 +306,8 @@ function motDuChoix(famille: string): string {
       return "le livre";
     case "lunettes":
       return "la monture";
+    case "sortie":
+      return "la sortie";
     default:
       return "celui";
   }
@@ -315,12 +407,18 @@ export function useDuelDuSalon(p: {
   autres: { qui: string; auteur?: string }[];
   fantomeDe: (qui: string, auteur?: string) => string;
   monFantome: string;
+  /** Ouvrir un autre salon — celui d'une soirée, après « J'y vais ». */
+  ouvrirSalon?: (cle: string) => void;
 }) {
   const { salon, carte, reelle, membre, autres } = p;
   const cle = salon?.cle ?? "";
-  const { pool, essai } = useMemo(() => vivierDe(carte, reelle), [carte, reelle]);
-  const famille = carte ? familleDuDouble(carte) : "mode";
-  const action = carte ? profilDuDouble(carte).demande.court : "Demander";
+  /* UNE SORTIE SE TRANCHE CONTRE UNE AUTRE SORTIE — un concert contre un bar
+     à vins —, et seulement dans la démonstration (voir `vivierDesSorties`). */
+  const sortie = useMemo(() => (!reelle && salon ? sortieDuSalon(salon) : undefined), [reelle, salon]);
+  const { pool, essai } = useMemo(() => (sortie ? { pool: vivierDesSorties(), essai: undefined } : vivierDe(carte, reelle)), [sortie, carte, reelle]);
+  const famille: string = sortie ? "sortie" : carte ? familleDuDouble(carte) : "mode";
+  const action = sortie ? "J’y vais" : carte ? profilDuDouble(carte).demande.court : "Demander";
+  const chez = lieuDe(carte);
   const sujet = useMemo(() => (salon ? sujetDe(salon, pool, carte) : null), [salon, pool, carte]);
   const duel = duelCourant(salon?.duels);
   const jeSuisProprio = !!duel && duel.cleProprio === MOI;
@@ -329,8 +427,8 @@ export function useDuelDuSalon(p: {
   const peutDuel = useMemo(() => {
     if (!sujet || !pool.length) return false;
     const deja = new Set((salon?.duels ?? []).flatMap((d) => [d.a.id, d.b.id]));
-    return !!choisirChallenger(sujet, pool, deja);
-  }, [sujet, pool, salon?.duels]);
+    return !!choisirChallenger(sujet, pool, deja, {}, famille);
+  }, [sujet, pool, salon?.duels, famille]);
 
   const [humeur, setHumeur] = useState<Humeur>("idle");
   const [proposition, setProposition] = useState<"seul" | "hesite" | "manuel" | null>(null);
@@ -477,15 +575,16 @@ export function useDuelDuSalon(p: {
             evs.push({ type: v?.genre === "desaccord" ? "owner_disagrees_with_group" : "owner_agrees_with_group", sur: d.id });
           }
         }
-        if (d.demande === "envoyee" && a.demande !== "envoyee") evs.push({ type: "request_sent", sur: d.id });
+        const genre = genreDAction(d.action);
+        if (d.demande === "envoyee" && a.demande !== "envoyee") evs.push({ type: "request_sent", sur: d.id, chez, genre });
         if (d.reponse && !a.reponse) {
           const e = etatDeLaDemande(d);
-          evs.push(d.reponse === "confirme" ? { type: "merchant_confirmed", sur: d.id, confirme: e?.mot } : { type: "merchant_declined", sur: d.id });
+          evs.push(d.reponse === "confirme" ? { type: "merchant_confirmed", sur: d.id, confirme: e?.mot, chez, genre } : { type: "merchant_declined", sur: d.id, chez, genre });
         }
       }
     }
     evs.forEach(emettre);
-  }, [salon, membre, peutDuel, seul, emettre]);
+  }, [salon, membre, peutDuel, seul, emettre, chez]);
 
   // ─── L'ISSUE EST RETENUE, ET LA RÉPONSE DU COMMERÇANT MESURÉE ───
   useEffect(() => {
@@ -501,20 +600,20 @@ export function useDuelDuSalon(p: {
    * fenêtre ouverte après une attente réseau.
    */
   useEffect(() => {
-    if (!reelle || !duel?.fin || !jeSuisProprio || !carte || lien?.duel === duel.id) return;
+    if (!reelle || !duel?.fin || !jeSuisProprio || !carte || sortie || lien?.duel === duel.id) return;
     let vivant = true;
     void lienReponseCommerce(cle, duel.id, duel.fin, carte.nom).then((url) => vivant && setLien({ duel: duel.id, url }));
     return () => {
       vivant = false;
     };
-  }, [reelle, duel?.id, duel?.fin, jeSuisProprio, carte, cle, lien?.duel]);
+  }, [reelle, duel?.id, duel?.fin, jeSuisProprio, carte, sortie, cle, lien?.duel]);
 
   // ─── LES AMIS DE DÉMONSTRATION VOTENT, COMME ILS RÉPONDENT AILLEURS ───
   const amisDeDemo = useCallback(
     (d: Duel) => {
       if (reelle) return;
       const noms = autres.map((x) => x.qui).filter((q) => q && q !== "Le commerce").slice(0, 4);
-      const motsB = ["B est plus chic ✨", "B aussi, ça te va mieux 😍", "Team B 👌"];
+      const mots = motsDesAmis(famille);
       noms.forEach((qui, i) => {
         const cote: Cote = i % 3 === 1 ? "a" : "b";
         amis.current.push(
@@ -524,7 +623,7 @@ export function useDuelDuSalon(p: {
               ecrireDansSalon(cle, {
                 qui,
                 voix: "ami",
-                texte: cote === "b" ? motsB[i % motsB.length] : "Moi je reste sur A, il passe partout 😄",
+                texte: cote === "b" ? mots.b[i % mots.b.length] : mots.a,
                 quand: heureCourte(),
               }),
             2300 + i * 1500,
@@ -532,7 +631,7 @@ export function useDuelDuSalon(p: {
         );
       });
     },
-    [reelle, autres, cle],
+    [reelle, autres, cle, famille],
   );
 
   // ─── LES GESTES ───
@@ -542,25 +641,26 @@ export function useDuelDuSalon(p: {
     if (!salon || !sujet || recherche) return;
     const a = champion ?? sujet;
     const deja = new Set([...(salon.duels ?? []).flatMap((x) => [x.a.id, x.b.id]), a.id]);
-    const b = choisirChallenger(a, pool, deja, preferencesObservees());
+    const b = choisirChallenger(a, pool, deja, preferencesObservees(), famille);
     const n = (salon.duels?.length ?? 0) + 1;
     noter("duel", n, champion ? "mieux" : "lance");
     setProposition(null);
     if (!b) {
-      ajouterLigne("J'ai fait le tour de la boutique : rien d'autre à lui opposer pour l'instant.");
+      ajouterLigne(sortie ? "J'ai fait le tour : rien d'autre à lui opposer pour l'instant." : "J'ai fait le tour de la boutique : rien d'autre à lui opposer pour l'instant.");
       return;
     }
     setRecherche(true);
     setReplie(false);
     emettre({ type: champion ? "new_challenger_requested" : "challenger_searching" });
-    const debut = Date.now();
-    let objetB: ObjetDuel = { id: b.id, nom: b.nom, ...(b.prix ? { prix: b.prix } : {}), photo: b.photo };
+    /* LA RECHERCHE SE VOIT AU MOINS 1,7 s, essayage compris — pas un clignement. */
+    const auMoins = attendre(1700);
+    let objetB: ObjetDuel = enObjet(b);
     let objetA: ObjetDuel = a;
     let essaiRate = false;
     /* SUR LA PERSONNE, SEULEMENT SI A Y EST DÉJÀ : deux images comparables. Un
        clic, une génération au plus — celle du challenger. */
-    const photo = photoDEssaiPour(carte?.id);
-    const renduA = a.essai ?? renduPour(carte?.id, a.id);
+    const photo = sortie ? undefined : photoDEssaiPour(carte?.id);
+    const renduA = sortie ? undefined : (a.essai ?? renduPour(carte?.id, a.id));
     if (photo && renduA && b.reference) {
       objetA = { ...a, essai: renduA };
       try {
@@ -579,8 +679,7 @@ export function useDuelDuSalon(p: {
         essaiRate = true;
       }
     }
-    const reste = 1700 - (Date.now() - debut);
-    if (reste > 0) await attendre(reste);
+    await auMoins;
     const d = lancerDuel(salon.cle, {
       a: essaiRate ? { ...objetA, essai: undefined } : objetA,
       b: objetB,
@@ -627,12 +726,13 @@ export function useDuelDuSalon(p: {
     const g = d.fin;
     if (!g) return null;
     const url = lien?.duel === d.id ? (lien.url ?? undefined) : undefined;
-    const texte = messageAuCommerce({ famille, objet: objetDe(d, g), prenom: monPrenom() || undefined, lien: url });
+    const texte = messageAuCommerce({ action: d.action ?? action, objet: objetDe(d, g), prenom: monPrenom() || undefined, lien: url });
     const tel = reelle && carte?.telephone ? international(carte.telephone) : "";
     return { url: tel ? `https://wa.me/${tel}?text=${encodeURIComponent(texte)}` : `https://wa.me/?text=${encodeURIComponent(texte)}`, texte };
   }
 
   function agir(d: Duel) {
+    if (genreDAction(d.action) === "sortie") return jYVais(d);
     const u = urlDemande(d);
     if (!u) return;
     window.open(u.url, "_blank", "noopener");
@@ -642,16 +742,40 @@ export function useDuelDuSalon(p: {
     emettre({ type: "reservation_requested", sur: d.id });
   }
 
+  /** Les amis de démonstration réagissent à la décision, comme ils l'ont fait au vote. */
+  function amisApplaudissent() {
+    if (reelle || seul) return;
+    const noms = autres.map((x) => x.qui).filter(Boolean);
+    const mots = motsDesAmis(famille).apres;
+    noms.slice(0, 2).forEach((qui, i) =>
+      amis.current.push(window.setTimeout(() => ecrireDansSalon(cle, { qui, voix: "ami", texte: mots[i], quand: heureCourte() }), 1600 + i * 1700)),
+    );
+  }
+
   function envoye(d: Duel) {
     demanderPourLeDuel(cle, d.id, "envoyee");
     noter("duel", d.n, "demande-envoyee");
-    if (!reelle && !seul) {
-      const noms = autres.map((x) => x.qui).filter(Boolean);
-      const mots = ["Parfait, bon choix 👌", "Trop hâte de la voir en vrai ! 😍"];
-      noms.slice(0, 2).forEach((qui, i) =>
-        amis.current.push(window.setTimeout(() => ecrireDansSalon(cle, { qui, voix: "ami", texte: mots[i], quand: heureCourte() }), 1600 + i * 1700)),
-      );
-    }
+    amisApplaudissent();
+  }
+
+  /**
+   * « J'Y VAIS » — UNE SORTIE N'A PERSONNE À QUI DEMANDER. C'est sa décision,
+   * dite au salon en une ligne : vraie dès qu'il l'a dite, et rien de plus
+   * (ni place réservée, ni billet). La soirée a son propre salon, à un appui.
+   */
+  function jYVais(d: Duel) {
+    const g = d.fin;
+    if (!g) return;
+    const o = objetDe(d, g);
+    ecrireDansSalon(cle, {
+      qui: monPrenom() || "Vous",
+      voix: "moi",
+      texte: `🎟️ J’y vais : ${o.nom}${o.quand ? `, ${o.quand.charAt(0).toLowerCase()}${o.quand.slice(1)}` : ""}.${seul ? "" : " Qui vient ?"}`,
+      quand: heureCourte(),
+    });
+    demanderPourLeDuel(cle, d.id, "envoyee");
+    noter("duel", d.n, "action");
+    amisApplaudissent();
   }
 
   const ouvrirLeSalonSurLeDuel = () => {
@@ -669,7 +793,7 @@ export function useDuelDuSalon(p: {
 
   if (recherche) {
     etape = "recherche";
-    carteModule = <CarteRecherche sujet={sujet} humeur={humeur === "searching" ? humeur : "searching"} />;
+    carteModule = <CarteRecherche sujet={sujet} humeur={humeur === "searching" ? humeur : "searching"} cherche={motsDeLaRecherche(famille).cherche} />;
   } else if (enAttente && sujet) {
     etape = "propose";
     carteModule = (
@@ -677,6 +801,7 @@ export function useDuelDuSalon(p: {
         sujet={sujet}
         seul={proposition === "seul"}
         humeur={humeur}
+        oppose={motsDeLaRecherche(famille).oppose}
         onTrancher={() => void lancer()}
         onPlusTard={() => {
           ecarter(cle);
@@ -700,6 +825,7 @@ export function useDuelDuSalon(p: {
           proprio={jeSuisProprio}
           etat={etat}
           chez={carte?.nom}
+          lieu={chez}
           reelle={reelle}
           texte={texteDemande || urlDemande(d)?.texte || ""}
           onEnvoye={() => envoye(d)}
@@ -708,7 +834,12 @@ export function useDuelDuSalon(p: {
             if (u) window.open(u.url, "_blank", "noopener");
           }}
           onMieux={peutDuel && jeSuisProprio ? () => void lancer(objetDe(d, d.fin as Cote)) : undefined}
-          onCoteBoutique={!reelle && jeSuisProprio ? () => setCoteBoutique(true) : undefined}
+          onCoteBoutique={!reelle && jeSuisProprio && !sortie ? () => setCoteBoutique(true) : undefined}
+          onVoirSoiree={
+            p.ouvrirSalon && soireeDeLObjet(objetDe(d, d.fin as Cote))
+              ? () => p.ouvrirSalon?.(cleSalonDeSoiree(soireeDeLObjet(objetDe(d, d.fin as Cote)) as { id: string }))
+              : undefined
+          }
         />
       );
     } else if (fini || (jeSuisProprio && vu && v && !revoir)) {
@@ -931,12 +1062,15 @@ function CartePropose({
   sujet,
   seul,
   humeur,
+  oppose,
   onTrancher,
   onPlusTard,
 }: {
   sujet: ObjetDuel;
   seul: boolean;
   humeur: Humeur;
+  /** Ce qu'il va lui opposer : « un challenger du magasin », « un autre plat de la carte »… */
+  oppose: string;
   onTrancher: () => void;
   onPlusTard: () => void;
 }) {
@@ -957,7 +1091,7 @@ function CartePropose({
         <div className="dl-propose-t">
           <p className="dl-sur">✨ ClikMe vous aide</p>
           <h3>{seul ? "Vous êtes seul ? Aucun problème." : "Vous hésitez ?"} Je peux vous aider à trancher.</h3>
-          <p className="dl-dit">Je vais opposer votre choix à un challenger du magasin.</p>
+          <p className="dl-dit">Je vais opposer votre choix à {oppose}.</p>
         </div>
       </div>
       <button type="button" className="dl-cta" onClick={onTrancher}>
@@ -968,13 +1102,13 @@ function CartePropose({
 }
 
 /** PENDANT LA RECHERCHE — il cherche, la loupe à la main. */
-function CarteRecherche({ sujet, humeur }: { sujet: ObjetDuel | null; humeur: Humeur }) {
+function CarteRecherche({ sujet, humeur, cherche }: { sujet: ObjetDuel | null; humeur: Humeur; cherche: string }) {
   return (
     <section className="dl-carte dl-cherche" aria-live="polite" aria-label="ClikMe cherche un challenger">
       <FantomeAnime humeur={humeur} taille={84} />
       <div>
         <p className="dl-sur">✨ ClikMe cherche</p>
-        <h3>Attendez… je regarde dans la boutique.</h3>
+        <h3>Attendez… {cherche}</h3>
         <div className="dl-cherche-p" aria-hidden="true">
           {sujet && (
             <span>
@@ -1032,7 +1166,7 @@ function CarteDuel({
             <Pastille c={c} />
             <span className="dl-photo-n">
               <b>{objetDe(d, c).nom}</b>
-              {objetDe(d, c).prix && <small>{objetDe(d, c).prix}</small>}
+              {(objetDe(d, c).quand || objetDe(d, c).prix) && <small>{[objetDe(d, c).quand, objetDe(d, c).prix].filter(Boolean).join(" · ")}</small>}
             </span>
           </button>
         ))}
@@ -1261,6 +1395,7 @@ function CarteResultat({
   const faits = [
     ...(p ? [`Votre choix : ${lettre(p)}`] : []),
     ...(groupe ? [`Le salon : ${g === "a" ? k.a : k.b} voix sur ${k.total}`] : []),
+    ...(objetDe(d, g).quand ? [objetDe(d, g).quand as string] : []),
     ...(objetDe(d, g).prix ? [objetDe(d, g).prix as string] : []),
   ];
   const votants = Object.keys(d.votes).filter((x) => x !== MOI);
@@ -1301,7 +1436,7 @@ function CarteResultat({
       {proprio && (
         <>
           <button type="button" className="dl-cta" onClick={onAgir}>
-            <span aria-hidden="true">{/rendez-vous|r[ée]serv/i.test(action) ? "📅" : "🛍️"}</span> {action} <span aria-hidden="true">›</span>
+            <span aria-hidden="true">{motsDeLAction(action).emoji}</span> {motsDeLAction(action).bouton} <span aria-hidden="true">›</span>
           </button>
           {onMieux && (
             <button type="button" className="dl-cta creux" onClick={onMieux}>
@@ -1321,56 +1456,75 @@ function CarteAction({
   proprio,
   etat,
   chez,
+  lieu,
   reelle,
   texte,
   onEnvoye,
   onRouvrir,
   onMieux,
   onCoteBoutique,
+  onVoirSoiree,
 }: {
   d: Duel;
   humeur: Humeur;
   proprio: boolean;
   etat: ReturnType<typeof etatDeLaDemande>;
+  /** Le nom du commerce : « Chez Bergine ». */
   chez?: string;
+  /** Le même, dit dans une phrase : « le restaurant ». */
+  lieu: string;
   reelle: boolean;
   texte: string;
   onEnvoye: () => void;
   onRouvrir: () => void;
   onMieux?: () => void;
   onCoteBoutique?: () => void;
+  onVoirSoiree?: () => void;
 }) {
   const g = d.fin as Cote;
   const o = objetDe(d, g);
+  const mots = motsDeLAction(d.action);
+  const sortie = genreDAction(d.action) === "sortie";
   const confirme = d.reponse === "confirme";
   const refuse = d.reponse === "refuse";
   const prete = d.demande === "prete" && !d.reponse;
-  const titre = confirme
-    ? /c[ôo]t[ée]/i.test(d.action ?? "") || !d.action
-      ? "C’est mis de côté !"
-      : "C’est confirmé !"
-    : refuse
-      ? "Plus disponible."
-      : prete
-        ? proprio
-          ? "Votre message est prêt."
-          : `${d.par} prépare sa demande.`
-        : "C’est demandé !";
-  const dit = confirme
-    ? `${chez ?? "Le commerce"} l’a confirmé.`
-    : refuse
-      ? `${chez ?? "Le commerce"} ne l’a plus. On en cherche un autre ?`
-      : prete
-        ? proprio
-          ? "Envoyez-le dans WhatsApp, puis dites-le moi : je préviens le salon."
-          : ""
-        : `La demande est partie au magasin.${reelle ? " Sa réponse s’affichera ici." : ""}`;
+  const titre = sortie
+    ? proprio
+      ? mots.titreConfirme
+      : `${d.par} y va !`
+    : confirme
+      ? mots.titreConfirme
+      : refuse
+        ? `${mots.refuse}.`
+        : prete
+          ? proprio
+            ? "Votre message est prêt."
+            : `${d.par} prépare sa demande.`
+          : "C’est demandé !";
+  const dit = sortie
+    ? proprio
+      ? "Vos amis le voient dans le salon."
+      : ""
+    : confirme
+      ? `${chez ?? "Le commerce"} l’a confirmé.`
+      : refuse
+        ? `${mots.refusDe(lieu)} On regarde autre chose ?`
+        : prete
+          ? proprio
+            ? "Envoyez-le dans WhatsApp, puis dites-le moi : je préviens le salon."
+            : ""
+          : `La demande est partie ${versLeLieu(lieu)}.${reelle ? " Sa réponse s’affichera ici." : ""}`;
   return (
-    <section className="dl-carte dl-action" aria-label="La demande au commerce">
+    <section className="dl-carte dl-action" aria-label={sortie ? "La sortie choisie" : "La demande au commerce"}>
       <div className="dl-tete">
-        <FantomeAnime humeur={confirme ? "celebrate" : refuse ? "surprised" : humeur === "quiet" ? "idle" : humeur} taille={80} accessoire={confirme || d.demande === "envoyee" ? "valide" : undefined} classe="dl-tete-f" />
+        <FantomeAnime
+          humeur={confirme || sortie ? "celebrate" : refuse ? "surprised" : humeur === "quiet" ? "idle" : humeur}
+          taille={80}
+          accessoire={confirme || d.demande === "envoyee" ? "valide" : undefined}
+          classe="dl-tete-f"
+        />
         <div>
-          <p className="dl-sur">✨ ClikMe s’en occupe</p>
+          <p className="dl-sur">{sortie ? "🎟️ C’est votre sortie" : "✨ ClikMe s’en occupe"}</p>
           <h3>{titre}</h3>
           {dit && <p className="dl-dit">{dit}</p>}
         </div>
@@ -1379,7 +1533,7 @@ function CarteAction({
         <Vignette o={o} />
         <span className="dl-objet-t">
           <b>{o.nom}</b>
-          {o.prix && <small>{o.prix}</small>}
+          {(o.quand || o.prix) && <small>{[o.quand, o.prix].filter(Boolean).join(" · ")}</small>}
           {etat && (
             <span className={`dl-etat ${etat.ton}`}>
               {etat.ton === "confirme" || etat.ton === "envoyee" ? "✓ " : ""}
@@ -1388,35 +1542,45 @@ function CarteAction({
           )}
         </span>
       </div>
-      {proprio && prete && (
-        <>
-          {texte && <p className="dl-message">« {texte.split("\n")[0]} »</p>}
-          <button type="button" className="dl-cta" onClick={onEnvoye}>
-            ✓ C’est envoyé
+      {sortie ? (
+        onVoirSoiree && (
+          <button type="button" className="dl-cta" onClick={onVoirSoiree}>
+            Voir la soirée <span aria-hidden="true">›</span>
           </button>
-          <button type="button" className="dl-cta creux" onClick={onRouvrir}>
-            Rouvrir WhatsApp
-          </button>
-        </>
-      )}
-      {proprio && !prete && (
+        )
+      ) : (
         <>
-          {!confirme && !refuse && (
-            <button type="button" className="dl-lien" onClick={onRouvrir}>
-              <span aria-hidden="true">💬</span> Réponse par message ou WhatsApp <span aria-hidden="true">›</span>
+          {proprio && prete && (
+            <>
+              {texte && <p className="dl-message">« {texte.split("\n")[0]} »</p>}
+              <button type="button" className="dl-cta" onClick={onEnvoye}>
+                ✓ C’est envoyé
+              </button>
+              <button type="button" className="dl-cta creux" onClick={onRouvrir}>
+                Rouvrir WhatsApp
+              </button>
+            </>
+          )}
+          {proprio && !prete && (
+            <>
+              {!confirme && !refuse && (
+                <button type="button" className="dl-lien" onClick={onRouvrir}>
+                  <span aria-hidden="true">💬</span> Réponse par message ou WhatsApp <span aria-hidden="true">›</span>
+                </button>
+              )}
+              {onMieux && !confirme && (
+                <button type="button" className={`dl-cta${refuse ? "" : " creux"}`} onClick={onMieux}>
+                  ✨ Trouve-moi mieux <span aria-hidden="true">›</span>
+                </button>
+              )}
+            </>
+          )}
+          {onCoteBoutique && d.demande === "envoyee" && !d.reponse && (
+            <button type="button" className="cg-pastille dl-demo" onClick={onCoteBoutique}>
+              🛍️ Démo · répondre comme {lieu} <span aria-hidden="true">›</span>
             </button>
           )}
-          {onMieux && (
-            <button type="button" className={`dl-cta${refuse ? "" : " creux"}`} onClick={onMieux}>
-              ✨ Trouve-moi mieux <span aria-hidden="true">›</span>
-            </button>
-          )}
         </>
-      )}
-      {onCoteBoutique && d.demande === "envoyee" && !d.reponse && (
-        <button type="button" className="cg-pastille dl-demo" onClick={onCoteBoutique}>
-          🛍️ Démo · répondre comme le magasin <span aria-hidden="true">›</span>
-        </button>
       )}
     </section>
   );
@@ -1499,10 +1663,10 @@ function CoteBoutiqueDemo({
         <p className="dl-dit">Dans la vraie ville, il répond d’un appui depuis ce message, et le salon le voit tout de suite.</p>
         <div className="dl-deux">
           <button type="button" className="dl-cta" onClick={() => onRepondre("confirme")}>
-            ✅ C’est mis de côté
+            ✅ {motsDeLAction(d.action).oui}
           </button>
           <button type="button" className="dl-cta creux" onClick={() => onRepondre("refuse")}>
-            Plus disponible
+            {motsDeLAction(d.action).non}
           </button>
         </div>
       </div>

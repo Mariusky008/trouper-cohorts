@@ -223,6 +223,7 @@ async function nettoyer(conv: string, g: Record<string, unknown>): Promise<Geste
           ...(s(o.prix) ? { prix: texte(o.prix, 40) } : {}),
           ...(photo ? { photo } : {}),
           ...(essai ? { essai } : {}),
+          ...(s(o.quand) ? { quand: texte(o.quand, 40) } : {}),
         };
       };
       const [a, b] = await Promise.all([objet(d.a), objet(d.b)]);
