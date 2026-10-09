@@ -11,6 +11,9 @@ const config: NextConfig = {
     // L'IMAGE DE PARTAGE LIT SA POLICE ET LE FANTÔME SUR LE DISQUE (voir
     // `lib/og/clikme-og.tsx`). Fabriquée à la compilation d'ordinaire, elle doit
     // pouvoir l'être aussi à la demande sans retomber sur une police générique.
+    // Next compare ces clés PAR INCLUSION : celle-ci couvre aussi l'image de
+    // partage des pages commerçant (`site-internet/apercu/[slug]`), qui lit
+    // les mêmes fichiers.
     "/opengraph-image": ["./public/clikme-fantome.png", "./src/lib/og/polices/**"],
     "/admin/rejoindre/lettre/[slug]": ["./src/templates/**"],
     // Les DEUX lettres du parcours commerçant lisent leurs gabarits par un

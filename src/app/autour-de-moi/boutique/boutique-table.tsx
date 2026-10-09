@@ -91,6 +91,7 @@ import {
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { StylesBoutiqueTable } from "./styles-boutique-table";
 import { compter } from "@/lib/direct/compter";
+import { aLaMaison } from "@/lib/site-internet/bienvenue";
 import { EssaiDuLieu } from "./essai-du-lieu";
 import { ChoixDuLibraire } from "./choix-du-libraire";
 import { ExperienceTable, estUnRestaurant } from "./experience-table";
@@ -207,28 +208,6 @@ const ONGLETS: { cle: Onglet; mot: string }[] = [
   { cle: "amis", mot: "Amis" },
   { cle: "infos", mot: "Infos" },
 ];
-
-/**
- * « BIENVENUE AU BOCAL », ET NON « À LE BOCAL ».
- *
- * Le nom vient de Google, avec son article. La phrase doit le contracter comme
- * on le dirait — au, aux, à la, à l' — sinon la première ligne de la page, la
- * plus grosse, porte une faute qu'un restaurateur verra avant tout le reste.
- */
-function aLaMaison(nom: string): string {
-  /* SANS ÉGARD À LA CASSE : « le bordeaux », tapé en minuscules, donnait
-     « Bienvenue à le bordeaux ». L'article se contracte quelle que soit la
-     façon dont il a été écrit, et le nom qui suit garde sa capitale. */
-  const cap = (s: string) => s.replace(/^(\p{L})/u, (x) => x.toUpperCase());
-  // « Bienvenue à Chez Bergine » → « Bienvenue chez Bergine ».
-  if (/^chez\s/i.test(nom)) return `chez ${cap(nom.slice(5))}`;
-  if (/^le\s/i.test(nom)) return `au ${cap(nom.slice(3))}`;
-  if (/^les\s/i.test(nom)) return `aux ${cap(nom.slice(4))}`;
-  if (/^la\s/i.test(nom)) return `à la ${cap(nom.slice(3))}`;
-  if (/^l['’]/i.test(nom)) return `à l’${cap(nom.slice(2))}`;
-  if (/^(un|une)\s/i.test(nom)) return `à ${nom[0].toLowerCase()}${nom.slice(1)}`;
-  return `à ${nom}`;
-}
 
 /** « 4,1 » → 4.1, pour dessiner les étoiles. */
 function noteChiffre(n: string | undefined): number | null {

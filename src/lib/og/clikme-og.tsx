@@ -50,6 +50,71 @@ async function lire(chemin: string): Promise<Buffer | null> {
   }
 }
 
+/**
+ * POPPINS 600 ET 800, la police du produit, lues sur le disque. Rien si elles
+ * manquent : l'image se fait alors dans la police par défaut, plutôt que pas
+ * du tout. Partagée avec l'image de partage des pages commerçant.
+ */
+export async function policesClikme() {
+  const [p600, p800] = await Promise.all([
+    lire("src/lib/og/polices/poppins-latin-600-normal.woff"),
+    lire("src/lib/og/polices/poppins-latin-800-normal.woff"),
+  ]);
+  return [
+    ...(p600 ? [{ name: "Poppins", data: p600, weight: 600 as const, style: "normal" as const }] : []),
+    ...(p800 ? [{ name: "Poppins", data: p800, weight: 800 as const, style: "normal" as const }] : []),
+  ];
+}
+
+/** Le fantôme de ClikMe, prêt à poser ; rien s'il manque. */
+export async function fantomeClikme() {
+  const f = await lire("public/clikme-fantome.png");
+  return f ? `data:image/png;base64,${f.toString("base64")}` : null;
+}
+
+/** LE FANTÔME, sur son halo — 400 × 400, à placer par `style`. */
+export function FantomeSurHalo({ src, style }: { src: string | null; style: Record<string, string | number> }) {
+  return (
+    <div style={{ position: "absolute", width: 400, height: 400, display: "flex", alignItems: "center", justifyContent: "center", ...style }}>
+      <div
+        style={{
+          position: "absolute",
+          width: 380,
+          height: 380,
+          borderRadius: 999,
+          backgroundImage: "radial-gradient(circle, rgba(255,120,210,0.30) 0%, rgba(255,120,210,0.08) 45%, rgba(0,0,0,0) 70%)",
+        }}
+      />
+      {src && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} width={400} height={366} alt="" style={{ transform: "rotate(-4deg)" }} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * LE MOT-MARQUE : « cli », le curseur, « me ». En minuscules — règle de la
+ * charte. `taille` est celle de la police ; le curseur suit à l'échelle.
+ */
+export function MotMarque({ taille, couleur = "#FFFFFF" }: { taille: number; couleur?: string }) {
+  const k = taille / 104;
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", fontSize: taille, fontWeight: 800, lineHeight: 1, letterSpacing: -2 * k, color: couleur }}>
+      <span>cli</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={CURSEUR}
+        width={Math.round(57 * k)}
+        height={Math.round(83 * k)}
+        alt=""
+        style={{ margin: `0 ${3 * k}px ${13 * k}px ${2 * k}px` }}
+      />
+      <span>me</span>
+    </div>
+  );
+}
+
 export async function clikmeOgImage({
   haut = "Ta ville, à essayer",
   bas = "et à partager.",
@@ -61,15 +126,7 @@ export async function clikmeOgImage({
   bas?: string;
   pastilles?: readonly string[];
 } = {}): Promise<ImageResponse> {
-  const [p600, p800, fantome] = await Promise.all([
-    lire("src/lib/og/polices/poppins-latin-600-normal.woff"),
-    lire("src/lib/og/polices/poppins-latin-800-normal.woff"),
-    lire("public/clikme-fantome.png"),
-  ]);
-  const fonts = [
-    ...(p600 ? [{ name: "Poppins", data: p600, weight: 600 as const, style: "normal" as const }] : []),
-    ...(p800 ? [{ name: "Poppins", data: p800, weight: 800 as const, style: "normal" as const }] : []),
-  ];
+  const [fonts, fantome] = await Promise.all([policesClikme(), fantomeClikme()]);
 
   return new ImageResponse(
     (
@@ -101,13 +158,7 @@ export async function clikmeOgImage({
         />
 
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 0 0 78px", width: 760 }}>
-          {/* LE MOT-MARQUE : « cli », le curseur, « me ». En minuscules — règle de la charte. */}
-          <div style={{ display: "flex", alignItems: "flex-end", fontSize: 104, fontWeight: 800, lineHeight: 1, letterSpacing: -2, color: "#FFFFFF" }}>
-            <span>cli</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={CURSEUR} width={57} height={83} alt="" style={{ margin: "0 3px 13px 2px" }} />
-            <span>me</span>
-          </div>
+          <MotMarque taille={104} />
           <div style={{ display: "flex", flexDirection: "column", marginTop: 40, fontSize: 60, fontWeight: 800, lineHeight: 1.08, letterSpacing: -1 }}>
             <span style={{ color: "#FFF8EC" }}>{haut}</span>
             <span style={{ color: "#F6B54B" }}>{bas}</span>
@@ -137,22 +188,7 @@ export async function clikmeOgImage({
           <div style={{ display: "flex", marginTop: 18, fontSize: 22, fontWeight: 600, color: "#CDB9A5" }}>{SITE_HOST}</div>
         </div>
 
-        {/* LE FANTÔME, sur son halo. */}
-        <div style={{ position: "absolute", right: 58, top: 112, width: 400, height: 400, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div
-            style={{
-              position: "absolute",
-              width: 380,
-              height: 380,
-              borderRadius: 999,
-              backgroundImage: "radial-gradient(circle, rgba(255,120,210,0.30) 0%, rgba(255,120,210,0.08) 45%, rgba(0,0,0,0) 70%)",
-            }}
-          />
-          {fantome && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={`data:image/png;base64,${fantome.toString("base64")}`} width={400} height={366} alt="" style={{ transform: "rotate(-4deg)" }} />
-          )}
-        </div>
+        <FantomeSurHalo src={fantome} style={{ right: 58, top: 112 }} />
       </div>
     ),
     { ...OG_SIZE, ...(fonts.length ? { fonts } : {}) },
