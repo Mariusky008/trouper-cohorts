@@ -1,47 +1,46 @@
 "use client";
 
-// 💬 LE DERNIER ACTE — ce qui lui revient, et surtout CE QU'ON EN DIT.
+// 💬 LES SALONS, JUSTE APRÈS L'ESSAI — la fin de l'étape 2.
 //
-// « Le design de cette dernière étape est vraiment pas terrible, il faut la
-// rendre vraiment wow. Et il manque quelque chose de très important : au-delà
-// d'avoir essayé virtuellement un vêtement, les gens vont surtout avoir un
-// moyen très sympa de partager leur découverte, et c'est ce qui fait toute la
-// différence, grâce aux salons de discussion qui s'ouvrent entre amis ou pour
-// tous. Imager simplement cette idée : trois salons de discussion privés
-// ouverts, où l'on voit des personnes échanger leurs pensées entre amis, et un
-// salon public ouvert, idem mais tout le monde. »
+// « Étape 2 : à la fin de cette étape, c'est là qu'il faut dire qu'une fois le
+// produit essayé, le client peut ouvrir un salon entre amis ou public, où il
+// pourrait demander des avis, faire des comparaisons… C'est un endroit où les
+// ventes grimpent. C'est donc ici même qu'il faut montrer le nouveau design
+// qu'on vient de produire, avec ces salons hyper bien pensés où le fantôme
+// intervient, qu'on soit seul ou avec des amis, et qui va nous aider à prendre
+// une décision de chez soi. » Le fantôme est celui DE LA BOUTIQUE — « avec sa
+// casquette ».
 //
-// ═══ LES SALONS NAISSENT DE L'ESSAI, EN UN CLIC, EN BULLES DE SAVON ═══════
+// LA SCÈNE QUI FERMAIT LA VISITE OUVRE MAINTENANT SA SUITE. Elle était à
+// l'étape 5, où elle disait « voilà ce qu'on en dit » après les chiffres ; elle
+// est ici à sa vraie place, juste après l'essai, là où l'envie se transforme en
+// décision. L'étape 5 montre désormais ce qui en revient chez la commerçante —
+// voir `scene-demandes.tsx`.
 //
-// « C'est sympa, mais il aurait fallu qu'on comprenne que les salons s'ouvrent
-// depuis l'essayage en un clic, et que ça ouvre des salons avec la photo de
-// l'essayage. Et quand les salons apparaissent, tu peux les faire apparaître
-// comme une bulle de savon qui pop à l'écran, pour un peu de magie. »
+// TROIS TEMPS, UN PAR PHRASE DE LÉA (`n`) :
+//   0. « D'un clic, elles ouvrent un salon » — un doigt appuie sur Partager ;
+//      quatre bulles de savon portant la photo de l'essai filent vers la place
+//      de chaque salon (mesurée à l'écran) et y éclatent ; le salon naît, la
+//      photo pour image de groupe, et les amies écrivent ;
+//   1. « Le fantôme de votre boutique est là, qu'elles soient seules ou entre
+//      amies » — il répond dans le salon des amies ET dans celui d'une cliente
+//      seule, et propose de mettre de côté ;
+//   2. « C'est là que vos ventes se décident » — ses propositions sont
+//      acceptées, et le bilan s'affiche sous la pièce.
 //
-// LES SALONS ÉTAIENT LÀ, MAIS ILS NE VENAIENT DE NULLE PART : ils montaient en
-// fondu pendant qu'un bouton s'allumait au milieu, et rien ne reliait l'un à
-// l'autre. Le geste se voit maintenant faire, dans l'ordre :
-//   1. un doigt appuie sur « Partager » — « 1 clic » ;
-//   2. de ce bouton partent quatre bulles de savon, chacune portant la photo
-//      de l'essai ; chacune file vers la place de son salon (mesurée à
-//      l'écran, pas devinée) ;
-//   3. elle y éclate en gouttelettes, et le salon apparaît à sa place — avec
-//      la photo de l'essai pour image de groupe, comme dans l'application ;
-//   4. puis les messages arrivent, un par un.
-//
-// L'ÉCRAN SUIT LA VOIX, PHRASE PAR PHRASE (`n`, l'indice de la phrase dite) :
-// l'ouverture pose la pièce au centre ; chaque chiffre fait monter son
-// compteur ; la phrase du partage joue le clic et les bulles.
-//
-// TOUT EST UN EXEMPLE, ET C'EST ÉCRIT : « Exemple · pas encore vos
-// chiffres », « Exemples de conversations ». Les prénoms sont ceux des
-// fantômes de l'application, aucun n'est celui d'un vrai client.
-import { useLayoutEffect, useRef, useState, useEffect } from "react";
+// TOUT EST UN EXEMPLE, ET C'EST ÉCRIT. Les prénoms sont ceux des fantômes de
+// l'application ; le fantôme de la boutique parle sous le nom de la boutique,
+// et ne dit rien qu'elle ne pourrait dire — une taille, une couleur, « je vous
+// la garde ? ».
+import { useLayoutEffect, useRef } from "react";
 import type { GesteDuJour } from "@/lib/direct/geste-du-jour";
 
 type Personne = { qui: string; fantome: string };
-type Message = Personne & { texte: string };
-type Salon = { titre: string; messages: Message[] };
+/** `ordi` : trop pour un téléphone, où chaque salon ne garde que l'essentiel. */
+type Message = Personne & { texte: string; ordi?: true };
+/** Ce que dit le fantôme de la boutique, le bouton qu'il propose, et ce que ça devient quand c'est décidé. */
+type Intervention = { texte: string; bouton: string; fait: string };
+type Salon = { titre: string; seul?: true; messages: Message[]; fantome?: Intervention };
 
 const F = (nom: string) => `/direct/ensemble/fantome-${nom}.webp`;
 const CAMILLE = { qui: "Camille", fantome: F("casquette-noire") };
@@ -49,101 +48,146 @@ const JULIE = { qui: "Julie", fantome: F("beret-rouge") };
 const SAM = { qui: "Sam", fantome: F("bonnet") };
 const INES = { qui: "Inès", fantome: F("lunettes-rouges") };
 const LEA = { qui: "Léa", fantome: F("echarpe-violette") };
-const MAMAN = { qui: "Maman", fantome: F("beret-noir") };
-const TOI = { qui: "Toi", fantome: F("casquette-bleue") };
 const NORA = { qui: "Nora", fantome: F("echarpe-verte") };
 const HUGO = { qui: "Hugo", fantome: F("salue") };
 const EMMA = { qui: "Emma", fantome: F("echarpe-violette-cligne") };
 const ZOE = { qui: "Zoé", fantome: F("bonnet-cligne") };
 const MILA = { qui: "Mila", fantome: F("beret-noir-cligne") };
 
-const m = (p: Personne, texte: string): Message => ({ ...p, texte });
+const m = (p: Personne, texte: string, ordi?: true): Message => ({ ...p, texte, ...(ordi ? { ordi } : {}) });
 
-/** Les conversations de l'exemple, dans les mots du métier. */
+/**
+ * LES CONVERSATIONS DE L'EXEMPLE, DANS LES MOTS DU MÉTIER : deux salons entre
+ * amis, un salon d'une personne seule — où le fantôme de la boutique répond
+ * aussi —, et le salon public de la ville.
+ */
 function salonsDe(g: GesteDuJour): { prives: Salon[]; public: Message[] } {
   if (g.photoEtVoix) {
     return {
       prives: [
-        { titre: "Cette tenue pour samedi ?", messages: [m(CAMILLE, "Vous en pensez quoi ?"), m(JULIE, "La couleur te va super bien ! ❤️"), m(SAM, "Avec tes bottines, oui ! 👢")] },
+        {
+          titre: "Cette tenue pour samedi ?",
+          messages: [m(CAMILLE, "Vous en pensez quoi ?", true), m(SAM, "Elle te va super bien… mais j’hésite avec l’autre 🤔")],
+          fantome: { texte: "Vous hésitez ? Je vous aide à trancher : votez A ou B !", bouton: "🗳️ On vote", fait: "A gagne 2–1 · mise de côté demandée" },
+        },
         { titre: "Les copines", messages: [m(INES, "Je passe l’essayer demain 😍"), m(LEA, "Je viens avec toi !")] },
-        { titre: "Maman & moi", messages: [m(MAMAN, "Très élégante, ma chérie"), m(TOI, "Je la fais mettre de côté 🙌")] },
+        {
+          titre: "Mon essai",
+          seul: true,
+          messages: [m(ZOE, "Elle me plaît… mais j’hésite.")],
+          fantome: { texte: "Vous êtes seule ? Aucun problème. Je vous aide à trancher.", bouton: "Fais-moi trancher", fait: "Votre choix : A · demande envoyée" },
+        },
       ],
       public: [
         m(NORA, "Je l’ai essayée hier, elle tombe parfaitement"),
-        m(HUGO, "Elle existe en bleu ?"),
-        m(EMMA, "Le conseil en boutique est adorable 💕"),
-        m(ZOE, "Je file la voir !"),
-        m(INES, "Elle taille comment ?"),
-        m(NORA, "Normalement, j’ai pris ma taille habituelle"),
+        m(HUGO, "Le conseil en boutique est adorable 💕"),
+        m(EMMA, "Je file la voir !", true),
+        m(INES, "Elle taille comment ?", true),
+        m(NORA, "Normalement, j’ai pris ma taille habituelle", true),
       ],
     };
   }
   if (g.famille === "restauration") {
     return {
       prives: [
-        { titre: `${g.quand}, on y va ?`, messages: [m(CAMILLE, "Regardez ça 😋"), m(JULIE, "Validé, je réserve pour 3 !"), m(SAM, "J’arrive !")] },
-        { titre: "Les collègues", messages: [m(INES, "Il a l’air trop bon"), m(LEA, "On y retourne demain ?")] },
-        { titre: "Famille", messages: [m(MAMAN, "On y emmène papa dimanche ?"), m(TOI, "Bonne idée ❤️")] },
+        {
+          titre: `${g.quand}, on y va ?`,
+          messages: [m(CAMILLE, "Regardez ça 😋", true), m(JULIE, "Validé ! Il reste de la place ?")],
+          fantome: { texte: "Il me reste une table pour 3 à 12 h 30. Je vous la garde ? 🙂", bouton: "Réserver", fait: "Demande envoyée pour 3" },
+        },
+        { titre: "Les collègues", messages: [m(INES, "Il a l’air trop bon"), m(LEA, "On y va demain ?")] },
+        {
+          titre: "Ma pause",
+          seul: true,
+          messages: [m(ZOE, "C’est fait maison ?")],
+          fantome: { texte: "Tout est fait maison, ce matin même. Je vous garde une place ?", bouton: "Réserver", fait: "Demande envoyée" },
+        },
       ],
-      public: [m(NORA, "Je confirme, c’est excellent"), m(HUGO, "Il reste de la place ?"), m(EMMA, "Tout est fait maison 👌"), m(ZOE, "J’y vais ce soir !")],
+      public: [m(NORA, "Je confirme, c’est excellent"), m(HUGO, "Il reste de la place ?"), m(EMMA, "Tout est fait maison 👌", true), m(ZOE, "J’y vais ce soir !", true)],
     };
   }
   if (g.famille === "rdv") {
     return {
       prives: [
-        { titre: "Un créneau aujourd’hui ?", messages: [m(CAMILLE, "Il reste une place cet après-midi"), m(JULIE, "Fonce, tu le mérites ✨"), m(SAM, "Envoie une photo après !")] },
+        {
+          titre: "Un créneau aujourd’hui ?",
+          messages: [m(CAMILLE, "Je me lance ? ✨", true), m(JULIE, "Fonce ! Il reste de la place ?")],
+          fantome: { texte: "J’ai 15 h ou 16 h 30 de libre. Je vous bloque lequel ? 🙂", bouton: "Réserver", fait: "Demande envoyée pour 15 h" },
+        },
         { titre: "Les copines", messages: [m(INES, "Je prends le suivant 😄"), m(LEA, "Top adresse !")] },
-        { titre: "Famille", messages: [m(MAMAN, "Je garde les petits, vas-y"), m(TOI, "Merci ❤️")] },
+        {
+          titre: "Mon rendez-vous",
+          seul: true,
+          messages: [m(ZOE, "Vous prenez sans rendez-vous ?")],
+          fantome: { texte: "Aujourd’hui oui, jusqu’à 18 h. Je vous inscris ?", bouton: "M’inscrire", fait: "Demande envoyée" },
+        },
       ],
-      public: [m(NORA, "Super accueil, je recommande"), m(HUGO, "Ils prennent sans rendez-vous ?"), m(EMMA, "Résultat parfait 👌"), m(ZOE, "J’y vais samedi !")],
+      public: [m(NORA, "Super accueil, je recommande"), m(HUGO, "Résultat parfait 👌"), m(EMMA, "J’y vais samedi !", true)],
     };
   }
   if (g.famille === "librairie") {
     return {
       prives: [
-        { titre: "Club de lecture", messages: [m(CAMILLE, "Vous l’avez lu ?"), m(JULIE, "Pas encore, je le note 📚"), m(SAM, "Je l’ai adoré !")] },
+        {
+          titre: "Club de lecture",
+          messages: [m(CAMILLE, "Vous l’avez lu ?", true), m(JULIE, "Pas encore… il en reste ?")],
+          fantome: { texte: "Il m’en reste deux. Je vous en mets un de côté ? 🙂", bouton: "Mettre de côté", fait: "Demande envoyée" },
+        },
         { titre: "Les copines", messages: [m(INES, "Je l’offre à ma sœur 🎁"), m(LEA, "Bonne idée !")] },
-        { titre: "Famille", messages: [m(MAMAN, "Pour les vacances ?"), m(TOI, "Je le fais mettre de côté")] },
+        {
+          titre: "Ma prochaine lecture",
+          seul: true,
+          messages: [m(ZOE, "Il existe en poche ?")],
+          fantome: { texte: "Pas encore, mais je l’ai en grand format. Je vous le garde ?", bouton: "Me le garder", fait: "Demande envoyée" },
+        },
       ],
-      public: [m(NORA, "Coup de cœur pour moi aussi"), m(HUGO, "Il existe en poche ?"), m(EMMA, "Leurs conseils sont toujours top"), m(ZOE, "Je file le chercher")],
+      public: [m(NORA, "Coup de cœur pour moi aussi"), m(HUGO, "Leurs conseils sont toujours top"), m(EMMA, "Je file le chercher", true)],
     };
   }
   return {
     prives: [
-      { titre: "Tu as vu ça ?", messages: [m(CAMILLE, "Regardez ce qui vient d’arriver 😍"), m(JULIE, "Je passe en prendre !"), m(SAM, "Garde-m’en un !")] },
+      {
+        titre: "Tu as vu ça ?",
+        messages: [m(CAMILLE, "Regardez ce qui vient d’arriver 😍", true), m(JULIE, "Il en reste ?")],
+        fantome: { texte: "Oui, ce matin encore. Je vous en mets de côté ? 🙂", bouton: "Mettre de côté", fait: "Demande envoyée" },
+      },
       { titre: "Les voisines", messages: [m(INES, "Superbe !"), m(LEA, "J’y vais à midi")] },
-      { titre: "Famille", messages: [m(MAMAN, "Pour l’anniversaire de mamie ?"), m(TOI, "Parfait ❤️")] },
+      {
+        titre: "Pour moi",
+        seul: true,
+        messages: [m(ZOE, "C’est encore dispo ce soir ?")],
+        fantome: { texte: "Oui, jusqu’à la fermeture. Je vous le garde ?", bouton: "Me le garder", fait: "Demande envoyée" },
+      },
     ],
-    public: [m(NORA, "Toujours parfait, je recommande"), m(HUGO, "Il en reste ?"), m(EMMA, "Accueil adorable 💕"), m(ZOE, "J’arrive !")],
+    public: [m(NORA, "Toujours parfait, je recommande"), m(HUGO, "Accueil adorable 💕"), m(EMMA, "J’arrive !", true)],
   };
-}
-
-/** Un nombre qui monte de zéro jusqu'à lui quand on le dit. */
-function Compteur({ cible, actif }: { cible: number; actif: boolean }) {
-  const [v, setV] = useState(0);
-  useEffect(() => {
-    if (!actif) return;
-    const debut = performance.now();
-    let id = 0;
-    const pas = (t: number) => {
-      const k = Math.min(1, (t - debut) / 1300);
-      setV(Math.round(cible * (1 - Math.pow(1 - k, 3))));
-      if (k < 1) id = requestAnimationFrame(pas);
-    };
-    id = requestAnimationFrame(pas);
-    return () => cancelAnimationFrame(id);
-  }, [actif, cible]);
-  return <>{(actif ? v : 0).toLocaleString("fr-FR")}</>;
 }
 
 function Bulle({ msg, i }: { msg: Message; i: number }) {
   return (
-    <div className="sp-msg" style={{ ["--i" as string]: i }}>
+    <div className={`sp-msg${msg.ordi ? " ordi" : ""}`} style={{ ["--i" as string]: i }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={msg.fantome} alt="" />
       <p>
         <b>{msg.qui}</b>
         {msg.texte}
+      </p>
+    </div>
+  );
+}
+
+/** LE FANTÔME DE LA BOUTIQUE PREND LA PAROLE — et sa proposition devient une décision au temps suivant. */
+function Fantome({ f, j, decide, qui }: { f: Intervention; j: number; decide: boolean; qui: { visage: string; nom: string } }) {
+  return (
+    <div className="sp-msg fan" style={{ ["--j" as string]: j }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={qui.visage} alt="" />
+      <p>
+        <b>
+          {qui.nom} <em>· son fantôme</em>
+        </b>
+        {f.texte}
+        <span className={`sp-garde${decide ? " fait" : ""}`}>{decide ? `✓ ${f.fait}` : f.bouton}</span>
       </p>
     </div>
   );
@@ -169,31 +213,38 @@ function BulleDeSavon({ photo }: { photo: string }) {
   );
 }
 
-export function ScenePartage({
+export function SceneSalons({
   g,
   n,
   ville,
-  ouverture,
   photo,
   exemple,
+  fantome,
+  duel,
 }: {
   g: GesteDuJour;
-  /** L'indice de la phrase que la voix dit : −1 pour l'ouverture. */
+  /** Où en est la voix : 0 on ouvre les salons, 1 le fantôme répond, 2 c'est décidé. */
   n: number;
   ville: string;
-  ouverture: string;
   /** La pièce essayée (boutique de vêtements), sinon la photo de son annonce. */
   photo: string;
   /** La photo du centre est celle de l'exemple, pas la sienne. */
   exemple?: boolean;
+  /** Le fantôme de la boutique : son visage, et le nom sous lequel il parle. */
+  fantome: { visage: string; nom: string };
+  /**
+   * LE DUEL D'« ENSEMBLE », AU CENTRE — voir `duel-salon.tsx`. Sa pièce essayée
+   * (A) contre une autre pièce portée par la même personne (B) ; on vote, et A
+   * l'emporte. Absent : le fantôme répond dans les salons, sans duel.
+   */
+  duel?: { b: string; nomA: string; nomB: string; exempleB?: boolean };
 }) {
-  const chiffres = g.retours.filter((r) => r.nombre);
-  const fin = g.retours.find((r) => !r.nombre)?.quoi;
-  const iPartage = chiffres.length;
-  const partage = n >= iPartage;
+  const partage = n >= 0;
+  const repond = n >= 1;
+  const decide = n >= 2;
   const { prives, public: publics } = salonsDe(g);
   const essai = Boolean(g.photoEtVoix);
-  const nbSalons = prives.length + 1;
+  const clients = essai ? "vos clientes" : "vos clients";
 
   /* ═══ LES BULLES PARTENT DU BOUTON, ET ON MESURE D'OÙ ═══════════════════
      Chaque place de salon reçoit l'écart qui la sépare du bouton
@@ -222,68 +273,125 @@ export function ScenePartage({
     // eslint-disable-next-line @next/next/no-img-element
     <img className="sp-pic" src={photo} alt="" />
   );
+  /** Le rang de chaque réponse du fantôme, pour qu'il ne parle pas partout à la même seconde. */
+  const rangFantome = prives.map((_, k) => prives.slice(0, k).filter((x) => x.fantome).length);
 
   return (
     <div className="dtour-ov sp-ov">
       <div className="sp">
         <div className="sp-tete">
-          <span className="sp-k">Exemple · pas encore vos chiffres</span>
-          <h3 className="sp-h">{ouverture}</h3>
+          <span className="sp-k">Exemple · des salons comme ceux de {clients}</span>
+          <h3 className="sp-h">{g.salons.titre}</h3>
         </div>
 
         <div className={`sp-scene${partage ? " partage" : ""}`}>
-          {/* ═══ TROIS SALONS PRIVÉS ═══ */}
+          {/* ═══ DEUX SALONS ENTRE AMIS, ET UN SALON SEUL ═══ */}
           <div className="sp-prives">
-            {prives.map((s, k) => (
-              <div
-                key={s.titre}
-                className="sp-place"
-                style={{ ["--k" as string]: k }}
-                ref={(el) => {
-                  places.current[k] = el;
-                }}
-              >
-                <section className="sp-salon prive">
-                  <header>
-                    {imageDeGroupe}
-                    <span className="sp-titres">
-                      <span className="sp-cadenas">🔒 Salon privé</span>
-                      <b>{s.titre}</b>
-                    </span>
-                  </header>
-                  {s.messages.map((msg, i) => (
-                    <Bulle key={i} msg={msg} i={i} />
-                  ))}
-                </section>
-                <BulleDeSavon photo={photo} />
-              </div>
-            ))}
+            {prives.map((s, k) => {
+              const j = rangFantome[k];
+              return (
+                <div
+                  key={s.titre}
+                  className="sp-place"
+                  style={{ ["--k" as string]: k }}
+                  ref={(el) => {
+                    places.current[k] = el;
+                  }}
+                >
+                  <section className={`sp-salon prive${s.seul ? " seul" : ""}`}>
+                    <header>
+                      {imageDeGroupe}
+                      <span className="sp-titres">
+                        <span className={`sp-cadenas${s.seul ? " seul" : ""}`}>{s.seul ? "🔒 Juste moi" : "🔒 Salon privé"}</span>
+                        <b>{s.titre}</b>
+                      </span>
+                    </header>
+                    {s.messages.map((msg, i) => (
+                      <Bulle key={i} msg={msg} i={i} />
+                    ))}
+                    {s.fantome && repond && <Fantome f={s.fantome} j={j} decide={decide} qui={fantome} />}
+                  </section>
+                  <BulleDeSavon photo={photo} />
+                </div>
+              );
+            })}
           </div>
 
-          {/* ═══ SA PIÈCE, AU CENTRE, ET LE CLIC ═══ */}
-          <div className="sp-centre">
-            <div className="sp-photo">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photo} alt="" />
-              <span className="sp-badge">{essai ? "Essayée virtuellement" : g.extrait.titre}</span>
-              {exemple && <span className="sp-ex">Exemple</span>}
-              <span className="sp-coeurs" aria-hidden="true">
-                <i>❤️</i>
-                <i>💗</i>
-                <i>❤️</i>
-              </span>
+          {/* ═══ SA PIÈCE, AU CENTRE, LE CLIC — PUIS LE DUEL ═══
+              « Vous hésitez ? Je peux vous aider à trancher. » Quand le
+              fantôme le propose, une autre pièce (B) vient se poser à côté de
+              la sienne (A), les amies votent, et A l'emporte : la décision se
+              voit prendre, depuis chez soi. */}
+          <div className={`sp-centre${duel && repond ? " duel" : ""}${duel && decide ? " tranche" : ""}`}>
+            <div className="sp-duo">
+              <div className="sp-photo a">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photo} alt="" />
+                <span className="sp-badge">{essai ? "Essayée virtuellement" : g.extrait.titre}</span>
+                {exemple && <span className="sp-ex">Exemple</span>}
+                {duel && repond && <span className="sp-lettre">A</span>}
+                {duel && decide && (
+                  <span className="sp-couronne" aria-hidden="true">
+                    👑
+                  </span>
+                )}
+                <span className="sp-coeurs" aria-hidden="true">
+                  <i>❤️</i>
+                  <i>💗</i>
+                  <i>❤️</i>
+                </span>
+              </div>
+              {duel && repond && (
+                <>
+                  <span className="sp-vs" aria-hidden="true">
+                    VS
+                  </span>
+                  <div className="sp-photo b">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={duel.b} alt={duel.nomB} />
+                    <span className="sp-lettre">B</span>
+                    {duel.exempleB && <span className="sp-ex">Exemple</span>}
+                  </div>
+                </>
+              )}
             </div>
-            <span className="sp-partager" ref={bouton}>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
-              </svg>
-              Partager dans ClikMe
-              <i className="sp-onde" aria-hidden="true" />
-              <i className="sp-doigt" aria-hidden="true">
-                👆
-              </i>
-              <span className="sp-clic">1 clic · {nbSalons} salons s’ouvrent</span>
-            </span>
+            {duel && repond && (
+              <div className="sp-votes" aria-label="Le vote du salon">
+                <span className="sp-vote a">
+                  <b>A · {duel.nomA}</b>
+                  <i style={{ ["--v" as string]: "67%" }} />
+                  <em>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={JULIE.fantome} alt="" />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={SAM.fantome} alt="" /> 2 votes
+                  </em>
+                </span>
+                <span className="sp-vote b">
+                  <b>B · {duel.nomB}</b>
+                  <i style={{ ["--v" as string]: "33%" }} />
+                  <em>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={INES.fantome} alt="" /> 1 vote
+                  </em>
+                </span>
+              </div>
+            )}
+            <div className="sp-actions">
+              <span className="sp-partager" ref={bouton}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
+                </svg>
+                Partager dans ClikMe
+                <i className="sp-onde" aria-hidden="true" />
+                <i className="sp-doigt" aria-hidden="true">
+                  👆
+                </i>
+                <span className="sp-clic">1 clic · {prives.length + 1} salons s’ouvrent</span>
+              </span>
+              {/* CE QUE LES SALONS ONT DÉCIDÉ — quand Léa dit « c'est là que vos ventes se décident ». */}
+              {decide && <span className="sp-bilan">{duel ? `👑 A gagne 2–1 · ${g.salons.bilan}` : g.salons.bilan}</span>}
+            </div>
           </div>
 
           {/* ═══ LE SALON PUBLIC ═══ */}
@@ -327,42 +435,19 @@ export function ScenePartage({
           </div>
         </div>
 
-        {/* ═══ LES COMPTEURS ═══ */}
-        <div className="sp-compteurs">
-          {chiffres.map((r, i) => (
-            <div key={r.heure} className={`sp-cpt${n >= i ? " on" : ""}`}>
-              <span className="sp-cpt-h">
-                {r.icone} {r.heure}
-              </span>
-              <b>
-                <Compteur cible={Number(r.nombre.replace(/\D/g, "")) || 0} actif={n >= i} />
-              </b>
-              <span>{r.quoi}</span>
-            </div>
-          ))}
-          <div className={`sp-cpt rose${partage ? " on" : ""}`}>
-            <span className="sp-cpt-h">💬 en un clic</span>
-            <b>
-              <Compteur cible={nbSalons} actif={partage} />
-            </b>
-            <span>salons en parlent</span>
-          </div>
-        </div>
-        <p className={`sp-fin${partage ? " on" : ""}`}>
-          Exemples de conversations{fin ? ` · ${fin}` : ""}
-        </p>
+        <p className={`sp-fin${partage ? " on" : ""}`}>Exemples de conversations · votre fantôme y répond pour vous</p>
       </div>
-      <StylesPartage />
+      <StylesSalons />
     </div>
   );
 }
 
-function StylesPartage() {
+function StylesSalons() {
   return (
     <style
       dangerouslySetInnerHTML={{
         __html: `
-.dtour-ov.sp-ov{align-items:flex-start;padding-top:76px;padding-bottom:140px;overflow:hidden;}
+.dtour-ov.sp-ov{align-items:flex-start;padding-top:70px;padding-bottom:140px;overflow:hidden;}
 .sp{position:relative;width:100%;max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:10px;pointer-events:auto;}
 .sp::before{content:"";position:absolute;inset:-60px -40px;z-index:-1;pointer-events:none;
   background:radial-gradient(40% 50% at 50% 45%,rgba(255,79,160,.22),transparent 70%),radial-gradient(35% 45% at 20% 60%,rgba(245,162,58,.18),transparent 70%);}
@@ -387,10 +472,12 @@ function StylesPartage() {
 .sp-pic{flex:none;width:32px;height:32px;border-radius:9px;object-fit:cover;object-position:50% 22%;
   box-shadow:0 0 0 2px #FF8CC8,0 4px 10px rgba(0,0,0,.18);}
 .sp-salon.public .sp-pic{box-shadow:0 0 0 2px #3CB37A,0 4px 10px rgba(0,0,0,.18);}
+.sp-salon.seul .sp-pic{box-shadow:0 0 0 2px #9B7BFF,0 4px 10px rgba(0,0,0,.18);}
 .sp-titres{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;}
 .sp-salon header b{font-family:var(--font-clikme),sans-serif;font-size:14px;font-weight:800;color:#2A1712;letter-spacing:-.01em;}
 .sp-cadenas{font-size:10px;font-weight:800;color:#C2185B;background:#FFE1EE;border-radius:999px;padding:2px 8px;}
 .sp-cadenas.pub{color:#1F6B4A;background:#DDF5E8;}
+.sp-cadenas.seul{color:#5B3FC4;background:#ECE6FF;}
 .sp-msg{display:grid;grid-template-columns:30px minmax(0,1fr);gap:7px;align-items:end;margin-top:4px;
   opacity:0;transform:translateY(6px);}
 .sp-scene.partage .sp-msg{animation:spMsg .45s ease both;animation-delay:calc(var(--t0) + 1.15s + var(--i) * .42s);}
@@ -404,12 +491,28 @@ function StylesPartage() {
 @keyframes spPoint{0%,100%{opacity:.25;transform:translateY(0);}50%{opacity:1;transform:translateY(-3px);}}
 .sp-msg p{margin:0;padding:5px 10px;border-radius:13px;border-bottom-left-radius:5px;background:#F3E6DA;font-size:12.5px;line-height:1.3;color:#2A1712;}
 .sp-msg p b{display:block;font-size:10.5px;color:#C2185B;margin-bottom:1px;}
+.sp-salon.seul .sp-msg p b{color:#5B3FC4;}
 .sp-salon.public{display:flex;flex-direction:column;}
 .sp-salon.public .sp-msg p{background:#E9F4EE;}
 .sp-salon.public .sp-msg p b{color:#1F6B4A;}
 .sp-foule{display:flex;align-items:center;margin-left:auto;padding-left:6px;}
 .sp-foule img{width:24px;height:24px;border-radius:50%;object-fit:cover;object-position:50% 18%;background:#FFE7D6;border:2px solid #FFF8F1;margin-left:-7px;}
 .sp-foule em{font-style:normal;font-size:11px;font-weight:800;color:#6E5A4E;margin-left:4px;white-space:nowrap;}
+
+/* ═══ LE FANTÔME DE LA BOUTIQUE ═══ Il arrive quand Léa le nomme : sa bulle a
+   la couleur de la maison, et ce qu'il propose devient une décision au temps
+   suivant. */
+.sp-scene.partage .sp-msg.fan{animation:spFan .55s cubic-bezier(.34,1.45,.64,1) both;animation-delay:calc(.15s + var(--j) * .55s);}
+@keyframes spFan{from{opacity:0;transform:translateY(10px) scale(.92);}to{opacity:1;transform:none;}}
+.sp-msg.fan img{background:#2A1712;box-shadow:0 0 0 2px #F5A23A;}
+.sp-msg.fan p{background:linear-gradient(135deg,#FFF0DA,#FFE3EF);border:1px solid rgba(245,162,58,.65);
+  box-shadow:0 6px 16px rgba(245,162,58,.22);}
+.sp-salon .sp-msg.fan p b{color:#B4600F;}
+.sp-msg.fan p b em{font-style:normal;font-weight:600;color:#A8927F;}
+.sp-garde{display:block;width:max-content;max-width:100%;margin-top:5px;padding:4px 10px;border-radius:999px;
+  font-size:11px;font-weight:800;color:#fff;background:#FF4FA0;box-shadow:0 4px 12px rgba(255,79,160,.35);}
+.sp-garde.fait{background:#2E9E6B;box-shadow:0 4px 12px rgba(46,158,107,.35);animation:spFait .5s cubic-bezier(.34,1.5,.64,1);}
+@keyframes spFait{0%{transform:scale(.8);}60%{transform:scale(1.08);}100%{transform:none;}}
 
 /* ═══ LA BULLE DE SAVON ═══ Elle part du bouton (--dx, --dy, mesurés), grossit
    en flottant jusqu'à la place du salon, tremble, et éclate. Un reflet, un bord
@@ -445,7 +548,7 @@ function StylesPartage() {
   100%{opacity:0;transform:rotate(var(--a)) translateX(calc(var(--b) * .95)) scale(.3);}
 }
 
-/* ═══ AU CENTRE : la pièce, et le clic ═══ */
+/* ═══ AU CENTRE : la pièce, le clic, et ce qui a été décidé ═══ */
 .sp-centre{position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;animation:spMonte .55s cubic-bezier(.2,.8,.2,1) .1s both;}
 .sp-photo{position:relative;width:236px;aspect-ratio:3 / 4;border-radius:22px;overflow:hidden;
   box-shadow:0 0 0 3px rgba(255,248,241,.9),0 30px 70px rgba(0,0,0,.55),0 0 60px rgba(255,79,160,.25);}
@@ -460,6 +563,7 @@ function StylesPartage() {
 .sp-scene .sp-coeurs i{animation:spCoeur 2.6s ease-out infinite;}
 .sp-scene .sp-coeurs i:nth-child(2){animation-delay:.8s;}
 .sp-scene .sp-coeurs i:nth-child(3){animation-delay:1.6s;}
+.sp-actions{display:flex;flex-direction:column;align-items:center;gap:34px;}
 .sp-partager{position:relative;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;font-size:14px;font-weight:800;
   color:#7A1446;background:#FFD6E8;box-shadow:0 8px 24px rgba(0,0,0,.3);
   transition:background .2s ease .35s,color .2s ease .35s;}
@@ -486,22 +590,54 @@ function StylesPartage() {
   opacity:0;transform:translateX(-50%) scale(.6);}
 .sp-scene.partage .sp-clic{animation:spClic .5s cubic-bezier(.34,1.5,.64,1) .4s both;}
 @keyframes spClic{from{opacity:0;transform:translateX(-50%) scale(.6);}to{opacity:1;transform:translateX(-50%) scale(1);}}
+/* ═══ LE DUEL ═══ A rétrécit pour faire place à B ; « VS » entre les deux ; les
+   votes montent ; à la décision, B s'efface et A reçoit sa couronne. */
+.sp-duo{position:relative;display:flex;align-items:center;justify-content:center;gap:16px;}
+.sp-photo{transition:width .6s cubic-bezier(.65,.05,.3,1),box-shadow .5s ease,filter .5s ease,opacity .5s ease;}
+.sp-centre.duel .sp-photo{width:110px;border-radius:16px;}
+.sp-centre.duel .sp-badge{left:6px;bottom:6px;font-size:9.5px;padding:3px 7px;}
+.sp-photo.b{animation:spB .6s cubic-bezier(.34,1.4,.64,1) .25s both;}
+@keyframes spB{from{opacity:0;transform:translateX(30px) scale(.85);}to{opacity:1;transform:none;}}
+.sp-lettre{position:absolute;left:6px;top:6px;z-index:2;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;
+  font-size:12px;font-weight:900;color:#1A0F08;background:#FFE2A6;box-shadow:0 4px 10px rgba(0,0,0,.35);}
+.sp-photo.b .sp-lettre{background:#D9E7FF;}
+.sp-vs{position:absolute;left:50%;top:50%;z-index:3;transform:translate(-50%,-50%);display:grid;place-items:center;
+  width:34px;height:34px;border-radius:50%;font-size:12px;font-weight:900;color:#fff;background:#FF4FA0;
+  box-shadow:0 0 0 3px rgba(255,248,241,.9),0 8px 20px rgba(255,79,160,.5);animation:spVs .5s cubic-bezier(.34,1.6,.64,1) .45s both;}
+@keyframes spVs{from{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(-30deg);}to{opacity:1;transform:translate(-50%,-50%);}}
+.sp-centre.tranche .sp-photo.b{opacity:.45;filter:grayscale(.7);}
+.sp-centre.tranche .sp-photo.a{box-shadow:0 0 0 3px #FFD36E,0 20px 50px rgba(0,0,0,.5),0 0 40px rgba(255,211,110,.55);}
+.sp-couronne{position:absolute;left:50%;top:-6px;z-index:3;transform:translateX(-50%);font-size:26px;line-height:1;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,.4));animation:spCouronne .6s cubic-bezier(.34,1.6,.64,1) both;}
+@keyframes spCouronne{from{opacity:0;transform:translate(-50%,-14px) scale(.4);}to{opacity:1;transform:translateX(-50%);}}
+.sp-votes{display:flex;flex-direction:column;gap:6px;width:236px;animation:spMonte .45s ease .8s both;}
+.sp-vote{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 8px;padding:6px 9px;border-radius:12px;
+  background:rgba(255,248,241,.08);border:1px solid rgba(255,196,140,.18);}
+.sp-vote b{grid-column:1 / -1;font-size:11.5px;font-weight:800;color:#FFF4E6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sp-vote i{height:6px;border-radius:999px;background:rgba(255,248,241,.12);position:relative;overflow:hidden;}
+.sp-vote i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--v);border-radius:inherit;background:#FFD36E;
+  animation:spJauge 1.2s cubic-bezier(.2,.8,.2,1) 1.1s both;}
+.sp-vote.b i::after{background:#9AB8FF;}
+@keyframes spJauge{from{width:0;}}
+.sp-vote em{display:flex;align-items:center;gap:2px;font-style:normal;font-size:11px;font-weight:700;color:#E7D6C6;white-space:nowrap;}
+.sp-vote em img{width:18px;height:18px;border-radius:50%;object-fit:cover;object-position:50% 16%;background:#FFE7D6;margin-right:-4px;
+  border:1.5px solid #2A1712;}
+.sp-vote em img:last-of-type{margin-right:4px;}
+.sp-centre.duel .sp-actions{gap:10px;}
+.sp-centre.duel .sp-clic{display:none;}
+.sp-bilan{max-width:236px;padding:8px 14px;border-radius:14px;font-size:13px;font-weight:800;line-height:1.3;color:#fff;text-align:center;
+  background:linear-gradient(135deg,#2E9E6B,#3CB37A);box-shadow:0 10px 26px rgba(46,158,107,.45);
+  animation:spBilan .6s cubic-bezier(.34,1.5,.64,1) .35s both;}
+@keyframes spBilan{from{opacity:0;transform:translateY(8px) scale(.85);}to{opacity:1;transform:none;}}
 
-/* ═══ LES COMPTEURS ═══ */
-.sp-compteurs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:760px;width:100%;margin:6px auto 0;}
-.sp-cpt{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 8px;border-radius:16px;text-align:center;
-  background:rgba(255,248,241,.07);border:1px solid rgba(255,196,140,.18);opacity:.35;transition:opacity .4s ease,transform .4s ease,background .4s;}
-.sp-cpt.on{opacity:1;transform:translateY(-2px);background:rgba(255,248,241,.11);}
-.sp-cpt b{font-family:var(--font-clikme),sans-serif;font-size:clamp(26px,3vw,36px);font-weight:800;line-height:1;color:#FFE2A6;letter-spacing:-.03em;}
-.sp-cpt.rose b{color:#FF8CC8;}
-.sp-cpt span{font-size:12.5px;color:#E7D6C6;}
-.sp-cpt .sp-cpt-h{font-size:11px;font-weight:700;color:#BFA88F;}
 .sp-fin{margin:0;text-align:center;font-size:12px;color:#A8927F;opacity:0;transition:opacity .5s ease 3s;}
 .sp-fin.on{opacity:1;}
 @keyframes spMonte{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
 @keyframes spMsg{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 @keyframes spCoeur{0%{opacity:0;transform:translateY(0) scale(.6);}20%{opacity:1;}100%{opacity:0;transform:translateY(-120px) scale(1.2);}}
-/* ═══ SUR UN TÉLÉPHONE : la pièce en haut, les quatre salons en deux par deux, les compteurs en bas. ═══ */
+/* ═══ SUR UN TÉLÉPHONE : la pièce en haut, les quatre salons en deux par deux.
+   Chaque salon n'y garde que l'essentiel (« ordi » : réservé à l'ordinateur) —
+   et toujours la réponse du fantôme. ═══ */
 @media (max-width:899px){
   .dtour-ov.sp-ov{padding-top:76px;padding-bottom:126px;padding-left:12px;padding-right:12px;}
   .sp{gap:9px;}
@@ -513,9 +649,28 @@ function StylesPartage() {
   .sp-photo{width:96px;border-radius:14px;}
   .sp-badge{left:6px;bottom:6px;font-size:9px;padding:3px 7px;}
   .sp-ex{font-size:9px;padding:2px 6px;right:6px;top:6px;}
+  .sp-actions{gap:30px;}
   .sp-partager{font-size:12px;padding:8px 12px;}
   .sp-clic{font-size:10px;padding:3px 8px;}
   .sp-doigt{font-size:24px;}
+  .sp-bilan{max-width:none;font-size:11.5px;padding:6px 10px;}
+  /* LE DUEL SUR UN TÉLÉPHONE : A et B côte à côte, les votes à droite ; le
+     bouton Partager a fait son office, il laisse la place. */
+  .sp-centre.duel .sp-photo{width:70px;border-radius:12px;}
+  .sp-centre.duel .sp-badge,.sp-centre.duel .sp-ex{display:none;}
+  .sp-duo{gap:10px;}
+  .sp-vs{width:26px;height:26px;font-size:10px;}
+  .sp-lettre{width:18px;height:18px;font-size:10px;left:4px;top:4px;}
+  .sp-couronne{font-size:20px;top:-4px;}
+  .sp-centre.duel .sp-partager{display:none;}
+  .sp-centre.duel{align-items:center;flex-wrap:wrap;row-gap:6px;}
+  .sp-votes{width:auto;flex:1;min-width:0;max-width:170px;gap:4px;}
+  .sp-vote{padding:4px 7px;border-radius:10px;}
+  .sp-vote b{font-size:9.5px;}
+  .sp-vote em{font-size:9.5px;}
+  .sp-vote em img{width:14px;height:14px;}
+  /* Le bilan prend une ligne à lui, réservée dès le duel : rien ne saute quand il arrive. */
+  .sp-centre.duel .sp-actions{flex-basis:100%;min-height:26px;}
   .sp-prives{display:contents;}
   .sp-place{--b:76px;display:flex;flex-direction:column;}
   .sp-place.pub{align-self:stretch;}
@@ -523,6 +678,7 @@ function StylesPartage() {
   .sp-salon header{gap:6px;margin-bottom:3px;}
   .sp-pic{width:26px;height:26px;border-radius:8px;box-shadow:0 0 0 1.5px #FF8CC8;}
   .sp-salon.public .sp-pic{box-shadow:0 0 0 1.5px #3CB37A;}
+  .sp-salon.seul .sp-pic{box-shadow:0 0 0 1.5px #9B7BFF;}
   .sp-titres{gap:2px;}
   .sp-salon header b{font-size:11px;line-height:1.15;}
   .sp-cadenas{font-size:8.5px;padding:2px 6px;}
@@ -531,19 +687,15 @@ function StylesPartage() {
   .sp-msg img{width:22px;height:22px;}
   .sp-msg p{font-size:10.5px;padding:4px 7px;}
   .sp-msg p b{font-size:9px;}
-  .sp-msg:nth-of-type(n+3),.sp-ecrit{display:none;}
-  .sp-compteurs{gap:6px;margin-top:4px;}
-  .sp-cpt{padding:7px 4px;border-radius:12px;}
-  .sp-cpt b{font-size:22px;}
-  .sp-cpt span{font-size:10.5px;}
-  .sp-cpt .sp-cpt-h{font-size:9.5px;}
+  .sp-msg.ordi,.sp-ecrit{display:none;}
+  .sp-msg.fan p b em{display:none;}
+  .sp-garde{font-size:9.5px;padding:3px 8px;margin-top:4px;}
   .sp-fin{font-size:10.5px;}
 }
 @media (prefers-reduced-motion:reduce){
   .sp-scene.partage .sp-salon,.sp-scene.partage .sp-msg,.sp-scene.partage .sp-ecrit{animation:none;opacity:1;transform:none;}
-  .sp-cpt{transition:none;}
   .sp-savon,.sp-gouttes,.sp-doigt,.sp-onde{display:none;}
-  .sp-scene .sp-coeurs i,.sp-scene.partage .sp-partager,.sp-savon::before{animation:none;}
+  .sp-scene .sp-coeurs i,.sp-scene.partage .sp-partager,.sp-savon::before,.sp-garde.fait,.sp-bilan{animation:none;}
   .sp-scene.partage .sp-clic{animation:none;opacity:1;transform:translateX(-50%);}
 }
 `,

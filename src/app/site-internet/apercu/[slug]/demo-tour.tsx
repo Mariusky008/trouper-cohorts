@@ -15,10 +15,13 @@ import { useEffect, useRef, useState } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange, dureeVoixMs, precharger } from "@/lib/site-internet/speech";
 import { MARQUE } from "@/lib/marque";
 import { direRetours, habitantsDe, type GesteDuJour } from "@/lib/direct/geste-du-jour";
-import { ScenePartage } from "./scene-partage";
+import { SceneSalons } from "./scene-partage";
+import { SceneDemandes } from "./scene-demandes";
 
 /** L'après de l'exemple d'essayage — le même que l'étape 2 quand sa pièce n'est pas encore prête. */
 const EXEMPLE_APRES = "/direct/accueil/moi-mode-avec.jpg";
+/** L'autre tenue du duel de l'étape 2 : la même personne, dans une veste brodée (photo de l'essayage de démonstration). */
+const DUEL_B = "/direct/essai/mode-friperie-apres.jpg";
 import { BarreDirect, CarteSwipe, GestesDirect, StylesDirect } from "@/components/direct/carte-swipe";
 import { cartesDeLaVille, ESSAI_DU_FIL, motDAction, saCarte } from "@/lib/direct/cartes-demo";
 
@@ -73,6 +76,11 @@ type Props = {
    * lui promet pas un écran qu'il n'a pas, l'acte saute.
    */
   essai?: { titre: string; say: string };
+  /**
+   * LE VISAGE DU FANTÔME DE LA BOUTIQUE — celui « avec sa casquette », qui
+   * répond dans les salons de l'étape 2. Voir `tenueDu` dans `double-metiers`.
+   */
+  fantomeBoutique?: string;
   keepHref?: string; // contact (WhatsApp/tel) pour « Garder mon site gratuitement »
   /**
    * LA PAGE SUR LAQUELLE LA DÉMONSTRATION SE JOUE, EN UN SÉLECTEUR.
@@ -105,6 +113,7 @@ type Scene =
   | "qui"
   | "invisible"
   | "photo"
+  | "salons"
   | "retour"
   | "boucle";
 
@@ -121,6 +130,7 @@ export function DemoTour({
   flashExample,
   geste,
   essai,
+  fantomeBoutique,
   keepHref,
   racine = "main.mqc",
 }: Props) {
@@ -209,6 +219,23 @@ export function DemoTour({
    * la conclusion de l'acte avant que sa première image ne soit apparue.
    */
   const G = geste;
+  /**
+   * ═══ L'ESSAI, PUIS SES SALONS — l'étape 2 en deux images ═══════════════
+   *
+   * « À la fin de cette étape, c'est là qu'il faut dire qu'une fois le
+   * produit essayé, le client peut ouvrir un salon entre amis ou public, où
+   * il pourrait demander des avis, faire des comparaisons… C'est un endroit
+   * où les ventes grimpent. »
+   *
+   * La phrase de l'essai, puis les trois des salons (`G.salons`) : on ouvre un
+   * salon, le fantôme de la boutique y répond, c'est là que ça se décide.
+   * Seulement quand la suite de la visite se joue (`avisAllowed`) et qu'il y a
+   * un essai à partager.
+   */
+  const SALONS_JOUES = Boolean(G && essai && avisAllowed);
+  const ESSAI_DIT = essai ? [essai.say, ...(SALONS_JOUES && G ? [G.salons.ouvre, G.salons.fantome, G.salons.ventes] : [])] : [];
+  const SAY_ESSAI = ESSAI_DIT.join(" ");
+  const ESSAI_AT = ESSAI_DIT.map((ph) => partAu(SAY_ESSAI, ph));
   // `habitants` est déjà pris dans ce composant (les silhouettes du réseau) :
   // deux choses sans rapport ne partagent pas un nom.
   const gentile = habitantsDe(villeAff);
@@ -272,7 +299,13 @@ export function DemoTour({
    */
   const QUI_TEMPS: { dit: string; acte?: "passer" | "veux" | "resa"; definit?: true }[] = G
     ? [
-        { dit: SAY_BASCULE },
+        /* « Une fois l'étape 2 terminée avec les salons, l'étape 3 doit être
+           un peu changée quand on parle du nombre de personnes qui cherchent :
+           il faudra que la liaison soit cohérente avec l'étape 2. » Après
+           l'essai et ses salons, « le plus important n'est pas votre page » ne
+           suivait plus rien : la phrase dit maintenant ce qui manque —
+           « mais pour l'essayer, encore faut-il la découvrir ». */
+        { dit: SALONS_JOUES && G.liaison ? G.liaison : SAY_BASCULE },
         { dit: `${G.quand}, plus de ${G.combien} ${gentile} vont ${G.verbe} ${G.cherchent}.` },
         /* ═══ LE DIRECT, DIT UNE FOIS, AVANT D'EN PARLER ═══════════════════
            « On parle du Direct à plusieurs reprises dans la présentation de
@@ -292,7 +325,7 @@ export function DemoTour({
           G.famille === "restauration"
             ? "les menus du jour, les tables qui restent"
             : G.famille === "boutique"
-              ? "ce qui vient d'arriver, ce qui part le plus vite"
+              ? "ce qui vient d'arriver"
               : G.famille === "librairie"
                 ? "les coups de cœur des libraires, les rencontres de la semaine"
               : G.famille === "rdv"
@@ -389,7 +422,9 @@ export function DemoTour({
   //    ELLE LIT LES LIGNES. La réplique tenait en six mots pendant que quatre
   //    lignes mettaient six secondes à s'afficher : l'acte se terminait avant
   //    d'en avoir montré une seule. Mesuré au navigateur, zéro ligne visible.
-  const retourDit = G ? direRetours(G) : { say: "", phrases: [] as string[] };
+  /* LE PARTAGE N'EST PLUS REDIT À LA FIN QUAND L'ÉTAPE 2 A MONTRÉ LES SALONS :
+     l'étape 5 montre ce qui en revient — voir `scene-demandes.tsx`. */
+  const retourDit = G ? direRetours(G, !SALONS_JOUES) : { say: "", phrases: [] as string[] };
   /** LA PHRASE QUI OUVRE L'ACTE 6, ÉCRITE UNE FOIS.
    *  Elle l'était à trois endroits — la réplique, la légende de départ et le
    *  titre de la carte — et la corriger n'en changeait qu'un : la voix disait
@@ -480,6 +515,9 @@ export function DemoTour({
   const maCarte = G
     ? saCarte(G, nom, metierLabel, laVille, pieceMontree ?? (carteDeLExemple || photoKO ? undefined : saPhoto))
     : null;
+  /** CE QUI SE PARTAGE ET CE QUI REVIENT : sa pièce portée (l'exemple tant qu'elle ne l'est pas), ou la photo de son annonce. */
+  const photoPartagee = G?.photoEtVoix ? essaiApres || EXEMPLE_APRES : maCarte?.photo || saPhoto || EXEMPLE_APRES;
+  const photoExemple = G?.photoEtVoix ? !essaiApres : !(maCarte?.photo || saPhoto);
 
   /* ═══ LA QUEUE DE LA DÉMONSTRATION N'EST PLUS QU'UN SEUL ACTE ════════════
    *
@@ -548,6 +586,8 @@ export function DemoTour({
   const [invN, setInvN] = useState(0);
   const [photoN, setPhotoN] = useState(0);
   const [retourN, setRetourN] = useState(0);
+  /** La phrase de l'étape 2 que la voix dit : 0 l'essai, puis 1 à 3 les salons. */
+  const [essaiN, setEssaiN] = useState(0);
   const [boucleN, setBoucleN] = useState(0);
   /** Quelle carte est sur le dessus de la pile, à l'acte 3. Elle tourne toute
    *  seule : une pile immobile se lit comme une image, pas comme un paquet
@@ -931,10 +971,10 @@ export function DemoTour({
     const steps: Array<{ title: string; say: string; enter: () => void; respire?: number }> = [];
     /**
      * L'INSTANT AVANT LEQUEL L'ACTE EN COURS NE SE TERMINE PAS, quoi que fasse
-     * la voix (0 : aucun). Le dernier acte le pose : ses salons éclosent en six
-     * secondes et demie, et une voix plus rapide — ou absente, quand la
-     * synthèse ne répond pas et qu'on retombe sur le temps de lecture — fermait
-     * la visite sur des bulles encore en vol.
+     * la voix (0 : aucun). Le dernier acte le pose : ses demandes arrivent en
+     * cinq secondes, et une voix plus rapide — ou absente, quand la synthèse
+     * ne répond pas et qu'on retombe sur le temps de lecture — fermait la
+     * visite sur des messages encore en route.
      */
     let tenirJusqua = 0;
 
@@ -975,7 +1015,7 @@ export function DemoTour({
     if (essai) {
       steps.push({
         title: essai.titre,
-        say: essai.say,
+        say: SAY_ESSAI,
         /* ET LA PAGE À ONGLETS DES RESTAURANTS N'A PAS DE SECTION À FAIRE
            DÉFILER : elle a un onglet. On le lui dit par un évènement, qu'elle
            écoute et que la longue page ignore — voir `boutique-table.tsx`. */
@@ -984,13 +1024,23 @@ export function DemoTour({
           setScene("");
           scrollTo("essayer");
           try { window.dispatchEvent(new CustomEvent("clikme:montrer", { detail: "essayer" })); } catch { /* noop */ }
+          if (!SALONS_JOUES) return;
+          /* LA LÉGENDE SUIT LES QUATRE PHRASES, et les salons s'ouvrent sur la
+             deuxième — mais jamais avant que l'essayage en grand ne se soit
+             rangé (8,4 s après son ouverture, plus son glissement) : les deux
+             se seraient recouverts. */
+          suivre(SAY_ESSAI, ESSAI_DIT, ESSAI_AT, setEssaiN);
+          const tSalons = Math.max(quand(SAY_ESSAI, ESSAI_AT[1] ?? 1), 10000);
+          window.setTimeout(() => setScene("salons"), tSalons);
+          // ET L'ACTE TIENT JUSQU'À LA DÉCISION — voir `tenirJusqua`.
+          tenirJusqua = performance.now() + Math.max(quand(SAY_ESSAI, ESSAI_AT[3] ?? 1) + 2600, tSalons + 7000);
         },
         // On laisse le bloc à l'écran après la phrase : c'est l'image qu'on
         // veut qu'il emporte, et la suite la recouvre immédiatement.
         /* L'ESSAYAGE S'OUVRE EN GRAND PENDANT LA PHRASE, puis se range à sa
            place (`avant-apres-vitrine.tsx`) : on laisse le temps de le voir
-           s'y poser. */
-        respire: 2400,
+           s'y poser. Avec les salons, c'est leur décision qu'on laisse voir. */
+        respire: SALONS_JOUES ? 1600 : 2400,
       });
     }
 
@@ -1334,14 +1384,15 @@ export function DemoTour({
           // ET LA BOUCLE SE FERME DANS LE MÊME ACTE. Elle en avait un à elle,
           // plus l'acte métier avant : trois écrans pour finir, là où la
           // décision était déjà prise. Voir `SAY_FIN`.
-          /* MAIS PAS AVANT QUE LES SALONS AIENT ÉCLOS. Le clic, les quatre
-             bulles, puis les messages demandent six secondes et demie depuis
-             la phrase du partage (voir `scene-partage.tsx`) ; la clôture les
-             coupait à quatre et demie. La scène reste donc jusque-là — la voix
-             dit déjà « votre commerce, en direct » par-dessus — et l'acte
-             garde un souffle après elle pour laisser voir la clôture. */
+          /* MAIS PAS AVANT QUE LA DERNIÈRE IMAGE AIT EU LIEU. Les demandes
+             qui arrivent sur son téléphone, et la première acceptée, demandent
+             cinq secondes depuis leur phrase (voir `scene-demandes.tsx`) ; les
+             salons, quand c'est encore ici qu'ils se jouent, six et demie. La
+             scène reste donc jusque-là — la voix dit déjà « votre commerce, en
+             direct » par-dessus — et l'acte garde un souffle après elle pour
+             laisser voir la clôture. */
           const tPartage = quand(SAY_FIN, RETOUR_AT[RETOUR_AT.length - 1] ?? 0);
-          const tBoucle = Math.max(quand(SAY_FIN, PART_BOUCLE), tPartage + 6500);
+          const tBoucle = Math.max(quand(SAY_FIN, PART_BOUCLE), tPartage + (SALONS_JOUES ? 5000 : 6500));
           tenirJusqua = performance.now() + tBoucle + 1800;
           window.setTimeout(() => {
             chime();
@@ -2915,14 +2966,37 @@ export function DemoTour({
               entre amis ou pour tous. » Sa pièce au centre, trois salons
               privés et le salon public qui s'ouvrent autour, et les compteurs
               qui montent avec la voix — voir `scene-partage.tsx`. */}
+          {/* ── ÉTAPE 2, SA SUITE : LES SALONS, et le fantôme de la boutique qui
+              y répond — voir `scene-partage.tsx`. */}
+          {scene === "salons" && G && (
+            <SceneSalons
+              g={G}
+              n={essaiN - 1}
+              ville={laVille}
+              photo={photoPartagee}
+              exemple={photoExemple}
+              fantome={{ visage: fantomeBoutique || "/clikme-fantome.png", nom }}
+              /* LE DUEL, CHEZ UNE BOUTIQUE DE VÊTEMENTS : sa pièce portée (A)
+                 contre une autre tenue sur la même personne (B), marquée
+                 « Exemple » — on ne prête pas une pièce inventée à sa boutique. */
+              duel={
+                G.photoEtVoix
+                  ? { b: DUEL_B, nomA: pieceDuJour ? G.extrait.lignes[0] : "Le blazer rose", nomB: "La veste brodée", exempleB: true }
+                  : undefined
+              }
+            />
+          )}
+          {/* ── ÉTAPE 5 : CE QUI LUI REVIENT — les chiffres, et les demandes qui
+              arrivent sur son téléphone. Voir `scene-demandes.tsx`. */}
           {scene === "retour" && G && (
-            <ScenePartage
+            <SceneDemandes
               g={G}
               n={retourN}
-              ville={laVille}
               ouverture={OUVERTURE_RETOUR}
-              photo={G.photoEtVoix ? essaiApres || EXEMPLE_APRES : maCarte?.photo || saPhoto || EXEMPLE_APRES}
-              exemple={G.photoEtVoix ? !essaiApres : !(maCarte?.photo || saPhoto)}
+              photo={photoPartagee}
+              exemple={photoExemple}
+              piece={pieceDuJour ? G.extrait.lignes[0] : G.photoEtVoix ? "Le blazer rose" : undefined}
+              salons={SALONS_JOUES ? 4 : undefined}
             />
           )}
 
