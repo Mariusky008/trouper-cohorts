@@ -190,6 +190,24 @@ const AILLEURS = {
   musee: "/direct/nocturne-musee.jpg",
 } as const;
 
+/**
+ * ═══ LA PIÈCE QU'ON VOIT ESSAYER, À L'ÉTAPE 3 ═════════════════════════════
+ *
+ * « "Et quand une pièce leur plaît, ils l'essaient sur leur photo" : tu
+ * parles d'essayage, mais on ne voit pas quelqu'un essayer, avant / après. »
+ *
+ * UNE PAIRE DÉJÀ FABRIQUÉE, ET LA CARTE QUI VA AVEC : la même femme, dans
+ * ses vêtements puis dans le manteau léopard du dépôt-vente (les photos de
+ * l'essayage de démonstration). C'est la dernière carte du fil de la mode ;
+ * la visite s'y arrête et la joue. Une voisine inventée, pas un commerçant
+ * réel : rien n'est prêté à personne.
+ */
+export const ESSAI_DU_FIL = {
+  quoi: "Le manteau léopard",
+  avant: "/direct/accueil/moi-mode-sans.jpg",
+  apres: "/direct/essai/mode-depot-apres.jpg",
+} as const;
+
 export function cartesDeLaVille(ville: string, famille: FamilleMetier = "restauration", mode = false): CarteDirect[] {
   const yAllerF = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(ville);
 
@@ -200,47 +218,44 @@ export function cartesDeLaVille(ville: string, famille: FamilleMetier = "restaur
    * ou trois annonces de plus de magasins de vêtements pour qu'on reste dans
    * le thème, et supprime les autres types de commerçants. »
    *
-   * CINQ VOISINS, TOUS DE SON MÉTIER, et aucun visage : une vitrine de
-   * mannequins, un jean à plat, un rayon de friperie, une combinaison sur un
-   * mannequin, une chemise de près. LE JEAN EST LE DERNIER : la visite
-   * s'arrête sur lui au moment où la voix dit « mettre de côté ». */
+   * « Il n'y a pas assez d'exemples de boutiques et de vêtements
+   * différents. » CINQ NE SUFFISAIENT PAS : la pile s'arrêtait sur la
+   * dernière au bout de huit secondes, et l'acte en dure une vingtaine.
+   *
+   * ONZE VOISINS, TOUS DE SON MÉTIER, ET DE TOUS LES STYLES : la créatrice,
+   * la friperie, le cuir, la maille, le vintage, l'homme, le concept store.
+   * Les photos sont celles des murs d'essai du produit. LE MANTEAU LÉOPARD EST
+   * LE DERNIER, et c'est voulu : c'est sur lui que la visite s'arrête, quand
+   * la voix dit « ils l'essaient sur leur photo » — et on le VOIT essayé.
+   * Voir `ESSAI_DU_FIL`. */
   if (mode) {
+    const carte = (
+      photo: string, cadrage: string, nom: string, metier: string, distance: string,
+      reste: string, icone: string, quoi: string, lignes: string[], prix: string, social: string,
+    ): CarteDirect => ({ photo, cadrage, nom, metier, ville, distance, itineraire: yAllerF, reste, icone, quoi, lignes, prix, social });
     return [
-      {
-        photo: "/direct/vitrine-mode.jpg", cadrage: "50%",
-        nom: "Une boutique de la rue piétonne", metier: "Prêt-à-porter", ville, distance: "180 m",
-        itineraire: yAllerF, reste: "Cette semaine", icone: "👗",
-        quoi: "La nouvelle collection", lignes: ["En vitrine depuis ce matin", "À essayer sur sa photo"],
-        prix: "", social: "5 l'ont mise de côté",
-      },
-      {
-        photo: "/direct/mode-chemise-jean.jpg", cadrage: "40%",
-        nom: "Un magasin pour hommes", metier: "Prêt-à-porter homme", ville, distance: "300 m",
-        itineraire: yAllerF, reste: "Arrivage du jour", icone: "👕",
-        quoi: "La chemise en jean délavé", lignes: ["Du S au XXL", "Retouches offertes"],
-        prix: "55 €", social: "4 l'ont essayée",
-      },
-      {
-        photo: AILLEURS.rayon, cadrage: "50%",
-        nom: "Une friperie du vieux centre", metier: "Friperie", ville, distance: "400 m",
-        itineraire: yAllerF, reste: "Arrivage du jour", icone: "🧥",
-        quoi: "Ce qui vient de rentrer", lignes: ["Une pièce par taille", "Premier arrivé"],
-        prix: "", social: "7 l'ont vu passer",
-      },
-      {
-        photo: "/direct/mode-combinaison.jpg", cadrage: "35%",
-        nom: "Un dépôt-vente", metier: "Dépôt-vente", ville, distance: "550 m",
-        itineraire: yAllerF, reste: "Aujourd'hui", icone: "✨",
-        quoi: "La combinaison des années 70", lignes: ["Pièce unique · taille 38", "À essayer sur sa photo"],
-        prix: "45 €", social: "3 l'ont essayée",
-      },
-      {
-        photo: "/direct/mode-jean-papillons.jpg", cadrage: "55%",
-        nom: "Un concept store", metier: "Concept store", ville, distance: "350 m",
-        itineraire: yAllerF, reste: "Arrivage du jour", icone: "👖",
-        quoi: "Le jean brodé papillons", lignes: ["Du 34 au 42", "À essayer sur sa photo"],
-        prix: "69 €", social: "8 l'ont essayé",
-      },
+      carte("/direct/vitrine-mode.jpg", "50%", "Une boutique de la rue piétonne", "Prêt-à-porter", "180 m",
+        "Cette semaine", "👗", "La nouvelle collection", ["En vitrine depuis ce matin", "À essayer sur sa photo"], "", "5 l'ont mise de côté"),
+      carte("/direct/mode-robe-pois-dores.jpg", "30%", "Une boutique de créatrice", "Créatrice", "260 m",
+        "Arrivage du jour", "✨", "La robe à pois dorés", ["Du 36 au 44", "À essayer sur sa photo"], "89 €", "6 l'ont essayée"),
+      carte("/direct/mode-chemise-jean.jpg", "40%", "Un magasin pour hommes", "Prêt-à-porter homme", "300 m",
+        "Arrivage du jour", "👕", "La chemise en jean délavé", ["Du S au XXL", "Retouches offertes"], "55 €", "4 l'ont essayée"),
+      carte("/direct/mode-pull-mohair-vert.jpg", "28%", "Une boutique de maille", "Maille", "220 m",
+        "Aujourd'hui", "🧶", "Le pull en mohair", ["Quatre couleurs", "À essayer sur sa photo"], "65 €", "9 l'ont essayé"),
+      carte(AILLEURS.rayon, "50%", "Une friperie du vieux centre", "Friperie", "400 m",
+        "Arrivage du jour", "🧥", "Ce qui vient de rentrer", ["Une pièce par taille", "Premier arrivé"], "", "7 l'ont vu passer"),
+      carte("/direct/homme-blouson-aviateur.jpg", "25%", "Une maroquinerie", "Cuir", "500 m",
+        "Cette semaine", "🧥", "Le blouson aviateur", ["Cuir et col mouton", "Du S au XXL"], "189 €", "5 l'ont essayé"),
+      carte("/direct/mode-robe-volants-corail.jpg", "30%", "Une boutique du bord de l'eau", "Prêt-à-porter", "650 m",
+        "Aujourd'hui", "🌺", "La robe à volants corail", ["Du 36 au 42", "À essayer sur sa photo"], "79 €", "11 l'ont essayée"),
+      carte("/direct/mode-combinaison.jpg", "35%", "Une boutique vintage", "Vintage", "550 m",
+        "Aujourd'hui", "✨", "La combinaison des années 70", ["Pièce unique · taille 38", "À essayer sur sa photo"], "45 €", "3 l'ont essayée"),
+      carte("/direct/homme-veste-ciree-kaki.jpg", "25%", "Un magasin pour hommes", "Prêt-à-porter homme", "320 m",
+        "Arrivage du jour", "🧥", "La veste cirée kaki", ["Du M au XXL", "À essayer sur sa photo"], "149 €", "4 l'ont essayée"),
+      carte("/direct/mode-jean-papillons.jpg", "55%", "Un concept store", "Concept store", "350 m",
+        "Arrivage du jour", "👖", "Le jean brodé papillons", ["Du 34 au 42", "À essayer sur sa photo"], "69 €", "8 l'ont essayé"),
+      carte("/direct/mode-manteau-leopard.jpg", "25%", "Une boutique de seconde main", "Dépôt-vente", "450 m",
+        "Pièce unique", "🐆", ESSAI_DU_FIL.quoi, ["Taille 38 · très bon état", "À essayer sur sa photo"], "120 €", "12 l'ont essayé"),
     ];
   }
 

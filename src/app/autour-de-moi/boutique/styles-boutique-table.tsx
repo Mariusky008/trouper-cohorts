@@ -492,6 +492,25 @@ export function StylesBoutiqueTable() {
         .bt-e-lieu .bt-entrer{width:calc(100% - var(--bt-coin) + 14px);max-width:330px;
           white-space:nowrap;font-size:17.5px;padding:14px 18px;}
         .bt-e-lieu .bt-entrer.second{font-size:16px;padding:12px 18px;}
+        /* ═══ SUR UN TÉLÉPHONE, LE BAS DE LA PHOTO RESPIRE ═══════════════════
+           « C'est dommage, on ne voit pas les fantômes en bas de la photo,
+           cachés par les gros boutons ; et "Touche-moi et je te montre ma
+           boutique" est trop imposant et gros. »
+           La photo ClikMe pose ses clients-fantômes en bas à gauche, devant la
+           vitrine — exactement sous la bulle et les deux portes. La bulle
+           devient une étiquette, les portes deux pilules plus basses et plus
+           claires : leurs visages et leurs casquettes reparaissent au-dessus,
+           et la photo se voit à travers. */
+        @media (max-width: 959px){
+          .bt-e-lieu .bt-seuil{padding-bottom:10px;}
+          .bt-e-lieu .bt-seuil>.bt-indice{align-self:flex-start;margin:0 0 8px;padding:4px 10px;border-radius:11px;
+            font-size:15px;background:rgba(255,244,230,.9);box-shadow:0 6px 16px -8px rgba(0,0,0,.6);}
+          .bt-e-lieu .bt-entrer{width:auto;max-width:calc(100% - var(--bt-coin) + 14px);gap:9px;
+            font-size:15.5px;padding:10px 16px;background:rgba(28,20,17,.62);border-width:1px;}
+          .bt-e-lieu .bt-entrer.second{margin-top:7px;font-size:14px;padding:8px 14px;background:rgba(18,12,9,.42);}
+          .bt-e-lieu .bt-entrer.second .bt-ico{width:18px;height:18px;}
+          .bt-e-lieu .bt-entrer.second s{font-size:16px;}
+        }
         /* LA SECONDE PORTE : « Carte et prix », plus discrète, juste dessous. */
         .bt-entrer.second{margin-top:10px;padding:12px 20px;font-size:17px;font-weight:700;
           background:rgba(18,12,9,.55);border-color:rgba(255,244,230,.4);}

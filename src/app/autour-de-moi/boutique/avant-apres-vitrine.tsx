@@ -54,6 +54,32 @@ const DUREE_RANGEMENT = 850;
 /** Les hauteurs de l'onde du mot — fixes : une onde qui change à chaque rendu clignote. */
 const ONDE = [30, 55, 40, 80, 60, 95, 45, 70, 35, 85, 50, 65, 30, 75, 55, 90, 40, 60, 35, 70, 45, 80, 30, 50];
 
+/**
+ * ═══ LA DEMANDE DE LÉA, GARDÉE POUR CELUI QUI N'ÉTAIT PAS ENCORE LÀ ═══════
+ *
+ * « En mode téléphone, à l'étape 2, on ne voit pas du tout l'animation avant
+ * après. »
+ *
+ * SUR LA PAGE À ONGLETS, L'ESSAYAGE N'EXISTE PAS ENCORE QUAND LÉA LE DEMANDE.
+ * La présentation envoie `clikme:montrer` ; la page à onglets ouvre alors son
+ * onglet Expérience — et c'est seulement là que ce bloc naît. Il arrivait une
+ * fraction de seconde APRÈS le signal, ne l'entendait jamais, et restait en
+ * bas de l'onglet, hors de l'écran du téléphone, sans jouer.
+ *
+ * ON NOTE DONC LA DEMANDE ICI, dès que ce fichier est chargé (il l'est avec la
+ * page) : le bloc qui arrive dans les trois secondes la sert à sa naissance.
+ * Celui qui était déjà là la sert tout de suite, et la marque servie — elle
+ * ne s'ouvre jamais deux fois.
+ */
+const demande = { at: 0, servie: true };
+if (typeof window !== "undefined") {
+  window.addEventListener("clikme:montrer", (e) => {
+    if ((e as CustomEvent).detail !== "essayer") return;
+    demande.at = Date.now();
+    demande.servie = false;
+  });
+}
+
 /** Son mot, rejoué depuis le début ; rend vrai s'il joue. */
 async function depuisLeDebut(a: HTMLAudioElement, fin: () => void): Promise<boolean> {
   a.onended = fin;
@@ -132,17 +158,38 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
   const ranger = useCallback(() => {
     minuteurs.current.forEach((t) => window.clearTimeout(t));
     minuteurs.current = [];
-    const de = cadresPlein.current?.getBoundingClientRect();
-    const vers = cadresPage.current?.getBoundingClientRect();
-    if (de && vers && de.width > 0) setVol({ tx: vers.left - de.left, ty: vers.top - de.top, s: vers.width / de.width });
-    setPlein((p) => (p ? { ...p, range: true } : p));
-    setJeu((j) => ({ mode: "fini", n: j.n + 1 }));
-    minuteurs.current.push(
-      window.setTimeout(() => {
-        setPlein(null);
-        setVol(null);
-      }, DUREE_RANGEMENT),
-    );
+    /* SA PLACE DOIT ÊTRE À L'ÉCRAN AVANT QU'IL S'Y POSE. Sur un téléphone, le
+       bloc est au bas de l'onglet, sous le fantôme : le cadre glissait hors de
+       l'écran, et l'on croyait qu'il avait disparu. On amène sa place à
+       l'écran d'abord, et on ne mesure qu'APRÈS le défilement (deux images
+       plus tard) : mesuré tout de suite, le cadre visait l'ancienne place. */
+    const ici = cadresPage.current?.getBoundingClientRect();
+    const defile = Boolean(ici && (ici.top < 60 || ici.bottom > window.innerHeight - 120));
+    if (defile) cadresPage.current?.scrollIntoView({ block: "center", behavior: "auto" });
+    const poser = () => {
+      /* ON VISE LE CADRE DE L'APRÈS, PAS LA GRILLE. Sur un téléphone, le
+         plein écran ne montre que lui (voir les styles) : la grille en grand
+         et celle de la page n'ont plus la même forme. Le cadre de l'après, si.
+         Le glissement part du coin de la grille (transform-origin) : on en
+         déduit le déplacement qui pose l'après exactement sur le sien. */
+      const grille = cadresPlein.current?.getBoundingClientRect();
+      const de = cadresPlein.current?.querySelector(".aa-cadre.apres")?.getBoundingClientRect();
+      const vers = cadresPage.current?.querySelector(".aa-cadre.apres")?.getBoundingClientRect();
+      if (grille && de && vers && de.width > 0) {
+        const s = vers.width / de.width;
+        setVol({ tx: vers.left - grille.left - s * (de.left - grille.left), ty: vers.top - grille.top - s * (de.top - grille.top), s });
+      }
+      setPlein((p) => (p ? { ...p, range: true } : p));
+      setJeu((j) => ({ mode: "fini", n: j.n + 1 }));
+      minuteurs.current.push(
+        window.setTimeout(() => {
+          setPlein(null);
+          setVol(null);
+        }, DUREE_RANGEMENT),
+      );
+    };
+    if (defile) requestAnimationFrame(() => requestAnimationFrame(poser));
+    else poser();
   }, []);
 
   /* ═══ OUVRIR EN GRAND ═══ L'après se révèle à trois secondes, puis on range. */
@@ -220,9 +267,16 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
       o.observe(el);
     }
     const montrer = (e: Event) => {
-      if ((e as CustomEvent).detail === "essayer") window.setTimeout(ouvrir, 500);
+      if ((e as CustomEvent).detail !== "essayer") return;
+      demande.servie = true;
+      window.setTimeout(ouvrir, 500);
     };
     window.addEventListener("clikme:montrer", montrer);
+    /* NÉ APRÈS LA DEMANDE (l'onglet Expérience vient de s'ouvrir) : on la sert maintenant. */
+    if (!demande.servie && Date.now() - demande.at < 3000) {
+      demande.servie = true;
+      window.setTimeout(ouvrir, 500);
+    }
     return () => {
       o?.disconnect();
       window.removeEventListener("clikme:montrer", montrer);
@@ -441,6 +495,19 @@ function StylesAvantApres() {
 .aa-plein-x{position:absolute;top:-8px;right:-8px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,196,140,.3);
   background:rgba(18,12,9,.8);color:#FFF4E6;font-size:15px;cursor:pointer;}
 .aa-plein.range .aa-plein-k,.aa-plein.range .aa-plein-pied,.aa-plein.range .aa-plein-x{opacity:0;transition:opacity .25s;}
+/* SUR UN TÉLÉPHONE, UNE SEULE GRANDE IMAGE. Côte à côte, les deux photos
+   n'avaient que 168 px de large : l'effet se perdait. Le cadre de l'après
+   porte déjà l'avant sous lui — on voit la personne, puis le balayage
+   l'habille, au même endroit et en grand. L'avant à part revient dans la page. */
+@media (max-width:620px){
+  .aa-plein{padding-left:16px;padding-right:16px;}
+  .aa-plein-k{padding:0 40px;font-size:11.5px;letter-spacing:.14em;}
+  .aa-plein-cadres{--l:min(calc((100vh - 360px) * 2 / 3), calc(100vw - 48px), 430px);grid-template-columns:var(--l);}
+  .aa-plein-cadres .aa-cadre:not(.apres){display:none;}
+  .aa-plein-cadres .aa-cadre.apres::before{content:"Avant";position:absolute;top:14px;left:14px;z-index:1;padding:8px 14px;border-radius:999px;
+    font-size:15px;font-weight:700;color:#FFF4E6;background:rgba(18,12,9,.62);animation:aa-sort .3s ease 3s forwards;}
+}
+@keyframes aa-sort{to{opacity:0;}}
 @keyframes aa-fondu{from{opacity:0;}to{opacity:1;}}
 @keyframes aa-efface{from{opacity:1;}to{opacity:0;}}
 @keyframes aa-monte{from{opacity:0;transform:scale(.94);}to{opacity:1;transform:none;}}

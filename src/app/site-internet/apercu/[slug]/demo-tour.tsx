@@ -20,7 +20,7 @@ import { ScenePartage } from "./scene-partage";
 /** L'après de l'exemple d'essayage — le même que l'étape 2 quand sa pièce n'est pas encore prête. */
 const EXEMPLE_APRES = "/direct/accueil/moi-mode-avec.jpg";
 import { BarreDirect, CarteSwipe, GestesDirect, StylesDirect } from "@/components/direct/carte-swipe";
-import { cartesDeLaVille, motDAction, saCarte } from "@/lib/direct/cartes-demo";
+import { cartesDeLaVille, ESSAI_DU_FIL, motDAction, saCarte } from "@/lib/direct/cartes-demo";
 
 type Props = {
   slug: string;
@@ -560,6 +560,8 @@ export function DemoTour({
   const [resaQui, setResaQui] = useState(false);
   /** VRAI quand le message est parti — le dernier temps de l'acte 3. */
   const [resaEnvoyee, setResaEnvoyee] = useState(false);
+  /** L'ESSAI JOUÉ SUR LA CARTE, chez une boutique de vêtements — voir `ESSAI_DU_FIL`. */
+  const [essaiFil, setEssaiFil] = useState(false);
   /** Les minuteries de ces trois gestes, pour les couper en quittant l'acte. */
   const gestes3 = useRef<number[]>([]);
   /**
@@ -909,6 +911,14 @@ export function DemoTour({
      * recevoir. Une seconde et demie de noir vaut mieux qu'une transition.
      */
     const steps: Array<{ title: string; say: string; enter: () => void; respire?: number }> = [];
+    /**
+     * L'INSTANT AVANT LEQUEL L'ACTE EN COURS NE SE TERMINE PAS, quoi que fasse
+     * la voix (0 : aucun). Le dernier acte le pose : ses salons éclosent en six
+     * secondes et demie, et une voix plus rapide — ou absente, quand la
+     * synthèse ne répond pas et qu'on retombe sur le temps de lecture — fermait
+     * la visite sur des bulles encore en vol.
+     */
+    let tenirJusqua = 0;
 
 
     // ── 0. LA PAGE, CINQ SECONDES, COMME PREUVE ────────────────────────────
@@ -1058,6 +1068,7 @@ export function DemoTour({
           setCoeurVole(false);
           setResaQui(false);
           setResaEnvoyee(false);
+          setEssaiFil(false);
           gestes3.current.forEach(clearTimeout);
           gestes3.current = [];
           const dans = (ms: number, f: () => void) => { gestes3.current.push(window.setTimeout(f, ms)); };
@@ -1081,8 +1092,14 @@ export function DemoTour({
           // LA PILE TOURNE JUSQU'À LA RÉSERVATION. « On ne voit pas les
           // annonces » : elles doivent défiler pendant qu'on parle d'elles, et
           // ne s'arrêter qu'au moment où l'on en choisit une.
+          /* ELLE TOURNE QUAND LE DIRECT S'OUVRE, PAS AVANT. Lancée à la
+             première seconde, elle feuilletait deux ou trois cartes derrière
+             le nombre, que personne ne voyait jamais. */
           if (rotation.current) window.clearInterval(rotation.current);
-          rotation.current = window.setInterval(suivante, 1900);
+          rotation.current = null;
+          dans(quand(SAY_QUI, QUI_AT[1] ?? 0), () => {
+            if (!rotation.current) rotation.current = window.setInterval(suivante, 1900);
+          });
           suivre(SAY_QUI, QUI_DIT, QUI_AT, setQuiN);
 
           /* ═══ LES GESTES SUIVENT LEURS PHRASES ══════════════════════
@@ -1124,7 +1141,27 @@ export function DemoTour({
           //    la dernière image de l'acte était la première d'entre elles.
           //    Maintenant que le paquet avance une fois et s'arrête, la carte
           //    du dessus est la bonne.
-          if (tResa != null) {
+          /* ═══ CHEZ UNE BOUTIQUE DE VÊTEMENTS, ON LA VOIT ESSAYÉE D'ABORD ═══
+             « "Et quand une pièce leur plaît, ils l'essaient sur leur photo" :
+             tu parles d'essayage, mais on ne voit pas quelqu'un essayer,
+             avant / après. »
+             La pile s'arrête sur le manteau léopard (`ESSAI_DU_FIL`), et la
+             carte devient la photo d'une habitante : dans ses vêtements, puis,
+             sous le balayage, dans le manteau. Le panneau « mettre de côté »
+             ne monte qu'ensuite, sur « puis vous demandent ». */
+          const iEssai = G.photoEtVoix ? cartesVille.findIndex((c) => c.quoi === ESSAI_DU_FIL.quoi) : -1;
+          const tDemande = iEssai >= 0 ? partAu(SAY_QUI, "puis vous demandent") : 0;
+          if (tResa != null && iEssai >= 0) {
+            dans(quand(SAY_QUI, tResa), () => {
+              if (rotation.current) { window.clearInterval(rotation.current); rotation.current = null; }
+              setCarteVille(iEssai);
+              setGesteQui("veux");
+              setEssaiFil(true);
+            });
+            const tPanneau = Math.max(quand(SAY_QUI, tResa) + 4200, tDemande ? quand(SAY_QUI, tDemande) : 0);
+            dans(tPanneau, () => { setGesteQui("resa"); setResaQui(true); });
+            dans(tPanneau + 2200, () => { chime(); setResaEnvoyee(true); });
+          } else if (tResa != null) {
             dans(quand(SAY_QUI, tResa), () => {
               if (rotation.current) { window.clearInterval(rotation.current); rotation.current = null; }
               setGesteQui("resa");
@@ -1227,12 +1264,22 @@ export function DemoTour({
           // ET LA BOUCLE SE FERME DANS LE MÊME ACTE. Elle en avait un à elle,
           // plus l'acte métier avant : trois écrans pour finir, là où la
           // décision était déjà prise. Voir `SAY_FIN`.
+          /* MAIS PAS AVANT QUE LES SALONS AIENT ÉCLOS. Le clic, les quatre
+             bulles, puis les messages demandent six secondes et demie depuis
+             la phrase du partage (voir `scene-partage.tsx`) ; la clôture les
+             coupait à quatre et demie. La scène reste donc jusque-là — la voix
+             dit déjà « votre commerce, en direct » par-dessus — et l'acte
+             garde un souffle après elle pour laisser voir la clôture. */
+          const tPartage = quand(SAY_FIN, RETOUR_AT[RETOUR_AT.length - 1] ?? 0);
+          const tBoucle = Math.max(quand(SAY_FIN, PART_BOUCLE), tPartage + 6500);
+          tenirJusqua = performance.now() + tBoucle + 1800;
           window.setTimeout(() => {
             chime();
             setScene("boucle");
             suivre(SAY_FIN, BOUCLE_DIT, BOUCLE_AT, setBoucleN);
-          }, quand(SAY_FIN, PART_BOUCLE));
+          }, tBoucle);
         },
+        respire: 1800,
       });
     }
 
@@ -1272,6 +1319,10 @@ export function DemoTour({
       // LA RESPIRATION. La scène reste à l'écran, la voix se tait : c'est le
       // silence qui fait qu'on a le temps de comprendre ce qu'on vient de voir.
       if (st.respire) await new Promise((r) => window.setTimeout(r, st.respire));
+      // ET L'ACTE TIENT JUSQU'À SON DERNIER GESTE — voir `tenirJusqua`.
+      const reste = tenirJusqua - performance.now();
+      tenirJusqua = 0;
+      if (reste > 0) await new Promise((r) => window.setTimeout(r, reste));
       if (cancelled.current) return;
     }
     if (cancelled.current) return;
@@ -1784,7 +1835,39 @@ export function DemoTour({
             border:1px solid rgba(255,201,122,.42);box-shadow:none;font-size:12.5px;
             animation:dtRecu .55s cubic-bezier(.34,1.45,.64,1);}
 
+          /* ④ L'ESSAI, SUR LA CARTE — chez une boutique de vêtements (voir
+             ESSAI_DU_FIL). Sa photo d'abord ; à 1,3 s le balayage descend et
+             la découvre dans la pièce ; l'étiquette change avec lui. */
+          .qi-essai{position:absolute;inset:14px 0 0;z-index:6;overflow:hidden;background:#1A120E;
+            animation:dtCarteEntre .5s var(--exp) both;}
+          .qi-essai img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 22%;}
+          .qi-essai-ap{position:absolute;inset:0;clip-path:inset(0 0 100% 0);
+            animation:qiDevoile 1.8s cubic-bezier(.65,.05,.3,1) 1.3s forwards;}
+          .qi-essai-scan{position:absolute;left:-10%;right:-10%;top:0;height:3px;z-index:2;opacity:0;pointer-events:none;
+            background:linear-gradient(90deg,transparent,#FFD9A8 20%,#fff 50%,#FF8CC8 80%,transparent);
+            box-shadow:0 0 18px 6px rgba(255,170,90,.55),0 0 46px 14px rgba(255,46,154,.28);
+            animation:qiBalaye 1.8s cubic-bezier(.65,.05,.3,1) 1.3s both;}
+          .qi-essai-k{position:absolute;top:12px;left:12px;z-index:3;padding:5px 11px;border-radius:999px;
+            font-size:12px;font-weight:800;color:#FFF4E6;background:rgba(18,12,9,.66);}
+          .qi-essai-k.av{animation:qiSort .3s ease 1.3s forwards;}
+          .qi-essai-k.ap{opacity:0;background:linear-gradient(90deg,#FF4FA0,#F5A23A);
+            box-shadow:0 6px 18px rgba(255,79,160,.45);animation:qiArrive .4s ease 3.1s forwards;}
+          .qi-essai-piece{position:absolute;right:10px;bottom:44px;z-index:3;display:flex;flex-direction:column;
+            align-items:center;gap:4px;width:78px;padding:5px;border-radius:12px;background:rgba(18,12,9,.74);
+            box-shadow:0 10px 24px rgba(0,0,0,.45);}
+          .qi-essai-piece img{position:static;width:68px;height:86px;border-radius:8px;object-position:50% 25%;}
+          .qi-essai-piece b{font-size:10px;line-height:1.15;text-align:center;color:#FFF4E6;}
+          .qi-essai-ex{position:absolute;left:12px;bottom:12px;z-index:3;padding:3px 8px;border-radius:999px;
+            font-size:10.5px;color:#E7D6C6;background:rgba(18,12,9,.6);}
+          @keyframes qiDevoile{to{clip-path:inset(0 0 0 0);}}
+          @keyframes qiBalaye{0%{top:0;opacity:0;}8%{opacity:1;}92%{opacity:1;}100%{top:100%;opacity:0;}}
+          @keyframes qiSort{to{opacity:0;}}
+          @keyframes qiArrive{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+
           @media (prefers-reduced-motion:reduce){
+            .qi-essai-ap{clip-path:none;animation:none;}
+            .qi-essai-scan,.qi-essai-k.av{display:none;}
+            .qi-essai-k.ap{opacity:1;animation:none;}
             .qi-dessus.part,.qi-dessus.aime,.qi-c.dessous.monte,.qi-vol,.qi-tampon,.qi-resa,.qi-app.recu .cd-puce.vert{animation-duration:.01ms;}
             .qi-tete{transition:none;}
           }
@@ -2468,6 +2551,28 @@ export function DemoTour({
                           fonction : sans lui, « Ma carte » passerait de 1 à 2
                           dans un coin, et personne ne ferait le lien. */}
                       {coeurVole && <span className="qi-vol" aria-hidden="true">♥</span>}
+                      {/* L'ESSAI, SUR LA CARTE — voir `ESSAI_DU_FIL`. Sa photo,
+                          puis elle dans la pièce, sous un balayage ; la pièce en
+                          vignette dans le coin, pour qu'on sache ce qu'elle porte. */}
+                      {essaiFil && (
+                        <div className="qi-essai" aria-label={`Une habitante essaie ${ESSAI_DU_FIL.quoi.toLowerCase()} sur sa photo`}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img className="qi-essai-av" src={ESSAI_DU_FIL.avant} alt="" />
+                          <span className="qi-essai-ap">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={ESSAI_DU_FIL.apres} alt="" />
+                          </span>
+                          <i className="qi-essai-scan" aria-hidden="true" />
+                          <span className="qi-essai-k av">Sa photo</span>
+                          <span className="qi-essai-k ap">Essayé sur elle ✨</span>
+                          <span className="qi-essai-piece">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={cartesVille[carteVille]?.photo} alt="" />
+                            <b>{ESSAI_DU_FIL.quoi}</b>
+                          </span>
+                          <span className="qi-essai-ex">Exemple · rendu indicatif</span>
+                        </div>
+                      )}
                       {/* LE PANNEAU DU PRODUIT, pas une pop-up de démo : mêmes
                           blocs que `PanneauReserve` du fil — ce qu'on prend, le
                           message déjà écrit, le bouton WhatsApp. */}
@@ -2480,14 +2585,16 @@ export function DemoTour({
                           </div>
                           <div className="qi-resa-m">
                             <span className="k">Message prêt à envoyer</span>
-                            Bonjour, je viens de voir votre annonce sur Le Direct de {laVille}. Je passe la prendre&nbsp;?
+                            {essaiFil
+                              ? <>Bonjour, je viens de l&apos;essayer sur ma photo dans Le Direct de {laVille}. Vous pouvez me le mettre de côté&nbsp;?</>
+                              : <>Bonjour, je viens de voir votre annonce sur Le Direct de {laVille}. Je passe la prendre&nbsp;?</>}
                           </div>
                           {resaEnvoyee ? (
                             <div className="qi-resa-b envoye">
                               <span aria-hidden="true">✓</span> Envoyé sur le WhatsApp du commerce
                             </div>
                           ) : (
-                            <div className="qi-resa-b"><span aria-hidden="true">💬</span> Réserver via WhatsApp</div>
+                            <div className="qi-resa-b"><span aria-hidden="true">💬</span> {essaiFil ? "Mettre de côté via WhatsApp" : "Réserver via WhatsApp"}</div>
                           )}
                         </div>
                       )}

@@ -108,6 +108,11 @@ export type GesteDuJour = {
    * ce que vous avez à faire, c'est de me dire… ». C'est juste à l'écrit, où
    * l'œil saute en avant ; à la voix, on attend. Celle-ci met le verbe en
    * tête, là où on l'entend. Absente, on retombe sur `gesteDit`.
+   *
+   * « "Pour y être" : ce n'est pas très compréhensible dans le contexte de la
+   * phrase. » LE « Y » NE RENVOYAIT À RIEN : la phrase d'avant parle de ses
+   * portants, de son ardoise ou de son carnet, pas du Direct. Elle nomme donc
+   * ce qu'on rejoint — « Pour apparaître dans Le Direct » —, en tête, toujours.
    */
   gesteCourt?: string;
   /**
@@ -300,7 +305,7 @@ export function gesteDuJour(
         pasVu: "Votre devanture le dit très bien. Mais elle ne se lit que de la rue. Et eux sont à quatre cents mètres, en train de choisir.",
         geste: "Dites-le-moi.",
         gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me dire ce qui se passe chez vous ce soir.",
-        gesteCourt: "Pour y être, dites-moi ce qui se passe chez vous ce soir.",
+        gesteCourt: "Pour apparaître dans Le Direct, dites-moi ce qui se passe chez vous ce soir.",
         parPhoto: false,
         demande: "Qu'est-ce qui se passe chez vous ce soir ?",
         envoi: "votre soirée part",
@@ -339,7 +344,7 @@ export function gesteDuJour(
          elle n'est simplement plus le geste. */
       geste: "Dites-le-moi.",
       gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me dire ce que vous servez aujourd'hui.",
-      gesteCourt: "Pour y être, dites-moi ce que vous servez aujourd'hui.",
+      gesteCourt: "Pour apparaître dans Le Direct, dites-moi ce que vous servez aujourd'hui.",
       parPhoto: false,
       demande: "Qu'est-ce que vous servez aujourd'hui ?",
       envoi: "votre menu part",
@@ -394,7 +399,7 @@ export function gesteDuJour(
       pasVu: "Elle est très belle. Mais elle ne se lit qu'en poussant votre porte. Et eux sont à quatre cents mètres, sans idée de lecture.",
       geste: "Dites-le-moi.",
       gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me dire quel livre vous avez aimé cette semaine.",
-      gesteCourt: "Pour y être, dites-moi quel livre vous avez aimé cette semaine.",
+      gesteCourt: "Pour apparaître dans Le Direct, dites-moi quel livre vous avez aimé cette semaine.",
       parPhoto: false,
       demande: "Quel livre conseillez-vous cette semaine ?",
       envoi: "votre coup de cœur part",
@@ -447,7 +452,7 @@ export function gesteDuJour(
       geste: "Montrez-moi la pièce du jour.",
       gesteDit:
         "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me montrer la pièce du jour en photo, et de me laisser un vocal.",
-      gesteCourt: "Pour y être, montrez-moi la pièce du jour en photo, et laissez-moi un vocal pour vos clientes.",
+      gesteCourt: "Pour apparaître dans Le Direct, montrez-moi la pièce du jour en photo, et laissez-moi un vocal pour vos clientes.",
       parPhoto: false,
       photoEtVoix: true,
       demande: "Montrez-moi la pièce du jour, et dites-moi ce que vos clientes doivent savoir.",
@@ -490,7 +495,7 @@ export function gesteDuJour(
       pasVu: "Elle est magnifique. Mais elle s'arrête à votre porte. Et eux sont à quatre cents mètres, en train de choisir.",
       geste: "Photographiez-la.",
       gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de photographier votre vitrine.",
-      gesteCourt: "Pour y être, photographiez votre vitrine.",
+      gesteCourt: "Pour apparaître dans Le Direct, photographiez votre vitrine.",
       parPhoto: true,
       /* JAMAIS AFFICHÉE ICI, mais le champ est obligatoire, et une question
          vide serait pire qu'une question juste : le jour où un fleuriste passe
@@ -529,7 +534,7 @@ export function gesteDuJour(
       pasVu: `Vous êtes le seul à les voir. Et eux cherchent, maintenant, à quatre cents mètres de chez vous.`,
       geste: "Dites-le-moi.",
       gesteDit: `Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me dire ce qu'il vous reste de ${v.places} libres.`,
-      gesteCourt: `Pour y être, dites-moi ce qu'il vous reste de ${v.places} libres.`,
+      gesteCourt: `Pour apparaître dans Le Direct, dites-moi ce qu'il vous reste de ${v.places} libres.`,
       parPhoto: false,
       demande: `Qu'est-ce qu'il vous reste de ${v.places} libres aujourd'hui ?`,
       envoi: `vos ${v.places} libres partent`,
@@ -561,7 +566,7 @@ export function gesteDuJour(
     pasVu: "Personne d'autre ne peut le deviner. Et eux cherchent, maintenant, à quelques rues de chez vous.",
     geste: "Dites-le-moi.",
     gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me dire quand vous êtes disponible.",
-    gesteCourt: "Pour y être, dites-moi quand vous êtes disponible.",
+    gesteCourt: "Pour apparaître dans Le Direct, dites-moi quand vous êtes disponible.",
     parPhoto: false,
     demande: "Quand êtes-vous disponible cette semaine ?",
     envoi: "votre disponibilité part",
