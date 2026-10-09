@@ -68,6 +68,9 @@ import {
   MOI,
   motsDeLAction,
   objetDe,
+  preferencesDe,
+  prixEnNombre,
+  raisonDuChallenger,
   retrouverDansLePool,
   teinteDe,
   verdict,
@@ -75,8 +78,8 @@ import {
   type Candidat,
   type Cote,
   type Duel,
+  type Issue,
   type ObjetDuel,
-  type Preferences,
 } from "@/lib/direct/duel";
 import { SOIREES } from "@/lib/direct/soiree";
 import { avisPartages, interpreter, lireMessage, MEMOIRE_NEUVE, versLeLieu, type Evenement, type Humeur, type Memoire } from "@/lib/direct/fantome-salon";
@@ -316,7 +319,6 @@ function motDuChoix(famille: string): string {
 // ─── CE QUE SES DUELS DISENT DE LUI (sur ce téléphone) ────────────────────
 
 const CLE_HISTOIRE = "clikme-duels-v1";
-type Issue = { gagnant: { nom: string; famille: string; teinte?: string }; perdant: { nom: string; famille: string; teinte?: string }; t: number };
 
 function lireHistoire(): Issue[] {
   try {
@@ -335,7 +337,12 @@ function lireHistoire(): Issue[] {
 function retenirIssue(d: Duel) {
   const g = gagnantDe(d);
   if (!g) return;
-  const fiche = (o: ObjetDuel) => ({ nom: o.nom, famille: familleDe(o.nom), ...(teinteDe(o.nom) ? { teinte: teinteDe(o.nom) } : {}) });
+  const fiche = (o: ObjetDuel) => ({
+    nom: o.nom,
+    famille: familleDe(o.nom),
+    ...(teinteDe(o.nom) ? { teinte: teinteDe(o.nom) } : {}),
+    ...(prixEnNombre(o.prix) ? { prix: prixEnNombre(o.prix) } : {}),
+  });
   try {
     const h = lireHistoire().filter((x) => !(x.gagnant.nom === objetDe(d, g).nom && x.perdant.nom === objetDe(d, autre(g)).nom));
     h.push({ gagnant: fiche(objetDe(d, g)), perdant: fiche(objetDe(d, autre(g))), t: Date.now() });
@@ -345,18 +352,11 @@ function retenirIssue(d: Duel) {
   }
 }
 
-/**
- * CE QU'ON A VRAIMENT OBSERVÉ, ET SEULEMENT ÇA : une teinte qui gagne au moins
- * trois fois, et six fois sur dix. En dessous, rien — « ne jamais inventer une
- * préférence non observée ».
- */
-function preferencesObservees(): Preferences {
-  const h = lireHistoire();
-  const gagnes = new Map<string, number>();
-  for (const x of h) if (x.gagnant.teinte) gagnes.set(x.gagnant.teinte, (gagnes.get(x.gagnant.teinte) ?? 0) + 1);
-  for (const [t, n] of gagnes) if (n >= 3 && n / h.length >= 0.6) return { teinte: t };
-  return {};
-}
+/** Ce que ses duels passés disent de lui — voir `preferencesDe` : rien en dessous de trois. */
+const preferencesObservees = () => preferencesDe(lireHistoire());
+
+/** Pourquoi ce challenger, quand ses duels y sont pour quelque chose (cette visite). */
+const raisonsParDuel = new Map<string, string>();
 
 // ─── CE QUE LE FANTÔME A DIT DANS CHAQUE SALON (cette visite) ──────────────
 
@@ -641,7 +641,8 @@ export function useDuelDuSalon(p: {
     if (!salon || !sujet || recherche) return;
     const a = champion ?? sujet;
     const deja = new Set([...(salon.duels ?? []).flatMap((x) => [x.a.id, x.b.id]), a.id]);
-    const b = choisirChallenger(a, pool, deja, preferencesObservees(), famille);
+    const prefs = preferencesObservees();
+    const b = choisirChallenger(a, pool, deja, prefs, famille);
     const n = (salon.duels?.length ?? 0) + 1;
     noter("duel", n, champion ? "mieux" : "lance");
     setProposition(null);
@@ -693,6 +694,11 @@ export function useDuelDuSalon(p: {
     setTrancher(false);
     if (!d) return;
     if (essaiRate) emettre({ type: "essai_rate", sur: d.id });
+    const raison = raisonDuChallenger(a, b, prefs);
+    if (raison) {
+      raisonsParDuel.set(d.id, raison);
+      emettre({ type: "preference_used", sur: d.id, preference: raison });
+    }
     if (!seul) amisDeDemo(d);
   }
 
@@ -874,6 +880,7 @@ export function useDuelDuSalon(p: {
           mot={motDuChoix(famille)}
           lecture={lectureSeule}
           revoir={revoir}
+          pourquoi={jeSuisProprio ? raisonsParDuel.get(d.id) : undefined}
           onVoter={(c) => voter(d, c)}
         />
       );
@@ -1132,6 +1139,7 @@ function CarteDuel({
   mot,
   lecture,
   revoir,
+  pourquoi,
   onVoter,
 }: {
   d: Duel;
@@ -1141,6 +1149,8 @@ function CarteDuel({
   mot: string;
   lecture: boolean;
   revoir: boolean;
+  /** Ce que ses duels passés ont montré, quand le challenger y répond. */
+  pourquoi?: string;
   onVoter: (c: Cote) => void;
 }) {
   const fem = estFeminin(d.b.nom);
@@ -1157,6 +1167,11 @@ function CarteDuel({
                 ? `Je lui ai trouvé ${fem ? "une" : "un"} adversaire.`
                 : "Votre avis : A ou B ?"}
           </h3>
+          {pourquoi && !revoir && (
+            <p className="dl-pourquoi" title={pourquoi}>
+              🧠 D’après vos duels passés
+            </p>
+          )}
         </div>
       </div>
       <div className="dl-paire">
@@ -1759,6 +1774,7 @@ ${Array.from({ length: 10 }, (_, i) => {
 .dl-x{position:absolute;top:6px;right:8px;width:30px;height:30px;padding:0;border:0;background:none;cursor:pointer;color:#CDB9A5;font-size:22px;line-height:1;}
 .dl-pied{margin:10px 0 0;text-align:center;font-size:12.5px;color:#CDB9A5;}
 .dl-consigne{margin:10px 0 0;text-align:center;font-size:14px;color:#FFF4E6;}
+.dl-pourquoi{display:inline-block;margin:6px 0 0;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;color:#F6B54B;background:rgba(246,181,75,.12);border:1px solid rgba(246,181,75,.35);}
 .dl-lettre{position:absolute;top:8px;left:8px;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;
   font-style:normal;font-size:15px;font-weight:900;color:#F6B54B;background:rgba(30,18,10,.88);border:1.5px solid rgba(246,181,75,.8);}
 .dl-lettre.or{color:#2A1608;background:linear-gradient(180deg,#FFD07A,#F0A23A);border-color:#FFE3BD;}

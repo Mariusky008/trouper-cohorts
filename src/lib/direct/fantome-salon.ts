@@ -20,7 +20,8 @@
  *
  *   · LE DÉLAI : pas plus d'une ligne toutes les 25 secondes. Seuls les
  *     moments qui comptent passent outre — le challenger prêt, le gagnant, la
- *     demande partie, la réponse du magasin.
+ *     demande partie, la réponse du magasin, et ce que ses duels passés ont
+ *     montré quand le challenger y répond.
  *   · LES HUMAINS : quand ils discutent, il se fait discret (`quiet`) et ne
  *     dit rien qui ne soit pas l'un de ces moments.
  *   · LA MÉMOIRE : il ne dit jamais deux fois la même chose sur le même duel.
@@ -78,6 +79,7 @@ export type TypeEvenement =
   | "merchant_confirmed"
   | "merchant_declined"
   | "essai_rate"
+  | "preference_used"
   | "humans_talking";
 
 export type Evenement = {
@@ -95,6 +97,8 @@ export type Evenement = {
   chez?: string;
   /** Le geste demandé (voir `genreDAction`) : une sortie n'a pas de commerçant qui réponde. */
   genre?: GenreAction;
+  /** Ce que ses duels passés ont montré, chiffres compris (voir `raisonDuChallenger`). */
+  preference?: string;
 };
 
 /** Le rôle de chaque phrase : ce qu'elle fait pour le salon. */
@@ -135,6 +139,7 @@ const CRITIQUES = new Set<TypeEvenement>([
   "merchant_confirmed",
   "merchant_declined",
   "essai_rate",
+  "preference_used",
 ]);
 
 /** « le restaurant » → « au restaurant », « l'onglerie » → « à l'onglerie ». */
@@ -219,6 +224,9 @@ function reaction(e: Evenement): Intervention {
       };
     case "essai_rate":
       return { humeur: "whisper", pendant: 3200, ligne: { texte: "L'essayage n'a pas marché cette fois, mais on peut quand même trancher.", role: "conseiller" } };
+    // IL SE SOUVIENT — et il dit d'où il le sait. Une fois par duel, jamais une préférence inventée.
+    case "preference_used":
+      return { humeur: "whisper", pendant: 2800, ...(e.preference ? { ligne: { texte: e.preference, role: "conseiller" as Role } } : {}) };
     case "humans_talking":
       return { humeur: "quiet" };
   }

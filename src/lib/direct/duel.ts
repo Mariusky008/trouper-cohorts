@@ -245,13 +245,14 @@ const PRESTATION = /^(coupe( (femme|homme|enfant|mixte))?|coupe (et|\+) (brushin
 export const estUnePrestation = (nom: string) => PRESTATION.test(nom.trim());
 
 /** La teinte, quand le nom la dit. Sert à proposer une vraie alternative, pas un doublon. */
+/** Accordés : « noire », « vertes », « blanche » sont les mêmes teintes. */
 const TEINTES: [string, RegExp][] = [
-  ["vert", mots("kaki|vert|olive|sapin|for[eê]t")],
-  ["clair", mots("beige|sable|[ée]cru|cr[eè]me|camel|blanc|ivoire|naturel|lin")],
-  ["sombre", mots("noir|marine|anthracite|gris fonc[ée]|brut")],
-  ["bleu", mots("bleu|ciel|denim|jean")],
-  ["chaud", mots("brique|rouge|bordeaux|rouille|orange|corail|terracotta|cuivr[ée]|roux|rousse")],
-  ["rose", mots("rose|orchid[ée]e|fuchsia|lilas|violet")],
+  ["vert", mots("kaki|verte?s?|olive|sapin|for[eê]t")],
+  ["clair", mots("beiges?|sable|[ée]crue?s?|cr[eè]me|camel|blanc(he)?s?|ivoire|naturel(le)?s?")],
+  ["sombre", mots("noire?s?|marine|anthracite|gris(es?)? fonc[ée]e?s?|brute?s?")],
+  ["bleu", mots("bleue?s?|ciel|denim|jean")],
+  ["chaud", mots("brique|rouges?|bordeaux|rouille|orange|corail|terracotta|cuivr[ée]e?s?|roux|rousses?")],
+  ["rose", mots("roses?|orchid[ée]e|fuchsia|lilas|violette?s?")],
   ["brun", mots("marron|chocolat|cognac|caramel|tabac|[ée]caille")],
 ];
 export function teinteDe(nom: string): string | undefined {
@@ -269,8 +270,81 @@ export function prixEnNombre(prix?: string): number | undefined {
 /** « Ce soir, 19 h » → « ce soir » : le jour d'une sortie, sans l'heure. */
 const jourDe = (quand?: string) => (quand ?? "").split(",")[0].trim().toLowerCase() || undefined;
 
-/** Ce que ses duels passés disent de lui — seulement quand ils le disent plusieurs fois. */
-export type Preferences = { teinte?: string; famille?: string };
+/**
+ * ═══ CE QUE SES DUELS PASSÉS DISENT DE LUI ═════════════════════════════════
+ *
+ * « Ne jamais inventer une préférence non observée. » Une issue par duel
+ * tranché, gardée sur SON téléphone (voir `duel-salon.tsx`), et une
+ * préférence n'existe qu'à partir de trois duels qui vont dans le même sens,
+ * six fois sur dix au moins. Un seul vote ne dit rien.
+ */
+export type FicheIssue = { nom: string; famille: string; teinte?: string; prix?: number };
+export type Issue = { gagnant: FicheIssue; perdant: FicheIssue; t: number };
+
+export type Preferences = {
+  teinte?: string;
+  /** Il garde l'option la moins chère des deux… ou la plus chère. */
+  prix?: "moins" | "plus";
+  /** Combien de duels le disent, et sur combien : la phrase les cite. */
+  preuves?: { teinte?: [number, number]; prix?: [number, number] };
+};
+
+const assez = (n: number, sur: number) => n >= 3 && sur > 0 && n / sur >= 0.6;
+
+export function preferencesDe(h: Issue[]): Preferences {
+  const p: Preferences = {};
+  const preuves: NonNullable<Preferences["preuves"]> = {};
+  const gagnes = new Map<string, number>();
+  for (const x of h) if (x.gagnant.teinte) gagnes.set(x.gagnant.teinte, (gagnes.get(x.gagnant.teinte) ?? 0) + 1);
+  for (const [t, n] of gagnes)
+    if (assez(n, h.length)) {
+      p.teinte = t;
+      preuves.teinte = [n, h.length];
+      break;
+    }
+  const comparables = h.filter((x) => x.gagnant.prix != null && x.perdant.prix != null && x.gagnant.prix !== x.perdant.prix);
+  const moins = comparables.filter((x) => (x.gagnant.prix as number) < (x.perdant.prix as number)).length;
+  const plus = comparables.length - moins;
+  if (assez(moins, comparables.length)) {
+    p.prix = "moins";
+    preuves.prix = [moins, comparables.length];
+  } else if (assez(plus, comparables.length)) {
+    p.prix = "plus";
+    preuves.prix = [plus, comparables.length];
+  }
+  if (preuves.teinte || preuves.prix) p.preuves = preuves;
+  return p;
+}
+
+const TEINTES_DITES: Record<string, string> = {
+  vert: "le vert",
+  clair: "les tons clairs",
+  sombre: "les tons foncés",
+  bleu: "le bleu",
+  chaud: "les tons chauds",
+  rose: "le rose",
+  brun: "les tons bruns",
+};
+
+/**
+ * POURQUOI CE CHALLENGER, QUAND SES DUELS PASSÉS Y SONT POUR QUELQUE CHOSE —
+ * dit avec les chiffres, et seulement si le challenger a vraiment ce trait.
+ * Sinon rien : le Fantôme ne prétend pas le connaître.
+ */
+export function raisonDuChallenger(a: Pick<ObjetDuel, "prix">, b: Pick<ObjetDuel, "nom" | "prix">, prefs: Preferences): string | null {
+  const t = prefs.teinte;
+  if (t && prefs.preuves?.teinte && teinteDe(b.nom) === t) {
+    const [n, sur] = prefs.preuves.teinte;
+    return `Vous gardez souvent ${TEINTES_DITES[t] ?? t} (${n} duels sur ${sur}) : ce challenger aussi.`;
+  }
+  const pa = prixEnNombre(a.prix);
+  const pb = prixEnNombre(b.prix);
+  if (prefs.prix && prefs.preuves?.prix && pa && pb && (prefs.prix === "moins" ? pb < pa : pb > pa)) {
+    const [n, sur] = prefs.preuves.prix;
+    return `Vous gardez souvent l’option la ${prefs.prix === "moins" ? "moins chère" : "plus chère"} (${n} duels sur ${sur}) : ce challenger l’est.`;
+  }
+  return null;
+}
 
 /**
  * ═══ CHOISIR UN CHALLENGER — UNE OPÉRATION LÉGÈRE, SANS IA ═════════════════
@@ -325,6 +399,7 @@ export function choisirChallenger(
     const t = teinteDe(p.nom);
     if (t && teinteA && t !== teinteA) n += 0.5;
     if (prefs.teinte && t === prefs.teinte) n += 0.5;
+    if (prefs.prix && prixA && prixP && (prefs.prix === "moins" ? prixP < prixA : prixP > prixA)) n += 0.5;
     if (n > note) {
       note = n;
       meilleur = p;
