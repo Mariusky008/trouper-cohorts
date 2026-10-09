@@ -135,7 +135,11 @@ function EssaiEnImage({ c, saPage, onReserver, onSalon }: ProprietesEssai) {
      vêtements normaux, et exactement la même pose avec les vêtements de sa
      boutique, pris sur sa fiche Google. » Montrée à lui seul, sur sa page,
      tant qu'il n'a rien mis à essayer — voir `avant-apres-vitrine.tsx`. */
-  const essaiVitrine = saPage && onEssaie && pieces.length === 0 ? c.essaiVitrine : undefined;
+  /* UNE BOUTIQUE DE VÊTEMENTS LE VOIT TOUJOURS : sa pièce si elle est prête,
+     l'exemple déjà fabriqué sinon — l'après arrive à trois secondes, jamais
+     au bout d'une minute. */
+  const essaiVitrine =
+    saPage && onEssaie && pieces.length === 0 && c.branche === "mode" ? (c.essaiVitrine ?? { etat: "exemple" as const }) : undefined;
 
   return (
     <div className="bx">

@@ -901,43 +901,8 @@ export function DemoTour({
      * vous ? » qui retourne la situation contre lui — il faut le temps de la
      * recevoir. Une seconde et demie de noir vaut mieux qu'une transition.
      */
-    const steps: Array<{ title: string; say: string; enter: () => void; respire?: number; attendre?: () => Promise<void> }> = [];
+    const steps: Array<{ title: string; say: string; enter: () => void; respire?: number }> = [];
 
-    /**
-     * ═══ L'ÉTAPE 2 ATTEND SA PIÈCE, QUAND ELLE EST EN ROUTE ═══════════════
-     *
-     * « L'assistante m'a montré l'avant et l'après, mais je n'ai pas eu le
-     * temps de voir apparaître l'après : on est passé en étape 3. »
-     *
-     * LE RENDU DE SA PIÈCE PREND UNE MINUTE, la réplique dix secondes. Quand
-     * l'essai est encore en route à la fin de la phrase (`clikme:essai`,
-     * annoncé par `avant-apres-vitrine.tsx`), la visite patiente — vingt-cinq
-     * secondes au plus, la légende le dit — et laisse jouer l'apparition s'il
-     * arrive. Sinon, elle continue : on ne retient pas quelqu'un une minute
-     * devant une image qui charge.
-     */
-    const attendreLEssai = (maxMs: number) =>
-      new Promise<void>((ok) => {
-        const etat = () => (window as unknown as { __clikmeEssai?: string }).__clikmeEssai;
-        if (etat() !== "en-cours") return ok();
-        setCaption("Un instant : je l'habille avec une de vos pièces…");
-        let fini = false;
-        let t = 0;
-        const ecoute = (e: Event) => {
-          const d = (e as CustomEvent).detail;
-          if (d === "prete") finir(3800);
-          else if (d !== "en-cours") finir(0);
-        };
-        const finir = (encore: number) => {
-          if (fini) return;
-          fini = true;
-          window.removeEventListener("clikme:essai", ecoute);
-          window.clearTimeout(t);
-          window.setTimeout(ok, encore);
-        };
-        window.addEventListener("clikme:essai", ecoute);
-        t = window.setTimeout(() => finir(0), maxMs);
-      });
 
     // ── 0. LA PAGE, CINQ SECONDES, COMME PREUVE ────────────────────────────
     //
@@ -987,8 +952,10 @@ export function DemoTour({
         },
         // On laisse le bloc à l'écran après la phrase : c'est l'image qu'on
         // veut qu'il emporte, et la suite la recouvre immédiatement.
-        respire: 1800,
-        attendre: () => attendreLEssai(25_000),
+        /* L'ESSAYAGE S'OUVRE EN GRAND PENDANT LA PHRASE, puis se range à sa
+           place (`avant-apres-vitrine.tsx`) : on laisse le temps de le voir
+           s'y poser. */
+        respire: 2400,
       });
     }
 
@@ -1297,8 +1264,6 @@ export function DemoTour({
       if (cancelled.current) return;
       // LA RESPIRATION. La scène reste à l'écran, la voix se tait : c'est le
       // silence qui fait qu'on a le temps de comprendre ce qu'on vient de voir.
-      if (st.attendre) await st.attendre();
-      if (cancelled.current) return;
       if (st.respire) await new Promise((r) => window.setTimeout(r, st.respire));
       if (cancelled.current) return;
     }
@@ -1974,6 +1939,27 @@ export function DemoTour({
              carte, vue de plus loin, et c'est bien ce qu'on veut dire ici. */
           .ph-mini{zoom:.58;}
           .ph-mini .cd-gestes{margin-top:14px;}
+          /* ═══ SUR UN GRAND ÉCRAN, CÔTE À CÔTE ═══ « Là aussi on ne voit pas
+             tout sur l'écran. » Empilés, la conversation et la carte du Direct
+             dépassaient la hauteur d'un ordinateur portable : la carte, qui
+             est le moment de bascule, tombait sous la légende. La largeur, elle,
+             était libre. La conversation à gauche, ce qu'elle devient à droite. */
+          @media (min-width:900px){
+            .ph-wrap{max-width:780px;display:grid;grid-template-columns:minmax(0,1fr) 300px;column-gap:34px;row-gap:12px;align-items:start;}
+            .ph-wrap .ph-h{grid-column:1 / -1;}
+            .ph-wrap > .dt-ouvre{grid-column:2;grid-row:2;}
+            .ph-wrap > .ph-dial,.ph-wrap > .ph-shot{grid-column:1;grid-row:2;}
+            .ph-wrap .ph-mini{zoom:.66;margin-top:4px;}
+          }
+          /* SUR UN TÉLÉPHONE, LA PHOTO ET LE VOCAL SE METTENT CÔTE À CÔTE, et la
+             transcription s'efface : la légende du bas dit déjà ce qu'elle
+             fait. Empilés, ils poussaient la carte du Direct sous la légende. */
+          @media (max-width:899px){
+            .ph-piece{width:58px;height:76px;}
+            .ph-wrap.vv .ph-lui{flex-direction:row;align-items:flex-end;}
+            .ph-wrap.vv .ph-lui p.ph-mot{display:none;}
+            .ph-wrap.vv .ph-mini{zoom:.44;}
+          }
           @media (max-height:800px){
             .dtour-ov.ph-ov{padding-top:78px;}
             .ph-wrap{gap:6px;}
@@ -2561,7 +2547,7 @@ export function DemoTour({
               n'existait pas. */}
           {scene === "photo" && G && maCarte && (
             <div className="dtour-ov ph-ov">
-              <div className="ph-wrap">
+              <div className={`ph-wrap${G.photoEtVoix ? " vv" : ""}`}>
                 <div className="ph-h">{G.geste}<em>C&apos;est tout.</em></div>
 
                 {/* ═══ ON PHOTOGRAPHIE, OU ON PARLE — ET CE N'EST PLUS LE

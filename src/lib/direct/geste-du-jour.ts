@@ -456,10 +456,12 @@ export function gesteDuJour(
         lignes: ["Chemise à volants rose poudré", "Du 36 au 44 · à essayer sur soi"],
         prix: "59 €",
       },
+      /* « Les heures et les nombres ne sont pas bons : 15 h 30, 549 habitants
+         l'auront vue passer ; 16 h 05, 19 l'auront essayée virtuellement. » */
       retours: [
-        { heure: "10 h 20", icone: "❤️", nombre: "31", quoi: `${gentile} l'auront vue passer` },
-        { heure: "11 h 05", icone: "👗", nombre: "9", quoi: "l'auront essayée sur leur photo" },
-        { heure: "12 h 00", icone: "📊", nombre: "", quoi: "En une matinée, vous saurez quelle pièce donne envie." },
+        { heure: "15 h 30", icone: "❤️", nombre: "549", quoi: `${gentile} l'auront vue passer` },
+        { heure: "16 h 05", icone: "👗", nombre: "19", quoi: "l'auront essayée virtuellement" },
+        { heure: "17 h 00", icone: "📊", nombre: "", quoi: "En une journée, vous saurez quelle pièce donne envie." },
       ],
     };
   }

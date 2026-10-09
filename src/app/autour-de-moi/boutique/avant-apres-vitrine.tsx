@@ -9,49 +9,48 @@
 // vêtements normaux, et exactement la même pose avec les vêtements de Lili
 // Ross by me, pris sur sa fiche Google. »
 //
-// CE QU'ON VOIT, DANS L'ORDRE :
-//   · deux cadres côte à côte, la même personne, la même pose ;
-//   · dans le second, un trait de lumière descend et, derrière lui, la pièce
-//     de SA boutique apparaît sur la personne — c'est le moment que Léa
-//     commente (`clikme:montrer`, envoyé par la démonstration, relance
-//     l'animation au bon moment) ;
-//   · dessous, la pièce elle-même, recadrée sur sa photo Google, et son mot :
-//     SA voix s'il l'a enregistrée, sinon l'emplacement vide où elle ira.
-//     Jamais une voix prêtée à la propriétaire.
+// ═══ L'APRÈS ARRIVE AU BOUT DE TROIS SECONDES, TOUJOURS ═══════════════════
 //
-// CE QUI EST DIT EN TOUTES LETTRES : « Simulation d'essayage · Rendu
-// indicatif ». La personne n'existe pas — c'est celle de l'essayage de
-// démonstration —, la pièce est la sienne.
+// « On attend une minute sans que rien ne se passe, on attend que l'après
+// arrive mais il n'arrive pas, et il arrive une fois que la démo est
+// terminée. Il vaut mieux avoir l'avant dès le départ, et un après au bout de
+// trois secondes, déjà préparé. »
 //
-// LE RENDU PEUT ÊTRE EN ROUTE à la première visite (le moteur travaille après
-// la page, voir `essai-vitrine.ts`) : le second cadre le dit, la page demande
-// où il en est, et l'animation part dès qu'il arrive.
+// DEUX PAIRES, ET ON NE FAIT PLUS JAMAIS ATTENDRE :
+//   · SA PIÈCE, quand le moteur l'a déjà habillée (voir `essai-vitrine.ts`) :
+//     « Avec votre pièce », sa vignette, son nom ;
+//   · sinon L'EXEMPLE, déjà fabriqué — la même personne, avant et avec un
+//     blazer rose —, marqué « Exemple » sans rien prétendre de sa boutique.
+//     Le rendu de sa pièce continue derrière ; dès qu'il arrive, il remplace
+//     l'exemple et se rejoue.
 //
-// S'IL ÉCHOUE, LE BLOC LE DIT. « Le après n'a jamais marché, et ensuite à
-// l'étape 2 je n'ai pas eu d'avant ou d'après » : il s'effaçait sans un mot,
-// et personne ne pouvait savoir pourquoi. Il garde l'avant, dit la raison en
-// clair, et replie le détail technique dessous. Et il continue de demander :
-// un nouvel essai part dès que ses photos Google sont lues.
+// ═══ EN GRAND PENDANT QUE LÉA EN PARLE, PUIS À SA PLACE ═══════════════════
 //
-// LA VISITE DE LÉA L'ATTEND : l'état est annoncé à la fenêtre
-// (`clikme:essai`), et l'étape 2 patiente quelques secondes quand le rendu
-// est en route — voir `attendreLEssai` dans `demo-tour.tsx`.
+// « On ne voit pas l'animation dans son entier, et pourtant j'ai un grand
+// écran : elle pourrait être en pop-up plein écran, et une fois terminée elle
+// se met dans son espace sous "La pièce qui vous plaît". »
+//
+// Quand la présentation arrive à cette étape (`clikme:montrer`), les deux
+// photos s'ouvrent en grand par-dessus la page ; l'après se révèle à trois
+// secondes ; puis le tout rétrécit et glisse exactement à sa place dans la
+// page (on mesure les deux cadres et on anime la différence). « Voir en
+// grand » rouvre la même chose à la main.
+//
+// SON MOT : SA voix s'il l'a enregistrée, sinon l'emplacement vide où elle
+// ira — jamais une voix prêtée à la propriétaire. Et « Simulation d'essayage
+// · Rendu indicatif », en toutes lettres.
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import type { EssaiVitrineCarte } from "@/lib/site-internet/essai-vitrine-donnees";
 
-/** Combien de temps on attend le rendu, au plus. */
+/** L'exemple déjà fabriqué : la même personne, avant et avec un blazer rose. */
+const EXEMPLE = { avant: "/direct/accueil/moi-mode-sans.jpg", apres: "/direct/accueil/moi-mode-avec.jpg" };
+/** Combien de temps on demande où en est le rendu de sa pièce, au plus. */
 const ATTENTE_MAX = 5 * 60_000;
-
-/** L'état de l'essai, annoncé à la fenêtre pour la visite de Léa. */
-function annoncer(etat: string) {
-  try {
-    (window as unknown as { __clikmeEssai?: string }).__clikmeEssai = etat;
-    window.dispatchEvent(new CustomEvent("clikme:essai", { detail: etat }));
-  } catch {
-    /* rien */
-  }
-}
+/** En grand : l'après se révèle à 3 s, l'apparition finit vers 5,8 s ; on le laisse regarder, puis on range. */
+const RANGER_A = 8400;
+const DUREE_RANGEMENT = 850;
 /** Les hauteurs de l'onde du mot — fixes : une onde qui change à chaque rendu clignote. */
 const ONDE = [30, 55, 40, 80, 60, 95, 45, 70, 35, 85, 50, 65, 30, 75, 55, 90, 40, 60, 35, 70, 45, 80, 30, 50];
 
@@ -67,18 +66,113 @@ async function depuisLeDebut(a: HTMLAudioElement, fin: () => void): Promise<bool
   }
 }
 
-export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai: EssaiVitrineCarte }) {
-  const [essai, setEssai] = useState<EssaiVitrineCarte | null>(depart);
-  /** Chaque tour de l'animation : il la remonte, donc la rejoue depuis le début. */
-  const [tour, setTour] = useState(0);
-  const racine = useRef<HTMLElement | null>(null);
-  const rejouer = useCallback(() => setTour((t) => t + 1), []);
+type Mode = "repos" | "joue" | "fini";
 
-  /* ═══ TANT QU'IL N'EST PAS PRÊT, ON DEMANDE OÙ IL EN EST ═══ Toutes les
-     cinq secondes, cinq minutes au plus — en cours comme après un échec : un
-     nouvel essai part dès que ses photos Google sont lues. « Absent » au
-     début est normal : la route qui le fabrique vient à peine d'être sonnée. */
-  const attend = essai?.etat === "en-cours" || essai?.etat === "echec";
+/** Les deux cadres : l'avant, et l'après qui se révèle par-dessus l'avant. */
+function Cadres({ avant, apres, badge, mode, n, alt }: { avant: string; apres: string; badge: string; mode: Mode; n: number; alt: string }) {
+  return (
+    <>
+      <figure className="aa-cadre">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={avant} alt="Avant : la personne dans ses vêtements" />
+        <figcaption className="aa-badge">Avant</figcaption>
+      </figure>
+      <figure className="aa-cadre apres">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={avant} alt="" aria-hidden="true" />
+        <div key={n} className={`aa-revele ${mode}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={apres} alt={alt} />
+          <span className="aa-pendant" aria-hidden="true">
+            L’IA l’habille…
+          </span>
+          <i className="aa-scan" aria-hidden="true" />
+          <span className="aa-etincelles" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+            <i />
+          </span>
+          <figcaption className="aa-badge or">{badge}</figcaption>
+        </div>
+      </figure>
+    </>
+  );
+}
+
+export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai: EssaiVitrineCarte }) {
+  const [essai, setEssai] = useState<EssaiVitrineCarte>(depart);
+  /** L'animation dans la page : au repos (après caché), qui joue, ou finie (après visible). */
+  const [jeu, setJeu] = useState<{ mode: Mode; n: number }>({ mode: "repos", n: 0 });
+  /** En grand, par-dessus la page : ouvert, puis en train de se ranger à sa place. */
+  const [plein, setPlein] = useState<{ n: number; range: boolean } | null>(null);
+  /** Le glissement vers sa place : la différence entre le cadre en grand et celui de la page. */
+  const [vol, setVol] = useState<{ tx: number; ty: number; s: number } | null>(null);
+  const racine = useRef<HTMLElement | null>(null);
+  const cadresPage = useRef<HTMLDivElement | null>(null);
+  const cadresPlein = useRef<HTMLDivElement | null>(null);
+  const minuteurs = useRef<number[]>([]);
+  const dejaJoue = useRef(false);
+
+  const pret = essai.etat === "prete" && Boolean(essai.apres);
+  const exemple = !pret;
+  const avant = pret ? (essai.avant ?? EXEMPLE.avant) : EXEMPLE.avant;
+  const apres = pret ? (essai.apres as string) : EXEMPLE.apres;
+  const badge = exemple ? "Exemple" : "Avec votre pièce";
+  const alt = exemple
+    ? "Exemple : la même personne, avec une autre tenue"
+    : `Après : la même personne, avec ${essai.nom ? essai.nom.toLowerCase() : "une pièce"} de ${c.nom}`;
+
+  const jouerIci = useCallback(() => {
+    dejaJoue.current = true;
+    setJeu((j) => ({ mode: "joue", n: j.n + 1 }));
+  }, []);
+
+  /* ═══ RANGER : le cadre en grand rétrécit et glisse à sa place ═══ */
+  const ranger = useCallback(() => {
+    minuteurs.current.forEach((t) => window.clearTimeout(t));
+    minuteurs.current = [];
+    const de = cadresPlein.current?.getBoundingClientRect();
+    const vers = cadresPage.current?.getBoundingClientRect();
+    if (de && vers && de.width > 0) setVol({ tx: vers.left - de.left, ty: vers.top - de.top, s: vers.width / de.width });
+    setPlein((p) => (p ? { ...p, range: true } : p));
+    setJeu((j) => ({ mode: "fini", n: j.n + 1 }));
+    minuteurs.current.push(
+      window.setTimeout(() => {
+        setPlein(null);
+        setVol(null);
+      }, DUREE_RANGEMENT),
+    );
+  }, []);
+
+  /* ═══ OUVRIR EN GRAND ═══ L'après se révèle à trois secondes, puis on range. */
+  const ouvrir = useCallback(() => {
+    minuteurs.current.forEach((t) => window.clearTimeout(t));
+    dejaJoue.current = true;
+    setVol(null);
+    setPlein({ n: Date.now(), range: false });
+    minuteurs.current = [window.setTimeout(ranger, RANGER_A)];
+  }, [ranger]);
+
+  useEffect(
+    () => () => {
+      minuteurs.current.forEach((t) => window.clearTimeout(t));
+    },
+    [],
+  );
+
+  /* ÉCHAP REFERME, comme toute fenêtre. */
+  useEffect(() => {
+    if (!plein || plein.range) return;
+    const touche = (e: KeyboardEvent) => e.key === "Escape" && ranger();
+    window.addEventListener("keydown", touche);
+    return () => window.removeEventListener("keydown", touche);
+  }, [plein, ranger]);
+
+  /* ═══ TANT QUE SA PIÈCE N'EST PAS PRÊTE, ON DEMANDE OÙ ELLE EN EST ═══
+     L'exemple tient la place ; dès que sa pièce arrive, elle le remplace et
+     se rejoue dans la page. Cinq minutes au plus. */
+  const attend = essai.etat === "en-cours" || essai.etat === "echec";
   useEffect(() => {
     if (!attend) return;
     const debut = Date.now();
@@ -86,10 +180,6 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
     const t = window.setInterval(async () => {
       if (Date.now() - debut > ATTENTE_MAX) {
         window.clearInterval(t);
-        if (!fini)
-          setEssai((e) =>
-            e?.etat === "en-cours" ? { ...e, etat: "echec", raison: "Le rendu prend plus de temps que prévu : il sera là à votre prochaine visite." } : e,
-          );
         return;
       }
       try {
@@ -99,11 +189,11 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
         if (j.etat === "prete" && j.apres) {
           window.clearInterval(t);
           setEssai({ etat: "prete", avant: j.avant, apres: j.apres, piece: j.piece, nom: j.nom });
-          setTour((x) => x + 1);
+          setJeu((x) => ({ mode: "joue", n: x.n + 1 }));
         } else if (j.etat === "en-cours") {
-          setEssai((e) => ({ ...(e ?? {}), etat: "en-cours", piece: j.piece ?? e?.piece, nom: j.nom ?? e?.nom }));
+          setEssai((e) => ({ ...e, etat: "en-cours", piece: j.piece ?? e.piece, nom: j.nom ?? e.nom }));
         } else if ((j.etat === "echec" || j.etat === "aucune") && j.raison) {
-          setEssai((e) => ({ ...(e ?? {}), etat: "echec", raison: j.raison, detail: j.erreur, piece: j.piece ?? e?.piece, nom: j.nom ?? e?.nom }));
+          setEssai((e) => ({ ...e, etat: "echec", raison: j.raison, detail: j.erreur, piece: j.piece ?? e.piece, nom: j.nom ?? e.nom }));
         }
       } catch {
         /* réseau coupé : au tour suivant */
@@ -115,36 +205,29 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
     };
   }, [attend, c.id]);
 
-  /* L'ÉTAT, ANNONCÉ À LA VISITE DE LÉA — voir `attendreLEssai`. */
-  const etat = essai?.etat ?? "absent";
-  useEffect(() => {
-    annoncer(etat);
-  }, [etat]);
-
-  /* ═══ L'ANIMATION PART QUAND ON LA VOIT, ET QUAND LÉA EN PARLE ═══ */
+  /* ═══ DANS LA PAGE, ELLE JOUE QUAND ON LA VOIT ; EN GRAND QUAND LÉA EN PARLE ═══ */
   useEffect(() => {
     const el = racine.current;
-    if (!el || typeof IntersectionObserver === "undefined") return;
-    let vue = false;
-    const o = new IntersectionObserver(
-      (entrees) => {
-        if (entrees.some((e) => e.isIntersecting) && !vue) {
-          vue = true;
-          rejouer();
-        }
-      },
-      { threshold: 0.45 },
-    );
-    o.observe(el);
+    if (!el) return;
+    let o: IntersectionObserver | null = null;
+    if (typeof IntersectionObserver !== "undefined") {
+      o = new IntersectionObserver(
+        (entrees) => {
+          if (entrees.some((e) => e.isIntersecting) && !dejaJoue.current) jouerIci();
+        },
+        { threshold: 0.45 },
+      );
+      o.observe(el);
+    }
     const montrer = (e: Event) => {
-      if ((e as CustomEvent).detail === "essayer") window.setTimeout(rejouer, 700);
+      if ((e as CustomEvent).detail === "essayer") window.setTimeout(ouvrir, 500);
     };
     window.addEventListener("clikme:montrer", montrer);
     return () => {
-      o.disconnect();
+      o?.disconnect();
       window.removeEventListener("clikme:montrer", montrer);
     };
-  }, [rejouer]);
+  }, [jouerIci, ouvrir]);
 
   /* ═══ SON MOT, À SA VOIX — s'il l'a enregistré, et seulement alors ═══ */
   const voix = c.voix?.extrait;
@@ -163,60 +246,63 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
     void depuisLeDebut(son.current, () => setJoue(false)).then(setJoue);
   };
 
-  if (!essai) return null;
-  const pret = essai.etat === "prete" && essai.apres;
-  const avant = essai.avant ?? "/direct/accueil/moi-mode-sans.jpg";
+  const plein_ =
+    plein && typeof document !== "undefined"
+      ? createPortal(
+          <div className={`aa-plein${plein.range ? " range" : ""}`} role="dialog" aria-label={`L’essayage virtuel · ${c.nom}`}>
+            <StylesAvantApres />
+            <div className="aa-plein-fond" onClick={ranger} />
+            <div className="aa-plein-scene">
+              <p className="aa-plein-k">
+                L’essayage virtuel · {exemple ? "exemple" : `une pièce de ${c.nom}`}
+              </p>
+              <div
+                ref={cadresPlein}
+                className="aa-plein-cadres"
+                style={vol ? { transform: `translate(${vol.tx}px, ${vol.ty}px) scale(${vol.s})` } : undefined}
+              >
+                <Cadres avant={avant} apres={apres} badge={badge} mode="joue" n={plein.n} alt={alt} />
+              </div>
+              <p className="aa-plein-pied">Simulation d’essayage · Rendu indicatif</p>
+              <button type="button" className="aa-plein-x" onClick={ranger} aria-label="Fermer">
+                ✕
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
 
   return (
     <section ref={racine} className="aa" aria-label={`L’essayage virtuel, avec une pièce de ${c.nom}`}>
       <StylesAvantApres />
       <p className="aa-k">L’essayage virtuel</p>
-      <div className="aa-cadres">
-        <figure className="aa-cadre">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={avant} alt="Avant : la personne dans ses vêtements" />
-          <figcaption className="aa-badge">Avant</figcaption>
-        </figure>
-        <figure className={`aa-cadre apres${pret ? "" : " attend"}`}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={avant} alt="" aria-hidden="true" />
-          {pret ? (
-            <div key={tour} className={`aa-revele${tour ? " joue" : ""}`}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={essai.apres} alt={`Après : la même personne, avec ${essai.nom ? essai.nom.toLowerCase() : "une pièce"} de ${c.nom}`} />
-              <i className="aa-scan" aria-hidden="true" />
-              <span className="aa-etincelles" aria-hidden="true">
-                <i />
-                <i />
-                <i />
-                <i />
-              </span>
-              <figcaption className="aa-badge or">Avec votre pièce</figcaption>
-            </div>
-          ) : essai.etat === "echec" ? (
-            <div className="aa-route rate">
-              <p>{essai.raison ?? "Le rendu n’a pas abouti cette fois."}</p>
-            </div>
-          ) : (
-            <div className="aa-route">
-              <i className="aa-scan boucle" aria-hidden="true" />
-              <p>L’IA l’habille avec une de vos pièces…</p>
-            </div>
-          )}
-        </figure>
+      <div ref={cadresPage} className={`aa-cadres${plein ? " cache" : ""}`}>
+        <Cadres avant={avant} apres={apres} badge={badge} mode={jeu.mode} n={jeu.n} alt={alt} />
       </div>
 
       <div className="aa-bas">
-        {essai.piece ? (
+        {!exemple && essai.piece ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img className="aa-piece" src={essai.piece} alt={essai.nom ?? `Une pièce de ${c.nom}`} />
         ) : (
-          <span className="aa-piece vide" aria-hidden="true" />
+          <span className="aa-piece vide" aria-hidden="true">
+            👗
+          </span>
         )}
         <div className="aa-info">
-          <small>Une pièce de {c.nom}</small>
-          <b>{essai.nom ?? (pret ? "Prise sur votre fiche Google" : "Choisie sur votre fiche Google…")}</b>
-          {essai.nom && <span>Prise sur votre fiche Google</span>}
+          {exemple ? (
+            <>
+              <small>Exemple d’essayage</small>
+              <b>{essai.etat === "echec" && essai.raison ? essai.raison : "Votre pièce, prise sur votre fiche Google, arrive ici."}</b>
+            </>
+          ) : (
+            <>
+              <small>Une pièce de {c.nom}</small>
+              <b>{essai.nom ?? "Prise sur votre fiche Google"}</b>
+              {essai.nom && <span>Prise sur votre fiche Google</span>}
+            </>
+          )}
         </div>
         {/* SON MOT, SUR TOUTE LA LARGEUR : à côté de la vignette, l'onde n'avait plus de place sur un téléphone. */}
         {voix ? (
@@ -256,12 +342,11 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
 
       <p className="aa-pied">
         <span>Simulation d’essayage · Rendu indicatif</span>
-        {pret && (
-          <button type="button" onClick={rejouer}>
-            ↻ Revoir
-          </button>
-        )}
+        <button type="button" onClick={ouvrir}>
+          ⤢ Voir en grand
+        </button>
       </p>
+      {plein_}
     </section>
   );
 }
@@ -276,6 +361,7 @@ function StylesAvantApres() {
   box-shadow:0 24px 60px rgba(0,0,0,.35);}
 .aa-k{margin:2px 4px 12px;font-size:12px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:#F5A23A;}
 .aa-cadres{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.aa-cadres.cache{visibility:hidden;}
 .aa-cadre{position:relative;margin:0;aspect-ratio:2 / 3;border-radius:16px;overflow:hidden;background:#261B16;}
 .aa-cadre img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 .aa-badge{position:absolute;top:10px;left:10px;z-index:3;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:700;
@@ -283,14 +369,18 @@ function StylesAvantApres() {
 .aa-badge.or{left:auto;right:10px;background:rgba(160,82,18,.88);}
 .aa-revele{position:absolute;inset:0;}
 .aa-revele > img{clip-path:inset(0 0 100% 0);}
-.aa-revele.joue > img{animation:aa-devoile 2.6s cubic-bezier(.65,.05,.3,1) .45s both;}
+.aa-revele.fini > img{clip-path:none;}
+.aa-revele.joue > img{animation:aa-devoile 2.6s cubic-bezier(.65,.05,.3,1) 3s both;}
 .aa-revele .aa-badge{opacity:0;}
-.aa-revele.joue .aa-badge{animation:aa-arrive .5s ease-out 2.9s both;}
+.aa-revele.fini .aa-badge{opacity:1;}
+.aa-revele.joue .aa-badge{animation:aa-arrive .5s ease-out 5.5s both;}
+.aa-pendant{position:absolute;left:50%;bottom:14px;z-index:3;transform:translateX(-50%);white-space:nowrap;opacity:0;
+  padding:7px 12px;border-radius:12px;background:rgba(18,12,9,.72);font-size:13px;font-weight:700;color:#FFF4E6;}
+.aa-revele.joue .aa-pendant{animation:aa-pendant 3.6s ease both;}
 .aa-scan{position:absolute;left:-10%;right:-10%;top:0;height:3px;z-index:2;opacity:0;pointer-events:none;
   background:linear-gradient(90deg,transparent,#FFD9A8 20%,#fff 50%,#FF8CC8 80%,transparent);
   box-shadow:0 0 18px 6px rgba(255,170,90,.55),0 0 46px 14px rgba(255,46,154,.28);}
-.aa-revele.joue .aa-scan{animation:aa-balaye 2.6s cubic-bezier(.65,.05,.3,1) .45s both;}
-.aa-scan.boucle{animation:aa-balaye 2.4s ease-in-out infinite;}
+.aa-revele.joue .aa-scan{animation:aa-balaye 2.6s cubic-bezier(.65,.05,.3,1) 3s both;}
 .aa-etincelles i{position:absolute;z-index:2;width:8px;height:8px;opacity:0;border-radius:50%;
   background:radial-gradient(circle,#fff 0 30%,rgba(255,217,168,.9) 45%,transparent 70%);}
 .aa-etincelles i:nth-child(1){left:22%;top:28%;}
@@ -298,16 +388,10 @@ function StylesAvantApres() {
 .aa-etincelles i:nth-child(3){left:38%;top:66%;}
 .aa-etincelles i:nth-child(4){left:62%;top:82%;}
 .aa-revele.joue .aa-etincelles i{animation:aa-brille 1.1s ease-out both;}
-.aa-revele.joue .aa-etincelles i:nth-child(1){animation-delay:1.1s;}
-.aa-revele.joue .aa-etincelles i:nth-child(2){animation-delay:1.6s;}
-.aa-revele.joue .aa-etincelles i:nth-child(3){animation-delay:2.1s;}
-.aa-revele.joue .aa-etincelles i:nth-child(4){animation-delay:2.6s;}
-.aa-cadre.attend > img{filter:blur(3px) saturate(.5) brightness(.7);transform:scale(1.04);}
-.aa-route{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:14px;}
-.aa-route p{position:relative;z-index:3;margin:0;padding:8px 12px;border-radius:12px;background:rgba(18,12,9,.7);
-  font-size:13px;font-weight:700;color:#FFF4E6;text-align:center;}
-.aa-route.rate{align-items:center;}
-.aa-route.rate p{font-weight:600;line-height:1.4;background:rgba(18,12,9,.82);}
+.aa-revele.joue .aa-etincelles i:nth-child(1){animation-delay:3.6s;}
+.aa-revele.joue .aa-etincelles i:nth-child(2){animation-delay:4.1s;}
+.aa-revele.joue .aa-etincelles i:nth-child(3){animation-delay:4.6s;}
+.aa-revele.joue .aa-etincelles i:nth-child(4){animation-delay:5.1s;}
 .aa-detail{margin:10px 2px 0;font-size:12px;color:#A8927F;}
 .aa-detail summary{cursor:pointer;}
 .aa-detail code{display:block;margin-top:6px;padding:8px 10px;border-radius:10px;background:rgba(18,12,9,.6);
@@ -316,12 +400,13 @@ function StylesAvantApres() {
 @keyframes aa-balaye{0%{top:0;opacity:0;}8%{opacity:1;}92%{opacity:1;}100%{top:100%;opacity:0;}}
 @keyframes aa-brille{0%{opacity:0;transform:scale(.2);}40%{opacity:1;transform:scale(1.6);}100%{opacity:0;transform:scale(.6);}}
 @keyframes aa-arrive{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+@keyframes aa-pendant{0%{opacity:0;}15%{opacity:1;}80%{opacity:1;}100%{opacity:0;}}
 .aa-bas{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px;align-items:center;margin-top:12px;}
 .aa-piece{width:72px;height:96px;border-radius:12px;object-fit:cover;background:#261B16;border:1px solid rgba(255,196,140,.16);}
-.aa-piece.vide{display:block;}
+.aa-piece.vide{display:grid;place-items:center;font-size:28px;border-style:dashed;}
 .aa-info{display:flex;flex-direction:column;gap:3px;min-width:0;}
 .aa-info small,.aa-info span{font-size:12px;color:#CDB8A4;}
-.aa-info > b{font-family:var(--font-clikme),sans-serif;font-size:15.5px;line-height:1.25;color:#FFF4E6;}
+.aa-info > b{font-family:var(--font-clikme),sans-serif;font-size:15px;line-height:1.3;color:#FFF4E6;}
 .aa-mot{grid-column:1 / -1;display:grid;grid-template-columns:40px auto minmax(0,1fr);align-items:center;gap:10px;padding:8px 12px 8px 8px;
   border-radius:16px;border:1px solid rgba(255,196,140,.2);background:rgba(18,12,9,.45);color:#FFF4E6;font:inherit;text-align:left;cursor:pointer;}
 .aa-play{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#F5A23A;color:#1B0F08;font-size:14px;font-weight:900;}
@@ -336,12 +421,34 @@ function StylesAvantApres() {
 .aa-micro svg rect{fill:#FF8CC8;stroke:none;}
 .aa-mot.vide b{display:block;font-size:13.5px;color:#FFF4E6;}
 .aa-mot.vide em{display:block;font-style:normal;font-size:12.5px;line-height:1.35;color:#CDB8A4;}
-.aa-pied{display:flex;align-items:center;justify-content:center;gap:12px;margin:10px 0 2px;font-size:12px;color:#A8927F;}
+.aa-pied{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 12px;margin:10px 0 2px;font-size:12px;color:#A8927F;}
 .aa-pied button{border:0;background:none;padding:4px 6px;color:#F5A23A;font:inherit;font-weight:700;cursor:pointer;}
+.aa-plein{position:fixed;inset:0;z-index:89;display:flex;align-items:center;justify-content:center;
+  padding:calc(env(safe-area-inset-top,0px) + 92px) 20px calc(env(safe-area-inset-bottom,0px) + 140px);}
+.aa-plein-fond{position:absolute;inset:0;background:rgba(10,6,4,.84);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  animation:aa-fondu .35s ease both;}
+.aa-plein.range .aa-plein-fond{animation:aa-efface .8s ease both;}
+.aa-plein-scene{position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;animation:aa-monte .45s cubic-bezier(.2,.8,.2,1) both;}
+.aa-plein-k{margin:0;font-size:13px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:#F5A23A;text-align:center;}
+.aa-plein-cadres{--l:min(calc((100vh - 330px) * 2 / 3), calc((100vw - 54px) / 2), 430px);
+  display:grid;grid-template-columns:repeat(2,var(--l));gap:14px;transform-origin:top left;
+  transition:transform .8s cubic-bezier(.65,.05,.3,1);}
+.aa-plein-cadres .aa-cadre{border-radius:22px;box-shadow:0 30px 80px rgba(0,0,0,.5);}
+.aa-plein-cadres .aa-badge{top:14px;left:14px;font-size:15px;padding:8px 14px;}
+.aa-plein-cadres .aa-badge.or{left:auto;right:14px;}
+.aa-plein-cadres .aa-pendant{font-size:15px;bottom:20px;}
+.aa-plein-pied{margin:0;font-size:12.5px;color:#BFA88F;}
+.aa-plein-x{position:absolute;top:-8px;right:-8px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,196,140,.3);
+  background:rgba(18,12,9,.8);color:#FFF4E6;font-size:15px;cursor:pointer;}
+.aa-plein.range .aa-plein-k,.aa-plein.range .aa-plein-pied,.aa-plein.range .aa-plein-x{opacity:0;transition:opacity .25s;}
+@keyframes aa-fondu{from{opacity:0;}to{opacity:1;}}
+@keyframes aa-efface{from{opacity:1;}to{opacity:0;}}
+@keyframes aa-monte{from{opacity:0;transform:scale(.94);}to{opacity:1;transform:none;}}
 @media (prefers-reduced-motion:reduce){
-  .aa-revele.joue > img,.aa-revele.joue .aa-scan,.aa-revele.joue .aa-etincelles i,.aa-scan.boucle,.aa-mot.joue .aa-onde i,.aa-revele.joue .aa-badge{animation:none;}
+  .aa-revele.joue > img,.aa-revele.joue .aa-scan,.aa-revele.joue .aa-etincelles i,.aa-mot.joue .aa-onde i,.aa-revele.joue .aa-badge,.aa-revele.joue .aa-pendant{animation:none;}
   .aa-revele > img{clip-path:none;}
   .aa-revele .aa-badge{opacity:1;}
+  .aa-plein-cadres{transition:none;}
 }
 `,
       }}

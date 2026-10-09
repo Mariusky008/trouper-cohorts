@@ -103,7 +103,8 @@ export function essaiVitrineAFaire(e: EssaiVitrine | undefined, maintenant = Dat
  * personne ne pouvait savoir pourquoi. Il le dit maintenant, à lui seul.
  */
 export type EssaiVitrineCarte = {
-  etat: "en-cours" | "prete" | "echec";
+  /** `exemple` : rien n'est en route chez lui — la page montre l'exemple, sans rien attendre. */
+  etat: "en-cours" | "prete" | "echec" | "exemple";
   avant?: string;
   apres?: string;
   piece?: string;
