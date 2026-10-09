@@ -276,6 +276,7 @@ export function PageBoutique(p: PageBoutiqueProps) {
           villeAff={carte.ville}
           photos={photos}
           pieceDuJour={pieceDuJour?.piece}
+          essaiApres={pieceDuJour?.apres}
           note={note}
           reviewsCount={reviewsCount}
           avisAllowed={avisAllowed}

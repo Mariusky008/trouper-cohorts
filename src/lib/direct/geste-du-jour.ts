@@ -168,6 +168,14 @@ export type GesteDuJour = {
   /** La phrase de la demande, à l'acte de la ville, quand « ils réservent » ne se dit pas chez lui. */
   convaincus?: string;
   /**
+   * LA PHRASE DU PARTAGE, au dernier acte. « Au-delà d'avoir essayé
+   * virtuellement un vêtement, les gens vont surtout avoir un moyen très
+   * sympa de partager leur découverte, et c'est ce qui fait toute la
+   * différence, grâce aux salons de discussion qui s'ouvrent entre amis ou
+   * pour tous. » Absente : la phrase de tous les métiers.
+   */
+  partage?: string;
+  /**
    * LE GESTE EST UNE PHOTO DE LA PIÈCE ET UN MOT À SA VOIX — la boutique de
    * vêtements. « Ce n'est pas une description, mais plutôt qu'on montre à
    * l'assistante une photo du vêtement, et on laisse un vocal pour donner des
@@ -451,6 +459,8 @@ export function gesteDuJour(
       convaincus:
         "Et quand une pièce leur plaît, ils l'essaient sur leur photo, puis vous demandent de la mettre de côté — et la demande arrive chez vous.",
       publie: "votre pièce du jour",
+      partage:
+        "Et en un clic, elles la partagent : entre amies dans leurs salons privés, et avec toute la ville dans le salon public.",
       extrait: {
         titre: "La pièce du jour",
         lignes: ["Chemise à volants rose poudré", "Du 36 au 44 · à essayer sur soi"],
@@ -576,14 +586,22 @@ export function gesteDuJour(
  * Elle lit donc ce qui revient, ligne par ligne. C'est aussi mieux ainsi : un
  * chiffre entendu ET lu se retient, un chiffre seulement affiché se survole.
  */
+/** La phrase du partage, pour tous les métiers qui n'en ont pas une à eux. */
+const PARTAGE = "Et en un clic, ils en parlent : entre amis dans leurs salons privés, et avec toute la ville dans le salon public.";
+
 export function direRetours(g: GesteDuJour): { say: string; phrases: string[] } {
   /* DEUX RELEVÉS ET LA CONCLUSION, comme avant — mais la conclusion n'est plus
      comptée comme un relevé : c'est elle qui ferme, et l'écran l'affiche à
      part. Rien n'est retiré ici ; la coupe, quand il en faudra une, se fera
      dans `retours`, où chaque métier écrit les siens. */
-  const phrases = g.retours.map((r) =>
-    r.nombre ? `À ${r.heure}, ${r.nombre} ${r.quoi}.` : r.quoi
-  );
+  /* LES CHIFFRES, PUIS LE PARTAGE. La conclusion de chaque métier (« en un
+     midi, vous saurez si votre menu plaît ») n'est plus dite : l'écran
+     l'affiche sous les compteurs, et la voix garde son temps pour ce qui
+     fait la différence — les salons où l'on en parle, en un clic. */
+  const phrases = [
+    ...g.retours.filter((r) => r.nombre).map((r) => `À ${r.heure}, ${r.nombre} ${r.quoi}.`),
+    g.partage ?? PARTAGE,
+  ];
   /**
    * ═══ « VOTRE MENU » ÉTAIT ÉCRIT EN DUR, POUR TOUT LE MONDE ═══════════════
    *

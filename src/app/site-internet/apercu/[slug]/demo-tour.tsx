@@ -15,6 +15,10 @@ import { useEffect, useRef, useState } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange, dureeVoixMs, precharger } from "@/lib/site-internet/speech";
 import { MARQUE } from "@/lib/marque";
 import { direRetours, habitantsDe, type GesteDuJour } from "@/lib/direct/geste-du-jour";
+import { ScenePartage } from "./scene-partage";
+
+/** L'après de l'exemple d'essayage — le même que l'étape 2 quand sa pièce n'est pas encore prête. */
+const EXEMPLE_APRES = "/direct/accueil/moi-mode-avec.jpg";
 import { BarreDirect, CarteSwipe, GestesDirect, StylesDirect } from "@/components/direct/carte-swipe";
 import { cartesDeLaVille, motDAction, saCarte } from "@/lib/direct/cartes-demo";
 
@@ -26,6 +30,8 @@ type Props = {
   photos?: string[]; // photos Google du pro — la carte du fil est pleine photo
   /** Sa pièce, recadrée sur sa photo Google par l'essayage de sa vitrine — voir `essai-vitrine.ts`. */
   pieceDuJour?: string;
+  /** La même pièce, portée : l'après de l'essayage, quand il est prêt. */
+  essaiApres?: string;
   note: string | null;
   reviewsCount: number | null;
   avisAllowed: boolean; // commerce (déonto none) : avis + « remplir ce soir » autorisés
@@ -109,6 +115,7 @@ export function DemoTour({
   villeAff,
   photos,
   pieceDuJour,
+  essaiApres,
   reviewsCount,
   avisAllowed,
   flashExample,
@@ -2680,28 +2687,21 @@ export function DemoTour({
               il annonce maintenant l'inverse — ce ne sont PAS ses chiffres.
               Le titre reste au futur pour la même raison : « voilà ce qui se
               passe » aurait été un relevé. */}
+          {/* ── ACTE 6 · CE QUI LUI REVIENT, ET CE QU'ON EN DIT ─────────────
+              « Le design de cette dernière étape est vraiment pas terrible. Et
+              il manque l'essentiel : les salons de discussion qui s'ouvrent
+              entre amis ou pour tous. » Sa pièce au centre, trois salons
+              privés et le salon public qui s'ouvrent autour, et les compteurs
+              qui montent avec la voix — voir `scene-partage.tsx`. */}
           {scene === "retour" && G && (
-            <div className="dtour-ov">
-              <div className="dtour-card rt">
-                <div className="rt-k">Exemple · pas encore vos chiffres</div>
-                <div className="rt-h">{OUVERTURE_RETOUR}</div>
-                <div className="rt-l">
-                  {G.retours.map((r, i) => (
-                    <div
-                      className={`rt-i${i >= G.retours.length - 1 ? " fin" : ""}${i <= retourN ? " on" : ""}`}
-                      key={`${r.heure}-${r.quoi}`}
-                    >
-                      <span className="rt-hh">{r.heure}</span>
-                      <span className="rt-e" aria-hidden="true">{r.icone}</span>
-                      <span className="rt-t">
-                        {r.nombre ? <b>{r.nombre} </b> : null}
-                        {r.quoi}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <ScenePartage
+              g={G}
+              n={retourN}
+              ville={laVille}
+              ouverture={OUVERTURE_RETOUR}
+              photo={G.photoEtVoix ? essaiApres || EXEMPLE_APRES : maCarte?.photo || saPhoto || EXEMPLE_APRES}
+              exemple={G.photoEtVoix ? !essaiApres : !(maCarte?.photo || saPhoto)}
+            />
           )}
 
           {/* ── ACTE 8 · LA BOUCLE, QUI EST AUSSI LA FIN ──────────────────
