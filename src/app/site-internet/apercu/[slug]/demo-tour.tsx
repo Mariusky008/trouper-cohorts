@@ -270,15 +270,25 @@ export function DemoTour({
    * invisible : il fabriquait une réponse plausible à une question sans
    * réponse.
    */
-  const QUI_TEMPS: { dit: string; acte?: "passer" | "veux" | "resa" }[] = G
+  const QUI_TEMPS: { dit: string; acte?: "passer" | "veux" | "resa"; definit?: true }[] = G
     ? [
         { dit: SAY_BASCULE },
         { dit: `${G.quand}, plus de ${G.combien} ${gentile} vont ${G.verbe} ${G.cherchent}.` },
+        /* ═══ LE DIRECT, DIT UNE FOIS, AVANT D'EN PARLER ═══════════════════
+           « On parle du Direct à plusieurs reprises dans la présentation de
+           Léa, sans jamais préciser ce qu'est le Direct. Le Direct, c'est
+           l'ensemble des commerçants présents sur ClikMe, que les utilisateurs
+           peuvent découvrir chaque jour en swipant leurs annonces. »
+           C'est sa première apparition dans la visite, et toutes les
+           suivantes s'appuient sur elle (« pour apparaître dans Le Direct »,
+           « une fois dans Le Direct ») : elle porte donc la définition. La
+           pile se feuillette à l'écran pendant qu'elle la dit. */
+        { definit: true, dit: `Pour choisir, ils ouvrent Le Direct de ${laVille} : tous les commerçants présents sur ClikMe, qu'ils découvrent chaque jour en faisant défiler leurs annonces.` },
         // CE QU'ILS Y VERRONT SUIT LA FAMILLE, comme le fil montré derrière.
         // Cette ligne énumérait « les menus du jour, les tables qui restent »
         // à tout le monde : un coiffeur l'entendait pendant que l'écran, lui,
         // défilait — depuis la même correction — sur des créneaux libres.
-        { acte: "passer", dit: `Dans Le Direct de ${laVille}, ils verront ${
+        { acte: "passer", dit: `Ils y voient ${
           G.famille === "restauration"
             ? "les menus du jour, les tables qui restent"
             : G.famille === "boutique"
@@ -298,6 +308,10 @@ export function DemoTour({
       ]
     : [];
   const QUI_DIT = QUI_TEMPS.map((t) => t.dit);
+  /** La phrase qui dit ce qu'est Le Direct : l'écran l'écrit au même moment. */
+  const QUI_DEFINIT = QUI_TEMPS.findIndex((t) => t.definit);
+  /** LE DIRECT S'OUVRE SUR « ILS OUVRENT LE DIRECT » — pas une phrase avant, pendant le nombre. */
+  const QUI_OUVRE = QUI_DEFINIT >= 0 ? QUI_DEFINIT : 1;
   const SAY_QUI = QUI_DIT.join(" ");
   const QUI_AT = QUI_DIT.map((p) => partAu(SAY_QUI, p));
   /** OÙ TOMBE UN GESTE — et rien du tout s'il n'a plus de phrase. */
@@ -539,6 +553,8 @@ export function DemoTour({
    *  seule : une pile immobile se lit comme une image, pas comme un paquet
    *  qu'on feuillette. */
   const [carteVille, setCarteVille] = useState(0);
+  /** La carte glissée dessous à la place de la suivante — pour amener l'essai du fil sans saut. */
+  const [dessousForce, setDessousForce] = useState<number | null>(null);
   const rotation = useRef<number | null>(null);
   /**
    * LES TROIS GESTES DU DIRECT, JOUÉS UN PAR UN — acte 3.
@@ -554,7 +570,9 @@ export function DemoTour({
    * ses conséquences visibles, parce qu'elles ne tombent pas au même instant
    * que le geste (le cœur met presque une seconde à arriver en haut).
    */
-  const [gesteQui, setGesteQui] = useState<"" | "passer" | "veux" | "resa">("");
+  /* `defile` : la pile qui se feuillette seule — la carte glisse sans tampon,
+     et aucun bouton ne s'allume, puisque personne ne refuse rien. */
+  const [gesteQui, setGesteQui] = useState<"" | "passer" | "defile" | "veux" | "resa">("");
   const [gardees, setGardees] = useState(1);
   const [coeurVole, setCoeurVole] = useState(false);
   const [resaQui, setResaQui] = useState(false);
@@ -1063,6 +1081,7 @@ export function DemoTour({
           setScene("qui");
           compter(G.combien);
           setCarteVille(0);
+          setDessousForce(null);
           setGesteQui("");
           setGardees(1);
           setCoeurVole(false);
@@ -1086,8 +1105,48 @@ export function DemoTour({
              n'est pas une régression : à ce moment de la visite, la voix parle
              déjà de réserver, et la carte sur laquelle on s'arrête est celle
              qu'on réserve. */
-          const suivante = () =>
-            setCarteVille((n) => Math.min(n + 1, Math.max(0, cartesVille.length - 1)));
+          /* ═══ FEUILLETER, ET RIEN D'AUTRE ═════════════════════════════
+             « À l'étape 3, les différentes annonces ont l'air de bugger, ce
+             n'est pas fluide. »
+             ELLES BUGGAIENT, AU SENS PROPRE. Chaque tour détruisait les deux
+             cartes visibles et en fabriquait deux neuves : la nouvelle du
+             dessus entrait en fondu flou par-dessus une autre à demi
+             transparente, puis rechargeait et remesurait sa photo — et sa mise
+             en page sautait une fraction de seconde plus tard. Les cartes sont
+             maintenant toutes montées une fois (voir la pile) ; un tour ne fait
+             que les changer de place : celle du dessus glisse, celle de dessous
+             monte et devient elle, sans rien recharger.
+             `ici` et `occupe` vivent dans cet acte, pas dans l'état : un geste
+             en cours (refus, cœur, essai) ne se fait jamais doubler par la
+             rotation. */
+          const iEssai = G.photoEtVoix ? cartesVille.findIndex((c) => c.quoi === ESSAI_DU_FIL.quoi) : -1;
+          // Les deux photos de l'essai se chargent dès maintenant : il arrive vingt secondes plus tard.
+          if (iEssai >= 0) for (const src of [ESSAI_DU_FIL.avant, ESSAI_DU_FIL.apres]) new Image().src = src;
+          /** Seule, la pile ne va pas plus loin : la carte de l'essai attend son moment. */
+          const dernier = iEssai >= 0 ? iEssai - 1 : cartesVille.length - 1;
+          let ici = 0;
+          let occupe = false;
+          const feuilleter = (geste: "passer" | "defile", vers: number, puis?: () => void) => {
+            occupe = true;
+            if (vers !== ici + 1) setDessousForce(vers);
+            setGesteQui(geste);
+            dans(620, () => {
+              ici = vers;
+              setCarteVille(vers);
+              setDessousForce(null);
+              setGesteQui("");
+              occupe = false;
+              puis?.();
+            });
+          };
+          const suivante = () => {
+            if (!occupe && ici < dernier) feuilleter("defile", ici + 1);
+          };
+          /** Le geste attend que la carte en mouvement soit posée. */
+          const quandLibre = (f: () => void) => {
+            if (!occupe) f();
+            else dans(140, () => quandLibre(f));
+          };
 
           // LA PILE TOURNE JUSQU'À LA RÉSERVATION. « On ne voit pas les
           // annonces » : elles doivent défiler pendant qu'on parle d'elles, et
@@ -1097,7 +1156,7 @@ export function DemoTour({
              le nombre, que personne ne voyait jamais. */
           if (rotation.current) window.clearInterval(rotation.current);
           rotation.current = null;
-          dans(quand(SAY_QUI, QUI_AT[1] ?? 0), () => {
+          dans(quand(SAY_QUI, QUI_AT[QUI_OUVRE] ?? 0), () => {
             if (!rotation.current) rotation.current = window.setInterval(suivante, 1900);
           });
           suivre(SAY_QUI, QUI_DIT, QUI_AT, setQuiN);
@@ -1124,11 +1183,17 @@ export function DemoTour({
           //    Les deux gestes disent la même chose que cette phrase : on
           //    regarde, on écarte, on garde.
           if (tPasser != null) {
-            dans(quand(SAY_QUI, tPasser), () => setGesteQui("passer"));
-            dans(quand(SAY_QUI, tPasser) + 620, () => { suivante(); setGesteQui(""); });
-            dans(quand(SAY_QUI, tPasser) + 1500, () => { setGesteQui("veux"); setCoeurVole(true); });
-            dans(quand(SAY_QUI, tPasser) + 2400, () => setGardees(2));
-            dans(quand(SAY_QUI, tPasser) + 2700, () => { setCoeurVole(false); setGesteQui(""); });
+            dans(quand(SAY_QUI, tPasser), () =>
+              quandLibre(() => {
+                if (ici >= dernier) return;
+                feuilleter("passer", ici + 1, () => {
+                  occupe = true;
+                  dans(400, () => { setGesteQui("veux"); setCoeurVole(true); });
+                  dans(1300, () => setGardees(2));
+                  dans(1600, () => { setCoeurVole(false); setGesteQui(""); occupe = false; });
+                });
+              }),
+            );
           }
 
           // ② LA RÉSERVATION, ET ELLE FERME L'ACTE.
@@ -1149,23 +1214,28 @@ export function DemoTour({
              carte devient la photo d'une habitante : dans ses vêtements, puis,
              sous le balayage, dans le manteau. Le panneau « mettre de côté »
              ne monte qu'ensuite, sur « puis vous demandent ». */
-          const iEssai = G.photoEtVoix ? cartesVille.findIndex((c) => c.quoi === ESSAI_DU_FIL.quoi) : -1;
           const tDemande = iEssai >= 0 ? partAu(SAY_QUI, "puis vous demandent") : 0;
           if (tResa != null && iEssai >= 0) {
             dans(quand(SAY_QUI, tResa), () => {
               if (rotation.current) { window.clearInterval(rotation.current); rotation.current = null; }
-              setCarteVille(iEssai);
-              setGesteQui("veux");
-              setEssaiFil(true);
+              // LA CARTE DE L'ESSAI ARRIVE COMME LES AUTRES : glissée dessous, elle monte.
+              quandLibre(() => {
+                const essayer = () => { occupe = true; setGesteQui("veux"); setEssaiFil(true); };
+                if (ici === iEssai) essayer();
+                else feuilleter("defile", iEssai, essayer);
+              });
             });
-            const tPanneau = Math.max(quand(SAY_QUI, tResa) + 4200, tDemande ? quand(SAY_QUI, tDemande) : 0);
+            const tPanneau = Math.max(quand(SAY_QUI, tResa) + 4800, tDemande ? quand(SAY_QUI, tDemande) : 0);
             dans(tPanneau, () => { setGesteQui("resa"); setResaQui(true); });
             dans(tPanneau + 2200, () => { chime(); setResaEnvoyee(true); });
           } else if (tResa != null) {
             dans(quand(SAY_QUI, tResa), () => {
               if (rotation.current) { window.clearInterval(rotation.current); rotation.current = null; }
-              setGesteQui("resa");
-              setResaQui(true);
+              quandLibre(() => {
+                occupe = true;
+                setGesteQui("resa");
+                setResaQui(true);
+              });
             });
             // ③ ET LE MESSAGE PART. Le panneau s'arrêtait sur un bouton qu'on
             //    ne voyait jamais appuyer : la démonstration montrait une
@@ -1632,6 +1702,12 @@ export function DemoTour({
 
           /* ── ACTE 3 · CE MIDI, DANS SA VILLE ─────────────────────────── */
           .dtour-ov.qi{gap:0;}
+          /* LE DIRECT OUVERT SE CALE SOUS « PASSER ✕ », PAS AU CENTRE. Centré,
+             chaque pixel gagné ne remontait le bas que de moitié : la barre
+             touchait « Passer » en haut pendant que les trois gestes passaient
+             sous la légende en bas. Calé en haut, tout ce qu'on gagne revient
+             au bas. */
+          .dtour-ov.qi.serre{justify-content:flex-start;padding-top:70px;}
           /* Le nombre est COMPTÉ à l'écran (voir compte dans le composant) :
              posé d'un coup, mille Dacquois se lisaient comme un chiffre de
              plaquette ; il monte, et on le regarde monter. Le halo derrière lui
@@ -1661,8 +1737,20 @@ export function DemoTour({
              Un encadré stylisé à trois lignes ne disait pas ce qu'il fallait
              comprendre. C'est maintenant la VRAIE carte du fil (composant
              partagé), empilée comme un paquet qu'on feuillette au pouce. */
-          .qi-app{width:100%;max-width:340px;margin:0 auto;display:flex;flex-direction:column;gap:12px;
+          .qi-app{width:100%;max-width:340px;margin:0 auto;display:flex;flex-direction:column;gap:9px;
             animation:dtTel .55s var(--exp) both;}
+          /* SUR UN ÉCRAN COURT, LE TÉLÉPHONE RÉTRÉCIT D'UN CRAN : la définition du
+             Direct prend sa ligne, et les trois gestes doivent rester au-dessus
+             de la légende. Mesuré à 390 × 844 : ils passaient dessous de 36 px. */
+          @media (max-height:900px){.qi-app{max-width:322px;}}
+          .qi .dt-ouvre>.dt-ec24{padding-top:34px;}
+          /* LA DÉFINITION DU DIRECT, au-dessus de lui : grise tant que Léa n'y
+             est pas, allumée quand elle la dit. */
+          .qi-def{margin:-4px 0 -6px;padding:5px 10px;border-radius:12px;font-size:11px;line-height:1.3;text-align:center;
+            color:#CDB8A4;background:rgba(245,162,58,.07);border:1px solid rgba(255,201,122,.14);
+            opacity:.35;transition:opacity .4s ease,background .4s ease,border-color .4s ease;}
+          .qi-def b{color:#FFC97A;font-weight:800;}
+          .qi-def.on{opacity:1;color:#F2E3D0;background:rgba(245,162,58,.13);border-color:rgba(255,201,122,.34);}
           @keyframes dtTel{
             from{opacity:0;transform:perspective(900px) rotateX(14deg) translate3d(0,26px,0) scale(.94);filter:blur(12px)}
             to{opacity:1;transform:perspective(900px) rotateX(0) translate3d(0,0,0) scale(1);filter:blur(0)}
@@ -1695,18 +1783,23 @@ export function DemoTour({
              telephone, et la carte la remplit. Les trois gestes n'ont pas
              bouge : ils s'appliquent a la couche du dessus, qui remplit la
              scene elle aussi. */
-          .qi-pile.scene{aspect-ratio:9 / 15.5;padding-top:14px;}
+          .qi-pile.scene{aspect-ratio:9 / 14;padding-top:14px;}
+          /* UN PEU PLUS BASSE QU'UN ÉCRAN : elle rend la hauteur que prend la
+             définition du Direct, au-dessus — sinon « Passer ✕ » touchait la
+             barre, et les trois gestes passaient sous la légende. */
           /* LA PRESENTATION EST CELLE DE LA COMPOSANTE — voir la classe
              « plein » dans carte-swipe : position absolue, aucun arrondi,
              aucune ombre, le texte pose sur la photo. Il ne reste ici que
              l'entree animee et la place a prendre dans la scene, qui sont
              propres a cette visite. */
-          .qi-c{inset:14px 0 0;animation:dtCarteEntre .5s var(--exp);}
-          .qi-dessus{position:absolute;inset:14px 0 0;}
-          .qi-dessus .qi-c{inset:0;}
-          /* Le remontage (clé React) rejoue cette entrée à chaque rotation :
-             une carte qui se remplace sans bouger se lit comme un texte qui
-             change, pas comme une carte qu'on fait défiler. */
+          /* UNE FEUILLE PAR CARTE, TOUTES MONTÉES UNE FOIS. Plus d'entrée
+             floue au remontage : c'est elle qui faisait « bugger » la pile —
+             la carte neuve apparaissait en fondu par-dessus une autre à demi
+             transparente. Une feuille change de place, elle n'entre plus. */
+          .qi-feuille{position:absolute;inset:14px 0 0;}
+          .qi-feuille .qi-c{inset:0;}
+          .qi-feuille.rangee{visibility:hidden;opacity:0;}
+          /* L'entrée de l'essai du fil (voir .qi-essai). */
           @keyframes dtCarteEntre{
             from{opacity:0;transform:translate3d(0,10px,0) scale(.97);filter:blur(6px)}
             to{opacity:1;transform:none;filter:blur(0)}
@@ -1729,30 +1822,42 @@ export function DemoTour({
              rebours. Mêmes paliers que l'aperçu de l'espace commerçant. */
           /* LE MAXIMUM DE 300 px EST PARTI AVEC LE CADRE : c'est lui qui
              faisait la « carte posee sur un ecran » au lieu de l'ecran. */
-          @media (max-height:860px){.qi-app{zoom:.90;}}
-          @media (max-height:790px){.qi-app{zoom:.80;}}
-          @media (max-height:720px){.qi-app{zoom:.70;}}
-          @media (max-height:650px){.qi-app{zoom:.60;}}
+          @media (max-height:860px){.qi-app{zoom:.88;}}
+          @media (max-height:790px){.qi-app{zoom:.76;}}
+          @media (max-height:720px){.qi-app{zoom:.68;}}
+          @media (max-height:680px){.qi-app{zoom:.62;}}
+          @media (max-height:650px){.qi-app{zoom:.58;}}
 
           /* ── LES TROIS GESTES, JOUÉS ─────────────────────────────────
              Un mode swipe ne se décrit pas, il se voit faire. Ces trois
              effets sont l'acte lui-même, pas sa décoration. */
 
-          /* LE PAQUET : la suivante dessous, celle qu'on manipule dessus. */
-          .qi-c.dessous{position:absolute;left:0;right:0;top:14px;margin-inline:auto;z-index:0;
-            transform:scale(.945) translateY(9px);opacity:.5;filter:saturate(.55);animation:none;}
-          .qi-c.dessous.monte{animation:dtMonte .62s var(--exp) forwards;}
+          /* LE PAQUET : la suivante dessous, celle qu'on manipule dessus.
+             Quand celle du dessus part, celle de dessous monte jusqu'à sa
+             place exacte — et c'est elle, la même, qui devient le dessus. */
+          .qi-feuille.dessous{z-index:1;transform:scale(.945) translateY(9px);opacity:.5;filter:saturate(.55);}
+          .qi-feuille.dessous.monte{animation:dtMonte .62s var(--exp) forwards;will-change:transform,opacity;}
           @keyframes dtMonte{to{transform:none;opacity:1;filter:none}}
-          .qi-dessus{z-index:2;}
+          .qi-feuille.dessus{z-index:2;}
 
+          /* ⓪ LA PILE QUI SE FEUILLETTE SEULE — la carte sort du cadre, sans
+             tampon : on regarde, on ne refuse rien. ELLE RESTE OPAQUE EN
+             GLISSANT, comme une carte qu'on pousse du pouce : transparente, son
+             texte se mêlait à celui de la carte qui monte dessous. */
+          .qi-feuille.dessus.defile{animation:dtDefile .62s cubic-bezier(.5,0,.25,1) forwards;will-change:transform,opacity;}
+          @keyframes dtDefile{
+            0%{opacity:1;transform:none}
+            70%{opacity:1}
+            100%{opacity:0;transform:translate3d(-118%,-16px,0) rotate(-9deg)}
+          }
           /* ① LE REFUS — la carte s'en va, la suivante prend sa place. */
-          .qi-dessus.part{animation:dtPart .62s var(--exp) forwards;}
+          .qi-feuille.dessus.part{animation:dtPart .62s var(--exp) forwards;}
           @keyframes dtPart{
             from{opacity:1;transform:none}
             to{opacity:0;transform:translate3d(-128%,18px,0) rotate(-15deg)}
           }
           /* ② LE CŒUR — la carte accuse le coup avant que le cœur parte. */
-          .qi-dessus.aime{animation:dtAime .5s cubic-bezier(.34,1.4,.64,1);}
+          .qi-feuille.dessus.aime{animation:dtAime .5s cubic-bezier(.34,1.4,.64,1);}
           @keyframes dtAime{0%{transform:none}40%{transform:scale(1.035) rotate(1.2deg)}100%{transform:none}}
           /* Le tampon dit CE QUI VIENT D'ÊTRE FAIT, pendant que l'effet court. */
           .qi-tampon{position:absolute;left:50%;top:46%;z-index:5;pointer-events:none;
@@ -1868,7 +1973,7 @@ export function DemoTour({
             .qi-essai-ap{clip-path:none;animation:none;}
             .qi-essai-scan,.qi-essai-k.av{display:none;}
             .qi-essai-k.ap{opacity:1;animation:none;}
-            .qi-dessus.part,.qi-dessus.aime,.qi-c.dessous.monte,.qi-vol,.qi-tampon,.qi-resa,.qi-app.recu .cd-puce.vert{animation-duration:.01ms;}
+            .qi-feuille.dessus.part,.qi-feuille.dessus.defile,.qi-feuille.dessus.aime,.qi-feuille.dessous.monte,.qi-vol,.qi-tampon,.qi-resa,.qi-app.recu .cd-puce.vert{animation-duration:.01ms;}
             .qi-tete{transition:none;}
           }
           /* Le nombre ne « se resserre » plus quand le fil s'ouvre : il s'en
@@ -2481,7 +2586,7 @@ export function DemoTour({
               cherchent » se lisait « ClikMe a mille utilisateurs ici », et le
               jour où il ouvre le fil et le trouve calme, il se sent trompé. */}
           {scene === "qui" && G && (
-            <div className={`dtour-ov dt-noir qi${quiN >= 1 ? " serre" : ""}`}>
+            <div className={`dtour-ov dt-noir qi${quiN >= QUI_OUVRE ? " serre" : ""}`}>
               {/* LE NOMBRE S'EFFACE QUAND LE DIRECT S'OUVRE, il ne rétrécit
                   plus. Il restait à l'écran, réduit, avec sa question et une
                   ligne d'aide sous les boutons : quatre bandeaux de texte
@@ -2502,10 +2607,16 @@ export function DemoTour({
                   faisait le plus gros saut de la démonstration — 69 pixels
                   mesurés en une seule image, en plein milieu de la phrase la
                   plus importante de l'acte. */}
-              <div className={`dt-ouvre${quiN >= 1 ? " on" : ""}`}>
+              <div className={`dt-ouvre${quiN >= QUI_OUVRE ? " on" : ""}`}>
                 <div className="dt-ec24">
                   <div className={`qi-app${gardees > 1 ? " recu" : ""}`}>
                     <BarreDirect marque={MARQUE} ville={laVille} agenda={2} gardees={gardees} />
+                    {/* CE QU'EST LE DIRECT, ÉCRIT PENDANT QUE LÉA LE DIT —
+                        et il reste : c'est la clé de tout ce qui suit. Sous la
+                        barre, pas au-dessus : en haut, « Passer ✕ » le couvrait. */}
+                    <p className={`qi-def${QUI_DEFINIT >= 0 && quiN >= QUI_DEFINIT ? " on" : ""}`}>
+                      <b>Le Direct</b> · les annonces de tous les commerçants ClikMe de {laVille}, à faire défiler chaque jour
+                    </p>
                     {/* UNE SEULE CARTE À LA FOIS, et deux tranches derrière.
                         Les trois étaient rendues empilées dans la même case :
                         leurs textes se superposaient et l'écran devenait
@@ -2523,30 +2634,34 @@ export function DemoTour({
                           milieu du noir. Or c'est ÇA, la promesse du geste :
                           « la suivante arrive ». Elle doit donc être visible
                           avant, et monter en même temps que l'autre sort. */}
-                      <CarteSwipe
-                        key={`dessous-${carteVille}`}
-                        carte={cartesVille[(carteVille + 1) % Math.max(1, cartesVille.length)]}
-                        variante="seconde"
-                        className={`qi-c plein dessous${gesteQui === "passer" ? " monte" : ""}`}
-                      />
-                      {/* La carte du dessus et son tampon partent ENSEMBLE :
-                          le tampon posé dans la pile restait à l'écran après le
-                          départ de la carte qu'il marquait. */}
-                      <div
-                        className={`qi-dessus${gesteQui === "passer" ? " part" : ""}${gesteQui === "veux" ? " aime" : ""}`}
-                      >
-                        <CarteSwipe
-                          key={cartesVille[carteVille]?.quoi}
-                          carte={cartesVille[carteVille]}
-                          variante="seconde"
-                          className="qi-c plein"
-                        />
-                        {/* LE TAMPON dit CE QUI VIENT D'ÊTRE FAIT pendant que
-                            l'effet court : un geste dont la conséquence arrive
-                            une demi-seconde plus tard laisse sinon un temps mort. */}
-                        {gesteQui === "passer" && <span className="qi-tampon non" aria-hidden="true">✕</span>}
-                        {gesteQui === "veux" && <span className="qi-tampon oui" aria-hidden="true">♥</span>}
-                      </div>
+                      {/* ═══ LE PAQUET ENTIER, MONTÉ UNE FOIS ═══════════════════
+                          « Les annonces ont l'air de bugger. » Chaque carte
+                          était détruite et refaite à chaque tour : fondu flou,
+                          photo rechargée, mise en page qui sautait. Elles sont
+                          toutes là dès l'ouverture de l'acte, photos chargées
+                          et mesurées ; un tour ne change que leur place —
+                          dessus, dessous, ou rangée. La carte du dessus et son
+                          tampon partent ENSEMBLE, et celle de dessous, qui
+                          monte, est déjà celle qu'on verra. */}
+                      {cartesVille.map((c, i) => {
+                        const iDessous = dessousForce ?? carteVille + 1;
+                        const rang = i === carteVille ? "dessus" : i === iDessous ? "dessous" : "rangee";
+                        const bouge = gesteQui === "passer" || gesteQui === "defile";
+                        const geste =
+                          rang === "dessus"
+                            ? gesteQui === "passer" ? " part" : gesteQui === "defile" ? " defile" : gesteQui === "veux" ? " aime" : ""
+                            : rang === "dessous" && bouge ? " monte" : "";
+                        return (
+                          <div key={c.quoi} className={`qi-feuille ${rang}${geste}`} aria-hidden={rang !== "dessus"}>
+                            <CarteSwipe carte={c} variante="seconde" className="qi-c plein" />
+                            {/* LE TAMPON dit CE QUI VIENT D'ÊTRE FAIT pendant que
+                                l'effet court : un geste dont la conséquence arrive
+                                une demi-seconde plus tard laisse sinon un temps mort. */}
+                            {rang === "dessus" && gesteQui === "passer" && <span className="qi-tampon non" aria-hidden="true">✕</span>}
+                            {rang === "dessus" && gesteQui === "veux" && <span className="qi-tampon oui" aria-hidden="true">♥</span>}
+                          </div>
+                        );
+                      })}
                       {/* LE CŒUR VA SE RANGER. C'est le trajet qui explique la
                           fonction : sans lui, « Ma carte » passerait de 1 à 2
                           dans un coin, et personne ne ferait le lien. */}
@@ -2609,7 +2724,7 @@ export function DemoTour({
                         autant de hauteur reprise à la carte. */}
                     <GestesDirect
                       action={actionHabitant}
-                      actif={gesteQui === "passer" ? "passer" : gesteQui ? "veux" : undefined}
+                      actif={gesteQui === "passer" ? "passer" : gesteQui === "veux" || gesteQui === "resa" ? "veux" : undefined}
                     />
                   </div>
                 </div>
