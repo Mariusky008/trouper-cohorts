@@ -9,9 +9,29 @@ export default async function proxy(request: NextRequest) {
   const vitrineHost = String(host || "").split(":")[0].toLowerCase();
   const isVitrineHost = vitrineHost === "vitrine.popey.academy";
   const isPopeyLinkHost = /(^|\.)popey\.link$/i.test(host);
+
+  // SÉCURITÉ — AUCUN EN-TÊTE D'IDENTITÉ VENU DU CLIENT N'EST DIGNE DE CONFIANCE.
+  // Seul ce middleware a le droit de poser `x-popey-auth-user-id`, à partir de
+  // la vraie session. On efface donc d'entrée, AVANT toute sortie anticipée,
+  // les deux formes qu'un client pourrait forger :
+  //   · `x-popey-auth-user-id` ;
+  //   · `x-middleware-request-x-popey-auth-user-id`, la forme préfixée que
+  //     Next.js n'inscrit pas dans sa liste d'en-têtes internes et laisse donc
+  //     passer — et que le serveur relit comme repli (voir
+  //     `getServerUserIdWithProxyFallback`).
+  // Le faire ICI, et non plus bas, ferme deux trous : une requête marquée
+  // « préchargement » ou une requête de fichier statique ressortait jusque-là
+  // par `NextResponse.next()` SANS nettoyage, donc avec l'en-tête forgé intact.
+  // Résultat : quelqu'un connaissant l'identifiant d'un administrateur pouvait
+  // se faire passer pour lui sur les pages /admin et les routes /api/admin.
+  const entrantes = new Headers(request.headers);
+  entrantes.delete("x-popey-auth-user-id");
+  entrantes.delete("x-middleware-request-x-popey-auth-user-id");
+  const sansIdentite = () => NextResponse.next({ request: { headers: entrantes } });
+
   const isStaticAssetRequest = /\.[a-z0-9]+$/i.test(pathname);
   if (isStaticAssetRequest && !isVitrineHost && !isPopeyLinkHost) {
-    return NextResponse.next();
+    return sansIdentite();
   }
 
   const isHumanMemberArea = pathname.startsWith("/popey-human/app");
@@ -23,7 +43,7 @@ export default async function proxy(request: NextRequest) {
     request.headers.get("next-router-prefetch") === "1" ||
     request.headers.get("purpose") === "prefetch";
   if (isPrefetchRequest && !isProtectedAuthRoute) {
-    return NextResponse.next();
+    return sansIdentite();
   }
 
   let response: NextResponse;
@@ -36,11 +56,11 @@ export default async function proxy(request: NextRequest) {
     console.error("[proxy] unexpected updateSession crash", error);
     response = NextResponse.next();
   }
-  const downstreamHeaders = new Headers(request.headers);
+  // `entrantes` a déjà perdu les deux formes forgées plus haut : on repart de
+  // là et on n'y pose l'identité QUE si une vraie session existe.
+  const downstreamHeaders = entrantes;
   if (user?.id) {
     downstreamHeaders.set("x-popey-auth-user-id", user.id);
-  } else {
-    downstreamHeaders.delete("x-popey-auth-user-id");
   }
   response = copyResponseCookies(
     NextResponse.next({
@@ -61,7 +81,7 @@ export default async function proxy(request: NextRequest) {
   if (isPopeyLinkHost && canRewritePopeyLinkPath) {
     const rewriteUrl = request.nextUrl.clone();
     rewriteUrl.pathname = `/popey-link${pathname}`;
-    return copyResponseCookies(NextResponse.rewrite(rewriteUrl), response);
+    return copyResponseCookies(NextResponse.rewrite(rewriteUrl, { request: { headers: downstreamHeaders } }), response);
   }
 
   const canRewriteVitrinePath =
@@ -73,7 +93,7 @@ export default async function proxy(request: NextRequest) {
   if (isVitrineHost && canRewriteVitrinePath) {
     const rewriteUrl = request.nextUrl.clone();
     rewriteUrl.pathname = pathname === "/" ? "/vitrine" : `/vitrine${pathname}`;
-    return copyResponseCookies(NextResponse.rewrite(rewriteUrl), response);
+    return copyResponseCookies(NextResponse.rewrite(rewriteUrl, { request: { headers: downstreamHeaders } }), response);
   }
 
   // DOMAINE PERSO d'un commerçant (ex. salon-elodie.fr) : tout host inconnu de
@@ -90,7 +110,7 @@ export default async function proxy(request: NextRequest) {
   if (!isKnownPopeyHost && pathname === "/") {
     const rewriteUrl = request.nextUrl.clone();
     rewriteUrl.pathname = "/site-internet/domain";
-    return copyResponseCookies(NextResponse.rewrite(rewriteUrl), response);
+    return copyResponseCookies(NextResponse.rewrite(rewriteUrl, { request: { headers: downstreamHeaders } }), response);
   }
 
   const forceAuthScreen = request.nextUrl.searchParams.get("force") === "1";
