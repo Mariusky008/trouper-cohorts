@@ -105,6 +105,14 @@ export type Evenement =
    * mieux ») ; la `valeur`, le rang du duel dans le salon.
    */
   | "duel"
+  /**
+   * 🎁 LES SURPRISES DU FANTÔME — trouvée, ouverte, ❤️, 👎, « Voir », « Pourquoi
+   * moi ? », « Ne plus me proposer ». Le `contexte` dit le geste, la sorte de
+   * raison (dit / crois / va-avec), la pièce et la ville ; la `valeur`, le
+   * score. Rien de la surprise elle-même : ni ce que c'était, ni chez qui.
+   * Voir `/admin/humain/surprises`.
+   */
+  | "surprise"
   | "fin";
 
 type Ligne = { evenement: Evenement; valeur?: number; contexte?: string };

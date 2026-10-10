@@ -416,6 +416,7 @@ function lireSurprise(x: unknown): Surprise | undefined {
     preuves,
     traits: Array.isArray(r.traits) ? r.traits.filter((t) => typeof t === "string").map((t) => t.slice(0, 40)).slice(0, 8) : [],
     trait: optionnelle(r.trait, 40),
+    sorte: r.sorte === "dit" || r.sorte === "crois" || r.sorte === "va-avec" ? r.sorte : undefined,
     action: { mot: chaine(a.mot, 40) || "Voir", onglet: optionnelle(a.onglet, 30) },
     score: nombre(r.score),
   };

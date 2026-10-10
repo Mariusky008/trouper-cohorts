@@ -3,7 +3,7 @@
  *
  * Il répond comme PostgREST (`/rest/v1/<table>`) et comme le stockage
  * (`/storage/v1/object/…`) à ce dont l'application se sert : filtres eq, neq,
- * in, is, gte, lt, lte, gt ; order ; limit ; select de colonnes ; count ;
+ * in, is, gte, lt, lte, gt ; order ; limit ; offset (pagination) ; select de colonnes ; count ;
  * insert / update / delete ; envoi d'un fichier ; adresse signée ; adresse
  * publique — REFUSÉE pour un seau privé, comme le vrai.
  *
@@ -138,6 +138,9 @@ const corps = (req) =>
     req.on("data", (m) => morceaux.push(m));
     req.on("end", () => ok(Buffer.concat(morceaux)));
   });
+/** L'administrateur des tests : voir la session « faux-admin » plus bas. */
+const ADMIN_TEST = "00000000-0000-4000-8000-0000000ad001";
+
 function repondre(res, statut, donnees, entetes = {}) {
   res.writeHead(statut, { "content-type": "application/json", ...entetes });
   res.end(donnees === undefined ? "" : JSON.stringify(donnees));
@@ -152,7 +155,8 @@ async function rest(req, res, url, table) {
     let rs = trier(lignes(table).filter(garder), url.searchParams.get("order"));
     const total = rs.length;
     const lim = Number(url.searchParams.get("limit"));
-    if (lim) rs = rs.slice(0, lim);
+    const off = Number(url.searchParams.get("offset")) || 0;
+    if (lim || off) rs = rs.slice(off, lim ? off + lim : undefined);
     const entetes = /count=/.test(prefer) ? { "content-range": `0-${Math.max(0, rs.length - 1)}/${total}` } : {};
     if (req.method === "HEAD") return repondre(res, 200, undefined, entetes);
     const sortie = rs.map((r) => projeter(r, select));
@@ -237,6 +241,11 @@ http
       if (m) return await rest(req, res, url, m[1]);
       if (url.pathname.startsWith("/rest/v1/rpc/")) return repondre(res, 404, []);
       if (url.pathname.startsWith("/storage/v1/object/")) return await stockage(req, res, url);
+      // UNE SESSION D'ADMINISTRATION, POUR LES TESTS SEULEMENT : le jeton
+      // « faux-admin » ouvre l'utilisateur ADMIN_TEST (à mettre dans `admins`).
+      if (url.pathname === "/auth/v1/user" && (req.headers.authorization || "") === "Bearer faux-admin") {
+        return repondre(res, 200, { id: ADMIN_TEST, aud: "authenticated", role: "authenticated", email: "admin@example.invalid", app_metadata: {}, user_metadata: {}, created_at: "2026-01-01T00:00:00Z" });
+      }
       if (url.pathname.startsWith("/auth/v1/")) return repondre(res, 401, { message: "pas de session" });
       return repondre(res, 404, { message: "inconnu" });
     } catch (e) {

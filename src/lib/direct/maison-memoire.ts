@@ -23,6 +23,8 @@ import {
   type Memoire,
   type Signal,
 } from "@/lib/direct/maison";
+import { noterUneFois } from "@/lib/direct/parcours";
+import { contexteDe, type GesteDeSurprise } from "@/lib/direct/surprises-mesure";
 import {
   choisirLesSurprises,
   dateDuJour,
@@ -230,6 +232,16 @@ export function preparerLesSurprises(commerces: CommerceDuJour[], maintenant: Da
   const pareil = avant && liste.length === avant.liste.length && liste.every((s, i) => s.id === avant.liste[i].id);
   if (pareil || (!avant && !liste.length && !m.jour)) return;
   geste((x) => ({ ...x, jour: { ...jour, liste } }));
+  for (const s of liste) if (!avant?.liste.some((a) => a.id === s.id)) noterLaSurprise(s, "trouvee");
+}
+
+/**
+ * CE QUE LA SURPRISE EST DEVENUE — anonyme : le geste, la sorte de raison, la
+ * pièce, la ville. Une fois par surprise et par geste dans la visite. Voir
+ * `lib/direct/surprises-mesure.ts`.
+ */
+export function noterLaSurprise(s: Surprise, geste: GesteDeSurprise) {
+  noterUneFois(`surprise|${s.id}|${geste}`, "surprise", s.score, contexteDe(geste, s.sorte, s.piece, lire().ville));
 }
 
 /** Les surprises du jour pas encore ouvertes — le badge de Ma Maison. */
@@ -248,6 +260,7 @@ export function surprisesDuJour(m: Memoire, maintenant: Date): Surprise[] {
 export function voirLaSurprise(s: Surprise) {
   const m = lire().memoire;
   if (!m.jour || m.jour.vues.includes(s.id)) return;
+  noterLaSurprise(s, "vue");
   geste((x) =>
     x.jour
       ? {
@@ -266,6 +279,7 @@ export function voirLaSurprise(s: Surprise) {
  * pause garde l'avis mais n'apprend rien.
  */
 export function reagirALaSurprise(s: Surprise, sens: 1 | -1) {
+  if (lire().memoire.jour?.avis[s.id] !== sens) noterLaSurprise(s, sens > 0 ? "aime" : "bof");
   geste((m) => {
     const t = Date.now();
     const jour = m.jour ? { ...m.jour, avis: { ...m.jour.avis, [s.id]: sens } } : m.jour;

@@ -37,6 +37,7 @@ import {
   abonnerMaisonPrivee,
   chargerMaisonPrivee,
   maisonPriveeServeur,
+  noterLaSurprise,
   noterLesSignaux,
   preparerLesSurprises,
   reagirALaSurprise,
@@ -301,13 +302,20 @@ export function SurprisesDuJour({
           coeur={coeur}
           refuse={refuse}
           pourquoi={pourquoi}
-          onPourquoi={setPourquoi}
-          onVoir={() => onVoir(suite[etape])}
+          onPourquoi={(v) => {
+            if (v) noterLaSurprise(suite[etape], "pourquoi");
+            setPourquoi(v);
+          }}
+          onVoir={() => {
+            noterLaSurprise(suite[etape], "voir");
+            onVoir(suite[etape]);
+          }}
           onAvis={(sens) => {
             reagirALaSurprise(suite[etape], sens);
             if (sens > 0) setCoeur((x) => x + 1);
           }}
           onRefuser={(trait) => {
+            noterLaSurprise(suite[etape], "refus");
             refuserLeTrait(suite[etape].piece, trait);
             setRefuse(trait);
           }}

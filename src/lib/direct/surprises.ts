@@ -43,6 +43,8 @@ import {
 // ─── CE QUE LE FANTÔME RAPPORTE ────────────────────────────────────────────
 
 export type Preuve = { sorte: "dit" | "remarque" | "crois"; texte: string };
+export type SorteDeRaison = "dit" | "crois" | "va-avec";
+export const SORTES_DE_RAISON: SorteDeRaison[] = ["dit", "crois", "va-avec"];
 
 export type Surprise = {
   /** Unique pour le jour : `<date>|<objet>`. */
@@ -70,6 +72,12 @@ export type Surprise = {
   traits: string[];
   /** Le trait qui l'a fait choisir — « Ne plus me proposer ce genre-là » le refuse. */
   trait?: string;
+  /**
+   * LA SORTE DE RAISON QUI LA PORTE : ce que vous m'avez dit, ce que je crois,
+   * ce qui va avec ce que vous avez gardé. C'est elle que le tableau de bord
+   * compare : quelles raisons tiennent vraiment devant les vrais habitants.
+   */
+  sorte?: SorteDeRaison;
   action: { mot: string; onglet?: string };
   score: number;
 };
@@ -405,7 +413,7 @@ export function choisirLesSurprises(
       // Un lieu suivi, un trait partagé une fois : des points en plus, jamais une
       // raison. « Vous aimez la mode, donc voici une chemise » ne passe pas.
       const preuves: Preuve[] = [];
-      const pivots: { phrase: string; poids: number; trait?: string }[] = [];
+      const pivots: { phrase: string; poids: number; trait?: string; sorte: SorteDeRaison }[] = [];
       const chose = objetDe(p, x.titre, x.famille);
       // 💬 Ce que vous m'avez dit
       const versTrait = TRAIT_DU_CHOIX[p];
@@ -414,7 +422,7 @@ export function choisirLesSurprises(
           const t = versTrait(k);
           if (traits.includes(t) && !(INCOMPATIBLES[t] ?? []).some((u) => traits.includes(u))) {
             preuves.push({ sorte: "dit", texte: `Vous m'avez dit : ${motDe(t)}` });
-            pivots.push({ phrase: phraseDuChoix(p, t), poids: 3, trait: t });
+            pivots.push({ phrase: phraseDuChoix(p, t), poids: 3, trait: t, sorte: "dit" });
           }
         }
       }
@@ -432,7 +440,7 @@ export function choisirLesSurprises(
           return a.length > 3 && b.includes(a);
         });
         const fin = memeChose ? (x.quand === "en ce moment" ? "en voici" : `il y en a ${x.quand}`) : conclusion(g.trait);
-        if (!g.trait.startsWith("famille:")) pivots.push({ phrase: `Vous avez ${evoque(appuis(g.trait))} : ${fin}.`, poids: 3, trait: g.trait });
+        if (!g.trait.startsWith("famille:")) pivots.push({ phrase: `Vous avez ${evoque(appuis(g.trait))} : ${fin}.`, poids: 3, trait: g.trait, sorte: "crois" });
       }
       // 👀 Ce que j'ai remarqué : ce qui irait avec ce que vous avez gardé
       const avec: Signal[] = [];
@@ -460,6 +468,7 @@ export function choisirLesSurprises(
             phrase: `Vous avez ${evoque([...avec, appuiTeinte], true)} : ${chose.dem.charAt(0).toLowerCase()}${chose.dem.slice(1)} ${va} avec.`,
             poids: 3 + avec.length,
             trait: goutTeinte!.trait,
+            sorte: "va-avec",
           });
         } else if (avec.length >= 2 || (avec.length === 1 && (memeTeinte || aimeLaFamille))) {
           const liste = avec.map((a) => votre(a.quoi)).join(" et ");
@@ -469,7 +478,7 @@ export function choisirLesSurprises(
                 ? `, dans le même ${TON_NOM[teinte] ?? "ton"} que ${votre(memeTeinte.quoi)}`
                 : `, et c'est ${DU_TON[teinte] ?? "la même teinte"}, comme ${evoqueUn(memeTeinte)}`
               : "";
-          pivots.push({ phrase: `${chose.dem} va avec ${liste}${ton}.`, poids: 2 + avec.length - 1 + (memeTeinte ? 1 : 0) + (aimeLaFamille ? 1 : 0) });
+          pivots.push({ phrase: `${chose.dem} va avec ${liste}${ton}.`, poids: 2 + avec.length - 1 + (memeTeinte ? 1 : 0) + (aimeLaFamille ? 1 : 0), sorte: "va-avec" });
         }
       }
       if (!pivots.length) continue;
@@ -526,6 +535,7 @@ export function choisirLesSurprises(
         preuves,
         traits,
         trait,
+        sorte: pivots[0].sorte,
         action: ACTIONS[p],
         score,
       };

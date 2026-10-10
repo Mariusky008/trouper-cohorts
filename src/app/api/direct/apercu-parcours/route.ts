@@ -72,6 +72,8 @@ const EVENEMENTS = new Set([
   "journee",
   // ⚔️ L'entonnoir du duel d'un salon — voir `lib/direct/parcours.ts`.
   "duel",
+  // 🎁 Les surprises du Fantôme — voir `lib/direct/parcours.ts`.
+  "surprise",
   "fin",
 ]);
 
