@@ -8,6 +8,14 @@
 import { useEffect } from "react";
 import type { Humeur } from "@/lib/direct/fantome-salon";
 
+/**
+ * SES HUMEURS DE MA MAISON, en plus de celles du salon : il dort quand une
+ * pièce est en pause, il part en ville avec son sac, il revient avec un
+ * paquet ou du courrier (les surprises).
+ */
+export type HumeurMaison = "sleeping" | "leaving" | "gift" | "mail";
+export type HumeurFantome = Humeur | HumeurMaison;
+
 // ─── 👻 LE FANTÔME ANIMÉ ────────────────────────────────────────────────────
 
 /**
@@ -17,7 +25,7 @@ import type { Humeur } from "@/lib/direct/fantome-salon";
  * que la loupe ou le bras tendu sortent sans rapetisser le corps.
  */
 const DESSINS = "/direct/fantome-humeurs";
-const IMAGE_HUMEUR: Record<Humeur, string> = {
+const IMAGE_HUMEUR: Record<HumeurFantome, string> = {
   idle: `${DESSINS}/fantome-idle.webp`,
   curious: `${DESSINS}/fantome-curious.webp`,
   thinking: `${DESSINS}/fantome-thinking.webp`,
@@ -30,6 +38,10 @@ const IMAGE_HUMEUR: Record<Humeur, string> = {
   celebrate: `${DESSINS}/fantome-celebrate.webp`,
   urgent: `${DESSINS}/fantome-urgent.webp`,
   quiet: `${DESSINS}/fantome-quiet.webp`,
+  sleeping: `${DESSINS}/fantome-sleeping.webp`,
+  leaving: `${DESSINS}/fantome-leaving.webp`,
+  gift: `${DESSINS}/fantome-gift.webp`,
+  mail: `${DESSINS}/fantome-mail.webp`,
 };
 /** La pose neutre, yeux fermés : elle passe un instant par-dessus pour le clignement. */
 const CLIGNE = `${DESSINS}/fantome-idle-cligne.webp`;
@@ -37,7 +49,7 @@ const CLIGNE = `${DESSINS}/fantome-idle-cligne.webp`;
 export const FANTOME_AVATAR = `${DESSINS}/fantome-avatar.webp`;
 
 /**
- * CHARGER LES DOUZE TÊTES DÈS LE PREMIER FANTÔME : sans ça, la première fois
+ * CHARGER TOUTES SES TÊTES DÈS LE PREMIER FANTÔME : sans ça, la première fois
  * qu'il change d'humeur, l'image arrive en retard et il disparaît un instant.
  */
 let dessinsCharges = false;
@@ -62,7 +74,7 @@ export function FantomeAnime({
   accessoire,
   classe,
 }: {
-  humeur: Humeur;
+  humeur: HumeurFantome;
   taille?: number;
   accessoire?: "porte-voix" | "couronne" | "question" | "valide";
   classe?: string;
@@ -110,6 +122,13 @@ export function FantomeAnime({
         </span>
       )}
       {humeur === "urgent" && <i className="fa-halo" />}
+      {humeur === "sleeping" && (
+        <span className="fa-zz">
+          <i>z</i>
+          <i>z</i>
+          <i>z</i>
+        </span>
+      )}
       {accessoire === "question" && humeur !== "curious" && humeur !== "surprised" && <i className="fa-bulle q">?</i>}
       {accessoire === "valide" && <i className="fa-bulle ok">✓</i>}
     </span>
@@ -167,6 +186,21 @@ export const CSS_FANTOME = `
 /* DISCRET, quand les humains parlent : il s'efface, mais respire toujours. */
 .fa-quiet{opacity:.6;}
 .fa-quiet .fa-corps{animation-duration:4.4s;}
+/* IL DORT : une respiration lente, et des « z » qui montent. */
+.fa-sleeping .fa-corps{animation:fa-respire 5.2s ease-in-out infinite;}
+.fa-zz{position:absolute;right:2%;top:2%;pointer-events:none;}
+.fa-zz i{position:absolute;font-style:normal;font-weight:800;color:#CFC3FF;font-size:calc(var(--t,96px) * .13);opacity:0;animation:fa-zz 3.6s ease-out infinite;}
+.fa-zz i:nth-child(2){animation-delay:1.2s;font-size:calc(var(--t,96px) * .1);}
+.fa-zz i:nth-child(3){animation-delay:2.4s;font-size:calc(var(--t,96px) * .08);}
+@keyframes fa-zz{0%{transform:translate(0,0) scale(.6);opacity:0;}20%{opacity:.9;}100%{transform:translate(calc(var(--t,96px) * .16),calc(var(--t,96px) * -.36)) scale(1.1);opacity:0;}}
+/* IL PART EN VILLE : il se dandine, son sac au bras. */
+.fa-leaving .fa-corps{animation:fa-trotte 1.1s ease-in-out infinite;}
+@keyframes fa-trotte{0%,100%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(calc(var(--t,96px) * -.06)) rotate(5deg);}}
+/* IL REVIENT AVEC UN PAQUET : il sautille de joie, et le paquet avec lui. */
+.fa-gift .fa-corps{animation:fa-sautille .9s cubic-bezier(.3,.7,.4,1) infinite;}
+/* IL APPORTE LE COURRIER : il agite sa lettre. */
+.fa-mail .fa-corps{animation:fa-agite 1.4s ease-in-out infinite;}
+@keyframes fa-agite{0%,100%{transform:rotate(-3deg);}30%{transform:rotate(5deg) translateY(calc(var(--t,96px) * -.05));}60%{transform:rotate(-1deg);}}
 .fa-halo{position:absolute;inset:-8%;border-radius:50%;box-shadow:0 0 0 2px rgba(255,170,60,.55),0 0 22px rgba(255,170,60,.55);}
 .fa-bulle{position:absolute;top:-6%;right:-10%;display:grid;place-items:center;min-width:26px;height:26px;padding:0 6px;border-radius:13px;
   font-style:normal;font-size:14px;font-weight:900;color:#2A1608;background:#FFF4E6;box-shadow:0 4px 12px rgba(0,0,0,.35);animation:fa-pop .35s ease-out both;}
@@ -200,7 +234,7 @@ ${Array.from({ length: 12 }, (_, i) => {
 .fa-acc.pv{right:-16%;top:26%;font-size:calc(var(--t,96px) * .3);transform:rotate(-12deg);transform-origin:0 50%;animation:fa-crie 1.1s ease-in-out infinite;}
 @keyframes fa-crie{0%,100%{transform:rotate(-12deg) scale(1);}50%{transform:rotate(-18deg) scale(1.12);}}
 @media (prefers-reduced-motion: reduce){
-  .fa-corps,.fa-corps img,.fa-ombre,.fa-acc,.fa-coeur,.fa-confettis i,.fa-bulle,.fa-bulle.pts b{animation:none !important;}
+  .fa-corps,.fa-corps img,.fa-ombre,.fa-acc,.fa-coeur,.fa-confettis i,.fa-bulle,.fa-bulle.pts b,.fa-zz i{animation:none !important;}
   .fa-confettis{display:none;}
 }
 `;

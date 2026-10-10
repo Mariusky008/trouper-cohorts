@@ -30,17 +30,25 @@ export type PieceMaison = {
   /** Ce qu'elle garde, en trois mots, sous le nom. */
   sous: string;
   icone: string;
-  /**
-   * LA PHOTO DE LA PIÈCE. Provisoire : le décor du métier le plus proche, en
-   * attendant les sept photos de pièces dessinées pour la Maison.
-   */
+  /** LA PHOTO DE LA PIÈCE — une vraie pièce de maison, le soir, dans la lumière ClikMe. */
   photo: string;
   /** Comment elle se remplit, sans formulaire — dit quand elle est vide. */
   remplit: string;
   /** Ce que ça débloque : la raison de la remplir, dite AVANT l'effort. */
   debloque: string;
+  /**
+   * PIÈCE ENCORE ENDORMIE : un petit geste, et ce qu'il débloque — « Gardez 3
+   * pièces → je chercherai en ville ce qui va avec ». Jamais seulement éteinte.
+   */
+  reveil: { action: string; gain: string };
+  /** PIÈCE QUI APPREND : ce qu'elle fait déjà pour vous, en quelques mots. */
+  apport: string;
+  /** En haut de la pièce, quand elle sait quelque chose : le bénéfice d'abord. */
+  benefice: string;
   /** Le seul choix qu'on y propose, quand il rend service tout de suite. */
   choix?: ChoixPiece;
+  /** Ce qu'on pourra y déposer soi-même, aux étapes suivantes — dit honnêtement « bientôt ». */
+  bientot?: string;
   /** Le métier du Direct qu'ouvre « Découvrir » depuis la pièce. */
   branche: string;
 };
@@ -51,9 +59,13 @@ export const PIECES: PieceMaison[] = [
     nom: "Mon Dressing",
     sous: "Mes vêtements et mes looks",
     icone: "👔",
-    photo: "/direct/double/mode/decor.jpg",
+    photo: "/direct/maison/piece-dressing.webp",
     remplit: "Les pièces que vous mettez de côté dans les boutiques arrivent ici. Bientôt, vos propres vêtements en photo.",
     debloque: "Je vous dirai avec quoi porter les nouveautés des boutiques de la ville.",
+    reveil: { action: "Gardez 3 pièces qui vous plaisent", gain: "je chercherai ce qui va avec" },
+    apport: "je cherche ce qui va avec",
+    benefice: "Grâce à ce que je sais déjà, je peux chercher les nouveautés qui vont avec.",
+    bientot: "Bientôt : vos propres vêtements en photo, pour des looks avec ce que vous avez déjà.",
     branche: "mode",
   },
   {
@@ -61,9 +73,13 @@ export const PIECES: PieceMaison[] = [
     nom: "Mon Miroir",
     sous: "Coiffure, ongles, soins",
     icone: "✨",
-    photo: "/direct/double/coiffure/decor.jpg",
+    photo: "/direct/maison/piece-miroir.webp",
     remplit: "Les coupes et les poses que vous essayez ou départagez arrivent ici.",
     debloque: "Une nouvelle coupe qui ressemble à celles que vous aimez ? Je vous la montrerai sur vous.",
+    reveil: { action: "Essayez une coupe", gain: "je vous montrerai les nouvelles sur vous" },
+    apport: "je guette les coupes pour vous",
+    benefice: "Grâce à ce que je sais déjà, je peux repérer les coupes qui ressemblent à celles que vous aimez.",
+    bientot: "Bientôt : votre photo, gardée ici, pour ne plus la reprendre à chaque essai.",
     branche: "coiffeur",
   },
   {
@@ -71,9 +87,12 @@ export const PIECES: PieceMaison[] = [
     nom: "Ma Cuisine",
     sous: "Mes goûts et mes envies",
     icone: "🍝",
-    photo: "/direct/double/comptoir.jpg",
+    photo: "/direct/maison/piece-cuisine.webp",
     remplit: "Rien à remplir : j'apprends des plats qui vous font envie.",
     debloque: "Chaque midi, les plats du jour qui vous ressemblent.",
+    reveil: { action: "Dites-moi ce qui vous fait envie", gain: "je trouverai vos plats du jour" },
+    apport: "je repère les plats du jour",
+    benefice: "Grâce à ce que je sais déjà, je peux repérer chaque midi les plats du jour qui vous ressemblent.",
     choix: {
       titre: "Je ne mange pas de…",
       options: [
@@ -92,9 +111,12 @@ export const PIECES: PieceMaison[] = [
     nom: "Mes Sorties",
     sous: "Bars, soirées, activités",
     icone: "🍸",
-    photo: "/direct/double/bar/decor.jpg",
+    photo: "/direct/maison/piece-sorties.webp",
     remplit: "Les soirées que vous choisissez m'apprennent ce qui vous fait sortir.",
     debloque: "Le soir venu, les idées qui devraient vous ressembler.",
+    reveil: { action: "Choisissez une soirée", gain: "je vous dirai quoi faire ce soir" },
+    apport: "je prépare vos soirées",
+    benefice: "Grâce à ce que je sais déjà, je peux vous proposer, le soir venu, les sorties qui vous ressemblent.",
     choix: {
       titre: "Ce qui me fait sortir",
       options: [
@@ -113,9 +135,13 @@ export const PIECES: PieceMaison[] = [
     nom: "Mon Intérieur",
     sous: "Ma déco, mon chez-moi",
     icone: "🛋️",
-    photo: "/direct/double/fleurs/decor.jpg",
+    photo: "/direct/maison/piece-interieur.webp",
     remplit: "Les fleurs, les objets et les créateurs qui vous plaisent arrivent ici. Bientôt, une photo de votre salon.",
     debloque: "Je vous montrerai ce qui irait chez vous.",
+    reveil: { action: "Gardez un bouquet ou un objet", gain: "je trouverai ce qui ira chez vous" },
+    apport: "je repère ce qui irait chez vous",
+    benefice: "Grâce à ce que je sais déjà, je peux repérer les objets et les fleurs qui iraient chez vous.",
+    bientot: "Bientôt : une photo de votre salon, pour voir les nouveautés chez vous.",
     choix: {
       titre: "Chez moi, c'est plutôt…",
       options: [
@@ -133,9 +159,12 @@ export const PIECES: PieceMaison[] = [
     nom: "Ma Librairie",
     sous: "Mes livres et mes envies de lecture",
     icone: "📚",
-    photo: "/direct/double/librairie/decor.jpg",
+    photo: "/direct/maison/piece-librairie.webp",
     remplit: "Les livres et les librairies que vous gardez arrivent ici.",
     debloque: "Les nouveautés du libraire qui ressemblent à ce que vous aimez.",
+    reveil: { action: "Dites-moi ce que vous lisez", gain: "je guetterai les nouveautés" },
+    apport: "je guette les nouveautés",
+    benefice: "Grâce à ce que je sais déjà, je peux guetter les nouveautés du libraire qui vous ressemblent.",
     choix: {
       titre: "Ce que j'aime lire",
       options: [
@@ -151,12 +180,15 @@ export const PIECES: PieceMaison[] = [
   },
   {
     cle: "bienetre",
-    nom: "Mon Bien-être",
+    nom: "Mon Bien\u2011être",
     sous: "Sport, yoga, détente",
     icone: "🧘",
-    photo: "/direct/double/bien-etre/decor.jpg",
+    photo: "/direct/maison/piece-bienetre.webp",
     remplit: "Les séances que vous réservez et les lieux que vous gardez arrivent ici.",
     debloque: "Un créneau libre près de chez vous, quand il vous ressemble.",
+    reveil: { action: "Dites-moi ce que vous cherchez", gain: "je trouverai le bon créneau" },
+    apport: "je repère les bons créneaux",
+    benefice: "Grâce à ce que je sais déjà, je peux repérer un créneau qui vous ressemble, près de chez vous.",
     choix: {
       titre: "Ce que je cherche",
       options: [
@@ -539,8 +571,10 @@ export type EtatPiece = {
   crois: Gout[];
   /** Allumée dès qu'elle sait quelque chose de vous. */
   allumee: boolean;
-  /** La ligne sous le nom, sur l'entrée de la Maison. */
+  /** Sous le nom, sur l'entrée : ce qu'elle sait, ou le geste qui la réveille. */
   ligne: string;
+  /** Et ce que ça vous apporte : « → je cherche ce qui va avec ». */
+  suite: string;
 };
 
 const pluriel = (n: number, un: string, plusieurs: string) => `${n} ${n > 1 ? plusieurs : un}`;
@@ -552,12 +586,27 @@ export function etatDe(m: Memoire, piece: PieceMaison): EtatPiece {
   const crois = goutsDe(m, piece.cle);
   const allumee = !enPause && (dit.length > 0 || remarque.length > 0);
   let ligne: string;
-  if (enPause) ligne = "En pause";
-  else if (crois.length) ligne = `Vous aimez ${crois[0].mot}`;
+  let suite = `→ ${piece.apport}`;
+  if (enPause) {
+    ligne = "En pause";
+    suite = "→ touchez pour la réveiller";
+  } else if (crois.length) ligne = `Vous aimez ${crois[0].mot}`;
   else if (remarque.length) ligne = `${pluriel(remarque.length, "chose gardée", "choses gardées")} pour vous`;
   else if (dit.length) ligne = `${pluriel(dit.length, "chose", "choses")} que vous m'avez ${dit.length > 1 ? "dites" : "dite"}`;
-  else ligne = piece.sous;
-  return { piece, enPause, dit, remarque, crois, allumee, ligne };
+  else {
+    ligne = piece.reveil.action;
+    suite = `→ ${piece.reveil.gain}`;
+  }
+  return { piece, enPause, dit, remarque, crois, allumee, ligne, suite };
+}
+
+/**
+ * « 4 PIÈCES COMMENCENT À VOUS CONNAÎTRE » — pas « vous connaissent » : elles
+ * apprennent, elles ne savent pas tout.
+ */
+export function phraseDesPieces(n: number): string {
+  if (n <= 0) return "Vos pièces n'attendent que vous";
+  return n === 1 ? "1 pièce commence à vous connaître" : `${n} pièces commencent à vous connaître`;
 }
 
 /**
