@@ -156,7 +156,9 @@ export function MaMaison({
         <CourrierDuFantome n={surprises.aOuvrir} onOuvrir={() => surprises.onOuvrir(false)} />
       ) : (
         <section className="mz-scene">
-          <FantomeAnime humeur={allumees ? "excited" : "idle"} taille={76} />
+          {/* LE FANTÔME DE LA MAQUETTE : lunettes rondes, la Maison dans les bras. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="mz-fantome" src="/direct/maison/fantome-maison.webp" alt="" width={82} height={92} />
           <div className="mz-dit">
             <b className="mz-bulle">{mot.titre}</b>
             <span>Choisissez une pièce pour que je cherche pour vous.</span>
@@ -211,7 +213,9 @@ export function MaMaison({
       </div>
 
       <section className="mz-privee">
-        <FantomeAnime humeur="quiet" taille={84} />
+        {/* Le même Fantôme, cette fois derrière son bouclier. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="mz-fantome" src="/direct/maison/fantome-bouclier.webp" alt="" width={86} height={86} />
         <div>
           <b>Votre Maison est privée</b>
           <span>Vos commerçants ne voient pas vos données personnelles.</span>
@@ -232,6 +236,28 @@ export function MaMaison({
 /** Les quatre pièces de la grille, puis « Les autres pièces », en grandes cartes. */
 const PRINCIPALES: ClePiece[] = ["dressing", "miroir", "cuisine", "sorties"];
 const AUTRES: ClePiece[] = ["interieur", "librairie", "bienetre"];
+
+/**
+ * OÙ REGARDER DANS CHAQUE PHOTO. Les photos de la maquette sont en paysage
+ * (4:3) et les cartes de la grille presque carrées : sans ce point, le miroir
+ * ou le verre sortiraient du cadre. Le premier chiffre compte dans la grille
+ * (on y coupe les côtés), le second dans les grandes cartes et en tête de
+ * pièce (on y coupe le haut et le bas).
+ *
+ * `zoom`, DANS LA GRILLE SEULEMENT : le cocktail de Sorties est en bas de sa
+ * photo, donc sous le dégradé qui porte le texte. On grossit l'image depuis le
+ * pied du verre, ce qui le remonte dans la partie claire — c'est là que la
+ * maquette le montre.
+ */
+const CADRAGE: Record<ClePiece, { pos: string; zoom?: { echelle: number; depuis: string } }> = {
+  dressing: { pos: "50% 50%" },
+  miroir: { pos: "30% 50%" },
+  cuisine: { pos: "42% 55%" },
+  sorties: { pos: "30% 50%", zoom: { echelle: 1.45, depuis: "34% 92%" } },
+  interieur: { pos: "50% 50%" },
+  librairie: { pos: "50% 42%" },
+  bienetre: { pos: "50% 62%" },
+};
 
 /** LES PICTOGRAMMES DE LA MAQUETTE — des traits, pas des emojis : ils prennent la couleur de la pièce. */
 const DESSINS = {
@@ -266,6 +292,8 @@ function Dessin({ d, plein = false }: { d: string; plein?: boolean }) {
 function CartePiece({ e, large, onOuvrir }: { e: EtatPiece; large?: boolean; onOuvrir: () => void }) {
   const etatCarte = e.enPause ? "pause" : e.allumee ? "on" : "dort";
   const p = e.piece;
+  const c = CADRAGE[p.cle];
+  const zoom = !large && c.zoom ? { scale: String(c.zoom.echelle), transformOrigin: c.zoom.depuis } : null;
   return (
     <button
       type="button"
@@ -275,7 +303,7 @@ function CartePiece({ e, large, onOuvrir }: { e: EtatPiece; large?: boolean; onO
       aria-label={`${p.nom} — ${p.promesse}${e.enPause ? " (en pause)" : ""}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={p.photo} alt="" loading={large ? "lazy" : "eager"} />
+      <img src={p.photo} alt="" loading={large ? "lazy" : "eager"} style={{ objectPosition: c.pos, ...zoom }} />
       <i className="mz-anneau">
         <Dessin d={DESSINS[p.cle]} />
       </i>
@@ -330,7 +358,7 @@ function VuePiece({
     <>
       <header className="mz-piece-h">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={p.photo} alt="" />
+        <img src={p.photo} alt="" style={{ objectPosition: CADRAGE[p.cle].pos }} />
         <button type="button" className="mz-retour" onClick={onRetour} aria-label="Revenir à ma Maison">
           ←
         </button>
@@ -748,11 +776,12 @@ function StylesMaMaison() {
 .mz-tete p{margin:6px 0 0;max-width:330px;font-size:13.5px;line-height:1.38;color:#C4B9B3;}
 .mz-roue{position:absolute;top:calc(16px + env(safe-area-inset-top));right:16px;display:grid;place-items:center;width:44px;height:44px;padding:10px;border-radius:50%;cursor:pointer;
   color:#fff;background:rgba(255,255,255,.04);border:1px solid rgba(255,240,230,.16);}
-.mz-scene{display:flex;align-items:center;gap:2px;margin:16px 16px 0;padding:8px 8px 10px 2px;border-radius:22px;
+.mz-scene{display:flex;align-items:center;gap:2px;margin:16px 16px 0;padding:8px 6px 10px 4px;border-radius:22px;
   background:#1F150F;border:1px solid rgba(255,235,215,.08);}
-.mz-scene .fa{flex:none;}
+.mz-fantome{flex:none;display:block;width:82px;height:auto;margin:0 4px 0 0;filter:drop-shadow(0 6px 12px rgba(0,0,0,.35));animation:mz-flotte 4.8s ease-in-out infinite;}
+@keyframes mz-flotte{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
 .mz-dit{flex:1;min-width:0;}
-.mz-bulle{position:relative;display:inline-block;padding:8px 9px;border-radius:20px;font-size:12.5px;letter-spacing:-.005em;line-height:1.25;font-weight:800;color:#fff;
+.mz-bulle{position:relative;display:inline-block;padding:8px 9px;border-radius:20px;font-size:12px;letter-spacing:-.015em;line-height:1.25;font-weight:750;color:#fff;
   background:rgba(255,255,255,.03);border:1.5px solid rgba(255,240,230,.5);}
 .mz-bulle::after{content:"";position:absolute;left:14px;bottom:-7px;width:12px;height:12px;background:#221811;
   border-right:1.5px solid rgba(255,240,230,.5);border-bottom:1.5px solid rgba(255,240,230,.5);transform:skewX(-28deg) rotate(45deg);}
@@ -775,8 +804,8 @@ function StylesMaMaison() {
 .mz-grille{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:14px 16px 0;}
 .mz-carte{position:relative;display:flex;flex-direction:column;justify-content:flex-end;width:100%;aspect-ratio:.88;padding:62px 11px 11px;text-align:left;border-radius:22px;overflow:hidden;cursor:pointer;isolation:isolate;
   background:#1F150F;border:1px solid rgba(255,235,215,.1);box-shadow:0 14px 30px -18px rgba(0,0,0,.7);}
-/* Les photos actuelles sont plus sombres que celles de la maquette : on les éclaire. */
-.mz-carte img{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;object-position:50% 38%;filter:brightness(1.38) saturate(1.06);transition:filter .3s,transform .6s;}
+/* Les photos de la maquette sont claires d'elles-mêmes : plus aucun filtre. Le cadrage est par pièce (CADRAGE). */
+.mz-carte img{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;transition:filter .3s,transform .6s;}
 .mz-carte::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(24,15,10,0) 22%,rgba(24,15,10,.5) 46%,rgba(26,17,11,.93) 68%,#1D140E 100%);}
 .mz-carte:active img{transform:scale(1.03);}
 .mz-carte.pause img{filter:grayscale(.65) brightness(.75);}
@@ -793,7 +822,6 @@ function StylesMaMaison() {
 .mz-liste{display:grid;gap:12px;margin:14px 16px 0;}
 .mz-carte.large{aspect-ratio:auto;min-height:168px;padding:70px 16px 13px;justify-content:flex-end;}
 .mz-carte.large::after{background:linear-gradient(90deg,rgba(26,17,11,.95) 0%,rgba(26,17,11,.78) 36%,rgba(26,17,11,.12) 72%,rgba(26,17,11,0) 100%);}
-.mz-carte.large img{object-position:60% 50%;}
 .mz-carte.large .mz-anneau{top:12px;left:14px;width:48px;height:48px;padding:10px;}
 .mz-carte.large .mz-carte-t{max-width:60%;}
 .mz-carte.large .mz-carte-t b{font-size:18.5px;}
@@ -806,9 +834,9 @@ function StylesMaMaison() {
 .mz-h2-sous{margin:6px 16px 0;font-size:13.5px;color:#B9ADA6;}
 /* LA MAISON EST PRIVÉE — et c'est d'ici qu'on gère ses pièces. */
 .mz-privee{display:flex;align-items:center;gap:8px;margin:14px 16px 0;padding:12px 14px 12px 4px;border-radius:22px;background:#1F150F;border:1px solid rgba(255,235,215,.08);}
-.mz-privee .fa{flex:none;}
+.mz-privee .mz-fantome{width:86px;margin:0 4px;animation:none;}
 .mz-privee>div{flex:1;min-width:0;}
-.mz-privee b{display:block;font-size:16px;font-weight:800;color:#fff;}
+.mz-privee b{display:block;font-size:15px;letter-spacing:-.01em;font-weight:800;color:#fff;}
 .mz-privee>div>span{display:block;margin-top:3px;font-size:13px;line-height:1.38;color:#B9ADA6;}
 .mz-privee button{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;padding:9px 12px;border-radius:999px;cursor:pointer;text-align:left;font-size:14px;
   background:rgba(255,255,255,.02);border:1px solid rgba(255,240,230,.18);}
@@ -817,7 +845,7 @@ function StylesMaMaison() {
 
 /* ── UNE PIÈCE : le bénéfice d'abord ── */
 .mz-piece-h{position:relative;height:300px;overflow:hidden;}
-.mz-piece-h img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 45%;}
+.mz-piece-h img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 .mz-piece-h::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,13,8,.25),rgba(20,13,8,0) 30%,rgba(20,13,8,.5) 70%,#140D08 100%);}
 .mz-retour{position:absolute;z-index:2;top:calc(12px + env(safe-area-inset-top));left:14px;display:grid;place-items:center;width:40px;height:40px;padding:0;border-radius:50%;
   border:1px solid rgba(255,236,210,.3);background:rgba(20,13,8,.55);font-size:18px;cursor:pointer;}
@@ -898,7 +926,7 @@ function StylesMaMaison() {
 .mz-lien{border:0;background:transparent;color:#F6B54B !important;font-size:13px;text-decoration:underline;cursor:pointer;}
 @media (max-width:360px){.mz-connait{white-space:normal;}.mz-connait>span{overflow:visible;}}
 @media (max-width:340px){.mz-tete h1{font-size:29px;}.mz-carte{aspect-ratio:auto;min-height:196px;}.mz-carte-t b{white-space:normal;}.mz-carte-t em{-webkit-line-clamp:3;}.mz-tete p{font-size:13.5px;}.mz-grille{gap:9px;}.mz-carte{padding:10px;}.mz-carte-t b{font-size:14.5px;}.mz-carte-t em{font-size:11.5px;}.mz-anneau{width:40px;height:40px;padding:8px;}.mz-etiquette{padding:4px 10px;font-size:12px;}.mz-fleche{width:28px;height:28px;padding:6px;}.mz-carte.large .mz-carte-t{max-width:70%;}.mz-piece-h{height:250px;}}
-@media (prefers-reduced-motion: reduce){.mz-carte img{transition:none;}}
+@media (prefers-reduced-motion: reduce){.mz-carte img{transition:none;}.mz-fantome{animation:none;}}
 `,
         }}
       />
