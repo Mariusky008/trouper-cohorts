@@ -468,13 +468,20 @@ export function useDuelDuSalon(p: {
   ouvrirSalon?: (cle: string) => void;
   /** Inviter ses amis dans ce salon (le lien part dans WhatsApp). */
   onInviter?: () => void;
+  /**
+   * SA VRAIE PAGE, HORS DE LA VRAIE VILLE — l'onglet Amis d'une boutique,
+   * vu par la commerçante avant qu'elle la garde (`boutique-table.tsx`) : le
+   * duel reste une démonstration, mais n'oppose que SES pièces. Jamais une
+   * pièce du modèle prêtée à un vrai commerce.
+   */
+  seulementLesSiennes?: boolean;
 }) {
   const { salon, carte, reelle, membre, autres } = p;
   const cle = salon?.cle ?? "";
   /* UNE SORTIE SE TRANCHE CONTRE UNE AUTRE SORTIE — un concert contre un bar
      à vins —, et seulement dans la démonstration (voir `vivierDesSorties`). */
   const sortie = useMemo(() => (!reelle && salon ? sortieDuSalon(salon) : undefined), [reelle, salon]);
-  const { pool, essai } = useMemo(() => (sortie ? { pool: vivierDesSorties(), essai: undefined } : vivierDe(carte, reelle)), [sortie, carte, reelle]);
+  const { pool, essai } = useMemo(() => (sortie ? { pool: vivierDesSorties(), essai: undefined } : vivierDe(carte, reelle || !!p.seulementLesSiennes)), [sortie, carte, reelle, p.seulementLesSiennes]);
   const famille: string = sortie ? "sortie" : carte ? familleDuDouble(carte) : "mode";
   const action = sortie ? "J’y vais" : carte ? profilDuDouble(carte).demande.court : "Demander";
   const chez = lieuDe(carte);
@@ -1023,7 +1030,7 @@ export function useDuelDuSalon(p: {
     if (!etape) return;
     const t = window.setTimeout(() => {
       const el = ancre.current;
-      const fil = el?.closest(".ap-sal-corps") as HTMLElement | null;
+      const fil = el?.closest(".ap-sal-corps, .bt-corps") as HTMLElement | null;
       if (!el || !fil) return;
       const doux = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       fil.scrollTo({ top: Math.max(0, fil.scrollTop + el.getBoundingClientRect().top - fil.getBoundingClientRect().top - 8), behavior: doux ? "smooth" : "auto" });
@@ -1131,7 +1138,32 @@ export function useDuelDuSalon(p: {
       />
     ) : null;
 
-  return { module: carteModule, trace, apres, reste, mini, calques, actif: !!duel || !!enAttente || recherche };
+  /**
+   * AVANT QUE LE SALON EXISTE — l'onglet Amis d'une boutique : la pièce par
+   * laquelle commencer (celle de l'essai de sa vitrine, sinon la première), à
+   * condition qu'il y en ait une autre à lui opposer. La page ouvre le salon
+   * sur elle, puis appelle `lancer`.
+   */
+  const depart = useMemo(() => {
+    if (sortie || pool.length < 2) return null;
+    const e = carte?.essaiVitrine;
+    const c = (e && (e.nom || e.piece) ? retrouverDansLePool(pool, { nom: e.nom, photo: e.piece }) : undefined) ?? pool[0];
+    return enObjet(c);
+  }, [sortie, pool, carte]);
+
+  return {
+    module: carteModule,
+    trace,
+    apres,
+    reste,
+    mini,
+    calques,
+    actif: !!duel || !!enAttente || recherche,
+    peutDuel,
+    depart,
+    autre: motsDeLaRecherche(famille).autre,
+    lancer: () => void lancer(),
+  };
 }
 
 // ─── LES PIÈCES ────────────────────────────────────────────────────────────
@@ -1164,7 +1196,7 @@ function issue(d: Duel, g: Cote) {
 }
 
 /** ÉCRAN 1 — « Vous hésitez ? Je peux vous aider à trancher. » */
-function CartePropose({
+export function CartePropose({
   sujet,
   ouverture,
   humeur,
