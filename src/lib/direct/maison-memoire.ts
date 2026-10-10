@@ -16,11 +16,21 @@ import {
   fusionnerMemoires,
   lireMemoire,
   MEMOIRE_VIDE,
+  MONTREES_MAX,
   PIECES,
   type ClePiece,
+  type JourDeSurprises,
   type Memoire,
   type Signal,
 } from "@/lib/direct/maison";
+import {
+  choisirLesSurprises,
+  dateDuJour,
+  estPassee,
+  SURPRISES_MAX,
+  type CommerceDuJour,
+  type Surprise,
+} from "@/lib/direct/surprises";
 
 const CLE = "clikme-maison-memoire-v1";
 
@@ -144,16 +154,31 @@ export function choisirDansLaPiece(piece: ClePiece, cles: string[]) {
   geste((m) => ({ ...m, choix: { ...m.choix, [piece]: { v: [...new Set(cles)].slice(0, 20), t: Date.now() } } }));
 }
 
+/** Les surprises du jour pas encore ouvertes qui ne valent plus : elles s'en vont. */
+function sansLesSurprises(m: Memoire, tombe: (s: Surprise) => boolean): JourDeSurprises | undefined {
+  const j = m.jour;
+  if (!j) return j;
+  return { ...j, liste: j.liste.filter((s) => j.vues.includes(s.id) || !tombe(s)) };
+}
+
 /** « Ce n'est pas moi » : ce trait ne sera plus déduit dans cette pièce. */
 export function refuserLeTrait(piece: ClePiece, trait: string) {
   geste((m) => {
     const deja = m.refus[piece]?.v ?? [];
-    return { ...m, refus: { ...m.refus, [piece]: { v: [...new Set([...deja, trait])].slice(0, 20), t: Date.now() } } };
+    return {
+      ...m,
+      refus: { ...m.refus, [piece]: { v: [...new Set([...deja, trait])].slice(0, 20), t: Date.now() } },
+      jour: sansLesSurprises(m, (s) => s.piece === piece && s.traits.includes(trait)),
+    };
   });
 }
 
 export function mettreEnPause(piece: ClePiece, enPause: boolean) {
-  geste((m) => ({ ...m, pauses: { ...m.pauses, [piece]: { v: enPause, t: Date.now() } } }));
+  geste((m) => ({
+    ...m,
+    pauses: { ...m.pauses, [piece]: { v: enPause, t: Date.now() } },
+    jour: enPause ? sansLesSurprises(m, (s) => s.piece === piece) : m.jour,
+  }));
 }
 
 /** VIDER UNE PIÈCE : ce qu'elle savait ne compte plus, ses choix tombent. */
@@ -165,6 +190,7 @@ export function viderLaPiece(piece: ClePiece) {
     choix: { ...m.choix, [piece]: { v: [], t } },
     refus: { ...m.refus, [piece]: { v: [], t } },
     signaux: m.signaux.filter((s) => s.piece !== piece),
+    jour: sansLesSurprises(m, (s) => s.piece === piece),
   }));
 }
 
@@ -179,6 +205,83 @@ export function noterLesSignaux(nouveaux: Signal[]) {
   const a = nouveaux.filter((s) => !connus.has(s.id) && m.pauses[s.piece]?.v !== true && s.t > (m.videes[s.piece] ?? 0));
   if (!a.length) return;
   geste((x) => fusionnerMemoires(x, { ...MEMOIRE_VIDE, signaux: a }));
+}
+
+// ─── LES SURPRISES DU JOUR ─────────────────────────────────────────────────
+
+/**
+ * LE FANTÔME FAIT SA TOURNÉE. Une fois par jour, puis chaque fois que la Maison
+ * en apprend plus : une pièce qui n'avait rien peut avoir trouvé quelque chose.
+ * Ce qui est déjà dans la liste y reste (on ne retire pas une surprise sous les
+ * yeux), sauf ce qui n'a pas été ouvert et ne vaut plus (le plat du midi, à 16 h).
+ */
+export function preparerLesSurprises(commerces: CommerceDuJour[], maintenant: Date, gardees: { nom: string }[] = []) {
+  const m = lire().memoire;
+  const date = dateDuJour(maintenant);
+  const avant = m.jour?.date === date ? m.jour : undefined;
+  const jour: JourDeSurprises = avant ?? { date, liste: [], vues: [], avis: {} };
+  const restent = jour.liste.filter((s) => jour.vues.includes(s.id) || !estPassee(s, maintenant));
+  let liste = restent;
+  if (restent.length < SURPRISES_MAX) {
+    const deja = [...m.montrees, ...restent.map((s) => ({ k: s.objet, t: maintenant.getTime() }))];
+    const nouvelles = choisirLesSurprises(m, commerces, maintenant, gardees, deja).filter((s) => !restent.some((r) => r.piece === s.piece));
+    liste = [...restent, ...nouvelles].slice(0, SURPRISES_MAX);
+  }
+  const pareil = avant && liste.length === avant.liste.length && liste.every((s, i) => s.id === avant.liste[i].id);
+  if (pareil || (!avant && !liste.length && !m.jour)) return;
+  geste((x) => ({ ...x, jour: { ...jour, liste } }));
+}
+
+/** Les surprises du jour pas encore ouvertes — le badge de Ma Maison. */
+export function surprisesAOuvrir(m: Memoire, maintenant: Date): Surprise[] {
+  const j = m.jour;
+  if (!j || j.date !== dateDuJour(maintenant)) return [];
+  return j.liste.filter((s) => !j.vues.includes(s.id) && !estPassee(s, maintenant));
+}
+
+/** Les surprises d'aujourd'hui, ouvertes ou non : « Revoir mes surprises du jour ». */
+export function surprisesDuJour(m: Memoire, maintenant: Date): Surprise[] {
+  return m.jour?.date === dateDuJour(maintenant) ? m.jour.liste : [];
+}
+
+/** Ouverte : elle ne compte plus dans le badge, et ne revient pas de la semaine. */
+export function voirLaSurprise(s: Surprise) {
+  const m = lire().memoire;
+  if (!m.jour || m.jour.vues.includes(s.id)) return;
+  geste((x) =>
+    x.jour
+      ? {
+          ...x,
+          jour: { ...x.jour, vues: [...new Set([...x.jour.vues, s.id])] },
+          montrees: [{ k: s.objet, t: Date.now() }, ...x.montrees.filter((y) => y.k !== s.objet)].slice(0, MONTREES_MAX),
+        }
+      : x,
+  );
+}
+
+/**
+ * ❤️ ÇA ME PLAÎT / 👎 PAS VRAIMENT — un geste comme un autre : il devient un
+ * signal de la pièce (ce que j'ai remarqué), et nourrit ce que je crois. On
+ * peut changer d'avis : le même signal est remplacé, pas doublé. Une pièce en
+ * pause garde l'avis mais n'apprend rien.
+ */
+export function reagirALaSurprise(s: Surprise, sens: 1 | -1) {
+  geste((m) => {
+    const t = Date.now();
+    const jour = m.jour ? { ...m.jour, avis: { ...m.jour.avis, [s.id]: sens } } : m.jour;
+    if (m.pauses[s.piece]?.v === true) return { ...m, jour };
+    const signal: Signal = {
+      id: `surprise|${s.objet}`,
+      piece: s.piece,
+      quoi: s.titre,
+      d: sens > 0 ? `Une surprise qui vous a plu, chez ${s.lieu}` : `Une surprise pas vraiment pour vous`,
+      sens,
+      traits: s.traits,
+      image: s.photo,
+      t,
+    };
+    return fusionnerMemoires({ ...m, jour }, { ...MEMOIRE_VIDE, signaux: [signal] });
+  });
 }
 
 /**

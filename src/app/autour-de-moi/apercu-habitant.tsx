@@ -207,6 +207,7 @@ import { decorDe } from "./alcove";
 import { BarreDAcces, LectureDuSalon, MenuDuMessage, PorteDuSalon, porteFermee } from "./porte-salon";
 import { aToiDeJouer, nosDiscussions } from "@/lib/direct/ensemble";
 import { MaMaison } from "./ma-maison";
+import { SurprisesDuJour, useTourneeDuFantome } from "./surprises";
 import { ComposeurVille, LaVille, type CibleSalon, type EssaiPartageable, type SalonPartageable } from "./la-ville";
 import { StyleMaison } from "@/components/direct/style-maison";
 import { StylesChoix } from "@/components/direct/styles-choix";
@@ -5402,6 +5403,20 @@ export function ApercuHabitant({
     return c ? familleDuDouble(c) : undefined;
   }, []);
   const nomDeLaSoiree = useCallback((cle: string) => SOIREES[cle]?.lieu, []);
+  /**
+   * 🎁 LA TOURNÉE DU FANTÔME — tenue ici, et pas dans Ma Maison : le badge de
+   * l'onglet en dépend, et ce que l'application sait déjà doit entrer dans la
+   * Maison même si on ne l'a jamais ouverte. Voir `surprises.tsx`.
+   */
+  const tournee = useTourneeDuFantome({
+    cartes: toutes,
+    gardees: piecesGardees,
+    suivis: suivisDeLaMaison,
+    familleDeCarte: familleDeLaCarte,
+    nomDeSoiree: nomDeLaSoiree,
+  });
+  /** L'écran des surprises : les nouvelles (avec l'ouverture), ou toutes celles du jour. */
+  const [surprisesOuvertes, setSurprisesOuvertes] = useState<"neuves" | "toutes" | null>(null);
   /**
    * CE QUE MES COMMERCES ONT DIT AUJOURD'HUI — la matière de la pastille.
    *
@@ -12261,9 +12276,11 @@ export function ApercuHabitant({
               <MaMaison
                 reelle={Boolean(reelle)}
                 gardees={piecesGardees}
-                suivis={suivisDeLaMaison}
-                familleDeCarte={familleDeLaCarte}
-                nomDeSoiree={nomDeLaSoiree}
+                surprises={{
+                  aOuvrir: tournee.aOuvrir.length,
+                  duJour: tournee.duJour.length,
+                  onOuvrir: (revoir) => setSurprisesOuvertes(revoir ? "toutes" : "neuves"),
+                }}
                 onVoirGardee={(p) => setPieceVue(p)}
                 onDecouvrir={(b) => {
                   // DEPUIS UNE PIÈCE : LE DIRECT S'OUVRE SUR SON MÉTIER (Mes Sorties → les bars).
@@ -14290,7 +14307,16 @@ export function ApercuHabitant({
                   remontee en haut a droite, dans la maquette, a cote du coeur ;
                   laisser son chiffre ici l'ecrirait deux fois. Ce qui reste,
                   c'est ce qu'on trouve DANS le profil : ses annonces gardees. */}
-              {gardees.length > 0 && <b>{gardees.length}</b>}
+              {/* 🎁 LE FANTÔME A TROUVÉ QUELQUE CHOSE : l'ambre dit « du neuf »,
+                  et il passe devant le compte des favoris tant qu'on n'a pas
+                  ouvert ses surprises. */}
+              {tournee.aOuvrir.length > 0 ? (
+                <b className="neuf" title="Le Fantôme a trouvé quelque chose pour vous">
+                  {tournee.aOuvrir.length}
+                </b>
+              ) : (
+                gardees.length > 0 && <b>{gardees.length}</b>
+              )}
             </button>
           </nav>
 
@@ -15641,6 +15667,17 @@ export function ApercuHabitant({
               dans le cadre du téléphone. Posé dehors, il s'étalerait sur toute
               la fenêtre d'un ordinateur pendant que l'application tient dans
               ses trois cent quatre-vingt-dix points. */}
+          {/* LES SURPRISES DU JOUR — même place que le relooking, dans le cadre
+              du téléphone, par-dessus la barre des onglets : plein écran. */}
+          {surprisesOuvertes && (
+            <SurprisesDuJour
+              revoir={surprisesOuvertes === "toutes"}
+              onFermer={() => setSurprisesOuvertes(null)}
+              onVoir={(s) => {
+                window.location.href = pageDuCommerce(toutes.find((x) => x.id === s.carte) ?? { id: s.carte }, s.action.onglet);
+              }}
+            />
+          )}
           {journeeOuverte && (
             <JourneeContenu
               onFermer={() => setJourneeOuverte(false)}

@@ -972,6 +972,12 @@ export type ArticleCatalogue = {
   /** Le rayon : « Entrées », « Coupes », « Bouquets »… Facultatif. */
   rayon?: string;
   /**
+   * QUAND IL L'A PUBLIÉE, s'il l'a publiée à son comptoir (ISO) — absente pour
+   * une photo de vitrine, qui reste. C'est ce qui permet au Fantôme de dire
+   * « trouvée ce matin » : sans elle, une pièce est en rayon, pas fraîche.
+   */
+  publieLe?: string;
+  /**
    * CE QUE L'ESSAI DOIT REPRODUIRE, écrit devant la photo — jamais d'après le
    * nom de la prestation. Facultatif : sans elle, l'essai s'appuie sur la
    * photo seule. Voir `decrire` dans `fantomes.ts`.

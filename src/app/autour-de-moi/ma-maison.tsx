@@ -17,14 +17,12 @@
 // fait déjà pour vous. On montre ce que ça APPORTE, pas ce que ça stocke — ce
 // que la Maison sait reste visible, mais sous le bénéfice. Les réglages restent
 // derrière la roue dentée. Voir `lib/direct/maison.ts`.
-import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { FantomeAnime, StylesFantome } from "@/components/direct/fantome-anime";
-import { histoireDesDuels } from "@/components/direct/duel-salon";
 import { abonnerLook, monLook } from "@/lib/direct/look";
 import { changerDeLook } from "./prendre-place";
-import type { FamilleDouble } from "@/lib/direct/double-metiers";
 import type { PieceGardee } from "@/lib/direct/pieces-gardees";
-import { abonnerEnvies, AUCUNES_ENVIES, chargerEnvies } from "@/lib/direct/soiree-envies";
+import { CourrierDuFantome, RevoirLesSurprises } from "./surprises";
 import {
   etatDe,
   motDuFantome,
@@ -32,10 +30,6 @@ import {
   ordreSelonLHeure,
   pieceParCle,
   PIECES,
-  signauxDesDuels,
-  signauxDesEnvies,
-  signauxDesGardees,
-  signauxDesSuivis,
   type ClePiece,
   type EtatPiece,
   type Signal,
@@ -49,7 +43,6 @@ import {
   effacerToutLaMaison,
   maisonPriveeServeur,
   mettreEnPause,
-  noterLesSignaux,
   refuserLeTrait,
   viderLaPiece,
 } from "@/lib/direct/maison-memoire";
@@ -63,9 +56,7 @@ const heureIci = () => new Date().getHours();
 export function MaMaison({
   reelle,
   gardees,
-  suivis,
-  familleDeCarte,
-  nomDeSoiree,
+  surprises,
   onDecouvrir,
   onVoirGardee,
   demandeGeste = 0,
@@ -74,9 +65,11 @@ export function MaMaison({
   /** Dans une vraie ville : la Maison est gardée par le serveur et l'adresse la retrouve. */
   reelle: boolean;
   gardees: PieceGardee[];
-  suivis: { id: string; nom: string; famille: FamilleDouble; photo?: string }[];
-  familleDeCarte: (carte: string) => FamilleDouble | undefined;
-  nomDeSoiree: (cle: string) => string | undefined;
+  /**
+   * LES SURPRISES DU JOUR — la tournée est tenue par l'application (le badge
+   * en dépend), l'écran aussi : ici, l'enveloppe du Fantôme. Voir `surprises.tsx`.
+   */
+  surprises?: { aOuvrir: number; duJour: number; onOuvrir: (revoir: boolean) => void };
   /** « Découvrir » depuis une pièce : le Direct, sur son métier. */
   onDecouvrir: (branche: string) => void;
   onVoirGardee?: (p: PieceGardee) => void;
@@ -86,23 +79,9 @@ export function MaMaison({
   reglagesEnPlus?: ReactNode;
 }) {
   const etat = useSyncExternalStore(abonnerMaisonPrivee, chargerMaisonPrivee, maisonPriveeServeur);
-  const envies = useSyncExternalStore(abonnerEnvies, chargerEnvies, () => AUCUNES_ENVIES);
   const look = useSyncExternalStore(abonnerLook, monLook, monLook);
   const heure = useSyncExternalStore(rien, heureIci, heureServeur);
   const [vue, setVue] = useState<Vue>({ ou: "entree" });
-
-  /* CE QUE L'APPLICATION SAVAIT DÉJÀ ENTRE DANS LA MAISON — pièces mises de
-     côté, duels, commerces suivis, envies de soirée. Après le rendu : l'histoire
-     des duels se lit dans le téléphone. */
-  useEffect(() => {
-    const derives: Signal[] = [
-      ...signauxDesGardees(gardees, familleDeCarte),
-      ...signauxDesDuels(histoireDesDuels()),
-      ...signauxDesSuivis(suivis, Date.now()),
-      ...signauxDesEnvies(envies, nomDeSoiree),
-    ];
-    noterLesSignaux(derives);
-  }, [gardees, suivis, envies, familleDeCarte, nomDeSoiree]);
 
   const etats = useMemo(() => {
     const ordre = ordreSelonLHeure(heure);
@@ -173,12 +152,17 @@ export function MaMaison({
           </button>
         </div>
         {/* UNE SEULE INTERVENTION DU FANTÔME, puis directement la Maison. La
-            jauge se passe d'explication. */}
+            jauge se passe d'explication. LE JOUR OÙ IL REVIENT DE LA VILLE
+            AVEC QUELQUE CHOSE, c'est l'enveloppe qui prend sa place. */}
+        {surprises && surprises.aOuvrir > 0 ? (
+          <CourrierDuFantome n={surprises.aOuvrir} onOuvrir={() => surprises.onOuvrir(false)} />
+        ) : (
         <div className="mz-scene">
           <FantomeAnime humeur={allumees ? "excited" : "idle"} taille={104} />
           <div className="mz-bulle">
             <b>{mot.titre}</b>
-            {mot.texte && <span>{mot.texte}</span>}
+            {/* RIEN DE FORT AUJOURD'HUI : il le dit, il n'invente pas. */}
+            {mot.texte ? <span>{mot.texte}</span> : surprises && allumees > 0 && !surprises.duJour && <span>Rien pour vous en ville pour l&apos;instant. J&apos;y retourne plus tard.</span>}
             <i className="mz-jauge" role="img" aria-label={phraseDesPieces(allumees)}>
               {PIECES.map((p, k) => (
                 <s key={p.cle} className={k < allumees ? "on" : ""} />
@@ -186,6 +170,8 @@ export function MaMaison({
             </i>
           </div>
         </div>
+        )}
+        {surprises && !surprises.aOuvrir && surprises.duJour > 0 && <RevoirLesSurprises n={surprises.duJour} onRevoir={() => surprises.onOuvrir(true)} />}
       </header>
 
       {proposerCompte && (

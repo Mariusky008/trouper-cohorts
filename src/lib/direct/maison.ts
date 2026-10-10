@@ -17,6 +17,7 @@
 // téléphone et la synchronisation vivent dans `maison-memoire.ts`.
 import { familleDe, teinteDe, type Issue } from "@/lib/direct/duel";
 import type { FamilleDouble } from "@/lib/direct/double-metiers";
+import type { Preuve, Surprise } from "@/lib/direct/surprises";
 
 // ─── LES SEPT PIÈCES ───────────────────────────────────────────────────────
 
@@ -268,10 +269,31 @@ export type Memoire = {
   videes: Partial<Record<ClePiece, number>>;
   /** CE QUE J'AI REMARQUÉ — gardé ici pour survivre au téléphone effacé. */
   signaux: Signal[];
+  /** LES SURPRISES DU JOUR — ce que le Fantôme a rapporté de la ville (`surprises.ts`). */
+  jour?: JourDeSurprises;
+  /** Ce qui a déjà été montré, et quand : pas deux fois la même chose dans la semaine. */
+  montrees: { k: string; t: number }[];
   maj: number;
 };
 
-export const MEMOIRE_VIDE: Memoire = { v: 1, choix: {}, refus: {}, pauses: {}, videes: {}, signaux: [], maj: 0 };
+/**
+ * LA TOURNÉE DU JOUR. Tirée une fois (et complétée si la Maison en apprend
+ * plus dans la journée), gardée telle quelle : on peut la revoir le soir, et
+ * le deuxième téléphone voit la même.
+ */
+export type JourDeSurprises = {
+  /** « 2026-10-10 », à l'heure du téléphone. */
+  date: string;
+  liste: Surprise[];
+  /** Les surprises déjà ouvertes. */
+  vues: string[];
+  /** ❤️ (1) ou 👎 (-1), par surprise. */
+  avis: Record<string, 1 | -1>;
+};
+
+export const MEMOIRE_VIDE: Memoire = { v: 1, choix: {}, refus: {}, pauses: {}, videes: {}, signaux: [], montrees: [], maj: 0 };
+/** Assez pour une semaine de surprises : au-delà, elles peuvent revenir. */
+export const MONTREES_MAX = 80;
 
 /** Au-delà, les plus anciens s'en vont : la Maison retient, elle n'archive pas. */
 export const SIGNAUX_MAX = 300;
@@ -316,6 +338,11 @@ export function lireMemoire(x: unknown): Memoire {
       t: nombre(r.t),
     });
   }
+  const montrees: { k: string; t: number }[] = [];
+  for (const x of Array.isArray(o.montrees) ? o.montrees : []) {
+    const r = (x ?? {}) as Record<string, unknown>;
+    if (typeof r.k === "string" && r.k) montrees.push({ k: r.k.slice(0, 200), t: nombre(r.t) });
+  }
   return {
     v: 1,
     choix: datees(o.choix, liste),
@@ -323,8 +350,75 @@ export function lireMemoire(x: unknown): Memoire {
     pauses: datees(o.pauses, (w) => (typeof w === "boolean" ? w : undefined)),
     videes,
     signaux: signaux.sort((a, b) => b.t - a.t).slice(0, SIGNAUX_MAX),
+    jour: lireJour(o.jour),
+    montrees: montrees.sort((a, b) => b.t - a.t).slice(0, MONTREES_MAX),
     maj: nombre(o.maj),
   };
+}
+
+/** Une image de la ville : un chemin du site ou une adresse https, rien d'autre. */
+const image = (v: unknown) => (typeof v === "string" && v.length < 600 && /^(\/(?!\/)|https:\/\/)/.test(v) ? v : "");
+const heure = (v: unknown) => (typeof v === "number" && v >= 0 && v <= 30 ? v : undefined);
+
+function lireSurprise(x: unknown): Surprise | undefined {
+  const r = (x && typeof x === "object" ? x : {}) as Record<string, unknown>;
+  const photo = image(r.photo);
+  if (!estCle(r.piece) || !r.id || !r.objet || !r.carte || !r.titre || !photo) return undefined;
+  const a = (r.action ?? {}) as Record<string, unknown>;
+  const preuves: Preuve[] = [];
+  for (const p of Array.isArray(r.preuves) ? r.preuves.slice(0, 8) : []) {
+    const q = (p ?? {}) as Record<string, unknown>;
+    if ((q.sorte === "dit" || q.sorte === "remarque" || q.sorte === "crois") && q.texte) preuves.push({ sorte: q.sorte, texte: chaine(q.texte, 200) });
+  }
+  const optionnelle = (v: unknown, n: number) => (typeof v === "string" && v ? v.slice(0, n) : undefined);
+  return {
+    id: chaine(r.id, 220),
+    objet: chaine(r.objet, 200),
+    piece: r.piece,
+    carte: chaine(r.carte, 120),
+    lieu: chaine(r.lieu, 120),
+    distance: optionnelle(r.distance, 30),
+    titre: chaine(r.titre, 160),
+    annonce: optionnelle(r.annonce, 160),
+    photo,
+    prix: optionnelle(r.prix, 40),
+    quand: chaine(r.quand, 30),
+    de: heure(r.de),
+    fin: heure(r.fin),
+    raison: chaine(r.raison, 240),
+    preuves,
+    traits: Array.isArray(r.traits) ? r.traits.filter((t) => typeof t === "string").map((t) => t.slice(0, 40)).slice(0, 8) : [],
+    trait: optionnelle(r.trait, 40),
+    action: { mot: chaine(a.mot, 40) || "Voir", onglet: optionnelle(a.onglet, 30) },
+    score: nombre(r.score),
+  };
+}
+
+function lireJour(x: unknown): JourDeSurprises | undefined {
+  const o = (x && typeof x === "object" ? x : null) as Record<string, unknown> | null;
+  if (!o || typeof o.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(o.date)) return undefined;
+  const liste = (Array.isArray(o.liste) ? o.liste : []).map(lireSurprise).filter((s): s is Surprise => !!s).slice(0, 6);
+  const ids = new Set(liste.map((s) => s.id));
+  const avis: Record<string, 1 | -1> = {};
+  for (const [k, v] of Object.entries((o.avis && typeof o.avis === "object" ? o.avis : {}) as Record<string, unknown>)) if (ids.has(k) && (v === 1 || v === -1)) avis[k] = v;
+  return { date: o.date, liste, vues: (Array.isArray(o.vues) ? o.vues : []).filter((v): v is string => typeof v === "string" && ids.has(v)), avis };
+}
+
+/**
+ * DEUX TOURNÉES, UN JOUR. Le jour le plus récent l'emporte ; le même jour, les
+ * deux listes se rejoignent (trois au plus, celles déjà ouvertes d'abord), et
+ * ce qui a été vu ou aimé d'un côté l'est des deux.
+ */
+function fusionnerJours(a?: JourDeSurprises, b?: JourDeSurprises): JourDeSurprises | undefined {
+  if (!a || !b) return a ?? b;
+  if (a.date !== b.date) return a.date > b.date ? a : b;
+  const vues = [...new Set([...a.vues, ...b.vues])];
+  const parId = new Map<string, Surprise>();
+  for (const s of [...a.liste, ...b.liste]) if (!parId.has(s.id)) parId.set(s.id, s);
+  const liste = [...parId.values()].sort((x, y) => Number(vues.includes(y.id)) - Number(vues.includes(x.id))).slice(0, 3);
+  const ids = new Set(liste.map((s) => s.id));
+  const avis = Object.fromEntries(Object.entries({ ...a.avis, ...b.avis }).filter(([k]) => ids.has(k))) as Record<string, 1 | -1>;
+  return { date: a.date, liste, vues: vues.filter((v) => ids.has(v)), avis };
 }
 
 /**
@@ -345,6 +439,8 @@ export function fusionnerMemoires(a: Memoire, b: Memoire): Memoire {
     const deja = parId.get(s.id);
     if (!deja || s.t > deja.t) parId.set(s.id, s);
   }
+  const montrees = new Map<string, number>();
+  for (const x of [...a.montrees, ...b.montrees]) montrees.set(x.k, Math.max(montrees.get(x.k) ?? 0, x.t));
   return {
     v: 1,
     choix: datees(a.choix, b.choix),
@@ -352,6 +448,8 @@ export function fusionnerMemoires(a: Memoire, b: Memoire): Memoire {
     pauses: datees(a.pauses, b.pauses),
     videes,
     signaux: [...parId.values()].sort((x, y) => y.t - x.t).slice(0, SIGNAUX_MAX),
+    jour: fusionnerJours(a.jour, b.jour),
+    montrees: [...montrees].map(([k, t]) => ({ k, t })).sort((x, y) => y.t - x.t).slice(0, MONTREES_MAX),
     maj: Math.max(a.maj, b.maj),
   };
 }

@@ -380,6 +380,8 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
         prix: x.prix,
         photo: x.photo,
         decrire: x.decrire,
+        // UNE ANNONCE DU COMPTOIR EST DATÉE ; UNE PHOTO DE VITRINE RESTE (les surprises lisent la différence).
+        ...(x.vitrine ? {} : { publieLe: x.publieLe }),
         // SON MOT À SA VOIX, s'il en a enregistré un — voir `ChoixDuLibraire`.
         ...(x.voix ? { voix: x.voix, voixSecondes: x.voixSecondes, voixTexte: x.voixTexte } : {}),
       })),
