@@ -97,33 +97,6 @@ function enMessage(p: PublicationLue, nomVille: string): MessageVille {
   };
 }
 
-/**
- * UNE PUBLICATION VUE DANS LA MAISON DE SON AUTEUR — voir `maison-sync.ts`.
- * La maison n'en rend que l'essentiel : ni cœurs ni réponses, qu'on retrouve
- * dans le fil.
- */
-export function messageDeMaison(
-  p: { id: string; visibilite: string; cree_le: string; donnees: Record<string, unknown> },
-  qui: string,
-  nomVille: string,
-): MessageVille {
-  return enMessage(
-    {
-      ...p,
-      qui,
-      moi: false,
-      visibilite: p.visibilite === "amis" ? "amis" : "public",
-      persistant: false,
-      masque: false,
-      coeurs: 0,
-      monCoeur: false,
-      reponses: [],
-      interesses: [],
-    },
-    nomVille,
-  );
-}
-
 async function poster(corps: unknown): Promise<boolean> {
   try {
     const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });

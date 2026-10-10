@@ -17,7 +17,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cityDirectory } from "@/lib/site-internet/collectif";
 import { consentPhrase, sendConfirmation, villeSlug } from "@/lib/site-internet/ville-mail";
-import { habitantCourant, fusionner, poserCookie } from "@/lib/direct/habitant";
+import { habitantCourant, poserCookie } from "@/lib/direct/habitant";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +46,9 @@ function ipThrottled(ip: string): boolean {
 }
 
 // Réponse unique : « regardez vos e-mails ». Elle ne révèle jamais l'état réel.
-const OK = NextResponse.json({ ok: true });
+// UNE RÉPONSE NEUVE À CHAQUE FOIS : un même objet renvoyé deux fois a déjà
+// livré son corps, et la seconde requête tombait en erreur 500.
+const OK = () => NextResponse.json({ ok: true });
 
 export async function POST(request: Request) {
   let p: Record<string, unknown> | null = null;
@@ -67,7 +69,7 @@ export async function POST(request: Request) {
 
   const fwd = request.headers.get("x-forwarded-for") || "";
   const ip = (fwd.split(",")[0] || request.headers.get("x-real-ip") || "").trim();
-  if (ipThrottled(ip)) return OK;
+  if (ipThrottled(ip)) return OK();
 
   const supabase = createAdminClient();
 
@@ -93,13 +95,13 @@ export async function POST(request: Request) {
 
     if (parEmail) {
       const idEmail = s(parEmail.id);
-      // Cette adresse est déjà connue ici. Si l'appareil portait une AUTRE ligne,
-      // on la replie dans celle-ci : c'est la même personne, et ses gardées
-      // doivent suivre.
-      if (surAppareil && surAppareil.id !== idEmail) {
-        await fusionner(supabase, surAppareil.id, idEmail);
-      }
-      await poserCookie(s(parEmail.device_token));
+      // CETTE ADRESSE EST DÉJÀ CONNUE ICI — ET LA TAPER NE PROUVE RIEN.
+      // Avant, l'appareil devenait aussitôt cet habitant (cookie posé, lignes
+      // repliées) : n'importe qui tapant l'adresse d'un autre héritait de ses
+      // gardées, de ses suivis… et aujourd'hui de sa Maison privée. Rejoindre
+      // un habitant existant passe désormais par le code à six chiffres envoyé
+      // à cette adresse (`/api/direct/ma-maison/verifier`). Ici, on ne fait
+      // que renvoyer la confirmation du résumé si elle manque.
 
       // Un retrait passé se respecte : se réinscrire demande un geste explicite,
       // et ce geste, c'est de recliquer le lien de confirmation.
@@ -112,7 +114,7 @@ export async function POST(request: Request) {
       if (!parEmail.confirmed_at || parEmail.unsubscribed_at) {
         await sendConfirmation(email, ville, s(parEmail.confirm_token));
       }
-      return OK;
+      return OK();
     }
 
     // Adresse inconnue. Si l'appareil a déjà une ligne POUR CETTE VILLE,
@@ -144,7 +146,7 @@ export async function POST(request: Request) {
       if (error) throw new Error(error.message);
       const token = s((maj as Record<string, unknown> | null)?.confirm_token);
       if (token) await sendConfirmation(email, ville, token);
-      return OK;
+      return OK();
     }
 
     const { data: ins, error } = await supabase
@@ -158,7 +160,7 @@ export async function POST(request: Request) {
     await poserCookie(s(row?.device_token));
     const token = s(row?.confirm_token);
     if (token) await sendConfirmation(email, ville, token);
-    return OK;
+    return OK();
   } catch (e) {
     // Table absente (migration non appliquée) : on le DIT, plutôt que d'afficher
     // « c'est fait » à quelqu'un qui ne recevra jamais rien.

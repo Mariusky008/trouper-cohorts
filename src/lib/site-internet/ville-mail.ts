@@ -94,6 +94,38 @@ export async function sendConfirmation(email: string, ville: string, token: stri
   }
 }
 
+/**
+ * LE CODE DE MA MAISON — six chiffres, dix minutes. Il ne contient AUCUN lien :
+ * sur un iPhone, un lien s'ouvrirait dans Safari et pas dans l'application
+ * installée, et la personne se retrouverait connectée au mauvais endroit. Le
+ * code se tape là où on l'a demandé.
+ */
+export async function sendCodeMaison(email: string, code: string): Promise<boolean> {
+  const html = SHELL(
+    `<div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#F6B54B;font-weight:700">Ma Maison</div>
+     <div style="font-family:Georgia,serif;font-size:25px;line-height:1.15;margin-top:10px;color:#fff">
+       Votre code
+     </div>
+     <div style="margin-top:18px;text-align:center;font-size:34px;letter-spacing:.32em;font-weight:700;color:#fff;
+        background:#221a10;border:1.5px solid rgba(246,181,75,.6);border-radius:14px;padding:14px 0 14px .32em">
+       ${esc(code)}
+     </div>
+     <p style="font-size:14px;line-height:1.6;color:#A8AEBC;margin:16px 0 0">
+       Tapez-le dans ${MARQUE} pour retrouver votre Maison. Il est valable <b style="color:#fff">dix minutes</b>.
+     </p>
+     <p style="font-size:12px;line-height:1.55;color:#6F7684;margin:16px 0 0">
+       Ce n'était pas vous&nbsp;? Ignorez cet e-mail : sans ce code, personne n'entre chez vous.
+     </p>`,
+    `Ce code a été demandé avec cette adresse. Il ne vous abonne à rien.`
+  );
+  try {
+    const r = await getResend().emails.send({ from: MAIL_FROM, to: email, subject: `${code} — votre code ${MARQUE}`, html });
+    return !(r as { error?: unknown } | undefined)?.error;
+  } catch {
+    return false;
+  }
+}
+
 /** Le digest du jour. `offers` est déjà filtré : rien de vide n'arrive ici. */
 export async function sendDigest(
   email: string,

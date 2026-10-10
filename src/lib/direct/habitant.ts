@@ -17,6 +17,7 @@
 // nulle : activer le SMS plus tard sera un canal à brancher, pas une table à
 // réécrire.
 import { cookies } from "next/headers";
+import { rejoindreMaison } from "@/lib/direct/maison-serveur";
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 type Supabase = { from: (t: string) => any }; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -177,6 +178,10 @@ export async function fusionner(supabase: Supabase, sourceId: string, cibleId: s
       // visites réelles.
       await supabase.from("human_suivis").upsert(suivisSource, { onConflict: "habitant_id,site_id", ignoreDuplicates: true });
     }
+
+    // SA MAISON SUIT AUSSI : la mémoire de l'appareil s'ajoute à celle de la
+    // maison retrouvée, ses dépôts la rejoignent — avant que la ligne parte.
+    await rejoindreMaison(supabase as Parameters<typeof rejoindreMaison>[0], sourceId, cibleId);
 
     await supabase.from("human_habitants").delete().eq("id", sourceId);
   } catch {

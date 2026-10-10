@@ -21,7 +21,7 @@ import http from "node:http";
 import { randomBytes, randomUUID } from "node:crypto";
 
 const PORT = Number(process.argv[2] || 54321);
-const SEAUX_PRIVES = new Set(["salons-prives"]);
+const SEAUX_PRIVES = new Set(["salons-prives", "maison-privee"]);
 
 const tables = new Map();
 const fichiers = new Map(); // `${seau}/${chemin}` → { type, octets }
@@ -58,6 +58,9 @@ const DEFAUTS = {
   human_conversation_demandes: () => ({ statut: "attente", cree_le: maintenant(), decide_le: null, invitation: null, qui: "" }),
   human_conversation_signalements: () => ({ id: suite++, cree_le: maintenant(), traite_le: null, geste: null }),
   human_habitant_blocages: () => ({ cree_le: maintenant() }),
+  human_maisons_privees: () => ({ memoire: {}, maj_le: maintenant() }),
+  human_maison_elements: () => ({ id: randomUUID(), sorte: "", donnees: {}, photo: null, cree_le: maintenant(), maj_le: maintenant() }),
+  human_habitant_codes: () => ({ id: suite++, ville_slug: "", essais: 0, utilise_le: null, cree_le: maintenant() }),
 };
 const CLES = {
   human_conversations: ["id"],
@@ -66,6 +69,7 @@ const CLES = {
   human_conversation_demandes: ["conversation", "habitant"],
   human_habitant_blocages: ["habitant", "bloque"],
   human_habitants: ["id"],
+  human_maisons_privees: ["habitant"],
 };
 
 const lignes = (t) => {
@@ -210,6 +214,11 @@ async function stockage(req, res, url) {
     const f = fichiers.get(cle);
     res.writeHead(200, { "content-type": f.type });
     return res.end(f.octets);
+  }
+  if (req.method === "DELETE") {
+    const { prefixes = [] } = JSON.parse((await corps(req)).toString() || "{}");
+    for (const c of prefixes) fichiers.delete(`${p}/${c}`);
+    return repondre(res, 200, prefixes.map((name) => ({ name })));
   }
   if (req.method === "POST" || req.method === "PUT") {
     fichiers.set(p, { type: req.headers["content-type"] || "application/octet-stream", octets: await corps(req) });

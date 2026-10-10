@@ -1,716 +1,774 @@
 "use client";
 
-// 🏠 MA MAISON — l'onglet qui remplace « Profil ».
+// 🏠 MA MAISON — « Vous me montrez un peu de vous. Je vais voir ce que la ville
+// a pour vous. »
 //
-// « "Ma maison" exprime et conserve. » En haut, qui habite là (« Chez Léa »).
-// Au centre, la maison : une pièce par univers, et dans chaque pièce le
-// fantôme des commerces adoptés — on la touche, elle s'ouvre sur eux. Dessous,
-// ce qu'on garde : ses essais, ses découvertes, ses publications.
+// QUATRE VUES, UNE MAISON :
+//   · l'entrée : le Fantôme, ce qu'il a déjà rangé, et les sept pièces — dans
+//     l'ordre de l'heure (la cuisine à midi, les sorties le soir) ;
+//   · une pièce : ce que vous m'avez dit, ce que j'ai remarqué, ce que je crois,
+//     et de quoi la mettre en pause ou la vider ;
+//   · les réglages : la Maison privée, l'adresse qui la retrouve, mon fantôme,
+//     tout effacer ;
+//   · l'adresse et le code : « Pour ne jamais perdre votre Maison ».
 //
-// UN DÉCOR FIXE, DES FANTÔMES POSÉS DESSUS : aucun moteur 3D, aucune image
-// fabriquée à chaque geste. Chaque pièce prend le décor et le fantôme du
-// métier qu'elle accueille (`ma-maison.ts`).
-//
-// LES ESSAIS SONT PRIVÉS PAR DÉFAUT. « Voir comme mes amis » montre la maison
-// telle qu'un ami la verrait : sans les essais privés, sans les réservations,
-// sans les conversations.
-import { useState, useSyncExternalStore } from "react";
+// RIEN ICI NE DEMANDE DE REMPLIR UN PROFIL. Une pièce vide dit comment elle se
+// remplira toute seule, et ce que ça débloquera ; le seul choix proposé est
+// celui qui rend service tout de suite. Voir `lib/direct/maison.ts`.
+import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import { FantomeAnime, StylesFantome } from "@/components/direct/fantome-anime";
+import { histoireDesDuels } from "@/components/direct/duel-salon";
 import { abonnerLook, monLook } from "@/lib/direct/look";
 import { changerDeLook } from "./prendre-place";
-import type { CarteAutour } from "@/lib/direct/apercu-habitant";
-import type { MessageVille } from "@/lib/direct/la-ville";
-import type { FantomePose } from "@/lib/direct/mes-fantomes";
+import type { FamilleDouble } from "@/lib/direct/double-metiers";
 import type { PieceGardee } from "@/lib/direct/pieces-gardees";
+import { abonnerEnvies, AUCUNES_ENVIES, chargerEnvies } from "@/lib/direct/soiree-envies";
 import {
-  abonnerMaison,
-  chargerMaison,
-  direPresentation,
-  habillage,
-  MAISON_VIDE,
-  partagerEssai,
+  etatDe,
+  motDuFantome,
+  ordreSelonLHeure,
+  pieceParCle,
   PIECES,
-  rangerLaMaison,
+  signauxDesDuels,
+  signauxDesEnvies,
+  signauxDesGardees,
+  signauxDesSuivis,
   type ClePiece,
-} from "@/lib/direct/ma-maison";
+  type EtatPiece,
+  type Signal,
+} from "@/lib/direct/maison";
+import {
+  abonnerMaisonPrivee,
+  chargerMaisonPrivee,
+  choisirDansLaPiece,
+  demanderLeCode,
+  donnerLeCode,
+  effacerToutLaMaison,
+  maisonPriveeServeur,
+  mettreEnPause,
+  noterLesSignaux,
+  refuserLeTrait,
+  viderLaPiece,
+} from "@/lib/direct/maison-memoire";
 
-type Essai = { cle: string; titre: string; lieu: string; photo?: string; carte?: string; piece?: PieceGardee; trace?: FantomePose };
-
-/**
- * ═══ LA MAISON D'UN AUTRE HABITANT, EN VISITE ══════════════════════════════
- *
- * « Toucher l'avatar d'un habitant ouvre sa vraie maison : ses commerces
- * adoptés et ce qu'il a choisi de partager. » La même maison, vue comme ses
- * amis la voient (« Voir comme mes amis ») : sans essais privés, sans
- * réglages, sans rien à modifier. Voir `maison-sync.ts`.
- */
-export type MaisonEnVisite = {
-  prenom: string;
-  presentation: string;
-  adoptes: CarteAutour[];
-  /** Ses essais partagés — le serveur ne rend jamais les privés. */
-  essais: { cle: string; titre: string; lieu: string; photo?: string; carte?: string }[];
-  publications: MessageVille[];
-  onFermer: () => void;
-};
+type Vue = { ou: "entree" } | { ou: "piece"; cle: ClePiece } | { ou: "reglages" } | { ou: "compte" };
 
 const rien = () => () => {};
+const heureServeur = () => 12;
+const heureIci = () => new Date().getHours();
 
 export function MaMaison({
-  prenom,
-  adoptes,
-  pieces,
-  traces,
-  publications,
-  onPage,
-  onVoirPiece,
-  onVoirTrace,
-  onPartager,
+  reelle,
+  gardees,
+  suivis,
+  familleDeCarte,
+  nomDeSoiree,
   onDecouvrir,
-  onReglages,
-  onNePlusSuivre,
-  demandeVisite = 0,
-  visiteur,
-  lienInvitation,
+  onVoirGardee,
+  demandeGeste = 0,
+  reglagesEnPlus,
 }: {
-  prenom: string;
-  /** Les commerces adoptés (suivis), tels que l'application les connaît. */
-  adoptes: CarteAutour[];
-  pieces: PieceGardee[];
-  traces: FantomePose[];
-  /** Ce que j'ai dit dans La ville. */
-  publications: MessageVille[];
-  /** Ouvre la page d'un commerce. */
-  onPage: (c: { id: string }) => void;
-  onVoirPiece: (p: PieceGardee) => void;
-  onVoirTrace: (t: FantomePose) => void;
-  /** Partager un essai avec ses amis : ouvre la conversation. */
-  onPartager: (e: { titre: string; lieu: string; photo?: string; carte?: string }) => void;
-  /** Aller découvrir des commerces (Le Direct) — sur ce métier, quand il est donné. */
-  onDecouvrir: (branche?: string) => void;
-  /** Les réglages du compte (l'ancien « Mon espace »). */
-  onReglages: () => void;
-  onNePlusSuivre: (id: string) => void;
-  /** Change à chaque appui sur le fantôme de la barre : « Faire visiter ma maison ». */
-  demandeVisite?: number;
-  /** La maison d'un autre habitant, en visite — voir `MaisonEnVisite`. */
-  visiteur?: MaisonEnVisite;
-  /** Le lien d'invitation de ma maison, dans la vraie ville. Absent : celui de l'application. */
-  lienInvitation?: () => Promise<string | null>;
+  /** Dans une vraie ville : la Maison est gardée par le serveur et l'adresse la retrouve. */
+  reelle: boolean;
+  gardees: PieceGardee[];
+  suivis: { id: string; nom: string; famille: FamilleDouble; photo?: string }[];
+  familleDeCarte: (carte: string) => FamilleDouble | undefined;
+  nomDeSoiree: (cle: string) => string | undefined;
+  /** « Découvrir » depuis une pièce : le Direct, sur son métier. */
+  onDecouvrir: (branche: string) => void;
+  onVoirGardee?: (p: PieceGardee) => void;
+  /** Le Fantôme du bas, sur cette page : il ouvre la pièce du moment. */
+  demandeGeste?: number;
+  /** Ce que les réglages gardent de l'application (aide, mes fantômes, installer). */
+  reglagesEnPlus?: ReactNode;
 }) {
-  const monte = useSyncExternalStore(rien, () => true, () => false);
-  const reglages = useSyncExternalStore(abonnerMaison, chargerMaison, () => MAISON_VIDE);
-  const [commeAmiDemande, setCommeAmi] = useState(false);
-  /** EN VISITE, ON VOIT TOUJOURS COMME UN AMI : rien de privé, rien à modifier. */
-  const commeAmi = commeAmiDemande || Boolean(visiteur);
-  const [onglet, setOnglet] = useState<"essais" | "decouvertes" | "publications">("essais");
-  const [ouverte, setOuverte] = useState<ClePiece | null>(null);
-  const [edition, setEdition] = useState(false);
-  /** « Comment un fantôme emménage ? » refermé une fois : on ne le remontre plus. */
-  const [regleVue, setRegleVueEtat] = useState(() => {
-    try {
-      return typeof window !== "undefined" && window.localStorage.getItem("clikme-maison-regle-vue") === "1";
-    } catch {
-      return false;
-    }
-  });
-  const setRegleVue = (v: boolean) => {
-    setRegleVueEtat(v);
-    try {
-      window.localStorage.setItem("clikme-maison-regle-vue", v ? "1" : "0");
-    } catch {
-      /* stockage refusé : refermé le temps de la visite */
-    }
-  };
+  const etat = useSyncExternalStore(abonnerMaisonPrivee, chargerMaisonPrivee, maisonPriveeServeur);
+  const envies = useSyncExternalStore(abonnerEnvies, chargerEnvies, () => AUCUNES_ENVIES);
   const look = useSyncExternalStore(abonnerLook, monLook, monLook);
-  const [presentation, setPresentation] = useState("");
-  const [invite, setInvite] = useState("");
-  const [visite, setVisite] = useState(false);
-  // LE FANTÔME DE LA BARRE FAIT VISITER LA MAISON. Une demande nouvelle se
-  // voit pendant le rendu, sans effet.
-  const [demandeVue, setDemandeVue] = useState(demandeVisite);
-  if (demandeVisite !== demandeVue) {
-    setDemandeVue(demandeVisite);
-    // EN VISITE, ON NE FAIT PAS VISITER LA MAISON D'UN AUTRE.
-    if (!visiteur) {
-      setOuverte(null);
-      setVisite(true);
-    }
+  const heure = useSyncExternalStore(rien, heureIci, heureServeur);
+  const [vue, setVue] = useState<Vue>({ ou: "entree" });
+
+  /* CE QUE L'APPLICATION SAVAIT DÉJÀ ENTRE DANS LA MAISON — pièces mises de
+     côté, duels, commerces suivis, envies de soirée. Après le rendu : l'histoire
+     des duels se lit dans le téléphone. */
+  useEffect(() => {
+    const derives: Signal[] = [
+      ...signauxDesGardees(gardees, familleDeCarte),
+      ...signauxDesDuels(histoireDesDuels()),
+      ...signauxDesSuivis(suivis, Date.now()),
+      ...signauxDesEnvies(envies, nomDeSoiree),
+    ];
+    noterLesSignaux(derives);
+  }, [gardees, suivis, envies, familleDeCarte, nomDeSoiree]);
+
+  const etats = useMemo(() => {
+    const ordre = ordreSelonLHeure(heure);
+    return ordre.map((cle) => etatDe(etat.memoire, pieceParCle(cle)));
+  }, [etat.memoire, heure]);
+
+  /* LE FANTÔME DU BAS : la pièce du moment, celle que l'heure met devant. */
+  const [vuGeste, setVuGeste] = useState(demandeGeste);
+  if (demandeGeste !== vuGeste) {
+    setVuGeste(demandeGeste);
+    if (demandeGeste > 0) setVue({ ou: "piece", cle: etats[0].piece.cle });
   }
 
-  const lesAdoptes = visiteur ? visiteur.adoptes : adoptes;
-  const maison = rangerLaMaison(lesAdoptes);
-  const nbFantomes = lesAdoptes.length;
-  const nom = (visiteur ? visiteur.prenom : prenom).trim();
+  if (vue.ou === "piece") {
+    const e = etats.find((x) => x.piece.cle === vue.cle) ?? etatDe(etat.memoire, pieceParCle(vue.cle));
+    return (
+      <div className="mz">
+        <VuePiece e={e} gardees={gardees} onRetour={() => setVue({ ou: "entree" })} onDecouvrir={onDecouvrir} onVoirGardee={onVoirGardee} />
+        <StylesMaMaison />
+      </div>
+    );
+  }
+  if (vue.ou === "reglages") {
+    return (
+      <div className="mz">
+        <VueReglages
+          reelle={reelle}
+          etats={etats}
+          look={look}
+          compte={etat.compte}
+          serveur={etat.serveur}
+          onRetour={() => setVue({ ou: "entree" })}
+          onCompte={() => setVue({ ou: "compte" })}
+        >
+          {reglagesEnPlus}
+        </VueReglages>
+        <StylesMaMaison />
+      </div>
+    );
+  }
+  if (vue.ou === "compte") {
+    return (
+      <div className="mz">
+        <VueCompte onRetour={() => setVue({ ou: "entree" })} />
+        <StylesMaMaison />
+      </div>
+    );
+  }
 
-  // MES ESSAIS : les pièces essayées et gardées, et les traces d'un essai.
-  const essais: Essai[] = visiteur ? visiteur.essais : [
-    ...pieces.map((p) => ({ cle: `piece:${p.carte}|${p.piece}`, titre: p.nom, lieu: p.lieu, photo: p.image, carte: p.carte, piece: p })),
-    ...traces
-      .filter((t) => t.essai)
-      .map((t) => ({ cle: `trace:${t.id}`, titre: t.essai?.quoi ?? t.mot, lieu: t.souvenir.lieu, photo: t.photo, carte: t.souvenir.cle, trace: t })),
-  ];
-  const partage = (cle: string) => Boolean(visiteur) || reglages.partages.includes(cle);
-  const essaisVus = commeAmi ? essais.filter((e) => partage(e.cle)) : essais;
-  // MES DÉCOUVERTES : les lieux où j'ai laissé mon fantôme — ce que J'AI dit y avoir vécu.
-  const decouvertes = visiteur ? [] : traces.filter((t) => !t.essai);
-  const lesPublications = visiteur ? visiteur.publications : publications;
-
-  const inviter = async () => {
-    // DANS LA VRAIE VILLE, LE LIEN MÈNE À MA MAISON ELLE-MÊME.
-    const url = (lienInvitation ? await lienInvitation() : null) ?? `${window.location.origin}/autour-de-moi`;
-    const texte = `Viens voir ma maison sur Clikme${nom ? ` — chez ${nom}` : ""} : mes bonnes adresses et mes coups de cœur.`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "Ma maison Clikme", text: texte, url });
-        return;
-      }
-      await navigator.clipboard.writeText(`${texte} ${url}`);
-      setInvite("Lien copié : colle-le à tes amis.");
-    } catch {
-      setInvite("Partage annulé.");
-    }
-    window.setTimeout(() => setInvite(""), 3500);
-  };
-
-  const pieceOuverte = PIECES.find((p) => p.cle === ouverte);
+  const allumees = etats.filter((e) => e.allumee).length;
+  const mot = motDuFantome(etats);
+  /* « POUR NE JAMAIS PERDRE VOTRE MAISON » — seulement quand il y a quelque
+     chose à perdre, dans la vraie ville, et tant que l'adresse n'est pas prouvée. */
+  const proposerCompte = reelle && etat.serveur === "pret" && allumees > 0 && !etat.compte?.verifie;
 
   return (
-    <div className="mm">
-      <StylesMaMaison />
-      <header className="mm-tete">
-        <div>
-          <h1>{visiteur ? (nom ? `Chez ${nom}` : "Chez un habitant") : "Ma maison"}</h1>
-          <p>{visiteur ? "Son univers, ses essais partagés, ses bonnes adresses" : "Mon univers, mes essais, mes bonnes adresses"}</p>
-        </div>
-        {!commeAmi && (
-          <button type="button" className="mm-roue" onClick={onReglages} aria-label="Réglages">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="3.2" />
-              <path d="M12 2.8v2.4M12 18.8v2.4M4.2 7.5l2 1.2M17.8 15.3l2 1.2M4.2 16.5l2-1.2M17.8 8.7l2-1.2" />
-              <path d="M12 6.2a5.8 5.8 0 1 0 0 11.6 5.8 5.8 0 0 0 0-11.6Z" />
-            </svg>
-          </button>
-        )}
-      </header>
-
-      {visiteur ? (
-        <div className="mm-commeami">
-          <span>🏠 Tu visites sa maison : ce qu’il a choisi de partager, rien de privé.</span>
-          <button type="button" onClick={visiteur.onFermer}>
-            Revenir
-          </button>
-        </div>
-      ) : (
-        commeAmi && (
-          <div className="mm-commeami">
-            <span>👀 Tes invités voient ta maison ainsi : sans tes essais privés, tes réservations ni tes conversations.</span>
-            <button type="button" onClick={() => setCommeAmi(false)}>
-              Revenir
-            </button>
-          </div>
-        )
-      )}
-
-      {/* ═══ QUI HABITE LÀ ═══ */}
-      <section className="mm-qui">
-        {visiteur ? (
-          <span className="mm-av" aria-hidden="true">
-            {(nom[0] ?? "🙂").toUpperCase()}
-          </span>
-        ) : (
-          // MON FANTÔME — le même look dans Ensemble, les conversations et ici.
-          <button type="button" className="mm-av mm-av-fantome" onClick={changerDeLook} aria-label={`Mon fantôme : ${look.nom}. Changer mon fantôme`}>
+    <div className="mz">
+      <header className="mz-tete">
+        <div className="mz-tete-h">
+          <h1>
+            Ma <b>Maison</b>
+          </h1>
+          <button type="button" className="mz-moi" onClick={() => setVue({ ou: "reglages" })} aria-label="Réglages de ma Maison">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={look.image} alt="" />
-            <i aria-hidden="true">✎</i>
+            <i aria-hidden="true">⚙︎</i>
           </button>
-        )}
-        <div className="mm-qui-t">
-          <b>{nom ? `Chez ${nom}` : "Chez toi"}</b>
-          {edition ? (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                direPresentation(presentation);
-                setEdition(false);
-              }}
-            >
-              <input
-                autoFocus
-                value={presentation}
-                maxLength={120}
-                onChange={(e) => setPresentation(e.target.value)}
-                placeholder="Mes goûts, mes essais, mes bonnes adresses."
-              />
-              <button type="submit">OK</button>
-            </form>
-          ) : (
-            <em>
-              {visiteur
-                ? visiteur.presentation || "Ses goûts, ses essais, ses bonnes adresses."
-                : (monte && reglages.presentation) || "Mes goûts, mes essais, mes bonnes adresses."}
-              {!commeAmi && (
-                <button
-                  type="button"
-                  className="mm-edit"
-                  onClick={() => {
-                    setPresentation(reglages.presentation);
-                    setEdition(true);
-                  }}
-                >
-                  Modifier
-                </button>
-              )}
-            </em>
-          )}
         </div>
-        {!commeAmi && (
-          <div className="mm-qui-actions">
-            {!visiteur && (
-              <button type="button" className="mm-voir mm-look" onClick={changerDeLook}>
-                Changer mon fantôme <s aria-hidden="true">›</s>
-              </button>
-            )}
-            <button type="button" className="mm-voir" onClick={() => setCommeAmi(true)}>
-              Voir comme mes amis <s aria-hidden="true">›</s>
-            </button>
+        <p className="mz-sous">Ajoutez ce qui vous ressemble. Je vais chercher en ville ce qui vous correspond.</p>
+        <div className="mz-scene">
+          <FantomeAnime humeur={allumees ? "excited" : "idle"} taille={112} />
+          <div className="mz-bulle">
+            <b>{mot.titre}</b>
+            <span>{mot.texte}</span>
           </div>
-        )}
-      </section>
+        </div>
+      </header>
 
-      {/* ═══ COMMENT ELLE SE REMPLIT — dit en clair, toujours ═══════════════
-          « On ne comprend pas vraiment comment on arrive à obtenir les
-          fantômes dans les maisons. En likant, en ouvrant un salon ou
-          autre ? Ce n'est pas clair. » L'explication n'existait que sur une
-          maison vide, et elle parlait d'un bouton « Suivre » qui s'appelle
-          « Favori » sur l'annonce. Elle est maintenant là tant qu'on ne l'a
-          pas refermée, avec le vrai nom du geste. */}
-      {!commeAmi && nbFantomes > 0 && !regleVue && (
-        <div className="mm-regle" role="note">
-          <b>Comment un fantôme emménage ?</b>
-          <ol>
-            <li>
-              Sur une annonce du Direct, touche <em>♡ Favori</em> — ou tape deux fois sur sa photo.
-            </li>
-            <li>Le fantôme du commerce s’installe dans la pièce de son métier : le restaurant à la cuisine, le bar à la cave, la librairie au coin lecture…</li>
-            <li>Tu es prévenu de ses annonces. Pour le faire partir : sa pièce, puis « Ne plus suivre ».</li>
-          </ol>
-          <p>Tes essais gardés et tes découvertes se rangent plus bas, dans « Mes essais » et « Mes découvertes ».</p>
-          <button type="button" onClick={() => setRegleVue(true)}>
-            Compris
-          </button>
-        </div>
-      )}
-
-      {/* ═══ LA MAISON ═══ — une pièce par univers. */}
-      <div className="mm-maison" aria-label="Ma maison et ses pièces">
-        <div className="mm-toit" aria-hidden="true">
-          <span className="mm-chem" />
-        </div>
-        <div className="mm-murs">
-          {PIECES.map((p) => {
-            const ici = maison[p.cle];
-            const h = habillage(p, ici[0]);
-            const vide = ici.length === 0;
-            return (
-              <button
-                key={p.cle}
-                type="button"
-                className={`mm-piece${vide ? " vide" : ""}`}
-                onClick={() => setOuverte(p.cle)}
-                aria-label={vide ? `${p.nom} : vide` : `${p.nom} : ${ici.map((c) => c.nom).join(", ")}`}
-              >
-                <span className="mm-decor" style={{ backgroundImage: `url("${h.decor}")` }} />
-                {!vide && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img className="mm-fant" src={h.fantome} alt="" loading="lazy" draggable={false} />
-                )}
-                {ici.length > 1 && <span className="mm-nb">{ici.length}</span>}
-                <span className="mm-etiq">{vide ? `＋ ${p.nom}` : ici[0].nom}</span>
-              </button>
-            );
-          })}
-        </div>
-        <div className="mm-compte">
-          <span aria-hidden="true">👻</span>
-          {nbFantomes === 0
-            ? "Aucun fantôme adopté"
-            : `${nbFantomes} fantôme${nbFantomes > 1 ? "s" : ""} adopté${nbFantomes > 1 ? "s" : ""}`}
-        </div>
+      <div className="mz-progres" aria-label={`${allumees} pièce${allumees > 1 ? "s" : ""} sur 7 vous connaissent`}>
+        <span>
+          <b>{allumees}</b> pièce{allumees > 1 ? "s" : ""} qui {allumees > 1 ? "vous connaissent" : "vous connaît"}
+        </span>
+        <i aria-hidden="true">
+          {PIECES.map((p, k) => (
+            <s key={p.cle} className={k < allumees ? "on" : ""} />
+          ))}
+        </i>
       </div>
 
-
-      {/* ÉTAT INITIAL : rien d'adopté, on dit comment la remplir. */}
-      {nbFantomes === 0 && !commeAmi && (
-        <div className="mm-accueil">
-          <b>Ta maison est encore vide.</b>
-          <span>Sur une annonce du Direct, touche ♡ « Favori » : le fantôme du commerce emménage dans la pièce de son métier — le restaurant à la cuisine, le bar à la cave, la librairie au coin lecture.</span>
-          <button type="button" onClick={() => onDecouvrir()}>
-            Découvrir les commerces <s aria-hidden="true">→</s>
-          </button>
-        </div>
-      )}
-
-      {/* ═══ CE QUE JE GARDE ═══ */}
-      <nav className="mm-onglets" aria-label="Ce que je garde">
-        {(
-          [
-            ["essais", "Mes essais"],
-            ["decouvertes", "Mes découvertes"],
-            ["publications", "Mes publications"],
-          ] as const
-        )
-          // EN VISITE : ses essais partagés et ses publications. Ses découvertes
-          // (les fantômes qu'il laisse) restent dans son téléphone.
-          .filter(([k]) => !visiteur || k !== "decouvertes")
-          .map(([k, t]) => (
-            <button key={k} type="button" className={onglet === k ? "on" : ""} onClick={() => setOnglet(k)}>
-              {visiteur ? t.replace("Mes ", "Ses ") : t}
-            </button>
-          ))}
-      </nav>
-
-      {onglet === "essais" && (
-        <section className="mm-liste">
-          {essaisVus.length === 0 && (
-            <p className="mm-vide">
-              {visiteur
-                ? "Aucun essai partagé pour l’instant."
-                : commeAmi
-                ? "Aucun essai partagé avec tes amis."
-                : "Tes essais apparaîtront ici : une coupe, une tenue, des lunettes essayées sur toi. Ils restent privés tant que tu ne les partages pas."}
-            </p>
-          )}
-          {essaisVus.map((e) => (
-            <article key={e.cle} className="mm-essai">
-              <button
-                type="button"
-                className="mm-essai-ph"
-                onClick={() =>
-                  // EN VISITE, L'ESSAI MÈNE AU COMMERCE OÙ IL A ÉTÉ FAIT.
-                  visiteur ? e.carte && onPage({ id: e.carte }) : e.piece ? onVoirPiece(e.piece) : e.trace && onVoirTrace(e.trace)
-                }
-                style={e.photo ? { backgroundImage: `url("${e.photo}")` } : undefined}
-                aria-label={`Voir ${e.titre}`}
-              >
-                {!e.photo && <span aria-hidden="true">👻</span>}
-              </button>
-              <div className="mm-essai-t">
-                <b>{e.titre}</b>
-                <em>{e.lieu}</em>
-                <span className={`mm-badge${partage(e.cle) ? " amis" : ""}`}>
-                  {visiteur ? "👥 Partagé" : partage(e.cle) ? "👥 Visible par mes invités" : "🔒 Privé"}
-                </span>
-                {!commeAmi &&
-                  (partage(e.cle) ? (
-                    <button type="button" className="mm-lien" onClick={() => partagerEssai(e.cle, false)}>
-                      Rendre privé
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="mm-or"
-                      onClick={() => {
-                        partagerEssai(e.cle, true);
-                        onPartager({ titre: e.titre, lieu: e.lieu, photo: e.photo, carte: e.carte });
-                      }}
-                    >
-                      Partager avec mes amis <s aria-hidden="true">→</s>
-                    </button>
-                  ))}
-              </div>
-            </article>
-          ))}
-        </section>
-      )}
-
-      {onglet === "decouvertes" && (
-        <section className="mm-liste">
-          {decouvertes.length === 0 && (
-            <p className="mm-vide">Les lieux où tu laisses ton fantôme — « j’y étais », ta photo, ton mot — se rangent ici.</p>
-          )}
-          {decouvertes.map((t) => (
-            <button key={t.id} type="button" className="mm-decouv" onClick={() => onVoirTrace(t)}>
-              <span className="mm-decouv-ph" style={t.photo ? { backgroundImage: `url("${t.photo}")` } : undefined}>
-                {!t.photo && "👻"}
-              </span>
-              <span>
-                <b>{t.souvenir.lieu}</b>
-                <em>{t.mot}</em>
-              </span>
-              <s aria-hidden="true">›</s>
-            </button>
-          ))}
-        </section>
-      )}
-
-      {onglet === "publications" && (
-        <section className="mm-liste">
-          {lesPublications.length === 0 && (
-            <p className="mm-vide">
-              {visiteur
-                ? "Rien de publié dans La ville pour l’instant — ou rien que tu puisses voir."
-                : "Ce que tu dis dans La ville — une question, un bon plan, un coup de cœur — se retrouve ici."}
-            </p>
-          )}
-          {lesPublications.map((m) => (
-            <div key={m.id} className="mm-pub">
-              <b>{m.texte}</b>
-              <em>
-                {m.ou} · {m.reponses.length} réponse{m.reponses.length > 1 ? "s" : ""} · {m.coeurs} ❤️
-              </em>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {!commeAmi && (
-        <button type="button" className="mm-inviter" onClick={() => void inviter()}>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="9" cy="8" r="3.5" />
-            <path d="M2.5 20c.6-3.7 3.3-6 6.5-6s5.9 2.3 6.5 6M19 8v6M16 11h6" />
-          </svg>
-          Inviter un ami chez moi
+      {proposerCompte && (
+        <button type="button" className="mz-garder" onClick={() => setVue({ ou: "compte" })}>
+          <span>
+            <b>Ne perdez jamais votre Maison</b>
+            <em>Votre adresse e-mail, et un code à six chiffres. C’est tout.</em>
+          </span>
+          <s aria-hidden="true">›</s>
         </button>
       )}
-      {invite && <p className="mm-toast">{invite}</p>}
 
-      {/* ═══ FAIRE VISITER MA MAISON ═══
-          Le geste du fantôme sur cette page. Le partage part d'un appui DANS
-          la feuille : un téléphone ne laisse ouvrir son menu de partage qu'au
-          doigt, jamais au milieu d'un rendu. */}
-      {visite && (
-        <div className="mm-fond" role="dialog" aria-label="Faire visiter ma maison" onClick={() => setVisite(false)}>
-          <div className="mm-fiche" onClick={(e) => e.stopPropagation()}>
-            <span className="mm-poignee" aria-hidden="true" />
-            <h2>Faire visiter ma maison</h2>
-            <p className="mm-visite-p">
-              {nbFantomes > 0
-                ? `${nbFantomes} fantôme${nbFantomes > 1 ? "s" : ""} habite${nbFantomes > 1 ? "nt" : ""} chez toi. `
-                : "Ta maison est encore vide. "}
-              Ceux à qui tu envoies le lien verront tes bonnes adresses, tes découvertes et les essais que tu as choisi de montrer — jamais les autres.
-            </p>
-            <button
-              type="button"
-              className="mm-inviter"
-              onClick={() => {
-                setVisite(false);
-                void inviter();
-              }}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="9" cy="8" r="3.5" />
-                <path d="M2.5 20c.6-3.7 3.3-6 6.5-6s5.9 2.3 6.5 6M19 8v6M16 11h6" />
-              </svg>
-              Inviter un ami chez moi
-            </button>
-            <button
-              type="button"
-              className="mm-visite-voir"
-              onClick={() => {
-                setVisite(false);
-                setCommeAmi(true);
-              }}
-            >
-              👀 Voir ce que mes amis verront
-            </button>
-          </div>
-        </div>
-      )}
+      <div className="mz-grille">
+        {etats.map((e) => (
+          <CartePiece key={e.piece.cle} e={e} onOuvrir={() => setVue({ ou: "piece", cle: e.piece.cle })} />
+        ))}
+      </div>
 
-      {/* ═══ LA FICHE D'UNE PIÈCE ═══ */}
-      {pieceOuverte && (
-        <div className="mm-fond" role="dialog" aria-label={pieceOuverte.nom} onClick={() => setOuverte(null)}>
-          <div className="mm-fiche" onClick={(e) => e.stopPropagation()}>
-            <span className="mm-poignee" aria-hidden="true" />
-            <h2>{pieceOuverte.nom}</h2>
-            {maison[pieceOuverte.cle].length === 0 ? (
-              <div className="mm-fiche-vide">
-                <p>
-                  Personne n’habite encore {pieceOuverte.nom.toLowerCase()}. Trouve {pieceOuverte.invite} dans Le Direct et touche ♡ « Favori » sur son
-                  annonce : son fantôme s’installera ici.
-                </p>
-                <button
-                  type="button"
-                  className="mm-or"
-                  onClick={() => {
-                    setOuverte(null);
-                    onDecouvrir(pieceOuverte.branche);
-                  }}
-                >
-                  Découvrir {pieceOuverte.invite} <s aria-hidden="true">→</s>
-                </button>
-              </div>
-            ) : (
-              maison[pieceOuverte.cle].map((c) => {
-                const lies = essais.filter((e) => e.carte === c.id && (!commeAmi || partage(e.cle)));
-                const vus = decouvertes.filter((t) => t.souvenir.cle === c.id);
-                return (
-                  <div key={c.id} className="mm-com">
-                    <div className="mm-com-h">
-                      <span className="mm-com-ph" style={c.photo ? { backgroundImage: `url("${c.photo}")` } : undefined} />
-                      <span>
-                        <b>{c.nom}</b>
-                        <em>
-                          {c.metier}
-                          {c.distance ? ` · ${c.distance}` : ""}
-                        </em>
-                      </span>
-                    </div>
-                    {(lies.length > 0 || vus.length > 0) && (
-                      <ul>
-                        {lies.map((e) => (
-                          <li key={e.cle}>✨ Essai : {e.titre}</li>
-                        ))}
-                        {vus.map((t) => (
-                          <li key={t.id}>👻 {t.mot}</li>
-                        ))}
-                      </ul>
-                    )}
-                    <div className="mm-com-b">
-                      <button type="button" className="mm-or" onClick={() => onPage(c)}>
-                        Sa page <s aria-hidden="true">→</s>
-                      </button>
-                      {!commeAmi && (
-                        <button type="button" className="mm-lien" onClick={() => onNePlusSuivre(c.id)}>
-                          Ne plus suivre
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-            <button type="button" className="mm-fermer" onClick={() => setOuverte(null)}>
-              Fermer
-            </button>
-          </div>
-        </div>
-      )}
+      <p className="mz-prive">
+        <i aria-hidden="true">🔒</i>
+        Votre Maison est privée. Les commerçants n’en voient rien : ClikMe leur dit seulement que leurs nouveautés ont trouvé des
+        personnes intéressées.
+      </p>
+      <StylesMaMaison />
     </div>
   );
 }
 
+// ─── L'ENTRÉE : UNE CARTE PAR PIÈCE ────────────────────────────────────────
+
+function CartePiece({ e, onOuvrir }: { e: EtatPiece; onOuvrir: () => void }) {
+  return (
+    <button type="button" className={`mz-carte${e.allumee ? " on" : ""}${e.enPause ? " pause" : ""}`} onClick={onOuvrir}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={e.piece.photo} alt="" loading="lazy" />
+      <span className="mz-carte-i" aria-hidden="true">
+        {e.piece.icone}
+      </span>
+      <span className="mz-carte-t">
+        <b>{e.piece.nom}</b>
+        <em>{e.ligne}</em>
+      </span>
+      <s aria-hidden="true">›</s>
+    </button>
+  );
+}
+
+// ─── UNE PIÈCE ─────────────────────────────────────────────────────────────
+
+function VuePiece({
+  e,
+  gardees,
+  onRetour,
+  onDecouvrir,
+  onVoirGardee,
+}: {
+  e: EtatPiece;
+  gardees: PieceGardee[];
+  onRetour: () => void;
+  onDecouvrir: (branche: string) => void;
+  onVoirGardee?: (p: PieceGardee) => void;
+}) {
+  const [vider, setVider] = useState(false);
+  const p = e.piece;
+  const choix = p.choix;
+  const coches = new Set(e.dit);
+  const gardeeDe = (s: Signal) => (s.id.startsWith("garde|") ? gardees.find((g) => `garde|${g.carte}|${g.piece}` === s.id) : undefined);
+  return (
+    <>
+      <header className="mz-piece-h">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={p.photo} alt="" />
+        <button type="button" className="mz-retour" onClick={onRetour} aria-label="Revenir à ma Maison">
+          ←
+        </button>
+        <span className="mz-piece-t">
+          <i aria-hidden="true">{p.icone}</i>
+          <b>{p.nom}</b>
+          <em>{e.enPause ? "En pause : elle n’apprend rien et ne propose rien." : p.sous}</em>
+        </span>
+      </header>
+
+      <div className="mz-corps">
+        <p className="mz-debloque">
+          <i aria-hidden="true">✨</i>
+          {p.debloque}
+        </p>
+
+        {choix && (
+          <section className="mz-bloc">
+            <h3>
+              {choix.titre}
+              <small>Vous me l’avez dit</small>
+            </h3>
+            <div className="mz-puces">
+              {choix.options.map((o) => {
+                const on = coches.has(o.cle);
+                return (
+                  <button
+                    key={o.cle}
+                    type="button"
+                    className={`mz-puce${on ? " on" : ""}`}
+                    aria-pressed={on}
+                    onClick={() => choisirDansLaPiece(p.cle, on ? e.dit.filter((x) => x !== o.cle) : [...e.dit, o.cle])}
+                  >
+                    {on ? "✓ " : ""}
+                    {o.mot}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        <section className="mz-bloc">
+          <h3>
+            Ce que j’ai remarqué<small>{e.remarque.length ? `${e.remarque.length}` : ""}</small>
+          </h3>
+          {e.remarque.length ? (
+            <ul className="mz-gestes">
+              {e.remarque.slice(0, 12).map((s) => {
+                const g = gardeeDe(s);
+                const contenu = (
+                  <>
+                    {s.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={s.image} alt="" loading="lazy" />
+                    ) : (
+                      <i aria-hidden="true">{p.icone}</i>
+                    )}
+                    <span>
+                      <b>{s.quoi}</b>
+                      <em>{s.d}</em>
+                    </span>
+                  </>
+                );
+                return (
+                  <li key={s.id}>
+                    {g && onVoirGardee ? (
+                      <button type="button" onClick={() => onVoirGardee(g)}>
+                        {contenu}
+                      </button>
+                    ) : (
+                      <div>{contenu}</div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <div className="mz-vide">
+              <p>{p.remplit}</p>
+              <button type="button" className="mz-cta creux" onClick={() => onDecouvrir(p.branche)}>
+                Découvrir dans la ville →
+              </button>
+            </div>
+          )}
+        </section>
+
+        <section className="mz-bloc">
+          <h3>
+            Ce que je crois<small>jamais d’après un seul geste</small>
+          </h3>
+          {e.crois.length ? (
+            <ul className="mz-crois">
+              {e.crois.map((g) => (
+                <li key={g.trait}>
+                  <span>
+                    <b>Vous aimez {g.mot}</b>
+                    <em>
+                      {g.pour} gestes sur {g.sur} vont dans ce sens
+                    </em>
+                  </span>
+                  <button type="button" onClick={() => refuserLeTrait(p.cle, g.trait)}>
+                    Ce n’est pas moi
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mz-note">Il me faut au moins trois gestes dans le même sens avant de croire quoi que ce soit.</p>
+          )}
+        </section>
+
+        <div className="mz-actions">
+          <button type="button" className="mz-cta creux" onClick={() => mettreEnPause(p.cle, !e.enPause)}>
+            {e.enPause ? "Reprendre la pièce" : "Mettre en pause"}
+          </button>
+          {vider ? (
+            <span className="mz-sur">
+              Tout ce qu’elle sait de vous sera oublié.
+              <button
+                type="button"
+                className="mz-cta danger"
+                onClick={() => {
+                  viderLaPiece(p.cle);
+                  setVider(false);
+                }}
+              >
+                Vider
+              </button>
+              <button type="button" className="mz-cta creux" onClick={() => setVider(false)}>
+                Garder
+              </button>
+            </span>
+          ) : (
+            <button type="button" className="mz-cta creux" onClick={() => setVider(true)}>
+              Vider la pièce
+            </button>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── LES RÉGLAGES ──────────────────────────────────────────────────────────
+
+function VueReglages({
+  reelle,
+  etats,
+  look,
+  compte,
+  serveur,
+  onRetour,
+  onCompte,
+  children,
+}: {
+  reelle: boolean;
+  etats: EtatPiece[];
+  look: { image: string; nom: string };
+  compte: { email: string | null; verifie: boolean } | null;
+  serveur: "attente" | "pret" | "absent";
+  onRetour: () => void;
+  onCompte: () => void;
+  children?: ReactNode;
+}) {
+  const [effacer, setEffacer] = useState<"non" | "sur" | "fait" | "rate">("non");
+  return (
+    <>
+      <div className="mz-page-h">
+        <button type="button" className="mz-retour plat" onClick={onRetour}>
+          ← Ma Maison
+        </button>
+        <b>Réglages</b>
+      </div>
+      <div className="mz-corps">
+        <section className="mz-bloc">
+          <h3>🔒 Votre Maison est privée</h3>
+          <p className="mz-note">
+            {reelle
+              ? serveur === "absent"
+                ? "Elle vit pour l’instant sur ce téléphone : le serveur qui doit la garder n’est pas encore prêt."
+                : "Elle est gardée par ClikMe, pour vous seul. Aucun commerçant, aucun autre habitant ne peut la voir."
+              : "Dans la démonstration, elle reste sur ce téléphone."}
+          </p>
+        </section>
+
+        {reelle && serveur !== "absent" && (
+          <section className="mz-bloc">
+            <h3>Retrouver ma Maison</h3>
+            {compte?.verifie && compte.email ? (
+              <p className="mz-note">
+                Elle vous suit sur tous vos téléphones avec <b>{compte.email}</b>.
+              </p>
+            ) : (
+              <>
+                <p className="mz-note">Sur un autre téléphone, ou si celui-ci perd ses données : votre adresse e-mail et un code.</p>
+                <button type="button" className="mz-cta" onClick={onCompte}>
+                  Ne jamais la perdre
+                </button>
+              </>
+            )}
+          </section>
+        )}
+
+        <section className="mz-bloc">
+          <h3>Mon fantôme</h3>
+          <div className="mz-look">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={look.image} alt="" />
+            <span>
+              <b>{look.nom}</b>
+              <em>C’est lui qui vous représente dans les salons.</em>
+            </span>
+            <button type="button" className="mz-cta creux" onClick={changerDeLook}>
+              Changer
+            </button>
+          </div>
+        </section>
+
+        <section className="mz-bloc">
+          <h3>Les pièces</h3>
+          <ul className="mz-pieces">
+            {etats.map((e) => (
+              <li key={e.piece.cle}>
+                <span>
+                  <i aria-hidden="true">{e.piece.icone}</i>
+                  {e.piece.nom}
+                </span>
+                <button type="button" className={`mz-bascule${e.enPause ? "" : " on"}`} aria-pressed={!e.enPause} onClick={() => mettreEnPause(e.piece.cle, !e.enPause)}>
+                  {e.enPause ? "En pause" : "Active"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="mz-bloc">
+          <h3>Tout effacer</h3>
+          {effacer === "fait" ? (
+            <p className="mz-note">C’est fait : votre Maison est vide, ses photos et ce qu’elle savait sont effacés.</p>
+          ) : effacer === "rate" ? (
+            <p className="mz-note">Je n’ai pas pu joindre le serveur. Réessayez dans un instant.</p>
+          ) : effacer === "sur" ? (
+            <span className="mz-sur">
+              Ce que vous m’avez dit, ce que j’ai remarqué, vos photos : tout part, pour de bon.
+              <button
+                type="button"
+                className="mz-cta danger"
+                onClick={() => void effacerToutLaMaison().then((ok) => setEffacer(ok ? "fait" : "rate"))}
+              >
+                Tout effacer
+              </button>
+              <button type="button" className="mz-cta creux" onClick={() => setEffacer("non")}>
+                Garder
+              </button>
+            </span>
+          ) : (
+            <button type="button" className="mz-cta creux danger-t" onClick={() => setEffacer("sur")}>
+              Effacer toute ma Maison
+            </button>
+          )}
+        </section>
+
+        {children}
+      </div>
+    </>
+  );
+}
+
+// ─── L'ADRESSE ET LE CODE ──────────────────────────────────────────────────
+
+function VueCompte({ onRetour }: { onRetour: () => void }) {
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [etape, setEtape] = useState<"adresse" | "code" | "fait">("adresse");
+  const [erreur, setErreur] = useState("");
+  const [occupe, setOccupe] = useState(false);
+
+  async function envoyer() {
+    setOccupe(true);
+    setErreur("");
+    const r = await demanderLeCode(email.trim());
+    setOccupe(false);
+    if ("erreur" in r) setErreur(r.erreur);
+    else setEtape("code");
+  }
+  async function valider() {
+    setOccupe(true);
+    setErreur("");
+    const r = await donnerLeCode(email.trim(), code);
+    setOccupe(false);
+    if ("erreur" in r) setErreur(r.erreur);
+    else setEtape("fait");
+  }
+
+  return (
+    <>
+      <div className="mz-page-h">
+        <button type="button" className="mz-retour plat" onClick={onRetour}>
+          ← Ma Maison
+        </button>
+      </div>
+      <div className="mz-corps mz-compte">
+        <FantomeAnime humeur={etape === "fait" ? "celebrate" : etape === "code" ? "whisper" : "idle"} taille={96} />
+        {etape === "fait" ? (
+          <>
+            <h2>C’est fait</h2>
+            <p>Votre Maison vous suivra sur tous vos téléphones. Ce code ne vous abonne à rien.</p>
+            <button type="button" className="mz-cta" onClick={onRetour}>
+              Revenir à ma Maison
+            </button>
+          </>
+        ) : etape === "code" ? (
+          <form
+            onSubmit={(ev) => {
+              ev.preventDefault();
+              if (code.length === 6 && !occupe) void valider();
+            }}
+          >
+            <h2>Le code</h2>
+            <p>
+              Je viens de l’envoyer à <b>{email.trim()}</b>. Il est valable dix minutes.
+            </p>
+            <input
+              className="mz-champ mz-code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]*"
+              maxLength={6}
+              placeholder="••••••"
+              aria-label="Code à six chiffres"
+              value={code}
+              onChange={(ev) => setCode(ev.target.value.replace(/\D/g, "").slice(0, 6))}
+            />
+            {erreur && <p className="mz-erreur">{erreur}</p>}
+            <button type="submit" className="mz-cta" disabled={code.length !== 6 || occupe}>
+              {occupe ? "Un instant…" : "Valider"}
+            </button>
+            <button
+              type="button"
+              className="mz-lien"
+              onClick={() => {
+                setCode("");
+                setErreur("");
+                setEtape("adresse");
+              }}
+            >
+              Changer d’adresse ou renvoyer un code
+            </button>
+          </form>
+        ) : (
+          <form
+            onSubmit={(ev) => {
+              ev.preventDefault();
+              if (!occupe) void envoyer();
+            }}
+          >
+            <h2>Ne perdez jamais votre Maison</h2>
+            <p>Votre adresse e-mail : je vous envoie un code à six chiffres. Le même code vous rend votre Maison sur un autre téléphone.</p>
+            <input
+              className="mz-champ"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="vous@exemple.fr"
+              aria-label="Adresse e-mail"
+              value={email}
+              onChange={(ev) => setEmail(ev.target.value)}
+            />
+            {erreur && <p className="mz-erreur">{erreur}</p>}
+            <button type="submit" className="mz-cta" disabled={!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim()) || occupe}>
+              {occupe ? "Un instant…" : "Recevoir mon code"}
+            </button>
+            <p className="mz-note">Aucun mot de passe. Aucun abonnement. Votre adresse ne sert qu’à retrouver votre Maison.</p>
+          </form>
+        )}
+      </div>
+    </>
+  );
+}
+
+// ─── LE STYLE ──────────────────────────────────────────────────────────────
+
 function StylesMaMaison() {
   return (
-    <style
+    <>
+      <StylesFantome />
+      <style
       dangerouslySetInnerHTML={{
         __html: `
-.mm::-webkit-scrollbar{display:none;}
-.mm{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;overscroll-behavior:contain;padding:4px 2px calc(30px + env(safe-area-inset-bottom,0px));
-  color:#FFF4E6;font-family:var(--font-clikme),system-ui,sans-serif;}
-.mm-tete{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:2px 4px 14px;}
-.mm-tete h1{margin:0;font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.05;}
-.mm-tete p{margin:6px 0 0;font-size:15px;color:#D9C6B2;}
-.mm-roue{flex:none;display:grid;place-items:center;width:48px;height:48px;border-radius:50%;cursor:pointer;background:none;border:0;color:#FFF4E6;}
-.mm-roue svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;}
-.mm-commeami{display:flex;align-items:center;gap:10px;margin:0 2px 12px;padding:10px 12px;border-radius:14px;
-  background:rgba(245,162,58,.12);border:1px solid rgba(245,162,58,.4);font-size:13px;color:#FFE3BD;}
-.mm-commeami button{flex:none;border:0;border-radius:999px;padding:8px 12px;background:linear-gradient(180deg,#F8B451,#E8932A);color:#2A1608;font:inherit;font-weight:700;cursor:pointer;}
-.mm-qui{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"av t" "a a";gap:14px 16px;align-items:center;
-  margin:0 2px 14px;padding:14px;border-radius:20px;background:#211813;border:1px solid rgba(255,214,170,.14);}
-.mm-av{grid-area:av;display:grid;place-items:center;width:88px;height:88px;border-radius:50%;font-size:28px;font-weight:800;
-  color:#1C1009;background:linear-gradient(135deg,#F5A23A,#FF7DBE);border:2px solid rgba(255,244,230,.6);}
-.mm-qui-t{grid-area:t;min-width:0;}
-.mm-qui-t b{display:block;font-size:22px;font-weight:800;}
-.mm-qui-t em{display:block;font-style:normal;font-size:14px;line-height:1.4;color:#CDB9A5;margin-top:4px;}
-.mm-qui-t form{display:flex;gap:6px;margin-top:6px;}
-.mm-qui-t input{flex:1;min-width:0;height:38px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,214,170,.25);background:#17100D;color:#FFF4E6;font:inherit;font-size:14px;}
-.mm-qui-t form button{border:0;border-radius:999px;padding:0 14px;background:#F5A23A;color:#2A1608;font:inherit;font-weight:800;cursor:pointer;}
-.mm-edit{margin-left:8px;border:0;background:none;color:#F5A23A;font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:0;}
-.mm-qui-actions{grid-area:a;display:flex;flex-wrap:wrap;gap:8px;}
-.mm-voir{flex:1 1 auto;min-height:40px;padding:8px 14px;border-radius:999px;border:1px solid rgba(255,214,170,.22);background:rgba(255,236,210,.05);
-  color:#FFF4E6;font:inherit;font-size:13.5px;font-weight:600;white-space:nowrap;cursor:pointer;}
-.mm-voir s{text-decoration:none;margin-left:4px;}
-.mm-voir.mm-look{border-color:rgba(245,181,68,.55);color:#F5B544;font-weight:700;}
-.mm-av-fantome{position:relative;padding:0;cursor:pointer;background:radial-gradient(circle at 50% 40%,#FFE7C2,#F5B544 70%);overflow:visible;}
-.mm-av-fantome img{width:90%;height:auto;max-width:none;border-radius:0 0 30px 30px;}
-.mm-av-fantome i{position:absolute;right:-2px;bottom:0;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;
-  background:#2A1608;color:#F5B544;font-style:normal;font-size:12px;border:1.5px solid #F5B544;}
+/* ELLE DÉFILE ELLE-MÊME : la page de l'onglet ne défile pas (l'application est posée en position fixe). */
+.mz{position:relative;height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:0 0 calc(110px + env(safe-area-inset-bottom));color:#FFF4E6;
+  background:radial-gradient(130% 60% at 70% 0%,rgba(255,170,70,.20),transparent 60%),radial-gradient(90% 50% at 10% 30%,rgba(255,120,60,.10),transparent 60%),#140D08;}
+:where(.mz) button{font:inherit;color:inherit;}
+.mz-tete{position:relative;padding:calc(18px + env(safe-area-inset-top)) 18px 8px;overflow:hidden;}
+.mz-tete::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(4px 4px at 18% 22%,rgba(255,210,140,.7),transparent),radial-gradient(3px 3px at 82% 30%,rgba(255,210,140,.55),transparent),
+  radial-gradient(5px 5px at 64% 12%,rgba(255,190,110,.45),transparent),radial-gradient(3px 3px at 36% 8%,rgba(255,220,160,.5),transparent);}
+.mz-tete-h{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.mz-tete h1{margin:0;font-size:32px;line-height:1.05;font-weight:900;letter-spacing:-.01em;}
+.mz-tete h1 b{color:#F6B54B;}
+.mz-moi{position:relative;flex:none;width:46px;height:46px;padding:0;border-radius:50%;border:1.5px solid rgba(246,181,75,.75);background:#2a1a0f;cursor:pointer;}
+.mz-moi img{width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 12%;}
+.mz-moi i{position:absolute;right:-4px;bottom:-4px;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#F6B54B;color:#2a1a0f;font-style:normal;font-size:12px;}
+.mz-sous{margin:8px 0 0;max-width:30ch;font-size:14px;line-height:1.4;color:#E9D3B6;}
+.mz-scene{position:relative;display:flex;align-items:flex-end;gap:10px;margin-top:14px;min-height:118px;}
+.mz-scene .fa{flex:none;margin-left:2px;}
+.mz-bulle{position:relative;flex:1;min-width:0;margin-bottom:22px;padding:11px 13px;border-radius:16px 16px 16px 4px;background:#FFF1DC;color:#3a240f;box-shadow:0 10px 26px -12px rgba(0,0,0,.6);}
+.mz-bulle b{display:block;font-size:14.5px;}
+.mz-bulle span{display:block;margin-top:2px;font-size:13px;line-height:1.35;color:#6b4a2a;}
+.mz-progres{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 16px 0;padding:11px 14px;border-radius:16px;
+  background:rgba(255,236,210,.05);border:1px solid rgba(246,181,75,.22);font-size:13px;color:#E9D3B6;}
+.mz-progres b{color:#FFF4E6;font-size:16px;}
+.mz-progres i{display:flex;gap:4px;}
+.mz-progres s{display:block;width:16px;height:5px;border-radius:3px;background:rgba(255,236,210,.14);}
+.mz-progres s.on{background:#F6B54B;box-shadow:0 0 8px rgba(246,181,75,.6);}
+.mz-garder{display:flex;align-items:center;gap:12px;width:calc(100% - 32px);margin:10px 16px 0;padding:12px 14px;text-align:left;border-radius:16px;cursor:pointer;
+  background:linear-gradient(135deg,rgba(246,181,75,.22),rgba(246,181,75,.08));border:1.5px solid rgba(246,181,75,.7);}
+.mz-garder span{flex:1;min-width:0;}
+.mz-garder b{display:block;font-size:14.5px;}
+.mz-garder em{display:block;margin-top:2px;font-style:normal;font-size:12.5px;color:#E9D3B6;}
+.mz-garder s{text-decoration:none;font-size:22px;color:#F6B54B;}
+.mz-grille{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 16px 0;}
+.mz-carte{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-height:132px;padding:12px;text-align:left;border-radius:18px;overflow:hidden;cursor:pointer;
+  border:1.5px solid rgba(255,236,210,.12);background:#1d130c;isolation:isolate;}
+.mz-carte:last-child:nth-child(odd){grid-column:1 / -1;min-height:104px;}
+.mz-carte img{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;filter:grayscale(.7) brightness(.42);transition:filter .3s;}
+.mz-carte::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(20,13,8,0) 20%,rgba(20,13,8,.88) 100%);}
+.mz-carte.on{border-color:rgba(246,181,75,.75);box-shadow:0 0 0 1px rgba(246,181,75,.18) inset,0 12px 30px -16px rgba(255,170,60,.7);}
+.mz-carte.on img{filter:none;}
+.mz-carte.pause{opacity:.7;}
+.mz-carte-i{display:grid;place-items:center;width:36px;height:36px;margin-bottom:auto;border-radius:50%;background:rgba(20,13,8,.6);border:1.5px solid rgba(246,181,75,.6);font-size:18px;}
+.mz-carte-t b{display:block;font-size:15.5px;line-height:1.15;}
+.mz-carte-t em{display:block;margin-top:3px;font-style:normal;font-size:12px;line-height:1.3;color:#E9D3B6;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.mz-carte.on .mz-carte-t em{color:#FFD58A;}
+.mz-carte>s{position:absolute;right:12px;bottom:12px;text-decoration:none;font-size:20px;color:#F6B54B;}
+.mz-prive{display:flex;gap:8px;margin:16px 18px 0;font-size:12px;line-height:1.45;color:#BFA88C;}
+.mz-prive i{font-style:normal;}
 
-/* LA MAISON : un toit, des murs de bois, huit pièces éclairées. */
-.mm-maison{position:relative;margin:4px 0 6px;padding:0 6px;}
-.mm-toit{position:relative;height:74px;margin:0 -2px;clip-path:polygon(50% 0,100% 100%,0 100%);
-  background:repeating-linear-gradient(170deg,#4a2f22 0 9px,#3a241a 9px 18px);}
-.mm-toit::after{content:"";position:absolute;left:50%;bottom:10px;width:34px;height:24px;transform:translateX(-50%);
-  border-radius:6px 6px 0 0;background:radial-gradient(circle at 50% 70%,#FFD08A,#F5A23A 55%,#8a4f1c);box-shadow:0 0 18px rgba(255,190,110,.7);}
-.mm-chem{position:absolute;right:22%;top:14px;width:18px;height:34px;background:#5b3a29;}
-.mm-murs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px;border-radius:0 0 8px 8px;
-  background:linear-gradient(180deg,#6b4430,#4b2e20);box-shadow:0 18px 30px -12px rgba(0,0,0,.8);}
-.mm-piece{position:relative;height:clamp(118px,33vw,150px);overflow:hidden;border:0;border-radius:6px;padding:0;cursor:pointer;
-  background:#1C1411;box-shadow:inset 0 0 0 1px rgba(0,0,0,.4);}
-.mm-decor{position:absolute;inset:0;background:center / cover no-repeat;filter:brightness(.88) saturate(1.15);}
-.mm-piece::after{content:"";position:absolute;inset:0;background:radial-gradient(90% 70% at 50% 20%,rgba(255,200,120,.25),transparent 70%),
-  linear-gradient(180deg,transparent 45%,rgba(18,12,9,.55));pointer-events:none;}
-.mm-piece.vide .mm-decor{filter:brightness(.38) grayscale(.6);}
-.mm-fant{position:absolute;z-index:1;left:50%;bottom:22px;height:78%;transform:translateX(-50%);filter:drop-shadow(0 6px 8px rgba(0,0,0,.55));}
-.mm-etiq{position:absolute;z-index:2;left:50%;bottom:6px;transform:translateX(-50%);max-width:92%;padding:5px 12px;border-radius:999px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;font-weight:700;color:#FFF4E6;
-  background:rgba(28,18,12,.85);border:1.5px solid #E7A84B;}
-.mm-nb{position:absolute;z-index:2;top:6px;right:6px;display:grid;place-items:center;min-width:24px;height:24px;padding:0 6px;border-radius:999px;
-  font-size:12px;font-weight:800;color:#2A1608;background:#F5A23A;box-shadow:0 2px 8px rgba(0,0,0,.5);}
-.mm-piece.vide .mm-etiq{border-style:dashed;border-color:rgba(255,214,170,.45);color:#D9C6B2;}
-.mm-compte{display:flex;align-items:center;justify-content:center;gap:8px;width:max-content;margin:-14px auto 0;position:relative;z-index:2;
-  padding:8px 16px;border-radius:999px;font-size:14px;font-weight:700;background:#2A1E18;border:1.5px solid #E7A84B;}
-.mm-regle{margin:14px 2px 0;padding:14px 16px;border-radius:18px;background:#211813;border:1px solid rgba(245,162,58,.4);}
-.mm-regle b{display:block;font-size:16px;}
-.mm-regle ol{list-style:decimal outside;margin:8px 0 0;padding-left:20px;display:grid;gap:5px;font-size:14px;line-height:1.4;color:#E7D6C4;}
-.mm-regle em{font-style:normal;font-weight:800;color:#FFB0D6;}
-.mm-regle p{margin:8px 0 10px;font-size:13px;color:#CDB9A5;line-height:1.4;}
-.mm-regle button{border:1px solid rgba(245,162,58,.5);background:none;color:#F5B65A;border-radius:999px;padding:7px 16px;font-weight:700;cursor:pointer;}
-.mm-accueil{margin:14px 2px 0;padding:16px;border-radius:18px;text-align:center;background:#211813;border:1px dashed rgba(245,162,58,.45);}
-.mm-accueil b{display:block;font-size:17px;}
-.mm-accueil span{display:block;margin:6px 0 12px;font-size:14px;color:#CDB9A5;line-height:1.4;}
-.mm-accueil button,.mm-or{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:999px;cursor:pointer;
-  padding:10px 16px;font:inherit;font-weight:800;font-size:14px;color:#2A1608;background:linear-gradient(180deg,#F8B451,#E8932A);}
-.mm-or s,.mm-accueil s{text-decoration:none;}
-.mm-onglets{display:flex;gap:6px;margin:18px 2px 12px;}
-.mm-onglets button{flex:1;padding:11px 6px;border-radius:999px;cursor:pointer;font:inherit;font-size:13px;font-weight:700;
-  color:#FFF4E6;background:#211813;border:1px solid rgba(255,214,170,.18);}
-.mm-onglets button.on{color:#2A1608;background:linear-gradient(180deg,#F8B451,#E8932A);border-color:transparent;}
-.mm-liste{margin:0 2px;}
-.mm-vide{padding:16px;border-radius:16px;border:1px dashed rgba(255,214,170,.2);font-size:14px;color:#CDB9A5;line-height:1.4;}
-.mm-essai{display:grid;grid-template-columns:42% 1fr;gap:12px;margin-bottom:10px;padding:10px;border-radius:18px;background:#211813;border:1px solid rgba(255,214,170,.14);}
-.mm-essai-ph{aspect-ratio:4/3;border:0;border-radius:12px;background:#2A1F1B center / cover no-repeat;cursor:pointer;font-size:30px;}
-.mm-essai-t{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;}
-.mm-essai-t b{font-size:16px;line-height:1.2;}
-.mm-essai-t em{font-style:normal;font-size:13px;color:#CDB9A5;}
-.mm-badge{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;background:rgba(255,244,230,.08);border:1px solid rgba(255,244,230,.2);}
-.mm-badge.amis{color:#FFD08A;border-color:rgba(245,162,58,.5);}
-.mm-lien{border:0;background:none;color:#CDB9A5;font:inherit;font-size:13px;cursor:pointer;padding:2px 0;text-decoration:underline;}
-.mm-decouv{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;width:100%;margin-bottom:10px;padding:10px;border-radius:16px;
-  cursor:pointer;text-align:left;color:inherit;font:inherit;background:#211813;border:1px solid rgba(255,214,170,.14);}
-.mm-decouv-ph{display:grid;place-items:center;width:58px;height:58px;border-radius:12px;background:#2A1F1B center / cover no-repeat;}
-.mm-decouv b{display:block;font-size:15px;}
-.mm-decouv em{display:block;font-style:normal;font-size:13px;color:#CDB9A5;}
-.mm-decouv s{text-decoration:none;font-size:22px;color:#CDB9A5;}
-.mm-pub{margin-bottom:10px;padding:12px 14px;border-radius:16px;background:#211813;border:1px solid rgba(255,214,170,.14);}
-.mm-pub b{display:block;font-size:15px;font-weight:600;}
-.mm-pub em{display:block;margin-top:4px;font-style:normal;font-size:12px;color:#CDB9A5;}
-.mm-inviter{display:flex;align-items:center;justify-content:center;gap:10px;width:calc(100% - 4px);height:58px;margin:18px 2px 0;border:0;border-radius:18px;cursor:pointer;
-  font:inherit;font-size:17px;font-weight:800;color:#2A1608;background:linear-gradient(180deg,#F8B451,#E8932A);box-shadow:0 12px 26px -12px rgba(245,162,58,.8);}
-.mm-inviter svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
-.mm-visite-p{margin:0 0 4px;font-size:14px;line-height:1.45;color:#CDB9A5;}
-.mm-visite-voir{display:block;width:calc(100% - 4px);height:50px;margin:10px 2px 0;border-radius:18px;cursor:pointer;font:inherit;font-size:15px;font-weight:700;
-  color:#FFF4E6;background:transparent;border:1px solid rgba(255,214,170,.3);}
-.mm-toast{margin:8px 2px 0;text-align:center;font-size:13px;color:#FFD08A;}
-.mm-fond{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,6,4,.6);}
-.mm-fiche{width:min(520px,100%);max-height:82vh;overflow-y:auto;padding:10px 16px calc(18px + env(safe-area-inset-bottom,0px));
-  border-radius:24px 24px 0 0;background:#1C1411;border:1px solid rgba(255,214,170,.18);animation:mmMonte .25s ease both;}
-@keyframes mmMonte{from{transform:translateY(30px);opacity:0;}to{transform:none;opacity:1;}}
-.mm-poignee{display:block;width:44px;height:5px;margin:0 auto 10px;border-radius:99px;background:rgba(255,244,230,.25);}
-.mm-fiche h2{margin:0 0 12px;font-size:22px;font-weight:800;}
-.mm-fiche-vide p{font-size:14px;color:#CDB9A5;line-height:1.45;}
-.mm-com{margin-bottom:12px;padding:12px;border-radius:16px;background:#241A15;border:1px solid rgba(255,214,170,.14);}
-.mm-com-h{display:flex;align-items:center;gap:12px;}
-.mm-com-ph{flex:none;width:52px;height:52px;border-radius:12px;background:#2A1F1B center / cover no-repeat;}
-.mm-com-h b{display:block;font-size:16px;}
-.mm-com-h em{display:block;font-style:normal;font-size:13px;color:#CDB9A5;}
-.mm-com ul{margin:10px 0 0;padding:0;list-style:none;font-size:13px;color:#EADBC8;display:grid;gap:4px;}
-.mm-com-b{display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
-.mm-fermer{display:block;width:100%;margin-top:6px;padding:12px;border-radius:999px;border:1px solid rgba(255,244,230,.3);background:none;color:#FFF4E6;font:inherit;font-weight:700;cursor:pointer;}
+.mz-piece-h{position:relative;height:200px;overflow:hidden;}
+.mz-piece-h img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.6);}
+.mz-piece-h::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,13,8,.2),#140D08 96%);}
+.mz-retour{position:absolute;z-index:2;top:calc(12px + env(safe-area-inset-top));left:14px;display:grid;place-items:center;width:40px;height:40px;padding:0;border-radius:50%;
+  border:1px solid rgba(255,236,210,.3);background:rgba(20,13,8,.55);font-size:18px;cursor:pointer;}
+.mz-retour.plat{position:static;width:auto;height:auto;padding:8px 12px;border-radius:12px;font-size:14px;}
+.mz-piece-t{position:absolute;z-index:2;left:18px;right:18px;bottom:12px;}
+.mz-piece-t i{font-style:normal;font-size:24px;}
+.mz-piece-t b{display:block;margin-top:2px;font-size:26px;font-weight:900;line-height:1.05;}
+.mz-piece-t em{display:block;margin-top:4px;font-style:normal;font-size:13px;color:#E9D3B6;}
+.mz-page-h{display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top)) 14px 4px;}
+.mz-page-h b{font-size:20px;}
+.mz-corps{padding:6px 16px 0;}
+.mz-debloque{display:flex;gap:9px;margin:0;padding:12px 14px;border-radius:16px;background:rgba(246,181,75,.12);border:1px solid rgba(246,181,75,.35);font-size:14px;line-height:1.4;}
+.mz-debloque i{font-style:normal;}
+.mz-bloc{margin-top:16px;padding:14px;border-radius:18px;background:rgba(255,236,210,.04);border:1px solid rgba(255,236,210,.1);}
+.mz-bloc h3{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;column-gap:10px;row-gap:2px;margin:0 0 10px;font-size:15.5px;}
+.mz-bloc h3 small{font-size:11.5px;font-weight:600;color:#BFA88C;}
+.mz-puces{display:flex;flex-wrap:wrap;gap:8px;}
+.mz-puce{padding:8px 13px;border-radius:999px;border:1.5px solid rgba(255,236,210,.22);background:rgba(255,236,210,.04);font-size:13.5px;cursor:pointer;}
+.mz-puce.on{border-color:#F6B54B;background:rgba(246,181,75,.18);color:#FFD58A;font-weight:700;}
+.mz-gestes{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none;}
+.mz-gestes li>*{display:flex;align-items:center;gap:11px;width:100%;padding:6px;text-align:left;border-radius:14px;border:0;background:rgba(255,236,210,.04);}
+.mz-gestes button{cursor:pointer;}
+.mz-gestes img,.mz-gestes li i{flex:none;display:grid;place-items:center;width:48px;height:48px;border-radius:11px;object-fit:cover;background:#2a1a0f;font-style:normal;font-size:20px;}
+.mz-gestes span{min-width:0;}
+.mz-gestes b{display:block;font-size:14px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mz-gestes em{display:block;margin-top:2px;font-style:normal;font-size:12px;color:#BFA88C;}
+.mz-vide p{margin:0 0 10px;font-size:13.5px;line-height:1.45;color:#E9D3B6;}
+.mz-crois{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none;}
+.mz-crois li{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(246,181,75,.08);}
+.mz-crois span{flex:1;min-width:0;}
+.mz-crois b{display:block;font-size:14px;}
+.mz-crois em{display:block;margin-top:2px;font-style:normal;font-size:12px;color:#BFA88C;}
+.mz-crois button{flex:none;padding:7px 10px;border-radius:10px;border:1px solid rgba(255,236,210,.25);background:transparent;font-size:12px;cursor:pointer;}
+.mz-note{margin:0;font-size:13px;line-height:1.45;color:#BFA88C;}
+.mz-note b{color:#FFF4E6;}
+.mz-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;}
+.mz-cta{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:14px;border:0;cursor:pointer;
+  background:linear-gradient(180deg,#FFC861,#F0A22E);color:#2a1a0f !important;font-weight:800;font-size:14.5px;}
+.mz-cta:disabled{opacity:.45;cursor:default;}
+.mz-cta.creux{background:transparent;border:1.5px solid rgba(255,236,210,.28);color:#FFF4E6 !important;font-weight:700;}
+.mz-cta.danger{background:#C2412D;color:#fff !important;}
+.mz-cta.danger-t{border-color:rgba(232,110,90,.6);color:#FFB4A6 !important;}
+.mz-sur{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;color:#FFD2C8;}
+.mz-look{display:flex;align-items:center;gap:12px;}
+.mz-look img{flex:none;width:52px;height:52px;border-radius:50%;object-fit:cover;object-position:50% 12%;background:#2a1a0f;border:1.5px solid rgba(246,181,75,.6);}
+.mz-look span{flex:1;min-width:0;}
+.mz-look b{display:block;font-size:14.5px;}
+.mz-look em{display:block;margin-top:2px;font-style:normal;font-size:12px;color:#BFA88C;}
+.mz-pieces{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none;}
+.mz-pieces li{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;}
+.mz-pieces li span{display:flex;align-items:center;gap:8px;}
+.mz-pieces li i{font-style:normal;}
+.mz-bascule{min-width:86px;padding:7px 10px;border-radius:999px;border:1.5px solid rgba(255,236,210,.22);background:transparent;font-size:12.5px;cursor:pointer;}
+.mz-bascule.on{border-color:rgba(120,210,150,.7);color:#A9F0C0;}
+.mz-compte{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding-top:10px;}
+.mz-compte form{display:flex;flex-direction:column;align-items:stretch;gap:12px;width:100%;max-width:360px;}
+.mz-compte h2{margin:8px 0 0;font-size:24px;font-weight:900;}
+.mz-compte p{margin:0;font-size:14px;line-height:1.45;color:#E9D3B6;}
+.mz-champ{width:100%;min-height:50px;padding:0 14px;border-radius:14px;border:1.5px solid rgba(255,236,210,.25);background:rgba(255,236,210,.06);color:#FFF4E6;font:inherit;font-size:16px;}
+.mz-champ:focus{outline:none;border-color:#F6B54B;}
+.mz-code{text-align:center;letter-spacing:.4em;font-size:26px;font-weight:800;}
+.mz-erreur{color:#FFB4A6 !important;font-size:13px !important;}
+.mz-lien{border:0;background:transparent;color:#F6B54B !important;font-size:13px;text-decoration:underline;cursor:pointer;}
+@media (max-width:340px){.mz-tete h1{font-size:28px;}.mz-carte{min-height:118px;}.mz-progres s{width:11px;}}
+@media (prefers-reduced-motion: reduce){.mz-carte img{transition:none;}}
 `,
-      }}
-    />
+        }}
+      />
+    </>
   );
 }

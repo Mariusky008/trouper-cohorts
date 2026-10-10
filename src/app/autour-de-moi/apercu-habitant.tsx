@@ -193,9 +193,8 @@ import { StylesCadeau } from "@/components/direct/cadeau-offert";
 import { monLook } from "@/lib/direct/look";
 import { PROFILS_CADEAU, profilCadeau } from "@/lib/site-internet/cadeau-offert";
 import { montrerSalonPret } from "./ensemble-alcoves";
-import { messageDeMaison, signalerPublication } from "@/lib/direct/ville-sync";
-import { essaisPartages, lienDeMaMaison, lireUneMaison, publierLaMaison, type MaisonLue } from "@/lib/direct/maison-sync";
-import { abonnerMaison, chargerMaison, MAISON_VIDE, pieceDe, PIECES } from "@/lib/direct/ma-maison";
+import { signalerPublication } from "@/lib/direct/ville-sync";
+import { pieceDeLaFamille, pieceParCle } from "@/lib/direct/maison";
 /* ═══ L'OUVERTURE EN TROIS ACTES EST MISE DE CÔTÉ, PAS EFFACÉE ═════════════
    « L'animation de départ ne fonctionne pas assez bien, garde-la de côté, on
    essaiera de faire mieux plus tard. »
@@ -207,7 +206,7 @@ import { Ensemble, salonsDontJeSuisMembre, sceneDuSalon } from "./ensemble";
 import { decorDe } from "./alcove";
 import { BarreDAcces, LectureDuSalon, MenuDuMessage, PorteDuSalon, porteFermee } from "./porte-salon";
 import { aToiDeJouer, nosDiscussions } from "@/lib/direct/ensemble";
-import { MaMaison, type MaisonEnVisite } from "./ma-maison";
+import { MaMaison } from "./ma-maison";
 import { ComposeurVille, LaVille, type CibleSalon, type EssaiPartageable, type SalonPartageable } from "./la-ville";
 import { StyleMaison } from "@/components/direct/style-maison";
 import { StylesChoix } from "@/components/direct/styles-choix";
@@ -222,7 +221,7 @@ import { ParcoursRestaurant } from "@/components/direct/parcours-restaurant";
 import { EssaiDuLieu } from "./boutique/essai-du-lieu";
 import { abonnerVitrines, avecSaVitrine, chargerVitrines, VITRINES_VIDES } from "@/lib/direct/vitrine";
 import { DoubleChef } from "@/components/direct/double-chef";
-import { aUnDouble, nomDansPhrase, profilDuDouble, tenueDu } from "@/lib/direct/double-metiers";
+import { aUnDouble, familleDuDouble, nomDansPhrase, profilDuDouble, tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
 import { StylesParcoursTable } from "@/components/direct/styles-parcours-table";
 import { ParcoursDeco } from "@/components/direct/parcours-deco-ecran";
 import { StylesParcoursDeco } from "@/components/direct/styles-parcours-deco";
@@ -486,14 +485,15 @@ const NOM_ONGLET = {
  * Sur les trois autres pages, il change de tenue et devient LE geste de la page :
  * - La ville : il rit, la main levée — « Qu'as-tu envie de partager ? » ;
  * - Ensemble : il lève son verre — « Lancer une discussion » ;
- * - Ma maison : il lit dans son fauteuil — « Faire visiter ma maison ».
+ * - Ma maison : il lit dans son fauteuil — « La pièce du moment » (celle que l'heure
+ *   met devant : la cuisine à midi, les sorties le soir).
  * Un petit signe doré au coin dit ce qu'il fait ; le mot s'affiche au-dessus
  * tant qu'on ne l'a jamais touché sur cette page.
  */
 const GESTES_DE_PAGE = {
   ville: { image: "/direct/fantomes/client-rit.png", mot: "Partager", dit: "Qu’as-tu envie de partager ?" },
   salons: { image: "/direct/fantomes/client-verre.png", mot: "Discuter", dit: "Lancer une discussion" },
-  profil: { image: "/direct/fantomes/client-magazine.png", mot: "Inviter", dit: "Faire visiter ma maison" },
+  profil: { image: "/direct/fantomes/client-magazine.png", mot: "Ouvrir", dit: "La pièce du moment" },
 } as const;
 type PageAGeste = keyof typeof GESTES_DE_PAGE;
 
@@ -1733,7 +1733,6 @@ export function ApercuHabitant({
   /** Les lieux où l'on s'est posé. Relus à l'ouverture de « Profil ». */
   const [mesTraces, setMesTraces] = useState<FantomePose[]>([]);
   /** Ma maison montre ses réglages (l'ancien « Mon espace ») — voir la roue dentée. */
-  const [reglagesMaison, setReglagesMaison] = useState(false);
   /** L'onglet sur lequel s'ouvre la découverte d'une soirée : l'ambiance, ou « Qui vient ? » depuis le rail. */
   const [soireeSur, setSoireeSur] = useState<OngletSoiree>("ambiance");
   /** Ce que j'ai dit des soirées (« Tu viens pour… ») : le compte du rail en tient compte. */
@@ -1748,15 +1747,6 @@ export function ApercuHabitant({
   const [vusPropos, setVusPropos] = useState<Record<string, string>>(lireVusPropos);
   /** « Bienvenue sur Clikme » rouvert depuis Réglages → Aide. */
   const [revoirBienvenue, setRevoirBienvenue] = useState(false);
-  /**
-   * LA MAISON D'UN AUTRE HABITANT, EN VISITE — vraie ville seulement. Ouverte
-   * par son lien (`?maison=`) ou par « Voir sa maison » dans La ville ; elle
-   * prend la place de la mienne dans l'onglet, et n'importe quel onglet la
-   * referme — « Ma maison » compris, qui ramène chez moi.
-   */
-  const [maisonLue, setMaisonLue] = useState<MaisonLue | null>(null);
-  /** Ce que je partage de ma maison : ma présentation, mes essais partagés. */
-  const maisonGardee = useSyncExternalStore(abonnerMaison, chargerMaison, () => MAISON_VIDE);
   /**
    * ON LIT LA MÉMOIRE APRÈS LE PREMIER RENDU, ET PAS PENDANT.
    *
@@ -2772,7 +2762,6 @@ export function ApercuHabitant({
     // s'éteint tout seul, et un fantôme posé il y a dix secondes doit apparaître
     // sans recharger la page.
     if (o === "profil") setMesTraces(mesFantomes());
-    setMaisonLue(null);
     setPreselectionVille(null);
     // ON FERME CE QUI EST PAR-DESSUS, ET C'EST INDISPENSABLE DEPUIS QUE LA
     // BARRE RESTE VISIBLE DANS UN SALON. Sans ces deux lignes, appuyer sur
@@ -5394,84 +5383,25 @@ export function ApercuHabitant({
   const gardesTotal = gardees.length + piecesGardees.length;
   const mesSuivis = toutes.filter((c) => suivis.includes(c.id));
   /**
-   * ═══ MA MAISON, PUBLIÉE — dans la vraie ville ═══════════════════════════
-   *
-   * « Toucher l'avatar d'un habitant ouvre sa vraie maison. » Pour qu'on
-   * puisse ouvrir la mienne, elle part au serveur dès que ce que je partage
-   * change : mon prénom, ma présentation, mes commerces adoptés, mes essais
-   * PARTAGÉS. Les essais privés ne quittent jamais le téléphone. Voir
-   * `maison-sync.ts`.
+   * CE QUE MA MAISON LIT DE L'APPLICATION — voir `ma-maison.tsx`. Mémorisé :
+   * la Maison note ces signaux dans un effet, qui ne doit pas repartir à chaque
+   * rendu.
    */
-  const idsSuivis = mesSuivis.map((c) => c.id).join(",");
-  const maMaisonAPublier = useCallback(
-    () => ({
-      prenom,
-      presentation: maisonGardee.presentation,
-      adoptes: idsSuivis ? idsSuivis.split(",") : [],
-      essais: essaisPartages(
-        piecesGardees,
-        // LES TRACES SONT RELUES ICI, PAS DANS L'ÉTAT : il n'est rempli qu'en ouvrant Ma maison.
-        mesFantomes().filter((t) => toutesLesCartes().some((c) => c.id === t.souvenir.cle)),
-        maisonGardee.partages,
-      ),
-    }),
-    [prenom, maisonGardee, idsSuivis, piecesGardees],
+  const idsSuivisMaison = mesSuivis.map((c) => c.id).join(",");
+  const suivisDeLaMaison = useMemo(
+    () =>
+      (idsSuivisMaison ? idsSuivisMaison.split(",") : []).flatMap((id) => {
+        const c = toutes.find((x) => x.id === id);
+        return c ? [{ id: c.id, nom: c.nom, famille: familleDuDouble(c), photo: c.photo }] : [];
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [idsSuivisMaison],
   );
-  useEffect(() => {
-    if (reelle) publierLaMaison(maMaisonAPublier());
-  }, [reelle, maMaisonAPublier]);
-  /** « Voir sa maison », depuis une de ses publications de La ville. */
-  async function visiterLaMaison(par: { publication: string }) {
-    const m = await lireUneMaison(par);
-    if (!m) {
-      setEchoIcone("🏠");
-      setEcho("Sa maison n’est pas visitable pour l’instant.");
-      return;
-    }
-    allerA_onglet("profil");
-    setReglagesMaison(false);
-    if (!m.moi) setMaisonLue(m);
-  }
-  /**
-   * LA MAISON VISITÉE, DANS LA FORME QUE `MaMaison` AFFICHE : ses commerces
-   * adoptés retrouvés parmi ceux de la ville (un commerce qui n'y est plus
-   * disparaît de sa maison), ses publications écrites à son nom.
-   */
-  const maisonEnVisite: MaisonEnVisite | null =
-    maisonLue && reelle
-      ? {
-          prenom: maisonLue.prenom,
-          presentation: maisonLue.presentation,
-          adoptes: maisonLue.adoptes.flatMap((id) => toutes.filter((c) => c.id === id).slice(0, 1)),
-          essais: maisonLue.essais,
-          publications: maisonLue.publications.map((p) => messageDeMaison(p, maisonLue.prenom || "Un habitant", reelle.nom)),
-          onFermer: () => setMaisonLue(null),
-        }
-      : null;
-  /**
-   * ARRIVÉ PAR LE LIEN D'UNE MAISON (`?maison=<jeton>`) : on l'ouvre. Le
-   * paramètre quitte l'adresse aussitôt — recharger la page ramène chez soi.
-   * Ma propre maison, ouverte par mon lien, c'est simplement la mienne.
-   */
-  useEffect(() => {
-    if (!reelle) return;
-    const jeton = new URLSearchParams(window.location.search).get("maison");
-    if (!jeton) return;
-    void lireUneMaison({ jeton }).then((m) => {
-      // APRÈS LA LECTURE, PAS AVANT : au premier rendu, le routeur de Next
-      // réécrit encore l'adresse derrière nous.
-      const url = new URL(window.location.href);
-      url.searchParams.delete("maison");
-      window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
-      setOnglet("profil");
-      setReglagesMaison(false);
-      if (m && !m.moi) setMaisonLue(m);
-      else if (!m) {
-        setEchoIcone("🏠");
-        setEcho("Cette maison n’est plus visitable.");
-      }
-    });
-  }, [reelle]);
+  const familleDeLaCarte = useCallback((id: string): FamilleDouble | undefined => {
+    const c = toutesLesCartes().find((x) => x.id === id);
+    return c ? familleDuDouble(c) : undefined;
+  }, []);
+  const nomDeLaSoiree = useCallback((cle: string) => SOIREES[cle]?.lieu, []);
   /**
    * CE QUE MES COMMERCES ONT DIT AUJOURD'HUI — la matière de la pastille.
    *
@@ -5729,8 +5659,10 @@ export function ApercuHabitant({
     // ET IL DIT OÙ EST PASSÉ LE FANTÔME : « on ne comprend pas comment on
     // obtient les fantômes dans les maisons ». C'est ce geste-ci qui les y met.
     setEcho(
-      `${c.nom} emménage dans ta maison : son fantôme t’attend dans ${PIECES.find((p) => p.cle === pieceDe(c))?.nom.toLowerCase() ?? "sa pièce"}. ` +
-        `Tu seras prévenu de ses prochaines annonces.`,
+      (() => {
+        const piece = pieceDeLaFamille(familleDuDouble(c));
+        return `${c.nom} entre dans ta Maison${piece ? `, dans ${pieceParCle(piece).nom}` : ""}. Tu seras prévenu de ses prochaines annonces.`;
+      })(),
     );
     noter("notif-proposee", 0, "suivre");
     void demanderAvertissement().then((r) =>
@@ -5858,16 +5790,6 @@ export function ApercuHabitant({
     if (!c) return [];
     return [{ cle, nom: c.nom, icone: "📅", quoi: b }];
   });
-  /**
-   * MES SORTIES — ce que j'ai déclenché ou rejoint.
-   *
-   * Ce qu'on accumule n'est pas des conversations, c'est ce qu'on a découvert et
-   * vécu. C'est pour ça que le salon ne s'efface pas quand il se ferme : six mois
-   * plus tard, on doit pouvoir retrouver pourquoi on l'avait ouvert.
-   */
-  const mesSorties = Object.values(salons).filter(
-    (x) => jySuis(x.presents) || cestMoi(x.parQui),
-  );
   /**
    * OUVERTS D'ABORD, PASSÉS ENSUITE — et jamais mélangés.
    *
@@ -12262,7 +12184,6 @@ export function ApercuHabitant({
                       }
                     : undefined
                 }
-                onMaison={reelle ? (m) => void visiterLaMaison({ publication: m.id }) : undefined}
                 nouvelle={nouvelleVille ?? undefined}
               />
             </div>
@@ -12329,62 +12250,23 @@ export function ApercuHabitant({
             </div>
           )}
 
-          {/* ─── PROFIL ───
-              L'ancienne feuille « Mon espace », montée d'un étage. Elle ne
-              porte plus « Mes sorties » : les salons ont leur onglet, et deux
-              endroits pour la même chose est un défaut, pas un raccourci. */}
           {/* ═══ MA MAISON — l'onglet qui remplace « Profil » ═══════════════
-              Voir `ma-maison.tsx`. L'ancien « Mon espace » (sans compte,
-              installer l'application, mes commerces, mes traces) n'est pas
-              perdu : la roue dentée l'ouvre, ce sont les réglages. */}
-          {onglet === "profil" && !reglagesMaison && (
+              « L'endroit où ClikMe apprend qui je suis, pour aller chercher dans
+              ma ville ce qui pourrait me plaire. » Privée : ni les autres
+              habitants ni les commerçants ne la voient. Voir `ma-maison.tsx`.
+              Ses réglages gardent ce que « Mon espace » portait déjà : l'aide,
+              où est mon fantôme, installer l'application, ce que j'ai gardé. */}
+          {onglet === "profil" && (
             <div className="ap-page ap-onglet-vue">
               <MaMaison
-                key={maisonEnVisite ? "visite" : "moi"}
-                visiteur={maisonEnVisite ?? undefined}
-                // DANS LA VRAIE VILLE, « Inviter un ami chez moi » mène à MA maison.
-                lienInvitation={reelle ? () => lienDeMaMaison(maMaisonAPublier()) : undefined}
-                prenom={prenom}
-                adoptes={mesSuivis}
-                pieces={piecesGardees}
-                traces={reelle ? mesTraces.filter((t) => toutes.some((c) => c.id === t.souvenir.cle)) : mesTraces}
-                publications={ville.filter((m) => m.qui === "Vous")}
-                onPage={(c) => {
-                  window.location.href = pageDuCommerce(toutes.find((x) => x.id === c.id) ?? c);
-                }}
-                onVoirPiece={(p) => setPieceVue(p)}
-                onVoirTrace={(t) => {
-                  setMurRevisite(t);
-                  allerA_onglet("direct");
-                }}
-                onPartager={(e) => {
-                  /* PARTAGER UN ESSAI AVEC SES AMIS, C'EST OUVRIR UNE
-                     CONVERSATION SUR LUI — privée, où l'on invite par lien.
-                     Elle se retrouve dans Ensemble. Rien n'est publié dans la
-                     ville sans qu'on le demande. */
-                  const cle = `essai|${(e.carte ?? "moi")}|${e.titre}`.slice(0, 120);
-                  ouvrirSalon({
-                    cle,
-                    sujet: `Mon essai : ${e.titre}`,
-                    ou: e.lieu,
-                    parQui: "Vous",
-                    quand: "Aujourd'hui",
-                    prive: true,
-                    photo: e.photo,
-                    annonce: e.titre,
-                  });
-                  ecrireDansSalon(cle, {
-                    qui: monPrenom() || "Vous",
-                    voix: "moi",
-                    texte: "Je l'ai essayé sur moi, vous en pensez quoi ?",
-                    quand: heureCourte(),
-                    photo: e.photo,
-                  });
-                  setSalonOuvert(cle);
-                  setSalonPage(true);
-                }}
+                reelle={Boolean(reelle)}
+                gardees={piecesGardees}
+                suivis={suivisDeLaMaison}
+                familleDeCarte={familleDeLaCarte}
+                nomDeSoiree={nomDeLaSoiree}
+                onVoirGardee={(p) => setPieceVue(p)}
                 onDecouvrir={(b) => {
-                  // DEPUIS UNE PIÈCE VIDE : LE DIRECT S'OUVRE SUR SON MÉTIER (la cave → les bars).
+                  // DEPUIS UNE PIÈCE : LE DIRECT S'OUVRE SUR SON MÉTIER (Mes Sorties → les bars).
                   if (surOrdinateur && onOnglet) {
                     onOnglet("direct");
                     return;
@@ -12395,63 +12277,15 @@ export function ApercuHabitant({
                     setVue("metiers");
                   }
                 }}
-                onReglages={() => setReglagesMaison(true)}
-                onNePlusSuivre={(id) => basculerSuivi(id)}
-                demandeVisite={demandeGeste}
-              />
-              {laPieceVue}
-            </div>
-          )}
-          {onglet === "profil" && reglagesMaison && (
-            <div className="ap-page ap-onglet-vue">
-              <div className="ap-page-h">
-                <button type="button" className="ap-maison-retour" onClick={() => setReglagesMaison(false)}>
-                  ← Ma maison
-                </button>
-                <span className="ap-page-t">
-                  <b>Réglages</b>
-                  <em>Ce que vous avez gardé, réservé et demandé.</em>
-                </span>
-              </div>
-              <div className="ap-sal-corps">
-                {/* ─── VOUS, SANS COMPTE ───
-                    Un onglet « Profil » vide au premier passage ne dit rien, et
-                    la tentation serait de le remplir de réglages. Or il y a une
-                    chose vraie à y mettre, et c'est celle sur laquelle repose
-                    tout le reste : on n'a rien demandé. Pas de compte, pas de
-                    numéro, rien qui parte du téléphone. C'est l'argument qui
-                    fait qu'une amie peut ouvrir un salon depuis un lien sans
-                    s'inscrire — autant l'écrire là où on vient chercher « qui
-                    suis-je ici ». */}
-                <div className="ap-moi-qui">
-                  <i aria-hidden="true">🙂</i>
-                  <b>Vous, sans compte</b>
-                  <em>
-                    Aucun nom, aucun numéro, aucune adresse. Ce que vous gardez
-                    et ce que vous écrivez reste sur ce téléphone.
-                  </em>
-                  <div className="ap-moi-chif">
-                    <span>
-                      <b>{gardees.length}</b>gardés
-                    </span>
-                    <span>
-                      <b>{mesSorties.length}</b>
-                      {mesSorties.length > 1 ? "sorties" : "sortie"}
-                    </span>
-                    <span>
-                      <b>{mesSuivis.length}</b>
-                      {mesSuivis.length > 1 ? "suivis" : "suivi"}
-                    </span>
-                  </div>
-                </div>
-
+                demandeGeste={demandeGeste}
+                reglagesEnPlus={
+                  <>
                 {/* AIDE : le tuto d'arrivée, à revoir quand on veut. */}
                 <div className="ap-aide">
                   <b>Aide</b>
                   <button
                     type="button"
                     onClick={() => {
-                      setReglagesMaison(false);
                       allerA_onglet("direct");
                       setRevoirBienvenue(true);
                     }}
@@ -12521,9 +12355,12 @@ export function ApercuHabitant({
                     ))}
                   </div>
                 )}
-                {blocInstaller}
-                {monEspace}
-              </div>
+                    {blocInstaller}
+                    {monEspace}
+                  </>
+                }
+              />
+              {laPieceVue}
             </div>
           )}
 
@@ -14258,11 +14095,6 @@ export function ApercuHabitant({
                   window.setTimeout(() => setClin(""), BOND_MS);
                   noter("onglet", 0, `geste-${onglet}`);
                   connaitreGeste(onglet as PageAGeste);
-                  // CHEZ QUELQU'UN, « Faire visiter ma maison » ramène d'abord chez moi.
-                  if (onglet === "profil" && maisonLue) {
-                    setMaisonLue(null);
-                    return;
-                  }
                   // DANS ENSEMBLE, LE PANNEAU « ON SE RETROUVE AUTOUR DE QUOI ? » —
                   // par-dessus l'alcôve affichée, qu'on retrouve à la fermeture.
                   if (onglet === "salons") {

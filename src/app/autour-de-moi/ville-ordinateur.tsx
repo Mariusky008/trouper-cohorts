@@ -56,8 +56,8 @@ import { personnaliteDe } from "@/lib/direct/personnalites";
 import { commentPrevenir, demanderRendezVous, numeroDeFiction } from "@/lib/direct/prevenir";
 import { pageDuCommerce } from "@/lib/direct/source-ville";
 import { basculerSuivi, chargerSuivis } from "@/lib/direct/suivis";
-import { pieceDe, PIECES } from "@/lib/direct/ma-maison";
-import { profilDuDouble, tenueDu } from "@/lib/direct/double-metiers";
+import { pieceDeLaFamille, pieceParCle } from "@/lib/direct/maison";
+import { familleDuDouble, profilDuDouble, tenueDu } from "@/lib/direct/double-metiers";
 import { cleSalonBoutique, ecrireDansSalon, heureCourte, monPrenom, ouvrirSalon } from "@/lib/direct/salons";
 
 export type VilleOrdinateurProps = {
@@ -743,13 +743,12 @@ function LeDirectOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) {
                           className={aime ? "aime" : ""}
                           onClick={() => {
                             basculerEnvie(f.cle);
-                            // LIKER UN COMMERCE LE FAIT EMMÉNAGER DANS MA MAISON — la
+                            // LIKER UN COMMERCE LE FAIT ENTRER DANS MA MAISON — la
                             // même règle que « Favori » sur le téléphone.
                             if (!aime && f.c && !chargerSuivis().includes(f.c.id)) {
                               basculerSuivi(f.c.id);
-                              setDit(
-                                `${f.c.nom} emménage dans ta maison : son fantôme t’attend dans ${PIECES.find((x) => x.cle === pieceDe(f.c!))?.nom.toLowerCase() ?? "sa pièce"}.`,
-                              );
+                              const piece = pieceDeLaFamille(familleDuDouble(f.c));
+                              setDit(`${f.c.nom} entre dans ta Maison${piece ? `, dans ${pieceParCle(piece).nom}` : ""}.`);
                             }
                           }}
                           aria-pressed={aime}
