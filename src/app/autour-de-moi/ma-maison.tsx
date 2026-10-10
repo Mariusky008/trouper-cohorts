@@ -172,24 +172,21 @@ export function MaMaison({
             <i aria-hidden="true">⚙︎</i>
           </button>
         </div>
-        <p className="mz-sous">Montrez-moi un peu de vous. Je vais chercher en ville ce qui vous ressemble.</p>
+        {/* UNE SEULE INTERVENTION DU FANTÔME, puis directement la Maison. La
+            jauge se passe d'explication. */}
         <div className="mz-scene">
-          <FantomeAnime humeur={allumees ? "excited" : "idle"} taille={112} />
+          <FantomeAnime humeur={allumees ? "excited" : "idle"} taille={104} />
           <div className="mz-bulle">
             <b>{mot.titre}</b>
-            <span>{mot.texte}</span>
+            {mot.texte && <span>{mot.texte}</span>}
+            <i className="mz-jauge" role="img" aria-label={phraseDesPieces(allumees)}>
+              {PIECES.map((p, k) => (
+                <s key={p.cle} className={k < allumees ? "on" : ""} />
+              ))}
+            </i>
           </div>
         </div>
       </header>
-
-      <div className="mz-progres" aria-label={phraseDesPieces(allumees)}>
-        <span>{phraseDesPieces(allumees)}</span>
-        <i aria-hidden="true">
-          {PIECES.map((p, k) => (
-            <s key={p.cle} className={k < allumees ? "on" : ""} />
-          ))}
-        </i>
-      </div>
 
       {proposerCompte && (
         <button type="button" className="mz-garder" onClick={() => setVue({ ou: "compte" })}>
@@ -288,11 +285,12 @@ function VuePiece({
   const choix = p.choix;
   const coches = new Set(e.dit);
   const gardeeDe = (s: Signal) => (s.id.startsWith("garde|") ? gardees.find((g) => `garde|${g.carte}|${g.piece}` === s.id) : undefined);
+  /* LA MISSION DU FANTÔME — ce qu'il va faire après qu'on a nourri la Maison. */
   const dit = e.enPause
-    ? "Je fais une pause dans cette pièce : je n’apprends rien et ne propose rien. Réveillez-la quand vous voulez."
+    ? "Je fais une pause ici : je n’apprends rien et ne propose rien. Réveillez-moi quand vous voulez."
     : e.allumee
-      ? p.benefice
-      : `${p.reveil.action} : ${p.reveil.gain}.`;
+      ? p.mission.active
+      : p.mission.vide;
   return (
     <>
       <header className="mz-piece-h">
@@ -317,7 +315,7 @@ function VuePiece({
       <div className="mz-corps">
         {e.enPause ? (
           <button type="button" className="mz-cta large" onClick={() => mettreEnPause(p.cle, false)}>
-            Réveiller la pièce
+            Me réveiller
           </button>
         ) : !e.allumee ? (
           <button type="button" className="mz-cta large" onClick={() => onDecouvrir(p.branche)}>
@@ -426,12 +424,12 @@ function VuePiece({
         <div className="mz-discret">
           {!e.enPause && (
             <button type="button" onClick={() => mettreEnPause(p.cle, true)}>
-              Mettre la pièce en pause
+              Faire une pause ici
             </button>
           )}
           {vider ? (
             <span className="mz-sur">
-              Tout ce qu’elle sait de vous sera oublié.
+              Tout ce que je sais de vous ici sera oublié.
               <button
                 type="button"
                 className="mz-cta danger"
@@ -448,7 +446,7 @@ function VuePiece({
             </span>
           ) : (
             <button type="button" onClick={() => setVider(true)}>
-              Vider la pièce
+              Tout oublier ici
             </button>
           )}
         </div>
@@ -533,7 +531,7 @@ function VueReglages({
         </section>
 
         <section className="mz-bloc">
-          <h3>Les pièces</h3>
+          <h3>Ce que ClikMe apprend</h3>
           <ul className="mz-pieces">
             {etats.map((e) => (
               <li key={e.piece.cle}>
@@ -719,17 +717,14 @@ function StylesMaMaison() {
 .mz-moi{position:relative;flex:none;width:46px;height:46px;padding:0;border-radius:50%;border:1.5px solid rgba(246,181,75,.75);background:#2a1a0f;cursor:pointer;}
 .mz-moi img{width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 12%;}
 .mz-moi i{position:absolute;right:-4px;bottom:-4px;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#F6B54B;color:#2a1a0f;font-style:normal;font-size:12px;}
-.mz-sous{margin:8px 0 0;max-width:32ch;font-size:14px;line-height:1.4;color:#E9D3B6;}
 .mz-scene{position:relative;display:flex;align-items:flex-end;gap:10px;margin-top:10px;min-height:118px;}
 .mz-scene .fa{flex:none;margin-left:2px;}
 .mz-bulle{position:relative;flex:1;min-width:0;margin-bottom:22px;padding:11px 13px;border-radius:16px 16px 16px 4px;background:#FFF1DC;color:#3a240f;box-shadow:0 10px 26px -12px rgba(0,0,0,.6);}
-.mz-bulle b{display:block;font-size:14.5px;}
+.mz-bulle b{display:block;font-size:15.5px;}
 .mz-bulle span{display:block;margin-top:2px;font-size:13px;line-height:1.35;color:#6b4a2a;}
-.mz-progres{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 16px 0;padding:11px 14px;border-radius:16px;
-  background:rgba(255,236,210,.05);border:1px solid rgba(246,181,75,.22);font-size:13.5px;font-weight:700;color:#FFE7C2;}
-.mz-progres i{display:flex;gap:4px;flex:none;}
-.mz-progres s{display:block;width:14px;height:5px;border-radius:3px;background:rgba(255,236,210,.14);}
-.mz-progres s.on{background:#F6B54B;box-shadow:0 0 8px rgba(246,181,75,.6);}
+.mz-jauge{display:flex;gap:4px;margin-top:8px;}
+.mz-jauge s{display:block;width:16px;height:5px;border-radius:3px;background:rgba(58,36,15,.15);}
+.mz-jauge s.on{background:#F0A22E;}
 .mz-garder{display:flex;align-items:center;gap:12px;width:calc(100% - 32px);margin:10px 16px 0;padding:11px 14px;text-align:left;border-radius:16px;cursor:pointer;
   background:rgba(255,236,210,.05);border:1px solid rgba(246,181,75,.4);}
 .mz-garder>i{font-style:normal;font-size:20px;}
@@ -842,7 +837,7 @@ function StylesMaMaison() {
 .mz-code{text-align:center;letter-spacing:.4em;font-size:26px;font-weight:800;}
 .mz-erreur{color:#FFB4A6 !important;font-size:13px !important;}
 .mz-lien{border:0;background:transparent;color:#F6B54B !important;font-size:13px;text-decoration:underline;cursor:pointer;}
-@media (max-width:340px){.mz-tete h1{font-size:28px;}.mz-scene .fa{transform:scale(.78);transform-origin:0 100%;margin-right:-24px;}.mz-carte{min-height:150px;padding:12px;}.mz-grille{grid-template-columns:1fr;}.mz-grille .mz-carte{min-height:132px;}.mz-carte.grande{min-height:200px;}.mz-progres s{width:9px;}.mz-piece-h{height:250px;}}
+@media (max-width:340px){.mz-tete h1{font-size:28px;}.mz-scene .fa{transform:scale(.78);transform-origin:0 100%;margin-right:-24px;}.mz-carte{min-height:150px;padding:12px;}.mz-grille{grid-template-columns:1fr;}.mz-grille .mz-carte{min-height:132px;}.mz-carte.grande{min-height:200px;}.mz-jauge s{width:11px;}.mz-piece-h{height:250px;}}
 @media (prefers-reduced-motion: reduce){.mz-carte img{transition:none;}}
 `,
         }}

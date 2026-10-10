@@ -43,8 +43,12 @@ export type PieceMaison = {
   reveil: { action: string; gain: string };
   /** PIÈCE QUI APPREND : ce qu'elle fait déjà pour vous, en quelques mots. */
   apport: string;
-  /** En haut de la pièce, quand elle sait quelque chose : le bénéfice d'abord. */
-  benefice: string;
+  /**
+   * LA MISSION DU FANTÔME, en haut de la pièce — ce qu'il VA faire, pas ce
+   * qu'il stocke : « Je pars voir ce qui va avec. » `vide` : quand la pièce ne
+   * sait encore rien, le petit geste et ce qu'il déclenchera.
+   */
+  mission: { active: string; vide: string };
   /** Le seul choix qu'on y propose, quand il rend service tout de suite. */
   choix?: ChoixPiece;
   /** Ce qu'on pourra y déposer soi-même, aux étapes suivantes — dit honnêtement « bientôt ». */
@@ -60,11 +64,11 @@ export const PIECES: PieceMaison[] = [
     sous: "Mes vêtements et mes looks",
     icone: "👔",
     photo: "/direct/maison/piece-dressing.webp",
-    remplit: "Les pièces que vous mettez de côté dans les boutiques arrivent ici. Bientôt, vos propres vêtements en photo.",
+    remplit: "Les vêtements que vous mettez de côté dans les boutiques arrivent ici. Bientôt, les vôtres en photo.",
     debloque: "Je vous dirai avec quoi porter les nouveautés des boutiques de la ville.",
-    reveil: { action: "Gardez 3 pièces qui vous plaisent", gain: "je chercherai ce qui va avec" },
+    reveil: { action: "Gardez 3 vêtements qui vous plaisent", gain: "je chercherai ce qui va avec" },
     apport: "je cherche ce qui va avec",
-    benefice: "Grâce à ce que je sais déjà, je peux chercher les nouveautés qui vont avec.",
+    mission: { active: "Je pars voir ce qui va avec.", vide: "Gardez 3 vêtements qui vous plaisent : je partirai voir ce qui va avec." },
     bientot: "Bientôt : vos propres vêtements en photo, pour des looks avec ce que vous avez déjà.",
     branche: "mode",
   },
@@ -78,7 +82,7 @@ export const PIECES: PieceMaison[] = [
     debloque: "Une nouvelle coupe qui ressemble à celles que vous aimez ? Je vous la montrerai sur vous.",
     reveil: { action: "Essayez une coupe", gain: "je vous montrerai les nouvelles sur vous" },
     apport: "je guette les coupes pour vous",
-    benefice: "Grâce à ce que je sais déjà, je peux repérer les coupes qui ressemblent à celles que vous aimez.",
+    mission: { active: "Je guette les nouvelles coupes qui vous ressemblent.", vide: "Essayez une coupe : je guetterai les nouvelles, pour vous les montrer sur vous." },
     bientot: "Bientôt : votre photo, gardée ici, pour ne plus la reprendre à chaque essai.",
     branche: "coiffeur",
   },
@@ -92,7 +96,7 @@ export const PIECES: PieceMaison[] = [
     debloque: "Chaque midi, les plats du jour qui vous ressemblent.",
     reveil: { action: "Dites-moi ce qui vous fait envie", gain: "je trouverai vos plats du jour" },
     apport: "je repère les plats du jour",
-    benefice: "Grâce à ce que je sais déjà, je peux repérer chaque midi les plats du jour qui vous ressemblent.",
+    mission: { active: "À midi, je regarderai les plats du jour.", vide: "Dites-moi ce qui vous fait envie : à midi, je regarderai les plats du jour." },
     choix: {
       titre: "Je ne mange pas de…",
       options: [
@@ -116,7 +120,7 @@ export const PIECES: PieceMaison[] = [
     debloque: "Le soir venu, les idées qui devraient vous ressembler.",
     reveil: { action: "Choisissez une soirée", gain: "je vous dirai quoi faire ce soir" },
     apport: "je prépare vos soirées",
-    benefice: "Grâce à ce que je sais déjà, je peux vous proposer, le soir venu, les sorties qui vous ressemblent.",
+    mission: { active: "Ce soir, je regarderai ce qui se passe en ville.", vide: "Choisissez une soirée : ce soir, je regarderai ce qui se passe en ville." },
     choix: {
       titre: "Ce qui me fait sortir",
       options: [
@@ -140,7 +144,7 @@ export const PIECES: PieceMaison[] = [
     debloque: "Je vous montrerai ce qui irait chez vous.",
     reveil: { action: "Gardez un bouquet ou un objet", gain: "je trouverai ce qui ira chez vous" },
     apport: "je repère ce qui irait chez vous",
-    benefice: "Grâce à ce que je sais déjà, je peux repérer les objets et les fleurs qui iraient chez vous.",
+    mission: { active: "Je pars chercher ce qui irait chez vous.", vide: "Gardez un bouquet ou un objet : je partirai chercher ce qui irait chez vous." },
     bientot: "Bientôt : une photo de votre salon, pour voir les nouveautés chez vous.",
     choix: {
       titre: "Chez moi, c'est plutôt…",
@@ -164,7 +168,7 @@ export const PIECES: PieceMaison[] = [
     debloque: "Les nouveautés du libraire qui ressemblent à ce que vous aimez.",
     reveil: { action: "Dites-moi ce que vous lisez", gain: "je guetterai les nouveautés" },
     apport: "je guette les nouveautés",
-    benefice: "Grâce à ce que je sais déjà, je peux guetter les nouveautés du libraire qui vous ressemblent.",
+    mission: { active: "Je guette les nouveautés du libraire pour vous.", vide: "Dites-moi ce que vous aimez lire, je vais guetter les nouveautés." },
     choix: {
       titre: "Ce que j'aime lire",
       options: [
@@ -188,7 +192,7 @@ export const PIECES: PieceMaison[] = [
     debloque: "Un créneau libre près de chez vous, quand il vous ressemble.",
     reveil: { action: "Dites-moi ce que vous cherchez", gain: "je trouverai le bon créneau" },
     apport: "je repère les bons créneaux",
-    benefice: "Grâce à ce que je sais déjà, je peux repérer un créneau qui vous ressemble, près de chez vous.",
+    mission: { active: "Je guette un créneau libre près de chez vous.", vide: "Dites-moi ce que vous cherchez : je guetterai un créneau près de chez vous." },
     choix: {
       titre: "Ce que je cherche",
       options: [
@@ -589,7 +593,7 @@ export function etatDe(m: Memoire, piece: PieceMaison): EtatPiece {
   let suite = `→ ${piece.apport}`;
   if (enPause) {
     ligne = "En pause";
-    suite = "→ touchez pour la réveiller";
+    suite = "→ touchez pour me réveiller";
   } else if (crois.length) ligne = `Vous aimez ${crois[0].mot}`;
   else if (remarque.length) ligne = `${pluriel(remarque.length, "chose gardée", "choses gardées")} pour vous`;
   else if (dit.length) ligne = `${pluriel(dit.length, "chose", "choses")} que vous m'avez ${dit.length > 1 ? "dites" : "dite"}`;
@@ -605,8 +609,8 @@ export function etatDe(m: Memoire, piece: PieceMaison): EtatPiece {
  * apprennent, elles ne savent pas tout.
  */
 export function phraseDesPieces(n: number): string {
-  if (n <= 0) return "Vos pièces n'attendent que vous";
-  return n === 1 ? "1 pièce commence à vous connaître" : `${n} pièces commencent à vous connaître`;
+  if (n <= 0) return "ClikMe ne vous connaît pas encore";
+  return n === 1 ? "1 endroit de votre Maison commence à vous connaître" : `${n} endroits de votre Maison commencent à vous connaître`;
 }
 
 /**
@@ -630,13 +634,9 @@ export function motDuFantome(etats: EtatPiece[]): { titre: string; texte: string
   if (!pleines.length)
     return {
       titre: "Bienvenue chez vous",
-      texte: "Montrez-moi un peu de vous. Je vais voir ce que la ville a pour vous.",
+      texte: "Montrez-moi un peu de vous, je vais voir ce que la ville a pour vous.",
     };
-  const parts = pleines
-    .slice(0, 3)
-    .map((e) => (e.remarque.length ? `${pluriel(e.remarque.length, "chose", "choses")} dans ${e.piece.nom}` : `vos choix dans ${e.piece.nom}`));
-  return {
-    titre: "Je commence à vous connaître",
-    texte: `J'ai rangé ${parts.join(", ").replace(/, ([^,]*)$/, " et $1")}.`,
-  };
+  // PAS D'INVENTAIRE (« 1 chose dans Mon Miroir, 2 dans Ma Cuisine… ») : les
+  // cartes le montrent déjà. Une phrase, puis les endroits de la Maison.
+  return { titre: "Je commence à vous connaître.", texte: "" };
 }
