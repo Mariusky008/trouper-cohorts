@@ -131,7 +131,7 @@ export function CourrierDuFantome({ n, onOuvrir }: { n: number; onOuvrir: () => 
     <div className="sp-courrier" role="region" aria-label="Le Fantôme a trouvé quelque chose pour vous">
       <i className="sp-courrier-eclats" aria-hidden="true" />
       <div className="sp-courrier-fantome">
-        <FantomeAnime humeur="mail" taille={112} />
+        <FantomeAnime humeur="mail" taille={96} />
       </div>
       <div className="sp-courrier-t">
         <em>Je suis allé faire un tour en ville…</em>
@@ -534,17 +534,17 @@ function StylesSurprises() {
       dangerouslySetInnerHTML={{
         __html: `
 /* ── L'ENVELOPPE, EN HAUT DE MA MAISON ── */
-.sp-courrier{position:relative;display:flex;flex-direction:column;align-items:center;margin-top:12px;padding:14px 16px 18px;border-radius:24px;overflow:hidden;isolation:isolate;text-align:center;
-  background:radial-gradient(90% 70% at 50% 18%,rgba(246,181,75,.38),transparent 70%),linear-gradient(180deg,#3a1f0b,#22120a 70%,#2d1408);
+.sp-courrier{position:relative;display:flex;align-items:center;gap:4px;margin:16px 16px 0;padding:10px 14px 12px 2px;border-radius:22px;overflow:hidden;isolation:isolate;
+  background:radial-gradient(70% 120% at 18% 50%,rgba(246,181,75,.34),transparent 70%),linear-gradient(135deg,#3a1f0b,#22120a 70%,#2d1408);
   border:1.5px solid rgba(246,181,75,.7);box-shadow:0 0 0 0 rgba(246,181,75,.5),0 18px 40px -18px rgba(0,0,0,.8);animation:sp-appel 2.6s ease-in-out infinite;}
 .sp-courrier-eclats{position:absolute;inset:0;z-index:-1;pointer-events:none;
-  background:radial-gradient(3px 3px at 16% 22%,#FFE1A6,transparent),radial-gradient(2px 2px at 78% 14%,#fff,transparent),radial-gradient(3px 3px at 88% 56%,#FFE1A6,transparent),radial-gradient(2px 2px at 10% 70%,#F6B54B,transparent),radial-gradient(2px 2px at 64% 34%,#fff,transparent),radial-gradient(3px 3px at 30% 46%,#FFE1A6,transparent);
+  background:radial-gradient(3px 3px at 16% 22%,#FFE1A6,transparent),radial-gradient(2px 2px at 78% 14%,#fff,transparent),radial-gradient(3px 3px at 92% 70%,#FFE1A6,transparent),radial-gradient(2px 2px at 8% 80%,#F6B54B,transparent),radial-gradient(2px 2px at 60% 26%,#fff,transparent),radial-gradient(3px 3px at 34% 86%,#FFE1A6,transparent);
   animation:sp-scintille 2.2s ease-in-out infinite alternate;}
 .sp-courrier-fantome{flex:none;animation:sp-flotte 3s ease-in-out infinite;}
-.sp-courrier-t{display:flex;flex-direction:column;align-items:center;gap:5px;max-width:320px;}
-.sp-courrier-t em{font-style:italic;font-size:14px;color:#F3D9B5;}
-.sp-courrier-t b{font-size:24px;line-height:1.08;font-weight:950;letter-spacing:.01em;text-transform:uppercase;color:#FFF4E6;text-shadow:0 2px 18px rgba(246,181,75,.5);}
-.sp-ouvrir{margin-top:10px;display:inline-flex;align-items:center;gap:8px;padding:12px 30px;border:0;border-radius:999px;cursor:pointer;
+.sp-courrier-t{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:4px;}
+.sp-courrier-t em{font-style:italic;font-size:12.5px;color:#F3D9B5;}
+.sp-courrier-t b{font-size:17px;line-height:1.1;font-weight:950;letter-spacing:.01em;text-transform:uppercase;color:#FFF4E6;text-shadow:0 2px 18px rgba(246,181,75,.5);}
+.sp-ouvrir{margin-top:6px;display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border:0;border-radius:999px;cursor:pointer;
   font-size:15.5px;font-weight:900;color:#2a1405;background:linear-gradient(180deg,#FFD27A,#F39C2B);box-shadow:0 8px 22px -6px rgba(243,156,43,.8),inset 0 1px 0 rgba(255,255,255,.6);
   animation:sp-bat 1.4s ease-in-out infinite;}
 .sp-ouvrir span{font-size:18px;}
@@ -553,8 +553,8 @@ function StylesSurprises() {
 @keyframes sp-bat{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
 @keyframes sp-scintille{from{opacity:.35;}to{opacity:1;}}
 
-.sp-revoir{display:flex;align-items:center;gap:12px;width:100%;margin-top:10px;padding:10px 14px;text-align:left;border-radius:16px;cursor:pointer;
-  font:inherit;color:#FFF4E6;background:rgba(255,236,210,.05);border:1px solid rgba(246,181,75,.35);}
+.sp-revoir{display:flex;align-items:center;gap:12px;width:calc(100% - 32px);margin:10px 16px 0;padding:10px 16px;text-align:left;border-radius:999px;cursor:pointer;
+  font:inherit;color:#FFF4E6;background:#1F160F;border:1px solid rgba(246,181,75,.38);}
 .sp-revoir>i{font-style:normal;font-size:20px;}
 .sp-revoir span{flex:1;min-width:0;}
 .sp-revoir b{display:block;font-size:14px;}
@@ -685,7 +685,7 @@ function StylesSurprises() {
   .sp-mot-b{font-size:13.5px;}
 }
 @media (max-width:340px){
-  .sp-courrier-t b{font-size:18px;letter-spacing:0;}
+  .sp-courrier-t b{font-size:16px;letter-spacing:0;}
 }
 
 /* SANS MOUVEMENT : tout est là, rien ne saute. */

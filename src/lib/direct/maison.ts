@@ -56,6 +56,12 @@ export type PieceMaison = {
   bientot?: string;
   /** Le métier du Direct qu'ouvre « Découvrir » depuis la pièce. */
   branche: string;
+  /** SUR SA CARTE, À L'ENTRÉE : ce qu'elle fait pour vous, en une phrase (la maquette). */
+  promesse: string;
+  /** L'étiquette de couleur sous la phrase : « Mode », « Beauté », « Food »… */
+  etiquette: string;
+  /** Sa couleur : l'anneau de son pictogramme et son étiquette. */
+  teinte: string;
 };
 
 export const PIECES: PieceMaison[] = [
@@ -72,6 +78,9 @@ export const PIECES: PieceMaison[] = [
     mission: { active: "Je pars voir ce qui va avec.", vide: "Gardez 3 vêtements qui vous plaisent : je partirai voir ce qui va avec." },
     bientot: "Bientôt : vos propres vêtements en photo, pour des looks avec ce que vous avez déjà.",
     branche: "mode",
+    promesse: "Je cherche ce qui va avec vos vêtements.",
+    etiquette: "Mode",
+    teinte: "#E2B884",
   },
   {
     cle: "miroir",
@@ -86,6 +95,9 @@ export const PIECES: PieceMaison[] = [
     mission: { active: "Je guette les nouvelles coupes qui vous ressemblent.", vide: "Essayez une coupe : je guetterai les nouvelles, pour vous les montrer sur vous." },
     bientot: "Bientôt : votre photo, gardée ici, pour ne plus la reprendre à chaque essai.",
     branche: "coiffeur",
+    promesse: "Je garde les coupes et essais qui vous vont.",
+    etiquette: "Beauté",
+    teinte: "#FC86A8",
   },
   {
     cle: "cuisine",
@@ -110,6 +122,9 @@ export const PIECES: PieceMaison[] = [
       ],
     },
     branche: "restaurant",
+    promesse: "Je repère les plats et envies faits pour vous.",
+    etiquette: "Food",
+    teinte: "#FC9023",
   },
   {
     cle: "sorties",
@@ -134,6 +149,9 @@ export const PIECES: PieceMaison[] = [
       ],
     },
     branche: "bar",
+    promesse: "Je trouve quoi faire ce soir selon vos envies.",
+    etiquette: "Sorties",
+    teinte: "#C685FC",
   },
   {
     cle: "interieur",
@@ -158,6 +176,9 @@ export const PIECES: PieceMaison[] = [
       ],
     },
     branche: "fleuriste",
+    promesse: "Je repère ce qui irait bien chez vous.",
+    etiquette: "Déco",
+    teinte: "#CDEA8C",
   },
   {
     cle: "librairie",
@@ -182,6 +203,9 @@ export const PIECES: PieceMaison[] = [
       ],
     },
     branche: "librairie",
+    promesse: "Je vous montre les livres et nouveautés qui vous ressemblent.",
+    etiquette: "Livres",
+    teinte: "#FDBD57",
   },
   {
     cle: "bienetre",
@@ -205,6 +229,9 @@ export const PIECES: PieceMaison[] = [
       ],
     },
     branche: "artisan",
+    promesse: "Je trouve les idées qui vous font du bien.",
+    etiquette: "Bien-être",
+    teinte: "#6FE9D0",
   },
 ];
 
