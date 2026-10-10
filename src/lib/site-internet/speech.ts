@@ -152,7 +152,17 @@ async function playCloud(text: string): Promise<boolean> {
         resolve();
       };
       curResolve = finish;
-      el.onplay = () => { played = true; emitSpeaking(true); };
+      /* « PLAYING », PAS « PLAY » — ET C'EST TOUT LE MINUTAGE DE LA DÉMO.
+         « La voix s'arrête et on attend quasiment cinq secondes pour voir
+         les résultats. » `play` part dès l'appel à `play()`, AVANT que le
+         fichier soit lu : la durée vaut alors NaN (mesuré : NaN au `play`,
+         28,19 s au `playing`, à chaque fois). `dureeVoixMs` rendait donc 0
+         et la démonstration retombait sur son estimation — 70 ms par
+         caractère, plus lente que la vraie voix : les images couraient
+         derrière elle, jusqu'à cinq secondes en fin de réplique longue.
+         `playing` part quand le son sort vraiment : la durée est connue, et
+         la scène démarre avec le premier mot. */
+      el.onplaying = () => { played = true; emitSpeaking(true); };
       el.onended = finish;
       el.onerror = finish;
       el.src = url;
@@ -223,9 +233,10 @@ function emitSpeaking(v: boolean) {
  * signalé tel quel : « ça va vite par rapport à la voix ».
  *
  * L'élément audio, lui, CONNAÎT la durée dès que le fichier est décodé — donc
- * dès `onplay`, qui est précisément le moment où la démo déclenche sa scène. On
- * la lui donne : elle n'a plus à deviner, et le minutage suit n'importe quelle
- * voix, à n'importe quel débit, sans qu'on ait à retoucher une constante.
+ * dès `onplaying`, qui est précisément le moment où la démo déclenche sa scène
+ * (PAS `onplay` : la durée y vaut encore NaN, voir `playCloud`). On la lui
+ * donne : elle n'a plus à deviner, et le minutage suit n'importe quelle voix,
+ * à n'importe quel débit, sans qu'on ait à retoucher une constante.
  *
  * Renvoie 0 quand la voix du NAVIGATEUR prend le relais : celle-là ne publie
  * aucune durée, et l'appelant retombe alors sur son estimation.

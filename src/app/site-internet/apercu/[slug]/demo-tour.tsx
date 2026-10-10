@@ -16,6 +16,7 @@ import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange, duree
 import { MARQUE } from "@/lib/marque";
 import { direRetours, habitantsDe, type GesteDuJour } from "@/lib/direct/geste-du-jour";
 import { SceneSalons } from "./scene-partage";
+import { SceneGardeRobe } from "./scene-garde-robe";
 import { SceneDemandes } from "./scene-demandes";
 
 /** L'après de l'exemple d'essayage — le même que l'étape 2 quand sa pièce n'est pas encore prête. */
@@ -113,6 +114,7 @@ type Scene =
   | "qui"
   | "invisible"
   | "photo"
+  | "garde"
   | "salons"
   | "retour"
   | "boucle";
@@ -233,9 +235,19 @@ export function DemoTour({
    * un essai à partager.
    */
   const SALONS_JOUES = Boolean(G && essai && avisAllowed);
-  const ESSAI_DIT = essai ? [essai.say, ...(SALONS_JOUES && G ? [G.salons.ouvre, G.salons.fantome, G.salons.ventes] : [])] : [];
+  /* ═══ ET ENTRE LES DEUX, LEUR GARDE-ROBE — chez la mode ═══
+     « Elles peuvent aussi fouiller dans la garde-robe qu'elles auront
+     enregistrée sur ClikMe, pour voir ce qui, dans le magasin, irait avec. »
+     Après l'essai (c'est encore essayer), avant les salons (on en parle
+     ensuite). Voir `scene-garde-robe.tsx`. */
+  const GARDE = SALONS_JOUES && G?.gardeRobe ? G.gardeRobe : null;
+  const ESSAI_DIT = essai
+    ? [essai.say, ...(GARDE ? [GARDE.dit] : []), ...(SALONS_JOUES && G ? [G.salons.ouvre, G.salons.fantome, G.salons.ventes] : [])]
+    : [];
   const SAY_ESSAI = ESSAI_DIT.join(" ");
   const ESSAI_AT = ESSAI_DIT.map((ph) => partAu(SAY_ESSAI, ph));
+  /** Où commencent les salons dans la réplique : la scène compte ses temps à partir de là. */
+  const ESSAI_SALONS = GARDE ? 2 : 1;
   // `habitants` est déjà pris dans ce composant (les silhouettes du réseau) :
   // deux choses sans rapport ne partagent pas un nom.
   const gentile = habitantsDe(villeAff);
@@ -1030,10 +1042,15 @@ export function DemoTour({
              rangé (8,4 s après son ouverture, plus son glissement) : les deux
              se seraient recouverts. */
           suivre(SAY_ESSAI, ESSAI_DIT, ESSAI_AT, setEssaiN);
-          const tSalons = Math.max(quand(SAY_ESSAI, ESSAI_AT[1] ?? 1), 10000);
+          /* LA GARDE-ROBE, PUIS LES SALONS, chacun sur SA phrase — et la
+             garde-robe jamais avant que l'essayage en grand ne soit rangé, ni
+             les salons avant que la garde-robe ait joué ses gestes (5 s). */
+          const tGarde = GARDE ? Math.max(quand(SAY_ESSAI, ESSAI_AT[1] ?? 1), 9600) : 0;
+          if (GARDE) window.setTimeout(() => setScene("garde"), tGarde);
+          const tSalons = Math.max(quand(SAY_ESSAI, ESSAI_AT[ESSAI_SALONS] ?? 1), GARDE ? tGarde + 5600 : 10000);
           window.setTimeout(() => setScene("salons"), tSalons);
           // ET L'ACTE TIENT JUSQU'À LA DÉCISION — voir `tenirJusqua`.
-          tenirJusqua = performance.now() + Math.max(quand(SAY_ESSAI, ESSAI_AT[3] ?? 1) + 2600, tSalons + 7000);
+          tenirJusqua = performance.now() + Math.max(quand(SAY_ESSAI, ESSAI_AT[ESSAI_DIT.length - 1] ?? 1) + 2600, tSalons + 7000);
         },
         // On laisse le bloc à l'écran après la phrase : c'est l'image qu'on
         // veut qu'il emporte, et la suite la recouvre immédiatement.
@@ -1790,18 +1807,11 @@ export function DemoTour({
              partagé), empilée comme un paquet qu'on feuillette au pouce. */
           .qi-app{width:100%;max-width:340px;margin:0 auto;display:flex;flex-direction:column;gap:9px;
             animation:dtTel .55s var(--exp) both;}
-          /* SUR UN ÉCRAN COURT, LE TÉLÉPHONE RÉTRÉCIT D'UN CRAN : la définition du
-             Direct prend sa ligne, et les trois gestes doivent rester au-dessus
-             de la légende. Mesuré à 390 × 844 : ils passaient dessous de 36 px. */
+          /* SUR UN ÉCRAN COURT, LE TÉLÉPHONE RÉTRÉCIT D'UN CRAN : les trois
+             gestes doivent rester au-dessus de la légende. Mesuré à 390 × 844 :
+             ils passaient dessous de 36 px. */
           @media (max-height:900px){.qi-app{max-width:322px;}}
           .qi .dt-ouvre>.dt-ec24{padding-top:34px;}
-          /* LA DÉFINITION DU DIRECT, au-dessus de lui : grise tant que Léa n'y
-             est pas, allumée quand elle la dit. */
-          .qi-def{margin:-4px 0 -6px;padding:5px 10px;border-radius:12px;font-size:11px;line-height:1.3;text-align:center;
-            color:#CDB8A4;background:rgba(245,162,58,.07);border:1px solid rgba(255,201,122,.14);
-            opacity:.35;transition:opacity .4s ease,background .4s ease,border-color .4s ease;}
-          .qi-def b{color:#FFC97A;font-weight:800;}
-          .qi-def.on{opacity:1;color:#F2E3D0;background:rgba(245,162,58,.13);border-color:rgba(255,201,122,.34);}
           @keyframes dtTel{
             from{opacity:0;transform:perspective(900px) rotateX(14deg) translate3d(0,26px,0) scale(.94);filter:blur(12px)}
             to{opacity:1;transform:perspective(900px) rotateX(0) translate3d(0,0,0) scale(1);filter:blur(0)}
@@ -1835,9 +1845,8 @@ export function DemoTour({
              bouge : ils s'appliquent a la couche du dessus, qui remplit la
              scene elle aussi. */
           .qi-pile.scene{aspect-ratio:9 / 14;padding-top:14px;}
-          /* UN PEU PLUS BASSE QU'UN ÉCRAN : elle rend la hauteur que prend la
-             définition du Direct, au-dessus — sinon « Passer ✕ » touchait la
-             barre, et les trois gestes passaient sous la légende. */
+          /* UN PEU PLUS BASSE QU'UN ÉCRAN : sinon les trois gestes passaient
+             sous la légende. */
           /* LA PRESENTATION EST CELLE DE LA COMPOSANTE — voir la classe
              « plein » dans carte-swipe : position absolue, aucun arrondi,
              aucune ombre, le texte pose sur la photo. Il ne reste ici que
@@ -2141,6 +2150,35 @@ export function DemoTour({
              aurait ecrase la premiere en silence. La garde des feuilles en
              ligne l'a vu ; voir npm run verifier:styles. */
           @keyframes dtBarre{from{transform:scaleY(.42)}to{transform:scaleY(1)}}
+          /* ═══ SA VOIX, SUR L'ANNONCE ═══ Mesures de la carte pleine (340 px de
+             large) : le tout est réduit avec elle (« .ph-mini »). Il arrive une
+             fois la carte posée, puis ne cesse plus de parler. */
+          .ph-parle{position:absolute;right:16px;top:30%;z-index:3;display:flex;flex-direction:column;align-items:flex-end;gap:8px;
+            pointer-events:none;opacity:0;}
+          /* LA CARTE EST LÀ DÈS LE DÉBUT, REPLIÉE (« .dt-ouvre ») : l'entrée de sa
+             voix attend qu'elle se déplie, sinon elle se jouait dans le vide. */
+          .dt-ouvre.on .ph-parle{animation:phParle .55s cubic-bezier(.34,1.5,.64,1) .9s both;}
+          .ph-parle-qui{white-space:nowrap;padding:6px 14px;border-radius:16px;text-align:right;line-height:1.15;
+            font-size:16px;font-weight:850;color:#1A0F08;background:#FFC97A;box-shadow:0 8px 20px rgba(0,0,0,.35);}
+          .ph-parle-l{display:flex;align-items:center;gap:10px;}
+          .ph-parle-bulle{display:inline-flex;align-items:center;gap:10px;padding:9px 16px 9px 9px;border-radius:999px;
+            background:rgba(20,12,8,.8);border:1.5px solid rgba(255,201,122,.55);box-shadow:0 10px 24px rgba(0,0,0,.4);
+            -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+          .ph-parle-play{width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+            font-size:14px;color:#1A0F08;background:#FFC97A;}
+          .ph-parle-onde{display:flex;align-items:center;gap:4px;height:30px;}
+          .ph-parle-onde i{width:4px;height:var(--h);border-radius:3px;background:#FFC97A;
+            animation:dtBarre .8s ease-in-out infinite alternate;animation-delay:calc(var(--i) * 60ms);}
+          .ph-parle-bulle em{font-style:normal;font-size:17px;font-weight:700;color:#FFE2B8;}
+          .ph-parle-av{position:relative;flex:none;width:86px;height:86px;border-radius:50%;}
+          .ph-parle-av img{position:relative;z-index:1;width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 18%;
+            background:#FFF0E0;border:3px solid #FF4FA0;box-shadow:0 10px 24px rgba(0,0,0,.4);}
+          /* LES ONDES AUTOUR DE LUI : c'est elles qui disent « il parle », pas le micro. */
+          .ph-parle-av i{position:absolute;inset:0;border-radius:50%;border:3px solid rgba(255,79,160,.75);
+            animation:phAnneau 1.6s ease-out infinite;}
+          .ph-parle-av i+i{animation-delay:.8s;}
+          @keyframes phAnneau{from{transform:scale(1);opacity:.9}to{transform:scale(1.65);opacity:0}}
+          @keyframes phParle{from{opacity:0;transform:translateY(14px) scale(.8)}to{opacity:1;transform:none}}
           /* LA BOUTIQUE DE VÊTEMENTS : la photo de la pièce, puis la bulle du vocal. */
           .ph-piece{width:96px;height:124px;object-fit:cover;border-radius:13px;border-top-right-radius:5px;
             border:1px solid rgba(255,201,122,.35);}
@@ -2201,6 +2239,12 @@ export function DemoTour({
              transcription s'efface : la légende du bas dit déjà ce qu'elle
              fait. Empilés, ils poussaient la carte du Direct sous la légende. */
           @media (max-width:899px){
+            /* LA CARTE Y EST RÉDUITE DE MOITIÉ : sa voix grossit d'autant, et
+               remonte pour laisser « Aujourd'hui » lisible. */
+            .ph-parle{gap:10px;top:20%;}
+            .ph-parle-qui{white-space:normal;max-width:260px;font-size:24px;padding:7px 16px;}
+            .ph-parle-av{width:108px;height:108px;}
+            .ph-parle-bulle em{font-size:22px;}
             .ph-piece{width:58px;height:76px;}
             .ph-wrap.vv .ph-lui{flex-direction:row;align-items:flex-end;}
             .ph-wrap.vv .ph-lui p.ph-mot{display:none;}
@@ -2477,7 +2521,8 @@ export function DemoTour({
             .dtour-launch>*,.dtour-end>*,.dtour-card,.dtour-ov,.dtour-top,.dtour-bar,.dtour-bar .cap,
             .dtour-bar .mini::before,.dtour-top .dt-prog i::after,.dtour-end .end-go::after,
             .ph-shot::before,.ph-flash,.ph-lu,.dtour-alive .al-ring,.dtour-mark::after{display:none;}
-            .ph-onde i{animation:none;}
+            .ph-onde i,.ph-parle-onde i,.ph-parle-av i{animation:none;}
+            .dt-ouvre.on .ph-parle{animation:none;opacity:1;}
             .al-fly{display:none;}
             .rt-i,.rt-t b{transition:opacity .2s linear;transform:none;filter:none;}
             .dt-ouvre{transition:none;}
@@ -2662,12 +2707,10 @@ export function DemoTour({
                 <div className="dt-ec24">
                   <div className={`qi-app${gardees > 1 ? " recu" : ""}`}>
                     <BarreDirect marque={MARQUE} ville={laVille} agenda={2} gardees={gardees} />
-                    {/* CE QU'EST LE DIRECT, ÉCRIT PENDANT QUE LÉA LE DIT —
-                        et il reste : c'est la clé de tout ce qui suit. Sous la
-                        barre, pas au-dessus : en haut, « Passer ✕ » le couvrait. */}
-                    <p className={`qi-def${QUI_DEFINIT >= 0 && quiN >= QUI_DEFINIT ? " on" : ""}`}>
-                      <b>Le Direct</b> · les annonces de tous les commerçants ClikMe de {laVille}, à faire défiler chaque jour
-                    </p>
+                    {/* PLUS DE BANDEAU « LE DIRECT · LES ANNONCES… » : « tu peux
+                        supprimer cette section puisque tu le dis oralement. »
+                        Léa le définit (`QUI_DEFINIT`), et le Direct s'ouvre à ce
+                        mot-là : l'écrire en plus doublait la phrase. */}
                     {/* UNE SEULE CARTE À LA FOIS, et deux tranches derrière.
                         Les trois étaient rendues empilées dans la même case :
                         leurs textes se superposaient et l'écran devenait
@@ -2940,6 +2983,37 @@ export function DemoTour({
                           endroit l'aurait laissé vrai à l'autre. */}
                       <span className="ph-scene">
                         <CarteSwipe carte={maCarte} variante="seconde" className="ph-carte plein" />
+                        {/* ═══ ET ON LA VOIT PARLER ═══ « C'est votre voix qui
+                            en parle, mais on ne voit pas du tout sur l'annonce
+                            quelqu'un qui pourrait parler. » Son fantôme, celui
+                            de sa boutique, se pose sur sa pièce : des ondes
+                            autour de lui, la bulle de son vocal à côté — on
+                            comprend qu'en l'ouvrant, c'est elle qu'on entend. */}
+                        {G.photoEtVoix && (
+                          <span className="ph-parle" aria-label={`${nom} parle de sa pièce`}>
+                            {/* « LA BOUTIQUE », PAS SON NOM : un nom long (« Une boutique de
+                                la rue piétonne ») mangeait « vous en parle », c'est-à-dire
+                                tout ce que l'étiquette avait à dire. Son visage dit qui. */}
+                            <b className="ph-parle-qui">🎙️ La boutique vous en parle</b>
+                            <span className="ph-parle-l">
+                              <span className="ph-parle-bulle">
+                                <span className="ph-parle-play" aria-hidden="true">▶</span>
+                                <span className="ph-parle-onde" aria-hidden="true">
+                                  {[9, 17, 12, 24, 15, 28, 19, 11, 22, 14].map((h, i) => (
+                                    <i key={`${h}-${i}`} style={{ ["--h" as string]: `${h}px`, ["--i" as string]: i }} />
+                                  ))}
+                                </span>
+                                <em>0:12</em>
+                              </span>
+                              <span className="ph-parle-av" aria-hidden="true">
+                                <i />
+                                <i />
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={fantomeBoutique || "/clikme-fantome.png"} alt="" />
+                              </span>
+                            </span>
+                          </span>
+                        )}
                       </span>
                       <GestesDirect action={actionHabitant} actif="veux" />
                     </div>
@@ -2968,10 +3042,15 @@ export function DemoTour({
               qui montent avec la voix — voir `scene-partage.tsx`. */}
           {/* ── ÉTAPE 2, SA SUITE : LES SALONS, et le fantôme de la boutique qui
               y répond — voir `scene-partage.tsx`. */}
+          {/* ── ÉTAPE 2, ENTRE L'ESSAI ET LES SALONS : LEUR GARDE-ROBE — voir
+              `scene-garde-robe.tsx`. */}
+          {scene === "garde" && GARDE && (
+            <SceneGardeRobe titre={GARDE.titre} fantome={{ visage: fantomeBoutique || "/clikme-fantome.png", nom }} />
+          )}
           {scene === "salons" && G && (
             <SceneSalons
               g={G}
-              n={essaiN - 1}
+              n={essaiN - ESSAI_SALONS}
               ville={laVille}
               photo={photoPartagee}
               exemple={photoExemple}
