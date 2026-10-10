@@ -88,15 +88,53 @@ import { avisPartages, interpreter, lireMessage, MEMOIRE_NEUVE, versLeLieu, type
 import { zoneChangee } from "@/components/direct/mur-contenu";
 import { AvatarFantome } from "@/app/autour-de-moi/salon-chat";
 
-const FANTOME = "/clikme-fantome.png";
-const FANTOME_LOUPE = "/direct/clikme-fantome-loupe.png";
-
 // ─── 👻 LE FANTÔME ANIMÉ ────────────────────────────────────────────────────
 
 /**
- * LE FANTÔME DE CLIKME, DANS L'HUMEUR DU MOMENT. Une seule image (et sa
- * loupe quand il cherche) : les humeurs sont des mouvements, des bulles et
- * des accessoires — il réagit à l'action, il ne la cache pas.
+ * UNE EXPRESSION DESSINÉE PAR HUMEUR. Les douze dessins sont calés sur la
+ * même toile : même taille de corps, même pied, même centre — il change de
+ * tête sans sauter. La toile déborde la boîte de 21 % de chaque côté, pour
+ * que la loupe ou le bras tendu sortent sans rapetisser le corps.
+ */
+const DESSINS = "/direct/fantome-humeurs";
+const IMAGE_HUMEUR: Record<Humeur, string> = {
+  idle: `${DESSINS}/fantome-idle.webp`,
+  curious: `${DESSINS}/fantome-curious.webp`,
+  thinking: `${DESSINS}/fantome-thinking.webp`,
+  searching: `${DESSINS}/fantome-searching.webp`,
+  excited: `${DESSINS}/fantome-excited.webp`,
+  love: `${DESSINS}/fantome-love.webp`,
+  surprised: `${DESSINS}/fantome-surprised.webp`,
+  pointing: `${DESSINS}/fantome-pointing.webp`,
+  whisper: `${DESSINS}/fantome-whisper.webp`,
+  celebrate: `${DESSINS}/fantome-celebrate.webp`,
+  urgent: `${DESSINS}/fantome-urgent.webp`,
+  quiet: `${DESSINS}/fantome-quiet.webp`,
+};
+/** La pose neutre, yeux fermés : elle passe un instant par-dessus pour le clignement. */
+const CLIGNE = `${DESSINS}/fantome-idle-cligne.webp`;
+/** La pose neutre cadrée comme l'ancienne image : le petit rond devant « ClikMe » dans le fil. */
+const FANTOME = `${DESSINS}/fantome-avatar.webp`;
+
+/**
+ * CHARGER LES DOUZE TÊTES DÈS LE PREMIER FANTÔME : sans ça, la première fois
+ * qu'il change d'humeur, l'image arrive en retard et il disparaît un instant.
+ */
+let dessinsCharges = false;
+function chargerLesDessins() {
+  if (dessinsCharges || typeof window === "undefined") return;
+  dessinsCharges = true;
+  for (const src of [...Object.values(IMAGE_HUMEUR), CLIGNE]) {
+    const im = new Image();
+    im.decoding = "async";
+    im.src = src;
+  }
+}
+
+/**
+ * LE FANTÔME DE CLIKME, DANS L'HUMEUR DU MOMENT. Une tête dessinée par
+ * humeur, et par-dessus le mouvement, les bulles et les accessoires — il
+ * réagit à l'action, il ne la cache pas.
  */
 export function FantomeAnime({
   humeur,
@@ -109,7 +147,8 @@ export function FantomeAnime({
   accessoire?: "porte-voix" | "couronne" | "question" | "valide";
   classe?: string;
 }) {
-  const src = IMAGE_HUMEUR[humeur] ?? FANTOME;
+  const src = IMAGE_HUMEUR[humeur];
+  useEffect(chargerLesDessins, []);
   return (
     <span
       className={`fa fa-${humeur}${classe ? ` ${classe}` : ""}`}
@@ -122,6 +161,8 @@ export function FantomeAnime({
       <span className="fa-corps">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img key={src} src={src} alt="" draggable={false} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {humeur === "idle" && <img className="fa-cligne" src={CLIGNE} alt="" draggable={false} />}
         {accessoire === "couronne" && <i className="fa-acc cr">👑</i>}
         {accessoire === "porte-voix" && <i className="fa-acc pv">📣</i>}
       </span>
@@ -154,15 +195,6 @@ export function FantomeAnime({
     </span>
   );
 }
-
-/**
- * UNE IMAGE PAR HUMEUR, QUAND ON L'A. Aujourd'hui, seule la recherche a la
- * sienne (la loupe) ; les autres humeurs passent par le mouvement. Les
- * expressions dessinées viendront se ranger ici, une ligne chacune.
- */
-const IMAGE_HUMEUR: Partial<Record<Humeur, string>> = {
-  searching: FANTOME_LOUPE,
-};
 
 // ─── CE QUE LE COMMERCE A À OPPOSER ────────────────────────────────────────
 
@@ -1829,7 +1861,9 @@ export function StylesDuel() {
   background:radial-gradient(closest-side,rgba(0,0,0,.5),rgba(0,0,0,0));animation:fa-ombre 2.6s ease-in-out infinite;}
 @keyframes fa-ombre{0%,100%{transform:scale(1);opacity:.8;}50%{transform:scale(.7);opacity:.4;}}
 .fa-corps{position:absolute;inset:0;display:block;transform-origin:50% 92%;animation:fa-respire 2.6s ease-in-out infinite;}
-.fa-corps img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(255,140,220,.35));animation:fa-change .3s ease-out;}
+.fa-corps img{position:absolute;inset:-21%;display:block;width:142%;height:142%;max-width:none;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(255,140,220,.3));animation:fa-change .3s ease-out;}
+.fa-corps img.fa-cligne{opacity:0;animation:fa-cligne 4.8s linear 1.2s infinite;}
+@keyframes fa-cligne{0%,93%,100%{opacity:0;}93.6%,96%{opacity:1;}}
 @keyframes fa-change{from{transform:scale(.86);opacity:.3;}to{transform:none;opacity:1;}}
 /* LE FOND : il respire — monte en s'étirant, redescend en s'écrasant un peu. */
 @keyframes fa-respire{0%,100%{transform:translateY(0) scale(1.035,.965);}50%{transform:translateY(calc(var(--t,96px) * -.09)) scale(.975,1.03);}}
