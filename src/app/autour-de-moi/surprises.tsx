@@ -45,7 +45,7 @@ import {
   surprisesDuJour,
   voirLaSurprise,
 } from "@/lib/direct/maison-memoire";
-import { estPassee, motDe, motDuFantomePour, sourceDe, type CommerceDuJour, type Preuve, type Surprise } from "@/lib/direct/surprises";
+import { estPassee, motDe, motsDuFantome, sourceDe, type CommerceDuJour, type Preuve, type Surprise } from "@/lib/direct/surprises";
 
 // ─── LA TOURNÉE ────────────────────────────────────────────────────────────
 
@@ -211,6 +211,7 @@ export function SurprisesDuJour({
     const maintenant = new Date();
     return revoir ? surprisesDuJour(m, maintenant) : surprisesAOuvrir(m, maintenant);
   });
+  const [mots] = useState(() => motsDuFantome(suite));
   const [etape, setEtape] = useState<Etape>(() => (!suite.length ? "fin" : revoir ? 0 : "ouverture"));
   const [pourquoi, setPourquoi] = useState(false);
   const [refuse, setRefuse] = useState<string | null>(null);
@@ -223,7 +224,8 @@ export function SurprisesDuJour({
   useEffect(() => {
     if (etape !== "ouverture") return;
     const calme = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    const t = window.setTimeout(() => setEtape(0), calme ? 500 : 2400);
+    // TRÈS COURT : un éclat, pas une étape de plus entre « Ouvrir » et la surprise.
+    const t = window.setTimeout(() => setEtape(0), calme ? 300 : 1100);
     return () => window.clearTimeout(t);
   }, [etape]);
 
@@ -294,6 +296,7 @@ export function SurprisesDuJour({
           s={suite[etape]}
           k={etape}
           n={suite.length}
+          mot={mots[etape]}
           avis={avis[suite[etape].id]}
           coeur={coeur}
           refuse={refuse}
@@ -362,6 +365,7 @@ function UneSurprise({
   s,
   k,
   n,
+  mot,
   avis,
   coeur,
   refuse,
@@ -377,6 +381,8 @@ function UneSurprise({
   s: Surprise;
   k: number;
   n: number;
+  /** Ce que le Fantôme dit en la montrant (`motsDuFantome`). */
+  mot: string;
   avis?: 1 | -1;
   coeur: number;
   refuse: string | null;
@@ -414,7 +420,7 @@ function UneSurprise({
         <span className="sp-mot-f" aria-hidden="true">
           <FantomeAnime humeur={avis === 1 ? "love" : avis === -1 ? "thinking" : k === 0 ? "excited" : "pointing"} taille={44} />
         </span>
-        <span className="sp-mot-b">{avis ? MOT_APRES[String(avis) as "1" | "-1"] : motDuFantomePour(k, n)}</span>
+        <span className="sp-mot-b">{avis ? MOT_APRES[String(avis) as "1" | "-1"] : mot}</span>
       </p>
 
       <div className="sp-photo" onPointerDown={(e) => onToucher(e, false)} onPointerUp={(e) => onToucher(e, true)}>
@@ -578,20 +584,20 @@ function StylesSurprises() {
 .sp-rayons{position:absolute;left:50%;top:44%;width:900px;height:900px;margin:-450px 0 0 -450px;border-radius:50%;opacity:0;
   background:repeating-conic-gradient(from 0deg,rgba(255,214,140,.30) 0deg 7deg,transparent 7deg 20deg);
   -webkit-mask:radial-gradient(circle,#000 0,#000 18%,transparent 62%);mask:radial-gradient(circle,#000 0,#000 18%,transparent 62%);
-  animation:sp-rayons-in .9s .7s ease-out forwards,sp-tourne 14s linear infinite;}
+  animation:sp-rayons-in .4s .2s ease-out forwards,sp-tourne 9s linear infinite;}
 @keyframes sp-rayons-in{to{opacity:1;}}
 @keyframes sp-tourne{to{transform:rotate(360deg);}}
-.sp-flash{position:absolute;inset:0;opacity:0;background:radial-gradient(circle at 50% 44%,#fff 0,rgba(255,226,160,.9) 18%,transparent 60%);animation:sp-flash .9s .62s ease-out forwards;}
+.sp-flash{position:absolute;inset:0;opacity:0;background:radial-gradient(circle at 50% 44%,#fff 0,rgba(255,226,160,.9) 18%,transparent 60%);animation:sp-flash .55s .18s ease-out forwards;}
 @keyframes sp-flash{0%{opacity:0;}18%{opacity:1;}100%{opacity:0;}}
-.sp-cadeau{position:relative;z-index:2;animation:sp-cadeau 1.1s cubic-bezier(.2,1.6,.4,1) both;}
+.sp-cadeau{position:relative;z-index:2;animation:sp-cadeau .55s cubic-bezier(.2,1.6,.4,1) both;}
 @keyframes sp-cadeau{0%{transform:scale(.3) translateY(60px);opacity:0;}55%{transform:scale(1.12) translateY(-6px);opacity:1;}75%{transform:scale(.96) rotate(-3deg);}100%{transform:scale(1) rotate(0);}}
 .sp-eclats{position:absolute;left:50%;top:44%;width:0;height:0;z-index:3;}
 .sp-eclats i{position:absolute;left:0;top:0;width:var(--s);height:calc(var(--s) * .55);border-radius:2px;background:var(--c);opacity:0;
-  transform:rotate(var(--a)) translateX(0) rotate(var(--r));animation:sp-eclat 1.4s calc(.66s + var(--t)) cubic-bezier(.15,.8,.3,1) forwards;}
+  transform:rotate(var(--a)) translateX(0) rotate(var(--r));animation:sp-eclat .85s calc(.2s + var(--t) * .5) cubic-bezier(.15,.8,.3,1) forwards;}
 @keyframes sp-eclat{0%{opacity:1;transform:rotate(var(--a)) translateX(10px) rotate(var(--r)) scale(.4);}
   70%{opacity:1;}100%{opacity:0;transform:rotate(var(--a)) translateX(calc(var(--d) * 1.6)) rotate(calc(var(--r) + 220deg)) scale(1);}}
 .sp-ouverture-t{position:relative;z-index:2;font-size:24px;font-weight:950;text-align:center;letter-spacing:.01em;text-shadow:0 4px 30px rgba(246,181,75,.7);
-  opacity:0;animation:sp-monte .6s 1.1s ease-out forwards;}
+  opacity:0;animation:sp-monte .35s .3s ease-out forwards;}
 @keyframes sp-monte{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
 
 /* UNE SURPRISE, SEULE, EN PLEIN ÉCRAN. */
@@ -629,9 +635,9 @@ function StylesSurprises() {
 .sp-annonce{display:block;margin-bottom:2px;font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#F6B54B;}
 .sp-texte h2{margin:0;font-size:23px;line-height:1.12;font-weight:950;letter-spacing:-.01em;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.sp-raison{margin:7px 0 0;font-size:15px;line-height:1.35;font-weight:700;color:#FFE1A6;}
+.sp-raison{margin:8px 0 0;padding:2px 0 2px 11px;font-size:16.5px;line-height:1.32;font-weight:800;color:#FFF4E6;border-left:3px solid #F6B54B;}
 .sp-raison i{font-style:normal;}
-.sp-source{margin:5px 0 0;font-size:13px;color:#D9C2A3;}
+.sp-source{margin:7px 0 0;font-size:12.5px;color:#BFAE98;}
 .sp-source i{font-style:normal;}
 
 .sp-gestes{flex:none;margin-top:12px;animation:sp-monte .5s .6s ease-out both;}
@@ -678,7 +684,7 @@ function StylesSurprises() {
 /* PETITS ÉCRANS : la photo cède la place, jamais les boutons. */
 @media (max-height:700px){
   .sp-texte h2{font-size:20px;}
-  .sp-raison{font-size:14px;}
+  .sp-raison{font-size:15px;}
   .sp-cta{padding:13px 16px;}
   .sp-avis button{padding:9px 6px;font-size:13.5px;}
   .sp-mot{margin:2px 0 8px;}

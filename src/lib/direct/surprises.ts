@@ -6,11 +6,15 @@
 // rayon) et le compare à ce que la Maison sait de vous. Il revient avec une à
 // trois choses — une par pièce au plus.
 //
-// JAMAIS INVENTÉE (le brief, §24). Une surprise n'existe que si un vrai
-// contenu de la ville correspond vraiment : il faut au moins trois points
-// « personnels » (ce que vous m'avez dit, ce que je crois, ce que j'ai
-// remarqué, un lieu que vous suivez), la fraîcheur seule ne suffit pas. Un
-// jour sans rien de fort, il n'y a pas de surprise, et le Fantôme le dit.
+// JAMAIS INVENTÉE, JAMAIS VAGUE (le brief, §24). Une surprise n'existe que si
+// un vrai contenu de la ville correspond vraiment, ET si la raison se raconte
+// en une phrase : « Vous avez gardé votre chino et préféré « Parka kaki » :
+// cette veste va avec. » Trois raisons seulement peuvent la porter : ce que
+// vous m'avez DIT (tout de suite : ce n'est pas une déduction), ce que je
+// CROIS (un goût précis tiré d'au moins trois gestes), ce qui VA AVEC ce que
+// vous avez gardé. Un lieu suivi, un trait partagé une fois, la fraîcheur :
+// des points en plus, jamais une raison. Mieux vaut une excellente surprise
+// que cinq moyennes ; un jour sans rien de fort, il n'y en a pas.
 //
 // TOUJOURS EXPLICABLE (§25). Chaque surprise porte ses preuves, rangées comme
 // dans la Maison : ce que vous m'avez dit / ce que j'ai remarqué / ce que je
@@ -389,33 +393,48 @@ export function choisirLesSurprises(
         if (siens.length && !siens.includes("homme") && sienne === "homme") continue;
       }
 
+      // ═══ LA RÈGLE : PAS DE SURPRISE SANS UNE RAISON RACONTABLE EN UNE PHRASE ═══
+      //
+      // Trois raisons seulement peuvent la porter (« pivots ») :
+      //   · ce que vous m'avez DIT — un choix exprès vaut tout de suite : ce
+      //     n'est pas une déduction ;
+      //   · ce que je CROIS — un goût tiré d'au moins trois gestes (`goutsDe`),
+      //     et précis : « le kaki », pas « la mode » ;
+      //   · au Dressing, ce qui VA AVEC ce que vous avez gardé — deux pièces, ou
+      //     une pièce et la même teinte que ce que vous aimez.
+      // Un lieu suivi, un trait partagé une fois : des points en plus, jamais une
+      // raison. « Vous aimez la mode, donc voici une chemise » ne passe pas.
       const preuves: Preuve[] = [];
-      let perso = 0;
-      let raison = "";
-      let trait: string | undefined;
+      const pivots: { phrase: string; poids: number; trait?: string }[] = [];
+      const chose = objetDe(p, x.titre, x.famille);
       // 💬 Ce que vous m'avez dit
       const versTrait = TRAIT_DU_CHOIX[p];
       if (versTrait) {
         for (const k of dits) {
           const t = versTrait(k);
           if (traits.includes(t) && !(INCOMPATIBLES[t] ?? []).some((u) => traits.includes(u))) {
-            perso += 3;
             preuves.push({ sorte: "dit", texte: `Vous m'avez dit : ${motDe(t)}` });
-            if (!raison) raison = phraseDuChoix(p, t);
-            trait ??= t;
+            pivots.push({ phrase: phraseDuChoix(p, t), poids: 3, trait: t });
           }
         }
       }
       if (p === "cuisine" && dits.length) preuves.push({ sorte: "dit", texte: `Sans ${dits.map((k) => k.replace("fruits-a-coque", "fruits à coque")).join(", ")}, comme vous me l'avez dit` });
-      // 💡 Ce que je crois
+      // 💡 Ce que je crois — précis seulement : « vous aimez les vestes » ne suffit pas à montrer une veste.
       const gouts = goutsDe(m, p).filter((g) => traits.includes(g.trait) && !TROP_LARGES.has(g.trait));
+      const appuis = (t: string) => positifs.filter((s) => s.traits.includes(t) && !s.id.startsWith("suivi|"));
       for (const g of gouts.slice(0, 2)) {
-        perso += 3;
-        preuves.push({ sorte: "crois", texte: `Je crois que vous aimez ${g.mot} (${g.pour} gestes sur ${g.sur})` });
-        if (!raison) raison = phraseDuGout(p, gouts.map((x) => x.trait));
-        trait ??= g.trait;
+        preuves.push({ sorte: "crois", texte: `Je crois que vous aimez ${g.mot} : ${evoque(appuis(g.trait))} (${g.pour} gestes sur ${g.sur})` });
+        // LA MÊME CHOSE QUE CE QUE VOUS AVEZ PRÉFÉRÉ : on ne dit pas « c'est italien
+        // aussi » de lasagnes à quelqu'un qui a choisi les lasagnes, on dit qu'il y en a.
+        const memeChose = appuis(g.trait).some((s) => {
+          const a = sansAccents(s.quoi);
+          const b = sansAccents(x.texte);
+          return a.length > 3 && b.includes(a);
+        });
+        const fin = memeChose ? (x.quand === "en ce moment" ? "en voici" : `il y en a ${x.quand}`) : conclusion(g.trait);
+        if (!g.trait.startsWith("famille:")) pivots.push({ phrase: `Vous avez ${evoque(appuis(g.trait))} : ${fin}.`, poids: 3, trait: g.trait });
       }
-      // 👀 Ce que j'ai remarqué : ce qui irait avec, les mêmes traits, le lieu suivi
+      // 👀 Ce que j'ai remarqué : ce qui irait avec ce que vous avez gardé
       const avec: Signal[] = [];
       if (p === "dressing") {
         const fam = familleDe(x.titre) === "autre" ? traits.find((t) => t.startsWith("famille:"))?.slice(8) ?? "" : familleDe(x.titre);
@@ -425,40 +444,67 @@ export function choisirLesSurprises(
           const f = s.traits.find((t) => t.startsWith("famille:"));
           if (avec.length < 2 && !avec.some((a) => a.traits.includes(f ?? "")) && !avec.some((a) => a.quoi === s.quoi)) avec.push(s);
         }
-        if (avec.length) {
-          perso += avec.length + 1;
-          for (const a of avec) preuves.push({ sorte: "remarque", texte: `Vous avez gardé : ${a.quoi}` });
-          raison = `Ça irait avec ce que vous avez gardé : ${avec.map((a) => a.quoi).join(" et ")}.`;
+        for (const a of avec) preuves.push({ sorte: "remarque", texte: `Vous avez gardé ${votre(a.quoi)}` });
+        // La même teinte qu'une pièce que vous aimez : c'est elle qui fait d'une
+        // seule pièce assortie une vraie raison.
+        const teinte = traits.find((t) => t.startsWith("teinte:"));
+        const memeTeinte = teinte ? positifs.find((s) => s.traits.includes(teinte) && !s.id.startsWith("suivi|")) : undefined;
+        const aimeLaFamille = gouts.some((g) => g.trait.startsWith("famille:"));
+        // LA PHRASE DE LA RÈGLE : « Vous avez gardé votre chino et préféré « Parka
+        // kaki » : cette veste va avec. » — ce qui va avec, et le goût qui choisit.
+        const goutTeinte = teinte ? gouts.find((g) => g.trait === teinte) : undefined;
+        const appuiTeinte = goutTeinte ? appuis(goutTeinte.trait).find((s) => !avec.includes(s)) : undefined;
+        if (avec.length && appuiTeinte) {
+          const va = chose.genre === "p" ? "vont" : "va";
+          pivots.push({
+            phrase: `Vous avez ${evoque([...avec, appuiTeinte], true)} : ${chose.dem.charAt(0).toLowerCase()}${chose.dem.slice(1)} ${va} avec.`,
+            poids: 3 + avec.length,
+            trait: goutTeinte!.trait,
+          });
+        } else if (avec.length >= 2 || (avec.length === 1 && (memeTeinte || aimeLaFamille))) {
+          const liste = avec.map((a) => votre(a.quoi)).join(" et ");
+          const ton =
+            teinte && memeTeinte
+              ? avec.includes(memeTeinte)
+                ? `, dans le même ${TON_NOM[teinte] ?? "ton"} que ${votre(memeTeinte.quoi)}`
+                : `, et c'est ${DU_TON[teinte] ?? "la même teinte"}, comme ${evoqueUn(memeTeinte)}`
+              : "";
+          pivots.push({ phrase: `${chose.dem} va avec ${liste}${ton}.`, poids: 2 + avec.length - 1 + (memeTeinte ? 1 : 0) + (aimeLaFamille ? 1 : 0) });
         }
       }
+      if (!pivots.length) continue;
+
+      // Des points en plus, jamais une raison : le même trait qu'un geste, le lieu suivi.
+      let bonus = 0;
       const communs = new Set<string>();
       for (const s of positifs) {
         if (avec.includes(s) || s.id.startsWith("suivi|")) continue;
         const t = s.traits.find((u) => traits.includes(u) && !gouts.some((g) => g.trait === u) && !u.startsWith("famille:") && !u.startsWith("prix:"));
         if (t && communs.size < 2 && !communs.has(t)) {
           communs.add(t);
-          perso += 1;
+          bonus += 1;
           preuves.push({ sorte: "remarque", texte: `${s.quoi} — ${s.d.charAt(0).toLowerCase()}${s.d.slice(1)}` });
-          trait ??= t;
         }
       }
       const suivi = suivisParPiece.get(c.id);
       if (suivi && suivi.piece === p) {
-        perso += 2;
+        bonus += 2;
         preuves.push({ sorte: "remarque", texte: `Vous suivez ${c.nom}` });
-        if (!raison) raison = `${c.nom}, que vous suivez, l'a publié ${x.quand}.`;
       }
       // Ce qui a déplu, sur les mêmes traits
       const malus = negatifs.filter((s) => s.traits.some((t) => traits.includes(t))).length;
-      const score = perso - 2 * Math.min(malus, 2) + x.frais;
-      if (perso < 3 || score < 4) continue;
-      if (!raison) raison = communs.size ? `Ça ressemble à ce que vous avez aimé.` : `Ça m'a fait penser à vous.`;
+      pivots.sort((u, v) => v.poids - u.poids);
+      const perso = pivots.slice(0, 2).reduce((n, v) => n + v.poids, 0);
+      const score = perso + bonus - 2 * Math.min(malus, 2) + x.frais;
+      if (score < 4) continue;
+      const raison = pivots[0].phrase;
+      const trait = pivots.find((v) => v.trait)?.trait ?? gouts[0]?.trait;
 
       // LE NOM DU PLAT, PAS CELUI DE L'ANNONCE : quand « Les deux plats du jour »
       // ne dit pas ce qui a plu, la ligne qui le dit devient le titre. À table
       // seulement : ailleurs, la ligne décrit la chose (« Un roman haletant »),
       // elle ne la nomme pas.
-      const cles = new Set([...(trait ? [trait] : []), ...gouts.map((g) => g.trait), ...communs]);
+      const cles = new Set([...pivots.flatMap((v) => (v.trait ? [v.trait] : [])), ...gouts.map((g) => g.trait), ...communs]);
       const parle = (t: string) => traitsDuContenu(p, t, t, x.famille).some((u) => cles.has(u));
       const ligne = p === "cuisine" && !parle(x.titre) ? x.lignes?.find(parle) : undefined;
 
@@ -492,34 +538,142 @@ export function choisirLesSurprises(
   return [...meilleures.values()].sort((a, b) => b.score - a.score || ordre.indexOf(a.piece) - ordre.indexOf(b.piece)).slice(0, SURPRISES_MAX);
 }
 
+/** CE QUE VOUS M'AVEZ DIT, redit en une phrase. */
 function phraseDuChoix(p: ClePiece, t: string): string {
   const mot = motDe(t);
   switch (p) {
     case "sorties":
-      return `${mot.charAt(0).toUpperCase()}${mot.slice(1)} : c'est ce qui vous fait sortir.`;
+      return `Vous m'avez dit ce qui vous fait sortir : ${mot}.`;
     case "interieur":
-      return `Dans l'esprit de chez vous : ${mot}.`;
+      return `Chez vous, c'est ${mot} : vous me l'avez dit.`;
     case "librairie":
-      return `Pour vous qui aimez ${mot}.`;
+      return `Vous m'avez dit aimer ${mot} : en voici ${UN_GENRE[t] ?? "un"}.`;
     case "bienetre":
-      return `Pour ${mot}, comme vous me l'avez dit.`;
+      return `Vous m'avez dit vouloir ${mot}.`;
     default:
-      return `Comme vous me l'avez dit : ${mot}.`;
+      return `Vous m'avez dit : ${mot}.`;
   }
 }
 
-function phraseDuGout(p: ClePiece, traits: string[]): string {
-  const liste = traits.slice(0, 2).map(motDe).join(" et ");
-  switch (p) {
-    case "dressing":
-      return `Dans ce que vous aimez : ${liste}.`;
-    case "cuisine":
-      return `Ça ressemble aux plats que vous aimez : ${liste}.`;
-    case "miroir":
-      return `Ça ressemble aux coupes que vous aimez : ${liste}.`;
-    default:
-      return `Ça vous ressemble : ${liste}.`;
+const UN_GENRE: Record<string, string> = { "genre:bd": "une", "genre:roman": "un", "genre:polar": "un", "genre:essai": "un", "genre:jeunesse": "un", "genre:cuisine": "un" };
+
+/** « c'est du kaki », « c'est un dessert » : ce que la chose a de commun avec ce que vous aimez. */
+const DU_TON: Record<string, string> = {
+  "teinte:vert": "du kaki",
+  "teinte:clair": "dans les tons clairs",
+  "teinte:sombre": "dans les tons sombres",
+  "teinte:bleu": "du bleu",
+  "teinte:chaud": "dans les couleurs chaudes",
+  "teinte:rose": "du rose",
+  "teinte:brun": "du marron",
+};
+const TON_NOM: Record<string, string> = {
+  "teinte:vert": "kaki",
+  "teinte:clair": "ton clair",
+  "teinte:sombre": "ton sombre",
+  "teinte:bleu": "bleu",
+  "teinte:chaud": "ton chaud",
+  "teinte:rose": "rose",
+  "teinte:brun": "marron",
+};
+const CONCLUSIONS: Record<string, string> = {
+  ...Object.fromEntries(Object.entries(DU_TON).map(([k, v]) => [k, `c'est aussi ${v}`])),
+  "cuisine:italien": "c'est italien aussi",
+  "cuisine:basque": "c'est basque aussi",
+  "cuisine:asiatique": "c'est asiatique aussi",
+  "cuisine:poisson": "c'est du poisson aussi",
+  "cuisine:viande": "c'est de la viande aussi",
+  "cuisine:vegetal": "c'est végétarien aussi",
+  "cuisine:mijote": "c'est un plat mijoté aussi",
+  "cuisine:sucre": "c'est un dessert aussi",
+  "coupe:carre": "c'est un carré aussi",
+  "coupe:frange": "avec une frange aussi",
+  "coupe:degrade": "c'est un dégradé aussi",
+  "coupe:boucles": "les boucles sont gardées",
+  "coupe:court": "c'est court aussi",
+  "coupe:long": "les longueurs sont gardées",
+  "coupe:couleur": "avec de la couleur aussi",
+};
+const conclusion = (t: string) => CONCLUSIONS[t] ?? `c'est dans le même esprit (${motDe(t)})`;
+
+/** « votre chino », « vos baskets » : une pièce gardée, dite comme la sienne. */
+function votre(quoi: string): string {
+  const q = quoi.trim();
+  const premier = q.split(/\s+/)[0] ?? "";
+  const nom = /^[A-ZÀ-Ý][a-zà-ÿ]/.test(q) ? q.charAt(0).toLowerCase() + q.slice(1) : q;
+  return `${/[sx]$/i.test(premier) && premier.length > 3 ? "vos" : "votre"} ${nom}`;
+}
+
+/** Un geste, dit par ce qu'il a été : « votre chino » (gardé), « « Lasagnes maison » » (préféré en duel). */
+function evoqueUn(s: Signal): string {
+  return s.id.startsWith("garde|") ? votre(s.quoi) : `« ${s.quoi} »`;
+}
+
+/**
+ * CE QUE VOUS AVEZ FAIT, DIT CONCRÈTEMENT — les deux gestes les plus récents :
+ * « gardé votre chino et préféré « Veste cirée kaki » », « préféré « Lasagnes
+ * maison » 3 fois ». Jamais « vous aimez la mode ».
+ */
+function evoque(signaux: Signal[], dansLOrdre = false): string {
+  const verbe = (s: Signal) => (s.id.startsWith("garde|") ? "gardé" : s.id.startsWith("duel|") ? "préféré" : s.id.startsWith("envie|") ? "choisi" : "aimé");
+  const tries = dansLOrdre ? signaux : [...signaux].sort((a, b) => b.t - a.t);
+  const vus = new Map<string, { s: Signal; n: number }>();
+  for (const s of tries) {
+    const k = sansAccents(s.quoi);
+    const deja = vus.get(k);
+    if (deja) deja.n++;
+    else vus.set(k, { s, n: 1 });
   }
+  const deux = [...vus.values()].slice(0, dansLOrdre ? 3 : 2);
+  if (!deux.length) return "fait des choix qui vont dans ce sens";
+  const parVerbe = new Map<string, string[]>();
+  for (const { s, n } of deux) {
+    const v = verbe(s);
+    parVerbe.set(v, [...(parVerbe.get(v) ?? []), `${evoqueUn(s)}${n > 1 ? ` ${n} fois` : ""}`]);
+  }
+  return [...parVerbe].map(([v, l]) => `${v} ${l.join(" et ")}`).join(" et ");
+}
+
+/** LA CHOSE, NOMMÉE : « Cette veste », « Ce plat », « Ce livre » — et son genre, pour le Fantôme. */
+const NOMS: [RegExp, string, "m" | "f" | "p"][] = [
+  [mots("surchemises?"), "Cette surchemise", "f"],
+  [mots("vestes?"), "Cette veste", "f"],
+  [mots("manteaux?"), "Ce manteau", "m"],
+  [mots("doudounes?"), "Cette doudoune", "f"],
+  [mots("blousons?"), "Ce blouson", "m"],
+  [mots("parkas?"), "Cette parka", "f"],
+  [mots("trench"), "Ce trench", "m"],
+  [mots("chemises?|chemisiers?"), "Cette chemise", "f"],
+  [mots("blouses?"), "Cette blouse", "f"],
+  [mots("polos?"), "Ce polo", "m"],
+  [mots("t-shirts?|tee-shirts?"), "Ce t-shirt", "m"],
+  [mots("pulls?"), "Ce pull", "m"],
+  [mots("gilets?|cardigans?"), "Ce gilet", "m"],
+  [mots("sweats?"), "Ce sweat", "m"],
+  [mots("robes?"), "Cette robe", "f"],
+  [mots("jeans?"), "Ce jean", "m"],
+  [mots("pantalons?"), "Ce pantalon", "m"],
+  [mots("chinos?"), "Ce chino", "m"],
+  [mots("jupes?"), "Cette jupe", "f"],
+  [mots("shorts?"), "Ce short", "m"],
+  [mots("costumes?|tailleurs?"), "Ce costume", "m"],
+  [mots("écharpes?"), "Cette écharpe", "f"],
+  [mots("foulards?"), "Ce foulard", "m"],
+  [mots("sacs?"), "Ce sac", "m"],
+  [mots("ceintures?"), "Cette ceinture", "f"],
+  [mots("bonnets?"), "Ce bonnet", "m"],
+  [mots("baskets|sneakers"), "Ces baskets", "p"],
+  [mots("montures?|lunettes"), "Cette monture", "f"],
+];
+export function objetDe(p: ClePiece, titre: string, famille?: FamilleDouble): { dem: string; genre?: "m" | "f" | "p" } {
+  if (p === "dressing") {
+    const n = NOMS.find(([re]) => re.test(titre));
+    return n ? { dem: n[1], genre: n[2] } : { dem: "Cette pièce", genre: "f" };
+  }
+  if (p === "miroir") return famille === "seance" ? { dem: "Ce motif", genre: "m" } : famille === "ongles" ? { dem: "Cette pose", genre: "f" } : { dem: "Cette coupe", genre: "f" };
+  if (p === "cuisine") return { dem: "Ce plat", genre: "m" };
+  if (p === "librairie") return { dem: "Ce livre", genre: "m" };
+  return { dem: "Ça" };
 }
 
 /** « 2026-10-10 », à l'heure du téléphone : un jour, c'est le sien. */
@@ -547,11 +701,32 @@ export function sourceDe(s: Surprise, maintenant?: Date): string {
 /** Passée : le plat du midi après 15 h, la soirée finie. Ce qui est en rayon ne passe pas dans la journée. */
 export const estPassee = (s: Surprise, maintenant: Date) => s.fin !== undefined && maintenant.getHours() + maintenant.getMinutes() / 60 >= s.fin;
 
-/** Ce que le Fantôme dit en montrant chacune : la première, une suivante, la dernière. */
-export function motDuFantomePour(k: number, n: number): string {
-  if (k === 0) return "Ça, je devais vous le montrer.";
-  if (k === n - 1) return "Et la dernière, je l'ai gardée pour la fin.";
-  return "Et ça, ça m'a fait penser à vous.";
+/**
+ * CE QUE LE FANTÔME DIT EN MONTRANT CHACUNE — vivant, pas récité : jamais
+ * deux fois la même phrase dans une tournée, et « celui-là » ou « celle-là »
+ * selon la chose. Le choix suit la surprise (pas le hasard du rendu) : la
+ * revoir, c'est réentendre la même phrase.
+ */
+export function motsDuFantome(suite: Surprise[]): string[] {
+  const pris = new Set<number>();
+  return suite.map((s, k) => {
+    const genre = objetDe(s.piece, s.titre).genre;
+    const lui = genre === "f" ? "Celle-là" : genre === "p" ? "Celles-là" : genre === "m" ? "Celui-là" : "Ça";
+    const merite = genre === "p" ? "méritent" : "mérite";
+    const mots = [
+      "Regardez ça…",
+      "Je suis tombé là-dessus.",
+      "Ça m'a fait penser à vous.",
+      `${lui} ${merite} votre attention.`,
+      "Ça, je devais vous le montrer.",
+      "Tenez, j'ai trouvé ça en passant.",
+      ...(k === suite.length - 1 && k > 0 ? ["Et la dernière, je l'ai gardée pour la fin."] : []),
+    ];
+    let i = [...s.id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % mots.length;
+    while (pris.has(i) && pris.size < mots.length) i = (i + 1) % mots.length;
+    pris.add(i);
+    return mots[i];
+  });
 }
 
 export const nomDeLaPiece = (p: ClePiece) => pieceParCle(p).nom;
