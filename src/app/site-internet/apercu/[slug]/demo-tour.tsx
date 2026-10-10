@@ -1845,9 +1845,8 @@ export function DemoTour({
              bouge : ils s'appliquent a la couche du dessus, qui remplit la
              scene elle aussi. */
           .qi-pile.scene{aspect-ratio:9 / 14;padding-top:14px;}
-          /* UN PEU PLUS BASSE QU'UN ÉCRAN : elle rend la hauteur que prend la
-             définition du Direct, au-dessus — sinon « Passer ✕ » touchait la
-             barre, et les trois gestes passaient sous la légende. */
+          /* UN PEU PLUS BASSE QU'UN ÉCRAN : sinon les trois gestes passaient
+             sous la légende. */
           /* LA PRESENTATION EST CELLE DE LA COMPOSANTE — voir la classe
              « plein » dans carte-swipe : position absolue, aucun arrondi,
              aucune ombre, le texte pose sur la photo. Il ne reste ici que
@@ -2159,8 +2158,8 @@ export function DemoTour({
           /* LA CARTE EST LÀ DÈS LE DÉBUT, REPLIÉE (« .dt-ouvre ») : l'entrée de sa
              voix attend qu'elle se déplie, sinon elle se jouait dans le vide. */
           .dt-ouvre.on .ph-parle{animation:phParle .55s cubic-bezier(.34,1.5,.64,1) .9s both;}
-          .ph-parle-qui{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:6px 14px;border-radius:999px;
-            font-size:17px;font-weight:850;color:#1A0F08;background:#FFC97A;box-shadow:0 8px 20px rgba(0,0,0,.35);}
+          .ph-parle-qui{white-space:nowrap;padding:6px 14px;border-radius:16px;text-align:right;line-height:1.15;
+            font-size:16px;font-weight:850;color:#1A0F08;background:#FFC97A;box-shadow:0 8px 20px rgba(0,0,0,.35);}
           .ph-parle-l{display:flex;align-items:center;gap:10px;}
           .ph-parle-bulle{display:inline-flex;align-items:center;gap:10px;padding:9px 16px 9px 9px;border-radius:999px;
             background:rgba(20,12,8,.8);border:1.5px solid rgba(255,201,122,.55);box-shadow:0 10px 24px rgba(0,0,0,.4);
@@ -2243,7 +2242,7 @@ export function DemoTour({
             /* LA CARTE Y EST RÉDUITE DE MOITIÉ : sa voix grossit d'autant, et
                remonte pour laisser « Aujourd'hui » lisible. */
             .ph-parle{gap:10px;top:20%;}
-            .ph-parle-qui{font-size:24px;padding:7px 16px;}
+            .ph-parle-qui{white-space:normal;max-width:260px;font-size:24px;padding:7px 16px;}
             .ph-parle-av{width:108px;height:108px;}
             .ph-parle-bulle em{font-size:22px;}
             .ph-piece{width:58px;height:76px;}
