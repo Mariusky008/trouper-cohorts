@@ -307,19 +307,27 @@ export function Alcove({
               <Vapeur key={`t${i}`} x={c.x(tx)} y={c.y(ty)} t={D.hauteur * 0.34 * c.s} decale={i * 0.9 + 0.4} />
             ),
           )}
+          {/* ═══ CE DONT ON PARLE, DANS UN CADRE DEBOUT SUR LA TABLE ═══
+              « La photo du thème est vraiment à plat sur la table et on ne la
+              voit quasiment pas. » Couchée en perspective et ternie, elle
+              perdait les deux tiers de sa hauteur : un cadre debout la montre
+              en entier, comme une photo qu'on pose sur la table pour en
+              parler. Deux images : deux cadres, légèrement tournés. */}
           {!a.invitation && a.contenu.length > 0 && (
             <div className="al-plateau" style={{ left: c.x(D.plateau.x), top: c.y(D.plateau.y) }} aria-hidden="true">
               {a.contenu.slice(0, 2).map((u, i, t) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <span
                   key={u}
-                  src={u}
-                  alt=""
+                  className="al-cadre"
                   style={{
-                    width: D.plateau.l * c.s * (t.length > 1 ? 0.8 : 1),
-                    transform: `translate(-50%, -50%) translateX(${(i - (t.length - 1) / 2) * D.plateau.l * 0.85 * c.s}px) rotate(${i ? 5 : -4}deg)`,
+                    width: D.plateau.l * c.s * (t.length > 1 ? 0.6 : 0.78),
+                    ["--dx" as string]: `${(i - (t.length - 1) / 2) * D.plateau.l * 0.64 * c.s}px`,
+                    ["--r" as string]: `${t.length > 1 ? (i ? 7 : -6) : -4}deg`,
                   }}
-                />
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={u} alt="" />
+                </span>
               ))}
             </div>
           )}
@@ -423,9 +431,18 @@ function StylesAlcove() {
   background:radial-gradient(ellipse,rgba(255,206,130,.26) 0%,rgba(255,190,110,.1) 48%,rgba(255,190,110,0) 72%);}
 .al.actif .al-coussin{animation:al-respire 3.6s ease-in-out infinite;}
 @keyframes al-respire{0%,100%{opacity:.75;}50%{opacity:1;}}
-.al-plateau{position:absolute;z-index:5;width:0;height:0;pointer-events:none;transform:perspective(420px) rotateX(50deg);}
-.al-plateau img{position:absolute;left:0;top:0;max-width:none;aspect-ratio:4/3;object-fit:cover;border:3px solid #F3E6D2;border-radius:3px;filter:brightness(.86) sepia(.14);
-  box-shadow:0 6px 10px rgba(20,8,0,.45);}
+.al-plateau{position:absolute;z-index:5;width:0;height:0;pointer-events:none;}
+/* LE CADRE : bois doré, passe-partout blanc, debout sur la table — son pied est
+   au milieu du plateau, il monte au-dessus. Pas de filtre : la photo se lit. */
+.al-cadre{position:absolute;left:0;top:0;display:block;box-sizing:border-box;padding:6%;border-radius:4px;
+  transform:translate(calc(-50% + var(--dx,0px)),-100%) rotate(var(--r,-4deg));transform-origin:50% 100%;
+  background:linear-gradient(150deg,#F0D49B 0%,#C08E4F 42%,#7B5227 100%);
+  box-shadow:inset 0 1px 0 rgba(255,244,220,.6),inset 0 -1px 0 rgba(60,30,8,.55),0 12px 18px rgba(18,8,0,.55),0 2px 4px rgba(18,8,0,.4);}
+.al-cadre img{display:block;width:100%;max-width:none;aspect-ratio:4/5;object-fit:cover;object-position:50% 22%;
+  box-sizing:border-box;border:3px solid #FBF4E8;border-radius:1px;background:#FBF4E8;}
+/* SON OMBRE SUR LA TABLE, au pied. */
+.al-cadre::after{content:"";position:absolute;left:4%;right:-18%;bottom:-8%;height:13%;border-radius:50%;z-index:-1;
+  background:radial-gradient(closest-side,rgba(12,5,0,.55),rgba(12,5,0,0));}
 .al-libre{position:absolute;z-index:6;display:grid;place-items:center;padding:0;border:0;background:none;cursor:pointer;font:inherit;color:#FFE9C7;}
 .al-libre span{padding:5px 12px;border-radius:999px;background:rgba(36,21,11,.72);border:1px solid rgba(246,190,110,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
   font-size:12.5px;font-weight:600;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.35),0 0 14px rgba(246,181,75,.18);}

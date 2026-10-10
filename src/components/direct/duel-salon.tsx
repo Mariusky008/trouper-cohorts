@@ -5,7 +5,7 @@
 // JE VOIS → J'HÉSITE → CLIKME M'AIDE À TRANCHER → JE DIS OUI → J'AGIS
 //
 // CINQ CARTES, CELLES DES MAQUETTES, et aucune n'est un tunnel :
-//   1. « On tranche ça ? » à l'ouverture d'un salon où l'on est encore seul —
+//   1. « On commence comment ? » à l’ouverture d’un salon où l’on est encore seul —
 //      inviter ses amis OU commencer avec le Fantôme, les deux à égalité ;
 //      « Vous hésitez ? » après une hésitation, des avis qui divergent, ou un
 //      appui sur le Fantôme. Jamais imposée, elle s'écarte d'un geste.
@@ -272,24 +272,29 @@ function motsDesAmis(famille: string): { b: string[]; a: string; apres: [string,
   }
 }
 
-/** Ce que le Fantôme va opposer, et où il le cherche. */
-function motsDeLaRecherche(famille: string): { oppose: string; cherche: string } {
+/**
+ * Ce que le Fantôme va opposer, où il le cherche, et ce qu'on lui demande de
+ * montrer (« Montre-moi une autre coupe »).
+ */
+function motsDeLaRecherche(famille: string): { oppose: string; cherche: string; autre: string } {
   switch (famille) {
     case "coiffure":
-      return { oppose: "une autre coupe qu’on fait là-bas", cherche: "je regarde leurs coupes." };
+      return { oppose: "une autre coupe que le coiffeur propose aussi", cherche: "je regarde leurs coupes.", autre: "une autre coupe" };
     case "ongles":
-      return { oppose: "une autre pose de l’onglerie", cherche: "je regarde leurs poses." };
+      return { oppose: "une autre pose que l’onglerie propose aussi", cherche: "je regarde leurs poses.", autre: "une autre pose" };
     case "table":
     case "bar":
-      return { oppose: "un autre plat de la carte", cherche: "je regarde la carte." };
+      return { oppose: "un autre plat de la carte", cherche: "je regarde la carte.", autre: "un autre plat" };
     case "sortie":
-      return { oppose: "une autre sortie", cherche: "je regarde ce qui se passe en ville." };
+      return { oppose: "une autre sortie", cherche: "je regarde ce qui se passe en ville.", autre: "une autre sortie" };
     case "fleurs":
-      return { oppose: "un autre bouquet de la boutique", cherche: "je regarde leurs bouquets." };
+      return { oppose: "un autre bouquet de la boutique", cherche: "je regarde leurs bouquets.", autre: "un autre bouquet" };
     case "lunettes":
-      return { oppose: "une autre monture de la boutique", cherche: "je regarde leurs montures." };
+      return { oppose: "une autre monture de la boutique", cherche: "je regarde leurs montures.", autre: "une autre monture" };
+    case "librairie":
+      return { oppose: "un autre livre de la librairie", cherche: "je regarde leurs rayons.", autre: "un autre livre" };
     default:
-      return { oppose: "un challenger du magasin", cherche: "je regarde dans la boutique." };
+      return { oppose: "un challenger du magasin", cherche: "je regarde dans la boutique.", autre: "une autre pièce" };
   }
 }
 
@@ -847,6 +852,7 @@ export function useDuelDuSalon(p: {
         ouverture={proposition === "ouverture"}
         humeur={humeur}
         oppose={motsDeLaRecherche(famille).oppose}
+        autre={motsDeLaRecherche(famille).autre}
         onInviter={
           p.onInviter
             ? () => {
@@ -1131,6 +1137,7 @@ function CartePropose({
   ouverture,
   humeur,
   oppose,
+  autre,
   onInviter,
   onTrancher,
   onPlusTard,
@@ -1141,6 +1148,8 @@ function CartePropose({
   humeur: Humeur;
   /** Ce qu'il va lui opposer : « un challenger du magasin », « un autre plat de la carte »… */
   oppose: string;
+  /** Ce qu'on lui demande de montrer : « une autre coupe », « un autre plat »… */
+  autre: string;
   onInviter?: () => void;
   onTrancher: () => void;
   onPlusTard: () => void;
@@ -1162,10 +1171,7 @@ function CartePropose({
         <div className="dl-propose-t">
           <p className="dl-sur">✨ ClikMe vous aide</p>
           {ouverture ? (
-            <>
-              <h3>On tranche ça ?</h3>
-              <p className="dl-dit">Invitez qui vous voulez… ou commencez avec moi.</p>
-            </>
+            <h3>On commence comment ?</h3>
           ) : (
             <>
               <h3>Vous hésitez ? Je peux vous aider à trancher.</h3>
@@ -1175,14 +1181,27 @@ function CartePropose({
         </div>
       </div>
       {ouverture ? (
-        <div className="dl-deux dl-ouverture">
+        /* « J'ai l'impression qu'elle pousse à essayer autre chose plutôt qu'à
+           inviter des amis. » Deux chemins de même poids, dits du point de vue
+           de celui qui choisit — aucun n'est « le » bouton. */
+        <div className="dl-chemins">
           {onInviter && (
-            <button type="button" className="dl-cta creux" onClick={onInviter}>
-              Inviter mes amis
+            <button type="button" className="dl-chemin" onClick={onInviter}>
+              <i aria-hidden="true">👥</i>
+              <span>
+                <b>Avec mes amis</b>
+                <small>Je les invite dans le salon.</small>
+              </span>
+              <s aria-hidden="true">›</s>
             </button>
           )}
-          <button type="button" className="dl-cta" onClick={onTrancher}>
-            ✨ Aide-moi à trancher
+          <button type="button" className="dl-chemin" onClick={onTrancher}>
+            <i aria-hidden="true">✨</i>
+            <span>
+              <b>Avec ClikMe</b>
+              <small>Montre-moi {autre}.</small>
+            </span>
+            <s aria-hidden="true">›</s>
           </button>
         </div>
       ) : (
@@ -1907,8 +1926,18 @@ ${Array.from({ length: 12 }, (_, i) => {
 .dl-cta sup{font-size:.6em;}
 .dl-deux{display:flex;gap:10px;}
 .dl-deux .dl-cta{flex:1;min-width:0;text-transform:none;}
-/* « On tranche ça ? » : les deux chemins l'un sous l'autre, à égalité de taille. */
-.dl-deux.dl-ouverture{flex-direction:column;gap:8px;}
+/* « On commence comment ? » : deux chemins de même poids, l'un sous l'autre. */
+.dl-chemins{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.dl-chemin{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;padding:10px 14px;border-radius:16px;cursor:pointer;text-align:left;font:inherit;
+  color:#FFF4E6;background:rgba(255,244,230,.06);border:1.5px solid rgba(246,181,75,.55);transition:transform .15s,background .15s;}
+.dl-chemin:hover{background:rgba(246,181,75,.12);}
+.dl-chemin:active{transform:scale(.98);}
+.dl-chemin:focus-visible{outline:2px solid #F6B54B;outline-offset:2px;}
+.dl-chemin i{flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;font-style:normal;font-size:18px;background:rgba(246,181,75,.16);}
+.dl-chemin span{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
+.dl-chemin b{font-size:15.5px;font-weight:800;color:#F6B54B;}
+.dl-chemin small{font-size:13.5px;color:#E9D7C2;line-height:1.3;}
+.dl-chemin s{flex:none;text-decoration:none;font-size:22px;color:#F6B54B;}
 .dl-x{position:absolute;top:6px;right:8px;width:30px;height:30px;padding:0;border:0;background:none;cursor:pointer;color:#CDB9A5;font-size:22px;line-height:1;}
 .dl-pied{margin:10px 0 0;text-align:center;font-size:12.5px;color:#CDB9A5;}
 .dl-consigne{margin:10px 0 0;text-align:center;font-size:14px;color:#FFF4E6;}

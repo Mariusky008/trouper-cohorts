@@ -161,7 +161,7 @@ function reaction(e: Evenement): Intervention {
     case "salon_created":
       return { humeur: "idle" };
     // JAMAIS ÉMIS À L'OUVERTURE D'UN SALON : on ne sait pas encore s'il va inviter
-    // ses amis. Là, c'est la carte neutre « On tranche ça ? » (voir `duel-salon.tsx`).
+    // ses amis. Là, c’est la carte « On commence comment ? » (voir `duel-salon.tsx`).
     case "owner_alone":
       return { humeur: "curious", proposer: true };
     case "friend_joined":
