@@ -315,20 +315,33 @@ export function Alcove({
               parler. Deux images : deux cadres, légèrement tournés. */}
           {!a.invitation && a.contenu.length > 0 && (
             <div className="al-plateau" style={{ left: c.x(D.plateau.x), top: c.y(D.plateau.y) }} aria-hidden="true">
-              {a.contenu.slice(0, 2).map((u, i, t) => (
-                <span
-                  key={u}
-                  className="al-cadre"
-                  style={{
-                    width: D.plateau.l * c.s * (t.length > 1 ? 0.6 : 0.78),
-                    ["--dx" as string]: `${(i - (t.length - 1) / 2) * D.plateau.l * 0.64 * c.s}px`,
-                    ["--r" as string]: `${t.length > 1 ? (i ? 7 : -6) : -4}deg`,
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={u} alt="" />
-                </span>
-              ))}
+              {a.contenu.slice(0, 2).map((u, i, t) => {
+                const l = D.plateau.l * c.s * (t.length > 1 ? 0.66 : 0.88);
+                return (
+                  <span
+                    key={u}
+                    className="al-cadre"
+                    style={{
+                      width: l,
+                      ["--dx" as string]: `${(i - (t.length - 1) / 2) * D.plateau.l * 0.7 * c.s}px`,
+                      ["--r" as string]: `${t.length > 1 ? (i ? 4 : -3) : -2}deg`,
+                      ["--ry" as string]: `${t.length > 1 && i ? -20 : 20}deg`,
+                      ["--ep" as string]: `${Math.max(4, l * 0.08)}px`,
+                    }}
+                  >
+                    <span className="al-cadre-3d">
+                      {/* LA TRANCHE : l'épaisseur du cadre, qu'on voit parce qu'il est tourné. */}
+                      <i className={`al-cadre-tranche${t.length > 1 && i ? " droite" : ""}`} />
+                      <span className="al-cadre-face">
+                        <span className="al-cadre-passe">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={u} alt="" />
+                        </span>
+                      </span>
+                    </span>
+                  </span>
+                );
+              })}
             </div>
           )}
           {places.map((p, k) => {
@@ -432,17 +445,39 @@ function StylesAlcove() {
 .al.actif .al-coussin{animation:al-respire 3.6s ease-in-out infinite;}
 @keyframes al-respire{0%,100%{opacity:.75;}50%{opacity:1;}}
 .al-plateau{position:absolute;z-index:5;width:0;height:0;pointer-events:none;}
-/* LE CADRE : bois doré, passe-partout blanc, debout sur la table — son pied est
-   au milieu du plateau, il monte au-dessus. Pas de filtre : la photo se lit. */
-.al-cadre{position:absolute;left:0;top:0;display:block;box-sizing:border-box;padding:6%;border-radius:4px;
-  transform:translate(calc(-50% + var(--dx,0px)),-100%) rotate(var(--r,-4deg));transform-origin:50% 100%;
-  background:linear-gradient(150deg,#F0D49B 0%,#C08E4F 42%,#7B5227 100%);
-  box-shadow:inset 0 1px 0 rgba(255,244,220,.6),inset 0 -1px 0 rgba(60,30,8,.55),0 12px 18px rgba(18,8,0,.55),0 2px 4px rgba(18,8,0,.4);}
-.al-cadre img{display:block;width:100%;max-width:none;aspect-ratio:4/5;object-fit:cover;object-position:50% 22%;
-  box-sizing:border-box;border:3px solid #FBF4E8;border-radius:1px;background:#FBF4E8;}
-/* SON OMBRE SUR LA TABLE, au pied. */
-.al-cadre::after{content:"";position:absolute;left:4%;right:-18%;bottom:-8%;height:13%;border-radius:50%;z-index:-1;
-  background:radial-gradient(closest-side,rgba(12,5,0,.55),rgba(12,5,0,0));}
+/* ═══ LE CADRE, POSÉ SUR LA TABLE ═══
+   « J'ai pas l'impression que la photo est dans un beau cadre posé sur la
+   table. » Un rectangle à bord fin, de face, sans épaisseur ni contact, se
+   lisait comme une vignette collée sur la scène. Ce qui fait « posé » :
+   une moulure dorée en relief et un passe-partout ; une légère perspective
+   — il penche en arrière sur son pied et il est tourné, ce qui montre sa
+   tranche ; le reflet du verre ; et l'ombre de contact à son pied. */
+.al-cadre{position:absolute;left:0;top:0;display:block;transform:translate(calc(-50% + var(--dx,0px)),-100%);
+  perspective:520px;perspective-origin:50% -30%;}
+.al-cadre-3d{position:relative;display:block;transform-style:preserve-3d;transform-origin:50% 100%;
+  transform:rotateX(9deg) rotateY(var(--ry,20deg)) rotateZ(var(--r,-2deg));}
+.al-cadre-face{position:relative;display:block;box-sizing:border-box;padding:9%;border-radius:3px;
+  background:linear-gradient(135deg,#FFE9B0 0%,#D6A156 18%,#8E5E2A 40%,#E3B972 62%,#A7742F 80%,#6E4719 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,238,196,.85),inset 0 0 0 3px rgba(122,82,34,.55),inset 3px 3px 5px rgba(255,244,214,.55),
+    inset -3px -3px 6px rgba(52,30,8,.6),0 1px 2px rgba(20,8,0,.5);}
+/* LE PASSE-PARTOUT : un carton crème, sa découpe en biseau autour de la photo. */
+.al-cadre-passe{position:relative;display:block;padding:8%;background:#F7EFE3;
+  box-shadow:inset 2px 2px 4px rgba(60,35,10,.45),inset -1px -1px 2px rgba(255,255,255,.7);}
+.al-cadre-passe img{display:block;width:100%;max-width:none;aspect-ratio:4/5;object-fit:cover;object-position:50% 22%;
+  box-sizing:border-box;border:1.5px solid #FFFFFF;box-shadow:1px 1px 2px rgba(40,22,6,.35);}
+/* LE VERRE : un reflet en biais, plus clair d'un côté. */
+.al-cadre-passe::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(118deg,rgba(255,255,255,.38) 0%,rgba(255,255,255,.1) 24%,rgba(255,255,255,0) 38%,rgba(255,255,255,0) 68%,rgba(255,250,235,.14) 80%,rgba(255,255,255,0) 90%);}
+/* LA TRANCHE : elle part du bord du cadre vers l'arrière. */
+.al-cadre-tranche{position:absolute;top:0;bottom:0;left:0;width:var(--ep,6px);transform-origin:0 50%;transform:rotateY(90deg);
+  background:linear-gradient(90deg,#B98543 0%,#7A5023 55%,#4E3112 100%);}
+.al-cadre-tranche.droite{left:auto;right:0;transform-origin:100% 50%;transform:rotateY(-90deg);
+  background:linear-gradient(270deg,#B98543 0%,#7A5023 55%,#4E3112 100%);}
+/* SON OMBRE SUR LA TABLE : portée vers la droite (la lumière vient de la lampe, à gauche), et un trait sombre au contact. */
+.al-cadre::after{content:"";position:absolute;left:2%;right:-46%;bottom:-7%;height:17%;border-radius:50%;z-index:-1;transform:skewX(-28deg);
+  background:radial-gradient(closest-side,rgba(10,4,0,.78),rgba(10,4,0,.36) 55%,rgba(10,4,0,0));}
+.al-cadre::before{content:"";position:absolute;left:4%;right:0;bottom:-3px;height:7px;border-radius:50%;z-index:-1;
+  background:rgba(8,3,0,.85);filter:blur(2px);}
 .al-libre{position:absolute;z-index:6;display:grid;place-items:center;padding:0;border:0;background:none;cursor:pointer;font:inherit;color:#FFE9C7;}
 .al-libre span{padding:5px 12px;border-radius:999px;background:rgba(36,21,11,.72);border:1px solid rgba(246,190,110,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
   font-size:12.5px;font-weight:600;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.35),0 0 14px rgba(246,181,75,.18);}
