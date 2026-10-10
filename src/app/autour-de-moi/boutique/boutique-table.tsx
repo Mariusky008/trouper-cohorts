@@ -60,6 +60,8 @@ import { MotMarque } from "@/components/direct/mot-marque";
 import { DoubleChef } from "@/components/direct/double-chef";
 import { ParcoursTable } from "@/components/direct/parcours-table-ecran";
 import { StylesParcoursTable } from "@/components/direct/styles-parcours-table";
+import { CartePropose, StylesDuel, useDuelDuSalon } from "@/components/direct/duel-salon";
+import { monLook } from "@/lib/direct/look";
 import { tenueDu } from "@/lib/direct/double-metiers";
 import { seuilDuDouble } from "@/lib/direct/double-chef";
 import {
@@ -85,6 +87,7 @@ import {
   heureCourte,
   monPrenom,
   ouvrirSalon,
+  proposer,
   SALONS_VIDES,
   type MessageSalon,
 } from "@/lib/direct/salons";
@@ -171,6 +174,11 @@ const motsDuMetier = (branche: string): MotsDuMetier => MOTS[branche] ?? MOTS.ar
 
 /** Les poses validées, demandées une fois par visite et partagées par toutes les pages. */
 let posesValideesPromesse: Promise<Record<string, Partial<Record<"regard-gauche" | "regard-droite" | "pousse-porte", string>>>> | null = null;
+/** Les fantômes des amis dans le duel (leurs votes) : un par prénom, toujours le même. */
+const AMIS_FANTOMES = ["beret-rouge", "bonnet", "casquette-noire", "echarpe-verte", "lunettes-rouges", "echarpe-violette"].map(
+  (n) => `/direct/ensemble/fantome-${n}.webp`,
+);
+
 function lesPosesValidees() {
   if (posesValideesPromesse) return posesValideesPromesse;
   // CINQ SECONDES AU PLUS : une demande qui pend ne doit rien retenir de la page.
@@ -1154,6 +1162,76 @@ export function BoutiqueTable({
   const moi = typeof window === "undefined" ? "Vous" : monPrenom() || "Vous";
   const jeViens = viennent.includes(moi);
 
+  /* ═══ « ON COMMENCE COMMENT ? » — LE DUEL D'ENSEMBLE, ICI AUSSI ════════════
+     « "En parler à mes amis" : il manque des fonctionnalités qu'on a
+     ajoutées : "On commence comment ? Avec mes amis, je les invite dans le
+     salon. Avec ClikMe, montre-moi une autre coupe." »
+     C'EST LE MÊME SALON QU'ENSEMBLE (même clé, voir plus haut) : il a donc le
+     même duel, et pas une copie — `useDuelDuSalon`, ses cartes, son Fantôme,
+     sa demande au commerce. Un duel lancé ici se retrouve là-bas.
+     · `reelle` : un vrai client sur une vraie page — la demande part chez le
+       commerçant. Sur SA page avant qu'elle la garde, c'est une démonstration
+       (« Côté boutique » lui montre comment elle la recevra)…
+     · …qui n'oppose que SES pièces (`seulementLesSiennes`) : jamais une pièce
+       du modèle prêtée à un vrai commerce.
+     · SAUF S'IL LUI EN MANQUE : sans deux pièces photographiées, il n'y a rien
+       à opposer, et la carte disparaissait de sa page — exactement là où elle
+       la cherche. Elle voit alors le duel avec des pièces de démonstration, et
+       la page le dit (« Exemple ») : rien n'y est présenté comme à elle. */
+  const sesPieces = c.cataloguePropose ? 0 : (c.catalogue ?? []).filter((x) => x.photo && x.nom).length;
+  const duelDeDemo = saPage && Boolean(c.vraiePage) && sesPieces < 2;
+  const autresDuSalon = useMemo(
+    () => [...new Set([...(salon?.presents ?? []), ...(salon?.viennent ?? [])])].filter((q) => q !== moi).map((qui) => ({ qui })),
+    [salon, moi],
+  );
+  const duelSalon = useDuelDuSalon({
+    salon,
+    carte: c,
+    reelle: Boolean(c.vraiePage) && !saPage,
+    seulementLesSiennes: Boolean(c.vraiePage) && !duelDeDemo,
+    membre: !!salon,
+    autres: autresDuSalon,
+    fantomeDe: (qui) => AMIS_FANTOMES[[...qui].reduce((n, x) => n + x.charCodeAt(0), 0) % AMIS_FANTOMES.length],
+    monFantome: monLook().image,
+    onInviter: () => void inviter(),
+  });
+  /* LE SALON N'EXISTE PAS ENCORE (ou ne parle de rien de précis) : la carte
+     est la nôtre, avec les mêmes deux chemins. « Avec ClikMe » ouvre le
+     salon sur la pièce de départ, et le duel part dès qu'il est là. Dès que
+     le salon a un sujet, c'est le duel lui-même qui propose. */
+  const [pasMaintenant, setPasMaintenant] = useState(false);
+  const lancerDesQue = useRef(false);
+  const carteOuverture =
+    !pasMaintenant && !duelSalon.actif && !duelSalon.peutDuel && !salon?.duels?.length && messages.length === 0 ? duelSalon.depart : null;
+  const avecClikMe = () => {
+    const o = duelSalon.depart;
+    if (!o) return;
+    const qui = monPrenom() || "Vous";
+    if (!salon) {
+      ouvrirSalon({
+        cle: cleSalon,
+        sujet: `Chez ${c.nom}`,
+        ou: c.nom,
+        parQui: qui,
+        quand: "Aujourd’hui",
+        annonce: o.nom,
+        prix: o.prix,
+        distance: c.distance,
+        photo: o.photo,
+        boutique: { id: c.id, nom: c.nom, lien: lienPage() },
+      });
+    } else {
+      // UN SALON OUVERT PAR « JE VIENS » NE PARLE DE RIEN : on pose la pièce sur la table.
+      proposer(cleSalon, { cle: `${cleSalon}|${o.id}`, par: qui, quoi: o.nom, ou: c.nom, prix: o.prix, distance: c.distance, photo: o.photo }, qui);
+    }
+    lancerDesQue.current = true;
+  };
+  useEffect(() => {
+    if (!lancerDesQue.current || !salon || !duelSalon.peutDuel) return;
+    lancerDesQue.current = false;
+    duelSalon.lancer();
+  });
+
   /** L'en-tête commun : la flèche, le mot ClikMe, le nom du lieu dessous. */
   const entete = (avecNom: boolean) => (
     <header className="bt-haut">
@@ -2030,6 +2108,33 @@ export function BoutiqueTable({
               </button>
             </div>
 
+            {/* « ON COMMENCE COMMENT ? » — voir `duelSalon`. La nôtre tant que le
+                salon ne parle de rien ; ensuite, celle du duel lui-même. */}
+            {carteOuverture && (
+              <div className="dl-ancre bt-duel">
+                {duelDeDemo && <span className="bt-duel-tag">Exemple · pièces de démonstration</span>}
+                <CartePropose
+                  sujet={carteOuverture}
+                  ouverture
+                  humeur="idle"
+                  oppose=""
+                  autre={duelSalon.autre}
+                  onInviter={() => void inviter()}
+                  onTrancher={avecClikMe}
+                  onPlusTard={() => setPasMaintenant(true)}
+                />
+              </div>
+            )}
+            {duelSalon.module && (
+              <div className="bt-duel">
+                {duelDeDemo && <span className="bt-duel-tag">Exemple · pièces de démonstration</span>}
+                {duelSalon.module}
+              </div>
+            )}
+            {duelDeDemo && (carteOuverture || duelSalon.module) && (
+              <p className="bt-note bt-duel-ex">ClikMe opposera vos pièces dès que vous en aurez ajouté deux.</p>
+            )}
+
             {/* ═══ UN SALON VIDE EST VIDE ═══════════════════════════════════
                 « Il y a des phrases déjà écrites alors que je n'ai jamais encore
                 invité qui que ce soit à discuter dans ce salon. »
@@ -2043,17 +2148,25 @@ export function BoutiqueTable({
                   <span>La conversation</span>
                 </p>
                 <div className="bt-fil">
-                  {messages.slice(-6).map((m) => (
-                    <div key={m.id} className={`bt-msg${m.voix === "moi" ? " moi" : ""}`}>
-                      {m.voix !== "moi" && <i className="bt-av">{m.qui[0]?.toUpperCase()}</i>}
-                      <div>
-                        <small>
-                          {m.voix === "moi" ? "Moi" : m.qui} <span>{m.quand}</span>
-                        </small>
-                        <p>{m.texte}</p>
-                      </div>
-                    </div>
-                  ))}
+                  {/* LE DUEL LAISSE SA TRACE DANS LE FIL, ET LE FANTÔME Y PARLE —
+                      comme dans Ensemble (`trace`, `apres`). */}
+                  {messages.slice(-6).flatMap((m, i, vus) => {
+                    const rang = messages.length - vus.length + i;
+                    if (m.duel) return [duelSalon.trace(m), ...duelSalon.apres(rang + 1)];
+                    return [
+                      <div key={m.id} className={`bt-msg${m.voix === "moi" ? " moi" : ""}`}>
+                        {m.voix !== "moi" && <i className="bt-av">{m.qui[0]?.toUpperCase()}</i>}
+                        <div>
+                          <small>
+                            {m.voix === "moi" ? "Moi" : m.qui} <span>{m.quand}</span>
+                          </small>
+                          <p>{m.texte}</p>
+                        </div>
+                      </div>,
+                      ...duelSalon.apres(rang + 1),
+                    ];
+                  })}
+                  {duelSalon.reste(messages.length)}
                 </div>
               </>
             ) : saPage ? (
@@ -2094,6 +2207,7 @@ export function BoutiqueTable({
               <i aria-hidden="true">ⓘ</i> Demande à confirmer par {mots.completer}.
             </p>
             {partageDit && <p className="bt-note">{partageDit}</p>}
+            {duelSalon.mini}
           </div>
           <form
             className="bt-ecrire"
@@ -2114,7 +2228,9 @@ export function BoutiqueTable({
               </svg>
             </button>
           </form>
+          {duelSalon.calques}
           </div>
+          <StylesDuel />
         </section>
       )}
 

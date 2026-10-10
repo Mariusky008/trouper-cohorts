@@ -820,6 +820,30 @@ export function StylesBoutiqueTable() {
         .bt-e-amis .bt-corps>.bt-trait{margin-top:auto;padding-top:10px;}
         .bt-e-amis .bt-duo{margin-top:12px;}
         .bt-e-amis .bt-note{max-width:none;}
+        /* ═══ LE DUEL D'ENSEMBLE, DANS LA FENÊTRE — voir \`duelSalon\` ═══
+           Ses cartes ont leurs styles (\`StylesDuel\`) ; ici, la place qu'elles
+           prennent, la fenêtre qui porte « Côté boutique » (\`.dl-cb\` s'y pose
+           en absolu), et les lignes du Fantôme parmi les bulles du fil. */
+        .bt-e-amis .bt-fenetre{position:relative;}
+        .bt-duel{margin:12px 0 2px;}
+        /* L'ÉTIQUETTE « EXEMPLE » COLLE AU HAUT DE LA CARTE, tant que la carte
+           est à l'écran : le duel fait défiler le fil jusqu'à lui (8 px
+           au-dessus), et une étiquette au-dessus ou en dessous sortait de
+           l'écran — on aurait vu des pièces de démonstration sans le lire.
+           Collée en bas du fil, elle cachait « Mettre de côté ». Haute de
+           15 px, elle tient dans les 8 px d'écart et la marge de la carte
+           sans toucher sa première ligne. */
+        .bt-duel-tag{position:sticky;top:0;z-index:3;display:block;width:max-content;max-width:92%;margin:0 auto -8px;
+          padding:1px 10px;border-radius:999px;font-size:10.5px;font-weight:800;line-height:13px;color:#1A0F08;background:#FFE2A6;
+          box-shadow:0 4px 12px rgba(0,0,0,.4);}
+        .bt-duel-ex{margin:8px 0 0;text-align:center;}
+        .bt-duel .dl-carte{margin:0;}
+        .bt-fil .ap-sal-m.dl-f{display:flex;flex-direction:column;align-items:flex-start;gap:3px;max-width:86%;}
+        .bt-fil .ap-sal-m.dl-f>b{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;}
+        .bt-fil .ap-sal-m.dl-f>span{padding:10px 14px;border-radius:18px 18px 18px 6px;font-size:15px;line-height:1.35;
+          color:var(--bt-creme);background:#2A1F1B;}
+        .bt-fil .ap-sal-m.dl-f>i{font-style:normal;font-size:11px;color:rgba(205,184,164,.7);}
+        .bt-fil .dl-trace{max-width:100%;}
         .bt-ecrire{flex:none;display:flex;align-items:center;gap:10px;
           padding:10px 14px;border-top:1px solid var(--bt-trait);background:var(--bt-fond);}
         .bt-ecrire input{flex:1 1 auto;min-width:0;padding:12px 18px;border-radius:999px;

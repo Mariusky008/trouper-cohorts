@@ -80,6 +80,11 @@ if (typeof window !== "undefined") {
   });
 }
 
+/** Une demande de Léa attend encore son bloc : elle a moins de trois secondes. */
+function demandeEnAttente() {
+  return !demande.servie && Date.now() - demande.at < 3000;
+}
+
 /** Son mot, rejoué depuis le début ; rend vrai s'il joue. */
 async function depuisLeDebut(a: HTMLAudioElement, fin: () => void): Promise<boolean> {
   a.onended = fin;
@@ -130,8 +135,24 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
   const [essai, setEssai] = useState<EssaiVitrineCarte>(depart);
   /** L'animation dans la page : au repos (après caché), qui joue, ou finie (après visible). */
   const [jeu, setJeu] = useState<{ mode: Mode; n: number }>({ mode: "repos", n: 0 });
-  /** En grand, par-dessus la page : ouvert, puis en train de se ranger à sa place. */
-  const [plein, setPlein] = useState<{ n: number; range: boolean } | null>(null);
+  /**
+   * En grand, par-dessus la page : ouvert, puis en train de se ranger à sa place.
+   *
+   * ═══ NÉ D'UNE DEMANDE DE LÉA, LE BLOC NAÎT DÉJÀ EN GRAND ═══════════════
+   *
+   * « Au départ de l'étape 2, quand Léa dit "Et voilà ce qu'…", on voit
+   * pendant moins d'une seconde "La pièce qui vous plaît, sur vous avant
+   * d'entrer", les trois étapes et l'image en dessous, puis l'image devient
+   * toute grande. J'aimerais qu'on ait directement l'image en grand. »
+   *
+   * C'ÉTAIT L'ORDRE DES CHOSES : l'onglet Expérience s'ouvrait, se peignait,
+   * et le plein écran ne venait qu'une demi-seconde plus tard, en fondu. Le
+   * bloc qui naît d'une demande en attente naît donc ouvert (`net` : ni fondu
+   * ni montée), dans la même image que l'onglet — rien ne se peint avant.
+   */
+  const [plein, setPlein] = useState<{ n: number; range: boolean; net?: boolean } | null>(() =>
+    demandeEnAttente() ? { n: 1, range: false, net: true } : null,
+  );
   /** Le glissement vers sa place : la différence entre le cadre en grand et celui de la page. */
   const [vol, setVol] = useState<{ tx: number; ty: number; s: number } | null>(null);
   const racine = useRef<HTMLElement | null>(null);
@@ -192,14 +213,18 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
     else poser();
   }, []);
 
-  /* ═══ OUVRIR EN GRAND ═══ L'après se révèle à trois secondes, puis on range. */
-  const ouvrir = useCallback(() => {
-    minuteurs.current.forEach((t) => window.clearTimeout(t));
-    dejaJoue.current = true;
-    setVol(null);
-    setPlein({ n: Date.now(), range: false });
-    minuteurs.current = [window.setTimeout(ranger, RANGER_A)];
-  }, [ranger]);
+  /* ═══ OUVRIR EN GRAND ═══ L'après se révèle à trois secondes, puis on range.
+     `net` : à la demande de Léa, d'un coup, sans fondu. */
+  const ouvrir = useCallback(
+    (net = false) => {
+      minuteurs.current.forEach((t) => window.clearTimeout(t));
+      dejaJoue.current = true;
+      setVol(null);
+      setPlein({ n: Date.now(), range: false, net });
+      minuteurs.current = [window.setTimeout(ranger, RANGER_A)];
+    },
+    [ranger],
+  );
 
   useEffect(
     () => () => {
@@ -207,6 +232,15 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
     },
     [],
   );
+
+  /* NÉ OUVERT (voir `plein`) : la demande est servie, et le rangement se
+     programme comme si l'on venait d'ouvrir. Une fois, à la naissance. */
+  useEffect(() => {
+    if (!plein?.net || plein.n !== 1) return;
+    demande.servie = true;
+    dejaJoue.current = true;
+    minuteurs.current = [window.setTimeout(ranger, RANGER_A)];
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ÉCHAP REFERME, comme toute fenêtre. */
   useEffect(() => {
@@ -266,16 +300,18 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
       );
       o.observe(el);
     }
+    /* DÉJÀ LÀ QUAND LÉA EN PARLE : en grand tout de suite, sans la
+       demi-seconde d'avant — c'est elle qui laissait voir la page. */
     const montrer = (e: Event) => {
       if ((e as CustomEvent).detail !== "essayer") return;
       demande.servie = true;
-      window.setTimeout(ouvrir, 500);
+      ouvrir(true);
     };
     window.addEventListener("clikme:montrer", montrer);
-    /* NÉ APRÈS LA DEMANDE (l'onglet Expérience vient de s'ouvrir) : on la sert maintenant. */
-    if (!demande.servie && Date.now() - demande.at < 3000) {
+    /* UNE DEMANDE ARRIVÉE ENTRE LA NAISSANCE ET CET EFFET : servie aussi. */
+    if (demandeEnAttente()) {
       demande.servie = true;
-      window.setTimeout(ouvrir, 500);
+      window.setTimeout(() => ouvrir(true), 0);
     }
     return () => {
       o?.disconnect();
@@ -303,7 +339,7 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
   const plein_ =
     plein && typeof document !== "undefined"
       ? createPortal(
-          <div className={`aa-plein${plein.range ? " range" : ""}`} role="dialog" aria-label={`L’essayage virtuel · ${c.nom}`}>
+          <div className={`aa-plein${plein.range ? " range" : ""}${plein.net ? " net" : ""}`} role="dialog" aria-label={`L’essayage virtuel · ${c.nom}`}>
             <StylesAvantApres />
             <div className="aa-plein-fond" onClick={ranger} />
             <div className="aa-plein-scene">
@@ -396,7 +432,7 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
 
       <p className="aa-pied">
         <span>Simulation d’essayage · Rendu indicatif</span>
-        <button type="button" onClick={ouvrir}>
+        <button type="button" onClick={() => ouvrir()}>
           ⤢ Voir en grand
         </button>
       </p>
@@ -482,6 +518,8 @@ function StylesAvantApres() {
 .aa-plein-fond{position:absolute;inset:0;background:rgba(10,6,4,.84);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   animation:aa-fondu .35s ease both;}
 .aa-plein.range .aa-plein-fond{animation:aa-efface .8s ease both;}
+/* À LA DEMANDE DE LÉA, EN GRAND D'UN COUP : ni fondu ni montée (voir \`plein\`). */
+.aa-plein.net:not(.range) .aa-plein-fond,.aa-plein.net .aa-plein-scene{animation:none;}
 .aa-plein-scene{position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;animation:aa-monte .45s cubic-bezier(.2,.8,.2,1) both;}
 .aa-plein-k{margin:0;font-size:13px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:#F5A23A;text-align:center;}
 .aa-plein-cadres{--l:min(calc((100vh - 330px) * 2 / 3), calc((100vw - 54px) / 2), 430px);
