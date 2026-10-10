@@ -820,9 +820,9 @@ export function StylesBoutiqueTable() {
         .bt-e-amis .bt-corps>.bt-trait{margin-top:auto;padding-top:10px;}
         .bt-e-amis .bt-duo{margin-top:12px;}
         .bt-e-amis .bt-note{max-width:none;}
-        /* ═══ LE DUEL D'ENSEMBLE, DANS LA FENÊTRE — voir \`duelSalon\` ═══
-           Ses cartes ont leurs styles (\`StylesDuel\`) ; ici, la place qu'elles
-           prennent, la fenêtre qui porte « Côté boutique » (\`.dl-cb\` s'y pose
+        /* ═══ LE DUEL D'ENSEMBLE, DANS LA FENÊTRE — voir « duelSalon » ═══
+           Ses cartes ont leurs styles (« StylesDuel ») ; ici, la place qu'elles
+           prennent, la fenêtre qui porte « Côté boutique » (« .dl-cb » s'y pose
            en absolu), et les lignes du Fantôme parmi les bulles du fil. */
         .bt-e-amis .bt-fenetre{position:relative;}
         .bt-duel{margin:12px 0 2px;}

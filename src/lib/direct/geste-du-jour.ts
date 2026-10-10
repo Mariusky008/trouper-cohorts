@@ -94,6 +94,16 @@ export type FamilleMetier = "restauration" | "boutique" | "librairie" | "rdv" | 
 export type GesteDuJour = {
   /** Voir `FamilleMetier` : ce qui décide AUSSI du fil de la ville montré à côté. */
   famille: FamilleMetier;
+  /**
+   * ═══ LEUR GARDE-ROBE, AVEC SES PIÈCES — l'étape 2, chez la mode seulement ═══
+   *
+   * « Les clients peuvent essayer la tenue à partir de leur photo, mais aussi
+   * en fouillant dans la garde-robe qu'ils auront enregistrée sur ClikMe, pour
+   * voir si dans le magasin il y a quelque chose qui irait avec tel ou tel de
+   * leurs vêtements. » `dit` est la phrase de Léa, entre l'essai et les
+   * salons ; `titre`, celui de la scène (`scene-garde-robe.tsx`).
+   */
+  gardeRobe?: { dit: string; titre: string };
   /** LE MOMENT DE LA JOURNÉE OÙ ÇA SE JOUE CHEZ LUI : « Ce midi », « Ce
    *  matin », « Cette semaine ». L'acte l'ouvrait sur « Ce midi » pour tout le
    *  monde — un boulanger dont la fournée sort à 7 h et un plombier qui remplit
@@ -548,6 +558,10 @@ export function gesteDuJour(
         { heure: "17 h", icone: "🛍️", nombre: "3", quoi: "clientes vous auront demandé de la mettre de côté", demande: true },
         { heure: "18 h 00", icone: "📊", nombre: "", quoi: "En une journée, vous saurez quelle pièce donne envie." },
       ],
+      gardeRobe: {
+        dit: "Mieux encore : elles ouvrent leur garde-robe, enregistrée sur ClikMe, choisissent leur jean préféré, et voient aussitôt ce qui, chez vous, irait avec.",
+        titre: "Leur jean préféré ? Voilà ce qui irait avec.",
+      },
       salons: salons("elles", "le fantôme de votre boutique", "il vous demande de la mettre de côté", "vos ventes se décident", "🛍️ 2 mises de côté demandées"),
       liaison: "Mais pour l'essayer, encore faut-il la découvrir.",
     };
