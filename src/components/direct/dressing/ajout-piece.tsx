@@ -263,7 +263,7 @@ export function AjoutPiece({
         {etape === "analyse" && (
           <div aria-live="polite">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="dr-fant" src="/direct/fantome-humeurs/fantome-searching.webp" alt="" style={{ marginTop: 26 }} />
+            <img className="dr-fant" src="/direct/dressing/dressing-loupe.webp" alt="" style={{ marginTop: 26 }} />
             <p className="dr-titre">ClikMe analyse votre vêtement…</p>
             <div className={`dr-barre${lente ? " lente" : ""}`}>
               <i />

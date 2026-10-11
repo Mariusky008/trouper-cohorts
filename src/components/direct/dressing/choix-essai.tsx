@@ -71,7 +71,7 @@ export function ChoixEssai({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="piece" src={piece.photo} alt="" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="fant" src="/direct/fantome-humeurs/fantome-pointing.webp" alt="" />
+          <img className="fant" src="/direct/dressing/dressing-penderie.webp" alt="" />
         </div>
         <h3>{piece.nom}</h3>
         <p className="dr-choix-q">Comment voulez-vous l’essayer ?</p>

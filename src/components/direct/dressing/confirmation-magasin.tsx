@@ -50,7 +50,8 @@ export function EcranMagasinConfirme({
   return (
     <div className="dr-confirme">
       <span className={`dr-cintre-grand${confirme ? "" : " eteint"}`} aria-hidden="true">
-        <Dessin d={DESSINS_DRESSING.cintre} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/direct/dressing/dressing-cintre.webp" alt="" />
       </span>
       <p className="dr-titre">{confirme ? "Le magasin confirme !" : "Le magasin n’a plus cette pièce"}</p>
       <p className="dr-sous">

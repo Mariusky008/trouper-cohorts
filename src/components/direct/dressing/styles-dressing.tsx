@@ -47,6 +47,8 @@ export function StylesDressing() {
 
 /* LE FANTÔME ET SA LUEUR */
 .dr-fant{display:block;margin:0 auto;width:150px;height:auto;filter:drop-shadow(0 10px 26px rgba(246,181,75,.45));animation:dr-flotte 4.6s ease-in-out infinite;}
+/* LE FANTÔME ENTRE UNE VESTE ET UN JEAN : l'image s'arrête net sur les vêtements, on en fond les bords. */
+.dr-fant.fondu{-webkit-mask-image:radial-gradient(closest-side,#000 72%,transparent);mask-image:radial-gradient(closest-side,#000 72%,transparent);filter:none;}
 @keyframes dr-flotte{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
 .dr-titre{margin:14px 0 0;text-align:center;font-size:25px;line-height:1.15;font-weight:900;letter-spacing:-.015em;color:#fff;}
 .dr-sous{margin:8px auto 0;max-width:330px;text-align:center;font-size:14.5px;line-height:1.45;color:#CDBFAE;}
@@ -193,10 +195,10 @@ export function StylesDressing() {
 .dr-bandeau.ok{color:#9BE3B4;border-color:rgba(46,155,87,.6);}
 .dr-confirme{padding-top:4px;}
 .dr-cintre-grand{display:flex;align-items:center;justify-content:center;width:120px;height:120px;margin:6px auto 0;border-radius:50%;color:#F6B54B;background:radial-gradient(circle,rgba(246,181,75,.26),rgba(246,181,75,0) 68%);}
-.dr-cintre-grand svg{width:92px;height:92px;filter:drop-shadow(0 0 14px rgba(246,181,75,.65));}
-.dr-cintre-grand svg path{stroke-width:1.25;}
-.dr-cintre-grand.eteint{color:#9C8B76;background:none;}
-.dr-cintre-grand.eteint svg{filter:none;}
+.dr-cintre-grand img{width:112px;height:auto;filter:drop-shadow(0 0 14px rgba(246,181,75,.6));}
+/* PLUS DISPONIBLE : le même cintre, éteint. */
+.dr-cintre-grand.eteint{background:none;}
+.dr-cintre-grand.eteint img{filter:grayscale(1) brightness(.75);opacity:.55;}
 .dr-indispo{align-self:flex-start;margin-top:4px;padding:4px 10px;border-radius:999px;font-size:12.5px;font-weight:800;text-decoration:none;color:#FFB4A0;background:rgba(255,140,120,.1);border:1px solid rgba(255,140,120,.45);}
 .dr-envoyee{align-self:flex-start;margin-top:4px;padding:4px 10px;border-radius:999px;font-size:12.5px;font-weight:800;text-decoration:none;color:#9BE3B4;background:rgba(46,155,87,.12);border:1px solid rgba(46,155,87,.5);}
 .dr-attente{display:flex;align-items:center;justify-content:center;gap:9px;margin:14px 0 0;font-size:13.5px;font-weight:700;color:#E8D9C6;}
@@ -240,7 +242,7 @@ export function StylesDressing() {
 .dr-choix-x{position:absolute;top:12px;right:12px;width:38px;height:38px;}
 .dr-choix-tete{position:relative;width:150px;margin:6px auto 0;}
 .dr-choix-tete .piece{display:block;width:150px;height:150px;border-radius:20px;object-fit:cover;background:#F2ECE3;box-shadow:0 0 0 2px rgba(246,181,75,.6);}
-.dr-choix-tete .fant{position:absolute;right:-54px;bottom:-14px;width:84px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.45));}
+.dr-choix-tete .fant{position:absolute;right:-70px;bottom:-16px;width:108px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.45));}
 .dr-choix h3{margin:14px 0 0;text-align:center;font-size:18px;color:#fff;}
 .dr-choix-q{margin:4px 0 14px;text-align:center;font-size:14px;color:#BFAE98;}
 .dr-option{display:flex;align-items:center;gap:12px;width:100%;margin-top:10px;padding:13px 14px;border-radius:16px;cursor:pointer;text-align:left;color:#FFF4E6;

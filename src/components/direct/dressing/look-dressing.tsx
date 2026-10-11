@@ -294,7 +294,7 @@ export function LookAvecMonDressing({
             ) : (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="dr-fant" src="/direct/fantome-humeurs/fantome-excited.webp" alt="" style={{ marginTop: 10 }} />
+                <img className="dr-fant fondu" src="/direct/dressing/dressing-entre.webp" alt="" style={{ marginTop: 10, width: 176 }} />
                 <p className="dr-titre">Il me manque de quoi compléter la tenue</p>
                 <p className="dr-sous">
                   {manque.length
@@ -334,7 +334,7 @@ export function LookAvecMonDressing({
         {ici === "bonne" && (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="dr-fant" src="/direct/fantome-humeurs/fantome-celebrate.webp" alt="" style={{ marginTop: 4, width: 128 }} />
+            <img className="dr-fant" src="/direct/dressing/dressing-pouce.webp" alt="" style={{ marginTop: 4, width: 128 }} />
             <p className="dr-titre">Bonne nouvelle !</p>
             <p className="dr-sous" style={{ fontSize: 16 }}>
               {phraseCompatibles(p, compat.length).replace(/(\d+ pièces?)/, "§$1§")
@@ -379,7 +379,7 @@ export function LookAvecMonDressing({
         {ici === "selection" && (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="dr-fant" src="/direct/fantome-humeurs/fantome-pointing.webp" alt="" style={{ width: 120, marginTop: 2 }} />
+            <img className="dr-fant" src="/direct/dressing/dressing-penderie.webp" alt="" style={{ width: 156, marginTop: 2 }} />
             <p className="dr-titre">Créer un look avec votre dressing</p>
             <p className="dr-sous">Je choisis les meilleures pièces pour vous, ou vous pouvez les sélectionner.</p>
             <div className="dr-h2" style={{ marginTop: 16 }}>
@@ -426,7 +426,7 @@ export function LookAvecMonDressing({
         {ici === "generation" && (
           <div aria-live="polite">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="dr-fant" src="/direct/fantome-humeurs/fantome-searching.webp" alt="" style={{ marginTop: 40, width: 170 }} />
+            <img className="dr-fant" src="/direct/dressing/dressing-loupe.webp" alt="" style={{ marginTop: 40, width: 170 }} />
             <p className="dr-titre">Je crée votre look…</p>
             <p className="dr-sous">Cela prend quelques secondes.</p>
             <div className="dr-barre lente">
@@ -575,7 +575,7 @@ export function LookAvecMonDressing({
         {ici === "cote" && fait && (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="dr-fant" src="/direct/fantome-humeurs/fantome-gift.webp" alt="" style={{ marginTop: 10, width: 170 }} />
+            <img className="dr-fant" src="/direct/dressing/dressing-cadeau.webp" alt="" style={{ marginTop: 10, width: 170 }} />
             <p className="dr-titre">Demande envoyée !</p>
             <p className="dr-sous">
               {!magasin
