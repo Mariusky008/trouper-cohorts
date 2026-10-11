@@ -13837,6 +13837,7 @@ export function ApercuHabitant({
                           ouvrirSur="depot"
                           onSalon={envoyerLEssaiAuSalon}
                           onSortir={fermer}
+                          onQuitterEssai={fermer}
                         />
                       </div>
                     </>

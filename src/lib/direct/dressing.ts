@@ -310,12 +310,16 @@ export function tenueAccordee(couleurs: (CleCouleur | undefined)[]): boolean {
   return true;
 }
 
+/** UNE TENUE SE LIT DE HAUT EN BAS : la veste, le haut, le bas, les chaussures. */
+const ORDRE_TENUE: SorteVetement[] = ["dessus", "maille", "haut", "robe", "bas", "chaussures", "accessoire"];
+export const enOrdreDeTenue = (vs: Vetement[]) => [...vs].sort((a, b) => ORDRE_TENUE.indexOf(a.sorte) - ORDRE_TENUE.indexOf(b.sorte));
+
 /** Les pièces du dressing qui vont avec la pièce de la boutique — la maquette les compte. */
 export function compatibles(piece: PieceBoutique, dressing: Vetement[]): Vetement[] {
   const sorte = piece.sorte ?? sorteDuNom(piece.nom);
   if (!sorte) return [];
   const accueil = new Set(sortesQuiVontAvec(sorte));
-  return dressing.filter((v) => accueil.has(v.sorte) && couleursAccordees(piece.couleur ?? couleurDuNom(piece.nom), v.couleur));
+  return enOrdreDeTenue(dressing.filter((v) => accueil.has(v.sorte) && couleursAccordees(piece.couleur ?? couleurDuNom(piece.nom), v.couleur)));
 }
 
 // ─── LES LOOKS ─────────────────────────────────────────────────────────────
@@ -422,10 +426,11 @@ export function looksPossibles(piece: PieceBoutique, dressing: Vetement[], max =
         ? { titre: "Le look actuel", sous: "Casual et intemporel" }
         : (libre ?? { titre: `Autre idée ${looks.length + 1}`, sous: "Une autre façon de la porter" });
     titres.add(nom.titre);
+    const enOrdre = enOrdreDeTenue(c);
     looks.push({
       ...nom,
-      pieces: c,
-      raison: `${pronom(piece.nom)} avec ${enListe(c.map(votreVetement))}.`,
+      pieces: enOrdre,
+      raison: `${pronom(piece.nom)} avec ${enListe(enOrdre.map(votreVetement))}.`,
     });
   }
   return looks;
@@ -445,3 +450,32 @@ export function phraseCompatibles(piece: PieceBoutique, n: number): string {
 export const PIECES_MIN = 3;
 /** Au-delà, on demande de faire de la place : un dressing n'est pas une galerie. */
 export const PIECES_MAX = 60;
+
+/** « cette veste », « ce pull », « ces baskets » — pour « Réserver cette veste ». */
+export function cettePiece(nom: string): string {
+  const premier = nom.trim().split(/\s+/)[0]?.toLowerCase() ?? "";
+  if (!premier) return "cette pièce";
+  if (PLURIELS.test(premier) || /^(jeans|chinos)$/.test(premier)) return `ces ${premier}`;
+  return /^(veste|chemise|robe|jupe|surchemise|parka|doudoune|blouse|chemisier|marini[eè]re|combinaison|casquette|ceinture|écharpe|echarpe|montre|salopette)$/.test(premier)
+    ? `cette ${premier}`
+    : `ce ${premier}`;
+}
+
+const NOM_DE_PLACE: Record<string, string> = {
+  "haut|maille": "un haut",
+  haut: "un haut",
+  maille: "un pull",
+  bas: "un bas (jean, pantalon, jupe)",
+  chaussures: "des chaussures",
+  "dessus|maille": "une veste ou un pull",
+};
+
+/** Ce qui manque au dressing pour habiller cette pièce : « un bas », « des chaussures ». */
+export function placesManquantes(piece: PieceBoutique, dressing: Vetement[]): string[] {
+  const sorte = piece.sorte ?? sorteDuNom(piece.nom);
+  if (!sorte) return [];
+  const couleurPiece = piece.couleur ?? couleurDuNom(piece.nom);
+  return PLACES[sorte]
+    .filter((pl) => !pl.facultative && !dressing.some((v) => pl.sortes.includes(v.sorte) && couleursAccordees(couleurPiece, v.couleur)))
+    .map((pl) => NOM_DE_PLACE[pl.sortes.join("|")] ?? NOM_SORTE[pl.sortes[0]].toLowerCase());
+}

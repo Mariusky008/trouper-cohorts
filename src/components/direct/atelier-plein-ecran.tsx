@@ -118,6 +118,7 @@ export function AtelierPleinEcran({
             ouvrirSur={onEssaie ? "depot" : undefined}
             piecePrechoisie={piece}
             ouvrirSurGrille={grille}
+            onQuitterEssai={onFermer}
             onReserver={() => {
               onFermer();
               onReserver();

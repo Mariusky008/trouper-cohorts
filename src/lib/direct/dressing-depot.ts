@@ -49,6 +49,8 @@ const ETAT_VIDE: EtatDressing = { pret: false, ou: "appareil", pieces: [], repli
 let etat: EtatDressing = ETAT_VIDE;
 let ville: string | null = null;
 let chargement: Promise<void> | null = null;
+/** La ville que la page impose, quand son adresse ne la dit pas. Voir `imposerVilleDuDressing`. */
+let villeImposee: string | null | undefined;
 const abonnes = new Set<() => void>();
 
 const publier = (suite: Partial<EtatDressing>) => {
@@ -136,12 +138,25 @@ function villeDeLAdresse(): string | null {
 export function brancherDressing(v?: string | null): Promise<void> {
   if (v === undefined) {
     if (chargement) return chargement;
-    v = villeDeLAdresse();
+    v = villeImposee !== undefined ? villeImposee : villeDeLAdresse();
   }
   if (chargement && v === ville) return chargement;
   ville = v;
   chargement = charger();
   return chargement;
+}
+
+/**
+ * LA VILLE QU'UNE PAGE IMPOSE, SANS RIEN CHARGER. La page publique d'un vrai
+ * magasin n'a pas `/ville/<ville>` dans son adresse : elle dit ici la ville du
+ * commerce (ou `null` pour un commerce inventé). Le dressing n'est lu qu'au
+ * premier écran qui en a besoin — la plupart des visiteurs n'en ouvrent aucun.
+ */
+export function imposerVilleDuDressing(v: string | null): void {
+  if (villeImposee === v) return;
+  villeImposee = v;
+  // Un dépôt déjà branché ailleurs (une autre page de la même visite) se rebranchera au prochain écran.
+  if (chargement && v !== ville) chargement = null;
 }
 
 /** L'état du dressing, pour un écran. Il branche le dépôt s'il ne l'est pas encore. */

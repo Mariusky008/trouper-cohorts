@@ -22,6 +22,9 @@ const config: NextConfig = {
     // manque en production alors qu'il est là en local.
     "/admin/humain/site-internet/lettre/[slug]": ["./src/templates/**"],
     "/admin/humain/site-internet/lettres/[ville]": ["./src/templates/**"],
+    // LE LOOK AVEC MON DRESSING habille la personne de démonstration du magasin
+    // quand la cliente ne s'est pas photographiée : il la lit sur le disque.
+    "/api/direct/dressing/look": ["./public/direct/accueil/moi-mode-sans.jpg", "./public/direct/essai/mode-homme-avant.jpg"],
     // LA PHOTO CLIKME LIT LE FANTOME DE REFERENCE SUR LE DISQUE (voir
     // `lib/site-internet/couverture.ts`). Les deux routes qui la fabriquent
     // doivent l'emporter, sinon le rendu tombe en production seulement.

@@ -103,6 +103,12 @@ import { basculerPieceGardee } from "@/lib/direct/pieces-gardees";
 import { rayonDuNom } from "@/lib/direct/rayons";
 import { EcranGout } from "@/components/direct/gout-contenu";
 import { DecouverteSoiree, type OngletSoiree } from "@/components/direct/decouverte-soiree";
+import { ChoixEssai } from "@/components/direct/dressing/choix-essai";
+import { LookAvecMonDressing } from "@/components/direct/dressing/look-dressing";
+import { Porte } from "@/components/direct/dressing/porte";
+import { StylesDressing } from "@/components/direct/dressing/styles-dressing";
+import { couleurDuNom, sorteDuNom } from "@/lib/direct/dressing";
+import { demanderMiseDeCote } from "@/lib/direct/prevenir";
 
 /**
  * « CHEZ QUI », ÉCRIT COMME ON LE DIRAIT.
@@ -899,6 +905,7 @@ export function MurContenu({
   onSalon,
   onFavori,
   onSortir,
+  onQuitterEssai,
   favori,
   ouvrirSur,
   surprendre,
@@ -965,6 +972,14 @@ export function MurContenu({
    * commerçant, par exemple — on retombe sur l'ancien comportement.
    */
   onSortir?: () => void;
+  /**
+   * REFERMER LA FENÊTRE D'ESSAI ouverte depuis la vitrine. Le choix « Comment
+   * voulez-vous l'essayer ? » et le look avec mon dressing y ramènent quand on
+   * les a ouverts depuis la vitrine : « Continuer mes achats » revient dans la
+   * boutique, pas devant la photo d'un essai seul qu'on n'a pas choisi.
+   * Facultatif : sans lui, on retombe dans l'essai.
+   */
+  onQuitterEssai?: () => void;
   /** L'annonce est-elle déjà gardée ? Le bouton le dit plutôt que de le taire. */
   favori?: boolean;
   /**
@@ -1379,6 +1394,7 @@ export function MurContenu({
           piecePrechoisie={piecePrechoisie}
           rayonPrechoisi={rayonPrechoisi}
           ouvrirSurGrille={ouvrirSurGrille}
+          onQuitterEssai={onQuitterEssai}
           onFerme={() => setEcran("mur")}
           onPose={(f) => {
             /**
@@ -2200,6 +2216,7 @@ function EcranDepot({
   ouvrirSurGrille,
   onEssai,
   catalogue,
+  onQuitterEssai,
 }: {
   mur: TypeMur;
   clients: Fantome[];
@@ -2215,6 +2232,8 @@ function EcranDepot({
   onEssai?: (e: EssaiVu | null) => void;
   /** Il change quand on demande le catalogue depuis le mur. Voir `MurContenu`. */
   catalogue?: number;
+  /** Refermer la fenêtre d'essai. Voir `MurContenu`. */
+  onQuitterEssai?: () => void;
   dits: Record<string, string>;
   onDit: (f: Fantome) => void;
   onFerme: () => void;
@@ -2247,6 +2266,7 @@ function EcranDepot({
         restants={restants}
         onPose={onPose}
         onMur={onFerme}
+        onQuitter={onQuitterEssai}
         onSalon={onSalon}
         onFavori={onFavori}
         favori={favori}
@@ -2797,6 +2817,7 @@ function Essai({
   restants,
   onPose,
   onMur,
+  onQuitter,
   onSalon,
   onFavori,
   favori,
@@ -2824,6 +2845,8 @@ function Essai({
   onPose: (f: Fantome) => void;
   /** Le seul chemin vers le mur depuis l'essai. Voir `mots.mur`. */
   onMur: () => void;
+  /** Refermer la fenêtre d'essai. Voir `onQuitterEssai` dans `MurContenu`. */
+  onQuitter?: () => void;
   /** Voir `VersLeSalon` : absent là où il n'y a pas de salon. */
   onSalon?: (o: VersLeSalon) => void;
   /**
@@ -2913,6 +2936,35 @@ function Essai({
     }
   });
   const [piece, setPiece] = useState<Piece | null>(null);
+  /**
+   * ═══ AVEC MON DRESSING — LES BOUTIQUES DE VÊTEMENTS ════════════════════
+   *
+   * « Si un client va sur leur page commerçant sans aller sur le Direct, il
+   * faut bien qu'il ait aussi cette possibilité. » CET ESSAI EST LE MÊME DANS
+   * L'APPLICATION ET SUR LA PAGE DE LA BOUTIQUE : le brancher ici, c'est le
+   * brancher aux deux. Une boutique de vêtements se reconnaît à ses pièces,
+   * qui disent quelle partie du corps elles habillent (`couvre`).
+   */
+  // UN MAGASIN DE VÊTEMENTS, À SON MODÈLE — pas aux pièces : celles que le
+  // commerçant photographie lui-même n'ont pas de `couvre`, et un magasin qui
+  // ne montre que les siennes perdait « Avec mes vêtements ».
+  const pourDressing: "homme" | "femme" | null =
+    mur.essai && (mur.modele === "mode" || mur.modele === "mode-homme" || mur.essai.pieces.some((x) => x.couvre))
+      ? mur.modele === "mode-homme"
+        ? "homme"
+        : "femme"
+      : null;
+  /** Le dressing ne propose que les pièces dont il sait ce qu'elles sont (une veste, un jean…) : les autres vont à l'essai seul. */
+  const seCombine = (x: Piece) => Boolean(pourDressing && sorteDuNom(x.nom, x.couvre));
+  /* LA PIÈCE DÉSIGNÉE DANS LA VITRINE (le chemin de la page d'une boutique)
+     OUVRE LE CHOIX TOUT DE SUITE, avant la photo : « Avec mes vêtements »
+     n'en a pas besoin, et « En solo » reprend l'essai là où il en était. */
+  const prechoisie = pourDressing && piecePrechoisie ? (mur.essai?.pieces.find((x) => x.id === piecePrechoisie && !x.bientot && seCombine(x)) ?? null) : null;
+  const [choixPour, setChoixPour] = useState<Piece | null>(prechoisie);
+  const [choixVitrine, setChoixVitrine] = useState(Boolean(prechoisie));
+  const [lookPour, setLookPour] = useState<Piece | null>(null);
+  /** Le look vient du choix ouvert depuis la vitrine : le refermer ramène dans la boutique. */
+  const [lookVitrine, setLookVitrine] = useState(false);
   /**
    * ═══ QUI A CHOISI CETTE PIÈCE ? ═══════════════════════════════════════════
    *
@@ -4603,7 +4655,7 @@ function Essai({
               // drapeau « c'est ClikMe qui a choisi ». Deux copies d'une même
               // remise à zéro divergent toujours d'un champ ; il n'y en a plus
               // qu'une, et c'est `changerDeStyle`.
-              onClick={() => changerDeStyle(p)}
+              onClick={() => (seCombine(p) ? setChoixPour(p) : changerDeStyle(p))}
             >
               {/* UNE VIGNETTE DE VERNIS MONTRE LE VERNIS, PAS UNE PHOTO VOISINE.
                   « C'est les ongles que j'ai choisis, mais le résultat est
@@ -5882,6 +5934,17 @@ function Essai({
                 </i>
                 <span>{misDeCote ? "C’est mis de côté" : mots.reserver}</span>
               </button>
+              {/* ═══ AVEC MES VÊTEMENTS ═══════════════════════════════════════
+                  La pièce est sur soi : le geste suivant est de la voir avec ce
+                  qu'on a déjà. Le look partira de cette même photo. */}
+              {seCombine(piece) && (
+                <button type="button" className="mu-res-c" onClick={() => setLookPour(piece)}>
+                  <i aria-hidden="true">
+                    <Trace cle="vetement" />
+                  </i>
+                  <span>Avec mes vêtements</span>
+                </button>
+              )}
               {/* ═══ EN PARLER AVEC MES AMIS ═════════════════════════════════
 
                   « Change "Partager" pour "En parler avec mes amis", qui amène
@@ -6650,6 +6713,94 @@ function Essai({
       {/* LE RENDU EN PLEIN ÉCRAN. Fond noir, aucune commande sauf fermer : ce
           qu'on vient juger, c'est une couleur et une forme, et tout ce qui est
           autour ment sur les deux. */}
+      {/* ═══ « COMMENT VOULEZ-VOUS L'ESSAYER ? » PUIS LE LOOK ═══════════════
+          Montés sur le corps de la page : l'essai vit dans des conteneurs
+          transformés qui coinceraient un plein écran. Voir `dressing/porte`. */}
+      {choixPour && (
+        <Porte>
+          <ChoixEssai
+            piece={choixPour}
+            onFermer={() => {
+              if (choixVitrine && onQuitter) return onQuitter();
+              setChoixPour(null);
+              setChoixVitrine(false);
+            }}
+            onDressing={() => {
+              setLookPour(choixPour);
+              setLookVitrine(choixVitrine);
+              setChoixPour(null);
+              setChoixVitrine(false);
+            }}
+            onSolo={() => {
+              const p = choixPour;
+              const vitrine = choixVitrine;
+              setChoixPour(null);
+              setChoixVitrine(false);
+              // Depuis la vitrine, l'essai attend déjà la photo et posera la
+              // pièce désignée ensuite : on ne la pose pas deux fois.
+              if (!vitrine) changerDeStyle(p);
+            }}
+            onAmis={
+              onSalon
+                ? () => {
+                    onSalon({ quoi: choixPour.nom, prix: choixPour.prix, image: choixPour.photo, note: 0, depuis: "essai" });
+                    setChoixPour(null);
+                  }
+                : undefined
+            }
+          />
+          <StylesDressing />
+        </Porte>
+      )}
+      {lookPour && pourDressing && (
+        <Porte>
+          <LookAvecMonDressing
+            piece={{
+              id: lookPour.id,
+              nom: lookPour.nom,
+              photo: lookPour.photo,
+              prix: lookPour.prix,
+              sorte: sorteDuNom(lookPour.nom, lookPour.couvre),
+              couleur: couleurDuNom(lookPour.nom),
+            }}
+            lieu={mur.lieu}
+            pour={lookPour.pour ?? pourDressing}
+            photoPersonne={photo}
+            onFermer={() => (lookVitrine && onQuitter ? onQuitter() : setLookPour(null))}
+            onReserver={(look) =>
+              basculerPieceGardee({
+                carte: mur.cle,
+                lieu: mur.lieu,
+                piece: lookPour.id,
+                nom: lookPour.nom,
+                prix: lookPour.prix,
+                image: look.image ?? lookPour.photo,
+                rendu: Boolean(look.image),
+                note: 0,
+              })
+            }
+            /* PRÉVENIR LE MAGASIN : seulement avec son vrai numéro. Le numéro de
+               fiction de la démonstration ne mène à personne. */
+            onPrevenir={
+              !(mur.telFiction ?? !mur.telephone) && mur.telephone
+                ? () => {
+                    window.open(demanderMiseDeCote({ telephone: mur.telephone as string, quoi: lookPour.nom, prix: lookPour.prix }).whatsapp, "_blank", "noopener");
+                  }
+                : undefined
+            }
+            onSalon={
+              onSalon
+                ? (look) => {
+                    onSalon({ quoi: lookPour.nom, prix: lookPour.prix, image: look.image ?? lookPour.photo, note: 0, depuis: "essai" });
+                    setLookPour(null);
+                  }
+                : undefined
+            }
+          />
+          <StylesDressing />
+        </Porte>
+      )}
+
       {loupe && piece && (
         <div
           className="mu-loupe"

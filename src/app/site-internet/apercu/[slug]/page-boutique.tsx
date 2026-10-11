@@ -48,6 +48,7 @@ import { gesteDuJour } from "@/lib/direct/geste-du-jour";
 import { murDeLaCarte } from "@/lib/direct/fantomes";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { SCRIPT_HEURE } from "@/lib/direct/lumiere-du-moment";
+import { villeSlug } from "@/lib/direct/ville";
 
 export type PageBoutiqueProps = {
   slug: string;
@@ -268,6 +269,10 @@ export function PageBoutique(p: PageBoutiqueProps) {
         saPage={modeDemo}
         prenomChef={p.prenomChef}
         pied={aOnglets ? garder : undefined}
+        /* LE DRESSING DE SA MAISON, SUR LA PAGE DU MAGASIN : le visiteur venu
+           sans passer par l'application retrouve ses vêtements, et ce qu'il
+           ajoute ici rejoint Ma Maison. Un commerce inventé n'y touche pas. */
+        villeDuDressing={invente ? null : villeSlug(carte.ville) || null}
       />
       {p.couverture && (
         <VeilleCouverture

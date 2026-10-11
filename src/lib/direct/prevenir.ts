@@ -212,3 +212,23 @@ export function demanderRendezVous(a: {
     texte,
   };
 }
+
+/**
+ * ═══ « POUVEZ-VOUS ME LA METTRE DE CÔTÉ ? » — depuis un look avec mon dressing ═══
+ *
+ * La personne a vu la pièce avec SES vêtements et l'a mise de côté dans
+ * ClikMe : le message le dit au magasin, avec la pièce et son prix, pour qu'il
+ * sache exactement quoi garder. On ne fixe pas d'heure — c'est lui qui répond.
+ */
+export function demanderMiseDeCote(a: { telephone: string; quoi: string; prix?: string; prenom?: string }): CommentPrevenir {
+  const signature = a.prenom ? ` — ${a.prenom}` : "";
+  const texte =
+    `Bonjour, pourriez-vous me mettre de côté « ${a.quoi} »${a.prix ? ` (${a.prix})` : ""} ? ` +
+    `Je l'ai vue sur ClikMe, elle va avec ce que j'ai déjà. Je passe la chercher.${signature}`;
+  const num = international(a.telephone);
+  return {
+    whatsapp: `https://wa.me/${num}?text=${encodeURIComponent(texte)}`,
+    appel: `tel:+${num}`,
+    texte,
+  };
+}

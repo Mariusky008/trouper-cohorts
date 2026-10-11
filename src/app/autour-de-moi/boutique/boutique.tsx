@@ -114,6 +114,7 @@ import {
 import { AnneauMetier, PictoMetier } from "@/components/direct/picto-metier";
 import { BoutiqueTable } from "./boutique-table";
 import { aLaPageAOnglets } from "@/lib/direct/page-a-onglets";
+import { imposerVilleDuDressing } from "@/lib/direct/dressing-depot";
 
 /* LE SECOND ESSAI A QUITTÉ LE NAVIGATEUR. Il réécrivait l'adresse d'une photo
    Google après un premier échec ; c'est désormais le serveur qui essaie les
@@ -383,9 +384,22 @@ export function Boutique(p: {
    * Il remplace le sélecteur : on est chez lui, pas dans la maquette.
    */
   depart?: string;
+  /**
+   * OÙ VIT LE DRESSING DU VISITEUR. La page publique d'un vrai commerçant n'a
+   * pas `/ville/<ville>` dans son adresse : elle donne la ville du commerce,
+   * pour que les vêtements rangés dans Ma Maison soient là aussi (et qu'une
+   * pièce ajoutée ici rejoigne Ma Maison). `null` : un commerce inventé, le
+   * dressing reste sur le téléphone. Absent : l'adresse décide. Rien n'est lu
+   * avant qu'un écran du dressing s'ouvre. Voir `imposerVilleDuDressing`.
+   */
+  villeDuDressing?: string | null;
 }) {
   // SA VITRINE, POSÉE DEPUIS SON COMPTOIR DE DÉMONSTRATION, rejoint son catalogue.
   const vitrines = useSyncExternalStore(abonnerVitrines, chargerVitrines, () => VITRINES_VIDES);
+  const villeDuDressing = p.villeDuDressing;
+  useEffect(() => {
+    if (villeDuDressing !== undefined) imposerVilleDuDressing(villeDuDressing);
+  }, [villeDuDressing]);
   const cartes = useMemo(() => toutesLesCartes().map((x) => avecSaVitrine(x, vitrines)), [vitrines]);
   const [id, setId] = useState(p.commerce?.id ?? "emporter");
   const venu = p.depart ? cartes.find((x) => x.id === p.depart) : undefined;
