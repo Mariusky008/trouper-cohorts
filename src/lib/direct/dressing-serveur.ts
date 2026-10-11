@@ -62,6 +62,8 @@ export async function listerDressing(supabase: Supabase, habitant: string): Prom
       .select("id, sorte, donnees, cree_le, maj_le")
       .eq("habitant", habitant)
       .eq("piece", "dressing")
+      // LES VÊTEMENTS SEULS : les demandes de mise de côté vivent dans la même pièce (`mise-de-cote.ts`).
+      .in("sorte", [...SORTES_VETEMENT])
       .order("cree_le", { ascending: false })
       .limit(PIECES_MAX);
     if (error) return null;
@@ -90,7 +92,7 @@ export async function ajouterAuDressing(
   fiche: Fiche,
 ): Promise<Vetement | { erreur: "plein" | "image" | "base" }> {
   try {
-    const { data: deja, error: errCompte } = await supabase.from("human_maison_elements").select("id").eq("habitant", habitant).eq("piece", "dressing");
+    const { data: deja, error: errCompte } = await supabase.from("human_maison_elements").select("id").eq("habitant", habitant).eq("piece", "dressing").in("sorte", [...SORTES_VETEMENT]);
     if (errCompte) return { erreur: "base" };
     if (Array.isArray(deja) && deja.length >= PIECES_MAX) return { erreur: "plein" };
     let webp: Buffer;
@@ -128,6 +130,7 @@ export async function modifierDansDressing(supabase: Supabase, habitant: string,
       .eq("id", id)
       .eq("habitant", habitant)
       .eq("piece", "dressing")
+      .in("sorte", [...SORTES_VETEMENT])
       .select("id, sorte, donnees, cree_le, maj_le");
     const r = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | null;
     return error || !r ? null : versVetement(r);
@@ -143,7 +146,7 @@ export async function retirerDuDressing(supabase: Supabase, habitant: string, id
     const { data } = await supabase.from("human_maison_elements").select("photo").eq("id", id).eq("habitant", habitant).eq("piece", "dressing").maybeSingle();
     const chemin = str((data as Record<string, unknown> | null)?.photo);
     if (chemin) await supabase.storage.from(SEAU_MAISON).remove([chemin]);
-    const { error } = await supabase.from("human_maison_elements").delete().eq("id", id).eq("habitant", habitant).eq("piece", "dressing");
+    const { error } = await supabase.from("human_maison_elements").delete().eq("id", id).eq("habitant", habitant).eq("piece", "dressing").in("sorte", [...SORTES_VETEMENT]);
     return !error;
   } catch {
     return false;

@@ -119,6 +119,36 @@ export async function prevenir(
   }
 }
 
+/**
+ * À UNE SEULE PERSONNE, HORS DE TOUT SALON — la réponse d'un magasin à SA
+ * demande de mise de côté (`mise-de-cote.ts`). Elle n'est pas comptée dans les
+ * plafonds des salons : elle arrive une fois par demande, et c'est elle qu'on
+ * attend.
+ */
+export async function prevenirUnHabitant(supabase: Supabase, habitant: string, n: Notification): Promise<number> {
+  if (!vapid() || !habitant) return 0;
+  try {
+    const { data: abos, error } = await supabase.from("human_push_abonnements").select("endpoint, abonnement").eq("habitant", habitant);
+    if (error || !abos?.length) return 0;
+    const charge = JSON.stringify({ title: n.titre, body: n.corps, url: n.url, tag: n.tag });
+    let envoyes = 0;
+    await Promise.all(
+      (abos as Ligne[]).map(async (a) => {
+        try {
+          await webpush.sendNotification(a.abonnement as webpush.PushSubscription, charge, { TTL: 3600, urgency: "high", timeout: 5000 });
+          envoyes++;
+        } catch (e) {
+          const code = (e as { statusCode?: number })?.statusCode;
+          if (code === 404 || code === 410) await supabase.from("human_push_abonnements").delete().eq("endpoint", String(a.endpoint));
+        }
+      }),
+    );
+    return envoyes;
+  } catch {
+    return 0;
+  }
+}
+
 // ─── CE QUI SONNE, GESTE PAR GESTE ─────────────────────────────────────────
 
 type GesteBrut = { type?: string; duel?: string; cote?: string; d?: { id?: string; a?: { nom?: string }; b?: { nom?: string } } };

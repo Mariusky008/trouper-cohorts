@@ -115,6 +115,7 @@ import { AnneauMetier, PictoMetier } from "@/components/direct/picto-metier";
 import { BoutiqueTable } from "./boutique-table";
 import { aLaPageAOnglets } from "@/lib/direct/page-a-onglets";
 import { imposerVilleDuDressing } from "@/lib/direct/dressing-depot";
+import { ReponseDuMagasin } from "@/components/direct/dressing/confirmation-magasin";
 
 /* LE SECOND ESSAI A QUITTÉ LE NAVIGATEUR. Il réécrivait l'adresse d'une photo
    Google après un premier échec ; c'est désormais le serveur qui essaie les
@@ -407,29 +408,36 @@ export function Boutique(p: {
   const c = commerce ?? cartes.find((x) => x.id === id) ?? cartes[0];
   if (aLaPageAOnglets(c.branche)) {
     return (
-      <BoutiqueTable
-        carte={c}
-        retourHref={p.retourHref === undefined ? "/autour-de-moi" : p.retourHref}
-        saPage={p.saPage ?? false}
-        piedMaquette={p.piedMaquette ?? true}
-        /* LE SÉLECTEUR N'EXISTE QUE DANS LA MAQUETTE — sur la page d'un vrai
-           commerçant, une rangée de concurrents sous son nom serait la pire
-           chose qu'on puisse lui faire. */
-        autres={commerce ? undefined : { cartes, choisir: setId }}
-        prenomChef={p.prenomChef}
-        pied={p.pied}
-      />
+      <>
+        {/* LA RÉPONSE D'UN MAGASIN À UNE MISE DE CÔTÉ — sur sa page aussi, pour qui n'ouvre pas l'application. */}
+        <ReponseDuMagasin />
+        <BoutiqueTable
+          carte={c}
+          retourHref={p.retourHref === undefined ? "/autour-de-moi" : p.retourHref}
+          saPage={p.saPage ?? false}
+          piedMaquette={p.piedMaquette ?? true}
+          /* LE SÉLECTEUR N'EXISTE QUE DANS LA MAQUETTE — sur la page d'un vrai
+             commerçant, une rangée de concurrents sous son nom serait la pire
+             chose qu'on puisse lui faire. */
+          autres={commerce ? undefined : { cartes, choisir: setId }}
+          prenomChef={p.prenomChef}
+          pied={p.pied}
+        />
+      </>
     );
   }
   return (
-    <BoutiqueLongue
-      commerce={commerce}
-      retourHref={p.retourHref}
-      piedMaquette={p.piedMaquette}
-      saPage={p.saPage}
-      idControle={id}
-      onChoisir={setId}
-    />
+    <>
+      <ReponseDuMagasin />
+      <BoutiqueLongue
+        commerce={commerce}
+        retourHref={p.retourHref}
+        piedMaquette={p.piedMaquette}
+        saPage={p.saPage}
+        idControle={id}
+        onChoisir={setId}
+      />
+    </>
   );
 }
 

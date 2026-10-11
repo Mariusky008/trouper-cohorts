@@ -220,11 +220,13 @@ export function demanderRendezVous(a: {
  * ClikMe : le message le dit au magasin, avec la pièce et son prix, pour qu'il
  * sache exactement quoi garder. On ne fixe pas d'heure — c'est lui qui répond.
  */
-export function demanderMiseDeCote(a: { telephone: string; quoi: string; prix?: string; prenom?: string }): CommentPrevenir {
+export function demanderMiseDeCote(a: { telephone: string; quoi: string; prix?: string; prenom?: string; lien?: string }): CommentPrevenir {
   const signature = a.prenom ? ` — ${a.prenom}` : "";
+  // LE LIEN OÙ IL RÉPOND D'UN APPUI — sans lui, la réponse reste dans WhatsApp et ClikMe ne peut rien afficher.
+  const reponse = a.lien ? `\n\nPour me répondre d'un appui (c'est mis de côté / plus disponible) : ${a.lien}` : "";
   const texte =
     `Bonjour, pourriez-vous me mettre de côté « ${a.quoi} »${a.prix ? ` (${a.prix})` : ""} ? ` +
-    `Je l'ai vue sur ClikMe, elle va avec ce que j'ai déjà. Je passe la chercher.${signature}`;
+    `Je l'ai vue sur ClikMe, elle va avec ce que j'ai déjà. Je passe la chercher.${signature}${reponse}`;
   const num = international(a.telephone);
   return {
     whatsapp: `https://wa.me/${num}?text=${encodeURIComponent(texte)}`,

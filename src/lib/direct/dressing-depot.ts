@@ -159,6 +159,9 @@ export function imposerVilleDuDressing(v: string | null): void {
   if (chargement && v !== ville) chargement = null;
 }
 
+/** La vraie ville où vit le dressing en ce moment (`null` : démonstration, ou pas encore branché). */
+export const villeDuDepot = (): string | null => ville ?? (villeImposee !== undefined ? villeImposee : villeDeLAdresse());
+
 /** L'état du dressing, pour un écran. Il branche le dépôt s'il ne l'est pas encore. */
 export function useDressing(v?: string | null): EtatDressing {
   const e = useSyncExternalStore(abonnerDressing, lireDressing, dressingServeur);

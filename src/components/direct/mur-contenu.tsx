@@ -104,11 +104,10 @@ import { rayonDuNom } from "@/lib/direct/rayons";
 import { EcranGout } from "@/components/direct/gout-contenu";
 import { DecouverteSoiree, type OngletSoiree } from "@/components/direct/decouverte-soiree";
 import { ChoixEssai } from "@/components/direct/dressing/choix-essai";
-import { LookAvecMonDressing } from "@/components/direct/dressing/look-dressing";
+import { LookAvecMonDressing, pageDuMagasinIci } from "@/components/direct/dressing/look-dressing";
 import { Porte } from "@/components/direct/dressing/porte";
 import { StylesDressing } from "@/components/direct/dressing/styles-dressing";
 import { couleurDuNom, sorteDuNom } from "@/lib/direct/dressing";
-import { demanderMiseDeCote } from "@/lib/direct/prevenir";
 
 /**
  * « CHEZ QUI », ÉCRIT COMME ON LE DIRAIT.
@@ -6780,13 +6779,12 @@ function Essai({
                 note: 0,
               })
             }
-            /* PRÉVENIR LE MAGASIN : seulement avec son vrai numéro. Le numéro de
-               fiction de la démonstration ne mène à personne. */
-            onPrevenir={
+            /* LE VRAI MAGASIN : seulement avec son vrai numéro. Le numéro de
+               fiction de la démonstration ne mène à personne — la demande ne
+               part pas, et la confirmation est jouée (et dite). */
+            magasin={
               !(mur.telFiction ?? !mur.telephone) && mur.telephone
-                ? () => {
-                    window.open(demanderMiseDeCote({ telephone: mur.telephone as string, quoi: lookPour.nom, prix: lookPour.prix }).whatsapp, "_blank", "noopener");
-                  }
+                ? { telephone: mur.telephone, carte: mur.cle, page: pageDuMagasinIci(mur.cle) }
                 : undefined
             }
             onSalon={

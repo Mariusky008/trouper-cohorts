@@ -234,6 +234,7 @@ import { PictoMetier } from "@/components/direct/picto-metier";
 // 👻 LE MUR MONTE ICI, sur l'annonce, et ne l'emmene nulle part. Voir le
 // commentaire du bouton dans la barre.
 import { MurContenu } from "@/components/direct/mur-contenu";
+import { ReponseDuMagasin } from "@/components/direct/dressing/confirmation-magasin";
 import { RelookingContenu } from "@/components/direct/relooking-contenu";
 import { JourneeContenu } from "@/components/direct/journee-contenu";
 import {
@@ -14009,6 +14010,8 @@ export function ApercuHabitant({
           />
           <PanneauPlace />
           <AnnonceInstallation />
+          {/* LA RÉPONSE D'UN MAGASIN À UNE MISE DE CÔTÉ, ARRIVÉE ENTRE-TEMPS — voir `dressing/confirmation-magasin`. */}
+          <ReponseDuMagasin />
           {/* LE TUTO D'ARRIVÉE : au premier passage dans Le Direct, par-dessus l'annonce. */}
           <Bienvenue
             ouvert={bienvenueOuverte}

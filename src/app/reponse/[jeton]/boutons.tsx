@@ -10,11 +10,17 @@ export function BoutonsReponse({
   initial,
   action,
   client,
+  adresse = "/api/direct/reponse-commerce",
+  ou = "dans son salon",
 }: {
   jeton: string;
   initial?: "confirme" | "refuse";
   action: string;
   client: string;
+  /** Où la réponse part — celle d'une mise de côté a sa propre route. */
+  adresse?: string;
+  /** Où le client la voit : « dans son salon », « dans ClikMe »… */
+  ou?: string;
 }) {
   const [etat, setEtat] = useState(initial);
   const [occupe, setOccupe] = useState(false);
@@ -25,7 +31,7 @@ export function BoutonsReponse({
     setOccupe(true);
     setSouci("");
     try {
-      const r = await fetch("/api/direct/reponse-commerce", {
+      const r = await fetch(adresse, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ jeton, etat: e }),
@@ -45,7 +51,7 @@ export function BoutonsReponse({
       <style>{STYLE}</style>
       {etat && (
         <p className={`rcb-fait ${etat}`} role="status">
-          {etat === "confirme" ? `✅ ${oui}. ${client || "Le client"} le voit dans son salon.` : `Noté : ${non.toLowerCase()}. ${client || "Le client"} est prévenu.`}
+          {etat === "confirme" ? `✅ ${oui}. ${client || "Le client"} le voit ${ou}.` : `Noté : ${non.toLowerCase()}. ${client || "Le client"} est prévenu.`}
         </p>
       )}
       <div className="rcb-b">

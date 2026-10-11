@@ -14,7 +14,10 @@
  *   · « Autres idées de looks » — même veste, d'autres façons de la porter.
  *   · « Détails du look » — chaque pièce, et d'où elle vient. « Réserver
  *     cette veste ».
- *   · « C'est mis de côté ! » — et ce qu'on peut faire ensuite.
+ *   · « Demande envoyée » — le message part sur le WhatsApp du magasin, avec
+ *     un lien où il répond d'un appui.
+ *   · « Le magasin confirme ! » — seulement quand il a appuyé (écran 19, voir
+ *     `confirmation-magasin.tsx` et `lib/direct/mise-de-cote.ts`).
  *
  * ═══ CE QUI N'EST PAS ENCORE LÀ, ET L'ÉCRAN LE DIT ═════════════════════════
  *
@@ -23,12 +26,13 @@
  *   · LE MOTEUR D'IMAGE N'EST PAS BRANCHÉ, OU A ÉCHOUÉ → les pièces sont
  *     montrées ensemble, à plat, avec « Aperçu des pièces ensemble ». On ne
  *     fait pas passer un collage pour un rendu porté.
- *   · « LE MAGASIN CONFIRME » (écran 19) demande que le commerçant reçoive la
- *     demande dans son espace : mettre de côté range la pièce dans les pièces
- *     gardées et propose de prévenir le magasin, comme l'essai le fait déjà.
+ *   · PAS DE « MIS DE CÔTÉ » TANT QUE LE MAGASIN N'A RIEN DIT. Sans Maison sur
+ *     le serveur, le message part sans lien : il répondra sur WhatsApp, et
+ *     l'écran le dit. Dans la démonstration (numéro de fiction), personne ne
+ *     peut appuyer : la confirmation est jouée, et l'écran le dit aussi.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   NOM_SORTE,
   cettePiece,
@@ -44,13 +48,31 @@ import {
   type PieceBoutique,
   type Vetement,
 } from "@/lib/direct/dressing";
-import { exemplePossible, photoEnDataUrl, remplirAvecLExemple, useDressing } from "@/lib/direct/dressing-depot";
+import { exemplePossible, photoEnDataUrl, remplirAvecLExemple, useDressing, villeDuDepot } from "@/lib/direct/dressing-depot";
+import { demanderMiseDeCote } from "@/lib/direct/prevenir";
+import { marquerVueCote, nePlusSuivreIci, noterEnvoiCote, preparerLienCote, relireMisesDeCote, suivreIci, useMisesDeCote, type LienCote } from "@/lib/direct/mises-de-cote";
+import { EcranMagasinConfirme, votrePiece } from "./confirmation-magasin";
 import { AjoutPiece } from "./ajout-piece";
 import { Dessin, DESSINS_DRESSING } from "./dessins-dressing";
 import { Porte } from "./porte";
 import { StylesDressing } from "./styles-dressing";
 
-type Etape = "accueil" | "bonne" | "selection" | "generation" | "resultat" | "autres" | "details" | "cote";
+type Etape = "accueil" | "bonne" | "selection" | "generation" | "resultat" | "autres" | "details" | "cote" | "confirme";
+
+/** Le magasin, quand c'est un vrai : son numéro (jamais celui de la démonstration), sa carte, sa page. */
+export type MagasinDuLook = { telephone: string; carte: string; page?: string };
+
+/**
+ * LA PAGE DU MAGASIN, VUE D'ICI — pour « Voir les infos du magasin » quand sa
+ * réponse arrive. Sur sa page publique : cette page. Dans l'application d'une
+ * vraie ville : sa page publique. Dans la démonstration : sa boutique de démo.
+ */
+export function pageDuMagasinIci(carte: string): string | undefined {
+  if (typeof window === "undefined" || !carte) return undefined;
+  const ici = window.location.pathname;
+  if (/^\/site-internet\/apercu\/[^/]+$/.test(ici)) return ici;
+  return villeDuDepot() ? `/site-internet/apercu/${encodeURIComponent(carte)}` : `/autour-de-moi/boutique?c=${encodeURIComponent(carte)}`;
+}
 
 export type LookFait = { image: string | null; pieces: Vetement[]; titre: string };
 
@@ -67,7 +89,7 @@ export function LookAvecMonDressing({
   photoPersonne,
   onFermer,
   onReserver,
-  onPrevenir,
+  magasin,
   onSalon,
 }: {
   piece: PieceBoutique;
@@ -79,8 +101,12 @@ export function LookAvecMonDressing({
   onFermer: () => void;
   /** Mettre la pièce de côté : la page hôte la range dans les pièces gardées. */
   onReserver: (look: LookFait) => void;
-  /** Prévenir le magasin (l'étape « agir » de l'essai). Absent : le bouton ne s'affiche pas. */
-  onPrevenir?: () => void;
+  /**
+   * LE VRAI MAGASIN. Présent : « Réserver » envoie la demande sur son WhatsApp
+   * (avec le lien où il répond quand la Maison est sur le serveur). Absent
+   * (démonstration) : rien ne part, et la confirmation est jouée.
+   */
+  magasin?: MagasinDuLook;
   /** Ouvrir un salon avec le look. Absent là où il n'y a pas de salon. */
   onSalon?: (look: LookFait) => void;
 }) {
@@ -99,6 +125,13 @@ export function LookAvecMonDressing({
   const [erreur, setErreur] = useState<string | null>(null);
   const [lookVu, setLookVu] = useState(0);
   const [exemple, setExemple] = useState(false);
+  /** Le lien de réponse, préparé dès les détails (WhatsApp doit s'ouvrir dans le geste même). */
+  const [lien, setLien] = useState<LienCote | null>(null);
+  /** La demande partie avec ce lien — c'est elle qu'on guette. */
+  const [envoye, setEnvoye] = useState<LienCote | null>(null);
+  const [voirDemande, setVoirDemande] = useState(false);
+  const cotes = useMisesDeCote(Boolean(envoye));
+  const suivie = envoye ? cotes.demandes.find((d) => d.r === envoye.r) : undefined;
 
   /* L'ÉTAPE DE DÉPART SE DÉDUIT DU DRESSING, tant que la personne n'a rien
      touché : vide ou incomplet → l'accueil ; sinon → « Bonne nouvelle ». Elle
@@ -160,6 +193,59 @@ export function LookAvecMonDressing({
   };
 
   const accordee = tenueAccordee([p.couleur, ...choisies.map((v) => v.couleur)]);
+
+  /* LE LIEN SE PRÉPARE DÈS QUE LE LOOK EST LÀ, bien avant « Réserver » : il ne
+     range rien côté serveur, et WhatsApp doit s'ouvrir dans le geste même.
+     Seulement pour un vrai magasin, et quand la Maison est sur le serveur
+     (sinon personne à qui rendre la réponse). Les dépendances sont des valeurs,
+     pas l'objet `magasin`, refait à chaque rendu de la page hôte. */
+  const telMagasin = magasin?.telephone;
+  const carteMagasin = magasin?.carte;
+  const pageMagasin = magasin?.page;
+  const presDeReserver = ici === "resultat" || ici === "autres" || ici === "details";
+  useEffect(() => {
+    if (!presDeReserver || !telMagasin || e.ou !== "serveur" || lien) return;
+    let vivant = true;
+    void preparerLienCote({ quoi: p.nom, prix: p.prix, photo: p.photo, magasin: lieu, carte: carteMagasin, page: pageMagasin }).then((l) => vivant && setLien(l));
+    return () => {
+      vivant = false;
+    };
+  }, [presDeReserver, telMagasin, carteMagasin, pageMagasin, e.ou, lien, p.nom, p.prix, p.photo, lieu]);
+
+  /* LA DÉMONSTRATION : personne ne peut appuyer, la réponse est jouée — et dite. */
+  useEffect(() => {
+    if (ici !== "cote" || magasin) return;
+    const t = window.setTimeout(() => setEtape("confirme"), 3500);
+    return () => window.clearTimeout(t);
+  }, [ici, magasin]);
+
+  /* LA VRAIE RÉPONSE ARRIVE PENDANT QU'ON EST LÀ : l'écran 19, ici même. */
+  useEffect(() => {
+    if (ici === "cote" && suivie && suivie.etat !== "envoyee") {
+      setEtape("confirme");
+      marquerVueCote(suivie.r);
+    }
+  }, [ici, suivie]);
+
+  /* EN PARTANT SANS RÉPONSE, ON LA LAISSE À LA FENÊTRE GLOBALE (`ReponseDuMagasin`). */
+  useEffect(() => () => {
+    if (envoye) nePlusSuivreIci(envoye.r);
+  }, [envoye]);
+
+  const reserver = (f: LookFait) => {
+    onReserver(f);
+    if (magasin) {
+      // WHATSAPP S'OUVRE DANS LE GESTE — avec le lien s'il est prêt, sans lui sinon.
+      const message = demanderMiseDeCote({ telephone: magasin.telephone, quoi: p.nom, prix: p.prix, lien: lien?.lien });
+      window.open(message.whatsapp, "_blank", "noopener");
+      if (lien) {
+        suivreIci(lien.r);
+        setEnvoye(lien);
+        noterEnvoiCote(lien, { quoi: p.nom, prix: p.prix, photo: p.photo, magasin: lieu, carte: magasin.carte, page: magasin.page });
+      }
+    }
+    setEtape("cote");
+  };
 
   return (
     <div className="dr" role="dialog" aria-modal="true" aria-label="Un look avec mon dressing">
@@ -477,10 +563,7 @@ export function LookAvecMonDressing({
               <button
                 type="button"
                 className="dr-cta"
-                onClick={() => {
-                  onReserver(fait);
-                  setEtape("cote");
-                }}
+                onClick={() => reserver(fait)}
               >
                 <Dessin d={DESSINS_DRESSING.sac} /> Réserver {cettePiece(p.nom)}
               </button>
@@ -492,10 +575,13 @@ export function LookAvecMonDressing({
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className="dr-fant" src="/direct/fantome-humeurs/fantome-gift.webp" alt="" style={{ marginTop: 10, width: 170 }} />
-            <p className="dr-titre">C’est mis de côté !</p>
+            <p className="dr-titre">Demande envoyée !</p>
             <p className="dr-sous">
-              {cettePiece(p.nom).charAt(0).toUpperCase() + cettePiece(p.nom).slice(1)} vous attend dans vos pièces gardées, avec votre look.
-              {onPrevenir ? " Prévenez le magasin pour qu’il vous la garde." : ""}
+              {!magasin
+                ? "Dans la démonstration, le magasin vous répond dans un instant…"
+                : envoye
+                  ? `${lieu} la reçoit sur WhatsApp. Dès qu’il vous met ${votrePiece(p.nom).dit} de côté, vous le voyez ici.`
+                  : `${lieu} la reçoit sur WhatsApp, et vous répondra là-bas.`}
             </p>
             <div className="dr-ligne carte">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -503,18 +589,35 @@ export function LookAvecMonDressing({
               <span>
                 <b>{p.nom}</b>
                 {p.prix && <strong>{p.prix}</strong>}
-                <s className="dr-gardee">✓ Mise de côté</s>
+                <s className="dr-envoyee">✓ Demande envoyée</s>
               </span>
             </div>
+            {voirDemande && envoye && (
+              <p className="dr-attente" role="status">
+                <i aria-hidden="true" /> En attente de la réponse de {lieu}
+              </p>
+            )}
             <div className="dr-pile">
-              {onPrevenir && (
-                <button type="button" className="dr-cta" onClick={onPrevenir}>
-                  <Dessin d={DESSINS_DRESSING.cadeau} /> Prévenir le magasin
+              {envoye && (
+                <button
+                  type="button"
+                  className="dr-cta"
+                  onClick={() => {
+                    setVoirDemande(true);
+                    void relireMisesDeCote();
+                  }}
+                >
+                  <Dessin d={DESSINS_DRESSING.cintre} /> Voir ma demande
                 </button>
               )}
               {onSalon && (
-                <button type="button" className={onPrevenir ? "dr-bis" : "dr-cta"} onClick={() => onSalon(fait)}>
+                <button type="button" className={envoye ? "dr-bis" : "dr-cta"} onClick={() => onSalon(fait)}>
                   <Dessin d={DESSINS_DRESSING.partager} /> Partager dans un salon
+                </button>
+              )}
+              {magasin && (
+                <button type="button" className="dr-lien" onClick={() => window.open(demanderMiseDeCote({ telephone: magasin.telephone, quoi: p.nom, prix: p.prix, lien: envoye?.lien }).whatsapp, "_blank", "noopener")}>
+                  Le message n’est pas parti ? Le renvoyer
                 </button>
               )}
               <button type="button" className="dr-lien" onClick={onFermer}>
@@ -522,6 +625,16 @@ export function LookAvecMonDressing({
               </button>
             </div>
           </>
+        )}
+
+        {ici === "confirme" && fait && (
+          <EcranMagasinConfirme
+            demande={{ quoi: p.nom, prix: p.prix, photo: p.photo, magasin: lieu, page: magasin?.page, etat: suivie?.etat === "refusee" ? "refusee" : "confirmee" }}
+            image={fait.image}
+            demo={!magasin}
+            onSalon={onSalon ? () => onSalon(fait) : undefined}
+            onFermer={onFermer}
+          />
         )}
       </div>
 
