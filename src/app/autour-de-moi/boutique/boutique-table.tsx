@@ -95,7 +95,8 @@ import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { StylesBoutiqueTable } from "./styles-boutique-table";
 import { compter } from "@/lib/direct/compter";
 import { aLaMaison } from "@/lib/site-internet/bienvenue";
-import { EssaiDuLieu } from "./essai-du-lieu";
+import { EssaiDuLieu, oublierLEssaiDeDemo } from "./essai-du-lieu";
+import { piecesDeLaVitrine } from "@/lib/site-internet/essai-vitrine-donnees";
 import { SalonExemple } from "./salon-exemple";
 import { ChoixDuLibraire } from "./choix-du-libraire";
 import { ExperienceTable, estUnRestaurant } from "./experience-table";
@@ -1178,15 +1179,28 @@ export function BoutiqueTable({
        à opposer, et la carte disparaissait de sa page — exactement là où elle
        la cherche. Elle voit alors le duel avec des pièces de démonstration, et
        la page le dit (« Exemple ») : rien n'y est présenté comme à elle. */
-  const sesPieces = c.cataloguePropose ? 0 : (c.catalogue ?? []).filter((x) => x.photo && x.nom).length;
+  /* SES PIÈCES REPÉRÉES SUR SES PHOTOS GOOGLE D'ABORD — les mêmes que
+     l'atelier de l'onglet Expérience lui donne à essayer (`piecesDeLaVitrine`) :
+     ce sont les siennes, le duel peut les opposer. */
+  const vitrineDuel = useMemo(
+    () =>
+      saPage && c.vraiePage && c.branche === "mode" && !(c.catalogue ?? []).some((x) => x.photo) ? piecesDeLaVitrine(c.essaiVitrine) : [],
+    [saPage, c.vraiePage, c.branche, c.catalogue, c.essaiVitrine],
+  );
+  const cDuel = useMemo(() => (vitrineDuel.length ? { ...c, catalogue: [...(c.catalogue ?? []), ...vitrineDuel] } : c), [c, vitrineDuel]);
+  const sesPieces = cDuel.cataloguePropose && !vitrineDuel.length ? 0 : (cDuel.catalogue ?? []).filter((x) => x.photo && x.nom).length;
   const duelDeDemo = saPage && Boolean(c.vraiePage) && sesPieces < 2;
+  /* SA PAGE GARDÉE OUBLIE LA DÉMONSTRATION — voir `oublierLEssaiDeDemo`. */
+  useEffect(() => {
+    if (!saPage && c.vraiePage) oublierLEssaiDeDemo(c.id);
+  }, [saPage, c.vraiePage, c.id]);
   const autresDuSalon = useMemo(
     () => [...new Set([...(salon?.presents ?? []), ...(salon?.viennent ?? [])])].filter((q) => q !== moi).map((qui) => ({ qui })),
     [salon, moi],
   );
   const duelSalon = useDuelDuSalon({
     salon,
-    carte: c,
+    carte: cDuel,
     reelle: Boolean(c.vraiePage) && !saPage,
     seulementLesSiennes: Boolean(c.vraiePage) && !duelDeDemo,
     membre: !!salon,
@@ -2160,6 +2174,15 @@ export function BoutiqueTable({
                           <small>
                             {m.voix === "moi" ? "Moi" : m.qui} <span>{m.quand}</span>
                           </small>
+                          {/* LA PHOTO DE L'ESSAYAGE OUVRE LA CONVERSATION — c'est
+                              d'elle qu'on parle. Le fil ne montrait que le texte :
+                              « Je mets 4/5 » arrivait sans ce qui était noté. */}
+                          {m.photo && (
+                            <figure className="bt-essai">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={m.photo} alt="L’essayage dont on parle" />
+                            </figure>
+                          )}
                           <p>{m.texte}</p>
                         </div>
                       </div>,

@@ -6,6 +6,9 @@
 //   · POST : le lancer, s'il est à faire. Sonné par sa page quand LUI la
 //     regarde, et par la lecture de sa fiche Google dès que ses photos sont
 //     là — pour que l'essai soit prêt AVANT qu'il lance la présentation.
+//     PUIS SES AUTRES PIÈCES (`completerPiecesDemo`), celles qu'elle essaiera
+//     elle-même après la présentation : APRÈS l'essai, jamais en même temps —
+//     les deux écrivent dans le même diagnostic. Le GET les rend (`autres`).
 //
 // ELLE A SES CINQ MINUTES À ELLE. L'essai passait par la route `hote`, après
 // la photo ClikMe et sa version sans hôte : deux rendus d'image avant le sien,
@@ -13,8 +16,8 @@
 // habiller l'avant.
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { essaiVitrineDuDiagnostic, raisonLisible } from "@/lib/site-internet/essai-vitrine-donnees";
-import { completerEssaiVitrine } from "@/lib/site-internet/essai-vitrine";
+import { essaiVitrineDuDiagnostic, piecesDemoDuDiagnostic, raisonLisible } from "@/lib/site-internet/essai-vitrine-donnees";
+import { completerEssaiVitrine, completerPiecesDemo } from "@/lib/site-internet/essai-vitrine";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -32,9 +35,13 @@ export async function GET(req: Request) {
       .eq("slug", slug)
       .eq("channel", "letter")
       .maybeSingle();
-    const e = essaiVitrineDuDiagnostic((data as Record<string, unknown> | null)?.diagnostic);
+    const diag = (data as Record<string, unknown> | null)?.diagnostic;
+    const e = essaiVitrineDuDiagnostic(diag);
+    /* SES AUTRES PIÈCES : la liste quand on l'a cherchée, et où on en est. */
+    const pd = piecesDemoDuDiagnostic(diag);
+    const autres = { autres: pd?.etat === "prete" ? pd.pieces.map(({ photo, nom, genre }) => ({ photo, nom, genre })) : undefined, autresEtat: pd?.etat ?? "absent" };
     if (e?.etat === "prete" && e.apres && e.avant) {
-      return NextResponse.json({ etat: "prete", avant: e.avant, apres: e.apres, piece: e.piece, nom: e.nom });
+      return NextResponse.json({ etat: "prete", avant: e.avant, apres: e.apres, piece: e.piece, nom: e.nom, ...autres });
     }
     /* L'ÉCHEC DIT POURQUOI : la raison pour lui, le détail pour nous. */
     return NextResponse.json({
@@ -46,6 +53,7 @@ export async function GET(req: Request) {
       raison: e && (e.etat === "echec" || e.etat === "aucune") ? raisonLisible(e) : undefined,
       erreur: e?.erreur,
       v: e?.v,
+      ...autres,
     });
   } catch {
     return NextResponse.json({ etat: "absent" });
@@ -60,6 +68,11 @@ export async function POST(req: Request) {
   after(async () => {
     try {
       await completerEssaiVitrine(slug, origine);
+    } catch {
+      /* la prochaine visite relancera */
+    }
+    try {
+      await completerPiecesDemo(slug);
     } catch {
       /* la prochaine visite relancera */
     }

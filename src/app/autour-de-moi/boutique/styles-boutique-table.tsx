@@ -794,6 +794,7 @@ export function StylesBoutiqueTable() {
         .bt-msg p{margin:0;padding:8px 13px;border-radius:18px 18px 18px 6px;
           font-size:15.5px;line-height:1.35;background:#2A1F1B;}
         .bt-msg.moi p{border-radius:18px 18px 6px 18px;background:var(--bt-rose);color:#fff;}
+        .bt-msg.moi .bt-essai{margin-left:auto;border-radius:18px 18px 6px 18px;}
         /* ═══ LA CONVERSATION D'EXEMPLE — tant que sa page n'est pas gardée ═══
            Voir salon-exemple.tsx : l'essai ouvre le fil, les amies répondent
            une par une, comme dans une vraie messagerie. */
