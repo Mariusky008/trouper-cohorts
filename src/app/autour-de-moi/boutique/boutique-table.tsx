@@ -98,6 +98,8 @@ import { aLaMaison } from "@/lib/site-internet/bienvenue";
 import { EssaiDuLieu, oublierLEssaiDeDemo } from "./essai-du-lieu";
 import { piecesDeLaVitrine } from "@/lib/site-internet/essai-vitrine-donnees";
 import { SalonExemple } from "./salon-exemple";
+import { memeLieu, SalonsDuLieu } from "./salons-du-lieu";
+import type { SalonADecouvrir } from "@/lib/direct/conversations-sync";
 import { ChoixDuLibraire } from "./choix-du-libraire";
 import { ExperienceTable, estUnRestaurant } from "./experience-table";
 
@@ -1082,8 +1084,42 @@ export function BoutiqueTable({
     [salons, cleBoutique],
   );
   const [salonChoisi, setSalonChoisi] = useState<string | null>(null);
+  /* ═══ LA TABLE DES FANTÔMES, AVANT LE SALON (`salons-du-lieu.tsx`) ═══════
+     Toucher l'onglet Amis ouvre d'abord la table : mes salons ici, et les
+     salons publics de ce commerce. Mais on va droit au salon quand on vient
+     d'agir (« En parler avec mes amis », le conseil du libraire, un lien de
+     l'application) : on veut parler tout de suite. */
+  const [hall, setHall] = useState(false);
+  /** Dans une vraie ville : les salons publics de ce commerce, sur le serveur. */
+  const [publicsDeLaVille, setPublicsDeLaVille] = useState<SalonADecouvrir[]>([]);
+  useEffect(() => {
+    const ville = c.villeReelle;
+    if (!hall || !ville || saPage) return;
+    let fini = false;
+    fetch(`/api/direct/conversations?${new URLSearchParams({ ville, decouvrir: "1" })}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { decouvrir?: SalonADecouvrir[] } | null) => {
+        if (!fini && Array.isArray(j?.decouvrir)) setPublicsDeLaVille(j.decouvrir.filter((x) => memeLieu(x.ou, c.nom)));
+      })
+      .catch(() => {});
+    return () => {
+      fini = true;
+    };
+  }, [hall, c.villeReelle, c.nom, saPage]);
   const cleSalon = salonChoisi && salons[salonChoisi] ? salonChoisi : (salonsIci[0]?.cle ?? cleBoutique);
   const salon = salons[cleSalon];
+  /* LES SALONS DE LA TABLE : ceux de cette page, puis ceux d'ailleurs qui
+     parlent de ce commerce — un duel lancé dans l'application, un salon
+     public. Les miens d'un côté, les publics où je ne suis pas de l'autre. */
+  const estMoiIci = (q: string) => q === "Vous" || q === "Moi" || q === "Toi" || (!!monPrenom() && q === monPrenom());
+  const salonsDuHall = useMemo(() => {
+    const lies = Object.values(salons)
+      .filter((x) => !salonsIci.includes(x) && !x.archive && !x.collectif && (x.boutique?.id === c.id || memeLieu(x.ou, c.nom)))
+      .sort((a, b) => (b.activite ?? 0) - (a.activite ?? 0));
+    const jySuis = (x: (typeof lies)[number]) =>
+      x.acces ? x.acces.statut === "membre" : x.prive !== false || x.presents.some(estMoiIci) || estMoiIci(x.parQui);
+    return { miens: [...salonsIci, ...lies.filter(jySuis)], publics: lies.filter((x) => x.prive === false && !jySuis(x)) };
+  }, [salons, salonsIci, c.id, c.nom]);
   /** Un salon neuf, pour un essai : l'expérience y repart de zéro. */
   const nouvelleCleDeSalon = () => `${cleBoutique}|${Date.now().toString(36)}`;
   const [aEcrire, setAEcrire] = useState("");
@@ -1126,6 +1162,7 @@ export function BoutiqueTable({
       photo: l.photo,
     });
     setSalonChoisi(cle);
+    setHall(false);
     setOnglet("amis");
   };
   const ouvrirLeSalon = () =>
@@ -1683,6 +1720,7 @@ export function BoutiqueTable({
                   photo: o.image,
                 });
                 setSalonChoisi(cle);
+                setHall(false);
                 setOnglet("amis");
               }}
               /* LE CONSEIL DU LIBRAIRE, MONTRÉ AUX AMIS : on n'a rien
@@ -2059,7 +2097,35 @@ export function BoutiqueTable({
       )}
 
       {/* ════════════════════════════ 5 · LES AMIS ═════════════════════════ */}
-      {onglet === "amis" && (
+      {onglet === "amis" && hall && (
+        <section className="bt-ecran bt-e-salons defile" key="salons">
+          {/* LA PHOTO DU LIEU, comme les autres onglets : en haut sur un
+              téléphone, la moitié gauche sur un ordinateur. */}
+          <div className="bt-photo haute" style={{ backgroundImage: `url("${dedans(1)}")` }} />
+          <div className="bt-voile haut" />
+          {entete(true)}
+          <div className="bt-corps">
+            <h1 className="bt-titre moyen centre">Les salons</h1>
+            <SalonsDuLieu
+              nom={c.nom}
+              miens={salonsDuHall.miens}
+              publicsDuTelephone={salonsDuHall.publics}
+              publicsDeLaVille={publicsDeLaVille}
+              estMoi={estMoiIci}
+              cleBoutique={cleBoutique}
+              exemple={!c.vraiePage}
+              onEntrer={(cle) => {
+                setSalonChoisi(cle);
+                setHall(false);
+              }}
+              onLirePublic={(id) => {
+                if (c.villeReelle) window.location.href = `/ville/${encodeURIComponent(c.villeReelle)}?salon=p:${encodeURIComponent(id)}`;
+              }}
+            />
+          </div>
+        </section>
+      )}
+      {onglet === "amis" && !hall && (
         <section className="bt-ecran bt-e-amis" key="amis">
           {/* ═══ UNE FENETRE DE MESSAGERIE, PAS UNE PAGE ══════════════════════
               « Le salon n'est pas tres bien fait : il faut qu'il ressemble plus a
@@ -2074,7 +2140,7 @@ export function BoutiqueTable({
               c'etait l'image d'une page, pas d'une conversation. */}
           <div className="bt-fenetre" role="dialog" aria-label={`En parler à mes amis — ${c.nom}`}>
           <header className="bt-haut plein bt-chat-tete">
-            <button type="button" className="bt-rond" onClick={() => setOnglet("lieu")} aria-label="Revenir au lieu">
+            <button type="button" className="bt-rond" onClick={() => setHall(true)} aria-label="Revenir aux salons du lieu">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M19 12H5.5M11 5.5 4.5 12l6.5 6.5" />
               </svg>
@@ -2093,7 +2159,7 @@ export function BoutiqueTable({
                   <rect x="5" y="10.5" width="14" height="10" rx="2.4" />
                   <path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5" />
                 </svg>
-                Salon privé · {salon && salon.cle !== cleBoutique && salon.annonce ? salon.annonce : c.nom}
+                {salon?.prive === false ? "Salon public" : "Salon privé"} · {salon && salon.cle !== cleBoutique && salon.annonce ? salon.annonce : c.nom}
               </em>
             </div>
           </header>
@@ -2492,7 +2558,10 @@ export function BoutiqueTable({
             type="button"
             className={onglet === o.cle ? "on" : ""}
             aria-current={onglet === o.cle ? "page" : undefined}
-            onClick={() => setOnglet(o.cle)}
+            onClick={() => {
+              if (o.cle === "amis") setHall(true);
+              setOnglet(o.cle);
+            }}
           >
             <IconeOnglet cle={o.cle} />
             <span>{o.mot}</span>
