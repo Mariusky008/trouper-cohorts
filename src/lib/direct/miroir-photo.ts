@@ -12,10 +12,46 @@
 // dans une sauvegarde.
 //
 // RÉDUITE AVANT D'ÊTRE RANGÉE (1 200 points) : assez pour un essai, sans
-// garder douze mégapixels qu'on renverrait à chaque fois.
+// garder douze mégapixels qu'on renverrait à chaque fois. Décodée par une
+// image ordinaire, pas par `createImageBitmap` : certaines versions d'iOS
+// ignorent alors l'orientation de la photo, et un selfie arriverait couché.
+//
+// SAFARI EFFACE CE QU'UN SITE GARDE après sept jours sans visite (sauf une
+// application ajoutée à l'écran d'accueil). On demande donc au navigateur
+// de la garder (`navigator.storage.persist`) ; s'il refuse, le Miroir
+// redevient vide et son tuto revient — rien ne casse.
+//
+// LE PORTRAIT D'ABORD. « Plus tard, dans la même pièce : Mon visage, Mes
+// mains (ongles, bagues), Mon poignet (bracelet, montre) — mais seulement
+// lorsque ces usages sont réellement développés. » Une seule photo, `moi`,
+// pour l'instant ; d'autres clés le jour venu.
 
 import { useEffect, useSyncExternalStore } from "react";
 import { reduirePhoto } from "@/lib/direct/dressing-depot";
+
+/** Réduit la photo en passant par une image (orientation respectée), sinon par la voie du dressing. */
+async function reduire(f: Blob, max: number, qualite: number): Promise<string | null> {
+  const url = URL.createObjectURL(f);
+  try {
+    const img = new Image();
+    img.decoding = "async";
+    img.src = url;
+    await img.decode();
+    const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(img.naturalWidth * k));
+    c.height = Math.max(1, Math.round(img.naturalHeight * k));
+    const ctx = c.getContext("2d");
+    if (!ctx) throw new Error("canvas");
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", qualite);
+  } catch {
+    const r = await reduirePhoto(f, max, qualite).catch(() => null);
+    return r?.dataUrl ?? null;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 
 export type EtatMiroir = { pret: boolean; photo: string | null; t?: number };
 
@@ -88,15 +124,17 @@ export function useMiroir(): EtatMiroir {
 
 /** Range la photo choisie (réduite). Rend `false` si elle n'a pas pu l'être. */
 export async function garderPhotoMiroir(f: Blob): Promise<boolean> {
-  const r = await reduirePhoto(f, 1200, 0.86).catch(() => null);
-  if (!r) return false;
+  const photo = await reduire(f, 1200, 0.86);
+  if (!photo) return false;
   const t = Date.now();
   try {
-    await tiroir("readwrite", (s) => s.put({ photo: r.dataUrl, t }, CLE));
+    await tiroir("readwrite", (s) => s.put({ photo, t }, CLE));
   } catch {
     return false;
   }
-  publier({ pret: true, photo: r.dataUrl, t });
+  publier({ pret: true, photo, t });
+  // QU'IL LA GARDE AU-DELÀ DE SEPT JOURS, S'IL L'ACCEPTE (voir plus haut).
+  void navigator.storage?.persist?.().catch(() => false);
   return true;
 }
 

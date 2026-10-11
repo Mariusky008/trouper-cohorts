@@ -18,14 +18,18 @@
 // « Envoyer ». La seule confirmation possible est donc celle de la personne
 // (« C'est envoyé », « Je l'ai prévenu ») — c'est après elle, et seulement
 // chez un vrai commerce (jamais sur un numéro de fiction), que la vidéo vient.
-// Et les mots s'en tiennent à ce qu'on sait : la demande EST PARTIE (`voie:
-// "whatsapp"`). « La boutique a reçu votre demande » est réservé au jour où
-// un envoi passera par notre serveur et reviendra confirmé (`voie: "serveur"`).
+// Et les mots s'en tiennent à ce qu'on sait : « Vous avez prévenu Lili Ross
+// by me. » — « techniquement, la seule chose certaine est que l'utilisateur
+// nous a confirmé l'avoir envoyée » (`voie: "whatsapp"`). « La boutique a
+// reçu votre demande » est réservé au jour où un envoi passera par notre
+// serveur et reviendra confirmé (`voie: "serveur"`).
 //
-// L'ÉCHEC A SON ÉCRAN, `EnvoiRate` : « Je n'ai pas réussi à envoyer votre
-// demande. Réessayer → » — jamais la vidéo à sa place.
+// LE SUCCÈS OU L'ÉCHEC, JAMAIS LES DEUX : « Ils ne doivent jamais pouvoir
+// apparaître simultanément. » Un seul composant, une seule place : avec
+// `echec`, il dit « Je n'ai pas réussi à envoyer votre demande. Réessayer → »
+// — sans la vidéo ; sans `echec`, il joue « C'est fait ». Il n'existe pas
+// d'écran d'échec à poser à côté.
 
-import type { ReactNode } from "react";
 import { VideoFantome } from "./video-fantome";
 
 /** Ce qui a été demandé : les mots changent avec le métier. */
@@ -40,15 +44,8 @@ export function genreDuFait(famille?: string | null): GenreFait {
   return "demande";
 }
 
-const chez = (lieu?: string) => (lieu ? ` chez ${lieu}` : "");
-
-/** Ce qu'on sait quand la personne l'a envoyé elle-même : c'est parti. */
-const PARTI: Record<GenreFait, (lieu?: string) => string> = {
-  "mise-de-cote": (l) => `Votre demande de mise de côté est partie${chez(l)}.`,
-  reservation: (l) => `Votre demande de réservation est partie${chez(l)}.`,
-  demande: (l) => `Votre demande est partie${chez(l)}.`,
-  sortie: () => "Votre demande est partie.",
-};
+/** Ce qu'on sait quand la personne l'a envoyé elle-même : elle l'a prévenu. */
+const PREVENU = (lieu?: string) => `Vous avez prévenu ${lieu || "le commerce"}.`;
 /** Ce qu'on saura quand le serveur aura confirmé la réception. */
 const RECU: Record<GenreFait, string> = {
   "mise-de-cote": "La boutique a reçu votre demande de mise de côté.",
@@ -64,6 +61,7 @@ export function CestFait({
   continuer = "Continuer →",
   onContinuer,
   onPartager,
+  echec,
   classe,
 }: {
   genre: GenreFait;
@@ -76,9 +74,22 @@ export function CestFait({
   onContinuer: () => void;
   /** « Partager dans mon salon → », quand il y a un salon où le dire. */
   onPartager?: () => void;
+  /** L'ENVOI A ÉCHOUÉ (un envoi par le serveur qui revient en erreur) : l'échec À LA PLACE du succès. */
+  echec?: { onReessayer: () => void };
   classe?: string;
 }) {
-  const texte = voie === "serveur" ? RECU[genre] : PARTI[genre](lieu);
+  if (echec) {
+    return (
+      <section className={`cf cf-rate${classe ? ` ${classe}` : ""}`} role="alert">
+        <p className="cf-rate-t">Je n’ai pas réussi à envoyer votre demande.</p>
+        <button type="button" className="cf-cta" onClick={echec.onReessayer}>
+          Réessayer →
+        </button>
+        <StylesCestFait />
+      </section>
+    );
+  }
+  const texte = voie === "serveur" ? RECU[genre] : PREVENU(lieu);
   return (
     <section className={`cf${classe ? ` ${classe}` : ""}`} role="status" aria-live="polite">
       <VideoFantome
@@ -106,20 +117,6 @@ export function CestFait({
           </button>
         )}
       </div>
-      <StylesCestFait />
-    </section>
-  );
-}
-
-/** L'ENVOI N'EST PAS PARTI : on le dit, et on propose de recommencer. Jamais la vidéo. */
-export function EnvoiRate({ onReessayer, enPlus, classe }: { onReessayer: () => void; enPlus?: ReactNode; classe?: string }) {
-  return (
-    <section className={`cf cf-rate${classe ? ` ${classe}` : ""}`} role="alert">
-      <p className="cf-rate-t">Je n’ai pas réussi à envoyer votre demande.</p>
-      {enPlus}
-      <button type="button" className="cf-cta" onClick={onReessayer}>
-        Réessayer →
-      </button>
       <StylesCestFait />
     </section>
   );

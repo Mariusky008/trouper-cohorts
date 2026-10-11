@@ -21,16 +21,22 @@
 //
 // LES FICHIERS (`public/direct/videos`) : 720 × 1280, 24 images/s, sans piste
 // son — environ 0,8 Mo pour 5,2 s, au lieu de 7 Mo pour l'original. Deux
-// formats : WebM d'abord (les navigateurs sans H.264, et plus léger), MP4
-// ensuite (Safari, iPhone). Une image de début (l'affiche, rien de noir avant
-// la première image) et une de fin (ce qui reste, et ce qu'on montre seul au
-// mouvement réduit).
+// formats : MP4 (H.264) D'ABORD, puis WebM. L'iPhone d'abord : Safari ne lit
+// pas le WebM partout, et un navigateur qui choisit une source qu'il décode
+// mal ne revient pas à la suivante. Le codec exact est écrit sur chaque
+// source (`avc1.4D401F` : profil Main, niveau 3.1, celui des fichiers) — un
+// navigateur sans H.264 le sait sans essayer et passe au WebM. Une image de
+// début (l'affiche, rien de noir avant la première image) et une de fin (ce
+// qui reste, et ce qu'on montre seul au mouvement réduit).
 //
-// TROIS CAS OÙ ELLE NE JOUE PAS, ET LA PAGE N'EN SOUFFRE PAS :
+// QUATRE CAS OÙ ELLE NE JOUE PAS, ET LA PAGE N'EN SOUFFRE PAS :
 //   · mouvement réduit demandé → l'image de fin, les mots, et `onFin` aussitôt ;
 //   · lecture automatique refusée (mode économie d'énergie d'un iPhone) → la
 //     même image, et `onFin` après le temps de lire ;
-//   · fichier introuvable → idem.
+//   · fichier introuvable → idem ;
+//   · RÉSEAU LENT : pas commencée au bout de `ATTENTE_MAX` → l'image de fin,
+//     tout de suite. En 3G lente, elle démarrait vingt secondes plus tard,
+//     quand on avait déjà lu la page et commencé à s'en servir.
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
@@ -40,6 +46,8 @@ export type NomVideo = "dressing" | "recherche" | "surprise" | "soiree" | "salon
 export type Legende = { a: number; texte: ReactNode };
 
 const DUREE = 5.17;
+/** Au-delà, elle ne commencera plus au bon moment : on montre sa fin. */
+const ATTENTE_MAX = 4000;
 export const videoDe = (nom: NomVideo) => ({
   webm: `/direct/videos/${nom}.webm`,
   mp4: `/direct/videos/${nom}.mp4`,
@@ -92,6 +100,8 @@ export function VideoFantome({
   /** `joue` · `fini` (resté sur sa dernière image) · `fige` (elle ne jouera pas : l'image seule). */
   const [etat, setEtat] = useState<"joue" | "fini" | "fige">(immobile ? "fige" : "joue");
   const dejaFini = useRef(false);
+  /** Elle a vraiment commencé (l'évènement `playing`) — voir `ATTENTE_MAX`. */
+  const demarre = useRef(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -123,7 +133,25 @@ export function VideoFantome({
     }
     const p = el.play();
     if (p && typeof p.catch === "function") p.catch(() => figer(2600));
-    return () => window.clearTimeout(minuteur);
+    const tropLent = window.setTimeout(() => {
+      if (demarre.current || dejaFini.current) return;
+      el.pause();
+      figer(0);
+    }, ATTENTE_MAX);
+    /* L'IPHONE MET EN PAUSE CE QUI JOUE QUAND ON QUITTE L'APPLICATION (un
+       appel, WhatsApp, l'écran d'accueil) et ne reprend pas toujours seul : on
+       relance au retour, pour finir sur la dernière image — sinon on figera. */
+    const auRetour = () => {
+      if (document.visibilityState !== "visible" || dejaFini.current || !el.paused || el.ended) return;
+      const r = el.play();
+      if (r && typeof r.catch === "function") r.catch(() => figer(0));
+    };
+    document.addEventListener("visibilitychange", auRetour);
+    return () => {
+      window.clearTimeout(minuteur);
+      window.clearTimeout(tropLent);
+      document.removeEventListener("visibilitychange", auRetour);
+    };
   }, [immobile, vitesse]);
 
   /* LE TEMPS DE LA VIDÉO, POUR LES MOTS — et l'arrêt anticipé. */
@@ -146,6 +174,7 @@ export function VideoFantome({
       if (!el.ended && !el.paused) raf = requestAnimationFrame(tic);
     };
     const enJeu = () => {
+      demarre.current = true;
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(tic);
     };
@@ -201,8 +230,8 @@ export function VideoFantome({
           aria-hidden="true"
           tabIndex={-1}
         >
-          <source src={v.webm} type="video/webm" />
-          <source src={v.mp4} type="video/mp4" />
+          <source src={v.mp4} type={'video/mp4; codecs="avc1.4D401F"'} />
+          <source src={v.webm} type={'video/webm; codecs="vp9"'} />
         </video>
       )}
       {ligne && (

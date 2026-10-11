@@ -40,8 +40,9 @@ export function TutoCuisine({
   return (
     <section className="mz-sorties mt-tuto">
       <VideoFantome nom="cuisine" classe="mz-video" />
-      <p className="mt-q">👻 Montrez-moi simplement ce qui vous donne envie.</p>
-      <p className="mt-s">À midi, je repérerai les plats du jour qui pourraient vous plaire.</p>
+      {/* COURT, POUR UN TÉLÉPHONE : « Le mot "simplement" n'apporte pas grand-chose. » */}
+      <p className="mt-q">👻 Montrez-moi ce qui vous donne envie.</p>
+      <p className="mt-s">À midi, je repère les plats du jour pour vous.</p>
       {/* LA SEULE QUESTION EXPLICITE VRAIMENT UTILE — le reste s'apprend en
           vivant : ❤️, « pas vraiment », une réservation, un plat regardé, un
           duel. Rien à remplir. */}
