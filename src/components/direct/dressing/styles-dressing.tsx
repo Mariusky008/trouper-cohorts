@@ -38,6 +38,12 @@ export function StylesDressing() {
   font-size:15.5px;font-weight:800;color:#F6C26B;background:rgba(246,181,75,.04);border:1.5px solid rgba(246,181,75,.75);}
 .dr-lien{display:block;margin:12px auto 0;padding:8px 10px;border:0;background:transparent;cursor:pointer;font-size:14.5px;font-weight:700;color:#D9CCBC;text-align:center;}
 .dr-pile{display:grid;gap:10px;margin-top:18px;}
+/* LA VIGNETTE DU FANTÔME — voir « VideoFantome ». Verticale comme la scène,
+   recadrée sur la penderie et le téléphone. Plus petite dans « Avec mon
+   dressing », où elle n'est qu'une explication en passant. */
+.dr-video{width:100%;max-width:360px;aspect-ratio:4 / 5;margin:8px auto 0;box-shadow:0 18px 44px rgba(0,0,0,.45);}
+.dr-video.petite{max-width:250px;aspect-ratio:3 / 4;margin-top:14px;}
+.dr-video-dit{margin:14px auto 0;max-width:340px;text-align:center;font-size:16px;line-height:1.4;font-weight:700;color:#FFF4E6;}
 
 /* LE FANTÔME ET SA LUEUR */
 .dr-fant{display:block;margin:0 auto;width:150px;height:auto;filter:drop-shadow(0 10px 26px rgba(246,181,75,.45));animation:dr-flotte 4.6s ease-in-out infinite;}
@@ -247,6 +253,11 @@ export function StylesDressing() {
 .dr-option.une b{color:#F6C26B;}
 .dr-option em{font-style:normal;font-size:12.5px;color:#BFAE98;}
 .dr-option>svg{flex:none;width:18px;height:18px;color:#8C7B66;}
+/* « AVEC MES VÊTEMENTS » QUAND LE DRESSING EST VIDE : il attend une première pièce, et le dit. */
+.dr-option.attend{border-style:dashed;}
+.dr-option.attend i{opacity:.75;}
+.dr-vide-pastille{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;vertical-align:2px;
+  font-size:11px;font-weight:800;color:#2a1405;background:#F6C26B;}
 
 @media (max-width:360px){.dr-tete h1{font-size:18px;}.dr-tete p{font-size:12px;}.dr-hero{grid-template-columns:104px 1fr;}.dr-hero .dr-fant{width:104px;}.dr-hero h2{font-size:22px;}.dr-trois{grid-template-columns:1fr;}.dr-titre{font-size:22px;}}
 @media (prefers-reduced-motion: reduce){.dr-fant{animation:none;}.dr-attente i{animation:none;}.dr-barre i{animation-duration:.01s;}.dr-liste li,.dr-liste li i,.dr-ajoutee i{animation-duration:.01s;animation-delay:0s !important;}}

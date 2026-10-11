@@ -138,13 +138,15 @@ export const PIECES: PieceMaison[] = [
     mission: { active: "Ce soir, je regarderai ce qui se passe en ville.", vide: "Choisissez une soirée : ce soir, je regarderai ce qui se passe en ville." },
     choix: {
       titre: "Ce qui me fait sortir",
+      /* LES AMBIANCES DE LA PREMIÈRE VISITE — les mêmes que sous sa vidéo
+         (voir `VuePiece` dans `ma-maison.tsx`). Plusieurs à la fois. */
       options: [
-        { cle: "terrasse", mot: "Terrasse" },
-        { cle: "musique", mot: "Musique live" },
-        { cle: "verre", mot: "Un verre au calme" },
+        { cle: "verre", mot: "Un verre" },
+        { cle: "musique", mot: "Musique" },
         { cle: "fete", mot: "Faire la fête" },
-        { cle: "decouvrir", mot: "Découvrir" },
-        { cle: "amis", mot: "Entre amis" },
+        { cle: "tranquille", mot: "Tranquille" },
+        { cle: "rencontrer", mot: "Rencontrer du monde" },
+        { cle: "surprends", mot: "Surprends-moi" },
       ],
     },
     branche: "bar",

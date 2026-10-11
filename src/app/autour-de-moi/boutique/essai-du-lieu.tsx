@@ -30,9 +30,10 @@ import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { tenueDu } from "@/lib/direct/double-metiers";
 import { parcoursPromis } from "@/lib/direct/parcours-promis";
 import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
-import { monPrenom } from "@/lib/direct/salons";
+import { chargerSalons, cleSalonBoutique, monPrenom, oublierSalon } from "@/lib/direct/salons";
+import { piecesDeLaVitrine, type PieceDemo } from "@/lib/site-internet/essai-vitrine-donnees";
 import { ChoixDuLibraire } from "./choix-du-libraire";
-import { AvantApresVitrine } from "./avant-apres-vitrine";
+import { AvantApresVitrine, demandeEnAttente, presentationEnCours } from "./avant-apres-vitrine";
 
 export type { RenduEssai };
 
@@ -114,10 +115,99 @@ export function EssaiDuLieu(p: ProprietesEssai) {
   return p.c.branche === "librairie" ? <ProchainLivre {...p} /> : <EssaiEnImage {...p} />;
 }
 
-function EssaiEnImage({ c, saPage, onReserver, onSalon }: ProprietesEssai) {
+/* ═══ LA DÉMONSTRATION LAISSE UNE TRACE, ET LA PAGE GARDÉE L'EFFACE ═══════
+   « Quand elle décidera de garder sa page, on réinitialise tout pour qu'elle
+   mette depuis son admin ses vêtements, sa collection. »
+   Ses pièces de démonstration disparaissent d'elles-mêmes : elles ne sont
+   proposées que tant que sa page n'est pas gardée (`saPage`). Ce qui reste,
+   c'est ce que l'atelier a rangé dans SON navigateur — le salon où elle a
+   parlé de ses essais. On le note quand elle essaie (`noterLEssaiDeDemo`),
+   et sa page, une fois gardée, l'oublie (`oublierLEssaiDeDemo`). Un visiteur
+   n'a jamais cette marque : son salon à lui ne bouge pas. */
+const MARQUE_DEMO = (id: string) => `clikme:essai-demo:${id}`;
+function noterLEssaiDeDemo(id: string) {
+  try {
+    window.localStorage.setItem(MARQUE_DEMO(id), "1");
+  } catch {
+    /* navigation privée : rien à oublier plus tard */
+  }
+}
+export function oublierLEssaiDeDemo(id: string) {
+  try {
+    if (!window.localStorage.getItem(MARQUE_DEMO(id))) return;
+    // LE SALON DE LA BOUTIQUE ET CEUX DE CHAQUE ESSAI (`<clé>|<instant>`).
+    const cle = cleSalonBoutique(id);
+    for (const k of Object.keys(chargerSalons())) if (k === cle || k.startsWith(`${cle}|`)) oublierSalon(k);
+    window.localStorage.removeItem(MARQUE_DEMO(id));
+  } catch {
+    /* rien */
+  }
+}
+
+/** Combien de temps on attend ses autres pièces, au plus (le moteur les cherche après la page). */
+const ATTENTE_PIECES = 3 * 60_000;
+
+function EssaiEnImage({ c: carte, saPage, onReserver, onSalon }: ProprietesEssai) {
   /** L'atelier ouvert, et la pièce choisie pour y entrer. */
   const [atelier, setAtelier] = useState<{ piece?: string; grille?: boolean } | null>(null);
   const fermer = useCallback(() => setAtelier(null), []);
+  /* ═══ SES PIÈCES À ELLE, POUR ESSAYER AVANT DE GARDER SA PAGE ═══════════
+     « Une fois la démo terminée, j'aurais aimé que la propriétaire puisse
+     essayer l'expérience : elle voit ce qu'on lui a montré, mais ne peut pas
+     essayer elle-même. Mets le système tel qu'il est déjà pensé, avec
+     quelques vêtements de son shop déjà présents. »
+     L'ATELIER N'AVAIT RIEN À LUI DONNER : sur une vraie page, il n'essaie que
+     ses pièces photographiées, et elle n'en a pas encore mis. Sur SA page, et
+     tant qu'elle ne l'a pas gardée, il reçoit donc celles que le modèle qui
+     voit a repérées sur ses photos Google — la pièce de l'étape 2 d'abord,
+     puis jusqu'à six autres (voir `completerPiecesDemo`). C'est le même
+     atelier que ses clientes auront : sa photo, l'essai, la note des cinq
+     fantômes, « En parler » dans un salon. */
+  const sansSesPieces = !(carte.catalogue ?? []).some((x) => x.photo);
+  const essaieLaSienne = saPage && Boolean(carte.vraiePage) && carte.branche === "mode" && sansSesPieces;
+  /* SES AUTRES PIÈCES ARRIVENT APRÈS LA PAGE : on les demande tant qu'elles
+     n'y sont pas — trois minutes au plus. La pièce de l'étape 2 n'attend pas. */
+  const [autres, setAutres] = useState<PieceDemo[] | undefined>(carte.essaiVitrine?.autres);
+  const attendAutres = essaieLaSienne && autres === undefined;
+  useEffect(() => {
+    if (!attendAutres) return;
+    const debut = Date.now();
+    let fini = false;
+    const t = window.setInterval(async () => {
+      if (Date.now() - debut > ATTENTE_PIECES) return window.clearInterval(t);
+      try {
+        const r = await fetch(`/api/site-internet/essai-vitrine?slug=${encodeURIComponent(carte.id)}`, { cache: "no-store" });
+        const j = (await r.json()) as { autres?: PieceDemo[]; autresEtat?: string };
+        if (fini) return;
+        if (Array.isArray(j.autres)) {
+          window.clearInterval(t);
+          setAutres(j.autres);
+        } else if (j.autresEtat === "aucune" || j.autresEtat === "echec") {
+          window.clearInterval(t);
+          setAutres([]);
+        }
+      } catch {
+        /* réseau coupé : au tour suivant */
+      }
+    }, 6000);
+    return () => {
+      fini = true;
+      window.clearInterval(t);
+    };
+  }, [attendAutres, carte.id]);
+  const vitrine = useMemo(
+    () => (essaieLaSienne ? piecesDeLaVitrine(carte.essaiVitrine ? { ...carte.essaiVitrine, autres } : autres ? { etat: "exemple", autres } : undefined) : []),
+    [essaieLaSienne, carte.essaiVitrine, autres],
+  );
+  /** La carte que l'atelier reçoit : la sienne, avec ses pièces repérées en plus. */
+  const c = useMemo(() => (vitrine.length ? { ...carte, catalogue: [...(carte.catalogue ?? []), ...vitrine] } : carte), [carte, vitrine]);
+  const ouvrir = useCallback(
+    (a: { piece?: string; grille?: boolean }) => {
+      if (vitrine.length) noterLEssaiDeDemo(carte.id);
+      setAtelier(a);
+    },
+    [vitrine.length, carte.id],
+  );
   const murDuLieu = useMurDuLieu(c);
   const onEssaie = murDuLieu.depot === "essai";
   const pieces = useMemo(() => (murDuLieu.essai?.pieces ?? []).filter((p) => !p.bientot), [murDuLieu]);
@@ -138,8 +228,29 @@ function EssaiEnImage({ c, saPage, onReserver, onSalon }: ProprietesEssai) {
   /* UNE BOUTIQUE DE VÊTEMENTS LE VOIT TOUJOURS : sa pièce si elle est prête,
      l'exemple déjà fabriqué sinon — l'après arrive à trois secondes, jamais
      au bout d'une minute. */
+  /* ═══ L'AVANT/APRÈS, LE TEMPS DE LA PRÉSENTATION SEULEMENT ═════════════
+     « Une fois la présentation terminée, quand je vais sur "Expérience",
+     j'ai encore l'avant/après au lieu d'avoir juste le début de
+     l'expérience à faire. » Quand elle a ses pièces à essayer, l'avant/après
+     ne sert qu'à Léa : il naît à sa demande (étape 2) et s'en va quand elle
+     se tait. Sans pièce à essayer, il reste : c'est tout ce qu'il y a à voir. */
+  const [presentationJoue, setPresentationJoue] = useState(() => presentationEnCours() || demandeEnAttente());
+  useEffect(() => {
+    const montrer = (e: Event) => {
+      if ((e as CustomEvent).detail === "essayer") setPresentationJoue(true);
+    };
+    const suivre = (e: Event) => setPresentationJoue((e as CustomEvent).detail === "debut");
+    window.addEventListener("clikme:montrer", montrer);
+    window.addEventListener("clikme:presentation", suivre);
+    return () => {
+      window.removeEventListener("clikme:montrer", montrer);
+      window.removeEventListener("clikme:presentation", suivre);
+    };
+  }, []);
   const essaiVitrine =
-    saPage && onEssaie && pieces.length === 0 && c.branche === "mode" ? (c.essaiVitrine ?? { etat: "exemple" as const }) : undefined;
+    saPage && onEssaie && (pieces.length === 0 || (vitrine.length > 0 && presentationJoue)) && c.branche === "mode"
+      ? (carte.essaiVitrine ?? { etat: "exemple" as const })
+      : undefined;
 
   return (
     <div className="bx">
@@ -190,19 +301,29 @@ function EssaiEnImage({ c, saPage, onReserver, onSalon }: ProprietesEssai) {
         </div>
       </div>
 
+      {/* CE QU'ON LUI A MONTRÉ D'ABORD, PUIS CE QU'ELLE ESSAIE ELLE-MÊME. */}
+      {essaiVitrine && vitrine.length > 0 && <AvantApresVitrine c={c} essai={essaiVitrine} />}
+
       {/* ═══ SES CRÉATIONS À ESSAYER — les siennes, et elles seules ═══ */}
       {pieces.length > 0 && (
         <section className="bx-pieces" aria-label={`Les ${mots.pieces} à essayer`}>
           <h3>
-            À essayer ici <span>· {pieces.length}</span>
+            {vitrine.length ? "À vous d’essayer" : "À essayer ici"} <span>· {pieces.length}</span>
           </h3>
+          {/* D'OÙ VIENNENT-ELLES, ET JUSQU'À QUAND : c'est elle qui lit. */}
+          {vitrine.length > 0 && (
+            <p className="bx-vitrine">
+              Prises sur votre fiche Google, pour essayer avant de garder votre page. Une fois gardée, vous y mettrez
+              votre collection depuis votre comptoir.
+            </p>
+          )}
           <div className="bx-grille">
             {pieces.slice(0, pieces.length > 12 ? 11 : 12).map((p, i) => (
               <button
                 key={p.id}
                 type="button"
                 style={{ ["--i" as string]: i }}
-                onClick={() => setAtelier({ piece: p.id })}
+                onClick={() => ouvrir({ piece: p.id })}
                 aria-label={`Essayer ${p.nom}`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -217,7 +338,7 @@ function EssaiEnImage({ c, saPage, onReserver, onSalon }: ProprietesEssai) {
                 envie, et la douzième ouvre toutes les autres — elle ferme la
                 grille au lieu de pendre seule sur une ligne. */}
             {pieces.length > 12 && (
-              <button type="button" className="bx-plus" onClick={() => setAtelier({ grille: true })}>
+              <button type="button" className="bx-plus" onClick={() => ouvrir({ grille: true })}>
                 <b>+{pieces.length - 11}</b>
                 <span>Tout voir</span>
               </button>
@@ -227,7 +348,7 @@ function EssaiEnImage({ c, saPage, onReserver, onSalon }: ProprietesEssai) {
       )}
 
       {/* ═══ LE GRAND BOUTON — ou l'aveu honnête que rien n'est encore là ═══ */}
-      {essaiVitrine && <AvantApresVitrine c={c} essai={essaiVitrine} />}
+      {essaiVitrine && vitrine.length === 0 && <AvantApresVitrine c={c} essai={essaiVitrine} />}
 
       {bientot ? (
         <div className="bx-bientot">
@@ -260,7 +381,7 @@ function EssaiEnImage({ c, saPage, onReserver, onSalon }: ProprietesEssai) {
           </button>
         </div>
       ) : (
-        <button type="button" className="bx-go" onClick={() => setAtelier({})}>
+        <button type="button" className="bx-go" onClick={() => ouvrir({})}>
           <span>{onEssaie ? mots.geste : "Découvrir"}</span>
           <s aria-hidden="true">→</s>
         </button>
@@ -774,6 +895,7 @@ function StylesExperience() {
         .bx-pieces{margin-top:22px;}
         .bx-pieces h3{margin:0 0 10px;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:17px;color:#FFF4E6;}
         .bx-pieces h3 span{font-family:var(--font-geist-sans),sans-serif;font-weight:500;font-size:13px;color:#CDB8A4;}
+        .bx-vitrine{margin:-4px 0 12px;font-size:13px;line-height:1.45;color:#CDB8A4;}
         .bx-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;}
         .bx-grille button{position:relative;padding:0;border:1px solid rgba(255,196,140,.16);border-radius:16px;overflow:hidden;
           cursor:pointer;background:#1C1411;text-align:left;aspect-ratio:3/4;

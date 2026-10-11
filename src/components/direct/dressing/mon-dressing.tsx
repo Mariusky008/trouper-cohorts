@@ -24,6 +24,7 @@ import { AjoutPiece } from "./ajout-piece";
 import { Dessin, DESSINS_DRESSING } from "./dessins-dressing";
 import { Porte } from "./porte";
 import { StylesDressing } from "./styles-dressing";
+import { VideoFantome } from "@/components/direct/video-fantome";
 
 export function MonDressing({
   onRetour,
@@ -73,15 +74,25 @@ export function MonDressing({
       </header>
 
       <div className="dr-corps">
-        {(!n || !e.pret) && (
+        {/* PAS PENDANT QU'IL S'OUVRE : un dressing rempli ne doit pas voir passer le tuto. */}
+        {e.pret && !n && (
           <>
-            <div className="dr-hero">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="dr-fant" src="/direct/fantome-humeurs/fantome-excited.webp" alt="" />
-              <div>
-                <h2>Ajoutez vos vêtements</h2>
-                <p>Prenez en photo quelques pièces que vous portez souvent. ClikMe les utilisera pour vous proposer des looks avec les articles des commerçants.</p>
-              </div>
+            {/* ═══ LA PREMIÈRE OUVERTURE, LE DRESSING VIDE : LE FANTÔME MONTRE LE GESTE ═══
+                « L'utilisateur arrive dans Mon Dressing et voit la vignette de
+                cinq à sept secondes. Juste dessous : "Montrez-moi quelques
+                vêtements que vous portez. Je chercherai en ville ce qui va
+                avec." Puis : 📸 Ajouter mon premier vêtement. »
+                Le Fantôme photographie un jean pendu dans sa penderie : c'est
+                exactement ce qu'on va lui demander de faire. Une fois, et elle
+                reste sur le téléphone qui montre le jean — voir `VideoFantome`.
+                TROIS, PAS « QUELQUES » : « 3 paraît réalisable et concret » — et
+                c'est le seuil des looks (`PIECES_MIN`). */}
+            <VideoFantome nom="dressing" classe="dr-video" />
+            <p className="dr-video-dit">Montrez-moi {PIECES_MIN} vêtements que vous portez. Je chercherai en ville ce qui va avec.</p>
+            <div className="dr-pile">
+              <button type="button" className="dr-cta" onClick={() => setAjout(true)}>
+                <Dessin d={DESSINS_DRESSING.photo} /> Ajouter mon premier vêtement
+              </button>
             </div>
             <div className="dr-trois">
               <div>
@@ -102,11 +113,6 @@ export function MonDressing({
                 </i>
                 Vous restez maître de votre dressing
               </div>
-            </div>
-            <div className="dr-pile">
-              <button type="button" className="dr-cta" onClick={() => setAjout(true)}>
-                <Dessin d={DESSINS_DRESSING.photo} /> Ajouter mes premières pièces
-              </button>
             </div>
           </>
         )}

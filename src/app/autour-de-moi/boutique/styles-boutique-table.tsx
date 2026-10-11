@@ -794,6 +794,7 @@ export function StylesBoutiqueTable() {
         .bt-msg p{margin:0;padding:8px 13px;border-radius:18px 18px 18px 6px;
           font-size:15.5px;line-height:1.35;background:#2A1F1B;}
         .bt-msg.moi p{border-radius:18px 18px 6px 18px;background:var(--bt-rose);color:#fff;}
+        .bt-msg.moi .bt-essai{margin-left:auto;border-radius:18px 18px 6px 18px;}
         /* ═══ LA CONVERSATION D'EXEMPLE — tant que sa page n'est pas gardée ═══
            Voir salon-exemple.tsx : l'essai ouvre le fil, les amies répondent
            une par une, comme dans une vraie messagerie. */
@@ -825,6 +826,22 @@ export function StylesBoutiqueTable() {
            prennent, la fenêtre qui porte « Côté boutique » (« .dl-cb » s'y pose
            en absolu), et les lignes du Fantôme parmi les bulles du fil. */
         .bt-e-amis .bt-fenetre{position:relative;}
+        /* ═══ VOS SALONS ICI — épinglés sous l'en-tête, une rangée qu'on fait défiler ═══
+           Hors du fil (qui défile), ils restent à l'écran : l'étiquette à
+           gauche, les salons en pastilles compactes à droite. */
+        .bt-salons{flex:none;display:flex;align-items:center;gap:10px;padding:7px 0 8px 16px;
+          background:var(--bt-nappe);border-bottom:1px solid rgba(255,244,230,.08);}
+        .bt-salons-k{flex:none;margin:0;max-width:62px;font-size:10.5px;line-height:1.2;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,226,166,.8);}
+        .bt-salons-l{flex:1 1 auto;min-width:0;display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding-right:16px;}
+        .bt-salons-l::-webkit-scrollbar{display:none;}
+        .bt-salons-l button{flex:none;display:flex;align-items:center;gap:8px;max-width:190px;padding:4px 11px 4px 4px;border-radius:12px;cursor:pointer;
+          font:inherit;text-align:left;color:var(--bt-creme);background:rgba(255,244,230,.05);border:1.5px solid rgba(255,244,230,.12);}
+        .bt-salons-l button.on{border-color:#F5A23A;background:rgba(245,162,58,.14);}
+        .bt-salons-l img,.bt-salons-l i{flex:none;width:32px;height:32px;border-radius:9px;object-fit:cover;object-position:50% 25%;
+          display:grid;place-items:center;font-style:normal;font-size:16px;background:#2A1F1B;}
+        .bt-salons-l span{min-width:0;display:flex;flex-direction:column;gap:1px;}
+        .bt-salons-l b{font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .bt-salons-l small{font-size:11px;color:rgba(205,184,164,.85);}
         .bt-duel{margin:12px 0 2px;}
         /* L'ÉTIQUETTE « EXEMPLE » COLLE AU HAUT DE LA CARTE, tant que la carte
            est à l'écran : le duel fait défiler le fil jusqu'à lui (8 px

@@ -137,6 +137,17 @@ export function DemoTour({
   racine = "main.mqc",
 }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "more" | "done">("idle");
+  /* ═══ LA PAGE SAIT QUAND LA PRÉSENTATION JOUE ═══ « Une fois la
+     présentation terminée, dans "Expérience", j'ai encore l'avant/après au
+     lieu d'avoir juste le début de l'expérience à faire. » L'onglet ne garde
+     l'avant/après que pendant qu'elle joue — voir `presentationEnCours`. */
+  useEffect(() => {
+    try {
+      window.dispatchEvent(new CustomEvent("clikme:presentation", { detail: phase === "playing" ? "debut" : "fin" }));
+    } catch {
+      /* noop */
+    }
+  }, [phase]);
   // Bonus « toucher plus de monde » : la scène se joue étape par étape (le site du
   // partenaire apparaît → la section entre → la carte du pro glisse → un visiteur clique).
   const [mstep, setMstep] = useState(0);

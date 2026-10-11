@@ -113,6 +113,8 @@ export type EssaiVitrineCarte = {
   raison?: string;
   /** Le détail technique, replié sous la raison. */
   detail?: string;
+  /** Ses autres pièces, repérées sur ses photos — voir `PiecesDemo`. */
+  autres?: PieceDemo[];
 };
 
 /** La raison d'un échec, dite au commerçant — le détail technique reste à part. */
@@ -125,11 +127,88 @@ export function raisonLisible(e: EssaiVitrine): string {
   return "Le rendu n’a pas abouti cette fois. Un nouvel essai se fait tout seul à votre prochaine visite.";
 }
 
-export function essaiVitrinePourLaCarte(e: EssaiVitrine | undefined, aFaire: boolean): EssaiVitrineCarte | undefined {
-  if (e?.etat === "prete" && e.apres && e.avant) return { etat: "prete", avant: e.avant, apres: e.apres, piece: e.piece, nom: e.nom };
-  if (aFaire || e?.etat === "en-cours") return { etat: "en-cours", avant: AVANT_ELLE, piece: e?.piece, nom: e?.nom };
+export function essaiVitrinePourLaCarte(e: EssaiVitrine | undefined, aFaire: boolean, autres?: PieceDemo[]): EssaiVitrineCarte | undefined {
+  const plus = autres?.length ? { autres } : {};
+  if (e?.etat === "prete" && e.apres && e.avant) return { etat: "prete", avant: e.avant, apres: e.apres, piece: e.piece, nom: e.nom, ...plus };
+  if (aFaire || e?.etat === "en-cours") return { etat: "en-cours", avant: AVANT_ELLE, piece: e?.piece, nom: e?.nom, ...plus };
   if (e && (e.etat === "echec" || e.etat === "aucune")) {
-    return { etat: "echec", avant: e.avant ?? AVANT_ELLE, piece: e.piece, nom: e.nom, raison: raisonLisible(e), detail: e.erreur };
+    return { etat: "echec", avant: e.avant ?? AVANT_ELLE, piece: e.piece, nom: e.nom, raison: raisonLisible(e), detail: e.erreur, ...plus };
   }
-  return undefined;
+  return autres?.length ? { etat: "exemple", ...plus } : undefined;
+}
+
+/**
+ * ═══ SES PIÈCES À ELLE, POUR QU'ELLE ESSAIE ELLE-MÊME ═══════════════════
+ *
+ * « Une fois la démo terminée, j'aurais aimé que la propriétaire puisse
+ * essayer l'expérience : dans l'onglet Expérience, elle voit ce qu'on lui a
+ * montré mais ne peut pas essayer elle-même. Mets le système tel qu'il est
+ * déjà pensé, avec peut-être quelques vêtements de son shop déjà présents ;
+ * et quand elle décidera de garder sa page, on réinitialise tout pour qu'elle
+ * mette depuis son admin ses vêtements, sa collection. »
+ *
+ * L'ATELIER N'A RIEN À LUI PROPOSER : sur une vraie page, il n'essaie que SES
+ * pièces photographiées (`seulementLesSiennes`), et une boutique toute neuve
+ * n'en a aucune. Le modèle qui voit, qui a déjà trouvé LA pièce de l'étape 2,
+ * en repère jusqu'à six autres sur ses photos Google, recadrées sur elles
+ * (`completerPiecesDemo`). La page les lui donne à essayer, à elle seule et
+ * tant qu'elle n'a pas gardé sa page — voir `piecesDeLaVitrine`. Gardée, sa
+ * page ne lit plus que son comptoir.
+ *
+ * GARDÉES À CÔTÉ DE L'ESSAI (`pieces_demo`), PAS DEDANS : l'essai réécrit
+ * tout son objet en finissant, il les effacerait.
+ */
+export type PieceDemo = { photo: string; nom: string; genre?: "femme" | "homme"; source?: string };
+export type PiecesDemo = {
+  etat: "en-cours" | "prete" | "echec" | "aucune";
+  essais: number;
+  at: string;
+  pieces: PieceDemo[];
+  erreur?: string;
+};
+
+export function piecesDemoDuDiagnostic(diag: unknown): PiecesDemo | undefined {
+  const d = (diag && typeof diag === "object" ? diag : {}) as Record<string, unknown>;
+  const p = (d.pieces_demo && typeof d.pieces_demo === "object" ? d.pieces_demo : null) as Record<string, unknown> | null;
+  if (!p) return undefined;
+  const etat = ["en-cours", "prete", "echec", "aucune"].includes(s(p.etat)) ? (s(p.etat) as PiecesDemo["etat"]) : "echec";
+  const pieces = (Array.isArray(p.pieces) ? p.pieces : [])
+    .map((x) => (x && typeof x === "object" ? (x as Record<string, unknown>) : {}))
+    .filter((x) => /^https:\/\//i.test(s(x.photo)))
+    .slice(0, 6)
+    .map((x) => ({
+      photo: s(x.photo),
+      nom: s(x.nom).slice(0, 60) || "Une de vos pièces",
+      ...(x.genre === "homme" || x.genre === "femme" ? { genre: x.genre as "femme" | "homme" } : {}),
+      ...(/^https:\/\//i.test(s(x.source)) ? { source: s(x.source) } : {}),
+    }));
+  return { etat, essais: Number.isFinite(Number(p.essais)) ? Number(p.essais) : 0, at: s(p.at), pieces, erreur: s(p.erreur) || undefined };
+}
+
+/** Faut-il (re)chercher ses pièces ? Les mêmes délais que l'essai — voir `essaiVitrineAFaire`. */
+export function piecesDemoAFaire(p: PiecesDemo | undefined, maintenant = Date.now()): boolean {
+  if (!p) return true;
+  const depuis = p.at ? maintenant - Date.parse(p.at) : Infinity;
+  if (p.etat === "prete") return false;
+  if (p.etat === "en-cours") return !(depuis < PERDU);
+  if (p.etat === "aucune") return p.essais < 3 ? !(depuis < DEMI_HEURE) : !(depuis < UN_JOUR);
+  return p.essais < 3 ? !(depuis < DIX_MINUTES) : !(depuis < UN_JOUR);
+}
+
+/**
+ * LES PIÈCES QU'ELLE PEUT ESSAYER SUR SA PAGE, en articles de catalogue : celle
+ * de l'étape 2 d'abord (c'est celle qu'elle vient de voir portée), puis les
+ * autres. Sans prix — on ne les connaît pas, et on n'en invente pas.
+ */
+export function piecesDeLaVitrine(e: EssaiVitrineCarte | undefined): { id: string; nom: string; photo: string; rayon: string }[] {
+  const toutes = [...(e?.piece ? [{ photo: e.piece, nom: e.nom || "Votre pièce" }] : []), ...(e?.autres ?? [])];
+  const vues = new Set<string>();
+  return toutes
+    .filter((p) => {
+      if (!p.photo || vues.has(p.photo)) return false;
+      vues.add(p.photo);
+      return true;
+    })
+    .slice(0, 7)
+    .map((p, i) => ({ id: `vitrine-${i}`, nom: p.nom, photo: p.photo, rayon: "Vos pièces" }));
 }

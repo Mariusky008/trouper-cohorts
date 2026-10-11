@@ -42,8 +42,12 @@ import {
   AVANT_LUI,
   essaiVitrineAFaire,
   essaiVitrineDuDiagnostic,
+  piecesDemoAFaire,
+  piecesDemoDuDiagnostic,
   VERSION_ESSAI,
   type EssaiVitrine,
+  type PieceDemo,
+  type PiecesDemo,
 } from "@/lib/site-internet/essai-vitrine-donnees";
 
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -97,12 +101,12 @@ const cleGemini = () => s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_AP
 const cleOpenAI = () => s(process.env.OPENAI_API_KEY);
 
 /** La question, posée à Gemini : il rend le texte de sa réponse. */
-async function voirParGemini(photos: Img[], cle: string): Promise<string | { erreur: string }> {
+async function voirParGemini(photos: Img[], cle: string, question = QUESTION_PIECE): Promise<string | { erreur: string }> {
   const base = s(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
   const modele = s(process.env.GEMINI_VISION_MODEL) || "gemini-2.5-flash";
   const parts: ({ text: string } | { inlineData: { mimeType: string; data: string } })[] = [];
   photos.forEach((p, i) => parts.push({ text: `PHOTO ${i}` }, { inlineData: { mimeType: p.type, data: p.donnees } }));
-  parts.push({ text: QUESTION_PIECE });
+  parts.push({ text: question });
   const r = await fetch(`${base}/v1beta/models/${modele}:generateContent`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-goog-api-key": cle },
@@ -118,7 +122,7 @@ async function voirParGemini(photos: Img[], cle: string): Promise<string | { err
  * LA MÊME QUESTION, POSÉE À OPENAI quand il n'y a pas de clé Gemini — ou que
  * Gemini n'a pas répondu. Le modèle de conversation du double sait voir.
  */
-async function voirParOpenAI(photos: Img[], cle: string): Promise<string | { erreur: string }> {
+async function voirParOpenAI(photos: Img[], cle: string, question = QUESTION_PIECE): Promise<string | { erreur: string }> {
   const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
   const modele = s(process.env.OPENAI_VISION_MODEL) || s(process.env.OPENAI_DOUBLE_MODEL) || "gpt-5.4-mini";
   const contenu = [
@@ -126,7 +130,7 @@ async function voirParOpenAI(photos: Img[], cle: string): Promise<string | { err
       { type: "text", text: `PHOTO ${i}` },
       { type: "image_url", image_url: { url: `data:${p.type};base64,${p.donnees}` } },
     ]),
-    { type: "text", text: QUESTION_PIECE },
+    { type: "text", text: question },
   ];
   const r = await fetch(`${base}/v1/chat/completions`, {
     method: "POST",
@@ -144,36 +148,43 @@ async function voirParOpenAI(photos: Img[], cle: string): Promise<string | { err
   return j.choices?.[0]?.message?.content ?? "";
 }
 
-async function choisirLaPiece(photos: Img[]): Promise<Choix | "aucune" | { erreur: string }> {
-  if (!photos.length) return "aucune";
+/** Une question aux yeux : Gemini d'abord, OpenAI ensuite. Le texte de la réponse, ou pourquoi il n'y en a pas. */
+async function demanderAuxYeux(photos: Img[], question: string): Promise<string | { erreur: string }> {
   const erreurs: string[] = [];
-  let texte = "";
   for (const [cle, voir] of [
     [cleGemini(), voirParGemini],
     [cleOpenAI(), voirParOpenAI],
   ] as const) {
     if (!cle) continue;
     try {
-      const r = await voir(photos, cle);
-      if (typeof r === "string" && r.trim()) {
-        texte = r;
-        break;
-      }
+      const r = await voir(photos, cle, question);
+      if (typeof r === "string" && r.trim()) return r;
       erreurs.push(typeof r === "string" ? "réponse vide" : r.erreur);
     } catch (e) {
       erreurs.push(e instanceof Error ? e.message : String(e));
     }
   }
-  if (!texte) return { erreur: erreurs.join(" ; ") || "aucune clé d'IA sur le serveur (GEMINI_API_KEY ou OPENAI_API_KEY)" };
+  return { erreur: erreurs.join(" ; ") || "aucune clé d'IA sur le serveur (GEMINI_API_KEY ou OPENAI_API_KEY)" };
+}
+
+/** La boîte du modèle (0-1000, [ymin, xmin, ymax, xmax]) en fractions de l'image, si elle tient debout. */
+function boiteDe(v: unknown): Choix["boite"] {
+  const b = Array.isArray(v) ? v.map(Number) : [];
+  return b.length === 4 && b.every((x) => Number.isFinite(x)) && b[2] > b[0] && b[3] > b[1]
+    ? { x: b[1] / 1000, y: b[0] / 1000, w: (b[3] - b[1]) / 1000, h: (b[2] - b[0]) / 1000 }
+    : undefined;
+}
+
+async function choisirLaPiece(photos: Img[]): Promise<Choix | "aucune" | { erreur: string }> {
+  if (!photos.length) return "aucune";
+  const reponse = await demanderAuxYeux(photos, QUESTION_PIECE);
+  if (typeof reponse !== "string") return reponse;
+  const texte = reponse;
   try {
     const o = JSON.parse(texte.replace(/^```json|```$/g, "").trim()) as { index?: unknown; nom?: unknown; genre?: unknown; box_2d?: unknown };
     const index = Number(o.index);
     if (!Number.isInteger(index) || index < 0 || index >= photos.length) return "aucune";
-    const b = Array.isArray(o.box_2d) ? o.box_2d.map(Number) : [];
-    const boite =
-      b.length === 4 && b.every((v) => Number.isFinite(v)) && b[2] > b[0] && b[3] > b[1]
-        ? { x: b[1] / 1000, y: b[0] / 1000, w: (b[3] - b[1]) / 1000, h: (b[2] - b[0]) / 1000 }
-        : undefined;
+    const boite = boiteDe(o.box_2d);
     const nom = s(o.nom).replace(/["«»]/g, "").slice(0, 60);
     return { index, nom: nom ? nom[0].toUpperCase() + nom.slice(1) : "", genre: o.genre === "homme" ? "homme" : "femme", boite };
   } catch {
@@ -381,5 +392,113 @@ export async function completerEssaiVitrine(slug: string, origine?: string): Pro
     );
   } catch (e) {
     await echec(e instanceof Error ? e.message : "erreur");
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   👗 SES AUTRES PIÈCES, POUR QU'ELLE ESSAIE ELLE-MÊME — voir `PiecesDemo`.
+
+   « Une fois la démo terminée, la propriétaire doit pouvoir essayer
+   l'expérience, avec quelques vêtements de son shop déjà présents. »
+
+   LA MÊME CHAÎNE QUE L'ESSAI, SANS LE RENDU : ses photos en petit, le modèle
+   qui voit désigne celles où un vêtement se voit en entier (six au plus,
+   toutes différentes), chacune recadrée sur lui, tête exclue, et rangée.
+   Aucune image n'est fabriquée ici : c'est elle qui essaiera, sur sa photo,
+   dans l'atelier. Une fraction de centime.
+
+   LA PIÈCE DE L'ÉTAPE 2 N'Y EST PAS DEUX FOIS : sa photo source est écartée.
+   ═══════════════════════════════════════════════════════════════════════ */
+const QUESTION_PIECES =
+  "These photos come from the Google listing of a clothing shop. List the photos that each show ONE garment or outfit clearly " +
+  "enough to dress another person with it: worn by someone, on a mannequin, on a hanger or laid flat, the whole garment visible " +
+  "and well lit. At most 6, best first, and each a DIFFERENT garment (skip near-duplicates of the same piece). Skip shop fronts, " +
+  "crowded racks of many clothes, accessories alone, shoes alone and bags. Answer only with JSON: " +
+  '{"pieces": [{"index": <photo number>, "nom": "<short French name of the garment, 2 to 5 words, lower case after the first ' +
+  'letter, e.g. Robe fleurie marine>", "genre": "femme" or "homme", "box_2d": [ymin, xmin, ymax, xmax] normalised to 0-1000, ' +
+  'tight around the garment only, EXCLUDING the head and face of the person wearing it}]} — an empty list if no photo qualifies.';
+
+/* SA PROPRE CASE DU DIAGNOSTIC, relue avant chaque écriture — la même règle que `ecrire`. */
+async function ecrirePieces(id: string, maj: (p: PiecesDemo | undefined) => PiecesDemo | null): Promise<boolean> {
+  const supabase = createAdminClient();
+  const { data } = await supabase.from("human_vitrine_sites").select("diagnostic").eq("id", id).maybeSingle();
+  const diag = ((data as Record<string, unknown> | null)?.diagnostic ?? {}) as Record<string, unknown>;
+  const suite = maj(piecesDemoDuDiagnostic(diag));
+  if (!suite) return false;
+  await supabase.from("human_vitrine_sites").update({ diagnostic: { ...diag, pieces_demo: suite } }).eq("id", id);
+  return true;
+}
+
+/** SES PIÈCES À ESSAYER, SI ELLES SONT À CHERCHER. Rien ne lève. */
+export async function completerPiecesDemo(slug: string): Promise<void> {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("human_vitrine_sites")
+    .select("id, activite, diagnostic, gallery_photos")
+    .eq("slug", slug)
+    .eq("channel", "letter")
+    .maybeSingle();
+  const row = (data as Record<string, unknown> | null) ?? null;
+  if (!row || !moteurEssaiConfigure() || !boutiqueAEssayer(s(row.activite), row.diagnostic)) return;
+  const id = s(row.id);
+  const avant = piecesDemoDuDiagnostic(row.diagnostic);
+  if (!piecesDemoAFaire(avant)) return;
+  const urls = photosCandidates(row).slice(0, 10);
+  if (!urls.length) return;
+  const essais = (avant?.essais ?? 0) + 1;
+  const debut = new Date().toISOString();
+  const pris = await ecrirePieces(id, (p) =>
+    p && !piecesDemoAFaire(p) ? null : { etat: "en-cours", essais, at: debut, pieces: p?.pieces ?? [] },
+  );
+  if (!pris) return;
+  const finir = (suite: Omit<PiecesDemo, "essais" | "at">) =>
+    ecrirePieces(id, (p) => (p?.at !== debut ? null : { ...suite, essais, at: new Date().toISOString() }));
+
+  try {
+    const grandes = await Promise.all(urls.map((u) => lirePhoto(u)));
+    const lues = grandes.map((g, i) => ({ g, url: urls[i] })).filter((x): x is { g: Img; url: string } => Boolean(x.g));
+    if (!lues.length) return void (await finir({ etat: "aucune", pieces: [], erreur: "aucune photo lisible sur sa fiche" }));
+    const petites = await Promise.all(
+      lues.map(async (x) => ({
+        type: "image/jpeg",
+        donnees: (await sharp(Buffer.from(x.g.donnees, "base64")).resize(640, 640, { fit: "inside" }).jpeg({ quality: 80 }).toBuffer()).toString("base64"),
+      })),
+    );
+    const reponse = await demanderAuxYeux(petites, QUESTION_PIECES);
+    if (typeof reponse !== "string") return void (await finir({ etat: "echec", pieces: [], erreur: reponse.erreur }));
+    let liste: unknown[] = [];
+    try {
+      const o = JSON.parse(reponse.replace(/^```json|```$/g, "").trim()) as { pieces?: unknown };
+      liste = Array.isArray(o.pieces) ? o.pieces : Array.isArray(o) ? (o as unknown[]) : [];
+    } catch {
+      return void (await finir({ etat: "echec", pieces: [], erreur: `réponse illisible du modèle qui voit : ${reponse.slice(0, 120)}` }));
+    }
+    // LA PIÈCE DE L'ÉTAPE 2 EST DÉJÀ À ESSAYER : sa photo source ne revient pas.
+    const dejaLa = essaiVitrineDuDiagnostic(row.diagnostic)?.source;
+    const vus = new Set<number>();
+    const pieces: PieceDemo[] = [];
+    for (const brut of liste) {
+      if (pieces.length >= 6) break;
+      const o = (brut && typeof brut === "object" ? brut : {}) as Record<string, unknown>;
+      const index = Number(o.index);
+      if (!Number.isInteger(index) || index < 0 || index >= lues.length || vus.has(index)) continue;
+      vus.add(index);
+      const source = lues[index];
+      if (dejaLa && source.url === dejaLa) continue;
+      const octets = await recadrer(source.g, boiteDe(o.box_2d));
+      const empreinte = createHash("sha1").update(octets).digest("hex").slice(0, 12);
+      const photo = await ranger(`${DOSSIER}/${slug}-demo-${empreinte}.jpg`, octets, "image/jpeg");
+      if (typeof photo !== "string") continue;
+      const nom = s(o.nom).replace(/["«»]/g, "").slice(0, 60);
+      pieces.push({
+        photo,
+        nom: nom ? nom[0].toUpperCase() + nom.slice(1) : "Une de vos pièces",
+        genre: o.genre === "homme" ? "homme" : "femme",
+        ...(/^https:\/\//i.test(source.url) ? { source: source.url } : {}),
+      });
+    }
+    await finir(pieces.length ? { etat: "prete", pieces } : { etat: "aucune", pieces: [], erreur: "aucune autre pièce sur ses photos" });
+  } catch (e) {
+    await finir({ etat: "echec", pieces: [], erreur: e instanceof Error ? e.message : "erreur" });
   }
 }

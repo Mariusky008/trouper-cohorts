@@ -24,6 +24,18 @@ import { abonnerLook, monLook } from "@/lib/direct/look";
 import { changerDeLook } from "./prendre-place";
 import type { PieceGardee } from "@/lib/direct/pieces-gardees";
 import { CourrierDuFantome, RevoirLesSurprises } from "./surprises";
+import { VideoFantome } from "@/components/direct/video-fantome";
+
+/* ═══ MES SORTIES, LA PREMIÈRE FOIS ═══ Les ambiances proposées sous la vidéo —
+   les options de la pièce (`maison.ts`), avec leur pictogramme. */
+const AMBIANCES: Record<string, string> = {
+  verre: "🍸",
+  musique: "🎵",
+  fete: "🎉",
+  tranquille: "🌿",
+  rencontrer: "👥",
+  surprends: "✨",
+};
 import {
   etatDe,
   motDuFantome,
@@ -372,6 +384,17 @@ function VuePiece({
   const [vider, setVider] = useState(false);
   const p = e.piece;
   const choix = p.choix;
+  /* ═══ MES SORTIES, TANT QU'ELLE NE ME CONNAÎT PAS ═══════════════════════
+     « Ma Maison → Mes Sorties → si l'utilisateur est nouveau dans cette
+     pièce : la vidéo, puis des choix d'ambiance rapides ; à partir de là
+     ClikMe commence à apprendre. » Le Fantôme, chez lui, regarde son
+     téléphone : terrasse, concert, bar — « dis-moi ce qui te tente, je
+     regarderai ce qui existe vraiment ce soir ». Décidé à l'arrivée : un
+     premier choix allume la pièce, et la suite (« Parfait… ») doit rester
+     sous les yeux. Ensuite, elle n'ouvre plus la pièce ; « Comment ça
+     marche ? » la remontre. */
+  const sorties = p.cle === "sorties";
+  const [intro, setIntro] = useState(() => sorties && !e.allumee && !e.enPause);
   const coches = new Set(e.dit);
   const gardeeDe = (s: Signal) => (s.id.startsWith("garde|") ? gardees.find((g) => `garde|${g.carte}|${g.piece}` === s.id) : undefined);
   /* LA MISSION DU FANTÔME — ce qu'il va faire après qu'on a nourri la Maison. */
@@ -396,17 +419,58 @@ function VuePiece({
         </span>
       </header>
 
-      <div className="mz-piece-dit">
-        <FantomeAnime humeur={e.enPause ? "sleeping" : e.allumee ? "leaving" : "curious"} taille={78} />
-        <p>{dit}</p>
-      </div>
+      {intro && choix ? (
+        <section className="mz-sorties">
+          <VideoFantome nom="soiree" classe="mz-video" />
+          {/* UNE QUESTION, SIX RÉPONSES, RIEN D'AUTRE : « "Dites-moi l'ambiance, je
+              regarde ce qui se passe en ville" + "Parfait, je regarderai…" répète
+              deux fois la même idée. » */}
+          <p className="mz-sorties-q">👻 De quoi avez-vous envie ce soir&nbsp;?</p>
+          <div className="mz-puces centre">
+            {choix.options.map((o) => {
+              const on = coches.has(o.cle);
+              return (
+                <button
+                  key={o.cle}
+                  type="button"
+                  className={`mz-puce${on ? " on" : ""}`}
+                  aria-pressed={on}
+                  onClick={() => choisirDansLaPiece(p.cle, on ? e.dit.filter((x) => x !== o.cle) : [...e.dit, o.cle])}
+                >
+                  {AMBIANCES[o.cle] ? `${AMBIANCES[o.cle]} ` : ""}
+                  {o.mot}
+                </button>
+              );
+            })}
+          </div>
+          {/* LE PREMIER CHOIX EST UN SIGNAL : il le dit, et ouvre la ville. */}
+          {e.dit.length > 0 && (
+            <>
+              <p className="mz-sorties-ok">Parfait. Je regarde ce qui se passe.</p>
+              <button type="button" className="mz-cta large" onClick={() => onDecouvrir(p.branche)}>
+                Voir ce soir →
+              </button>
+            </>
+          )}
+        </section>
+      ) : (
+        <div className="mz-piece-dit">
+          <FantomeAnime humeur={e.enPause ? "sleeping" : e.allumee ? "leaving" : "curious"} taille={78} />
+          <p>{dit}</p>
+        </div>
+      )}
+      {sorties && !intro && choix && (
+        <button type="button" className="mz-comment" onClick={() => setIntro(true)}>
+          Comment ça marche&nbsp;?
+        </button>
+      )}
 
       <div className="mz-corps">
         {e.enPause ? (
           <button type="button" className="mz-cta large" onClick={() => mettreEnPause(p.cle, false)}>
             Me réveiller
           </button>
-        ) : !e.allumee ? (
+        ) : intro ? null : !e.allumee ? (
           <button type="button" className="mz-cta large" onClick={() => onDecouvrir(p.branche)}>
             Découvrir dans la ville →
           </button>
@@ -421,7 +485,8 @@ function VuePiece({
           <h3>
             <i aria-hidden="true">💬</i> Ce que vous m’avez dit
           </h3>
-          {choix && (
+          {/* SES AMBIANCES SONT DÉJÀ AU-DESSUS, SOUS LA VIDÉO : pas deux fois. */}
+          {choix && !intro && (
             <>
               <p className="mz-question">{choix.titre}</p>
               <div className="mz-puces">
@@ -895,6 +960,19 @@ function StylesMaMaison() {
 .mz-bloc h3 small{margin-left:auto;font-size:12px;font-weight:700;color:#BFA88C;}
 .mz-question{margin:0 0 8px;font-size:13px;font-weight:700;color:#FFD58A;}
 .mz-puces{display:flex;flex-wrap:wrap;gap:8px;}
+.mz-puces.centre{justify-content:center;margin-top:14px;}
+/* ── MES SORTIES, LA PREMIÈRE FOIS : la vidéo, la question, les ambiances ── */
+.mz-sorties{margin:-6px 16px 0;}
+/* CARRÉE ET PAS PLUS HAUTE QU'UN TIERS D'ÉCRAN : sous la photo de la pièce,
+   plus haute, elle poussait la question sous la barre du bas d'un iPhone.
+   Recadrée sur les ambiances qui flottent ET sur lui, au téléphone. */
+.mz-video{width:100%;aspect-ratio:1 / 1;max-height:min(38vh,340px);box-shadow:0 18px 44px rgba(0,0,0,.45);}
+.mz-video .vf-media{object-position:50% 40%;}
+.mz-sorties-q{margin:14px 0 0;text-align:center;font-size:19px;font-weight:900;color:#FFF4E6;}
+.mz-sorties-ok{margin:16px 0 10px;text-align:center;font-size:15px;font-weight:800;color:#F6B54B;animation:mzOk .35s ease both;}
+@keyframes mzOk{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.mz-comment{display:block;margin:6px auto 0;padding:6px 10px;border:0;background:none;cursor:pointer;font:inherit;font-size:13px;
+  font-weight:700;color:#F6B54B;text-decoration:underline;text-underline-offset:3px;}
 .mz-puce{padding:8px 13px;border-radius:999px;border:1.5px solid rgba(255,236,210,.22);background:rgba(255,236,210,.04);font-size:13.5px;cursor:pointer;}
 .mz-puce.on{border-color:#F6B54B;background:rgba(246,181,75,.18);color:#FFD58A;font-weight:700;}
 /* Ce que j'ai remarqué : des vignettes qu'on fait défiler, pas une liste de base de données. */

@@ -88,6 +88,9 @@ import { avisPartages, interpreter, lireMessage, MEMOIRE_NEUVE, versLeLieu, type
 import { zoneChangee } from "@/components/direct/mur-contenu";
 import { AvatarFantome } from "@/app/autour-de-moi/salon-chat";
 import { CSS_FANTOME, FANTOME_AVATAR, FantomeAnime } from "@/components/direct/fantome-anime";
+import { mouvementReduit, VideoFantome } from "@/components/direct/video-fantome";
+import { RechercheFantome } from "@/components/direct/recherche-fantome";
+import { contexteDeRecherche, type ContexteRecherche } from "@/lib/direct/contexte-recherche";
 
 // ─── CE QUE LE COMMERCE A À OPPOSER ────────────────────────────────────────
 
@@ -346,6 +349,47 @@ type Instantane = {
 
 const attendre = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
 
+/* ═══ LES DEUX VIDÉOS DU SALON — voir `video-fantome.tsx` ═══════════════════
+   · `recherche` : après « ✨ Avec ClikMe », AVANT le résultat — « je pars
+     comparer les commerces ClikMe pour vous ». Cinq secondes la première fois
+     de la visite, moins de trois ensuite : elle ne doit pas ralentir celui
+     qui a compris.
+   · `salon` : le tuto, à l'ouverture du PREMIER salon qu'on crée, une seule
+     fois sur ce téléphone — puis le salon redevient direct. */
+const CLE_RECHERCHE_VUE = "clikme:recherche-vue";
+const CLE_TUTO_SALON = "clikme:ensemble-tuto-vu";
+function rechercheDejaVue(): boolean {
+  try {
+    return window.sessionStorage.getItem(CLE_RECHERCHE_VUE) === "1";
+  } catch {
+    return false;
+  }
+}
+function noterRechercheVue() {
+  try {
+    window.sessionStorage.setItem(CLE_RECHERCHE_VUE, "1");
+  } catch {
+    /* rien */
+  }
+}
+function tutoSalonDejaVu(): boolean {
+  try {
+    return window.localStorage.getItem(CLE_TUTO_SALON) === "1";
+  } catch {
+    return false;
+  }
+}
+function noterTutoSalonVu() {
+  try {
+    window.localStorage.setItem(CLE_TUTO_SALON, "1");
+  } catch {
+    /* rien */
+  }
+}
+/** La recherche filmée : entière (5,2 s) ou raccourcie (2,8 s). */
+const RECHERCHE_LONGUE = 5200;
+const RECHERCHE_COURTE = 2800;
+
 // ─── LE CROCHET ────────────────────────────────────────────────────────────
 
 export function useDuelDuSalon(p: {
@@ -379,6 +423,8 @@ export function useDuelDuSalon(p: {
   const sortie = useMemo(() => (!reelle && salon ? sortieDuSalon(salon) : undefined), [reelle, salon]);
   const { pool, essai } = useMemo(() => (sortie ? { pool: vivierDesSorties(), essai: undefined } : vivierDe(carte, reelle || !!p.seulementLesSiennes)), [sortie, carte, reelle, p.seulementLesSiennes]);
   const famille: string = sortie ? "sortie" : carte ? familleDuDouble(carte) : "mode";
+  /** Le monde du salon, pour la scène de recherche : jamais des vêtements devant un restaurant. */
+  const contexte = contexteDeRecherche({ sortie: !!sortie, carte });
   const action = sortie ? "J’y vais" : carte ? profilDuDouble(carte).demande.court : "Demander";
   const chez = lieuDe(carte);
   const sujet = useMemo(() => (salon ? sujetDe(salon, pool, carte) : null), [salon, pool, carte]);
@@ -395,6 +441,11 @@ export function useDuelDuSalon(p: {
   const [humeur, setHumeur] = useState<Humeur>("idle");
   const [proposition, setProposition] = useState<"ouverture" | "hesite" | "manuel" | null>(null);
   const [recherche, setRecherche] = useState(false);
+  /** La recherche de cette fois est-elle la version courte (déjà vue pendant la visite) ? */
+  const [rechercheCourte, setRechercheCourte] = useState(false);
+  /* LE TUTO DU SALON : décidé une fois, à l'arrivée — voir `CLE_TUTO_SALON`. */
+  const [tutoAJouer] = useState(() => (typeof window === "undefined" ? false : !tutoSalonDejaVu()));
+  const [tutoFini, setTutoFini] = useState(false);
   const [replie, setReplie] = useState(false);
   const [revoir, setRevoir] = useState(false);
   const [vu, setVu] = useState(false);
@@ -625,15 +676,25 @@ export function useDuelDuSalon(p: {
     const n = (salon.duels?.length ?? 0) + 1;
     noter("duel", n, champion ? "mieux" : "lance");
     setProposition(null);
-    if (!b) {
-      ajouterLigne(sortie ? "J'ai fait le tour : rien d'autre à lui opposer pour l'instant." : "J'ai fait le tour de la boutique : rien d'autre à lui opposer pour l'instant.");
-      return;
-    }
+    /* ═══ ON CHERCHE D'ABORD, ET ÇA SE VOIT ═══ « Au clic, ne pas afficher
+       immédiatement le résultat : d'abord la vidéo, à la place de la zone
+       principale du salon. » Cinq secondes la première fois, moins de trois
+       ensuite — et la recherche dure au moins ce temps-là, essayage compris. */
+    const courte = rechercheDejaVue();
+    noterRechercheVue();
+    setRechercheCourte(courte);
     setRecherche(true);
     setReplie(false);
     emettre({ type: champion ? "new_challenger_requested" : "challenger_searching" });
-    /* LA RECHERCHE SE VOIT AU MOINS 1,7 s, essayage compris — pas un clignement. */
-    const auMoins = attendre(1700);
+    const auMoins = attendre(courte ? RECHERCHE_COURTE : RECHERCHE_LONGUE);
+    /* RIEN DE MIEUX : on le dit, et on garde le sien. « Ne jamais inventer une
+       alternative uniquement pour terminer le parcours. » */
+    if (!b) {
+      await auMoins;
+      setRecherche(false);
+      ajouterLigne("Je n’ai rien trouvé de mieux. Je garderais celui-ci.");
+      return;
+    }
     let objetB: ObjetDuel = enObjet(b);
     let objetA: ObjetDuel = a;
     let essaiRate = false;
@@ -672,6 +733,7 @@ export function useDuelDuSalon(p: {
     setVu(false);
     setTrancher(false);
     if (!d) return;
+    ajouterLigne("J’ai trouvé un vrai concurrent.");
     if (essaiRate) emettre({ type: "essai_rate", sur: d.id });
     const raison = raisonDuChallenger(a, b, prefs);
     if (raison) {
@@ -778,10 +840,27 @@ export function useDuelDuSalon(p: {
 
   if (recherche) {
     etape = "recherche";
-    carteModule = <CarteRecherche sujet={sujet} humeur={humeur === "searching" ? humeur : "searching"} cherche={motsDeLaRecherche(famille).cherche} />;
+    carteModule = <CarteRecherche courte={rechercheCourte} contexte={contexte} />;
+  } else if (enAttente && sujet && proposition === "ouverture" && tutoAJouer && !tutoFini && !mouvementReduit()) {
+    /* ═══ LE PREMIER SALON : LE TUTO, DANS LA ZONE DE CONVERSATION ═══
+       « Pas une popup : dans le salon, exactement là où les messages vont
+       vivre. » Puis « On commence comment ? ». Jamais en rejoignant le salon
+       d'un ami (on n'y est pas seul à l'arrivée), jamais deux fois. */
+    etape = "tuto";
+    carteModule = (
+      <CarteTutoSalon
+        onFin={() => {
+          noterTutoSalonVu();
+          setTutoFini(true);
+        }}
+      />
+    );
   } else if (enAttente && sujet) {
     etape = "propose";
     carteModule = (
+      <>
+        {/* AU MOUVEMENT RÉDUIT, LE TUTO EST UNE IMAGE : l'affiche et sa phrase, au-dessus des deux choix. */}
+        {proposition === "ouverture" && tutoAJouer && !tutoFini && <CarteTutoSalon onFin={noterTutoSalonVu} />}
       <CartePropose
         sujet={sujet}
         ouverture={proposition === "ouverture"}
@@ -802,6 +881,7 @@ export function useDuelDuSalon(p: {
           setProposition(null);
         }}
       />
+      </>
     );
   } else if (duel && salon) {
     const d = duel;
@@ -1097,7 +1177,6 @@ export function CartePropose({
   ouverture,
   humeur,
   oppose,
-  autre,
   onInviter,
   onTrancher,
   onPlusTard,
@@ -1108,8 +1187,8 @@ export function CartePropose({
   humeur: Humeur;
   /** Ce qu'il va lui opposer : « un challenger du magasin », « un autre plat de la carte »… */
   oppose: string;
-  /** Ce qu'on lui demande de montrer : « une autre coupe », « un autre plat »… */
-  autre: string;
+  /** Ce qu'on lui demande de montrer : « une autre coupe », « un autre plat »… (plus affiché : la phrase dit ce que fait ClikMe). */
+  autre?: string;
   onInviter?: () => void;
   onTrancher: () => void;
   onPlusTard: () => void;
@@ -1150,7 +1229,7 @@ export function CartePropose({
               <i aria-hidden="true">👥</i>
               <span>
                 <b>Avec mes amis</b>
-                <small>Je les invite dans le salon.</small>
+                <small>Je partage ce salon pour avoir leurs avis.</small>
               </span>
               <s aria-hidden="true">›</s>
             </button>
@@ -1159,7 +1238,7 @@ export function CartePropose({
             <i aria-hidden="true">✨</i>
             <span>
               <b>Avec ClikMe</b>
-              <small>Montre-moi {autre}.</small>
+              <small>ClikMe compare, cherche une alternative et m’aide à décider.</small>
             </span>
             <s aria-hidden="true">›</s>
           </button>
@@ -1174,23 +1253,62 @@ export function CartePropose({
 }
 
 /** PENDANT LA RECHERCHE — il cherche, la loupe à la main. */
-function CarteRecherche({ sujet, humeur, cherche }: { sujet: ObjetDuel | null; humeur: Humeur; cherche: string }) {
+function CarteRecherche({ courte, contexte }: { courte: boolean; contexte: ContexteRecherche }) {
+  /* « On voit le Fantôme avec son téléphone, sa loupe, plusieurs propositions
+     autour de lui, puis il semble s'arrêter sur quelque chose. » Les mots
+     sont en HTML, par-dessus : la recherche, puis la comparaison.
+     LA SCÈNE SUIT LE MONDE DU SALON (`contexte`) : la vidéo des vêtements
+     pour la mode et la beauté, la scène générique ailleurs — voir
+     `recherche-fantome.tsx`. */
   return (
-    <section className="dl-carte dl-cherche" aria-live="polite" aria-label="ClikMe cherche un challenger">
-      <FantomeAnime humeur={humeur} taille={84} />
-      <div>
-        <p className="dl-sur">✨ ClikMe cherche</p>
-        <h3>Attendez… {cherche}</h3>
-        <div className="dl-cherche-p" aria-hidden="true">
-          {sujet && (
-            <span>
-              <Vignette o={sujet} />
-            </span>
-          )}
-          <span className="dl-cherche-vs">VS</span>
-          <span className="dl-cherche-q">?</span>
-        </div>
-      </div>
+    <section className="dl-carte dl-cherche-video" aria-live="polite" aria-label="ClikMe cherche une alternative">
+      <RechercheFantome
+        contexte={contexte}
+        classe="dl-video"
+        jusqua={courte ? RECHERCHE_COURTE / 1000 : undefined}
+        legendes={[
+          { a: 0, texte: "👻 Je cherche dans les commerces ClikMe…" },
+          { a: courte ? 1.4 : 3, texte: "Je compare ce qui pourrait mieux vous correspondre." },
+        ]}
+      />
+    </section>
+  );
+}
+
+/**
+ * LE TUTO DU PREMIER SALON — cinq secondes, « Passer » toujours possible.
+ *
+ * DANS LE CHAT, PAS PAR-DESSUS : « la vidéo occupe presque tout l'écran et
+ * repousse la conversation. Je la réduirais à environ 45–50 % de la hauteur
+ * disponible, avec juste deux lignes, puis elle disparaît après 5 secondes.
+ * Là, on comprend qu'on est dans un chat, pas dans une vidéo de
+ * présentation. » D'où `dl-tuto` (une bande, plus un portrait), et un filet
+ * de sécurité : si la vidéo traîne à se charger, elle s'en va quand même et
+ * « On commence comment ? » arrive.
+ */
+const TUTO_MAX_MS = 6000;
+function CarteTutoSalon({ onFin }: { onFin: () => void }) {
+  const finRef = useRef(onFin);
+  useEffect(() => {
+    finRef.current = onFin;
+  });
+  useEffect(() => {
+    if (mouvementReduit()) return;
+    const t = window.setTimeout(() => finRef.current(), TUTO_MAX_MS);
+    return () => window.clearTimeout(t);
+  }, []);
+  return (
+    <section className="dl-carte dl-cherche-video" aria-label="Comment fonctionne un salon">
+      <VideoFantome
+        nom="salon"
+        classe="dl-video dl-tuto"
+        passer
+        onFin={onFin}
+        legendes={[
+          { a: 0, texte: "Bienvenue dans votre salon 👻" },
+          { a: 2.5, texte: "Ici, vos amis et ClikMe peuvent vous aider à décider." },
+        ]}
+      />
     </section>
   );
 }
@@ -1849,6 +1967,20 @@ ${CSS_FANTOME}
 
 /* RECHERCHE */
 .dl-cherche{display:flex;align-items:center;gap:12px;}
+/* LA RECHERCHE FILMÉE, ET LE TUTO DU PREMIER SALON — à la place de la carte,
+   aux mêmes coins arrondis. Le haut du salon reste visible au-dessus. */
+.dl-cherche-video{padding:0;overflow:hidden;animation:dl-fondu .25s ease both;}
+.dl-video{width:100%;aspect-ratio:4 / 5;max-height:min(56vh,460px);border-radius:22px;}
+/* LE TUTO, UNE BANDE DANS LE FIL : la moitié de la hauteur utile du salon
+   (l'écran moins l'en-tête, la saisie et la barre du bas), cadrée sur les
+   bulles et les fantômes — la fausse barre de saisie du bas de la vidéo reste
+   hors champ, la vraie est juste en dessous. */
+.dl-video.dl-tuto{aspect-ratio:auto;max-height:none;height:clamp(190px,calc((100vh - 260px) * .48),330px);
+  height:clamp(190px,calc((100dvh - 260px) * .48),330px);}
+.dl-video.dl-tuto .vf-media{object-position:50% 38%;}
+/* SUR UN ORDINATEUR, LE SALON FLOTTE DANS UNE FENÊTRE PLUS BASSE QUE L'ÉCRAN. */
+@media (min-width:900px){.dl-video.dl-tuto{height:clamp(190px,calc((100vh - 340px) * .48),330px);height:clamp(190px,calc((100dvh - 340px) * .48),330px);}}
+@keyframes dl-fondu{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:none}}
 .dl-cherche-p{display:flex;align-items:center;gap:8px;margin-top:10px;}
 .dl-cherche-p span{display:block;width:44px;height:56px;border-radius:10px;overflow:hidden;border:1.5px solid rgba(246,181,75,.6);}
 .dl-cherche-p img{width:100%;height:100%;object-fit:cover;}
