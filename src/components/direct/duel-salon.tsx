@@ -89,6 +89,8 @@ import { zoneChangee } from "@/components/direct/mur-contenu";
 import { AvatarFantome } from "@/app/autour-de-moi/salon-chat";
 import { CSS_FANTOME, FANTOME_AVATAR, FantomeAnime } from "@/components/direct/fantome-anime";
 import { mouvementReduit, VideoFantome } from "@/components/direct/video-fantome";
+import { RechercheFantome } from "@/components/direct/recherche-fantome";
+import { contexteDeRecherche, type ContexteRecherche } from "@/lib/direct/contexte-recherche";
 
 // ─── CE QUE LE COMMERCE A À OPPOSER ────────────────────────────────────────
 
@@ -421,6 +423,8 @@ export function useDuelDuSalon(p: {
   const sortie = useMemo(() => (!reelle && salon ? sortieDuSalon(salon) : undefined), [reelle, salon]);
   const { pool, essai } = useMemo(() => (sortie ? { pool: vivierDesSorties(), essai: undefined } : vivierDe(carte, reelle || !!p.seulementLesSiennes)), [sortie, carte, reelle, p.seulementLesSiennes]);
   const famille: string = sortie ? "sortie" : carte ? familleDuDouble(carte) : "mode";
+  /** Le monde du salon, pour la scène de recherche : jamais des vêtements devant un restaurant. */
+  const contexte = contexteDeRecherche({ sortie: !!sortie, carte });
   const action = sortie ? "J’y vais" : carte ? profilDuDouble(carte).demande.court : "Demander";
   const chez = lieuDe(carte);
   const sujet = useMemo(() => (salon ? sujetDe(salon, pool, carte) : null), [salon, pool, carte]);
@@ -836,7 +840,7 @@ export function useDuelDuSalon(p: {
 
   if (recherche) {
     etape = "recherche";
-    carteModule = <CarteRecherche courte={rechercheCourte} />;
+    carteModule = <CarteRecherche courte={rechercheCourte} contexte={contexte} />;
   } else if (enAttente && sujet && proposition === "ouverture" && tutoAJouer && !tutoFini && !mouvementReduit()) {
     /* ═══ LE PREMIER SALON : LE TUTO, DANS LA ZONE DE CONVERSATION ═══
        « Pas une popup : dans le salon, exactement là où les messages vont
@@ -1249,14 +1253,17 @@ export function CartePropose({
 }
 
 /** PENDANT LA RECHERCHE — il cherche, la loupe à la main. */
-function CarteRecherche({ courte }: { courte: boolean }) {
+function CarteRecherche({ courte, contexte }: { courte: boolean; contexte: ContexteRecherche }) {
   /* « On voit le Fantôme avec son téléphone, sa loupe, plusieurs propositions
      autour de lui, puis il semble s'arrêter sur quelque chose. » Les mots
-     sont en HTML, par-dessus : la recherche, puis la comparaison. */
+     sont en HTML, par-dessus : la recherche, puis la comparaison.
+     LA SCÈNE SUIT LE MONDE DU SALON (`contexte`) : la vidéo des vêtements
+     pour la mode et la beauté, la scène générique ailleurs — voir
+     `recherche-fantome.tsx`. */
   return (
     <section className="dl-carte dl-cherche-video" aria-live="polite" aria-label="ClikMe cherche une alternative">
-      <VideoFantome
-        nom="recherche"
+      <RechercheFantome
+        contexte={contexte}
         classe="dl-video"
         jusqua={courte ? RECHERCHE_COURTE / 1000 : undefined}
         legendes={[
@@ -1268,18 +1275,38 @@ function CarteRecherche({ courte }: { courte: boolean }) {
   );
 }
 
-/** LE TUTO DU PREMIER SALON — cinq secondes, « Passer » toujours possible. */
+/**
+ * LE TUTO DU PREMIER SALON — cinq secondes, « Passer » toujours possible.
+ *
+ * DANS LE CHAT, PAS PAR-DESSUS : « la vidéo occupe presque tout l'écran et
+ * repousse la conversation. Je la réduirais à environ 45–50 % de la hauteur
+ * disponible, avec juste deux lignes, puis elle disparaît après 5 secondes.
+ * Là, on comprend qu'on est dans un chat, pas dans une vidéo de
+ * présentation. » D'où `dl-tuto` (une bande, plus un portrait), et un filet
+ * de sécurité : si la vidéo traîne à se charger, elle s'en va quand même et
+ * « On commence comment ? » arrive.
+ */
+const TUTO_MAX_MS = 6000;
 function CarteTutoSalon({ onFin }: { onFin: () => void }) {
+  const finRef = useRef(onFin);
+  useEffect(() => {
+    finRef.current = onFin;
+  });
+  useEffect(() => {
+    if (mouvementReduit()) return;
+    const t = window.setTimeout(() => finRef.current(), TUTO_MAX_MS);
+    return () => window.clearTimeout(t);
+  }, []);
   return (
     <section className="dl-carte dl-cherche-video" aria-label="Comment fonctionne un salon">
       <VideoFantome
         nom="salon"
-        classe="dl-video"
+        classe="dl-video dl-tuto"
         passer
         onFin={onFin}
         legendes={[
           { a: 0, texte: "Bienvenue dans votre salon 👻" },
-          { a: 2.5, texte: "Vos amis peuvent donner leur avis. ClikMe peut aussi vous aider à trancher." },
+          { a: 2.5, texte: "Ici, vos amis et ClikMe peuvent vous aider à décider." },
         ]}
       />
     </section>
@@ -1944,6 +1971,15 @@ ${CSS_FANTOME}
    aux mêmes coins arrondis. Le haut du salon reste visible au-dessus. */
 .dl-cherche-video{padding:0;overflow:hidden;animation:dl-fondu .25s ease both;}
 .dl-video{width:100%;aspect-ratio:4 / 5;max-height:min(56vh,460px);border-radius:22px;}
+/* LE TUTO, UNE BANDE DANS LE FIL : la moitié de la hauteur utile du salon
+   (l'écran moins l'en-tête, la saisie et la barre du bas), cadrée sur les
+   bulles et les fantômes — la fausse barre de saisie du bas de la vidéo reste
+   hors champ, la vraie est juste en dessous. */
+.dl-video.dl-tuto{aspect-ratio:auto;max-height:none;height:clamp(190px,calc((100vh - 260px) * .48),330px);
+  height:clamp(190px,calc((100dvh - 260px) * .48),330px);}
+.dl-video.dl-tuto .vf-media{object-position:50% 38%;}
+/* SUR UN ORDINATEUR, LE SALON FLOTTE DANS UNE FENÊTRE PLUS BASSE QUE L'ÉCRAN. */
+@media (min-width:900px){.dl-video.dl-tuto{height:clamp(190px,calc((100vh - 340px) * .48),330px);height:clamp(190px,calc((100dvh - 340px) * .48),330px);}}
 @keyframes dl-fondu{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:none}}
 .dl-cherche-p{display:flex;align-items:center;gap:8px;margin-top:10px;}
 .dl-cherche-p span{display:block;width:44px;height:56px;border-radius:10px;overflow:hidden;border:1.5px solid rgba(246,181,75,.6);}

@@ -218,7 +218,7 @@ export function VideoFantome({
   );
 }
 
-function StylesVideoFantome() {
+export function StylesVideoFantome() {
   return (
     <style
       dangerouslySetInnerHTML={{

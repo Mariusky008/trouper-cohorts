@@ -422,8 +422,10 @@ function VuePiece({
       {intro && choix ? (
         <section className="mz-sorties">
           <VideoFantome nom="soiree" classe="mz-video" />
-          <p className="mz-sorties-q">👻 Vous avez envie de quoi ce soir&nbsp;?</p>
-          <p className="mz-sorties-s">Dites-moi l’ambiance. Je regarde ce qui se passe en ville.</p>
+          {/* UNE QUESTION, SIX RÉPONSES, RIEN D'AUTRE : « "Dites-moi l'ambiance, je
+              regarde ce qui se passe en ville" + "Parfait, je regarderai…" répète
+              deux fois la même idée. » */}
+          <p className="mz-sorties-q">👻 De quoi avez-vous envie ce soir&nbsp;?</p>
           <div className="mz-puces centre">
             {choix.options.map((o) => {
               const on = coches.has(o.cle);
@@ -444,9 +446,9 @@ function VuePiece({
           {/* LE PREMIER CHOIX EST UN SIGNAL : il le dit, et ouvre la ville. */}
           {e.dit.length > 0 && (
             <>
-              <p className="mz-sorties-ok">👻 Parfait. Je regarderai ce qui ressemble à ça.</p>
+              <p className="mz-sorties-ok">Parfait. Je regarde ce qui se passe.</p>
               <button type="button" className="mz-cta large" onClick={() => onDecouvrir(p.branche)}>
-                Voir ce qui se passe ce soir →
+                Voir ce soir →
               </button>
             </>
           )}
@@ -967,7 +969,6 @@ function StylesMaMaison() {
 .mz-video{width:100%;aspect-ratio:1 / 1;max-height:min(38vh,340px);box-shadow:0 18px 44px rgba(0,0,0,.45);}
 .mz-video .vf-media{object-position:50% 40%;}
 .mz-sorties-q{margin:14px 0 0;text-align:center;font-size:19px;font-weight:900;color:#FFF4E6;}
-.mz-sorties-s{margin:6px auto 0;max-width:330px;text-align:center;font-size:14.5px;line-height:1.4;color:#E9D7C2;}
 .mz-sorties-ok{margin:16px 0 10px;text-align:center;font-size:15px;font-weight:800;color:#F6B54B;animation:mzOk .35s ease both;}
 @keyframes mzOk{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .mz-comment{display:block;margin:6px auto 0;padding:6px 10px;border:0;background:none;cursor:pointer;font:inherit;font-size:13px;

@@ -84,9 +84,11 @@ export function MonDressing({
                 avec." Puis : 📸 Ajouter mon premier vêtement. »
                 Le Fantôme photographie un jean pendu dans sa penderie : c'est
                 exactement ce qu'on va lui demander de faire. Une fois, et elle
-                reste sur le téléphone qui montre le jean — voir `VideoFantome`. */}
+                reste sur le téléphone qui montre le jean — voir `VideoFantome`.
+                TROIS, PAS « QUELQUES » : « 3 paraît réalisable et concret » — et
+                c'est le seuil des looks (`PIECES_MIN`). */}
             <VideoFantome nom="dressing" classe="dr-video" />
-            <p className="dr-video-dit">Montrez-moi quelques vêtements que vous portez. Je chercherai en ville ce qui va avec.</p>
+            <p className="dr-video-dit">Montrez-moi {PIECES_MIN} vêtements que vous portez. Je chercherai en ville ce qui va avec.</p>
             <div className="dr-pile">
               <button type="button" className="dr-cta" onClick={() => setAjout(true)}>
                 <Dessin d={DESSINS_DRESSING.photo} /> Ajouter mon premier vêtement

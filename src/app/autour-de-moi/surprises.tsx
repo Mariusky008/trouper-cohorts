@@ -218,26 +218,36 @@ export function CourrierDuFantome({ n, onOuvrir }: { n: number; onOuvrir: () => 
   );
 }
 
-/** Tout est ouvert : de quoi les revoir, sans bruit. */
+/**
+ * TOUT EST OUVERT : de quoi les revoir, sans bruit.
+ *
+ * JAMAIS EN MÊME TEMPS QUE LA VIDÉO : « la grosse vidéo "J'ai trouvé 3 choses
+ * pour vous", puis immédiatement dessous "Mes surprises du jour — 3
+ * trouvailles" : les deux disent quasiment la même chose ». Tant qu'une
+ * surprise attend, c'est `CourrierDuFantome` seul ; cette carte ne vient
+ * qu'après, et dit ce qu'elle fait : « Revoir mes surprises » (voir l'appel
+ * dans `ma-maison.tsx`).
+ */
 export function RevoirLesSurprises({ n, onRevoir }: { n: number; onRevoir: () => void }) {
   return (
     <button type="button" className="sp-revoir" onClick={onRevoir}>
       <i aria-hidden="true">🎁</i>
       <span>
-        <b>Mes surprises du jour</b>
+        <b>Revoir mes surprises</b>
         <em>
-          {n} {n > 1 ? "trouvailles" : "trouvaille"} du Fantôme, ce {momentDuJour()}
+          {n} {n > 1 ? "trouvailles" : "trouvaille"} du Fantôme, {momentDuJour()}
         </em>
       </span>
-      <s aria-hidden="true">Revoir ›</s>
+      <s aria-hidden="true">›</s>
       <StylesSurprises />
     </button>
   );
 }
 
+/** « ce matin », « cet après-midi », « ce soir » — « ce jour » ne se dit pas. */
 function momentDuJour(): string {
   const h = new Date().getHours();
-  return h < 12 ? "matin" : h < 18 ? "jour" : "soir";
+  return h < 12 ? "ce matin" : h < 18 ? "cet après-midi" : "ce soir";
 }
 
 // ─── L'ÉCRAN DES SURPRISES ─────────────────────────────────────────────────
@@ -659,7 +669,7 @@ function StylesSurprises() {
 .sp-revoir span{flex:1;min-width:0;}
 .sp-revoir b{display:block;font-size:14px;}
 .sp-revoir em{display:block;margin-top:1px;font-style:normal;font-size:12.5px;color:#E9D3B6;}
-.sp-revoir s{text-decoration:none;font-size:13px;font-weight:800;color:#F6B54B;white-space:nowrap;}
+.sp-revoir s{text-decoration:none;font-size:20px;font-weight:800;color:#F6B54B;white-space:nowrap;}
 
 /* ── L'ÉCRAN : DANS LE CADRE DU TÉLÉPHONE, PAR-DESSUS TOUT ── */
 .sp{position:absolute;inset:0;z-index:220;overflow:hidden;color:#FFF7EC;outline:none;
