@@ -247,24 +247,13 @@ export function CourrierDuFantome({ n, onOuvrir }: { n: number; onOuvrir: () => 
  * 5 s, quand il s'est calé dans les coussins : avant, elle lui couvrait le
  * visage. Elle reste sur sa dernière image (13,7 s). Plus de lien vers les
  * nouveautés : ce n'est pas une impasse à contourner, c'est le Fantôme qui
- * veille. Une fois par jour ; revenue plus tard, la carte reste sur sa
- * dernière image, avec sa phrase.
+ * veille.
+ *
+ * À CHAQUE RETOUR SUR MA MAISON, ELLE REJOUE. Elle ne jouait qu'une fois par
+ * jour : « j'ai bien la photo mais je n'ai pas eu la vidéo… je préférerais
+ * qu'elle se joue quand on quitte cette page et qu'on y revient ». Pendant
+ * la lecture comme après, sa dernière image et sa phrase.
  */
-const CLE_RIEN_VU = "clikme:rien-vu";
-function rienDejaVu(jour: string): boolean {
-  try {
-    return window.localStorage.getItem(CLE_RIEN_VU) === jour;
-  } catch {
-    return false;
-  }
-}
-function noterRienVu(jour: string) {
-  try {
-    window.localStorage.setItem(CLE_RIEN_VU, jour);
-  } catch {
-    /* rien */
-  }
-}
 
 /**
  * La tournée du jour a eu lieu, et rien n'a passé le seuil (voir
@@ -283,19 +272,10 @@ export function useRienAujourdhui(): { rien: boolean; debutDuJour: number } {
 }
 
 export function RienAujourdhui() {
-  const jour = new Date().toDateString();
-  const dejaVu = useSyncExternalStore(
-    rienAEcouter,
-    () => rienDejaVu(jour),
-    () => false,
-  );
   return (
     <div className="sp-courrier sp-courrier-video sp-rien" role="status">
       <VideoFantome
-        key={dejaVu ? "vue" : "joue"}
         nom="rien"
-        immobile={dejaVu}
-        onFin={() => noterRienVu(jour)}
         legendes={[{ a: 5, texte: <b className="sp-rien-t">Rien de fort pour vous pour l’instant… mais je garde l’œil ouvert 👻</b> }]}
       />
       <StylesSurprises />

@@ -2100,8 +2100,13 @@ export function BoutiqueTable({
           {/* ═══ VOS SALONS ICI — pour les retrouver, et passer de l'un à l'autre ═══
               ÉPINGLÉS SOUS L'EN-TÊTE, HORS DU FIL : dans le fil, ils partaient
               vers le haut dès que la conversation descendait. Le plus récent
-              d'abord ; celui qu'on regarde est allumé. */}
-          {salonsIci.length > 0 && (
+              d'abord ; celui qu'on regarde est allumé.
+              À PARTIR DE DEUX SEULEMENT, ET CELUI-CI EST DIT : « le bouton ne
+              fonctionne pas — à moins qu'il indique que je suis déjà sur ce
+              salon et que je n'en ai pas ouvert d'autres ? » C'était ça, et
+              rien ne le disait. Avec un seul salon, l'en-tête le nomme déjà ;
+              avec plusieurs, celui où l'on est dit « Vous êtes ici ». */}
+          {salonsIci.length > 1 && (
             <nav className="bt-salons" aria-label={`Vos salons chez ${c.nom}`}>
               <p className="bt-salons-k">Vos salons ici · {salonsIci.length}</p>
               <div className="bt-salons-l">
@@ -2110,7 +2115,14 @@ export function BoutiqueTable({
                   const n = x.messages.filter((m) => m.voix !== "systeme").length;
                   const ici = x.cle === cleSalon;
                   return (
-                    <button key={x.cle} type="button" className={ici ? "on" : undefined} aria-pressed={ici} onClick={() => setSalonChoisi(x.cle)}>
+                    <button
+                      key={x.cle}
+                      type="button"
+                      className={ici ? "on" : undefined}
+                      aria-current={ici ? "true" : undefined}
+                      disabled={ici}
+                      onClick={() => setSalonChoisi(x.cle)}
+                    >
                       {x.photo ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={x.photo} alt="" />
@@ -2119,9 +2131,7 @@ export function BoutiqueTable({
                       )}
                       <span>
                         <b>{essai ? (x.annonce ?? "Un essai") : "Le salon de la boutique"}</b>
-                        <small>
-                          {n} message{n > 1 ? "s" : ""}
-                        </small>
+                        <small>{ici ? "Vous êtes ici" : `${n} message${n > 1 ? "s" : ""}`}</small>
                       </span>
                     </button>
                   );
