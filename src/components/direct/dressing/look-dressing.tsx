@@ -49,6 +49,7 @@ import { AjoutPiece } from "./ajout-piece";
 import { Dessin, DESSINS_DRESSING } from "./dessins-dressing";
 import { Porte } from "./porte";
 import { StylesDressing } from "./styles-dressing";
+import { VideoFantome } from "@/components/direct/video-fantome";
 
 type Etape = "accueil" | "bonne" | "selection" | "generation" | "resultat" | "autres" | "details" | "cote";
 
@@ -191,26 +192,21 @@ export function LookAvecMonDressing({
 
         {ici === "accueil" && (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="dr-fant" src="/direct/fantome-humeurs/fantome-excited.webp" alt="" style={{ marginTop: 10 }} />
             {e.pieces.length === 0 ? (
+              /* ═══ « AVEC MON DRESSING », MAIS IL EST VIDE : LA VIGNETTE, ICI ET
+                  SEULEMENT ICI ═══ « La page commerçant reste très commerciale et
+                  légère. La vidéo n'y apparaît que lorsqu'elle devient utile » —
+                  au moment où l'on demande un look avec ses vêtements sans en
+                  avoir rangé un seul. Elle dit la promesse sans phrase compliquée :
+                  montrez-moi ce que vous avez, je cherche ce qui va avec. */
               <>
-                <p className="dr-titre">Votre dressing est vide</p>
-                <p className="dr-sous">Ajoutez quelques vêtements pour créer des looks avec les articles des commerçants.</p>
-                <ul className="dr-avantages">
-                  <li>
-                    <Dessin d={DESSINS_DRESSING.photo} /> Prenez en photo vos pièces
-                  </li>
-                  <li>
-                    <Dessin d={DESSINS_DRESSING.etoile} /> ClikMe les analyse automatiquement
-                  </li>
-                  <li>
-                    <Dessin d={DESSINS_DRESSING.sac} /> Puis les utilise pour créer des looks
-                  </li>
-                </ul>
+                <VideoFantome nom="dressing" classe="dr-video petite" />
+                <p className="dr-video-dit">👻 Pour trouver ce qui va avec, montrez-moi d’abord une pièce que vous portez déjà.</p>
               </>
             ) : (
               <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="dr-fant" src="/direct/fantome-humeurs/fantome-excited.webp" alt="" style={{ marginTop: 10 }} />
                 <p className="dr-titre">Il me manque de quoi compléter la tenue</p>
                 <p className="dr-sous">
                   {manque.length
@@ -221,7 +217,7 @@ export function LookAvecMonDressing({
             )}
             <div className="dr-pile">
               <button type="button" className="dr-cta" onClick={() => setAjout(true)}>
-                <Dessin d={DESSINS_DRESSING.photo} /> {e.pieces.length ? "Ajouter une pièce" : "Ajouter ma première pièce"}
+                <Dessin d={DESSINS_DRESSING.photo} /> {e.pieces.length ? "Ajouter une pièce" : "Photographier un vêtement"}
               </button>
               {exemplePossible(e) && e.pieces.length === 0 && (
                 <button

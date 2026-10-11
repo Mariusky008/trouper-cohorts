@@ -2164,6 +2164,8 @@ export function BoutiqueTable({
                 <div className="bt-fil">
                   {/* LE DUEL LAISSE SA TRACE DANS LE FIL, ET LE FANTÔME Y PARLE —
                       comme dans Ensemble (`trace`, `apres`). */}
+                  {/* CE QUE LE FANTÔME A DIT AVANT LE PREMIER MESSAGE (« J'ai trouvé un vrai concurrent. »). */}
+                  {messages.length <= 6 && duelSalon.apres(0)}
                   {messages.slice(-6).flatMap((m, i, vus) => {
                     const rang = messages.length - vus.length + i;
                     if (m.duel) return [duelSalon.trace(m), ...duelSalon.apres(rang + 1)];

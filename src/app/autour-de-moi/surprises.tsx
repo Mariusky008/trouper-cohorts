@@ -28,6 +28,7 @@ import {
   type PointerEvent as Appui,
 } from "react";
 import { FantomeAnime, StylesFantome } from "@/components/direct/fantome-anime";
+import { VideoFantome } from "@/components/direct/video-fantome";
 import { histoireDesDuels } from "@/components/direct/duel-salon";
 import type { FamilleDouble } from "@/lib/direct/double-metiers";
 import type { PieceGardee } from "@/lib/direct/pieces-gardees";
@@ -124,25 +125,94 @@ export function useTourneeDuFantome({
 // ─── L'ENVELOPPE, EN HAUT DE MA MAISON ─────────────────────────────────────
 
 /**
- * LE FANTÔME REVIENT DE LA VILLE, UNE ENVELOPPE À LA MAIN. Il prend la place
- * de sa bulle habituelle : une seule intervention, celle qui compte aujourd'hui.
+ * ═══ LE FANTÔME REVIENT DE LA VILLE — EN VRAI, EN VIDÉO ═══════════════════
+ *
+ * « On voit vraiment le Fantôme revenir à la maison avec son sac et son
+ * paquet. Je remplacerais la carte statique par une vraie carte vidéo : elle
+ * joue une seule fois à l'arrivée, puis reste sur sa dernière image avec
+ * "Ouvrir mes surprises". »
+ *
+ * UNE FOIS PAR ARRIVAGE : la signature (le jour, et combien il en rapporte)
+ * est retenue sur ce téléphone. Revenir plus tard avec les mêmes surprises
+ * pas encore ouvertes montre la dernière image, sans rejouer ; une nouvelle
+ * surprise la rejoue. Une fois tout ouvert, c'est `RevoirLesSurprises`, la
+ * carte compacte. Sans vraie surprise, cette carte n'existe pas (voir l'appel
+ * dans `ma-maison.tsx`).
  */
+const CLE_RETOUR_VU = "clikme:surprises-retour-vu";
+const rienAEcouter = () => () => {};
+function retourDejaVu(signature: string): boolean {
+  try {
+    return window.localStorage.getItem(CLE_RETOUR_VU) === signature;
+  } catch {
+    return false;
+  }
+}
+function noterRetourVu(signature: string) {
+  try {
+    window.localStorage.setItem(CLE_RETOUR_VU, signature);
+  } catch {
+    /* rien */
+  }
+}
+
 export function CourrierDuFantome({ n, onOuvrir }: { n: number; onOuvrir: () => void }) {
+  const signature = `${new Date().toDateString()}|${n}`;
+  /* LU APRÈS L'HYDRATATION (le serveur ne connaît pas ce téléphone) : un
+     `useState` qui lisait la mémoire dès le premier rendu faisait diverger
+     la page du serveur et celle du téléphone. */
+  const dejaVu = useSyncExternalStore(
+    rienAEcouter,
+    () => retourDejaVu(signature),
+    () => false,
+  );
+  const [fini, setFini] = useState(dejaVu);
+  const trouve = (
+    <b className="sp-trouve">
+      J&apos;ai trouvé {n} {n > 1 ? "choses" : "chose"} pour vous
+    </b>
+  );
+  const bouton = (
+    <button
+      type="button"
+      className={`sp-ouvrir${fini ? " pret" : ""}`}
+      onClick={(ev) => {
+        ev.stopPropagation();
+        onOuvrir();
+      }}
+    >
+      <span aria-hidden="true">🎁</span> Ouvrir mes surprises
+    </button>
+  );
   return (
-    <div className="sp-courrier" role="region" aria-label="Le Fantôme a trouvé quelque chose pour vous">
-      <i className="sp-courrier-eclats" aria-hidden="true" />
-      <div className="sp-courrier-fantome">
-        <FantomeAnime humeur="mail" taille={96} />
-      </div>
-      <div className="sp-courrier-t">
-        <em>Je suis allé faire un tour en ville…</em>
-        <b>
-          J&apos;ai trouvé {n} {n > 1 ? "choses" : "chose"} pour vous
-        </b>
-        <button type="button" className="sp-ouvrir" onClick={onOuvrir}>
-          <span aria-hidden="true">🎁</span> Ouvrir
-        </button>
-      </div>
+    <div
+      className="sp-courrier sp-courrier-video"
+      role="button"
+      tabIndex={0}
+      aria-label={`Le Fantôme a trouvé ${n} ${n > 1 ? "choses" : "chose"} pour vous — ouvrir mes surprises`}
+      onClick={onOuvrir}
+      onKeyDown={(ev) => {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          onOuvrir();
+        }
+      }}
+    >
+      {/* DÉJÀ VUE POUR CET ARRIVAGE : sa dernière image, sans rejouer. */}
+      <VideoFantome
+        key={dejaVu ? "vue" : "joue"}
+        nom="surprise"
+        immobile={dejaVu}
+        onFin={() => {
+          noterRetourVu(signature);
+          setFini(true);
+        }}
+        legendes={[
+          { a: 0, texte: <em className="sp-tour">Je suis allé faire un tour en ville…</em> },
+          { a: 2.7, texte: trouve },
+        ]}
+        enfants={fini || dejaVu ? bouton : null}
+      />
       <StylesSurprises />
     </div>
   );
@@ -547,6 +617,22 @@ function StylesSurprises() {
     <style
       dangerouslySetInnerHTML={{
         __html: `
+/* ── LE RETOUR DU FANTÔME, EN VIDÉO, EN HAUT DE MA MAISON ──
+   Une carte héros de 210 à 250 px : la scène verticale recadrée sur lui, un
+   voile sombre en bas pour les mots, le bouton à la fin. */
+.sp-courrier.sp-courrier-video{display:block;padding:0;height:clamp(210px,62vw,250px);cursor:pointer;}
+.sp-courrier-video .vf{position:absolute;inset:0;border-radius:20px;}
+/* RECADRÉE SUR SON VISAGE : à la fin, il s'approche, et un cadrage centré
+   ne laissait voir que sa casquette, le bouton par-dessus le visage. */
+.sp-courrier-video .vf-media{object-position:50% 28%;}
+.sp-courrier-video .vf-legende{bottom:60px;}
+.sp-tour{font-style:italic;font-weight:700;font-size:14px;color:#F3D9B5;}
+.sp-trouve{display:block;font-size:19px;line-height:1.1;font-weight:950;letter-spacing:.01em;text-transform:uppercase;color:#FFF4E6;
+  text-shadow:0 2px 18px rgba(246,181,75,.6);}
+.sp-courrier-video .sp-ouvrir{position:absolute;left:50%;bottom:12px;z-index:3;margin:0;transform:translateX(-50%);white-space:nowrap;
+  animation:sp-ouvre .35s cubic-bezier(.34,1.5,.64,1) both,sp-bat-centre 1.4s ease-in-out .4s infinite;}
+@keyframes sp-ouvre{from{opacity:0;transform:translate(-50%,10px) scale(.9)}to{opacity:1;transform:translateX(-50%)}}
+@keyframes sp-bat-centre{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.06)}}
 /* ── L'ENVELOPPE, EN HAUT DE MA MAISON ── */
 .sp-courrier{position:relative;display:flex;align-items:center;gap:4px;margin:16px 16px 0;padding:10px 14px 12px 2px;border-radius:22px;overflow:hidden;isolation:isolate;
   background:radial-gradient(70% 120% at 18% 50%,rgba(246,181,75,.34),transparent 70%),linear-gradient(135deg,#3a1f0b,#22120a 70%,#2d1408);
