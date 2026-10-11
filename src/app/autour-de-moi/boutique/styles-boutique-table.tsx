@@ -836,7 +836,8 @@ export function StylesBoutiqueTable() {
         .bt-salons-l::-webkit-scrollbar{display:none;}
         .bt-salons-l button{flex:none;display:flex;align-items:center;gap:8px;max-width:190px;padding:4px 11px 4px 4px;border-radius:12px;cursor:pointer;
           font:inherit;text-align:left;color:var(--bt-creme);background:rgba(255,244,230,.05);border:1.5px solid rgba(255,244,230,.12);}
-        .bt-salons-l button.on{border-color:#F5A23A;background:rgba(245,162,58,.14);}
+        .bt-salons-l button.on{border-color:#F5A23A;background:rgba(245,162,58,.14);cursor:default;opacity:1;}
+        .bt-salons-l button.on small{color:#F5A23A;font-weight:800;}
         .bt-salons-l img,.bt-salons-l i{flex:none;width:32px;height:32px;border-radius:9px;object-fit:cover;object-position:50% 25%;
           display:grid;place-items:center;font-style:normal;font-size:16px;background:#2A1F1B;}
         .bt-salons-l span{min-width:0;display:flex;flex-direction:column;gap:1px;}
