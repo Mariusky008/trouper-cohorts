@@ -52,6 +52,7 @@ import { exemplePossible, photoEnDataUrl, remplirAvecLExemple, useDressing, vill
 import { demanderMiseDeCote } from "@/lib/direct/prevenir";
 import { marquerVueCote, nePlusSuivreIci, noterEnvoiCote, preparerLienCote, relireMisesDeCote, suivreIci, useMisesDeCote, type LienCote } from "@/lib/direct/mises-de-cote";
 import { EcranMagasinConfirme, votrePiece } from "./confirmation-magasin";
+import { RetrouverMonDressing } from "./pont-dressing";
 import { AjoutPiece } from "./ajout-piece";
 import { Dessin, DESSINS_DRESSING } from "./dessins-dressing";
 import { Porte } from "./porte";
@@ -305,6 +306,8 @@ export function LookAvecMonDressing({
                 </p>
               </>
             )}
+            {/* SUR LE DOMAINE PROPRE D'UN MAGASIN : sa Maison ClikMe est ailleurs ; pour qui en a une, c'est le premier geste. */}
+            {e.pieces.length === 0 && <RetrouverMonDressing />}
             <div className="dr-pile">
               <button type="button" className="dr-cta" onClick={() => setAjout(true)}>
                 <Dessin d={DESSINS_DRESSING.photo} /> {e.pieces.length ? "Ajouter une pièce" : "Ajouter ma première pièce"}
@@ -327,6 +330,7 @@ export function LookAvecMonDressing({
                 Plus tard
               </button>
             </div>
+
           </>
         )}
 

@@ -116,6 +116,8 @@ import { BoutiqueTable } from "./boutique-table";
 import { aLaPageAOnglets } from "@/lib/direct/page-a-onglets";
 import { imposerVilleDuDressing } from "@/lib/direct/dressing-depot";
 import { ReponseDuMagasin } from "@/components/direct/dressing/confirmation-magasin";
+import { BandeauPont } from "@/components/direct/dressing/pont-dressing";
+import { StylesDressing } from "@/components/direct/dressing/styles-dressing";
 
 /* LE SECOND ESSAI A QUITTÉ LE NAVIGATEUR. Il réécrivait l'adresse d'une photo
    Google après un premier échec ; c'est désormais le serveur qui essaie les
@@ -411,6 +413,9 @@ export function Boutique(p: {
       <>
         {/* LA RÉPONSE D'UN MAGASIN À UNE MISE DE CÔTÉ — sur sa page aussi, pour qui n'ouvre pas l'application. */}
         <ReponseDuMagasin />
+        {/* AU RETOUR DU PONT (domaine propre du magasin) : ce qui s'est passé, dit une fois. */}
+        <BandeauPont />
+        <StylesDressing />
         <BoutiqueTable
           carte={c}
           retourHref={p.retourHref === undefined ? "/autour-de-moi" : p.retourHref}
@@ -429,6 +434,8 @@ export function Boutique(p: {
   return (
     <>
       <ReponseDuMagasin />
+      <BandeauPont />
+      <StylesDressing />
       <BoutiqueLongue
         commerce={commerce}
         retourHref={p.retourHref}

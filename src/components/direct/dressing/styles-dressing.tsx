@@ -179,6 +179,12 @@ export function StylesDressing() {
 .dr-ligne em svg{width:15px;height:15px;}
 .dr-ligne.boutique{border-color:rgba(246,181,75,.6);background:rgba(246,181,75,.06);}
 .dr-ligne.carte{margin-top:18px;border-color:rgba(246,181,75,.45);}
+.dr-pont{margin-top:18px;padding:14px 14px 8px;border-radius:18px;background:rgba(246,181,75,.07);border:1px solid rgba(246,181,75,.3);}
+.dr-pont-t{margin:0 0 10px;text-align:center;font-size:14.5px;font-weight:800;color:#fff;}
+.dr-pont-f{display:grid;gap:10px;margin-top:10px;}
+.dr-pont-c{width:100%;box-sizing:border-box;min-height:48px;padding:12px 14px;border-radius:14px;font:inherit;font-size:16px;color:#fff;background:rgba(255,255,255,.06);border:1px solid rgba(255,240,230,.22);}
+.dr-bandeau{position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top));z-index:3020;margin:0;padding:12px 14px;border-radius:14px;font-size:14px;font-weight:700;line-height:1.4;color:#FFE7C2;background:rgba(36,22,12,.96);border:1px solid rgba(246,181,75,.5);box-shadow:0 12px 30px -12px rgba(0,0,0,.8);}
+.dr-bandeau.ok{color:#9BE3B4;border-color:rgba(46,155,87,.6);}
 .dr-confirme{padding-top:4px;}
 .dr-cintre-grand{display:flex;align-items:center;justify-content:center;width:120px;height:120px;margin:6px auto 0;border-radius:50%;color:#F6B54B;background:radial-gradient(circle,rgba(246,181,75,.26),rgba(246,181,75,0) 68%);}
 .dr-cintre-grand svg{width:92px;height:92px;filter:drop-shadow(0 0 14px rgba(246,181,75,.65));}

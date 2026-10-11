@@ -27,6 +27,7 @@
 // du temps et du forfait perdus. Et il mesure la couleur au centre de la
 // photo : si l'analyse n'est pas branchée, c'est elle qui sert.
 import { useEffect, useSyncExternalStore } from "react";
+import { estNotreHote } from "@/lib/site-url";
 import {
   COULEURS,
   CLES_COULEUR,
@@ -157,6 +158,25 @@ export function imposerVilleDuDressing(v: string | null): void {
   villeImposee = v;
   // Un dépôt déjà branché ailleurs (une autre page de la même visite) se rebranchera au prochain écran.
   if (chargement && v !== ville) chargement = null;
+}
+
+/** Relire le dressing tout de suite — après avoir retrouvé sa Maison (code e-mail, pont). */
+export function rechargerDressing(): Promise<void> {
+  if (ville === null && villeImposee === undefined) ville = villeDeLAdresse();
+  else if (villeImposee !== undefined) ville = villeImposee;
+  chargement = charger();
+  return chargement;
+}
+
+/**
+ * SUR LE DOMAINE PROPRE D'UN MAGASIN ? (`boutique-lafitte.fr`, pas clikme.fr).
+ * Là, le navigateur ne montre pas la Maison posée sur clikme.fr : il faut le
+ * pont (`lib/direct/pont-maison.ts`) pour la retrouver.
+ */
+export function surLeDomaineDUnMagasin(): boolean {
+  if (typeof window === "undefined") return false;
+  const h = window.location.hostname.toLowerCase();
+  return !estNotreHote(h) && !/^(localhost|127\.0\.0\.1)$/.test(h) && !h.endsWith(".vercel.app");
 }
 
 /** La vraie ville où vit le dressing en ce moment (`null` : démonstration, ou pas encore branché). */
