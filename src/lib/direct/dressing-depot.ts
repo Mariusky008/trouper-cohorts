@@ -160,6 +160,29 @@ export function imposerVilleDuDressing(v: string | null): void {
   if (chargement && v !== ville) chargement = null;
 }
 
+/**
+ * POUR QUI L'ON S'HABILLE — celui du dernier look fait avec le dressing (la
+ * boutique homme ou femme où on l'a fait). Le dressing lui-même ne le dit pas ;
+ * les surprises en ont besoin pour ne pas proposer une veste de femme à un
+ * homme. Gardé sur ce téléphone.
+ */
+const CLE_POUR = "clikme-dressing-pour-v1";
+export function noterPourDuDressing(pour: "homme" | "femme"): void {
+  try {
+    localStorage.setItem(CLE_POUR, pour);
+  } catch {
+    /* navigation privée : on ne le saura que le temps de la visite */
+  }
+}
+export function pourDuDressing(): "homme" | "femme" | undefined {
+  try {
+    const v = localStorage.getItem(CLE_POUR);
+    return v === "homme" || v === "femme" ? v : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Relire le dressing tout de suite — après avoir retrouvé sa Maison (code e-mail, pont). */
 export function rechargerDressing(): Promise<void> {
   if (ville === null && villeImposee === undefined) ville = villeDeLAdresse();

@@ -48,7 +48,7 @@ import {
   type PieceBoutique,
   type Vetement,
 } from "@/lib/direct/dressing";
-import { exemplePossible, photoEnDataUrl, remplirAvecLExemple, useDressing, villeDuDepot } from "@/lib/direct/dressing-depot";
+import { exemplePossible, noterPourDuDressing, photoEnDataUrl, remplirAvecLExemple, useDressing, villeDuDepot } from "@/lib/direct/dressing-depot";
 import { demanderMiseDeCote } from "@/lib/direct/prevenir";
 import { marquerVueCote, nePlusSuivreIci, noterEnvoiCote, preparerLienCote, relireMisesDeCote, suivreIci, useMisesDeCote, type LienCote } from "@/lib/direct/mises-de-cote";
 import { EcranMagasinConfirme, votrePiece } from "./confirmation-magasin";
@@ -153,6 +153,7 @@ export function LookAvecMonDressing({
     setChoisies((cs) => (cs.some((x) => x.id === v.id) ? cs.filter((x) => x.id !== v.id) : cs.length >= 3 ? cs : [...cs, v]));
 
   const creer = async (choix: Vetement[]) => {
+    noterPourDuDressing(pour);
     const pieces = enOrdreDeTenue(choix);
     setEtape("generation");
     setErreur(null);

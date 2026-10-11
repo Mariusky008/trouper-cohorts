@@ -23,6 +23,7 @@ import {
   type Memoire,
   type Signal,
 } from "@/lib/direct/maison";
+import type { Vetement } from "@/lib/direct/dressing";
 import { noterUneFois } from "@/lib/direct/parcours";
 import { contexteDe, type GesteDeSurprise } from "@/lib/direct/surprises-mesure";
 import {
@@ -217,7 +218,7 @@ export function noterLesSignaux(nouveaux: Signal[]) {
  * Ce qui est déjà dans la liste y reste (on ne retire pas une surprise sous les
  * yeux), sauf ce qui n'a pas été ouvert et ne vaut plus (le plat du midi, à 16 h).
  */
-export function preparerLesSurprises(commerces: CommerceDuJour[], maintenant: Date, gardees: { nom: string }[] = []) {
+export function preparerLesSurprises(commerces: CommerceDuJour[], maintenant: Date, gardees: { nom: string }[] = [], dressing: Vetement[] = [], pourDuDressing?: "homme" | "femme") {
   const m = lire().memoire;
   const date = dateDuJour(maintenant);
   const avant = m.jour?.date === date ? m.jour : undefined;
@@ -226,7 +227,7 @@ export function preparerLesSurprises(commerces: CommerceDuJour[], maintenant: Da
   let liste = restent;
   if (restent.length < SURPRISES_MAX) {
     const deja = [...m.montrees, ...restent.map((s) => ({ k: s.objet, t: maintenant.getTime() }))];
-    const nouvelles = choisirLesSurprises(m, commerces, maintenant, gardees, deja).filter((s) => !restent.some((r) => r.piece === s.piece));
+    const nouvelles = choisirLesSurprises(m, commerces, maintenant, gardees, deja, dressing, pourDuDressing).filter((s) => !restent.some((r) => r.piece === s.piece));
     liste = [...restent, ...nouvelles].slice(0, SURPRISES_MAX);
   }
   const pareil = avant && liste.length === avant.liste.length && liste.every((s, i) => s.id === avant.liste[i].id);

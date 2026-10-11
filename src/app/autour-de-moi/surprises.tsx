@@ -47,6 +47,7 @@ import {
   voirLaSurprise,
 } from "@/lib/direct/maison-memoire";
 import { estPassee, motDe, motsDuFantome, sourceDe, type CommerceDuJour, type Preuve, type Surprise } from "@/lib/direct/surprises";
+import { lireDressing, pourDuDressing, useDressing } from "@/lib/direct/dressing-depot";
 
 // ─── LA TOURNÉE ────────────────────────────────────────────────────────────
 
@@ -91,6 +92,10 @@ export function useTourneeDuFantome({
   const envies = useSyncExternalStore(abonnerEnvies, chargerEnvies, () => AUCUNES_ENVIES);
   const minute = useSyncExternalStore(abonnerHorloge, minuteIci, minuteServeur);
   const tournee = Math.floor(minute / TOURNEE_MINUTES);
+  /* SES VÊTEMENTS : une pièce de la ville qui complète une tenue avec eux est une
+     raison de surprise. Le dépôt se branche ici (serveur ou téléphone). */
+  const dressing = useDressing();
+  const cleDuDressing = dressing.pret ? dressing.pieces.map((v) => v.id).join(",") : "";
   /* Les cartes changent d'objet à chaque rendu de l'application : on garde la
      dernière, et on ne refait la tournée que si leur liste a changé. */
   const dernieres = useRef(cartes);
@@ -111,8 +116,8 @@ export function useTourneeDuFantome({
 
   useEffect(() => {
     if (!cleDesCartes || !tournee) return;
-    preparerLesSurprises(dernieres.current, new Date(), gardees);
-  }, [etat.memoire, gardees, cleDesCartes, tournee]);
+    preparerLesSurprises(dernieres.current, new Date(), gardees, lireDressing().pieces, pourDuDressing());
+  }, [etat.memoire, gardees, cleDesCartes, tournee, cleDuDressing]);
 
   const maintenant = minute ? new Date(minute * 60_000) : null;
   return {

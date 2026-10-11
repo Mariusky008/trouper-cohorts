@@ -26,6 +26,7 @@
 // FICHIER PARTAGÉ, SANS NAVIGATEUR NI SERVEUR. La garde du jour (ce qui a été
 // tiré, vu, aimé) vit dans la mémoire de la Maison (`maison-memoire.ts`).
 import { estUnePrestation, familleDe, teinteDe } from "@/lib/direct/duel";
+import { couleurDuNom, looksPossibles, sorteDuNom, votreVetement, type Vetement } from "@/lib/direct/dressing";
 import { familleDuDouble, type FamilleDouble } from "@/lib/direct/double-metiers";
 import {
   cuisinesDe,
@@ -358,6 +359,10 @@ export function choisirLesSurprises(
   maintenant: Date,
   gardees: { nom: string }[] = [],
   dejaMontrees: { k: string; t: number }[] = [],
+  /** SES VÊTEMENTS (Mon Dressing) : la pièce d'un magasin qui complète une tenue avec eux est une raison. */
+  dressing: Vetement[] = [],
+  /** Pour qui s'habille-t-on — celui du dernier look fait avec le dressing, quand il y en a un. */
+  pourDuDressing?: "homme" | "femme",
 ): Surprise[] {
   const heure = maintenant.getHours() + maintenant.getMinutes() / 60;
   const date = dateDuJour(maintenant);
@@ -441,6 +446,44 @@ export function choisirLesSurprises(
         });
         const fin = memeChose ? (x.quand === "en ce moment" ? "en voici" : `il y en a ${x.quand}`) : conclusion(g.trait);
         if (!g.trait.startsWith("famille:")) pivots.push({ phrase: `Vous avez ${evoque(appuis(g.trait))} : ${fin}.`, poids: 3, trait: g.trait, sorte: "crois" });
+      }
+      // 👀 AVEC SES PROPRES VÊTEMENTS — la plus forte des raisons du Dressing : une
+      // tenue complète, avec ce qui est déjà dans son placard (les règles de
+      // `dressing.ts` : les places d'une tenue, les couleurs qui s'accordent).
+      // « Cette veste va avec votre chemise blanche, votre jean brut et vos
+      // baskets blanches. » Une pièce qu'on ne sait pas nommer ne propose rien.
+      //
+      // DEUX DE SES PIÈCES AU MOINS : « va avec vos baskets » ne fait pas une
+      // tenue. ET PAS DE ROBE NI DE JUPE À UN DRESSING QUI N'EN A AUCUNE : une
+      // robe ne « demande » que des chaussures, n'importe quelles baskets
+      // l'appelleraient — le dressing ne dit pas pour qui l'on s'habille.
+      //
+      // ET POUR LA BONNE PERSONNE. Le dressing ne dit pas pour qui l'on
+      // s'habille : on le sait par les pièces gardées (homme, femme) ou par le
+      // dernier look fait avec lui. Inconnu, on ne propose rien d'une boutique
+      // qui s'adresse à l'un ou à l'autre.
+      const genreSignaux = (() => {
+        const g = positifs.map(genreDuSignal).filter(Boolean);
+        return g.length && g.every((x) => x === g[0]) ? g[0] : undefined;
+      })();
+      const genreConnu = genreSignaux ?? pourDuDressing;
+      // LA MÊME RÈGLE QUE L'ESSAI (`pourDressing` dans `mur-contenu.tsx`) : une
+      // boutique de mode qui ne dit pas « homme » habille des femmes.
+      const genreBoutique = pour(`${c.nom} ${c.metier ?? ""} ${x.texte}`) ?? (/\bhomme/i.test(c.metier ?? "") ? "homme" : "femme");
+      const bonnePersonne = genreBoutique ? genreBoutique === genreConnu : true;
+      if (p === "dressing" && dressing.length && bonnePersonne) {
+        const sorte = sorteDuNom(x.titre);
+        const feminine = sorte === "robe" || /\bjupes?\b/i.test(x.titre);
+        const enPorte = dressing.some((v) => v.sorte === "robe" || /\bjupes?\b/i.test(v.nom));
+        const look = sorte && (!feminine || enPorte) ? looksPossibles({ id: objet, nom: x.titre, photo: "", sorte, couleur: couleurDuNom(x.titre) }, dressing, 1)[0] : undefined;
+        if (look && look.pieces.length >= 2) {
+          const siennes = look.pieces.slice(0, 3);
+          const liste = siennes.map(votreVetement);
+          const dite = liste.length < 2 ? liste.join("") : `${liste.slice(0, -1).join(", ")} et ${liste[liste.length - 1]}`;
+          const va = chose.genre === "p" ? "vont" : "va";
+          preuves.push({ sorte: "remarque", texte: `Dans votre dressing : ${siennes.map((v) => v.nom).join(", ")}` });
+          pivots.push({ phrase: `${chose.dem} ${va} avec ${dite} : une tenue complète avec ce que vous avez déjà.`, poids: 5, sorte: "va-avec" });
+        }
       }
       // 👀 Ce que j'ai remarqué : ce qui irait avec ce que vous avez gardé
       const avec: Signal[] = [];
