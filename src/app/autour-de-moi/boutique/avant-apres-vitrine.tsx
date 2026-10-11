@@ -81,9 +81,21 @@ if (typeof window !== "undefined") {
 }
 
 /** Une demande de Léa attend encore son bloc : elle a moins de trois secondes. */
-function demandeEnAttente() {
+export function demandeEnAttente() {
   return !demande.servie && Date.now() - demande.at < 3000;
 }
+
+/* ═══ LA PRÉSENTATION EST-ELLE EN COURS ? ═══ La présentation de Léa le dit
+   (`clikme:presentation`, « debut » puis « fin ») ; on le retient ici, chargé
+   avec la page, pour l'onglet Expérience qui naît après le signal. Voir
+   `EssaiEnImage` : l'avant/après n'y reste que le temps de la présentation. */
+const presentation = { enCours: false };
+if (typeof window !== "undefined") {
+  window.addEventListener("clikme:presentation", (e) => {
+    presentation.enCours = (e as CustomEvent).detail === "debut";
+  });
+}
+export const presentationEnCours = () => presentation.enCours;
 
 /** Son mot, rejoué depuis le début ; rend vrai s'il joue. */
 async function depuisLeDebut(a: HTMLAudioElement, fin: () => void): Promise<boolean> {

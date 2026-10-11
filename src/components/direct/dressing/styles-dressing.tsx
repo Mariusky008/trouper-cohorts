@@ -236,6 +236,11 @@ export function StylesDressing() {
 .dr-option.une b{color:#F6C26B;}
 .dr-option em{font-style:normal;font-size:12.5px;color:#BFAE98;}
 .dr-option>svg{flex:none;width:18px;height:18px;color:#8C7B66;}
+/* « AVEC MES VÊTEMENTS » QUAND LE DRESSING EST VIDE : il attend une première pièce, et le dit. */
+.dr-option.attend{border-style:dashed;}
+.dr-option.attend i{opacity:.75;}
+.dr-vide-pastille{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;vertical-align:2px;
+  font-size:11px;font-weight:800;color:#2a1405;background:#F6C26B;}
 
 @media (max-width:360px){.dr-tete h1{font-size:18px;}.dr-tete p{font-size:12px;}.dr-hero{grid-template-columns:104px 1fr;}.dr-hero .dr-fant{width:104px;}.dr-hero h2{font-size:22px;}.dr-trois{grid-template-columns:1fr;}.dr-titre{font-size:22px;}}
 @media (prefers-reduced-motion: reduce){.dr-fant{animation:none;}.dr-barre i{animation-duration:.01s;}.dr-liste li,.dr-liste li i,.dr-ajoutee i{animation-duration:.01s;animation-delay:0s !important;}}

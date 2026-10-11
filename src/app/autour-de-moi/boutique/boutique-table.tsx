@@ -1057,10 +1057,35 @@ export function BoutiqueTable({
 
   /* ═══ LE SALON ENTRE AMIS — le même que sur la longue page ════════════
      Même clé, mêmes messages, même stockage : c'est le salon de `salons.ts`,
-     pas une seconde conversation. Voir `salonOuvert` dans `boutique.tsx`. */
-  const cleSalon = cleSalonBoutique(c.id);
+     pas une seconde conversation. Voir `salonOuvert` dans `boutique.tsx`.
+
+     ═══ ET UN SALON NEUF PAR ESSAI, LA LISTE POUR LES RETROUVER ═══════════
+     « J'avais essayé quelque chose et ouvert un salon ; j'ai réessayé autre
+     chose et j'ai en mémoire l'ancien essai, alors que plus bas j'ai bien la
+     robe que je viens d'essayer. Il faut que les salons soient bien indiqués
+     quelque part pour les retrouver, et que lorsque j'ouvre un nouveau salon
+     l'expérience redémarre à zéro. »
+     Tous les essais partaient dans LE salon de la boutique : le duel de la
+     robe d'avant restait en tête, au-dessus de la nouvelle. Chaque « En
+     parler avec mes amis » ouvre désormais SON salon (`<clé>|<instant>`), où
+     tout repart de zéro — la carte, le duel, le Fantôme. Le salon de la
+     boutique reste celui des gestes généraux (« Je viens », un message
+     tapé). Tous se retrouvent en tête de l'onglet Amis ; on y est remis sur
+     le plus récent. */
+  const cleBoutique = cleSalonBoutique(c.id);
   const salons = useSyncExternalStore(abonnerSalons, chargerSalons, () => SALONS_VIDES);
+  const salonsIci = useMemo(
+    () =>
+      Object.values(salons)
+        .filter((x) => x.cle === cleBoutique || x.cle.startsWith(`${cleBoutique}|`))
+        .sort((a, b) => (b.activite ?? 0) - (a.activite ?? 0)),
+    [salons, cleBoutique],
+  );
+  const [salonChoisi, setSalonChoisi] = useState<string | null>(null);
+  const cleSalon = salonChoisi && salons[salonChoisi] ? salonChoisi : (salonsIci[0]?.cle ?? cleBoutique);
   const salon = salons[cleSalon];
+  /** Un salon neuf, pour un essai : l'expérience y repart de zéro. */
+  const nouvelleCleDeSalon = () => `${cleBoutique}|${Date.now().toString(36)}`;
   const [aEcrire, setAEcrire] = useState("");
   /* L'ADRESSE DE SA PAGE, AVEC LE COMMERCE QU'ELLE NOMME. Ouverte depuis la
      ville (`/autour-de-moi/boutique?c=…`), la page ne sait qui elle montre que
@@ -1080,8 +1105,9 @@ export function BoutiqueTable({
      ouvert en grand (`ChoixDuLibraire`). */
   const parlerDuLivre = (l: { quoi: string; prix?: string; photo?: string }) => {
     const moi = monPrenom() || "Vous";
+    const cle = nouvelleCleDeSalon();
     ouvrirSalon({
-      cle: cleSalon,
+      cle,
       sujet: `Chez ${c.nom}`,
       ou: c.nom,
       parQui: moi,
@@ -1092,13 +1118,14 @@ export function BoutiqueTable({
       photo: l.photo,
       boutique: { id: c.id, nom: c.nom, lien: lienPage() },
     });
-    ecrireDansSalon(cleSalon, {
+    ecrireDansSalon(cle, {
       qui: moi,
       voix: "moi",
       texte: `Le libraire de ${c.nom} me conseille « ${l.quoi} »${l.prix ? ` (${l.prix})` : ""}. Quelqu’un l’a lu ?`,
       quand: heureCourte(),
       photo: l.photo,
     });
+    setSalonChoisi(cle);
     setOnglet("amis");
   };
   const ouvrirLeSalon = () =>
@@ -1214,6 +1241,12 @@ export function BoutiqueTable({
      salon sur la pièce de départ, et le duel part dès qu'il est là. Dès que
      le salon a un sujet, c'est le duel lui-même qui propose. */
   const [pasMaintenant, setPasMaintenant] = useState(false);
+  /* UN AUTRE SALON, UNE AUTRE CARTE : « Pas maintenant » ne le suit pas. */
+  const [salonDeLaCarte, setSalonDeLaCarte] = useState(cleSalon);
+  if (salonDeLaCarte !== cleSalon) {
+    setSalonDeLaCarte(cleSalon);
+    setPasMaintenant(false);
+  }
   const lancerDesQue = useRef(false);
   const carteOuverture =
     !pasMaintenant && !duelSalon.actif && !duelSalon.peutDuel && !salon?.duels?.length && messages.length === 0 ? duelSalon.depart : null;
@@ -1627,8 +1660,9 @@ export function BoutiqueTable({
               onReserver={() => setDiscute(true)}
               onSalon={(o) => {
                 const moi = monPrenom() || "Vous";
+                const cle = nouvelleCleDeSalon();
                 ouvrirSalon({
-                  cle: cleSalon,
+                  cle,
                   sujet: `Chez ${c.nom}`,
                   ou: c.nom,
                   parQui: moi,
@@ -1639,7 +1673,7 @@ export function BoutiqueTable({
                   photo: o.image,
                   boutique: { id: c.id, nom: c.nom, lien: lienPage() },
                 });
-                ecrireDansSalon(cleSalon, {
+                ecrireDansSalon(cle, {
                   qui: moi,
                   voix: "moi",
                   texte: o.note
@@ -1648,6 +1682,7 @@ export function BoutiqueTable({
                   quand: heureCourte(),
                   photo: o.image,
                 });
+                setSalonChoisi(cle);
                 setOnglet("amis");
               }}
               /* LE CONSEIL DU LIBRAIRE, MONTRÉ AUX AMIS : on n'a rien
@@ -2058,10 +2093,42 @@ export function BoutiqueTable({
                   <rect x="5" y="10.5" width="14" height="10" rx="2.4" />
                   <path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5" />
                 </svg>
-                Salon privé · {c.nom}
+                Salon privé · {salon && salon.cle !== cleBoutique && salon.annonce ? salon.annonce : c.nom}
               </em>
             </div>
           </header>
+          {/* ═══ VOS SALONS ICI — pour les retrouver, et passer de l'un à l'autre ═══
+              ÉPINGLÉS SOUS L'EN-TÊTE, HORS DU FIL : dans le fil, ils partaient
+              vers le haut dès que la conversation descendait. Le plus récent
+              d'abord ; celui qu'on regarde est allumé. */}
+          {salonsIci.length > 0 && (
+            <nav className="bt-salons" aria-label={`Vos salons chez ${c.nom}`}>
+              <p className="bt-salons-k">Vos salons ici · {salonsIci.length}</p>
+              <div className="bt-salons-l">
+                {salonsIci.map((x) => {
+                  const essai = x.cle !== cleBoutique;
+                  const n = x.messages.filter((m) => m.voix !== "systeme").length;
+                  const ici = x.cle === cleSalon;
+                  return (
+                    <button key={x.cle} type="button" className={ici ? "on" : undefined} aria-pressed={ici} onClick={() => setSalonChoisi(x.cle)}>
+                      {x.photo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={x.photo} alt="" />
+                      ) : (
+                        <i aria-hidden="true">💬</i>
+                      )}
+                      <span>
+                        <b>{essai ? (x.annonce ?? "Un essai") : "Le salon de la boutique"}</b>
+                        <small>
+                          {n} message{n > 1 ? "s" : ""}
+                        </small>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </nav>
+          )}
           <div className="bt-corps">
             {/* LE RENDEZ-VOUS, EPINGLE EN HAUT DU FIL — comme un message
                 epingle dans une conversation de groupe. */}

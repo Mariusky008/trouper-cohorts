@@ -30,10 +30,10 @@ import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { tenueDu } from "@/lib/direct/double-metiers";
 import { parcoursPromis } from "@/lib/direct/parcours-promis";
 import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
-import { cleSalonBoutique, monPrenom, oublierSalon } from "@/lib/direct/salons";
+import { chargerSalons, cleSalonBoutique, monPrenom, oublierSalon } from "@/lib/direct/salons";
 import { piecesDeLaVitrine, type PieceDemo } from "@/lib/site-internet/essai-vitrine-donnees";
 import { ChoixDuLibraire } from "./choix-du-libraire";
-import { AvantApresVitrine } from "./avant-apres-vitrine";
+import { AvantApresVitrine, demandeEnAttente, presentationEnCours } from "./avant-apres-vitrine";
 
 export type { RenduEssai };
 
@@ -135,7 +135,9 @@ function noterLEssaiDeDemo(id: string) {
 export function oublierLEssaiDeDemo(id: string) {
   try {
     if (!window.localStorage.getItem(MARQUE_DEMO(id))) return;
-    oublierSalon(cleSalonBoutique(id));
+    // LE SALON DE LA BOUTIQUE ET CEUX DE CHAQUE ESSAI (`<clé>|<instant>`).
+    const cle = cleSalonBoutique(id);
+    for (const k of Object.keys(chargerSalons())) if (k === cle || k.startsWith(`${cle}|`)) oublierSalon(k);
     window.localStorage.removeItem(MARQUE_DEMO(id));
   } catch {
     /* rien */
@@ -226,8 +228,27 @@ function EssaiEnImage({ c: carte, saPage, onReserver, onSalon }: ProprietesEssai
   /* UNE BOUTIQUE DE VÊTEMENTS LE VOIT TOUJOURS : sa pièce si elle est prête,
      l'exemple déjà fabriqué sinon — l'après arrive à trois secondes, jamais
      au bout d'une minute. */
+  /* ═══ L'AVANT/APRÈS, LE TEMPS DE LA PRÉSENTATION SEULEMENT ═════════════
+     « Une fois la présentation terminée, quand je vais sur "Expérience",
+     j'ai encore l'avant/après au lieu d'avoir juste le début de
+     l'expérience à faire. » Quand elle a ses pièces à essayer, l'avant/après
+     ne sert qu'à Léa : il naît à sa demande (étape 2) et s'en va quand elle
+     se tait. Sans pièce à essayer, il reste : c'est tout ce qu'il y a à voir. */
+  const [presentationJoue, setPresentationJoue] = useState(() => presentationEnCours() || demandeEnAttente());
+  useEffect(() => {
+    const montrer = (e: Event) => {
+      if ((e as CustomEvent).detail === "essayer") setPresentationJoue(true);
+    };
+    const suivre = (e: Event) => setPresentationJoue((e as CustomEvent).detail === "debut");
+    window.addEventListener("clikme:montrer", montrer);
+    window.addEventListener("clikme:presentation", suivre);
+    return () => {
+      window.removeEventListener("clikme:montrer", montrer);
+      window.removeEventListener("clikme:presentation", suivre);
+    };
+  }, []);
   const essaiVitrine =
-    saPage && onEssaie && (pieces.length === 0 || vitrine.length > 0) && c.branche === "mode"
+    saPage && onEssaie && (pieces.length === 0 || (vitrine.length > 0 && presentationJoue)) && c.branche === "mode"
       ? (carte.essaiVitrine ?? { etat: "exemple" as const })
       : undefined;
 

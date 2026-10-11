@@ -104,6 +104,7 @@ import { rayonDuNom } from "@/lib/direct/rayons";
 import { EcranGout } from "@/components/direct/gout-contenu";
 import { DecouverteSoiree, type OngletSoiree } from "@/components/direct/decouverte-soiree";
 import { ChoixEssai } from "@/components/direct/dressing/choix-essai";
+import { SiDressingRempli } from "@/components/direct/dressing/si-dressing-rempli";
 import { LookAvecMonDressing } from "@/components/direct/dressing/look-dressing";
 import { Porte } from "@/components/direct/dressing/porte";
 import { StylesDressing } from "@/components/direct/dressing/styles-dressing";
@@ -5937,13 +5938,18 @@ function Essai({
               {/* ═══ AVEC MES VÊTEMENTS ═══════════════════════════════════════
                   La pièce est sur soi : le geste suivant est de la voir avec ce
                   qu'on a déjà. Le look partira de cette même photo. */}
+              {/* « J'ai l'option "Avec mes vêtements" alors que je n'ai encore mis
+                  aucun vêtement dans ma Maison. » Il n'apparaît qu'avec un
+                  dressing qui a de quoi composer — voir `SiDressingRempli`. */}
               {seCombine(piece) && (
-                <button type="button" className="mu-res-c" onClick={() => setLookPour(piece)}>
-                  <i aria-hidden="true">
-                    <Trace cle="vetement" />
-                  </i>
-                  <span>Avec mes vêtements</span>
-                </button>
+                <SiDressingRempli>
+                  <button type="button" className="mu-res-c" onClick={() => setLookPour(piece)}>
+                    <i aria-hidden="true">
+                      <Trace cle="vetement" />
+                    </i>
+                    <span>Avec mes vêtements</span>
+                  </button>
+                </SiDressingRempli>
               )}
               {/* ═══ EN PARLER AVEC MES AMIS ═════════════════════════════════
 
