@@ -219,6 +219,12 @@ async function stockage(req, res, url) {
     res.writeHead(200, { "content-type": f.type });
     return res.end(f.octets);
   }
+  // LE SERVEUR LIT UN FICHIER PRIVÉ (`download`, clé de service) : jamais le navigateur.
+  if (req.method === "GET" && fichiers.has(p)) {
+    const f = fichiers.get(p);
+    res.writeHead(200, { "content-type": f.type });
+    return res.end(f.octets);
+  }
   if (req.method === "DELETE") {
     const { prefixes = [] } = JSON.parse((await corps(req)).toString() || "{}");
     for (const c of prefixes) fichiers.delete(`${p}/${c}`);

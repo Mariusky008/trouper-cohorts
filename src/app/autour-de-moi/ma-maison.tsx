@@ -19,6 +19,7 @@
 // derrière la roue dentée. Voir `lib/direct/maison.ts`.
 import { useMemo, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { FantomeAnime, StylesFantome } from "@/components/direct/fantome-anime";
+import { MonDressing } from "@/components/direct/dressing/mon-dressing";
 import { abonnerLook, monLook } from "@/lib/direct/look";
 import { changerDeLook } from "./prendre-place";
 import type { PieceGardee } from "@/lib/direct/pieces-gardees";
@@ -45,7 +46,7 @@ import {
   viderLaPiece,
 } from "@/lib/direct/maison-memoire";
 
-type Vue = { ou: "entree" } | { ou: "piece"; cle: ClePiece } | { ou: "reglages" } | { ou: "compte" };
+type Vue = { ou: "entree" } | { ou: "piece"; cle: ClePiece; gouts?: boolean } | { ou: "reglages" } | { ou: "compte" };
 
 const rien = () => () => {};
 const heureServeur = () => 12;
@@ -93,6 +94,31 @@ export function MaMaison({
     if (demandeGeste > 0) setVue({ ou: "piece", cle: etats[0].piece.cle });
   }
 
+  /* ═══ MON DRESSING : LA VRAIE GARDE-ROBE ═══════════════════════════════
+
+     « Il faut faire le dressing avec la logique et les images que je t'ai
+     données. » La pièce s'ouvre désormais sur les vêtements de l'habitant —
+     le même dépôt que l'essai des boutiques, dans l'application comme sur
+     leurs pages. Ce que la Maison sait de ses goûts (dit / remarqué / cru)
+     reste à un geste, sous la grille. */
+  if (vue.ou === "piece" && vue.cle === "dressing" && !vue.gouts) {
+    return (
+      <div className="mz" key="piece-dressing">
+        <MonDressing
+          dedans
+          onRetour={() => setVue({ ou: "entree" })}
+          enPlus={
+            <button type="button" className="mz-connait" style={{ width: "100%", margin: "18px 0 0" }} onClick={() => setVue({ ou: "piece", cle: "dressing", gouts: true })}>
+              <Dessin d={DESSINS.maison} plein />
+              <span>Ce que je sais de vos goûts</span>
+              <Dessin d={DESSINS.chevron} />
+            </button>
+          }
+        />
+        <StylesMaMaison />
+      </div>
+    );
+  }
   if (vue.ou === "piece") {
     const e = etats.find((x) => x.piece.cle === vue.cle) ?? etatDe(etat.memoire, pieceParCle(vue.cle));
     return (
