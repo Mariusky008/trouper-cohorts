@@ -208,7 +208,7 @@ export function MaMaison({
       {surprises && surprises.aOuvrir > 0 ? (
         <CourrierDuFantome n={surprises.aOuvrir} onOuvrir={() => surprises.onOuvrir(false)} />
       ) : rienDuJour ? (
-        <RienAujourdhui onNouveautes={() => onDecouvrir("")} />
+        <RienAujourdhui />
       ) : (
         <section className="mz-scene">
           {/* LE FANTÔME DE LA MAQUETTE : lunettes rondes, la Maison dans les bras. */}

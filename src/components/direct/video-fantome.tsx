@@ -179,7 +179,8 @@ export function VideoFantome({
       raf = requestAnimationFrame(tic);
     };
     const fin = () => {
-      setT(DUREE);
+      /* SA VRAIE DURÉE : elles ne font pas toutes 5,2 s (« rien » en fait 13,7). */
+      setT(Number.isFinite(el.duration) ? el.duration : DUREE);
       setEtat("fini");
       if (!dejaFini.current) {
         dejaFini.current = true;
