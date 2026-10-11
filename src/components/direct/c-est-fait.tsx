@@ -46,6 +46,14 @@ export function genreDuFait(famille?: string | null): GenreFait {
 
 /** Ce qu'on sait quand la personne l'a envoyé elle-même : elle l'a prévenu. */
 const PREVENU = (lieu?: string) => `Vous avez prévenu ${lieu || "le commerce"}.`;
+/** Le nom court de l'action, pour le rappel de l'échec : « Mise de côté · Lili Ross by me ». */
+const ACTION: Record<GenreFait, string> = {
+  "mise-de-cote": "Mise de côté",
+  reservation: "Réservation",
+  demande: "Demande",
+  sortie: "Sortie",
+};
+
 /** Ce qu'on saura quand le serveur aura confirmé la réception. */
 const RECU: Record<GenreFait, string> = {
   "mise-de-cote": "La boutique a reçu votre demande de mise de côté.",
@@ -62,6 +70,7 @@ export function CestFait({
   onContinuer,
   onPartager,
   echec,
+  photo,
   classe,
 }: {
   genre: GenreFait;
@@ -76,12 +85,30 @@ export function CestFait({
   onPartager?: () => void;
   /** L'ENVOI A ÉCHOUÉ (un envoi par le serveur qui revient en erreur) : l'échec À LA PLACE du succès. */
   echec?: { onReessayer: () => void };
+  /** La photo de ce qu'on demandait (la pièce, le plat) : le rappel de l'échec la montre. */
+  photo?: string;
   classe?: string;
 }) {
   if (echec) {
     return (
       <section className={`cf cf-rate${classe ? ` ${classe}` : ""}`} role="alert">
         <p className="cf-rate-t">Je n’ai pas réussi à envoyer votre demande.</p>
+        {/* LE RAPPEL DE CE QUI N'EST PAS PARTI : « énormément de vide, aucun
+            rappel de ce qu'on essayait d'envoyer » donnait l'impression d'une
+            page cassée. L'action et le commerce, en une petite carte. */}
+        <div className="cf-rappel">
+          {photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photo} alt="" />
+          ) : null}
+          <span>
+            <b>👻 Ça n’est pas parti.</b>
+            <em>
+              {ACTION[genre]}
+              {lieu ? ` · ${lieu}` : ""}
+            </em>
+          </span>
+        </div>
         <button type="button" className="cf-cta" onClick={echec.onReessayer}>
           Réessayer →
         </button>
@@ -140,6 +167,12 @@ function StylesCestFait() {
   text-decoration:underline;text-underline-offset:3px;}
 .cf-rate{padding:16px;border-radius:20px;background:rgba(255,155,138,.08);border:1px solid rgba(255,155,138,.3);}
 .cf-rate-t{margin:0 0 12px;font-size:15px;font-weight:800;color:#FFE1DA;text-align:center;}
+.cf-rappel{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 14px;border-radius:16px;
+  background:rgba(255,244,230,.06);border:1px solid rgba(255,244,230,.12);}
+.cf-rappel img{flex:none;width:52px;height:52px;border-radius:12px;object-fit:cover;}
+.cf-rappel span{min-width:0;display:flex;flex-direction:column;gap:3px;}
+.cf-rappel b{font-size:15px;font-weight:900;color:#FFF4E6;}
+.cf-rappel em{font-style:normal;font-size:13.5px;font-weight:700;color:#E9D7C2;}
 `,
       }}
     />

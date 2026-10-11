@@ -28,7 +28,7 @@ import {
   type PointerEvent as Appui,
 } from "react";
 import { FantomeAnime, StylesFantome } from "@/components/direct/fantome-anime";
-import { VideoFantome } from "@/components/direct/video-fantome";
+import { VideoFantome, videoDe } from "@/components/direct/video-fantome";
 import { histoireDesDuels } from "@/components/direct/duel-salon";
 import type { FamilleDouble } from "@/lib/direct/double-metiers";
 import type { PieceGardee } from "@/lib/direct/pieces-gardees";
@@ -235,8 +235,13 @@ export function CourrierDuFantome({ n, onOuvrir }: { n: number; onOuvrir: () => 
  * nouvelle. Qu'une vraie surprise arrive dans la journée, et l'enveloppe
  * reprend sa place à la tournée suivante.
  *
- * UNE FOIS PAR JOUR : revenue plus tard, la carte reste sur sa dernière
- * image, comme l'enveloppe. Jouée un peu plus vite (environ 4 s).
+ * UNE FOIS PAR JOUR, PUIS ELLE SE REPLIE. « Une fois la vidéo jouée, ça fait
+ * quand même étrange, le texte et la photo derrière. » La vidéo (environ
+ * 4 s) ne porte qu'une ligne ; à sa fin, la carte devient une petite carte
+ * calme — le Fantôme en vignette, les mots à côté, sur un fond uni, et le
+ * lien. Revenue plus tard dans la journée, c'est directement elle. Elle
+ * rend aussi la place aux pièces : un « rien » n'a pas à occuper le haut de
+ * la Maison comme une nouvelle.
  */
 const CLE_RIEN_VU = "clikme:rien-vu";
 function rienDejaVu(jour: string): boolean {
@@ -277,32 +282,36 @@ export function RienAujourdhui({ onNouveautes }: { onNouveautes?: () => void }) 
     () => rienDejaVu(jour),
     () => false,
   );
-  return (
-    <div className="sp-courrier sp-courrier-video sp-rien" role="status">
-      <VideoFantome
-        key={dejaVu ? "vue" : "joue"}
-        nom="rien"
-        vitesse={1.3}
-        immobile={dejaVu}
-        onFin={() => noterRienVu(jour)}
-        legendes={[
-          {
-            a: 0.4,
-            texte: (
-              <>
-                <b className="sp-rien-t">👻 Rien d’assez intéressant pour vous aujourd’hui.</b>
-                <span className="sp-rien-s">Je préfère ne rien vous proposer plutôt que quelque chose qui ne vous ressemble pas.</span>
-              </>
-            ),
-          },
-        ]}
-        enfants={
-          onNouveautes ? (
+  const [fini, setFini] = useState(false);
+  /* REPLIÉE : la vignette et les mots, côte à côte — plus de texte sur la photo. */
+  if (dejaVu || fini) {
+    return (
+      <div className="sp-rien-c" role="status">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={videoDe("rien").fin} alt="" />
+        <span>
+          <b>👻 Rien d’assez intéressant pour vous aujourd’hui.</b>
+          <em>Je préfère ne rien vous proposer plutôt que quelque chose qui ne vous ressemble pas.</em>
+          {onNouveautes && (
             <button type="button" className="sp-rien-lien" onClick={onNouveautes}>
               Voir quand même les nouveautés →
             </button>
-          ) : null
-        }
+          )}
+        </span>
+        <StylesSurprises />
+      </div>
+    );
+  }
+  return (
+    <div className="sp-courrier sp-courrier-video sp-rien" role="status">
+      <VideoFantome
+        nom="rien"
+        vitesse={1.3}
+        onFin={() => {
+          noterRienVu(jour);
+          setFini(true);
+        }}
+        legendes={[{ a: 0.4, texte: <b className="sp-rien-t">👻 Rien d’assez intéressant pour vous aujourd’hui.</b> }]}
       />
       <StylesSurprises />
     </div>
@@ -730,11 +739,19 @@ function StylesSurprises() {
 /* RIEN AUJOURD'HUI : la même carte, plus calme — pas de main, un lien discret. */
 .sp-courrier.sp-rien{cursor:default;}
 .sp-rien .vf-media{object-position:50% 44%;}
-.sp-rien .vf-legende{bottom:40px;text-align:left;}
+.sp-rien .vf-legende{text-align:left;}
 .sp-rien-t{display:block;font-size:16px;line-height:1.25;font-weight:900;color:#FFF4E6;}
-.sp-rien-s{display:block;margin-top:4px;font-size:12.5px;line-height:1.35;font-weight:600;color:#F3D9B5;}
-.sp-rien-lien{position:absolute;left:14px;bottom:12px;z-index:3;margin:0;padding:0;border:0;background:none;cursor:pointer;
+/* REPLIÉE : le Fantôme en vignette, les mots à côté, un fond uni et calme. */
+.sp-rien-c{display:flex;align-items:center;gap:14px;margin:16px 16px 0;padding:12px 14px 12px 12px;border-radius:22px;
+  background:linear-gradient(135deg,#2a1810,#1e130d 70%);border:1px solid rgba(246,181,75,.32);animation:sp-rien-pli .45s ease both;}
+.sp-rien-c img{flex:none;width:76px;height:76px;border-radius:18px;object-fit:cover;object-position:50% 47%;}
+.sp-rien-c span{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:4px;}
+.sp-rien-c b{font-size:14.5px;line-height:1.25;font-weight:900;color:#FFF4E6;}
+.sp-rien-c em{font-style:normal;font-size:12.5px;line-height:1.35;color:#E3CDB4;}
+@keyframes sp-rien-pli{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+.sp-rien-lien{margin:2px 0 0;padding:0;border:0;background:none;cursor:pointer;text-align:left;
   font:inherit;font-size:12.5px;font-weight:800;color:#F6B54B;text-decoration:underline;text-underline-offset:3px;}
+@media (prefers-reduced-motion:reduce){.sp-rien-c{animation:none;}}
 .sp-tour{font-style:italic;font-weight:700;font-size:14px;color:#F3D9B5;}
 .sp-trouve{display:block;font-size:19px;line-height:1.1;font-weight:950;letter-spacing:.01em;text-transform:uppercase;color:#FFF4E6;
   text-shadow:0 2px 18px rgba(246,181,75,.6);}

@@ -250,9 +250,12 @@ export function MaMaison({
         </button>
       )}
 
-      <div className="mz-grille">
+      {/* LES PIÈCES PRINCIPALES EN PLEINE LARGEUR : « ça fait un peu compact /
+          confiné, les pièces gagneraient à être plus larges ». En travers,
+          comme les autres, un peu plus hautes pour garder la hiérarchie. */}
+      <div className="mz-liste mz-principales">
         {PRINCIPALES.map((cle) => (
-          <CartePiece key={cle} e={etatDeLaCle(cle)} onOuvrir={ouvrir(cle)} />
+          <CartePiece key={cle} e={etatDeLaCle(cle)} large onOuvrir={ouvrir(cle)} />
         ))}
       </div>
       <p className="mz-suite" aria-hidden="true">
@@ -482,7 +485,14 @@ function VuePiece({
           {e.dit.length > 0 && (
             <>
               <p className="mz-sorties-ok">Parfait. Je regarde ce qui se passe.</p>
-              <button type="button" className="mz-cta large" onClick={() => onDecouvrir(p.branche)}>
+              {/* IL APPARAÎT EN BAS, SOUS LES CHOIX : on le remonte au-dessus de la
+                  barre du bas, pour qu'il ne naisse pas caché derrière elle. */}
+              <button
+                type="button"
+                className="mz-cta large"
+                ref={(b) => b?.scrollIntoView({ block: "nearest", behavior: "smooth" })}
+                onClick={() => onDecouvrir(p.branche)}
+              >
                 Voir ce soir →
               </button>
             </>
@@ -892,9 +902,17 @@ function StylesMaMaison() {
       dangerouslySetInnerHTML={{
         __html: `
 /* ELLE DÉFILE ELLE-MÊME : la page de l'onglet ne défile pas (l'application est posée en position fixe). */
-.mz{position:relative;height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:0 0 calc(110px + env(safe-area-inset-bottom));color:#FFF4E6;
+/* RIEN SOUS LA BARRE DU BAS : sa hauteur, le Fantôme du milieu qui dépasse,
+   la zone de l'indicateur d'accueil de l'iPhone (la barre l'ajoute aussi),
+   et de quoi respirer. Les boutons qui naissent en bas s'arrêtent au-dessus
+   (scroll-margin). Et pas de barre de défilement : on fait défiler du doigt. */
+.mz{--mz-bas:calc(124px + env(safe-area-inset-bottom, 0px));
+  position:relative;height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:0 0 var(--mz-bas);color:#FFF4E6;
+  scrollbar-width:none;
   background:radial-gradient(120% 34% at 50% 0%,rgba(255,170,90,.07),transparent 70%),#170F0B;}
 :where(.mz) button{font:inherit;color:inherit;}
+.mz::-webkit-scrollbar{display:none;}
+.mz .mz-cta,.mz .mz-puces{scroll-margin-bottom:var(--mz-bas);}
 
 /* ── L'ENTRÉE, D'APRÈS LA MAQUETTE : de l'air, des photos claires, une couleur par pièce ── */
 .mz-dessin{display:block;width:100%;height:100%;}
@@ -928,7 +946,7 @@ function StylesMaMaison() {
 .mz-garder s{text-decoration:none;font-size:22px;color:#F6B54B;}
 
 /* LES PIÈCES : la photo, l'anneau de sa couleur, sa phrase, son étiquette, la flèche. */
-.mz-grille{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:14px 16px 0;}
+.mz-principales .mz-carte.large{min-height:184px;}
 .mz-carte{position:relative;display:flex;flex-direction:column;justify-content:flex-end;width:100%;aspect-ratio:.88;padding:62px 11px 11px;text-align:left;border-radius:22px;overflow:hidden;cursor:pointer;isolation:isolate;
   background:#1F150F;border:1px solid rgba(255,235,215,.1);box-shadow:0 14px 30px -18px rgba(0,0,0,.7);}
 /* Les photos de la maquette sont claires d'elles-mêmes : plus aucun filtre. Le cadrage est par pièce (CADRAGE). */
@@ -1065,7 +1083,7 @@ function StylesMaMaison() {
 .mz-erreur{color:#FFB4A6 !important;font-size:13px !important;}
 .mz-lien{border:0;background:transparent;color:#F6B54B !important;font-size:13px;text-decoration:underline;cursor:pointer;}
 @media (max-width:360px){.mz-connait{white-space:normal;}.mz-connait>span{overflow:visible;}}
-@media (max-width:340px){.mz-tete h1{font-size:29px;}.mz-carte{aspect-ratio:auto;min-height:196px;}.mz-carte-t b{white-space:normal;}.mz-carte-t em{-webkit-line-clamp:3;}.mz-tete p{font-size:13.5px;}.mz-grille{gap:9px;}.mz-carte{padding:10px;}.mz-carte-t b{font-size:14.5px;}.mz-carte-t em{font-size:11.5px;}.mz-anneau{width:40px;height:40px;padding:8px;}.mz-etiquette{padding:4px 10px;font-size:12px;}.mz-fleche{width:28px;height:28px;padding:6px;}.mz-carte.large .mz-carte-t{max-width:70%;}.mz-piece-h{height:250px;}}
+@media (max-width:340px){.mz-tete h1{font-size:29px;}.mz-carte{aspect-ratio:auto;min-height:196px;}.mz-carte-t b{white-space:normal;}.mz-carte-t em{-webkit-line-clamp:3;}.mz-tete p{font-size:13.5px;}.mz-carte{padding:10px;}.mz-carte-t b{font-size:14.5px;}.mz-carte-t em{font-size:11.5px;}.mz-anneau{width:40px;height:40px;padding:8px;}.mz-etiquette{padding:4px 10px;font-size:12px;}.mz-fleche{width:28px;height:28px;padding:6px;}.mz-carte.large .mz-carte-t{max-width:70%;}.mz-piece-h{height:250px;}}
 @media (prefers-reduced-motion: reduce){.mz-carte img{transition:none;}.mz-fantome{animation:none;}}
 `,
         }}
