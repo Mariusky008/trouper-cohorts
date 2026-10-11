@@ -33,10 +33,13 @@ function piece(o: unknown): PieceDuLook | null {
   const image = lireImage(r.image, IMAGE_MAX);
   if (!image) return null;
   const sorte = SORTES_VETEMENT.includes(r.sorte as SorteVetement) ? (r.sorte as SorteVetement) : undefined;
-  return { nom: nomPropre(r.nom, "Vêtement"), image, ...(sorte ? { sorte } : {}) };
+  // LA DESCRIPTION DU COMMERÇANT : elle ne sert que si le filtre refuse sa photo. Bornée ici.
+  const decrire = typeof r.decrire === "string" ? r.decrire.replace(/\s+/g, " ").trim().slice(0, 300) : "";
+  return { nom: nomPropre(r.nom, "Vêtement"), image, ...(sorte ? { sorte } : {}), ...(decrire ? { decrire } : {}) };
 }
 
 export async function POST(req: Request) {
+  const debut = Date.now();
   if (!moteurLookConfigure()) return NextResponse.json({ ok: false, sansMoteur: true }, { status: 503 });
   const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "inconnue";
   if (trop(ip)) return NextResponse.json({ ok: false, error: "Trop de looks d'un coup : réessayez dans un moment." }, { status: 429 });
@@ -56,6 +59,7 @@ export async function POST(req: Request) {
     boutique,
     siennes,
     origine: new URL(req.url).origin,
+    debut,
   });
   if ("erreur" in r) return NextResponse.json({ ok: false, error: "Le look n'a pas pu être rendu." }, { status: 502 });
   return NextResponse.json(

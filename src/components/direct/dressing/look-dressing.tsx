@@ -137,7 +137,7 @@ export function LookAvecMonDressing({
         body: JSON.stringify({
           pour,
           personne,
-          piece: { nom: p.nom, sorte: p.sorte, image: imgPiece },
+          piece: { nom: p.nom, sorte: p.sorte, image: imgPiece, ...(p.decrire ? { decrire: p.decrire } : {}) },
           autres: pieces.map((v, i) => ({ nom: v.nom, sorte: v.sorte, image: autres[i] })),
         }),
       });

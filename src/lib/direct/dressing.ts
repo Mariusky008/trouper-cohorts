@@ -255,6 +255,8 @@ export type PieceBoutique = {
   prix?: string;
   sorte?: SorteVetement;
   couleur?: CleCouleur;
+  /** Ce que le commerçant en dit — le look s'en sert si le filtre refuse sa photo. */
+  decrire?: string;
 };
 
 // ─── CE QUI SE PORTE ENSEMBLE ──────────────────────────────────────────────

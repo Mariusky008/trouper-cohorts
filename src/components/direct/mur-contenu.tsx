@@ -6762,6 +6762,7 @@ function Essai({
               prix: lookPour.prix,
               sorte: sorteDuNom(lookPour.nom, lookPour.couvre),
               couleur: couleurDuNom(lookPour.nom),
+              ...(lookPour.decrire ? { decrire: lookPour.decrire } : {}),
             }}
             lieu={mur.lieu}
             pour={lookPour.pour ?? pourDressing}
