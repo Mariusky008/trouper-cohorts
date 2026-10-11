@@ -23,8 +23,9 @@ import { MonDressing } from "@/components/direct/dressing/mon-dressing";
 import { abonnerLook, monLook } from "@/lib/direct/look";
 import { changerDeLook } from "./prendre-place";
 import type { PieceGardee } from "@/lib/direct/pieces-gardees";
-import { CourrierDuFantome, RevoirLesSurprises } from "./surprises";
+import { CourrierDuFantome, RevoirLesSurprises, RienAujourdhui, useRienAujourdhui } from "./surprises";
 import { VideoFantome } from "@/components/direct/video-fantome";
+import { CUISINE_SIGNAUX, MiroirDit, TutoCuisine, TutoMiroir } from "./maison-tutos";
 
 /* ═══ MES SORTIES, LA PREMIÈRE FOIS ═══ Les ambiances proposées sous la vidéo —
    les options de la pièce (`maison.ts`), avec leur pictogramme. */
@@ -93,6 +94,8 @@ export function MaMaison({
   const look = useSyncExternalStore(abonnerLook, monLook, monLook);
   const heure = useSyncExternalStore(rien, heureIci, heureServeur);
   const [vue, setVue] = useState<Vue>({ ou: "entree" });
+  /** La tournée du jour a eu lieu, sans rien d'assez bien — voir `rienDuJour`, plus bas. */
+  const rienAujourdhui = useRienAujourdhui();
 
   const etats = useMemo(() => {
     const ordre = ordreSelonLHeure(heure);
@@ -168,6 +171,18 @@ export function MaMaison({
   }
 
   const allumees = etats.filter((e) => e.allumee).length;
+  /* ═══ « RIEN AUJOURD'HUI », SEULEMENT QUAND C'EST UN VRAI RIEN ═══════════
+     « Ne surtout pas afficher cette vidéo à un nouvel utilisateur dont Ma
+     Maison est simplement vide. » La Maison doit déjà le connaître : deux
+     pièces éveillées, au moins trois gestes remarqués, et l'un d'eux d'AVANT
+     aujourd'hui — un visiteur du jour (la démo lui fait suivre quelques
+     lieux dès l'arrivée) n'est pas quelqu'un qu'on connaît. Sinon, « rien »
+     voudrait dire « je ne sais pas encore quoi chercher » — et c'est la scène
+     habituelle qui le dit. */
+  const gestes = etats.flatMap((e) => e.remarque);
+  const connue =
+    allumees >= 2 && gestes.length >= 3 && rienAujourdhui.debutDuJour > 0 && gestes.some((g) => g.t < rienAujourdhui.debutDuJour);
+  const rienDuJour = rienAujourdhui.rien && connue && !!surprises && !surprises.aOuvrir && !surprises.duJour;
   const mot = motDuFantome(etats);
   /* « EMPORTEZ VOTRE MAISON AVEC VOUS » — seulement quand il y a quelque chose
      à emporter, dans la vraie ville, et tant que l'adresse n'est pas prouvée. */
@@ -192,6 +207,8 @@ export function MaMaison({
           AVEC QUELQUE CHOSE, c'est l'enveloppe qui prend sa place. */}
       {surprises && surprises.aOuvrir > 0 ? (
         <CourrierDuFantome n={surprises.aOuvrir} onOuvrir={() => surprises.onOuvrir(false)} />
+      ) : rienDuJour ? (
+        <RienAujourdhui onNouveautes={() => onDecouvrir("")} />
       ) : (
         <section className="mz-scene">
           {/* LE FANTÔME DE LA MAQUETTE : lunettes rondes, la Maison dans les bras. */}
@@ -394,15 +411,25 @@ function VuePiece({
      sous les yeux. Ensuite, elle n'ouvre plus la pièce ; « Comment ça
      marche ? » la remontre. */
   const sorties = p.cle === "sorties";
-  const [intro, setIntro] = useState(() => sorties && !e.allumee && !e.enPause);
+  /* MA CUISINE, MÊME LOGIQUE : la vidéo tant qu'elle n'a presque aucun signal
+     (voir `maison-tutos.tsx`), décidé à l'arrivée ; ensuite « Je commence à
+     savoir… », et « Comment ça marche ? » la remontre. */
+  const cuisine = p.cle === "cuisine";
+  const cuisineSait = e.remarque.length >= CUISINE_SIGNAUX;
+  /* MON MIROIR : son tuto dépend de la photo gardée, pas des signaux — c'est
+     `TutoMiroir` qui en décide. */
+  const miroir = p.cle === "miroir";
+  const [intro, setIntro] = useState(() => !e.enPause && ((sorties && !e.allumee) || (cuisine && !cuisineSait)));
   const coches = new Set(e.dit);
   const gardeeDe = (s: Signal) => (s.id.startsWith("garde|") ? gardees.find((g) => `garde|${g.carte}|${g.piece}` === s.id) : undefined);
   /* LA MISSION DU FANTÔME — ce qu'il va faire après qu'on a nourri la Maison. */
   const dit = e.enPause
     ? "Je fais une pause ici : je n’apprends rien et ne propose rien. Réveillez-moi quand vous voulez."
-    : e.allumee
-      ? p.mission.active
-      : p.mission.vide;
+    : cuisine && cuisineSait
+      ? "👻 Je commence à savoir ce qui vous donne envie. Je regarderai les plats du jour pour vous."
+      : e.allumee
+        ? p.mission.active
+        : p.mission.vide;
   return (
     <>
       <header className="mz-piece-h">
@@ -419,7 +446,15 @@ function VuePiece({
         </span>
       </header>
 
-      {intro && choix ? (
+      {intro && cuisine ? (
+        <TutoCuisine
+          choix={choix}
+          coches={coches}
+          onChoisir={(cle, on) => choisirDansLaPiece(p.cle, on ? e.dit.filter((x) => x !== cle) : [...e.dit, cle])}
+        />
+      ) : miroir && !e.enPause ? (
+        <TutoMiroir />
+      ) : intro && choix ? (
         <section className="mz-sorties">
           <VideoFantome nom="soiree" classe="mz-video" />
           {/* UNE QUESTION, SIX RÉPONSES, RIEN D'AUTRE : « "Dites-moi l'ambiance, je
@@ -459,7 +494,7 @@ function VuePiece({
           <p>{dit}</p>
         </div>
       )}
-      {sorties && !intro && choix && (
+      {(sorties || (cuisine && !e.enPause)) && !intro && choix && (
         <button type="button" className="mz-comment" onClick={() => setIntro(true)}>
           Comment ça marche&nbsp;?
         </button>
@@ -509,6 +544,7 @@ function VuePiece({
             </>
           )}
           {p.bientot && <p className="mz-note bientot">{p.bientot}</p>}
+          {miroir && <MiroirDit />}
         </section>
 
         <section className="mz-bloc">

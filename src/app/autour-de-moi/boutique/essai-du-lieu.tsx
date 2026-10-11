@@ -30,6 +30,7 @@ import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { tenueDu } from "@/lib/direct/double-metiers";
 import { parcoursPromis } from "@/lib/direct/parcours-promis";
 import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
+import { CestFait } from "@/components/direct/c-est-fait";
 import { chargerSalons, cleSalonBoutique, monPrenom, oublierSalon } from "@/lib/direct/salons";
 import { piecesDeLaVitrine, type PieceDemo } from "@/lib/site-internet/essai-vitrine-donnees";
 import { ChoixDuLibraire } from "./choix-du-libraire";
@@ -513,7 +514,8 @@ function ProchainLivre({ c, saPage, onReserver, onConseil, portail }: Proprietes
    * tomberait chez un inconnu, et c'est lui qui choisit à qui l'envoyer — à
    * lui-même pour voir. Chez un vrai libraire, le même lien porte son numéro.
    */
-  const [deCote, setDeCote] = useState<{ nom: string; texte: string; reel: boolean } | null>(null);
+  /** `fait` : « C'est envoyé » chez un vrai libraire — la vidéo « C'est fait » (voir `c-est-fait.tsx`). */
+  const [deCote, setDeCote] = useState<{ nom: string; texte: string; reel: boolean; fait?: boolean } | null>(null);
   const mettreDeCote = (l: Livre) => {
     const tel = c.telephone;
     const m = commentPrevenir({
@@ -722,7 +724,8 @@ function ProchainLivre({ c, saPage, onReserver, onConseil, portail }: Proprietes
                           : "Pour toi, j’ai celui-là."
                         : "Rien dans mes coups de cœur ne colle pile à tes réponses. Voici ce que je conseille en ce moment — ou demande-moi directement."}
                     </p>
-                    {deCote && (
+                    {deCote?.fait && <CestFait genre="mise-de-cote" lieu={c.nom} onContinuer={() => setDeCote(null)} classe="bl-fait" />}
+                    {deCote && !deCote.fait && (
                       <div className="bl-prevenu" role="status">
                         {deCote.reel ? (
                           <b>Le message est prêt dans WhatsApp, chez {c.nom}. Envoie-le, et le livre t’attend.</b>
@@ -733,7 +736,7 @@ function ProchainLivre({ c, saPage, onReserver, onConseil, portail }: Proprietes
                           </>
                         )}
                         <q>{deCote.texte}</q>
-                        <button type="button" onClick={() => setDeCote(null)}>
+                        <button type="button" onClick={() => (deCote.reel ? setDeCote({ ...deCote, fait: true }) : setDeCote(null))}>
                           {deCote.reel ? "C’est envoyé" : "C’est vu"}
                         </button>
                       </div>

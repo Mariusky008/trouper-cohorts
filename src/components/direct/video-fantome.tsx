@@ -7,6 +7,12 @@
 //   · `surprise`  — « Tu ne m'as rien demandé : j'ai trouvé quelque chose pour toi. »
 //   · `soiree`    — « Je ne te connais pas encore assez : montre-moi ce que tu cherches. »
 //   · `salon`     — « Ici, tes amis donnent leur avis, et moi je t'aide à trancher. »
+//   · `rien`      — « J'ai cherché, et rien ne vous ressemblait assez aujourd'hui. »
+//   · `cuisine`   — « Montrez-moi ce qui vous donne envie, je repère les plats du jour. »
+//   · `fait`      — « C'est fait : votre demande est partie. » (recadrée : la
+//                   phrase incrustée en bas de l'original est hors champ, les
+//                   mots restent en HTML)
+//   · `miroir`    — « Gardez une photo de vous, j'y essaierai ce que vous trouvez. »
 //
 // CE NE SONT PAS DES PUBLICITÉS, ET ELLES NE S'EN DONNENT PAS L'AIR : sans son,
 // sans contrôles, sans boucle ; elles se jouent UNE fois, à l'endroit même où
@@ -28,7 +34,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-export type NomVideo = "dressing" | "recherche" | "surprise" | "soiree" | "salon";
+export type NomVideo = "dressing" | "recherche" | "surprise" | "soiree" | "salon" | "rien" | "cuisine" | "fait" | "miroir";
 
 /** Une ligne de texte, et la seconde à partir de laquelle elle remplace la précédente. */
 export type Legende = { a: number; texte: ReactNode };
@@ -58,8 +64,11 @@ export function VideoFantome({
   classe,
   enfants,
   immobile = false,
+  vitesse,
 }: {
   nom: NomVideo;
+  /** Plus vite que nature (1,3 : 5,2 s deviennent 4 s) — les mots suivent le temps de la vidéo. */
+  vitesse?: number;
   /** Déjà vue : sa dernière image et sa dernière ligne, sans jouer ni appeler `onFin`. */
   immobile?: boolean;
   legendes?: Legende[];
@@ -108,10 +117,14 @@ export function VideoFantome({
        que React écrit ne suffit pas toujours. */
     el.muted = true;
     el.defaultMuted = true;
+    if (vitesse) {
+      el.defaultPlaybackRate = vitesse;
+      el.playbackRate = vitesse;
+    }
     const p = el.play();
     if (p && typeof p.catch === "function") p.catch(() => figer(2600));
     return () => window.clearTimeout(minuteur);
-  }, [immobile]);
+  }, [immobile, vitesse]);
 
   /* LE TEMPS DE LA VIDÉO, POUR LES MOTS — et l'arrêt anticipé. */
   useEffect(() => {

@@ -90,6 +90,7 @@ import {
 import { MurContenu } from "@/components/direct/mur-contenu";
 import { BlocFantome } from "@/components/direct/bloc-fantome";
 import { commentPrevenir, demanderRendezVous, numeroDeFiction } from "@/lib/direct/prevenir";
+import { CestFait } from "@/components/direct/c-est-fait";
 import { partager } from "@/lib/direct/partager";
 import { POSTES } from "@/lib/direct/relooking";
 import { personnaliteDe } from "@/lib/direct/personnalites";
@@ -1025,6 +1026,8 @@ function BoutiqueLongue({
     texte: string;
     telephone: string;
     fiction: boolean;
+    /** ✅ Il a dit « Je l'ai prévenu » chez un vrai commerce : « C'est fait » (voir `c-est-fait.tsx`). */
+    fait?: boolean;
   } | null>(null);
   /* LE PANNEAU « C'EST PARTI DANS LE SALON » A DISPARU, et avec lui le
      dernier endroit d'où l'on sortait de cette page. Il annonçait le départ du
@@ -3091,6 +3094,11 @@ function BoutiqueLongue({
           aria-label="Votre demande"
           onClick={() => setDemandePiece(null)}
         >
+          {demandePiece.fait ? (
+            <div className="bq-salon bq-fait" onClick={(e) => e.stopPropagation()}>
+              <CestFait genre="mise-de-cote" lieu={demandePiece.piece.lieu} onContinuer={() => setDemandePiece(null)} />
+            </div>
+          ) : (
           <div className="bq-salon" onClick={(e) => e.stopPropagation()}>
             <b>{demandePiece.piece.lieu}</b>
             {demandePiece.fiction && (
@@ -3107,11 +3115,16 @@ function BoutiqueLongue({
             <button
               type="button"
               className="bq-salon-b"
-              onClick={() => setDemandePiece(null)}
+              onClick={() =>
+                /* « C'EST FAIT » APRÈS SA CONFIRMATION, ET CHEZ UN VRAI COMMERCE
+                   SEULEMENT : sur un numéro de fiction, rien n'est parti. */
+                demandePiece.fiction ? setDemandePiece(null) : setDemandePiece({ ...demandePiece, fait: true })
+              }
             >
               {demandePiece.fiction ? "J’ai compris" : "Je l’ai prévenu"}
             </button>
           </div>
+          )}
         </div>
       )}
 

@@ -43,6 +43,7 @@ import {
   preparerLesSurprises,
   reagirALaSurprise,
   refuserLeTrait,
+  rienTrouveAujourdhui,
   surprisesAOuvrir,
   surprisesDuJour,
   voirLaSurprise,
@@ -212,6 +213,96 @@ export function CourrierDuFantome({ n, onOuvrir }: { n: number; onOuvrir: () => 
           { a: 2.7, texte: trouve },
         ]}
         enfants={fini || dejaVu ? bouton : null}
+      />
+      <StylesSurprises />
+    </div>
+  );
+}
+
+/**
+ * ═══ RIEN AUJOURD'HUI — LE FANTÔME A CHERCHÉ, ET IL LE DIT ════════════════
+ *
+ * « Le Fantôme a réellement cherché dans les commerces ClikMe mais n'a trouvé
+ * aucune recommandation suffisamment pertinente. Elle doit renforcer la
+ * confiance : ClikMe préfère ne rien proposer plutôt que montrer quelque
+ * chose de médiocre. »
+ *
+ * À LA PLACE EXACTE DE L'ENVELOPPE, à sa taille et avec ses arrondis — et
+ * seulement quand c'est vrai (voir l'appel dans `ma-maison.tsx`) : la Maison
+ * connaît la personne, la tournée du jour a eu lieu (`rienTrouveAujourdhui`),
+ * et rien n'a passé le seuil. Jamais pour une Maison simplement vide. Aucun
+ * badge, aucune notification : c'est un état calme, pas une mauvaise
+ * nouvelle. Qu'une vraie surprise arrive dans la journée, et l'enveloppe
+ * reprend sa place à la tournée suivante.
+ *
+ * UNE FOIS PAR JOUR : revenue plus tard, la carte reste sur sa dernière
+ * image, comme l'enveloppe. Jouée un peu plus vite (environ 4 s).
+ */
+const CLE_RIEN_VU = "clikme:rien-vu";
+function rienDejaVu(jour: string): boolean {
+  try {
+    return window.localStorage.getItem(CLE_RIEN_VU) === jour;
+  } catch {
+    return false;
+  }
+}
+function noterRienVu(jour: string) {
+  try {
+    window.localStorage.setItem(CLE_RIEN_VU, jour);
+  } catch {
+    /* rien */
+  }
+}
+
+/**
+ * La tournée du jour a eu lieu, et rien n'a passé le seuil (voir
+ * `rienTrouveAujourdhui`). Rend aussi le début du jour, à l'heure du
+ * téléphone : l'écran s'en sert pour savoir si la Maison connaissait déjà la
+ * personne avant aujourd'hui. Chez le serveur, ni l'un ni l'autre.
+ */
+export function useRienAujourdhui(): { rien: boolean; debutDuJour: number } {
+  const etat = useSyncExternalStore(abonnerMaisonPrivee, chargerMaisonPrivee, maisonPriveeServeur);
+  const minute = useSyncExternalStore(abonnerHorloge, minuteIci, minuteServeur);
+  if (!minute) return { rien: false, debutDuJour: 0 };
+  const maintenant = new Date(minute * 60_000);
+  const debut = new Date(maintenant);
+  debut.setHours(0, 0, 0, 0);
+  return { rien: rienTrouveAujourdhui(etat.memoire, maintenant), debutDuJour: debut.getTime() };
+}
+
+export function RienAujourdhui({ onNouveautes }: { onNouveautes?: () => void }) {
+  const jour = new Date().toDateString();
+  const dejaVu = useSyncExternalStore(
+    rienAEcouter,
+    () => rienDejaVu(jour),
+    () => false,
+  );
+  return (
+    <div className="sp-courrier sp-courrier-video sp-rien" role="status">
+      <VideoFantome
+        key={dejaVu ? "vue" : "joue"}
+        nom="rien"
+        vitesse={1.3}
+        immobile={dejaVu}
+        onFin={() => noterRienVu(jour)}
+        legendes={[
+          {
+            a: 0.4,
+            texte: (
+              <>
+                <b className="sp-rien-t">👻 Rien d’assez intéressant pour vous aujourd’hui.</b>
+                <span className="sp-rien-s">Je préfère ne rien vous proposer plutôt que quelque chose qui ne vous ressemble pas.</span>
+              </>
+            ),
+          },
+        ]}
+        enfants={
+          onNouveautes ? (
+            <button type="button" className="sp-rien-lien" onClick={onNouveautes}>
+              Voir quand même les nouveautés →
+            </button>
+          ) : null
+        }
       />
       <StylesSurprises />
     </div>
@@ -636,6 +727,14 @@ function StylesSurprises() {
    ne laissait voir que sa casquette, le bouton par-dessus le visage. */
 .sp-courrier-video .vf-media{object-position:50% 28%;}
 .sp-courrier-video .vf-legende{bottom:60px;}
+/* RIEN AUJOURD'HUI : la même carte, plus calme — pas de main, un lien discret. */
+.sp-courrier.sp-rien{cursor:default;}
+.sp-rien .vf-media{object-position:50% 44%;}
+.sp-rien .vf-legende{bottom:40px;text-align:left;}
+.sp-rien-t{display:block;font-size:16px;line-height:1.25;font-weight:900;color:#FFF4E6;}
+.sp-rien-s{display:block;margin-top:4px;font-size:12.5px;line-height:1.35;font-weight:600;color:#F3D9B5;}
+.sp-rien-lien{position:absolute;left:14px;bottom:12px;z-index:3;margin:0;padding:0;border:0;background:none;cursor:pointer;
+  font:inherit;font-size:12.5px;font-weight:800;color:#F6B54B;text-decoration:underline;text-underline-offset:3px;}
 .sp-tour{font-style:italic;font-weight:700;font-size:14px;color:#F3D9B5;}
 .sp-trouve{display:block;font-size:19px;line-height:1.1;font-weight:950;letter-spacing:.01em;text-transform:uppercase;color:#FFF4E6;
   text-shadow:0 2px 18px rgba(246,181,75,.6);}

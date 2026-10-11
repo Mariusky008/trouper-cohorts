@@ -90,6 +90,7 @@ import { AvatarFantome } from "@/app/autour-de-moi/salon-chat";
 import { CSS_FANTOME, FANTOME_AVATAR, FantomeAnime } from "@/components/direct/fantome-anime";
 import { mouvementReduit, VideoFantome } from "@/components/direct/video-fantome";
 import { RechercheFantome } from "@/components/direct/recherche-fantome";
+import { CestFait, genreDuFait } from "@/components/direct/c-est-fait";
 import { contexteDeRecherche, type ContexteRecherche } from "@/lib/direct/contexte-recherche";
 
 // ─── CE QUE LE COMMERCE A À OPPOSER ────────────────────────────────────────
@@ -454,6 +455,8 @@ export function useDuelDuSalon(p: {
   const [lien, setLien] = useState<{ duel: string; url: string | null } | null>(null);
   const [texteDemande, setTexteDemande] = useState("");
   const [coteBoutique, setCoteBoutique] = useState(false);
+  /** ✅ « C'EST FAIT » — le duel dont la demande vient de partir (voir `c-est-fait.tsx`). */
+  const [faitPour, setFaitPour] = useState<string | null>(null);
   const [traceOuverte, setTraceOuverte] = useState<string | null>(null);
   const cloche = useSyncExternalStore(abonnerCloche, etatDeLaCloche, () => "indisponible" as EtatCloche);
   const minuteurHumeur = useRef<number | null>(null);
@@ -803,6 +806,10 @@ export function useDuelDuSalon(p: {
     demanderPourLeDuel(cle, d.id, "envoyee");
     noter("duel", d.n, "demande-envoyee");
     amisApplaudissent();
+    /* LA VIDÉO, SEULEMENT DANS LA VRAIE VILLE : le message est parti vers le
+       vrai numéro du commerce, et la personne vient de le confirmer. Dans la
+       démonstration, il n'est parti chez personne. */
+    if (reelle) setFaitPour(d.id);
   }
 
   /**
@@ -890,7 +897,10 @@ export function useDuelDuSalon(p: {
     const monVote = d.votes[MOI];
     const v = verdict(d);
     let carteDuel: ReactNode;
-    if (fini && (d.demande || d.reponse)) {
+    if (fini && d.demande === "envoyee" && !d.reponse && faitPour === d.id) {
+      etape = `${d.id}:fait`;
+      carteDuel = <CestFait genre={genreDuFait(famille)} lieu={chez} onContinuer={() => setFaitPour(null)} classe="dl-carte dl-fait" />;
+    } else if (fini && (d.demande || d.reponse)) {
       etape = `${d.id}:action`;
       carteDuel = (
         <CarteAction
