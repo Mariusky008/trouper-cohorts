@@ -92,7 +92,6 @@ export const PIECES: PieceMaison[] = [
     reveil: { action: "Essayez une coupe", gain: "je vous montrerai les nouvelles sur vous" },
     apport: "je guette les coupes pour vous",
     mission: { active: "Je guette les nouvelles coupes qui vous ressemblent.", vide: "Essayez une coupe : je guetterai les nouvelles, pour vous les montrer sur vous." },
-    bientot: "Bientôt : votre photo, gardée ici, pour ne plus la reprendre à chaque essai.",
     branche: "coiffeur",
     promesse: "Je garde les coupes et essais qui vous vont.",
     etiquette: "Beauté",
@@ -317,6 +316,13 @@ export type JourDeSurprises = {
   vues: string[];
   /** ❤️ (1) ou 👎 (-1), par surprise. */
   avis: Record<string, 1 | -1>;
+  /**
+   * LA TOURNÉE A VRAIMENT EU LIEU : l'heure de la première recherche du jour,
+   * sur de vrais commerces. Une liste vide ne dit rien toute seule — elle peut
+   * vouloir dire « pas encore cherché » ; avec `cherche`, elle veut dire « j'ai
+   * cherché, et rien n'était assez bien » (« Rien aujourd'hui », `surprises.tsx`).
+   */
+  cherche?: number;
 };
 
 export const MEMOIRE_VIDE: Memoire = { v: 1, choix: {}, refus: {}, pauses: {}, videes: {}, signaux: [], montrees: [], maj: 0 };
@@ -430,7 +436,14 @@ function lireJour(x: unknown): JourDeSurprises | undefined {
   const ids = new Set(liste.map((s) => s.id));
   const avis: Record<string, 1 | -1> = {};
   for (const [k, v] of Object.entries((o.avis && typeof o.avis === "object" ? o.avis : {}) as Record<string, unknown>)) if (ids.has(k) && (v === 1 || v === -1)) avis[k] = v;
-  return { date: o.date, liste, vues: (Array.isArray(o.vues) ? o.vues : []).filter((v): v is string => typeof v === "string" && ids.has(v)), avis };
+  const cherche = typeof o.cherche === "number" && Number.isFinite(o.cherche) ? o.cherche : undefined;
+  return {
+    date: o.date,
+    liste,
+    vues: (Array.isArray(o.vues) ? o.vues : []).filter((v): v is string => typeof v === "string" && ids.has(v)),
+    avis,
+    ...(cherche ? { cherche } : {}),
+  };
 }
 
 /**
@@ -447,7 +460,8 @@ function fusionnerJours(a?: JourDeSurprises, b?: JourDeSurprises): JourDeSurpris
   const liste = [...parId.values()].sort((x, y) => Number(vues.includes(y.id)) - Number(vues.includes(x.id))).slice(0, 3);
   const ids = new Set(liste.map((s) => s.id));
   const avis = Object.fromEntries(Object.entries({ ...a.avis, ...b.avis }).filter(([k]) => ids.has(k))) as Record<string, 1 | -1>;
-  return { date: a.date, liste, vues: vues.filter((v) => ids.has(v)), avis };
+  const cherche = a.cherche && b.cherche ? Math.min(a.cherche, b.cherche) : (a.cherche ?? b.cherche);
+  return { date: a.date, liste, vues: vues.filter((v) => ids.has(v)), avis, ...(cherche ? { cherche } : {}) };
 }
 
 /**

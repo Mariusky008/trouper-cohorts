@@ -109,6 +109,7 @@ import { LookAvecMonDressing, pageDuMagasinIci } from "@/components/direct/dress
 import { Porte } from "@/components/direct/dressing/porte";
 import { StylesDressing } from "@/components/direct/dressing/styles-dressing";
 import { couleurDuNom, sorteDuNom } from "@/lib/direct/dressing";
+import { useMiroir } from "@/lib/direct/miroir-photo";
 
 /**
  * « CHEZ QUI », ÉCRIT COMME ON LE DIRAIT.
@@ -3176,6 +3177,20 @@ function Essai({
   const fichier = useRef<HTMLInputElement>(null);
   /** Le champ qui ouvre l'appareil photo. Voir les deux champs, plus bas. */
   const appareil = useRef<HTMLInputElement>(null);
+  /* ═══ MON MIROIR : LA PHOTO DÉJÀ GARDÉE, SANS LA REDEMANDER ═══════════════
+     « Sur une page commerçant compatible, "Essayer sur moi" doit pouvoir
+     utiliser directement cette photo sans demander d'en reprendre une. »
+     Compatible = un essai qui se cadre sur la personne (`forme: "cadre"` :
+     coiffure, lunettes, vêtements, tatouage). Une main ou un poignet
+     (ongles, bijoux) demandent leur propre photo. Posée une fois, à
+     l'arrivée ; « Reprendre la photo » reste là, et le viseur dit d'où elle
+     vient. */
+  const miroir = useMiroir();
+  const [miroirPose, setMiroirPose] = useState(false);
+  if (!miroirPose && !photo && miroir.photo && mur.essai?.gabarit?.forme === "cadre") {
+    setMiroirPose(true);
+    setPhoto(miroir.photo);
+  }
   const laPhoto = photo ?? mur.essai?.avant;
   /**
    * L'AVANT-APRÈS, SUR APPUI.
@@ -4368,6 +4383,7 @@ function Essai({
                   Tant qu'aucune photo n'a été prise, celle du viseur vient du
                   dépôt : sans ce mot, on croit reconnaître un aperçu de soi. */}
               {!photo && <span className="mu-ph-x">Exemple de photo</span>}
+              {photo && photo === miroir.photo && <span className="mu-ph-x">🪞 Ma photo · Mon Miroir</span>}
             </div>
           </div>
           {/* LE BOUTON OUVRE VRAIMENT L'APPAREIL PHOTO.

@@ -124,6 +124,7 @@ import {
   marquerLues,
 } from "@/lib/direct/suivis";
 import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
+import { CestFait } from "@/components/direct/c-est-fait";
 import {
   abonnerRemises,
   avecLesRemises,
@@ -1825,6 +1826,8 @@ export function ApercuHabitant({
     texte: string;
     telephone: string;
     fiction: boolean;
+    /** ✅ « Je l'ai prévenu » chez un vrai commerce : « C'est fait » (voir `c-est-fait.tsx`). */
+    fait?: boolean;
   } | null>(null);
   const [reserves, setReserves] = useState<string[]>([]);
   const [dx, setDx] = useState(0);
@@ -6570,6 +6573,11 @@ export function ApercuHabitant({
       aria-label="Votre demande"
       onClick={() => setDemandePiece(null)}
     >
+      {demandePiece.fait ? (
+        <div className="ap-pdem ap-pdem-fait" onClick={(ev) => ev.stopPropagation()}>
+          <CestFait genre="mise-de-cote" lieu={demandePiece.piece.lieu} onContinuer={() => setDemandePiece(null)} />
+        </div>
+      ) : (
       <div className="ap-pdem" onClick={(ev) => ev.stopPropagation()}>
         <b>{demandePiece.piece.lieu}</b>
         {demandePiece.fiction && (
@@ -6584,11 +6592,15 @@ export function ApercuHabitant({
         <button
           type="button"
           className="ap-pdem-b"
-          onClick={() => setDemandePiece(null)}
+          onClick={() =>
+            /* « C'EST FAIT » APRÈS SA CONFIRMATION, CHEZ UN VRAI COMMERCE SEULEMENT. */
+            demandePiece.fiction ? setDemandePiece(null) : setDemandePiece({ ...demandePiece, fait: true })
+          }
         >
           {demandePiece.fiction ? "J’ai compris" : "Je l’ai prévenu"}
         </button>
       </div>
+      )}
       <button type="button" className="ap-moi-vue-x" aria-label="Fermer">
         ✕
       </button>

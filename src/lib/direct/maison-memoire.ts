@@ -230,9 +230,14 @@ export function preparerLesSurprises(commerces: CommerceDuJour[], maintenant: Da
     const nouvelles = choisirLesSurprises(m, commerces, maintenant, gardees, deja, dressing, pourDuDressing).filter((s) => !restent.some((r) => r.piece === s.piece));
     liste = [...restent, ...nouvelles].slice(0, SURPRISES_MAX);
   }
-  const pareil = avant && liste.length === avant.liste.length && liste.every((s, i) => s.id === avant.liste[i].id);
-  if (pareil || (!avant && !liste.length && !m.jour)) return;
-  geste((x) => ({ ...x, jour: { ...jour, liste } }));
+  /* LA PREMIÈRE VRAIE RECHERCHE DU JOUR EST NOTÉE, une fois : c'est elle qui
+     permet de dire « rien d'assez intéressant aujourd'hui » sans mentir — une
+     liste vide sans recherche voudrait seulement dire « pas encore cherché ». */
+  const cherche = jour.cherche ?? (commerces.length ? maintenant.getTime() : undefined);
+  const pareil =
+    avant && avant.cherche === cherche && liste.length === avant.liste.length && liste.every((s, i) => s.id === avant.liste[i].id);
+  if (pareil || (!avant && !liste.length && !m.jour && !cherche)) return;
+  geste((x) => ({ ...x, jour: { ...jour, liste, ...(cherche ? { cherche } : {}) } }));
   for (const s of liste) if (!avant?.liste.some((a) => a.id === s.id)) noterLaSurprise(s, "trouvee");
 }
 
@@ -250,6 +255,17 @@ export function surprisesAOuvrir(m: Memoire, maintenant: Date): Surprise[] {
   const j = m.jour;
   if (!j || j.date !== dateDuJour(maintenant)) return [];
   return j.liste.filter((s) => !j.vues.includes(s.id) && !estPassee(s, maintenant));
+}
+
+/**
+ * RIEN AUJOURD'HUI — le Fantôme a vraiment cherché ce jour-là, et rien n'a
+ * passé le seuil. Pas « pas encore cherché », pas « tout ouvert » : une
+ * recherche faite, et une liste vide. Que la Maison connaisse assez la
+ * personne pour que ce soit un vrai « rien », c'est à l'écran d'en juger.
+ */
+export function rienTrouveAujourdhui(m: Memoire, maintenant: Date): boolean {
+  const j = m.jour;
+  return !!j && j.date === dateDuJour(maintenant) && !!j.cherche && j.liste.length === 0;
 }
 
 /** Les surprises d'aujourd'hui, ouvertes ou non : « Revoir mes surprises du jour ». */
