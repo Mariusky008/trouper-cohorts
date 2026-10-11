@@ -113,6 +113,11 @@ const AMBIANCES: [string, RegExp][] = [
   ["decouvrir", mots("découvr\\p{L}*|ateliers?|expos?|exposition|marché|nocturne|inconnus")],
   ["amis", mots("entre amis|à partager|pour deux|ensemble|grande table|tablée")],
   ["monde", mots("inconnus|tablée|grande table|rencontres?")],
+  // LES AMBIANCES DE MES SORTIES DEPUIS SA VIDÉO (`maison.ts`). Les anciennes
+  // restent au-dessus : des Maisons les ont déjà cochées.
+  ["tranquille", mots("calmes?|au calme|tranquilles?|cosy|feutrée?s?|paisibles?|intimistes?|coin du feu")],
+  ["rencontrer", mots("inconnus|tablée|grande table|rencontres?|rencontrer|afterwork|quiz|blind test|table d'hôtes")],
+  ["surprends", mots("découvr\\p{L}*|insolites?|inédite?s?|surprises?|ateliers?|expos?|exposition|nocturne|jamais vu")],
 ];
 const STYLES: [string, RegExp][] = [
   ["bois", mots("bois|chêne|noyer|jute|rotin|lin|velours|naturel(le)?s?")],
@@ -159,15 +164,19 @@ const TROP_LARGES = new Set(["famille:coupe", "famille:ongles", "famille:tatouag
 /** « Un verre au calme » n'est pas une table de six inconnus ni une soirée DJ. */
 const INCOMPATIBLES: Record<string, string[]> = {
   "ambiance:verre": ["ambiance:fete", "ambiance:monde"],
+  "ambiance:tranquille": ["ambiance:fete", "ambiance:monde", "ambiance:rencontrer"],
 };
 const MOTS_EN_PLUS: Record<string, string> = {
   "ambiance:terrasse": "la terrasse",
   "ambiance:musique": "la musique",
-  "ambiance:verre": "un verre au calme",
+  "ambiance:verre": "un verre",
   "ambiance:fete": "la fête",
   "ambiance:decouvrir": "découvrir",
   "ambiance:amis": "sortir entre amis",
   "ambiance:monde": "rencontrer du monde",
+  "ambiance:tranquille": "le calme",
+  "ambiance:rencontrer": "rencontrer du monde",
+  "ambiance:surprends": "l'inattendu",
   "style:bois": "le bois et le naturel",
   "style:minimaliste": "l'épuré",
   "style:boheme": "le bohème",
