@@ -117,6 +117,7 @@ import { BoutiqueTable } from "./boutique-table";
 import { aLaPageAOnglets } from "@/lib/direct/page-a-onglets";
 import { imposerVilleDuDressing } from "@/lib/direct/dressing-depot";
 import { ReponseDuMagasin } from "@/components/direct/dressing/confirmation-magasin";
+import { AvisRecus } from "@/components/direct/ca-me-va";
 import { BandeauPont } from "@/components/direct/dressing/pont-dressing";
 import { StylesDressing } from "@/components/direct/dressing/styles-dressing";
 
@@ -414,6 +415,8 @@ export function Boutique(p: {
       <>
         {/* LA RÉPONSE D'UN MAGASIN À UNE MISE DE CÔTÉ — sur sa page aussi, pour qui n'ouvre pas l'application. */}
         <ReponseDuMagasin />
+        {/* LES VOTES DES AMIS (« Ça me va ? ») arrivés pendant qu'on regardait ailleurs. */}
+        <AvisRecus />
         {/* AU RETOUR DU PONT (domaine propre du magasin) : ce qui s'est passé, dit une fois. */}
         <BandeauPont />
         <StylesDressing />
@@ -435,6 +438,7 @@ export function Boutique(p: {
   return (
     <>
       <ReponseDuMagasin />
+      <AvisRecus />
       <BandeauPont />
       <StylesDressing />
       <BoutiqueLongue

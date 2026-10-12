@@ -108,6 +108,7 @@ import { ChoixEssai } from "@/components/direct/dressing/choix-essai";
 import { SiDressingRempli } from "@/components/direct/dressing/si-dressing-rempli";
 import { LookAvecMonDressing, pageDuMagasinIci } from "@/components/direct/dressing/look-dressing";
 import { Porte } from "@/components/direct/dressing/porte";
+import { FeuilleCaMeVa } from "@/components/direct/ca-me-va";
 import { StylesDressing } from "@/components/direct/dressing/styles-dressing";
 import { couleurDuNom, sorteDuNom } from "@/lib/direct/dressing";
 import { useMiroir } from "@/lib/direct/miroir-photo";
@@ -2965,6 +2966,8 @@ function Essai({
   const [choixPour, setChoixPour] = useState<Piece | null>(prechoisie);
   const [choixVitrine, setChoixVitrine] = useState(Boolean(prechoisie));
   const [lookPour, setLookPour] = useState<Piece | null>(null);
+  /** L'essai qu'on envoie à ses amis pour qu'ils votent (« Ça me va ? »). */
+  const [caMeVa, setCaMeVa] = useState<Piece | null>(null);
   /** Le look vient du choix ouvert depuis la vitrine : le refermer ramène dans la boutique. */
   const [lookVitrine, setLookVitrine] = useState(false);
   /**
@@ -6014,42 +6017,28 @@ function Essai({
                   </button>
                 </SiDressingRempli>
               )}
-              {/* ═══ EN PARLER AVEC MES AMIS ═════════════════════════════════
+              {/* ═══ « ÇA ME VA ? » — UN SEUL BOUTON POUR LES AMIS ══════════════
 
-                  « Change "Partager" pour "En parler avec mes amis", qui amène
-                  sur un salon de discussion où l'on invite ses amis, et qui
-                  existe déjà. »
+                  L'essai part chez les amis avec un lien de vote qui s'ouvre
+                  sans application : chaque ami qui vote voit la boutique, et
+                  « essayez cette pièce sur vous ». Voir
+                  `components/direct/ca-me-va.tsx`.
 
-                  IL OUVRE LE SALON DE L'ANNONCE, avec ses propositions, son
-                  vote et sa réservation : on n'en fabrique pas un second pour
-                  l'essai. Le rendu, le prix et la note partent avec, et la
-                  première phrase du salon est déjà écrite.
-
-                  LÀ OÙ IL N'Y A PAS DE SALON — la page du commerce n'a pas la
-                  mécanique du fil — il retombe sur la feuille de partage du
-                  téléphone. Ce n'est pas un geste différent : c'est la même
-                  intention, servie par ce que l'écran a sous la main. */}
+                  LE SALON EST TOUJOURS LÀ, juste en dessous dans la même
+                  feuille (« Ou en discuter dans un salon ClikMe ») : « En
+                  parler avec mes amis » ouvrait le salon de l'annonce, avec ses
+                  propositions, son vote et sa réservation, le rendu, le prix et
+                  la note partant avec. Il n'a pas changé ; il vient en second,
+                  parce qu'un ami sans ClikMe n'y entre pas, et qu'un lien de
+                  vote, lui, se répand. Sans salon ni vote possible
+                  (démonstration), la photo part par la feuille de partage du
+                  téléphone. */}
               {!!rendu && !rendu.souci && (onSalon || !!photo) && (
-                <button
-                  type="button"
-                  className="mu-res-c"
-                  onClick={() => {
-                    if (onSalon && rendu) {
-                      onSalon({
-                        quoi: piece.nom,
-                        prix: piece.prix,
-                        image: rendu.image,
-                        note,
-                      });
-                      return;
-                    }
-                    void partagerLeLook(piece);
-                  }}
-                >
+                <button type="button" className="mu-res-c" onClick={() => setCaMeVa(piece)}>
                   <i aria-hidden="true">
                     <Trace cle="partage" />
                   </i>
-                  <span>En parler avec mes amis</span>
+                  <span>Ça me va&nbsp;? Mes amis votent</span>
                 </button>
               )}
             </div>
@@ -6820,6 +6809,30 @@ function Essai({
           />
           <StylesDressing />
         </Porte>
+      )}
+      {caMeVa && rendu && !rendu.souci && (
+        <FeuilleCaMeVa
+          essai={{
+            image: rendu.image,
+            quoi: caMeVa.nom,
+            ...(caMeVa.prix ? { prix: caMeVa.prix } : {}),
+            magasin: mur.lieu,
+            carte: mur.cle,
+            page: pageDuMagasinIci(mur.cle),
+            ville: mur.ville,
+            ...(mur.essai?.mots?.ceci ? { ceci: mur.essai.mots.ceci } : {}),
+          }}
+          onFermer={() => setCaMeVa(null)}
+          secours={photo ? () => void partagerLeLook(caMeVa) : undefined}
+          salon={
+            onSalon
+              ? () => {
+                  onSalon({ quoi: caMeVa.nom, prix: caMeVa.prix, image: rendu.image, note });
+                  setCaMeVa(null);
+                }
+              : undefined
+          }
+        />
       )}
       {lookPour && pourDressing && (
         <Porte>
