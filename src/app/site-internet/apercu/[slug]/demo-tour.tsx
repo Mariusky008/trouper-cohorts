@@ -16,6 +16,7 @@ import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange, duree
 import { MARQUE } from "@/lib/marque";
 import { direRetours, type GesteDuJour } from "@/lib/direct/geste-du-jour";
 import { SceneSalons } from "./scene-partage";
+import { SceneMaison } from "./scene-maison";
 import { SceneGardeRobe } from "./scene-garde-robe";
 import { SceneDemandes } from "./scene-demandes";
 
@@ -407,7 +408,19 @@ export function DemoTour({
      s'ouvre sur la deuxième, celle qui le nomme ; la pile se feuillette sur
      la troisième ; on la fait défiler sur la quatrième, et on essaie, on en
      parle, on contacte sur la dernière. */
-  const QUI_TEMPS: { dit: string; acte?: "passer" | "veux" | "resa"; definit?: true }[] = G
+  /* ═══ ET CHEZ LA MODE, LES DEUX FAÇONS : LE DIRECT, PUIS MA MAISON ═══
+     « On a oublié la fonction quasiment essentielle et différenciante, "Ma
+     Maison". » Voir `maison` dans `geste-du-jour.ts` : Le Direct s'ouvre sur
+     sa phrase, puis la Maison d'une cliente prend l'écran (`SceneMaison`),
+     une image par phrase. */
+  const QUI_TEMPS: { dit: string; acte?: "passer" | "veux" | "resa"; definit?: true; maison?: true }[] = G?.maison
+    ? [
+        { dit: SALONS_JOUES && G.liaison ? G.liaison : SAY_BASCULE },
+        { dit: G.maison.deuxFacons },
+        { definit: true, dit: G.maison.direct },
+        ...G.maison.dit.map((dit, i) => (i === 0 ? { dit, maison: true as const } : { dit })),
+      ]
+    : G
     ? [
         { dit: SALONS_JOUES && G.liaison ? G.liaison : SAY_BASCULE },
         {
@@ -425,6 +438,8 @@ export function DemoTour({
       ]
     : [];
   const QUI_DIT = QUI_TEMPS.map((t) => t.dit);
+  /** La phrase où la Maison prend l'écran (−1 : pas de Maison). */
+  const QUI_MAISON = QUI_TEMPS.findIndex((t) => t.maison);
   /** La phrase qui dit ce qu'est Le Direct : l'écran l'écrit au même moment. */
   const QUI_DEFINIT = QUI_TEMPS.findIndex((t) => t.definit);
   /** LE DIRECT S'OUVRE SUR « ILS OUVRENT LE DIRECT » — pas une phrase avant, pendant le nombre. */
@@ -2977,6 +2992,10 @@ export function DemoTour({
               Trois temps le remplacent, et le deuxième est un compliment. Ce
               n'est pas de la politesse : sans lui, la phrase d'après se lit
               comme un reproche sur son ardoise, et il se ferme. */}
+          {/* MA MAISON, PAR-DESSUS LE DIRECT — à partir de sa phrase. */}
+          {scene === "qui" && G && QUI_MAISON >= 0 && quiN >= QUI_MAISON && (
+            <SceneMaison n={quiN - QUI_MAISON} fantome={{ visage: fantomeBoutique || "/clikme-fantome.png", nom }} pied={fantomePied} />
+          )}
           {scene === "invisible" && G && (
             <div className="dtour-ov">
               <div className="dtour-card iv">

@@ -255,7 +255,8 @@ function StylesDemandes() {
 .sd-cpt.rose b{color:#FF8CC8;}
 .sd-cpt span{font-size:12.5px;color:#E7D6C6;}
 .sd-cpt .sd-cpt-h{font-size:11px;font-weight:700;color:#BFA88F;}
-.sd-fin{margin:0;text-align:center;font-size:12px;color:#A8927F;opacity:0;transition:opacity .5s ease 2.6s;}
+/* LA CONCLUSION EST DITE, MAINTENANT (« Votre pièce n'attend plus qu'on la cherche… ») : elle se lit. */
+.sd-fin{margin:0 auto;max-width:640px;text-align:center;font-size:14px;line-height:1.4;font-weight:600;color:#F2E3D0;opacity:0;transition:opacity .5s ease 2.6s;}
 .sd-fin.on{opacity:1;}
 @keyframes sdMonte{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
 /* ═══ SUR UN TÉLÉPHONE : la pièce et les salons en ligne, ses demandes, les compteurs en bas. ═══ */
@@ -282,7 +283,7 @@ function StylesDemandes() {
   .sd-cpt b{font-size:22px;}
   .sd-cpt span{font-size:10px;}
   .sd-cpt .sd-cpt-h{font-size:9.5px;}
-  .sd-fin{font-size:10.5px;}
+  .sd-fin{font-size:12px;}
 }
 @media (prefers-reduced-motion:reduce){
   .sd-dem,.sd-btn.fait,.sd-tete,.sd-gauche{animation:none;opacity:1;transform:none;}

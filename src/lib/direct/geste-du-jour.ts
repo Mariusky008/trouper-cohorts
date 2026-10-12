@@ -44,6 +44,8 @@ export type RetourDuJour = {
   quoi: string;
   /** CE CHIFFRE-LÀ EST UNE DEMANDE QUI ARRIVE CHEZ LUI — l'étape 5 montre alors les messages reçus. */
   demande?: true;
+  /** LA PHRASE DITE, quand « à {heure}, {nombre} {quoi} » ne se dit pas : « À 16 h 10, ClikMe l'a aussi repérée pour 27 Maisons… ». */
+  dit?: string;
 };
 
 /**
@@ -234,6 +236,17 @@ export type GesteDuJour = {
   momentPhoto?: string;
   momentVoix?: string;
   imaginons?: string;
+  /**
+   * ═══ MA MAISON, À L'ÉTAPE 3 — la seconde façon d'être découvert ═══════════
+   *
+   * « On a oublié la fonction quasiment essentielle et différenciante, "Ma
+   * Maison" : ClikMe connaît progressivement ses goûts et ce qu'elle possède
+   * déjà. Quand un commerçant publie une nouveauté qui lui correspond, ClikMe
+   * la repère pour elle et la dépose dans sa Maison. » L'étape 3 dit alors
+   * les deux façons : Le Direct (`direct`), puis Ma Maison (`dit`, quatre
+   * phrases — voir `scene-maison.tsx`, une image par phrase).
+   */
+  maison?: { deuxFacons: string; direct: string; dit: [string, string, string, string] };
   /**
    * LE GESTE EST UNE PHOTO DE LA PIÈCE ET UN MOT À SA VOIX — la boutique de
    * vêtements. « Ce n'est pas une description, mais plutôt qu'on montre à
@@ -600,13 +613,24 @@ export function gesteDuJour(
          17 h 00 — 3 vous demandent de la mettre de côté. Et vous voyez
          exactement ce que votre publication a provoqué. » */
       imaginons: "Maintenant, imaginons votre pièce publiée cet après-midi.",
+      /* « 16 h 10 — ClikMe l'a aussi repérée pour 27 Maisons correspondant à
+         son style. » Et la conclusion : « Votre pièce n'attend plus qu'on la
+         cherche. ClikMe va la présenter aux personnes à qui elle pourrait
+         vraiment plaire. » */
       retours: [
-        { heure: "15 h 30", icone: "❤️", nombre: "549", quoi: `${gentile} l'ont vue passer` },
-        { heure: "16 h 30", icone: "👗", nombre: "19", quoi: "l'ont essayée sur eux" },
+        { heure: "15 h 30", icone: "❤️", nombre: "549", quoi: `${gentile} l'ont vue dans Le Direct`, dit: `À 15 h 30, 549 ${gentile} ont vu votre pièce dans Le Direct.` },
+        {
+          heure: "16 h 10",
+          icone: "🏠",
+          nombre: "27",
+          quoi: "Maisons où ClikMe l'a repérée",
+          dit: "À 16 h 10, ClikMe l'a aussi repérée pour 27 Maisons correspondant à son style.",
+        },
+        { heure: "16 h 30", icone: "👗", nombre: "19", quoi: "personnes l'ont essayée" },
         /* « Étape 5 : les demandes qui arrivent chez elle. » Les salons sont
            montrés à l'étape 2 ; ici, c'est ce qui en sort et arrive chez elle. */
         { heure: "17 h 00", icone: "🛍️", nombre: "3", quoi: "vous demandent de la mettre de côté", demande: true },
-        { heure: "18 h 00", icone: "📊", nombre: "", quoi: "Et vous voyez exactement ce que votre publication a provoqué." },
+        { heure: "18 h 00", icone: "📊", nombre: "", quoi: "Votre pièce n'attend plus qu'on la cherche. ClikMe va la présenter aux personnes à qui elle pourrait vraiment plaire." },
       ],
       gardeRobe: {
         dit: "Elle peut même ouvrir son Dressing ClikMe : choisir, par exemple, son jean préféré et voir immédiatement si votre pièce va avec ce qu'elle possède déjà.",
@@ -626,6 +650,19 @@ export function gesteDuJour(
         conclut: "Une décision d'achat peut donc commencer chez elle… et se terminer chez vous.",
       },
       liaison: "Mais pour essayer une de vos pièces, encore faut-il savoir qu'elle existe.",
+      /* SES MOTS, À UN DÉTAIL PRÈS : « cette veste » est devenue « ce pull »,
+         parce que l'image montre un pull — celui de son exemple (« Lili Ross a
+         un pull qui serait assorti à mon jean »). */
+      maison: {
+        deuxFacons: "Avec ClikMe, il y a deux façons.",
+        direct: `D'abord nous avons créé Le Direct de ${villeAff || "votre ville"} : les habitants voient simplement ce qui vient d'arriver aujourd'hui dans les commerces autour d'eux.`,
+        dit: [
+          "Et puis il y a « Ma Maison ». Là, ClikMe apprend progressivement ce que chacun aime et ce qu'il possède déjà.",
+          "Par exemple, si vous publiez aujourd'hui ce pull et qu'il correspond au style d'une personne ou va particulièrement bien avec les vêtements de son Dressing, votre Fantôme peut le lui rapporter comme une surprise.",
+          "Cette personne ne vous suivait pas. Elle ne cherchait pas votre boutique. Elle ne vous connaissait peut-être même pas. Et pourtant, votre pièce vient d'arriver chez elle.",
+          "Elle peut alors voir pourquoi ClikMe l'a choisie, l'essayer sur elle, demander l'avis de ses amis… puis vous demander de la mettre de côté.",
+        ],
+      },
     };
   }
 
@@ -770,7 +807,7 @@ export function direRetours(
      montre ces messages reçus. */
   const phrases = [
     // « 17 h 00 » s'affiche ; « à 17 h » se dit.
-    ...g.retours.filter((r) => r.nombre).map((r) => `À ${r.heure.replace(/ h 00$/, " h")}, ${r.nombre} ${r.quoi}.`),
+    ...g.retours.filter((r) => r.nombre).map((r) => r.dit ?? `À ${r.heure.replace(/ h 00$/, " h")}, ${r.nombre} ${r.quoi}.`),
     // QUAND LE MÉTIER A SA PHRASE D'OUVERTURE (`imaginons`), SA CONCLUSION SE DIT AUSSI.
     ...(g.imaginons ? g.retours.filter((r) => !r.nombre).map((r) => r.quoi) : []),
     ...(avecPartage ? [g.partage ?? PARTAGE] : []),
