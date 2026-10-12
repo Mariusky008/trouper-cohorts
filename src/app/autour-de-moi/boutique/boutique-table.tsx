@@ -543,11 +543,14 @@ export function BoutiqueTable({
         setOnglet("amis");
         adresse.searchParams.set("salon", "lu");
         window.history.replaceState(window.history.state, "", adresse.toString());
+        /* L'AMI INVITÉ ENTRE DIRECTEMENT DANS LA CONVERSATION : il se présente
+           donc en arrivant — son fantôme, son prénom —, comme à la porte. */
+        identifierPuis(() => {});
       }
     } catch {
       /* pas d'adresse lisible → on reste sur le lieu */
     }
-  }, []);
+  }, [identifierPuis]);
   const mots = motsDuMetier(c.branche);
   /* UN ATELIER QUI FAIT ESSAYER (un bijou au poignet, un tatouage, une bougie
      posée chez soi) dit « Essayer », pas « Découvrir ». */
@@ -2177,10 +2180,16 @@ export function BoutiqueTable({
               estMoi={estMoiIci}
               cleBoutique={cleBoutique}
               exemple={!c.vraiePage}
-              onEntrer={(cle) => {
-                setSalonChoisi(cle);
-                setHall(false);
-              }}
+              /* ON SE PRÉSENTE EN ENTRANT, comme dans l'application : « quand je
+                 suis rentré dans le salon, on ne me demande pas de choisir mon
+                 fantôme avec mon pseudo ». Le fantôme, puis le prénom, s'ils
+                 manquent — ensuite la porte s'ouvre. */
+              onEntrer={(cle) =>
+                identifierPuis(() => {
+                  setSalonChoisi(cle);
+                  setHall(false);
+                })
+              }
               onLirePublic={(id) => {
                 if (c.villeReelle) window.location.href = `/ville/${encodeURIComponent(c.villeReelle)}?salon=p:${encodeURIComponent(id)}`;
               }}
