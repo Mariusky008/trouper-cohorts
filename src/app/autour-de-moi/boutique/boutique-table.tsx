@@ -88,6 +88,7 @@ import {
   monPrenom,
   ouvrirSalon,
   proposer,
+  rangerLesSalonsDans,
   SALONS_VIDES,
   type MessageSalon,
 } from "@/lib/direct/salons";
@@ -99,7 +100,19 @@ import { EssaiDuLieu, oublierLEssaiDeDemo } from "./essai-du-lieu";
 import { piecesDeLaVitrine } from "@/lib/site-internet/essai-vitrine-donnees";
 import { SalonExemple } from "./salon-exemple";
 import { memeLieu, SalonsDuLieu } from "./salons-du-lieu";
-import type { SalonADecouvrir } from "@/lib/direct/conversations-sync";
+import {
+  abonnerDecouverte,
+  brancherLaVille,
+  lienConnu,
+  lienDInvitation,
+  preparerLien,
+  salonsADecouvrirDeLaVille,
+  type SalonADecouvrir,
+} from "@/lib/direct/conversations-sync";
+import { brancherLaMaisonPrivee } from "@/lib/direct/maison-memoire";
+import { useIdentite } from "./identite-salon";
+import { EmporterMaison } from "./emporter-maison";
+import { BarreDAcces } from "../porte-salon";
 import { ChoixDuLibraire } from "./choix-du-libraire";
 import { ExperienceTable, estUnRestaurant } from "./experience-table";
 
@@ -226,6 +239,9 @@ const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfA
  *     inconnus. Le même mot que dans l'application (« Mes salons »).
  *   · LES SALONS AVANT LES AVIS : ce qu'on fait ici avant ce qu'on lit.
  */
+const sansAbonnement = () => () => {};
+const AUCUN_PUBLIC: SalonADecouvrir[] = [];
+
 const ONGLETS: { cle: Onglet; mot: string }[] = [
   { cle: "lieu", mot: "Le lieu" },
   { cle: "experience", mot: "Découvrir" },
@@ -476,6 +492,36 @@ export function BoutiqueTable({
    */
   pied?: ReactNode;
 }) {
+  /* ═══ DANS UNE VRAIE VILLE, LES SALONS DE LA PAGE SONT CEUX DE LA VILLE ═══
+     « Est-ce qu'une personne qui fait un essayage sur la page du commerçant et
+     ouvre un salon le retrouvera dans l'application ? » Non : ils restaient
+     sur le téléphone, dans le tiroir de la démonstration, et le lien envoyé
+     aux amis ouvrait à chacun SON salon, vide. Une cliente sur la vraie page
+     d'un commerçant (pas la commerçante qui regarde la sienne) est
+     maintenant branchée comme l'application (`ville-app.tsx`) : le tiroir de
+     sa ville, la synchronisation des conversations (chaque salon et chaque
+     message partent au serveur, ceux des autres en reviennent), et sa Maison
+     privée. Les salons y sont PRIVÉS, comme ceux de l'application : un essai
+     montre un visage. */
+  const villeSync = !saPage && c.vraiePage && c.villeReelle ? c.villeReelle : null;
+  const monteIci = useSyncExternalStore(sansAbonnement, () => true, () => false);
+  if (monteIci && villeSync) rangerLesSalonsDans(villeSync);
+  useEffect(() => {
+    if (!villeSync) return;
+    rangerLesSalonsDans(villeSync);
+    const q = new URLSearchParams(window.location.search);
+    const demande = q.get("salon");
+    const debrancher = brancherLaVille(villeSync, demande?.startsWith("p:") ? demande : undefined, q.get("invitation") || undefined);
+    const debrancherMaison = brancherLaMaisonPrivee(villeSync);
+    return () => {
+      debrancher();
+      debrancherMaison();
+      rangerLesSalonsDans(null);
+    };
+  }, [villeSync]);
+  /* QUI PARLE : le fantôme puis le prénom, au premier geste qui parle aux
+     autres (`identite-salon.tsx`). Pas pour la commerçante qui essaie sa page. */
+  const { identifierPuis, rendu: identiteRendu } = useIdentite(!saPage);
   const [onglet, setOnglet] = useState<Onglet>("lieu");
   /* ═══ `?salon=1` : L'AMI INVITÉ ARRIVE DANS LA CONVERSATION ══════════════
      C'est ce que porte le lien « Inviter des amis » (voir `inviter`), et la
@@ -1107,22 +1153,9 @@ export function BoutiqueTable({
      d'agir (« En parler avec mes amis », le conseil du libraire, un lien de
      l'application) : on veut parler tout de suite. */
   const [hall, setHall] = useState(false);
-  /** Dans une vraie ville : les salons publics de ce commerce, sur le serveur. */
-  const [publicsDeLaVille, setPublicsDeLaVille] = useState<SalonADecouvrir[]>([]);
-  useEffect(() => {
-    const ville = c.villeReelle;
-    if (!hall || !ville || saPage) return;
-    let fini = false;
-    fetch(`/api/direct/conversations?${new URLSearchParams({ ville, decouvrir: "1" })}`, { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j: { decouvrir?: SalonADecouvrir[] } | null) => {
-        if (!fini && Array.isArray(j?.decouvrir)) setPublicsDeLaVille(j.decouvrir.filter((x) => memeLieu(x.ou, c.nom)));
-      })
-      .catch(() => {});
-    return () => {
-      fini = true;
-    };
-  }, [hall, c.villeReelle, c.nom, saPage]);
+  /** Dans une vraie ville : les salons publics de ce commerce, relevés par la synchronisation. */
+  const publicsVille = useSyncExternalStore(abonnerDecouverte, salonsADecouvrirDeLaVille, () => AUCUN_PUBLIC);
+  const publicsDeLaVille = useMemo(() => (villeSync ? publicsVille.filter((x) => memeLieu(x.ou, c.nom)) : AUCUN_PUBLIC), [villeSync, publicsVille, c.nom]);
   const cleSalon = salonChoisi && salons[salonChoisi] ? salonChoisi : (salonsIci[0]?.cle ?? cleBoutique);
   const salon = salons[cleSalon];
   /* LES SALONS DE LA TABLE : ceux de cette page, puis ceux d'ailleurs qui
@@ -1156,7 +1189,8 @@ export function BoutiqueTable({
   /* LE CONSEIL DU LIBRAIRE, MONTRÉ AUX AMIS : on n'a rien « essayé sur soi »,
      on demande qui l'a lu. Depuis « Ton prochain livre » et depuis un livre
      ouvert en grand (`ChoixDuLibraire`). */
-  const parlerDuLivre = (l: { quoi: string; prix?: string; photo?: string }) => {
+  const parlerDuLivre = (l: { quoi: string; prix?: string; photo?: string }) => identifierPuis(() => parlerDuLivreMaintenant(l));
+  const parlerDuLivreMaintenant = (l: { quoi: string; prix?: string; photo?: string }) => {
     const moi = monPrenom() || "Vous";
     const cle = nouvelleCleDeSalon();
     ouvrirSalon({
@@ -1219,14 +1253,25 @@ export function BoutiqueTable({
     }
     basculerVenue(cleSalon, monPrenom() || "Vous");
   };
+  /* LE VRAI LIEN D'INVITATION, PRÉPARÉ D'AVANCE : ouvrir la feuille de partage
+     doit se faire dans le geste même, et le lien demande au serveur un jeton. */
+  useEffect(() => {
+    if (villeSync && salon && (!salon.acces || salon.acces.statut === "membre")) preparerLien(salon);
+  }, [villeSync, salon]);
   const inviter = async () => {
     ouvrirLeSalon();
+    /* DANS UNE VRAIE VILLE, UN VRAI LIEN : celui qui l'ouvre arrive dans CE
+       salon (il demande à entrer, et vous acceptez), pas dans le sien, vide. */
+    const local = chargerSalons()[cleSalon];
+    const connu = villeSync && local ? lienConnu(local) : null;
+    const lienVrai = connu ?? (villeSync && local ? await lienDInvitation(local) : null);
     const r = await partager({
       titre: c.nom,
       texte: `On se retrouve chez ${c.nom} ?`,
-      lien: lienPage(true),
+      lien: lienVrai ?? lienPage(true),
     });
     if (r === "copie") setPartageDit("Lien copié : collez-le dans votre groupe.");
+    else if (r === "echec" && lienVrai && !connu) setPartageDit("Votre lien d’invitation est prêt : touchez encore « Inviter » pour l’envoyer.");
     else if (r === "echec") setPartageDit("Le partage n’a pas abouti.");
     // UN PARTAGE compte dans les chiffres de son comptoir. La feuille de
     // partage refermée sans choix compte aussi : `partager` ne les distingue
@@ -1288,7 +1333,7 @@ export function BoutiqueTable({
     autres: autresDuSalon,
     fantomeDe: (qui) => AMIS_FANTOMES[[...qui].reduce((n, x) => n + x.charCodeAt(0), 0) % AMIS_FANTOMES.length],
     monFantome: monLook().image,
-    onInviter: () => void inviter(),
+    onInviter: () => identifierPuis(() => void inviter()),
   });
   /* LE SALON N'EXISTE PAS ENCORE (ou ne parle de rien de précis) : la carte
      est la nôtre, avec les mêmes deux chemins. « Avec ClikMe » ouvre le
@@ -1386,6 +1431,7 @@ export function BoutiqueTable({
   return (
     <div className={`bt bq bt-${onglet}${autres ? " avec-maq" : ""}`}>
       <StylesBoutiqueTable />
+      {identiteRendu}
       {/* ═══ LE FILTRE AMBRE — voir .bt-photo dans la feuille ══════════════
           Luminosité → échelle brun, cuivre, miel, crème ; puis 65 % de ce
           mappage pour 35 % de la photo d'origine, un peu plus saturée. Il
@@ -1712,7 +1758,7 @@ export function BoutiqueTable({
               c={c}
               saPage={saPage}
               onReserver={() => setDiscute(true)}
-              onSalon={(o) => {
+              onSalon={(o) => identifierPuis(() => {
                 const moi = monPrenom() || "Vous";
                 const cle = nouvelleCleDeSalon();
                 ouvrirSalon({
@@ -1739,7 +1785,7 @@ export function BoutiqueTable({
                 setSalonChoisi(cle);
                 setHall(false);
                 setOnglet("amis");
-              }}
+              })}
               /* LE CONSEIL DU LIBRAIRE, MONTRÉ AUX AMIS : on n'a rien
                  « essayé sur soi », on demande qui l'a lu. */
               onConseil={parlerDuLivre}
@@ -2139,6 +2185,12 @@ export function BoutiqueTable({
                 if (c.villeReelle) window.location.href = `/ville/${encodeURIComponent(c.villeReelle)}?salon=p:${encodeURIComponent(id)}`;
               }}
             />
+            {/* « EMPORTEZ VOTRE MAISON », APRÈS UN PREMIER SALON : c'est là qu'on a
+                quelque chose à perdre en changeant de navigateur. Vraie ville
+                seulement — dans la démonstration, tout reste sur le téléphone. */}
+            {villeSync && salonsDuHall.miens.length > 0 && (
+              <EmporterMaison raison="Vos salons et vos essais vous suivent sur un autre téléphone ou un autre navigateur." />
+            )}
           </div>
         </section>
       )}
@@ -2223,6 +2275,13 @@ export function BoutiqueTable({
             </nav>
           )}
           <div className="bt-corps">
+            {/* QUI DEMANDE À ENTRER — dans une vraie ville, l'ami qui ouvre votre
+                lien d'invitation frappe à la porte de CE salon ; vous l'acceptez
+                d'ici, comme dans l'application (`BarreDAcces`, sans sa barre :
+                l'en-tête dit déjà « Salon privé »). Rien dans la démonstration. */}
+            {salon?.acces?.statut === "membre" && (
+              <BarreDAcces salon={salon} sansBarre onInviterLien={() => identifierPuis(() => void inviter())} onQuitte={() => setHall(true)} />
+            )}
             {/* LE RENDEZ-VOUS, EPINGLE EN HAUT DU FIL — comme un message
                 epingle dans une conversation de groupe. */}
             <div className="bt-rdv">
@@ -2277,7 +2336,7 @@ export function BoutiqueTable({
               </span>
                 </>
               )}
-              <button type="button" className={`bt-viens${jeViens ? " on" : ""}`} onClick={viens}>
+              <button type="button" className={`bt-viens${jeViens ? " on" : ""}`} onClick={() => identifierPuis(viens)}>
                 {jeViens ? "✓ Je viens" : "Je viens"}
               </button>
             </div>
@@ -2293,7 +2352,7 @@ export function BoutiqueTable({
                   humeur="idle"
                   oppose=""
                   autre={duelSalon.autre}
-                  onInviter={() => void inviter()}
+                  onInviter={() => identifierPuis(() => void inviter())}
                   onTrancher={avecClikMe}
                   onPlusTard={() => setPasMaintenant(true)}
                 />
@@ -2378,7 +2437,7 @@ export function BoutiqueTable({
             )}
 
             <div className="bt-duo">
-              <button type="button" className="bt-deux" onClick={inviter}>
+              <button type="button" className="bt-deux" onClick={() => identifierPuis(() => void inviter())}>
                 <Inviter />
                 Inviter des amis
               </button>
@@ -2398,7 +2457,7 @@ export function BoutiqueTable({
             className="bt-ecrire"
             onSubmit={(e) => {
               e.preventDefault();
-              envoyer();
+              identifierPuis(envoyer);
             }}
           >
             <input
@@ -2498,7 +2557,9 @@ export function BoutiqueTable({
               )}
               <button type="button" className="bt-deux" onClick={() => setDiscute(true)}>
                 <Enveloppe />
-                Écrire au restaurant
+                {/* LES MOTS DE SON MÉTIER : « Écrire au restaurant » s'affichait
+                    aussi chez un coiffeur. « le salon » → « au salon ». */}
+                Écrire {mots.completer.replace(/^les /, "aux ").replace(/^le /, "au ").replace(/^(la |l’|l')/, "à $1")}
               </button>
             </div>
             {/* SES SERVICES, TELS QUE SA FICHE LES ANNONCE : « Terrasse ·
