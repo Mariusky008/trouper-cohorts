@@ -2,7 +2,7 @@
 //
 // Les sept derniers jours, en personnes et en gestes : des essais, des mises de
 // côté demandées puis confirmées, des amis venus voir, des clients envoyés par
-// ses voisins. Les mêmes phrases que le SMS du lundi (`semaine-en-clients.ts`).
+// ses voisins. Les mêmes phrases que son comptoir (`semaine-en-clients.ts`).
 import type { CleMetier } from "@/lib/direct/apercu-habitant";
 import type { SemaineEnClients } from "@/lib/site-internet/compteurs-jour";
 import { lignesDeLaSemaine } from "@/lib/site-internet/semaine-en-clients";

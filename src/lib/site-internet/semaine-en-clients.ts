@@ -1,5 +1,5 @@
 /**
- * 🧾 SA SEMAINE, DITE EN CLIENTS — les mêmes phrases dans son espace et dans le SMS du lundi.
+ * 🧾 SA SEMAINE, DITE EN CLIENTS — les mêmes phrases dans son espace pro et dans son comptoir.
  *
  * « Un commerçant ne paie pas des fonctions, il paie des clients. » Pas « 412
  * vues » : « 23 personnes ont essayé vos pièces, 6 vous ont demandé une mise de
@@ -61,22 +61,4 @@ export function lignesDeLaSemaine(s: SemaineEnClients, branche?: CleMetier | str
   }
   ajouter("voisins", "🏘️", `${c.voisins} ${pluriel(c.voisins, "client envoyé", "clients envoyés")} par ${v("vos", "tes")} voisins`);
   return out;
-}
-
-/**
- * LE SMS DU LUNDI, COURT : chaque SMS coûte, et un SMS accentué tient en 70
- * signes. Les chiffres qui comptent en clients, puis le lien de son espace,
- * où les phrases complètes l'attendent.
- */
-export function smsDeLaSemaine(nom: string, s: SemaineEnClients, branche: CleMetier | undefined, lien: string): string | null {
-  void branche;
-  const c = s.cette;
-  const parts: string[] = [];
-  if (c.essais) parts.push(`${c.essais} ${pluriel(c.essais, "essai", "essais")}`);
-  if (c.cotes) parts.push(`${c.cotes} ${pluriel(c.cotes, "mise de côté demandée", "mises de côté demandées")}${c.confirmees ? ` (${c.confirmees} ${pluriel(c.confirmees, "confirmée", "confirmées")})` : ""}`);
-  if (c.amis) parts.push(`${c.amis} ${pluriel(c.amis, "ami de client venu", "amis de clients venus")}`);
-  else if (c.avis) parts.push(`${c.avis} « Ça me va ? » ${pluriel(c.avis, "envoyé", "envoyés")}`);
-  if (c.voisins) parts.push(`${c.voisins} ${pluriel(c.voisins, "client envoyé", "clients envoyés")} par vos voisins`);
-  if (!parts.length) return null;
-  return `ClikMe, votre semaine (${nom}) : ${parts.join(", ")}. Détail : ${lien}`;
 }
