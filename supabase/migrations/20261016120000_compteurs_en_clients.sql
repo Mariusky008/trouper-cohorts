@@ -13,12 +13,38 @@
 -- MÊME RÈGLE QUE LES QUATRE PREMIERS : aucune personne n'est identifiée ; ce
 -- sont des gestes comptés par jour, pas des visiteurs uniques.
 --
--- APPLIQUER À LA MAIN DANS L'ÉDITEUR SQL DE SUPABASE, après
--- `20261004120000_compteurs_du_comptoir.sql`. Tant qu'elle ne l'est pas, rien
--- ne casse : ces gestes ne sont pas comptés, et l'espace pro le dit.
+-- APPLIQUER À LA MAIN DANS L'ÉDITEUR SQL DE SUPABASE. ELLE SE SUFFIT À
+-- ELLE-MÊME : si `20261004120000_compteurs_du_comptoir.sql` n'a jamais été
+-- appliquée (« relation human_compteurs_jour does not exist »), elle crée la
+-- table entière ; sinon elle y ajoute les six colonnes. Elle peut être rejouée
+-- sans dommage. Tant qu'elle ne l'est pas, rien ne casse : ces gestes ne sont
+-- pas comptés, et l'espace pro le dit.
 
 BEGIN;
 
+-- La table des compteurs du jour, telle que la crée la migration du 4 octobre,
+-- avec les dix compteurs d'emblée.
+CREATE TABLE IF NOT EXISTS public.human_compteurs_jour (
+  site_id uuid NOT NULL REFERENCES public.human_vitrine_sites(id) ON DELETE CASCADE,
+  jour date NOT NULL,
+  vues integer NOT NULL DEFAULT 0,
+  ecoutes integer NOT NULL DEFAULT 0,
+  demandes integer NOT NULL DEFAULT 0,
+  partages integer NOT NULL DEFAULT 0,
+  essais integer NOT NULL DEFAULT 0,
+  cotes integer NOT NULL DEFAULT 0,
+  confirmees integer NOT NULL DEFAULT 0,
+  avis integer NOT NULL DEFAULT 0,
+  amis integer NOT NULL DEFAULT 0,
+  voisins integer NOT NULL DEFAULT 0,
+  PRIMARY KEY (site_id, jour)
+);
+
+-- Lue et écrite par le serveur seulement (clé d'administration) : aucune
+-- politique, donc aucun accès public direct.
+ALTER TABLE public.human_compteurs_jour ENABLE ROW LEVEL SECURITY;
+
+-- La table existait déjà (migration du 4 octobre appliquée) : les six colonnes.
 ALTER TABLE public.human_compteurs_jour
   ADD COLUMN IF NOT EXISTS essais integer NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS cotes integer NOT NULL DEFAULT 0,
@@ -65,6 +91,11 @@ BEGIN
     voisins = human_compteurs_jour.voisins + EXCLUDED.voisins;
 END;
 $$;
+
+-- Seul le serveur l'appelle (clé d'administration) : personne d'autre ne peut
+-- gonfler les compteurs d'un commerce en appelant la fonction directement.
+REVOKE EXECUTE ON FUNCTION public.compter_jour(uuid, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.compter_jour(uuid, text) TO service_role;
 
 NOTIFY pgrst, 'reload schema';
 
