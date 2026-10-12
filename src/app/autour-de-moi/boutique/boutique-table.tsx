@@ -130,47 +130,49 @@ type MotsDuMetier = {
   completer: string;
   /** Ce que dit son double sous le titre du lieu : l'invitation de SON métier. */
   invite: string;
+  /** Le nom de l'onglet de l'expérience, dans la barre du bas : le verbe du métier. */
+  onglet: string;
   /** « Touche-moi et je te montre MON RESTO » — comment il appelle sa maison. */
   chezMoi: string;
 };
 const MOTS: Record<string, MotsDuMetier> = {
   restaurant: {
     carte: "Carte et prix", titre: "La carte", reserver: "Demander une réservation", experience: "Et si vous goûtiez ?",
-    vide: "Sa carte arrive. En attendant, demandez au chef ce qu’il propose aujourd’hui.", lue: ["sa carte", "votre carte"], completer: "le restaurant", invite: "Entre, je te fais découvrir.", chezMoi: "mon resto",
+    vide: "Sa carte arrive. En attendant, demandez au chef ce qu’il propose aujourd’hui.", lue: ["sa carte", "votre carte"], completer: "le restaurant", invite: "Entre, je te fais découvrir.", onglet: "Goûter", chezMoi: "mon resto",
   },
   bar: {
     carte: "Carte et prix", titre: "La carte", reserver: "Réserver une table", experience: "Et si vous goûtiez ?",
-    vide: "Sa carte arrive. En attendant, demandez ce qu’on sert ce soir.", lue: ["sa carte", "votre carte"], completer: "le bar", invite: "Entre, je te fais découvrir.", chezMoi: "mon bar",
+    vide: "Sa carte arrive. En attendant, demandez ce qu’on sert ce soir.", lue: ["sa carte", "votre carte"], completer: "le bar", invite: "Entre, je te fais découvrir.", onglet: "Goûter", chezMoi: "mon bar",
   },
   coiffeur: {
     carte: "Tarifs", titre: "Les tarifs", reserver: "Prendre rendez-vous", experience: "Et si vous essayiez une coupe ?",
-    vide: "Ses tarifs arrivent. En attendant, demandez-les directement au salon.", lue: ["sa grille de tarifs", "votre grille de tarifs"], completer: "le salon", invite: "Entre, on imagine ta prochaine coupe.", chezMoi: "mon salon",
+    vide: "Ses tarifs arrivent. En attendant, demandez-les directement au salon.", lue: ["sa grille de tarifs", "votre grille de tarifs"], completer: "le salon", invite: "Entre, on imagine ta prochaine coupe.", onglet: "Essayer", chezMoi: "mon salon",
   },
   ongles: {
     carte: "Tarifs", titre: "Les tarifs", reserver: "Prendre rendez-vous", experience: "Et si vous essayiez une pose ?",
-    vide: "Ses tarifs arrivent. En attendant, demandez-les directement à l’institut.", lue: ["sa grille de tarifs", "votre grille de tarifs"], completer: "l’institut", invite: "Entre, on choisit ta prochaine pose.", chezMoi: "mon salon",
+    vide: "Ses tarifs arrivent. En attendant, demandez-les directement à l’institut.", lue: ["sa grille de tarifs", "votre grille de tarifs"], completer: "l’institut", invite: "Entre, on choisit ta prochaine pose.", onglet: "Essayer", chezMoi: "mon salon",
   },
   lunetier: {
     carte: "Tarifs", titre: "Les tarifs", reserver: "Prendre rendez-vous", experience: "Et si vous essayiez vos lunettes ?",
-    vide: "Ses tarifs arrivent. En attendant, demandez-les directement en boutique.", lue: ["sa grille de tarifs", "votre grille de tarifs"], completer: "la boutique", invite: "Entre, on essaie tes futures lunettes.", chezMoi: "ma boutique",
+    vide: "Ses tarifs arrivent. En attendant, demandez-les directement en boutique.", lue: ["sa grille de tarifs", "votre grille de tarifs"], completer: "la boutique", invite: "Entre, on essaie tes futures lunettes.", onglet: "Essayer", chezMoi: "ma boutique",
   },
   mode: {
     carte: "Produits et prix", titre: "La boutique", reserver: "Passer le voir", experience: "Et si vous essayiez ?",
-    vide: "Ses produits arrivent. En attendant, demandez ce qui vient d’arriver.", lue: ["ses étiquettes", "vos étiquettes"], completer: "la boutique", invite: "Entre, viens essayer les pièces du moment.", chezMoi: "ma boutique",
+    vide: "Ses produits arrivent. En attendant, demandez ce qui vient d’arriver.", lue: ["ses étiquettes", "vos étiquettes"], completer: "la boutique", invite: "Entre, viens essayer les pièces du moment.", onglet: "Essayer", chezMoi: "ma boutique",
   },
   fleuriste: {
     carte: "Bouquets et prix", titre: "Les bouquets", reserver: "Commander un bouquet", experience: "Et si vous composiez votre bouquet ?",
-    vide: "Ses bouquets arrivent. En attendant, demandez ce qui est arrivé ce matin.", lue: ["son ardoise", "votre ardoise"], completer: "la boutique", invite: "Entre, on compose ton bouquet.", chezMoi: "ma boutique",
+    vide: "Ses bouquets arrivent. En attendant, demandez ce qui est arrivé ce matin.", lue: ["son ardoise", "votre ardoise"], completer: "la boutique", invite: "Entre, on compose ton bouquet.", onglet: "Composer", chezMoi: "ma boutique",
   },
   artisan: {
     carte: "Créations et prix", titre: "Les créations", reserver: "Le contacter", experience: "Et si vous découvriez ?",
-    vide: "Ses créations arrivent. En attendant, demandez ce qui sort de l’atelier.", lue: ["ses étiquettes", "vos étiquettes"], completer: "l’atelier", invite: "Entre, je te montre l’atelier.", chezMoi: "mon atelier",
+    vide: "Ses créations arrivent. En attendant, demandez ce qui sort de l’atelier.", lue: ["ses étiquettes", "vos étiquettes"], completer: "l’atelier", invite: "Entre, je te montre l’atelier.", onglet: "Découvrir", chezMoi: "mon atelier",
   },
   /* LE LIBRAIRE : sa « carte », ce sont ses coups de cœur, et l'expérience
      n'est pas un essai — c'est son conseil (voir `essai-du-lieu.tsx`). */
   librairie: {
     carte: "Ses coups de cœur", titre: "Ses coups de cœur", reserver: "Demander un livre", experience: "Et si on trouvait ton prochain livre ?",
-    vide: "Ses coups de cœur arrivent. En attendant, demandez-lui ce qu’il lit en ce moment.", lue: ["ses étiquettes", "vos étiquettes"], completer: "la librairie", invite: "Entre, je te trouve ton prochain livre.", chezMoi: "ma librairie",
+    vide: "Ses coups de cœur arrivent. En attendant, demandez-lui ce qu’il lit en ce moment.", lue: ["ses étiquettes", "vos étiquettes"], completer: "la librairie", invite: "Entre, je te trouve ton prochain livre.", onglet: "Conseil", chezMoi: "ma librairie",
   },
 };
 const motsDuMetier = (branche: string): MotsDuMetier => MOTS[branche] ?? MOTS.artisan;
@@ -213,11 +215,22 @@ const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfA
  * sixième place mène hors de la page, vers l'application de la ville. Voir
  * `explorer` plus bas : un lien, pas un onglet.
  */
+/**
+ * LES ONGLETS DU BAS. « J'aurais mis "Amis" avant "Avis" — et "Expérience" et
+ * "Amis" ne sont peut-être pas très appropriés. »
+ *   · L'EXPÉRIENCE PREND LE VERBE DU MÉTIER (`MOTS[…].onglet`) : on essaie chez
+ *     un coiffeur, on goûte dans un restaurant, on compose chez un fleuriste —
+ *     « Expérience » ne disait pas ce qu'on allait y faire.
+ *   · « AMIS » DEVIENT « SALONS » : l'onglet ouvre la table des salons, les
+ *     miens et les salons publics de ce commerce, où l'on croise aussi des
+ *     inconnus. Le même mot que dans l'application (« Mes salons »).
+ *   · LES SALONS AVANT LES AVIS : ce qu'on fait ici avant ce qu'on lit.
+ */
 const ONGLETS: { cle: Onglet; mot: string }[] = [
   { cle: "lieu", mot: "Le lieu" },
-  { cle: "experience", mot: "Expérience" },
+  { cle: "experience", mot: "Découvrir" },
+  { cle: "amis", mot: "Salons" },
   { cle: "avis", mot: "Avis" },
-  { cle: "amis", mot: "Amis" },
   { cle: "infos", mot: "Infos" },
 ];
 
@@ -490,6 +503,10 @@ export function BoutiqueTable({
     }
   }, []);
   const mots = motsDuMetier(c.branche);
+  /* UN ATELIER QUI FAIT ESSAYER (un bijou au poignet, un tatouage, une bougie
+     posée chez soi) dit « Essayer », pas « Découvrir ». */
+  const ongletExperience =
+    c.branche === "artisan" && /bijou|bracelet|collier|bague|joaill|tatou|tattoo|bougie|cire/i.test(c.metier ?? "") ? "Essayer" : mots.onglet;
   /** À table (restaurant, bar) : le plat et la voix du chef. Ailleurs : l'essayage. */
   const aLaTable = c.branche === "restaurant" || c.branche === "bar";
   // LES TROIS ÉTAPES, AUX SEULS RESTAURANTS — voir `estUnRestaurant`.
@@ -2564,7 +2581,7 @@ export function BoutiqueTable({
             }}
           >
             <IconeOnglet cle={o.cle} />
-            <span>{o.mot}</span>
+            <span>{o.cle === "experience" ? ongletExperience : o.mot}</span>
           </button>
         ))}
         {/* EXPLORER MA VILLE : l'application, ouverte sur ses deux copains du
