@@ -109,6 +109,7 @@ import { SiDressingRempli } from "@/components/direct/dressing/si-dressing-rempl
 import { LookAvecMonDressing, pageDuMagasinIci } from "@/components/direct/dressing/look-dressing";
 import { Porte } from "@/components/direct/dressing/porte";
 import { FeuilleCaMeVa } from "@/components/direct/ca-me-va";
+import { compter } from "@/lib/direct/compter";
 import { StylesDressing } from "@/components/direct/dressing/styles-dressing";
 import { couleurDuNom, sorteDuNom } from "@/lib/direct/dressing";
 import { useMiroir } from "@/lib/direct/miroir-photo";
@@ -3635,6 +3636,18 @@ function Essai({
       vivant = false;
     };
   }, [pourDressing, vraiNumero, piece, renduPret, mur.lieu, mur.cle]);
+
+  /* UN ESSAI RÉUSSI COMPTE POUR LE COMMERÇANT — « 23 personnes ont essayé vos
+     pièces cette semaine ». Un vrai rendu sur la photo du client, une fois par
+     rendu ; un commerce de la démonstration n'a pas de ligne, rien n'est compté. */
+  const essaiCompte = useRef("");
+  useEffect(() => {
+    if (!rendu || rendu.souci || !photo || !piece) return;
+    const cle = `${piece.id}|${rendu.ms}|${rendu.image.length}`;
+    if (essaiCompte.current === cle) return;
+    essaiCompte.current = cle;
+    compter(mur.cle, "essais");
+  }, [rendu, photo, piece, mur.cle]);
 
   /**
    * PRÉVENIR LE COMMERÇANT AVEC LA PHOTO.

@@ -459,6 +459,10 @@ export default async function ApercuMaquette({
     if (str(moi) !== "1") {
       const idSite = str(row.id);
       after(() => compterLeJour(idSite, "vues"));
+      // CEUX QUE CLIKME LUI AMÈNE, EN PERSONNES : l'ami d'un client (« Ça me va ? »)
+      // et le client envoyé par un voisin (sa rue). Voir `compteurs-jour.ts`.
+      if (str(via) === "avis") after(() => compterLeJour(idSite, "amis"));
+      if (str(via) === "voisin") after(() => compterLeJour(idSite, "voisins"));
     }
   } catch {
     /* colonnes non migrées → best-effort, la page reste complète */

@@ -27,6 +27,7 @@
  * (« envoyée »), ou au plus tard quand le magasin répond.
  */
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { compterParAdresse } from "@/lib/site-internet/compteurs-jour";
 import type { createAdminClient } from "@/lib/supabase/admin";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -172,6 +173,8 @@ export async function noterEnvoi(supabase: Supabase, j: JetonCote): Promise<bool
       cree_le: maintenant,
       maj_le: maintenant,
     });
+    // UNE MISE DE CÔTÉ DEMANDÉE COMPTE POUR LE MAGASIN, une fois (« 6 ont demandé une mise de côté »).
+    if (!error && j.cm) await compterParAdresse(j.cm, "cotes");
     return !error;
   } catch {
     return false;
@@ -189,21 +192,29 @@ export async function noterReponse(supabase: Supabase, j: JetonCote, etat: "conf
       const d = deja.donnees ?? {};
       const reponses = Number(d.reponses) || 0;
       if (reponses >= REPONSES_MAX) return { erreur: "Déjà répondu.", statut: 429 };
+      // CONFIRMÉE UNE FOIS, COMPTÉE UNE FOIS : se raviser puis reconfirmer ne gonfle rien.
+      const compte = etat === "confirmee" && !d.compteeConfirmee;
       const { error } = await supabase
         .from("human_maison_elements")
-        .update({ donnees: { ...d, etat, reponduLe: maintenant, reponses: reponses + 1, vue: false }, maj_le: maintenant })
+        .update({ donnees: { ...d, etat, reponduLe: maintenant, reponses: reponses + 1, vue: false, ...(compte ? { compteeConfirmee: true } : {}) }, maj_le: maintenant })
         .eq("id", deja.id)
         .eq("habitant", j.h);
+      if (!error && compte && j.cm) await compterParAdresse(j.cm, "confirmees");
       return error ? { erreur: "Enregistrement impossible.", statut: 500 } : { ok: true };
     }
     const { error } = await supabase.from("human_maison_elements").insert({
       habitant: j.h,
       piece: "dressing",
       sorte: SORTE_COTE,
-      donnees: { ...contenuDe(j), etat, reponduLe: maintenant, reponses: 1, vue: false },
+      donnees: { ...contenuDe(j), etat, reponduLe: maintenant, reponses: 1, vue: false, ...(etat === "confirmee" ? { compteeConfirmee: true } : {}) },
       cree_le: maintenant,
       maj_le: maintenant,
     });
+    // LE MAGASIN A RÉPONDU AVANT QUE L'ENVOI NE SOIT RANGÉ : la demande compte ici.
+    if (!error && j.cm) {
+      await compterParAdresse(j.cm, "cotes");
+      if (etat === "confirmee") await compterParAdresse(j.cm, "confirmees");
+    }
     return error ? { erreur: "Enregistrement impossible.", statut: 500 } : { ok: true };
   } catch {
     return { erreur: "Indisponible.", statut: 503 };

@@ -245,6 +245,22 @@ http
       if (url.pathname === "/__tables") return repondre(res, 200, Object.fromEntries(tables));
       const m = /^\/rest\/v1\/([a-z_]+)$/.exec(url.pathname);
       if (m) return await rest(req, res, url, m[1]);
+      // LE COMPTEUR DU JOUR, comme la fonction SQL `compter_jour` (migrations
+      // `…_compteurs_du_comptoir.sql` et `…_compteurs_en_clients.sql`).
+      if (url.pathname === "/rest/v1/rpc/compter_jour" && req.method === "POST") {
+        const { sid, quoi } = JSON.parse((await corps(req)).toString() || "{}");
+        const COLS = ["vues", "ecoutes", "demandes", "partages", "essais", "cotes", "confirmees", "avis", "amis", "voisins"];
+        if (!COLS.includes(quoi)) return repondre(res, 204, undefined);
+        const jour = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
+        const t = lignes("human_compteurs_jour");
+        let l = t.find((r) => r.site_id === sid && r.jour === jour);
+        if (!l) {
+          l = { site_id: sid, jour, ...Object.fromEntries(COLS.map((c) => [c, 0])) };
+          t.push(l);
+        }
+        l[quoi] = (l[quoi] || 0) + 1;
+        return repondre(res, 204, undefined);
+      }
       if (url.pathname.startsWith("/rest/v1/rpc/")) return repondre(res, 404, []);
       if (url.pathname.startsWith("/storage/v1/object/")) return await stockage(req, res, url);
       // UNE SESSION D'ADMINISTRATION, POUR LES TESTS SEULEMENT : le jeton

@@ -30,6 +30,7 @@ import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { SEAU_MAISON } from "@/lib/direct/maison-serveur";
 import { pageDeMagasin } from "@/lib/direct/mise-de-cote";
+import { compterParAdresse } from "@/lib/site-internet/compteurs-jour";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 
@@ -183,6 +184,8 @@ export async function creerAvis(
       await supabase.storage.from(SEAU_MAISON).remove([chemin]);
       return "base";
     }
+    // UN « ÇA ME VA ? » SUR UNE DE SES PIÈCES COMPTE POUR LE MAGASIN.
+    if (s(d.carte, 80)) await compterParAdresse(s(d.carte, 80), "avis");
     return "ok";
   } catch {
     return "base";

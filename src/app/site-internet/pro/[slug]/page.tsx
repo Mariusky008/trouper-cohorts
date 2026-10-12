@@ -29,6 +29,8 @@ import { ProPhotosDuLieu } from "./pro-photos-lieu";
 import { ProMusique } from "./pro-musique";
 import { ProCadeau } from "./pro-cadeau";
 import { ProVoisins } from "./pro-voisins";
+import { ProSemaine } from "./pro-semaine";
+import { semaineEnClients } from "@/lib/site-internet/compteurs-jour";
 import { cadeauDuMetier } from "@/lib/site-internet/cadeau-du-metier";
 import { ProServices } from "./pro-services";
 import { ProMotifs } from "./pro-motifs";
@@ -183,6 +185,8 @@ export default async function EspacePro({
 
   // ── Tableau de bord : chiffres réels agrégés (best-effort). ──────────────────
   const siteId = str(row.id);
+  // SA SEMAINE EN CLIENTS — une lecture, les quatorze derniers jours. Voir `pro-semaine.tsx`.
+  const semaine = await semaineEnClients(siteId);
   // Statut de mise en ligne : le commerçant ne savait pas si son site était
   // vraiment public, ni à quelle adresse. La publication est une action de notre
   // côté — raison de plus pour la lui afficher. Colonnes récentes → défensif.
@@ -364,6 +368,8 @@ export default async function EspacePro({
         sitePublished={sitePublished}
         siteUrl={siteUrl}
       />
+      {/* CE QUE CLIKME LUI A AMENÉ CETTE SEMAINE, DIT EN CLIENTS — juste sous l'accueil. */}
+      <ProSemaine semaine={semaine} branche={brancheDuMetier(activite)} />
       {/* LA PETITE HISTOIRE DU JOUR, tout en haut de son espace : c'est le
           geste le plus court de l'application, et il n'a d'intérêt que s'il se
           fait le matin, en passant. Rangée dans un onglet, elle ne serait

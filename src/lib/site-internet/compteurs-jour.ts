@@ -27,8 +27,14 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { JourStats } from "@/lib/direct/stats-comptoir";
 
-export type QuoiCompte = "vues" | "ecoutes" | "demandes" | "partages";
-export const QUOI_PUBLICS: QuoiCompte[] = ["ecoutes", "demandes", "partages"];
+export type QuoiCompte = "vues" | "ecoutes" | "demandes" | "partages" | QuoiClient;
+/**
+ * LES GESTES EN CLIENTS — voir la migration `20261016120000_compteurs_en_clients.sql`.
+ * Seul `essais` vient du navigateur (le rendu se fait chez le client) ; les
+ * autres sont comptés par le serveur, là où le geste a lieu.
+ */
+export type QuoiClient = "essais" | "cotes" | "confirmees" | "avis" | "amis" | "voisins";
+export const QUOI_PUBLICS: QuoiCompte[] = ["ecoutes", "demandes", "partages", "essais"];
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 const nb = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
@@ -87,6 +93,19 @@ export async function semaineDuCommerce(siteId: string, maintenant = Date.now())
   } catch {
     mesure = false;
   }
+  // SES MISES DE CÔTÉ SONT SES DEMANDES : chez un commerce de mode, la tuile
+  // « pièce mise de côté » lit `demandes`, que seul le double incrémente.
+  // Requête à part : sans la migration des chiffres en clients, elle échoue
+  // seule et le reste s'affiche.
+  const cotes = new Map<string, number>();
+  if (mesure) {
+    try {
+      const { data, error } = await supabase.from("human_compteurs_jour").select("jour, cotes").eq("site_id", siteId).gte("jour", cles[0]);
+      if (!error) for (const r of (Array.isArray(data) ? data : []) as Record<string, unknown>[]) cotes.set(str(r.jour).slice(0, 10), nb(r.cotes));
+    } catch {
+      /* colonne absente → rien à ajouter */
+    }
+  }
 
   // LES JOURS OÙ IL A PUBLIÉ, et ce qu'il a publié ce jour-là (le premier mot).
   const publies = new Map<string, string>();
@@ -120,9 +139,42 @@ export async function semaineDuCommerce(siteId: string, maintenant = Date.now())
       titre: publies.get(jour) || undefined,
       vues: nb(l?.vues),
       ecoutes: nb(l?.ecoutes),
-      demandes: nb(l?.demandes),
+      demandes: nb(l?.demandes) + (cotes.get(jour) ?? 0),
       partages: nb(l?.partages),
     };
   });
   return { mesure, jours };
+}
+
+/** Sa semaine, en clients : les sept derniers jours, et les sept d'avant pour comparer. */
+export type SemaineEnClients = {
+  /** `false` : la migration des compteurs en clients n'est pas appliquée. */
+  mesure: boolean;
+  cette: Record<QuoiClient | "vues", number>;
+  avant: Record<QuoiClient | "vues", number>;
+};
+
+const QUOI_CLIENTS: (QuoiClient | "vues")[] = ["vues", "essais", "cotes", "confirmees", "avis", "amis", "voisins"];
+const zeros = () => Object.fromEntries(QUOI_CLIENTS.map((q) => [q, 0])) as Record<QuoiClient | "vues", number>;
+
+export async function semaineEnClients(siteId: string, maintenant = Date.now()): Promise<SemaineEnClients> {
+  const cette = zeros();
+  const avant = zeros();
+  const debut = jourParis(maintenant - 6 * 86_400_000);
+  const debutAvant = jourParis(maintenant - 13 * 86_400_000);
+  try {
+    const { data, error } = await createAdminClient()
+      .from("human_compteurs_jour")
+      .select(`jour, ${QUOI_CLIENTS.join(", ")}`)
+      .eq("site_id", siteId)
+      .gte("jour", debutAvant);
+    if (error) throw new Error(error.message);
+    for (const r of (Array.isArray(data) ? data : []) as unknown as Record<string, unknown>[]) {
+      const cible = str(r.jour).slice(0, 10) >= debut ? cette : avant;
+      for (const q of QUOI_CLIENTS) cible[q] += nb(r[q]);
+    }
+    return { mesure: true, cette, avant };
+  } catch {
+    return { mesure: false, cette, avant };
+  }
 }

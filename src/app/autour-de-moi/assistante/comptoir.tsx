@@ -52,6 +52,8 @@ import { SavoirComptoir } from "./savoir-comptoir";
 import { useSavoir, type SavoirDuComptoir } from "./use-savoir";
 import { questionsDuMetier, reponduesDuMetier } from "@/lib/direct/savoir-fantome";
 import { accord, demandesEnMots, effetDesAnnonces, phraseDeLaVeille, semaineDuComptoir, type JourStats } from "@/lib/direct/stats-comptoir";
+import { lignesDeLaSemaine } from "@/lib/site-internet/semaine-en-clients";
+import type { SemaineEnClients } from "@/lib/site-internet/compteurs-jour";
 
 type Commerce = CommerceComptoir;
 type Pose = "repos" | "parle-1" | "parle-2" | "salut-1" | "salut-2" | "viens" | "montre";
@@ -381,6 +383,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
    * honnête, et rien de simulé n'apparaît jamais chez lui.
    */
   const [vrais, setVrais] = useState<JourStats[] | null>(null);
+  /** SA SEMAINE EN CLIENTS — essais, mises de côté, amis, voisins (vrai commerçant seulement). */
+  const [clients, setClients] = useState<SemaineEnClients | null>(null);
   const reel = commerce.reel;
   useEffect(() => {
     if (!reel) return;
@@ -391,8 +395,10 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
       body: JSON.stringify({ slug: reel.slug, token: reel.token }),
     })
       .then((r) => (r.ok ? r.json() : null))
-      .then((j: { mesure?: boolean; jours?: JourStats[] } | null) => {
-        if (!fini) setVrais(j?.mesure && Array.isArray(j.jours) && j.jours.length === 7 ? j.jours : null);
+      .then((j: { mesure?: boolean; jours?: JourStats[]; clients?: SemaineEnClients } | null) => {
+        if (fini) return;
+        setVrais(j?.mesure && Array.isArray(j.jours) && j.jours.length === 7 ? j.jours : null);
+        setClients(j?.clients?.mesure ? j.clients : null);
       })
       .catch(() => {
         /* hors ligne → on garde ce qu'on avait */
@@ -446,7 +452,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
       </header>
 
       {stats && (
-        <PanneauStats famille={commerce.famille} semaine={chiffres} etat={etat} serie={s} reel={Boolean(commerce.reel)} onFermer={() => setStats(false)} />
+        <PanneauStats famille={commerce.famille} branche={commerce.branche} semaine={chiffres} clients={reel ? clients : null} etat={etat} serie={s} reel={Boolean(commerce.reel)} onFermer={() => setStats(false)} />
       )}
 
       {phase.ou === "accueil" && (
@@ -741,7 +747,9 @@ function Accueil({
    journée, sa semaine, puis où il en est dans le jeu. */
 function PanneauStats({
   famille,
+  branche,
   semaine,
+  clients,
   etat,
   serie: jours,
   reel,
@@ -750,6 +758,10 @@ function PanneauStats({
   famille: FamilleDouble;
   /** `null` : un vrai commerçant dont la page ne compte pas encore. */
   semaine: JourStats[] | null;
+  /** Sa semaine en clients (vrai commerçant, comptage activé), sinon `null`. */
+  clients: SemaineEnClients | null;
+  /** Son métier : « tes pièces », « une de tes coupes »… */
+  branche?: string;
   etat: EtatComptoir;
   serie: number;
   /** Un vrai commerçant : ses vrais chiffres, jamais de simulés. */
@@ -757,6 +769,7 @@ function PanneauStats({
   onFermer: () => void;
 }) {
   const niveau = niveauDe(etat.points);
+  const lignesClients = clients ? lignesDeLaSemaine(clients, branche, true) : [];
   useEffect(() => {
     const touche = (e: KeyboardEvent) => e.key === "Escape" && onFermer();
     window.addEventListener("keydown", touche);
@@ -773,6 +786,25 @@ function PanneauStats({
           </button>
         </header>
         <div className="cz-feuille-c">
+          {/* ═══ TA SEMAINE EN CLIENTS — d'abord ce que ClikMe lui a amené en personnes ═══ */}
+          {clients && (
+            <section className="cz-bloc cz-stats cz-clients">
+              <h2>Ta semaine en clients</h2>
+              {lignesClients.length ? (
+                <ul>
+                  {lignesClients.map((l) => (
+                    <li key={l.cle}>
+                      <i aria-hidden="true">{l.emoji}</i>
+                      <span>{l.texte}</span>
+                      {l.hausse ? <em>+{l.hausse}</em> : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="cz-pousse">Rien encore ces sept derniers jours. Chaque client qui essaie, réserve ou demande l’avis de ses amis s’affichera ici.</p>
+              )}
+            </section>
+          )}
           {!semaine ? (
             <section className="cz-bloc cz-stats">
               <h2>Tes chiffres</h2>
@@ -1728,6 +1760,11 @@ label.cz-go{cursor:pointer;}
 .cz-direct::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#7BD66A;margin-right:5px;
   vertical-align:1px;animation:cz-respire 1.6s infinite;}
 .cz-stats{padding:14px;border-radius:20px;background:var(--nappe2);border:1px solid var(--trait);}
+.cz-clients ul{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:9px;}
+.cz-clients li{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;line-height:1.4;color:var(--creme);}
+.cz-clients li i{flex:none;font-style:normal;font-size:18px;line-height:1.2;}
+.cz-clients li span{flex:1;min-width:0;}
+.cz-clients li em{flex:none;font-style:normal;font-size:12px;font-weight:800;color:#9BD58A;background:rgba(123,214,106,.14);border-radius:999px;padding:2px 8px;}
 .cz-chiffres{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
 .cz-chiffre{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;padding:10px 4px;
   border-radius:16px;background:rgba(0,0,0,.22);}

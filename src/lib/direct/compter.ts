@@ -1,6 +1,6 @@
 /**
  * 📈 COMPTER UN GESTE, DEPUIS LE NAVIGATEUR — une écoute, une demande, un
- * partage, sur la page d'un commerçant. Voir `api/site-internet/compter`.
+ * partage, un essai réussi, sur la page d'un commerçant. Voir `api/site-internet/compter`.
  *
  * `sendBeacon` d'abord : il part même quand la page se ferme juste après (un
  * partage ouvre souvent une autre application). Sans lui, un `fetch` qui
@@ -8,7 +8,7 @@
  *
  * FICHIER NAVIGATEUR.
  */
-export function compter(slug: string, quoi: "ecoutes" | "demandes" | "partages"): void {
+export function compter(slug: string, quoi: "ecoutes" | "demandes" | "partages" | "essais"): void {
   if (typeof window === "undefined" || !/^[a-z0-9-]{2,120}$/i.test(slug)) return;
   const corps = JSON.stringify({ slug, quoi });
   try {
