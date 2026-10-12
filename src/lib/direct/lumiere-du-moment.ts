@@ -120,7 +120,13 @@ export function phraseDuSeuil(ouvert: OpenState, allumee: boolean, invitation = 
     // ET DANS LES MOTS DE SON MÉTIER, MÊME PORTE FERMÉE : le soir, tous les
     // commerces disaient la même phrase — « Entre, je te fais visiter » —, et
     // le coiffeur ne parlait plus de coupes.
-    return ouvert.next ? `On ouvre à ${ouvert.next.replace(/ /g, "\u00a0")}. ${invitation}` : `C'est fermé. ${invitation}`;
+    // « IL EST ÉCRIT "C'EST FERMÉ, ENTRE…" : ON NE PEUT PAS ENTRER SI C'EST
+    // FERMÉ. » La boutique est fermée, la page non : l'invitation perd son
+    // « Entre » et devient ce qu'on peut faire ICI — « C'est fermé… mais ici,
+    // viens essayer les pièces du moment. »
+    const sansEntrer = invitation.replace(/^Entre,\s*/, "");
+    const ici = `mais ici, ${sansEntrer.charAt(0).toLowerCase()}${sansEntrer.slice(1)}`;
+    return ouvert.next ? `On ouvre à ${ouvert.next.replace(/ /g, "\u00a0")}… ${ici}` : `C'est fermé… ${ici}`;
   }
   // « C'EST ALLUMÉ » SEULEMENT QUAND L'ENSEIGNE L'EST : c'est la même
   // promesse, dite deux fois. ET L'INVITATION DE SON MÉTIER RESTE : le soir,

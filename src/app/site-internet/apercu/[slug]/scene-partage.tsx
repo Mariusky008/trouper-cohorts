@@ -32,7 +32,7 @@
 // l'application ; le fantôme de la boutique parle sous le nom de la boutique,
 // et ne dit rien qu'elle ne pourrait dire — une taille, une couleur, « je vous
 // la garde ? ».
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { GesteDuJour } from "@/lib/direct/geste-du-jour";
 
 type Personne = { qui: string; fantome: string };
@@ -213,6 +213,26 @@ function BulleDeSavon({ photo }: { photo: string }) {
   );
 }
 
+/**
+ * ═══ LE FANTÔME DE LA BOUTIQUE VOLE DE SALON EN SALON ══════════════════════
+ *
+ * « On parle du fantôme de la boutique, mais ce serait sympa d'avoir
+ * visuellement un fantôme qui va de chat en chat sur l'image, pour imager le
+ * propos. » Léa dit « il est là, qu'elles soient seules ou entre amies : il
+ * répond, il les aide à trancher » — on le voit le faire : parti de la pièce
+ * essayée, il se pose sur le premier salon au moment où sa réponse y
+ * apparaît, puis sur « Mon essai » pour la seconde, puis passe saluer le
+ * salon public. Quand Léa dit « c'est là que vos ventes se décident », il
+ * revient à côté de la pièce et la montre.
+ *
+ * SES POSES SONT CELLES DE SA PAGE (`enPied`, voir `double-metiers`) : le même
+ * personnage, casquette comprise. Sans elles, son visage seul fait le voyage.
+ * Les réponses (`.sp-msg.fan`) sont calées sur ses atterrissages.
+ */
+type Pose = "repos" | "parle-1" | "salut-1" | "montre";
+const POSES: Pose[] = ["repos", "parle-1", "salut-1", "montre"];
+type Voyage = { x: number; y: number; pose: Pose; saut: number };
+
 export function SceneSalons({
   g,
   n,
@@ -220,6 +240,7 @@ export function SceneSalons({
   photo,
   exemple,
   fantome,
+  pied,
   duel,
 }: {
   g: GesteDuJour;
@@ -232,6 +253,8 @@ export function SceneSalons({
   exemple?: boolean;
   /** Le fantôme de la boutique : son visage, et le nom sous lequel il parle. */
   fantome: { visage: string; nom: string };
+  /** Le dossier de ses poses en pied — voir `Voyage`. */
+  pied?: string;
   /**
    * LE DUEL D'« ENSEMBLE », AU CENTRE — voir `duel-salon.tsx`. Sa pièce essayée
    * (A) contre une autre pièce portée par la même personne (B) ; on vote, et A
@@ -276,9 +299,73 @@ export function SceneSalons({
   /** Le rang de chaque réponse du fantôme, pour qu'il ne parle pas partout à la même seconde. */
   const rangFantome = prives.map((_, k) => prives.slice(0, k).filter((x) => x.fantome).length);
 
+  /* LE VOYAGE, ÉTAPE PAR ÉTAPE — chaque cible est mesurée au moment où il y
+     part : la place d'un salon n'est pas la même sur un téléphone. */
+  const racine = useRef<HTMLDivElement | null>(null);
+  const [voyage, setVoyage] = useState<Voyage | null>(null);
+  useEffect(() => {
+    const sp = racine.current;
+    if (!repond || !sp) return;
+    const vers = (cible: Element | null | undefined, ou: (r: DOMRect) => [number, number], pose: Pose, vole = true) => {
+      if (!cible) return;
+      const b = sp.getBoundingClientRect();
+      const [cx, cy] = ou(cible.getBoundingClientRect());
+      const w = window.matchMedia("(max-width: 899px)").matches ? 50 : 66;
+      const x = Math.min(Math.max(cx - b.left - w / 2, 0), b.width - w);
+      const y = cy - b.top - w / 2;
+      setVoyage((v) => ({ x, y, pose, saut: vole ? (v?.saut ?? 0) + 1 : (v?.saut ?? 0) }));
+    };
+    const pose = (p: Pose) => setVoyage((v) => (v ? { ...v, pose: p } : v));
+    const fans = () => sp.querySelectorAll(".sp-msg.fan");
+    const piece = () => sp.querySelector(".sp-photo.a");
+    const etapes: [number, () => void][] = decide
+      ? [
+          [
+            0,
+            () =>
+              vers(
+                piece(),
+                // AU-DESSUS DE LA PIÈCE SUR UN ORDINATEUR, où il y a la place ; à sa gauche
+                // sur un téléphone. À gauche sur un ordinateur, il cachait la fin d'une réponse.
+                (r) => (window.matchMedia("(max-width: 899px)").matches ? [r.left - 30, r.top + r.height * 0.55] : [r.left + 12, r.top - 30]),
+                "montre",
+              ),
+          ],
+        ]
+      : [
+          [0, () => vers(piece(), (r) => [r.left + r.width / 2, r.top + 6], "repos", false)],
+          /* IL SE POSE À GAUCHE DE SA RÉPONSE, sur son petit visage rond : c'est
+             lui qui parle, et le texte reste lisible (posé à droite, il en
+             cachait la fin — vu au test). */
+          [300, () => vers(fans()[0], (r) => [r.left - 10, r.top + r.height / 2], "repos")],
+          [950, () => pose("parle-1")],
+          [2350, () => vers(fans()[1], (r) => [r.left - 10, r.top + r.height / 2], "repos")],
+          [3050, () => pose("parle-1")],
+          [4600, () => vers(sp.querySelector(".sp-place.pub .sp-salon"), (r) => [r.left - 6, r.top + 26], "repos")],
+          [5300, () => pose("salut-1")],
+        ];
+    const ids = etapes.map(([t, f]) => window.setTimeout(f, t));
+    return () => ids.forEach((id) => window.clearTimeout(id));
+  }, [repond, decide]);
+
   return (
     <div className="dtour-ov sp-ov">
-      <div className="sp">
+      <div className="sp" ref={racine}>
+        {voyage && (
+          <span className="sp-voyageur" style={{ transform: `translate(${voyage.x}px, ${voyage.y}px)` }} aria-hidden="true">
+            <span key={voyage.saut} className="sp-voy-saut">
+              {pied ? (
+                POSES.map((p) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={p} src={`${pied}${p}.webp`} className={p === voyage.pose ? "on" : undefined} alt="" />
+                ))
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={fantome.visage} className="on" alt="" />
+              )}
+            </span>
+          </span>
+        )}
         <div className="sp-tete">
           <span className="sp-k">Exemple · des salons comme ceux de {clients}</span>
           <h3 className="sp-h">{g.salons.titre}</h3>
@@ -502,7 +589,16 @@ function StylesSalons() {
 /* ═══ LE FANTÔME DE LA BOUTIQUE ═══ Il arrive quand Léa le nomme : sa bulle a
    la couleur de la maison, et ce qu'il propose devient une décision au temps
    suivant. */
-.sp-scene.partage .sp-msg.fan{animation:spFan .55s cubic-bezier(.34,1.45,.64,1) both;animation-delay:calc(.15s + var(--j) * .55s);}
+.sp-scene.partage .sp-msg.fan{animation:spFan .55s cubic-bezier(.34,1.45,.64,1) both;animation-delay:calc(.9s + var(--j) * 2.1s);}
+/* SES RÉPONSES ARRIVENT AVEC LUI : 0,9 s puis 3 s — quand il se pose (voir Voyage). */
+.sp-voyageur{position:absolute;left:0;top:0;z-index:6;width:var(--vw,66px);height:var(--vw,66px);pointer-events:none;
+  transition:transform .7s cubic-bezier(.5,0,.3,1);animation:spVoyArrive .45s cubic-bezier(.34,1.56,.64,1) both;}
+.sp-voy-saut{position:absolute;inset:0;animation:spVoySaut .7s ease-in-out both;}
+.sp-voy-saut img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;
+  filter:drop-shadow(0 8px 14px rgba(0,0,0,.45));}
+.sp-voy-saut img.on{opacity:1;}
+@keyframes spVoySaut{0%{transform:none}45%{transform:translateY(-34px) rotate(-6deg)}100%{transform:none}}
+@keyframes spVoyArrive{from{opacity:0;scale:.3}to{opacity:1;scale:1}}
 @keyframes spFan{from{opacity:0;transform:translateY(10px) scale(.92);}to{opacity:1;transform:none;}}
 .sp-msg.fan img{background:#2A1712;box-shadow:0 0 0 2px #F5A23A;}
 .sp-msg.fan p{background:linear-gradient(135deg,#FFF0DA,#FFE3EF);border:1px solid rgba(245,162,58,.65);
@@ -692,7 +788,9 @@ function StylesSalons() {
   .sp-garde{font-size:9.5px;padding:3px 8px;margin-top:4px;}
   .sp-fin{font-size:10.5px;}
 }
+@media (max-width:899px){.sp-voyageur{--vw:50px;}}
 @media (prefers-reduced-motion:reduce){
+  .sp-voyageur,.sp-voy-saut{transition:none;animation:none;}
   .sp-scene.partage .sp-salon,.sp-scene.partage .sp-msg,.sp-scene.partage .sp-ecrit{animation:none;opacity:1;transform:none;}
   .sp-savon,.sp-gouttes,.sp-doigt,.sp-onde{display:none;}
   .sp-scene .sp-coeurs i,.sp-scene.partage .sp-partager,.sp-savon::before,.sp-garde.fait,.sp-bilan{animation:none;}
