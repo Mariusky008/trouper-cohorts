@@ -2659,12 +2659,13 @@ export function BoutiqueTable({
             quitte la page ; le retour ramène ici.
             « Le même parcours, mais non fictif » : sur la page d'un VRAI
             commerçant, c'est sa vraie ville, `/ville/<ville>`, où il apparaît
-            dès qu'il est client et publie depuis son comptoir. */}
+            dès qu'il est client et publie depuis son comptoir — et sa RUE
+            d'abord, ses deux vrais voisins les plus proches (`?depuis=`). */}
         <Link
           className="bt-explorer"
           href={
             c.villeReelle
-              ? `/ville/${encodeURIComponent(c.villeReelle)}`
+              ? `/ville/${encodeURIComponent(c.villeReelle)}?depuis=${encodeURIComponent(c.id)}&retour=${encodeURIComponent(retourExplorer ?? "")}`
               : `/autour-de-moi?depuis=${encodeURIComponent(c.id)}&retour=${encodeURIComponent(retourExplorer ?? "")}`
           }
         >

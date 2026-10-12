@@ -20,6 +20,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { configVille } from "@/lib/direct/ville";
 import { lireLaVilleReelle } from "@/lib/direct/ville-reelle";
 import { VilleApp } from "./_ui/ville-app";
+import { LaRue } from "@/components/direct/la-rue";
+import { lireLaRue } from "@/lib/direct/voisins-serveur";
 import { IMAGE_DE_PARTAGE } from "@/lib/og/image-de-partage";
 
 export const dynamic = "force-dynamic";
@@ -58,8 +60,30 @@ export async function generateMetadata({ params }: { params: Promise<{ ville: st
   };
 }
 
-export default async function LeDirectPage({ params }: { params: Promise<{ ville: string }> }) {
+export default async function LeDirectPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ ville: string }>;
+  searchParams: Promise<{ depuis?: string; retour?: string }>;
+}) {
   const { ville } = await params;
-  const reelle = await lireLaVilleReelle(ville);
-  return <VilleApp reelle={reelle} />;
+  const sp = await searchParams;
+  /* ═══ VENU DE LA PAGE D'UN COMMERÇANT (« Explorer ma ville ») : SA RUE D'ABORD ═══
+     Ses deux voisins les plus proches, puis la ville — voir `components/direct/la-rue.tsx`. */
+  const [reelle, rue] = await Promise.all([lireLaVilleReelle(ville), sp.depuis ? lireLaRue(String(sp.depuis)) : Promise.resolve(null)]);
+  // LE RETOUR NE PEUT MENER QUE CHEZ NOUS : une adresse relative, jamais une autre origine.
+  const retour = /^\/(?!\/)/.test(String(sp.retour ?? "")) ? String(sp.retour) : rue ? `/site-internet/apercu/${encodeURIComponent(rue.moi.id)}` : undefined;
+  return (
+    <>
+      <VilleApp reelle={reelle} />
+      {rue && (
+        <LaRue
+          moi={{ nom: rue.moi.nom, ville: reelle.nom || rue.moi.ville, fantome: rue.moi.fantome }}
+          voisins={rue.voisins.map((v) => ({ ...v, href: v.page }))}
+          retour={retour}
+        />
+      )}
+    </>
+  );
 }

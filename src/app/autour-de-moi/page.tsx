@@ -13,7 +13,8 @@
 import type { Metadata, Viewport } from "next";
 import { MARQUE } from "@/lib/marque";
 import { ApercuHabitant } from "./apercu-habitant";
-import { CopainsDuQuartier, type CopainsProps } from "./copains-du-quartier";
+import { LaRue, type LaRueProps } from "@/components/direct/la-rue";
+import { raisonDuVoisin } from "@/lib/direct/voisins";
 import { VilleOrdinateur, type VilleOrdinateurProps } from "./ville-ordinateur";
 import { VilleSelonEcran } from "./ville-selon-ecran";
 import { EnCharteMaison } from "@/components/direct/style-maison";
@@ -127,7 +128,7 @@ export default async function AutourDeMoiPage({
 }) {
   const sp = await searchParams;
   const trouve = await leCommerce(String(sp.depuis ?? ""));
-  let copains: CopainsProps | null = null;
+  let rue: LaRueProps | null = null;
   let ville: VilleOrdinateurProps = { copains: [] };
   if (trouve) {
     const { carte } = trouve;
@@ -135,17 +136,30 @@ export default async function AutourDeMoiPage({
     // LE RETOUR NE PEUT MENER QUE CHEZ NOUS : une adresse relative, jamais une
     // autre origine glissée dans le lien.
     const retour = String(sp.retour ?? "");
-    copains = {
-      moi: { nom: carte.nom, metier: carte.metier, ville: carte.ville || "votre ville", fantome: fantomeDe(carte) },
-      copains: choisis,
+    const ou = carte.ville || "votre ville";
+    // LA RUE DE LA DÉMONSTRATION — ses voisins sont des commerces d'exemple,
+    // et la page le dit. Celle d'un vrai commerçant est servie par `/ville/<ville>?depuis=`.
+    rue = {
+      moi: { nom: carte.nom, ville: ou, fantome: fantomeDe(carte) },
+      voisins: choisis.map((x) => ({
+        id: x.id,
+        nom: x.nom,
+        metier: x.metier,
+        photo: x.photo,
+        fantome: x.fantome,
+        ...(x.distance ? { aPied: x.distance } : {}),
+        raison: raisonDuVoisin(carte.branche, x.branche, x.offre),
+        bouton: x.bouton,
+        href: `/autour-de-moi?carte=${encodeURIComponent(x.id)}`,
+      })),
       retour: /^\/(?!\/)/.test(retour) ? retour : undefined,
-      // LES COPAINS VIENNENT DE LA DÉMONSTRATION : la page le dit, toujours.
       fictifs: choisis.length > 0,
+      ...(choisis.length ? {} : { villeDerriere: "Voir l'exemple de Dax" }),
     };
     ville = {
-      moi: { id: carte.id, nom: carte.nom, ville: carte.ville || "votre ville", fantome: fantomeDe(carte) },
+      moi: { id: carte.id, nom: carte.nom, ville: ou, fantome: fantomeDe(carte) },
       copains: choisis.map((x) => x.id),
-      retour: copains.retour,
+      retour: rue.retour,
     };
   }
   // SUR UN ORDINATEUR, LES COPAINS ET LA VILLE SONT LE MÊME ÉCRAN — voir
@@ -159,7 +173,7 @@ export default async function AutourDeMoiPage({
         // lieu de la nuit bleue et de la menthe — voir `StyleMaison`.
         <EnCharteMaison>
           <ApercuHabitant />
-          {copains && <CopainsDuQuartier {...copains} />}
+          {rue && <LaRue {...rue} />}
         </EnCharteMaison>
       }
     />

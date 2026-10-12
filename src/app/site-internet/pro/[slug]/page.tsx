@@ -28,6 +28,7 @@ import { ProGallery } from "./pro-gallery";
 import { ProPhotosDuLieu } from "./pro-photos-lieu";
 import { ProMusique } from "./pro-musique";
 import { ProCadeau } from "./pro-cadeau";
+import { ProVoisins } from "./pro-voisins";
 import { cadeauDuMetier } from "@/lib/site-internet/cadeau-du-metier";
 import { ProServices } from "./pro-services";
 import { ProMotifs } from "./pro-motifs";
@@ -641,6 +642,8 @@ export default async function EspacePro({
           <div className="siteblock"><ProPhotosDuLieu slug={slug} token={token} /></div>
           {/* LA MUSIQUE DE SON AMBIANCE — jouée dans « L'ambiance » de sa soirée. */}
           <div className="siteblock"><ProMusique slug={slug} token={token} /></div>
+          {/* SES VOISINS — les deux commerces que son fantôme présente dans sa rue (« Explorer ma ville »). */}
+          <div className="siteblock"><ProVoisins slug={slug} token={token} /></div>
           {/* LE CADEAU OFFERT — le même geste pour tous les métiers non réglementés, avec leurs mots. */}
           {(() => {
             const c = cadeauDuMetier(activite);

@@ -58,6 +58,10 @@ export type Copain = {
   id: string;
   nom: string;
   metier: string;
+  /** Son métier, pour dire pourquoi aller de l'un à l'autre (`raisonDuVoisin`). */
+  branche: CleMetier;
+  /** « à 300 m » — un chiffre de démonstration. */
+  distance?: string;
   /** La photo de sa carte, celle qui ouvre sa page. */
   photo: string;
   /** Son fantôme, dans la tenue de son métier. */
@@ -90,6 +94,8 @@ function copainDe(c: CarteAutour): Copain {
     id: c.id,
     nom: c.nom,
     metier: c.metier,
+    branche: c.branche,
+    ...(c.distance ? { distance: c.distance } : {}),
     photo,
     fantome: fantomeDe(c),
     offre: m?.titre,
