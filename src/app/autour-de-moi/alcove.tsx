@@ -193,11 +193,14 @@ export function Alcove({
   installe = false,
   actif = true,
   onPlaceLibre,
+  vous = false,
 }: {
   a: AlcoveData;
   installe?: boolean;
   actif?: boolean;
   onPlaceLibre?: () => void;
+  /** Sur la page d'un commerçant, qui vouvoie : « Votre place ? », « Vous ». */
+  vous?: boolean;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [taille, setTaille] = useState({ W: 0, H: 0 });
@@ -355,15 +358,15 @@ export function Alcove({
                   className="al-libre"
                   style={{ left: x - D.hauteur * 0.4 * c.s, top: c.y(D.coussin - D.hauteur * 0.51), width: D.hauteur * 0.8 * c.s, height: D.hauteur * 0.77 * c.s }}
                   onClick={onPlaceLibre}
-                  aria-label="Ta place ? Prendre une place dans ce salon"
+                  aria-label={`${vous ? "Votre" : "Ta"} place ? Prendre une place dans ce salon`}
                 >
-                  <span>Ta place ?</span>
+                  <span>{vous ? "Votre place ?" : "Ta place ?"}</span>
                 </button>
               );
             if (p.qui === "moi")
               return (
                 <span key={k} className={`al-toi${installe && !calme ? " al-arrive-mot" : ""}`} style={{ left: x, top: haut - (imageAssis("moi", decor).echelle - 1) * hf - 2 }}>
-                  Toi
+                  {vous ? "Vous" : "Toi"}
                 </span>
               );
             return null;

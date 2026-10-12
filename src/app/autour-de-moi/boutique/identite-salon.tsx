@@ -8,8 +8,9 @@
 //
 // AU PREMIER GESTE QUI PARLE AUX AUTRES — un message, une invitation, un
 // salon ouvert depuis un essai —, et seulement s'il manque quelque chose :
-//   1. le fantôme, avec LE MÊME PANNEAU que l'application (`PanneauPlace`,
-//      « Choisis ton fantôme » ; « Choisir plus tard » garde celui par défaut) ;
+//   1. le fantôme, avec LE MÊME PANNEAU que l'application (`PanneauPlace`),
+//      mais au « vous » de la page : « Choisissez votre fantôme » ; « Choisir
+//      plus tard » garde celui par défaut ;
 //   2. le prénom, avec la même question : « Comment vous appelez-vous ? Juste
 //      un prénom, pour que les autres sachent qui parle. »
 // Puis le geste se fait. Déjà connus (choisis ici ou dans l'application, sur
@@ -39,7 +40,7 @@ export function useIdentite(actif: boolean): { identifierPuis: (apres: () => voi
     <>
       {/* LE PANNEAU DE L'APPLICATION, posé par-dessus toute la page. */}
       <div className="id-place">
-        <PanneauPlace />
+        <PanneauPlace vous />
       </div>
       {prenomPour && (
         <div className="id-voile" role="dialog" aria-modal="true" aria-label="Votre prénom" onClick={() => setPrenomPour(null)}>

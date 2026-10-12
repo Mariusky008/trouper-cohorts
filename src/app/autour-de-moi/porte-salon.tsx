@@ -206,6 +206,7 @@ export function BarreDAcces({
   onQuitte,
   sansBarre = false,
   ouvrirOptions = 0,
+  vous = false,
 }: {
   salon: Salon;
   onInviterLien: () => void;
@@ -214,6 +215,8 @@ export function BarreDAcces({
   sansBarre?: boolean;
   /** Chaque nouvelle valeur ouvre le menu des options (le ⋯ de l'en-tête). */
   ouvrirOptions?: number;
+  /** Sur la page d'un commerçant, qui vouvoie. */
+  vous?: boolean;
 }) {
   const a = salon.acces!;
   const [options, setOptions] = useState<"" | "menu" | "inviter">("");
@@ -244,7 +247,7 @@ export function BarreDAcces({
       )}
       {moderateur && (a.demandes?.length ?? 0) > 0 && (
         <div className="ps-demandes">
-          <p>Ils demandent à entrer — tu décides :</p>
+          <p>Ils demandent à entrer — {vous ? "vous décidez" : "tu décides"} :</p>
           {a.demandes!.map((d) => (
             <div className="ps-demande" key={d.auteur}>
               <span>{d.qui}</span>

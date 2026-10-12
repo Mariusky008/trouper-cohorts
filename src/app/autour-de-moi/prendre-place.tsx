@@ -126,7 +126,7 @@ const reduit = () => typeof window !== "undefined" && window.matchMedia?.("(pref
  * LE PANNEAU. Il s'arrête au-dessus du vrai menu du bas (sa hauteur mesurée,
  * `--ap-onglets-h`) ; un appui sur le menu le ferme (voir l'application).
  */
-export function PanneauPlace() {
+export function PanneauPlace({ vous = false }: { vous?: boolean } = {}) {
   const e = useSyncExternalStore(abonner, () => etat, () => etat);
   const look = useSyncExternalStore(abonnerLook, monLook, monLook);
   const [choisi, setChoisi] = useState(look.id);
@@ -183,7 +183,7 @@ export function PanneauPlace() {
     fermerPlace();
   };
   return (
-    <div className="pp" role="dialog" aria-modal="true" aria-label={e.etape === "choix" ? "Choisis ton fantôme" : "Prêt à prendre ta place ?"}>
+    <div className="pp" role="dialog" aria-modal="true" aria-label={e.etape === "choix" ? (vous ? "Choisissez votre fantôme" : "Choisis ton fantôme") : "Prêt à prendre ta place ?"}>
       <StylesPlace />
       <button type="button" className="pp-voile" aria-label="Fermer" onClick={fermerPlace} />
       <div className="pp-panneau">
@@ -200,6 +200,7 @@ export function PanneauPlace() {
             onGarder={() => garder(choisi)}
             onPlusTard={c || e.apres ? () => garder(look.id) : undefined}
             avecSalon={Boolean(c)}
+            vous={vous}
           />
         ) : (
           c && (
@@ -245,12 +246,15 @@ function Choix({
   onGarder,
   onPlusTard,
   avecSalon,
+  vous = false,
 }: {
   choisi: string;
   setChoisi: (id: string) => void;
   onGarder: () => void;
   onPlusTard?: () => void;
   avecSalon: boolean;
+  /** Sur la page d'un commerçant, qui vouvoie : le même panneau, au « vous ». */
+  vous?: boolean;
 }) {
   const rangee = useRef<HTMLDivElement | null>(null);
   const i = Math.max(0, LOOKS.findIndex((l) => l.id === choisi));
@@ -286,9 +290,9 @@ function Choix({
   return (
     <div className="pp-corps">
       <div className="pp-defile">
-        <h2>Choisis ton fantôme</h2>
-        <p className="pp-sous">pour t’asseoir avec les autres.</p>
-        <p className="pp-note">Un look à toi, modifiable quand tu veux.</p>
+        <h2>{vous ? "Choisissez votre fantôme" : "Choisis ton fantôme"}</h2>
+        <p className="pp-sous">{vous ? "pour vous asseoir avec les autres." : "pour t’asseoir avec les autres."}</p>
+        <p className="pp-note">{vous ? "Un look à vous, modifiable quand vous voulez." : "Un look à toi, modifiable quand tu veux."}</p>
         <Apercu id={l.id} />
         <p className="pp-nom" aria-live="polite">
           {l.nom}
@@ -356,7 +360,7 @@ function Choix({
         <p className="pp-compte">
           {i + 1} / {LOOKS.length}
         </p>
-        <p className="pp-glisse">Fais défiler pour trouver le tien ↔</p>
+        <p className="pp-glisse">{vous ? "Faites défiler pour trouver le vôtre ↔" : "Fais défiler pour trouver le tien ↔"}</p>
       </div>
       <div className="pp-actions">
         <button type="button" className="pp-principal" onClick={onGarder}>
@@ -369,7 +373,7 @@ function Choix({
         )}
         {avecSalon && (
           <p className="pp-info">
-            <i aria-hidden="true">i</i> Tu confirmeras ensuite pour rejoindre le salon.
+            <i aria-hidden="true">i</i> {vous ? "Vous confirmerez" : "Tu confirmeras"} ensuite pour rejoindre le salon.
           </p>
         )}
       </div>

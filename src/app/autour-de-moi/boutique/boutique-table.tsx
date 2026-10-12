@@ -2280,7 +2280,7 @@ export function BoutiqueTable({
                 d'ici, comme dans l'application (`BarreDAcces`, sans sa barre :
                 l'en-tête dit déjà « Salon privé »). Rien dans la démonstration. */}
             {salon?.acces?.statut === "membre" && (
-              <BarreDAcces salon={salon} sansBarre onInviterLien={() => identifierPuis(() => void inviter())} onQuitte={() => setHall(true)} />
+              <BarreDAcces salon={salon} sansBarre vous onInviterLien={() => identifierPuis(() => void inviter())} onQuitte={() => setHall(true)} />
             )}
             {/* LE RENDEZ-VOUS, EPINGLE EN HAUT DU FIL — comme un message
                 epingle dans une conversation de groupe. */}
