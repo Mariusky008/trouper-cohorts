@@ -160,7 +160,9 @@ function direLEssai(carte: CarteAutour): { titre: string; say: string } | null {
      c'est la somme des répliques, pas leur nombre. Celle-ci nommait la chose
      deux fois — « ce motif » dans le titre, puis « avec ce motif » — et disait
      en dix mots ce que trois disent. */
-  const ouvre = "Et voilà ce qu'aucun site ne sait faire.";
+  /* « Maintenant, regardez ce qu'un site classique ne permet pas de faire. »
+     — l'ouverture de l'étape 2 qu'il a écrite, pour tous les métiers. */
+  const ouvre = "Maintenant, regardez ce qu'un site classique ne permet pas de faire.";
   /* LE LIBRAIRE N'A RIEN À ESSAYER NI À GOÛTER — son mur, faute de mieux,
      était celui d'un restaurant, et la voix promettait de « goûter votre
      plat ». Ce que sa page sait faire, c'est « Ton prochain livre » : trois
@@ -178,6 +180,17 @@ function direLEssai(carte: CarteAutour): { titre: string; say: string } | null {
     /* « VOS CLIENTES » CHEZ UNE BOUTIQUE DE VÊTEMENTS — c'est le mot du texte
        validé pour l'étape 2, et la suite (les salons) le reprend. */
     const clients = carte.branche === "mode" ? "clientes" : "clients";
+    /* LA BOUTIQUE DE VÊTEMENTS, DANS SES MOTS À LUI : « Cette pièce, sur elle.
+       Une cliente voit cette pièce… et en quelques secondes, elle peut
+       l'essayer sur sa propre photo. » « Cette pièce » quand une des siennes
+       est déjà à l'écran, portée ; « une de vos pièces » sinon. */
+    if (carte.branche === "mode") {
+      const laquelle = carte.essaiVitrine?.etat === "prete" ? "cette pièce" : "une de vos pièces";
+      return {
+        titre: "Cette pièce, sur elle",
+        say: `${ouvre} Une cliente voit ${laquelle}… et en quelques secondes, elle peut l'essayer sur sa propre photo.`,
+      };
+    }
     /* UNE DE SES PIÈCES EST DÉJÀ À L'ÉCRAN, PORTÉE : Léa la montre au lieu de
        la décrire. Voir `avant-apres-vitrine.tsx`. */
     if (carte.essaiVitrine?.etat === "prete") {
@@ -304,6 +317,7 @@ export function PageBoutique(p: PageBoutiqueProps) {
              de l'étape 2. Son visage en pied, s'il en a ; sa pose d'accueil sinon. */
           fantomeBoutique={fantomeDe(carte)}
           fantomePied={tenueDu(carte)?.enPied}
+          aHoraires={Boolean(carte.semaine?.length || carte.fiche?.horaires)}
           keepHref={keepHref}
         />
       )}

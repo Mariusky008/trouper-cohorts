@@ -44,6 +44,8 @@ export type RetourDuJour = {
   quoi: string;
   /** CE CHIFFRE-LÀ EST UNE DEMANDE QUI ARRIVE CHEZ LUI — l'étape 5 montre alors les messages reçus. */
   demande?: true;
+  /** LA PHRASE DITE, quand « à {heure}, {nombre} {quoi} » ne se dit pas : « À 16 h 10, ClikMe l'a aussi repérée pour 27 Maisons… ». */
+  dit?: string;
 };
 
 /**
@@ -68,6 +70,8 @@ export type SalonsDuMetier = {
   titre: string;
   /** « 2 pièces mises de côté » — ce que les salons ont décidé, à l'écran. */
   bilan: string;
+  /** UNE PHRASE APRÈS LA DÉCISION, quand le métier en a une : « Une décision d'achat peut donc commencer chez elle… et se terminer chez vous. » */
+  conclut?: string;
 };
 
 /**
@@ -118,30 +122,8 @@ export type GesteDuJour = {
   cherchent: string;
   /** Combien, dans SA ville, chaque jour. Une affirmation sur la ville. */
   combien: number;
-  /**
-   * ═══ LA MÊME AFFIRMATION, PRÉCISE, ET DITE COMME UNE ESTIMATION ══════════
-   *
-   * « Elle dit qu'à Vevey 800 personnes cherchent des vêtements, mais il
-   * faudrait être plus précis pour ne pas perdre en légitimité. Par exemple :
-   * en moyenne, chaque jour à Vevey, 800 personnes cherchent des vêtements
-   * pour femmes sans avoir connaissance de votre collection. »
-   *
-   * LE NOMBRE N'EST PAS UN RELEVÉ : c'est `combien`, le même pour un métier
-   * dans toutes les villes. Question posée — « garder 800, en estimation ».
-   * Léa dit donc « environ », jamais « sur Google » ni « en moyenne » (ce
-   * serait citer une mesure qui n'existe pas), et elle devient précise sur
-   * tout ce qui est vrai : QUAND (`chaque`), QUOI (`objet`, tiré du métier
-   * lu sur sa fiche : « des vêtements pour femmes »), et CE QUI LEUR MANQUE
-   * (`sansVous`) — « Chaque jour, à Vevey, environ 800 personnes cherchent
-   * des vêtements pour femmes sans connaître votre collection. »
-   */
-  chaque: string;
-  /** Le verbe, conjugué : « cherchent », « se demandent ». */
-  verbeIls: string;
   /** Ce qu'ils cherchent, au plus près de son métier : « des vêtements pour femmes ». */
   objet: string;
-  /** Ce qui leur manque, et c'est lui : « sans connaître votre collection ». */
-  sansVous: string;
   /** L'heure où ça se joue chez lui. */
   heure: string;
   /** Où dort l'information aujourd'hui : « votre ardoise », « votre vitrine ». */
@@ -240,6 +222,31 @@ export type GesteDuJour = {
    * pour tous. » Absente : la phrase de tous les métiers.
    */
   partage?: string;
+  /**
+   * ═══ LE TEXTE DE LILI ROSS BY ME — la boutique de vêtements ══════════════
+   *
+   * « On va devoir ajuster le texte et donc les animations » : le texte des
+   * cinq étapes, écrit par lui. Trois repères pour que l'écran suive la voix :
+   *   · `momentPhoto` et `momentVoix` — les mots de l'étape 4 où arrivent la
+   *     photo de la pièce, puis le vocal (« Une photo suffit », « ajoutez dix
+   *     secondes de votre voix ») ;
+   *   · `imaginons` — la phrase qui ouvre l'étape 5 ; la conclusion du métier
+   *     (le relevé sans nombre) y est alors dite, pas seulement affichée.
+   */
+  momentPhoto?: string;
+  momentVoix?: string;
+  imaginons?: string;
+  /**
+   * ═══ MA MAISON, À L'ÉTAPE 3 — la seconde façon d'être découvert ═══════════
+   *
+   * « On a oublié la fonction quasiment essentielle et différenciante, "Ma
+   * Maison" : ClikMe connaît progressivement ses goûts et ce qu'elle possède
+   * déjà. Quand un commerçant publie une nouveauté qui lui correspond, ClikMe
+   * la repère pour elle et la dépose dans sa Maison. » L'étape 3 dit alors
+   * les deux façons : Le Direct (`direct`), puis Ma Maison (`dit`, quatre
+   * phrases — voir `scene-maison.tsx`, une image par phrase).
+   */
+  maison?: { deuxFacons: string; direct: string; dit: [string, string, string, string] };
   /**
    * LE GESTE EST UNE PHOTO DE LA PIÈCE ET UN MOT À SA VOIX — la boutique de
    * vêtements. « Ce n'est pas une description, mais plutôt qu'on montre à
@@ -408,10 +415,7 @@ export function gesteDuJour(
         verbe: "se demander",
         cherchent: "où sortir",
         combien: 700,
-        chaque: "Chaque soir",
-        verbeIls: "se demandent",
         objet: "où sortir",
-        sansVous: "sans savoir ce qui se passe chez vous",
         heure: "18 h",
         support: "votre ardoise",
         ouDort: "Vous, à cette heure-là, ce qui se passe chez vous ce soir, vous êtes seul à le savoir.",
@@ -442,10 +446,7 @@ export function gesteDuJour(
       verbe: "se demander",
       cherchent: "où manger",
       combien: 1000,
-      chaque: "Chaque midi",
-      verbeIls: "se demandent",
       objet: "où manger",
-      sansVous: "sans savoir ce que vous servez aujourd'hui",
       heure: "11 h",
       support: "votre ardoise",
       // TROIS PHRASES, PAS UNE COMPARAISON. La version d'avant opposait Google,
@@ -514,10 +515,7 @@ export function gesteDuJour(
       verbe: "chercher",
       cherchent: "leur prochain livre",
       combien: 500,
-      chaque: "Chaque semaine",
-      verbeIls: "cherchent",
       objet: "leur prochain livre",
-      sansVous: "sans connaître vos coups de cœur",
       heure: "10 h",
       support: "votre table des coups de cœur",
       ouDort: "Vous, à cette heure-là, vos coups de cœur sont sur votre table, avec leur petit mot.",
@@ -569,29 +567,28 @@ export function gesteDuJour(
       verbe: "chercher",
       cherchent: "ce qu'il y a de nouveau en boutique",
       combien: 800,
-      chaque: "Chaque jour",
-      verbeIls: "cherchent",
       objet: ceQuOnCherche(metier),
-      sansVous: "sans connaître votre collection",
       heure: "10 h",
       support: "vos portants",
-      ouDort: "Vous, ce matin, votre nouvel arrivage est sur vos portants.",
-      pasVu: "Il est superbe. Mais il ne se voit qu'en poussant votre porte. Et eux sont à quatre cents mètres, en train de choisir.",
+      ouDort: "Ce matin, votre nouvel arrivage est déjà sur vos portants.",
+      pasVu: "Aujourd'hui, il sera surtout vu par les personnes qui passent devant votre boutique ou celles qui vous suivent déjà.",
       /* UNE PHOTO ET UN VOCAL, PAS UNE DESCRIPTION. « On montre à
          l'assistante une photo du vêtement, et on laisse un vocal pour donner
          des infos aux clients quand ils l'essaient virtuellement. » */
-      geste: "Montrez-moi la pièce du jour.",
+      geste: "Montrez-moi ce que vous voulez mettre en lumière.",
       gesteDit:
         "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me montrer la pièce du jour en photo, et de me laisser un vocal.",
-      gesteCourt: "Pour apparaître dans Le Direct, montrez-moi la pièce du jour en photo, et laissez-moi un vocal pour vos clientes.",
+      gesteCourt:
+        "Avec ClikMe, vous me montrez simplement ce que vous voulez mettre en lumière. Une photo suffit. Et si vous le souhaitez, ajoutez dix secondes de votre voix pour raconter pourquoi cette pièce vous plaît.",
+      momentPhoto: "Une photo suffit.",
+      momentVoix: "ajoutez dix secondes de votre voix",
       parPhoto: false,
       photoEtVoix: true,
-      demande: "Montrez-moi la pièce du jour, et dites-moi ce que vos clientes doivent savoir.",
+      demande: "Qu'est-ce que vous voulez mettre en lumière aujourd'hui ?",
       motVoix: "Elle tombe parfaitement, je la porte moi-même. Du 36 au 44, et les retouches sont offertes.",
       pieceExemple: "/direct/mode-chemise-volants-rose.jpeg",
       envoi: "votre pièce du jour part",
-      suite:
-        "Je m'occupe du reste : elle part sur votre page et dans Le Direct, chacun l'essaie sur sa propre photo, et c'est votre voix qui leur en parle.",
+      suite: `Je m'occupe du reste. Je prépare l'annonce, je la publie sur votre page et dans Le Direct de ${villeAff || "votre ville"}. Ensuite, chacune peut l'essayer sur sa photo et entendre votre propre voix lui en parler.`,
       /* « "Puis vous demande de la mettre" : ça ne veut rien dire. » La phrase
          était entière, c'est la voix qui la coupait au 500e caractère de
          l'acte (voir la route `tts`). Elle dit maintenant aussi le salon, que
@@ -600,8 +597,7 @@ export function gesteDuJour(
          parler dans leurs salons de discussion avec leurs amis qui ne vous
          connaissent pas non plus, puis vous demander de la mettre de côté. »
          Ses mots, au bout de la nouvelle définition du Direct. */
-      convaincus:
-        "Et lorsqu'ils verront une de vos pièces, ils pourront l'essayer, en parler dans leurs salons de discussion avec leurs amis, qui ne vous connaissent pas non plus, puis vous demander de la mettre de côté.",
+      convaincus: "Et lorsqu'une de vos pièces leur plaît, ils peuvent immédiatement l'essayer, en parler et vous contacter.",
       publie: "votre pièce du jour",
       partage:
         "Et en un clic, elles la partagent : entre amies dans leurs salons privés, et avec toute la ville dans le salon public.",
@@ -612,20 +608,61 @@ export function gesteDuJour(
       },
       /* « Les heures et les nombres ne sont pas bons : 15 h 30, 549 habitants
          l'auront vue passer ; 16 h 05, 19 l'auront essayée virtuellement. » */
+      /* « Maintenant, imaginons votre pièce publiée cet après-midi. 15 h 30 —
+         549 habitants l'ont vue passer. 16 h 30 — 19 l'ont essayée sur eux.
+         17 h 00 — 3 vous demandent de la mettre de côté. Et vous voyez
+         exactement ce que votre publication a provoqué. » */
+      imaginons: "Maintenant, imaginons votre pièce publiée cet après-midi.",
+      /* « 16 h 10 — ClikMe l'a aussi repérée pour 27 Maisons correspondant à
+         son style. » Et la conclusion : « Votre pièce n'attend plus qu'on la
+         cherche. ClikMe va la présenter aux personnes à qui elle pourrait
+         vraiment plaire. » */
       retours: [
-        { heure: "15 h 30", icone: "❤️", nombre: "549", quoi: `${gentile} l'auront vue passer` },
-        { heure: "16 h 05", icone: "👗", nombre: "19", quoi: "l'auront essayée virtuellement" },
+        { heure: "15 h 30", icone: "❤️", nombre: "549", quoi: `${gentile} l'ont vue dans Le Direct`, dit: `À 15 h 30, 549 ${gentile} ont vu votre pièce dans Le Direct.` },
+        {
+          heure: "16 h 10",
+          icone: "🏠",
+          nombre: "27",
+          quoi: "Maisons où ClikMe l'a repérée",
+          dit: "À 16 h 10, ClikMe l'a aussi repérée pour 27 Maisons correspondant à son style.",
+        },
+        { heure: "16 h 30", icone: "👗", nombre: "19", quoi: "personnes l'ont essayée" },
         /* « Étape 5 : les demandes qui arrivent chez elle. » Les salons sont
            montrés à l'étape 2 ; ici, c'est ce qui en sort et arrive chez elle. */
-        { heure: "17 h", icone: "🛍️", nombre: "3", quoi: "clientes vous auront demandé de la mettre de côté", demande: true },
-        { heure: "18 h 00", icone: "📊", nombre: "", quoi: "En une journée, vous saurez quelle pièce donne envie." },
+        { heure: "17 h 00", icone: "🛍️", nombre: "3", quoi: "vous demandent de la mettre de côté", demande: true },
+        { heure: "18 h 00", icone: "📊", nombre: "", quoi: "Votre pièce n'attend plus qu'on la cherche. ClikMe va la présenter aux personnes à qui elle pourrait vraiment plaire." },
       ],
       gardeRobe: {
-        dit: "Mieux encore : elles ouvrent leur garde-robe, enregistrée sur ClikMe, choisissent leur jean préféré, et voient aussitôt ce qui, chez vous, irait avec.",
+        dit: "Elle peut même ouvrir son Dressing ClikMe : choisir, par exemple, son jean préféré et voir immédiatement si votre pièce va avec ce qu'elle possède déjà.",
         titre: "Leur jean préféré ? Voilà ce qui irait avec.",
       },
-      salons: salons("elles", "le fantôme de votre boutique", "il vous demande de la mettre de côté", "vos ventes se décident", "🛍️ 2 mises de côté demandées"),
-      liaison: "Mais pour l'essayer, encore faut-il la découvrir.",
+      /* « Elle hésite ? Elle ouvre un salon. Ses amis donnent leur avis, ClikMe
+         peut comparer d'autres possibilités et l'aider à trancher. Et lorsqu'elle
+         se décide, elle peut vous demander de mettre la pièce de côté. Une
+         décision d'achat peut donc commencer chez elle… et se terminer chez
+         vous. » Les trois temps de la scène (on ouvre, on aide, on décide),
+         puis sa conclusion. */
+      salons: {
+        ...salons("elles", "le fantôme de votre boutique", "il vous demande de la mettre de côté", "vos ventes se décident", "🛍️ 2 mises de côté demandées"),
+        ouvre: "Elle hésite ? Elle ouvre un salon.",
+        fantome: "Ses amis donnent leur avis, ClikMe peut comparer d'autres possibilités et l'aider à trancher.",
+        ventes: "Et lorsqu'elle se décide, elle peut vous demander de mettre la pièce de côté.",
+        conclut: "Une décision d'achat peut donc commencer chez elle… et se terminer chez vous.",
+      },
+      liaison: "Mais pour essayer une de vos pièces, encore faut-il savoir qu'elle existe.",
+      /* SES MOTS, À UN DÉTAIL PRÈS : « cette veste » est devenue « ce pull »,
+         parce que l'image montre un pull — celui de son exemple (« Lili Ross a
+         un pull qui serait assorti à mon jean »). */
+      maison: {
+        deuxFacons: "Avec ClikMe, il y a deux façons.",
+        direct: `D'abord nous avons créé Le Direct de ${villeAff || "votre ville"} : les habitants voient simplement ce qui vient d'arriver aujourd'hui dans les commerces autour d'eux.`,
+        dit: [
+          "Et puis il y a « Ma Maison ». Là, ClikMe apprend progressivement ce que chacun aime et ce qu'il possède déjà.",
+          "Par exemple, si vous publiez aujourd'hui ce pull et qu'il correspond au style d'une personne ou va particulièrement bien avec les vêtements de son Dressing, votre Fantôme peut le lui rapporter comme une surprise.",
+          "Cette personne ne vous suivait pas. Elle ne cherchait pas votre boutique. Elle ne vous connaissait peut-être même pas. Et pourtant, votre pièce vient d'arriver chez elle.",
+          "Elle peut alors voir pourquoi ClikMe l'a choisie, l'essayer sur elle, demander l'avis de ses amis… puis vous demander de la mettre de côté.",
+        ],
+      },
     };
   }
 
@@ -637,10 +674,7 @@ export function gesteDuJour(
       verbe: "chercher",
       cherchent: "ce qu'il y a de frais",
       combien: 800,
-      chaque: "Chaque matin",
-      verbeIls: "cherchent",
       objet: "ce qu'il y a de frais",
-      sansVous: "sans savoir ce que vous avez en vitrine",
       heure: "7 h",
       support: "votre vitrine",
       ouDort: "Vous, à cette heure-là, tout est déjà en vitrine.",
@@ -682,10 +716,7 @@ export function gesteDuJour(
       verbe: "chercher",
       cherchent: `${v.un} ${v.place}`,
       combien: 600,
-      chaque: "Chaque jour",
-      verbeIls: "cherchent",
       objet: `${v.un} ${v.place}`,
-      sansVous: "sans savoir qu'il vous en reste",
       heure: "9 h",
       support: "votre carnet",
       ouDort: `Vous, à cette heure-là, vos ${v.places} libres sont dans votre carnet.`,
@@ -720,10 +751,7 @@ export function gesteDuJour(
     verbe: "chercher",
     cherchent: "un artisan disponible",
     combien: 300,
-    chaque: "Chaque semaine",
-    verbeIls: "cherchent",
     objet: "un artisan disponible",
-    sansVous: "sans savoir que vous l'êtes",
     heure: "9 h",
     support: "votre téléphone",
     ouDort: "Ce que vous pouvez prendre cette semaine, vous êtes seul à le savoir.",
@@ -778,7 +806,10 @@ export function direRetours(
      finissent sur la demande qui arrive chez lui (`demande`), et l'écran
      montre ces messages reçus. */
   const phrases = [
-    ...g.retours.filter((r) => r.nombre).map((r) => `À ${r.heure}, ${r.nombre} ${r.quoi}.`),
+    // « 17 h 00 » s'affiche ; « à 17 h » se dit.
+    ...g.retours.filter((r) => r.nombre).map((r) => r.dit ?? `À ${r.heure.replace(/ h 00$/, " h")}, ${r.nombre} ${r.quoi}.`),
+    // QUAND LE MÉTIER A SA PHRASE D'OUVERTURE (`imaginons`), SA CONCLUSION SE DIT AUSSI.
+    ...(g.imaginons ? g.retours.filter((r) => !r.nombre).map((r) => r.quoi) : []),
     ...(avecPartage ? [g.partage ?? PARTAGE] : []),
   ];
   /**
@@ -804,7 +835,7 @@ export function direRetours(
    */
   const quoi = g.publie ?? (g.envoi.replace(/\s+(part|partent)$/i, "").trim() || "votre annonce");
   return {
-    say: [`Une fois ${quoi} dans Le Direct, voilà ce qui pourrait se passer.`, ...phrases].join(" "),
+    say: [g.imaginons ?? `Une fois ${quoi} dans Le Direct, voilà ce qui pourrait se passer.`, ...phrases].join(" "),
     phrases,
   };
 }

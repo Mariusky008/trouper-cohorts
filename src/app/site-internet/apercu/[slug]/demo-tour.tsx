@@ -16,6 +16,7 @@ import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange, duree
 import { MARQUE } from "@/lib/marque";
 import { direRetours, type GesteDuJour } from "@/lib/direct/geste-du-jour";
 import { SceneSalons } from "./scene-partage";
+import { SceneMaison } from "./scene-maison";
 import { SceneGardeRobe } from "./scene-garde-robe";
 import { SceneDemandes } from "./scene-demandes";
 
@@ -35,9 +36,10 @@ const DUEL_B = "/direct/essai/mode-friperie-apres.jpg";
  * des bulles qui éclatent. »
  *
  * DONC DEUX CHOSES, ET PLUS VINGT :
- *   · UN PETIT GROUPE, sous le nombre : trois fantômes côte à côte qui se
+ *   · UN PETIT GROUPE, au centre : trois fantômes côte à côte qui se
  *     parlent, une bulle à la fois (`GROUPE`, les phrases dans `parlent`) —
- *     l'œil sait où aller, et ce qu'ils disent est ce que dit le nombre ;
+ *     l'œil sait où aller. Le nombre est parti du texte de Léa (« encore
+ *     faut-il savoir qu'elle existe ») : le groupe a pris sa place ;
  *   · QUELQUES BULLES DE SAVON, autour : un fantôme y apparaît, monte un peu,
  *     et la bulle éclate (`BULLES`). Deux ou trois à l'écran à la fois, jamais
  *     plus, et jamais sur le texte.
@@ -115,6 +117,8 @@ type Props = {
   fantomeBoutique?: string;
   /** LE MÊME FANTÔME EN PIED — le dossier de ses poses (`enPied`) : il vole de salon en salon à l'étape 2. */
   fantomePied?: string;
+  /** Sa fiche donne-t-elle ses horaires ? Léa ne les cite qu'alors, à l'étape 1. */
+  aHoraires?: boolean;
   keepHref?: string; // contact (WhatsApp/tel) pour « Garder mon site gratuitement »
   /**
    * LA PAGE SUR LAQUELLE LA DÉMONSTRATION SE JOUE, EN UN SÉLECTEUR.
@@ -167,6 +171,7 @@ export function DemoTour({
   essai,
   fantomeBoutique,
   fantomePied,
+  aHoraires = false,
   keepHref,
   racine = "main.mqc",
 }: Props) {
@@ -287,15 +292,17 @@ export function DemoTour({
      ensuite). Voir `scene-garde-robe.tsx`. */
   const GARDE = SALONS_JOUES && G?.gardeRobe ? G.gardeRobe : null;
   const ESSAI_DIT = essai
-    ? [essai.say, ...(GARDE ? [GARDE.dit] : []), ...(SALONS_JOUES && G ? [G.salons.ouvre, G.salons.fantome, G.salons.ventes] : [])]
+    ? [
+        essai.say,
+        ...(GARDE ? [GARDE.dit] : []),
+        ...(SALONS_JOUES && G ? [G.salons.ouvre, G.salons.fantome, G.salons.ventes, ...(G.salons.conclut ? [G.salons.conclut] : [])] : []),
+      ]
     : [];
   const SAY_ESSAI = ESSAI_DIT.join(" ");
   const ESSAI_AT = ESSAI_DIT.map((ph) => partAu(SAY_ESSAI, ph));
   /** Où commencent les salons dans la réplique : la scène compte ses temps à partir de là. */
   const ESSAI_SALONS = GARDE ? 2 : 1;
   const laVille = villeAff || "votre ville";
-  /** « à Vevey » — et « près de chez vous » quand on ne connaît pas sa ville. */
-  const aLaVille = villeAff ? `à ${villeAff}` : "près de chez vous";
   /** Ce que cherchent les petits fantômes de l'étape 3 (`GROUPE`), en une icône. */
   const iconeRecherche = !G
     ? ""
@@ -385,53 +392,43 @@ export function DemoTour({
    * invisible : il fabriquait une réponse plausible à une question sans
    * réponse.
    */
-  const QUI_TEMPS: { dit: string; acte?: "passer" | "veux" | "resa"; definit?: true }[] = G
+  /* ═══ L'ÉTAPE 3, DANS SES MOTS — « Mais encore faut-il vous découvrir » ═══
+
+     « Mais pour essayer une de vos pièces, encore faut-il savoir qu'elle
+     existe. C'est pour cela que nous avons créé Le Direct de Vevey. Les
+     commerces y publient ce qui se passe aujourd'hui : un nouvel arrivage, une
+     pièce particulière, un plat du jour, une disponibilité, un événement… Les
+     habitants font simplement défiler ce qui se passe autour d'eux. Et
+     lorsqu'une de vos pièces leur plaît, ils peuvent immédiatement l'essayer,
+     en parler et vous contacter. »
+
+     LE NOMBRE EST PARTI DU TEXTE, ET DONC DE L'ÉCRAN : on n'affiche pas un
+     chiffre que personne ne dit. Pendant la première phrase, ce sont les
+     petits fantômes qui cherchent sans savoir (voir GROUPE) ; Le Direct
+     s'ouvre sur la deuxième, celle qui le nomme ; la pile se feuillette sur
+     la troisième ; on la fait défiler sur la quatrième, et on essaie, on en
+     parle, on contacte sur la dernière. */
+  /* ═══ ET CHEZ LA MODE, LES DEUX FAÇONS : LE DIRECT, PUIS MA MAISON ═══
+     « On a oublié la fonction quasiment essentielle et différenciante, "Ma
+     Maison". » Voir `maison` dans `geste-du-jour.ts` : Le Direct s'ouvre sur
+     sa phrase, puis la Maison d'une cliente prend l'écran (`SceneMaison`),
+     une image par phrase. */
+  const QUI_TEMPS: { dit: string; acte?: "passer" | "veux" | "resa"; definit?: true; maison?: true }[] = G?.maison
     ? [
-        /* « Une fois l'étape 2 terminée avec les salons, l'étape 3 doit être
-           un peu changée quand on parle du nombre de personnes qui cherchent :
-           il faudra que la liaison soit cohérente avec l'étape 2. » Après
-           l'essai et ses salons, « le plus important n'est pas votre page » ne
-           suivait plus rien : la phrase dit maintenant ce qui manque —
-           « mais pour l'essayer, encore faut-il la découvrir ». */
         { dit: SALONS_JOUES && G.liaison ? G.liaison : SAY_BASCULE },
-        /* PRÉCIS, ET DIT COMME UNE ESTIMATION : « il faudrait être plus précis
-           pour ne pas perdre en légitimité ». Le nombre n'est pas mesuré (voir
-           `chaque` dans `geste-du-jour.ts`) : « environ », et jamais « sur
-           Google ». Tout le reste est exact — quand, où, quoi, ce qui manque. */
-        { dit: `${G.chaque}, ${aLaVille}, environ ${G.combien.toLocaleString("fr-FR")} personnes ${G.verbeIls} ${G.objet} ${G.sansVous}.` },
-        /* ═══ LE DIRECT, DIT UNE FOIS, AVANT D'EN PARLER ═══════════════════
-           « On parle du Direct à plusieurs reprises dans la présentation de
-           Léa, sans jamais préciser ce qu'est le Direct. Le Direct, c'est
-           l'ensemble des commerçants présents sur ClikMe, que les utilisateurs
-           peuvent découvrir chaque jour en swipant leurs annonces. »
-           C'est sa première apparition dans la visite, et toutes les
-           suivantes s'appuient sur elle (« pour apparaître dans Le Direct »,
-           « une fois dans Le Direct ») : elle porte donc la définition. La
-           pile se feuillette à l'écran pendant qu'elle la dit.
-           « On ne comprend pas le lien entre "800 personnes cherchent…" et
-           "Pour choisir, ils ouvrent Le Direct…" » : la phrase disait ce
-           qu'est Le Direct, pas pourquoi il vient après le nombre. Elle dit
-           maintenant à quoi il sert POUR EUX — c'est le lien. */
-        { definit: true, dit: `Le Direct de ${laVille} a été conçu pour leur faciliter la recherche.` },
-        // CE QU'ILS Y VERRONT SUIT LA FAMILLE, comme le fil montré derrière.
-        // Cette ligne énumérait « les menus du jour, les tables qui restent »
-        // à tout le monde : un coiffeur l'entendait pendant que l'écran, lui,
-        // défilait — depuis la même correction — sur des créneaux libres.
-        // « Nous accueillons tous les commerçants de la ville pour qu'ils n'aient
-        // plus qu'à faire défiler leurs annonces et voir ce qui vient d'arriver,
-        // les prix, la distance… » — ses mots. « Accueillons » : il est ouvert à
-        // tous, pas « ils y sont tous ».
-        { acte: "passer", dit: `Nous accueillons tous les commerçants de la ville, pour qu'ils n'aient plus qu'à faire défiler leurs annonces et voir ${
-          G.famille === "restauration"
-            ? "les menus du jour, les tables qui restent"
-            : G.famille === "boutique"
-              ? "ce qui vient d'arriver"
-              : G.famille === "librairie"
-                ? "les coups de cœur des libraires, les rencontres de la semaine"
-              : G.famille === "rdv"
-                ? "les créneaux qui se libèrent"
-                : "qui est disponible cette semaine"
-        }, les prix, la distance…` },
+        { dit: G.maison.deuxFacons },
+        { definit: true, dit: G.maison.direct },
+        ...G.maison.dit.map((dit, i) => (i === 0 ? { dit, maison: true as const } : { dit })),
+      ]
+    : G
+    ? [
+        { dit: SALONS_JOUES && G.liaison ? G.liaison : SAY_BASCULE },
+        {
+          definit: true,
+          dit: `${SALONS_JOUES && G.liaison ? "C'est pour cela que nous avons créé" : "Pour cela, nous avons créé"} Le Direct de ${laVille}.`,
+        },
+        { dit: "Les commerces y publient ce qui se passe aujourd'hui : un nouvel arrivage, une pièce particulière, un plat du jour, une disponibilité, un événement…" },
+        { acte: "passer", dit: "Les habitants font simplement défiler ce qui se passe autour d'eux." },
         // « Une table » n'a de sens que dans la restauration : ailleurs on
         // réserve un créneau, une pièce, une place. Le mot suit le métier,
         // comme partout dans cette démonstration.
@@ -441,6 +438,8 @@ export function DemoTour({
       ]
     : [];
   const QUI_DIT = QUI_TEMPS.map((t) => t.dit);
+  /** La phrase où la Maison prend l'écran (−1 : pas de Maison). */
+  const QUI_MAISON = QUI_TEMPS.findIndex((t) => t.maison);
   /** La phrase qui dit ce qu'est Le Direct : l'écran l'écrit au même moment. */
   const QUI_DEFINIT = QUI_TEMPS.findIndex((t) => t.definit);
   /** LE DIRECT S'OUVRE SUR « ILS OUVRENT LE DIRECT » — pas une phrase avant, pendant le nombre. */
@@ -531,7 +530,6 @@ export function DemoTour({
    *  la nouvelle version pendant que l'écran affichait l'ancienne. */
   const OUVERTURE_RETOUR = retourDit.say.split(". ")[0] + ".";
   const SAY_RETOUR = retourDit.say;
-  const RETOUR_AT = retourDit.phrases.map((ph) => partAu(SAY_RETOUR, ph));
 
   /* ══════════ CE QUE LES HABITANTS VOIENT ═══════════════════════════════
    *
@@ -647,10 +645,18 @@ export function DemoTour({
 
   /* UNE SEULE PHRASE DE CLÔTURE. Les deux disaient la même chose, et la
      seconde nommait la ville une quatrième fois. */
-  const BOUCLE_DIT = [`Votre commerce, en direct dans ${laVille}.`];
+  /* « Votre commerce ne reste plus simplement dans votre rue. Il vit, en
+     direct, dans Vevey. » — ses mots ; la seconde s'écrit en grand sous la
+     première (`bo-fin`). */
+  const BOUCLE_DIT = ["Votre commerce ne reste plus simplement dans votre rue.", `Il vit, en direct, dans ${laVille}.`];
   /** Le retour, puis la clôture : une seule réplique, donc un seul acte. */
   const SAY_FIN = `${SAY_RETOUR} ${BOUCLE_DIT.join(" ")}`;
   const BOUCLE_AT = BOUCLE_DIT.map((p) => partAu(SAY_FIN, p));
+  /* LES CHIFFRES SE PLACENT DANS LA RÉPLIQUE ENTIÈRE (`SAY_FIN`), celle que la
+     voix lit. Placés dans le seul retour, puis appliqués à la durée de toute
+     la réplique, ils tombaient de plus en plus tard — et la clôture se
+     retrouvait collée à la conclusion. */
+  const RETOUR_AT = retourDit.phrases.map((ph) => partAu(SAY_FIN, ph));
   /** Où, dans la réplique, l'image bascule du retour vers la clôture. */
   const PART_BOUCLE = BOUCLE_AT[0] ?? 1;
 
@@ -685,6 +691,8 @@ export function DemoTour({
   const [quiN, setQuiN] = useState(0);
   const [invN, setInvN] = useState(0);
   const [photoN, setPhotoN] = useState(0);
+  /** Le vocal est-il dit ? Chez la mode, il arrive sur « ajoutez dix secondes de votre voix » (`momentVoix`). */
+  const [voixDite, setVoixDite] = useState(false);
   const [retourN, setRetourN] = useState(0);
   /** La phrase de l'étape 2 que la voix dit : 0 l'essai, puis 1 à 3 les salons. */
   const [essaiN, setEssaiN] = useState(0);
@@ -722,36 +730,11 @@ export function DemoTour({
   const [essaiFil, setEssaiFil] = useState(false);
   /** Les minuteries de ces trois gestes, pour les couper en quittant l'acte. */
   const gestes3 = useRef<number[]>([]);
-  /**
-   * LE NOMBRE DE LA VILLE, COMPTÉ À L'ÉCRAN.
-   *
-   * Posés d'un coup, mille Dacquois se lisent comme un chiffre de plaquette :
-   * on les survole. Comptés, on les regarde monter — et c'est le premier
-   * moment de la démonstration où le commerçant réalise qu'il y a du monde
-   * dehors. La montée suit la même courbe que toutes les entrées de la
-   * feuille de style (expo : rapide au début, posée à la fin), pour que le
-   * mouvement de l'écran ait une seule grammaire.
-   */
-  const [compte, setCompte] = useState(0);
-  const compteur = useRef<number | null>(null);
-  const compter = (vers: number) => {
-    if (compteur.current) cancelAnimationFrame(compteur.current);
-    // Le mouvement rend certaines personnes malades : on pose le chiffre.
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) { setCompte(vers); return; }
-    const t0 = performance.now();
-    const pas = () => {
-      const k = Math.min(1, (performance.now() - t0) / 1100);
-      setCompte(Math.round(vers * (1 - Math.pow(1 - k, 4))));
-      if (k < 1) compteur.current = requestAnimationFrame(pas);
-    };
-    compteur.current = requestAnimationFrame(pas);
-  };
-  // Laissés courir, le compteur et la rotation continuaient de rendre le
+  // Laissées courir, la rotation et les gestes continuaient de rendre le
   // composant après la fin de l'acte — et après le démontage, sur un composant
   // qui n'existe plus.
   useEffect(
     () => () => {
-      if (compteur.current) cancelAnimationFrame(compteur.current);
       if (rotation.current) window.clearInterval(rotation.current);
       gestes3.current.forEach(clearTimeout);
     },
@@ -1054,6 +1037,8 @@ export function DemoTour({
   };
 
   const hasReviews = reviewsCount != null && reviewsCount > 0;
+  /** Ce que sa fiche Google a donné à sa page, dit à l'étape 1 : « photos, horaires, avis ». */
+  const inventaire = [photos?.length ? "photos" : "", aHoraires ? "horaires" : "", hasReviews ? "avis" : ""].filter(Boolean).join(", ");
 
   const run = async () => {
     // Démo COURTE, alignée sur le positionnement : site GRATUIT → assistante incluse
@@ -1097,8 +1082,13 @@ export function DemoTour({
         // TROIS FAITS SUFFISENT : qui parle, que la page existe, d'où elle
         // vient. L'inventaire — photos, horaires, avis — se voit à l'écran
         // pendant qu'elle parle, et il coûtait quatre secondes à énoncer.
-        `Bonjour, je suis Léa. Votre page ClikMe est prête : je l'ai construite ` +
-        `à partir de votre fiche Google${hasReviews ? ", avis compris" : ""}.`,
+        /* « Bonjour, je suis Léa. Votre page ClikMe est déjà prête. Je l'ai
+           créée à partir de votre fiche Google : photos, horaires, avis… Vous
+           n'avez rien eu à construire. » — ses mots. L'inventaire ne cite que
+           ce que sa fiche a vraiment donné. */
+        `Bonjour, je suis Léa. Votre page ClikMe est déjà prête. ` +
+        (inventaire ? `Je l'ai créée à partir de votre fiche Google : ${inventaire}… ` : `Je l'ai créée à partir de votre fiche Google. `) +
+        `Vous n'avez rien eu à construire.`,
       enter: () => { envol(); scrollTo(null); setScene(""); void buildSite(); },
     });
 
@@ -1207,7 +1197,10 @@ export function DemoTour({
      * `parts` sont des fractions de la réplique, converties ici seulement —
      * quand la durée vraie est enfin connue.
      */
-    const suivre = (phrase: string, dits: string[], parts: number[], setN: (n: number) => void) => {
+    /* `depuis` : quand le suivi commence au milieu de l'acte (la clôture), ses
+       temps se comptent à partir de là. Comptés depuis le début de l'acte, la
+       seconde phrase de clôture tombait après la fin — vue au test. */
+    const suivre = (phrase: string, dits: string[], parts: number[], setN: (n: number) => void, depuis = 0) => {
       setN(0);
       setCaption(dits[0] ?? "");
       parts.forEach((part, i) => {
@@ -1215,7 +1208,7 @@ export function DemoTour({
         window.setTimeout(() => {
           setN(i);
           setCaption(dits[i]);
-        }, quand(phrase, part));
+        }, Math.max(0, quand(phrase, part) - depuis));
       });
     };
 
@@ -1229,12 +1222,11 @@ export function DemoTour({
       // sans jamais voir OÙ. Ici il voit l'écran que les habitants ouvrent
       // dans la rue, avant même qu'on lui parle de lui.
       steps.push({
-        title: `${G.chaque}, ${aLaVille}`,
+        title: "Mais encore faut-il vous découvrir",
         say: SAY_QUI,
         enter: () => {
           chime();
           setScene("qui");
-          compter(G.combien);
           setCarteVille(0);
           setDessousForce(null);
           setGesteQui("");
@@ -1369,7 +1361,9 @@ export function DemoTour({
              carte devient la photo d'une habitante : dans ses vêtements, puis,
              sous le balayage, dans le manteau. Le panneau « mettre de côté »
              ne monte qu'ensuite, sur « puis vous demandent ». */
-          const tDemande = iEssai >= 0 ? partAu(SAY_QUI, "puis vous demandent") : 0;
+          /* LE PANNEAU MONTE SUR LES MOTS DU CONTACT — « et vous contacter »
+             dans son texte, « puis vous demandent » dans l'ancien. */
+          const tDemande = iEssai >= 0 ? partAu(SAY_QUI, "vous contacter") || partAu(SAY_QUI, "puis vous demand") : 0;
           if (tResa != null && iEssai >= 0) {
             dans(quand(SAY_QUI, tResa), () => {
               if (rotation.current) { window.clearInterval(rotation.current); rotation.current = null; }
@@ -1422,7 +1416,7 @@ export function DemoTour({
          à la clôture sans qu'on change d'étape : on repère l'instant où la
          voix attaque la seconde moitié, et l'image suit. */
       steps.push({
-        title: "Et vous ?",
+        title: "Vous n'avez presque rien à faire",
         say: SAY_MANQUE,
         enter: () => {
           setScene("invisible");
@@ -1431,6 +1425,7 @@ export function DemoTour({
             chime();
             setScene("photo");
             setPhotoN(0);
+            setVoixDite(false);
             setCaption(PHOTO_DIT[0] ?? "");
             /* ═══ TROIS TEMPS, ET LE DERNIER DURE ═════════════════════════
 
@@ -1451,7 +1446,13 @@ export function DemoTour({
                l'écran de ses clients. Elle mérite plus qu'une seconde. */
             const t0 = quand(SAY_MANQUE, PART_GESTE);
             // ① ON LIT L'ARDOISE, OU ON L'ÉCOUTE — le temps de l'animation.
-            window.setTimeout(() => setPhotoN(1), 1200);
+            //    CHEZ LA MODE, SUR SES MOTS : la photo arrive sur « Une photo
+            //    suffit », le vocal sur « ajoutez dix secondes de votre voix ».
+            const motA = (m?: string) => (m && SAY_MANQUE.includes(m) ? quand(SAY_MANQUE, partAu(SAY_MANQUE, m)) - t0 : null);
+            const tPhoto = motA(G.momentPhoto);
+            window.setTimeout(() => setPhotoN(1), tPhoto != null ? Math.max(600, tPhoto) : 1200);
+            const tVoix = motA(G.momentVoix);
+            if (tVoix != null) window.setTimeout(() => setVoixDite(true), Math.max(900, tVoix));
             // ② PUIS ÇA PART, et la carte reste à l'écran jusqu'à la fin.
             const t1 = quand(SAY_MANQUE, PHOTO_AT2[1] ?? PART_GESTE) - t0;
             window.setTimeout(() => {
@@ -1471,7 +1472,7 @@ export function DemoTour({
       // Les lignes tombent une par une, avec un temps de silence entre elles :
       // affichées d'un bloc, elles se lisent comme un tableau de bord de plus.
       steps.push({
-        title: "Ce qui vous revient",
+        title: "Ce qui peut vous revenir",
         say: SAY_FIN,
         enter: () => {
           chime();
@@ -1496,13 +1497,18 @@ export function DemoTour({
              scène reste donc jusque-là — la voix dit déjà « votre commerce, en
              direct » par-dessus — et l'acte garde un souffle après elle pour
              laisser voir la clôture. */
-          const tPartage = quand(SAY_FIN, RETOUR_AT[RETOUR_AT.length - 1] ?? 0);
+          /* COMPTÉ DEPUIS LA DEMANDE (17 h, « vous demandent de la mettre de
+             côté »), PAS DEPUIS LA DERNIÈRE PHRASE : celle-ci peut maintenant
+             être la conclusion (« Et vous voyez exactement… »), et la clôture
+             arrivait cinq secondes trop tard, sans sa première phrase. */
+          const iDemande = G.retours.filter((r) => r.nombre).findIndex((r) => r.demande);
+          const tPartage = quand(SAY_FIN, RETOUR_AT[iDemande >= 0 ? iDemande : RETOUR_AT.length - 1] ?? 0);
           const tBoucle = Math.max(quand(SAY_FIN, PART_BOUCLE), tPartage + (SALONS_JOUES ? 5000 : 6500));
           tenirJusqua = performance.now() + tBoucle + 1800;
           window.setTimeout(() => {
             chime();
             setScene("boucle");
-            suivre(SAY_FIN, BOUCLE_DIT, BOUCLE_AT, setBoucleN);
+            suivre(SAY_FIN, BOUCLE_DIT, BOUCLE_AT, setBoucleN, tBoucle);
           }, tBoucle);
         },
         respire: 1800,
@@ -1836,8 +1842,6 @@ export function DemoTour({
           .cp-1{font-size:22px;line-height:1.15;font-weight:850;letter-spacing:-.035em;color:#fff;text-wrap:balance;
             animation:dtWipe .62s var(--exp) .1s both;}
           .bo-0{font-size:16px;line-height:1.45;color:#E6D3BF;text-wrap:balance;animation:dtRise .4s var(--exp) both;}
-          .bo-0b{padding-top:8px;font-size:16px;line-height:1.45;color:#E6D3BF;text-wrap:balance;}
-          .dt-ouvre.on .bo-0b{animation:dtRise .4s var(--exp) .1s both;}
           .bo-fin{padding-top:22px;}
           .bo-1{font-size:26px;line-height:1.08;font-weight:850;letter-spacing:-.035em;color:#fff;text-wrap:balance;}
           .dt-ouvre.on .bo-1{animation:dtWipe .6s var(--exp) .15s both;}
@@ -1864,15 +1868,6 @@ export function DemoTour({
              sous la légende en bas. Calé en haut, tout ce qu'on gagne revient
              au bas. */
           .dtour-ov.qi.serre{justify-content:flex-start;padding-top:70px;}
-          /* Le nombre est COMPTÉ à l'écran (voir compte dans le composant) :
-             posé d'un coup, mille Dacquois se lisaient comme un chiffre de
-             plaquette ; il monte, et on le regarde monter. Le halo derrière lui
-             se dilate en même temps. */
-          /* isolation:isolate ouvre un contexte d'empilement : sans lui, le halo
-             en z-index:-1 passe DERRIÈRE le fond de la scène et ne se voit pas. */
-          .qi-n{font-family:var(--font-geist-sans),system-ui,sans-serif;font-size:clamp(64px,20vw,104px);font-weight:850;
-            letter-spacing:-.055em;line-height:1;color:#fff;font-variant-numeric:tabular-nums;
-            animation:dtPop .55s var(--exp) both;}
           /* LE HALO EST PORTÉ PAR LA SCÈNE, PAS PAR LE NOMBRE.
              Posé sur le nombre, il se retrouvait à l'intérieur du bloc qui se
              replie — et ce bloc doit rogner ce qui dépasse pour que le repli
@@ -1880,16 +1875,12 @@ export function DemoTour({
              carré, c'est-à-dire un rectangle vert sombre derrière le chiffre.
              Mesuré au navigateur. Ici il est libre, et il s'éteint quand le
              nombre s'en va. */
-          .dtour-ov.qi::before{content:"";position:absolute;left:50%;top:34%;width:min(150%,560px);aspect-ratio:1;
+          .dtour-ov.qi::before{content:"";position:absolute;left:50%;top:44%;width:min(150%,560px);aspect-ratio:1;
             transform:translate(-50%,-50%);pointer-events:none;
             background:radial-gradient(circle,rgba(245,162,58,.26),transparent 62%);
             animation:dtSouffle 4s ease-in-out infinite;transition:opacity .45s ease;}
           .dtour-ov.qi.serre::before{opacity:0;}
           @keyframes dtSouffle{0%,100%{opacity:.55;transform:translate(-50%,-50%) scale(.9)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}}
-          .qi-q{margin-top:8px;font-size:17px;line-height:1.35;color:#CDB8A4;animation:dtRise .4s var(--exp) .22s both;}
-          .qi-q b{display:inline-block;margin-top:4px;font-size:22px;font-weight:800;letter-spacing:-.025em;color:#fff;}
-          .qi-env{margin-bottom:6px;font-size:15px;font-weight:700;color:#F5D9B8;animation:dtRise .4s var(--exp) both;}
-          .qi-sans{margin-top:8px;font-size:15px;line-height:1.35;color:#CDB8A4;animation:dtRise .4s var(--exp) .32s both;}
 
           /* LE CATALOGUE DU DIRECT, dans la main d'un habitant.
              Un encadré stylisé à trois lignes ne disait pas ce qu'il fallait
@@ -1969,14 +1960,19 @@ export function DemoTour({
           .dtour-ov.qi .qi-tete,.dtour-ov.qi .dt-ouvre{position:relative;z-index:1;}
           /* LE PETIT GROUPE : trois fantômes serrés, qui se parlent chacun à
              son tour (7,5 s pour un tour de parole). */
-          .qi-groupe{position:absolute;left:50%;top:83%;display:flex;align-items:flex-end;gap:2px;transform:translate(-50%,-50%);}
-          .qg-f{position:relative;width:60px;height:60px;animation:qfArrive .5s cubic-bezier(.34,1.56,.64,1) calc(.25s + var(--k) * .15s) both;}
-          .qg-f:nth-child(2){width:68px;height:68px;}
+          .qi-groupe{position:relative;display:flex;align-items:flex-end;justify-content:center;gap:4px;padding:60px 34px 6px;}
+          .qg-f{position:relative;width:86px;height:86px;animation:qfArrive .5s cubic-bezier(.34,1.56,.64,1) calc(.25s + var(--k) * .15s) both;}
+          .qg-f:nth-child(2){width:98px;height:98px;}
+          /* LEURS BULLES PASSENT DEVANT LE PLUS GRAND, au milieu : celle du
+             premier s'étend vers la droite, sur sa casquette — elle passait
+             derrière (« boutique » caché, vu au test sur un ordinateur). */
+          .qg-f:first-child{z-index:3;}.qg-f:last-child{z-index:2;}.qg-f:nth-child(2){z-index:1;}
+          @media (min-width:700px){.qg-f{width:108px;height:108px;}.qg-f:nth-child(2){width:124px;height:124px;}}
           .qg-f img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45));
             animation:qfFlotte calc(2.6s + var(--k) * .4s) ease-in-out .8s infinite alternate;}
           .qg-f.miroir img{scale:-1 1;}
           .qg-dit{--tx:-50%;position:absolute;left:50%;bottom:calc(100% + 4px);padding:5px 10px;border-radius:14px;white-space:nowrap;
-            font-size:12.5px;line-height:1.2;font-weight:700;color:#2A1708;background:#FFF4E6;box-shadow:0 6px 16px rgba(0,0,0,.4);
+            font-size:14px;line-height:1.2;font-weight:700;color:#2A1708;background:#FFF4E6;box-shadow:0 6px 16px rgba(0,0,0,.4);
             transform-origin:50% 100%;opacity:0;animation:qgParle 7.5s ease-out calc(1.3s + var(--k) * 2.5s) infinite;}
           .qg-dit::after{content:"";position:absolute;left:50%;top:100%;margin-left:-5px;border:5px solid transparent;border-top-color:#FFF4E6;}
           /* LA BULLE PART DU CÔTÉ DE CELUI QUI PARLE : celle du premier s'étend
@@ -2281,6 +2277,8 @@ export function DemoTour({
           /* SON TOUR A LUI VIENT APRES : il attend qu'on lui ait demande. */
           .ph-lui{align-self:flex-end;flex-direction:column;align-items:flex-end;gap:5px;
             animation:dtRise .45s var(--exp) .55s both;}
+          /* CHACUN DE SES ENVOIS ARRIVE QUAND IL EST DIT, avec la même entrée. */
+          .ph-lui>*{animation:dtRise .45s var(--exp) both;}
           .ph-lui p{color:#fff;background:rgba(255,201,122,.16);
             border-top-right-radius:5px;text-align:right;}
           /* LES BARRES MONTENT ET DESCENDENT : une onde figee se lit comme une
@@ -2840,38 +2838,22 @@ export function DemoTour({
                     <s className="qb-eclat" />
                   </i>
                 ))}
-                <div className="qi-groupe">
-                  {GROUPE.map((tenue, k) => (
-                    <span key={tenue} className={`qg-f${k === 2 ? " miroir" : ""}`} style={{ "--k": k } as CSSProperties}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/direct/foule/${tenue}.webp`} alt="" />
-                      <b className="qg-dit">{parlent[k]}</b>
-                    </span>
-                  ))}
-                </div>
               </div>
-              {/* LE NOMBRE S'EFFACE QUAND LE DIRECT S'OUVRE, il ne rétrécit
-                  plus. Il restait à l'écran, réduit, avec sa question et une
-                  ligne d'aide sous les boutons : quatre bandeaux de texte
-                  autour de la seule chose qu'on est venu montrer, et une carte
-                  bridée à 226 px pour leur faire de la place. Le Direct est la
-                  vedette de cette démonstration ; à cet instant, il a l'écran
-                  entier. Le nombre a déjà été dit — il n'a plus à être lu. */}
+              {/* LES FANTÔMES QUI CHERCHENT, À LA PLACE DU NOMBRE — « Mais pour
+                  essayer une de vos pièces, encore faut-il savoir qu'elle
+                  existe. » Trois fantômes qui se demandent où aller, et aucun
+                  ne vous connaît. Ils s'effacent quand Le Direct s'ouvre. */}
               <div className="qi-tete">
                 <div>
-                  {/* CE QUE LÉA DIT, MOT POUR MOT : « Chaque jour à Vevey, environ
-                      800 personnes cherchent des vêtements pour femmes sans
-                      connaître votre collection. » */}
-                  <div className="qi-env">
-                    {G.chaque} {aLaVille}, environ
+                  <div className="qi-groupe">
+                    {GROUPE.map((tenue, k) => (
+                      <span key={tenue} className={`qg-f${k === 2 ? " miroir" : ""}`} style={{ "--k": k } as CSSProperties}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={`/direct/foule/${tenue}.webp`} alt="" />
+                        <b className="qg-dit">{parlent[k]}</b>
+                      </span>
+                    ))}
                   </div>
-                  <div className="qi-n">{compte}</div>
-                  <div className="qi-q">
-                    personnes {G.verbeIls}
-                    <br />
-                    <b>{G.objet}</b>
-                  </div>
-                  <div className="qi-sans">{G.sansVous}</div>
                 </div>
               </div>
               {/* LE CATALOGUE AUSSI S'OUVRE. Monté d'un coup, c'est LUI qui
@@ -3010,6 +2992,10 @@ export function DemoTour({
               Trois temps le remplacent, et le deuxième est un compliment. Ce
               n'est pas de la politesse : sans lui, la phrase d'après se lit
               comme un reproche sur son ardoise, et il se ferme. */}
+          {/* MA MAISON, PAR-DESSUS LE DIRECT — à partir de sa phrase. */}
+          {scene === "qui" && G && QUI_MAISON >= 0 && quiN >= QUI_MAISON && (
+            <SceneMaison n={quiN - QUI_MAISON} fantome={{ visage: fantomeBoutique || "/clikme-fantome.png", nom }} pied={fantomePied} />
+          )}
           {scene === "invisible" && G && (
             <div className="dtour-ov">
               <div className="dtour-card iv">
@@ -3079,10 +3065,12 @@ export function DemoTour({
                       <p>{G.demande}</p>
                     </div>
                     <div className="ph-lui">
-                      {pieceMontree && (
+                      {/* LA PHOTO, PUIS LA VOIX, CHACUNE SUR SES MOTS (voir `momentPhoto`, `momentVoix`). */}
+                      {pieceMontree && photoN >= 1 && (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img className="ph-piece" src={pieceMontree} alt="" />
                       )}
+                      {(G.momentVoix ? voixDite : photoN >= 1) && (
                       <span className="ph-vocal">
                         <span className="ph-play" aria-hidden="true">▶</span>
                         <span className="ph-onde" aria-hidden="true">
@@ -3090,15 +3078,16 @@ export function DemoTour({
                             <i key={`${h}-${i}`} style={{ ["--h" as string]: `${h}px`, ["--i" as string]: i }} />
                           ))}
                         </span>
-                        <em>0:12</em>
+                        <em>0:10</em>
                       </span>
-                      {G.motVoix && (
+                      )}
+                      {G.motVoix && (G.momentVoix ? voixDite : photoN >= 1) && (
                         <p className="ph-mot">
                           « {G.motVoix} »<small>Exemple de vocal</small>
                         </p>
                       )}
                     </div>
-                    {photoN >= 1 && <span className="ph-lu" aria-hidden="true">✓ reçu</span>}
+                    {(G.momentVoix ? voixDite : photoN >= 1) && <span className="ph-lu" aria-hidden="true">✓ reçu</span>}
                   </div>
                 ) : G.parPhoto ? (
                   <div className={`ph-shot${photoN >= 1 ? " lu" : ""}`}>
@@ -3262,14 +3251,14 @@ export function DemoTour({
               d'acte « À vous » pour redire ce qu'il affiche déjà. */}
           {scene === "boucle" && (
             <div className="dtour-ov dt-noir">
+              {/* LA PREMIÈRE PHRASE EN AMORCE, LA SECONDE EN GRAND — « Votre
+                  commerce ne reste plus simplement dans votre rue. » / « IL
+                  VIT, EN DIRECT, DANS VEVEY. » L'écran dit ce que la voix dit. */}
               <div className="bo-0">{BOUCLE_DIT[0]}</div>
               <div className={`dt-ouvre${boucleN >= 1 ? " on" : ""}`}>
-                <div className="bo-0b">{BOUCLE_DIT[1]}</div>
-              </div>
-              <div className={`dt-ouvre${boucleN >= 2 ? " on" : ""}`}>
                 <div className="bo-fin">
-                  <div className="bo-1">VOTRE COMMERCE.</div>
-                  <div className="bo-2">EN DIRECT DANS VOTRE VILLE.</div>
+                  <div className="bo-1">IL VIT, EN DIRECT,</div>
+                  <div className="bo-2">DANS {(villeAff || "votre ville").toUpperCase()}.</div>
                 </div>
               </div>
             </div>
