@@ -18,19 +18,26 @@
 // formulaire « Garder ce site gratuitement » et atterrit dans `metadata.leads[]`.
 // Sans ce repli, toutes les notifications au commerçant partaient dans le vide.
 import { toE164 } from "./phone";
+import { paysDuCommerce } from "./pays";
 import { jourParis } from "@/lib/jour-paris";
 
-type MaybeRow = { whatsapp_phone_e164?: unknown; metadata?: unknown; diagnostic?: unknown } | null | undefined;
+type MaybeRow = { whatsapp_phone_e164?: unknown; metadata?: unknown; diagnostic?: unknown; address?: unknown; city?: unknown } | null | undefined;
 
-/** Tout numéro français plausible — fixe compris. */
-const FIXE_OU_MOBILE_FR = /^\+33[1-9]\d{8}$/;
+/** Tout numéro plausible — fixe compris : France, Suisse, Belgique, Luxembourg. */
+const FIXE_OU_MOBILE = /^\+(?:33[1-9]\d{8}|41[1-9]\d{8}|32[1-9]\d{7,8}|352\d{6,9})$/;
 
-/** Mobile français, seul format joignable par SMS (et seul accepté par la colonne). */
-export const MOBILE_FR = /^\+33[67]\d{8}$/;
+/**
+ * Un MOBILE, le seul numéro qui porte un compte WhatsApp (et le seul que la
+ * colonne accepte). La France, et depuis Lili Ross à Vevey ses voisins
+ * francophones : « Il faut un mobile français » laissait une boutique suisse
+ * sans aucune réservation — sa page disait même « commerce inventé ».
+ *   France 06/07 · Suisse 075–079 · Belgique 045–049 · Luxembourg 621…691
+ */
+export const MOBILE = /^\+(?:33[67]\d{8}|417[5-9]\d{7}|324[5-9]\d{7}|3526[2-9]1\d{6})$/;
 
 /** Un remplaçant pendant les congés : son numéro, son prénom, et jusqu'à quand. */
 export type Relais = {
-  /** E.164, mobile français. */
+  /** E.164, un mobile (voir `MOBILE`). */
   numero: string;
   /** Le prénom de l'employé — affiché au commerçant, jamais à l'habitant. */
   qui: string;
@@ -46,9 +53,9 @@ export function relaisEnregistre(row: MaybeRow): Relais | null {
   const r = meta(row).whatsapp_relais;
   if (!r || typeof r !== "object") return null;
   const o = r as Record<string, unknown>;
-  const numero = toE164(String(o.numero ?? "").trim());
+  const numero = toE164(String(o.numero ?? "").trim(), paysDuCommerce(row));
   const jusquau = String(o.jusquau ?? "").trim();
-  if (!MOBILE_FR.test(numero) || !/^\d{4}-\d{2}-\d{2}$/.test(jusquau)) return null;
+  if (!MOBILE.test(numero) || !/^\d{4}-\d{2}-\d{2}$/.test(jusquau)) return null;
   return { numero, qui: String(o.qui ?? "").trim().slice(0, 40), jusquau };
 }
 
@@ -74,21 +81,21 @@ export function relaisActif(row: MaybeRow, jour = jourParis()): Relais | null {
  *  mis lui-même à disposition de ses clients — sa destination naturelle. */
 function numeroGoogle(row: MaybeRow): string {
   const d = (row?.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
-  return toE164(String(d.phone ?? "").trim());
+  return toE164(String(d.phone ?? "").trim(), paysDuCommerce(row));
 }
 
 /** Numéro E.164 du COMMERÇANT lui-même, ou "" si on n'en a aucun. */
 export function proPhoneFrom(row: MaybeRow): string {
   const direct = toE164(String(row?.whatsapp_phone_e164 ?? "").trim());
-  if (MOBILE_FR.test(direct)) return direct;
+  if (MOBILE.test(direct)) return direct;
 
   // Repli : le dernier numéro laissé dans le formulaire de rappel (c'est LUI qui
   // nous l'a donné, précisément pour qu'on le recontacte à propos de son site).
   const leads = Array.isArray(meta(row).leads) ? (meta(row).leads as unknown[]) : [];
   for (let i = leads.length - 1; i >= 0; i--) {
     const l = (leads[i] && typeof leads[i] === "object" ? leads[i] : {}) as Record<string, unknown>;
-    const p = toE164(String(l.phone ?? "").trim());
-    if (MOBILE_FR.test(p)) return p;
+    const p = toE164(String(l.phone ?? "").trim(), paysDuCommerce(row));
+    if (MOBILE.test(p)) return p;
   }
   return "";
 }
@@ -115,7 +122,7 @@ export function numeroReservations(row: MaybeRow, jour = jourParis()): string {
   // pour qu'on les joigne. S'en servir n'est pas une intrusion : c'est
   // l'usage pour lequel ils l'ont mis là.
   const google = numeroGoogle(row);
-  return relaisActif(row, jour)?.numero || proPhoneFrom(row) || (MOBILE_FR.test(google) ? google : "");
+  return relaisActif(row, jour)?.numero || proPhoneFrom(row) || (MOBILE.test(google) ? google : "");
 }
 
 /**
@@ -130,7 +137,7 @@ export function numeroAppel(row: MaybeRow, jour = jourParis()): string {
   const wa = numeroReservations(row, jour);
   if (wa) return wa;
   const google = numeroGoogle(row);
-  if (FIXE_OU_MOBILE_FR.test(google)) return google;
+  if (FIXE_OU_MOBILE.test(google)) return google;
   const direct = toE164(String(row?.whatsapp_phone_e164 ?? "").trim());
-  return FIXE_OU_MOBILE_FR.test(direct) ? direct : "";
+  return FIXE_OU_MOBILE.test(direct) ? direct : "";
 }

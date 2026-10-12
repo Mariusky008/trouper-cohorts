@@ -10,15 +10,17 @@
 // TROIS ACTIONS. `get` (ce qui est réglé aujourd'hui), `set` (changer son
 // numéro), `relais` (mettre celui d'un employé jusqu'à une date, ou l'annuler).
 //
-// POURQUOI LE MOBILE FRANÇAIS EST EXIGÉ. Ce n'est pas un caprice de formulaire :
-// la colonne `whatsapp_phone_e164` porte une contrainte SQL (`~ '^\+33[67]…'`).
-// Un numéro fixe ne la passerait pas, et l'écriture entière échouerait avec un
+// POURQUOI UN MOBILE EST EXIGÉ. Ce n'est pas un caprice de formulaire : la
+// colonne `whatsapp_phone_e164` porte une contrainte SQL (voir `MOBILE`). Un
+// numéro fixe ne la passerait pas, et l'écriture entière échouerait avec un
 // message que personne ne comprend. On le refuse donc ici, en le disant — et de
-// toute façon un fixe n'a pas de WhatsApp.
+// toute façon un fixe n'a pas de WhatsApp. Un mobile suisse, belge ou
+// luxembourgeois passe : « 079… » se lit dans le pays du commerce.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { toE164 } from "@/lib/site-internet/phone";
-import { MOBILE_FR, numeroReservations, proPhoneFrom, relaisEnregistre } from "@/lib/site-internet/pro-phone";
+import { MOBILE, numeroReservations, proPhoneFrom, relaisEnregistre } from "@/lib/site-internet/pro-phone";
+import { paysDuCommerce } from "@/lib/site-internet/pays";
 import { jourParis } from "@/lib/jour-paris";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +45,7 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
-    .select("id, pro_token, whatsapp_phone_e164, metadata")
+    .select("id, pro_token, whatsapp_phone_e164, metadata, city, address, diagnostic")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -74,10 +76,10 @@ export async function POST(request: Request) {
     }
 
     if (action === "set") {
-      const e164 = toE164(s(p?.numero));
-      if (!MOBILE_FR.test(e164)) {
+      const e164 = toE164(s(p?.numero), paysDuCommerce(site));
+      if (!MOBILE.test(e164)) {
         return NextResponse.json(
-          { error: "Il faut un mobile français (06… ou 07…) — c'est le seul numéro qui porte un compte WhatsApp." },
+          { error: "Il faut un mobile (06… ou 07… en France, 07… en Suisse) — c'est le seul numéro qui porte un compte WhatsApp." },
           { status: 400 }
         );
       }
@@ -98,10 +100,10 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: true, ...etat({ ...site, metadata: m }) });
       }
 
-      const e164 = toE164(s(p?.numero));
-      if (!MOBILE_FR.test(e164)) {
+      const e164 = toE164(s(p?.numero), paysDuCommerce(site));
+      if (!MOBILE.test(e164)) {
         return NextResponse.json(
-          { error: "Il faut un mobile français (06… ou 07…) — c'est le seul numéro qui porte un compte WhatsApp." },
+          { error: "Il faut un mobile (06… ou 07… en France, 07… en Suisse) — c'est le seul numéro qui porte un compte WhatsApp." },
           { status: 400 }
         );
       }

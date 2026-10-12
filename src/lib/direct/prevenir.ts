@@ -219,14 +219,18 @@ export function demanderRendezVous(a: {
  * La personne a vu la pièce avec SES vêtements et l'a mise de côté dans
  * ClikMe : le message le dit au magasin, avec la pièce et son prix, pour qu'il
  * sache exactement quoi garder. On ne fixe pas d'heure — c'est lui qui répond.
+ *
+ * `seul` : essayée seule, sur sa photo (« Réserver cet article » de la page du
+ * magasin) — « elle va avec ce que j'ai déjà » y serait faux.
  */
-export function demanderMiseDeCote(a: { telephone: string; quoi: string; prix?: string; prenom?: string; lien?: string }): CommentPrevenir {
+export function demanderMiseDeCote(a: { telephone: string; quoi: string; prix?: string; prenom?: string; lien?: string; seul?: boolean }): CommentPrevenir {
   const signature = a.prenom ? ` — ${a.prenom}` : "";
   // LE LIEN OÙ IL RÉPOND D'UN APPUI — sans lui, la réponse reste dans WhatsApp et ClikMe ne peut rien afficher.
   const reponse = a.lien ? `\n\nPour me répondre d'un appui (c'est mis de côté / plus disponible) : ${a.lien}` : "";
   const texte =
     `Bonjour, pourriez-vous me mettre de côté « ${a.quoi} »${a.prix ? ` (${a.prix})` : ""} ? ` +
-    `Je l'ai vue sur ClikMe, elle va avec ce que j'ai déjà. Je passe la chercher.${signature}${reponse}`;
+    (a.seul ? `Je l'ai essayée sur ma photo dans ClikMe. ` : `Je l'ai vue sur ClikMe, elle va avec ce que j'ai déjà. `) +
+    `Je passe la chercher.${signature}${reponse}`;
   const num = international(a.telephone);
   return {
     whatsapp: `https://wa.me/${num}?text=${encodeURIComponent(texte)}`,

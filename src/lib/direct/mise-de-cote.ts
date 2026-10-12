@@ -48,6 +48,8 @@ export type JetonCote = {
   cm?: string;
   /** Sa page (chemin relatif), pour « Voir les infos du magasin ». */
   pg?: string;
+  /** Essayée SEULE, sur sa photo — pas avec son dressing : le magasin ne lit pas « avec ses propres vêtements ». */
+  s?: 1;
   /** Quand le lien a été fait (ms). */
   t: number;
 };

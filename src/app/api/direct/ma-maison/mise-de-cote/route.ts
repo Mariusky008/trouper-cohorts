@@ -8,7 +8,8 @@
 //   PATCH { r }                     → il a vu la réponse.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { habitantCourant } from "@/lib/direct/habitant";
+import { assurerHabitant, habitantCourant } from "@/lib/direct/habitant";
+import { villeSlug } from "@/lib/direct/ville";
 import { SITE_URL } from "@/lib/site-url";
 import { lireJetonCote, listerDemandes, marquerVue, noterEnvoi, nouvelleDemande, pageDeMagasin, photoDeLien, signerCote } from "@/lib/direct/mise-de-cote";
 
@@ -46,10 +47,15 @@ export async function GET() {
 export async function POST(req: Request) {
   const supabase = client();
   if (!supabase) return NextResponse.json({ ok: false }, { status: 503, headers: PRIVE });
-  const h = await habitantCourant(supabase);
+  const p = await corps(req);
+  /* UN ESSAI QUI DONNE ENVIE DE RÉSERVER FAIT NAÎTRE L'HABITANT, comme une
+     première pièce rangée dans son dressing : un jeton anonyme sur ce
+     téléphone, rien de plus. Sans lui, le commerçant répondrait dans le vide.
+     Seulement pour préparer un lien, et seulement avec la ville du magasin. */
+  const ville = p.action === "lien" ? villeSlug(s(p.ville, 80)) : "";
+  const h = (await habitantCourant(supabase)) ?? (ville ? await assurerHabitant(supabase, ville) : null);
   // SANS HABITANT, PAS DE SUIVI : la page retombe sur le message simple, sans lien.
   if (!h) return NextResponse.json({ ok: false, sansMaison: true }, { status: 401, headers: PRIVE });
-  const p = await corps(req);
 
   if (p.action === "lien") {
     const quoi = s(p.quoi);
@@ -66,6 +72,7 @@ export async function POST(req: Request) {
       ...(s(p.magasin, 80) ? { m: s(p.magasin, 80) } : {}),
       ...(s(p.carte, 80) ? { cm: s(p.carte, 80) } : {}),
       ...(pageDeMagasin(p.page) ? { pg: pageDeMagasin(p.page) } : {}),
+      ...(p.seul === true ? { s: 1 as const } : {}),
       t: Date.now(),
     });
     if (!jeton) return NextResponse.json({ ok: false }, { status: 503, headers: PRIVE });

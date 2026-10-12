@@ -1,6 +1,6 @@
 // ✅ LA PAGE OÙ LE MAGASIN RÉPOND À UNE MISE DE CÔTÉ — ouverte depuis le
 // message WhatsApp qu'un client lui a envoyé après avoir vu la pièce avec ses
-// propres vêtements (le look de son dressing).
+// propres vêtements (le look de son dressing), ou essayée seule sur sa photo.
 //
 // ELLE NE FAIT RIEN EN S'OUVRANT : WhatsApp ouvre lui-même le lien pour en
 // faire l'aperçu. Deux boutons, et c'est l'appui qui répond (voir
@@ -53,7 +53,7 @@ export default async function Page({ params }: { params: Promise<{ jeton: string
               </span>
             </div>
             <p className="rc-d">
-              {j.q || "Ce client"} l’a vue sur ClikMe{j.m ? `, chez ${j.m}` : ""}, et l’a essayée avec ses propres vêtements. Votre réponse s’affiche dans son application.
+              {j.q || "Ce client"} l’a vue sur ClikMe{j.m ? `, chez ${j.m}` : ""}, et l’a essayée {j.s ? "sur sa propre photo" : "avec ses propres vêtements"}. Votre réponse s’affiche dans son application.
             </p>
             <BoutonsReponse jeton={brut} initial={initial} action="Mettre de côté" client={j.q || ""} adresse="/api/direct/reponse-cote" ou="dans ClikMe" />
           </>

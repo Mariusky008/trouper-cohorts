@@ -16,7 +16,7 @@ export function StylesDressing() {
         __html: `
 .dr{position:fixed;inset:0;z-index:3000;display:flex;flex-direction:column;color:#FFF4E6;
   background:radial-gradient(120% 60% at 50% -8%,rgba(246,181,75,.16),rgba(246,181,75,0) 60%),#1A120C;
-  font-family:inherit;-webkit-font-smoothing:antialiased;}
+  font-family:var(--font-clikme),"Poppins",system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
 .dr.dedans{position:relative;inset:auto;z-index:auto;min-height:100%;background:transparent;}
 .dr.dedans .dr-corps{overflow:visible;}
 .dr-corps{flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:0 16px calc(28px + env(safe-area-inset-bottom));}
@@ -155,7 +155,8 @@ export function StylesDressing() {
 .dr-question{margin:18px 0 0;font-size:15px;font-weight:800;color:#fff;}
 
 /* LA FICHE D'UNE PIÈCE (feuille du bas) */
-.dr-voile{position:fixed;inset:0;z-index:3010;background:rgba(10,6,3,.62);display:flex;align-items:flex-end;}
+/* MONTÉS SUR <body> (voir Porte) : rien à hériter de la page, la police se dit ici. */
+.dr-voile{position:fixed;inset:0;z-index:3010;background:rgba(10,6,3,.62);display:flex;align-items:flex-end;font-family:var(--font-clikme),"Poppins",system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
 .dr-feuille{width:100%;max-height:88vh;overflow-y:auto;padding:18px 16px calc(20px + env(safe-area-inset-bottom));border-radius:24px 24px 0 0;background:#21170F;border-top:1px solid rgba(255,240,230,.12);}
 .dr-feuille .dr-grande{display:block;width:100%;max-width:300px;aspect-ratio:1;margin:0 auto;border-radius:18px;object-fit:cover;background:#F2ECE3;}
 .dr-feuille h3{margin:14px 0 0;text-align:center;font-size:20px;color:#fff;}

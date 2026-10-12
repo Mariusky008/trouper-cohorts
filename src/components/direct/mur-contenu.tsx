@@ -76,7 +76,8 @@ import { laMainEstPrete, poserVernis } from "@/lib/direct/ongles";
 import { MOTS, VISAGES, type FamilleReaction } from "@/lib/direct/reaction-fantome";
 import { essayerSurMoi, estUnRendu } from "@/lib/direct/essai-genere";
 import { retenirPhotoDEssai, retenirRendu } from "@/lib/direct/photo-essai";
-import { prevenirPourEssai, numeroDeFiction } from "@/lib/direct/prevenir";
+import { demanderMiseDeCote, prevenirPourEssai, numeroDeFiction } from "@/lib/direct/prevenir";
+import { noterEnvoiCote, preparerLienCote, type LienCote } from "@/lib/direct/mises-de-cote";
 import { partagerLEssai, type Sortie } from "@/lib/direct/partager-essai";
 import { jouer } from "@/lib/direct/sons";
 import { StyleMaison } from "@/components/direct/style-maison";
@@ -3599,6 +3600,40 @@ function Essai({
   const [envoi, setEnvoi] = useState<Sortie | null>(null);
 
   /**
+   * ═══ LA BOUCLE SE FERME DEVANT LE COMMERÇANT (boutiques de vêtements) ═══
+   *
+   * « Une démo où le commerçant sent le client arriver, en 30 secondes. » Le
+   * message de « Réserver cet article » partait sans retour possible : le
+   * commerçant lisait, répondait à la main, et le client n'en savait rien ici.
+   * Chez une boutique de vêtements au VRAI numéro, il porte maintenant le lien
+   * où le commerçant répond d'un appui (« c'est mis de côté » / « plus
+   * disponible ») — le même que le look avec son dressing, voir
+   * `mises-de-cote.ts` — et la page affiche sa réponse (« Le magasin
+   * confirme ! »). Préparé dès que le rendu est là : WhatsApp doit s'ouvrir
+   * DANS l'appui (Safari bloque une fenêtre ouverte après une attente).
+   *
+   * LES AUTRES MÉTIERS GARDENT LEUR MESSAGE : un coiffeur donne un rendez-vous,
+   * un restaurant une table — pas une pièce mise de côté.
+   */
+  /* LE LIEN DE LA PIÈCE ESSAYÉE, PAS D'UNE AUTRE : on le garde avec son identifiant. */
+  const [lienPrepare, setLienPrepare] = useState<{ piece: string; lien: LienCote } | null>(null);
+  const lienCote = lienPrepare && piece && lienPrepare.piece === piece.id ? lienPrepare.lien : null;
+  const [suiviCote, setSuiviCote] = useState(false);
+  const vraiNumero = !(mur.telFiction ?? !mur.telephone) && Boolean(mur.telephone);
+  const renduPret = Boolean(rendu && !rendu.souci);
+  useEffect(() => {
+    if (!pourDressing || !vraiNumero || !piece || !renduPret) return;
+    let vivant = true;
+    const id = piece.id;
+    void preparerLienCote({ quoi: piece.nom, prix: piece.prix, photo: piece.photo, magasin: mur.lieu, carte: mur.cle, page: pageDuMagasinIci(mur.cle), ville: mur.ville, seul: true }).then(
+      (l) => vivant && setLienPrepare(l ? { piece: id, lien: l } : null),
+    );
+    return () => {
+      vivant = false;
+    };
+  }, [pourDressing, vraiNumero, piece, renduPret, mur.lieu, mur.cle]);
+
+  /**
    * PRÉVENIR LE COMMERÇANT AVEC LA PHOTO.
    *
    * « Quand je dis "je réserve ma place", j'ai cet écran au lieu d'avoir le
@@ -3639,6 +3674,14 @@ function Essai({
     const tel = mur.telephone || numeroDeFiction(mur.cle);
     if (mur.telFiction ?? !mur.telephone) {
       setEnvoi({ par: "fiction", telephone: tel });
+      return;
+    }
+    // LA PIÈCE MISE DE CÔTÉ, AVEC SA RÉPONSE D'UN APPUI — voir `lienCote`.
+    if (pourDressing && lienCote) {
+      window.open(demanderMiseDeCote({ telephone: tel, quoi: p.nom, prix: p.prix, lien: lienCote.lien, seul: true }).whatsapp, "_blank", "noopener,noreferrer");
+      noterEnvoiCote(lienCote, { quoi: p.nom, prix: p.prix, photo: p.photo, magasin: mur.lieu, carte: mur.cle, page: pageDuMagasinIci(mur.cle) });
+      setSuiviCote(true);
+      setEnvoi({ par: "whatsapp" });
       return;
     }
     const sienne = !!photo && !!rendu && !rendu.souci;
@@ -5594,6 +5637,11 @@ function Essai({
                       ? "Vous avez refermé le partage."
                       : "WhatsApp s’est ouvert avec le message."}
                 </b>
+                {envoi.par === "whatsapp" && suiviCote && (
+                  <em>
+                    {mur.lieu} vous répond d’un appui depuis son téléphone&nbsp;: sa réponse s’affichera ici.
+                  </em>
+                )}
                 {envoi.par === "fiction" && (
                   <>
                     <em>

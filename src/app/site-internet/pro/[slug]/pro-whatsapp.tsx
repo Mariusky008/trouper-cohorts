@@ -188,7 +188,7 @@ export function ProWhatsapp({ slug, token }: { slug: string; token: string }) {
               onChange={(e) => setNumero(e.target.value)}
               placeholder="06 12 34 56 78"
             />
-            <div className="s">Un mobile français&nbsp;: c&apos;est le seul numéro qui porte un compte WhatsApp.</div>
+            <div className="s">Un mobile (06/07… en France, 07… en Suisse)&nbsp;: c&apos;est le seul numéro qui porte un compte WhatsApp.</div>
             {err && <div className="err">{err}</div>}
             <div className="row">
               <button type="button" className="go" onClick={() => void envoyer({ action: "set", numero })} disabled={envoi || !numero.trim()}>

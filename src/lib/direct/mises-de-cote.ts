@@ -68,7 +68,19 @@ export const aDesDemandes = () => enAttente().length > 0;
  * Maison sur le serveur (démonstration, navigation hors ville) : la page envoie
  * alors le message simple, sans suivi.
  */
-export async function preparerLienCote(a: { quoi: string; prix?: string; photo?: string; magasin?: string; carte?: string; page?: string; prenom?: string }): Promise<LienCote | null> {
+export async function preparerLienCote(a: {
+  quoi: string;
+  prix?: string;
+  photo?: string;
+  magasin?: string;
+  carte?: string;
+  page?: string;
+  prenom?: string;
+  /** La ville du magasin : sans Maison sur ce téléphone, elle en fait naître une (voir la route). */
+  ville?: string;
+  /** Essayée seule, sur sa photo (pas un look avec son dressing). */
+  seul?: boolean;
+}): Promise<LienCote | null> {
   try {
     const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "lien", ...a }) });
     const j = (await r.json()) as { ok?: boolean; r?: string; jeton?: string; lien?: string };
@@ -115,8 +127,13 @@ export function marquerVueCote(r: string): void {
  */
 export function useMisesDeCote(toujours = false): Etat {
   const e = useSyncExternalStore(abonner, lire, serveur);
+  /* LA PREMIÈRE DEMANDE DE LA VISITE COMPTE AUSSI. Sans elle dans les
+     dépendances, le suivi ne s'armait qu'au montage : une demande envoyée
+     depuis la page n'était suivie qu'après un rechargement, et « Le magasin
+     confirme ! » n'arrivait jamais à qui restait sur la page. */
+  const enCours = e.demandes.some((d) => d.etat === "envoyee");
   useEffect(() => {
-    if (!toujours && !aDesDemandes()) return;
+    if (!toujours && !enCours && !aDesDemandes()) return;
     void relireMisesDeCote();
     const auRetour = () => {
       if (document.visibilityState === "visible") void relireMisesDeCote();
@@ -129,7 +146,7 @@ export function useMisesDeCote(toujours = false): Etat {
       document.removeEventListener("visibilitychange", auRetour);
       window.clearInterval(t);
     };
-  }, [toujours]);
+  }, [toujours, enCours]);
   return e;
 }
 

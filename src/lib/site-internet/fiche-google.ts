@@ -36,6 +36,7 @@ import { avancerLesPhotosMenu, lancerLesPhotosMenu, photosMenuEnCours } from "@/
 import { carteALire } from "@/lib/site-internet/carte-lue";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isDirectoryUrl } from "@/lib/site-internet/directories";
+import { paysDeLaVille } from "@/lib/site-internet/pays";
 
 const str = (v: unknown) => String(v ?? "").trim();
 
@@ -153,24 +154,7 @@ type RunFiche = RunApify & { etape: "recherche" | "partout" | "metier" | "medias
  *     sans pays. Le garde-fou reste `memeCommerce` : on ne prend une fiche que
  *     si son nom est bien le sien, donc un homonyme lointain ne passe pas.
  */
-const PAYS: [RegExp, string][] = [
-  [/\b(suisse|switzerland|schweiz|svizzera)\b|\(ch\)|,\s*ch\s*$/i, "ch"],
-  [/\b(belgique|belgium|belgi[eë])\b|\(be\)|,\s*be\s*$/i, "be"],
-  [/\bluxembourg\b|\(lu\)/i, "lu"],
-  [/\bmonaco\b/i, "mc"],
-  [/\b(canada|qu[ée]bec)\b/i, "ca"],
-  [/\b(espagne|españa|spain)\b/i, "es"],
-  [/\b(italie|italia|italy)\b/i, "it"],
-  [/\b(allemagne|deutschland|germany)\b/i, "de"],
-  [/\b(portugal)\b/i, "pt"],
-  [/\b(maroc|morocco)\b/i, "ma"],
-  [/\b(tunisie|tunisia)\b/i, "tn"],
-  [/\b(r[ée]union|martinique|guadeloupe|guyane|mayotte)\b/i, "fr"],
-];
-/** Le pays que la ville tapée nomme, s'il en nomme un. */
-export function paysDeLaVille(ville: string): string | null {
-  return PAYS.find(([re]) => re.test(ville))?.[1] ?? null;
-}
+export { paysDeLaVille };
 
 const LANGUE = { language: "fr" };
 const entreeRecherche = (q: string, ville: string, n: number, partout = false) => {
@@ -257,7 +241,10 @@ function rangerUneFiche(site: Site, biz: Record<string, unknown>, renommer: bool
       oh.slice(0, 7).map((h) => ({ jours: str(h.day), horaires: str(h.hours) })),
       d.horaires,
     ),
-    phone: str(biz.phone || biz.phoneUnformatted) || d.phone || "",
+    // LE NUMÉRO INTERNATIONAL D'ABORD : `phone` est écrit comme on le lit dans le pays
+    // (« 079 123 45 67 »), et hors de France il se relisait comme un numéro français.
+    phone: str(biz.phoneUnformatted || biz.phone) || d.phone || "",
+    pays: str(biz.countryCode).toLowerCase() || d.pays || "",
     menu_url: (/^https?:\/\//i.test(str(biz.menu)) ? str(biz.menu) : "") || d.menu_url || null,
     prix_moyen: str(biz.price).slice(0, 30) || d.prix_moyen || null,
     services_google: prendre(servicesDe(biz), d.services_google ?? []),
