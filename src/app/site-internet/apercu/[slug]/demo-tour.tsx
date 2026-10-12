@@ -11,7 +11,7 @@
 // annonce sur le site = réels et automatiques ; Facebook/Instagram = texte + visuel
 // PRÉPARÉS, à publier en un tap (aide à la rédaction, jamais d'auto-publication).
 // Non publié uniquement. Entièrement « passable ».
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange, dureeVoixMs, precharger } from "@/lib/site-internet/speech";
 import { MARQUE } from "@/lib/marque";
 import { direRetours, type GesteDuJour } from "@/lib/direct/geste-du-jour";
@@ -23,6 +23,37 @@ import { SceneDemandes } from "./scene-demandes";
 const EXEMPLE_APRES = "/direct/accueil/moi-mode-avec.jpg";
 /** L'autre tenue du duel de l'étape 2 : la même personne, dans une veste brodée (photo de l'essayage de démonstration). */
 const DUEL_B = "/direct/essai/mode-friperie-apres.jpg";
+
+/**
+ * ═══ CEUX QUI CHERCHENT, EN PETITS FANTÔMES — autour du nombre de l'étape 3 ═══
+ *
+ * « On peut pas mettre une petite animation de petits fantômes qui
+ * représenteraient ces personnes qui cherchent ? » Le nombre seul se lisait
+ * comme un chiffre ; une foule qui arrive pendant qu'il monte se lit comme du
+ * monde. Ils apparaissent un à un, au rythme du compteur, puis flottent ; de
+ * temps en temps, l'un d'eux cherche (« 🔍 » et ce qu'on cherche chez lui).
+ *
+ * UNE FIGURATION, PAS UN COMPTAGE : une vingtaine de fantômes pour « environ
+ * 800 personnes ». Les douze tenues de l'application (`/direct/ensemble/*-
+ * debout.webp`), réduites à 120 px de haut dans `/direct/foule/` — cinq Ko
+ * chacune au lieu de quatre-vingt-dix. Positions en pourcentage d'un cadre
+ * centré, autour du nombre et jamais dessus ; `cote` : seulement là où la
+ * largeur le permet (un ordinateur) ; `cherche` : ceux qui montrent leur
+ * bulle — jamais au bord, où elle était coupée sur un téléphone.
+ */
+const TENUES_FOULE = ["curieux", "fleuri", "denim", "soleil", "rebelle", "lecteur", "artiste", "voyageur", "cosy", "melomane", "jardinier", "flaneur"];
+const FOULE: { x: number; y: number; t: number; cote?: true; cherche?: true }[] = [
+  // au-dessus du nombre
+  { x: 7, y: 14, t: 40 }, { x: 19, y: 5, t: 34 }, { x: 30, y: 20, t: 46, cherche: true }, { x: 43, y: 8, t: 38 },
+  { x: 56, y: 22, t: 44, cherche: true }, { x: 68, y: 6, t: 36 }, { x: 80, y: 17, t: 46 }, { x: 92, y: 9, t: 36 },
+  // en dessous
+  { x: 6, y: 82, t: 42 }, { x: 17, y: 93, t: 36 }, { x: 28, y: 78, t: 48, cherche: true }, { x: 40, y: 90, t: 40 },
+  { x: 52, y: 80, t: 46, cherche: true }, { x: 64, y: 93, t: 38 }, { x: 75, y: 79, t: 44, cherche: true }, { x: 87, y: 90, t: 40 },
+  { x: 94, y: 78, t: 34 },
+  // sur les côtés, quand il y a la place
+  { x: 6, y: 42, t: 40, cote: true }, { x: 18, y: 58, t: 36, cote: true, cherche: true }, { x: 82, y: 40, t: 42, cote: true, cherche: true },
+  { x: 94, y: 57, t: 36, cote: true },
+];
 import { BarreDirect, CarteSwipe, GestesDirect, StylesDirect } from "@/components/direct/carte-swipe";
 import { cartesDeLaVille, ESSAI_DU_FIL, motDAction, saCarte } from "@/lib/direct/cartes-demo";
 
@@ -262,6 +293,20 @@ export function DemoTour({
   const laVille = villeAff || "votre ville";
   /** « à Vevey » — et « près de chez vous » quand on ne connaît pas sa ville. */
   const aLaVille = villeAff ? `à ${villeAff}` : "près de chez vous";
+  /** Ce que cherchent les petits fantômes de l'étape 3 (`FOULE`), en une icône. */
+  const iconeRecherche = !G
+    ? ""
+    : G.famille === "restauration"
+      ? G.cherchent === "où sortir" ? "🍸" : "🍽️"
+      : G.famille === "librairie"
+        ? "📚"
+        : G.photoEtVoix
+          ? /chaussures/.test(G.objet) ? "👟" : "👗"
+          : G.famille === "boutique"
+            ? "🧺"
+            : G.famille === "rdv"
+              ? "📅"
+              : "🔧";
 
   // ── ACTE 2 · LA BASCULE ────────────────────────────────────────────────
   //    La phrase qui fait tenir tout le reste, et qui n'existait pas. Elle
@@ -1886,6 +1931,31 @@ export function DemoTour({
              place : la vedette de la démonstration tenait dans un timbre.
              Le bloc se replie sur zéro par la même mécanique que l'ouverture
              du fil (0fr → 1fr), donc sans saut. */
+          /* LA FOULE DE L'ÉTAPE 3 — voir FOULE. Sous le nombre et sous le
+             Direct (qui passent devant), et elle s'en va quand le Direct
+             s'ouvre, comme le halo. */
+          .qi-foule{position:absolute;top:84px;bottom:130px;left:50%;width:min(100%,820px);transform:translateX(-50%);
+            pointer-events:none;transition:opacity .45s ease;}
+          .dtour-ov.qi.serre .qi-foule{opacity:0;}
+          .dtour-ov.qi .qi-tete,.dtour-ov.qi .dt-ouvre{position:relative;z-index:1;}
+          .qf-g{position:absolute;width:var(--t);height:var(--t);margin:calc(var(--t) / -2) 0 0 calc(var(--t) / -2);
+            animation:qfArrive .5s cubic-bezier(.34,1.56,.64,1) var(--d) both;}
+          .qf-g img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45));
+            animation:qfFlotte var(--b) ease-in-out calc(var(--d) + .5s) infinite alternate;}
+          .qf-g.miroir img{scale:-1 1;}
+          .qf-g.cote{display:none;}
+          @media (min-width:700px){.qf-g.cote{display:block;}}
+          .qf-bulle{position:absolute;left:50%;bottom:calc(100% - 2px);padding:3px 7px;border-radius:999px;white-space:nowrap;
+            font-size:11px;line-height:1.2;font-weight:700;color:#2A1708;background:#FFF4E6;box-shadow:0 4px 12px rgba(0,0,0,.35);
+            transform-origin:50% 100%;animation:qfCherche 4.2s ease-in-out var(--c) infinite both;}
+          @keyframes qfArrive{from{opacity:0;transform:translateY(14px) scale(.4)}to{opacity:1;transform:none}}
+          @keyframes qfFlotte{from{transform:translateY(0)}to{transform:translateY(-6px)}}
+          @keyframes qfCherche{0%,8%{opacity:0;transform:translateX(-50%) scale(.3)}16%,58%{opacity:1;transform:translateX(-50%) scale(1)}
+            68%,100%{opacity:0;transform:translateX(-50%) scale(.3)}}
+          @media (prefers-reduced-motion:reduce){
+            .qf-g,.qf-g img{animation:none;}
+            .qf-bulle{animation:none;opacity:1;transform:translateX(-50%);}
+          }
           .qi-tete{display:grid;grid-template-rows:1fr;opacity:1;
             transition:grid-template-rows .55s var(--exp),opacity .3s ease;}
           .qi-tete>div{overflow:hidden;min-height:0;}
@@ -2699,6 +2769,28 @@ export function DemoTour({
               jour où il ouvre le fil et le trouve calme, il se sent trompé. */}
           {scene === "qui" && G && (
             <div className={`dtour-ov dt-noir qi${quiN >= QUI_OUVRE ? " serre" : ""}`}>
+              <div className="qi-foule" aria-hidden="true">
+                {FOULE.map((f, i) => (
+                  <i
+                    key={i}
+                    className={`qf-g${f.cote ? " cote" : ""}${i % 3 === 0 ? " miroir" : ""}`}
+                    style={
+                      {
+                        left: `${f.x}%`,
+                        top: `${f.y}%`,
+                        "--t": `${f.t}px`,
+                        "--d": `${((i * 7) % FOULE.length) * 0.055}s`,
+                        "--b": `${2.4 + (i % 5) * 0.35}s`,
+                        "--c": `${1.4 + (i % 4) * 0.9}s`,
+                      } as CSSProperties
+                    }
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`/direct/foule/${TENUES_FOULE[i % TENUES_FOULE.length]}.webp`} alt="" />
+                    {f.cherche && <b className="qf-bulle">🔍 {iconeRecherche}</b>}
+                  </i>
+                ))}
+              </div>
               {/* LE NOMBRE S'EFFACE QUAND LE DIRECT S'OUVRE, il ne rétrécit
                   plus. Il restait à l'écran, réduit, avec sa question et une
                   ligne d'aide sous les boutons : quatre bandeaux de texte
