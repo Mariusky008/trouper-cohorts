@@ -28,31 +28,31 @@ const DUEL_B = "/direct/essai/mode-friperie-apres.jpg";
  * ═══ CEUX QUI CHERCHENT, EN PETITS FANTÔMES — autour du nombre de l'étape 3 ═══
  *
  * « On peut pas mettre une petite animation de petits fantômes qui
- * représenteraient ces personnes qui cherchent ? » Le nombre seul se lisait
- * comme un chiffre ; une foule qui arrive pendant qu'il monte se lit comme du
- * monde. Ils apparaissent un à un, au rythme du compteur, puis flottent ; de
- * temps en temps, l'un d'eux cherche (« 🔍 » et ce qu'on cherche chez lui).
+ * représenteraient ces personnes qui cherchent ? » Puis, vue la première
+ * version : « Ça fait trop confus, tous ces fantômes partout : on se perd et
+ * on ne sait pas où regarder. Peut-être juste quelques-uns, les uns à côté des
+ * autres, qui se parlent… et d'autres qui apparaissent et disparaissent comme
+ * des bulles qui éclatent. »
  *
- * UNE FIGURATION, PAS UN COMPTAGE : une vingtaine de fantômes pour « environ
- * 800 personnes ». Les douze tenues de l'application (`/direct/ensemble/*-
- * debout.webp`), réduites à 120 px de haut dans `/direct/foule/` — cinq Ko
- * chacune au lieu de quatre-vingt-dix. Positions en pourcentage d'un cadre
- * centré, autour du nombre et jamais dessus ; `cote` : seulement là où la
- * largeur le permet (un ordinateur) ; `cherche` : ceux qui montrent leur
- * bulle — jamais au bord, où elle était coupée sur un téléphone.
+ * DONC DEUX CHOSES, ET PLUS VINGT :
+ *   · UN PETIT GROUPE, sous le nombre : trois fantômes côte à côte qui se
+ *     parlent, une bulle à la fois (`GROUPE`, les phrases dans `parlent`) —
+ *     l'œil sait où aller, et ce qu'ils disent est ce que dit le nombre ;
+ *   · QUELQUES BULLES DE SAVON, autour : un fantôme y apparaît, monte un peu,
+ *     et la bulle éclate (`BULLES`). Deux ou trois à l'écran à la fois, jamais
+ *     plus, et jamais sur le texte.
+ *
+ * UNE FIGURATION, PAS UN COMPTAGE. Les tenues de l'application
+ * (`/direct/ensemble/*-debout.webp`), réduites à 120 px de haut dans
+ * `/direct/foule/` — cinq Ko chacune. Positions en pourcentage d'un cadre
+ * centré ; `cote` : seulement là où la largeur le permet (un ordinateur).
  */
 const TENUES_FOULE = ["curieux", "fleuri", "denim", "soleil", "rebelle", "lecteur", "artiste", "voyageur", "cosy", "melomane", "jardinier", "flaneur"];
-const FOULE: { x: number; y: number; t: number; cote?: true; cherche?: true }[] = [
-  // au-dessus du nombre
-  { x: 7, y: 14, t: 40 }, { x: 19, y: 5, t: 34 }, { x: 30, y: 20, t: 46, cherche: true }, { x: 43, y: 8, t: 38 },
-  { x: 56, y: 22, t: 44, cherche: true }, { x: 68, y: 6, t: 36 }, { x: 80, y: 17, t: 46 }, { x: 92, y: 9, t: 36 },
-  // en dessous
-  { x: 6, y: 82, t: 42 }, { x: 17, y: 93, t: 36 }, { x: 28, y: 78, t: 48, cherche: true }, { x: 40, y: 90, t: 40 },
-  { x: 52, y: 80, t: 46, cherche: true }, { x: 64, y: 93, t: 38 }, { x: 75, y: 79, t: 44, cherche: true }, { x: 87, y: 90, t: 40 },
-  { x: 94, y: 78, t: 34 },
-  // sur les côtés, quand il y a la place
-  { x: 6, y: 42, t: 40, cote: true }, { x: 18, y: 58, t: 36, cote: true, cherche: true }, { x: 82, y: 40, t: 42, cote: true, cherche: true },
-  { x: 94, y: 57, t: 36, cote: true },
+const GROUPE = ["soleil", "denim", "fleuri"];
+const BULLES: { x: number; y: number; t: number; cote?: true }[] = [
+  { x: 16, y: 12, t: 58 }, { x: 52, y: 5, t: 50 }, { x: 85, y: 15, t: 56 },
+  { x: 10, y: 88, t: 50 }, { x: 90, y: 86, t: 52 },
+  { x: 8, y: 48, t: 56, cote: true }, { x: 92, y: 44, t: 54, cote: true },
 ];
 import { BarreDirect, CarteSwipe, GestesDirect, StylesDirect } from "@/components/direct/carte-swipe";
 import { cartesDeLaVille, ESSAI_DU_FIL, motDAction, saCarte } from "@/lib/direct/cartes-demo";
@@ -113,6 +113,8 @@ type Props = {
    * répond dans les salons de l'étape 2. Voir `tenueDu` dans `double-metiers`.
    */
   fantomeBoutique?: string;
+  /** LE MÊME FANTÔME EN PIED — le dossier de ses poses (`enPied`) : il vole de salon en salon à l'étape 2. */
+  fantomePied?: string;
   keepHref?: string; // contact (WhatsApp/tel) pour « Garder mon site gratuitement »
   /**
    * LA PAGE SUR LAQUELLE LA DÉMONSTRATION SE JOUE, EN UN SÉLECTEUR.
@@ -164,6 +166,7 @@ export function DemoTour({
   geste,
   essai,
   fantomeBoutique,
+  fantomePied,
   keepHref,
   racine = "main.mqc",
 }: Props) {
@@ -293,7 +296,7 @@ export function DemoTour({
   const laVille = villeAff || "votre ville";
   /** « à Vevey » — et « près de chez vous » quand on ne connaît pas sa ville. */
   const aLaVille = villeAff ? `à ${villeAff}` : "près de chez vous";
-  /** Ce que cherchent les petits fantômes de l'étape 3 (`FOULE`), en une icône. */
+  /** Ce que cherchent les petits fantômes de l'étape 3 (`GROUPE`), en une icône. */
   const iconeRecherche = !G
     ? ""
     : G.famille === "restauration"
@@ -307,6 +310,24 @@ export function DemoTour({
             : G.famille === "rdv"
               ? "📅"
               : "🔧";
+  /** CE QUE SE DISENT LES TROIS FANTÔMES DU GROUPE — l'un cherche, l'autre ne sait pas, le troisième regarde. */
+  const parlent: [string, string, string] = !G
+    ? ["", "", ""]
+    : [
+        `${
+          G.famille === "restauration"
+            ? G.cherchent === "où sortir" ? "On sort où ce soir ?" : "On mange où ce midi ?"
+            : G.famille === "librairie"
+              ? "Un bon livre à lire ?"
+              : G.photoEtVoix
+                ? "Tu connais une boutique sympa ?"
+                : G.famille === "boutique"
+                  ? "Il y a quoi de frais ce matin ?"
+                  : `Où trouver ${G.objet} ?`
+        } ${iconeRecherche}`,
+        "Aucune idée… 🤷",
+        "Je regarde… 🔍",
+      ];
 
   // ── ACTE 2 · LA BASCULE ────────────────────────────────────────────────
   //    La phrase qui fait tenir tout le reste, et qui n'existait pas. Elle
@@ -386,13 +407,21 @@ export function DemoTour({
            C'est sa première apparition dans la visite, et toutes les
            suivantes s'appuient sur elle (« pour apparaître dans Le Direct »,
            « une fois dans Le Direct ») : elle porte donc la définition. La
-           pile se feuillette à l'écran pendant qu'elle la dit. */
-        { definit: true, dit: `Pour choisir, ils ouvrent Le Direct de ${laVille} : tous les commerçants présents sur ClikMe, qu'ils découvrent chaque jour en faisant défiler leurs annonces.` },
+           pile se feuillette à l'écran pendant qu'elle la dit.
+           « On ne comprend pas le lien entre "800 personnes cherchent…" et
+           "Pour choisir, ils ouvrent Le Direct…" » : la phrase disait ce
+           qu'est Le Direct, pas pourquoi il vient après le nombre. Elle dit
+           maintenant à quoi il sert POUR EUX — c'est le lien. */
+        { definit: true, dit: `Le Direct de ${laVille} a été conçu pour leur faciliter la recherche.` },
         // CE QU'ILS Y VERRONT SUIT LA FAMILLE, comme le fil montré derrière.
         // Cette ligne énumérait « les menus du jour, les tables qui restent »
         // à tout le monde : un coiffeur l'entendait pendant que l'écran, lui,
         // défilait — depuis la même correction — sur des créneaux libres.
-        { acte: "passer", dit: `Ils y voient ${
+        // « Nous accueillons tous les commerçants de la ville pour qu'ils n'aient
+        // plus qu'à faire défiler leurs annonces et voir ce qui vient d'arriver,
+        // les prix, la distance… » — ses mots. « Accueillons » : il est ouvert à
+        // tous, pas « ils y sont tous ».
+        { acte: "passer", dit: `Nous accueillons tous les commerçants de la ville, pour qu'ils n'aient plus qu'à faire défiler leurs annonces et voir ${
           G.famille === "restauration"
             ? "les menus du jour, les tables qui restent"
             : G.famille === "boutique"
@@ -402,7 +431,7 @@ export function DemoTour({
               : G.famille === "rdv"
                 ? "les créneaux qui se libèrent"
                 : "qui est disponible cette semaine"
-        }, les prix, la distance.` },
+        }, les prix, la distance…` },
         // « Une table » n'a de sens que dans la restauration : ailleurs on
         // réserve un créneau, une pièce, une place. Le mot suit le métier,
         // comme partout dans cette démonstration.
@@ -1931,30 +1960,60 @@ export function DemoTour({
              place : la vedette de la démonstration tenait dans un timbre.
              Le bloc se replie sur zéro par la même mécanique que l'ouverture
              du fil (0fr → 1fr), donc sans saut. */
-          /* LA FOULE DE L'ÉTAPE 3 — voir FOULE. Sous le nombre et sous le
-             Direct (qui passent devant), et elle s'en va quand le Direct
-             s'ouvre, comme le halo. */
+          /* LA FOULE DE L'ÉTAPE 3 — voir GROUPE et BULLES. Sous le nombre et
+             sous le Direct (qui passent devant), et elle s'en va quand le
+             Direct s'ouvre, comme le halo. */
           .qi-foule{position:absolute;top:84px;bottom:130px;left:50%;width:min(100%,820px);transform:translateX(-50%);
             pointer-events:none;transition:opacity .45s ease;}
           .dtour-ov.qi.serre .qi-foule{opacity:0;}
           .dtour-ov.qi .qi-tete,.dtour-ov.qi .dt-ouvre{position:relative;z-index:1;}
-          .qf-g{position:absolute;width:var(--t);height:var(--t);margin:calc(var(--t) / -2) 0 0 calc(var(--t) / -2);
-            animation:qfArrive .5s cubic-bezier(.34,1.56,.64,1) var(--d) both;}
-          .qf-g img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45));
-            animation:qfFlotte var(--b) ease-in-out calc(var(--d) + .5s) infinite alternate;}
-          .qf-g.miroir img{scale:-1 1;}
-          .qf-g.cote{display:none;}
-          @media (min-width:700px){.qf-g.cote{display:block;}}
-          .qf-bulle{position:absolute;left:50%;bottom:calc(100% - 2px);padding:3px 7px;border-radius:999px;white-space:nowrap;
-            font-size:11px;line-height:1.2;font-weight:700;color:#2A1708;background:#FFF4E6;box-shadow:0 4px 12px rgba(0,0,0,.35);
-            transform-origin:50% 100%;animation:qfCherche 4.2s ease-in-out var(--c) infinite both;}
+          /* LE PETIT GROUPE : trois fantômes serrés, qui se parlent chacun à
+             son tour (7,5 s pour un tour de parole). */
+          .qi-groupe{position:absolute;left:50%;top:83%;display:flex;align-items:flex-end;gap:2px;transform:translate(-50%,-50%);}
+          .qg-f{position:relative;width:60px;height:60px;animation:qfArrive .5s cubic-bezier(.34,1.56,.64,1) calc(.25s + var(--k) * .15s) both;}
+          .qg-f:nth-child(2){width:68px;height:68px;}
+          .qg-f img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45));
+            animation:qfFlotte calc(2.6s + var(--k) * .4s) ease-in-out .8s infinite alternate;}
+          .qg-f.miroir img{scale:-1 1;}
+          .qg-dit{--tx:-50%;position:absolute;left:50%;bottom:calc(100% + 4px);padding:5px 10px;border-radius:14px;white-space:nowrap;
+            font-size:12.5px;line-height:1.2;font-weight:700;color:#2A1708;background:#FFF4E6;box-shadow:0 6px 16px rgba(0,0,0,.4);
+            transform-origin:50% 100%;opacity:0;animation:qgParle 7.5s ease-out calc(1.3s + var(--k) * 2.5s) infinite;}
+          .qg-dit::after{content:"";position:absolute;left:50%;top:100%;margin-left:-5px;border:5px solid transparent;border-top-color:#FFF4E6;}
+          /* LA BULLE PART DU CÔTÉ DE CELUI QUI PARLE : celle du premier s'étend
+             vers la droite, celle du dernier vers la gauche — centrée, la
+             première sortait de l'écran d'un téléphone (vu au test). */
+          .qg-f:first-child .qg-dit{--tx:0%;left:-4px;transform-origin:20px 100%;}
+          .qg-f:first-child .qg-dit::after{left:26px;}
+          .qg-f:last-child .qg-dit{--tx:0%;left:auto;right:-4px;transform-origin:calc(100% - 20px) 100%;}
+          .qg-f:last-child .qg-dit::after{left:auto;right:21px;margin-left:0;}
+          @keyframes qgParle{0%{opacity:0;transform:translateX(var(--tx)) translateY(6px) scale(.7)}
+            4%,29%{opacity:1;transform:translateX(var(--tx)) scale(1)}33%,100%{opacity:0;transform:translateX(var(--tx)) translateY(-4px) scale(.96)}}
+          /* LES BULLES DE SAVON : un fantôme apparaît dedans, monte un peu, et
+             la bulle éclate en gouttes (5,9 s par vie, décalées). */
+          .qb-b{position:absolute;width:var(--t);height:var(--t);margin:calc(var(--t) / -2) 0 0 calc(var(--t) / -2);border-radius:50%;
+            border:1.5px solid rgba(255,255,255,.5);
+            background:radial-gradient(circle at 30% 26%,rgba(255,255,255,.7) 0 6%,transparent 16%),
+              radial-gradient(circle,transparent 56%,rgba(170,215,255,.16) 72%,rgba(255,170,225,.3) 100%);
+            box-shadow:inset 0 0 12px rgba(255,255,255,.12);opacity:0;animation:qbVie 5.9s ease-in-out var(--d) infinite;}
+          .qb-b img{position:absolute;left:16%;top:14%;width:68%;height:72%;object-fit:contain;}
+          .qb-b.cote{display:none;}
+          @media (min-width:700px){.qb-b.cote{display:block;}}
+          .qb-eclat{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;
+            color:rgba(255,236,250,.95);opacity:0;
+            box-shadow:0 calc(var(--t) * -.5) 0 0,calc(var(--t) * .43) calc(var(--t) * -.25) 0 0,calc(var(--t) * .43) calc(var(--t) * .25) 0 0,
+              0 calc(var(--t) * .5) 0 0,calc(var(--t) * -.43) calc(var(--t) * .25) 0 0,calc(var(--t) * -.43) calc(var(--t) * -.25) 0 0;
+            animation:qbEclat 5.9s ease-out var(--d) infinite;}
+          @keyframes qbVie{0%{opacity:0;transform:translateY(10px) scale(.2)}9%{opacity:1;transform:translateY(0) scale(1)}
+            58%{opacity:1;transform:translateY(-16px) scale(1);border-color:rgba(255,255,255,.5)}
+            63%{opacity:0;transform:translateY(-18px) scale(1.3);border-color:rgba(255,255,255,0)}100%{opacity:0;transform:translateY(-18px) scale(1.3)}}
+          @keyframes qbEclat{0%,58%{opacity:0;transform:translateY(-16px) scale(.6)}61%{opacity:1}
+            72%,100%{opacity:0;transform:translateY(-18px) scale(1.5)}}
           @keyframes qfArrive{from{opacity:0;transform:translateY(14px) scale(.4)}to{opacity:1;transform:none}}
           @keyframes qfFlotte{from{transform:translateY(0)}to{transform:translateY(-6px)}}
-          @keyframes qfCherche{0%,8%{opacity:0;transform:translateX(-50%) scale(.3)}16%,58%{opacity:1;transform:translateX(-50%) scale(1)}
-            68%,100%{opacity:0;transform:translateX(-50%) scale(.3)}}
           @media (prefers-reduced-motion:reduce){
-            .qf-g,.qf-g img{animation:none;}
-            .qf-bulle{animation:none;opacity:1;transform:translateX(-50%);}
+            .qg-f,.qg-f img,.qb-b,.qb-eclat,.qg-dit{animation:none;}
+            .qb-b{opacity:1;}
+            .qg-f:first-child .qg-dit{opacity:1;transform:none;}
           }
           .qi-tete{display:grid;grid-template-rows:1fr;opacity:1;
             transition:grid-template-rows .55s var(--exp),opacity .3s ease;}
@@ -2770,26 +2829,26 @@ export function DemoTour({
           {scene === "qui" && G && (
             <div className={`dtour-ov dt-noir qi${quiN >= QUI_OUVRE ? " serre" : ""}`}>
               <div className="qi-foule" aria-hidden="true">
-                {FOULE.map((f, i) => (
+                {BULLES.map((f, i) => (
                   <i
                     key={i}
-                    className={`qf-g${f.cote ? " cote" : ""}${i % 3 === 0 ? " miroir" : ""}`}
-                    style={
-                      {
-                        left: `${f.x}%`,
-                        top: `${f.y}%`,
-                        "--t": `${f.t}px`,
-                        "--d": `${((i * 7) % FOULE.length) * 0.055}s`,
-                        "--b": `${2.4 + (i % 5) * 0.35}s`,
-                        "--c": `${1.4 + (i % 4) * 0.9}s`,
-                      } as CSSProperties
-                    }
+                    className={`qb-b${f.cote ? " cote" : ""}`}
+                    style={{ left: `${f.x}%`, top: `${f.y}%`, "--t": `${f.t}px`, "--d": `${0.3 + i * 0.85}s` } as CSSProperties}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`/direct/foule/${TENUES_FOULE[i % TENUES_FOULE.length]}.webp`} alt="" />
-                    {f.cherche && <b className="qf-bulle">🔍 {iconeRecherche}</b>}
+                    <img src={`/direct/foule/${TENUES_FOULE[(i * 5 + 1) % TENUES_FOULE.length]}.webp`} alt="" />
+                    <s className="qb-eclat" />
                   </i>
                 ))}
+                <div className="qi-groupe">
+                  {GROUPE.map((tenue, k) => (
+                    <span key={tenue} className={`qg-f${k === 2 ? " miroir" : ""}`} style={{ "--k": k } as CSSProperties}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`/direct/foule/${tenue}.webp`} alt="" />
+                      <b className="qg-dit">{parlent[k]}</b>
+                    </span>
+                  ))}
+                </div>
               </div>
               {/* LE NOMBRE S'EFFACE QUAND LE DIRECT S'OUVRE, il ne rétrécit
                   plus. Il restait à l'écran, réduit, avec sa question et une
@@ -3171,6 +3230,7 @@ export function DemoTour({
               photo={photoPartagee}
               exemple={photoExemple}
               fantome={{ visage: fantomeBoutique || "/clikme-fantome.png", nom }}
+              pied={fantomePied}
               /* LE DUEL, CHEZ UNE BOUTIQUE DE VÊTEMENTS : sa pièce portée (A)
                  contre une autre tenue sur la même personne (B), marquée
                  « Exemple » — on ne prête pas une pièce inventée à sa boutique. */

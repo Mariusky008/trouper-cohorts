@@ -303,6 +303,7 @@ export function PageBoutique(p: PageBoutiqueProps) {
           /* SON FANTÔME, CELUI « AVEC SA CASQUETTE » : il répond dans les salons
              de l'étape 2. Son visage en pied, s'il en a ; sa pose d'accueil sinon. */
           fantomeBoutique={fantomeDe(carte)}
+          fantomePied={tenueDu(carte)?.enPied}
           keepHref={keepHref}
         />
       )}

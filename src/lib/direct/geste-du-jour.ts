@@ -596,8 +596,12 @@ export function gesteDuJour(
          était entière, c'est la voix qui la coupait au 500e caractère de
          l'acte (voir la route `tts`). Elle dit maintenant aussi le salon, que
          l'étape 2 vient de montrer. */
+      /* « …et lorsqu'ils verront une de vos pièces, ils pourront l'essayer, en
+         parler dans leurs salons de discussion avec leurs amis qui ne vous
+         connaissent pas non plus, puis vous demander de la mettre de côté. »
+         Ses mots, au bout de la nouvelle définition du Direct. */
       convaincus:
-        "Et quand une pièce leur plaît, ils l'essaient, en parlent dans leur salon, puis vous demandent de la leur mettre de côté. La demande arrive directement chez vous.",
+        "Et lorsqu'ils verront une de vos pièces, ils pourront l'essayer, en parler dans leurs salons de discussion avec leurs amis, qui ne vous connaissent pas non plus, puis vous demander de la mettre de côté.",
       publie: "votre pièce du jour",
       partage:
         "Et en un clic, elles la partagent : entre amies dans leurs salons privés, et avec toute la ville dans le salon public.",
