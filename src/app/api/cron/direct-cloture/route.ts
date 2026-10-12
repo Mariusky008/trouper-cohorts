@@ -17,6 +17,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { cloturerEchues } from "@/lib/direct/cloture";
+import { effacerLesAvantApresFinis } from "@/lib/direct/avant-apres";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -25,6 +26,9 @@ export async function GET(request: Request) {
   if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
-  const bilan = await cloturerEchues(createAdminClient());
-  return NextResponse.json({ ok: true, ...bilan });
+  const supabase = createAdminClient();
+  const bilan = await cloturerEchues(supabase);
+  // ⚖️ LES « AVANT OU APRÈS ? » DONT LES 48 HEURES SONT PASSÉES : photos effacées, même si personne n'a rouvert La ville.
+  const avantApresEffaces = await effacerLesAvantApresFinis(supabase);
+  return NextResponse.json({ ok: true, ...bilan, avantApresEffaces });
 }

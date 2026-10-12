@@ -291,3 +291,26 @@ export async function votesDesSalons(supabase: Supabase, salons: { id: string; p
   }
   return out;
 }
+
+/**
+ * LE BALAYAGE DE LA NUIT. La lecture du fil efface déjà ce qui a passé ses
+ * 48 heures ; mais dans une ville où personne n'ouvre La ville, les photos
+ * attendraient. Le passage quotidien (`/api/cron/direct-cloture`) les efface
+ * quoi qu'il arrive : au plus tard la nuit qui suit la fin.
+ */
+export async function effacerLesAvantApresFinis(supabase: Supabase, maintenant = Date.now()): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .from("human_ville_publications")
+      .select("id, donnees")
+      .is("retire_le", null)
+      .eq("persistant", true)
+      .limit(1000);
+    if (error) return 0;
+    const finies = ((data ?? []) as Record<string, unknown>[]).filter((p) => estFinie(p.donnees as Record<string, unknown>, maintenant));
+    for (const p of finies) await effacerAvantApres(supabase, s(p.id), (p.donnees ?? {}) as Record<string, unknown>, false);
+    return finies.length;
+  } catch {
+    return 0;
+  }
+}
