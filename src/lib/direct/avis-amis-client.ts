@@ -68,8 +68,25 @@ function noterEnvoye(e: string) {
 }
 const aDemande = () => envoyes().length > 0;
 
-/** LE LIEN, avant même l'envoi : il ne range rien. `null` sans Maison possible (démonstration). */
-export async function preparerAvis(ville?: string): Promise<LienAvis | null> {
+/**
+ * LE LIEN, avant même l'envoi : il ne range rien. `null` sans Maison possible (démonstration).
+ *
+ * UN SEUL À LA FOIS : deux demandes parties ensemble, sur un téléphone sans
+ * Maison, en feraient naître deux — et le lien de l'une ne correspondrait plus
+ * au cookie gardé par l'autre. `neuf` : on en veut un autre (le précédent a été refusé).
+ */
+let enVol: Promise<LienAvis | null> | null = null;
+export function preparerAvis(ville?: string, neuf = false): Promise<LienAvis | null> {
+  if (enVol && !neuf) return enVol;
+  const p = demanderLien(ville);
+  enVol = p;
+  void p.finally(() => {
+    if (enVol === p) enVol = null;
+  });
+  return p;
+}
+
+async function demanderLien(ville?: string): Promise<LienAvis | null> {
   try {
     const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "lien", ville }) });
     const j = (await r.json()) as Partial<LienAvis> & { ok?: boolean };

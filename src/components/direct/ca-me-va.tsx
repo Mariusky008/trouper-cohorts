@@ -81,25 +81,33 @@ export function FeuilleCaMeVa({
   const { avis } = useAvisAmis();
   const suivi = lien ? avis.find((a) => a.e === lien.e) : undefined;
 
-  /* LE LIEN, PUIS L'ESSAI — pendant qu'on lit. Un seul aller par ouverture. */
+  /* LE LIEN, PUIS L'ESSAI — pendant qu'on lit. Refusé (le téléphone venait
+     d'avoir sa Maison par un autre chemin) : une fois encore, avec un lien neuf. */
   useEffect(() => {
     let vivant = true;
+    const details = {
+      image: essai.image,
+      quoi: essai.quoi,
+      ...(essai.prix ? { prix: essai.prix } : {}),
+      ...(essai.magasin ? { magasin: essai.magasin } : {}),
+      ...(essai.carte ? { carte: essai.carte } : {}),
+      ...(essai.page ? { page: essai.page } : {}),
+      ...(essai.ceci ? { ceci: essai.ceci } : {}),
+    };
     void (async () => {
-      const l = await preparerAvis(essai.ville);
-      if (!vivant) return;
-      if (!l) return setEtape("impossible");
-      setLien(l);
-      suivreAvisIci(l.e);
-      const ok = await rangerEssaiAvis(l, {
-        image: essai.image,
-        quoi: essai.quoi,
-        ...(essai.prix ? { prix: essai.prix } : {}),
-        ...(essai.magasin ? { magasin: essai.magasin } : {}),
-        ...(essai.carte ? { carte: essai.carte } : {}),
-        ...(essai.page ? { page: essai.page } : {}),
-        ...(essai.ceci ? { ceci: essai.ceci } : {}),
-      });
-      if (vivant) setEtape((x) => (x === "prepare" ? (ok ? "pret" : "impossible") : x));
+      for (const neuf of [false, true]) {
+        const l = await preparerAvis(essai.ville, neuf);
+        if (!vivant) return;
+        if (!l) return setEtape("impossible");
+        const ok = await rangerEssaiAvis(l, details);
+        if (!vivant) return;
+        if (ok) {
+          setLien(l);
+          suivreAvisIci(l.e);
+          return setEtape((x) => (x === "prepare" ? "pret" : x));
+        }
+      }
+      setEtape((x) => (x === "prepare" ? "impossible" : x));
     })();
     return () => {
       vivant = false;
