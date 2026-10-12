@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange, dureeVoixMs, precharger } from "@/lib/site-internet/speech";
 import { MARQUE } from "@/lib/marque";
-import { direRetours, habitantsDe, type GesteDuJour } from "@/lib/direct/geste-du-jour";
+import { direRetours, type GesteDuJour } from "@/lib/direct/geste-du-jour";
 import { SceneSalons } from "./scene-partage";
 import { SceneGardeRobe } from "./scene-garde-robe";
 import { SceneDemandes } from "./scene-demandes";
@@ -259,10 +259,9 @@ export function DemoTour({
   const ESSAI_AT = ESSAI_DIT.map((ph) => partAu(SAY_ESSAI, ph));
   /** Où commencent les salons dans la réplique : la scène compte ses temps à partir de là. */
   const ESSAI_SALONS = GARDE ? 2 : 1;
-  // `habitants` est déjà pris dans ce composant (les silhouettes du réseau) :
-  // deux choses sans rapport ne partagent pas un nom.
-  const gentile = habitantsDe(villeAff);
   const laVille = villeAff || "votre ville";
+  /** « à Vevey » — et « près de chez vous » quand on ne connaît pas sa ville. */
+  const aLaVille = villeAff ? `à ${villeAff}` : "près de chez vous";
 
   // ── ACTE 2 · LA BASCULE ────────────────────────────────────────────────
   //    La phrase qui fait tenir tout le reste, et qui n'existait pas. Elle
@@ -329,7 +328,11 @@ export function DemoTour({
            suivait plus rien : la phrase dit maintenant ce qui manque —
            « mais pour l'essayer, encore faut-il la découvrir ». */
         { dit: SALONS_JOUES && G.liaison ? G.liaison : SAY_BASCULE },
-        { dit: `${G.quand}, plus de ${G.combien} ${gentile} vont ${G.verbe} ${G.cherchent}.` },
+        /* PRÉCIS, ET DIT COMME UNE ESTIMATION : « il faudrait être plus précis
+           pour ne pas perdre en légitimité ». Le nombre n'est pas mesuré (voir
+           `chaque` dans `geste-du-jour.ts`) : « environ », et jamais « sur
+           Google ». Tout le reste est exact — quand, où, quoi, ce qui manque. */
+        { dit: `${G.chaque}, ${aLaVille}, environ ${G.combien.toLocaleString("fr-FR")} personnes ${G.verbeIls} ${G.objet} ${G.sansVous}.` },
         /* ═══ LE DIRECT, DIT UNE FOIS, AVANT D'EN PARLER ═══════════════════
            « On parle du Direct à plusieurs reprises dans la présentation de
            Léa, sans jamais préciser ce qu'est le Direct. Le Direct, c'est
@@ -1152,7 +1155,7 @@ export function DemoTour({
       // sans jamais voir OÙ. Ici il voit l'écran que les habitants ouvrent
       // dans la rue, avant même qu'on lui parle de lui.
       steps.push({
-        title: `${G.quand}, à ${laVille}`,
+        title: `${G.chaque}, ${aLaVille}`,
         say: SAY_QUI,
         enter: () => {
           chime();
@@ -1811,6 +1814,8 @@ export function DemoTour({
           @keyframes dtSouffle{0%,100%{opacity:.55;transform:translate(-50%,-50%) scale(.9)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}}
           .qi-q{margin-top:8px;font-size:17px;line-height:1.35;color:#CDB8A4;animation:dtRise .4s var(--exp) .22s both;}
           .qi-q b{display:inline-block;margin-top:4px;font-size:22px;font-weight:800;letter-spacing:-.025em;color:#fff;}
+          .qi-env{margin-bottom:6px;font-size:15px;font-weight:700;color:#F5D9B8;animation:dtRise .4s var(--exp) both;}
+          .qi-sans{margin-top:8px;font-size:15px;line-height:1.35;color:#CDB8A4;animation:dtRise .4s var(--exp) .32s both;}
 
           /* LE CATALOGUE DU DIRECT, dans la main d'un habitant.
              Un encadré stylisé à trois lignes ne disait pas ce qu'il fallait
@@ -2703,11 +2708,19 @@ export function DemoTour({
                   entier. Le nombre a déjà été dit — il n'a plus à être lu. */}
               <div className="qi-tete">
                 <div>
+                  {/* CE QUE LÉA DIT, MOT POUR MOT : « Chaque jour à Vevey, environ
+                      800 personnes cherchent des vêtements pour femmes sans
+                      connaître votre collection. » */}
+                  <div className="qi-env">
+                    {G.chaque} {aLaVille}, environ
+                  </div>
                   <div className="qi-n">{compte}</div>
                   <div className="qi-q">
-                    {gentile} vont {G.verbe}<br />
-                    <b>{G.cherchent}</b>
+                    personnes {G.verbeIls}
+                    <br />
+                    <b>{G.objet}</b>
                   </div>
+                  <div className="qi-sans">{G.sansVous}</div>
                 </div>
               </div>
               {/* LE CATALOGUE AUSSI S'OUVRE. Monté d'un coup, c'est LUI qui

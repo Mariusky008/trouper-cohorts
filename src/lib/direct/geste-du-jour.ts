@@ -118,6 +118,30 @@ export type GesteDuJour = {
   cherchent: string;
   /** Combien, dans SA ville, chaque jour. Une affirmation sur la ville. */
   combien: number;
+  /**
+   * ═══ LA MÊME AFFIRMATION, PRÉCISE, ET DITE COMME UNE ESTIMATION ══════════
+   *
+   * « Elle dit qu'à Vevey 800 personnes cherchent des vêtements, mais il
+   * faudrait être plus précis pour ne pas perdre en légitimité. Par exemple :
+   * en moyenne, chaque jour à Vevey, 800 personnes cherchent des vêtements
+   * pour femmes sans avoir connaissance de votre collection. »
+   *
+   * LE NOMBRE N'EST PAS UN RELEVÉ : c'est `combien`, le même pour un métier
+   * dans toutes les villes. Question posée — « garder 800, en estimation ».
+   * Léa dit donc « environ », jamais « sur Google » ni « en moyenne » (ce
+   * serait citer une mesure qui n'existe pas), et elle devient précise sur
+   * tout ce qui est vrai : QUAND (`chaque`), QUOI (`objet`, tiré du métier
+   * lu sur sa fiche : « des vêtements pour femmes »), et CE QUI LEUR MANQUE
+   * (`sansVous`) — « Chaque jour, à Vevey, environ 800 personnes cherchent
+   * des vêtements pour femmes sans connaître votre collection. »
+   */
+  chaque: string;
+  /** Le verbe, conjugué : « cherchent », « se demandent ». */
+  verbeIls: string;
+  /** Ce qu'ils cherchent, au plus près de son métier : « des vêtements pour femmes ». */
+  objet: string;
+  /** Ce qui leur manque, et c'est lui : « sans connaître votre collection ». */
+  sansVous: string;
   /** L'heure où ça se joue chez lui. */
   heure: string;
   /** Où dort l'information aujourd'hui : « votre ardoise », « votre vitrine ». */
@@ -326,6 +350,24 @@ const LA_MODE = /v[êe]tement|pr[êe]t[- ]?[àa][- ]porter|friperie|\bmode\b|cha
 /** …sauf quand le métier dit autre chose avant : une boutique de fleurs, de lunettes, de bijoux. */
 const PAS_LA_MODE = /fleur|coiff|ongl|optic|lunet|bijou|librair/i;
 
+/**
+ * CE QU'ON CHERCHE CHEZ ELLE, DIT COMME SA FICHE LE DIT. « Boutique de
+ * vêtements pour femmes » donne « des vêtements pour femmes » ; une fiche qui
+ * ne précise rien donne « des vêtements », jamais une clientèle devinée.
+ */
+function ceQuOnCherche(metier: string): string {
+  const m = metier.toLowerCase();
+  if (/lingerie/.test(m)) return "de la lingerie";
+  if (/chaussur/.test(m)) return "des chaussures";
+  const femmes = /femme/.test(m);
+  const hommes = /homme/.test(m);
+  if (femmes && !hommes) return "des vêtements pour femmes";
+  if (hommes && !femmes) return "des vêtements pour hommes";
+  if (!femmes && !hommes && /enfant|b[ée]b[ée]/.test(m)) return "des vêtements pour enfants";
+  if (/friperie|seconde main|vintage/.test(m)) return "des vêtements de seconde main";
+  return "des vêtements";
+}
+
 const LE_COMPTOIR_DU_SOIR = /\bbar\b|bar à|caviste|pub\b|cave à (vin|bière|biere)|à vins?\b|à bières?\b/i;
 
 export function gesteDuJour(
@@ -366,6 +408,10 @@ export function gesteDuJour(
         verbe: "se demander",
         cherchent: "où sortir",
         combien: 700,
+        chaque: "Chaque soir",
+        verbeIls: "se demandent",
+        objet: "où sortir",
+        sansVous: "sans savoir ce qui se passe chez vous",
         heure: "18 h",
         support: "votre ardoise",
         ouDort: "Vous, à cette heure-là, ce qui se passe chez vous ce soir, vous êtes seul à le savoir.",
@@ -396,6 +442,10 @@ export function gesteDuJour(
       verbe: "se demander",
       cherchent: "où manger",
       combien: 1000,
+      chaque: "Chaque midi",
+      verbeIls: "se demandent",
+      objet: "où manger",
+      sansVous: "sans savoir ce que vous servez aujourd'hui",
       heure: "11 h",
       support: "votre ardoise",
       // TROIS PHRASES, PAS UNE COMPARAISON. La version d'avant opposait Google,
@@ -464,6 +514,10 @@ export function gesteDuJour(
       verbe: "chercher",
       cherchent: "leur prochain livre",
       combien: 500,
+      chaque: "Chaque semaine",
+      verbeIls: "cherchent",
+      objet: "leur prochain livre",
+      sansVous: "sans connaître vos coups de cœur",
       heure: "10 h",
       support: "votre table des coups de cœur",
       ouDort: "Vous, à cette heure-là, vos coups de cœur sont sur votre table, avec leur petit mot.",
@@ -515,6 +569,10 @@ export function gesteDuJour(
       verbe: "chercher",
       cherchent: "ce qu'il y a de nouveau en boutique",
       combien: 800,
+      chaque: "Chaque jour",
+      verbeIls: "cherchent",
+      objet: ceQuOnCherche(metier),
+      sansVous: "sans connaître votre collection",
       heure: "10 h",
       support: "vos portants",
       ouDort: "Vous, ce matin, votre nouvel arrivage est sur vos portants.",
@@ -575,6 +633,10 @@ export function gesteDuJour(
       verbe: "chercher",
       cherchent: "ce qu'il y a de frais",
       combien: 800,
+      chaque: "Chaque matin",
+      verbeIls: "cherchent",
+      objet: "ce qu'il y a de frais",
+      sansVous: "sans savoir ce que vous avez en vitrine",
       heure: "7 h",
       support: "votre vitrine",
       ouDort: "Vous, à cette heure-là, tout est déjà en vitrine.",
@@ -616,6 +678,10 @@ export function gesteDuJour(
       verbe: "chercher",
       cherchent: `${v.un} ${v.place}`,
       combien: 600,
+      chaque: "Chaque jour",
+      verbeIls: "cherchent",
+      objet: `${v.un} ${v.place}`,
+      sansVous: "sans savoir qu'il vous en reste",
       heure: "9 h",
       support: "votre carnet",
       ouDort: `Vous, à cette heure-là, vos ${v.places} libres sont dans votre carnet.`,
@@ -650,6 +716,10 @@ export function gesteDuJour(
     verbe: "chercher",
     cherchent: "un artisan disponible",
     combien: 300,
+    chaque: "Chaque semaine",
+    verbeIls: "cherchent",
+    objet: "un artisan disponible",
+    sansVous: "sans savoir que vous l'êtes",
     heure: "9 h",
     support: "votre téléphone",
     ouDort: "Ce que vous pouvez prendre cette semaine, vous êtes seul à le savoir.",
