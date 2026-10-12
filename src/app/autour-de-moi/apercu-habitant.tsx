@@ -1710,6 +1710,12 @@ export function ApercuHabitant({
     () => new URLSearchParams(window.location.search).get("salon") || "",
     () => "",
   );
+  /** ⚖️ « Voir dans La ville », depuis un avant/après qu'on vient de publier : l'onglet La ville, une fois. */
+  const ongletUrl = useSyncExternalStore(
+    () => () => {},
+    () => new URLSearchParams(window.location.search).get("onglet") || "",
+    () => "",
+  );
 
   const [branche, setBranche] = useState<CleMetier>("restaurant");
   const [envies, setEnvies] = useState<string[]>([]);
@@ -2068,6 +2074,10 @@ export function ApercuHabitant({
       setSalonOuvert(salonUrl);
       setSalonPage(true);
     }
+    if (!ouvert && !salonUrl && ongletUrl === "ville") {
+      setOuvert(true);
+      setOnglet("ville");
+    }
     if (ouvert || !carteUrl) return;
     setOuvert(true);
     // On lit la journée directement : elle est rangée dans le téléphone, et on
@@ -2077,7 +2087,7 @@ export function ApercuHabitant({
       setBranche(b as CleMetier);
       setVue("metiers");
     }
-  }, [carteUrl, salonUrl, ouvert]);
+  }, [carteUrl, salonUrl, ongletUrl, ouvert]);
   /**
    * UNE CARTE SORTIE DE SON RANG, LE TEMPS QU'ON LA REGARDE.
    *

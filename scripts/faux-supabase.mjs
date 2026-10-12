@@ -61,6 +61,10 @@ const DEFAUTS = {
   human_maisons_privees: () => ({ memoire: {}, maj_le: maintenant() }),
   human_maison_elements: () => ({ id: randomUUID(), sorte: "", donnees: {}, photo: null, cree_le: maintenant(), maj_le: maintenant() }),
   human_habitant_codes: () => ({ id: suite++, ville_slug: "", essais: 0, utilise_le: null, cree_le: maintenant() }),
+  // LA VILLE PARTAGÉE — voir `20261006120000_ville_partagee.sql`.
+  human_ville_publications: () => ({ cree_le: maintenant(), retire_le: null, masque: false, verdict: null, persistant: false }),
+  human_ville_gestes: () => ({ id: suite++, cree_le: maintenant() }),
+  human_ville_signalements: () => ({ cree_le: maintenant(), motif: null }),
 };
 const CLES = {
   human_conversations: ["id"],
@@ -70,6 +74,7 @@ const CLES = {
   human_habitant_blocages: ["habitant", "bloque"],
   human_habitants: ["id"],
   human_maisons_privees: ["habitant"],
+  human_ville_publications: ["id"],
 };
 
 const lignes = (t) => {

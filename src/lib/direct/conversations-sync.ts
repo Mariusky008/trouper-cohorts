@@ -140,7 +140,30 @@ async function envoyerGeste(cle: string, geste: Geste | { type: "visibilite"; pr
   void synchroniser();
 }
 
-type ConvLue = { id: string; base: BaseConversation; createurMoi: boolean; activite: string; gestes: GesteLu[]; acces: AccesSalon };
+type ConvLue = {
+  id: string;
+  base: BaseConversation;
+  createurMoi: boolean;
+  activite: string;
+  gestes: GesteLu[];
+  acces: AccesSalon;
+  /** ⚖️ Un salon « Avant ou après ? » : les votes venus de La ville et des amis (voir `avant-apres.ts`). */
+  avantApres?: { exterieur: { avant: number; apres: number }; monVote?: string };
+};
+
+/** LE VOTE D'UN SALON AVANT/APRÈS, COMPLÉTÉ : ses propres voix, plus celles de La ville et des amis. */
+function avecLaVille(s: Salon, aa: ConvLue["avantApres"]): Salon {
+  if (!aa || !s.vote) return s;
+  const ext = aa.exterieur as Record<string, number>;
+  return {
+    ...s,
+    vote: {
+      ...s.vote,
+      options: s.vote.options.map((o) => ({ ...o, voix: Math.max(0, o.voix + (Number(ext[o.cle]) || 0)) })),
+      ...(aa.monVote ? { monVote: aa.monVote } : {}),
+    },
+  };
+}
 
 /** Un salon public de la ville à découvrir — sujet, créateur, participants, dernier message. */
 export type SalonADecouvrir = {
@@ -189,7 +212,7 @@ export async function synchroniser(): Promise<void> {
   const venues: Record<string, Salon> = {};
   for (const c of j.conversations) {
     const cle = inverse[c.id] ?? `${PREFIXE}${c.id}`;
-    let s = rejouer(cle, c.base, c.gestes, { createurMoi: c.createurMoi, moiNom });
+    let s = avecLaVille(rejouer(cle, c.base, c.gestes, { createurMoi: c.createurMoi, moiNom }), c.avantApres);
     // LES PRÉSENTS SONT LES MEMBRES RÉELS — pas tous ceux qui ont un jour écrit.
     if (c.acces.participants) s = { ...s, presents: c.acces.participants.map((x) => (x.moi ? moiNom : x.qui)) };
     venues[cle] = { ...s, acces: c.acces };

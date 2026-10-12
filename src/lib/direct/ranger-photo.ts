@@ -36,6 +36,30 @@ export async function rangerPhoto(dossier: string, nom: string, valeur: unknown)
 }
 
 /**
+ * 🧹 EFFACER POUR DE BON UNE PHOTO RANGÉE PAR `rangerPhoto` — l'avant/après de
+ * La ville, quand ses 48 heures sont passées ou que son auteur l'a retiré.
+ *
+ * SEULEMENT LA SIENNE : le chemin doit être celui que `rangerPhoto` a donné à
+ * CE nom (`<dossier>/<nom>-<empreinte>.jpg`). Une adresse d'ailleurs — un
+ * chemin du site, la photo d'une autre publication glissée là exprès — est
+ * laissée tranquille.
+ */
+export async function effacerPhotoRangee(url: unknown, dossier: string, nom: string): Promise<boolean> {
+  const u = s(url);
+  const repere = `/object/public/${SEAU}/`;
+  const i = u.indexOf(repere);
+  if (i < 0 || !nom) return false;
+  const chemin = decodeURIComponent(u.slice(i + repere.length).split("?")[0]);
+  if (!chemin.startsWith(`${dossier}/${nom}-`) || chemin.includes("..") || !/^[a-z0-9/_.-]+$/i.test(chemin)) return false;
+  try {
+    const { error } = await createAdminClient().storage.from(SEAU).remove([chemin]);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * 🎙️ UN MOT VOCAL D'HABITANT, RANGÉ CHEZ NOUS — même règle que les photos :
  * jamais gardé en `data:` dans la base. Rangé tel quel (webm/opus d'Android
  * et de Chrome, mp4 d'iPhone) : aucun convertisseur sur le serveur. Une

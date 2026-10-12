@@ -132,6 +132,14 @@ export type MessageVille = {
   vecu?: boolean;
   /** La publication dont celle-ci est la suite. */
   suite?: string;
+  /**
+   * ⚖️ « AVANT OU APRÈS ? » — sa photo à elle (`avant`) à côté de l'essai
+   * (`photo`), le compte des votes de la ville, du salon et des amis, et la fin
+   * des 48 heures (ms). Le salon public est dans `salon`. Voir `avant-apres.ts`.
+   */
+  avant?: string;
+  fin?: number;
+  duel?: { avant: number; apres: number; monVote?: "avant" | "apres" };
 };
 
 /** Ce qu'un message gagne à être utile. Voir l'en-tête : le seul classement. */

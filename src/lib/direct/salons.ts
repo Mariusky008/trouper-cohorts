@@ -301,6 +301,13 @@ export type Salon = {
   enDirect?: EnDirect;
   /** La question posée à ceux qui ne sont pas là. */
   vote?: Vote;
+  /**
+   * ⚖️ UN SALON « AVANT OU APRÈS ? », OUVERT EN MÊME TEMPS QU'UNE PUBLICATION
+   * DE LA VILLE : son vote compte aussi ceux de La ville et des amis, et il
+   * cesse d'être proposé à la ville quand les 48 heures sont passées. Voir
+   * `avant-apres.ts`.
+   */
+  avantApres?: { pub: string; fin: string };
   /** La photo de l'annonce, pour la carte en tête du salon. */
   photo?: string;
   /**

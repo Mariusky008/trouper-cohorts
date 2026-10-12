@@ -2,7 +2,8 @@
 //
 // GET  ?ville=<ville>                          → { moi, publications }
 // POST { action: "publier", ville, id, donnees, qui }  — toujours public
-// POST { action: "geste", id, geste, qui }     — cœur, réponse, « ça m'intéresse »
+// POST { action: "geste", id, geste, qui }     — cœur, réponse, « ça m'intéresse »,
+//                                                 vote « avant » / « après » (voir `avant-apres.ts`)
 // POST { action: "retirer", id }               — l'auteur seul
 // POST { action: "signaler", id, motif }
 //
@@ -13,12 +14,21 @@
 // révocable pour le remplacer. Pour un cercle précis, on partage dans un salon
 // d'Ensemble. Une ancienne publication « amis » ne se voit plus que de son
 // auteur. L'écran ne reçoit jamais ce qu'il n'a pas le droit de montrer.
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant, habitantCourant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
 import { rangerPhoto, rangerSon } from "@/lib/direct/ranger-photo";
 import { lireContenu, lireScene } from "@/lib/direct/scenes-ville";
+import {
+  DUREE_AVANT_APRES_MS,
+  effacerAvantApres,
+  estFinie,
+  ouvrirSalonAvantApres,
+  votesAvantApres,
+  type CibleAA,
+} from "@/lib/direct/avant-apres";
+import { compterParAdresse } from "@/lib/site-internet/compteurs-jour";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -49,6 +59,15 @@ function peutVoir(p: Record<string, unknown>, moi: string | null): boolean {
   return p.visibilite === "public";
 }
 
+/** Ce que le compte des votes doit savoir d'une publication avant/après. */
+function cibleDe(p: Record<string, unknown>): CibleAA {
+  const d = (p.donnees ?? {}) as Record<string, unknown>;
+  return { pub: s(p.id), auteur: s(p.habitant), ...(s(d.salon) ? { salon: s(d.salon) } : {}), ...(s(d.avis) ? { avis: s(d.avis) } : {}) };
+}
+/** Le téléphone de La ville n'a besoin que du compte fusionné. */
+const sansExterieur = ({ exterieur: _e, ...c }: { exterieur: unknown; avant: number; apres: number; monVote?: string }) => (void _e, c);
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 async function limite(supabase: Supabase, habitant: string): Promise<boolean> {
   const depuis = new Date(Date.now() - 60_000).toISOString();
   const [{ count: a }, { count: b }] = await Promise.all([
@@ -78,7 +97,12 @@ export async function GET(request: Request) {
       .order("cree_le", { ascending: false })
       .limit(200);
     if (error) throw new Error(error.message);
-    const visibles = ((data ?? []) as Record<string, unknown>[]).filter((p) => peutVoir(p, moi?.id ?? null));
+    // ⚖️ AVANT/APRÈS : 48 HEURES, PUIS TOUT S'EFFACE — la ligne et les deux photos.
+    const lues = (data ?? []) as Record<string, unknown>[];
+    const finies = lues.filter((p) => estFinie(p.donnees as Record<string, unknown>));
+    if (finies.length) after(() => Promise.all(finies.map((p) => effacerAvantApres(supabase, s(p.id), p.donnees as Record<string, unknown>, false))));
+    const visibles = lues.filter((p) => !finies.includes(p) && peutVoir(p, moi?.id ?? null));
+    const duels = await votesAvantApres(supabase, visibles.filter((p) => (p.donnees as Record<string, unknown>)?.avantApres).map(cibleDe), moi?.id);
     const ids = visibles.map((p) => s(p.id));
     const { data: gestes } = ids.length
       ? await supabase.from("human_ville_gestes").select("id, publication, habitant, qui, geste, cree_le").in("publication", ids).order("id", { ascending: true }).limit(5000)
@@ -126,6 +150,7 @@ export async function GET(request: Request) {
           monCoeur: Boolean(moi && coeurs.get(id)?.has(moi.id)),
           reponses: reponses.get(id) ?? [],
           interesses: [...(interesses.get(id)?.values() ?? [])],
+          ...(duels.get(id) ? { duel: sansExterieur(duels.get(id)!) } : {}),
         };
       }),
     });
@@ -159,7 +184,22 @@ export async function POST(request: Request) {
     if (await limite(supabase, h.id)) return NextResponse.json({ error: "Doucement : réessaie dans une minute." }, { status: 429 });
     const d = (p?.donnees && typeof p.donnees === "object" ? p.donnees : {}) as Record<string, unknown>;
     const t = texte(d.texte, 1200);
+    // ⚖️ AVANT/APRÈS : sa photo à elle, à côté de l'essai. Les deux, ou rien —
+    // et deux photos ENVOYÉES À L'INSTANT, jamais une adresse déjà rangée : au
+    // retrait, ce sont elles qu'on efface, et seulement elles.
+    const avantApres = d.avantApres === true && d.genre === "essai";
+    if (avantApres && !(/^data:image\//i.test(s(d.photo)) && /^data:image\//i.test(s(d.avant))))
+      return NextResponse.json({ error: "Les deux photos doivent venir du téléphone." }, { status: 400 });
     const photo = await rangerPhoto("ville", id, d.photo);
+    const avant = avantApres ? await rangerPhoto("ville", `${id}-avant`, d.avant) : undefined;
+    if (avantApres && (!photo || !avant)) return NextResponse.json({ error: "Les deux photos ne sont pas arrivées." }, { status: 400 });
+    const fin = avantApres ? new Date(Date.now() + DUREE_AVANT_APRES_MS).toISOString() : "";
+    // « ÇA ME VA ? » ENVOYÉ AUX AMIS DEPUIS LA MÊME FEUILLE : ses votes comptent aussi — s'il est bien à elle.
+    let avis = "";
+    if (avantApres && UUID.test(s(d.avis))) {
+      const { data: a } = await supabase.from("human_maison_elements").select("habitant").eq("id", s(d.avis)).eq("sorte", "avis-amis").maybeSingle();
+      if (s((a as Record<string, unknown> | null)?.habitant) === h.id) avis = s(d.avis);
+    }
     // LE MOT VOCAL, rangé à part comme la photo — et sa durée, bornée.
     const a = d.audio && typeof d.audio === "object" ? (d.audio as Record<string, unknown>) : null;
     const son = a ? await rangerSon("ville-sons", id, a.src) : undefined;
@@ -194,25 +234,47 @@ export async function POST(request: Request) {
       ...(d.vecu ? { vecu: true } : {}),
       ...(ID.test(s(d.suite)) ? { suite: s(d.suite) } : {}),
       ...(d.cherche ? { cherche: true } : {}),
+      ...(avantApres ? { avantApres: true, avant, fin, ...(avis ? { avis } : {}) } : {}),
     };
+    const qui = prenom(p?.qui, h.prenom);
     const { error } = await supabase.from("human_ville_publications").insert({
       id,
       ville_slug: ville,
       habitant: h.id,
-      qui: prenom(p?.qui, h.prenom),
+      qui,
       visibilite: "public",
       donnees,
       persistant: Boolean(genre),
     });
     if (error) return NextResponse.json({ error: "Enregistrement impossible." }, { status: 500 });
-    return NextResponse.json({ ok: true });
+    if (!avantApres) return NextResponse.json({ ok: true });
+    // LE SALON PUBLIC, OUVERT DANS LE MÊME GESTE — et relié dans les deux sens.
+    const ref = donnees.reference;
+    const boutique = donnees.commerce && /^\/[a-z0-9/_.?=&-]+$/i.test(s(d.page)) ? { id: donnees.commerce.id, nom: donnees.commerce.nom, lien: texte(d.page, 300) } : undefined;
+    const salon = await ouvrirSalonAvantApres(supabase, {
+      ville,
+      habitant: h.id,
+      qui,
+      pub: id,
+      fin,
+      avant: avant!,
+      apres: photo!,
+      quoi: ref?.nom || texte(d.quoi, 120),
+      ...(texte(d.prix, 40) ? { prix: texte(d.prix, 40) } : {}),
+      ...(donnees.commerce?.nom ? { magasin: donnees.commerce.nom } : {}),
+      ...(boutique ? { boutique } : {}),
+    });
+    if (salon) await supabase.from("human_ville_publications").update({ donnees: { ...donnees, salon } }).eq("id", id);
+    // UN ESSAI DEMANDÉ À LA VILLE COMPTE POUR LE MAGASIN, comme un « Ça me va ? ».
+    if (ref?.carte) after(() => compterParAdresse(ref.carte, "avis"));
+    return NextResponse.json({ ok: true, id, fin, ...(salon ? { salon } : {}) });
   }
 
   const id = s(p?.id);
   if (!ID.test(id)) return NextResponse.json({ error: "Publication inconnue." }, { status: 400 });
   const { data: pub } = await supabase
     .from("human_ville_publications")
-    .select("id, ville_slug, habitant, visibilite, retire_le, masque")
+    .select("id, ville_slug, habitant, visibilite, retire_le, masque, donnees")
     .eq("id", id)
     .maybeSingle();
   if (!pub) return NextResponse.json({ error: "Publication inconnue." }, { status: 404 });
@@ -222,7 +284,10 @@ export async function POST(request: Request) {
 
   if (action === "retirer") {
     if (s(ligne.habitant) !== h.id) return NextResponse.json({ error: "Seul son auteur peut la retirer." }, { status: 403 });
-    await supabase.from("human_ville_publications").update({ retire_le: new Date().toISOString() }).eq("id", id);
+    const dd = (ligne.donnees ?? {}) as Record<string, unknown>;
+    // ⚖️ SON AVANT/APRÈS : les photos quittent le stockage, et le salon part avec.
+    if (dd.avantApres) await effacerAvantApres(supabase, id, dd, true);
+    else await supabase.from("human_ville_publications").update({ retire_le: new Date().toISOString() }).eq("id", id);
     return NextResponse.json({ ok: true });
   }
 
@@ -234,6 +299,17 @@ export async function POST(request: Request) {
     const g = (p?.geste && typeof p.geste === "object" ? p.geste : {}) as Record<string, unknown>;
     const geste =
       g.type === "coeur" ? { type: "coeur" } : g.type === "interesse" ? { type: "interesse" } : g.type === "reponse" && s(g.texte) ? { type: "reponse", texte: texte(g.texte, 600) } : null;
+    // ⚖️ AVANT OU APRÈS — d'un appui, sur un avant/après encore en vie, et pas par celle qui demande.
+    const dd = (ligne.donnees ?? {}) as Record<string, unknown>;
+    if (g.type === "vote") {
+      if (!dd.avantApres || estFinie(dd)) return NextResponse.json({ error: "Ce vote est terminé." }, { status: 410 });
+      if (s(ligne.habitant) === h.id) return NextResponse.json({ error: "C'est ton essai : la ville te conseille, c'est toi qui décides." }, { status: 403 });
+      if (g.v !== "avant" && g.v !== "apres") return NextResponse.json({ error: "Vote illisible." }, { status: 400 });
+      const { error } = await supabase.from("human_ville_gestes").insert({ publication: id, habitant: h.id, qui: prenom(p?.qui, h.prenom), geste: { type: "vote", v: g.v } });
+      if (error) return NextResponse.json({ error: "Vote non enregistré." }, { status: 500 });
+      const c = (await votesAvantApres(supabase, [cibleDe(ligne)], h.id)).get(id);
+      return NextResponse.json({ ok: true, ...(c ? { duel: sansExterieur(c) } : {}) });
+    }
     if (!geste) return NextResponse.json({ error: "Geste illisible." }, { status: 400 });
     const { error } = await supabase.from("human_ville_gestes").insert({ publication: id, habitant: h.id, qui: prenom(p?.qui, h.prenom), geste });
     if (error) return NextResponse.json({ error: "Enregistrement impossible." }, { status: 500 });

@@ -34,6 +34,7 @@ type PublicationLue = {
   monCoeur: boolean;
   reponses: { id: string; qui: string; moi: boolean; texte: string; cree_le: string }[];
   interesses: { qui: string; moi: boolean }[];
+  duel?: { avant: number; apres: number; monVote?: "avant" | "apres" };
 };
 
 const s = (v: unknown) => String(v ?? "").trim();
@@ -94,7 +95,31 @@ function enMessage(p: PublicationLue, nomVille: string): MessageVille {
     ...(scene ? { scene } : {}),
     ...(contenu ? { contenu } : {}),
     ...(audio && s(audio.src) ? { audio: { src: s(audio.src), duree: Math.max(1, Math.min(Number(audio.duree) || 1, 120)) } } : {}),
+    // ⚖️ AVANT OU APRÈS : les deux photos, le compte, la fin, et son salon.
+    ...(d.avantApres && s(d.avant) && s(d.photo)
+      ? {
+          avant: s(d.avant),
+          ...(Number.isFinite(Date.parse(s(d.fin))) ? { fin: Date.parse(s(d.fin)) } : {}),
+          ...(s(d.salon) ? { salon: s(d.salon) } : {}),
+          duel: p.duel ?? { avant: 0, apres: 0 },
+        }
+      : {}),
   };
+}
+
+/** ⚖️ Un vote « avant » ou « après », d'un appui. Rend le nouveau compte, ou `null` (hors ligne, refusé). */
+export async function voterAvantApres(id: string, v: "avant" | "apres"): Promise<{ avant: number; apres: number; monVote?: "avant" | "apres" } | null> {
+  try {
+    const r = await fetch(ROUTE, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "geste", id, geste: { type: "vote", v }, qui: qui() }),
+    });
+    const j = (await r.json()) as { ok?: boolean; duel?: { avant: number; apres: number; monVote?: "avant" | "apres" } };
+    return r.ok && j.ok && j.duel ? j.duel : null;
+  } catch {
+    return null;
+  }
 }
 
 async function poster(corps: unknown): Promise<boolean> {

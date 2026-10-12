@@ -52,6 +52,7 @@ import type { BaseConversation, Geste, GesteLu } from "@/lib/direct/conversation
 import type { ObjetDuel } from "@/lib/direct/duel";
 import { signerReponse } from "@/lib/direct/reponse-commerce";
 import { prevenirDuGeste } from "@/lib/direct/push-salons";
+import { salonFini, votesDesSalons } from "@/lib/direct/avant-apres";
 import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
@@ -405,6 +406,12 @@ export async function GET(request: Request) {
       const looks = await looksDe(supabase, [...new Set([...membresDe.values()].flat().filter((x) => actif(x)).map((x) => x.habitant))]);
       const attenteDe = new Map<string, Ligne[]>();
       for (const d of (enAttente ?? []) as Ligne[]) attenteDe.set(s(d.conversation), [...(attenteDe.get(s(d.conversation)) ?? []), d]);
+      // ⚖️ LES SALONS « AVANT OU APRÈS ? » : les votes de La ville et des amis s'ajoutent aux leurs.
+      const votesAA = await votesDesSalons(
+        supabase,
+        lisibles.map((c) => ({ id: c.id, pub: s((c.base.avantApres as Ligne | undefined)?.pub) })).filter((x) => x.pub),
+        moi?.id,
+      );
 
       for (const c of convs) {
         const m = membres.get(c.id);
@@ -439,6 +446,9 @@ export async function GET(request: Request) {
           createurMoi: Boolean(moi && c.createur === moi.id),
           activite: c.activite,
           gestes: servirPhotos(parConv.get(c.id) ?? [], c.id),
+          ...(votesAA.get(c.id)
+            ? { avantApres: { exterieur: votesAA.get(c.id)!.exterieur, ...(votesAA.get(c.id)!.monVote ? { monVote: votesAA.get(c.id)!.monVote } : {}) } }
+            : {}),
           acces: {
             statut,
             prive: c.prive,
@@ -467,6 +477,8 @@ export async function GET(request: Request) {
       const pubs = ((data ?? []) as Ligne[])
         .map(lireConv)
         .filter((c) => !actif(membres.get(c.id)) && !exclu(membres.get(c.id)) && !(c.createur && (blocs.jeBloque.has(c.createur) || blocs.meBloquent.has(c.createur))))
+        // UN AVANT/APRÈS DONT LES 48 HEURES SONT PASSÉES n'est plus proposé à la ville.
+        .filter((c) => !salonFini(c.base))
         .slice(0, 30);
       if (pubs.length) {
         const idsP = pubs.map((c) => c.id);

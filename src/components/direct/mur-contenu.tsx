@@ -6834,6 +6834,9 @@ function Essai({
             page: pageDuMagasinIci(mur.cle),
             ville: mur.ville,
             ...(mur.essai?.mots?.ceci ? { ceci: mur.essai.mots.ceci } : {}),
+            // ⚖️ SA PHOTO À ELLE, JAMAIS LE MODÈLE DE LA DÉMONSTRATION : sans elle, pas d'avant/après dans La ville.
+            ...(photo ? { avant: photo } : {}),
+            piece: caMeVa.id,
           }}
           onFermer={() => setCaMeVa(null)}
           secours={photo ? () => void partagerLeLook(caMeVa) : undefined}

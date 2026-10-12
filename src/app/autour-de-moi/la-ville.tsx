@@ -34,6 +34,9 @@
 // chose. Il reviendra avec une relation choisie et révocable.
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
+import { AvantApres } from "@/components/direct/avant-apres";
+import { voterAvantApres } from "@/lib/direct/ville-sync";
+import { voirSalonPublic } from "@/lib/direct/conversations-sync";
 import {
   abonnerVus,
   AUCUN_VU,
@@ -196,7 +199,8 @@ export function LaVille({
 
   // UNE ANCIENNE PUBLICATION « AMIS » NE SE VOIT PLUS QUE DE SON AUTEUR — comme
   // sur le serveur (`ville-fil`).
-  const visible = (m: MessageVille) => m.visibilite !== "amis" || m.qui === "Vous";
+  // ⚖️ UN AVANT/APRÈS DÉJÀ FINI À L'OUVERTURE NE S'AFFICHE PAS ; ensuite, le serveur cesse de le rendre.
+  const visible = (m: MessageVille) => (m.visibilite !== "amis" || m.qui === "Vous") && !(m.fin && m.fin <= ouverture);
   const vivants = messages.filter(visible);
 
   type Entree = { cle: string; a: number; m?: MessageVille; salon?: Salon; score: number };
@@ -392,6 +396,7 @@ export function LaVille({
                 setCompose(e.m!.genre === "essai" ? "essai" : "decouverte");
               }}
               onSignaler={onSignaler}
+              onSalon={(id) => void voirSalonPublic(id).then((cle) => cle && onOuvrirSalon(cle))}
               neuve={neuve === e.m!.id}
             />
           ),
@@ -635,6 +640,7 @@ function CartePublication({
   onSortie,
   onSuite,
   onSignaler,
+  onSalon,
   neuve,
 }: {
   m: MessageVille;
@@ -654,6 +660,8 @@ function CartePublication({
   onSortie: (m: MessageVille) => void;
   onSuite: () => void;
   onSignaler?: (m: MessageVille) => void;
+  /** ⚖️ Rejoindre la discussion d'un avant/après : son salon public. */
+  onSalon?: (id: string) => void;
 }) {
   const moi = m.qui === "Vous";
   // « S'EFFACE DANS… » NE SE DIT QUE LÀ OÙ ÇA COMPTE : une question ou une
@@ -802,8 +810,23 @@ function CartePublication({
 
       {/* UN MESSAGE SANS PHOTO SE LIT D'ABORD : le texte, puis le vocal. */}
       {!media && <p className="lv-texte grand">{m.texte}</p>}
-      <Contenu m={m} branche={branche} onEssayer={m.reference && !moi ? () => onEssayer(m.reference!) : undefined} />
-      {media && m.texte && <p className="lv-texte">{m.texte}</p>}
+      {m.avant && m.photo ? (
+        /* ⚖️ AVANT OU APRÈS ? — les deux photos, un appui pour voter, et sa discussion publique. */
+        <>
+          {m.texte && <p className="lv-texte aa-question">{m.texte}</p>}
+          <AvantApres avant={m.avant} apres={m.photo} duel={m.duel} moi={moi} fin={m.fin} onVoter={moi ? undefined : (v) => voterAvantApres(m.id, v)} />
+          {m.salon && onSalon && (
+            <button type="button" className="lv-cta creux lv-aa-salon" onClick={() => onSalon(m.salon!)}>
+              💬 {moi ? "Ouvrir ma discussion" : "Rejoindre la discussion"}
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          <Contenu m={m} branche={branche} onEssayer={m.reference && !moi ? () => onEssayer(m.reference!) : undefined} />
+          {media && m.texte && <p className="lv-texte">{m.texte}</p>}
+        </>
+      )}
       {/* UNE FORMULE SE DIT FORMULE : la photo montre un de ses plats, la
           ligne dit tout ce qu'elle comprend — sinon on lirait « magret » sous
           une photo de garbure sans comprendre. */}
@@ -1924,6 +1947,8 @@ function StylesLaVille() {
 .lv-cta{flex:1 0 auto;justify-content:center;display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 16px;border-radius:999px;border:0;cursor:pointer;font:inherit;font-size:14.5px;font-weight:800;
   color:#2A1608;background:linear-gradient(180deg,#F8B451,#E8932A);box-shadow:0 6px 18px rgba(232,147,42,.3);white-space:nowrap;}
 .lv-cta.creux{color:#FFC46B;background:none;border:1.5px solid #F5A23A;box-shadow:none;}
+.lv-texte.aa-question{margin:2px 2px 10px;}
+.lv-aa-salon{display:flex;width:100%;margin-top:10px;}
 .lv-ic{width:17px;height:17px;flex:none;fill:currentColor;}
 .lv-ic.trait{fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;}
 .lv-bas{display:flex;gap:10px;justify-content:flex-end;margin:8px 4px 0;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:500;font-size:12.5px;color:#9C8775;}
