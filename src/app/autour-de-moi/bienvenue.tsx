@@ -36,7 +36,7 @@ const GESTES: { onglet: OngletBienvenue; titre: string; dit: string; icone: Reac
   },
   {
     onglet: "salons",
-    titre: "Ensemble",
+    titre: "Salons",
     dit: "Discute d’une tenue, d’un resto ou d’une sortie.",
     icone: (
       <>

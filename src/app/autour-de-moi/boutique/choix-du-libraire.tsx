@@ -252,7 +252,7 @@ export function ChoixDuLibraire({
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M20 11.5a7.5 7.5 0 0 1-11 6.6L4 19.5l1.4-4.5A7.5 7.5 0 1 1 20 11.5Z" />
               </svg>
-              En parler dans Ensemble
+              En parler dans un salon
             </button>
           )}
         </div>

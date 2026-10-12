@@ -736,7 +736,7 @@ function Discussion({
       )}
       {onEnsemble && (
         <button type="button" className="dso-ens" onClick={() => onEnsemble(cle)}>
-          Aussi dans Ensemble, en salon public <span aria-hidden="true">↗</span>
+          Aussi dans Salons, ouvert à tous <span aria-hidden="true">↗</span>
         </button>
       )}
       <div className="dso-fil">

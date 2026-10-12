@@ -6,8 +6,10 @@
 // tant qu'utilisatrice, on ne m'a pas demandé de choisir mon fantôme pour
 // m'identifier ? » On écrivait sous « Vous », et les amis lisaient « Vous ».
 //
-// AU PREMIER GESTE QUI PARLE AUX AUTRES — un message, une invitation, un
-// salon ouvert depuis un essai —, et seulement s'il manque quelque chose :
+// EN ENTRANT DANS UN SALON (« quand je suis rentré dans le salon, on ne me
+// demande pas de choisir mon fantôme avec mon pseudo »), et à tout geste qui
+// parle aux autres — un message, une invitation, un salon ouvert depuis un
+// essai —, seulement s'il manque quelque chose :
 //   1. le fantôme, avec LE MÊME PANNEAU que l'application (`PanneauPlace`),
 //      mais au « vous » de la page : « Choisissez votre fantôme » ; « Choisir
 //      plus tard » garde celui par défaut ;
@@ -21,21 +23,25 @@
 // téléphone (`lib/direct/habitant.ts`) — et, pour le retrouver ailleurs,
 // « Emportez votre Maison » (`emporter-maison.tsx`).
 
-import { useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { choisirPuis, PanneauPlace } from "../prendre-place";
 import { direSonPrenom, monPrenom } from "@/lib/direct/salons";
 
 export function useIdentite(actif: boolean): { identifierPuis: (apres: () => void) => void; rendu: ReactNode } {
   const [prenomPour, setPrenomPour] = useState<(() => void) | null>(null);
   const [brouillon, setBrouillon] = useState("");
-  const identifierPuis = (apres: () => void) => {
-    if (!actif) {
-      apres();
-      return;
-    }
-    const suite = () => (monPrenom() ? apres() : setPrenomPour(() => apres));
-    choisirPuis(suite);
-  };
+  // STABLE : l'arrivée par un lien d'invitation la demande dès le chargement.
+  const identifierPuis = useCallback(
+    (apres: () => void) => {
+      if (!actif) {
+        apres();
+        return;
+      }
+      const suite = () => (monPrenom() ? apres() : setPrenomPour(() => apres));
+      choisirPuis(suite);
+    },
+    [actif],
+  );
   const rendu = (
     <>
       {/* LE PANNEAU DE L'APPLICATION, posé par-dessus toute la page. */}

@@ -198,7 +198,7 @@ export function EnsembleAlcoves({
         }
       />
       <header className="ea-tete">
-        <h1>Ensemble</h1>
+        <h1>Salons</h1>
         <div className="ea-boutons">
           <button type="button" className={source === "miens" ? "on" : ""} aria-haspopup="dialog" onClick={() => setListe("miens")}>
             <IconeListe />
@@ -313,7 +313,7 @@ function Accueil({ onDecouvrir }: { onDecouvrir: () => void }) {
           Clikme
           <i aria-hidden="true" />
         </p>
-        <p className="ea-bienvenue">Bienvenue dans Ensemble</p>
+        <p className="ea-bienvenue">Bienvenue dans les salons</p>
         <h1>
           Une découverte.
           <br />
