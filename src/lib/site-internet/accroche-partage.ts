@@ -20,7 +20,13 @@ import type { CleMetier } from "@/lib/direct/apercu-habitant";
 /** « de Lili Ross » mais « d’Atelier Mona » : l'élision devant une voyelle. */
 const de = (nom: string) => (/^[aeiouyàâäéèêëîïôöûüœ]/i.test(nom) ? `d’${nom}` : `de ${nom}`);
 
-type Accroche = { titre: (nom: string) => string; phrase: (a: string) => string };
+/** Ce que la page a vraiment à montrer, au-delà du métier. */
+export type CeQuIlA = {
+  /** Le chef a dit son plat du jour (son enregistrement, ou sa phrase dite par son double). */
+  vocalDuChef?: boolean;
+};
+
+type Accroche = { titre: (nom: string) => string; phrase: (a: string, il: CeQuIlA) => string };
 
 /** `a` : « à Vevey », précédé d'une espace — ou rien, si l'on ne connaît pas la ville. La
  *  ville seulement là où elle se dit bien (« on vous le met de côté à Vevey ») : l'image
@@ -44,11 +50,16 @@ const ACCROCHES: Record<CleMetier, Accroche> = {
   },
   restaurant: {
     titre: (nom) => `Ce qu’on mange aujourd’hui chez ${nom}`,
-    phrase: () => `Voyez la carte et le plat du jour avant de vous déplacer, et réservez votre table en un message.`,
+    /* LE VOCAL DU CHEF SEULEMENT S'IL EXISTE : la plupart n'en ont pas, et le lien ne promet
+       que ce que la page fait entendre. */
+    phrase: (_a, il) =>
+      il.vocalDuChef
+        ? `Découvrez la carte et le plat du jour avant de vous déplacer, et le vocal du chef qui vous mettra les papilles en éveil.`
+        : `Découvrez la carte et le plat du jour avant de vous déplacer, et réservez votre table en un message.`,
   },
   bar: {
     titre: (nom) => `Ce soir chez ${nom}`,
-    phrase: () => `Voyez l’ambiance et ce qu’on sert ce soir avant de sortir, et faites garder votre table en un message.`,
+    phrase: () => `Testez l’ambiance et la composition de la soirée avant même d’y aller.`,
   },
   fleuriste: {
     titre: (nom) => `Voyez les bouquets ${de(nom)} chez vous`,
@@ -64,7 +75,7 @@ const ACCROCHES: Record<CleMetier, Accroche> = {
   },
 };
 
-export function accrocheDuPartage(branche: CleMetier, nom: string, ville: string): { title: string; description: string } {
+export function accrocheDuPartage(branche: CleMetier, nom: string, ville: string, il: CeQuIlA = {}): { title: string; description: string } {
   const a = ACCROCHES[branche] ?? ACCROCHES.artisan;
-  return { title: a.titre(nom), description: a.phrase(ville ? ` à ${ville}` : "") };
+  return { title: a.titre(nom), description: a.phrase(ville ? ` à ${ville}` : "", il) };
 }

@@ -49,7 +49,7 @@ import { brancheDuMetier, carteDepuisFiche, enGrand } from "@/lib/site-internet/
 import { accrocheDuPartage } from "@/lib/site-internet/accroche-partage";
 import { menuATenter, tenterLesPhotosMenu } from "@/lib/site-internet/photos-menu";
 import { couvertureDuDiagnostic, hoteACherche, photosCandidates, sansHoteAFaire } from "@/lib/site-internet/couverture";
-import { experienceDuDiagnostic, sceneAFaire, sceneARefaire } from "@/lib/site-internet/experience-donnees";
+import { experienceDuDiagnostic, platEnCours, sceneAFaire, sceneARefaire } from "@/lib/site-internet/experience-donnees";
 import { etatDeLaFiche, raisonLisible } from "@/lib/site-internet/fiche-google";
 import { COLONNES_FICHE, construireFiche } from "@/lib/site-internet/fiche-du-site";
 import { compterLeJour } from "@/lib/site-internet/compteurs-jour";
@@ -118,7 +118,9 @@ export async function generateMetadata({
   const noindex = { robots: { index: false, follow: false }, ...installer };
   const copie = copieDePresentation(slug);
   if (copie) {
-    const { title, description } = accrocheDuPartage(copie.carte.branche, copie.carte.nom, capWords(copie.carte.ville || ""));
+    const { title, description } = accrocheDuPartage(copie.carte.branche, copie.carte.nom, capWords(copie.carte.ville || ""), {
+      vocalDuChef: Boolean(copie.carte.voix?.extrait || copie.carte.voix?.citation),
+    });
     return { title, description, ...noindex, openGraph: { title, description, type: "website" }, twitter: { card: "summary_large_image", title, description } };
   }
   if (estAdresseDeDemo(slug)) {
@@ -130,7 +132,7 @@ export async function generateMetadata({
     const supabase = createAdminClient();
     const { data } = await supabase
       .from("human_vitrine_sites")
-      .select("business_name, city, activite")
+      .select("business_name, city, activite, diagnostic")
       .eq("slug", slug)
       .eq("channel", "letter")
       .maybeSingle();
@@ -139,7 +141,10 @@ export async function generateMetadata({
     const nom = str(row.business_name) || "Votre commerce";
     const ville = str(row.city);
     // CE QUE LE CLIENT Y GAGNE AVANT DE SE DÉPLACER, selon son métier — voir `accroche-partage.ts`.
-    const { title, description } = accrocheDuPartage(brancheDuMetier(str(row.activite)), nom, ville ? capWords(ville) : "");
+    const plat = platEnCours(experienceDuDiagnostic(row.diagnostic)?.plat);
+    const { title, description } = accrocheDuPartage(brancheDuMetier(str(row.activite)), nom, ville ? capWords(ville) : "", {
+      vocalDuChef: Boolean(plat?.voix || plat?.phrase || plat?.voixTexte),
+    });
     // L'image de partage est fournie par opengraph-image.tsx (carte générée).
     return {
       title,
