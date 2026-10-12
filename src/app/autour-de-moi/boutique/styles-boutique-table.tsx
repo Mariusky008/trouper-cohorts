@@ -598,6 +598,14 @@ export function StylesBoutiqueTable() {
         .bt-duo .bt-go{font-size:16px;padding:13px 14px;}
         .bt-duo.seul{grid-template-columns:1fr;}
         .bt-duo .bt-deux{padding:13px 10px;font-size:15px;white-space:nowrap;}
+        /* DEUX BOUTONS CÔTE À CÔTE NE DÉBORDENT JAMAIS. Mesuré à 390 dans le
+           salon d'un coiffeur : « Prendre rendez-vous », sur une ligne, sortait
+           de l'écran — une colonne « 1fr » ne descend pas sous la largeur de
+           son texte. Couper le texte en trois lignes n'était pas mieux. CÔTE À
+           CÔTE QUAND ILS TIENNENT, l'un sous l'autre sinon : chacun garde sa
+           ligne entière, et « Réserver » reste à côté d'« Inviter des amis ». */
+        .bt-duo{display:flex;flex-wrap:wrap;}
+        .bt-duo>*{flex:1 1 0;min-width:max-content;}
         /* LES ECRANS QUI DEFILENT GARDENT LE DOUBLE A COTE DE LEUR DERNIER
            GESTE, comme sa maquette des avis : les boutons de fin laissent la
            place au coin plutot que de passer dessous. */
