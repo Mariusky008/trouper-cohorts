@@ -178,7 +178,7 @@ type Fiche = {
 const VUES: { cle: OngletAppli; nom: string }[] = [
   { cle: "direct", nom: "Le Direct" },
   { cle: "ville", nom: "La Ville" },
-  { cle: "salons", nom: "Ensemble" },
+  { cle: "salons", nom: "Salons" },
   { cle: "profil", nom: "Ma maison" },
 ];
 

@@ -469,10 +469,15 @@ const ANCIENNE_OUVERTURE = false;
  * qui les crée — « proposer à mes amis » —, ce qui ferme la boucle : le geste
  * et l'endroit portent enfin le même nom.
  */
+/* « SALONS », COMME SUR LA PAGE DU COMMERÇANT : « Sur l'application, il
+   faudrait synchroniser avec la page commerçant, où on appelle les salons de
+   discussion "salons" ; sur l'application c'est "Ensemble", il faudrait que
+   ça devienne "Salons" aussi. » Un seul mot pour un seul endroit. La clé
+   (`salons`) et les liens (`?salon=`, `?invitation=`) ne changent pas. */
 const NOM_ONGLET = {
   direct: "Le direct",
   ville: "La ville",
-  salons: "Ensemble",
+  salons: "Salons",
   profil: "Ma maison",
 } as const;
 

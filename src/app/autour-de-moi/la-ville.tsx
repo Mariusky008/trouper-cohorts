@@ -1486,7 +1486,7 @@ function Composeur({
               <button type="button" className="lv-retour lv-vers-salon" disabled={!pret} onClick={versSalon}>
                 💬 Partager plutôt dans un salon
               </button>
-              <p className="lv-qui-voit">Un salon précis d’Ensemble : seuls ceux qui y sont la verront.</p>
+              <p className="lv-qui-voit">Un de tes salons : seuls ceux qui y sont la verront.</p>
             </div>
             <p className="lv-garde">🔒 Rien n’est publié sans ton accord.</p>
           </>
@@ -1753,7 +1753,7 @@ function VersEnsemble({
                 </div>
               </>
             )}
-            <p className="lv-garde">Le salon se retrouve ensuite dans Ensemble.</p>
+            <p className="lv-garde">Le salon se retrouve ensuite dans l’onglet Salons.</p>
           </>
         )}
       </div>

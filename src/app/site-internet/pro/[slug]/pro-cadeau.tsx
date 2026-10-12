@@ -92,7 +92,7 @@ export function ProCadeau({ slug, token, branche, profil }: { slug: string; toke
         <div className="a-sub">
           {profil.alcool
             ? "Ce soir c’est calme ? Depuis le salon de votre soirée — ou un salon ouvert sur votre lieu — offrez quelques consos, tirées au sort parmi ceux qui comptent venir."
-            : `Quand on parle de vous dans un salon d’Ensemble, public ou privé, offrez-y quelques ${profil.plusieurs}, tirés au sort parmi ses membres.`}{" "}
+            : `Quand on parle de vous dans un salon, public ou privé, offrez-y quelques ${profil.plusieurs}, tirés au sort parmi ses membres.`}{" "}
           Les gagnants reçoivent un code ; vous le validez d’un appui {profil.sur}, et vous voyez combien sont vraiment venus grâce à ça.
         </div>
         <button type="button" className="interrupteur" role="switch" aria-checked={r.actif} onClick={() => changer({ actif: !r.actif })}>
@@ -180,7 +180,7 @@ export function ProCadeau({ slug, token, branche, profil }: { slug: string; toke
         <div className="note">
           {profil.alcool
             ? "Dans la démonstration : ouvrez « Découvrir cette soirée », puis « Démo · côté bar »."
-            : "Dans la démonstration : ouvrez un salon d’Ensemble où l’on parle d’un commerce, puis « Démo · côté commerçant »."}{" "}
+            : "Dans la démonstration : ouvrez, dans Salons, un salon où l’on parle d’un commerce, puis « Démo · côté commerçant »."}{" "}
           Le lancement en direct depuis vos salons arrive avec les salons partagés des vrais commerces ; vos réglages sont gardés d’ici là.
         </div>
       </div>

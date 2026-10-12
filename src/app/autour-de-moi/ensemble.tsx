@@ -334,7 +334,7 @@ export function Ensemble({
       </button>
       <header className="en-tete">
         <div>
-          <h1>Ensemble</h1>
+          <h1>Salons</h1>
           <p>Nos échanges, nos envies, la suite à décider.</p>
         </div>
         <button type="button" className="en-crayon" onClick={() => setLancer((v) => !v)} aria-label="Lancer une discussion">

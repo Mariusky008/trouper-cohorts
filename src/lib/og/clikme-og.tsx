@@ -40,7 +40,7 @@ const CURSEUR =
   ).toString("base64");
 
 /** Les quatre rubriques de l'application, dans l'ordre du menu. */
-export const RUBRIQUES = ["Le Direct", "La Ville", "Ensemble", "Ma maison"] as const;
+export const RUBRIQUES = ["Le Direct", "La Ville", "Salons", "Ma maison"] as const;
 
 async function lire(chemin: string): Promise<Buffer | null> {
   try {

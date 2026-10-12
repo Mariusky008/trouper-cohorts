@@ -285,7 +285,7 @@ export function BarreDAcces({
                   }}
                 >
                   <b>👥 Inviter une personne de mes discussions</b>
-                  <small>Les personnes de tes salons privés. Elle devra accepter dans Ensemble.</small>
+                  <small>Les personnes de tes salons privés. Elle devra accepter dans Salons.</small>
                 </button>
                 <button type="button" className="ps-ligne" onClick={() => (setOptions(""), onInviterLien())}>
                   <b>📲 Partager une invitation</b>
@@ -329,7 +329,7 @@ export function BarreDAcces({
                   personnes.map((x) => (
                     <button key={x.ref} type="button" className="ps-ligne" onClick={async () => dire(await inviterPersonne(salon.cle, x.ref), `Invitation envoyée à ${x.qui}.`)}>
                       <b>{x.qui}</b>
-                      <small>Reçoit une invitation à accepter dans Ensemble.</small>
+                      <small>Reçoit une invitation à accepter dans Salons.</small>
                     </button>
                   ))
                 )}
