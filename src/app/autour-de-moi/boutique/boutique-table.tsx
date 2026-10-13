@@ -558,6 +558,8 @@ export function BoutiqueTable({
     c.branche === "artisan" && /bijou|bracelet|collier|bague|joaill|tatou|tattoo|bougie|cire/i.test(c.metier ?? "") ? "Essayer" : mots.onglet;
   /** À table (restaurant, bar) : le plat et la voix du chef. Ailleurs : l'essayage. */
   const aLaTable = c.branche === "restaurant" || c.branche === "bar";
+  /** L'instant où l'on a touché le bandeau « En ce moment » : l'essayage s'ouvre alors sur la pièce du jour. */
+  const [viseJour, setViseJour] = useState(0);
   // LES TROIS ÉTAPES, AUX SEULS RESTAURANTS — voir `estUnRestaurant`.
   const troisEtapes = estUnRestaurant(c);
   /* ALLER AU FORMULAIRE : l'onglet des infos, puis jusqu'en bas. */
@@ -1698,7 +1700,14 @@ export function BoutiqueTable({
                 <button
                   type="button"
                   className={`bt-annonce${o.reste ? " reste" : ""}`}
-                  onClick={() => entrer(lieuRef.current?.querySelector<HTMLElement>(".bt-hote, .bt-accueille") ?? null)}
+                  onClick={() => {
+                    /* HORS DE LA TABLE, LE BANDEAU MÈNE À SA PIÈCE DU JOUR : on
+                       entre, et l'essayage s'ouvre sur elle — voir
+                       `PieceDuJourEnVedette`. « Comme on la verrait sur
+                       l'application. » */
+                    if (!aLaTable) setViseJour(Date.now());
+                    entrer(lieuRef.current?.querySelector<HTMLElement>(".bt-hote, .bt-accueille") ?? null);
+                  }}
                 >
                   {vignette && <span className="bt-annonce-photo" style={{ backgroundImage: `url("${vignette}")` }} aria-hidden="true" />}
                   <span className="bt-annonce-mots">
@@ -1760,6 +1769,7 @@ export function BoutiqueTable({
             <EssaiDuLieu
               c={c}
               saPage={saPage}
+              vise={viseJour}
               onReserver={() => setDiscute(true)}
               onSalon={(o) => identifierPuis(() => {
                 const moi = monPrenom() || "Vous";

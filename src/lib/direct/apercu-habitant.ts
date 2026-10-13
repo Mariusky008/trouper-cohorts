@@ -978,6 +978,12 @@ export type ArticleCatalogue = {
    */
   publieLe?: string;
   /**
+   * JUSQU'À QUAND ELLE EST À L'AFFICHE (ISO), quand c'est une annonce de son
+   * comptoir. Sert à « jusqu'à 18 h » sur la pièce du jour — voir
+   * `lib/direct/piece-du-jour.ts`.
+   */
+  fin?: string;
+  /**
    * CE QUE L'ESSAI DOIT REPRODUIRE, écrit devant la photo — jamais d'après le
    * nom de la prestation. Facultatif : sans elle, l'essai s'appuie sur la
    * photo seule. Voir `decrire` dans `fantomes.ts`.
