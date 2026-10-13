@@ -193,14 +193,14 @@ const cleOpenAI = () => str(process.env.OPENAI_API_KEY);
 /** L'analyse est-elle branchée ? Sans clé, l'écran demande la place et garde la couleur mesurée. */
 export const analyseConfiguree = () => Boolean(cleGemini() || cleOpenAI());
 
-async function voirParGemini(img: Img, cle: string): Promise<string | { erreur: string }> {
+async function voirParGemini(img: Img, cle: string, question = QUESTION_VETEMENT): Promise<string | { erreur: string }> {
   const base = str(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
   const modele = str(process.env.GEMINI_VISION_MODEL) || "gemini-2.5-flash";
   const r = await fetch(`${base}/v1beta/models/${modele}:generateContent`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-goog-api-key": cle },
     body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ inlineData: { mimeType: img.type, data: img.donnees } }, { text: QUESTION_VETEMENT }] }],
+      contents: [{ role: "user", parts: [{ inlineData: { mimeType: img.type, data: img.donnees } }, { text: question }] }],
       generationConfig: { responseMimeType: "application/json" },
     }),
     signal: AbortSignal.timeout(30_000),
@@ -210,7 +210,7 @@ async function voirParGemini(img: Img, cle: string): Promise<string | { erreur: 
   return (j.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("");
 }
 
-async function voirParOpenAI(img: Img, cle: string): Promise<string | { erreur: string }> {
+async function voirParOpenAI(img: Img, cle: string, question = QUESTION_VETEMENT): Promise<string | { erreur: string }> {
   const base = str(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
   const modele = str(process.env.OPENAI_VISION_MODEL) || str(process.env.OPENAI_DOUBLE_MODEL) || "gpt-5.4-mini";
   const r = await fetch(`${base}/v1/chat/completions`, {
@@ -225,7 +225,7 @@ async function voirParOpenAI(img: Img, cle: string): Promise<string | { erreur: 
           role: "user",
           content: [
             { type: "image_url", image_url: { url: `data:${img.type};base64,${img.donnees}` } },
-            { type: "text", text: QUESTION_VETEMENT },
+            { type: "text", text: question },
           ],
         },
       ],
@@ -235,6 +235,34 @@ async function voirParOpenAI(img: Img, cle: string): Promise<string | { erreur: 
   if (!r.ok) return { erreur: `OpenAI ${r.status}` };
   const j = (await r.json()) as { choices?: { message?: { content?: string } }[] };
   return j.choices?.[0]?.message?.content ?? "";
+}
+
+/**
+ * UNE IMAGE, UNE QUESTION, UNE RÉPONSE JSON — le premier modèle qui répond.
+ * Le même chemin que l'analyse d'un vêtement, pour une autre question (voir
+ * « ClikMe tranche », `lib/direct/clikme-tranche.ts`).
+ */
+export async function regarderImage(img: Img, question: string): Promise<Record<string, unknown> | { erreur: string }> {
+  const erreurs: string[] = [];
+  for (const [cle, voir] of [
+    [cleGemini(), voirParGemini],
+    [cleOpenAI(), voirParOpenAI],
+  ] as const) {
+    if (!cle) continue;
+    try {
+      const r = await voir(img, cle, question);
+      if (typeof r !== "string") {
+        erreurs.push(r.erreur);
+        continue;
+      }
+      const o = JSON.parse(r.replace(/^```json|```$/g, "").trim()) as unknown;
+      if (o && typeof o === "object") return o as Record<string, unknown>;
+      erreurs.push("réponse illisible");
+    } catch (e) {
+      erreurs.push(e instanceof Error ? e.message : String(e));
+    }
+  }
+  return { erreur: erreurs.join(" ; ") || "aucune clé d'IA" };
 }
 
 /**

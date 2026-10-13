@@ -170,7 +170,7 @@ export async function creerAvis(
   supabase: Supabase,
   j: JetonAvis,
   image: Buffer,
-  d: { quoi: string; prix?: string; magasin?: string; carte?: string; page?: string; ceci?: string },
+  d: { quoi: string; prix?: string; magasin?: string; carte?: string; page?: string; ceci?: string; prenom?: string },
 ): Promise<"ok" | "plein" | "image" | "base"> {
   try {
     if (await ligne(supabase, j.e)) return "ok";
@@ -199,6 +199,8 @@ export async function creerAvis(
         ...(pageDeMagasin(d.page) ? { pg: pageDeMagasin(d.page) } : {}),
         // « cette coupe », « cette pose » : ce que l'ami pourra essayer à son tour.
         ...(/^(cette|ce|ces) [a-zàâçéèêëîïôûüœ' -]{2,30}$/i.test(s(d.ceci, 40)) ? { c: s(d.ceci, 40) } : {}),
+        // SON PRÉNOM, quand son téléphone le connaît : « Le salon de Marie », « Marie vous demande ».
+        ...(s(d.prenom, 30) ? { qp: s(d.prenom, 30) } : {}),
         votes: [],
         vus: 0,
       },
@@ -229,8 +231,7 @@ export async function lireAvisPublic(supabase: Supabase, e: string, votant?: str
     if (!l) return null;
     const d = l.donnees ?? {};
     const votes = votesDe(d);
-    const { data: h } = await supabase.from("human_habitants").select("prenom").eq("id", l.habitant).maybeSingle();
-    const prenom = s((h as Record<string, unknown> | null)?.prenom, 30);
+    const prenom = (await prenomDe(supabase, l.habitant)) || s(d.qp, 30);
     const moi = votantValide(votant);
     const mien = moi ? votes.find((x) => x.a === moi) : undefined;
     return {
@@ -343,5 +344,173 @@ export async function imageAvis(supabase: Supabase, e: string): Promise<Buffer |
     return Buffer.from(await (blob as Blob).arrayBuffer());
   } catch {
     return null;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   💬 LE SALON DE L'ESSAI — la discussion privée autour d'un « Ça me va ? ».
+
+   « Quand l'ami clique, c'est un bon UX, mais on n'est pas du tout sur la
+   page du commerçant. Il aurait fallu que ça ouvre un salon de discussion
+   privé, où l'essayant peut y voir plus clair et voir ce qu'il se passe. »
+
+   LE SALON VIT SUR LA MÊME LIGNE QUE L'ESSAI ET SES VOTES : les mots
+   (`donnees.mots`) à côté des votes, dans la Maison de celui qui demande. Ni
+   table ni migration de plus — et il part avec « tout effacer ». Il est
+   PRIVÉ COMME LE LIEN : seuls ceux à qui on l'a envoyé l'ouvrent, et ils
+   s'y retrouvent sur la page du commerçant (voir `salon-essai.tsx`).
+
+   CLIKME Y PARLE AUSSI : son verdict, puis ses réponses — voir
+   `lib/direct/clikme-tranche.ts`. Ses mots portent `k: "clikme"`, ceux de
+   celui qui a essayé `k: "auteur"`.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/** Un mot du salon, tel qu'on le range. `a` : le téléphone qui l'a écrit (jamais renvoyé). */
+type MotRange = { i: string; a: string; q: string; x: string; t: string; k?: "auteur" | "clikme"; v?: "oui" | "non" | "hesite" };
+
+/** Un mot du salon, tel qu'on le montre. `mien` : écrit depuis ce téléphone. */
+export type MotSalon = { i: string; q: string; x: string; t: string; k?: "auteur" | "clikme"; v?: "oui" | "non" | "hesite"; mien?: boolean };
+
+export type SalonEssai = AvisPublic & {
+  mots: MotSalon[];
+  /** C'est celui qui a essayé qui regarde : il voit qui a voté quoi. */
+  auteur: boolean;
+  votes?: { v: ChoixVote; q?: string; t: string }[];
+  /** Combien de fois ClikMe peut encore parler dans ce salon. */
+  clikme: number;
+};
+
+/** Ce qu'un salon garde : assez pour un groupe d'amis, pas pour un forum. */
+const MOTS_MAX = 150;
+/** Les mots d'un même téléphone. */
+const MOTS_PAR_PERSONNE = 60;
+/** Un mot par seconde et demie au plus, par téléphone. */
+const MOTS_ECART_MS = 1500;
+/** Combien de fois ClikMe parle dans un salon, et pour une même personne. */
+export const CLIKME_MAX = 12;
+const CLIKME_PAR_PERSONNE = 6;
+
+const motsDe = (d: Record<string, unknown> | null | undefined): MotRange[] =>
+  (Array.isArray(d?.mots) ? (d.mots as Record<string, unknown>[]) : [])
+    .map((m) => ({
+      i: s(m?.i, 24),
+      a: s(m?.a, 40),
+      q: s(m?.q, 30),
+      x: s(m?.x, 420),
+      t: s(m?.t, 40),
+      ...(m?.k === "auteur" || m?.k === "clikme" ? { k: m.k as "auteur" | "clikme" } : {}),
+      ...(m?.v === "oui" || m?.v === "non" || m?.v === "hesite" ? { v: m.v as "oui" | "non" | "hesite" } : {}),
+    }))
+    .filter((m) => m.i && m.x && m.t);
+
+const idMot = () => `${Date.now().toString(36)}${randomUUID().slice(0, 6)}`;
+
+async function prenomDe(supabase: Supabase, habitant: string): Promise<string> {
+  const { data: h } = await supabase.from("human_habitants").select("prenom").eq("id", habitant).maybeSingle();
+  return s((h as Record<string, unknown> | null)?.prenom, 30);
+}
+
+/** Le salon, pour celui qui l'ouvre. `null` : l'essai n'est pas (ou plus) là. */
+export async function lireSalonEssai(supabase: Supabase, e: string, qui: { votant?: unknown; habitant?: string | null }): Promise<SalonEssai | null> {
+  try {
+    const l = await ligne(supabase, e);
+    if (!l) return null;
+    const d = l.donnees ?? {};
+    const votes = votesDe(d);
+    const prenom = (await prenomDe(supabase, l.habitant)) || s(d.qp, 30);
+    const moi = votantValide(qui.votant);
+    const auteur = Boolean(qui.habitant && qui.habitant === l.habitant);
+    const mien = moi ? votes.find((x) => x.a === moi) : undefined;
+    const ck = Math.max(0, Number(d.ck) || 0);
+    return {
+      quoi: s(d.o),
+      ...(s(d.p, 30) ? { prix: s(d.p, 30) } : {}),
+      ...(s(d.m, 80) ? { magasin: s(d.m, 80) } : {}),
+      ...(pageDeMagasin(d.pg) ? { page: pageDeMagasin(d.pg) } : {}),
+      ...(s(d.c, 40) ? { ceci: s(d.c, 40) } : {}),
+      ...(prenom ? { prenom } : {}),
+      ...compte(votes),
+      ...(mien ? { monVote: mien.v } : {}),
+      mots: motsDe(d).map(({ a, ...m }) => ({ ...m, ...(moi && a === moi && m.k !== "clikme" ? { mien: true } : {}) })),
+      auteur,
+      ...(auteur ? { votes: votes.map(({ v, q, t }) => ({ v, ...(q ? { q } : {}), t })) } : {}),
+      clikme: Math.max(0, CLIKME_MAX - ck),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Un mot dans le salon. Celui qui a essayé signe de son prénom ; les amis, du leur. */
+export async function ecrireDansSalonEssai(
+  supabase: Supabase,
+  e: string,
+  m: { votant: unknown; prenom: unknown; texte: unknown; habitant?: string | null },
+): Promise<{ ok: true } | { erreur: string; statut: number }> {
+  const a = votantValide(m.votant);
+  const x = s(m.texte, 280);
+  if (!a || !x) return { erreur: "Mot vide.", statut: 400 };
+  try {
+    const l = await ligne(supabase, e);
+    if (!l) return { erreur: "Cet essai n'est plus là.", statut: 404 };
+    const d = l.donnees ?? {};
+    const mots = motsDe(d);
+    const miens = mots.filter((y) => y.a === a);
+    if (miens.length >= MOTS_PAR_PERSONNE) return { erreur: "Vous avez beaucoup écrit ici : laissez la place aux autres.", statut: 429 };
+    const dernier = miens.at(-1);
+    if (dernier && Date.now() - (Date.parse(dernier.t) || 0) < MOTS_ECART_MS) return { erreur: "Doucement : une seconde.", statut: 429 };
+    const auteur = Boolean(m.habitant && m.habitant === l.habitant);
+    const q = auteur ? (await prenomDe(supabase, l.habitant)) || s(d.qp, 30) || s(m.prenom, 30) : s(m.prenom, 30);
+    const mot: MotRange = { i: idMot(), a, q, x, t: new Date().toISOString(), ...(auteur ? { k: "auteur" as const } : {}) };
+    const { error } = await supabase
+      .from("human_maison_elements")
+      .update({ donnees: { ...d, mots: [...mots, mot].slice(-MOTS_MAX) }, maj_le: new Date().toISOString() })
+      .eq("id", l.id)
+      .eq("sorte", SORTE_AVIS);
+    return error ? { erreur: "Mot non enregistré.", statut: 500 } : { ok: true };
+  } catch {
+    return { erreur: "Mot non enregistré.", statut: 500 };
+  }
+}
+
+/** ClikMe peut-il encore parler ici, pour ce téléphone ? Et de quoi parle-t-on ? */
+export async function avantClikMe(
+  supabase: Supabase,
+  e: string,
+  votant: unknown,
+): Promise<{ quoi: string; prix?: string; magasin?: string; mots: { q: string; x: string; clikme?: boolean }[] } | { erreur: string; statut: number }> {
+  const a = votantValide(votant);
+  if (!a) return { erreur: "Qui demande ?", statut: 400 };
+  const l = await ligne(supabase, e);
+  if (!l) return { erreur: "Cet essai n'est plus là.", statut: 404 };
+  const d = l.donnees ?? {};
+  if ((Number(d.ck) || 0) >= CLIKME_MAX) return { erreur: "ClikMe a déjà beaucoup parlé ici : à vos amis de trancher !", statut: 429 };
+  const parLui = (Array.isArray(d.cka) ? (d.cka as unknown[]) : []).filter((x) => x === a).length;
+  if (parLui >= CLIKME_PAR_PERSONNE) return { erreur: "Vous avez déjà beaucoup demandé à ClikMe ici.", statut: 429 };
+  return {
+    quoi: s(d.o),
+    ...(s(d.p, 30) ? { prix: s(d.p, 30) } : {}),
+    ...(s(d.m, 80) ? { magasin: s(d.m, 80) } : {}),
+    mots: motsDe(d).map((m) => ({ q: m.q, x: m.x, ...(m.k === "clikme" ? { clikme: true } : {}) })),
+  };
+}
+
+/** ClikMe a répondu : son mot entre dans le salon, et compte. */
+export async function ecrireClikMe(supabase: Supabase, e: string, votant: unknown, texte: string, verdict?: "oui" | "non" | "hesite"): Promise<boolean> {
+  try {
+    const l = await ligne(supabase, e);
+    if (!l) return false;
+    const d = l.donnees ?? {};
+    const a = votantValide(votant);
+    const mot: MotRange = { i: idMot(), a: "clikme", q: "ClikMe", x: s(texte, 420), t: new Date().toISOString(), k: "clikme", ...(verdict ? { v: verdict } : {}) };
+    const cka = [...(Array.isArray(d.cka) ? (d.cka as unknown[]).filter((x): x is string => typeof x === "string") : []), ...(a ? [a] : [])].slice(-60);
+    const { error } = await supabase
+      .from("human_maison_elements")
+      .update({ donnees: { ...d, mots: [...motsDe(d), mot].slice(-MOTS_MAX), ck: (Number(d.ck) || 0) + 1, cka }, maj_le: new Date().toISOString() })
+      .eq("id", l.id)
+      .eq("sorte", SORTE_AVIS);
+    return !error;
+  } catch {
+    return false;
   }
 }

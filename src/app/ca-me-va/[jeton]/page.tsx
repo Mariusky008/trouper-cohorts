@@ -8,11 +8,19 @@
 // ELLE NE VOTE PAS EN S'OUVRANT : WhatsApp ouvre lui-même le lien pour en
 // faire l'aperçu. Et l'aperçu, c'est l'essai (`og:image`) : on voit la pièce
 // portée avant même d'ouvrir.
+//
+// 💬 ET QUAND L'ESSAI A ÉTÉ FAIT CHEZ UN COMMERÇANT, ELLE MÈNE À SON SALON.
+// « Quand l'ami clique, on n'est pas du tout sur la page du commerçant : il
+// aurait fallu que ça ouvre un salon de discussion privé. » La page garde son
+// aperçu (WhatsApp ne lit que l'en-tête), puis le téléphone de l'ami part sur
+// la page de la boutique, le salon de l'essai ouvert (`?essai=`, voir
+// `components/direct/salon-essai.tsx`) : le vote d'un appui, la discussion,
+// et la boutique juste derrière. `?vote=1` garde l'ancienne page.
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SITE_URL } from "@/lib/site-url";
 import { lireAvisPublic, lireJetonAvis, type AvisPublic } from "@/lib/direct/avis-amis";
-import { Patienter, Vote } from "./vote";
+import { Patienter, VersLeSalon, Vote } from "./vote";
 
 export const dynamic = "force-dynamic";
 
@@ -46,9 +54,25 @@ export async function generateMetadata({ params }: { params: Promise<{ jeton: st
   };
 }
 
-export default async function Page({ params }: { params: Promise<{ jeton: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ jeton: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { jeton } = await params;
+  const { vote } = await searchParams;
   const l = await lire(jeton);
+  if (l?.avis?.page && !vote) {
+    const salon = `${l.avis.page}${l.avis.page.includes("?") ? "&" : "?"}via=avis&essai=${encodeURIComponent(l.jeton)}`;
+    return (
+      <main className="cmv">
+        <style>{STYLE}</style>
+        <div className="cmv-f">
+          <p className="cmv-marque">clikme</p>
+          <p className="cmv-sur">{l.avis.prenom ? `${l.avis.prenom} vous demande votre avis` : "On vous demande votre avis"}</p>
+          <h1>Ça me va&nbsp;?</h1>
+          <p className="cmv-d">{l.avis.magasin ? `Le salon de l’essai s’ouvre chez ${l.avis.magasin}…` : "Le salon de l’essai s’ouvre…"}</p>
+          <VersLeSalon href={salon} />
+        </div>
+      </main>
+    );
+  }
   return (
     <main className="cmv">
       <style>{STYLE}</style>

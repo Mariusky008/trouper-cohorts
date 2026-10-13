@@ -118,6 +118,7 @@ import { aLaPageAOnglets } from "@/lib/direct/page-a-onglets";
 import { imposerVilleDuDressing } from "@/lib/direct/dressing-depot";
 import { ReponseDuMagasin } from "@/components/direct/dressing/confirmation-magasin";
 import { AvisRecus } from "@/components/direct/ca-me-va";
+import { SalonEssaiDepuisAdresse } from "@/components/direct/salon-essai";
 import { BandeauPont } from "@/components/direct/dressing/pont-dressing";
 import { StylesDressing } from "@/components/direct/dressing/styles-dressing";
 
@@ -417,6 +418,8 @@ export function Boutique(p: {
         <ReponseDuMagasin />
         {/* LES VOTES DES AMIS (« Ça me va ? ») arrivés pendant qu'on regardait ailleurs. */}
         <AvisRecus />
+        {/* 💬 L'AMI ARRIVE DE WHATSAPP (`?essai=`) : le salon de l'essai, par-dessus la boutique. */}
+        <SalonEssaiDepuisAdresse />
         {/* AU RETOUR DU PONT (domaine propre du magasin) : ce qui s'est passé, dit une fois. */}
         <BandeauPont />
         <StylesDressing />
@@ -439,6 +442,7 @@ export function Boutique(p: {
     <>
       <ReponseDuMagasin />
       <AvisRecus />
+      <SalonEssaiDepuisAdresse />
       <BandeauPont />
       <StylesDressing />
       <BoutiqueLongue

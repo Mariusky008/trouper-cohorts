@@ -97,7 +97,7 @@ async function demanderLien(ville?: string): Promise<LienAvis | null> {
 }
 
 /** L'essai monte dans sa Maison, derrière le lien. `true` quand l'ami pourra le voir. */
-export async function rangerEssaiAvis(l: LienAvis, d: { image: string; quoi: string; prix?: string; magasin?: string; carte?: string; page?: string; ceci?: string }): Promise<boolean> {
+export async function rangerEssaiAvis(l: LienAvis, d: { image: string; quoi: string; prix?: string; magasin?: string; carte?: string; page?: string; ceci?: string; prenom?: string }): Promise<boolean> {
   try {
     const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "envoyer", jeton: l.jeton, ...d }) });
     const j = (await r.json()) as { ok?: boolean };
@@ -176,3 +176,66 @@ export function quiAVote(a: Avis): string {
   const liste = tete.length > 1 ? `${tete.slice(0, -1).join(", ")} et ${tete.at(-1)}` : tete[0];
   return reste ? `${tete.join(", ")} et ${reste} autre${reste > 1 ? "s" : ""}` : liste;
 }
+
+/* ═══ 💬 LE SALON DE L'ESSAI, CÔTÉ TÉLÉPHONE — voir `components/direct/salon-essai.tsx` ═══ */
+
+/** Ce téléphone, pour le serveur : tiré au hasard une fois, gardé ici. Le même pour voter et pour écrire. */
+export function votantDuTelephone(): string {
+  try {
+    let v = localStorage.getItem("clikme-votant") ?? "";
+    if (!/^[A-Za-z0-9_-]{8,40}$/.test(v)) {
+      v = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(36).padStart(2, "0")).join("").slice(0, 20);
+      localStorage.setItem("clikme-votant", v);
+    }
+    return v;
+  } catch {
+    return `v${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+  }
+}
+
+export type MotSalon = { i: string; q: string; x: string; t: string; k?: "auteur" | "clikme"; v?: "oui" | "non" | "hesite"; mien?: boolean };
+export type SalonEssai = {
+  quoi: string;
+  prix?: string;
+  magasin?: string;
+  page?: string;
+  ceci?: string;
+  prenom?: string;
+  oui: number;
+  non: number;
+  monVote?: ChoixVote;
+  mots: MotSalon[];
+  auteur: boolean;
+  votes?: { v: ChoixVote; q?: string; t: string }[];
+  clikme: number;
+};
+
+type Reponse = { ok?: boolean; error?: string; attente?: boolean; salon?: SalonEssai };
+
+export async function lireSalonEssai(jeton: string, votant: string): Promise<{ salon?: SalonEssai; attente?: boolean; erreur?: string }> {
+  try {
+    const r = await fetch(`${ROUTE}?salon=${encodeURIComponent(jeton)}&votant=${encodeURIComponent(votant)}`, { cache: "no-store" });
+    const j = (await r.json()) as Reponse;
+    if (j.ok && j.salon) return { salon: j.salon };
+    return j.attente ? { attente: true } : { erreur: j.error || "Ce salon n’est plus là." };
+  } catch {
+    return {};
+  }
+}
+
+async function poster(corps: Record<string, unknown>): Promise<{ ok: boolean; erreur?: string }> {
+  try {
+    const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
+    const j = (await r.json()) as Reponse;
+    return j.ok ? { ok: true } : { ok: false, erreur: j.error || "Ça n’est pas passé. Réessayez." };
+  } catch {
+    return { ok: false, erreur: "Pas de réseau. Réessayez." };
+  }
+}
+
+export const voterDansSalon = (jeton: string, votant: string, v: ChoixVote, prenom?: string) =>
+  poster({ action: "voter", jeton, v, votant, ...(prenom ? { prenom } : {}) });
+export const ecrireDansSalon = (jeton: string, votant: string, texte: string, prenom?: string) =>
+  poster({ action: "ecrire", jeton, votant, texte, ...(prenom ? { prenom } : {}) });
+export const demanderAClikMe = (jeton: string, votant: string, question?: string) =>
+  poster({ action: "clikme", jeton, votant, ...(question ? { question } : {}) });

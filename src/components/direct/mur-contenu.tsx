@@ -2960,12 +2960,20 @@ function Essai({
       : null;
   /** Le dressing ne propose que les pièces dont il sait ce qu'elles sont (une veste, un jean…) : les autres vont à l'essai seul. */
   const seCombine = (x: Piece) => Boolean(pourDressing && sorteDuNom(x.nom, x.couvre));
-  /* LA PIÈCE DÉSIGNÉE DANS LA VITRINE (le chemin de la page d'une boutique)
-     OUVRE LE CHOIX TOUT DE SUITE, avant la photo : « Avec mes vêtements »
-     n'en a pas besoin, et « En solo » reprend l'essai là où il en était. */
-  const prechoisie = pourDressing && piecePrechoisie ? (mur.essai?.pieces.find((x) => x.id === piecePrechoisie && !x.bientot && seCombine(x)) ?? null) : null;
-  const [choixPour, setChoixPour] = useState<Piece | null>(prechoisie);
-  const [choixVitrine, setChoixVitrine] = useState(Boolean(prechoisie));
+  /* ═══ LA PIÈCE DÉSIGNÉE DANS LA VITRINE RESTE À L'ÉCRAN ════════════════
+     « Je clique sur un vêtement, j'arrive sur "En solo / Avec mes vêtements"
+     avec derrière une photo qui n'est pas celle que je voudrais, puis sur
+     "Choisissez la pièce" alors que je l'avais choisie au départ. »
+     PLUS DE FEUILLE AVANT L'ESSAI : la pièce touchée est CELLE qu'on essaie.
+     Un seul écran la montre à côté de sa photo, dit comment changer la
+     photo, et lance l'essai ; « Avec mes vêtements » y reste, en second.
+     `voulue` suit la dernière pièce désignée sur ce chemin : reprendre la
+     photo ne la fait pas oublier. */
+  const [voulue, setVoulue] = useState<Piece | null>(() =>
+    piecePrechoisie ? (mur.essai?.pieces.find((x) => x.id === piecePrechoisie && !x.bientot) ?? null) : null,
+  );
+  const [choixPour, setChoixPour] = useState<Piece | null>(null);
+  const [choixVitrine, setChoixVitrine] = useState(false);
   const [lookPour, setLookPour] = useState<Piece | null>(null);
   /** L'essai qu'on envoie à ses amis pour qu'ils votent (« Ça me va ? »). */
   const [caMeVa, setCaMeVa] = useState<Piece | null>(null);
@@ -3954,6 +3962,10 @@ function Essai({
    */
   /** L'intention d'entrée a-t-elle déjà servi ? Voir `surprendre`. */
   const surpriseFaite = useRef(false);
+  /** La pièce de l'écran de la photo, quand elle est déjà choisie. Voir `voulue`. */
+  const vise = piece ?? voulue;
+  /** « Avec mes vêtements », en second, sur le chemin de la vitrine seulement. */
+  const avecMesVetements = Boolean(voulue && vise && seCombine(vise));
 
   /**
    * ═══ « M'ALERTER POUR DES LOOKS SIMILAIRES ? » ════════════════════════════
@@ -4054,6 +4066,8 @@ function Essai({
    */
   const changerDeStyle = (p: Piece) => {
     setPiece(p);
+    // Sur le chemin de la vitrine, la pièce d'à côté de la photo suit le choix.
+    if (voulue) setVoulue(p);
     // ON A DÉSIGNÉ CETTE PIÈCE-LÀ : ce n'est plus ClikMe qui a choisi, et
     // l'écran du résultat ne doit plus le prétendre.
     setSurprise(false);
@@ -4414,10 +4428,65 @@ function Essai({
               côte à côte, et elle a raison : on lit un conseil, on regarde
               l'exemple, on revient. Empilés, il faut faire défiler entre les
               deux — c'est-à-dire les comparer de mémoire. */}
+          {/* ═══ LA PIÈCE EST CHOISIE : UN SEUL ÉCRAN, LA PIÈCE ET VOUS ═══════
+              « Le parcours utilisateur est hyper compliqué, il faut le revoir
+              pour que ce soit simple et cohérent. » Quand on arrive ici avec
+              une pièce (touchée dans la vitrine, ou choisie avant la photo),
+              l'écran ne demande plus de la choisir : il la montre à côté de la
+              photo, dit en grand comment changer la photo, et lance l'essai. */}
           <div className="mu-ph-tete">
-            <h2>{mur.essai.mots.photoTitre}</h2>
-            <p>{mur.essai.mots.photoSous}</p>
+            <h2>{vise ? `Essayer « ${vise.nom} »` : mur.essai.mots.photoTitre}</h2>
+            <p>{vise ? (photo ? "Sur votre photo, en quelques secondes." : mur.essai.mots.photoSous) : mur.essai.mots.photoSous}</p>
           </div>
+          {vise ? (
+            <>
+              <div className="mu-duo">
+                <figure className="mu-duo-p">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={vise.photo} alt="" />
+                  <figcaption>
+                    <b>{vise.nom}</b>
+                    {vise.prix && <i>{vise.prix}</i>}
+                  </figcaption>
+                </figure>
+                <span className="mu-duo-plus" aria-hidden="true">
+                  +
+                </span>
+                <figure className="mu-duo-v">
+                  {photo ? (
+                    <Viseur photo={photo} gabarit={mur.essai?.gabarit} />
+                  ) : (
+                    <button type="button" className="mu-duo-vide" onClick={() => appareil.current?.click()}>
+                      <i aria-hidden="true">
+                        <Trace cle="photo" />
+                      </i>
+                      <b>Votre photo</b>
+                    </button>
+                  )}
+                  <figcaption>{photo ? (photo === miroir.photo ? "Votre dernière photo" : "Votre photo") : "Vous"}</figcaption>
+                </figure>
+              </div>
+              {photo ? (
+                <div className="mu-duo-chg">
+                  <button type="button" onClick={() => appareil.current?.click()}>
+                    <Trace cle="photo" /> Nouvelle photo
+                  </button>
+                  <button type="button" onClick={() => fichier.current?.click()}>
+                    Ma photothèque
+                  </button>
+                </div>
+              ) : (
+                <ul className="mu-duo-conseils">
+                  {mur.essai.mots.conseils.map((c) => (
+                    <li key={c.titre}>
+                      <Trace cle={c.picto} />
+                      {c.titre}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          ) : (
           <div className="mu-ph">
             <ul className="mu-ph-l">
               {mur.essai.mots.conseils.map((c) => (
@@ -4445,6 +4514,7 @@ function Essai({
               {photo && photo === miroir.photo && <span className="mu-ph-x">🪞 Ma photo · Mon Miroir</span>}
             </div>
           </div>
+          )}
           {/* LE BOUTON OUVRE VRAIMENT L'APPAREIL PHOTO.
               Il ne le faisait pas : il faisait avancer l'écran, et l'essai se
               calculait sur une photo du dépôt. « J'arrive sur photographier ma
@@ -4479,28 +4549,25 @@ function Essai({
                     jouer("essai");
                     return;
                   }
-                  // LA MÊME RÈGLE POUR LA PIÈCE DÉSIGNÉE DEPUIS LA VITRINE :
-                  // une seule fois, et seulement si elle est essayable.
-                  const voulue = mur.essai?.pieces.find(
-                    (x) => x.id === piecePrechoisie && !x.bientot,
-                  );
-                  if (voulue && !surpriseFaite.current) {
-                    surpriseFaite.current = true;
-                    changerDeStyle(voulue);
+                  // LA PIÈCE DÉSIGNÉE DEPUIS LA VITRINE, posée sur la photo.
+                  if (vise) {
+                    changerDeStyle(vise);
                     return;
                   }
                   setEtape("choisir");
                 }}
               >
-                <i aria-hidden="true">👉</i>
+                <i aria-hidden="true">{vise ? "✨" : "👉"}</i>
                 <span>
-                  <b>{mots.choisir}</b>
-                  <em>Vérifiez que le repère tombe bien sur {mur.essai.partie}</em>
+                  <b>{vise ? "Lancer l’essayage" : mots.choisir}</b>
+                  <em>{vise ? `« ${vise.nom} » sur votre photo` : `Vérifiez que le repère tombe bien sur ${mur.essai.partie}`}</em>
                 </span>
               </button>
-              <button type="button" className="mu-exemple" onClick={() => appareil.current?.click()}>
-                Reprendre la photo
-              </button>
+              {!vise && (
+                <button type="button" className="mu-exemple" onClick={() => appareil.current?.click()}>
+                  Reprendre la photo
+                </button>
+              )}
             </>
           ) : (
             <>
@@ -4546,6 +4613,26 @@ function Essai({
                   viseur tant qu'on n'a rien pris, et le badge du rendu continue
                   de dire « Photo d'exemple — ce n'est pas la vôtre ». */}
             </>
+          )}
+          {/* LES DEUX AUTRES CHEMINS, EN SECOND : la porter avec ses propres
+              vêtements (une boutique de vêtements), ou en choisir une autre. */}
+          {vise && (
+            <div className="mu-duo-autres">
+              {avecMesVetements && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLookPour(vise);
+                    setLookVitrine(false);
+                  }}
+                >
+                  Avec mes vêtements
+                </button>
+              )}
+              <button type="button" onClick={() => setEtape("choisir")}>
+                Choisir une autre pièce
+              </button>
+            </div>
           )}
           {/* ═══ CE QU'ON PROMET AVANT DE DEMANDER UNE PHOTO ══════════════════
 
@@ -4730,7 +4817,7 @@ function Essai({
               // drapeau « c'est ClikMe qui a choisi ». Deux copies d'une même
               // remise à zéro divergent toujours d'un champ ; il n'y en a plus
               // qu'une, et c'est `changerDeStyle`.
-              onClick={() => (seCombine(p) ? setChoixPour(p) : changerDeStyle(p))}
+              onClick={() => (seCombine(p) && !voulue ? setChoixPour(p) : changerDeStyle(p))}
             >
               {/* UNE VIGNETTE DE VERNIS MONTRE LE VERNIS, PAS UNE PHOTO VOISINE.
                   « C'est les ongles que j'ai choisis, mais le résultat est
@@ -9245,6 +9332,45 @@ const CSS_MUR = `
         @media (max-width:359px){
           .mu-ph{grid-template-columns:1fr;}
           .mu-ph-v{max-width:220px;margin:0 auto;}
+        }
+        /* ═══ LA PIÈCE ET VOUS, CÔTE À CÔTE ═══
+           Deux cadres de même hauteur, un « + » entre eux : ce qu'on va
+           essayer, et sur qui. Le bouton pour changer de photo est juste
+           dessous, en clair — il était un lien gris sous le grand bouton. */
+        .mu-duo{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;}
+        .mu-duo figure{margin:0;min-width:0;display:flex;flex-direction:column;gap:6px;}
+        .mu-duo-p img{display:block;width:100%;height:210px;object-fit:cover;border-radius:18px;
+          background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);}
+        .mu-duo-p figcaption{display:flex;flex-direction:column;gap:1px;min-width:0;}
+        .mu-duo-p figcaption b{font-size:12.5px;font-weight:800;color:#fff;line-height:1.2;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .mu-duo-p figcaption i{font-style:normal;font-size:12px;font-weight:800;color:#F5A23A;}
+        .mu-duo-v .mu-viseur{margin:0;}
+        .mu-duo-v figcaption{font-size:12px;font-weight:700;color:var(--mu-pale);}
+        .mu-duo-plus{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;
+          font-size:17px;font-weight:800;color:#fff;background:rgba(255,255,255,.1);margin-bottom:22px;}
+        .mu-duo-vide{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+          width:100%;height:210px;border-radius:18px;cursor:pointer;font:inherit;color:#fff;
+          background:rgba(255,255,255,.04);border:1.5px dashed rgba(255,255,255,.3);}
+        .mu-duo-vide i{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;
+          background:rgba(255,255,255,.08);font-style:normal;}
+        .mu-duo-vide b{font-size:13px;font-weight:800;}
+        .mu-duo-chg{display:flex;gap:8px;margin:12px 0 2px;}
+        .mu-duo-chg button{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;
+          padding:11px 10px;border-radius:999px;cursor:pointer;font:inherit;font-size:13px;font-weight:800;
+          color:#fff;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.22);}
+        .mu-duo-chg .mu-tr{width:17px;height:17px;flex:none;}
+        .mu-duo-conseils{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 2px;padding:0;}
+        .mu-duo-conseils li{display:flex;align-items:center;gap:5px;padding:5px 10px 5px 7px;border-radius:999px;
+          font-size:11.5px;font-weight:700;color:#E8EFF6;background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.12);}
+        .mu-duo-conseils .mu-tr{width:15px;height:15px;}
+        .mu-duo-autres{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 18px;margin-top:10px;}
+        .mu-duo-autres button{padding:6px 2px;background:none;border:none;cursor:pointer;font:inherit;
+          font-size:13px;font-weight:700;color:var(--mu-pale);text-decoration:underline;text-underline-offset:3px;}
+        @media (max-width:359px){
+          .mu-duo-p img,.mu-duo-vide{height:170px;}
+          .mu-duo-chg{flex-direction:column;}
         }
 
         /* ═══ LE PETIT MOT, ET C'EST LUI QU'ON LIRA ═════════════════════════

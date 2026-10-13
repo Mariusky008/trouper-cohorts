@@ -3,21 +3,7 @@
 // Le vote d'un appui, puis ce que disent les autres, puis la boutique. Voir `page.tsx`.
 import { useEffect, useState } from "react";
 
-import { REPONSES_AVIS as REPONSES, type ChoixVote as Choix } from "@/lib/direct/avis-amis-client";
-
-/** Ce téléphone, pour le serveur : tiré au hasard une fois, gardé ici. Il change d'avis, il ne vote pas deux fois. */
-function votant(): string {
-  try {
-    let v = localStorage.getItem("clikme-votant") ?? "";
-    if (!/^[A-Za-z0-9_-]{8,40}$/.test(v)) {
-      v = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(36).padStart(2, "0")).join("").slice(0, 20);
-      localStorage.setItem("clikme-votant", v);
-    }
-    return v;
-  } catch {
-    return `v${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
-  }
-}
+import { REPONSES_AVIS as REPONSES, votantDuTelephone as votant, type ChoixVote as Choix } from "@/lib/direct/avis-amis-client";
 
 const lireMien = (e: string): { v?: Choix; q?: string } => {
   try {
@@ -133,6 +119,19 @@ export function Vote(p: { jeton: string; e: string; oui: number; non: number; ma
       )}
       <style>{STYLE}</style>
     </>
+  );
+}
+
+/** Le salon de l'essai, sur la page du commerçant : on y va tout de suite, et le bouton reste si rien ne bouge. */
+export function VersLeSalon({ href }: { href: string }) {
+  useEffect(() => {
+    window.location.replace(href);
+  }, [href]);
+  return (
+    <a className="cmv-tour fort" href={href}>
+      <span className="cmv-tour-t">Ouvrir le salon</span>
+      <span className="cmv-tour-d">Votez d’un appui et dites ce que vous en pensez, sans application.</span>
+    </a>
   );
 }
 

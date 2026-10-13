@@ -39,6 +39,7 @@ import {
   type LienAvis,
 } from "@/lib/direct/avis-amis-client";
 import { Porte } from "@/components/direct/dressing/porte";
+import { SalonEssai } from "@/components/direct/salon-essai";
 import { StylesDressing } from "@/components/direct/dressing/styles-dressing";
 
 type Essai = {
@@ -95,6 +96,8 @@ export function FeuilleCaMeVa({
   const [daccord, setDaccord] = useState(false);
   const [pub, setPub] = useState<PublicationAA | null>(null);
   const [souci, setSouci] = useState("");
+  /** 💬 Le salon de l'essai ouvert par-dessus la feuille — `clikme` : on y entre pour son verdict. */
+  const [salon, setSalon] = useState<{ clikme: boolean } | null>(null);
   const { avis } = useAvisAmis();
   const suivi = lien ? avis.find((a) => a.e === lien.e) : undefined;
 
@@ -110,6 +113,7 @@ export function FeuilleCaMeVa({
       ...(essai.carte ? { carte: essai.carte } : {}),
       ...(essai.page ? { page: essai.page } : {}),
       ...(essai.ceci ? { ceci: essai.ceci } : {}),
+      ...(monPrenom() ? { prenom: monPrenom() } : {}),
     };
     void (async () => {
       for (const neuf of [false, true]) {
@@ -174,10 +178,13 @@ export function FeuilleCaMeVa({
     setEtape("envoye");
   };
 
+  /* LE LIEN PART SUR WHATSAPP, ET LE SALON S'OUVRE ICI : en revenant de
+     WhatsApp, on y voit arriver les votes et les mots de ses amis. */
   const parWhatsApp = () => {
     if (!lien) return;
     window.open(`https://wa.me/?text=${encodeURIComponent(texteDuMessage(essai, lien.lien))}`, "_blank", "noopener,noreferrer");
     parti();
+    setSalon((x) => x ?? { clikme: false });
   };
 
   const autrement = async () => {
@@ -202,8 +209,10 @@ export function FeuilleCaMeVa({
   };
 
   const nomVille = essai.ville ? essai.ville.charAt(0).toUpperCase() + essai.ville.slice(1) : "";
-  // AFFICHÉE D'EMBLÉE (pas de saut de mise en page), RETIRÉE si La ville ne répond pas.
-  const peutDemanderALaVille = Boolean(essai.avant && essai.ville && villeOk !== false);
+  /* SEULEMENT QUAND LA VILLE A RÉPONDU. « Au bout de deux secondes, l'une
+     disparaît » : affichée d'emblée puis retirée quand La ville ne répondait
+     pas, la tuile clignotait. Elle n'arrive plus que confirmée. */
+  const peutDemanderALaVille = Boolean(essai.avant && essai.ville && villeOk === true);
 
   const publier = async () => {
     if (!essai.avant || !essai.ville || !daccord || !prenom.trim()) return;
@@ -316,13 +325,33 @@ export function FeuilleCaMeVa({
   }
 
   const pret = etape === "pret" || etape === "envoye";
+
+  /* 💬 LE SALON DE L'ESSAI, par-dessus la feuille. « Retour » ramène ici. */
+  if (salon && lien) {
+    return (
+      <SalonEssai
+        jeton={lien.jeton}
+        image={essai.image}
+        clikmeDabord={salon.clikme}
+        inviter={parWhatsApp}
+        onFermer={() => {
+          if (suivi && suivi.votes.length > suivi.vus) marquerAvisVus(suivi.e);
+          setSalon(null);
+        }}
+      />
+    );
+  }
+
+  /* TROIS FAÇONS DE TRANCHER, DEUX QUAND LA VILLE N'EST PAS LÀ. */
+  const nb = etape === "impossible" ? 1 + (peutDemanderALaVille ? 1 : 0) : 2 + (peutDemanderALaVille ? 1 : 0);
+  const court = nb === 3;
   return (
     <Porte>
       <div className="dr-voile cmv-voile" onClick={fermer}>
         <div className="dr-feuille cmv-feuille" role="dialog" aria-modal="true" aria-label="Ça me va ? Qui va trancher ?" onClick={(ev) => ev.stopPropagation()}>
           <i className="cmv-poignee" aria-hidden="true" />
           {/* L'ESSAI EN GRAND : c'est lui qu'on demande de juger. */}
-          <figure className={`cmv-photo${etape === "envoye" && suivi ? " petite" : ""}`}>
+          <figure className={`cmv-photo${etape === "envoye" ? " petite" : ""}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={essai.image} alt="" />
             <figcaption>
@@ -333,15 +362,27 @@ export function FeuilleCaMeVa({
             </figcaption>
           </figure>
 
-          {etape === "envoye" && suivi && (
-            <div className="cmv-suivi">
-              <p className="cmv-note">{copie ? "Message copié : collez-le à vos amis. " : ""}Les avis de vos amis s’affichent ici dès qu’ils arrivent.</p>
-              <Compte a={suivi} />
-            </div>
+          {/* LE SALON DÉJÀ OUVERT SE ROUVRE D'ICI, avec ses votes. */}
+          {etape === "envoye" && (
+            <button type="button" className="cmv-rouvrir" onClick={() => setSalon({ clikme: false })}>
+              <span>💬 Ouvrir mon salon</span>
+              {suivi && (
+                <span className="cmv-cpt">
+                  <span>
+                    {REPONSES_AVIS.oui.emoji} {suivi.oui}
+                  </span>
+                  <span>
+                    {REPONSES_AVIS.non.emoji} {suivi.non}
+                  </span>
+                  {suivi.votes.length > 0 && <em>{quiAVote(suivi)}</em>}
+                </span>
+              )}
+              {copie && <em>Message copié : collez-le à vos amis.</em>}
+            </button>
           )}
 
           <p className="cmv-q">Qui va trancher&nbsp;?</p>
-          <div className={`cmv-choix${peutDemanderALaVille ? "" : " seul"}`}>
+          <div className={`cmv-choix n${nb}`}>
             {etape === "impossible" ? (
               <button type="button" className="cmv-tuile amis" disabled={!secours} onClick={() => secours && (secours(), onFermer())}>
                 <i aria-hidden="true">
@@ -351,22 +392,32 @@ export function FeuilleCaMeVa({
                 <span>Le vote n’est pas disponible ici : envoyez-leur la photo.</span>
               </button>
             ) : (
-              <button type="button" className="cmv-tuile amis" disabled={!pret} onClick={parWhatsApp}>
-                <i aria-hidden="true">
-                  <BulleIcone />
-                </i>
-                <b>{etape === "envoye" ? "D’autres amis" : "Mes amis"}</b>
-                <span>{pret ? "Sur WhatsApp : ils votent d’un appui, sans application." : "Préparation de votre essai…"}</span>
-              </button>
+              <>
+                <button type="button" className="cmv-tuile amis" disabled={!pret} onClick={parWhatsApp}>
+                  <i aria-hidden="true">
+                    <BulleIcone />
+                  </i>
+                  <b>{etape === "envoye" ? "D’autres amis" : "Mes amis"}</b>
+                  <span>{!pret ? "Préparation…" : court ? "Sur WhatsApp, dans un salon privé" : "Sur WhatsApp : ils votent et en parlent dans un salon privé."}</span>
+                </button>
+                {/* ✨ SANS AMI SOUS LA MAIN : CLIKME TRANCHE, et aide. */}
+                <button type="button" className="cmv-tuile clikme" disabled={!pret} onClick={() => setSalon({ clikme: true })}>
+                  <i aria-hidden="true">
+                    <EtincelleIcone />
+                  </i>
+                  <b>ClikMe</b>
+                  <span>{court ? "Son avis franc, tout de suite" : "Son avis franc tout de suite, et ses conseils."}</span>
+                </button>
+              </>
             )}
-            {/* ⚖️ PAS D'AMIS SOUS LA MAIN : TOUTE LA VILLE VOTE. */}
+            {/* ⚖️ TOUTE LA VILLE VOTE — quand La ville répond. */}
             {peutDemanderALaVille && (
               <button type="button" className="cmv-tuile ville" onClick={() => setVille("accord")}>
                 <i aria-hidden="true">
                   <VilleIcone />
                 </i>
                 <b>Tout {nomVille}</b>
-                <span>Avant ou après&nbsp;? Les gens d’ici votent pendant 48&nbsp;h.</span>
+                <span>{court ? "Avant ou après, 48 h" : "Avant ou après ? Les gens d’ici votent pendant 48 h."}</span>
               </button>
             )}
           </div>
@@ -387,6 +438,12 @@ const BulleIcone = () => (
   <svg viewBox="0 0 24 24">
     <path d="M4.5 18.8 6 15.3a7.6 7.6 0 1 1 3 2.6Z" />
     <path d="M9 10.5h6M9 13.5h4" />
+  </svg>
+);
+const EtincelleIcone = () => (
+  <svg viewBox="0 0 24 24">
+    <path d="M12 3.5 13.9 9l5.6 1.9-5.6 1.9L12 18.5l-1.9-5.7-5.6-1.9L10.1 9Z" />
+    <path d="M18.5 3.5v3M17 5h3M5.5 17v3M4 18.5h3" />
   </svg>
 );
 const VilleIcone = () => (
@@ -421,7 +478,7 @@ export function AvisRecus() {
             Merci&nbsp;!
           </button>
           <a className="dr-lien cmv-revoir" href={a.lien} target="_blank" rel="noopener noreferrer">
-            Revoir la page du vote
+            Ouvrir mon salon
           </a>
         </div>
       </div>
@@ -450,14 +507,31 @@ const STYLE = `
 .cmv-suivi{display:flex;flex-direction:column;gap:8px;}
 .cmv-q{margin:2px 0 -2px;text-align:center;font-size:12.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#C9B29A;}
 .cmv-choix{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.cmv-choix.seul{grid-template-columns:1fr;}
+.cmv-choix.n1{grid-template-columns:1fr;}
+.cmv-choix.n3{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
 .cmv-tuile{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:132px;padding:14px;border-radius:20px;cursor:pointer;
   text-align:left;font:inherit;color:#fff;border:1.5px solid rgba(255,244,230,.2);background:rgba(255,244,230,.05);
   transition:transform .15s ease,border-color .15s ease;}
 .cmv-tuile:active{transform:scale(.98);}
 .cmv-tuile:disabled{opacity:.6;cursor:default;}
-.cmv-choix.seul .cmv-tuile{min-height:0;display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center;}
-.cmv-choix.seul .cmv-tuile i{grid-row:span 2;}
+.cmv-choix.n1 .cmv-tuile{min-height:0;display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center;}
+.cmv-choix.n1 .cmv-tuile i{grid-row:span 2;}
+/* TROIS TUILES SUR UNE LIGNE : plus serrées, une phrase courte chacune. */
+.cmv-choix.n3 .cmv-tuile{min-height:126px;padding:12px 10px;gap:5px;border-radius:18px;}
+.cmv-choix.n3 .cmv-tuile i{width:36px;height:36px;border-radius:11px;}
+.cmv-choix.n3 .cmv-tuile svg{width:21px;height:21px;}
+.cmv-choix.n3 .cmv-tuile b{font-size:15px;}
+.cmv-choix.n3 .cmv-tuile span{font-size:12px;line-height:1.3;}
+@media (max-width:359px){
+  .cmv-choix.n3{grid-template-columns:1fr 1fr;}
+  .cmv-choix.n3 .cmv-tuile.ville{grid-column:span 2;min-height:0;}
+}
+.cmv-tuile.clikme{background:linear-gradient(160deg,rgba(245,162,58,.24),rgba(245,162,58,.05));border-color:rgba(245,162,58,.65);}
+.cmv-tuile.clikme i{background:linear-gradient(135deg,#F8B451,#E8932A);}
+.cmv-rouvrir{display:flex;flex-direction:column;align-items:stretch;gap:8px;width:100%;padding:12px;border-radius:18px;cursor:pointer;text-align:left;
+  font:inherit;color:#fff;background:linear-gradient(160deg,rgba(255,46,154,.24),rgba(255,46,154,.08));border:1.5px solid rgba(255,46,154,.6);}
+.cmv-rouvrir>span{font-size:16px;font-weight:900;}
+.cmv-rouvrir em{font-style:normal;font-size:13px;color:#D9C3A8;}
 .cmv-tuile.amis{background:linear-gradient(160deg,rgba(37,211,102,.2),rgba(37,211,102,.05));border-color:rgba(37,211,102,.55);}
 .cmv-tuile.ville{background:linear-gradient(160deg,rgba(255,46,154,.22),rgba(255,46,154,.05));border-color:rgba(255,46,154,.6);}
 .cmv-tuile i{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:13px;font-style:normal;color:#fff;}
