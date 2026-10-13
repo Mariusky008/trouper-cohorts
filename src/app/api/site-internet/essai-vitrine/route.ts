@@ -9,6 +9,9 @@
 //     PUIS SES AUTRES PIÈCES (`completerPiecesDemo`), celles qu'elle essaiera
 //     elle-même après la présentation : APRÈS l'essai, jamais en même temps —
 //     les deux écrivent dans le même diagnostic. Le GET les rend (`autres`).
+//     PUIS LE LOOK (`completerLookVitrine`) — son jean et un de ses hauts —,
+//     À UNE SONNERIE À LUI (`quoi: "look"`) : il a ses cinq minutes, lui
+//     aussi. Le GET le rend (`look`), et la présentation l'attend.
 //
 // ELLE A SES CINQ MINUTES À ELLE. L'essai passait par la route `hote`, après
 // la photo ClikMe et sa version sans hôte : deux rendus d'image avant le sien,
@@ -16,8 +19,14 @@
 // habiller l'avant.
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { essaiVitrineDuDiagnostic, piecesDemoDuDiagnostic, raisonLisible } from "@/lib/site-internet/essai-vitrine-donnees";
-import { completerEssaiVitrine, completerPiecesDemo } from "@/lib/site-internet/essai-vitrine";
+import {
+  essaiVitrineDuDiagnostic,
+  lookPourLaCarte,
+  lookVitrineDuDiagnostic,
+  piecesDemoDuDiagnostic,
+  raisonLisible,
+} from "@/lib/site-internet/essai-vitrine-donnees";
+import { completerEssaiVitrine, completerLookVitrine, completerPiecesDemo } from "@/lib/site-internet/essai-vitrine";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -40,6 +49,9 @@ export async function GET(req: Request) {
     /* SES AUTRES PIÈCES : la liste quand on l'a cherchée, et où on en est. */
     const pd = piecesDemoDuDiagnostic(diag);
     const autres = { autres: pd?.etat === "prete" ? pd.pieces.map(({ photo, nom, genre }) => ({ photo, nom, genre })) : undefined, autresEtat: pd?.etat ?? "absent" };
+    /* LE LOOK : le haut choisi toujours, la photo quand elle est rendue, et où on en est. */
+    const l = lookVitrineDuDiagnostic(diag);
+    Object.assign(autres, { look: lookPourLaCarte(l, e, pd?.pieces), lookEtat: l?.etat ?? "absent" });
     if (e?.etat === "prete" && e.apres && e.avant) {
       return NextResponse.json({ etat: "prete", avant: e.avant, apres: e.apres, piece: e.piece, nom: e.nom, ...autres });
     }
@@ -65,6 +77,17 @@ export async function POST(req: Request) {
   const slug = String(p.slug ?? "").trim();
   if (!lisible(slug)) return NextResponse.json({ erreur: "adresse illisible" }, { status: 400 });
   const origine = new URL(req.url).origin;
+  /* LE LOOK SEUL : sa sonnerie à lui. */
+  if (p.quoi === "look") {
+    after(async () => {
+      try {
+        await completerLookVitrine(slug, origine);
+      } catch {
+        /* la prochaine visite relancera */
+      }
+    });
+    return NextResponse.json({ lance: true }, { status: 202 });
+  }
   after(async () => {
     try {
       await completerEssaiVitrine(slug, origine);
@@ -73,6 +96,19 @@ export async function POST(req: Request) {
     }
     try {
       await completerPiecesDemo(slug);
+    } catch {
+      /* la prochaine visite relancera */
+    }
+    /* PUIS LE LOOK, À SA PROPRE ROUTE : la même adresse, une autre invocation,
+       donc ses cinq minutes à lui. Il ne part que si l'essai et ses pièces ont
+       fini (voir `lookPeutPartir`) — sinon la visite suivante le relancera. */
+    try {
+      await fetch(`${origine}/api/site-internet/essai-vitrine`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ slug, quoi: "look" }),
+        signal: AbortSignal.timeout(10_000),
+      });
     } catch {
       /* la prochaine visite relancera */
     }

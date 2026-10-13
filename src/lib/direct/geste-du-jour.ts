@@ -44,7 +44,7 @@ export type RetourDuJour = {
   quoi: string;
   /** CE CHIFFRE-LÀ EST UNE DEMANDE QUI ARRIVE CHEZ LUI — l'étape 5 montre alors les messages reçus. */
   demande?: true;
-  /** LA PHRASE DITE, quand « à {heure}, {nombre} {quoi} » ne se dit pas : « À 16 h 10, ClikMe l'a aussi repérée pour 27 Maisons… ». */
+  /** LA PHRASE DITE, quand « à {heure}, {nombre} {quoi} » ne se dit pas : « À 16 h 10, votre Fantôme l'a aussi apportée en surprise à 27 personnes… ». */
   dit?: string;
 };
 
@@ -579,9 +579,12 @@ export function gesteDuJour(
       gesteDit:
         "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me montrer la pièce du jour en photo, et de me laisser un vocal.",
       gesteCourt:
-        "Avec ClikMe, vous me montrez simplement ce que vous voulez mettre en lumière. Une photo suffit. Et si vous le souhaitez, ajoutez dix secondes de votre voix pour raconter pourquoi cette pièce vous plaît.",
+        "Avec ClikMe, vous me montrez simplement ce que vous voulez mettre en lumière. Une photo suffit. Et si vous le souhaitez, ajoutez votre voix pour raconter pourquoi cette pièce vous plaît.",
       momentPhoto: "Une photo suffit.",
-      momentVoix: "ajoutez dix secondes de votre voix",
+      /* « Au lieu de 10 secondes on peut ne pas donner de timing, parce que 10
+         secondes c'est très court. » Plus de durée : elle parle le temps qu'il
+         faut. */
+      momentVoix: "ajoutez votre voix",
       parPhoto: false,
       photoEtVoix: true,
       demande: "Qu'est-ce que vous voulez mettre en lumière aujourd'hui ?",
@@ -616,15 +619,19 @@ export function gesteDuJour(
       /* « 16 h 10 — ClikMe l'a aussi repérée pour 27 Maisons correspondant à
          son style. » Et la conclusion : « Votre pièce n'attend plus qu'on la
          cherche. ClikMe va la présenter aux personnes à qui elle pourrait
-         vraiment plaire. » */
+         vraiment plaire. »
+         PUIS : « Je ne suis pas certain qu'elle comprenne encore la
+         terminologie "Maisons" ; formule la phrase différemment. » Elle a vu,
+         à l'étape 3, le fantôme APPORTER UNE SURPRISE : la ligne dit ce
+         geste-là, avec des personnes, sans le mot « Maisons ». */
       retours: [
         { heure: "15 h 30", icone: "❤️", nombre: "549", quoi: `${gentile} l'ont vue dans Le Direct`, dit: `À 15 h 30, 549 ${gentile} ont vu votre pièce dans Le Direct.` },
         {
           heure: "16 h 10",
-          icone: "🏠",
+          icone: "🎁",
           nombre: "27",
-          quoi: "Maisons où ClikMe l'a repérée",
-          dit: "À 16 h 10, ClikMe l'a aussi repérée pour 27 Maisons correspondant à son style.",
+          quoi: "personnes l'ont reçue en surprise",
+          dit: "À 16 h 10, votre Fantôme l'a aussi apportée en surprise à 27 personnes dont le style lui correspond.",
         },
         { heure: "16 h 30", icone: "👗", nombre: "19", quoi: "personnes l'ont essayée" },
         /* « Étape 5 : les demandes qui arrivent chez elle. » Les salons sont

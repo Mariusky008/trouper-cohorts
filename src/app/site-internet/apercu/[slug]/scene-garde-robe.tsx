@@ -18,13 +18,26 @@
 //      l'essaie avec.
 //
 // TOUT EST UN EXEMPLE, ET L'ÉCRAN LE DIT. La garde-robe est celle d'une
-// cliente de démonstration, et les trois pièces ne sont pas les siennes :
-// elles portent chacune « Exemple ». On ne prête pas à sa boutique des pièces
-// qu'elle n'a pas — sa propre pièce, ici, est souvent une robe, et dire
-// qu'une robe « va avec un jean » serait inventer un conseil.
+// cliente de démonstration, et les pièces de démonstration portent chacune
+// « Exemple ». On ne prête pas à sa boutique des pièces qu'elle n'a pas — sa
+// pièce de l'étape 2 est souvent une robe, et dire qu'une robe « va avec un
+// jean » serait inventer un conseil.
+//
+// SAUF QUAND UN DE SES HAUTS A ÉTÉ TROUVÉ (`look`, voir `LookVitrine`) : il
+// prend la première place, marqué « Votre pièce ». Et quand le moteur l'a
+// rendu porté avec ce jean, LA PERSONNE APPARAÎT AVEC, au moment où Léa dit
+// « voir immédiatement si votre pièce va avec » (`revele`) :
+//   « Ce que j'aurais encore plus aimé, c'est que lorsque tu dis qu'elle peut
+//   utiliser son propre dressing pour voir si le pull de Lili Ross va avec son
+//   propre jean, on voie la personne réellement avec son propre jean et le
+//   pull de Lili Ross. »
 //
 // AUCUN MINUTEUR : la scène naît quand Léa en parle (`setScene("garde")`), et
 // tout le reste se joue en CSS, avec des délais. Rien ne reste à arrêter.
+
+import type { CSSProperties } from "react";
+import type { LookVitrineCarte } from "@/lib/site-internet/essai-vitrine-donnees";
+import { LookSurElle } from "./look-sur-elle";
 
 const CLIENTE = { qui: "Camille", visage: "/direct/ensemble/fantome-casquette-noire.webp" };
 
@@ -37,16 +50,32 @@ const GARDE_ROBE = [
 ];
 
 /** Ce qui irait avec son jean — des pièces de démonstration, marquées comme telles. */
-const AVEC = [
+const AVEC: { nom: string; prix: string; photo: string; sienne?: boolean }[] = [
   { nom: "Pull écru et rose", prix: "69 €", photo: "/direct/mode-pull-ecru-rose.webp" },
   { nom: "Pull mohair vert", prix: "79 €", photo: "/direct/mode-pull-mohair-vert.jpeg" },
   { nom: "Chemise à volants", prix: "59 €", photo: "/direct/mode-chemise-volants-rose.jpeg" },
 ];
 
-export function SceneGardeRobe({ titre, fantome }: { titre: string; fantome: { visage: string; nom: string } }) {
+export function SceneGardeRobe({
+  titre,
+  fantome,
+  look,
+  revele = 5,
+}: {
+  titre: string;
+  fantome: { visage: string; nom: string };
+  /** Son jean et un de ses hauts — voir `LookVitrine`. */
+  look?: LookVitrineCarte;
+  /** Quand la personne apparaît avec, en secondes depuis l'ouverture de la scène. */
+  revele?: number;
+}) {
+  /* UN DE SES HAUTS, EN PREMIER : c'est lui qu'on essaie avec le jean. Sans
+     prix — on ne le connaît pas, et on n'en invente pas. */
+  const avec = look && !look.exemple ? [{ nom: look.nom, prix: "", photo: look.photo, sienne: true }, ...AVEC.slice(1)] : AVEC;
+  const sienne = Boolean(avec[0].sienne);
   return (
     <div className="dtour-ov gr-ov">
-      <div className="gr">
+      <div className={`gr${look?.apres ? " avec-look" : ""}`} style={{ "--rv": `${revele}s` } as CSSProperties}>
         <div className="gr-tete">
           <span className="gr-k">Exemple · la garde-robe d&apos;une cliente</span>
           <h3 className="gr-h">{titre}</h3>
@@ -109,15 +138,15 @@ export function SceneGardeRobe({ titre, fantome }: { titre: string; fantome: { v
             </header>
             <p className="gr-dit">Avec votre jean, j&apos;ai ça pour vous&nbsp;😍</p>
             <div className="gr-avec">
-              {AVEC.map((p, i) => (
+              {avec.map((p, i) => (
                 <figure key={p.nom} className={`gr-prod${i === 0 ? " elu" : ""}`} style={{ ["--i" as string]: i }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.photo} alt="" />
-                  <span className="gr-ex">Exemple</span>
+                  <span className={`gr-ex${p.sienne ? " sienne" : ""}`}>{p.sienne ? "Votre pièce" : "Exemple"}</span>
                   <span className="gr-va">💞 Va avec</span>
                   <figcaption>
                     <b>{p.nom}</b>
-                    <em>{p.prix}</em>
+                    {p.prix && <em>{p.prix}</em>}
                   </figcaption>
                 </figure>
               ))}
@@ -126,7 +155,38 @@ export function SceneGardeRobe({ titre, fantome }: { titre: string; fantome: { v
           </section>
         </div>
 
-        <p className="gr-fin">Exemple · une garde-robe et des pièces de démonstration</p>
+        <p className="gr-fin">
+          {sienne ? "Exemple · une garde-robe de démonstration, et votre pièce" : "Exemple · une garde-robe et des pièces de démonstration"}
+        </p>
+
+        {/* ═══ 4 · ET LA VOILÀ, AVEC ═══ Son jean, la pièce, et elle qui les
+            porte — seulement quand le moteur l'a rendue. Sinon la scène
+            s'arrête au bouton, comme avant : rien n'est promis à l'écran
+            qu'on ne puisse montrer. */}
+        {look?.apres && (
+          <div className="gr-look">
+            <div className="gr-look-in">
+              <LookSurElle look={look} delai={revele + 0.35} classe="gr-look-photo" />
+              <div className="gr-look-leg">
+                <span className="gr-look-p">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/direct/garde-robe/jean.webp" alt="" />
+                  <b>Son jean</b>
+                  <em>de son Dressing</em>
+                </span>
+                <i aria-hidden="true">+</i>
+                <span className="gr-look-p">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={look.photo} alt="" />
+                  <b>{look.nom}</b>
+                  <em>{look.exemple ? "Exemple" : `chez ${fantome.nom}`}</em>
+                </span>
+                <i aria-hidden="true">=</i>
+                <span className="gr-look-oui">Sur elle ✨</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <StylesGardeRobe />
     </div>
@@ -206,6 +266,7 @@ function StylesGardeRobe() {
   animation:grProd .55s cubic-bezier(.34,1.5,.64,1) forwards;animation-delay:calc(2.8s + var(--i) * .3s);}
 .gr-prod img{display:block;width:100%;aspect-ratio:3 / 4;object-fit:cover;object-position:50% 25%;}
 .gr-ex{position:absolute;top:6px;left:6px;padding:2px 6px;border-radius:6px;font-size:9.5px;font-weight:800;color:#FFF4E6;background:rgba(18,12,9,.7);}
+.gr-ex.sienne{background:#FF4FA0;color:#fff;}
 .gr-va{position:absolute;left:50%;bottom:46px;transform:translateX(-50%) scale(.6);white-space:nowrap;padding:3px 9px;border-radius:999px;text-align:center;
   font-size:10px;font-weight:850;color:#fff;background:#FF4FA0;box-shadow:0 4px 10px rgba(255,79,160,.45);
   opacity:0;animation:grVa .35s cubic-bezier(.34,1.7,.64,1) forwards;animation-delay:calc(3.15s + var(--i) * .3s);}
@@ -219,6 +280,27 @@ function StylesGardeRobe() {
   opacity:0;animation:grApparait .45s cubic-bezier(.34,1.5,.64,1) 4.5s forwards,grBat 1.4s ease-in-out 5.1s infinite;}
 .gr-fin{margin:2px 0 0;text-align:center;font-size:12px;color:rgba(255,244,230,.6);opacity:0;animation:grApparait .4s ease 3s forwards;}
 
+/* ═══ 4 · ET LA VOILÀ, AVEC ═══ La scène se voile, et elle apparaît au
+   milieu : la photo d'abord, son jean et la pièce à côté. */
+/* LE TITRE S'EFFACE QUAND ELLE ARRIVE : le voile le coupait en deux, à mi-hauteur. */
+.gr.avec-look .gr-h{animation:grEfface .3s ease var(--rv) forwards;}
+@keyframes grEfface{to{opacity:0}}
+.gr-look{position:absolute;inset:40px -18px -10px;z-index:5;display:grid;place-items:center;border-radius:24px;
+  background:radial-gradient(70% 70% at 50% 45%,rgba(40,18,26,.9),rgba(14,9,7,.94));
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  opacity:0;animation:grApparait .45s ease var(--rv) forwards;}
+.gr-look-in{display:flex;align-items:center;justify-content:center;gap:22px;width:100%;padding:12px;
+  transform:scale(.94);animation:grApparait .55s cubic-bezier(.34,1.3,.64,1) var(--rv) forwards;}
+.gr-look-photo{height:min(52vh,470px);width:auto;flex:none;}
+.gr-look-leg{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;}
+.gr-look-leg>i{font-style:normal;font-size:22px;font-weight:900;color:#FFB8DA;line-height:1;}
+.gr-look-p{display:flex;flex-direction:column;align-items:center;gap:2px;width:132px;padding:8px 8px 9px;border-radius:14px;
+  background:#FFF8F1;color:#2A1A12;text-align:center;box-shadow:0 10px 24px rgba(0,0,0,.3);}
+.gr-look-p img{width:72px;height:72px;object-fit:contain;border-radius:10px;background:#F3E6D8;}
+.gr-look-p b{font-size:12.5px;font-weight:850;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.gr-look-p em{font-style:normal;font-size:11px;color:#8A6E5C;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.gr-look-oui{padding:7px 14px;border-radius:999px;font-size:13.5px;font-weight:850;color:#fff;
+  background:linear-gradient(90deg,#FF4FA0,#F5A23A);box-shadow:0 8px 20px rgba(255,79,160,.4);}
 @keyframes grMonte{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes grCarte{from{opacity:0;transform:translateY(22px) scale(.92)}to{opacity:1;transform:none}}
 @keyframes grPop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
@@ -267,6 +349,19 @@ function StylesGardeRobe() {
   .gr-essai{margin-top:8px;padding:8px 15px;font-size:13px;}
   .gr-fin{font-size:11px;}
 }
+/* SUR UN TÉLÉPHONE, ELLE AU MILIEU, ET LA LÉGENDE EN UNE RANGÉE DESSOUS. */
+@media (max-width:899px){
+  .gr-look{inset:30px -6px -6px;}
+  .gr-look-in{flex-direction:column;gap:10px;padding:8px;}
+  .gr-look-photo{height:min(46vh,400px);}
+  .gr-look-leg{flex-direction:row;gap:6px;}
+  .gr-look-leg>i{font-size:17px;}
+  .gr-look-p{width:auto;max-width:112px;flex-direction:row;gap:6px;padding:5px 8px 5px 5px;border-radius:12px;text-align:left;}
+  .gr-look-p img{width:34px;height:34px;flex:none;}
+  .gr-look-p b{font-size:11px;}
+  .gr-look-p em{display:none;}
+  .gr-look-oui{font-size:12px;padding:6px 10px;white-space:nowrap;}
+}
 @media (max-width:899px) and (max-height:760px){
   .gr-h{font-size:17px;}
   .gr-prod img{aspect-ratio:1 / 1;}
@@ -277,6 +372,7 @@ function StylesGardeRobe() {
   .gr-va{animation:none !important;opacity:1;transform:translateX(-50%);}
   .gr-doigt,.gr-rond i{display:none;}
   .gr-piece.choisi,.gr-prod.elu{border-color:#FF4FA0;}
+  .gr-look,.gr-look-in{animation:none;opacity:1;transform:none;}
 }
 `,
       }}

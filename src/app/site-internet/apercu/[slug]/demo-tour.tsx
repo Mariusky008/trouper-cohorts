@@ -19,6 +19,7 @@ import { SceneSalons } from "./scene-partage";
 import { SceneMaison } from "./scene-maison";
 import { SceneGardeRobe } from "./scene-garde-robe";
 import { SceneDemandes } from "./scene-demandes";
+import type { LookVitrineCarte } from "@/lib/site-internet/essai-vitrine-donnees";
 
 /** L'après de l'exemple d'essayage — le même que l'étape 2 quand sa pièce n'est pas encore prête. */
 const EXEMPLE_APRES = "/direct/accueil/moi-mode-avec.jpg";
@@ -119,6 +120,14 @@ type Props = {
   fantomePied?: string;
   /** Sa fiche donne-t-elle ses horaires ? Léa ne les cite qu'alors, à l'étape 1. */
   aHoraires?: boolean;
+  /**
+   * SON JEAN ET UN DE SES HAUTS, PORTÉS — la garde-robe de l'étape 2 et la
+   * surprise de Ma Maison. Voir `LookVitrine`. Sans photo rendue encore, la
+   * présentation la guette (`idVitrine`) et la montre dès qu'elle arrive.
+   */
+  look?: LookVitrineCarte;
+  /** L'adresse de sa vitrine, pour guetter le look (la même que l'essai). */
+  idVitrine?: string;
   keepHref?: string; // contact (WhatsApp/tel) pour « Garder mon site gratuitement »
   /**
    * LA PAGE SUR LAQUELLE LA DÉMONSTRATION SE JOUE, EN UN SÉLECTEUR.
@@ -172,6 +181,8 @@ export function DemoTour({
   fantomeBoutique,
   fantomePied,
   aHoraires = false,
+  look,
+  idVitrine,
   keepHref,
   racine = "main.mqc",
 }: Props) {
@@ -691,7 +702,7 @@ export function DemoTour({
   const [quiN, setQuiN] = useState(0);
   const [invN, setInvN] = useState(0);
   const [photoN, setPhotoN] = useState(0);
-  /** Le vocal est-il dit ? Chez la mode, il arrive sur « ajoutez dix secondes de votre voix » (`momentVoix`). */
+  /** Le vocal est-il dit ? Chez la mode, il arrive sur « ajoutez votre voix » (`momentVoix`). */
   const [voixDite, setVoixDite] = useState(false);
   const [retourN, setRetourN] = useState(0);
   /** La phrase de l'étape 2 que la voix dit : 0 l'essai, puis 1 à 3 les salons. */
@@ -741,6 +752,45 @@ export function DemoTour({
     []
   );
   const [scene, setScene] = useState<Scene>("");
+  /* ═══ LE LOOK, GUETTÉ ═══ Rendu une fois par boutique (voir `LookVitrine`),
+     il peut arriver PENDANT la présentation : la première visite le lance.
+     On demande où il en est toutes les huit secondes, huit minutes au plus ;
+     prêt, il entre dans la garde-robe et dans Ma Maison s'il n'est pas trop
+     tard. La référence sert aux actes, dont les fonctions sont écrites une
+     fois. */
+  const [lookVu, setLookVu] = useState(look);
+  const lookRef = useRef(look);
+  useEffect(() => {
+    lookRef.current = lookVu;
+  }, [lookVu]);
+  const lookAttendu = Boolean(look && !look.apres && idVitrine);
+  useEffect(() => {
+    if (!lookAttendu || !idVitrine) return;
+    const debut = Date.now();
+    let fini = false;
+    const t = window.setInterval(async () => {
+      if (Date.now() - debut > 8 * 60_000) {
+        window.clearInterval(t);
+        return;
+      }
+      try {
+        const r = await fetch(`/api/site-internet/essai-vitrine?slug=${encodeURIComponent(idVitrine)}`, { cache: "no-store" });
+        const j = (await r.json()) as { look?: LookVitrineCarte };
+        if (!fini && j.look?.apres) {
+          window.clearInterval(t);
+          setLookVu(j.look);
+        }
+      } catch {
+        /* réseau coupé : au tour suivant */
+      }
+    }, 8000);
+    return () => {
+      fini = true;
+      window.clearInterval(t);
+    };
+  }, [lookAttendu, idVitrine]);
+  /** Quand elle apparaît avec, dans la garde-robe (en secondes depuis l'ouverture de la scène) — calé sur la voix, voir l'acte. */
+  const [gardeRevele, setGardeRevele] = useState(5);
   const [head, setHead] = useState<{ n: number; total: number; title: string }>({ n: 0, total: 0, title: "" });
   // La pile ne tourne QUE pendant l'acte 3 : ailleurs, elle n'est pas à
   // l'écran, et un minuteur qui rend un composant invisible est un défaut.
@@ -1125,7 +1175,18 @@ export function DemoTour({
              les salons avant que la garde-robe ait joué ses gestes (5 s). */
           const tGarde = GARDE ? Math.max(quand(SAY_ESSAI, ESSAI_AT[1] ?? 1), 9600) : 0;
           if (GARDE) window.setTimeout(() => setScene("garde"), tGarde);
-          const tSalons = Math.max(quand(SAY_ESSAI, ESSAI_AT[ESSAI_SALONS] ?? 1), GARDE ? tGarde + 5600 : 10000);
+          /* ELLE APPARAÎT AVEC SON JEAN SUR « …et voir immédiatement si votre
+             pièce va avec » — jamais avant que le bouton « Essayer avec mon
+             jean » se soit allumé (4,5 s) —, et reste au moins 3,6 s avant
+             les salons. */
+          const tRevele = GARDE ? Math.max(4800, quand(SAY_ESSAI, partAu(SAY_ESSAI, "voir immédiatement") || (ESSAI_AT[1] ?? 1)) - tGarde) : 0;
+          setGardeRevele(Math.round(tRevele / 100) / 10);
+          const avecLook = Boolean(GARDE && lookRef.current?.apres);
+          const tSalons = Math.max(
+            quand(SAY_ESSAI, ESSAI_AT[ESSAI_SALONS] ?? 1),
+            GARDE ? tGarde + 5600 : 10000,
+            avecLook ? tGarde + tRevele + 3600 : 0,
+          );
           window.setTimeout(() => setScene("salons"), tSalons);
           // ET L'ACTE TIENT JUSQU'À LA DÉCISION — voir `tenirJusqua`.
           tenirJusqua = performance.now() + Math.max(quand(SAY_ESSAI, ESSAI_AT[ESSAI_DIT.length - 1] ?? 1) + 2600, tSalons + 7000);
@@ -1447,7 +1508,7 @@ export function DemoTour({
             const t0 = quand(SAY_MANQUE, PART_GESTE);
             // ① ON LIT L'ARDOISE, OU ON L'ÉCOUTE — le temps de l'animation.
             //    CHEZ LA MODE, SUR SES MOTS : la photo arrive sur « Une photo
-            //    suffit », le vocal sur « ajoutez dix secondes de votre voix ».
+            //    suffit », le vocal sur « ajoutez votre voix ».
             const motA = (m?: string) => (m && SAY_MANQUE.includes(m) ? quand(SAY_MANQUE, partAu(SAY_MANQUE, m)) - t0 : null);
             const tPhoto = motA(G.momentPhoto);
             window.setTimeout(() => setPhotoN(1), tPhoto != null ? Math.max(600, tPhoto) : 1200);
@@ -1939,6 +2000,15 @@ export function DemoTour({
              transparente. Une feuille change de place, elle n'entre plus. */
           .qi-feuille{position:absolute;inset:14px 0 0;}
           .qi-feuille .qi-c{inset:0;}
+          /* LA PHOTO SUR TROIS QUARTS DE LA CARTE, QUELLE QU'ELLE SOIT.
+             « Il faudrait que le vêtement occupe plutôt 3/4 de la photo, et
+             qu'on n'ait pas ce noir/bleu qui prend quasiment tout l'espace. »
+             La carte calcule la part de sa photo pour un ÉCRAN DE TÉLÉPHONE
+             (9 × 19,5 — voir partDeLaPhoto) ; ici elle est bien plus
+             trapue (9 × 14), et une photo carrée s'y arrêtait à mi-hauteur.
+             Dans la visite, la part est donc fixée : 76 %, la cible de la
+             carte, et la photo la couvre. */
+          .qi-feuille .qi-c.mesuree{--cd-photo-h:76% !important;}
           .qi-feuille.rangee{visibility:hidden;opacity:0;}
           /* L'entrée de l'essai du fil (voir .qi-essai). */
           @keyframes dtCarteEntre{
@@ -2994,7 +3064,7 @@ export function DemoTour({
               comme un reproche sur son ardoise, et il se ferme. */}
           {/* MA MAISON, PAR-DESSUS LE DIRECT — à partir de sa phrase. */}
           {scene === "qui" && G && QUI_MAISON >= 0 && quiN >= QUI_MAISON && (
-            <SceneMaison n={quiN - QUI_MAISON} fantome={{ visage: fantomeBoutique || "/clikme-fantome.png", nom }} pied={fantomePied} />
+            <SceneMaison n={quiN - QUI_MAISON} fantome={{ visage: fantomeBoutique || "/clikme-fantome.png", nom }} look={lookVu} />
           )}
           {scene === "invisible" && G && (
             <div className="dtour-ov">
@@ -3078,7 +3148,7 @@ export function DemoTour({
                             <i key={`${h}-${i}`} style={{ ["--h" as string]: `${h}px`, ["--i" as string]: i }} />
                           ))}
                         </span>
-                        <em>0:10</em>
+                        {/* PAS DE DURÉE AFFICHÉE : « 10 secondes c'est très court » — elle parle le temps qu'il faut. */}
                       </span>
                       )}
                       {G.motVoix && (G.momentVoix ? voixDite : photoN >= 1) && (
@@ -3209,7 +3279,7 @@ export function DemoTour({
           {/* ── ÉTAPE 2, ENTRE L'ESSAI ET LES SALONS : LEUR GARDE-ROBE — voir
               `scene-garde-robe.tsx`. */}
           {scene === "garde" && GARDE && (
-            <SceneGardeRobe titre={GARDE.titre} fantome={{ visage: fantomeBoutique || "/clikme-fantome.png", nom }} />
+            <SceneGardeRobe titre={GARDE.titre} fantome={{ visage: fantomeBoutique || "/clikme-fantome.png", nom }} look={lookVu} revele={gardeRevele} />
           )}
           {scene === "salons" && G && (
             <SceneSalons
