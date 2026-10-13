@@ -667,7 +667,10 @@ export function gesteDuJour(
           "Et puis il y a « Ma Maison ». Là, ClikMe apprend progressivement ce que chacun aime et ce qu'il possède déjà.",
           "Par exemple, si vous publiez aujourd'hui ce pull et qu'il correspond au style d'une personne ou va particulièrement bien avec les vêtements de son Dressing, votre Fantôme peut le lui rapporter comme une surprise.",
           "Cette personne ne vous suivait pas. Elle ne cherchait pas votre boutique. Elle ne vous connaissait peut-être même pas. Et pourtant, votre pièce vient d'arriver chez elle.",
-          "Elle peut alors voir pourquoi ClikMe l'a choisie, l'essayer sur elle, demander l'avis de ses amis… puis vous demander de la mettre de côté.",
+          /* « Tu dis "l'essayer sur elle", mais elle le voit déjà sur elle
+             puisqu'elle est déjà en photo. » La surprise ARRIVE portée : le
+             geste d'essayer est déjà fait pour elle. */
+          "Elle peut alors voir pourquoi ClikMe l'a choisie, demander l'avis de ses amis… puis vous demander de la mettre de côté.",
         ],
       },
     };
