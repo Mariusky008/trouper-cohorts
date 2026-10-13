@@ -548,7 +548,10 @@ export function consigneCalquee(
       ? `Change ONLY this, and nothing else — ${quoi} — to match the SECOND image, treating that second image solely as a visual reference for ${court}, never as a face, body, clothing or background reference.`
       : `Change ONLY this, and nothing else — ${quoi} — following the written specification below.`,
     avecReference && visageReferenceCache
-      ? "In the SECOND image the face has been deliberately covered with a flat grey patch: it is not a person, only a head of hair. Take nothing from it except the hair."
+      ? /buste|torse|silhouette|pied/i.test(partie)
+        ? /* LE PRÊT-À-PORTER : la pièce est portée par quelqu'un d'autre. */
+          `In the SECOND image the face of the person wearing the garment has been deliberately covered with a flat grey patch: that person must not appear in the result. Take nothing from them — no face, hair, body shape, skin, pose, bag or jewellery — only ${court}.`
+        : "In the SECOND image the face has been deliberately covered with a flat grey patch: it is not a person, only a head of hair. Take nothing from it except the hair."
       : "",
     /* ═══ L'IDENTITÉ, DITE EN TOUTES LETTRES ═══════════════════════════════
        « Le visage n'est toujours pas le même que sur la photo de départ. » Ce

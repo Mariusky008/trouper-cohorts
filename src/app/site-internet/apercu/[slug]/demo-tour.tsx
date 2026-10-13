@@ -41,22 +41,15 @@ const DUEL_B = "/direct/essai/mode-friperie-apres.jpg";
  *     parlent, une bulle à la fois (`GROUPE`, les phrases dans `parlent`) —
  *     l'œil sait où aller. Le nombre est parti du texte de Léa (« encore
  *     faut-il savoir qu'elle existe ») : le groupe a pris sa place ;
- *   · QUELQUES BULLES DE SAVON, autour : un fantôme y apparaît, monte un peu,
- *     et la bulle éclate (`BULLES`). Deux ou trois à l'écran à la fois, jamais
- *     plus, et jamais sur le texte.
+ *   · PLUS DE BULLES DE SAVON AUTOUR : « les fantômes au milieu sont ok, mais
+ *     tous ceux qui sont autour sont inutiles ». Le groupe reste seul.
  *
  * UNE FIGURATION, PAS UN COMPTAGE. Les tenues de l'application
  * (`/direct/ensemble/*-debout.webp`), réduites à 120 px de haut dans
  * `/direct/foule/` — cinq Ko chacune. Positions en pourcentage d'un cadre
  * centré ; `cote` : seulement là où la largeur le permet (un ordinateur).
  */
-const TENUES_FOULE = ["curieux", "fleuri", "denim", "soleil", "rebelle", "lecteur", "artiste", "voyageur", "cosy", "melomane", "jardinier", "flaneur"];
 const GROUPE = ["soleil", "denim", "fleuri"];
-const BULLES: { x: number; y: number; t: number; cote?: true }[] = [
-  { x: 16, y: 12, t: 58 }, { x: 52, y: 5, t: 50 }, { x: 85, y: 15, t: 56 },
-  { x: 10, y: 88, t: 50 }, { x: 90, y: 86, t: 52 },
-  { x: 8, y: 48, t: 56, cote: true }, { x: 92, y: 44, t: 54, cote: true },
-];
 import { BarreDirect, CarteSwipe, GestesDirect, StylesDirect } from "@/components/direct/carte-swipe";
 import { cartesDeLaVille, ESSAI_DU_FIL, motDAction, saCarte } from "@/lib/direct/cartes-demo";
 
@@ -2021,12 +2014,6 @@ export function DemoTour({
              place : la vedette de la démonstration tenait dans un timbre.
              Le bloc se replie sur zéro par la même mécanique que l'ouverture
              du fil (0fr → 1fr), donc sans saut. */
-          /* LA FOULE DE L'ÉTAPE 3 — voir GROUPE et BULLES. Sous le nombre et
-             sous le Direct (qui passent devant), et elle s'en va quand le
-             Direct s'ouvre, comme le halo. */
-          .qi-foule{position:absolute;top:84px;bottom:130px;left:50%;width:min(100%,820px);transform:translateX(-50%);
-            pointer-events:none;transition:opacity .45s ease;}
-          .dtour-ov.qi.serre .qi-foule{opacity:0;}
           .dtour-ov.qi .qi-tete,.dtour-ov.qi .dt-ouvre{position:relative;z-index:1;}
           /* LE PETIT GROUPE : trois fantômes serrés, qui se parlent chacun à
              son tour (7,5 s pour un tour de parole). */
@@ -2054,31 +2041,10 @@ export function DemoTour({
           .qg-f:last-child .qg-dit::after{left:auto;right:21px;margin-left:0;}
           @keyframes qgParle{0%{opacity:0;transform:translateX(var(--tx)) translateY(6px) scale(.7)}
             4%,29%{opacity:1;transform:translateX(var(--tx)) scale(1)}33%,100%{opacity:0;transform:translateX(var(--tx)) translateY(-4px) scale(.96)}}
-          /* LES BULLES DE SAVON : un fantôme apparaît dedans, monte un peu, et
-             la bulle éclate en gouttes (5,9 s par vie, décalées). */
-          .qb-b{position:absolute;width:var(--t);height:var(--t);margin:calc(var(--t) / -2) 0 0 calc(var(--t) / -2);border-radius:50%;
-            border:1.5px solid rgba(255,255,255,.5);
-            background:radial-gradient(circle at 30% 26%,rgba(255,255,255,.7) 0 6%,transparent 16%),
-              radial-gradient(circle,transparent 56%,rgba(170,215,255,.16) 72%,rgba(255,170,225,.3) 100%);
-            box-shadow:inset 0 0 12px rgba(255,255,255,.12);opacity:0;animation:qbVie 5.9s ease-in-out var(--d) infinite;}
-          .qb-b img{position:absolute;left:16%;top:14%;width:68%;height:72%;object-fit:contain;}
-          .qb-b.cote{display:none;}
-          @media (min-width:700px){.qb-b.cote{display:block;}}
-          .qb-eclat{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;
-            color:rgba(255,236,250,.95);opacity:0;
-            box-shadow:0 calc(var(--t) * -.5) 0 0,calc(var(--t) * .43) calc(var(--t) * -.25) 0 0,calc(var(--t) * .43) calc(var(--t) * .25) 0 0,
-              0 calc(var(--t) * .5) 0 0,calc(var(--t) * -.43) calc(var(--t) * .25) 0 0,calc(var(--t) * -.43) calc(var(--t) * -.25) 0 0;
-            animation:qbEclat 5.9s ease-out var(--d) infinite;}
-          @keyframes qbVie{0%{opacity:0;transform:translateY(10px) scale(.2)}9%{opacity:1;transform:translateY(0) scale(1)}
-            58%{opacity:1;transform:translateY(-16px) scale(1);border-color:rgba(255,255,255,.5)}
-            63%{opacity:0;transform:translateY(-18px) scale(1.3);border-color:rgba(255,255,255,0)}100%{opacity:0;transform:translateY(-18px) scale(1.3)}}
-          @keyframes qbEclat{0%,58%{opacity:0;transform:translateY(-16px) scale(.6)}61%{opacity:1}
-            72%,100%{opacity:0;transform:translateY(-18px) scale(1.5)}}
           @keyframes qfArrive{from{opacity:0;transform:translateY(14px) scale(.4)}to{opacity:1;transform:none}}
           @keyframes qfFlotte{from{transform:translateY(0)}to{transform:translateY(-6px)}}
           @media (prefers-reduced-motion:reduce){
-            .qg-f,.qg-f img,.qb-b,.qb-eclat,.qg-dit{animation:none;}
-            .qb-b{opacity:1;}
+            .qg-f,.qg-f img,.qg-dit{animation:none;}
             .qg-f:first-child .qg-dit{opacity:1;transform:none;}
           }
           .qi-tete{display:grid;grid-template-rows:1fr;opacity:1;
@@ -2896,19 +2862,8 @@ export function DemoTour({
               jour où il ouvre le fil et le trouve calme, il se sent trompé. */}
           {scene === "qui" && G && (
             <div className={`dtour-ov dt-noir qi${quiN >= QUI_OUVRE ? " serre" : ""}`}>
-              <div className="qi-foule" aria-hidden="true">
-                {BULLES.map((f, i) => (
-                  <i
-                    key={i}
-                    className={`qb-b${f.cote ? " cote" : ""}`}
-                    style={{ left: `${f.x}%`, top: `${f.y}%`, "--t": `${f.t}px`, "--d": `${0.3 + i * 0.85}s` } as CSSProperties}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`/direct/foule/${TENUES_FOULE[(i * 5 + 1) % TENUES_FOULE.length]}.webp`} alt="" />
-                    <s className="qb-eclat" />
-                  </i>
-                ))}
-              </div>
+              {/* PLUS DE BULLES AUTOUR DU GROUPE : « les fantômes au milieu sont
+                  ok, mais tous ceux qui sont autour sont inutiles ». */}
               {/* LES FANTÔMES QUI CHERCHENT, À LA PLACE DU NOMBRE — « Mais pour
                   essayer une de vos pièces, encore faut-il savoir qu'elle
                   existe. » Trois fantômes qui se demandent où aller, et aucun

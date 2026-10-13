@@ -662,6 +662,22 @@ export async function essayerSurMoi(opts: {
       dire("découpe de la monture impossible : référence entière", e);
     }
   }
+  /* ═══ LE PRÊT-À-PORTER : LA PIÈCE EST PORTÉE PAR QUELQU'UN ══════════════
+     « J'ai essayé la robe, et ça a donné une photo qui n'est pas la même
+     robe » — et une autre femme : celle qui la portait sur la photo de la
+     boutique, souvent la commerçante elle-même. Son visage partait au moteur,
+     qui l'a recopié. Il est caché, comme pour la coupe : le moteur n'a plus
+     que le vêtement à reprendre. Voir aussi la garde `meme-personne.ts`. */
+  if (commeChatGPT && zone === "buste" && reference) {
+    try {
+      const c = await cacherLeVisage(reference);
+      reference = c.image;
+      visageReferenceCache = c.cache;
+      dire(`comme ChatGPT : visage de la référence ${c.cache ? "caché" : "absent"} (la pièce seule)`);
+    } catch (e) {
+      dire("visage de la référence non caché : référence entière", e);
+    }
+  }
   if (commeChatGPT && zone === "coiffure") {
     try {
       if (reference) {

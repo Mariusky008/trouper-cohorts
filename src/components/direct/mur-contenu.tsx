@@ -9342,8 +9342,11 @@ const CSS_MUR = `
            dessous, en clair — il était un lien gris sous le grand bouton. */
         .mu-duo{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;}
         .mu-duo figure{margin:0;min-width:0;display:flex;flex-direction:column;gap:6px;}
-        .mu-duo-p img{display:block;width:100%;height:210px;object-fit:cover;border-radius:18px;
-          background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);}
+        /* LA PIÈCE EN ENTIER, JAMAIS ROGNÉE : « on ne voit pas le vêtement que
+           j'ai sélectionné à gauche ». Ses photos sont recadrées sur le
+           vêtement, souvent en largeur : remplir le cadre coupait le vêtement. */
+        .mu-duo-p img{display:block;width:100%;height:210px;object-fit:contain;border-radius:18px;
+          background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);}
         .mu-duo-p figcaption{display:flex;flex-direction:column;gap:1px;min-width:0;}
         .mu-duo-p figcaption b{font-size:12.5px;font-weight:800;color:#fff;line-height:1.2;
           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}

@@ -44,6 +44,7 @@
 import { NextResponse } from "next/server";
 import { consigne, consigneBrute, consigneCalquee } from "@/lib/direct/consigne-essai";
 import { moteurRefuse, moteursDImage, noterRefus } from "@/lib/direct/moteur-image";
+import { aReprisLaReference, ressemblances } from "@/lib/direct/meme-personne";
 
 export const dynamic = "force-dynamic";
 /**
@@ -939,6 +940,8 @@ export async function POST(req: Request) {
     });
   }
 
+  /** Un rendu a été écarté parce qu'il montrait quelqu'un d'autre. */
+  let autrePersonne = false;
   for (const chemin of ordre) {
     /**
      * ON NE LANCE PAS UN APPEL QU'ON SAIT DÉJÀ PERDU. Huit secondes ne suffisent
@@ -952,6 +955,20 @@ export async function POST(req: Request) {
     }
     try {
       const r = await chemin.aller();
+      /* ═══ CE N'EST PAS ELLE : ON NE LE MONTRE PAS ═══════════════════════
+         « J'ai essayé la robe, et ça a donné une photo qui n'est pas la même
+         robe » — ni elle : le rendu montrait la femme de la photo de la
+         boutique. Voir `lib/direct/meme-personne.ts`. On essaie le chemin
+         suivant ; s'il n'y en a plus, l'écran dit que l'essai n'a pas abouti. */
+      if ("image" in r && reference) {
+        const m = await ressemblances(r.image, photo.donnees, reference.donnees);
+        if (m && aReprisLaReference(m)) {
+          console.warn("[essai] rendu écarté, c'est la personne de la référence", JSON.stringify({ fournisseur: chemin.nom, modele: r.modele, ...m }));
+          autrePersonne = true;
+          essais.push(`${chemin.nom} : le rendu montrait la personne de la photo de la pièce, pas la vôtre`);
+          continue;
+        }
+      }
       if ("image" in r) {
         const ms = Date.now() - debut;
         /* LE RENDU DIT QUI L'A FAIT. « Deux essais sur ClikMe » sont arrivés
@@ -979,7 +996,12 @@ export async function POST(req: Request) {
   // LA RAISON REMONTE JUSQU'À L'ÉCRAN. Une panne muette se diagnostique sur un
   // téléphone, ce qui coûte un aller-retour par hypothèse — déjà payé.
   return NextResponse.json(
-    { erreur: "L’essayage n’a pas abouti.", pourquoi: essais.join(" · ") },
+    {
+      erreur: autrePersonne
+        ? "Le rendu montrait la personne de la photo de la pièce, pas vous : nous ne l’avons pas affiché."
+        : "L’essayage n’a pas abouti.",
+      pourquoi: essais.join(" · "),
+    },
     { status: 502 },
   );
 }
