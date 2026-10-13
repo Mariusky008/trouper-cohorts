@@ -332,3 +332,17 @@
     transform: rotate(6deg);
   }
 }
+
+/* ═══ PAS DE BARRE DE DÉFILEMENT, NULLE PART ═══════════════════════════════
+   « Fais disparaître cette barre latérale de progression qui est très laide,
+   et partout ailleurs si elle apparaît aussi. » On défile toujours — molette,
+   pavé tactile, doigt, clavier — ; seule la barre grise disparaît, celle de
+   la page comme celle des listes qui défilent. */
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}

@@ -534,10 +534,8 @@ function StylesPanneauEnsemble() {
 .pe-ou button:disabled{opacity:.45;cursor:default;}
 .pe-qui b{font-family:var(--font-clikme),system-ui,sans-serif;font-weight:600;}
 .pe-salons{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:0 0 12px;max-height:200px;overflow-y:auto;overflow-x:hidden;
-  padding-right:4px;scrollbar-width:thin;scrollbar-color:rgba(246,181,75,.45) transparent;}
-.pe-salons::-webkit-scrollbar{width:4px;height:0;}
-.pe-salons::-webkit-scrollbar-thumb{border-radius:4px;background:rgba(246,181,75,.45);}
-.pe-salons::-webkit-scrollbar-track{background:transparent;}
+  padding-right:4px;scrollbar-width:none;}
+.pe-salons::-webkit-scrollbar{display:none;}
 .pe-salons button{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;width:100%;text-align:left;}
 .pe-salons b{min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .pe-salons em{flex:none;font-style:normal;font-size:12.5px;color:#DCC8B2;}
