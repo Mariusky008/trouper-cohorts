@@ -13,7 +13,9 @@
 // est posé sur la table est ce que le salon contient vraiment
 // (`contenuDuSalon`). Deux listes, seulement chez ce commerçant :
 //
-//   · MES SALONS ICI — le salon de la boutique et celui de chaque essai ;
+//   · MES SALONS ICI — le salon de la boutique et celui de chaque essai,
+//     et les salons « Ça me va ? » ouverts sur ce téléphone (le sien, avec
+//     ses amis ou ClikMe, et ceux où un ami l'a invité) ;
 //   · SALONS PUBLICS — ceux qui parlent de ce commerce : ceux du téléphone
 //     (la démonstration) et, dans une vraie ville, ceux du serveur. Le
 //     serveur ne les rattache aujourd'hui qu'au NOM du lieu (`ou`) : on
@@ -29,6 +31,7 @@ import { Alcove, type AlcoveData, type Assis } from "../alcove";
 import { contenuDuSalon, sceneDuSalon } from "../ensemble";
 import type { Salon } from "@/lib/direct/salons";
 import type { SalonADecouvrir } from "@/lib/direct/conversations-sync";
+import type { SalonEssaiConnu } from "@/lib/direct/avis-amis-client";
 
 /** « Oxygène by Alexis » et « OXYGENE BY ALEXIS » sont le même lieu. */
 export const memeLieu = (a?: string, b?: string) => {
@@ -53,7 +56,9 @@ export function SalonsDuLieu({
   estMoi,
   cleBoutique,
   exemple,
+  essais = [],
   onEntrer,
+  onEntrerEssai,
   onLirePublic,
 }: {
   nom: string;
@@ -67,8 +72,12 @@ export function SalonsDuLieu({
   cleBoutique: string;
   /** La démonstration : les salons publics du téléphone sont des exemples, et le disent. */
   exemple: boolean;
+  /** Les salons « Ça me va ? » de ce commerce ouverts sur ce téléphone, le plus récent d'abord. */
+  essais?: SalonEssaiConnu[];
   /** Entrer dans un salon du téléphone (le mien, ou un public de la démo) ; sans clé : ouvrir le mien. */
   onEntrer: (cle: string | null) => void;
+  /** Rouvrir un salon « Ça me va ? » (voir `SalonEssai`). */
+  onEntrerEssai?: (jeton: string) => void;
   /** Lire un salon public de la vraie ville, dans l'application. */
   onLirePublic: (id: string) => void;
 }) {
@@ -90,7 +99,33 @@ export function SalonsDuLieu({
       contenu: contenuDuSalon(x),
     };
   };
-  const mesEntrees: Entree[] = miens.map((x) => ({ a: alcoveDu(x, true), mien: true, ouvrir: () => onEntrer(x.cle) }));
+  /* UN SALON « ÇA ME VA ? » À LA TABLE : l'essai posé dessus, ceux qui ont
+     parlé assis autour — ClikMe compris —, son dernier mot. */
+  const alcoveDEssai = (x: SalonEssaiConnu): AlcoveData => {
+    const cle = `essai:${x.j}`;
+    return {
+      cle,
+      scene: sceneDuSalon(cle),
+      titre: x.auteur ? `Ça me va ? « ${x.quoi} »` : `${x.prenom ? `L’essai de ${x.prenom}` : "Ça me va ?"} « ${x.quoi} »`,
+      prive: true,
+      membre: true,
+      nb: x.qui.length + 1,
+      autres: x.qui.map((q) => ({ cle: q, qui: q })),
+      ...(x.dernier ? { dernier: x.dernier } : {}),
+      nonLus: 0,
+      contenu: [`/api/direct/avis-amis/image?j=${encodeURIComponent(x.j)}`],
+    };
+  };
+  /* LES DEUX SORTES DE SALONS, DU PLUS RÉCENT AU PLUS ANCIEN — chaque liste
+     garde son ordre : on vient de quitter un salon d'essai, il est devant. */
+  const mesEntrees: Entree[] = [];
+  {
+    const a = miens.map((x) => ({ t: x.activite ?? 0, e: { a: alcoveDu(x, true), mien: true, ouvrir: () => onEntrer(x.cle) } }));
+    const b = essais.map((x) => ({ t: x.t, e: { a: alcoveDEssai(x), mien: true, ouvrir: () => onEntrerEssai?.(x.j) } }));
+    let i = 0;
+    let k = 0;
+    while (i < a.length || k < b.length) mesEntrees.push(k >= b.length || (i < a.length && a[i].t >= b[k].t) ? a[i++].e : b[k++].e);
+  }
   const publiques: Entree[] = [
     ...publicsDeLaVille.map((x) => {
       const scene = `pub:${x.id}`;

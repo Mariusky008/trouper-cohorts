@@ -100,6 +100,8 @@ import { EssaiDuLieu, oublierLEssaiDeDemo } from "./essai-du-lieu";
 import { piecesDeLaVitrine } from "@/lib/site-internet/essai-vitrine-donnees";
 import { SalonExemple } from "./salon-exemple";
 import { memeLieu, SalonsDuLieu } from "./salons-du-lieu";
+import { SalonEssai, inviterAuSalon } from "@/components/direct/salon-essai";
+import { useSalonsEssai } from "@/lib/direct/avis-amis-client";
 import {
   abonnerDecouverte,
   brancherLaVille,
@@ -1158,6 +1160,32 @@ export function BoutiqueTable({
      d'agir (« En parler avec mes amis », le conseil du libraire, un lien de
      l'application) : on veut parler tout de suite. */
   const [hall, setHall] = useState(false);
+  /* ═══ LES SALONS « ÇA ME VA ? » DE CE COMMERCE, DANS LA TABLE ════════════
+     « J'ai demandé l'avis de ClikMe, le salon s'est ouvert, et ensuite je ne
+     pouvais plus sortir, si ce n'est revenir en arrière plusieurs fois. Et
+     quand j'ai voulu revenir à ce salon, je suis allé sur Salons : il n'y
+     était pas. » Le salon de l'essai referme tout ce qui était ouvert et
+     mène ici (`clikme:vers-les-salons`, voir `salon-essai.tsx`) ; il est
+     rangé avec les autres, et se rouvre d'un appui. */
+  const salonsEssai = useSalonsEssai();
+  const essaisIci = useMemo(() => salonsEssai.filter((x) => memeLieu(x.magasin, c.nom)), [salonsEssai, c.nom]);
+  const [essaiOuvert, setEssaiOuvert] = useState<string | null>(null);
+  /** On revient d'un salon d'essai : la table repart sur le plus récent — celui qu'on quitte. */
+  const [retourDEssai, setRetourDEssai] = useState(0);
+  useEffect(() => {
+    const versLesSalons = (e: Event) => {
+      const d = (e as CustomEvent<{ magasin?: string }>).detail;
+      if (d?.magasin && !memeLieu(d.magasin, c.nom)) return;
+      e.preventDefault();
+      setEssaiOuvert(null);
+      setOnglet("amis");
+      setHall(true);
+      setRetourDEssai((n) => n + 1);
+    };
+    window.addEventListener("clikme:vers-les-salons", versLesSalons);
+    return () => window.removeEventListener("clikme:vers-les-salons", versLesSalons);
+  }, [c.nom]);
+  const essaiRouvert = essaiOuvert ? essaisIci.find((x) => x.j === essaiOuvert) : undefined;
   /** Dans une vraie ville : les salons publics de ce commerce, relevés par la synchronisation. */
   const publicsVille = useSyncExternalStore(abonnerDecouverte, salonsADecouvrirDeLaVille, () => AUCUN_PUBLIC);
   const publicsDeLaVille = useMemo(() => (villeSync ? publicsVille.filter((x) => memeLieu(x.ou, c.nom)) : AUCUN_PUBLIC), [villeSync, publicsVille, c.nom]);
@@ -2183,7 +2211,10 @@ export function BoutiqueTable({
           <div className="bt-corps">
             <h1 className="bt-titre moyen centre">Les salons</h1>
             <SalonsDuLieu
+              key={retourDEssai}
               nom={c.nom}
+              essais={essaisIci}
+              onEntrerEssai={setEssaiOuvert}
               miens={salonsDuHall.miens}
               publicsDuTelephone={salonsDuHall.publics}
               publicsDeLaVille={publicsDeLaVille}
@@ -2207,7 +2238,7 @@ export function BoutiqueTable({
             {/* « EMPORTEZ VOTRE MAISON », APRÈS UN PREMIER SALON : c'est là qu'on a
                 quelque chose à perdre en changeant de navigateur. Vraie ville
                 seulement — dans la démonstration, tout reste sur le téléphone. */}
-            {villeSync && salonsDuHall.miens.length > 0 && (
+            {villeSync && salonsDuHall.miens.length + essaisIci.length > 0 && (
               <EmporterMaison raison="Vos salons et vos essais vous suivent sur un autre téléphone ou un autre navigateur." />
             )}
           </div>
@@ -2714,6 +2745,23 @@ export function BoutiqueTable({
             <ParcoursTable commerce={c.id} onFermer={() => setPlat(false)} />
           </div>
         </div>
+      )}
+      {/* 💬 UN SALON « ÇA ME VA ? » ROUVERT DEPUIS LA TABLE : refermé, on y revient. */}
+      {essaiOuvert && (
+        <SalonEssai
+          key={essaiOuvert}
+          jeton={essaiOuvert}
+          avis={essaiRouvert?.auteur ? essaiRouvert.e : undefined}
+          inviter={essaiRouvert?.lien ? () => inviterAuSalon(essaiRouvert) : undefined}
+          onEssayer={() => {
+            setEssaiOuvert(null);
+            setOnglet("experience");
+          }}
+          onFermer={() => {
+            setEssaiOuvert(null);
+            setRetourDEssai((n) => n + 1);
+          }}
+        />
       )}
       {vue >= 0 && photos.length > 0 && (
         <div className="bt-couche bt-visio" role="dialog" aria-label="Photos du lieu">

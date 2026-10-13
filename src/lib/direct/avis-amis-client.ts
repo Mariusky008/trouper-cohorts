@@ -239,3 +239,103 @@ export const ecrireDansSalon = (jeton: string, votant: string, texte: string, pr
   poster({ action: "ecrire", jeton, votant, texte, ...(prenom ? { prenom } : {}) });
 export const demanderAClikMe = (jeton: string, votant: string, question?: string) =>
   poster({ action: "clikme", jeton, votant, ...(question ? { question } : {}) });
+
+/* ═══ LES SALONS D'ESSAI DE CE TÉLÉPHONE — pour les retrouver dans « Salons » ═══
+   « Quand j'ai voulu revenir à ce salon où ClikMe m'avait donné son avis, je
+   suis allé sur "Salons" et il n'y était pas. » Le salon de l'essai vit sur
+   le serveur, derrière son lien ; rien ne le rangeait parmi les salons du
+   lieu. Chaque salon ouvert ici s'inscrit donc dans ce registre — le sien
+   comme celui d'un ami —, avec de quoi le montrer à la table : la pièce, le
+   commerce, qui a parlé, le dernier mot. Le contenu reste sur le serveur. */
+export type SalonEssaiConnu = {
+  /** Le jeton (ou le lien court) : il suffit pour rouvrir le salon. */
+  j: string;
+  quoi: string;
+  magasin?: string;
+  /** C'est son essai à soi. */
+  auteur: boolean;
+  /** Le prénom de celui qui a essayé (vu par l'ami). */
+  prenom?: string;
+  /** Le lien à envoyer, chez celui qui a essayé : « Inviter des amis » depuis les salons. */
+  lien?: string;
+  /** Son avis (`Avis.e`), chez celui qui a essayé : les votes vus dans le salon ne rouvrent pas « Un nouvel avis ! ». */
+  e?: string;
+  /** Ceux qui ont parlé ou voté, ClikMe compris (pas soi). */
+  qui: string[];
+  dernier?: { qui: string; texte: string };
+  oui: number;
+  non: number;
+  /** La dernière fois qu'on y est entré. */
+  t: number;
+};
+const CLE_SALONS = "clikme-salons-essai-v1";
+const AUCUN_SALON: SalonEssaiConnu[] = [];
+let connus: SalonEssaiConnu[] | null = null;
+const abonnesSalons = new Set<() => void>();
+const texteCourt = (v: unknown, n: number) => (typeof v === "string" ? v.slice(0, n) : "");
+
+function lireConnus(): SalonEssaiConnu[] {
+  if (connus) return connus;
+  try {
+    const v = JSON.parse(localStorage.getItem(CLE_SALONS) || "[]");
+    connus = Array.isArray(v)
+      ? v
+          .filter((x): x is SalonEssaiConnu => Boolean(x) && typeof x.j === "string" && typeof x.quoi === "string" && typeof x.t === "number")
+          .map((x) => ({ ...x, qui: Array.isArray(x.qui) ? x.qui.filter((q: unknown): q is string => typeof q === "string").slice(0, 6) : [] }))
+          .slice(0, 20)
+      : [];
+  } catch {
+    connus = [];
+  }
+  return connus;
+}
+function abonnerSalons(f: () => void) {
+  abonnesSalons.add(f);
+  // UN AUTRE ONGLET DU MÊME TÉLÉPHONE A OUVERT UN SALON : on relit.
+  const ailleurs = (ev: StorageEvent) => {
+    if (ev.key !== CLE_SALONS) return;
+    connus = null;
+    f();
+  };
+  window.addEventListener("storage", ailleurs);
+  return () => {
+    abonnesSalons.delete(f);
+    window.removeEventListener("storage", ailleurs);
+  };
+}
+
+/**
+ * LE SALON EST VU : il s'inscrit (ou se met à jour). `entre` : on vient d'y
+ * entrer — il remonte en tête des salons. Sinon, seul ce qu'il contient change,
+ * et rien n'est réécrit quand rien n'a bougé.
+ */
+export function retenirSalonEssai(x: Omit<SalonEssaiConnu, "t">, entre: boolean): void {
+  const avant = lireConnus();
+  const ancien = avant.find((y) => y.j === x.j);
+  const neuf: SalonEssaiConnu = {
+    ...x,
+    quoi: texteCourt(x.quoi, 80),
+    ...(x.magasin ? { magasin: texteCourt(x.magasin, 80) } : {}),
+    ...(x.prenom ? { prenom: texteCourt(x.prenom, 30) } : {}),
+    ...(x.dernier ? { dernier: { qui: texteCourt(x.dernier.qui, 30), texte: texteCourt(x.dernier.texte, 140) } } : {}),
+    qui: x.qui.slice(0, 6),
+    ...(x.lien || ancien?.lien ? { lien: x.lien || ancien?.lien } : {}),
+    ...(x.e || ancien?.e ? { e: x.e || ancien?.e } : {}),
+    t: entre || !ancien ? Date.now() : ancien.t,
+  };
+  if (ancien && !entre && JSON.stringify(ancien) === JSON.stringify(neuf)) return;
+  connus = [neuf, ...avant.filter((y) => y.j !== x.j)].sort((a, b) => b.t - a.t).slice(0, 20);
+  try {
+    localStorage.setItem(CLE_SALONS, JSON.stringify(connus));
+  } catch {
+    /* navigation privée : le registre vit le temps de la page */
+  }
+  abonnesSalons.forEach((f) => f());
+}
+
+/** Les salons d'essai ouverts sur ce téléphone, le plus récent d'abord. */
+export const useSalonsEssai = () => useSyncExternalStore(abonnerSalons, lireConnus, () => AUCUN_SALON);
+
+/* SANS ÉMOJI : passé par le lien d'ouverture de WhatsApp, il arrivait en « � ». */
+export const messageCaMeVa = (e: { quoi: string; magasin?: string }, lien: string) =>
+  `Ça me va ? J’hésite pour « ${e.quoi} »${e.magasin ? ` chez ${e.magasin}` : ""}. Dis-moi en un appui : ${lien}`;

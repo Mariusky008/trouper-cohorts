@@ -27,6 +27,7 @@ import { villeSlug } from "@/lib/direct/ville";
 import {
   REPONSES_AVIS,
   marquerAvisVus,
+  messageCaMeVa,
   nePlusSuivreAvisIci,
   avisSuiviIci,
   preparerAvis,
@@ -39,7 +40,7 @@ import {
   type LienAvis,
 } from "@/lib/direct/avis-amis-client";
 import { Porte } from "@/components/direct/dressing/porte";
-import { SalonEssai } from "@/components/direct/salon-essai";
+import { SalonEssai, versLesSalons } from "@/components/direct/salon-essai";
 import { StylesDressing } from "@/components/direct/dressing/styles-dressing";
 
 type Essai = {
@@ -58,10 +59,6 @@ type Essai = {
   /** La pièce essayée, pour « Essayer moi aussi » sous la publication. */
   piece?: string;
 };
-
-/* SANS ÉMOJI : passé par le lien d'ouverture de WhatsApp, il arrivait en « � ». */
-const texteDuMessage = (e: Essai, lien: string) =>
-  `Ça me va ? J’hésite pour « ${e.quoi} »${e.magasin ? ` chez ${e.magasin}` : ""}. Dis-moi en un appui : ${lien}`;
 
 function Compte({ a }: { a: Avis }) {
   return (
@@ -98,6 +95,12 @@ export function FeuilleCaMeVa({
   const [souci, setSouci] = useState("");
   /** 💬 Le salon de l'essai ouvert par-dessus la feuille — `clikme` : on y entre pour son verdict. */
   const [salon, setSalon] = useState<{ clikme: boolean } | null>(null);
+  /** Le salon a déjà été ouvert (par les amis ou par ClikMe) : la feuille le rouvre. */
+  const [salonOuvert, setSalonOuvert] = useState(false);
+  const ouvrirLeSalon = (clikme: boolean) => {
+    setSalon((x) => x ?? { clikme });
+    setSalonOuvert(true);
+  };
   const { avis } = useAvisAmis();
   const suivi = lien ? avis.find((a) => a.e === lien.e) : undefined;
 
@@ -182,14 +185,14 @@ export function FeuilleCaMeVa({
      WhatsApp, on y voit arriver les votes et les mots de ses amis. */
   const parWhatsApp = () => {
     if (!lien) return;
-    window.open(`https://wa.me/?text=${encodeURIComponent(texteDuMessage(essai, lien.lien))}`, "_blank", "noopener,noreferrer");
+    window.open(`https://wa.me/?text=${encodeURIComponent(messageCaMeVa(essai, lien.lien))}`, "_blank", "noopener,noreferrer");
     parti();
-    setSalon((x) => x ?? { clikme: false });
+    ouvrirLeSalon(false);
   };
 
   const autrement = async () => {
     if (!lien) return;
-    const texte = texteDuMessage(essai, lien.lien);
+    const texte = messageCaMeVa(essai, lien.lien);
     try {
       if (typeof navigator.share === "function") {
         await navigator.share({ title: "Ça me va ?", text: texte });
@@ -326,16 +329,21 @@ export function FeuilleCaMeVa({
 
   const pret = etape === "pret" || etape === "envoye";
 
-  /* 💬 LE SALON DE L'ESSAI, par-dessus la feuille. « Retour » ramène ici. */
+  /* 💬 LE SALON DE L'ESSAI, par-dessus la feuille. « Retour » mène aux
+     salons du lieu sur la page du commerçant, où il est désormais rangé —
+     l'essai et la feuille se referment avec. Ailleurs, il ramène ici. */
   if (salon && lien) {
     return (
       <SalonEssai
         jeton={lien.jeton}
         image={essai.image}
+        lien={lien.lien}
+        avis={lien.e}
         clikmeDabord={salon.clikme}
         inviter={parWhatsApp}
         onFermer={() => {
-          if (suivi && suivi.votes.length > suivi.vus) marquerAvisVus(suivi.e);
+          // Les votes lus dans le salon y sont marqués vus (voir `SalonEssai`).
+          if (versLesSalons(lien.jeton, essai.magasin)) return onFermer();
           setSalon(null);
         }}
       />
@@ -363,8 +371,8 @@ export function FeuilleCaMeVa({
           </figure>
 
           {/* LE SALON DÉJÀ OUVERT SE ROUVRE D'ICI, avec ses votes. */}
-          {etape === "envoye" && (
-            <button type="button" className="cmv-rouvrir" onClick={() => setSalon({ clikme: false })}>
+          {(etape === "envoye" || salonOuvert) && (
+            <button type="button" className="cmv-rouvrir" onClick={() => ouvrirLeSalon(false)}>
               <span>💬 Ouvrir mon salon</span>
               {suivi && (
                 <span className="cmv-cpt">
@@ -401,7 +409,7 @@ export function FeuilleCaMeVa({
                   <span>{!pret ? "Préparation…" : court ? "Sur WhatsApp, dans un salon privé" : "Sur WhatsApp : ils votent et en parlent dans un salon privé."}</span>
                 </button>
                 {/* ✨ SANS AMI SOUS LA MAIN : CLIKME TRANCHE, et aide. */}
-                <button type="button" className="cmv-tuile clikme" disabled={!pret} onClick={() => setSalon({ clikme: true })}>
+                <button type="button" className="cmv-tuile clikme" disabled={!pret} onClick={() => ouvrirLeSalon(true)}>
                   <i aria-hidden="true">
                     <EtincelleIcone />
                   </i>

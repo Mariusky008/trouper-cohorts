@@ -26,13 +26,20 @@ import { Porte } from "@/components/direct/dressing/porte";
 import { direSonPrenom, monPrenom } from "@/lib/direct/salons";
 import {
   REPONSES_AVIS,
+  avisSuiviIci,
   demanderAClikMe,
   ecrireDansSalon,
   lireSalonEssai,
+  marquerAvisVus,
+  messageCaMeVa,
+  nePlusSuivreAvisIci,
+  retenirSalonEssai,
+  suivreAvisIci,
   votantDuTelephone,
   voterDansSalon,
   type ChoixVote,
   type SalonEssai as Salon,
+  type SalonEssaiConnu,
 } from "@/lib/direct/avis-amis-client";
 
 const VERDICT: Record<"oui" | "non" | "hesite", string> = { oui: "Ça te va", non: "Pas pour toi", hesite: "À voir" };
@@ -51,9 +58,53 @@ function quiAVote(votes: { v: ChoixVote; q?: string }[]): string {
   return reste ? `${tete.join(", ")} et ${reste} autre${reste > 1 ? "s" : ""}` : tete.length > 1 ? `${tete.slice(0, -1).join(", ")} et ${tete.at(-1)}` : tete[0];
 }
 
+/** Le salon, tel qu'il se range dans « Salons » (voir `retenirSalonEssai`). */
+function inscrire(jeton: string, s: Salon, entre: boolean, lien?: string, e?: string) {
+  const nom = (m: Salon["mots"][number]) => (m.k === "clikme" ? "ClikMe" : m.q || "");
+  const qui = [
+    ...new Set([...s.mots.filter((m) => !m.mien).map(nom), ...(s.votes ?? []).map((v) => v.q ?? "")].filter((q): q is string => Boolean(q))),
+  ];
+  const d = s.mots.at(-1);
+  retenirSalonEssai(
+    {
+      j: jeton,
+      quoi: s.quoi,
+      ...(s.magasin ? { magasin: s.magasin } : {}),
+      auteur: s.auteur,
+      ...(s.prenom ? { prenom: s.prenom } : {}),
+      ...(lien ? { lien } : {}),
+      ...(e ? { e } : {}),
+      qui,
+      ...(d ? { dernier: { qui: d.mien ? "Vous" : nom(d) || "Un ami", texte: d.x } } : {}),
+      oui: s.oui,
+      non: s.non,
+    },
+    entre,
+  );
+}
+
+/** « + Inviter des amis » depuis les salons : le même message que la feuille « Ça me va ? ». */
+export function inviterAuSalon(x: SalonEssaiConnu) {
+  if (!x.lien) return;
+  window.open(`https://wa.me/?text=${encodeURIComponent(messageCaMeVa(x, x.lien))}`, "_blank", "noopener,noreferrer");
+}
+
+/**
+ * LE SALON REFERMÉ VA AUX SALONS DU LIEU. « Je suis dans un salon : je devrais
+ * pouvoir en sortir facilement en me retrouvant sur la page Salons. » La page
+ * à onglets du commerçant prend l'évènement (`boutique-table.tsx`) : elle
+ * passe à l'onglet Salons, où ce salon est désormais rangé — et tout ce qui
+ * était ouvert par-dessus (l'atelier, la feuille) se referme avec. `true`
+ * quand une page l'a pris ; sinon, chacun referme seulement le salon.
+ */
+export const versLesSalons = (jeton: string, magasin?: string) =>
+  !window.dispatchEvent(new CustomEvent("clikme:vers-les-salons", { cancelable: true, detail: { jeton, ...(magasin ? { magasin } : {}) } }));
+
 export function SalonEssai({
   jeton,
   image,
+  lien,
+  avis,
   onFermer,
   clikmeDabord,
   inviter,
@@ -63,6 +114,10 @@ export function SalonEssai({
   jeton: string;
   /** L'essai, quand on l'a déjà sous la main (celui qui a essayé) ; sinon l'image servie au lien. */
   image?: string;
+  /** Le lien envoyé aux amis (celui qui a essayé) : gardé pour inviter depuis les salons. */
+  lien?: string;
+  /** Son avis (`Avis.e`), chez celui qui a essayé : ce qu'il voit ici est vu. */
+  avis?: string;
   onFermer: () => void;
   /** Ouvert par « ClikMe tranche » : son verdict est demandé en arrivant. */
   clikmeDabord?: boolean;
@@ -83,6 +138,10 @@ export function SalonEssai({
   const [pense, setPense] = useState(false);
   const fil = useRef<HTMLDivElement>(null);
   const verdictDemande = useRef(false);
+  /** Déjà rangé dans « Salons » depuis qu'on est entré ? */
+  const range = useRef(false);
+  const lienRef = useRef(lien);
+  const avisRef = useRef(avis);
 
   const relire = useCallback(async () => {
     const r = await lireSalonEssai(jeton, votant);
@@ -90,10 +149,59 @@ export function SalonEssai({
       setSalon(r.salon);
       setAttente(false);
       setPerdu("");
+      inscrire(jeton, r.salon, !range.current, lienRef.current, avisRef.current);
+      range.current = true;
     } else if (r.attente) setAttente(true);
     else if (r.erreur) setPerdu(r.erreur);
     return r.salon;
   }, [jeton, votant]);
+
+  /* ═══ LA FLÈCHE « RETOUR » DU TÉLÉPHONE REFERME LE SALON ═══════════════
+     « Je ne pouvais plus sortir, si ce n'est revenir en arrière. » Le salon
+     n'avait pas de place dans l'historique : la flèche quittait la page, ou
+     ne faisait rien. Il en prend une en s'ouvrant (même adresse, l'état du
+     routeur recopié) : la flèche le referme, comme « Retour ». */
+  const fermeDeja = useRef(false);
+  /* LES VOTES VUS ICI SONT VUS : « Un nouvel avis ! » ne s'ouvre pas par-dessus
+     le salon, ni en le quittant, pour un vote qu'on vient de lire. */
+  useEffect(() => {
+    if (!avis || avisSuiviIci(avis)) return;
+    suivreAvisIci(avis);
+    return () => void nePlusSuivreAvisIci(avis);
+  }, [avis]);
+  const toutVu = useCallback(() => {
+    if (avisRef.current) marquerAvisVus(avisRef.current);
+  }, []);
+  const onFermerRef = useRef(onFermer);
+  useEffect(() => {
+    onFermerRef.current = onFermer;
+  });
+  const marque = `salon-essai:${jeton}`;
+  const enTete = useCallback(() => (window.history.state as { salonEssai?: string } | null)?.salonEssai === marque, [marque]);
+  useEffect(() => {
+    const h = window.history;
+    if (!enTete()) h.pushState({ ...((h.state as object | null) ?? {}), salonEssai: marque }, "");
+    const auRetour = () => {
+      if (fermeDeja.current || enTete()) return;
+      fermeDeja.current = true;
+      toutVu();
+      onFermerRef.current();
+    };
+    window.addEventListener("popstate", auRetour);
+    return () => window.removeEventListener("popstate", auRetour);
+  }, [marque, enTete, toutVu]);
+  /** Le salon s'en va : sa place dans l'historique aussi (la flèche ne bute plus sur une page vide). */
+  const lacher = useCallback(() => {
+    if (!fermeDeja.current) toutVu();
+    fermeDeja.current = true;
+    if (enTete()) window.history.back();
+  }, [enTete, toutVu]);
+  /** « Retour », Échap. */
+  const retour = useCallback(() => {
+    const deja = fermeDeja.current;
+    lacher();
+    if (!deja) onFermerRef.current();
+  }, [lacher]);
 
   const clikme = useCallback(
     async (question?: string) => {
@@ -147,11 +255,11 @@ export function SalonEssai({
     const touche = (ev: KeyboardEvent) => {
       if (ev.key !== "Escape") return;
       ev.stopImmediatePropagation();
-      onFermer();
+      retour();
     };
     window.addEventListener("keydown", touche, true);
     return () => window.removeEventListener("keydown", touche, true);
-  }, [onFermer]);
+  }, [retour]);
 
   const auteur = salon?.auteur ?? false;
   const signe = prenom || undefined;
@@ -199,7 +307,7 @@ export function SalonEssai({
     <Porte>
       <div className="se" role="dialog" aria-modal="true" aria-label={titre}>
         <header className="se-h">
-          <button type="button" className="se-retour" onClick={onFermer}>
+          <button type="button" className="se-retour" onClick={retour}>
             <span aria-hidden="true">‹</span> Retour
           </button>
           <div className="se-titre">
@@ -328,7 +436,14 @@ export function SalonEssai({
                   </button>
                 )}
                 {!auteur && onEssayer && (
-                  <button type="button" className="essayer" onClick={onEssayer}>
+                  <button
+                    type="button"
+                    className="essayer"
+                    onClick={() => {
+                      lacher();
+                      onEssayer();
+                    }}
+                  >
                     Essayer à mon tour
                   </button>
                 )}
@@ -382,7 +497,8 @@ export function SalonEssai({
 
 /* ═══ LE SALON OUVERT PAR LE LIEN, SUR LA PAGE DU COMMERÇANT ═══════════════
    `?essai=<lien>` : l'ami arrive de WhatsApp (voir `/ca-me-va/[jeton]`). Le
-   salon s'ouvre par-dessus la boutique ; refermé, une pastille le rouvre. */
+   salon s'ouvre par-dessus la boutique ; refermé, il attend dans l'onglet
+   Salons de la page à onglets — ailleurs, une pastille le rouvre. */
 const lireEssaiDeLAdresse = () => {
   try {
     const v = new URLSearchParams(window.location.search).get("essai") ?? "";
@@ -395,8 +511,9 @@ const sansAbonnement = () => () => {};
 
 export function SalonEssaiDepuisAdresse() {
   const jeton = useSyncExternalStore(sansAbonnement, lireEssaiDeLAdresse, () => "");
-  const [ferme, setFerme] = useState(false);
-  if (!jeton) return null;
+  /** Refermé : vers « Salons » (la page l'y range), ou dans la pastille. */
+  const [ferme, setFerme] = useState<false | "salons" | "pastille">(false);
+  if (!jeton || ferme === "salons") return null;
   if (ferme) {
     return (
       <Porte>
@@ -410,9 +527,9 @@ export function SalonEssaiDepuisAdresse() {
   return (
     <SalonEssai
       jeton={jeton}
-      onFermer={() => setFerme(true)}
+      onFermer={() => setFerme(versLesSalons(jeton) ? "salons" : "pastille")}
       onEssayer={() => {
-        setFerme(true);
+        setFerme("pastille");
         // L'ONGLET « ESSAYER » DE LA BOUTIQUE S'OUVRE (voir `clikme:montrer` dans `boutique-table.tsx`).
         window.dispatchEvent(new CustomEvent("clikme:montrer", { detail: "essayer" }));
       }}
