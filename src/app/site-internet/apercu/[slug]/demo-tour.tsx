@@ -11,7 +11,7 @@
 // annonce sur le site = réels et automatiques ; Facebook/Instagram = texte + visuel
 // PRÉPARÉS, à publier en un tap (aide à la rédaction, jamais d'auto-publication).
 // Non publié uniquement. Entièrement « passable ».
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange, dureeVoixMs, precharger } from "@/lib/site-internet/speech";
 import { MARQUE } from "@/lib/marque";
 import { direRetours, type GesteDuJour } from "@/lib/direct/geste-du-jour";
@@ -2386,7 +2386,10 @@ export function DemoTour({
           .ph-vers{display:flex;align-items:center;justify-content:center;gap:7px;padding-top:9px;
             font-size:12px;font-weight:800;color:#FFC97A;}
           .ph-vers i{font-style:normal;font-size:14px;line-height:1;}
-          .ph-mini{margin-top:8px;display:flex;flex-direction:column;align-items:center;}
+          /* RÉDUITE PAR « transform », PAS PAR « zoom » (voir Reduit, en fin de fichier) : la taille
+             se règle par --z, la boîte du dehors prend la place réduite. */
+          .ph-mini{--z:.58;margin:8px auto 0;}
+          .ph-mini>.rd-in{display:flex;flex-direction:column;align-items:center;}
           /* LA SCENE DONNE SA PLACE A LA CARTE PLEINE : sans hauteur, une carte
              en position absolue n'en a aucune. Les proportions sont celles d'un
              ecran de telephone, comme dans le paquet de l'acte d'avant. */
@@ -2400,8 +2403,8 @@ export function DemoTour({
              « Boulangerie du Sablar » passait sur deux lignes et recouvrait le
              compte à rebours. Le zoom met tout à l'échelle — c'est la même
              carte, vue de plus loin, et c'est bien ce qu'on veut dire ici. */
-          .ph-mini{zoom:.58;}
           .ph-mini .cd-gestes{margin-top:14px;}
+          .ph-parle-dit{display:none;}
           /* ═══ SUR UN GRAND ÉCRAN, CÔTE À CÔTE ═══ « Là aussi on ne voit pas
              tout sur l'écran. » Empilés, la conversation et la carte du Direct
              dépassaient la hauteur d'un ordinateur portable : la carte, qui
@@ -2412,22 +2415,46 @@ export function DemoTour({
             .ph-wrap .ph-h{grid-column:1 / -1;}
             .ph-wrap > .dt-ouvre{grid-column:2;grid-row:2;}
             .ph-wrap > .ph-dial,.ph-wrap > .ph-shot{grid-column:1;grid-row:2;}
-            .ph-wrap .ph-mini{zoom:.66;margin-top:4px;}
+            .ph-wrap .ph-mini{--z:.66;margin-top:4px;}
+          }
+          /* « PASSER » REMONTE DANS LE BANDEAU, à droite de « Étape 4 / 5 » : sous
+             le bandeau, sur un téléphone, elle tombait sur le titre de l'étape
+             (« Montrez-moi ce que vous voulez mettre… »). */
+          @media (max-width:899px){
+            .dtour-quit{top:calc(env(safe-area-inset-top,0px) + 8px);}
           }
           /* SUR UN TÉLÉPHONE, LA PHOTO ET LE VOCAL SE METTENT CÔTE À CÔTE, et la
              transcription s'efface : la légende du bas dit déjà ce qu'elle
              fait. Empilés, ils poussaient la carte du Direct sous la légende. */
           @media (max-width:899px){
-            /* LA CARTE Y EST RÉDUITE DE MOITIÉ : sa voix grossit d'autant, et
-               remonte pour laisser « Aujourd'hui » lisible. */
-            .ph-parle{gap:10px;top:20%;}
-            .ph-parle-qui{white-space:normal;max-width:260px;font-size:24px;padding:7px 16px;}
-            .ph-parle-av{width:108px;height:108px;}
-            .ph-parle-bulle em{font-size:22px;}
+            /* LA CARTE Y EST RÉDUITE DE MOITIÉ. « La boutique vous en parle »
+               prenait toute la carte : la phrase en sort (.ph-parle-dit), le
+               fantôme et son vocal descendent au pied de la photo — la pièce
+               reste visible au-dessus, « Aujourd'hui » et le titre dessous. Les
+               trois gestes, illisibles à cette taille, laissent leur place à la
+               carte : on les a vus à l'étape d'avant. */
+            .ph-parle-qui{display:none;}
+            .ph-parle{top:auto;bottom:45%;right:14px;}
+            .ph-parle-l{gap:8px;}
+            .ph-parle-av{width:92px;height:92px;}
+            .ph-parle-bulle{padding:8px 14px 8px 8px;}
+            .ph-parle-bulle em{font-size:21px;}
+            .ph-mini .cd-gestes{display:none;}
+            /* LA MARGE OÙ ELLE SE LIT : le bloc de la carte s'élargit jusqu'au
+               bord de l'écran (sans le dépasser), et la phrase prend ce qui reste
+               à gauche de la carte (cqw : la largeur de ce bloc). */
+            .ph-wrap > .dt-ouvre{margin-inline:calc(-1 * clamp(0px, (100vw - 100%) / 2 - 8px, 30px));}
+            .ph-wrap > .dt-ouvre > .dt-ec{container-type:inline-size;}
+            .ph-mini{position:relative;}
+            .ph-parle-dit{display:block;position:absolute;right:calc(100% + 8px);top:36%;margin:0;
+              width:max-content;max-width:calc(50cqw - 75px - 14px);text-align:right;
+              font-size:clamp(10px,3.1cqw,12.5px);font-weight:850;line-height:1.3;color:#FFC97A;opacity:0;}
+            .ph-parle-dit i{font-style:normal;white-space:nowrap;}
+            .dt-ouvre.on .ph-parle-dit{animation:phParle .55s cubic-bezier(.34,1.5,.64,1) .9s both;}
             .ph-piece{width:58px;height:76px;}
             .ph-wrap.vv .ph-lui{flex-direction:row;align-items:flex-end;}
             .ph-wrap.vv .ph-lui p.ph-mot{display:none;}
-            .ph-wrap.vv .ph-mini{zoom:.44;}
+            .ph-wrap.vv .ph-mini{--z:.44;}
           }
           @media (max-height:800px){
             .dtour-ov.ph-ov{padding-top:78px;}
@@ -2443,8 +2470,7 @@ export function DemoTour({
             .ph-elle p,.ph-lui p{font-size:12px;padding:7px 10px;}
             .ph-parc{padding:6px 10px;}
             .ph-vers{padding-top:6px;font-size:11px;}
-            .ph-mini{margin-top:5px;}
-            .ph-mini{zoom:.44;}
+            .ph-mini{margin-top:5px;--z:.44;}
           }
           /* ── ACTE 6 · CE QUI LUI REVIENT ─────────────────────────────── */
           .dtour-card.rt{text-align:left;}
@@ -2701,7 +2727,7 @@ export function DemoTour({
             .dtour-bar .mini::before,.dtour-top .dt-prog i::after,.dtour-end .end-go::after,
             .ph-shot::before,.ph-flash,.ph-lu,.dtour-alive .al-ring,.dtour-mark::after{display:none;}
             .ph-onde i,.ph-parle-onde i,.ph-parle-av i{animation:none;}
-            .dt-ouvre.on .ph-parle{animation:none;opacity:1;}
+            .dt-ouvre.on .ph-parle,.dt-ouvre.on .ph-parle-dit{animation:none;opacity:1;}
             .al-fly{display:none;}
             .rt-i,.rt-t b{transition:opacity .2s linear;transform:none;filter:none;}
             .dt-ouvre{transition:none;}
@@ -3162,7 +3188,15 @@ export function DemoTour({
                 <div className={`dt-ouvre${photoN >= 2 ? " on" : ""}`}>
                   <div className="dt-ec">
                     <div className="ph-vers"><i aria-hidden="true">↓</i>Dans Le Direct de {laVille}, à l&apos;instant</div>
-                    <div className="ph-mini">
+                    <Reduit
+                      className="ph-mini"
+                      /* SUR UN TÉLÉPHONE, LA PHRASE SORT DE LA CARTE : réduite de
+                         moitié, la carte n'a pas la place pour elle — en grand, elle
+                         couvrait la pièce et son titre (« ça prend tout l'écran »).
+                         Le fantôme qui parle y reste ; la phrase se lit à côté, dans
+                         la marge restée vide, et le montre du doigt. */
+                      dessus={G.photoEtVoix ? <p className="ph-parle-dit">🎙️ La boutique vous en parle <i aria-hidden="true">→</i></p> : undefined}
+                    >
                       {/* LA MÊME FACE QU'À L'ACTE D'AVANT, ET QUE DANS
                           L'APPLICATION. Deux actes de la même visite montraient
                           la même carte sous deux présentations : l'une pleine,
@@ -3205,7 +3239,7 @@ export function DemoTour({
                         )}
                       </span>
                       <GestesDirect action={actionHabitant} actif="veux" />
-                    </div>
+                    </Reduit>
                   </div>
                 </div>
 
@@ -3355,5 +3389,51 @@ export function DemoTour({
         </div>
       )}
     </>
+  );
+}
+
+/**
+ * 🔍 RÉDUIT EN ENTIER, TEXTE COMPRIS — par `transform`, pas par `zoom`.
+ *
+ * « La boutique vous en parle prend tout l'écran. » Sur iPhone, Safari réduit
+ * bien les boîtes d'un bloc en `zoom`, mais pas son texte quand la page fixe
+ * `-webkit-text-size-adjust` (Tailwind le met à 100 %) : la carte du Direct,
+ * réduite à 0,44, gardait des lettres deux fois trop grandes — l'étiquette
+ * passait sur quatre lignes et couvrait la pièce, le titre débordait. Un
+ * `transform` réduit tout de la même façon, partout ; il ne réduit pas la place
+ * prise, alors la boîte du dehors la prend, mesurée sur celle du dedans.
+ * L'échelle vient de la feuille de style (`--z`), qui la règle selon l'écran.
+ * `dessus` : ce qui reste à taille réelle, posé par-dessus (une légende).
+ */
+function Reduit({ className, dessus, children }: { className?: string; dessus?: ReactNode; children: ReactNode }) {
+  const dehors = useRef<HTMLDivElement>(null);
+  const dedans = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const a = dehors.current;
+    const b = dedans.current;
+    if (!a || !b) return;
+    const caler = () => {
+      const z = Number.parseFloat(getComputedStyle(a).getPropertyValue("--z")) || 1;
+      a.style.width = `${b.offsetWidth * z}px`;
+      a.style.height = `${b.offsetHeight * z}px`;
+      b.style.transform = `scale(${z})`;
+    };
+    caler();
+    const suivi = new ResizeObserver(caler);
+    suivi.observe(b);
+    window.addEventListener("resize", caler);
+    return () => {
+      suivi.disconnect();
+      window.removeEventListener("resize", caler);
+    };
+  }, []);
+  return (
+    <div ref={dehors} className={className}>
+      <div ref={dedans} className="rd-in" style={{ width: "max-content", transformOrigin: "0 0" }}>
+        {children}
+      </div>
+      {/* Ce qui se lit à taille réelle, posé sur la boîte réduite. */}
+      {dessus}
+    </div>
   );
 }
