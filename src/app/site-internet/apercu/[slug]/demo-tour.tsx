@@ -4,7 +4,7 @@
 // l'assistante (voix OpenAI) parle ET la VRAIE page réagit derrière. La cadence
 // suit la FIN RÉELLE de chaque phrase (pas un minuteur). Le scroll utilisateur est
 // bloqué pendant la présentation (touchmove/wheel) ; le scroll AUTO fonctionne.
-// La légende (caption) apparaît AU DÉMARRAGE de la voix (plus de décalage texte/voix).
+// Pas de légende écrite : la voix suffit, l'écran montre (voir « PLUS DE LÉGENDE EN BAS »).
 //
 // HONNÊTETÉ (règle absolue) : on ne montre QUE de vraies données (note, nb d'avis)
 // et on ne promet QUE ce qui existe. « Remplir ce soir » : WhatsApp aux habitués +
@@ -665,7 +665,6 @@ export function DemoTour({
   const PART_BOUCLE = BOUCLE_AT[0] ?? 1;
 
   // L'icône de l'assistante qui rejoint son emplacement (bouton Action Flash).
-  const [caption, setCaption] = useState("");
   /**
    * La sortie de secours de la visite — voir `.dtour-quit`.
    *
@@ -1256,12 +1255,10 @@ export function DemoTour({
        seconde phrase de clôture tombait après la fin — vue au test. */
     const suivre = (phrase: string, dits: string[], parts: number[], setN: (n: number) => void, depuis = 0) => {
       setN(0);
-      setCaption(dits[0] ?? "");
       parts.forEach((part, i) => {
         if (i === 0) return;
         window.setTimeout(() => {
           setN(i);
-          setCaption(dits[i]);
         }, Math.max(0, quand(phrase, part) - depuis));
       });
     };
@@ -1480,7 +1477,6 @@ export function DemoTour({
             setScene("photo");
             setPhotoN(0);
             setVoixDite(false);
-            setCaption(PHOTO_DIT[0] ?? "");
             /* ═══ TROIS TEMPS, ET LE DERNIER DURE ═════════════════════════
 
                « Étape 4, les annonces ne se voient qu'une ou deux secondes et
@@ -1511,7 +1507,6 @@ export function DemoTour({
             const t1 = quand(SAY_MANQUE, PHOTO_AT2[1] ?? PART_GESTE) - t0;
             window.setTimeout(() => {
               setPhotoN(2);
-              setCaption(PHOTO_DIT[1] ?? "");
             }, Math.max(1400, t1));
           }, quand(SAY_MANQUE, PART_GESTE));
         },
@@ -1534,11 +1529,9 @@ export function DemoTour({
           setScene("retour");
           // Chaque ligne tombe quand la voix l'attaque — plus sur un minuteur
           // qui dérivait dès qu'on retouchait une phrase.
-          setCaption(OUVERTURE_RETOUR);
           RETOUR_AT.forEach((part, i) => {
             window.setTimeout(() => {
               setRetourN(i);
-              setCaption(retourDit.phrases[i]);
             }, quand(SAY_FIN, part));
           });
           // ET LA BOUCLE SE FERME DANS LE MÊME ACTE. Elle en avait un à elle,
@@ -1598,7 +1591,6 @@ export function DemoTour({
       if (steps[i + 1]) precharger(steps[i + 1].say);
       await awaitSpeech(est(st.say), () => {
         setHead({ n: i + 1, total, title: st.title });
-        setCaption(st.say);
         st.enter();
       });
       if (cancelled.current) return;
@@ -2447,14 +2439,15 @@ export function DemoTour({
             .ph-wrap > .dt-ouvre > .dt-ec{container-type:inline-size;}
             .ph-mini{position:relative;}
             .ph-parle-dit{display:block;position:absolute;right:calc(100% + 8px);top:36%;margin:0;
-              width:max-content;max-width:calc(50cqw - 75px - 14px);text-align:right;
+              width:max-content;max-width:calc(50cqw - 170px * var(--z) - 14px);text-align:right;
               font-size:clamp(10px,3.1cqw,12.5px);font-weight:850;line-height:1.3;color:#FFC97A;opacity:0;}
             .ph-parle-dit i{font-style:normal;white-space:nowrap;}
             .dt-ouvre.on .ph-parle-dit{animation:phParle .55s cubic-bezier(.34,1.5,.64,1) .9s both;}
             .ph-piece{width:58px;height:76px;}
             .ph-wrap.vv .ph-lui{flex-direction:row;align-items:flex-end;}
             .ph-wrap.vv .ph-lui p.ph-mot{display:none;}
-            .ph-wrap.vv .ph-mini{--z:.44;}
+            /* La légende du bas partie, la carte reprend sa place. */
+            .ph-wrap.vv .ph-mini{--z:.5;}
           }
           @media (max-height:800px){
             .dtour-ov.ph-ov{padding-top:78px;}
@@ -2470,7 +2463,7 @@ export function DemoTour({
             .ph-elle p,.ph-lui p{font-size:12px;padding:7px 10px;}
             .ph-parc{padding:6px 10px;}
             .ph-vers{padding-top:6px;font-size:11px;}
-            .ph-mini{margin-top:5px;--z:.44;}
+            .ph-mini{margin-top:5px;--z:.5;}
           }
           /* ── ACTE 6 · CE QUI LUI REVIENT ─────────────────────────────── */
           .dtour-card.rt{text-align:left;}
@@ -3323,13 +3316,11 @@ export function DemoTour({
             </div>
           )}
 
-          <div className="dtour-bar">
-            <span className="mini" />
-            {/* LA CLÉ FORCE LE REMONTAGE, et c'est tout l'intérêt : sans elle
-                React réécrit le texte sur place et la phrase change d'un coup au
-                milieu d'une lecture. Avec, chaque temps se relaie. */}
-            <span className="cap" key={caption}>{caption}</span>
-          </div>
+          {/* PLUS DE LÉGENDE EN BAS. « Les textes de Léa en bas de l'écran
+              sont-ils vraiment nécessaires ? Je serai là pour leur faire
+              écouter. » Ils redisaient la voix et prenaient un tiers d'un
+              écran de téléphone — sur un petit, ils cachaient la carte du
+              Direct. L'écran ne garde que ce que la voix montre. */}
         </>
       )}
 
