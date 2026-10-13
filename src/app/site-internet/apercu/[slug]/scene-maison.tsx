@@ -18,9 +18,10 @@
 //      se pose : elle, dans son jean et ce pull ; son jean s'allume ;
 //   2. « Cette personne ne vous suivait pas… et pourtant, votre pièce vient
 //      d'arriver chez elle » — trois raisons barrées, et l'arrivée ;
-//   3. « Elle peut alors voir pourquoi ClikMe l'a choisie, l'essayer,
-//      demander l'avis de ses amis… puis vous demander de la mettre de côté »
-//      — les quatre gestes s'allument, un à un.
+//   3. « Elle peut alors voir pourquoi ClikMe l'a choisie, demander l'avis
+//      de ses amis… puis vous demander de la mettre de côté » — les trois
+//      gestes s'allument, un à un. PLUS D'« ESSAYÉ SUR ELLE » : « elle le
+//      voit déjà sur elle, puisqu'elle est déjà en photo ».
 //
 // TOUT EST UN EXEMPLE, ET L'ÉCRAN LE DIT : la Maison est celle d'une cliente
 // de démonstration. La pièce est UN DE SES HAUTS quand ses photos en montrent
@@ -72,7 +73,6 @@ export function SceneMaison({
   const { il } = motsDeLaPiece(surprise.nom);
   const gestes: [string, string][] = [
     ["💡", `Pourquoi ? ${il[0].toUpperCase()}${il.slice(1)} va avec son jean préféré`],
-    ["✨", "Essayé sur elle"],
     ["💬", "Ses amies donnent leur avis"],
     ["🛍️", "Mise de côté demandée"],
   ];
@@ -159,7 +159,7 @@ export function SceneMaison({
                         </div>
                       )}
                     </div>
-                    {/* LES QUATRE GESTES SOUS LA PHOTO, SUR TOUTE LA LARGEUR : dans la
+                    {/* LES TROIS GESTES SOUS LA PHOTO, SUR TOUTE LA LARGEUR : dans la
                         colonne du texte, ils s'empilaient sur six lignes d'un petit
                         téléphone et poussaient la scène sous la légende. */}
                     {n >= 3 && (
@@ -236,6 +236,8 @@ function StylesMaison() {
 .smz-gestes li{padding:4px 8px;border-radius:9px;font-size:12px;font-weight:700;color:#2A1708;background:#FFF0DA;
   animation:smzAllume .45s ease calc(.2s + var(--i) * 2.1s) both;}
 .smz-gestes li:last-child{background:#FFE3EF;color:#B0185E;}
+/* LE POURQUOI SUR TOUTE LA LARGEUR, les deux suites dessous : trois gestes, comme la phrase. */
+.smz-gestes li:first-child{grid-column:1 / -1;}
 @keyframes smzMonte{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes smzPop{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:none}}
 @keyframes smzCadeau{from{opacity:0;transform:translateY(-10px) scale(.85)}to{opacity:1;transform:none}}
