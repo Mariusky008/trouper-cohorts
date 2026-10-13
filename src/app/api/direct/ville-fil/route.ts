@@ -246,7 +246,16 @@ export async function POST(request: Request) {
       donnees,
       persistant: Boolean(genre),
     });
-    if (error) return NextResponse.json({ error: "Enregistrement impossible." }, { status: 500 });
+    if (error) {
+      // LE MOTIF DANS LES JOURNAUX DU SERVEUR, ET UN MOT CLAIR À L'ÉCRAN : une
+      // table absente veut dire que la migration de La ville n'est pas appliquée.
+      console.error("[ville-fil] publication refusée :", error.code, error.message);
+      const absente = error.code === "42P01" || /does not exist|schema cache/i.test(String(error.message));
+      return NextResponse.json(
+        { error: absente ? "La ville n’est pas encore activée sur ce site." : "Enregistrement impossible.", ...(absente ? { code: "ville-absente" } : {}) },
+        { status: absente ? 503 : 500 },
+      );
+    }
     if (!avantApres) return NextResponse.json({ ok: true });
     // LE SALON PUBLIC, OUVERT DANS LE MÊME GESTE — et relié dans les deux sens.
     const ref = donnees.reference;

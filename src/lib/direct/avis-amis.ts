@@ -48,9 +48,9 @@ export type ChoixVote = "oui" | "non";
 export type JetonAvis = {
   /** La ligne (son identifiant, choisi avant qu'elle existe). */
   e: string;
-  /** Celui qui demande : lui seul peut y ranger l'essai. */
+  /** Celui qui demande : lui seul peut y ranger l'essai. Vide pour un lien court (il ne range rien). */
   h: string;
-  /** Quand le lien a été fait (ms). */
+  /** Quand le lien a été fait (ms). 0 pour un lien court : c'est l'âge de la ligne qui compte. */
   t: number;
 };
 
@@ -104,8 +104,33 @@ export function signerAvis(j: JetonAvis): string {
   return `${corps}.${signer(corps, k)}`;
 }
 
+/**
+ * 🔗 LE LIEN COURT, CELUI QUI PART CHEZ LES AMIS — 48 signes au lieu de 150.
+ *
+ * « Le lien est très long » : le jeton complet porte l'identifiant, celui qui
+ * demande et l'heure, en JSON. L'ami n'a besoin que de la ligne : son
+ * identifiant (32 signes hexadécimaux) et une signature de 16 signes. La durée
+ * de vie se lit sur la ligne elle-même (`ligne`). Le jeton complet reste celui
+ * qui sert à ranger l'essai, et les liens déjà envoyés continuent de marcher.
+ */
+const COURT = /^([0-9a-f]{32})([A-Za-z0-9_-]{16})$/;
+const signerCourt = (e: string, k: string) => createHmac("sha256", k).update(`avis-court|${e}`).digest("base64url").slice(0, 16);
+export function lienCourtAvis(e: string): string {
+  const k = secret();
+  if (!k || !UUID.test(e)) return "";
+  return `${e.replace(/-/g, "").toLowerCase()}${signerCourt(e.toLowerCase(), k)}`;
+}
+
 export function lireJetonAvis(jeton: string): JetonAvis | null {
   const k = secret();
+  const court = COURT.exec(String(jeton || ""));
+  if (court) {
+    if (!k) return null;
+    const x = court[1];
+    const e = `${x.slice(0, 8)}-${x.slice(8, 12)}-${x.slice(12, 16)}-${x.slice(16, 20)}-${x.slice(20)}`;
+    const attendu = signerCourt(e, k);
+    return timingSafeEqual(Buffer.from(attendu), Buffer.from(court[2])) ? { e, h: "", t: 0 } : null;
+  }
   const [corps, sig] = String(jeton || "").split(".");
   if (!k || !corps || !sig || corps.length > 400) return null;
   const attendu = signer(corps, k);
@@ -131,7 +156,10 @@ const votesDe = (d: Record<string, unknown> | null | undefined): VoteRange[] =>
 async function ligne(supabase: Supabase, e: string): Promise<Ligne | null> {
   if (!UUID.test(e)) return null;
   const { data } = await supabase.from("human_maison_elements").select("id, habitant, donnees, photo, cree_le").eq("id", e).eq("sorte", SORTE_AVIS).maybeSingle();
-  return (data as Ligne | null) ?? null;
+  const l = (data as Ligne | null) ?? null;
+  // TRENTE JOURS, LUS SUR LA LIGNE : un lien court ne porte pas son heure.
+  if (l && Date.now() - (Date.parse(l.cree_le) || Date.now()) > DUREE_MS) return null;
+  return l;
 }
 
 /**
@@ -251,7 +279,7 @@ export async function voter(
 }
 
 /** Ses demandes d'avis, de la plus récente à la plus ancienne. `null` : la table n'est pas là. */
-export async function listerAvis(supabase: Supabase, habitant: string, adresse: (jeton: string) => { lien: string; image: string }): Promise<Avis[] | null> {
+export async function listerAvis(supabase: Supabase, habitant: string, adresse: (e: string) => { lien: string; image: string } | null): Promise<Avis[] | null> {
   try {
     const { data, error } = await supabase
       .from("human_maison_elements")
@@ -266,8 +294,8 @@ export async function listerAvis(supabase: Supabase, habitant: string, adresse: 
     for (const l of (Array.isArray(data) ? data : []) as Ligne[]) {
       const d = l.donnees ?? {};
       const votes = votesDe(d);
-      const jeton = signerAvis({ e: l.id, h: habitant, t: Date.parse(l.cree_le) || Date.now() });
-      if (!jeton) continue;
+      const a = adresse(l.id);
+      if (!a) continue;
       out.push({
         e: l.id,
         quoi: s(d.o),
@@ -278,7 +306,7 @@ export async function listerAvis(supabase: Supabase, habitant: string, adresse: 
         votes: votes.map(({ v, q, t }) => ({ v, ...(q ? { q } : {}), t })),
         vus: Math.max(0, Number(d.vus) || 0),
         creeLe: l.cree_le,
-        ...adresse(jeton),
+        ...a,
       });
     }
     return out;

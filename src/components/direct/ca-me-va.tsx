@@ -23,6 +23,7 @@
 import { useEffect, useState } from "react";
 import { publierAvantApres, retirerAvantApres, type PublicationAA } from "@/lib/direct/avant-apres-client";
 import { monPrenom } from "@/lib/direct/salons";
+import { villeSlug } from "@/lib/direct/ville";
 import {
   REPONSES_AVIS,
   marquerAvisVus,
@@ -57,8 +58,9 @@ type Essai = {
   piece?: string;
 };
 
+/* SANS ÉMOJI : passé par le lien d'ouverture de WhatsApp, il arrivait en « � ». */
 const texteDuMessage = (e: Essai, lien: string) =>
-  `Ça me va ? 🤔 J’hésite pour « ${e.quoi} »${e.magasin ? ` chez ${e.magasin}` : ""}. Dis-moi en un appui : ${lien}`;
+  `Ça me va ? J’hésite pour « ${e.quoi} »${e.magasin ? ` chez ${e.magasin}` : ""}. Dis-moi en un appui : ${lien}`;
 
 function Compte({ a }: { a: Avis }) {
   return (
@@ -78,14 +80,11 @@ export function FeuilleCaMeVa({
   essai,
   onFermer,
   secours,
-  salon,
 }: {
   essai: Essai;
   onFermer: () => void;
   /** Sans vote possible (démonstration) : la photo part par la feuille de partage du téléphone. */
   secours?: () => void;
-  /** Le salon de discussion, là où il existe : la même intention, dans ClikMe. */
-  salon?: () => void;
 }) {
   const [lien, setLien] = useState<LienAvis | null>(null);
   const [etape, setEtape] = useState<"prepare" | "pret" | "envoye" | "impossible">("prepare");
@@ -136,10 +135,38 @@ export function FeuilleCaMeVa({
 
   useEffect(() => () => void (lien && nePlusSuivreAvisIci(lien.e)), [lien]);
 
+  /* ⚖️ « TOUT VEVEY » SEULEMENT SI LA VILLE RÉPOND : sans sa migration, le
+     choix n'apparaît pas — plutôt qu'un « Enregistrement impossible » au bout
+     de l'écran d'accord. */
+  const [villeOk, setVilleOk] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!essai.avant || !essai.ville) return;
+    let vivant = true;
+    fetch(`/api/direct/ville-fil?ville=${encodeURIComponent(villeSlug(essai.ville))}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { ok?: boolean } | null) => vivant && setVilleOk(j?.ok === true))
+      .catch(() => undefined);
+    return () => {
+      vivant = false;
+    };
+  }, [essai.avant, essai.ville]);
+
   const fermer = () => {
     if (suivi && suivi.votes.length > suivi.vus) marquerAvisVus(suivi.e);
     onFermer();
   };
+  // PAS DE BOUTON « FERMER » : on touche à côté, ou Échap — qui ne referme que
+  // la feuille, pas l'essai dessous (elle passe la première et garde la touche).
+  useEffect(() => {
+    const touche = (ev: KeyboardEvent) => {
+      if (ev.key !== "Escape") return;
+      ev.stopImmediatePropagation();
+      if (suivi && suivi.votes.length > suivi.vus) marquerAvisVus(suivi.e);
+      onFermer();
+    };
+    window.addEventListener("keydown", touche, true);
+    return () => window.removeEventListener("keydown", touche, true);
+  }, [suivi, onFermer]);
 
   const parti = () => {
     if (!lien) return;
@@ -175,7 +202,8 @@ export function FeuilleCaMeVa({
   };
 
   const nomVille = essai.ville ? essai.ville.charAt(0).toUpperCase() + essai.ville.slice(1) : "";
-  const peutDemanderALaVille = Boolean(essai.avant && essai.ville);
+  // AFFICHÉE D'EMBLÉE (pas de saut de mise en page), RETIRÉE si La ville ne répond pas.
+  const peutDemanderALaVille = Boolean(essai.avant && essai.ville && villeOk !== false);
 
   const publier = async () => {
     if (!essai.avant || !essai.ville || !daccord || !prenom.trim()) return;
@@ -212,8 +240,9 @@ export function FeuilleCaMeVa({
   if (ville !== "non") {
     return (
       <Porte>
-        <div className="dr-voile" onClick={ville === "envoi" ? undefined : fermer}>
+        <div className="dr-voile cmv-voile" onClick={ville === "envoi" ? undefined : fermer}>
           <div className="dr-feuille cmv-feuille" role="dialog" aria-modal="true" aria-label={`Avant ou après ? Demander à ${nomVille}`} onClick={(ev) => ev.stopPropagation()}>
+            <i className="cmv-poignee" aria-hidden="true" />
             {ville === "publie" && pub ? (
               <>
                 <div className="cmv-aa-ok">
@@ -236,17 +265,9 @@ export function FeuilleCaMeVa({
                 <button type="button" className="dr-lien cmv-aa-retirer" onClick={() => void toutRetirer()}>
                   Tout retirer maintenant
                 </button>
-                <button type="button" className="dr-lien" onClick={fermer}>
-                  Fermer
-                </button>
               </>
             ) : ville === "retire" ? (
-              <>
-                <p className="cmv-note">C’est retiré : la publication, les deux photos et la discussion ont disparu.</p>
-                <button type="button" className="dr-cta" onClick={fermer}>
-                  Fermer
-                </button>
-              </>
+              <p className="cmv-note cmv-aa-retire">C’est retiré : la publication, les deux photos et la discussion ont disparu.</p>
             ) : (
               <>
                 <h3 className="cmv-aa-titre">Avant ou après&nbsp;? Demandez à {nomVille}</h3>
@@ -294,62 +315,66 @@ export function FeuilleCaMeVa({
     );
   }
 
+  const pret = etape === "pret" || etape === "envoye";
   return (
     <Porte>
-      <div className="dr-voile" onClick={fermer}>
-        <div className="dr-feuille cmv-feuille" role="dialog" aria-modal="true" aria-label="Ça me va ? Demander l’avis de vos amis" onClick={(ev) => ev.stopPropagation()}>
-          <div className="cmv-tete">
+      <div className="dr-voile cmv-voile" onClick={fermer}>
+        <div className="dr-feuille cmv-feuille" role="dialog" aria-modal="true" aria-label="Ça me va ? Qui va trancher ?" onClick={(ev) => ev.stopPropagation()}>
+          <i className="cmv-poignee" aria-hidden="true" />
+          {/* L'ESSAI EN GRAND : c'est lui qu'on demande de juger. */}
+          <figure className={`cmv-photo${etape === "envoye" && suivi ? " petite" : ""}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={essai.image} alt="" />
-            <div>
-              <h3>Ça me va&nbsp;?</h3>
-              <p>
-                Vos amis voient votre essai de «&nbsp;{essai.quoi}&nbsp;» et votent d’un appui, sans application.
-              </p>
-            </div>
-          </div>
+            <figcaption>
+              <b>Ça me va&nbsp;?</b>
+              <span>
+                «&nbsp;{essai.quoi}&nbsp;»{essai.magasin ? ` · ${essai.magasin}` : ""}
+              </span>
+            </figcaption>
+          </figure>
 
-          {etape === "impossible" ? (
-            <>
-              <p className="cmv-note">Le vote n’est pas disponible ici. Vous pouvez quand même envoyer la photo.</p>
-              {secours && (
-                <button type="button" className="dr-cta" onClick={() => (secours(), onFermer())}>
-                  Envoyer la photo
-                </button>
-              )}
-            </>
-          ) : etape === "envoye" && suivi ? (
-            <>
-              <p className="cmv-note">{copie ? "Message copié : collez-le à vos amis. " : ""}Les avis s’affichent ici dès qu’ils arrivent.</p>
+          {etape === "envoye" && suivi && (
+            <div className="cmv-suivi">
+              <p className="cmv-note">{copie ? "Message copié : collez-le à vos amis. " : ""}Les avis de vos amis s’affichent ici dès qu’ils arrivent.</p>
               <Compte a={suivi} />
-              <button type="button" className="dr-cta cmv-wa" onClick={parWhatsApp}>
-                Demander à d’autres amis
-              </button>
-            </>
-          ) : (
-            <>
-              <button type="button" className="dr-cta cmv-wa" disabled={etape !== "pret"} onClick={parWhatsApp}>
-                {etape === "pret" ? "Envoyer sur WhatsApp" : "Préparation de votre essai…"}
-              </button>
-              <button type="button" className="dr-lien cmv-autre" disabled={etape !== "pret"} onClick={() => void autrement()}>
-                Autre application
-              </button>
-            </>
+            </div>
           )}
-          {/* ⚖️ PAS D'AMIS SOUS LA MAIN : TOUTE LA VILLE VOTE. */}
-          {peutDemanderALaVille && (
-            <button type="button" className="dr-lien cmv-aa-ouvrir" onClick={() => setVille("accord")}>
-              <span aria-hidden="true">⚖️</span> Pas d’amis sous la main&nbsp;? Demandez aux gens de {nomVille}
+
+          <p className="cmv-q">Qui va trancher&nbsp;?</p>
+          <div className={`cmv-choix${peutDemanderALaVille ? "" : " seul"}`}>
+            {etape === "impossible" ? (
+              <button type="button" className="cmv-tuile amis" disabled={!secours} onClick={() => secours && (secours(), onFermer())}>
+                <i aria-hidden="true">
+                  <BulleIcone />
+                </i>
+                <b>Mes amis</b>
+                <span>Le vote n’est pas disponible ici : envoyez-leur la photo.</span>
+              </button>
+            ) : (
+              <button type="button" className="cmv-tuile amis" disabled={!pret} onClick={parWhatsApp}>
+                <i aria-hidden="true">
+                  <BulleIcone />
+                </i>
+                <b>{etape === "envoye" ? "D’autres amis" : "Mes amis"}</b>
+                <span>{pret ? "Sur WhatsApp : ils votent d’un appui, sans application." : "Préparation de votre essai…"}</span>
+              </button>
+            )}
+            {/* ⚖️ PAS D'AMIS SOUS LA MAIN : TOUTE LA VILLE VOTE. */}
+            {peutDemanderALaVille && (
+              <button type="button" className="cmv-tuile ville" onClick={() => setVille("accord")}>
+                <i aria-hidden="true">
+                  <VilleIcone />
+                </i>
+                <b>Tout {nomVille}</b>
+                <span>Avant ou après&nbsp;? Les gens d’ici votent pendant 48&nbsp;h.</span>
+              </button>
+            )}
+          </div>
+          {etape !== "impossible" && (
+            <button type="button" className="cmv-autre" disabled={!pret} onClick={() => void autrement()}>
+              Autre messagerie (SMS, Messenger…)
             </button>
           )}
-          {salon && (
-            <button type="button" className="dr-lien cmv-salon" onClick={salon}>
-              Ou en discuter dans un salon ClikMe
-            </button>
-          )}
-          <button type="button" className="dr-lien" onClick={fermer}>
-            Fermer
-          </button>
         </div>
       </div>
       <StylesDressing />
@@ -357,6 +382,19 @@ export function FeuilleCaMeVa({
     </Porte>
   );
 }
+
+const BulleIcone = () => (
+  <svg viewBox="0 0 24 24">
+    <path d="M4.5 18.8 6 15.3a7.6 7.6 0 1 1 3 2.6Z" />
+    <path d="M9 10.5h6M9 13.5h4" />
+  </svg>
+);
+const VilleIcone = () => (
+  <svg viewBox="0 0 24 24">
+    <path d="M3.5 20.5h17M5.5 20.5V10l4-2.5V20.5M9.5 20.5V5l5 2.5v13M14.5 20.5v-9l4 1.6v7.4" />
+    <path d="M12 10v.01M12 13v.01M7.5 13v.01M7.5 16v.01M16.5 15v.01" />
+  </svg>
+);
 
 /** LES VOTES ARRIVÉS ENTRE-TEMPS — elle ne questionne le serveur que si ce téléphone a demandé un avis. */
 export function AvisRecus() {
@@ -366,7 +404,7 @@ export function AvisRecus() {
   const nouveaux = a.votes.length - a.vus;
   return (
     <Porte>
-      <div className="dr-voile" onClick={() => marquerAvisVus(a.e)}>
+      <div className="dr-voile cmv-voile" onClick={() => marquerAvisVus(a.e)}>
         <div className="dr-feuille cmv-feuille" role="dialog" aria-modal="true" aria-label="Vos amis ont répondu" onClick={(ev) => ev.stopPropagation()}>
           <div className="cmv-tete">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -394,7 +432,44 @@ export function AvisRecus() {
 }
 
 const STYLE = `
-.cmv-feuille{display:flex;flex-direction:column;gap:12px;}
+.cmv-voile{justify-content:center;}
+.cmv-feuille{display:flex;flex-direction:column;gap:12px;max-width:440px;margin:0 auto;padding-top:10px !important;}
+.cmv-poignee{display:block;width:44px;height:5px;margin:0 auto -2px;border-radius:999px;background:rgba(255,244,230,.22);}
+@media (min-width:700px){
+  .cmv-voile{align-items:center;padding:24px;}
+  .cmv-feuille{border-radius:26px !important;border:1px solid rgba(255,240,230,.12);max-height:92vh;}
+  .cmv-poignee{display:none;}
+}
+.cmv-photo{position:relative;margin:0;width:100%;aspect-ratio:4 / 5;max-height:44vh;border-radius:22px;overflow:hidden;background:#2a1a0f;flex:none;}
+.cmv-photo.petite{max-height:26vh;}
+.cmv-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:top;}
+.cmv-photo figcaption{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;gap:3px;padding:48px 16px 14px;
+  background:linear-gradient(180deg,rgba(18,12,9,0),rgba(18,12,9,.9));}
+.cmv-photo b{font-size:30px;font-weight:900;line-height:1.05;color:#fff;letter-spacing:-.01em;}
+.cmv-photo span{font-size:14px;line-height:1.3;color:#EADBC8;}
+.cmv-suivi{display:flex;flex-direction:column;gap:8px;}
+.cmv-q{margin:2px 0 -2px;text-align:center;font-size:12.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#C9B29A;}
+.cmv-choix{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.cmv-choix.seul{grid-template-columns:1fr;}
+.cmv-tuile{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:132px;padding:14px;border-radius:20px;cursor:pointer;
+  text-align:left;font:inherit;color:#fff;border:1.5px solid rgba(255,244,230,.2);background:rgba(255,244,230,.05);
+  transition:transform .15s ease,border-color .15s ease;}
+.cmv-tuile:active{transform:scale(.98);}
+.cmv-tuile:disabled{opacity:.6;cursor:default;}
+.cmv-choix.seul .cmv-tuile{min-height:0;display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center;}
+.cmv-choix.seul .cmv-tuile i{grid-row:span 2;}
+.cmv-tuile.amis{background:linear-gradient(160deg,rgba(37,211,102,.2),rgba(37,211,102,.05));border-color:rgba(37,211,102,.55);}
+.cmv-tuile.ville{background:linear-gradient(160deg,rgba(255,46,154,.22),rgba(255,46,154,.05));border-color:rgba(255,46,154,.6);}
+.cmv-tuile i{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:13px;font-style:normal;color:#fff;}
+.cmv-tuile.amis i{background:#1FAF55;}
+.cmv-tuile.ville i{background:#FF2E9A;}
+.cmv-tuile svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+.cmv-tuile b{font-size:17px;font-weight:900;line-height:1.15;}
+.cmv-tuile span{font-size:13px;line-height:1.35;color:#E6D6C4;}
+.cmv-autre{display:block;margin:0 auto;padding:6px 10px;border:0;background:none;cursor:pointer;font:inherit;font-size:13.5px;font-weight:700;
+  color:#BFA993;text-decoration:underline;text-underline-offset:3px;}
+.cmv-autre:disabled{opacity:.5;cursor:default;}
+.cmv-aa-retire{padding:18px 4px;text-align:center;}
 .cmv-tete{display:flex;gap:14px;align-items:center;}
 .cmv-tete img{width:84px;height:108px;flex:none;object-fit:cover;object-position:top;border-radius:14px;background:#2a1a0f;}
 .cmv-tete h3{margin:0 0 4px !important;text-align:left !important;font-size:22px !important;font-weight:900;color:#fff;}
@@ -403,11 +478,8 @@ const STYLE = `
 .cmv-cpt{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0;padding:12px 14px;border-radius:14px;
   background:rgba(246,181,75,.1);border:1px solid rgba(246,181,75,.35);font-size:20px;font-weight:900;color:#fff;}
 .cmv-cpt em{flex-basis:100%;font-style:normal;font-size:13.5px;font-weight:600;color:#D9C3A8;}
-.cmv-wa:disabled,.cmv-autre:disabled{opacity:.55;}
 .cmv-revoir{text-align:center;}
 .cmv-feuille .dr-lien{margin:0 auto;}
-.cmv-aa-ouvrir{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px 14px !important;border-radius:16px;
-  border:1.5px dashed rgba(255,46,154,.6) !important;color:#FFD2EA !important;font-weight:800;text-align:center;line-height:1.3;}
 .cmv-aa-titre{margin:0 !important;text-align:left !important;font-size:22px !important;font-weight:900;color:#fff;line-height:1.2;}
 .cmv-aa-duo{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .cmv-aa-duo figure{position:relative;margin:0;}

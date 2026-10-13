@@ -6037,15 +6037,12 @@ function Essai({
                   « essayez cette pièce sur vous ». Voir
                   `components/direct/ca-me-va.tsx`.
 
-                  LE SALON EST TOUJOURS LÀ, juste en dessous dans la même
-                  feuille (« Ou en discuter dans un salon ClikMe ») : « En
-                  parler avec mes amis » ouvrait le salon de l'annonce, avec ses
-                  propositions, son vote et sa réservation, le rendu, le prix et
-                  la note partant avec. Il n'a pas changé ; il vient en second,
-                  parce qu'un ami sans ClikMe n'y entre pas, et qu'un lien de
-                  vote, lui, se répand. Sans salon ni vote possible
-                  (démonstration), la photo part par la feuille de partage du
-                  téléphone. */}
+                  DEUX CHOIX DANS LA FEUILLE, ET PAS TROIS : « Mes amis »
+                  (WhatsApp) et « Tout Vevey » (l'avant/après de La ville, avec
+                  son salon public). « En discuter dans un salon ClikMe avec
+                  mes amis, c'est un peu la même chose » : il n'y est plus. Sans
+                  vote possible (démonstration), la photo part par la feuille
+                  de partage du téléphone. */}
               {!!rendu && !rendu.souci && (onSalon || !!photo) && (
                 <button type="button" className="mu-res-c" onClick={() => setCaMeVa(piece)}>
                   <i aria-hidden="true">
@@ -6840,14 +6837,6 @@ function Essai({
           }}
           onFermer={() => setCaMeVa(null)}
           secours={photo ? () => void partagerLeLook(caMeVa) : undefined}
-          salon={
-            onSalon
-              ? () => {
-                  onSalon({ quoi: caMeVa.nom, prix: caMeVa.prix, image: rendu.image, note });
-                  setCaMeVa(null);
-                }
-              : undefined
-          }
         />
       )}
       {lookPour && pourDressing && (

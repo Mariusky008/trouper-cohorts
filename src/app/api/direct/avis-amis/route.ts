@@ -10,7 +10,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant, habitantCourant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
 import { SITE_URL } from "@/lib/site-url";
-import { creerAvis, lireJetonAvis, listerAvis, marquerAvisVus, nouvelAvis, signerAvis, voter } from "@/lib/direct/avis-amis";
+import { creerAvis, lienCourtAvis, lireJetonAvis, listerAvis, marquerAvisVus, nouvelAvis, signerAvis, voter } from "@/lib/direct/avis-amis";
 
 export const dynamic = "force-dynamic";
 
@@ -34,11 +34,11 @@ async function corps(req: Request): Promise<Record<string, unknown>> {
   }
 }
 
-/** Le lien de vote et l'image, tels qu'on les met dans un message. */
-const adresses = (jeton: string) => ({
-  lien: `${SITE_URL}/ca-me-va/${jeton}`,
-  image: `/api/direct/avis-amis/image?j=${encodeURIComponent(jeton)}`,
-});
+/** Le lien de vote et l'image, tels qu'on les met dans un message — le lien COURT. */
+const adresses = (e: string) => {
+  const court = lienCourtAvis(e);
+  return court ? { lien: `${SITE_URL}/ca-me-va/${court}`, image: `/api/direct/avis-amis/image?j=${court}` } : null;
+};
 
 export async function GET() {
   const supabase = client();
@@ -73,13 +73,15 @@ export async function POST(req: Request) {
     const jeton = signerAvis({ e: nouvelAvis(), h: h.id, t: Date.now() });
     if (!jeton) return NextResponse.json({ ok: false }, { status: 503, headers: PRIVE });
     const j = lireJetonAvis(jeton);
-    return NextResponse.json({ ok: true, e: j?.e, jeton, ...adresses(jeton) }, { headers: PRIVE });
+    const a = j ? adresses(j.e) : null;
+    if (!j || !a) return NextResponse.json({ ok: false }, { status: 503, headers: PRIVE });
+    return NextResponse.json({ ok: true, e: j.e, jeton, ...a }, { headers: PRIVE });
   }
 
   if (p.action === "envoyer") {
     const j = lireJetonAvis(s(p.jeton, 600));
-    // UN LIEN N'ACCUEILLE QUE L'ESSAI DE CELUI À QUI IL A ÉTÉ FAIT.
-    if (!j || j.h !== h.id) return NextResponse.json({ ok: false, error: "Lien inconnu." }, { status: 400, headers: PRIVE });
+    // UN LIEN N'ACCUEILLE QUE L'ESSAI DE CELUI À QUI IL A ÉTÉ FAIT (jamais un lien court : il ne porte personne).
+    if (!j || !j.h || j.h !== h.id) return NextResponse.json({ ok: false, error: "Lien inconnu." }, { status: 400, headers: PRIVE });
     const quoi = s(p.quoi);
     const m = /^data:image\/(?:jpeg|jpg|png|webp);base64,(.+)$/i.exec(String(p.image ?? ""));
     if (!quoi || !m) return NextResponse.json({ ok: false, error: "Quel essai ?" }, { status: 400, headers: PRIVE });
