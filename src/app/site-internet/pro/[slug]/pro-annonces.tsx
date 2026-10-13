@@ -184,6 +184,10 @@ export function ProAnnonces({ slug, token, ville }: { slug: string; token: strin
             text-overflow:ellipsis;white-space:nowrap;}
           .pro .pann .hist-d{flex:none;font-size:11px;color:var(--faint);font-weight:700;}
           .pro .pann .hist-i:active{transform:translateY(1px);}
+          .pro .pann .plan{display:flex;align-items:center;gap:8px;width:100%;margin-top:12px;text-align:left;
+            border:1px solid #CFE7DD;background:#EEF8F3;color:#0B6B52;border-radius:13px;padding:11px 13px;
+            font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;}
+          .pro .pann .plan span{margin-left:auto;font-size:17px;line-height:1;}
           `,
         }}
       />
@@ -193,6 +197,15 @@ export function ProAnnonces({ slug, token, ville }: { slug: string; token: strin
         Ce que vos client·es voient en ce moment — sur votre site et dans le fil de votre ville.
         Vous pouvez en avoir trois à la fois.
       </div>
+
+      {/* LE PLANNING, À CÔTÉ DE CE QUI TOURNE : c'est là qu'on pense à la suite. */}
+      <button
+        type="button"
+        className="plan"
+        onClick={() => window.dispatchEvent(new CustomEvent("pro-goto-tab", { detail: "planning" }))}
+      >
+        🗓️ Préparer mes annonces de la semaine ou du mois <span>›</span>
+      </button>
 
       {err ? <div className="err">{err}</div> : null}
 

@@ -41,6 +41,7 @@
  *
  * FICHIER SERVEUR : il lit la base avec la clé d'administration.
  */
+import { activerPlanning, planningAFaire } from "@/lib/direct/planning-activation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { COLONNES_FICHE, construireFiche } from "@/lib/site-internet/fiche-du-site";
 import { carteDepuisFiche } from "@/lib/site-internet/carte-depuis-fiche";
@@ -261,6 +262,16 @@ export async function lireLaVilleReelle(ville: string, maintenant = Date.now()):
     rows = ((Array.isArray(data) ? data : []) as Record<string, unknown>[]).filter((r) => colle(str(r.city)));
   } catch {
     rows = [];
+  }
+
+  // ── LEURS ANNONCES PROGRAMMÉES DU JOUR PARTENT ICI ──
+  // La ville charge leurs fiches de toute façon : celle qui commence
+  // aujourd'hui part au premier qui regarde, et s'affiche dans la foulée.
+  // Rien n'est lu ni écrit pour qui n'a rien de dû — voir `planning-activation.ts`.
+  if (rows.some((r) => planningAFaire(r, maintenant))) {
+    rows = await Promise.all(
+      rows.map((r) => (planningAFaire(r, maintenant) ? activerPlanning(supabase, r, maintenant).then((x) => x.row).catch(() => r) : r)),
+    );
   }
 
   // SES PRESTATIONS, en une lecture pour tous — colonne récente, lue à part.

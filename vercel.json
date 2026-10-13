@@ -64,6 +64,10 @@
     {
       "path": "/api/cron/direct-cloture",
       "schedule": "20 3 * * *"
+    },
+    {
+      "path": "/api/cron/direct-planning",
+      "schedule": "40 3 * * *"
     }
   ]
 }

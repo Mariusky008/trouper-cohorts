@@ -46,6 +46,8 @@ export function ProHome(p: Props) {
   // il publiait, et l'annonce lui échappait.
   if (p.soliciter) {
     acts.push({ icon: "📋", label: "Mes annonces en cours", go: () => goto("annonces") });
+    // PRÉPARER LA SEMAINE EN UNE FOIS : plutôt qu'une annonce chaque matin.
+    acts.push({ icon: "🗓️", label: "Mon planning d'annonces", go: () => goto("planning") });
     // QUI VIENT. C'est la liste qu'on ouvre DEVANT quelqu'un, au comptoir :
     // elle mérite un accès direct, pas un défilement jusqu'au bas de l'accueil.
     acts.push({ icon: "🎟️", label: "Mes réservations", go: () => goto("reservations") });

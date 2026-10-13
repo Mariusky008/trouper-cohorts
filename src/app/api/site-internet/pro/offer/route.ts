@@ -28,6 +28,7 @@ import { envoyerAlertes } from "@/lib/direct/envoi-alertes";
 import { echeanceDuTexte } from "@/lib/direct/echeance-texte";
 import { preparerFacons, ecrireFacons } from "@/lib/direct/facons-creation";
 import { jourParis } from "@/lib/jour-paris";
+import { activerPlanning, oublierEnCours } from "@/lib/direct/planning-activation";
 
 export const dynamic = "force-dynamic";
 
@@ -135,6 +136,10 @@ export async function POST(request: Request) {
   // photos Google se voyait annoncer « aucune photo ».
   const galerie = photosDe(site);
 
+  // SES ANNONCES PROGRAMMÉES DU JOUR PARTENT AVANT QU'IL NE REGARDE : « Mes
+  // annonces en cours » montre ce qui tourne vraiment (`planning-activation.ts`).
+  if (action === "get" || action === "annonces") await activerPlanning(supabase, site).catch(() => null);
+
   // Lecture défensive : colonne récente (migration peut ne pas être appliquée).
   //
   // LE BANDEAU PÉRIMÉ NE SURVIT PAS À SA JOURNÉE. Il n'a jamais été effacé :
@@ -231,6 +236,8 @@ export async function POST(request: Request) {
     // annonces déjà en base sans correspondance.
     const avant = (await mesAnnonces()).find((a) => a.id === cible);
     await retirer(supabase, cible, id);
+    // VENUE DE SON PLANNING, ELLE NE REVIENT PAS reprendre son bandeau à la visite suivante.
+    if (avant) await oublierEnCours(supabase, id, avant.texte);
     if (avant) {
       const banniere = await current();
       if (banniere && banniere.text.trim() === avant.texte.trim()) {
@@ -262,6 +269,7 @@ export async function POST(request: Request) {
     // dans Le Direct enverrait des gens vers une offre qu'il vient d'annuler —
     // c'est la pire promesse qu'on puisse faire à sa place.
     await retirerToutesDe(supabase, id);
+    await oublierEnCours(supabase, id);
     // L'historique part avec la réponse : l'écran remet le parcours à zéro
     // et doit pouvoir montrer immédiatement où le texte a été rangé.
     return NextResponse.json({ ok: true, offer: null, historique: await monHistorique() });

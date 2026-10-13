@@ -65,6 +65,8 @@ const DEFAUTS = {
   human_ville_publications: () => ({ cree_le: maintenant(), retire_le: null, masque: false, verdict: null, persistant: false }),
   human_ville_gestes: () => ({ id: suite++, cree_le: maintenant() }),
   human_ville_signalements: () => ({ cree_le: maintenant(), motif: null }),
+  // LE FIL DES COMMERÇANTS : la vraie table donne son `id` (uuid) et sa date.
+  human_publications: () => ({ id: randomUUID(), publie_le: maintenant(), retire_le: null }),
 };
 const CLES = {
   human_conversations: ["id"],

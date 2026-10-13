@@ -14,6 +14,7 @@ import { slugify } from "@/lib/popey-marketplace";
 import { ProActions } from "./pro-actions";
 import { ProContacts } from "./pro-contacts";
 import { ProAnnonces } from "./pro-annonces";
+import { ProPlanning } from "./pro-planning";
 import { ProRelance } from "./pro-relance";
 import { ProAgenda } from "./pro-agenda";
 import { ProAssistant } from "./pro-assistant";
@@ -543,6 +544,15 @@ export default async function EspacePro({
             // `ville` sert au lien « Dans Le Direct » de chaque annonce : sans
             // lui, le commerçant ne pourrait pas aller vérifier de ses yeux.
             node: <ProAnnonces slug={slug} token={token} ville={villeUrl ? slugify(ville) : ""} />,
+          },
+          {
+            // SON PLANNING : préparer la semaine ou le mois d'annonces en une
+            // fois. Atteint depuis l'accueil et depuis « Mes annonces ».
+            key: "planning",
+            label: "Mon planning",
+            icon: "🗓️",
+            hidden: true,
+            node: <ProPlanning slug={slug} token={token} />,
           },
           {
             key: "clients",

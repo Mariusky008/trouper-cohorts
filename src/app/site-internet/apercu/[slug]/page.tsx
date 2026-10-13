@@ -52,6 +52,7 @@ import { couvertureDuDiagnostic, hoteACherche, photosCandidates, sansHoteAFaire 
 import { experienceDuDiagnostic, platEnCours, sceneAFaire, sceneARefaire } from "@/lib/site-internet/experience-donnees";
 import { etatDeLaFiche, raisonLisible } from "@/lib/site-internet/fiche-google";
 import { COLONNES_FICHE, construireFiche } from "@/lib/site-internet/fiche-du-site";
+import { activerPlanning, planningAFaire } from "@/lib/direct/planning-activation";
 import { compterLeJour } from "@/lib/site-internet/compteurs-jour";
 import { carteDeDemo, estAdresseDeDemo, listeDesDemos } from "@/lib/site-internet/fiches-demo";
 import { copieDePresentation, fusionnerCopie, type CopiePresentation } from "@/lib/direct/copies-presentation";
@@ -388,7 +389,15 @@ export default async function ApercuMaquette({
     .eq("channel", "letter")
     .maybeSingle();
 
-  const row = (data as Record<string, unknown> | null) ?? null;
+  let row = (data as Record<string, unknown> | null) ?? null;
+  // SON ANNONCE PROGRAMMÉE DU JOUR PART ICI, si personne ne l'a encore vue
+  // partir : sa page la montre dès le premier visiteur (`planning-activation.ts`).
+  if (row && planningAFaire(row)) {
+    const fiche: Record<string, unknown> = row;
+    row = await activerPlanning(supabase, { ...fiche, slug })
+      .then((x) => x.row)
+      .catch(() => fiche);
+  }
   if (!row) {
     return (
       <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "system-ui", padding: 24, textAlign: "center" }}>
