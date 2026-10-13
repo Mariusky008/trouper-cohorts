@@ -90,6 +90,7 @@ export function LookAvecMonDressing({
   pour,
   photoPersonne,
   onFermer,
+  onContinuer,
   onReserver,
   magasin,
   onSalon,
@@ -101,6 +102,12 @@ export function LookAvecMonDressing({
   /** La photo que la personne vient de prendre pour l'essai de cette boutique, s'il y en a une. */
   photoPersonne?: string | null;
   onFermer: () => void;
+  /**
+   * « CONTINUER MES ACHATS » : retour à la boutique. Absent, c'est `onFermer`.
+   * Les deux diffèrent quand le look part de l'écran d'essai d'une pièce :
+   * « Revenir » y ramène, « Continuer mes achats » ramène dans la boutique.
+   */
+  onContinuer?: () => void;
   /** Mettre la pièce de côté : la page hôte la range dans les pièces gardées. */
   onReserver: (look: LookFait) => void;
   /**
@@ -369,7 +376,7 @@ export function LookAvecMonDressing({
               <button type="button" className="dr-cta" onClick={() => versSelection()}>
                 <Dessin d={DESSINS_DRESSING.cintre} /> Voir toutes les combinaisons <Dessin d={DESSINS_DRESSING.fleche} />
               </button>
-              <button type="button" className="dr-lien" onClick={onFermer}>
+              <button type="button" className="dr-lien" onClick={onContinuer ?? onFermer}>
                 Continuer mes achats
               </button>
             </div>
@@ -621,7 +628,7 @@ export function LookAvecMonDressing({
                   Le message n’est pas parti ? Le renvoyer
                 </button>
               )}
-              <button type="button" className="dr-lien" onClick={onFermer}>
+              <button type="button" className="dr-lien" onClick={onContinuer ?? onFermer}>
                 Continuer mes achats →
               </button>
             </div>
@@ -634,7 +641,7 @@ export function LookAvecMonDressing({
             image={fait.image}
             demo={!magasin}
             onSalon={onSalon ? () => onSalon(fait) : undefined}
-            onFermer={onFermer}
+            onFermer={onContinuer ?? onFermer}
           />
         )}
       </div>

@@ -6942,6 +6942,9 @@ function Essai({
             pour={lookPour.pour ?? pourDressing}
             photoPersonne={photo}
             onFermer={() => (lookVitrine && onQuitter ? onQuitter() : setLookPour(null))}
+            /* PARTI DE L'ÉCRAN D'ESSAI D'UNE PIÈCE DE LA VITRINE : « Revenir »
+               y ramène, « Continuer mes achats » ramène dans la boutique. */
+            onContinuer={() => ((lookVitrine || voulue) && onQuitter ? onQuitter() : setLookPour(null))}
             onReserver={(look) =>
               basculerPieceGardee({
                 carte: mur.cle,
