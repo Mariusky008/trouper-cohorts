@@ -115,6 +115,8 @@ export type EssaiVitrineCarte = {
   detail?: string;
   /** Ses autres pièces, repérées sur ses photos — voir `PiecesDemo`. */
   autres?: PieceDemo[];
+  /** Son jean et un de ses hauts, portés ensemble — voir `LookVitrine`. */
+  look?: LookVitrineCarte;
 };
 
 /** La raison d'un échec, dite au commerçant — le détail technique reste à part. */
@@ -127,14 +129,154 @@ export function raisonLisible(e: EssaiVitrine): string {
   return "Le rendu n’a pas abouti cette fois. Un nouvel essai se fait tout seul à votre prochaine visite.";
 }
 
-export function essaiVitrinePourLaCarte(e: EssaiVitrine | undefined, aFaire: boolean, autres?: PieceDemo[]): EssaiVitrineCarte | undefined {
-  const plus = autres?.length ? { autres } : {};
+export function essaiVitrinePourLaCarte(
+  e: EssaiVitrine | undefined,
+  aFaire: boolean,
+  autres?: PieceDemo[],
+  look?: LookVitrineCarte,
+): EssaiVitrineCarte | undefined {
+  const plus = { ...(autres?.length ? { autres } : {}), ...(look ? { look } : {}) };
   if (e?.etat === "prete" && e.apres && e.avant) return { etat: "prete", avant: e.avant, apres: e.apres, piece: e.piece, nom: e.nom, ...plus };
   if (aFaire || e?.etat === "en-cours") return { etat: "en-cours", avant: AVANT_ELLE, piece: e?.piece, nom: e?.nom, ...plus };
   if (e && (e.etat === "echec" || e.etat === "aucune")) {
     return { etat: "echec", avant: e.avant ?? AVANT_ELLE, piece: e.piece, nom: e.nom, raison: raisonLisible(e), detail: e.erreur, ...plus };
   }
   return autres?.length ? { etat: "exemple", ...plus } : undefined;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   👖 SON JEAN, ET UN DE SES HAUTS PAR-DESSUS — LE LOOK DE SA VITRINE.
+
+   « Ce que j'aurais encore plus aimé, c'est que lorsque tu dis qu'elle peut
+   utiliser son propre dressing pour voir si le pull de Lili Ross va avec son
+   propre jean, on voie la personne réellement avec son propre jean et le pull
+   de Lili Ross. Idem à l'étape 3, lorsqu'on parle de Ma Maison : qu'on voie
+   la personne avec la proposition ClikMe, comme une belle surprise. »
+
+   UNE IMAGE DE PLUS, FAITE UNE FOIS, GARDÉE À CÔTÉ DE L'ESSAI (`look_vitrine`),
+   par le même moteur (voir `completerLookVitrine`). LA MÊME PERSONNE QUE
+   L'AVANT DE L'ESSAI, DANS LA MÊME POSE : seuls ses vêtements changent — son
+   jean, celui de la garde-robe de l'exemple, et UN HAUT DE LA BOUTIQUE.
+
+   UN HAUT, ET PAS SA PIÈCE DE L'ÉTAPE 2 TELLE QUELLE : cette pièce est souvent
+   une robe, et dire qu'une robe « va avec un jean » serait inventer un
+   conseil (c'était déjà la règle de `scene-garde-robe.tsx`). On cherche donc
+   un haut parmi SES pièces repérées ; s'il n'y en a aucun, c'est le pull de
+   l'exemple — et l'écran dit alors « Exemple ».
+
+   CE QUI EST VRAI, ET CE QUI NE L'EST PAS : la même règle que l'essai. Le
+   haut est le sien (ou l'exemple, dit comme tel), la personne et le jean sont
+   ceux de la démonstration, le rendu est une simulation.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/** Son jean, à plat : la même pièce que dans la garde-robe de l'exemple, en plus grand pour le moteur. */
+export const JEAN_DU_DRESSING = "/direct/dressing/demo-jean.webp";
+
+/** Le haut de l'exemple, quand aucune de ses photos n'en montre un. */
+const HAUT_EXEMPLE = {
+  femme: { photo: "/direct/mode-pull-ecru-rose.webp", nom: "Pull écru et rose" },
+  homme: { photo: "/direct/homme-pull-col-roule.jpeg", nom: "Pull col roulé" },
+};
+
+/* LES MOTS ENTIERS, ACCENTS COMPRIS : « \b » ignore les lettres accentuées, et
+   « marinière » n'aurait jamais été reconnue. */
+const mots = (liste: string) => new RegExp(`(?<!\\p{L})(?:${liste})(?!\\p{L})`, "iu");
+const UN_HAUT = mots(
+  "pulls?|pull-?overs?|gilets?|cardigans?|chemises?|chemisiers?|blouses?|tops?|t-?shirts?|tee-?shirts?|sweats?|sweat-?shirts?|" +
+    "hoodies?|vestes?|blazers?|polos?|débardeurs?|tuniques?|mailles?|hauts?|blousons?|caracos?|bodys?|marinières?|cols? roulés?|kimonos?",
+);
+/** Ce qui ne se porte pas « avec son jean », ou le cache : on ne le choisit pas. */
+const PAS_AVEC_UN_JEAN = mots(
+  "robes?|combinaisons?|ensembles?|jupes?|pantalons?|jeans?|denim|shorts?|salopettes?|tailleurs?|manteaux|manteau|costumes?|" +
+    "chaussures?|sacs?|bottes?|baskets?|bijoux|colliers?|lunettes?",
+);
+
+export type HautDuLook = { photo: string; nom: string; exemple: boolean; genre: "femme" | "homme" };
+
+/**
+ * LE HAUT QU'ON PORTE AVEC SON JEAN : le premier de SES hauts (la pièce de
+ * l'étape 2 d'abord, puis les autres), de la même coupe — femme ou homme —
+ * que la personne de l'essai. Sinon le pull de l'exemple.
+ */
+export function hautPourLeJean(e: { piece?: string; nom?: string; genre?: "femme" | "homme" } | undefined, autres: PieceDemo[] | undefined): HautDuLook {
+  const genre = e?.genre ?? "femme";
+  const siennes = [...(e?.piece ? [{ photo: e.piece, nom: e.nom ?? "", genre: e.genre }] : []), ...(autres ?? [])];
+  const haut = siennes.find((p) => p.photo && UN_HAUT.test(p.nom) && !PAS_AVEC_UN_JEAN.test(p.nom) && (p.genre ?? genre) === genre);
+  return haut ? { photo: haut.photo, nom: haut.nom, exemple: false, genre } : { ...HAUT_EXEMPLE[genre], exemple: true, genre };
+}
+
+export type LookVitrine = {
+  etat: "en-cours" | "prete" | "echec";
+  essais: number;
+  at: string;
+  /** Le haut porté : la photo de sa pièce (https), ou celle de l'exemple (/direct/…). */
+  piece?: string;
+  nom?: string;
+  /** Vrai quand c'est le pull de l'exemple : l'écran le dit. */
+  exemple?: boolean;
+  genre?: "femme" | "homme";
+  avant?: string;
+  apres?: string;
+  modele?: string;
+  erreur?: string;
+};
+
+export function lookVitrineDuDiagnostic(diag: unknown): LookVitrine | undefined {
+  const d = (diag && typeof diag === "object" ? diag : {}) as Record<string, unknown>;
+  const l = (d.look_vitrine && typeof d.look_vitrine === "object" ? d.look_vitrine : null) as Record<string, unknown> | null;
+  if (!l) return undefined;
+  const etat = ["en-cours", "prete", "echec"].includes(s(l.etat)) ? (s(l.etat) as LookVitrine["etat"]) : "echec";
+  const https = (v: unknown) => (/^https:\/\//i.test(s(v)) ? s(v) : undefined);
+  const duSite = (v: unknown) => (s(v).startsWith("/direct/") ? s(v) : undefined);
+  return {
+    etat,
+    essais: Number.isFinite(Number(l.essais)) ? Number(l.essais) : 0,
+    at: s(l.at),
+    piece: https(l.piece) ?? duSite(l.piece),
+    nom: s(l.nom).slice(0, 60) || undefined,
+    exemple: l.exemple === true,
+    genre: l.genre === "homme" ? "homme" : l.genre === "femme" ? "femme" : undefined,
+    avant: duSite(l.avant),
+    apres: https(l.apres),
+    modele: s(l.modele) || undefined,
+    erreur: s(l.erreur) || undefined,
+  };
+}
+
+/** Faut-il (re)faire le look ? Les mêmes délais que l'essai — voir `essaiVitrineAFaire`. */
+export function lookVitrineAFaire(l: LookVitrine | undefined, maintenant = Date.now()): boolean {
+  if (!l) return true;
+  const depuis = l.at ? maintenant - Date.parse(l.at) : Infinity;
+  if (l.etat === "prete") return false;
+  if (l.etat === "en-cours") return !(depuis < PERDU);
+  return l.essais < 3 ? !(depuis < DIX_MINUTES) : !(depuis < UN_JOUR);
+}
+
+/**
+ * LE HAUT SE CHOISIT PARMI SES PIÈCES : on attend que l'essai ET la recherche
+ * de ses pièces aient fini — réussi, rien trouvé, ou échoué trois fois. Avant,
+ * on choisirait le pull de l'exemple alors que les siens arrivent.
+ */
+export function lookPeutPartir(e: EssaiVitrine | undefined, p: PiecesDemo | undefined): boolean {
+  const fini = (x: { etat: string; essais: number } | undefined) =>
+    Boolean(x && (x.etat === "prete" || x.etat === "aucune" || (x.etat === "echec" && x.essais >= 3)));
+  return fini(e) && fini(p);
+}
+
+/**
+ * CE QUE LA PAGE REÇOIT : LE HAUT, TOUJOURS — c'est lui que Léa nomme et que
+ * l'étape 2 montre, rendu ou pas —, et la photo rendue quand elle existe.
+ * Prête, la carte reprend le haut QUI A ÉTÉ RENDU : la photo et le nom ne
+ * peuvent pas se contredire.
+ */
+export type LookVitrineCarte = HautDuLook & { avant: string; apres?: string };
+
+export function lookPourLaCarte(l: LookVitrine | undefined, e: EssaiVitrine | undefined, autres: PieceDemo[] | undefined): LookVitrineCarte {
+  if (l?.etat === "prete" && l.apres && l.avant && l.piece) {
+    return { photo: l.piece, nom: l.nom ?? "", exemple: Boolean(l.exemple), genre: l.genre ?? "femme", avant: l.avant, apres: l.apres };
+  }
+  const h = hautPourLeJean(e, autres);
+  return { ...h, avant: h.genre === "homme" ? AVANT_LUI : AVANT_ELLE };
 }
 
 /**
@@ -211,4 +353,19 @@ export function piecesDeLaVitrine(e: EssaiVitrineCarte | undefined): { id: strin
     })
     .slice(0, 7)
     .map((p, i) => ({ id: `vitrine-${i}`, nom: p.nom, photo: p.photo, rayon: "Vos pièces" }));
+}
+
+/**
+ * « CE PULL », « CETTE CHEMISE » — le haut du look, dans les phrases qui le
+ * désignent (Ma Maison : « si vous publiez aujourd'hui ce pull… votre Fantôme
+ * peut le lui rapporter »). Le premier mot de son nom donne le genre ; un nom
+ * qu'on ne reconnaît pas devient « cette pièce », toujours juste.
+ */
+export function motsDeLaPiece(nom: string | undefined): { ce: string; il: string; le: string } {
+  const mot = (nom ?? "").trim().split(/\s+/)[0]?.toLowerCase() ?? "";
+  const masc = mot.match(/^(pull|pullover|pull-over|gilet|cardigan|chemisier|top|t-shirt|tee-shirt|sweat|sweat-shirt|hoodie|blazer|polo|débardeur|haut|blouson|caraco|body|kimono)s?$/);
+  if (masc) return { ce: `ce ${masc[1]}`, il: "il", le: "le" };
+  const fem = mot.match(/^(chemise|blouse|veste|tunique|maille|marinière)s?$/);
+  if (fem) return { ce: `cette ${fem[1]}`, il: "elle", le: "la" };
+  return { ce: "cette pièce", il: "elle", le: "la" };
 }

@@ -238,9 +238,15 @@ export function cartesDeLaVille(ville: string, famille: FamilleMetier = "restaur
         "Cette semaine", "👗", "La nouvelle collection", ["En vitrine depuis ce matin", "À essayer sur sa photo"], "", "5 l'ont mise de côté"),
       carte("/direct/mode-robe-pois-dores.jpg", "30%", "Une boutique de créatrice", "Créatrice", "260 m",
         "Arrivage du jour", "✨", "La robe à pois dorés", ["Du 36 au 44", "À essayer sur sa photo"], "89 €", "6 l'ont essayée"),
-      carte("/direct/mode-chemise-jean.jpg", "40%", "Un magasin pour hommes", "Prêt-à-porter homme", "300 m",
-        "Arrivage du jour", "👕", "La chemise en jean délavé", ["Du S au XXL", "Retouches offertes"], "55 €", "4 l'ont essayée"),
-      carte("/direct/mode-pull-mohair-vert.jpeg", "28%", "Une boutique de maille", "Maille", "220 m",
+      /* « L'image des vêtements n'est visible que sur 1/4 de la photo, et
+         ensuite c'est noir : il faudrait que le vêtement occupe plutôt 3/4. »
+         Ces deux cartes portaient les deux seules photos EN LARGEUR du paquet
+         (chemise : 760 × 540, pull : 1100 × 733) : à pleine largeur d'une
+         carte en hauteur, elles ne pouvaient pas descendre plus bas. Les
+         mêmes pièces, photographiées en hauteur. */
+      carte("/direct/homme-chemise-denim.jpg", "30%", "Un magasin pour hommes", "Prêt-à-porter homme", "300 m",
+        "Arrivage du jour", "👕", "La chemise en jean", ["Du S au XXL", "Retouches offertes"], "55 €", "4 l'ont essayée"),
+      carte("/direct/mode-pull-mohair-marine.jpeg", "28%", "Une boutique de maille", "Maille", "220 m",
         "Aujourd'hui", "🧶", "Le pull en mohair", ["Quatre couleurs", "À essayer sur sa photo"], "65 €", "9 l'ont essayé"),
       carte(AILLEURS.rayon, "50%", "Une friperie du vieux centre", "Friperie", "400 m",
         "Arrivage du jour", "🧥", "Ce qui vient de rentrer", ["Une pièce par taille", "Premier arrivé"], "", "7 l'ont vu passer"),

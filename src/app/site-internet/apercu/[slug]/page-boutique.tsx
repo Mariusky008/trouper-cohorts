@@ -49,6 +49,7 @@ import { murDeLaCarte } from "@/lib/direct/fantomes";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { SCRIPT_HEURE } from "@/lib/direct/lumiere-du-moment";
 import { villeSlug } from "@/lib/direct/ville";
+import { motsDeLaPiece } from "@/lib/site-internet/essai-vitrine-donnees";
 
 export type PageBoutiqueProps = {
   slug: string;
@@ -250,13 +251,32 @@ export function PageBoutique(p: PageBoutiqueProps) {
      de SES pièces (étape 2), c'est elle que la carte du Direct montre, avec
      son nom et sans prix inventé. Voir `essai-vitrine.ts`. */
   const pieceDuJour = carte.branche === "mode" && carte.essaiVitrine?.etat === "prete" ? carte.essaiVitrine : undefined;
-  const geste =
+  /* ═══ SON JEAN ET UN DE SES HAUTS ═══ La personne de l'essai, portant son
+     jean et le haut choisi parmi SES pièces — voir `LookVitrine`. Ma Maison
+     le nomme : « si vous publiez aujourd'hui ce pull… votre Fantôme peut le
+     lui rapporter » devient « cette chemise… la lui rapporter » quand c'est
+     une chemise qu'on montre. */
+  const look = carte.branche === "mode" ? carte.essaiVitrine?.look : undefined;
+  const geste0 =
     gesteBrut && pieceDuJour
       ? {
           ...gesteBrut,
           extrait: { titre: "La pièce du jour", lignes: [pieceDuJour.nom ?? "Une pièce de la boutique", "À essayer sur soi avant de passer"], prix: "" },
         }
       : gesteBrut;
+  const mots = motsDeLaPiece(look?.nom);
+  const geste =
+    geste0?.maison && look
+      ? {
+          ...geste0,
+          maison: {
+            ...geste0.maison,
+            dit: geste0.maison.dit.map((d) =>
+              d.replace("ce pull et qu'il correspond", `${mots.ce} et qu'${mots.il} correspond`).replace("peut le lui rapporter", `peut ${mots.le} lui rapporter`),
+            ) as typeof geste0.maison.dit,
+          },
+        }
+      : geste0;
   const photos = [carte.photo, ...(carte.photos ?? [])].filter((x): x is string => Boolean(x));
   /* LA PAGE À ONGLETS EST FIXE : le formulaire entre dedans, au bout des
      infos. Rendu après elle, il se retrouvait derrière. Tous les métiers l'ont
@@ -318,6 +338,8 @@ export function PageBoutique(p: PageBoutiqueProps) {
           fantomeBoutique={fantomeDe(carte)}
           fantomePied={tenueDu(carte)?.enPied}
           aHoraires={Boolean(carte.semaine?.length || carte.fiche?.horaires)}
+          look={look}
+          idVitrine={carte.id}
           keepHref={keepHref}
         />
       )}

@@ -74,6 +74,11 @@ const config: NextConfig = {
     "/api/site-internet/essai-vitrine": [
       "./public/direct/accueil/moi-mode-sans.jpg",
       "./public/direct/essai/mode-homme-avant.jpg",
+      // …ET LE LOOK : son jean, et les deux hauts de l'exemple (voir
+      // `completerLookVitrine`). Le réseau sert de repli, le disque d'abord.
+      "./public/direct/dressing/demo-jean.webp",
+      "./public/direct/mode-pull-ecru-rose.webp",
+      "./public/direct/homme-pull-col-roule.jpeg",
     ],
   },
   typescript: {

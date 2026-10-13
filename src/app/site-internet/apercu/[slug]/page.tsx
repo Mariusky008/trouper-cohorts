@@ -58,7 +58,15 @@ import { copieDePresentation, fusionnerCopie, type CopiePresentation } from "@/l
 import { nomCourt, nomDeLaPage } from "@/lib/site-internet/nom-de-la-page";
 import { PageBoutique } from "./page-boutique";
 import { boutiqueAEssayer, moteurEssaiConfigure } from "@/lib/site-internet/essai-vitrine";
-import { essaiVitrineAFaire, essaiVitrineDuDiagnostic, piecesDemoAFaire, piecesDemoDuDiagnostic } from "@/lib/site-internet/essai-vitrine-donnees";
+import {
+  essaiVitrineAFaire,
+  essaiVitrineDuDiagnostic,
+  lookPeutPartir,
+  lookVitrineAFaire,
+  lookVitrineDuDiagnostic,
+  piecesDemoAFaire,
+  piecesDemoDuDiagnostic,
+} from "@/lib/site-internet/essai-vitrine-donnees";
 import { IndexDesDemos } from "./index-demos";
 
 // DEUX LISTES, parce que ce sont deux questions différentes.
@@ -197,14 +205,18 @@ function sonnerLHote(slug: string, origine: string) {
   });
 }
 
-/** L'ESSAYAGE DE SA VITRINE, APRÈS LA PAGE, à sa propre route — voir `api/site-internet/essai-vitrine`. */
-function sonnerLEssai(slug: string, origine: string) {
+/**
+ * L'ESSAYAGE DE SA VITRINE, APRÈS LA PAGE, à sa propre route — voir
+ * `api/site-internet/essai-vitrine`. `look` : seulement son jean et un de ses
+ * hauts, quand l'essai et ses pièces sont déjà là.
+ */
+function sonnerLEssai(slug: string, origine: string, quoi?: "look") {
   after(async () => {
     try {
       await fetch(`${origine}/api/site-internet/essai-vitrine`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ slug }),
+        body: JSON.stringify(quoi ? { slug, quoi } : { slug }),
         signal: AbortSignal.timeout(10_000),
       });
     } catch {
@@ -539,7 +551,18 @@ export default async function ApercuMaquette({
     piecesDemoAFaire(piecesDemoDuDiagnostic(row.diagnostic));
   if (hoteACherche(couv) || sansHoteAFaire(couv) || sceneAFaire(xp?.scenePlat) || sceneARefaire(xp?.sceneChef, "chef"))
     sonnerLHote(slug, await origineDeLaPage());
+  /* ET LE LOOK — son jean et un de ses hauts, pour l'étape 2 et Ma Maison :
+     une page dont l'essai et les pièces sont déjà prêts (celle de Lili Ross)
+     le demande seule ; sinon, l'essai le sonne lui-même en finissant. */
+  const lookAFaire =
+    !estClient &&
+    !visiteurPublic &&
+    moteurEssaiConfigure() &&
+    boutiqueAEssayer(str(row.activite), row.diagnostic) &&
+    lookVitrineAFaire(lookVitrineDuDiagnostic(row.diagnostic)) &&
+    lookPeutPartir(essaiVitrineDuDiagnostic(row.diagnostic), piecesDemoDuDiagnostic(row.diagnostic));
   if (essaiAFaire || piecesAFaire) sonnerLEssai(slug, await origineDeLaPage());
+  else if (lookAFaire) sonnerLEssai(slug, await origineDeLaPage(), "look");
   /* SA CARTE EST VIDE ET SON ONGLET « MENU » N'A JAMAIS ÉTÉ DEMANDÉ (page
      créée avant cette étape) : on le demande une fois, après la page. La
      lecture de la carte suit d'elle-même, aux visites suivantes — JAMAIS À

@@ -30,6 +30,8 @@
 //
 // FICHIER SERVEUR.
 import { createHash } from "crypto";
+import { readFileSync } from "fs";
+import { join } from "path";
 import sharp from "sharp";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
@@ -42,10 +44,16 @@ import {
   AVANT_LUI,
   essaiVitrineAFaire,
   essaiVitrineDuDiagnostic,
+  hautPourLeJean,
+  JEAN_DU_DRESSING,
+  lookPeutPartir,
+  lookVitrineAFaire,
+  lookVitrineDuDiagnostic,
   piecesDemoAFaire,
   piecesDemoDuDiagnostic,
   VERSION_ESSAI,
   type EssaiVitrine,
+  type LookVitrine,
   type PieceDemo,
   type PiecesDemo,
 } from "@/lib/site-internet/essai-vitrine-donnees";
@@ -203,7 +211,14 @@ export function moteurEssaiConfigure(): boolean {
  * l'avant (1024 × 1536). Le moteur est celui de l'essayage — le plus proche de
  * ChatGPT dans le catalogue du compte, voir `moteur-image.ts`.
  */
-async function rendreParOpenAI(avant: Img, piece: Img, consigne: string, cle: string): Promise<{ image: Img; modele: string } | { erreur: string }> {
+async function rendreParOpenAI(
+  avant: Img,
+  piece: Img,
+  consigne: string,
+  cle: string,
+  /** D'autres pièces après la première — le jean du look. Leur consigne les numérote elle-même. */
+  plus: Img[] = [],
+): Promise<{ image: Img; modele: string } | { erreur: string }> {
   const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
   const fichier = (p: Img, nom: string) => new File([Buffer.from(p.donnees, "base64")], nom, { type: p.type });
   const erreurs: string[] = [];
@@ -212,7 +227,8 @@ async function rendreParOpenAI(avant: Img, piece: Img, consigne: string, cle: st
     forme.append("model", modele);
     forme.append("image[]", fichier(avant, "personne.jpg"));
     forme.append("image[]", fichier(piece, "piece.jpg"));
-    forme.append("prompt", `IMAGE 1 is the person; IMAGE 2 is the shop's garment.\n${consigne}`);
+    plus.forEach((p, i) => forme.append("image[]", fichier(p, `piece-${i + 3}.jpg`)));
+    forme.append("prompt", plus.length ? consigne : `IMAGE 1 is the person; IMAGE 2 is the shop's garment.\n${consigne}`);
     forme.append("size", "1024x1536");
     forme.append("quality", s(process.env.OPENAI_IMAGE_QUALITY) || "high");
     const r = await fetch(`${base}/v1/images/edits`, {
@@ -500,5 +516,172 @@ export async function completerPiecesDemo(slug: string): Promise<void> {
     await finir(pieces.length ? { etat: "prete", pieces } : { etat: "aucune", pieces: [], erreur: "aucune autre pièce sur ses photos" });
   } catch (e) {
     await finir({ etat: "echec", pieces: [], erreur: e instanceof Error ? e.message : "erreur" });
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   👖 LE LOOK DE SA VITRINE : SON JEAN, ET UN DE SES HAUTS — voir `LookVitrine`.
+
+   « On voit la personne réellement avec son propre jean et le pull de Lili
+   Ross. »
+
+   LA MÊME CHAÎNE QUE L'ESSAI, À UNE PIÈCE PRÈS : la personne de l'avant, le
+   haut choisi (`hautPourLeJean`), et son jean. Elle garde sa pose, son décor,
+   sa lumière : l'avant et ce look se superposent au pixel près, comme l'essai.
+
+   À SA PROPRE SONNERIE (`quoi: "look"` sur la route), APRÈS L'ESSAI ET SES
+   PIÈCES : c'est parmi elles qu'on choisit le haut, et un troisième travail
+   ne tiendrait pas dans les cinq minutes de la route avec les deux autres.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* SA PROPRE CASE DU DIAGNOSTIC, relue avant chaque écriture — la même règle que `ecrire`. */
+async function ecrireLook(id: string, maj: (l: LookVitrine | undefined) => LookVitrine | null): Promise<boolean> {
+  const supabase = createAdminClient();
+  const { data } = await supabase.from("human_vitrine_sites").select("diagnostic").eq("id", id).maybeSingle();
+  const diag = ((data as Record<string, unknown> | null)?.diagnostic ?? {}) as Record<string, unknown>;
+  const suite = maj(lookVitrineDuDiagnostic(diag));
+  if (!suite) return false;
+  await supabase.from("human_vitrine_sites").update({ diagnostic: { ...diag, look_vitrine: suite } }).eq("id", id);
+  return true;
+}
+
+/**
+ * UNE PIÈCE DU SITE (le jean, le pull de l'exemple), SUR FOND BLANC. Le jean
+ * est détouré : converti tel quel, son fond transparent devenait NOIR, et un
+ * jean sur du noir est une référence que le moteur lit mal. Sur le disque,
+ * puis par le réseau en repli — la même prudence que l'avant.
+ */
+async function pieceDuSite(chemin: string, origine?: string): Promise<Img | null> {
+  let brut: Buffer | null = null;
+  try {
+    brut = readFileSync(join(process.cwd(), "public", chemin.replace(/^\//, "")));
+  } catch {
+    brut = null;
+  }
+  if (!brut && origine) {
+    try {
+      const r = await fetch(`${origine}${chemin}`, { signal: AbortSignal.timeout(20_000) });
+      if (r.ok) brut = Buffer.from(await r.arrayBuffer());
+    } catch {
+      brut = null;
+    }
+  }
+  if (!brut) return null;
+  try {
+    const jpg = await sharp(brut)
+      .rotate()
+      .flatten({ background: "#ffffff" })
+      .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 88 })
+      .toBuffer();
+    return { type: "image/jpeg", donnees: jpg.toString("base64") };
+  } catch {
+    return null;
+  }
+}
+
+/** LA CONSIGNE : la personne ne bouge pas ; le haut devient le sien (IMAGE 2), le bas devient son jean (IMAGE 3). */
+function consigneLook(nom: string, boutique: string, exemple: boolean): string {
+  return [
+    "Edit IMAGE 1 so that the same person wears the top of IMAGE 2 together with the jeans of IMAGE 3. Output ONE photorealistic photograph.",
+    "IMAGE 1 — THE PERSON AND THE SCENE. Keep exactly the same person: face, features, expression, hair, skin, age, body shape and hands. " +
+      "Keep the same pose, the same framing and camera, the same background and the same light. Only the clothes change.",
+    `IMAGE 2 — THE TOP${nom ? ` ("${nom.replace(/["\n\r]/g, " ")}")` : ""}${exemple ? "" : `, from the shop "${boutique.replace(/["\n\r]/g, " ")}"`}. ` +
+      "Copy it faithfully: the same type of garment, cut, length, colour, pattern, fabric and texture (knit, lace, print), neckline, " +
+      "sleeves and details. It replaces the top of IMAGE 1.",
+    "IMAGE 3 — THE PERSON'S OWN JEANS, from their wardrobe. Copy them faithfully: the same wash and colour, cut, length and details. " +
+      "They replace the trousers of IMAGE 1.",
+    "IMAGES 2 and 3 are garment references only: never copy any face, hair, skin, body, hands, hanger, mannequin or background from them.",
+    "The clothes fit this person's body naturally, with realistic folds, drape and shadows matching the light of IMAGE 1. Keep the shoes of IMAGE 1.",
+    "No text, no logo, no watermark, no label. Portrait format, 2:3, exactly the framing of IMAGE 1.",
+  ].join("\n");
+}
+
+/** LE LOOK DE SA VITRINE, S'IL EST À FAIRE. Rien ne lève. */
+export async function completerLookVitrine(slug: string, origine?: string): Promise<void> {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("human_vitrine_sites")
+    .select("id, business_name, activite, diagnostic")
+    .eq("slug", slug)
+    .eq("channel", "letter")
+    .maybeSingle();
+  const row = (data as Record<string, unknown> | null) ?? null;
+  if (!row || !moteurEssaiConfigure() || !boutiqueAEssayer(s(row.activite), row.diagnostic)) return;
+  const id = s(row.id);
+  const avant = lookVitrineDuDiagnostic(row.diagnostic);
+  if (!lookVitrineAFaire(avant)) return;
+  /* SES PIÈCES D'ABORD : tant que l'essai et leur recherche n'ont rien dit, on
+     n'essaie pas, et RIEN N'EST NOTÉ — voir `lookPeutPartir`. */
+  const essai = essaiVitrineDuDiagnostic(row.diagnostic);
+  const pieces = piecesDemoDuDiagnostic(row.diagnostic);
+  if (!lookPeutPartir(essai, pieces)) return;
+  const haut = hautPourLeJean(essai, pieces?.pieces);
+  const essais = (avant?.essais ?? 0) + 1;
+  const debut = new Date().toISOString();
+  // LE VERROU, COMME L'ESSAI : deux sonneries rapprochées ne paient qu'un rendu.
+  const pris = await ecrireLook(id, (l) => (l && !lookVitrineAFaire(l) ? null : { etat: "en-cours", essais, at: debut }));
+  if (!pris) return;
+  const echec = (erreur: string) => ecrireLook(id, (l) => (l?.at !== debut ? null : { ...l, etat: "echec", at: new Date().toISOString(), erreur }));
+
+  try {
+    const cheminAvant = haut.genre === "homme" ? AVANT_LUI : AVANT_ELLE;
+    const [imgAvant, imgHaut, imgJean] = await Promise.all([
+      photoDuDisque(cheminAvant).then((im) => im ?? (origine ? lirePhoto(`${origine}${cheminAvant}`) : null)),
+      haut.photo.startsWith("/") ? pieceDuSite(haut.photo, origine) : lirePhoto(haut.photo),
+      pieceDuSite(JEAN_DU_DRESSING, origine),
+    ]);
+    if (!imgAvant) return void (await echec("la photo de l'avant est introuvable sur le serveur"));
+    if (!imgHaut) return void (await echec("la photo du haut est illisible"));
+    if (!imgJean) return void (await echec("la photo du jean est introuvable sur le serveur"));
+    const consigne = consigneLook(haut.nom, s(row.business_name), haut.exemple);
+    /* GEMINI D'ABORD, OPENAI ENSUITE — la règle de l'essai. */
+    const erreurs: string[] = [];
+    let r: { image: Img; modele: string } | null = null;
+    if (cleGemini()) {
+      const g = await parGemini(
+        [
+          { text: "IMAGE 1 — THE PERSON:" },
+          { inlineData: { mimeType: imgAvant.type, data: imgAvant.donnees } },
+          { text: "IMAGE 2 — THE TOP:" },
+          { inlineData: { mimeType: imgHaut.type, data: imgHaut.donnees } },
+          { text: "IMAGE 3 — THE JEANS:" },
+          { inlineData: { mimeType: imgJean.type, data: imgJean.donnees } },
+          { text: consigne },
+        ],
+        "2:3",
+      );
+      if ("erreur" in g) erreurs.push(g.erreur);
+      else r = g;
+    }
+    if (!r && cleOpenAI()) {
+      const o = await rendreParOpenAI(imgAvant, imgHaut, consigne, cleOpenAI(), [imgJean]);
+      if ("erreur" in o) erreurs.push(o.erreur);
+      else r = o;
+    }
+    if (!r) return void (await echec(erreurs.join(" ; ") || "aucun moteur d'image"));
+    const dim = DIMENSIONS[cheminAvant];
+    const octets = await sharp(Buffer.from(r.image.donnees, "base64")).resize(dim.l, dim.h, { fit: "cover" }).webp({ quality: 86 }).toBuffer();
+    const urlApres = await ranger(`${DOSSIER}/${slug}-look-apres-${Date.now()}.webp`, octets, "image/webp");
+    if (typeof urlApres !== "string") return void (await echec(urlApres.erreur));
+    const modele = r.modele;
+    await ecrireLook(id, (l) =>
+      l?.at !== debut
+        ? null
+        : {
+            etat: "prete",
+            essais,
+            at: new Date().toISOString(),
+            piece: haut.photo,
+            nom: haut.nom,
+            exemple: haut.exemple,
+            genre: haut.genre,
+            avant: cheminAvant,
+            apres: urlApres,
+            modele,
+          },
+    );
+  } catch (e) {
+    await echec(e instanceof Error ? e.message : "erreur");
   }
 }

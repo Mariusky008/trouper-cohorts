@@ -21,7 +21,14 @@ import { experienceDuDiagnostic } from "@/lib/site-internet/experience-donnees";
 import { piecesDuDiagnostic } from "@/lib/site-internet/pieces-comptoir";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { boutiqueAEssayer, moteurEssaiConfigure } from "@/lib/site-internet/essai-vitrine";
-import { essaiVitrineAFaire, essaiVitrineDuDiagnostic, essaiVitrinePourLaCarte, piecesDemoDuDiagnostic } from "@/lib/site-internet/essai-vitrine-donnees";
+import {
+  essaiVitrineAFaire,
+  essaiVitrineDuDiagnostic,
+  essaiVitrinePourLaCarte,
+  lookPourLaCarte,
+  lookVitrineDuDiagnostic,
+  piecesDemoDuDiagnostic,
+} from "@/lib/site-internet/essai-vitrine-donnees";
 import { familleDuDouble } from "@/lib/direct/double-metiers";
 import { MAX_REPONSES, memeQuestion, nettoyerSavoir, savoirPourLeDouble, type ReponseSavoir } from "@/lib/direct/savoir-fantome";
 import { horairesLisibles } from "@/lib/site-internet/horaires-pro";
@@ -263,6 +270,8 @@ export function construireFiche(
           moteurEssaiConfigure() && essaiVitrineAFaire(essaiVitrineDuDiagnostic(diag)),
           // SES AUTRES PIÈCES, QU'ELLE ESSAIERA ELLE-MÊME — voir `PiecesDemo`.
           piecesDemoDuDiagnostic(diag)?.pieces,
+          // SON JEAN ET UN DE SES HAUTS — l'étape 2 et Ma Maison. Voir `LookVitrine`.
+          lookPourLaCarte(lookVitrineDuDiagnostic(diag), essaiVitrineDuDiagnostic(diag), piecesDemoDuDiagnostic(diag)?.pieces),
         )
       : undefined,
     // SON ANNONCE EN COURS : le bandeau de sa page — voir `offreDuSite`.
