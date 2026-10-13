@@ -381,7 +381,8 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
         photo: x.photo,
         decrire: x.decrire,
         // UNE ANNONCE DU COMPTOIR EST DATÉE ; UNE PHOTO DE VITRINE RESTE (les surprises lisent la différence).
-        ...(x.vitrine ? {} : { publieLe: x.publieLe }),
+        // ET ELLE A UNE FIN : « jusqu'à 18 h » sur la pièce du jour — voir `piece-du-jour.ts`.
+        ...(x.vitrine ? {} : { publieLe: x.publieLe, ...(x.fin ? { fin: x.fin } : {}) }),
         // SON MOT À SA VOIX, s'il en a enregistré un — voir `ChoixDuLibraire`.
         ...(x.voix ? { voix: x.voix, voixSecondes: x.voixSecondes, voixTexte: x.voixTexte } : {}),
       })),

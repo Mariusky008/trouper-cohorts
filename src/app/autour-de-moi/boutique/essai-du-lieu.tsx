@@ -35,6 +35,8 @@ import { chargerSalons, cleSalonBoutique, monPrenom, oublierSalon } from "@/lib/
 import { piecesDeLaVitrine, type PieceDemo } from "@/lib/site-internet/essai-vitrine-donnees";
 import { ChoixDuLibraire } from "./choix-du-libraire";
 import { AvantApresVitrine, demandeEnAttente, presentationEnCours } from "./avant-apres-vitrine";
+import { pieceDuJour } from "@/lib/direct/piece-du-jour";
+import { PieceDuJourEnVedette } from "./piece-du-jour";
 
 export type { RenduEssai };
 
@@ -45,6 +47,10 @@ type MotsEssai = {
   pieces: string;
   pose: string;
   geste: string;
+  /** Sa pièce du jour, en vedette — voir `PieceDuJourEnVedette`. */
+  jour: string;
+  /** « Pourquoi je l'ai choisie » : l'accord se lit sur le nom, pas sur une règle. */
+  choisie: string;
 };
 const ESSAI: Record<string, MotsEssai> = {
   coiffeur: {
@@ -53,6 +59,8 @@ const ESSAI: Record<string, MotsEssai> = {
     pieces: "coupes",
     pose: "pose la coupe",
     geste: "Me prendre en photo",
+    jour: "La coupe du jour",
+    choisie: "choisie",
   },
   ongles: {
     fantome: "hote-onglerie",
@@ -60,6 +68,8 @@ const ESSAI: Record<string, MotsEssai> = {
     pieces: "poses",
     pose: "pose le vernis",
     geste: "Photographier ma main",
+    jour: "La pose du jour",
+    choisie: "choisie",
   },
   lunetier: {
     fantome: "hote-opticien",
@@ -67,6 +77,8 @@ const ESSAI: Record<string, MotsEssai> = {
     pieces: "montures",
     pose: "pose la monture",
     geste: "Me prendre en photo",
+    jour: "La monture du jour",
+    choisie: "choisie",
   },
   mode: {
     fantome: "hote-mode",
@@ -74,6 +86,8 @@ const ESSAI: Record<string, MotsEssai> = {
     pieces: "pièces",
     pose: "vous habille",
     geste: "Me prendre en photo",
+    jour: "La pièce du jour",
+    choisie: "choisie",
   },
   fleuriste: {
     fantome: "hote-fleuriste",
@@ -81,6 +95,8 @@ const ESSAI: Record<string, MotsEssai> = {
     pieces: "bouquets",
     pose: "le pose chez vous",
     geste: "Photographier ma pièce",
+    jour: "Le bouquet du jour",
+    choisie: "choisi",
   },
   artisan: {
     fantome: "hote-artisan",
@@ -88,6 +104,8 @@ const ESSAI: Record<string, MotsEssai> = {
     pieces: "créations",
     pose: "la pose chez vous",
     geste: "Photographier ma pièce",
+    jour: "La création du jour",
+    choisie: "choisie",
   },
 };
 const motsEssai = (branche: string) => ESSAI[branche] ?? ESSAI.artisan;
@@ -100,6 +118,8 @@ type ProprietesEssai = {
   onSalon: (o: RenduEssai) => void;
   /** Le libraire : un livre conseillé qu'on montre à ses amis — voir `ProchainLivre`. */
   onConseil?: (l: { quoi: string; prix?: string; photo?: string }) => void;
+  /** L'instant où l'on a touché « En ce moment » sur l'accueil : la pièce du jour vient à l'écran. */
+  vise?: number;
   /**
    * OÙ S'OUVRE LE PLEIN ÉCRAN DES QUESTIONS. Sur sa page, la fenêtre entière ;
    * dans l'application, le cadre du téléphone — sinon, sur un ordinateur, il
@@ -148,7 +168,7 @@ export function oublierLEssaiDeDemo(id: string) {
 /** Combien de temps on attend ses autres pièces, au plus (le moteur les cherche après la page). */
 const ATTENTE_PIECES = 3 * 60_000;
 
-function EssaiEnImage({ c: carte, saPage, onReserver, onSalon }: ProprietesEssai) {
+function EssaiEnImage({ c: carte, saPage, onReserver, onSalon, vise }: ProprietesEssai) {
   /** L'atelier ouvert, et la pièce choisie pour y entrer. */
   const [atelier, setAtelier] = useState<{ piece?: string; grille?: boolean } | null>(null);
   const fermer = useCallback(() => setAtelier(null), []);
@@ -220,6 +240,17 @@ function EssaiEnImage({ c: carte, saPage, onReserver, onSalon }: ProprietesEssai
     [onEssaie, murDuLieu.gout, murDuLieu.soiree, c.branche, c.metier],
   );
   const mots = motsEssai(c.branche);
+  /* ═══ SA PIÈCE DU JOUR, EN VEDETTE ═══ « Quand le commerçant met sa pièce du
+     jour en vedette, est-ce qu'elle apparaît sur l'essayage comme on la verrait
+     sur l'application ? » Elle n'était que la première case de la grille. Elle
+     a sa carte du Direct, sa voix et son bouton (`PieceDuJourEnVedette`), et
+     sort de la grille : deux fois la même pièce à trois cents points d'écart,
+     c'est un catalogue qui se répète. Seulement si l'atelier sait l'essayer. */
+  const jour = useMemo(() => {
+    const j = onEssaie ? pieceDuJour(c.catalogue) : null;
+    return j && pieces.some((p) => p.id === j.article.id) ? j : null;
+  }, [onEssaie, c.catalogue, pieces]);
+  const grille = useMemo(() => (jour ? pieces.filter((p) => p.id !== jour.article.id) : pieces), [jour, pieces]);
   /** Rien à essayer chez lui pour l'instant : ni pièce, ni autre porte ouverte. */
   const bientot = Boolean(promis) || (onEssaie && pieces.length === 0);
   /* ═══ MAIS UNE DE SES PIÈCES, DÉJÀ ESSAYÉE ═══ « Une personne avec ses
@@ -302,14 +333,26 @@ function EssaiEnImage({ c: carte, saPage, onReserver, onSalon }: ProprietesEssai
         </div>
       </div>
 
+      {/* ═══ SA PIÈCE DU JOUR, COMME DANS LE DIRECT ═══ */}
+      {jour && (
+        <PieceDuJourEnVedette
+          c={c}
+          jour={jour}
+          titre={mots.jour}
+          choisie={mots.choisie}
+          onEssayer={() => ouvrir({ piece: jour.article.id })}
+          vise={vise}
+        />
+      )}
+
       {/* CE QU'ON LUI A MONTRÉ D'ABORD, PUIS CE QU'ELLE ESSAIE ELLE-MÊME. */}
       {essaiVitrine && vitrine.length > 0 && <AvantApresVitrine c={c} essai={essaiVitrine} />}
 
       {/* ═══ SES CRÉATIONS À ESSAYER — les siennes, et elles seules ═══ */}
-      {pieces.length > 0 && (
+      {grille.length > 0 && (
         <section className="bx-pieces" aria-label={`Les ${mots.pieces} à essayer`}>
           <h3>
-            {vitrine.length ? "À vous d’essayer" : "À essayer ici"} <span>· {pieces.length}</span>
+            {vitrine.length ? "À vous d’essayer" : jour ? "Et aussi, à essayer ici" : "À essayer ici"} <span>· {grille.length}</span>
           </h3>
           {/* D'OÙ VIENNENT-ELLES, ET JUSQU'À QUAND : c'est elle qui lit. */}
           {vitrine.length > 0 && (
@@ -319,7 +362,7 @@ function EssaiEnImage({ c: carte, saPage, onReserver, onSalon }: ProprietesEssai
             </p>
           )}
           <div className="bx-grille">
-            {pieces.slice(0, pieces.length > 12 ? 11 : 12).map((p, i) => (
+            {grille.slice(0, grille.length > 12 ? 11 : 12).map((p, i) => (
               <button
                 key={p.id}
                 type="button"
@@ -338,9 +381,9 @@ function EssaiEnImage({ c: carte, saPage, onReserver, onSalon }: ProprietesEssai
             {/* LES AUTRES, DANS L'ATELIER : douze cases suffisent à donner
                 envie, et la douzième ouvre toutes les autres — elle ferme la
                 grille au lieu de pendre seule sur une ligne. */}
-            {pieces.length > 12 && (
+            {grille.length > 12 && (
               <button type="button" className="bx-plus" onClick={() => ouvrir({ grille: true })}>
-                <b>+{pieces.length - 11}</b>
+                <b>+{grille.length - 11}</b>
                 <span>Tout voir</span>
               </button>
             )}
