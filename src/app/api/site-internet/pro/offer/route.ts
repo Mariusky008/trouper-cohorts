@@ -29,6 +29,8 @@ import { echeanceDuTexte } from "@/lib/direct/echeance-texte";
 import { preparerFacons, ecrireFacons } from "@/lib/direct/facons-creation";
 import { jourParis } from "@/lib/jour-paris";
 import { activerPlanning, oublierEnCours } from "@/lib/direct/planning-activation";
+import { reseauxDuDiagnostic } from "@/lib/reseaux/reseaux-donnees";
+import { publierSurSesReseauxEnFond, reseauxConfigures } from "@/lib/reseaux/intermediaire";
 
 export const dynamic = "force-dynamic";
 
@@ -508,7 +510,25 @@ export async function POST(request: Request) {
       });
     }
 
-    return NextResponse.json({ ok: true, offer: avecEtat(offer), avertissement: avertissementFacons || undefined });
+    // 📣 ET SUR SES RÉSEAUX, s'il les a connectés — après la réponse : sa fête
+    // n'attend pas Instagram. « Il en reste ! » n'y part pas (`reseaux: false`) :
+    // une annonce de deux heures resterait des mois en haut de son Instagram.
+    // Voir `lib/reseaux/intermediaire.ts`.
+    const sesReseaux = reseauxConfigures() && p?.reseaux !== false ? reseauxDuDiagnostic(site.diagnostic) : null;
+    const versReseaux = sesReseaux?.auto && photo ? [...new Set(sesReseaux.comptes.map((c) => c.plateforme))] : [];
+    if (versReseaux.length) {
+      await publierSurSesReseauxEnFond(
+        { id, slug: str(site.slug), nom: str(site.business_name), ville: str(site.city), activite: str(site.activite) },
+        { texte: text, photo },
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      offer: avecEtat(offer),
+      avertissement: avertissementFacons || undefined,
+      ...(versReseaux.length ? { reseaux: versReseaux } : {}),
+    });
   }
 
   // get — la galerie voyage avec l'offre : le sélecteur de photo n'a pas besoin

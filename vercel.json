@@ -68,6 +68,10 @@
     {
       "path": "/api/cron/direct-planning",
       "schedule": "40 3 * * *"
+    },
+    {
+      "path": "/api/cron/proposition-matin",
+      "schedule": "10 6 * * *"
     }
   ]
 }

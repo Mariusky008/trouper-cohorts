@@ -72,6 +72,9 @@ import { jourCourt, PlanningComptoir } from "./planning-comptoir";
 import { CarteComptoir } from "./carte-comptoir";
 import { VitrineComptoir } from "./vitrine-comptoir";
 import { SavoirComptoir } from "./savoir-comptoir";
+import { CarteReseaux, ReseauxComptoir, useReseaux } from "./reseaux-comptoir";
+import { CarteProposition, propositionAMontrer, useProposition, type PieceProposee } from "./proposition-comptoir";
+import { reseauxEnMots } from "@/lib/reseaux/reseaux-donnees";
 import { useSavoir, type SavoirDuComptoir } from "./use-savoir";
 import { questionsDuMetier, reponduesDuMetier } from "@/lib/direct/savoir-fantome";
 import { accord, demandesEnMots, effetDesAnnonces, phraseDeLaVeille, semaineDuComptoir, type JourStats } from "@/lib/direct/stats-comptoir";
@@ -303,7 +306,9 @@ type Phase =
   /** Ma carte : ses rubriques, ses lignes et ses prix — voir `carte-comptoir.tsx`. */
   | { ou: "carte" }
   /** Ce que mon fantôme sait : ses réponses, et les questions de ses clients — voir `savoir-comptoir.tsx`. */
-  | { ou: "savoir" };
+  | { ou: "savoir" }
+  /** Mes réseaux : Instagram, Facebook, TikTok connectés une fois — voir `reseaux-comptoir.tsx`. */
+  | { ou: "reseaux" };
 
 /** L'envoi en ligne d'un vrai commerçant : en cours, arrivé, ou à refaire. */
 type Envoi = { etat: "en-cours" } | ({ etat: "fini" } & ResultatEnvoi);
@@ -324,6 +329,10 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
   /* CE QUE SON FANTÔME SAIT, lu une fois : l'accueil y compte les questions
      de ses clients, l'écran du savoir y répond. */
   const savoir = useSavoir(commerce);
+  /* SES RÉSEAUX, lus une fois : la carte de l'accueil et leur écran. */
+  const reseaux = useReseaux(commerce);
+  /* ☀️ SA PROPOSITION DU MATIN : une pièce de sa vitrine, prête — « oui » et c'est parti. */
+  const proposition = useProposition(commerce);
 
   useEffect(() => {
     const id = window.setInterval(() => setMaintenant(Date.now()), 30_000);
@@ -584,7 +593,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
     setRelire((n) => n + 1);
   };
 
-  const envoyer = () => {
+  const envoyer = (b: Brouillon = brouillon) => {
+    const brouillon = b;
     const t = Date.now();
     const relance = brouillon.genre === "relance";
     const p: Publication = {
@@ -613,6 +623,29 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
     } else envoyerALaVille(commerce, mission, p, principal);
     setMaintenant(t);
     setPhase({ ou: "fete", points: r.points, gagnes: r.gagnes, publication: p });
+  };
+
+  /** La pièce proposée ce matin, telle qu'il l'aurait préparée lui-même : sa photo, son nom, son prix, sa voix. */
+  const brouillonDe = (piece: PieceProposee): Brouillon => ({
+    genre: "principal",
+    nom: piece.nom,
+    prix: piece.prix ?? "",
+    photos: [piece.photo],
+    jours: 1,
+    ...(piece.voix ? { voix: piece.voix, voixSecondes: piece.voixSecondes, voixTexte: piece.voixTexte } : {}),
+  });
+  /** « ✨ Oui, publie-la » : elle part tout de suite, comme s'il avait touché « Publier ». */
+  const publierLaProposition = (piece: PieceProposee) => {
+    const b = brouillonDe(piece);
+    setPlusTard(false);
+    setBrouillon(b);
+    envoyer(b);
+  };
+  /** « Voir avant » : le récapitulatif, où il peut la modifier ou y mettre sa voix. */
+  const voirLaProposition = (piece: PieceProposee) => {
+    setPlusTard(false);
+    setBrouillon(brouillonDe(piece));
+    setPhase({ ou: "recap" });
   };
 
   const enlever = (id: string) => {
@@ -740,7 +773,23 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           onSavoir={() => setPhase({ ou: "savoir" })}
           programmees={programmees}
           onPlanning={() => setPhase({ ou: "planning" })}
+          reseaux={<CarteReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
+          propositionActive={Boolean(propositionAMontrer(proposition))}
+          proposition={
+            <CarteProposition
+              commerce={commerce}
+              proposition={proposition}
+              onOui={publierLaProposition}
+              onVoir={voirLaProposition}
+              onPhoto={() => commencer(false)}
+              onVitrine={() => setPhase({ ou: "vitrine" })}
+            />
+          }
         />
+      )}
+
+      {phase.ou === "reseaux" && (
+        <ReseauxComptoir commerce={commerce} dossier={dossier} reseaux={reseaux} onRetour={() => setPhase({ ou: "accueil" })} />
       )}
 
       {phase.ou === "planning" && (
@@ -810,7 +859,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           mission={mission}
           brouillon={brouillon}
           principal={principal}
-          onPublier={envoyer}
+          onPublier={() => envoyer()}
           onModifier={() => setPhase({ ou: "mission", etape: 0, relance: phase.relance })}
           plusTard={plusTard && !phase.relance ? quand : undefined}
           ennui={ennuiPlanning}
@@ -918,6 +967,9 @@ function Accueil({
   onSavoir,
   programmees,
   onPlanning,
+  reseaux,
+  proposition,
+  propositionActive,
 }: {
   commerce: Commerce;
   mission: Mission;
@@ -940,6 +992,12 @@ function Accueil({
   programmees: Programmee[];
   /** Ouvrir « Mon planning ». */
   onPlanning: () => void;
+  /** La carte « Mes réseaux » — absente tant que l'intermédiaire n'est pas branché. */
+  reseaux?: React.ReactNode;
+  /** ☀️ La proposition du matin, quand rien n'est encore en ligne. */
+  proposition?: React.ReactNode;
+  /** Elle est là : le grand bouton « Publier » devient « Publier autre chose ». */
+  propositionActive?: boolean;
 }) {
   const relance = mission.relance;
   const vitrine = motsDeLaVitrine(commerce.famille, commerce.metier);
@@ -990,12 +1048,19 @@ function Accueil({
     <div className="cz-corps accueil">
       <Scene dossier={dossier} texte={texte} humeur="salut" petit />
       <div className="cz-panneau">
-        {!principal && (
-          <button type="button" className="cz-go grand" onClick={() => onCommencer(false)}>
-            {mission.icone} Publier {mission.quoi.toLowerCase()}
-            <s aria-hidden="true">→</s>
-          </button>
-        )}
+        {!principal && proposition}
+
+        {!principal &&
+          (propositionActive ? (
+            <button type="button" className="cz-second" onClick={() => onCommencer(false)}>
+              Publier autre chose
+            </button>
+          ) : (
+            <button type="button" className="cz-go grand" onClick={() => onCommencer(false)}>
+              {mission.icone} Publier {mission.quoi.toLowerCase()}
+              <s aria-hidden="true">→</s>
+            </button>
+          ))}
 
         {actives.length > 0 && (
           <section className="cz-bloc">
@@ -1048,6 +1113,10 @@ function Accueil({
           </span>
           <s aria-hidden="true">→</s>
         </button>
+
+        {/* ═══ MES RÉSEAUX ═══ « Une photo, et vous êtes partout » : ce qu'il
+            publie ici part aussi sur son Instagram, sa page Facebook, son TikTok. */}
+        {reseaux}
 
         {enAttente > 0 && boutonSavoir}
 
@@ -2029,6 +2098,9 @@ function Fete({
             : envoi.ok
               ? `✓ En ligne : ${envoi.ou.join(" et ")}.${envoi.erreur ? ` Une partie n’a pas suivi : ${envoi.erreur}` : ""}`
               : `Ça n’est pas parti : ${envoi.erreur ?? "erreur inconnue"}`}
+          {/* SES RÉSEAUX PARTENT APRÈS : on dit « en route », pas « publié ».
+              Le résultat est dans « Mes réseaux ». */}
+          {envoi.etat === "fini" && envoi.reseaux?.length ? <span className="cz-envoi-reseaux">📣 En route vers {reseauxEnMots(envoi.reseaux)}.</span> : null}
           {/* UNE PARTIE PEUT ÊTRE PARTIE ET PAS L'AUTRE : on propose de refaire
               dès qu'il y a une erreur. Renvoyer la même photo ne refait pas la
               scène (voir le mode d'emploi de l'Expérience). */}
@@ -2332,6 +2404,7 @@ label.cz-go{cursor:pointer;}
   background:rgba(123,214,106,.12);color:#BDE8B0;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;}
 .cz-envoi-etat.ko{background:rgba(255,46,154,.12);color:#FFC2E0;}
 .cz-envoi-etat button{border:1px solid currentColor;background:none;border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px;}
+.cz-envoi-reseaux{display:block;margin-top:4px;font-weight:700;}
 .cz-confettis{position:absolute;inset:0;pointer-events:none;}
 .cz-confettis i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;
   background:var(--rose);animation:cz-tombe 2.6s cubic-bezier(.3,.6,.5,1) both;transform:rotate(var(--r));}

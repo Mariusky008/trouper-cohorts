@@ -30,7 +30,8 @@ import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import type { Publication } from "@/lib/direct/comptoir";
 import type { Mission } from "@/lib/direct/missions-commercant";
 
-export type ResultatEnvoi = { ok: boolean; ou: string[]; erreur?: string };
+/** `reseaux` : ses réseaux sociaux vers lesquels l'annonce est EN ROUTE (elle y part après la réponse). */
+export type ResultatEnvoi = { ok: boolean; ou: string[]; erreur?: string; reseaux?: string[] };
 
 /** Les métiers dont la pièce entre au catalogue avec sa photo. */
 export const AVEC_PIECE = ["coiffure", "ongles", "lunettes", "mode", "createur", "librairie"];
@@ -140,6 +141,7 @@ export async function envoyerEnLigne(
   const { slug, token } = c.reel;
   const ou: string[] = [];
   const erreurs: string[] = [];
+  let reseaux: string[] = [];
 
   // ── LE PLAT DU RESTAURANT : SA PAGE, ÉTAPE 2 ──
   if (c.famille === "table" && p.genre === "principal") {
@@ -196,12 +198,17 @@ export async function envoyerEnLigne(
       photo,
       until: new Date(p.genre === "relance" ? Math.min(p.finLe, Date.now() + 2 * 3600_000) : p.finLe).toISOString(),
       famille: c.famille === "table" && p.genre === "principal" ? "menu" : "offre",
+      // « IL EN RESTE ! » NE PART PAS SUR SES RÉSEAUX : deux heures chez nous,
+      // des mois en haut de son Instagram. Voir `lib/reseaux/intermediaire.ts`.
+      reseaux: p.genre !== "relance",
     });
     if (r.ok) ou.push("Le Direct");
+    if (r.ok && Array.isArray(r.json?.reseaux)) reseaux = (r.json.reseaux as unknown[]).map(String);
     else erreurs.push(r.erreur ?? "L'annonce n'a pas pu partir.");
   }
 
-  return erreurs.length ? { ok: ou.length > 0, ou, erreur: erreurs.join(" ") } : { ok: true, ou };
+  const enRoute = reseaux.length ? { reseaux } : {};
+  return erreurs.length ? { ok: ou.length > 0, ou, erreur: erreurs.join(" "), ...enRoute } : { ok: true, ou, ...enRoute };
 }
 
 /** Retirer en ligne : le plat de sa page, et l'annonce du Direct qui porte ce texte. */
