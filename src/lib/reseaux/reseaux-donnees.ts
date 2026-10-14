@@ -144,7 +144,15 @@ function enHashtag(mot: string): string {
  */
 export function legendeReseaux(p: { texte: string; nom: string; ville?: string; metier?: string; lien?: string }): string {
   const lignes = [p.texte.trim()];
-  const ou = [p.nom.trim(), s(p.ville)].filter(Boolean).join(" · ");
+  // « vevey » TEL QU'IL EST EN BASE devient « Vevey » : c'est un nom de ville.
+  // « saint-paul-lès-dax » → « Saint-Paul-lès-Dax » : les petits mots restent petits.
+  const ville =
+    s(p.ville) === s(p.ville).toLowerCase()
+      ? s(p.ville).replace(/(^|[\s-])(\p{L}+)/gu, (_, sep: string, mot: string) =>
+          sep && /^(lès|les|lez|de|du|des|sur|sous|en|aux|la|le)$/.test(mot) ? sep + mot : sep + mot.charAt(0).toUpperCase() + mot.slice(1),
+        )
+      : s(p.ville);
+  const ou = [p.nom.trim(), ville].filter(Boolean).join(" · ");
   if (ou) lignes.push("", `📍 ${ou}`);
   if (p.lien) lignes.push(`👉 ${p.lien}`);
   const tags = [s(p.ville), s(p.metier)]

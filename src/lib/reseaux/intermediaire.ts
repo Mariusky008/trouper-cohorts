@@ -219,9 +219,20 @@ export async function publierPartout(p: { texte: string; image: string; comptes:
 
 /* ═══ L'IMAGE QUE LES RÉSEAUX ACCEPTENT ════════════════════════════════════
    Instagram refuse une photo plus haute que 4:5 ou plus large que 1,91:1 — or
-   une photo de téléphone en hauteur fait 3:4, et c'est presque toutes celles du
-   comptoir. On la recadre (sur ce qui attire l'œil), en JPEG, à 1080 points, et
-   on la range chez nous : l'intermédiaire va la chercher par son adresse. */
+   une photo de téléphone en hauteur fait 3:4 ou 9:16, et c'est presque toutes
+   celles du comptoir.
+
+   ON NE COUPE PLUS, ON ENCADRE. « Le haut de la photo sur Facebook et Instagram
+   apparaît coupé, alors que sur la page commerçant elle est ok. » La première
+   version recadrait sur « ce qui attire l'œil » : chez Lili Ross, le sac et
+   les ballerines rouges — et la tête de la cliente sortait du cadre. Une
+   pièce de mode se juge en entier, de la tête aux pieds. La photo est donc
+   posée ENTIÈRE au centre d'un cadre 4:5 (ou 1,91:1 pour une photo très
+   large), sur un fond fait d'elle-même, flouté et assombri : pas de bandes
+   blanches, et rien ne manque.
+
+   En JPEG, à 1080 points, rangée chez nous : l'intermédiaire va la chercher
+   par son adresse. */
 async function octetsDe(photo: string): Promise<Buffer | null> {
   const m = /^data:image\/[a-z+.-]+;base64,(.+)$/i.exec(photo);
   if (m) return Buffer.from(m[1], "base64");
@@ -240,21 +251,30 @@ async function octetsDe(photo: string): Promise<Buffer | null> {
   }
 }
 
+/** La photo, telle que les réseaux l'acceptent — entière. Exportée pour être essayée seule. */
+export async function cadrerPourReseaux(brut: Buffer): Promise<Buffer> {
+  // `rotate()` d'abord : une photo de téléphone porte son sens dans ses
+  // métadonnées. `flatten()` : un PNG détouré passerait sur fond noir en JPEG.
+  const droite = await sharp(brut).rotate().flatten({ background: "#ffffff" }).toBuffer();
+  const meta = await sharp(droite).metadata();
+  const ratio = (meta.width ?? 1080) / (meta.height ?? 1080);
+  const largeur = 1080;
+  if (ratio >= 0.8 && ratio <= 1.91) {
+    // DÉJÀ DANS LES CLOUS : on la réduit, on n'y touche pas.
+    return sharp(droite).resize(largeur, Math.round(largeur / ratio), { fit: "fill" }).jpeg({ quality: 88 }).toBuffer();
+  }
+  const hauteur = Math.round(largeur / (ratio < 0.8 ? 0.8 : 1.91));
+  const fond = await sharp(droite).resize(largeur, hauteur, { fit: "cover" }).blur(36).modulate({ brightness: 0.62 }).toBuffer();
+  const photoEntiere = await sharp(droite).resize(largeur, hauteur, { fit: "inside" }).toBuffer();
+  return sharp(fond).composite([{ input: photoEntiere, gravity: "centre" }]).jpeg({ quality: 88 }).toBuffer();
+}
+
 export async function imagePourReseaux(slug: string, photo: string): Promise<string | { erreur: string }> {
   const brut = await octetsDe(s(photo));
   if (!brut) return { erreur: "photo introuvable" };
   let octets: Buffer;
   try {
-    const img = sharp(brut).rotate();
-    const meta = await img.metadata();
-    const tourne = (meta.orientation ?? 1) >= 5;
-    const w = (tourne ? meta.height : meta.width) ?? 1080;
-    const h = (tourne ? meta.width : meta.height) ?? 1080;
-    const ratio = w / h;
-    const cible = ratio < 0.8 ? 0.8 : ratio > 1.91 ? 1.91 : ratio;
-    const largeur = 1080;
-    const hauteur = Math.round(largeur / cible);
-    octets = await img.resize(largeur, hauteur, { fit: "cover", position: sharp.strategy.attention }).jpeg({ quality: 88 }).toBuffer();
+    octets = await cadrerPourReseaux(brut);
   } catch {
     return { erreur: "photo illisible" };
   }
