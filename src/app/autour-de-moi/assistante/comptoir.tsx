@@ -30,12 +30,15 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
 import { COMMERCES_DEMO, missionDe, type Etape, type Mission } from "@/lib/direct/missions-commercant";
 import {
+  ajouterSansPoints,
+  aVenir,
   BADGES,
   chargerComptoir,
   enLigne,
   finApres,
   garderComptoir,
   niveauDe,
+  oublier,
   publier,
   retirer,
   serie,
@@ -46,6 +49,19 @@ import { useMicro } from "./use-micro";
 import { envoyerALaVille, retirerDeLaVille, type CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { envoyerEnLigne, retirerEnLigne, type ResultatEnvoi } from "@/lib/direct/comptoir-en-ligne";
 import { motsDeLaCarte, motsDeLaVitrine } from "@/lib/direct/vitrine";
+import { lirePlanningEnLigne, programmerEnLigne, retirerDuPlanning, type EtatPlanning, type Programmee, type Quand } from "@/lib/direct/comptoir-planning";
+import {
+  ajouterJours,
+  bornes,
+  DUREE_MAX_JOURS,
+  HORIZON_JOURS,
+  jourEnClair,
+  joursCouverts,
+  MAX_PAR_JOUR,
+  verifierDates,
+} from "@/lib/direct/planning-annonces";
+import { jourParis } from "@/lib/jour-paris";
+import { jourCourt, PlanningComptoir } from "./planning-comptoir";
 import { CarteComptoir } from "./carte-comptoir";
 import { VitrineComptoir } from "./vitrine-comptoir";
 import { SavoirComptoir } from "./savoir-comptoir";
@@ -126,6 +142,10 @@ function dureeEnMots(jours: number): string {
   if (jours >= 365) return "Sans limite";
   return `${jours} jours`;
 }
+
+/** « vendredi 16 » — un jour du planning, court, pour la bulle du fantôme. */
+const jourDit = (jour: string) =>
+  new Date(`${jour}T12:00:00Z`).toLocaleDateString("fr-FR", { timeZone: "UTC", weekday: "long", day: "numeric" });
 
 /** « Salut Margot ! », « Salut Chef ! » — et « Salut ! » quand on ne sait pas son prénom. */
 const aQui = (c: Commerce, avant = "") => (c.prenom ? `${avant} ${c.prenom}` : "");
@@ -259,7 +279,18 @@ type Phase =
   | { ou: "accueil" }
   | { ou: "mission"; etape: number; relance?: boolean }
   | { ou: "recap"; relance?: boolean }
-  | { ou: "fete"; points: number; gagnes: string[]; publication: Publication }
+  | {
+      ou: "fete";
+      points: number;
+      gagnes: string[];
+      publication: Publication;
+      /** Préparée d'avance : le jour choisi, combien de semaines, et celles sautées (déjà pleines). */
+      programme?: { quand: Quand; nb: number; ignores: string[] };
+    }
+  /** La question de plus d'une annonce préparée d'avance : quel jour, combien de jours. */
+  | { ou: "quand" }
+  /** Mon planning : ses prochains jours, et ce qui est programmé — voir `planning-comptoir.tsx`. */
+  | { ou: "planning" }
   /** Ma vitrine : ses photos de produits, avec leur libellé — voir `vitrine-comptoir.tsx`. */
   | { ou: "vitrine" }
   /** Ma carte : ses rubriques, ses lignes et ses prix — voir `carte-comptoir.tsx`. */
@@ -303,21 +334,205 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
 
   const enLigneMaintenant = useMemo(() => enLigne(etat, maintenant), [etat, maintenant]);
   const principal = enLigneMaintenant.find((p) => p.genre === "principal");
+
+  /* ═══ PLUS TARD : LA MÊME MISSION, POUR UN AUTRE JOUR ═══════════════════
+     « Préparer toute la semaine ou tout le mois à l'avance, pour ne pas avoir
+     à le faire tous les jours. » Il répond aux mêmes questions ; seule la
+     durée change de place : elle se choisit avec le jour (sept jours au plus). */
+  const [plusTard, setPlusTard] = useState(false);
+  const demain = () => ajouterJours(jourParis(), 1);
+  const [quand, setQuand] = useState<Quand>(() => ({ jour: "", jours: 1, repeter: false }));
+  /** Son planning en base (vrai commerçant) — `null` tant qu'on ne l'a pas lu. */
+  const [planningServeur, setPlanningServeur] = useState<EtatPlanning | null>(null);
+  const [ennuiPlanning, setEnnuiPlanning] = useState("");
+  const [occupePlanning, setOccupePlanning] = useState("");
+
   const etapes: Etape[] = useMemo(() => {
-    if (phase.ou !== "mission" && phase.ou !== "recap") return mission.etapes;
-    if (!("relance" in phase) || !phase.relance || !mission.relance) return mission.etapes;
+    const base = plusTard ? mission.etapes.filter((e) => e.type !== "duree") : mission.etapes;
+    if (phase.ou !== "mission" && phase.ou !== "recap") return base;
+    if (!("relance" in phase) || !phase.relance || !mission.relance) return base;
     return [{ type: "dire", question: mission.relance.question, exemple: mission.relance.exemple, nomDuChamp: "Il en reste" }];
-  }, [phase, mission]);
+  }, [phase, mission, plusTard]);
 
   const commencer = (relance = false) => {
+    setPlusTard(false);
     setBrouillon(brouillonVide(relance ? "relance" : "principal"));
     setPhase({ ou: "mission", etape: 0, relance });
+  };
+
+  /** Préparer une annonce pour un autre jour — celui touché dans son planning, ou demain. */
+  const commencerPlusTard = (jour?: string) => {
+    setPlusTard(true);
+    setEnnuiPlanning("");
+    setQuand({ jour: jour && jour > jourParis() ? jour : demain(), jours: 1, repeter: false });
+    setBrouillon(brouillonVide("principal"));
+    setPhase({ ou: "mission", etape: 0 });
   };
 
   const suivante = (relance?: boolean) => {
     if (phase.ou !== "mission") return;
     if (phase.etape + 1 < etapes.length) setPhase({ ou: "mission", etape: phase.etape + 1, relance });
-    else setPhase({ ou: "recap", relance });
+    else setPhase(plusTard && !relance ? { ou: "quand" } : { ou: "recap", relance });
+  };
+
+  /* SON PLANNING EN BASE, relu en revenant au comptoir ou à son planning : ce
+     qui est dû part d'abord (côté serveur), et ce qu'il a retiré ailleurs
+     s'efface ici aussi. */
+  const lienPro = commerce.reel;
+  const ouPhase = phase.ou;
+  useEffect(() => {
+    if (!lienPro || (ouPhase !== "accueil" && ouPhase !== "planning")) return;
+    let fini = false;
+    lirePlanningEnLigne(commerce)
+      .then((e) => {
+        if (fini) return;
+        setPlanningServeur(e);
+        setEtat((avant) => {
+          const perdus = aVenir(avant).filter((p) => !e.planning.some((x) => x.id === p.id)).map((p) => p.id);
+          if (!perdus.length) return avant;
+          const suite = oublier(avant, perdus);
+          garderComptoir(memoire, suite);
+          return suite;
+        });
+      })
+      .catch(() => {
+        /* hors ligne : on garde ce qu'on avait */
+      });
+    return () => {
+      fini = true;
+    };
+  }, [lienPro, ouPhase, commerce, memoire]);
+
+  /* LA DÉMONSTRATION N'A PAS DE SERVEUR : ce qu'elle a programmé part dans la
+     ville du téléphone au premier passage du comptoir, le jour venu. */
+  useEffect(() => {
+    if (commerce.reel) return;
+    const dues = etat.publications.filter((p) => p.programmee && !p.envoyee && p.publieLe <= maintenant && p.finLe > maintenant);
+    if (!dues.length) return;
+    for (const p of dues) envoyerALaVille(commerce, mission, p, undefined);
+    const suite = { ...etat, publications: etat.publications.map((p) => (dues.includes(p) ? { ...p, envoyee: true } : p)) };
+    setEtat(suite);
+    garderComptoir(memoire, suite);
+  }, [commerce, mission, etat, maintenant, memoire]);
+
+  /** Ses annonces à venir, dans les mots du comptoir : celles de la base, ou celles du téléphone. */
+  const programmees: Programmee[] = useMemo(() => {
+    if (commerce.reel && planningServeur) return planningServeur.planning;
+    return aVenir(etat, maintenant).map((p) => ({
+      id: p.id,
+      nom: p.nom,
+      ...(p.prix ? { prix: p.prix } : {}),
+      photo: p.photos[0] ?? "",
+      jour: jourParis(new Date(p.publieLe)),
+      jours: p.jours,
+      debut: new Date(p.publieLe).toISOString(),
+      fin: new Date(p.finLe).toISOString(),
+      ...(p.serie ? { serie: p.serie } : {}),
+      ...(p.voix ? { voix: true } : {}),
+    }));
+  }, [commerce.reel, planningServeur, etat, maintenant]);
+
+  /**
+   * PROGRAMMER : la publication préparée, au jour choisi. Un vrai commerçant
+   * l'envoie dans son planning en base ; la démonstration la garde ici. Dans
+   * les deux cas elle entre dans son comptoir avec sa date de départ — elle y
+   * apparaît « en ligne » le jour venu, et ses points tombent dès maintenant.
+   */
+  const programmer = async () => {
+    setEnnuiPlanning("");
+    const t = Date.now();
+    const b0 = bornes(quand.jour, quand.jours);
+    const base: Publication = {
+      id: `pub-${t}`,
+      famille: commerce.famille,
+      genre: "principal",
+      nom: brouillon.nom || mission.quoi,
+      prix: brouillon.prix,
+      photos: brouillon.photos,
+      voix: brouillon.voix,
+      voixSecondes: brouillon.voixSecondes,
+      voixTexte: brouillon.voixTexte,
+      jours: quand.jours,
+      publieLe: Date.parse(b0.debut),
+      finLe: Date.parse(b0.fin),
+      programmee: true,
+      ...(brouillon.detail ? { detail: brouillon.detail } : {}),
+    };
+    let placees: { id: string; debut: string; fin: string; photo: string; serie?: string }[] = [];
+    let ignores: string[] = [];
+    if (commerce.reel) {
+      setOccupePlanning("programmer");
+      try {
+        const r = await programmerEnLigne(commerce, mission, base, quand);
+        setPlanningServeur(r.etat);
+        placees = r.placees;
+        ignores = r.ignores;
+      } catch (e) {
+        setEnnuiPlanning(e instanceof Error ? e.message : "Ça n’a pas pu partir. Réessaie.");
+        return;
+      } finally {
+        setOccupePlanning("");
+      }
+    } else {
+      // LA DÉMONSTRATION : les mêmes règles de dates, dans le téléphone.
+      const souci = verifierDates(quand.jour, quand.jours);
+      if (souci) return setEnnuiPlanning(souci);
+      const voulus = [quand.jour];
+      for (let k = 1; quand.repeter && k <= 5; k++) {
+        const j = ajouterJours(quand.jour, 7 * k);
+        if (verifierDates(j, quand.jours)) break;
+        voulus.push(j);
+      }
+      const serie = voulus.length > 1 ? `s-${t}` : undefined;
+      placees = voulus.map((j, i) => ({ id: `pl-local-${t}-${i}`, ...bornes(j, quand.jours), photo: base.photos[0] ?? "", ...(serie ? { serie } : {}) }));
+    }
+    if (!placees.length) return setEnnuiPlanning("Rien n’a pu être programmé.");
+    // LA PREMIÈRE RAPPORTE SES POINTS ; les semaines suivantes entrent avec sa photo rangée, sans les recompter.
+    let c = etat;
+    let points = 0;
+    let gagnes: string[] = [];
+    let premiere = base;
+    placees.forEach((pl, i) => {
+      const p: Publication = {
+        ...base,
+        id: pl.id,
+        publieLe: Date.parse(pl.debut),
+        finLe: Date.parse(pl.fin),
+        ...(pl.serie ? { serie: pl.serie } : {}),
+        ...(i > 0 ? { photos: pl.photo ? [pl.photo] : base.photos.slice(0, 1), voix: undefined } : {}),
+      };
+      if (i === 0) {
+        const r = publier(c, p);
+        c = r.comptoir;
+        points = r.points;
+        gagnes = r.gagnes;
+        premiere = p;
+      } else c = ajouterSansPoints(c, p);
+    });
+    setEtat(c);
+    garderComptoir(memoire, c);
+    setPhase({ ou: "fete", points, gagnes, publication: premiere, programme: { quand, nb: placees.length, ignores } });
+  };
+
+  /** Retirer une annonce programmée — ou toute sa série. */
+  const deprogrammer = async (id: string, toute: boolean) => {
+    setEnnuiPlanning("");
+    const serie = programmees.find((x) => x.id === id)?.serie;
+    const ids = toute && serie ? programmees.filter((x) => x.serie === serie).map((x) => x.id) : [id];
+    if (commerce.reel) {
+      setOccupePlanning(id);
+      try {
+        setPlanningServeur(await retirerDuPlanning(commerce, id, toute));
+      } catch (e) {
+        setEnnuiPlanning(e instanceof Error ? e.message : "Ça n’a pas pu être retiré.");
+        return;
+      } finally {
+        setOccupePlanning("");
+      }
+    }
+    const c = oublier(etat, ids);
+    setEtat(c);
+    garderComptoir(memoire, c);
   };
 
   const [envoi, setEnvoi] = useState<Envoi | null>(null);
@@ -470,6 +685,27 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           onCarte={() => setPhase({ ou: "carte" })}
           savoir={savoir}
           onSavoir={() => setPhase({ ou: "savoir" })}
+          programmees={programmees}
+          onPlanning={() => setPhase({ ou: "planning" })}
+        />
+      )}
+
+      {phase.ou === "planning" && (
+        <PlanningComptoir
+          commerce={commerce}
+          mission={mission}
+          dossier={dossier}
+          programmees={programmees}
+          enLigne={
+            commerce.reel && planningServeur
+              ? planningServeur.enLigne.map((a) => ({ id: a.id, photo: a.photo, debut: a.publieLe, fin: a.expireLe }))
+              : enLigneMaintenant.map((p) => ({ id: p.id, photo: p.photos[0] ?? null, debut: new Date(p.publieLe).toISOString(), fin: new Date(p.finLe).toISOString() }))
+          }
+          ennui={ennuiPlanning}
+          occupe={occupePlanning}
+          onProgrammer={commencerPlusTard}
+          onRetirer={(id, toute) => void deprogrammer(id, toute)}
+          onRetour={() => setPhase({ ou: "accueil" })}
         />
       )}
 
@@ -503,6 +739,18 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
         />
       )}
 
+      {phase.ou === "quand" && (
+        <QuandComptoir
+          dossier={dossier}
+          mission={mission}
+          quand={quand}
+          setQuand={setQuand}
+          programmees={programmees}
+          onSuivante={() => setPhase({ ou: "recap" })}
+          onRetour={() => setPhase({ ou: "mission", etape: Math.max(0, etapes.length - 1) })}
+        />
+      )}
+
       {phase.ou === "recap" && (
         <Recap
           dossier={dossier}
@@ -511,6 +759,21 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           principal={principal}
           onPublier={envoyer}
           onModifier={() => setPhase({ ou: "mission", etape: 0, relance: phase.relance })}
+          plusTard={plusTard && !phase.relance ? quand : undefined}
+          ennui={ennuiPlanning}
+          occupe={occupePlanning === "programmer"}
+          onProgrammer={() => void programmer()}
+          onChangerJour={() => setPhase({ ou: "quand" })}
+          onAutreJour={
+            phase.relance
+              ? undefined
+              : () => {
+                  setPlusTard(true);
+                  setEnnuiPlanning("");
+                  setQuand({ jour: demain(), jours: Math.min(Math.max(1, brouillon.jours), DUREE_MAX_JOURS), repeter: false });
+                  setPhase({ ou: "quand" });
+                }
+          }
         />
       )}
 
@@ -527,6 +790,9 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           envoi={envoi}
           onReessayer={() => phase.ou === "fete" && void envoyerEnBase(phase.publication, principal)}
           onFin={() => setPhase({ ou: "accueil" })}
+          programme={phase.programme}
+          onEncore={() => commencerPlusTard(phase.programme ? ajouterJours(phase.programme.quand.jour, 1) : undefined)}
+          onPlanning={() => setPhase({ ou: "planning" })}
         />
       )}
     </div>
@@ -541,6 +807,7 @@ function Scene({
   humeur = "repos",
   ecoute = false,
   petit = false,
+  mini = false,
 }: {
   dossier: string;
   texte: string;
@@ -548,11 +815,13 @@ function Scene({
   humeur?: "salut" | "ecoute" | "montre" | "repos";
   ecoute?: boolean;
   petit?: boolean;
+  /** Plus petit encore : quand le panneau du bas porte beaucoup (le choix du jour). */
+  mini?: boolean;
 }) {
   const { ecrit, fini } = useMachine(texte);
   const pose = useFantome(!fini && !ecoute, ecoute ? "ecoute" : humeur);
   return (
-    <section className={`cz-scene${petit ? " petit" : ""}${ecoute ? " ecoute" : ""}`}>
+    <section className={`cz-scene${petit ? " petit" : ""}${mini ? " mini" : ""}${ecoute ? " ecoute" : ""}`}>
       <div className="cz-bulle" aria-live="polite">
         <p>
           {ecrit}
@@ -594,6 +863,8 @@ function Accueil({
   onCarte,
   savoir,
   onSavoir,
+  programmees,
+  onPlanning,
 }: {
   commerce: Commerce;
   mission: Mission;
@@ -612,6 +883,10 @@ function Accueil({
   savoir: SavoirDuComptoir;
   /** Ouvrir « Ce que mon fantôme sait ». */
   onSavoir: () => void;
+  /** Ses annonces programmées, la plus proche d'abord. */
+  programmees: Programmee[];
+  /** Ouvrir « Mon planning ». */
+  onPlanning: () => void;
 }) {
   const relance = mission.relance;
   const vitrine = motsDeLaVitrine(commerce.famille, commerce.metier);
@@ -700,6 +975,26 @@ function Accueil({
             Changer {mission.quoi.toLowerCase()}
           </button>
         )}
+
+        {/* ═══ MON PLANNING ═══ « Préparer un jour du mois toute la semaine ou
+            tout le mois à l'avance, pour ne pas avoir à le faire tous les
+            jours. » Le même fantôme, les mêmes questions, et il publie le jour
+            venu. */}
+        <button type="button" className="cz-relance cz-planning" onClick={onPlanning}>
+          <span className="cz-relance-i">🗓️</span>
+          <span>
+            <b>
+              Mon planning
+              {programmees.length > 0 && <i className="cz-pastille calme">{programmees.length}</i>}
+            </b>
+            <em>
+              {programmees.length
+                ? `Prochaine : ${jourCourt(programmees[0].jour)} — ${programmees[0].nom}`
+                : "Prépare tes prochains jours en une fois : je publie pour toi le jour venu."}
+            </em>
+          </span>
+          <s aria-hidden="true">→</s>
+        </button>
 
         {enAttente > 0 && boutonSavoir}
 
@@ -1328,6 +1623,120 @@ function Lecteur({ src, secondes, texte }: { src: string; secondes?: number; tex
 }
 
 /* ═══ LE RÉCAP : CE QUE SES CLIENTS VONT VOIR ════════════════════════════ */
+/* ═══ QUEL JOUR ? ═════════════════════════════════════════════════════════
+   La seule question de plus d'une annonce préparée d'avance. Ses quatorze
+   prochains jours en pastilles (un jour déjà plein ne se touche pas), une date
+   plus loin s'il le faut, combien de jours elle reste, et « chaque semaine ». */
+function QuandComptoir({
+  dossier,
+  mission,
+  quand,
+  setQuand,
+  programmees,
+  onSuivante,
+  onRetour,
+}: {
+  dossier: string;
+  mission: Mission;
+  quand: Quand;
+  setQuand: React.Dispatch<React.SetStateAction<Quand>>;
+  programmees: Programmee[];
+  onSuivante: () => void;
+  onRetour: () => void;
+}) {
+  const auj = jourParis();
+  const prochains = Array.from({ length: 14 }, (_, i) => ajouterJours(auj, i + 1));
+  const charge = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const a of programmees) joursCouverts(a).forEach((j) => m.set(j, (m.get(j) ?? 0) + 1));
+    return m;
+  }, [programmees]);
+  const autre = Boolean(quand.jour) && !prochains.includes(quand.jour);
+  const chiffres = (jour: string) => {
+    const d = new Date(`${jour}T12:00:00Z`);
+    return { sem: d.toLocaleDateString("fr-FR", { timeZone: "UTC", weekday: "short" }).replace(".", ""), num: d.getUTCDate() };
+  };
+  return (
+    <div className="cz-corps">
+      <div className="cz-fil">
+        <button type="button" onClick={onRetour} aria-label="Revenir">
+          ‹
+        </button>
+        <span className="cz-fil-n cz-fil-plus">🗓️ {mission.quoi} · pour plus tard</span>
+      </div>
+      <Scene dossier={dossier} texte="Je la publie quel jour ?" humeur="montre" petit mini />
+      <div className="cz-panneau">
+        <div className="cz-jours" role="group" aria-label="Le jour">
+          {prochains.map((j, i) => {
+            const c = chiffres(j);
+            const n = charge.get(j) ?? 0;
+            return (
+              <button
+                type="button"
+                key={j}
+                className={quand.jour === j ? "choisi" : ""}
+                aria-pressed={quand.jour === j}
+                disabled={n >= MAX_PAR_JOUR}
+                aria-label={`${jourEnClair(j)}${n ? ` — ${n} déjà prévue${n > 1 ? "s" : ""}` : ""}`}
+                onClick={() => setQuand((q) => ({ ...q, jour: j }))}
+              >
+                <i>{i === 0 ? "dem." : c.sem}</i>
+                <b>{c.num}</b>
+                <span aria-hidden="true">{"•".repeat(Math.min(n, MAX_PAR_JOUR))}</span>
+              </button>
+            );
+          })}
+        </div>
+        <label className={`cz-autre${autre ? " choisi" : ""}`}>
+          <span>Plus loin</span>
+          <input
+            type="date"
+            min={ajouterJours(auj, 1)}
+            max={ajouterJours(auj, HORIZON_JOURS)}
+            value={autre ? quand.jour : ""}
+            onChange={(e) => e.target.value && setQuand((q) => ({ ...q, jour: e.target.value }))}
+            aria-label="Une autre date"
+          />
+        </label>
+
+        <p className="cz-q">Elle reste combien de jours ?</p>
+        <div className="cz-nb" role="group" aria-label="Combien de jours">
+          {Array.from({ length: DUREE_MAX_JOURS }, (_, i) => i + 1).map((n) => (
+            <button
+              type="button"
+              key={n}
+              className={quand.jours === n ? "choisi" : ""}
+              aria-pressed={quand.jours === n}
+              aria-label={`${n} jour${n > 1 ? "s" : ""}`}
+              onClick={() => setQuand((q) => ({ ...q, jours: n }))}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+
+        <label className="cz-chaque">
+          <input type="checkbox" checked={quand.repeter} onChange={(e) => setQuand((q) => ({ ...q, repeter: e.target.checked }))} />
+          <span>
+            <b>Chaque semaine</b>
+            <em>Le même jour, jusqu’à un mois.</em>
+          </span>
+        </label>
+
+        {quand.jour && (
+          <p className="cz-quand-recap">
+            En ligne {jourEnClair(quand.jour)} à l’ouverture,
+            {quand.jours > 1 ? ` jusqu’au ${jourEnClair(ajouterJours(quand.jour, quand.jours - 1))} au soir.` : " jusqu’au soir."}
+          </p>
+        )}
+        <button type="button" className="cz-go" disabled={!quand.jour} onClick={onSuivante}>
+          Voir l’aperçu <s aria-hidden="true">→</s>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Recap({
   dossier,
   mission,
@@ -1335,6 +1744,12 @@ function Recap({
   principal,
   onPublier,
   onModifier,
+  plusTard,
+  ennui,
+  occupe,
+  onProgrammer,
+  onChangerJour,
+  onAutreJour,
 }: {
   dossier: string;
   mission: Mission;
@@ -1342,13 +1757,29 @@ function Recap({
   principal?: Publication;
   onPublier: () => void;
   onModifier: () => void;
+  /** Préparée pour un autre jour : le jour et la durée choisis. */
+  plusTard?: Quand;
+  ennui?: string;
+  occupe?: boolean;
+  onProgrammer: () => void;
+  onChangerJour: () => void;
+  /** « Plutôt un autre jour » — absent pour « Il en reste », qui ne se prépare pas d'avance. */
+  onAutreJour?: () => void;
 }) {
   const relance = brouillon.genre === "relance";
   const photo = relance ? principal?.photos[0] : brouillon.photos[0];
   const nom = relance ? principal?.nom ?? mission.quoi : brouillon.nom;
+  const quandEnMots = plusTard
+    ? `${jourCourt(plusTard.jour)} · ${plusTard.jours > 1 ? `${plusTard.jours} jours` : "la journée"}${plusTard.repeter ? " · chaque semaine" : ""}`
+    : "";
   return (
     <div className="cz-corps">
-      <Scene dossier={dossier} texte="Voilà ce que tes clients vont voir. On publie ?" humeur="montre" petit />
+      <Scene
+        dossier={dossier}
+        texte={plusTard ? `Voilà ce qu’ils verront ${jourDit(plusTard.jour)}. On programme ?` : "Voilà ce que tes clients vont voir. On publie ?"}
+        humeur="montre"
+        petit
+      />
       <div className="cz-panneau">
         <article className="cz-apercu">
           {photo ? (
@@ -1361,7 +1792,11 @@ function Recap({
             {relance ? <i className="cz-tag">Il en reste !</i> : <i className="cz-tag ambre">{mission.quoi}</i>}
             <b>{nom}</b>
             <span>{[brouillon.prix, brouillon.detail].filter(Boolean).join(" · ")}</span>
-            <em>En ligne : {dureeEnMots(relance ? 1 : brouillon.jours).toLowerCase()}</em>
+            {plusTard ? (
+              <em className="cz-quand-em">🗓️ {quandEnMots}</em>
+            ) : (
+              <em>En ligne : {dureeEnMots(relance ? 1 : brouillon.jours).toLowerCase()}</em>
+            )}
           </div>
           {brouillon.photos.length > 1 && !relance && (
             <div className="cz-apercu-plus">
@@ -1377,12 +1812,38 @@ function Recap({
             </div>
           )}
         </article>
-        <button type="button" className="cz-go grand" onClick={onPublier}>
-          Publier <s aria-hidden="true">🚀</s>
-        </button>
-        <button type="button" className="cz-lien" onClick={onModifier}>
-          Modifier
-        </button>
+        {ennui ? <p className="cz-ennui">{ennui}</p> : null}
+        {plusTard ? (
+          <>
+            <button type="button" className="cz-go grand" onClick={onProgrammer} disabled={occupe}>
+              {occupe ? "Je range ça…" : "Programmer"} <s aria-hidden="true">🗓️</s>
+            </button>
+            <div className="cz-liens">
+              <button type="button" className="cz-lien" onClick={onChangerJour}>
+                Changer le jour
+              </button>
+              <button type="button" className="cz-lien" onClick={onModifier}>
+                Modifier
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <button type="button" className="cz-go grand" onClick={onPublier}>
+              Publier <s aria-hidden="true">🚀</s>
+            </button>
+            <div className="cz-liens">
+              {onAutreJour && (
+                <button type="button" className="cz-lien" onClick={onAutreJour}>
+                  🗓️ Plutôt un autre jour
+                </button>
+              )}
+              <button type="button" className="cz-lien" onClick={onModifier}>
+                Modifier
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -1401,6 +1862,9 @@ function Fete({
   envoi,
   onReessayer,
   onFin,
+  programme,
+  onEncore,
+  onPlanning,
 }: {
   dossier: string;
   mission: Mission;
@@ -1415,9 +1879,57 @@ function Fete({
   envoi: Envoi | null;
   onReessayer: () => void;
   onFin: () => void;
+  /** Préparée d'avance : la fête dit quand elle partira, pas qu'elle est partie. */
+  programme?: { quand: Quand; nb: number; ignores: string[] };
+  /** « Préparer le jour suivant ». */
+  onEncore: () => void;
+  onPlanning: () => void;
 }) {
   const pose = useFantome(false, "salut");
-  const bravo = publication.genre === "relance" ? "C’est parti : le quartier est prévenu qu’il en reste !" : mission.bravo;
+  const bravo = programme
+    ? `Je publie « ${publication.nom} » ${jourEnClair(programme.quand.jour)} à l’ouverture${
+        programme.nb > 1 ? `, puis chaque semaine (${programme.nb} fois en tout)` : ""
+      }. Tu n’as plus rien à faire.`
+    : publication.genre === "relance"
+      ? "C’est parti : le quartier est prévenu qu’il en reste !"
+      : mission.bravo;
+  if (programme) {
+    return (
+      <div className="cz-fete" role="dialog" aria-label="C’est programmé">
+        <div className="cz-confettis" aria-hidden="true">
+          {Array.from({ length: 22 }, (_, i) => (
+            <i key={i} style={{ left: `${(i * 37) % 100}%`, animationDelay: `${(i % 7) * 0.12}s`, ["--r" as string]: `${(i * 53) % 360}deg` }} />
+          ))}
+        </div>
+        <div className="cz-fete-f">
+          <span className="cz-halo fort" aria-hidden="true" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`${dossier}${pose}.webp`} alt="" />
+        </div>
+        <h2>C’est programmé !</h2>
+        <p>{bravo}</p>
+        {programme.ignores.length > 0 && (
+          <p className="cz-envoi-etat ko" role="status">
+            Sautée{programme.ignores.length > 1 ? "s" : ""} : {programme.ignores.map((j) => jourEnClair(j)).join(", ")} — tu y as déjà trois annonces.
+          </p>
+        )}
+        <div className="cz-gains">
+          <span className="cz-gain">
+            <b>+{points}</b> points
+          </span>
+          <span className="cz-gain">
+            <b>🗓️ {programme.nb}</b> {programme.nb > 1 ? "jours prévus" : "jour prévu"}
+          </span>
+        </div>
+        <button type="button" className="cz-go" onClick={onEncore}>
+          Préparer un autre jour <s aria-hidden="true">→</s>
+        </button>
+        <button type="button" className="cz-lien" onClick={onPlanning}>
+          Voir mon planning
+        </button>
+      </div>
+    );
+  }
   return (
     <div className="cz-fete" role="dialog" aria-label="C’est en ligne">
       <div className="cz-confettis" aria-hidden="true">
@@ -1568,6 +2080,8 @@ body{background:#0B0806;}
 .cz-bulle small.vu{opacity:1;}
 .cz-fantome{position:relative;height:min(36vh,300px);aspect-ratio:1;flex:none;}
 .cz-scene.petit .cz-fantome{height:min(26vh,210px);}
+.cz-scene.mini .cz-fantome{height:min(15vh,128px);}
+.cz-scene.mini .cz-bulle{padding:12px 16px 11px;}
 .cz-fantome img{position:relative;width:100%;height:100%;object-fit:contain;
   animation:cz-flotte 3.2s ease-in-out infinite;filter:drop-shadow(0 18px 24px rgba(0,0,0,.45));}
 .cz-halo{position:absolute;inset:12% 14% 8%;border-radius:50%;
@@ -1598,6 +2112,34 @@ body{background:#0B0806;}
   transform:translateX(-100%);animation:cz-brille 3.4s ease-in-out infinite 1s;}
 .cz-lien{align-self:center;background:none;border:0;padding:6px 10px;font-size:14.5px;font-weight:600;
   color:var(--gris);text-decoration:underline;text-underline-offset:3px;position:relative;}
+/* LE PLANNING : la question « quel jour ? », et ce qui s'y rattache */
+.cz-liens{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 14px;}
+.cz-fil-plus{flex:1;color:var(--ambre);}
+.cz-jours{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;}
+.cz-jours button{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;padding:7px 0 5px;border-radius:14px;
+  border:1px solid var(--trait);background:var(--nappe2);}
+.cz-jours i{font-style:normal;font-size:10.5px;font-weight:700;color:var(--gris);text-transform:uppercase;}
+.cz-jours b{font-family:var(--font-clikme),sans-serif;font-size:17px;font-weight:800;line-height:1.05;}
+.cz-jours span{min-height:10px;font-size:10px;line-height:10px;color:var(--ambre);letter-spacing:1px;}
+.cz-jours button.choisi{background:var(--rose);border-color:var(--rose);color:#fff;}
+.cz-jours button.choisi i,.cz-jours button.choisi span{color:#fff;}
+.cz-jours button:disabled{opacity:.35;}
+.cz-autre{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;border-radius:16px;border:1px solid var(--trait);background:var(--nappe2);}
+.cz-autre span{font-size:14px;font-weight:700;color:var(--gris);flex:none;}
+.cz-autre input{flex:1;min-width:0;border:0;background:transparent;color:var(--creme);color-scheme:dark;font-size:16px;padding:6px 4px;}
+.cz-autre.choisi{border-color:var(--rose);box-shadow:0 0 0 1px var(--rose);}
+.cz-q{margin:2px 0 0;font-size:14px;font-weight:700;}
+.cz-nb{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;}
+.cz-nb button{min-height:44px;border-radius:14px;border:1px solid var(--trait);background:var(--nappe2);
+  font-family:var(--font-clikme),sans-serif;font-size:17px;font-weight:800;}
+.cz-nb button.choisi{background:var(--rose);border-color:var(--rose);color:#fff;}
+.cz-chaque{display:flex;gap:12px;align-items:center;padding:10px 14px;border-radius:16px;background:var(--nappe2);border:1px solid var(--trait);cursor:pointer;}
+.cz-chaque input{flex:none;width:22px;height:22px;margin:0;accent-color:var(--rose);}
+.cz-chaque b{display:block;font-size:14.5px;}
+.cz-chaque em{display:block;font-style:normal;font-size:12.5px;color:var(--gris);}
+.cz-quand-recap{margin:0;text-align:center;font-size:14px;font-weight:700;color:var(--ambre);}
+.cz-apercu-t em.cz-quand-em{color:var(--ambre);}
+.cz-pastille.calme{background:var(--ambre);color:#2A1A10;animation:none;}
 .cz-ennui{margin:0;padding:10px 14px;border-radius:14px;background:rgba(255,46,154,.1);color:#FFC2E0;font-size:14px;}
 
 /* LE MICRO */

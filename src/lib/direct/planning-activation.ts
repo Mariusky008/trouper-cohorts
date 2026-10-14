@@ -8,8 +8,12 @@
  *     alertes, les menus du jour la voient comme n'importe quelle annonce ;
  *   · LE BANDEAU DE SA PAGE (`current_offer`), que lisent sa page et
  *     `/ville/<ville>` ;
- *   · SA PIÈCE EN VEDETTE dans l'essayage, quand il l'a demandé (la veste qui
- *     reste quatre jours) — voir `piece-du-jour.ts`.
+ *   · SON PLAT DU JOUR, ses photos et SA VOIX dans son Expérience (restaurant) ;
+ *   · SA PIÈCE À ESSAYER — la coupe, la veste qui reste quatre jours, le
+ *     livre conseillé — dans son catalogue, avec son mot.
+ *
+ * Elle a été préparée au comptoir, avec son fantôme : elle part exactement
+ * comme s'il touchait « Publier » ce matin-là (`comptoir-en-ligne.ts`).
  *
  * ─── QUI LA FAIT PARTIR ───────────────────────────────────────────────────
  *
@@ -34,6 +38,7 @@ import { villeSlug } from "@/lib/direct/ville";
 import { saisirPrix } from "@/lib/direct/prix";
 import { envoyerAlertes } from "@/lib/direct/envoi-alertes";
 import { MAX_PIECES, piecesDuDiagnostic, type PieceComptoir } from "@/lib/site-internet/pieces-comptoir";
+import { poserExperience } from "@/lib/site-internet/experience-scenes";
 import { lireEnCours, lirePlanning, MAX_PAR_JOUR, type AnnonceEnCours, type AnnoncePlanifiee } from "@/lib/direct/planning-annonces";
 
 type Supabase = { from: (t: string) => any }; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -86,11 +91,13 @@ export async function activerPlanning(
   // pièces, son plat, ses réglages. Écrire sur une copie ancienne les effacerait.
   let diag = objet(row.diagnostic);
   let bandeau: unknown = row.current_offer;
+  let slug = s(row.slug);
   try {
-    const { data } = await supabase.from("human_vitrine_sites").select("diagnostic, current_offer").eq("id", id).maybeSingle();
+    const { data } = await supabase.from("human_vitrine_sites").select("diagnostic, current_offer, slug").eq("id", id).maybeSingle();
     if (data) {
       diag = objet((data as Record<string, unknown>).diagnostic);
       bandeau = (data as Record<string, unknown>).current_offer;
+      slug = s((data as Record<string, unknown>).slug) || slug;
     }
   } catch {
     /* on travaille sur ce qu'on a */
@@ -107,20 +114,26 @@ export async function activerPlanning(
     ...aPublier.map((a) => ({ id: a.id, texte: a.texte, photo: a.photo, debut: a.debut, fin: a.fin })),
   ];
 
-  // SA PIÈCE EN VEDETTE : devant son catalogue, jusqu'à sa fin — la même forme que celles du comptoir.
-  const vedettes = aPublier.filter((a) => a.vedette);
+  // SA PIÈCE : devant son catalogue, jusqu'à sa fin — comme `/api/site-internet/pro/pieces`
+  // la pose quand il publie : son rayon, sa cible d'essai, son mot à sa voix.
+  const avecPiece = aPublier.flatMap((a) => (a.comptoir?.rayon ? [{ a, c: a.comptoir }] : []));
   let pieces: PieceComptoir[] | undefined;
-  if (vedettes.length) {
-    const nouvelles: PieceComptoir[] = vedettes.map((a) => ({
-      id: a.id,
-      nom: a.texte.slice(0, 80),
-      ...(a.prix ? { prix: a.prix } : {}),
-      photo: a.photo,
-      rayon: "En ce moment",
-      decrire: a.texte.slice(0, 300),
-      publieLe: new Date(maintenant).toISOString(),
-      fin: a.fin,
-    }));
+  if (avecPiece.length) {
+    const publieLe = new Date(maintenant).toISOString();
+    const nouvelles: PieceComptoir[] = avecPiece.map(({ a, c }) => {
+      return {
+        id: a.id,
+        nom: c.nom,
+        ...(c.prix ? { prix: c.prix } : {}),
+        photo: c.photos[0],
+        rayon: c.rayon ?? "À essayer",
+        ...(c.decrire ? { decrire: c.decrire } : {}),
+        ...(c.voixTexte ? { detail: c.voixTexte } : {}),
+        ...(c.voix ? { voix: c.voix, ...(c.voixSecondes ? { voixSecondes: c.voixSecondes } : {}), ...(c.voixTexte ? { voixTexte: c.voixTexte } : {}) } : {}),
+        publieLe,
+        fin: a.fin,
+      };
+    });
     const vivantes = piecesDuDiagnostic(diag).filter((x) => !x.fin || Date.parse(x.fin) > maintenant);
     pieces = [...nouvelles, ...vivantes.filter((x) => !nouvelles.some((n) => n.id === x.id))].slice(0, MAX_PIECES);
   }
@@ -153,6 +166,36 @@ export async function activerPlanning(
   } catch (e) {
     console.error("[planning] mise en ligne impossible :", String((e as Error)?.message ?? e));
     return { row, activees: [] };
+  }
+
+  // LE PLAT DU JOUR DU COMPTOIR : son Expérience, ses photos, sa voix — comme « Publier ».
+  // Écrit APRÈS la fiche : `poserExperience` relit et réécrit son diagnostic.
+  let platPose = false;
+  for (const a of [...aPublier].sort((x, y) => x.debut.localeCompare(y.debut))) {
+    const c = a.comptoir;
+    if (!c?.plat || !slug) continue;
+    const r = await poserExperience(slug, {
+      plat: {
+        nom: c.nom,
+        prix: c.prix,
+        photos: c.photos,
+        ...(c.voix ? { voix: c.voix, voixSecondes: c.voixSecondes } : {}),
+        ...(c.voixTexte ? { voixTexte: c.voixTexte } : {}),
+        fin: a.fin,
+      },
+    }).catch((e: unknown) => ({ erreur: String((e as Error)?.message ?? e) }));
+    if ("erreur" in r && r.erreur) console.error("[planning] le plat programmé n'a pas pu partir :", r.erreur);
+    else platPose = true;
+  }
+  // LA PAGE QUI L'A FAIT PARTIR LE MONTRE TOUT DE SUITE : on rend la fiche avec son plat.
+  if (platPose) {
+    try {
+      const { data } = await supabase.from("human_vitrine_sites").select("diagnostic").eq("id", id).maybeSingle();
+      const relu = (data as Record<string, unknown> | null)?.diagnostic;
+      if (relu && typeof relu === "object") maj.diagnostic = relu;
+    } catch {
+      /* la visite suivante le verra */
+    }
   }
 
   const ville = s(row.city);

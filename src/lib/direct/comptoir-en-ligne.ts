@@ -33,7 +33,7 @@ import type { Mission } from "@/lib/direct/missions-commercant";
 export type ResultatEnvoi = { ok: boolean; ou: string[]; erreur?: string };
 
 /** Les métiers dont la pièce entre au catalogue avec sa photo. */
-const AVEC_PIECE = ["coiffure", "ongles", "lunettes", "mode", "createur", "librairie"];
+export const AVEC_PIECE = ["coiffure", "ongles", "lunettes", "mode", "createur", "librairie"];
 
 async function poster(url: string, corps: unknown): Promise<{ ok: boolean; erreur?: string; json?: Record<string, unknown> }> {
   try {

@@ -1,34 +1,35 @@
-// 📅 SON PLANNING D'ANNONCES — préparer la semaine ou le mois en une fois.
-// Voir `lib/direct/planning-annonces.ts` (les règles) et
+// 📅 SON PLANNING D'ANNONCES — préparer la semaine ou le mois en une fois,
+// depuis son comptoir (`autour-de-moi/assistante`, « Mon planning »).
+// Voir `lib/direct/planning-annonces.ts` (les règles),
+// `lib/direct/comptoir-planning.ts` (l'écran) et
 // `lib/direct/planning-activation.ts` (le jour venu).
 //
-// POST, même jeton que le reste de l'Espace Pro (`slug` + `token`) :
-//   · `lire`      → { planning, enLigne, photos, vedettePossible, aujourdhui, ville }
+// POST, le jeton de son lien pro (`slug` + `token`) :
+//   · `lire`      → { planning, enLigne, aujourdhui, horizon, maintenant }
 //                   Ce qui est dû part d'abord : il voit l'état réel.
-//   · `ajouter`   → { texte, famille, photo, prix?, jour, jours, vedette?, repeter? }
-//                   `repeter` : la même, chaque semaine, jusqu'à un mois.
-//                   Rend aussi `ignores` : les semaines déjà pleines.
+//   · `comptoir`  → { texte, famille, jour, jours, repeter?, comptoir: { nom, prix?,
+//                   photos, voix?, voixSecondes?, voixTexte?, plat?, rayon?, decrire? } }
+//                   L'annonce préparée avec son fantôme : le jour venu, elle
+//                   part comme « Publier » (le plat et sa voix, la pièce au
+//                   catalogue, Le Direct). `repeter` : la même chaque semaine,
+//                   jusqu'à un mois. Rend `placees`, et `ignores` : les
+//                   semaines déjà pleines.
 //   · `retirer`   → { id, serie? }  — `serie` : toutes les semaines de la série.
-//   · `dupliquer` → { id, jour }    — la même annonce, un autre jour.
 //
-// LA PHOTO EST RANGÉE CHEZ NOUS AU MOMENT DE PROGRAMMER : sa fiche est lue par
-// toutes ses pages, elle ne doit jamais porter un `data:` d'un mégaoctet. On
-// n'accepte qu'une photo de sa galerie ou une photo qu'il vient de prendre —
-// pas une adresse d'image quelconque, qui s'afficherait sur la page de la ville.
+// SES PHOTOS ET SA VOIX SONT RANGÉES CHEZ NOUS AU MOMENT DE PROGRAMMER : sa
+// fiche est lue par toutes ses pages, elle ne doit jamais porter un `data:`
+// d'un mégaoctet.
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { photosDe } from "@/lib/site-internet/collectif";
-import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 import { rangerPhoto } from "@/lib/direct/ranger-photo";
+import { rangerVoix } from "@/lib/site-internet/experience-scenes";
 import { siennesVivantes } from "@/lib/direct/publications";
-import { villeSlug } from "@/lib/direct/ville";
 import { jourParis } from "@/lib/jour-paris";
 import { activerPlanning } from "@/lib/direct/planning-activation";
 import {
   HORIZON_JOURS,
   MAX_PROGRAMMEES,
-  SORTES_PLANNING,
   ajouterJours,
   bornes,
   chargeParJour,
@@ -37,7 +38,9 @@ import {
   joursCouverts,
   lirePlanning,
   verifierDates,
+  adresseSure,
   type AnnoncePlanifiee,
+  type ComptoirPlanifie,
   type FamillePlanifiee,
 } from "@/lib/direct/planning-annonces";
 
@@ -46,9 +49,7 @@ export const maxDuration = 60;
 
 const s = (v: unknown) => String(v ?? "").trim();
 const objet = (v: unknown) => (v && typeof v === "object" ? (v as Record<string, unknown>) : {});
-const COLONNES = "id, slug, business_name, city, activite, pro_token, diagnostic, current_offer, gallery_photos";
-/** Les métiers où une annonce peut aussi se mettre en vedette dans l'essayage. */
-const AVEC_ESSAI = new Set(["mode", "coiffeur", "ongles"]);
+const COLONNES = "id, slug, business_name, city, activite, pro_token, diagnostic, current_offer";
 
 async function laFiche(slug: string, token: string) {
   if (!/^[a-z0-9-]{2,120}$/i.test(slug) || !token) return null;
@@ -75,19 +76,13 @@ async function enLigneDe(siteId: string) {
 }
 
 async function etat(row: Record<string, unknown>) {
-  const branche = brancheDuMetier(s(row.activite));
   return {
     ok: true,
     planning: lirePlanning(row.diagnostic),
     enLigne: await enLigneDe(s(row.id)),
-    photos: photosDe(row),
-    vedettePossible: AVEC_ESSAI.has(branche),
-    restaurant: branche === "restaurant" || branche === "bar",
     aujourdhui: jourParis(),
-    // L'HEURE DU SERVEUR : l'écran s'en sert pour situer ses annonces, sans lire l'horloge pendant un rendu.
     maintenant: new Date().toISOString(),
     horizon: ajouterJours(jourParis(), HORIZON_JOURS),
-    ville: s(row.city) ? villeSlug(s(row.city)) : "",
   };
 }
 
@@ -134,7 +129,7 @@ export async function POST(request: Request) {
     return NextResponse.json(await etat(row));
   }
 
-  // ── AJOUTER, DUPLIQUER : les mêmes règles, la même charge par jour ──
+  // ── PROGRAMMER : les règles des dates, et trois annonces par jour au plus ──
   const planningAvant = lirePlanning(row.diagnostic);
   const enLigne = await enLigneDe(id);
   const charge = chargeParJour(planningAvant, enLigne.map((a) => ({ debut: a.publieLe, fin: a.expireLe })));
@@ -160,12 +155,12 @@ export async function POST(request: Request) {
     if (!placees.length) {
       const j = pleins[0];
       return NextResponse.json(
-        { error: j ? `Le ${jourEnClair(j)} a déjà 3 annonces : retirez-en une, ou choisissez un autre jour.` : "Rien à programmer." },
+        { error: j ? `Le ${jourEnClair(j)} a déjà 3 annonces : retires-en une, ou choisis un autre jour.` : "Rien à programmer." },
         { status: 400 },
       );
     }
     if (planningAvant.length + placees.length > MAX_PROGRAMMEES) {
-      return NextResponse.json({ error: `Vous avez déjà ${planningAvant.length} annonces programmées : c’est le maximum.` }, { status: 400 });
+      return NextResponse.json({ error: `Tu as déjà ${planningAvant.length} annonces programmées : c’est le maximum.` }, { status: 400 });
     }
     try {
       row = await changer(id, (l) => [...l, ...placees]);
@@ -174,67 +169,63 @@ export async function POST(request: Request) {
     }
     // CELLE QUI COMMENCE AUJOURD'HUI PART TOUT DE SUITE.
     row = (await activerPlanning(supabase, row)).row;
-    return NextResponse.json({ ...(await etat(row)), ajoutees: placees.length, ignores: [...new Set(pleins)] });
+    return NextResponse.json({ ...(await etat(row)), ajoutees: placees.length, placees, ignores: [...new Set(pleins)] });
   };
 
-  if (action === "dupliquer") {
-    const source = planningAvant.find((a) => a.id === s(p?.id));
-    if (!source) return NextResponse.json({ error: "Cette annonce n’est plus dans votre planning." }, { status: 404 });
-    const jour = s(p?.jour);
-    const souci = verifierDates(jour, source.jours);
-    if (souci) return NextResponse.json({ error: souci }, { status: 400 });
-    const { id: _i, jour: _j, debut: _d, fin: _f, creeLe: _c, serie: _s, ...modele } = source;
-    void _i;
-    void _j;
-    void _d;
-    void _f;
-    void _c;
-    void _s;
-    const { placees, pleins } = placer(modele, [jour]);
-    return repondre(placees, pleins);
-  }
-
-  if (action === "ajouter") {
-    const texte = s(p?.texte).replace(/\s+/g, " ").slice(0, 140);
-    if (!texte) return NextResponse.json({ error: "Écrivez votre annonce." }, { status: 400 });
-    const famille = (SORTES_PLANNING.some((x) => x.cle === s(p?.famille)) ? s(p?.famille) : "offre") as FamillePlanifiee;
-    const jour = s(p?.jour);
-    const jours = Math.round(Number(p?.jours));
-    const souci = verifierDates(jour, jours);
-    if (souci) return NextResponse.json({ error: souci }, { status: 400 });
-
-    // SA PHOTO : une de sa galerie, ou une qu'il vient de prendre — rangée chez nous.
-    const voulue = s(p?.photo);
-    if (!voulue) return NextResponse.json({ error: "Une annonce a besoin d’une photo." }, { status: 400 });
-    const galerie = photosDe(row);
-    let photo: string | undefined;
-    if (/^https:\/\//i.test(voulue)) photo = galerie.includes(voulue) ? voulue : undefined;
-    else if (/^data:image\//i.test(voulue)) photo = await rangerPhoto("planning-clikme", slug, voulue);
-    if (!photo) return NextResponse.json({ error: "Cette photo n’a pas pu être enregistrée : choisissez-en une autre." }, { status: 400 });
-
-    const branche = brancheDuMetier(s(row.activite));
-    const prix = s(p?.prix).slice(0, 20);
-    const modele = {
-      texte,
-      famille,
-      photo,
-      ...(prix ? { prix } : {}),
-      jours,
-      // EN VEDETTE : une pièce à essayer — pas une soirée ni un créneau.
-      ...(p?.vedette === true && famille === "offre" && AVEC_ESSAI.has(branche) ? { vedette: true } : {}),
-    };
-
-    // CHAQUE SEMAINE, JUSQU'À UN MOIS : le jeudi, puis les jeudis suivants qui tiennent dans l'horizon.
+  /** Le premier jour, et les semaines suivantes qui tiennent dans le mois. */
+  const lesJours = (jour: string, jours: number, repeter: boolean) => {
     const voulus = [jour];
-    if (p?.repeter === true) {
+    if (repeter) {
       for (let k = 1; k <= 5; k++) {
         const j = ajouterJours(jour, 7 * k);
         if (verifierDates(j, jours)) break;
         voulus.push(j);
       }
     }
+    return voulus;
+  };
+
+  if (action === "comptoir") {
+    const texte = s(p?.texte).replace(/\s+/g, " ").slice(0, 140);
+    const c = objet(p?.comptoir);
+    const nom = s(c.nom).slice(0, 80);
+    if (!texte || !nom) return NextResponse.json({ error: "Dis-moi d’abord ce que tu annonces." }, { status: 400 });
+    const jour = s(p?.jour);
+    const jours = Math.round(Number(p?.jours));
+    const souci = verifierDates(jour, jours);
+    if (souci) return NextResponse.json({ error: souci }, { status: 400 });
+
+    // SES PHOTOS ET SA VOIX, RANGÉES CHEZ NOUS MAINTENANT : sa fiche ne garde que leurs adresses.
+    const photos: string[] = [];
+    for (const v of (Array.isArray(c.photos) ? c.photos : []).slice(0, 4)) {
+      const u = adresseSure(await rangerPhoto("planning-clikme", slug, v));
+      if (u) photos.push(u);
+    }
+    if (!photos.length) return NextResponse.json({ error: "La photo n’a pas pu être enregistrée : réessaie." }, { status: 400 });
+    let voix: string | undefined;
+    if (s(c.voix)) {
+      const r = await rangerVoix(slug, s(c.voix));
+      // UN MOT QUI N'A PAS PU PARTIR N'EMPÊCHE PAS L'ANNONCE (comme au catalogue).
+      if (typeof r === "string") voix = r;
+    }
+    const secondes = Math.round(Number(c.voixSecondes));
+    const comptoir: ComptoirPlanifie = {
+      nom,
+      photos,
+      ...(s(c.prix) ? { prix: s(c.prix).slice(0, 20) } : {}),
+      ...(voix ? { voix, ...(secondes > 0 ? { voixSecondes: secondes } : {}) } : {}),
+      ...(s(c.voixTexte) ? { voixTexte: s(c.voixTexte).slice(0, 400) } : {}),
+      ...(c.plat === true ? { plat: true } : {}),
+      ...(s(c.rayon) ? { rayon: s(c.rayon).slice(0, 40) } : {}),
+      ...(s(c.decrire) ? { decrire: s(c.decrire).slice(0, 300) } : {}),
+    };
+    const famille = (s(p?.famille) === "menu" ? "menu" : "offre") as FamillePlanifiee;
+    const voulus = lesJours(jour, jours, p?.repeter === true);
     const serie = voulus.length > 1 ? `s-${randomUUID().slice(0, 8)}` : undefined;
-    const { placees, pleins } = placer({ ...modele, ...(serie ? { serie } : {}) }, voulus);
+    const { placees, pleins } = placer(
+      { texte, famille, photo: photos[0], ...(comptoir.prix ? { prix: comptoir.prix } : {}), jours, comptoir, ...(serie ? { serie } : {}) },
+      voulus,
+    );
     return repondre(placees, pleins);
   }
 

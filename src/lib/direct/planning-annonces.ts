@@ -11,7 +11,7 @@
  *
  * Elle attend dans SA fiche (`diagnostic.planning`), et rien d'autre ne la
  * voit. Le jour venu, elle est publiée par le chemin de toujours — le fil de
- * la ville, le bandeau de sa page, sa pièce en vedette — voir
+ * la ville, le bandeau de sa page, son plat ou sa pièce à essayer — voir
  * `planning-activation.ts`. On ne l'écrit PAS d'avance, datée dans le futur,
  * dans la table des annonces : une quinzaine d'écrans la lisent (le fil, les
  * menus du jour, les compteurs, les alertes, le plan du site…), et un seul
@@ -43,15 +43,8 @@ export const MAX_PAR_JOUR = 3;
 /** Ce qu'il peut garder d'avance : un mois plein, trois par jour, et de la marge. */
 export const MAX_PROGRAMMEES = 90;
 
-export type FamillePlanifiee = "offre" | "evenement" | "place" | "menu";
-
-/** Les sortes qu'il choisit, dans ses mots — la famille du fil de la ville derrière. */
-export const SORTES_PLANNING: { cle: FamillePlanifiee; label: string; exemple: string }[] = [
-  { cle: "offre", label: "Nouveauté / offre", exemple: "La veste en lin est arrivée, 89 €" },
-  { cle: "evenement", label: "Événement / soirée", exemple: "Samedi soir : soirée jazz dès 20 h" },
-  { cle: "place", label: "Créneau / place libre", exemple: "Deux créneaux libres jeudi après-midi" },
-  { cle: "menu", label: "Plat du jour", exemple: "Mardi : blanquette de veau, 14 €" },
-];
+/** La famille du fil de la ville : le plat du jour d'un restaurant, une annonce pour les autres — comme « Publier ». */
+export type FamillePlanifiee = "offre" | "menu";
 
 export type AnnoncePlanifiee = {
   id: string;
@@ -69,19 +62,74 @@ export type AnnoncePlanifiee = {
   debut: string;
   /** ISO — 23 h 59, son dernier jour. */
   fin: string;
-  /** Aussi en vedette dans l'essayage de sa page (les métiers qui font essayer). */
-  vedette?: boolean;
   /** Les copies « chaque semaine » portent le même repère : on peut les retirer ensemble. */
   serie?: string;
+  /** Préparée au comptoir : le jour venu, elle part par les mêmes portes que « Publier ». */
+  comptoir?: ComptoirPlanifie;
   creeLe: string;
 };
+
+/**
+ * CE QUE LE COMPTOIR A PRÉPARÉ — son plat, sa pièce, son livre, tels que la
+ * mission les a recueillis. Le jour venu, ça part comme si le commerçant
+ * touchait « Publier » ce matin-là (voir `comptoir-en-ligne.ts`) : le plat du
+ * jour avec sa voix dans son Expérience, la pièce dans son essayage, et
+ * l'annonce dans Le Direct. Photos et voix sont rangées chez nous au moment
+ * de programmer : rien d'autre que des adresses https ici.
+ */
+export type ComptoirPlanifie = {
+  nom: string;
+  prix?: string;
+  /** La première fait l'annonce ; le plat en garde quatre. */
+  photos: string[];
+  voix?: string;
+  voixSecondes?: number;
+  voixTexte?: string;
+  /** Le plat du jour de son Expérience (restaurant). */
+  plat?: boolean;
+  /** La pièce à essayer, ou le livre conseillé : le rayon de son catalogue. */
+  rayon?: string;
+  /** Ce que l'essayage pose sur le client — absent chez le libraire. */
+  decrire?: string;
+};
+
+/** Le stockage du projet — en http seulement en local, avec le faux serveur ; https partout ailleurs. */
+const STOCKAGE = `${String(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/+$/, "")}/storage/v1/object/public/`;
+
+/** Une adresse rangée chez nous (ou en https) — jamais un `data:` ni une adresse en clair d'ailleurs. */
+export function adresseSure(v: unknown, max = 600): string {
+  const u = s(v);
+  if (/^https:\/\//i.test(u) || (STOCKAGE.length > 30 && u.startsWith(STOCKAGE))) return u.slice(0, max);
+  return "";
+}
+
+/** Ce que le comptoir a préparé, tel que sa fiche le garde. */
+function lireComptoir(v: unknown): ComptoirPlanifie | undefined {
+  if (!v || typeof v !== "object") return undefined;
+  const o = v as Record<string, unknown>;
+  const nom = s(o.nom).slice(0, 80);
+  const photos = (Array.isArray(o.photos) ? o.photos : []).map((x) => adresseSure(x)).filter(Boolean).slice(0, 4);
+  if (!nom || !photos.length) return undefined;
+  const secondes = Math.round(Number(o.voixSecondes));
+  const voix = adresseSure(o.voix);
+  return {
+    nom,
+    photos,
+    ...(s(o.prix) ? { prix: s(o.prix).slice(0, 20) } : {}),
+    ...(voix ? { voix, ...(secondes > 0 ? { voixSecondes: secondes } : {}) } : {}),
+    ...(s(o.voixTexte) ? { voixTexte: s(o.voixTexte).slice(0, 400) } : {}),
+    ...(o.plat === true ? { plat: true } : {}),
+    ...(s(o.rayon) ? { rayon: s(o.rayon).slice(0, 40) } : {}),
+    ...(s(o.decrire) ? { decrire: s(o.decrire).slice(0, 300) } : {}),
+  };
+}
 
 /** Une annonce du planning déjà mise en ligne, et qui court encore : de quoi rendre son bandeau. */
 export type AnnonceEnCours = { id: string; texte: string; photo: string; debut: string; fin: string };
 
 const s = (v: unknown) => String(v ?? "").trim();
 const JOUR = /^\d{4}-\d{2}-\d{2}$/;
-const FAMILLES = new Set<string>(SORTES_PLANNING.map((x) => x.cle));
+const FAMILLES = new Set<string>(["offre", "menu"]);
 
 /** « 2026-10-14 » + n jours, en calendrier pur (aucun fuseau en jeu). */
 export function ajouterJours(jour: string, n: number): string {
@@ -147,11 +195,12 @@ export function lirePlanning(diag: unknown): AnnoncePlanifiee[] {
     const o = (x && typeof x === "object" ? x : {}) as Record<string, unknown>;
     const id = s(o.id).slice(0, 60);
     const texte = s(o.texte).slice(0, 140);
-    const photo = /^https:\/\//i.test(s(o.photo)) || /^\/[a-z0-9/_.-]+$/i.test(s(o.photo)) ? s(o.photo).slice(0, 600) : "";
+    const photo = adresseSure(o.photo) || (/^\/[a-z0-9/_.-]+$/i.test(s(o.photo)) ? s(o.photo).slice(0, 600) : "");
     const jour = s(o.jour);
     const jours = Math.round(Number(o.jours));
     if (!id || !texte || !photo || !JOUR.test(jour) || !(jours >= 1 && jours <= DUREE_MAX_JOURS)) continue;
     const b = bornes(jour, jours);
+    const comptoir = lireComptoir(o.comptoir);
     out.push({
       id,
       texte,
@@ -162,8 +211,8 @@ export function lirePlanning(diag: unknown): AnnoncePlanifiee[] {
       jours,
       debut: b.debut,
       fin: b.fin,
-      ...(o.vedette === true ? { vedette: true } : {}),
       ...(s(o.serie) ? { serie: s(o.serie).slice(0, 40) } : {}),
+      ...(comptoir ? { comptoir } : {}),
       creeLe: s(o.creeLe) || new Date(0).toISOString(),
     });
   }
@@ -223,8 +272,3 @@ export function jourEnClair(jour: string): string {
   return d.toLocaleDateString("fr-FR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
 }
 
-/** « 4 jours, du mardi 14 au vendredi 17 octobre » — ce qu'il a programmé, relu. */
-export function periodeEnClair(a: { jour: string; jours: number }): string {
-  if (a.jours === 1) return `le ${jourEnClair(a.jour)}`;
-  return `${a.jours} jours, du ${jourEnClair(a.jour)} au ${jourEnClair(ajouterJours(a.jour, a.jours - 1))}`;
-}

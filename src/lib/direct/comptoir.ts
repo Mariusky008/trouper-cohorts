@@ -32,8 +32,15 @@ export type Publication = {
   /** Ce qu'il a dit, écrit : sous-titre du lecteur, et repli sans audio. */
   voixTexte?: string;
   jours: number;
+  /** DANS LE FUTUR pour une annonce programmée : elle n'est « en ligne » qu'à partir de là. */
   publieLe: number;
   finLe: number;
+  /** Préparée d'avance (voir `comptoir-planning.ts`). */
+  programmee?: boolean;
+  /** Les semaines d'une même série programmée portent le même repère. */
+  serie?: string;
+  /** Démonstration : déjà partie dans la ville du téléphone, le jour venu. */
+  envoyee?: boolean;
 };
 
 export type Comptoir = {
@@ -155,6 +162,31 @@ export function publier(c: Comptoir, p: Publication): { comptoir: Comptoir; gagn
   };
   const gagnes = BADGES.filter((b) => !c.badges.includes(b.id) && b.gagne(suivant)).map((b) => b.id);
   return { comptoir: { ...suivant, badges: [...c.badges, ...gagnes] }, gagnes, points };
+}
+
+/**
+ * LES SEMAINES SUIVANTES D'UNE SÉRIE : elles entrent sans rapporter de points
+ * une deuxième fois — la peine, c'était de la préparer une fois.
+ */
+export function ajouterSansPoints(c: Comptoir, p: Publication): Comptoir {
+  if (c.publications.some((x) => x.id === p.id)) return c;
+  const jour = jourDe(p.publieLe);
+  return { ...c, publications: [...c.publications, p], jours: c.jours.includes(jour) ? c.jours : [...c.jours, jour].slice(-60) };
+}
+
+/** Ses annonces programmées, pas encore parties : de la plus proche à la plus lointaine. */
+export function aVenir(c: Comptoir, maintenant = Date.now()): Publication[] {
+  return c.publications.filter((p) => p.programmee && p.publieLe > maintenant).sort((a, b) => a.publieLe - b.publieLe);
+}
+
+/** Oublier des annonces programmées (retirées du planning, ici ou ailleurs). */
+export function oublier(c: Comptoir, ids: string[], maintenant = Date.now()): Comptoir {
+  if (!ids.length) return c;
+  const publications = c.publications.filter((p) => !ids.includes(p.id));
+  // SON JOUR À VENIR S'EN VA AVEC ELLE : la série ne compte que ce qui part vraiment.
+  const auj = jourDe(maintenant);
+  const jours = c.jours.filter((j) => j <= auj || publications.some((p) => jourDe(p.publieLe) === j));
+  return { ...c, publications, jours };
 }
 
 /** Ce qui est en ligne maintenant. */
