@@ -47,7 +47,14 @@ import {
 } from "@/lib/direct/comptoir";
 import { useMicro } from "./use-micro";
 import { envoyerALaVille, retirerDeLaVille, type CommerceComptoir } from "@/lib/direct/comptoir-ville";
-import { envoyerEnLigne, retirerEnLigne, type ResultatEnvoi } from "@/lib/direct/comptoir-en-ligne";
+import {
+  envoyerEnLigne,
+  publicationDeLaBase,
+  retirerDeLaBase,
+  retirerEnLigne,
+  texteDeLAnnonce,
+  type ResultatEnvoi,
+} from "@/lib/direct/comptoir-en-ligne";
 import { motsDeLaCarte, motsDeLaVitrine } from "@/lib/direct/vitrine";
 import { lirePlanningEnLigne, programmerEnLigne, retirerDuPlanning, type EtatPlanning, type Programmee, type Quand } from "@/lib/direct/comptoir-planning";
 import {
@@ -333,7 +340,6 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
   }, [dossier]);
 
   const enLigneMaintenant = useMemo(() => enLigne(etat, maintenant), [etat, maintenant]);
-  const principal = enLigneMaintenant.find((p) => p.genre === "principal");
 
   /* ═══ PLUS TARD : LA MÊME MISSION, POUR UN AUTRE JOUR ═══════════════════
      « Préparer toute la semaine ou tout le mois à l'avance, pour ne pas avoir
@@ -346,6 +352,10 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
   const [planningServeur, setPlanningServeur] = useState<EtatPlanning | null>(null);
   const [ennuiPlanning, setEnnuiPlanning] = useState("");
   const [occupePlanning, setOccupePlanning] = useState("");
+  /** Relire la base : après un envoi ou un retrait, ce qui tourne a changé. */
+  const [relire, setRelire] = useState(0);
+  /** Publiées depuis cet écran, pendant cette visite — la base ne les a peut-être pas encore. */
+  const [publieesIci, setPublieesIci] = useState<string[]>([]);
 
   const etapes: Etape[] = useMemo(() => {
     const base = plusTard ? mission.etapes.filter((e) => e.type !== "duree") : mission.etapes;
@@ -401,7 +411,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
     return () => {
       fini = true;
     };
-  }, [lienPro, ouPhase, commerce, memoire]);
+  }, [lienPro, ouPhase, commerce, memoire, relire]);
 
   /* LA DÉMONSTRATION N'A PAS DE SERVEUR : ce qu'elle a programmé part dans la
      ville du téléphone au premier passage du comptoir, le jour venu. */
@@ -431,6 +441,37 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
       ...(p.voix ? { voix: true } : {}),
     }));
   }, [commerce.reel, planningServeur, etat, maintenant]);
+
+  /**
+   * ═══ EN LIGNE MAINTENANT : CE QUI TOURNE VRAIMENT, SUR TOUS SES TÉLÉPHONES ═══
+   *
+   * La mémoire de ce téléphone ne connaît que ce qu'il a publié d'ici. Un vrai
+   * commerçant lit ce que la base fait tourner dans Le Direct : publié depuis
+   * un autre téléphone, ou parti de son planning cette nuit, ça s'affiche
+   * aussi. Une annonce publiée d'ici garde sa carte complète (ses photos, sa
+   * voix) ; une publiée ailleurs redevient une carte depuis son texte. Celle
+   * qu'il vient de publier d'ici, que la base n'a peut-être pas encore, reste
+   * visible deux minutes. Points et série, eux, restent ceux du téléphone :
+   * ils ne servent qu'au jeu.
+   */
+  const enLigneAffichees: Publication[] = useMemo(() => {
+    if (!commerce.reel || !planningServeur) return enLigneMaintenant;
+    const vues = new Set<string>();
+    const depuisLaBase = planningServeur.enLigne
+      .map((a) => {
+        const texte = a.texte.replace(/\s+/g, " ").trim();
+        const locale = etat.publications
+          .filter((p) => p.publieLe <= maintenant && texteDeLAnnonce(commerce, mission, p) === texte)
+          .sort((x, y) => y.publieLe - x.publieLe)[0];
+        if (locale) vues.add(locale.id);
+        const fin = a.expireLe && Number.isFinite(Date.parse(a.expireLe)) ? Date.parse(a.expireLe) : undefined;
+        return locale ? { ...locale, ...(fin ? { finLe: fin } : {}), serveurId: a.id } : publicationDeLaBase(commerce, mission, a);
+      })
+      .filter((p) => p.finLe > maintenant);
+    const enRoute = enLigneMaintenant.filter((p) => !vues.has(p.id) && publieesIci.includes(p.id) && p.publieLe > maintenant - 120_000);
+    return [...enRoute, ...depuisLaBase];
+  }, [commerce, mission, planningServeur, etat, maintenant, enLigneMaintenant, publieesIci]);
+  const principal = enLigneAffichees.find((p) => p.genre === "principal");
 
   /**
    * PROGRAMMER : la publication préparée, au jour choisi. Un vrai commerçant
@@ -540,6 +581,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
     setEnvoi({ etat: "en-cours" });
     const r = await envoyerEnLigne(commerce, mission, p, principalAvant);
     setEnvoi({ etat: "fini", ...r });
+    setRelire((n) => n + 1);
   };
 
   const envoyer = () => {
@@ -565,20 +607,31 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
     garderComptoir(memoire, r.comptoir);
     // ET ÇA PART DANS LA VILLE — Le Direct, sa carte, l'essayage, son libraire.
     // Un vrai commerçant publie en base ; la démonstration, dans le téléphone.
-    if (commerce.reel) void envoyerEnBase(p, principal);
-    else envoyerALaVille(commerce, mission, p, principal);
+    if (commerce.reel) {
+      setPublieesIci((l) => [...l, p.id]);
+      void envoyerEnBase(p, principal);
+    } else envoyerALaVille(commerce, mission, p, principal);
     setMaintenant(t);
     setPhase({ ou: "fete", points: r.points, gagnes: r.gagnes, publication: p });
   };
 
   const enlever = (id: string) => {
+    const affichee = enLigneAffichees.find((x) => x.id === id);
     const quoi = etat.publications.find((x) => x.id === id);
-    const c = retirer(etat, id);
-    setEtat(c);
-    garderComptoir(memoire, c);
+    // ELLE QUITTE L'ÉCRAN TOUT DE SUITE ; la base est relue une fois le retrait fait.
+    if (affichee?.serveurId) {
+      const sid = affichee.serveurId;
+      setPlanningServeur((e) => (e ? { ...e, enLigne: e.enLigne.filter((a) => a.id !== sid) } : e));
+    }
     if (quoi) {
-      if (commerce.reel) void retirerEnLigne(commerce, mission, quoi);
+      const c = retirer(etat, id);
+      setEtat(c);
+      garderComptoir(memoire, c);
+      if (commerce.reel) void retirerEnLigne(commerce, mission, quoi).then(() => setRelire((n) => n + 1));
       else retirerDeLaVille(quoi);
+    } else if (affichee && commerce.reel) {
+      // PUBLIÉE DEPUIS UN AUTRE TÉLÉPHONE (ou partie de son planning) : on la retire par la base.
+      void retirerDeLaBase(commerce, affichee).then(() => setRelire((n) => n + 1));
     }
     setMaintenant(Date.now());
   };
@@ -675,7 +728,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           commerce={commerce}
           mission={mission}
           dossier={dossier}
-          enLigne={enLigneMaintenant}
+          enLigne={enLigneAffichees}
           principal={principal}
           semaine={chiffres}
           onStats={() => setStats(true)}

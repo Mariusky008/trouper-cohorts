@@ -41,6 +41,12 @@ export type Publication = {
   serie?: string;
   /** Démonstration : déjà partie dans la ville du téléphone, le jour venu. */
   envoyee?: boolean;
+  /**
+   * SON ANNONCE DANS LE DIRECT (vrai commerçant) — l'identifiant de la base.
+   * Jamais gardé dans le téléphone : il vient de la lecture de ce qui tourne
+   * vraiment en ligne (`publicationDeLaBase`).
+   */
+  serveurId?: string;
 };
 
 export type Comptoir = {

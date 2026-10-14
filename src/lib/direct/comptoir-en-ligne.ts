@@ -58,6 +58,74 @@ export function texteDeLAnnonce(c: CommerceComptoir, mission: Mission, p: Public
   return t.replace(/\s+/g, " ").replace(/ · ·/g, " ·").trim().slice(0, 140);
 }
 
+/** Une annonce telle que la base la rend : ce qui tourne vraiment dans Le Direct. */
+export type AnnonceDeLaBase = { id: string; texte: string; photo: string | null; publieLe: string; expireLe: string | null };
+
+/**
+ * L'INVERSE DE `texteDeLAnnonce` — « En ligne maintenant » sur tous ses
+ * téléphones. Une annonce publiée depuis un autre appareil, ou partie de son
+ * planning pendant la nuit, n'est pas dans la mémoire de CE téléphone : on la
+ * relit dans la base et elle redevient une carte du comptoir — son nom, son
+ * prix, « il en reste ». Une annonce écrite à la main ailleurs garde son texte
+ * entier comme nom.
+ */
+export function publicationDeLaBase(c: CommerceComptoir, mission: Mission, a: AnnonceDeLaBase): Publication {
+  let t = a.texte.replace(/\s+/g, " ").trim();
+  const relance = /^Il en reste !/i.test(t);
+  if (relance) t = t.replace(/^Il en reste !\s*(·\s*)?/i, "");
+  for (const debut of [`${mission.quoi} : `, "Le conseil du libraire : "]) if (t.startsWith(debut)) t = t.slice(debut.length);
+  const morceaux = t.split(" · ").map((x) => x.trim()).filter(Boolean);
+  const dernier = morceaux[morceaux.length - 1] ?? "";
+  const prix = morceaux.length > 1 && /\d/.test(dernier) && dernier.length <= 20 ? dernier : "";
+  if (prix) morceaux.pop();
+  // « Il en reste ! Plus que 5 parts · Magret · 12 € » : le détail d'abord, le plat ensuite.
+  const detail = relance && morceaux.length > 1 ? morceaux.shift() : undefined;
+  const publieLe = Date.parse(a.publieLe) || Date.now();
+  const finLe = a.expireLe && Number.isFinite(Date.parse(a.expireLe)) ? Date.parse(a.expireLe) : publieLe + 3 * 86_400_000;
+  return {
+    id: `base-${a.id}`,
+    famille: c.famille,
+    genre: relance ? "relance" : "principal",
+    nom: morceaux.join(" · ") || mission.quoi,
+    prix,
+    ...(detail ? { detail } : {}),
+    photos: a.photo ? [a.photo] : [],
+    jours: Math.max(1, Math.round((finLe - publieLe) / 86_400_000)),
+    publieLe,
+    finLe,
+    serveurId: a.id,
+  };
+}
+
+/**
+ * RETIRER UNE ANNONCE QUE CE TÉLÉPHONE N'A PAS PUBLIÉE : Le Direct par son
+ * identifiant, et ce qui l'accompagnait — le plat de son Expérience s'il est
+ * bien celui-là, la pièce de son catalogue qui porte ce nom (jamais une photo
+ * de sa vitrine, qui reste).
+ */
+export async function retirerDeLaBase(c: CommerceComptoir, p: Publication): Promise<void> {
+  if (!c.reel || !p.serveurId) return;
+  const { slug, token } = c.reel;
+  await poster("/api/site-internet/pro/offer", { slug, token, action: "retirer_annonce", id: p.serveurId });
+  if (p.genre !== "principal") return;
+  if (c.famille === "table") {
+    try {
+      const r = await fetch(`/api/site-internet/pro/experience?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`);
+      const j = (await r.json().catch(() => ({}))) as { experience?: { plat?: { nom?: string } } };
+      if (j.experience?.plat?.nom === p.nom) await poster("/api/site-internet/pro/experience", { slug, token, action: "poser", plat: null });
+    } catch {
+      /* hors ligne : son plat finira le soir de lui-même */
+    }
+  }
+  if (AVEC_PIECE.includes(c.famille)) {
+    const l = await poster("/api/site-internet/pro/pieces", { slug, token, action: "lire" });
+    const pieces = (l.json?.pieces ?? []) as { id: string; nom: string; vitrine?: boolean }[];
+    for (const x of pieces.filter((x) => !x.vitrine && x.nom === p.nom)) {
+      await poster("/api/site-internet/pro/pieces", { slug, token, action: "retirer", id: x.id });
+    }
+  }
+}
+
 /**
  * PUBLIER EN LIGNE. Rend où c'est arrivé (« ta page », « Le Direct ») ou la
  * raison de l'échec — le comptoir l'affiche, avec « Réessayer ».

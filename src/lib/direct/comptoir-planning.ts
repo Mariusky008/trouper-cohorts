@@ -19,7 +19,7 @@
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import type { Publication } from "@/lib/direct/comptoir";
 import type { Mission } from "@/lib/direct/missions-commercant";
-import { AVEC_PIECE, texteDeLAnnonce } from "@/lib/direct/comptoir-en-ligne";
+import { AVEC_PIECE, texteDeLAnnonce, type AnnonceDeLaBase } from "@/lib/direct/comptoir-en-ligne";
 import type { AnnoncePlanifiee } from "@/lib/direct/planning-annonces";
 
 /** Ce qu'il choisit à la question « quel jour ? ». */
@@ -39,8 +39,8 @@ export type Programmee = {
   voix?: boolean;
 };
 
-/** Une annonce déjà en ligne (le fil de sa ville), pour remplir ses jours. */
-export type EnLigneServeur = { id: string; texte: string; photo: string | null; publieLe: string; expireLe: string | null };
+/** Une annonce déjà en ligne (le fil de sa ville) : ses jours, et « En ligne maintenant ». */
+export type EnLigneServeur = AnnonceDeLaBase;
 
 export type EtatPlanning = {
   planning: Programmee[];
