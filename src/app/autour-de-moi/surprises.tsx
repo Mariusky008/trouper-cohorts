@@ -51,7 +51,7 @@ import {
 } from "@/lib/direct/maison-memoire";
 import { estPassee, motDe, motsDuFantome, sourceDe, type CommerceDuJour, type Preuve, type Surprise } from "@/lib/direct/surprises";
 import { lireDressing, pourDuDressing, useDressing } from "@/lib/direct/dressing-depot";
-import { jouer } from "@/lib/direct/sons";
+import { basculerLeSon, jouerDoux, sonCoupe } from "@/lib/direct/sons";
 import { AvisFantomes, type Avis } from "./avis-fantomes";
 import { SigneFantome } from "@/components/direct/note-fantomes";
 
@@ -417,16 +417,16 @@ export function SurprisesDuJour({
     if (typeof etape === "number" && suite[etape]) voirLaSurprise(suite[etape]);
   }, [etape, suite]);
 
-  /* ═══ UN SON PAR SURPRISE ═══ « Il manque un peu de son pour égayer les
-     surprises, entre chaque surprise. » La signature de ClikMe à l'ouverture,
-     puis la révélation à chaque trouvaille — les sons de `sons.ts`, qui se
-     taisent si on les a coupés. On est arrivé ici d'un appui : le navigateur
-     les laisse jouer. */
+  /* ═══ UNE NOTE PAR SURPRISE ═══ « Il manque un peu de son pour égayer les
+     surprises » — mais « pas stressant » : une boîte à musique, une seule
+     note par surprise, un peu plus haut à chaque fois (`jouerDoux`). Rien à
+     la fin. On est arrivé ici d'un appui : le navigateur les laisse jouer. */
   useEffect(() => {
-    if (etape === "ouverture") jouer("ouvrir");
-    else if (typeof etape === "number") jouer("revele");
-    else if (etape === "fin") jouer("garder");
+    if (etape === "ouverture") jouerDoux("trouve");
+    else if (typeof etape === "number") jouerDoux("surprise", etape);
   }, [etape]);
+  /** Le son, coupé ou non — le même réglage que partout dans l'application. */
+  const [muet, setMuet] = useState(() => sonCoupe());
 
   useEffect(() => {
     racine.current?.focus();
@@ -473,6 +473,9 @@ export function SurprisesDuJour({
       </span>
       <button type="button" className="sp-fermer" onClick={onFermer} aria-label="Fermer les surprises">
         ✕
+      </button>
+      <button type="button" className="sp-son" onClick={() => setMuet(basculerLeSon())} aria-label={muet ? "Remettre le son" : "Couper le son"} aria-pressed={muet}>
+        {muet ? "🔇" : "🔈"}
       </button>
 
       {etape === "ouverture" && (
@@ -808,6 +811,7 @@ function StylesSurprises() {
   background:radial-gradient(60% 40% at 50% 30%,rgba(246,160,60,.38),transparent 70%),radial-gradient(50% 35% at 20% 80%,rgba(255,90,170,.16),transparent 70%),radial-gradient(45% 30% at 85% 70%,rgba(255,200,110,.14),transparent 70%);
   animation:sp-respire 6s ease-in-out infinite alternate;}
 @keyframes sp-respire{from{transform:scale(1) rotate(0deg);}to{transform:scale(1.12) rotate(6deg);}}
+.sp-son{position:absolute;top:calc(10px + env(safe-area-inset-top));right:58px;z-index:30;width:38px;height:38px;border-radius:50%;cursor:pointer;border:0;font-size:16px;line-height:1;background:rgba(255,255,255,.12);color:#FFF7EC;}
 .sp-fermer{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;z-index:30;width:38px;height:38px;border-radius:50%;cursor:pointer;
   border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.35);font-size:16px;line-height:1;backdrop-filter:blur(6px);}
 
@@ -834,7 +838,7 @@ function StylesSurprises() {
 
 /* UNE SURPRISE, SEULE, EN PLEIN ÉCRAN. */
 .sp-surprise{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;padding:calc(14px + env(safe-area-inset-top)) 16px calc(12px + env(safe-area-inset-bottom));}
-.sp-haut{flex:none;display:flex;align-items:center;height:38px;padding-right:46px;}
+.sp-haut{flex:none;display:flex;align-items:center;height:38px;padding-right:92px;}
 .sp-points{display:flex;gap:6px;flex:1;}
 .sp-points i{flex:1;height:4px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden;position:relative;}
 .sp-points i.vu{background:#F6B54B;}

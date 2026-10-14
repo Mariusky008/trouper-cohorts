@@ -17,7 +17,7 @@
 //
 // CE QUE CHACUN APPREND À LA MAISON : voir `reagirALaSurprise`.
 import { useState, type CSSProperties } from "react";
-import { jouer } from "@/lib/direct/sons";
+import { jouerDoux } from "@/lib/direct/sons";
 
 export type Avis = 1 | 0 | -1;
 
@@ -48,7 +48,7 @@ export function AvisFantomes({ avis, onAvis, question = "Et vous, vous en pensez
             aria-checked={avis === a.sens}
             className={avis === a.sens ? "on" : ""}
             onClick={() => {
-              jouer(a.sens > 0 ? "garder" : "note");
+              jouerDoux("avis", a.sens);
               if (a.sens > 0) setEclat((n) => n + 1);
               onAvis(a.sens);
             }}

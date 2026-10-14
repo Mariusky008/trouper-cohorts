@@ -409,3 +409,69 @@ export function jouer(geste: Geste): void {
     // doit pouvoir empêcher le geste qui l'a déclenché d'aboutir.
   }
 }
+
+// ─── LES SONS DOUX DE MA MAISON ────────────────────────────────────────────
+//
+// « Les sons ne sont pas terribles, voire même un peu stressants. »
+//
+// C'ÉTAIT EXACT, ET LA CAUSE ÉTAIT DOUBLE. Les surprises reprenaient les sons
+// des GESTES de l'application — triangle, attaque de six millisecondes,
+// souffle sous la note, accords de cinq voix jusqu'à 2,6 kHz : des sons faits
+// pour répondre à un doigt, vifs et brillants. Et il y en avait trop : un
+// carillon à chaque commerce de la tournée, toutes les secondes. Une suite de
+// petits signaux rapprochés, c'est exactement ce que l'oreille lit comme une
+// alerte.
+//
+// ICI, UNE BOÎTE À MUSIQUE. Des sinusoïdes (aucune harmonique qui siffle),
+// une entrée lente de quarante millisecondes (aucun clic), une longue
+// résonance, un passe-bas à 2 kHz, un registre médium, un volume bas — et
+// RAREMENT : quand il rentre avec ses trouvailles, à chaque surprise qu'on
+// ouvre, au rideau de l'essai, et un tout petit son quand on donne son avis.
+// La même gamme pentatonique que le reste : rien ne peut sonner faux.
+
+/** Une note de boîte à musique : la fondamentale, et un souffle d'octave pour la rondeur. */
+function cloche(m: { ctx: AudioContext; sortie: GainNode }, hz: number, depart: number, niveau: number, duree = 1.7): void {
+  voix(m, { hz, depart, duree, niveau, attaque: 0.04, forme: "sine", coupure: 2000 });
+  voix(m, { hz: hz * 2, depart, duree: duree * 0.6, niveau: niveau * 0.12, attaque: 0.04, forme: "sine", coupure: 2000 });
+}
+
+/** La mélodie des surprises : une note de plus haut à chacune, dans la gamme. */
+const MELODIE = [SOL, D(0), SI, RE, MI2, SOL2];
+
+export type MomentDoux = "trouve" | "surprise" | "rideau" | "avis";
+
+/**
+ * JOUER UN MOMENT DE MA MAISON, DOUCEMENT. `rang` : la surprise (0, 1, 2…),
+ * qui monte d'une note à chaque fois ; ou, pour un avis, son sens (-1, 0, 1).
+ * Même règle que `jouer` : rien avant un geste, rien si le son est coupé,
+ * jamais d'erreur.
+ */
+export function jouerDoux(moment: MomentDoux, rang = 0): void {
+  const m = moteur();
+  if (!m) return;
+  try {
+    switch (moment) {
+      /** IL RENTRE AVEC SES TROUVAILLES — trois notes qui montent, lentement. */
+      case "trouve":
+        cloche(m, SOL, 0, 0.3, 1.9);
+        cloche(m, SI, 0.22, 0.28, 1.9);
+        cloche(m, RE, 0.44, 0.3, 2.2);
+        break;
+      /** UNE SURPRISE — une seule note, et la suivante un peu plus haut. */
+      case "surprise":
+        cloche(m, MELODIE[Math.max(0, rang) % MELODIE.length], 0, 0.3, 1.8);
+        break;
+      /** LE RIDEAU DE L'ESSAI — deux notes claires, très bas. */
+      case "rideau":
+        cloche(m, RE, 0, 0.2, 1.6);
+        cloche(m, SOL2, 0.32, 0.16, 1.9);
+        break;
+      /** UN AVIS — à peine une goutte : plus haut pour « j'adore », plus bas pour « j'aime pas ». */
+      case "avis":
+        cloche(m, rang > 0 ? MI2 : rang < 0 ? SOL : SI, 0, 0.18, 0.7);
+        break;
+    }
+  } catch {
+    /* un ornement : jamais une panne */
+  }
+}

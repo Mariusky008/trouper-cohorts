@@ -31,7 +31,7 @@ import { VideoFantome, mouvementReduit } from "@/components/direct/video-fantome
 import { pieceParCle } from "@/lib/direct/maison";
 import { abonnerMaisonPrivee, chargerMaisonPrivee, maisonPriveeServeur, reagirALaSurprise, voirLaSurprise } from "@/lib/direct/maison-memoire";
 import { sourceDe, type CommerceDuJour, type Surprise } from "@/lib/direct/surprises";
-import { jouer } from "@/lib/direct/sons";
+import { jouerDoux } from "@/lib/direct/sons";
 import { SigneFantome } from "@/components/direct/note-fantomes";
 import { AvisFantomes, type Avis } from "./avis-fantomes";
 
@@ -134,7 +134,6 @@ export function ReveilDuFantome({
 
   const reveiller = () => {
     if (phase !== "dort") return;
-    jouer("fantome");
     const trouvees = partir();
     setRoute({ visites: itineraire(commerces, trouvees), trouvees });
     enCours.current = { trouvees, posees: false };
@@ -154,13 +153,10 @@ export function ReveilDuFantome({
   /* SES VISITES, UNE À UNE : environ six secondes en tout, le temps de la vidéo. */
   const n = route?.visites.length ?? 0;
   const duree = mouvementReduit() ? 380 : Math.min(1250, Math.max(800, 6400 / Math.max(n, 1)));
-  /** La visite en cours rapporte quelque chose : un petit carillon quand il ressort. */
-  const tinte = !!route?.visites[pas - 1]?.s;
   useEffect(() => {
     if (phase !== "tournee" || pas > n) return;
     const t = window.setTimeout(
       () => {
-        if (tinte) jouer("note");
         setPas(pas + 1);
         if (pas + 1 > n) {
           fini.current.journal = true;
@@ -170,14 +166,14 @@ export function ReveilDuFantome({
       pas === 0 ? 350 : duree,
     );
     return () => window.clearTimeout(t);
-  }, [phase, pas, n, duree, tinte]);
+  }, [phase, pas, n, duree]);
 
   /* « J'AI TROUVÉ… » : les pièces s'allument au moment où il le dit. */
   useEffect(() => {
     if (phase !== "retour") return;
     const t = window.setTimeout(
       () => {
-        jouer("ouvrir");
+        jouerDoux("trouve");
         rappels.current.onAllumer();
       },
       mouvementReduit() ? 0 : 2700,
@@ -454,7 +450,7 @@ function EssaiSurMoi({ s, onVoir }: { s: Surprise; onVoir: (s: Surprise) => void
   const [avant, setAvant] = useState(false);
   useEffect(() => {
     if (!revele) return;
-    jouer("revele");
+    jouerDoux("rideau");
     const t = window.setTimeout(() => setPret(true), mouvementReduit() ? 0 : 1750);
     return () => window.clearTimeout(t);
   }, [revele]);
