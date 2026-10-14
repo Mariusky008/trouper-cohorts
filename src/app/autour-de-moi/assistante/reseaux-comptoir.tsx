@@ -1,6 +1,6 @@
 "use client";
 
-// 📣 MES RÉSEAUX — connecter Instagram, Facebook, TikTok une fois, et chaque
+// 📣 MES RÉSEAUX — connecter Instagram et Facebook une fois, et chaque
 // annonce du comptoir y part toute seule.
 //
 // « Ils n'ont qu'une seule manipulation à faire et tout est fait

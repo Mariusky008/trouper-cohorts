@@ -47,8 +47,8 @@ export const reseauxConfigures = () => Boolean(CLE());
 
 /**
  * Les réseaux proposés au commerçant. `RESEAUX_PLATEFORMES` (« instagram,
- * facebook,tiktok,googlebusiness ») permet d'en ajouter un sans redéployer de
- * code — Google, par exemple, une fois son identifiant vérifié chez PostPeer.
+ * facebook,linkedin ») permet d'en ajouter un sans toucher au code — une
+ * variable sur Vercel, puis un redéploiement.
  */
 export function plateformesProposees(): string[] {
   const env = s(process.env.RESEAUX_PLATEFORMES)
