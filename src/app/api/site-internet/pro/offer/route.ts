@@ -321,6 +321,19 @@ export async function POST(request: Request) {
     // contrôle que la galerie : une adresse qu'IL a déjà posée chez lui.
     const deSaVitrine = piecesDuDiagnostic(site.diagnostic).some((x) => x.photo === voulue);
     const photo = voulue && (galerie.includes(voulue) || imageEnClair || deSaVitrine) ? voulue : null;
+    // SES AUTRES PHOTOS, POUR SES RÉSEAUX SEULEMENT (un carrousel) : Le Direct et
+    // son bandeau gardent la première. Le même contrôle, photo par photo.
+    const photosReseaux = (Array.isArray(p?.photosReseaux) ? p.photosReseaux : [])
+      .map((x) => str(x))
+      .filter(
+        (x) =>
+          x &&
+          x !== voulue &&
+          (galerie.includes(x) ||
+            (/^data:image\/(jpe?g|png|webp);base64,/.test(x) && x.length <= 900000) ||
+            piecesDuDiagnostic(site.diagnostic).some((y) => y.photo === x)),
+      )
+      .slice(0, 3);
     // Le fichier doit venir de NOTRE stockage : accepter une adresse
     // quelconque ferait jouer, sur le fil d'une ville, une vidéo qu'on
     // n'héberge pas et qui peut changer de contenu après coup.
@@ -527,7 +540,7 @@ export async function POST(request: Request) {
     if (versReseaux.length) {
       await publierSurSesReseauxEnFond(
         { id, slug: str(site.slug), nom: str(site.business_name), ville: str(site.city), activite: str(site.activite) },
-        { texte: text, photo },
+        { texte: text, photo, autres: photosReseaux },
       );
     }
 

@@ -187,7 +187,7 @@ export async function comptesConnectes(profil: string): Promise<{ comptes?: Comp
  * refusé, avec la raison. Une réponse sans détail par réseau mais acceptée
  * compte comme partie partout : c'est ce que l'intermédiaire nous dit.
  */
-export async function publierPartout(p: { texte: string; image: string; comptes: CompteReseau[] }): Promise<Omit<DernierePublication, "at" | "texte">> {
+export async function publierPartout(p: { texte: string; images: string[]; comptes: CompteReseau[] }): Promise<Omit<DernierePublication, "at" | "texte">> {
   const r = await appeler("/posts", {
     method: "POST",
     delai: 45_000,
@@ -195,7 +195,8 @@ export async function publierPartout(p: { texte: string; image: string; comptes:
       content: p.texte,
       platforms: p.comptes.map((c) => ({ platform: c.plateforme, accountId: c.id })),
       publishNow: true,
-      mediaItems: [{ type: "image", url: p.image }],
+      // PLUSIEURS PHOTOS : un carrousel sur Instagram, un album sur Facebook.
+      mediaItems: p.images.map((url) => ({ type: "image", url })),
     },
   });
   const toutes = p.comptes.map((c) => c.plateforme);
@@ -308,7 +309,7 @@ export async function changerReseaux(siteId: string, maj: (r: Reseaux) => Reseau
  */
 export async function publierSurSesReseaux(
   site: { id: string; slug: string; nom: string; ville?: string; activite?: string },
-  annonce: { texte: string; photo: string | null },
+  annonce: { texte: string; photo: string | null; autres?: string[] },
 ): Promise<DernierePublication | null> {
   try {
     if (!reseauxConfigures() || !site.id || !annonce.photo) return null;
@@ -318,6 +319,10 @@ export async function publierSurSesReseaux(
 
     const texte = annonce.texte.trim();
     const image = await imagePourReseaux(site.slug, annonce.photo);
+    // SES AUTRES PHOTOS (trois au plus) : celles qui ne passent pas sont laissées, pas l'annonce.
+    const suite = (await Promise.all((annonce.autres ?? []).slice(0, 3).map((x) => imagePourReseaux(site.slug, x)))).filter(
+      (x): x is string => typeof x === "string",
+    );
     const metier = site.activite ? resolveMetier(site.activite).entry?.label ?? "" : "";
     const legende = legendeReseaux({
       texte,
@@ -333,11 +338,21 @@ export async function publierSurSesReseaux(
     // Google de l'autre.
     const google = reseaux.comptes.filter((c) => c.plateforme === "googlebusiness");
     const autres = reseaux.comptes.filter((c) => c.plateforme !== "googlebusiness");
+    // GOOGLE PREND LA PREMIÈRE SEULEMENT : un post de fiche montre une photo.
+    // UN CARROUSEL REFUSÉ REPART EN UNE PHOTO : mieux vaut sa première photo
+    // sur Instagram que rien du tout parce que la troisième ne plaisait pas.
+    const versAutres = async (images: string[]) => {
+      const r = await publierPartout({ texte: legende, images, comptes: autres });
+      if (images.length < 2 || !r.erreurs.length) return r;
+      const rates = autres.filter((c) => r.erreurs.some((e) => e.plateforme === c.plateforme));
+      const encore = await publierPartout({ texte: legende, images: images.slice(0, 1), comptes: rates });
+      return { ok: [...r.ok, ...encore.ok], erreurs: encore.erreurs };
+    };
     const envois =
       typeof image === "string"
         ? await Promise.all([
-            autres.length ? publierPartout({ texte: legende, image, comptes: autres }) : null,
-            google.length ? publierPartout({ texte, image, comptes: google }) : null,
+            autres.length ? versAutres([image, ...suite]) : null,
+            google.length ? publierPartout({ texte, images: [image], comptes: google }) : null,
           ])
         : [];
     const resultat =

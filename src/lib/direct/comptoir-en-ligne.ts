@@ -201,6 +201,8 @@ export async function envoyerEnLigne(
       // « IL EN RESTE ! » NE PART PAS SUR SES RÉSEAUX : deux heures chez nous,
       // des mois en haut de son Instagram. Voir `lib/reseaux/intermediaire.ts`.
       reseaux: p.genre !== "relance",
+      // SES AUTRES PHOTOS PARTENT EN CARROUSEL SUR SES RÉSEAUX (Le Direct garde la première).
+      ...(p.genre !== "relance" && p.photos.length > 1 ? { photosReseaux: p.photos.slice(1, 4) } : {}),
     });
     if (r.ok) ou.push("Le Direct");
     if (r.ok && Array.isArray(r.json?.reseaux)) reseaux = (r.json.reseaux as unknown[]).map(String);
