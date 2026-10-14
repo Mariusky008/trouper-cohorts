@@ -102,6 +102,8 @@ import { SalonExemple } from "./salon-exemple";
 import { memeLieu, SalonsDuLieu } from "./salons-du-lieu";
 import { SalonEssai, inviterAuSalon } from "@/components/direct/salon-essai";
 import { useSalonsEssai } from "@/lib/direct/avis-amis-client";
+import { themesDuLieu, type ThemeSalon } from "@/lib/direct/themes-salon";
+import { pieceDuJour } from "@/lib/direct/piece-du-jour";
 import {
   abonnerDecouverte,
   brancherLaVille,
@@ -1188,9 +1190,16 @@ export function BoutiqueTable({
   const essaiRouvert = essaiOuvert ? essaisIci.find((x) => x.j === essaiOuvert) : undefined;
   /** Dans une vraie ville : les salons publics de ce commerce, relevés par la synchronisation. */
   const publicsVille = useSyncExternalStore(abonnerDecouverte, salonsADecouvrirDeLaVille, () => AUCUN_PUBLIC);
-  const publicsDeLaVille = useMemo(() => (villeSync ? publicsVille.filter((x) => memeLieu(x.ou, c.nom)) : AUCUN_PUBLIC), [villeSync, publicsVille, c.nom]);
+  /* PAR SON IDENTIFIANT D'ABORD, quand le salon le porte ; par le nom sinon
+     (les salons ouverts avant que le serveur ne le rende). */
+  const publicsDeLaVille = useMemo(
+    () => (villeSync ? publicsVille.filter((x) => (x.boutique ? x.boutique === c.id : memeLieu(x.ou, c.nom))) : AUCUN_PUBLIC),
+    [villeSync, publicsVille, c.id, c.nom],
+  );
   const cleSalon = salonChoisi && salons[salonChoisi] ? salonChoisi : (salonsIci[0]?.cle ?? cleBoutique);
   const salon = salons[cleSalon];
+  /** Un salon public ouvert sur un sujet de ce commerce — voir `ouvrirSalonPublic`. */
+  const sujetPublic = Boolean(salon?.theme && salon.prive === false);
   /* LES SALONS DE LA TABLE : ceux de cette page, puis ceux d'ailleurs qui
      parlent de ce commerce — un duel lancé dans l'application, un salon
      public. Les miens d'un côté, les publics où je ne suis pas de l'autre. */
@@ -1205,6 +1214,39 @@ export function BoutiqueTable({
   }, [salons, salonsIci, c.id, c.nom]);
   /** Un salon neuf, pour un essai : l'expérience y repart de zéro. */
   const nouvelleCleDeSalon = () => `${cleBoutique}|${Date.now().toString(36)}`;
+  /* ═══ OUVRIR UN SALON PUBLIC SUR UN SUJET DE CE COMMERCE ═══════════════
+     « Il faudrait que je puisse ouvrir un salon public si j'en ai envie — et
+     ce salon irait aussi sur l'app, dans les salons publics. » Les sujets
+     viennent de son métier, sa pièce du jour en tête (`themes-salon.ts`).
+     UNE CLÉ PAR SUJET (`<boutique>|t|<sujet>`) : rouvrir le même sujet ramène
+     au même salon. Dans une vraie ville, il part au serveur comme tout salon
+     de la page (`brancherLaVille`) — et il est alors dans « Salons publics »
+     de l'application. Rien sur la table : c'est un sujet, pas une annonce —
+     sauf la pièce du jour, qui y pose sa photo. */
+  const themesPublics = useMemo(() => themesDuLieu(c, pieceDuJour(c.catalogue)), [c]);
+  /** La première phrase proposée dans un salon public sur un sujet, encore vide. */
+  const amorcePublique = sujetPublic ? themesPublics.find((x) => x.cle === salon?.theme)?.amorce : undefined;
+  const ouvrirSalonPublic = (t: ThemeSalon) =>
+    identifierPuis(() => {
+      const moi = monPrenom() || "Vous";
+      const cle = `${cleBoutique}|t|${t.cle}`;
+      if (!chargerSalons()[cle]) {
+        ouvrirSalon({
+          cle,
+          sujet: t.titre,
+          ou: c.nom,
+          parQui: moi,
+          quand: "Aujourd’hui",
+          prive: false,
+          theme: t.cle,
+          distance: c.distance,
+          boutique: { id: c.id, nom: c.nom, lien: lienPage() },
+          ...(t.photo ? { photo: t.photo, annonce: t.annonce ?? t.titre, ...(t.prix ? { prix: t.prix } : {}) } : { sansProposition: true }),
+        });
+      }
+      setSalonChoisi(cle);
+      setHall(false);
+    });
   const [aEcrire, setAEcrire] = useState("");
   /* L'ADRESSE DE SA PAGE, AVEC LE COMMERCE QU'ELLE NOMME. Ouverte depuis la
      ville (`/autour-de-moi/boutique?c=…`), la page ne sait qui elle montre que
@@ -2234,6 +2276,9 @@ export function BoutiqueTable({
               onLirePublic={(id) => {
                 if (c.villeReelle) window.location.href = `/ville/${encodeURIComponent(c.villeReelle)}?salon=p:${encodeURIComponent(id)}`;
               }}
+              themes={themesPublics}
+              onOuvrirPublic={ouvrirSalonPublic}
+              ville={c.ville}
             />
             {/* « EMPORTEZ VOTRE MAISON », APRÈS UN PREMIER SALON : c'est là qu'on a
                 quelque chose à perdre en changeant de navigateur. Vraie ville
@@ -2257,7 +2302,7 @@ export function BoutiqueTable({
               un ordinateur, elle flotte au milieu, et la moitie photo des
               autres onglets disparait. La grande banniere photo est partie :
               c'etait l'image d'une page, pas d'une conversation. */}
-          <div className="bt-fenetre" role="dialog" aria-label={`En parler à mes amis — ${c.nom}`}>
+          <div className="bt-fenetre" role="dialog" aria-label={`${sujetPublic ? salon?.sujet : "En parler à mes amis"} — ${c.nom}`}>
           <header className="bt-haut plein bt-chat-tete">
             <button type="button" className="bt-rond" onClick={() => setHall(true)} aria-label="Revenir aux salons du lieu">
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -2272,13 +2317,24 @@ export function BoutiqueTable({
               {dedans(0) ? null : c.nom[0]?.toUpperCase()}
             </span>
             <div className="bt-chat-qui">
-              <b>En parler à mes amis</b>
+              {/* UN SALON PUBLIC SUR UN SUJET porte son sujet en titre : « En parler
+                  à mes amis » disait le contraire de ce qu'il est. */}
+              <b>{sujetPublic ? salon?.sujet : "En parler à mes amis"}</b>
               <em>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <rect x="5" y="10.5" width="14" height="10" rx="2.4" />
-                  <path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5" />
-                </svg>
-                {salon?.prive === false ? "Salon public" : "Salon privé"} · {salon && salon.cle !== cleBoutique && salon.annonce ? salon.annonce : c.nom}
+                {salon?.prive === false ? (
+                  /* UN GLOBE POUR UN SALON PUBLIC — le cadenas y disait « privé ». */
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="8.5" />
+                    <path d="M3.5 12h17M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5s-1.2 6.1-3.6 8.5M12 3.5C9.6 5.9 8.4 8.7 8.4 12s1.2 6.1 3.6 8.5" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="10.5" width="14" height="10" rx="2.4" />
+                    <path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5" />
+                  </svg>
+                )}
+                {salon?.prive === false ? "Salon public" : "Salon privé"} ·{" "}
+                {salon && salon.cle !== cleBoutique && salon.annonce && !sujetPublic ? salon.annonce : c.nom}
               </em>
             </div>
           </header>
@@ -2333,7 +2389,10 @@ export function BoutiqueTable({
               <BarreDAcces salon={salon} sansBarre vous onInviterLien={() => identifierPuis(() => void inviter())} onQuitte={() => setHall(true)} />
             )}
             {/* LE RENDEZ-VOUS, EPINGLE EN HAUT DU FIL — comme un message
-                epingle dans une conversation de groupe. */}
+                epingle dans une conversation de groupe. PAS DANS UN SALON
+                PUBLIC SUR UN SUJET : on y parle d'une coupe, on ne s'y donne
+                pas rendez-vous (ni « On se retrouve ici ? », ni « Je viens »). */}
+            {!sujetPublic && (
             <div className="bt-rdv">
               <div className="bt-rdv-i">
                 <Epingle />
@@ -2358,9 +2417,12 @@ export function BoutiqueTable({
               </div>
             </div>
 
+            )}
+
             {/* PERSONNE ENCORE : on ne l'écrit pas « 0 vient ». Un compteur à zéro
                 se lit comme une salle vide ; une invitation se lit comme une
                 place à prendre. */}
+            {!sujetPublic && (
             <div className="bt-qui">
               {viennent.length + presents.length === 0 ? (
                 <span className="bt-qui-t">
@@ -2390,6 +2452,7 @@ export function BoutiqueTable({
                 {jeViens ? "✓ Je viens" : "Je viens"}
               </button>
             </div>
+            )}
 
             {/* « ON COMMENCE COMMENT ? » — voir `duelSalon`. La nôtre tant que le
                 salon ne parle de rien ; ensuite, celle du duel lui-même. */}
@@ -2478,11 +2541,27 @@ export function BoutiqueTable({
               <div className="bt-salon-vide">
                 <span aria-hidden="true">💬</span>
                 <b>Personne n&apos;a encore écrit ici.</b>
-                <p>Invitez vos amis, ou lancez la conversation : votre message les attendra.</p>
-                {/* LA PHRASE NOMME LE LIEU : un ami qui la reçoit sait de quoi on parle. */}
-                <button type="button" onClick={() => setAEcrire(`Ça vous dit qu’on aille ${aLaMaison(c.nom)} ?`)}>
-                  « Ça vous dit qu’on aille {aLaMaison(c.nom)}&nbsp;? »
-                </button>
+                {sujetPublic ? (
+                  /* UN SALON PUBLIC SUR UN SUJET : la première phrase est celle du
+                     sujet (`amorce`, voir `themes-salon.ts`) — on l'envoie telle
+                     quelle, ou on la change. */
+                  <>
+                    <p>Lancez la conversation : tout le monde{c.ville ? ` à ${c.ville}` : ""} peut la lire et vous répondre.</p>
+                    {amorcePublique && (
+                      <button type="button" onClick={() => setAEcrire(amorcePublique)}>
+                        « {amorcePublique} »
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p>Invitez vos amis, ou lancez la conversation : votre message les attendra.</p>
+                    {/* LA PHRASE NOMME LE LIEU : un ami qui la reçoit sait de quoi on parle. */}
+                    <button type="button" onClick={() => setAEcrire(`Ça vous dit qu’on aille ${aLaMaison(c.nom)} ?`)}>
+                      « Ça vous dit qu’on aille {aLaMaison(c.nom)}&nbsp;? »
+                    </button>
+                  </>
+                )}
               </div>
             )}
 

@@ -25,8 +25,19 @@
 // salon, c'est ma place seule à une table vide, et l'invitation à l'ouvrir.
 // Lire un salon public de la vraie ville se fait dans l'application, où l'on
 // choisit sa place pour le rejoindre — les mêmes règles qu'Ensemble.
+//
+// ═══ ET ON PEUT EN OUVRIR UN ═══════════════════════════════════════════════
+// « Il faudrait que je puisse ouvrir un salon public si j'en ai envie — et ce
+// salon irait aussi sur l'app, dans les salons publics. Ce bouton m'ouvre le
+// salon, et je dois choisir une thématique en lien avec le commerçant. »
+// « 🌍 Ouvrir un salon public » ouvre la feuille des sujets de CE commerce
+// (`themes-salon.ts`). Un sujet déjà ouvert ici se REJOINT — un sujet, un
+// salon. Ouvert dans une vraie ville, il part au serveur comme tout salon de
+// la page : il est alors dans « Salons publics » de l'application.
 
 import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { themeLibre, type ThemeSalon } from "@/lib/direct/themes-salon";
 import { Alcove, type AlcoveData, type Assis } from "../alcove";
 import { contenuDuSalon, sceneDuSalon } from "../ensemble";
 import type { Salon } from "@/lib/direct/salons";
@@ -60,6 +71,9 @@ export function SalonsDuLieu({
   onEntrer,
   onEntrerEssai,
   onLirePublic,
+  themes = [],
+  onOuvrirPublic,
+  ville,
 }: {
   nom: string;
   /** Mes salons ici, le plus récent d'abord. */
@@ -80,6 +94,12 @@ export function SalonsDuLieu({
   onEntrerEssai?: (jeton: string) => void;
   /** Lire un salon public de la vraie ville, dans l'application. */
   onLirePublic: (id: string) => void;
+  /** Les sujets proposés chez ce commerce — voir `themes-salon.ts`. Vide : pas de bouton. */
+  themes?: ThemeSalon[];
+  /** Ouvrir un salon public sur ce sujet (il n'existe pas encore ici). */
+  onOuvrirPublic?: (t: ThemeSalon) => void;
+  /** Le nom de sa ville, pour dire qui pourra lire. */
+  ville?: string;
 }) {
   const alcoveDu = (x: Salon, membre: boolean): AlcoveData => {
     const autres: Assis[] = x.acces?.participants
@@ -89,7 +109,8 @@ export function SalonsDuLieu({
     return {
       cle: x.cle,
       scene: sceneDuSalon(x.cle),
-      titre: x.cle === cleBoutique ? `Chez ${nom}` : (x.annonce ?? x.sujet),
+      // UN SALON SUR UN SUJET SE NOMME PAR SON SUJET, même quand une pièce est sur sa table.
+      titre: x.cle === cleBoutique ? `Chez ${nom}` : x.theme ? x.sujet : (x.annonce ?? x.sujet),
       prive: x.acces ? x.acces.prive : x.prive !== false,
       membre,
       nb: x.acces ? x.acces.nb : autres.length + (membre ? 1 : 0),
@@ -166,6 +187,31 @@ export function SalonsDuLieu({
   /* LE GLISSER D'UN SALON À L'AUTRE, comme dans Ensemble. */
   const depart = useRef<number | null>(null);
 
+  /* ═══ LES SUJETS DÉJÀ OUVERTS ICI — on les rejoint, on ne les double pas ═══
+     Les miens (ouverts ou rejoints), ceux de la ville (pas encore rejoints),
+     ceux de la démonstration. Le premier trouvé l'emporte. */
+  const ouverts = new Map<string, { nb: number; mien: boolean; ouvrir: () => void }>();
+  for (const x of miens) if (x.theme && !ouverts.has(x.theme)) ouverts.set(x.theme, { nb: x.acces?.nb ?? x.presents.length, mien: true, ouvrir: () => onEntrer(x.cle) });
+  for (const x of publicsDeLaVille) if (x.theme && !ouverts.has(x.theme)) ouverts.set(x.theme, { nb: x.nb, mien: false, ouvrir: () => onLirePublic(x.id) });
+  for (const x of publicsDuTelephone) if (x.theme && !ouverts.has(x.theme)) ouverts.set(x.theme, { nb: x.presents.length, mien: false, ouvrir: () => onEntrer(x.cle) });
+  const [feuille, setFeuille] = useState(false);
+  const [autre, setAutre] = useState<string | null>(null);
+  const choisir = (t: ThemeSalon) => {
+    setFeuille(false);
+    setAutre(null);
+    const deja = ouverts.get(t.cle);
+    if (deja) deja.ouvrir();
+    else onOuvrirPublic?.(t);
+  };
+  const libre = autre != null ? themeLibre(autre) : null;
+  const peutOuvrir = Boolean(onOuvrirPublic && themes.length);
+  const boutonPublic = (premier: boolean) =>
+    peutOuvrir ? (
+      <button type="button" className={`sl-ouvrir${premier ? " premier" : ""}`} onClick={() => setFeuille(true)}>
+        <span aria-hidden="true">🌍</span> Ouvrir un salon public
+      </button>
+    ) : null;
+
   /* SANS SALON À MOI : ma place, seule, à une table vide — et l'invitation à l'ouvrir. */
   const tableVide: AlcoveData = {
     cle: cleBoutique,
@@ -225,8 +271,10 @@ export function SalonsDuLieu({
       ) : (
         <div className="sl-rien">
           <p>
-            Pas encore de salon public chez {nom}.<span>Quand quelqu’un en ouvre un, il apparaît ici.</span>
+            Pas encore de salon public chez {nom}.
+            <span>{peutOuvrir ? "Ouvrez le premier : choisissez un sujet, et toute la ville peut vous rejoindre." : "Quand quelqu’un en ouvre un, il apparaît ici."}</span>
           </p>
+          {boutonPublic(true)}
         </div>
       )}
 
@@ -247,8 +295,85 @@ export function SalonsDuLieu({
             {vide ? "Ouvrir mon salon ici" : courante?.mien ? "Entrer dans la discussion" : "Voir la discussion"} <span aria-hidden="true">→</span>
           </button>
           {liste.length > 1 && <p className="sl-glisse">Glissez pour voir un autre salon</p>}
+          {source === "publics" && boutonPublic(false)}
         </div>
       )}
+
+      {/* ═══ LA FEUILLE DES SUJETS ═══ Par-dessus la page : l'écran des salons
+          vit dans un onglet qui coupe ce qui dépasse. */}
+      {feuille &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="sl-fond" onClick={() => setFeuille(false)}>
+            <div className="sl-feuille" role="dialog" aria-modal="true" aria-label="Ouvrir un salon public" onClick={(e) => e.stopPropagation()}>
+              <span className="sl-poignee" aria-hidden="true" />
+              <h2>🌍 Ouvrir un salon public</h2>
+              <p className="sl-qui">
+                Chez {nom}. Tout le monde {ville ? `à ${ville}` : "dans la ville"} pourra le lire et le rejoindre — ici, et dans les salons publics de l’application.
+              </p>
+              <p className="sl-l">Choisissez le sujet</p>
+              <ul className="sl-themes">
+                {themes.map((t) => {
+                  const deja = ouverts.get(t.cle);
+                  return (
+                    <li key={t.cle}>
+                      <button type="button" onClick={() => choisir(t)}>
+                        {t.photo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={t.photo} alt="" />
+                        ) : (
+                          <span className="sl-emoji" aria-hidden="true">
+                            {t.emoji}
+                          </span>
+                        )}
+                        <b>{t.titre}</b>
+                        <em className={deja ? "deja" : ""}>
+                          {deja ? (deja.mien ? "Y retourner" : `Rejoindre${deja.nb ? ` · ${deja.nb}` : ""}`) : "Ouvrir"}
+                        </em>
+                      </button>
+                    </li>
+                  );
+                })}
+                <li>
+                  {autre == null ? (
+                    <button type="button" onClick={() => setAutre("")}>
+                      <span className="sl-emoji" aria-hidden="true">
+                        ✏️
+                      </span>
+                      <b>Autre sujet…</b>
+                      <em>Écrire</em>
+                    </button>
+                  ) : (
+                    <form
+                      className="sl-autre"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (libre) choisir(libre);
+                      }}
+                    >
+                      <input
+                        autoFocus
+                        value={autre}
+                        maxLength={60}
+                        placeholder={`Votre sujet, en lien avec ${nom}`}
+                        onChange={(e) => setAutre(e.target.value)}
+                        aria-label="Votre sujet"
+                      />
+                      <button type="submit" disabled={!libre}>
+                        {libre && ouverts.has(libre.cle) ? "Rejoindre" : "Ouvrir"}
+                      </button>
+                    </form>
+                  )}
+                </li>
+              </ul>
+              <p className="sl-regle">Restez dans le sujet et bienveillant : un message hors sujet peut être signalé et masqué.</p>
+              <button type="button" className="sl-annuler" onClick={() => setFeuille(false)}>
+                Annuler
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )}
     </section>
   );
 }
@@ -286,6 +411,43 @@ function StylesSalonsDuLieu() {
 .sl-cta{margin-top:6px;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 18px;border:0;border-radius:999px;cursor:pointer;
   font:inherit;font-size:16px;font-weight:900;color:#2A1708;background:linear-gradient(180deg,#FFC867,#F5A23A);box-shadow:0 12px 26px -10px rgba(245,162,58,.55);}
 .sl-glisse{margin:2px 0 0;text-align:center;font-size:12.5px;color:#A99B92;}
+/* ═══ OUVRIR UN SALON PUBLIC ═══ Le bouton : plein dans l'état vide, en
+   contour sous un salon existant (le geste principal reste d'y entrer). */
+.sl-ouvrir{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:8px;padding:12px 16px;border-radius:999px;cursor:pointer;
+  font:inherit;font-size:15px;font-weight:900;color:#FFF4E6;background:rgba(255,244,230,.06);border:1.5px solid rgba(255,200,103,.55);}
+.sl-ouvrir.premier{width:auto;margin-top:16px;padding:13px 22px;color:#2A1708;border-color:transparent;
+  background:linear-gradient(180deg,#FFC867,#F5A23A);box-shadow:0 12px 26px -10px rgba(245,162,58,.55);}
+.sl-rien{gap:4px;}
+.sl-fond{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(10,6,4,.62);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);animation:slFond .2s ease both;}
+.sl-feuille{width:100%;max-width:520px;max-height:88vh;overflow-y:auto;padding:10px 18px calc(18px + env(safe-area-inset-bottom));
+  border-radius:24px 24px 0 0;background:#1C1411;color:#FFF4E6;border:1px solid rgba(255,214,150,.18);border-bottom:0;
+  box-shadow:0 -20px 50px rgba(0,0,0,.5);animation:slMonte .32s cubic-bezier(.16,1,.3,1) both;font-family:var(--font-geist-sans),system-ui,sans-serif;}
+.sl-poignee{display:block;width:42px;height:5px;margin:0 auto 12px;border-radius:5px;background:rgba(255,244,230,.25);}
+.sl-feuille h2{margin:0;font-family:var(--font-clikme),sans-serif;font-size:21px;font-weight:800;}
+.sl-qui{margin:6px 0 0;font-size:13.5px;line-height:1.45;color:#CDB8A4;}
+.sl-l{margin:16px 0 8px;font-size:11px;font-weight:850;letter-spacing:.12em;text-transform:uppercase;color:#FFC867;}
+.sl-themes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
+.sl-themes button{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border-radius:16px;cursor:pointer;text-align:left;
+  font:inherit;color:#FFF4E6;background:rgba(255,244,230,.05);border:1px solid rgba(255,244,230,.12);transition:border-color .2s ease,background .2s ease;}
+.sl-themes button:hover{border-color:rgba(255,200,103,.5);background:rgba(255,200,103,.08);}
+.sl-themes img{flex:none;width:44px;height:44px;border-radius:12px;object-fit:cover;}
+.sl-emoji{flex:none;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;font-size:22px;background:rgba(255,244,230,.08);}
+.sl-themes b{flex:1;min-width:0;font-size:15px;font-weight:800;line-height:1.3;}
+.sl-themes em{flex:none;font-style:normal;font-size:12.5px;font-weight:850;padding:5px 10px;border-radius:999px;color:#2A1708;background:#FFC867;}
+.sl-themes em.deja{color:#0E2A1B;background:#7FE0A8;}
+.sl-autre{display:flex;gap:8px;}
+.sl-autre input{flex:1;min-width:0;padding:12px 14px;border-radius:14px;font:inherit;font-size:15px;color:#FFF4E6;
+  background:rgba(255,244,230,.06);border:1.5px solid rgba(255,200,103,.5);outline:none;}
+.sl-autre button{flex:none;width:auto;padding:0 16px;justify-content:center;font-weight:900;color:#2A1708;background:linear-gradient(180deg,#FFC867,#F5A23A);border:0;}
+.sl-autre button:disabled{opacity:.45;cursor:default;}
+.sl-regle{margin:14px 0 0;font-size:12px;line-height:1.4;color:#A99B92;}
+.sl-annuler{display:block;width:100%;margin-top:10px;padding:12px;border:0;border-radius:999px;cursor:pointer;font:inherit;font-size:14px;font-weight:800;
+  color:#CDB8A4;background:rgba(255,244,230,.06);}
+@keyframes slFond{from{opacity:0}to{opacity:1}}
+@keyframes slMonte{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+@media (min-width:700px){.sl-fond{align-items:center;}.sl-feuille{border-radius:24px;border-bottom:1px solid rgba(255,214,150,.18);}}
+@media (prefers-reduced-motion:reduce){.sl-fond,.sl-feuille{animation:none;}}
 `,
       }}
     />

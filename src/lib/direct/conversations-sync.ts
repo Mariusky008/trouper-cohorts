@@ -171,6 +171,10 @@ export type SalonADecouvrir = {
   sujet: string;
   ou: string;
   parQui: string;
+  /** L'identifiant du commerce dont il parle, s'il en parle d'un. */
+  boutique?: string;
+  /** Son sujet, quand il a été ouvert depuis la page d'un commerce — voir `themes-salon.ts`. */
+  theme?: string;
   photo?: string;
   nb: number;
   /** Quelques vrais participants, à asseoir dans l'alcôve (prénom, look, empreinte propre au salon). */

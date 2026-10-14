@@ -277,6 +277,8 @@ async function nettoyerBase(id: string, b: Record<string, unknown>, qui: string)
     ...(s(b.reste) ? { reste: texte(b.reste, 60) } : {}),
     ...(s(b.distance) ? { distance: texte(b.distance, 40) } : {}),
     ...(boutique && s(boutique.id) ? { boutique: { id: texte(boutique.id, 120), nom: texte(boutique.nom, 120), lien: texte(boutique.lien, 300) } } : {}),
+    // LE SUJET D'UN SALON PUBLIC OUVERT CHEZ UN COMMERCE — voir `themes-salon.ts`.
+    ...(/^[a-z0-9-]{2,60}$/.test(s(b.theme)) ? { theme: s(b.theme) } : {}),
     ...(vote && Array.isArray(vote.options)
       ? {
           vote: {
@@ -512,6 +514,11 @@ export async function GET(request: Request) {
             sujet: s(c.base.sujet),
             ou: s(c.base.ou),
             parQui: s(c.base.parQui),
+            // LE COMMERCE ET LE SUJET : la page d'un commerce retrouve ses salons
+            // publics par l'identifiant (le nom seul était fragile), et ne double
+            // pas un sujet déjà ouvert — voir `themes-salon.ts`.
+            ...(s((c.base.boutique as { id?: unknown } | undefined)?.id) ? { boutique: s((c.base.boutique as { id?: unknown }).id) } : {}),
+            ...(s(c.base.theme) ? { theme: s(c.base.theme) } : {}),
             ...(s(c.base.photo) ? { photo: servirPhotos(s(c.base.photo), c.id) } : {}),
             nb: nb.get(c.id) ?? 0,
             visibles: (visibles.get(c.id) ?? []).map((v) => ({ auteur: v.auteur, qui: v.qui, ...(looksP.get(v.habitant) ? { look: looksP.get(v.habitant) } : {}) })),

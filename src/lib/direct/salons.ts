@@ -375,6 +375,12 @@ export type Salon = {
     lien: string;
   };
   /**
+   * LE SUJET D'UN SALON PUBLIC OUVERT DEPUIS LA PAGE D'UN COMMERCE (`coupe`,
+   * `avis`, `jour-…`) — voir `themes-salon.ts`. Un sujet, chez un commerce,
+   * un seul salon : c'est ce qui permet de rejoindre au lieu de doubler.
+   */
+  theme?: string;
+  /**
    * LA DERNIÈRE ACTIVITÉ (millisecondes) : ce qui trie « Nos discussions ».
    * Posée à l'ouverture et à chaque message ; un salon semé la tient de
    * `ilYa`, un salon ancien sans elle passe derrière.
@@ -1152,10 +1158,17 @@ function garder(suivant: Record<string, Salon>) {
  * contraire de ce que la jauge annonce sur l'annonce.
  */
 export function ouvrirSalon(
-  salon: Omit<Salon, "messages" | "viennent" | "presents" | "ouvert"> & {
+  entree: Omit<Salon, "messages" | "viennent" | "presents" | "ouvert"> & {
     presents?: string[];
+    /**
+     * UN SALON SUR UN SUJET, SANS ANNONCE : rien sur la table. Sans ce
+     * drapeau, le sujet (« Quelle coupe me conseillez-vous ? ») y devenait une
+     * proposition à voter. Il ne se range pas dans le salon.
+     */
+    sansProposition?: boolean;
   },
 ) {
+  const { sansProposition, ...salon } = entree;
   const avant = chargerSalons();
   if (avant[salon.cle]) return avant[salon.cle];
   /**
@@ -1183,7 +1196,7 @@ export function ouvrirSalon(
     // CE QUI EST SUR LA TABLE DÈS L'OUVERTURE : l'annonce qui a déclenché le
     // salon, portée par celui qui l'a ouvert. Sans elle, la première
     // alternative proposée n'aurait rien à départager.
-    propositions: [
+    propositions: sansProposition ? [] : [
       {
         cle: salon.cle,
         par: moi,
