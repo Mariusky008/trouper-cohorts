@@ -51,6 +51,18 @@ import {
 } from "@/lib/direct/maison-memoire";
 import { estPassee, motDe, motsDuFantome, sourceDe, type CommerceDuJour, type Preuve, type Surprise } from "@/lib/direct/surprises";
 import { lireDressing, pourDuDressing, useDressing } from "@/lib/direct/dressing-depot";
+import { jouer } from "@/lib/direct/sons";
+import { AvisFantomes, type Avis } from "./avis-fantomes";
+import { SigneFantome } from "@/components/direct/note-fantomes";
+
+/** De petits fantômes qui flottent au fond de l'écran : des places fixes, pas de hasard au rendu. */
+const MOTIFS = [
+  { x: "6%", y: "14%", t: 20, d: "0s", c: false },
+  { x: "84%", y: "9%", t: 16, d: "-1.8s", c: true },
+  { x: "90%", y: "44%", t: 13, d: "-3.1s", c: false },
+  { x: "4%", y: "58%", t: 15, d: "-0.9s", c: true },
+  { x: "78%", y: "78%", t: 18, d: "-2.4s", c: false },
+];
 
 // ─── LA TOURNÉE ────────────────────────────────────────────────────────────
 
@@ -349,8 +361,9 @@ const ECLATS = Array.from({ length: 28 }, (_, i) => ({
 }));
 const COEURS = Array.from({ length: 8 }, (_, i) => ({ x: -46 + i * 13, d: 70 + ((i * 29) % 50), t: (i % 4) * 60, s: 14 + (i % 3) * 5 }));
 
-const MOT_APRES: Record<"1" | "-1", string> = {
+const MOT_APRES: Record<"1" | "0" | "-1", string> = {
   "1": "Noté. Je chercherai dans ce sens.",
+  "0": "D'accord. Je viserai mieux la prochaine fois.",
   "-1": "Compris. Je saurai pour la prochaine fois.",
 };
 
@@ -362,10 +375,13 @@ const MOT_APRES: Record<"1" | "-1", string> = {
  */
 export function SurprisesDuJour({
   revoir = false,
+  depart,
   onFermer,
   onVoir,
 }: {
   revoir?: boolean;
+  /** Rouvrir sur celle-ci (en revenant de son annonce, « ← Mes surprises »). */
+  depart?: string;
   onFermer: () => void;
   /** « Voir sur moi », « Voir le plat » : la page du commerce, sur le bon onglet. */
   onVoir: (s: Surprise) => void;
@@ -377,7 +393,9 @@ export function SurprisesDuJour({
     return revoir ? surprisesDuJour(m, maintenant) : surprisesAOuvrir(m, maintenant);
   });
   const [mots] = useState(() => motsDuFantome(suite));
-  const [etape, setEtape] = useState<Etape>(() => (!suite.length ? "fin" : revoir ? 0 : "ouverture"));
+  const [etape, setEtape] = useState<Etape>(() =>
+    !suite.length ? "fin" : revoir ? Math.max(0, depart ? suite.findIndex((x) => x.id === depart) : 0) : "ouverture",
+  );
   const [pourquoi, setPourquoi] = useState(false);
   const [refuse, setRefuse] = useState<string | null>(null);
   const [coeur, setCoeur] = useState(0);
@@ -398,6 +416,17 @@ export function SurprisesDuJour({
   useEffect(() => {
     if (typeof etape === "number" && suite[etape]) voirLaSurprise(suite[etape]);
   }, [etape, suite]);
+
+  /* ═══ UN SON PAR SURPRISE ═══ « Il manque un peu de son pour égayer les
+     surprises, entre chaque surprise. » La signature de ClikMe à l'ouverture,
+     puis la révélation à chaque trouvaille — les sons de `sons.ts`, qui se
+     taisent si on les a coupés. On est arrivé ici d'un appui : le navigateur
+     les laisse jouer. */
+  useEffect(() => {
+    if (etape === "ouverture") jouer("ouvrir");
+    else if (typeof etape === "number") jouer("revele");
+    else if (etape === "fin") jouer("garder");
+  }, [etape]);
 
   useEffect(() => {
     racine.current?.focus();
@@ -432,6 +461,16 @@ export function SurprisesDuJour({
       onKeyDown={clavier}
     >
       <i className="sp-fond" aria-hidden="true" />
+      <span className="sp-motifs" aria-hidden="true">
+        {MOTIFS.map((m, i) => (
+          <SigneFantome
+            key={i}
+            classe="sp-motif"
+            coeur={m.c}
+            style={{ left: m.x, top: m.y, width: m.t, height: m.t * 1.1, animationDelay: m.d } as CSSProperties}
+          />
+        ))}
+      </span>
       <button type="button" className="sp-fermer" onClick={onFermer} aria-label="Fermer les surprises">
         ✕
       </button>
@@ -462,7 +501,7 @@ export function SurprisesDuJour({
           k={etape}
           n={suite.length}
           mot={mots[etape]}
-          avis={avis[suite[etape].id]}
+          avis={avis[suite[etape].id] as Avis | undefined}
           coeur={coeur}
           refuse={refuse}
           pourquoi={pourquoi}
@@ -555,13 +594,13 @@ function UneSurprise({
   n: number;
   /** Ce que le Fantôme dit en la montrant (`motsDuFantome`). */
   mot: string;
-  avis?: 1 | -1;
+  avis?: Avis;
   coeur: number;
   refuse: string | null;
   pourquoi: boolean;
   onPourquoi: (v: boolean) => void;
   onVoir: () => void;
-  onAvis: (sens: 1 | -1) => void;
+  onAvis: (sens: Avis) => void;
   onRefuser: (trait: string) => void;
   onSuivante: () => void;
   onPrecedente: () => void;
@@ -590,9 +629,9 @@ function UneSurprise({
 
       <p className="sp-mot">
         <span className="sp-mot-f" aria-hidden="true">
-          <FantomeAnime humeur={avis === 1 ? "love" : avis === -1 ? "thinking" : k === 0 ? "excited" : "pointing"} taille={44} />
+          <FantomeAnime humeur={avis === 1 ? "love" : avis === -1 ? "thinking" : avis === 0 ? "quiet" : k === 0 ? "excited" : "pointing"} taille={44} />
         </span>
-        <span className="sp-mot-b">{avis ? MOT_APRES[String(avis) as "1" | "-1"] : mot}</span>
+        <span className="sp-mot-b">{avis !== undefined ? MOT_APRES[String(avis) as "1" | "0" | "-1"] : mot}</span>
       </p>
 
       <div className="sp-photo" onPointerDown={(e) => onToucher(e, false)} onPointerUp={(e) => onToucher(e, true)}>
@@ -640,14 +679,7 @@ function UneSurprise({
             {s.action.mot}
           </button>
         )}
-        <div className="sp-avis" role="group" aria-label="Votre avis">
-          <button type="button" className={avis === 1 ? "on" : ""} aria-pressed={avis === 1} onClick={() => onAvis(1)}>
-            <i aria-hidden="true">❤️</i> Ça me plaît
-          </button>
-          <button type="button" className={avis === -1 ? "on non" : ""} aria-pressed={avis === -1} onClick={() => onAvis(-1)}>
-            <i aria-hidden="true">👎</i> Pas vraiment
-          </button>
-        </div>
+        <AvisFantomes avis={avis} onAvis={onAvis} />
         <div className="sp-bas">
           {k > 0 ? (
             <button type="button" className="sp-lien" onClick={onPrecedente} aria-label="Surprise précédente">
@@ -765,6 +797,13 @@ function StylesSurprises() {
   font-family:var(--font-clikme),'Poppins',system-ui,sans-serif;background:#0B0604;}
 .sp *{box-sizing:border-box;}
 .sp button{font:inherit;color:inherit;}
+.sp-motifs{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.sp-motif{position:absolute;opacity:.22;animation:sp-motif 6s ease-in-out infinite;}
+.sp-motif .mu-f-corps{fill:#FFE9F2;}
+.sp-motif .mu-f-oeil{fill:#2A1606;}
+.sp-motif .mu-f-bouche{fill:none;stroke:#2A1606;stroke-width:2.2;stroke-linecap:round;}
+@keyframes sp-motif{0%,100%{translate:0 0;rotate:-6deg}50%{translate:0 -14px;rotate:6deg}}
+@media (prefers-reduced-motion:reduce){.sp-motif{animation:none;}}
 .sp-fond{position:absolute;inset:-20%;z-index:0;pointer-events:none;
   background:radial-gradient(60% 40% at 50% 30%,rgba(246,160,60,.38),transparent 70%),radial-gradient(50% 35% at 20% 80%,rgba(255,90,170,.16),transparent 70%),radial-gradient(45% 30% at 85% 70%,rgba(255,200,110,.14),transparent 70%);
   animation:sp-respire 6s ease-in-out infinite alternate;}

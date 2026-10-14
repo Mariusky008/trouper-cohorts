@@ -82,7 +82,7 @@ export default async function AdminSurprisesPage({
     return `/admin/humain/surprises?${q.toString()}`;
   };
   const t = a.total;
-  const avis = t.aime + t.bof;
+  const avis = t.aime + t.sansplus + t.bof;
   const croises = Object.entries(a.croise)
     .map(([k, c]) => ({ piece: k.split("|")[0] as ClePiece, sorte: k.split("|")[1] as SorteDeRaison, c }))
     .filter((x) => x.c.vue > 0 || x.c.trouvee > 0)
@@ -124,7 +124,7 @@ export default async function AdminSurprisesPage({
         <div className="mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <Tuile titre="Trouvées" valeur={String(t.trouvee)} detail="par le Fantôme" />
           <Tuile titre="Ouvertes" valeur={pct(taux(t.vue, t.trouvee))} detail={`${t.vue} vues`} />
-          <Tuile titre="❤️ parmi les avis" valeur={pct(taux(t.aime, avis))} detail={`${t.aime} ❤️ · ${t.bof} 👎`} />
+          <Tuile titre="« J’adore » parmi les avis" valeur={pct(taux(t.aime, avis))} detail={`${t.aime} j’adore · ${t.sansplus} sans plus · ${t.bof} j’aime pas`} />
           <Tuile titre="« Voir »" valeur={pct(taux(t.voir, t.vue))} detail="des surprises vues" />
           <Tuile titre="« Pourquoi moi ? »" valeur={pct(taux(t.pourquoi, t.vue))} detail="des surprises vues" />
           <Tuile titre="« Ne plus me proposer »" valeur={String(t.refus)} detail="genres refusés" />
@@ -152,7 +152,7 @@ export default async function AdminSurprisesPage({
         </div>
       ) : (
         <>
-          <Bloc titre="Par sorte de raison" sous="La question principale : quelle raison fait dire ❤️, laquelle fait dire 👎.">
+          <Bloc titre="Par sorte de raison" sous="La question principale : quelle raison fait dire « J’adore », laquelle fait dire « J’aime pas ».">
             {SORTES_DE_RAISON.map((s) => (
               <Ligne key={s} nom={NOM_SORTE[s].titre} sous={NOM_SORTE[s].exemple} c={a.parSorte[s]} />
             ))}
@@ -211,7 +211,7 @@ function Bloc({ titre, sous, children }: { titre: string; sous?: string; childre
               <th className="py-2 pr-3">Raison</th>
               <th className="py-2 pr-3 text-right">Vues</th>
               <th className="w-[38%] py-2 pr-3">Réactions (sur les vues)</th>
-              <th className="py-2 pr-3 text-right">❤️ / avis</th>
+              <th className="py-2 pr-3 text-right">J’adore / avis</th>
               <th className="py-2 pr-3 text-right">« Voir »</th>
               <th className="py-2 pr-3 text-right">Pourquoi ?</th>
               <th className="py-2 text-right">Refus</th>
@@ -233,9 +233,9 @@ function Legende() {
   );
   return (
     <p className="mt-3 flex flex-wrap gap-4 text-xs text-slate-600">
-      {pastille(ROUGE, "👎 Pas vraiment")}
-      {pastille(NEUTRE, "Vue, sans avis")}
-      {pastille(BLEU, "❤️ Ça me plaît")}
+      {pastille(ROUGE, "👻 J’aime pas")}
+      {pastille(NEUTRE, "Vue sans avis, ou « sans plus »")}
+      {pastille(BLEU, "👻 J’adore")}
       <span className="text-slate-400">Barres centrées sur « sans avis » : à gauche ce qui déplaît, à droite ce qui plaît.</span>
     </p>
   );
@@ -247,9 +247,10 @@ function Legende() {
  * neutre : on compare d'un coup d'œil ce qui penche d'un côté ou de l'autre.
  */
 function Ligne({ nom, sous, c }: { nom: string; sous?: string; c: Compte }) {
-  const avis = c.aime + c.bof;
+  const avis = c.aime + c.sansplus + c.bof;
   const vues = Math.max(c.vue, avis);
-  const sans = Math.max(0, vues - avis);
+  // « SANS PLUS » TOMBE AU CENTRE, avec les vues sans avis : ni pour, ni contre.
+  const sans = Math.max(0, vues - c.aime - c.bof);
   const part = (n: number) => (vues ? (n / vues) * 100 : 0);
   // L'échelle va de -100 % à +100 % : la barre occupe la moitié de la largeur.
   const gauche = 50 - (part(c.bof) + part(sans) / 2) / 2;
@@ -269,9 +270,9 @@ function Ligne({ nom, sous, c }: { nom: string; sous?: string; c: Compte }) {
       />
     ) : null;
   const segs = [
-    { n: c.bof, couleur: ROUGE, titre: `👎 ${c.bof} (${Math.round(part(c.bof))} % des vues)` },
-    { n: sans, couleur: NEUTRE, titre: `Sans avis : ${sans} (${Math.round(part(sans))} %)` },
-    { n: c.aime, couleur: BLEU, titre: `❤️ ${c.aime} (${Math.round(part(c.aime))} % des vues)` },
+    { n: c.bof, couleur: ROUGE, titre: `J’aime pas : ${c.bof} (${Math.round(part(c.bof))} % des vues)` },
+    { n: sans, couleur: NEUTRE, titre: `Sans avis ou sans plus : ${sans} (${Math.round(part(sans))} %)` },
+    { n: c.aime, couleur: BLEU, titre: `J’adore : ${c.aime} (${Math.round(part(c.aime))} % des vues)` },
   ].filter((x) => x.n > 0);
   return (
     <tr className="border-b last:border-0">
@@ -282,7 +283,7 @@ function Ligne({ nom, sous, c }: { nom: string; sous?: string; c: Compte }) {
       <td className="py-2.5 pr-3 text-right align-top tabular-nums">{c.vue}</td>
       <td className="py-2.5 pr-3 align-top">
         {vues > 0 ? (
-          <span className="relative block h-3.5 w-full" aria-label={`${c.bof} pas vraiment, ${sans} sans avis, ${c.aime} ça me plaît`}>
+          <span className="relative block h-3.5 w-full" aria-label={`${c.bof} j’aime pas, ${sans} sans avis ou sans plus, ${c.aime} j’adore`}>
             <i className="absolute inset-y-[-3px] left-1/2 w-px bg-slate-300" aria-hidden="true" />
             <span className="absolute inset-y-0 flex" style={{ left: `${gauche}%`, width: "50%" }}>
               {segs.map((x, k) => (

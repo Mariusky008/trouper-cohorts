@@ -195,7 +195,8 @@ import { monLook } from "@/lib/direct/look";
 import { PROFILS_CADEAU, profilCadeau } from "@/lib/site-internet/cadeau-offert";
 import { montrerSalonPret } from "./ensemble-alcoves";
 import { signalerPublication } from "@/lib/direct/ville-sync";
-import { pieceDeLaFamille, pieceParCle } from "@/lib/direct/maison";
+import { pieceDeLaFamille, pieceParCle, type ClePiece } from "@/lib/direct/maison";
+import type { Surprise } from "@/lib/direct/surprises";
 /* ═══ L'OUVERTURE EN TROIS ACTES EST MISE DE CÔTÉ, PAS EFFACÉE ═════════════
    « L'animation de départ ne fonctionne pas assez bien, garde-la de côté, on
    essaiera de faire mieux plus tard. »
@@ -2097,6 +2098,19 @@ export function ApercuHabitant({
    * L'épingle ne déplace qu'elle, et se retire dès qu'on l'a passée.
    */
   const [epingle, setEpingle] = useState("");
+  /**
+   * 🎁 UNE SURPRISE OUVERTE DANS LE DIRECT — « Quand je clique sur "Voir la
+   * soirée" ou "Voir le plat", ça m'amène sur la page du commerçant et je suis
+   * perdu. Peut-être faudrait-il m'amener sur la page "Le Direct" de
+   * l'annonce. » Son annonce est épinglée en tête du paquet, et on retient
+   * d'où l'on vient : la pièce de Ma Maison, ou l'écran des surprises
+   * (`ecran`) — la puce « ← Mes surprises » y ramène.
+   */
+  const [depuisSurprise, setDepuisSurprise] = useState<{ carte: string; piece: ClePiece; id: string; ecran: boolean } | null>(null);
+  /** La pièce de Ma Maison à rouvrir en revenant du Direct, sur la surprise qu'on regardait. */
+  const [pieceDeDepart, setPieceDeDepart] = useState<{ cle: ClePiece; cible: string } | null>(null);
+  /** L'écran des surprises, rouvert sur celle qu'on regardait. */
+  const [surpriseDeDepart, setSurpriseDeDepart] = useState<string | undefined>(undefined);
 
   /**
    * ─── ON ARRIVE PAR LE QR D'UN COMMERÇANT, PAS PAR LA PORTE PRINCIPALE ───
@@ -2779,6 +2793,9 @@ export function ApercuHabitant({
     onOnglet?.(o);
     // PARTI CHERCHER UNE IDÉE POUR ENSEMBLE, ON EST ALLÉ AILLEURS : le fil tombe.
     if (o !== "direct") finirIdee();
+    // VENU D'UNE SURPRISE, ON EST ALLÉ AILLEURS : le retour n'a plus lieu d'être.
+    if (o !== "direct") setDepuisSurprise(null);
+    if (o !== "profil") setPieceDeDepart(null);
     // ON RELIT LA MÉMOIRE EN ARRIVANT, PAS UNE FOIS POUR TOUTES : un fantôme
     // s'éteint tout seul, et un fantôme posé il y a dix secondes doit apparaître
     // sans recharger la page.
@@ -3491,9 +3508,17 @@ export function ApercuHabitant({
     const i = arrivees.indexOf(c.id);
     return i < 0 ? 999 : i;
   };
+  /* L'ANNONCE D'UNE SURPRISE EST DANS LE PAQUET, même si son heure n'est pas
+     celle de maintenant (la soirée, vue le matin) : on est venu exprès pour
+     elle. Tant qu'elle est épinglée seulement — passée, elle reprend sa règle. */
+  const carteDeSurprise =
+    depuisSurprise && epingle === depuisSurprise.carte && !dispoBrut.some((c) => c.id === depuisSurprise.carte)
+      ? toutes.find((c) => c.id === depuisSurprise.carte)
+      : undefined;
+  const dispoVu = carteDeSurprise ? [carteDeSurprise, ...dispoBrut] : dispoBrut;
   const dispo = sortie
-    ? [...dispoBrut].sort((a, b) => rang(a) - rang(b) || a.metres - b.metres)
-    : dispoBrut;
+    ? [...dispoVu].sort((a, b) => rang(a) - rang(b) || a.metres - b.metres)
+    : dispoVu;
   const pile = (() => {
     // LES PRÉPARÉS D'ABORD, ET ILS SE PASSENT COMME LES AUTRES : une carte
     // qu'on ne peut pas balayer se remarque, et c'est la seule chose qu'on ne
@@ -6287,7 +6312,15 @@ export function ApercuHabitant({
   }
 
   /** Le geste du fantôme sur la page affichée — aucun dans Le Direct. */
-  const gestePage = onglet in GESTES_DE_PAGE ? GESTES_DE_PAGE[onglet as PageAGeste] : null;
+  /* DANS MA MAISON, LE JOUR OÙ IL A RAPPORTÉ DES SURPRISES, IL PASSE À LA
+     SUIVANTE : « au lieu de revenir en arrière à la page Ma maison pour voir
+     la prochaine surprise et réappuyer dessus ». Voir `MaMaison`. */
+  const gestePage: { image: string; mot: string; dit: string } | null =
+    onglet === "profil" && tournee.duJour.length > 0
+      ? { ...GESTES_DE_PAGE.profil, mot: "Suivante", dit: "La surprise suivante" }
+      : onglet in GESTES_DE_PAGE
+        ? GESTES_DE_PAGE[onglet as PageAGeste]
+        : null;
   /**
    * LE MOT AU-DESSUS DU FANTÔME EST UNE AIDE DE PREMIER USAGE, PAS UNE
    * ÉTIQUETTE. « La bulle permanente "Partager" recouvre les actions des
@@ -7293,6 +7326,52 @@ export function ApercuHabitant({
     };
   }
 
+  /**
+   * 🎁 « VOIR LE PLAT », « VOIR LA SOIRÉE », « VOIR L'ANNONCE » — depuis une
+   * surprise, dans l'application : l'annonce du commerce en tête du Direct, sa
+   * fiche ouverte, et la puce « ← Mes surprises » pour revenir où l'on était.
+   * Un commerce que l'application ne connaît pas (il n'est plus dans la ville
+   * du jour) garde sa page à lui.
+   */
+  function voirLaSurpriseDansLeDirect(s: Surprise, ecran: boolean) {
+    const c = toutes.find((t) => t.id === s.carte);
+    if (!c) {
+      window.location.href = pageDuCommerce({ id: s.carte }, s.action.onglet);
+      return;
+    }
+    arreterLeDirect();
+    noter("onglet", 0, "surprise");
+    setSurprisesOuvertes(null);
+    setOnglet("direct");
+    rangerCeQuiAttend();
+    setSalonPage(false);
+    setSalonOuvert("");
+    setFeuille("");
+    setEmbauches(false);
+    setEnvies([]);
+    setPassees([]);
+    setBranche(c.branche);
+    setVue("metiers");
+    setEpingle(c.id);
+    setDepuisSurprise({ carte: c.id, piece: s.piece, id: s.id, ecran });
+    minuteries.current.push(
+      window.setTimeout(() => defilement.current?.scrollTo({ top: 260, behavior: "smooth" }), 260),
+    );
+  }
+
+  /** « ← Mes surprises » : la pièce qu'on regardait, ou l'écran des surprises sur la même. */
+  function revenirAuxSurprises() {
+    const d = depuisSurprise;
+    if (!d) return;
+    if (epingle === d.carte) setEpingle("");
+    allerA_onglet("profil");
+    setDepuisSurprise(null);
+    if (d.ecran) {
+      setSurpriseDeDepart(d.id);
+      setSurprisesOuvertes("toutes");
+    } else setPieceDeDepart({ cle: d.piece, cible: d.id });
+  }
+
   function voirLAnnonce(x: Salon) {
     const { carte: c, evenement: e } = annonceDuSalon(x);
     if (!c && !e) return;
@@ -7795,6 +7874,29 @@ export function ApercuHabitant({
               : undefined
           }
         >
+          {/* 🎁 VENU D'UNE SURPRISE : on sait d'où l'on vient, et on y revient d'un appui. */}
+          {onglet === "direct" && depuisSurprise && !salonPage && !favorisPage && (
+            <button type="button" className="ap-retour-surprise" onClick={revenirAuxSurprises}>
+              <i aria-hidden="true">←</i>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/direct/fantomes/avis/envie.png" alt="" />
+              Mes surprises
+              <style
+                dangerouslySetInnerHTML={{
+                  __html: `
+.ap-retour-surprise{position:absolute;z-index:60;top:calc(env(safe-area-inset-top, 0px) + 100px);left:12px;
+  display:inline-flex;align-items:center;gap:6px;padding:6px 14px 6px 10px;border-radius:999px;border:1px solid rgba(255,225,166,.55);cursor:pointer;
+  font:inherit;font-size:13.5px;font-weight:850;color:#2A1606;background:linear-gradient(180deg,#FFE7A8,#F6B54B);box-shadow:0 6px 18px rgba(0,0,0,.35);
+  animation:ap-retour-surprise .45s cubic-bezier(.3,1.5,.5,1) both;}
+.ap-retour-surprise i{font-style:normal;font-size:15px;}
+.ap-retour-surprise img{width:22px;height:22px;object-fit:contain;}
+@keyframes ap-retour-surprise{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.ap-retour-surprise{animation:none;}}
+`,
+                }}
+              />
+            </button>
+          )}
           {/* ─── LE SALON, EN PAGE PLEINE ───
               Il vivait dans une feuille qui remonte par-dessus le paquet. Une
               feuille dit « ceci est un aparté, tu vas revenir » ; or le salon
@@ -12308,10 +12410,11 @@ export function ApercuHabitant({
                 surprises={{
                   aOuvrir: tournee.aOuvrir,
                   duJour: tournee.duJour,
-                  onOuvrir: (revoir) => setSurprisesOuvertes(revoir ? "toutes" : "neuves"),
-                  onVoir: (s) => {
-                    window.location.href = pageDuCommerce(toutes.find((x) => x.id === s.carte) ?? { id: s.carte }, s.action.onglet);
+                  onOuvrir: (revoir) => {
+                    setSurpriseDeDepart(undefined);
+                    setSurprisesOuvertes(revoir ? "toutes" : "neuves");
                   },
+                  onVoir: (s) => voirLaSurpriseDansLeDirect(s, false),
                   commerces: toutes,
                   rapporterait: tournee.rapporterait,
                   chercherMaintenant: tournee.chercherMaintenant,
@@ -12330,6 +12433,7 @@ export function ApercuHabitant({
                   }
                 }}
                 demandeGeste={demandeGeste}
+                pieceDeDepart={pieceDeDepart}
                 reglagesEnPlus={
                   <>
                 {/* AIDE : le tuto d'arrivée, à revoir quand on veut. */}
@@ -15711,10 +15815,9 @@ export function ApercuHabitant({
           {surprisesOuvertes && (
             <SurprisesDuJour
               revoir={surprisesOuvertes === "toutes"}
+              depart={surpriseDeDepart}
               onFermer={() => setSurprisesOuvertes(null)}
-              onVoir={(s) => {
-                window.location.href = pageDuCommerce(toutes.find((x) => x.id === s.carte) ?? { id: s.carte }, s.action.onglet);
-              }}
+              onVoir={(s) => voirLaSurpriseDansLeDirect(s, true)}
             />
           )}
           {journeeOuverte && (

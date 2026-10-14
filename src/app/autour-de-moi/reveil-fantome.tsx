@@ -31,6 +31,9 @@ import { VideoFantome, mouvementReduit } from "@/components/direct/video-fantome
 import { pieceParCle } from "@/lib/direct/maison";
 import { abonnerMaisonPrivee, chargerMaisonPrivee, maisonPriveeServeur, reagirALaSurprise, voirLaSurprise } from "@/lib/direct/maison-memoire";
 import { sourceDe, type CommerceDuJour, type Surprise } from "@/lib/direct/surprises";
+import { jouer } from "@/lib/direct/sons";
+import { SigneFantome } from "@/components/direct/note-fantomes";
+import { AvisFantomes, type Avis } from "./avis-fantomes";
 
 type Phase = "dort" | "sursaut" | "tournee" | "retour" | "rien";
 type Visite = { c: CommerceDuJour; s?: Surprise };
@@ -131,6 +134,7 @@ export function ReveilDuFantome({
 
   const reveiller = () => {
     if (phase !== "dort") return;
+    jouer("fantome");
     const trouvees = partir();
     setRoute({ visites: itineraire(commerces, trouvees), trouvees });
     enCours.current = { trouvees, posees: false };
@@ -150,10 +154,13 @@ export function ReveilDuFantome({
   /* SES VISITES, UNE À UNE : environ six secondes en tout, le temps de la vidéo. */
   const n = route?.visites.length ?? 0;
   const duree = mouvementReduit() ? 380 : Math.min(1250, Math.max(800, 6400 / Math.max(n, 1)));
+  /** La visite en cours rapporte quelque chose : un petit carillon quand il ressort. */
+  const tinte = !!route?.visites[pas - 1]?.s;
   useEffect(() => {
     if (phase !== "tournee" || pas > n) return;
     const t = window.setTimeout(
       () => {
+        if (tinte) jouer("note");
         setPas(pas + 1);
         if (pas + 1 > n) {
           fini.current.journal = true;
@@ -163,12 +170,18 @@ export function ReveilDuFantome({
       pas === 0 ? 350 : duree,
     );
     return () => window.clearTimeout(t);
-  }, [phase, pas, n, duree]);
+  }, [phase, pas, n, duree, tinte]);
 
   /* « J'AI TROUVÉ… » : les pièces s'allument au moment où il le dit. */
   useEffect(() => {
     if (phase !== "retour") return;
-    const t = window.setTimeout(() => rappels.current.onAllumer(), mouvementReduit() ? 0 : 2700);
+    const t = window.setTimeout(
+      () => {
+        jouer("ouvrir");
+        rappels.current.onAllumer();
+      },
+      mouvementReduit() ? 0 : 2700,
+    );
     return () => window.clearTimeout(t);
   }, [phase]);
 
@@ -334,7 +347,18 @@ export function ReveilDuFantome({
  * dressing). Les ouvrir ici les compte comme ouvertes : l'enveloppe ne les
  * remontrera pas comme neuves.
  */
-export function TrouveesDeLaPiece({ liste, onVoir, titre }: { liste: Surprise[]; onVoir: (s: Surprise) => void; titre?: string }) {
+export function TrouveesDeLaPiece({
+  liste,
+  onVoir,
+  titre,
+  cible,
+}: {
+  liste: Surprise[];
+  onVoir: (s: Surprise) => void;
+  titre?: string;
+  /** La surprise que le Fantôme du menu vient de désigner (« Suivante ») : on y descend. */
+  cible?: string;
+}) {
   /* CELLES QUI ÉTAIENT LÀ EN ENTRANT. Une surprise qui arrive pendant qu'on
      est dans la pièce (on vient de dire « Romans ») reste à ouvrir : elle a
      droit à sa pastille et à son enveloppe. */
@@ -342,10 +366,24 @@ export function TrouveesDeLaPiece({ liste, onVoir, titre }: { liste: Surprise[];
   useEffect(() => {
     for (const s of deja) voirLaSurprise(s);
   }, [deja]);
+  /* LA SUIVANTE, DANS LA MÊME PIÈCE : on la fait venir sous les yeux. La
+     première n'a pas besoin qu'on descende — la pièce s'ouvre dessus. */
+  const racine = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!cible || liste[0]?.id === cible) return;
+    const el = racine.current?.querySelector<HTMLElement>(`[data-surprise="${CSS.escape(cible)}"]`);
+    el?.scrollIntoView({ behavior: mouvementReduit() ? "auto" : "smooth", block: "start" });
+  }, [cible, liste]);
   if (!liste.length) return null;
   const essayees = liste.filter((s) => s.surMoi);
   return (
-    <section className="tr">
+    <section className="tr" ref={racine}>
+      {/* DE PETITS FANTÔMES QUI FLOTTENT AUTOUR DU TITRE : on est chez lui. */}
+      <span className="tr-motifs" aria-hidden="true">
+        {[0, 1, 2].map((i) => (
+          <SigneFantome key={i} classe={`tr-motif m${i}`} coeur={i === 1} />
+        ))}
+      </span>
       <h2 className="tr-h">
         <i aria-hidden="true">✨</i>
         {titre ??
@@ -356,19 +394,20 @@ export function TrouveesDeLaPiece({ liste, onVoir, titre }: { liste: Surprise[];
             : `Le Fantôme a trouvé ${pluriel(liste.length, "chose", "choses")} pour cette pièce`)}
       </h2>
       {liste.map((s) => (s.surMoi ? <EssaiSurMoi key={s.id} s={s} onVoir={onVoir} /> : <Trouvee key={s.id} s={s} onVoir={onVoir} />))}
+      <p className="tr-pied">
+        <SigneFantome classe="tr-pied-f" />
+        Vos avis m’apprennent vos goûts : la prochaine tournée en tiendra compte.
+      </p>
       <StylesReveil />
     </section>
   );
 }
 
-function Avis({ s }: { s: Surprise }) {
+/** 👻 J'aime pas / Sympa, sans plus / J'adore — voir `avis-fantomes.tsx`. */
+function AvisDeLaSurprise({ s }: { s: Surprise }) {
   const etat = useSyncExternalStore(abonnerMaisonPrivee, chargerMaisonPrivee, maisonPriveeServeur);
-  const aime = etat.memoire.jour?.avis[s.id] === 1;
-  return (
-    <button type="button" className={`tr-coeur${aime ? " on" : ""}`} aria-pressed={aime} onClick={() => reagirALaSurprise(s, 1)}>
-      {aime ? "❤️ Noté" : "🤍 Ça me plaît"}
-    </button>
-  );
+  const avis = etat.memoire.jour?.avis[s.id] as Avis | undefined;
+  return <AvisFantomes avis={avis} onAvis={(a) => reagirALaSurprise(s, a)} />;
 }
 
 function Texte({ s, onVoir }: { s: Surprise; onVoir: (s: Surprise) => void }) {
@@ -380,19 +419,17 @@ function Texte({ s, onVoir }: { s: Surprise; onVoir: (s: Surprise) => void }) {
         {s.prix ? <span> · {s.prix.replace(/ /g, "\u00a0")}</span> : null}
       </b>
       <p>👻 {s.raison}</p>
-      <div className="tr-actions">
-        <button type="button" className="tr-voir" onClick={() => onVoir(s)}>
-          {s.action.mot} →
-        </button>
-        <Avis s={s} />
-      </div>
+      <button type="button" className="tr-voir" onClick={() => onVoir(s)}>
+        {s.action.mot} →
+      </button>
+      <AvisDeLaSurprise s={s} />
     </div>
   );
 }
 
 function Trouvee({ s, onVoir }: { s: Surprise; onVoir: (s: Surprise) => void }) {
   return (
-    <article className="tr-carte">
+    <article className="tr-carte" data-surprise={s.id}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="tr-photo" src={s.photo} alt="" />
       <Texte s={s} onVoir={onVoir} />
@@ -417,6 +454,7 @@ function EssaiSurMoi({ s, onVoir }: { s: Surprise; onVoir: (s: Surprise) => void
   const [avant, setAvant] = useState(false);
   useEffect(() => {
     if (!revele) return;
+    jouer("revele");
     const t = window.setTimeout(() => setPret(true), mouvementReduit() ? 0 : 1750);
     return () => window.clearTimeout(t);
   }, [revele]);
@@ -445,7 +483,7 @@ function EssaiSurMoi({ s, onVoir }: { s: Surprise; onVoir: (s: Surprise) => void
   }, []);
   if (!s.surMoi) return null;
   return (
-    <article className="tr-carte tr-essai">
+    <article className="tr-carte tr-essai" data-surprise={s.id}>
       <div
         ref={cadre}
         className={`tr-cadre${revele ? " revele" : ""}${avant ? " avant" : ""}`}
@@ -547,9 +585,24 @@ button.rv{cursor:pointer;font:inherit;}
 .rv-points{display:inline-block;animation:rv-points 1s steps(4) infinite;overflow:hidden;vertical-align:bottom;width:1em;}
 @keyframes rv-points{from{width:0}to{width:1em}}
 
-.tr{margin:14px 0 4px;}
+.tr{position:relative;margin:14px 0 4px;}
+.tr-motifs{position:absolute;right:0;top:-6px;width:96px;height:44px;pointer-events:none;}
+.tr-motif{position:absolute;width:18px;height:20px;opacity:.85;animation:tr-flotte 4.2s ease-in-out infinite;}
+.tr-motif .mu-f-corps{fill:#FFE9F2;}
+.tr-motif .mu-f-oeil{fill:#2A1606;}
+.tr-motif .mu-f-bouche{fill:none;stroke:#2A1606;stroke-width:2.2;stroke-linecap:round;}
+.tr-motif.m0{right:62px;top:14px;transform:rotate(-10deg);}
+.tr-motif.m1{right:30px;top:0;width:24px;height:26px;animation-delay:-1.4s;}
+.tr-motif.m1 .mu-f-oeil{fill:#FF4D8D;}
+.tr-motif.m2{right:2px;top:18px;width:15px;height:17px;opacity:.6;animation-delay:-2.6s;}
+@keyframes tr-flotte{0%,100%{translate:0 0}50%{translate:0 -6px}}
+.tr-pied{display:flex;align-items:center;gap:8px;margin:2px 4px 6px;font-size:12px;line-height:1.35;color:#B3A59D;}
+.tr-pied-f{flex:none;width:16px;height:18px;}
+.tr-pied-f .mu-f-corps{fill:#C9B8A8;}
+.tr-pied-f .mu-f-oeil{fill:#170F0B;}
+.tr-pied-f .mu-f-bouche{fill:none;stroke:#170F0B;stroke-width:2.2;stroke-linecap:round;}
 .mz .tr{margin:14px 16px 4px;}
-.tr-h{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:17px;line-height:1.2;font-weight:900;color:#FFE1A6;}
+.tr-h{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding-right:100px;font-size:17px;line-height:1.2;font-weight:900;color:#FFE1A6;}
 .tr-h i{font-style:normal;}
 .tr-carte{margin:0 0 14px;border-radius:20px;overflow:hidden;background:#221811;border:1px solid rgba(246,181,75,.35);box-shadow:0 0 28px -8px rgba(246,181,75,.45);}
 .tr-photo{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;}
@@ -558,10 +611,7 @@ button.rv{cursor:pointer;font:inherit;}
 .tr-texte b{font-size:18px;line-height:1.2;font-weight:900;color:#FFF4E6;}
 .tr-texte b span{color:#FFD37A;}
 .tr-texte p{margin:2px 0 0;font-size:14px;line-height:1.4;color:#E9DACB;}
-.tr-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
-.tr-voir{flex:1 0 auto;padding:11px 14px;white-space:nowrap;border:0;border-radius:999px;cursor:pointer;font-size:14.5px;font-weight:850;color:#2A1606;background:linear-gradient(180deg,#FFD37A,#F6A53B);}
-.tr-coeur{flex:none;padding:11px 14px;border-radius:999px;cursor:pointer;font-size:13.5px;font-weight:800;color:#FFF4E6;background:transparent;border:1px solid rgba(255,236,210,.3);}
-.tr-coeur.on{border-color:#FF7AC8;background:rgba(255,122,200,.14);}
+.tr-voir{margin-top:8px;padding:12px 14px;white-space:nowrap;border:0;border-radius:999px;cursor:pointer;font-size:14.5px;font-weight:850;color:#2A1606;background:linear-gradient(180deg,#FFD37A,#F6A53B);}
 .tr-cadre{position:relative;aspect-ratio:4/5;max-height:470px;width:100%;overflow:hidden;cursor:pointer;background:#140D08;}
 .tr-cadre img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 18%;}
 .tr-apres{clip-path:inset(0 100% 0 0);transition:opacity .45s ease;}
@@ -580,6 +630,7 @@ button.rv{cursor:pointer;font:inherit;}
 .tr-comparer{position:absolute;right:12px;bottom:12px;z-index:3;font-style:normal;font-size:12px;font-weight:750;color:#FFF4E6;padding:5px 10px;border-radius:999px;background:rgba(12,7,4,.5);
   animation:rv-entre .4s ease both;}
 @media (prefers-reduced-motion:reduce){
+  .tr-motif{animation:none;}
   .rv-dort .rv-img,.rv-z i,.rv-cta,.rv-visites li,.rv-hein{animation:none;}
   .rv-z i{opacity:.8;}
   .rv-z i:nth-child(2){transform:translate(14px,-22px);}

@@ -77,6 +77,7 @@ export function MaMaison({
   onDecouvrir,
   onVoirGardee,
   demandeGeste = 0,
+  pieceDeDepart = null,
   reglagesEnPlus,
 }: {
   /** Dans une vraie ville : la Maison est gardée par le serveur et l'adresse la retrouve. */
@@ -102,15 +103,19 @@ export function MaMaison({
   /** « Découvrir » depuis une pièce : le Direct, sur son métier. */
   onDecouvrir: (branche: string) => void;
   onVoirGardee?: (p: PieceGardee) => void;
-  /** Le Fantôme du bas, sur cette page : il ouvre la pièce du moment. */
+  /** Le Fantôme du bas, sur cette page : il ouvre la pièce du moment — ou, les jours de surprises, la suivante. */
   demandeGeste?: number;
+  /** En revenant d'une annonce (« ← Mes surprises ») : la pièce qu'on regardait, et la surprise. */
+  pieceDeDepart?: { cle: ClePiece; cible: string } | null;
   /** Ce que les réglages gardent de l'application (aide, mes fantômes, installer). */
   reglagesEnPlus?: ReactNode;
 }) {
   const etat = useSyncExternalStore(abonnerMaisonPrivee, chargerMaisonPrivee, maisonPriveeServeur);
   const look = useSyncExternalStore(abonnerLook, monLook, monLook);
   const heure = useSyncExternalStore(rien, heureIci, heureServeur);
-  const [vue, setVue] = useState<Vue>({ ou: "entree" });
+  const [vue, setVue] = useState<Vue>(() => (pieceDeDepart ? { ou: "piece", cle: pieceDeDepart.cle } : { ou: "entree" }));
+  /** La surprise que le Fantôme du menu a désignée en dernier (« Suivante »). */
+  const [cible, setCible] = useState<string | undefined>(pieceDeDepart?.cible);
   /** La tournée du jour a eu lieu, sans rien d'assez bien — voir `rienDuJour`, plus bas. */
   const rienAujourdhui = useRienAujourdhui();
   /**
@@ -127,11 +132,23 @@ export function MaMaison({
     return ordre.map((cle) => etatDe(etat.memoire, pieceParCle(cle)));
   }, [etat.memoire, heure]);
 
-  /* LE FANTÔME DU BAS : la pièce du moment, celle que l'heure met devant. */
+  /* LE FANTÔME DU BAS : la pièce du moment, celle que l'heure met devant.
+     LES JOURS DE SURPRISES, IL PASSE À LA SUIVANTE — « au lieu de revenir en
+     arrière à la page Ma maison pour voir la prochaine surprise et réappuyer
+     dessus » : pièce après pièce, dans l'ordre de l'entrée (les deux du
+     dressing l'une après l'autre), puis il ramène à l'entrée. */
   const [vuGeste, setVuGeste] = useState(demandeGeste);
   if (demandeGeste !== vuGeste) {
     setVuGeste(demandeGeste);
-    if (demandeGeste > 0) setVue({ ou: "piece", cle: etats[0].piece.cle });
+    const ordre = [...PRINCIPALES, ...AUTRES].flatMap((cle) => trouveesDe(cle));
+    if (demandeGeste > 0 && ordre.length) {
+      const ici = vue.ou === "piece" ? vue.cle : null;
+      let i = cible ? ordre.findIndex((x) => x.id === cible) : -1;
+      if (i < 0 || (ici && ordre[i].piece !== ici)) i = ici ? ordre.findIndex((x) => x.piece === ici) : -1;
+      const suivante = ordre[i + 1];
+      setVue(suivante ? { ou: "piece", cle: suivante.piece } : { ou: "entree" });
+      setCible(suivante?.id);
+    } else if (demandeGeste > 0) setVue({ ou: "piece", cle: etats[0].piece.cle });
   }
 
   /* ═══ MON DRESSING : LA VRAIE GARDE-ROBE ═══════════════════════════════
@@ -147,7 +164,7 @@ export function MaMaison({
         <MonDressing
           dedans
           onRetour={() => setVue({ ou: "entree" })}
-          enHaut={surprises && <TrouveesDeLaPiece liste={trouveesDe("dressing")} onVoir={surprises.onVoir} />}
+          enHaut={surprises && <TrouveesDeLaPiece liste={trouveesDe("dressing")} onVoir={surprises.onVoir} cible={cible} />}
           enPlus={
             <button type="button" className="mz-connait" style={{ width: "100%", margin: "18px 0 0" }} onClick={() => setVue({ ou: "piece", cle: "dressing", gouts: true })}>
               <Dessin d={DESSINS.maison} plein />
@@ -167,7 +184,7 @@ export function MaMaison({
         <VuePiece
           e={e}
           gardees={gardees}
-          trouvees={surprises ? <TrouveesDeLaPiece liste={trouveesDe(vue.cle)} onVoir={surprises.onVoir} /> : null}
+          trouvees={surprises ? <TrouveesDeLaPiece liste={trouveesDe(vue.cle)} onVoir={surprises.onVoir} cible={cible} /> : null}
           onRetour={() => setVue({ ou: "entree" })}
           onDecouvrir={onDecouvrir}
           onVoirGardee={onVoirGardee}
@@ -220,7 +237,10 @@ export function MaMaison({
      à emporter, dans la vraie ville, et tant que l'adresse n'est pas prouvée. */
   const proposerCompte = reelle && etat.serveur === "pret" && allumees > 0 && !etat.compte?.verifie;
   const etatDeLaCle = (cle: ClePiece) => etats.find((e) => e.piece.cle === cle) ?? etatDe(etat.memoire, pieceParCle(cle));
-  const ouvrir = (cle: ClePiece) => () => setVue({ ou: "piece", cle });
+  const ouvrir = (cle: ClePiece) => () => {
+    setCible(undefined);
+    setVue({ ou: "piece", cle });
+  };
   /* ═══ LES PIÈCES QUI ONT REÇU QUELQUE CHOSE S'ILLUMINENT ═══════════════
      « …avec le nombre de surprises qu'il y a dedans. » Pendant sa tournée,
      il les passe en revue (elles s'éteignent, un reflet les parcourt) ; à

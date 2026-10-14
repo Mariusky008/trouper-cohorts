@@ -314,8 +314,8 @@ export type JourDeSurprises = {
   liste: Surprise[];
   /** Les surprises déjà ouvertes. */
   vues: string[];
-  /** ❤️ (1) ou 👎 (-1), par surprise. */
-  avis: Record<string, 1 | -1>;
+  /** Par surprise, en fantômes : « J'adore » (1), « Sympa, sans plus » (0), « J'aime pas » (-1). */
+  avis: Record<string, 1 | 0 | -1>;
   /**
    * LA TOURNÉE A VRAIMENT EU LIEU : l'heure de la première recherche du jour,
    * sur de vrais commerces. Une liste vide ne dit rien toute seule — elle peut
@@ -443,8 +443,8 @@ function lireJour(x: unknown): JourDeSurprises | undefined {
   if (!o || typeof o.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(o.date)) return undefined;
   const liste = (Array.isArray(o.liste) ? o.liste : []).map(lireSurprise).filter((s): s is Surprise => !!s).slice(0, 6);
   const ids = new Set(liste.map((s) => s.id));
-  const avis: Record<string, 1 | -1> = {};
-  for (const [k, v] of Object.entries((o.avis && typeof o.avis === "object" ? o.avis : {}) as Record<string, unknown>)) if (ids.has(k) && (v === 1 || v === -1)) avis[k] = v;
+  const avis: Record<string, 1 | 0 | -1> = {};
+  for (const [k, v] of Object.entries((o.avis && typeof o.avis === "object" ? o.avis : {}) as Record<string, unknown>)) if (ids.has(k) && (v === 1 || v === 0 || v === -1)) avis[k] = v;
   const cherche = typeof o.cherche === "number" && Number.isFinite(o.cherche) ? o.cherche : undefined;
   return {
     date: o.date,
@@ -468,7 +468,7 @@ function fusionnerJours(a?: JourDeSurprises, b?: JourDeSurprises): JourDeSurpris
   for (const s of [...a.liste, ...b.liste]) if (!parId.has(s.id)) parId.set(s.id, s);
   const liste = [...parId.values()].sort((x, y) => Number(vues.includes(y.id)) - Number(vues.includes(x.id))).slice(0, 3);
   const ids = new Set(liste.map((s) => s.id));
-  const avis = Object.fromEntries(Object.entries({ ...a.avis, ...b.avis }).filter(([k]) => ids.has(k))) as Record<string, 1 | -1>;
+  const avis = Object.fromEntries(Object.entries({ ...a.avis, ...b.avis }).filter(([k]) => ids.has(k))) as Record<string, 1 | 0 | -1>;
   const cherche = a.cherche && b.cherche ? Math.min(a.cherche, b.cherche) : (a.cherche ?? b.cherche);
   return { date: a.date, liste, vues: vues.filter((v) => ids.has(v)), avis, ...(cherche ? { cherche } : {}) };
 }

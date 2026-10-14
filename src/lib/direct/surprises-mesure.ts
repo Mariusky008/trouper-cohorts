@@ -2,7 +2,7 @@
 // paraît intelligent ou bavard.
 //
 // UNE LIGNE PAR GESTE, DANS LA TABLE ANONYME DU PARCOURS (`apercu_parcours`,
-// événement « surprise ») : trouvée, ouverte, ❤️, 👎, « Voir », « Pourquoi
+// événement « surprise ») : trouvée, ouverte, j'adore, sans plus, j'aime pas, « Voir », « Pourquoi
 // moi ? », « Ne plus me proposer ». Le `contexte` porte quatre mots, écrits par
 // le code et jamais par la personne : le geste, la sorte de raison (dit /
 // crois / va-avec), la pièce, la ville. La `valeur` est le score.
@@ -16,8 +16,8 @@
 import { PIECES, type ClePiece } from "@/lib/direct/maison";
 import { SORTES_DE_RAISON, type SorteDeRaison } from "@/lib/direct/surprises";
 
-export type GesteDeSurprise = "trouvee" | "vue" | "aime" | "bof" | "voir" | "pourquoi" | "refus";
-export const GESTES: GesteDeSurprise[] = ["trouvee", "vue", "aime", "bof", "voir", "pourquoi", "refus"];
+export type GesteDeSurprise = "trouvee" | "vue" | "aime" | "sansplus" | "bof" | "voir" | "pourquoi" | "refus";
+export const GESTES: GesteDeSurprise[] = ["trouvee", "vue", "aime", "sansplus", "bof", "voir", "pourquoi", "refus"];
 
 const CLES = new Set<string>(PIECES.map((p) => p.cle));
 /** La démonstration se compte à part : ses habitants ne sont pas de vrais habitants. */
@@ -44,7 +44,7 @@ export function lireContexte(contexte: unknown): GesteLu | null {
 }
 
 export type Compte = Record<GesteDeSurprise, number>;
-const zero = (): Compte => ({ trouvee: 0, vue: 0, aime: 0, bof: 0, voir: 0, pourquoi: 0, refus: 0 });
+const zero = (): Compte => ({ trouvee: 0, vue: 0, aime: 0, sansplus: 0, bof: 0, voir: 0, pourquoi: 0, refus: 0 });
 
 export type Agregat = {
   total: Compte;

@@ -325,13 +325,18 @@ export function voirLaSurprise(s: Surprise) {
 }
 
 /**
- * ❤️ ÇA ME PLAÎT / 👎 PAS VRAIMENT — un geste comme un autre : il devient un
- * signal de la pièce (ce que j'ai remarqué), et nourrit ce que je crois. On
- * peut changer d'avis : le même signal est remplacé, pas doublé. Une pièce en
- * pause garde l'avis mais n'apprend rien.
+ * 👻 J'ADORE / SYMPA, SANS PLUS / J'AIME PAS — un geste comme un autre : il
+ * devient un signal de la pièce (ce que j'ai remarqué), et nourrit ce que je
+ * crois. On peut changer d'avis : le même signal est remplacé, pas doublé. Une
+ * pièce en pause garde l'avis mais n'apprend rien.
+ *
+ * « SANS PLUS » N'APPREND AUCUN GOÛT : son signal ne porte aucun trait, et il
+ * remplace celui d'un avis précédent — un « j'adore » sur lequel on revient ne
+ * continue pas de compter. Il ne se montre pas non plus dans « Ce que j'ai
+ * remarqué », qui ne garde que ce qui va pour vous.
  */
-export function reagirALaSurprise(s: Surprise, sens: 1 | -1) {
-  if (lire().memoire.jour?.avis[s.id] !== sens) noterLaSurprise(s, sens > 0 ? "aime" : "bof");
+export function reagirALaSurprise(s: Surprise, sens: 1 | 0 | -1) {
+  if (lire().memoire.jour?.avis[s.id] !== sens) noterLaSurprise(s, sens > 0 ? "aime" : sens < 0 ? "bof" : "sansplus");
   geste((m) => {
     const t = Date.now();
     const jour = m.jour ? { ...m.jour, avis: { ...m.jour.avis, [s.id]: sens } } : m.jour;
@@ -340,9 +345,9 @@ export function reagirALaSurprise(s: Surprise, sens: 1 | -1) {
       id: `surprise|${s.objet}`,
       piece: s.piece,
       quoi: s.titre,
-      d: sens > 0 ? `Une surprise qui vous a plu, chez ${s.lieu}` : `Une surprise pas vraiment pour vous`,
-      sens,
-      traits: s.traits,
+      d: sens > 0 ? `Une surprise qui vous a plu, chez ${s.lieu}` : sens < 0 ? `Une surprise pas vraiment pour vous` : `Une surprise sympa, sans plus`,
+      sens: sens > 0 ? 1 : -1,
+      traits: sens === 0 ? [] : s.traits,
       image: s.photo,
       t,
     };
