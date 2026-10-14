@@ -7,6 +7,23 @@ const config: NextConfig = {
   // Force l'inclusion des templates HTML de la lettre dans le bundle serverless :
   // ils sont lus via readFileSync avec un chemin dynamique (couleur/N&B), que le
   // file-tracing de Next ne détecte pas automatiquement.
+  // LES FONCTIONS N'EMPORTENT PAS CE QU'AUCUN CODE SERVEUR NE LIT.
+  //
+  // Quelques bibliothèques lisent `public/` par un chemin calculé à l'exécution
+  // (`readFileSync(join(process.cwd(), "public", chemin))` : la photo ClikMe,
+  // les scènes du restaurant, l'essai de la vitrine). Le traçage de Next ne
+  // peut pas deviner lequel : il emportait TOUT `public/` dans chaque fonction
+  // qui les importe — environ 180 Mo chacune, pour des centaines de fonctions,
+  // et les déploiements se sont mis à échouer à l'étape « Deploying outputs ».
+  // Les vidéos, les modèles de détection du visage (lus par le navigateur), les
+  // flyers, les pages HTML et PDF statiques ne sont jamais lus par le serveur :
+  // ils restent servis tels quels, ils ne partent simplement plus dans les
+  // fonctions. Ce que les routes lisent vraiment est listé plus bas, route par
+  // route — une exclusion ici retirerait aussi ces fichiers-là : aucune ne
+  // touche une image.
+  outputFileTracingExcludes: {
+    "*": ["./public/**/*.{mp4,mov,webm}", "./public/mediapipe/**", "./public/flyers/**", "./public/**/*.{html,pdf}"],
+  },
   outputFileTracingIncludes: {
     // L'IMAGE DE PARTAGE LIT SA POLICE ET LE FANTÔME SUR LE DISQUE (voir
     // `lib/og/clikme-og.tsx`). Fabriquée à la compilation d'ordinaire, elle doit
