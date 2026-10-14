@@ -4,7 +4,7 @@
 
 Deux choses sont arrivées au comptoir du commerçant (`/p/<jeton>`) :
 
-1. **Mes réseaux** : il connecte une fois son Instagram et sa page Facebook. Ensuite, chaque
+1. **Mes réseaux** : il connecte une fois son Instagram, sa page Facebook et sa fiche Google. Ensuite, chaque
    annonce publiée au comptoir part dans Le Direct, sur sa page **et** sur ses réseaux. Il n'ouvre plus
    aucune de ces applications. Il n'y a pas de réponses automatiques aux commentaires : c'est voulu.
 2. **La proposition du matin** : chaque matin, son fantôme choisit une pièce de sa vitrine et la lui
@@ -22,9 +22,9 @@ auditée. PostPeer a déjà ces autorisations. Nous lui disons simplement « pub
 1. Créer le compte sur postpeer.dev et récupérer la **clé d'API**.
 2. Sur Vercel → Settings → Environment Variables (Production) :
    - `POSTPEER_API_KEY` = la clé ;
-   - facultatif : `RESEAUX_PLATEFORMES` = `instagram,facebook` (valeur par défaut). PostPeer propose
-     aussi LinkedIn (`instagram,facebook,linkedin`) et YouTube, inutile ici : YouTube n'accepte que des
-     vidéos. **Ni TikTok ni Google Business ne sont chez PostPeer** (voir plus bas).
+   - facultatif : `RESEAUX_PLATEFORMES` = `instagram,facebook,googlebusiness` (valeur par défaut).
+     PostPeer propose aussi LinkedIn (à ajouter : `…,linkedin`) et YouTube, inutile ici : YouTube
+     n'accepte que des vidéos. **TikTok n'est pas chez PostPeer** (voir plus bas).
    - facultatif : `POSTPEER_BASE_URL` (par défaut `https://api.postpeer.dev/v1`).
 3. **Redéployer** (Deployments → ⋯ → Redeploy). Une variable ajoutée sur Vercel n'atteint le site
    qu'au déploiement suivant : sans ça, la carte « Mes réseaux » reste cachée.
@@ -85,10 +85,13 @@ une annonce depuis le comptoir, puis rouvre « Mes réseaux » pour lire le rés
 - **Instagram** : il faut un compte **professionnel** (gratuit). La limite est de 100 publications par
   24 h.
 - **Facebook** : c'est sa **page** qui publie, pas son profil perso.
-- **TikTok et Google Business** : absents de PostPeer. Les deux existent chez d'autres intermédiaires
-  (bundle.social, Ayrshare, selon leurs propres pages). Le jour où ils comptent, le changement se fait
-  dans `src/lib/reseaux/intermediaire.ts` seulement : le comptoir, la route et les données ne
-  dépendent pas de PostPeer.
+- **Google (sa fiche Google Business)** : identifiant `googlebusiness`. PostPeer crée un compte par
+  fiche. Si le compte Google du commerçant gère plusieurs fiches, l'annonce part sur toutes. Le post
+  reçoit **ses mots seuls**, sans « 📍 nom · ville », sans lien et sans mots-dièse : il est déjà sur sa
+  fiche, et Google n'aime pas les liens dans le texte. Il apparaît dans la recherche et sur Maps.
+- **TikTok** : absent de PostPeer. Il existe chez d'autres intermédiaires (Ayrshare, selon ses propres
+  pages). Le jour où il compte, le changement se fait dans `src/lib/reseaux/intermediaire.ts`
+  seulement : le comptoir, la route et les données ne dépendent pas de PostPeer.
 
 ---
 

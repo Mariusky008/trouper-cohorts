@@ -326,9 +326,26 @@ export async function publierSurSesReseaux(
       metier,
       lien: `${SITE_URL.replace(/^https?:\/\/(www\.)?/, "")}/site-internet/apercu/${site.slug}`,
     });
+    // SA FICHE GOOGLE REÇOIT SES MOTS, ET RIEN D'AUTRE. Le post est déjà sur
+    // SA fiche, sous son nom et son adresse : « 📍 nom · ville » et les
+    // mots-dièse y feraient doublon, et Google n'aime pas les liens dans le
+    // texte d'un post. Un seul appel par groupe : Instagram et Facebook d'un côté,
+    // Google de l'autre.
+    const google = reseaux.comptes.filter((c) => c.plateforme === "googlebusiness");
+    const autres = reseaux.comptes.filter((c) => c.plateforme !== "googlebusiness");
+    const envois =
+      typeof image === "string"
+        ? await Promise.all([
+            autres.length ? publierPartout({ texte: legende, image, comptes: autres }) : null,
+            google.length ? publierPartout({ texte, image, comptes: google }) : null,
+          ])
+        : [];
     const resultat =
       typeof image === "string"
-        ? await publierPartout({ texte: legende, image, comptes: reseaux.comptes })
+        ? {
+            ok: envois.flatMap((e) => e?.ok ?? []),
+            erreurs: envois.flatMap((e) => e?.erreurs ?? []),
+          }
         : { ok: [], erreurs: reseaux.comptes.map((c) => ({ plateforme: c.plateforme, message: image.erreur })) };
     const derniere: DernierePublication = { at: new Date().toISOString(), texte: texte.slice(0, 300), ...resultat };
     if (resultat.erreurs.length) console.warn("[reseaux] publication incomplète :", JSON.stringify(resultat.erreurs));

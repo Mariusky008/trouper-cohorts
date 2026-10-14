@@ -46,14 +46,17 @@ export type Reseaux = {
 /**
  * Les réseaux proposés au comptoir, dans l'ordre où on les montre. Voir `plateformesProposees`.
  *
- * INSTAGRAM ET FACEBOOK SEULEMENT. Chez PostPeer, on trouve Facebook,
- * Instagram, LinkedIn et YouTube — ni TikTok, ni Google Business. YouTube
- * n'accepte que des vidéos, nos annonces sont des photos ; LinkedIn n'est pas
- * là où sont les clients d'un commerce de quartier. Un bouton « Connecter »
- * qui mène à un refus serait pire que pas de bouton. LinkedIn s'ajoute par
- * `RESEAUX_PLATEFORMES` si un commerçant le demande.
+ * INSTAGRAM, FACEBOOK ET SA FICHE GOOGLE. Chez PostPeer, on trouve aussi
+ * LinkedIn et YouTube, mais pas TikTok. YouTube n'accepte que des vidéos, nos
+ * annonces sont des photos. LinkedIn n'est pas là où sont les clients d'un
+ * commerce de quartier : il s'ajoute par `RESEAUX_PLATEFORMES` si un
+ * commerçant le demande.
+ *
+ * GOOGLE, C'EST LÀ OÙ ON LE CHERCHE. « J'ai réussi à mettre Google Business
+ * sur PostPeer. » Son annonce apparaît sur sa fiche Google, dans la recherche
+ * et sur Maps, au moment où quelqu'un tape son nom ou « boutique Vevey ».
  */
-export const PLATEFORMES_PAR_DEFAUT = ["instagram", "facebook"];
+export const PLATEFORMES_PAR_DEFAUT = ["instagram", "facebook", "googlebusiness"];
 
 const NOMS: Record<string, string> = {
   instagram: "Instagram",

@@ -273,6 +273,9 @@ export function ReseauxComptoir({
           <b>Facebook</b> : c’est ta page de commerce qui publie, pas ton profil perso.
         </p>
         <p>
+          <b>Google</b> : ton annonce apparaît sur ta fiche Google, dans la recherche et sur Maps — là où on te cherche. Connecte le compte Google qui gère ta fiche.
+        </p>
+        <p>
           <b>« Il en reste ! »</b> ne part pas sur tes réseaux : elle ne dure que deux heures, elle resterait des mois en haut de ton fil.
         </p>
       </section>
