@@ -37,6 +37,7 @@ import { publier, limiterVivantes } from "@/lib/direct/publications";
 import { villeSlug } from "@/lib/direct/ville";
 import { saisirPrix } from "@/lib/direct/prix";
 import { envoyerAlertes } from "@/lib/direct/envoi-alertes";
+import { publierSurSesReseauxEnFond } from "@/lib/reseaux/intermediaire";
 import { MAX_PIECES, piecesDuDiagnostic, type PieceComptoir } from "@/lib/site-internet/pieces-comptoir";
 import { poserExperience } from "@/lib/site-internet/experience-scenes";
 import { lireEnCours, lirePlanning, MAX_PAR_JOUR, type AnnonceEnCours, type AnnoncePlanifiee } from "@/lib/direct/planning-annonces";
@@ -215,6 +216,11 @@ export async function activerPlanning(
         site: { id, slug: s(row.slug), nom: s(row.business_name), activite: s(row.activite) },
       }).catch(() => null);
       if (!pub?.id) console.error("[planning] le fil a refusé l'annonce programmée :", pub?.erreur ?? "raison inconnue");
+      // 📣 LE JOUR VENU, ELLE PART AUSSI SUR SES RÉSEAUX — s'il les a connectés.
+      await publierSurSesReseauxEnFond(
+        { id, slug: s(row.slug), nom: s(row.business_name), ville, activite: s(row.activite) },
+        { texte: a.texte, photo: a.photo },
+      ).catch(() => null);
     }
     try {
       await envoyerAlertes(supabase, slugVille);
