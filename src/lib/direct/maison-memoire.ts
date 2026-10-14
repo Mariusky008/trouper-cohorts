@@ -220,6 +220,20 @@ export function noterLesSignaux(nouveaux: Signal[]) {
  */
 export function preparerLesSurprises(commerces: CommerceDuJour[], maintenant: Date, gardees: { nom: string }[] = [], dressing: Vetement[] = [], pourDuDressing?: "homme" | "femme") {
   const m = lire().memoire;
+  const { avant, jour, liste } = laTournee(m, commerces, maintenant, gardees, dressing, pourDuDressing);
+  /* LA PREMIÈRE VRAIE RECHERCHE DU JOUR EST NOTÉE, une fois : c'est elle qui
+     permet de dire « rien d'assez intéressant aujourd'hui » sans mentir — une
+     liste vide sans recherche voudrait seulement dire « pas encore cherché ». */
+  const cherche = jour.cherche ?? (commerces.length ? maintenant.getTime() : undefined);
+  const pareil =
+    avant && avant.cherche === cherche && liste.length === avant.liste.length && liste.every((s, i) => s.id === avant.liste[i].id);
+  if (pareil || (!avant && !liste.length && !m.jour && !cherche)) return;
+  geste((x) => ({ ...x, jour: { ...jour, liste, ...(cherche ? { cherche } : {}) } }));
+  for (const s of liste) if (!avant?.liste.some((a) => a.id === s.id)) noterLaSurprise(s, "trouvee");
+}
+
+/** La liste du jour telle qu'une tournée maintenant la laisserait — sans rien écrire. */
+function laTournee(m: Memoire, commerces: CommerceDuJour[], maintenant: Date, gardees: { nom: string }[], dressing: Vetement[], pourDuDressing?: "homme" | "femme") {
   const date = dateDuJour(maintenant);
   const avant = m.jour?.date === date ? m.jour : undefined;
   const jour: JourDeSurprises = avant ?? { date, liste: [], vues: [], avis: {} };
@@ -230,15 +244,36 @@ export function preparerLesSurprises(commerces: CommerceDuJour[], maintenant: Da
     const nouvelles = choisirLesSurprises(m, commerces, maintenant, gardees, deja, dressing, pourDuDressing).filter((s) => !restent.some((r) => r.piece === s.piece));
     liste = [...restent, ...nouvelles].slice(0, SURPRISES_MAX);
   }
-  /* LA PREMIÈRE VRAIE RECHERCHE DU JOUR EST NOTÉE, une fois : c'est elle qui
-     permet de dire « rien d'assez intéressant aujourd'hui » sans mentir — une
-     liste vide sans recherche voudrait seulement dire « pas encore cherché ». */
-  const cherche = jour.cherche ?? (commerces.length ? maintenant.getTime() : undefined);
-  const pareil =
-    avant && avant.cherche === cherche && liste.length === avant.liste.length && liste.every((s, i) => s.id === avant.liste[i].id);
-  if (pareil || (!avant && !liste.length && !m.jour && !cherche)) return;
-  geste((x) => ({ ...x, jour: { ...jour, liste, ...(cherche ? { cherche } : {}) } }));
-  for (const s of liste) if (!avant?.liste.some((a) => a.id === s.id)) noterLaSurprise(s, "trouvee");
+  return { avant, jour, liste };
+}
+
+/**
+ * CE QU'UNE TOURNÉE RAPPORTERAIT MAINTENANT — les surprises qui ne sont pas
+ * encore dans la liste du jour. Rien n'est écrit : le Fantôme qu'on réveille
+ * sait d'avance chez qui il trouvera, et ne pose ses trouvailles qu'en rentrant
+ * (`preparerLesSurprises`).
+ */
+export function ceQueLaTourneeRapporterait(commerces: CommerceDuJour[], maintenant: Date, gardees: { nom: string }[] = [], dressing: Vetement[] = [], pourDuDressing?: "homme" | "femme"): Surprise[] {
+  const m = lire().memoire;
+  const { avant, liste } = laTournee(m, commerces, maintenant, gardees, dressing, pourDuDressing);
+  return liste.filter((s) => !avant?.liste.some((a) => a.id === s.id));
+}
+
+/**
+ * LA TOURNÉE DE LA DÉMONSTRATION — le Fantôme qu'on réveille rentre toujours
+ * avec quelque chose : ses trouvailles passent devant celles du jour, et
+ * redeviennent à ouvrir (on peut refaire la démonstration).
+ */
+export function deposerLesSurprisesDeDemo(liste: Surprise[], maintenant: Date) {
+  const date = dateDuJour(maintenant);
+  const ids = new Set(liste.map((s) => s.id));
+  geste((x) => {
+    const j: JourDeSurprises = x.jour?.date === date ? x.jour : { date, liste: [], vues: [], avis: {} };
+    return {
+      ...x,
+      jour: { ...j, liste: [...liste, ...j.liste.filter((s) => !ids.has(s.id))].slice(0, 6), vues: j.vues.filter((v) => !ids.has(v)), cherche: j.cherche ?? maintenant.getTime() },
+    };
+  });
 }
 
 /**

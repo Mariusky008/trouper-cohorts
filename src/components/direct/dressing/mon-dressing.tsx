@@ -29,11 +29,14 @@ import { VideoFantome } from "@/components/direct/video-fantome";
 export function MonDressing({
   onRetour,
   dedans = false,
+  enHaut,
   enPlus,
 }: {
   onRetour?: () => void;
   /** Dans une page qui défile déjà (Ma Maison) : pas de surcouche plein écran. */
   dedans?: boolean;
+  /** Ce que la page hôte montre avant tout (Ma Maison : la pièce que le Fantôme a trouvée, sur vous). */
+  enHaut?: ReactNode;
   /** Ce que la page hôte ajoute sous la grille (Ma Maison : « Ce que je sais de vos goûts »). */
   enPlus?: ReactNode;
 }) {
@@ -74,6 +77,7 @@ export function MonDressing({
       </header>
 
       <div className="dr-corps">
+        {enHaut}
         {/* PAS PENDANT QU'IL S'OUVRE : un dressing rempli ne doit pas voir passer le tuto. */}
         {e.pret && !n && (
           <>

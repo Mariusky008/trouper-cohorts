@@ -426,7 +426,16 @@ function lireSurprise(x: unknown): Surprise | undefined {
     sorte: r.sorte === "dit" || r.sorte === "crois" || r.sorte === "va-avec" ? r.sorte : undefined,
     action: { mot: chaine(a.mot, 40) || "Voir", onglet: optionnelle(a.onglet, 30) },
     score: nombre(r.score),
+    ...surMoiDe(r.surMoi),
   };
+}
+
+/** La photo de vous avant / avec la pièce : les deux, ou rien. */
+function surMoiDe(x: unknown): { surMoi?: { avant: string; apres: string } } {
+  const o = (x && typeof x === "object" ? x : {}) as Record<string, unknown>;
+  const avant = image(o.avant);
+  const apres = image(o.apres);
+  return avant && apres ? { surMoi: { avant, apres } } : {};
 }
 
 function lireJour(x: unknown): JourDeSurprises | undefined {

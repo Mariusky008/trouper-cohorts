@@ -81,6 +81,13 @@ export type Surprise = {
   sorte?: SorteDeRaison;
   action: { mot: string; onglet?: string };
   score: number;
+  /**
+   * SUR VOUS, DÉJÀ — la photo de vous telle que vous étiez (`avant`), et avec
+   * la pièce trouvée (`apres`, qui est aussi `photo`). Ouvrir son dressing
+   * montre la révélation. Seulement quand l'essai existe vraiment : la
+   * démonstration, ou un essai déjà fait.
+   */
+  surMoi?: { avant: string; apres: string };
 };
 
 /** Le commerce tel que le Fantôme le lit : ce qu'il a publié aujourd'hui. */

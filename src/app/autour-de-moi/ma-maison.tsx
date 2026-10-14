@@ -23,7 +23,10 @@ import { MonDressing } from "@/components/direct/dressing/mon-dressing";
 import { abonnerLook, monLook } from "@/lib/direct/look";
 import { changerDeLook } from "./prendre-place";
 import type { PieceGardee } from "@/lib/direct/pieces-gardees";
-import { CourrierDuFantome, RevoirLesSurprises, RienAujourdhui, useRienAujourdhui } from "./surprises";
+import { CourrierDuFantome, noterRetourVu, RevoirLesSurprises, signatureDuRetour, useRienAujourdhui } from "./surprises";
+import { ReveilDuFantome, TrouveesDeLaPiece } from "./reveil-fantome";
+import type { CommerceDuJour, Surprise } from "@/lib/direct/surprises";
+import { surprisesDeDemo } from "@/lib/direct/surprises-demo";
 import { VideoFantome } from "@/components/direct/video-fantome";
 import { CUISINE_SIGNAUX, MiroirDit, TutoCuisine, TutoMiroir } from "./maison-tutos";
 
@@ -51,11 +54,13 @@ import {
   chargerMaisonPrivee,
   choisirDansLaPiece,
   demanderLeCode,
+  deposerLesSurprisesDeDemo,
   donnerLeCode,
   effacerToutLaMaison,
   maisonPriveeServeur,
   mettreEnPause,
   refuserLeTrait,
+  surprisesAOuvrir,
   viderLaPiece,
 } from "@/lib/direct/maison-memoire";
 
@@ -79,9 +84,21 @@ export function MaMaison({
   gardees: PieceGardee[];
   /**
    * LES SURPRISES DU JOUR — la tournée est tenue par l'application (le badge
-   * en dépend), l'écran aussi : ici, l'enveloppe du Fantôme. Voir `surprises.tsx`.
+   * en dépend), l'écran aussi : ici, le Fantôme qu'on réveille, son enveloppe,
+   * et les pièces qui s'allument. Voir `surprises.tsx` et `reveil-fantome.tsx`.
    */
-  surprises?: { aOuvrir: number; duJour: number; onOuvrir: (revoir: boolean) => void };
+  surprises?: {
+    aOuvrir: Surprise[];
+    duJour: Surprise[];
+    onOuvrir: (revoir: boolean) => void;
+    /** « Voir à la boutique », « Voir le plat » : la page du commerce, sur le bon onglet. */
+    onVoir: (s: Surprise) => void;
+    /** Les commerces du jour : le chemin de sa tournée. */
+    commerces: CommerceDuJour[];
+    /** Ce qu'une tournée rapporterait maintenant, sans rien poser. */
+    rapporterait: () => Surprise[];
+    chercherMaintenant: () => void;
+  };
   /** « Découvrir » depuis une pièce : le Direct, sur son métier. */
   onDecouvrir: (branche: string) => void;
   onVoirGardee?: (p: PieceGardee) => void;
@@ -96,6 +113,14 @@ export function MaMaison({
   const [vue, setVue] = useState<Vue>({ ou: "entree" });
   /** La tournée du jour a eu lieu, sans rien d'assez bien — voir `rienDuJour`, plus bas. */
   const rienAujourdhui = useRienAujourdhui();
+  /**
+   * LE FANTÔME QU'ON A RÉVEILLÉ EST EN TOURNÉE : il garde le haut de la page
+   * jusqu'à son retour (l'enveloppe n'arrive qu'avec lui), et les pièces ne
+   * s'allument qu'au moment où il dit ce qu'il a trouvé (`allume`).
+   */
+  const [tournee, setTournee] = useState<{ allume: boolean } | null>(null);
+  /** Ce que le Fantôme a trouvé pour une pièce aujourd'hui. */
+  const trouveesDe = (cle: ClePiece) => surprises?.duJour.filter((s) => s.piece === cle) ?? [];
 
   const etats = useMemo(() => {
     const ordre = ordreSelonLHeure(heure);
@@ -122,6 +147,7 @@ export function MaMaison({
         <MonDressing
           dedans
           onRetour={() => setVue({ ou: "entree" })}
+          enHaut={surprises && <TrouveesDeLaPiece liste={trouveesDe("dressing")} onVoir={surprises.onVoir} />}
           enPlus={
             <button type="button" className="mz-connait" style={{ width: "100%", margin: "18px 0 0" }} onClick={() => setVue({ ou: "piece", cle: "dressing", gouts: true })}>
               <Dessin d={DESSINS.maison} plein />
@@ -138,7 +164,14 @@ export function MaMaison({
     const e = etats.find((x) => x.piece.cle === vue.cle) ?? etatDe(etat.memoire, pieceParCle(vue.cle));
     return (
       <div className="mz" key={`piece-${vue.cle}`}>
-        <VuePiece e={e} gardees={gardees} onRetour={() => setVue({ ou: "entree" })} onDecouvrir={onDecouvrir} onVoirGardee={onVoirGardee} />
+        <VuePiece
+          e={e}
+          gardees={gardees}
+          trouvees={surprises ? <TrouveesDeLaPiece liste={trouveesDe(vue.cle)} onVoir={surprises.onVoir} /> : null}
+          onRetour={() => setVue({ ou: "entree" })}
+          onDecouvrir={onDecouvrir}
+          onVoirGardee={onVoirGardee}
+        />
         <StylesMaMaison />
       </div>
     );
@@ -182,13 +215,25 @@ export function MaMaison({
   const gestes = etats.flatMap((e) => e.remarque);
   const connue =
     allumees >= 2 && gestes.length >= 3 && rienAujourdhui.debutDuJour > 0 && gestes.some((g) => g.t < rienAujourdhui.debutDuJour);
-  const rienDuJour = rienAujourdhui.rien && connue && !!surprises && !surprises.aOuvrir && !surprises.duJour;
-  const mot = motDuFantome(etats);
+  const rienDuJour = rienAujourdhui.rien && connue && !!surprises && !surprises.aOuvrir.length && !surprises.duJour.length;
   /* « EMPORTEZ VOTRE MAISON AVEC VOUS » — seulement quand il y a quelque chose
      à emporter, dans la vraie ville, et tant que l'adresse n'est pas prouvée. */
   const proposerCompte = reelle && etat.serveur === "pret" && allumees > 0 && !etat.compte?.verifie;
   const etatDeLaCle = (cle: ClePiece) => etats.find((e) => e.piece.cle === cle) ?? etatDe(etat.memoire, pieceParCle(cle));
   const ouvrir = (cle: ClePiece) => () => setVue({ ou: "piece", cle });
+  /* ═══ LES PIÈCES QUI ONT REÇU QUELQUE CHOSE S'ILLUMINENT ═══════════════
+     « …avec le nombre de surprises qu'il y a dedans. » Pendant sa tournée,
+     il les passe en revue (elles s'éteignent, un reflet les parcourt) ; à
+     « J'ai trouvé… », celles qui ont reçu s'allument l'une après l'autre. */
+  const avecSurprises = [...PRINCIPALES, ...AUTRES].filter((cle) => trouveesDe(cle).length > 0);
+  const eclatDe = (cle: ClePiece): Eclat | undefined => {
+    if (!surprises) return undefined;
+    if (tournee && !tournee.allume) return { sorte: "cherche", i: [...PRINCIPALES, ...AUTRES].indexOf(cle) };
+    const n = trouveesDe(cle).length;
+    if (!n) return undefined;
+    const neuves = surprises.aOuvrir.filter((s) => s.piece === cle).length;
+    return { sorte: "trouve", n, neuves, vient: !!tournee?.allume, i: avecSurprises.indexOf(cle) };
+  };
 
   return (
     <div className="mz" key="entree">
@@ -203,24 +248,46 @@ export function MaMaison({
         </button>
       </header>
 
-      {/* UNE SEULE INTERVENTION DU FANTÔME. LE JOUR OÙ IL REVIENT DE LA VILLE
-          AVEC QUELQUE CHOSE, c'est l'enveloppe qui prend sa place. */}
-      {surprises && surprises.aOuvrir > 0 ? (
-        <CourrierDuFantome n={surprises.aOuvrir} onOuvrir={() => surprises.onOuvrir(false)} />
-      ) : rienDuJour ? (
-        <RienAujourdhui />
+      {/* UNE SEULE INTERVENTION DU FANTÔME. Il dort sur son canapé : on le
+          réveille, il fait sa tournée chez les commerçants du jour, et rentre
+          — avec l'enveloppe, qui prend alors sa place, ou les mains vides.
+          Voir `reveil-fantome.tsx`. Sa tournée se fait aussi toute seule, au
+          fil de la journée (`useTourneeDuFantome`) : l'enveloppe peut déjà
+          l'attendre. */}
+      {surprises && (tournee || !surprises.aOuvrir.length) ? (
+        <ReveilDuFantome
+          rien={rienDuJour}
+          toutOuvert={surprises.duJour.length > 0}
+          commerces={surprises.commerces}
+          /* LA DÉMONSTRATION n'a ni vraie Maison ni vrais commerçants : son
+             Fantôme rentre toujours avec ses cinq trouvailles. */
+          partir={() => (reelle ? surprises.rapporterait() : surprisesDeDemo(new Date(), surprises.commerces))}
+          rentrer={(trouvees) => (reelle ? surprises.chercherMaintenant() : deposerLesSurprisesDeDemo(trouvees, new Date()))}
+          onDepart={() => setTournee({ allume: false })}
+          onAllumer={() => setTournee((t) => (t ? { allume: true } : t))}
+          onFini={(vu) => {
+            /* L'enveloppe qui prend sa place ne rejoue pas son retour : on vient de le voir. */
+            const n = surprisesAOuvrir(chargerMaisonPrivee().memoire, new Date()).length;
+            if (vu && n) noterRetourVu(signatureDuRetour(n));
+            setTournee(null);
+          }}
+        />
+      ) : surprises ? (
+        <CourrierDuFantome n={surprises.aOuvrir.length} onOuvrir={() => surprises.onOuvrir(false)} />
       ) : (
         <section className="mz-scene">
           {/* LE FANTÔME DE LA MAQUETTE : lunettes rondes, la Maison dans les bras. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="mz-fantome" src="/direct/maison/fantome-maison.webp" alt="" width={82} height={92} />
           <div className="mz-dit">
-            <b className="mz-bulle">{mot.titre}</b>
+            <b className="mz-bulle">{motDuFantome(etats).titre}</b>
             <span>Choisissez une pièce pour que je cherche pour vous.</span>
           </div>
         </section>
       )}
-      {surprises && !surprises.aOuvrir && surprises.duJour > 0 && <RevoirLesSurprises n={surprises.duJour} onRevoir={() => surprises.onOuvrir(true)} />}
+      {surprises && !tournee && !surprises.aOuvrir.length && surprises.duJour.length > 0 && (
+        <RevoirLesSurprises n={surprises.duJour.length} onRevoir={() => surprises.onOuvrir(true)} />
+      )}
 
       <button type="button" className="mz-connait" onClick={() => setVue({ ou: "reglages" })}>
         <Dessin d={DESSINS.maison} plein />
@@ -255,7 +322,7 @@ export function MaMaison({
           comme les autres, un peu plus hautes pour garder la hiérarchie. */}
       <div className="mz-liste mz-principales">
         {PRINCIPALES.map((cle) => (
-          <CartePiece key={cle} e={etatDeLaCle(cle)} large onOuvrir={ouvrir(cle)} />
+          <CartePiece key={cle} e={etatDeLaCle(cle)} large eclat={eclatDe(cle)} onOuvrir={ouvrir(cle)} />
         ))}
       </div>
       <p className="mz-suite" aria-hidden="true">
@@ -266,7 +333,7 @@ export function MaMaison({
       <p className="mz-h2-sous">D&apos;autres espaces pour vous aider au quotidien.</p>
       <div className="mz-liste">
         {AUTRES.map((cle) => (
-          <CartePiece key={cle} e={etatDeLaCle(cle)} large onOuvrir={ouvrir(cle)} />
+          <CartePiece key={cle} e={etatDeLaCle(cle)} large eclat={eclatDe(cle)} onOuvrir={ouvrir(cle)} />
         ))}
       </div>
 
@@ -347,18 +414,31 @@ function Dessin({ d, plein = false }: { d: string; plein?: boolean }) {
  * « autres pièces », en travers. Ce qu'elle sait de vous est dedans (et dans
  * « N pièces commencent à vous connaître ») ; une pièce en pause le dit.
  */
-function CartePiece({ e, large, onOuvrir }: { e: EtatPiece; large?: boolean; onOuvrir: () => void }) {
+/**
+ * CE QUE LE FANTÔME FAIT DE LA PIÈCE : il la passe en revue pendant sa tournée
+ * (`cherche`), ou elle a reçu `n` surprises aujourd'hui (`trouve`) — dont
+ * `neuves` pas encore ouvertes ; `vient` : elle s'allume à l'instant.
+ */
+type Eclat = { sorte: "cherche"; i: number } | { sorte: "trouve"; n: number; neuves: number; vient: boolean; i: number };
+
+function CartePiece({ e, large, eclat, onOuvrir }: { e: EtatPiece; large?: boolean; eclat?: Eclat; onOuvrir: () => void }) {
   const etatCarte = e.enPause ? "pause" : e.allumee ? "on" : "dort";
   const p = e.piece;
   const c = CADRAGE[p.cle];
   const zoom = !large && c.zoom ? { scale: String(c.zoom.echelle), transformOrigin: c.zoom.depuis } : null;
+  const trouve = eclat?.sorte === "trouve" ? eclat : null;
+  const classeEclat = !eclat
+    ? ""
+    : eclat.sorte === "cherche"
+      ? " cherche"
+      : ` trouve${eclat.neuves ? " neuf" : ""}${eclat.vient ? " vient" : ""}`;
   return (
     <button
       type="button"
-      className={`mz-carte ${etatCarte}${large ? " large" : ""}`}
-      style={{ "--t": p.teinte } as CSSProperties}
+      className={`mz-carte ${etatCarte}${large ? " large" : ""}${classeEclat}`}
+      style={{ "--t": p.teinte, "--i": String(eclat?.i ?? 0) } as CSSProperties}
       onClick={onOuvrir}
-      aria-label={`${p.nom} — ${p.promesse}${e.enPause ? " (en pause)" : ""}`}
+      aria-label={`${p.nom} — ${trouve ? `${trouve.n} ${trouve.n > 1 ? "surprises" : "surprise"} du Fantôme — ` : ""}${p.promesse}${e.enPause ? " (en pause)" : ""}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={p.photo} alt="" loading={large ? "lazy" : "eager"} style={{ objectPosition: c.pos, ...zoom }} />
@@ -376,6 +456,12 @@ function CartePiece({ e, large, onOuvrir }: { e: EtatPiece; large?: boolean; onO
           </u>
         </span>
       </span>
+      {/* Après le titre dans le texte de la carte (lu par l'aria-label) ; en haut à droite à l'écran. */}
+      {trouve && (
+        <span className="mz-trouve" aria-hidden="true">
+          ✨ {trouve.n} {trouve.n > 1 ? "surprises" : "surprise"}
+        </span>
+      )}
     </button>
   );
 }
@@ -391,12 +477,15 @@ function CartePiece({ e, large, onOuvrir }: { e: EtatPiece; large?: boolean; onO
 function VuePiece({
   e,
   gardees,
+  trouvees,
   onRetour,
   onDecouvrir,
   onVoirGardee,
 }: {
   e: EtatPiece;
   gardees: PieceGardee[];
+  /** Ce que le Fantôme a trouvé pour cette pièce aujourd'hui — en tête, avant tout le reste. */
+  trouvees?: ReactNode;
   onRetour: () => void;
   onDecouvrir: (branche: string) => void;
   onVoirGardee?: (p: PieceGardee) => void;
@@ -448,6 +537,7 @@ function VuePiece({
           <em>{p.sous}</em>
         </span>
       </header>
+      {trouvees}
 
       {intro && cuisine ? (
         <TutoCuisine
@@ -957,6 +1047,23 @@ function StylesMaMaison() {
 .mz-anneau{position:absolute;top:10px;left:10px;display:grid;place-items:center;width:44px;height:44px;padding:9px;border-radius:50%;
   color:var(--t);border:2.5px solid var(--t);background:rgba(28,17,11,.55);backdrop-filter:blur(2px);}
 .mz-badge{position:absolute;top:12px;right:12px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:800;color:#F3E6DB;background:rgba(20,12,8,.72);border:1px solid rgba(255,236,210,.25);}
+.mz-carte::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:0;
+  background:linear-gradient(105deg,transparent 38%,rgba(255,244,222,.5) 50%,transparent 62%) no-repeat;background-size:260% 100%;background-position:130% 0;}
+.mz-carte.cherche img{filter:brightness(.55) saturate(.6);}
+.mz-carte.cherche::before{opacity:1;animation:mz-reflet 1.6s ease-in-out infinite;animation-delay:calc(var(--i) * .22s);}
+@keyframes mz-reflet{from{background-position:130% 0}to{background-position:-30% 0}}
+.mz-carte.trouve{box-shadow:0 0 0 2px var(--t),0 0 26px 0 color-mix(in srgb,var(--t) 55%,transparent);}
+.mz-carte.trouve img{filter:brightness(1.1) saturate(1.12);}
+.mz-carte.trouve.neuf{animation:mz-lueur 2.6s ease-in-out infinite;}
+@keyframes mz-lueur{0%,100%{box-shadow:0 0 0 2px var(--t),0 0 18px 0 color-mix(in srgb,var(--t) 40%,transparent)}50%{box-shadow:0 0 0 2px var(--t),0 0 38px 6px color-mix(in srgb,var(--t) 70%,transparent)}}
+.mz-carte.vient{animation:mz-allume .9s cubic-bezier(.3,1.4,.5,1) both,mz-lueur 2.6s ease-in-out .9s infinite;animation-delay:calc(var(--i) * .35s),calc(.9s + var(--i) * .35s);}
+@keyframes mz-allume{0%{box-shadow:0 0 0 0 transparent;filter:brightness(.6)}45%{box-shadow:0 0 0 3px #FFF4E6,0 0 60px 14px color-mix(in srgb,var(--t) 80%,transparent);filter:brightness(1.35)}100%{box-shadow:0 0 0 2px var(--t),0 0 26px 0 color-mix(in srgb,var(--t) 55%,transparent);filter:none}}
+.mz-carte.vient::before{opacity:1;animation:mz-reflet 1.1s ease-out 1 both;animation-delay:calc(var(--i) * .35s);}
+.mz-trouve{position:absolute;top:12px;right:12px;z-index:1;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:900;color:#2A1606;
+  background:linear-gradient(180deg,#FFE7A8,#F6B54B);box-shadow:0 4px 16px rgba(246,181,75,.55);}
+.mz-carte.vient .mz-trouve{animation:mz-pastille .6s cubic-bezier(.3,1.8,.5,1) both;animation-delay:calc(.25s + var(--i) * .35s);}
+@keyframes mz-pastille{from{opacity:0;transform:scale(.2) rotate(-12deg)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.mz-carte.cherche::before,.mz-carte.vient::before{animation:none;opacity:0;}.mz-carte.trouve.neuf,.mz-carte.vient,.mz-carte.vient .mz-trouve{animation:none;}}
 .mz-carte-t{display:block;}
 .mz-carte-t b{display:block;font-size:16.5px;line-height:1.1;font-weight:800;letter-spacing:-.01em;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .mz-carte-t em{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-top:4px;font-style:normal;font-size:12px;line-height:1.3;color:#D2C9C1;}

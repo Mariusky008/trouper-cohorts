@@ -12306,9 +12306,15 @@ export function ApercuHabitant({
                 reelle={Boolean(reelle)}
                 gardees={piecesGardees}
                 surprises={{
-                  aOuvrir: tournee.aOuvrir.length,
-                  duJour: tournee.duJour.length,
+                  aOuvrir: tournee.aOuvrir,
+                  duJour: tournee.duJour,
                   onOuvrir: (revoir) => setSurprisesOuvertes(revoir ? "toutes" : "neuves"),
+                  onVoir: (s) => {
+                    window.location.href = pageDuCommerce(toutes.find((x) => x.id === s.carte) ?? { id: s.carte }, s.action.onglet);
+                  },
+                  commerces: toutes,
+                  rapporterait: tournee.rapporterait,
+                  chercherMaintenant: tournee.chercherMaintenant,
                 }}
                 onVoirGardee={(p) => setPieceVue(p)}
                 onDecouvrir={(b) => {

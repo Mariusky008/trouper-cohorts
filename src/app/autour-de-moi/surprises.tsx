@@ -36,6 +36,7 @@ import { abonnerEnvies, AUCUNES_ENVIES, chargerEnvies } from "@/lib/direct/soire
 import { pieceParCle, signauxDesDuels, signauxDesEnvies, signauxDesGardees, signauxDesSuivis, type Signal } from "@/lib/direct/maison";
 import {
   abonnerMaisonPrivee,
+  ceQueLaTourneeRapporterait,
   chargerMaisonPrivee,
   maisonPriveeServeur,
   noterLaSurprise,
@@ -125,6 +126,11 @@ export function useTourneeDuFantome({
   return {
     aOuvrir: maintenant ? surprisesAOuvrir(etat.memoire, maintenant) : [],
     duJour: maintenant ? surprisesDuJour(etat.memoire, maintenant) : [],
+    /* LE FANTÔME QU'ON RÉVEILLE (`reveil-fantome.tsx`) : ce que sa tournée
+       rapporterait maintenant, sans rien poser — puis, à son retour, la vraie
+       tournée, tout de suite plutôt qu'aux cinq minutes suivantes. */
+    rapporterait: () => ceQueLaTourneeRapporterait(dernieres.current, new Date(), gardees, lireDressing().pieces, pourDuDressing()),
+    chercherMaintenant: () => preparerLesSurprises(dernieres.current, new Date(), gardees, lireDressing().pieces, pourDuDressing()),
   };
 }
 
@@ -147,14 +153,24 @@ export function useTourneeDuFantome({
  */
 const CLE_RETOUR_VU = "clikme:surprises-retour-vu";
 const rienAEcouter = () => () => {};
+/**
+ * DÉJÀ VU : le même jour, avec au moins autant de surprises. En ouvrir dans
+ * les pièces (`reveil-fantome.tsx`) en laisse moins à ouvrir — ce n'est pas
+ * un nouvel arrivage, le Fantôme ne revient pas une deuxième fois.
+ */
 function retourDejaVu(signature: string): boolean {
   try {
-    return window.localStorage.getItem(CLE_RETOUR_VU) === signature;
+    const vu = window.localStorage.getItem(CLE_RETOUR_VU);
+    if (!vu) return false;
+    const [jour, n] = vu.split("|");
+    const [jourIci, nIci] = signature.split("|");
+    return jour === jourIci && Number(n) >= Number(nIci);
   } catch {
     return false;
   }
 }
-function noterRetourVu(signature: string) {
+/** Le retour du Fantôme a été vu pour cet arrivage — l'enveloppe montrera sa dernière image. */
+export function noterRetourVu(signature: string) {
   try {
     window.localStorage.setItem(CLE_RETOUR_VU, signature);
   } catch {
@@ -162,8 +178,11 @@ function noterRetourVu(signature: string) {
   }
 }
 
+/** Un arrivage : le jour, et combien il en rapporte. */
+export const signatureDuRetour = (n: number) => `${new Date().toDateString()}|${n}`;
+
 export function CourrierDuFantome({ n, onOuvrir }: { n: number; onOuvrir: () => void }) {
-  const signature = `${new Date().toDateString()}|${n}`;
+  const signature = signatureDuRetour(n);
   /* LU APRÈS L'HYDRATATION (le serveur ne connaît pas ce téléphone) : un
      `useState` qui lisait la mémoire dès le premier rendu faisait diverger
      la page du serveur et celle du téléphone. */
