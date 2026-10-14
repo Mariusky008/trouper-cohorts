@@ -30,6 +30,7 @@ import { preparerFacons, ecrireFacons } from "@/lib/direct/facons-creation";
 import { jourParis } from "@/lib/jour-paris";
 import { activerPlanning, oublierEnCours } from "@/lib/direct/planning-activation";
 import { reseauxDuDiagnostic } from "@/lib/reseaux/reseaux-donnees";
+import { piecesDuDiagnostic } from "@/lib/site-internet/pieces-comptoir";
 import { publierSurSesReseauxEnFond, reseauxConfigures } from "@/lib/reseaux/intermediaire";
 
 export const dynamic = "force-dynamic";
@@ -312,7 +313,14 @@ export async function POST(request: Request) {
     // après validation. Des octets en clair, bornés en type et en taille, ne
     // posent pas ce problème : il n'y a rien à aller chercher.
     const imageEnClair = /^data:image\/(jpe?g|png|webp);base64,/.test(voulue) && voulue.length <= 900000;
-    const photo = voulue && (galerie.includes(voulue) || imageEnClair) ? voulue : null;
+    // …OU UNE PHOTO DE SA VITRINE. « La proposition du matin » publie une pièce
+    // qu'il a déjà rangée dans sa vitrine : sa photo est chez nous, en https,
+    // mais pas dans la galerie de son site. Elle était refusée — « Une annonce
+    // a besoin d'une image » — alors qu'elle en avait une : sa pièce entrait
+    // dans son essayage, mais ni dans Le Direct, ni sur ses réseaux. Même
+    // contrôle que la galerie : une adresse qu'IL a déjà posée chez lui.
+    const deSaVitrine = piecesDuDiagnostic(site.diagnostic).some((x) => x.photo === voulue);
+    const photo = voulue && (galerie.includes(voulue) || imageEnClair || deSaVitrine) ? voulue : null;
     // Le fichier doit venir de NOTRE stockage : accepter une adresse
     // quelconque ferait jouer, sur le fil d'une ville, une vidéo qu'on
     // n'héberge pas et qui peut changer de contenu après coup.

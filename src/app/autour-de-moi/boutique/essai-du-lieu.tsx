@@ -250,7 +250,13 @@ function EssaiEnImage({ c: carte, saPage, onReserver, onSalon, vise }: Propriete
     const j = onEssaie ? pieceDuJour(c.catalogue) : null;
     return j && pieces.some((p) => p.id === j.article.id) ? j : null;
   }, [onEssaie, c.catalogue, pieces]);
-  const grille = useMemo(() => (jour ? pieces.filter((p) => p.id !== jour.article.id) : pieces), [jour, pieces]);
+  /* SA COPIE EN VITRINE SORT AUSSI. Publiée depuis « la proposition du matin », la
+     pièce du jour est une copie d'une pièce de sa vitrine — même photo, autre
+     identifiant : « Et aussi, à essayer ici » montrait la même blazar juste dessous. */
+  const grille = useMemo(
+    () => (jour ? pieces.filter((p) => p.id !== jour.article.id && p.photo !== jour.article.photo) : pieces),
+    [jour, pieces],
+  );
   /** Rien à essayer chez lui pour l'instant : ni pièce, ni autre porte ouverte. */
   const bientot = Boolean(promis) || (onEssaie && pieces.length === 0);
   /* ═══ MAIS UNE DE SES PIÈCES, DÉJÀ ESSAYÉE ═══ « Une personne avec ses

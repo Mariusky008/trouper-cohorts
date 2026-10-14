@@ -593,7 +593,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
     setRelire((n) => n + 1);
   };
 
-  const envoyer = (b: Brouillon = brouillon) => {
+  /** Rend l'envoi en ligne en cours (vrai commerçant), pour qui doit attendre qu'il soit fini. */
+  const envoyer = (b: Brouillon = brouillon): Promise<void> | undefined => {
     const brouillon = b;
     const t = Date.now();
     const relance = brouillon.genre === "relance";
@@ -617,12 +618,14 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
     garderComptoir(memoire, r.comptoir);
     // ET ÇA PART DANS LA VILLE — Le Direct, sa carte, l'essayage, son libraire.
     // Un vrai commerçant publie en base ; la démonstration, dans le téléphone.
+    let enCours: Promise<void> | undefined;
     if (commerce.reel) {
       setPublieesIci((l) => [...l, p.id]);
-      void envoyerEnBase(p, principal);
+      enCours = envoyerEnBase(p, principal);
     } else envoyerALaVille(commerce, mission, p, principal);
     setMaintenant(t);
     setPhase({ ou: "fete", points: r.points, gagnes: r.gagnes, publication: p });
+    return enCours;
   };
 
   /** La pièce proposée ce matin, telle qu'il l'aurait préparée lui-même : sa photo, son nom, son prix, sa voix. */
@@ -639,7 +642,13 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
     const b = brouillonDe(piece);
     setPlusTard(false);
     setBrouillon(b);
-    envoyer(b);
+    // « PUBLIÉE » S'ÉCRIT UNE FOIS L'ENVOI FINI, pas pendant : la pièce entre
+    // dans son catalogue en relisant puis réécrivant sa fiche, et une écriture
+    // faite au même instant était effacée — la proposition revenait, comme si
+    // de rien n'était.
+    const enCours = envoyer(b);
+    if (enCours) void enCours.then(() => proposition.geste("publiee", piece.id));
+    else void proposition.geste("publiee", piece.id);
   };
   /** « Voir avant » : le récapitulatif, où il peut la modifier ou y mettre sa voix. */
   const voirLaProposition = (piece: PieceProposee) => {
@@ -859,7 +868,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           mission={mission}
           brouillon={brouillon}
           principal={principal}
-          onPublier={() => envoyer()}
+          onPublier={() => void envoyer()}
           onModifier={() => setPhase({ ou: "mission", etape: 0, relance: phase.relance })}
           plusTard={plusTard && !phase.relance ? quand : undefined}
           ennui={ennuiPlanning}

@@ -173,7 +173,6 @@ export function CarteProposition({
             disabled={occupe}
             onClick={() => {
               setOccupe(true);
-              void p.geste("publiee", piece.id);
               onOui(piece);
             }}
           >
