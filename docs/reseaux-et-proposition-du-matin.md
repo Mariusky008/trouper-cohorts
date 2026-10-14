@@ -4,7 +4,7 @@
 
 Deux choses sont arrivées au comptoir du commerçant (`/p/<jeton>`) :
 
-1. **Mes réseaux** : il connecte une fois son Instagram, sa page Facebook et son TikTok. Ensuite, chaque
+1. **Mes réseaux** : il connecte une fois son Instagram et sa page Facebook. Ensuite, chaque
    annonce publiée au comptoir part dans Le Direct, sur sa page **et** sur ses réseaux. Il n'ouvre plus
    aucune de ces applications. Il n'y a pas de réponses automatiques aux commentaires : c'est voulu.
 2. **La proposition du matin** : chaque matin, son fantôme choisit une pièce de sa vitrine et la lui
@@ -22,19 +22,37 @@ auditée. PostPeer a déjà ces autorisations. Nous lui disons simplement « pub
 1. Créer le compte sur postpeer.dev et récupérer la **clé d'API**.
 2. Sur Vercel → Settings → Environment Variables (Production) :
    - `POSTPEER_API_KEY` = la clé ;
-   - facultatif : `RESEAUX_PLATEFORMES` = `instagram,facebook,tiktok` (valeur par défaut). Pour ajouter
-     Google Business plus tard, il suffira de mettre ici son identifiant chez PostPeer.
+   - facultatif : `RESEAUX_PLATEFORMES` = `instagram,facebook` (valeur par défaut). PostPeer propose
+     aussi LinkedIn (`instagram,facebook,linkedin`) et YouTube, inutile ici : YouTube n'accepte que des
+     vidéos. **Ni TikTok ni Google Business ne sont chez PostPeer** (voir plus bas).
    - facultatif : `POSTPEER_BASE_URL` (par défaut `https://api.postpeer.dev/v1`).
-3. Redéployer.
+3. **Redéployer** (Deployments → ⋯ → Redeploy). Une variable ajoutée sur Vercel n'atteint le site
+   qu'au déploiement suivant : sans ça, la carte « Mes réseaux » reste cachée.
 
 **Tant que la clé n'est pas posée**, rien ne change chez un vrai commerçant : la carte « Mes réseaux »
 n'apparaît pas. Le comptoir de démonstration (`/autour-de-moi/assistante?metier=mode`) la montre
 toujours, étiquetée « Exemple ».
 
+### Tester avec un vrai commerçant
+
+1. Ouvrir son comptoir (`/autour-de-moi/assistante?site=…&k=…`). La carte **📣 Mes réseaux** est dans la
+   liste de l'accueil, sous « Mon planning ».
+2. **Connecter** Instagram : un onglet s'ouvre sur la page de connexion. Se connecter avec le compte
+   du commerce et accepter. PostPeer affiche alors sa propre page de fin (on ne peut pas lui faire
+   ramener le commerçant chez nous).
+3. Revenir à l'onglet du comptoir : il relit ses comptes tout seul (sinon, « C'est fait ✓ »).
+   Instagram passe à « Connecté », et l'envoi s'allume.
+4. Publier une annonce, par exemple avec « ✨ Oui, publie-la » sur la proposition du jour.
+5. Rouvrir « Mes réseaux » une minute après : « ✓ Partie sur Instagram », ou le message exact du refus.
+   Le tableau de bord PostPeer (Posts, Logs) montre la même chose de son côté.
+
+Chaque publication consomme des crédits PostPeer. Le compte gratuit en donne 20 par mois.
+
 ### Ce qui n'a pas pu être vérifié
 
-La documentation de PostPeer n'était pas joignable depuis l'atelier. Les chemins et les champs viennent
-de ses extraits publics :
+La documentation de PostPeer n'est pas joignable depuis l'atelier. Les chemins et les champs viennent
+de ses extraits publics. Ils annoncent que le lien de connexion revient sous la forme `{ url }` et que
+le paramètre de retour (`redirectUri`) n'existe pas : il est envoyé quand même, sans effet.
 
 | Usage | Appel |
 |---|---|
@@ -45,7 +63,7 @@ de ses extraits publics :
 | Publication | `POST /posts` avec `{ content, platforms: [{ platform, accountId }], publishNow, mediaItems: [{ type: "image", url }] }` |
 
 Chaque réponse est lue de façon défensive, et chaque refus remonte **avec le message de PostPeer** dans
-l'écran « Mes réseaux » du commerçant (« ✗ TikTok : … »). Si quelque chose cloche au premier essai réel,
+l'écran « Mes réseaux » du commerçant (« ✗ Facebook : … »). Si quelque chose cloche au premier essai réel,
 c'est là qu'on le voit, et ça se corrige dans `src/lib/reseaux/intermediaire.ts`.
 
 **Premier essai conseillé** : sur ton propre commerce de test, connecte un Instagram professionnel, publie
@@ -67,8 +85,10 @@ une annonce depuis le comptoir, puis rouvre « Mes réseaux » pour lire le rés
 - **Instagram** : il faut un compte **professionnel** (gratuit). La limite est de 100 publications par
   24 h.
 - **Facebook** : c'est sa **page** qui publie, pas son profil perso.
-- **TikTok** : la publication publique dépend de l'audit de l'application de l'intermédiaire. Les
-  publications d'images (« photo mode ») ne sont pas vérifiées.
+- **TikTok et Google Business** : absents de PostPeer. Les deux existent chez d'autres intermédiaires
+  (bundle.social, Ayrshare, selon leurs propres pages). Le jour où ils comptent, le changement se fait
+  dans `src/lib/reseaux/intermediaire.ts` seulement : le comptoir, la route et les données ne
+  dépendent pas de PostPeer.
 
 ---
 

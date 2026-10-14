@@ -307,7 +307,7 @@ type Phase =
   | { ou: "carte" }
   /** Ce que mon fantôme sait : ses réponses, et les questions de ses clients — voir `savoir-comptoir.tsx`. */
   | { ou: "savoir" }
-  /** Mes réseaux : Instagram, Facebook, TikTok connectés une fois — voir `reseaux-comptoir.tsx`. */
+  /** Mes réseaux : Instagram et Facebook connectés une fois — voir `reseaux-comptoir.tsx`. */
   | { ou: "reseaux" };
 
 /** L'envoi en ligne d'un vrai commerçant : en cours, arrivé, ou à refaire. */
@@ -1115,7 +1115,7 @@ function Accueil({
         </button>
 
         {/* ═══ MES RÉSEAUX ═══ « Une photo, et vous êtes partout » : ce qu'il
-            publie ici part aussi sur son Instagram, sa page Facebook, son TikTok. */}
+            publie ici part aussi sur son Instagram et sa page Facebook. */}
         {reseaux}
 
         {enAttente > 0 && boutonSavoir}

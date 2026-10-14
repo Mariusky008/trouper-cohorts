@@ -3,8 +3,8 @@
  *
  * « Ils n'ont qu'une seule manipulation à faire et tout est fait
  * automatiquement. » Ce qu'il publie au comptoir part dans Le Direct, sur sa
- * page… et maintenant sur SON Instagram, SA page Facebook, SON TikTok, sans
- * qu'il ouvre une seule de ces applications.
+ * page… et maintenant sur SON Instagram et SA page Facebook, sans qu'il
+ * ouvre une seule de ces applications.
  *
  * PAR UN INTERMÉDIAIRE, PAS EN DIRECT. Instagram, Facebook et TikTok ne
  * laissent publier à la place de quelqu'un qu'une application qu'ils ont
@@ -43,8 +43,17 @@ export type Reseaux = {
   derniere?: DernierePublication;
 };
 
-/** Les réseaux proposés au comptoir, dans l'ordre où on les montre. Voir `plateformesProposees`. */
-export const PLATEFORMES_PAR_DEFAUT = ["instagram", "facebook", "tiktok"];
+/**
+ * Les réseaux proposés au comptoir, dans l'ordre où on les montre. Voir `plateformesProposees`.
+ *
+ * INSTAGRAM ET FACEBOOK SEULEMENT. Chez PostPeer, on trouve Facebook,
+ * Instagram, LinkedIn et YouTube — ni TikTok, ni Google Business. YouTube
+ * n'accepte que des vidéos, nos annonces sont des photos ; LinkedIn n'est pas
+ * là où sont les clients d'un commerce de quartier. Un bouton « Connecter »
+ * qui mène à un refus serait pire que pas de bouton. LinkedIn s'ajoute par
+ * `RESEAUX_PLATEFORMES` si un commerçant le demande.
+ */
+export const PLATEFORMES_PAR_DEFAUT = ["instagram", "facebook"];
 
 const NOMS: Record<string, string> = {
   instagram: "Instagram",
@@ -75,7 +84,7 @@ const ICONES: Record<string, string> = {
 export const nomDuReseau = (p: string) => NOMS[p] ?? p.charAt(0).toUpperCase() + p.slice(1);
 export const iconeDuReseau = (p: string) => ICONES[p] ?? "🌐";
 
-/** « Instagram, Facebook et TikTok ». */
+/** « Instagram, Facebook et LinkedIn ». */
 export function reseauxEnMots(plateformes: string[]): string {
   const noms = [...new Set(plateformes.map(nomDuReseau))];
   if (noms.length <= 1) return noms.join("");
