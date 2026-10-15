@@ -75,6 +75,7 @@ import { VitrineComptoir } from "./vitrine-comptoir";
 import { SavoirComptoir } from "./savoir-comptoir";
 import { ReseauxComptoir, useReseaux, type ReseauxDuComptoir } from "./reseaux-comptoir";
 import { EchangesComptoir, resumeDesEchanges } from "./echanges-comptoir";
+import { EchangesReels, useEchangesReels } from "./echanges-reels";
 import { StylesInterview } from "../essai-interview/styles-interview";
 import { chefEnPied } from "@/lib/direct/interview-montage";
 import { CarteProposition, propositionAMontrer, useProposition, type PieceProposee } from "./proposition-comptoir";
@@ -335,7 +336,7 @@ type Phase =
   | { ou: "savoir" }
   /** Mes réseaux : Instagram et Facebook connectés une fois — voir `reseaux-comptoir.tsx`. */
   | { ou: "reseaux" }
-  /** Échanger son bon avec les autres commerçants — démonstration, voir `echanges-comptoir.tsx`. */
+  /** Échanger avec les autres commerçants — démonstration (`echanges-comptoir.tsx`), ou en vrai chez un commerçant venu par son lien pro (`echanges-reels.tsx`). */
   | { ou: "echanges" };
 
 /** L'envoi en ligne d'un vrai commerçant : en cours, arrivé, ou à refaire. */
@@ -811,7 +812,13 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           programmees={programmees}
           onPlanning={() => setPhase({ ou: "planning" })}
           reseaux={<TuileReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
-          echanges={<TuileEchanges commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />}
+          echanges={
+            commerce.reel ? (
+              <TuileEchangesReelle commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />
+            ) : (
+              <TuileEchanges commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />
+            )
+          }
           onInterview={commerce.famille === "table" ? () => setPhase({ ou: "interview" }) : undefined}
           propositionActive={Boolean(propositionAMontrer(proposition))}
           proposition={
@@ -827,9 +834,12 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
         />
       )}
 
-      {phase.ou === "echanges" && (
-        <EchangesComptoir commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
-      )}
+      {phase.ou === "echanges" &&
+        (commerce.reel ? (
+          <EchangesReels commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
+        ) : (
+          <EchangesComptoir commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
+        ))}
 
       {phase.ou === "reseaux" && (
         <ReseauxComptoir commerce={commerce} dossier={dossier} reseaux={reseaux} onRetour={() => setPhase({ ou: "accueil" })} />
@@ -1273,10 +1283,27 @@ function TuileReseaux({ commerce, reseaux, onOuvrir }: { commerce: Commerce; res
   return <Tuile icone="📣" nom="Réseaux" teinte="violet" badge={connectes ? `${connectes} ✓` : commerce.reel ? "à faire" : "démo"} chaud={!connectes && Boolean(commerce.reel)} onClick={onOuvrir} />;
 }
 
-/** La tuile « Échanges » : son bon contre celui d'un voisin (démonstration). */
+/** La tuile « Échanges » de la démonstration : la caisse commune entre commerçants. */
 function TuileEchanges({ commerce, onOuvrir }: { commerce: Commerce; onOuvrir: () => void }) {
   const [r] = useState(() => resumeDesEchanges(commerce));
-  return <Tuile icone="🎁" nom="Échanges" teinte="corail" badge={r.recus ? r.recus : "démo"} onClick={onOuvrir} />;
+  return <Tuile icone="🔁" nom="Échanges" teinte="corail" badge={r.pret ? `${r.aDepenser} €` : "démo"} onClick={onOuvrir} />;
+}
+
+/** La tuile « Échanges » d'un vrai commerçant : absente tant que la base ne répond pas, comme l'ancienne carte. */
+function TuileEchangesReelle({ commerce, onOuvrir }: { commerce: Commerce; onOuvrir: () => void }) {
+  const etat = useEchangesReels(commerce);
+  if (!etat?.pret) return null;
+  const aValider = etat.recus.filter((b) => b.statut === "reserve").length;
+  return (
+    <Tuile
+      icone="🔁"
+      nom="Échanges"
+      teinte="corail"
+      badge={aValider > 0 ? aValider : etat.mien ? `${etat.compte.aDepenser} €` : "à faire"}
+      chaud={!etat.mien || aValider > 0}
+      onClick={onOuvrir}
+    />
+  );
 }
 
 /* ═══ LE PANNEAU DES STATS ═══════════════════════════════════════════════
