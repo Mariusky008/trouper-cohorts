@@ -10,6 +10,7 @@
 // page ne le reconnaît pas — et dit de taper le code dans le comptoir.
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { CLE_ACCES_COMPTOIR } from "@/lib/echanges/echanges";
+import { debloquerSon, jouer, vibrer } from "@/app/autour-de-moi/assistante/echanges-magie";
 
 type Acces = { slug: string; token: string; nom: string };
 
@@ -37,6 +38,7 @@ export function ValiderBon({ code }: { code: string }) {
 
   const valider = async () => {
     if (!acces || envoi) return;
+    debloquerSon();
     setEnvoi(true);
     try {
       const r = await fetch("/api/site-internet/pro/echanges", {
@@ -46,6 +48,10 @@ export function ValiderBon({ code }: { code: string }) {
       });
       const j = (await r.json().catch(() => ({}))) as { ok?: boolean; message?: string; error?: string };
       setResultat({ ok: j.ok === true, texte: j.message || j.error || "Validation impossible pour l'instant." });
+      if (j.ok === true) {
+        jouer("piece");
+        vibrer([20, 40, 20]);
+      }
     } catch {
       setResultat({ ok: false, texte: "Le réseau ne répond pas. Réessaie dans un instant." });
     }
