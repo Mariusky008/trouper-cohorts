@@ -7,10 +7,21 @@
 //
 // LES SONS SONT FABRIQUÉS PAR LE TÉLÉPHONE (Web Audio), aucun fichier à
 // charger : un souffle quand la carte part, un carillon quand c'est à toi, une
-// pièce quand tu gagnes. Un navigateur ne joue un son qu'après un geste : le
-// premier toucher sur l'écran « débloque » le son (`debloquerSon`), et les
-// suivants partent même après une réponse du serveur. Sur iPhone, le bouton
-// silencieux coupe aussi ces sons. Un bouton 🔊 / 🔇 les coupe, et c'est retenu.
+// pièce quand tu gagnes. Un bouton 🔊 / 🔇 les coupe, et c'est retenu.
+//
+// « IL N'Y A AUCUN SON. » Deux raisons, toutes deux sur iPhone :
+//   1. LE SON N'ÉTAIT PAS DÉBLOQUÉ. Un navigateur ne joue un son qu'après un
+//      geste, et sur un écran tactile, POSER le doigt n'en est pas un (seul le
+//      fait de le LEVER compte). On débloquait au moment où le doigt se pose :
+//      le son restait suspendu. Désormais, le PREMIER geste reconnu n'importe
+//      où sur l'écran (doigt levé, clic, touche) réveille le son et joue un
+//      silence d'un échantillon, ce qu'exige Safari ; ensuite tout part.
+//   2. LE MODE SILENCIEUX. Par défaut, Safari range ces sons parmi les sons
+//      « d'ambiance », que le bouton silencieux coupe. On les déclare comme
+//      une lecture (`navigator.audioSession.type = "playback"`, iOS 17) : ils
+//      s'entendent comme le son d'une vidéo. Le 🔇 de l'écran reste là pour
+//      les couper.
+// Et chaque son attend que le son soit vraiment réveillé avant de partir.
 //
 // MOUVEMENT RÉDUIT : si le téléphone le demande, pas de confettis ni de
 // rebonds — la scène s'affiche, simplement.
@@ -49,20 +60,47 @@ const sAbonner = (f: () => void) => {
 export const useMuet = () => useSyncExternalStore(sAbonner, lireMuet, () => false);
 
 let audio: AudioContext | null = null;
-/** À appeler sur un geste (toucher, clic) : le son ne part qu'ensuite. */
+/** À appeler sur un geste (doigt levé, clic) : le son ne part qu'ensuite. */
 export function debloquerSon() {
   if (typeof window === "undefined") return null;
   try {
+    const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+    if (session && session.type !== "playback") session.type = "playback";
     if (!audio) {
       const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Ctx) return null;
       audio = new Ctx();
     }
-    if (audio.state === "suspended") void audio.resume();
+    if (audio.state !== "running") {
+      void audio.resume().catch(() => undefined);
+      // Safari ne réveille vraiment le son qu'en jouant quelque chose pendant le geste : un silence suffit.
+      // Rejoué à chaque appel tant qu'il dort : un appel hors geste (doigt posé) ne compte pas.
+      const vide = audio.createBufferSource();
+      vide.buffer = audio.createBuffer(1, 1, 22050);
+      vide.connect(audio.destination);
+      vide.start(0);
+    }
     return audio;
   } catch {
     return null;
   }
+}
+
+/* LE PREMIER GESTE, OÙ QU'IL SOIT : on écoute la page entière jusqu'à ce que
+   le son soit réveillé, puis on n'écoute plus. */
+let ecoute = false;
+const GESTES = ["touchend", "pointerup", "click", "keydown", "mousedown"] as const;
+function auGeste() {
+  const a = debloquerSon();
+  if (a?.state === "running") {
+    GESTES.forEach((g) => document.removeEventListener(g, auGeste, true));
+    ecoute = false;
+  }
+}
+export function ecouterLePremierGeste() {
+  if (ecoute || typeof document === "undefined" || audio?.state === "running") return;
+  ecoute = true;
+  GESTES.forEach((g) => document.addEventListener(g, auGeste, { capture: true, passive: true }));
 }
 
 /** Une note : forme d'onde, fréquence, départ, durée, volume. */
@@ -107,9 +145,25 @@ export function jouer(son: Son) {
   if (lireMuet()) return;
   const a = debloquerSon();
   if (!a) return;
+  // Pas encore réveillé : on attend qu'il le soit (sinon le son se perd).
+  if (a.state !== "running") {
+    ecouterLePremierGeste();
+    a.resume()
+      .then(() => composer(a, son))
+      .catch(() => undefined);
+    return;
+  }
+  composer(a, son);
+}
+
+function composer(a: AudioContext, son: Son) {
+  // Un compresseur en sortie : plus fort sur un haut-parleur de téléphone, sans saturer.
+  const comp = a.createDynamicsCompressor();
+  comp.threshold.value = -18;
+  comp.ratio.value = 6;
   const sortie = a.createGain();
-  sortie.gain.value = 0.5;
-  sortie.connect(a.destination);
+  sortie.gain.value = 1.6;
+  sortie.connect(comp).connect(a.destination);
   const t = a.currentTime + 0.01;
   if (son === "tic") note(a, sortie, "sine", 1320, t, 0.06, 0.15);
   if (son === "passe") souffle(a, sortie, t, 1600, 380, 0.2, 0.35);
@@ -145,6 +199,8 @@ export function vibrer(motif: number | number[]) {
 
 export function BoutonSon() {
   const coupe = useMuet();
+  // Affiché dans l'en-tête de l'échange : à partir de là, le premier geste réveille le son.
+  useEffect(() => ecouterLePremierGeste(), []);
   return (
     <button
       type="button"
