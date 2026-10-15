@@ -29,7 +29,7 @@
 // (étiquetés), tout reste dans ce téléphone, le premier voisin qui vient
 // prendre son produit est simulé, et le scan chez l'autre commerçant se
 // simule d'un bouton marqué « démo ».
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import QRCode from "qrcode";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { COMMERCES_DEMO } from "@/lib/direct/missions-commercant";
@@ -399,7 +399,14 @@ function Depart({
   );
 }
 
-/* ═══ LA PAGE : CE QU'IL PEUT DÉPENSER, ET LES OFFRES À GLISSER ══════════ */
+/* ═══ LA PAGE : LES OFFRES À GLISSER, EN VEDETTE ═════════════════════════
+   « La star, c'est le catalogue à swiper, et il est quasiment invisible au
+   départ. » Il était sous un gros solde, la dette, le voisin et « Comment ça
+   marche ». Désormais : le solde tient en UNE ligne (le détail s'ouvre d'un
+   geste), les villes, puis la pile, tout de suite. Le reste — comment ça
+   marche, mes bons, mon offre — devient trois petits boutons qui ouvrent un
+   panneau, et le voisin qui passe est une notification qui s'en va seule. */
+type Panneau = "solde" | "comment" | "bons" | "offre";
 function Echanger({
   commerce,
   etat,
@@ -419,6 +426,7 @@ function Echanger({
   const [recu, setRecu] = useState<Bon | null>(null);
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [nouvelle, setNouvelle] = useState<string | null>(null);
+  const [panneau, setPanneau] = useState<Panneau | null>(null);
   const toutes = useMemo(() => [...offresDeSaVille(commerce), ...AILLEURS], [commerce]);
   const deLaVille = toutes.filter((o) => o.ville === ville);
   const pile = deLaVille.filter((o) => !vus.includes(o.id));
@@ -438,6 +446,13 @@ function Echanger({
     }, 2400);
     return () => window.clearTimeout(t);
   }, [etat.premier, famille, changer, mien]);
+
+  /* La notification du voisin s'en va seule. */
+  useEffect(() => {
+    if (!nouvelle) return;
+    const t = window.setTimeout(() => setNouvelle(null), 6500);
+    return () => window.clearTimeout(t);
+  }, [nouvelle]);
 
   const passer = (o: Offre) => setVus((v) => [...v, o.id]);
   const vouloir = (o: Offre) => {
@@ -466,48 +481,13 @@ function Echanger({
 
   return (
     <section className="ec-page">
-      <div className="ec-gros">
+      <button type="button" className="ec-solde" onClick={() => setPanneau("solde")}>
         <span>Tu peux dépenser</span>
         <b key={reste}>{reste} €</b>
-        <em>
-          Gagné <strong>{etat.gagne} €</strong> · pris <strong>{pris(etat)} €</strong> · découvert <strong>{decouvert} €</strong>
-        </em>
-      </div>
+        {du > 0 && <i>Tu dois {du} €</i>}
+        <s aria-hidden="true">›</s>
+      </button>
 
-      {du > 0 && (
-        <div className="ec-regle ec-dette">
-          <p>
-            ⚖️ <b>Tu dois {du} € au réseau</b>, {soitEnProduits(mien, famille, du)}.
-          </p>
-          <p>Ta dette baisse toute seule chaque fois qu’un commerçant prend {nomDuMien(mien)}.</p>
-          <p className="ec-tete">📣 En attendant, ton offre passe en tête chez les autres commerçants.</p>
-          <p className="ec-petit">
-            En dernier recours seulement : en euros {echeanceDe(etat)}, ou si tu quittes le réseau. Règle à valider.
-          </p>
-        </div>
-      )}
-
-      {nouvelle && (
-        <p className="ec-vente" role="status">
-          {nouvelle}
-        </p>
-      )}
-
-      <section className="ec-comment">
-        <h3>Comment ça marche</h3>
-        <ol>
-          <li>
-            Un commerçant vient prendre ton produit : <b>quand tu scannes son code, tu gagnes son prix</b>.
-          </li>
-          <li>Tu prends chez un autre : il gagne ce prix quand il scanne ton code.</li>
-          <li>
-            Tu peux dépenser avant d’avoir donné, jusqu’à ton découvert : <b>{decouvert} €</b>.
-          </li>
-          <li>Ce que tu prends, tu le rends en ton produit. Les euros, seulement en dernier recours.</li>
-        </ol>
-      </section>
-
-      <h3 className="ec-titre">Chez les autres commerçants</h3>
       <div className="ec-villes">
         {[
           ["", "📍 Ta ville"],
@@ -519,6 +499,7 @@ function Echanger({
           </button>
         ))}
       </div>
+
       {pile.length > 0 ? (
         <Pile key={pile[0].id} offres={pile} onPasser={passer} onPrendre={vouloir} />
       ) : (
@@ -530,25 +511,110 @@ function Echanger({
         </div>
       )}
 
-      {etat.bons.length > 0 && <h3 className="ec-titre">Ce que tu as pris</h3>}
-      {etat.bons.map((b) => (
-        <BonPris key={b.id} b={b} ouvert={ouvert === b.id} onOuvrir={() => setOuvert((x) => (x === b.id ? null : b.id))} onScanner={() => scanner(b.id)} />
-      ))}
-
-      <h3 className="ec-titre">Ce que tu offres</h3>
-      <article className="ec-resume">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={mien.photo} alt="" />
-        <div>
-          <b>
-            {nomAffiche(mien)} · {mien.prix} €
-          </b>
-          <em>Jusqu’à {mien.parMois} par mois</em>
-        </div>
-        <button type="button" className="cz-lien" onClick={onModifier}>
-          Modifier
+      <nav className="ec-tiroirs" aria-label="Plus d’informations">
+        <button type="button" onClick={() => setPanneau("comment")}>
+          Comment ça marche
         </button>
-      </article>
+        <button type="button" onClick={() => setPanneau("bons")}>
+          Mes bons{etat.bons.length > 0 ? ` · ${etat.bons.length}` : ""}
+        </button>
+        <button type="button" onClick={() => setPanneau("offre")}>
+          Mon offre
+        </button>
+      </nav>
+
+      {nouvelle && (
+        <button type="button" className="ec-toast" role="status" onClick={() => setNouvelle(null)}>
+          {nouvelle}
+        </button>
+      )}
+
+      {panneau === "solde" && (
+        <Feuille titre="Mon solde" onFermer={() => setPanneau(null)}>
+          <div className="ec-lignes">
+            <p>
+              <span>Ton découvert</span>
+              <b>{decouvert} €</b>
+            </p>
+            <p>
+              <span>Tu as gagné</span>
+              <b>+ {etat.gagne} €</b>
+            </p>
+            <p>
+              <span>Tu as pris</span>
+              <b>− {pris(etat)} €</b>
+            </p>
+            <p className="total">
+              <span>Tu peux dépenser</span>
+              <b>{reste} €</b>
+            </p>
+          </div>
+          {du > 0 ? (
+            <div className="ec-regle ec-dette">
+              <p>
+                ⚖️ <b>Tu dois {du} € au réseau</b>, {soitEnProduits(mien, famille, du)}.
+              </p>
+              <p>Ta dette baisse toute seule chaque fois qu’un commerçant prend {nomDuMien(mien)}.</p>
+              <p className="ec-tete">📣 En attendant, ton offre passe en tête chez les autres commerçants.</p>
+              <p className="ec-petit">
+                En dernier recours seulement : en euros {echeanceDe(etat)}, ou si tu quittes le réseau. Règle à valider.
+              </p>
+            </div>
+          ) : (
+            <p className="ec-gris">Tu ne dois rien au réseau.</p>
+          )}
+        </Feuille>
+      )}
+
+      {panneau === "comment" && (
+        <Feuille titre="Comment ça marche" onFermer={() => setPanneau(null)}>
+          <ol className="ec-regles">
+            <li>
+              Un commerçant vient prendre ton produit : <b>quand tu scannes son code, tu gagnes son prix</b>.
+            </li>
+            <li>Tu prends chez un autre : il gagne ce prix quand il scanne ton code.</li>
+            <li>
+              Tu peux dépenser avant d’avoir donné, jusqu’à ton découvert : <b>{decouvert} €</b>, soit un mois de ce que tu peux offrir.
+            </li>
+            <li>Ce que tu prends, tu le rends en ton produit. Les euros, seulement en dernier recours : au bout de 12 mois, ou si tu quittes le réseau.</li>
+          </ol>
+        </Feuille>
+      )}
+
+      {panneau === "bons" && (
+        <Feuille titre="Mes bons" onFermer={() => setPanneau(null)}>
+          {etat.bons.length === 0 && <p className="ec-gris">Tu n’as encore rien pris. Glisse une carte vers la droite pour prendre une offre.</p>}
+          {etat.bons.map((b) => (
+            <BonPris key={b.id} b={b} ouvert={ouvert === b.id} onOuvrir={() => setOuvert((x) => (x === b.id ? null : b.id))} onScanner={() => scanner(b.id)} />
+          ))}
+        </Feuille>
+      )}
+
+      {panneau === "offre" && (
+        <Feuille titre="Mon offre" onFermer={() => setPanneau(null)}>
+          <article className="ec-resume">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={mien.photo} alt="" />
+            <div>
+              <b>
+                {nomAffiche(mien)} · {mien.prix} €
+              </b>
+              <em>Jusqu’à {mien.parMois} par mois</em>
+            </div>
+          </article>
+          {du > 0 && <p className="ec-gris">📣 Tant que tu dois, ton offre passe en tête chez les autres commerçants.</p>}
+          <button
+            type="button"
+            className="cz-go"
+            onClick={() => {
+              setPanneau(null);
+              onModifier();
+            }}
+          >
+            Modifier mon offre
+          </button>
+        </Feuille>
+      )}
 
       {choisie && (
         <div className="ec-feuille" role="dialog" aria-label="Je prends">
@@ -591,7 +657,7 @@ function Echanger({
           <div className="ec-feuille-c">
             <h2 className="ec-bravo">C’est réservé !</h2>
             <BonPris b={recu} ouvert onOuvrir={() => undefined} />
-            <p className="ec-gris ec-centre">Ces {recu.prix} € sont déjà déduits de ce que tu peux dépenser.</p>
+            <p className="ec-gris ec-centre">Ces {recu.prix} € sont déjà déduits de ce que tu peux dépenser. Tu retrouves ce bon dans « Mes bons ».</p>
             <button type="button" className="cz-go" onClick={() => setRecu(null)}>
               C’est noté
             </button>
@@ -599,6 +665,23 @@ function Echanger({
         </div>
       )}
     </section>
+  );
+}
+
+/** Un panneau qui monte du bas : le détail, seulement quand on le demande. */
+function Feuille({ titre, onFermer, children }: { titre: string; onFermer: () => void; children: ReactNode }) {
+  return (
+    <div className="ec-feuille" role="dialog" aria-label={titre} onClick={onFermer}>
+      <div className="ec-feuille-c" onClick={(e) => e.stopPropagation()}>
+        <div className="ec-feuille-h">
+          <h2>{titre}</h2>
+          <button type="button" className="ec-fermer" onClick={onFermer} aria-label="Fermer">
+            ✕
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -754,7 +837,8 @@ function StylesEchanges() {
   background:rgba(245,162,58,.18);color:var(--ambre);}
 .ec-gris{color:var(--gris);font-size:14px;line-height:1.4;margin:0;}
 .ec-centre{text-align:center;}
-.ec-depart,.ec-page{display:flex;flex-direction:column;gap:14px;}
+.ec-depart{display:flex;flex-direction:column;gap:14px;}
+.ec-page{display:flex;flex-direction:column;gap:12px;}
 .ec-pas-barre{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
 .ec-pas-barre i{height:5px;border-radius:99px;background:var(--nappe2);}
 .ec-pas-barre i.on{background:var(--ambre);}
@@ -801,25 +885,40 @@ function StylesEchanges() {
 @keyframes ec-pouls{from{transform:scale(1.15);}to{transform:none;}}
 .ec-gros em{font-style:normal;font-size:13.5px;color:var(--gris);line-height:1.4;}
 .ec-gros strong{color:var(--creme);}
-.ec-vente{margin:0;padding:12px 14px;border-radius:16px;background:rgba(124,240,162,.12);border:1px solid rgba(124,240,162,.45);
-  color:#C9F7D7;font-weight:700;font-size:14.5px;line-height:1.4;}
-.ec-comment{padding:12px 14px;border-radius:18px;background:var(--nappe);border:1px solid var(--trait);}
-.ec-comment h3,.ec-titre{margin:0;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ambre);}
-.ec-titre{margin-top:6px;}
-.ec-comment ol{list-style:decimal;margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.4;color:var(--gris);}
-.ec-comment b{color:var(--creme);}
-.ec-comment li::marker{color:var(--ambre);font-weight:900;}
+.ec-solde{display:flex;align-items:center;gap:10px;width:100%;padding:9px 14px;border-radius:18px;border:1px solid rgba(245,162,58,.45);
+  background:linear-gradient(160deg,rgba(245,162,58,.18),rgba(255,46,154,.06));color:var(--creme);text-align:left;}
+.ec-solde span{font-weight:700;font-size:14px;color:var(--gris);}
+.ec-solde b{font-family:var(--font-clikme),sans-serif;font-size:24px;font-weight:900;color:var(--ambre);animation:ec-pouls .5s ease-out;}
+.ec-solde i{font-style:normal;font-size:12px;font-weight:800;padding:4px 9px;border-radius:999px;background:rgba(255,46,154,.16);color:#FF8FB8;white-space:nowrap;}
+.ec-solde s{margin-left:auto;text-decoration:none;font-size:24px;line-height:1;color:var(--gris);}
+.ec-tiroirs{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;}
+.ec-tiroirs button{height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--trait);background:none;color:var(--gris);
+  font-weight:800;font-size:13px;}
+.ec-toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:58;
+  width:min(92vw,520px);margin:0;padding:12px 14px;border-radius:16px;border:1px solid rgba(124,240,162,.5);
+  background:#14261B;color:#C9F7D7;font-weight:700;font-size:14px;line-height:1.4;text-align:left;
+  box-shadow:0 14px 34px -10px rgba(0,0,0,.7);animation:ec-descend .3s ease-out;}
+@keyframes ec-descend{from{transform:translate(-50%,-16px);opacity:0;}to{transform:translateX(-50%);opacity:1;}}
+.ec-feuille-h{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.ec-fermer{width:36px;height:36px;border-radius:50%;border:1px solid var(--trait);background:var(--nappe);color:var(--creme);font-weight:900;}
+.ec-lignes{display:flex;flex-direction:column;}
+.ec-lignes p{margin:0;display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--trait);font-size:15px;
+  font-variant-numeric:tabular-nums;}
+.ec-lignes p.total{border-bottom:0;color:var(--ambre);font-weight:800;font-size:16.5px;}
+.ec-regles{list-style:decimal;margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:15px;line-height:1.45;color:var(--gris);}
+.ec-regles b{color:var(--creme);}
+.ec-regles li::marker{color:var(--ambre);font-weight:900;}
 .ec-villes{display:flex;flex-wrap:wrap;gap:8px;}
 .ec-villes button{height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--trait);background:var(--nappe);color:var(--creme);
   font-weight:800;font-size:14px;}
 .ec-villes button.on{background:var(--rose);border-color:var(--rose);color:#fff;}
-.ec-pile{position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:420px;margin:0 auto;}
+.ec-pile{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:420px;margin:0 auto;}
 .ec-pile > .ec-carte.dessous{position:absolute;top:0;left:0;right:0;transform:scale(.95) translateY(10px);opacity:.55;}
 .ec-glisse{position:relative;width:100%;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none;z-index:1;}
 .ec-carte{border-radius:24px;overflow:hidden;background:var(--nappe);border:1px solid var(--trait);box-shadow:0 18px 40px -18px rgba(0,0,0,.7);}
 .ec-carte.hotel{border-color:rgba(245,162,58,.55);box-shadow:0 0 26px rgba(245,162,58,.16);}
 .ec-carte-photo{position:relative;}
-.ec-carte-photo img{display:block;width:100%;aspect-ratio:4/3.2;max-height:40vh;object-fit:cover;pointer-events:none;}
+.ec-carte-photo img{display:block;width:100%;aspect-ratio:1;max-height:48vh;object-fit:cover;pointer-events:none;}
 .ec-carte-photo img.entier,.ec-feuille-c > img.entier{object-fit:contain;padding:12px 0;background:var(--nappe2);}
 .ec-prix{position:absolute;left:12px;bottom:12px;padding:7px 12px;border-radius:999px;background:var(--ambre);color:#2A1608;
   font-family:var(--font-clikme),sans-serif;font-weight:900;font-size:17px;}
@@ -872,7 +971,7 @@ function StylesEchanges() {
 .ec-calcul b{color:var(--ambre);font-size:18px;}
 .ec-calcul.petit{font-size:14px;color:var(--gris);}
 .ec-bravo{text-align:center;font-size:30px !important;color:#fff;}
-@media (prefers-reduced-motion: reduce){.ec-glisse{transition:none !important;}.ec-gros b,.ec-feuille-c{animation:none;}}
+@media (prefers-reduced-motion: reduce){.ec-glisse{transition:none !important;}.ec-gros b,.ec-solde b,.ec-feuille-c,.ec-toast{animation:none;}}
 `,
       }}
     />
