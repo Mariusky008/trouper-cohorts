@@ -6,8 +6,12 @@
  * l'épisode du Bordeaux : l'ardoise du jour qui s'écrit à la craie, le
  * fantôme qui arrive dans une pluie d'étincelles, qui parle avec une bulle,
  * qui se fait petit au coin de l'ardoise quand le chef parle, et qui dit « à
- * demain » sur l'ardoise de fin. Ce fichier refait exactement ça, avec les
- * trois prises filmées à la place des photos.
+ * demain » sur l'ardoise de fin. Ce fichier refait exactement ça, avec le
+ * reporter de ClikMe et les prises de l'interview.
+ *
+ * ET PENDANT QU'IL RÉPOND, CE QU'IL MONTRE : la photo ou la vidéo ajoutée à
+ * la question passe en grand, son visage reste dans un médaillon — ou, s'il a
+ * choisi de ne pas se montrer, c'est son fantôme qui parle, avec sa voix.
  *
  * ─── POURQUOI DANS LE TÉLÉPHONE ──────────────────────────────────────────
  *
@@ -21,15 +25,16 @@
  * ─── LE SON DE SA RÉPONSE VIENT DU FICHIER, PAS DU LECTEUR ───────────────
  *
  * Sur iPhone, un lecteur vidéo ne joue un son qu'après un toucher de l'écran,
- * et le montage démarre tout seul à la fin de l'interview. Les prises sont
- * donc jouées MUETTES pour l'image, et leur son est décodé à part puis calé
- * sur l'image au moment où elle démarre vraiment. Si ce décodage échoue, on
- * retombe sur le son du lecteur, et l'écran d'essai dit lequel a servi.
+ * et le montage démarre tout seul. Les prises sont donc jouées MUETTES pour
+ * l'image, et leur son est décodé à part puis calé sur l'image au moment où
+ * elle démarre vraiment. Si ce décodage échoue, on retombe sur le son du
+ * lecteur, et l'écran d'essai dit lequel a servi.
  *
  * FICHIER NAVIGATEUR.
  */
 import {
   FIN,
+  IDS_REPLIQUES,
   OUVERTURE,
   QUESTIONS,
   REPLIQUES,
@@ -40,6 +45,7 @@ import {
   type Cote,
   type IdQuestion,
   type IdReplique,
+  type Mode,
   type SousTitre,
 } from "@/lib/direct/interview-fantome";
 import { MARQUE } from "@/lib/marque";
@@ -84,11 +90,28 @@ export function formatVideo(): string {
   return "";
 }
 
+/** Le chef qui ne se montre pas n'enregistre que sa voix. */
+const FORMATS_AUDIO = ["audio/mp4", "audio/mp4;codecs=mp4a.40.2", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"];
+
+export function formatAudio(): string {
+  if (typeof MediaRecorder === "undefined") return "";
+  for (const f of FORMATS_AUDIO) {
+    try {
+      if (MediaRecorder.isTypeSupported(f)) return f;
+    } catch {
+      /* navigateur ancien : on laisse le défaut */
+    }
+  }
+  return "";
+}
+
 /* ═══ LES ÉLÉMENTS ═════════════════════════════════════════════════════════ */
 
 export type Elements = {
-  /** Bouche fermée → grande ouverte. */
-  fantome: HTMLImageElement[];
+  /** Le reporter de ClikMe, bouche fermée → grande ouverte. */
+  reporter: HTMLImageElement[];
+  /** Le fantôme du chef — à sa place quand il ne veut pas se montrer. */
+  chef: HTMLImageElement[];
   ardoise: HTMLImageElement;
   bande: HTMLImageElement;
   grain: HTMLImageElement;
@@ -96,9 +119,14 @@ export type Elements = {
   voix: Record<IdReplique, AudioBuffer>;
   /** L'ouverture de la bouche, trente valeurs par seconde de réplique. */
   bouche: Record<IdReplique, Float32Array>;
+  /** Qui a parlé pour le reporter : « elevenlabs:eleven_v3 », « openai:ash »… ou « secours ». */
+  sourceVoix: string;
   sons: { gril: AudioBuffer; craie: AudioBuffer; cloches: AudioBuffer; souffle: AudioBuffer };
   police: { craie: string; bulle: string };
 };
+
+/** Changer un texte de réplique → changer ce numéro, sinon le cache resservirait l'ancienne voix. */
+export const VERSION_VOIX = "2";
 
 function image(src: string): Promise<HTMLImageElement> {
   return new Promise((ok, ko) => {
@@ -130,17 +158,82 @@ export function energie(buf: AudioBuffer, pas: number): Float32Array {
   return out;
 }
 
-/** La bouche suit la voix : l'énergie, ramenée entre 0 et 1, lissée sur trois images. */
-export function ouvertures(buf: AudioBuffer): Float32Array {
+/**
+ * LA BOUCHE SUIT LA VOIX : l'énergie, ramenée entre 0 et 1, lissée sur trois
+ * images. `depuis` ignore le début (pour la réponse du chef : le micro y a
+ * entendu le reporter dans le haut-parleur, et son fantôme ne doit pas parler
+ * à sa place).
+ */
+export function ouvertures(buf: AudioBuffer, depuis = 0): Float32Array {
   const e = energie(buf, 1 / IPS);
-  const tri = Array.from(e).filter((v) => v > 0).sort((a, b) => a - b);
+  const k0 = Math.min(e.length, Math.max(0, Math.floor(depuis * IPS)));
+  const tri = Array.from(e.subarray(k0)).filter((v) => v > 0).sort((a, b) => a - b);
   const ref = tri[Math.floor(tri.length * 0.92)] || 1;
   const o = new Float32Array(e.length);
-  for (let k = 0; k < e.length; k++) {
+  for (let k = k0; k < e.length; k++) {
     const m = ((e[k - 1] ?? e[k]) + e[k] + (e[k + 1] ?? e[k])) / 3;
     o[k] = Math.min(1, m / ref);
   }
   return o;
+}
+
+const attendre = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * LA VOIX DU REPORTER : LIAM, PAR LE SERVEUR — OU TOUTES CELLES DE SECOURS.
+ *
+ * TOUT OU RIEN. Une réplique refusée au milieu (un quota, une limite de
+ * requêtes simultanées) ne doit pas donner un reporter qui change de voix
+ * entre deux questions : au premier échec, on reprend TOUTES les répliques de
+ * secours. Deux demandes à la fois seulement — un compte ElevenLabs modeste en
+ * refuse davantage —, et une seconde chance après un refus pour cause
+ * d'affluence.
+ */
+async function chargerVoix(ctx: BaseAudioContext): Promise<{ voix: Record<IdReplique, AudioBuffer>; source: string }> {
+  const voix = {} as Record<IdReplique, AudioBuffer>;
+  let source = "";
+  try {
+    const une = async (id: IdReplique) => {
+      for (let essai = 0; essai < 2; essai++) {
+        const stop = new AbortController();
+        const minuterie = setTimeout(() => stop.abort(), 25_000);
+        try {
+          const r = await fetch(`/api/direct/interview/voix?id=${id}&v=${VERSION_VOIX}`, { signal: stop.signal });
+          if (r.ok) {
+            source = source || r.headers.get("x-interview-voix") || "serveur";
+            voix[id] = await ctx.decodeAudioData(await r.arrayBuffer());
+            return;
+          }
+          if (r.status !== 429 && r.status < 500) throw new Error(`HTTP ${r.status}`);
+          if (r.status === 503) throw new Error("voix non configurée");
+        } finally {
+          clearTimeout(minuterie);
+        }
+        await attendre(1500);
+      }
+      throw new Error("voix indisponible");
+    };
+    const file = [...IDS_REPLIQUES];
+    let echec = false;
+    await Promise.all(
+      [0, 1].map(async () => {
+        while (file.length && !echec) {
+          try {
+            await une(file.shift()!);
+          } catch (e) {
+            echec = true;
+            throw e;
+          }
+        }
+      }),
+    );
+    return { voix, source };
+  } catch {
+    const liste = await Promise.all(IDS_REPLIQUES.map((id) => son(ctx, `${DOSSIER}/voix/${id}.mp3`)));
+    const secours = {} as Record<IdReplique, AudioBuffer>;
+    IDS_REPLIQUES.forEach((id, k) => (secours[id] = liste[k]));
+    return { voix: secours, source: "secours" };
+  }
 }
 
 async function polices(): Promise<Elements["police"]> {
@@ -173,27 +266,36 @@ async function polices(): Promise<Elements["police"]> {
 }
 
 export async function chargerElements(ctx: BaseAudioContext): Promise<Elements> {
-  const ids = Object.keys(REPLIQUES) as IdReplique[];
-  const [fantome, ardoise, bande, grain, logo, voixListe, gril, craie, cloches, souffle, police] = await Promise.all([
-    Promise.all([0, 1, 2, 3].map((k) => image(`${DOSSIER}/fantome-${k}.webp`))),
+  const quatre = (nom: string) => Promise.all([0, 1, 2, 3].map((k) => image(`${DOSSIER}/${nom}-${k}.webp`)));
+  const [reporter, chef, ardoise, bande, grain, logo, voix, gril, craie, cloches, souffle, police] = await Promise.all([
+    quatre("reporter"),
+    quatre("chef"),
     image(`${DOSSIER}/ardoise.webp`),
     image(`${DOSSIER}/ardoise-bande.webp`),
     image(`${DOSSIER}/grain-craie.webp`),
     image("/clikme-logo-blanc.png"),
-    Promise.all(ids.map((id) => son(ctx, `${DOSSIER}/voix/${id}.mp3`))),
+    chargerVoix(ctx),
     son(ctx, `${DOSSIER}/gril.mp3`),
     son(ctx, `${DOSSIER}/craie.mp3`),
     son(ctx, `${DOSSIER}/cloches.mp3`),
     son(ctx, `${DOSSIER}/souffle.mp3`),
     polices(),
   ]);
-  const voix = {} as Record<IdReplique, AudioBuffer>;
   const bouche = {} as Record<IdReplique, Float32Array>;
-  ids.forEach((id, k) => {
-    voix[id] = voixListe[k];
-    bouche[id] = ouvertures(voixListe[k]);
-  });
-  return { fantome, ardoise, bande, grain, logo, voix, bouche, sons: { gril, craie, cloches, souffle }, police };
+  for (const id of IDS_REPLIQUES) bouche[id] = ouvertures(voix.voix[id]);
+  return {
+    reporter,
+    chef,
+    ardoise,
+    bande,
+    grain,
+    logo,
+    voix: voix.voix,
+    bouche,
+    sourceVoix: voix.source,
+    sons: { gril, craie, cloches, souffle },
+    police,
+  };
 }
 
 /* ═══ LES OUTILS DE DESSIN ═════════════════════════════════════════════════ */
@@ -396,7 +498,7 @@ function dessinerBulle(c2d: CanvasRenderingContext2D, b: Bulle, cx: number, bas:
 type Place = { cx: number; bas: number; h: number };
 function dessinerFantome(
   c2d: CanvasRenderingContext2D,
-  el: Elements,
+  images: HTMLImageElement[],
   p: Place,
   t: number,
   ouverture: number,
@@ -404,7 +506,7 @@ function dessinerFantome(
   alpha = 1,
 ) {
   if (alpha <= 0) return;
-  const img = el.fantome[Math.min(3, Math.round(borne(ouverture) * 3))];
+  const img = images[Math.min(3, Math.round(borne(ouverture) * 3))];
   const souffle = Math.sin(t * 2 * Math.PI * 1.05);
   const sx = 1 - 0.02 * ouverture + 0.012 * souffle;
   const sy = 1 + 0.03 * ouverture - 0.012 * souffle;
@@ -461,20 +563,56 @@ function etincelles(c2d: CanvasRenderingContext2D, cx: number, cy: number, age: 
   c2d.restore();
 }
 
-/** L'image du chef, recadrée pour remplir le haut sans la déformer. */
-function dessinerVideo(c2d: CanvasRenderingContext2D, v: HTMLVideoElement) {
-  const vw = v.videoWidth;
-  const vh = v.videoHeight;
-  if (!vw || !vh) {
+/**
+ * UNE IMAGE (le chef filmé, sa photo, sa vidéo) RECADRÉE POUR REMPLIR UN
+ * RECTANGLE sans la déformer, un peu au-dessus du milieu — c'est là que sont
+ * les visages, debout derrière un comptoir. `zoom` > 1 resserre (le lent
+ * travelling sur une photo).
+ */
+function couvrir(
+  c2d: CanvasRenderingContext2D,
+  src: CanvasImageSource,
+  sw: number,
+  sh: number,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  zoom = 1,
+  focus = 0.38,
+) {
+  if (!sw || !sh) {
     c2d.fillStyle = "#14110F";
-    c2d.fillRect(0, 0, LARGEUR, HAUT_VIDEO);
+    c2d.fillRect(x, y, w, h);
     return;
   }
-  const s = Math.max(LARGEUR / vw, HAUT_VIDEO / vh);
-  const w = LARGEUR / s;
-  const h = HAUT_VIDEO / s;
-  // UN PEU AU-DESSUS DU MILIEU : c'est là que sont les visages, debout derrière un comptoir.
-  c2d.drawImage(v, (vw - w) / 2, (vh - h) * 0.38, w, h, 0, 0, LARGEUR, HAUT_VIDEO);
+  const s = Math.max(w / sw, h / sh) * zoom;
+  const cw = w / s;
+  const ch = h / s;
+  c2d.drawImage(src, (sw - cw) / 2, (sh - ch) * focus, cw, ch, x, y, w, h);
+}
+
+const tailleDe = (m: HTMLVideoElement | HTMLImageElement): [number, number] =>
+  m instanceof HTMLVideoElement ? [m.videoWidth, m.videoHeight] : [m.naturalWidth, m.naturalHeight];
+
+/** Son visage dans un médaillon, pendant que sa photo ou sa vidéo passe en grand. */
+function medaillon(c2d: CanvasRenderingContext2D, v: HTMLVideoElement, cx: number, cy: number, r: number, alpha: number) {
+  if (alpha <= 0) return;
+  c2d.save();
+  c2d.globalAlpha = alpha;
+  c2d.shadowColor = "rgba(0,0,0,.45)";
+  c2d.shadowBlur = 18;
+  c2d.beginPath();
+  c2d.arc(cx, cy, r + 6, 0, Math.PI * 2);
+  c2d.fillStyle = "#fff";
+  c2d.fill();
+  c2d.shadowColor = "transparent";
+  c2d.beginPath();
+  c2d.arc(cx, cy, r, 0, Math.PI * 2);
+  c2d.clip();
+  const [vw, vh] = tailleDe(v);
+  couvrir(c2d, v, vw, vh, cx - r, cy - r, 2 * r, 2 * r, 1.05, 0.32);
+  c2d.restore();
 }
 
 function noir(c2d: CanvasRenderingContext2D, a: number) {
@@ -493,21 +631,30 @@ export type Reglages = {
   ville: string;
   plat: string;
   prix: string;
-  /** Où était le fantôme sur l'aperçu, pendant l'interview. */
+  /** Où était le reporter sur l'aperçu, pendant l'interview. */
   coteApercu: Cote;
+  /** Le chef filmé, ou son fantôme à sa place. */
+  mode: Mode;
 };
 
+/** La photo ou la vidéo qu'il a ajoutée à une question, après l'interview. */
+export type Media = { genre: "photo" | "video"; url: string };
+
 export type PriseAMonter = {
-  url: string;
+  /** La vidéo de la prise — `null` quand il n'a enregistré que sa voix. */
+  url: string | null;
   question: IdQuestion;
-  /** En secondes depuis le début de la prise. */
-  questionDebut: number;
+  /** Ce que dit le reporter, en secondes depuis le début de la prise. */
+  paroles: { id: IdReplique; debut: number }[];
   questionFin: number;
   /** Où couper la prise : la fin de sa parole, plus un souffle. */
   coupe: number;
   /** Le son de la prise, décodé — `null` si le téléphone n'a pas su. */
   audio: AudioBuffer | null;
+  /** La bouche de son fantôme, trente valeurs par seconde de prise (quand il ne se montre pas). */
+  bouche: Float32Array | null;
   sousTitres: SousTitre[];
+  media: Media | null;
 };
 
 export type Montage = {
@@ -516,9 +663,32 @@ export type Montage = {
   duree: number;
   /** Ce qui a servi pour le son des réponses, prise par prise. */
   sonDesReponses: ("fichier" | "lecteur" | "aucun")[];
+  /** La photo ou la vidéo de chaque réponse : montrée, absente, ou illisible par ce téléphone. */
+  mediaDesReponses: ("montre" | "aucun" | "illisible")[];
 };
 
 type Segment = { genre: "ouverture" } | { genre: "prise"; k: number } | { genre: "fin" };
+type MediaPret = { genre: "photo"; img: HTMLImageElement } | { genre: "video"; v: HTMLVideoElement };
+
+/** Un lecteur muet, prêt à donner ses images. */
+function lecteurMuet(url: string, boucle = false): Promise<HTMLVideoElement> {
+  return new Promise((ok) => {
+    const v = document.createElement("video");
+    v.muted = true;
+    v.playsInline = true;
+    v.loop = boucle;
+    v.setAttribute("playsinline", "");
+    v.preload = "auto";
+    // VISIBLE, MAIS À PEINE : un lecteur caché du tout n'avance plus ses images sur certains téléphones.
+    Object.assign(v.style, { position: "fixed", left: "0", top: "0", width: "2px", height: "2px", opacity: "0.01", pointerEvents: "none" });
+    const fini = () => ok(v);
+    v.addEventListener("loadeddata", fini, { once: true });
+    v.addEventListener("error", fini, { once: true });
+    setTimeout(fini, 5000);
+    v.src = url;
+    document.body.appendChild(v);
+  });
+}
 
 export async function monter(o: {
   ctx: AudioContext;
@@ -529,7 +699,7 @@ export async function monter(o: {
   /** Le commerçant entend-il le montage pendant qu'il se fabrique ? */
   ecouter: boolean;
   surProgres?: (p: number) => void;
-  /** L'image d'attente du lecteur : l'ardoise du jour, une fois écrite, avec le fantôme. */
+  /** L'image d'attente du lecteur : l'ardoise du jour, une fois écrite, avec le reporter. */
   surAffiche?: (image: string) => void;
   signal?: AbortSignal;
 }): Promise<Montage> {
@@ -542,27 +712,20 @@ export async function monter(o: {
   const craie = new Craie(el);
   const cote = coteDuMontage(reglages.coteApercu);
   const aGauche = cote === "gauche";
+  const enFantome = reglages.mode === "fantome";
 
-  /* ─── les lecteurs, muets, un par prise ─── */
-  const lecteurs = await Promise.all(
-    prises.map(
-      (p) =>
-        new Promise<HTMLVideoElement>((ok) => {
-          const v = document.createElement("video");
-          v.muted = true;
-          v.playsInline = true;
-          v.setAttribute("playsinline", "");
-          v.preload = "auto";
-          // VISIBLE, MAIS À PEINE : un lecteur caché du tout n'avance plus ses images sur certains téléphones.
-          Object.assign(v.style, { position: "fixed", left: "0", top: "0", width: "2px", height: "2px", opacity: "0.01", pointerEvents: "none" });
-          const fini = () => ok(v);
-          v.addEventListener("loadeddata", fini, { once: true });
-          v.addEventListener("error", fini, { once: true });
-          setTimeout(fini, 5000);
-          v.src = p.url;
-          document.body.appendChild(v);
-        }),
-    ),
+  /* ─── les lecteurs (muets) et les photos ─── */
+  const lecteurs = await Promise.all(prises.map((p) => (p.url ? lecteurMuet(p.url) : Promise.resolve(null))));
+  const medias: (MediaPret | null)[] = await Promise.all(
+    prises.map(async (p): Promise<MediaPret | null> => {
+      if (!p.media) return null;
+      if (p.media.genre === "photo") {
+        const img = await image(p.media.url).catch(() => null);
+        return img ? { genre: "photo", img } : null;
+      }
+      const v = await lecteurMuet(p.media.url, true);
+      return v.videoWidth ? { genre: "video", v } : null;
+    }),
   );
 
   /* ─── le son : un bus, un compresseur, la sortie enregistrée (et les haut-parleurs si on écoute) ─── */
@@ -595,7 +758,10 @@ export async function monter(o: {
       s.start(q, off, duree - (q - quand) + 0.05);
       g.gain.setValueAtTime(gain, quand + Math.max(0, duree - 0.08));
       g.gain.linearRampToValueAtTime(0, quand + duree);
-    } else s.start(q, off);
+    } else {
+      if (off >= buf.duration) return;
+      s.start(q, off);
+    }
     sources.push(s);
   };
   const crayon = (quand: number, duree: number, gain = 0.85) => {
@@ -647,25 +813,35 @@ export async function monter(o: {
     { b: craie.bloc(reglages.commerce, 80, 700), cy: 220, debut: 0.25, duree: 0.7 },
     { b: craie.bloc(reglages.ville, 42, 400), cy: 312, debut: 0.95, duree: 0.3 },
   ];
-  const bulles = new Map<IdReplique, Bulle>();
-  const bulle = (id: IdReplique) => {
-    let b = bulles.get(id);
-    if (!b) bulles.set(id, (b = fabriquerBulle(REPLIQUES[id], el.police.bulle)));
+  const bulles = new Map<string, Bulle>();
+  const bulle = (texte: string) => {
+    let b = bulles.get(texte);
+    if (!b) bulles.set(texte, (b = fabriquerBulle(texte, el.police.bulle)));
     return b;
   };
+  const texteDe = (paroles: { id: IdReplique }[]) => paroles.map((p) => REPLIQUES[p.id]).join(" ");
   const TITRES = Object.fromEntries(QUESTIONS.map((q) => [q.id, q.titre])) as Record<IdQuestion, string>;
-  const mention = `Essai ${MARQUE} · la voix du fantôme est une voix de synthèse`;
+  const mention = `Essai ${MARQUE} · la voix du reporter est une voix de synthèse`;
 
+  /* les places : le reporter grand quand il demande, petit au coin quand le chef répond ;
+     le fantôme du chef dans le haut, de l'autre côté, quand c'est lui qui parle */
   const GRAND_ARD: Place = { cx: 360, bas: 1262, h: 560 };
   const GRAND: Place = { cx: aGauche ? 225 : 495, bas: 1266, h: 470 };
   const PETIT: Place = { cx: aGauche ? 128 : 592, bas: 1272, h: 265 };
-  /** Le milieu de la place laissée à la craie, à côté du petit fantôme. */
+  const CHEF_HAUT: Place = { cx: aGauche ? 505 : 215, bas: 808, h: 440 };
+  const REPORTER_FIN: Place = { cx: 200, bas: 1262, h: 460 };
+  const CHEF_FIN: Place = { cx: 525, bas: 1262, h: 440 };
+  /** Le milieu de la place laissée à la craie, à côté du petit reporter. */
   const X_TEXTE = aGauche ? 478 : 242;
   const mi = (a: Place, b: Place, q: number): Place => ({ cx: a.cx + (b.cx - a.cx) * q, bas: a.bas + (b.bas - a.bas) * q, h: a.h + (b.h - a.h) * q });
   const bouche = (id: IdReplique, t: number) => {
     const b = el.bouche[id];
     const i = Math.floor(t * IPS);
     return i >= 0 && i < b.length ? b[i] : 0;
+  };
+  const boucheReporter = (paroles: { id: IdReplique; debut: number }[], t: number) => {
+    for (const p of paroles) if (t >= p.debut && t < p.debut + el.voix[p.id].duration) return bouche(p.id, t - p.debut);
+    return 0;
   };
 
   /* ─── chaque image ─── */
@@ -675,17 +851,39 @@ export async function monter(o: {
     trait(c2d, el, LARGEUR / 2, 334, 300, doux((t - 1.2) / 0.35));
     const arrivee = entree(t, 0.3, 0.7);
     const place = { ...GRAND_ARD, bas: GRAND_ARD.bas + 900 * (1 - arrivee) };
-    const tv = t - OUVERTURE.voix;
-    dessinerFantome(c2d, el, place, t, bouche("bonjour", tv));
+    dessinerFantome(c2d, el.reporter, place, t, bouche("bonjour", t - OUVERTURE.voix));
     etincelles(c2d, 360, 900, t - 0.4);
     const al = entree(t, OUVERTURE.voix - 0.15, 0.2) * (1 - entree(t, OUVERTURE.voix + el.voix.bonjour.duration + 0.25, 0.2));
-    dessinerBulle(c2d, bulle("bonjour"), 360, place.bas - place.h * 0.97, 360, al);
+    dessinerBulle(c2d, bulle(REPLIQUES.bonjour), 360, place.bas - place.h * 0.97, 360, al);
     noir(c2d, 1 - t / 0.3);
+  };
+
+  /** Le haut d'une prise sans visage ni photo : l'ardoise, et le plat du jour écrit dessus. */
+  const fondArdoise = (tc: number) => {
+    couvrir(c2d, el.ardoise, el.ardoise.naturalWidth, el.ardoise.naturalHeight, 0, 0, LARGEUR, HAUT_VIDEO, 1, 0);
+    ecrire(c2d, craie.bloc(reglages.plat, 46, 700, CRAIE_J, 600), LARGEUR / 2, 112, doux(tc / 0.8));
+  };
+  const dessinerMedia = (m: MediaPret, k: number, tc: number, alpha: number) => {
+    c2d.save();
+    c2d.globalAlpha = alpha;
+    if (m.genre === "photo") {
+      // UNE PHOTO NE RESTE PAS FIGÉE : elle avance doucement, comme une caméra qui s'approche du plat
+      couvrir(c2d, m.img, m.img.naturalWidth, m.img.naturalHeight, 0, 0, LARGEUR, HAUT_VIDEO, 1 + 0.09 * borne(tc / prises[k].coupe), 0.5);
+    } else couvrir(c2d, m.v, m.v.videoWidth, m.v.videoHeight, 0, 0, LARGEUR, HAUT_VIDEO, 1, 0.5);
+    c2d.restore();
   };
 
   const prise = (k: number, tc: number, tl: number) => {
     const p = prises[k];
-    dessinerVideo(c2d, lecteurs[k]);
+    const m = medias[k];
+    const v = lecteurs[k];
+    const repond = tc - (p.questionFin + 0.05);
+    // LE HAUT : son visage pendant la question et au début de sa réponse, puis ce qu'il montre
+    const partMedia = m ? (enFantome ? 1 : entree(repond, 1.2, 0.45)) : 0;
+    if (v && partMedia < 1) couvrir(c2d, v, v.videoWidth, v.videoHeight, 0, 0, LARGEUR, HAUT_VIDEO);
+    else if (!v && !m) fondArdoise(tc);
+    if (m && partMedia > 0) dessinerMedia(m, k, tc, partMedia);
+    if (v && m) medaillon(c2d, v, aGauche ? LARGEUR - 150 : 150, 168, 116, partMedia);
     const voile = c2d.createLinearGradient(0, HAUT_VIDEO - 110, 0, HAUT_VIDEO);
     voile.addColorStop(0, "rgba(10,8,6,0)");
     voile.addColorStop(1, "rgba(10,8,6,.6)");
@@ -693,30 +891,35 @@ export async function monter(o: {
     c2d.fillRect(0, HAUT_VIDEO - 110, LARGEUR, 110);
     c2d.drawImage(el.bande, 0, HAUT_VIDEO, LARGEUR, HAUTEUR - HAUT_VIDEO);
 
-    const repond = tc - (p.questionFin + 0.05);
-    // l'ardoise : la question en titre, puis ce qu'il dit, à la craie
-    const titreAvecSousTitres = p.sousTitres.length > 0;
-    const titre = titreAvecSousTitres
-      ? craie.bloc(TITRES[p.question], 32, 400, CRAIE_DOUCE, 430)
-      : craie.bloc(TITRES[p.question], 54, 700, CRAIE, 430);
-    ecrire(c2d, titre, X_TEXTE, titreAvecSousTitres ? 848 : 1018, doux((repond - 0.05) / 0.5));
+    // L'ARDOISE : la question en titre, puis ce qu'il dit, à la craie
+    const avecSousTitres = p.sousTitres.length > 0;
+    const titre = avecSousTitres ? craie.bloc(TITRES[p.question], 32, 400, CRAIE_DOUCE, 430) : craie.bloc(TITRES[p.question], 54, 700, CRAIE, 430);
+    ecrire(c2d, titre, X_TEXTE, avecSousTitres ? 848 : 1018, doux((repond - 0.05) / 0.5));
+    let reaction = 0;
     p.sousTitres.forEach((s, j) => {
       const suivant = j + 1 < p.sousTitres.length ? p.sousTitres[j + 1].debut : s.fin + 0.8;
+      if (tc >= s.debut && tc < s.debut + 0.35) reaction = 4 * Math.sin((tc - s.debut) * 22);
       if (tc < s.debut - 0.05 || tc >= suivant - 0.05) return;
       const b = craie.bloc(s.texte, 40, 700, CRAIE, 430, 50);
       ecrire(c2d, b, X_TEXTE, 1040, doux((tc - s.debut + 0.05) / Math.max(0.35, Math.min(0.8, (s.fin - s.debut) * 0.6))), 1 - entree(tc, suivant - 0.17, 0.12));
     });
 
-    // le fantôme : grand quand il demande, petit au coin quand le chef répond
-    const q = entree(repond, 0, 0.4);
-    const place = mi(GRAND, PETIT, q);
-    let angle = 0;
-    for (const s of p.sousTitres) if (tc >= s.debut && tc < s.debut + 0.35) angle = 4 * Math.sin((tc - s.debut) * 22);
-    if (!p.sousTitres.length && repond > 0) angle = 2.5 * Math.sin(tc * 1.7) * Math.max(0, Math.sin(tc * 0.45));
-    dessinerFantome(c2d, el, place, tc, bouche(p.question, tc - p.questionDebut), angle);
-    const al = entree(tc, p.questionDebut - 0.1, 0.2) * (1 - entree(tc, p.questionFin + 0.2, 0.2));
+    // SON FANTÔME, quand il ne se montre pas : dans le haut, et il parle avec SA voix
+    if (enFantome) {
+      const i = Math.floor(tc * IPS);
+      const ouv = repond > 0 && p.bouche && i < p.bouche.length ? p.bouche[i] : 0;
+      dessinerFantome(c2d, el.chef, CHEF_HAUT, tc + 0.7, ouv, 2 * Math.sin(tc * 1.3) + (repond > 0 ? reaction * 0.6 : 0));
+    }
+
+    // LE REPORTER : grand quand il demande, petit au coin pendant la réponse
+    const place = mi(GRAND, PETIT, entree(repond, 0, 0.4));
+    let angle = enFantome ? 0 : reaction;
+    if (!avecSousTitres && repond > 0) angle = 2.5 * Math.sin(tc * 1.7) * Math.max(0, Math.sin(tc * 0.45));
+    dessinerFantome(c2d, el.reporter, place, tc, boucheReporter(p.paroles, tc), angle);
+    const debutQ = p.paroles[0]?.debut ?? 0;
+    const al = entree(tc, debutQ - 0.1, 0.2) * (1 - entree(tc, p.questionFin + 0.2, 0.2));
     const teteY = place.bas - place.h * 0.97;
-    dessinerBulle(c2d, bulle(p.question), place.cx + (aGauche ? 110 : -110), teteY + 6, place.cx + (aGauche ? 30 : -30), al);
+    dessinerBulle(c2d, bulle(texteDe(p.paroles)), place.cx + (aGauche ? 110 : -110), teteY + 6, place.cx + (aGauche ? 30 : -30), al);
     noir(c2d, 1 - tl / 0.25);
   };
 
@@ -738,16 +941,18 @@ export async function monter(o: {
       c2d.fillText(mention, LARGEUR / 2, 1250);
       c2d.restore();
     }
-    // il apparaît au milieu, dit « à demain », puis fait un petit salut
+    // ils apparaissent, le reporter dit « à demain », puis un petit salut
     const e = 0.7 + 0.3 * entree(t, 0, 0.35);
     const salut = t - (finVoix + 0.2);
-    const saut = salut > 0 ? 40 * Math.abs(Math.sin(Math.min(salut, 1.2) * Math.PI / 0.6)) * (1 - (Math.min(salut, 1.2) / 1.2) * 0.3) : 0;
+    const saut = salut > 0 ? 40 * Math.abs(Math.sin((Math.min(salut, 1.2) * Math.PI) / 0.6)) * (1 - (Math.min(salut, 1.2) / 1.2) * 0.3) : 0;
     const angle = salut > 0 ? 7 * Math.sin(salut * 9) * Math.max(0, 1 - salut / 1.6) : 0;
-    dessinerFantome(c2d, el, { ...GRAND_ARD, h: GRAND_ARD.h * e, bas: GRAND_ARD.bas - saut }, t, bouche("a-demain", t - FIN.voix), angle);
+    const placeR = enFantome ? REPORTER_FIN : GRAND_ARD;
+    if (enFantome) dessinerFantome(c2d, el.chef, { ...CHEF_FIN, h: CHEF_FIN.h * e, bas: CHEF_FIN.bas - saut * 0.8 }, t + 0.7, 0, -angle * 0.8);
+    dessinerFantome(c2d, el.reporter, { ...placeR, h: placeR.h * e, bas: placeR.bas - saut }, t, bouche("a-demain", t - FIN.voix), angle);
     etincelles(c2d, 360, 920, t - 0.05, 220);
     etincelles(c2d, 360, 900, salut, 300);
     const al = entree(t, FIN.voix - 0.15, 0.2) * (1 - entree(t, finVoix + 0.25, 0.2));
-    dessinerBulle(c2d, bulle("a-demain"), 360, GRAND_ARD.bas - GRAND_ARD.h * 0.97 + 10, 360, al);
+    dessinerBulle(c2d, bulle(REPLIQUES["a-demain"]), placeR.cx, placeR.bas - placeR.h * 0.97 + 10, placeR.cx, al);
     noir(c2d, (t - (dFin - 0.5)) / 0.5);
   };
 
@@ -769,15 +974,15 @@ export async function monter(o: {
     jouer(el.voix["a-demain"], t0 + FIN.voix, 0.95);
     jouer(el.sons.cloches, t0 + FIN.voix + el.voix["a-demain"].duration + 0.25, 0.55);
   };
-  /** Une prise : appelé quand sa vidéo démarre vraiment, `zero` = l'heure de son début. */
-  const sonsPrise = (k: number, zero: number, v: HTMLVideoElement) => {
+  /** Une prise : appelé quand elle démarre vraiment, `zero` = l'heure de son début. */
+  const sonsPrise = (k: number, zero: number, v: HTMLVideoElement | null) => {
     const p = prises[k];
     niveauLit(ctx.currentTime, 0.16, 0.5);
     jouer(el.sons.souffle, ctx.currentTime, 0.3);
-    jouer(el.voix[p.question], zero + p.questionDebut, 0.95);
+    for (const pa of p.paroles) jouer(el.voix[pa.id], zero + pa.debut, 0.95);
     crayon(zero + p.questionFin + 0.1, 0.5, 0.6);
     for (const s of p.sousTitres) crayon(zero + s.debut, Math.max(0.35, Math.min(0.8, (s.fin - s.debut) * 0.6)), 0.45);
-    // SA RÉPONSE : muette pendant la question (le micro a entendu le fantôme
+    // SA RÉPONSE : muette pendant la question (le micro a entendu le reporter
     // dans le haut-parleur), puis à pleine voix.
     const g = ctx.createGain();
     g.gain.setValueAtTime(0, ctx.currentTime);
@@ -788,11 +993,12 @@ export async function monter(o: {
       const s = ctx.createBufferSource();
       s.buffer = p.audio;
       s.connect(g);
-      s.start(ctx.currentTime, Math.min(p.audio.duration - 0.01, v.currentTime));
+      const depuis = v ? v.currentTime : Math.max(0, ctx.currentTime - zero);
+      s.start(ctx.currentTime, Math.min(p.audio.duration - 0.01, depuis));
       s.stop(zero + p.coupe + 0.05);
       sources.push(s);
       sonDesReponses[k] = "fichier";
-    } else {
+    } else if (v) {
       try {
         const s = ctx.createMediaElementSource(v);
         v.muted = false;
@@ -817,6 +1023,7 @@ export async function monter(o: {
   let debutSeg = T0;
   let lance = false;
   let sonsPoses = false;
+  let mediaLance = false;
   let derniere = -1;
   let bloqueDepuis = 0;
   let affiche = false;
@@ -825,11 +1032,16 @@ export async function monter(o: {
   await new Promise<void>((fini) => {
     const suivant = (maintenant: number) => {
       const s = segments[seg];
-      if (s.genre === "prise") lecteurs[s.k].pause();
+      if (s.genre === "prise") {
+        lecteurs[s.k]?.pause();
+        const m = medias[s.k];
+        if (m?.genre === "video") m.v.pause();
+      }
       seg += 1;
       debutSeg = maintenant;
       lance = false;
       sonsPoses = false;
+      mediaLance = false;
       if (seg >= segments.length) return fini();
       if (segments[seg].genre === "fin") sonsFin(maintenant);
     };
@@ -858,23 +1070,36 @@ export async function monter(o: {
       } else if (s.genre === "prise") {
         const v = lecteurs[s.k];
         const p = prises[s.k];
-        if (!lance) {
-          lance = true;
-          bloqueDepuis = maintenant;
-          v.currentTime = 0;
-          v.play().catch(() => {
-            /* muet : la lecture ne devrait jamais être refusée — sinon, le garde-fou ci-dessous passe la prise */
-          });
-        }
-        const tc = v.currentTime;
-        if (tc > 0.02 && !sonsPoses) {
-          // LA VIDÉO TOURNE VRAIMENT : on cale le son sur elle.
+        const m = medias[s.k];
+        let tc = t;
+        if (v) {
+          // FILMÉ : la vidéo mène, et le son se cale sur elle quand elle tourne vraiment
+          if (!lance) {
+            lance = true;
+            bloqueDepuis = maintenant;
+            v.currentTime = 0;
+            v.play().catch(() => {
+              /* muet : la lecture ne devrait jamais être refusée — sinon, le garde-fou ci-dessous passe la prise */
+            });
+          }
+          tc = v.currentTime;
+          if (tc > 0.02 && !sonsPoses) {
+            sonsPoses = true;
+            sonsPrise(s.k, maintenant - tc, v);
+          }
+          if (tc > 0.02) bloqueDepuis = maintenant;
+        } else if (!sonsPoses) {
+          // SA VOIX SEULE : c'est l'horloge qui mène
           sonsPoses = true;
-          sonsPrise(s.k, maintenant - tc, v);
+          sonsPrise(s.k, debutSeg, null);
+        }
+        if (m?.genre === "video" && !mediaLance && (enFantome || tc - p.questionFin > 1.1)) {
+          mediaLance = true;
+          m.v.currentTime = 0;
+          m.v.play().catch(() => {});
         }
         if (dessiner) prise(s.k, tc, t);
-        if (tc > 0.02) bloqueDepuis = maintenant;
-        if (tc >= p.coupe || v.ended || maintenant - bloqueDepuis > 3) suivant(maintenant);
+        if (tc >= p.coupe || (v && (v.ended || maintenant - bloqueDepuis > 3))) suivant(maintenant);
       } else {
         if (dessiner) fin(Math.max(0, t));
         if (t >= dFin) suivant(maintenant);
@@ -889,7 +1114,7 @@ export async function monter(o: {
 
   // une image noire de plus, puis on arrête
   noir(c2d, 1);
-  await new Promise((r) => setTimeout(r, 150));
+  await attendre(150);
   if (rec.state !== "inactive") rec.stop();
   await arrete;
   for (const s of sources) {
@@ -903,7 +1128,9 @@ export async function monter(o: {
   comp.disconnect();
   ecoute.disconnect();
   lit.disconnect();
-  for (const v of lecteurs) {
+  const aRanger = [...lecteurs, ...medias.map((m) => (m?.genre === "video" ? m.v : null))];
+  for (const v of aRanger) {
+    if (!v) continue;
     v.pause();
     v.removeAttribute("src");
     v.load();
@@ -912,5 +1139,7 @@ export async function monter(o: {
   flux.getTracks().forEach((t) => t.stop());
   if (erreur) throw erreur;
   const type = rec.mimeType || format || "video/webm";
-  return { blob: new Blob(morceaux, { type }), type, duree: ctx.currentTime - T0, sonDesReponses };
+  // UNE VIDÉO QUE CE TÉLÉPHONE NE SAIT PAS LIRE NE DISPARAÎT PAS EN SILENCE : l'écran d'essai le dit
+  const mediaDesReponses = prises.map((p, k) => (!p.media ? "aucun" : medias[k] ? "montre" : "illisible")) as Montage["mediaDesReponses"];
+  return { blob: new Blob(morceaux, { type }), type, duree: ctx.currentTime - T0, sonDesReponses, mediaDesReponses };
 }

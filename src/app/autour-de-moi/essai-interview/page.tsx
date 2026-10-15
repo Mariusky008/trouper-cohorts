@@ -53,6 +53,15 @@ function Styles() {
   color:var(--craie2);background:var(--nuit2);border:1px solid var(--trait);
   border-radius:12px;padding:13px 10px}
 .ei-choix button.on{color:#04150E;background:var(--menthe);border-color:var(--menthe)}
+/* le nombre de questions, et qui repond : deux grilles de choix, lisibles a 320 px */
+.ei-formats,.ei-modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ei-formats button,.ei-modes button{font:inherit;cursor:pointer;text-align:left;
+  color:var(--craie2);background:var(--nuit2);border:1px solid var(--trait);border-radius:13px;padding:12px 13px}
+.ei-formats button b,.ei-modes button b{display:block;font-size:15px;font-weight:850;color:var(--craie)}
+.ei-formats button em,.ei-modes button em{display:block;margin-top:2px;font-style:normal;font-size:12.5px;line-height:1.35}
+.ei-formats button.on,.ei-modes button.on{background:rgba(61,226,166,.12);border-color:var(--menthe)}
+.ei-formats button.on b,.ei-modes button.on b{color:var(--menthe)}
+.ei-modes button img{display:block;height:52px;width:auto;margin-bottom:6px}
 .ei-case{display:flex;gap:10px;align-items:center;margin-top:14px;font-size:14px;color:var(--craie2)}
 .ei-case input{width:20px;height:20px;accent-color:var(--menthe)}
 .ei-n{margin:10px 0 0;font-size:12.5px;line-height:1.5;color:var(--craie3)}
@@ -78,6 +87,20 @@ function Styles() {
 .ei-attente{width:44px;height:44px;margin:40px auto;border-radius:50%;
   border:4px solid var(--trait);border-top-color:var(--menthe);animation:eiTourne 1s linear infinite}
 @keyframes eiTourne{to{transform:rotate(360deg)}}
+/* ses reponses, une par ligne : la question, et la photo ou la video qu'il y met */
+.ei-reponses{list-style:none;margin:20px 0 0;padding:0;display:grid;gap:10px}
+.ei-reponses li{display:flex;gap:12px;align-items:center;justify-content:space-between;
+  padding:12px 14px;border-radius:14px;background:var(--nuit2);border:1px solid var(--trait)}
+.ei-r-texte{min-width:0}
+.ei-r-texte b{display:block;font-size:15px;font-weight:850}
+.ei-r-texte em{display:block;margin-top:2px;font-style:normal;font-size:12.5px;color:var(--craie3)}
+.ei-r-ajout{position:relative;flex:none;font-size:14px;font-weight:850;color:#04150E;
+  background:var(--menthe);border-radius:999px;padding:10px 14px;cursor:pointer;overflow:hidden}
+.ei-r-ajout input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+.ei-r-media{display:flex;align-items:center;gap:8px;flex:none}
+.ei-r-media img,.ei-r-media video{width:64px;height:64px;object-fit:cover;border-radius:10px;background:#000}
+.ei-r-media button{font:inherit;font-size:12.5px;font-weight:700;color:var(--craie2);cursor:pointer;
+  background:transparent;border:1px solid var(--trait);border-radius:999px;padding:7px 11px}
 .ei-mesures{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .ei-mesures li{padding:11px 13px;border-radius:13px;background:var(--nuit2);border:1px solid var(--trait)}
 .ei-mesures li b{display:block;font-size:13.5px;font-weight:800}
@@ -85,23 +108,29 @@ function Styles() {
 .ei-mesures li.oui{border-color:rgba(61,226,166,.35)}
 .ei-mesures li.non{border-color:rgba(255,107,107,.35)}
 
-/* LE DIRECT : la camera plein ecran, en miroir comme une glace, et le fantome pose dessus */
+/* LE DIRECT : la camera plein ecran, en miroir comme une glace, et le reporter pose dessus */
 .ei-scene{position:fixed;inset:0;background:#000;overflow:hidden;color:#fff;
   font-family:var(--font-clikme),system-ui,-apple-system,sans-serif}
 .ei-camera{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
-.ei-fantome{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 96px);
-  width:min(46vw,34vh);aspect-ratio:598/640;pointer-events:none;
+.ei-perso{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 96px);
+  height:min(36vh,60vw);aspect-ratio:455/640;pointer-events:none;
   animation:eiFlotte 1.8s ease-in-out infinite alternate}
-.ei-fantome.droite{right:2vw}
-.ei-fantome.gauche{left:2vw}
-.ei-fantome img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+.ei-perso.chef{aspect-ratio:549/640;animation-delay:-.9s}
+.ei-perso.droite{right:2vw}
+.ei-perso.gauche{left:2vw}
+.ei-perso img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
   filter:drop-shadow(0 10px 18px rgba(0,0,0,.35))}
 @keyframes eiFlotte{from{transform:translateY(0)}to{transform:translateY(-10px)}}
-.ei-bulle{position:absolute;margin:0;bottom:calc(env(safe-area-inset-bottom) + 96px + min(46vw,34vh) * 1.04);
+.ei-bulle{position:absolute;margin:0;bottom:calc(env(safe-area-inset-bottom) + 96px + min(36vh,60vw));
   max-width:min(80vw,420px);padding:14px 18px;border-radius:22px;background:#fff;color:#1E1E22;
   font-weight:700;font-size:17px;line-height:1.35;box-shadow:0 8px 24px rgba(0,0,0,.3)}
 .ei-bulle.droite{right:4vw}
 .ei-bulle.gauche{left:4vw}
+/* SANS CAMERA : l'ardoise du jour, le plat ecrit dessus, et les deux fantomes face a face */
+.ei-ardoise-fond{position:absolute;inset:0;background:#1d2a24 url(/direct/interview/ardoise.webp) center/cover no-repeat}
+.ei-plat{position:absolute;top:calc(env(safe-area-inset-top) + 72px);left:0;right:0;margin:0;padding:0 20px;
+  text-align:center;font-family:"Craie ClikMe","Comic Sans MS",cursive;font-weight:700;
+  font-size:clamp(26px,7.5vw,42px);line-height:1.15;color:#F6DE78}
 .ei-haut{position:absolute;top:calc(env(safe-area-inset-top) + 12px);left:50%;transform:translateX(-50%);
   display:flex;gap:10px;align-items:center;white-space:nowrap;max-width:calc(100vw - 24px);
   overflow:hidden;text-overflow:ellipsis;font-size:14px;font-weight:800;
@@ -120,7 +149,7 @@ function Styles() {
 .ei-scene .ei-go{box-shadow:0 8px 24px rgba(0,0,0,.35)}
 /* sur la camera, un bouton grise a moitie transparent disparait : il reste lisible */
 .ei-scene .ei-go:disabled{opacity:1;color:#fff;background:rgba(20,24,22,.72);box-shadow:none}
-@media (prefers-reduced-motion:reduce){.ei-fantome,.ei-rec,.ei-attente{animation:none}}
+@media (prefers-reduced-motion:reduce){.ei-perso,.ei-rec,.ei-attente{animation:none}}
         `,
       }}
     />

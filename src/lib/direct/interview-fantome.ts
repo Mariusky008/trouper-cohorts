@@ -4,63 +4,103 @@
  *
  * « Est-ce que ça serait pas super que l'assistant fantôme lui pose des
  * questions et que le commerçant y réponde ? » Le commerçant pose son
- * téléphone, le fantôme est déjà à l'écran, à l'endroit où il lui a dit de
- * regarder, et il lui pose trois questions en direct. Une minute, pas plus.
- * Puis le téléphone monte la vidéo lui-même, « comme la dernière » : l'ardoise
- * qui s'écrit à la craie, le fantôme qui ouvre, qui pose ses questions et qui
- * dit au revoir.
+ * téléphone, le fantôme reporter de ClikMe est déjà à l'écran, à l'endroit où
+ * il lui a dit de regarder, et il lui pose ses questions en direct. Puis le
+ * téléphone monte la vidéo lui-même, « comme la dernière » : l'ardoise qui
+ * s'écrit à la craie, le reporter qui ouvre, qui pose ses questions et qui dit
+ * au revoir.
+ *
+ * DEUXIÈME VERSION, après le premier essai sur un téléphone :
+ *   · le reporter parle avec « la voix de Jean-Marie » — Liam, d'ElevenLabs,
+ *     celle de l'enregistrement du magret (voir `api/direct/interview/voix`) ;
+ *   · une à quatre questions, au choix, trente secondes au plus chacune ;
+ *   · une photo ou une vidéo par question, ajoutée après l'interview ;
+ *   · le chef qui ne veut pas se montrer est remplacé par SON fantôme, qui
+ *     parle avec sa voix à lui.
  *
  * CE FICHIER NE TOUCHE NI À LA CAMÉRA NI AU SON. Il porte les règles —
- * répliques, budget de temps, fenêtre de parole, plan du montage — pour
- * qu'elles se lisent et se vérifient sans téléphone. Le direct est dans
- * l'écran d'essai, le montage dans `interview-montage.ts`.
+ * répliques, formats, temps, fenêtre de parole, plan du montage — pour
+ * qu'elles se lisent et se vérifient sans téléphone, et le serveur y lit les
+ * textes que la voix a le droit de dire.
  */
 
-/* ═══ CE QUE DIT LE FANTÔME ════════════════════════════════════════════════
+/* ═══ CE QUE DIT LE REPORTER ═══════════════════════════════════════════════
  *
  * UNE VOIX DE SYNTHÈSE, ET C'EST LA SIENNE. On ne fait jamais dire au
  * commerçant une phrase qu'il n'a pas dite (voir `public/direct/voix/
- * LISEZ-MOI.md`) : le fantôme parle avec sa voix à lui, le chef avec la
- * sienne, enregistrée par son téléphone. Les fichiers sont dans
- * `public/direct/interview/voix/`, et le texte ci-dessous est exactement ce
- * qu'ils disent — c'est lui qui s'affiche dans la bulle.
+ * LISEZ-MOI.md`) : le reporter parle avec sa voix à lui, le chef avec la
+ * sienne, enregistrée par son téléphone — même quand c'est son fantôme qui
+ * est à l'écran.
+ *
+ * LE TEXTE AFFICHÉ ET LE TEXTE DIT PEUVENT DIFFÉRER : la bulle écrit « ClikMe »,
+ * la voix doit le prononcer comme on le dit (« Clic Mi ») — une voix de
+ * synthèse qui lit le nom de la marque lettre à lettre ne se rattrape pas.
  */
 export const REPLIQUES = {
   "place-droite": "Pose ton téléphone face à toi. Moi, je suis là, à droite ! Quand tu réponds, regarde-moi.",
   "place-gauche": "Pose ton téléphone face à toi. Moi, je suis là, à gauche ! Quand tu réponds, regarde-moi.",
-  bonjour: "Bonjour ! Moi, c'est le fantôme du Bordeaux. Aujourd'hui, je pose trois questions au chef !",
+  "place-fantome": "Pose ton téléphone, et parle-moi comme à un ami. Ton fantôme répondra à ta place !",
+  bonjour: "Bonjour ! Ici le fantôme reporter de ClikMe. Aujourd'hui, je suis au Bordeaux, avec le chef !",
   q1: "Alors chef, c'est quoi, le plat du jour ?",
   q2: "Et c'est quoi, ton secret, pour qu'il soit si bon ?",
-  q3: "Dernière question : si ton plat était une chanson, ce serait laquelle ?",
+  q3: "Si ton plat était une chanson, ce serait laquelle ?",
+  q4: "Et toi, chef : qu'est-ce qui t'a donné envie de faire ce métier ?",
+  derniere: "Dernière question !",
   merci: "Merci chef ! Je m'occupe du montage.",
   "a-demain": "À demain, au Bordeaux !",
 } as const;
 export type IdReplique = keyof typeof REPLIQUES;
 export const IDS_REPLIQUES = Object.keys(REPLIQUES) as IdReplique[];
 
+/** Ce que la voix prononce — le texte affiché, sauf là où il se lit mal. */
+export const repliqueDite = (id: IdReplique): string => REPLIQUES[id].replace(/ClikMe/g, "Clic Mi");
+
 /**
- * TROIS QUESTIONS, TROIS TONS : une utile, une sérieuse, une pour rire. Le
- * `titre` est ce que l'ardoise écrit pendant la réponse — c'est lui qui dit de
- * quoi on parle à celui qui regarde sans le son, et c'est la majorité.
+ * QUATRE QUESTIONS, ET LE FORMAT CHOISIT COMBIEN ON EN POSE : une (sérieuse),
+ * deux (sérieuses), trois (la troisième pour rire), quatre (la quatrième
+ * personnelle). Le `titre` est ce que l'ardoise écrit pendant la réponse —
+ * c'est lui qui dit de quoi on parle à celui qui regarde sans le son, et c'est
+ * la majorité.
  */
 export const QUESTIONS = [
-  { id: "q1", titre: "Le plat du jour ?" },
-  { id: "q2", titre: "Son secret ?" },
-  { id: "q3", titre: "Si c'était une chanson…" },
-] as const satisfies readonly { id: IdReplique; titre: string }[];
+  { id: "q1", ton: "sérieuse", titre: "Le plat du jour ?" },
+  { id: "q2", ton: "sérieuse", titre: "Son secret ?" },
+  { id: "q3", ton: "pour rire", titre: "Si c'était une chanson…" },
+  { id: "q4", ton: "personnelle", titre: "Pourquoi ce métier ?" },
+] as const satisfies readonly { id: IdReplique; ton: string; titre: string }[];
 export type IdQuestion = (typeof QUESTIONS)[number]["id"];
+export type Question = (typeof QUESTIONS)[number];
+
+export const FORMATS = [1, 2, 3, 4] as const;
+export type Format = (typeof FORMATS)[number];
+export const questionsDuFormat = (n: Format): Question[] => QUESTIONS.slice(0, n);
+
+/**
+ * CE QUE LE REPORTER DIT À LA QUESTION `k` SUR `n` : la question, précédée de
+ * « Dernière question ! » quand c'est la dernière d'une série — jamais pour
+ * une question seule, qui n'est la dernière de rien.
+ */
+export function parolesDeLaQuestion(k: number, n: number): IdReplique[] {
+  const q = QUESTIONS[k].id;
+  return n >= 2 && k === n - 1 ? ["derniere", q] : [q];
+}
+
+/** Le blanc laissé entre deux répliques enchaînées (« Dernière question ! » … la question). */
+export const ENTRE_DEUX_S = 0.18;
+
+/**
+ * QUI RÉPOND À L'ÉCRAN : le chef lui-même, filmé, ou son fantôme — « si le
+ * commerçant ne veut pas montrer son visage ». Dans les deux cas c'est SA voix.
+ */
+export type Mode = "camera" | "fantome";
 
 /* ═══ LE TEMPS ═════════════════════════════════════════════════════════════
  *
- * UNE MINUTE POUR TOUTE L'INTERVIEW, questions comprises. Au-delà, ce n'est
- * plus une annonce qu'on regarde jusqu'au bout, et c'est surtout une minute de
- * plus prise au commerçant au milieu de son service.
+ * TRENTE SECONDES PAR RÉPONSE AU PLUS. « Une minute, c'est peut-être un peu
+ * court » : avec quatre questions, l'interview monte à deux minutes — c'est le
+ * format qui décide de la longueur, plus un budget commun.
  */
-export const BUDGET_S = 60;
-/** Une réponse ne prend jamais plus que ça, même s'il reste du budget. */
-export const REPONSE_MAX_S = 20;
-/** Ce qu'on garde pour chaque question encore à poser (sa voix + un souffle). */
-export const PAR_QUESTION_A_VENIR_S = 4.5;
+export const REPONSE_MAX_S = 30;
 /**
  * LE SILENCE QUI DIT « J'AI FINI » — plus long que celui de l'assistante
  * (`voix-micro.ts`, sept cents millisecondes). Là-bas, on attend une
@@ -72,18 +112,7 @@ export const SILENCE_FIN_S = 2.2;
 /** Le même seuil que l'assistante : il a été mesuré dans un commerce. */
 export const SEUIL_VOIX = 0.012;
 /** Sans un mot au bout de ce temps, on passe à la suite plutôt que d'attendre. */
-export const ATTENTE_SANS_PAROLE_S = 9;
-
-/**
- * Le temps laissé à la réponse `index` (0, 1, 2) quand il reste `restant`
- * secondes de budget : jamais plus que `REPONSE_MAX_S`, et toujours de quoi
- * poser les questions suivantes. Cinq secondes au moins, sinon autant ne pas
- * poser la question.
- */
-export function tempsDeReponse(index: number, restant: number): number {
-  const aVenir = QUESTIONS.length - 1 - index;
-  return Math.max(5, Math.min(REPONSE_MAX_S, restant - aVenir * (PAR_QUESTION_A_VENIR_S + 5)));
-}
+export const ATTENTE_SANS_PAROLE_S = 10;
 
 /* ═══ OÙ EST LE FANTÔME ════════════════════════════════════════════════════
  *
