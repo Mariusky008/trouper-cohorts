@@ -110,7 +110,8 @@ function trouvailles(heure: number): [string, Trouvaille][] {
         traits: ["sud-ouest"],
         trait: "sud-ouest",
         sorte: "crois",
-        action: { mot: "Voir le plat", onglet: "carte" },
+        // L'EXPÉRIENCE DU PLAT, pas sa carte : la cloche, le magret, la voix de Jean-Marie.
+        action: { mot: "Voir le plat", onglet: "experience" },
       },
     ],
     [

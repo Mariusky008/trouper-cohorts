@@ -2421,6 +2421,8 @@ export function ApercuHabitant({
      écrite à la main. */
   const [doubleOuvert, setDoubleOuvert] = useState<CarteAutour | null>(null);
   const [platOuvert, setPlatOuvert] = useState("");
+  /** Ouvert depuis une surprise : le plat qu'elle annonçait, et le retour vers « Mes surprises ». */
+  const [platDeSurprise, setPlatDeSurprise] = useState<{ nom: string; photo?: string; prix?: string } | null>(null);
   /**
    * « TON PROCHAIN LIVRE », OUVERT DANS L'APPLICATION. « Quand je clique sur
    * "Trouver mon prochain livre", tout à coup le design est cassé et le
@@ -7354,6 +7356,15 @@ export function ApercuHabitant({
     setVue("metiers");
     setEpingle(c.id);
     setDepuisSurprise({ carte: c.id, piece: s.piece, id: s.id, ecran });
+    /* « VOIR LE PLAT » OUVRE L'EXPÉRIENCE, PAS L'ANNONCE. « J'arrive sur
+       l'annonce au lieu d'arriver sur l'expérience directement. » Chez un
+       restaurant, la cloche s'ouvre tout de suite sur le plat de la surprise ;
+       la refermer ramène aux surprises. */
+    if (c.branche === "restaurant" && s.piece === "cuisine") {
+      setPlatDeSurprise({ nom: s.titre, photo: s.photo, prix: s.prix });
+      setPlatOuvert(c.id);
+      return;
+    }
     minuteries.current.push(
       window.setTimeout(() => defilement.current?.scrollTo({ top: 260, behavior: "smooth" }), 260),
     );
@@ -13783,7 +13794,14 @@ export function ApercuHabitant({
               {platOuvert ? (
                 <ParcoursRestaurant
                   commerce={platOuvert}
-                  onFermer={() => setPlatOuvert("")}
+                  plat={platDeSurprise ?? undefined}
+                  onFermer={() => {
+                    setPlatOuvert("");
+                    if (platDeSurprise) {
+                      setPlatDeSurprise(null);
+                      revenirAuxSurprises();
+                    }
+                  }}
                   /* VENU DE SON DOUBLE, ON Y RETOURNE — pas de second double par-dessus. */
                   onDouble={doubleOuvert ? () => setPlatOuvert("") : undefined}
                 />

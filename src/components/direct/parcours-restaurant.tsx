@@ -26,10 +26,18 @@ import { abonnerVitrines, avecSaVitrine, chargerVitrines, VITRINES_VIDES } from 
 
 export function ParcoursRestaurant({
   commerce,
+  plat,
   onFermer,
   onDouble,
 }: {
   commerce?: string;
+  /**
+   * LE PLAT DONT ON VIENT DE LUI PARLER. « Quand je clique sur "Voir le plat"
+   * depuis la surprise, ce n'est pas le magret. » La surprise annonçait le
+   * magret ; sous la cloche, il y avait la garbure de sa carte. Venu d'une
+   * surprise, on soulève la cloche sur CE plat-là.
+   */
+  plat?: { nom: string; photo?: string; prix?: string };
   onFermer: () => void;
   /** Quand on y vient DEPUIS son double : on y retourne, au lieu d'en ouvrir un second. */
   onDouble?: () => void;
@@ -40,7 +48,11 @@ export function ParcoursRestaurant({
   const journee = useSyncExternalStore(abonnerJournee, chargerJournee, journeeVide);
   // SA VITRINE (ses plats en photo, posés depuis son comptoir) rejoint sa carte.
   const vitrines = useSyncExternalStore(abonnerVitrines, chargerVitrines, () => VITRINES_VIDES);
-  const c = commerce ? avecSaVitrine(avecSaJournee(commerce, carteDuPaquet(commerce), journee), vitrines) : undefined;
+  const c0 = commerce ? avecSaVitrine(avecSaJournee(commerce, carteDuPaquet(commerce), journee), vitrines) : undefined;
+  const c =
+    c0 && plat
+      ? { ...c0, menu: { ...c0.menu, plat: plat.nom, ...(plat.photo ? { photo: plat.photo } : {}), ...(plat.prix ? { prix: plat.prix } : {}) } }
+      : c0;
   if (!c || !estUnRestaurant(c)) return <ParcoursTable commerce={commerce} onFermer={onFermer} />;
   const tenue = tenueDu(c);
   return (
