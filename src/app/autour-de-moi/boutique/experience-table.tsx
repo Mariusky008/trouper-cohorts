@@ -28,6 +28,7 @@ import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { onSpeakingChange, speak, stopSpeaking } from "@/lib/site-internet/speech";
 import { compter } from "@/lib/direct/compter";
 import { DemandeTable } from "@/components/direct/demande-table";
+import { BRODERIE, arcsDuNom, lignesDuNom, type Pose, type Pt } from "@/lib/direct/fantome-assis";
 
 type Proposition = { nom: string; photo: string; prix?: string };
 
@@ -51,50 +52,12 @@ const BOITE_MAQUETTE = { x: 0.655, y: 0.33, l: 0.33, h: 0.26, bulle: false } as 
  */
 const ASSIS_SALLE = { x: 0.655, y: 0.42, l: 0.33, coupe: 0.76 } as const;
 
-type Pt = readonly [number, number];
-/**
- * LE NOM, BRODÉ COMME SUR SA MAQUETTE — pose par pose, en fraction de l'image.
- *
- * « Le nom est étrange sur la casquette, pas proportionnel et pas bien
- * ajusté. » Il était posé à plat, en capitales, au milieu de la calotte. Sur
- * sa maquette, il SUIT LA COURBE de la casquette, juste au-dessus de la
- * visière, en italique à empattements couleur crème — et il se répète sur le
- * plastron du tablier. Les arcs ci-dessous sont mesurés sur ses trois PNG :
- * départ, point de contrôle (le bombé), arrivée. `tablier` : centre, largeur
- * permise et inclinaison du plastron.
- */
-const BRODERIE: Record<
-  "montre" | "repos" | "salut",
-  { l: number; h: number; arc: readonly [Pt, Pt, Pt]; tablier: readonly [number, number, number, number] }
-> = {
-  montre: { l: 1047, h: 1010, arc: [[0.35, 0.143], [0.535, 0.11], [0.735, 0.173]], tablier: [0.475, 0.69, 0.27, 4] },
-  repos: { l: 853, h: 1015, arc: [[0.255, 0.15], [0.45, 0.114], [0.69, 0.183]], tablier: [0.39, 0.665, 0.27, 3] },
-  salut: { l: 963, h: 1020, arc: [[0.305, 0.14], [0.5, 0.106], [0.715, 0.17]], tablier: [0.455, 0.675, 0.26, 4] },
-};
-type Pose = keyof typeof BRODERIE;
-
-/** LE NOM EN UNE OU DEUX LIGNES, coupé entre deux mots au plus près du milieu. */
-function lignesDuNom(nom: string): string[] {
-  const mots = nom.trim().split(/\s+/);
-  if (nom.length <= 14 || mots.length < 2) return [nom];
-  let mieux = 1;
-  let ecart = Infinity;
-  for (let i = 1; i < mots.length; i++) {
-    const d = Math.abs(mots.slice(0, i).join(" ").length - mots.slice(i).join(" ").length);
-    if (d < ecart) [ecart, mieux] = [d, i];
-  }
-  return [mots.slice(0, mieux).join(" "), mots.slice(mieux).join(" ")];
-}
-
 /** SON FANTÔME ASSIS, ET SON NOM BRODÉ SUR LA CASQUETTE ET LE TABLIER. */
 function Fantome({ pose, nom, classe }: { pose: Pose; nom: string; classe: string }) {
   const b = BRODERIE[pose];
   const lignes = lignesDuNom(nom);
   // DEUX LIGNES : la première monte d'un cran, la seconde se resserre.
-  const arcs =
-    lignes.length === 1
-      ? [b.arc]
-      : [b.arc.map(([x, y]) => [x + 0.012, y - 0.047] as Pt), b.arc.map(([x, y], i) => [x + (i === 0 ? 0.02 : i === 2 ? -0.02 : 0), y] as Pt)];
+  const arcs = arcsDuNom(b.arc, lignes.length);
   const d = (arc: readonly Pt[]) => {
     const [a, c, e] = arc.map(([x, y]) => `${(x * b.l).toFixed(1)} ${(y * b.h).toFixed(1)}`);
     return `M${a} Q${c} ${e}`;

@@ -14,8 +14,10 @@
 //
 // ─── LE TRAJET ────────────────────────────────────────────────────────────
 //
-//   1. réglages : le plat, le prix, combien de questions (une à quatre), qui
-//      répond à l'écran (lui, filmé, ou son fantôme), où se tient le reporter ;
+//   1. réglages : le plat, sa photo (la vidéo s'ouvre alors sur la cloche de
+//      l'expérience du restaurant), le prix, combien de questions (une à
+//      quatre), qui répond à l'écran (lui, filmé, ou son fantôme), où se tient
+//      le reporter ;
 //   2. le reporter dit où il est : « je suis là, à droite, regarde-moi » ;
 //   3. les questions — une prise par question, trente secondes au plus ; la
 //      réponse s'arrête sur un silence, sur « J'ai fini », ou au bout du temps ;
@@ -96,6 +98,9 @@ const LIBELLES_FORMAT: Record<Format, { titre: string; detail: string }> = {
   3: { titre: "3 questions", detail: "+ une pour rire" },
   4: { titre: "4 questions", detail: "+ une perso" },
 };
+
+/** La photo d'exemple sous la cloche : le magret servi du Bordeaux. */
+const PHOTO_PLAT = "/direct/table/magret/3.jpg";
 
 /* ─── petits outils ─── */
 const attendre = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -255,6 +260,9 @@ export function EssaiInterview() {
   const [etape, setEtape] = useState<Etape>("reglages");
   const [plat, setPlat] = useState("Magret frites maison");
   const [prix, setPrix] = useState("19 €");
+  // LA PHOTO DE SON PLAT : dans l'application, celle qu'il a mise au comptoir ; ici, à choisir
+  const [cloche, setCloche] = useState(true);
+  const [photoPlat, setPhotoPlat] = useState<{ url: string; nom: string | null }>({ url: PHOTO_PLAT, nom: null });
   const [format, setFormat] = useState<Format>(3);
   const [mode, setMode] = useState<Mode>("camera");
   const [cote, setCote] = useState<Cote>("droite");
@@ -289,10 +297,10 @@ export function EssaiInterview() {
   const veille = useRef<{ release: () => Promise<void> } | null>(null);
   const stopMontage = useRef<AbortController | null>(null);
   // LES RÉGLAGES LUS AU MOMENT DU MONTAGE, pas au moment où la fonction est née.
-  const reglages = useRef({ plat, prix, cote, ecouter, mode, format });
+  const reglages = useRef({ plat, prix, cote, ecouter, mode, format, cloche, photoPlat });
   useEffect(() => {
-    reglages.current = { plat, prix, cote, ecouter, mode, format };
-  }, [plat, prix, cote, ecouter, mode, format]);
+    reglages.current = { plat, prix, cote, ecouter, mode, format, cloche, photoPlat };
+  }, [plat, prix, cote, ecouter, mode, format, cloche, photoPlat]);
 
   const majReponses = useCallback((f: (r: Reponse[]) => Reponse[]) => {
     reponsesRef.current = f(reponsesRef.current);
@@ -326,9 +334,19 @@ export function EssaiInterview() {
         if (r.url) URL.revokeObjectURL(r.url);
         if (r.media) URL.revokeObjectURL(r.media.url);
       }
+      if (reglages.current.photoPlat.nom) URL.revokeObjectURL(reglages.current.photoPlat.url);
     },
     [],
   );
+
+  const choisirPhotoPlat = (fichier: File | undefined) => {
+    if (!fichier || !fichier.type.startsWith("image/")) return;
+    setPhotoPlat((ancienne) => {
+      if (ancienne.nom) URL.revokeObjectURL(ancienne.url);
+      return { url: URL.createObjectURL(fichier), nom: fichier.name };
+    });
+    setCloche(true);
+  };
 
   /** Le niveau du micro, maintenant. */
   const niveau = useCallback(() => {
@@ -637,6 +655,7 @@ export function EssaiInterview() {
           prix: reglages.current.prix,
           coteApercu: reglages.current.cote,
           mode: reglages.current.mode,
+          cloche: reglages.current.cloche ? { photo: reglages.current.photoPlat.url } : null,
         },
         toile: toile.current!,
         ecouter: reglages.current.ecouter,
@@ -723,6 +742,24 @@ export function EssaiInterview() {
             <span>Le prix (facultatif)</span>
             <input value={prix} onChange={(e) => setPrix(e.target.value)} maxLength={12} />
           </label>
+          <div className={`ei-cloche${cloche ? "" : " off"}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photoPlat.url} alt="La photo du plat" />
+            <div>
+              <label className="ei-case">
+                <input type="checkbox" checked={cloche} onChange={(e) => setCloche(e.target.checked)} />
+                <span>Ouvrir sur la cloche</span>
+              </label>
+              <p className="ei-n">
+                Après le bonjour du reporter, la cloche se soulève et ce plat apparaît dessous, son fantôme assis derrière. Dans
+                l&apos;application, ce sera la photo mise au comptoir.
+              </p>
+              <label className="ei-r-ajout">
+                <input type="file" accept="image/*" onChange={(e) => choisirPhotoPlat(e.target.files?.[0])} />
+                <span>{photoPlat.nom ? "Changer la photo" : "Mettre ma photo"}</span>
+              </label>
+            </div>
+          </div>
         </section>
 
         <section className="ei-bloc">
@@ -959,6 +996,18 @@ export function EssaiInterview() {
               {source ? (
                 <li className={source.ok ? "oui" : "non"}>
                   <b>Voix du reporter</b> <em>{source.texte}</em>
+                </li>
+              ) : null}
+              {montage ? (
+                <li className={montage.cloche === "illisible" ? "non" : montage.cloche === "montree" ? "oui" : ""}>
+                  <b>La cloche</b>{" "}
+                  <em>
+                    {montage.cloche === "montree"
+                      ? `soulevée sur ${photoPlat.nom ? "ta photo" : "la photo d'exemple"}`
+                      : montage.cloche === "illisible"
+                        ? "photo du plat illisible par ce téléphone — la vidéo s'en est passée"
+                        : "pas demandée"}
+                  </em>
                 </li>
               ) : null}
               <li>

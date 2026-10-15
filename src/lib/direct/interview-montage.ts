@@ -33,6 +33,7 @@
  * FICHIER NAVIGATEUR.
  */
 import {
+  CLOCHE,
   FIN,
   IDS_REPLIQUES,
   OUVERTURE,
@@ -49,6 +50,7 @@ import {
   type SousTitre,
 } from "@/lib/direct/interview-fantome";
 import { MARQUE } from "@/lib/marque";
+import { BRODERIE, arcsDuNom, lignesDuNom, type Pt } from "@/lib/direct/fantome-assis";
 
 export const LARGEUR = 720;
 export const HAUTEUR = 1280;
@@ -60,6 +62,8 @@ const DOSSIER = "/direct/interview";
 const CRAIE = "#EEEEE4";
 const CRAIE_DOUCE = "rgba(238,238,228,.78)";
 const CRAIE_J = "#F6DE78";
+/** Le rose de ClikMe, celui du « ? » de la cloche. */
+const ROSE = "#FF2E9A";
 const ENCRE = "#1E1E22";
 
 /* ═══ LES FORMATS QUE LE TÉLÉPHONE SAIT ÉCRIRE ═════════════════════════════
@@ -122,7 +126,7 @@ export type Elements = {
   /** Qui a parlé pour le reporter : « elevenlabs:eleven_v3 », « openai:ash »… ou « secours ». */
   sourceVoix: string;
   sons: { gril: AudioBuffer; craie: AudioBuffer; cloches: AudioBuffer; souffle: AudioBuffer };
-  police: { craie: string; bulle: string };
+  police: { craie: string; bulle: string; enseigne: string };
 };
 
 /** Changer un texte de réplique → changer ce numéro, sinon le cache resservirait l'ancienne voix. */
@@ -257,12 +261,17 @@ async function polices(): Promise<Elements["police"]> {
   document.body.appendChild(sonde);
   const bulle = getComputedStyle(sonde).fontFamily || "system-ui, sans-serif";
   sonde.remove();
+  // ET CELLE DU NOM BRODÉ SUR LA CASQUETTE, comme dans l'expérience du restaurant
+  sonde.style.fontFamily = "var(--font-enseigne), Georgia, serif";
+  document.body.appendChild(sonde);
+  const enseigne = getComputedStyle(sonde).fontFamily || "Georgia, serif";
+  sonde.remove();
   try {
-    await document.fonts.load(`700 27px ${bulle}`);
+    await Promise.all([document.fonts.load(`700 27px ${bulle}`), document.fonts.load(`800 60px ${bulle}`), document.fonts.load(`italic 400 30px ${enseigne}`)]);
   } catch {
     /* repli sur la police du système */
   }
-  return { craie: `"${nom}", "Comic Sans MS", cursive`, bulle };
+  return { craie: `"${nom}", "Comic Sans MS", cursive`, bulle, enseigne };
 }
 
 export async function chargerElements(ctx: BaseAudioContext): Promise<Elements> {
@@ -624,6 +633,438 @@ function noir(c2d: CanvasRenderingContext2D, a: number) {
   c2d.restore();
 }
 
+/* ═══ LA CLOCHE DU RESTAURANT ══════════════════════════════════════════════
+ *
+ * L'étape 1 de l'expérience (`boutique/experience-table.tsx`), rejouée dans la
+ * vidéo : les mêmes images, aux mêmes places — en fractions du cadre, qui a la
+ * proportion de la salle (9 × 16, comme la vidéo) —, et le même mouvement de
+ * la cloche. Seule différence : personne ne la touche, elle se soulève toute
+ * seule, et le plat apparaît dessous.
+ */
+const RESTAURANT = {
+  salle: "/direct/table/restaurant/salle.webp",
+  cloche: "/direct/table/restaurant/cloche-cuivre.webp",
+  assis: "/direct/double/assis/montre.webp",
+};
+/** Un pixel CSS de l'expérience vue sur un téléphone de 390 px de large, en pixels de la vidéo. */
+const PX = LARGEUR / 390;
+/** La place laissée autour de la cloche pour son ombre. */
+const MARGE_OMBRE = 80;
+const TITRE_CLOCHE = { texte: "Qu’est-ce que le chef te prépare aujourd’hui", fin: " ?", haut: 124 * (HAUTEUR / 844) };
+
+/** Tout ce qui ne bouge pas, dessiné une fois : sur un téléphone, une ombre floue par image coûte cher. */
+type DecorCloche = {
+  /** La salle, son voile, le fantôme assis et son nom brodé, le pied de page. */
+  fond: HTMLCanvasElement;
+  /** La cloche et son ombre (MARGE_OMBRE tout autour). */
+  cloche: HTMLCanvasElement;
+  plat: HTMLCanvasElement;
+  titre: { toile: HTMLCanvasElement; marge: number };
+  fleche: HTMLCanvasElement;
+  carte: HTMLCanvasElement;
+  /** Le bas de la cloche (milieu), sa taille ; le milieu du plat et ses rayons. */
+  g: { cx: number; bas: number; w: number; h: number; platY: number; rx: number; ry: number };
+};
+
+/** `cubic-bezier()` du CSS, pour rejouer les mêmes mouvements. */
+function bezier(x1: number, y1: number, x2: number, y2: number) {
+  const f = (u: number, a: number, b: number) => 3 * (1 - u) * (1 - u) * u * a + 3 * (1 - u) * u * u * b + u * u * u;
+  return (x: number) => {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    let bas = 0;
+    let haut = 1;
+    let u = x;
+    for (let i = 0; i < 22; i++) {
+      u = (bas + haut) / 2;
+      if (f(u, x1, x2) < x) bas = u;
+      else haut = u;
+    }
+    return f(u, y1, y2);
+  };
+}
+/** `xrSouleve` : cubic-bezier(.3,.1,.3,1). */
+const SOULEVE = bezier(0.3, 0.1, 0.3, 1);
+const SORTIE = bezier(0, 0, 0.58, 1);
+const EASE = bezier(0.25, 0.1, 0.25, 1);
+
+/** Les lignes d'un titre, équilibrées comme `text-wrap: balance`. */
+function lignesEquilibrees(c2d: CanvasRenderingContext2D, texte: string, largeur: number): string[] {
+  const coupe = (l: number) => couperLignes(c2d, texte, l);
+  const n = coupe(largeur).length;
+  let bas = largeur / Math.max(1, n);
+  let haut = largeur;
+  for (let i = 0; i < 14; i++) {
+    const m = (bas + haut) / 2;
+    if (coupe(m).length > n) bas = m;
+    else haut = m;
+  }
+  return coupe(haut);
+}
+
+/** Un point d'une courbe de Bézier quadratique, et sa direction. */
+function surCourbe(arc: readonly Pt[], t: number) {
+  const [p0, p1, p2] = arc;
+  const u = 1 - t;
+  return {
+    x: u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0],
+    y: u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1],
+    a: Math.atan2(2 * u * (p1[1] - p0[1]) + 2 * t * (p2[1] - p1[1]), 2 * u * (p1[0] - p0[0]) + 2 * t * (p2[0] - p1[0])),
+  };
+}
+function longueursArc(arc: readonly Pt[], n = 80): number[] {
+  const cum = [0];
+  let avant = surCourbe(arc, 0);
+  for (let i = 1; i <= n; i++) {
+    const q = surCourbe(arc, i / n);
+    cum.push(cum[i - 1] + Math.hypot(q.x - avant.x, q.y - avant.y));
+    avant = q;
+  }
+  return cum;
+}
+
+/** LE TEXTE POSÉ LETTRE À LETTRE SUR LA COURBE, centré — le `textPath` de l'expérience, à la main. */
+function texteSurCourbe(c2d: CanvasRenderingContext2D, texte: string, arc: readonly Pt[], peindre: (ch: string, x: number) => void) {
+  const cum = longueursArc(arc);
+  const L = cum[cum.length - 1];
+  const lettres = [...texte];
+  const largeurs = lettres.map((ch) => c2d.measureText(ch).width);
+  let s = (L - largeurs.reduce((a, b) => a + b, 0)) / 2;
+  lettres.forEach((ch, i) => {
+    const mi = s + largeurs[i] / 2;
+    let j = 1;
+    while (j < cum.length - 1 && cum[j] < mi) j++;
+    const t = (j - 1 + (mi - cum[j - 1]) / Math.max(1e-6, cum[j] - cum[j - 1])) / (cum.length - 1);
+    const p = surCourbe(arc, borne(t));
+    c2d.save();
+    c2d.translate(p.x, p.y);
+    c2d.rotate(p.a);
+    peindre(ch, -largeurs[i] / 2);
+    c2d.restore();
+    s += largeurs[i];
+  });
+}
+
+/**
+ * SON NOM BRODÉ SUR LA CASQUETTE ET LE TABLIER, par-dessus l'image posée en
+ * `x, y, w, h` — les arcs, la taille et le fil crème de l'expérience.
+ */
+function broderie(c2d: CanvasRenderingContext2D, nom: string, x: number, y: number, w: number, h: number, police: string) {
+  const b = BRODERIE.montre;
+  const lignes = lignesDuNom(nom);
+  const arcs = arcsDuNom(b.arc, lignes.length).map((arc) => arc.map(([u, v]) => [x + u * w, y + v * h] as Pt));
+  let taille = (lignes.length === 1 ? 0.074 : 0.05) * h;
+  c2d.font = `italic 400 ${taille}px ${police}`;
+  lignes.forEach((l, i) => {
+    const place = longueursArc(arcs[i]).pop()! * 0.98;
+    const long = c2d.measureText(l).width;
+    if (long > place) taille = Math.min(taille, (taille * place) / long);
+  });
+  const fil = c2d.createLinearGradient(x + 0.3 * w, y, x + 0.75 * w, y + 0.06 * h);
+  fil.addColorStop(0, "#F7EEDF");
+  fil.addColorStop(0.55, "#EADCC5");
+  fil.addColorStop(1, "#BFAE93");
+  const brode = (dessiner: (peindre: (ch: string, x0: number) => void) => void, t: number, couleur: string | CanvasGradient) => {
+    c2d.save();
+    c2d.font = `italic 400 ${t}px ${police}`;
+    c2d.textBaseline = "alphabetic";
+    c2d.shadowColor = "rgba(0,0,0,.55)";
+    c2d.shadowBlur = Math.max(1, h / 1010);
+    c2d.shadowOffsetY = (1.6 * h) / 1010;
+    c2d.lineWidth = t * 0.07;
+    c2d.strokeStyle = "rgba(30,18,10,.55)";
+    c2d.fillStyle = couleur;
+    // LE CONTOUR D'ABORD, PUIS LE FIL : « paint-order: stroke » de l'expérience
+    dessiner((ch, x0) => c2d.strokeText(ch, x0, 0));
+    c2d.shadowColor = "transparent";
+    dessiner((ch, x0) => c2d.fillText(ch, x0, 0));
+    c2d.restore();
+  };
+  lignes.forEach((l, i) => brode((peindre) => texteSurCourbe(c2d, l, arcs[i], peindre), taille, fil));
+  // le plastron du tablier
+  const [tx, ty, tl, tr] = b.tablier;
+  let f = 0.044 * h;
+  c2d.font = `italic 400 ${f}px ${police}`;
+  const long = c2d.measureText(nom).width;
+  if (long > tl * w) f = (f * tl * w) / long;
+  c2d.save();
+  c2d.translate(x + tx * w, y + ty * h);
+  c2d.rotate((tr * Math.PI) / 180);
+  c2d.font = `italic 400 ${f}px ${police}`;
+  const lt = c2d.measureText(nom).width;
+  brode((peindre) => peindre(nom, -lt / 2), f, "#E6D7C0");
+  c2d.restore();
+}
+
+/**
+ * LE PLAT, SOUS LA CLOCHE : sa photo dans une ellipse aux bords fondus — une
+ * assiette posée sur la table, vue de trois quarts. Fabriquée une fois.
+ */
+function platSousCloche(photo: HTMLImageElement, rx: number, ry: number): HTMLCanvasElement {
+  const c = toile(2 * rx, 2 * ry);
+  const g = c.getContext("2d")!;
+  couvrir(g, photo, photo.naturalWidth, photo.naturalHeight, 0, 0, c.width, c.height, 1, 0.62);
+  g.globalCompositeOperation = "destination-in";
+  g.save();
+  g.translate(rx, ry);
+  g.scale(1, ry / rx);
+  const m = g.createRadialGradient(0, 0, rx * 0.7, 0, 0, rx);
+  m.addColorStop(0, "rgba(0,0,0,1)");
+  m.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = m;
+  g.fillRect(-rx, -rx, 2 * rx, 2 * rx);
+  g.restore();
+  return c;
+}
+
+/**
+ * LA SCÈNE DE L'ÉTAPE 1, PRÉPARÉE : les places du CSS de l'expérience
+ * (`.xr-cloche` left 3 %, bottom 33 %, width 76 % ; `.xr-fant.montre` right
+ * −8 %, bottom 40 % ; le titre à 124 px du haut), dans le cadre
+ * de la vidéo, qui a la proportion de la salle. Rejette si une image manque —
+ * la vidéo se monte alors sans la cloche, et l'écran d'essai le dit.
+ */
+async function preparerCloche(photo: string, r: Reglages, police: Elements["police"]): Promise<DecorCloche> {
+  const [salle, cloche, assis, plat] = await Promise.all([image(RESTAURANT.salle), image(RESTAURANT.cloche), image(RESTAURANT.assis), image(photo)]);
+  const W = LARGEUR;
+  const H = HAUTEUR;
+
+  // LE FOND : la salle, le voile de l'étape 1, le fantôme assis qui montre la cloche, son nom brodé
+  const fond = toile(W, H);
+  const f = fond.getContext("2d")!;
+  couvrir(f, salle, salle.naturalWidth, salle.naturalHeight, 0, 0, W, H, 1, 0.5);
+  const voile = f.createLinearGradient(0, 0, 0, H);
+  voile.addColorStop(0, "rgba(18,12,9,.7)");
+  voile.addColorStop(0.3, "rgba(18,12,9,.25)");
+  voile.addColorStop(0.55, "rgba(18,12,9,.1)");
+  voile.addColorStop(1, "rgba(18,12,9,.7)");
+  f.fillStyle = voile;
+  f.fillRect(0, 0, W, H);
+  // UN PEU PLUS GRAND QUE LES 24 % DU CSS : un téléphone est plus haut que la vidéo
+  // (390 × 844 contre 9 × 16), et c'est à côté de la cloche qu'on le juge — sur le
+  // téléphone, il fait les sept dixièmes de sa largeur.
+  const fh = 0.27 * H;
+  const fw = (fh * assis.naturalWidth) / assis.naturalHeight;
+  const fx = 1.08 * W - fw;
+  const fy = 0.6 * H - fh;
+  f.save();
+  f.shadowColor = "rgba(0,0,0,.45)";
+  f.shadowOffsetY = 10 * PX;
+  f.shadowBlur = 14 * PX;
+  f.drawImage(assis, fx, fy, fw, fh);
+  f.restore();
+  broderie(f, r.commerce, fx, fy, fw, fh, police.enseigne);
+  // « Une rencontre avec … », entre deux traits, en bas
+  f.save();
+  f.font = `500 ${15 * PX}px ${police.bulle}`;
+  f.fillStyle = "#F3E2D0";
+  f.textAlign = "center";
+  f.textBaseline = "middle";
+  const pied = `Une rencontre avec ${r.commerce}`;
+  const yPied = H - 44;
+  f.fillText(pied, W / 2, yPied);
+  const lp = f.measureText(pied).width;
+  const trait = Math.max(14 * PX, Math.min(56 * PX, (W - lp) / 2 - 24 * PX - 30));
+  f.fillStyle = "rgba(255,244,230,.4)";
+  f.fillRect(W / 2 - lp / 2 - 12 * PX - trait, yPied - 1, trait, 2);
+  f.fillRect(W / 2 + lp / 2 + 12 * PX, yPied - 1, trait, 2);
+  f.restore();
+
+  // LA CLOCHE ET SON OMBRE (`drop-shadow(0 16px 16px rgba(0,0,0,.55))`)
+  const w = 0.76 * W;
+  const h = (w * cloche.naturalHeight) / cloche.naturalWidth;
+  const cl = toile(w + 2 * MARGE_OMBRE, h + 2 * MARGE_OMBRE);
+  const c = cl.getContext("2d")!;
+  c.shadowColor = "rgba(0,0,0,.55)";
+  c.shadowOffsetY = 16 * PX;
+  c.shadowBlur = 16 * PX;
+  c.drawImage(cloche, MARGE_OMBRE, MARGE_OMBRE, w, h);
+  const cx = 0.03 * W + w / 2;
+  const bas = 0.67 * H;
+
+  // LE TITRE, avec son « ? » rose
+  const taille = 0.094 * W;
+  const largeur = W - 2 * 22 * PX;
+  const interligne = taille * 1.08;
+  const t0 = toile(1, 1).getContext("2d")!;
+  const policeTitre = `800 ${taille}px ${police.bulle}`;
+  t0.font = policeTitre;
+  const lignes = lignesEquilibrees(t0, TITRE_CLOCHE.texte + TITRE_CLOCHE.fin, largeur);
+  const marge = 60;
+  const ti = toile(W, lignes.length * interligne + 2 * marge);
+  const tc = ti.getContext("2d")!;
+  tc.font = policeTitre;
+  if ("letterSpacing" in tc) tc.letterSpacing = `${-0.025 * taille}px`;
+  tc.textBaseline = "middle";
+  tc.shadowColor = "rgba(0,0,0,.6)";
+  tc.shadowOffsetY = 4 * PX;
+  tc.shadowBlur = 26 * PX;
+  lignes.forEach((l, i) => {
+    const derniere = i === lignes.length - 1 && l.endsWith(TITRE_CLOCHE.fin);
+    const blanc = derniere ? l.slice(0, -TITRE_CLOCHE.fin.length) : l;
+    const lb = tc.measureText(blanc).width;
+    const lr = derniere ? tc.measureText(TITRE_CLOCHE.fin).width : 0;
+    const x = (W - lb - lr) / 2;
+    const y = marge + interligne * (i + 0.5);
+    tc.fillStyle = "#FFF4E6";
+    tc.fillText(blanc, x, y);
+    if (derniere) {
+      tc.fillStyle = ROSE;
+      tc.fillText(TITRE_CLOCHE.fin, x + lb, y);
+    }
+  });
+
+  // LA FLÈCHE ROSE, qui luit
+  const fl = toile(120, 120);
+  const fc = fl.getContext("2d")!;
+  fc.font = `800 ${30 * PX}px ${police.bulle}`;
+  fc.textAlign = "center";
+  fc.textBaseline = "middle";
+  fc.fillStyle = ROSE;
+  fc.shadowColor = "rgba(255,46,154,.7)";
+  fc.shadowBlur = 12 * PX;
+  fc.fillText("↑", 60, 60);
+
+  // LE NOM DU PLAT ET SON PRIX, sous l'assiette, une fois découverte
+  const ca = toile(W, 240);
+  const cc = ca.getContext("2d")!;
+  cc.textAlign = "center";
+  cc.textBaseline = "middle";
+  cc.shadowColor = "rgba(0,0,0,.75)";
+  cc.shadowOffsetY = 3;
+  cc.shadowBlur = 22;
+  cc.font = `800 ${44}px ${police.bulle}`;
+  const lignesPlat = couperLignes(cc, r.plat.trim(), W - 120).slice(0, 2);
+  lignesPlat.forEach((l, i) => {
+    cc.fillStyle = "#FFF4E6";
+    cc.fillText(l, W / 2, 40 + i * 50);
+  });
+  if (r.prix.trim()) {
+    cc.font = `800 ${46}px ${police.bulle}`;
+    cc.fillStyle = ROSE;
+    cc.fillText(r.prix.trim(), W / 2, 40 + lignesPlat.length * 50 + 14);
+  }
+
+  const rx = 0.45 * w;
+  const ry = rx * 0.68;
+  return {
+    fond,
+    cloche: cl,
+    plat: platSousCloche(plat, rx, ry),
+    titre: { toile: ti, marge },
+    fleche: fl,
+    carte: ca,
+    g: { cx, bas, w, h, platY: bas - 0.47 * h, rx, ry },
+  };
+}
+
+/**
+ * L'ÉTAPE 1, IMAGE PAR IMAGE : le titre monte, la flèche sautille, puis à
+ * `CLOCHE.leve` la cloche se soulève (`xrSouleve`, 0,85 s), la lueur s'allume
+ * (`xrLueur`, 0,9 s), et le plat apparaît dessous en montant un peu.
+ */
+function decouverte(c2d: CanvasRenderingContext2D, d: DecorCloche, t: number) {
+  const { cx, bas, w, h, platY, rx, ry } = d.g;
+  const a = t - CLOCHE.leve;
+  c2d.drawImage(d.fond, 0, 0);
+
+  // LA LUEUR, derrière la cloche
+  if (a > 0) {
+    const p = a / 0.9;
+    const echelle = 0.6 + 1.8 * SORTIE(p);
+    let op = p < 0.5 ? SORTIE(p / 0.5) : 1 - 0.1 * SORTIE((p - 0.5) / 0.5);
+    op *= 1 - 0.45 * entree(a, 1.1, 1.4); // puis elle s'adoucit, pour laisser voir le plat
+    const lw = 0.8 * w;
+    const lh = 0.6 * h;
+    c2d.save();
+    c2d.globalAlpha = op;
+    c2d.translate(cx, bas - 0.08 * h - lh / 2);
+    c2d.scale(echelle, (echelle * lh) / lw);
+    const g = c2d.createRadialGradient(0, 0, 0, 0, 0, lw / 2);
+    g.addColorStop(0, "rgba(255,226,170,.95)");
+    g.addColorStop(0.5, "rgba(255,176,90,.5)");
+    g.addColorStop(1, "rgba(255,176,90,0)");
+    c2d.fillStyle = g;
+    c2d.fillRect(-lw / 2, -lw / 2, lw, lw);
+    c2d.restore();
+  }
+
+  // LE PLAT : il apparaît sous la cloche et se lève un peu, puis la caméra s'en approche
+  const pp = doux((a - 0.2) / 0.6);
+  if (pp > 0) {
+    const zoom = (0.86 + 0.14 * pp) * (1 + 0.05 * borne((a - 0.8) / 3.2));
+    const y = platY + 26 * (1 - pp);
+    c2d.save();
+    c2d.globalAlpha = pp;
+    c2d.translate(cx, y + ry * 0.82 * zoom);
+    c2d.scale(1, 0.2);
+    const o = c2d.createRadialGradient(0, 0, 0, 0, 0, rx * zoom);
+    o.addColorStop(0, "rgba(0,0,0,.55)");
+    o.addColorStop(1, "rgba(0,0,0,0)");
+    c2d.fillStyle = o;
+    c2d.fillRect(-rx * zoom, -rx * zoom, 2 * rx * zoom, 2 * rx * zoom);
+    c2d.restore();
+    c2d.save();
+    c2d.globalAlpha = pp;
+    c2d.translate(cx, y);
+    c2d.scale(zoom, zoom);
+    c2d.drawImage(d.plat, -rx, -ry);
+    c2d.restore();
+  }
+
+  // LA CLOCHE : posée, puis `xrSouleve` — elle se décolle, puis s'envole en tournant
+  const p = a / 0.85;
+  if (p < 1) {
+    let tx = 0;
+    let ty = 0;
+    let r = 0;
+    if (p > 0 && p < 0.3) {
+      const q = SOULEVE(p / 0.3);
+      ty = -14 * PX * q;
+      r = -2 * q;
+    } else if (p >= 0.3) {
+      const q = SOULEVE((p - 0.3) / 0.7);
+      tx = 0.18 * w * q;
+      ty = -14 * PX + (-1.5 * h + 14 * PX) * q;
+      r = -2 - 22 * q;
+    }
+    c2d.save();
+    c2d.globalAlpha = 1 - SOULEVE(borne(p));
+    c2d.translate(cx + tx, bas + ty);
+    c2d.rotate((r * Math.PI) / 180);
+    c2d.drawImage(d.cloche, -w / 2 - MARGE_OMBRE, -h - MARGE_OMBRE);
+    c2d.restore();
+  }
+
+  // LA FLÈCHE, tant que la cloche est posée (`xrHop`, 1,4 s)
+  if (a < 0) {
+    const saut = 8 * PX * (0.5 - 0.5 * Math.cos((t / 1.4) * 2 * Math.PI));
+    c2d.save();
+    c2d.globalAlpha = entree(t, 0.3, 0.3);
+    c2d.drawImage(d.fleche, cx - d.fleche.width / 2, bas - h - 16 * PX - saut - d.fleche.height / 2);
+    c2d.restore();
+  }
+
+  // LE TITRE (`xrMonte`, 0,7 s)
+  const m = EASE(borne(t / 0.7));
+  c2d.save();
+  c2d.globalAlpha = m;
+  c2d.drawImage(d.titre.toile, 0, TITRE_CLOCHE.haut - d.titre.marge + 14 * PX * (1 - m));
+  c2d.restore();
+
+  // LE NOM DU PLAT, une fois découvert
+  const n = doux((a - 1.0) / 0.5);
+  if (n > 0) {
+    c2d.save();
+    c2d.globalAlpha = n;
+    c2d.drawImage(d.carte, 0, bas + 70 + 20 * (1 - n));
+    c2d.restore();
+  }
+
+  noir(c2d, 1 - t / 0.3);
+  noir(c2d, (t - (CLOCHE.duree - 0.35)) / 0.35);
+}
+
 /* ═══ LE MONTAGE ═══════════════════════════════════════════════════════════ */
 
 export type Reglages = {
@@ -635,6 +1076,8 @@ export type Reglages = {
   coteApercu: Cote;
   /** Le chef filmé, ou son fantôme à sa place. */
   mode: Mode;
+  /** La photo de son plat : la vidéo s'ouvre alors sur la cloche qu'on soulève. */
+  cloche: { photo: string } | null;
 };
 
 /** La photo ou la vidéo qu'il a ajoutée à une question, après l'interview. */
@@ -665,9 +1108,11 @@ export type Montage = {
   sonDesReponses: ("fichier" | "lecteur" | "aucun")[];
   /** La photo ou la vidéo de chaque réponse : montrée, absente, ou illisible par ce téléphone. */
   mediaDesReponses: ("montre" | "aucun" | "illisible")[];
+  /** La cloche du restaurant : montrée, pas demandée, ou sa photo illisible. */
+  cloche: "montree" | "aucune" | "illisible";
 };
 
-type Segment = { genre: "ouverture" } | { genre: "prise"; k: number } | { genre: "fin" };
+type Segment = { genre: "ouverture" } | { genre: "cloche" } | { genre: "prise"; k: number } | { genre: "fin" };
 type MediaPret = { genre: "photo"; img: HTMLImageElement } | { genre: "video"; v: HTMLVideoElement };
 
 /** Un lecteur muet, prêt à donner ses images. */
@@ -727,6 +1172,8 @@ export async function monter(o: {
       return v.videoWidth ? { genre: "video", v } : null;
     }),
   );
+  // LA CLOCHE : préparée une fois ; une photo illisible et la vidéo s'en passe
+  const decor = reglages.cloche ? await preparerCloche(reglages.cloche.photo, reglages, el.police).catch(() => null) : null;
 
   /* ─── le son : un bus, un compresseur, la sortie enregistrée (et les haut-parleurs si on écoute) ─── */
   const sortie = ctx.createMediaStreamDestination();
@@ -796,8 +1243,14 @@ export async function monter(o: {
   /* ─── le plan ─── */
   const dOuv = dureeOuverture(el.voix.bonjour.duration);
   const dFin = dureeFin(el.voix["a-demain"].duration);
-  const estime = dOuv + prises.reduce((s, p) => s + p.coupe, 0) + dFin;
-  const segments: Segment[] = [{ genre: "ouverture" }, ...prises.map((_, k) => ({ genre: "prise" as const, k })), { genre: "fin" }];
+  const estime = dOuv + (decor ? CLOCHE.duree : 0) + prises.reduce((s, p) => s + p.coupe, 0) + dFin;
+  // LE RESTAURANT : après le bonjour du reporter, on soulève la cloche, puis on revient à l'interview
+  const segments: Segment[] = [
+    { genre: "ouverture" },
+    ...(decor ? [{ genre: "cloche" as const }] : []),
+    ...prises.map((_, k) => ({ genre: "prise" as const, k })),
+    { genre: "fin" },
+  ];
   const sonDesReponses: Montage["sonDesReponses"] = prises.map(() => "aucun");
 
   // les blocs de craie, préparés une fois
@@ -974,6 +1427,11 @@ export async function monter(o: {
     jouer(el.voix["a-demain"], t0 + FIN.voix, 0.95);
     jouer(el.sons.cloches, t0 + FIN.voix + el.voix["a-demain"].duration + 0.25, 0.55);
   };
+  const sonsCloche = (t0: number) => {
+    niveauLit(t0, 0.3, 0.5);
+    jouer(el.sons.souffle, t0 + CLOCHE.leve, 0.55);
+    jouer(el.sons.cloches, t0 + CLOCHE.leve + 0.3, 0.55);
+  };
   /** Une prise : appelé quand elle démarre vraiment, `zero` = l'heure de son début. */
   const sonsPrise = (k: number, zero: number, v: HTMLVideoElement | null) => {
     const p = prises[k];
@@ -1043,6 +1501,7 @@ export async function monter(o: {
       sonsPoses = false;
       mediaLance = false;
       if (seg >= segments.length) return fini();
+      if (segments[seg].genre === "cloche") sonsCloche(maintenant);
       if (segments[seg].genre === "fin") sonsFin(maintenant);
     };
     const tic = () => {
@@ -1067,6 +1526,9 @@ export async function monter(o: {
           }
         }
         if (t >= dOuv) suivant(maintenant);
+      } else if (s.genre === "cloche") {
+        if (dessiner && decor) decouverte(c2d, decor, Math.max(0, t));
+        if (t >= CLOCHE.duree) suivant(maintenant);
       } else if (s.genre === "prise") {
         const v = lecteurs[s.k];
         const p = prises[s.k];
@@ -1141,5 +1603,6 @@ export async function monter(o: {
   const type = rec.mimeType || format || "video/webm";
   // UNE VIDÉO QUE CE TÉLÉPHONE NE SAIT PAS LIRE NE DISPARAÎT PAS EN SILENCE : l'écran d'essai le dit
   const mediaDesReponses = prises.map((p, k) => (!p.media ? "aucun" : medias[k] ? "montre" : "illisible")) as Montage["mediaDesReponses"];
-  return { blob: new Blob(morceaux, { type }), type, duree: ctx.currentTime - T0, sonDesReponses, mediaDesReponses };
+  const cloche: Montage["cloche"] = !reglages.cloche ? "aucune" : decor ? "montree" : "illisible";
+  return { blob: new Blob(morceaux, { type }), type, duree: ctx.currentTime - T0, sonDesReponses, mediaDesReponses, cloche };
 }

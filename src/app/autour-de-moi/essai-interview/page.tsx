@@ -64,6 +64,14 @@ function Styles() {
 .ei-modes button img{display:block;height:52px;width:auto;margin-bottom:6px}
 .ei-case{display:flex;gap:10px;align-items:center;margin-top:14px;font-size:14px;color:var(--craie2)}
 .ei-case input{width:20px;height:20px;accent-color:var(--menthe)}
+/* la photo du plat, sous la cloche */
+.ei-cloche{display:flex;gap:14px;align-items:flex-start;margin-top:6px}
+.ei-cloche img{flex:none;width:92px;height:92px;object-fit:cover;border-radius:14px;background:#000;transition:opacity .2s}
+.ei-cloche.off img{opacity:.4}
+.ei-cloche>div{min-width:0}
+.ei-cloche .ei-case{margin-top:0}
+.ei-cloche .ei-n{margin:6px 0 10px}
+.ei-cloche .ei-r-ajout{display:inline-block}
 .ei-n{margin:10px 0 0;font-size:12.5px;line-height:1.5;color:var(--craie3)}
 .ei-act{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:28px;text-align:center}
 .ei-act.rangee{flex-direction:row;flex-wrap:wrap;justify-content:center}

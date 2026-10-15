@@ -34,6 +34,18 @@ commerçant une voix ou une phrase qu'il n'a pas dite (voir
 `public/direct/voix/LISEZ-MOI.md`). Le chef parle avec **sa propre voix**,
 enregistrée par son téléphone — même quand c'est son fantôme qui est à l'écran.
 
+## La cloche (restaurants)
+
+Quand le restaurant a une photo de son plat, la vidéo s'ouvre, après le bonjour
+du reporter, sur **l'étape 1 de l'expérience du restaurant**
+(`boutique/experience-table.tsx`) : la même salle, le même fantôme assis avec le
+nom du restaurant brodé sur sa casquette et son tablier, le même titre, la même
+cloche de cuivre. La cloche se soulève toute seule, comme quand on la touche,
+et la photo du plat apparaît dessous ; puis on revient à l'interview. Les images
+viennent de `public/direct/table/restaurant/` et `public/direct/double/assis/`,
+rien n'est copié ici. Dans l'application, la photo sera celle qu'il a mise au
+comptoir ; sur la page d'essai, on la choisit.
+
 ## Pour un autre commerçant
 
 Son fantôme en deux images au moins (bouche fermée, bouche ouverte, **exactement
