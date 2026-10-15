@@ -162,6 +162,40 @@ async function analyser(ctx: AudioContext, p: PriseBrute): Promise<Analyse> {
   }
 }
 
+/**
+ * LA CAMÉRA ET LE MICRO, DEMANDÉS DE LA FAÇON LA PLUS PRÉCISE À LA PLUS SIMPLE.
+ *
+ * Premier essai en ligne : « Impossible de démarrer : Invalid constraint » —
+ * sur un ordinateur sans micro, mais la leçon vaut pour les téléphones : un
+ * navigateur qui n'aime pas UN réglage (la taille d'image, la réduction de
+ * bruit) refuse toute la demande. On redemande donc avec moins, plutôt que
+ * d'abandonner. Un refus de l'utilisateur, lui, ne se rattrape pas en
+ * demandant moins : on s'arrête tout de suite.
+ */
+const DEMANDES: MediaStreamConstraints[] = [
+  {
+    video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 1280 } },
+    // L'ANNULATION D'ÉCHO EST CE QUI EMPÊCHE LA VOIX DU FANTÔME, sortie du
+    // haut-parleur, de revenir dans le micro par-dessus celle du chef.
+    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+  },
+  { video: { facingMode: "user" }, audio: { echoCancellation: true } },
+  { video: true, audio: true },
+];
+
+async function ouvrirCamera(): Promise<MediaStream> {
+  let derniere: unknown = null;
+  for (const demande of DEMANDES) {
+    try {
+      return await navigator.mediaDevices.getUserMedia(demande);
+    } catch (e) {
+      derniere = e;
+      if ((e as Error)?.name === "NotAllowedError" || (e as Error)?.name === "SecurityError") throw e;
+    }
+  }
+  throw derniere;
+}
+
 /* ═══ L'ÉCRAN ═════════════════════════════════════════════════════════════ */
 
 export function EssaiInterview() {
@@ -296,12 +330,7 @@ export function EssaiInterview() {
     try {
       const [el, flux] = await Promise.all([
         elRef.current ? Promise.resolve(elRef.current) : chargerElements(ctx),
-        navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 1280 } },
-          // L'ANNULATION D'ÉCHO EST CE QUI EMPÊCHE LA VOIX DU FANTÔME, sortie du
-          // haut-parleur, de revenir dans le micro par-dessus celle du chef.
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-        }),
+        ouvrirCamera(),
       ]);
       elRef.current = el;
       fluxRef.current = flux;
@@ -320,7 +349,11 @@ export function EssaiInterview() {
       setErreur(
         nom === "NotAllowedError"
           ? "La caméra ou le micro ont été refusés. Autorise-les dans les réglages du navigateur, puis recommence."
-          : `Impossible de démarrer : ${(e as Error)?.message || "erreur inconnue"}`,
+          : nom === "NotFoundError" || nom === "OverconstrainedError" || nom === "TypeError"
+            ? "Cet appareil n'a pas de caméra ou pas de micro utilisable. L'interview se fait sur un téléphone : ouvre cette page dans Safari (iPhone) ou Chrome (Android)."
+            : nom === "NotReadableError"
+              ? "La caméra ou le micro sont déjà pris par une autre application. Ferme-la, puis recommence."
+              : `Impossible de démarrer (${nom || "erreur"}) : ${(e as Error)?.message || "erreur inconnue"}`,
       );
       libererCamera();
       setEtape("erreur");
