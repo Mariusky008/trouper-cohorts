@@ -1,54 +1,63 @@
 "use client";
 
-// 🔁 L'ÉCHANGE ENTRE COMMERÇANTS — démonstration, en quatre étapes et en euros.
+// 🔁 L'ÉCHANGE ENTRE COMMERÇANTS — démonstration : une caisse commune, des
+// cartes à glisser.
 //
-// « L'idée est bien parce qu'elle permet de prendre ce qu'on veut, et partout,
-// mais c'est très mal expliqué : on ne saisit pas comment ça marche. Il faudrait
-// au départ des étapes :
-//   1. quel produit mets-tu à disposition des autres commerçants — "produit du
-//      jour" ou autre ;
-//   2. quelle est sa valeur — pas de crédit, du véritable argent ;
-//   3. quel est le montant maximal que tu es prêt à concéder — par exemple pas
-//      plus de 500 €, donc j'aurais 500 € à dépenser chez les autres ;
-//   4. je découvre les autres annonces. »
+// LE CHOIX DE JEAN-PHILIPPE ET DE SON AMI, après avoir comparé le troc direct
+// (« je swipe une offre, ClikMe calcule combien de mes produits je dois
+// donner ») et la caisse commune : « le modèle économique du système 2 et
+// l'interface du système 1 ». On découvre les offres en glissant, on prend
+// avec son solde, sans chercher d'échange réciproque — la sophrologue a sa
+// nuit d'hôtel même si l'hôtelier n'a jamais besoin de sophrologie.
 //
-// ET LA QUESTION QUI MANQUAIT : « au final j'ai eu le produit gratuitement si
-// personne ne vient chez moi parce que mon service n'est pas utile aux autres
-// commerçants ». La règle qui y répond est écrite à l'écran, en une phrase :
-// CE QUE TU PRENDS, TU LE RENDS — en produits quand un commerçant en veut,
-// sinon en euros au bout de 3 mois. Personne n'a rien gratuitement : au pire,
-// on a acheté au prix public en payant plus tard.
-//
-// PLUS DE « CRÉDITS », DE « SOLDE » NI D'ONGLETS : des euros, une seule
-// phrase en haut (« Tu peux dépenser : 500 € »), une seule page.
+// LEURS TROIS RÈGLES, et ce qu'elles deviennent à l'écran :
+//   1. « Un crédit n'est gagné que lorsqu'une prestation a réellement été
+//      fournie » → le crédit bouge AU SCAN DU QR chez le commerçant, pas quand
+//      on touche « Je prends » (qui ne fait que réserver).
+//   2. « Un plafond adapté à sa capacité à fournir, plutôt qu'un montant
+//      arbitraire » → l'étape 3 demande « combien peux-tu en offrir par
+//      mois ? ». La réponse limite ce qu'on peut lui prendre ET fixe son
+//      découvert de départ (un mois de capacité, plafonné à 300 €).
+//   3. « Les échéances et le règlement en euros cadrés juridiquement » → la
+//      dette se compte en PRODUITS (« tu dois 2 séances »), ClikMe aide à la
+//      rendre (son offre passe en tête), et les euros ne viennent qu'en
+//      dernier recours, au bout de 12 mois ou au départ du réseau — écrit
+//      « à valider » : rien de cela n'a encore été vu par un avocat ni un
+//      expert-comptable.
 //
 // CE QUI EST UNE DÉMONSTRATION : les autres commerçants sont des EXEMPLES
-// (étiquetés), tout reste dans ce téléphone, et le premier voisin qui prend
-// son produit est simulé, pour qu'il voie ce que donner lui rapporte.
-import { useCallback, useEffect, useMemo, useState } from "react";
+// (étiquetés), tout reste dans ce téléphone, le premier voisin qui vient
+// prendre son produit est simulé, et le scan chez l'autre commerçant se
+// simule d'un bouton marqué « démo ».
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "qrcode";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { COMMERCES_DEMO } from "@/lib/direct/missions-commercant";
 import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
 
-/** `entier` : une couverture de livre se montre en entier, pas recadrée. */
-type Modele = { titre: string; prix: number; photo: string; entier?: boolean };
+/** `entier` : une couverture de livre se montre en entier, pas recadrée.
+ *  `unite` : comment on compte ce produit (« 2 séances »). */
+type Modele = { titre: string; prix: number; photo: string; entier?: boolean; unite: [string, string] };
 
 /** Ce que chaque métier mettrait naturellement à disposition — il change tout. */
 const MODELES: Record<FamilleDouble, Modele> = {
-  table: { titre: "Un dîner pour deux", prix: 50, photo: "/direct/table/magret/3.jpg" },
-  bar: { titre: "L’apéro pour quatre", prix: 40, photo: "/direct/soiree/saxo-du-soir.jpg" },
-  coiffure: { titre: "Une coupe et un brushing", prix: 45, photo: "/direct/coiffure1.jpg" },
-  ongles: { titre: "Une pose semi-permanente", prix: 40, photo: "/direct/avis-ongles.jpg" },
-  fleurs: { titre: "Un bouquet de saison", prix: 35, photo: "/direct/bouquet-du-jour.jpg" },
-  mode: { titre: "Un bon d’achat", prix: 50, photo: "/direct/mode-pull-mohair-marine.jpeg" },
-  createur: { titre: "Un atelier bougie", prix: 45, photo: "/direct/atelier-bougies.jpeg" },
-  lunettes: { titre: "Un bon sur une monture", prix: 50, photo: "/direct/lunettes1.jpg" },
-  seance: { titre: "Une séance de sophrologie", prix: 50, photo: "/direct/cabinet-hypnose.jpeg" },
-  librairie: { titre: "Deux livres au choix", prix: 40, photo: "/direct/livres/harry-quebert.jpg", entier: true },
+  table: { titre: "Un dîner pour deux", prix: 50, photo: "/direct/table/magret/3.jpg", unite: ["dîner pour deux", "dîners pour deux"] },
+  bar: { titre: "L’apéro pour quatre", prix: 40, photo: "/direct/soiree/saxo-du-soir.jpg", unite: ["apéro pour quatre", "apéros pour quatre"] },
+  coiffure: { titre: "Une coupe et un brushing", prix: 45, photo: "/direct/coiffure1.jpg", unite: ["coupe", "coupes"] },
+  ongles: { titre: "Une pose semi-permanente", prix: 40, photo: "/direct/avis-ongles.jpg", unite: ["pose", "poses"] },
+  fleurs: { titre: "Un bouquet de saison", prix: 35, photo: "/direct/bouquet-du-jour.jpg", unite: ["bouquet", "bouquets"] },
+  mode: { titre: "Un bon d’achat", prix: 50, photo: "/direct/mode-pull-mohair-marine.jpeg", unite: ["bon d’achat", "bons d’achat"] },
+  createur: { titre: "Un atelier bougie", prix: 45, photo: "/direct/atelier-bougies.jpeg", unite: ["atelier", "ateliers"] },
+  lunettes: { titre: "Un bon sur une monture", prix: 50, photo: "/direct/lunettes1.jpg", unite: ["bon sur une monture", "bons sur une monture"] },
+  seance: { titre: "Une séance de sophrologie", prix: 50, photo: "/direct/cabinet-hypnose.jpeg", unite: ["séance", "séances"] },
+  librairie: { titre: "Deux livres au choix", prix: 40, photo: "/direct/livres/harry-quebert.jpg", entier: true, unite: ["lot de deux livres", "lots de deux livres"] },
 };
 
-const PLAFONDS = [200, 500, 1000];
+/** Combien il peut en offrir par mois : c'est sa capacité à fournir. */
+const PAR_MOIS = [1, 2, 4, 8];
+/** Le découvert de départ ne dépasse pas ce montant, quelle que soit sa capacité. */
+const DECOUVERT_MAX_DEPART = 300;
+const DOUZE_MOIS = 365 * 24 * 3600 * 1000;
 const DISTANCES = ["120 m", "350 m", "200 m", "600 m", "450 m", "90 m", "800 m", "300 m", "250 m", "700 m"];
 
 type Offre = {
@@ -62,24 +71,25 @@ type Offre = {
   prix: number;
   photo: string;
   ou: string;
+  parMois: number;
   hotel?: boolean;
   cadrage?: string;
   entier?: boolean;
 };
-type Mien = { duJour: boolean; titre: string; prix: number; photo: string; plafond: number };
-type Bon = { id: string; code: string; titre: string; commerce: string; prenom: string; ville: string; prix: number; photo: string; le?: number };
+type Mien = { duJour: boolean; titre: string; prix: number; photo: string; parMois: number };
+type Bon = { id: string; code: string; titre: string; commerce: string; prenom: string; ville: string; prix: number; photo: string; le: number; scanne?: boolean };
 type Etat = {
   mien?: Mien;
-  /** Ce que les autres ont pris chez lui (en euros). */
-  donne: number;
-  /** Ce qu'il a pris chez les autres. */
+  /** Ce qu'il a gagné : les produits fournis, QR scanné (en euros). */
+  gagne: number;
+  /** Ce qu'il a pris chez les autres (réservé ou déjà utilisé). */
   bons: Bon[];
-  /** Le premier voisin qui prend son produit (simulé une fois). */
+  /** Le premier voisin venu prendre son produit (simulé une fois). */
   premier?: string;
 };
 
-const NEUF: Etat = { donne: 0, bons: [] };
-const cle = (c: CommerceComptoir) => `clikme-echanges-euros-${c.id}`;
+const NEUF: Etat = { gagne: 0, bons: [] };
+const cle = (c: CommerceComptoir) => `clikme-echanges-caisse-${c.id}`;
 function charger(c: CommerceComptoir): Etat {
   if (typeof window === "undefined") return NEUF;
   try {
@@ -97,21 +107,35 @@ function garder(c: CommerceComptoir, e: Etat) {
   }
 }
 
+/** Son découvert : un mois de ce qu'il peut offrir, plafonné au départ. */
+const decouvertDe = (m: Mien) => Math.min(DECOUVERT_MAX_DEPART, m.parMois * m.prix);
+const pris = (e: Etat) => e.bons.reduce((s, b) => s + b.prix, 0);
+/** Ce qu'il peut encore dépenser : son découvert, plus ce qu'il a gagné, moins ce qu'il a pris. */
+const aDepenser = (e: Etat) => (e.mien ? Math.max(0, decouvertDe(e.mien) + e.gagne - pris(e)) : 0);
+/** Ce qu'il doit au réseau : ce qu'il a pris de plus que ce qu'il a gagné. */
+const aRendre = (e: Etat) => Math.max(0, pris(e) - e.gagne);
+
+/** « 2 séances », « 1 produit du jour », « 3 × « Une séance découverte » ». */
+function enProduits(m: Mien, famille: FamilleDouble, n: number): string {
+  if (m.duJour) return `${n} ${n > 1 ? "produits du jour" : "produit du jour"}`;
+  const modele = MODELES[famille];
+  if (m.titre === modele.titre) return `${n} ${n > 1 ? modele.unite[1] : modele.unite[0]}`;
+  return `${n} × « ${m.titre} »`;
+}
+/** Une somme en euros dite en produits : « soit 2 séances », « soit environ 3 dîners pour deux ». */
+function soitEnProduits(m: Mien, famille: FamilleDouble, euros: number): string {
+  const n = euros / m.prix;
+  return Number.isInteger(n) ? `soit ${enProduits(m, famille, n)}` : `soit environ ${enProduits(m, famille, Math.max(1, Math.round(n)))}`;
+}
 /** Comment on le nomme, en lui parlant : « ton produit du jour », « un dîner pour deux ». */
 const nomDuMien = (m: Mien) => (m.duJour ? "ton produit du jour" : `${m.titre.charAt(0).toLowerCase()}${m.titre.slice(1)}`);
 const nomAffiche = (m: Mien) => (m.duJour ? "Ton produit du jour" : m.titre);
 
-const pris = (e: Etat) => e.bons.reduce((s, b) => s + b.prix, 0);
-/** Ce qu'il peut encore dépenser : sa limite, plus ce qu'il a donné, moins ce qu'il a pris. */
-const aDepenser = (e: Etat) => (e.mien ? Math.max(0, e.mien.plafond + e.donne - pris(e)) : 0);
-/** Ce qu'il doit rendre : ce qu'il a pris de plus que ce qu'il a donné. */
-const aRendre = (e: Etat) => Math.max(0, pris(e) - e.donne);
-const TROIS_MOIS = 91 * 24 * 3600 * 1000;
-/** L'échéance : trois mois après le premier produit pris (le plus ancien). */
+/** L'échéance du dernier recours : douze mois après le premier produit pris. */
 function echeanceDe(e: Etat): string {
-  const debut = Math.min(...e.bons.map((b) => b.le ?? Infinity));
-  if (!Number.isFinite(debut)) return "dans 3 mois";
-  return `avant le ${new Date(debut + TROIS_MOIS).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}`;
+  const debut = Math.min(...e.bons.map((b) => b.le));
+  if (!Number.isFinite(debut)) return "dans 12 mois";
+  return `avant le ${new Date(debut + DOUZE_MOIS).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}`;
 }
 
 const visageDe = (branche: string, metier: string) => `${tenueDu({ branche, metier })?.enPied ?? "/direct/double/pied/"}visage.webp`;
@@ -119,10 +143,10 @@ const visageDe = (branche: string, metier: string) => `${tenueDu({ branche, meti
 /* LES AUTRES COMMERÇANTS — EXEMPLES. Sa ville : ceux de la démonstration.
    Ailleurs : des commerces décrits par ce qu'ils sont, sans nom propre. */
 const AILLEURS: Offre[] = [
-  { id: "bz-hotel", commerce: "Hôtel face à l’océan", prenom: "l’hôtel", metier: "Hôtel ★★★", visage: visageDe("", ""), ville: "Biarritz", titre: "Une nuit pour deux, petit-déjeuner compris", prix: 180, photo: "/direct/ensemble/scene-ocean.webp", ou: "Biarritz", hotel: true, cadrage: "50% 24%" },
-  { id: "bz-bistrot", commerce: "Bistrot du port", prenom: "le bistrot", metier: "Restaurant", visage: visageDe("restaurant", "Restaurant"), ville: "Biarritz", titre: "Un déjeuner pour deux", prix: 60, photo: "/direct/terrasse-au-soleil.jpg", ou: "Biarritz" },
-  { id: "by-hotel", commerce: "Hôtel du centre historique", prenom: "l’hôtel", metier: "Hôtel ★★", visage: visageDe("", ""), ville: "Bayonne", titre: "Une nuit pour deux", prix: 120, photo: "/direct/maison/piece-interieur.webp", ou: "Bayonne", hotel: true },
-  { id: "by-barbier", commerce: "Barbier des quais", prenom: "le barbier", metier: "Barbier", visage: visageDe("coiffeur", "Barbier"), ville: "Bayonne", titre: "Coupe et taille de barbe", prix: 35, photo: "/direct/essayeurs/coif-barbier-1.jpg", ou: "Bayonne" },
+  { id: "bz-hotel", commerce: "Hôtel face à l’océan", prenom: "l’hôtel", metier: "Hôtel ★★★", visage: visageDe("", ""), ville: "Biarritz", titre: "Une nuit pour deux, petit-déjeuner compris", prix: 180, photo: "/direct/ensemble/scene-ocean.webp", ou: "Biarritz", parMois: 2, hotel: true, cadrage: "50% 24%" },
+  { id: "bz-bistrot", commerce: "Bistrot du port", prenom: "le bistrot", metier: "Restaurant", visage: visageDe("restaurant", "Restaurant"), ville: "Biarritz", titre: "Un déjeuner pour deux", prix: 60, photo: "/direct/terrasse-au-soleil.jpg", ou: "Biarritz", parMois: 6 },
+  { id: "by-hotel", commerce: "Hôtel du centre historique", prenom: "l’hôtel", metier: "Hôtel ★★", visage: visageDe("", ""), ville: "Bayonne", titre: "Une nuit pour deux", prix: 120, photo: "/direct/maison/piece-interieur.webp", ou: "Bayonne", parMois: 3, hotel: true },
+  { id: "by-barbier", commerce: "Barbier des quais", prenom: "le barbier", metier: "Barbier", visage: visageDe("coiffeur", "Barbier"), ville: "Bayonne", titre: "Coupe et taille de barbe", prix: 35, photo: "/direct/essayeurs/coif-barbier-1.jpg", ou: "Bayonne", parMois: 6 },
 ];
 
 function offresDeSaVille(moi: CommerceComptoir): Offre[] {
@@ -140,6 +164,7 @@ function offresDeSaVille(moi: CommerceComptoir): Offre[] {
       photo: m.photo,
       entier: m.entier,
       ou: DISTANCES[i % DISTANCES.length],
+      parMois: 4,
     };
   });
 }
@@ -175,6 +200,7 @@ function useQr(texte: string | null) {
 /* ═══ LA CARTE DE L'ACCUEIL ═══════════════════════════════════════════════ */
 export function CarteEchanges({ commerce, onOuvrir }: { commerce: CommerceComptoir; onOuvrir: () => void }) {
   const [etat] = useState<Etat>(() => charger(commerce));
+  const du = aRendre(etat);
   return (
     <button type="button" className={`cz-relance cz-echanges${etat.mien ? "" : " chaud"}`} onClick={onOuvrir}>
       <span className="cz-relance-i">🔁</span>
@@ -185,8 +211,8 @@ export function CarteEchanges({ commerce, onOuvrir }: { commerce: CommerceCompto
         </b>
         <em>
           {etat.mien
-            ? `Tu peux dépenser ${aDepenser(etat)} € chez les autres commerçants.`
-            : "Donne ton produit à d’autres commerçants, prends ce que tu veux chez eux — même un hôtel à Biarritz."}
+            ? `Tu peux dépenser ${aDepenser(etat)} € chez les autres commerçants.${du > 0 ? ` Tu dois ${du} € au réseau.` : ""}`
+            : "Offre ton produit aux autres commerçants, prends ce que tu veux chez eux — même une nuit d’hôtel à Biarritz."}
         </em>
       </span>
       <s aria-hidden="true">→</s>
@@ -251,13 +277,15 @@ function Depart({
   const [duJour, setDuJour] = useState(initial?.duJour ?? false);
   const [titre, setTitre] = useState(initial?.titre ?? m.titre);
   const [prix, setPrix] = useState(initial?.prix ?? m.prix);
-  const [plafond, setPlafond] = useState(initial?.plafond ?? 500);
+  const [parMois, setParMois] = useState(initial?.parMois ?? 4);
   const photo = initial?.photo ?? commerce.photo ?? m.photo;
+  const brouillon: Mien = { duJour, titre: duJour ? "Mon produit du jour" : titre.trim(), prix, photo, parMois };
+  const decouvert = decouvertDe(brouillon);
 
   const QUESTIONS = [
     "Que mets-tu à disposition des autres commerçants ?",
     "Combien il vaut ?",
-    "Jusqu’à combien es-tu prêt à donner ?",
+    "Combien peux-tu en offrir par mois, au maximum ?",
     "C’est prêt !",
   ];
 
@@ -318,18 +346,19 @@ function Depart({
 
       {etape === 3 && (
         <>
-          <div className="ec-puces grandes">
-            {PLAFONDS.map((p) => (
-              <button key={p} type="button" className={plafond === p ? "on" : ""} onClick={() => setPlafond(p)}>
-                {p} €
+          <div className="ec-puces quatre" role="group" aria-label="Combien par mois">
+            {PAR_MOIS.map((n) => (
+              <button key={n} type="button" className={parMois === n ? "on" : ""} onClick={() => setParMois(n)}>
+                {n}
               </button>
             ))}
           </div>
           <p className="ec-dit">
-            C’est aussi <b>ce que tu peux dépenser tout de suite</b> chez les autres commerçants : {plafond} €.
+            Personne ne pourra t’en prendre plus de <b>{parMois} par mois</b>. Et c’est ce qui fixe ce que tu peux dépenser avant même d’avoir donné : <b>{decouvert} €</b>
+            {parMois * prix > DECOUVERT_MAX_DEPART ? ` (plafonné à ${DECOUVERT_MAX_DEPART} € au départ)` : ""}.
           </p>
           <p className="ec-regle">
-            ⚖️ <b>Ce que tu prends, tu le rends</b> : en donnant ton produit quand un commerçant en veut — sinon en euros, au bout de 3 mois. Personne n’a rien gratuitement.
+            ⚖️ <b>Ce que tu prends, tu le rends, en ton produit</b> : chaque fois qu’un commerçant le prend, ta dette baisse. Tant que tu dois, ton offre passe en tête chez les autres. Les euros, seulement en dernier recours : au bout de 12 mois, ou si tu quittes le réseau.
           </p>
           <button type="button" className="cz-go grand" onClick={() => setEtape(4)}>
             Suivant <s aria-hidden="true">→</s>
@@ -348,16 +377,17 @@ function Depart({
             <div>
               <em>Tu offres aux commerçants</em>
               <b>
-                {duJour ? "Ton produit du jour" : titre} · {prix} €
+                {nomAffiche(brouillon)} · {prix} €
               </b>
+              <em>Jusqu’à {parMois} par mois</em>
             </div>
           </article>
           <div className="ec-gros">
             <span>Tu peux dépenser dès maintenant</span>
-            <b>{plafond} €</b>
-            <em>chez les autres commerçants, dans ta ville ou ailleurs.</em>
+            <b>{decouvert} €</b>
+            <em>chez les autres commerçants, dans ta ville ou ailleurs. C’est ton découvert de départ ; il grandira avec ce que tu fournis vraiment.</em>
           </div>
-          <button type="button" className="cz-go grand" onClick={() => onFini({ duJour, titre: duJour ? "Mon produit du jour" : titre.trim(), prix, photo, plafond })}>
+          <button type="button" className="cz-go grand" onClick={() => onFini(brouillon)}>
             Voir ce que proposent les autres <s aria-hidden="true">→</s>
           </button>
           <button type="button" className="cz-lien" onClick={() => setEtape(3)}>
@@ -369,7 +399,7 @@ function Depart({
   );
 }
 
-/* ═══ LA PAGE : CE QU'IL PEUT DÉPENSER, ET CE QUE PROPOSENT LES AUTRES ═══ */
+/* ═══ LA PAGE : CE QU'IL PEUT DÉPENSER, ET LES OFFRES À GLISSER ══════════ */
 function Echanger({
   commerce,
   etat,
@@ -382,45 +412,57 @@ function Echanger({
   onModifier: () => void;
 }) {
   const mien = etat.mien as Mien;
+  const famille = commerce.famille;
   const [ville, setVille] = useState("");
+  const [vus, setVus] = useState<string[]>([]);
   const [choisie, setChoisie] = useState<Offre | null>(null);
   const [recu, setRecu] = useState<Bon | null>(null);
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [nouvelle, setNouvelle] = useState<string | null>(null);
   const toutes = useMemo(() => [...offresDeSaVille(commerce), ...AILLEURS], [commerce]);
-  const visibles = toutes.filter((o) => o.ville === ville);
+  const deLaVille = toutes.filter((o) => o.ville === ville);
+  const pile = deLaVille.filter((o) => !vus.includes(o.id));
+  const decouvert = decouvertDe(mien);
   const reste = aDepenser(etat);
   const du = aRendre(etat);
 
-  /* LE PREMIER VOISIN QUI PREND SON PRODUIT — simulé une fois, pour qu'il
-     voie ce que donner lui rapporte. */
+  /* LE PREMIER VOISIN QUI VIENT PRENDRE SON PRODUIT — simulé une fois. Il
+     gagne au SCAN, pas à la réservation : c'est la règle 1. */
   useEffect(() => {
     if (etat.premier) return;
-    const voisin = COMMERCES_DEMO.find((c) => c.famille !== commerce.famille);
+    const voisin = COMMERCES_DEMO.find((c) => c.famille !== famille);
     if (!voisin) return;
     const t = window.setTimeout(() => {
-      changer((e) => (e.premier ? e : { ...e, premier: voisin.nom, donne: e.donne + mien.prix }));
-      setNouvelle(`🎉 ${voisin.prenom} (${voisin.nom}) vient de prendre ${nomDuMien(mien)}. Tu peux dépenser ${mien.prix} € de plus.`);
+      changer((e) => (e.premier ? e : { ...e, premier: voisin.nom, gagne: e.gagne + mien.prix }));
+      setNouvelle(`🎉 ${voisin.prenom} (${voisin.nom}) a pris ${nomDuMien(mien)} chez toi. Tu as scanné son code : tu as gagné ${mien.prix} €.`);
     }, 2400);
     return () => window.clearTimeout(t);
-  }, [etat.premier, commerce.famille, changer, mien]);
+  }, [etat.premier, famille, changer, mien]);
 
+  const passer = (o: Offre) => setVus((v) => [...v, o.id]);
+  const vouloir = (o: Offre) => {
+    setVus((v) => [...v, o.id]);
+    setChoisie(o);
+  };
   const prendre = (o: Offre) => {
+    const maintenant = Date.now();
     const bon: Bon = {
-      id: `${o.id}-${Date.now()}`,
-      code: codeDe(`${commerce.id}|${o.id}|${Date.now()}`),
+      id: `${o.id}-${maintenant}`,
+      code: codeDe(`${commerce.id}|${o.id}|${maintenant}`),
       titre: o.titre,
       commerce: o.commerce,
       prenom: o.prenom,
       ville: o.ville,
       prix: o.prix,
       photo: o.photo,
-      le: Date.now(),
+      le: maintenant,
     };
     changer((e) => ({ ...e, bons: [bon, ...e.bons] }));
     setChoisie(null);
     setRecu(bon);
   };
+  const scanner = (id: string) => changer((e) => ({ ...e, bons: e.bons.map((b) => (b.id === id ? { ...b, scanne: true } : b)) }));
+  const duApres = choisie ? Math.max(0, pris(etat) + choisie.prix - etat.gagne) : 0;
 
   return (
     <section className="ec-page">
@@ -428,14 +470,21 @@ function Echanger({
         <span>Tu peux dépenser</span>
         <b key={reste}>{reste} €</b>
         <em>
-          Tu as donné <strong>{etat.donne} €</strong> · tu as pris <strong>{pris(etat)} €</strong>
+          Gagné <strong>{etat.gagne} €</strong> · pris <strong>{pris(etat)} €</strong> · découvert <strong>{decouvert} €</strong>
         </em>
       </div>
 
       {du > 0 && (
-        <p className="ec-regle">
-          ⚖️ <b>À rendre : {du} €</b> — en produits dès qu’un commerçant prend chez toi, sinon en euros {echeanceDe(etat)}.
-        </p>
+        <div className="ec-regle ec-dette">
+          <p>
+            ⚖️ <b>Tu dois {du} € au réseau</b>, {soitEnProduits(mien, famille, du)}.
+          </p>
+          <p>Ta dette baisse toute seule chaque fois qu’un commerçant prend {nomDuMien(mien)}.</p>
+          <p className="ec-tete">📣 En attendant, ton offre passe en tête chez les autres commerçants.</p>
+          <p className="ec-petit">
+            En dernier recours seulement : en euros {echeanceDe(etat)}, ou si tu quittes le réseau. Règle à valider.
+          </p>
+        </div>
       )}
 
       {nouvelle && (
@@ -448,14 +497,13 @@ function Echanger({
         <h3>Comment ça marche</h3>
         <ol>
           <li>
-            Un commerçant prend ton produit → <b>tu peux dépenser</b> son prix chez les autres.
+            Un commerçant vient prendre ton produit : <b>quand tu scannes son code, tu gagnes son prix</b>.
           </li>
+          <li>Tu prends chez un autre : il gagne ce prix quand il scanne ton code.</li>
           <li>
-            Tu prends chez un autre → <b>lui pourra dépenser</b> ce prix ailleurs.
+            Tu peux dépenser avant d’avoir donné, jusqu’à ton découvert : <b>{decouvert} €</b>.
           </li>
-          <li>
-            Ce que tu prends, tu le rends : en produits, sinon en euros au bout de 3 mois.
-          </li>
+          <li>Ce que tu prends, tu le rends en ton produit. Les euros, seulement en dernier recours.</li>
         </ol>
       </section>
 
@@ -471,36 +519,20 @@ function Echanger({
           </button>
         ))}
       </div>
-      {visibles.map((o) => (
-        <article key={o.id} className={`ec-offre${o.hotel ? " hotel" : ""}`}>
-          <div className="ec-offre-photo">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={o.photo} alt="" className={o.entier ? "entier" : undefined} style={o.cadrage ? { objectPosition: o.cadrage } : undefined} />
-            <span className="ec-prix">{o.prix} €</span>
-            {o.hotel && <span className="ec-hotel">🏨 Hôtel</span>}
-          </div>
-          <div className="ec-offre-t">
-            <div className="ec-qui">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={o.visage} alt="" />
-              <span>
-                <b>{o.commerce}</b>
-                <em>
-                  {o.metier} · {o.ou}
-                </em>
-              </span>
-            </div>
-            <h4>{o.titre}</h4>
-            <button type="button" className="ec-prendre" onClick={() => setChoisie(o)}>
-              Je prends · {o.prix} €
-            </button>
-          </div>
-        </article>
-      ))}
+      {pile.length > 0 ? (
+        <Pile key={pile[0].id} offres={pile} onPasser={passer} onPrendre={vouloir} />
+      ) : (
+        <div className="ec-fin-pile">
+          <p>Tu as vu toutes les offres {ville ? `de ${ville}` : "de ta ville"}.</p>
+          <button type="button" className="cz-lien" onClick={() => setVus((v) => v.filter((id) => !deLaVille.some((o) => o.id === id)))}>
+            Les revoir
+          </button>
+        </div>
+      )}
 
       {etat.bons.length > 0 && <h3 className="ec-titre">Ce que tu as pris</h3>}
       {etat.bons.map((b) => (
-        <BonPris key={b.id} b={b} ouvert={ouvert === b.id} onOuvrir={() => setOuvert((x) => (x === b.id ? null : b.id))} />
+        <BonPris key={b.id} b={b} ouvert={ouvert === b.id} onOuvrir={() => setOuvert((x) => (x === b.id ? null : b.id))} onScanner={() => scanner(b.id)} />
       ))}
 
       <h3 className="ec-titre">Ce que tu offres</h3>
@@ -511,7 +543,7 @@ function Echanger({
           <b>
             {nomAffiche(mien)} · {mien.prix} €
           </b>
-          <em>Jusqu’à {mien.plafond} €</em>
+          <em>Jusqu’à {mien.parMois} par mois</em>
         </div>
         <button type="button" className="cz-lien" onClick={onModifier}>
           Modifier
@@ -522,7 +554,7 @@ function Echanger({
         <div className="ec-feuille" role="dialog" aria-label="Je prends">
           <div className="ec-feuille-c">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={choisie.photo} alt="" style={choisie.cadrage ? { objectPosition: choisie.cadrage } : undefined} />
+            <img src={choisie.photo} alt="" className={choisie.entier ? "entier" : undefined} style={choisie.cadrage ? { objectPosition: choisie.cadrage } : undefined} />
             <h2>{choisie.titre}</h2>
             <p className="ec-gris">
               Chez {choisie.commerce}
@@ -533,6 +565,11 @@ function Echanger({
                 <p className="ec-calcul">
                   Après : tu pourras encore dépenser <b>{reste - choisie.prix} €</b>.
                 </p>
+                {duApres > 0 && (
+                  <p className="ec-calcul petit">
+                    Tu devras {duApres} € au réseau, {soitEnProduits(mien, famille, duApres)}, à rendre en ton produit.
+                  </p>
+                )}
                 <button type="button" className="cz-go grand" onClick={() => prendre(choisie)}>
                   Je prends · {choisie.prix} €
                 </button>
@@ -550,13 +587,11 @@ function Echanger({
       )}
 
       {recu && (
-        <div className="ec-feuille" role="dialog" aria-label="C’est à toi">
+        <div className="ec-feuille" role="dialog" aria-label="C’est réservé">
           <div className="ec-feuille-c">
-            <h2 className="ec-bravo">C’est à toi !</h2>
+            <h2 className="ec-bravo">C’est réservé !</h2>
             <BonPris b={recu} ouvert onOuvrir={() => undefined} />
-            <p className="ec-gris ec-centre">
-              {recu.commerce} pourra dépenser {recu.prix} € chez n’importe quel commerçant.
-            </p>
+            <p className="ec-gris ec-centre">Ces {recu.prix} € sont déjà déduits de ce que tu peux dépenser.</p>
             <button type="button" className="cz-go" onClick={() => setRecu(null)}>
               C’est noté
             </button>
@@ -567,7 +602,105 @@ function Echanger({
   );
 }
 
-function BonPris({ b, ouvert, onOuvrir }: { b: Bon; ouvert: boolean; onOuvrir: () => void }) {
+/* ═══ LA PILE À GLISSER ═══════════════════════════════════════════════════
+   À droite : je prends (la feuille de confirmation s'ouvre). À gauche : je
+   passe. Les deux boutons font la même chose, pour qui ne glisse pas. */
+function Pile({ offres, onPasser, onPrendre }: { offres: Offre[]; onPasser: (o: Offre) => void; onPrendre: (o: Offre) => void }) {
+  const [dx, setDx] = useState(0);
+  const [sortie, setSortie] = useState<"g" | "d" | null>(null);
+  /** Le doigt est posé : la carte suit sans transition. */
+  const [tire, setTire] = useState(false);
+  const depart = useRef<number | null>(null);
+  const o = offres[0];
+  const suivante = offres[1];
+
+  const partir = (prend: boolean) => {
+    if (sortie) return;
+    setSortie(prend ? "d" : "g");
+    window.setTimeout(() => (prend ? onPrendre(o) : onPasser(o)), 240);
+  };
+
+  const style = sortie
+    ? { transform: `translateX(${sortie === "d" ? 140 : -140}%) rotate(${sortie === "d" ? 16 : -16}deg)`, transition: "transform .24s ease-in" }
+    : { transform: `translateX(${dx}px) rotate(${dx / 20}deg)`, transition: tire ? "none" : "transform .2s" };
+
+  return (
+    <div className="ec-pile">
+      {suivante && <CarteOffre o={suivante} dessous />}
+      <div
+        className="ec-glisse"
+        style={style}
+        onPointerDown={(e) => {
+          depart.current = e.clientX;
+          setTire(true);
+          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (depart.current !== null) setDx(e.clientX - depart.current);
+        }}
+        onPointerUp={() => {
+          const d = dx;
+          depart.current = null;
+          setTire(false);
+          if (d > 90) partir(true);
+          else if (d < -90) partir(false);
+          else setDx(0);
+        }}
+        onPointerCancel={() => {
+          depart.current = null;
+          setTire(false);
+          setDx(0);
+        }}
+      >
+        <CarteOffre o={o} />
+        <span className="ec-tampon oui" style={{ opacity: Math.max(0, Math.min(1, dx / 90)) }}>
+          JE PRENDS
+        </span>
+        <span className="ec-tampon non" style={{ opacity: Math.max(0, Math.min(1, -dx / 90)) }}>
+          JE PASSE
+        </span>
+      </div>
+      <div className="ec-gestes">
+        <button type="button" className="ec-non" onClick={() => partir(false)}>
+          ✕ Je passe
+        </button>
+        <button type="button" className="ec-oui" onClick={() => partir(true)}>
+          Je prends · {o.prix} €
+        </button>
+      </div>
+      <p className="ec-astuce">Glisse la carte : à droite je prends, à gauche je passe.</p>
+    </div>
+  );
+}
+
+function CarteOffre({ o, dessous = false }: { o: Offre; dessous?: boolean }) {
+  return (
+    <article className={`ec-carte${o.hotel ? " hotel" : ""}${dessous ? " dessous" : ""}`} aria-hidden={dessous || undefined}>
+      <div className="ec-carte-photo">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={o.photo} alt="" draggable={false} className={o.entier ? "entier" : undefined} style={o.cadrage ? { objectPosition: o.cadrage } : undefined} />
+        <span className="ec-prix">{o.prix} €</span>
+        {o.hotel && <span className="ec-hotel">🏨 Hôtel</span>}
+      </div>
+      <div className="ec-carte-t">
+        <div className="ec-qui">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={o.visage} alt="" draggable={false} />
+          <span>
+            <b>{o.commerce}</b>
+            <em>
+              {o.metier} · {o.ou}
+            </em>
+          </span>
+        </div>
+        <h4>{o.titre}</h4>
+        <p className="ec-cap">Jusqu’à {o.parMois} par mois</p>
+      </div>
+    </article>
+  );
+}
+
+function BonPris({ b, ouvert, onOuvrir, onScanner }: { b: Bon; ouvert: boolean; onOuvrir: () => void; onScanner?: () => void }) {
   const qr = useQr(ouvert ? `ClikMe · Bon ${b.code} · ${b.titre} (${b.prix} €) chez ${b.commerce} · Exemple` : null);
   return (
     <article className={`ec-recu${ouvert ? " ouvert" : ""}`}>
@@ -580,6 +713,7 @@ function BonPris({ b, ouvert, onOuvrir }: { b: Bon; ouvert: boolean; onOuvrir: (
             {b.commerce}
             {b.ville ? ` · ${b.ville}` : ""} · {b.prix} €
           </em>
+          <small className={b.scanne ? "fait" : ""}>{b.scanne ? "Utilisé ✓" : "Réservé, en attente de ton passage"}</small>
         </span>
         <i>{ouvert ? "▲" : "QR"}</i>
       </button>
@@ -588,7 +722,18 @@ function BonPris({ b, ouvert, onOuvrir }: { b: Bon; ouvert: boolean; onOuvrir: (
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {qr ? <img src={qr} alt={`Code ${b.code}`} /> : <span className="ec-qr-vide" />}
           <b>{b.code}</b>
-          <p>Présente ce code chez {b.commerce} : il le scanne, c’est réglé.</p>
+          {b.scanne ? (
+            <p>Scanné : {b.commerce} a gagné {b.prix} €.</p>
+          ) : (
+            <>
+              <p>Présente ce code chez {b.commerce} : il le scanne, et il gagne {b.prix} €, à dépenser chez n’importe quel commerçant.</p>
+              {onScanner && (
+                <button type="button" className="ec-scan" onClick={onScanner}>
+                  Simuler le scan chez {b.commerce} (démo)
+                </button>
+              )}
+            </>
+          )}
         </div>
       )}
     </article>
@@ -634,11 +779,16 @@ function StylesEchanges() {
 .ec-puces{display:flex;flex-wrap:wrap;gap:8px;}
 .ec-puces button{height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--trait);background:var(--nappe);color:var(--creme);
   font-weight:700;font-size:14px;}
-.ec-puces.grandes{display:grid;grid-template-columns:repeat(3,1fr);}
-.ec-puces.grandes button{height:60px;font-size:20px;font-weight:900;border-radius:18px;}
+.ec-puces.quatre{display:grid;grid-template-columns:repeat(4,1fr);}
+.ec-puces.quatre button{height:64px;font-family:var(--font-clikme),sans-serif;font-size:26px;font-weight:900;border-radius:18px;}
 .ec-puces button.on{background:var(--rose);border-color:var(--rose);color:#fff;}
 .ec-regle{margin:0;padding:12px 14px;border-radius:16px;background:rgba(245,162,58,.1);border:1px solid rgba(245,162,58,.4);
   font-size:14.5px;line-height:1.45;}
+.ec-dette{display:flex;flex-direction:column;gap:6px;}
+.ec-dette p{margin:0;}
+.ec-dette b{color:var(--ambre);}
+.ec-tete{font-weight:700;}
+.ec-petit{font-size:12.5px;color:var(--gris);}
 .ec-resume{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center;padding:10px;border-radius:18px;
   background:var(--nappe);border:1px solid var(--trait);}
 .ec-resume img{width:56px;height:56px;border-radius:12px;object-fit:cover;}
@@ -649,7 +799,7 @@ function StylesEchanges() {
 .ec-gros span{font-weight:800;font-size:15px;}
 .ec-gros b{font-family:var(--font-clikme),sans-serif;font-size:50px;line-height:1.05;color:var(--ambre);animation:ec-pouls .5s ease-out;}
 @keyframes ec-pouls{from{transform:scale(1.15);}to{transform:none;}}
-.ec-gros em{font-style:normal;font-size:13.5px;color:var(--gris);}
+.ec-gros em{font-style:normal;font-size:13.5px;color:var(--gris);line-height:1.4;}
 .ec-gros strong{color:var(--creme);}
 .ec-vente{margin:0;padding:12px 14px;border-radius:16px;background:rgba(124,240,162,.12);border:1px solid rgba(124,240,162,.45);
   color:#C9F7D7;font-weight:700;font-size:14.5px;line-height:1.4;}
@@ -663,23 +813,37 @@ function StylesEchanges() {
 .ec-villes button{height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--trait);background:var(--nappe);color:var(--creme);
   font-weight:800;font-size:14px;}
 .ec-villes button.on{background:var(--rose);border-color:var(--rose);color:#fff;}
-.ec-offre{border-radius:22px;overflow:hidden;background:var(--nappe);border:1px solid var(--trait);}
-.ec-offre.hotel{border-color:rgba(245,162,58,.55);box-shadow:0 0 26px rgba(245,162,58,.14);}
-.ec-offre-photo{position:relative;}
-.ec-offre-photo img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;}
-.ec-offre-photo img.entier{object-fit:contain;padding:12px 0;background:var(--nappe2);}
+.ec-pile{position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:420px;margin:0 auto;}
+.ec-pile > .ec-carte.dessous{position:absolute;top:0;left:0;right:0;transform:scale(.95) translateY(10px);opacity:.55;}
+.ec-glisse{position:relative;width:100%;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none;z-index:1;}
+.ec-carte{border-radius:24px;overflow:hidden;background:var(--nappe);border:1px solid var(--trait);box-shadow:0 18px 40px -18px rgba(0,0,0,.7);}
+.ec-carte.hotel{border-color:rgba(245,162,58,.55);box-shadow:0 0 26px rgba(245,162,58,.16);}
+.ec-carte-photo{position:relative;}
+.ec-carte-photo img{display:block;width:100%;aspect-ratio:4/3.2;max-height:40vh;object-fit:cover;pointer-events:none;}
+.ec-carte-photo img.entier,.ec-feuille-c > img.entier{object-fit:contain;padding:12px 0;background:var(--nappe2);}
 .ec-prix{position:absolute;left:12px;bottom:12px;padding:7px 12px;border-radius:999px;background:var(--ambre);color:#2A1608;
   font-family:var(--font-clikme),sans-serif;font-weight:900;font-size:17px;}
 .ec-hotel{position:absolute;left:12px;top:12px;padding:5px 10px;border-radius:999px;background:rgba(18,12,9,.72);color:var(--creme);
   font-size:12.5px;font-weight:800;}
-.ec-offre-t{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;}
+.ec-carte-t{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;}
 .ec-qui{display:flex;align-items:center;gap:10px;}
-.ec-qui img{width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--nappe2);}
+.ec-qui img{width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--nappe2);pointer-events:none;}
 .ec-qui b{display:block;font-size:14.5px;}
 .ec-qui em{display:block;font-style:normal;font-size:12.5px;color:var(--gris);}
-.ec-offre h4{margin:2px 0 0;font-family:var(--font-clikme),sans-serif;font-size:19px;font-weight:800;line-height:1.2;}
-.ec-prendre{margin-top:4px;height:46px;border:0;border-radius:999px;background:var(--rose);color:#fff;font-weight:900;font-size:15px;
-  box-shadow:0 10px 24px -10px rgba(255,46,154,.7);}
+.ec-carte h4{margin:2px 0 0;font-family:var(--font-clikme),sans-serif;font-size:19px;font-weight:800;line-height:1.2;}
+.ec-cap{margin:0;font-size:12.5px;color:var(--gris);}
+.ec-tampon{position:absolute;top:22px;padding:6px 12px;border:3px solid currentColor;border-radius:10px;font-weight:900;font-size:20px;
+  letter-spacing:.04em;pointer-events:none;background:rgba(18,12,9,.55);}
+.ec-tampon.oui{left:18px;color:#7CF0A2;transform:rotate(-12deg);}
+.ec-tampon.non{right:18px;color:#FF8FB8;transform:rotate(12deg);}
+.ec-gestes{display:grid;grid-template-columns:auto 1fr;gap:10px;width:100%;}
+.ec-gestes button{height:52px;border-radius:999px;border:0;font-weight:900;font-size:15.5px;padding:0 18px;}
+.ec-non{background:var(--nappe);color:#FF8FB8;border:1px solid var(--trait) !important;}
+.ec-oui{background:var(--rose);color:#fff;box-shadow:0 10px 26px -8px rgba(255,46,154,.7);}
+.ec-astuce{margin:0;font-size:12.5px;color:var(--gris);text-align:center;}
+.ec-fin-pile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:22px 14px;border-radius:20px;border:1px dashed var(--trait);
+  text-align:center;color:var(--gris);}
+.ec-fin-pile p{margin:0;}
 .ec-recu{border-radius:18px;background:var(--nappe);border:1px solid var(--trait);overflow:hidden;}
 .ec-recu.ouvert{border-color:rgba(245,162,58,.55);}
 .ec-recu-h{display:grid;grid-template-columns:62px 1fr auto;gap:12px;align-items:center;width:100%;padding:10px;border:0;background:none;
@@ -687,11 +851,15 @@ function StylesEchanges() {
 .ec-recu-h img{width:62px;height:62px;border-radius:14px;object-fit:cover;}
 .ec-recu-h b{display:block;font-size:15px;}
 .ec-recu-h em{display:block;font-style:normal;font-size:13px;color:var(--ambre);font-weight:700;}
+.ec-recu-h small{display:block;font-size:12px;color:var(--gris);}
+.ec-recu-h small.fait{color:#7CF0A2;font-weight:800;}
 .ec-recu-h i{font-style:normal;font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;background:var(--ambre);color:#2A1608;}
 .ec-qr{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 14px 16px;}
 .ec-qr img,.ec-qr-vide{width:180px;height:180px;border-radius:14px;background:#FFF4E6;}
 .ec-qr b{font-family:var(--font-clikme),sans-serif;font-size:20px;letter-spacing:.08em;}
 .ec-qr p{margin:0;font-size:13px;color:var(--gris);text-align:center;}
+.ec-scan{margin-top:4px;height:40px;padding:0 14px;border-radius:999px;border:1px dashed rgba(245,162,58,.6);background:none;
+  color:var(--ambre);font-weight:800;font-size:13px;}
 .ec-feuille{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,7,5,.7);}
 .ec-feuille-c{width:100%;max-width:560px;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;
   padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));border-radius:26px 26px 0 0;background:#1C1411;
@@ -702,7 +870,9 @@ function StylesEchanges() {
 .ec-feuille-c .cz-lien{align-self:center;}
 .ec-calcul{margin:0;font-size:15px;line-height:1.4;}
 .ec-calcul b{color:var(--ambre);font-size:18px;}
+.ec-calcul.petit{font-size:14px;color:var(--gris);}
 .ec-bravo{text-align:center;font-size:30px !important;color:#fff;}
+@media (prefers-reduced-motion: reduce){.ec-glisse{transition:none !important;}.ec-gros b,.ec-feuille-c{animation:none;}}
 `,
       }}
     />
