@@ -73,6 +73,7 @@ import { CarteComptoir } from "./carte-comptoir";
 import { VitrineComptoir } from "./vitrine-comptoir";
 import { SavoirComptoir } from "./savoir-comptoir";
 import { CarteReseaux, ReseauxComptoir, useReseaux } from "./reseaux-comptoir";
+import { CarteEchanges, EchangesComptoir } from "./echanges-comptoir";
 import { CarteProposition, propositionAMontrer, useProposition, type PieceProposee } from "./proposition-comptoir";
 import { reseauxEnMots } from "@/lib/reseaux/reseaux-donnees";
 import { useSavoir, type SavoirDuComptoir } from "./use-savoir";
@@ -308,7 +309,9 @@ type Phase =
   /** Ce que mon fantôme sait : ses réponses, et les questions de ses clients — voir `savoir-comptoir.tsx`. */
   | { ou: "savoir" }
   /** Mes réseaux : Instagram et Facebook connectés une fois — voir `reseaux-comptoir.tsx`. */
-  | { ou: "reseaux" };
+  | { ou: "reseaux" }
+  /** Échanger son bon avec les autres commerçants — démonstration, voir `echanges-comptoir.tsx`. */
+  | { ou: "echanges" };
 
 /** L'envoi en ligne d'un vrai commerçant : en cours, arrivé, ou à refaire. */
 type Envoi = { etat: "en-cours" } | ({ etat: "fini" } & ResultatEnvoi);
@@ -783,6 +786,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           programmees={programmees}
           onPlanning={() => setPhase({ ou: "planning" })}
           reseaux={<CarteReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
+          echanges={<CarteEchanges commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />}
           propositionActive={Boolean(propositionAMontrer(proposition))}
           proposition={
             <CarteProposition
@@ -795,6 +799,10 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
             />
           }
         />
+      )}
+
+      {phase.ou === "echanges" && (
+        <EchangesComptoir commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
       )}
 
       {phase.ou === "reseaux" && (
@@ -977,6 +985,7 @@ function Accueil({
   programmees,
   onPlanning,
   reseaux,
+  echanges,
   proposition,
   propositionActive,
 }: {
@@ -1003,6 +1012,8 @@ function Accueil({
   onPlanning: () => void;
   /** La carte « Mes réseaux » — absente tant que l'intermédiaire n'est pas branché. */
   reseaux?: React.ReactNode;
+  /** La carte « Échanger avec les commerçants » (démonstration). */
+  echanges?: React.ReactNode;
   /** ☀️ La proposition du matin, quand rien n'est encore en ligne. */
   proposition?: React.ReactNode;
   /** Elle est là : le grand bouton « Publier » devient « Publier autre chose ». */
@@ -1126,6 +1137,10 @@ function Accueil({
         {/* ═══ MES RÉSEAUX ═══ « Une photo, et vous êtes partout » : ce qu'il
             publie ici part aussi sur son Instagram et sa page Facebook. */}
         {reseaux}
+
+        {/* ═══ L'ÉCHANGE DE BONS ═══ « Le Tinder des coupons » entre commerçants :
+            ça marche sans habitants, dès que deux commerçants sont inscrits. */}
+        {echanges}
 
         {enAttente > 0 && boutonSavoir}
 
