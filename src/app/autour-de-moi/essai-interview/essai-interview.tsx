@@ -48,6 +48,7 @@ import {
   type SousTitre,
 } from "@/lib/direct/interview-fantome";
 import {
+  CHEF_DU_BORDEAUX,
   HAUTEUR,
   LARGEUR,
   chargerElements,
@@ -234,18 +235,20 @@ async function ouvrirAppareils(mode: Mode): Promise<MediaStream> {
   throw derniere;
 }
 
+const REPORTER = [0, 1, 2, 3].map((k) => `/direct/interview/reporter-${k}.webp`);
+
 /** Quatre images d'un personnage empilées : on n'en montre qu'une, celle de la bouche du moment. */
-function Visage({ nom, images }: { nom: "reporter" | "chef"; images: { current: (HTMLImageElement | null)[] } }) {
+function Visage({ srcs, images }: { srcs: string[]; images: { current: (HTMLImageElement | null)[] } }) {
   return (
     <>
-      {[0, 1, 2, 3].map((k) => (
+      {srcs.map((src, k) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           key={k}
           ref={(n) => {
             images.current[k] = n;
           }}
-          src={`/direct/interview/${nom}-${k}.webp`}
+          src={src}
           alt=""
           style={{ opacity: k === 0 ? 1 : 0 }}
         />
@@ -254,15 +257,45 @@ function Visage({ nom, images }: { nom: "reporter" | "chef"; images: { current: 
   );
 }
 
+/**
+ * L'INTERVIEW OUVERTE DEPUIS LE COMPTOIR DU RESTAURANT : son nom, son plat, la
+ * photo qu'il y a mise, son fantôme à lui. Sans elle, c'est la page d'essai
+ * (Le Bordeaux, à Dax, et son chef moustachu).
+ */
+export type InterviewDuCommerce = {
+  commerce: string;
+  /** Écrite sous son nom sur l'ardoise de fin ; vide, rien n'est écrit. */
+  ville: string;
+  plat: string;
+  prix: string;
+  /** La photo de son plat : la vidéo s'ouvre sur la cloche. `null` : il en choisit une, ou s'en passe. */
+  photoPlat: string | null;
+  /** Son fantôme, bouche fermée → grande ouverte (voir `chefEnPied`). */
+  chef: string[];
+  onFermer: () => void;
+};
+
+/** Un nom de fichier sans accents ni espaces : « interview-la-table-de-margot.mp4 ». */
+const enFichier = (t: string) =>
+  t
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "interview";
+
 /* ═══ L'ÉCRAN ═════════════════════════════════════════════════════════════ */
 
-export function EssaiInterview() {
+export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
+  const commerce = du?.commerce ?? "Le Bordeaux";
+  const ville = du?.ville ?? "Dax";
+  const chef = du?.chef ?? CHEF_DU_BORDEAUX;
   const [etape, setEtape] = useState<Etape>("reglages");
-  const [plat, setPlat] = useState("Magret frites maison");
-  const [prix, setPrix] = useState("19 €");
-  // LA PHOTO DE SON PLAT : dans l'application, celle qu'il a mise au comptoir ; ici, à choisir
-  const [cloche, setCloche] = useState(true);
-  const [photoPlat, setPhotoPlat] = useState<{ url: string; nom: string | null }>({ url: PHOTO_PLAT, nom: null });
+  const [plat, setPlat] = useState(du ? du.plat : "Magret frites maison");
+  const [prix, setPrix] = useState(du ? du.prix : "19 €");
+  // LA PHOTO DE SON PLAT : au comptoir, celle qu'il y a mise ; sur la page d'essai, à choisir
+  const [cloche, setCloche] = useState(du ? Boolean(du.photoPlat) : true);
+  const [photoPlat, setPhotoPlat] = useState<{ url: string; nom: string | null }>({ url: du ? (du.photoPlat ?? "") : PHOTO_PLAT, nom: null });
   const [format, setFormat] = useState<Format>(3);
   const [mode, setMode] = useState<Mode>("camera");
   const [cote, setCote] = useState<Cote>("droite");
@@ -457,7 +490,7 @@ export function EssaiInterview() {
     await garderAllume();
     try {
       const [el, flux] = await Promise.all([
-        elRef.current ? Promise.resolve(elRef.current) : chargerElements(ctx),
+        elRef.current ? Promise.resolve(elRef.current) : chargerElements(ctx, chef),
         ouvrirAppareils(mode),
       ]);
       elRef.current = el;
@@ -486,7 +519,7 @@ export function EssaiInterview() {
       libererAppareils();
       setEtape("erreur");
     }
-  }, [cote, direSuite, garderAllume, libererAppareils, mode]);
+  }, [chef, cote, direSuite, garderAllume, libererAppareils, mode]);
 
   /** Attend la fin de sa réponse : un silence, « J'ai fini », ou le temps écoulé. */
   const ecouterReponse = useCallback(
@@ -649,13 +682,13 @@ export function EssaiInterview() {
         el,
         prises: aMonter,
         reglages: {
-          commerce: "Le Bordeaux",
-          ville: "Dax",
+          commerce,
+          ville,
           plat: reglages.current.plat.trim() || "Le plat du jour",
           prix: reglages.current.prix,
           coteApercu: reglages.current.cote,
           mode: reglages.current.mode,
-          cloche: reglages.current.cloche ? { photo: reglages.current.photoPlat.url } : null,
+          cloche: reglages.current.cloche && reglages.current.photoPlat.url ? { photo: reglages.current.photoPlat.url } : null,
         },
         toile: toile.current!,
         ecouter: reglages.current.ecouter,
@@ -697,12 +730,12 @@ export function EssaiInterview() {
   };
 
   const extension = montage?.type.includes("mp4") ? "mp4" : "webm";
-  const nomFichier = `interview-le-bordeaux.${extension}`;
+  const nomFichier = `interview-${enFichier(commerce)}.${extension}`;
   const partager = async () => {
     if (!montage) return;
     const fichier = new File([montage.blob], nomFichier, { type: montage.type.split(";")[0] });
     try {
-      await navigator.share({ files: [fichier], title: "Le Bordeaux — l'interview du chef" });
+      await navigator.share({ files: [fichier], title: `${commerce} — l'interview du chef` });
     } catch {
       /* annulé par lui, ou refusé par le téléphone : le bouton Télécharger reste là */
     }
@@ -721,15 +754,21 @@ export function EssaiInterview() {
       <main className="ei">
         <header className="ei-h">
           <div>
-            <h1>L&apos;interview du fantôme</h1>
+            <h1>{du ? "Mon interview vidéo" : "L’interview du fantôme"}</h1>
             <p>
-              Le <b>reporter de ClikMe</b> pose ses questions au chef, devant le téléphone. Puis le téléphone{" "}
-              <b>monte la vidéo lui-même</b> : l&apos;ardoise à la craie, le reporter, ses réponses, ses photos.
+              Le <b>reporter de ClikMe</b> te pose ses questions, devant le téléphone. Puis le téléphone{" "}
+              <b>monte la vidéo lui-même</b> : l&apos;ardoise à la craie, le reporter, tes réponses, tes photos.
             </p>
           </div>
-          <a className="ei-retour" href="/autour-de-moi">
-            ← L&apos;application
-          </a>
+          {du ? (
+            <button type="button" className="ei-retour" onClick={du.onFermer}>
+              ← Mon comptoir
+            </button>
+          ) : (
+            <a className="ei-retour" href="/autour-de-moi">
+              ← L&apos;application
+            </a>
+          )}
         </header>
 
         <section className="ei-bloc">
@@ -742,17 +781,26 @@ export function EssaiInterview() {
             <span>Le prix (facultatif)</span>
             <input value={prix} onChange={(e) => setPrix(e.target.value)} maxLength={12} />
           </label>
-          <div className={`ei-cloche${cloche ? "" : " off"}`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={photoPlat.url} alt="La photo du plat" />
+          <div className={`ei-cloche${cloche && photoPlat.url ? "" : " off"}`}>
+            {photoPlat.url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photoPlat.url} alt="La photo du plat" />
+            ) : (
+              <span className="ei-cloche-vide" aria-hidden="true">
+                🍽️
+              </span>
+            )}
             <div>
               <label className="ei-case">
-                <input type="checkbox" checked={cloche} onChange={(e) => setCloche(e.target.checked)} />
+                <input type="checkbox" checked={cloche && Boolean(photoPlat.url)} disabled={!photoPlat.url} onChange={(e) => setCloche(e.target.checked)} />
                 <span>Ouvrir sur la cloche</span>
               </label>
               <p className="ei-n">
-                Après le bonjour du reporter, la cloche se soulève et ce plat apparaît dessous, son fantôme assis derrière. Dans
-                l&apos;application, ce sera la photo mise au comptoir.
+                {du
+                  ? photoPlat.url
+                    ? "Après le bonjour du reporter, la cloche se soulève et ton plat apparaît dessous, ton fantôme assis derrière."
+                    : "Mets la photo de ton plat : la vidéo s’ouvrira sur la cloche qui se soulève."
+                  : "Après le bonjour du reporter, la cloche se soulève et ce plat apparaît dessous, son fantôme assis derrière. Dans l’application, c’est la photo mise au comptoir."}
               </p>
               <label className="ei-r-ajout">
                 <input type="file" accept="image/*" onChange={(e) => choisirPhotoPlat(e.target.files?.[0])} />
@@ -784,7 +832,7 @@ export function EssaiInterview() {
             </button>
             <button type="button" role="radio" aria-checked={mode === "fantome"} className={mode === "fantome" ? "on" : ""} onClick={() => setMode("fantome")}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/direct/interview/chef-0.webp" alt="" />
+              <img src={chef[0]} alt="" />
               <b>Mon fantôme</b>
               <em>je ne me montre pas, il parle avec ma voix</em>
             </button>
@@ -821,7 +869,7 @@ export function EssaiInterview() {
         </div>
 
         <p className="ei-rappel">
-          <b>Page d&apos;essai.</b> La voix du reporter est une voix de synthèse. Tes réponses sont envoyées au service de
+          {du ? null : <b>Page d&apos;essai. </b>}La voix du reporter est une voix de synthèse. Tes réponses sont envoyées au service de
           transcription pour les sous-titres à la craie ; la vidéo reste dans ce téléphone tant que tu ne la partages pas.
         </p>
       </main>
@@ -837,13 +885,13 @@ export function EssaiInterview() {
           <>
             <div className="ei-ardoise-fond" aria-hidden />
             <p className="ei-plat">{plat}</p>
-            <div className={`ei-perso chef ${autreCote}`} aria-hidden>
-              <Visage nom="chef" images={visagesChef} />
+            <div className={`ei-perso chef ${autreCote}${du ? " carre" : ""}`} aria-hidden>
+              <Visage srcs={chef} images={visagesChef} />
             </div>
           </>
         )}
         <div className={`ei-perso reporter ${cote}`} aria-hidden>
-          <Visage nom="reporter" images={visagesReporter} />
+          <Visage srcs={REPORTER} images={visagesReporter} />
         </div>
         {bulle ? <p className={`ei-bulle ${cote}`}>{bulle}</p> : null}
 
@@ -988,10 +1036,18 @@ export function EssaiInterview() {
             <button type="button" className="ei-go second" onClick={recommencer}>
               Nouvelle interview
             </button>
+            {du ? (
+              <button type="button" className="ei-go second" onClick={du.onFermer}>
+                ← Mon comptoir
+              </button>
+            ) : null}
           </div>
 
-          <section className="ei-bloc">
-            <h2>Ce que le téléphone a fait</h2>
+          {/* AU COMPTOIR, LES MESURES SE RANGENT : elles servent à comprendre un raté, pas à chaque fois. */}
+          <details className="ei-bloc ei-details" open={!du}>
+            <summary>
+              <h2>Ce que le téléphone a fait</h2>
+            </summary>
             <ul className="ei-mesures">
               {source ? (
                 <li className={source.ok ? "oui" : "non"}>
@@ -1003,7 +1059,7 @@ export function EssaiInterview() {
                   <b>La cloche</b>{" "}
                   <em>
                     {montage.cloche === "montree"
-                      ? `soulevée sur ${photoPlat.nom ? "ta photo" : "la photo d'exemple"}`
+                      ? `soulevée sur ${photoPlat.nom || du ? "ta photo" : "la photo d'exemple"}`
                       : montage.cloche === "illisible"
                         ? "photo du plat illisible par ce téléphone — la vidéo s'en est passée"
                         : "pas demandée"}
@@ -1048,7 +1104,7 @@ export function EssaiInterview() {
                 </li>
               ))}
             </ul>
-          </section>
+          </details>
         </>
       ) : null}
     </main>

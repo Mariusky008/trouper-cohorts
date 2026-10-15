@@ -43,6 +43,7 @@ import {
   dureeFin,
   enteteArdoise,
   dureeOuverture,
+  repliquesDuLieu,
   type Cote,
   type IdQuestion,
   type IdReplique,
@@ -135,6 +136,9 @@ export const VERSION_VOIX = "2";
 function image(src: string): Promise<HTMLImageElement> {
   return new Promise((ok, ko) => {
     const i = new Image();
+    // UNE PHOTO D'AILLEURS (son stockage en ligne) SE DEMANDE « SANS COOKIES » : sans
+    // cette permission, elle salirait le dessin et la vidéo ne pourrait plus s'enregistrer.
+    if (/^https?:/i.test(src) && !src.startsWith(window.location.origin)) i.crossOrigin = "anonymous";
     i.onload = () => ok(i);
     i.onerror = () => ko(new Error(`Image introuvable : ${src}`));
     i.src = src;
@@ -274,11 +278,19 @@ async function polices(): Promise<Elements["police"]> {
   return { craie: `"${nom}", "Comic Sans MS", cursive`, bulle, enseigne };
 }
 
-export async function chargerElements(ctx: BaseAudioContext): Promise<Elements> {
+/**
+ * LES IMAGES DE SON FANTÔME, bouche fermée → grande ouverte, même cadre. Par
+ * défaut, le chef du Bordeaux ; au comptoir, le fantôme de son métier (ses
+ * poses « repos », « parle-1 », « parle-2 »).
+ */
+export const CHEF_DU_BORDEAUX = [0, 1, 2, 3].map((k) => `${DOSSIER}/chef-${k}.webp`);
+export const chefEnPied = (dossier: string) => ["repos", "parle-1", "parle-2", "parle-2"].map((p) => `${dossier}${p}.webp`);
+
+export async function chargerElements(ctx: BaseAudioContext, imagesDuChef: string[] = CHEF_DU_BORDEAUX): Promise<Elements> {
   const quatre = (nom: string) => Promise.all([0, 1, 2, 3].map((k) => image(`${DOSSIER}/${nom}-${k}.webp`)));
   const [reporter, chef, ardoise, bande, grain, logo, voix, gril, craie, cloches, souffle, police] = await Promise.all([
     quatre("reporter"),
-    quatre("chef"),
+    Promise.all(imagesDuChef.map(image)),
     image(`${DOSSIER}/ardoise.webp`),
     image(`${DOSSIER}/ardoise-bande.webp`),
     image(`${DOSSIER}/grain-craie.webp`),
@@ -663,7 +675,7 @@ type DecorCloche = {
   fleche: HTMLCanvasElement;
   carte: HTMLCanvasElement;
   /** Le bas de la cloche (milieu), sa taille ; le milieu du plat et ses rayons. */
-  g: { cx: number; bas: number; w: number; h: number; platY: number; rx: number; ry: number };
+  g: { cx: number; bas: number; w: number; h: number; platX: number; platY: number; pw: number; ph: number };
 };
 
 /** `cubic-bezier()` du CSS, pour rejouer les mêmes mouvements. */
@@ -797,23 +809,34 @@ function broderie(c2d: CanvasRenderingContext2D, nom: string, x: number, y: numb
 }
 
 /**
- * LE PLAT, SOUS LA CLOCHE : sa photo dans une ellipse aux bords fondus — une
- * assiette posée sur la table, vue de trois quarts. Fabriquée une fois.
+ * LE PLAT, SOUS LA CLOCHE : SA PHOTO TELLE QU'IL L'A PRISE, nette, l'assiette
+ * entière, coins arrondis et ombre portée. « Le plat est entouré de flou au
+ * lieu d'être comme sur la photo, dans une assiette » : l'ovale aux bords
+ * fondus noyait l'assiette. Fabriquée une fois, ombre comprise (MARGE_OMBRE
+ * tout autour).
  */
-function platSousCloche(photo: HTMLImageElement, rx: number, ry: number): HTMLCanvasElement {
-  const c = toile(2 * rx, 2 * ry);
+function photoDuPlat(photo: HTMLImageElement, w: number, h: number): HTMLCanvasElement {
+  const c = toile(w + 2 * MARGE_OMBRE, h + 2 * MARGE_OMBRE);
   const g = c.getContext("2d")!;
-  couvrir(g, photo, photo.naturalWidth, photo.naturalHeight, 0, 0, c.width, c.height, 1, 0.62);
-  g.globalCompositeOperation = "destination-in";
+  const r = 30;
+  const forme = () => cheminArrondi(g, MARGE_OMBRE, MARGE_OMBRE, w, h, r);
   g.save();
-  g.translate(rx, ry);
-  g.scale(1, ry / rx);
-  const m = g.createRadialGradient(0, 0, rx * 0.7, 0, 0, rx);
-  m.addColorStop(0, "rgba(0,0,0,1)");
-  m.addColorStop(1, "rgba(0,0,0,0)");
-  g.fillStyle = m;
-  g.fillRect(-rx, -rx, 2 * rx, 2 * rx);
+  g.shadowColor = "rgba(0,0,0,.6)";
+  g.shadowOffsetY = 18;
+  g.shadowBlur = 40;
+  g.fillStyle = "#1A120E";
+  forme();
+  g.fill();
   g.restore();
+  g.save();
+  forme();
+  g.clip();
+  couvrir(g, photo, photo.naturalWidth, photo.naturalHeight, MARGE_OMBRE, MARGE_OMBRE, w, h, 1, 0.55);
+  g.restore();
+  g.lineWidth = 2;
+  g.strokeStyle = "rgba(255,244,230,.28)";
+  forme();
+  g.stroke();
   return c;
 }
 
@@ -945,16 +968,18 @@ async function preparerCloche(photo: string, r: Reglages, police: Elements["poli
     cc.fillText(r.prix.trim(), W / 2, 40 + lignesPlat.length * 50 + 14);
   }
 
-  const rx = 0.45 * w;
-  const ry = rx * 0.68;
+  // LA PHOTO DU PLAT : un peu moins large que la cloche, et un peu à sa gauche —
+  // le fantôme qui la montre reste visible derrière
+  const pw = 0.8 * w;
+  const ph = pw * 0.8;
   return {
     fond,
     cloche: cl,
-    plat: platSousCloche(plat, rx, ry),
+    plat: photoDuPlat(plat, pw, ph),
     titre: { toile: ti, marge },
     fleche: fl,
     carte: ca,
-    g: { cx, bas, w, h, platY: bas - 0.47 * h, rx, ry },
+    g: { cx, bas, w, h, platX: cx - 16, platY: bas + 12 - ph / 2, pw, ph },
   };
 }
 
@@ -964,7 +989,7 @@ async function preparerCloche(photo: string, r: Reglages, police: Elements["poli
  * (`xrLueur`, 0,9 s), et le plat apparaît dessous en montant un peu.
  */
 function decouverte(c2d: CanvasRenderingContext2D, d: DecorCloche, t: number) {
-  const { cx, bas, w, h, platY, rx, ry } = d.g;
+  const { cx, bas, w, h, platX, platY, pw, ph } = d.g;
   const a = t - CLOCHE.leve;
   c2d.drawImage(d.fond, 0, 0);
 
@@ -992,23 +1017,13 @@ function decouverte(c2d: CanvasRenderingContext2D, d: DecorCloche, t: number) {
   // LE PLAT : il apparaît sous la cloche et se lève un peu, puis la caméra s'en approche
   const pp = doux((a - 0.2) / 0.6);
   if (pp > 0) {
-    const zoom = (0.86 + 0.14 * pp) * (1 + 0.05 * borne((a - 0.8) / 3.2));
-    const y = platY + 26 * (1 - pp);
+    const zoom = (0.86 + 0.14 * pp) * (1 + 0.04 * borne((a - 0.8) / 3.2));
+    const y = platY + 30 * (1 - pp);
     c2d.save();
     c2d.globalAlpha = pp;
-    c2d.translate(cx, y + ry * 0.82 * zoom);
-    c2d.scale(1, 0.2);
-    const o = c2d.createRadialGradient(0, 0, 0, 0, 0, rx * zoom);
-    o.addColorStop(0, "rgba(0,0,0,.55)");
-    o.addColorStop(1, "rgba(0,0,0,0)");
-    c2d.fillStyle = o;
-    c2d.fillRect(-rx * zoom, -rx * zoom, 2 * rx * zoom, 2 * rx * zoom);
-    c2d.restore();
-    c2d.save();
-    c2d.globalAlpha = pp;
-    c2d.translate(cx, y);
+    c2d.translate(platX, y);
     c2d.scale(zoom, zoom);
-    c2d.drawImage(d.plat, -rx, -ry);
+    c2d.drawImage(d.plat, -pw / 2 - MARGE_OMBRE, -ph / 2 - MARGE_OMBRE);
     c2d.restore();
   }
 
@@ -1057,7 +1072,7 @@ function decouverte(c2d: CanvasRenderingContext2D, d: DecorCloche, t: number) {
   if (n > 0) {
     c2d.save();
     c2d.globalAlpha = n;
-    c2d.drawImage(d.carte, 0, bas + 70 + 20 * (1 - n));
+    c2d.drawImage(d.carte, 0, bas + 44 + 20 * (1 - n));
     c2d.restore();
   }
 
@@ -1241,8 +1256,10 @@ export async function monter(o: {
   const arrete = new Promise<void>((ok) => (rec.onstop = () => ok()));
 
   /* ─── le plan ─── */
-  const dOuv = dureeOuverture(el.voix.bonjour.duration);
-  const dFin = dureeFin(el.voix["a-demain"].duration);
+  // LE BONJOUR ET L'AU REVOIR : nommés pour Le Bordeaux, sans nom de lieu ailleurs
+  const LIEU = repliquesDuLieu(reglages.commerce);
+  const dOuv = dureeOuverture(el.voix[LIEU.bonjour].duration);
+  const dFin = dureeFin(el.voix[LIEU.adieu].duration);
   const estime = dOuv + (decor ? CLOCHE.duree : 0) + prises.reduce((s, p) => s + p.coupe, 0) + dFin;
   // LE RESTAURANT : après le bonjour du reporter, on soulève la cloche, puis on revient à l'interview
   const segments: Segment[] = [
@@ -1264,7 +1281,7 @@ export async function monter(o: {
   if (reglages.prix.trim()) MENU.push({ b: craie.bloc(reglages.prix, 60, 700), cy: 404 + (lignesPlat - 1) * 30 + 78, debut: 2.1, duree: 0.4 });
   const ADIEU = [
     { b: craie.bloc(reglages.commerce, 80, 700), cy: 220, debut: 0.25, duree: 0.7 },
-    { b: craie.bloc(reglages.ville, 42, 400), cy: 312, debut: 0.95, duree: 0.3 },
+    ...(reglages.ville.trim() ? [{ b: craie.bloc(reglages.ville, 42, 400), cy: 312, debut: 0.95, duree: 0.3 }] : []),
   ];
   const bulles = new Map<string, Bulle>();
   const bulle = (texte: string) => {
@@ -1304,10 +1321,10 @@ export async function monter(o: {
     trait(c2d, el, LARGEUR / 2, 334, 300, doux((t - 1.2) / 0.35));
     const arrivee = entree(t, 0.3, 0.7);
     const place = { ...GRAND_ARD, bas: GRAND_ARD.bas + 900 * (1 - arrivee) };
-    dessinerFantome(c2d, el.reporter, place, t, bouche("bonjour", t - OUVERTURE.voix));
+    dessinerFantome(c2d, el.reporter, place, t, bouche(LIEU.bonjour, t - OUVERTURE.voix));
     etincelles(c2d, 360, 900, t - 0.4);
-    const al = entree(t, OUVERTURE.voix - 0.15, 0.2) * (1 - entree(t, OUVERTURE.voix + el.voix.bonjour.duration + 0.25, 0.2));
-    dessinerBulle(c2d, bulle(REPLIQUES.bonjour), 360, place.bas - place.h * 0.97, 360, al);
+    const al = entree(t, OUVERTURE.voix - 0.15, 0.2) * (1 - entree(t, OUVERTURE.voix + el.voix[LIEU.bonjour].duration + 0.25, 0.2));
+    dessinerBulle(c2d, bulle(REPLIQUES[LIEU.bonjour]), 360, place.bas - place.h * 0.97, 360, al);
     noir(c2d, 1 - t / 0.3);
   };
 
@@ -1379,7 +1396,7 @@ export async function monter(o: {
   const fin = (t: number) => {
     c2d.drawImage(el.ardoise, 0, 0, LARGEUR, HAUTEUR);
     for (const m of ADIEU) ecrire(c2d, m.b, LARGEUR / 2, m.cy, doux((t - m.debut) / m.duree));
-    const finVoix = FIN.voix + el.voix["a-demain"].duration;
+    const finVoix = FIN.voix + el.voix[LIEU.adieu].duration;
     const a = entree(t, finVoix + 0.3, 0.6);
     if (a > 0) {
       const lw = 170;
@@ -1401,11 +1418,11 @@ export async function monter(o: {
     const angle = salut > 0 ? 7 * Math.sin(salut * 9) * Math.max(0, 1 - salut / 1.6) : 0;
     const placeR = enFantome ? REPORTER_FIN : GRAND_ARD;
     if (enFantome) dessinerFantome(c2d, el.chef, { ...CHEF_FIN, h: CHEF_FIN.h * e, bas: CHEF_FIN.bas - saut * 0.8 }, t + 0.7, 0, -angle * 0.8);
-    dessinerFantome(c2d, el.reporter, { ...placeR, h: placeR.h * e, bas: placeR.bas - saut }, t, bouche("a-demain", t - FIN.voix), angle);
+    dessinerFantome(c2d, el.reporter, { ...placeR, h: placeR.h * e, bas: placeR.bas - saut }, t, bouche(LIEU.adieu, t - FIN.voix), angle);
     etincelles(c2d, 360, 920, t - 0.05, 220);
     etincelles(c2d, 360, 900, salut, 300);
     const al = entree(t, FIN.voix - 0.15, 0.2) * (1 - entree(t, finVoix + 0.25, 0.2));
-    dessinerBulle(c2d, bulle(REPLIQUES["a-demain"]), placeR.cx, placeR.bas - placeR.h * 0.97 + 10, placeR.cx, al);
+    dessinerBulle(c2d, bulle(REPLIQUES[LIEU.adieu]), placeR.cx, placeR.bas - placeR.h * 0.97 + 10, placeR.cx, al);
     noir(c2d, (t - (dFin - 0.5)) / 0.5);
   };
 
@@ -1416,7 +1433,7 @@ export async function monter(o: {
     crayon(t0 + 1.2, 0.35, 0.6);
     jouer(el.sons.souffle, t0 + 0.15, 0.55);
     jouer(el.sons.cloches, t0 + 0.35, 0.5);
-    jouer(el.voix.bonjour, t0 + OUVERTURE.voix, 0.95);
+    jouer(el.voix[LIEU.bonjour], t0 + OUVERTURE.voix, 0.95);
   };
   const sonsFin = (t0: number) => {
     niveauLit(t0, 0.4, 0.4);
@@ -1424,8 +1441,8 @@ export async function monter(o: {
     lit.gain.linearRampToValueAtTime(0, t0 + dFin);
     for (const m of ADIEU) crayon(t0 + m.debut, m.duree);
     jouer(el.sons.souffle, t0, 0.5);
-    jouer(el.voix["a-demain"], t0 + FIN.voix, 0.95);
-    jouer(el.sons.cloches, t0 + FIN.voix + el.voix["a-demain"].duration + 0.25, 0.55);
+    jouer(el.voix[LIEU.adieu], t0 + FIN.voix, 0.95);
+    jouer(el.sons.cloches, t0 + FIN.voix + el.voix[LIEU.adieu].duration + 0.25, 0.55);
   };
   const sonsCloche = (t0: number) => {
     niveauLit(t0, 0.3, 0.5);

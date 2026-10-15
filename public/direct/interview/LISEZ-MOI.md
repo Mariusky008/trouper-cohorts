@@ -46,10 +46,22 @@ viennent de `public/direct/table/restaurant/` et `public/direct/double/assis/`,
 rien n'est copié ici. Dans l'application, la photo sera celle qu'il a mise au
 comptoir ; sur la page d'essai, on la choisit.
 
+## Au comptoir d'un restaurant
+
+L'interview s'ouvre aussi depuis le comptoir du restaurant (« En interview », à
+côté de « En photos »). Elle y prend son nom, son plat du jour (celui publié,
+sinon le dernier de sa vitrine), la photo pour la cloche, et **son fantôme à
+lui** — ses poses en pied « repos », « parle-1 », « parle-2 » servent de bouche.
+
+Le reporter ne nomme que Le Bordeaux, dont il a la réplique : pour les autres,
+`bonjour-chef` et `a-demain-chef` disent la même chose sans nom de lieu. La
+route de la voix n'accepte toujours aucun texte libre ; le nom du restaurant est
+écrit sur l'ardoise.
+
 ## Pour un autre commerçant
 
 Son fantôme en deux images au moins (bouche fermée, bouche ouverte, **exactement
-la même pose**), et ses répliques : le nom du commerce change dans « Bonjour »
-et « À demain » (`src/lib/direct/interview-fantome.ts`). Changer un texte →
-changer `VERSION_VOIX` dans `interview-montage.ts`, sinon le cache resservirait
-l'ancienne voix.
+la même pose**). Une réplique nommée (comme celles du Bordeaux) se crée dans
+`src/lib/direct/interview-fantome.ts`, avec son fichier de secours dans `voix/`.
+Changer un texte → changer `VERSION_VOIX` dans `interview-montage.ts`, sinon le
+cache resservirait l'ancienne voix.

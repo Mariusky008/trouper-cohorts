@@ -144,6 +144,12 @@ function codeDu(moi: CommerceComptoir, b: Bon): string {
 }
 
 /* ═══ LA CARTE DE L'ACCUEIL ═══════════════════════════════════════════════ */
+/** Pour la tuile de l'accueil : son bon est-il posé, et combien d'échanges il a déjà. */
+export function resumeDesEchanges(commerce: CommerceComptoir): { pret: boolean; recus: number } {
+  const etat = charger(commerce);
+  return { pret: Boolean(etat.monBon), recus: bonsDesAutres(commerce).filter((b) => etat.matchs.includes(b.id)).length };
+}
+
 export function CarteEchanges({ commerce, onOuvrir }: { commerce: CommerceComptoir; onOuvrir: () => void }) {
   const [etat] = useState<Etat>(() => charger(commerce));
   const recus = bonsDesAutres(commerce).filter((b) => etat.matchs.includes(b.id));

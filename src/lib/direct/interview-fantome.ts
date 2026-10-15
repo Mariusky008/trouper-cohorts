@@ -48,9 +48,19 @@ export const REPLIQUES = {
   derniere: "Dernière question !",
   merci: "Merci chef ! Je m'occupe du montage.",
   "a-demain": "À demain, au Bordeaux !",
+  // LES MÊMES, SANS NOM DE LIEU : pour tout autre restaurant. La voix ne lit
+  // que des textes fixes (voir la route) — un nom de restaurant tapé par
+  // quelqu'un n'y passe pas ; son nom est écrit sur l'ardoise.
+  "bonjour-chef": "Bonjour ! Ici le fantôme reporter de ClikMe. Aujourd'hui, je suis en cuisine, avec le chef !",
+  "a-demain-chef": "À demain, et bon appétit !",
 } as const;
 export type IdReplique = keyof typeof REPLIQUES;
 export const IDS_REPLIQUES = Object.keys(REPLIQUES) as IdReplique[];
+
+/** Le bonjour et l'au revoir du reporter : il ne nomme que le restaurant dont il a la réplique. */
+export function repliquesDuLieu(commerce: string): { bonjour: IdReplique; adieu: IdReplique } {
+  return commerce.trim().toLowerCase() === "le bordeaux" ? { bonjour: "bonjour", adieu: "a-demain" } : { bonjour: "bonjour-chef", adieu: "a-demain-chef" };
+}
 
 /** Ce que la voix prononce — le texte affiché, sauf là où il se lit mal. */
 export const repliqueDite = (id: IdReplique): string => REPLIQUES[id].replace(/ClikMe/g, "Clic Mi");

@@ -27,6 +27,7 @@
 // L'ANCIENNE LÉA RESTE OUVRABLE sur `/autour-de-moi/assistante/lea`, le temps
 // de comparer.
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import dynamic from "next/dynamic";
 import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
 import { COMMERCES_DEMO, missionDe, type Etape, type Mission } from "@/lib/direct/missions-commercant";
 import {
@@ -55,7 +56,7 @@ import {
   texteDeLAnnonce,
   type ResultatEnvoi,
 } from "@/lib/direct/comptoir-en-ligne";
-import { motsDeLaCarte, motsDeLaVitrine } from "@/lib/direct/vitrine";
+import { chargerVitrines, motsDeLaCarte } from "@/lib/direct/vitrine";
 import { lirePlanningEnLigne, programmerEnLigne, retirerDuPlanning, type EtatPlanning, type Programmee, type Quand } from "@/lib/direct/comptoir-planning";
 import {
   ajouterJours,
@@ -72,8 +73,10 @@ import { jourCourt, PlanningComptoir } from "./planning-comptoir";
 import { CarteComptoir } from "./carte-comptoir";
 import { VitrineComptoir } from "./vitrine-comptoir";
 import { SavoirComptoir } from "./savoir-comptoir";
-import { CarteReseaux, ReseauxComptoir, useReseaux } from "./reseaux-comptoir";
-import { CarteEchanges, EchangesComptoir } from "./echanges-comptoir";
+import { ReseauxComptoir, useReseaux, type ReseauxDuComptoir } from "./reseaux-comptoir";
+import { EchangesComptoir, resumeDesEchanges } from "./echanges-comptoir";
+import { StylesInterview } from "../essai-interview/styles-interview";
+import { chefEnPied } from "@/lib/direct/interview-montage";
 import { CarteProposition, propositionAMontrer, useProposition, type PieceProposee } from "./proposition-comptoir";
 import { reseauxEnMots } from "@/lib/reseaux/reseaux-donnees";
 import { useSavoir, type SavoirDuComptoir } from "./use-savoir";
@@ -83,6 +86,26 @@ import { lignesDeLaSemaine } from "@/lib/site-internet/semaine-en-clients";
 import type { SemaineEnClients } from "@/lib/site-internet/compteurs-jour";
 
 type Commerce = CommerceComptoir;
+
+/* 🎬 L'INTERVIEW VIDÉO (restaurant) : la même que la page d'essai, chargée seulement quand on l'ouvre. */
+const Interview = dynamic(() => import("../essai-interview/essai-interview").then((m) => m.EssaiInterview), { ssr: false });
+
+/**
+ * LE PLAT DE SON INTERVIEW : celui qu'il a publié aujourd'hui (et sa photo) ;
+ * sinon la dernière photo de sa vitrine, avec son libellé ; sinon rien — il
+ * l'écrit, et choisit sa photo, sur l'écran de l'interview.
+ */
+function platDuJour(principal: Publication | undefined, vitrine: { nom: string; prix?: string; photo: string } | undefined) {
+  if (principal) return { plat: principal.nom, prix: principal.prix, photoPlat: principal.photos[0] ?? null };
+  if (vitrine) return { plat: vitrine.nom, prix: vitrine.prix ?? "", photoPlat: vitrine.photo };
+  return { plat: "", prix: "", photoPlat: null };
+}
+
+/** La ville, lue dans son adresse (« …, 40100 Dax » → « Dax ») : écrite sous son nom sur l'ardoise de fin. */
+function villeDe(c: Commerce): string {
+  const m = (c.adresse ?? "").match(/\b\d{5}\s+([^,]+)$/);
+  return m ? m[1].trim() : "";
+}
 type Pose = "repos" | "parle-1" | "parle-2" | "salut-1" | "salut-2" | "viens" | "montre";
 const POSES: Pose[] = ["repos", "parle-1", "parle-2", "salut-1", "salut-2", "viens", "montre"];
 
@@ -304,6 +327,8 @@ type Phase =
   | { ou: "planning" }
   /** Ma vitrine : ses photos de produits, avec leur libellé — voir `vitrine-comptoir.tsx`. */
   | { ou: "vitrine" }
+  /** 🎬 L'interview vidéo du restaurant — voir `essai-interview/essai-interview.tsx`. */
+  | { ou: "interview" }
   /** Ma carte : ses rubriques, ses lignes et ses prix — voir `carte-comptoir.tsx`. */
   | { ou: "carte" }
   /** Ce que mon fantôme sait : ses réponses, et les questions de ses clients — voir `savoir-comptoir.tsx`. */
@@ -785,8 +810,9 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           onSavoir={() => setPhase({ ou: "savoir" })}
           programmees={programmees}
           onPlanning={() => setPhase({ ou: "planning" })}
-          reseaux={<CarteReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
-          echanges={<CarteEchanges commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />}
+          reseaux={<TuileReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
+          echanges={<TuileEchanges commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />}
+          onInterview={commerce.famille === "table" ? () => setPhase({ ou: "interview" }) : undefined}
           propositionActive={Boolean(propositionAMontrer(proposition))}
           proposition={
             <CarteProposition
@@ -838,6 +864,24 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
 
       {phase.ou === "vitrine" && (
         <VitrineComptoir commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
+      )}
+
+      {/* 🎬 L'INTERVIEW, PAR-DESSUS LE COMPTOIR : son nom, son plat du jour s'il
+          est en ligne, sa photo (celle du plat publié, sinon la première de sa
+          vitrine) pour la cloche, et SON fantôme quand il ne veut pas se montrer. */}
+      {phase.ou === "interview" && (
+        <div className="cz-interview">
+          <StylesInterview />
+          <Interview
+            du={{
+              commerce: commerce.nom,
+              ville: villeDe(commerce),
+              ...platDuJour(principal, chargerVitrines().articles[commerce.id]?.[0]),
+              chef: chefEnPied(dossier),
+              onFermer: () => setPhase({ ou: "accueil" }),
+            }}
+          />
+        </div>
       )}
 
       {phase.ou === "mission" && (
@@ -988,6 +1032,7 @@ function Accueil({
   echanges,
   proposition,
   propositionActive,
+  onInterview,
 }: {
   commerce: Commerce;
   mission: Mission;
@@ -1010,17 +1055,18 @@ function Accueil({
   programmees: Programmee[];
   /** Ouvrir « Mon planning ». */
   onPlanning: () => void;
-  /** La carte « Mes réseaux » — absente tant que l'intermédiaire n'est pas branché. */
+  /** La tuile « Réseaux » — absente tant que l'intermédiaire n'est pas branché. */
   reseaux?: React.ReactNode;
-  /** La carte « Échanger avec les commerçants » (démonstration). */
+  /** La tuile « Échanges » (démonstration). */
   echanges?: React.ReactNode;
+  /** 🎬 L'interview vidéo — un restaurant seulement : le reporter pose ses questions au chef. */
+  onInterview?: () => void;
   /** ☀️ La proposition du matin, quand rien n'est encore en ligne. */
   proposition?: React.ReactNode;
   /** Elle est là : le grand bouton « Publier » devient « Publier autre chose ». */
   propositionActive?: boolean;
 }) {
   const relance = mission.relance;
-  const vitrine = motsDeLaVitrine(commerce.famille, commerce.metier);
   const carte = motsDeLaCarte(commerce.famille, commerce.metier);
   const relanceFaite = actives.some((p) => p.genre === "relance");
   const questions = questionsDuMetier(commerce.famille, commerce.metier);
@@ -1075,6 +1121,31 @@ function Accueil({
             <button type="button" className="cz-second" onClick={() => onCommencer(false)}>
               Publier autre chose
             </button>
+          ) : onInterview ? (
+            /* ═══ LE PLAT DU JOUR : EN PHOTOS, OU EN INTERVIEW ═══ « Où est
+               l'interview ou le mode normal sur l'admin commerçant ? Je ne le
+               vois pas. » Les deux, côte à côte, à la place du seul bouton. */
+            <section className="cz-deux" aria-label={`Publier ${mission.quoi.toLowerCase()}`}>
+              <h2>
+                {mission.icone} Publier {mission.quoi.toLowerCase()}
+              </h2>
+              <div className="cz-deux-choix">
+                <button type="button" className="cz-choix-photo" onClick={() => onCommencer(false)}>
+                  <span className="cz-choix-i" aria-hidden="true">
+                    📸
+                  </span>
+                  <b>En photos</b>
+                  <em>1 minute</em>
+                </button>
+                <button type="button" className="cz-choix-interview" onClick={onInterview}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/direct/interview/reporter-0.webp" alt="" />
+                  <i className="cz-nouveau">Nouveau</i>
+                  <b>En interview</b>
+                  <em>une vidéo · 2 min</em>
+                </button>
+              </div>
+            </section>
           ) : (
             <button type="button" className="cz-go grand" onClick={() => onCommencer(false)}>
               {mission.icone} Publier {mission.quoi.toLowerCase()}
@@ -1108,67 +1179,48 @@ function Accueil({
           </a>
         )}
 
+        {/* SON PLAT EST EN LIGNE : L'INTERVIEW RESTE À PORTÉE, pour la vidéo à envoyer sur WhatsApp. */}
+        {principal && onInterview && (
+          <button type="button" className="cz-vers-interview" onClick={onInterview}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/direct/interview/reporter-0.webp" alt="" />
+            <b>Mon interview vidéo</b>
+            <i className="cz-nouveau">Nouveau</i>
+            <s aria-hidden="true">→</s>
+          </button>
+        )}
+
         {principal && (
           <button type="button" className="cz-second" onClick={() => onCommencer(false)}>
             Changer {mission.quoi.toLowerCase()}
           </button>
         )}
 
-        {/* ═══ MON PLANNING ═══ « Préparer un jour du mois toute la semaine ou
-            tout le mois à l'avance, pour ne pas avoir à le faire tous les
-            jours. » Le même fantôme, les mêmes questions, et il publie le jour
-            venu. */}
-        <button type="button" className="cz-relance cz-planning" onClick={onPlanning}>
-          <span className="cz-relance-i">🗓️</span>
-          <span>
-            <b>
-              Mon planning
-              {programmees.length > 0 && <i className="cz-pastille calme">{programmees.length}</i>}
-            </b>
-            <em>
-              {programmees.length
-                ? `Prochaine : ${jourCourt(programmees[0].jour)} — ${programmees[0].nom}`
-                : "Prépare tes prochains jours en une fois : je publie pour toi le jour venu."}
-            </em>
-          </span>
-          <s aria-hidden="true">→</s>
-        </button>
-
-        {/* ═══ MES RÉSEAUX ═══ « Une photo, et vous êtes partout » : ce qu'il
-            publie ici part aussi sur son Instagram et sa page Facebook. */}
-        {reseaux}
-
-        {/* ═══ L'ÉCHANGE DE BONS ═══ « Le Tinder des coupons » entre commerçants :
-            ça marche sans habitants, dès que deux commerçants sont inscrits. */}
-        {echanges}
-
+        {/* DES CLIENTS ATTENDENT UNE RÉPONSE : ça passe avant le reste. */}
         {enAttente > 0 && boutonSavoir}
 
-        {/* ═══ MA VITRINE ═══ « Prévoir un endroit où il pourra mettre ses photos
-            avec libellés » : ses coupes, ses poses, ses livres, ses flashs. Pas
-            une annonce — elles restent, et ses clients les essaient. */}
-        <button type="button" className="cz-relance cz-vitrine" onClick={onVitrine}>
-          <span className="cz-relance-i">📸</span>
-          <span>
-            <b>Ma vitrine · {vitrine.titre.toLowerCase()}</b>
-            <em>Tes photos avec leur libellé, sur ta page et dans tes annonces.</em>
-          </span>
-          <s aria-hidden="true">→</s>
-        </button>
-
-        {/* ═══ MA CARTE ═══ « Que ça arrive directement sur leur CARTE et PRIX,
-            plutôt qu'avoir des photos recueillies sur leur fiche Google. » Ses
-            rubriques, ses lignes, ses prix : sa page les montre tels quels. */}
-        <button type="button" className="cz-relance cz-carte" onClick={onCarte}>
-          <span className="cz-relance-i">📋</span>
-          <span>
-            <b>{carte.titre}</b>
-            <em>{carte.titre === "Ma carte" ? "Tes rubriques, tes lignes et leurs prix" : "Tes prestations et leurs prix"}, écrits par toi, sur ta page.</em>
-          </span>
-          <s aria-hidden="true">→</s>
-        </button>
-
-        {enAttente === 0 && boutonSavoir}
+        {/* ═══ MES OUTILS ═══ « Toutes ces lignes avec tous ces textes, ça fait
+            pas beau » : une tuile par outil — une image, un mot, une pastille
+            quand il y a quelque chose à voir. Ce qu'elles faisaient avant n'a
+            pas changé, seule leur porte. */}
+        <section className="cz-outils" aria-label="Mes outils">
+          <h2>Mes outils</h2>
+          <div className="cz-tuiles">
+            <Tuile icone="🗓️" nom="Planning" teinte="bleu" badge={programmees.length || undefined} onClick={onPlanning} />
+            <Tuile icone="📸" nom="Ma vitrine" teinte="rose" onClick={onVitrine} />
+            <Tuile icone="📋" nom={carte.titre} teinte="ambre" onClick={onCarte} />
+            <Tuile
+              icone="🧠"
+              nom="Mon fantôme"
+              teinte="menthe"
+              badge={enAttente > 0 ? String(enAttente) : sues >= questions.length ? "✓" : `${sues}/${questions.length}`}
+              chaud={enAttente > 0}
+              onClick={onSavoir}
+            />
+            {reseaux}
+            {echanges}
+          </div>
+        </section>
 
         {/* UN SEUL CHIFFRE ICI, ET IL MÈNE AUX AUTRES : celui d'aujourd'hui. */}
         {auj && <button type="button" className="cz-apercu-stats" onClick={onStats}>
@@ -1181,6 +1233,50 @@ function Accueil({
       </div>
     </div>
   );
+}
+
+/* ═══ UNE TUILE D'OUTIL ═══════════════════════════════════════════════════
+   Une icône sur sa pastille de couleur, un mot, et une petite pastille quand il
+   y a quelque chose à voir (un nombre, « démo »). */
+export type Teinte = "bleu" | "rose" | "ambre" | "menthe" | "violet" | "corail";
+export function Tuile({
+  icone,
+  nom,
+  teinte,
+  badge,
+  chaud,
+  onClick,
+}: {
+  icone: string;
+  nom: string;
+  teinte: Teinte;
+  badge?: string | number;
+  chaud?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" className={`cz-tuile t-${teinte}${chaud ? " chaud" : ""}`} onClick={onClick}>
+      <span className="cz-tuile-i" aria-hidden="true">
+        {icone}
+      </span>
+      <b>{nom}</b>
+      {badge !== undefined && badge !== "" ? <i className="cz-tuile-badge">{badge}</i> : null}
+    </button>
+  );
+}
+
+/** La tuile « Réseaux » : absente tant que l'intermédiaire n'est pas branché, comme l'ancienne carte. */
+function TuileReseaux({ commerce, reseaux, onOuvrir }: { commerce: Commerce; reseaux: ReseauxDuComptoir; onOuvrir: () => void }) {
+  const { etat } = reseaux;
+  if (!etat || !etat.configure) return null;
+  const connectes = etat.plateformes.filter((p) => p.compte).length;
+  return <Tuile icone="📣" nom="Réseaux" teinte="violet" badge={connectes ? `${connectes} ✓` : commerce.reel ? "à faire" : "démo"} chaud={!connectes && Boolean(commerce.reel)} onClick={onOuvrir} />;
+}
+
+/** La tuile « Échanges » : son bon contre celui d'un voisin (démonstration). */
+function TuileEchanges({ commerce, onOuvrir }: { commerce: Commerce; onOuvrir: () => void }) {
+  const [r] = useState(() => resumeDesEchanges(commerce));
+  return <Tuile icone="🎁" nom="Échanges" teinte="corail" badge={r.recus ? r.recus : "démo"} onClick={onOuvrir} />;
 }
 
 /* ═══ LE PANNEAU DES STATS ═══════════════════════════════════════════════
@@ -2519,6 +2615,60 @@ label.cz-go{cursor:pointer;}
 @keyframes cz-saut{from{opacity:0;transform:translateY(40px) scale(.6)}to{opacity:1;transform:none}}
 @keyframes cz-pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
 @keyframes cz-tombe{from{transform:translateY(0) rotate(var(--r))}to{transform:translateY(110vh) rotate(calc(var(--r) + 540deg))}}
+
+/* LE PLAT DU JOUR : EN PHOTOS, OU EN INTERVIEW (restaurant) */
+.cz-deux,.cz-outils{display:flex;flex-direction:column;gap:10px;}
+.cz-deux h2,.cz-outils h2{margin:2px 2px 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ambre);}
+.cz-deux-choix{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.cz-deux-choix button{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:1px;
+  min-height:134px;padding:14px 14px 13px;border-radius:24px;text-align:left;overflow:hidden;border:0;
+  transition:transform .2s cubic-bezier(.34,1.5,.64,1);}
+.cz-deux-choix button:active{transform:scale(.95);}
+.cz-deux-choix b{position:relative;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:19px;letter-spacing:-.02em;line-height:1.1;}
+.cz-deux-choix em{position:relative;font-style:normal;font-size:13px;opacity:.88;}
+.cz-choix-photo{background:linear-gradient(140deg,#FF5AB6,#FF2E9A 55%,#D9157C);color:#fff;
+  box-shadow:0 14px 30px -10px rgba(255,46,154,.75);}
+.cz-choix-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.25) 50%,transparent 70%);
+  transform:translateX(-120%);animation:cz-reflet 3.6s ease-in-out infinite;}
+.cz-choix-i{position:absolute;top:10px;right:12px;font-size:40px;transform:rotate(-8deg);filter:drop-shadow(0 6px 8px rgba(0,0,0,.25));}
+.cz-choix-interview{background:radial-gradient(120% 90% at 85% 0%,#2C5A4C,#15302A 55%,#0F221D);color:var(--creme);
+  box-shadow:0 14px 30px -12px rgba(61,226,166,.5),inset 0 0 0 1.5px rgba(61,226,166,.55);}
+.cz-choix-interview img{position:absolute;right:-8px;top:-8px;height:84px;width:auto;rotate:7deg;
+  filter:drop-shadow(0 6px 10px rgba(0,0,0,.45));animation:cz-flotte 3.2s ease-in-out infinite;}
+.cz-nouveau{display:inline-block;font-style:normal;font-weight:800;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  padding:4px 8px;border-radius:999px;background:#3DE2A6;color:#04150E;}
+.cz-choix-interview .cz-nouveau{position:absolute;top:11px;left:11px;}
+.cz-vers-interview{position:relative;display:flex;align-items:center;gap:10px;min-height:58px;padding:0 16px 0 70px;border:0;border-radius:20px;
+  overflow:hidden;text-align:left;color:var(--creme);background:radial-gradient(120% 140% at 0% 0%,#2C5A4C,#15302A 60%,#0F221D);
+  box-shadow:inset 0 0 0 1.5px rgba(61,226,166,.5);}
+.cz-vers-interview img{position:absolute;left:10px;top:4px;height:62px;width:auto;}
+.cz-vers-interview b{flex:1;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:16px;}
+.cz-vers-interview s{text-decoration:none;font-size:20px;color:#3DE2A6;}
+
+/* MES OUTILS : une tuile par outil */
+.cz-tuiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+.cz-tuile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;
+  min-height:104px;padding:12px 6px 11px;border-radius:22px;border:1px solid var(--trait);
+  background:linear-gradient(165deg,var(--t2),var(--nappe) 72%);transition:transform .2s cubic-bezier(.34,1.5,.64,1),border-color .2s;}
+.cz-tuile:active{transform:scale(.92);border-color:var(--t1);}
+.cz-tuile-i{display:grid;place-items:center;width:50px;height:50px;border-radius:16px;font-size:26px;
+  background:var(--t1);background:linear-gradient(150deg,color-mix(in srgb,var(--t1) 80%,#fff),var(--t1));box-shadow:0 10px 22px -8px var(--t1);}
+.cz-tuile b{font-family:var(--font-clikme),sans-serif;font-weight:700;font-size:13.5px;line-height:1.15;text-align:center;}
+.cz-tuile-badge{position:absolute;top:7px;right:7px;min-width:22px;height:21px;padding:0 7px;border-radius:999px;
+  display:grid;place-items:center;font-style:normal;font-weight:800;font-size:11px;background:rgba(255,244,230,.13);color:var(--creme);}
+.cz-tuile.chaud{border-color:var(--rose);box-shadow:0 0 22px rgba(255,46,154,.32);animation:cz-appel 2.4s ease-in-out infinite;}
+.cz-tuile.chaud .cz-tuile-badge{background:var(--rose);color:#fff;}
+.t-bleu{--t1:#4E7BF5;--t2:rgba(78,123,245,.2);}
+.t-rose{--t1:#FF2E9A;--t2:rgba(255,46,154,.18);}
+.t-ambre{--t1:#F5A23A;--t2:rgba(245,162,58,.2);}
+.t-menthe{--t1:#22B987;--t2:rgba(34,185,135,.18);}
+.t-violet{--t1:#9A5BF4;--t2:rgba(154,91,244,.2);}
+.t-corail{--t1:#FF6A48;--t2:rgba(255,106,72,.2);}
+@keyframes cz-reflet{0%,55%{transform:translateX(-120%)}85%,100%{transform:translateX(120%)}}
+@media (max-width:340px){.cz-tuiles{gap:8px;}.cz-tuile{min-height:96px;}.cz-tuile b{font-size:12.5px;}.cz-deux-choix b{font-size:17px;}}
+
+/* L'INTERVIEW, PAR-DESSUS LE COMPTOIR */
+.cz-interview{position:absolute;inset:0;z-index:40;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#05090C;}
 @media (prefers-reduced-motion:reduce){.cz *{animation:none!important;}}
         `,
       }}
