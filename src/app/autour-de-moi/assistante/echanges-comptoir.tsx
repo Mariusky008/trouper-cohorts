@@ -25,6 +25,10 @@
 //      « à valider » : rien de cela n'a encore été vu par un avocat ni un
 //      expert-comptable.
 //
+// CHEZ UN VRAI COMMERÇANT (lien pro), c'est `echanges-reels.tsx` qui prend le
+// relais, avec la base : il réutilise d'ici les quatre étapes, la pile à
+// glisser, les panneaux et les styles — exportés pour ça.
+//
 // CE QUI EST UNE DÉMONSTRATION : les autres commerçants sont des EXEMPLES
 // (étiquetés), tout reste dans ce téléphone, le premier voisin qui vient
 // prendre son produit est simulé, et le scan chez l'autre commerçant se
@@ -34,13 +38,14 @@ import QRCode from "qrcode";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { COMMERCES_DEMO } from "@/lib/direct/missions-commercant";
 import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
+import { DECOUVERT_MAX_DEPART, PAR_MOIS, decouvertDe as decouvertDeBase } from "@/lib/echanges/echanges";
 
 /** `entier` : une couverture de livre se montre en entier, pas recadrée.
  *  `unite` : comment on compte ce produit (« 2 séances »). */
-type Modele = { titre: string; prix: number; photo: string; entier?: boolean; unite: [string, string] };
+export type Modele = { titre: string; prix: number; photo: string; entier?: boolean; unite: [string, string] };
 
 /** Ce que chaque métier mettrait naturellement à disposition — il change tout. */
-const MODELES: Record<FamilleDouble, Modele> = {
+export const MODELES: Record<FamilleDouble, Modele> = {
   table: { titre: "Un dîner pour deux", prix: 50, photo: "/direct/table/magret/3.jpg", unite: ["dîner pour deux", "dîners pour deux"] },
   bar: { titre: "L’apéro pour quatre", prix: 40, photo: "/direct/soiree/saxo-du-soir.jpg", unite: ["apéro pour quatre", "apéros pour quatre"] },
   coiffure: { titre: "Une coupe et un brushing", prix: 45, photo: "/direct/coiffure1.jpg", unite: ["coupe", "coupes"] },
@@ -53,14 +58,10 @@ const MODELES: Record<FamilleDouble, Modele> = {
   librairie: { titre: "Deux livres au choix", prix: 40, photo: "/direct/livres/harry-quebert.jpg", entier: true, unite: ["lot de deux livres", "lots de deux livres"] },
 };
 
-/** Combien il peut en offrir par mois : c'est sa capacité à fournir. */
-const PAR_MOIS = [1, 2, 4, 8];
-/** Le découvert de départ ne dépasse pas ce montant, quelle que soit sa capacité. */
-const DECOUVERT_MAX_DEPART = 300;
 const DOUZE_MOIS = 365 * 24 * 3600 * 1000;
 const DISTANCES = ["120 m", "350 m", "200 m", "600 m", "450 m", "90 m", "800 m", "300 m", "250 m", "700 m"];
 
-type Offre = {
+export type Offre = {
   id: string;
   commerce: string;
   prenom: string;
@@ -75,8 +76,10 @@ type Offre = {
   hotel?: boolean;
   cadrage?: string;
   entier?: boolean;
+  /** Chez un vrai commerçant : combien on peut encore lui en prendre ce mois-ci. */
+  restant?: number;
 };
-type Mien = { duJour: boolean; titre: string; prix: number; photo: string; parMois: number };
+export type Mien = { duJour: boolean; titre: string; prix: number; photo: string; parMois: number };
 type Bon = { id: string; code: string; titre: string; commerce: string; prenom: string; ville: string; prix: number; photo: string; le: number; scanne?: boolean };
 type Etat = {
   mien?: Mien;
@@ -108,7 +111,7 @@ function garder(c: CommerceComptoir, e: Etat) {
 }
 
 /** Son découvert : un mois de ce qu'il peut offrir, plafonné au départ. */
-const decouvertDe = (m: Mien) => Math.min(DECOUVERT_MAX_DEPART, m.parMois * m.prix);
+const decouvertDe = (m: Mien) => decouvertDeBase(m.prix, m.parMois);
 const pris = (e: Etat) => e.bons.reduce((s, b) => s + b.prix, 0);
 /** Ce qu'il peut encore dépenser : son découvert, plus ce qu'il a gagné, moins ce qu'il a pris. */
 const aDepenser = (e: Etat) => (e.mien ? Math.max(0, decouvertDe(e.mien) + e.gagne - pris(e)) : 0);
@@ -116,20 +119,20 @@ const aDepenser = (e: Etat) => (e.mien ? Math.max(0, decouvertDe(e.mien) + e.gag
 const aRendre = (e: Etat) => Math.max(0, pris(e) - e.gagne);
 
 /** « 2 séances », « 1 produit du jour », « 3 × « Une séance découverte » ». */
-function enProduits(m: Mien, famille: FamilleDouble, n: number): string {
+export function enProduits(m: Mien, famille: FamilleDouble, n: number): string {
   if (m.duJour) return `${n} ${n > 1 ? "produits du jour" : "produit du jour"}`;
   const modele = MODELES[famille];
   if (m.titre === modele.titre) return `${n} ${n > 1 ? modele.unite[1] : modele.unite[0]}`;
   return `${n} × « ${m.titre} »`;
 }
 /** Une somme en euros dite en produits : « soit 2 séances », « soit environ 3 dîners pour deux ». */
-function soitEnProduits(m: Mien, famille: FamilleDouble, euros: number): string {
+export function soitEnProduits(m: Mien, famille: FamilleDouble, euros: number): string {
   const n = euros / m.prix;
   return Number.isInteger(n) ? `soit ${enProduits(m, famille, n)}` : `soit environ ${enProduits(m, famille, Math.max(1, Math.round(n)))}`;
 }
 /** Comment on le nomme, en lui parlant : « ton produit du jour », « un dîner pour deux ». */
-const nomDuMien = (m: Mien) => (m.duJour ? "ton produit du jour" : `${m.titre.charAt(0).toLowerCase()}${m.titre.slice(1)}`);
-const nomAffiche = (m: Mien) => (m.duJour ? "Ton produit du jour" : m.titre);
+export const nomDuMien = (m: Mien) => (m.duJour ? "ton produit du jour" : `${m.titre.charAt(0).toLowerCase()}${m.titre.slice(1)}`);
+export const nomAffiche = (m: Mien) => (m.duJour ? "Ton produit du jour" : m.titre);
 
 /** L'échéance du dernier recours : douze mois après le premier produit pris. */
 function echeanceDe(e: Etat): string {
@@ -138,7 +141,7 @@ function echeanceDe(e: Etat): string {
   return `avant le ${new Date(debut + DOUZE_MOIS).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}`;
 }
 
-const visageDe = (branche: string, metier: string) => `${tenueDu({ branche, metier })?.enPied ?? "/direct/double/pied/"}visage.webp`;
+export const visageDe = (branche: string, metier: string) => `${tenueDu({ branche, metier })?.enPied ?? "/direct/double/pied/"}visage.webp`;
 
 /* LES AUTRES COMMERÇANTS — EXEMPLES. Sa ville : ceux de la démonstration.
    Ailleurs : des commerces décrits par ce qu'ils sont, sans nom propre. */
@@ -178,7 +181,7 @@ function codeDe(graine: string): string {
   return `CLK-${code}`;
 }
 
-function useQr(texte: string | null) {
+export function useQr(texte: string | null) {
   const [url, setUrl] = useState("");
   useEffect(() => {
     if (!texte) return;
@@ -261,16 +264,20 @@ export function EchangesComptoir({ commerce, dossier, onRetour }: { commerce: Co
 }
 
 /* ═══ LES QUATRE ÉTAPES DE DÉPART ═════════════════════════════════════════ */
-function Depart({
+export function Depart({
   commerce,
   dossier,
   initial,
   onFini,
+  reel = false,
 }: {
   commerce: CommerceComptoir;
   dossier: string;
   initial?: Mien;
-  onFini: (m: Mien) => void;
+  /** Chez un vrai commerçant, la publication peut échouer : le message s'affiche à l'étape 4. */
+  onFini: (m: Mien) => void | Promise<string | null>;
+  /** Un vrai commerçant accepte les règles en publiant : elles sont redites à l'étape 4. */
+  reel?: boolean;
 }) {
   const m = MODELES[commerce.famille];
   const [etape, setEtape] = useState(1);
@@ -278,9 +285,20 @@ function Depart({
   const [titre, setTitre] = useState(initial?.titre ?? m.titre);
   const [prix, setPrix] = useState(initial?.prix ?? m.prix);
   const [parMois, setParMois] = useState(initial?.parMois ?? 4);
-  const photo = initial?.photo ?? commerce.photo ?? m.photo;
+  // Chez un vrai commerçant, jamais la photo d'exemple du métier : la sienne, ou son fantôme.
+  const photo = initial?.photo || commerce.photo || (reel ? "" : m.photo);
   const brouillon: Mien = { duJour, titre: duJour ? "Mon produit du jour" : titre.trim(), prix, photo, parMois };
   const decouvert = decouvertDe(brouillon);
+  const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState("");
+  const finir = async () => {
+    if (envoi) return;
+    setEnvoi(true);
+    setErreur("");
+    const r = await onFini(brouillon);
+    setEnvoi(false);
+    if (typeof r === "string" && r) setErreur(r);
+  };
 
   const QUESTIONS = [
     "Que mets-tu à disposition des autres commerçants ?",
@@ -373,7 +391,7 @@ function Depart({
         <>
           <article className="ec-resume">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={photo} alt="" />
+            <img src={photo || `${dossier}visage.webp`} alt="" />
             <div>
               <em>Tu offres aux commerçants</em>
               <b>
@@ -387,8 +405,14 @@ function Depart({
             <b>{decouvert} €</b>
             <em>chez les autres commerçants, dans ta ville ou ailleurs. C’est ton découvert de départ ; il grandira avec ce que tu fournis vraiment.</em>
           </div>
-          <button type="button" className="cz-go grand" onClick={() => onFini(brouillon)}>
-            Voir ce que proposent les autres <s aria-hidden="true">→</s>
+          {reel && (
+            <p className="ec-regle">
+              ⚖️ <b>En publiant, tu acceptes les règles</b> : tu gagnes quand tu valides le code d’un commerçant venu chez toi ; ce que tu prends, tu le rends en ton produit ; les euros, seulement en dernier recours, au bout de 12 mois ou si tu quittes le réseau.
+            </p>
+          )}
+          {erreur && <p className="ec-erreur">{erreur}</p>}
+          <button type="button" className="cz-go grand" disabled={envoi} onClick={finir}>
+            {reel ? (envoi ? "Publication…" : "J’accepte et je publie mon offre") : "Voir ce que proposent les autres"} <s aria-hidden="true">→</s>
           </button>
           <button type="button" className="cz-lien" onClick={() => setEtape(3)}>
             ‹ Retour
@@ -669,7 +693,7 @@ function Echanger({
 }
 
 /** Un panneau qui monte du bas : le détail, seulement quand on le demande. */
-function Feuille({ titre, onFermer, children }: { titre: string; onFermer: () => void; children: ReactNode }) {
+export function Feuille({ titre, onFermer, children }: { titre: string; onFermer: () => void; children: ReactNode }) {
   return (
     <div className="ec-feuille" role="dialog" aria-label={titre} onClick={onFermer}>
       <div className="ec-feuille-c" onClick={(e) => e.stopPropagation()}>
@@ -688,7 +712,7 @@ function Feuille({ titre, onFermer, children }: { titre: string; onFermer: () =>
 /* ═══ LA PILE À GLISSER ═══════════════════════════════════════════════════
    À droite : je prends (la feuille de confirmation s'ouvre). À gauche : je
    passe. Les deux boutons font la même chose, pour qui ne glisse pas. */
-function Pile({ offres, onPasser, onPrendre }: { offres: Offre[]; onPasser: (o: Offre) => void; onPrendre: (o: Offre) => void }) {
+export function Pile({ offres, onPasser, onPrendre }: { offres: Offre[]; onPasser: (o: Offre) => void; onPrendre: (o: Offre) => void }) {
   const [dx, setDx] = useState(0);
   const [sortie, setSortie] = useState<"g" | "d" | null>(null);
   /** Le doigt est posé : la carte suit sans transition. */
@@ -756,12 +780,20 @@ function Pile({ offres, onPasser, onPrendre }: { offres: Offre[]; onPasser: (o: 
   );
 }
 
-function CarteOffre({ o, dessous = false }: { o: Offre; dessous?: boolean }) {
+export function CarteOffre({ o, dessous = false }: { o: Offre; dessous?: boolean }) {
   return (
     <article className={`ec-carte${o.hotel ? " hotel" : ""}${dessous ? " dessous" : ""}`} aria-hidden={dessous || undefined}>
       <div className="ec-carte-photo">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={o.photo} alt="" draggable={false} className={o.entier ? "entier" : undefined} style={o.cadrage ? { objectPosition: o.cadrage } : undefined} />
+        {o.photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={o.photo} alt="" draggable={false} className={o.entier ? "entier" : undefined} style={o.cadrage ? { objectPosition: o.cadrage } : undefined} />
+        ) : (
+          /* Un commerce sans photo montrable : son fantôme, en grand, plutôt qu'une image d'un autre. */
+          <span className="ec-sans-photo">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={o.visage} alt="" draggable={false} />
+          </span>
+        )}
         <span className="ec-prix">{o.prix} €</span>
         {o.hotel && <span className="ec-hotel">🏨 Hôtel</span>}
       </div>
@@ -777,7 +809,7 @@ function CarteOffre({ o, dessous = false }: { o: Offre; dessous?: boolean }) {
           </span>
         </div>
         <h4>{o.titre}</h4>
-        <p className="ec-cap">Jusqu’à {o.parMois} par mois</p>
+        <p className="ec-cap">{o.restant !== undefined ? `Encore ${o.restant} ce mois-ci` : `Jusqu’à ${o.parMois} par mois`}</p>
       </div>
     </article>
   );
@@ -823,7 +855,7 @@ function BonPris({ b, ouvert, onOuvrir, onScanner }: { b: Bon; ouvert: boolean; 
   );
 }
 
-function StylesEchanges() {
+export function StylesEchanges() {
   return (
     <style
       dangerouslySetInnerHTML={{
@@ -919,6 +951,9 @@ function StylesEchanges() {
 .ec-carte.hotel{border-color:rgba(245,162,58,.55);box-shadow:0 0 26px rgba(245,162,58,.16);}
 .ec-carte-photo{position:relative;}
 .ec-carte-photo img{display:block;width:100%;aspect-ratio:1;max-height:48vh;object-fit:cover;pointer-events:none;}
+.ec-sans-photo{display:grid;place-items:center;width:100%;aspect-ratio:1;max-height:48vh;background:radial-gradient(circle at 50% 40%,rgba(245,162,58,.22),var(--nappe2));}
+.ec-carte-photo .ec-sans-photo img{width:42%;max-height:none;aspect-ratio:1;border-radius:50%;object-fit:cover;}
+.ec-erreur{margin:0;padding:10px 12px;border-radius:14px;background:rgba(255,46,154,.12);border:1px solid rgba(255,46,154,.4);color:#FFB3D6;font-size:14px;line-height:1.4;}
 .ec-carte-photo img.entier,.ec-feuille-c > img.entier{object-fit:contain;padding:12px 0;background:var(--nappe2);}
 .ec-prix{position:absolute;left:12px;bottom:12px;padding:7px 12px;border-radius:999px;background:var(--ambre);color:#2A1608;
   font-family:var(--font-clikme),sans-serif;font-weight:900;font-size:17px;}

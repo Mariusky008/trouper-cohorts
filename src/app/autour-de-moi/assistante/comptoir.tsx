@@ -74,6 +74,7 @@ import { VitrineComptoir } from "./vitrine-comptoir";
 import { SavoirComptoir } from "./savoir-comptoir";
 import { CarteReseaux, ReseauxComptoir, useReseaux } from "./reseaux-comptoir";
 import { CarteEchanges, EchangesComptoir } from "./echanges-comptoir";
+import { CarteEchangesReelle, EchangesReels } from "./echanges-reels";
 import { CarteProposition, propositionAMontrer, useProposition, type PieceProposee } from "./proposition-comptoir";
 import { reseauxEnMots } from "@/lib/reseaux/reseaux-donnees";
 import { useSavoir, type SavoirDuComptoir } from "./use-savoir";
@@ -310,7 +311,7 @@ type Phase =
   | { ou: "savoir" }
   /** Mes réseaux : Instagram et Facebook connectés une fois — voir `reseaux-comptoir.tsx`. */
   | { ou: "reseaux" }
-  /** Échanger son bon avec les autres commerçants — démonstration, voir `echanges-comptoir.tsx`. */
+  /** Échanger avec les autres commerçants — démonstration (`echanges-comptoir.tsx`), ou en vrai chez un commerçant venu par son lien pro (`echanges-reels.tsx`). */
   | { ou: "echanges" };
 
 /** L'envoi en ligne d'un vrai commerçant : en cours, arrivé, ou à refaire. */
@@ -786,7 +787,13 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           programmees={programmees}
           onPlanning={() => setPhase({ ou: "planning" })}
           reseaux={<CarteReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
-          echanges={<CarteEchanges commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />}
+          echanges={
+            commerce.reel ? (
+              <CarteEchangesReelle commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />
+            ) : (
+              <CarteEchanges commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />
+            )
+          }
           propositionActive={Boolean(propositionAMontrer(proposition))}
           proposition={
             <CarteProposition
@@ -801,9 +808,12 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
         />
       )}
 
-      {phase.ou === "echanges" && (
-        <EchangesComptoir commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
-      )}
+      {phase.ou === "echanges" &&
+        (commerce.reel ? (
+          <EchangesReels commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
+        ) : (
+          <EchangesComptoir commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
+        ))}
 
       {phase.ou === "reseaux" && (
         <ReseauxComptoir commerce={commerce} dossier={dossier} reseaux={reseaux} onRetour={() => setPhase({ ou: "accueil" })} />
