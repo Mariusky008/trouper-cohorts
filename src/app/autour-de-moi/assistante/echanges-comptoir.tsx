@@ -33,12 +33,13 @@
 // (étiquetés), tout reste dans ce téléphone, le premier voisin qui vient
 // prendre son produit est simulé, et le scan chez l'autre commerçant se
 // simule d'un bouton marqué « démo ».
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import QRCode from "qrcode";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { COMMERCES_DEMO } from "@/lib/direct/missions-commercant";
 import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
 import { DECOUVERT_MAX_DEPART, PAR_MOIS, decouvertDe as decouvertDeBase } from "@/lib/echanges/echanges";
+import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, debloquerSon, jouer, vibrer } from "./echanges-magie";
 
 /** `entier` : une couverture de livre se montre en entier, pas recadrée.
  *  `unite` : comment on compte ce produit (« 2 séances »). */
@@ -250,8 +251,12 @@ export function EchangesComptoir({ commerce, dossier, onRetour }: { commerce: Co
         <button type="button" className="ec-retour" onClick={onRetour}>
           ‹ Mon comptoir
         </button>
-        <span className="ec-exemple">Exemple</span>
+        <span className="ec-haut-d">
+          <span className="ec-exemple">Exemple</span>
+          <BoutonSon />
+        </span>
       </div>
+      <StylesMagie />
       {!etat.mien || modifier ? (
         <Depart
           commerce={commerce}
@@ -299,6 +304,7 @@ export function Depart({
   const [erreur, setErreur] = useState("");
   const finir = async () => {
     if (envoi) return;
+    debloquerSon();
     setEnvoi(true);
     setErreur("");
     const r = await onFini(brouillon);
@@ -457,6 +463,9 @@ function Echanger({
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [nouvelle, setNouvelle] = useState<string | null>(null);
   const [panneau, setPanneau] = useState<Panneau | null>(null);
+  /** La scène « C'est à toi ! » qui précède le QR, et le « +60 € » qui monte du solde. */
+  const [fete, setFete] = useState<{ bon: Bon; offre: Offre } | null>(null);
+  const [gain, setGain] = useState<{ n: number; cle: number } | null>(null);
   const toutes = useMemo(() => [...offresDeSaVille(commerce), ...AILLEURS], [commerce]);
   const deLaVille = toutes.filter((o) => o.ville === ville);
   const pile = deLaVille.filter((o) => !vus.includes(o.id));
@@ -473,6 +482,9 @@ function Echanger({
     const t = window.setTimeout(() => {
       changer((e) => (e.premier ? e : { ...e, premier: voisin.nom, gagne: e.gagne + mien.prix }));
       setNouvelle(`🎉 ${voisin.prenom} (${voisin.nom}) a pris ${nomDuMien(mien)} chez toi. Tu as scanné son code : tu as gagné ${mien.prix} €.`);
+      setGain({ n: mien.prix, cle: Date.now() });
+      jouer("piece");
+      vibrer([20, 40, 20]);
     }, 2400);
     return () => window.clearTimeout(t);
   }, [etat.premier, famille, changer, mien]);
@@ -504,7 +516,7 @@ function Echanger({
     };
     changer((e) => ({ ...e, bons: [bon, ...e.bons] }));
     setChoisie(null);
-    setRecu(bon);
+    setFete({ bon, offre: o });
   };
   const scanner = (id: string) => changer((e) => ({ ...e, bons: e.bons.map((b) => (b.id === id ? { ...b, scanne: true } : b)) }));
   const duApres = choisie ? Math.max(0, pris(etat) + choisie.prix - etat.gagne) : 0;
@@ -516,6 +528,7 @@ function Echanger({
         <b key={reste}>{reste} €</b>
         {du > 0 && <i>Tu dois {du} €</i>}
         <s aria-hidden="true">›</s>
+        {gain && <GainQuiMonte key={gain.cle} montant={gain.n} />}
       </button>
 
       <div className="ec-villes">
@@ -531,7 +544,7 @@ function Echanger({
       </div>
 
       {pile.length > 0 ? (
-        <Pile key={pile[0].id} offres={pile} onPasser={passer} onPrendre={vouloir} />
+        <Pile key={pile[0].id} offres={pile} onPasser={passer} onPrendre={vouloir} indice={vus.length === 0} />
       ) : (
         <div className="ec-fin-pile">
           <p>Tu as vu toutes les offres {ville ? `de ${ville}` : "de ta ville"}.</p>
@@ -682,10 +695,25 @@ function Echanger({
         </div>
       )}
 
+      {fete && (
+        <FeteDuMatch
+          moi={mien.photo || visageDe(commerce.branche, commerce.metier)}
+          eux={fete.offre.photo || fete.offre.visage}
+          titre={fete.offre.titre}
+          commerce={fete.offre.commerce}
+          prix={fete.offre.prix}
+          onQr={() => {
+            setRecu(fete.bon);
+            setFete(null);
+          }}
+          onFermer={() => setFete(null)}
+        />
+      )}
+
       {recu && (
         <div className="ec-feuille" role="dialog" aria-label="C’est réservé">
           <div className="ec-feuille-c">
-            <h2 className="ec-bravo">C’est réservé !</h2>
+            <h2 className="ec-bravo">Ton bon</h2>
             <BonPris b={recu} ouvert onOuvrir={() => undefined} />
             <p className="ec-gris ec-centre">Ces {recu.prix} € sont déjà déduits de ce que tu peux dépenser. Tu retrouves ce bon dans « Mes bons ».</p>
             <button type="button" className="cz-go" onClick={() => setRecu(null)}>
@@ -718,7 +746,18 @@ export function Feuille({ titre, onFermer, children }: { titre: string; onFermer
 /* ═══ LA PILE À GLISSER ═══════════════════════════════════════════════════
    À droite : je prends (la feuille de confirmation s'ouvre). À gauche : je
    passe. Les deux boutons font la même chose, pour qui ne glisse pas. */
-export function Pile({ offres, onPasser, onPrendre }: { offres: Offre[]; onPasser: (o: Offre) => void; onPrendre: (o: Offre) => void }) {
+export function Pile({
+  offres,
+  onPasser,
+  onPrendre,
+  indice = false,
+}: {
+  offres: Offre[];
+  onPasser: (o: Offre) => void;
+  onPrendre: (o: Offre) => void;
+  /** La toute première carte se balance une fois pour montrer qu'elle se glisse. */
+  indice?: boolean;
+}) {
   const [dx, setDx] = useState(0);
   const [sortie, setSortie] = useState<"g" | "d" | null>(null);
   /** Le doigt est posé : la carte suit sans transition. */
@@ -729,9 +768,18 @@ export function Pile({ offres, onPasser, onPrendre }: { offres: Offre[]; onPasse
 
   const partir = (prend: boolean) => {
     if (sortie) return;
+    debloquerSon();
+    jouer(prend ? "prend" : "passe");
+    vibrer(prend ? 18 : 8);
     setSortie(prend ? "d" : "g");
     window.setTimeout(() => (prend ? onPrendre(o) : onPasser(o)), 240);
   };
+  /* À QUEL POINT LA CARTE EST TIRÉE (0 à 1) : la teinte, les tampons, la carte
+     du dessous et les boutons suivent le doigt. */
+  const k = sortie ? 1 : Math.min(1, Math.abs(dx) / 110);
+  const versOui = sortie ? sortie === "d" : dx > 0;
+  const kOui = versOui ? k : 0;
+  const kNon = versOui ? 0 : k;
 
   const style = sortie
     ? { transform: `translateX(${sortie === "d" ? 140 : -140}%) rotate(${sortie === "d" ? 16 : -16}deg)`, transition: "transform .24s ease-in" }
@@ -739,11 +787,18 @@ export function Pile({ offres, onPasser, onPrendre }: { offres: Offre[]; onPasse
 
   return (
     <div className="ec-pile">
-      {suivante && <CarteOffre o={suivante} dessous />}
+      {suivante && (
+        <CarteOffre
+          o={suivante}
+          dessous
+          style={{ transform: `scale(${0.94 + 0.06 * k}) translateY(${12 - 12 * k}px)`, opacity: 0.5 + 0.5 * k, transition: tire ? "none" : "transform .25s, opacity .25s" }}
+        />
+      )}
       <div
-        className="ec-glisse"
+        className={`ec-glisse${indice && !tire && dx === 0 && !sortie ? " indice" : ""}`}
         style={style}
         onPointerDown={(e) => {
+          debloquerSon();
           depart.current = e.clientX;
           setTire(true);
           (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -766,18 +821,23 @@ export function Pile({ offres, onPasser, onPrendre }: { offres: Offre[]; onPasse
         }}
       >
         <CarteOffre o={o} />
-        <span className="ec-tampon oui" style={{ opacity: Math.max(0, Math.min(1, dx / 90)) }}>
+        <span
+          className="ec-teinte"
+          style={{ background: versOui ? `rgba(124,240,162,${0.32 * kOui})` : `rgba(255,46,154,${0.32 * kNon})` }}
+          aria-hidden="true"
+        />
+        <span className="ec-tampon oui" style={{ opacity: kOui, transform: `rotate(-12deg) scale(${0.7 + 0.5 * kOui})` }}>
           JE PRENDS
         </span>
-        <span className="ec-tampon non" style={{ opacity: Math.max(0, Math.min(1, -dx / 90)) }}>
+        <span className="ec-tampon non" style={{ opacity: kNon, transform: `rotate(12deg) scale(${0.7 + 0.5 * kNon})` }}>
           JE PASSE
         </span>
       </div>
       <div className="ec-gestes">
-        <button type="button" className="ec-non" onClick={() => partir(false)}>
+        <button type="button" className="ec-non" style={{ transform: `scale(${1 + 0.1 * kNon})` }} onClick={() => partir(false)}>
           ✕ Je passe
         </button>
-        <button type="button" className="ec-oui" onClick={() => partir(true)}>
+        <button type="button" className="ec-oui" style={{ transform: `scale(${1 + 0.08 * kOui})` }} onClick={() => partir(true)}>
           Je prends · {o.prix} €
         </button>
       </div>
@@ -786,9 +846,9 @@ export function Pile({ offres, onPasser, onPrendre }: { offres: Offre[]; onPasse
   );
 }
 
-export function CarteOffre({ o, dessous = false }: { o: Offre; dessous?: boolean }) {
+export function CarteOffre({ o, dessous = false, style }: { o: Offre; dessous?: boolean; style?: CSSProperties }) {
   return (
-    <article className={`ec-carte${o.hotel ? " hotel" : ""}${dessous ? " dessous" : ""}`} aria-hidden={dessous || undefined}>
+    <article className={`ec-carte${o.hotel ? " hotel" : ""}${dessous ? " dessous" : ""}`} aria-hidden={dessous || undefined} style={style}>
       <div className="ec-carte-photo">
         {o.photo ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -974,8 +1034,17 @@ export function StylesEchanges() {
 .ec-cap{margin:0;font-size:12.5px;color:var(--gris);}
 .ec-tampon{position:absolute;top:22px;padding:6px 12px;border:3px solid currentColor;border-radius:10px;font-weight:900;font-size:20px;
   letter-spacing:.04em;pointer-events:none;background:rgba(18,12,9,.55);}
-.ec-tampon.oui{left:18px;color:#7CF0A2;transform:rotate(-12deg);}
-.ec-tampon.non{right:18px;color:#FF8FB8;transform:rotate(12deg);}
+.ec-tampon.oui{left:18px;color:#7CF0A2;transform:rotate(-12deg);transform-origin:left center;}
+.ec-tampon.non{right:18px;color:#FF8FB8;transform:rotate(12deg);transform-origin:right center;}
+.ec-teinte{position:absolute;inset:0;border-radius:24px;pointer-events:none;mix-blend-mode:screen;}
+.ec-glisse > .ec-carte{animation:ec-arrive .38s cubic-bezier(.2,1.25,.4,1) both;}
+@keyframes ec-arrive{from{transform:scale(.93) translateY(10px);opacity:.4;}to{transform:none;opacity:1;}}
+.ec-glisse.indice > .ec-carte{animation:ec-arrive .38s cubic-bezier(.2,1.25,.4,1) both,ec-indice 1.5s 1.1s ease-in-out 2;}
+@keyframes ec-indice{0%,100%{transform:none;}20%{transform:translateX(-16px) rotate(-3deg);}45%{transform:translateX(18px) rotate(3deg);}70%{transform:none;}}
+.ec-gestes button{transition:transform .15s;}
+.ec-gestes button:active{transform:scale(.93) !important;}
+.ec-solde{position:relative;}
+.ec-haut-d{display:flex;align-items:center;gap:8px;}
 .ec-gestes{display:grid;grid-template-columns:auto 1fr;gap:10px;width:100%;}
 .ec-gestes button{height:52px;border-radius:999px;border:0;font-weight:900;font-size:15.5px;padding:0 18px;}
 .ec-non{background:var(--nappe);color:#FF8FB8;border:1px solid var(--trait) !important;}
@@ -1012,7 +1081,7 @@ export function StylesEchanges() {
 .ec-calcul b{color:var(--ambre);font-size:18px;}
 .ec-calcul.petit{font-size:14px;color:var(--gris);}
 .ec-bravo{text-align:center;font-size:30px !important;color:#fff;}
-@media (prefers-reduced-motion: reduce){.ec-glisse{transition:none !important;}.ec-gros b,.ec-solde b,.ec-feuille-c,.ec-toast{animation:none;}}
+@media (prefers-reduced-motion: reduce){.ec-glisse{transition:none !important;}.ec-gros b,.ec-solde b,.ec-feuille-c,.ec-toast,.ec-glisse > .ec-carte{animation:none !important;}}
 `,
       }}
     />

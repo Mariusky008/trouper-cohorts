@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { CLE_ACCES_COMPTOIR, type BonReel, type EtatEchanges } from "@/lib/echanges/echanges";
 import { Depart, Feuille, Pile, StylesEchanges, nomAffiche, nomDuMien, soitEnProduits, useQr, visageDe, type Mien, type Offre } from "./echanges-comptoir";
+import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, jouer, vibrer } from "./echanges-magie";
 
 const ROUTE = "/api/site-internet/pro/echanges";
 
@@ -139,7 +140,9 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
         <button type="button" className="ec-retour" onClick={onRetour}>
           ‹ Mon comptoir
         </button>
+        <BoutonSon />
       </div>
+      <StylesMagie />
       {!etat ? (
         <div className="ec-fin-pile">
           {erreur ? (
@@ -205,6 +208,9 @@ function PageReelle({
   const [panneau, setPanneau] = useState<Panneau | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const [code, setCode] = useState("");
+  /** La scène « C'est à toi ! » qui précède le QR, et le « +180 € » qui monte du solde. */
+  const [fete, setFete] = useState<{ bon: BonReel; offre: Offre } | null>(null);
+  const [gain, setGain] = useState<{ n: number; cle: number } | null>(null);
   const aValider = etat.recus.filter((b) => b.statut === "reserve");
   const [annonce, setAnnonce] = useState<{ texte: string; mauvais?: boolean } | null>(() =>
     aValider.length > 0
@@ -262,7 +268,8 @@ function PageReelle({
   const prendre = async (o: Offre) => {
     const r = await agir("prendre", { fournisseur: o.id });
     setChoisie(null);
-    if (r.ok && r.code) setRecu(r.etat?.pris.find((b) => b.code === r.code) ?? null);
+    const bon = r.ok && r.code ? r.etat?.pris.find((b) => b.code === r.code) : undefined;
+    if (bon) setFete({ bon, offre: o });
   };
 
   return (
@@ -281,6 +288,7 @@ function PageReelle({
         <b key={compte.aDepenser}>{compte.aDepenser} €</b>
         {compte.du > 0 && <i>Tu dois {compte.du} €</i>}
         <s aria-hidden="true">›</s>
+        {gain && <GainQuiMonte key={gain.cle} montant={gain.n} />}
       </button>
 
       {villes.length > 1 && (
@@ -294,7 +302,13 @@ function PageReelle({
       )}
 
       {pile.length > 0 ? (
-        <Pile key={pile[0].id} offres={pile} onPasser={(o) => setVus((v) => [...v, o.id])} onPrendre={(o) => (setVus((v) => [...v, o.id]), setChoisie(o))} />
+        <Pile
+          key={pile[0].id}
+          offres={pile}
+          indice={vus.length === 0}
+          onPasser={(o) => setVus((v) => [...v, o.id])}
+          onPrendre={(o) => (setVus((v) => [...v, o.id]), setChoisie(o))}
+        />
       ) : etat.offres.length === 0 ? (
         <div className="ec-fin-pile">
           <p>
@@ -396,8 +410,19 @@ function PageReelle({
             className="ec-code"
             onSubmit={async (e) => {
               e.preventDefault();
+              const avant = compte.gagne;
               const r = await agir("valider", { code });
-              if (r.ok) setCode("");
+              if (r.ok) {
+                setCode("");
+                // ON VOIT LE GAIN : le panneau se ferme, « +180 € » monte du solde, la pièce tinte.
+                const n = (r.etat?.compte.gagne ?? avant) - avant;
+                setPanneau(null);
+                if (n > 0) {
+                  setGain({ n, cle: Date.now() });
+                  jouer("piece");
+                  vibrer([20, 40, 20]);
+                }
+              }
             }}
           >
             <input
@@ -530,10 +555,25 @@ function PageReelle({
         </div>
       )}
 
+      {fete && (
+        <FeteDuMatch
+          moi={mien.photo || visageDe(commerce.branche, commerce.metier)}
+          eux={fete.offre.photo || fete.offre.visage}
+          titre={fete.offre.titre}
+          commerce={fete.offre.commerce}
+          prix={fete.offre.prix}
+          onQr={() => {
+            setRecu(fete.bon);
+            setFete(null);
+          }}
+          onFermer={() => setFete(null)}
+        />
+      )}
+
       {recu && (
-        <div className="ec-feuille" role="dialog" aria-label="C’est réservé">
+        <div className="ec-feuille" role="dialog" aria-label="Ton bon">
           <div className="ec-feuille-c">
-            <h2 className="ec-bravo">C’est réservé !</h2>
+            <h2 className="ec-bravo">Ton bon</h2>
             <BonVue b={recu} ouvert onOuvrir={() => undefined} />
             <p className="ec-gris ec-centre">Ces {recu.prix} € sont déjà déduits de ce que tu peux dépenser. Tu retrouves ce bon dans « Mes bons ».</p>
             <button type="button" className="cz-go" onClick={() => setRecu(null)}>
