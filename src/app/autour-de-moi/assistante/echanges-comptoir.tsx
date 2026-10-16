@@ -15,7 +15,7 @@
 //      fournie » → le crédit bouge AU SCAN DU QR chez le commerçant, pas quand
 //      on touche « Je prends » (qui ne fait que réserver).
 //   2. « Un plafond adapté à sa capacité à fournir, plutôt qu'un montant
-//      arbitraire » → l'étape 3 demande « combien peux-tu en offrir par
+//      arbitraire » → l'étape 2 demande « combien peux-tu en offrir par
 //      mois ? ». La réponse limite ce qu'on peut lui prendre ET fixe son
 //      découvert de départ (un mois de capacité, plafonné à 300 €).
 //   3. « Les échéances et le règlement en euros cadrés juridiquement » → la
@@ -26,7 +26,7 @@
 //      expert-comptable.
 //
 // CHEZ UN VRAI COMMERÇANT (lien pro), c'est `echanges-reels.tsx` qui prend le
-// relais, avec la base : il réutilise d'ici les quatre étapes, la pile à
+// relais, avec la base : il réutilise d'ici les trois étapes, la pile à
 // glisser, les panneaux et les styles — exportés pour ça.
 //
 // CE QUI EST UNE DÉMONSTRATION : les autres commerçants sont des EXEMPLES
@@ -38,7 +38,7 @@ import QRCode from "qrcode";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { COMMERCES_DEMO } from "@/lib/direct/missions-commercant";
 import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
-import { DECOUVERT_MAX_DEPART, PAR_MOIS, decouvertDe as decouvertDeBase } from "@/lib/echanges/echanges";
+import { PAR_MOIS, decouvertDe as decouvertDeBase } from "@/lib/echanges/echanges";
 import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, debloquerSon, jouer, vibrer } from "./echanges-magie";
 
 /** `entier` : une couverture de livre se montre en entier, pas recadrée.
@@ -243,6 +243,17 @@ export function EchangesComptoir({ commerce, dossier, onRetour }: { commerce: Co
     [commerce],
   );
   const [modifier, setModifier] = useState(false);
+  /* Ce qu'il pourra s'offrir (étape 3) : deux offres de sa ville, les moins chères, et la nuit d'hôtel — des exemples. */
+  const envies = useMemo<Envie[]>(
+    () =>
+      [...offresDeSaVille(commerce).sort((a, b) => a.prix - b.prix).slice(0, 2), AILLEURS[0]].map((o) => ({
+        id: o.id,
+        photo: o.photo,
+        prix: o.prix,
+        mot: o.titre,
+      })),
+    [commerce],
+  );
 
   return (
     <div className="ec">
@@ -261,6 +272,7 @@ export function EchangesComptoir({ commerce, dossier, onRetour }: { commerce: Co
         <Depart
           commerce={commerce}
           dossier={dossier}
+          envies={envies}
           initial={etat.mien}
           onFini={(mien) => {
             changer((e) => ({ ...e, mien }));
@@ -274,32 +286,204 @@ export function EchangesComptoir({ commerce, dossier, onRetour }: { commerce: Co
   );
 }
 
-/* ═══ LES QUATRE ÉTAPES DE DÉPART ═════════════════════════════════════════ */
+/* ═══ LES TROIS ÉTAPES DE DÉPART ═════════════════════════════════════════
+   « Cet écran, on ne le comprend pas bien, c'est un peu confus : l'explication
+   n'est pas assez visuelle, j'ai peur que le commerçant ne comprenne pas. Et
+   l'étape 1 est très peu fun ou animée. »
+
+   LE PARAGRAPHE EST DEVENU UNE IMAGE. Le produit et son prix tiennent sur un
+   seul écran, comme le plat du jour au comptoir : trois étapes au lieu de
+   quatre, et le fantôme pose chaque question dans sa bulle.
+     1. CE QUE J'OFFRE — le produit et son prix, et il devient une pièce :
+        « 1 dîner pour deux = 50 € à dépenser ». Sa monnaie, c'est son produit.
+     2. COMBIEN PAR MOIS — une assiette se pose pour chaque produit du mois,
+        chacune sur sa note, et une caisse compte ce qu'il peut déjà dépenser
+        (« 8 × 50 € = 400 €, plafonné à 300 € au départ »).
+     3. C'EST PRÊT — les pièces tombent dans la caisse, et ce qu'il peut
+        s'offrir s'allume quand la caisse l'atteint : des exemples en
+        démonstration, les vraies offres du réseau chez un vrai commerçant.
+   « Ce que tu prends, tu le rends » n'est plus un paragraphe au milieu du
+   choix : il est dans « Comment ça marche » et, chez un vrai commerçant, redit
+   au moment de publier, là où il l'accepte.
+
+   EN DÉMONSTRATION, la première fois, le produit et son prix s'écrivent tout
+   seuls sous ses yeux ; toucher un champ arrête l'écriture et lui rend la main. */
+
+/** Ce qu'il pourra s'offrir : s'allume quand sa caisse atteint le prix. */
+export type Envie = { id: string; photo: string; prix: number; mot: string };
+
+/** Un nombre qui compte vers sa cible, depuis là où il en était (ou zéro), en `ms` après `attente`. */
+function useCompteur(cible: number, ms = 700, attente = 0) {
+  const [vu, setVu] = useState(0);
+  const depuis = useRef(0);
+  useEffect(() => {
+    const reduit = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const de = depuis.current;
+    const t0 = performance.now() + (reduit ? 0 : attente);
+    let raf = 0;
+    const pas = (t: number) => {
+      const p = reduit ? 1 : Math.max(0, Math.min(1, (t - t0) / ms));
+      const v = Math.round(de + (cible - de) * (1 - Math.pow(1 - p, 3)));
+      depuis.current = v;
+      setVu(v);
+      if (p < 1) raf = requestAnimationFrame(pas);
+    };
+    raf = requestAnimationFrame(pas);
+    return () => cancelAnimationFrame(raf);
+  }, [cible, ms, attente]);
+  return vu;
+}
+
+/** Le fantôme du commerçant pose la question ; sa bulle arrive à chaque étape. */
+function Guide({ visage, etape, titre, sous }: { visage: string; etape: number; titre: string; sous: string }) {
+  return (
+    <div className="ec-guide">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={visage} alt="" />
+      <p className="ec-bulle">
+        <em>Étape {etape} sur 3</em>
+        <b>{titre}</b>
+        <small>{sous}</small>
+      </p>
+    </div>
+  );
+}
+
+const MAX_PAR_MOIS = PAR_MOIS[PAR_MOIS.length - 1];
+
+/** Étape 2 : une assiette par produit du mois, posées une à une, chacune sur sa note. */
+function MonMois({ image, parMois }: { image: string; parMois: number }) {
+  useEffect(() => {
+    const t = Array.from({ length: parMois }, (_, k) => window.setTimeout(() => jouer("note", k), 120 + k * 110));
+    return () => t.forEach((x) => window.clearTimeout(x));
+  }, [parMois]);
+  return (
+    <div className="ec-mois">
+      <span className="ec-mois-t">Ton mois</span>
+      <div className="ec-assiettes" aria-hidden="true">
+        {Array.from({ length: MAX_PAR_MOIS }, (_, k) =>
+          k < parMois ? (
+            <i key={`${parMois}-${k}`} className="pleine" style={{ backgroundImage: `url(${JSON.stringify(image)})`, animationDelay: `${120 + k * 110}ms` }} />
+          ) : (
+            <i key={k} />
+          ),
+        )}
+      </div>
+      <p>
+        Personne ne pourra t’en prendre plus de <b>{parMois} par mois</b>.
+      </p>
+    </div>
+  );
+}
+
+/** Étape 2 : la caisse compte ce qu'il peut déjà dépenser, et tinte quand elle s'arrête. */
+function CaisseDuMois({ decouvert, calcul }: { decouvert: number; calcul: string }) {
+  const vu = useCompteur(decouvert, 650, 150);
+  useEffect(() => {
+    const t = window.setTimeout(() => jouer("piece"), 820);
+    return () => window.clearTimeout(t);
+  }, [decouvert]);
+  return (
+    <div className="ec-caisse">
+      <span className="ec-or" aria-hidden="true">
+        €
+      </span>
+      <span>
+        <small>Tu peux déjà dépenser</small>
+        <em>{calcul}</em>
+      </span>
+      <b>{vu} €</b>
+    </div>
+  );
+}
+
+/** Étape 3 : les pièces tombent dans la caisse ; ce qu'il peut s'offrir s'allume quand elle l'atteint. */
+function CaissePleine({ decouvert, pieces, envies, exemple }: { decouvert: number; pieces: number; envies: Envie[]; exemple: boolean }) {
+  const pas = 240;
+  const duree = 250 + pieces * pas;
+  const vu = useCompteur(decouvert, duree, 200);
+  useEffect(() => {
+    const t = Array.from({ length: pieces }, (_, k) => window.setTimeout(() => jouer("piece"), 200 + k * pas));
+    t.push(
+      window.setTimeout(() => {
+        jouer("match");
+        vibrer([20, 40, 30]);
+      }, 300 + duree),
+    );
+    return () => t.forEach((x) => window.clearTimeout(x));
+  }, [pieces, duree]);
+  const allumees = envies.filter((e) => vu >= e.prix).length;
+  useEffect(() => {
+    if (allumees > 0) jouer("note", 6 + allumees);
+  }, [allumees]);
+  return (
+    <>
+      <div className="ec-gros ec-pleine">
+        {Array.from({ length: pieces }, (_, k) => (
+          <span key={k} className="ec-or ec-goutte" style={{ left: `${10 + ((k * 37) % 72)}%`, animationDelay: `${200 + k * pas}ms` }} aria-hidden="true">
+            €
+          </span>
+        ))}
+        <span>Tu peux dépenser dès maintenant</span>
+        <b>{vu} €</b>
+        <em>Chez les autres commerçants, dans ta ville ou ailleurs. C’est ton découvert de départ : il grandit avec ce que tu sers vraiment.</em>
+      </div>
+      {envies.length > 0 && (
+        <div className="ec-envies">
+          <span className="ec-envies-t">{exemple ? "De quoi t’offrir, par exemple" : "De quoi t’offrir dans le réseau"}</span>
+          <div className="ec-envies-l">
+            {envies.slice(0, 3).map((e) => {
+              const ok = vu >= e.prix;
+              return (
+                <span key={e.id} className={`ec-envie${ok ? " ok" : ""}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={e.photo} alt="" />
+                  <i aria-hidden="true">{ok ? "✓" : "🔒"}</i>
+                  <b>{e.prix} €</b>
+                  <small>{e.mot}</small>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 export function Depart({
   commerce,
   dossier,
   initial,
   onFini,
   reel = false,
+  envies = [],
 }: {
   commerce: CommerceComptoir;
   dossier: string;
   initial?: Mien;
-  /** Chez un vrai commerçant, la publication peut échouer : le message s'affiche à l'étape 4. */
+  /** Chez un vrai commerçant, la publication peut échouer : le message s'affiche à l'étape 3. */
   onFini: (m: Mien) => void | Promise<string | null>;
-  /** Un vrai commerçant accepte les règles en publiant : elles sont redites à l'étape 4. */
+  /** Un vrai commerçant accepte les règles en publiant : elles sont redites à l'étape 3. */
   reel?: boolean;
+  /** Ce qu'il pourra s'offrir, du moins cher au plus cher (étape 3). */
+  envies?: Envie[];
 }) {
   const m = MODELES[commerce.famille];
+  const visage = `${dossier}visage.webp`;
+  const [ecritSeul, setEcritSeul] = useState(!reel && !initial);
   const [etape, setEtape] = useState(1);
   const [duJour, setDuJour] = useState(initial?.duJour ?? false);
-  const [titre, setTitre] = useState(initial?.titre ?? m.titre);
-  const [prix, setPrix] = useState(initial?.prix ?? m.prix);
+  const [titre, setTitre] = useState(initial?.titre ?? (ecritSeul ? "" : m.titre));
+  const [prixTexte, setPrixTexte] = useState(initial ? String(initial.prix) : ecritSeul ? "" : String(m.prix));
   const [parMois, setParMois] = useState(initial?.parMois ?? 4);
+  const prix = Math.max(0, Math.min(2000, Number(prixTexte.replace(",", ".")) || 0));
   // Chez un vrai commerçant, jamais la photo d'exemple du métier : la sienne, ou son fantôme.
   const photo = initial?.photo || commerce.photo || (reel ? "" : m.photo);
+  const image = photo || visage;
   const brouillon: Mien = { duJour, titre: duJour ? "Mon produit du jour" : titre.trim(), prix, photo, parMois };
   const decouvert = decouvertDe(brouillon);
+  const pretUn = !ecritSeul && prix >= 5 && (duJour || titre.trim().length > 0);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState("");
   const finir = async () => {
@@ -312,60 +496,147 @@ export function Depart({
     if (typeof r === "string" && r) setErreur(r);
   };
 
-  const QUESTIONS = [
-    "Que mets-tu à disposition des autres commerçants ?",
-    "Combien il vaut ?",
-    "Combien peux-tu en offrir par mois, au maximum ?",
-    "C’est prêt !",
-  ];
+  /* EN DÉMONSTRATION, LE PRODUIT S'ÉCRIT TOUT SEUL : le titre, puis le prix. */
+  useEffect(() => {
+    if (!ecritSeul) return;
+    const mots = m.titre;
+    const chiffres = String(m.prix);
+    let i = 0;
+    const t = window.setInterval(() => {
+      i += 1;
+      if (i <= mots.length) setTitre(mots.slice(0, i));
+      else if (i - mots.length <= chiffres.length) setPrixTexte(chiffres.slice(0, i - mots.length));
+      else {
+        window.clearInterval(t);
+        setEcritSeul(false);
+      }
+    }, 55);
+    return () => window.clearInterval(t);
+  }, [ecritSeul, m.titre, m.prix]);
+  const reprendreLaMain = () => {
+    if (!ecritSeul) return;
+    setEcritSeul(false);
+    setTitre(m.titre);
+    setPrixTexte(String(m.prix));
+  };
+
+  /* La pièce tinte quand son produit devient une monnaie. */
+  useEffect(() => {
+    if (pretUn && etape === 1) jouer("piece");
+  }, [pretUn, etape]);
+
+  const calcul =
+    prix * parMois > decouvert
+      ? `${parMois} × ${prix} € = ${prix * parMois} €, plafonné à ${decouvert} € au départ`
+      : `${parMois} × ${prix} €`;
 
   return (
     <section className="ec-depart">
-      <div className="ec-pas-barre" aria-label={`Étape ${etape} sur 4`}>
-        {[1, 2, 3, 4].map((i) => (
+      <div className="ec-pas-barre" aria-label={`Étape ${etape} sur 3`}>
+        {[1, 2, 3].map((i) => (
           <i key={i} className={i <= etape ? "on" : ""} />
         ))}
-      </div>
-      <div className="ec-question">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`${dossier}visage.webp`} alt="" />
-        <div>
-          <em>Étape {etape} sur 4</em>
-          <h2>{QUESTIONS[etape - 1]}</h2>
-        </div>
       </div>
 
       {etape === 1 && (
         <>
-          <div className="ec-choix">
-            <button type="button" className={duJour ? "on" : ""} onClick={() => setDuJour(true)}>
-              <b>Mon produit du jour</b>
-              <span>Celui que je publie chaque matin : il change tous les jours.</span>
+          <Guide key="g1" visage={visage} etape={1} titre="Qu’est-ce que tu offres aux commerçants ?" sous="Ce sera ta monnaie dans le réseau." />
+          <div className="ec-bascule" role="group" aria-label="Ce que j’offre">
+            <button
+              type="button"
+              className={!duJour ? "on" : ""}
+              aria-pressed={!duJour}
+              onClick={() => {
+                reprendreLaMain();
+                setDuJour(false);
+              }}
+            >
+              Un produit précis
             </button>
-            <button type="button" className={!duJour ? "on" : ""} onClick={() => setDuJour(false)}>
-              <b>Un produit précis</b>
-              <span>Toujours le même. Écris-le :</span>
+            <button
+              type="button"
+              className={duJour ? "on" : ""}
+              aria-pressed={duJour}
+              onClick={() => {
+                reprendreLaMain();
+                setDuJour(true);
+              }}
+            >
+              Mon produit du jour
             </button>
-            {!duJour && <input value={titre} maxLength={60} onChange={(e) => setTitre(e.target.value)} aria-label="Le produit" />}
           </div>
-          <button type="button" className="cz-go grand" disabled={!duJour && !titre.trim()} onClick={() => setEtape(2)}>
-            Suivant <s aria-hidden="true">→</s>
+          <div className="ec-produit">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={image} alt="" className={photo ? "" : "fantome"} />
+            <div className="ec-champs">
+              <label>
+                <span>{duJour ? "Mon produit du jour" : "Ce que j’offre"}</span>
+                {duJour ? (
+                  <i className="ec-champ-fixe">Il change chaque matin</i>
+                ) : (
+                  <input value={titre} maxLength={60} onFocus={reprendreLaMain} onChange={(e) => setTitre(e.target.value)} />
+                )}
+              </label>
+              <label>
+                <span>{duJour ? "Prix moyen" : "Prix"}</span>
+                <span className="ec-euro">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min={5}
+                    max={2000}
+                    value={prixTexte}
+                    onFocus={reprendreLaMain}
+                    onChange={(e) => setPrixTexte(e.target.value)}
+                  />
+                  <i aria-hidden="true">€</i>
+                </span>
+              </label>
+            </div>
+          </div>
+          {pretUn ? (
+            <div className="ec-egal">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={image} alt="" />
+              <b aria-hidden="true">=</b>
+              <span className="ec-or" key={prix}>
+                {prix} €
+              </span>
+              <span className="ec-egal-t">
+                <b>
+                  {enProduits(brouillon, commerce.famille, 1)} = {prix} € à dépenser
+                </b>
+                <small>chez tous les commerçants du réseau</small>
+              </span>
+            </div>
+          ) : (
+            <p className="ec-astuce">
+              {prix > 0 && prix < 5
+                ? "À partir de 5 €."
+                : duJour
+                  ? "Son prix habituel, en vrais euros : ce que coûte ton produit du jour, en moyenne."
+                  : "Son vrai prix, en euros : celui de ta carte ou de ta vitrine."}
+            </p>
+          )}
+          <button type="button" className="cz-go grand" disabled={!pretUn} onClick={() => setEtape(2)}>
+            C’est ça ! ✓
           </button>
         </>
       )}
 
       {etape === 2 && (
         <>
-          <p className="ec-dit">
-            {duJour
-              ? "Son prix habituel, en vrais euros : ce que coûte ton produit du jour, en moyenne."
-              : "Son vrai prix, en euros : celui de ta carte ou de ta vitrine."}
-          </p>
-          <div className="ec-prix-saisie">
-            <input type="number" inputMode="numeric" min={5} max={2000} value={prix} onChange={(e) => setPrix(Math.max(0, Math.min(2000, Number(e.target.value) || 0)))} aria-label="Prix en euros" />
-            <span>€</span>
+          <Guide key="g2" visage={visage} etape={2} titre="Combien peux-tu en offrir par mois ?" sous="Au maximum. C’est toi qui fixes la limite." />
+          <div className="ec-puces quatre" role="group" aria-label="Combien par mois">
+            {PAR_MOIS.map((n) => (
+              <button key={n} type="button" className={parMois === n ? "on" : ""} aria-pressed={parMois === n} onClick={() => setParMois(n)}>
+                {n}
+              </button>
+            ))}
           </div>
-          <button type="button" className="cz-go grand" disabled={prix < 5} onClick={() => setEtape(3)}>
+          <MonMois image={image} parMois={parMois} />
+          <CaisseDuMois decouvert={decouvert} calcul={calcul} />
+          <button type="button" className="cz-go grand" onClick={() => setEtape(3)}>
             Suivant <s aria-hidden="true">→</s>
           </button>
           <button type="button" className="cz-lien" onClick={() => setEtape(1)}>
@@ -376,34 +647,10 @@ export function Depart({
 
       {etape === 3 && (
         <>
-          <div className="ec-puces quatre" role="group" aria-label="Combien par mois">
-            {PAR_MOIS.map((n) => (
-              <button key={n} type="button" className={parMois === n ? "on" : ""} onClick={() => setParMois(n)}>
-                {n}
-              </button>
-            ))}
-          </div>
-          <p className="ec-dit">
-            Personne ne pourra t’en prendre plus de <b>{parMois} par mois</b>. Et c’est ce qui fixe ce que tu peux dépenser avant même d’avoir donné : <b>{decouvert} €</b>
-            {parMois * prix > DECOUVERT_MAX_DEPART ? ` (plafonné à ${DECOUVERT_MAX_DEPART} € au départ)` : ""}.
-          </p>
-          <p className="ec-regle">
-            ⚖️ <b>Ce que tu prends, tu le rends, en ton produit</b> : chaque fois qu’un commerçant le prend, ta dette baisse. Tant que tu dois, ton offre passe en tête chez les autres. Les euros, seulement en dernier recours : au bout de 12 mois, ou si tu quittes le réseau.
-          </p>
-          <button type="button" className="cz-go grand" onClick={() => setEtape(4)}>
-            Suivant <s aria-hidden="true">→</s>
-          </button>
-          <button type="button" className="cz-lien" onClick={() => setEtape(2)}>
-            ‹ Retour
-          </button>
-        </>
-      )}
-
-      {etape === 4 && (
-        <>
+          <Guide key="g3" visage={visage} etape={3} titre="C’est prêt !" sous="Tu peux te faire plaisir chez les autres, avant même d’avoir servi." />
           <article className="ec-resume">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={photo || `${dossier}visage.webp`} alt="" />
+            <img src={image} alt="" />
             <div>
               <em>Tu offres aux commerçants</em>
               <b>
@@ -412,11 +659,7 @@ export function Depart({
               <em>Jusqu’à {parMois} par mois</em>
             </div>
           </article>
-          <div className="ec-gros">
-            <span>Tu peux dépenser dès maintenant</span>
-            <b>{decouvert} €</b>
-            <em>chez les autres commerçants, dans ta ville ou ailleurs. C’est ton découvert de départ ; il grandira avec ce que tu fournis vraiment.</em>
-          </div>
+          <CaissePleine decouvert={decouvert} pieces={Math.min(parMois, 6)} envies={envies} exemple={!reel} />
           {reel && (
             <p className="ec-regle">
               ⚖️ <b>En publiant, tu acceptes les règles</b> : tu gagnes quand tu valides le code d’un commerçant venu chez toi ; ce que tu prends, tu le rends en ton produit ; les euros, seulement en dernier recours, au bout de 12 mois ou si tu quittes le réseau.
@@ -426,7 +669,7 @@ export function Depart({
           <button type="button" className="cz-go grand" disabled={envoi} onClick={finir}>
             {reel ? (envoi ? "Publication…" : "J’accepte et je publie mon offre") : "Voir ce que proposent les autres"} <s aria-hidden="true">→</s>
           </button>
-          <button type="button" className="cz-lien" onClick={() => setEtape(3)}>
+          <button type="button" className="cz-lien" onClick={() => setEtape(2)}>
             ‹ Retour
           </button>
         </>
@@ -937,27 +1180,86 @@ export function StylesEchanges() {
 .ec-centre{text-align:center;}
 .ec-depart{display:flex;flex-direction:column;gap:14px;}
 .ec-page{display:flex;flex-direction:column;gap:12px;}
-.ec-pas-barre{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
-.ec-pas-barre i{height:5px;border-radius:99px;background:var(--nappe2);}
+.ec-pas-barre{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.ec-pas-barre i{height:5px;border-radius:99px;background:var(--nappe2);transition:background .3s;}
 .ec-pas-barre i.on{background:var(--ambre);}
-.ec-question{display:grid;grid-template-columns:58px 1fr;gap:12px;align-items:center;}
-.ec-question img{width:58px;height:58px;border-radius:50%;object-fit:cover;background:var(--nappe2);}
-.ec-question em{font-style:normal;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ambre);}
-.ec-question h2{margin:2px 0 0;font-family:var(--font-clikme),sans-serif;font-size:23px;font-weight:800;line-height:1.15;}
-.ec-choix{display:flex;flex-direction:column;gap:10px;}
-.ec-choix > button{display:flex;flex-direction:column;gap:4px;align-items:flex-start;text-align:left;padding:16px;border-radius:18px;
-  border:2px solid var(--trait);background:var(--nappe);color:var(--creme);}
-.ec-choix > button.on{border-color:var(--rose);background:rgba(255,46,154,.08);}
-.ec-choix b{font-size:17px;}
-.ec-choix span{font-size:14px;color:var(--gris);}
-.ec-choix input{margin-top:-4px;width:100%;height:46px;padding:0 14px;border-radius:14px;border:1px solid var(--trait);
-  background:var(--fond);color:var(--creme);font-size:16px;}
-.ec-dit{margin:0;font-size:16px;line-height:1.45;}
-.ec-dit b{color:var(--ambre);}
-.ec-prix-saisie{position:relative;}
-.ec-prix-saisie input{width:100%;height:72px;padding:0 54px 0 20px;border-radius:20px;border:2px solid var(--ambre);background:var(--nappe);
-  color:var(--creme);font-family:var(--font-clikme),sans-serif;font-size:34px;font-weight:900;}
-.ec-prix-saisie span{position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:30px;font-weight:900;color:var(--ambre);}
+/* Le fantôme pose la question : sa bulle arrive à chaque étape. */
+.ec-guide{display:flex;align-items:center;gap:10px;animation:ec-guide .5s cubic-bezier(.2,1.25,.4,1) both;}
+@keyframes ec-guide{from{opacity:0;transform:translateX(-12px) scale(.96);}to{opacity:1;transform:none;}}
+.ec-guide > img{flex:none;width:64px;height:64px;border-radius:50%;object-fit:cover;background:var(--nappe2);border:2px solid rgba(245,162,58,.5);
+  animation:ec-flotte 3.2s ease-in-out .5s infinite;}
+@keyframes ec-flotte{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+.ec-bulle{position:relative;flex:1;min-width:0;margin:0;padding:11px 14px;border-radius:18px;background:#FFF4E6;color:#2A1A10;
+  box-shadow:0 10px 22px -10px rgba(0,0,0,.6);}
+.ec-bulle::before{content:"";position:absolute;left:-6px;top:50%;width:14px;height:14px;margin-top:-7px;border-radius:3px;background:#FFF4E6;transform:rotate(45deg);}
+.ec-bulle em{display:block;font-style:normal;font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#A9530C;}
+.ec-bulle b{display:block;margin-top:2px;font-family:var(--font-clikme),sans-serif;font-size:20px;font-weight:800;line-height:1.18;text-wrap:balance;}
+.ec-bulle small{display:block;margin-top:3px;font-size:13px;line-height:1.35;color:#6A5444;}
+/* Étape 1 : son produit, son prix, et la pièce qu'il devient. */
+.ec-bascule{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:999px;background:var(--nappe);border:1px solid var(--trait);}
+.ec-bascule button{height:38px;border:0;border-radius:999px;background:none;color:var(--gris);font-weight:800;font-size:14px;transition:background .25s,color .25s;}
+.ec-bascule button.on{background:var(--rose);color:#fff;}
+.ec-produit{border-radius:20px;overflow:hidden;background:var(--nappe);border:1px solid var(--trait);}
+.ec-produit > img{display:block;width:100%;height:150px;object-fit:cover;animation:ec-vivant 5s ease-in-out infinite alternate;}
+.ec-produit > img.fantome{object-fit:contain;padding:14px 0;background:radial-gradient(circle at 50% 45%,rgba(245,162,58,.22),var(--nappe2));animation:none;}
+@keyframes ec-vivant{from{transform:scale(1.03);}to{transform:scale(1.09) translate(-1%,-1%);}}
+.ec-champs{display:grid;grid-template-columns:minmax(0,1fr) 104px;gap:10px;padding:12px;}
+.ec-champs label{display:flex;flex-direction:column;gap:5px;min-width:0;}
+.ec-champs label > span:first-child{font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--ambre);}
+.ec-champs input{width:100%;min-width:0;height:48px;padding:0 12px;border-radius:14px;border:1.5px solid var(--ambre);background:var(--fond);
+  color:var(--creme);font-size:16px;font-weight:700;}
+.ec-euro{position:relative;display:block;}
+.ec-euro input{padding-right:28px;font-family:var(--font-clikme),sans-serif;font-size:20px;font-weight:900;-moz-appearance:textfield;appearance:textfield;}
+.ec-euro input::-webkit-inner-spin-button,.ec-euro input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+.ec-euro i{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-style:normal;font-weight:900;color:var(--ambre);}
+.ec-champ-fixe{display:flex;align-items:center;height:48px;padding:0 12px;border-radius:14px;border:1.5px dashed var(--trait);font-style:normal;font-size:14px;color:var(--gris);}
+.ec-or{display:grid;place-items:center;flex:none;width:58px;height:58px;border-radius:50%;color:#3A2200;font-family:var(--font-clikme),sans-serif;
+  font-weight:900;font-size:14px;letter-spacing:-.02em;white-space:nowrap;border:2px solid #FFD27A;
+  background:radial-gradient(circle at 35% 30%,#FFE9AE,#F5A23A 55%,#B5670F);box-shadow:inset 0 0 0 3px rgba(255,255,255,.22),0 6px 16px -6px rgba(245,162,58,.85);}
+.ec-egal{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:18px;border:1px dashed rgba(245,162,58,.55);
+  background:rgba(245,162,58,.08);animation:ec-arrive .45s cubic-bezier(.2,1.25,.4,1) both;}
+.ec-egal > img{flex:none;width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--creme);}
+.ec-egal > b{font-size:24px;font-weight:900;color:var(--ambre);}
+.ec-egal .ec-or{animation:ec-frappe .8s cubic-bezier(.2,1.25,.4,1) .1s both;}
+@keyframes ec-frappe{0%{transform:rotateY(90deg) scale(.3);}60%{transform:rotateY(-25deg) scale(1.15);}100%{transform:none;}}
+.ec-egal-t{flex:1;min-width:0;}
+.ec-egal-t b{display:block;font-size:15px;line-height:1.25;}
+.ec-egal-t small{display:block;margin-top:2px;font-size:12.5px;color:var(--gris);}
+/* Étape 2 : une assiette par produit du mois, et la caisse qui compte. */
+.ec-mois{padding:12px 12px 14px;border-radius:20px;border:1px solid var(--trait);background:var(--nappe);text-align:center;}
+.ec-mois-t{display:block;margin-bottom:10px;font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--gris);}
+.ec-assiettes{display:grid;grid-template-columns:repeat(4,52px);justify-content:center;gap:10px 16px;}
+.ec-assiettes i{width:52px;height:52px;border-radius:50%;border:2px dashed rgba(255,255,255,.18);}
+.ec-assiettes i.pleine{border:2.5px solid var(--creme);background-size:cover;background-position:center;box-shadow:0 6px 12px -6px rgba(0,0,0,.6);
+  animation:ec-pose .45s cubic-bezier(.2,1.25,.4,1) both;}
+@keyframes ec-pose{from{transform:scale(.2) rotate(-40deg);opacity:0;}to{transform:none;opacity:1;}}
+.ec-mois p{margin:12px 0 0;font-size:15px;line-height:1.4;}
+.ec-mois p b{color:var(--ambre);white-space:nowrap;}
+.ec-caisse{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;border:1px solid rgba(245,162,58,.55);
+  background:linear-gradient(120deg,rgba(245,162,58,.18),rgba(255,46,154,.05) 75%);}
+.ec-caisse .ec-or{width:44px;height:44px;font-size:18px;}
+.ec-caisse > span:nth-child(2){flex:1;min-width:0;}
+.ec-caisse small{display:block;font-size:15px;font-weight:800;}
+.ec-caisse em{display:block;margin-top:2px;font-style:normal;font-size:12.5px;line-height:1.3;color:var(--gris);}
+.ec-caisse > b{font-family:var(--font-clikme),sans-serif;font-size:32px;font-weight:900;color:var(--ambre);font-variant-numeric:tabular-nums;white-space:nowrap;}
+/* Étape 3 : les pièces tombent, et ce qu'il peut s'offrir s'allume. */
+.ec-pleine{position:relative;overflow:hidden;}
+.ec-pleine > :not(.ec-goutte){position:relative;z-index:1;}
+.ec-pleine > b{font-variant-numeric:tabular-nums;}
+.ec-goutte{position:absolute;top:-44px;width:34px;height:34px;font-size:15px;animation:ec-goutte .8s cubic-bezier(.45,0,.75,1) both;}
+@keyframes ec-goutte{0%{transform:translateY(0) rotateY(0);opacity:1;}75%{opacity:1;}100%{transform:translateY(160px) rotateY(540deg);opacity:0;}}
+.ec-envies-t{display:block;margin-bottom:8px;text-align:center;font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--gris);}
+.ec-envies-l{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+.ec-envie{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;text-align:center;}
+.ec-envie img{width:62px;height:62px;border-radius:50%;object-fit:cover;border:2.5px solid rgba(255,255,255,.18);filter:grayscale(.9) brightness(.5);
+  transition:filter .45s,border-color .45s,transform .5s cubic-bezier(.2,1.25,.4,1);}
+.ec-envie i{position:absolute;top:44px;left:50%;margin-left:14px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;
+  background:var(--nappe2);border:1px solid var(--trait);font-style:normal;font-size:11px;font-weight:900;}
+.ec-envie b{font-family:var(--font-clikme),sans-serif;font-size:15px;font-weight:900;color:var(--gris);transition:color .45s;}
+.ec-envie small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:12px;line-height:1.25;color:var(--gris);}
+.ec-envie.ok img{filter:none;border-color:#7CF0A2;transform:scale(1.07);}
+.ec-envie.ok b{color:#7CF0A2;}
+.ec-envie.ok i{background:#7CF0A2;border-color:#7CF0A2;color:#0E2A1F;animation:ec-pose .45s cubic-bezier(.2,1.25,.4,1);}
 .ec-puces{display:flex;flex-wrap:wrap;gap:8px;}
 .ec-puces button{height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--trait);background:var(--nappe);color:var(--creme);
   font-weight:700;font-size:14px;}
@@ -1081,7 +1383,8 @@ export function StylesEchanges() {
 .ec-calcul b{color:var(--ambre);font-size:18px;}
 .ec-calcul.petit{font-size:14px;color:var(--gris);}
 .ec-bravo{text-align:center;font-size:30px !important;color:#fff;}
-@media (prefers-reduced-motion: reduce){.ec-glisse{transition:none !important;}.ec-gros b,.ec-solde b,.ec-feuille-c,.ec-toast,.ec-glisse > .ec-carte{animation:none !important;}}
+@media (prefers-reduced-motion: reduce){.ec-glisse{transition:none !important;}.ec-gros b,.ec-solde b,.ec-feuille-c,.ec-toast,.ec-glisse > .ec-carte{animation:none !important;}
+  .ec-guide,.ec-guide > img,.ec-produit > img,.ec-egal,.ec-egal .ec-or,.ec-assiettes i.pleine,.ec-envie.ok i{animation:none !important;}.ec-goutte{display:none;}}
 `,
       }}
     />

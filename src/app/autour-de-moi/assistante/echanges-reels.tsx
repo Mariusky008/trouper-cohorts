@@ -2,7 +2,7 @@
 
 // 🔁 L'ÉCHANGE ENTRE COMMERÇANTS, EN VRAI — chez un commerçant venu par son
 // lien pro (`/p/<jeton>`). Même écran que la démonstration
-// (`echanges-comptoir.tsx` : les quatre étapes, la pile à glisser, les
+// (`echanges-comptoir.tsx` : les trois étapes, la pile à glisser, les
 // panneaux), mais tout passe par la base :
 //   · son offre est publiée pour TOUS les commerçants ClikMe qui échangent ;
 //   · « Je prends » réserve vraiment (le serveur vérifie son solde et la
@@ -17,7 +17,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { CLE_ACCES_COMPTOIR, type BonReel, type EtatEchanges } from "@/lib/echanges/echanges";
-import { Depart, Feuille, Pile, StylesEchanges, nomAffiche, nomDuMien, soitEnProduits, useQr, visageDe, type Mien, type Offre } from "./echanges-comptoir";
+import { Depart, Feuille, Pile, StylesEchanges, nomAffiche, nomDuMien, soitEnProduits, useQr, visageDe, type Envie, type Mien, type Offre } from "./echanges-comptoir";
 import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, jouer, vibrer } from "./echanges-magie";
 
 const ROUTE = "/api/site-internet/pro/echanges";
@@ -58,6 +58,11 @@ const versMien = (e: EtatEchanges, commerce: CommerceComptoir): Mien | undefined
 /* ═══ LA CARTE DE L'ACCUEIL ═══════════════════════════════════════════════ */
 /** Son état d'échanges en base, lu une fois — `null` tant qu'il n'est pas lu, ou sans réponse. */
 export function useEchangesReels(commerce: CommerceComptoir): EtatEchanges | null {
+  return useEtatEtPanne(commerce).etat;
+}
+
+/** Le même, avec `panne` : le serveur n'a pas répondu (la carte le dit, au lieu de rester vide). */
+function useEtatEtPanne(commerce: CommerceComptoir): { etat: EtatEchanges | null; panne: boolean } {
   const [etat, setEtat] = useState<EtatEchanges | null>(null);
   const [panne, setPanne] = useState(false);
   useEffect(() => {
@@ -73,11 +78,11 @@ export function useEchangesReels(commerce: CommerceComptoir): EtatEchanges | nul
       fini = true;
     };
   }, [commerce]);
-  return etat;
+  return { etat, panne };
 }
 
 export function CarteEchangesReelle({ commerce, onOuvrir }: { commerce: CommerceComptoir; onOuvrir: () => void }) {
-  const etat = useEchangesReels(commerce);
+  const { etat, panne } = useEtatEtPanne(commerce);
 
   /* LA CARTE EST TOUJOURS LÀ, ET DIT OÙ ON EN EST. « L'échange entre
      commerçants n'apparaît pas » : cachée tant que la base n'était pas
@@ -163,6 +168,13 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
   }, [reel, charger]);
 
   const mien = etat ? versMien(etat, commerce) : undefined;
+  /* Ce qu'il pourra s'offrir (étape 3 du départ) : de VRAIES offres du réseau — la moins chère, celle du
+     milieu, la plus chère. Aucune offre encore : la rangée ne s'affiche pas. */
+  const envies = useMemo<Envie[]>(() => {
+    const tri = [...(etat?.offres ?? [])].filter((o) => o.prix > 0).sort((a, b) => a.prix - b.prix);
+    const choix = tri.length <= 3 ? tri : [tri[0], tri[Math.floor(tri.length / 2)], tri[tri.length - 1]];
+    return choix.map((o) => ({ id: o.id, photo: o.photo || visageDe(o.branche, o.metier), prix: o.prix, mot: o.titre }));
+  }, [etat?.offres]);
 
   return (
     <div className="ec">
@@ -198,6 +210,7 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
           commerce={commerce}
           dossier={dossier}
           initial={mien}
+          envies={envies}
           reel
           onFini={async (m) => {
             const r = await appeler(reel, "offre", { titre: m.titre, prix: m.prix, parMois: m.parMois, duJour: m.duJour, accepte: true });

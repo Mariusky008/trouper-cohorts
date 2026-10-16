@@ -139,9 +139,10 @@ function souffle(a: AudioContext, sortie: AudioNode, t: number, de: number, vers
   src.stop(t + duree + 0.02);
 }
 
-export type Son = "prend" | "passe" | "match" | "piece" | "tic";
+export type Son = "prend" | "passe" | "match" | "piece" | "tic" | "note";
 
-export function jouer(son: Son) {
+/** `degre` : pour « note », la marche de la gamme (0, 1, 2…) — les assiettes du mois montent une à une. */
+export function jouer(son: Son, degre = 0) {
   if (lireMuet()) return;
   const a = debloquerSon();
   if (!a) return;
@@ -149,14 +150,17 @@ export function jouer(son: Son) {
   if (a.state !== "running") {
     ecouterLePremierGeste();
     a.resume()
-      .then(() => composer(a, son))
+      .then(() => composer(a, son, degre))
       .catch(() => undefined);
     return;
   }
-  composer(a, son);
+  composer(a, son, degre);
 }
 
-function composer(a: AudioContext, son: Son) {
+/** Une gamme pentatonique : quelle que soit la marche, ça sonne juste. */
+const GAMME = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21];
+
+function composer(a: AudioContext, son: Son, degre = 0) {
   // Un compresseur en sortie : plus fort sur un haut-parleur de téléphone, sans saturer.
   const comp = a.createDynamicsCompressor();
   comp.threshold.value = -14;
@@ -166,6 +170,11 @@ function composer(a: AudioContext, son: Son) {
   sortie.connect(comp).connect(a.destination);
   const t = a.currentTime + 0.01;
   if (son === "tic") note(a, sortie, "sine", 1320, t, 0.06, 0.15);
+  if (son === "note") {
+    const f = 523.25 * Math.pow(2, GAMME[Math.abs(degre) % GAMME.length] / 12);
+    note(a, sortie, "triangle", f, t, 0.22, 0.2);
+    note(a, sortie, "sine", f * 2, t, 0.14, 0.05);
+  }
   if (son === "passe") souffle(a, sortie, t, 1600, 380, 0.22, 0.7);
   if (son === "prend") {
     souffle(a, sortie, t, 500, 3200, 0.26, 0.8);
