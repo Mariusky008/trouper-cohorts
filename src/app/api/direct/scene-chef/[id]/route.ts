@@ -22,27 +22,67 @@
  *
  * EN CAS D'ÉCHEC, 503, sans cache : l'écran garde la salle de la maquette et
  * son fantôme assis, qu'il montre en attendant — voir `experience-table.tsx`.
+ *
+ * « LA PHOTO DU MONSIEUR À CÔTÉ DU FANTÔME A DISPARU. » Le réseau ne garde une
+ * scène que pour UN déploiement : chaque mise en ligne la jette, et la
+ * mémoire de la fonction aussi. Il fallait donc la refaire après chaque
+ * déploiement — une minute de moteur d'images, payée à nouveau, pendant
+ * laquelle l'écran montre la salle vide ; et si le moteur échoue ce jour-là,
+ * plus de cuisinier du tout. ELLE EST MAINTENANT RANGÉE DANS LE STOCKAGE
+ * (le même seau que les scènes des vrais restaurants) dès qu'elle est faite,
+ * et relue de là ensuite : faite une fois, pour de bon.
+ *
+ * ET L'ÉCHEC SE LIT : la réponse 503 dit pourquoi (`{ erreur }`). Ouvrir
+ * l'adresse dans un navigateur suffit à savoir ce qui bloque.
  */
 import { NextResponse } from "next/server";
 import { toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import { photoDuDisque, rendreScene } from "@/lib/site-internet/experience-scenes";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const maxDuration = 300;
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 const memoire = new Map<string, Buffer>();
-const enCours = new Map<string, Promise<Buffer | null>>();
+const enCours = new Map<string, Promise<{ octets: Buffer } | { erreur: string }>>();
 
-async function composer(nom: string, photo: string): Promise<Buffer | null> {
+/** Le seau des scènes des vrais restaurants (`experience-scenes.ts`) : une adresse fixe par restaurant de démonstration. */
+const SEAU = String(process.env.COUVERTURE_BUCKET ?? "").trim() || "marketplace-privilege-offers";
+const rangement = (id: string) => `experience-clikme/demo-scene-chef-${id}.webp`;
+
+async function lireRangee(id: string): Promise<Buffer | null> {
+  try {
+    const { data, error } = await createAdminClient().storage.from(SEAU).download(rangement(id));
+    if (error || !data) return null;
+    return Buffer.from(await data.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
+async function ranger(id: string, octets: Buffer) {
+  try {
+    const { error } = await createAdminClient().storage.from(SEAU).upload(rangement(id), octets, { contentType: "image/webp", upsert: true });
+    if (error) console.info("[scene-chef] rangement impossible", JSON.stringify({ id, erreur: error.message }));
+  } catch (e) {
+    console.info("[scene-chef] rangement impossible", JSON.stringify({ id, erreur: e instanceof Error ? e.message : "erreur" }));
+  }
+}
+
+async function composer(id: string, nom: string, photo: string): Promise<{ octets: Buffer } | { erreur: string }> {
+  // DÉJÀ FAITE UN AUTRE JOUR : on la relit, sans repasser par le moteur.
+  const rangee = await lireRangee(id);
+  if (rangee) return { octets: rangee };
   const img = await photoDuDisque(photo);
-  if (!img) return null;
+  if (!img) return { erreur: `photo d'accueil introuvable sur le serveur (${photo})` };
   const r = await rendreScene("chef", nom, img);
   if ("erreur" in r) {
     console.info("[scene-chef] la scène a échoué", JSON.stringify({ nom, erreur: r.erreur }));
-    return null;
+    return { erreur: r.erreur };
   }
-  return r.octets;
+  await ranger(id, r.octets);
+  return { octets: r.octets };
 }
 
 export async function GET(requete: Request, { params }: RouteContext) {
@@ -57,14 +97,13 @@ export async function GET(requete: Request, { params }: RouteContext) {
   if (!octets) {
     let p = enCours.get(id);
     if (!p) {
-      p = composer(c.nom, c.photoAccueil).finally(() => enCours.delete(id));
+      p = composer(id, c.nom, c.photoAccueil).finally(() => enCours.delete(id));
       enCours.set(id, p);
     }
-    octets = await p;
-    if (octets) memoire.set(id, octets);
-  }
-  if (!octets) {
-    return new NextResponse(null, { status: 503, headers: { "cache-control": "no-store" } });
+    const r = await p;
+    if ("erreur" in r) return NextResponse.json({ erreur: r.erreur }, { status: 503, headers: { "cache-control": "no-store" } });
+    octets = r.octets;
+    memoire.set(id, octets);
   }
   return new NextResponse(new Uint8Array(octets), {
     headers: {

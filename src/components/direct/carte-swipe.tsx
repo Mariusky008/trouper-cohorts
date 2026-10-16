@@ -980,18 +980,8 @@ export function CarteSwipe({
                 minutes, une barre. Le compte à rebours, lui, a quitté le texte
                 pour devenir un objet : l'anneau, à droite, posé sur la photo.
                 Deux objets qui se voient de loin, au lieu d'un paragraphe. */}
-            {c.flash && (
-              <span className="cd-tombe">
-                {/* LES ÉTINCELLES DE LA MAQUETTE — trois traits de chaque côté,
-                    comme un « pop » de bande dessinée. Elles ne disent rien de
-                    plus que la pastille ; elles disent qu'il faut la regarder,
-                    et c'est exactement ce qu'on lui demande. */}
-                <b aria-hidden="true" />
-                <i aria-hidden="true">⚡</i>
-                Ça vient de tomber !
-                <b aria-hidden="true" />
-              </span>
-            )}
+            {/* « SUPPRIMER "ÇA VIENT DE TOMBER" » : la pastille est partie. L'anneau
+                du compte à rebours, à droite, dit déjà que c'est maintenant. */}
             {/* ─── LE MÉTIER DESCEND, L'ÉTIQUETTE RESTE ───
                 LA MAQUETTE NE VEUT PAS DE « RESTAURANT » AU-DESSUS DU TITRE, et
                 elle a raison : c'est une ligne qu'on lit avant celle qui

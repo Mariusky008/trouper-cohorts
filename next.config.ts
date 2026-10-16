@@ -77,6 +77,13 @@ const config: NextConfig = {
       "./public/direct/table/restaurant/chef-fantome.webp",
       "./public/direct/double/assis/*.webp",
     ],
+    // LA SCÈNE DU CUISINIER D'UN RESTAURANT DE LA DÉMONSTRATION : sa photo
+    // d'accueil, la maquette 3 et le fantôme qui salue, lus sur le disque.
+    "/api/direct/scene-chef/[id]": [
+      "./public/direct/table/accueil-*.jpg",
+      "./public/direct/table/restaurant/chef-fantome.webp",
+      "./public/direct/double/assis/salut.webp",
+    ],
     "/api/site-internet/hote": [
       "./public/direct/table/restaurant/scene-magret.webp",
       "./public/direct/table/restaurant/chef-fantome.webp",

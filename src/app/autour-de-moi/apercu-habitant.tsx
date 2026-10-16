@@ -239,6 +239,13 @@ import { MurContenu } from "@/components/direct/mur-contenu";
 import { ReponseDuMagasin } from "@/components/direct/dressing/confirmation-magasin";
 import { AvisRecus } from "@/components/direct/ca-me-va";
 import { RelookingContenu } from "@/components/direct/relooking-contenu";
+/**
+ * « RELOOKE-MOI » ET « VOTRE JOURNÉE » — LES DEUX CARTES QUI NE SONT À PERSONNE.
+ * « Pour le moment on les enlève, ces deux options ; on les remettra plus
+ * tard. » Elles ne s'affichent plus dans Le Direct (c'était leur seule
+ * entrée) ; tout le reste est intact. `true` pour les remettre.
+ */
+const CARTES_A_PERSONNE = false;
 import { JourneeContenu } from "@/components/direct/journee-contenu";
 import {
   RANG_ANNONCE_RELOOKING,
@@ -5290,6 +5297,7 @@ export function ApercuHabitant({
    * se permettre de ne pas tenir.
    */
   const annonceJournee =
+    CARTES_A_PERSONNE &&
     monte &&
     !!sommet &&
     !journeeFermee &&
@@ -5303,6 +5311,7 @@ export function ApercuHabitant({
     !journeeDejaVue;
 
   const annonceRelook =
+    CARTES_A_PERSONNE &&
     monte &&
     !!sommet &&
     !relookFermee &&
