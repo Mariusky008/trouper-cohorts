@@ -239,6 +239,7 @@ import { MurContenu } from "@/components/direct/mur-contenu";
 import { ReponseDuMagasin } from "@/components/direct/dressing/confirmation-magasin";
 import { AvisRecus } from "@/components/direct/ca-me-va";
 import { RelookingContenu } from "@/components/direct/relooking-contenu";
+import { TutoOnglet } from "./tuto-onglet";
 /**
  * « RELOOKE-MOI » ET « VOTRE JOURNÉE » — LES DEUX CARTES QUI NE SONT À PERSONNE.
  * « Pour le moment on les enlève, ces deux options ; on les remettra plus
@@ -2899,9 +2900,10 @@ export function ApercuHabitant({
     // du serveur pendant l'hydratation, puis celui du client. Le fondu d'entrée
     // de 0,24 s couvre l'unique image où les deux diffèrent.
     !vus.includes("balayage") &&
-    // LE TUTO D'ARRIVÉE D'ABORD : la démonstration du balayage joue derrière
-    // lui sinon, et personne ne la verrait.
-    vus.includes("bienvenue");
+    // PAS PAR-DESSOUS LE PANNEAU DE BIENVENUE rouvert depuis Aide : la
+    // démonstration du balayage jouerait derrière lui, et personne ne la
+    // verrait. (Il ne s'ouvre plus tout seul — voir `tuto-onglet.tsx`.)
+    !revoirBienvenue;
 
   /**
    * LA DÉMONSTRATION SE TERMINE TOUTE SEULE, ET C'EST UN MINUTEUR QUI LA FINIT
@@ -3981,9 +3983,10 @@ export function ApercuHabitant({
    * « BIENVENUE SUR CLIKME » — le tuto d'arrivée, une fois l'écran d'ouverture
    * passé (ou tout de suite dans une vraie ville), sur Le Direct et rien par-dessus.
    */
-  const bienvenueOuverte =
-    revoirBienvenue ||
-    (monte && accueilVu && onglet === "direct" && !embauches && !sortie && !salonPage && !favorisPage && !feuille && !vus.includes("bienvenue"));
+  /* IL NE S'OUVRE PLUS TOUT SEUL. « Un petit tuto sur chaque page, ou tout à
+     lire au départ sur Le Direct ? » — chaque page, la première fois qu'on y
+     entre (`tuto-onglet.tsx`). Le panneau complet se rouvre depuis Aide. */
+  const bienvenueOuverte = revoirBienvenue;
   /** L'icône du bas que le tuto présente en ce moment : elle s'éclaire avec sa rubrique. */
   const [bvEclaire, setBvEclaire] = useState<OngletBienvenue | null>(null);
   const fermerBienvenue = () => {
@@ -14178,7 +14181,24 @@ export function ApercuHabitant({
           {/* LA RÉPONSE D'UN MAGASIN À UNE MISE DE CÔTÉ, ARRIVÉE ENTRE-TEMPS — voir `dressing/confirmation-magasin`. */}
           <ReponseDuMagasin />
           <AvisRecus />
-          {/* LE TUTO D'ARRIVÉE : au premier passage dans Le Direct, par-dessus l'annonce. */}
+          {/* LE PETIT TUTO DE L'ONGLET : une phrase de son fantôme, la première fois qu'on y entre. */}
+          <TutoOnglet
+            onglet={onglet}
+            ville={dessus?.ville ?? ""}
+            libre={
+              monte &&
+              accueilVu &&
+              !revoirBienvenue &&
+              !embauches &&
+              !sortie &&
+              !salonPage &&
+              !favorisPage &&
+              !feuille &&
+              // LE DIRECT ATTEND LA FIN DE LA DÉMONSTRATION DU BALAYAGE : sa phrase vient après.
+              (onglet !== "direct" || (vus.includes("balayage") && !montrerLeTuto))
+            }
+          />
+          {/* LE PANNEAU DE BIENVENUE : seulement quand on le redemande, depuis Aide. */}
           <Bienvenue
             ouvert={bienvenueOuverte}
             onFermer={fermerBienvenue}

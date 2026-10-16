@@ -36,7 +36,8 @@ const CLE = "clikme-vu-v1";
  */
 // « bienvenue » — le tuto d'arrivée — suit la même règle : on le remontre à
 // chaque démonstration, une seule fois à un habitant.
-export const TOUJOURS_REVOIR = new Set<string>(["accueil", "bienvenue"]);
+// …ET LE PETIT TUTO DE CHAQUE ONGLET (`tuto-onglet.tsx`), pour la même raison.
+export const TOUJOURS_REVOIR = new Set<string>(["accueil", "bienvenue", "tuto-direct", "tuto-ville", "tuto-salons", "tuto-profil"]);
 const CLE_DEMO = "clikme-demo-v1";
 
 /**
