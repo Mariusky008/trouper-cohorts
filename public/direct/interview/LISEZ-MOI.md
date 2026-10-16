@@ -68,9 +68,9 @@ création, librairie et bar ont leur interview : leurs questions, leur bonjour
 et leur au revoir sont dans `SCRIPTS` (`src/lib/direct/interview-fantome.ts`),
 sans « chef », sans « plat », sans cloche, et l'ardoise dit « Aujourd'hui
 chez… » (« Ce soir au… » pour un bar). Le gril ne grésille qu'en cuisine.
-**Textes à valider** : tant qu'un métier n'est pas dans `INTERVIEW_VALIDEE`,
-son interview ne s'ouvre qu'au comptoir de démonstration
-(`/autour-de-moi/assistante?metier=coiffure`), pas chez un vrai commerçant.
+Leurs textes sont validés : l'interview s'ouvre au comptoir de chacun. Un
+métier qu'on ajoute à `SCRIPTS` sans le mettre dans `INTERVIEW_VALIDEE` ne
+s'ouvre qu'au comptoir de démonstration (`/autour-de-moi/assistante?metier=…`).
 
 Leurs voix de secours se fabriquent avec
 `node scripts/fabriquer-voix-secours-interview.mjs` (espeak-ng, français,

@@ -8,7 +8,8 @@
 //     un serveur muet laisserait le reporter sans voix au milieu d'une question) ;
 //   · aucun « chef », aucun « plat », aucun « bon appétit » hors du restaurant ;
 //   · un vrai commerçant ne reçoit l'interview de son métier qu'une fois ses
-//     textes validés (`INTERVIEW_VALIDEE`) ; la démonstration, elle, l'a tout de suite.
+//     textes validés (`INTERVIEW_VALIDEE`) ; la démonstration, elle, l'a tout de
+//     suite. Tous les métiers d'aujourd'hui sont validés.
 //
 //   node scripts/verifier-interview-metiers.mjs
 import { existsSync, readFileSync } from "node:fs";
@@ -53,9 +54,11 @@ dire(enteteArdoise("Chez Bergine").avant === "Ce midi", "« Ce midi Chez Bergine
 
 console.log("══ à qui elle s'ouvre ══");
 dire(interviewOuverte("table", true) && interviewOuverte("table", false), "restaurant : chez tous");
-for (const m of Object.keys(SCRIPTS).filter((m) => !INTERVIEW_VALIDEE.includes(m))) {
-  dire(!interviewOuverte(m, true) && interviewOuverte(m, false), `${m} : démonstration seulement, tant que ses textes ne sont pas validés`);
+for (const m of Object.keys(SCRIPTS)) {
+  const valide = INTERVIEW_VALIDEE.includes(m);
+  dire(interviewOuverte(m, false) && interviewOuverte(m, true) === valide, `${m} : ${valide ? "textes validés — chez tous" : "démonstration seulement, tant que ses textes ne sont pas validés"}`);
 }
+dire(Object.keys(SCRIPTS).every((m) => INTERVIEW_VALIDEE.includes(m)), "tous les métiers d'aujourd'hui sont validés (« Tu valides les questions ? — Oui. »)");
 dire(!interviewOuverte("seance", false), "sophrologue : pas d'interview (aucun script)");
 dire(scriptDe("inconnu") === SCRIPTS.table, "un métier sans script retombe sur le restaurant (jamais d'écran vide)");
 

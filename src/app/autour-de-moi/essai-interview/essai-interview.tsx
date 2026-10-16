@@ -777,7 +777,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
         type: montage.type,
         duree: montage.duree,
         affiche: affiche ?? "",
-        plat: reglages.current.plat.trim(),
+        plat: reglages.current.plat.trim() || script.quoi,
         prix: reglages.current.prix.trim(),
         ...(mots ? { mots } : {}),
       });

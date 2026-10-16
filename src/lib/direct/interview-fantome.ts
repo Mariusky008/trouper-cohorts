@@ -54,10 +54,10 @@ export const REPLIQUES = {
   "bonjour-chef": "Bonjour ! Ici le fantôme reporter de ClikMe. Aujourd'hui, je suis en cuisine, avec le chef !",
   "a-demain-chef": "À demain, et bon appétit !",
 
-  // ═══ LES AUTRES MÉTIERS — TEXTES PROPOSÉS, À VALIDER ═══════════════════
+  // ═══ LES AUTRES MÉTIERS — TEXTES VALIDÉS ═══════════════════════════════
   // « Le gros du travail, c'est d'écrire ces textes par métier. Je te les
-  // ferai valider avant. » Ils servent déjà au comptoir de DÉMONSTRATION ;
-  // un vrai commerçant de ces métiers ne voit « En interview » qu'une fois
+  // ferai valider avant. » — « Tu valides les questions ? — Oui. » Un métier
+  // ajouté ici ne s'ouvre chez un vrai commerçant qu'une fois ses textes
   // validés (`INTERVIEW_VALIDEE`). Changer un texte → `VERSION_VOIX`.
   "q4-metier": "Et toi : qu'est-ce qui t'a donné envie de faire ce métier ?",
   "merci-tous": "Merci ! Je m'occupe du montage.",
@@ -214,11 +214,12 @@ export const SCRIPTS = {
 export type MetierInterview = keyof typeof SCRIPTS;
 
 /**
- * LES MÉTIERS DONT LES TEXTES SONT VALIDÉS. Les autres ont leur interview au
- * comptoir de démonstration, pour l'essayer et relire ses questions, mais pas
- * encore chez un vrai commerçant.
+ * LES MÉTIERS DONT LES TEXTES SONT VALIDÉS — tous ceux d'aujourd'hui. Un
+ * métier qu'on ajoute à `SCRIPTS` sans le mettre ici a son interview au
+ * comptoir de démonstration, pour l'essayer et relire ses questions, mais
+ * pas encore chez un vrai commerçant.
  */
-export const INTERVIEW_VALIDEE: readonly MetierInterview[] = ["table"];
+export const INTERVIEW_VALIDEE: readonly MetierInterview[] = ["table", "coiffure", "ongles", "mode", "lunettes", "fleurs", "createur", "librairie", "bar"];
 
 /** Le script d'un métier — celui du restaurant pour un métier qui n'en a pas. */
 export const scriptDe = (famille: string | undefined): ScriptInterview => SCRIPTS[(famille ?? "table") as MetierInterview] ?? SCRIPTS.table;

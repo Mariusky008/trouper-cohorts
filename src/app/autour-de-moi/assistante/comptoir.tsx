@@ -79,7 +79,7 @@ import { EchangesComptoir, resumeDesEchanges } from "./echanges-comptoir";
 import { EchangesReels, useEchangesReels } from "./echanges-reels";
 import { StylesInterview } from "../essai-interview/styles-interview";
 import { chefEnPied } from "@/lib/direct/interview-montage";
-import { interviewOuverte } from "@/lib/direct/interview-fantome";
+import { interviewOuverte, scriptDe } from "@/lib/direct/interview-fantome";
 import { CarteProposition, propositionAMontrer, useProposition, type PieceProposee } from "./proposition-comptoir";
 import { reseauxEnMots } from "@/lib/reseaux/reseaux-donnees";
 import { useSavoir, type SavoirDuComptoir } from "./use-savoir";
@@ -821,9 +821,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
               <OutilEchanges commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />
             )
           }
-          /* L'INTERVIEW, MÉTIER PAR MÉTIER : le restaurant chez tous ; les autres
-             métiers au comptoir de démonstration seulement, tant que leurs
-             questions ne sont pas validées — voir `INTERVIEW_VALIDEE`. */
+          /* L'INTERVIEW, MÉTIER PAR MÉTIER : chaque métier dont les questions
+             sont validées — voir `INTERVIEW_VALIDEE`. */
           onInterview={interviewOuverte(commerce.famille, Boolean(commerce.reel)) ? () => setPhase({ ou: "interview" }) : undefined}
           propositionActive={Boolean(propositionAMontrer(proposition))}
           proposition={
@@ -902,7 +901,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
                 ? {
                     publier: async (m: { blob: Blob; type: string; duree: number; affiche: string; plat: string; prix: string; mots?: string }) => {
                       const r = await envoyerInterview(commerce, {
-                        nom: m.plat || principal?.nom || "Le plat du jour",
+                        nom: m.plat || principal?.nom || scriptDe(commerce.famille).quoi,
                         prix: m.prix,
                         blob: m.blob,
                         type: m.type,
