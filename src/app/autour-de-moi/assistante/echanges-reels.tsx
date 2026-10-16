@@ -59,12 +59,15 @@ const versMien = (e: EtatEchanges, commerce: CommerceComptoir): Mien | undefined
 /** Son état d'échanges en base, lu une fois — `null` tant qu'il n'est pas lu, ou sans réponse. */
 export function useEchangesReels(commerce: CommerceComptoir): EtatEchanges | null {
   const [etat, setEtat] = useState<EtatEchanges | null>(null);
+  const [panne, setPanne] = useState(false);
   useEffect(() => {
     if (!commerce.reel) return;
     retenirAcces(commerce);
     let fini = false;
     appeler(commerce.reel, "etat").then((r) => {
-      if (!fini && r.etat) setEtat(r.etat);
+      if (fini) return;
+      if (r.etat) setEtat(r.etat);
+      else setPanne(true);
     });
     return () => {
       fini = true;
@@ -76,8 +79,36 @@ export function useEchangesReels(commerce: CommerceComptoir): EtatEchanges | nul
 export function CarteEchangesReelle({ commerce, onOuvrir }: { commerce: CommerceComptoir; onOuvrir: () => void }) {
   const etat = useEchangesReels(commerce);
 
-  // Pas de base (migration non appliquée) ou pas de réponse : pas de carte.
-  if (!etat?.pret) return null;
+  /* LA CARTE EST TOUJOURS LÀ, ET DIT OÙ ON EN EST. « L'échange entre
+     commerçants n'apparaît pas » : cachée tant que la base n'était pas
+     créée, elle ne laissait rien deviner. Désormais :
+       · « Bientôt disponible » — la base n'est pas encore créée (migration) ;
+       · « Indisponible pour l'instant » — le serveur n'a pas répondu. */
+  if (!etat) {
+    if (!panne) return null;
+    return (
+      <button type="button" className="cz-relance cz-echanges" onClick={onOuvrir}>
+        <span className="cz-relance-i">🔁</span>
+        <span>
+          <b>Échanger avec les commerçants</b>
+          <em>Indisponible pour l’instant. Réessaie dans un moment.</em>
+        </span>
+        <s aria-hidden="true">→</s>
+      </button>
+    );
+  }
+  if (!etat.pret) {
+    return (
+      <button type="button" className="cz-relance cz-echanges" onClick={onOuvrir}>
+        <span className="cz-relance-i">🔁</span>
+        <span>
+          <b>Échanger avec les commerçants</b>
+          <em>Bientôt disponible : offre ton produit aux autres commerçants ClikMe, et prends ce que tu veux chez eux.</em>
+        </span>
+        <s aria-hidden="true">→</s>
+      </button>
+    );
+  }
   const aValider = etat.recus.filter((b) => b.statut === "reserve").length;
   const morceaux = etat.mien
     ? [
@@ -158,7 +189,9 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
         </div>
       ) : !etat.pret ? (
         <div className="ec-fin-pile">
-          <p>L’échange entre commerçants ouvre bientôt.</p>
+          <p>
+            <b>L’échange entre commerçants ouvre bientôt.</b> Tu pourras offrir ton produit aux autres commerçants ClikMe, et prendre ce que tu veux chez eux, même dans d’autres villes.
+          </p>
         </div>
       ) : !mien || modifier ? (
         <Depart

@@ -930,7 +930,7 @@ export function StylesEchanges() {
   scrollbar-width:none;display:flex;flex-direction:column;gap:14px;}
 .ec::-webkit-scrollbar{display:none;}
 .ec-haut{display:flex;align-items:center;justify-content:space-between;gap:10px;}
-.ec-retour{border:1px solid var(--trait);border-radius:999px;padding:9px 16px;background:var(--nappe);font-weight:700;}
+.ec-retour{border:1px solid var(--trait);border-radius:999px;padding:9px 14px;background:var(--nappe);font-weight:700;white-space:nowrap;flex-shrink:0;}
 .ec-exemple{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:999px;
   background:rgba(245,162,58,.18);color:var(--ambre);}
 .ec-gris{color:var(--gris);font-size:14px;line-height:1.4;margin:0;}
@@ -1044,7 +1044,7 @@ export function StylesEchanges() {
 .ec-gestes button{transition:transform .15s;}
 .ec-gestes button:active{transform:scale(.93) !important;}
 .ec-solde{position:relative;}
-.ec-haut-d{display:flex;align-items:center;gap:8px;}
+.ec-haut-d{display:flex;align-items:center;gap:6px;min-width:0;}
 .ec-gestes{display:grid;grid-template-columns:auto 1fr;gap:10px;width:100%;}
 .ec-gestes button{height:52px;border-radius:999px;border:0;font-weight:900;font-size:15.5px;padding:0 18px;}
 .ec-non{background:var(--nappe);color:#FF8FB8;border:1px solid var(--trait) !important;}

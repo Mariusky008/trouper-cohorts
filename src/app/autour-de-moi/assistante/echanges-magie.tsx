@@ -159,22 +159,22 @@ export function jouer(son: Son) {
 function composer(a: AudioContext, son: Son) {
   // Un compresseur en sortie : plus fort sur un haut-parleur de téléphone, sans saturer.
   const comp = a.createDynamicsCompressor();
-  comp.threshold.value = -18;
+  comp.threshold.value = -14;
   comp.ratio.value = 6;
   const sortie = a.createGain();
-  sortie.gain.value = 1.6;
+  sortie.gain.value = 2.1;
   sortie.connect(comp).connect(a.destination);
   const t = a.currentTime + 0.01;
   if (son === "tic") note(a, sortie, "sine", 1320, t, 0.06, 0.15);
-  if (son === "passe") souffle(a, sortie, t, 1600, 380, 0.2, 0.35);
+  if (son === "passe") souffle(a, sortie, t, 1600, 380, 0.22, 0.7);
   if (son === "prend") {
-    souffle(a, sortie, t, 500, 3200, 0.24, 0.4);
-    note(a, sortie, "triangle", 880, t + 0.12, 0.18, 0.12);
+    souffle(a, sortie, t, 500, 3200, 0.26, 0.8);
+    note(a, sortie, "triangle", 880, t + 0.12, 0.2, 0.2);
   }
   if (son === "piece") {
     // La pièce : deux notes vives, la seconde qui sonne.
-    note(a, sortie, "square", 988, t, 0.09, 0.08);
-    note(a, sortie, "triangle", 1319, t + 0.08, 0.5, 0.22);
+    note(a, sortie, "square", 988, t, 0.09, 0.12);
+    note(a, sortie, "triangle", 1319, t + 0.08, 0.5, 0.32);
     note(a, sortie, "sine", 2637, t + 0.08, 0.35, 0.06);
   }
   if (son === "match") {
@@ -204,18 +204,20 @@ export function BoutonSon() {
   return (
     <button
       type="button"
-      className="mg-son"
+      className={`mg-son${coupe ? " coupe" : ""}`}
       aria-pressed={!coupe}
-      aria-label={coupe ? "Remettre le son" : "Couper le son"}
+      title={coupe ? "Remettre le son" : "Couper le son"}
       onClick={() => {
         ecrireMuet(!coupe);
         if (coupe) {
           debloquerSon();
-          setTimeout(() => jouer("tic"), 30);
+          setTimeout(() => jouer("piece"), 30);
         }
       }}
     >
-      {coupe ? "🔇" : "🔊"}
+      {/* LE BOUTON DIT CE QUI EST, pas ce qu'il fera : une icône seule se lisait
+          « touche ici pour avoir le son » — et la toucher le coupait. */}
+      {coupe ? "🔇 Son coupé" : "🔊 Son activé"}
     </button>
   );
 }
@@ -381,7 +383,9 @@ export function StylesMagie() {
     <style
       dangerouslySetInnerHTML={{
         __html: `
-.mg-son{width:40px;height:40px;border-radius:50%;border:1px solid var(--trait,rgba(255,196,140,.14));background:var(--nappe,#1C1411);font-size:18px;line-height:1;}
+.mg-son{height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--trait,rgba(255,196,140,.14));background:var(--nappe,#1C1411);
+  color:var(--creme,#FFF4E6);font-size:13px;font-weight:800;line-height:1;white-space:nowrap;}
+.mg-son.coupe{border-color:rgba(255,46,154,.55);color:#FF8FB8;background:rgba(255,46,154,.1);}
 .mg-fete{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;overflow:hidden;
   padding:calc(20px + env(safe-area-inset-top,0px)) 20px calc(20px + env(safe-area-inset-bottom,0px));
   background:radial-gradient(120% 85% at 50% 38%,#FF5AB4 0%,#D81B7E 30%,#5A1236 62%,#1A0E0B 88%);
