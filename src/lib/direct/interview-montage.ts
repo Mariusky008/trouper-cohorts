@@ -666,16 +666,22 @@ const TITRE_CLOCHE = { texte: "Qu’est-ce que le chef te prépare aujourd’hui
 
 /** Tout ce qui ne bouge pas, dessiné une fois : sur un téléphone, une ombre floue par image coûte cher. */
 type DecorCloche = {
-  /** La salle, son voile, le fantôme assis et son nom brodé, le pied de page. */
+  /** Étape 1 : la salle, son voile, le fantôme assis et son nom brodé, le pied de page. */
   fond: HTMLCanvasElement;
   /** La cloche et son ombre (MARGE_OMBRE tout autour). */
   cloche: HTMLCanvasElement;
-  plat: HTMLCanvasElement;
   titre: { toile: HTMLCanvasElement; marge: number };
   fleche: HTMLCanvasElement;
+  /** Étape 2 : la même salle, remontée d'un quart et assombrie, sous son voile. */
+  fond2: HTMLCanvasElement;
+  /** Le plat en pleine largeur, fondu en haut et en bas — ou sa scène, l'assiette et son fantôme. */
+  plat: { toile: HTMLCanvasElement; y: number };
+  /** « ♥ Le coup de cœur du chef ». */
+  badge: HTMLCanvasElement;
+  /** Le trait, le nom du plat et son prix. */
   carte: HTMLCanvasElement;
-  /** Le bas de la cloche (milieu), sa taille ; le milieu du plat et ses rayons. */
-  g: { cx: number; bas: number; w: number; h: number; platX: number; platY: number; pw: number; ph: number };
+  /** Le bas de la cloche (milieu) et sa taille. */
+  g: { cx: number; bas: number; w: number; h: number };
 };
 
 /** `cubic-bezier()` du CSS, pour rejouer les mêmes mouvements. */
@@ -809,35 +815,31 @@ function broderie(c2d: CanvasRenderingContext2D, nom: string, x: number, y: numb
 }
 
 /**
- * LE PLAT, SOUS LA CLOCHE : SA PHOTO TELLE QU'IL L'A PRISE, nette, l'assiette
- * entière, coins arrondis et ombre portée. « Le plat est entouré de flou au
- * lieu d'être comme sur la photo, dans une assiette » : l'ovale aux bords
- * fondus noyait l'assiette. Fabriquée une fois, ombre comprise (MARGE_OMBRE
- * tout autour).
+ * LE PLAT DE L'ÉTAPE 2, EN PLEINE LARGEUR — `.xr-plat-photo` de l'expérience.
+ * « Le plat est entouré de flou au lieu d'être dans son assiette » : un ovale,
+ * puis une carte posée sur la table, ne valaient pas l'étape 2. On fait comme
+ * elle : SA SCÈNE quand le restaurant en a une (l'assiette servie, son fantôme
+ * assis derrière — composée une fois pour toutes), sinon SA PHOTO, telle
+ * qu'il l'a prise, sur toute la largeur, fondue dans la nuit en haut et en bas.
  */
-function photoDuPlat(photo: HTMLImageElement, w: number, h: number): HTMLCanvasElement {
-  const c = toile(w + 2 * MARGE_OMBRE, h + 2 * MARGE_OMBRE);
+function platPleinePage(img: HTMLImageElement, scene: boolean): { toile: HTMLCanvasElement; y: number } {
+  const W = LARGEUR;
+  const h = scene ? (W * img.naturalHeight) / img.naturalWidth : 0.48 * HAUTEUR;
+  const c = toile(W, h);
   const g = c.getContext("2d")!;
-  const r = 30;
-  const forme = () => cheminArrondi(g, MARGE_OMBRE, MARGE_OMBRE, w, h, r);
-  g.save();
-  g.shadowColor = "rgba(0,0,0,.6)";
-  g.shadowOffsetY = 18;
-  g.shadowBlur = 40;
-  g.fillStyle = "#1A120E";
-  forme();
-  g.fill();
-  g.restore();
-  g.save();
-  forme();
-  g.clip();
-  couvrir(g, photo, photo.naturalWidth, photo.naturalHeight, MARGE_OMBRE, MARGE_OMBRE, w, h, 1, 0.55);
-  g.restore();
-  g.lineWidth = 2;
-  g.strokeStyle = "rgba(255,244,230,.28)";
-  forme();
-  g.stroke();
-  return c;
+  if (scene) g.drawImage(img, 0, 0, W, h);
+  else couvrir(g, img, img.naturalWidth, img.naturalHeight, 0, 0, W, h, 1, 0.6);
+  // le fondu, comme le `mask-image` du CSS (scène : 7 % / 90 % ; photo : 9 % / 84 %)
+  const [haut, bas] = scene ? [0.07, 0.9] : [0.09, 0.84];
+  const m = g.createLinearGradient(0, 0, 0, h);
+  m.addColorStop(0, "rgba(0,0,0,0)");
+  m.addColorStop(haut, "rgba(0,0,0,1)");
+  m.addColorStop(bas, "rgba(0,0,0,1)");
+  m.addColorStop(1, "rgba(0,0,0,0)");
+  g.globalCompositeOperation = "destination-in";
+  g.fillStyle = m;
+  g.fillRect(0, 0, W, h);
+  return { toile: c, y: (scene ? 0.158 : 0.13) * HAUTEUR };
 }
 
 /**
@@ -847,8 +849,19 @@ function photoDuPlat(photo: HTMLImageElement, w: number, h: number): HTMLCanvasE
  * de la vidéo, qui a la proportion de la salle. Rejette si une image manque —
  * la vidéo se monte alors sans la cloche, et l'écran d'essai le dit.
  */
-async function preparerCloche(photo: string, r: Reglages, police: Elements["police"]): Promise<DecorCloche> {
-  const [salle, cloche, assis, plat] = await Promise.all([image(RESTAURANT.salle), image(RESTAURANT.cloche), image(RESTAURANT.assis), image(photo)]);
+async function preparerCloche(
+  quoi: { photo: string; scene?: string },
+  r: Reglages,
+  police: Elements["police"],
+): Promise<DecorCloche> {
+  // SA SCÈNE SI ELLE EXISTE ET SE CHARGE ; sinon sa photo
+  const vue = quoi.scene ? await image(quoi.scene).then((img) => ({ img, scene: true })).catch(() => null) : null;
+  const [salle, cloche, assis, plat] = await Promise.all([
+    image(RESTAURANT.salle),
+    image(RESTAURANT.cloche),
+    image(RESTAURANT.assis),
+    vue ? Promise.resolve(vue) : image(quoi.photo).then((img) => ({ img, scene: false })),
+  ]);
   const W = LARGEUR;
   const H = HAUTEUR;
 
@@ -877,21 +890,24 @@ async function preparerCloche(photo: string, r: Reglages, police: Elements["poli
   f.drawImage(assis, fx, fy, fw, fh);
   f.restore();
   broderie(f, r.commerce, fx, fy, fw, fh, police.enseigne);
-  // « Une rencontre avec … », entre deux traits, en bas
-  f.save();
-  f.font = `500 ${15 * PX}px ${police.bulle}`;
-  f.fillStyle = "#F3E2D0";
-  f.textAlign = "center";
-  f.textBaseline = "middle";
-  const pied = `Une rencontre avec ${r.commerce}`;
-  const yPied = H - 44;
-  f.fillText(pied, W / 2, yPied);
-  const lp = f.measureText(pied).width;
-  const trait = Math.max(14 * PX, Math.min(56 * PX, (W - lp) / 2 - 24 * PX - 30));
-  f.fillStyle = "rgba(255,244,230,.4)";
-  f.fillRect(W / 2 - lp / 2 - 12 * PX - trait, yPied - 1, trait, 2);
-  f.fillRect(W / 2 + lp / 2 + 12 * PX, yPied - 1, trait, 2);
-  f.restore();
+  // « Une rencontre avec … », entre deux traits, en bas — sur les deux étapes
+  const piedDePage = (g: CanvasRenderingContext2D) => {
+    g.save();
+    g.font = `500 ${15 * PX}px ${police.bulle}`;
+    g.fillStyle = "#F3E2D0";
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    const pied = `Une rencontre avec ${r.commerce}`;
+    const yPied = H - 44;
+    g.fillText(pied, W / 2, yPied);
+    const lp = g.measureText(pied).width;
+    const trait = Math.max(14 * PX, Math.min(56 * PX, (W - lp) / 2 - 24 * PX - 30));
+    g.fillStyle = "rgba(255,244,230,.4)";
+    g.fillRect(W / 2 - lp / 2 - 12 * PX - trait, yPied - 1, trait, 2);
+    g.fillRect(W / 2 + lp / 2 + 12 * PX, yPied - 1, trait, 2);
+    g.restore();
+  };
+  piedDePage(f);
 
   // LA CLOCHE ET SON OMBRE (`drop-shadow(0 16px 16px rgba(0,0,0,.55))`)
   const w = 0.76 * W;
@@ -948,132 +964,202 @@ async function preparerCloche(photo: string, r: Reglages, police: Elements["poli
   fc.shadowBlur = 12 * PX;
   fc.fillText("↑", 60, 60);
 
-  // LE NOM DU PLAT ET SON PRIX, sous l'assiette, une fois découverte
-  const ca = toile(W, 240);
+  // ═══ L'ÉTAPE 2 ═══ la salle remontée d'un quart (`.xr-plan.remonte`), assombrie, sous le voile de l'étape 2
+  const fond2 = toile(W, H);
+  const f2 = fond2.getContext("2d")!;
+  f2.fillStyle = "#120C09";
+  f2.fillRect(0, 0, W, H);
+  couvrir(f2, salle, salle.naturalWidth, salle.naturalHeight, 0, -0.24 * H, W, H, 1, 0.5);
+  f2.fillStyle = "rgba(0,0,0,.22)"; // `brightness(.78)`
+  f2.fillRect(0, 0, W, H);
+  const voile2 = f2.createLinearGradient(0, 0, 0, H);
+  voile2.addColorStop(0, "rgba(18,12,9,.6)");
+  voile2.addColorStop(0.22, "rgba(18,12,9,0)");
+  voile2.addColorStop(0.46, "rgba(18,12,9,0)");
+  voile2.addColorStop(0.64, "rgba(18,12,9,.75)");
+  voile2.addColorStop(0.82, "rgba(18,12,9,.97)");
+  voile2.addColorStop(1, "#120C09");
+  f2.fillStyle = voile2;
+  f2.fillRect(0, 0, W, H);
+  piedDePage(f2);
+
+  // « ♥ Le coup de cœur du chef » (`.xr-badge`)
+  const tb = 16 * PX;
+  const t1 = toile(1, 1).getContext("2d")!;
+  t1.font = `700 ${tb}px ${police.bulle}`;
+  const motBadge = "Le coup de cœur du chef";
+  const bw = 14 * PX + 22 * PX + 10 * PX + t1.measureText(motBadge).width + 18 * PX;
+  const bh = 42 * PX;
+  const badge = toile(bw + 4, bh + 4);
+  const bc = badge.getContext("2d")!;
+  cheminArrondi(bc, 2, 2, bw, bh, bh / 2);
+  bc.fillStyle = "rgba(18,12,9,.72)";
+  bc.fill();
+  bc.lineWidth = 1.5 * PX;
+  bc.strokeStyle = ROSE;
+  bc.stroke();
+  bc.save();
+  bc.translate(2 + 14 * PX, 2 + (bh - 22 * PX) / 2);
+  bc.scale((22 * PX) / 24, (22 * PX) / 24);
+  bc.fillStyle = ROSE;
+  bc.fill(new Path2D("M12 20s-7.5-4.6-9.2-9.3C1.6 7.4 3.8 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.2 0 5.4 2.9 4.2 6.2C19.5 15.4 12 20 12 20Z"));
+  bc.restore();
+  bc.font = `700 ${tb}px ${police.bulle}`;
+  bc.fillStyle = "#FFF4E6";
+  bc.textBaseline = "middle";
+  bc.fillText(motBadge, 2 + 14 * PX + 22 * PX + 10 * PX, 2 + bh / 2);
+
+  // LE TRAIT, LE NOM DU PLAT ET SON PRIX (`.xr-trait`, `.xr-plat`, `.xr-prix`)
+  const ca = toile(W, 220);
   const cc = ca.getContext("2d")!;
+  const trait2 = cc.createLinearGradient(W * 0.3, 0, W * 0.7, 0);
+  trait2.addColorStop(0, "rgba(255,244,230,0)");
+  trait2.addColorStop(0.5, "rgba(255,244,230,.4)");
+  trait2.addColorStop(1, "rgba(255,244,230,0)");
+  cc.fillStyle = trait2;
+  cc.fillRect(W * 0.3, 10, W * 0.4, 2);
   cc.textAlign = "center";
   cc.textBaseline = "middle";
-  cc.shadowColor = "rgba(0,0,0,.75)";
-  cc.shadowOffsetY = 3;
-  cc.shadowBlur = 22;
-  cc.font = `800 ${44}px ${police.bulle}`;
-  const lignesPlat = couperLignes(cc, r.plat.trim(), W - 120).slice(0, 2);
-  lignesPlat.forEach((l, i) => {
-    cc.fillStyle = "#FFF4E6";
-    cc.fillText(l, W / 2, 40 + i * 50);
-  });
+  cc.font = `600 ${20 * PX}px ${police.bulle}`;
+  cc.fillStyle = "#FFF4E6";
+  const lignesPlat = couperLignes(cc, r.plat.trim(), W - 90).slice(0, 2);
+  lignesPlat.forEach((l, i) => cc.fillText(l, W / 2, 62 + i * 44));
   if (r.prix.trim()) {
-    cc.font = `800 ${46}px ${police.bulle}`;
-    cc.fillStyle = ROSE;
-    cc.fillText(r.prix.trim(), W / 2, 40 + lignesPlat.length * 50 + 14);
+    cc.font = `400 ${17 * PX}px ${police.bulle}`;
+    cc.fillStyle = "#E8D5C2";
+    cc.fillText(r.prix.trim(), W / 2, 62 + lignesPlat.length * 44 + 8);
   }
 
-  // LA PHOTO DU PLAT : un peu moins large que la cloche, et un peu à sa gauche —
-  // le fantôme qui la montre reste visible derrière
-  const pw = 0.8 * w;
-  const ph = pw * 0.8;
   return {
     fond,
     cloche: cl,
-    plat: photoDuPlat(plat, pw, ph),
     titre: { toile: ti, marge },
     fleche: fl,
+    fond2,
+    plat: platPleinePage(plat.img, plat.scene),
+    badge,
     carte: ca,
-    g: { cx, bas, w, h, platX: cx - 16, platY: bas + 12 - ph / 2, pw, ph },
+    g: { cx, bas, w, h },
   };
 }
 
 /**
- * L'ÉTAPE 1, IMAGE PAR IMAGE : le titre monte, la flèche sautille, puis à
- * `CLOCHE.leve` la cloche se soulève (`xrSouleve`, 0,85 s), la lueur s'allume
- * (`xrLueur`, 0,9 s), et le plat apparaît dessous en montant un peu.
+ * LA DÉCOUVERTE, IMAGE PAR IMAGE — les deux premières étapes de l'expérience.
+ * Étape 1 : le titre monte, la flèche sautille, puis à `CLOCHE.leve` la cloche
+ * se soulève (`xrSouleve`, 0,85 s) et la lueur s'allume (`xrLueur`, 0,9 s).
+ * Étape 2, à la fin du geste comme dans l'application (0,9 s) : la salle
+ * remonte en fondu, le plat arrive (`xrArrive`), le badge monte (`xrMonte`),
+ * puis son nom et son prix.
  */
 function decouverte(c2d: CanvasRenderingContext2D, d: DecorCloche, t: number) {
-  const { cx, bas, w, h, platX, platY, pw, ph } = d.g;
+  const { cx, bas, w, h } = d.g;
   const a = t - CLOCHE.leve;
-  c2d.drawImage(d.fond, 0, 0);
+  /** Le temps de l'étape 2. */
+  const b = a - 0.9;
+  const deux = doux(b / 0.6);
 
-  // LA LUEUR, derrière la cloche
-  if (a > 0) {
-    const p = a / 0.9;
-    const echelle = 0.6 + 1.8 * SORTIE(p);
-    let op = p < 0.5 ? SORTIE(p / 0.5) : 1 - 0.1 * SORTIE((p - 0.5) / 0.5);
-    op *= 1 - 0.45 * entree(a, 1.1, 1.4); // puis elle s'adoucit, pour laisser voir le plat
-    const lw = 0.8 * w;
-    const lh = 0.6 * h;
-    c2d.save();
-    c2d.globalAlpha = op;
-    c2d.translate(cx, bas - 0.08 * h - lh / 2);
-    c2d.scale(echelle, (echelle * lh) / lw);
-    const g = c2d.createRadialGradient(0, 0, 0, 0, 0, lw / 2);
-    g.addColorStop(0, "rgba(255,226,170,.95)");
-    g.addColorStop(0.5, "rgba(255,176,90,.5)");
-    g.addColorStop(1, "rgba(255,176,90,0)");
-    c2d.fillStyle = g;
-    c2d.fillRect(-lw / 2, -lw / 2, lw, lw);
-    c2d.restore();
-  }
+  // ═══ ÉTAPE 1 ═══
+  if (deux < 1) {
+    c2d.drawImage(d.fond, 0, 0);
 
-  // LE PLAT : il apparaît sous la cloche et se lève un peu, puis la caméra s'en approche
-  const pp = doux((a - 0.2) / 0.6);
-  if (pp > 0) {
-    const zoom = (0.86 + 0.14 * pp) * (1 + 0.04 * borne((a - 0.8) / 3.2));
-    const y = platY + 30 * (1 - pp);
-    c2d.save();
-    c2d.globalAlpha = pp;
-    c2d.translate(platX, y);
-    c2d.scale(zoom, zoom);
-    c2d.drawImage(d.plat, -pw / 2 - MARGE_OMBRE, -ph / 2 - MARGE_OMBRE);
-    c2d.restore();
-  }
-
-  // LA CLOCHE : posée, puis `xrSouleve` — elle se décolle, puis s'envole en tournant
-  const p = a / 0.85;
-  if (p < 1) {
-    let tx = 0;
-    let ty = 0;
-    let r = 0;
-    if (p > 0 && p < 0.3) {
-      const q = SOULEVE(p / 0.3);
-      ty = -14 * PX * q;
-      r = -2 * q;
-    } else if (p >= 0.3) {
-      const q = SOULEVE((p - 0.3) / 0.7);
-      tx = 0.18 * w * q;
-      ty = -14 * PX + (-1.5 * h + 14 * PX) * q;
-      r = -2 - 22 * q;
+    // LA LUEUR, derrière la cloche
+    if (a > 0) {
+      const p = a / 0.9;
+      const echelle = 0.6 + 1.8 * SORTIE(p);
+      const op = p < 0.5 ? SORTIE(p / 0.5) : 1 - 0.1 * SORTIE((p - 0.5) / 0.5);
+      const lw = 0.8 * w;
+      const lh = 0.6 * h;
+      c2d.save();
+      c2d.globalAlpha = op;
+      c2d.translate(cx, bas - 0.08 * h - lh / 2);
+      c2d.scale(echelle, (echelle * lh) / lw);
+      const g = c2d.createRadialGradient(0, 0, 0, 0, 0, lw / 2);
+      g.addColorStop(0, "rgba(255,226,170,.95)");
+      g.addColorStop(0.5, "rgba(255,176,90,.5)");
+      g.addColorStop(1, "rgba(255,176,90,0)");
+      c2d.fillStyle = g;
+      c2d.fillRect(-lw / 2, -lw / 2, lw, lw);
+      c2d.restore();
     }
+
+    // LA CLOCHE : posée, puis `xrSouleve` — elle se décolle, puis s'envole en tournant
+    const p = a / 0.85;
+    if (p < 1) {
+      let tx = 0;
+      let ty = 0;
+      let r = 0;
+      if (p > 0 && p < 0.3) {
+        const q = SOULEVE(p / 0.3);
+        ty = -14 * PX * q;
+        r = -2 * q;
+      } else if (p >= 0.3) {
+        const q = SOULEVE((p - 0.3) / 0.7);
+        tx = 0.18 * w * q;
+        ty = -14 * PX + (-1.5 * h + 14 * PX) * q;
+        r = -2 - 22 * q;
+      }
+      c2d.save();
+      c2d.globalAlpha = 1 - SOULEVE(borne(p));
+      c2d.translate(cx + tx, bas + ty);
+      c2d.rotate((r * Math.PI) / 180);
+      c2d.drawImage(d.cloche, -w / 2 - MARGE_OMBRE, -h - MARGE_OMBRE);
+      c2d.restore();
+    }
+
+    // LA FLÈCHE, tant que la cloche est posée (`xrHop`, 1,4 s)
+    if (a < 0) {
+      const saut = 8 * PX * (0.5 - 0.5 * Math.cos((t / 1.4) * 2 * Math.PI));
+      c2d.save();
+      c2d.globalAlpha = entree(t, 0.3, 0.3);
+      c2d.drawImage(d.fleche, cx - d.fleche.width / 2, bas - h - 16 * PX - saut - d.fleche.height / 2);
+      c2d.restore();
+    }
+
+    // LE TITRE (`xrMonte`, 0,7 s)
+    const m = EASE(borne(t / 0.7));
     c2d.save();
-    c2d.globalAlpha = 1 - SOULEVE(borne(p));
-    c2d.translate(cx + tx, bas + ty);
-    c2d.rotate((r * Math.PI) / 180);
-    c2d.drawImage(d.cloche, -w / 2 - MARGE_OMBRE, -h - MARGE_OMBRE);
+    c2d.globalAlpha = m;
+    c2d.drawImage(d.titre.toile, 0, TITRE_CLOCHE.haut - d.titre.marge + 14 * PX * (1 - m));
     c2d.restore();
   }
 
-  // LA FLÈCHE, tant que la cloche est posée (`xrHop`, 1,4 s)
-  if (a < 0) {
-    const saut = 8 * PX * (0.5 - 0.5 * Math.cos((t / 1.4) * 2 * Math.PI));
+  // ═══ ÉTAPE 2 ═══
+  if (deux > 0) {
     c2d.save();
-    c2d.globalAlpha = entree(t, 0.3, 0.3);
-    c2d.drawImage(d.fleche, cx - d.fleche.width / 2, bas - h - 16 * PX - saut - d.fleche.height / 2);
+    c2d.globalAlpha = deux;
+    c2d.drawImage(d.fond2, 0, 0);
     c2d.restore();
-  }
 
-  // LE TITRE (`xrMonte`, 0,7 s)
-  const m = EASE(borne(t / 0.7));
-  c2d.save();
-  c2d.globalAlpha = m;
-  c2d.drawImage(d.titre.toile, 0, TITRE_CLOCHE.haut - d.titre.marge + 14 * PX * (1 - m));
-  c2d.restore();
+    // LE PLAT (`xrArrive`, 0,6 s : il monte de 20 px et grandit de 4 %), puis la caméra s'en approche
+    const k = EASE(borne(b / 0.6));
+    if (k > 0) {
+      const zoom = (0.96 + 0.04 * k) * (1 + 0.04 * borne((b - 0.6) / 3.4));
+      const pl = d.plat;
+      c2d.save();
+      c2d.globalAlpha = k;
+      c2d.translate(LARGEUR / 2, pl.y + pl.toile.height / 2 + 20 * PX * (1 - k));
+      c2d.scale(zoom, zoom);
+      c2d.drawImage(pl.toile, -LARGEUR / 2, -pl.toile.height / 2);
+      c2d.restore();
+    }
 
-  // LE NOM DU PLAT, une fois découvert
-  const n = doux((a - 1.0) / 0.5);
-  if (n > 0) {
-    c2d.save();
-    c2d.globalAlpha = n;
-    c2d.drawImage(d.carte, 0, bas + 44 + 20 * (1 - n));
-    c2d.restore();
+    // LE BADGE (`xrMonte`, 0,6 s) — une fois le titre de l'étape 1 effacé
+    const kb = EASE(borne((b - 0.45) / 0.6));
+    if (kb > 0) {
+      c2d.save();
+      c2d.globalAlpha = kb;
+      c2d.drawImage(d.badge, 0.05 * LARGEUR, (112 / 844) * HAUTEUR + 14 * PX * (1 - kb));
+      c2d.restore();
+    }
+
+    // SON NOM ET SON PRIX
+    const n = doux((b - 0.5) / 0.5);
+    if (n > 0) {
+      c2d.save();
+      c2d.globalAlpha = n;
+      c2d.drawImage(d.carte, 0, 0.655 * HAUTEUR + 16 * (1 - n));
+      c2d.restore();
+    }
   }
 
   noir(c2d, 1 - t / 0.3);
@@ -1091,8 +1177,12 @@ export type Reglages = {
   coteApercu: Cote;
   /** Le chef filmé, ou son fantôme à sa place. */
   mode: Mode;
-  /** La photo de son plat : la vidéo s'ouvre alors sur la cloche qu'on soulève. */
-  cloche: { photo: string } | null;
+  /**
+   * La photo de son plat : la vidéo s'ouvre alors sur la cloche qu'on soulève.
+   * `scene` : l'assiette servie avec son fantôme derrière, quand le restaurant
+   * en a une (l'étape 2 de l'expérience la montre à la place de la photo).
+   */
+  cloche: { photo: string; scene?: string } | null;
 };
 
 /** La photo ou la vidéo qu'il a ajoutée à une question, après l'interview. */
@@ -1188,7 +1278,7 @@ export async function monter(o: {
     }),
   );
   // LA CLOCHE : préparée une fois ; une photo illisible et la vidéo s'en passe
-  const decor = reglages.cloche ? await preparerCloche(reglages.cloche.photo, reglages, el.police).catch(() => null) : null;
+  const decor = reglages.cloche ? await preparerCloche(reglages.cloche, reglages, el.police).catch(() => null) : null;
 
   /* ─── le son : un bus, un compresseur, la sortie enregistrée (et les haut-parleurs si on écoute) ─── */
   const sortie = ctx.createMediaStreamDestination();

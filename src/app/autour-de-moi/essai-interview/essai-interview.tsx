@@ -100,8 +100,10 @@ const LIBELLES_FORMAT: Record<Format, { titre: string; detail: string }> = {
   4: { titre: "4 questions", detail: "+ une perso" },
 };
 
-/** La photo d'exemple sous la cloche : le magret servi du Bordeaux. */
+/** La photo d'exemple sous la cloche : le magret servi du Bordeaux… */
 const PHOTO_PLAT = "/direct/table/magret/3.jpg";
+/** …et sa scène, celle de l'étape 2 de l'expérience : l'assiette, et son fantôme assis derrière. */
+const SCENE_PLAT = "/direct/table/restaurant/scene-magret.webp";
 
 /* ─── petits outils ─── */
 const attendre = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -688,7 +690,14 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
           prix: reglages.current.prix,
           coteApercu: reglages.current.cote,
           mode: reglages.current.mode,
-          cloche: reglages.current.cloche && reglages.current.photoPlat.url ? { photo: reglages.current.photoPlat.url } : null,
+          cloche:
+            reglages.current.cloche && reglages.current.photoPlat.url
+              ? {
+                  photo: reglages.current.photoPlat.url,
+                  // LE MAGRET DU BORDEAUX A SA SCÈNE : l'assiette servie, son fantôme derrière
+                  ...(!du && reglages.current.photoPlat.url === PHOTO_PLAT ? { scene: SCENE_PLAT } : {}),
+                }
+              : null,
         },
         toile: toile.current!,
         ecouter: reglages.current.ecouter,
@@ -798,9 +807,9 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
               <p className="ei-n">
                 {du
                   ? photoPlat.url
-                    ? "Après le bonjour du reporter, la cloche se soulève et ton plat apparaît dessous, ton fantôme assis derrière."
+                    ? "Après le bonjour du reporter, la cloche se soulève et ton plat apparaît en grand, comme dans la découverte de ta page."
                     : "Mets la photo de ton plat : la vidéo s’ouvrira sur la cloche qui se soulève."
-                  : "Après le bonjour du reporter, la cloche se soulève et ce plat apparaît dessous, son fantôme assis derrière. Dans l’application, c’est la photo mise au comptoir."}
+                  : "Après le bonjour du reporter, la cloche se soulève et le plat apparaît en grand, comme dans l’étape 2 de la découverte. Dans l’application, c’est la photo mise au comptoir."}
               </p>
               <label className="ei-r-ajout">
                 <input type="file" accept="image/*" onChange={(e) => choisirPhotoPlat(e.target.files?.[0])} />

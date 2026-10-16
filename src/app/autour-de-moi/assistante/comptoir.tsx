@@ -811,12 +811,12 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           onSavoir={() => setPhase({ ou: "savoir" })}
           programmees={programmees}
           onPlanning={() => setPhase({ ou: "planning" })}
-          reseaux={<TuileReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
+          reseaux={<OutilReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
           echanges={
             commerce.reel ? (
-              <TuileEchangesReelle commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />
+              <OutilEchangesReelle commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />
             ) : (
-              <TuileEchanges commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />
+              <OutilEchanges commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />
             )
           }
           onInterview={commerce.famille === "table" ? () => setPhase({ ou: "interview" }) : undefined}
@@ -1065,9 +1065,9 @@ function Accueil({
   programmees: Programmee[];
   /** Ouvrir « Mon planning ». */
   onPlanning: () => void;
-  /** La tuile « Réseaux » — absente tant que l'intermédiaire n'est pas branché. */
+  /** L'outil « Réseaux » — absent tant que l'intermédiaire n'est pas branché. */
   reseaux?: React.ReactNode;
-  /** La tuile « Échanges » (démonstration). */
+  /** L'outil « Échanges » (démonstration, ou en vrai). */
   echanges?: React.ReactNode;
   /** 🎬 L'interview vidéo — un restaurant seulement : le reporter pose ses questions au chef. */
   onInterview?: () => void;
@@ -1210,27 +1210,24 @@ function Accueil({
         {enAttente > 0 && boutonSavoir}
 
         {/* ═══ MES OUTILS ═══ « Toutes ces lignes avec tous ces textes, ça fait
-            pas beau » : une tuile par outil — une image, un mot, une pastille
-            quand il y a quelque chose à voir. Ce qu'elles faisaient avant n'a
-            pas changé, seule leur porte. */}
-        <section className="cz-outils" aria-label="Mes outils">
-          <h2>Mes outils</h2>
-          <div className="cz-tuiles">
-            <Tuile icone="🗓️" nom="Planning" teinte="bleu" badge={programmees.length || undefined} onClick={onPlanning} />
-            <Tuile icone="📸" nom="Ma vitrine" teinte="rose" onClick={onVitrine} />
-            <Tuile icone="📋" nom={carte.titre} teinte="ambre" onClick={onCarte} />
-            <Tuile
-              icone="🧠"
-              nom="Mon fantôme"
-              teinte="menthe"
-              badge={enAttente > 0 ? String(enAttente) : sues >= questions.length ? "✓" : `${sues}/${questions.length}`}
-              chaud={enAttente > 0}
-              onClick={onSavoir}
-            />
-            {reseaux}
-            {echanges}
-          </div>
-        </section>
+            pas beau », puis « les six boutons sont encore trop imposants » : une
+            seule barre, fine, sous les deux grands choix — une icône au trait,
+            un mot, et une pastille seulement quand il y a quelque chose à faire.
+            Ce que chaque outil ouvre n'a pas changé, seule sa porte. */}
+        <nav className="cz-outils" aria-label="Mes outils">
+          <Outil icone="planning" nom="Planning" badge={programmees.length || undefined} onClick={onPlanning} />
+          <Outil icone="vitrine" nom="Vitrine" onClick={onVitrine} />
+          <Outil icone="carte" nom={carte.titre.replace(/^(Ma|Mes)\s+/, "").replace(/^./, (x) => x.toUpperCase())} onClick={onCarte} />
+          <Outil
+            icone="fantome"
+            nom="Fantôme"
+            badge={enAttente > 0 ? enAttente : sues < questions.length ? `${sues}/${questions.length}` : undefined}
+            chaud={enAttente > 0}
+            onClick={onSavoir}
+          />
+          {reseaux}
+          {echanges}
+        </nav>
 
         {/* UN SEUL CHIFFRE ICI, ET IL MÈNE AUX AUTRES : celui d'aujourd'hui. */}
         {auj && <button type="button" className="cz-apercu-stats" onClick={onStats}>
@@ -1245,62 +1242,92 @@ function Accueil({
   );
 }
 
-/* ═══ UNE TUILE D'OUTIL ═══════════════════════════════════════════════════
-   Une icône sur sa pastille de couleur, un mot, et une petite pastille quand il
-   y a quelque chose à voir (un nombre, « démo »). */
-export type Teinte = "bleu" | "rose" | "ambre" | "menthe" | "violet" | "corail";
-export function Tuile({
+/* ═══ UN OUTIL DE LA BARRE ═══════════════════════════════════════════════
+   Une icône au trait, un mot, et une pastille quand il y a quelque chose à
+   faire (un nombre, ce qu'il reste à remplir). */
+const ICONES = {
+  planning: (
+    <>
+      <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
+      <path d="M3.5 10h17M8.5 3v4M15.5 3v4" />
+    </>
+  ),
+  vitrine: (
+    <>
+      <path d="M4.5 8.5h2.8l1.5-2.5h6.4l1.5 2.5h2.8A1.5 1.5 0 0 1 21 10v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18v-8a1.5 1.5 0 0 1 1.5-1.5z" />
+      <circle cx="12" cy="13.6" r="3.4" />
+    </>
+  ),
+  carte: (
+    <>
+      <path d="M6.5 3.5h8l4 4v13h-12z" />
+      <path d="M14.5 3.5v4h4M9.5 11.5h6M9.5 14.5h6M9.5 17.5h4" />
+    </>
+  ),
+  fantome: (
+    <>
+      <path d="M6 20.5V11a6 6 0 0 1 12 0v9.5l-2-1.6-2 1.6-2-1.6-2 1.6-2-1.6z" />
+      <circle cx="10" cy="11" r="1" fill="currentColor" stroke="none" />
+      <circle cx="14" cy="11" r="1" fill="currentColor" stroke="none" />
+    </>
+  ),
+  reseaux: (
+    <>
+      <path d="M4 10v4a1 1 0 0 0 1 1h2.5l5 4V5l-5 4H5a1 1 0 0 0-1 1z" />
+      <path d="M16.5 9.2a4 4 0 0 1 0 5.6M19 6.8a7.5 7.5 0 0 1 0 10.4" />
+    </>
+  ),
+  echanges: <path d="M4 8.5h13.5l-3.2-3.2M20 15.5H6.5l3.2 3.2" />,
+};
+function Outil({
   icone,
   nom,
-  teinte,
   badge,
   chaud,
   onClick,
 }: {
-  icone: string;
+  icone: keyof typeof ICONES;
   nom: string;
-  teinte: Teinte;
   badge?: string | number;
   chaud?: boolean;
   onClick: () => void;
 }) {
   return (
-    <button type="button" className={`cz-tuile t-${teinte}${chaud ? " chaud" : ""}`} onClick={onClick}>
-      <span className="cz-tuile-i" aria-hidden="true">
-        {icone}
+    <button type="button" className={`cz-outil${chaud ? " chaud" : ""}`} onClick={onClick}>
+      <span className="cz-outil-i" aria-hidden="true">
+        <svg viewBox="0 0 24 24">{ICONES[icone]}</svg>
       </span>
       <b>{nom}</b>
-      {badge !== undefined && badge !== "" ? <i className="cz-tuile-badge">{badge}</i> : null}
+      {badge !== undefined && badge !== "" ? <i className="cz-outil-badge">{badge}</i> : null}
     </button>
   );
 }
 
-/** La tuile « Réseaux » : absente tant que l'intermédiaire n'est pas branché, comme l'ancienne carte. */
-function TuileReseaux({ commerce, reseaux, onOuvrir }: { commerce: Commerce; reseaux: ReseauxDuComptoir; onOuvrir: () => void }) {
+/** L'outil « Réseaux » : absent tant que l'intermédiaire n'est pas branché, comme l'ancienne carte. */
+function OutilReseaux({ commerce, reseaux, onOuvrir }: { commerce: Commerce; reseaux: ReseauxDuComptoir; onOuvrir: () => void }) {
   const { etat } = reseaux;
   if (!etat || !etat.configure) return null;
   const connectes = etat.plateformes.filter((p) => p.compte).length;
-  return <Tuile icone="📣" nom="Réseaux" teinte="violet" badge={connectes ? `${connectes} ✓` : commerce.reel ? "à faire" : "démo"} chaud={!connectes && Boolean(commerce.reel)} onClick={onOuvrir} />;
+  return <Outil icone="reseaux" nom="Réseaux" badge={!connectes && commerce.reel ? "!" : undefined} chaud={!connectes && Boolean(commerce.reel)} onClick={onOuvrir} />;
 }
 
-/** La tuile « Échanges » de la démonstration : la caisse commune entre commerçants. */
-function TuileEchanges({ commerce, onOuvrir }: { commerce: Commerce; onOuvrir: () => void }) {
+/** L'outil « Échanges » de la démonstration : la caisse commune entre commerçants. */
+function OutilEchanges({ commerce, onOuvrir }: { commerce: Commerce; onOuvrir: () => void }) {
   const [r] = useState(() => resumeDesEchanges(commerce));
-  return <Tuile icone="🔁" nom="Échanges" teinte="corail" badge={r.pret ? `${r.aDepenser} €` : "démo"} onClick={onOuvrir} />;
+  return <Outil icone="echanges" nom="Échanges" badge={r.pret && r.aDepenser > 0 ? `${r.aDepenser} €` : undefined} onClick={onOuvrir} />;
 }
 
-/** La tuile « Échanges » d'un vrai commerçant : absente tant que la base ne répond pas, comme l'ancienne carte. */
-function TuileEchangesReelle({ commerce, onOuvrir }: { commerce: Commerce; onOuvrir: () => void }) {
+/** L'outil « Échanges » d'un vrai commerçant : absent tant que la base ne répond pas, comme l'ancienne carte. */
+function OutilEchangesReelle({ commerce, onOuvrir }: { commerce: Commerce; onOuvrir: () => void }) {
   const etat = useEchangesReels(commerce);
   if (!etat?.pret) return null;
   const aValider = etat.recus.filter((b) => b.statut === "reserve").length;
   return (
-    <Tuile
-      icone="🔁"
+    <Outil
+      icone="echanges"
       nom="Échanges"
-      teinte="corail"
-      badge={aValider > 0 ? aValider : etat.mien ? `${etat.compte.aDepenser} €` : "à faire"}
-      chaud={!etat.mien || aValider > 0}
+      badge={aValider > 0 ? aValider : etat.mien && etat.compte.aDepenser > 0 ? `${etat.compte.aDepenser} €` : undefined}
+      chaud={aValider > 0}
       onClick={onOuvrir}
     />
   );
@@ -2644,8 +2671,8 @@ label.cz-go{cursor:pointer;}
 @keyframes cz-tombe{from{transform:translateY(0) rotate(var(--r))}to{transform:translateY(110vh) rotate(calc(var(--r) + 540deg))}}
 
 /* LE PLAT DU JOUR : EN PHOTOS, OU EN INTERVIEW (restaurant) */
-.cz-deux,.cz-outils{display:flex;flex-direction:column;gap:10px;}
-.cz-deux h2,.cz-outils h2{margin:2px 2px 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ambre);}
+.cz-deux{display:flex;flex-direction:column;gap:10px;}
+.cz-deux h2{margin:2px 2px 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ambre);}
 .cz-deux-choix{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
 .cz-deux-choix button{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:1px;
   min-height:134px;padding:14px 14px 13px;border-radius:24px;text-align:left;overflow:hidden;border:0;
@@ -2672,27 +2699,24 @@ label.cz-go{cursor:pointer;}
 .cz-vers-interview b{flex:1;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:16px;}
 .cz-vers-interview s{text-decoration:none;font-size:20px;color:#3DE2A6;}
 
-/* MES OUTILS : une tuile par outil */
-.cz-tuiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
-.cz-tuile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;
-  min-height:104px;padding:12px 6px 11px;border-radius:22px;border:1px solid var(--trait);
-  background:linear-gradient(165deg,var(--t2),var(--nappe) 72%);transition:transform .2s cubic-bezier(.34,1.5,.64,1),border-color .2s;}
-.cz-tuile:active{transform:scale(.92);border-color:var(--t1);}
-.cz-tuile-i{display:grid;place-items:center;width:50px;height:50px;border-radius:16px;font-size:26px;
-  background:var(--t1);background:linear-gradient(150deg,color-mix(in srgb,var(--t1) 80%,#fff),var(--t1));box-shadow:0 10px 22px -8px var(--t1);}
-.cz-tuile b{font-family:var(--font-clikme),sans-serif;font-weight:700;font-size:13.5px;line-height:1.15;text-align:center;}
-.cz-tuile-badge{position:absolute;top:7px;right:7px;min-width:22px;height:21px;padding:0 7px;border-radius:999px;
-  display:grid;place-items:center;font-style:normal;font-weight:800;font-size:11px;background:rgba(255,244,230,.13);color:var(--creme);}
-.cz-tuile.chaud{border-color:var(--rose);box-shadow:0 0 22px rgba(255,46,154,.32);animation:cz-appel 2.4s ease-in-out infinite;}
-.cz-tuile.chaud .cz-tuile-badge{background:var(--rose);color:#fff;}
-.t-bleu{--t1:#4E7BF5;--t2:rgba(78,123,245,.2);}
-.t-rose{--t1:#FF2E9A;--t2:rgba(255,46,154,.18);}
-.t-ambre{--t1:#F5A23A;--t2:rgba(245,162,58,.2);}
-.t-menthe{--t1:#22B987;--t2:rgba(34,185,135,.18);}
-.t-violet{--t1:#9A5BF4;--t2:rgba(154,91,244,.2);}
-.t-corail{--t1:#FF6A48;--t2:rgba(255,106,72,.2);}
-@keyframes cz-reflet{0%,55%{transform:translateX(-120%)}85%,100%{transform:translateX(120%)}}
-@media (max-width:340px){.cz-tuiles{gap:8px;}.cz-tuile{min-height:96px;}.cz-tuile b{font-size:12.5px;}.cz-deux-choix b{font-size:17px;}}
+/* MES OUTILS : une barre fine, une icone au trait par outil */
+.cz-outils{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;padding:10px 4px 9px;margin-top:2px;
+  border-radius:22px;background:rgba(255,244,230,.035);border:1px solid var(--trait);}
+.cz-outil{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:2px 0;border:0;background:none;
+  color:var(--gris);transition:transform .15s ease,color .15s ease;}
+.cz-outil:active{transform:scale(.9);color:var(--creme);}
+.cz-outil-i{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;color:#F2D9BC;background:rgba(245,162,58,.08);
+  transition:background .2s ease;}
+.cz-outil:active .cz-outil-i{background:rgba(245,162,58,.2);}
+.cz-outil-i svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+.cz-outil b{font-weight:600;font-size:11.5px;letter-spacing:-.01em;white-space:nowrap;}
+.cz-outil-badge{position:absolute;top:-4px;left:calc(50% + 11px);min-width:17px;height:17px;padding:0 5px;border-radius:999px;
+  font-style:normal;font-weight:800;font-size:9.5px;line-height:15px;text-align:center;color:var(--gris);background:var(--nappe2);
+  border:1px solid var(--trait);white-space:nowrap;}
+.cz-outil.chaud .cz-outil-i{color:#fff;background:var(--rose);box-shadow:0 0 16px rgba(255,46,154,.45);}
+.cz-outil.chaud .cz-outil-badge{color:#fff;background:var(--rose);border-color:var(--rose);}
+@media (max-width:350px){.cz-outils{padding:10px 2px 9px;}.cz-outil-i{width:36px;height:36px;}.cz-outil-i svg{width:20px;height:20px;}
+  .cz-outil b{font-size:9.5px;letter-spacing:-.02em;}.cz-outil-badge{left:calc(50% + 7px);}.cz-deux-choix b{font-size:17px;}}
 
 /* L'INTERVIEW, PAR-DESSUS LE COMPTOIR */
 .cz-interview{position:absolute;inset:0;z-index:40;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#05090C;}

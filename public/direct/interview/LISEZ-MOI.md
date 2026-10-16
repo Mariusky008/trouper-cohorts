@@ -41,7 +41,10 @@ du reporter, sur **l'étape 1 de l'expérience du restaurant**
 (`boutique/experience-table.tsx`) : la même salle, le même fantôme assis avec le
 nom du restaurant brodé sur sa casquette et son tablier, le même titre, la même
 cloche de cuivre. La cloche se soulève toute seule, comme quand on la touche,
-et la photo du plat apparaît dessous ; puis on revient à l'interview. Les images
+puis vient l'étape 2 : le plat en grand — sa scène quand le restaurant en a une
+(l'assiette servie, son fantôme derrière, comme le magret du Bordeaux), sinon sa
+photo en pleine largeur — avec « Le coup de cœur du chef », son nom et son prix.
+Puis on revient à l'interview. Les images
 viennent de `public/direct/table/restaurant/` et `public/direct/double/assis/`,
 rien n'est copié ici. Dans l'application, la photo sera celle qu'il a mise au
 comptoir ; sur la page d'essai, on la choisit.

@@ -248,11 +248,12 @@ export const dureeOuverture = (bonjour: number) => OUVERTURE.voix + bonjour + OU
  * LA CLOCHE, ENTRE L'OUVERTURE ET LA PREMIÈRE QUESTION — pour un restaurant
  * qui a donné la photo de son plat. « Utiliser l'animation de la découverte,
  * juste l'étape 1 avec la cloche, parce que c'est esthétique et beau » : la
- * salle, son fantôme assis qui la montre, la cloche qui s'envole, le plat qui
- * apparaît dessous — puis on revient à l'interview. `leve` : quand la cloche
- * se soulève ; `duree` : tout le moment.
+ * salle, son fantôme assis qui la montre, la cloche qui s'envole — puis,
+ * comme dans l'application, l'étape 2 : le plat en grand (« si tu n'y arrives
+ * pas dans une assiette, mets-le en pleine page »). Puis on revient à
+ * l'interview. `leve` : quand la cloche se soulève ; `duree` : tout le moment.
  */
-export const CLOCHE = { leve: 1.35, duree: 5.4 } as const;
+export const CLOCHE = { leve: 1.35, duree: 6 } as const;
 export const dureeFin = (aDemain: number) => FIN.voix + aDemain + FIN.apres;
 
 /**
