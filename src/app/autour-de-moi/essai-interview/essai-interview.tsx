@@ -996,7 +996,9 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
               ? "Ajoute, si tu veux, une photo ou une vidéo à chaque question : elle passera en grand pendant ta réponse."
               : etape === "montage"
                 ? "Le montage se joue une fois, sous tes yeux, et s'enregistre. Garde l'écran allumé."
-                : "Regarde-la, puis partage-la ou télécharge-la."}
+                : du?.publier
+                  ? "Regarde-la, puis publie-la partout : Le Direct, ta page et tes réseaux."
+                  : "Regarde-la, puis partage-la ou télécharge-la."}
           </p>
         </div>
       </header>

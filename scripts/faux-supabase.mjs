@@ -309,6 +309,14 @@ http
   .createServer(async (req, res) => {
     try {
       const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
+      // LE NAVIGATEUR Y ÉCRIT DIRECTEMENT (adresse signée d'envoi) : le vrai répond au CORS, lui aussi.
+      res.setHeader("access-control-allow-origin", "*");
+      res.setHeader("access-control-allow-headers", "*");
+      res.setHeader("access-control-allow-methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+      if (req.method === "OPTIONS") {
+        res.writeHead(204);
+        return res.end();
+      }
       if (url.pathname === "/__etat") return repondre(res, 200, Object.fromEntries([...tables].map(([t, r]) => [t, r.length])));
       if (url.pathname === "/__tables") return repondre(res, 200, Object.fromEntries(tables));
       const m = /^\/rest\/v1\/([a-z_]+)$/.exec(url.pathname);

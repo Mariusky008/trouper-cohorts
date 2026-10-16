@@ -408,7 +408,7 @@ function StylesReseaux() {
 .rs-bio p{margin:0;font-size:14px;line-height:1.4;color:var(--gris);}
 .rs-bio-lien{display:flex;align-items:center;gap:8px;margin-top:10px;padding:6px 6px 6px 12px;border-radius:14px;background:var(--nappe2);
   border:1px solid var(--trait);min-width:0;}
-.rs-bio-lien code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:inherit;font-weight:700;font-size:14px;
+.rs-bio-lien code{flex:1;min-width:0;overflow-wrap:anywhere;font-family:inherit;font-weight:700;font-size:14px;line-height:1.3;
   color:var(--creme);}
 .rs-bio-lien button{flex:none;height:36px;padding:0 14px;border:0;border-radius:999px;background:var(--rose);color:#fff;font-weight:800;font-size:14px;}
 .rs-bio-lien button:disabled{opacity:.5;}
