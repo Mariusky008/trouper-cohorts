@@ -79,6 +79,7 @@ import { EchangesComptoir, resumeDesEchanges } from "./echanges-comptoir";
 import { EchangesReels, useEchangesReels } from "./echanges-reels";
 import { StylesInterview } from "../essai-interview/styles-interview";
 import { chefEnPied } from "@/lib/direct/interview-montage";
+import { interviewOuverte } from "@/lib/direct/interview-fantome";
 import { CarteProposition, propositionAMontrer, useProposition, type PieceProposee } from "./proposition-comptoir";
 import { reseauxEnMots } from "@/lib/reseaux/reseaux-donnees";
 import { useSavoir, type SavoirDuComptoir } from "./use-savoir";
@@ -820,7 +821,10 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
               <OutilEchanges commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />
             )
           }
-          onInterview={commerce.famille === "table" ? () => setPhase({ ou: "interview" }) : undefined}
+          /* L'INTERVIEW, MÉTIER PAR MÉTIER : le restaurant chez tous ; les autres
+             métiers au comptoir de démonstration seulement, tant que leurs
+             questions ne sont pas validées — voir `INTERVIEW_VALIDEE`. */
+          onInterview={interviewOuverte(commerce.famille, Boolean(commerce.reel)) ? () => setPhase({ ou: "interview" }) : undefined}
           propositionActive={Boolean(propositionAMontrer(proposition))}
           proposition={
             <CarteProposition
@@ -889,6 +893,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
               ville: villeDe(commerce),
               ...platDuJour(principal, chargerVitrines().articles[commerce.id]?.[0]),
               chef: chefEnPied(dossier),
+              famille: commerce.famille,
               onFermer: () => setPhase({ ou: "accueil" }),
               /* 🎬 « PUBLIER PARTOUT » : Le Direct, sa page, ses réseaux — voir
                  `envoyerInterview`. La démonstration n'a pas de lien pro : elle
@@ -1152,9 +1157,21 @@ function Accueil({
 
         {!principal &&
           (propositionActive ? (
-            <button type="button" className="cz-second" onClick={() => onCommencer(false)}>
-              Publier autre chose
-            </button>
+            <>
+              <button type="button" className="cz-second" onClick={() => onCommencer(false)}>
+                Publier autre chose
+              </button>
+              {/* SA PROPOSITION DU MATIN PREND LA PLACE DES DEUX TUILES : l'interview reste à portée. */}
+              {onInterview && (
+                <button type="button" className="cz-vers-interview" onClick={onInterview}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/direct/interview/reporter-0.webp" alt="" />
+                  <b>Mon interview vidéo</b>
+                  <i className="cz-nouveau">Nouveau</i>
+                  <s aria-hidden="true">→</s>
+                </button>
+              )}
+            </>
           ) : onInterview ? (
             /* ═══ LE PLAT DU JOUR : EN PHOTOS, OU EN INTERVIEW ═══ « Où est
                l'interview ou le mode normal sur l'admin commerçant ? Je ne le

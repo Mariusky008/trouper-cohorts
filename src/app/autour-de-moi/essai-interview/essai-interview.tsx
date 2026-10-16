@@ -40,6 +40,8 @@ import {
   horairesSousTitres,
   parolesDeLaQuestion,
   questionsDuFormat,
+  repliquesDuScript,
+  scriptDe,
   type Cote,
   type Format,
   type IdQuestion,
@@ -88,10 +90,6 @@ type Analyse = {
 
 type Reponse = PriseBrute & { analyse?: Analyse; media?: Media & { nom: string } };
 
-/** Ce qu'on souffle au service de transcription : du vocabulaire, pas du contenu. */
-const CONTEXTE =
-  "Interview d'un chef de restaurant à Dax : son plat du jour, son secret de cuisine, " +
-  "une chanson, pourquoi il fait ce métier. Prix en euros.";
 
 const LIBELLES_FORMAT: Record<Format, { titre: string; detail: string }> = {
   1: { titre: "1 question", detail: "sérieuse" },
@@ -166,7 +164,7 @@ async function versWav(audio: AudioBuffer, debut: number, fin: number): Promise<
   });
 }
 
-async function analyser(ctx: AudioContext, p: PriseBrute, enFantome: boolean): Promise<Analyse> {
+async function analyser(ctx: AudioContext, p: PriseBrute, enFantome: boolean, contexte: string): Promise<Analyse> {
   let audio: AudioBuffer | null = null;
   try {
     audio = await ctx.decodeAudioData(await p.blob.arrayBuffer());
@@ -186,7 +184,7 @@ async function analyser(ctx: AudioContext, p: PriseBrute, enFantome: boolean): P
     const r = await fetch("/api/direct/transcrire", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ audio: wav, contexte: CONTEXTE }),
+      body: JSON.stringify({ audio: wav, contexte }),
       signal: stop.signal,
     }).finally(() => clearTimeout(minuterie));
     const j = (await r.json().catch(() => ({}))) as { texte?: string; erreur?: string };
@@ -274,6 +272,8 @@ export type InterviewDuCommerce = {
   photoPlat: string | null;
   /** Son fantôme, bouche fermée → grande ouverte (voir `chefEnPied`). */
   chef: string[];
+  /** Son métier (`famille` du comptoir) : les mots du reporter — voir `scriptDe`. Le restaurant sans lui. */
+  famille?: string;
   onFermer: () => void;
   /**
    * « PUBLIER PARTOUT » : Le Direct, sa page, ses réseaux — voir
@@ -298,11 +298,13 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
   const commerce = du?.commerce ?? "Le Bordeaux";
   const ville = du?.ville ?? "Dax";
   const chef = du?.chef ?? CHEF_DU_BORDEAUX;
+  // SES MOTS, SELON SON MÉTIER — le restaurant sur la page d'essai (voir `SCRIPTS`).
+  const script = scriptDe(du?.famille);
   const [etape, setEtape] = useState<Etape>("reglages");
   const [plat, setPlat] = useState(du ? du.plat : "Magret frites maison");
   const [prix, setPrix] = useState(du ? du.prix : "19 €");
   // LA PHOTO DE SON PLAT : au comptoir, celle qu'il y a mise ; sur la page d'essai, à choisir
-  const [cloche, setCloche] = useState(du ? Boolean(du.photoPlat) : true);
+  const [cloche, setCloche] = useState(script.cloche && (du ? Boolean(du.photoPlat) : true));
   const [photoPlat, setPhotoPlat] = useState<{ url: string; nom: string | null }>({ url: du ? (du.photoPlat ?? "") : PHOTO_PLAT, nom: null });
   // AU COMPTOIR, DEUX QUESTIONS : la vidéo tient en un Reel (90 secondes) — voir `enReel`.
   const [format, setFormat] = useState<Format>(du?.publier ? 2 : 3);
@@ -501,7 +503,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     await garderAllume();
     try {
       const [el, flux] = await Promise.all([
-        elRef.current ? Promise.resolve(elRef.current) : chargerElements(ctx, chef),
+        elRef.current ? Promise.resolve(elRef.current) : chargerElements(ctx, chef, repliquesDuScript(script, commerce)),
         ouvrirAppareils(mode),
       ]);
       elRef.current = el;
@@ -530,7 +532,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
       libererAppareils();
       setEtape("erreur");
     }
-  }, [chef, cote, direSuite, garderAllume, libererAppareils, mode]);
+  }, [chef, commerce, cote, direSuite, garderAllume, libererAppareils, mode, script]);
 
   /** Attend la fin de sa réponse : un silence, « J'ai fini », ou le temps écoulé. */
   const ecouterReponse = useCallback(
@@ -576,7 +578,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     const type = enFantome ? formatAudio() : formatVideo();
     setFormatPrise(type || "(défaut du navigateur)");
     const prises: PriseBrute[] = [];
-    const questions = questionsDuFormat(n);
+    const questions = questionsDuFormat(n, script);
     for (let k = 0; k < questions.length; k++) {
       if (annule.current) return;
       const q = questions[k];
@@ -603,7 +605,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
         setTimeout(go, 600);
       });
       await attendre(250);
-      const ids = parolesDeLaQuestion(k, n);
+      const ids = parolesDeLaQuestion(k, n, script);
       const voix = await direSuite(ids);
       setBulle(null);
       setPhase("reponse");
@@ -626,7 +628,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     }
     if (annule.current) return;
     setEtape("merci");
-    await direSuite(["merci"]);
+    await direSuite([script.merci]);
     setBulle(null);
     libererAppareils();
     veille.current?.release().catch(() => {});
@@ -635,7 +637,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     majReponses(() => prises.map((p) => ({ ...p })));
     setEcoute(true);
     setEtape("reponses");
-    const analyses = await Promise.all(prises.map((p) => analyser(ctx, p, enFantome)));
+    const analyses = await Promise.all(prises.map((p) => analyser(ctx, p, enFantome, script.contexte)));
     majReponses((rs) => rs.map((r, k) => ({ ...r, analyse: analyses[k] })));
     setEcoute(false);
   };
@@ -697,7 +699,8 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
         reglages: {
           commerce,
           ville,
-          plat: reglages.current.plat.trim() || "Le plat du jour",
+          plat: reglages.current.plat.trim() || script.quoi,
+          script,
           prix: reglages.current.prix,
           coteApercu: reglages.current.cote,
           mode: reglages.current.mode,
@@ -756,7 +759,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     if (!montage) return;
     const fichier = new File([montage.blob], nomFichier, { type: montage.type.split(";")[0] });
     try {
-      await navigator.share({ files: [fichier], title: `${commerce} — l'interview du chef` });
+      await navigator.share({ files: [fichier], title: `${commerce} — ${script.appel}` });
     } catch {
       /* annulé par lui, ou refusé par le téléphone : le bouton Télécharger reste là */
     }
@@ -786,7 +789,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
 
   /* ═══ CE QUI S'AFFICHE ═══ */
   const enDirect = etape === "placement" || etape === "interview" || etape === "merci";
-  const questions = questionsDuFormat(format);
+  const questions = questionsDuFormat(format, script);
   const q = questions[Math.min(question, questions.length - 1)];
   const autreCote: Cote = cote === "droite" ? "gauche" : "droite";
 
@@ -813,15 +816,17 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
         </header>
 
         <section className="ei-bloc">
-          <h2>Le plat du jour</h2>
+          <h2>{script.quoi}</h2>
           <label className="ei-champ">
-            <span>Ce qu&apos;il y a ce midi</span>
+            <span>{script.champ}</span>
             <input value={plat} onChange={(e) => setPlat(e.target.value)} maxLength={40} />
           </label>
           <label className="ei-champ">
             <span>Le prix (facultatif)</span>
             <input value={prix} onChange={(e) => setPrix(e.target.value)} maxLength={12} />
           </label>
+          {/* LA CLOCHE N'EST QU'À TABLE : ailleurs, ses photos se mettent question par question. */}
+          {script.cloche ? (
           <div className={`ei-cloche${cloche && photoPlat.url ? "" : " off"}`}>
             {photoPlat.url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -849,6 +854,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
               </label>
             </div>
           </div>
+          ) : null}
         </section>
 
         <section className="ei-bloc">
@@ -895,7 +901,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
               </button>
             ))}
           </div>
-          <p className="ei-n">{mode === "camera" ? "Le chef le regarde quand il répond. Dans la vidéo finale, il garde ce regard vers lui." : "Son fantôme se tiendra de l'autre côté."}</p>
+          <p className="ei-n">{mode === "camera" ? "Tu le regardes quand tu réponds : dans la vidéo finale, ton regard reste tourné vers lui." : "Son fantôme se tiendra de l'autre côté."}</p>
           <label className="ei-case">
             <input type="checkbox" checked={ecouter} onChange={(e) => setEcouter(e.target.checked)} />
             <span>Entendre le montage pendant qu&apos;il se fabrique</span>

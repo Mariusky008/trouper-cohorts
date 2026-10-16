@@ -35,10 +35,10 @@
 import {
   CLOCHE,
   DEBIT_SON,
+  SCRIPTS,
+  repliquesDuScript,
   FIN,
-  IDS_REPLIQUES,
   OUVERTURE,
-  QUESTIONS,
   REPLIQUES,
   coteDuMontage,
   debitDuMontage,
@@ -50,6 +50,7 @@ import {
   type IdQuestion,
   type IdReplique,
   type Mode,
+  type ScriptInterview,
   type SousTitre,
 } from "@/lib/direct/interview-fantome";
 import { MARQUE } from "@/lib/marque";
@@ -199,7 +200,7 @@ const attendre = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * refuse davantage —, et une seconde chance après un refus pour cause
  * d'affluence.
  */
-async function chargerVoix(ctx: BaseAudioContext): Promise<{ voix: Record<IdReplique, AudioBuffer>; source: string }> {
+async function chargerVoix(ctx: BaseAudioContext, ids: readonly IdReplique[]): Promise<{ voix: Record<IdReplique, AudioBuffer>; source: string }> {
   const voix = {} as Record<IdReplique, AudioBuffer>;
   let source = "";
   try {
@@ -223,7 +224,7 @@ async function chargerVoix(ctx: BaseAudioContext): Promise<{ voix: Record<IdRepl
       }
       throw new Error("voix indisponible");
     };
-    const file = [...IDS_REPLIQUES];
+    const file = [...ids];
     let echec = false;
     await Promise.all(
       [0, 1].map(async () => {
@@ -239,9 +240,9 @@ async function chargerVoix(ctx: BaseAudioContext): Promise<{ voix: Record<IdRepl
     );
     return { voix, source };
   } catch {
-    const liste = await Promise.all(IDS_REPLIQUES.map((id) => son(ctx, `${DOSSIER}/voix/${id}.mp3`)));
+    const liste = await Promise.all(ids.map((id) => son(ctx, `${DOSSIER}/voix/${id}.mp3`)));
     const secours = {} as Record<IdReplique, AudioBuffer>;
-    IDS_REPLIQUES.forEach((id, k) => (secours[id] = liste[k]));
+    ids.forEach((id, k) => (secours[id] = liste[k]));
     return { voix: secours, source: "secours" };
   }
 }
@@ -288,7 +289,16 @@ async function polices(): Promise<Elements["police"]> {
 export const CHEF_DU_BORDEAUX = [0, 1, 2, 3].map((k) => `${DOSSIER}/chef-${k}.webp`);
 export const chefEnPied = (dossier: string) => ["repos", "parle-1", "parle-2", "parle-2"].map((p) => `${dossier}${p}.webp`);
 
-export async function chargerElements(ctx: BaseAudioContext, imagesDuChef: string[] = CHEF_DU_BORDEAUX): Promise<Elements> {
+/**
+ * `ids` : LES RÉPLIQUES DE CE MÉTIER, et elles seules (`repliquesDuScript`) —
+ * on ne fait plus fabriquer au serveur les phrases de huit métiers pour en
+ * dire une dizaine.
+ */
+export async function chargerElements(
+  ctx: BaseAudioContext,
+  imagesDuChef: string[] = CHEF_DU_BORDEAUX,
+  ids: readonly IdReplique[] = repliquesDuScript(SCRIPTS.table, "Le Bordeaux"),
+): Promise<Elements> {
   const quatre = (nom: string) => Promise.all([0, 1, 2, 3].map((k) => image(`${DOSSIER}/${nom}-${k}.webp`)));
   const [reporter, chef, ardoise, bande, grain, logo, voix, gril, craie, cloches, souffle, police] = await Promise.all([
     quatre("reporter"),
@@ -297,7 +307,7 @@ export async function chargerElements(ctx: BaseAudioContext, imagesDuChef: strin
     image(`${DOSSIER}/ardoise-bande.webp`),
     image(`${DOSSIER}/grain-craie.webp`),
     image("/clikme-logo-blanc.png"),
-    chargerVoix(ctx),
+    chargerVoix(ctx, ids),
     son(ctx, `${DOSSIER}/gril.mp3`),
     son(ctx, `${DOSSIER}/craie.mp3`),
     son(ctx, `${DOSSIER}/cloches.mp3`),
@@ -305,7 +315,7 @@ export async function chargerElements(ctx: BaseAudioContext, imagesDuChef: strin
     polices(),
   ]);
   const bouche = {} as Record<IdReplique, Float32Array>;
-  for (const id of IDS_REPLIQUES) bouche[id] = ouvertures(voix.voix[id]);
+  for (const id of ids) bouche[id] = ouvertures(voix.voix[id]);
   return {
     reporter,
     chef,
@@ -1185,6 +1195,8 @@ export type Reglages = {
    * en a une (l'étape 2 de l'expérience la montre à la place de la photo).
    */
   cloche: { photo: string; scene?: string } | null;
+  /** Ses mots, selon son métier : le bonjour, les questions, l'au revoir — le restaurant par défaut. */
+  script?: ScriptInterview;
 };
 
 /** La photo ou la vidéo qu'il a ajoutée à une question, après l'interview. */
@@ -1323,7 +1335,9 @@ export async function monter(o: {
     jouer(el.sons.craie, quand, gain, Math.random() * Math.max(0, el.sons.craie.duration - d - 0.05), d);
   };
 
-  // le grésillement du gril, en fond, d'un bout à l'autre
+  // le grésillement du gril, en fond, d'un bout à l'autre — EN CUISINE SEULEMENT :
+  // un gril qui grésille derrière un salon de coiffure ne se raconte pas.
+  const enCuisine = (reglages.script ?? SCRIPTS.table) === SCRIPTS.table ? 1 : 0;
   const lit = ctx.createGain();
   lit.gain.value = 0;
   lit.connect(bus);
@@ -1334,7 +1348,7 @@ export async function monter(o: {
   const niveauLit = (quand: number, niveau: number, en = 0.4) => {
     lit.gain.cancelScheduledValues(quand);
     lit.gain.setValueAtTime(lit.gain.value, quand);
-    lit.gain.linearRampToValueAtTime(niveau, quand + en);
+    lit.gain.linearRampToValueAtTime(niveau * enCuisine, quand + en);
   };
 
   /* ─── l'enregistreur ─── */
@@ -1355,7 +1369,9 @@ export async function monter(o: {
 
   /* ─── le plan ─── */
   // LE BONJOUR ET L'AU REVOIR : nommés pour Le Bordeaux, sans nom de lieu ailleurs
-  const LIEU = repliquesDuLieu(reglages.commerce);
+  // CHAQUE MÉTIER SES MOTS — voir `SCRIPTS` ; le restaurant par défaut.
+  const script = reglages.script ?? SCRIPTS.table;
+  const LIEU = repliquesDuLieu(reglages.commerce, script);
   const dOuv = dureeOuverture(el.voix[LIEU.bonjour].duration);
   const dFin = dureeFin(el.voix[LIEU.adieu].duration);
   const estime = dOuv + (decor ? CLOCHE.duree : 0) + prises.reduce((s, p) => s + p.coupe, 0) + dFin;
@@ -1369,7 +1385,7 @@ export async function monter(o: {
   const sonDesReponses: Montage["sonDesReponses"] = prises.map(() => "aucun");
 
   // les blocs de craie, préparés une fois
-  const entete = enteteArdoise(reglages.commerce);
+  const entete = enteteArdoise(reglages.commerce, script.quand);
   const MENU = [
     { b: craie.bloc(entete.avant, 46, 400), cy: 200, debut: 0.2, duree: 0.5 },
     { b: craie.bloc(entete.nom, 84, 700, CRAIE, 640), cy: 284, debut: 0.6, duree: 0.6 },
@@ -1388,7 +1404,7 @@ export async function monter(o: {
     return b;
   };
   const texteDe = (paroles: { id: IdReplique }[]) => paroles.map((p) => REPLIQUES[p.id]).join(" ");
-  const TITRES = Object.fromEntries(QUESTIONS.map((q) => [q.id, q.titre])) as Record<IdQuestion, string>;
+  const TITRES = Object.fromEntries(script.questions.map((q) => [q.id, q.titre])) as Record<IdQuestion, string>;
   const mention = `Essai ${MARQUE} · la voix du reporter est une voix de synthèse`;
 
   /* les places : le reporter grand quand il demande, petit au coin quand le chef répond ;

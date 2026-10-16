@@ -26,6 +26,7 @@
     "lettres:pdf": "node scripts/lettres-pdf.mjs",
     "verifier:consigne": "node scripts/verifier-consigne.mjs",
     "verifier:porte-reseaux": "node scripts/verifier-porte-reseaux.mjs",
+    "verifier:interview-metiers": "node scripts/verifier-interview-metiers.mjs",
     "verifier:photos-google": "node scripts/verifier-photos-google.mjs",
     "verifier:regime-essai": "node scripts/verifier-regime-essai.mjs",
     "verifier:coupe-decrite": "node scripts/verifier-coupe-decrite.mjs",

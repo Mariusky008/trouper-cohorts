@@ -61,6 +61,22 @@ Le reporter ne nomme que Le Bordeaux, dont il a la réplique : pour les autres,
 route de la voix n'accepte toujours aucun texte libre ; le nom du restaurant est
 écrit sur l'ardoise.
 
+## Les autres métiers
+
+Coiffeur, onglerie, boutique de vêtements, opticien, fleuriste, atelier de
+création, librairie et bar ont leur interview : leurs questions, leur bonjour
+et leur au revoir sont dans `SCRIPTS` (`src/lib/direct/interview-fantome.ts`),
+sans « chef », sans « plat », sans cloche, et l'ardoise dit « Aujourd'hui
+chez… » (« Ce soir au… » pour un bar). Le gril ne grésille qu'en cuisine.
+**Textes à valider** : tant qu'un métier n'est pas dans `INTERVIEW_VALIDEE`,
+son interview ne s'ouvre qu'au comptoir de démonstration
+(`/autour-de-moi/assistante?metier=coiffure`), pas chez un vrai commerçant.
+
+Leurs voix de secours se fabriquent avec
+`node scripts/fabriquer-voix-secours-interview.mjs` (espeak-ng, français,
+150 mots/minute, comme les premières) ; `npm run verifier:interview-metiers`
+vérifie que chaque réplique a la sienne.
+
 ## Pour un autre commerçant
 
 Son fantôme en deux images au moins (bouche fermée, bouche ouverte, **exactement

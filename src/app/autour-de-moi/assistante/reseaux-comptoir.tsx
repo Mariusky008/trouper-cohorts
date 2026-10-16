@@ -19,6 +19,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { missionDe } from "@/lib/direct/missions-commercant";
+import { interviewOuverte } from "@/lib/direct/interview-fantome";
 import {
   adresseLisible,
   iconeDuReseau,
@@ -301,7 +302,7 @@ export function ReseauxComptoir({
           <b>Plusieurs photos</b> : jusqu’à quatre, elles partent en carrousel sur Instagram et Facebook, toutes au format de la première — rien n’est
           coupé. Google et Le Direct prennent la première.
         </p>
-        {commerce.famille === "table" && (
+        {interviewOuverte(commerce.famille, Boolean(commerce.reel)) && (
           <p>
             <b>Ton interview</b> : elle part en Reel sur Instagram et Facebook jusqu’à 90 secondes (une ou deux questions). Plus longue, c’est son image
           qui part, et la vidéo entière est dans Le Direct.
