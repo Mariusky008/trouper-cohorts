@@ -13,6 +13,10 @@
 //                   phrase incrustée en bas de l'original est hors champ, les
 //                   mots restent en HTML)
 //   · `miroir`    — « Gardez une photo de vous, j'y essaierai ce que vous trouvez. »
+//   · `direct`    — le tuto du Direct : il passe une carte à gauche, en propose
+//                   une à droite à ses amis, et en ouvre une (6,6 s, 720 × 1260).
+//   · `ville`     — le tuto de La Ville : il se promène, les bulles des
+//                   habitants apparaissent autour de lui, il fait coucou.
 //
 // CE NE SONT PAS DES PUBLICITÉS, ET ELLES NE S'EN DONNENT PAS L'AIR : sans son,
 // sans contrôles, sans boucle ; elles se jouent UNE fois, à l'endroit même où
@@ -40,7 +44,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-export type NomVideo = "dressing" | "recherche" | "surprise" | "soiree" | "salon" | "rien" | "cuisine" | "fait" | "miroir";
+export type NomVideo = "dressing" | "recherche" | "surprise" | "soiree" | "salon" | "rien" | "cuisine" | "fait" | "miroir" | "direct" | "ville";
 
 /** Une ligne de texte, et la seconde à partir de laquelle elle remplace la précédente. */
 export type Legende = { a: number; texte: ReactNode };

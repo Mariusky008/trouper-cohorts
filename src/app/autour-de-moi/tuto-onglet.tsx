@@ -18,10 +18,13 @@
 // revient à chaque séance comme l'écran d'ouverture (voir `premiere-fois.ts`).
 // Le panneau complet reste dans Ma maison › Réglages › Aide.
 //
-// UNE VIDÉO QUAND IL Y EN A UNE : pour Salons, celle du salon (« Ici, tes amis
-// donnent leur avis, et moi je t'aide à trancher ») se joue dans la bulle.
-// Pour en ajouter une à un autre onglet : la ranger dans `public/direct/videos`
-// au format des autres (voir `video-fantome.tsx`) et l'écrire dans `TUTOS`.
+// UNE VIDÉO QUAND IL Y EN A UNE, ET EN GRAND : Le Direct (il passe une carte,
+// en propose une à ses amis, en ouvre une), La Ville (il se promène, les bulles
+// des habitants apparaissent) et Salons (« Ici, tes amis donnent leur avis… »).
+// La bulle devient alors une carte : la vidéo au-dessus, la phrase dessous —
+// dans une vignette de 56 px, trois cartes et des avatars ne se lisaient pas.
+// Pour en ajouter une : la ranger dans `public/direct/videos` au format des
+// autres (voir `video-fantome.tsx`) et l'écrire dans `TUTOS`, avec sa durée.
 //
 // LE DIRECT A DÉJÀ SA DÉMONSTRATION : la carte se balance toute seule avec le
 // doigt et les tampons « Passer » / « Proposer ». Sa phrase vient APRÈS, et dit
@@ -33,29 +36,32 @@ import { VideoFantome, type NomVideo } from "@/components/direct/video-fantome";
 
 export type OngletTuto = "direct" | "ville" | "salons" | "profil";
 
-const TUTOS: Record<OngletTuto, { titre: string; dit: (ville: string) => string; video?: NomVideo }> = {
+/** `duree` : le temps à l'écran — celui de la vidéo, plus de quoi lire la phrase. */
+const TUTOS: Record<OngletTuto, { titre: string; dit: (ville: string) => string; video?: NomVideo; duree: number }> = {
   direct: {
     titre: "Le Direct",
     dit: () => "Glisse à gauche pour passer, à droite pour proposer à tes amis. Touche la carte pour découvrir le commerce.",
+    video: "direct",
+    duree: 10500,
   },
   ville: {
     titre: "La Ville",
     dit: (v) => `Ce que les habitants${v ? ` de ${v}` : ""} essaient, recommandent et partagent. Ici, tout s’efface au bout de quelques heures.`,
+    video: "ville",
+    duree: 9000,
   },
   salons: {
     titre: "Salons",
     dit: () => "Demande l’avis de tes amis sur une tenue, un resto ou une sortie. Ton fantôme t’aide à trancher.",
     video: "salon",
+    duree: 9000,
   },
   profil: {
     titre: "Ma maison",
     dit: () => "Tes essais, tes commerces préférés, et les surprises que ton fantôme te rapporte.",
+    duree: 7000,
   },
 };
-
-/** Le temps de lire une phrase ; un peu plus quand une vidéo se joue. */
-const DUREE_MS = 7000;
-const DUREE_VIDEO_MS = 9000;
 
 /** La clé « déjà vu » d'un onglet — aussi dans `TOUJOURS_REVOIR` (`premiere-fois.ts`). */
 export const cleTuto = (o: OngletTuto) => `tuto-${o}`;
@@ -74,7 +80,7 @@ export function TutoOnglet({
   const cle = cleTuto(onglet);
   const tuto = TUTOS[onglet];
   const visible = libre && !vus.includes(cle);
-  const duree = tuto.video ? DUREE_VIDEO_MS : DUREE_MS;
+  const duree = tuto.duree;
 
   /* IL REPART TOUT SEUL. Noté « vu » seulement à ce moment-là (ou au geste) :
      quitter l'onglet avant la fin, c'est ne pas l'avoir lu — il reviendra. */
@@ -87,7 +93,7 @@ export function TutoOnglet({
   if (!visible) return null;
   return (
     <div className="tu" role="status" aria-live="polite">
-      <div className="tu-bulle">
+      <div className={`tu-bulle${tuto.video ? " grand" : ""}`}>
         {tuto.video ? (
           <VideoFantome nom={tuto.video} classe="tu-video" />
         ) : (
@@ -128,6 +134,12 @@ export function TutoOnglet({
 .tu-temps{position:absolute;left:0;bottom:0;height:3px;width:100%;background:linear-gradient(90deg,#FBC766,#FF2E9A);transform-origin:left;
   animation:tu-temps linear both;}
 @keyframes tu-temps{from{transform:scaleX(1);}to{transform:scaleX(0);}}
+/* LA BULLE À VIDÉO : la vidéo au-dessus, en grand, la phrase dessous. */
+.tu-bulle.grand{flex-direction:column;align-items:center;gap:10px;max-width:340px;padding:12px 14px 16px;text-align:center;}
+.tu-bulle.grand .tu-video{width:min(40vw,150px);border-radius:16px;box-shadow:0 8px 22px -8px rgba(0,0,0,.6);}
+.tu-bulle.grand .tu-t{align-items:center;}
+.tu-bulle.grand .tu-ok{align-self:center;}
+@media (max-height:700px){.tu-bulle.grand .tu-video{width:min(32vw,118px);}}
 @media (prefers-reduced-motion: reduce){.tu-bulle,.tu-fantome{animation:none;}.tu-temps{display:none;}}
 `,
         }}
