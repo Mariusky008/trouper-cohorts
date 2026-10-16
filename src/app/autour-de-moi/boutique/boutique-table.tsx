@@ -527,6 +527,8 @@ export function BoutiqueTable({
      autres (`identite-salon.tsx`). Pas pour la commerçante qui essaie sa page. */
   const { identifierPuis, rendu: identiteRendu } = useIdentite(!saPage);
   const [onglet, setOnglet] = useState<Onglet>("lieu");
+  /** La pièce qu'un post a fait essayer (`?essayer=`) : l'atelier s'ouvre dessus. */
+  const [pieceVisee, setPieceVisee] = useState<string | undefined>(undefined);
   /* ═══ `?salon=1` : L'AMI INVITÉ ARRIVE DANS LA CONVERSATION ══════════════
      C'est ce que porte le lien « Inviter des amis » (voir `inviter`), et la
      page à onglets le fabriquait sans le lire : l'invité tombait sur la
@@ -543,6 +545,17 @@ export function BoutiqueTable({
       /* `?onglet=experience` : « Trouver mon prochain livre » depuis
          l'application — on entre directement dans le conseil du libraire. */
       if (voulu === "experience") setOnglet("experience");
+      /* `?essayer=<pièce>` : LA PORTE D'UN POST (« ✨ Essaie-la sur toi », voir
+         `app/b/[slug]`). On a vu cette veste sur Instagram : l'atelier s'ouvre
+         sur elle. L'adresse l'oublie aussitôt — un rechargement ne rouvre pas
+         l'atelier par-dessus ce qu'on regardait. */
+      const essayer = adresse.searchParams.get("essayer");
+      if (essayer && /^[\w.-]{1,60}$/.test(essayer)) {
+        setOnglet("experience");
+        setPieceVisee(essayer);
+        adresse.searchParams.delete("essayer");
+        window.history.replaceState(window.history.state, "", adresse.toString());
+      }
       if (adresse.searchParams.get("salon") === "1") {
         setOnglet("amis");
         adresse.searchParams.set("salon", "lu");
@@ -1840,6 +1853,7 @@ export function BoutiqueTable({
               c={c}
               saPage={saPage}
               vise={viseJour}
+              ouvrirSur={pieceVisee}
               onReserver={() => setDiscute(true)}
               onSalon={(o) => identifierPuis(() => {
                 const moi = monPrenom() || "Vous";

@@ -80,7 +80,8 @@ import { IndexDesDemos } from "./index-demos";
 // visiteur — voir `manifest.webmanifest/route.ts`.
 // `avis` : l'ami d'un client, venu du lien « Ça me va ? » (voir `app/ca-me-va`).
 // `voisin` : un client envoyé par la rue d'un commerçant voisin (voir `components/direct/la-rue.tsx`).
-const VIA_PUBLIC = new Set(["direct", "catalogue", "digest", "alerte", "offre", "affiche", "ecran", "avis", "voisin"]);
+// `reseaux` : la porte de ses posts Instagram, Facebook et Google (`app/b/[slug]`).
+const VIA_PUBLIC = new Set(["direct", "catalogue", "digest", "alerte", "offre", "affiche", "ecran", "avis", "voisin", "reseaux"]);
 
 // « Le collectif lui a-t-il amené quelqu'un ? » est autre chose, et c'est LE
 // chiffre qu'il regarde pour juger ce que les autres lui apportent. Un client

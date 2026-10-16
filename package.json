@@ -25,6 +25,7 @@
     "e2e:privilege-favorites": "node scripts/e2e-privilege-tinder-favorites.mjs",
     "lettres:pdf": "node scripts/lettres-pdf.mjs",
     "verifier:consigne": "node scripts/verifier-consigne.mjs",
+    "verifier:porte-reseaux": "node scripts/verifier-porte-reseaux.mjs",
     "verifier:photos-google": "node scripts/verifier-photos-google.mjs",
     "verifier:regime-essai": "node scripts/verifier-regime-essai.mjs",
     "verifier:coupe-decrite": "node scripts/verifier-coupe-decrite.mjs",

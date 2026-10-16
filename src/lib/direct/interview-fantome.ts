@@ -254,6 +254,22 @@ export const dureeOuverture = (bonjour: number) => OUVERTURE.voix + bonjour + OU
  * l'interview. `leve` : quand la cloche se soulève ; `duree` : tout le moment.
  */
 export const CLOCHE = { leve: 1.35, duree: 6 } as const;
+
+/**
+ * LE DÉBIT DU MONTAGE — QU'IL TIENNE DANS SON ENVOI. La vidéo part de son
+ * téléphone vers notre stockage (`api/site-internet/pro/interview`, cinquante
+ * mégaoctets au plus) puis vers Instagram. Quatre mégabits par seconde, c'est
+ * trente mégaoctets la minute : une interview de deux minutes et demie n'y
+ * tenait pas. Le débit baisse donc avec la longueur prévue, pour viser
+ * quarante mégaoctets — une ardoise, un visage qui parle et un fantôme ne
+ * demandent pas plus de deux mégabits en 720 × 1280.
+ */
+export const OCTETS_VISES = 40_000_000;
+export const DEBIT_SON = 128_000;
+export function debitDuMontage(secondesPrevues: number): number {
+  const d = Math.max(1, secondesPrevues);
+  return Math.round(Math.min(4_000_000, Math.max(1_200_000, (OCTETS_VISES * 8) / d - DEBIT_SON)));
+}
 export const dureeFin = (aDemain: number) => FIN.voix + aDemain + FIN.apres;
 
 /**

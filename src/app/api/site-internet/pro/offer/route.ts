@@ -29,11 +29,14 @@ import { echeanceDuTexte } from "@/lib/direct/echeance-texte";
 import { preparerFacons, ecrireFacons } from "@/lib/direct/facons-creation";
 import { jourParis } from "@/lib/jour-paris";
 import { activerPlanning, oublierEnCours } from "@/lib/direct/planning-activation";
-import { reseauxDuDiagnostic } from "@/lib/reseaux/reseaux-donnees";
+import { idDePiece, motsPourLesReseaux, reseauxDuDiagnostic } from "@/lib/reseaux/reseaux-donnees";
 import { piecesDuDiagnostic } from "@/lib/site-internet/pieces-comptoir";
 import { publierSurSesReseauxEnFond, reseauxConfigures } from "@/lib/reseaux/intermediaire";
 
 export const dynamic = "force-dynamic";
+// UNE INTERVIEW PART EN REEL APRÈS LA RÉPONSE (`after`) : l'intermédiaire va la
+// chercher, Instagram la traite — plus long qu'une photo.
+export const maxDuration = 300;
 
 const str = (v: unknown) => String(v ?? "").trim();
 
@@ -77,13 +80,17 @@ const MAX_MS = 30 * 24 * 3600 * 1000; // au-delà, ce n'est plus « l'offre du m
 // midi, soir) sans qu'un seul commerce occupe l'écran d'accueil d'une ville.
 const MAX_VIVANTES = 3;
 
-/** Une vidéo n'est acceptée que si elle sort de NOTRE seau `annonces`. */
+/**
+ * Une vidéo n'est acceptée que si elle sort de NOTRE stockage : le seau
+ * `annonces` (les vidéos de quinze secondes) ou le seau `interviews` (son
+ * interview, voir `api/site-internet/pro/interview`).
+ */
 function videoAcceptee(url: string): string | null {
   if (!url) return null;
   const base = str(process.env.NEXT_PUBLIC_SUPABASE_URL).replace(/\/+$/, "");
   if (!base) return null;
-  const attendu = `${base}/storage/v1/object/public/annonces/`;
-  return url.startsWith(attendu) && url.length <= 500 && !url.includes("..") ? url : null;
+  const ok = ["annonces", "interviews"].some((seau) => url.startsWith(`${base}/storage/v1/object/public/${seau}/`));
+  return ok && url.length <= 500 && !url.includes("..") ? url : null;
 }
 
 /**
@@ -538,9 +545,23 @@ export async function POST(request: Request) {
     const sesReseaux = reseauxConfigures() && p?.reseaux !== false ? reseauxDuDiagnostic(site.diagnostic) : null;
     const versReseaux = sesReseaux?.auto && photo ? [...new Set(sesReseaux.comptes.map((c) => c.plateforme))] : [];
     if (versReseaux.length) {
+      // SES MOTS À SON MICRO, POUR SES RÉSEAUX SEULEMENT : Le Direct garde ses 140 signes,
+      // sa légende reçoit ce qu'il a dit — voir `legendeReseaux`.
+      const mots = motsPourLesReseaux(p?.mots);
+      // LA PIÈCE DE SON CATALOGUE QUE CE POST MONTRE : la porte ouvre son essai.
+      const piece = idDePiece(p?.piece);
+      // SON INTERVIEW : sa durée et son format, mesurés par son téléphone (le serveur ne lit pas une vidéo).
+      const secondes = Number(p?.videoSecondes);
       await publierSurSesReseauxEnFond(
         { id, slug: str(site.slug), nom: str(site.business_name), ville: str(site.city), activite: str(site.activite) },
-        { texte: text, photo, autres: photosReseaux },
+        {
+          texte: text,
+          photo,
+          autres: photosReseaux,
+          ...(mots ? { mots } : {}),
+          ...(piece ? { piece } : {}),
+          ...(video && Number.isFinite(secondes) && secondes > 0 ? { video: { url: video, secondes, mp4: p?.videoMp4 === true } } : {}),
+        },
       );
     }
 

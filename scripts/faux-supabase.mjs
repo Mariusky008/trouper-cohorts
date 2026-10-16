@@ -4,8 +4,9 @@
  * Il répond comme PostgREST (`/rest/v1/<table>`) et comme le stockage
  * (`/storage/v1/object/…`) à ce dont l'application se sert : filtres eq, neq,
  * in, is, gte, lt, lte, gt ; order ; limit ; offset (pagination) ; select de colonnes ; count ;
- * insert / update / delete ; envoi d'un fichier ; adresse signée ; adresse
- * publique — REFUSÉE pour un seau privé, comme le vrai.
+ * insert / update / delete ; envoi d'un fichier ; adresse signée (lecture et
+ * envoi) ; seaux (lire, créer) ; adresse publique — REFUSÉE pour un seau
+ * privé, comme le vrai.
  *
  * CE N'EST PAS UNE BASE : pas de transactions, pas de jointures, des clés
  * primaires seulement là où les salons en ont besoin. Les essais faits avec
@@ -200,8 +201,68 @@ async function rest(req, res, url, table) {
   return repondre(res, 405, { message: "méthode" });
 }
 
+/** Le fichier d'un envoi `multipart/form-data` (celui de `uploadToSignedUrl` avec un Blob). */
+function partieFichier(octets, type) {
+  const m = /boundary=(?:"([^"]+)"|([^;]+))/i.exec(type || "");
+  if (!m) return null;
+  const borne = Buffer.from(`--${m[1] || m[2]}`);
+  let i = octets.indexOf(borne);
+  while (i >= 0) {
+    const debut = i + borne.length + 2;
+    const suivante = octets.indexOf(borne, debut);
+    if (suivante < 0) break;
+    const tete = octets.indexOf(Buffer.from("\r\n\r\n"), debut);
+    const entetes = octets.subarray(debut, tete).toString();
+    if (/filename=/i.test(entetes)) {
+      const t = /content-type:\s*([^\r\n]+)/i.exec(entetes);
+      return { type: t ? t[1].trim() : "application/octet-stream", octets: octets.subarray(tete + 4, suivante - 2) };
+    }
+    i = suivante;
+  }
+  return null;
+}
+
+/** Les seaux, comme `/storage/v1/bucket` : ceux qu'on crée, et les privés connus. */
+const seaux = new Map([...SEAUX_PRIVES].map((id) => [id, { id, name: id, public: false }]));
+
+async function seau(req, res, url) {
+  const id = decodeURIComponent(url.pathname.replace(/^\/storage\/v1\/bucket\/?/, ""));
+  if (req.method === "GET" && id) {
+    return seaux.has(id) ? repondre(res, 200, seaux.get(id)) : repondre(res, 400, { statusCode: "404", error: "Bucket not found", message: "Bucket not found" });
+  }
+  if (req.method === "POST" && !id) {
+    const b = JSON.parse((await corps(req)).toString() || "{}");
+    if (seaux.has(b.id)) return repondre(res, 400, { statusCode: "409", error: "Duplicate", message: "The resource already exists" });
+    seaux.set(b.id, { id: b.id, name: b.name || b.id, public: Boolean(b.public), file_size_limit: b.file_size_limit ?? null, allowed_mime_types: b.allowed_mime_types ?? null });
+    return repondre(res, 200, { name: b.id });
+  }
+  return repondre(res, 405, { message: "méthode" });
+}
+
 async function stockage(req, res, url) {
   const p = decodeURIComponent(url.pathname.replace(/^\/storage\/v1\/object\//, ""));
+  // L'ADRESSE SIGNÉE D'ENVOI (`createSignedUploadUrl`), puis l'envoi lui-même (`uploadToSignedUrl`).
+  if (p.startsWith("upload/sign/")) {
+    const cle = p.slice(12);
+    if (req.method === "POST") {
+      const jeton = hex(12);
+      signes.set(jeton, { cle, expire: Date.now() + 7200 * 1000, envoi: true });
+      return repondre(res, 200, { url: `/object/upload/sign/${cle}?token=${jeton}` });
+    }
+    if (req.method === "PUT") {
+      const s = signes.get(url.searchParams.get("token") || "");
+      if (!s || !s.envoi || s.cle !== cle || s.expire < Date.now()) return repondre(res, 400, { error: "InvalidJWT", message: "Signature invalide ou expirée" });
+      const brut = await corps(req);
+      const f = partieFichier(brut, req.headers["content-type"]) ?? { type: req.headers["content-type"] || "application/octet-stream", octets: brut };
+      const regle = seaux.get(cle.split("/")[0]);
+      if (regle?.allowed_mime_types?.length && !regle.allowed_mime_types.includes(f.type)) {
+        return repondre(res, 400, { statusCode: "415", error: "invalid_mime_type", message: `mime type ${f.type} is not supported` });
+      }
+      fichiers.set(cle, f);
+      signes.delete(url.searchParams.get("token") || "");
+      return repondre(res, 200, { Key: cle });
+    }
+  }
   if (p.startsWith("sign/")) {
     const cle = p.slice(5);
     if (req.method === "POST") {
@@ -270,6 +331,7 @@ http
       }
       if (url.pathname.startsWith("/rest/v1/rpc/")) return repondre(res, 404, []);
       if (url.pathname.startsWith("/storage/v1/object/")) return await stockage(req, res, url);
+      if (url.pathname.startsWith("/storage/v1/bucket")) return await seau(req, res, url);
       // UNE SESSION D'ADMINISTRATION, POUR LES TESTS SEULEMENT : le jeton
       // « faux-admin » ouvre l'utilisateur ADMIN_TEST (à mettre dans `admins`).
       if (url.pathname === "/auth/v1/user" && (req.headers.authorization || "") === "Bearer faux-admin") {

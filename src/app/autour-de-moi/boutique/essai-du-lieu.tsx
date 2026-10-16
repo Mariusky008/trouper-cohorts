@@ -121,6 +121,12 @@ type ProprietesEssai = {
   /** L'instant où l'on a touché « En ce moment » sur l'accueil : la pièce du jour vient à l'écran. */
   vise?: number;
   /**
+   * LA PIÈCE D'UN POST (« ✨ Essaie-la sur toi », `?essayer=`) : l'atelier
+   * s'ouvre dessus dès qu'on la connaît. Finie ou retirée, on reste sur
+   * l'expérience — ses autres pièces y sont.
+   */
+  ouvrirSur?: string;
+  /**
    * OÙ S'OUVRE LE PLEIN ÉCRAN DES QUESTIONS. Sur sa page, la fenêtre entière ;
    * dans l'application, le cadre du téléphone — sinon, sur un ordinateur, il
    * sortait du téléphone et prenait tout l'écran.
@@ -168,10 +174,15 @@ export function oublierLEssaiDeDemo(id: string) {
 /** Combien de temps on attend ses autres pièces, au plus (le moteur les cherche après la page). */
 const ATTENTE_PIECES = 3 * 60_000;
 
-function EssaiEnImage({ c: carte, saPage, onReserver, onSalon, vise }: ProprietesEssai) {
+function EssaiEnImage({ c: carte, saPage, onReserver, onSalon, vise, ouvrirSur }: ProprietesEssai) {
   /** L'atelier ouvert, et la pièce choisie pour y entrer. */
   const [atelier, setAtelier] = useState<{ piece?: string; grille?: boolean } | null>(null);
-  const fermer = useCallback(() => setAtelier(null), []);
+  /** La porte d'un post (`ouvrirSur`), une fois refermée : elle ne se rouvre pas. */
+  const [porteFermee, setPorteFermee] = useState("");
+  const fermer = useCallback(() => {
+    setAtelier(null);
+    setPorteFermee(ouvrirSur ?? "");
+  }, [ouvrirSur]);
   /* ═══ SES PIÈCES À ELLE, POUR ESSAYER AVANT DE GARDER SA PAGE ═══════════
      « Une fois la démo terminée, j'aurais aimé que la propriétaire puisse
      essayer l'expérience : elle voit ce qu'on lui a montré, mais ne peut pas
@@ -257,6 +268,10 @@ function EssaiEnImage({ c: carte, saPage, onReserver, onSalon, vise }: Propriete
     () => (jour ? pieces.filter((p) => p.id !== jour.article.id && p.photo !== jour.article.photo) : pieces),
     [jour, pieces],
   );
+  /* ═══ LA PORTE D'UN POST : L'ATELIER S'OUVRE SUR SA PIÈCE ═══ Dès qu'on la
+     connaît, et une fois : le refermer ramène à l'expérience, pas dans l'atelier. */
+  const porte = ouvrirSur && porteFermee !== ouvrirSur && pieces.some((p) => p.id === ouvrirSur) ? ouvrirSur : undefined;
+  const atelierOuvert = atelier ?? (porte ? { piece: porte } : null);
   /** Rien à essayer chez lui pour l'instant : ni pièce, ni autre porte ouverte. */
   const bientot = Boolean(promis) || (onEssaie && pieces.length === 0);
   /* ═══ MAIS UNE DE SES PIÈCES, DÉJÀ ESSAYÉE ═══ « Une personne avec ses
@@ -438,11 +453,11 @@ function EssaiEnImage({ c: carte, saPage, onReserver, onSalon, vise }: Propriete
       )}
 
       {/* ═══ L'ATELIER, EN PLEIN ÉCRAN — voir `AtelierPleinEcran` ═══ */}
-      {atelier && (
+      {atelierOuvert && (
         <AtelierPleinEcran
           c={c}
-          piece={atelier.piece}
-          grille={atelier.grille}
+          piece={atelierOuvert.piece}
+          grille={atelierOuvert.grille}
           onFermer={fermer}
           onReserver={onReserver}
           onSalon={onSalon}

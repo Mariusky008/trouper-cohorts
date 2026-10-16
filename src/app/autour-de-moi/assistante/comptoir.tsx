@@ -50,6 +50,7 @@ import { useMicro } from "./use-micro";
 import { envoyerALaVille, retirerDeLaVille, type CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import {
   envoyerEnLigne,
+  envoyerInterview,
   publicationDeLaBase,
   retirerDeLaBase,
   retirerEnLigne,
@@ -889,6 +890,29 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
               ...platDuJour(principal, chargerVitrines().articles[commerce.id]?.[0]),
               chef: chefEnPied(dossier),
               onFermer: () => setPhase({ ou: "accueil" }),
+              /* 🎬 « PUBLIER PARTOUT » : Le Direct, sa page, ses réseaux — voir
+                 `envoyerInterview`. La démonstration n'a pas de lien pro : elle
+                 garde « Partager » et « Télécharger ». */
+              ...(commerce.reel
+                ? {
+                    publier: async (m: { blob: Blob; type: string; duree: number; affiche: string; plat: string; prix: string; mots?: string }) => {
+                      const r = await envoyerInterview(commerce, {
+                        nom: m.plat || principal?.nom || "Le plat du jour",
+                        prix: m.prix,
+                        blob: m.blob,
+                        type: m.type,
+                        duree: m.duree,
+                        affiche: m.affiche,
+                        ...(m.mots ? { mots: m.mots } : {}),
+                      });
+                      if (!r.ok) return { ok: false, message: r.erreur ?? "L’envoi a échoué. Réessaie." };
+                      return {
+                        ok: true,
+                        message: `C’est en ligne : ${r.ou.join(" et ")}.${r.reseaux?.length ? ` 📣 En route vers ${reseauxEnMots(r.reseaux)}.` : ""}`,
+                      };
+                    },
+                  }
+                : {}),
             }}
           />
         </div>

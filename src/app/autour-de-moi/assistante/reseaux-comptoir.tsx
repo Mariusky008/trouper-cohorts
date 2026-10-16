@@ -18,7 +18,17 @@
 // Voir `lib/reseaux/reseaux-donnees.ts` et la route `/api/site-internet/pro/reseaux`.
 import { useCallback, useEffect, useState } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
-import { iconeDuReseau, nomDuReseau, PLATEFORMES_PAR_DEFAUT, reseauxEnMots, type DernierePublication } from "@/lib/reseaux/reseaux-donnees";
+import { missionDe } from "@/lib/direct/missions-commercant";
+import {
+  adresseLisible,
+  iconeDuReseau,
+  lienDeBio,
+  nomDuReseau,
+  PLATEFORMES_PAR_DEFAUT,
+  reseauxEnMots,
+  type DernierePublication,
+} from "@/lib/reseaux/reseaux-donnees";
+import { SITE_URL } from "@/lib/site-url";
 
 type Plateforme = { id: string; nom: string; compte?: string };
 type Etat = { configure: boolean; plateformes: Plateforme[]; auto: boolean; derniere?: DernierePublication };
@@ -251,6 +261,12 @@ export function ReseauxComptoir({
         </label>
       )}
 
+      {/* ═══ LE LIEN DE SA BIO INSTAGRAM ═══ « Sur Instagram, un lien dans le
+          texte n'est pas cliquable. Il faut donc un lien fixe dans la bio, qui
+          ouvre toujours les pièces du jour. » Ses posts finissent par
+          « 👉 lien en bio » : c'est celui-ci. */}
+      {etat?.plateformes.some((p) => p.id === "instagram") && <LienDeBio commerce={commerce} />}
+
       {d && (
         <section className="rs-derniere">
           <h3>Ta dernière publication sur tes réseaux</h3>
@@ -267,22 +283,77 @@ export function ReseauxComptoir({
       <section className="rs-aide">
         <h3>Bon à savoir</h3>
         <p>
-          <b>Instagram</b> : il faut un compte professionnel (gratuit — Réglages › Type de compte). Ta photo est recadrée au format qu’Instagram accepte.
+          <b>Tes posts</b> : ta photo, ton texte, puis tes mots dits au micro, entre guillemets. Ils finissent par une porte — « ✨ Essaie-la sur
+          toi », « 🍽️ Découvre le plat »… — qui ouvre ta page, sur ce que tu viens de publier.
         </p>
         <p>
-          <b>Facebook</b> : c’est ta page de commerce qui publie, pas ton profil perso.
+          <b>Instagram</b> : il faut un compte professionnel (gratuit — Réglages › Type de compte). Un lien n’y est pas cliquable dans un texte : ton
+          post dit « lien en bio », d’où le lien ci-dessus. Ta photo est mise, entière, au format qu’Instagram accepte.
         </p>
         <p>
-          <b>Google</b> : ton annonce apparaît sur ta fiche Google, dans la recherche et sur Maps — là où on te cherche. Connecte le compte Google qui gère ta fiche.
+          <b>Facebook</b> : c’est ta page de commerce qui publie, pas ton profil perso. Le lien de la porte y est cliquable.
         </p>
         <p>
-          <b>Plusieurs photos</b> : jusqu’à quatre, elles partent en carrousel sur Instagram et Facebook. Google et Le Direct prennent la première.
+          <b>Google</b> : ton annonce apparaît sur ta fiche Google, dans la recherche et sur Maps — là où on te cherche. Ta photo y est mise en largeur,
+          avec un bouton (« Réserver » ou « En savoir plus ») qui ouvre ta page. Connecte le compte Google qui gère ta fiche.
         </p>
+        <p>
+          <b>Plusieurs photos</b> : jusqu’à quatre, elles partent en carrousel sur Instagram et Facebook, toutes au format de la première — rien n’est
+          coupé. Google et Le Direct prennent la première.
+        </p>
+        {commerce.famille === "table" && (
+          <p>
+            <b>Ton interview</b> : elle part en Reel sur Instagram et Facebook jusqu’à 90 secondes (une ou deux questions). Plus longue, c’est son image
+          qui part, et la vidéo entière est dans Le Direct.
+          </p>
+        )}
         <p>
           <b>« Il en reste ! »</b> ne part pas sur tes réseaux : elle ne dure que deux heures, elle resterait des mois en haut de ton fil.
         </p>
       </section>
     </div>
+  );
+}
+
+/** Ce que le lien de sa bio ouvre, dans les mots de son métier : « ton plat du jour ». */
+const CE_QU_IL_OUVRE: Partial<Record<string, string>> = {
+  table: "ton plat du jour",
+  bar: "ta soirée",
+  coiffure: "ta coupe du moment, à essayer sur soi",
+  ongles: "ta pose du moment, à essayer sur ses ongles",
+  mode: "ta pièce du jour, à essayer sur soi",
+  lunettes: "ta monture du moment, à essayer sur son visage",
+  createur: "ta création du moment",
+  fleurs: "ton bouquet du jour",
+  librairie: "ton livre conseillé",
+};
+
+function LienDeBio({ commerce }: { commerce: CommerceComptoir }) {
+  const lien = lienDeBio(SITE_URL, commerce.reel?.slug ?? "ta-page");
+  const [copie, setCopie] = useState(false);
+  const copier = async () => {
+    try {
+      await navigator.clipboard.writeText(lien);
+      setCopie(true);
+      window.setTimeout(() => setCopie(false), 2200);
+    } catch {
+      /* presse-papiers refusé : le lien reste lisible, et se sélectionne d'un appui long */
+    }
+  };
+  const ouvre = CE_QU_IL_OUVRE[commerce.famille] ?? missionDe(commerce.famille).quoi.toLowerCase();
+  return (
+    <section className="rs-bio">
+      <h3>Le lien de ta bio Instagram</h3>
+      <p>
+        Colle-le une fois dans ta bio (Modifier le profil › Liens). Il ouvre toujours {ouvre} : c’est lui que tes posts appellent « lien en bio ».
+      </p>
+      <div className="rs-bio-lien">
+        <code>{adresseLisible(lien)}</code>
+        <button type="button" onClick={() => void copier()} disabled={!commerce.reel}>
+          {copie ? "Copié ✓" : "Copier"}
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -332,8 +403,15 @@ function StylesReseaux() {
 .rs-auto input:focus-visible + .rs-interrupteur{outline:2px solid var(--ambre);outline-offset:2px;}
 .rs-auto b{display:block;font-size:15px;}
 .rs-auto em{display:block;margin-top:2px;font-style:normal;font-size:13px;color:var(--gris);}
-.rs-derniere,.rs-aide{padding:14px;border-radius:18px;background:var(--nappe);border:1px solid var(--trait);}
-.rs-derniere h3,.rs-aide h3{margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ambre);}
+.rs-derniere,.rs-aide,.rs-bio{padding:14px;border-radius:18px;background:var(--nappe);border:1px solid var(--trait);}
+.rs-derniere h3,.rs-aide h3,.rs-bio h3{margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ambre);}
+.rs-bio p{margin:0;font-size:14px;line-height:1.4;color:var(--gris);}
+.rs-bio-lien{display:flex;align-items:center;gap:8px;margin-top:10px;padding:6px 6px 6px 12px;border-radius:14px;background:var(--nappe2);
+  border:1px solid var(--trait);min-width:0;}
+.rs-bio-lien code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:inherit;font-weight:700;font-size:14px;
+  color:var(--creme);}
+.rs-bio-lien button{flex:none;height:36px;padding:0 14px;border:0;border-radius:999px;background:var(--rose);color:#fff;font-weight:800;font-size:14px;}
+.rs-bio-lien button:disabled{opacity:.5;}
 .rs-derniere p,.rs-aide p{margin:4px 0 0;font-size:14px;line-height:1.4;}
 .rs-texte{color:var(--gris);}
 .rs-ok{color:#B9F3C6;font-weight:700;}

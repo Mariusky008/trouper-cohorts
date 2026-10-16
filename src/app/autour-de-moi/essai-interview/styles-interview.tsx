@@ -62,6 +62,9 @@ button.ei-retour{font-family:inherit;cursor:pointer}
 .ei-cloche .ei-n{margin:6px 0 10px}
 .ei-cloche .ei-r-ajout{display:inline-block}
 .ei-n{margin:10px 0 0;font-size:12.5px;line-height:1.5;color:var(--craie3)}
+.ei-publier{margin:16px 0 0}
+.ei-publier .ei-go{width:100%}
+.ei-publier .ei-n.ei-erreur{margin-top:10px}
 .ei-act{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:28px;text-align:center}
 .ei-act.rangee{flex-direction:row;flex-wrap:wrap;justify-content:center}
 .ei-go{display:inline-block;text-decoration:none;font:inherit;font-size:18px;font-weight:850;

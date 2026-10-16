@@ -217,9 +217,16 @@ export async function activerPlanning(
       }).catch(() => null);
       if (!pub?.id) console.error("[planning] le fil a refusé l'annonce programmée :", pub?.erreur ?? "raison inconnue");
       // 📣 LE JOUR VENU, ELLE PART AUSSI SUR SES RÉSEAUX — s'il les a connectés.
+      // SES MOTS À SON MICRO ET SA PIÈCE, comme une annonce publiée au comptoir : la légende
+      // les cite, la porte ouvre l'essai de cette pièce-là (voir `porteDuPost`).
       await publierSurSesReseauxEnFond(
         { id, slug: s(row.slug), nom: s(row.business_name), ville, activite: s(row.activite) },
-        { texte: a.texte, photo: a.photo },
+        {
+          texte: a.texte,
+          photo: a.photo,
+          ...(a.comptoir?.voixTexte ? { mots: a.comptoir.voixTexte } : {}),
+          ...(a.comptoir?.rayon ? { piece: a.id } : {}),
+        },
       ).catch(() => null);
     }
     try {

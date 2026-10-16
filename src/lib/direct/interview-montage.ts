@@ -34,12 +34,14 @@
  */
 import {
   CLOCHE,
+  DEBIT_SON,
   FIN,
   IDS_REPLIQUES,
   OUVERTURE,
   QUESTIONS,
   REPLIQUES,
   coteDuMontage,
+  debitDuMontage,
   dureeFin,
   enteteArdoise,
   dureeOuverture,
@@ -1338,7 +1340,13 @@ export async function monter(o: {
   /* ─── l'enregistreur ─── */
   const format = formatVideo();
   const flux = new MediaStream([...o.toile.captureStream(IPS).getVideoTracks(), ...sortie.stream.getAudioTracks()]);
-  const rec = new MediaRecorder(flux, { ...(format ? { mimeType: format } : {}), videoBitsPerSecond: 4_000_000, audioBitsPerSecond: 128_000 });
+  // LA LONGUEUR PRÉVUE : l'ouverture, la cloche, ses réponses coupées, la fin — voir `debitDuMontage`.
+  const prevue = 7 + (decor ? CLOCHE.duree : 0) + prises.reduce((t, p) => t + p.coupe, 0) + 6;
+  const rec = new MediaRecorder(flux, {
+    ...(format ? { mimeType: format } : {}),
+    videoBitsPerSecond: debitDuMontage(prevue),
+    audioBitsPerSecond: DEBIT_SON,
+  });
   const morceaux: Blob[] = [];
   rec.ondataavailable = (e) => {
     if (e.data && e.data.size) morceaux.push(e.data);

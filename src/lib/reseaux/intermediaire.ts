@@ -11,13 +11,16 @@
  *   3. la LISTE de ses comptes connectés (`comptesConnectes`) ;
  *   4. PUBLIER (`publierPartout`) : un texte, une image en https, ses comptes.
  *
- * ── CE QUI N'EST PAS VÉRIFIÉ ─────────────────────────────────────────────
- * La documentation de PostPeer n'était pas joignable depuis l'atelier : les
- * chemins et les champs ci-dessous viennent de ses extraits publics. Chaque
- * lecture est donc DÉFENSIVE (plusieurs noms de champ acceptés), et chaque
- * échec remonte avec le message de l'intermédiaire, pour être corrigé en une
- * ligne au premier essai réel. Rien ne part tant que `POSTPEER_API_KEY` n'est
- * pas posée sur Vercel.
+ * ── CE QUI EST VÉRIFIÉ, ET D'OÙ VIENNENT LES CHAMPS ──────────────────────
+ * Les publications partent en vrai sur des comptes de commerçants : profils,
+ * connexions et `/posts` répondent comme écrit ici. Les champs ajoutés
+ * ensuite — le texte par réseau (`platforms[].content`), le bouton du post
+ * Google et la couverture d'un Reel (`platforms[].platformSpecificData`), la
+ * vidéo (`mediaItems[].type: "video"`) — suivent les types du SDK officiel
+ * (`@postpeer/node` 0.9.0). Les lectures restent DÉFENSIVES (plusieurs noms
+ * de champ acceptés), et chaque échec remonte avec le message de
+ * l'intermédiaire. Rien ne part tant que `POSTPEER_API_KEY` n'est pas posée
+ * sur Vercel.
  *
  * SERVEUR SEULEMENT : la clé ne doit jamais atteindre un navigateur.
  */
@@ -27,9 +30,12 @@ import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SITE_URL } from "@/lib/site-url";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
+import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 import {
   legendeReseaux,
+  lienDeLaPorte,
   PLATEFORMES_PAR_DEFAUT,
+  porteDuPost,
   reseauxDuDiagnostic,
   type CompteReseau,
   type DernierePublication,
@@ -187,16 +193,41 @@ export async function comptesConnectes(profil: string): Promise<{ comptes?: Comp
  * refusé, avec la raison. Une réponse sans détail par réseau mais acceptée
  * compte comme partie partout : c'est ce que l'intermédiaire nous dit.
  */
-export async function publierPartout(p: { texte: string; images: string[]; comptes: CompteReseau[] }): Promise<Omit<DernierePublication, "at" | "texte">> {
+/** Une photo ou une vidéo, en https chez nous. `thumbnail` : l'image d'une vidéo sur Facebook. */
+export type Media = { type: "image" | "video"; url: string; thumbnail?: string };
+
+/** Ce qui change d'un réseau à l'autre dans un même envoi : son texte, ses réglages. */
+export type ParReseau = { content?: string; platformSpecificData?: Record<string, unknown> };
+
+export async function publierPartout(p: {
+  texte: string;
+  images?: string[];
+  /** À la place des images : une vidéo (un Reel sur Instagram), ou des photos. */
+  medias?: Media[];
+  comptes: CompteReseau[];
+  /** Le texte et les réglages propres à un réseau — voir `ParReseau`. */
+  pour?: (c: CompteReseau) => ParReseau | undefined;
+}): Promise<Omit<DernierePublication, "at" | "texte">> {
+  const medias: Media[] = p.medias ?? (p.images ?? []).map((url) => ({ type: "image" as const, url }));
   const r = await appeler("/posts", {
     method: "POST",
-    delai: 45_000,
+    // UNE VIDÉO SE TÉLÉCHARGE PUIS SE TRAITE CHEZ INSTAGRAM : plus long qu'une photo.
+    delai: medias.some((m) => m.type === "video") ? 120_000 : 45_000,
     corps: {
       content: p.texte,
-      platforms: p.comptes.map((c) => ({ platform: c.plateforme, accountId: c.id })),
+      platforms: p.comptes.map((c) => {
+        const en = p.pour?.(c);
+        return {
+          platform: c.plateforme,
+          accountId: c.id,
+          ...(en?.content ? { content: en.content } : {}),
+          ...(en?.platformSpecificData && Object.keys(en.platformSpecificData).length ? { platformSpecificData: en.platformSpecificData } : {}),
+        };
+      }),
       publishNow: true,
       // PLUSIEURS PHOTOS : un carrousel sur Instagram, un album sur Facebook.
-      mediaItems: p.images.map((url) => ({ type: "image", url })),
+      // UNE VIDÉO VERTICALE : un Reel sur Instagram (l'intermédiaire le décide seul).
+      mediaItems: medias.map((m) => ({ type: m.type, url: m.url, ...(m.thumbnail ? { thumbnail: m.thumbnail } : {}) })),
     },
   });
   const toutes = p.comptes.map((c) => c.plateforme);
@@ -252,30 +283,51 @@ async function octetsDe(photo: string): Promise<Buffer | null> {
   }
 }
 
-/** La photo, telle que les réseaux l'acceptent — entière. Exportée pour être essayée seule. */
-export async function cadrerPourReseaux(brut: Buffer): Promise<Buffer> {
+/**
+ * La photo, telle que les réseaux l'acceptent — entière. Exportée pour être essayée seule.
+ *
+ * `voulu` IMPOSE LE FORMAT, et c'est pour deux raisons :
+ *   · UN CARROUSEL A LE FORMAT DE SA PREMIÈRE PHOTO. Instagram recadre toutes
+ *     les suivantes à son format : une photo en largeur après une photo en
+ *     hauteur perdait ses côtés. Elles sont donc toutes posées, entières, dans
+ *     le cadre de la première (`publierSurSesReseaux`).
+ *   · GOOGLE MONTRE SES POSTS EN LARGEUR (4:3) : une photo en hauteur y perdait
+ *     son haut et son bas. Sa fiche reçoit sa propre version, 1200 × 900.
+ *   · LA COUVERTURE D'UN REEL est verticale (9:16), comme la vidéo.
+ * Même règle partout : on ne coupe pas, on encadre, sur un fond fait d'elle-même.
+ */
+export async function cadrerPourReseaux(brut: Buffer, voulu?: { ratio: number; largeur?: number }): Promise<Buffer> {
   // `rotate()` d'abord : une photo de téléphone porte son sens dans ses
   // métadonnées. `flatten()` : un PNG détouré passerait sur fond noir en JPEG.
   const droite = await sharp(brut).rotate().flatten({ background: "#ffffff" }).toBuffer();
   const meta = await sharp(droite).metadata();
   const ratio = (meta.width ?? 1080) / (meta.height ?? 1080);
-  const largeur = 1080;
-  if (ratio >= 0.8 && ratio <= 1.91) {
-    // DÉJÀ DANS LES CLOUS : on la réduit, on n'y touche pas.
-    return sharp(droite).resize(largeur, Math.round(largeur / ratio), { fit: "fill" }).jpeg({ quality: 88 }).toBuffer();
+  const largeur = voulu?.largeur ?? 1080;
+  const cible = voulu ? voulu.ratio : ratio < 0.8 ? 0.8 : ratio > 1.91 ? 1.91 : ratio;
+  if (Math.abs(ratio - cible) / cible < 0.015) {
+    // DÉJÀ AU BON FORMAT : on la réduit, on n'y touche pas.
+    return sharp(droite).resize(largeur, Math.round(largeur / cible), { fit: "cover" }).jpeg({ quality: 88 }).toBuffer();
   }
-  const hauteur = Math.round(largeur / (ratio < 0.8 ? 0.8 : 1.91));
+  const hauteur = Math.round(largeur / cible);
   const fond = await sharp(droite).resize(largeur, hauteur, { fit: "cover" }).blur(36).modulate({ brightness: 0.62 }).toBuffer();
   const photoEntiere = await sharp(droite).resize(largeur, hauteur, { fit: "inside" }).toBuffer();
   return sharp(fond).composite([{ input: photoEntiere, gravity: "centre" }]).jpeg({ quality: 88 }).toBuffer();
 }
 
-export async function imagePourReseaux(slug: string, photo: string): Promise<string | { erreur: string }> {
+/** La photo cadrée, rangée chez nous : son adresse, et le format qu'elle a pris. */
+export async function imagePourReseaux(
+  slug: string,
+  photo: string,
+  voulu?: { ratio: number; largeur?: number },
+): Promise<{ url: string; ratio: number } | { erreur: string }> {
   const brut = await octetsDe(s(photo));
   if (!brut) return { erreur: "photo introuvable" };
   let octets: Buffer;
+  let ratio: number;
   try {
-    octets = await cadrerPourReseaux(brut);
+    octets = await cadrerPourReseaux(brut, voulu);
+    const m = await sharp(octets).metadata();
+    ratio = (m.width ?? 1080) / (m.height ?? 1080);
   } catch {
     return { erreur: "photo illisible" };
   }
@@ -283,8 +335,27 @@ export async function imagePourReseaux(slug: string, photo: string): Promise<str
   const chemin = `${DOSSIER}/${slug}-reseaux-${createHash("sha1").update(octets).digest("hex").slice(0, 16)}.jpg`;
   const { error } = await supabase.storage.from(SEAU).upload(chemin, octets, { contentType: "image/jpeg", upsert: true });
   if (error) return { erreur: `stockage : ${error.message}` };
-  return supabase.storage.from(SEAU).getPublicUrl(chemin).data.publicUrl;
+  return { url: supabase.storage.from(SEAU).getPublicUrl(chemin).data.publicUrl, ratio };
 }
+
+/** Le format des posts d'une fiche Google : en largeur. */
+const GOOGLE = { ratio: 4 / 3, largeur: 1200 };
+/** La couverture d'un Reel : le format de la vidéo. */
+const REEL = { ratio: 9 / 16, largeur: 1080 };
+
+/**
+ * ═══ UNE VIDÉO PART EN REEL QUAND ELLE EN EST UN ═══════════════════════════
+ *
+ * Instagram et Facebook la prennent en MP4 (H.264) et de 3 à 90 secondes : le
+ * format qu'un téléphone écrit et que l'intermédiaire accepte en Reel. En
+ * dehors — un WebM d'un navigateur qui ne sait pas écrire de MP4, une
+ * interview de quatre questions —, c'est sa couverture qui part en photo, avec
+ * le même texte : le post existe quand même, et la vidéo entière est dans Le
+ * Direct. Google n'en prend jamais (trente secondes au plus, et elle n'y
+ * apparaît pas dans les posts) : sa fiche reçoit la photo.
+ */
+export const REEL_MAX_S = 90;
+export const enReel = (v: { secondes: number; mp4: boolean } | undefined) => Boolean(v && v.mp4 && v.secondes >= 3 && v.secondes <= REEL_MAX_S);
 
 /* ═══ SA FICHE ═══════════════════════════════════════════════════════════ */
 
@@ -309,7 +380,17 @@ export async function changerReseaux(siteId: string, maj: (r: Reseaux) => Reseau
  */
 export async function publierSurSesReseaux(
   site: { id: string; slug: string; nom: string; ville?: string; activite?: string },
-  annonce: { texte: string; photo: string | null; autres?: string[] },
+  annonce: {
+    texte: string;
+    photo: string | null;
+    autres?: string[];
+    /** Ce qu'il a dit à son micro, transcrit — ses mots, entre guillemets (voir `legendeReseaux`). */
+    mots?: string;
+    /** La pièce de son catalogue que montre ce post : la porte ouvre SON essai. */
+    piece?: string;
+    /** Son interview, chez nous (https) : un Reel quand elle en est un (`enReel`), sa couverture sinon. */
+    video?: { url: string; secondes: number; mp4: boolean };
+  },
 ): Promise<DernierePublication | null> {
   try {
     if (!reseauxConfigures() || !site.id || !annonce.photo) return null;
@@ -318,50 +399,82 @@ export async function publierSurSesReseaux(
     if (!reseaux.auto || !reseaux.comptes.length) return null;
 
     const texte = annonce.texte.trim();
-    const image = await imagePourReseaux(site.slug, annonce.photo);
-    // SES AUTRES PHOTOS (trois au plus) : celles qui ne passent pas sont laissées, pas l'annonce.
-    const suite = (await Promise.all((annonce.autres ?? []).slice(0, 3).map((x) => imagePourReseaux(site.slug, x)))).filter(
-      (x): x is string => typeof x === "string",
-    );
+    const reel = enReel(annonce.video) ? annonce.video : undefined;
+    const [image, imageGoogle, couverture] = await Promise.all([
+      imagePourReseaux(site.slug, annonce.photo),
+      imagePourReseaux(site.slug, annonce.photo, GOOGLE),
+      reel ? imagePourReseaux(site.slug, annonce.photo, REEL) : null,
+    ]);
+    // SES AUTRES PHOTOS (trois au plus), AU FORMAT DE LA PREMIÈRE : celles qui ne passent pas sont laissées, pas l'annonce.
+    const premiere = "url" in image ? image : null;
+    const suite = premiere
+      ? (await Promise.all((annonce.autres ?? []).slice(0, 3).map((x) => imagePourReseaux(site.slug, x, { ratio: premiere.ratio }))))
+          .flatMap((x) => ("url" in x ? [x.url] : []))
+      : [];
+
+    // ═══ LA PORTE DE CE POST — voir `porteDuPost` ═══
     const metier = site.activite ? resolveMetier(site.activite).entry?.label ?? "" : "";
-    const legende = legendeReseaux({
-      texte,
-      nom: site.nom,
-      ville: site.ville,
-      metier,
-      lien: `${SITE_URL.replace(/^https?:\/\/(www\.)?/, "")}/site-internet/apercu/${site.slug}`,
+    const porte = porteDuPost({ branche: brancheDuMetier(site.activite ?? ""), metier: site.activite, piece: Boolean(annonce.piece) });
+    const lien = lienDeLaPorte(SITE_URL, site.slug, porte.essai ? annonce.piece : undefined);
+    const legende = (reseau: string) =>
+      legendeReseaux({ texte, mots: annonce.mots, nom: site.nom, ville: site.ville, metier, porte: porte.mot, lien, reseau });
+    const pour = (c: CompteReseau): ParReseau => ({
+      content: legende(c.plateforme),
+      // LA COUVERTURE DU REEL : l'image que le montage a choisie, pas la première de la vidéo (une ardoise vide).
+      ...(reel && couverture && "url" in couverture
+        ? {
+            platformSpecificData:
+              c.plateforme === "instagram" ? { coverUrl: couverture.url } : c.plateforme === "facebook" ? { videoThumbnailUrl: couverture.url } : {},
+          }
+        : {}),
     });
-    // SA FICHE GOOGLE REÇOIT SES MOTS, ET RIEN D'AUTRE. Le post est déjà sur
-    // SA fiche, sous son nom et son adresse : « 📍 nom · ville » et les
-    // mots-dièse y feraient doublon, et Google n'aime pas les liens dans le
-    // texte d'un post. Un seul appel par groupe : Instagram et Facebook d'un côté,
-    // Google de l'autre.
+
+    // SA FICHE GOOGLE REÇOIT SES MOTS, ET RIEN D'AUTRE DANS LE TEXTE. Le post
+    // est déjà sur SA fiche, sous son nom et son adresse : « 📍 nom · ville »
+    // et les mots-dièse y feraient doublon, et Google n'aime pas les liens dans
+    // le texte d'un post. LA PORTE EST DANS SON BOUTON (« Réserver », « En
+    // savoir plus »). Un appel par groupe : Instagram et Facebook d'un côté,
+    // Google de l'autre — leurs images ne sont pas les mêmes.
     const google = reseaux.comptes.filter((c) => c.plateforme === "googlebusiness");
     const autres = reseaux.comptes.filter((c) => c.plateforme !== "googlebusiness");
-    // GOOGLE PREND LA PREMIÈRE SEULEMENT : un post de fiche montre une photo.
     // UN CARROUSEL REFUSÉ REPART EN UNE PHOTO : mieux vaut sa première photo
     // sur Instagram que rien du tout parce que la troisième ne plaisait pas.
-    const versAutres = async (images: string[]) => {
-      const r = await publierPartout({ texte: legende, images, comptes: autres });
-      if (images.length < 2 || !r.erreurs.length) return r;
+    // UN REEL REFUSÉ REPART EN PHOTO, la même raison.
+    const versAutres = async (medias: Media[], repli?: Media[]) => {
+      const r = await publierPartout({ texte: legende("facebook"), medias, comptes: autres, pour });
+      if (!r.erreurs.length || !repli) return r;
       const rates = autres.filter((c) => r.erreurs.some((e) => e.plateforme === c.plateforme));
-      const encore = await publierPartout({ texte: legende, images: images.slice(0, 1), comptes: rates });
+      const encore = await publierPartout({ texte: legende("facebook"), medias: repli, comptes: rates, pour: (c) => ({ content: legende(c.plateforme) }) });
       return { ok: [...r.ok, ...encore.ok], erreurs: encore.erreurs };
     };
-    const envois =
-      typeof image === "string"
-        ? await Promise.all([
-            autres.length ? versAutres([image, ...suite]) : null,
-            google.length ? publierPartout({ texte, images: [image], comptes: google }) : null,
-          ])
-        : [];
-    const resultat =
-      typeof image === "string"
-        ? {
-            ok: envois.flatMap((e) => e?.ok ?? []),
-            erreurs: envois.flatMap((e) => e?.erreurs ?? []),
-          }
-        : { ok: [], erreurs: reseaux.comptes.map((c) => ({ plateforme: c.plateforme, message: image.erreur })) };
+    // UN BOUTON REFUSÉ NE FAIT PAS TOMBER LE POST : sa fiche le reçoit sans bouton.
+    const versGoogle = async (url: string) => {
+      const cta = { callToActionType: porte.bouton, callToActionUrl: lien };
+      const r = await publierPartout({ texte: legende("googlebusiness"), images: [url], comptes: google, pour: () => ({ platformSpecificData: cta }) });
+      if (!r.erreurs.length) return r;
+      const encore = await publierPartout({ texte: legende("googlebusiness"), images: [url], comptes: google });
+      return encore.erreurs.length ? r : encore;
+    };
+    const photos: Media[] = premiere ? [premiere.url, ...suite].map((url) => ({ type: "image", url })) : [];
+    const envois = premiere
+      ? await Promise.all([
+          autres.length
+            ? reel
+              ? versAutres(
+                  [{ type: "video", url: reel.url, ...(couverture && "url" in couverture ? { thumbnail: couverture.url } : {}) }],
+                  photos.slice(0, 1),
+                )
+              : versAutres(photos, photos.length > 1 ? photos.slice(0, 1) : undefined)
+            : null,
+          google.length ? versGoogle("url" in imageGoogle ? imageGoogle.url : premiere.url) : null,
+        ])
+      : [];
+    const resultat = premiere
+      ? {
+          ok: envois.flatMap((e) => e?.ok ?? []),
+          erreurs: envois.flatMap((e) => e?.erreurs ?? []),
+        }
+      : { ok: [], erreurs: reseaux.comptes.map((c) => ({ plateforme: c.plateforme, message: "erreur" in image ? image.erreur : "photo illisible" })) };
     const derniere: DernierePublication = { at: new Date().toISOString(), texte: texte.slice(0, 300), ...resultat };
     if (resultat.erreurs.length) console.warn("[reseaux] publication incomplète :", JSON.stringify(resultat.erreurs));
     await changerReseaux(site.id, (r) => ({ ...r, derniere })).catch(() => null);

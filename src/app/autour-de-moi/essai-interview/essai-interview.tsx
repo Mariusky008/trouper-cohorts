@@ -275,6 +275,12 @@ export type InterviewDuCommerce = {
   /** Son fantôme, bouche fermée → grande ouverte (voir `chefEnPied`). */
   chef: string[];
   onFermer: () => void;
+  /**
+   * « PUBLIER PARTOUT » : Le Direct, sa page, ses réseaux — voir
+   * `envoyerInterview`. Rend la phrase à lui dire, réussite ou échec.
+   * Absent sur la page d'essai : la vidéo s'y partage ou se télécharge.
+   */
+  publier?: (m: { blob: Blob; type: string; duree: number; affiche: string; plat: string; prix: string; mots?: string }) => Promise<{ ok: boolean; message: string }>;
 };
 
 /** Un nom de fichier sans accents ni espaces : « interview-la-table-de-margot.mp4 ». */
@@ -298,7 +304,8 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
   // LA PHOTO DE SON PLAT : au comptoir, celle qu'il y a mise ; sur la page d'essai, à choisir
   const [cloche, setCloche] = useState(du ? Boolean(du.photoPlat) : true);
   const [photoPlat, setPhotoPlat] = useState<{ url: string; nom: string | null }>({ url: du ? (du.photoPlat ?? "") : PHOTO_PLAT, nom: null });
-  const [format, setFormat] = useState<Format>(3);
+  // AU COMPTOIR, DEUX QUESTIONS : la vidéo tient en un Reel (90 secondes) — voir `enReel`.
+  const [format, setFormat] = useState<Format>(du?.publier ? 2 : 3);
   const [mode, setMode] = useState<Mode>("camera");
   const [cote, setCote] = useState<Cote>("droite");
   const [ecouter, setEcouter] = useState(true);
@@ -315,6 +322,8 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
   const [formatPrise, setFormatPrise] = useState("");
   const [pret, setPret] = useState(false);
   const [affiche, setAffiche] = useState<string | undefined>(undefined);
+  /** « Publier partout » : où en est l'envoi, et ce qu'on lui dit. */
+  const [envoi, setEnvoi] = useState<{ etat: "envoi" | "fini" | "erreur"; message: string } | null>(null);
 
   const camera = useRef<HTMLVideoElement>(null);
   const toile = useRef<HTMLCanvasElement>(null);
@@ -658,6 +667,8 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     setEtape("montage");
     setProgres(0);
     setErreur("");
+    // UN NOUVEAU MONTAGE SE PUBLIE À SON TOUR.
+    setEnvoi(null);
     await garderAllume();
     // l'élément de dessin doit exister avant qu'on dessine dedans
     await attendre(50);
@@ -733,6 +744,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     }
     majReponses(() => []);
     setMontage(null);
+    setEnvoi(null);
     setErreur("");
     setBulle(null);
     setEtape("reglages");
@@ -751,6 +763,26 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
   };
   const peutPartager =
     !!montage && typeof navigator !== "undefined" && !!navigator.canShare?.({ files: [new File([montage.blob], nomFichier, { type: montage.type.split(";")[0] })] });
+  const publierPartout = async () => {
+    if (!montage || !du?.publier || envoi?.etat === "envoi") return;
+    setEnvoi({ etat: "envoi", message: "J’envoie ta vidéo…" });
+    // SES MOTS : sa réponse à la première question, transcrite — la légende de ses posts les cite.
+    const mots = reponsesRef.current[0]?.analyse?.texte?.trim();
+    try {
+      const r = await du.publier({
+        blob: montage.blob,
+        type: montage.type,
+        duree: montage.duree,
+        affiche: affiche ?? "",
+        plat: reglages.current.plat.trim(),
+        prix: reglages.current.prix.trim(),
+        ...(mots ? { mots } : {}),
+      });
+      setEnvoi({ etat: r.ok ? "fini" : "erreur", message: r.message });
+    } catch {
+      setEnvoi({ etat: "erreur", message: "L’envoi a échoué. Réessaie." });
+    }
+  };
 
   /* ═══ CE QUI S'AFFICHE ═══ */
   const enDirect = etape === "placement" || etape === "interview" || etape === "merci";
@@ -830,6 +862,12 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
             ))}
           </div>
           <p className="ei-n">Trente secondes au plus par réponse — {secondes(format * REPONSE_MAX_S)} de réponses au maximum.</p>
+          {du?.publier ? (
+            <p className="ei-n">
+              Une ou deux questions : ta vidéo part en Reel sur Instagram et Facebook (90 secondes au plus). Au-delà, c’est son image qui y part,
+              et la vidéo entière reste dans Le Direct.
+            </p>
+          ) : null}
         </section>
 
         <section className="ei-bloc">
@@ -1025,9 +1063,30 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
         <>
           {montage ? <video className="ei-resultat" src={montage.url} poster={affiche} controls playsInline /> : null}
           {erreur ? <p className="ei-erreur">{erreur}</p> : null}
+          {/* ═══ PUBLIER PARTOUT — au comptoir seulement ═══ */}
+          {montage && du?.publier ? (
+            <div className="ei-publier">
+              <button
+                type="button"
+                className="ei-go"
+                onClick={() => void publierPartout()}
+                disabled={!affiche || envoi?.etat === "envoi" || envoi?.etat === "fini"}
+              >
+                {envoi?.etat === "envoi" ? "J’envoie…" : envoi?.etat === "fini" ? "Publiée ✓" : "Publier partout"}
+              </button>
+              <p className={`ei-n${envoi?.etat === "erreur" ? " ei-erreur" : ""}`} role="status">
+                {envoi?.message ??
+                  (lisiblePartout(montage.type) && montage.duree <= 90
+                    ? "Le Direct, ta page, et un Reel sur Instagram et Facebook. Google reçoit son image."
+                    : `Le Direct et ta page reçoivent la vidéo. Sur Instagram, Facebook et Google, c’est son image qui part${
+                        montage.duree > 90 ? " : un Reel tient en 90 secondes" : " : ce téléphone n’écrit pas de MP4"
+                      }.`)}
+              </p>
+            </div>
+          ) : null}
           <div className="ei-act rangee">
             {montage && peutPartager ? (
-              <button type="button" className="ei-go" onClick={partager}>
+              <button type="button" className={du?.publier ? "ei-go second" : "ei-go"} onClick={partager}>
                 Partager
               </button>
             ) : null}

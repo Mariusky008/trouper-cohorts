@@ -26,6 +26,7 @@
  *
  * FICHIER NAVIGATEUR.
  */
+import { createClient } from "@/lib/supabase/client";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import type { Publication } from "@/lib/direct/comptoir";
 import type { Mission } from "@/lib/direct/missions-commercant";
@@ -203,6 +204,10 @@ export async function envoyerEnLigne(
       reseaux: p.genre !== "relance",
       // SES AUTRES PHOTOS PARTENT EN CARROUSEL SUR SES RÉSEAUX (Le Direct garde la première).
       ...(p.genre !== "relance" && p.photos.length > 1 ? { photosReseaux: p.photos.slice(1, 4) } : {}),
+      // CE QU'IL A DIT À SON MICRO, POUR SES RÉSEAUX : la légende le cite entre guillemets —
+      // Le Direct, lui, garde ses 140 signes. Et LA PIÈCE que la porte du post fait essayer.
+      ...(p.genre !== "relance" && p.voixTexte ? { mots: p.voixTexte } : {}),
+      ...(p.genre === "principal" && AVEC_PIECE.includes(c.famille) ? { piece: p.id } : {}),
     });
     if (r.ok) ou.push("Le Direct");
     if (r.ok && Array.isArray(r.json?.reseaux)) reseaux = (r.json.reseaux as unknown[]).map(String);
@@ -211,6 +216,69 @@ export async function envoyerEnLigne(
 
   const enRoute = reseaux.length ? { reseaux } : {};
   return erreurs.length ? { ok: ou.length > 0, ou, erreur: erreurs.join(" "), ...enRoute } : { ok: true, ou, ...enRoute };
+}
+
+/** Une vidéo que les réseaux prennent en Reel : du MP4 en H.264, pas du WebM. */
+export const enMp4 = (type: string) => /mp4/i.test(type) && !/vp0?8|vp0?9|av01|opus/i.test(type);
+
+/** Le titre de son interview dans Le Direct : 140 signes au plus. */
+export function texteDeLInterview(nom: string, prix: string): string {
+  return `L’interview du jour : ${nom.trim()}${prix.trim() ? ` · ${prix.trim()}` : ""}`.replace(/\s+/g, " ").slice(0, 140);
+}
+
+/**
+ * ═══ SON INTERVIEW PART EN LIGNE ══════════════════════════════════════════
+ *
+ * « Envoyer l'interview dans Le Direct et en Reels Instagram et Facebook. »
+ * Trois temps, parce que la vidéo pèse trop lourd pour passer par le site :
+ *
+ *   1. une adresse signée, contre son jeton pro (`/api/site-internet/pro/interview`) ;
+ *   2. la vidéo déposée DIRECTEMENT dans notre stockage depuis son téléphone ;
+ *   3. l'annonce, par le chemin de toutes les annonces : Le Direct (la vidéo,
+ *      son image en vignette), puis ses réseaux — un Reel quand la vidéo en
+ *      est un (MP4, 90 secondes au plus), son image sinon ; Google prend
+ *      toujours l'image, avec son bouton.
+ *
+ * `mots` : ce qu'il a répondu à la première question, transcrit — ses mots,
+ * cités dans la légende de ses posts.
+ */
+export async function envoyerInterview(
+  c: CommerceComptoir,
+  i: { nom: string; prix: string; blob: Blob; type: string; duree: number; affiche: string; mots?: string },
+): Promise<ResultatEnvoi> {
+  if (!c.reel) return { ok: false, ou: [], erreur: "Ce commerce n'a pas de lien pro." };
+  const { slug, token } = c.reel;
+  const type = i.type.split(";")[0];
+  const signe = await poster("/api/site-internet/pro/interview", { slug, token, type, taille: i.blob.size });
+  const s = signe.json as { seau?: string; chemin?: string; jeton?: string; url?: string } | undefined;
+  if (!signe.ok || !s?.seau || !s.chemin || !s.jeton || !s.url) return { ok: false, ou: [], erreur: signe.erreur ?? "L'envoi n'a pas pu commencer." };
+  try {
+    // LE TYPE NU (« video/mp4 », sans « ;codecs=… ») : c'est celui que le seau accepte.
+    const fichier = new Blob([i.blob], { type });
+    const { error } = await createClient().storage.from(s.seau).uploadToSignedUrl(s.chemin, s.jeton, fichier, { contentType: type });
+    if (error) throw new Error(error.message);
+  } catch {
+    return { ok: false, ou: [], erreur: "La vidéo n'a pas pu partir. Réessaie, de préférence en wifi." };
+  }
+  // SA VIDÉO VIT JUSQU'À CE SOIR, COMME SON PLAT DU JOUR.
+  const ceSoir = new Date();
+  ceSoir.setHours(23, 59, 0, 0);
+  const r = await poster("/api/site-internet/pro/offer", {
+    slug,
+    token,
+    action: "set",
+    text: texteDeLInterview(i.nom, i.prix),
+    photo: i.affiche,
+    video: s.url,
+    videoSecondes: Math.round(i.duree * 10) / 10,
+    videoMp4: enMp4(i.type),
+    until: ceSoir.toISOString(),
+    famille: c.famille === "table" ? "menu" : "offre",
+    ...(i.mots ? { mots: i.mots } : {}),
+  });
+  if (!r.ok) return { ok: false, ou: [], erreur: r.erreur ?? "L'annonce n'a pas pu partir." };
+  const reseaux = Array.isArray(r.json?.reseaux) ? (r.json.reseaux as unknown[]).map(String) : [];
+  return { ok: true, ou: ["Le Direct", "ta page"], ...(reseaux.length ? { reseaux } : {}) };
 }
 
 /** Retirer en ligne : le plat de sa page, et l'annonce du Direct qui porte ce texte. */
