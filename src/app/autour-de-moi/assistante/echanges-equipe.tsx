@@ -15,6 +15,11 @@
 //
 // Utilisé tel quel par le vrai comptoir (`echanges-reels.tsx`) et par la
 // démonstration (`echanges-comptoir.tsx`, avec des personnes d'exemple).
+//
+// « J'ai pu mettre un employé, mais comment se connecte-t-il ? » — EN
+// DÉMONSTRATION AUSSI, on le voit : le message WhatsApp qu'il recevrait, avec
+// un lien d'exemple (marqué comme tel), et les trois gestes qui le font entrer.
+// « Son accès » le remontre pour une personne déjà invitée.
 import { useState } from "react";
 import { MAX_MEMBRES, PAR_PERSONNE, deNom, type MembreEquipe } from "@/lib/echanges/echanges";
 import { Feuille } from "./echanges-communs";
@@ -25,6 +30,9 @@ export function messageMembre(prenom: string, commerce: string, lien: string): s
 }
 
 const pluriel = (n: number, un: string, plusieurs: string) => (n > 1 ? plusieurs : un);
+/** En démonstration : un lien qui se voit comme un exemple, jamais un vrai jeton. */
+const lienExemple = (prenom: string) =>
+  `https://clikme.fr/e/exemple-${prenom.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "equipe"}`;
 
 export function PanneauEquipe({
   membres,
@@ -61,9 +69,29 @@ export function PanneauEquipe({
     return (
       <Feuille titre={`Envoie son accès à ${nouveau.prenom}`} onFermer={onFermer}>
         {exemple ? (
-          <p className="ec-gris">
-            <b>{nouveau.prenom}</b> rejoint ton équipe (exemple) : {PAR_PERSONNE} € par mois rien qu’à elle ou lui, et {PAR_PERSONNE} € de plus d’avance pour ta boutique. En vrai, son lien partirait par ton WhatsApp.
-          </p>
+          <>
+            <p className="ec-gris">
+              <b>{nouveau.prenom}</b> rejoint ton équipe : {PAR_PERSONNE} € par mois rien qu’à elle ou lui, et {PAR_PERSONNE} € de plus d’avance pour ta boutique. Voici comment elle ou il se connecte.
+            </p>
+            <div className="ec-wa-apercu" aria-label="Le message WhatsApp qu’elle ou il reçoit">
+              <span className="ec-wa-apercu-t">
+                WhatsApp · de toi à {nouveau.prenom} <i>Exemple</i>
+              </span>
+              <p>{messageMembre(nouveau.prenom, commerce, lienExemple(nouveau.prenom))}</p>
+            </div>
+            <ol className="ec-regles">
+              <li>
+                <b>Tu lui envoies son lien</b> par ton WhatsApp : en vrai, le bouton « Envoyer par WhatsApp » écrit ce message pour toi.
+              </li>
+              <li>
+                <b>Elle ou il touche le lien.</b> Pas de mot de passe, pas de compte à créer : le lien est sa clé. Dès qu’il est ouvert, elle ou il compte dans ton équipe.
+              </li>
+              <li>
+                <b>Sa page « Mon accès »</b> : ses {PAR_PERSONNE} € du mois, les offres à glisser, ses bons, et « Valider un bon » au comptoir. Elle lui propose de la poser sur son écran d’accueil.
+              </li>
+            </ol>
+            <p className="ec-petit">Lien perdu ? « Renvoyer », à côté de son prénom. Elle ou il part ? « Retirer » : le lien ne marche plus.</p>
+          </>
         ) : (
           <>
             <p className="ec-gris">
@@ -136,6 +164,11 @@ export function PanneauEquipe({
               </em>
             </span>
             <span className="ec-membre-b">
+              {exemple && (
+                <button type="button" onClick={() => setNouveau({ prenom: m.prenom, lien: "" })}>
+                  Son accès
+                </button>
+              )}
               {!exemple && m.lien && (
                 <a href={`https://wa.me/?text=${encodeURIComponent(messageMembre(m.prenom, commerce, lienEntier(m.lien)))}`} target="_blank" rel="noopener noreferrer">
                   Renvoyer
@@ -201,6 +234,11 @@ export function StylesEquipe() {
 .ec-inviter input{min-width:0;width:100%;height:52px;padding:0 14px;border-radius:14px;border:1.5px solid var(--ambre);background:var(--fond);
   color:var(--creme);font-size:16px;font-weight:700;}
 .ec-inviter .cz-go{height:52px;min-height:52px;padding:0 20px;width:auto;}
+.ec-wa-apercu{display:flex;flex-direction:column;gap:6px;padding:10px 12px 12px;border-radius:16px 16px 16px 4px;background:#103A2C;
+  border:1px solid rgba(124,240,162,.35);}
+.ec-wa-apercu-t{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:800;letter-spacing:.04em;color:#7CF0A2;}
+.ec-wa-apercu-t i{font-style:normal;padding:1px 7px;border-radius:999px;background:rgba(245,162,58,.18);color:var(--ambre);font-size:10.5px;}
+.ec-wa-apercu p{margin:0;font-size:14px;line-height:1.45;color:#E8FFF1;overflow-wrap:anywhere;}
 .ec-lien-membre{margin:0;padding:10px 12px;border-radius:14px;background:var(--fond);border:1px dashed var(--trait);font-size:13px;
   color:var(--creme);overflow-wrap:anywhere;}
 `,
