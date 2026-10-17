@@ -17,6 +17,24 @@ type Panneau = "solde" | "bons" | "valider" | "comment";
 
 const ROUTE = "/api/site-internet/pro/echanges";
 
+/* GARDER SON ACCÈS SOUS LA MAIN : l'astuce « ajoute cette page à ton écran
+   d'accueil », pour un téléphone, et pas une fois l'accès déjà posé sur
+   l'écran d'accueil (il s'ouvre alors seul, en plein écran). L'icône rouvre
+   bien SON accès : la page a son propre manifeste (`manifest.webmanifest`). */
+type Appareil = "ios" | "android";
+function lireAppareil(): Appareil | null {
+  try {
+    const n = window.navigator as Navigator & { standalone?: boolean };
+    if (n.standalone || window.matchMedia("(display-mode: standalone)").matches) return null;
+    const ua = n.userAgent;
+    if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && n.maxTouchPoints > 1)) return "ios";
+    if (/Android/i.test(ua)) return "android";
+  } catch {
+    /* rien : pas d'astuce */
+  }
+  return null;
+}
+
 async function appeler(jeton: string, action: string, extra: Record<string, unknown> = {}): Promise<Reponse> {
   try {
     const r = await fetch(ROUTE, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ membre: jeton, action, ...extra }) });
@@ -32,6 +50,8 @@ export function EspaceMembre({ jeton, prenom, commerce }: { jeton: string; preno
   const [etat, setEtat] = useState<EtatEchanges | null>(null);
   const [erreur, setErreur] = useState("");
   const [bienvenue, setBienvenue] = useState(false);
+  const [astuce, setAstuce] = useState<Appareil | null>(null);
+  const cleAstuce = `clikme-membre-ecran-accueil-${jeton.slice(0, 10)}`;
   const visage = commerce.photo || visageDe(commerce.branche, commerce.metier);
 
   const charger = useCallback(async () => {
@@ -59,11 +79,20 @@ export function EspaceMembre({ jeton, prenom, commerce }: { jeton: string; preno
     } catch {
       premiere = false;
     }
+    // L'ASTUCE DE L'ÉCRAN D'ACCUEIL, jusqu'à ce qu'il touche « Compris ».
+    let astuceVue = true;
+    try {
+      astuceVue = Boolean(window.localStorage.getItem(`clikme-membre-ecran-accueil-${jeton.slice(0, 10)}`));
+    } catch {
+      astuceVue = true;
+    }
+    const appareil = astuceVue ? null : lireAppareil();
     appeler(jeton, "etat").then((r) => {
       if (fini) return;
       if (r.etat) {
         setEtat(r.etat);
         if (premiere) setBienvenue(true);
+        if (appareil) setAstuce(appareil);
       } else setErreur(r.error || "Lecture impossible pour l'instant.");
     });
     const auRetour = () => {
@@ -125,6 +154,54 @@ export function EspaceMembre({ jeton, prenom, commerce }: { jeton: string; preno
           <p className="ec-regle">🔒 Garde ce lien : c’est ton accès personnel. Ne le partage pas.</p>
           <button type="button" className="cz-go grand" onClick={() => setBienvenue(false)}>
             C’est parti
+          </button>
+        </Feuille>
+      )}
+      {astuce && !bienvenue && etat && (
+        <Feuille
+          titre="Garde ton accès sous la main 📲"
+          onFermer={() => setAstuce(null)}
+        >
+          <p className="ec-gris">
+            Ajoute cette page à ton écran d’accueil : elle s’ouvrira d’un geste, comme une application, sans rechercher le message avec ton lien.
+          </p>
+          <ol className="ec-regles">
+            {astuce === "ios" ? (
+              <>
+                <li>Ouverte depuis WhatsApp ? Ouvre-la d’abord dans Safari.</li>
+                <li>
+                  Touche <b>Partager</b> (le carré avec la flèche vers le haut).
+                </li>
+                <li>
+                  Choisis <b>« Sur l’écran d’accueil »</b>, puis « Ajouter ».
+                </li>
+              </>
+            ) : (
+              <>
+                <li>Ouverte depuis WhatsApp ? Ouvre-la d’abord dans Chrome.</li>
+                <li>
+                  Touche le menu <b>⋮</b>, en haut à droite.
+                </li>
+                <li>
+                  Choisis <b>« Ajouter à l’écran d’accueil »</b> (ou « Installer l’application »).
+                </li>
+              </>
+            )}
+          </ol>
+          <p className="ec-petit">Sinon, garde le message WhatsApp avec ton lien : il t’ouvre toujours la même page.</p>
+          <button
+            type="button"
+            className="cz-go grand"
+            onClick={() => {
+              try {
+                window.localStorage.setItem(cleAstuce, "1");
+              } catch {
+                /* tant pis : elle reviendra à la prochaine visite */
+              }
+              setAstuce(null);
+            }}
+          >
+            Compris
           </button>
         </Feuille>
       )}
@@ -332,6 +409,9 @@ function PageMembre({
             <li>Au comptoir, quand un commerçant vient avec un bon, valide-le : ta boutique gagne son prix. S’il paie à moitié prix, encaisse la moitié : l’autre moitié revient en crédits à ta boutique.</li>
             <li>Un bon pas utilisé expire au bout de {JOURS_VALIDITE} jours.</li>
             <li>Ce lien est ton accès personnel : ne le partage pas.</li>
+            <li>
+              Pour le retrouver d’un geste, ajoute cette page à ton écran d’accueil — iPhone : Safari › Partager › « Sur l’écran d’accueil » ; Android : menu ⋮ › « Ajouter à l’écran d’accueil ».
+            </li>
           </ol>
         </Feuille>
       )}

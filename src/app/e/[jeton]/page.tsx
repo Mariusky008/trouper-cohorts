@@ -20,10 +20,25 @@ export const dynamic = "force-dynamic";
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#120C09" };
 
-export const metadata: Metadata = {
-  title: { absolute: `Mon accès — ${MARQUE}` },
-  robots: { index: false, follow: false },
-};
+/* SON PROPRE MANIFESTE (`manifest.webmanifest/route.ts`) : posée sur l'écran
+   d'accueil, l'icône rouvre SON accès, pas clikme.fr. */
+export async function generateMetadata({ params }: { params: Promise<{ jeton: string }> }): Promise<Metadata> {
+  const { jeton } = await params;
+  const j = decodeURIComponent(String(jeton ?? ""));
+  return {
+    title: { absolute: `Mon accès — ${MARQUE}` },
+    robots: { index: false, follow: false },
+    ...(/^[A-Za-z0-9_-]{24,64}$/.test(j) ? { manifest: `/e/${j}/manifest.webmanifest` } : {}),
+    appleWebApp: { capable: true, title: "Mon accès", statusBarStyle: "black-translucent" },
+    icons: {
+      icon: [
+        { url: "/direct/icone-autour.svg", type: "image/svg+xml" },
+        { url: "/direct/icone-autour-512.png", sizes: "512x512", type: "image/png" },
+      ],
+      apple: "/direct/icone-autour-180.png",
+    },
+  };
+}
 
 const str = (v: unknown) => String(v ?? "").trim();
 
