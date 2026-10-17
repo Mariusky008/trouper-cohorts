@@ -32,6 +32,11 @@
 // crédits. « Comment tu paies ? » (`ChoixDuPaiement`) sert la démonstration,
 // le vrai comptoir et la page d'un membre de l'équipe.
 //
+// « 3 OFFRES MAX ET LIMITE PAR OFFRE » : sa première offre se pose au départ,
+// avec comment on la lui paie (les deux, échange seulement, −50 % seulement) ;
+// « Mes offres » (`echanges-offres.tsx`) en ajoute deux autres, chacune avec sa
+// limite du mois et sa façon d'être payée.
+//
 // « POUR MES CLIENTS » (le cadeau d'un voisin offert à ses clients) A ÉTÉ
 // RETIRÉ : « trop compliqué à expliquer et à faire faire ». L'échange sert le
 // commerçant et son équipe, rien d'autre.
@@ -48,12 +53,29 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { COMMERCES_DEMO } from "@/lib/direct/missions-commercant";
 import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
-import { JOURS_VALIDITE, PAR_MOIS, PAR_PERSONNE, chezNom, creditsMoitie, decouvertDe as decouvertDeBase, enEuros, moitieDe, type MembreEquipe, type ModePaiement } from "@/lib/echanges/echanges";
+import {
+  JOURS_VALIDITE,
+  MAX_OFFRES,
+  PAR_MOIS,
+  PAR_PERSONNE,
+  accepte,
+  chezNom,
+  creditsMoitie,
+  decouvertDe as decouvertDeBase,
+  enEuros,
+  moitieDe,
+  sansMoitie,
+  type AutreOffre,
+  type MembreEquipe,
+  type ModePaiement,
+  type Paiement,
+} from "@/lib/echanges/echanges";
 import { PanneauEquipe, StylesEquipe } from "./echanges-equipe";
 import { ExempleDeFacture } from "./echanges-factures";
 import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, debloquerSon, jouer, vibrer } from "./echanges-magie";
 import { Feuille, reduirePhoto, useQr } from "./echanges-communs";
 import { StylesVille } from "./echanges-ville";
+import { ChoixPaiementOffre, PanneauOffres, StylesOffres, legendePaiement } from "./echanges-offres";
 
 export { Feuille, useQr };
 
@@ -98,10 +120,30 @@ export type Offre = {
   moitieDeja?: boolean;
   /** Pas de moitié prix chez lui : une librairie (prix unique du livre). */
   sansMoitie?: boolean;
+  /** Le commerce qui la propose (absent : `id`, sa seule offre). */
+  fournisseur?: string;
+  /** Sa 2e ou 3e offre (vide : sa première). */
+  offre?: string | null;
+  /** Comment on peut la lui payer (absent : les deux). */
+  paiement?: Paiement;
 };
-/** `equipe` : combien ils sont à en profiter (absent dans une démonstration gardée d'avant : 1). */
-export type Mien = { duJour: boolean; titre: string; prix: number; photo: string; parMois: number; equipe?: number };
-type Bon = { id: string; code: string; titre: string; commerce: string; prenom: string; ville: string; prix: number; photo: string; le: number; scanne?: boolean; mode?: ModePaiement };
+/** `equipe` : combien ils sont à en profiter (absent dans une démonstration gardée d'avant : 1). `paiement` : absent, les deux. */
+export type Mien = { duJour: boolean; titre: string; prix: number; photo: string; parMois: number; equipe?: number; paiement?: Paiement };
+type Bon = {
+  id: string;
+  code: string;
+  titre: string;
+  commerce: string;
+  prenom: string;
+  ville: string;
+  prix: number;
+  photo: string;
+  le: number;
+  scanne?: boolean;
+  mode?: ModePaiement;
+  /** Chez qui (absent dans une démonstration gardée d'avant). */
+  fournisseur?: string;
+};
 type Etat = {
   mien?: Mien;
   /** Ce qu'il a gagné : les produits fournis, QR scanné (en euros). */
@@ -112,6 +154,8 @@ type Etat = {
   premier?: string;
   /** Son équipe d'exemple : chaque personne invitée rejoint tout de suite. */
   membres?: MembreEquipe[];
+  /** Ses 2e et 3e offres d'exemple. */
+  autres?: AutreOffre[];
 };
 
 const NEUF: Etat = { gagne: 0, bons: [] };
@@ -170,24 +214,33 @@ const AILLEURS: Offre[] = [
   { id: "by-barbier", commerce: "Barbier des quais", prenom: "le barbier", metier: "Barbier", visage: visageDe("coiffeur", "Barbier"), ville: "Bayonne", titre: "Coupe et taille de barbe", prix: 35, photo: "/direct/essayeurs/coif-barbier-1.jpg", ou: "Bayonne", parMois: 6 },
 ];
 
+/* UN COMMERÇANT PEUT AVOIR TROIS OFFRES, ET CHACUNE SE PAIE À SA FAÇON —
+   des exemples : le restaurant vend aussi ses lasagnes, à −50 % seulement ;
+   la créatrice, une bougie, en échange seulement ; l'opticien ne fait pas de
+   moitié prix sur ses montures ; la libraire, jamais (prix unique du livre). */
+const PAIEMENT_DEMO: Partial<Record<FamilleDouble, Paiement>> = { lunettes: "credits", librairie: "credits" };
+const AUTRES_DEMO: Partial<Record<FamilleDouble, Array<{ titre: string; prix: number; photo: string; parMois: number; paiement: Paiement }>>> = {
+  table: [{ titre: "Les lasagnes du chef, à emporter", prix: 14, photo: "/direct/table/lasagnes-portion.jpg", parMois: 8, paiement: "moitie" }],
+  createur: [{ titre: "Une bougie parfumée", prix: 18, photo: "/direct/table-salon-bougie.jpg", parMois: 4, paiement: "credits" }],
+};
+
 function offresDeSaVille(moi: CommerceComptoir): Offre[] {
-  return COMMERCES_DEMO.filter((c) => c.famille !== moi.famille).map((c, i) => {
+  return COMMERCES_DEMO.filter((c) => c.famille !== moi.famille).flatMap((c, i) => {
     const m = MODELES[c.famille];
-    return {
-      id: c.id,
+    const commun = {
+      fournisseur: c.id,
       commerce: c.nom,
       prenom: c.prenom,
       metier: c.metier,
       visage: visageDe(c.branche, c.metier),
       ville: "",
-      titre: m.titre,
-      prix: m.prix,
-      photo: m.photo,
-      entier: m.entier,
       ou: DISTANCES[i % DISTANCES.length],
-      parMois: 4,
       ...(c.famille === "librairie" ? { sansMoitie: true } : {}),
     };
+    return [
+      { ...commun, id: c.id, offre: null, titre: m.titre, prix: m.prix, photo: m.photo, entier: m.entier, parMois: 4, paiement: PAIEMENT_DEMO[c.famille] ?? "les_deux" },
+      ...(AUTRES_DEMO[c.famille] ?? []).map((a, k) => ({ ...commun, ...a, id: `${c.id}~${k + 2}`, offre: `${c.id}~${k + 2}` })),
+    ];
   });
 }
 
@@ -269,6 +322,7 @@ export function EchangesComptoir({ commerce, dossier, onRetour }: { commerce: Co
       <StylesMagie />
       <StylesVille />
       <StylesEquipe />
+      <StylesOffres />
       {!etat.mien || modifier ? (
         <Depart
           commerce={commerce}
@@ -430,7 +484,7 @@ function CaissePleine({ decouvert, pieces, envies, exemple }: { decouvert: numbe
         ))}
         <span>Tu peux dépenser dès maintenant</span>
         <b>{vu} €</b>
-        <em>Chez les autres commerçants. Ce que tu prends, tu le rends en ton produit, jamais en euros. Au-delà : −50 % partout.</em>
+        <em>Chez les autres commerçants. Ce que tu prends, tu le rends en ton produit, jamais en euros. Au-delà : −50 %, là où c’est proposé.</em>
       </div>
       {envies.length > 0 && (
         <div className="ec-envies">
@@ -484,6 +538,10 @@ export function Depart({
   const [titre, setTitre] = useState(initial?.titre ?? (ecritSeul ? "" : m.titre));
   const [prixTexte, setPrixTexte] = useState(initial ? String(initial.prix) : ecritSeul ? "" : String(m.prix));
   const [parMois, setParMois] = useState(initial?.parMois ?? 4);
+  /* COMMENT ON LE LUI PAIE — « il y a des choses que je peux échanger et d'autres que je peux
+     seulement vendre, ou les deux ». Une librairie : en échange seulement. */
+  const librairie = commerce.famille === "librairie" || sansMoitie(commerce);
+  const [paiement, setPaiement] = useState<Paiement>(librairie ? "credits" : (initial?.paiement ?? "les_deux"));
   const prix = Math.max(0, Math.min(2000, Number(prixTexte.replace(",", ".")) || 0));
   // Chez un vrai commerçant, jamais la photo d'exemple du métier : la sienne, ou son fantôme.
   /* « JE N'AI PAS PU METTRE DE PHOTO À L'ÉTAPE 1 » : il peut maintenant prendre
@@ -505,7 +563,7 @@ export function Depart({
       setErreurPhoto("Cette photo ne s'ouvre pas. Essaie avec une autre.");
     }
   };
-  const brouillon: Mien = { duJour, titre: duJour ? "Mon produit du jour" : titre.trim(), prix, photo, parMois, equipe };
+  const brouillon: Mien = { duJour, titre: duJour ? "Mon produit du jour" : titre.trim(), prix, photo, parMois, equipe, paiement };
   const decouvert = decouvertDeBase(equipe);
   const pretUn = !ecritSeul && prix >= 5 && (duJour || titre.trim().length > 0);
   const [envoi, setEnvoi] = useState(false);
@@ -635,6 +693,18 @@ export function Depart({
                 </span>
               </label>
             </div>
+            <div className="ec-produit-paie">
+              <span>Les commerçants te le paient</span>
+              <ChoixPaiementOffre
+                valeur={paiement}
+                librairie={librairie}
+                onChange={(p) => {
+                  reprendreLaMain();
+                  setPaiement(p);
+                }}
+              />
+              {(librairie || paiement !== "les_deux") && <small>{legendePaiement(paiement, librairie)}</small>}
+            </div>
           </div>
           {erreurPhoto && <p className="ec-erreur">{erreurPhoto}</p>}
           {pretUn ? (
@@ -649,7 +719,7 @@ export function Depart({
                 <b>
                   {enProduits(brouillon, commerce.famille, 1)} = {prix} € à dépenser
                 </b>
-                <small>chez tous les commerçants du réseau</small>
+                <small>dans tout le réseau</small>
               </span>
             </div>
           ) : (
@@ -702,13 +772,17 @@ export function Depart({
               <b>
                 {nomAffiche(brouillon)} · {prix} €
               </b>
-              <em>Jusqu’à {parMois} par mois</em>
+              <em>
+                Jusqu’à {parMois} par mois · {paiement === "les_deux" ? "crédits ou −50 %" : paiement === "credits" ? "en échange seulement" : "à −50 % seulement"}
+              </em>
             </div>
           </article>
+          <p className="ec-astuce">＋ Jusqu’à {MAX_OFFRES - 1} autres offres ensuite, depuis « Mes offres ».</p>
           <CaissePleine decouvert={decouvert} pieces={Math.min(parMois, 6)} envies={envies} exemple={!reel} />
           {reel && (
             <p className="ec-regle">
-              ⚖️ <b>En publiant, tu acceptes les règles</b> : tu gagnes quand tu valides le code d’un commerçant venu chez toi ; ce que tu prends, tu le rends en ton produit, jamais en euros ; tant que tu dois, tu ne peux ni mettre ton offre en pause, ni refuser un bon ; un bon non utilisé expire au bout de {JOURS_VALIDITE} jours ; un commerçant peut aussi payer à moitié prix : la moitié en euros, l’autre moitié en crédits pour toi.
+              ⚖️ <b>En publiant, tu acceptes les règles</b> : tu gagnes quand tu valides le code d’un commerçant venu chez toi ; ce que tu prends, tu le rends en ton produit, jamais en euros ; tant que tu dois, tu ne peux ni mettre ton offre en pause, ni refuser un bon ; un bon non utilisé expire au bout de {JOURS_VALIDITE} jours
+              {paiement === "credits" ? "." : " ; à moitié prix, un commerçant te paie la moitié en euros, et l’autre moitié te revient en crédits."}
             </p>
           )}
           {erreur && <p className="ec-erreur">{erreur}</p>}
@@ -762,6 +836,7 @@ function Echanger({
   const decouvert = decouvertDe(etat);
   const reste = aDepenser(etat);
   const du = aRendre(etat);
+  const autres = etat.autres ?? [];
 
   /* LE PREMIER VOISIN QUI VIENT PRENDRE SON PRODUIT — simulé une fois. Il
      gagne au SCAN, pas à la réservation : c'est la règle 1. */
@@ -804,6 +879,7 @@ function Echanger({
       photo: o.photo,
       le: maintenant,
       mode,
+      fournisseur: o.fournisseur ?? o.id,
     };
     changer((e) => ({ ...e, bons: [bon, ...e.bons] }));
     setChoisie(null);
@@ -854,7 +930,7 @@ function Echanger({
           Mes bons{etat.bons.length > 0 ? ` · ${etat.bons.length}` : ""}
         </button>
         <button type="button" onClick={() => setPanneau("offre")}>
-          Mon offre
+          Mes offres{autres.length > 0 ? ` · ${1 + autres.length}` : ""}
         </button>
         <button type="button" onClick={() => setPanneau("equipe")}>
           Mon équipe{etat.membres?.length ? ` · ${etat.membres.length}` : ""}
@@ -911,29 +987,29 @@ function Echanger({
       )}
 
       {panneau === "offre" && (
-        <Feuille titre="Mon offre" onFermer={() => setPanneau(null)}>
-          <article className="ec-resume">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={mien.photo} alt="" />
-            <div>
-              <b>
-                {nomAffiche(mien)} · {mien.prix} €
-              </b>
-              <em>Jusqu’à {mien.parMois} par mois</em>
-            </div>
-          </article>
-          {du > 0 && <p className="ec-gris">📣 Tant que tu dois, ton offre passe en tête chez les autres commerçants.</p>}
-          <button
-            type="button"
-            className="cz-go"
-            onClick={() => {
-              setPanneau(null);
-              onModifier();
-            }}
-          >
-            Modifier mon offre
-          </button>
-        </Feuille>
+        <PanneauOffres
+          exemple
+          principale={{ ...mien, paiement: mien.paiement ?? "les_deux" }}
+          autres={autres}
+          actif
+          du={du}
+          visage={visageDe(commerce.branche, commerce.metier)}
+          librairie={famille === "librairie"}
+          onModifierPrincipale={() => {
+            setPanneau(null);
+            onModifier();
+          }}
+          onEnregistrer={async (b) => {
+            const a: AutreOffre = { id: b.id ?? `exemple-${Date.now()}`, titre: b.titre, prix: b.prix, parMois: b.parMois, paiement: b.paiement, photo: b.photo };
+            changer((e) => {
+              const deja = e.autres ?? [];
+              return { ...e, autres: b.id ? deja.map((x) => (x.id === b.id ? a : x)) : [...deja, a].slice(0, MAX_OFFRES - 1) };
+            });
+            return null;
+          }}
+          onRetirer={(a) => changer((e) => ({ ...e, autres: (e.autres ?? []).filter((x) => x.id !== a.id) }))}
+          onFermer={() => setPanneau(null)}
+        />
       )}
 
       {choisie && (
@@ -951,7 +1027,9 @@ function Echanger({
               reste={reste}
               apres={duApres > 0 ? `Avec tes crédits, tu devras ${duApres} € au réseau, ${soitEnProduits(mien, famille, duApres)}, à rendre en ton produit.` : ""}
               sansMoitie={choisie.sansMoitie}
-              moitieDeja={etat.bons.some((b) => b.mode === "moitie" && b.id.startsWith(`${choisie.id}-`))}
+              paiement={choisie.paiement}
+              // UNE FOIS PAR MOIS CHEZ UN MÊME COMMERÇANT, toutes ses offres confondues.
+              moitieDeja={etat.bons.some((b) => b.mode === "moitie" && (b.fournisseur ?? b.id.slice(0, b.id.lastIndexOf("-"))) === (choisie.fournisseur ?? choisie.id))}
               onPayer={(mode) => prendre(choisie, mode)}
             />
             <button type="button" className="cz-lien" onClick={() => setChoisie(null)}>
@@ -1061,12 +1139,15 @@ export function ReglesDuReseau({ decouvert, equipe, seuil }: { decouvert: number
   return (
     <ol className="ec-regles">
       <li>
-        <b>Jamais plein tarif</b> chez un commerçant ClikMe : gratuit avec tes crédits, sinon à moitié prix, à régler sur place.
+        <b>Jamais plein tarif</b> chez un commerçant ClikMe : gratuit avec tes crédits, ou à moitié prix, à régler sur place — selon ce que chaque offre accepte.
       </li>
       <li>
         Un commerçant vient prendre ton produit : <b>quand tu valides son code, tu gagnes son prix</b>. S’il paie à moitié prix, tu encaisses la moitié en euros et l’autre moitié te revient en crédits : tu ne perds rien.
       </li>
       <li>À moitié prix : une fois par mois chez un même commerçant, et pas chez une librairie (prix unique du livre).</li>
+      <li>
+        <b>Jusqu’à {MAX_OFFRES} offres</b> : pour chacune, tu fixes combien par mois, et comment on te la paie — avec des crédits ou à moitié prix, en échange seulement, ou à moitié prix seulement.
+      </li>
       <li>Tu prends chez un autre : il gagne ce prix quand il valide ton code.</li>
       <li>
         <b>Chaque mois, {PAR_PERSONNE} € par personne de ton équipe</b> ({equipe > 1 ? `vous êtes ${equipe}` : "toi seul pour l’instant"}) : ta boutique peut prendre jusqu’à {decouvert} € avant d’avoir donné. Ça ne s’accumule pas.
@@ -1097,6 +1178,7 @@ export function ChoixDuPaiement({
   manque = "",
   sansMoitie = false,
   moitieDeja = false,
+  paiement = "les_deux",
   occupe = false,
   bloque = "",
   onPayer,
@@ -1110,29 +1192,41 @@ export function ChoixDuPaiement({
   manque?: string;
   sansMoitie?: boolean;
   moitieDeja?: boolean;
+  /** Comment le commerçant accepte qu'on lui paie cette offre. */
+  paiement?: Paiement;
   occupe?: boolean;
   /** Une raison de ne rien pouvoir prendre (offre en pause…). */
   bloque?: string;
   onPayer: (mode: ModePaiement) => void;
 }) {
   const assez = reste >= prix;
-  const pourquoiPasMoitie = sansMoitie ? "Pas chez une librairie : prix unique du livre" : moitieDeja ? "Déjà pris à moitié prix chez lui ce mois-ci" : "−50 %, à régler sur place";
+  const enCredits = accepte(paiement, "credits");
+  const aMoitie = accepte(paiement, "moitie") && !sansMoitie;
+  const pourquoiPasMoitie = sansMoitie
+    ? "Pas chez une librairie : prix unique du livre"
+    : !aMoitie
+      ? "Il le propose en échange seulement"
+      : moitieDeja
+        ? "Déjà pris à moitié prix chez lui ce mois-ci"
+        : "−50 %, à régler sur place";
   return (
     <div className="ec-payer">
       <h3>Comment tu paies ?</h3>
       {bloque && <p className="ec-calcul petit">{bloque}</p>}
-      <button type="button" className="ec-payer-b credits" disabled={!assez || occupe || Boolean(bloque)} onClick={() => onPayer("credits")}>
+      <button type="button" className="ec-payer-b credits" disabled={!enCredits || !assez || occupe || Boolean(bloque)} onClick={() => onPayer("credits")}>
         <span className="ec-payer-i" aria-hidden="true">
           €
         </span>
         <span>
           <b>Avec mes crédits</b>
-          <small>{assez ? `Il te restera ${reste - prix} € de crédits` : manque || `Il te manque ${prix - reste} € de crédits`}</small>
+          <small>
+            {!enCredits ? "Il le propose à moitié prix seulement" : assez ? `Il te restera ${reste - prix} € de crédits` : manque || `Il te manque ${prix - reste} € de crédits`}
+          </small>
         </span>
         <strong>0&nbsp;€</strong>
       </button>
-      {assez && apres && <p className="ec-calcul petit">{apres}</p>}
-      <button type="button" className="ec-payer-b moitie" disabled={sansMoitie || moitieDeja || occupe || Boolean(bloque)} onClick={() => onPayer("moitie")}>
+      {enCredits && assez && apres && <p className="ec-calcul petit">{apres}</p>}
+      <button type="button" className="ec-payer-b moitie" disabled={!aMoitie || moitieDeja || occupe || Boolean(bloque)} onClick={() => onPayer("moitie")}>
         <span className="ec-payer-i" aria-hidden="true">
           ½
         </span>
@@ -1155,7 +1249,7 @@ export function Pile({
   onPrendre,
   indice = false,
   tampon = "JE PRENDS",
-  bouton = (o) => `Je prends · ${o.prix}\u00a0€`,
+  bouton = (o) => (o.paiement === "moitie" ? `Je prends · ${enEuros(moitieDe(o.prix))}` : `Je prends · ${o.prix}\u00a0€`),
   astuce = "Glisse la carte : à droite je prends, à gauche je passe.",
 }: {
   offres: Offre[];
@@ -1287,7 +1381,13 @@ export function CarteOffre({ o, dessous = false, style }: { o: Offre; dessous?: 
         <h4>{o.titre}</h4>
         <p className="ec-cap">
           {o.restant !== undefined ? `Encore ${o.restant} ce mois-ci` : `Jusqu’à ${o.parMois} par mois`}
-          {!o.sansMoitie && <b className="ec-cap-moitie"> · ou {enEuros(moitieDe(o.prix))} à −50 %</b>}
+          {o.sansMoitie || o.paiement === "credits" ? (
+            <b className="ec-cap-echange"> · en échange seulement</b>
+          ) : o.paiement === "moitie" ? (
+            <b className="ec-cap-moitie"> · à −50 % seulement : {enEuros(moitieDe(o.prix))}</b>
+          ) : (
+            <b className="ec-cap-moitie"> · ou {enEuros(moitieDe(o.prix))} à −50 %</b>
+          )}
         </p>
       </div>
     </article>
@@ -1515,6 +1615,7 @@ export function StylesEchanges() {
 .ec-carte h4{margin:2px 0 0;font-family:var(--font-clikme),sans-serif;font-size:19px;font-weight:800;line-height:1.2;}
 .ec-cap{margin:0;font-size:12.5px;color:var(--gris);}
 .ec-cap-moitie{font-weight:800;color:#FF8FBF;}
+.ec-cap-echange{font-weight:800;color:var(--ambre);}
 .ec-payer{display:flex;flex-direction:column;gap:8px;text-align:left;}
 .ec-payer h3{margin:4px 0 0;font-family:var(--font-clikme),sans-serif;font-size:18px;font-weight:800;}
 .ec-payer-b{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:12px 14px;border-radius:18px;

@@ -3,10 +3,14 @@
 // POST, jeton pro privé requis ({ slug, token, action }) — OU le lien personnel
 // d'un membre de son équipe ({ membre: <jeton>, action }) :
 //   etat                          → son offre, son compte, sa ville, les offres des autres, ses bons
-//   offre { titre, prix, parMois, duJour, accepte }
-//                                 → publie ou modifie son offre (il accepte les règles)
-//   pause { actif }               → met son offre en pause ou la réactive — pas tant qu'il doit
-//   prendre { fournisseur, mode } → réserve l'offre d'un autre, pour lui (fonction `echanges_prendre`) :
+//   offre { titre, prix, parMois, duJour, paiement, accepte }
+//                                 → publie ou modifie sa première offre (il accepte les règles)
+//   autre { id?, titre, prix, parMois, paiement, photo? }
+//                                 → ajoute (sans id) ou modifie sa 2e ou 3e offre
+//   autre_retirer { id }          → retire sa 2e ou 3e offre (les bons déjà pris dessus restent)
+//   pause { actif }               → met ses offres en pause ou les réactive — pas tant qu'il doit
+//   prendre { fournisseur, offre?, mode }
+//                                 → réserve une offre d'un autre, pour lui (fonction `echanges_prendre`) :
 //                                   avec ses crédits (`credits`), ou à moitié prix (`moitie`)
 //   valider { code }              → il valide le code d'un commerçant venu chez lui :
 //                                   c'est là, et seulement là, que le crédit est gagné
@@ -22,6 +26,11 @@
 // l'acheteur règle la moitié en euros sur place et ses crédits ne bougent pas ; celui qui
 // sert gagne l'autre moitié en crédits quand il valide. Une seule fois par mois chez un
 // même commerçant, et pas chez une libraire (prix unique du livre).
+//
+// « 3 OFFRES MAX ET LIMITE PAR OFFRE » (`20261023120000_echanges_offres.sql`) : sa
+// première offre dit qui il est et s'il est en pause ; deux autres au plus, chacune
+// avec sa limite du mois et sa façon d'être payée (`paiement` : les deux, crédits
+// seulement, moitié prix seulement — une librairie : crédits seulement).
 //
 // LA FACTURE D'ÉCHANGE (`20261021120000_echanges_factures.sql`) : chaque bon validé
 // est une vente du fournisseur au preneur, payée par échange. ClikMe la prépare au
@@ -57,17 +66,21 @@ import { enregistrerInfos, facturer, lireFactures } from "@/lib/echanges/facture
 import {
   ALPHABET_CODE,
   MAX_MEMBRES,
+  MAX_OFFRES,
   PAR_MOIS,
   PAR_PERSONNE,
   SEUIL_VILLE,
+  accepte,
   codeNormalise,
   decouvertDe,
   enEuros,
+  paiementLu,
   sansMoitie,
   type BonReel,
   type EtatEchanges,
   type MembreEquipe,
   type OffreReelle,
+  type Paiement,
   type VilleDuReseau,
 } from "@/lib/echanges/echanges";
 
@@ -101,7 +114,10 @@ type LigneOffre = {
   actif: boolean;
   maj_le: string;
   equipe: number;
+  paiement: Paiement;
 };
+/** Sa 2e ou 3e offre (seulement celles qui ne sont pas retirées). */
+type LigneAutre = { id: string; site_id: string; rang: number; titre: string; prix: number; par_mois: number; photo: string | null; paiement: Paiement };
 type LigneBon = {
   id: string;
   code: string;
@@ -124,15 +140,18 @@ type LigneBon = {
   expire_le: string;
   membre_id: string | null;
   valide_par: string | null;
+  /** Pris sur sa 2e ou 3e offre (vide : sa première). */
+  offre_id: string | null;
 };
 type LigneMembre = { id: string; prenom: string; jeton: string; active_le: string | null; retire_le: string | null };
 /** Un membre de son équipe, venu par son lien personnel. */
 type Membre = { id: string; prenom: string };
 
 const COLONNES_OFFRE =
-  "site_id, titre, prix, par_mois, du_jour, photo, commerce, metier, branche, ville, ville_slug, actif, maj_le, equipe";
+  "site_id, titre, prix, par_mois, du_jour, photo, commerce, metier, branche, ville, ville_slug, actif, maj_le, equipe, paiement";
+const COLONNES_AUTRE = "id, site_id, rang, titre, prix, par_mois, photo, paiement";
 const COLONNES_BON =
-  "id, code, preneur_id, fournisseur_id, titre, prix, photo, du_jour, statut, cree_le, utilise_le, pour, mode, credits, a_regler, expire_le, membre_id, valide_par";
+  "id, code, preneur_id, fournisseur_id, titre, prix, photo, du_jour, statut, cree_le, utilise_le, pour, mode, credits, a_regler, expire_le, membre_id, valide_par, offre_id";
 
 function nouveauCode(): string {
   let c = "";
@@ -209,6 +228,9 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
 
   const { data: lo, error: eo } = await supabase.from("human_echanges_offres").select(COLONNES_OFFRE).limit(1000);
   if (eo) return absente(eo) ? vide : null;
+  /* LEURS 2e ET 3e OFFRES (celles qui ne sont pas retirées). */
+  const { data: la, error: ea } = await supabase.from("human_echanges_offres_autres").select(COLONNES_AUTRE).eq("actif", true).order("rang").limit(2000);
+  if (ea) return absente(ea) ? vide : null;
   const { data: lb, error: eb } = await supabase
     .from("human_echanges_bons")
     .select(COLONNES_BON)
@@ -231,6 +253,8 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
   const offresLues = (lo ?? []) as LigneOffre[];
   const bons = (lb ?? []) as LigneBon[];
   const parSite = new Map(offresLues.map((o) => [o.site_id, o]));
+  const autresDe = new Map<string, LigneAutre[]>();
+  for (const a of (la ?? []) as LigneAutre[]) autresDe.set(a.site_id, [...(autresDe.get(a.site_id) ?? []), a]);
   const maVilleSlug = villeSlug(moi.city);
 
   /* LES VILLES : combien de commerçants y échangent, et si elles sont ouvertes. */
@@ -264,16 +288,18 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
      pour savoir qui doit (son offre passe en tête). Un bon expiré ne compte
      plus ; un ancien bon cadeau compte comme un autre (pris par celui qui
      offrait, gagné par celui qui servait). À MOITIÉ PRIX, le preneur paie en
-     euros (rien de pris en crédits) et le fournisseur gagne la moitié. */
+     euros (rien de pris en crédits) et le fournisseur gagne la moitié. CHAQUE
+     OFFRE A SA LIMITE : on compte ses bons du mois offre par offre. */
   const gagne = new Map<string, number>();
   const pris = new Map<string, number>();
   const ceMoisPourEux = new Map<string, number>();
+  const cleOffre = (fournisseur: string, offre: string | null) => `${fournisseur}|${offre ?? ""}`;
   const debut = debutDuMois();
   for (const b of bons) {
     if (b.statut === "expire") continue;
     if (b.statut === "utilise") ajouter(gagne, b.fournisseur_id, b.credits ?? b.prix);
     if (b.mode !== "moitie") ajouter(pris, b.preneur_id, b.prix);
-    if (b.pour !== "client" && Date.parse(b.cree_le) >= debut) ajouter(ceMoisPourEux, b.fournisseur_id, 1);
+    if (b.pour !== "client" && Date.parse(b.cree_le) >= debut) ajouter(ceMoisPourEux, cleOffre(b.fournisseur_id, b.offre_id), 1);
   }
   const doit = (id: string) => (pris.get(id) ?? 0) > (gagne.get(id) ?? 0);
 
@@ -318,28 +344,54 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
     return Number.isFinite(d) ? { aPied: aPied(d) } : {};
   };
 
+  /* LES OFFRES DES AUTRES : la première de chacun, puis ses autres. Ce que les
+     autres voient de lui (nom, métier, ville, pause) vient de sa première. */
   const autres = offresLues.filter((o) => o.actif && o.site_id !== moi.id);
   const offres: OffreReelle[] = autres
-    .map((o) => ({
-      id: o.site_id,
-      commerce: o.commerce,
-      metier: o.metier,
-      branche: o.branche,
-      ville: o.ville,
-      villeSlug: o.ville_slug,
-      villeOuverte: ouverte(o.ville_slug),
-      titre: o.du_jour ? "Son produit du jour" : o.titre,
-      prix: o.prix,
-      photo: photoMontrable(o.photo),
-      parMois: o.par_mois,
-      restant: Math.max(0, o.par_mois - (ceMoisPourEux.get(o.site_id) ?? 0)),
-      doit: doit(o.site_id),
-      ...aPiedDe(o.site_id),
-      ...(moitieDeja.has(o.site_id) ? { moitieDeja: true } : {}),
-      ...(sansMoitie(o) ? { sansMoitie: true } : {}),
-    }))
-    // TANT QU'IL DOIT, SON OFFRE PASSE EN TÊTE ; ensuite, les plus récentes.
-    .sort((a, b) => Number(b.doit) - Number(a.doit) || Date.parse(parSite.get(b.id)?.maj_le ?? "") - Date.parse(parSite.get(a.id)?.maj_le ?? ""));
+    // TANT QU'IL DOIT, SES OFFRES PASSENT EN TÊTE ; ensuite, les plus récentes.
+    .sort((a, b) => Number(doit(b.site_id)) - Number(doit(a.site_id)) || Date.parse(b.maj_le) - Date.parse(a.maj_le))
+    .flatMap((o) => {
+      const commun = {
+        fournisseur: o.site_id,
+        commerce: o.commerce,
+        metier: o.metier,
+        branche: o.branche,
+        ville: o.ville,
+        villeSlug: o.ville_slug,
+        villeOuverte: ouverte(o.ville_slug),
+        doit: doit(o.site_id),
+        ...aPiedDe(o.site_id),
+        ...(moitieDeja.has(o.site_id) ? { moitieDeja: true } : {}),
+        ...(sansMoitie(o) ? { sansMoitie: true } : {}),
+      };
+      // UNE LIBRAIRIE : en échange seulement, quoi que dise une offre d'avant.
+      const paiementDe = (p: Paiement): Paiement => (sansMoitie(o) ? "credits" : paiementLu(p));
+      const premiere: OffreReelle = {
+        ...commun,
+        id: o.site_id,
+        offre: null,
+        paiement: paiementDe(o.paiement),
+        titre: o.du_jour ? "Son produit du jour" : o.titre,
+        prix: o.prix,
+        photo: photoMontrable(o.photo),
+        parMois: o.par_mois,
+        restant: Math.max(0, o.par_mois - (ceMoisPourEux.get(cleOffre(o.site_id, null)) ?? 0)),
+      };
+      return [
+        premiere,
+        ...(autresDe.get(o.site_id) ?? []).slice(0, MAX_OFFRES - 1).map((a) => ({
+          ...commun,
+          id: a.id,
+          offre: a.id,
+          paiement: paiementDe(a.paiement),
+          titre: a.titre,
+          prix: a.prix,
+          photo: photoMontrable(a.photo),
+          parMois: a.par_mois,
+          restant: Math.max(0, a.par_mois - (ceMoisPourEux.get(cleOffre(o.site_id, a.id)) ?? 0)),
+        })),
+      ];
+    });
 
   const maVille = parVille.get(maVilleSlug) ?? { slug: maVilleSlug, nom: moi.city, offres: 0, ouverte: false };
   const aDepenser = Math.max(0, decouvert + g - p);
@@ -366,6 +418,15 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
           photo: photoMontrable(mienLu.photo),
           actif: mienLu.actif,
           equipe,
+          paiement: paiementLu(mienLu.paiement),
+          autres: (autresDe.get(moi.id) ?? []).map((a) => ({
+            id: a.id,
+            titre: a.titre,
+            prix: a.prix,
+            parMois: a.par_mois,
+            paiement: paiementLu(a.paiement),
+            photo: photoMontrable(a.photo),
+          })),
         }
       : null,
     compte: { decouvert, equipe, gagne: g, pris: p, aDepenser, du: Math.max(0, p - g) },
@@ -482,6 +543,9 @@ export async function POST(request: Request) {
        de prendre, sinon celle que son offre avait déjà, sinon celle de sa fiche. */
     const lu = await lireLeSite(slug).catch(() => null);
     const carte = lu?.carte;
+    // COMMENT ON LA LUI PAIE — une librairie : en échange seulement (prix unique du livre).
+    const librairie = sansMoitie({ metier: str(carte?.metier), branche: str(carte?.branche) });
+    const paiement: Paiement = librairie ? "credits" : paiementLu(p?.paiement);
     let photo = "";
     if (str(p?.photo).startsWith("data:image/")) {
       const rangee = await rangerPhoto(supabase, slug, str(p?.photo));
@@ -506,10 +570,75 @@ export async function POST(request: Request) {
       actif: true,
       regles_acceptees_le: new Date().toISOString(),
       maj_le: new Date().toISOString(),
+      // Un écran d'avant n'envoie pas `paiement` : on garde ce qu'il avait choisi.
+      ...(p?.paiement !== undefined || librairie ? { paiement } : {}),
     };
     const { error } = await supabase.from("human_echanges_offres").upsert(ligne, { onConflict: "site_id" });
     if (error) return NextResponse.json({ error: absente(error) ? "L'échange n'est pas encore ouvert." : "Enregistrement impossible." }, { status: 500 });
     return repondre({ ok: true });
+  }
+
+  /* ── SES 2e ET 3e OFFRES ───────────────────────────────────────────────── */
+  if (action === "autre") {
+    const id = str(p?.id);
+    if (id && !UUID.test(id)) return NextResponse.json({ error: "Offre inconnue." }, { status: 400 });
+    const titre = str(p?.titre).slice(0, 80);
+    const prix = Math.round(Number(p?.prix));
+    const parMois = Math.round(Number(p?.parMois));
+    if (titre.length < 2) return NextResponse.json({ error: "Écris ce que tu offres." }, { status: 400 });
+    if (!Number.isFinite(prix) || prix < 5 || prix > 2000) return NextResponse.json({ error: "Le prix doit être entre 5 et 2000 €." }, { status: 400 });
+    if (!PAR_MOIS.includes(parMois)) return NextResponse.json({ error: "Combien par mois ? 1, 2, 4 ou 8." }, { status: 400 });
+    const { data: lp, error: ep } = await supabase.from("human_echanges_offres").select("metier, branche").eq("site_id", moi.id).maybeSingle();
+    if (ep) return NextResponse.json({ error: absente(ep) ? "L'échange n'est pas encore ouvert." : "Lecture impossible." }, { status: 500 });
+    if (!lp) return NextResponse.json({ error: "Publie d'abord ta première offre." }, { status: 400 });
+    const paiement: Paiement = sansMoitie(lp as { metier?: string; branche?: string }) ? "credits" : paiementLu(p?.paiement);
+    // SA PHOTO : celle qu'il vient de prendre ; sinon, en la modifiant, celle qu'elle avait.
+    let photo = "";
+    if (str(p?.photo).startsWith("data:image/")) {
+      const rangee = await rangerPhoto(supabase, slug, str(p?.photo));
+      if (typeof rangee !== "string") return NextResponse.json({ error: rangee.erreur }, { status: 400 });
+      photo = rangee;
+    }
+    const maj_le = new Date().toISOString();
+    if (id) {
+      const { data, error } = await supabase
+        .from("human_echanges_offres_autres")
+        .update({ titre, prix, par_mois: parMois, paiement, ...(photo ? { photo } : {}), maj_le })
+        .eq("id", id)
+        .eq("site_id", moi.id)
+        .eq("actif", true)
+        .select("id");
+      if (error) return NextResponse.json({ error: "Enregistrement impossible." }, { status: 500 });
+      if (!(data ?? []).length) return NextResponse.json({ error: "Offre inconnue." }, { status: 404 });
+      return repondre({ ok: true, message: "C’est noté ✓" });
+    }
+    // TROIS OFFRES AU PLUS : la première, et les rangs 2 et 3 (la base le garantit aussi).
+    const plein = `${MAX_OFFRES} offres au plus : retire-en une pour en mettre une autre.`;
+    const { data: deja, error: ed } = await supabase.from("human_echanges_offres_autres").select("rang").eq("site_id", moi.id).eq("actif", true);
+    if (ed) return NextResponse.json({ error: absente(ed) ? "L'échange n'est pas encore ouvert." : "Lecture impossible." }, { status: 500 });
+    const occupes = new Set(((deja ?? []) as Array<{ rang: number }>).map((r) => r.rang));
+    const rang = Array.from({ length: MAX_OFFRES - 1 }, (_, i) => i + 2).find((r) => !occupes.has(r));
+    if (!rang) return repondre({ ok: false, message: plein });
+    const { error } = await supabase.from("human_echanges_offres_autres").insert({ site_id: moi.id, rang, titre, prix, par_mois: parMois, paiement, photo: photo || null, maj_le });
+    if (error?.code === "23505") return repondre({ ok: false, message: plein });
+    if (error) return NextResponse.json({ error: absente(error) ? "L'échange n'est pas encore ouvert." : "Enregistrement impossible." }, { status: 500 });
+    return repondre({ ok: true, message: "Ta nouvelle offre est ajoutée ✓" });
+  }
+
+  if (action === "autre_retirer") {
+    const id = str(p?.id);
+    if (!UUID.test(id)) return NextResponse.json({ error: "Offre inconnue." }, { status: 400 });
+    // RETIRÉE, PAS EFFACÉE : les bons déjà pris dessus la gardent.
+    const { data, error } = await supabase
+      .from("human_echanges_offres_autres")
+      .update({ actif: false, maj_le: new Date().toISOString() })
+      .eq("id", id)
+      .eq("site_id", moi.id)
+      .eq("actif", true)
+      .select("titre");
+    if (error) return NextResponse.json({ error: "Modification impossible." }, { status: 500 });
+    const titre = str((data as Array<{ titre: string }> | null)?.[0]?.titre);
+    return repondre({ ok: Boolean(titre), message: titre ? `« ${titre} » est retirée. Les bons déjà pris dessus restent valables.` : "Offre inconnue." });
   }
 
   if (action === "pause") {
@@ -528,16 +657,23 @@ export async function POST(request: Request) {
   /* ── PRENDRE CHEZ UN AUTRE, POUR SOI ───────────────────────────────────── */
   if (action === "prendre") {
     const fournisseur = str(p?.fournisseur);
-    if (!UUID.test(fournisseur)) return NextResponse.json({ error: "Offre inconnue." }, { status: 400 });
+    // SA 2e OU 3e OFFRE ; rien : sa première.
+    const offre = str(p?.offre);
+    if (!UUID.test(fournisseur) || (offre && !UUID.test(offre))) return NextResponse.json({ error: "Offre inconnue." }, { status: 400 });
     const mode = str(p?.mode) === "moitie" ? "moitie" : "credits";
     const { etat, erreur } = await avant();
     if (!etat) return erreur;
-    const o = etat.offres.find((x) => x.id === fournisseur);
+    const o = etat.offres.find((x) => x.fournisseur === fournisseur && (x.offre ?? "") === offre);
     const ferme = villeFermee(etat, o);
     if (ferme) return refus(etat, ferme, { raison: "ville" });
     if (mode === "moitie" && o?.sansMoitie) {
       return refus(etat, "Pas de moitié prix chez une librairie : le prix d’un livre neuf ne se remise que de 5 %. Avec tes crédits, c’est possible.", { raison: "livre" });
     }
+    const pasCommeCa = (paiement: string) =>
+      paiement === "moitie"
+        ? "Ce commerçant propose ce produit à moitié prix seulement : tu règles la moitié sur place."
+        : "Ce commerçant propose ce produit en échange seulement : avec tes crédits.";
+    if (o && !accepte(o.paiement, mode)) return refus(etat, pasCommeCa(o.paiement), { raison: "paiement" });
     // Un code déjà pris (une chance sur des centaines de millions) : on en tire un autre.
     for (let essai = 0; essai < 3; essai++) {
       const { data, error } = await supabase.rpc("echanges_prendre", {
@@ -547,10 +683,11 @@ export async function POST(request: Request) {
         p_par_personne: PAR_PERSONNE,
         p_membre: membre?.id ?? null,
         p_mode: mode,
+        p_offre: offre || null,
       });
       if (error?.code === "23505") continue;
       if (error) return NextResponse.json({ error: absente(error) ? "L'échange n'est pas encore ouvert." : "Réservation impossible." }, { status: 500 });
-      const r = (data ?? {}) as { ok?: boolean; raison?: string; manque?: number; reste?: number; bon?: LigneBon };
+      const r = (data ?? {}) as { ok?: boolean; raison?: string; manque?: number; reste?: number; paiement?: string; bon?: LigneBon };
       if (!r.ok) {
         const pourquoi: Record<string, string> = {
           solde: membre
@@ -558,14 +695,15 @@ export async function POST(request: Request) {
             : `Il te manque ${r.manque ?? 0} €. Dès qu'un commerçant prend ton produit, tu peux reprendre.`,
           plafond_perso: `Il te reste ${r.reste ?? 0} € de tes 50 € ce mois-ci. Ils reviennent le 1er du mois.`,
           membre: "Ce lien n'est plus valable. Demande-en un nouveau à ton responsable.",
-          complet: "Ce commerçant a déjà donné tout ce qu'il pouvait ce mois-ci.",
-          offre_retiree: "Ce commerçant a mis son offre en pause.",
+          complet: "Ce commerçant a déjà donné tout ce qu'il pouvait de ce produit ce mois-ci.",
+          offre_retiree: "Cette offre n'est plus proposée : le commerçant l'a retirée ou mise en pause.",
           sans_offre: membre
             ? "Ta boutique n'a pas encore publié son offre : dès que c'est fait, tu pourras prendre."
             : "Publie d'abord ton offre : c'est ce qui te permet de prendre chez les autres.",
           soi: "C'est ta propre offre.",
           moitie_deja: "Tu as déjà pris à moitié prix chez ce commerçant ce mois-ci : c'est une fois par mois. Avec tes crédits, c'est possible.",
           mode: "Comment tu paies ? Avec tes crédits, ou à moitié prix.",
+          paiement: pasCommeCa(str(r.paiement)),
         };
         return repondre({ ok: false, raison: r.raison, message: pourquoi[str(r.raison)] ?? "Réservation impossible." });
       }

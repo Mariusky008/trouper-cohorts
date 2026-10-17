@@ -32,7 +32,7 @@ UPDATE human_echanges_offres SET cadeau_titre='Un dessert du jour', cadeau_prix=
 
 CREATE TEMP TABLE r (n int, j jsonb);
 CREATE FUNCTION pg_temp.verifie(ok boolean, quoi text) RETURNS void LANGUAGE plpgsql AS $$
-BEGIN IF NOT ok THEN RAISE EXCEPTION 'ÉCHEC : %', quoi; END IF; RAISE NOTICE 'ok  %', quoi; END $$;
+BEGIN IF ok IS NOT TRUE THEN RAISE EXCEPTION 'ÉCHEC : %', quoi; END IF; RAISE NOTICE 'ok  %', quoi; END $$;
 
 -- 1. A (équipe 2 → 100 € d'avance) prend deux dîners (2 × 50), le troisième manque.
 INSERT INTO r SELECT 1, echanges_prendre('aaaaaaaa-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000002','CLK-AAAAA1',50,NULL);

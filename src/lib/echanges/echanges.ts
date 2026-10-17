@@ -67,6 +67,24 @@ export const enEuros = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(2).
  */
 export const sansMoitie = (o: { metier?: string; branche?: string }) => /librair/i.test(`${o.metier ?? ""} ${o.branche ?? ""}`);
 
+/**
+ * « 3 OFFRES MAX ET LIMITE PAR OFFRE » (`20261023120000_echanges_offres.sql`) :
+ * jusqu'à trois produits ou services, chacun avec sa limite du mois, et pour
+ * chacun, comment on peut le lui payer — « il y a des choses que je peux
+ * échanger et d'autres que je peux seulement vendre, ou les deux ».
+ */
+export const MAX_OFFRES = 3;
+export type Paiement = "les_deux" | "credits" | "moitie";
+export const paiementLu = (v: unknown): Paiement => (v === "credits" || v === "moitie" ? v : "les_deux");
+/** Cette offre se paie-t-elle de cette façon ? */
+export const accepte = (p: Paiement | undefined, mode: ModePaiement) => !p || p === "les_deux" || p === mode;
+/** Comment l'écran le dit. */
+export const MOTS_PAIEMENT: Record<Paiement, { court: string; long: string }> = {
+  les_deux: { court: "Les deux", long: "avec des crédits ou à moitié prix" },
+  credits: { court: "Échange", long: "en échange seulement (crédits)" },
+  moitie: { court: "−50 %", long: "à moitié prix seulement" },
+};
+
 /** « chez Bergine », mais « Chez Bergine » tout court quand le nom le dit déjà. */
 export const chezNom = (nom: string) => (/^chez\s/i.test(nom.trim()) ? nom.trim() : `chez ${nom.trim()}`);
 /** « l’équipe du Fournil », « des Délices », « de la Page », « d’Atelier Lou » — jamais « de Le Fournil ». */
@@ -82,7 +100,14 @@ export function deNom(nom: string): string {
 
 /** Une offre d'un autre commerçant, telle que l'écran la montre. */
 export type OffreReelle = {
+  /** Unique : le commerce pour sa première offre, l'offre elle-même pour les autres. */
   id: string;
+  /** Le commerce qui la propose. */
+  fournisseur: string;
+  /** Sa 2e ou 3e offre (vide : sa première). */
+  offre: string | null;
+  /** Comment on peut la lui payer (une librairie : en échange seulement). */
+  paiement: Paiement;
   commerce: string;
   metier: string;
   branche: string;
@@ -144,15 +169,22 @@ export type MembreEquipe = {
   lien: string;
 };
 
+/** Sa 2e ou 3e offre. */
+export type AutreOffre = { id: string; titre: string; prix: number; parMois: number; paiement: Paiement; photo: string };
+
 export type MonOffre = {
   titre: string;
   prix: number;
   parMois: number;
   duJour: boolean;
   photo: string;
+  /** En pause, toutes ses offres le sont. */
   actif: boolean;
   /** Responsable compris : 1 + les membres qui ont ouvert leur lien. */
   equipe: number;
+  paiement: Paiement;
+  /** Ses autres offres, deux au plus. */
+  autres: AutreOffre[];
 };
 
 /** Une ville du réseau : combien de commerçants y échangent, et si elle est ouverte. */

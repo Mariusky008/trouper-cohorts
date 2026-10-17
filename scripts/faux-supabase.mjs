@@ -69,7 +69,9 @@ const DEFAUTS = {
   // LE FIL DES COMMERÇANTS : la vraie table donne son `id` (uuid) et sa date.
   human_publications: () => ({ id: randomUUID(), publie_le: maintenant(), retire_le: null }),
   // L'ÉCHANGE ENTRE COMMERÇANTS — `…_echanges_commercants.sql` et `…_echanges_reseau.sql`.
-  human_echanges_offres: () => ({ du_jour: false, photo: null, metier: "", branche: "", ville: "", ville_slug: "", actif: true, equipe: 1, cadeau_titre: null, cadeau_prix: null, cadeau_par_mois: null, regles_acceptees_le: maintenant(), cree_le: maintenant(), maj_le: maintenant() }),
+  human_echanges_offres: () => ({ du_jour: false, photo: null, metier: "", branche: "", ville: "", ville_slug: "", actif: true, equipe: 1, cadeau_titre: null, cadeau_prix: null, cadeau_par_mois: null, regles_acceptees_le: maintenant(), cree_le: maintenant(), maj_le: maintenant(), paiement: "les_deux" }),
+  // SES 2e ET 3e OFFRES — `…_echanges_offres.sql`.
+  human_echanges_offres_autres: () => ({ id: randomUUID(), photo: null, paiement: "les_deux", actif: true, cree_le: maintenant(), maj_le: maintenant() }),
   human_echanges_cadeaux: () => ({ id: randomUUID(), photo: null, occasion: "", cree_le: maintenant() }),
   human_echanges_bons: () => nouveauBon({}),
   human_echanges_membres: () => ({ id: randomUUID(), cree_le: maintenant(), active_le: null, retire_le: null }),
@@ -86,6 +88,7 @@ const CLES = {
   human_maisons_privees: ["habitant"],
   human_ville_publications: ["id"],
   human_echanges_offres: ["site_id"],
+  human_echanges_offres_autres: ["id"],
   human_echanges_bons: ["id"],
   human_echanges_cadeaux: ["id"],
   human_echanges_membres: ["id"],
@@ -111,6 +114,7 @@ function nouveauBon(champs) {
     membre_id: null,
     valide_par: null,
     mode: "credits",
+    offre_id: null,
     ...champs,
   };
 }
@@ -284,8 +288,14 @@ function echanges(nom, a) {
     if (a.p_membre && (!m || m.site_id !== a.p_preneur || m.retire_le)) return { ok: false, raison: "membre" };
     const op = offre(a.p_preneur);
     if (!op || !op.actif) return { ok: false, raison: "sans_offre" };
-    const of = offre(a.p_fournisseur);
-    if (!of || !of.actif) return { ok: false, raison: "offre_retiree" };
+    const premiere = offre(a.p_fournisseur);
+    if (!premiere || !premiere.actif) return { ok: false, raison: "offre_retiree" };
+    // L'OFFRE CHOISIE : sa première, ou sa 2e ou 3e (`p_offre`).
+    const autre = a.p_offre ? lignes("human_echanges_offres_autres").find((x) => x.id === a.p_offre) : null;
+    if (a.p_offre && (!autre || autre.site_id !== a.p_fournisseur || !autre.actif)) return { ok: false, raison: "offre_retiree" };
+    const of = autre ? { ...autre, du_jour: false } : premiere;
+    const paiement = of.paiement ?? "les_deux";
+    if (paiement !== "les_deux" && paiement !== mode) return { ok: false, raison: "paiement", paiement };
     if (mode === "credits") {
       if (m) {
         const lui = bons.filter((b) => b.membre_id === m.id && b.mode !== "moitie" && ["reserve", "utilise"].includes(b.statut) && b.cree_le >= debut).reduce((t, b) => t + b.prix, 0);
@@ -296,9 +306,13 @@ function echanges(nom, a) {
     } else if (bons.some((b) => b.preneur_id === a.p_preneur && b.fournisseur_id === a.p_fournisseur && b.mode === "moitie" && ["reserve", "utilise"].includes(b.statut) && b.cree_le >= debut)) {
       return { ok: false, raison: "moitie_deja" };
     }
-    if (ceMois(a.p_fournisseur, "moi") >= of.par_mois) return { ok: false, raison: "complet" };
+    // LA LIMITE DE CETTE OFFRE : seuls ses bons à elle comptent.
+    const ceMoisOffre = bons.filter((b) => b.fournisseur_id === a.p_fournisseur && b.pour === "moi" && (b.offre_id ?? null) === (a.p_offre ?? null) && ["reserve", "utilise"].includes(b.statut) && b.cree_le >= debut).length;
+    if (ceMoisOffre >= of.par_mois) return { ok: false, raison: "complet" };
     if (bons.some((b) => b.code === a.p_code)) return { doublon: true };
-    const bon = avecMoitie(nouveauBon({ code: a.p_code, preneur_id: a.p_preneur, fournisseur_id: a.p_fournisseur, titre: of.titre, prix: of.prix, photo: of.photo, du_jour: of.du_jour, membre_id: m?.id ?? null, mode }));
+    const bon = avecMoitie(
+      nouveauBon({ code: a.p_code, preneur_id: a.p_preneur, fournisseur_id: a.p_fournisseur, titre: of.titre, prix: of.prix, photo: of.photo, du_jour: of.du_jour, membre_id: m?.id ?? null, mode, offre_id: a.p_offre ?? null }),
+    );
     bons.push(bon);
     return { ok: true, bon };
   }

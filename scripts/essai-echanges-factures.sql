@@ -22,7 +22,7 @@ INSERT INTO human_echanges_bons (id, code, preneur_id, fournisseur_id, titre, pr
  ('b0000000-0000-4000-8000-000000000004','CLK-FAC004','f2f2f2f2-0000-4000-8000-000000000002','f1f1f1f1-0000-4000-8000-000000000001','Une coupe',45,'utilise', now());
 
 CREATE FUNCTION pg_temp.verifie(ok boolean, quoi text) RETURNS void LANGUAGE plpgsql AS $$
-BEGIN IF NOT ok THEN RAISE EXCEPTION 'ÉCHEC : %', quoi; END IF; RAISE NOTICE 'ok  %', quoi; END $$;
+BEGIN IF ok IS NOT TRUE THEN RAISE EXCEPTION 'ÉCHEC : %', quoi; END IF; RAISE NOTICE 'ok  %', quoi; END $$;
 CREATE FUNCTION pg_temp.ligne(bon text, ttc int, ht numeric, tva numeric, taux numeric) RETURNS jsonb LANGUAGE sql AS $$
   SELECT jsonb_build_object('bon', bon, 'ttc', ttc, 'ht', ht, 'tva', tva, 'taux', taux, 'contenu', jsonb_build_object('ligne', jsonb_build_object('designation', 'Un dîner pour deux')))
 $$;
@@ -49,8 +49,9 @@ SELECT pg_temp.verifie((SELECT count(*) FROM human_echanges_factures WHERE char_
 
 -- Le bon réservé est validé : il prend le numéro suivant.
 UPDATE human_echanges_bons SET statut = 'utilise', utilise_le = now() WHERE id = 'b0000000-0000-4000-8000-000000000003';
-SELECT pg_temp.verifie(echanges_facturer('f2f2f2f2-0000-4000-8000-000000000002', (SELECT l FROM lots)) = 1
-  AND (SELECT rang FROM human_echanges_factures WHERE bon_id = 'b0000000-0000-4000-8000-000000000003') = 3, 'le bon validé ensuite : n° 0003, sans trou');
+-- (La facture se lit dans une requête à part : la même ne voit pas ce que la fonction vient d'écrire.)
+SELECT pg_temp.verifie(echanges_facturer('f2f2f2f2-0000-4000-8000-000000000002', (SELECT l FROM lots)) = 1, 'le bon validé ensuite : une facture');
+SELECT pg_temp.verifie((SELECT rang FROM human_echanges_factures WHERE bon_id = 'b0000000-0000-4000-8000-000000000003') = 3, 'le bon validé ensuite : n° 0003, sans trou');
 
 -- Un montant qui ne correspond pas au prix du bon : refusé.
 INSERT INTO human_echanges_bons (id, code, preneur_id, fournisseur_id, titre, prix, statut, utilise_le) VALUES
@@ -93,8 +94,8 @@ EXCEPTION WHEN check_violation THEN RAISE NOTICE 'ok  franchise ET taux de TVA :
 END $$;
 INSERT INTO human_echanges_facturation (site_id, nom_legal, forme, adresse, siret, franchise, taux, nature, mandat_le)
 VALUES ('f1f1f1f1-0000-4000-8000-000000000001', 'Lou Martin', 'EI', '4 rue des Carmes, 40100 Dax', '98765432400019', true, NULL, 'services', now());
-SELECT pg_temp.verifie(echanges_facturer('f1f1f1f1-0000-4000-8000-000000000001', jsonb_build_array(pg_temp.ligne('b0000000-0000-4000-8000-000000000004', 45, 45, 0, NULL))) = 1
-  AND (SELECT numero FROM human_echanges_factures WHERE bon_id = 'b0000000-0000-4000-8000-000000000004') LIKE 'ECH-%-0001',
+SELECT pg_temp.verifie(echanges_facturer('f1f1f1f1-0000-4000-8000-000000000001', jsonb_build_array(pg_temp.ligne('b0000000-0000-4000-8000-000000000004', 45, 45, 0, NULL))) = 1, 'Lou, en franchise : une facture');
+SELECT pg_temp.verifie((SELECT numero FROM human_echanges_factures WHERE bon_id = 'b0000000-0000-4000-8000-000000000004') LIKE 'ECH-%-0001',
   'Lou, en franchise : sa propre série commence à 0001, sans TVA');
 
 -- Comme Supabase : anon a le droit de lire les tables de public ; c'est la RLS (sans règle) qui ne lui montre rien.

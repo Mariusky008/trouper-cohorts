@@ -8,7 +8,8 @@
 // 50 € par personne, ce qu'un membre peut faire ou pas, valider pour la boutique, 4 au plus,
 // retirer quelqu'un. Enfin la facture d'échange (`20261021120000_echanges_factures.sql`) : elle attend
 // les infos du fournisseur, se fait d'un coup quand il les donne, puis toute seule à chaque validation ;
-// TVA ou franchise ; la page de la facture ; la Suisse n'a que le relevé.
+// TVA ou franchise ; la page de la facture ; la Suisse n'a que le relevé. Puis « jamais plein tarif »
+// (la moitié prix), et « 3 offres max et limite par offre » (`20261023120000_echanges_offres.sql`).
 //
 //   node scripts/faux-supabase.mjs 54321
 //   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=faux NEXT_PUBLIC_SUPABASE_ANON_KEY=faux \
@@ -296,6 +297,68 @@ r = await appel(LOU, "prendre", { fournisseur: ID.fournil, mode: "moitie" });
 ok(r.ok === false && r.raison === "moitie_deja", "Lou, à moitié prix au Fournil : déjà fait par Léa ce mois-ci (c'est la boutique qui compte)");
 r = await appel(LOU, "prendre", { fournisseur: ID.fournil });
 ok(r.ok && r.etat.pris.filter((b) => b.titre.startsWith("Une baguette")).some((b) => b.mode === "credits" && b.statut === "reserve"), "sans mode : avec ses crédits, comme avant");
+
+/* ── « 3 OFFRES MAX ET LIMITE PAR OFFRE » (`20261023120000_echanges_offres.sql`) ──── */
+console.log("\n— 3 offres max et limite par offre —");
+r = await appel(BERGINE, "autre", { titre: "Un dessert du jour", prix: 8, parMois: 1, paiement: "moitie" });
+const dessert = r.etat?.mien.autres[0]?.id;
+ok(r.ok && r.etat.mien.autres.length === 1 && r.etat.mien.autres[0].paiement === "moitie" && r.etat.mien.paiement === "les_deux", `Bergine ajoute un dessert, à moitié prix seulement : « ${r.message} »`);
+r = await appel(BERGINE, "autre", { titre: "Un menu midi", prix: 15, parMois: 2, paiement: "credits" });
+const menu = r.etat?.mien.autres.find((a) => a.titre === "Un menu midi")?.id;
+ok(r.ok && r.etat.mien.autres.length === 2 && Boolean(menu), "… puis un menu midi, en échange seulement");
+r = await appel(BERGINE, "autre", { titre: "Un café", prix: 5, parMois: 8 });
+ok(r.ok === false && /3 offres au plus/.test(r.message) && r.etat.mien.autres.length === 2, `une 4e offre : « ${r.message} »`);
+r = await appel(BERGINE, "autre", { titre: "Un café", prix: 5, parMois: 3 });
+ok(r.statut === 400 && /1, 2, 4 ou 8/.test(r.error), `3 par mois : « ${r.error} »`);
+m = await appelMembre(jetonMax, "autre", { titre: "Un pain au chocolat", prix: 5, parMois: 8 });
+ok(m.statut === 403, `un membre n'ajoute pas d'offre (${m.error})`);
+e = (await appel(FLEURS, "etat")).etat;
+const deBergine = e.offres.filter((o) => o.fournisseur === ID.bergine);
+ok(deBergine.length === 3 && deBergine[0].offre === null && deBergine.map((o) => o.paiement).join() === "les_deux,moitie,credits", `Fleurs voit les 3 offres de Bergine : ${deBergine.map((o) => `${o.titre} (${o.paiement})`).join(", ")}`);
+ok(new Set(e.offres.map((o) => o.id)).size === e.offres.length && deBergine.find((o) => o.id === menu)?.restant === 2, "chaque offre a son id, et sa limite (le menu : encore 2)");
+r = await appel(FLEURS, "prendre", { fournisseur: ID.bergine, offre: dessert, mode: "credits" });
+ok(r.ok === false && r.raison === "paiement" && /moitié prix seulement/.test(r.message), `le dessert avec ses crédits : « ${r.message} »`);
+r = await appel(FLEURS, "prendre", { fournisseur: ID.bergine, offre: menu, mode: "moitie" });
+ok(r.ok === false && r.raison === "paiement" && /échange seulement/.test(r.message), `le menu à moitié prix : « ${r.message} »`);
+r = await appel(FLEURS, "prendre", { fournisseur: ID.bergine, offre: dessert, mode: "moitie" });
+const bonDessert = r.etat?.pris.find((b) => b.titre === "Un dessert du jour");
+ok(r.ok && bonDessert?.mode === "moitie" && bonDessert.aRegler === 4 && bonDessert.prix === 8, `le dessert à moitié prix : ${bonDessert?.aRegler} € à régler`);
+r = await appel(FOURNIL, "prendre", { fournisseur: ID.bergine, offre: dessert, mode: "moitie" });
+ok(r.ok === false && r.raison === "complet" && /de ce produit/.test(r.message), `le dessert (1 par mois) est complet : « ${r.message} »`);
+ok(r.etat.offres.find((o) => o.id === dessert)?.restant === 0 && r.etat.offres.find((o) => o.id === menu)?.restant === 2, "… mais pas le menu : chaque offre sa limite");
+r = await appel(FLEURS, "prendre", { fournisseur: ID.bergine, mode: "moitie" });
+ok(r.ok === false && r.raison === "moitie_deja", "Fleurs, à moitié prix sur le dîner après le dessert : une fois par mois chez Bergine, toutes ses offres confondues");
+r = await appel(FLEURS, "prendre", { fournisseur: ID.bergine, offre: menu, mode: "credits" });
+const bonMenu = r.etat?.pris.find((b) => b.titre === "Un menu midi");
+ok(r.ok && bonMenu?.prix === 15 && bonMenu.mode === "credits", "le menu avec ses crédits : 15 €");
+r = await appel(BERGINE, "valider", { code: bonMenu.code });
+ok(r.ok && /tu as gagné 15 €/.test(r.message), `Bergine valide le menu : « ${r.message} »`);
+r = await appel(BERGINE, "autre", { id: menu, titre: "Un menu midi", prix: 16, parMois: 4, paiement: "les_deux" });
+ok(r.ok && r.etat.mien.autres.find((a) => a.id === menu)?.prix === 16 && r.etat.mien.autres.find((a) => a.id === menu)?.paiement === "les_deux", "elle modifie le menu : 16 €, 4 par mois, les deux");
+ok(r.etat.recus.find((b) => b.code === bonMenu.code)?.prix === 15, "le bon déjà pris garde son prix (15 €)");
+r = await appel(BERGINE, "autre_retirer", { id: dessert });
+ok(r.ok && r.etat.mien.autres.length === 1 && /restent valables/.test(r.message), `elle retire le dessert : « ${r.message} »`);
+e = (await appel(FLEURS, "etat")).etat;
+ok(!e.offres.some((o) => o.id === dessert) && e.pris.find((b) => b.code === bonDessert.code)?.statut === "reserve", "retiré : plus visible, et le bon de Fleurs reste réservé");
+r = await appel(FLEURS, "prendre", { fournisseur: ID.bergine, offre: dessert, mode: "moitie" });
+ok(r.ok === false && r.raison === "offre_retiree", `le dessert retiré : « ${r.message} »`);
+r = await appel(LOU, "prendre", { fournisseur: ID.fleurs, offre: menu, mode: "credits" });
+ok(r.ok === false && r.raison === "offre_retiree", "l'offre de Bergine demandée chez Fleurs : refusée");
+r = await appel(BERGINE, "autre", { titre: "Un café gourmand", prix: 9, parMois: 4 });
+ok(r.ok && r.etat.mien.autres.length === 2 && r.etat.mien.autres.find((a) => a.titre === "Un café gourmand")?.paiement === "les_deux", "une place libérée : un café gourmand, payé des deux façons par défaut");
+r = await appel(BERGINE, "autre_retirer", { id: "aaaaaaaa-0000-4000-8000-00000000ffff" });
+ok(r.ok === false, "retirer une offre inconnue : rien");
+// Sa première offre : comment on la lui paie ; un écran d'avant (sans `paiement`) garde son choix.
+r = await appel(LOU, "offre", { titre: "Une coupe et un brushing", prix: 45, parMois: 4, paiement: "credits", accepte: true });
+ok(r.ok && r.etat.mien.paiement === "credits", "Lou : sa coupe, en échange seulement");
+r = await appel(LOU, "offre", { titre: "Une coupe et un brushing", prix: 45, parMois: 4, accepte: true });
+ok(r.ok && r.etat.mien.paiement === "credits", "republiée par un écran d'avant : toujours en échange seulement");
+r = await appel(FLEURS, "prendre", { fournisseur: ID.lou, mode: "moitie" });
+ok(r.ok === false && r.raison === "paiement", `la coupe à moitié prix : « ${r.message} »`);
+// Une librairie : en échange seulement, même si elle demande autre chose.
+await fetch(`${F}/human_echanges_offres?site_id=eq.${ID.alice}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ metier: "Librairie" }) });
+r = await appel(ALICE, "autre", { titre: "Un marque-page brodé", prix: 6, parMois: 8, paiement: "moitie" });
+ok(r.ok && r.etat.mien.autres[0]?.paiement === "credits", "Alice (librairie) ajoute un marque-page à −50 % seulement : enregistré en échange seulement");
 
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTout est bon.");
 process.exit(echecs ? 1 : 0);

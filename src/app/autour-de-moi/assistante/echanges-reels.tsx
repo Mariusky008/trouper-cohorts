@@ -12,6 +12,9 @@
 //     tapant le code, ou en scannant le QR avec l'appareil photo du téléphone
 //     (la page `/bon/<code>` s'ouvre et valide si ce téléphone est le sien).
 //
+// SES OFFRES : la première au départ, deux autres au plus dans « Mes offres »
+// (`echanges-offres.tsx`) — chacune sa limite du mois et sa façon d'être payée.
+//
 // LES RÈGLES : jamais d'euros ; 50 € d'avance par personne de l'équipe ;
 // tant qu'il doit, ni pause ni refus ; un bon expire au bout de 30 jours ;
 // l'échange s'ouvre dans une ville à partir de 12 commerçants — avant,
@@ -22,7 +25,7 @@
 // carte de l'accueil dit « bientôt ».
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
-import { CLE_ACCES_COMPTOIR, chezNom, enEuros, type BonReel, type EtatEchanges, type ModePaiement } from "@/lib/echanges/echanges";
+import { CLE_ACCES_COMPTOIR, chezNom, enEuros, sansMoitie, type BonReel, type EtatEchanges, type ModePaiement } from "@/lib/echanges/echanges";
 import {
   ChoixDuPaiement,
   DetailDuSolde,
@@ -31,7 +34,6 @@ import {
   Pile,
   ReglesDuReseau,
   StylesEchanges,
-  nomAffiche,
   soitEnProduits,
   useQr,
   visageDe,
@@ -43,6 +45,7 @@ import { StylesVille, VilleFermee, messageInvitation } from "./echanges-ville";
 import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, jouer, vibrer } from "./echanges-magie";
 import { PanneauEquipe, StylesEquipe } from "./echanges-equipe";
 import { PanneauFactures, type ReponseFactures } from "./echanges-factures";
+import { PanneauOffres, StylesOffres } from "./echanges-offres";
 
 const ROUTE = "/api/site-internet/pro/echanges";
 
@@ -74,7 +77,9 @@ function retenirAcces(commerce: CommerceComptoir) {
 }
 
 const versMien = (e: EtatEchanges, commerce: CommerceComptoir): Mien | undefined =>
-  e.mien ? { duJour: e.mien.duJour, titre: e.mien.titre, prix: e.mien.prix, parMois: e.mien.parMois, equipe: e.mien.equipe, photo: e.mien.photo || commerce.photo || "" } : undefined;
+  e.mien
+    ? { duJour: e.mien.duJour, titre: e.mien.titre, prix: e.mien.prix, parMois: e.mien.parMois, equipe: e.mien.equipe, photo: e.mien.photo || commerce.photo || "", paiement: e.mien.paiement }
+    : undefined;
 
 const dateCourte = (iso: string) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
 
@@ -213,6 +218,7 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
       <StylesMagie />
       <StylesVille />
       <StylesEquipe />
+      <StylesOffres />
       {!etat ? (
         <div className="ec-fin-pile">
           {erreur ? (
@@ -246,6 +252,7 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
               prix: m.prix,
               parMois: m.parMois,
               duJour: m.duJour,
+              paiement: m.paiement ?? "les_deux",
               // UNE PHOTO PRISE À L'ÉTAPE 1 part avec l'offre ; sinon le serveur garde celle qu'il a.
               ...(m.photo.startsWith("data:image/") ? { photo: m.photo } : {}),
               accepte: true,
@@ -313,6 +320,9 @@ function PageReelle({
         .filter((o) => o.villeOuverte)
         .map((o) => ({
           id: o.id,
+          fournisseur: o.fournisseur,
+          offre: o.offre,
+          paiement: o.paiement,
           commerce: o.commerce,
           prenom: "",
           metier: o.metier || "Commerce",
@@ -354,7 +364,7 @@ function PageReelle({
   };
 
   const prendre = async (o: Offre, mode: ModePaiement) => {
-    const r = await agir("prendre", { fournisseur: o.id, mode });
+    const r = await agir("prendre", { fournisseur: o.fournisseur ?? o.id, offre: o.offre ?? null, mode });
     setChoisie(null);
     const bon = r.ok && r.code ? r.etat?.pris.find((b) => b.code === r.code) : undefined;
     if (bon) setFete({ bon, offre: o });
@@ -445,7 +455,7 @@ function PageReelle({
           Mes bons{etat.pris.length > 0 ? ` · ${etat.pris.length}` : ""}
         </button>
         <button type="button" onClick={() => setPanneau("offre")}>
-          Mon offre
+          Mes offres{etat.mien && etat.mien.autres.length > 0 ? ` · ${1 + etat.mien.autres.length}` : ""}
         </button>
         <button type="button" onClick={() => setPanneau("equipe")}>
           Mon équipe{etat.equipe.length > 0 ? ` · ${etat.equipe.length}` : ""}
@@ -564,41 +574,35 @@ function PageReelle({
         </Feuille>
       )}
 
-      {panneau === "offre" && (
-        <Feuille titre="Mon offre" onFermer={() => setPanneau(null)}>
-          <article className="ec-resume">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={mien.photo || visageDe(commerce.branche, commerce.metier)} alt="" />
-            <div>
-              <b>
-                {nomAffiche(mien)} · {mien.prix} €
-              </b>
-              <em>
-                Jusqu’à {mien.parMois} par mois · {compte.equipe} {compte.equipe > 1 ? "personnes en profitent" : "personne en profite"}
-                {etat.mien?.actif ? "" : " · en pause"}
-              </em>
-            </div>
-          </article>
-          {compte.du > 0 && <p className="ec-gris">📣 Tant que tu dois, ton offre passe en tête chez les autres commerçants, et elle reste visible.</p>}
-          <button
-            type="button"
-            className="cz-go"
-            onClick={() => {
-              setPanneau(null);
-              onModifier();
-            }}
-          >
-            Modifier mon offre
-          </button>
-          <button
-            type="button"
-            className="cz-lien"
-            disabled={envoi || (Boolean(etat.mien?.actif) && compte.du > 0)}
-            onClick={() => void agir("pause", { actif: !etat.mien?.actif })}
-          >
-            {etat.mien?.actif ? "Mettre mon offre en pause" : "Réactiver mon offre"}
-          </button>
-        </Feuille>
+      {panneau === "offre" && etat.mien && (
+        <PanneauOffres
+          principale={{ ...mien, paiement: etat.mien.paiement }}
+          autres={etat.mien.autres}
+          actif={etat.mien.actif}
+          du={compte.du}
+          visage={visageDe(commerce.branche, commerce.metier)}
+          envoi={envoi}
+          librairie={famille === "librairie" || sansMoitie(commerce)}
+          onModifierPrincipale={() => {
+            setPanneau(null);
+            onModifier();
+          }}
+          onPause={() => void agir("pause", { actif: !etat.mien?.actif })}
+          onEnregistrer={async (b) => {
+            const r = await agir("autre", {
+              ...(b.id ? { id: b.id } : {}),
+              titre: b.titre,
+              prix: b.prix,
+              parMois: b.parMois,
+              paiement: b.paiement,
+              // UNE PHOTO PRISE À L'INSTANT part avec l'offre ; sinon le serveur garde la sienne.
+              ...(b.photo.startsWith("data:image/") ? { photo: b.photo } : {}),
+            });
+            return r.ok ? null : r.error || r.message || "Enregistrement impossible pour l’instant.";
+          }}
+          onRetirer={(a) => void agir("autre_retirer", { id: a.id })}
+          onFermer={() => setPanneau(null)}
+        />
       )}
 
       {panneau === "equipe" && (
@@ -636,6 +640,7 @@ function PageReelle({
               apres={duApres > 0 ? `Avec tes crédits, tu devras ${duApres} € au réseau, ${soitEnProduits(mien, famille, duApres)}, à rendre en ton produit.` : ""}
               sansMoitie={choisie.sansMoitie}
               moitieDeja={choisie.moitieDeja}
+              paiement={choisie.paiement}
               occupe={envoi}
               bloque={etat.mien?.actif ? "" : "Ton offre est en pause : réactive-la pour prendre chez les autres."}
               onPayer={(mode) => void prendre(choisie, mode)}

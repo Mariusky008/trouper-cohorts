@@ -21,7 +21,7 @@ INSERT INTO human_echanges_membres (id, site_id, prenom, jeton) VALUES
 
 CREATE TEMP TABLE r (n int, j jsonb);
 CREATE FUNCTION pg_temp.verifie(ok boolean, quoi text) RETURNS void LANGUAGE plpgsql AS $$
-BEGIN IF NOT ok THEN RAISE EXCEPTION 'ÉCHEC : %', quoi; END IF; RAISE NOTICE 'ok  %', quoi; END $$;
+BEGIN IF ok IS NOT TRUE THEN RAISE EXCEPTION 'ÉCHEC : %', quoi; END IF; RAISE NOTICE 'ok  %', quoi; END $$;
 
 SELECT pg_temp.verifie(echanges_equipe('a1a1a1a1-0000-4000-8000-000000000001') = 1, 'invités mais pas encore venus : l''équipe ne compte que le responsable');
 UPDATE human_echanges_membres SET active_le = now() WHERE prenom IN ('Léa', 'Hugo');

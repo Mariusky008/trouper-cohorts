@@ -179,6 +179,9 @@ function PageMembre({
         .filter((o) => o.villeOuverte)
         .map((o) => ({
           id: o.id,
+          fournisseur: o.fournisseur,
+          offre: o.offre,
+          paiement: o.paiement,
           commerce: o.commerce,
           prenom: "",
           metier: o.metier || "Commerce",
@@ -211,7 +214,7 @@ function PageMembre({
   };
 
   const prendre = async (o: Offre, mode: ModePaiement) => {
-    const r = await agir("prendre", { fournisseur: o.id, mode });
+    const r = await agir("prendre", { fournisseur: o.fournisseur ?? o.id, offre: o.offre ?? null, mode });
     setChoisie(null);
     const bon = r.ok && r.code ? r.etat?.pris.find((b) => b.code === r.code) : undefined;
     if (bon) setFete({ bon, offre: o });
@@ -322,6 +325,7 @@ function PageMembre({
             <li>
               <b>Jamais plein tarif</b> : gratuit avec tes crédits, sinon à moitié prix, à régler sur place (une fois par mois chez un même commerçant). À moitié prix, tes {PAR_PERSONNE} € ne bougent pas.
             </li>
+            <li>Chaque commerçant dit, pour chacune de ses offres (jusqu’à 3), comment on la lui paie : la carte l’indique (« en échange seulement », « à −50 % seulement »).</li>
             <li>
               Ce que tu prends, {commerce.nom} le rend <b>en ses produits</b> : jamais en euros, et jamais par toi.
             </li>
@@ -403,6 +407,7 @@ function PageMembre({
               }
               sansMoitie={choisie.sansMoitie}
               moitieDeja={choisie.moitieDeja}
+              paiement={choisie.paiement}
               occupe={envoi}
               onPayer={(mode) => void prendre(choisie, mode)}
             />

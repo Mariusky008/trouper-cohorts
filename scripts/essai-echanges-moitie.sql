@@ -26,12 +26,12 @@ INSERT INTO human_echanges_membres (id, site_id, prenom, jeton, active_le) VALUE
 
 CREATE TEMP TABLE r (n int, j jsonb);
 CREATE FUNCTION pg_temp.verifie(ok boolean, quoi text) RETURNS void LANGUAGE plpgsql AS $$
-BEGIN IF NOT ok THEN RAISE EXCEPTION 'ÉCHEC : %', quoi; END IF; RAISE NOTICE 'ok  %', quoi; END $$;
+BEGIN IF ok IS NOT TRUE THEN RAISE EXCEPTION 'ÉCHEC : %', quoi; END IF; RAISE NOTICE 'ok  %', quoi; END $$;
 CREATE FUNCTION pg_temp.prendre(n int, preneur text, fourn text, code text, membre text, mode text) RETURNS void LANGUAGE sql AS $$
   INSERT INTO r SELECT n, echanges_prendre(preneur::uuid, fourn::uuid, code, 50, membre::uuid, mode);
 $$;
-CREATE FUNCTION pg_temp.ok(n int) RETURNS boolean LANGUAGE sql AS $$ SELECT (j->>'ok')::boolean FROM r WHERE r.n = n $$;
-CREATE FUNCTION pg_temp.raison(n int) RETURNS text LANGUAGE sql AS $$ SELECT j->>'raison' FROM r WHERE r.n = n $$;
+CREATE FUNCTION pg_temp.ok(n int) RETURNS boolean LANGUAGE sql AS $$ SELECT (j->>'ok')::boolean FROM r WHERE r.n = $1 $$;
+CREATE FUNCTION pg_temp.raison(n int) RETURNS text LANGUAGE sql AS $$ SELECT j->>'raison' FROM r WHERE r.n = $1 $$;
 
 -- 1. A prend deux dîners avec ses crédits (100 €) : son avance est épuisée.
 SELECT pg_temp.prendre(1,'a0000000-0000-4000-8000-0000000000aa','b0000000-0000-4000-8000-0000000000bb','CLK-MOI001',NULL,'credits');
