@@ -13,7 +13,13 @@ export const CLE_ACCES_COMPTOIR = "clikme-comptoir-acces";
  * JAMAIS EN EUROS ; arrivé au bout, on sert avant de reprendre.
  */
 export const PAR_PERSONNE = 50;
-/** Combien ils sont à en profiter : lui et ses associés (les employés viendront après l'avis du comptable). */
+/**
+ * SON ÉQUIPE : chacun son accès (un lien personnel envoyé par le WhatsApp du
+ * responsable) et ses 50 € par mois. Quatre personnes au plus, cinq avec lui.
+ * La dette reste celle du commerce. Voir `20261020120000_echanges_equipe.sql`.
+ */
+export const MAX_MEMBRES = 4;
+/** Ce que l'équipe peut être, responsable compris. */
 export const EQUIPE = [1, 2, 3, 4, 5];
 /** Combien il peut en offrir par mois : c'est sa capacité à fournir. */
 export const PAR_MOIS = [1, 2, 4, 8];
@@ -53,6 +59,16 @@ export function offertAccorde(titre: string): string {
 
 /** « chez Bergine », mais « Chez Bergine » tout court quand le nom le dit déjà. */
 export const chezNom = (nom: string) => (/^chez\s/i.test(nom.trim()) ? nom.trim() : `chez ${nom.trim()}`);
+/** « l’équipe du Fournil », « des Délices », « de la Page », « d’Atelier Lou » — jamais « de Le Fournil ». */
+export function deNom(nom: string): string {
+  const n = nom.trim();
+  if (/^le\s/i.test(n)) return `du ${n.slice(3)}`;
+  if (/^les\s/i.test(n)) return `des ${n.slice(4)}`;
+  if (/^la\s/i.test(n)) return `de la ${n.slice(3)}`;
+  if (/^l['’]/i.test(n)) return `de l’${n.slice(2)}`;
+  if (/^[aeiouâàéèêîôû]/i.test(n)) return `d’${n}`;
+  return `de ${n}`;
+}
 
 /** « 🎁 Pour toute coloration : un dessert du jour offert chez Bergine ! » — 140 signes au plus (Le Direct). */
 export function phraseDuCadeau(c: { titre: string; chez: string; occasion?: string }): string {
@@ -143,6 +159,22 @@ export type BonReel = {
   expire: string;
   /** Combien de personnes sont venues avec ce bon cadeau. */
   venus?: number;
+  /** Le prénom du membre de l'équipe qui l'a pris (vide : le responsable). */
+  qui?: string;
+  /** Le prénom du membre de l'équipe qui l'a validé au comptoir (vide : le responsable). */
+  validePar?: string;
+};
+
+/** Une personne de son équipe, vue par le responsable. */
+export type MembreEquipe = {
+  id: string;
+  prenom: string;
+  /** A ouvert son lien : il compte dans l'équipe. */
+  actif: boolean;
+  /** Ce qu'il a pris ce mois-ci, sur ses 50 €. */
+  prisCeMois: number;
+  /** Son lien (`/e/<jeton>`), pour le lui renvoyer. */
+  lien: string;
 };
 
 export type MonOffre = {
@@ -152,6 +184,7 @@ export type MonOffre = {
   duJour: boolean;
   photo: string;
   actif: boolean;
+  /** Responsable compris : 1 + les membres qui ont ouvert leur lien. */
   equipe: number;
   /** Ce qu'il accepte d'être offert aux clients des autres, ou `null`. */
   cadeau: { titre: string; prix: number; parMois: number } | null;
@@ -163,6 +196,15 @@ export type VilleDuReseau = { slug: string; nom: string; offres: number; ouverte
 export type EtatEchanges = {
   /** Faux tant que les migrations ne sont pas appliquées. */
   pret: boolean;
+  /** Qui regarde : le responsable (lien pro), ou un membre de son équipe (son lien personnel). */
+  moi: {
+    role: "responsable" | "membre";
+    prenom: string;
+    /** Ce qu'il peut encore prendre : un membre, dans ses 50 € du mois ; le responsable, le compte du commerce. */
+    reste: number;
+  };
+  /** Son équipe (le responsable seulement ; vide pour un membre). */
+  equipe: MembreEquipe[];
   mien: MonOffre | null;
   compte: {
     /** Ce qu'il peut prendre d'avance : 50 € × son équipe. */

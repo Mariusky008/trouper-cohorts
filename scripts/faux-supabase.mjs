@@ -72,6 +72,7 @@ const DEFAUTS = {
   human_echanges_offres: () => ({ du_jour: false, photo: null, metier: "", branche: "", ville: "", ville_slug: "", actif: true, equipe: 1, cadeau_titre: null, cadeau_prix: null, cadeau_par_mois: null, regles_acceptees_le: maintenant(), cree_le: maintenant(), maj_le: maintenant() }),
   human_echanges_cadeaux: () => ({ id: randomUUID(), photo: null, occasion: "", cree_le: maintenant() }),
   human_echanges_bons: () => nouveauBon({}),
+  human_echanges_membres: () => ({ id: randomUUID(), cree_le: maintenant(), active_le: null, retire_le: null }),
 };
 const CLES = {
   human_conversations: ["id"],
@@ -85,6 +86,7 @@ const CLES = {
   human_echanges_offres: ["site_id"],
   human_echanges_bons: ["id"],
   human_echanges_cadeaux: ["id"],
+  human_echanges_membres: ["id"],
 };
 
 /** Un bon d'échange neuf, comme la table le remplit (30 jours de validité). */
@@ -103,6 +105,8 @@ function nouveauBon(champs) {
     du_jour: false,
     photo: null,
     expire_le: new Date(Date.now() + 30 * 86400000).toISOString(),
+    membre_id: null,
+    valide_par: null,
     ...champs,
   };
 }
@@ -256,26 +260,33 @@ function echanges(nom, a) {
     const j = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit" }).format(new Date());
     return new Date(`${j}-01T00:00:00+01:00`).toISOString();
   })();
+  // L'ÉQUIPE QUI COMPTE (`echanges_equipe`) : le responsable, et ceux qui ont ouvert leur lien sans être retirés.
+  const equipe = (site) => Math.min(5, 1 + lignes("human_echanges_membres").filter((m) => m.site_id === site && m.active_le && !m.retire_le).length);
   const peut = (site, parPersonne) => {
-    const o = offre(site);
     const gagne = bons.filter((b) => b.fournisseur_id === site && b.statut === "utilise").reduce((s, b) => s + b.prix, 0);
     const pris = bons.filter((b) => b.preneur_id === site && ["reserve", "utilise"].includes(b.statut)).reduce((s, b) => s + b.prix, 0);
-    return (o?.equipe ?? 1) * Math.max(0, parPersonne) + gagne - pris;
+    return equipe(site) * Math.max(0, parPersonne) + gagne - pris;
   };
   const ceMois = (site, pour) => bons.filter((b) => b.fournisseur_id === site && b.pour === pour && ["reserve", "utilise"].includes(b.statut) && b.cree_le >= debut).length;
   if (nom === "echanges_expirer") return expirer();
   if (nom === "echanges_prendre") {
     if (a.p_preneur === a.p_fournisseur) return { ok: false, raison: "soi" };
     expirer();
+    const m = a.p_membre ? lignes("human_echanges_membres").find((x) => x.id === a.p_membre) : null;
+    if (a.p_membre && (!m || m.site_id !== a.p_preneur || m.retire_le)) return { ok: false, raison: "membre" };
     const op = offre(a.p_preneur);
     if (!op || !op.actif) return { ok: false, raison: "sans_offre" };
     const of = offre(a.p_fournisseur);
     if (!of || !of.actif) return { ok: false, raison: "offre_retiree" };
+    if (m) {
+      const lui = bons.filter((b) => b.membre_id === m.id && ["reserve", "utilise"].includes(b.statut) && b.cree_le >= debut).reduce((t, b) => t + b.prix, 0);
+      if (lui + of.prix > a.p_par_personne) return { ok: false, raison: "plafond_perso", reste: Math.max(a.p_par_personne - lui, 0) };
+    }
     const v = peut(a.p_preneur, a.p_par_personne);
     if (v < of.prix) return { ok: false, raison: "solde", manque: of.prix - Math.max(v, 0) };
     if (ceMois(a.p_fournisseur, "moi") >= of.par_mois) return { ok: false, raison: "complet" };
     if (bons.some((b) => b.code === a.p_code)) return { doublon: true };
-    const bon = nouveauBon({ code: a.p_code, preneur_id: a.p_preneur, fournisseur_id: a.p_fournisseur, titre: of.titre, prix: of.prix, photo: of.photo, du_jour: of.du_jour });
+    const bon = nouveauBon({ code: a.p_code, preneur_id: a.p_preneur, fournisseur_id: a.p_fournisseur, titre: of.titre, prix: of.prix, photo: of.photo, du_jour: of.du_jour, membre_id: m?.id ?? null });
     bons.push(bon);
     return { ok: true, bon };
   }

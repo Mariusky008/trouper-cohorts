@@ -60,10 +60,11 @@ import {
   type Onglet,
 } from "./echanges-cadeaux";
 import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, jouer, vibrer } from "./echanges-magie";
+import { PanneauEquipe, StylesEquipe } from "./echanges-equipe";
 
 const ROUTE = "/api/site-internet/pro/echanges";
 
-type Reponse = { etat?: EtatEchanges; ok?: boolean; message?: string; code?: string; cadeau?: string; client?: boolean; bon?: string; error?: string };
+type Reponse = { etat?: EtatEchanges; ok?: boolean; message?: string; code?: string; cadeau?: string; client?: boolean; bon?: string; lien?: string; prenom?: string; error?: string };
 type Reel = { slug: string; token: string };
 
 async function appeler(reel: Reel, action: string, extra: Record<string, unknown> = {}): Promise<Reponse> {
@@ -230,6 +231,7 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
       </div>
       <StylesMagie />
       <StylesCadeaux />
+      <StylesEquipe />
       {!etat ? (
         <div className="ec-fin-pile">
           {erreur ? (
@@ -255,6 +257,7 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
           dossier={dossier}
           initial={mien}
           envies={envies}
+          equipe={etat.compte.equipe}
           reel
           onFini={async (m) => {
             const r = await appeler(reel, "offre", {
@@ -262,7 +265,6 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
               prix: m.prix,
               parMois: m.parMois,
               duJour: m.duJour,
-              equipe: m.equipe ?? 1,
               // UNE PHOTO PRISE À L'ÉTAPE 1 part avec l'offre ; sinon le serveur garde celle qu'il a.
               ...(m.photo.startsWith("data:image/") ? { photo: m.photo } : {}),
               accepte: true,
@@ -280,7 +282,7 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
   );
 }
 
-type Panneau = "solde" | "comment" | "bons" | "valider" | "offre" | "moncadeau";
+type Panneau = "solde" | "comment" | "bons" | "valider" | "offre" | "moncadeau" | "equipe";
 
 function PageReelle({
   commerce,
@@ -553,6 +555,9 @@ function PageReelle({
         <button type="button" onClick={() => setPanneau("offre")}>
           Mon offre
         </button>
+        <button type="button" onClick={() => setPanneau("equipe")}>
+          Mon équipe{etat.equipe.length > 0 ? ` · ${etat.equipe.length}` : ""}
+        </button>
         <button type="button" onClick={() => setPanneau("comment")}>
           Comment ça marche
         </button>
@@ -651,6 +656,7 @@ function PageReelle({
                   <b>{b.pour === "client" ? `🎁 Client envoyé par ${b.autre}` : b.autre}</b>
                   <em>
                     {b.titre} · +{b.prix} €{b.venus && b.venus > 1 ? ` · venu à ${b.venus}` : ""}
+                    {b.validePar ? ` · validé par ${b.validePar}` : ""}
                   </em>
                 </span>
                 <i>✓</i>
@@ -711,6 +717,21 @@ function PageReelle({
         </Feuille>
       )}
 
+      {panneau === "equipe" && (
+        <PanneauEquipe
+          membres={etat.equipe}
+          commerce={commerce.nom}
+          envoi={envoi}
+          origine={window.location.origin}
+          onInviter={async (prenom) => {
+            const r = await agir("inviter", { prenom });
+            return r.ok && r.lien ? { prenom: r.prenom ?? prenom, lien: r.lien } : r.error || r.message || "L’invitation n’a pas pu être créée.";
+          }}
+          onRetirer={(m) => void agir("retirer", { membre: m.id })}
+          onFermer={() => setPanneau(null)}
+        />
+      )}
+
       {panneau === "moncadeau" && (
         <FeuilleMonCadeau
           famille={famille}
@@ -751,7 +772,7 @@ function PageReelle({
                   </p>
                 )}
                 <button type="button" className="cz-go grand" disabled={envoi || !etat.mien?.actif} onClick={() => void prendre(choisie)}>
-                  {envoi ? "Réservation…" : `Je prends · ${choisie.prix} €`}
+                  {envoi ? "Réservation…" : `Je prends · ${choisie.prix}\u00a0€`}
                 </button>
               </>
             ) : (
@@ -840,7 +861,7 @@ function PageReelle({
 }
 
 /** Un bon qu'il a pris : son QR (l'adresse de la page du bon), son code, son état. */
-function BonVue({ b, ouvert, onOuvrir, onAnnuler }: { b: BonReel; ouvert: boolean; onOuvrir: () => void; onAnnuler?: () => void }) {
+export function BonVue({ b, ouvert, onOuvrir, onAnnuler }: { b: BonReel; ouvert: boolean; onOuvrir: () => void; onAnnuler?: () => void }) {
   const lien = typeof window === "undefined" ? `/bon/${b.code}` : `${window.location.origin}/bon/${b.code}`;
   const qr = useQr(ouvert && b.statut === "reserve" ? lien : null);
   const etatDuBon =
@@ -866,7 +887,10 @@ function BonVue({ b, ouvert, onOuvrir, onAnnuler }: { b: BonReel; ouvert: boolea
             {b.autre}
             {b.autreVille ? ` · ${b.autreVille}` : ""} · {b.prix} €
           </em>
-          <small className={b.statut === "utilise" ? "fait" : ""}>{etatDuBon}</small>
+          <small className={b.statut === "utilise" ? "fait" : ""}>
+            {b.qui ? `Pris par ${b.qui} · ` : ""}
+            {etatDuBon}
+          </small>
         </span>
         <i>{ouvert ? "▲" : b.statut === "reserve" ? "QR" : "›"}</i>
       </button>
@@ -903,7 +927,7 @@ function BonVue({ b, ouvert, onOuvrir, onAnnuler }: { b: BonReel; ouvert: boolea
   );
 }
 
-function StylesReels() {
+export function StylesReels() {
   return (
     <style
       dangerouslySetInnerHTML={{

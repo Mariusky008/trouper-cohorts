@@ -1,9 +1,10 @@
 // L'ÉCHANGE ENTRE COMMERÇANTS, EN VRAI — la caisse commune du comptoir, et
 // « le cadeau du voisin ».
 //
-// POST, jeton pro privé requis ({ slug, token, action }) :
+// POST, jeton pro privé requis ({ slug, token, action }) — OU le lien personnel
+// d'un membre de son équipe ({ membre: <jeton>, action }) :
 //   etat                          → son offre, son compte, sa ville, les offres et cadeaux des autres, ses bons
-//   offre { titre, prix, parMois, duJour, equipe, accepte }
+//   offre { titre, prix, parMois, duJour, accepte }
 //                                 → publie ou modifie son offre (il accepte les règles)
 //   cadeau { titre, prix, parMois } | { retirer: true }
 //                                 → ce qu'il accepte d'être offert aux clients des autres
@@ -18,6 +19,13 @@
 //   venus { bon, n }              → « venu à combien ? » pour un bon cadeau qu'il vient de valider
 //   annuler { bon }               → annule un bon encore réservé (celui qui l'a pris ; celui qui
 //                                   le fournit seulement s'il ne doit rien et que ce n'est pas un cadeau)
+//   inviter { prenom }            → un membre de plus dans son équipe : son lien personnel (`/e/<jeton>`)
+//   retirer { membre }            → son lien ne marche plus ; ce qu'il a pris reste dû par le commerce
+//
+// L'ÉQUIPE (`20261020120000_echanges_equipe.sql`) : chaque membre a son accès et
+// ses 50 € par mois ; il peut regarder, prendre pour lui, annuler SES bons,
+// valider un bon au comptoir et dire « venu à combien ». Le reste — l'offre,
+// les cadeaux, la pause, l'équipe — est au responsable, qui voit tout.
 //
 // LES RÈGLES (migrations `20261017120000_echanges_commercants.sql` et
 // `20261019120000_echanges_reseau.sql`) : jamais d'euros ; 50 € d'avance par
@@ -27,7 +35,7 @@
 // migrations ne sont pas appliquées, `etat` répond `{ pret: false }` et
 // l'écran dit « bientôt ».
 import { NextResponse } from "next/server";
-import { createHash, randomInt } from "node:crypto";
+import { createHash, randomBytes, randomInt } from "node:crypto";
 import sharp from "sharp";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { lireLeSite } from "@/lib/site-internet/fiche-du-site";
@@ -36,7 +44,7 @@ import { aPied, distanceM, type Point } from "@/lib/direct/voisins";
 import {
   ALPHABET_CODE,
   CADEAU_PAR_MOIS,
-  EQUIPE,
+  MAX_MEMBRES,
   PAR_MOIS,
   PAR_PERSONNE,
   SEUIL_VILLE,
@@ -45,6 +53,7 @@ import {
   type BonReel,
   type CadeauDuReseau,
   type EtatEchanges,
+  type MembreEquipe,
   type MonLotDeCadeaux,
   type OffreReelle,
   type VilleDuReseau,
@@ -101,7 +110,12 @@ type LigneBon = {
   donne_le: string | null;
   venus: number | null;
   expire_le: string;
+  membre_id: string | null;
+  valide_par: string | null;
 };
+type LigneMembre = { id: string; prenom: string; jeton: string; active_le: string | null; retire_le: string | null };
+/** Un membre de son équipe, venu par son lien personnel. */
+type Membre = { id: string; prenom: string };
 type LigneCadeau = {
   id: string;
   fournisseur_id: string;
@@ -115,7 +129,8 @@ type LigneCadeau = {
 
 const COLONNES_OFFRE =
   "site_id, titre, prix, par_mois, du_jour, photo, commerce, metier, branche, ville, ville_slug, actif, maj_le, equipe, cadeau_titre, cadeau_prix, cadeau_par_mois";
-const COLONNES_BON = "id, code, preneur_id, fournisseur_id, titre, prix, photo, du_jour, statut, cree_le, utilise_le, pour, cadeau_id, donne_le, venus, expire_le";
+const COLONNES_BON =
+  "id, code, preneur_id, fournisseur_id, titre, prix, photo, du_jour, statut, cree_le, utilise_le, pour, cadeau_id, donne_le, venus, expire_le, membre_id, valide_par";
 
 function nouveauCode(): string {
   let c = "";
@@ -165,11 +180,13 @@ const pointDe = (r: Record<string, unknown>): Point | undefined => {
 
 const ajouter = (m: Map<string, number>, k: string, n: number) => m.set(k, (m.get(k) ?? 0) + n);
 
-async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: { id: string; city: string }): Promise<EtatEchanges | null> {
+async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: { id: string; city: string }, membre: Membre | null = null): Promise<EtatEchanges | null> {
   const seuil = seuilVille();
   const maVilleVide = { slug: villeSlug(moi.city), nom: moi.city, offres: 0, ouverte: false, seuil, deja: [] };
   const vide: EtatEchanges = {
     pret: false,
+    moi: { role: membre ? "membre" : "responsable", prenom: membre?.prenom ?? "", reste: 0 },
+    equipe: [],
     mien: null,
     compte: { decouvert: 0, equipe: 1, gagne: 0, pris: 0, aDepenser: 0, du: 0 },
     maVille: maVilleVide,
@@ -204,6 +221,11 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: { i
     .order("cree_le", { ascending: false })
     .limit(60);
   if (ec) return absente(ec) ? vide : null;
+  /* SON ÉQUIPE : ceux qui ont ouvert leur lien comptent ; un retiré ne compte plus. */
+  const { data: lm, error: em } = await supabase.from("human_echanges_membres").select("id, prenom, jeton, active_le, retire_le").eq("site_id", moi.id).limit(50);
+  if (em) return absente(em) ? vide : null;
+  const membres = (lm ?? []) as LigneMembre[];
+  const prenomDe = new Map(membres.map((m) => [m.id, m.prenom]));
 
   const offresLues = (lo ?? []) as LigneOffre[];
   const bons = (lb ?? []) as LigneBon[];
@@ -256,8 +278,14 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: { i
   const doit = (id: string) => (pris.get(id) ?? 0) > (gagne.get(id) ?? 0);
 
   const mienLu = parSite.get(moi.id);
-  const equipe = mienLu?.equipe ?? 1;
+  const equipe = Math.min(5, 1 + membres.filter((m) => m.active_le && !m.retire_le).length);
   const decouvert = mienLu ? decouvertDe(equipe) : 0;
+  /* CE QUE CHAQUE MEMBRE A PRIS CE MOIS-CI, sur ses 50 €. */
+  const parMembre = new Map<string, number>();
+  for (const b of bons) {
+    if (!b.membre_id || b.preneur_id !== moi.id || !["reserve", "utilise"].includes(b.statut) || Date.parse(b.cree_le) < debut) continue;
+    ajouter(parMembre, b.membre_id, b.prix);
+  }
   const g = gagne.get(moi.id) ?? 0;
   const p = pris.get(moi.id) ?? 0;
 
@@ -277,6 +305,8 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: { i
     utilise: b.utilise_le ?? undefined,
     expire: b.expire_le,
     ...(b.venus ? { venus: b.venus } : {}),
+    ...(b.membre_id && prenomDe.get(b.membre_id) ? { qui: prenomDe.get(b.membre_id) } : {}),
+    ...(b.valide_par && prenomDe.get(b.valide_par) ? { validePar: prenomDe.get(b.valide_par) } : {}),
   });
   const aPiedDe = (id: string) => {
     const d = distance(id);
@@ -366,8 +396,21 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: { i
   }
 
   const maVille = parVille.get(maVilleSlug) ?? { slug: maVilleSlug, nom: moi.city, offres: 0, ouverte: false };
+  const aDepenser = Math.max(0, decouvert + g - p);
+  const equipeVue: MembreEquipe[] = membre
+    ? []
+    : membres
+        .filter((m) => !m.retire_le)
+        .map((m) => ({ id: m.id, prenom: m.prenom, actif: Boolean(m.active_le), prisCeMois: parMembre.get(m.id) ?? 0, lien: `/e/${m.jeton}` }));
   return {
     pret: true,
+    moi: {
+      role: membre ? "membre" : "responsable",
+      prenom: membre?.prenom ?? "",
+      // UN MEMBRE : ses 50 € du mois, dans la limite du compte du commerce.
+      reste: membre ? Math.max(0, Math.min(PAR_PERSONNE - (parMembre.get(membre.id) ?? 0), aDepenser)) : aDepenser,
+    },
+    equipe: equipeVue,
     mien: mienLu
       ? {
           titre: mienLu.titre,
@@ -383,7 +426,7 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: { i
               : null,
         }
       : null,
-    compte: { decouvert, equipe, gagne: g, pris: p, aDepenser: Math.max(0, decouvert + g - p), du: Math.max(0, p - g) },
+    compte: { decouvert, equipe, gagne: g, pris: p, aDepenser, du: Math.max(0, p - g) },
     maVille: {
       ...maVille,
       nom: moi.city || maVille.nom,
@@ -397,7 +440,8 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: { i
     offres,
     cadeaux,
     mesCadeaux,
-    pris: bons.filter((b) => b.preneur_id === moi.id && b.pour !== "client").map((b) => enBon(b, b.fournisseur_id)),
+    // UN MEMBRE NE VOIT QUE SES BONS ; le responsable, ceux de toute l'équipe.
+    pris: bons.filter((b) => b.preneur_id === moi.id && b.pour !== "client" && (!membre || b.membre_id === membre.id)).map((b) => enBon(b, b.fournisseur_id)),
     recus: bons
       .filter((b) => b.fournisseur_id === moi.id && (b.pour === "client" ? b.statut === "utilise" : b.statut !== "expire"))
       .map((b) => enBon(b, b.preneur_id)),
@@ -429,31 +473,57 @@ export async function POST(request: Request) {
   } catch {
     p = null;
   }
-  const slug = str(p?.slug);
+  let slug = str(p?.slug);
   const token = str(p?.token);
+  // `membre` est le jeton d'un membre SEULEMENT sans jeton de responsable : chez le
+  // responsable, `retirer { membre }` désigne le membre qu'il retire.
+  const jetonMembre = token ? "" : str(p?.membre);
   const action = str(p?.action) || "etat";
-  if (!slug || !token) return NextResponse.json({ error: "slug/token requis" }, { status: 400 });
+  if (!jetonMembre && (!slug || !token)) return NextResponse.json({ error: "slug/token requis" }, { status: 400 });
 
   const supabase = createAdminClient();
-  const { data: row } = await supabase
-    .from("human_vitrine_sites")
-    .select("id, slug, city, pro_token")
-    .eq("slug", slug)
-    .eq("channel", "letter")
-    .maybeSingle();
-  const site = (row as Record<string, unknown> | null) ?? null;
-  if (!site || !site.pro_token || str(site.pro_token) !== token) {
-    return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
+  let moi: { id: string; city: string };
+  let membre: Membre | null = null;
+  if (jetonMembre) {
+    /* UN MEMBRE DE SON ÉQUIPE, PAR SON LIEN PERSONNEL. La première fois qu'il
+       l'ouvre, il compte dans l'équipe (pas quand WhatsApp en fait l'aperçu :
+       l'aperçu ne passe pas par ici). */
+    const { data: lm, error: em } = await supabase.from("human_echanges_membres").select("id, site_id, prenom, active_le, retire_le").eq("jeton", jetonMembre).maybeSingle();
+    if (em) return NextResponse.json({ error: absente(em) ? "L'échange n'est pas encore ouvert." : "Lecture impossible." }, { status: absente(em) ? 403 : 500 });
+    const m = lm as { id: string; site_id: string; prenom: string; active_le: string | null; retire_le: string | null } | null;
+    if (!m || m.retire_le) return NextResponse.json({ error: "Ce lien n'est plus valable. Demande-en un nouveau à ton responsable." }, { status: 403 });
+    const { data: lsite } = await supabase.from("human_vitrine_sites").select("id, slug, city").eq("id", m.site_id).maybeSingle();
+    const site = (lsite as Record<string, unknown> | null) ?? null;
+    if (!site) return NextResponse.json({ error: "Ce lien n'est plus valable." }, { status: 403 });
+    if (!m.active_le) await supabase.from("human_echanges_membres").update({ active_le: new Date().toISOString() }).eq("id", m.id).is("active_le", null);
+    moi = { id: str(site.id), city: str(site.city) };
+    slug = str(site.slug);
+    membre = { id: m.id, prenom: m.prenom };
+    // CE QU'UN MEMBRE PEUT FAIRE ; le reste est au responsable.
+    if (!["etat", "prendre", "annuler", "valider", "venus"].includes(action)) {
+      return NextResponse.json({ error: "C'est le responsable du commerce qui s'en occupe." }, { status: 403 });
+    }
+  } else {
+    const { data: row } = await supabase
+      .from("human_vitrine_sites")
+      .select("id, slug, city, pro_token")
+      .eq("slug", slug)
+      .eq("channel", "letter")
+      .maybeSingle();
+    const site = (row as Record<string, unknown> | null) ?? null;
+    if (!site || !site.pro_token || str(site.pro_token) !== token) {
+      return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
+    }
+    moi = { id: str(site.id), city: str(site.city) };
   }
-  const moi = { id: str(site.id), city: str(site.city) };
   const repondre = async (extra: Record<string, unknown> = {}) => {
-    const etat = await lireEtat(supabase, moi);
+    const etat = await lireEtat(supabase, moi, membre);
     if (!etat) return NextResponse.json({ error: "Lecture impossible pour l'instant." }, { status: 500 });
     return NextResponse.json({ ...extra, etat });
   };
   /** L'état d'abord, pour décider (sa ville est-elle ouverte ? doit-il ?). */
   const avant = async () => {
-    const etat = await lireEtat(supabase, moi);
+    const etat = await lireEtat(supabase, moi, membre);
     if (!etat) return { etat: null, erreur: NextResponse.json({ error: "Lecture impossible pour l'instant." }, { status: 500 }) };
     if (!etat.pret) return { etat: null, erreur: NextResponse.json({ error: "L'échange n'est pas encore ouvert." }, { status: 500 }) };
     return { etat, erreur: null };
@@ -469,11 +539,9 @@ export async function POST(request: Request) {
     const titre = duJour ? "Mon produit du jour" : str(p?.titre).slice(0, 80);
     const prix = Math.round(Number(p?.prix));
     const parMois = Math.round(Number(p?.parMois));
-    const equipe = Math.round(Number(p?.equipe ?? 1));
     if (titre.length < 2) return NextResponse.json({ error: "Écris ce que tu offres." }, { status: 400 });
     if (!Number.isFinite(prix) || prix < 5 || prix > 2000) return NextResponse.json({ error: "Le prix doit être entre 5 et 2000 €." }, { status: 400 });
     if (!PAR_MOIS.includes(parMois)) return NextResponse.json({ error: "Combien par mois ? 1, 2, 4 ou 8." }, { status: 400 });
-    if (!EQUIPE.includes(equipe)) return NextResponse.json({ error: "Vous êtes combien à en profiter ? De 1 à 5." }, { status: 400 });
     /* CE QUE LES AUTRES VOIENT DE LUI, lu sur sa propre fiche (pas sur ce
        que l'écran envoie) : son nom, son métier. SA PHOTO : celle qu'il vient
        de prendre, sinon celle que son offre avait déjà, sinon celle de sa fiche. */
@@ -494,7 +562,6 @@ export async function POST(request: Request) {
       prix,
       par_mois: parMois,
       du_jour: duJour,
-      equipe,
       photo: photo || null,
       commerce: str(carte?.nom) || slug,
       metier: str(carte?.metier),
@@ -560,16 +627,23 @@ export async function POST(request: Request) {
         p_fournisseur: fournisseur,
         p_code: nouveauCode(),
         p_par_personne: PAR_PERSONNE,
+        p_membre: membre?.id ?? null,
       });
       if (error?.code === "23505") continue;
       if (error) return NextResponse.json({ error: absente(error) ? "L'échange n'est pas encore ouvert." : "Réservation impossible." }, { status: 500 });
-      const r = (data ?? {}) as { ok?: boolean; raison?: string; manque?: number; bon?: LigneBon };
+      const r = (data ?? {}) as { ok?: boolean; raison?: string; manque?: number; reste?: number; bon?: LigneBon };
       if (!r.ok) {
         const pourquoi: Record<string, string> = {
-          solde: `Il te manque ${r.manque ?? 0} €. Dès qu'un commerçant prend ton produit, tu peux reprendre.`,
+          solde: membre
+            ? `Le compte de ta boutique est au plus bas : il manque ${r.manque ?? 0} €. Dès qu'elle sert un commerçant, tu peux reprendre.`
+            : `Il te manque ${r.manque ?? 0} €. Dès qu'un commerçant prend ton produit, tu peux reprendre.`,
+          plafond_perso: `Il te reste ${r.reste ?? 0} € de tes 50 € ce mois-ci. Ils reviennent le 1er du mois.`,
+          membre: "Ce lien n'est plus valable. Demande-en un nouveau à ton responsable.",
           complet: "Ce commerçant a déjà donné tout ce qu'il pouvait ce mois-ci.",
           offre_retiree: "Ce commerçant a mis son offre en pause.",
-          sans_offre: "Publie d'abord ton offre : c'est ce qui te permet de prendre chez les autres.",
+          sans_offre: membre
+            ? "Ta boutique n'a pas encore publié son offre : dès que c'est fait, tu pourras prendre."
+            : "Publie d'abord ton offre : c'est ce qui te permet de prendre chez les autres.",
           soi: "C'est ta propre offre.",
         };
         return repondre({ ok: false, raison: r.raison, message: pourquoi[str(r.raison)] ?? "Réservation impossible." });
@@ -681,7 +755,7 @@ export async function POST(request: Request) {
     await supabase.rpc("echanges_expirer");
     const { data, error } = await supabase
       .from("human_echanges_bons")
-      .update({ statut: "utilise", utilise_le: new Date().toISOString() })
+      .update({ statut: "utilise", utilise_le: new Date().toISOString(), valide_par: membre?.id ?? null })
       .eq("code", code)
       .eq("fournisseur_id", moi.id)
       .eq("statut", "reserve")
@@ -692,9 +766,9 @@ export async function POST(request: Request) {
       const { data: o } = await supabase.from("human_echanges_offres").select("commerce").eq("site_id", fait.preneur_id).maybeSingle();
       const qui = str((o as { commerce?: string } | null)?.commerce) || "Ce commerçant";
       if (fait.pour === "client") {
-        return repondre({ ok: true, client: true, bon: fait.id, message: `🎁 Validé ✓ Un client envoyé par ${qui} : ${fait.titre}. Tu as gagné ${fait.prix} €.` });
+        return repondre({ ok: true, client: true, bon: fait.id, message: `🎁 Validé ✓ Un client envoyé par ${qui} : ${fait.titre}. ${membre ? "Ta boutique a gagné" : "Tu as gagné"} ${fait.prix} €.` });
       }
-      return repondre({ ok: true, message: `Validé ✓ ${qui} a bien reçu ton produit : tu as gagné ${fait.prix} €.` });
+      return repondre({ ok: true, message: membre ? `Validé ✓ ${qui} a bien reçu le produit de ta boutique : elle a gagné ${fait.prix} €.` : `Validé ✓ ${qui} a bien reçu ton produit : tu as gagné ${fait.prix} €.` });
     }
     // Pourquoi pas : inconnu chez lui, déjà validé, annulé ou expiré.
     const { data: lu } = await supabase.from("human_echanges_bons").select("statut").eq("code", code).eq("fournisseur_id", moi.id).maybeSingle();
@@ -732,10 +806,12 @@ export async function POST(request: Request) {
   if (action === "annuler") {
     const bon = str(p?.bon);
     if (!UUID.test(bon)) return NextResponse.json({ error: "Bon inconnu." }, { status: 400 });
-    const { data: lu } = await supabase.from("human_echanges_bons").select("preneur_id, fournisseur_id, statut, pour, donne_le").eq("id", bon).maybeSingle();
-    const b = lu as { preneur_id?: string; fournisseur_id?: string; statut?: string; pour?: string; donne_le?: string | null } | null;
+    const { data: lu } = await supabase.from("human_echanges_bons").select("preneur_id, fournisseur_id, statut, pour, donne_le, membre_id").eq("id", bon).maybeSingle();
+    const b = lu as { preneur_id?: string; fournisseur_id?: string; statut?: string; pour?: string; donne_le?: string | null; membre_id?: string | null } | null;
     const role = b?.preneur_id === moi.id ? "preneur" : b?.fournisseur_id === moi.id ? "fournisseur" : "";
     if (!b || !role) return NextResponse.json({ error: "Bon inconnu." }, { status: 404 });
+    // UN MEMBRE N'ANNULE QUE SES PROPRES BONS.
+    if (membre && (role !== "preneur" || b.membre_id !== membre.id)) return NextResponse.json({ error: "C'est le responsable du commerce qui s'en occupe." }, { status: 403 });
     if (b.statut !== "reserve") return repondre({ ok: false, message: "Ce bon ne peut plus être annulé." });
     if (role === "fournisseur") {
       if (b.pour === "client") return repondre({ ok: false, message: "C’est un cadeau promis à un client : il ne se refuse pas." });
@@ -752,6 +828,35 @@ export async function POST(request: Request) {
       .eq("statut", "reserve");
     if (error) return NextResponse.json({ error: "Annulation impossible." }, { status: 500 });
     return repondre({ ok: true, message: "Bon annulé." });
+  }
+
+  /* ── SON ÉQUIPE ────────────────────────────────────────────────────────── */
+  if (action === "inviter") {
+    const prenom = str(p?.prenom).replace(/\s+/g, " ").slice(0, 40);
+    if (!prenom) return NextResponse.json({ error: "Son prénom ?" }, { status: 400 });
+    const { data: deja, error: ed } = await supabase.from("human_echanges_membres").select("id").eq("site_id", moi.id).is("retire_le", null);
+    if (ed) return NextResponse.json({ error: absente(ed) ? "L'échange n'est pas encore ouvert." : "Lecture impossible." }, { status: 500 });
+    if ((deja ?? []).length >= MAX_MEMBRES) return repondre({ ok: false, message: `Ton équipe est complète : ${MAX_MEMBRES} personnes, et toi.` });
+    // UN LIEN QU'ON NE DEVINE PAS : 18 octets au hasard, 24 signes.
+    const jeton = randomBytes(18).toString("base64url");
+    const { data: m, error } = await supabase.from("human_echanges_membres").insert({ site_id: moi.id, prenom, jeton }).select("id").single();
+    if (error || !m) return NextResponse.json({ error: "L'invitation n'a pas pu être créée." }, { status: 500 });
+    return repondre({ ok: true, membre: (m as { id: string }).id, lien: `/e/${jeton}`, prenom });
+  }
+
+  if (action === "retirer") {
+    const id = str(p?.membre);
+    if (!UUID.test(id)) return NextResponse.json({ error: "Membre inconnu." }, { status: 400 });
+    const { data, error } = await supabase
+      .from("human_echanges_membres")
+      .update({ retire_le: new Date().toISOString() })
+      .eq("id", id)
+      .eq("site_id", moi.id)
+      .is("retire_le", null)
+      .select("prenom");
+    if (error) return NextResponse.json({ error: "Modification impossible." }, { status: 500 });
+    const qui = str((data as Array<{ prenom: string }> | null)?.[0]?.prenom);
+    return repondre({ ok: Boolean(qui), message: qui ? `${qui} ne fait plus partie de ton équipe : son lien ne marche plus.` : "Membre inconnu." });
   }
 
   return NextResponse.json({ error: "Action inconnue." }, { status: 400 });

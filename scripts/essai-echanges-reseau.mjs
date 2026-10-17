@@ -3,7 +3,10 @@
 // Quatre commerces semés (trois à Dax, une à Vevey), puis tout ce que la route doit tenir : la
 // ville qui s'ouvre au seuil, 50 € d'avance par personne, le cadeau du voisin (offrir, plafond,
 // donner, la page du client, valider, « venu à combien »), les chiffres des deux côtés, la dette
-// (ni pause ni refus), reprendre les bons pas donnés, l'expiration, Vevey fermée.
+// (ni pause ni refus), reprendre les bons pas donnés, l'expiration, Vevey fermée. Puis l'équipe
+// (`20261020120000_echanges_equipe.sql`) : inviter, le lien qui compte à la première ouverture,
+// 50 € par personne, ce qu'un membre peut faire ou pas, valider pour la boutique, 4 au plus,
+// retirer quelqu'un.
 //
 //   node scripts/faux-supabase.mjs 54321
 //   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=faux NEXT_PUBLIC_SUPABASE_ANON_KEY=faux \
@@ -20,6 +23,7 @@ const SITES = {
   bergine: site("bbbbbbbb-0000-4000-8000-000000000002", "chez-bergine-dax", "Chez Bergine", "Dax", "Restaurant", 43.7110, -1.0522, "18 rue Neuve, 40100 Dax, France"),
   fleurs: site("cccccccc-0000-4000-8000-000000000003", "fleurs-adour-dax", "Fleurs de l'Adour", "Dax", "Fleuriste", 43.7088, -1.0551, "2 place de la Fontaine Chaude, 40100 Dax, France"),
   alice: site("dddddddd-0000-4000-8000-000000000004", "page-alice-vevey", "La Page d'Alice", "Vevey", "Librairie", 46.4628, 6.8419, "Rue du Lac 10, 1800 Vevey, Suisse"),
+  fournil: site("eeeeeeee-0000-4000-8000-000000000005", "fournil-dax", "Le Fournil des Arènes", "Dax", "Boulangerie", 43.7095, -1.0530, "7 cours de Verdun, 40100 Dax, France"),
 };
 await fetch(`${F}/human_vitrine_sites`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(Object.values(SITES)) });
 const R = "http://localhost:3821/api/site-internet/pro/echanges";
@@ -30,31 +34,46 @@ const appel = async (slug, action, extra = {}) => {
   const j = await r.json().catch(() => ({}));
   return { statut: r.status, ...j };
 };
-const LOU = "atelier-lou-dax", BERGINE = "chez-bergine-dax", FLEURS = "fleurs-adour-dax", ALICE = "page-alice-vevey";
-const ID = { bergine: "bbbbbbbb-0000-4000-8000-000000000002", lou: "aaaaaaaa-0000-4000-8000-000000000001", alice: "dddddddd-0000-4000-8000-000000000004" };
+/** Un membre de l'équipe, par son lien personnel (`/e/<jeton>`) : ni adresse ni jeton du commerce. */
+const appelMembre = async (jeton, action, extra = {}) => {
+  const r = await fetch(R, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ membre: jeton, action, ...extra }) });
+  const j = await r.json().catch(() => ({}));
+  return { statut: r.status, ...j };
+};
+const jetonDe = (lien) => String(lien ?? "").replace(/^\/e\//, "");
+const LOU = "atelier-lou-dax", BERGINE = "chez-bergine-dax", FLEURS = "fleurs-adour-dax", ALICE = "page-alice-vevey", FOURNIL = "fournil-dax";
+const ID = {
+  bergine: "bbbbbbbb-0000-4000-8000-000000000002", lou: "aaaaaaaa-0000-4000-8000-000000000001", alice: "dddddddd-0000-4000-8000-000000000004",
+  fleurs: "cccccccc-0000-4000-8000-000000000003", fournil: "eeeeeeee-0000-4000-8000-000000000005",
+};
 
 let e = (await appel(LOU, "etat")).etat;
 ok(e?.pret === true && e.mien === null && e.maVille.ouverte === false, `avant tout : prêt, pas d'offre, Dax fermée (${e?.maVille.offres}/${e?.maVille.seuil})`);
 ok((await fetch(R, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: LOU, token: "faux", action: "etat" }) })).status === 403, "mauvais jeton : refusé");
 
-let r = await appel(BERGINE, "offre", { titre: "Un dîner pour deux", prix: 50, parMois: 2, equipe: 1, accepte: true });
-ok(r.ok && r.etat.mien.equipe === 1 && r.etat.compte.decouvert === 50, `Bergine publie : seule, 50 € d'avance (${r.etat?.compte.decouvert})`);
+let r = await appel(BERGINE, "offre", { titre: "Un dîner pour deux", prix: 50, parMois: 2, accepte: true });
+ok(r.ok && r.etat.compte.equipe === 1 && r.etat.compte.decouvert === 50, `Bergine publie : seule, 50 € d'avance (${r.etat?.compte.decouvert})`);
 r = await appel(BERGINE, "cadeau", { titre: "Un dessert du jour", prix: 7, parMois: 10 });
 ok(r.ok && r.etat.mien.cadeau?.titre === "Un dessert du jour", "Bergine propose son cadeau : un dessert du jour, 7 €, 10 par mois");
 r = await appel(BERGINE, "cadeau", { titre: "Un repas", prix: 100, parMois: 10 });
 ok(r.statut === 400, `un « cadeau » à 100 € : refusé (${r.error})`);
-r = await appel(BERGINE, "offre", { titre: "x y", prix: 50, parMois: 2, equipe: 7, accepte: true });
-ok(r.statut === 400, `équipe de 7 : refusée (${r.error})`);
-await appel(FLEURS, "offre", { titre: "Un bouquet de saison", prix: 35, parMois: 4, equipe: 1, accepte: true });
+r = await appel(BERGINE, "offre", { titre: "Un dîner pour deux", prix: 50, parMois: 2, equipe: 5, accepte: true });
+ok(r.ok && r.etat.compte.equipe === 1, `« on est 5 » déclaré : ignoré, l'équipe se fait par invitation (${r.etat?.compte.equipe})`);
+await appel(FLEURS, "offre", { titre: "Un bouquet de saison", prix: 35, parMois: 4, accepte: true });
 await appel(FLEURS, "cadeau", { titre: "Une fleur de saison", prix: 5, parMois: 20 });
 
 r = await appel(LOU, "prendre", { fournisseur: ID.bergine });
 ok(r.ok === false && r.raison === "ville", `Dax à 2 sur 3 : « ${r.message} »`);
 
-r = await appel(LOU, "offre", { titre: "Une coupe et un brushing", prix: 45, parMois: 4, equipe: 2, accepte: true });
+r = await appel(LOU, "offre", { titre: "Une coupe et un brushing", prix: 45, parMois: 4, accepte: true });
 e = r.etat;
 ok(e.maVille.ouverte && e.maVille.offres === 3, `Lou publie : Dax s'ouvre (${e.maVille.offres}/${e.maVille.seuil})`);
-ok(e.compte.decouvert === 100 && e.compte.aDepenser === 100, `équipe de 2 : 100 € d'avance (${e.compte.decouvert})`);
+r = await appel(LOU, "inviter", { prenom: "Léa" });
+const jetonLea = jetonDe(r.lien);
+ok(r.ok && /^[A-Za-z0-9_-]{24}$/.test(jetonLea) && r.etat.equipe[0]?.actif === false && r.etat.compte.equipe === 1, `Lou invite Léa : un lien /e/… (${jetonLea.length} signes), pas encore dans l'équipe`);
+await appelMembre(jetonLea, "etat");
+e = (await appel(LOU, "etat")).etat;
+ok(e.compte.equipe === 2 && e.compte.decouvert === 100 && e.compte.aDepenser === 100, `Léa ouvre son lien : équipe de 2, 100 € d'avance (${e.compte.decouvert})`);
 ok(e.cadeaux[0]?.commerce === "Chez Bergine" && /min à pied/.test(e.cadeaux[0]?.aPied ?? ""), `cadeaux : Bergine en tête, ${e.cadeaux[0]?.aPied}`);
 ok(e.cadeaux.map((c) => c.commerce).join(",") === "Chez Bergine,Fleurs de l'Adour", `ordre des cadeaux : ${e.cadeaux.map((c) => `${c.commerce} (${c.aPied})`).join(" ; ")}`);
 ok(!("echeance" in e.compte), "plus d'échéance en euros dans le compte");
@@ -117,7 +136,7 @@ ok(r.ok === false && /expiré/.test(r.message), `valider un bon expiré : « ${r
 const html2 = await (await fetch(`http://localhost:3821/bon/${code2}`)).text();
 ok(html2.includes("Ce cadeau a expiré"), "la page du client le dit");
 
-r = await appel(ALICE, "offre", { titre: "Deux livres au choix", prix: 40, parMois: 2, equipe: 1, accepte: true });
+r = await appel(ALICE, "offre", { titre: "Deux livres au choix", prix: 40, parMois: 2, accepte: true });
 ok(r.etat.maVille.ouverte === false && r.etat.maVille.offres === 1, `Vevey : ${r.etat.maVille.offres} sur ${r.etat.maVille.seuil}, fermée`);
 r = await appel(ALICE, "prendre", { fournisseur: ID.bergine });
 ok(r.ok === false && /Vevey dès 3 commerçants/.test(r.message), `Alice ne peut pas encore prendre : « ${r.message} »`);
@@ -125,6 +144,69 @@ r = await appel(LOU, "prendre", { fournisseur: ID.alice });
 ok(r.ok === false && /pas encore ouvert à Vevey/.test(r.message), `ni Lou chez Alice : « ${r.message} »`);
 e = (await appel(LOU, "etat")).etat;
 ok(e.villes.map((v) => v.slug).join() === "dax", `villes ouvertes : ${e.villes.map((v) => v.nom).join(", ")}`);
+
+/* ── L'ÉQUIPE, PAR SES LIENS PERSONNELS ─────────────────────────────────── */
+console.log("\n— l'équipe du Fournil —");
+r = await appel(FOURNIL, "offre", { titre: "Une baguette et deux croissants", prix: 6, parMois: 8, accepte: true });
+ok(r.ok && r.etat.compte.equipe === 1 && r.etat.compte.decouvert === 50 && r.etat.moi.role === "responsable", "le Fournil publie : seul, 50 €, responsable");
+r = await appel(FOURNIL, "inviter", { prenom: "  Inès  " });
+const jetonInes = jetonDe(r.lien);
+ok(r.ok && r.prenom === "Inès" && r.etat.equipe.length === 1 && r.etat.equipe[0].lien === `/e/${jetonInes}`, `il invite Inès : son lien ${r.lien}`);
+r = await appel(FOURNIL, "inviter", { prenom: "   " });
+ok(r.statut === 400, `un prénom vide : refusé (${r.error})`);
+const page = await fetch(`http://localhost:3821/e/${jetonInes}`);
+const pageHtml = await page.text();
+ok(page.status === 200 && pageHtml.includes("Inès") && pageHtml.includes("Fournil"), "la page /e/… s'ouvre : Inès, chez le Fournil");
+e = (await appel(FOURNIL, "etat")).etat;
+ok(e.equipe[0].actif === false && e.compte.equipe === 1, "l'aperçu de la page (WhatsApp) ne la compte pas encore");
+let m = await appelMembre(jetonInes, "etat");
+ok(m.etat?.moi.role === "membre" && m.etat.moi.prenom === "Inès" && m.etat.moi.reste === 50 && m.etat.equipe.length === 0, `Inès ouvre : membre, 50 € rien qu'à elle (${m.etat?.moi.reste}), elle ne voit pas l'équipe`);
+e = (await appel(FOURNIL, "etat")).etat;
+ok(e.equipe[0].actif === true && e.compte.equipe === 2 && e.compte.decouvert === 100, `le Fournil : équipe de 2, 100 € (${e.compte.decouvert})`);
+for (const [action, extra] of [["offre", { titre: "x y", prix: 5, parMois: 1, accepte: true }], ["cadeau", { titre: "Un croissant", prix: 2, parMois: 5 }], ["pause", { actif: false }], ["inviter", { prenom: "Max" }], ["retirer", {}], ["offrir", { fournisseur: ID.bergine, n: 5 }]]) {
+  m = await appelMembre(jetonInes, action, extra);
+  ok(m.statut === 403 && /responsable/.test(m.error), `Inès ne peut pas « ${action} » (${m.error})`);
+}
+m = await appelMembre(jetonInes, "prendre", { fournisseur: ID.lou });
+ok(m.ok && m.etat.moi.reste === 5, `Inès prend la coupe (45 €) : il lui reste ${m.etat?.moi.reste} € ce mois-ci`);
+m = await appelMembre(jetonInes, "prendre", { fournisseur: ID.fleurs });
+ok(m.ok === false && m.raison === "plafond_perso" && /5 €/.test(m.message), `le bouquet (35 €) : « ${m.message} »`);
+r = await appel(FOURNIL, "prendre", { fournisseur: ID.fleurs });
+ok(r.ok && r.etat.compte.aDepenser === 20, `le responsable, lui, prend le bouquet sur le compte du commerce : reste ${r.etat?.compte.aDepenser} €`);
+e = r.etat;
+ok(e.pris.length === 2 && e.pris.find((b) => b.titre.startsWith("Une coupe"))?.qui === "Inès" && !e.pris.find((b) => b.titre.startsWith("Un bouquet"))?.qui, "il voit tout : « Pris par Inès » pour la coupe, le bouquet sans nom");
+ok(e.equipe[0].prisCeMois === 45, `« Ce mois-ci : ${e.equipe[0].prisCeMois} € sur 50 € »`);
+m = await appelMembre(jetonInes, "etat");
+ok(m.etat.pris.length === 1 && m.etat.moi.reste === 5, `Inès ne voit que ses bons (${m.etat.pris.length}), reste ${m.etat.moi.reste} €`);
+const bouquet = e.pris.find((b) => b.titre.startsWith("Un bouquet"));
+const coupe = e.pris.find((b) => b.titre.startsWith("Une coupe"));
+m = await appelMembre(jetonInes, "annuler", { bon: bouquet.id });
+ok(m.statut === 403, `Inès n'annule pas le bon du responsable (${m.error})`);
+m = await appelMembre(jetonInes, "annuler", { bon: coupe.id });
+ok(m.ok && m.etat.moi.reste === 50, `Inès annule sa coupe : ses 50 € reviennent (${m.etat?.moi.reste})`);
+m = await appelMembre(jetonInes, "prendre", { fournisseur: ID.lou });
+ok(m.ok, "… et la reprend");
+r = await appel(LOU, "prendre", { fournisseur: ID.fournil });
+const codePain = r.etat?.pris.find((b) => b.titre.startsWith("Une baguette"))?.code;
+ok(r.ok && /^CLK-/.test(codePain ?? ""), `Lou prend une baguette au Fournil : ${codePain}`);
+m = await appelMembre(jetonInes, "valider", { code: codePain });
+ok(m.ok && /le produit de ta boutique : elle a gagné 6 €/.test(m.message), `Inès valide au comptoir : « ${m.message} »`);
+e = (await appel(FOURNIL, "etat")).etat;
+ok(e.recus.find((b) => b.code === codePain)?.validePar === "Inès" && e.compte.gagne === 6, "le responsable voit « validé par Inès », +6 €");
+for (const prenom of ["Tom", "Noé", "Zoé"]) await appel(FOURNIL, "inviter", { prenom });
+r = await appel(FOURNIL, "inviter", { prenom: "Max" });
+ok(r.ok === false && /complète/.test(r.message) && r.etat.equipe.length === 4, `5e invitation : « ${r.message} »`);
+ok(r.etat.compte.equipe === 2, "trois invitations pas encore ouvertes : toujours 2 dans l'équipe");
+r = await appel(FOURNIL, "retirer", { membre: r.etat.equipe.find((x) => x.prenom === "Inès").id });
+ok(r.ok && /Inès ne fait plus partie/.test(r.message) && r.etat.compte.equipe === 1 && r.etat.equipe.length === 3, `le responsable retire Inès : « ${r.message} »`);
+ok(r.etat.pris.find((b) => b.titre.startsWith("Une coupe"))?.qui === "Inès" && r.etat.compte.du === 74, `ce qu'elle a pris reste dû par le Fournil : ${r.etat.compte.du} €`);
+m = await appelMembre(jetonInes, "etat");
+ok(m.statut === 403 && /plus valable/.test(m.error), `son lien ne marche plus : « ${m.error} »`);
+ok((await (await fetch(`http://localhost:3821/e/${jetonInes}`)).text()).includes("plus valable"), "la page /e/… le dit aussi");
+r = await appel(FOURNIL, "inviter", { prenom: "Max" });
+ok(r.ok, "une place s'est libérée : Max peut venir");
+m = await appelMembre("x".repeat(24), "etat");
+ok(m.statut === 403, "un jeton inventé : refusé");
 
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTout est bon.");
 process.exit(echecs ? 1 : 0);

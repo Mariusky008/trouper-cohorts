@@ -23,8 +23,9 @@
 //      son offre en pause ni refuser un bon.
 //
 // « 50 € PAR MOIS ET PAR PERSONNE » : ce qu'il peut prendre d'avance, par
-// personne de son équipe (lui et ses associés) — l'étape 2 demande « vous
-// êtes combien ? ». Arrivé au bout, il sert avant de reprendre.
+// personne de son équipe. Plus de « vous êtes combien ? » déclaré : chaque
+// personne a son propre accès, qu'il lui envoie depuis « Mon équipe »
+// (`echanges-equipe.tsx`). Arrivé au bout, il sert avant de reprendre.
 //
 // ET « LE CADEAU DU VOISIN » (`echanges-cadeaux.tsx`) : l'onglet « Pour mes
 // clients » offre à SES clients un petit cadeau chez un voisin, payé avec son
@@ -42,7 +43,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { COMMERCES_DEMO } from "@/lib/direct/missions-commercant";
 import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
-import { EQUIPE, JOURS_VALIDITE, PAR_MOIS, PAR_PERSONNE, chezNom, decouvertDe as decouvertDeBase, type MonLotDeCadeaux } from "@/lib/echanges/echanges";
+import { JOURS_VALIDITE, PAR_MOIS, PAR_PERSONNE, chezNom, decouvertDe as decouvertDeBase, type MembreEquipe, type MonLotDeCadeaux } from "@/lib/echanges/echanges";
+import { PanneauEquipe, StylesEquipe } from "./echanges-equipe";
 import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, debloquerSon, jouer, vibrer } from "./echanges-magie";
 import { Feuille, reduirePhoto, useQr } from "./echanges-communs";
 import {
@@ -119,6 +121,8 @@ type Etat = {
   /** Les clients venus chez lui avec le cadeau d'un voisin (simulé une fois), et les personnes. */
   recusClients?: number;
   recusPersonnes?: number;
+  /** Son équipe d'exemple : chaque personne invitée rejoint tout de suite. */
+  membres?: MembreEquipe[];
 };
 
 const NEUF: Etat = { gagne: 0, bons: [] };
@@ -140,12 +144,13 @@ function garder(c: CommerceComptoir, e: Etat) {
   }
 }
 
-/** Son découvert : 50 € par personne de son équipe. */
-const decouvertDe = (m: Mien) => decouvertDeBase(m.equipe ?? 1);
+/** Son équipe (lui compris), et son découvert : 50 € par personne. */
+const equipeDe = (e: Etat) => Math.min(5, 1 + (e.membres?.length ?? 0));
+const decouvertDe = (e: Etat) => decouvertDeBase(equipeDe(e));
 /** Ce qu'il a pris : pour lui, et les cadeaux offerts à ses clients (sauf ceux qui ont expiré). */
 const pris = (e: Etat) => e.bons.reduce((s, b) => s + b.prix, 0) + (e.lots ?? []).reduce((s, l) => s + (l.quantite - l.expires) * l.prix, 0);
 /** Ce qu'il peut encore dépenser : son découvert, plus ce qu'il a gagné, moins ce qu'il a pris. */
-const aDepenser = (e: Etat) => (e.mien ? Math.max(0, decouvertDe(e.mien) + e.gagne - pris(e)) : 0);
+const aDepenser = (e: Etat) => (e.mien ? Math.max(0, decouvertDe(e) + e.gagne - pris(e)) : 0);
 /** Ce qu'il doit au réseau : ce qu'il a pris de plus que ce qu'il a gagné. */
 const aRendre = (e: Etat) => Math.max(0, pris(e) - e.gagne);
 
@@ -273,12 +278,14 @@ export function EchangesComptoir({ commerce, dossier, onRetour }: { commerce: Co
       </div>
       <StylesMagie />
       <StylesCadeaux />
+      <StylesEquipe />
       {!etat.mien || modifier ? (
         <Depart
           commerce={commerce}
           dossier={dossier}
           envies={envies}
           initial={etat.mien}
+          equipe={equipeDe(etat)}
           onFini={(mien) => {
             changer((e) => ({ ...e, mien }));
             setModifier(false);
@@ -301,10 +308,10 @@ export function EchangesComptoir({ commerce, dossier, onRetour }: { commerce: Co
    quatre, et le fantôme pose chaque question dans sa bulle.
      1. CE QUE J'OFFRE — le produit et son prix, et il devient une pièce :
         « 1 dîner pour deux = 50 € à dépenser ». Sa monnaie, c'est son produit.
-     2. COMBIEN PAR MOIS, ET VOUS ÊTES COMBIEN — une assiette se pose pour
-        chaque produit du mois, chacune sur sa note ; puis l'équipe (lui et
-        ses associés), et une caisse compte ce qu'il peut prendre d'avance
-        (« 50 € × 2 personnes = 100 € »).
+     2. COMBIEN PAR MOIS — une assiette se pose pour chaque produit du mois,
+        chacune sur sa note, et une caisse compte ce qu'il peut prendre
+        d'avance (« 50 € × 1 personne »). Son équipe, il l'invitera ensuite,
+        une personne à la fois, depuis « Mon équipe ».
      3. C'EST PRÊT — les pièces tombent dans la caisse, et ce qu'il peut
         s'offrir s'allume quand la caisse l'atteint : des exemples en
         démonstration, les vraies offres du réseau chez un vrai commerçant.
@@ -465,6 +472,7 @@ export function Depart({
   onFini,
   reel = false,
   envies = [],
+  equipe = 1,
 }: {
   commerce: CommerceComptoir;
   dossier: string;
@@ -475,6 +483,8 @@ export function Depart({
   reel?: boolean;
   /** Ce qu'il pourra s'offrir, du moins cher au plus cher (étape 3). */
   envies?: Envie[];
+  /** Son équipe aujourd'hui, lui compris (« Mon équipe » l'agrandit). */
+  equipe?: number;
 }) {
   const m = MODELES[commerce.famille];
   const visage = `${dossier}visage.webp`;
@@ -484,7 +494,6 @@ export function Depart({
   const [titre, setTitre] = useState(initial?.titre ?? (ecritSeul ? "" : m.titre));
   const [prixTexte, setPrixTexte] = useState(initial ? String(initial.prix) : ecritSeul ? "" : String(m.prix));
   const [parMois, setParMois] = useState(initial?.parMois ?? 4);
-  const [equipe, setEquipe] = useState(initial?.equipe ?? 1);
   const prix = Math.max(0, Math.min(2000, Number(prixTexte.replace(",", ".")) || 0));
   // Chez un vrai commerçant, jamais la photo d'exemple du métier : la sienne, ou son fantôme.
   /* « JE N'AI PAS PU METTRE DE PHOTO À L'ÉTAPE 1 » : il peut maintenant prendre
@@ -507,7 +516,7 @@ export function Depart({
     }
   };
   const brouillon: Mien = { duJour, titre: duJour ? "Mon produit du jour" : titre.trim(), prix, photo, parMois, equipe };
-  const decouvert = decouvertDe(brouillon);
+  const decouvert = decouvertDeBase(equipe);
   const pretUn = !ecritSeul && prix >= 5 && (duJour || titre.trim().length > 0);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState("");
@@ -679,15 +688,10 @@ export function Depart({
             ))}
           </div>
           <MonMois image={image} parMois={parMois} />
-          <span className="ec-champ-t ec-equipe-t">Vous êtes combien à en profiter ? Toi et tes associés</span>
-          <div className="ec-puces cinq" role="group" aria-label="Vous êtes combien">
-            {EQUIPE.map((n) => (
-              <button key={n} type="button" className={equipe === n ? "on" : ""} aria-pressed={equipe === n} onClick={() => setEquipe(n)}>
-                {n}
-              </button>
-            ))}
-          </div>
           <CaisseDuMois decouvert={decouvert} calcul={calcul} rendre={rendre} />
+          <p className="ec-astuce ec-equipe-t">
+            👥 Ton équipe (associés, salariés) ? Tu l’inviteras ensuite depuis « Mon équipe » : chacun son accès, et {PAR_PERSONNE} € de plus par personne.
+          </p>
           <button type="button" className="cz-go grand" onClick={() => setEtape(3)}>
             Suivant <s aria-hidden="true">→</s>
           </button>
@@ -708,9 +712,7 @@ export function Depart({
               <b>
                 {nomAffiche(brouillon)} · {prix} €
               </b>
-              <em>
-                Jusqu’à {parMois} par mois · {equipe} {equipe > 1 ? "personnes en profitent" : "personne en profite"}
-              </em>
+              <em>Jusqu’à {parMois} par mois</em>
             </div>
           </article>
           <CaissePleine decouvert={decouvert} pieces={Math.min(parMois, 6)} envies={envies} exemple={!reel} />
@@ -743,7 +745,7 @@ export function Depart({
    DEUX ONGLETS : « Pour moi » (la pile d'avant) et « Pour mes clients » — le
    cadeau du voisin, avec des EXEMPLES de cadeaux, ses lots, le bon donné au
    client, et la visite du client simulée d'un bouton marqué « démo ». */
-type Panneau = "solde" | "comment" | "bons" | "offre" | "moncadeau";
+type Panneau = "solde" | "comment" | "bons" | "offre" | "moncadeau" | "equipe";
 
 /** Les cadeaux des commerces de la démonstration : un petit produit par métier — des exemples. */
 function cadeauxDeSaVille(moi: CommerceComptoir): CarteCadeau[] {
@@ -820,7 +822,7 @@ function Echanger({
   const toutes = useMemo(() => [...offresDeSaVille(commerce), ...AILLEURS], [commerce]);
   const deLaVille = toutes.filter((o) => o.ville === ville);
   const pile = deLaVille.filter((o) => !vus.includes(o.id));
-  const decouvert = decouvertDe(mien);
+  const decouvert = decouvertDe(etat);
   const reste = aDepenser(etat);
   const du = aRendre(etat);
 
@@ -1008,6 +1010,9 @@ function Echanger({
         <button type="button" onClick={() => setPanneau("offre")}>
           Mon offre
         </button>
+        <button type="button" onClick={() => setPanneau("equipe")}>
+          Mon équipe{etat.membres?.length ? ` · ${etat.membres.length}` : ""}
+        </button>
       </nav>
 
       {nouvelle && (
@@ -1018,14 +1023,31 @@ function Echanger({
 
       {panneau === "solde" && (
         <Feuille titre="Mon solde" onFermer={() => setPanneau(null)}>
-          <DetailDuSolde decouvert={decouvert} equipe={mien.equipe ?? 1} gagne={etat.gagne} pris={pris(etat)} reste={reste} du={du} mien={mien} famille={famille} />
+          <DetailDuSolde decouvert={decouvert} equipe={equipeDe(etat)} gagne={etat.gagne} pris={pris(etat)} reste={reste} du={du} mien={mien} famille={famille} />
         </Feuille>
       )}
 
       {panneau === "comment" && (
         <Feuille titre="Comment ça marche" onFermer={() => setPanneau(null)}>
-          <ReglesDuReseau decouvert={decouvert} equipe={mien.equipe ?? 1} />
+          <ReglesDuReseau decouvert={decouvert} equipe={equipeDe(etat)} />
         </Feuille>
+      )}
+
+      {panneau === "equipe" && (
+        <PanneauEquipe
+          exemple
+          origine=""
+          commerce={commerce.nom}
+          membres={etat.membres ?? []}
+          onInviter={async (prenom) => {
+            changer((e) => ({ ...e, membres: [...(e.membres ?? []), { id: `exemple-${Date.now()}`, prenom, actif: true, prisCeMois: 0, lien: "" }] }));
+            setGain({ n: PAR_PERSONNE, cle: Date.now() });
+            jouer("piece");
+            return { prenom, lien: "" };
+          }}
+          onRetirer={(m) => changer((e) => ({ ...e, membres: (e.membres ?? []).filter((x) => x.id !== m.id) }))}
+          onFermer={() => setPanneau(null)}
+        />
       )}
 
       {panneau === "moncadeau" && (
@@ -1116,7 +1138,7 @@ function Echanger({
                   </p>
                 )}
                 <button type="button" className="cz-go grand" onClick={() => prendre(choisie)}>
-                  Je prends · {choisie.prix} €
+                  Je prends · {choisie.prix}&nbsp;€
                 </button>
               </>
             ) : (
@@ -1187,7 +1209,7 @@ export function DetailDuSolde({
       <div className="ec-lignes">
         <p>
           <span>
-            Ton avance : {PAR_PERSONNE} € × {equipe} {equipe > 1 ? "personnes" : "personne"}
+            Ton avance : {PAR_PERSONNE} € × {equipe} {equipe > 1 ? "personnes (toi et ton équipe)" : "personne"}
           </span>
           <b>{decouvert} €</b>
         </p>
@@ -1230,10 +1252,10 @@ export function ReglesDuReseau({ decouvert, equipe, seuil }: { decouvert: number
       </li>
       <li>Tu prends chez un autre : il gagne ce prix quand il valide ton code.</li>
       <li>
-        <b>
-          Chaque mois, {PAR_PERSONNE} € par personne de ton équipe
-        </b>{" "}
-        ({equipe > 1 ? `vous êtes ${equipe}` : "toi seul"}) : tu peux prendre jusqu’à {decouvert} € avant d’avoir donné. Ça ne s’accumule pas.
+        <b>Chaque mois, {PAR_PERSONNE} € par personne de ton équipe</b> ({equipe > 1 ? `vous êtes ${equipe}` : "toi seul pour l’instant"}) : ta boutique peut prendre jusqu’à {decouvert} € avant d’avoir donné. Ça ne s’accumule pas.
+      </li>
+      <li>
+        <b>Chacun son accès</b> : tu invites ton équipe depuis « Mon équipe », par ton WhatsApp. Chaque personne a ses {PAR_PERSONNE} € à elle ; tu vois tout ce qu’elle prend, et c’est ta boutique qui le rend.
       </li>
       <li>
         Ce que tu prends, tu le rends <b>en ton produit, jamais en euros</b>. Arrivé à {decouvert} €, tu sers avant de reprendre.
@@ -1257,7 +1279,7 @@ export function Pile({
   onPrendre,
   indice = false,
   tampon = "JE PRENDS",
-  bouton = (o) => `Je prends · ${o.prix} €`,
+  bouton = (o) => `Je prends · ${o.prix}\u00a0€`,
   astuce = "Glisse la carte : à droite je prends, à gauche je passe.",
 }: {
   offres: Offre[];

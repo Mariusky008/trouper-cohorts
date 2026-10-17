@@ -3,7 +3,9 @@
 // Voir `page.tsx`. Le comptoir range sur le téléphone du commerçant son
 // adresse et son jeton (`CLE_ACCES_COMPTOIR`, `lib/echanges/echanges.ts`) : s'ils
 // sont là, ce téléphone est le sien, et il peut valider le bon d'un geste. Le
-// serveur vérifie de toute façon que le bon a bien été pris CHEZ LUI.
+// serveur vérifie de toute façon que le bon a bien été pris CHEZ LUI. Le
+// téléphone d'un membre de son équipe (`/e/<jeton>`) y range son jeton à lui :
+// il valide de la même façon, au nom de la boutique.
 //
 // UN BON CADEAU (« le cadeau du voisin ») a deux visages :
 //   · chez le CLIENT qui l'a reçu — la carte cadeau : quoi, chez qui, offert
@@ -19,7 +21,7 @@ import { CLE_ACCES_COMPTOIR, chezNom, type BonCadeauPublic } from "@/lib/echange
 import { debloquerSon, jouer, vibrer } from "@/app/autour-de-moi/assistante/echanges-magie";
 import { useQr } from "@/app/autour-de-moi/assistante/echanges-communs";
 
-type Acces = { slug: string; token: string; nom: string };
+type Acces = { slug: string; token?: string; membre?: string; nom: string };
 
 const lireAcces = () => {
   try {
@@ -41,7 +43,7 @@ async function envoyer(acces: Acces, action: string, extra: Record<string, unkno
     const r = await fetch("/api/site-internet/pro/echanges", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug: acces.slug, token: acces.token, action, ...extra }),
+      body: JSON.stringify({ ...(acces.membre ? { membre: acces.membre } : { slug: acces.slug, token: acces.token }), action, ...extra }),
     });
     return (await r.json().catch(() => ({}))) as { ok?: boolean; message?: string; error?: string; client?: boolean; bon?: string };
   } catch {
@@ -55,7 +57,9 @@ export function ValiderBon({ code, cadeau = null }: { code: string; cadeau?: Bon
   const acces = useMemo<Acces | null>(() => {
     try {
       const a = JSON.parse(brut ?? "null") as Partial<Acces> | null;
-      return a?.slug && a?.token ? { slug: a.slug, token: a.token, nom: a.nom || "ton commerce" } : null;
+      if (!a?.slug) return null;
+      if (a.membre) return { slug: a.slug, membre: a.membre, nom: a.nom || "ton commerce" };
+      return a.token ? { slug: a.slug, token: a.token, nom: a.nom || "ton commerce" } : null;
     } catch {
       return null;
     }
@@ -221,11 +225,19 @@ export function ValiderBon({ code, cadeau = null }: { code: string; cadeau?: Bon
                   <b>Tu es le commerçant qui a pris ce bon ?</b> Présente ce code chez celui qui le fournit : il le scanne avec son téléphone.
                 </p>
                 <p>
-                  <b>Tu es le commerçant qui le fournit ?</b> Ouvre ton comptoir ClikMe › Échanger › À valider, et tape ce code.
+                  <b>Tu es le commerçant qui le fournit ?</b> {acces?.membre ? "Ouvre ton accès ClikMe › Valider un bon, et tape ce code." : "Ouvre ton comptoir ClikMe › Échanger › À valider, et tape ce code."}
                 </p>
                 {acces && (
                   <p>
-                    <a href={`/autour-de-moi/assistante?site=${encodeURIComponent(acces.slug)}&k=${encodeURIComponent(acces.token)}`}>Ouvrir mon comptoir</a>
+                    <a
+                      href={
+                        acces.membre
+                          ? `/e/${encodeURIComponent(acces.membre)}`
+                          : `/autour-de-moi/assistante?site=${encodeURIComponent(acces.slug)}&k=${encodeURIComponent(acces.token ?? "")}`
+                      }
+                    >
+                      Ouvrir mon comptoir
+                    </a>
                   </p>
                 )}
               </div>
