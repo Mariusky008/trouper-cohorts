@@ -61,6 +61,7 @@ import {
 } from "./echanges-cadeaux";
 import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, jouer, vibrer } from "./echanges-magie";
 import { PanneauEquipe, StylesEquipe } from "./echanges-equipe";
+import { PanneauFactures, type ReponseFactures } from "./echanges-factures";
 
 const ROUTE = "/api/site-internet/pro/echanges";
 
@@ -282,7 +283,7 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
   );
 }
 
-type Panneau = "solde" | "comment" | "bons" | "valider" | "offre" | "moncadeau" | "equipe";
+type Panneau = "solde" | "comment" | "bons" | "valider" | "offre" | "moncadeau" | "equipe" | "factures";
 
 function PageReelle({
   commerce,
@@ -379,6 +380,12 @@ function PageReelle({
   );
   const pileCadeaux = cadeaux.filter((c) => !vusCadeaux.includes(c.id) && (c.restant ?? 1) > 0);
   const lotDonne = donne ? etat.mesCadeaux.find((l) => l.id === donne.lotId) : undefined;
+
+  /* SES FACTURES : le panneau les lit lui-même (stable : il ne relit pas à chaque rendu). */
+  const chargerFactures = useCallback(() => appeler(reel, "factures") as Promise<ReponseFactures>, [reel]);
+  const enregistrerFacturation = useCallback((infos: Record<string, unknown>) => appeler(reel, "facturation", infos) as Promise<ReponseFactures>, [reel]);
+  /* Ses bons validés qui attendent leur facture : il n'a pas encore donné ses infos. */
+  const facturesAFaire = etat.factures?.pays === "fr" && !etat.factures.infos ? etat.recus.filter((b) => b.statut === "utilise").length : 0;
 
   const agir = async (action: string, extra: Record<string, unknown> = {}) => {
     setEnvoi(true);
@@ -558,6 +565,12 @@ function PageReelle({
         <button type="button" onClick={() => setPanneau("equipe")}>
           Mon équipe{etat.equipe.length > 0 ? ` · ${etat.equipe.length}` : ""}
         </button>
+        {etat.factures && (
+          <button type="button" className={facturesAFaire > 0 ? "chaud" : ""} onClick={() => setPanneau("factures")}>
+            {etat.factures.pays === "fr" ? "Mes factures" : "Mes échanges"}
+            {facturesAFaire > 0 ? ` · ${facturesAFaire}` : ""}
+          </button>
+        )}
         <button type="button" onClick={() => setPanneau("comment")}>
           Comment ça marche
         </button>
@@ -731,6 +744,8 @@ function PageReelle({
           onFermer={() => setPanneau(null)}
         />
       )}
+
+      {panneau === "factures" && <PanneauFactures charger={chargerFactures} enregistrer={enregistrerFacturation} onFermer={() => setPanneau(null)} />}
 
       {panneau === "moncadeau" && (
         <FeuilleMonCadeau

@@ -21,6 +21,14 @@
 //                                   le fournit seulement s'il ne doit rien et que ce n'est pas un cadeau)
 //   inviter { prenom }            → un membre de plus dans son équipe : son lien personnel (`/e/<jeton>`)
 //   retirer { membre }            → son lien ne marche plus ; ce qu'il a pris reste dû par le commerce
+//   factures                      → « Mes factures » : émises, reçues, en attente, et le relevé de ses échanges
+//   facturation { nomLegal, forme, capital, immatriculation, adresse, siret, franchise, taux, nature, accepte }
+//                                 → ses infos de facturation, une fois ; ses factures en attente sont faites
+//
+// LA FACTURE D'ÉCHANGE (`20261021120000_echanges_factures.sql`) : chaque bon validé
+// est une vente du fournisseur au preneur, payée par échange. ClikMe la prépare au
+// nom du fournisseur dès qu'il a donné ses infos, en France seulement (ailleurs, le
+// relevé). Voir `lib/echanges/factures-serveur.ts`.
 //
 // L'ÉQUIPE (`20261020120000_echanges_equipe.sql`) : chaque membre a son accès et
 // ses 50 € par mois ; il peut regarder, prendre pour lui, annuler SES bons,
@@ -41,6 +49,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { lireLeSite } from "@/lib/site-internet/fiche-du-site";
 import { villeSlug } from "@/lib/direct/ville";
 import { aPied, distanceM, type Point } from "@/lib/direct/voisins";
+import { paysDuCommerce } from "@/lib/site-internet/pays";
+import { enregistrerInfos, facturer, lireFactures } from "@/lib/echanges/factures-serveur";
 import {
   ALPHABET_CODE,
   CADEAU_PAR_MOIS,
@@ -180,7 +190,10 @@ const pointDe = (r: Record<string, unknown>): Point | undefined => {
 
 const ajouter = (m: Map<string, number>, k: string, n: number) => m.set(k, (m.get(k) ?? 0) + n);
 
-async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: { id: string; city: string }, membre: Membre | null = null): Promise<EtatEchanges | null> {
+/** Le commerce qui appelle : son id, sa ville, son pays (une facture ne se fait qu'en France). */
+type Moi = { id: string; city: string; pays: string };
+
+async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi, membre: Membre | null = null): Promise<EtatEchanges | null> {
   const seuil = seuilVille();
   const maVilleVide = { slug: villeSlug(moi.city), nom: moi.city, offres: 0, ouverte: false, seuil, deja: [] };
   const vide: EtatEchanges = {
@@ -198,6 +211,7 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: { i
     recus: [],
     cadeauxAServir: [],
     reseau: { clientsRecus: 0, personnesRecues: 0, clientsEnvoyes: 0, personnesEnvoyees: 0 },
+    factures: null,
   };
 
   /* LES BONS PÉRIMÉS D'ABORD : un bon de plus de 30 jours ne bloque plus rien.
@@ -226,6 +240,12 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: { i
   if (em) return absente(em) ? vide : null;
   const membres = (lm ?? []) as LigneMembre[];
   const prenomDe = new Map(membres.map((m) => [m.id, m.prenom]));
+  /* SES FACTURES (le responsable seulement) : a-t-il donné ses infos ? Sans la migration, rien. */
+  let factures: EtatEchanges["factures"] = null;
+  if (!membre) {
+    const { data: lf, error: ef } = await supabase.from("human_echanges_facturation").select("site_id").eq("site_id", moi.id).maybeSingle();
+    if (!ef) factures = { pays: moi.pays, infos: Boolean(lf) };
+  }
 
   const offresLues = (lo ?? []) as LigneOffre[];
   const bons = (lb ?? []) as LigneBon[];
@@ -452,6 +472,7 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: { i
       clientsEnvoyes: envoyes.length,
       personnesEnvoyees: envoyes.reduce((s, b) => s + (b.venus ?? 1), 0),
     },
+    factures,
   };
 }
 
@@ -482,8 +503,10 @@ export async function POST(request: Request) {
   if (!jetonMembre && (!slug || !token)) return NextResponse.json({ error: "slug/token requis" }, { status: 400 });
 
   const supabase = createAdminClient();
-  let moi: { id: string; city: string };
+  let moi: Moi;
   let membre: Membre | null = null;
+  /** Sa fiche (nom, adresse), pour proposer ses infos de facturation. Le responsable seulement. */
+  let siteLu: Record<string, unknown> | null = null;
   if (jetonMembre) {
     /* UN MEMBRE DE SON ÉQUIPE, PAR SON LIEN PERSONNEL. La première fois qu'il
        l'ouvre, il compte dans l'équipe (pas quand WhatsApp en fait l'aperçu :
@@ -492,11 +515,11 @@ export async function POST(request: Request) {
     if (em) return NextResponse.json({ error: absente(em) ? "L'échange n'est pas encore ouvert." : "Lecture impossible." }, { status: absente(em) ? 403 : 500 });
     const m = lm as { id: string; site_id: string; prenom: string; active_le: string | null; retire_le: string | null } | null;
     if (!m || m.retire_le) return NextResponse.json({ error: "Ce lien n'est plus valable. Demande-en un nouveau à ton responsable." }, { status: 403 });
-    const { data: lsite } = await supabase.from("human_vitrine_sites").select("id, slug, city").eq("id", m.site_id).maybeSingle();
+    const { data: lsite } = await supabase.from("human_vitrine_sites").select("id, slug, city, address, diagnostic").eq("id", m.site_id).maybeSingle();
     const site = (lsite as Record<string, unknown> | null) ?? null;
     if (!site) return NextResponse.json({ error: "Ce lien n'est plus valable." }, { status: 403 });
     if (!m.active_le) await supabase.from("human_echanges_membres").update({ active_le: new Date().toISOString() }).eq("id", m.id).is("active_le", null);
-    moi = { id: str(site.id), city: str(site.city) };
+    moi = { id: str(site.id), city: str(site.city), pays: paysDuCommerce(site) };
     slug = str(site.slug);
     membre = { id: m.id, prenom: m.prenom };
     // CE QU'UN MEMBRE PEUT FAIRE ; le reste est au responsable.
@@ -506,7 +529,7 @@ export async function POST(request: Request) {
   } else {
     const { data: row } = await supabase
       .from("human_vitrine_sites")
-      .select("id, slug, city, pro_token")
+      .select("id, slug, city, pro_token, address, diagnostic, business_name")
       .eq("slug", slug)
       .eq("channel", "letter")
       .maybeSingle();
@@ -514,7 +537,8 @@ export async function POST(request: Request) {
     if (!site || !site.pro_token || str(site.pro_token) !== token) {
       return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
     }
-    moi = { id: str(site.id), city: str(site.city) };
+    moi = { id: str(site.id), city: str(site.city), pays: paysDuCommerce(site) };
+    siteLu = site;
   }
   const repondre = async (extra: Record<string, unknown> = {}) => {
     const etat = await lireEtat(supabase, moi, membre);
@@ -765,10 +789,24 @@ export async function POST(request: Request) {
     if (fait) {
       const { data: o } = await supabase.from("human_echanges_offres").select("commerce").eq("site_id", fait.preneur_id).maybeSingle();
       const qui = str((o as { commerce?: string } | null)?.commerce) || "Ce commerçant";
+      // UN BON VALIDÉ, UNE FACTURE — tout de suite s'il a donné ses infos ; sinon elle l'attend.
+      const f = await facturer(supabase, moi.id);
+      const facture = f.faites > 0 ? "faite" : moi.pays === "fr" && !f.infos ? "infos" : "";
+      const rappel = facture === "infos" && !membre ? " 📄 Ta facture d’échange t’attend dans « Mes factures »." : "";
       if (fait.pour === "client") {
-        return repondre({ ok: true, client: true, bon: fait.id, message: `🎁 Validé ✓ Un client envoyé par ${qui} : ${fait.titre}. ${membre ? "Ta boutique a gagné" : "Tu as gagné"} ${fait.prix} €.` });
+        return repondre({
+          ok: true,
+          client: true,
+          bon: fait.id,
+          facture,
+          message: `🎁 Validé ✓ Un client envoyé par ${qui} : ${fait.titre}. ${membre ? "Ta boutique a gagné" : "Tu as gagné"} ${fait.prix} €.${rappel}`,
+        });
       }
-      return repondre({ ok: true, message: membre ? `Validé ✓ ${qui} a bien reçu le produit de ta boutique : elle a gagné ${fait.prix} €.` : `Validé ✓ ${qui} a bien reçu ton produit : tu as gagné ${fait.prix} €.` });
+      return repondre({
+        ok: true,
+        facture,
+        message: membre ? `Validé ✓ ${qui} a bien reçu le produit de ta boutique : elle a gagné ${fait.prix} €.` : `Validé ✓ ${qui} a bien reçu ton produit : tu as gagné ${fait.prix} €.${rappel}`,
+      });
     }
     // Pourquoi pas : inconnu chez lui, déjà validé, annulé ou expiré.
     const { data: lu } = await supabase.from("human_echanges_bons").select("statut").eq("code", code).eq("fournisseur_id", moi.id).maybeSingle();
@@ -857,6 +895,29 @@ export async function POST(request: Request) {
     if (error) return NextResponse.json({ error: "Modification impossible." }, { status: 500 });
     const qui = str((data as Array<{ prenom: string }> | null)?.[0]?.prenom);
     return repondre({ ok: Boolean(qui), message: qui ? `${qui} ne fait plus partie de ton équipe : son lien ne marche plus.` : "Membre inconnu." });
+  }
+
+  /* ── SES FACTURES D'ÉCHANGE ────────────────────────────────────────────── */
+  if (action === "factures" || action === "facturation") {
+    let message = "";
+    if (action === "facturation") {
+      if (moi.pays !== "fr") return NextResponse.json({ error: "Les factures d’échange arrivent bientôt dans ton pays." }, { status: 400 });
+      const r = await enregistrerInfos(supabase, moi.id, p ?? {});
+      if ("erreur" in r) return NextResponse.json({ error: r.erreur }, { status: 400 });
+      const f = await facturer(supabase, moi.id);
+      message = f.faites > 0 ? `C’est noté ✓ ${f.faites} facture${f.faites > 1 ? "s" : ""} d’échange ${f.faites > 1 ? "sont prêtes" : "est prête"}.` : "C’est noté ✓ Tes prochaines factures d’échange seront faites toutes seules.";
+    } else await facturer(supabase, moi.id);
+    const { data: lo } = await supabase.from("human_echanges_offres").select("metier").eq("site_id", moi.id).maybeSingle();
+    const factures = await lireFactures(supabase, {
+      id: moi.id,
+      business_name: str(siteLu?.business_name),
+      address: str(siteLu?.address),
+      city: moi.city,
+      diagnostic: siteLu?.diagnostic,
+      metier: str((lo as { metier?: string } | null)?.metier),
+    });
+    if (!factures) return NextResponse.json({ error: "Lecture impossible pour l'instant." }, { status: 500 });
+    return NextResponse.json({ ok: true, message, factures });
   }
 
   return NextResponse.json({ error: "Action inconnue." }, { status: 400 });

@@ -73,6 +73,8 @@ const DEFAUTS = {
   human_echanges_cadeaux: () => ({ id: randomUUID(), photo: null, occasion: "", cree_le: maintenant() }),
   human_echanges_bons: () => nouveauBon({}),
   human_echanges_membres: () => ({ id: randomUUID(), cree_le: maintenant(), active_le: null, retire_le: null }),
+  // LA FACTURE D'ÉCHANGE — `…_echanges_factures.sql`.
+  human_echanges_facturation: () => ({ capital: null, immatriculation: null, tva_intra: null, franchise: false, taux: null, nature: "biens", maj_le: maintenant() }),
 };
 const CLES = {
   human_conversations: ["id"],
@@ -87,6 +89,7 @@ const CLES = {
   human_echanges_bons: ["id"],
   human_echanges_cadeaux: ["id"],
   human_echanges_membres: ["id"],
+  human_echanges_facturation: ["site_id"],
 };
 
 /** Un bon d'échange neuf, comme la table le remplit (30 jours de validité). */
@@ -310,6 +313,42 @@ function echanges(nom, a) {
     for (const code of a.p_codes.slice(0, q))
       bons.push(nouveauBon({ code, preneur_id: a.p_donneur, fournisseur_id: a.p_fournisseur, titre: c.titre, prix: c.prix, photo: c.photo, pour: "client", cadeau_id: c.id }));
     return { ok: true, cadeau: c };
+  }
+  // LA FACTURE D'ÉCHANGE (`echanges_facturer`) : rien sans ses infos ; un bon validé chez lui, à son
+  // prix, sans facture ; la série de l'année, sans trou, dans l'ordre des remises.
+  if (nom === "echanges_facturer") {
+    if (!lignes("human_echanges_facturation").some((f) => f.site_id === a.p_fournisseur)) return 0;
+    const annee = Number(new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric" }).format(new Date()));
+    const factures = lignes("human_echanges_factures");
+    const remise = (l) => bons.find((b) => b.id === l.bon)?.utilise_le ?? "";
+    const ls = [...(a.p_lignes ?? [])].sort((x, y) => remise(x).localeCompare(remise(y)) || String(x.bon).localeCompare(String(y.bon)));
+    let n = 0;
+    for (const l of ls) {
+      const b = bons.find((x) => x.id === l.bon);
+      if (!b || b.fournisseur_id !== a.p_fournisseur || b.statut !== "utilise" || Number(l.ttc) !== b.prix) continue;
+      if (factures.some((f) => f.bon_id === b.id)) continue;
+      if (Math.round((Number(l.ht) + Number(l.tva)) * 100) !== b.prix * 100) continue;
+      const rang = 1 + factures.filter((f) => f.fournisseur_id === a.p_fournisseur && f.annee === annee).reduce((m, f) => Math.max(m, f.rang), 0);
+      factures.push({
+        id: randomUUID(),
+        bon_id: b.id,
+        fournisseur_id: a.p_fournisseur,
+        preneur_id: b.preneur_id,
+        annee,
+        rang,
+        numero: `ECH-${annee}-${String(rang).padStart(4, "0")}`,
+        jeton: randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, ""),
+        emise_le: maintenant(),
+        livree_le: b.utilise_le ?? maintenant(),
+        ttc: b.prix,
+        ht: Number(l.ht),
+        tva: Number(l.tva),
+        taux: l.taux ?? null,
+        contenu: l.contenu ?? {},
+      });
+      n++;
+    }
+    return n;
   }
   return undefined;
 }

@@ -6,7 +6,9 @@
 // (ni pause ni refus), reprendre les bons pas donnés, l'expiration, Vevey fermée. Puis l'équipe
 // (`20261020120000_echanges_equipe.sql`) : inviter, le lien qui compte à la première ouverture,
 // 50 € par personne, ce qu'un membre peut faire ou pas, valider pour la boutique, 4 au plus,
-// retirer quelqu'un.
+// retirer quelqu'un. Enfin la facture d'échange (`20261021120000_echanges_factures.sql`) : elle attend
+// les infos du fournisseur, se fait d'un coup quand il les donne, puis toute seule à chaque validation ;
+// TVA ou franchise ; la page de la facture ; la Suisse n'a que le relevé.
 //
 //   node scripts/faux-supabase.mjs 54321
 //   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=faux NEXT_PUBLIC_SUPABASE_ANON_KEY=faux \
@@ -207,6 +209,75 @@ r = await appel(FOURNIL, "inviter", { prenom: "Max" });
 ok(r.ok, "une place s'est libérée : Max peut venir");
 m = await appelMembre("x".repeat(24), "etat");
 ok(m.statut === 403, "un jeton inventé : refusé");
+
+/* ── LA FACTURE D'ÉCHANGE ───────────────────────────────────────────────── */
+console.log("\n— les factures —");
+// React glisse « <!-- --> » entre deux bouts de texte : on les retire pour lire la page comme on la voit.
+const lire = async (lien) => (await (await fetch(`http://localhost:3821${lien}`)).text()).replace(/<!-- -->/g, "");
+let f = await appel(BERGINE, "factures");
+ok(f.ok && f.factures.pays === "fr" && f.factures.infos === null && f.factures.aPreparer === 1 && f.factures.emises.length === 0, `Bergine, sans ses infos : ${f.factures?.aPreparer} facture à préparer (le dessert de Lou)`);
+ok(f.factures.suggestion.nomLegal === "Chez Bergine" && f.factures.suggestion.taux === 10 && f.factures.suggestion.nature === "services", `on lui propose : « ${f.factures.suggestion.nomLegal} », TVA ${f.factures.suggestion.taux} %, services`);
+ok((await appel(BERGINE, "etat")).etat.factures?.infos === false, "l'état du comptoir le sait (pastille « Mes factures »)");
+const bonDuDiner = (await appel(BERGINE, "etat")).etat.recus.find((b) => b.statut === "reserve" && b.autre === "Fleurs de l'Adour");
+r = await appel(BERGINE, "valider", { code: bonDuDiner.code });
+ok(r.ok && r.facture === "infos" && /Ta facture d’échange t’attend/.test(r.message), `elle valide le dîner de Fleurs : « ${r.message} »`);
+const infosBergine = { nomLegal: "SARL Bergine", forme: "SARL", capital: "5 000 €", immatriculation: "RCS Dax", adresse: "18 rue Neuve, 40100 Dax", siret: "123 456 782 00010", franchise: false, taux: 10, nature: "services", accepte: true };
+r = await appel(BERGINE, "facturation", { ...infosBergine, siret: "123 456 782 00011" });
+ok(r.statut === 400 && /SIRET/.test(r.error), `un SIRET faux : « ${r.error} »`);
+r = await appel(BERGINE, "facturation", { ...infosBergine, capital: "" });
+ok(r.statut === 400 && /capital/.test(r.error), `une SARL sans capital : « ${r.error} »`);
+r = await appel(BERGINE, "facturation", { ...infosBergine, accepte: false });
+ok(r.statut === 400 && /accord/.test(r.error), `sans son accord : « ${r.error} »`);
+r = await appel(BERGINE, "facturation", infosBergine);
+const an = new Date().getFullYear();
+const [fDiner, fDessert] = r.factures?.emises ?? [];
+ok(r.ok && /2 factures d’échange sont prêtes/.test(r.message) && r.factures.emises.length === 2 && r.factures.aPreparer === 0, `ses infos données : « ${r.message} »`);
+ok(fDessert?.numero === `ECH-${an}-0001` && fDiner?.numero === `ECH-${an}-0002`, `dans l'ordre des remises : le dessert ${fDessert?.numero}, le dîner ${fDiner?.numero}`);
+ok(fDessert.ht === 6.36 && fDessert.tva === 0.64 && fDiner.ht === 45.45 && fDiner.tva === 4.55, `TVA 10 % : dessert ${fDessert.ht} + ${fDessert.tva}, dîner ${fDiner.ht} + ${fDiner.tva}`);
+ok(r.factures.infos.tvaIntra === "FR11123456782" && r.factures.infos.siret === "12345678200010", `son n° de TVA calculé d'après le SIREN : ${r.factures.infos.tvaIntra}`);
+let pageFacture = await lire(fDessert.lien);
+ok(pageFacture.includes(`ECH-${an}-0001`) && pageFacture.includes("SARL Bergine") && pageFacture.includes("SIRET 123 456 782 00010") && pageFacture.includes("FR11123456782") && pageFacture.includes("au capital de 5 000 €"), "la page de la facture : numéro, vendeur, SIRET, TVA, capital");
+ok(pageFacture.includes("Cadeau offert par L&#x27;Atelier de Lou") && pageFacture.includes("Bon CLK-") && pageFacture.includes("Prestation de services") && pageFacture.includes("réglée par échange"), "… la ligne (le cadeau d'un client de Lou), la nature, le paiement par échange");
+ok((await lire(`/facture/${"0".repeat(64)}`)).includes("Facture introuvable"), "un lien inventé : facture introuvable");
+f = await appel(LOU, "factures");
+ok(f.factures.recues.length === 1 && f.factures.recues[0].numero === `ECH-${an}-0001` && f.factures.recues[0].autre === "Chez Bergine", `Lou la reçoit : ${f.factures.recues[0]?.numero} de ${f.factures.recues[0]?.autre}`);
+f = await appel(FLEURS, "factures");
+ok(f.factures.recues.length === 1 && f.factures.recues[0].ttc === 50, "Fleurs reçoit celle du dîner");
+
+// Lou valide la coupe de Bergine, puis donne ses infos : EI en franchise, pas de TVA.
+const coupeDeBergine = (await appel(LOU, "etat")).etat.recus.find((b) => b.statut === "reserve" && b.autre === "Chez Bergine");
+r = await appel(LOU, "valider", { code: coupeDeBergine.code });
+ok(r.ok && r.facture === "infos", "Lou valide la coupe de Bergine : sa facture l'attend");
+r = await appel(LOU, "facturation", { nomLegal: "Lou Martin", forme: "EI", capital: "", immatriculation: "", adresse: "4 rue des Carmes, 40100 Dax", siret: "98765432400019", franchise: true, taux: null, nature: "services", accepte: true });
+const fCoupe = r.factures?.emises[0];
+ok(r.ok && fCoupe?.numero === `ECH-${an}-0001` && fCoupe.ht === 45 && fCoupe.tva === 0 && fCoupe.taux === null, `Lou, en franchise : ${fCoupe?.numero}, 45 € sans TVA (sa propre série)`);
+pageFacture = await lire(fCoupe.lien);
+ok(pageFacture.includes("Lou Martin EI") && pageFacture.includes("TVA non applicable, art. 293 B du CGI") && pageFacture.includes("SARL Bergine") && !pageFacture.includes("FR14987654324") && pageFacture.includes("TVA intracommunautaire FR11123456782"), "la page : « Lou Martin EI », la mention de franchise, pas de n° de TVA pour elle ; l'acheteur avec son nom légal et le sien");
+
+// Le Fournil n'a pas ses infos : ce qu'il a acheté chez Fleurs attend la facture de Fleurs.
+const bouquetDuFournil = (await appel(FLEURS, "etat")).etat.recus.find((b) => b.statut === "reserve" && b.autre === "Le Fournil des Arènes");
+await appel(FLEURS, "valider", { code: bouquetDuFournil.code });
+// Désormais, chaque validation chez Bergine fait sa facture toute seule.
+r = await appel(FLEURS, "offrir", { fournisseur: ID.bergine, quantite: 1, occasion: "" });
+const lotFleurs = r.etat?.mesCadeaux?.[0];
+r = await appel(FLEURS, "donner", { cadeau: lotFleurs?.id });
+r = await appel(BERGINE, "valider", { code: r.code });
+ok(r.ok && r.facture === "faite" && !/t’attend/.test(r.message), `Bergine valide le cadeau d'un client de Fleurs : facture faite tout de suite`);
+f = await appel(BERGINE, "factures");
+ok(f.factures.emises[0].numero === `ECH-${an}-0003` && f.factures.emises.length === 3, `… ${f.factures.emises[0].numero}, sans trou`);
+ok(f.factures.releve.filter((l) => l.sens === "vendu").length === 3 && f.factures.releve.some((l) => l.sens === "achete" && l.titre.startsWith("Une coupe") && l.numero === `ECH-${an}-0001`), "le relevé : ses 3 ventes, et la coupe achetée chez Lou avec son numéro");
+
+f = await appel(FOURNIL, "factures");
+ok(f.factures.enAttente.some((a) => a.chez === "Fleurs de l'Adour" && a.titre.startsWith("Un bouquet")), "le Fournil voit le bouquet « en attente de facture » de Fleurs");
+
+// Un membre de l'équipe ne touche pas aux factures ; la Suisse a le relevé seulement.
+const jetonMax = jetonDe((await appel(FOURNIL, "etat")).etat.equipe.find((x) => x.prenom === "Max")?.lien);
+m = await appelMembre(jetonMax, "factures");
+ok(m.statut === 403, `un membre : pas de factures (${m.error})`);
+f = await appel(ALICE, "factures");
+ok(f.ok && f.factures.pays === "ch" && f.factures.aPreparer === 0 && f.factures.enAttente.length === 0, "Vevey (Suisse) : le relevé, sans facture à préparer");
+r = await appel(ALICE, "facturation", infosBergine);
+ok(r.statut === 400 && /bientôt/.test(r.error), `Alice ne peut pas encore donner d'infos : « ${r.error} »`);
 
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTout est bon.");
 process.exit(echecs ? 1 : 0);

@@ -45,6 +45,7 @@ import { COMMERCES_DEMO } from "@/lib/direct/missions-commercant";
 import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
 import { JOURS_VALIDITE, PAR_MOIS, PAR_PERSONNE, chezNom, decouvertDe as decouvertDeBase, type MembreEquipe, type MonLotDeCadeaux } from "@/lib/echanges/echanges";
 import { PanneauEquipe, StylesEquipe } from "./echanges-equipe";
+import { ExempleDeFacture } from "./echanges-factures";
 import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, debloquerSon, jouer, vibrer } from "./echanges-magie";
 import { Feuille, reduirePhoto, useQr } from "./echanges-communs";
 import {
@@ -745,7 +746,7 @@ export function Depart({
    DEUX ONGLETS : « Pour moi » (la pile d'avant) et « Pour mes clients » — le
    cadeau du voisin, avec des EXEMPLES de cadeaux, ses lots, le bon donné au
    client, et la visite du client simulée d'un bouton marqué « démo ». */
-type Panneau = "solde" | "comment" | "bons" | "offre" | "moncadeau" | "equipe";
+type Panneau = "solde" | "comment" | "bons" | "offre" | "moncadeau" | "equipe" | "factures";
 
 /** Les cadeaux des commerces de la démonstration : un petit produit par métier — des exemples. */
 function cadeauxDeSaVille(moi: CommerceComptoir): CarteCadeau[] {
@@ -1013,6 +1014,9 @@ function Echanger({
         <button type="button" onClick={() => setPanneau("equipe")}>
           Mon équipe{etat.membres?.length ? ` · ${etat.membres.length}` : ""}
         </button>
+        <button type="button" onClick={() => setPanneau("factures")}>
+          Mes factures
+        </button>
       </nav>
 
       {nouvelle && (
@@ -1032,6 +1036,8 @@ function Echanger({
           <ReglesDuReseau decouvert={decouvert} equipe={equipeDe(etat)} />
         </Feuille>
       )}
+
+      {panneau === "factures" && <ExempleDeFacture onFermer={() => setPanneau(null)} />}
 
       {panneau === "equipe" && (
         <PanneauEquipe
@@ -1262,6 +1268,9 @@ export function ReglesDuReseau({ decouvert, equipe, seuil }: { decouvert: number
       </li>
       <li>Tant que tu dois, ton offre passe en tête, reste visible, et tu ne peux pas refuser un bon.</li>
       <li>Un bon pas utilisé expire au bout de {JOURS_VALIDITE} jours : son montant revient à celui qui l’avait pris.</li>
+      <li>
+        <b>📄 Chaque bon validé chez toi a sa facture d’échange</b>, préparée à ton nom (tu donnes tes infos une fois). C’est à toi, ou à ton comptable, de la déclarer.
+      </li>
       <li>
         <b>🎁 Le cadeau du voisin</b> : offre à tes clients un petit cadeau chez un autre commerçant, payé avec ton solde. Il gagne son prix quand ton client vient.
       </li>

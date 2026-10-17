@@ -231,6 +231,8 @@ export type EtatEchanges = {
   cadeauxAServir: Array<{ de: string; titre: string; n: number }>;
   /** Ce que le réseau lui a amené : clients venus avec un cadeau d'un voisin, et ceux qu'il a envoyés. */
   reseau: { clientsRecus: number; personnesRecues: number; clientsEnvoyes: number; personnesEnvoyees: number };
+  /** Ses factures d'échange (le responsable) : son pays (« fr » seulement), et s'il a donné ses infos. Null sans la migration. */
+  factures: { pays: string; infos: boolean } | null;
 };
 
 /** Ce que la page d'un bon montre à un client qui a reçu un cadeau du voisin. */
