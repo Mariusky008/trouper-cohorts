@@ -1,9 +1,9 @@
 // 🔁 LE RÉSEAU DES COMMERÇANTS, PAR LA ROUTE — contre le faux Supabase, jamais la vraie base.
 //
 // Quatre commerces semés (trois à Dax, une à Vevey), puis tout ce que la route doit tenir : la
-// ville qui s'ouvre au seuil, 50 € d'avance par personne, le cadeau du voisin (offrir, plafond,
-// donner, la page du client, valider, « venu à combien »), les chiffres des deux côtés, la dette
-// (ni pause ni refus), reprendre les bons pas donnés, l'expiration, Vevey fermée. Puis l'équipe
+// ville qui s'ouvre au seuil, 50 € d'avance par personne, prendre et valider, la page du bon, les
+// actions retirées avec « Pour mes clients », la dette (ni pause ni refus), l'expiration, Vevey
+// fermée. Puis l'équipe
 // (`20261020120000_echanges_equipe.sql`) : inviter, le lien qui compte à la première ouverture,
 // 50 € par personne, ce qu'un membre peut faire ou pas, valider pour la boutique, 4 au plus,
 // retirer quelqu'un. Enfin la facture d'échange (`20261021120000_echanges_factures.sql`) : elle attend
@@ -55,14 +55,9 @@ ok((await fetch(R, { method: "POST", headers: { "content-type": "application/jso
 
 let r = await appel(BERGINE, "offre", { titre: "Un dîner pour deux", prix: 50, parMois: 2, accepte: true });
 ok(r.ok && r.etat.compte.equipe === 1 && r.etat.compte.decouvert === 50, `Bergine publie : seule, 50 € d'avance (${r.etat?.compte.decouvert})`);
-r = await appel(BERGINE, "cadeau", { titre: "Un dessert du jour", prix: 7, parMois: 10 });
-ok(r.ok && r.etat.mien.cadeau?.titre === "Un dessert du jour", "Bergine propose son cadeau : un dessert du jour, 7 €, 10 par mois");
-r = await appel(BERGINE, "cadeau", { titre: "Un repas", prix: 100, parMois: 10 });
-ok(r.statut === 400, `un « cadeau » à 100 € : refusé (${r.error})`);
 r = await appel(BERGINE, "offre", { titre: "Un dîner pour deux", prix: 50, parMois: 2, equipe: 5, accepte: true });
 ok(r.ok && r.etat.compte.equipe === 1, `« on est 5 » déclaré : ignoré, l'équipe se fait par invitation (${r.etat?.compte.equipe})`);
 await appel(FLEURS, "offre", { titre: "Un bouquet de saison", prix: 35, parMois: 4, accepte: true });
-await appel(FLEURS, "cadeau", { titre: "Une fleur de saison", prix: 5, parMois: 20 });
 
 r = await appel(LOU, "prendre", { fournisseur: ID.bergine });
 ok(r.ok === false && r.raison === "ville", `Dax à 2 sur 3 : « ${r.message} »`);
@@ -76,67 +71,51 @@ ok(r.ok && /^[A-Za-z0-9_-]{24}$/.test(jetonLea) && r.etat.equipe[0]?.actif === f
 await appelMembre(jetonLea, "etat");
 e = (await appel(LOU, "etat")).etat;
 ok(e.compte.equipe === 2 && e.compte.decouvert === 100 && e.compte.aDepenser === 100, `Léa ouvre son lien : équipe de 2, 100 € d'avance (${e.compte.decouvert})`);
-ok(e.cadeaux[0]?.commerce === "Chez Bergine" && /min à pied/.test(e.cadeaux[0]?.aPied ?? ""), `cadeaux : Bergine en tête, ${e.cadeaux[0]?.aPied}`);
-ok(e.cadeaux.map((c) => c.commerce).join(",") === "Chez Bergine,Fleurs de l'Adour", `ordre des cadeaux : ${e.cadeaux.map((c) => `${c.commerce} (${c.aPied})`).join(" ; ")}`);
+ok(/min à pied/.test(e.offres.find((o) => o.commerce === "Chez Bergine")?.aPied ?? ""), `Bergine : ${e.offres.find((o) => o.commerce === "Chez Bergine")?.aPied}`);
 ok(!("echeance" in e.compte), "plus d'échéance en euros dans le compte");
+ok(!("cadeaux" in e) && !("mesCadeaux" in e) && !("reseau" in e) && !("cadeau" in e.mien), "plus rien de « Pour mes clients » dans l'état");
 
-r = await appel(LOU, "offrir", { fournisseur: ID.bergine, quantite: 20, occasion: "pour toute coloration" });
-ok(r.ok === false && r.raison === "solde", `20 desserts (140 €) : « ${r.message} »`);
-r = await appel(LOU, "offrir", { fournisseur: ID.bergine, quantite: 10, occasion: "pour toute coloration" });
-e = r.etat;
-const lot = e?.mesCadeaux?.[0];
-ok(r.ok && lot?.aDonner === 10 && e.compte.aDepenser === 30, `10 desserts offerts (70 €) : reste ${e?.compte.aDepenser} €, ${lot?.aDonner} à donner`);
-r = await appel(LOU, "offrir", { fournisseur: ID.bergine, quantite: 1, occasion: "" });
-ok(r.ok === false && r.raison === "complet", `11e dessert du mois : « ${r.message} »`);
-
-r = await appel(LOU, "donner", { cadeau: lot.id });
-const code1 = r.code;
-ok(r.ok && /^CLK-/.test(code1) && r.etat.mesCadeaux[0].donnes === 1, `un bon remis à un client : ${code1}`);
-const html = await (await fetch(`http://localhost:3821/bon/${code1}`)).text();
-ok(html.includes("Un cadeau pour toi") && html.includes("Un dessert du jour") && html.includes("L&#x27;Atelier de Lou"), "la page du bon montre la carte cadeau au client");
-ok(html.includes("pour toute coloration"), "… avec l'occasion");
-
-r = await appel(BERGINE, "valider", { code: code1.toLowerCase().replace("-", " ") });
-ok(r.ok && r.client === true && /Un client envoyé par L'Atelier de Lou/.test(r.message), `Bergine valide (code tapé en minuscules) : « ${r.message} »`);
-const bon1 = r.bon;
-r = await appel(BERGINE, "venus", { bon: bon1, n: 3 });
-ok(r.ok, `venu à 3 : « ${r.message} »`);
-r = await appel(BERGINE, "valider", { code: code1 });
-ok(r.ok === false && /déjà été validé/.test(r.message), "deuxième validation : refusée");
-
-e = (await appel(LOU, "etat")).etat;
-ok(e.reseau.clientsEnvoyes === 1 && e.reseau.personnesEnvoyees === 3, `Lou : 1 client envoyé, 3 personnes`);
-ok(e.mesCadeaux[0].utilises === 1 && e.mesCadeaux[0].personnes === 3, "le lot : 1 venu (3 personnes)");
-e = (await appel(BERGINE, "etat")).etat;
-ok(e.reseau.clientsRecus === 1 && e.reseau.personnesRecues === 3 && e.compte.gagne === 7, `Bergine : 1 client reçu (3 personnes), +7 €`);
-ok(e.cadeauxAServir[0]?.n === 9 && e.cadeauxAServir[0]?.de === "L'Atelier de Lou", `Bergine voit 9 bons de Lou en circulation`);
-ok(e.recus.some((b) => b.pour === "client" && b.venus === 3), "dans « Déjà validés » : venu à 3");
+/* « POUR MES CLIENTS » EST RETIRÉ : ses actions n'existent plus. */
+for (const action of ["cadeau", "offrir", "donner", "reprendre", "venus"]) {
+  r = await appel(LOU, action, { titre: "Un dessert du jour", prix: 7, parMois: 10, fournisseur: ID.bergine, quantite: 1, cadeau: ID.bergine, bon: ID.bergine, n: 2 });
+  ok(r.statut === 400 && /inconnue/.test(r.error), `« ${action} » : action inconnue`);
+}
 
 r = await appel(LOU, "prendre", { fournisseur: ID.bergine });
-ok(r.ok === false && r.raison === "solde" && /20 €/.test(r.message), `le dîner (50 €) avec 30 € : « ${r.message} »`);
+const code1 = r.etat?.pris.find((b) => b.titre.startsWith("Un dîner"))?.code ?? "";
+ok(r.ok && /^CLK-/.test(code1) && r.etat.compte.aDepenser === 50, `Lou prend le dîner de Bergine : ${code1}, reste ${r.etat?.compte.aDepenser} €`);
+const html = (await (await fetch(`http://localhost:3821/bon/${code1}`)).text()).replace(/<!-- -->/g, "");
+ok(html.includes("Bon d’échange ClikMe") && html.includes(code1) && !html.includes("Un cadeau pour toi"), "la page du bon : le code, plus de carte cadeau");
+
+r = await appel(BERGINE, "valider", { code: code1.toLowerCase().replace("-", " ") });
+ok(r.ok && /L'Atelier de Lou a bien reçu ton produit : tu as gagné 50 €/.test(r.message), `Bergine valide (code tapé en minuscules) : « ${r.message} »`);
+r = await appel(BERGINE, "valider", { code: code1 });
+ok(r.ok === false && /déjà été validé/.test(r.message), "deuxième validation : refusée");
+e = (await appel(BERGINE, "etat")).etat;
+ok(e.compte.gagne === 50 && e.compte.aDepenser === 100, `Bergine : +50 €, elle peut dépenser ${e.compte.aDepenser} €`);
+
+r = await appel(LOU, "prendre", { fournisseur: ID.fleurs });
+const codeBouquetLou = r.etat?.pris.find((b) => b.titre.startsWith("Un bouquet"))?.code ?? "";
+ok(r.ok && r.etat.compte.aDepenser === 15, `Lou prend un bouquet (35 €) : reste ${r.etat?.compte.aDepenser} €`);
+r = await appel(LOU, "prendre", { fournisseur: ID.bergine });
+ok(r.ok === false && r.raison === "solde" && /35 €/.test(r.message), `un second dîner (50 €) avec 15 € : « ${r.message} »`);
 
 r = await appel(BERGINE, "prendre", { fournisseur: ID.lou });
-ok(r.ok && r.etat.compte.du === 38, `Bergine prend la coupe (45 €) : elle doit ${r.etat?.compte.du} €`);
+r = await appel(BERGINE, "prendre", { fournisseur: ID.fleurs });
+ok(r.ok && r.etat.compte.du === 30, `Bergine prend la coupe (45 €) et un bouquet (35 €) : elle doit ${r.etat?.compte.du} €`);
 r = await appel(BERGINE, "pause", { actif: false });
-ok(r.ok === false && /Tant que tu dois 38 €/.test(r.message) && r.etat.mien.actif === true, `pause en dette : « ${r.message} »`);
+ok(r.ok === false && /Tant que tu dois 30 €/.test(r.message) && r.etat.mien.actif === true, `pause en dette : « ${r.message} »`);
 r = await appel(FLEURS, "prendre", { fournisseur: ID.bergine });
 ok(r.ok, "Fleurs prend le dîner de Bergine");
-const bonFleurs = (await appel(BERGINE, "etat")).etat.recus.find((b) => b.statut === "reserve" && b.pour === "moi");
+const bonFleurs = (await appel(BERGINE, "etat")).etat.recus.find((b) => b.statut === "reserve" && b.autre === "Fleurs de l'Adour");
 r = await appel(BERGINE, "annuler", { bon: bonFleurs.id });
 ok(r.ok === false && /ne peux pas refuser/.test(r.message), `refuser un bon en dette : « ${r.message} »`);
 
-r = await appel(LOU, "donner", { cadeau: lot.id });
-const code2 = r.code;
-r = await appel(LOU, "reprendre", { cadeau: lot.id });
-ok(r.ok && /8 bons repris : 56 €/.test(r.message), `reprendre ceux pas donnés : « ${r.message} »`);
-const avantExp = r.etat.compte.aDepenser;
-await fetch(`${F}/human_echanges_bons?code=eq.${code2}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ expire_le: "2026-01-01T00:00:00.000Z" }) });
+await fetch(`${F}/human_echanges_bons?code=eq.${codeBouquetLou}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ expire_le: "2026-01-01T00:00:00.000Z" }) });
 e = (await appel(LOU, "etat")).etat;
-ok(e.mesCadeaux[0].expires === 1 && e.compte.aDepenser === avantExp + 7, `le bon donné expire : +7 € reviennent (${avantExp} → ${e.compte.aDepenser})`);
-r = await appel(BERGINE, "valider", { code: code2 });
+ok(e.compte.aDepenser === 50, `le bouquet de Lou expire : ses 35 € reviennent (${e.compte.aDepenser} €)`);
+r = await appel(FLEURS, "valider", { code: codeBouquetLou });
 ok(r.ok === false && /expiré/.test(r.message), `valider un bon expiré : « ${r.message} »`);
-const html2 = await (await fetch(`http://localhost:3821/bon/${code2}`)).text();
-ok(html2.includes("Ce cadeau a expiré"), "la page du client le dit");
 
 r = await appel(ALICE, "offre", { titre: "Deux livres au choix", prix: 40, parMois: 2, accepte: true });
 ok(r.etat.maVille.ouverte === false && r.etat.maVille.offres === 1, `Vevey : ${r.etat.maVille.offres} sur ${r.etat.maVille.seuil}, fermée`);
@@ -165,7 +144,7 @@ let m = await appelMembre(jetonInes, "etat");
 ok(m.etat?.moi.role === "membre" && m.etat.moi.prenom === "Inès" && m.etat.moi.reste === 50 && m.etat.equipe.length === 0, `Inès ouvre : membre, 50 € rien qu'à elle (${m.etat?.moi.reste}), elle ne voit pas l'équipe`);
 e = (await appel(FOURNIL, "etat")).etat;
 ok(e.equipe[0].actif === true && e.compte.equipe === 2 && e.compte.decouvert === 100, `le Fournil : équipe de 2, 100 € (${e.compte.decouvert})`);
-for (const [action, extra] of [["offre", { titre: "x y", prix: 5, parMois: 1, accepte: true }], ["cadeau", { titre: "Un croissant", prix: 2, parMois: 5 }], ["pause", { actif: false }], ["inviter", { prenom: "Max" }], ["retirer", {}], ["offrir", { fournisseur: ID.bergine, n: 5 }]]) {
+for (const [action, extra] of [["offre", { titre: "x y", prix: 5, parMois: 1, accepte: true }], ["pause", { actif: false }], ["inviter", { prenom: "Max" }], ["retirer", {}]]) {
   m = await appelMembre(jetonInes, action, extra);
   ok(m.statut === 403 && /responsable/.test(m.error), `Inès ne peut pas « ${action} » (${m.error})`);
 }
@@ -215,7 +194,7 @@ console.log("\n— les factures —");
 // React glisse « <!-- --> » entre deux bouts de texte : on les retire pour lire la page comme on la voit.
 const lire = async (lien) => (await (await fetch(`http://localhost:3821${lien}`)).text()).replace(/<!-- -->/g, "");
 let f = await appel(BERGINE, "factures");
-ok(f.ok && f.factures.pays === "fr" && f.factures.infos === null && f.factures.aPreparer === 1 && f.factures.emises.length === 0, `Bergine, sans ses infos : ${f.factures?.aPreparer} facture à préparer (le dessert de Lou)`);
+ok(f.ok && f.factures.pays === "fr" && f.factures.infos === null && f.factures.aPreparer === 1 && f.factures.emises.length === 0, `Bergine, sans ses infos : ${f.factures?.aPreparer} facture à préparer (le dîner de Lou)`);
 ok(f.factures.suggestion.nomLegal === "Chez Bergine" && f.factures.suggestion.taux === 10 && f.factures.suggestion.nature === "services", `on lui propose : « ${f.factures.suggestion.nomLegal} », TVA ${f.factures.suggestion.taux} %, services`);
 ok((await appel(BERGINE, "etat")).etat.factures?.infos === false, "l'état du comptoir le sait (pastille « Mes factures »)");
 const bonDuDiner = (await appel(BERGINE, "etat")).etat.recus.find((b) => b.statut === "reserve" && b.autre === "Fleurs de l'Adour");
@@ -230,14 +209,14 @@ r = await appel(BERGINE, "facturation", { ...infosBergine, accepte: false });
 ok(r.statut === 400 && /accord/.test(r.error), `sans son accord : « ${r.error} »`);
 r = await appel(BERGINE, "facturation", infosBergine);
 const an = new Date().getFullYear();
-const [fDiner, fDessert] = r.factures?.emises ?? [];
+const [fDiner, fDinerLou] = r.factures?.emises ?? [];
 ok(r.ok && /2 factures d’échange sont prêtes/.test(r.message) && r.factures.emises.length === 2 && r.factures.aPreparer === 0, `ses infos données : « ${r.message} »`);
-ok(fDessert?.numero === `ECH-${an}-0001` && fDiner?.numero === `ECH-${an}-0002`, `dans l'ordre des remises : le dessert ${fDessert?.numero}, le dîner ${fDiner?.numero}`);
-ok(fDessert.ht === 6.36 && fDessert.tva === 0.64 && fDiner.ht === 45.45 && fDiner.tva === 4.55, `TVA 10 % : dessert ${fDessert.ht} + ${fDessert.tva}, dîner ${fDiner.ht} + ${fDiner.tva}`);
+ok(fDinerLou?.numero === `ECH-${an}-0001` && fDiner?.numero === `ECH-${an}-0002`, `dans l'ordre des validations : le dîner de Lou ${fDinerLou?.numero}, celui de Fleurs ${fDiner?.numero}`);
+ok(fDinerLou.ht === 45.45 && fDinerLou.tva === 4.55 && fDiner.ht === 45.45 && fDiner.tva === 4.55, `TVA 10 % : ${fDiner.ht} + ${fDiner.tva} par dîner`);
 ok(r.factures.infos.tvaIntra === "FR11123456782" && r.factures.infos.siret === "12345678200010", `son n° de TVA calculé d'après le SIREN : ${r.factures.infos.tvaIntra}`);
-let pageFacture = await lire(fDessert.lien);
+let pageFacture = await lire(fDinerLou.lien);
 ok(pageFacture.includes(`ECH-${an}-0001`) && pageFacture.includes("SARL Bergine") && pageFacture.includes("SIRET 123 456 782 00010") && pageFacture.includes("FR11123456782") && pageFacture.includes("au capital de 5 000 €"), "la page de la facture : numéro, vendeur, SIRET, TVA, capital");
-ok(pageFacture.includes("Cadeau offert par L&#x27;Atelier de Lou") && pageFacture.includes("Bon CLK-") && pageFacture.includes("Prestation de services") && pageFacture.includes("réglée par échange"), "… la ligne (le cadeau d'un client de Lou), la nature, le paiement par échange");
+ok(pageFacture.includes("Un dîner pour deux") && pageFacture.includes("Bon CLK-") && pageFacture.includes("Prestation de services") && pageFacture.includes("réglée par échange"), "… la ligne (le dîner de Lou), la nature, le paiement par échange");
 ok((await lire(`/facture/${"0".repeat(64)}`)).includes("Facture introuvable"), "un lien inventé : facture introuvable");
 f = await appel(LOU, "factures");
 ok(f.factures.recues.length === 1 && f.factures.recues[0].numero === `ECH-${an}-0001` && f.factures.recues[0].autre === "Chez Bergine", `Lou la reçoit : ${f.factures.recues[0]?.numero} de ${f.factures.recues[0]?.autre}`);
@@ -257,12 +236,13 @@ ok(pageFacture.includes("Lou Martin EI") && pageFacture.includes("TVA non applic
 // Le Fournil n'a pas ses infos : ce qu'il a acheté chez Fleurs attend la facture de Fleurs.
 const bouquetDuFournil = (await appel(FLEURS, "etat")).etat.recus.find((b) => b.statut === "reserve" && b.autre === "Le Fournil des Arènes");
 await appel(FLEURS, "valider", { code: bouquetDuFournil.code });
-// Désormais, chaque validation chez Bergine fait sa facture toute seule.
-r = await appel(FLEURS, "offrir", { fournisseur: ID.bergine, quantite: 1, occasion: "" });
-const lotFleurs = r.etat?.mesCadeaux?.[0];
-r = await appel(FLEURS, "donner", { cadeau: lotFleurs?.id });
-r = await appel(BERGINE, "valider", { code: r.code });
-ok(r.ok && r.facture === "faite" && !/t’attend/.test(r.message), `Bergine valide le cadeau d'un client de Fleurs : facture faite tout de suite`);
+// Désormais, chaque validation chez Bergine fait sa facture toute seule. Elle passe à 4 dîners par mois
+// (Lou et Fleurs ont pris les deux de ce mois), et Lou en reprend un.
+await appel(BERGINE, "offre", { titre: "Un dîner pour deux", prix: 50, parMois: 4, accepte: true });
+r = await appel(LOU, "prendre", { fournisseur: ID.bergine });
+const code3 = r.etat?.pris.find((b) => b.titre.startsWith("Un dîner") && b.statut === "reserve")?.code ?? "";
+r = await appel(BERGINE, "valider", { code: code3 });
+ok(r.ok && r.facture === "faite" && !/t’attend/.test(r.message), `Bergine valide un second dîner de Lou : facture faite tout de suite`);
 f = await appel(BERGINE, "factures");
 ok(f.factures.emises[0].numero === `ECH-${an}-0003` && f.factures.emises.length === 3, `… ${f.factures.emises[0].numero}, sans trou`);
 ok(f.factures.releve.filter((l) => l.sens === "vendu").length === 3 && f.factures.releve.some((l) => l.sens === "achete" && l.titre.startsWith("Une coupe") && l.numero === `ECH-${an}-0001`), "le relevé : ses 3 ventes, et la coupe achetée chez Lou avec son numéro");

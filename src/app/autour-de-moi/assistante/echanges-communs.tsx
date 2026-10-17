@@ -1,6 +1,6 @@
 "use client";
 
-// 🔁 CE QUE LA DÉMONSTRATION, L'ÉCHANGE RÉEL ET LE CADEAU DU VOISIN
+// 🔁 CE QUE LA DÉMONSTRATION, L'ÉCHANGE RÉEL ET LA VILLE PAS ENCORE OUVERTE
 // PARTAGENT — à part pour qu'aucun des trois n'importe l'autre en boucle.
 import { useEffect, useState, type ReactNode } from "react";
 import QRCode from "qrcode";

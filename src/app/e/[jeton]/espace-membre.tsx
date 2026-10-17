@@ -2,17 +2,17 @@
 
 // Voir `page.tsx`. La page d'un membre de l'équipe : les mêmes pièces que le
 // comptoir (`echanges-comptoir.tsx`, `echanges-reels.tsx`,
-// `echanges-cadeaux.tsx`), réduites à ce qui est à lui.
+// `echanges-ville.tsx`), réduites à ce qui est à lui.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FamilleDouble } from "@/lib/direct/double-metiers";
 import { CLE_ACCES_COMPTOIR, JOURS_VALIDITE, PAR_PERSONNE, deNom, type BonReel, type EtatEchanges } from "@/lib/echanges/echanges";
 import { Feuille, Pile, StylesEchanges, visageDe, type Offre } from "@/app/autour-de-moi/assistante/echanges-comptoir";
 import { BonVue, StylesReels } from "@/app/autour-de-moi/assistante/echanges-reels";
-import { FeuilleVenus, StylesCadeaux, VilleFermee, messageInvitation } from "@/app/autour-de-moi/assistante/echanges-cadeaux";
+import { StylesVille, VilleFermee, messageInvitation } from "@/app/autour-de-moi/assistante/echanges-ville";
 import { BoutonSon, FeteDuMatch, StylesMagie, jouer, vibrer } from "@/app/autour-de-moi/assistante/echanges-magie";
 
 type Commerce = { nom: string; slug: string; famille: FamilleDouble; metier: string; branche: string; photo: string };
-type Reponse = { etat?: EtatEchanges; ok?: boolean; message?: string; code?: string; client?: boolean; bon?: string; error?: string };
+type Reponse = { etat?: EtatEchanges; ok?: boolean; message?: string; code?: string; error?: string };
 type Panneau = "solde" | "bons" | "valider" | "comment";
 
 const ROUTE = "/api/site-internet/pro/echanges";
@@ -81,7 +81,7 @@ export function EspaceMembre({ jeton, prenom, commerce }: { jeton: string; preno
       <StylesMembre />
       <StylesEchanges />
       <StylesMagie />
-      <StylesCadeaux />
+      <StylesVille />
       <StylesReels />
       <div className="ec">
         <header className="em-tete">
@@ -153,7 +153,6 @@ function PageMembre({
   const [recu, setRecu] = useState<BonReel | null>(null);
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [panneau, setPanneau] = useState<Panneau | null>(null);
-  const [venus, setVenus] = useState<{ bon: string; texte: string } | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const [code, setCode] = useState("");
   const [annonce, setAnnonce] = useState<{ texte: string; mauvais?: boolean } | null>(null);
@@ -319,7 +318,7 @@ function PageMembre({
             <li>
               Ce que tu prends, {commerce.nom} le rend <b>en ses produits</b> : jamais en euros, et jamais par toi.
             </li>
-            <li>Au comptoir, quand un commerçant ou un client vient avec un bon, valide-le : ta boutique gagne son prix.</li>
+            <li>Au comptoir, quand un commerçant vient avec un bon, valide-le : ta boutique gagne son prix.</li>
             <li>Un bon pas utilisé expire au bout de {JOURS_VALIDITE} jours.</li>
             <li>Ce lien est ton accès personnel : ne le partage pas.</li>
           </ol>
@@ -344,7 +343,7 @@ function PageMembre({
       {panneau === "valider" && (
         <Feuille titre="Valider un bon" onFermer={() => setPanneau(null)}>
           <p className="ec-gris">
-            Un commerçant, ou le client d’un voisin, vient chez {commerce.nom} avec un bon : scanne son QR avec l’appareil photo de ton téléphone, ou tape son code.
+            Un commerçant vient chez {commerce.nom} avec un bon : scanne son QR avec l’appareil photo de ton téléphone, ou tape son code.
           </p>
           <form
             className="ec-code"
@@ -356,7 +355,6 @@ function PageMembre({
                 setPanneau(null);
                 jouer("piece");
                 vibrer([20, 40, 20]);
-                if (r.client && r.bon) setVenus({ bon: r.bon, texte: r.message ?? "" });
               }
             }}
           >
@@ -374,18 +372,6 @@ function PageMembre({
             </button>
           </form>
         </Feuille>
-      )}
-
-      {venus && (
-        <FeuilleVenus
-          texte={venus.texte}
-          onChoisir={(n) => {
-            const bon = venus.bon;
-            setVenus(null);
-            void agir("venus", { bon, n });
-          }}
-          onFermer={() => setVenus(null)}
-        />
       )}
 
       {choisie && (

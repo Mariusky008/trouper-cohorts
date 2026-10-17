@@ -3,17 +3,14 @@
 // 🔁 L'ÉCHANGE ENTRE COMMERÇANTS, EN VRAI — chez un commerçant venu par son
 // lien pro (`/p/<jeton>`). Même écran que la démonstration
 // (`echanges-comptoir.tsx` : les trois étapes, la pile à glisser, les
-// panneaux ; `echanges-cadeaux.tsx` : le cadeau du voisin), mais tout passe
-// par la base :
+// panneaux ; `echanges-ville.tsx` : la ville pas encore ouverte), mais tout
+// passe par la base :
 //   · son offre est publiée pour TOUS les commerçants ClikMe qui échangent ;
 //   · « Je prends » réserve vraiment (le serveur vérifie son solde et la
 //     limite du mois de l'autre, d'un seul tenant) ;
-//   · « J'offre » réserve un lot de cadeaux pour SES clients chez un voisin ;
-//     il en remet un bon à chaque client (QR, ou son WhatsApp) ;
-//   · il gagne quand il VALIDE le code d'un commerçant, ou d'un client d'un
-//     voisin, venu chez lui — en tapant le code, ou en scannant le QR avec
-//     l'appareil photo du téléphone (la page `/bon/<code>` s'ouvre et valide
-//     si ce téléphone est le sien). Pour un cadeau : « venu à combien ? ».
+//   · il gagne quand il VALIDE le code d'un commerçant venu chez lui — en
+//     tapant le code, ou en scannant le QR avec l'appareil photo du téléphone
+//     (la page `/bon/<code>` s'ouvre et valide si ce téléphone est le sien).
 //
 // LES RÈGLES : jamais d'euros ; 50 € d'avance par personne de l'équipe ;
 // tant qu'il doit, ni pause ni refus ; un bon expire au bout de 30 jours ;
@@ -25,8 +22,7 @@
 // carte de l'accueil dit « bientôt ».
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
-import { CLE_ACCES_COMPTOIR, chezNom, phraseDuCadeau, type BonReel, type EtatEchanges, type MonLotDeCadeaux } from "@/lib/echanges/echanges";
-import { annoncerLeCadeau } from "@/lib/direct/comptoir-en-ligne";
+import { CLE_ACCES_COMPTOIR, chezNom, type BonReel, type EtatEchanges } from "@/lib/echanges/echanges";
 import {
   DetailDuSolde,
   Depart,
@@ -34,7 +30,6 @@ import {
   Pile,
   ReglesDuReseau,
   StylesEchanges,
-  carteEnOffre,
   nomAffiche,
   soitEnProduits,
   useQr,
@@ -43,29 +38,14 @@ import {
   type Mien,
   type Offre,
 } from "./echanges-comptoir";
-import {
-  CeQueLeReseauAmene,
-  FeuilleDonner,
-  FeuilleMonCadeau,
-  FeuilleOffrir,
-  FeuilleVenus,
-  LotsDeCadeaux,
-  MonCadeauLigne,
-  Onglets,
-  StylesCadeaux,
-  VilleFermee,
-  afficheDuCadeau,
-  messageInvitation,
-  type CarteCadeau,
-  type Onglet,
-} from "./echanges-cadeaux";
+import { StylesVille, VilleFermee, messageInvitation } from "./echanges-ville";
 import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, jouer, vibrer } from "./echanges-magie";
 import { PanneauEquipe, StylesEquipe } from "./echanges-equipe";
 import { PanneauFactures, type ReponseFactures } from "./echanges-factures";
 
 const ROUTE = "/api/site-internet/pro/echanges";
 
-type Reponse = { etat?: EtatEchanges; ok?: boolean; message?: string; code?: string; cadeau?: string; client?: boolean; bon?: string; lien?: string; prenom?: string; error?: string };
+type Reponse = { etat?: EtatEchanges; ok?: boolean; message?: string; code?: string; lien?: string; prenom?: string; error?: string };
 type Reel = { slug: string; token: string };
 
 async function appeler(reel: Reel, action: string, extra: Record<string, unknown> = {}): Promise<Reponse> {
@@ -150,7 +130,7 @@ export function CarteEchangesReelle({ commerce, onOuvrir }: { commerce: Commerce
         <span className="cz-relance-i">🔁</span>
         <span>
           <b>Échanger avec les commerçants</b>
-          <em>Bientôt disponible : offre ton produit aux autres commerçants ClikMe, prends ce que tu veux chez eux, et offre à tes clients les cadeaux des voisins.</em>
+          <em>Bientôt disponible : offre ton produit aux autres commerçants ClikMe, et prends ce que tu veux chez eux, sans sortir d’argent.</em>
         </span>
         <s aria-hidden="true">→</s>
       </button>
@@ -163,10 +143,9 @@ export function CarteEchangesReelle({ commerce, onOuvrir }: { commerce: Commerce
           ? `Tu peux dépenser ${etat.compte.aDepenser} € chez les autres commerçants.`
           : `${etat.maVille.offres} commerçants sur ${etat.maVille.seuil} à ${etat.maVille.nom || "ta ville"} : l’échange s’ouvre bientôt.`,
         aValider > 0 ? `${aValider} ${aValider > 1 ? "bons" : "bon"} à valider.` : "",
-        etat.reseau.clientsRecus > 0 ? `🎁 ${etat.reseau.clientsRecus} ${etat.reseau.clientsRecus > 1 ? "clients venus" : "client venu"} grâce aux voisins.` : "",
         etat.compte.du > 0 ? `Tu dois ${etat.compte.du} € au réseau.` : "",
       ]
-    : ["Offre ton produit aux autres commerçants ClikMe, prends ce que tu veux chez eux, et offre à tes clients les cadeaux des voisins."];
+    : ["Offre ton produit aux autres commerçants ClikMe, et prends ce que tu veux chez eux, sans sortir d’argent."];
   return (
     <button type="button" className={`cz-relance cz-echanges${!etat.mien || aValider > 0 ? " chaud" : ""}`} onClick={onOuvrir}>
       <span className="cz-relance-i">🔁</span>
@@ -231,7 +210,7 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
         <BoutonSon />
       </div>
       <StylesMagie />
-      <StylesCadeaux />
+      <StylesVille />
       <StylesEquipe />
       {!etat ? (
         <div className="ec-fin-pile">
@@ -249,7 +228,7 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
       ) : !etat.pret ? (
         <div className="ec-fin-pile">
           <p>
-            <b>L’échange entre commerçants ouvre bientôt.</b> Tu pourras offrir ton produit aux autres commerçants ClikMe, prendre ce que tu veux chez eux, et offrir à tes clients les cadeaux des voisins.
+            <b>L’échange entre commerçants ouvre bientôt.</b> Tu pourras offrir ton produit aux autres commerçants ClikMe, et prendre ce que tu veux chez eux, sans sortir d’argent.
           </p>
         </div>
       ) : !mien || modifier ? (
@@ -283,7 +262,7 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
   );
 }
 
-type Panneau = "solde" | "comment" | "bons" | "valider" | "offre" | "moncadeau" | "equipe" | "factures";
+type Panneau = "solde" | "comment" | "bons" | "valider" | "offre" | "equipe" | "factures";
 
 function PageReelle({
   commerce,
@@ -302,14 +281,9 @@ function PageReelle({
 }) {
   const famille = commerce.famille;
   const { compte, maVille } = etat;
-  const [onglet, setOnglet] = useState<Onglet>("moi");
   const [ville, setVille] = useState(maVille.slug);
   const [vus, setVus] = useState<string[]>([]);
-  const [vusCadeaux, setVusCadeaux] = useState<string[]>([]);
   const [choisie, setChoisie] = useState<Offre | null>(null);
-  const [aOffrir, setAOffrir] = useState<CarteCadeau | null>(null);
-  const [donne, setDonne] = useState<{ lotId: string; code: string } | null>(null);
-  const [venus, setVenus] = useState<{ bon: string; texte: string } | null>(null);
   const [recu, setRecu] = useState<BonReel | null>(null);
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [panneau, setPanneau] = useState<Panneau | null>(null);
@@ -360,27 +334,6 @@ function PageReelle({
   const nomVille = ville === maVille.slug ? "de ta ville" : `de ${villes.find((v) => v.slug === ville)?.nom ?? "cette ville"}`;
   const duApres = choisie ? Math.max(0, compte.pris + choisie.prix - compte.gagne) : 0;
 
-  /* LES CADEAUX DES VOISINS : sa ville seulement — un client ne traverse pas la France pour un dessert. */
-  const cadeaux: CarteCadeau[] = useMemo(
-    () =>
-      etat.cadeaux
-        .filter((c) => c.villeSlug === maVille.slug)
-        .map((c) => ({
-          id: c.id,
-          commerce: c.commerce,
-          metier: c.metier || "Commerce",
-          visage: visageDe(c.branche, c.metier),
-          titre: c.titre,
-          prix: c.prix,
-          photo: c.photo,
-          ou: c.aPied || c.ville,
-          restant: c.restant,
-        })),
-    [etat.cadeaux, maVille.slug],
-  );
-  const pileCadeaux = cadeaux.filter((c) => !vusCadeaux.includes(c.id) && (c.restant ?? 1) > 0);
-  const lotDonne = donne ? etat.mesCadeaux.find((l) => l.id === donne.lotId) : undefined;
-
   /* SES FACTURES : le panneau les lit lui-même (stable : il ne relit pas à chaque rendu). */
   const chargerFactures = useCallback(() => appeler(reel, "factures") as Promise<ReponseFactures>, [reel]);
   const enregistrerFacturation = useCallback((infos: Record<string, unknown>) => appeler(reel, "facturation", infos) as Promise<ReponseFactures>, [reel]);
@@ -402,29 +355,6 @@ function PageReelle({
     setChoisie(null);
     const bon = r.ok && r.code ? r.etat?.pris.find((b) => b.code === r.code) : undefined;
     if (bon) setFete({ bon, offre: o });
-  };
-
-  /* DONNER LE PROCHAIN BON D'UN LOT : le serveur le marque « remis », et rend son code. */
-  const donnerUnBon = async (lot: MonLotDeCadeaux) => {
-    const r = await agir("donner", { cadeau: lot.id });
-    if (r.ok && r.code) setDonne({ lotId: lot.id, code: r.code });
-  };
-
-  const annoncer = async (lot: MonLotDeCadeaux) => {
-    setEnvoi(true);
-    setAnnonce({ texte: "📣 L’affiche se prépare…" });
-    try {
-      const affiche = await afficheDuCadeau({ photo: lot.photo, titre: lot.titre, chez: lot.chez, occasion: lot.occasion, de: commerce.nom });
-      const r = await annoncerLeCadeau(commerce, { texte: phraseDuCadeau({ titre: lot.titre, chez: lot.chez, occasion: lot.occasion }), affiche, jusqua: lot.expire });
-      setAnnonce(
-        r.ok
-          ? { texte: `C’est en ligne : ${r.ou.join(", ")}${r.reseaux?.length ? ` 📣 En route vers ${r.reseaux.join(", ")}.` : "."}` }
-          : { texte: r.erreur ?? "L’annonce n’a pas pu partir.", mauvais: true },
-      );
-    } catch {
-      setAnnonce({ texte: "L’affiche n’a pas pu être préparée sur ce téléphone.", mauvais: true });
-    }
-    setEnvoi(false);
   };
 
   const inviter = () => {
@@ -462,96 +392,48 @@ function PageReelle({
         />
       ) : (
         <>
-          <Onglets onglet={onglet} onChanger={setOnglet} pastille={etat.mesCadeaux.filter((l) => l.aDonner > 0).length} />
-          {onglet === "moi" ? (
-            <>
-              {villes.length > 1 && (
-                <div className="ec-villes">
-                  {villes.map((v) => (
-                    <button key={v.slug} type="button" className={ville === v.slug ? "on" : ""} onClick={() => setVille(v.slug)}>
-                      {v.nom}
-                    </button>
-                  ))}
-                </div>
-              )}
+          {villes.length > 1 && (
+            <div className="ec-villes">
+              {villes.map((v) => (
+                <button key={v.slug} type="button" className={ville === v.slug ? "on" : ""} onClick={() => setVille(v.slug)}>
+                  {v.nom}
+                </button>
+              ))}
+            </div>
+          )}
 
-              {pile.length > 0 ? (
-                <Pile
-                  key={pile[0].id}
-                  offres={pile}
-                  indice={vus.length === 0}
-                  onPasser={(o) => setVus((v) => [...v, o.id])}
-                  onPrendre={(o) => (setVus((v) => [...v, o.id]), setChoisie(o))}
-                />
-              ) : offres.length === 0 ? (
-                <div className="ec-fin-pile">
-                  <p>
-                    <b>Tu es parmi les premiers.</b> Dès qu’un autre commerçant ClikMe publie son offre, elle apparaît ici.
-                  </p>
-                </div>
-              ) : (
-                <div className="ec-fin-pile">
-                  <p>
-                    {deLaVille.length === 0
-                      ? `Pas encore d’offre ${nomVille}.`
-                      : deLaVille.every((o) => o.restant === 0)
-                        ? `Les commerçants ${nomVille} ont déjà donné tout ce qu’ils pouvaient ce mois-ci.`
-                        : `Tu as vu toutes les offres ${nomVille}.`}
-                  </p>
-                  {deLaVille.some((o) => (o.restant ?? 1) > 0) && (
-                    <button type="button" className="cz-lien" onClick={() => setVus((v) => v.filter((id) => !deLaVille.some((o) => o.id === id)))}>
-                      Les revoir
-                    </button>
-                  )}
-                </div>
-              )}
-            </>
+          {pile.length > 0 ? (
+            <Pile
+              key={pile[0].id}
+              offres={pile}
+              indice={vus.length === 0}
+              onPasser={(o) => setVus((v) => [...v, o.id])}
+              onPrendre={(o) => (setVus((v) => [...v, o.id]), setChoisie(o))}
+            />
+          ) : offres.length === 0 ? (
+            <div className="ec-fin-pile">
+              <p>
+                <b>Tu es parmi les premiers.</b> Dès qu’un autre commerçant ClikMe publie son offre, elle apparaît ici.
+              </p>
+            </div>
           ) : (
-            <>
-              <CeQueLeReseauAmene reseau={etat.reseau} aDesLots={etat.mesCadeaux.some((l) => l.aDonner > 0 || l.donnes > l.utilises)} />
-              <LotsDeCadeaux
-                lots={etat.mesCadeaux}
-                envoi={envoi}
-                onDonner={(l) => void donnerUnBon(l)}
-                onAnnoncer={(l) => void annoncer(l)}
-                onReprendre={(l) => void agir("reprendre", { cadeau: l.id })}
-              />
-              {pileCadeaux.length > 0 ? (
-                <Pile
-                  key={pileCadeaux[0].id}
-                  offres={pileCadeaux.map(carteEnOffre)}
-                  indice={vusCadeaux.length === 0}
-                  tampon="J’OFFRE"
-                  bouton={(o) => `J’offre · ${o.prix} € le cadeau`}
-                  astuce="Glisse : à droite tu l’offres à tes clients, à gauche tu passes."
-                  onPasser={(o) => setVusCadeaux((v) => [...v, o.id])}
-                  onPrendre={(o) => {
-                    setVusCadeaux((v) => [...v, o.id]);
-                    setAOffrir(cadeaux.find((c) => c.id === o.id) ?? null);
-                  }}
-                />
-              ) : (
-                <div className="ec-fin-pile">
-                  <p>
-                    {cadeaux.length === 0
-                      ? "Aucun commerçant de ta ville ne propose encore de cadeau. Propose le tien : les autres suivront."
-                      : cadeaux.every((c) => c.restant === 0)
-                        ? "Les cadeaux de ta ville ont tous été offerts ce mois-ci."
-                        : "Tu as vu tous les cadeaux de ta ville."}
-                  </p>
-                  {cadeaux.some((c) => (c.restant ?? 1) > 0) && (
-                    <button type="button" className="cz-lien" onClick={() => setVusCadeaux([])}>
-                      Les revoir
-                    </button>
-                  )}
-                </div>
+            <div className="ec-fin-pile">
+              <p>
+                {deLaVille.length === 0
+                  ? `Pas encore d’offre ${nomVille}.`
+                  : deLaVille.every((o) => o.restant === 0)
+                    ? `Les commerçants ${nomVille} ont déjà donné tout ce qu’ils pouvaient ce mois-ci.`
+                    : `Tu as vu toutes les offres ${nomVille}.`}
+              </p>
+              {deLaVille.some((o) => (o.restant ?? 1) > 0) && (
+                <button type="button" className="cz-lien" onClick={() => setVus((v) => v.filter((id) => !deLaVille.some((o) => o.id === id)))}>
+                  Les revoir
+                </button>
               )}
-              <MonCadeauLigne cadeau={etat.mien?.cadeau ?? null} onOuvrir={() => setPanneau("moncadeau")} />
-            </>
+            </div>
           )}
         </>
       )}
-
       <nav className="ec-tiroirs" aria-label="Plus d’informations">
         <button type="button" className={aValider.length > 0 ? "chaud" : ""} onClick={() => setPanneau("valider")}>
           À valider{aValider.length > 0 ? ` · ${aValider.length}` : ""}
@@ -596,7 +478,7 @@ function PageReelle({
 
       {panneau === "valider" && (
         <Feuille titre="À valider" onFermer={() => setPanneau(null)}>
-          <p className="ec-gris">Un commerçant, ou le client d’un voisin, vient avec un bon : scanne son QR avec l’appareil photo de ton téléphone, ou tape son code.</p>
+          <p className="ec-gris">Un commerçant vient avec un bon : scanne son QR avec l’appareil photo de ton téléphone, ou tape son code.</p>
           <form
             className="ec-code"
             onSubmit={async (e) => {
@@ -613,8 +495,6 @@ function PageReelle({
                   jouer("piece");
                   vibrer([20, 40, 20]);
                 }
-                // UN CADEAU DU VOISIN : « venu à combien ? ».
-                if (r.client && r.bon) setVenus({ bon: r.bon, texte: r.message ?? "" });
               }
             }}
           >
@@ -632,18 +512,6 @@ function PageReelle({
               Valider
             </button>
           </form>
-          {etat.cadeauxAServir.length > 0 && <h3 className="ec-sous-titre">Tes cadeaux chez les clients des voisins</h3>}
-          {etat.cadeauxAServir.map((c) => (
-            <div key={`${c.de}|${c.titre}`} className="ec-ligne-bon">
-              <span>
-                <b>🎁 {c.de}</b>
-                <em>
-                  offre {c.titre.charAt(0).toLowerCase()}
-                  {c.titre.slice(1)} à ses clients · {c.n} {c.n > 1 ? "bons en circulation" : "bon en circulation"}
-                </em>
-              </span>
-            </div>
-          ))}
           {aValider.length > 0 && <h3 className="ec-sous-titre">Réservé chez toi</h3>}
           {aValider.map((b) => (
             <div key={b.id} className="ec-ligne-bon">
@@ -666,9 +534,9 @@ function PageReelle({
             .map((b) => (
               <div key={b.id} className="ec-ligne-bon fait">
                 <span>
-                  <b>{b.pour === "client" ? `🎁 Client envoyé par ${b.autre}` : b.autre}</b>
+                  <b>{b.autre}</b>
                   <em>
-                    {b.titre} · +{b.prix} €{b.venus && b.venus > 1 ? ` · venu à ${b.venus}` : ""}
+                    {b.titre} · +{b.prix} €
                     {b.validePar ? ` · validé par ${b.validePar}` : ""}
                   </em>
                 </span>
@@ -747,23 +615,6 @@ function PageReelle({
 
       {panneau === "factures" && <PanneauFactures charger={chargerFactures} enregistrer={enregistrerFacturation} onFermer={() => setPanneau(null)} />}
 
-      {panneau === "moncadeau" && (
-        <FeuilleMonCadeau
-          famille={famille}
-          initial={etat.mien?.cadeau ?? null}
-          onEnregistrer={async (c) => {
-            const r = await agir("cadeau", c);
-            if (r.ok) setPanneau(null);
-            return r.ok ? null : r.error || r.message || "Enregistrement impossible.";
-          }}
-          onRetirer={async () => {
-            const r = await agir("cadeau", { retirer: true });
-            if (r.ok) setPanneau(null);
-          }}
-          onFermer={() => setPanneau(null)}
-        />
-      )}
-
       {choisie && (
         <div className="ec-feuille" role="dialog" aria-label="Je prends">
           <div className="ec-feuille-c">
@@ -800,47 +651,6 @@ function PageReelle({
             </button>
           </div>
         </div>
-      )}
-
-      {aOffrir && (
-        <FeuilleOffrir
-          cadeau={aOffrir}
-          famille={famille}
-          aDepenser={compte.aDepenser}
-          onOffrir={async (quantite, occasion) => {
-            const r = await agir("offrir", { fournisseur: aOffrir.id, quantite, occasion });
-            if (!r.ok) return r.error || r.message || "L’offre n’a pas pu être enregistrée.";
-            setAOffrir(null);
-            jouer("match");
-            vibrer([20, 40, 30]);
-            setAnnonce({ texte: `🎁 ${quantite} cadeaux prêts ${chezNom(aOffrir.commerce)}. Donne un bon à chaque client concerné, et annonce-le partout.` });
-            return null;
-          }}
-          onFermer={() => setAOffrir(null)}
-        />
-      )}
-
-      {donne && lotDonne && (
-        <FeuilleDonner
-          lot={lotDonne}
-          code={donne.code}
-          lien={`${window.location.origin}/bon/${donne.code}`}
-          restants={lotDonne.aDonner}
-          onEncore={() => void donnerUnBon(lotDonne)}
-          onFermer={() => setDonne(null)}
-        />
-      )}
-
-      {venus && (
-        <FeuilleVenus
-          texte={venus.texte}
-          onChoisir={(n) => {
-            const bon = venus.bon;
-            setVenus(null);
-            void agir("venus", { bon, n });
-          }}
-          onFermer={() => setVenus(null)}
-        />
       )}
 
       {fete && (

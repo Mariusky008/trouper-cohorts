@@ -27,9 +27,9 @@
 // personne a son propre accès, qu'il lui envoie depuis « Mon équipe »
 // (`echanges-equipe.tsx`). Arrivé au bout, il sert avant de reprendre.
 //
-// ET « LE CADEAU DU VOISIN » (`echanges-cadeaux.tsx`) : l'onglet « Pour mes
-// clients » offre à SES clients un petit cadeau chez un voisin, payé avec son
-// solde. Le voisin gagne un client, lui une offre qui se démarque.
+// « POUR MES CLIENTS » (le cadeau d'un voisin offert à ses clients) A ÉTÉ
+// RETIRÉ : « trop compliqué à expliquer et à faire faire ». L'échange sert le
+// commerçant et son équipe, rien d'autre.
 //
 // CHEZ UN VRAI COMMERÇANT (lien pro), c'est `echanges-reels.tsx` qui prend le
 // relais, avec la base : il réutilise d'ici les trois étapes, la pile à
@@ -43,24 +43,12 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { COMMERCES_DEMO } from "@/lib/direct/missions-commercant";
 import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
-import { JOURS_VALIDITE, PAR_MOIS, PAR_PERSONNE, chezNom, decouvertDe as decouvertDeBase, type MembreEquipe, type MonLotDeCadeaux } from "@/lib/echanges/echanges";
+import { JOURS_VALIDITE, PAR_MOIS, PAR_PERSONNE, chezNom, decouvertDe as decouvertDeBase, type MembreEquipe } from "@/lib/echanges/echanges";
 import { PanneauEquipe, StylesEquipe } from "./echanges-equipe";
 import { ExempleDeFacture } from "./echanges-factures";
 import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, debloquerSon, jouer, vibrer } from "./echanges-magie";
 import { Feuille, reduirePhoto, useQr } from "./echanges-communs";
-import {
-  CeQueLeReseauAmene,
-  FeuilleDonner,
-  FeuilleMonCadeau,
-  FeuilleOffrir,
-  LotsDeCadeaux,
-  MODELES_CADEAU,
-  MonCadeauLigne,
-  Onglets,
-  StylesCadeaux,
-  type CarteCadeau,
-  type Onglet,
-} from "./echanges-cadeaux";
+import { StylesVille } from "./echanges-ville";
 
 export { Feuille, useQr };
 
@@ -101,8 +89,6 @@ export type Offre = {
   entier?: boolean;
   /** Chez un vrai commerçant : combien on peut encore lui en prendre ce mois-ci. */
   restant?: number;
-  /** « 🎁 Pour tes clients » : un cadeau à offrir, pas une offre à prendre pour soi. */
-  ruban?: string;
 };
 /** `equipe` : combien ils sont à en profiter (absent dans une démonstration gardée d'avant : 1). */
 export type Mien = { duJour: boolean; titre: string; prix: number; photo: string; parMois: number; equipe?: number };
@@ -115,13 +101,6 @@ type Etat = {
   bons: Bon[];
   /** Le premier voisin venu prendre son produit (simulé une fois). */
   premier?: string;
-  /** Ce qu'il accepte d'être offert aux clients des voisins. */
-  cadeau?: { titre: string; prix: number; parMois: number };
-  /** Ses lots de cadeaux offerts à ses clients. */
-  lots?: MonLotDeCadeaux[];
-  /** Les clients venus chez lui avec le cadeau d'un voisin (simulé une fois), et les personnes. */
-  recusClients?: number;
-  recusPersonnes?: number;
   /** Son équipe d'exemple : chaque personne invitée rejoint tout de suite. */
   membres?: MembreEquipe[];
 };
@@ -148,8 +127,8 @@ function garder(c: CommerceComptoir, e: Etat) {
 /** Son équipe (lui compris), et son découvert : 50 € par personne. */
 const equipeDe = (e: Etat) => Math.min(5, 1 + (e.membres?.length ?? 0));
 const decouvertDe = (e: Etat) => decouvertDeBase(equipeDe(e));
-/** Ce qu'il a pris : pour lui, et les cadeaux offerts à ses clients (sauf ceux qui ont expiré). */
-const pris = (e: Etat) => e.bons.reduce((s, b) => s + b.prix, 0) + (e.lots ?? []).reduce((s, l) => s + (l.quantite - l.expires) * l.prix, 0);
+/** Ce qu'il a pris chez les autres. */
+const pris = (e: Etat) => e.bons.reduce((s, b) => s + b.prix, 0);
 /** Ce qu'il peut encore dépenser : son découvert, plus ce qu'il a gagné, moins ce qu'il a pris. */
 const aDepenser = (e: Etat) => (e.mien ? Math.max(0, decouvertDe(e) + e.gagne - pris(e)) : 0);
 /** Ce qu'il doit au réseau : ce qu'il a pris de plus que ce qu'il a gagné. */
@@ -278,7 +257,7 @@ export function EchangesComptoir({ commerce, dossier, onRetour }: { commerce: Co
         </span>
       </div>
       <StylesMagie />
-      <StylesCadeaux />
+      <StylesVille />
       <StylesEquipe />
       {!etat.mien || modifier ? (
         <Depart
@@ -441,7 +420,7 @@ function CaissePleine({ decouvert, pieces, envies, exemple }: { decouvert: numbe
         ))}
         <span>Tu peux dépenser dès maintenant</span>
         <b>{vu} €</b>
-        <em>Chez les autres commerçants, ou en cadeaux pour tes clients. Ce que tu prends, tu le rends en ton produit, jamais en euros.</em>
+        <em>Chez les autres commerçants. Ce que tu prends, tu le rends en ton produit, jamais en euros.</em>
       </div>
       {envies.length > 0 && (
         <div className="ec-envies">
@@ -704,7 +683,7 @@ export function Depart({
 
       {etape === 3 && (
         <>
-          <Guide key="g3" visage={visage} etape={3} titre="C’est prêt !" sous="Tu peux te faire plaisir chez les autres, ou gâter tes clients, avant même d’avoir servi." />
+          <Guide key="g3" visage={visage} etape={3} titre="C’est prêt !" sous="Tu peux te faire plaisir chez les autres, avant même d’avoir servi." />
           <article className="ec-resume">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={image} alt="" />
@@ -719,7 +698,7 @@ export function Depart({
           <CaissePleine decouvert={decouvert} pieces={Math.min(parMois, 6)} envies={envies} exemple={!reel} />
           {reel && (
             <p className="ec-regle">
-              ⚖️ <b>En publiant, tu acceptes les règles</b> : tu gagnes quand tu valides le code d’un commerçant ou d’un client venu chez toi ; ce que tu prends, tu le rends en ton produit, jamais en euros ; tant que tu dois, tu ne peux ni mettre ton offre en pause, ni refuser un bon ; un bon non utilisé expire au bout de {JOURS_VALIDITE} jours.
+              ⚖️ <b>En publiant, tu acceptes les règles</b> : tu gagnes quand tu valides le code d’un commerçant venu chez toi ; ce que tu prends, tu le rends en ton produit, jamais en euros ; tant que tu dois, tu ne peux ni mettre ton offre en pause, ni refuser un bon ; un bon non utilisé expire au bout de {JOURS_VALIDITE} jours.
             </p>
           )}
           {erreur && <p className="ec-erreur">{erreur}</p>}
@@ -741,47 +720,8 @@ export function Depart({
    marche ». Désormais : le solde tient en UNE ligne (le détail s'ouvre d'un
    geste), les villes, puis la pile, tout de suite. Le reste — comment ça
    marche, mes bons, mon offre — devient trois petits boutons qui ouvrent un
-   panneau, et le voisin qui passe est une notification qui s'en va seule.
-
-   DEUX ONGLETS : « Pour moi » (la pile d'avant) et « Pour mes clients » — le
-   cadeau du voisin, avec des EXEMPLES de cadeaux, ses lots, le bon donné au
-   client, et la visite du client simulée d'un bouton marqué « démo ». */
-type Panneau = "solde" | "comment" | "bons" | "offre" | "moncadeau" | "equipe" | "factures";
-
-/** Les cadeaux des commerces de la démonstration : un petit produit par métier — des exemples. */
-function cadeauxDeSaVille(moi: CommerceComptoir): CarteCadeau[] {
-  return COMMERCES_DEMO.filter((c) => c.famille !== moi.famille).map((c, i) => {
-    const m = MODELES_CADEAU[c.famille];
-    return {
-      id: c.id,
-      commerce: c.nom,
-      metier: c.metier,
-      visage: visageDe(c.branche, c.metier),
-      titre: m.titre,
-      prix: m.prix,
-      photo: MODELES[c.famille].photo,
-      ou: DISTANCES[(i + 3) % DISTANCES.length],
-      restant: 20,
-    };
-  });
-}
-
-/** Un cadeau, au format de la pile. */
-export const carteEnOffre = (c: CarteCadeau): Offre => ({
-  id: c.id,
-  commerce: c.commerce,
-  prenom: "",
-  metier: c.metier || "Commerce",
-  visage: c.visage,
-  ville: "",
-  titre: c.titre,
-  prix: c.prix,
-  photo: c.photo,
-  ou: c.ou,
-  parMois: 0,
-  restant: c.restant,
-  ruban: "🎁 Pour tes clients",
-});
+   panneau, et le voisin qui passe est une notification qui s'en va seule. */
+type Panneau = "solde" | "comment" | "bons" | "offre" | "equipe" | "factures";
 
 function Echanger({
   commerce,
@@ -796,20 +736,6 @@ function Echanger({
 }) {
   const mien = etat.mien as Mien;
   const famille = commerce.famille;
-  const [onglet, setOnglet] = useState<Onglet>("moi");
-  const [vusCadeaux, setVusCadeaux] = useState<string[]>([]);
-  const [aOffrir, setAOffrir] = useState<CarteCadeau | null>(null);
-  const [donne, setDonne] = useState<{ lotId: string; code: string } | null>(null);
-  const cadeaux = useMemo(() => cadeauxDeSaVille(commerce), [commerce]);
-  const pileCadeaux = cadeaux.filter((c) => !vusCadeaux.includes(c.id));
-  const lots = useMemo(() => etat.lots ?? [], [etat.lots]);
-  const reseau = {
-    clientsRecus: etat.recusClients ?? 0,
-    personnesRecues: etat.recusPersonnes ?? 0,
-    clientsEnvoyes: lots.reduce((s, l) => s + l.utilises, 0),
-    personnesEnvoyees: lots.reduce((s, l) => s + l.personnes, 0),
-  };
-  const lotDonne = donne ? lots.find((l) => l.id === donne.lotId) : undefined;
   const [ville, setVille] = useState("");
   const [vus, setVus] = useState<string[]>([]);
   const [choisie, setChoisie] = useState<Offre | null>(null);
@@ -843,24 +769,6 @@ function Echanger({
     return () => window.clearTimeout(t);
   }, [etat.premier, famille, changer, mien]);
 
-  /* LA PREMIÈRE CLIENTE ENVOYÉE PAR UN VOISIN AVEC SON CADEAU — simulée une
-     fois, dès qu'il a proposé son cadeau : c'est ce que « Fais venir les
-     clients des voisins » veut dire. */
-  const sonCadeau = etat.cadeau;
-  useEffect(() => {
-    if (!sonCadeau || etat.recusClients) return;
-    const voisin = COMMERCES_DEMO.filter((c) => c.famille !== famille)[1] ?? COMMERCES_DEMO.find((c) => c.famille !== famille);
-    if (!voisin) return;
-    const t = window.setTimeout(() => {
-      changer((e) => (e.recusClients ? e : { ...e, recusClients: 1, recusPersonnes: 3, gagne: e.gagne + sonCadeau.prix }));
-      setNouvelle(`🎁 Une cliente de ${voisin.prenom} (${voisin.nom}) vient d’arriver avec ton cadeau, et deux amies avec elle. Tu as gagné ${sonCadeau.prix} €.`);
-      setGain({ n: sonCadeau.prix, cle: Date.now() });
-      jouer("piece");
-      vibrer([20, 40, 20]);
-    }, 2600);
-    return () => window.clearTimeout(t);
-  }, [sonCadeau, etat.recusClients, famille, changer]);
-
   /* La notification du voisin s'en va seule. */
   useEffect(() => {
     if (!nouvelle) return;
@@ -892,46 +800,6 @@ function Echanger({
   };
   const scanner = (id: string) => changer((e) => ({ ...e, bons: e.bons.map((b) => (b.id === id ? { ...b, scanne: true } : b)) }));
 
-  /* LE CADEAU DU VOISIN, EN DÉMONSTRATION. */
-  const offrir = (c: CarteCadeau, quantite: number, occasion: string): string | null => {
-    if (quantite * c.prix > reste) return `Il te manque ${quantite * c.prix - reste} €.`;
-    const maintenant = Date.now();
-    const lot: MonLotDeCadeaux = {
-      id: `${c.id}-${maintenant}`,
-      chez: c.commerce,
-      chezId: c.id,
-      titre: c.titre,
-      prix: c.prix,
-      photo: c.photo,
-      occasion,
-      quantite,
-      donnes: 0,
-      utilises: 0,
-      personnes: 0,
-      aDonner: quantite,
-      expires: 0,
-      cree: new Date(maintenant).toISOString(),
-      expire: new Date(maintenant + JOURS_VALIDITE * 86_400_000).toISOString(),
-    };
-    changer((e) => ({ ...e, lots: [lot, ...(e.lots ?? [])] }));
-    setAOffrir(null);
-    jouer("match");
-    vibrer([20, 40, 30]);
-    setNouvelle(`🎁 ${quantite} cadeaux prêts ${chezNom(c.commerce)}. Donne un bon à chaque client concerné : « Donner un bon à un client ».`);
-    return null;
-  };
-  const donnerUnBon = (lot: MonLotDeCadeaux) => {
-    if (lot.aDonner <= 0) return;
-    changer((e) => ({ ...e, lots: (e.lots ?? []).map((l) => (l.id === lot.id ? { ...l, donnes: l.donnes + 1, aDonner: l.aDonner - 1 } : l)) }));
-    setDonne({ lotId: lot.id, code: codeDe(`${lot.id}|${lot.donnes}`) });
-  };
-  const simulerVisite = (lot: MonLotDeCadeaux) => {
-    changer((e) => ({ ...e, lots: (e.lots ?? []).map((l) => (l.id === lot.id ? { ...l, utilises: l.utilises + 1, personnes: l.personnes + 2 } : l)) }));
-    setDonne(null);
-    setNouvelle(`🎉 Ton client est passé ${chezNom(lot.chez)} avec son bon, et il n’était pas seul : 2 personnes. ${lot.chez} a gagné ${lot.prix} €.`);
-    jouer("piece");
-    vibrer([20, 40, 20]);
-  };
   const duApres = choisie ? Math.max(0, pris(etat) + choisie.prix - etat.gagne) : 0;
 
   return (
@@ -944,61 +812,27 @@ function Echanger({
         {gain && <GainQuiMonte key={gain.cle} montant={gain.n} />}
       </button>
 
-      <Onglets onglet={onglet} onChanger={setOnglet} pastille={lots.filter((l) => l.aDonner > 0).length} />
+      <div className="ec-villes">
+        {[
+          ["", "📍 Ta ville"],
+          ["Biarritz", "Biarritz"],
+          ["Bayonne", "Bayonne"],
+        ].map(([v, mot]) => (
+          <button key={v || "ici"} type="button" className={ville === v ? "on" : ""} onClick={() => setVille(v)}>
+            {mot}
+          </button>
+        ))}
+      </div>
 
-      {onglet === "moi" ? (
-        <>
-          <div className="ec-villes">
-            {[
-              ["", "📍 Ta ville"],
-              ["Biarritz", "Biarritz"],
-              ["Bayonne", "Bayonne"],
-            ].map(([v, mot]) => (
-              <button key={v || "ici"} type="button" className={ville === v ? "on" : ""} onClick={() => setVille(v)}>
-                {mot}
-              </button>
-            ))}
-          </div>
-
-          {pile.length > 0 ? (
-            <Pile key={pile[0].id} offres={pile} onPasser={passer} onPrendre={vouloir} indice={vus.length === 0} />
-          ) : (
-            <div className="ec-fin-pile">
-              <p>Tu as vu toutes les offres {ville ? `de ${ville}` : "de ta ville"}.</p>
-              <button type="button" className="cz-lien" onClick={() => setVus((v) => v.filter((id) => !deLaVille.some((o) => o.id === id)))}>
-                Les revoir
-              </button>
-            </div>
-          )}
-        </>
+      {pile.length > 0 ? (
+        <Pile key={pile[0].id} offres={pile} onPasser={passer} onPrendre={vouloir} indice={vus.length === 0} />
       ) : (
-        <>
-          <CeQueLeReseauAmene reseau={reseau} aDesLots={lots.some((l) => l.aDonner > 0 || l.donnes > l.utilises)} />
-          <LotsDeCadeaux lots={lots} onDonner={donnerUnBon} />
-          {pileCadeaux.length > 0 ? (
-            <Pile
-              key={pileCadeaux[0].id}
-              offres={pileCadeaux.map(carteEnOffre)}
-              indice={vusCadeaux.length === 0}
-              tampon="J’OFFRE"
-              bouton={(o) => `J’offre · ${o.prix} € le cadeau`}
-              astuce="Glisse : à droite tu l’offres à tes clients, à gauche tu passes."
-              onPasser={(o) => setVusCadeaux((v) => [...v, o.id])}
-              onPrendre={(o) => {
-                setVusCadeaux((v) => [...v, o.id]);
-                setAOffrir(cadeaux.find((c) => c.id === o.id) ?? null);
-              }}
-            />
-          ) : (
-            <div className="ec-fin-pile">
-              <p>Tu as vu tous les cadeaux de ta ville.</p>
-              <button type="button" className="cz-lien" onClick={() => setVusCadeaux([])}>
-                Les revoir
-              </button>
-            </div>
-          )}
-          <MonCadeauLigne cadeau={etat.cadeau ?? null} onOuvrir={() => setPanneau("moncadeau")} />
-        </>
+        <div className="ec-fin-pile">
+          <p>Tu as vu toutes les offres {ville ? `de ${ville}` : "de ta ville"}.</p>
+          <button type="button" className="cz-lien" onClick={() => setVus((v) => v.filter((id) => !deLaVille.some((o) => o.id === id)))}>
+            Les revoir
+          </button>
+        </div>
       )}
 
       <nav className="ec-tiroirs" aria-label="Plus d’informations">
@@ -1053,38 +887,6 @@ function Echanger({
           }}
           onRetirer={(m) => changer((e) => ({ ...e, membres: (e.membres ?? []).filter((x) => x.id !== m.id) }))}
           onFermer={() => setPanneau(null)}
-        />
-      )}
-
-      {panneau === "moncadeau" && (
-        <FeuilleMonCadeau
-          famille={famille}
-          initial={etat.cadeau ?? null}
-          onEnregistrer={(c) => {
-            changer((e) => ({ ...e, cadeau: c }));
-            setPanneau(null);
-            setNouvelle("🎁 C’est noté : les commerçants de ta ville peuvent offrir ton cadeau à leurs clients.");
-            return null;
-          }}
-          onRetirer={() => {
-            changer((e) => ({ ...e, cadeau: undefined }));
-            setPanneau(null);
-          }}
-          onFermer={() => setPanneau(null)}
-        />
-      )}
-
-      {aOffrir && <FeuilleOffrir cadeau={aOffrir} famille={famille} aDepenser={reste} onOffrir={(q, occ) => offrir(aOffrir, q, occ)} onFermer={() => setAOffrir(null)} />}
-
-      {donne && lotDonne && (
-        <FeuilleDonner
-          lot={lotDonne}
-          code={donne.code}
-          lien=""
-          restants={lotDonne.aDonner}
-          onEncore={() => donnerUnBon(lotDonne)}
-          onSimuler={() => simulerVisite(lotDonne)}
-          onFermer={() => setDonne(null)}
         />
       )}
 
@@ -1224,7 +1026,7 @@ export function DetailDuSolde({
           <b>+ {gagne} €</b>
         </p>
         <p>
-          <span>Tu as pris (pour toi et en cadeaux)</span>
+          <span>Tu as pris</span>
           <b>− {prisTotal} €</b>
         </p>
         <p className="total">
@@ -1237,7 +1039,7 @@ export function DetailDuSolde({
           <p>
             ⚖️ <b>Tu dois {du} € au réseau</b>, {soitEnProduits(mien, famille, du)}. Ça se rend en ton produit, jamais en euros.
           </p>
-          <p>Ta dette baisse toute seule chaque fois qu’un commerçant, ou un client d’un voisin, vient chez toi avec un bon.</p>
+          <p>Ta dette baisse toute seule chaque fois qu’un commerçant vient chez toi avec un bon.</p>
           <p className="ec-tete">📣 En attendant, ton offre passe en tête chez les autres commerçants.</p>
           <p className="ec-petit">
             Tant que tu dois, ton offre reste visible et tu ne peux pas refuser un bon. Arrivé à {decouvert} €, tu sers avant de reprendre.
@@ -1271,9 +1073,6 @@ export function ReglesDuReseau({ decouvert, equipe, seuil }: { decouvert: number
       <li>
         <b>📄 Chaque bon validé chez toi a sa facture d’échange</b>, préparée à ton nom (tu donnes tes infos une fois). C’est à toi, ou à ton comptable, de la déclarer.
       </li>
-      <li>
-        <b>🎁 Le cadeau du voisin</b> : offre à tes clients un petit cadeau chez un autre commerçant, payé avec ton solde. Il gagne son prix quand ton client vient.
-      </li>
       {seuil ? <li>L’échange s’ouvre dans une ville à partir de {seuil} commerçants.</li> : null}
     </ol>
   );
@@ -1296,7 +1095,7 @@ export function Pile({
   onPrendre: (o: Offre) => void;
   /** La toute première carte se balance une fois pour montrer qu'elle se glisse. */
   indice?: boolean;
-  /** Les mots du « oui » : « J'OFFRE » pour les cadeaux du voisin. */
+  /** Les mots du « oui », s'il en faut d'autres que « JE PRENDS ». */
   tampon?: string;
   bouton?: (o: Offre) => string;
   astuce?: string;
@@ -1405,7 +1204,6 @@ export function CarteOffre({ o, dessous = false, style }: { o: Offre; dessous?: 
         )}
         <span className="ec-prix">{o.prix} €</span>
         {o.hotel && <span className="ec-hotel">🏨 Hôtel</span>}
-        {o.ruban && !o.hotel && <span className="ec-ruban">{o.ruban}</span>}
       </div>
       <div className="ec-carte-t">
         <div className="ec-qui">
@@ -1676,7 +1474,6 @@ export function StylesEchanges() {
 .ec-qr p{margin:0;font-size:13px;color:var(--gris);text-align:center;}
 .ec-sous-titre{margin:6px 0 0;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ambre);}
 .ec-recu-vide{display:grid;place-items:center;width:62px;height:62px;border-radius:14px;background:var(--nappe2);font-size:26px;}
-.ec-lot-h .ec-recu-vide{width:56px;height:56px;}
 .ec-caisse em.ec-rendre{margin-top:4px;color:var(--creme);opacity:.85;}
 .ec-equipe-t{margin-top:2px;}
 .ec-puces.cinq{display:grid;grid-template-columns:repeat(5,1fr);}

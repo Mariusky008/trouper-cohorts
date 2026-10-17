@@ -1,24 +1,16 @@
-// L'ÉCHANGE ENTRE COMMERÇANTS, EN VRAI — la caisse commune du comptoir, et
-// « le cadeau du voisin ».
+// L'ÉCHANGE ENTRE COMMERÇANTS, EN VRAI — la caisse commune du comptoir.
 //
 // POST, jeton pro privé requis ({ slug, token, action }) — OU le lien personnel
 // d'un membre de son équipe ({ membre: <jeton>, action }) :
-//   etat                          → son offre, son compte, sa ville, les offres et cadeaux des autres, ses bons
+//   etat                          → son offre, son compte, sa ville, les offres des autres, ses bons
 //   offre { titre, prix, parMois, duJour, accepte }
 //                                 → publie ou modifie son offre (il accepte les règles)
-//   cadeau { titre, prix, parMois } | { retirer: true }
-//                                 → ce qu'il accepte d'être offert aux clients des autres
 //   pause { actif }               → met son offre en pause ou la réactive — pas tant qu'il doit
 //   prendre { fournisseur }       → réserve l'offre d'un autre, pour lui (fonction `echanges_prendre`)
-//   offrir { fournisseur, quantite, occasion }
-//                                 → offre à SES clients un lot de cadeaux chez un autre (`echanges_offrir`)
-//   donner { cadeau }             → le prochain bon du lot, remis à un client (son code)
-//   reprendre { cadeau }          → les bons du lot pas encore remis : annulés, le montant lui revient
-//   valider { code }              → il valide le code d'un commerçant, ou d'un client, venu chez lui :
+//   valider { code }              → il valide le code d'un commerçant venu chez lui :
 //                                   c'est là, et seulement là, que le crédit est gagné
-//   venus { bon, n }              → « venu à combien ? » pour un bon cadeau qu'il vient de valider
 //   annuler { bon }               → annule un bon encore réservé (celui qui l'a pris ; celui qui
-//                                   le fournit seulement s'il ne doit rien et que ce n'est pas un cadeau)
+//                                   le fournit seulement s'il ne doit rien)
 //   inviter { prenom }            → un membre de plus dans son équipe : son lien personnel (`/e/<jeton>`)
 //   retirer { membre }            → son lien ne marche plus ; ce qu'il a pris reste dû par le commerce
 //   factures                      → « Mes factures » : émises, reçues, en attente, et le relevé de ses échanges
@@ -31,9 +23,14 @@
 // relevé). Voir `lib/echanges/factures-serveur.ts`.
 //
 // L'ÉQUIPE (`20261020120000_echanges_equipe.sql`) : chaque membre a son accès et
-// ses 50 € par mois ; il peut regarder, prendre pour lui, annuler SES bons,
-// valider un bon au comptoir et dire « venu à combien ». Le reste — l'offre,
-// les cadeaux, la pause, l'équipe — est au responsable, qui voit tout.
+// ses 50 € par mois ; il peut regarder, prendre pour lui, annuler SES bons et
+// valider un bon au comptoir. Le reste — l'offre, la pause, l'équipe — est au
+// responsable, qui voit tout.
+//
+// « 🎁 POUR MES CLIENTS » (le cadeau du voisin) A ÉTÉ RETIRÉ : ses actions
+// (cadeau, offrir, donner, reprendre, venus) n'existent plus. Ses tables et ses
+// colonnes restent en base, sans servir ; un ancien bon cadeau compte encore
+// dans les soldes, mais ne s'affiche plus.
 //
 // LES RÈGLES (migrations `20261017120000_echanges_commercants.sql` et
 // `20261019120000_echanges_reseau.sql`) : jamais d'euros ; 50 € d'avance par
@@ -53,7 +50,6 @@ import { paysDuCommerce } from "@/lib/site-internet/pays";
 import { enregistrerInfos, facturer, lireFactures } from "@/lib/echanges/factures-serveur";
 import {
   ALPHABET_CODE,
-  CADEAU_PAR_MOIS,
   MAX_MEMBRES,
   PAR_MOIS,
   PAR_PERSONNE,
@@ -61,10 +57,8 @@ import {
   codeNormalise,
   decouvertDe,
   type BonReel,
-  type CadeauDuReseau,
   type EtatEchanges,
   type MembreEquipe,
-  type MonLotDeCadeaux,
   type OffreReelle,
   type VilleDuReseau,
 } from "@/lib/echanges/echanges";
@@ -99,9 +93,6 @@ type LigneOffre = {
   actif: boolean;
   maj_le: string;
   equipe: number;
-  cadeau_titre: string | null;
-  cadeau_prix: number | null;
-  cadeau_par_mois: number | null;
 };
 type LigneBon = {
   id: string;
@@ -115,10 +106,8 @@ type LigneBon = {
   statut: BonReel["statut"];
   cree_le: string;
   utilise_le: string | null;
+  /** `client` : un ancien bon cadeau (« Pour mes clients », retiré). */
   pour: "moi" | "client";
-  cadeau_id: string | null;
-  donne_le: string | null;
-  venus: number | null;
   expire_le: string;
   membre_id: string | null;
   valide_par: string | null;
@@ -126,21 +115,11 @@ type LigneBon = {
 type LigneMembre = { id: string; prenom: string; jeton: string; active_le: string | null; retire_le: string | null };
 /** Un membre de son équipe, venu par son lien personnel. */
 type Membre = { id: string; prenom: string };
-type LigneCadeau = {
-  id: string;
-  fournisseur_id: string;
-  titre: string;
-  prix: number;
-  photo: string | null;
-  occasion: string;
-  quantite: number;
-  cree_le: string;
-};
 
 const COLONNES_OFFRE =
-  "site_id, titre, prix, par_mois, du_jour, photo, commerce, metier, branche, ville, ville_slug, actif, maj_le, equipe, cadeau_titre, cadeau_prix, cadeau_par_mois";
+  "site_id, titre, prix, par_mois, du_jour, photo, commerce, metier, branche, ville, ville_slug, actif, maj_le, equipe";
 const COLONNES_BON =
-  "id, code, preneur_id, fournisseur_id, titre, prix, photo, du_jour, statut, cree_le, utilise_le, pour, cadeau_id, donne_le, venus, expire_le, membre_id, valide_par";
+  "id, code, preneur_id, fournisseur_id, titre, prix, photo, du_jour, statut, cree_le, utilise_le, pour, expire_le, membre_id, valide_par";
 
 function nouveauCode(): string {
   let c = "";
@@ -205,12 +184,8 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
     maVille: maVilleVide,
     villes: [],
     offres: [],
-    cadeaux: [],
-    mesCadeaux: [],
     pris: [],
     recus: [],
-    cadeauxAServir: [],
-    reseau: { clientsRecus: 0, personnesRecues: 0, clientsEnvoyes: 0, personnesEnvoyees: 0 },
     factures: null,
   };
 
@@ -228,13 +203,6 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
     .order("cree_le", { ascending: false })
     .limit(10000);
   if (eb) return absente(eb) ? vide : null;
-  const { data: lc, error: ec } = await supabase
-    .from("human_echanges_cadeaux")
-    .select("id, fournisseur_id, titre, prix, photo, occasion, quantite, cree_le")
-    .eq("donneur_id", moi.id)
-    .order("cree_le", { ascending: false })
-    .limit(60);
-  if (ec) return absente(ec) ? vide : null;
   /* SON ÉQUIPE : ceux qui ont ouvert leur lien comptent ; un retiré ne compte plus. */
   const { data: lm, error: em } = await supabase.from("human_echanges_membres").select("id, prenom, jeton, active_le, retire_le").eq("site_id", moi.id).limit(50);
   if (em) return absente(em) ? vide : null;
@@ -249,7 +217,6 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
 
   const offresLues = (lo ?? []) as LigneOffre[];
   const bons = (lb ?? []) as LigneBon[];
-  const lots = (lc ?? []) as LigneCadeau[];
   const parSite = new Map(offresLues.map((o) => [o.site_id, o]));
   const maVilleSlug = villeSlug(moi.city);
 
@@ -264,7 +231,7 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
   }
   const ouverte = (slug: string) => Boolean(parVille.get(slug)?.ouverte);
 
-  /* OÙ ILS SONT : seulement dans sa ville, pour dire « à 4 min à pied » et ranger les cadeaux du plus proche. */
+  /* OÙ ILS SONT : seulement dans sa ville, pour dire « à 4 min à pied ». */
   const idsVille = [moi.id, ...offresLues.filter((o) => o.ville_slug === maVilleSlug && o.site_id !== moi.id).map((o) => o.site_id)];
   const points = new Map<string, Point>();
   if (idsVille.length > 1) {
@@ -282,18 +249,17 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
 
   /* LES SOLDES DE TOUT LE MONDE, recalculés depuis les bons : il en faut un
      pour savoir qui doit (son offre passe en tête). Un bon expiré ne compte
-     plus ; un bon cadeau compte comme un autre (pris par celui qui offre,
-     gagné par celui qui sert). */
+     plus ; un ancien bon cadeau compte comme un autre (pris par celui qui
+     offrait, gagné par celui qui servait). */
   const gagne = new Map<string, number>();
   const pris = new Map<string, number>();
   const ceMoisPourEux = new Map<string, number>();
-  const ceMoisCadeaux = new Map<string, number>();
   const debut = debutDuMois();
   for (const b of bons) {
     if (b.statut === "expire") continue;
     if (b.statut === "utilise") ajouter(gagne, b.fournisseur_id, b.prix);
     ajouter(pris, b.preneur_id, b.prix);
-    if (Date.parse(b.cree_le) >= debut) ajouter(b.pour === "client" ? ceMoisCadeaux : ceMoisPourEux, b.fournisseur_id, 1);
+    if (b.pour !== "client" && Date.parse(b.cree_le) >= debut) ajouter(ceMoisPourEux, b.fournisseur_id, 1);
   }
   const doit = (id: string) => (pris.get(id) ?? 0) > (gagne.get(id) ?? 0);
 
@@ -318,13 +284,11 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
     prix: b.prix,
     photo: photoMontrable(b.photo),
     statut: b.statut,
-    pour: b.pour === "client" ? "client" : "moi",
     autre: nomDe(autre),
     autreVille: villeDe(autre),
     cree: b.cree_le,
     utilise: b.utilise_le ?? undefined,
     expire: b.expire_le,
-    ...(b.venus ? { venus: b.venus } : {}),
     ...(b.membre_id && prenomDe.get(b.membre_id) ? { qui: prenomDe.get(b.membre_id) } : {}),
     ...(b.valide_par && prenomDe.get(b.valide_par) ? { validePar: prenomDe.get(b.valide_par) } : {}),
   });
@@ -354,67 +318,6 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
     // TANT QU'IL DOIT, SON OFFRE PASSE EN TÊTE ; ensuite, les plus récentes.
     .sort((a, b) => Number(b.doit) - Number(a.doit) || Date.parse(parSite.get(b.id)?.maj_le ?? "") - Date.parse(parSite.get(a.id)?.maj_le ?? ""));
 
-  /* LES CADEAUX DES AUTRES, à offrir à ses clients : sa ville d'abord, du plus
-     proche au plus loin — un dessert à deux minutes vaut mieux qu'à deux kilomètres. */
-  const cadeaux: CadeauDuReseau[] = autres
-    .filter((o) => o.cadeau_titre && o.cadeau_prix && o.cadeau_par_mois && ouverte(o.ville_slug))
-    .sort(
-      (a, b) =>
-        Number(b.ville_slug === maVilleSlug) - Number(a.ville_slug === maVilleSlug) ||
-        distance(a.site_id) - distance(b.site_id) ||
-        Number(doit(b.site_id)) - Number(doit(a.site_id)) ||
-        Date.parse(b.maj_le) - Date.parse(a.maj_le),
-    )
-    .map((o) => ({
-      id: o.site_id,
-      commerce: o.commerce,
-      metier: o.metier,
-      branche: o.branche,
-      ville: o.ville,
-      villeSlug: o.ville_slug,
-      titre: str(o.cadeau_titre),
-      prix: Number(o.cadeau_prix),
-      photo: photoMontrable(o.photo),
-      restant: Math.max(0, Number(o.cadeau_par_mois) - (ceMoisCadeaux.get(o.site_id) ?? 0)),
-      ...aPiedDe(o.site_id),
-    }));
-
-  /* SES LOTS DE CADEAUX : remis, utilisés, personnes venues, à donner. */
-  const mesCadeaux: MonLotDeCadeaux[] = lots.map((c) => {
-    const du = bons.filter((b) => b.cadeau_id === c.id);
-    const utilises = du.filter((b) => b.statut === "utilise");
-    const fins = du.map((b) => Date.parse(b.expire_le)).filter(Number.isFinite);
-    return {
-      id: c.id,
-      chez: nomDe(c.fournisseur_id),
-      chezId: c.fournisseur_id,
-      titre: c.titre,
-      prix: c.prix,
-      photo: photoMontrable(c.photo),
-      occasion: c.occasion,
-      quantite: c.quantite,
-      donnes: du.filter((b) => b.donne_le).length,
-      utilises: utilises.length,
-      personnes: utilises.reduce((s, b) => s + (b.venus ?? 1), 0),
-      aDonner: du.filter((b) => b.statut === "reserve" && !b.donne_le).length,
-      expires: du.filter((b) => b.statut === "expire").length,
-      cree: c.cree_le,
-      expire: new Date(fins.length ? Math.max(...fins) : Date.parse(c.cree_le) + 30 * 86_400_000).toISOString(),
-    };
-  });
-
-  /* CE QUE LE RÉSEAU LUI A AMENÉ — en clients, pas en euros. */
-  const servis = bons.filter((b) => b.pour === "client" && b.statut === "utilise" && b.fournisseur_id === moi.id);
-  const envoyes = bons.filter((b) => b.pour === "client" && b.statut === "utilise" && b.preneur_id === moi.id);
-  const aServir = new Map<string, { de: string; titre: string; n: number }>();
-  for (const b of bons) {
-    if (b.pour !== "client" || b.statut !== "reserve" || b.fournisseur_id !== moi.id) continue;
-    const k = `${b.preneur_id}|${b.titre}`;
-    const x = aServir.get(k) ?? { de: nomDe(b.preneur_id), titre: b.titre, n: 0 };
-    x.n += 1;
-    aServir.set(k, x);
-  }
-
   const maVille = parVille.get(maVilleSlug) ?? { slug: maVilleSlug, nom: moi.city, offres: 0, ouverte: false };
   const aDepenser = Math.max(0, decouvert + g - p);
   const equipeVue: MembreEquipe[] = membre
@@ -440,10 +343,6 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
           photo: photoMontrable(mienLu.photo),
           actif: mienLu.actif,
           equipe,
-          cadeau:
-            mienLu.cadeau_titre && mienLu.cadeau_prix && mienLu.cadeau_par_mois
-              ? { titre: mienLu.cadeau_titre, prix: mienLu.cadeau_prix, parMois: mienLu.cadeau_par_mois }
-              : null,
         }
       : null,
     compte: { decouvert, equipe, gagne: g, pris: p, aDepenser, du: Math.max(0, p - g) },
@@ -458,25 +357,14 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
     },
     villes: [...parVille.values()].filter((v) => v.ouverte).sort((a, b) => Number(b.slug === maVilleSlug) - Number(a.slug === maVilleSlug) || b.offres - a.offres),
     offres,
-    cadeaux,
-    mesCadeaux,
     // UN MEMBRE NE VOIT QUE SES BONS ; le responsable, ceux de toute l'équipe.
     pris: bons.filter((b) => b.preneur_id === moi.id && b.pour !== "client" && (!membre || b.membre_id === membre.id)).map((b) => enBon(b, b.fournisseur_id)),
-    recus: bons
-      .filter((b) => b.fournisseur_id === moi.id && (b.pour === "client" ? b.statut === "utilise" : b.statut !== "expire"))
-      .map((b) => enBon(b, b.preneur_id)),
-    cadeauxAServir: [...aServir.values()],
-    reseau: {
-      clientsRecus: servis.length,
-      personnesRecues: servis.reduce((s, b) => s + (b.venus ?? 1), 0),
-      clientsEnvoyes: envoyes.length,
-      personnesEnvoyees: envoyes.reduce((s, b) => s + (b.venus ?? 1), 0),
-    },
+    recus: bons.filter((b) => b.fournisseur_id === moi.id && b.pour !== "client" && b.statut !== "expire").map((b) => enBon(b, b.preneur_id)),
     factures,
   };
 }
 
-/** Pourquoi on ne peut pas encore prendre ni offrir : sa ville, ou celle de l'autre, n'est pas ouverte. */
+/** Pourquoi on ne peut pas encore prendre : sa ville, ou celle de l'autre, n'est pas ouverte. */
 function villeFermee(etat: EtatEchanges, autre?: { villeSlug: string; ville: string }): string | null {
   const m = etat.maVille;
   if (!m.ouverte) {
@@ -523,7 +411,7 @@ export async function POST(request: Request) {
     slug = str(site.slug);
     membre = { id: m.id, prenom: m.prenom };
     // CE QU'UN MEMBRE PEUT FAIRE ; le reste est au responsable.
-    if (!["etat", "prendre", "annuler", "valider", "venus"].includes(action)) {
+    if (!["etat", "prendre", "annuler", "valider"].includes(action)) {
       return NextResponse.json({ error: "C'est le responsable du commerce qui s'en occupe." }, { status: 403 });
     }
   } else {
@@ -601,27 +489,6 @@ export async function POST(request: Request) {
     return repondre({ ok: true });
   }
 
-  /* ── LE CADEAU QU'IL ACCEPTE D'ÊTRE OFFERT AUX CLIENTS DES AUTRES ───────── */
-  if (action === "cadeau") {
-    const retirer = p?.retirer === true;
-    const titre = str(p?.titre).slice(0, 60);
-    const prix = Math.round(Number(p?.prix));
-    const parMois = Math.round(Number(p?.parMois));
-    if (!retirer) {
-      if (titre.length < 2) return NextResponse.json({ error: "Écris le petit cadeau que tu proposes." }, { status: 400 });
-      if (!Number.isFinite(prix) || prix < 2 || prix > 60) return NextResponse.json({ error: "Un cadeau, c'est entre 2 et 60 €." }, { status: 400 });
-      if (!CADEAU_PAR_MOIS.includes(parMois)) return NextResponse.json({ error: "Combien par mois ? 5, 10, 20 ou 40." }, { status: 400 });
-    }
-    const { data, error } = await supabase
-      .from("human_echanges_offres")
-      .update(retirer ? { cadeau_titre: null, cadeau_prix: null, cadeau_par_mois: null, maj_le: new Date().toISOString() } : { cadeau_titre: titre, cadeau_prix: prix, cadeau_par_mois: parMois, maj_le: new Date().toISOString() })
-      .eq("site_id", moi.id)
-      .select("site_id");
-    if (error) return NextResponse.json({ error: absente(error) ? "L'échange n'est pas encore ouvert." : "Enregistrement impossible." }, { status: 500 });
-    if (!data?.length) return repondre({ ok: false, message: "Publie d'abord ton offre aux commerçants." });
-    return repondre({ ok: true, message: retirer ? "Ton cadeau n'est plus proposé aux autres commerçants." : "🎁 Les autres commerçants peuvent maintenant offrir ton cadeau à leurs clients." });
-  }
-
   if (action === "pause") {
     const actif = p?.actif === true;
     if (!actif) {
@@ -677,101 +544,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Réservation impossible, réessaie." }, { status: 500 });
   }
 
-  /* ── OFFRIR À SES CLIENTS UN CADEAU CHEZ UN VOISIN ─────────────────────── */
-  if (action === "offrir") {
-    const fournisseur = str(p?.fournisseur);
-    const quantite = Math.round(Number(p?.quantite));
-    const occasion = str(p?.occasion).replace(/\s+/g, " ").slice(0, 80);
-    if (!UUID.test(fournisseur)) return NextResponse.json({ error: "Cadeau inconnu." }, { status: 400 });
-    if (!Number.isFinite(quantite) || quantite < 1 || quantite > 60) return NextResponse.json({ error: "Combien de cadeaux ? De 1 à 60." }, { status: 400 });
-    const { etat, erreur } = await avant();
-    if (!etat) return erreur;
-    const c = etat.cadeaux.find((x) => x.id === fournisseur);
-    const o = etat.offres.find((x) => x.id === fournisseur);
-    const ferme = villeFermee(etat, c ?? o);
-    if (ferme) return refus(etat, ferme, { raison: "ville" });
-    for (let essai = 0; essai < 3; essai++) {
-      const codes = new Set<string>();
-      while (codes.size < quantite) codes.add(nouveauCode());
-      const { data, error } = await supabase.rpc("echanges_offrir", {
-        p_donneur: moi.id,
-        p_fournisseur: fournisseur,
-        p_quantite: quantite,
-        p_occasion: occasion,
-        p_codes: [...codes],
-        p_par_personne: PAR_PERSONNE,
-      });
-      if (error?.code === "23505") continue;
-      if (error) return NextResponse.json({ error: absente(error) ? "L'échange n'est pas encore ouvert." : "L'offre n'a pas pu être enregistrée." }, { status: 500 });
-      const r = (data ?? {}) as { ok?: boolean; raison?: string; manque?: number; restant?: number; cadeau?: { id?: string } };
-      if (!r.ok) {
-        const chez = c?.commerce ?? o?.commerce ?? "Ce commerçant";
-        const pourquoi: Record<string, string> = {
-          solde: `Il te manque ${r.manque ?? 0} € pour ${quantite} cadeaux. Offres-en moins, ou attends qu'un commerçant prenne ton produit.`,
-          complet: r.restant ? `${chez} accepte encore ${r.restant} cadeau${r.restant > 1 ? "x" : ""} ce mois-ci.` : `${chez} a déjà été offert autant qu'il le peut ce mois-ci.`,
-          offre_retiree: "Ce commerçant ne propose plus de cadeau.",
-          sans_offre: "Publie d'abord ton offre : c'est ce qui te permet d'offrir chez les autres.",
-          quantite: "Combien de cadeaux ? De 1 à 60.",
-          soi: "C'est ton propre cadeau.",
-        };
-        return repondre({ ok: false, raison: r.raison, message: pourquoi[str(r.raison)] ?? "L'offre n'a pas pu être enregistrée." });
-      }
-      return repondre({ ok: true, cadeau: r.cadeau?.id ?? "" });
-    }
-    return NextResponse.json({ error: "L'offre n'a pas pu être enregistrée, réessaie." }, { status: 500 });
-  }
-
-  /* ── REMETTRE UN BON DU LOT À UN CLIENT ─────────────────────────────────── */
-  if (action === "donner") {
-    const cadeau = str(p?.cadeau);
-    if (!UUID.test(cadeau)) return NextResponse.json({ error: "Lot inconnu." }, { status: 400 });
-    // DEUX TÉLÉPHONES PEUVENT DONNER EN MÊME TEMPS : le bon n'est à lui que si personne ne l'a marqué entre-temps.
-    for (let essai = 0; essai < 4; essai++) {
-      const { data: libres, error } = await supabase
-        .from("human_echanges_bons")
-        .select("id, code")
-        .eq("cadeau_id", cadeau)
-        .eq("preneur_id", moi.id)
-        .eq("statut", "reserve")
-        .is("donne_le", null)
-        .order("code")
-        .limit(1);
-      if (error) return NextResponse.json({ error: absente(error) ? "L'échange n'est pas encore ouvert." : "Lecture impossible." }, { status: 500 });
-      const b = ((libres ?? []) as Array<{ id: string; code: string }>)[0];
-      if (!b) return repondre({ ok: false, message: "Tous les bons de ce lot ont déjà été donnés." });
-      const { data: pris } = await supabase
-        .from("human_echanges_bons")
-        .update({ donne_le: new Date().toISOString() })
-        .eq("id", b.id)
-        .eq("statut", "reserve")
-        .is("donne_le", null)
-        .select("id");
-      if (pris?.length) return repondre({ ok: true, code: b.code });
-    }
-    return NextResponse.json({ error: "Réessaie dans un instant." }, { status: 500 });
-  }
-
-  if (action === "reprendre") {
-    const cadeau = str(p?.cadeau);
-    if (!UUID.test(cadeau)) return NextResponse.json({ error: "Lot inconnu." }, { status: 400 });
-    const { data, error } = await supabase
-      .from("human_echanges_bons")
-      .update({ statut: "annule", annule_par: "preneur", annule_le: new Date().toISOString() })
-      .eq("cadeau_id", cadeau)
-      .eq("preneur_id", moi.id)
-      .eq("statut", "reserve")
-      .is("donne_le", null)
-      .select("id, prix");
-    if (error) return NextResponse.json({ error: "Annulation impossible." }, { status: 500 });
-    const faits = (data ?? []) as Array<{ prix: number }>;
-    const total = faits.reduce((s, b) => s + b.prix, 0);
-    return repondre({
-      ok: faits.length > 0,
-      message: faits.length ? `${faits.length} bon${faits.length > 1 ? "s" : ""} repris : ${total} € reviennent dans ce que tu peux dépenser.` : "Aucun bon à reprendre : ils ont tous été donnés.",
-    });
-  }
-
-  /* ── VALIDER LE CODE D'UN COMMERÇANT, OU D'UN CLIENT, VENU CHEZ LUI ─────── */
+  /* ── VALIDER LE CODE D'UN COMMERÇANT VENU CHEZ LUI ─────────────────────── */
   if (action === "valider") {
     const code = codeNormalise(str(p?.code));
     if (!code) return repondre({ ok: false, message: "Ce code n'a pas la bonne forme : CLK- suivi de 6 lettres ou chiffres." });
@@ -783,9 +556,9 @@ export async function POST(request: Request) {
       .eq("code", code)
       .eq("fournisseur_id", moi.id)
       .eq("statut", "reserve")
-      .select("id, prix, preneur_id, pour, titre");
+      .select("id, prix, preneur_id");
     if (error) return NextResponse.json({ error: absente(error) ? "L'échange n'est pas encore ouvert." : "Validation impossible." }, { status: 500 });
-    const fait = ((data ?? []) as Array<{ id: string; prix: number; preneur_id: string; pour: string; titre: string }>)[0];
+    const fait = ((data ?? []) as Array<{ id: string; prix: number; preneur_id: string }>)[0];
     if (fait) {
       const { data: o } = await supabase.from("human_echanges_offres").select("commerce").eq("site_id", fait.preneur_id).maybeSingle();
       const qui = str((o as { commerce?: string } | null)?.commerce) || "Ce commerçant";
@@ -793,15 +566,6 @@ export async function POST(request: Request) {
       const f = await facturer(supabase, moi.id);
       const facture = f.faites > 0 ? "faite" : moi.pays === "fr" && !f.infos ? "infos" : "";
       const rappel = facture === "infos" && !membre ? " 📄 Ta facture d’échange t’attend dans « Mes factures »." : "";
-      if (fait.pour === "client") {
-        return repondre({
-          ok: true,
-          client: true,
-          bon: fait.id,
-          facture,
-          message: `🎁 Validé ✓ Un client envoyé par ${qui} : ${fait.titre}. ${membre ? "Ta boutique a gagné" : "Tu as gagné"} ${fait.prix} €.${rappel}`,
-        });
-      }
       return repondre({
         ok: true,
         facture,
@@ -822,43 +586,23 @@ export async function POST(request: Request) {
     return repondre({ ok: false, message });
   }
 
-  /* ── « VENU À COMBIEN ? » ──────────────────────────────────────────────── */
-  if (action === "venus") {
-    const bon = str(p?.bon);
-    const n = Math.round(Number(p?.n));
-    if (!UUID.test(bon) || !Number.isFinite(n) || n < 1 || n > 20) return NextResponse.json({ error: "Combien de personnes ? De 1 à 20." }, { status: 400 });
-    const { data, error } = await supabase
-      .from("human_echanges_bons")
-      .update({ venus: n })
-      .eq("id", bon)
-      .eq("fournisseur_id", moi.id)
-      .eq("pour", "client")
-      .eq("statut", "utilise")
-      .select("id");
-    if (error) return NextResponse.json({ error: "Enregistrement impossible." }, { status: 500 });
-    if (!data?.length) return NextResponse.json({ error: "Bon inconnu." }, { status: 404 });
-    return repondre({ ok: true, message: n > 1 ? `Noté : ${n} personnes venues grâce au cadeau 🎉` : "Noté ✓" });
-  }
-
   /* ── ANNULER UN BON ENCORE RÉSERVÉ ─────────────────────────────────────── */
   if (action === "annuler") {
     const bon = str(p?.bon);
     if (!UUID.test(bon)) return NextResponse.json({ error: "Bon inconnu." }, { status: 400 });
-    const { data: lu } = await supabase.from("human_echanges_bons").select("preneur_id, fournisseur_id, statut, pour, donne_le, membre_id").eq("id", bon).maybeSingle();
-    const b = lu as { preneur_id?: string; fournisseur_id?: string; statut?: string; pour?: string; donne_le?: string | null; membre_id?: string | null } | null;
+    const { data: lu } = await supabase.from("human_echanges_bons").select("preneur_id, fournisseur_id, statut, membre_id").eq("id", bon).maybeSingle();
+    const b = lu as { preneur_id?: string; fournisseur_id?: string; statut?: string; membre_id?: string | null } | null;
     const role = b?.preneur_id === moi.id ? "preneur" : b?.fournisseur_id === moi.id ? "fournisseur" : "";
     if (!b || !role) return NextResponse.json({ error: "Bon inconnu." }, { status: 404 });
     // UN MEMBRE N'ANNULE QUE SES PROPRES BONS.
     if (membre && (role !== "preneur" || b.membre_id !== membre.id)) return NextResponse.json({ error: "C'est le responsable du commerce qui s'en occupe." }, { status: 403 });
     if (b.statut !== "reserve") return repondre({ ok: false, message: "Ce bon ne peut plus être annulé." });
     if (role === "fournisseur") {
-      if (b.pour === "client") return repondre({ ok: false, message: "C’est un cadeau promis à un client : il ne se refuse pas." });
       // TANT QU'IL DOIT, IL SERT : refuser un bon, c'est refuser de rendre.
       const { etat, erreur } = await avant();
       if (!etat) return erreur;
       if (etat.compte.du > 0) return refus(etat, `Tant que tu dois ${etat.compte.du} € au réseau, tu ne peux pas refuser un bon : c’est en servant que ta dette baisse.`);
     }
-    if (role === "preneur" && b.pour === "client" && b.donne_le) return repondre({ ok: false, message: "Ce bon est déjà chez ton client." });
     const { error } = await supabase
       .from("human_echanges_bons")
       .update({ statut: "annule", annule_par: role, annule_le: new Date().toISOString() })
