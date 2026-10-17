@@ -52,7 +52,7 @@ export type ContenuFacture = {
   };
   acheteur: { nom: string; enseigne: string; adresse: string; siret: string; tvaIntra: string };
   ligne: { designation: string; detail: string; nature: Nature; ttc: number; ht: number; tva: number; taux: number | null };
-  /** `euros` : à moitié prix, la part réglée en euros sur place (le reste, par échange). */
+  /** `euros` : un bon à moitié prix — la vente, de la moitié du prix, réglée en euros sur place. */
   bon: { code: string; euros?: number };
 };
 

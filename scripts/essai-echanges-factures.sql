@@ -2,9 +2,10 @@
 --
 -- Les règles de `20261021120000_echanges_factures.sql` : pas de facture sans les infos et l'accord
 -- du fournisseur, une facture par bon validé et une seule, une série sans trou dans l'ordre des
--- remises, des montants qui tombent juste, une facture figée, et rien pour anon.
+-- remises, des montants qui tombent juste, une facture figée, celle d'un bon à moitié prix du montant
+-- payé, et rien pour anon.
 --
--- Sur une base d'essai où les quatre migrations de l'échange sont appliquées (voir
+-- Sur une base d'essai où les migrations de l'échange sont appliquées (voir
 -- `essai-echanges-reseau.sql` pour la préparer), puis :
 --   psql -d essai_echanges -f scripts/essai-echanges-factures.sql
 \set ON_ERROR_STOP 1
@@ -97,6 +98,16 @@ VALUES ('f1f1f1f1-0000-4000-8000-000000000001', 'Lou Martin', 'EI', '4 rue des C
 SELECT pg_temp.verifie(echanges_facturer('f1f1f1f1-0000-4000-8000-000000000001', jsonb_build_array(pg_temp.ligne('b0000000-0000-4000-8000-000000000004', 45, 45, 0, NULL))) = 1, 'Lou, en franchise : une facture');
 SELECT pg_temp.verifie((SELECT numero FROM human_echanges_factures WHERE bon_id = 'b0000000-0000-4000-8000-000000000004') LIKE 'ECH-%-0001',
   'Lou, en franchise : sa propre série commence à 0001, sans TVA');
+
+-- À MOITIÉ PRIX (`20261024120000_echanges_moitie_simple.sql`) : la facture est du montant payé, la moitié.
+INSERT INTO human_echanges_bons (id, code, preneur_id, fournisseur_id, titre, prix, statut, utilise_le, mode) VALUES
+ ('b0000000-0000-4000-8000-000000000006','CLK-FAC006','f2f2f2f2-0000-4000-8000-000000000002','f1f1f1f1-0000-4000-8000-000000000001','Une coupe',45,'utilise', now(), 'moitie');
+SELECT pg_temp.verifie(echanges_facturer('f1f1f1f1-0000-4000-8000-000000000001', jsonb_build_array(pg_temp.ligne('b0000000-0000-4000-8000-000000000006', 45, 45, 0, NULL))) = 0,
+  'un bon à moitié prix facturé au prix entier : refusé');
+SELECT pg_temp.verifie(echanges_facturer('f1f1f1f1-0000-4000-8000-000000000001',
+  jsonb_build_array(jsonb_build_object('bon', 'b0000000-0000-4000-8000-000000000006', 'ttc', 22.50, 'ht', 22.50, 'tva', 0, 'taux', NULL, 'contenu', '{}'::jsonb))) = 1,
+  'le même bon facturé 22,50 € (la moitié de 45 €) : accepté');
+SELECT pg_temp.verifie((SELECT ttc = 22.50 FROM human_echanges_factures WHERE bon_id = 'b0000000-0000-4000-8000-000000000006'), '… et la facture dit 22,50 €');
 
 -- Comme Supabase : anon a le droit de lire les tables de public ; c'est la RLS (sans règle) qui ne lui montre rien.
 GRANT SELECT ON human_echanges_factures, human_echanges_facturation TO anon;

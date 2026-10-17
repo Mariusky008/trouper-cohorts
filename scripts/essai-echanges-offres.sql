@@ -2,11 +2,11 @@
 --
 -- Les règles de `20261023120000_echanges_offres.sql` : chaque offre dit comment on la paie (les deux,
 -- crédits seulement, moitié prix seulement) ; deux offres de plus au plus (rang 2 et 3) ; chaque offre
--- a sa limite du mois, et seuls ses bons y comptent ; une seule fois à moitié prix par mois chez un
--- même commerçant, toutes ses offres confondues ; en pause, toutes ses offres le sont ; l'ancienne
--- `echanges_prendre` (six arguments) prend la première offre ; anon n'exécute rien.
+-- a sa limite du mois, et seuls ses bons y comptent ; à moitié prix, aucun crédit et plus de « une fois
+-- par mois » (`20261024120000_echanges_moitie_simple.sql`) ; en pause, toutes ses offres le sont ;
+-- l'ancienne `echanges_prendre` (six arguments) prend la première offre ; anon n'exécute rien.
 --
--- Sur une base d'essai où les six migrations de l'échange sont appliquées (voir
+-- Sur une base d'essai où les sept migrations de l'échange sont appliquées (voir
 -- `essai-echanges-reseau.sql` pour la préparer), puis :
 --   psql -d essai_echanges -f scripts/essai-echanges-offres.sql
 \set ON_ERROR_STOP 1
@@ -69,18 +69,17 @@ SELECT pg_temp.verifie(pg_temp.raison(1) = 'paiement' AND (SELECT j->>'paiement'
 SELECT pg_temp.prendre(3,'a1000000-0000-4000-8000-0000000000aa','b1000000-0000-4000-8000-0000000000bb','CLK-OFF003','credits','d1000000-0000-4000-8000-000000000002');
 SELECT pg_temp.prendre(4,'a1000000-0000-4000-8000-0000000000aa','b1000000-0000-4000-8000-0000000000bb','CLK-OFF004','moitie','d1000000-0000-4000-8000-000000000002');
 SELECT pg_temp.verifie(pg_temp.raison(3) = 'paiement' AND pg_temp.ok(4)
-  AND (SELECT titre = 'Un dessert' AND prix = 8 AND a_regler = 4 AND credits = 4 AND offre_id = 'd1000000-0000-4000-8000-000000000002' AND NOT du_jour FROM human_echanges_bons WHERE code = 'CLK-OFF004'),
-  'le dessert (moitié prix seulement) : avec ses crédits « paiement » ; à moitié prix, 4 € à régler, 4 € de crédits, le bon dit son offre');
+  AND (SELECT titre = 'Un dessert' AND prix = 8 AND a_regler = 4 AND credits = 0 AND offre_id = 'd1000000-0000-4000-8000-000000000002' AND NOT du_jour FROM human_echanges_bons WHERE code = 'CLK-OFF004'),
+  'le dessert (moitié prix seulement) : avec ses crédits « paiement » ; à moitié prix, 4 € à régler, aucun crédit, le bon dit son offre');
 
 -- 4. Sa limite à lui : 1 par mois. Le fleuriste arrive trop tard pour le dessert, pas pour le dîner.
 SELECT pg_temp.prendre(5,'c1000000-0000-4000-8000-0000000000cc','b1000000-0000-4000-8000-0000000000bb','CLK-OFF005','moitie','d1000000-0000-4000-8000-000000000002');
 SELECT pg_temp.prendre(6,'c1000000-0000-4000-8000-0000000000cc','b1000000-0000-4000-8000-0000000000bb','CLK-OFF006','credits',NULL);
 SELECT pg_temp.verifie(pg_temp.raison(5) = 'complet' AND pg_temp.ok(6), 'le dessert est complet (1 par mois), le dîner ne l''est pas : chaque offre sa limite');
 
--- 5. Une seule fois à moitié prix chez Bergine, toutes ses offres confondues ; avec ses crédits, le menu passe.
+-- 5. Plus de « une fois par mois » : après le dessert, A prend aussi le menu à moitié prix.
 SELECT pg_temp.prendre(7,'a1000000-0000-4000-8000-0000000000aa','b1000000-0000-4000-8000-0000000000bb','CLK-OFF007','moitie','d1000000-0000-4000-8000-000000000003');
-SELECT pg_temp.prendre(8,'a1000000-0000-4000-8000-0000000000aa','b1000000-0000-4000-8000-0000000000bb','CLK-OFF008','credits','d1000000-0000-4000-8000-000000000003');
-SELECT pg_temp.verifie(pg_temp.raison(7) = 'moitie_deja' AND pg_temp.ok(8), 'le menu à moitié prix après le dessert : « moitie_deja » ; avec ses crédits, ok');
+SELECT pg_temp.verifie(pg_temp.ok(7) AND (SELECT mode = 'moitie' AND credits = 0 FROM human_echanges_bons WHERE code = 'CLK-OFF007'), 'le menu à moitié prix après le dessert, le même mois : accepté');
 
 -- 6. Le menu : 2 par mois. Le 3e (A, qui a encore de quoi) est complet ; le dîner (4 par mois) n'en a que 2.
 SELECT pg_temp.prendre(9,'c1000000-0000-4000-8000-0000000000cc','b1000000-0000-4000-8000-0000000000bb','CLK-OFF009','moitie','d1000000-0000-4000-8000-000000000003');
@@ -89,8 +88,8 @@ SELECT pg_temp.verifie(pg_temp.ok(9) AND pg_temp.raison(10) = 'complet'
   AND (SELECT count(*) FROM human_echanges_bons WHERE fournisseur_id = 'b1000000-0000-4000-8000-0000000000bb' AND offre_id IS NULL) = 2,
   'le menu : 2 pris, le 3e « complet » ; le dîner n''en compte que 2 sur 4');
 
--- 7. Le compte d'A : 150 € d'avance ; pris en crédits : dîner 50 + menu 15 = 65 (le dessert à moitié prix n'y est pas).
-SELECT pg_temp.verifie((SELECT sum(prix) FROM human_echanges_bons WHERE preneur_id = 'a1000000-0000-4000-8000-0000000000aa' AND mode = 'credits') = 65, 'A a pris 65 € en crédits');
+-- 7. Le compte d'A : pris en crédits, le dîner seulement (50 €) ; le dessert et le menu à moitié prix n'y sont pas.
+SELECT pg_temp.verifie((SELECT sum(prix) FROM human_echanges_bons WHERE preneur_id = 'a1000000-0000-4000-8000-0000000000aa' AND mode = 'credits') = 50, 'A a pris 50 € en crédits');
 
 -- 8. L'offre d'un autre, une offre retirée, une offre inconnue : « offre_retiree ».
 SELECT pg_temp.prendre(11,'a1000000-0000-4000-8000-0000000000aa','c1000000-0000-4000-8000-0000000000cc','CLK-OFF011','credits','d1000000-0000-4000-8000-000000000003');

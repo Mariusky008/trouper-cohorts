@@ -260,8 +260,8 @@ ok(f.ok && f.factures.pays === "ch" && f.factures.aPreparer === 0 && f.factures.
 r = await appel(ALICE, "facturation", infosBergine);
 ok(r.statut === 400 && /bientôt/.test(r.error), `Alice ne peut pas encore donner d'infos : « ${r.error} »`);
 
-/* ── « JAMAIS PLEIN TARIF » (`20261022130000_echanges_moitie_prix.sql`) ──────────── */
-console.log("\n— jamais plein tarif —");
+/* ── À MOITIÉ PRIX, C'EST TOUT (`…_moitie_prix.sql`, `20261024120000_echanges_moitie_simple.sql`) ── */
+console.log("\n— à moitié prix —");
 // Lou : 100 € d'avance (Léa), +45 gagnés (sa coupe), 106 pris avec ses crédits → 39 €.
 e = (await appel(LOU, "etat")).etat;
 ok(e.compte.aDepenser === 39, `Lou peut encore dépenser ${e.compte.aDepenser} € en crédits`);
@@ -269,20 +269,18 @@ r = await appel(LOU, "prendre", { fournisseur: ID.bergine, mode: "credits" });
 ok(r.ok === false && r.raison === "solde" && /11 €/.test(r.message), `un dîner (50 €) avec ses crédits : « ${r.message} »`);
 r = await appel(LOU, "prendre", { fournisseur: ID.bergine, mode: "moitie" });
 const bonMoitie = r.etat?.pris.find((b) => b.mode === "moitie");
-ok(r.ok && bonMoitie?.aRegler === 25 && bonMoitie?.credits === 25 && r.etat.compte.aDepenser === 39, `le même dîner à moitié prix : ${bonMoitie?.aRegler} € à régler, ses crédits ne bougent pas (${r.etat?.compte.aDepenser} €)`);
-ok(r.etat.offres.find((o) => o.id === ID.bergine)?.moitieDeja === true, "la carte de Bergine le sait : déjà pris à moitié prix ce mois-ci");
-r = await appel(LOU, "prendre", { fournisseur: ID.bergine, mode: "moitie" });
-ok(r.ok === false && r.raison === "moitie_deja" && /une fois par mois/.test(r.message), `une deuxième fois chez Bergine : « ${r.message} »`);
+ok(r.ok && bonMoitie?.aRegler === 25 && bonMoitie?.credits === 0 && r.etat.compte.aDepenser === 39, `le même dîner à moitié prix : ${bonMoitie?.aRegler} € à régler, aucun crédit ne bouge (${r.etat?.compte.aDepenser} €)`);
+ok(!("moitieDeja" in (r.etat.offres.find((o) => o.id === ID.bergine) ?? {})), "plus de « une fois par mois » : la carte ne dit plus « déjà pris »");
 const gagneAvant = (await appel(BERGINE, "etat")).etat.compte.gagne;
 r = await appel(BERGINE, "valider", { code: bonMoitie.code });
-ok(r.ok && /à moitié prix : encaisse 25\u00a0€ sur place\. Tu gagnes 25 € de crédits/.test(r.message) && r.facture === "faite", `Bergine valide : « ${r.message} »`);
+ok(r.ok && /à moitié prix : encaisse 25\u00a0€ sur place\.$/.test(r.message) && !/crédit/.test(r.message) && r.facture === "faite", `Bergine valide : « ${r.message} »`);
 e = r.etat;
-ok(e.compte.gagne === gagneAvant + 25 && e.recus.find((b) => b.code === bonMoitie.code)?.mode === "moitie", `elle gagne la moitié en crédits : ${gagneAvant} → ${e.compte.gagne} €`);
+ok(e.compte.gagne === gagneAvant && e.recus.find((b) => b.code === bonMoitie.code)?.mode === "moitie", `elle encaisse 25 €, et ses crédits ne bougent pas : ${gagneAvant} → ${e.compte.gagne} €`);
 f = await appel(BERGINE, "factures");
 const fMoitie = f.factures.emises[0];
-ok(fMoitie.numero === `ECH-${an}-0004` && fMoitie.ttc === 50, `la facture : ${fMoitie.numero}, le prix entier (${fMoitie.ttc} €)`);
+ok(fMoitie.numero === `ECH-${an}-0004` && fMoitie.ttc === 25 && fMoitie.ht === 22.73 && fMoitie.tva === 2.27, `la facture : ${fMoitie.numero}, du montant payé (${fMoitie.ttc} € dont ${fMoitie.tva} € de TVA)`);
 pageFacture = await lire(fMoitie.lien);
-ok(/réglée pour 25,00\s€ en euros, sur place, et pour 25,00\s€ par échange/.test(pageFacture) && pageFacture.includes("à moitié prix entre membres"), "… réglée pour moitié en euros, pour moitié par échange");
+ok(/réglée en euros, sur place/.test(pageFacture) && pageFacture.includes("Prix public 50 € · remise de 50 % entre commerçants ClikMe") && !/par échange de produits/.test(pageFacture), "… « Prix public 50 € · remise de 50 % », réglée en euros, sur place");
 // Une librairie : pas de moitié prix (prix unique du livre).
 await fetch(`${F}/human_echanges_offres?site_id=eq.${ID.fleurs}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ metier: "Librairie" }) });
 r = await appel(LOU, "prendre", { fournisseur: ID.fleurs, mode: "moitie" });
@@ -294,7 +292,7 @@ const resteLea = m.etat.moi.reste;
 m = await appelMembre(jetonLea, "prendre", { fournisseur: ID.fournil, mode: "moitie" });
 ok(m.ok && m.etat.moi.reste === resteLea && m.etat.pris.some((b) => b.mode === "moitie" && b.aRegler === 3), `Léa prend une baguette à moitié prix (3 €) : il lui reste toujours ${m.etat?.moi.reste} €`);
 r = await appel(LOU, "prendre", { fournisseur: ID.fournil, mode: "moitie" });
-ok(r.ok === false && r.raison === "moitie_deja", "Lou, à moitié prix au Fournil : déjà fait par Léa ce mois-ci (c'est la boutique qui compte)");
+ok(r.ok && r.etat.pris.filter((b) => b.mode === "moitie" && b.titre.startsWith("Une baguette")).length === 2, "Lou aussi, à moitié prix au Fournil, après Léa : plus de « une fois par mois »");
 r = await appel(LOU, "prendre", { fournisseur: ID.fournil });
 ok(r.ok && r.etat.pris.filter((b) => b.titre.startsWith("Une baguette")).some((b) => b.mode === "credits" && b.statut === "reserve"), "sans mode : avec ses crédits, comme avant");
 
@@ -327,7 +325,7 @@ r = await appel(FOURNIL, "prendre", { fournisseur: ID.bergine, offre: dessert, m
 ok(r.ok === false && r.raison === "complet" && /de ce produit/.test(r.message), `le dessert (1 par mois) est complet : « ${r.message} »`);
 ok(r.etat.offres.find((o) => o.id === dessert)?.restant === 0 && r.etat.offres.find((o) => o.id === menu)?.restant === 2, "… mais pas le menu : chaque offre sa limite");
 r = await appel(FLEURS, "prendre", { fournisseur: ID.bergine, mode: "moitie" });
-ok(r.ok === false && r.raison === "moitie_deja", "Fleurs, à moitié prix sur le dîner après le dessert : une fois par mois chez Bergine, toutes ses offres confondues");
+ok(r.ok === false && r.raison === "complet", `Fleurs, à moitié prix sur le dîner après le dessert : seule la limite du dîner compte (4 par mois, atteinte) — « ${r.message} »`);
 r = await appel(FLEURS, "prendre", { fournisseur: ID.bergine, offre: menu, mode: "credits" });
 const bonMenu = r.etat?.pris.find((b) => b.titre === "Un menu midi");
 ok(r.ok && bonMenu?.prix === 15 && bonMenu.mode === "credits", "le menu avec ses crédits : 15 €");

@@ -12,7 +12,8 @@
 // Chacune a sa limite du mois, et sa façon d'être payée :
 //   · les deux (par défaut) — avec des crédits, ou à moitié prix ;
 //   · en échange seulement — avec des crédits ;
-//   · à moitié prix seulement — la moitié en euros sur place, l'autre en crédits.
+//   · à moitié prix seulement — la moitié en euros sur place, et c'est tout
+//     (pour écouler son stock : aucun crédit d'un côté ni de l'autre).
 // Une librairie : en échange seulement (prix unique du livre).
 //
 // Utilisé tel quel par le vrai comptoir (`echanges-reels.tsx`) et par la
@@ -32,8 +33,8 @@ const MOTS: Record<Paiement, [string, string]> = {
 export function legendePaiement(p: Paiement, librairie = false): string {
   if (librairie) return "Des livres : en échange seulement (prix unique du livre).";
   if (p === "credits") return "En échange seulement : les commerçants te le paient avec leurs crédits, jamais à moitié prix.";
-  if (p === "moitie") return "À moitié prix seulement : tu encaisses la moitié en euros sur place, et l’autre moitié te revient en crédits.";
-  return "Avec leurs crédits, ou à moitié prix : la moitié en euros pour toi, l’autre moitié en crédits.";
+  if (p === "moitie") return "À moitié prix seulement, pour écouler ton stock : tu encaisses la moitié en euros, sur place, et c’est tout (pas de crédits).";
+  return "Avec leurs crédits, ou à moitié prix : dans ce cas, tu encaisses la moitié en euros, sur place, et c’est tout.";
 }
 
 /** « Comment on te le paie ? » — trois choix, côte à côte. */

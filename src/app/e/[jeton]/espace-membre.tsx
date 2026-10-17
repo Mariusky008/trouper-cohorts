@@ -5,7 +5,7 @@
 // `echanges-ville.tsx`), réduites à ce qui est à lui.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FamilleDouble } from "@/lib/direct/double-metiers";
-import { CLE_ACCES_COMPTOIR, JOURS_VALIDITE, PAR_PERSONNE, deNom, type BonReel, type EtatEchanges, type ModePaiement } from "@/lib/echanges/echanges";
+import { CLE_ACCES_COMPTOIR, JOURS_VALIDITE, PAR_PERSONNE, chezNom, deNom, type BonReel, type EtatEchanges, type ModePaiement } from "@/lib/echanges/echanges";
 import { ChoixDuPaiement, Feuille, Pile, StylesEchanges, visageDe, type Offre } from "@/app/autour-de-moi/assistante/echanges-comptoir";
 import { BonVue, StylesReels } from "@/app/autour-de-moi/assistante/echanges-reels";
 import { StylesVille, VilleFermee, messageInvitation } from "@/app/autour-de-moi/assistante/echanges-ville";
@@ -194,7 +194,6 @@ function PageMembre({
           ou: o.aPied || o.ville,
           parMois: o.parMois,
           restant: o.restant,
-          moitieDeja: o.moitieDeja,
           sansMoitie: o.sansMoitie,
         })),
     [etat.offres],
@@ -323,13 +322,13 @@ function PageMembre({
             </li>
             <li>Glisse une offre à droite : « Je prends ». Tu reçois un bon (un QR) à montrer chez le commerçant.</li>
             <li>
-              <b>Jamais plein tarif</b> : gratuit avec tes crédits, sinon à moitié prix, à régler sur place (une fois par mois chez un même commerçant). À moitié prix, tes {PAR_PERSONNE} € ne bougent pas.
+              Avec tes crédits (0 €), ou <b>à moitié prix</b> quand l’offre le propose : tu règles la moitié en euros, sur place, et tes {PAR_PERSONNE} € ne bougent pas.
             </li>
             <li>Chaque commerçant dit, pour chacune de ses offres (jusqu’à 3), comment on la lui paie : la carte l’indique (« en échange seulement », « à −50 % seulement »).</li>
             <li>
               Ce que tu prends, {commerce.nom} le rend <b>en ses produits</b> : jamais en euros, et jamais par toi.
             </li>
-            <li>Au comptoir, quand un commerçant vient avec un bon, valide-le : ta boutique gagne son prix. S’il paie à moitié prix, encaisse la moitié : l’autre moitié revient en crédits à ta boutique.</li>
+            <li>Au comptoir, quand un commerçant vient avec un bon, valide-le : ta boutique gagne son prix. S’il a pris à moitié prix, encaisse la moitié en euros, et c’est tout.</li>
             <li>Un bon pas utilisé expire au bout de {JOURS_VALIDITE} jours.</li>
             <li>Ce lien est ton accès personnel : ne le partage pas.</li>
           </ol>
@@ -394,7 +393,7 @@ function PageMembre({
             )}
             <h2>{choisie.titre}</h2>
             <p className="ec-gris">
-              Chez {choisie.commerce}
+              {chezNom(choisie.commerce).replace(/^chez/, "Chez")}
               {choisie.ou ? ` · ${choisie.ou}` : ""}
             </p>
             <ChoixDuPaiement
@@ -406,7 +405,6 @@ function PageMembre({
                   : `Le compte de ${commerce.nom} est au plus bas : la boutique doit d’abord servir`
               }
               sansMoitie={choisie.sansMoitie}
-              moitieDeja={choisie.moitieDeja}
               paiement={choisie.paiement}
               occupe={envoi}
               onPayer={(mode) => void prendre(choisie, mode)}

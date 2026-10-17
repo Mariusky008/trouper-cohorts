@@ -27,10 +27,11 @@
 // personne a son propre accès, qu'il lui envoie depuis « Mon équipe »
 // (`echanges-equipe.tsx`). Arrivé au bout, il sert avant de reprendre.
 //
-// « JAMAIS PLEIN TARIF » : on prend avec ses crédits (0 €), ou à moitié prix,
-// la moitié en euros sur place — et celui qui sert gagne l'autre moitié en
-// crédits. « Comment tu paies ? » (`ChoixDuPaiement`) sert la démonstration,
-// le vrai comptoir et la page d'un membre de l'équipe.
+// DEUX FAÇONS DE PRENDRE : avec ses crédits (0 €), ou à moitié prix quand
+// l'offre le propose — une vente en euros, sur place, pour écouler son stock,
+// sans aucun crédit d'un côté ni de l'autre. « Comment tu paies ? »
+// (`ChoixDuPaiement`) sert la démonstration, le vrai comptoir et la page d'un
+// membre de l'équipe.
 //
 // « 3 OFFRES MAX ET LIMITE PAR OFFRE » : sa première offre se pose au départ,
 // avec comment on la lui paie (les deux, échange seulement, −50 % seulement) ;
@@ -60,7 +61,6 @@ import {
   PAR_PERSONNE,
   accepte,
   chezNom,
-  creditsMoitie,
   decouvertDe as decouvertDeBase,
   enEuros,
   moitieDe,
@@ -116,8 +116,6 @@ export type Offre = {
   entier?: boolean;
   /** Chez un vrai commerçant : combien on peut encore lui en prendre ce mois-ci. */
   restant?: number;
-  /** Déjà pris à moitié prix chez lui ce mois-ci (une fois par mois). */
-  moitieDeja?: boolean;
   /** Pas de moitié prix chez lui : une librairie (prix unique du livre). */
   sansMoitie?: boolean;
   /** Le commerce qui la propose (absent : `id`, sa seule offre). */
@@ -782,7 +780,7 @@ export function Depart({
           {reel && (
             <p className="ec-regle">
               ⚖️ <b>En publiant, tu acceptes les règles</b> : tu gagnes quand tu valides le code d’un commerçant venu chez toi ; ce que tu prends, tu le rends en ton produit, jamais en euros ; tant que tu dois, tu ne peux ni mettre ton offre en pause, ni refuser un bon ; un bon non utilisé expire au bout de {JOURS_VALIDITE} jours
-              {paiement === "credits" ? "." : " ; à moitié prix, un commerçant te paie la moitié en euros, et l’autre moitié te revient en crédits."}
+              {paiement === "credits" ? "." : " ; à moitié prix, le commerçant te paie la moitié en euros, sur place, et c’est tout."}
             </p>
           )}
           {erreur && <p className="ec-erreur">{erreur}</p>}
@@ -1019,7 +1017,7 @@ function Echanger({
             <img src={choisie.photo} alt="" className={choisie.entier ? "entier" : undefined} style={choisie.cadrage ? { objectPosition: choisie.cadrage } : undefined} />
             <h2>{choisie.titre}</h2>
             <p className="ec-gris">
-              Chez {choisie.commerce}
+              {chezNom(choisie.commerce).replace(/^chez/, "Chez")}
               {choisie.ville ? `, à ${choisie.ville}` : ""}
             </p>
             <ChoixDuPaiement
@@ -1028,8 +1026,6 @@ function Echanger({
               apres={duApres > 0 ? `Avec tes crédits, tu devras ${duApres} € au réseau, ${soitEnProduits(mien, famille, duApres)}, à rendre en ton produit.` : ""}
               sansMoitie={choisie.sansMoitie}
               paiement={choisie.paiement}
-              // UNE FOIS PAR MOIS CHEZ UN MÊME COMMERÇANT, toutes ses offres confondues.
-              moitieDeja={etat.bons.some((b) => b.mode === "moitie" && (b.fournisseur ?? b.id.slice(0, b.id.lastIndexOf("-"))) === (choisie.fournisseur ?? choisie.id))}
               onPayer={(mode) => prendre(choisie, mode)}
             />
             <button type="button" className="cz-lien" onClick={() => setChoisie(null)}>
@@ -1139,12 +1135,14 @@ export function ReglesDuReseau({ decouvert, equipe, seuil }: { decouvert: number
   return (
     <ol className="ec-regles">
       <li>
-        <b>Jamais plein tarif</b> chez un commerçant ClikMe : gratuit avec tes crédits, ou à moitié prix, à régler sur place — selon ce que chaque offre accepte.
+        Chez un commerçant ClikMe, tu prends <b>avec tes crédits</b> (0 €), ou <b>à moitié prix</b> quand son offre le propose — selon ce que chaque offre accepte.
       </li>
       <li>
-        Un commerçant vient prendre ton produit : <b>quand tu valides son code, tu gagnes son prix</b>. S’il paie à moitié prix, tu encaisses la moitié en euros et l’autre moitié te revient en crédits : tu ne perds rien.
+        Un commerçant vient prendre ton produit avec ses crédits : <b>quand tu valides son code, tu gagnes son prix</b>.
       </li>
-      <li>À moitié prix : une fois par mois chez un même commerçant, et pas chez une librairie (prix unique du livre).</li>
+      <li>
+        <b>À moitié prix</b>, pour écouler ton stock : le commerçant te paie la moitié en euros, sur place, et c’est tout — pas de crédits, ni pour lui ni pour toi. Pas de moitié prix chez une librairie (prix unique du livre).
+      </li>
       <li>
         <b>Jusqu’à {MAX_OFFRES} offres</b> : pour chacune, tu fixes combien par mois, et comment on te la paie — avec des crédits ou à moitié prix, en échange seulement, ou à moitié prix seulement.
       </li>
@@ -1170,14 +1168,13 @@ export function ReglesDuReseau({ decouvert, equipe, seuil }: { decouvert: number
 
 /* ═══ « COMMENT TU PAIES ? » ══════════════════════════════════════════════
    Avec ses crédits (0 €, s'ils suffisent), ou à moitié prix (la moitié en
-   euros, sur place ; ses crédits ne bougent pas). */
+   euros, sur place, et c'est tout : aucun crédit ne bouge). */
 export function ChoixDuPaiement({
   prix,
   reste,
   apres = "",
   manque = "",
   sansMoitie = false,
-  moitieDeja = false,
   paiement = "les_deux",
   occupe = false,
   bloque = "",
@@ -1191,7 +1188,6 @@ export function ChoixDuPaiement({
   /** Pourquoi ses crédits ne suffisent pas, s'il y a mieux à dire que « il te manque 15 € ». */
   manque?: string;
   sansMoitie?: boolean;
-  moitieDeja?: boolean;
   /** Comment le commerçant accepte qu'on lui paie cette offre. */
   paiement?: Paiement;
   occupe?: boolean;
@@ -1206,9 +1202,7 @@ export function ChoixDuPaiement({
     ? "Pas chez une librairie : prix unique du livre"
     : !aMoitie
       ? "Il le propose en échange seulement"
-      : moitieDeja
-        ? "Déjà pris à moitié prix chez lui ce mois-ci"
-        : "−50 %, à régler sur place";
+      : "−50 %, à régler en euros sur place";
   return (
     <div className="ec-payer">
       <h3>Comment tu paies ?</h3>
@@ -1226,7 +1220,7 @@ export function ChoixDuPaiement({
         <strong>0&nbsp;€</strong>
       </button>
       {enCredits && assez && apres && <p className="ec-calcul petit">{apres}</p>}
-      <button type="button" className="ec-payer-b moitie" disabled={!aMoitie || moitieDeja || occupe || Boolean(bloque)} onClick={() => onPayer("moitie")}>
+      <button type="button" className="ec-payer-b moitie" disabled={!aMoitie || occupe || Boolean(bloque)} onClick={() => onPayer("moitie")}>
         <span className="ec-payer-i" aria-hidden="true">
           ½
         </span>
@@ -1418,13 +1412,13 @@ function BonPris({ b, ouvert, onOuvrir, onScanner }: { b: Bon; ouvert: boolean; 
           <b>{b.code}</b>
           {b.scanne ? (
             <p>
-              Scanné : {b.commerce} a gagné {b.mode === "moitie" ? `${creditsMoitie(b.prix)} € de crédits, et tu lui as réglé ${enEuros(moitieDe(b.prix))}` : `${b.prix} €`}.
+              {b.mode === "moitie" ? `Scanné : tu as réglé ${enEuros(moitieDe(b.prix))} ${chezNom(b.commerce)}.` : `Scanné : ${b.commerce} a gagné ${b.prix} €.`}
             </p>
           ) : (
             <>
               <p>
                 {b.mode === "moitie"
-                  ? `Présente ce code ${chezNom(b.commerce)} et règle-lui ${enEuros(moitieDe(b.prix))} sur place : il le scanne, et il gagne l’autre moitié en crédits.`
+                  ? `Présente ce code ${chezNom(b.commerce)} et règle-lui ${enEuros(moitieDe(b.prix))} sur place : il le scanne, c’est tout.`
                   : `Présente ce code ${chezNom(b.commerce)} : il le scanne, et il gagne ${b.prix} €, à dépenser chez n’importe quel commerçant.`}
               </p>
               {onScanner && (

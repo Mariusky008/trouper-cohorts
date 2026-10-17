@@ -22,10 +22,10 @@
 //   facturation { nomLegal, forme, capital, immatriculation, adresse, siret, franchise, taux, nature, accepte }
 //                                 → ses infos de facturation, une fois ; ses factures en attente sont faites
 //
-// « JAMAIS PLEIN TARIF » (`20261022130000_echanges_moitie_prix.sql`) : à moitié prix,
-// l'acheteur règle la moitié en euros sur place et ses crédits ne bougent pas ; celui qui
-// sert gagne l'autre moitié en crédits quand il valide. Une seule fois par mois chez un
-// même commerçant, et pas chez une libraire (prix unique du livre).
+// À MOITIÉ PRIX (`20261022130000_echanges_moitie_prix.sql`, simplifiée par
+// `20261024120000_echanges_moitie_simple.sql`) : quand une offre le propose — pour écouler
+// son stock —, l'acheteur règle la moitié en euros, sur place, et c'est tout : aucun crédit
+// d'un côté ni de l'autre. Pas chez une libraire (prix unique du livre).
 //
 // « 3 OFFRES MAX ET LIMITE PAR OFFRE » (`20261023120000_echanges_offres.sql`) : sa
 // première offre dit qui il est et s'il est en pause ; deux autres au plus, chacune
@@ -133,7 +133,7 @@ type LigneBon = {
   /** `client` : un ancien bon cadeau (« Pour mes clients », retiré). */
   pour: "moi" | "client";
   mode: "credits" | "moitie";
-  /** Ce que le fournisseur gagne en crédits à la validation (la moitié, à moitié prix). */
+  /** Ce que le fournisseur gagne en crédits à la validation (rien à moitié prix ; la route le recompte d'après `mode`). */
   credits: number;
   /** À moitié prix : ce que le preneur règle en euros, sur place. */
   a_regler: number | string;
@@ -287,9 +287,9 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
   /* LES SOLDES DE TOUT LE MONDE, recalculés depuis les bons : il en faut un
      pour savoir qui doit (son offre passe en tête). Un bon expiré ne compte
      plus ; un ancien bon cadeau compte comme un autre (pris par celui qui
-     offrait, gagné par celui qui servait). À MOITIÉ PRIX, le preneur paie en
-     euros (rien de pris en crédits) et le fournisseur gagne la moitié. CHAQUE
-     OFFRE A SA LIMITE : on compte ses bons du mois offre par offre. */
+     offrait, gagné par celui qui servait). À MOITIÉ PRIX, tout se paie en
+     euros : rien de pris en crédits, rien de gagné. CHAQUE OFFRE A SA LIMITE :
+     on compte ses bons du mois offre par offre. */
   const gagne = new Map<string, number>();
   const pris = new Map<string, number>();
   const ceMoisPourEux = new Map<string, number>();
@@ -297,8 +297,10 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
   const debut = debutDuMois();
   for (const b of bons) {
     if (b.statut === "expire") continue;
-    if (b.statut === "utilise") ajouter(gagne, b.fournisseur_id, b.credits ?? b.prix);
-    if (b.mode !== "moitie") ajouter(pris, b.preneur_id, b.prix);
+    if (b.mode !== "moitie") {
+      if (b.statut === "utilise") ajouter(gagne, b.fournisseur_id, b.prix);
+      ajouter(pris, b.preneur_id, b.prix);
+    }
     if (b.pour !== "client" && Date.parse(b.cree_le) >= debut) ajouter(ceMoisPourEux, cleOffre(b.fournisseur_id, b.offre_id), 1);
   }
   const doit = (id: string) => (pris.get(id) ?? 0) > (gagne.get(id) ?? 0);
@@ -312,10 +314,6 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
     if (!b.membre_id || b.mode === "moitie" || b.preneur_id !== moi.id || !["reserve", "utilise"].includes(b.statut) || Date.parse(b.cree_le) < debut) continue;
     ajouter(parMembre, b.membre_id, b.prix);
   }
-  /* OÙ IL A DÉJÀ PRIS À MOITIÉ PRIX CE MOIS-CI : une seule fois par mois chez un même commerçant. */
-  const moitieDeja = new Set(
-    bons.filter((b) => b.preneur_id === moi.id && b.mode === "moitie" && ["reserve", "utilise"].includes(b.statut) && Date.parse(b.cree_le) >= debut).map((b) => b.fournisseur_id),
-  );
   const g = gagne.get(moi.id) ?? 0;
   const p = pris.get(moi.id) ?? 0;
 
@@ -330,7 +328,7 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
     statut: b.statut,
     mode: b.mode === "moitie" ? "moitie" : "credits",
     aRegler: Number(b.a_regler) || 0,
-    credits: b.credits ?? b.prix,
+    credits: b.mode === "moitie" ? 0 : b.prix,
     autre: nomDe(autre),
     autreVille: villeDe(autre),
     cree: b.cree_le,
@@ -361,7 +359,6 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
         villeOuverte: ouverte(o.ville_slug),
         doit: doit(o.site_id),
         ...aPiedDe(o.site_id),
-        ...(moitieDeja.has(o.site_id) ? { moitieDeja: true } : {}),
         ...(sansMoitie(o) ? { sansMoitie: true } : {}),
       };
       // UNE LIBRAIRIE : en échange seulement, quoi que dise une offre d'avant.
@@ -701,7 +698,6 @@ export async function POST(request: Request) {
             ? "Ta boutique n'a pas encore publié son offre : dès que c'est fait, tu pourras prendre."
             : "Publie d'abord ton offre : c'est ce qui te permet de prendre chez les autres.",
           soi: "C'est ta propre offre.",
-          moitie_deja: "Tu as déjà pris à moitié prix chez ce commerçant ce mois-ci : c'est une fois par mois. Avec tes crédits, c'est possible.",
           mode: "Comment tu paies ? Avec tes crédits, ou à moitié prix.",
           paiement: pasCommeCa(str(r.paiement)),
         };
@@ -734,15 +730,13 @@ export async function POST(request: Request) {
       const f = await facturer(supabase, moi.id);
       const facture = f.faites > 0 ? "faite" : moi.pays === "fr" && !f.infos ? "infos" : "";
       const rappel = facture === "infos" && !membre ? " 📄 Ta facture d’échange t’attend dans « Mes factures »." : "";
-      // À MOITIÉ PRIX : il encaisse la moitié en euros, sur place, et gagne l'autre moitié en crédits.
+      // À MOITIÉ PRIX : il encaisse la moitié en euros, sur place, et c'est tout.
       if (fait.mode === "moitie") {
         const euros = enEuros(Number(fait.a_regler) || 0);
         return repondre({
           ok: true,
           facture,
-          message: membre
-            ? `Validé ✓ ${qui} a bien reçu le produit de ta boutique, à moitié prix : encaisse ${euros} sur place. Ta boutique gagne ${fait.credits} € de crédits.`
-            : `Validé ✓ ${qui} a bien reçu ton produit, à moitié prix : encaisse ${euros} sur place. Tu gagnes ${fait.credits} € de crédits : tu ne perds rien.${rappel}`,
+          message: `Validé ✓ ${qui} a pris ${membre ? "le produit de ta boutique" : "ton produit"} à moitié prix : encaisse ${euros} sur place.${membre ? "" : rappel}`,
         });
       }
       return repondre({

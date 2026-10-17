@@ -47,17 +47,17 @@ export function codeNormalise(brut: string): string {
 }
 
 /**
- * « JAMAIS PLEIN TARIF » (`20261022130000_echanges_moitie_prix.sql`) : chez un
- * commerçant du réseau, on paie avec ses crédits (0 €), ou à moitié prix — la
- * moitié en euros, sur place. Celui qui sert gagne alors l'autre moitié en
- * crédits (arrondie à l'euro au-dessus) : il ne perd rien. Une seule fois par
- * mois chez un même commerçant.
+ * DEUX FAÇONS DE PRENDRE CHEZ UN COMMERÇANT DU RÉSEAU : avec ses crédits (0 €),
+ * ou à moitié prix, quand son offre le propose — pour écouler son stock.
+ *
+ * « À MOITIÉ PRIX, C'EST TOUT » (`20261024120000_echanges_moitie_simple.sql`) :
+ * l'acheteur règle la moitié en euros, sur place, et il n'y a de crédits ni
+ * d'un côté ni de l'autre. Seule la limite de l'offre (« combien par mois »)
+ * dit combien le vendeur en vend.
  */
 export type ModePaiement = "credits" | "moitie";
 /** Ce que l'acheteur règle en euros, sur place, à moitié prix. */
 export const moitieDe = (prix: number) => Math.round(prix * 50) / 100;
-/** Ce que le vendeur gagne en crédits quand il valide un bon à moitié prix. */
-export const creditsMoitie = (prix: number) => Math.ceil(prix / 2);
 /** « 22,50 € », mais « 25 € » tout rond. */
 export const enEuros = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(2).replace(".", ",")}\u00a0€`;
 /**
@@ -125,8 +125,6 @@ export type OffreReelle = {
   doit: boolean;
   /** « 4 min à pied », quand on sait où sont les deux commerces. */
   aPied?: string;
-  /** Il y a déjà pris à moitié prix ce mois-ci : une seule fois par mois chez un même commerçant. */
-  moitieDeja?: boolean;
   /** Pas de moitié prix chez lui (une librairie : prix unique du livre). */
   sansMoitie?: boolean;
 };
@@ -143,7 +141,7 @@ export type BonReel = {
   mode: ModePaiement;
   /** À moitié prix : ce que l'acheteur règle en euros, sur place (0 avec ses crédits). */
   aRegler: number;
-  /** Ce que le vendeur gagne en crédits quand il le valide (la moitié, à moitié prix). */
+  /** Ce que le vendeur gagne en crédits quand il le valide (rien à moitié prix : il encaisse des euros). */
   credits: number;
   /** L'autre commerce : celui qui fournit (pour un bon pris) ou celui qui a pris (pour un bon reçu). */
   autre: string;

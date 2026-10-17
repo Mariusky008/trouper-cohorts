@@ -55,7 +55,7 @@ type LigneBonValide = {
   utilise_le: string | null;
   pour: string;
   membre_id: string | null;
-  /** « Jamais plein tarif » : à moitié prix, une part réglée en euros sur place. */
+  /** À moitié prix : une vente en euros, de la moitié du prix (`a_regler`), sans crédits. */
   mode?: string;
   a_regler?: number | string;
 };
@@ -154,17 +154,24 @@ export async function facturer(supabase: Supabase, fournisseurId: string): Promi
         siret: ia?.siret ?? "",
         tvaIntra: ia && !ia.franchise ? (ia.tva_intra ?? "") : "",
       };
-      const { ht, tva } = montantsTva(b.prix, taux);
+      // À MOITIÉ PRIX, LA VENTE EST DE LA MOITIÉ, payée en euros sur place : la facture dit ce montant, et la remise.
+      const moitie = b.mode === "moitie";
+      const ttc = moitie ? Number(b.a_regler) || 0 : b.prix;
+      const { ht, tva } = montantsTva(ttc, taux);
       const prenom = b.membre_id ? prenoms.get(b.membre_id) : "";
-      const detail = b.pour === "client" ? `Cadeau offert par ${enseigne || acheteur.nom} à l’un de ses clients` : prenom ? `Pris par ${prenom}, de l’équipe` : "";
+      const detail = [
+        moitie ? `Prix public ${b.prix} € · remise de 50 % entre commerçants ClikMe` : "",
+        b.pour === "client" ? `Cadeau offert par ${enseigne || acheteur.nom} à l’un de ses clients` : prenom ? `Pris par ${prenom}, de l’équipe` : "",
+      ]
+        .filter(Boolean)
+        .join(" · ");
       const contenu: ContenuFacture = {
         vendeur,
         acheteur,
-        ligne: { designation: b.titre, detail, nature: infos.nature, ttc: b.prix, ht, tva, taux },
-        // À MOITIÉ PRIX, la vente est du prix entier : une moitié réglée en euros sur place, l'autre par échange.
-        bon: b.mode === "moitie" ? { code: b.code, euros: Number(b.a_regler) || 0 } : { code: b.code },
+        ligne: { designation: b.titre, detail, nature: infos.nature, ttc, ht, tva, taux },
+        bon: moitie ? { code: b.code, euros: ttc } : { code: b.code },
       };
-      return [{ bon: b.id, ttc: b.prix, ht, tva, taux, contenu }];
+      return [{ bon: b.id, ttc, ht, tva, taux, contenu }];
     });
     if (!lignes.length) return { infos: true, faites: 0 };
     const { data: n, error } = await supabase.rpc("echanges_facturer", { p_fournisseur: fournisseurId, p_lignes: lignes });
@@ -251,7 +258,7 @@ export async function lireFactures(supabase: Supabase, site: LigneSite & { metie
   if (ei) return vide;
   const infos = li ? versInfos(li as LigneInfos) : null;
 
-  const colBon = "id, code, preneur_id, fournisseur_id, titre, prix, utilise_le, pour, membre_id";
+  const colBon = "id, code, preneur_id, fournisseur_id, titre, prix, utilise_le, pour, membre_id, mode, a_regler";
   const [{ data: lv }, { data: la }, { data: le }, { data: lr }] = await Promise.all([
     supabase.from("human_echanges_bons").select(colBon).eq("fournisseur_id", site.id).eq("statut", "utilise").limit(5000),
     supabase.from("human_echanges_bons").select(colBon).eq("preneur_id", site.id).eq("statut", "utilise").limit(5000),
@@ -283,9 +290,9 @@ export async function lireFactures(supabase: Supabase, site: LigneSite & { metie
         sens,
         date: b.utilise_le ?? "",
         code: b.code,
-        titre: b.titre,
+        titre: b.mode === "moitie" ? `${b.titre} (à moitié prix, en euros)` : b.titre,
         autre,
-        ttc: b.prix,
+        ttc: b.mode === "moitie" ? Number(b.a_regler) || 0 : b.prix,
         numero: f?.numero ?? "",
         ht: f ? num(f.ht) : null,
         tva: f ? num(f.tva) : null,

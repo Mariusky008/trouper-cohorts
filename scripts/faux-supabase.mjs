@@ -118,8 +118,8 @@ function nouveauBon(champs) {
     ...champs,
   };
 }
-/** Les colonnes calculées de `20261022130000_echanges_moitie_prix.sql` : à moitié prix, la moitié en euros et l'autre en crédits. */
-const avecMoitie = (b) => ({ ...b, credits: b.mode === "moitie" ? Math.ceil(b.prix / 2) : b.prix, a_regler: b.mode === "moitie" ? Math.round(b.prix * 50) / 100 : 0 });
+/** Les colonnes calculées (`20261024120000_echanges_moitie_simple.sql`) : à moitié prix, la moitié en euros, et aucun crédit. */
+const avecMoitie = (b) => ({ ...b, credits: b.mode === "moitie" ? 0 : b.prix, a_regler: b.mode === "moitie" ? Math.round(b.prix * 50) / 100 : 0 });
 
 const lignes = (t) => {
   if (!tables.has(t)) tables.set(t, []);
@@ -273,7 +273,7 @@ function echanges(nom, a) {
   // L'ÉQUIPE QUI COMPTE (`echanges_equipe`) : le responsable, et ceux qui ont ouvert leur lien sans être retirés.
   const equipe = (site) => Math.min(5, 1 + lignes("human_echanges_membres").filter((m) => m.site_id === site && m.active_le && !m.retire_le).length);
   const peut = (site, parPersonne) => {
-    const gagne = bons.filter((b) => b.fournisseur_id === site && b.statut === "utilise").reduce((s, b) => s + (b.credits ?? b.prix), 0);
+    const gagne = bons.filter((b) => b.fournisseur_id === site && b.mode !== "moitie" && b.statut === "utilise").reduce((s, b) => s + b.prix, 0);
     const pris = bons.filter((b) => b.preneur_id === site && b.mode !== "moitie" && ["reserve", "utilise"].includes(b.statut)).reduce((s, b) => s + b.prix, 0);
     return equipe(site) * Math.max(0, parPersonne) + gagne - pris;
   };
@@ -303,8 +303,6 @@ function echanges(nom, a) {
       }
       const v = peut(a.p_preneur, a.p_par_personne);
       if (v < of.prix) return { ok: false, raison: "solde", manque: of.prix - Math.max(v, 0) };
-    } else if (bons.some((b) => b.preneur_id === a.p_preneur && b.fournisseur_id === a.p_fournisseur && b.mode === "moitie" && ["reserve", "utilise"].includes(b.statut) && b.cree_le >= debut)) {
-      return { ok: false, raison: "moitie_deja" };
     }
     // LA LIMITE DE CETTE OFFRE : seuls ses bons à elle comptent.
     const ceMoisOffre = bons.filter((b) => b.fournisseur_id === a.p_fournisseur && b.pour === "moi" && (b.offre_id ?? null) === (a.p_offre ?? null) && ["reserve", "utilise"].includes(b.statut) && b.cree_le >= debut).length;
@@ -348,9 +346,12 @@ function echanges(nom, a) {
     let n = 0;
     for (const l of ls) {
       const b = bons.find((x) => x.id === l.bon);
-      if (!b || b.fournisseur_id !== a.p_fournisseur || b.statut !== "utilise" || Number(l.ttc) !== b.prix) continue;
+      if (!b || b.fournisseur_id !== a.p_fournisseur || b.statut !== "utilise") continue;
+      // À moitié prix, la facture est de la moitié payée (`a_regler`).
+      const du = b.mode === "moitie" ? Math.round(b.prix * 50) / 100 : b.prix;
+      if (Number(l.ttc) !== du) continue;
       if (factures.some((f) => f.bon_id === b.id)) continue;
-      if (Math.round((Number(l.ht) + Number(l.tva)) * 100) !== b.prix * 100) continue;
+      if (Math.round((Number(l.ht) + Number(l.tva)) * 100) !== Math.round(du * 100)) continue;
       const rang = 1 + factures.filter((f) => f.fournisseur_id === a.p_fournisseur && f.annee === annee).reduce((m, f) => Math.max(m, f.rang), 0);
       factures.push({
         id: randomUUID(),
@@ -363,7 +364,7 @@ function echanges(nom, a) {
         jeton: randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, ""),
         emise_le: maintenant(),
         livree_le: b.utilise_le ?? maintenant(),
-        ttc: b.prix,
+        ttc: du,
         ht: Number(l.ht),
         tva: Number(l.tva),
         taux: l.taux ?? null,

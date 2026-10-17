@@ -1,12 +1,12 @@
--- « JAMAIS PLEIN TARIF », ESSAYÉ SUR UN VRAI POSTGRES — jamais sur la base de production.
+-- « À MOITIÉ PRIX, C'EST TOUT », ESSAYÉ SUR UN VRAI POSTGRES — jamais sur la base de production.
 --
--- Les règles de `20261022130000_echanges_moitie_prix.sql` : à moitié prix, l'acheteur paie la moitié
--- en euros et ses crédits ne bougent pas (ni ceux de son commerce, ni les 50 € d'un membre) ; le
--- vendeur gagne l'autre moitié en crédits (arrondie à l'euro au-dessus) quand il valide ; une seule
--- fois par mois chez un même commerçant ; « combien par mois » compte tous les bons ; les anciennes
--- `echanges_prendre` (quatre et cinq arguments) passent par la nouvelle ; anon n'exécute rien.
+-- Les règles de `20261022130000_echanges_moitie_prix.sql`, telles que `20261024120000_echanges_moitie_simple.sql`
+-- les a laissées : à moitié prix, l'acheteur paie la moitié en euros et ses crédits ne bougent pas (ni
+-- ceux de son commerce, ni les 50 € d'un membre) ; LE VENDEUR NE GAGNE AUCUN CRÉDIT, il encaisse la
+-- moitié et c'est tout ; plus de « une fois par mois » ; « combien par mois » compte tous les bons ; les
+-- anciennes `echanges_prendre` (quatre et cinq arguments) passent par la nouvelle ; anon n'exécute rien.
 --
--- Sur une base d'essai où les cinq migrations de l'échange sont appliquées (voir
+-- Sur une base d'essai où les sept migrations de l'échange sont appliquées (voir
 -- `essai-echanges-reseau.sql` pour la préparer), puis :
 --   psql -d essai_echanges -f scripts/essai-echanges-moitie.sql
 \set ON_ERROR_STOP 1
@@ -41,30 +41,29 @@ SELECT pg_temp.verifie(pg_temp.ok(1) AND pg_temp.ok(2) AND pg_temp.raison(3) = '
 
 -- 2. À moitié prix, ses crédits ne comptent pas : le bouquet passe.
 SELECT pg_temp.prendre(4,'a0000000-0000-4000-8000-0000000000aa','c0000000-0000-4000-8000-0000000000cc','CLK-MOI004',NULL,'moitie');
-SELECT pg_temp.verifie(pg_temp.ok(4) AND (SELECT mode = 'moitie' AND a_regler = 17.50 AND credits = 18 FROM human_echanges_bons WHERE code = 'CLK-MOI004'),
-  'le bouquet (35 €) à moitié prix : 17,50 € à régler, 18 € de crédits pour le fleuriste');
--- 3. Une seule fois par mois chez le même commerçant ; ailleurs, oui.
+SELECT pg_temp.verifie(pg_temp.ok(4) AND (SELECT mode = 'moitie' AND a_regler = 17.50 AND credits = 0 FROM human_echanges_bons WHERE code = 'CLK-MOI004'),
+  'le bouquet (35 €) à moitié prix : 17,50 € à régler, aucun crédit pour le fleuriste');
+-- 3. Plus de « une fois par mois » : un second bouquet à moitié prix passe ; un dîner aussi.
 SELECT pg_temp.prendre(5,'a0000000-0000-4000-8000-0000000000aa','c0000000-0000-4000-8000-0000000000cc','CLK-MOI005',NULL,'moitie');
-SELECT pg_temp.verifie(pg_temp.raison(5) = 'moitie_deja', 'un second bouquet à moitié prix ce mois-ci : « moitie_deja »');
+SELECT pg_temp.verifie(pg_temp.ok(5), 'un second bouquet à moitié prix le même mois : accepté');
 SELECT pg_temp.prendre(6,'a0000000-0000-4000-8000-0000000000aa','b0000000-0000-4000-8000-0000000000bb','CLK-MOI006',NULL,'moitie');
-SELECT pg_temp.verifie(pg_temp.ok(6) AND (SELECT a_regler = 25 AND credits = 25 FROM human_echanges_bons WHERE code = 'CLK-MOI006'), 'un dîner à moitié prix chez un autre : 25 € et 25 €');
--- Un bon annulé ne bloque pas : le droit revient.
+SELECT pg_temp.verifie(pg_temp.ok(6) AND (SELECT a_regler = 25 AND credits = 0 FROM human_echanges_bons WHERE code = 'CLK-MOI006'), 'un dîner à moitié prix : 25 € à régler, 0 crédit');
+-- Un bon annulé ne compte plus.
 UPDATE human_echanges_bons SET statut = 'annule', annule_par = 'preneur', annule_le = now() WHERE code = 'CLK-MOI004';
 SELECT pg_temp.prendre(7,'a0000000-0000-4000-8000-0000000000aa','c0000000-0000-4000-8000-0000000000cc','CLK-MOI007',NULL,'moitie');
-SELECT pg_temp.verifie(pg_temp.ok(7), 'le bouquet à moitié prix annulé : il peut le reprendre');
+SELECT pg_temp.verifie(pg_temp.ok(7), 'après un bouquet annulé, il en reprend un');
 
--- 4. Le vendeur valide : il gagne la moitié en crédits (le dîner à moitié prix : 25), le prix entier pour un dîner payé en crédits.
+-- 4. Le vendeur valide : le prix entier en crédits pour un dîner payé en crédits, RIEN pour celui payé à moitié prix.
 UPDATE human_echanges_bons SET statut = 'utilise', utilise_le = now() WHERE code IN ('CLK-MOI001', 'CLK-MOI006');
-SELECT pg_temp.verifie((SELECT sum(credits) FROM human_echanges_bons WHERE fournisseur_id = 'b0000000-0000-4000-8000-0000000000bb' AND statut = 'utilise') = 75,
-  'Bergine a validé un dîner en crédits et un à moitié prix : 50 + 25 = 75 € de crédits');
--- B : 50 € d'avance + 75 gagnés = 125 → une coupe (45) et deux bouquets (70) passent (115), une baguette (6) aussi, pas une seconde coupe.
+SELECT pg_temp.verifie((SELECT sum(credits) FROM human_echanges_bons WHERE fournisseur_id = 'b0000000-0000-4000-8000-0000000000bb' AND statut = 'utilise') = 50,
+  'Bergine a validé un dîner en crédits et un à moitié prix : 50 € de crédits, pas un de plus');
+-- B : 50 € d'avance + 50 gagnés = 100 → une coupe (45), un bouquet (35) et une baguette (6) passent (86), pas une seconde coupe.
 SELECT pg_temp.prendre(8,'b0000000-0000-4000-8000-0000000000bb','a0000000-0000-4000-8000-0000000000aa','CLK-MOI008',NULL,'credits');
 SELECT pg_temp.prendre(9,'b0000000-0000-4000-8000-0000000000bb','c0000000-0000-4000-8000-0000000000cc','CLK-MOI009',NULL,'credits');
-SELECT pg_temp.prendre(10,'b0000000-0000-4000-8000-0000000000bb','c0000000-0000-4000-8000-0000000000cc','CLK-MOI010',NULL,'credits');
 SELECT pg_temp.prendre(11,'b0000000-0000-4000-8000-0000000000bb','d0000000-0000-4000-8000-0000000000dd','CLK-MOI011',NULL,'credits');
 SELECT pg_temp.prendre(12,'b0000000-0000-4000-8000-0000000000bb','a0000000-0000-4000-8000-0000000000aa','CLK-MOI012',NULL,'credits');
-SELECT pg_temp.verifie(pg_temp.ok(8) AND pg_temp.ok(9) AND pg_temp.ok(10) AND pg_temp.ok(11) AND pg_temp.raison(12) = 'solde' AND (SELECT (j->>'manque')::int FROM r WHERE n = 12) = 41,
-  'les crédits gagnés à moitié prix se dépensent : 125 € pour Bergine, 4 € restent, il en manque 41 pour une coupe');
+SELECT pg_temp.verifie(pg_temp.ok(8) AND pg_temp.ok(9) AND pg_temp.ok(11) AND pg_temp.raison(12) = 'solde' AND (SELECT (j->>'manque')::int FROM r WHERE n = 12) = 31,
+  'une vente à moitié prix ne rapporte aucun crédit : 100 € pour Bergine, 14 € restent, il en manque 31 pour une 2e coupe');
 
 -- 5. Un membre : ses 50 € ne comptent que les crédits.
 SELECT pg_temp.prendre(13,'a0000000-0000-4000-8000-0000000000aa','d0000000-0000-4000-8000-0000000000dd','CLK-MOI013','e0000000-0000-4000-8000-0000000000ee','moitie');
@@ -86,10 +85,12 @@ INSERT INTO r SELECT 19, echanges_prendre('d0000000-0000-4000-8000-0000000000dd'
 SELECT pg_temp.verifie(pg_temp.ok(18) AND (SELECT mode FROM human_echanges_bons WHERE code = 'CLK-MOI018') = 'credits', 'l''ancienne à cinq arguments : un bon avec ses crédits');
 SELECT pg_temp.verifie(pg_temp.raison(19) = 'solde', 'l''ancienne à quatre arguments compte comme la nouvelle : 50 € d''avance, 35 pris, la coupe (45 €) ne passe pas');
 
--- 8. Un bon à moitié prix périmé ne compte plus (ni le droit du mois, ni « combien par mois »).
-UPDATE human_echanges_bons SET expire_le = now() - interval '1 day' WHERE code = 'CLK-MOI007';
+-- 8. Le fleuriste (4 par mois) est complet ; un bon à moitié prix périmé libère sa place.
 SELECT pg_temp.prendre(20,'a0000000-0000-4000-8000-0000000000aa','c0000000-0000-4000-8000-0000000000cc','CLK-MOI020',NULL,'moitie');
-SELECT pg_temp.verifie(pg_temp.ok(20) AND (SELECT statut FROM human_echanges_bons WHERE code = 'CLK-MOI007') = 'expire', 'le bouquet à moitié prix a expiré : il peut en reprendre un');
+UPDATE human_echanges_bons SET expire_le = now() - interval '1 day' WHERE code = 'CLK-MOI007';
+SELECT pg_temp.prendre(21,'a0000000-0000-4000-8000-0000000000aa','c0000000-0000-4000-8000-0000000000cc','CLK-MOI021',NULL,'moitie');
+SELECT pg_temp.verifie(pg_temp.raison(20) = 'complet' AND pg_temp.ok(21) AND (SELECT statut FROM human_echanges_bons WHERE code = 'CLK-MOI007') = 'expire',
+  'le 5e bouquet du mois : « complet » ; un bouquet à moitié prix périmé ne compte plus, il en reprend un');
 
 -- 9. anon et authenticated n'exécutent rien.
 SET ROLE anon;

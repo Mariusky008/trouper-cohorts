@@ -129,7 +129,7 @@ export function FactureVue({ facture, exemple = false }: { facture: FactureCompl
         <p>
           <b>Paiement :</b> facture acquittée le {livree},{" "}
           {bon.euros
-            ? `réglée pour ${euros(bon.euros)} en euros, sur place, et pour ${euros(l.ttc - bon.euros)} par échange de produits au sein du réseau ClikMe (bon ${bon.code}, à moitié prix entre membres).`
+            ? `réglée en euros, sur place (bon ${bon.code}, à moitié prix entre commerçants ClikMe).`
             : `réglée par échange de produits au sein du réseau ClikMe (bon ${bon.code}). Aucun règlement en euros.`}
         </p>
         <p className="fx-petit">
