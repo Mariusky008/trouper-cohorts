@@ -44,7 +44,7 @@ import { COMMERCES_DEMO } from "@/lib/direct/missions-commercant";
 import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
 import { EQUIPE, JOURS_VALIDITE, PAR_MOIS, PAR_PERSONNE, chezNom, decouvertDe as decouvertDeBase, type MonLotDeCadeaux } from "@/lib/echanges/echanges";
 import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, debloquerSon, jouer, vibrer } from "./echanges-magie";
-import { Feuille, useQr } from "./echanges-communs";
+import { Feuille, reduirePhoto, useQr } from "./echanges-communs";
 import {
   CeQueLeReseauAmene,
   FeuilleDonner,
@@ -487,8 +487,25 @@ export function Depart({
   const [equipe, setEquipe] = useState(initial?.equipe ?? 1);
   const prix = Math.max(0, Math.min(2000, Number(prixTexte.replace(",", ".")) || 0));
   // Chez un vrai commerçant, jamais la photo d'exemple du métier : la sienne, ou son fantôme.
-  const photo = initial?.photo || commerce.photo || (reel ? "" : m.photo);
+  /* « JE N'AI PAS PU METTRE DE PHOTO À L'ÉTAPE 1 » : il peut maintenant prendre
+     ou choisir la photo de ce qu'il offre. Et une photo qui ne se charge pas
+     (celle de sa fiche, partie ailleurs) laisse place à son fantôme, jamais à
+     une icône cassée. */
+  const [photoChoisie, setPhotoChoisie] = useState("");
+  const [cassee, setCassee] = useState("");
+  const [erreurPhoto, setErreurPhoto] = useState("");
+  const photoDeBase = initial?.photo || commerce.photo || (reel ? "" : m.photo);
+  const photo = photoChoisie || (photoDeBase && photoDeBase !== cassee ? photoDeBase : "");
   const image = photo || visage;
+  const choisirPhoto = async (f: File | undefined) => {
+    if (!f) return;
+    reprendreLaMain();
+    try {
+      setPhotoChoisie(await reduirePhoto(f));
+    } catch {
+      setErreurPhoto("Cette photo ne s'ouvre pas. Essaie avec une autre.");
+    }
+  };
   const brouillon: Mien = { duJour, titre: duJour ? "Mon produit du jour" : titre.trim(), prix, photo, parMois, equipe };
   const decouvert = decouvertDe(brouillon);
   const pretUn = !ecritSeul && prix >= 5 && (duJour || titre.trim().length > 0);
@@ -573,8 +590,27 @@ export function Depart({
             </button>
           </div>
           <div className="ec-produit">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image} alt="" className={photo ? "" : "fantome"} />
+            <label className="ec-photo-choix">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={image}
+                alt=""
+                className={photo ? "" : "fantome"}
+                onError={() => {
+                  if (photo && photo === photoDeBase) setCassee(photo);
+                }}
+              />
+              <span className="ec-photo-bouton">📷 {photoChoisie || photo ? "Changer la photo" : "Ajouter une photo"}</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  setErreurPhoto("");
+                  void choisirPhoto(e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+            </label>
             <div className="ec-champs">
               <label>
                 <span>{duJour ? "Mon produit du jour" : "Ce que j’offre"}</span>
@@ -601,6 +637,7 @@ export function Depart({
               </label>
             </div>
           </div>
+          {erreurPhoto && <p className="ec-erreur">{erreurPhoto}</p>}
           {pretUn ? (
             <div className="ec-egal">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1433,8 +1470,12 @@ export function StylesEchanges() {
 .ec-bascule button{height:38px;border:0;border-radius:999px;background:none;color:var(--gris);font-weight:800;font-size:14px;transition:background .25s,color .25s;}
 .ec-bascule button.on{background:var(--rose);color:#fff;}
 .ec-produit{border-radius:20px;overflow:hidden;background:var(--nappe);border:1px solid var(--trait);}
-.ec-produit > img{display:block;width:100%;height:150px;object-fit:cover;animation:ec-vivant 5s ease-in-out infinite alternate;}
-.ec-produit > img.fantome{object-fit:contain;padding:14px 0;background:radial-gradient(circle at 50% 45%,rgba(245,162,58,.22),var(--nappe2));animation:none;}
+.ec-photo-choix{position:relative;display:block;overflow:hidden;cursor:pointer;}
+.ec-photo-choix img{display:block;width:100%;height:150px;object-fit:cover;animation:ec-vivant 5s ease-in-out infinite alternate;}
+.ec-photo-choix img.fantome{object-fit:contain;padding:14px 0;background:radial-gradient(circle at 50% 45%,rgba(245,162,58,.22),var(--nappe2));animation:none;}
+.ec-photo-choix input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
+.ec-photo-bouton{position:absolute;right:10px;bottom:10px;padding:8px 12px;border-radius:999px;background:rgba(18,12,9,.82);color:var(--creme);
+  border:1px solid rgba(255,244,230,.25);font-weight:800;font-size:13.5px;}
 @keyframes ec-vivant{from{transform:scale(1.03);}to{transform:scale(1.09) translate(-1%,-1%);}}
 .ec-champs{display:grid;grid-template-columns:minmax(0,1fr) 104px;gap:10px;padding:12px;}
 .ec-champs label{display:flex;flex-direction:column;gap:5px;min-width:0;}
@@ -1624,7 +1665,7 @@ export function StylesEchanges() {
 .ec-calcul.petit{font-size:14px;color:var(--gris);}
 .ec-bravo{text-align:center;font-size:30px !important;color:#fff;}
 @media (prefers-reduced-motion: reduce){.ec-glisse{transition:none !important;}.ec-gros b,.ec-solde b,.ec-feuille-c,.ec-toast,.ec-glisse > .ec-carte{animation:none !important;}
-  .ec-guide,.ec-guide > img,.ec-produit > img,.ec-egal,.ec-egal .ec-or,.ec-assiettes i.pleine,.ec-envie.ok i{animation:none !important;}.ec-goutte{display:none;}}
+  .ec-guide,.ec-guide > img,.ec-photo-choix img,.ec-egal,.ec-egal .ec-or,.ec-assiettes i.pleine,.ec-envie.ok i{animation:none !important;}.ec-goutte{display:none;}}
 `,
       }}
     />

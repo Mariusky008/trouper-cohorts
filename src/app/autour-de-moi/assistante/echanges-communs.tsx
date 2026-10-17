@@ -24,6 +24,30 @@ export function useQr(texte: string | null) {
   return texte ? url : "";
 }
 
+/**
+ * LA PHOTO DE SON OFFRE, RÉDUITE DANS LE TÉLÉPHONE — 1200 points suffisent à
+ * une carte qu'on glisse, et l'envoi reste léger (le serveur la range ensuite).
+ */
+export async function reduirePhoto(fichier: File, large = 1200): Promise<string> {
+  const url = URL.createObjectURL(fichier);
+  try {
+    const img = await new Promise<HTMLImageElement>((ok, ko) => {
+      const i = new Image();
+      i.onload = () => ok(i);
+      i.onerror = ko;
+      i.src = url;
+    });
+    const k = Math.min(1, large / Math.max(img.width, img.height));
+    const toile = document.createElement("canvas");
+    toile.width = Math.round(img.width * k);
+    toile.height = Math.round(img.height * k);
+    toile.getContext("2d")?.drawImage(img, 0, 0, toile.width, toile.height);
+    return toile.toDataURL("image/jpeg", 0.85);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 /** Un panneau qui monte du bas : le détail, seulement quand on le demande. */
 export function Feuille({ titre, onFermer, children }: { titre: string; onFermer: () => void; children: ReactNode }) {
   return (

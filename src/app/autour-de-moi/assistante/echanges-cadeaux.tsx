@@ -457,12 +457,15 @@ export function VilleFermee({
   seuil,
   visages,
   onInviter,
+  demo,
 }: {
   nom: string;
   offres: number;
   seuil: number;
   visages: string[];
   onInviter: () => void;
+  /** La démonstration de son métier, ouverte sur l'échange : de quoi l'essayer en attendant. */
+  demo?: string;
 }) {
   const manque = Math.max(0, seuil - offres);
   return (
@@ -488,6 +491,11 @@ export function VilleFermee({
       <button type="button" className="cz-go" onClick={onInviter}>
         Inviter un commerçant voisin
       </button>
+      {demo && (
+        <a className="ec-essayer" href={demo}>
+          En attendant, essaie avec des commerçants d’exemple →
+        </a>
+      )}
     </div>
   );
 }
@@ -647,6 +655,7 @@ export function StylesCadeaux() {
 .ec-ville-fermee > b{font-family:var(--font-clikme),sans-serif;font-size:28px;font-weight:900;color:var(--ambre);}
 .ec-ville-fermee p{margin:0;font-size:14.5px;line-height:1.45;color:var(--gris);}
 .ec-ville-fermee p b{color:var(--creme);}
+.ec-essayer{font-weight:800;font-size:14px;color:var(--ambre);text-decoration:underline;text-underline-offset:3px;}
 .ec-jauge{width:100%;height:10px;border-radius:99px;background:var(--nappe2);overflow:hidden;}
 .ec-jauge i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--ambre),var(--rose));transition:width .6s;}
 .ec-visages{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;}

@@ -356,7 +356,15 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
   /* ON ARRIVE TOUJOURS PAR L'ACCUEIL : « je ne vois aucune stat de ma
      journée pour me motiver ». Ce que sa dernière annonce a rapporté est la
      première chose qu'il voit — et le bouton de la suivante est juste dessous. */
-  const [phase, setPhase] = useState<Phase>({ ou: "accueil" });
+  /* `?ouvrir=echanges` : on arrive directement sur l'échange — c'est là que
+     mène « Essaie avec des commerçants d'exemple » depuis une ville pas encore ouverte. */
+  const [phase, setPhase] = useState<Phase>(() => {
+    try {
+      return new URLSearchParams(window.location.search).get("ouvrir") === "echanges" ? { ou: "echanges" } : { ou: "accueil" };
+    } catch {
+      return { ou: "accueil" };
+    }
+  });
   /* CE QUE SON FANTÔME SAIT, lu une fois : l'accueil y compte les questions
      de ses clients, l'écran du savoir y répond. */
   const savoir = useSavoir(commerce);

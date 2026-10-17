@@ -27,7 +27,8 @@
 // migrations ne sont pas appliquées, `etat` répond `{ pret: false }` et
 // l'écran dit « bientôt ».
 import { NextResponse } from "next/server";
-import { randomInt } from "node:crypto";
+import { createHash, randomInt } from "node:crypto";
+import sharp from "sharp";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { lireLeSite } from "@/lib/site-internet/fiche-du-site";
 import { villeSlug } from "@/lib/direct/ville";
@@ -127,6 +128,27 @@ const photoMontrable = (p: unknown) => {
   const s = str(p);
   return (/^https:\/\//i.test(s) || /^\/[^/]/.test(s)) && s.length < 2048 ? s : "";
 };
+
+/* LA PHOTO DE SON OFFRE, prise à l'étape 1 du départ : ramenée à 1200 points
+   et rangée sous son empreinte, dans le même seau que les pièces du comptoir
+   (`pro/pieces`). La ligne de l'offre ne garde que son adresse. */
+const SEAU_PHOTOS = str(process.env.COUVERTURE_BUCKET) || "marketplace-privilege-offers";
+async function rangerPhoto(supabase: ReturnType<typeof createAdminClient>, slug: string, valeur: string): Promise<string | { erreur: string }> {
+  const m = /^data:(image\/(?:jpeg|jpg|png|webp|heic|heif));base64,(.+)$/i.exec(valeur);
+  if (!m) return { erreur: "Cette photo est illisible." };
+  const brut = Buffer.from(m[2], "base64");
+  if (brut.length > 8 * 1024 * 1024) return { erreur: "Cette photo est trop lourde." };
+  let octets: Buffer;
+  try {
+    octets = await sharp(brut).rotate().resize(1200, 1200, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 84 }).toBuffer();
+  } catch {
+    return { erreur: "Cette photo est illisible." };
+  }
+  const chemin = `comptoir-clikme/${slug}-echange-${createHash("sha1").update(brut).digest("hex").slice(0, 16)}.jpg`;
+  const { error } = await supabase.storage.from(SEAU_PHOTOS).upload(chemin, octets, { contentType: "image/jpeg", upsert: true });
+  if (error) return { erreur: "La photo n'a pas pu être enregistrée. Réessaie." };
+  return supabase.storage.from(SEAU_PHOTOS).getPublicUrl(chemin).data.publicUrl;
+}
 
 /** Début du mois en cours, à l'heure de Paris. */
 function debutDuMois(): number {
@@ -453,9 +475,19 @@ export async function POST(request: Request) {
     if (!PAR_MOIS.includes(parMois)) return NextResponse.json({ error: "Combien par mois ? 1, 2, 4 ou 8." }, { status: 400 });
     if (!EQUIPE.includes(equipe)) return NextResponse.json({ error: "Vous êtes combien à en profiter ? De 1 à 5." }, { status: 400 });
     /* CE QUE LES AUTRES VOIENT DE LUI, lu sur sa propre fiche (pas sur ce
-       que l'écran envoie) : son nom, son métier, sa photo. */
+       que l'écran envoie) : son nom, son métier. SA PHOTO : celle qu'il vient
+       de prendre, sinon celle que son offre avait déjà, sinon celle de sa fiche. */
     const lu = await lireLeSite(slug).catch(() => null);
     const carte = lu?.carte;
+    let photo = "";
+    if (str(p?.photo).startsWith("data:image/")) {
+      const rangee = await rangerPhoto(supabase, slug, str(p?.photo));
+      if (typeof rangee !== "string") return NextResponse.json({ error: rangee.erreur }, { status: 400 });
+      photo = rangee;
+    } else {
+      const { data: deja } = await supabase.from("human_echanges_offres").select("photo").eq("site_id", moi.id).maybeSingle();
+      photo = photoMontrable((deja as { photo?: string } | null)?.photo) || photoMontrable(carte?.photo);
+    }
     const ligne = {
       site_id: moi.id,
       titre,
@@ -463,7 +495,7 @@ export async function POST(request: Request) {
       par_mois: parMois,
       du_jour: duJour,
       equipe,
-      photo: photoMontrable(carte?.photo) || null,
+      photo: photo || null,
       commerce: str(carte?.nom) || slug,
       metier: str(carte?.metier),
       branche: str(carte?.branche),

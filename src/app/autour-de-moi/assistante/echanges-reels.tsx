@@ -257,7 +257,16 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
           envies={envies}
           reel
           onFini={async (m) => {
-            const r = await appeler(reel, "offre", { titre: m.titre, prix: m.prix, parMois: m.parMois, duJour: m.duJour, equipe: m.equipe ?? 1, accepte: true });
+            const r = await appeler(reel, "offre", {
+              titre: m.titre,
+              prix: m.prix,
+              parMois: m.parMois,
+              duJour: m.duJour,
+              equipe: m.equipe ?? 1,
+              // UNE PHOTO PRISE À L'ÉTAPE 1 part avec l'offre ; sinon le serveur garde celle qu'il a.
+              ...(m.photo.startsWith("data:image/") ? { photo: m.photo } : {}),
+              accepte: true,
+            });
             if (!r.etat) return r.error || "Publication impossible pour l'instant.";
             setEtat(r.etat);
             setModifier(false);
@@ -440,6 +449,7 @@ function PageReelle({
           seuil={maVille.seuil}
           visages={maVille.deja.map((d) => d.photo || visageDe(d.branche, d.metier))}
           onInviter={inviter}
+          demo={`/autour-de-moi/assistante?metier=${encodeURIComponent(commerce.famille)}&ouvrir=echanges`}
         />
       ) : (
         <>
