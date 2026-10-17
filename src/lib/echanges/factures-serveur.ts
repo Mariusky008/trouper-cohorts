@@ -45,7 +45,20 @@ type LigneInfos = {
   nature: Nature;
 };
 type LigneSite = { id: string; business_name?: string | null; address?: string | null; city?: string | null; diagnostic?: unknown };
-type LigneBonValide = { id: string; code: string; preneur_id: string; fournisseur_id: string; titre: string; prix: number; utilise_le: string | null; pour: string; membre_id: string | null };
+type LigneBonValide = {
+  id: string;
+  code: string;
+  preneur_id: string;
+  fournisseur_id: string;
+  titre: string;
+  prix: number;
+  utilise_le: string | null;
+  pour: string;
+  membre_id: string | null;
+  /** « Jamais plein tarif » : à moitié prix, une part réglée en euros sur place. */
+  mode?: string;
+  a_regler?: number | string;
+};
 type LigneFacture = {
   id: string;
   bon_id: string;
@@ -98,7 +111,7 @@ export async function facturer(supabase: Supabase, fournisseurId: string): Promi
 
     const { data: lb } = await supabase
       .from("human_echanges_bons")
-      .select("id, code, preneur_id, fournisseur_id, titre, prix, utilise_le, pour, membre_id")
+      .select("id, code, preneur_id, fournisseur_id, titre, prix, utilise_le, pour, membre_id, mode, a_regler")
       .eq("fournisseur_id", fournisseurId)
       .eq("statut", "utilise")
       .limit(5000);
@@ -148,7 +161,8 @@ export async function facturer(supabase: Supabase, fournisseurId: string): Promi
         vendeur,
         acheteur,
         ligne: { designation: b.titre, detail, nature: infos.nature, ttc: b.prix, ht, tva, taux },
-        bon: { code: b.code },
+        // À MOITIÉ PRIX, la vente est du prix entier : une moitié réglée en euros sur place, l'autre par échange.
+        bon: b.mode === "moitie" ? { code: b.code, euros: Number(b.a_regler) || 0 } : { code: b.code },
       };
       return [{ bon: b.id, ttc: b.prix, ht, tva, taux, contenu }];
     });

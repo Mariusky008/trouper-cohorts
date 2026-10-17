@@ -110,9 +110,12 @@ function nouveauBon(champs) {
     expire_le: new Date(Date.now() + 30 * 86400000).toISOString(),
     membre_id: null,
     valide_par: null,
+    mode: "credits",
     ...champs,
   };
 }
+/** Les colonnes calculées de `20261022130000_echanges_moitie_prix.sql` : à moitié prix, la moitié en euros et l'autre en crédits. */
+const avecMoitie = (b) => ({ ...b, credits: b.mode === "moitie" ? Math.ceil(b.prix / 2) : b.prix, a_regler: b.mode === "moitie" ? Math.round(b.prix * 50) / 100 : 0 });
 
 const lignes = (t) => {
   if (!tables.has(t)) tables.set(t, []);
@@ -266,13 +269,15 @@ function echanges(nom, a) {
   // L'ÉQUIPE QUI COMPTE (`echanges_equipe`) : le responsable, et ceux qui ont ouvert leur lien sans être retirés.
   const equipe = (site) => Math.min(5, 1 + lignes("human_echanges_membres").filter((m) => m.site_id === site && m.active_le && !m.retire_le).length);
   const peut = (site, parPersonne) => {
-    const gagne = bons.filter((b) => b.fournisseur_id === site && b.statut === "utilise").reduce((s, b) => s + b.prix, 0);
-    const pris = bons.filter((b) => b.preneur_id === site && ["reserve", "utilise"].includes(b.statut)).reduce((s, b) => s + b.prix, 0);
+    const gagne = bons.filter((b) => b.fournisseur_id === site && b.statut === "utilise").reduce((s, b) => s + (b.credits ?? b.prix), 0);
+    const pris = bons.filter((b) => b.preneur_id === site && b.mode !== "moitie" && ["reserve", "utilise"].includes(b.statut)).reduce((s, b) => s + b.prix, 0);
     return equipe(site) * Math.max(0, parPersonne) + gagne - pris;
   };
   const ceMois = (site, pour) => bons.filter((b) => b.fournisseur_id === site && b.pour === pour && ["reserve", "utilise"].includes(b.statut) && b.cree_le >= debut).length;
   if (nom === "echanges_expirer") return expirer();
   if (nom === "echanges_prendre") {
+    const mode = a.p_mode ?? "credits";
+    if (!["credits", "moitie"].includes(mode)) return { ok: false, raison: "mode" };
     if (a.p_preneur === a.p_fournisseur) return { ok: false, raison: "soi" };
     expirer();
     const m = a.p_membre ? lignes("human_echanges_membres").find((x) => x.id === a.p_membre) : null;
@@ -281,15 +286,19 @@ function echanges(nom, a) {
     if (!op || !op.actif) return { ok: false, raison: "sans_offre" };
     const of = offre(a.p_fournisseur);
     if (!of || !of.actif) return { ok: false, raison: "offre_retiree" };
-    if (m) {
-      const lui = bons.filter((b) => b.membre_id === m.id && ["reserve", "utilise"].includes(b.statut) && b.cree_le >= debut).reduce((t, b) => t + b.prix, 0);
-      if (lui + of.prix > a.p_par_personne) return { ok: false, raison: "plafond_perso", reste: Math.max(a.p_par_personne - lui, 0) };
+    if (mode === "credits") {
+      if (m) {
+        const lui = bons.filter((b) => b.membre_id === m.id && b.mode !== "moitie" && ["reserve", "utilise"].includes(b.statut) && b.cree_le >= debut).reduce((t, b) => t + b.prix, 0);
+        if (lui + of.prix > a.p_par_personne) return { ok: false, raison: "plafond_perso", reste: Math.max(a.p_par_personne - lui, 0) };
+      }
+      const v = peut(a.p_preneur, a.p_par_personne);
+      if (v < of.prix) return { ok: false, raison: "solde", manque: of.prix - Math.max(v, 0) };
+    } else if (bons.some((b) => b.preneur_id === a.p_preneur && b.fournisseur_id === a.p_fournisseur && b.mode === "moitie" && ["reserve", "utilise"].includes(b.statut) && b.cree_le >= debut)) {
+      return { ok: false, raison: "moitie_deja" };
     }
-    const v = peut(a.p_preneur, a.p_par_personne);
-    if (v < of.prix) return { ok: false, raison: "solde", manque: of.prix - Math.max(v, 0) };
     if (ceMois(a.p_fournisseur, "moi") >= of.par_mois) return { ok: false, raison: "complet" };
     if (bons.some((b) => b.code === a.p_code)) return { doublon: true };
-    const bon = nouveauBon({ code: a.p_code, preneur_id: a.p_preneur, fournisseur_id: a.p_fournisseur, titre: of.titre, prix: of.prix, photo: of.photo, du_jour: of.du_jour, membre_id: m?.id ?? null });
+    const bon = avecMoitie(nouveauBon({ code: a.p_code, preneur_id: a.p_preneur, fournisseur_id: a.p_fournisseur, titre: of.titre, prix: of.prix, photo: of.photo, du_jour: of.du_jour, membre_id: m?.id ?? null, mode }));
     bons.push(bon);
     return { ok: true, bon };
   }

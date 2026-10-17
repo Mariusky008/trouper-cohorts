@@ -5,8 +5,8 @@
 // `echanges-ville.tsx`), réduites à ce qui est à lui.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FamilleDouble } from "@/lib/direct/double-metiers";
-import { CLE_ACCES_COMPTOIR, JOURS_VALIDITE, PAR_PERSONNE, deNom, type BonReel, type EtatEchanges } from "@/lib/echanges/echanges";
-import { Feuille, Pile, StylesEchanges, visageDe, type Offre } from "@/app/autour-de-moi/assistante/echanges-comptoir";
+import { CLE_ACCES_COMPTOIR, JOURS_VALIDITE, PAR_PERSONNE, deNom, type BonReel, type EtatEchanges, type ModePaiement } from "@/lib/echanges/echanges";
+import { ChoixDuPaiement, Feuille, Pile, StylesEchanges, visageDe, type Offre } from "@/app/autour-de-moi/assistante/echanges-comptoir";
 import { BonVue, StylesReels } from "@/app/autour-de-moi/assistante/echanges-reels";
 import { StylesVille, VilleFermee, messageInvitation } from "@/app/autour-de-moi/assistante/echanges-ville";
 import { BoutonSon, FeteDuMatch, StylesMagie, jouer, vibrer } from "@/app/autour-de-moi/assistante/echanges-magie";
@@ -163,12 +163,14 @@ function PageMembre({
     return () => window.clearTimeout(t);
   }, [annonce]);
 
-  /* Ses 50 € du mois : ce qu'il a pris ce mois-ci, lu sur ses bons. */
+  /* Ses 50 € du mois : ce qu'il a pris ce mois-ci avec des crédits, lu sur ses bons (à moitié prix, il paie en euros). */
   const debutMois = useMemo(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
   }, []);
-  const prisCeMois = etat.pris.filter((b) => (b.statut === "reserve" || b.statut === "utilise") && Date.parse(b.cree) >= debutMois).reduce((s, b) => s + b.prix, 0);
+  const prisCeMois = etat.pris
+    .filter((b) => b.mode !== "moitie" && (b.statut === "reserve" || b.statut === "utilise") && Date.parse(b.cree) >= debutMois)
+    .reduce((s, b) => s + b.prix, 0);
   const persoReste = Math.max(0, PAR_PERSONNE - prisCeMois);
 
   const offres: Array<Offre & { villeSlug: string }> = useMemo(
@@ -189,6 +191,8 @@ function PageMembre({
           ou: o.aPied || o.ville,
           parMois: o.parMois,
           restant: o.restant,
+          moitieDeja: o.moitieDeja,
+          sansMoitie: o.sansMoitie,
         })),
     [etat.offres],
   );
@@ -206,8 +210,8 @@ function PageMembre({
     return r;
   };
 
-  const prendre = async (o: Offre) => {
-    const r = await agir("prendre", { fournisseur: o.id });
+  const prendre = async (o: Offre, mode: ModePaiement) => {
+    const r = await agir("prendre", { fournisseur: o.id, mode });
     setChoisie(null);
     const bon = r.ok && r.code ? r.etat?.pris.find((b) => b.code === r.code) : undefined;
     if (bon) setFete({ bon, offre: o });
@@ -316,9 +320,12 @@ function PageMembre({
             </li>
             <li>Glisse une offre à droite : « Je prends ». Tu reçois un bon (un QR) à montrer chez le commerçant.</li>
             <li>
+              <b>Jamais plein tarif</b> : gratuit avec tes crédits, sinon à moitié prix, à régler sur place (une fois par mois chez un même commerçant). À moitié prix, tes {PAR_PERSONNE} € ne bougent pas.
+            </li>
+            <li>
               Ce que tu prends, {commerce.nom} le rend <b>en ses produits</b> : jamais en euros, et jamais par toi.
             </li>
-            <li>Au comptoir, quand un commerçant vient avec un bon, valide-le : ta boutique gagne son prix.</li>
+            <li>Au comptoir, quand un commerçant vient avec un bon, valide-le : ta boutique gagne son prix. S’il paie à moitié prix, encaisse la moitié : l’autre moitié revient en crédits à ta boutique.</li>
             <li>Un bon pas utilisé expire au bout de {JOURS_VALIDITE} jours.</li>
             <li>Ce lien est ton accès personnel : ne le partage pas.</li>
           </ol>
@@ -386,26 +393,19 @@ function PageMembre({
               Chez {choisie.commerce}
               {choisie.ou ? ` · ${choisie.ou}` : ""}
             </p>
-            {moi.reste >= choisie.prix ? (
-              <>
-                <p className="ec-calcul">
-                  Après : il te restera <b>{moi.reste - choisie.prix} €</b> ce mois-ci.
-                </p>
-                <button type="button" className="cz-go grand" disabled={envoi} onClick={() => void prendre(choisie)}>
-                  {envoi ? "Réservation…" : `Je prends · ${choisie.prix}\u00a0€`}
-                </button>
-              </>
-            ) : (
-              <p className="ec-calcul">
-                {persoReste < choisie.prix ? (
-                  <>
-                    Il te reste <b>{persoReste} €</b> de tes {PAR_PERSONNE} € ce mois-ci. Ils reviennent le 1er du mois.
-                  </>
-                ) : (
-                  <>Le compte de {commerce.nom} est au plus bas : la boutique doit d’abord servir des commerçants.</>
-                )}
-              </p>
-            )}
+            <ChoixDuPaiement
+              prix={choisie.prix}
+              reste={moi.reste}
+              manque={
+                persoReste < choisie.prix
+                  ? `Il te reste ${persoReste} € de tes ${PAR_PERSONNE} € ce mois-ci (ils reviennent le 1er)`
+                  : `Le compte de ${commerce.nom} est au plus bas : la boutique doit d’abord servir`
+              }
+              sansMoitie={choisie.sansMoitie}
+              moitieDeja={choisie.moitieDeja}
+              occupe={envoi}
+              onPayer={(mode) => void prendre(choisie, mode)}
+            />
             <button type="button" className="cz-lien" onClick={() => setChoisie(null)}>
               Pas maintenant
             </button>
@@ -420,6 +420,7 @@ function PageMembre({
           titre={fete.offre.titre}
           commerce={fete.offre.commerce}
           prix={fete.offre.prix}
+          aRegler={fete.bon.mode === "moitie" ? fete.bon.aRegler : undefined}
           onQr={() => {
             setRecu(fete.bon);
             setFete(null);

@@ -52,7 +52,8 @@ export type ContenuFacture = {
   };
   acheteur: { nom: string; enseigne: string; adresse: string; siret: string; tvaIntra: string };
   ligne: { designation: string; detail: string; nature: Nature; ttc: number; ht: number; tva: number; taux: number | null };
-  bon: { code: string };
+  /** `euros` : à moitié prix, la part réglée en euros sur place (le reste, par échange). */
+  bon: { code: string; euros?: number };
 };
 
 /** Une facture telle que la page `/facture/<jeton>` l'affiche. */

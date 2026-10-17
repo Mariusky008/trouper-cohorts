@@ -46,6 +46,27 @@ export function codeNormalise(brut: string): string {
   return `CLK-${corps}`;
 }
 
+/**
+ * « JAMAIS PLEIN TARIF » (`20261022130000_echanges_moitie_prix.sql`) : chez un
+ * commerçant du réseau, on paie avec ses crédits (0 €), ou à moitié prix — la
+ * moitié en euros, sur place. Celui qui sert gagne alors l'autre moitié en
+ * crédits (arrondie à l'euro au-dessus) : il ne perd rien. Une seule fois par
+ * mois chez un même commerçant.
+ */
+export type ModePaiement = "credits" | "moitie";
+/** Ce que l'acheteur règle en euros, sur place, à moitié prix. */
+export const moitieDe = (prix: number) => Math.round(prix * 50) / 100;
+/** Ce que le vendeur gagne en crédits quand il valide un bon à moitié prix. */
+export const creditsMoitie = (prix: number) => Math.ceil(prix / 2);
+/** « 22,50 € », mais « 25 € » tout rond. */
+export const enEuros = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(2).replace(".", ",")}\u00a0€`;
+/**
+ * PRIX UNIQUE DU LIVRE : 5 % de remise au plus sur un livre neuf. Une libraire
+ * ne fait donc pas « moitié prix » (à revoir avec un juriste : des livres
+ * d'occasion, de la papeterie… le permettraient).
+ */
+export const sansMoitie = (o: { metier?: string; branche?: string }) => /librair/i.test(`${o.metier ?? ""} ${o.branche ?? ""}`);
+
 /** « chez Bergine », mais « Chez Bergine » tout court quand le nom le dit déjà. */
 export const chezNom = (nom: string) => (/^chez\s/i.test(nom.trim()) ? nom.trim() : `chez ${nom.trim()}`);
 /** « l’équipe du Fournil », « des Délices », « de la Page », « d’Atelier Lou » — jamais « de Le Fournil ». */
@@ -79,6 +100,10 @@ export type OffreReelle = {
   doit: boolean;
   /** « 4 min à pied », quand on sait où sont les deux commerces. */
   aPied?: string;
+  /** Il y a déjà pris à moitié prix ce mois-ci : une seule fois par mois chez un même commerçant. */
+  moitieDeja?: boolean;
+  /** Pas de moitié prix chez lui (une librairie : prix unique du livre). */
+  sansMoitie?: boolean;
 };
 
 /** Un bon, vu par celui qui l'a pris ou par celui qui le fournit. */
@@ -89,6 +114,12 @@ export type BonReel = {
   prix: number;
   photo: string;
   statut: "reserve" | "utilise" | "annule" | "expire";
+  /** Avec ses crédits, ou à moitié prix. */
+  mode: ModePaiement;
+  /** À moitié prix : ce que l'acheteur règle en euros, sur place (0 avec ses crédits). */
+  aRegler: number;
+  /** Ce que le vendeur gagne en crédits quand il le valide (la moitié, à moitié prix). */
+  credits: number;
   /** L'autre commerce : celui qui fournit (pour un bon pris) ou celui qui a pris (pour un bon reçu). */
   autre: string;
   autreVille: string;

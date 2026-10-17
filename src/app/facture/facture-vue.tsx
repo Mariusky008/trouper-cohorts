@@ -127,7 +127,10 @@ export function FactureVue({ facture, exemple = false }: { facture: FactureCompl
           <b>Nature de l’opération :</b> {NATURE[l.nature] ?? NATURE.biens}.
         </p>
         <p>
-          <b>Paiement :</b> facture acquittée le {livree}, réglée par échange de produits au sein du réseau ClikMe (bon {bon.code}). Aucun règlement en euros.
+          <b>Paiement :</b> facture acquittée le {livree},{" "}
+          {bon.euros
+            ? `réglée pour ${euros(bon.euros)} en euros, sur place, et pour ${euros(l.ttc - bon.euros)} par échange de produits au sein du réseau ClikMe (bon ${bon.code}, à moitié prix entre membres).`
+            : `réglée par échange de produits au sein du réseau ClikMe (bon ${bon.code}). Aucun règlement en euros.`}
         </p>
         <p className="fx-petit">
           Pas d’escompte. En cas de retard de paiement : pénalités au taux de trois fois le taux d’intérêt légal, et indemnité forfaitaire de 40 € pour frais de
