@@ -68,6 +68,10 @@ const DEFAUTS = {
   human_ville_signalements: () => ({ cree_le: maintenant(), motif: null }),
   // LE FIL DES COMMERÇANTS : la vraie table donne son `id` (uuid) et sa date.
   human_publications: () => ({ id: randomUUID(), publie_le: maintenant(), retire_le: null }),
+  // L'ÉCHANGE ENTRE COMMERÇANTS — `…_echanges_commercants.sql` et `…_echanges_reseau.sql`.
+  human_echanges_offres: () => ({ du_jour: false, photo: null, metier: "", branche: "", ville: "", ville_slug: "", actif: true, equipe: 1, cadeau_titre: null, cadeau_prix: null, cadeau_par_mois: null, regles_acceptees_le: maintenant(), cree_le: maintenant(), maj_le: maintenant() }),
+  human_echanges_cadeaux: () => ({ id: randomUUID(), photo: null, occasion: "", cree_le: maintenant() }),
+  human_echanges_bons: () => nouveauBon({}),
 };
 const CLES = {
   human_conversations: ["id"],
@@ -78,7 +82,30 @@ const CLES = {
   human_habitants: ["id"],
   human_maisons_privees: ["habitant"],
   human_ville_publications: ["id"],
+  human_echanges_offres: ["site_id"],
+  human_echanges_bons: ["id"],
+  human_echanges_cadeaux: ["id"],
 };
+
+/** Un bon d'échange neuf, comme la table le remplit (30 jours de validité). */
+function nouveauBon(champs) {
+  return {
+    id: randomUUID(),
+    statut: "reserve",
+    annule_par: null,
+    cree_le: maintenant(),
+    utilise_le: null,
+    annule_le: null,
+    pour: "moi",
+    cadeau_id: null,
+    donne_le: null,
+    venus: null,
+    du_jour: false,
+    photo: null,
+    expire_le: new Date(Date.now() + 30 * 86400000).toISOString(),
+    ...champs,
+  };
+}
 
 const lignes = (t) => {
   if (!tables.has(t)) tables.set(t, []);
@@ -175,8 +202,21 @@ async function rest(req, res, url, table) {
   const donnees = brut ? JSON.parse(brut) : null;
   const representation = /return=representation/.test(prefer);
   if (req.method === "POST") {
-    const neuves = (Array.isArray(donnees) ? donnees : [donnees]).map((d) => ({ ...(DEFAUTS[table]?.() ?? {}), ...d }));
-    const cles = CLES[table];
+    const recues = Array.isArray(donnees) ? donnees : [donnees];
+    const cles = url.searchParams.get("on_conflict")?.split(",") ?? CLES[table];
+    // UPSERT (`resolution=merge-duplicates`) : la ligne qui existe déjà prend les champs envoyés.
+    if (/resolution=merge-duplicates/.test(prefer) && cles) {
+      const sortie = [];
+      for (const d of recues) {
+        const deja = lignes(table).find((r) => cles.every((k) => String(r[k]) === String(d[k])));
+        if (deja) Object.assign(deja, d);
+        else lignes(table).push({ ...(DEFAUTS[table]?.() ?? {}), ...d });
+        sortie.push(deja ?? lignes(table)[lignes(table).length - 1]);
+      }
+      if (!representation) return repondre(res, 201, undefined);
+      return repondre(res, 201, sortie.map((r) => projeter(r, select)));
+    }
+    const neuves = recues.map((d) => ({ ...(DEFAUTS[table]?.() ?? {}), ...d }));
     for (const n of neuves)
       if (cles && lignes(table).some((r) => cles.every((k) => String(r[k]) === String(n[k]))))
         return repondre(res, 409, { code: "23505", message: "duplicate key value violates unique constraint" });
@@ -199,6 +239,68 @@ async function rest(req, res, url, table) {
     return repondre(res, 204, undefined);
   }
   return repondre(res, 405, { message: "méthode" });
+}
+
+/* ═══ L'ÉCHANGE ENTRE COMMERÇANTS — la copie des fonctions SQL ══════════════
+   `ECHANGES_ABSENT=1` : comme une base où la seconde migration n'est pas appliquée. */
+function echanges(nom, a) {
+  if (process.env.ECHANGES_ABSENT === "1") return undefined;
+  const bons = lignes("human_echanges_bons");
+  const offre = (id) => lignes("human_echanges_offres").find((o) => o.site_id === id);
+  const expirer = () => {
+    let n = 0;
+    for (const b of bons) if (b.statut === "reserve" && b.expire_le < maintenant()) (b.statut = "expire"), n++;
+    return n;
+  };
+  const debut = (() => {
+    const j = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit" }).format(new Date());
+    return new Date(`${j}-01T00:00:00+01:00`).toISOString();
+  })();
+  const peut = (site, parPersonne) => {
+    const o = offre(site);
+    const gagne = bons.filter((b) => b.fournisseur_id === site && b.statut === "utilise").reduce((s, b) => s + b.prix, 0);
+    const pris = bons.filter((b) => b.preneur_id === site && ["reserve", "utilise"].includes(b.statut)).reduce((s, b) => s + b.prix, 0);
+    return (o?.equipe ?? 1) * Math.max(0, parPersonne) + gagne - pris;
+  };
+  const ceMois = (site, pour) => bons.filter((b) => b.fournisseur_id === site && b.pour === pour && ["reserve", "utilise"].includes(b.statut) && b.cree_le >= debut).length;
+  if (nom === "echanges_expirer") return expirer();
+  if (nom === "echanges_prendre") {
+    if (a.p_preneur === a.p_fournisseur) return { ok: false, raison: "soi" };
+    expirer();
+    const op = offre(a.p_preneur);
+    if (!op || !op.actif) return { ok: false, raison: "sans_offre" };
+    const of = offre(a.p_fournisseur);
+    if (!of || !of.actif) return { ok: false, raison: "offre_retiree" };
+    const v = peut(a.p_preneur, a.p_par_personne);
+    if (v < of.prix) return { ok: false, raison: "solde", manque: of.prix - Math.max(v, 0) };
+    if (ceMois(a.p_fournisseur, "moi") >= of.par_mois) return { ok: false, raison: "complet" };
+    if (bons.some((b) => b.code === a.p_code)) return { doublon: true };
+    const bon = nouveauBon({ code: a.p_code, preneur_id: a.p_preneur, fournisseur_id: a.p_fournisseur, titre: of.titre, prix: of.prix, photo: of.photo, du_jour: of.du_jour });
+    bons.push(bon);
+    return { ok: true, bon };
+  }
+  if (nom === "echanges_offrir") {
+    if (a.p_donneur === a.p_fournisseur) return { ok: false, raison: "soi" };
+    const q = Number(a.p_quantite);
+    if (!(q >= 1 && q <= 60) || (a.p_codes ?? []).length < q) return { ok: false, raison: "quantite" };
+    expirer();
+    const od = offre(a.p_donneur);
+    if (!od || !od.actif) return { ok: false, raison: "sans_offre" };
+    const of = offre(a.p_fournisseur);
+    if (!of || !of.actif || !of.cadeau_titre) return { ok: false, raison: "offre_retiree" };
+    const total = q * of.cadeau_prix;
+    const v = peut(a.p_donneur, a.p_par_personne);
+    if (v < total) return { ok: false, raison: "solde", manque: total - Math.max(v, 0) };
+    const deja = ceMois(a.p_fournisseur, "client");
+    if (deja + q > of.cadeau_par_mois) return { ok: false, raison: "complet", restant: Math.max(of.cadeau_par_mois - deja, 0) };
+    if (a.p_codes.slice(0, q).some((c) => bons.some((b) => b.code === c))) return { doublon: true };
+    const c = { id: randomUUID(), donneur_id: a.p_donneur, fournisseur_id: a.p_fournisseur, titre: of.cadeau_titre, prix: of.cadeau_prix, photo: of.photo, occasion: String(a.p_occasion ?? "").slice(0, 80), quantite: q, cree_le: maintenant() };
+    lignes("human_echanges_cadeaux").push(c);
+    for (const code of a.p_codes.slice(0, q))
+      bons.push(nouveauBon({ code, preneur_id: a.p_donneur, fournisseur_id: a.p_fournisseur, titre: c.titre, prix: c.prix, photo: c.photo, pour: "client", cadeau_id: c.id }));
+    return { ok: true, cadeau: c };
+  }
+  return undefined;
 }
 
 /** Le fichier d'un envoi `multipart/form-data` (celui de `uploadToSignedUrl` avec un Blob). */
@@ -336,6 +438,16 @@ http
         }
         l[quoi] = (l[quoi] || 0) + 1;
         return repondre(res, 204, undefined);
+      }
+      // L'ÉCHANGE ENTRE COMMERÇANTS : les mêmes règles que les fonctions SQL
+      // (`echanges_expirer`, `echanges_prendre`, `echanges_offrir`), sans les verrous.
+      const rpc = /^\/rest\/v1\/rpc\/(echanges_[a-z]+)$/.exec(url.pathname);
+      if (rpc && req.method === "POST") {
+        const a = JSON.parse((await corps(req)).toString() || "{}");
+        const r = echanges(rpc[1], a);
+        if (r && r.doublon) return repondre(res, 409, { code: "23505", message: "duplicate key value violates unique constraint" });
+        if (r === undefined) return repondre(res, 404, { code: "42883", message: `function ${rpc[1]} does not exist` });
+        return repondre(res, 200, r);
       }
       if (url.pathname.startsWith("/rest/v1/rpc/")) return repondre(res, 404, []);
       if (url.pathname.startsWith("/storage/v1/object/")) return await stockage(req, res, url);

@@ -1366,7 +1366,7 @@ function OutilEchangesReelle({ commerce, onOuvrir }: { commerce: Commerce; onOuv
     <Outil
       icone="echanges"
       nom="Échanges"
-      badge={aValider > 0 ? aValider : etat.mien && etat.compte.aDepenser > 0 ? `${etat.compte.aDepenser} €` : undefined}
+      badge={aValider > 0 ? aValider : etat.mien && etat.maVille.ouverte && etat.compte.aDepenser > 0 ? `${etat.compte.aDepenser} €` : undefined}
       chaud={aValider > 0}
       onClick={onOuvrir}
     />

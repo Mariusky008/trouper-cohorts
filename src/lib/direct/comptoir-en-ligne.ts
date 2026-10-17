@@ -281,6 +281,31 @@ export async function envoyerInterview(
   return { ok: true, ou: ["Le Direct", "ta page"], ...(reseaux.length ? { reseaux } : {}) };
 }
 
+/**
+ * 🎁 LE CADEAU DU VOISIN, ANNONCÉ PARTOUT — Le Direct, le bandeau de sa page,
+ * et ses réseaux s'il les a branchés : « pour toute coloration, ton dessert
+ * offert chez Bergine ». L'affiche est faite dans son téléphone
+ * (`afficheDuCadeau`) : la photo d'un AUTRE commerce n'est pas dans sa galerie,
+ * la route ne l'accepterait pas telle quelle. Elle vit jusqu'à la fin du lot.
+ */
+export async function annoncerLeCadeau(c: CommerceComptoir, a: { texte: string; affiche: string; jusqua: string }): Promise<ResultatEnvoi> {
+  if (!c.reel) return { ok: false, ou: [], erreur: "Ce commerce n'a pas de lien pro." };
+  const { slug, token } = c.reel;
+  const r = await poster("/api/site-internet/pro/offer", {
+    slug,
+    token,
+    action: "set",
+    text: a.texte.slice(0, 140),
+    photo: a.affiche,
+    until: a.jusqua,
+    famille: "offre",
+    visuel: true,
+  });
+  if (!r.ok) return { ok: false, ou: [], erreur: r.erreur ?? "L'annonce n'a pas pu partir." };
+  const reseaux = Array.isArray(r.json?.reseaux) ? (r.json.reseaux as unknown[]).map(String) : [];
+  return { ok: true, ou: ["Le Direct", "ta page"], ...(reseaux.length ? { reseaux } : {}) };
+}
+
 /** Retirer en ligne : le plat de sa page, et l'annonce du Direct qui porte ce texte. */
 export async function retirerEnLigne(c: CommerceComptoir, mission: Mission, p: Publication): Promise<void> {
   if (!c.reel) return;
