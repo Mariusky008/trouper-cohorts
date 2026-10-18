@@ -199,6 +199,22 @@ export function momentsDuCommercant(
       ...(publie !== undefined ? { publie } : {}),
     });
   }
+
+  // ── SON FILM : SON INTERVIEW, SUR LE MOMENT QU'ELLE PRÉSENTE ──
+  // « Voir le résultat final sur l'annonce. » L'interview partait sur ses réseaux
+  // et dans le fil de la ville, mais l'application n'en montrait que l'affiche :
+  // l'adresse du film n'était pas gardée dans son annonce. Elle l'est
+  // (`current_offer.video`) ; elle va sur le moment dont parle l'annonce — son
+  // plat du jour, le plus souvent —, sinon sur la ligne de l'annonce. La carte du
+  // Direct la joue alors en fond, et sa journée la montre avec les fantômes d'avis.
+  const film = enCours ? str(o?.video) : "";
+  if (/^https:\/\//i.test(film)) {
+    const t = texte.toLowerCase();
+    const cible =
+      out.find((m) => m.titre.trim().length > 2 && t.includes(m.titre.toLowerCase())) ??
+      out.find((m) => m.etiquette === "En ce moment");
+    if (cible) cible.video = { mp4: film, webm: "", affiche: cible.photo || photoOffre || "", mot: "Son interview" };
+  }
   return out;
 }
 

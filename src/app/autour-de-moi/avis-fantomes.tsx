@@ -30,7 +30,18 @@ export const AVIS_FANTOMES: { sens: Avis; image: string; mot: string; merci: str
 /** Les cœurs qui s'envolent d'un « J'adore » : des places fixes, pas de hasard au rendu. */
 const COEURS = Array.from({ length: 9 }, (_, i) => ({ x: (i - 4) * 14 + ((i * 7) % 9), d: 70 + ((i * 23) % 50), t: (i % 4) * 70 }));
 
-export function AvisFantomes({ avis, onAvis, question = "Et vous, vous en pensez quoi ?" }: { avis?: Avis; onAvis: (a: Avis) => void; question?: string }) {
+export function AvisFantomes({
+  avis,
+  onAvis,
+  question = "Et vous, vous en pensez quoi ?",
+  libelle = "Votre avis sur cette surprise",
+}: {
+  avis?: Avis;
+  onAvis: (a: Avis) => void;
+  question?: string;
+  /** Ce que le lecteur d'écran annonce : la surprise, son interview… */
+  libelle?: string;
+}) {
   /** Un « J'adore » de plus : les cœurs repartent. */
   const [eclat, setEclat] = useState(0);
   const choisi = AVIS_FANTOMES.find((a) => a.sens === avis);
@@ -39,7 +50,7 @@ export function AvisFantomes({ avis, onAvis, question = "Et vous, vous en pensez
       <p className="af-q" aria-live="polite">
         {choisi ? choisi.merci : question}
       </p>
-      <div className="af-rang" role="radiogroup" aria-label="Votre avis sur cette surprise">
+      <div className="af-rang" role="radiogroup" aria-label={libelle}>
         {AVIS_FANTOMES.map((a) => (
           <button
             key={a.sens}

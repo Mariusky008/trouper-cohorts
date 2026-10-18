@@ -31,6 +31,8 @@ type Engagement = {
 };
 
 type Reactions = { jenveux: number; jepassevoir: number; prefere: number; jysuis: number } | null;
+/** 👻 Ce que les clients ont dit de ses films (son interview), sur trente jours. */
+type AvisFilms = { adore: number; sympa: number; non: number } | null;
 
 const STATUT_LABEL: Record<string, string> = {
   engage: "Vient",
@@ -52,6 +54,7 @@ function quand(iso: string): string {
 export function ProEngagements({ slug, token }: { slug: string; token: string }) {
   const [liste, setListe] = useState<Engagement[]>([]);
   const [reactions, setReactions] = useState<Reactions>(null);
+  const [avisFilms, setAvisFilms] = useState<AvisFilms>(null);
   const [charge, setCharge] = useState(false);
   const [tout, setTout] = useState(false);
 
@@ -71,6 +74,7 @@ export function ProEngagements({ slug, token }: { slug: string; token: string })
         if (!vivant || !j) return;
         if (Array.isArray(j.engagements)) setListe(j.engagements as Engagement[]);
         if (j.reactions && typeof j.reactions === "object") setReactions(j.reactions as Reactions);
+        if (j.avisFilms && typeof j.avisFilms === "object") setAvisFilms(j.avisFilms as AvisFilms);
       })
       .catch(() => {
         /* indisponible : le bloc ne s'affiche pas, rien n'est cassé */
@@ -108,6 +112,12 @@ export function ProEngagements({ slug, token }: { slug: string; token: string })
           /* « J'y suis » est la seule preuve de VENUE réelle : c'est le chiffre
              qu'aucune autre plateforme ne peut lui donner. */
           .pro .peng .rx .fort{background:#E6F7F1;}
+          /* 👻 L'AVIS SUR SES FILMS : les trois fantômes que voient ses clients à la fin de son interview. */
+          .pro .peng .af{margin-top:10px;border-radius:12px;background:#FBF3FA;padding:10px 12px;}
+          .pro .peng .af .t{font-size:11px;font-weight:800;color:var(--soft);}
+          .pro .peng .af .n{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;text-align:center;}
+          .pro .peng .af .n b{display:block;font-size:18px;font-weight:850;font-variant-numeric:tabular-nums;}
+          .pro .peng .af .n span{display:block;font-size:10px;color:var(--soft);font-weight:600;}
           .pro .peng .rx .fort b{color:#00714F;}
           .pro .peng .l{margin-top:13px;display:flex;flex-direction:column;gap:8px;}
           .pro .peng .e{border:1px solid var(--hair);border-radius:13px;padding:11px 12px;}
@@ -151,6 +161,19 @@ export function ProEngagements({ slug, token }: { slug: string; token: string })
             <div><b>{reactions.jepassevoir}</b><span>👀 passent voir</span></div>
             <div><b>{reactions.prefere}</b><span>❤️ vous préfèrent</span></div>
             <div className="fort"><b>{reactions.jysuis}</b><span>📍 y sont allés</span></div>
+          </div>
+        )}
+
+        {/* 👻 SES FILMS, VUS JUSQU'AU BOUT : à la fin de son interview, ses clients
+            donnent leur avis d'un geste. Rien tant que personne n'a répondu. */}
+        {avisFilms && avisFilms.adore + avisFilms.sympa + avisFilms.non > 0 && (
+          <div className="af">
+            <div className="t">À la fin de vos interviews, ces 30 derniers jours</div>
+            <div className="n">
+              <div><b>{avisFilms.adore}</b><span>J’adore !</span></div>
+              <div><b>{avisFilms.sympa}</b><span>Sympa, sans plus</span></div>
+              <div><b>{avisFilms.non}</b><span>J’aime pas</span></div>
+            </div>
           </div>
         )}
 
