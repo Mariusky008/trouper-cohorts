@@ -13,8 +13,10 @@
  * `interview-signature.ts` ; ici, le plan, le son calé sur l'image et
  * l'enregistrement.
  *
- * ET PENDANT QU'IL RÉPOND, CE QU'IL MONTRE : la photo ou la vidéo ajoutée à
- * la question passe en grand, son visage reste dans un médaillon — ou, s'il a
+ * ET PENDANT QU'IL RÉPOND, CE QU'IL MONTRE, au rythme de ses mots : son
+ * visage, puis ses photos (trois au plus par question), une nouvelle image à
+ * chaque phrase, et la photo de son produit juste avant qu'il le nomme (voir
+ * `plansDeCoupe`) ; sur une photo, son visage reste dans un médaillon. S'il a
  * choisi de ne pas se montrer, c'est son fantôme qui parle, avec sa voix.
  * Le restaurant garde sa cloche, après le titre.
  *
@@ -51,6 +53,7 @@ import {
   morceauxDeMots,
   motsDesSousTitres,
   motsForts,
+  plansDeCoupe,
   repliquesDuLieu,
   type Cote,
   type Mode,
@@ -1073,6 +1076,12 @@ export type Reglages = {
   cloche: { photo: string; scene?: string } | null;
   /** Ses mots, selon son métier : les questions, l'au revoir — le restaurant par défaut. */
   script?: ScriptInterview;
+  /**
+   * LA PHOTO DE CE QU'IL PRÉSENTE AUJOURD'HUI (sa pièce, son bouquet, son plat) :
+   * le fond du titre, la carte postale de la fin, et le plan de coupe quand il
+   * la nomme. Celle de la cloche, pour un restaurant.
+   */
+  photo?: string | null;
 };
 
 /** La photo ou la vidéo qu'il a ajoutée à une question, après l'interview. */
@@ -1095,7 +1104,8 @@ export type PriseAMonter = {
   /** La bouche de son fantôme, trente valeurs par seconde de prise (quand il ne se montre pas). */
   bouche: Float32Array | null;
   sousTitres: SousTitre[];
-  media: Media | null;
+  /** Les photos ou vidéos qu'il a ajoutées à cette réponse (trois au plus) : elles passent au rythme de ses mots. */
+  medias: Media[];
 };
 
 export type Montage = {
@@ -1176,17 +1186,17 @@ export async function monter(o: {
 
   /* ─── les lecteurs (muets) et les photos ─── */
   const lecteurs = await Promise.all(prises.map((p) => (p.url ? lecteurMuet(p.url) : Promise.resolve(null))));
-  const medias: (MediaPret | null)[] = await Promise.all(
-    prises.map(async (p): Promise<MediaPret | null> => {
-      if (!p.media) return null;
-      if (p.media.genre === "photo") {
-        const img = await image(p.media.url).catch(() => null);
-        return img ? { genre: "photo", img } : null;
-      }
-      const v = await lecteurMuet(p.media.url, true);
-      return v.videoWidth ? { genre: "video", v } : null;
-    }),
-  );
+  const preparer = async (m: Media): Promise<MediaPret | null> => {
+    if (m.genre === "photo") {
+      const img = await image(m.url).catch(() => null);
+      return img ? { genre: "photo", img } : null;
+    }
+    const v = await lecteurMuet(m.url, true);
+    return v.videoWidth ? { genre: "video", v } : null;
+  };
+  const chargees = await Promise.all(prises.map((p) => Promise.all(p.medias.map(preparer))));
+  /** Ses photos et vidéos lisibles, réponse par réponse. */
+  const medias: MediaPret[][] = chargees.map((l) => l.filter((m): m is MediaPret => m != null));
   // LA CLOCHE : préparée une fois ; une photo illisible et la vidéo s'en passe
   const decor = reglages.cloche ? await preparerCloche(reglages.cloche, reglages, el.police).catch(() => null) : null;
 
@@ -1195,12 +1205,11 @@ export async function monter(o: {
   const grain = fabriquerGrain();
   const fondCarte = fabriquerFondCarte();
   // LA PHOTO DU JOUR : celle de la cloche, sinon la première qu'il a ajoutée à une réponse
-  let photoDuJour: { src: CanvasImageSource; w: number; h: number } | null = null;
-  if (reglages.cloche) {
-    const img = await image(reglages.cloche.photo).catch(() => null);
-    if (img) photoDuJour = { src: img, w: img.naturalWidth, h: img.naturalHeight };
-  }
-  for (const m of medias) if (!photoDuJour && m?.genre === "photo") photoDuJour = { src: m.img, w: m.img.naturalWidth, h: m.img.naturalHeight };
+  let imageDuJour: HTMLImageElement | null = null;
+  const adresseDuJour = reglages.cloche?.photo ?? reglages.photo ?? null;
+  if (adresseDuJour) imageDuJour = await image(adresseDuJour).catch(() => null);
+  for (const l of medias) for (const m of l) if (!imageDuJour && m.genre === "photo") imageDuJour = m.img;
+  const photoDuJour = imageDuJour ? { src: imageDuJour as CanvasImageSource, w: imageDuJour.naturalWidth, h: imageDuJour.naturalHeight } : null;
   // LE FOND DU TITRE ET DE LA FIN : la photo du jour floutée — sinon la première image de lui
   let fond: HTMLCanvasElement | null = null;
   try {
@@ -1232,6 +1241,24 @@ export async function monter(o: {
   const frappes = mots.map((m, k) => (frappent[k] ? frappesDesMots(m) : []));
   // LE COUP DE ZOOM : sur le premier mot fort de sa réponse (son plat, son prix)
   const zoomA = mots.map((m, k) => (frappent[k] ? null : (m.find((w) => w.fort)?.a ?? null)));
+  // LES PLANS DE COUPE : ses photos à lui, plus la photo du jour, qui revient quand il nomme son produit.
+  // Son fantôme sans photo garde l'écran pour lui seul, en grand.
+  const vues: MediaPret[][] = medias.map((l, k) =>
+    imageDuJour && (l.length || (lecteurs[k] && !enFantome)) && !l.some((m) => m.genre === "photo" && m.img === imageDuJour)
+      ? [...l, { genre: "photo", img: imageDuJour }]
+      : l,
+  );
+  const plans = prises.map((p, k) =>
+    plansDeCoupe({
+      debut: p.questionFin + 0.05,
+      fin: p.coupe,
+      mots: mots[k],
+      medias: vues[k].length,
+      produit: imageDuJour ? vues[k].findIndex((m) => m.genre === "photo" && m.img === imageDuJour) : null,
+      visage: Boolean(lecteurs[k]) && !enFantome,
+      produitSeul: !medias[k].length,
+    }),
+  );
 
   /* ─── le son : un bus, un compresseur, la sortie enregistrée (et les haut-parleurs si on écoute) ─── */
   const enregistree = ctx.createMediaStreamDestination();
@@ -1390,24 +1417,25 @@ export async function monter(o: {
     dessinerGrain(c2d, grain, t);
   };
 
-  /** Ce qu'on voit pendant sa réponse : lui, ou ce qu'il montre, ou son fantôme sur le fond. */
-  const visuel = (k: number, tc: number, repond: number, z: number) => {
-    const p = prises[k];
-    const m = medias[k];
+  /** Le plan de coupe de cet instant. */
+  const planA = (k: number, tc: number) => plans[k].find((x) => tc >= x.de && tc < x.a) ?? plans[k][tc < plans[k][0].de ? 0 : plans[k].length - 1];
+
+  /** Ce qu'on voit pendant sa réponse : lui, une de ses photos (selon ses mots), ou son fantôme sur le fond. */
+  const visuel = (k: number, tc: number, z: number) => {
     const v = lecteurs[k];
-    const partMedia = m ? (enFantome ? 1 : entree(repond, 1.2, 0.45)) : 0;
-    if (v && partMedia < 1) couvrirImage(c2d, v, v.videoWidth, v.videoHeight, { z });
-    else if (!m) c2d.drawImage(fond ?? fondCarte, 0, 0);
-    if (m && partMedia > 0) {
-      c2d.save();
-      c2d.globalAlpha = partMedia;
-      // UNE PHOTO NE RESTE PAS FIGÉE : elle avance doucement, comme une caméra qui s'approche
-      if (m.genre === "photo") couvrirImage(c2d, m.img, m.img.naturalWidth, m.img.naturalHeight, { z: z * (1 + 0.09 * borne(tc / p.coupe)) });
+    const pl = planA(k, tc);
+    if (pl.quoi === "visage" && v) couvrirImage(c2d, v, v.videoWidth, v.videoHeight, { z });
+    else if (typeof pl.quoi === "number" && vues[k][pl.quoi]) {
+      const m = vues[k][pl.quoi];
+      // UNE PHOTO NE RESTE PAS FIGÉE : elle avance doucement, une fois vers la gauche, une fois vers la droite
+      const u = borne((tc - pl.de) / Math.max(0.5, pl.a - pl.de));
+      const sens = pl.quoi % 2 ? 1 : -1;
+      if (m.genre === "photo") couvrirImage(c2d, m.img, m.img.naturalWidth, m.img.naturalHeight, { z: z * (1.04 + 0.08 * u), fx: 0.5 + sens * 0.05 * (u - 0.5) });
       else couvrirImage(c2d, m.v, m.v.videoWidth, m.v.videoHeight, { z });
-      c2d.restore();
-    }
+    } else c2d.drawImage(fond ?? fondCarte, 0, 0);
     c2d.drawImage(vignette, 0, 0);
-    if (v && m) medaillon(c2d, v, 598, 236, 86, partMedia);
+    // SON VISAGE RESTE LÀ, dans un médaillon, quand on montre ce dont il parle
+    if (v && !enFantome && pl.quoi !== "visage") medaillon(c2d, v, 598, 236, 86, 1);
   };
 
   /** Le reporter sur la carte : il arrive en rebondissant, et sa bouche suit sa voix. */
@@ -1455,7 +1483,7 @@ export async function monter(o: {
     } else {
       c2d.save();
       c2d.translate(dx, dy);
-      visuel(k, tc, Math.max(0, repond), z);
+      visuel(k, tc, z);
       c2d.restore();
       // le flou du coup de zoom : l'image, deux fois de plus, un peu plus grande
       if (uz >= 0 && uz < 0.3) {
@@ -1474,10 +1502,10 @@ export async function monter(o: {
         if (enFantome) {
           const i = Math.floor(tc * IPS);
           const ouv = p.bouche && i < p.bouche.length ? p.bouche[i] : 0;
-          dessinerFantome(c2d, el.chef, medias[k] ? CHEF_COIN : CHEF_GRAND, tc + 0.7, ouv, 2 * Math.sin(tc * 1.3));
+          dessinerFantome(c2d, el.chef, vues[k].length ? CHEF_COIN : CHEF_GRAND, tc + 0.7, ouv, 2 * Math.sin(tc * 1.3));
         }
         dessinerCadre(c2d, P, repond, nomCadre);
-        const yMots = enFantome && !medias[k] ? 470 : 923;
+        const yMots = enFantome && !vues[k].length ? 470 : 923;
         dessinerSousTitres(c2d, P, morceaux[k].find((m) => tc >= m.de && tc < m.fin), tc, yMots);
         for (const f of frappes[k]) dessinerFrappe(c2d, P, f.m, tc - f.a, f.fin - f.a);
       } else {
@@ -1494,7 +1522,7 @@ export async function monter(o: {
     }
     // UNE IMAGE DE LUI, pour la carte postale de la fin
     const v = lecteurs[k];
-    if (!photoDuJour && !instantane && !enFantome && v && v.videoWidth && repond > 1.2) {
+    if (!photoDuJour && !instantane && !enFantome && v && v.videoWidth && repond > 1.2 && planA(k, tc).quoi === "visage") {
       const t2 = toile(540, 960);
       couvrirImage(t2.getContext("2d")!, v, v.videoWidth, v.videoHeight, { w: 540, h: 960 });
       instantane = { src: t2, w: 540, h: 960 };
@@ -1624,8 +1652,7 @@ export async function monter(o: {
       const s = segments[seg];
       if (s.genre === "prise") {
         lecteurs[s.k]?.pause();
-        const m = medias[s.k];
-        if (m?.genre === "video") m.v.pause();
+        for (const m of medias[s.k]) if (m.genre === "video") m.v.pause();
       }
       // la dernière image du plan, pour le coup de fouet de la carte suivante
       dg.drawImage(o.toile, 0, 0);
@@ -1669,7 +1696,6 @@ export async function monter(o: {
       } else if (s.genre === "prise") {
         const v = lecteurs[s.k];
         const p = prises[s.k];
-        const m = medias[s.k];
         let tc = t;
         if (v) {
           // FILMÉ : la vidéo mène, et le son se cale sur elle quand elle tourne vraiment
@@ -1692,10 +1718,14 @@ export async function monter(o: {
           sonsPoses = true;
           sonsPrise(s.k, debutSeg, null);
         }
-        if (m?.genre === "video" && !mediaLance && (enFantome || tc - p.questionFin > 1.1)) {
+        // SES VIDÉOS tournent dès le début de sa réponse : un plan de coupe peut tomber dessus à tout moment
+        if (!mediaLance && tc > p.questionFin) {
           mediaLance = true;
-          m.v.currentTime = 0;
-          m.v.play().catch(() => {});
+          for (const m of medias[s.k]) {
+            if (m.genre !== "video") continue;
+            m.v.currentTime = 0;
+            m.v.play().catch(() => {});
+          }
         }
         if (dessiner) prise(s.k, tc, t);
         if (tc >= p.coupe || (v && (v.ended || maintenant - bloqueDepuis > 3))) suivant(maintenant);
@@ -1729,7 +1759,7 @@ export async function monter(o: {
   ecoute.disconnect();
   musique.disconnect();
   salle.disconnect();
-  const aRanger = [...lecteurs, ...medias.map((m) => (m?.genre === "video" ? m.v : null))];
+  const aRanger = [...lecteurs, ...medias.flat().map((m) => (m.genre === "video" ? m.v : null))];
   for (const v of aRanger) {
     if (!v) continue;
     v.pause();
@@ -1741,7 +1771,7 @@ export async function monter(o: {
   if (erreur) throw erreur;
   const type = rec.mimeType || format || "video/webm";
   // UNE VIDÉO QUE CE TÉLÉPHONE NE SAIT PAS LIRE NE DISPARAÎT PAS EN SILENCE : l'écran d'essai le dit
-  const mediaDesReponses = prises.map((p, k) => (!p.media ? "aucun" : medias[k] ? "montre" : "illisible")) as Montage["mediaDesReponses"];
+  const mediaDesReponses = prises.map((p, k) => (!p.medias.length ? "aucun" : chargees[k].every(Boolean) ? "montre" : "illisible")) as Montage["mediaDesReponses"];
   const cloche: Montage["cloche"] = !reglages.cloche ? "aucune" : decor ? "montree" : "illisible";
   return { blob: new Blob(morceauxVideo, { type }), type, duree: ctx.currentTime - T0, sonDesReponses, mediaDesReponses, cloche };
 }

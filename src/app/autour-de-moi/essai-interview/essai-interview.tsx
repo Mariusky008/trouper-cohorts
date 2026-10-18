@@ -25,8 +25,9 @@
 //      écrites à l'écran sinon. Une prise par question, trente secondes au
 //      plus ; la réponse s'arrête sur un silence, sur « J'ai fini », ou au bout
 //      du temps ;
-//   4. ses réponses : il ajoute, s'il le veut, une photo ou une vidéo à
-//      chacune, pendant que le téléphone les écoute (ses mots, sous-titrés) ;
+//   4. ses réponses : il ajoute, s'il le veut, jusqu'à trois photos ou vidéos
+//      à chacune, pendant que le téléphone les écoute (ses mots, sous-titrés) ;
+//      elles passeront au rythme de ses mots (voir `plansDeCoupe`) ;
 //   5. le montage se joue sous ses yeux et s'enregistre — l'émission « Face
 //      au fantôme » : son nom en géant, une carte par question, la carte de fin
 //      (voir `interview-montage.ts`) ;
@@ -94,7 +95,9 @@ type Analyse = {
   detail?: string;
 };
 
-type Reponse = PriseBrute & { analyse?: Analyse; media?: Media & { nom: string } };
+/** Ses photos et vidéos d'une réponse : trois au plus, elles passent au rythme de ses mots (voir `plansDeCoupe`). */
+const MEDIAS_PAR_REPONSE = 3;
+type Reponse = PriseBrute & { analyse?: Analyse; medias: (Media & { nom: string })[] };
 
 
 const LIBELLES_FORMAT: Record<Format, { titre: string; detail: string }> = {
@@ -396,7 +399,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
       ctxRef.current?.close().catch(() => {});
       for (const r of reponsesRef.current) {
         if (r.url) URL.revokeObjectURL(r.url);
-        if (r.media) URL.revokeObjectURL(r.media.url);
+        for (const m of r.medias) URL.revokeObjectURL(m.url);
       }
       if (reglages.current.photoPlat.nom) URL.revokeObjectURL(reglages.current.photoPlat.url);
     },
@@ -661,7 +664,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     veille.current?.release().catch(() => {});
 
     // SES RÉPONSES : il choisit ses photos pendant que le téléphone les écoute
-    majReponses(() => prises.map((p) => ({ ...p })));
+    majReponses(() => prises.map((p) => ({ ...p, medias: [] })));
     setEcoute(true);
     setEtape("reponses");
     const analyses = await Promise.all(prises.map((p) => analyser(ctx, p, enFantome, script.contexte)));
@@ -669,23 +672,27 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     setEcoute(false);
   };
 
-  const choisirMedia = (k: number, fichier: File | undefined) => {
-    if (!fichier) return;
-    const genre: Media["genre"] = fichier.type.startsWith("video") ? "video" : "photo";
+  // SES PHOTOS D'UNE RÉPONSE : il en choisit une ou plusieurs d'un coup, trois au plus
+  const choisirMedias = (k: number, fichiers: FileList | null) => {
+    if (!fichiers?.length) return;
     majReponses((rs) =>
       rs.map((r, j) => {
         if (j !== k) return r;
-        if (r.media) URL.revokeObjectURL(r.media.url);
-        return { ...r, media: { genre, url: URL.createObjectURL(fichier), nom: fichier.name } };
+        const ajout = [...fichiers].slice(0, Math.max(0, MEDIAS_PAR_REPONSE - r.medias.length)).map((f) => ({
+          genre: (f.type.startsWith("video") ? "video" : "photo") as Media["genre"],
+          url: URL.createObjectURL(f),
+          nom: f.name,
+        }));
+        return { ...r, medias: [...r.medias, ...ajout] };
       }),
     );
   };
-  const retirerMedia = (k: number) =>
+  const retirerMedia = (k: number, i: number) =>
     majReponses((rs) =>
       rs.map((r, j) => {
-        if (j !== k || !r.media) return r;
-        URL.revokeObjectURL(r.media.url);
-        return { ...r, media: undefined };
+        if (j !== k || !r.medias[i]) return r;
+        URL.revokeObjectURL(r.medias[i].url);
+        return { ...r, medias: r.medias.filter((_, x) => x !== i) };
       }),
     );
 
@@ -718,7 +725,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
         audio: r.analyse?.audio ?? null,
         bouche: r.analyse?.bouche ?? null,
         sousTitres: r.analyse?.sousTitres ?? [],
-        media: r.media ? { genre: r.media.genre, url: r.media.url } : null,
+        medias: r.medias.map((m) => ({ genre: m.genre, url: m.url })),
       }));
       const m = await monter({
         ctx,
@@ -740,6 +747,8 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
                   ...(!du && reglages.current.photoPlat.url === PHOTO_PLAT ? { scene: SCENE_PLAT } : {}),
                 }
               : null,
+          // SA PHOTO DU JOUR : elle passe pendant ses réponses, quand il nomme son produit
+          photo: reglages.current.photoPlat.url || null,
         },
         toile: toile.current!,
         ecouter: reglages.current.ecouter,
@@ -771,7 +780,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     libererAppareils();
     for (const r of reponsesRef.current) {
       if (r.url) URL.revokeObjectURL(r.url);
-      if (r.media) URL.revokeObjectURL(r.media.url);
+      for (const m of r.medias) URL.revokeObjectURL(m.url);
     }
     majReponses(() => []);
     setMontage(null);
@@ -1040,7 +1049,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
           <h1>{etape === "reponses" ? "Tes réponses" : etape === "resultat" && montage ? "Ta vidéo est prête" : "Le reporter monte ta vidéo"}</h1>
           <p>
             {etape === "reponses"
-              ? "Ajoute, si tu veux, une photo ou une vidéo à chaque question : elle passera en grand pendant ta réponse."
+              ? "Ajoute, si tu veux, jusqu'à trois photos ou vidéos à chaque question : la vidéo passera de toi à elles au rythme de tes mots."
               : etape === "montage"
                 ? "Le montage se joue une fois, sous tes yeux, et s'enregistre. Garde l'écran allumé."
                 : du?.publier
@@ -1064,25 +1073,37 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
                       {insecable(r.question)} · {r.duree.toFixed(0)} s
                     </em>
                   </div>
-                  {r.media ? (
-                    <div className="ei-r-media">
-                      {r.media.genre === "photo" ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={r.media.url} alt="" />
-                      ) : (
-                        // « #t=0.1 » : sans lui, l'iPhone montre un carré noir au lieu de la première image
-                        <video src={`${r.media.url}#t=0.1`} muted playsInline preload="metadata" />
-                      )}
-                      <button type="button" onClick={() => retirerMedia(k)}>
-                        Retirer
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="ei-r-ajout">
-                      <input type="file" accept="image/*,video/*" onChange={(e) => choisirMedia(k, e.target.files?.[0])} />
-                      <span>+ Photo ou vidéo</span>
-                    </label>
-                  )}
+                  <div className="ei-r-medias">
+                    {r.medias.map((m, i) => (
+                      <div key={m.url} className="ei-r-media">
+                        {m.genre === "photo" ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={m.url} alt="" />
+                        ) : (
+                          // « #t=0.1 » : sans lui, l'iPhone montre un carré noir au lieu de la première image
+                          <video src={`${m.url}#t=0.1`} muted playsInline preload="metadata" />
+                        )}
+                        <button type="button" onClick={() => retirerMedia(k, i)} aria-label={`Retirer ${m.genre === "photo" ? "la photo" : "la vidéo"} ${i + 1}`}>
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                    {r.medias.length < MEDIAS_PAR_REPONSE ? (
+                      <label className="ei-r-ajout">
+                        {/* la valeur se vide après chaque choix : la même photo peut revenir après un « × » */}
+                        <input
+                          type="file"
+                          accept="image/*,video/*"
+                          multiple
+                          onChange={(e) => {
+                            choisirMedias(k, e.target.files);
+                            e.target.value = "";
+                          }}
+                        />
+                        <span>{r.medias.length ? "+ Une autre" : "+ Photos ou vidéos"}</span>
+                      </label>
+                    ) : null}
+                  </div>
                 </li>
               );
             })}
@@ -1094,7 +1115,9 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
             <p className="ei-n">
               {mode === "fantome"
                 ? "Sans photo, ton fantôme parle en grand, avec ta voix."
-                : "Sans photo, on te voit répondre du début à la fin."}
+                : photoPlat.url
+                  ? `Sans photo, on te voit répondre ; sa photo passe quand tu dis « ${plat.trim() || script.quoi} ».`
+                  : "Sans photo, on te voit répondre du début à la fin."}
             </p>
           </div>
         </>
@@ -1201,8 +1224,10 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
                 <li key={k} className={r.analyse?.transcription === "ok" ? "oui" : r.analyse?.audio ? "" : "non"}>
                   <b>
                     Réponse {k + 1} · {r.duree.toFixed(1)} s · {mo(r.blob.size)}
-                    {r.media
-                      ? ` · ${r.media.genre === "photo" ? "photo" : "vidéo"} ${montage?.mediaDesReponses[k] === "illisible" ? "illisible par ce téléphone, pas montrée" : "ajoutée"}`
+                    {r.medias.length
+                      ? ` · ${r.medias.length > 1 ? `${r.medias.length} photos ou vidéos` : r.medias[0].genre === "photo" ? "photo" : "vidéo"} ${
+                          montage?.mediaDesReponses[k] === "illisible" ? "— une illisible par ce téléphone, pas montrée" : "ajoutée" + (r.medias.length > 1 ? "s" : "")
+                        }`
                       : ""}
                   </b>
                   <em>

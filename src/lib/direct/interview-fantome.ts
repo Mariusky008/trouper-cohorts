@@ -472,6 +472,112 @@ export function motsForts(plat: string, prix: string): ((mot: string) => boolean
   return (m: string) => motif.test(sans(m).replace(/^[«"'(]+/, ""));
 }
 
+/**
+ * ═══ LES PLANS DE COUPE, CALÉS SUR SES MOTS ═══════════════════════════════
+ *
+ * Dans l'épisode de Lou, chaque photo montre ce qu'elle dit au moment où elle
+ * le dit. Le téléphone ne sait pas ce que montre une photo ; il sait QUAND
+ * une phrase commence, et QUAND il nomme son produit. Alors :
+ *   · on le voit d'abord, le temps qu'on sache qui parle ;
+ *   · puis l'image change à chaque nouvelle phrase — son visage, une de ses
+ *     photos, son visage… —, jamais au milieu d'un mot, jamais un plan de
+ *     moins d'une seconde ;
+ *   · quand il nomme son produit (son plat, sa pièce, son prix), on coupe
+ *     juste avant le mot sur la photo du produit — dès 0,6 s de plan, il passe
+ *     avant tout —, et le coup de zoom tombe dessus ;
+ *   · s'il n'a mis aucune photo à cette réponse, celle de son produit ne vient
+ *     QUE quand il le nomme : pas la même image à chaque phrase.
+ * `quoi` : « visage » (sa vidéo), « fond » (ni vidéo ni photo : son fantôme
+ * parle sur le fond), ou le numéro d'une photo.
+ */
+export type PlanDeCoupe = { de: number; a: number; quoi: "visage" | "fond" | number };
+
+export function plansDeCoupe(o: {
+  /** Le début et la fin de sa réponse, en secondes depuis le début de la prise. */
+  debut: number;
+  fin: number;
+  /** Ses mots, un à un (voir `motsDesSousTitres`). */
+  mots: readonly MotDit[];
+  /** Combien de photos ou de vidéos il a pour cette réponse. */
+  medias: number;
+  /** Le numéro de la photo de son produit parmi elles, s'il y en a une. */
+  produit?: number | null;
+  /** Sa vidéo existe-t-elle (il s'est filmé) ? */
+  visage: boolean;
+  /** Seule la photo de son produit est là (il n'en a pas mis à cette réponse) : elle attend qu'il le nomme. */
+  produitSeul?: boolean;
+}): PlanDeCoupe[] {
+  const { debut, fin, mots, medias, visage } = o;
+  const seul: PlanDeCoupe["quoi"] = visage ? "visage" : medias ? 0 : "fond";
+  const MIN = 1.0;
+  /** Lui, puis sa première photo, coupé au début du mot le plus proche du milieu ; trop court pour deux plans, elle seule. */
+  const luiPuisElle = (): PlanDeCoupe[] => {
+    if (fin - debut < 2 * MIN) return [{ de: debut, a: fin, quoi: 0 }];
+    const milieu = (debut + fin) / 2;
+    const c =
+      mots
+        .map((w) => w.a - 0.04)
+        .filter((x) => x - debut >= MIN && fin - x >= MIN)
+        .reduce<number | null>((m, x) => (m == null || Math.abs(x - milieu) < Math.abs(m - milieu) ? x : m), null) ?? milieu;
+    return [
+      { de: debut, a: c, quoi: "visage" },
+      { de: c, a: fin, quoi: 0 },
+    ];
+  };
+  // LA PHOTO QU'IL A MISE SE VOIT TOUJOURS, même sur une réponse trop courte pour être découpée
+  const sesPhotos = medias > 0 && visage && !o.produitSeul;
+  if (!medias || fin - debut < 2.5) return sesPhotos ? luiPuisElle() : [{ de: debut, a: fin, quoi: seul }];
+  // LES ENDROITS OÙ L'ON PEUT COUPER : le début d'une phrase (après une ponctuation ou un silence)
+  const coupures = mots
+    .filter((w, k) => k > 0 && (/[,.;:!?…]$/.test(mots[k - 1].m) || w.a - mots[k - 1].b > 0.25 || k % 5 === 0))
+    .map((w) => w.a - 0.04);
+  // ET LE NOM DE SON PRODUIT : on coupe juste avant
+  const produit = o.produit != null && o.produit >= 0 && o.produit < medias ? o.produit : null;
+  const fort = produit != null ? mots.find((w) => w.fort && w.a > debut + 0.6) : undefined;
+  if (fort) coupures.push(fort.a - 0.08);
+  coupures.sort((a, b) => a - b);
+
+  const plans: PlanDeCoupe[] = [];
+  let t = debut;
+  let quoi: PlanDeCoupe["quoi"] = visage ? "visage" : 0;
+  let prochaine = visage ? 0 : 1 % medias;
+  // ON LE VOIT D'ABORD : 1,2 seconde au moins avant la première photo
+  const premiere = visage ? debut + 1.2 : debut + MIN;
+  for (const c of coupures) {
+    const surLeProduit = fort != null && Math.abs(c - (fort.a - 0.08)) < 1e-6;
+    if (surLeProduit && quoi !== produit) {
+      // LE PRODUIT PASSE AVANT TOUT : dès 0,6 s de plan en cours ; plus tôt, ce plan devient le sien
+      if (c - t >= 0.6 && fin - c >= MIN) {
+        plans.push({ de: t, a: c, quoi });
+        t = c;
+        quoi = produit as number;
+      } else if (plans.length) quoi = produit as number;
+      // LA PHOTO SUIVANTE N'EST PAS ENCORE LE PRODUIT : on vient de le voir
+      if (quoi === produit && prochaine === produit) prochaine = (prochaine + 1) % medias;
+      continue;
+    }
+    if (c < premiere || c - t < MIN || fin - c < MIN) continue;
+    let suivant: PlanDeCoupe["quoi"];
+    if (surLeProduit) continue;
+    else if (quoi === "visage") {
+      if (o.produitSeul) continue;
+      suivant = prochaine;
+      prochaine = (prochaine + 1) % medias;
+    } else if (visage) suivant = "visage";
+    else if (medias > 1) {
+      suivant = prochaine;
+      prochaine = (prochaine + 1) % medias;
+    } else continue;
+    if (suivant === quoi) continue;
+    plans.push({ de: t, a: c, quoi });
+    t = c;
+    quoi = suivant;
+  }
+  plans.push({ de: t, a: fin, quoi });
+  if (sesPhotos && !plans.some((x) => typeof x.quoi === "number")) return luiPuisElle();
+  return plans;
+}
+
 /** Une ligne coupée en deux, au plus près du milieu (en signes) — une ligne seule si elle est courte. */
 export function enDeuxLignes(texte: string, seuleJusqua = 12): [string, string] {
   // les espaces ordinaires seulement : l'espace fine colle « ? » à son mot

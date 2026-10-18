@@ -21,7 +21,7 @@ const js = ts.transpileModule(readFileSync("src/lib/direct/interview-fantome.ts"
 }).outputText;
 const boite = { exports: {} };
 new Function("exports", "module", "require", js)(boite.exports, boite, exige);
-const { motsDesSousTitres, morceauxDeMots, enFrappes, frappesDesMots, motsForts, carteDeQuestion, enDeuxLignes, SCRIPTS, REPLIQUES } = boite.exports;
+const { motsDesSousTitres, morceauxDeMots, enFrappes, frappesDesMots, motsForts, carteDeQuestion, enDeuxLignes, plansDeCoupe, SCRIPTS, REPLIQUES } = boite.exports;
 const pjs = ts.transpileModule(readFileSync("src/lib/direct/interview-planning.ts", "utf8"), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
@@ -87,6 +87,59 @@ for (const [metier, s] of Object.entries(SCRIPTS))
   });
 dire(true, `${titres.length} cartes de ${Object.keys(SCRIPTS).length} métiers : 16 signes au plus par ligne de titre, 34 par ligne de question`);
 dire(enDeuxLignes("Manteau long camel", 16).join("|") === "Manteau long|camel" || enDeuxLignes("Manteau long camel", 16).join("|") === "Manteau|long camel", "le plat en deux lignes sur la carte de fin");
+
+console.log("══ les plans de coupe, calés sur ses mots ══");
+const reponse = motsDesSousTitres(
+  [
+    { texte: "Aujourd'hui, c'est le manteau long camel.", debut: 3.4, fin: 5.5 },
+    { texte: "Laine et cachemire, il tombe jusqu'aux chevilles…", debut: 5.9, fin: 8.5 },
+    { texte: "Ouvert ou ceinturé, il va avec tout.", debut: 9.0, fin: 11.3 },
+  ],
+  forts,
+);
+const couvre = (pl, de, a) => Math.abs(pl[0].de - de) < 1e-9 && Math.abs(pl[pl.length - 1].a - a) < 1e-9 && pl.every((x, k) => k === 0 || Math.abs(x.de - pl[k - 1].a) < 1e-9);
+const p0 = plansDeCoupe({ debut: 3.35, fin: 12, mots: reponse, medias: 0, visage: true });
+dire(p0.length === 1 && p0[0].quoi === "visage", "sans photo : on le voit répondre du début à la fin");
+const p1 = plansDeCoupe({ debut: 3.35, fin: 12, mots: reponse, medias: 2, produit: 0, visage: true });
+dire(couvre(p1, 3.35, 12), `avec deux photos : ${p1.length} plans, sans trou — ${p1.map((x) => `${x.quoi}@${x.de.toFixed(1)}`).join(" ")}`);
+dire(p1[0].quoi === "visage" && p1[0].a - p1[0].de >= 0.6, "on le voit d'abord (1,2 s, ou jusqu'à ce qu'il nomme son produit)");
+const sansProduit = plansDeCoupe({ debut: 3.35, fin: 12, mots: reponse, medias: 2, visage: true });
+dire(sansProduit[0].quoi === "visage" && sansProduit[0].a - sansProduit[0].de >= 1.2, "sans produit nommé : 1,2 s de visage au moins avant la première photo");
+dire(p1.every((x) => x.a - x.de >= 0.599), "jamais un plan de moins d'une seconde (0,6 s pour arriver sur le produit)");
+dire(p1.every((x, k) => k === 0 || x.quoi !== p1[k - 1].quoi), "chaque coupe change vraiment d'image");
+const coupes = p1.slice(1).map((x) => x.de);
+const debuts = reponse.map((w) => w.a);
+dire(coupes.every((c) => debuts.some((a) => Math.abs(a - c) < 0.1)), "chaque coupe tombe au début d'un mot, jamais au milieu");
+const motFort = reponse.find((w) => w.fort);
+const surLui = p1.find((x) => motFort.a >= x.de && motFort.a < x.a);
+dire(surLui?.quoi === 0, `quand il nomme son produit (« ${motFort.m} »), c'est la photo du produit`);
+const apresLui = p1.slice(p1.indexOf(surLui) + 1).find((x) => typeof x.quoi === "number");
+dire(!apresLui || apresLui.quoi !== 0, "la photo d'après est une autre : le produit, on vient de le voir");
+const pf = plansDeCoupe({ debut: 3.35, fin: 12, mots: reponse, medias: 1, visage: false });
+dire(pf.length === 1 && pf[0].quoi === 0, "son fantôme à l'écran, une seule photo : elle reste");
+// AUCUNE PHOTO À CETTE RÉPONSE, SEULEMENT CELLE DU JOUR : elle ne vient que quand il nomme son produit
+const ps = plansDeCoupe({ debut: 3.35, fin: 12, mots: reponse, medias: 1, produit: 0, visage: true, produitSeul: true });
+const surProduit = ps.filter((x) => x.quoi === 0);
+dire(
+  couvre(ps, 3.35, 12) && surProduit.length === 1 && motFort.a >= surProduit[0].de && motFort.a < surProduit[0].a && ps.every((x) => x.quoi === 0 || x.quoi === "visage"),
+  `sans photo à lui, la photo du jour passe une fois, sur « ${motFort.m} », puis on le revoit — ${ps.map((x) => `${x.quoi}@${x.de.toFixed(1)}`).join(" ")}`,
+);
+const sansNom = plansDeCoupe({ debut: 3.35, fin: 12, mots: motsDesSousTitres([{ texte: "Il est doux, il va avec tout, et il tient chaud.", debut: 3.4, fin: 8 }], forts), medias: 1, produit: 0, visage: true, produitSeul: true });
+dire(sansNom.length === 1 && sansNom[0].quoi === "visage", "et s'il ne le nomme pas, on le voit répondre du début à la fin");
+// LES RÉPONSES COURTES (« Douce. Vraie. ») : pas de rafale, mais sa photo se voit
+const courte = motsDesSousTitres([{ texte: "Douce. Vraie. Élégante.", debut: 2.6, fin: 4.6 }], forts);
+const pc = plansDeCoupe({ debut: 2.55, fin: 4.95, mots: courte, medias: 2, visage: true });
+dire(
+  pc.length === 2 && pc[0].quoi === "visage" && pc[1].quoi === 0 && couvre(pc, 2.55, 4.95) && pc.every((x) => x.a - x.de >= 0.999) && courte.some((w) => Math.abs(w.a - 0.04 - pc[1].de) < 1e-9),
+  `une réponse de 2,4 s avec sa photo : lui, puis elle, coupé au début d'un mot — ${pc.map((x) => `${x.quoi}@${x.de.toFixed(2)}`).join(" ")}`,
+);
+const tresCourte = plansDeCoupe({ debut: 2.55, fin: 4.2, mots: courte, medias: 2, visage: true });
+dire(tresCourte.length === 1 && tresCourte[0].quoi === 0, "trop courte pour deux plans : sa photo seule");
+const deuxMots = motsDesSousTitres([{ texte: "Douce. Vraie.", debut: 2.6, fin: 4.0 }], forts);
+const pd = plansDeCoupe({ debut: 2.55, fin: 5.2, mots: deuxMots, medias: 2, produit: 1, visage: true });
+dire(pd.some((x) => x.quoi === 0), `2,65 s, aucune coupe possible au rythme des phrases : sa photo passe quand même — ${pd.map((x) => `${x.quoi}@${x.de.toFixed(2)}`).join(" ")}`);
+const courteSansPhoto = plansDeCoupe({ debut: 2.55, fin: 4.95, mots: courte, medias: 1, produit: 0, visage: true, produitSeul: true });
+dire(courteSansPhoto.length === 1 && courteSansPhoto[0].quoi === "visage", "courte, sans photo à lui : on le voit, lui");
 
 console.log("══ les questions du jour, sur leurs cartes ══");
 for (const metier of Object.keys(BANQUES)) {
