@@ -22,8 +22,10 @@
 //   3. les questions — une prise par question, trente secondes au plus ; la
 //      réponse s'arrête sur un silence, sur « J'ai fini », ou au bout du temps ;
 //   4. ses réponses : il ajoute, s'il le veut, une photo ou une vidéo à
-//      chacune, pendant que le téléphone les écoute (sous-titres à la craie) ;
-//   5. le montage se joue sous ses yeux et s'enregistre ;
+//      chacune, pendant que le téléphone les écoute (ses mots, sous-titrés) ;
+//   5. le montage se joue sous ses yeux et s'enregistre — l'émission « Face
+//      au fantôme » : son nom en géant, une carte par question, la carte de fin
+//      (voir `interview-montage.ts`) ;
 //   6. il la regarde, la partage, la télécharge.
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -264,7 +266,7 @@ function Visage({ srcs, images }: { srcs: string[]; images: { current: (HTMLImag
  */
 export type InterviewDuCommerce = {
   commerce: string;
-  /** Écrite sous son nom sur l'ardoise de fin ; vide, rien n'est écrit. */
+  /** Écrite sous son nom, dans le titre et sur la carte de fin ; vide, rien n'est écrit. */
   ville: string;
   plat: string;
   prix: string;
@@ -801,7 +803,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
             <h1>{du ? "Mon interview vidéo" : "L’interview du fantôme"}</h1>
             <p>
               Le <b>reporter de ClikMe</b> te pose ses questions, devant le téléphone. Puis le téléphone{" "}
-              <b>monte la vidéo lui-même</b> : l&apos;ardoise à la craie, le reporter, tes réponses, tes photos.
+              <b>monte la vidéo lui-même</b> : ton nom en géant, une carte par question, tes réponses sous-titrées, tes photos, ton prix et la musique.
             </p>
           </div>
           {du ? (
@@ -923,7 +925,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
 
         <p className="ei-rappel">
           {du ? null : <b>Page d&apos;essai. </b>}La voix du reporter est une voix de synthèse. Tes réponses sont envoyées au service de
-          transcription pour les sous-titres à la craie ; la vidéo reste dans ce téléphone tant que tu ne la partages pas.
+          transcription pour les sous-titres ; la vidéo reste dans ce téléphone tant que tu ne la partages pas.
         </p>
       </main>
     );
@@ -1053,7 +1055,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
             </button>
             <p className="ei-n">
               {mode === "fantome"
-                ? "Sans photo, ton fantôme parle sur l'ardoise du jour."
+                ? "Sans photo, ton fantôme parle en grand, avec ta voix."
                 : "Sans photo, on te voit répondre du début à la fin."}
             </p>
           </div>

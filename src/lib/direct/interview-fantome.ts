@@ -6,9 +6,9 @@
  * questions et que le commerçant y réponde ? » Le commerçant pose son
  * téléphone, le fantôme reporter de ClikMe est déjà à l'écran, à l'endroit où
  * il lui a dit de regarder, et il lui pose ses questions en direct. Puis le
- * téléphone monte la vidéo lui-même, « comme la dernière » : l'ardoise qui
- * s'écrit à la craie, le reporter qui ouvre, qui pose ses questions et qui dit
- * au revoir.
+ * téléphone monte la vidéo lui-même : l'émission « Face au fantôme », avec
+ * son nom en géant, une carte par question et la carte de fin (voir
+ * `interview-signature.ts`).
  *
  * DEUXIÈME VERSION, après le premier essai sur un téléphone :
  *   · le reporter parle avec « la voix de Jean-Marie » — Liam, d'ElevenLabs,
@@ -117,7 +117,7 @@ export const repliqueDite = (id: IdReplique): string => REPLIQUES[id].replace(/C
 /**
  * QUATRE QUESTIONS, ET LE FORMAT CHOISIT COMBIEN ON EN POSE : une (sérieuse),
  * deux (sérieuses), trois (la troisième pour rire), quatre (la quatrième
- * personnelle). Le `titre` est ce que l'ardoise écrit pendant la réponse —
+ * personnelle). Le `titre` est ce que la carte de la question écrit en grand —
  * c'est lui qui dit de quoi on parle à celui qui regarde sans le son, et c'est
  * la majorité.
  */
@@ -143,7 +143,7 @@ export type Format = (typeof FORMATS)[number];
  *
  * LES QUESTIONS GARDENT LEUR PLACE (`q1` à `q4` : la sérieuse, la seconde
  * sérieuse, celle pour rire, la personnelle) ; c'est leur TEXTE qui change
- * (`replique`) et ce que l'ardoise en écrit (`titre`). Une prise reste « la
+ * (`replique`) et ce que sa carte en écrit (`titre`). Une prise reste « la
  * réponse à q1 » d'un métier à l'autre.
  */
 export type QuestionDuScript = { id: IdQuestion; replique: IdReplique; ton: string; titre: string };
@@ -357,6 +357,168 @@ export function horairesSousTitres(morceaux: string[], debut: number, fin: numbe
   });
 }
 
+/* ═══ LA SIGNATURE « FACE AU FANTÔME » : CE QUI SE CALCULE SANS TÉLÉPHONE ══
+ *
+ * « Est-ce que le mode interview a bien été pensé pour que le résultat soit à
+ * la hauteur de ce que tu viens de réaliser ? » Non : l'ardoise à la craie
+ * n'avait ni le nom géant au clic, ni les cartes de questions, ni les mots qui
+ * s'allument un à un. Le dessin est dans `interview-signature.ts` ; ici, les
+ * règles qui se vérifient (`scripts/verifier-signature-interview.mjs`).
+ */
+
+/** Un mot dit, et quand : `a` son début, `b` sa fin, en secondes depuis le début de la prise. */
+export type MotDit = { m: string; a: number; b: number; fort?: boolean };
+
+/**
+ * LES MOTS UN À UN. Le service de transcription donne des phrases, pas des
+ * mots : chaque sous-titre est réparti sur son temps au prorata de la longueur
+ * de ses mots. Ce n'est pas un minutage au mot près, mais à l'œil, le mot
+ * s'allume quand on l'entend. `forts` : les mots à mettre en rose (son plat,
+ * son prix).
+ */
+export function motsDesSousTitres(sousTitres: readonly SousTitre[], forts: ((mot: string) => boolean) | null = null): MotDit[] {
+  const out: MotDit[] = [];
+  for (const s of sousTitres) {
+    // « moment ? » : le point d'interrogation reste collé à son mot
+    const mots = s.texte
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/ ([?!:;»])/g, "\u202F$1")
+      .replace(/« /g, "«\u202F")
+      .split(" ")
+      .filter(Boolean);
+    const poids = mots.map((m) => m.length + 2);
+    const total = poids.reduce((a, b) => a + b, 0);
+    if (!total || s.fin <= s.debut) continue;
+    let t = s.debut;
+    mots.forEach((m, k) => {
+      const d = (poids[k] / total) * (s.fin - s.debut);
+      out.push({ m, a: t, b: t + d, ...(forts?.(m) ? { fort: true } : {}) });
+      t += d;
+    });
+  }
+  return out;
+}
+
+/** Un morceau de sous-titre : quelques mots, montrés ensemble, de `de` à `fin`. */
+export type MorceauDit = { mots: MotDit[]; de: number; fin: number };
+
+/**
+ * LES MORCEAUX À L'ÉCRAN : dix-sept signes au plus — deux lignes de gros mots
+ * sur un téléphone —, coupés aussi sur un silence ou une ponctuation, comme
+ * dans l'épisode de Lou. Un morceau reste jusqu'au suivant, sans le chevaucher.
+ */
+export function morceauxDeMots(mots: readonly MotDit[], max = 17): MorceauDit[] {
+  const groupes: MotDit[][] = [];
+  let cur: MotDit[] = [];
+  for (const w of mots) {
+    const prev = cur[cur.length - 1];
+    const longueur = cur.map((x) => x.m).join(" ").length + 1 + w.m.length;
+    if (cur.length && (longueur > max || w.a - prev.b > 0.35 || /[,.;:!?…]$/.test(prev.m))) {
+      groupes.push(cur);
+      cur = [];
+    }
+    cur.push(w);
+  }
+  if (cur.length) groupes.push(cur);
+  return groupes.map((g, k) => {
+    const suivant = groupes[k + 1];
+    const fin = g[g.length - 1].b + 0.32;
+    return { mots: g, de: g[0].a - 0.06, fin: suivant ? Math.min(fin, suivant[0].a - 0.06) : fin };
+  });
+}
+
+/**
+ * UNE RÉPONSE DE QUATRE MOTS AU PLUS NE SE SOUS-TITRE PAS : ELLE FRAPPE. « Ta
+ * boutique en trois mots ? — Douce. Vraie. Pleine de surprises. » Chaque mot
+ * passe en plein écran, au moment où il est dit.
+ */
+export const enFrappes = (mots: readonly MotDit[]): boolean => mots.length >= 1 && mots.length <= 4;
+
+/** Une frappe : un mot (ou un petit mot et le suivant), de `a` à `fin`. */
+export type Frappe = { m: string; a: number; fin: number };
+
+/**
+ * LES FRAPPES D'UNE RÉPONSE COURTE. Un petit mot (« le », « en », « et »)
+ * ne frappe pas seul : « LE » en plein écran ne veut rien dire. Il se colle au
+ * mot qui suit (« LE MAGRET »). Chaque frappe reste jusqu'à la suivante, une
+ * seconde au plus.
+ */
+export function frappesDesMots(mots: readonly MotDit[]): Frappe[] {
+  const groupes: MotDit[][] = [];
+  let cur: MotDit[] = [];
+  for (const w of mots) {
+    cur.push(w);
+    const nu = w.m.replace(/[^0-9A-Za-zÀ-ÖØ-öø-ÿŒœ]/g, "");
+    if (nu.length > 3 || /[,.;:!?…]$/.test(w.m)) {
+      groupes.push(cur);
+      cur = [];
+    }
+  }
+  if (cur.length) {
+    if (groupes.length) groupes[groupes.length - 1].push(...cur);
+    else groupes.push(cur);
+  }
+  return groupes.map((g, k) => {
+    const a = g[0].a;
+    const suivant = groupes[k + 1];
+    return { m: g.map((w) => w.m).join(" "), a, fin: suivant ? Math.min(suivant[0].a - 0.12, a + 0.95) : a + 0.75 };
+  });
+}
+
+/** Les mots de son plat (quatre lettres et plus) et son prix : ils s'écrivent en rose. */
+export function motsForts(plat: string, prix: string): ((mot: string) => boolean) | null {
+  const sans = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const racines = [...new Set(sans(plat).split(/[^a-z0-9]+/).filter((m) => m.length >= 4))];
+  const chiffres = (prix.match(/\d+/) ?? [])[0];
+  const parties = racines.map((r) => r.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  if (chiffres) parties.push(`${chiffres}(?:[,.]\\d+)?\\s*(?:€|euros?)?`);
+  if (!parties.length) return null;
+  const motif = new RegExp(`^(?:${parties.join("|")})`, "i");
+  return (m: string) => motif.test(sans(m).replace(/^[«"'(]+/, ""));
+}
+
+/** Une ligne coupée en deux, au plus près du milieu (en signes) — une ligne seule si elle est courte. */
+export function enDeuxLignes(texte: string, seuleJusqua = 12): [string, string] {
+  // les espaces ordinaires seulement : l'espace fine colle « ? » à son mot
+  const mots = texte.trim().split(/[ \t\r\n]+/).filter(Boolean);
+  if (mots.length < 2 || texte.trim().length <= seuleJusqua) return [texte.trim(), ""];
+  let mieux: [string, string] = [mots.join(" "), ""];
+  let ecart = Infinity;
+  for (let k = 1; k < mots.length; k++) {
+    const a = mots.slice(0, k).join(" ");
+    const b = mots.slice(k).join(" ");
+    const e = Math.max(a.length, b.length);
+    if (e < ecart) {
+      ecart = e;
+      mieux = [a, b];
+    }
+  }
+  return mieux;
+}
+
+/** Ce que la carte d'une question écrit : son numéro, son titre en deux lignes, la question dite. */
+export type CarteDeQuestion = { num: string; l1: string; l2: string; fin: string; sous: [string, string] };
+
+/**
+ * LA CARTE DE LA QUESTION `k` SUR `n` : « QUESTION 1 / 3 », le titre en très
+ * gros (« LA PIÈCE / DU MOMENT ? »), et dessous ce que le fantôme demande
+ * vraiment. La dernière d'une série s'annonce comme telle.
+ */
+export function carteDeQuestion(titre: string, k: number, n: number, dite: string): CarteDeQuestion {
+  const t = titre.trim();
+  const fin = /…$/.test(t) ? "…" : /\?$/.test(t) ? "?" : "";
+  const corps = t.replace(/\s*[?…]$/, "").trim();
+  const [l1, l2] = enDeuxLignes(corps.toLocaleUpperCase("fr-FR"), 9);
+  return {
+    num: n >= 2 && k === n - 1 ? "DERNIÈRE QUESTION" : `QUESTION ${k + 1} / ${n}`,
+    l1,
+    l2,
+    fin,
+    sous: enDeuxLignes(dite.replace(/\s+([?!:;])/g, "\u202F$1"), 22),
+  };
+}
+
 /**
  * « CE MIDI AU / BORDEAUX » — l'article du nom se contracte, comme on l'écrit à
  * la main sur une ardoise. « Ce midi au Le Bordeaux » se lit comme une faute
@@ -378,31 +540,23 @@ export function enteteArdoise(commerce: string, quand = "Ce midi"): { avant: str
 
 /* ═══ LE PLAN DU MONTAGE ═══════════════════════════════════════════════════
  *
- * Trois temps, comme l'épisode de l'ardoise : l'OUVERTURE (l'ardoise du jour
- * s'écrit, le fantôme arrive et dit bonjour), les PRISES (le fantôme pose sa
- * question par-dessus l'image du chef qui écoute, puis se fait petit au coin
- * de l'ardoise pendant qu'il répond), la FIN (le nom du commerce, le logo, « à
- * demain »). Les durées des prises ne sont connues qu'en les jouant — on
- * coupe quand la vidéo atteint la fin de la parole — donc le plan donne des
- * durées, pas des heures.
+ * L'émission Face au fantôme, en quatre temps (`interview-montage.ts`) : le
+ * TITRE (le clic, son nom en géant), la CLOCHE pour un restaurant qui a sa
+ * photo, les PRISES (la carte de la question, que le reporter pose avec sa
+ * voix, puis sa réponse en plein écran), la FIN (la carte postale, son prix,
+ * le bouton, « à bientôt »). Les durées des prises ne sont connues qu'en les
+ * jouant — on coupe quand la vidéo atteint la fin de la parole — donc le plan
+ * donne des durées, pas des heures.
  */
-export const OUVERTURE = {
-  /** Le fantôme commence à parler quand l'ardoise a presque fini de s'écrire. */
-  voix: 1.1,
-  apres: 0.7,
-} as const;
-export const FIN = { voix: 0.6, apres: 2.8 } as const;
-
-export const dureeOuverture = (bonjour: number) => OUVERTURE.voix + bonjour + OUVERTURE.apres;
 
 /**
- * LA CLOCHE, ENTRE L'OUVERTURE ET LA PREMIÈRE QUESTION — pour un restaurant
+ * LA CLOCHE, ENTRE LE TITRE ET LA PREMIÈRE QUESTION — pour un restaurant
  * qui a donné la photo de son plat. « Utiliser l'animation de la découverte,
  * juste l'étape 1 avec la cloche, parce que c'est esthétique et beau » : la
  * salle, son fantôme assis qui la montre, la cloche qui s'envole — puis,
  * comme dans l'application, l'étape 2 : le plat en grand (« si tu n'y arrives
- * pas dans une assiette, mets-le en pleine page »). Puis on revient à
- * l'interview. `leve` : quand la cloche se soulève ; `duree` : tout le moment.
+ * pas dans une assiette, mets-le en pleine page »). Puis viennent les
+ * questions. `leve` : quand la cloche se soulève ; `duree` : tout le moment.
  */
 export const CLOCHE = { leve: 1.35, duree: 6 } as const;
 
@@ -412,7 +566,7 @@ export const CLOCHE = { leve: 1.35, duree: 6 } as const;
  * mégaoctets au plus) puis vers Instagram. Quatre mégabits par seconde, c'est
  * trente mégaoctets la minute : une interview de deux minutes et demie n'y
  * tenait pas. Le débit baisse donc avec la longueur prévue, pour viser
- * quarante mégaoctets — une ardoise, un visage qui parle et un fantôme ne
+ * quarante mégaoctets — des cartes, un visage qui parle et un fantôme ne
  * demandent pas plus de deux mégabits en 720 × 1280.
  */
 export const OCTETS_VISES = 40_000_000;
@@ -421,7 +575,6 @@ export function debitDuMontage(secondesPrevues: number): number {
   const d = Math.max(1, secondesPrevues);
   return Math.round(Math.min(4_000_000, Math.max(1_200_000, (OCTETS_VISES * 8) / d - DEBIT_SON)));
 }
-export const dureeFin = (aDemain: number) => FIN.voix + aDemain + FIN.apres;
 
 /**
  * OÙ COUPER UNE PRISE (en secondes depuis son début) : sept dixièmes après la

@@ -107,7 +107,7 @@ function platDuJour(principal: Publication | undefined, vitrine: { nom: string; 
   return { plat: "", prix: "", photoPlat: null };
 }
 
-/** La ville, lue dans son adresse (« …, 40100 Dax » → « Dax ») : écrite sous son nom sur l'ardoise de fin. */
+/** La ville, lue dans son adresse (« …, 40100 Dax » → « Dax ») : écrite sous son nom sur la carte de fin. */
 function villeDe(c: Commerce): string {
   const m = (c.adresse ?? "").match(/\b\d{5}\s+([^,]+)$/);
   return m ? m[1].trim() : "";
