@@ -41,7 +41,6 @@ import {
   CLOCHE,
   DEBIT_SON,
   SCRIPTS,
-  repliquesDuScript,
   REPLIQUES,
   carteDeQuestion,
   debitDuMontage,
@@ -54,8 +53,6 @@ import {
   motsForts,
   repliquesDuLieu,
   type Cote,
-  type IdQuestion,
-  type IdReplique,
   type Mode,
   type ScriptInterview,
   type SousTitre,
@@ -98,6 +95,7 @@ import {
   type Titre,
 } from "@/lib/direct/interview-signature";
 import { BRODERIE, arcsDuNom, lignesDuNom, type Pt } from "@/lib/direct/fantome-assis";
+import { fichierEnregistre } from "@/lib/direct/voix-fantome";
 
 export { LARGEUR, HAUTEUR };
 const IPS = 30;
@@ -157,11 +155,14 @@ export type Elements = {
   /** Le fantôme du chef — à sa place quand il ne veut pas se montrer. */
   chef: HTMLImageElement[];
   logo: HTMLImageElement;
-  voix: Record<IdReplique, AudioBuffer>;
-  /** L'ouverture de la bouche, trente valeurs par seconde de réplique. */
-  bouche: Record<IdReplique, Float32Array>;
-  /** Qui a parlé pour le reporter : « elevenlabs:eleven_v3 », « openai:ash »… ou « secours ». */
+  /** SA VOIX, phrase par phrase, retrouvée par son texte — une phrase absente s'écrit au lieu de se dire. */
+  voix: Record<string, AudioBuffer>;
+  /** L'ouverture de la bouche, trente valeurs par seconde de phrase. */
+  bouche: Record<string, Float32Array>;
+  /** Ce qui a parlé pour le reporter : combien de phrases enregistrées, dites par le serveur, ou écrites. */
   sourceVoix: string;
+  /** Les phrases qu'il n'a pas pu dire (pas enregistrées, et le serveur n'a pas encore sa voix). */
+  voixManquantes: string[];
   /** La cloche du restaurant : le souffle quand elle se soulève, les clochettes. */
   sons: { cloches: AudioBuffer; souffle: AudioBuffer };
   /** La musique de l'émission, fabriquée note par note (voir `fabriquerMusique`) — `null` si ce téléphone n'a pas su. */
@@ -170,8 +171,11 @@ export type Elements = {
   police: { bulle: string; enseigne: string; affiche: string };
 };
 
-/** Changer un texte de réplique → changer ce numéro, sinon le cache resservirait l'ancienne voix. */
-export const VERSION_VOIX = "2";
+/**
+ * Changer un texte, ou la voix (`INTERVIEW_VOIX_ID`) → changer ce numéro, sinon
+ * le cache resservirait l'ancienne synthèse.
+ */
+export const VERSION_VOIX = "3";
 
 function image(src: string): Promise<HTMLImageElement> {
   return new Promise((ok, ko) => {
@@ -228,60 +232,66 @@ export function ouvertures(buf: AudioBuffer, depuis = 0): Float32Array {
 const attendre = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
- * LA VOIX DU REPORTER : LIAM, PAR LE SERVEUR — OU TOUTES CELLES DE SECOURS.
+ * LA VOIX DU FANTÔME, PHRASE PAR PHRASE.
  *
- * TOUT OU RIEN. Une réplique refusée au milieu (un quota, une limite de
- * requêtes simultanées) ne doit pas donner un reporter qui change de voix
- * entre deux questions : au premier échec, on reprend TOUTES les répliques de
- * secours. Deux demandes à la fois seulement — un compte ElevenLabs modeste en
- * refuse davantage —, et une seconde chance après un refus pour cause
- * d'affluence.
+ * D'abord ses enregistrements (`voix-fantome.ts`) ; une phrase qu'il n'a pas
+ * enregistrée est demandée au serveur, qui la dit avec la même voix — quand
+ * il en a l'identifiant. Sinon, elle n'a pas de son : l'écran et la carte
+ * l'écrivent. Au premier « pas encore réglée » (503), on n'insiste plus.
+ * Deux demandes à la fois seulement — un compte ElevenLabs modeste en refuse
+ * davantage.
  */
-async function chargerVoix(ctx: BaseAudioContext, ids: readonly IdReplique[]): Promise<{ voix: Record<IdReplique, AudioBuffer>; source: string }> {
-  const voix = {} as Record<IdReplique, AudioBuffer>;
-  let source = "";
-  try {
-    const une = async (id: IdReplique) => {
-      for (let essai = 0; essai < 2; essai++) {
-        const stop = new AbortController();
-        const minuterie = setTimeout(() => stop.abort(), 25_000);
-        try {
-          const r = await fetch(`/api/direct/interview/voix?id=${id}&v=${VERSION_VOIX}`, { signal: stop.signal });
-          if (r.ok) {
-            source = source || r.headers.get("x-interview-voix") || "serveur";
-            voix[id] = await ctx.decodeAudioData(await r.arrayBuffer());
-            return;
-          }
-          if (r.status !== 429 && r.status < 500) throw new Error(`HTTP ${r.status}`);
-          if (r.status === 503) throw new Error("voix non configurée");
-        } finally {
-          clearTimeout(minuterie);
-        }
-        await attendre(1500);
+async function chargerVoix(
+  ctx: BaseAudioContext,
+  textes: readonly string[],
+  metier: string,
+): Promise<{ voix: Record<string, AudioBuffer>; source: string; manquantes: string[] }> {
+  const voix: Record<string, AudioBuffer> = {};
+  const manquantes: string[] = [];
+  let enregistrees = 0;
+  let parLeServeur = 0;
+  let serveurSansVoix = false;
+  const une = async (texte: string): Promise<"enregistree" | "serveur" | null> => {
+    const f = fichierEnregistre(texte);
+    if (f) {
+      try {
+        voix[texte] = await son(ctx, f);
+        return "enregistree";
+      } catch {
+        /* un fichier qui ne se lit pas : on demande au serveur */
       }
-      throw new Error("voix indisponible");
-    };
-    const file = [...ids];
-    let echec = false;
-    await Promise.all(
-      [0, 1].map(async () => {
-        while (file.length && !echec) {
-          try {
-            await une(file.shift()!);
-          } catch (e) {
-            echec = true;
-            throw e;
-          }
-        }
-      }),
-    );
-    return { voix, source };
-  } catch {
-    const liste = await Promise.all(ids.map((id) => son(ctx, `${DOSSIER}/voix/${id}.mp3`)));
-    const secours = {} as Record<IdReplique, AudioBuffer>;
-    ids.forEach((id, k) => (secours[id] = liste[k]));
-    return { voix: secours, source: "secours" };
-  }
+    }
+    if (serveurSansVoix) return null;
+    const stop = new AbortController();
+    const minuterie = setTimeout(() => stop.abort(), 25_000);
+    try {
+      const r = await fetch(`/api/direct/interview/voix?m=${encodeURIComponent(metier)}&t=${encodeURIComponent(texte)}&v=${VERSION_VOIX}`, { signal: stop.signal });
+      if (r.ok) {
+        voix[texte] = await ctx.decodeAudioData(await r.arrayBuffer());
+        return "serveur";
+      }
+      if (r.status === 503) serveurSansVoix = true;
+    } catch {
+      /* réseau : cette phrase s'écrira */
+    } finally {
+      clearTimeout(minuterie);
+    }
+    return null;
+  };
+  const file = [...new Set(textes.filter((t) => t.trim()))];
+  await Promise.all(
+    [0, 1].map(async () => {
+      while (file.length) {
+        const t = file.shift()!;
+        const d = await une(t);
+        if (d === "enregistree") enregistrees += 1;
+        else if (d === "serveur") parLeServeur += 1;
+        else manquantes.push(t);
+      }
+    }),
+  );
+  const source = `voix du fantôme : ${enregistrees} enregistrée${enregistrees > 1 ? "s" : ""}, ${parLeServeur} par le serveur, ${manquantes.length} écrite${manquantes.length > 1 ? "s" : ""}`;
+  return { voix, source, manquantes };
 }
 
 /**
@@ -338,29 +348,30 @@ export const CHEF_DU_BORDEAUX = [0, 1, 2, 3].map((k) => `${DOSSIER}/chef-${k}.we
 export const chefEnPied = (dossier: string) => ["repos", "parle-1", "parle-2", "parle-2"].map((p) => `${dossier}${p}.webp`);
 
 /**
- * `ids` : LES RÉPLIQUES DE CE MÉTIER, et elles seules (`repliquesDuScript`) —
- * on ne fait plus fabriquer au serveur les phrases de huit métiers pour en
- * dire une dizaine.
+ * `textes` : LES PHRASES DE SON INTERVIEW, et elles seules — où se placer, les
+ * questions du jour, le merci, l'au revoir. `metier` : pour que le serveur
+ * vérifie que ce sont bien les textes validés de son métier.
  */
 export async function chargerElements(
   ctx: BaseAudioContext,
   imagesDuChef: string[] = CHEF_DU_BORDEAUX,
-  ids: readonly IdReplique[] = repliquesDuScript(SCRIPTS.table, "Le Bordeaux"),
+  textes: readonly string[] = [],
+  metier = "table",
 ): Promise<Elements> {
   const quatre = (nom: string) => Promise.all([0, 1, 2, 3].map((k) => image(`${DOSSIER}/${nom}-${k}.webp`)));
   const [reporter, chef, logo, voix, cloches, souffle, police, musique] = await Promise.all([
     quatre("reporter"),
     Promise.all(imagesDuChef.map(image)),
     image("/clikme-logo-blanc.png"),
-    chargerVoix(ctx, ids),
+    chargerVoix(ctx, textes, metier),
     son(ctx, `${DOSSIER}/cloches.mp3`),
     son(ctx, `${DOSSIER}/souffle.mp3`),
     polices(),
     // LA MUSIQUE : seize secondes rendues hors du temps — sans elle, la vidéo se fait quand même
     fabriquerMusique(ctx.sampleRate).catch(() => null),
   ]);
-  const bouche = {} as Record<IdReplique, Float32Array>;
-  for (const id of ids) bouche[id] = ouvertures(voix.voix[id]);
+  const bouche: Record<string, Float32Array> = {};
+  for (const [t, b] of Object.entries(voix.voix)) bouche[t] = ouvertures(b);
   return {
     reporter,
     chef,
@@ -368,6 +379,7 @@ export async function chargerElements(
     voix: voix.voix,
     bouche,
     sourceVoix: voix.source,
+    voixManquantes: voix.manquantes,
     sons: { cloches, souffle },
     musique,
     police,
@@ -1069,9 +1081,12 @@ export type Media = { genre: "photo" | "video"; url: string };
 export type PriseAMonter = {
   /** La vidéo de la prise — `null` quand il n'a enregistré que sa voix. */
   url: string | null;
-  question: IdQuestion;
-  /** Ce que dit le reporter, en secondes depuis le début de la prise. */
-  paroles: { id: IdReplique; debut: number }[];
+  /** Le titre de sa carte, en très gros (« LE GESTE », « JEAN OU ROBE ? »). */
+  titre: string;
+  /** La question, écrite sous le titre. */
+  question: string;
+  /** Ce que le reporter a dit à voix haute, en secondes depuis le début de la prise (rien pour une question écrite). */
+  paroles: { texte: string; debut: number }[];
   questionFin: number;
   /** Où couper la prise : la fin de sa parole, plus un souffle. */
   coupe: number;
@@ -1209,14 +1224,7 @@ export async function monter(o: {
 
   /* ─── les mots de ses réponses ─── */
   const n = prises.length;
-  const cartes = prises.map((p, k) => {
-    const titre = script.questions.find((x) => x.id === p.question)?.titre ?? "";
-    const dite = p.paroles
-      .filter((pa) => pa.id !== "derniere")
-      .map((pa) => REPLIQUES[pa.id])
-      .join(" ");
-    return carteDeQuestion(titre, k, n, dite);
-  });
+  const cartes = prises.map((p, k) => carteDeQuestion(p.titre, k, n, p.question));
   const forts = motsForts(reglages.plat, reglages.prix);
   const mots = prises.map((p) => motsDesSousTitres(p.sousTitres, forts));
   const frappent = mots.map((m) => enFrappes(m));
@@ -1300,7 +1308,10 @@ export async function monter(o: {
   /* ─── l'enregistreur ─── */
   const format = formatVideo();
   const flux = new MediaStream([...o.toile.captureStream(IPS).getVideoTracks(), ...enregistree.stream.getAudioTracks()]);
-  const adieu = el.voix[LIEU.adieu].duration;
+  // L'AU REVOIR : sa voix s'il l'a, sinon la bulle seule, le temps de la lire
+  const texteAdieu = REPLIQUES[LIEU.adieu];
+  const voixAdieu = el.voix[texteAdieu] ?? null;
+  const adieu = voixAdieu?.duration ?? 1.6;
   /** La mélodie de fin : quand le fantôme a dit au revoir, jamais avant 3,4 s. */
   const SIGNATURE = Math.max(3.4, 1.6 + adieu + 0.35);
   const dFin = SIGNATURE + 1.7;
@@ -1349,19 +1360,22 @@ export async function monter(o: {
     tampon: `FACE AU FANTÔME · ${NOM} · `.length <= 40 ? `FACE AU FANTÔME · ${NOM} · ` : "FACE AU FANTÔME · FACE AU FANTÔME · ",
     mention: "La voix du fantôme est une voix de synthèse",
   };
-  const bulleFin = { lignes: enDeuxLignes(REPLIQUES[LIEU.adieu], 14), de: 1.6, a: 1.6 + adieu + 0.3 };
+  const bulleFin = { lignes: enDeuxLignes(texteAdieu, 14), de: 1.6, a: 1.6 + adieu + 0.3 };
 
   /* les places : le reporter en bas à droite des cartes ; le fantôme du chef, quand il ne se montre pas */
   const REPORTER_CARTE: Place = { cx: 560, bas: 1290, h: 430 };
   const CHEF_GRAND: Place = { cx: 360, bas: 1236, h: 560 };
   const CHEF_COIN: Place = { cx: 590, bas: 1262, h: 300 };
-  const bouche = (id: IdReplique, t: number) => {
-    const b = el.bouche[id];
+  const bouche = (texte: string, t: number) => {
+    const b = el.bouche[texte];
     const i = Math.floor(t * IPS);
     return b && i >= 0 && i < b.length ? b[i] : 0;
   };
-  const boucheReporter = (paroles: { id: IdReplique; debut: number }[], t: number) => {
-    for (const p of paroles) if (t >= p.debut && t < p.debut + el.voix[p.id].duration) return bouche(p.id, t - p.debut);
+  const boucheReporter = (paroles: { texte: string; debut: number }[], t: number) => {
+    for (const p of paroles) {
+      const v = el.voix[p.texte];
+      if (v && t >= p.debut && t < p.debut + v.duration) return bouche(p.texte, t - p.debut);
+    }
     return 0;
   };
 
@@ -1491,7 +1505,7 @@ export async function monter(o: {
   const dessinerFinA = (t: number) => {
     fin.photo = photoDuJour ?? instantane;
     const i = Math.floor((t - bulleFin.de) * IPS);
-    const b = el.bouche[LIEU.adieu];
+    const b = el.bouche[texteAdieu];
     const ouv = b && i >= 0 && i < b.length ? b[i] : 0;
     dessinerFin(
       c2d,
@@ -1531,7 +1545,7 @@ export async function monter(o: {
   /** Une prise : appelé quand elle démarre vraiment, `zero` = l'heure de son début. */
   const sonsPrise = (k: number, zero: number, v: HTMLVideoElement | null) => {
     const p = prises[k];
-    for (const pa of p.paroles) jouer(el.voix[pa.id], zero + pa.debut, 0.95);
+    for (const pa of p.paroles) if (el.voix[pa.texte]) jouer(el.voix[pa.texte], zero + pa.debut, 0.95);
     const rep = zero + p.questionFin + 0.05;
     sonSortieCarte(S, rep - CARTE_SORTIE);
     etouffer(rep - 0.1, 18000, 0.3);
@@ -1572,7 +1586,7 @@ export async function monter(o: {
     for (const d of [0.55, 0.68, 0.82, 0.95, 1.25]) sonTic(S, t0 + d);
     sonTampon(S, t0 + 1.0);
     niveau(t0 + bulleFin.de - 0.1, MUSIQUE.adieu, 0.2);
-    jouer(el.voix[LIEU.adieu], t0 + bulleFin.de, 0.95);
+    if (voixAdieu) jouer(voixAdieu, t0 + bulleFin.de, 0.95);
     niveau(t0 + bulleFin.de + adieu + 0.05, MUSIQUE.pleine, 0.3);
     sonSignature(S, t0 + SIGNATURE);
     etouffer(t0 + SIGNATURE, 900, 0.3);

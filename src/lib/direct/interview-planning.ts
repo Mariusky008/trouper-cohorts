@@ -883,6 +883,8 @@ export type QuestionDuJour = {
   banque: string;
   /** FAUX pour la vraie question d'un client : le fantôme dit l'intro, la carte écrit la question. */
   dite: boolean;
+  /** Le jour de l'année (« La fête des mères ») : le titre de sa carte. */
+  nom?: string;
 };
 
 export type OptionsJour = {
@@ -1030,13 +1032,69 @@ export function questionsDuJour(metier: MetierPlanning, iso: string, n: 2 | 3 | 
   const produit = piocher("produit");
   const duJour = { ...piocher(plan.rubrique), genre: rubrique };
   const ev = evenementDuJour(metier, iso, o);
-  const calendrier: QuestionDuJour | null = ev ? { texte: ev.texte, genre: "calendrier", banque: "calendrier", dite: true } : null;
+  const calendrier: QuestionDuJour | null = ev ? { texte: ev.texte, genre: "calendrier", banque: "calendrier", dite: true, nom: ev.nom } : null;
   const plusDuJour = calendrier ?? piocher(plan.plus);
   const chute = piocher(plan.chute);
 
   if (n === 2) return [produit, calendrier ?? duJour];
   if (n === 3) return [produit, duJour, calendrier ?? chute];
   return [produit, duJour, plusDuJour, chute];
+}
+
+/* ═══ CE QUE L'INTERVIEW POSE ═════════════════════════════════════════════
+ *
+ * « OUI » : les textes sont validés, l'interview les pose. Pour chaque
+ * question du jour, ce que le fantôme DIT (l'annonce, puis la question) et ce
+ * que la carte du montage ÉCRIT : un titre en très gros — la rubrique, que les
+ * abonnés reconnaissent (« LE GESTE », « POUR QUI ? »), ou la question
+ * elle-même quand elle est courte (« JEAN OU ROBE ? ») —, et la question
+ * dessous.
+ */
+export type QuestionAPoser = {
+  /** Ce que le fantôme dit, dans l'ordre : « Le défi ! », puis la question. */
+  dit: string[];
+  /** La question : écrite à l'écran pendant qu'il la pose, et sous le titre de la carte. */
+  question: string;
+  /** Le titre de la carte, en très gros. */
+  titre: string;
+  genre: QuestionDuJour["genre"];
+};
+
+const NOM_DE: Record<Exclude<QuestionDuJour["genre"], "produit" | "calendrier">, string> = {
+  geste: "Le geste",
+  origine: "L'origine",
+  duel: "Ceci ou cela ?",
+  client: "La question d'un client",
+  defi: "Le défi",
+  pourqui: "Pour qui ?",
+  portrait: "Le portrait",
+  surprise: "La surprise",
+  chute: "Pour finir",
+};
+
+/**
+ * LES QUESTIONS DE SON INTERVIEW AUJOURD'HUI, de une à quatre. `quoi` : ce
+ * qu'il met en avant (« La pièce du moment ») — le titre de la question du
+ * produit. La dernière d'une série s'annonce (« Dernière question ! »), sauf
+ * si elle a déjà son annonce (« Le défi ! »).
+ */
+export function questionsDeLInterview(metier: MetierPlanning, iso: string, n: 1 | 2 | 3 | 4, quoi: string, o: OptionsJour = {}): QuestionAPoser[] {
+  const brutes = n === 1 ? questionsDuJour(metier, iso, 2, o).slice(0, 1) : questionsDuJour(metier, iso, n, o);
+  return brutes.map((q, k) => {
+    const derniere = brutes.length >= 2 && k === brutes.length - 1;
+    const intro = q.intro ?? (derniere ? INTROS.derniere : undefined);
+    const titre =
+      q.genre === "produit"
+        ? `${quoi.trim()} ?`
+        : q.genre === "calendrier"
+          ? (q.nom ?? "Aujourd'hui")
+          : q.texte.length <= 24
+            ? q.texte
+            : q.banque === "defis"
+              ? NOM_DE.defi
+              : NOM_DE[q.genre];
+    return { dit: [...(intro ? [intro] : []), ...(q.dite ? [q.texte] : [])], question: q.texte, titre, genre: q.genre };
+  });
 }
 
 /** Toutes les phrases que le fantôme peut avoir à dire pour un métier (pour les enregistrer ou les synthétiser). */

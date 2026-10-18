@@ -19,15 +19,19 @@
 //      quatre), qui répond à l'écran (lui, filmé, ou son fantôme), où se tient
 //      le reporter ;
 //   2. le reporter dit où il est : « je suis là, à droite, regarde-moi » ;
-//   3. les questions — une prise par question, trente secondes au plus ; la
-//      réponse s'arrête sur un silence, sur « J'ai fini », ou au bout du temps ;
+//   3. les questions DU JOUR, tirées du planning de la semaine (le produit, la
+//      rubrique du jour, le jour de l'année, la chute — voir
+//      `interview-planning.ts`), dites avec la voix du fantôme quand elle les a,
+//      écrites à l'écran sinon. Une prise par question, trente secondes au
+//      plus ; la réponse s'arrête sur un silence, sur « J'ai fini », ou au bout
+//      du temps ;
 //   4. ses réponses : il ajoute, s'il le veut, une photo ou une vidéo à
 //      chacune, pendant que le téléphone les écoute (ses mots, sous-titrés) ;
 //   5. le montage se joue sous ses yeux et s'enregistre — l'émission « Face
 //      au fantôme » : son nom en géant, une carte par question, la carte de fin
 //      (voir `interview-montage.ts`) ;
 //   6. il la regarde, la partage, la télécharge.
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ATTENTE_SANS_PAROLE_S,
   ENTRE_DEUX_S,
@@ -38,19 +42,16 @@ import {
   SILENCE_FIN_S,
   coupeDeLaPrise,
   decouperSousTitres,
+  dureeDeLecture,
   fenetreDeParole,
   horairesSousTitres,
-  parolesDeLaQuestion,
-  questionsDuFormat,
-  repliquesDuScript,
   scriptDe,
   type Cote,
   type Format,
-  type IdQuestion,
-  type IdReplique,
   type Mode,
   type SousTitre,
 } from "@/lib/direct/interview-fantome";
+import { BANQUES, questionsDeLInterview, type MetierPlanning, type QuestionAPoser } from "@/lib/direct/interview-planning";
 import {
   CHEF_DU_BORDEAUX,
   HAUTEUR,
@@ -70,11 +71,14 @@ import {
 type Etape = "reglages" | "preparation" | "placement" | "interview" | "merci" | "reponses" | "montage" | "resultat" | "erreur";
 
 type PriseBrute = {
-  question: IdQuestion;
+  /** Le titre de sa carte, et la question elle-même. */
+  titre: string;
+  question: string;
   blob: Blob;
   /** La vidéo de la prise — `null` quand il n'a enregistré que sa voix. */
   url: string | null;
-  paroles: { id: IdReplique; debut: number }[];
+  /** Ce que le reporter a dit à voix haute (rien pour une question seulement écrite). */
+  paroles: { texte: string; debut: number }[];
   questionFin: number;
   duree: number;
 };
@@ -94,10 +98,10 @@ type Reponse = PriseBrute & { analyse?: Analyse; media?: Media & { nom: string }
 
 
 const LIBELLES_FORMAT: Record<Format, { titre: string; detail: string }> = {
-  1: { titre: "1 question", detail: "sérieuse" },
-  2: { titre: "2 questions", detail: "sérieuses" },
-  3: { titre: "3 questions", detail: "+ une pour rire" },
-  4: { titre: "4 questions", detail: "+ une perso" },
+  1: { titre: "1 question", detail: "ce que tu présentes" },
+  2: { titre: "2 questions", detail: "+ la rubrique du jour" },
+  3: { titre: "3 questions", detail: "+ une pour finir" },
+  4: { titre: "4 questions", detail: "+ un petit plus" },
 };
 
 /** La photo d'exemple sous la cloche : le magret servi du Bordeaux… */
@@ -119,13 +123,14 @@ const insecable = (t: string) => t.replace(/ ([?!:;])/g, "\u202F$1");
  */
 const lisiblePartout = (type: string) => /mp4/i.test(type) && !/vp0?8|vp0?9|av01|opus/i.test(type);
 
-/** Qui a parlé pour le reporter, dit en clair. */
-function voixEnClair(source: string): { texte: string; ok: boolean } {
-  if (source.startsWith("elevenlabs:")) return { texte: `Liam · ElevenLabs (${source.slice(11)})`, ok: true };
-  if (source.startsWith("openai:")) return { texte: "OpenAI — ElevenLabs n'a pas répondu au serveur", ok: false };
-  return { texte: "voix de secours (synthèse locale) — le serveur n'a pas pu fabriquer la voix de Liam", ok: false };
-}
+/** La date d'aujourd'hui à Paris, « 2026-10-18 » : le planning tire les questions du jour. */
+const aujourdhuiAParis = () => new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
+/** Ce que le reporter dit d'une question, et ce qu'il laisse seulement écrit (la vraie question d'un client). */
+const phrasesDe = (q: QuestionAPoser): { texte: string; aVoix?: boolean }[] => [
+  ...q.dit.map((texte) => ({ texte })),
+  ...(q.dit.includes(q.question) ? [] : [{ texte: q.question, aVoix: false }]),
+];
 function nouveauContexte(): AudioContext {
   const C = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
   return new C();
@@ -302,6 +307,17 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
   const chef = du?.chef ?? CHEF_DU_BORDEAUX;
   // SES MOTS, SELON SON MÉTIER — le restaurant sur la page d'essai (voir `SCRIPTS`).
   const script = scriptDe(du?.famille);
+  // SON MÉTIER DANS LE PLANNING — le restaurant pour un métier qui n'y est pas
+  const metier = (du?.famille && du.famille in BANQUES ? du.famille : "table") as MetierPlanning;
+  // LE JOUR, fixé à l'ouverture de l'écran : les questions ne changent pas sous ses yeux à minuit
+  const [jour] = useState(aujourdhuiAParis);
+  // TOUTES LES PHRASES QU'IL PEUT AVOIR À DIRE AUJOURD'HUI, quel que soit le nombre de questions choisi
+  const textesDuJour = useMemo(() => {
+    const l: string[] = [REPLIQUES["place-droite"], REPLIQUES["place-gauche"], REPLIQUES["place-fantome"], REPLIQUES[script.merci], REPLIQUES[script.adieu]];
+    for (const n of [1, 2, 3, 4] as const)
+      for (const q of questionsDeLInterview(metier, jour, n, script.quoi)) l.push(...phrasesDe(q).filter((p) => p.aVoix !== false).map((p) => p.texte));
+    return [...new Set(l)];
+  }, [metier, jour, script]);
   const [etape, setEtape] = useState<Etape>("reglages");
   const [plat, setPlat] = useState(du ? du.plat : "Magret frites maison");
   const [prix, setPrix] = useState(du ? du.prix : "19 €");
@@ -337,7 +353,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
   const elRef = useRef<Elements | null>(null);
   const fluxRef = useRef<MediaStream | null>(null);
   const analyseurRef = useRef<AnalyserNode | null>(null);
-  const parle = useRef<{ id: IdReplique; t0: number } | null>(null);
+  const parle = useRef<{ texte: string; t0: number } | null>(null);
   const phaseRef = useRef<"question" | "reponse">("question");
   const fini = useRef(false);
   const annule = useRef(false);
@@ -429,9 +445,9 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
       const el = elRef.current;
       let o = 0;
       if (ctx && el && parle.current) {
-        const b = el.bouche[parle.current.id];
+        const b = el.bouche[parle.current.texte];
         const i = Math.floor((ctx.currentTime - parle.current.t0) * 30);
-        o = i >= 0 && i < b.length ? b[i] : 0;
+        o = b && i >= 0 && i < b.length ? b[i] : 0;
       }
       montrer(visagesReporter.current, o);
       // SON FANTÔME PARLE EN MÊME TEMPS QUE LUI : c'est ce qui lui apprend qu'il est entendu
@@ -452,38 +468,47 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     }
   });
 
-  /** Le reporter dit une réplique ; la promesse se tient quand il a fini. */
-  const dire = useCallback((id: IdReplique) => {
+  /**
+   * LE REPORTER DIT UNE PHRASE — ou, sans sa voix pour elle (pas encore
+   * enregistrée, ou la vraie question d'un client), la laisse écrite le temps
+   * de la lire. La promesse se tient quand c'est fini.
+   */
+  const dire = useCallback((texte: string, aVoix = true) => {
     const ctx = ctxRef.current!;
     const el = elRef.current!;
-    return new Promise<{ debut: number; fin: number }>((ok) => {
+    const voix = aVoix ? el.voix[texte] : undefined;
+    return new Promise<{ debut: number; fin: number; dite: boolean }>((ok) => {
+      const debut = performance.now() + 50;
+      if (!voix) {
+        setTimeout(() => ok({ debut, fin: performance.now(), dite: false }), 50 + dureeDeLecture(texte) * 1000);
+        return;
+      }
       const s = ctx.createBufferSource();
-      s.buffer = el.voix[id];
+      s.buffer = voix;
       s.connect(ctx.destination);
       const t0 = ctx.currentTime + 0.05;
-      const debut = performance.now() + 50;
       s.start(t0);
-      parle.current = { id, t0 };
+      parle.current = { texte, t0 };
       s.onended = () => {
         parle.current = null;
-        ok({ debut, fin: performance.now() });
+        ok({ debut, fin: performance.now(), dite: true });
       };
     });
   }, []);
 
-  /** Plusieurs répliques à la suite, une seule bulle. */
+  /** Plusieurs phrases à la suite, une seule bulle : ce qui est dit, et ce qui est seulement écrit. */
   const direSuite = useCallback(
-    async (ids: IdReplique[]) => {
-      setBulle(ids.map((id) => REPLIQUES[id]).join(" "));
-      const debuts: number[] = [];
+    async (phrases: { texte: string; aVoix?: boolean }[]) => {
+      setBulle(insecable(phrases.map((p) => p.texte).join(" ")));
+      const paroles: { texte: string; debut: number }[] = [];
       let fin = 0;
-      for (let k = 0; k < ids.length; k++) {
+      for (let k = 0; k < phrases.length; k++) {
         if (k) await attendre(ENTRE_DEUX_S * 1000);
-        const r = await dire(ids[k]);
-        debuts.push(r.debut);
+        const r = await dire(phrases[k].texte, phrases[k].aVoix !== false);
+        if (r.dite) paroles.push({ texte: phrases[k].texte, debut: r.debut });
         fin = r.fin;
       }
-      return { debuts, fin };
+      return { paroles, fin };
     },
     [dire],
   );
@@ -505,7 +530,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     await garderAllume();
     try {
       const [el, flux] = await Promise.all([
-        elRef.current ? Promise.resolve(elRef.current) : chargerElements(ctx, chef, repliquesDuScript(script, commerce)),
+        elRef.current ? Promise.resolve(elRef.current) : chargerElements(ctx, chef, textesDuJour, metier),
         ouvrirAppareils(mode),
       ]);
       elRef.current = el;
@@ -518,7 +543,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
       setEtape("placement");
       setPret(false);
       await attendre(600);
-      await direSuite([mode === "fantome" ? "place-fantome" : cote === "droite" ? "place-droite" : "place-gauche"]);
+      await direSuite([{ texte: REPLIQUES[mode === "fantome" ? "place-fantome" : cote === "droite" ? "place-droite" : "place-gauche"] }]);
       setPret(true);
     } catch (e) {
       const nom = (e as Error)?.name;
@@ -534,7 +559,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
       libererAppareils();
       setEtape("erreur");
     }
-  }, [chef, commerce, cote, direSuite, garderAllume, libererAppareils, mode, script]);
+  }, [chef, cote, direSuite, garderAllume, libererAppareils, metier, mode, textesDuJour]);
 
   /** Attend la fin de sa réponse : un silence, « J'ai fini », ou le temps écoulé. */
   const ecouterReponse = useCallback(
@@ -580,7 +605,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     const type = enFantome ? formatAudio() : formatVideo();
     setFormatPrise(type || "(défaut du navigateur)");
     const prises: PriseBrute[] = [];
-    const questions = questionsDuFormat(n, script);
+    const questions = questionsDeLInterview(metier, jour, n, script.quoi);
     for (let k = 0; k < questions.length; k++) {
       if (annule.current) return;
       const q = questions[k];
@@ -607,8 +632,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
         setTimeout(go, 600);
       });
       await attendre(250);
-      const ids = parolesDeLaQuestion(k, n, script);
-      const voix = await direSuite(ids);
+      const voix = await direSuite(phrasesDe(q));
       setBulle(null);
       setPhase("reponse");
       phaseRef.current = "reponse";
@@ -620,17 +644,18 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
         rec.stop();
       });
       prises.push({
-        question: q.id,
+        titre: q.titre,
+        question: q.question,
         blob,
         url: enFantome ? null : URL.createObjectURL(blob),
-        paroles: ids.map((id, j) => ({ id, debut: (voix.debuts[j] - t0) / 1000 })),
+        paroles: voix.paroles.map((p) => ({ texte: p.texte, debut: (p.debut - t0) / 1000 })),
         questionFin: (voix.fin - t0) / 1000,
         duree: (performance.now() - t0) / 1000,
       });
     }
     if (annule.current) return;
     setEtape("merci");
-    await direSuite([script.merci]);
+    await direSuite([{ texte: REPLIQUES[script.merci] }]);
     setBulle(null);
     libererAppareils();
     veille.current?.release().catch(() => {});
@@ -685,6 +710,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     try {
       const aMonter: PriseAMonter[] = rs.map((r) => ({
         url: r.url,
+        titre: r.titre,
         question: r.question,
         paroles: r.paroles,
         questionFin: r.questionFin,
@@ -791,7 +817,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
 
   /* ═══ CE QUI S'AFFICHE ═══ */
   const enDirect = etape === "placement" || etape === "interview" || etape === "merci";
-  const questions = questionsDuFormat(format, script);
+  const questions = questionsDeLInterview(metier, jour, format, script.quoi);
   const q = questions[Math.min(question, questions.length - 1)];
   const autreCote: Cote = cote === "droite" ? "gauche" : "droite";
 
@@ -846,9 +872,9 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
               <p className="ei-n">
                 {du
                   ? photoPlat.url
-                    ? "Après le bonjour du reporter, la cloche se soulève et ton plat apparaît en grand, comme dans la découverte de ta page."
+                    ? "Après ton nom en géant, la cloche se soulève et ton plat apparaît en grand, comme dans la découverte de ta page."
                     : "Mets la photo de ton plat : la vidéo s’ouvrira sur la cloche qui se soulève."
-                  : "Après le bonjour du reporter, la cloche se soulève et le plat apparaît en grand, comme dans l’étape 2 de la découverte. Dans l’application, c’est la photo mise au comptoir."}
+                  : "Après le nom du restaurant en géant, la cloche se soulève et le plat apparaît en grand, comme dans l’étape 2 de la découverte. Dans l’application, c’est la photo mise au comptoir."}
               </p>
               <label className="ei-r-ajout">
                 <input type="file" accept="image/*" onChange={(e) => choisirPhotoPlat(e.target.files?.[0])} />
@@ -869,7 +895,19 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
               </button>
             ))}
           </div>
-          <p className="ei-n">Trente secondes au plus par réponse — {secondes(format * REPONSE_MAX_S)} de réponses au maximum.</p>
+          {/* LES QUESTIONS DU JOUR : le planning les tire, chaque jour d'autres (voir `interview-planning.ts`) */}
+          <ol className="ei-questions" aria-label="Les questions d'aujourd'hui">
+            {questions.map((q, k) => (
+              <li key={k}>
+                <b>{insecable(q.titre)}</b>
+                <span>{insecable(q.question)}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="ei-n">
+            Les questions d&apos;aujourd&apos;hui. Demain, d&apos;autres : chaque jour a sa rubrique. Trente secondes au plus par réponse —{" "}
+            {secondes(format * REPONSE_MAX_S)} de réponses au maximum.
+          </p>
           {du?.publier ? (
             <p className="ei-n">
               Une ou deux questions : ta vidéo part en Reel sur Instagram et Facebook (90 secondes au plus). Au-delà, c’est son image qui y part,
@@ -993,7 +1031,8 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     );
   }
 
-  const source = elRef.current ? voixEnClair(elRef.current.sourceVoix) : null;
+  // LA VOIX : combien de phrases le fantôme a dites, et combien sont restées écrites
+  const source = elRef.current ? { texte: elRef.current.sourceVoix, ok: elRef.current.voixManquantes.length === 0 } : null;
   return (
     <main className="ei">
       <header className="ei-h">
@@ -1015,15 +1054,14 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
         <>
           <ol className="ei-reponses">
             {reponses.map((r, k) => {
-              const qq = questions[k];
               return (
                 <li key={k}>
                   <div className="ei-r-texte">
                     <b>
-                      {k + 1}. {insecable(qq?.titre ?? "")}
+                      {k + 1}. {insecable(r.titre)}
                     </b>
                     <em>
-                      {qq?.ton} · {r.duree.toFixed(0)} s
+                      {insecable(r.question)} · {r.duree.toFixed(0)} s
                     </em>
                   </div>
                   {r.media ? (

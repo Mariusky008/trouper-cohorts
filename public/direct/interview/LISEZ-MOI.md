@@ -24,20 +24,33 @@ commerçant.
 | `ardoise.webp` | L'ardoise de l'écran du direct, en mode fantôme (le plat écrit dessus) — plus dans le montage. |
 | `kalam-400.woff2`, `kalam-700.woff2` | La police « à la craie » de cette ardoise (Kalam, licence SIL OFL 1.1). |
 | `cloches.mp3`, `souffle.mp3` | Les sons de la cloche du restaurant, fabriqués (aucune banque de sons). |
-| `voix/*.mp3` | Les répliques du reporter **de secours** (voir plus bas). |
+| `fantome/*.mp3`, `fantome/index.json` | **La voix du fantôme** : ses 97 répliques enregistrées (voir plus bas). |
 
 ## La voix du reporter
 
-C'est **Liam, d'ElevenLabs** — la voix du fichier du magret de Jean-Marie
-(« Liam — Energetic Social Media Creator », réglages 100 / 50 / 75, modèle v3).
-Le serveur la fabrique à la demande (`/api/direct/interview/voix`), réplique par
-réplique, et le réseau de Vercel la garde en cache. Réglages sur Vercel :
-`ELEVENLABS_API_KEY` (déjà là), `INTERVIEW_VOIX_ID` pour changer de voix,
-`INTERVIEW_VOIX_MODELE` pour changer de modèle.
+C'est **la voix du fantôme**, celle des épisodes « Face au fantôme » : ses
+répliques ont été enregistrées sur ElevenLabs et coupées une à une, dans
+`fantome/` (97 phrases ; `fantome/index.json` dit d'où vient chaque coupe).
+L'interview les retrouve par leur texte (`src/lib/direct/voix-fantome.ts`).
 
-Si le serveur ne peut pas la fabriquer, **toutes** les répliques passent sur les
-fichiers de `voix/`, une voix de synthèse locale — jamais un reporter qui change
-de voix entre deux questions. L'écran d'essai dit laquelle a parlé.
+Les questions du jour viennent du planning (`interview-planning.ts`, plus de
+cent phrases par métier) : la plupart ne sont pas encore enregistrées. Le
+serveur les fait dire par **la même voix** (`/api/direct/interview/voix`, qui
+n'accepte que les textes validés du métier), dès que son identifiant est
+réglé sur Vercel : `INTERVIEW_VOIX_ID` (avec `ELEVENLABS_API_KEY`), et
+`INTERVIEW_VOIX_MODELE` pour changer de modèle. Changer de voix → monter
+`VERSION_VOIX` dans `interview-montage.ts`.
+
+**En attendant, une phrase sans voix s'écrit** : à l'écran pendant
+l'interview, le temps de la lire, et sur la carte de la question dans le
+montage. Il n'y a plus de voix de secours (la synthèse locale, « malade et
+très métallique ») ni de voix de remplacement : un reporter qui change de
+voix d'une question à l'autre, c'est pire qu'une question écrite.
+L'écran d'essai dit combien de phrases ont été dites, et combien écrites.
+
+Ce que le fantôme dit à chaque interview — où poser le téléphone, « Dernière
+question ! », le merci, l'au revoir de chaque métier — est enregistré :
+`npm run verifier:interview-metiers` le vérifie.
 
 C'est la voix **du reporter**, pas celle du chef : on ne prête jamais au
 commerçant une voix ou une phrase qu'il n'a pas dite (voir
@@ -66,10 +79,9 @@ côté de « En photos »). Elle y prend son nom, son plat du jour (celui publi�
 sinon le dernier de sa vitrine), la photo pour la cloche, et **son fantôme à
 lui** — ses poses en pied « repos », « parle-1 », « parle-2 » servent de bouche.
 
-Le reporter ne nomme que Le Bordeaux, dont il a la réplique : pour les autres,
-`bonjour-chef` et `a-demain-chef` disent la même chose sans nom de lieu. La
-route de la voix n'accepte toujours aucun texte libre ; le nom du restaurant est
-écrit en géant dans le titre, et sur la carte de fin.
+Le reporter ne nomme aucun restaurant : sa voix ne dit que des textes fixes,
+et aucun nom tapé par quelqu'un n'y passe. Le nom du restaurant est écrit en
+géant dans le titre, et sur la carte de fin.
 
 ## Les autres métiers
 
@@ -82,15 +94,14 @@ Leurs textes sont validés : l'interview s'ouvre au comptoir de chacun. Un
 métier qu'on ajoute à `SCRIPTS` sans le mettre dans `INTERVIEW_VALIDEE` ne
 s'ouvre qu'au comptoir de démonstration (`/autour-de-moi/assistante?metier=…`).
 
-Leurs voix de secours se fabriquent avec
-`node scripts/fabriquer-voix-secours-interview.mjs` (espeak-ng, français,
-150 mots/minute, comme les premières) ; `npm run verifier:interview-metiers`
-vérifie que chaque réplique a la sienne.
+Leurs questions du jour viennent du planning de la semaine
+(`src/lib/direct/interview-planning.ts`) : le produit, la rubrique du jour (le
+geste, l'origine, ceci ou cela, la question d'un client, le défi, pour qui, le
+portrait), le jour de l'année, la chute. `npm run verifier:interview-metiers`
+vérifie que leurs phrases de chaque interview sont enregistrées.
 
 ## Pour un autre commerçant
 
 Son fantôme en deux images au moins (bouche fermée, bouche ouverte, **exactement
-la même pose**). Une réplique nommée (comme celles du Bordeaux) se crée dans
-`src/lib/direct/interview-fantome.ts`, avec son fichier de secours dans `voix/`.
-Changer un texte → changer `VERSION_VOIX` dans `interview-montage.ts`, sinon le
-cache resservirait l'ancienne voix.
+la même pose**). Changer un texte → changer `VERSION_VOIX` dans
+`interview-montage.ts`, sinon le cache resservirait l'ancienne synthèse.

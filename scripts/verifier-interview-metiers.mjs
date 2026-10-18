@@ -4,8 +4,10 @@
 // commerçants ? » Oui : le moteur est le même, ce sont ses MOTS qui changent
 // (`SCRIPTS` dans `interview-fantome.ts`). Ce qui se vérifie ici, sans
 // téléphone :
-//   · chaque réplique d'un script existe, et a sa voix de secours (sans elle,
-//     un serveur muet laisserait le reporter sans voix au milieu d'une question) ;
+//   · chaque réplique d'un script existe ; celles de chaque interview (où se
+//     placer, « Dernière question ! », le merci, l'au revoir) sont ENREGISTRÉES
+//     dans la voix du fantôme, et chaque enregistrement se retrouve par son
+//     texte (`voix-fantome.ts`) — plus de voix de secours métallique ;
 //   · aucun « chef », aucun « plat », aucun « bon appétit » hors du restaurant ;
 //   · un vrai commerçant ne reçoit l'interview de son métier qu'une fois ses
 //     textes validés (`INTERVIEW_VALIDEE`) ; la démonstration, elle, l'a tout de
@@ -22,7 +24,14 @@ const js = ts.transpileModule(readFileSync("src/lib/direct/interview-fantome.ts"
 }).outputText;
 const boite = { exports: {} };
 new Function("exports", "module", js)(boite.exports, boite);
-const { SCRIPTS, REPLIQUES, INTERVIEW_VALIDEE, interviewOuverte, repliquesDuScript, enteteArdoise, parolesDeLaQuestion, scriptDe } = boite.exports;
+const { SCRIPTS, REPLIQUES, INTERVIEW_VALIDEE, interviewOuverte, repliquesDuScript, enteteArdoise, scriptDe } = boite.exports;
+// LA VOIX DU FANTÔME, DÉJÀ ENREGISTRÉE : la table texte → fichier, et le dossier
+const voixJs = ts.transpileModule(readFileSync("src/lib/direct/voix-fantome.ts", "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText;
+const voixBoite = { exports: {} };
+new Function("exports", "module", voixJs)(voixBoite.exports, voixBoite);
+const { fichierEnregistre, cleDeReplique } = voixBoite.exports;
 
 let echecs = 0;
 const dire = (ok, t) => {
@@ -35,16 +44,32 @@ for (const [metier, s] of Object.entries(SCRIPTS)) {
   const ids = repliquesDuScript(s, "Un commerce");
   const manquantes = ids.filter((id) => !REPLIQUES[id]);
   dire(!manquantes.length, `ses ${ids.length} répliques existent${manquantes.length ? ` — manquent : ${manquantes.join(", ")}` : ""}`);
-  const sansVoix = ids.filter((id) => !existsSync(`public/direct/interview/voix/${id}.mp3`));
-  dire(!sansVoix.length, `chacune a sa voix de secours${sansVoix.length ? ` — manquent : ${sansVoix.join(", ")}` : ""}`);
+  // CE QU'IL DIT À CHAQUE INTERVIEW (où se placer, « Dernière question ! », le merci, l'au revoir) est
+  // ENREGISTRÉ dans sa voix : ces phrases-là ne s'écrivent jamais faute de voix.
+  const fixes = ["place-droite", "place-gauche", "place-fantome", "derniere", s.merci, s.adieu];
+  const sansVoix = fixes.filter((id) => !fichierEnregistre(REPLIQUES[id]));
+  dire(!sansVoix.length, `ses phrases de chaque interview sont enregistrées dans la voix du fantôme${sansVoix.length ? ` — manquent : ${sansVoix.join(", ")}` : ""}`);
   dire(s.questions.map((q) => q.id).join() === "q1,q2,q3,q4", "quatre questions à leur place (q1 à q4)");
   if (metier !== "table") {
     const textes = ids.map((id) => REPLIQUES[id]).join(" ") + " " + s.questions.map((q) => q.titre).join(" ") + " " + s.quoi;
     dire(!/\bchef\b|\bplat\b|appétit|cuisine/i.test(textes), "aucun mot du restaurant (chef, plat, cuisine, appétit)");
     dire(!s.cloche, "pas de cloche");
   }
-  dire(parolesDeLaQuestion(1, 2, s).join() === `derniere,${s.questions[1].replique}`, "« Dernière question ! » avant la dernière d'une série");
 }
+
+console.log("══ la voix du fantôme ══");
+const index = JSON.parse(readFileSync("public/direct/interview/fantome/index.json", "utf8"));
+const toutes = Object.values(index).flat();
+const perdues = toutes.filter((e) => {
+  const f = fichierEnregistre(e.texte);
+  return !f || !existsSync(`public${f}`);
+});
+dire(!perdues.length, `ses ${toutes.length} répliques enregistrées se retrouvent par leur texte, et leur fichier existe${perdues.length ? ` — perdues : ${perdues.map((e) => e.fichier).join(", ")}` : ""}`);
+dire(
+  fichierEnregistre("Dernière   question !") === fichierEnregistre("Dernière question !") &&
+    cleDeReplique("Qu’est-ce que tu dirais à quelqu’un qui n’est jamais venu ?") === cleDeReplique("Qu'est-ce que tu dirais à quelqu'un qui n'est jamais venu ?"),
+  "la même phrase écrite autrement (apostrophe courbe, espaces) retrouve son fichier",
+);
 
 console.log("══ l'ardoise ══");
 dire(enteteArdoise("Le Bordeaux").avant === "Ce midi au", "« Ce midi au Bordeaux » (restaurant, inchangé)");

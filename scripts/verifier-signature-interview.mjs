@@ -22,6 +22,12 @@ const js = ts.transpileModule(readFileSync("src/lib/direct/interview-fantome.ts"
 const boite = { exports: {} };
 new Function("exports", "module", "require", js)(boite.exports, boite, exige);
 const { motsDesSousTitres, morceauxDeMots, enFrappes, frappesDesMots, motsForts, carteDeQuestion, enDeuxLignes, SCRIPTS, REPLIQUES } = boite.exports;
+const pjs = ts.transpileModule(readFileSync("src/lib/direct/interview-planning.ts", "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText;
+const planning = { exports: {} };
+new Function("exports", "module", "require", pjs)(planning.exports, planning, exige);
+const { questionsDeLInterview, BANQUES } = planning.exports;
 
 let echecs = 0;
 const dire = (ok, t) => {
@@ -70,6 +76,7 @@ dire(c1.num === "QUESTION 1 / 3" && c1.l1 === "LA PIÈCE" && c1.l2 === "DU MOMEN
 dire(carteDeQuestion("Pourquoi ce métier ?", 2, 3, "").num === "DERNIÈRE QUESTION", "la dernière d'une série s'annonce");
 dire(carteDeQuestion("Le plat du jour ?", 0, 1, "").num === "QUESTION 1 / 1", "une question seule n'est la dernière de rien");
 dire(carteDeQuestion("Si c'était une chanson…", 2, 4, "").fin === "…", "« Si c'était une chanson… » garde ses points de suspension");
+dire(carteDeQuestion("Jean ou robe ?", 1, 3, "Jean ou robe ?").sous.join("") === "", "« JEAN OU ROBE ? » n'est pas écrit une seconde fois sous le titre");
 dire(!c1.sous.some((l) => /^[?!:;]/.test(l)), `la question dite, sur deux lignes : « ${c1.sous.join(" / ")} »`);
 const titres = [];
 for (const [metier, s] of Object.entries(SCRIPTS))
@@ -80,6 +87,34 @@ for (const [metier, s] of Object.entries(SCRIPTS))
   });
 dire(true, `${titres.length} cartes de ${Object.keys(SCRIPTS).length} métiers : 16 signes au plus par ligne de titre, 34 par ligne de question`);
 dire(enDeuxLignes("Manteau long camel", 16).join("|") === "Manteau long|camel" || enDeuxLignes("Manteau long camel", 16).join("|") === "Manteau|long camel", "le plat en deux lignes sur la carte de fin");
+
+console.log("══ les questions du jour, sur leurs cartes ══");
+for (const metier of Object.keys(BANQUES)) {
+  const quoi = SCRIPTS[metier].quoi;
+  let cartesVues = 0;
+  const trop = new Set();
+  const fautes = new Set();
+  for (let d = 0; d < 365; d++) {
+    const iso = new Date(Date.UTC(2026, 10, 2) + d * 86_400_000).toISOString().slice(0, 10);
+    for (const n of [1, 2, 3, 4]) {
+      const qs = questionsDeLInterview(metier, iso, n, quoi);
+      if (qs.length !== n) fautes.add(`${iso} : ${qs.length} questions au lieu de ${n}`);
+      qs.forEach((q, k) => {
+        cartesVues++;
+        const c = carteDeQuestion(q.titre, k, qs.length, q.question);
+        if (Math.max(c.l1.length, c.l2.length) > 16 || c.sous.some((l) => l.length > 40)) trop.add(`${c.l1} / ${c.l2} — ${c.sous.join(" / ")}`);
+        if (!q.titre || !q.question) fautes.add(`${iso} : une carte sans titre ou sans question`);
+        if (k === qs.length - 1 && qs.length >= 2 && !q.dit.length) fautes.add(`${iso} : la dernière question n'est pas annoncée`);
+      });
+    }
+  }
+  dire(!fautes.size, `${metier} : ${cartesVues} cartes sur un an${fautes.size ? ` — ${[...fautes].slice(0, 3).join(" | ")}` : ""}`);
+  dire(!trop.size, `${metier} : chaque titre tient en deux lignes de 16 signes, chaque question en deux lignes de 40${trop.size ? ` — trop longs : ${[...trop].slice(0, 4).join(" | ")}` : ""}`);
+}
+const lundi = questionsDeLInterview("mode", "2026-11-02", 4, "La pièce du moment");
+dire(lundi[0].titre === "La pièce du moment ?" && lundi[1].titre === "Le geste", `un lundi en boutique : « ${lundi.map((q) => q.titre).join(" · ")} »`);
+const dernier = lundi[3];
+dire(dernier.dit[0] === "Le défi !" || dernier.dit[0] === "Dernière question !", `la dernière s'annonce : « ${dernier.dit.join(" ")} »`);
 
 console.log(`\n${echecs ? `${echecs} échec(s)` : "tout est bon"}`);
 process.exit(echecs ? 1 : 0);

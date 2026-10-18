@@ -106,13 +106,11 @@ export type IdReplique = keyof typeof REPLIQUES;
 export const IDS_REPLIQUES = Object.keys(REPLIQUES) as IdReplique[];
 
 /** Le bonjour et l'au revoir du reporter : il ne nomme que le restaurant dont il a la réplique. */
-export function repliquesDuLieu(commerce: string, script: ScriptInterview = SCRIPTS.table): { bonjour: IdReplique; adieu: IdReplique } {
-  if (script === SCRIPTS.table && commerce.trim().toLowerCase() === "le bordeaux") return { bonjour: "bonjour", adieu: "a-demain" };
+// LE BORDEAUX N'A PLUS SES PHRASES À LUI : « À demain, au Bordeaux ! » n'est pas
+// enregistré dans la voix du fantôme, et il ne change pas de voix pour une phrase.
+export function repliquesDuLieu(_commerce: string, script: ScriptInterview = SCRIPTS.table): { bonjour: IdReplique; adieu: IdReplique } {
   return { bonjour: script.bonjour, adieu: script.adieu };
 }
-
-/** Ce que la voix prononce — le texte affiché, sauf là où il se lit mal. */
-export const repliqueDite = (id: IdReplique): string => REPLIQUES[id].replace(/ClikMe/g, "Clic Mi");
 
 /**
  * QUATRE QUESTIONS, ET LE FORMAT CHOISIT COMBIEN ON EN POSE : une (sérieuse),
@@ -192,7 +190,8 @@ export const SCRIPTS = {
   table: {
     bonjour: "bonjour-chef",
     adieu: "a-demain-chef",
-    merci: "merci",
+    // « Merci ! Je m'occupe du montage. » — celle de tous : elle est enregistrée dans la voix du fantôme
+    merci: "merci-tous",
     questions: QUESTIONS.map((x) => q(x.id, x.id, x.ton, x.titre)),
     quand: "Ce midi",
     quoi: "Le plat du jour",
@@ -234,20 +233,15 @@ export function repliquesDuScript(script: ScriptInterview, commerce = ""): IdRep
   return [...new Set<IdReplique>(["place-droite", "place-gauche", "place-fantome", "derniere", lieu.bonjour, lieu.adieu, script.merci, ...script.questions.map((x) => x.replique)])];
 }
 
-export const questionsDuFormat = (n: Format, script: ScriptInterview = SCRIPTS.table): QuestionDuScript[] => script.questions.slice(0, n);
-
-/**
- * CE QUE LE REPORTER DIT À LA QUESTION `k` SUR `n` : la question, précédée de
- * « Dernière question ! » quand c'est la dernière d'une série — jamais pour
- * une question seule, qui n'est la dernière de rien.
- */
-export function parolesDeLaQuestion(k: number, n: number, script: ScriptInterview = SCRIPTS.table): IdReplique[] {
-  const r = script.questions[k].replique;
-  return n >= 2 && k === n - 1 ? ["derniere", r] : [r];
-}
-
 /** Le blanc laissé entre deux répliques enchaînées (« Dernière question ! » … la question). */
 export const ENTRE_DEUX_S = 0.18;
+
+/**
+ * LE TEMPS DE LIRE UNE QUESTION QUE LE FANTÔME NE DIT PAS — pas encore
+ * enregistrée dans sa voix : elle est écrite à l'écran, et on lui laisse le
+ * temps de la lire avant d'écouter sa réponse.
+ */
+export const dureeDeLecture = (texte: string) => Math.min(6, Math.max(2.4, 1.4 + 0.06 * texte.trim().length));
 
 /**
  * QUI RÉPOND À L'ÉCRAN : le chef lui-même, filmé, ou son fantôme — « si le
@@ -510,12 +504,15 @@ export function carteDeQuestion(titre: string, k: number, n: number, dite: strin
   const fin = /…$/.test(t) ? "…" : /\?$/.test(t) ? "?" : "";
   const corps = t.replace(/\s*[?…]$/, "").trim();
   const [l1, l2] = enDeuxLignes(corps.toLocaleUpperCase("fr-FR"), 9);
+  // « JEAN OU ROBE ? » en très gros n'a pas besoin d'être écrit une seconde fois dessous
+  const nu = (x: string) => x.toLowerCase().replace(/[^a-zà-ÿœ0-9]+/g, "");
+  const repete = nu(corps) === nu(dite);
   return {
     num: n >= 2 && k === n - 1 ? "DERNIÈRE QUESTION" : `QUESTION ${k + 1} / ${n}`,
     l1,
     l2,
     fin,
-    sous: enDeuxLignes(dite.replace(/\s+([?!:;])/g, "\u202F$1"), 22),
+    sous: repete ? ["", ""] : enDeuxLignes(dite.replace(/\s+([?!:;])/g, "\u202F$1"), 22),
   };
 }
 

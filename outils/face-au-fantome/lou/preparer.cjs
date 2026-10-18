@@ -13,7 +13,7 @@ const ICI = __dirname;
 const RACINE = path.resolve(ICI, "../../..");
 const RECU = path.resolve(process.argv[2] || "");
 const A = path.join(ICI, "a");
-const V = path.join(ICI, "../voix-fantome");
+const V = path.join(ICI, "../../../public/direct/interview/fantome");
 fs.mkdirSync(A, { recursive: true });
 
 const PHOTOS = {

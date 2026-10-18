@@ -381,7 +381,8 @@ export function dessinerCarte(g: CanvasRenderingContext2D, p: Polices, fond: HTM
   const entre = (d: number) => sortie((u - d) / 0.3);
   g.save();
   g.globalAlpha = entre(0.05);
-  texte(g, c.num, 56, 373 - 20 * (1 - entre(0.05)), `800 23px ${p.texte}`, ROSE, { ls: 5 });
+  // assez haut pour que l'accent d'un « É » en très gros ne le touche pas
+  texte(g, c.num, 56, 343 - 20 * (1 - entre(0.05)), `800 23px ${p.texte}`, ROSE, { ls: 5 });
   g.restore();
   const lignes = [c.l1, c.l2].filter(Boolean);
   const derniere = lignes.length - 1;
@@ -404,7 +405,10 @@ export function dessinerCarte(g: CanvasRenderingContext2D, p: Polices, fond: HTM
   const ySous = y0 + derniere * pas + Math.max(70, taille * 0.5);
   g.save();
   g.globalAlpha = entre(0.32);
-  c.sous.filter(Boolean).forEach((l, k) => texte(g, l, 56, ySous + k * 45, `600 35px ${p.texte}`, "rgba(255,244,230,.86)"));
+  // la question dite, en dessous : elle se resserre si elle est longue
+  const sous = c.sous.filter(Boolean);
+  const tSous = tailleQuiTient(g, sous, (t) => `600 ${t}px ${p.texte}`, 35, 616, 0, 1);
+  sous.forEach((l, k) => texte(g, l, 56, ySous + k * tSous * 1.28, `600 ${tSous}px ${p.texte}`, "rgba(255,244,230,.86)"));
   g.restore();
 }
 
