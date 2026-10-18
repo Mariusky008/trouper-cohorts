@@ -89,7 +89,6 @@ export function SceneDemandes({
   n,
   ouverture,
   photo,
-  exemple,
   piece,
   salons,
 }: {
@@ -126,7 +125,7 @@ export function SceneDemandes({
     <div className="dtour-ov sd-ov">
       <div className="sd">
         <div className="sd-tete">
-          <span className="sd-k">Exemple · pas encore vos chiffres</span>
+          <span className="sd-k">Les demandes qui arrivent</span>
           <h3 className="sd-h">{ouverture}</h3>
         </div>
 
@@ -137,7 +136,6 @@ export function SceneDemandes({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={photo} alt="" />
               <span className="sd-badge">{essai ? "Essayée virtuellement" : g.extrait.titre}</span>
-              {exemple && <span className="sd-ex">Exemple</span>}
             </div>
             {salons ? <span className={`sd-salons${arrivent ? " on" : ""}`}>💬 {salons} salons en parlent</span> : null}
           </div>

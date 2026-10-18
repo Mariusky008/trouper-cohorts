@@ -253,7 +253,6 @@ export function SalonsDuLieu({
           }}
         >
           <Alcove key={scene.scene ?? scene.cle} a={scene} vous />
-          {courante?.exemple && <span className="sl-exemple">Exemple</span>}
           {liste.length > 1 && (
             <>
               <button type="button" className="sl-fleche g" aria-label="Salon précédent" onClick={() => aller(-1)}>

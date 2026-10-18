@@ -177,7 +177,7 @@ export function DemarchageBooking({ target, hostNom, accent }: { target: Demarch
             <div className="dbk-reco">
               <div className="dbk-reco-glow" />
               <div className="dbk-reco-in">
-                <div className="dbk-reco-k">🤝 Le collectif de {target.ville}<span className="ex">exemple</span></div>
+                <div className="dbk-reco-k">🤝 Le collectif de {target.ville}</div>
                 <div className="dbk-reco-b">
                   Pendant que vous êtes à {target.ville}, profitez-en&nbsp;: <b>{target.nom}</b> — <span className="mint">{target.activite.toLowerCase()}</span> partenaire d&apos;élite du collectif — vous réserve un accueil privilégié.
                 </div>

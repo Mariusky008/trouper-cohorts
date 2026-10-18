@@ -4510,7 +4510,7 @@ function Essai({
               {/* ON DIT QUE CE N'EST PAS LA SIENNE, ET ON LE DIT SUR L'IMAGE.
                   Tant qu'aucune photo n'a été prise, celle du viseur vient du
                   dépôt : sans ce mot, on croit reconnaître un aperçu de soi. */}
-              {!photo && <span className="mu-ph-x">Exemple de photo</span>}
+              {!photo && <span className="mu-ph-x">Ce n’est pas vous</span>}
               {photo && photo === miroir.photo && <span className="mu-ph-x">🪞 Ma photo · Mon Miroir</span>}
             </div>
           </div>
@@ -6488,7 +6488,7 @@ function Essai({
               chose. */}
           {(rendu?.souci || !photo) && (
             <span className="mu-rendu-b rate">
-              {rendu?.souci ?? "Photo d’exemple — ce n’est pas la vôtre"}
+              {rendu?.souci ?? "Ce n’est pas votre photo"}
             </span>
           )}
           {/* LA DIFFERENCE ENTRE LES DEUX MECANIQUES SE DIT, PARCE QU'ELLE SE

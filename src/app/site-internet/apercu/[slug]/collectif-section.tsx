@@ -178,7 +178,6 @@ export function CollectifSection({ ville, accent, nom, metier, photo, partners, 
                 <div className="cl-projbar">
                   <span className="cl-projlogo">Pop<em>ey</em></span>
                   <span className="cl-projcity">📍 {ville}</span>
-                  <span className="cl-projex">exemple</span>
                 </div>
                 <div className="cl-projbody">
                   <div className="cl-kcard">

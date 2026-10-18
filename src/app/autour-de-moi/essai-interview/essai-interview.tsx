@@ -1198,7 +1198,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
                   <b>La cloche</b>{" "}
                   <em>
                     {montage.cloche === "montree"
-                      ? `soulevée sur ${photoPlat.nom || du ? "ta photo" : "la photo d'exemple"}`
+                      ? `soulevée sur ${photoPlat.nom || du ? "ta photo" : "la photo du magret"}`
                       : montage.cloche === "illisible"
                         ? "photo du plat illisible par ce téléphone — la vidéo s'en est passée"
                         : "pas demandée"}

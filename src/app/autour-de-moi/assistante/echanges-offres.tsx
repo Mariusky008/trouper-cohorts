@@ -185,7 +185,7 @@ export function PanneauOffres({
           {actif ? "Mettre mes offres en pause" : "Réactiver mes offres"}
         </button>
       )}
-      {exemple && <p className="ec-petit">Exemple : tout reste dans ce téléphone.</p>}
+      {exemple && <p className="ec-petit">Tout reste dans ce téléphone.</p>}
     </Feuille>
   );
 }

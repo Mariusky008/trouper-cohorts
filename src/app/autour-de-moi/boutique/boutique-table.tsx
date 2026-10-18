@@ -1694,7 +1694,7 @@ export function BoutiqueTable({
           {/* UN COMMERCE INVENTÉ LE DIT DÈS L'ARRIVÉE, pas seulement au bout des
               infos : c'est la condition pour le montrer. Un vrai commerçant ne
               reçoit jamais cette ligne sous son nom. */}
-          {piedMaquette && <p className="bt-invente">Exemple · ce commerce est inventé</p>}
+          {piedMaquette && <p className="bt-invente">Ce commerce est inventé</p>}
           <div className="bt-accueil">
             <h1 className="bt-titre">
               Bienvenue {aLaMaison(c.nom)}.
@@ -2019,7 +2019,7 @@ export function BoutiqueTable({
                 </button>
               )}
               {saPage && !aUnParcours && (
-                <p className="bt-note">Exemple de parcours · Le contenu de votre restaurant s’ajoute ici.</p>
+                <p className="bt-note">Le contenu de votre restaurant s’ajoute ici.</p>
               )}
             </div>
           </div>
@@ -2472,7 +2472,6 @@ export function BoutiqueTable({
                 salon ne parle de rien ; ensuite, celle du duel lui-même. */}
             {carteOuverture && (
               <div className="dl-ancre bt-duel">
-                {duelDeDemo && <span className="bt-duel-tag">Exemple · pièces de démonstration</span>}
                 <CartePropose
                   sujet={carteOuverture}
                   ouverture
@@ -2487,7 +2486,6 @@ export function BoutiqueTable({
             )}
             {duelSalon.module && (
               <div className="bt-duel">
-                {duelDeDemo && <span className="bt-duel-tag">Exemple · pièces de démonstration</span>}
                 {duelSalon.module}
               </div>
             )}
@@ -2543,8 +2541,8 @@ export function BoutiqueTable({
             ) : saPage ? (
               /* ═══ MAIS À ELLE, TANT QU'ELLE N'A PAS GARDÉ SA PAGE, ON MONTRE
                   CE QUI S'Y PASSERA — voir `salon-exemple.tsx`. Un essai de sa
-                  pièce ouvre la conversation, ses amies répondent ; tout est
-                  marqué « Exemple », et le premier vrai message le remplace. */
+                  pièce ouvre la conversation, ses amies répondent ; le premier
+                  vrai message le remplace. */
               <>
                 <p className="bt-trait">
                   <span>La conversation</span>

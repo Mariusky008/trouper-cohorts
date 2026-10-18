@@ -53,7 +53,7 @@ export function VilleFermee({
       </button>
       {demo && (
         <a className="ec-essayer" href={demo}>
-          En attendant, essaie avec des commerçants d’exemple →
+          En attendant, essaie avec les commerçants de la démo →
         </a>
       )}
     </div>

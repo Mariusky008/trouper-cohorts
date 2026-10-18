@@ -238,7 +238,6 @@ export function SceneSalons({
   n,
   ville,
   photo,
-  exemple,
   fantome,
   pied,
   duel,
@@ -367,7 +366,7 @@ export function SceneSalons({
           </span>
         )}
         <div className="sp-tete">
-          <span className="sp-k">Exemple · des salons comme ceux de {clients}</span>
+          <span className="sp-k">Des salons comme ceux de {clients}</span>
           <h3 className="sp-h">{g.salons.titre}</h3>
         </div>
 
@@ -415,7 +414,6 @@ export function SceneSalons({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={photo} alt="" />
                 <span className="sp-badge">{essai ? "Essayée virtuellement" : g.extrait.titre}</span>
-                {exemple && <span className="sp-ex">Exemple</span>}
                 {duel && repond && <span className="sp-lettre">A</span>}
                 {duel && decide && (
                   <span className="sp-couronne" aria-hidden="true">
@@ -437,7 +435,6 @@ export function SceneSalons({
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={duel.b} alt={duel.nomB} />
                     <span className="sp-lettre">B</span>
-                    {duel.exempleB && <span className="sp-ex">Exemple</span>}
                   </div>
                 </>
               )}
@@ -522,7 +519,7 @@ export function SceneSalons({
           </div>
         </div>
 
-        <p className={`sp-fin${partage ? " on" : ""}`}>Exemples de conversations · votre fantôme y répond pour vous</p>
+        <p className={`sp-fin${partage ? " on" : ""}`}>Votre fantôme y répond pour vous</p>
       </div>
       <StylesSalons />
     </div>

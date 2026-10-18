@@ -221,7 +221,7 @@ export function AjoutPiece({
               </button>
             </div>
             <div className="dr-exemples">
-              <b>Exemples de bonnes photos</b>
+              <b>Les photos qui marchent bien</b>
               <div>
                 {["tshirt", "jean", "baskets", "veste"].map((x) => (
                   <span key={x}>

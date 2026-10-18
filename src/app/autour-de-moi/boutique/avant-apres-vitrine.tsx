@@ -177,9 +177,9 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
   const exemple = !pret;
   const avant = pret ? (essai.avant ?? EXEMPLE.avant) : EXEMPLE.avant;
   const apres = pret ? (essai.apres as string) : EXEMPLE.apres;
-  const badge = exemple ? "Exemple" : "Avec votre pièce";
+  const badge = exemple ? "Essayage virtuel" : "Avec votre pièce";
   const alt = exemple
-    ? "Exemple : la même personne, avec une autre tenue"
+    ? "La même personne, avec une autre tenue"
     : `Après : la même personne, avec ${essai.nom ? essai.nom.toLowerCase() : "une pièce"} de ${c.nom}`;
 
   const jouerIci = useCallback(() => {
@@ -356,7 +356,7 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
             <div className="aa-plein-fond" onClick={ranger} />
             <div className="aa-plein-scene">
               <p className="aa-plein-k">
-                L’essayage virtuel · {exemple ? "exemple" : `une pièce de ${c.nom}`}
+                L’essayage virtuel{exemple ? "" : ` · une pièce de ${c.nom}`}
               </p>
               <div
                 ref={cadresPlein}
@@ -395,7 +395,7 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
         <div className="aa-info">
           {exemple ? (
             <>
-              <small>Exemple d’essayage</small>
+              <small>Essayage virtuel</small>
               <b>{essai.etat === "echec" && essai.raison ? essai.raison : "Votre pièce, prise sur votre fiche Google, arrive ici."}</b>
             </>
           ) : (

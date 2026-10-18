@@ -94,7 +94,7 @@ export function PiocherPhototheque({
             ✕
           </button>
         </div>
-        {!reel && <p className="pp-note">Exemple : en vrai, ce sont les photos que tu as déposées dans ta photothèque.</p>}
+        {!reel && <p className="pp-note">Ici, les photos que tu as déposées dans ta photothèque.</p>}
         {photos === null ? (
           <p className="pp-note">J’ouvre ta photothèque…</p>
         ) : photos.length === 0 ? (

@@ -72,12 +72,11 @@ export function SceneGardeRobe({
   /* UN DE SES HAUTS, EN PREMIER : c'est lui qu'on essaie avec le jean. Sans
      prix — on ne le connaît pas, et on n'en invente pas. */
   const avec = look && !look.exemple ? [{ nom: look.nom, prix: "", photo: look.photo, sienne: true }, ...AVEC.slice(1)] : AVEC;
-  const sienne = Boolean(avec[0].sienne);
   return (
     <div className="dtour-ov gr-ov">
       <div className={`gr${look?.apres ? " avec-look" : ""}`} style={{ "--rv": `${revele}s` } as CSSProperties}>
         <div className="gr-tete">
-          <span className="gr-k">Exemple · la garde-robe d&apos;une cliente</span>
+          <span className="gr-k">La garde-robe d&apos;une cliente</span>
           <h3 className="gr-h">{titre}</h3>
         </div>
 
@@ -142,7 +141,7 @@ export function SceneGardeRobe({
                 <figure key={p.nom} className={`gr-prod${i === 0 ? " elu" : ""}`} style={{ ["--i" as string]: i }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.photo} alt="" />
-                  <span className={`gr-ex${p.sienne ? " sienne" : ""}`}>{p.sienne ? "Votre pièce" : "Exemple"}</span>
+                  {p.sienne && <span className="gr-ex sienne">Votre pièce</span>}
                   <span className="gr-va">💞 Va avec</span>
                   <figcaption>
                     <b>{p.nom}</b>
@@ -155,9 +154,6 @@ export function SceneGardeRobe({
           </section>
         </div>
 
-        <p className="gr-fin">
-          {sienne ? "Exemple · une garde-robe de démonstration, et votre pièce" : "Exemple · une garde-robe et des pièces de démonstration"}
-        </p>
 
         {/* ═══ 4 · ET LA VOILÀ, AVEC ═══ Son jean, la pièce, et elle qui les
             porte — seulement quand le moteur l'a rendue. Sinon la scène
@@ -179,7 +175,7 @@ export function SceneGardeRobe({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={look.photo} alt="" />
                   <b>{look.nom}</b>
-                  <em>{look.exemple ? "Exemple" : `chez ${fantome.nom}`}</em>
+                  {!look.exemple && <em>chez {fantome.nom}</em>}
                 </span>
                 <i aria-hidden="true">=</i>
                 <span className="gr-look-oui">Sur elle ✨</span>

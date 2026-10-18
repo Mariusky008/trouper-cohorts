@@ -134,9 +134,9 @@ export function ProServices({
 
         {suggestions.length > 0 && rows.length === 0 && (
           <div className="tip">
-            Envie d&apos;aller vite ? Partez des exemples adaptés à votre métier, puis ajustez les tarifs.
+            Envie d&apos;aller vite ? Partez des modèles adaptés à votre métier, puis ajustez les tarifs.
             <br />
-            <button type="button" onClick={fillFromSuggestions}>Partir des exemples</button>
+            <button type="button" onClick={fillFromSuggestions}>Partir des modèles</button>
           </div>
         )}
 

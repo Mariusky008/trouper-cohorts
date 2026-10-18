@@ -164,7 +164,7 @@ export function MonDressing({
                   setExemple(false);
                 }}
               >
-                {exemple ? "Je range l’exemple…" : "Pas de vêtement sous la main ? Essayer avec un dressing d’exemple"}
+                {exemple ? "Je range les vêtements…" : "Pas de vêtement sous la main ? Essayer avec un dressing tout prêt"}
               </button>
             )}
           </div>

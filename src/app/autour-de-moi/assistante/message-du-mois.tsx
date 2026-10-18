@@ -181,7 +181,6 @@ function FeuilleMessage({
         </div>
         <p className="md-note">
           Pour tes amis d’ici, une fois par mois. Relis-le, change ce que tu veux, et envoie-le à ta liste de diffusion.
-          {!commerce.reel ? " (Exemple : en vrai, le lien est celui de ta page.)" : ""}
         </p>
         <textarea className="md-texte" value={message} rows={11} onChange={(e) => setTexte(e.target.value)} aria-label="Le message" />
         <button type="button" className="cz-go md-envoyer" onClick={envoyer}>

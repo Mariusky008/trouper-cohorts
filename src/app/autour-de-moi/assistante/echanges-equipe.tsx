@@ -75,7 +75,7 @@ export function PanneauEquipe({
             </p>
             <div className="ec-wa-apercu" aria-label="Le message WhatsApp qu’elle ou il reçoit">
               <span className="ec-wa-apercu-t">
-                WhatsApp · de toi à {nouveau.prenom} <i>Exemple</i>
+                WhatsApp · de toi à {nouveau.prenom}
               </span>
               <p>{messageMembre(nouveau.prenom, commerce, lienExemple(nouveau.prenom))}</p>
             </div>

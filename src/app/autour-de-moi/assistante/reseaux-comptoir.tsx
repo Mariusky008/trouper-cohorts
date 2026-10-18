@@ -76,7 +76,7 @@ export function useReseaux(commerce: CommerceComptoir) {
 export type ReseauxDuComptoir = ReturnType<typeof useReseaux>;
 
 /* ═══ LA CARTE DE L'ACCUEIL ═══════════════════════════════════════════════ */
-export function CarteReseaux({ commerce, reseaux, onOuvrir }: { commerce: CommerceComptoir; reseaux: ReseauxDuComptoir; onOuvrir: () => void }) {
+export function CarteReseaux({ reseaux, onOuvrir }: { commerce: CommerceComptoir; reseaux: ReseauxDuComptoir; onOuvrir: () => void }) {
   const { etat } = reseaux;
   if (!etat || !etat.configure) return null;
   const connectes = etat.plateformes.filter((p) => p.compte).map((p) => p.id);
@@ -87,7 +87,6 @@ export function CarteReseaux({ commerce, reseaux, onOuvrir }: { commerce: Commer
       <span>
         <b>
           Mes réseaux
-          {!commerce.reel && <i className="cz-pastille calme">Exemple</i>}
         </b>
         <em>
           {connectes.length
@@ -154,7 +153,7 @@ export function ReseauxComptoir({
     setMessage("");
     if (demo) {
       // LA DÉMONSTRATION NE CONNECTE RIEN : elle montre ce qui se passerait.
-      setEtat((e) => (e ? { ...e, auto: true, plateformes: e.plateformes.map((x) => (x.id === p.id ? { ...x, compte: `${x.nom} (exemple)` } : x)) } : e));
+      setEtat((e) => (e ? { ...e, auto: true, plateformes: e.plateformes.map((x) => (x.id === p.id ? { ...x, compte: x.nom } : x)) } : e));
       return;
     }
     // L'ONGLET S'OUVRE TOUT DE SUITE, pendant le geste : sur iPhone, un onglet
@@ -197,7 +196,6 @@ export function ReseauxComptoir({
         <button type="button" className="rs-retour" onClick={onRetour}>
           ‹ Mon comptoir
         </button>
-        {demo && <span className="rs-exemple">Exemple</span>}
       </div>
 
       <section className="rs-intro">

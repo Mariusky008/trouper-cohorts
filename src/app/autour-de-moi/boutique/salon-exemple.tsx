@@ -35,7 +35,6 @@ export function SalonExemple({ c, photoLieu }: { c: CarteAutour; photoLieu?: str
   /* LA PHOTO QUI OUVRE LA CONVERSATION : l'essai chez une boutique de
      vêtements (le sien s'il est prêt), la photo du lieu ailleurs. */
   const photo = mode ? (essai?.apres ?? ESSAI_EXEMPLE) : photoLieu;
-  const sienne = Boolean(mode && essai);
   const piece = essai?.nom ? `« ${essai.nom} »` : "cette pièce";
 
   const ouverture = mode
@@ -56,9 +55,9 @@ export function SalonExemple({ c, photoLieu }: { c: CarteAutour; photoLieu?: str
       ];
 
   return (
-    <div className="bt-exemple" aria-label="Exemple de conversation entre amis">
+    <div className="bt-exemple" aria-label="Conversation entre amis">
       <p className="bt-exemple-k">
-        Exemple · voici comment {mode ? "vos clientes en parleront entre amies" : "vos clients en parleront entre amis"}
+        Voici comment {mode ? "vos clientes en parleront entre amies" : "vos clients en parleront entre amis"}
       </p>
       <div className="bt-fil">
         <div className="bt-msg" style={{ ["--i" as string]: 0 }}>
@@ -73,7 +72,6 @@ export function SalonExemple({ c, photoLieu }: { c: CarteAutour; photoLieu?: str
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={photo} alt={mode ? `Camille dans une pièce de ${c.nom}` : c.nom} />
                 <figcaption>{mode ? "Essayé sur moi ✨" : "Partagé depuis ClikMe"}</figcaption>
-                {mode && !sienne && <span className="bt-essai-ex">Exemple</span>}
               </figure>
             )}
             <p>{ouverture}</p>

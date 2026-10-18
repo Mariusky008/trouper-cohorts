@@ -84,7 +84,7 @@ export function SceneMaison({
     <div className="dtour-ov dt-noir smz-ov">
       <div className={`smz n${Math.min(n, 3)}`}>
         <div className="smz-tete">
-          <span className="smz-k">Exemple · la Maison d&apos;une cliente</span>
+          <span className="smz-k">La Maison d&apos;une cliente</span>
           <h3 className="smz-h">Ma Maison</h3>
         </div>
 
@@ -94,7 +94,7 @@ export function SceneMaison({
             <img src={CLIENTE.visage} alt="" />
             <span>
               <b>La Maison de {CLIENTE.qui}</b>
-              <em>Exemple · ClikMe apprend ce qu&apos;elle aime</em>
+              <em>ClikMe apprend ce qu&apos;elle aime</em>
             </span>
           </header>
 
@@ -138,14 +138,13 @@ export function SceneMaison({
                         <>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img className="smz-piece" src={surprise.photo} alt="" />
-                          {surprise.exemple && <span className="smz-ex">Exemple</span>}
                         </>
                       )}
                     </div>
                     <div className="smz-txt">
                       <span className="smz-de">🎁 Une surprise de {fantome.nom}</span>
                       <b>{surprise.nom}</b>
-                      <em>{surprise.exemple ? "Exemple · sur elle, avec son jean préféré" : "Sur elle, avec son jean préféré"}</em>
+                      <em>Sur elle, avec son jean préféré</em>
                       {n >= 2 && (
                         <div className="smz-pas">
                           {/* UNE CROIX, PAS UNE RATURE : barré, « ne vous suivait pas » se
