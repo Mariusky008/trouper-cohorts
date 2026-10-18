@@ -1,0 +1,84 @@
+# 🗄️ CLIKME — LES MIGRATIONS, APPLIQUÉES PAR LA MACHINE (et plus à la main dans l'éditeur SQL)
+#
+# DEUX BASES :
+#   · la base de TEST, un second projet Supabase (gratuit) : à chaque push sur main qui touche
+#     `supabase/migrations`, les migrations nouvelles y sont appliquées toutes seules ;
+#   · la PRODUCTION : jamais toute seule. Une fois la base de test passée, on la lance à la main :
+#     GitHub › Actions › « ClikMe — migrations » › Run workflow › cible : production.
+#
+# LES SECRETS, À CRÉER UNE FOIS (GitHub › Settings › Secrets and variables › Actions) :
+#   SUPABASE_DB_URL_TEST et SUPABASE_DB_URL_PRODUCTION — l'adresse de connexion de chaque projet
+#   (Supabase › Connect › Session pooler › URI, mot de passe compris). Sans secret, la tâche le
+#   dit et s'arrête sans erreur.
+#
+# À FAIRE UNE SEULE FOIS, AVANT TOUT (action « preparer ») :
+#   · cible test : la STRUCTURE de la production est copiée dans la base de test (aucune donnée),
+#     puis toutes les migrations du dépôt y sont marquées comme appliquées ;
+#   · cible production : toutes les migrations du dépôt y sont marquées comme appliquées (elles
+#     l'ont été à la main jusqu'ici). Ensuite, seules les nouvelles partiront.
+name: ClikMe — migrations
+
+on:
+  push:
+    branches: [main]
+    paths: ["supabase/migrations/**"]
+  workflow_dispatch:
+    inputs:
+      cible:
+        description: "Quelle base ?"
+        type: choice
+        options: [test, production]
+        default: test
+      action:
+        description: "appliquer : les migrations nouvelles · preparer : la mise en place, une seule fois"
+        type: choice
+        options: [appliquer, preparer]
+        default: appliquer
+
+concurrency:
+  group: clikme-migrations
+  cancel-in-progress: false
+
+jobs:
+  migrations:
+    name: Migrations (${{ inputs.cible || 'test' }}, ${{ inputs.action || 'appliquer' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CIBLE: ${{ inputs.cible || 'test' }}
+      ACTION: ${{ inputs.action || 'appliquer' }}
+      URL_TEST: ${{ secrets.SUPABASE_DB_URL_TEST }}
+      URL_PRODUCTION: ${{ secrets.SUPABASE_DB_URL_PRODUCTION }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: La base visée
+        id: base
+        run: |
+          if [ "$CIBLE" = production ]; then url="$URL_PRODUCTION"; else url="$URL_TEST"; fi
+          if [ -z "$url" ]; then
+            echo "Pas de secret pour la base « $CIBLE » : rien à faire (voir l'en-tête de ce fichier)."
+            echo "pret=non" >> "$GITHUB_OUTPUT"
+          else
+            echo "pret=oui" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Préparer la base de test (structure de la production, sans données)
+        if: steps.base.outputs.pret == 'oui' && env.ACTION == 'preparer' && env.CIBLE == 'test'
+        run: |
+          if [ -z "$URL_PRODUCTION" ]; then echo "Il faut aussi SUPABASE_DB_URL_PRODUCTION pour copier sa structure."; exit 1; fi
+          supabase db dump --db-url "$URL_PRODUCTION" -f structure.sql
+          psql "$URL_TEST" -v ON_ERROR_STOP=1 -q -f structure.sql
+      - name: Marquer toutes les migrations du dépôt comme appliquées
+        if: steps.base.outputs.pret == 'oui' && env.ACTION == 'preparer'
+        run: |
+          if [ "$CIBLE" = production ]; then url="$URL_PRODUCTION"; else url="$URL_TEST"; fi
+          versions=$(ls supabase/migrations | grep -E '^[0-9]+_' | sed -E 's/^([0-9]+)_.*/\1/' | sort -u)
+          supabase migration repair --db-url "$url" --status applied $versions
+      - name: Appliquer les migrations nouvelles
+        if: steps.base.outputs.pret == 'oui' && env.ACTION == 'appliquer'
+        run: |
+          if [ "$CIBLE" = production ]; then url="$URL_PRODUCTION"; else url="$URL_TEST"; fi
+          supabase migration list --db-url "$url"
+          yes | supabase db push --db-url "$url" --include-all

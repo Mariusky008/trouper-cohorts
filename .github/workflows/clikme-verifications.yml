@@ -1,0 +1,113 @@
+# 🔁 CLIKME — LES VÉRIFICATIONS À CHAQUE PUSH
+#
+# Trois tâches en parallèle, toutes contre des bases jetables, jamais la vraie :
+#   1. types et lint : le code se type (Vercel refuse désormais un code qui ne se type pas),
+#      et les fichiers de l'échange passent le lint ;
+#   2. essais SQL : toutes les migrations de l'échange sur un Postgres neuf, puis leurs essais ;
+#   3. l'app : construite et lancée sur le faux Supabase, puis l'essai de la route de l'échange
+#      et trois essais navigateur (moitié prix, équipe, factures).
+# Rien ici n'a besoin de secret.
+name: ClikMe — vérifications
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: clikme-verifications-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  types-et-lint:
+    name: Types et lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - name: Types
+        run: npx tsc --noEmit -p .
+      - name: Lint de l'échange
+        run: >-
+          npx eslint
+          src/app/autour-de-moi/assistante/echanges-*.tsx
+          src/app/e src/app/bon src/app/facture
+          src/app/api/site-internet/pro/echanges
+          src/lib/echanges
+
+  essais-sql:
+    name: Essais SQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/essais-sql-echanges.sh
+
+  essais-app:
+    name: Route et navigateur
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: faux
+      SUPABASE_SERVICE_ROLE_KEY: faux
+      ECHANGES_SEUIL_VILLE: "3"
+      # `src/lib/stripe.ts` refuse de se charger sans clé : une fausse suffit, rien ne part chez Stripe.
+      STRIPE_SECRET_KEY: sk_test_faux
+      NEXT_TELEMETRY_DISABLED: "1"
+      ESSAI_CAPTURES: ${{ github.workspace }}/captures
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - name: Playwright et Chromium
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Construire l'app
+        run: |
+          node scripts/faux-supabase.mjs > /tmp/faux-construction.log 2>&1 &
+          echo $! > /tmp/faux-construction.pid
+          npm run build
+          kill "$(cat /tmp/faux-construction.pid)"
+      - name: Lancer l'app
+        run: |
+          npx next start -p 3821 > /tmp/next.log 2>&1 &
+          for _ in $(seq 1 60); do curl -fs -o /dev/null http://localhost:3821/autour-de-moi/assistante && exit 0; sleep 2; done
+          echo "L'app ne répond pas :"; tail -50 /tmp/next.log; exit 1
+      - name: Essais
+        run: bash scripts/navigateur/lancer-essais.sh
+      - name: Captures et journaux
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clikme-captures
+          path: |
+            captures
+            /tmp/next.log
+            /tmp/essai.log
+            /tmp/faux-supabase.log
+          if-no-files-found: ignore
