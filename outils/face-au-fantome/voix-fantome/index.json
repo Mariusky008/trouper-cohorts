@@ -1,0 +1,798 @@
+{
+ "commun": [
+  {
+   "fichier": "commun-01-c-est-parti-on-tourne.mp3",
+   "texte": "C'est parti, on tourne !",
+   "duree": 1.38,
+   "pris_dans": "commun.mp3",
+   "de": 0,
+   "a": 1.381
+  },
+  {
+   "fichier": "commun-02-pose-ton-telephone-face-a-toi.mp3",
+   "texte": "Pose ton téléphone face à toi. Moi, je suis là, à droite ! Quand tu réponds, regarde-moi.",
+   "duree": 5.14,
+   "pris_dans": "commun.mp3",
+   "de": 1.674,
+   "a": 6.817
+  },
+  {
+   "fichier": "commun-03-pose-ton-telephone-face-a-toi.mp3",
+   "texte": "Pose ton téléphone face à toi. Moi, je suis là, à gauche ! Quand tu réponds, regarde-moi.",
+   "duree": 5.22,
+   "pris_dans": "commun.mp3",
+   "de": 7.275,
+   "a": 12.494
+  },
+  {
+   "fichier": "commun-04-pose-ton-telephone-et-parle-moi.mp3",
+   "texte": "Pose ton téléphone, et parle-moi comme à un ami. Ton fantôme répondra à ta place !",
+   "duree": 4.62,
+   "pris_dans": "commun.mp3",
+   "de": 12.876,
+   "a": 17.493
+  },
+  {
+   "fichier": "commun-05-derniere-question.mp3",
+   "texte": "Dernière question !",
+   "duree": 1.02,
+   "pris_dans": "commun.mp3",
+   "de": 17.843,
+   "a": 18.866
+  },
+  {
+   "fichier": "commun-06-le-defi.mp3",
+   "texte": "Le défi !",
+   "duree": 0.78,
+   "pris_dans": "commun.mp3",
+   "de": 19.069,
+   "a": 19.845
+  },
+  {
+   "fichier": "commun-07-question-rapide.mp3",
+   "texte": "Question rapide !",
+   "duree": 0.92,
+   "pris_dans": "commun.mp3",
+   "de": 20.078,
+   "a": 21.001
+  },
+  {
+   "fichier": "commun-08-une-question-d-un-client.mp3",
+   "texte": "Une question d'un client !",
+   "duree": 1.13,
+   "pris_dans": "commun.mp3",
+   "de": 21.225,
+   "a": 22.352
+  },
+  {
+   "fichier": "commun-09-qu-est-ce-que-tu-fais.mp3",
+   "texte": "Qu'est-ce que tu fais que personne d'autre ne fait ?",
+   "duree": 2.08,
+   "pris_dans": "commun.mp3",
+   "de": 22.657,
+   "a": 24.736
+  },
+  {
+   "fichier": "commun-10-montre-moi-le-geste-que-tu.mp3",
+   "texte": "Montre-moi le geste que tu fais mieux que personne.",
+   "duree": 2.44,
+   "pris_dans": "commun.mp3",
+   "de": 25.038,
+   "a": 27.482
+  },
+  {
+   "fichier": "commun-11-qu-est-ce-que-tu-dirais.mp3",
+   "texte": "Qu'est-ce que tu dirais à quelqu'un qui n'est jamais venu ?",
+   "duree": 2.35,
+   "pris_dans": "commun.mp3",
+   "de": 27.85,
+   "a": 30.197
+  },
+  {
+   "fichier": "commun-12-raconte-moi-ta-plus-belle-surprise.mp3",
+   "texte": "Raconte-moi ta plus belle surprise avec un client.",
+   "duree": 2.54,
+   "pris_dans": "commun.mp3",
+   "de": 30.499,
+   "a": 33.042
+  },
+  {
+   "fichier": "commun-13-pourquoi-tu-fais-ce-metier.mp3",
+   "texte": "Pourquoi tu fais ce métier ?",
+   "duree": 1.23,
+   "pris_dans": "commun.mp3",
+   "de": 33.443,
+   "a": 34.674
+  },
+  {
+   "fichier": "commun-14-convaincs-moi-en-dix-secondes.mp3",
+   "texte": "Convaincs-moi en dix secondes !",
+   "duree": 1.69,
+   "pris_dans": "commun.mp3",
+   "de": 34.974,
+   "a": 36.662
+  },
+  {
+   "fichier": "commun-15-decris-le-sans-dire-son-nom.mp3",
+   "texte": "Décris-le sans dire son nom !",
+   "duree": 1.69,
+   "pris_dans": "commun.mp3",
+   "de": 36.902,
+   "a": 38.596
+  },
+  {
+   "fichier": "commun-16-merci-je-m-occupe-du-montage.mp3",
+   "texte": "Merci ! Je m'occupe du montage.",
+   "duree": 1.81,
+   "pris_dans": "commun.mp3",
+   "de": 38.923,
+   "a": 40.738
+  }
+ ],
+ "restaurant": [
+  {
+   "fichier": "restaurant-01-alors-chef-c-est-quoi-le.mp3",
+   "texte": "Alors chef, c'est quoi, le plat du jour ?",
+   "duree": 2.08,
+   "pris_dans": "restaurant.mp3",
+   "de": 0,
+   "a": 2.08
+  },
+  {
+   "fichier": "restaurant-02-montre-moi-le-geste-qui-fait.mp3",
+   "texte": "Montre-moi le geste qui fait la différence.",
+   "duree": 2.02,
+   "pris_dans": "restaurant.mp3",
+   "de": 2.428,
+   "a": 4.447
+  },
+  {
+   "fichier": "restaurant-03-et-c-est-quoi-ton-secret.mp3",
+   "texte": "Et c'est quoi, ton secret, pour qu'il soit si bon ?",
+   "duree": 2.23,
+   "pris_dans": "restaurant.mp3",
+   "de": 4.824,
+   "a": 7.057
+  },
+  {
+   "fichier": "restaurant-04-avec-quoi-on-le-deguste.mp3",
+   "texte": "Avec quoi on le déguste ?",
+   "duree": 1.12,
+   "pris_dans": "restaurant.mp3",
+   "de": 7.301,
+   "a": 8.416
+  },
+  {
+   "fichier": "restaurant-05-ton-plat-en-trois-mots.mp3",
+   "texte": "Ton plat en trois mots ?",
+   "duree": 0.95,
+   "pris_dans": "restaurant.mp3",
+   "de": 8.747,
+   "a": 9.7
+  },
+  {
+   "fichier": "restaurant-06-sucre-ou-sale.mp3",
+   "texte": "Sucré ou salé ?",
+   "duree": 1.07,
+   "pris_dans": "restaurant.mp3",
+   "de": 9.966,
+   "a": 11.04
+  },
+  {
+   "fichier": "restaurant-07-beurre-ou-huile-d-olive.mp3",
+   "texte": "Beurre ou huile d'olive ?",
+   "duree": 1.45,
+   "pris_dans": "restaurant.mp3",
+   "de": 11.239,
+   "a": 12.693
+  },
+  {
+   "fichier": "restaurant-08-midi-ou-soir.mp3",
+   "texte": "Midi ou soir ?",
+   "duree": 0.98,
+   "pris_dans": "restaurant.mp3",
+   "de": 12.922,
+   "a": 13.901
+  },
+  {
+   "fichier": "restaurant-09-a-demain-et-bon-appetit.mp3",
+   "texte": "À demain, et bon appétit !",
+   "duree": 1.7,
+   "pris_dans": "restaurant.mp3",
+   "de": 14.264,
+   "a": 15.96
+  }
+ ],
+ "mode": [
+  {
+   "fichier": "mode-01-alors-c-est-quoi-ta-piece.mp3",
+   "texte": "Alors, c'est quoi, ta pièce du jour ?",
+   "duree": 2.16,
+   "pris_dans": "mode.mp3",
+   "de": 0,
+   "a": 2.155
+  },
+  {
+   "fichier": "mode-02-montre-moi-comment-tu-la-portes.mp3",
+   "texte": "Montre-moi comment tu la portes !",
+   "duree": 1.4,
+   "pris_dans": "mode.mp3",
+   "de": 2.344,
+   "a": 3.741
+  },
+  {
+   "fichier": "mode-03-et-tu-la-porterais-avec-quoi.mp3",
+   "texte": "Et tu la porterais avec quoi ?",
+   "duree": 1.58,
+   "pris_dans": "mode.mp3",
+   "de": 4.021,
+   "a": 5.597
+  },
+  {
+   "fichier": "mode-04-a-qui-elle-va-le-mieux.mp3",
+   "texte": "À qui elle va le mieux ?",
+   "duree": 0.95,
+   "pris_dans": "mode.mp3",
+   "de": 5.863,
+   "a": 6.815
+  },
+  {
+   "fichier": "mode-05-ta-boutique-en-trois-mots.mp3",
+   "texte": "Ta boutique en trois mots ?",
+   "duree": 1.02,
+   "pris_dans": "mode.mp3",
+   "de": 7.177,
+   "a": 8.197
+  },
+  {
+   "fichier": "mode-06-jean-ou-robe.mp3",
+   "texte": "Jean ou robe ?",
+   "duree": 1.05,
+   "pris_dans": "mode.mp3",
+   "de": 8.469,
+   "a": 9.522
+  },
+  {
+   "fichier": "mode-07-baskets-ou-talons.mp3",
+   "texte": "Baskets ou talons ?",
+   "duree": 1.13,
+   "pris_dans": "mode.mp3",
+   "de": 9.758,
+   "a": 10.885
+  },
+  {
+   "fichier": "mode-08-noir-ou-couleur.mp3",
+   "texte": "Noir ou couleur ?",
+   "duree": 1.12,
+   "pris_dans": "mode.mp3",
+   "de": 11.157,
+   "a": 12.278
+  },
+  {
+   "fichier": "mode-09-a-bientot-en-boutique.mp3",
+   "texte": "À bientôt, en boutique !",
+   "duree": 1.51,
+   "pris_dans": "mode.mp3",
+   "de": 12.599,
+   "a": 14.11
+  }
+ ],
+ "coiffure": [
+  {
+   "fichier": "coiffure-01-alors-c-est-quoi-la-coupe.mp3",
+   "texte": "Alors, c'est quoi, la coupe du moment ?",
+   "duree": 2.08,
+   "pris_dans": "coiffure.mp3",
+   "de": 0,
+   "a": 2.077
+  },
+  {
+   "fichier": "coiffure-02-montre-moi-le-geste-qui-change.mp3",
+   "texte": "Montre-moi le geste qui change tout.",
+   "duree": 1.69,
+   "pris_dans": "coiffure.mp3",
+   "de": 2.342,
+   "a": 4.027
+  },
+  {
+   "fichier": "coiffure-03-et-a-qui-elle-va-le.mp3",
+   "texte": "Et à qui elle va le mieux, cette coupe ?",
+   "duree": 1.71,
+   "pris_dans": "coiffure.mp3",
+   "de": 4.339,
+   "a": 6.049
+  },
+  {
+   "fichier": "coiffure-04-ton-astuce-pour-la-garder-belle.mp3",
+   "texte": "Ton astuce pour la garder belle à la maison ?",
+   "duree": 1.79,
+   "pris_dans": "coiffure.mp3",
+   "de": 6.329,
+   "a": 8.121
+  },
+  {
+   "fichier": "coiffure-05-ton-salon-en-trois-mots.mp3",
+   "texte": "Ton salon en trois mots ?",
+   "duree": 1.07,
+   "pris_dans": "coiffure.mp3",
+   "de": 8.386,
+   "a": 9.457
+  },
+  {
+   "fichier": "coiffure-06-court-ou-long.mp3",
+   "texte": "Court ou long ?",
+   "duree": 0.85,
+   "pris_dans": "coiffure.mp3",
+   "de": 9.75,
+   "a": 10.604
+  },
+  {
+   "fichier": "coiffure-07-brushing-ou-naturel.mp3",
+   "texte": "Brushing ou naturel ?",
+   "duree": 1.5,
+   "pris_dans": "coiffure.mp3",
+   "de": 10.807,
+   "a": 12.304
+  },
+  {
+   "fichier": "coiffure-08-ciseaux-ou-tondeuse.mp3",
+   "texte": "Ciseaux ou tondeuse ?",
+   "duree": 1.39,
+   "pris_dans": "coiffure.mp3",
+   "de": 12.508,
+   "a": 13.899
+  },
+  {
+   "fichier": "coiffure-09-a-bientot-au-salon.mp3",
+   "texte": "À bientôt, au salon !",
+   "duree": 1.27,
+   "pris_dans": "coiffure.mp3",
+   "de": 14.186,
+   "a": 15.456
+  }
+ ],
+ "ongles": [
+  {
+   "fichier": "ongles-01-alors-c-est-quoi-la-pose.mp3",
+   "texte": "Alors, c'est quoi, la pose du moment ?",
+   "duree": 2.25,
+   "pris_dans": "ongles.mp3",
+   "de": 0,
+   "a": 2.252
+  },
+  {
+   "fichier": "ongles-02-montre-moi-le-geste-le-plus.mp3",
+   "texte": "Montre-moi le geste le plus délicat.",
+   "duree": 1.83,
+   "pris_dans": "ongles.mp3",
+   "de": 2.526,
+   "a": 4.357
+  },
+  {
+   "fichier": "ongles-03-et-ton-secret-pour-qu-elle.mp3",
+   "texte": "Et ton secret, pour qu'elle tienne aussi longtemps ?",
+   "duree": 2.06,
+   "pris_dans": "ongles.mp3",
+   "de": 4.664,
+   "a": 6.724
+  },
+  {
+   "fichier": "ongles-04-elle-va-avec-quelle-tenue.mp3",
+   "texte": "Elle va avec quelle tenue ?",
+   "duree": 1.12,
+   "pris_dans": "ongles.mp3",
+   "de": 6.984,
+   "a": 8.103
+  },
+  {
+   "fichier": "ongles-05-ta-couleur-du-moment-en-trois.mp3",
+   "texte": "Ta couleur du moment en trois mots ?",
+   "duree": 1.44,
+   "pris_dans": "ongles.mp3",
+   "de": 8.424,
+   "a": 9.86
+  },
+  {
+   "fichier": "ongles-06-court-ou-long.mp3",
+   "texte": "Court ou long ?",
+   "duree": 0.82,
+   "pris_dans": "ongles.mp3",
+   "de": 10.094,
+   "a": 10.916
+  },
+  {
+   "fichier": "ongles-07-nude-ou-flashy.mp3",
+   "texte": "Nude ou flashy ?",
+   "duree": 1.32,
+   "pris_dans": "ongles.mp3",
+   "de": 11.156,
+   "a": 12.473
+  },
+  {
+   "fichier": "ongles-08-carre-ou-amande.mp3",
+   "texte": "Carré ou amande ?",
+   "duree": 1.24,
+   "pris_dans": "ongles.mp3",
+   "de": 12.716,
+   "a": 13.952
+  },
+  {
+   "fichier": "ongles-09-a-bientot-a-l-onglerie.mp3",
+   "texte": "À bientôt, à l'onglerie !",
+   "duree": 1.39,
+   "pris_dans": "ongles.mp3",
+   "de": 14.2,
+   "a": 15.589
+  }
+ ],
+ "lunettes": [
+  {
+   "fichier": "lunettes-01-alors-c-est-quoi-la-monture.mp3",
+   "texte": "Alors, c'est quoi, la monture du moment ?",
+   "duree": 2.35,
+   "pris_dans": "lunettes.mp3",
+   "de": 0,
+   "a": 2.346
+  },
+  {
+   "fichier": "lunettes-02-montre-moi-comment-tu-choisis-la.mp3",
+   "texte": "Montre-moi comment tu choisis la bonne monture.",
+   "duree": 2.13,
+   "pris_dans": "lunettes.mp3",
+   "de": 2.68,
+   "a": 4.813
+  },
+  {
+   "fichier": "lunettes-03-et-a-quel-visage-elle-va.mp3",
+   "texte": "Et à quel visage elle va le mieux ?",
+   "duree": 1.71,
+   "pris_dans": "lunettes.mp3",
+   "de": 5.14,
+   "a": 6.851
+  },
+  {
+   "fichier": "lunettes-04-qu-est-ce-qui-la-rend.mp3",
+   "texte": "Qu'est-ce qui la rend unique ?",
+   "duree": 1.19,
+   "pris_dans": "lunettes.mp3",
+   "de": 7.118,
+   "a": 8.303
+  },
+  {
+   "fichier": "lunettes-05-ta-monture-en-trois-mots.mp3",
+   "texte": "Ta monture en trois mots ?",
+   "duree": 1.01,
+   "pris_dans": "lunettes.mp3",
+   "de": 8.649,
+   "a": 9.663
+  },
+  {
+   "fichier": "lunettes-06-ronde-ou-carree.mp3",
+   "texte": "Ronde ou carrée ?",
+   "duree": 1.09,
+   "pris_dans": "lunettes.mp3",
+   "de": 9.947,
+   "a": 11.039
+  },
+  {
+   "fichier": "lunettes-07-ecaille-ou-metal.mp3",
+   "texte": "Écaille ou métal ?",
+   "duree": 1.23,
+   "pris_dans": "lunettes.mp3",
+   "de": 11.302,
+   "a": 12.532
+  },
+  {
+   "fichier": "lunettes-08-discrete-ou-audacieuse.mp3",
+   "texte": "Discrète ou audacieuse ?",
+   "duree": 1.7,
+   "pris_dans": "lunettes.mp3",
+   "de": 12.729,
+   "a": 14.428
+  },
+  {
+   "fichier": "lunettes-09-a-bientot-chez-l-opticien.mp3",
+   "texte": "À bientôt, chez l'opticien !",
+   "duree": 1.34,
+   "pris_dans": "lunettes.mp3",
+   "de": 14.737,
+   "a": 16.077
+  }
+ ],
+ "fleurs": [
+  {
+   "fichier": "fleurs-01-alors-c-est-quoi-le-bouquet.mp3",
+   "texte": "Alors, c'est quoi, le bouquet du jour ?",
+   "duree": 2.1,
+   "pris_dans": "fleurs.mp3",
+   "de": 0,
+   "a": 2.101
+  },
+  {
+   "fichier": "fleurs-02-montre-moi-le-geste-qui-fait.mp3",
+   "texte": "Montre-moi le geste qui fait un beau bouquet.",
+   "duree": 1.99,
+   "pris_dans": "fleurs.mp3",
+   "de": 2.383,
+   "a": 4.375
+  },
+  {
+   "fichier": "fleurs-03-et-ton-secret-pour-qu-il.mp3",
+   "texte": "Et ton secret, pour qu'il tienne longtemps ?",
+   "duree": 1.83,
+   "pris_dans": "fleurs.mp3",
+   "de": 4.68,
+   "a": 6.515
+  },
+  {
+   "fichier": "fleurs-04-il-est-fait-pour-quelle-occasion.mp3",
+   "texte": "Il est fait pour quelle occasion ?",
+   "duree": 1.25,
+   "pris_dans": "fleurs.mp3",
+   "de": 6.83,
+   "a": 8.083
+  },
+  {
+   "fichier": "fleurs-05-ton-bouquet-en-trois-mots.mp3",
+   "texte": "Ton bouquet en trois mots ?",
+   "duree": 0.99,
+   "pris_dans": "fleurs.mp3",
+   "de": 8.393,
+   "a": 9.388
+  },
+  {
+   "fichier": "fleurs-06-roses-ou-pivoines.mp3",
+   "texte": "Roses ou pivoines ?",
+   "duree": 1.33,
+   "pris_dans": "fleurs.mp3",
+   "de": 9.674,
+   "a": 11.005
+  },
+  {
+   "fichier": "fleurs-07-champetre-ou-chic.mp3",
+   "texte": "Champêtre ou chic ?",
+   "duree": 1.4,
+   "pris_dans": "fleurs.mp3",
+   "de": 11.187,
+   "a": 12.588
+  },
+  {
+   "fichier": "fleurs-08-blanc-ou-couleurs.mp3",
+   "texte": "Blanc ou couleurs ?",
+   "duree": 1.21,
+   "pris_dans": "fleurs.mp3",
+   "de": 12.81,
+   "a": 14.018
+  },
+  {
+   "fichier": "fleurs-09-a-bientot-chez-le-fleuriste.mp3",
+   "texte": "À bientôt, chez le fleuriste !",
+   "duree": 1.58,
+   "pris_dans": "fleurs.mp3",
+   "de": 14.343,
+   "a": 15.922
+  }
+ ],
+ "atelier": [
+  {
+   "fichier": "atelier-01-alors-c-est-quoi-ta-creation.mp3",
+   "texte": "Alors, c'est quoi, ta création du moment ?",
+   "duree": 2.23,
+   "pris_dans": "atelier.mp3",
+   "de": 0,
+   "a": 2.23
+  },
+  {
+   "fichier": "atelier-02-montre-moi-le-geste-le-plus.mp3",
+   "texte": "Montre-moi le geste le plus difficile.",
+   "duree": 2.04,
+   "pris_dans": "atelier.mp3",
+   "de": 2.519,
+   "a": 4.563
+  },
+  {
+   "fichier": "atelier-03-et-combien-de-temps-il-faut.mp3",
+   "texte": "Et combien de temps il faut pour la fabriquer ?",
+   "duree": 1.97,
+   "pris_dans": "atelier.mp3",
+   "de": 4.82,
+   "a": 6.789
+  },
+  {
+   "fichier": "atelier-04-d-ou-t-est-venue-l.mp3",
+   "texte": "D'où t'est venue l'idée ?",
+   "duree": 0.96,
+   "pris_dans": "atelier.mp3",
+   "de": 7.071,
+   "a": 8.027
+  },
+  {
+   "fichier": "atelier-05-ton-atelier-en-trois-mots.mp3",
+   "texte": "Ton atelier en trois mots ?",
+   "duree": 1.18,
+   "pris_dans": "atelier.mp3",
+   "de": 8.357,
+   "a": 9.535
+  },
+  {
+   "fichier": "atelier-06-piece-unique-ou-petite-serie.mp3",
+   "texte": "Pièce unique ou petite série ?",
+   "duree": 1.73,
+   "pris_dans": "atelier.mp3",
+   "de": 9.865,
+   "a": 11.596
+  },
+  {
+   "fichier": "atelier-07-matin-ou-nuit-pour-creer.mp3",
+   "texte": "Matin ou nuit, pour créer ?",
+   "duree": 1.68,
+   "pris_dans": "atelier.mp3",
+   "de": 11.866,
+   "a": 13.55
+  },
+  {
+   "fichier": "atelier-08-musique-ou-silence.mp3",
+   "texte": "Musique ou silence ?",
+   "duree": 1.46,
+   "pris_dans": "atelier.mp3",
+   "de": 13.857,
+   "a": 15.315
+  },
+  {
+   "fichier": "atelier-09-a-bientot-a-l-atelier.mp3",
+   "texte": "À bientôt, à l'atelier !",
+   "duree": 1.4,
+   "pris_dans": "atelier.mp3",
+   "de": 15.624,
+   "a": 17.029
+  }
+ ],
+ "librairie": [
+  {
+   "fichier": "librairie-01-alors-c-est-quoi-le-livre.mp3",
+   "texte": "Alors, c'est quoi, le livre que tu conseilles ?",
+   "duree": 2.41,
+   "pris_dans": "librairie.mp3",
+   "de": 0,
+   "a": 2.409
+  },
+  {
+   "fichier": "librairie-02-lis-moi-la-phrase-qui-t.mp3",
+   "texte": "Lis-moi la phrase qui t'a donné envie.",
+   "duree": 1.59,
+   "pris_dans": "librairie.mp3",
+   "de": 2.746,
+   "a": 4.338
+  },
+  {
+   "fichier": "librairie-03-et-a-qui-tu-l-offrirais.mp3",
+   "texte": "Et à qui tu l'offrirais ?",
+   "duree": 1.27,
+   "pris_dans": "librairie.mp3",
+   "de": 4.651,
+   "a": 5.92
+  },
+  {
+   "fichier": "librairie-04-on-le-lit-ou-ce-livre.mp3",
+   "texte": "On le lit où, ce livre ?",
+   "duree": 1.16,
+   "pris_dans": "librairie.mp3",
+   "de": 6.213,
+   "a": 7.372
+  },
+  {
+   "fichier": "librairie-05-ce-livre-en-trois-mots.mp3",
+   "texte": "Ce livre en trois mots ?",
+   "duree": 0.96,
+   "pris_dans": "librairie.mp3",
+   "de": 7.715,
+   "a": 8.67
+  },
+  {
+   "fichier": "librairie-06-roman-ou-bd.mp3",
+   "texte": "Roman ou BD ?",
+   "duree": 1.24,
+   "pris_dans": "librairie.mp3",
+   "de": 8.958,
+   "a": 10.202
+  },
+  {
+   "fichier": "librairie-07-papier-ou-liseuse.mp3",
+   "texte": "Papier ou liseuse ?",
+   "duree": 1.29,
+   "pris_dans": "librairie.mp3",
+   "de": 10.488,
+   "a": 11.781
+  },
+  {
+   "fichier": "librairie-08-plage-ou-canape.mp3",
+   "texte": "Plage ou canapé ?",
+   "duree": 1.21,
+   "pris_dans": "librairie.mp3",
+   "de": 12.062,
+   "a": 13.27
+  },
+  {
+   "fichier": "librairie-09-a-bientot-et-bonne-lecture.mp3",
+   "texte": "À bientôt, et bonne lecture !",
+   "duree": 1.73,
+   "pris_dans": "librairie.mp3",
+   "de": 13.546,
+   "a": 15.277
+  }
+ ],
+ "bar": [
+  {
+   "fichier": "bar-01-alors-qu-est-ce-qui-se.mp3",
+   "texte": "Alors, qu'est-ce qui se passe ce soir ?",
+   "duree": 1.77,
+   "pris_dans": "bar.mp3",
+   "de": 0,
+   "a": 1.773
+  },
+  {
+   "fichier": "bar-02-montre-moi-comment-tu-le-prepares.mp3",
+   "texte": "Montre-moi comment tu le prépares !",
+   "duree": 1.34,
+   "pris_dans": "bar.mp3",
+   "de": 1.953,
+   "a": 3.29
+  },
+  {
+   "fichier": "bar-03-et-qu-est-ce-que-tu.mp3",
+   "texte": "Et qu'est-ce que tu nous sers, avec ça ?",
+   "duree": 1.74,
+   "pris_dans": "bar.mp3",
+   "de": 3.705,
+   "a": 5.44
+  },
+  {
+   "fichier": "bar-04-c-est-quoi-l-ambiance-ce.mp3",
+   "texte": "C'est quoi, l'ambiance, ce soir ?",
+   "duree": 1.22,
+   "pris_dans": "bar.mp3",
+   "de": 5.851,
+   "a": 7.069
+  },
+  {
+   "fichier": "bar-05-ta-soiree-en-trois-mots.mp3",
+   "texte": "Ta soirée en trois mots ?",
+   "duree": 1.08,
+   "pris_dans": "bar.mp3",
+   "de": 7.419,
+   "a": 8.497
+  },
+  {
+   "fichier": "bar-06-biere-ou-cocktail.mp3",
+   "texte": "Bière ou cocktail ?",
+   "duree": 1.1,
+   "pris_dans": "bar.mp3",
+   "de": 8.825,
+   "a": 9.929
+  },
+  {
+   "fichier": "bar-07-dedans-ou-en-terrasse.mp3",
+   "texte": "Dedans ou en terrasse ?",
+   "duree": 1.37,
+   "pris_dans": "bar.mp3",
+   "de": 10.2,
+   "a": 11.567
+  },
+  {
+   "fichier": "bar-08-playlist-ou-concert.mp3",
+   "texte": "Playlist ou concert ?",
+   "duree": 1.15,
+   "pris_dans": "bar.mp3",
+   "de": 11.848,
+   "a": 13.0
+  },
+  {
+   "fichier": "bar-09-a-ce-soir-au-bar.mp3",
+   "texte": "À ce soir, au bar !",
+   "duree": 1.42,
+   "pris_dans": "bar.mp3",
+   "de": 13.384,
+   "a": 14.806
+  }
+ ]
+}

@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Face au fantôme — rendu</title>
+<style>
+@font-face{font-family:'Anton';font-style:normal;font-weight:400;src:url(polices/Anton-normal-400-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family:'Anton';font-style:normal;font-weight:400;src:url(polices/Anton-normal-400-latin.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'Playfair Display';font-style:italic;font-weight:600;src:url(polices/PlayfairDisplay-italic-600-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family:'Playfair Display';font-style:italic;font-weight:600;src:url(polices/PlayfairDisplay-italic-600-latin.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'Playfair Display';font-style:italic;font-weight:700;src:url(polices/PlayfairDisplay-italic-700-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family:'Playfair Display';font-style:italic;font-weight:700;src:url(polices/PlayfairDisplay-italic-700-latin.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'Poppins';font-style:normal;font-weight:600;src:url(polices/Poppins-normal-600-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family:'Poppins';font-style:normal;font-weight:600;src:url(polices/Poppins-normal-600-latin.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'Poppins';font-style:normal;font-weight:800;src:url(polices/Poppins-normal-800-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family:'Poppins';font-style:normal;font-weight:800;src:url(polices/Poppins-normal-800-latin.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'Poppins';font-style:normal;font-weight:900;src:url(polices/Poppins-normal-900-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family:'Poppins';font-style:normal;font-weight:900;src:url(polices/Poppins-normal-900-latin.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+</style>
+<style>html,body{margin:0;background:#000}canvas{width:405px;height:720px;display:block}</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+/* ═══ FACE AU FANTÔME — UN ÉPISODE, IMAGE PAR IMAGE ═══════════════════════
+   dessiner(t) dessine l'image de l'instant t ; mixer() fabrique le son.
+   Tout est fonction du temps : le même t donne toujours la même image. */
+// LE FANTÔME POSE SES QUESTIONS À VOIX HAUTE : chaque carte s'allonge du temps de sa question,
+// et tout ce qui suit glisse d'autant. Les temps écrits plus bas sont ceux de la première version.
+const D1 = 1.13, D2 = 1.24, D3 = 0.49;
+const tt = (t) => t + (t >= 6.75 ? D1 : 0) + (t >= 18.25 ? D2 : 0) + (t >= 27.95 ? D3 : 0);
+const W = 1080, H = 1920, DUREE = tt(39.5);
+const ROSE = "#FF2E9A", CREME = "#FFF4E6", NUIT = "#140C09";
+const c = document.getElementById("c");
+let g = c.getContext("2d");
+const IM = {}, SON = {};
+let MOTS, GRAIN;
+
+/* ─── LES OUTILS ─── */
+const borne = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const sortie = (x) => 1 - Math.pow(1 - borne(x), 3);
+const douce = (x) => { x = borne(x); return x * x * (3 - 2 * x); };
+const rebond = (x) => { x = borne(x); const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const mix = (a, b, x) => a + (b - a) * x;
+function hasard(n) { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+
+function toile(w, h) { const t = document.createElement("canvas"); t.width = w; t.height = h; return t; }
+function flou(img, r) {
+  const t = toile(img.width, img.height), x = t.getContext("2d");
+  x.filter = `blur(${r}px)`; x.drawImage(img, 0, 0); return t;
+}
+function fabriquerGrain() {
+  const t = toile(540, 960), x = t.getContext("2d"), d = x.createImageData(540, 960);
+  for (let i = 0; i < d.data.length; i += 4) { const v = 128 + (hasard(i) - 0.5) * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; }
+  x.putImageData(d, 0, 0); return t;
+}
+
+/** Une image qui couvre l'écran : (fx, fy) le point de l'image au point (tx, ty) de l'écran, z le zoom. */
+function couvrir(img, { fx = 0.5, fy = 0.5, z = 1, tx = 0.5, ty = 0.5, ctx = g, w = W, h = H } = {}) {
+  const iw = img.width, ih = img.height;
+  const s = Math.max(w / iw, h / ih) * z, dw = iw * s, dh = ih * s;
+  let x = w * tx - fx * dw, y = h * ty - fy * dh;
+  x = Math.min(0, Math.max(w - dw, x)); y = Math.min(0, Math.max(h - dh, y));
+  ctx.drawImage(img, x, y, dw, dh);
+}
+/** Le flou de zoom : la même image, plusieurs fois, de plus en plus grande. */
+function flouDeZoom(img, o, force) {
+  const n = 7;
+  for (let k = 1; k <= n; k++) { g.globalAlpha = 0.16 * force; couvrir(img, { ...o, z: o.z * (1 + 0.035 * k * force) }); }
+  g.globalAlpha = 1;
+}
+function etalonner(chaleur = 0.22) {
+  g.save();
+  g.globalCompositeOperation = "soft-light"; g.fillStyle = `rgba(255,150,70,${chaleur})`; g.fillRect(0, 0, W, H);
+  g.globalCompositeOperation = "source-over";
+  const v = g.createRadialGradient(W / 2, H * 0.45, H * 0.3, W / 2, H * 0.48, H * 0.82);
+  v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,.6)");
+  g.fillStyle = v; g.fillRect(0, 0, W, H);
+  g.restore();
+}
+function lueur(x, y, r, couleur) {
+  const d = g.createRadialGradient(x, y, 0, x, y, r);
+  d.addColorStop(0, couleur); d.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = d; g.fillRect(0, 0, W, H);
+}
+/** La vapeur : des volutes douces qui montent — lentement au ralenti. */
+function vapeur(t, x0, y0, largeur, vitesse = 1, force = 1) {
+  g.save(); g.globalCompositeOperation = "screen";
+  for (let k = 0; k < 26; k++) {
+    const ph = (t * 0.22 * vitesse + hasard(k) ) % 1;
+    const x = x0 + (hasard(k + 7) - 0.5) * largeur + Math.sin(t * 0.9 * vitesse + k) * 26 + ph * 40 * (hasard(k + 3) - 0.5);
+    const y = y0 - ph * 620;
+    const r = 50 + ph * 170;
+    const a = 0.13 * Math.sin(Math.PI * ph) * force;
+    const d = g.createRadialGradient(x, y, 0, x, y, r);
+    d.addColorStop(0, `rgba(255,248,240,${a})`); d.addColorStop(1, "rgba(255,248,240,0)");
+    g.fillStyle = d; g.fillRect(x - r, y - r, 2 * r, 2 * r);
+  }
+  g.restore();
+}
+/** La traînée de lumière rose qui balaie l'image (fuite de lumière). */
+function fuite(u, force = 1) {
+  if (u < 0 || u > 1) return;
+  g.save(); g.globalCompositeOperation = "screen";
+  const x = mix(-300, W + 300, sortie(u)), a = Math.sin(Math.PI * u) * 0.55 * force;
+  const d = g.createRadialGradient(x, H * 0.4, 0, x, H * 0.4, 700);
+  d.addColorStop(0, `rgba(255,70,160,${a})`); d.addColorStop(0.5, `rgba(255,140,60,${a * 0.5})`); d.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = d; g.fillRect(0, 0, W, H);
+  g.restore();
+}
+function rectArrondi(x, y, w, h, r) {
+  g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+function texte(t, x, y, police, couleur, { align = "left", ls = 0, ombre = 0, contour = 0 } = {}) {
+  g.save(); g.font = police; g.textAlign = align; g.textBaseline = "alphabetic"; g.letterSpacing = `${ls}px`;
+  if (ombre) { g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = ombre; g.shadowOffsetY = ombre / 4; }
+  if (contour) { g.lineJoin = "round"; g.lineWidth = contour; g.strokeStyle = "rgba(0,0,0,.82)"; g.strokeText(t, x, y); }
+  g.fillStyle = couleur; g.fillText(t, x, y); g.restore();
+}
+function largeurTexte(t, police, ls = 0) { g.save(); g.font = police; g.letterSpacing = `${ls}px`; const w = g.measureText(t).width; g.restore(); return w; }
+
+/* ═══ LA VOIX : SES MOTS, À LEUR PLACE DANS L'ÉPISODE ═══════════════════ */
+// [début, fin] dans l'enregistrement de Jean-Marie, et l'instant T où il passe dans l'épisode.
+const CLIPS = [
+  { id: "hook", src: [24.915, 26.73], T: 0.3, style: "accroche" },
+  { id: "a", src: [1.76, 2.95], T: tt(6.85) },
+  { id: "b", src: [3.57, 5.87], T: tt(8.2) },
+  { id: "c", src: [6.56, 9.08], T: tt(10.8) },
+  { id: "d", src: [9.48, 12.47], T: tt(13.62) },
+  { id: "e", src: [13.23, 18.25], T: tt(18.35) },
+  { id: "f", src: [18.97, 21.05], T: tt(23.75) },
+  { id: "g", src: [21.75, 22.98], T: tt(28.0) },
+  { id: "h", src: [23.29, 24.12], T: tt(29.5) },
+  { id: "i", src: [24.67, 26.73], T: tt(30.75) },
+];
+const FORTS = /quadriller|croustillante|graisse|canard|tranche|odeur/i;
+const FRAPPES = /^(croustillant,|fondant…|l'odeur)$/;
+let MOTS_EP = [], MORCEAUX = [], FRAPPES_EP = [];
+function preparerMots() {
+  const tous = Object.values(MOTS).flatMap((p) => p.mots);
+  for (const cl of CLIPS) {
+    const L = tous.filter((w) => w.a >= cl.src[0] - 0.02 && w.b <= cl.src[1] + 0.06).map((w) => ({ m: w.m, a: cl.T + w.a - cl.src[0], b: cl.T + w.b - cl.src[0] }));
+    if (cl.id === "i") L.unshift({ m: "et", a: cl.T, b: cl.T + 0.245 });
+    if (cl.id === "a") L[0].m = "Mon";
+    if (cl.id === "hook") L[0].m = "L'odeur";
+    for (const w of L) { w.fort = FORTS.test(w.m); w.clip = cl.id; w.style = cl.style || "normal"; }
+    const frappes = cl.id === "g" || cl.id === "h" || cl.id === "i" ? L.filter((w) => FRAPPES.test(w.m)) : [];
+    FRAPPES_EP.push(...frappes);
+    const reste = L.filter((w) => !frappes.includes(w));
+    // des morceaux de deux à quatre mots, coupés à la ponctuation, ou là où un mot frappe
+    let cur = [];
+    const pousser = () => { if (cur.length) MORCEAUX.push(cur); cur = []; };
+    for (let k = 0; k < reste.length; k++) {
+      const w = reste[k], prev = cur[cur.length - 1];
+      const longueur = cur.map((x) => x.m).join(" ").length + w.m.length;
+      const trou = prev && w.a - prev.b > 0.35;
+      if (cur.length && (longueur > (cl.style === "accroche" ? 22 : 17) || trou || /[,.…]$/.test(prev.m))) pousser();
+      cur.push(w);
+    }
+    pousser();
+    MOTS_EP.push(...L);
+  }
+  // fin de chaque morceau : le suivant, ou un souffle après son dernier mot
+  for (let k = 0; k < MORCEAUX.length; k++) {
+    const m = MORCEAUX[k], suiv = MORCEAUX[k + 1];
+    m.de = m[0].a - 0.06;
+    m.fin = Math.min(m[m.length - 1].b + 0.32, suiv && suiv[0].clip === m[0].clip ? suiv[0].a - 0.06 : 99);
+  }
+  FRAPPES_EP.sort((a, b) => a.a - b.a);
+  FRAPPES_EP.forEach((w, k) => { w.fin = k < FRAPPES_EP.length - 1 ? Math.min(FRAPPES_EP[k + 1].a - 0.25, w.a + 0.95) : w.a + 0.62; });
+}
+
+/* ─── LES SOUS-TITRES MOT À MOT ─── */
+function sousTitres(t) {
+  const m = MORCEAUX.find((x) => t >= x.de && t < x.fin);
+  if (!m) return;
+  const acc = m[0].style === "accroche";
+  const taille = acc ? 96 : 84;
+  const police = `900 ${taille}px Poppins`;
+  const esp = largeurTexte(" ", police) + taille * 0.16;
+  // une ou deux lignes
+  const largeurs = m.map((w) => largeurTexte(w.m, police));
+  let lignes = [m.map((_, k) => k)];
+  const total = largeurs.reduce((s, x) => s + x, 0) + esp * (m.length - 1);
+  if (total > 940) { const coupe = Math.ceil(m.length / 2); lignes = [m.slice(0, coupe).map((_, k) => k), m.slice(coupe).map((_, k) => k + coupe)]; }
+  const yBas = acc ? 1420 : 1385, pas = taille * 1.12;
+  lignes.forEach((ligne, li) => {
+    const lw = ligne.reduce((s, k) => s + largeurs[k], 0) + esp * (ligne.length - 1);
+    let x = W / 2 - lw / 2;
+    const y = yBas - (lignes.length - 1 - li) * pas;
+    for (const k of ligne) {
+      const w = m[k], dt = t - (w.a - 0.04);
+      if (dt >= 0) {
+        const s = 0.72 + 0.28 * rebond(dt / 0.14);
+        const courant = t >= w.a && t < w.b + 0.04;
+        g.save(); g.translate(x + largeurs[k] / 2, y - taille * 0.35); g.scale(s * (courant ? 1.07 : 1), s * (courant ? 1.07 : 1));
+        texte(w.m, -largeurs[k] / 2, taille * 0.35, police, courant || w.fort ? ROSE : "#FFFFFF", { contour: 16, ombre: 24 });
+        g.restore();
+      }
+      x += largeurs[k] + esp;
+    }
+  });
+}
+/** LES MOTS QUI FRAPPENT : « CROUSTILLANT », « FONDANT », « L'ODEUR » — en plein écran. */
+function frappes(t) {
+  for (const w of FRAPPES_EP) {
+    const u = t - w.a;
+    if (u < 0 || t > w.fin) continue;
+    const mot = w.m.replace(/[,.…]/g, "").toUpperCase();
+    let taille = 320; while (largeurTexte(mot, `${taille}px Anton`, 4) > 960) taille -= 8;
+    const s = u < 0.12 ? mix(1.9, 1, sortie(u / 0.12)) : 1 + 0.05 * (u - 0.12);
+    const a = Math.min(1, u / 0.05, (w.fin - t) / 0.12);
+    g.save(); g.globalAlpha = borne(a); g.translate(W / 2, H * 0.5); g.scale(s, s);
+    texte(mot, 0, taille * 0.36, `${taille}px Anton`, ROSE, { align: "center", ls: 4, ombre: 40 });
+    g.restore();
+  }
+}
+function secousse(t) {
+  for (const w of FRAPPES_EP) { const u = t - w.a; if (u >= 0 && u < 0.2) return [Math.sin(u * 140) * 16 * (1 - u / 0.2), Math.cos(u * 110) * 10 * (1 - u / 0.2)]; }
+  return [0, 0];
+}
+
+/* ═══ LES PLANS ════════════════════════════════════════════════════════ */
+const QUESTIONS = {
+  1: { num: "QUESTION 1 / 3", l1: "TON", l2: "GESTE", sous: ["Montre-moi le geste", "qui fait la différence."] },
+  2: { num: "QUESTION 2 / 3", l1: "TON", l2: "SECRET", sous: ["Et c'est quoi, ton secret,", "pour qu'il soit si bon ?"] },
+  3: { num: "DERNIÈRE QUESTION · LE DÉFI", l1: "TON PLAT", l2: "EN 3 MOTS", sous: ["Trois mots,", "pas un de plus."], defi: true },
+};
+// CE QUE DIT LE FANTÔME, ET QUAND : ses questions sur les cartes, son au revoir sur la carte de fin.
+// Sa voix : les répliques enregistrées sur ElevenLabs (voir `voix-fantome/`).
+const PAROLES_REPORTER = [
+  { id: "q1", src: "a/f-q1.mp3", T: 5.62 },
+  { id: "q2", src: "a/f-q2.mp3", T: tt(16.75) + 0.27 },
+  { id: "derniere", src: "a/f-derniere.mp3", T: tt(25.95) + 0.15 },
+  { id: "defi", src: "a/f-defi.mp3", T: tt(25.95) + 1.3 },
+  { id: "ademain", src: "a/f-ademain.mp3", T: tt(34.3) },
+];
+function boucheReporter(t) {
+  for (const p of PAROLES_REPORTER) {
+    const env = SON[p.id + "Env"]; if (!env) continue;
+    const i = Math.floor((t - p.T) * 30);
+    if (i >= 0 && i < env.length) return env[i];
+  }
+  return 0;
+}
+function reporter(x, y, s, t, apparition) {
+  const o = boucheReporter(t), k = o > 0.55 ? 3 : o > 0.3 ? 2 : o > 0.08 ? 1 : 0;
+  const img = IM["r" + k], sc = s * rebond(apparition);
+  if (apparition <= 0) return;
+  g.save(); g.translate(x, y + Math.sin(t * 2.6) * 8); g.rotate(Math.sin(t * 1.7) * 0.03); g.scale(sc, sc);
+  g.drawImage(img, -img.width / 2, -img.height, img.width, img.height); g.restore();
+}
+
+function carteQuestion(n, u, t) {
+  const q = QUESTIONS[n];
+  g.fillStyle = NUIT; g.fillRect(0, 0, W, H);
+  lueur(880, 1560, 1000, "rgba(255,46,154,.42)");
+  lueur(120, 260, 760, "rgba(255,150,60,.18)");
+  // les rayures du plateau
+  g.save(); g.globalAlpha = 0.06; g.strokeStyle = CREME; g.lineWidth = 2;
+  for (let k = -20; k < 40; k++) { g.beginPath(); g.moveTo(k * 70 + u * 60, 0); g.lineTo(k * 70 - 600 + u * 60, H); g.stroke(); }
+  g.restore();
+  const entre = (d) => sortie((u - d) / 0.3);
+  texte(q.num, 84, 560 - 30 * (1 - entre(0.05)), "800 34px Poppins", ROSE, { ls: 7 });
+  const t1 = `${q.l1}`, t2 = `${q.l2}`;
+  const taille = q.defi ? 190 : 250;
+  g.save(); g.globalAlpha = entre(0.1);
+  texte(t1, 78, 800 + 70 * (1 - entre(0.1)), `${taille}px Anton`, CREME, { ls: 2 });
+  g.restore();
+  g.save(); g.globalAlpha = entre(0.18);
+  const y2 = (q.defi ? 1010 : 1065) + 70 * (1 - entre(0.18));
+  texte(t2, 78, y2, `${taille}px Anton`, CREME, { ls: 2 });
+  if (!q.defi) texte(" ?", 78 + largeurTexte(t2, `${taille}px Anton`, 2), y2, `${taille}px Anton`, ROSE, { ls: 2 });
+  g.restore();
+  g.save(); g.globalAlpha = entre(0.32);
+  q.sous.forEach((l, k) => texte(l, 84, (q.defi ? 1130 : 1160) + k * 68, "600 52px Poppins", "rgba(255,244,230,.86)"));
+  g.restore();
+  if (q.defi) {
+    // trois points qui se remplissent
+    for (let k = 0; k < 3; k++) {
+      const on = u > 1.45 + k * 0.28;
+      g.beginPath(); g.arc(104 + k * 64, 1340, 20, 0, Math.PI * 2);
+      g.fillStyle = on ? ROSE : "rgba(255,244,230,.18)"; g.fill();
+    }
+  }
+  reporter(840, 1905, 0.95, t, (u - 0.18) / 0.4);
+}
+
+function plan(img, o) { couvrir(img, o); }
+// LE CADRE CLIKME : quatre coins roses, et le nom de la série
+function cadre(t, depuis) {
+  const u = t - depuis, s = mix(1.08, 1, sortie(u / 0.22)), a = borne(u / 0.12);
+  g.save(); g.globalAlpha = a; g.translate(W / 2, H / 2); g.scale(s, s); g.translate(-W / 2, -H / 2);
+  g.strokeStyle = ROSE; g.lineWidth = 10; g.lineCap = "round";
+  const m = 56, L = 96;
+  for (const [x, y, dx, dy] of [[m, m + 60, 1, 1], [W - m, m + 60, -1, 1], [m, H - m - 140, 1, -1], [W - m, H - m - 140, -1, -1]]) {
+    g.beginPath(); g.moveTo(x, y + dy * L); g.lineTo(x, y); g.lineTo(x + dx * L, y); g.stroke();
+  }
+  g.restore();
+  g.save(); g.globalAlpha = a;
+  g.beginPath(); g.arc(98, 200, 11, 0, Math.PI * 2); g.fillStyle = ROSE; g.fill();
+  texte("FACE AU FANTÔME", 124, 212, "800 32px Poppins", CREME, { ls: 4, ombre: 14 });
+  texte("Jean-Marie · Chez Bergine", 124, 258, "600 30px Poppins", "rgba(255,244,230,.85)", { ombre: 14 });
+  g.restore();
+}
+function exemple() {
+  g.save(); g.font = "800 24px Poppins"; g.letterSpacing = "3px";
+  const w = g.measureText("EXEMPLE").width + 36;
+  rectArrondi(W - 56 - w, 180, w, 46, 23); g.fillStyle = "rgba(0,0,0,.38)"; g.fill();
+  g.fillStyle = "rgba(255,255,255,.78)"; g.textAlign = "center"; g.fillText("EXEMPLE", W - 56 - w / 2, 212); g.restore();
+}
+
+/* ─── LE PLAN SIGNATURE : SON NOM DERRIÈRE LUI ─── */
+function titre(u, t) {
+  couvrir(IM.fondAccueil, { z: 1.06 + 0.04 * u / 2.8, fx: 0.5 + 0.01 * u });
+  g.fillStyle = "rgba(20,12,9,.42)"; g.fillRect(0, 0, W, H);
+  lueur(420, 640, 760, "rgba(255,46,154,.32)");
+  // le nom, qui claque
+  const p = sortie((u - 0.06) / 0.32);
+  for (const [mot, y, d] of [["JEAN-", 640, 0], ["MARIE", 925, 0.07]]) {
+    const q = sortie((u - 0.06 - d) / 0.3);
+    let taille = 340; while (largeurTexte(mot, `${taille}px Anton`, 6) > 930) taille -= 6;
+    g.save(); g.globalAlpha = borne(q * 1.4); g.translate(70, y - 20 * u); g.scale(mix(1.25, 1, q), mix(1.25, 1, q));
+    g.filter = `blur(${(1 - q) * 12}px)`;
+    texte(mot, 0, 0, `${taille}px Anton`, CREME, { ls: 6 });
+    g.restore();
+  }
+  // lui, devant son nom
+  const sc = 0.92 * (1 + 0.025 * u / 2.8), lw = IM.lui.width * sc, lh = IM.lui.height * sc;
+  const monte = 70 * (1 - sortie(u / 0.55));
+  g.save(); g.shadowColor = "rgba(0,0,0,.45)"; g.shadowBlur = 40;
+  g.drawImage(IM.lui, W - lw + 6, 780 + monte - 10 * u, lw, lh); g.restore();
+  // la série, en haut ; le plat, en bas à gauche
+  const a = sortie((u - 0.35) / 0.4);
+  g.save(); g.globalAlpha = a;
+  texte("FACE AU FANTÔME", 74, 200, "800 34px Poppins", ROSE, { ls: 8 });
+  texte("DAX · ÉPISODE 12", 74, 250, "600 30px Poppins", "rgba(255,244,230,.8)", { ls: 5 });
+  g.restore();
+  const b = sortie((u - 0.55) / 0.45);
+  g.save(); g.globalAlpha = b; g.translate(0, 30 * (1 - b));
+  texte("le magret de", 70, 1290, "italic 600 74px 'Playfair Display'", CREME, { ombre: 26 });
+  texte("Chez Bergine", 70, 1385, "italic 700 92px 'Playfair Display'", ROSE, { ombre: 26 });
+  g.restore();
+  p;
+}
+
+/* ─── LA CARTE DE FIN ─── */
+function fin(u, t) {
+  couvrir(IM.m4flou, { z: 1.1 });
+  g.fillStyle = "rgba(20,12,9,.55)"; g.fillRect(0, 0, W, H);
+  lueur(540, 1350, 900, "rgba(255,46,154,.28)");
+  // l'image figée se fait carte
+  const p = rebond(u / 0.7), q = sortie(u / 0.55);
+  const cible = { x: 170, y: 150, w: 740, h: 860 };
+  const x = mix(0, cible.x, q), y = mix(0, cible.y, q), w = mix(W, cible.w, q), h = mix(H, cible.h, q);
+  const rot = mix(0, -0.06, p);
+  g.save(); g.translate(x + w / 2, y + h / 2); g.rotate(rot);
+  g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 60 * q; g.shadowOffsetY = 24 * q;
+  const bord = 22 * q;
+  g.fillStyle = "#FBF6EE"; g.fillRect(-w / 2, -h / 2, w, h); g.shadowColor = "transparent";
+  g.save(); g.beginPath(); g.rect(-w / 2 + bord, -h / 2 + bord, w - 2 * bord, h - 2 * bord - 96 * q); g.clip();
+  g.translate(-w / 2 + bord, -h / 2 + bord);
+  couvrir(IM.m4, { fx: 0.5, fy: 0.48, z: 1.18, w: w - 2 * bord, h: h - 2 * bord - 96 * q });
+  g.restore();
+  g.globalAlpha = q;
+  texte("Jean-Marie, le cuisinier", 0, h / 2 - 38, "italic 600 46px 'Playfair Display'", "#2A1A12", { align: "center" });
+  g.restore();
+  // le tampon de la série, avec le reporter qui parle
+  const st = rebond((u - 1.0) / 0.35);
+  if (st > 0) {
+    g.save(); g.translate(880, 210); g.rotate(-0.25 + 0.15 * Math.sin(t * 0.6)); g.scale(st, st);
+    g.beginPath(); g.arc(0, 0, 132, 0, Math.PI * 2); g.fillStyle = ROSE; g.fill();
+    g.lineWidth = 4; g.strokeStyle = "rgba(255,255,255,.85)"; g.beginPath(); g.arc(0, 0, 118, 0, Math.PI * 2); g.stroke();
+    // le texte en cercle
+    const txt = "FACE AU FANTÔME · ÉPISODE 12 · ";
+    g.font = "800 22px Poppins"; g.fillStyle = "#fff"; g.textAlign = "center";
+    for (let k = 0; k < txt.length; k++) { g.save(); g.rotate((k / txt.length) * Math.PI * 2 + t * 0.25); g.translate(0, -96); g.fillText(txt[k], 0, 8); g.restore(); }
+    g.save(); g.beginPath(); g.arc(0, 0, 76, 0, Math.PI * 2); g.clip();
+    g.fillStyle = "#fff"; g.fill();
+    const o = boucheReporter(t), k = o > 0.55 ? 3 : o > 0.3 ? 2 : o > 0.08 ? 1 : 0, r = IM["r" + k];
+    g.drawImage(r, -r.width * 0.36, -r.height * 0.1, r.width * 0.72, r.height * 0.72);
+    g.restore();
+    g.restore();
+  }
+  // sa bulle : « À demain, et bon appétit ! »
+  const bu = t - tt(34.25);
+  if (bu > 0 && bu < 2.4) {
+    const a = Math.min(1, bu / 0.15, (2.4 - bu) / 0.25);
+    g.save(); g.globalAlpha = a; g.translate(905, 400); g.scale(mix(0.7, 1, sortie(bu / 0.2)), mix(0.7, 1, sortie(bu / 0.2)));
+    rectArrondi(-150, 0, 300, 128, 40); g.fillStyle = "#fff"; g.fill();
+    g.beginPath(); g.moveTo(-30, 2); g.lineTo(-10, -44); g.lineTo(30, 2); g.fill();
+    texte("À demain,", 0, 52, "800 34px Poppins", "#1E1E22", { align: "center" });
+    texte("et bon appétit !", 0, 98, "800 34px Poppins", "#1E1E22", { align: "center" });
+    g.restore();
+  }
+  // ce qu'il y a ce midi, et où
+  const ligne = (d) => sortie((u - d) / 0.35);
+  const L = [
+    [0.55, () => texte("CE MIDI CHEZ BERGINE", 92, 1110, "800 34px Poppins", ROSE, { ls: 6 })],
+    [0.68, () => { texte("Garbure landaise,", 92, 1192, "900 64px Poppins", CREME); texte("magret grillé", 92, 1266, "900 64px Poppins", CREME); }],
+    [0.82, () => texte("19 €", 988, 1268, "150px Anton", ROSE, { align: "right" })],
+    [0.95, () => texte("12 h – 14 h · Rue piétonne, à côté de la halle · Dax", 92, 1340, "600 31px Poppins", "rgba(255,244,230,.85)")],
+  ];
+  for (const [d, f] of L) { const a = ligne(d); if (a <= 0) continue; g.save(); g.globalAlpha = a; g.translate(0, 26 * (1 - a)); f(); g.restore(); }
+  // l'appel, et la signature sonore : le bouton qui bat
+  const cu = sortie((u - 1.25) / 0.35);
+  if (cu > 0) {
+    const bat = t > tt(36.15) && t < tt(36.75) ? 1 + 0.07 * Math.sin(((t - tt(36.15)) / 0.6) * Math.PI) : 1;
+    g.save(); g.globalAlpha = cu; g.translate(W / 2, 1468); g.scale(bat, bat);
+    g.shadowColor = "rgba(255,46,154,.6)"; g.shadowBlur = 50;
+    rectArrondi(-400, -62, 800, 124, 62); g.fillStyle = "#1E1E22"; g.fill(); g.shadowColor = "transparent";
+    g.lineWidth = 6; g.strokeStyle = ROSE; g.stroke();
+    texte("Réserver sur", -150, 18, "800 50px Poppins", "#fff", { align: "center" });
+    const lg = IM.logo, lh = 70, lw2 = lg.width * lh / lg.height;
+    g.drawImage(lg, 30, -lh / 2 - 4, lw2, lh);
+    g.restore();
+  }
+  // les étincelles de la signature
+  const su = t - tt(36.15);
+  if (su > 0 && su < 1.2) {
+    for (let k = 0; k < 16; k++) {
+      const ang = (k / 16) * Math.PI * 2 + hasard(k), d = 300 + 420 * sortie(su / 1.2) * (0.6 + hasard(k + 4) * 0.6);
+      const x2 = W / 2 + Math.cos(ang) * d * 1.1, y2 = 1468 + Math.sin(ang) * d * 0.5;
+      g.save(); g.globalAlpha = 1 - su / 1.2; g.fillStyle = k % 2 ? ROSE : "#FFE3A3";
+      g.translate(x2, y2); g.rotate(ang); g.fillRect(-14, -3, 28, 6); g.restore();
+    }
+  }
+}
+
+/* ─── LA CHRONOLOGIE DES PLANS ─── */
+const m = (k) => IM["m" + k];
+const SEGS = [
+  // 1 · L'ACCROCHE : sa meilleure phrase, sur lui qui tend l'assiette
+  { de: 0, a: 2.55, dessin: (u, t) => {
+    const z = 1.12 + 0.1 * douce(u / 2.55) + 0.08 * Math.pow(borne((u - 2.1) / 0.45), 2);
+    plan(m(4), { fx: 0.52, fy: 0.5, z }); vapeur(t, 560, 1180, 260, 1, 0.8); etalonner();
+    if (u > 2.1) flouDeZoom(m(4), { fx: 0.52, fy: 0.5, z }, (u - 2.1) / 0.45);
+  } },
+  // 2 · LE CLIC : son nom derrière lui
+  { de: 2.55, a: 5.35, sig: true, dessin: (u, t) => titre(u, t) },
+  // 3 · QUESTION 1
+  { de: 5.35, a: tt(6.75), carte: 1 },
+  // 4 · RÉPONSE 1 : aux fourneaux, puis — coupe — plus près
+  { de: tt(6.75), a: tt(8.2), rep: tt(6.75), dessin: (u, t) => { plan(m(1), { fx: 0.42, fy: 0.42, z: 1.08 + 0.05 * u / 1.45 }); vapeur(t, 260, 1500, 220, 1, 0.7); etalonner(); } },
+  { de: tt(8.2), a: tt(10.5), rep: tt(6.75), dessin: (u, t) => { plan(m(1), { fx: 0.3, fy: 0.72, z: 1.5 + 0.06 * u / 2.3 }); vapeur(t, 380, 1500, 300, 1, 0.9); etalonner(); } },
+  // 5 · LE GESTE : ses mains, puis LE RALENTI sur « doucement »
+  { de: tt(10.5), a: tt(13.6), rep: tt(6.75), dessin: (u, t) => {
+    const r = 12.72 - 10.5; // le ralenti commence ici
+    let z = 1.05 + 0.08 * Math.min(u, r) / r, force = 0, vit = 1;
+    if (u > r) { const v = u - r; z = 1.13 + 0.32 * sortie(v / 0.28) + 0.05 * Math.max(0, v - 0.28); force = v < 0.3 ? Math.sin(Math.PI * v / 0.3) : 0; vit = 0.25; }
+    plan(m(2), { fx: 0.5, fy: 0.62, z }); if (force) flouDeZoom(m(2), { fx: 0.5, fy: 0.62, z }, force);
+    vapeur(u > r ? 10.5 + r + (u - r) * 0.25 : t, 540, 1420, 420, vit, 1.2); etalonner(0.26);
+    if (u > r) fuite((u - r) / 0.9, 0.9);
+  } },
+  { de: tt(13.6), a: tt(16.75), rep: tt(6.75), dessin: (u, t) => {
+    const coup = 14.8 - 13.6; // « croustillante » : on se rapproche
+    const z = (u < coup ? 1.62 : 1.85) + 0.04 * u / 3;
+    plan(m(2), { fx: 0.52, fy: 0.7, z }); vapeur(13.6 + u * 0.4, 560, 1520, 380, 0.4, 1.1); etalonner(0.26);
+  } },
+  // 6 · QUESTION 2
+  { de: tt(16.75), a: tt(18.25), carte: 2 },
+  // 7 · RÉPONSE 2 : lui, en relief ; puis les pommes de terre, puis le magret tranché
+  { de: tt(18.25), a: tt(19.58), rep: tt(18.25), dessin: (u, t) => {
+    couvrir(IM.fondAccueil, { z: 1.12, fx: 0.5 - 0.02 * u });
+    g.fillStyle = "rgba(20,12,9,.18)"; g.fillRect(0, 0, W, H);
+    const sc = 1.1 + 0.03 * u / 1.33, lw = IM.lui.width * sc, lh = IM.lui.height * sc;
+    g.drawImage(IM.lui, W - lw + 8 + 14 * u, 420 - 306 * (sc - 1.1) - 6 * u, lw, lh); etalonner(0.18);
+  } },
+  { de: tt(19.58), a: tt(22.02), rep: tt(18.25), dessin: (u, t) => { plan(m(3), { fx: mix(0.25, 0.42, douce(u / 2.44)), fy: 0.42, z: 1.4 }); vapeur(t, 420, 1100, 420, 0.8, 0.9); etalonner(); } },
+  { de: tt(22.02), a: tt(23.72), rep: tt(18.25), dessin: (u, t) => { plan(m(3), { fx: 0.42, fy: 0.78, z: 1.6 + 0.05 * u }); etalonner(); } },
+  { de: tt(23.72), a: tt(25.95), rep: tt(18.25), dessin: (u, t) => {
+    const coup = 25.01 - 23.72; const z = (u < coup ? 1.5 : 1.85) + 0.05 * u / 2.2;
+    plan(m(3), { fx: 0.7, fy: 0.55, z }); vapeur(t, 700, 1200, 300, 0.8, 0.8); etalonner();
+  } },
+  // 8 · LE DÉFI
+  { de: tt(25.95), a: tt(27.95), carte: 3 },
+  // 9 · TROIS MOTS QUI FRAPPENT
+  { de: tt(27.95), a: tt(29.45), rep: tt(27.95), dessin: (u, t) => { const z = t >= tt(28.74) ? 1.95 + 0.06 * (t - tt(28.74)) : 1.6 + 0.1 * u; plan(m(2), { fx: 0.52, fy: 0.68, z }); vapeur(t, 540, 1500, 380, 0.7, 1); etalonner(0.28); } },
+  { de: tt(29.45), a: tt(30.7), rep: tt(27.95), dessin: (u, t) => { const z = t >= tt(29.8) ? 2.0 + 0.06 * (t - tt(29.8)) : 1.7; plan(m(3), { fx: 0.66, fy: 0.56, z }); etalonner(0.28); } },
+  { de: tt(30.7), a: tt(32.95), rep: tt(27.95), dessin: (u, t) => { plan(m(4), { fx: 0.52, fy: 0.46, z: 1.2 + 0.12 * douce(u / 2.25) }); vapeur(t, 560, 1180, 260, 1, 0.8); etalonner(); } },
+  // 10 · LA CARTE DE FIN
+  { de: tt(32.95), a: DUREE + 1, fin: true, dessin: (u, t) => fin(u, t) },
+];
+
+function dessinerSeg(k, t) {
+  const s = SEGS[k], u = t - s.de;
+  if (s.carte) return carteQuestion(s.carte, u, t);
+  s.dessin(u, t);
+}
+
+/** L'IMAGE DE L'INSTANT t. */
+function dessiner(t) {
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.filter = "none"; g.globalCompositeOperation = "source-over";
+  let k = SEGS.findIndex((s) => t >= s.de && t < s.a); if (k < 0) k = SEGS.length - 1;
+  const s = SEGS[k], u = t - s.de;
+  const [sx, sy] = secousse(t);
+  g.save(); g.translate(sx, sy);
+  if (s.carte && u < 0.24 && k > 0) {
+    // ENTRÉE EN COUP DE FOUET : l'image d'avant part à gauche, la carte arrive de droite
+    const e = sortie(u / 0.24);
+    const avant = toile(W, H);
+    dessinerDans(avant, () => dessinerSeg(k - 1, SEGS[k - 1].a - 0.001));
+    const carte = toile(W, H); dessinerDans(carte, () => dessinerSeg(k, t));
+    for (let n = 0; n < 6; n++) {
+      const tr = n * 22 * (1 - e);
+      g.globalAlpha = n ? 0.16 : 1;
+      g.drawImage(avant, -W * e - tr, 0); g.drawImage(carte, W * (1 - e) + tr, 0);
+    }
+    g.globalAlpha = 1;
+  } else if (s.carte && u > s.a - s.de - 0.2 && SEGS[k + 1]) {
+    // SORTIE : la carte fonce vers nous et laisse voir la suite
+    const e = sortie((u - (s.a - s.de - 0.2)) / 0.2);
+    dessinerSeg(k + 1, SEGS[k + 1].de);
+    const carte = toile(W, H); dessinerDans(carte, () => dessinerSeg(k, t));
+    g.save(); g.globalAlpha = 1 - e; g.translate(W / 2, H / 2); g.scale(1 + 0.6 * e, 1 + 0.6 * e); g.drawImage(carte, -W / 2, -H / 2); g.restore();
+  } else dessinerSeg(k, t);
+  g.restore();
+
+  // par-dessus : le cadre ClikMe pendant ses réponses, les mots, les frappes
+  if (s.rep !== undefined && !s.carte) cadre(t, s.rep);
+  if (!s.carte && !s.sig && !s.fin) { sousTitres(t); frappes(t); }
+  // LE CLIC : l'image se fige dans un flash blanc
+  for (const f of [2.55, tt(32.95)]) {
+    if (t >= f - 0.08 && t < f) { g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(0, 0, W, H); }
+    const v = t - f; if (v >= 0 && v < 0.32) { g.fillStyle = `rgba(255,255,255,${Math.pow(1 - v / 0.32, 2)})`; g.fillRect(0, 0, W, H); }
+  }
+  // les frappes ont leur éclair
+  for (const w of FRAPPES_EP) { const v = t - w.a; if (v >= 0 && v < 0.09) { g.fillStyle = `rgba(255,255,255,${0.5 * (1 - v / 0.09)})`; g.fillRect(0, 0, W, H); } }
+  // le grain de la pellicule
+  g.save(); g.globalCompositeOperation = "overlay"; g.globalAlpha = 0.06;
+  const i = Math.floor(t * 10), ox = -Math.floor(hasard(i) * 540), oy = -Math.floor(hasard(i + 1) * 960);
+  for (let x = ox; x < W; x += 540) for (let y = oy; y < H; y += 960) g.drawImage(GRAIN, x, y);
+  g.restore();
+  if (t < tt(33.3)) exemple();
+  else { g.save(); g.globalAlpha = borne((t - tt(33.3)) / 0.4); texte("Exemple · Chez Bergine est un commerce inventé", W / 2, 1600, "600 28px Poppins", "rgba(255,244,230,.6)", { align: "center" }); g.restore(); }
+}
+function dessinerDans(t2, f) { const avant = g; g = t2.getContext("2d"); try { f(); } finally { g = avant; } }
+
+/* ═══ LE SON ═══════════════════════════════════════════════════════════ */
+const SR = 48000;
+async function decoder(url) { const b = await (await fetch(url)).arrayBuffer(); return await new OfflineAudioContext(1, SR, SR).decodeAudioData(b); }
+function enveloppe(buf, ips = 30) {
+  const d = buf.getChannelData(0), pas = Math.floor(buf.sampleRate / ips), out = [];
+  let m = 0;
+  for (let i = 0; i < d.length; i += pas) { let s = 0; for (let j = i; j < Math.min(d.length, i + pas); j++) s += d[j] * d[j]; const r = Math.sqrt(s / pas); out.push(r); m = Math.max(m, r); }
+  return out.map((r) => r / m);
+}
+function picDe(b) { const d = b.getChannelData(0); let p = 0; for (let i = 0; i < d.length; i++) p = Math.max(p, Math.abs(d[i])); return p; }
+const freq = (n) => 440 * Math.pow(2, (n - 69) / 12);
+
+async function mixer(piste = "tout") {
+  const ctx = new OfflineAudioContext(2, Math.ceil(SR * DUREE), SR);
+  const maitre = ctx.createDynamicsCompressor();
+  maitre.threshold.value = -14; maitre.ratio.value = 3; maitre.attack.value = 0.01; maitre.release.value = 0.2;
+  const sortieG = ctx.createGain(); sortieG.gain.value = 0.9; maitre.connect(sortieG); sortieG.connect(ctx.destination);
+  // une réverbération faite maison
+  const ir = ctx.createBuffer(2, SR * 2.2, SR);
+  for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3.2); }
+  const reverb = ctx.createConvolver(); reverb.buffer = ir; const retour = ctx.createGain(); retour.gain.value = 0.32; reverb.connect(retour); retour.connect(maitre);
+
+  // ─── LA VOIX ───
+  const voix = ctx.createGain(); voix.gain.value = 1; if (piste === "tout" || piste === "voix") voix.connect(maitre);
+  const v = SON.voix, pic = picDe(v);
+  voix.gain.value = 0.82 / pic;
+  const zones = []; // où une voix parle : la musique se baisse
+  for (const cl of CLIPS) {
+    const src = ctx.createBufferSource(); src.buffer = v;
+    const env = ctx.createGain(); const d = cl.src[1] - cl.src[0];
+    env.gain.setValueAtTime(0, cl.T); env.gain.linearRampToValueAtTime(1, cl.T + 0.012);
+    env.gain.setValueAtTime(1, cl.T + d - 0.03); env.gain.linearRampToValueAtTime(0, cl.T + d);
+    src.connect(env); env.connect(voix); src.start(cl.T, cl.src[0], d);
+    zones.push([cl.T, cl.T + d]);
+  }
+  for (const { id, T } of PAROLES_REPORTER) {
+    const b = SON[id], src = ctx.createBufferSource(); src.buffer = b;
+    const gg = ctx.createGain(); gg.gain.value = 0.9 / picDe(b);
+    src.connect(gg); if (piste === "tout" || piste === "voix") gg.connect(maitre); src.start(T);
+    zones.push([T, T + b.duration]);
+  }
+
+  // ─── LA MUSIQUE : un groove chaud, 100 battements par minute ───
+  const musique = ctx.createGain(); const filtre = ctx.createBiquadFilter(); filtre.type = "lowpass"; filtre.frequency.value = 18000; filtre.Q.value = 0.8;
+  musique.connect(filtre); if (piste === "tout" || piste === "musique") filtre.connect(maitre);
+  // elle se baisse quand quelqu'un parle
+  musique.gain.setValueAtTime(0.55, 0);
+  for (const [a, b] of zones) { musique.gain.setTargetAtTime(0.16, a - 0.05, 0.05); musique.gain.setTargetAtTime(0.55, b + 0.1, 0.18); }
+  // et s'étouffe sur les cartes, puis repart
+  for (const [a, b] of [[5.35, tt(6.75)], [tt(16.75), tt(18.25)], [tt(25.95), tt(27.95)]]) {
+    filtre.frequency.setValueAtTime(18000, a); filtre.frequency.exponentialRampToValueAtTime(700, a + 0.25);
+    filtre.frequency.setValueAtTime(700, b - 0.3); filtre.frequency.exponentialRampToValueAtTime(18000, b + 0.05);
+  }
+  const DEBUT = 2.55, TEMPS = 0.6, MESURE = 2.4, FIN_GROOVE = tt(36.15);
+  const ACCORDS = [[53, 57, 60, 64, 67], [52, 55, 59, 62, 67], [50, 53, 57, 60, 64], [48, 52, 55, 59, 62]];
+  const BASSES = [41, 40, 38, 36];
+  function rhodes(n, t, dur, vel = 0.12) {
+    for (const [h, a] of [[1, 1], [2, 0.18], [3, 0.06]]) {
+      const o = ctx.createOscillator(); o.type = "sine"; o.frequency.value = freq(n) * h; o.detune.value = (hasard(n * h) - 0.5) * 8;
+      const gg = ctx.createGain(); gg.gain.setValueAtTime(0, t); gg.gain.linearRampToValueAtTime(vel * a, t + 0.008);
+      gg.gain.exponentialRampToValueAtTime(vel * a * 0.35, t + 0.4); gg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      const trem = ctx.createGain(); trem.gain.value = 1;
+      o.connect(gg); gg.connect(musique); gg.connect(reverb); o.start(t); o.stop(t + dur + 0.05);
+    }
+  }
+  function nappe(notes, t, dur, vel = 0.05) {
+    for (const n of notes) for (const det of [-7, 7]) {
+      const o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = freq(n); o.detune.value = det;
+      const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 1200;
+      const gg = ctx.createGain(); gg.gain.setValueAtTime(0, t); gg.gain.linearRampToValueAtTime(vel, t + Math.min(0.8, dur / 3)); gg.gain.setValueAtTime(vel, t + dur * 0.7); gg.gain.linearRampToValueAtTime(0, t + dur);
+      o.connect(f); f.connect(gg); gg.connect(musique); gg.connect(reverb); o.start(t); o.stop(t + dur + 0.05);
+    }
+  }
+  function grosseCaisse(t, vel = 0.9) {
+    const o = ctx.createOscillator(); o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(46, t + 0.12);
+    const gg = ctx.createGain(); gg.gain.setValueAtTime(vel, t); gg.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
+    o.connect(gg); gg.connect(musique); o.start(t); o.stop(t + 0.4);
+  }
+  const bruit = ctx.createBuffer(1, SR, SR); { const d = bruit.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  function souffle(t, dur, type, f, vel, dest = musique, q = 1) {
+    const s = ctx.createBufferSource(); s.buffer = bruit; const fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+    const gg = ctx.createGain(); gg.gain.setValueAtTime(vel, t); gg.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    s.connect(fl); fl.connect(gg); gg.connect(dest); s.start(t, hasard(t) * 0.5, dur + 0.02); return gg;
+  }
+  const claquement = (t, vel = 0.35) => { souffle(t, 0.16, "bandpass", 1600, vel, musique, 0.9).connect(reverb); souffle(t + 0.012, 0.12, "bandpass", 1100, vel * 0.6); };
+  const charleston = (t, vel = 0.08) => souffle(t, 0.05, "highpass", 8000, vel);
+  function basse(n, t, dur) {
+    const o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = freq(n);
+    const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 420;
+    const gg = ctx.createGain(); gg.gain.setValueAtTime(0, t); gg.gain.linearRampToValueAtTime(0.42, t + 0.01); gg.gain.exponentialRampToValueAtTime(0.12, t + dur * 0.8); gg.gain.linearRampToValueAtTime(0, t + dur);
+    o.connect(f); f.connect(gg); gg.connect(musique); o.start(t); o.stop(t + dur + 0.02);
+  }
+  const SANS_BATTERIE = [[5.35, tt(6.75)], [tt(16.75), tt(18.25)], [tt(25.95), tt(27.95)]];
+  const calme = (t) => SANS_BATTERIE.some(([a, b]) => t >= a && t < b);
+  // l'intro : une nappe, puis la montée
+  nappe(ACCORDS[0], 0, 2.6, 0.035);
+  const montee = ctx.createBufferSource(); montee.buffer = bruit; montee.loop = true;
+  const mf = ctx.createBiquadFilter(); mf.type = "bandpass"; mf.Q.value = 2; mf.frequency.setValueAtTime(300, 1.3); mf.frequency.exponentialRampToValueAtTime(6000, 2.46);
+  const mg = ctx.createGain(); mg.gain.setValueAtTime(0, 1.3); mg.gain.linearRampToValueAtTime(0.22, 2.44); mg.gain.linearRampToValueAtTime(0, 2.47);
+  montee.connect(mf); mf.connect(mg); mg.connect(maitre); montee.start(1.3); montee.stop(2.5);
+  for (let mes = 0; DEBUT + mes * MESURE < FIN_GROOVE - 0.01; mes++) {
+    const t0 = DEBUT + mes * MESURE, a = ACCORDS[mes % 4];
+    rhodes(a[0] - 12, t0, 2.3, 0.07); for (const n of a) rhodes(n, t0, 1.9, 0.055);
+    for (const n of a.slice(1)) rhodes(n, t0 + 1.5 * TEMPS, 0.5, 0.035);
+    basse(BASSES[mes % 4], t0, 0.5); basse(BASSES[mes % 4], t0 + 1.5 * TEMPS, 0.25); basse(BASSES[mes % 4] + 7, t0 + 2.5 * TEMPS, 0.3); basse(BASSES[mes % 4], t0 + 3 * TEMPS, 0.5);
+    for (let b = 0; b < 4; b++) {
+      const tb = t0 + b * TEMPS;
+      if (!calme(tb)) { grosseCaisse(tb, b === 0 ? 0.85 : 0.65); if (b % 2) claquement(tb, 0.22); charleston(tb + TEMPS / 2 + 0.02, 0.07); charleston(tb + TEMPS * 0.75 + 0.03, 0.035); }
+    }
+  }
+  // la fin : l'accord tenu, sous la signature
+  nappe(ACCORDS[0], FIN_GROOVE, DUREE - FIN_GROOVE, 0.045);
+  rhodes(ACCORDS[0][0] - 12, FIN_GROOVE, 3.2, 0.08); for (const n of ACCORDS[0]) rhodes(n, FIN_GROOVE, 3.0, 0.05);
+
+  // ─── LES SONS ───
+  const sfx = ctx.createGain(); sfx.gain.value = 0.9; if (piste === "tout" || piste === "sons") sfx.connect(maitre);
+  // LE CLIC : deux déclics d'obturateur et un souffle grave
+  for (const t of [2.55, tt(32.95)]) {
+    souffle(t, 0.02, "highpass", 3500, 0.9, sfx); souffle(t + 0.045, 0.025, "highpass", 2500, 0.7, sfx);
+    const o = ctx.createOscillator(); o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.3);
+    const gg = ctx.createGain(); gg.gain.setValueAtTime(0.9, t); gg.gain.exponentialRampToValueAtTime(0.001, t + 0.5); o.connect(gg); gg.connect(sfx); o.start(t); o.stop(t + 0.55);
+    souffle(t, 0.9, "highpass", 5000, 0.12, sfx).connect(reverb);
+  }
+  // LE COUP DE FOUET des cartes
+  for (const t of [5.35, tt(16.75), tt(25.95)]) {
+    const s = ctx.createBufferSource(); s.buffer = bruit; const fl = ctx.createBiquadFilter(); fl.type = "bandpass"; fl.Q.value = 1.4;
+    fl.frequency.setValueAtTime(400, t - 0.08); fl.frequency.exponentialRampToValueAtTime(5000, t + 0.2);
+    const gg = ctx.createGain(); gg.gain.setValueAtTime(0, t - 0.08); gg.gain.linearRampToValueAtTime(0.5, t + 0.08); gg.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+    s.connect(fl); fl.connect(gg); gg.connect(sfx); s.start(t - 0.08, 0, 0.45);
+    // et une petite cloche quand la question s'affiche
+    for (const [n, d] of [[84, 0], [91, 0.09]]) { const o = ctx.createOscillator(); o.type = "sine"; o.frequency.value = freq(n); const g2 = ctx.createGain(); g2.gain.setValueAtTime(0.0001, t + 0.18 + d); g2.gain.linearRampToValueAtTime(0.12, t + 0.19 + d); g2.gain.exponentialRampToValueAtTime(0.0001, t + 1.1 + d); o.connect(g2); g2.connect(sfx); g2.connect(reverb); o.start(t + 0.18 + d); o.stop(t + 1.2 + d); }
+  }
+  // la sortie des cartes : un souffle qui passe
+  for (const t of [tt(6.75) - 0.2, tt(18.25) - 0.2, tt(27.95) - 0.2]) souffle(t, 0.3, "bandpass", 2500, 0.18, sfx, 0.7);
+  // LE RALENTI : un « vvvoum » grave qui s'étire
+  { const t = tt(12.72); const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(220, t); o.frequency.exponentialRampToValueAtTime(55, t + 0.9);
+    const fl = ctx.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = 600; const gg = ctx.createGain(); gg.gain.setValueAtTime(0, t); gg.gain.linearRampToValueAtTime(0.16, t + 0.08); gg.gain.exponentialRampToValueAtTime(0.001, t + 1.1);
+    o.connect(fl); fl.connect(gg); gg.connect(sfx); gg.connect(reverb); o.start(t); o.stop(t + 1.2); souffle(t, 0.5, "bandpass", 900, 0.2, sfx, 0.6).connect(reverb); }
+  // LES FRAPPES
+  for (const w of FRAPPES_EP) {
+    const t = w.a;
+    const o = ctx.createOscillator(); o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.25);
+    const gg = ctx.createGain(); gg.gain.setValueAtTime(0.5, t); gg.gain.exponentialRampToValueAtTime(0.001, t + 0.6); o.connect(gg); gg.connect(sfx); o.start(t); o.stop(t + 0.65);
+    souffle(t, 0.22, "bandpass", 2200, 0.26, sfx, 0.7).connect(reverb);
+  }
+  // le tampon qui se pose
+  { const t = tt(33.95); const o = ctx.createOscillator(); o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(60, t + 0.15); const gg = ctx.createGain(); gg.gain.setValueAtTime(0.6, t); gg.gain.exponentialRampToValueAtTime(0.001, t + 0.3); o.connect(gg); gg.connect(sfx); o.start(t); o.stop(t + 0.35); }
+  // les lignes de la carte : de petits « pop »
+  for (const d of [0.55, 0.68, 0.82, 0.95, 1.25]) { const t = tt(32.95) + d; const o = ctx.createOscillator(); o.type = "sine"; o.frequency.setValueAtTime(900, t); o.frequency.exponentialRampToValueAtTime(1500, t + 0.05); const gg = ctx.createGain(); gg.gain.setValueAtTime(0.08, t); gg.gain.exponentialRampToValueAtTime(0.001, t + 0.09); o.connect(gg); gg.connect(sfx); o.start(t); o.stop(t + 0.1); }
+  // LA SIGNATURE SONORE : un « clic », puis deux notes claires
+  { const t = tt(36.15); souffle(t, 0.015, "highpass", 4000, 0.7, sfx);
+    for (const [n, d] of [[76, 0.06], [83, 0.24]]) for (const [h, a] of [[1, 0.32], [4, 0.06], [2.01, 0.08]]) {
+      const o = ctx.createOscillator(); o.type = "sine"; o.frequency.value = freq(n) * h; const gg = ctx.createGain();
+      gg.gain.setValueAtTime(0.0001, t + d); gg.gain.linearRampToValueAtTime(a, t + d + 0.005); gg.gain.exponentialRampToValueAtTime(0.0001, t + d + (h === 1 ? 1.6 : 0.4));
+      o.connect(gg); gg.connect(sfx); gg.connect(reverb); o.start(t + d); o.stop(t + d + 1.7);
+    } }
+  const rendu = await ctx.startRendering();
+  // normaliser, et rendre un WAV
+  let p = 0; for (let ch = 0; ch < 2; ch++) { const d = rendu.getChannelData(ch); for (let i = 0; i < d.length; i++) p = Math.max(p, Math.abs(d[i])); }
+  const k = piste === "tout" ? 0.89 / p : 0.5, n = rendu.length, buf = new ArrayBuffer(44 + n * 4), dv = new DataView(buf);
+  const ecr = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+  ecr(0, "RIFF"); dv.setUint32(4, 36 + n * 4, true); ecr(8, "WAVE"); ecr(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 2, true);
+  dv.setUint32(24, SR, true); dv.setUint32(28, SR * 4, true); dv.setUint16(32, 4, true); dv.setUint16(34, 16, true); ecr(36, "data"); dv.setUint32(40, n * 4, true);
+  const L = rendu.getChannelData(0), R = rendu.getChannelData(1);
+  for (let i = 0; i < n; i++) { dv.setInt16(44 + i * 4, Math.max(-1, Math.min(1, L[i] * k)) * 32767, true); dv.setInt16(46 + i * 4, Math.max(-1, Math.min(1, R[i] * k)) * 32767, true); }
+  const octets = new Uint8Array(buf); let s = "";
+  for (let i = 0; i < octets.length; i += 0x8000) s += String.fromCharCode.apply(null, octets.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+/* ═══ LE CHARGEMENT ═══ */
+window.pret = (async () => {
+  const imgs = { m1: "a/m1.jpg", m2: "a/m2.jpg", m3: "a/m3.jpg", m4: "a/m4.jpg", lui: "lui.webp", fondAccueil: "a/fond-accueil.jpg", logo: "a/logo.png", r0: "a/reporter-0.webp", r1: "a/reporter-1.webp", r2: "a/reporter-2.webp", r3: "a/reporter-3.webp" };
+  await Promise.all(Object.entries(imgs).map(([k, s]) => new Promise((ok, ko) => { const i = new Image(); i.onload = () => { IM[k] = i; ok(); }; i.onerror = () => ko(new Error(s)); i.src = s; })));
+  await Promise.all(["340px Anton", "italic 600 80px 'Playfair Display'", "italic 700 80px 'Playfair Display'", "900 76px Poppins", "800 30px Poppins", "600 50px Poppins"].map((f) => document.fonts.load(f)));
+  MOTS = await (await fetch("mots.json")).json();
+  IM.m4flou = flou(IM.m4, 34);
+  GRAIN = fabriquerGrain();
+  preparerMots();
+  SON.voix = await decoder("a/bergine-magret.mp3");
+  for (const p of PAROLES_REPORTER) { SON[p.id] = await decoder(p.src); SON[p.id + "Env"] = enveloppe(SON[p.id]); }
+  return { morceaux: MORCEAUX.length, frappes: FRAPPES_EP.map((w) => [w.m, +w.a.toFixed(2)]) };
+})();
+window.dessiner = dessiner;
+window.DUREE = DUREE;
+window.mixer = mixer;
+</script>
+</body>
+</html>
