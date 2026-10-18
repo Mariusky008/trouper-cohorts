@@ -30,7 +30,7 @@ for f in $migrations $(echo "$migrations" | tail -1); do
 done
 
 echec=0
-for t in reseau equipe factures moitie offres; do
+for t in reseau equipe factures moitie offres signalements; do
   sortie=$(psql -q -v ON_ERROR_STOP=1 -d "$BASE" -f "scripts/essai-echanges-$t.sql" 2>&1 || true)
   ok=$(echo "$sortie" | grep -c 'ok' || true)
   if echo "$sortie" | grep -q 'TOUT EST BON'; then

@@ -16,6 +16,10 @@
 //                                   c'est là, et seulement là, que le crédit est gagné
 //   annuler { bon }               → annule un bon encore réservé (celui qui l'a pris ; celui qui
 //                                   le fournit seulement s'il ne doit rien)
+//   signaler { bon, motif, detail? }
+//                                 → celui qui a pris un bon dit qu'il n'a pas été honoré (fonction
+//                                   `echanges_signaler`) : un bon encore réservé est annulé ; deux
+//                                   commerces différents → les offres de l'autre passent en pause
 //   inviter { prenom }            → un membre de plus dans son équipe : son lien personnel (`/e/<jeton>`)
 //   retirer { membre }            → son lien ne marche plus ; ce qu'il a pris reste dû par le commerce
 //   factures                      → « Mes factures » : émises, reçues, en attente, et le relevé de ses échanges
@@ -67,6 +71,7 @@ import {
   ALPHABET_CODE,
   MAX_MEMBRES,
   MAX_OFFRES,
+  MOTIFS_SIGNALEMENT,
   PAR_MOIS,
   PAR_PERSONNE,
   SEUIL_VILLE,
@@ -79,12 +84,16 @@ import {
   type BonReel,
   type EtatEchanges,
   type MembreEquipe,
+  type MotifSignalement,
   type OffreReelle,
   type Paiement,
   type VilleDuReseau,
 } from "@/lib/echanges/echanges";
 
 export const dynamic = "force-dynamic";
+
+/** Une raison de signalement telle que la base la rend, ramenée aux quatre connues. */
+const motifLu = (m: string): MotifSignalement => (MOTIFS_SIGNALEMENT.find((x) => x.cle === m)?.cle ?? "autre");
 
 const str = (v: unknown) => String(v ?? "").trim();
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -243,6 +252,29 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
   if (em) return absente(em) ? vide : null;
   const membres = (lm ?? []) as LigneMembre[];
   const prenomDe = new Map(membres.map((m) => [m.id, m.prenom]));
+  /* « SIGNALER » (`20261025120000_echanges_signalements.sql`) : les bons qu'il a déjà
+     signalés, et SA pause s'il en a une. Sans la migration, rien de tout ça. */
+  const signales = new Set<string>();
+  let pause: EtatEchanges["pause"] = null;
+  {
+    const { data: ls, error: es } = await supabase.from("human_echanges_signalements").select("bon_id").eq("signale_par", moi.id).limit(2000);
+    if (!es) for (const r of (ls ?? []) as Array<{ bon_id: string }>) signales.add(r.bon_id);
+    const { data: lz, error: ez } = await supabase.from("human_echanges_pauses").select("depuis").eq("site_id", moi.id).is("levee_le", null).maybeSingle();
+    const z = lz as { depuis: string } | null;
+    if (!ez && z) {
+      const { data: lmo } = await supabase
+        .from("human_echanges_signalements")
+        .select("motif, cree_le")
+        .eq("fournisseur_id", moi.id)
+        .eq("statut", "ouvert")
+        .order("cree_le", { ascending: false })
+        .limit(20);
+      pause = {
+        depuis: z.depuis,
+        motifs: ((lmo ?? []) as Array<{ motif: string; cree_le: string }>).map((r) => ({ motif: motifLu(r.motif), le: r.cree_le })),
+      };
+    }
+  }
   /* SES FACTURES (le responsable seulement) : a-t-il donné ses infos ? Sans la migration, rien. */
   let factures: EtatEchanges["factures"] = null;
   if (!membre) {
@@ -342,6 +374,7 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
     expire: b.expire_le,
     ...(b.membre_id && prenomDe.get(b.membre_id) ? { qui: prenomDe.get(b.membre_id) } : {}),
     ...(b.valide_par && prenomDe.get(b.valide_par) ? { validePar: prenomDe.get(b.valide_par) } : {}),
+    ...(signales.has(b.id) ? { signale: true } : {}),
   });
   const aPiedDe = (id: string) => {
     const d = distance(id);
@@ -450,6 +483,7 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
     pris: bons.filter((b) => b.preneur_id === moi.id && b.pour !== "client" && (!membre || b.membre_id === membre.id)).map((b) => enBon(b, b.fournisseur_id)),
     recus: bons.filter((b) => b.fournisseur_id === moi.id && b.pour !== "client" && b.statut !== "expire").map((b) => enBon(b, b.preneur_id)),
     factures,
+    pause,
   };
 }
 
@@ -500,7 +534,7 @@ export async function POST(request: Request) {
     slug = str(site.slug);
     membre = { id: m.id, prenom: m.prenom };
     // CE QU'UN MEMBRE PEUT FAIRE ; le reste est au responsable.
-    if (!["etat", "prendre", "annuler", "valider"].includes(action)) {
+    if (!["etat", "prendre", "annuler", "valider", "signaler"].includes(action)) {
       return NextResponse.json({ error: "C'est le responsable du commerce qui s'en occupe." }, { status: 403 });
     }
   } else {
@@ -648,6 +682,14 @@ export async function POST(request: Request) {
 
   if (action === "pause") {
     const actif = p?.actif === true;
+    if (actif) {
+      // EN PAUSE APRÈS DEUX SIGNALEMENTS : c'est ClikMe qui la lève, après en avoir parlé avec lui.
+      const { data: lz, error: ez } = await supabase.from("human_echanges_pauses").select("depuis").eq("site_id", moi.id).is("levee_le", null).maybeSingle();
+      if (!ez && lz) {
+        const etat = await lireEtat(supabase, moi, membre);
+        if (etat) return refus(etat, "Tes offres sont en pause après deux signalements. ClikMe te contacte pour en parler, puis lève la pause.");
+      }
+    }
     if (!actif) {
       // TANT QU'IL DOIT, SON OFFRE RESTE VISIBLE : c'est elle qui fait baisser sa dette.
       const { etat, erreur } = await avant();
@@ -791,6 +833,44 @@ export async function POST(request: Request) {
       .eq("statut", "reserve");
     if (error) return NextResponse.json({ error: "Annulation impossible." }, { status: 500 });
     return repondre({ ok: true, message: "Bon annulé." });
+  }
+
+  /* ── SIGNALER UN BON NON HONORÉ ─────────────────────────────────────────── */
+  if (action === "signaler") {
+    const bon = str(p?.bon);
+    const motif = str(p?.motif);
+    if (!UUID.test(bon)) return NextResponse.json({ error: "Bon inconnu." }, { status: 400 });
+    if (!MOTIFS_SIGNALEMENT.some((m) => m.cle === motif)) return NextResponse.json({ error: "Dis-nous ce qui s'est passé." }, { status: 400 });
+    const detail = str(p?.detail).replace(/\s+/g, " ").slice(0, 500);
+    const { data: lu } = await supabase.from("human_echanges_bons").select("preneur_id, membre_id, mode, prix").eq("id", bon).maybeSingle();
+    const b = lu as { preneur_id?: string; membre_id?: string | null; mode?: string; prix?: number } | null;
+    if (!b || b.preneur_id !== moi.id) return NextResponse.json({ error: "Bon inconnu." }, { status: 404 });
+    // UN MEMBRE NE SIGNALE QUE LES BONS QU'IL A PRIS LUI-MÊME.
+    if (membre && b.membre_id !== membre.id) return NextResponse.json({ error: "C'est le responsable du commerce qui s'en occupe." }, { status: 403 });
+    const { data, error } = await supabase.rpc("echanges_signaler", { p_preneur: moi.id, p_bon: bon, p_motif: motif, p_detail: detail || null });
+    if (error) {
+      return absente(error)
+        ? NextResponse.json({ error: "Le signalement n'est pas encore ouvert. Écris-nous directement." }, { status: 503 })
+        : NextResponse.json({ error: "Signalement impossible pour l'instant." }, { status: 500 });
+    }
+    const r = (data ?? {}) as { ok?: boolean; raison?: string; annule?: boolean; pause?: boolean };
+    if (!r.ok) {
+      const pourquoi: Record<string, string> = {
+        deja: "Tu as déjà signalé ce bon : ClikMe s'en occupe.",
+        annule: "Ce bon est annulé : il n'y a rien à signaler.",
+        trop_tard: "Ce bon a plus de 60 jours : écris-nous directement.",
+        motif: "Dis-nous ce qui s'est passé.",
+        bon: "Bon inconnu.",
+      };
+      return repondre({ ok: false, message: pourquoi[str(r.raison)] ?? "Signalement impossible." });
+    }
+    const credits = b.mode === "moitie" ? 0 : Number(b.prix) || 0;
+    const message = r.annule
+      ? credits
+        ? `Merci, c'est signalé. Ton bon est annulé : tes ${credits} crédits te reviennent.`
+        : "Merci, c'est signalé. Ton bon est annulé."
+      : "Merci, c'est signalé. ClikMe regarde ça avec lui.";
+    return repondre({ ok: true, message, ...(r.pause ? { pause: true } : {}) });
   }
 
   /* ── SON ÉQUIPE ────────────────────────────────────────────────────────── */

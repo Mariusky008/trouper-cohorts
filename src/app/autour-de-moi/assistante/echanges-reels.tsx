@@ -25,7 +25,7 @@
 // carte de l'accueil dit « bientôt ».
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
-import { CLE_ACCES_COMPTOIR, chezNom, enCredits, enEuros, sansMoitie, type BonReel, type EtatEchanges, type ModePaiement } from "@/lib/echanges/echanges";
+import { CLE_ACCES_COMPTOIR, chezNom, enCredits, enEuros, motifEnMots, sansMoitie, signalable, type BonReel, type EtatEchanges, type ModePaiement } from "@/lib/echanges/echanges";
 import {
   ChoixDuPaiement,
   CommentCaMarche,
@@ -48,6 +48,7 @@ import { FeteDuMatch, StylesMagie, jouer, vibrer } from "./echanges-magie";
 import { PanneauEquipe, StylesEquipe } from "./echanges-equipe";
 import { PanneauFactures, type ReponseFactures } from "./echanges-factures";
 import { PanneauOffres, StylesOffres } from "./echanges-offres";
+import { FeuilleSignaler, StylesSignaler } from "./echanges-signaler";
 
 const ROUTE = "/api/site-internet/pro/echanges";
 
@@ -215,6 +216,7 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
       <StylesVille />
       <StylesEquipe />
       <StylesOffres />
+      <StylesSignaler />
       {!(etat?.pret && mien && !modifier) && <EnTeteEchange onRetour={onRetour} />}
       {!etat ? (
         <div className="ec-fin-pile">
@@ -292,6 +294,7 @@ function PageReelle({
   const [choisie, setChoisie] = useState<Offre | null>(null);
   const [recu, setRecu] = useState<BonReel | null>(null);
   const [ouvert, setOuvert] = useState<string | null>(null);
+  const [aSignaler, setASignaler] = useState<BonReel | null>(null);
   const [panneau, setPanneau] = useState<Panneau | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const [code, setCode] = useState("");
@@ -374,7 +377,21 @@ function PageReelle({
 
   return (
     <section className="ec-page">
-      {!etat.mien?.actif && (
+      {etat.pause ? (
+        <div className="ec-pause-sig" role="status">
+          <b>Tes offres sont en pause</b>
+          <span>Deux commerçants ont signalé un bon qui n’a pas été honoré. ClikMe te contacte pour en parler, puis lève la pause.</span>
+          {etat.pause.motifs.length > 0 && (
+            <ul>
+              {etat.pause.motifs.slice(0, 4).map((m, i) => (
+                <li key={i}>
+                  {motifEnMots(m.motif)} · le {dateCourte(m.le)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : !etat.mien?.actif && (
         <div className="ec-regle">
           Ton offre est en pause : les autres commerçants ne la voient pas, et tu ne peux pas prendre chez eux.{" "}
           <button type="button" className="cz-lien" disabled={envoi} onClick={() => void agir("pause", { actif: true })}>
@@ -550,9 +567,22 @@ function PageReelle({
               ouvert={ouvert === b.id}
               onOuvrir={() => setOuvert((x) => (x === b.id ? null : b.id))}
               onAnnuler={envoi ? undefined : () => void agir("annuler", { bon: b.id })}
+              onSignaler={() => setASignaler(b)}
             />
           ))}
         </Feuille>
+      )}
+
+      {aSignaler && (
+        <FeuilleSignaler
+          bon={aSignaler}
+          envoi={envoi}
+          onFermer={() => setASignaler(null)}
+          onEnvoyer={async (motif, detail) => {
+            const r = await agir("signaler", { bon: aSignaler.id, motif, detail });
+            if (!r.error) setASignaler(null);
+          }}
+        />
       )}
 
       {panneau === "offre" && etat.mien && (
@@ -670,7 +700,20 @@ function PageReelle({
 }
 
 /** Un bon qu'il a pris : son QR (l'adresse de la page du bon), son code, son état. */
-export function BonVue({ b, ouvert, onOuvrir, onAnnuler }: { b: BonReel; ouvert: boolean; onOuvrir: () => void; onAnnuler?: () => void }) {
+export function BonVue({
+  b,
+  ouvert,
+  onOuvrir,
+  onAnnuler,
+  onSignaler,
+}: {
+  b: BonReel;
+  ouvert: boolean;
+  onOuvrir: () => void;
+  onAnnuler?: () => void;
+  /** « Un souci avec ce bon ? » : il n'a pas été honoré. */
+  onSignaler?: () => void;
+}) {
   const lien = typeof window === "undefined" ? `/bon/${b.code}` : `${window.location.origin}/bon/${b.code}`;
   const qr = useQr(ouvert && b.statut === "reserve" ? lien : null);
   const etatDuBon =
@@ -737,6 +780,17 @@ export function BonVue({ b, ouvert, onOuvrir, onAnnuler }: { b: BonReel; ouvert:
                     : `Pas utilisé en 30 jours : les ${enCredits(b.prix)} te sont revenus.`
                   : "Ce bon a été annulé : rien n’a été dépensé."}
             </p>
+          )}
+          {/* UN SOUCI : il n'a pas été servi, ou pas comme annoncé. */}
+          {b.signale ? (
+            <p className="ec-signale">Signalé ✓ ClikMe s’en occupe.</p>
+          ) : (
+            onSignaler &&
+            signalable(b) && (
+              <button type="button" className="ec-signaler" onClick={onSignaler}>
+                Un souci avec ce bon ? Signaler
+              </button>
+            )
           )}
         </div>
       )}

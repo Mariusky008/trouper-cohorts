@@ -77,6 +77,7 @@ import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, debloquerSon, ecoute
 import { Feuille, reduirePhoto, useQr } from "./echanges-communs";
 import { StylesVille } from "./echanges-ville";
 import { ChoixPaiementOffre, PanneauOffres, StylesOffres, legendePaiement } from "./echanges-offres";
+import { FeuilleSignaler, StylesSignaler } from "./echanges-signaler";
 
 export { Feuille, useQr };
 
@@ -323,6 +324,7 @@ export function EchangesComptoir({ commerce, dossier, onRetour }: { commerce: Co
       <StylesVille />
       <StylesEquipe />
       <StylesOffres />
+      <StylesSignaler />
       {!etat.mien || modifier ? (
         <>
           <EnTeteEchange onRetour={onRetour} />
@@ -873,6 +875,9 @@ function Echanger({
   const [recu, setRecu] = useState<Bon | null>(null);
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [nouvelle, setNouvelle] = useState<string | null>(null);
+  /** « SIGNALER » EN DÉMONSTRATION : la même feuille, rien ne part. */
+  const [aSignaler, setASignaler] = useState<Bon | null>(null);
+  const [signales, setSignales] = useState<string[]>([]);
   const [panneau, setPanneau] = useState<Panneau | null>(null);
   /** La scène « C'est à toi ! » qui précède le QR, et le « +60 € » qui monte du solde. */
   const [fete, setFete] = useState<{ bon: Bon; offre: Offre } | null>(null);
@@ -1012,9 +1017,44 @@ function Echanger({
         <Feuille titre="Mes bons" onFermer={() => setPanneau(null)}>
           {etat.bons.length === 0 && <p className="ec-gris">Tu n’as encore rien pris. Glisse une carte vers la droite pour prendre une offre.</p>}
           {etat.bons.map((b) => (
-            <BonPris key={b.id} b={b} ouvert={ouvert === b.id} onOuvrir={() => setOuvert((x) => (x === b.id ? null : b.id))} onScanner={() => scanner(b.id)} />
+            <BonPris
+              key={b.id}
+              b={b}
+              ouvert={ouvert === b.id}
+              onOuvrir={() => setOuvert((x) => (x === b.id ? null : b.id))}
+              onScanner={() => scanner(b.id)}
+              signale={signales.includes(b.id)}
+              onSignaler={() => setASignaler(b)}
+            />
           ))}
         </Feuille>
+      )}
+
+      {aSignaler && (
+        <FeuilleSignaler
+          bon={{
+            id: aSignaler.id,
+            code: aSignaler.code,
+            titre: aSignaler.titre,
+            prix: aSignaler.prix,
+            photo: aSignaler.photo,
+            statut: aSignaler.scanne ? "utilise" : "reserve",
+            mode: aSignaler.mode ?? "credits",
+            aRegler: aSignaler.mode === "moitie" ? moitieDe(aSignaler.prix) : 0,
+            credits: aSignaler.mode === "moitie" ? 0 : aSignaler.prix,
+            autre: aSignaler.commerce,
+            autreVille: aSignaler.ville,
+            cree: new Date(aSignaler.le).toISOString(),
+            expire: new Date(aSignaler.le + 30 * 86400_000).toISOString(),
+          }}
+          envoi={false}
+          onFermer={() => setASignaler(null)}
+          onEnvoyer={() => {
+            setSignales((l) => [...l, aSignaler.id]);
+            setASignaler(null);
+            setNouvelle("Exemple : en vrai, ton signalement part chez ClikMe. Un bon encore réservé est annulé, et tes crédits te reviennent.");
+          }}
+        />
       )}
 
       {panneau === "offre" && (
@@ -1482,7 +1522,21 @@ export function CarteOffre({ o, dessous = false, style }: { o: Offre; dessous?: 
   );
 }
 
-function BonPris({ b, ouvert, onOuvrir, onScanner }: { b: Bon; ouvert: boolean; onOuvrir: () => void; onScanner?: () => void }) {
+function BonPris({
+  b,
+  ouvert,
+  onOuvrir,
+  onScanner,
+  signale,
+  onSignaler,
+}: {
+  b: Bon;
+  ouvert: boolean;
+  onOuvrir: () => void;
+  onScanner?: () => void;
+  signale?: boolean;
+  onSignaler?: () => void;
+}) {
   const qr = useQr(ouvert ? `ClikMe · Bon ${b.code} · ${b.titre} (${b.prix} €) ${chezNom(b.commerce)} · Exemple` : null);
   return (
     <article className={`ec-recu${ouvert ? " ouvert" : ""}`}>
@@ -1521,6 +1575,15 @@ function BonPris({ b, ouvert, onOuvrir, onScanner }: { b: Bon; ouvert: boolean; 
                 </button>
               )}
             </>
+          )}
+          {signale ? (
+            <p className="ec-signale">Signalé ✓ ClikMe s’en occupe.</p>
+          ) : (
+            onSignaler && (
+              <button type="button" className="ec-signaler" onClick={onSignaler}>
+                Un souci avec ce bon ? Signaler
+              </button>
+            )
           )}
         </div>
       )}

@@ -9,7 +9,8 @@
 // retirer quelqu'un. Enfin la facture d'échange (`20261021120000_echanges_factures.sql`) : elle attend
 // les infos du fournisseur, se fait d'un coup quand il les donne, puis toute seule à chaque validation ;
 // TVA ou franchise ; la page de la facture ; la Suisse n'a que le relevé. Puis « jamais plein tarif »
-// (la moitié prix), et « 3 offres max et limite par offre » (`20261023120000_echanges_offres.sql`).
+// (la moitié prix), « 3 offres max et limite par offre » (`20261023120000_echanges_offres.sql`), et
+// « Signaler » un bon non honoré, avec la pause à deux commerces (`20261025120000_echanges_signalements.sql`).
 //
 //   node scripts/faux-supabase.mjs 54321
 //   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=faux NEXT_PUBLIC_SUPABASE_ANON_KEY=faux \
@@ -360,6 +361,54 @@ ok(r.ok === false && r.raison === "paiement", `la coupe à moitié prix : « ${r
 await fetch(`${F}/human_echanges_offres?site_id=eq.${ID.alice}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ metier: "Librairie" }) });
 r = await appel(ALICE, "autre", { titre: "Un marque-page brodé", prix: 6, parMois: 8, paiement: "moitie" });
 ok(r.ok && r.etat.mien.autres[0]?.paiement === "credits", "Alice (librairie) ajoute un marque-page à −50 % seulement : enregistré en échange seulement");
+
+/* ── « SIGNALER » UN BON NON HONORÉ (`20261025120000_echanges_signalements.sql`) ──────── */
+console.log("\n— Signaler un bon non honoré —");
+const GLACIER = "glacier-dax";
+ID.glacier = "ffffffff-0000-4000-8000-000000000006";
+await fetch(`${F}/human_vitrine_sites`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify([site(ID.glacier, GLACIER, "Le Glacier des Arènes", "Dax", "Glacier", 43.7099, -1.0528, "3 rue des Arènes, 40100 Dax, France")]) });
+r = await appel(GLACIER, "offre", { titre: "Une glace deux boules", prix: 10, parMois: 8, accepte: true });
+ok(r.ok && r.etat.mien.actif, "le Glacier publie une glace (10 €, 8 par mois)");
+r = await appel(LOU, "prendre", { fournisseur: ID.glacier, mode: "moitie" });
+const bonLou = r.etat?.pris.find((b) => b.titre === "Une glace deux boules");
+ok(r.ok && bonLou?.statut === "reserve", "Lou prend une glace à moitié prix");
+m = await appelMembre(jetonLea, "signaler", { bon: bonLou.id, motif: "refuse" });
+ok(m.statut === 403 && /responsable/.test(m.error), `Léa ne signale pas un bon pris par Lou (${m.error})`);
+r = await appel(LOU, "signaler", { bon: bonLou.id, motif: "pas-une-raison" });
+ok(r.statut === 400, `une raison inconnue : « ${r.error} »`);
+r = await appel(LOU, "signaler", { bon: bonLou.id, motif: "refuse", detail: "Fermé à 15 h un mardi" });
+ok(r.ok && /c'est signalé/.test(r.message) && /annulé/.test(r.message) && !r.etat.pris.some((b) => b.id === bonLou.id), `Lou le signale : « ${r.message} » (le bon réservé est annulé)`);
+r = await appel(LOU, "signaler", { bon: bonLou.id, motif: "refuse" });
+ok(r.ok === false && /déjà signalé/.test(r.message), `le même bon une 2e fois : « ${r.message} »`);
+r = await appel(BERGINE, "signaler", { bon: bonLou.id, motif: "refuse" });
+ok(r.statut === 404, "Bergine ne signale pas le bon de Lou");
+e = (await appel(FLEURS, "etat")).etat;
+ok(e.offres.some((o) => o.fournisseur === ID.glacier), "un seul commerce l'a signalé : le Glacier reste visible");
+r = await appel(BERGINE, "prendre", { fournisseur: ID.glacier, mode: "moitie" });
+const bonBergine = r.etat?.pris.find((b) => b.titre === "Une glace deux boules");
+r = await appel(BERGINE, "signaler", { bon: bonBergine.id, motif: "ferme" });
+ok(r.ok && r.pause === true, `Bergine le signale à son tour : « ${r.message} »`);
+e = (await appel(GLACIER, "etat")).etat;
+ok(e.pause && e.pause.motifs.length === 2 && e.mien.actif === false && !JSON.stringify(e.pause).includes("Bergine"), `deux commerces : le Glacier est en pause, il voit les raisons (${e.pause?.motifs.map((x) => x.motif).join(", ")}), pas qui`);
+e = (await appel(FLEURS, "etat")).etat;
+ok(!e.offres.some((o) => o.fournisseur === ID.glacier), "en pause : Fleurs ne voit plus ses offres");
+r = await appel(GLACIER, "pause", { actif: true });
+ok(r.ok === false && /deux signalements/.test(r.message) && r.etat.mien.actif === false, `il ne peut pas se remettre en ligne : « ${r.message} »`);
+r = await appel(GLACIER, "offre", { titre: "Une glace trois boules", prix: 12, parMois: 8, accepte: true });
+ok(r.etat?.mien.titre === "Une glace trois boules" && r.etat.mien.actif === false, "il modifie son offre : elle reste hors ligne");
+r = await appel(FOURNIL, "prendre", { fournisseur: ID.glacier, mode: "moitie" });
+ok(r.ok === false, `personne ne peut lui prendre (« ${r.message} »)`);
+await fetch(`${F}/rpc/echanges_lever_pause`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ p_site: ID.glacier, p_decision: "rejete" }) });
+e = (await appel(GLACIER, "etat")).etat;
+ok(!e.pause && e.mien.actif === true, "ClikMe lève la pause : son offre revient en ligne");
+r = await appel(FOURNIL, "prendre", { fournisseur: ID.glacier, mode: "moitie" });
+const bonFournil = r.etat?.pris.find((b) => b.titre === "Une glace trois boules");
+r = await appel(GLACIER, "valider", { code: bonFournil.code });
+r = await appel(FOURNIL, "signaler", { bon: bonFournil.id, motif: "different" });
+const vu = r.etat?.pris.find((b) => b.id === bonFournil.id);
+ok(r.ok && vu?.statut === "utilise" && vu.signale === true && /regarde ça/.test(r.message), `un bon servi « pas comme annoncé » : signalé, rien d'annulé, marqué « signalé » (« ${r.message} »)`);
+e = (await appel(GLACIER, "etat")).etat;
+ok(!e.pause && e.mien.actif, "après la levée, le compte repart de zéro : un signalement ne remet pas en pause");
 
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTout est bon.");
 process.exit(echecs ? 1 : 0);

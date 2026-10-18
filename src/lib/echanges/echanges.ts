@@ -157,7 +157,27 @@ export type BonReel = {
   qui?: string;
   /** Le prénom du membre de l'équipe qui l'a validé au comptoir (vide : le responsable). */
   validePar?: string;
+  /** Déjà signalé par celui qui l'a pris (un bon ne se signale qu'une fois). */
+  signale?: boolean;
 };
+
+/**
+ * « SIGNALER » UN BON NON HONORÉ — voir `20261025120000_echanges_signalements.sql`.
+ * Celui qui a pris le bon dit ce qui s'est passé ; après deux commerces
+ * différents, les offres de l'autre passent en pause jusqu'à ce que ClikMe
+ * en ait parlé avec lui.
+ */
+export type MotifSignalement = "refuse" | "different" | "ferme" | "autre";
+export const MOTIFS_SIGNALEMENT: Array<{ cle: MotifSignalement; mot: string }> = [
+  { cle: "refuse", mot: "Il n’a pas voulu servir le bon" },
+  { cle: "different", mot: "Ce n’était pas ce qui était annoncé" },
+  { cle: "ferme", mot: "Fermé ou injoignable aux horaires" },
+  { cle: "autre", mot: "Autre chose" },
+];
+export const motifEnMots = (m: string) => MOTIFS_SIGNALEMENT.find((x) => x.cle === m)?.mot ?? "Autre chose";
+/** Un bon se signale dans les 60 jours, s'il n'est pas annulé. */
+export const signalable = (b: Pick<BonReel, "statut" | "cree" | "signale">, maintenant = Date.now()) =>
+  !b.signale && b.statut !== "annule" && maintenant - Date.parse(b.cree) <= 60 * 86400_000;
 
 /** Une personne de son équipe, vue par le responsable. */
 export type MembreEquipe = {
@@ -225,4 +245,6 @@ export type EtatEchanges = {
   recus: BonReel[];
   /** Ses factures d'échange (le responsable) : son pays (« fr » seulement), et s'il a donné ses infos. Null sans la migration. */
   factures: { pays: string; infos: boolean } | null;
+  /** SES OFFRES EN PAUSE après deux signalements : depuis quand, et ce qui a été dit (sans dire qui). */
+  pause?: { depuis: string; motifs: Array<{ motif: MotifSignalement; le: string }> } | null;
 };

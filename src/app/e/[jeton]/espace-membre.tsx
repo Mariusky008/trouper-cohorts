@@ -8,6 +8,7 @@ import type { FamilleDouble } from "@/lib/direct/double-metiers";
 import { CLE_ACCES_COMPTOIR, JOURS_VALIDITE, PAR_PERSONNE, chezNom, deNom, type BonReel, type EtatEchanges, type ModePaiement } from "@/lib/echanges/echanges";
 import { ChoixDuPaiement, Feuille, PastilleCredit, Pile, StylesEchanges, visageDe, type Offre } from "@/app/autour-de-moi/assistante/echanges-comptoir";
 import { BonVue, StylesReels } from "@/app/autour-de-moi/assistante/echanges-reels";
+import { FeuilleSignaler, StylesSignaler } from "@/app/autour-de-moi/assistante/echanges-signaler";
 import { StylesVille, VilleFermee, messageInvitation } from "@/app/autour-de-moi/assistante/echanges-ville";
 import { BoutonSon, FeteDuMatch, StylesMagie, ecouterLePremierGeste, jouer, vibrer } from "@/app/autour-de-moi/assistante/echanges-magie";
 
@@ -112,6 +113,7 @@ export function EspaceMembre({ jeton, prenom, commerce }: { jeton: string; preno
       <StylesMagie />
       <StylesVille />
       <StylesReels />
+      <StylesSignaler />
       <div className="ec">
         {!(etat?.pret) && <TeteMembre visage={visage} prenom={prenom} nom={commerce.nom} />}
         {!etat ? (
@@ -239,6 +241,7 @@ function PageMembre({
   const [fete, setFete] = useState<{ bon: BonReel; offre: Offre } | null>(null);
   const [recu, setRecu] = useState<BonReel | null>(null);
   const [ouvert, setOuvert] = useState<string | null>(null);
+  const [aSignaler, setASignaler] = useState<BonReel | null>(null);
   const [panneau, setPanneau] = useState<Panneau | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const [code, setCode] = useState("");
@@ -430,9 +433,22 @@ function PageMembre({
               ouvert={ouvert === b.id}
               onOuvrir={() => setOuvert((x) => (x === b.id ? null : b.id))}
               onAnnuler={envoi ? undefined : () => void agir("annuler", { bon: b.id })}
+              onSignaler={() => setASignaler(b)}
             />
           ))}
         </Feuille>
+      )}
+
+      {aSignaler && (
+        <FeuilleSignaler
+          bon={aSignaler}
+          envoi={envoi}
+          onFermer={() => setASignaler(null)}
+          onEnvoyer={async (motif, detail) => {
+            const r = await agir("signaler", { bon: aSignaler.id, motif, detail });
+            if (!r.error) setASignaler(null);
+          }}
+        />
       )}
 
       {panneau === "valider" && (

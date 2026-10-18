@@ -77,6 +77,9 @@ const DEFAUTS = {
   human_echanges_membres: () => ({ id: randomUUID(), cree_le: maintenant(), active_le: null, retire_le: null }),
   // LA FACTURE D'ÉCHANGE — `…_echanges_factures.sql`.
   human_echanges_facturation: () => ({ capital: null, immatriculation: null, tva_intra: null, franchise: false, taux: null, nature: "biens", maj_le: maintenant() }),
+  // « SIGNALER » UN BON NON HONORÉ — `…_echanges_signalements.sql`.
+  human_echanges_signalements: () => ({ id: randomUUID(), detail: null, statut: "ouvert", cree_le: maintenant(), traite_le: null }),
+  human_echanges_pauses: () => ({ depuis: maintenant(), offre_active_avant: true, levee_le: null }),
 };
 const CLES = {
   human_conversations: ["id"],
@@ -93,7 +96,16 @@ const CLES = {
   human_echanges_cadeaux: ["id"],
   human_echanges_membres: ["id"],
   human_echanges_facturation: ["site_id"],
+  human_echanges_signalements: ["id"],
+  human_echanges_pauses: ["site_id"],
 };
+
+/** Le déclencheur `echanges_pause_garde` : en pause après deux signalements, une offre ne se remet pas en ligne. */
+function gardePause(table) {
+  if (table !== "human_echanges_offres") return;
+  const enPause = new Set(lignes("human_echanges_pauses").filter((z) => !z.levee_le).map((z) => z.site_id));
+  for (const o of lignes(table)) if (o.actif && enPause.has(o.site_id)) o.actif = false;
+}
 
 /** Un bon d'échange neuf, comme la table le remplit (30 jours de validité). */
 function nouveauBon(champs) {
@@ -227,6 +239,7 @@ async function rest(req, res, url, table) {
         else lignes(table).push({ ...(DEFAUTS[table]?.() ?? {}), ...d });
         sortie.push(deja ?? lignes(table)[lignes(table).length - 1]);
       }
+      gardePause(table);
       if (!representation) return repondre(res, 201, undefined);
       return repondre(res, 201, sortie.map((r) => projeter(r, select)));
     }
@@ -235,6 +248,7 @@ async function rest(req, res, url, table) {
       if (cles && lignes(table).some((r) => cles.every((k) => String(r[k]) === String(n[k]))))
         return repondre(res, 409, { code: "23505", message: "duplicate key value violates unique constraint" });
     lignes(table).push(...neuves);
+    gardePause(table);
     if (!representation) return repondre(res, 201, undefined);
     const sortie = neuves.map((r) => projeter(r, select));
     return repondre(res, 201, objet ? sortie[0] : sortie);
@@ -242,6 +256,7 @@ async function rest(req, res, url, table) {
   if (req.method === "PATCH") {
     const touchees = lignes(table).filter(garder);
     for (const r of touchees) Object.assign(r, donnees);
+    gardePause(table);
     if (!representation) return repondre(res, 204, undefined);
     return repondre(res, 200, touchees.map((r) => projeter(r, select)));
   }
@@ -373,6 +388,46 @@ function echanges(nom, a) {
       n++;
     }
     return n;
+  }
+  // « SIGNALER » (`echanges_signaler`) : celui qui a pris le bon, une fois, dans les 60 jours ; un bon
+  // réservé est annulé ; deux commerces différents depuis la dernière levée → pause.
+  if (nom === "echanges_signaler") {
+    if (!["refuse", "different", "ferme", "autre"].includes(a.p_motif)) return { ok: false, raison: "motif" };
+    const b = bons.find((x) => x.id === a.p_bon);
+    if (!b || b.preneur_id !== a.p_preneur) return { ok: false, raison: "bon" };
+    const sig = lignes("human_echanges_signalements");
+    if (sig.some((x) => x.bon_id === b.id)) return { ok: false, raison: "deja" };
+    if (b.statut === "annule") return { ok: false, raison: "annule" };
+    if (Date.now() - Date.parse(b.cree_le) > 60 * 86400000) return { ok: false, raison: "trop_tard" };
+    const s = { ...DEFAUTS.human_echanges_signalements(), bon_id: b.id, signale_par: a.p_preneur, fournisseur_id: b.fournisseur_id, motif: a.p_motif, detail: a.p_detail || null };
+    sig.push(s);
+    let annule = false;
+    if (b.statut === "reserve") Object.assign(b, { statut: "annule", annule_par: "preneur", annule_le: maintenant() }), (annule = true);
+    const pauses = lignes("human_echanges_pauses");
+    const z = pauses.find((x) => x.site_id === b.fournisseur_id);
+    const depuisLevee = z?.levee_le ? Date.parse(z.levee_le) : -Infinity;
+    const combien = new Set(sig.filter((x) => x.fournisseur_id === b.fournisseur_id && x.statut !== "rejete" && Date.parse(x.cree_le) > depuisLevee && Date.now() - Date.parse(x.cree_le) <= 90 * 86400000).map((x) => x.signale_par)).size;
+    let pause = false;
+    if (combien >= 2 && !(z && !z.levee_le)) {
+      const o = lignes("human_echanges_offres").find((x) => x.site_id === b.fournisseur_id);
+      const ligne = { site_id: b.fournisseur_id, depuis: maintenant(), offre_active_avant: o ? Boolean(o.actif) : true, levee_le: null };
+      if (z) Object.assign(z, ligne);
+      else pauses.push(ligne);
+      if (o) Object.assign(o, { actif: false, maj_le: maintenant() });
+      pause = true;
+    }
+    return { ok: true, signalement: s, annule, pause, signalements: combien };
+  }
+  if (nom === "echanges_lever_pause") {
+    if (!["fonde", "rejete"].includes(a.p_decision)) return { ok: false, raison: "decision" };
+    let traites = 0;
+    for (const x of lignes("human_echanges_signalements")) if (x.fournisseur_id === a.p_site && x.statut === "ouvert") Object.assign(x, { statut: a.p_decision, traite_le: maintenant() }), traites++;
+    const z = lignes("human_echanges_pauses").find((x) => x.site_id === a.p_site && !x.levee_le);
+    if (!z) return { ok: true, levee: false, traites };
+    z.levee_le = maintenant();
+    const o = lignes("human_echanges_offres").find((x) => x.site_id === a.p_site);
+    if (o) Object.assign(o, { actif: z.offre_active_avant, maj_le: maintenant() });
+    return { ok: true, levee: true, traites };
   }
   return undefined;
 }
@@ -527,7 +582,7 @@ http
       }
       // L'ÉCHANGE ENTRE COMMERÇANTS : les mêmes règles que les fonctions SQL
       // (`echanges_expirer`, `echanges_prendre`, `echanges_offrir`), sans les verrous.
-      const rpc = /^\/rest\/v1\/rpc\/(echanges_[a-z]+)$/.exec(url.pathname);
+      const rpc = /^\/rest\/v1\/rpc\/(echanges_[a-z_]+)$/.exec(url.pathname);
       if (rpc && req.method === "POST") {
         const a = JSON.parse((await corps(req)).toString() || "{}");
         const r = echanges(rpc[1], a);
