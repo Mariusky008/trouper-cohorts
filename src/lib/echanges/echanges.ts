@@ -58,6 +58,8 @@ export function codeNormalise(brut: string): string {
 export type ModePaiement = "credits" | "moitie";
 /** Ce que l'acheteur règle en euros, sur place, à moitié prix. */
 export const moitieDe = (prix: number) => Math.round(prix * 50) / 100;
+/** « 50 crédits », « 1 crédit » : les crédits ont leur unité, pour ne jamais se confondre avec des euros (1 crédit vaut 1 €). */
+export const enCredits = (n: number) => `${n}\u00a0crédit${Math.abs(n) > 1 ? "s" : ""}`;
 /** « 22,50 € », mais « 25 € » tout rond. */
 export const enEuros = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(2).replace(".", ",")}\u00a0€`;
 /**

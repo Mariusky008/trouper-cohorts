@@ -30,7 +30,7 @@
 // Partagé par la démonstration (`echanges-comptoir.tsx`) et le vrai comptoir
 // (`echanges-reels.tsx`).
 import { useEffect, useRef, useSyncExternalStore } from "react";
-import { chezNom, enEuros } from "@/lib/echanges/echanges";
+import { chezNom, enCredits, enEuros } from "@/lib/echanges/echanges";
 
 /* ═══ LE SON ══════════════════════════════════════════════════════════════ */
 const CLE_MUET = "clikme-echanges-muet";
@@ -291,7 +291,7 @@ export function FeteDuMatch({
         <p className="mg-quoi">
           <b>{titre}</b>
           <span>
-            {chezNom(commerce)} · {aRegler !== undefined ? `${enEuros(aRegler)} au lieu de ${prix} €, à régler sur place` : `${prix} € avec tes crédits`}
+            {chezNom(commerce)} · {aRegler !== undefined ? `${enEuros(aRegler)} au lieu de ${prix} €, à régler sur place` : `${enCredits(prix)} (valeur ${prix} €)`}
           </span>
         </p>
         <button type="button" className="mg-go" onClick={onQr}>

@@ -25,7 +25,7 @@
 // carte de l'accueil dit « bientôt ».
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
-import { CLE_ACCES_COMPTOIR, chezNom, enEuros, sansMoitie, type BonReel, type EtatEchanges, type ModePaiement } from "@/lib/echanges/echanges";
+import { CLE_ACCES_COMPTOIR, chezNom, enCredits, enEuros, sansMoitie, type BonReel, type EtatEchanges, type ModePaiement } from "@/lib/echanges/echanges";
 import {
   ChoixDuPaiement,
   CommentCaMarche,
@@ -512,7 +512,7 @@ function PageReelle({
               <span>
                 <b>{b.autre}</b>
                 <em>
-                  {b.titre} · {b.mode === "moitie" ? `à moitié prix : encaisse ${enEuros(b.aRegler)} sur place` : `${b.prix} € de crédit à gagner`} · jusqu’au {dateCourte(b.expire)}
+                  {b.titre} · {b.mode === "moitie" ? `à moitié prix : encaisse ${enEuros(b.aRegler)} sur place` : `${enCredits(b.prix)} à gagner`} · jusqu’au {dateCourte(b.expire)}
                 </em>
               </span>
               <button type="button" className="cz-lien" disabled={envoi || compte.du > 0} onClick={() => void agir("annuler", { bon: b.id })}>
@@ -530,7 +530,7 @@ function PageReelle({
                 <span>
                   <b>{b.autre}</b>
                   <em>
-                    {b.titre} · {b.mode === "moitie" ? `${enEuros(b.aRegler)} encaissés (à moitié prix)` : `+${b.prix} €`}
+                    {b.titre} · {b.mode === "moitie" ? `${enEuros(b.aRegler)} encaissés (à moitié prix)` : `+${enCredits(b.prix)}`}
                     {b.validePar ? ` · validé par ${b.validePar}` : ""}
                   </em>
                 </span>
@@ -618,7 +618,7 @@ function PageReelle({
             <ChoixDuPaiement
               prix={choisie.prix}
               reste={compte.aDepenser}
-              apres={duApres > 0 ? `Avec tes crédits, tu devras ${duApres} € au réseau, ${soitEnProduits(mien, famille, duApres)}, à rendre en ton produit.` : ""}
+              apres={duApres > 0 ? `Avec tes crédits, tu devras ${enCredits(duApres)} au réseau, ${soitEnProduits(mien, famille, duApres)}, à rendre en ton produit.` : ""}
               sansMoitie={choisie.sansMoitie}
               paiement={choisie.paiement}
               occupe={envoi}
@@ -656,7 +656,7 @@ function PageReelle({
             <p className="ec-gris ec-centre">
               {recu.mode === "moitie"
                 ? `À moitié prix : tu régleras ${enEuros(recu.aRegler)} sur place. Tes crédits ne bougent pas. Tu retrouves ce bon dans « Mes bons ».`
-                : `Ces ${recu.prix} € sont déjà déduits de ce que tu peux dépenser. Tu retrouves ce bon dans « Mes bons ».`}
+                : `Ces ${enCredits(recu.prix)} sont déjà retirés de ton solde. Tu retrouves ce bon dans « Mes bons ».`}
             </p>
             <button type="button" className="cz-go" onClick={() => setRecu(null)}>
               C’est noté
@@ -694,7 +694,7 @@ export function BonVue({ b, ouvert, onOuvrir, onAnnuler }: { b: BonReel; ouvert:
           <b>{b.titre}</b>
           <em>
             {b.autre}
-            {b.autreVille ? ` · ${b.autreVille}` : ""} · {b.mode === "moitie" ? `à moitié prix : ${enEuros(b.aRegler)}` : `${b.prix} € de crédit`}
+            {b.autreVille ? ` · ${b.autreVille}` : ""} · {b.mode === "moitie" ? `à moitié prix : ${enEuros(b.aRegler)}` : enCredits(b.prix)}
           </em>
           <small className={b.statut === "utilise" ? "fait" : ""}>
             {b.qui ? `Pris par ${b.qui} · ` : ""}
@@ -717,7 +717,7 @@ export function BonVue({ b, ouvert, onOuvrir, onAnnuler }: { b: BonReel; ouvert:
               <p>
                 {b.mode === "moitie"
                   ? `Présente ce code ${chezNom(b.autre)} et règle-lui ${enEuros(b.aRegler)} sur place : il le scanne, ou il le tape dans son comptoir.`
-                  : `Présente ce code ${chezNom(b.autre)} : il le scanne avec son téléphone, ou il le tape dans son comptoir. Il gagne alors ${b.prix} €.`}
+                  : `Présente ce code ${chezNom(b.autre)} : il le scanne avec son téléphone, ou il le tape dans son comptoir. Il gagne alors ${enCredits(b.prix)}.`}
               </p>
               {onAnnuler && (
                 <button type="button" className="cz-lien" onClick={onAnnuler}>
@@ -730,11 +730,11 @@ export function BonVue({ b, ouvert, onOuvrir, onAnnuler }: { b: BonReel; ouvert:
               {b.statut === "utilise"
                 ? b.mode === "moitie"
                   ? `Validé : tu as réglé ${enEuros(b.aRegler)} ${chezNom(b.autre)}, à moitié prix.`
-                  : `Validé : ${b.autre} a gagné ${b.prix} €.`
+                  : `Validé : ${b.autre} a gagné ${enCredits(b.prix)}.`
                 : b.statut === "expire"
                   ? b.mode === "moitie"
                     ? "Pas utilisé en 30 jours : il n’est plus valable."
-                    : `Pas utilisé en 30 jours : les ${b.prix} € te sont revenus.`
+                    : `Pas utilisé en 30 jours : les ${enCredits(b.prix)} te sont revenus.`
                   : "Ce bon a été annulé : rien n’a été dépensé."}
             </p>
           )}

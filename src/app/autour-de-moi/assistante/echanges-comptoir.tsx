@@ -62,6 +62,7 @@ import {
   accepte,
   chezNom,
   decouvertDe as decouvertDeBase,
+  enCredits,
   enEuros,
   moitieDe,
   sansMoitie,
@@ -820,7 +821,7 @@ export function EnTeteEchange({ onRetour, children }: { onRetour?: () => void; c
   );
 }
 
-/** « Crédit : 100 € » — ce qu'il peut dépenser ; ce qu'il doit s'y voit aussi, et le « +60 € » gagné y monte. */
+/** « 🪙 100 crédits » — ce qu'il peut dépenser ; ce qu'il doit s'y voit aussi, et le « +60 » gagné y monte. */
 export function PastilleCredit({
   montant,
   du = 0,
@@ -834,9 +835,10 @@ export function PastilleCredit({
 }) {
   return (
     <button type="button" className="ec-solde" onClick={onOuvrir}>
-      <span>🪙 Crédit :</span>
-      <b key={montant}>{montant}&nbsp;€</b>
-      {du > 0 && <i>dois {du}&nbsp;€</i>}
+      <span aria-hidden="true">🪙</span>
+      <b key={montant}>{montant}</b>
+      <span>crédit{montant > 1 ? "s" : ""}</span>
+      {du > 0 && <i>dois {du}</i>}
       {gain && <GainQuiMonte key={gain.cle} montant={gain.n} />}
     </button>
   );
@@ -891,7 +893,7 @@ function Echanger({
     if (!voisin) return;
     const t = window.setTimeout(() => {
       changer((e) => (e.premier ? e : { ...e, premier: voisin.nom, gagne: e.gagne + mien.prix }));
-      setNouvelle(`🎉 ${voisin.prenom} (${voisin.nom}) a pris ${nomDuMien(mien)} chez toi. Tu as scanné son code : tu as gagné ${mien.prix} €.`);
+      setNouvelle(`🎉 ${voisin.prenom} (${voisin.nom}) a pris ${nomDuMien(mien)} chez toi. Tu as scanné son code : tu as gagné ${enCredits(mien.prix)}.`);
       setGain({ n: mien.prix, cle: Date.now() });
       jouer("piece");
       vibrer([20, 40, 20]);
@@ -1054,7 +1056,7 @@ function Echanger({
             <ChoixDuPaiement
               prix={choisie.prix}
               reste={reste}
-              apres={duApres > 0 ? `Avec tes crédits, tu devras ${duApres} € au réseau, ${soitEnProduits(mien, famille, duApres)}, à rendre en ton produit.` : ""}
+              apres={duApres > 0 ? `Avec tes crédits, tu devras ${enCredits(duApres)} au réseau, ${soitEnProduits(mien, famille, duApres)}, à rendre en ton produit.` : ""}
               sansMoitie={choisie.sansMoitie}
               paiement={choisie.paiement}
               onPayer={(mode) => prendre(choisie, mode)}
@@ -1090,7 +1092,7 @@ function Echanger({
             <p className="ec-gris ec-centre">
               {recu.mode === "moitie"
                 ? `À moitié prix : tu régleras ${enEuros(moitieDe(recu.prix))} sur place. Tes crédits ne bougent pas. Tu retrouves ce bon dans « Mes bons ».`
-                : `Ces ${recu.prix} € sont déjà déduits de ce que tu peux dépenser. Tu retrouves ce bon dans « Mes bons ».`}
+                : `Ces ${enCredits(recu.prix)} sont déjà retirés de ton solde. Tu retrouves ce bon dans « Mes bons ».`}
             </p>
             <button type="button" className="cz-go" onClick={() => setRecu(null)}>
               C’est noté
@@ -1240,7 +1242,7 @@ export function ChoixDuPaiement({
   onPayer: (mode: ModePaiement) => void;
 }) {
   const assez = reste >= prix;
-  const enCredits = accepte(paiement, "credits");
+  const parCredits = accepte(paiement, "credits");
   const aMoitie = accepte(paiement, "moitie") && !sansMoitie;
   /* LES CRÉDITS EN AMBRE AVEC UNE PIÈCE 🪙, LES EUROS EN ROSE AVEC UN BILLET 💶 —
      « on ne comprend pas en une seconde » : les deux s'écrivaient « € », côte à
@@ -1249,26 +1251,27 @@ export function ChoixDuPaiement({
     <div className="ec-payer">
       <h3>Comment tu le paies ?</h3>
       {bloque && <p className="ec-calcul petit">{bloque}</p>}
-      <button type="button" className="ec-payer-b credits" disabled={!enCredits || !assez || occupe || Boolean(bloque)} onClick={() => onPayer("credits")}>
+      <button type="button" className="ec-payer-b credits" disabled={!parCredits || !assez || occupe || Boolean(bloque)} onClick={() => onPayer("credits")}>
         <span className="ec-payer-i" aria-hidden="true">
           🪙
         </span>
         <span>
           <b>Avec tes crédits</b>
           <small>
-            {!enCredits
+            {!parCredits
               ? "Il le propose à moitié prix seulement."
               : assez
-                ? `Tu ne sors pas d’argent\u00a0: c’est pris sur ton crédit. Il te restera ${reste - prix}\u00a0€.`
-                : manque || `Ton crédit ne suffit pas\u00a0: il te manque ${prix - reste}\u00a0€.`}
+                ? `Tu ne sors pas d’argent. Il te restera ${enCredits(reste - prix)}.`
+                : manque || `Pas assez de crédits\u00a0: il t’en manque ${prix - reste}.`}
           </small>
         </span>
         <span className="ec-payer-m">
-          <strong>{prix}&nbsp;€</strong>
-          <em>de crédit</em>
+          <strong>{prix}</strong>
+          <em>crédit{prix > 1 ? "s" : ""}</em>
+          <small>valeur {prix}&nbsp;€</small>
         </span>
       </button>
-      {enCredits && assez && apres && <p className="ec-calcul petit">{apres}</p>}
+      {parCredits && assez && apres && <p className="ec-calcul petit">{apres}</p>}
       <p className="ec-payer-ou" aria-hidden="true">
         ou
       </p>
@@ -1283,10 +1286,11 @@ export function ChoixDuPaiement({
               ? "Pas chez une librairie\u00a0: prix unique du livre."
               : !aMoitie
                 ? "Il le propose en échange seulement."
-                : "Tu paies en euros, sur place. Ton crédit ne bouge pas."}
+                : "Tu paies en euros, sur place. Tes crédits ne bougent pas."}
           </small>
         </span>
         <span className="ec-payer-m">
+          <s>{prix}&nbsp;€</s>
           <strong>{enEuros(moitieDe(prix))}</strong>
           <em>à payer</em>
         </span>
@@ -1408,8 +1412,9 @@ export function Pile({
    prend toute la carte, comme une story ; le commerçant en haut, le « −50 % »
    en macaron ; en bas, sur un dégradé, combien de fois elle a été réservée et
    ce qu'il en reste ce mois-ci (« pour montrer la communauté »), le titre en
-   grand, et ses deux prix, chacun sa couleur : 🪙 avec ses crédits, 💶 à payer
-   sur place. Sans photo, son fantôme. */
+   grand, et ses deux prix, chacun sa couleur et son unité : 🪙 « 50 crédits
+   (valeur 50 €) », 💶 « 50 € barré, 25 € à payer sur place ». Sans photo, son
+   fantôme. */
 export function CarteOffre({ o, dessous = false, style }: { o: Offre; dessous?: boolean; style?: CSSProperties }) {
   const echangeSeul = o.sansMoitie || o.paiement === "credits";
   const moitieSeule = !echangeSeul && o.paiement === "moitie";
@@ -1454,16 +1459,19 @@ export function CarteOffre({ o, dessous = false, style }: { o: Offre; dessous?: 
           {!moitieSeule && (
             <span className="ec-tarif credits">
               <small>🪙 {echangeSeul ? "Échange seulement" : "Tes crédits"}</small>
-              <b>{o.prix}&nbsp;€</b>
-              <em>pris sur ton crédit</em>
+              <b>
+                {o.prix}
+                <span>crédit{o.prix > 1 ? "s" : ""}</span>
+              </b>
+              <em>valeur {o.prix}&nbsp;€</em>
             </span>
           )}
           {!echangeSeul && (
             <span className="ec-tarif moitie">
               <small>💶 {moitieSeule ? "Moitié prix seulement" : "Moitié prix"}</small>
               <b>
+                <s>{o.prix}&nbsp;€</s>
                 {enEuros(moitieDe(o.prix))}
-                {moitieSeule && <s>{o.prix}&nbsp;€</s>}
               </b>
               <em>à payer sur place</em>
             </span>
@@ -1485,7 +1493,7 @@ function BonPris({ b, ouvert, onOuvrir, onScanner }: { b: Bon; ouvert: boolean; 
           <b>{b.titre}</b>
           <em>
             {b.commerce}
-            {b.ville ? ` · ${b.ville}` : ""} · {b.mode === "moitie" ? `à moitié prix : ${enEuros(moitieDe(b.prix))}` : `${b.prix} € de crédit`}
+            {b.ville ? ` · ${b.ville}` : ""} · {b.mode === "moitie" ? `à moitié prix : ${enEuros(moitieDe(b.prix))}` : enCredits(b.prix)}
           </em>
           <small className={b.scanne ? "fait" : ""}>{b.scanne ? "Utilisé ✓" : "Réservé, en attente de ton passage"}</small>
         </span>
@@ -1498,14 +1506,14 @@ function BonPris({ b, ouvert, onOuvrir, onScanner }: { b: Bon; ouvert: boolean; 
           <b>{b.code}</b>
           {b.scanne ? (
             <p>
-              {b.mode === "moitie" ? `Scanné : tu as réglé ${enEuros(moitieDe(b.prix))} ${chezNom(b.commerce)}.` : `Scanné : ${b.commerce} a gagné ${b.prix} €.`}
+              {b.mode === "moitie" ? `Scanné : tu as réglé ${enEuros(moitieDe(b.prix))} ${chezNom(b.commerce)}.` : `Scanné : ${b.commerce} a gagné ${enCredits(b.prix)}.`}
             </p>
           ) : (
             <>
               <p>
                 {b.mode === "moitie"
                   ? `Présente ce code ${chezNom(b.commerce)} et règle-lui ${enEuros(moitieDe(b.prix))} sur place : il le scanne, c’est tout.`
-                  : `Présente ce code ${chezNom(b.commerce)} : il le scanne, et il gagne ${b.prix} €, à dépenser chez n’importe quel commerçant.`}
+                  : `Présente ce code ${chezNom(b.commerce)} : il le scanne, et il gagne ${enCredits(b.prix)}, à dépenser chez n’importe quel commerçant.`}
               </p>
               {onScanner && (
                 <button type="button" className="ec-scan" onClick={onScanner}>
@@ -1645,7 +1653,7 @@ export function StylesEchanges() {
 @keyframes ec-pouls{from{transform:scale(1.15);}to{transform:none;}}
 .ec-gros em{font-style:normal;font-size:13.5px;color:var(--gris);line-height:1.4;}
 .ec-gros strong{color:var(--creme);}
-/* « Crédit : 100 € », en haut à droite : le détail s'ouvre d'un geste. */
+/* « 🪙 100 crédits », en haut à droite : le détail s'ouvre d'un geste. */
 .ec-solde{position:relative;display:inline-flex;align-items:baseline;gap:5px;min-width:0;height:38px;margin-left:auto;padding:0 14px;
   border-radius:999px;border:1px solid rgba(245,162,58,.5);background:rgba(245,162,58,.12);color:var(--creme);white-space:nowrap;
   line-height:36px;}
@@ -1718,8 +1726,9 @@ export function StylesEchanges() {
 .ec-tarif{display:flex;flex-direction:column;gap:1px;min-width:0;padding:8px 11px 9px;border-radius:16px;
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}
 .ec-tarif small{font-size:11.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.ec-tarif b{display:flex;align-items:baseline;gap:7px;font-family:var(--font-clikme),sans-serif;font-size:25px;font-weight:900;line-height:1.1;}
-.ec-tarif b s{font-size:14px;font-weight:700;color:rgba(255,244,230,.6);}
+.ec-tarif b{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:6px;font-family:var(--font-clikme),sans-serif;font-size:25px;font-weight:900;line-height:1.1;}
+.ec-tarif b span{font-size:15px;font-weight:800;}
+.ec-tarif b s{font-size:15px;font-weight:700;color:rgba(255,244,230,.6);text-decoration-thickness:2px;}
 .ec-tarif em{font-style:normal;font-size:11.5px;font-weight:700;color:rgba(255,244,230,.82);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ec-tarif.credits{background:rgba(70,42,8,.55);border:1.5px solid rgba(245,162,58,.85);}
 .ec-tarif.credits small,.ec-tarif.credits b{color:var(--ambre);}
@@ -1738,6 +1747,8 @@ export function StylesEchanges() {
 .ec-payer-m{display:flex;flex-direction:column;align-items:flex-end;}
 .ec-payer-m strong{font-family:var(--font-clikme),sans-serif;font-size:23px;font-weight:900;line-height:1.05;white-space:nowrap;}
 .ec-payer-m em{font-style:normal;font-size:11.5px;font-weight:800;color:var(--gris);white-space:nowrap;}
+.ec-payer-m small{font-size:11px;font-weight:700;color:var(--gris);opacity:.8;white-space:nowrap;}
+.ec-payer-m s{font-size:13px;font-weight:700;color:var(--gris);text-decoration-thickness:2px;}
 .ec-payer-i{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;font-size:22px;}
 .ec-payer-b.credits{border-color:var(--ambre);background:linear-gradient(135deg,rgba(245,162,58,.26),rgba(245,162,58,.07));}
 .ec-payer-b.credits .ec-payer-i{background:rgba(245,162,58,.3);}
