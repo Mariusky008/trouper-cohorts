@@ -223,4 +223,4 @@ create policy "profiles_update_own" on public.profiles
 1. Lancer la requête d'audit (étape 1).
 2. Traiter d'abord les tables PII de la 1ʳᵉ liste qui ressortent en `rls_enabled = false` (impact maximal).
 3. Pour chaque table du front, écrire la policy scopée avant d'activer RLS, et **tester l'app** (login, dashboard, chat, proofs) après chaque lot.
-4. Vérifier le **Security Advisor** du dashboard Supabase (Database → Advisors) qui liste automatiquement les tables sans RLS — il existe déjà une migration `20240218_fix_security_advisor.sql`, signe que ça a été partiellement traité une fois.
+4. Vérifier le **Security Advisor** du dashboard Supabase (Database → Advisors) qui liste automatiquement les tables sans RLS — il existe déjà une migration `20240218000003_fix_security_advisor.sql`, signe que ça a été partiellement traité une fois.

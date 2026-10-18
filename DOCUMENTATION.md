@@ -77,8 +77,8 @@ Le système a évolué pour supporter deux types de programmes distincts :
 - **`analytics_events`** : Logs d'activité, utilisé notamment pour les demandes de Joker ("Founder Call").
 
 ### Scripts Importants (`supabase/migrations/`)
-- `20240212_add_program_type.sql` : Ajout du support multi-programmes.
-- `20240218_add_proof_type_to_steps.sql` : Ajout du support des preuves granulaires.
+- `20240212000001_add_program_type.sql` : Ajout du support multi-programmes.
+- `20240218000001_add_proof_type_to_steps.sql` : Ajout du support des preuves granulaires.
 - `seed_mission_templates.sql` : Contenu initial du programme Entrepreneur (J1 mis à jour avec preuves).
 
 ---
