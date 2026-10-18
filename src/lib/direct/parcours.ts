@@ -113,6 +113,16 @@ export type Evenement =
    * Voir `/admin/humain/surprises`.
    */
   | "surprise"
+  /**
+   * QUATRE GESTES QUI PARTAIENT ET QUE PERSONNE NE RECEVAIT — l'aperçu les
+   * envoie (l'avis du matin, la tournée du fantôme, l'arrivée, la vidéo de la
+   * voix) mais ni ce type ni le filtre de la route ne les connaissaient : ils
+   * tombaient sans trace. Même défaut, même correction que `republication`.
+   */
+  | "avis-matin"
+  | "tour"
+  | "arrivee"
+  | "video"
   | "fin";
 
 type Ligne = { evenement: Evenement; valeur?: number; contexte?: string };

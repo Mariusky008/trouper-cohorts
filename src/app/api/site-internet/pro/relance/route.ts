@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 // Plafond quotidien de relances (campagnes) par établissement. Sur-solliciter
 // fait fuir les clients ET fait flaguer le numéro : on garde ça bas et honnête.
-export const RELANCE_DAILY_CAP = 3;
+const RELANCE_DAILY_CAP = 3;
 
 export async function POST(request: Request) {
   let payload: Record<string, unknown> | null = null;

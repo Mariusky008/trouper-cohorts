@@ -29,7 +29,7 @@ const s = (v: unknown) => String(v ?? "").trim();
  * quelqu'un qui vient de taper le sien correctement est le meilleur moyen qu'il
  * n'en laisse aucun.
  */
-export function telephoneNormalise(brut: unknown): string {
+function telephoneNormalise(brut: unknown): string {
   const t = s(brut).replace(/[\s.\-()]/g, "");
   if (!t) return "";
   if (/^0[1-9]\d{8}$/.test(t)) return `+33${t.slice(1)}`;

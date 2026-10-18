@@ -155,7 +155,7 @@ import {
   poserSurLEcran,
   RIEN_A_INSTALLER,
 } from "@/lib/direct/installer";
-import { CarteSwipe, StylesDirect } from "@/components/direct/carte-swipe";
+import { CarteSwipe, StylesDirect, type CarteDirect } from "@/components/direct/carte-swipe";
 // L'ECRAN DE DEPART DE LA DEMO — ses cinq maquettes. Il vit dans son propre
 // fichier parce que c'est un ecran entier : le poser ici, dans dix-neuf mille
 // lignes, aurait rendu les deux illisibles.
@@ -9863,9 +9863,10 @@ export function ApercuHabitant({
                     const t = Date.now();
                     if (t - dernierAppui.current < 300) {
                       dernierAppui.current = 0;
-                      if (!suivis.includes(sommet.id)) {
+                      // UN COMMERCE, PAS UN ÉVÉNEMENT DE LA VILLE : on ne « suit » pas une soirée.
+                      if (dessus && !suivis.includes(dessus.id)) {
                         lancerLeCoeur();
-                        suivreCeCommerce(sommet);
+                        suivreCeCommerce(dessus);
                       }
                       return;
                     }
@@ -13174,7 +13175,7 @@ export function ApercuHabitant({
                         <b>{salon.annonce ?? salon.sujet}</b>
                         <em>
                           {salon.prix && <u>{salon.prix}</u>}
-                          {flashDuSalon?.prixBarre && <s>{flashDuSalon.prixBarre}</s>}
+                          {flashDuSalon && dessusCarte?.prixBarre && <s>{dessusCarte.prixBarre}</s>}
                         </em>
                         <i>
                           📍 {salon.distance ?? ""} {salon.ou ? `· ${salon.ou}` : ""}

@@ -5,6 +5,7 @@ import { CockpitDark } from "@/components/dashboard/cockpit-dark";
 import { getMyBuddies } from "@/lib/data/buddy";
 import { getBuddyHistory } from "@/actions/buddy";
 import { AlertCircle, Trophy } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 function computeDayIndex(startDate: string | null) {
   if (!startDate) return null;

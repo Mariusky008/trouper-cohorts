@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 
+type Parametres = Record<string, string | string[] | undefined>;
 type DaxLandingPageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Parametres>;
 };
 
-function toQueryString(searchParams: DaxLandingPageProps["searchParams"]): string {
+function toQueryString(searchParams: Parametres | undefined): string {
   if (!searchParams) return "";
   const query = new URLSearchParams();
   for (const [key, rawValue] of Object.entries(searchParams)) {
@@ -20,7 +21,7 @@ function toQueryString(searchParams: DaxLandingPageProps["searchParams"]): strin
   return serialized ? `?${serialized}` : "";
 }
 
-export default function DaxLandingPage({ searchParams }: DaxLandingPageProps) {
-  const query = toQueryString(searchParams);
+export default async function DaxLandingPage({ searchParams }: DaxLandingPageProps) {
+  const query = toQueryString(await searchParams);
   redirect(`/privilege/dax${query}`);
 }

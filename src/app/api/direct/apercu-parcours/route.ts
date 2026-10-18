@@ -74,6 +74,11 @@ const EVENEMENTS = new Set([
   "duel",
   // 🎁 Les surprises du Fantôme — voir `lib/direct/parcours.ts`.
   "surprise",
+  // Envoyés par l'aperçu, et jusqu'ici jetés : voir `lib/direct/parcours.ts`.
+  "avis-matin",
+  "tour",
+  "arrivee",
+  "video",
   "fin",
 ]);
 

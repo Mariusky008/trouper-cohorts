@@ -51,7 +51,18 @@ export function ParcoursRestaurant({
   const c0 = commerce ? avecSaVitrine(avecSaJournee(commerce, carteDuPaquet(commerce), journee), vitrines) : undefined;
   const c =
     c0 && plat
-      ? { ...c0, menu: { ...c0.menu, plat: plat.nom, ...(plat.photo ? { photo: plat.photo } : {}), ...(plat.prix ? { prix: plat.prix } : {}) } }
+      ? {
+          ...c0,
+          menu: {
+            description: "",
+            prix: "",
+            photo: "",
+            ...c0.menu,
+            plat: plat.nom,
+            ...(plat.photo ? { photo: plat.photo } : {}),
+            ...(plat.prix ? { prix: plat.prix } : {}),
+          },
+        }
       : c0;
   if (!c || !estUnRestaurant(c)) return <ParcoursTable commerce={commerce} onFermer={onFermer} />;
   const tenue = tenueDu(c);

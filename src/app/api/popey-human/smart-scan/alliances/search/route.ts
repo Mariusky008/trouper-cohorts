@@ -38,8 +38,9 @@ export async function POST(request: NextRequest) {
       city: body.city,
       sourceMetier: body.sourceMetier || null,
       targetMetiers: body.targetMetiers || [],
-      radiusKm: body.radiusKm,
-      limit: body.limit,
+      // SANS RAYON NI LIMITE, les valeurs de l'autre recherche : `Math.min(10, undefined)` donnait NaN.
+      radiusKm: body.radiusKm ?? 15,
+      limit: body.limit ?? 10,
     });
     if ("error" in started) {
       return NextResponse.json({ error: started.error }, { status: 400 });

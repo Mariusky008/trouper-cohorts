@@ -105,8 +105,10 @@ const config: NextConfig = {
       "./public/direct/homme-pull-col-roule.jpeg",
     ],
   },
+  // UN CODE QUI NE SE TYPE PAS NE PART PLUS EN LIGNE : Vercel refuse le déploiement
+  // (il en passait 37 erreurs, dont trois vrais bugs — voir le commit qui l'a retiré).
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   images: {
     remotePatterns: [

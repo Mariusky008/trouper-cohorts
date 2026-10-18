@@ -684,8 +684,8 @@ export async function POST(request: Request) {
           photoPrise,
           souvenirDejaDit,
           rdv,
-          apres,
           options,
+          apres,
         ),
         messages: conversation,
         output_config: {

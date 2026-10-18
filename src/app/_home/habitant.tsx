@@ -65,7 +65,7 @@ export function Habitant() {
   useEffect(() => {
     const el = cadre.current;
     if (!el) return;
-    if (!("IntersectionObserver" in window)) {
+    if (typeof IntersectionObserver === "undefined") {
       // Sans observateur, on joue toujours — mais pas dans le corps de l'effet
       // (le compilateur React l'interdit, et il a raison : un `setState`
       // synchrone ici relance un rendu en cascade). Un tour de boucle suffit,

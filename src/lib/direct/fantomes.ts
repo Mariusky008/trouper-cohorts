@@ -3377,7 +3377,7 @@ export function murDuSouvenir(s: {
   distance: string;
   note: string;
   avis: number;
-  photoLieu: string;
+  photoLieu?: string;
 }): Mur {
   const modele = MURS.find((m) => m.cle === s.modele) ?? MURS[0];
   return {

@@ -178,7 +178,7 @@ export default async function AdminHumainAffiliationPage({
       )
       .order("created_at", { ascending: false })
       .limit(2000);
-    activationTicketsAll = ((activationsWide as typeof activationTicketsAll) || []).slice(0, 2000);
+    activationTicketsAll = ((activationsWide as unknown as typeof activationTicketsAll) || []).slice(0, 2000);
   }
   const thresholdEffective = ticketFilterCode ? null : threshold;
   const activationTickets = activationTicketsAll.filter((ticket) => {
