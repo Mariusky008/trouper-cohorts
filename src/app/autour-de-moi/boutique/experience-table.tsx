@@ -257,13 +257,20 @@ export function ExperienceTable({
          `/api/direct/scene-chef` la compose depuis sa photo d'accueil ;
        · en l'attendant, ou si le moteur échoue : LA SALLE DE LA MAQUETTE et
          son fantôme assis à la table, au même endroit que dans la scène.
-     Sa photo telle quelle ne revient que s'il a refusé la scène. */
+     Sa photo telle quelle ne revient que s'il a refusé la scène.
+
+     « IL MANQUE LE CHEF À CÔTÉ DU FANTÔME » — deux fois : la scène du moteur
+     échouait, et l'écran gardait la salle vide. Pour un restaurant de la
+     démonstration qui a SA SALLE AVEC LUI (`salleAvecLui`, une image fixe),
+     c'est elle qui sert de salle, et on ne demande plus rien au moteur. */
   const telleQuelle = Boolean(voix?.photoChefTelleQuelle && voix.photoChef);
-  const sceneChef = telleQuelle
-    ? undefined
-    : voix?.photoChef ?? (c.photoAccueil?.startsWith("/direct/") ? `/api/direct/scene-chef/${encodeURIComponent(c.id)}` : undefined);
+  const salleAvecLui = telleQuelle ? undefined : voix?.salleAvecLui;
+  const sceneChef =
+    telleQuelle || salleAvecLui
+      ? undefined
+      : voix?.photoChef ?? (c.photoAccueil?.startsWith("/direct/") ? `/api/direct/scene-chef/${encodeURIComponent(c.id)}` : undefined);
   const [sceneVue, setSceneVue] = useState(false);
-  const photoChef = telleQuelle ? voix!.photoChef! : SALLE;
+  const photoChef = telleQuelle ? voix!.photoChef! : salleAvecLui ?? SALLE;
   const boite = voix?.fantomeDansLaPhoto ?? BOITE_MAQUETTE;
   /* SON VISAGE DANS LE ROND DE LA VOIX — le vrai, s'il l'a donné ; sinon
      celui de son fantôme. */

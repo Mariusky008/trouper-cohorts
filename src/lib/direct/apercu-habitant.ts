@@ -1293,6 +1293,15 @@ export type Voix = {
    */
   photoChefTelleQuelle?: boolean;
   /**
+   * « IL MANQUE LE CHEF À CÔTÉ DU FANTÔME. » LA SALLE DE LA MAQUETTE, AVEC LUI
+   * DEDANS — une image FIXE, rangée dans le dépôt, pour un restaurant de la
+   * démonstration. La scène du moteur (`/api/direct/scene-chef`) ne vient pas
+   * toujours ; quand elle échoue, l'étape 3 montrait la salle vide. Celle-ci
+   * ne dépend de rien : l'écran y pose son fantôme assis, comme sur la salle
+   * vide, et ne demande plus rien au moteur.
+   */
+  salleAvecLui?: string;
+  /**
    * QUAND SA PHOTO PORTE DÉJÀ SON FANTÔME — assis à la table, la bulle « Une
    * question ? » au-dessus, comme sur la maquette —, la boîte où il est
    * (fractions de la photo). L'écran n'en pose pas un second : il rend
@@ -2042,6 +2051,10 @@ const CARTES: CarteAutour[] = [
         { src: "/direct/table/magret/3.jpg", mot: "Rosé à cœur, avec ses pommes dorées.", fort: "Rosé à cœur" },
         { src: "/direct/table/magret/4.jpg", mot: "Je vous le prépare ce midi\u202f?", fort: "ce midi\u202f?" },
       ],
+      /* LUI, DERRIÈRE SON FANTÔME, LA MAIN TENDUE VERS LA TABLE — sa photo
+         d'accueil détourée et posée dans la salle de la maquette (le haut du
+         crâne, coupé par la photo, est reconstitué). Voir `salleAvecLui`. */
+      salleAvecLui: "/direct/table/restaurant/salle-bergine.webp",
     },
     site: "chezbergine.fr",
     fiche: {
