@@ -201,7 +201,8 @@ export async function envoyerEnLigne(
       famille: c.famille === "table" && p.genre === "principal" ? "menu" : "offre",
       // « IL EN RESTE ! » NE PART PAS SUR SES RÉSEAUX : deux heures chez nous,
       // des mois en haut de son Instagram. Voir `lib/reseaux/intermediaire.ts`.
-      reseaux: p.genre !== "relance",
+      // SINON, SON CHOIX (« juste Instagram », « juste ClikMe » = []) ; sans choix, tous.
+      reseaux: p.genre === "relance" ? false : (p.reseaux ?? true),
       // SES AUTRES PHOTOS PARTENT EN CARROUSEL SUR SES RÉSEAUX (Le Direct garde la première).
       ...(p.genre !== "relance" && p.photos.length > 1 ? { photosReseaux: p.photos.slice(1, 4) } : {}),
       // CE QU'IL A DIT À SON MICRO, POUR SES RÉSEAUX : la légende le cite entre guillemets —
@@ -209,9 +210,13 @@ export async function envoyerEnLigne(
       ...(p.genre !== "relance" && p.voixTexte ? { mots: p.voixTexte } : {}),
       ...(p.genre === "principal" && AVEC_PIECE.includes(c.famille) ? { piece: p.id } : {}),
     });
-    if (r.ok) ou.push("Le Direct");
-    if (r.ok && Array.isArray(r.json?.reseaux)) reseaux = (r.json.reseaux as unknown[]).map(String);
-    else erreurs.push(r.erreur ?? "L'annonce n'a pas pu partir.");
+    // UNE ANNONCE PARTIE SANS RÉSEAUX N'EST PAS UNE ERREUR : l'ancien « sinon » prenait l'absence
+    // de réseaux (rien de connecté, ou « juste ClikMe ») pour un échec — « une partie n'a pas suivi :
+    // l'annonce n'a pas pu partir », alors qu'elle était dans Le Direct.
+    if (r.ok) {
+      ou.push("Le Direct");
+      if (Array.isArray(r.json?.reseaux)) reseaux = (r.json.reseaux as unknown[]).map(String);
+    } else erreurs.push(r.erreur ?? "L'annonce n'a pas pu partir.");
   }
 
   const enRoute = reseaux.length ? { reseaux } : {};

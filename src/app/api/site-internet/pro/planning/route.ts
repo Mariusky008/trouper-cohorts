@@ -8,7 +8,7 @@
 //   · `lire`      → { planning, enLigne, aujourdhui, horizon, maintenant }
 //                   Ce qui est dû part d'abord : il voit l'état réel.
 //   · `comptoir`  → { texte, famille, jour, jours, repeter?, comptoir: { nom, prix?,
-//                   photos, voix?, voixSecondes?, voixTexte?, plat?, rayon?, decrire? } }
+//                   photos, voix?, voixSecondes?, voixTexte?, plat?, rayon?, decrire?, reseaux? } }
 //                   L'annonce préparée avec son fantôme : le jour venu, elle
 //                   part comme « Publier » (le plat et sa voix, la pièce au
 //                   catalogue, Le Direct). `repeter` : la même chaque semaine,
@@ -27,6 +27,7 @@ import { rangerVoix } from "@/lib/site-internet/experience-scenes";
 import { siennesVivantes } from "@/lib/direct/publications";
 import { jourParis } from "@/lib/jour-paris";
 import { activerPlanning } from "@/lib/direct/planning-activation";
+import { plateformesChoisies } from "@/lib/reseaux/reseaux-donnees";
 import {
   HORIZON_JOURS,
   MAX_PROGRAMMEES,
@@ -218,6 +219,8 @@ export async function POST(request: Request) {
       ...(c.plat === true ? { plat: true } : {}),
       ...(s(c.rayon) ? { rayon: s(c.rayon).slice(0, 40) } : {}),
       ...(s(c.decrire) ? { decrire: s(c.decrire).slice(0, 300) } : {}),
+      // SON CHOIX : les réseaux où elle partira le jour venu (vide : juste ClikMe).
+      ...(plateformesChoisies(c.reseaux) ? { reseaux: plateformesChoisies(c.reseaux) as string[] } : {}),
     };
     const famille = (s(p?.famille) === "menu" ? "menu" : "offre") as FamillePlanifiee;
     const voulus = lesJours(jour, jours, p?.repeter === true);

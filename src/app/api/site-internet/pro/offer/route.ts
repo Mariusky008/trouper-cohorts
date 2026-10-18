@@ -7,7 +7,8 @@
 //   { text, until (ISO|null), photo (string|null), clicks, created_at }
 //   null = aucune offre active.
 //
-// Actions (POST, jeton pro privé requis) : get | set {text, until|days, photo} | clear.
+// Actions (POST, jeton pro privé requis) : get | set {text, until|days, photo, reseaux?} | clear.
+// `reseaux` : false (pas de réseaux), une liste de plateformes (son choix ; [] = juste ClikMe), ou rien (tous, s'ils partent tout seuls).
 //
 // `photo` est l'image qui illustre CETTE annonce dans le catalogue de la ville.
 // Elle est vérifiée contre la galerie du commerce : sans ce contrôle, un jeton
@@ -29,7 +30,7 @@ import { echeanceDuTexte } from "@/lib/direct/echeance-texte";
 import { preparerFacons, ecrireFacons } from "@/lib/direct/facons-creation";
 import { jourParis } from "@/lib/jour-paris";
 import { activerPlanning, oublierEnCours } from "@/lib/direct/planning-activation";
-import { idDePiece, motsPourLesReseaux, reseauxDuDiagnostic } from "@/lib/reseaux/reseaux-donnees";
+import { idDePiece, motsPourLesReseaux, plateformesChoisies, reseauxDuDiagnostic } from "@/lib/reseaux/reseaux-donnees";
 import { piecesDuDiagnostic } from "@/lib/site-internet/pieces-comptoir";
 import { publierSurSesReseauxEnFond, reseauxConfigures } from "@/lib/reseaux/intermediaire";
 
@@ -542,8 +543,12 @@ export async function POST(request: Request) {
     // n'attend pas Instagram. « Il en reste ! » n'y part pas (`reseaux: false`) :
     // une annonce de deux heures resterait des mois en haut de son Instagram.
     // Voir `lib/reseaux/intermediaire.ts`.
+    // SON CHOIX POUR CETTE ANNONCE (`reseaux: ["instagram"]`, `[]` = juste ClikMe) : ces réseaux-là,
+    // même si l'envoi automatique est en pause. Sans choix : tous ses réseaux, s'ils partent tout seuls.
+    const choisis = plateformesChoisies(p?.reseaux);
     const sesReseaux = reseauxConfigures() && p?.reseaux !== false ? reseauxDuDiagnostic(site.diagnostic) : null;
-    const versReseaux = sesReseaux?.auto && photo ? [...new Set(sesReseaux.comptes.map((c) => c.plateforme))] : [];
+    const connectes = sesReseaux ? [...new Set(sesReseaux.comptes.map((c) => c.plateforme))] : [];
+    const versReseaux = photo && (choisis || sesReseaux?.auto) ? connectes.filter((x) => !choisis || choisis.includes(x)) : [];
     if (versReseaux.length) {
       // SES MOTS À SON MICRO, POUR SES RÉSEAUX SEULEMENT : Le Direct garde ses 140 signes,
       // sa légende reçoit ce qu'il a dit — voir `legendeReseaux`.
@@ -561,6 +566,7 @@ export async function POST(request: Request) {
           ...(mots ? { mots } : {}),
           ...(piece ? { piece } : {}),
           ...(video && Number.isFinite(secondes) && secondes > 0 ? { video: { url: video, secondes, mp4: p?.videoMp4 === true } } : {}),
+          ...(choisis ? { plateformes: versReseaux } : {}),
         },
       );
     }

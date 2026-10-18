@@ -112,7 +112,7 @@ export const MISSIONS: Record<FamilleDouble, Mission> = {
       { type: "photos", question: "Montre-moi l’ambiance !", conseil: "Le comptoir, la terrasse, ou le groupe qui s’installe.", min: 1, max: 4 },
       { type: "voix", question: "Un mot pour donner envie de passer ?", exemple: "« Venez tôt, la terrasse se remplit vite. »" },
     ],
-    bravo: "C’est en ligne ! Les gens du coin le voient dès maintenant.",
+    bravo: "Ta soirée est en ligne : les gens du coin la voient dès maintenant.",
   },
   coiffure: {
     famille: "coiffure",
@@ -201,7 +201,7 @@ export const MISSIONS: Record<FamilleDouble, Mission> = {
       { type: "duree", question: "Je la propose combien de temps ?", choix: JOURNEE },
       { type: "voix", question: "Un mot pour expliquer comment ça se passe ?", exemple: "« On commence toujours par parler dix minutes. »" },
     ],
-    bravo: "C’est en ligne !",
+    bravo: "Ta séance est en ligne : les gens du coin la voient dès maintenant.",
   },
   librairie: {
     famille: "librairie",

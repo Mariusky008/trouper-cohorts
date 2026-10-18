@@ -390,13 +390,18 @@ export async function publierSurSesReseaux(
     piece?: string;
     /** Son interview, chez nous (https) : un Reel quand elle en est un (`enReel`), sa couverture sinon. */
     video?: { url: string; secondes: number; mp4: boolean };
+    /** SON CHOIX pour cette annonce (« juste Instagram », « juste ClikMe ») : ces réseaux-là seulement,
+     *  même si l'envoi automatique est en pause. Absent : tous ses réseaux, s'ils partent tout seuls. */
+    plateformes?: string[];
   },
 ): Promise<DernierePublication | null> {
   try {
     if (!reseauxConfigures() || !site.id || !annonce.photo) return null;
     const { data } = await createAdminClient().from("human_vitrine_sites").select("diagnostic").eq("id", site.id).maybeSingle();
     const reseaux = reseauxDuDiagnostic((data as Record<string, unknown> | null)?.diagnostic);
-    if (!reseaux.auto || !reseaux.comptes.length) return null;
+    const choisis = annonce.plateformes;
+    const comptes = choisis ? reseaux.comptes.filter((c) => choisis.includes(c.plateforme)) : reseaux.comptes;
+    if ((!reseaux.auto && !choisis) || !comptes.length) return null;
 
     const texte = annonce.texte.trim();
     const reel = enReel(annonce.video) ? annonce.video : undefined;
@@ -435,8 +440,8 @@ export async function publierSurSesReseaux(
     // le texte d'un post. LA PORTE EST DANS SON BOUTON (« Réserver », « En
     // savoir plus »). Un appel par groupe : Instagram et Facebook d'un côté,
     // Google de l'autre — leurs images ne sont pas les mêmes.
-    const google = reseaux.comptes.filter((c) => c.plateforme === "googlebusiness");
-    const autres = reseaux.comptes.filter((c) => c.plateforme !== "googlebusiness");
+    const google = comptes.filter((c) => c.plateforme === "googlebusiness");
+    const autres = comptes.filter((c) => c.plateforme !== "googlebusiness");
     // UN CARROUSEL REFUSÉ REPART EN UNE PHOTO : mieux vaut sa première photo
     // sur Instagram que rien du tout parce que la troisième ne plaisait pas.
     // UN REEL REFUSÉ REPART EN PHOTO, la même raison.
@@ -474,7 +479,7 @@ export async function publierSurSesReseaux(
           ok: envois.flatMap((e) => e?.ok ?? []),
           erreurs: envois.flatMap((e) => e?.erreurs ?? []),
         }
-      : { ok: [], erreurs: reseaux.comptes.map((c) => ({ plateforme: c.plateforme, message: "erreur" in image ? image.erreur : "photo illisible" })) };
+      : { ok: [], erreurs: comptes.map((c) => ({ plateforme: c.plateforme, message: "erreur" in image ? image.erreur : "photo illisible" })) };
     const derniere: DernierePublication = { at: new Date().toISOString(), texte: texte.slice(0, 300), ...resultat };
     if (resultat.erreurs.length) console.warn("[reseaux] publication incomplète :", JSON.stringify(resultat.erreurs));
     await changerReseaux(site.id, (r) => ({ ...r, derniere })).catch(() => null);

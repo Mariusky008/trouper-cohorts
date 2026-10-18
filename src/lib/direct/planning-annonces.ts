@@ -36,6 +36,7 @@
  * FICHIER PARTAGÉ : aucune dépendance au serveur.
  */
 import { jourParis } from "@/lib/jour-paris";
+import { plateformesChoisies } from "@/lib/reseaux/reseaux-donnees";
 
 export const DUREE_MAX_JOURS = 7;
 export const HORIZON_JOURS = 31;
@@ -91,6 +92,8 @@ export type ComptoirPlanifie = {
   rayon?: string;
   /** Ce que l'essayage pose sur le client — absent chez le libraire. */
   decrire?: string;
+  /** SON CHOIX : les réseaux où elle partira le jour venu (vide : juste ClikMe). Absent : tous, s'ils partent tout seuls. */
+  reseaux?: string[];
 };
 
 /** Le stockage du projet — en http seulement en local, avec le faux serveur ; https partout ailleurs. */
@@ -112,6 +115,7 @@ function lireComptoir(v: unknown): ComptoirPlanifie | undefined {
   if (!nom || !photos.length) return undefined;
   const secondes = Math.round(Number(o.voixSecondes));
   const voix = adresseSure(o.voix);
+  const reseaux = plateformesChoisies(o.reseaux);
   return {
     nom,
     photos,
@@ -121,6 +125,7 @@ function lireComptoir(v: unknown): ComptoirPlanifie | undefined {
     ...(o.plat === true ? { plat: true } : {}),
     ...(s(o.rayon) ? { rayon: s(o.rayon).slice(0, 40) } : {}),
     ...(s(o.decrire) ? { decrire: s(o.decrire).slice(0, 300) } : {}),
+    ...(reseaux ? { reseaux } : {}),
   };
 }
 

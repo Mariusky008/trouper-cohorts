@@ -138,6 +138,8 @@ export async function programmerEnLigne(
       ...(c.famille === "table" ? { plat: true } : {}),
       ...(piece ? { rayon: c.famille === "librairie" ? "Ses coups de cœur" : mission.quoi } : {}),
       ...(piece && c.famille !== "librairie" ? { decrire: p.nom } : {}),
+      // SON CHOIX : les réseaux où elle partira le jour venu (vide : juste ClikMe).
+      ...(p.reseaux ? { reseaux: p.reseaux } : {}),
     },
   });
   return { etat: etatDe(j), placees: (j.placees ?? []).map(enProgrammee), ignores: j.ignores ?? [] };

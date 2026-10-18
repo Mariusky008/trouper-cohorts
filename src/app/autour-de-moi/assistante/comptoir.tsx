@@ -81,7 +81,7 @@ import { StylesInterview } from "../essai-interview/styles-interview";
 import { chefEnPied } from "@/lib/direct/interview-montage";
 import { interviewOuverte, scriptDe } from "@/lib/direct/interview-fantome";
 import { CarteProposition, propositionAMontrer, useProposition, type PieceProposee } from "./proposition-comptoir";
-import { reseauxEnMots } from "@/lib/reseaux/reseaux-donnees";
+import { PLATEFORMES_PAR_DEFAUT, iconeDuReseau, nomDuReseau, reseauxEnMots } from "@/lib/reseaux/reseaux-donnees";
 import { useSavoir, type SavoirDuComptoir } from "./use-savoir";
 import { questionsDuMetier, reponduesDuMetier } from "@/lib/direct/savoir-fantome";
 import { accord, demandesEnMots, effetDesAnnonces, phraseDeLaVeille, semaineDuComptoir, type JourStats } from "@/lib/direct/stats-comptoir";
@@ -123,6 +123,8 @@ type Brouillon = {
   voix?: string;
   voixSecondes?: number;
   voixTexte?: string;
+  /** « OÙ JE LE PUBLIE ? » — ses réseaux cochés au récapitulatif (vide : juste ClikMe). Absent : comme d'habitude. */
+  reseaux?: string[];
 };
 
 const brouillonVide = (genre: Brouillon["genre"] = "principal"): Brouillon => ({ genre, nom: "", prix: "", photos: [], jours: 1 });
@@ -372,6 +374,18 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
   const reseaux = useReseaux(commerce);
   /* ☀️ SA PROPOSITION DU MATIN : une pièce de sa vitrine, prête — « oui » et c'est parti. */
   const proposition = useProposition(commerce);
+  /* ⇄ SES ÉCHANGES, EN HAUT AUSSI, À CÔTÉ DE LA FLAMME — « c'est quand même une fonctionnalité
+     phare ». Ce qu'il peut dépenser chez les autres commerçants, ou les bons à valider. La
+     démonstration relit son téléphone à chaque affichage (un petit objet) : juste au retour. */
+  const echangesReels = useEchangesReels(commerce);
+  const resumeDemo = commerce.reel ? null : resumeDesEchanges(commerce);
+  const puceEchanges = (() => {
+    if (resumeDemo) return { mot: resumeDemo.pret ? `${resumeDemo.aDepenser} €` : "", chaud: false };
+    if (!echangesReels?.pret) return null;
+    const aValider = echangesReels.recus.filter((b) => b.statut === "reserve").length;
+    if (aValider > 0) return { mot: String(aValider), chaud: true };
+    return { mot: echangesReels.mien && echangesReels.maVille.ouverte ? `${echangesReels.compte.aDepenser} €` : "", chaud: false };
+  })();
 
   useEffect(() => {
     const id = window.setInterval(() => setMaintenant(Date.now()), 30_000);
@@ -546,6 +560,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
       finLe: Date.parse(b0.fin),
       programmee: true,
       ...(brouillon.detail ? { detail: brouillon.detail } : {}),
+      ...(brouillon.reseaux ? { reseaux: brouillon.reseaux } : {}),
     };
     let placees: { id: string; debut: string; fin: string; photo: string; serie?: string }[] = [];
     let ignores: string[] = [];
@@ -651,6 +666,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
       publieLe: t,
       finLe: finApres(relance ? 1 : brouillon.jours, t),
       ...(brouillon.detail ? { detail: brouillon.detail } : {}),
+      // « IL EN RESTE ! » NE PART JAMAIS SUR SES RÉSEAUX : pas de choix à garder.
+      ...(!relance && brouillon.reseaux ? { reseaux: brouillon.reseaux } : {}),
     };
     const r = publier(etat, p);
     setEtat(r.comptoir);
@@ -779,6 +796,19 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           <button type="button" className={`cz-puce${s ? " allume" : ""}`} onClick={() => setStats(true)} aria-label={`${s} jours d’affilée — voir mes stats`}>
             🔥 {s}
           </button>
+          {puceEchanges && (
+            <button
+              type="button"
+              className={`cz-puce echanges${puceEchanges.chaud ? " chaud" : ""}`}
+              onClick={() => setPhase({ ou: "echanges" })}
+              aria-label={puceEchanges.chaud ? `${puceEchanges.mot} bons à valider — mes échanges` : "Mes échanges entre commerçants"}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 8.5h13.5l-3.2-3.2M20 15.5H6.5l3.2 3.2" />
+              </svg>
+              {puceEchanges.mot}
+            </button>
+          )}
           {chiffres && (
             <button type="button" className="cz-puce stats" onClick={() => setStats(true)} aria-label="Voir mes stats">
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -966,6 +996,9 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           mission={mission}
           brouillon={brouillon}
           principal={principal}
+          reseaux={reseaux}
+          reel={Boolean(commerce.reel)}
+          onChoixReseaux={(l) => setBrouillon((b) => ({ ...b, reseaux: l }))}
           onPublier={() => void envoyer()}
           onModifier={() => setPhase({ ou: "mission", etape: 0, relance: phase.relance })}
           plusTard={plusTard && !phase.relance ? quand : undefined}
@@ -1332,16 +1365,19 @@ function Outil({
   nom,
   badge,
   chaud,
+  phare,
   onClick,
 }: {
   icone: keyof typeof ICONES;
   nom: string;
   badge?: string | number;
   chaud?: boolean;
+  /** « Échanges », la fonctionnalité phare : sa couleur à lui, pas celle des autres outils. */
+  phare?: boolean;
   onClick: () => void;
 }) {
   return (
-    <button type="button" className={`cz-outil${chaud ? " chaud" : ""}`} onClick={onClick}>
+    <button type="button" className={`cz-outil${chaud ? " chaud" : ""}${phare ? " phare" : ""}`} onClick={onClick}>
       <span className="cz-outil-i" aria-hidden="true">
         <svg viewBox="0 0 24 24">{ICONES[icone]}</svg>
       </span>
@@ -1362,7 +1398,7 @@ function OutilReseaux({ commerce, reseaux, onOuvrir }: { commerce: Commerce; res
 /** L'outil « Échanges » de la démonstration : la caisse commune entre commerçants. */
 function OutilEchanges({ commerce, onOuvrir }: { commerce: Commerce; onOuvrir: () => void }) {
   const [r] = useState(() => resumeDesEchanges(commerce));
-  return <Outil icone="echanges" nom="Échanges" badge={r.pret && r.aDepenser > 0 ? `${r.aDepenser} €` : undefined} onClick={onOuvrir} />;
+  return <Outil icone="echanges" nom="Échanges" phare badge={r.pret && r.aDepenser > 0 ? `${r.aDepenser} €` : undefined} onClick={onOuvrir} />;
 }
 
 /** L'outil « Échanges » d'un vrai commerçant : absent tant que la base ne répond pas, comme l'ancienne carte. */
@@ -1374,6 +1410,7 @@ function OutilEchangesReelle({ commerce, onOuvrir }: { commerce: Commerce; onOuv
     <Outil
       icone="echanges"
       nom="Échanges"
+      phare
       badge={aValider > 0 ? aValider : etat.mien && etat.maVille.ouverte && etat.compte.aDepenser > 0 ? `${etat.compte.aDepenser} €` : undefined}
       chaud={aValider > 0}
       onClick={onOuvrir}
@@ -2086,6 +2123,9 @@ function Recap({
   mission,
   brouillon,
   principal,
+  reseaux,
+  reel,
+  onChoixReseaux,
   onPublier,
   onModifier,
   plusTard,
@@ -2099,6 +2139,9 @@ function Recap({
   mission: Mission;
   brouillon: Brouillon;
   principal?: Publication;
+  reseaux: ReseauxDuComptoir;
+  reel: boolean;
+  onChoixReseaux: (plateformes: string[]) => void;
   onPublier: () => void;
   onModifier: () => void;
   /** Préparée pour un autre jour : le jour et la durée choisis. */
@@ -2156,6 +2199,8 @@ function Recap({
             </div>
           )}
         </article>
+        {/* « OÙ JE LE PUBLIE ? » — pas pour « Il en reste ! », qui reste chez nous. */}
+        {!relance && <OuPublier reseaux={reseaux} reel={reel} choix={brouillon.reseaux} onChoix={onChoixReseaux} />}
         {ennui ? <p className="cz-ennui">{ennui}</p> : null}
         {plusTard ? (
           <>
@@ -2189,6 +2234,96 @@ function Recap({
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ═══ « OÙ JE LE PUBLIE ? » ═══════════════════════════════════════════════
+   « Quand je publie quelque chose, on ne propose pas de choisir où je veux le
+   publier : partout ? juste certains réseaux ? juste ClikMe ? »
+   ClikMe (Le Direct, sa page) toujours ; ses réseaux connectés, à cocher. Par
+   défaut, comme avant : tous, s'ils partent tout seuls. En démonstration, les
+   réseaux proposés, pour l'exemple. */
+function reseauxCochables(reseaux: ReseauxDuComptoir, reel: boolean): { dispo: string[]; parDefaut: string[] } {
+  const etat = reseaux.etat;
+  if (!etat?.configure) return { dispo: [], parDefaut: [] };
+  const dispo = reel ? etat.plateformes.filter((x) => x.compte).map((x) => x.id) : etat.plateformes.map((x) => x.id);
+  return { dispo, parDefaut: reel && !etat.auto ? [] : dispo };
+}
+
+function OuPublier({ reseaux, reel, choix, onChoix }: { reseaux: ReseauxDuComptoir; reel: boolean; choix?: string[]; onChoix: (l: string[]) => void }) {
+  const { dispo, parDefaut } = reseauxCochables(reseaux, reel);
+  const coches = choix ?? parDefaut;
+  const basculer = (id: string) => onChoix(coches.includes(id) ? coches.filter((x) => x !== id) : [...coches, id]);
+  return (
+    <div className="cz-ou">
+      <div className="cz-ou-h">
+        <b>Où je le publie ?</b>
+        {dispo.length > 1 && (
+          <span>
+            <button type="button" className={coches.length === dispo.length ? "on" : ""} onClick={() => onChoix(dispo)}>
+              Partout
+            </button>
+            <button type="button" className={coches.length === 0 ? "on" : ""} onClick={() => onChoix([])}>
+              Juste ClikMe
+            </button>
+          </span>
+        )}
+      </div>
+      <div className="cz-ou-l">
+        <span className="cz-ou-c on fixe">
+          <i aria-hidden="true">⚡</i> ClikMe <small>Le Direct et ta page</small>
+        </span>
+        {dispo.map((id) => (
+          <button key={id} type="button" className={`cz-ou-c${coches.includes(id) ? " on" : ""}`} aria-pressed={coches.includes(id)} onClick={() => basculer(id)}>
+            <i aria-hidden="true">{iconeDuReseau(id)}</i> {nomDuReseau(id)}
+          </button>
+        ))}
+      </div>
+      {!reel && dispo.length > 0 && <p className="cz-ou-note">Exemple : chez toi, ce sont les comptes que tu as connectés dans « Réseaux ».</p>}
+      {reel && reseaux.etat?.configure && !dispo.length && (
+        <p className="cz-ou-note">Instagram, Facebook, Google : connecte-les une fois dans « Réseaux », et tu pourras y publier d’ici.</p>
+      )}
+    </div>
+  );
+}
+
+/** « Ton annonce est ici » : là où elle est arrivée — ClikMe tout de suite, ses réseaux en route. */
+const LIEUX: Record<string, [string, string]> = {
+  "Le Direct": ["⚡", "Le Direct de ClikMe"],
+  "ta page": ["🏪", "Ta page ClikMe"],
+  "ton essayage": ["🏪", "Ton essayage, sur ta page"],
+  "« Ton prochain livre »": ["🏪", "« Ton prochain livre », sur ta page"],
+};
+function OuPublie({ reel, envoi, publication }: { reel: boolean; envoi: Envoi | null; publication: Publication }) {
+  if (reel && (!envoi || envoi.etat === "en-cours")) {
+    return (
+      <p className="cz-envoi-etat" role="status">
+        J’envoie… ⏳
+      </p>
+    );
+  }
+  if (reel && envoi?.etat === "fini" && !envoi.ok) return null;
+  const fini = envoi?.etat === "fini" ? envoi : null;
+  const ici = reel ? (fini?.ou ?? []) : ["Le Direct", "ta page"];
+  const ailleurs = reel ? (fini?.reseaux ?? []) : publication.genre === "relance" ? [] : (publication.reseaux ?? PLATEFORMES_PAR_DEFAUT);
+  return (
+    <div className="cz-ou-fait" role="status">
+      <b>{reel ? "Ton annonce est ici" : "Ton annonce est ici (exemple)"}</b>
+      <div className="cz-ou-l">
+        {ici.map((o) => (
+          <span key={o} className="cz-ou-c on">
+            <i aria-hidden="true">{LIEUX[o]?.[0] ?? "✓"}</i> {LIEUX[o]?.[1] ?? o} <small>en ligne ✓</small>
+          </span>
+        ))}
+        {ailleurs.map((x) => (
+          <span key={x} className="cz-ou-c route">
+            <i aria-hidden="true">{iconeDuReseau(x)}</i> {nomDuReseau(x)} <small>{reel ? "en route…" : "exemple"}</small>
+          </span>
+        ))}
+      </div>
+      {reel && ailleurs.length > 0 && <small className="cz-ou-note">Ce que tes réseaux ont répondu s’affiche dans « Réseaux ».</small>}
+      {reel && publication.reseaux && publication.reseaux.length === 0 && <small className="cz-ou-note">Juste sur ClikMe, comme tu l’as choisi.</small>}
     </div>
   );
 }
@@ -2297,11 +2432,11 @@ function Fete({
         </span>
       </div>
       {gagnes.length > 0 && (
-        <div className="cz-nouveaux">
+        <div className="cz-badges-neufs">
           {gagnes.map((id, i) => {
             const b = BADGES.find((x) => x.id === id);
             return b ? (
-              <span key={id} className="cz-nouveau" style={{ animationDelay: `${0.5 + i * 0.25}s` }}>
+              <span key={id} className="cz-badge-neuf" style={{ animationDelay: `${0.5 + i * 0.25}s` }}>
                 <i>{b.icone}</i>
                 <span>
                   <em>Nouveau badge</em>
@@ -2312,25 +2447,18 @@ function Fete({
           })}
         </div>
       )}
-      {/* OÙ C'EST ARRIVÉ — et si ça n'est pas parti, on le dit et on refait. */}
-      {reel && envoi && (
-        <p className={`cz-envoi-etat${envoi.etat === "fini" && envoi.erreur ? " ko" : ""}`} role="status">
-          {envoi.etat === "en-cours"
-            ? "J’envoie… ⏳"
-            : envoi.ok
-              ? `✓ En ligne : ${envoi.ou.join(" et ")}.${envoi.erreur ? ` Une partie n’a pas suivi : ${envoi.erreur}` : ""}`
-              : `Ça n’est pas parti : ${envoi.erreur ?? "erreur inconnue"}`}
-          {/* SES RÉSEAUX PARTENT APRÈS : on dit « en route », pas « publié ».
-              Le résultat est dans « Mes réseaux ». */}
-          {envoi.etat === "fini" && envoi.reseaux?.length ? <span className="cz-envoi-reseaux">📣 En route vers {reseauxEnMots(envoi.reseaux)}.</span> : null}
-          {/* UNE PARTIE PEUT ÊTRE PARTIE ET PAS L'AUTRE : on propose de refaire
-              dès qu'il y a une erreur. Renvoyer la même photo ne refait pas la
-              scène (voir le mode d'emploi de l'Expérience). */}
-          {envoi.etat === "fini" && envoi.erreur && (
-            <button type="button" onClick={onReessayer}>
-              Réessayer
-            </button>
-          )}
+      {/* OÙ C'EST ARRIVÉ — « quand c'est publié, j'aimerais avoir le récap d'où ça a été publié » :
+          ClikMe tout de suite, ses réseaux en route (ils partent après : on dit « en route »,
+          pas « publié » ; leur réponse est dans « Réseaux »). */}
+      <OuPublie reel={reel} envoi={envoi} publication={publication} />
+      {/* ET SI ÇA N'EST PAS PARTI (ou une partie seulement), on le dit et on refait. Renvoyer la
+          même photo ne refait pas la scène (voir le mode d'emploi de l'Expérience). */}
+      {reel && envoi?.etat === "fini" && envoi.erreur && (
+        <p className="cz-envoi-etat ko" role="status">
+          {envoi.ok ? `Une partie n’a pas suivi : ${envoi.erreur}` : `Ça n’est pas parti : ${envoi.erreur}`}
+          <button type="button" onClick={onReessayer}>
+            Réessayer
+          </button>
         </p>
       )}
       {/* LA PREUVE QUE ÇA EST PARTI : son annonce, là où on la voit, tout de suite. */}
@@ -2399,6 +2527,13 @@ body{background:#0B0806;}
   border:1px solid var(--trait);color:var(--gris);}
 .cz-puce.allume{color:#FFD9A8;border-color:rgba(245,162,58,.55);box-shadow:0 0 18px rgba(245,162,58,.25);}
 .cz-puce.or{color:#FFE2A6;}
+.cz-puce.echanges{color:#9FF5C9;border-color:rgba(61,226,166,.55);background:rgba(61,226,166,.1);}
+.cz-puce.echanges.chaud{color:#fff;border-color:var(--rose);background:rgba(255,46,154,.25);}
+.cz-puce.echanges svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+/* SUR UN TÉLÉPHONE, LA PLACE DU NOM : avec Échanges en haut, cinq pastilles coupaient « Chez Bergine ».
+   Celle des vues s'efface (les vues sont en bas, « visites aujourd'hui », et dans les stats, que la
+   flamme et l'étoile ouvrent aussi) ; les autres se serrent. */
+@media (max-width:430px){.cz-puce.stats{display:none;}.cz-jeu{gap:3px;}.cz-puce{padding:6px 8px;gap:4px;}}
 .cz-corps{flex:1;min-height:0;display:flex;flex-direction:column;}
 
 /* LE FIL DES QUESTIONS */
@@ -2602,7 +2737,7 @@ label.cz-go{cursor:pointer;}
 .cz-apercu-voix .cz-lecteur{background:var(--fond);}
 
 /* LA FETE */
-.cz-fete{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
+.cz-fete{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:safe center;overflow-y:auto;
   gap:12px;padding:24px 22px max(24px,env(safe-area-inset-bottom));text-align:center;
   background:radial-gradient(70% 50% at 50% 35%,rgba(245,162,58,.28),transparent 70%),rgba(18,12,9,.97);
   animation:cz-fondu .3s both;overflow:hidden;}
@@ -2614,13 +2749,32 @@ label.cz-go{cursor:pointer;}
 .cz-gains{display:flex;gap:10px;animation:cz-entre .5s .4s both;}
 .cz-gain{padding:10px 16px;border-radius:16px;background:var(--nappe2);border:1px solid rgba(245,162,58,.4);font-size:14px;color:var(--gris);}
 .cz-gain b{display:block;font-family:var(--font-clikme),sans-serif;font-size:24px;color:#FFE2A6;}
-.cz-nouveaux{display:flex;flex-direction:column;gap:8px;width:100%;max-width:340px;}
-.cz-nouveau{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:16px;text-align:left;
+/* LE BADGE GAGNÉ. Il s'appelait « cz-nouveau », comme l'étiquette verte « NOUVEAU » de
+   l'interview (plus bas) : elle l'écrasait — une pilule verte, l'icône de travers. */
+.cz-badges-neufs{display:flex;flex-direction:column;gap:8px;width:100%;max-width:340px;}
+.cz-badge-neuf{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:16px;text-align:left;
   background:linear-gradient(90deg,rgba(255,46,154,.22),rgba(245,162,58,.18));border:1px solid rgba(255,46,154,.45);
   animation:cz-pop .5s cubic-bezier(.2,.9,.3,1.5) both;}
-.cz-nouveau > i{font-style:normal;font-size:28px;}
-.cz-nouveau em{display:block;font-style:normal;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#FFC2E0;}
-.cz-nouveau b{display:block;font-family:var(--font-clikme),sans-serif;font-size:16px;}
+.cz-badge-neuf > i{font-style:normal;font-size:28px;line-height:1;flex:none;}
+.cz-badge-neuf em{display:block;font-style:normal;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#FFC2E0;}
+.cz-badge-neuf b{display:block;font-family:var(--font-clikme),sans-serif;font-size:16px;}
+/* OÙ JE LE PUBLIE ? — et, à la fête, où il est arrivé. */
+.cz-ou,.cz-ou-fait{display:flex;flex-direction:column;gap:8px;width:100%;}
+.cz-ou-fait{max-width:340px;padding:12px;border-radius:16px;background:var(--nappe2);border:1px solid var(--trait);text-align:left;animation:cz-entre .5s .5s both;}
+.cz-ou-h{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.cz-ou-h b,.cz-ou-fait > b{font-family:var(--font-clikme),sans-serif;font-size:15px;font-weight:800;}
+.cz-ou-h span{display:flex;gap:4px;}
+.cz-ou-h button{padding:5px 10px;border-radius:999px;border:1px solid var(--trait);background:none;color:var(--gris);font-weight:700;font-size:12px;}
+.cz-ou-h button.on{color:#FFD9A8;border-color:rgba(245,162,58,.6);}
+.cz-ou-l{display:flex;flex-wrap:wrap;gap:6px;}
+.cz-ou-c{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 12px;border-radius:999px;border:1.5px solid var(--trait);
+  background:var(--nappe);color:var(--gris);font-weight:700;font-size:13.5px;}
+.cz-ou-c i{font-style:normal;}
+.cz-ou-c small{font-weight:600;font-size:11.5px;opacity:.8;}
+.cz-ou-c.on{color:var(--creme);border-color:rgba(61,226,166,.65);background:rgba(61,226,166,.1);}
+.cz-ou-c.fixe{cursor:default;}
+.cz-ou-c.route{color:#FFD9A8;border-color:rgba(245,162,58,.5);background:rgba(245,162,58,.08);}
+.cz-ou-note{margin:0;font-size:12.5px;line-height:1.4;color:var(--gris);}
 .cz-fete .cz-go{max-width:340px;margin-top:6px;text-decoration:none;}
 .cz-envoi-etat{margin:0;max-width:340px;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.4;
   background:rgba(123,214,106,.12);color:#BDE8B0;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;}
@@ -2763,6 +2917,11 @@ label.cz-go{cursor:pointer;}
   border:1px solid var(--trait);white-space:nowrap;}
 .cz-outil.chaud .cz-outil-i{color:#fff;background:var(--rose);box-shadow:0 0 16px rgba(255,46,154,.45);}
 .cz-outil.chaud .cz-outil-badge{color:#fff;background:var(--rose);border-color:var(--rose);}
+/* ÉCHANGES, LA FONCTIONNALITÉ PHARE : sa couleur à lui, le vert de l'argent qu'on ne sort pas. */
+.cz-outil.phare b{color:#9FF5C9;}
+.cz-outil.phare .cz-outil-i{color:#04150E;background:linear-gradient(135deg,#9FF5C9,#3DE2A6);box-shadow:0 0 16px rgba(61,226,166,.4);}
+.cz-outil.phare .cz-outil-badge{color:#04150E;background:#9FF5C9;border-color:#3DE2A6;}
+.cz-outil.phare.chaud .cz-outil-badge{color:#fff;background:var(--rose);border-color:var(--rose);}
 @media (max-width:350px){.cz-outils{padding:10px 2px 9px;}.cz-outil-i{width:36px;height:36px;}.cz-outil-i svg{width:20px;height:20px;}
   .cz-outil b{font-size:9.5px;letter-spacing:-.02em;}.cz-outil-badge{left:calc(50% + 7px);}.cz-deux-choix b{font-size:17px;}}
 
