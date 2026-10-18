@@ -330,6 +330,7 @@ import {
 } from "@/lib/direct/apercu-habitant";
 import { MARQUE } from "@/lib/marque";
 import { MotMarque } from "@/components/direct/mot-marque";
+import { AvisFantomes, type Avis } from "./avis-fantomes";
 
 /** Au-delà de cette distance en pixels, le doigt a décidé : la carte part. */
 /**
@@ -801,6 +802,40 @@ function ajouterAvis(cle: string, avis: AvisPlat) {
     }
   }
   abonnes.forEach((f) => f());
+}
+
+// ── 👻 L'AVIS SUR SES FILMS (son interview), GARDÉ DANS SON NAVIGATEUR ─────
+//
+// « On a oublié, à la fin de l'interview, de mettre nos petits fantômes pour
+// récolter l'avis du client. » Ils apparaissent quand le film arrive à sa fin ;
+// l'avis est gardé ici (on le retrouve en revenant) et, chez un vrai commerçant,
+// envoyé à son espace — voir `donnerAvisFilm` et `api/direct/avis-film`.
+const CLE_AVIS_FILMS = "clikme-avis-films-v1";
+const AUCUN_AVIS_FILM: Record<string, Avis> = {};
+let avisFilmsMemoire: Record<string, Avis> | null = null;
+const abonnesFilms = new Set<() => void>();
+
+function chargerAvisFilms(): Record<string, Avis> {
+  if (avisFilmsMemoire) return avisFilmsMemoire;
+  try {
+    avisFilmsMemoire = JSON.parse(window.localStorage.getItem(CLE_AVIS_FILMS) || "{}");
+  } catch {
+    avisFilmsMemoire = {};
+  }
+  return avisFilmsMemoire ?? AUCUN_AVIS_FILM;
+}
+function abonnerAvisFilms(f: () => void) {
+  abonnesFilms.add(f);
+  return () => void abonnesFilms.delete(f);
+}
+function poserAvisFilm(cle: string, a: Avis) {
+  avisFilmsMemoire = { ...chargerAvisFilms(), [cle]: a };
+  try {
+    window.localStorage.setItem(CLE_AVIS_FILMS, JSON.stringify(avisFilmsMemoire));
+  } catch {
+    /* Navigation privée : l'avis vit le temps de la visite. */
+  }
+  abonnesFilms.forEach((f) => f());
 }
 
 /**
@@ -2247,6 +2282,9 @@ export function ApercuHabitant({
   const filSalon = useRef<HTMLDivElement | null>(null);
 
   const miens = useSyncExternalStore(abonnerAvis, chargerAvis, () => VIDE);
+  /** 👻 Ses avis sur les films, et les films vus jusqu'au bout pendant cette visite. */
+  const avisFilms = useSyncExternalStore(abonnerAvisFilms, chargerAvisFilms, () => AUCUN_AVIS_FILM);
+  const [filmsFinis, setFilmsFinis] = useState<Record<string, true>>({});
   const mesRappels = useSyncExternalStore(abonnerRappels, chargerRappels, () => RIEN);
   const mesFlammes = useSyncExternalStore(abonnerFlammes, chargerFlammes, () => AUCUNE);
   const salonsLus = useSyncExternalStore(abonnerSalons, chargerSalons, () => SALONS_VIDES);
@@ -4870,6 +4908,22 @@ export function ApercuHabitant({
      meme chose, dont un seul savait les nommer. */
   /** La clé d'un moment dans le carnet local : le commerce et son intitulé. */
   const cleMoment = (c: CarteAutour, m: MomentJour) => `${c.id}|${m.titre}`;
+  /** La clé d'un film : le commerce et l'adresse du film (une interview par jour). */
+  const cleFilm = (c: CarteAutour, m: MomentJour) => `${c.id}|${m.video?.mp4 ?? ""}`;
+  /** 👻 Son avis à la fin du film : gardé ici, et envoyé à l'espace d'un vrai commerçant. */
+  const donnerAvisFilm = (c: CarteAutour, m: MomentJour, a: Avis) => {
+    if (!m.video) return;
+    poserAvisFilm(cleFilm(c, m), a);
+    if (c.villeReelle) {
+      void fetch("/api/direct/avis-film", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: c.id, ville: c.villeReelle, film: m.video.mp4, sens: a }),
+      }).catch(() => {
+        /* Réseau : l'avis reste dans ce téléphone. */
+      });
+    }
+  };
   const avisDe = (c: CarteAutour, m: MomentJour): AvisPlat[] => [
     ...(miens[cleMoment(c, m)] ?? []),
     ...(m.avis ?? []),
@@ -10788,6 +10842,15 @@ export function ApercuHabitant({
                                       preload="none"
                                       onPointerDown={(ev) => ev.stopPropagation()}
                                       onPlay={() => noterUneFois("video", "video-vue")}
+                                      // LA FIN DU FILM : il tourne en boucle, donc « ended » ne
+                                      // vient jamais — on guette la dernière demi-seconde.
+                                      onTimeUpdate={(ev) => {
+                                        const v = ev.currentTarget;
+                                        const cle = cleFilm(dessus, m);
+                                        if (!filmsFinis[cle] && v.duration > 0 && v.currentTime >= v.duration - 0.5) {
+                                          setFilmsFinis((f) => ({ ...f, [cle]: true }));
+                                        }
+                                      }}
                                     >
                                       {/* UNE SOURCE VIDE N'EN EST PAS UNE : la
                                           vidéo filmée depuis l'assistante n'a
@@ -10805,6 +10868,20 @@ export function ApercuHabitant({
                                     </span>
                                   </div>
                                 )}
+                                {/* 👻 À LA FIN DU FILM, SON AVIS : les trois fantômes de
+                                    l'essayage. Ils restent là une fois l'avis donné. */}
+                                {!passe &&
+                                  m.video &&
+                                  (filmsFinis[cleFilm(dessus, m)] || avisFilms[cleFilm(dessus, m)] !== undefined) && (
+                                    <div className="ap-film-avis" onPointerDown={(ev) => ev.stopPropagation()}>
+                                      <AvisFantomes
+                                        avis={avisFilms[cleFilm(dessus, m)]}
+                                        onAvis={(a) => donnerAvisFilm(dessus, m, a)}
+                                        question="Et vous, ça vous tente ?"
+                                        libelle="Votre avis sur son film"
+                                      />
+                                    </div>
+                                  )}
 
                                 {!passe && (avisNotes(av).length > 0 || photosDe(av).length > 0) && (
                                   <div className="ap-prog-av">
@@ -17792,6 +17869,7 @@ export function ApercuHabitant({
            une légende qui dit ce qu'on regarde — sans elle, dix secondes de
            cuisine sans contexte ressemblent à une publicité. */
         .ap-video{margin-top:11px;}
+        .ap-film-avis{margin-top:6px;}
         .ap-video video{display:block;width:100%;max-height:340px;object-fit:cover;
           border-radius:14px;background:#0A1210;border:1px solid rgba(255,255,255,.1);}
         .ap-video span{display:flex;align-items:center;gap:7px;margin-top:7px;

@@ -4,7 +4,7 @@
 // clic est compté → le pro voit des RÉSULTATS RÉELS (jamais un chiffre inventé).
 //
 // Objet stocké dans human_vitrine_sites.current_offer (jsonb) :
-//   { text, until (ISO|null), photo (string|null), clicks, created_at }
+//   { text, until (ISO|null), photo (string|null), video?, clicks, created_at }
 //   null = aucune offre active.
 //
 // Actions (POST, jeton pro privé requis) : get | set {text, until|days, photo, reseaux?} | clear.
@@ -45,6 +45,11 @@ type Offer = {
   text: string;
   until: string | null;
   photo: string | null;
+  /** SON INTERVIEW (ou sa vidéo de quinze secondes), quand l'annonce en a une.
+   *  L'application des habitants la lit ici pour la montrer à la place de la
+   *  photo — voir `momentsDuCommercant` — et pour savoir quel film les petits
+   *  fantômes notent (`api/direct/avis-film`). */
+  video?: string;
   clicks: number;
   created_at: string;
   /** VRAI quand l'échéance est passée. Calculé ICI et pas dans l'écran :
@@ -403,7 +408,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const offer: Offer = { text, until, photo, clicks: 0, created_at: new Date().toISOString() };
+    const offer: Offer = { text, until, photo, ...(video ? { video } : {}), clicks: 0, created_at: new Date().toISOString() };
     /** Renseigné si les façons ont échoué APRÈS la publication de l'annonce. */
     let avertissementFacons = "";
     try {

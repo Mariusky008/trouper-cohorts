@@ -24,6 +24,7 @@ import { echeanceDuTexte } from "@/lib/direct/echeance-texte";
 import { preparerFacons, ecrireFacons } from "@/lib/direct/facons-creation";
 import { engagementsDuCommerce } from "@/lib/direct/engagements";
 import { resumeReactions } from "@/lib/direct/reactions";
+import { resumeAvisFilms } from "@/lib/direct/avis-film";
 import { diagnostiquerFacons } from "@/lib/direct/diagnostic-facons";
 
 export const dynamic = "force-dynamic";
@@ -115,11 +116,12 @@ export async function POST(request: Request) {
   // faute de contact.
   if (action === "engagements") {
     try {
-      const [engagements, reactions] = await Promise.all([
+      const [engagements, reactions, avisFilms] = await Promise.all([
         engagementsDuCommerce(supabase, siteId),
         resumeReactions(supabase, siteId),
+        resumeAvisFilms(supabase, siteId),
       ]);
-      return NextResponse.json({ ok: true, engagements, reactions });
+      return NextResponse.json({ ok: true, engagements, reactions, avisFilms });
     } catch (e) {
       if (migrationManquante(String(e))) return NextResponse.json({ ok: true, engagements: [], reactions: null });
       return NextResponse.json({ error: String(e) }, { status: 500 });
