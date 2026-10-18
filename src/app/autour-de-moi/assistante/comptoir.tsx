@@ -87,6 +87,7 @@ import { questionsDuMetier, reponduesDuMetier } from "@/lib/direct/savoir-fantom
 import { accord, demandesEnMots, effetDesAnnonces, phraseDeLaVeille, semaineDuComptoir, type JourStats } from "@/lib/direct/stats-comptoir";
 import { lignesDeLaSemaine } from "@/lib/site-internet/semaine-en-clients";
 import type { SemaineEnClients } from "@/lib/site-internet/compteurs-jour";
+import { partagerEnStatut, type Statut, type SortieStatut } from "@/lib/direct/statut-whatsapp";
 
 type Commerce = CommerceComptoir;
 
@@ -1028,6 +1029,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           serie={s}
           publication={phase.publication}
           ville={commerce.ville ?? "/autour-de-moi"}
+          commerce={commerce.nom}
+          lienStatut={commerce.reel ? `/b/${encodeURIComponent(commerce.reel.slug)}` : (commerce.ville ?? "/autour-de-moi")}
           reel={Boolean(commerce.reel)}
           envoi={envoi}
           onReessayer={() => phase.ou === "fete" && void envoyerEnBase(phase.publication, principal)}
@@ -2328,6 +2331,35 @@ function OuPublie({ reel, envoi, publication }: { reel: boolean; envoi: Envoi | 
   );
 }
 
+/** « Mets-la dans ton statut WhatsApp » — l'image se fabrique ici, la feuille de partage l'emmène. */
+function EnStatut({ statut }: { statut: Statut }) {
+  const [occupe, setOccupe] = useState(false);
+  const [sortie, setSortie] = useState<SortieStatut | null>(null);
+  const partager = async () => {
+    setOccupe(true);
+    // L'adresse de sa page, entière : elle se lit sur l'image et se touche dans la légende. Sans
+    // `?moi=1` (sa propre visite) : ceux qui viennent de son statut comptent dans ses chiffres.
+    const lien = new URL(statut.lien, window.location.origin);
+    lien.searchParams.delete("moi");
+    setSortie(await partagerEnStatut({ ...statut, lien: lien.href }));
+    setOccupe(false);
+  };
+  return (
+    <div className="cz-statut">
+      <button type="button" disabled={occupe} onClick={() => void partager()}>
+        <span aria-hidden="true">📲</span> {occupe ? "Je prépare l’image…" : "Mets-la dans ton statut WhatsApp"}
+      </button>
+      <small>
+        {sortie?.par === "telechargement"
+          ? "Image enregistrée : dans WhatsApp, Actus › ➕ Mon statut, puis choisis-la."
+          : sortie?.par === "impossible"
+            ? `Pas possible sur ce téléphone : ${sortie.pourquoi}.`
+            : "Puis WhatsApp › « Mon statut », tout en haut. Tous ceux qui ont ton numéro la verront 24 h."}
+      </small>
+    </div>
+  );
+}
+
 /* ═══ LA FÊTE ═══════════════════════════════════════════════════════════ */
 function Fete({
   dossier,
@@ -2337,6 +2369,8 @@ function Fete({
   serie: jours,
   publication,
   ville,
+  commerce,
+  lienStatut,
   reel,
   envoi,
   onReessayer,
@@ -2353,6 +2387,10 @@ function Fete({
   publication: Publication;
   /** Là où son annonce vient d'arriver : l'application de la ville. */
   ville: string;
+  /** Son nom, sur l'image de son statut WhatsApp. */
+  commerce: string;
+  /** L'adresse écrite sur son statut : la courte (`/b/<sa-page>`, comptée comme une visite). */
+  lienStatut: string;
   /** Un vrai commerçant : l'envoi en ligne, et de quoi le refaire. */
   reel: boolean;
   envoi: Envoi | null;
@@ -2460,6 +2498,10 @@ function Fete({
             Réessayer
           </button>
         </p>
+      )}
+      {/* SON STATUT WHATSAPP, EN UN GESTE : tous ceux qui ont son numéro la voient 24 heures. */}
+      {publication.photos[0] && (
+        <EnStatut statut={{ photo: publication.photos[0], titre: publication.nom, prix: publication.prix || undefined, commerce, lien: lienStatut }} />
       )}
       {/* LA PREUVE QUE ÇA EST PARTI : son annonce, là où on la voit, tout de suite. */}
       <a className="cz-go" href={ville}>
@@ -2775,6 +2817,14 @@ label.cz-go{cursor:pointer;}
 .cz-ou-c.fixe{cursor:default;}
 .cz-ou-c.route{color:#FFD9A8;border-color:rgba(245,162,58,.5);background:rgba(245,162,58,.08);}
 .cz-ou-note{margin:0;font-size:12.5px;line-height:1.4;color:var(--gris);}
+/* 📲 SON STATUT WHATSAPP, en un geste. */
+.cz-statut{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;max-width:340px;margin-top:6px;}
+.cz-statut button{width:100%;min-height:52px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;
+  border-radius:16px;border:0;background:#25D366;color:#06260F;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:15.5px;
+  box-shadow:0 8px 22px rgba(37,211,102,.25);}
+.cz-statut button:active{transform:scale(.98);}
+.cz-statut button:disabled{opacity:.7;}
+.cz-statut small{font-size:12.5px;line-height:1.4;color:var(--gris);text-align:center;}
 .cz-fete .cz-go{max-width:340px;margin-top:6px;text-decoration:none;}
 .cz-envoi-etat{margin:0;max-width:340px;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.4;
   background:rgba(123,214,106,.12);color:#BDE8B0;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;}
