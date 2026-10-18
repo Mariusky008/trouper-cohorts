@@ -10,7 +10,8 @@ import { dirname, extname, join } from "path";
 import { spawn } from "child_process";
 import { fileURLToPath } from "url";
 
-const ICI = dirname(fileURLToPath(import.meta.url));
+// DOSSIER=lou : un autre épisode (son dossier, son episode.html, son a/), avec la même mécanique
+const ICI = join(dirname(fileURLToPath(import.meta.url)), process.env.DOSSIER || "");
 const FF = process.env.FFMPEG || "ffmpeg";
 const CHROMIUM = process.env.CHROMIUM || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined);
 const pw = (await import(process.env.PLAYWRIGHT || "/opt/node22/lib/node_modules/playwright/index.js")).default;

@@ -64,10 +64,28 @@ phrase par phrase sur la durée attendue de chaque phrase. Elles ont été
 vérifiées par la mesure (aucune coupe ne tombe dans un mot), **pas à l'oreille,
 une par une**.
 
-## Pour un autre commerce (la boutique de vêtements)
+## L'épisode 13 : Lou, boutique de vêtements (`lou/`)
 
-Il faut ses images (photos ou vidéos), **sa voix** et une musique. Dans cet
-environnement, les banques libres de droits sont bloquées par la politique
-réseau ; il faut autoriser leurs domaines (par exemple `mixkit.co` et
-`assets.mixkit.co`) et, pour la voix, `api.elevenlabs.io` avec la clé dans la
-variable `ELEVENLABS_API_KEY`.
+Le même moteur, un autre épisode : 39 secondes sur un manteau long camel. Le
+fantôme pose ses questions avec sa voix (« Alors, c'est quoi, ta pièce du
+jour ? », « Montre-moi comment tu la portes ! », « Dernière question ! », « Ta
+boutique en trois mots ? », « À bientôt, en boutique ! »). Chaque photo montre
+ce que Lou dit au moment où elle le dit : « laine et cachemire » sur la matière
+de tout près, « jusqu'aux chevilles » sur les chevilles, « ouvert » puis
+« ceinturé », « avec des boots » sur les boots, le ralenti sur la ceinture
+nouée (« comme ça »).
+
+**Les photos, la voix de Lou et la musique ne sont pas dans le dépôt** (droits) :
+`lou/preparer.cjs` les prend dans un dossier qu'on lui donne et dit les noms
+attendus. Six photos viennent de Pexels ; la veste à sequins (Amazon) et la pile
+de pulls (un blog) **ne sont pas libres de droits** : maquette interne
+seulement. Le dépôt garde ce qui permet de refaire le montage : le moteur
+(`lou/episode.html`), l'instant de chaque mot (`lou/mots.json`, posé à la main
+sur les pauses et les syllabes mesurées), les recadrages, et le masque du
+détourage (`lou/masque.png`).
+
+```sh
+node outils/face-au-fantome/lou/preparer.cjs /chemin/du/dossier/recu
+DOSSIER=lou node outils/face-au-fantome/rendu.mjs apercu 3.6 22.4
+DOSSIER=lou FFMPEG=/chemin/ffmpeg node outils/face-au-fantome/rendu.mjs tout
+```
