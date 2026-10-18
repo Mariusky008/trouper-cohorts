@@ -1,6 +1,6 @@
 -- « SIGNALER » UN BON NON HONORÉ, ESSAYÉ SUR UN VRAI POSTGRES — jamais sur la base de production.
 --
--- Les règles de `20261025120000_echanges_signalements.sql` : seul celui qui a pris le bon le signale,
+-- Les règles de `20261025121000_echanges_signalements.sql` : seul celui qui a pris le bon le signale,
 -- une fois, dans les 60 jours ; un bon encore réservé est annulé au passage (ses crédits reviennent) ;
 -- deux commerces DIFFÉRENTS → ses offres passent en pause, et il ne peut pas les remettre en ligne
 -- lui-même ; lever la pause remet son offre comme elle était et remet le compte à zéro ; anon

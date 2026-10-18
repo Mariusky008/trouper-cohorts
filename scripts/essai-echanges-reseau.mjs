@@ -10,7 +10,7 @@
 // les infos du fournisseur, se fait d'un coup quand il les donne, puis toute seule à chaque validation ;
 // TVA ou franchise ; la page de la facture ; la Suisse n'a que le relevé. Puis « jamais plein tarif »
 // (la moitié prix), « 3 offres max et limite par offre » (`20261023120000_echanges_offres.sql`), et
-// « Signaler » un bon non honoré, avec la pause à deux commerces (`20261025120000_echanges_signalements.sql`).
+// « Signaler » un bon non honoré, avec la pause à deux commerces (`20261025121000_echanges_signalements.sql`).
 //
 //   node scripts/faux-supabase.mjs 54321
 //   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=faux NEXT_PUBLIC_SUPABASE_ANON_KEY=faux \
@@ -362,7 +362,7 @@ await fetch(`${F}/human_echanges_offres?site_id=eq.${ID.alice}`, { method: "PATC
 r = await appel(ALICE, "autre", { titre: "Un marque-page brodé", prix: 6, parMois: 8, paiement: "moitie" });
 ok(r.ok && r.etat.mien.autres[0]?.paiement === "credits", "Alice (librairie) ajoute un marque-page à −50 % seulement : enregistré en échange seulement");
 
-/* ── « SIGNALER » UN BON NON HONORÉ (`20261025120000_echanges_signalements.sql`) ──────── */
+/* ── « SIGNALER » UN BON NON HONORÉ (`20261025121000_echanges_signalements.sql`) ──────── */
 console.log("\n— Signaler un bon non honoré —");
 const GLACIER = "glacier-dax";
 ID.glacier = "ffffffff-0000-4000-8000-000000000006";

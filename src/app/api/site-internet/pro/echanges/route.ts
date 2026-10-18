@@ -252,7 +252,7 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
   if (em) return absente(em) ? vide : null;
   const membres = (lm ?? []) as LigneMembre[];
   const prenomDe = new Map(membres.map((m) => [m.id, m.prenom]));
-  /* « SIGNALER » (`20261025120000_echanges_signalements.sql`) : les bons qu'il a déjà
+  /* « SIGNALER » (`20261025121000_echanges_signalements.sql`) : les bons qu'il a déjà
      signalés, et SA pause s'il en a une. Sans la migration, rien de tout ça. */
   const signales = new Set<string>();
   let pause: EtatEchanges["pause"] = null;

@@ -1,7 +1,7 @@
 // 🚩 L'ÉCHANGE · LES SIGNALEMENTS — les bons non honorés, et les pauses à lever.
 //
 // Deux commerces différents signalent le même commerçant : ses offres passent en
-// pause toutes seules (`20261025120000_echanges_signalements.sql`). Il ne peut pas
+// pause toutes seules (`20261025121000_echanges_signalements.sql`). Il ne peut pas
 // les remettre en ligne lui-même. ClikMe lui parle, puis lève la pause ici, en
 // disant ce qu'il conclut des signalements : non fondés, ou fondés (c'est réglé).
 // Dans les deux cas son offre revient comme elle était, et son compte repart de zéro.
@@ -73,7 +73,7 @@ export default async function Page() {
       <section className="rounded-2xl border bg-white p-5 shadow-sm sm:p-7">
         <h1 className="text-2xl font-black">L’échange · signalements</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          La migration <code>20261025120000_echanges_signalements.sql</code> n’est pas encore appliquée : rien à montrer.
+          La migration <code>20261025121000_echanges_signalements.sql</code> n’est pas encore appliquée : rien à montrer.
         </p>
       </section>
     );

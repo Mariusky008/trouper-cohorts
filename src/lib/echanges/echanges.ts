@@ -162,7 +162,7 @@ export type BonReel = {
 };
 
 /**
- * « SIGNALER » UN BON NON HONORÉ — voir `20261025120000_echanges_signalements.sql`.
+ * « SIGNALER » UN BON NON HONORÉ — voir `20261025121000_echanges_signalements.sql`.
  * Celui qui a pris le bon dit ce qui s'est passé ; après deux commerces
  * différents, les offres de l'autre passent en pause jusqu'à ce que ClikMe
  * en ait parlé avec lui.

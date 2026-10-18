@@ -5,7 +5,7 @@
  *
  * Celui qui a pris le bon dit ce qui s'est passé, en un geste. Ce que la feuille
  * dit d'avance, parce que c'est ce qui arrive vraiment (voir
- * `20261025120000_echanges_signalements.sql`) :
+ * `20261025121000_echanges_signalements.sql`) :
  *   · un bon encore réservé est annulé, ses crédits lui reviennent ;
  *   · son nom n'est montré qu'à ClikMe ;
  *   · deux commerces différents, et les offres de l'autre passent en pause le
