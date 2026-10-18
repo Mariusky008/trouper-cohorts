@@ -25,7 +25,11 @@
 /* ═══ FACE AU FANTÔME — UN ÉPISODE, IMAGE PAR IMAGE ═══════════════════════
    dessiner(t) dessine l'image de l'instant t ; mixer() fabrique le son.
    Tout est fonction du temps : le même t donne toujours la même image. */
-const W = 1080, H = 1920, DUREE = 39.5;
+// LE FANTÔME POSE SES QUESTIONS À VOIX HAUTE : chaque carte s'allonge du temps de sa question,
+// et tout ce qui suit glisse d'autant. Les temps écrits plus bas sont ceux de la première version.
+const D1 = 1.13, D2 = 1.24, D3 = 0.49;
+const tt = (t) => t + (t >= 6.75 ? D1 : 0) + (t >= 18.25 ? D2 : 0) + (t >= 27.95 ? D3 : 0);
+const W = 1080, H = 1920, DUREE = tt(39.5);
 const ROSE = "#FF2E9A", CREME = "#FFF4E6", NUIT = "#140C09";
 const c = document.getElementById("c");
 let g = c.getContext("2d");
@@ -120,15 +124,15 @@ function largeurTexte(t, police, ls = 0) { g.save(); g.font = police; g.letterSp
 // [début, fin] dans l'enregistrement de Jean-Marie, et l'instant T où il passe dans l'épisode.
 const CLIPS = [
   { id: "hook", src: [24.915, 26.73], T: 0.3, style: "accroche" },
-  { id: "a", src: [1.76, 2.95], T: 6.85 },
-  { id: "b", src: [3.57, 5.87], T: 8.2 },
-  { id: "c", src: [6.56, 9.08], T: 10.8 },
-  { id: "d", src: [9.48, 12.47], T: 13.62 },
-  { id: "e", src: [13.23, 18.25], T: 18.35 },
-  { id: "f", src: [18.97, 21.05], T: 23.75 },
-  { id: "g", src: [21.75, 22.98], T: 28.0 },
-  { id: "h", src: [23.29, 24.12], T: 29.5 },
-  { id: "i", src: [24.67, 26.73], T: 30.75 },
+  { id: "a", src: [1.76, 2.95], T: tt(6.85) },
+  { id: "b", src: [3.57, 5.87], T: tt(8.2) },
+  { id: "c", src: [6.56, 9.08], T: tt(10.8) },
+  { id: "d", src: [9.48, 12.47], T: tt(13.62) },
+  { id: "e", src: [13.23, 18.25], T: tt(18.35) },
+  { id: "f", src: [18.97, 21.05], T: tt(23.75) },
+  { id: "g", src: [21.75, 22.98], T: tt(28.0) },
+  { id: "h", src: [23.29, 24.12], T: tt(29.5) },
+  { id: "i", src: [24.67, 26.73], T: tt(30.75) },
 ];
 const FORTS = /quadriller|croustillante|graisse|canard|tranche|odeur/i;
 const FRAPPES = /^(croustillant,|fondant…|l'odeur)$/;
@@ -220,11 +224,18 @@ function secousse(t) {
 /* ═══ LES PLANS ════════════════════════════════════════════════════════ */
 const QUESTIONS = {
   1: { num: "QUESTION 1 / 3", l1: "TON", l2: "GESTE", sous: ["Montre-moi le geste", "qui fait la différence."] },
-  2: { num: "QUESTION 2 / 3", l1: "TON", l2: "SECRET", sous: ["Ce que tu fais", "que les autres ne font pas."] },
-  3: { num: "DERNIÈRE QUESTION · LE DÉFI", l1: "TON MAGRET", l2: "EN 3 MOTS", sous: ["Trois mots,", "pas un de plus."], defi: true },
+  2: { num: "QUESTION 2 / 3", l1: "TON", l2: "SECRET", sous: ["Et c'est quoi, ton secret,", "pour qu'il soit si bon ?"] },
+  3: { num: "DERNIÈRE QUESTION · LE DÉFI", l1: "TON PLAT", l2: "EN 3 MOTS", sous: ["Trois mots,", "pas un de plus."], defi: true },
 };
-// la bouche du reporter : quand il parle (défi, au revoir)
-const PAROLES_REPORTER = [{ id: "derniere", T: 26.05 }, { id: "ademain", T: 34.3 }];
+// CE QUE DIT LE FANTÔME, ET QUAND : ses questions sur les cartes, son au revoir sur la carte de fin.
+// Sa voix : les répliques enregistrées sur ElevenLabs (voir `voix-fantome/`).
+const PAROLES_REPORTER = [
+  { id: "q1", src: "a/f-q1.mp3", T: 5.62 },
+  { id: "q2", src: "a/f-q2.mp3", T: tt(16.75) + 0.27 },
+  { id: "derniere", src: "a/f-derniere.mp3", T: tt(25.95) + 0.15 },
+  { id: "defi", src: "a/f-defi.mp3", T: tt(25.95) + 1.3 },
+  { id: "ademain", src: "a/f-ademain.mp3", T: tt(34.3) },
+];
 function boucheReporter(t) {
   for (const p of PAROLES_REPORTER) {
     const env = SON[p.id + "Env"]; if (!env) continue;
@@ -268,7 +279,7 @@ function carteQuestion(n, u, t) {
   if (q.defi) {
     // trois points qui se remplissent
     for (let k = 0; k < 3; k++) {
-      const on = u > 0.7 + k * 0.32;
+      const on = u > 1.45 + k * 0.28;
       g.beginPath(); g.arc(104 + k * 64, 1340, 20, 0, Math.PI * 2);
       g.fillStyle = on ? ROSE : "rgba(255,244,230,.18)"; g.fill();
     }
@@ -373,7 +384,7 @@ function fin(u, t) {
     g.restore();
   }
   // sa bulle : « À demain, et bon appétit ! »
-  const bu = t - 34.25;
+  const bu = t - tt(34.25);
   if (bu > 0 && bu < 2.4) {
     const a = Math.min(1, bu / 0.15, (2.4 - bu) / 0.25);
     g.save(); g.globalAlpha = a; g.translate(905, 400); g.scale(mix(0.7, 1, sortie(bu / 0.2)), mix(0.7, 1, sortie(bu / 0.2)));
@@ -395,7 +406,7 @@ function fin(u, t) {
   // l'appel, et la signature sonore : le bouton qui bat
   const cu = sortie((u - 1.25) / 0.35);
   if (cu > 0) {
-    const bat = t > 36.15 && t < 36.75 ? 1 + 0.07 * Math.sin(((t - 36.15) / 0.6) * Math.PI) : 1;
+    const bat = t > tt(36.15) && t < tt(36.75) ? 1 + 0.07 * Math.sin(((t - tt(36.15)) / 0.6) * Math.PI) : 1;
     g.save(); g.globalAlpha = cu; g.translate(W / 2, 1468); g.scale(bat, bat);
     g.shadowColor = "rgba(255,46,154,.6)"; g.shadowBlur = 50;
     rectArrondi(-400, -62, 800, 124, 62); g.fillStyle = "#1E1E22"; g.fill(); g.shadowColor = "transparent";
@@ -406,7 +417,7 @@ function fin(u, t) {
     g.restore();
   }
   // les étincelles de la signature
-  const su = t - 36.15;
+  const su = t - tt(36.15);
   if (su > 0 && su < 1.2) {
     for (let k = 0; k < 16; k++) {
       const ang = (k / 16) * Math.PI * 2 + hasard(k), d = 300 + 420 * sortie(su / 1.2) * (0.6 + hasard(k + 4) * 0.6);
@@ -429,12 +440,12 @@ const SEGS = [
   // 2 · LE CLIC : son nom derrière lui
   { de: 2.55, a: 5.35, sig: true, dessin: (u, t) => titre(u, t) },
   // 3 · QUESTION 1
-  { de: 5.35, a: 6.75, carte: 1 },
+  { de: 5.35, a: tt(6.75), carte: 1 },
   // 4 · RÉPONSE 1 : aux fourneaux, puis — coupe — plus près
-  { de: 6.75, a: 8.2, rep: 6.75, dessin: (u, t) => { plan(m(1), { fx: 0.42, fy: 0.42, z: 1.08 + 0.05 * u / 1.45 }); vapeur(t, 260, 1500, 220, 1, 0.7); etalonner(); } },
-  { de: 8.2, a: 10.5, rep: 6.75, dessin: (u, t) => { plan(m(1), { fx: 0.3, fy: 0.72, z: 1.5 + 0.06 * u / 2.3 }); vapeur(t, 380, 1500, 300, 1, 0.9); etalonner(); } },
+  { de: tt(6.75), a: tt(8.2), rep: tt(6.75), dessin: (u, t) => { plan(m(1), { fx: 0.42, fy: 0.42, z: 1.08 + 0.05 * u / 1.45 }); vapeur(t, 260, 1500, 220, 1, 0.7); etalonner(); } },
+  { de: tt(8.2), a: tt(10.5), rep: tt(6.75), dessin: (u, t) => { plan(m(1), { fx: 0.3, fy: 0.72, z: 1.5 + 0.06 * u / 2.3 }); vapeur(t, 380, 1500, 300, 1, 0.9); etalonner(); } },
   // 5 · LE GESTE : ses mains, puis LE RALENTI sur « doucement »
-  { de: 10.5, a: 13.6, rep: 6.75, dessin: (u, t) => {
+  { de: tt(10.5), a: tt(13.6), rep: tt(6.75), dessin: (u, t) => {
     const r = 12.72 - 10.5; // le ralenti commence ici
     let z = 1.05 + 0.08 * Math.min(u, r) / r, force = 0, vit = 1;
     if (u > r) { const v = u - r; z = 1.13 + 0.32 * sortie(v / 0.28) + 0.05 * Math.max(0, v - 0.28); force = v < 0.3 ? Math.sin(Math.PI * v / 0.3) : 0; vit = 0.25; }
@@ -442,34 +453,34 @@ const SEGS = [
     vapeur(u > r ? 10.5 + r + (u - r) * 0.25 : t, 540, 1420, 420, vit, 1.2); etalonner(0.26);
     if (u > r) fuite((u - r) / 0.9, 0.9);
   } },
-  { de: 13.6, a: 16.75, rep: 6.75, dessin: (u, t) => {
+  { de: tt(13.6), a: tt(16.75), rep: tt(6.75), dessin: (u, t) => {
     const coup = 14.8 - 13.6; // « croustillante » : on se rapproche
     const z = (u < coup ? 1.62 : 1.85) + 0.04 * u / 3;
     plan(m(2), { fx: 0.52, fy: 0.7, z }); vapeur(13.6 + u * 0.4, 560, 1520, 380, 0.4, 1.1); etalonner(0.26);
   } },
   // 6 · QUESTION 2
-  { de: 16.75, a: 18.25, carte: 2 },
+  { de: tt(16.75), a: tt(18.25), carte: 2 },
   // 7 · RÉPONSE 2 : lui, en relief ; puis les pommes de terre, puis le magret tranché
-  { de: 18.25, a: 19.58, rep: 18.25, dessin: (u, t) => {
+  { de: tt(18.25), a: tt(19.58), rep: tt(18.25), dessin: (u, t) => {
     couvrir(IM.fondAccueil, { z: 1.12, fx: 0.5 - 0.02 * u });
     g.fillStyle = "rgba(20,12,9,.18)"; g.fillRect(0, 0, W, H);
     const sc = 1.1 + 0.03 * u / 1.33, lw = IM.lui.width * sc, lh = IM.lui.height * sc;
     g.drawImage(IM.lui, W - lw + 8 + 14 * u, 420 - 306 * (sc - 1.1) - 6 * u, lw, lh); etalonner(0.18);
   } },
-  { de: 19.58, a: 22.02, rep: 18.25, dessin: (u, t) => { plan(m(3), { fx: mix(0.25, 0.42, douce(u / 2.44)), fy: 0.42, z: 1.4 }); vapeur(t, 420, 1100, 420, 0.8, 0.9); etalonner(); } },
-  { de: 22.02, a: 23.72, rep: 18.25, dessin: (u, t) => { plan(m(3), { fx: 0.42, fy: 0.78, z: 1.6 + 0.05 * u }); etalonner(); } },
-  { de: 23.72, a: 25.95, rep: 18.25, dessin: (u, t) => {
+  { de: tt(19.58), a: tt(22.02), rep: tt(18.25), dessin: (u, t) => { plan(m(3), { fx: mix(0.25, 0.42, douce(u / 2.44)), fy: 0.42, z: 1.4 }); vapeur(t, 420, 1100, 420, 0.8, 0.9); etalonner(); } },
+  { de: tt(22.02), a: tt(23.72), rep: tt(18.25), dessin: (u, t) => { plan(m(3), { fx: 0.42, fy: 0.78, z: 1.6 + 0.05 * u }); etalonner(); } },
+  { de: tt(23.72), a: tt(25.95), rep: tt(18.25), dessin: (u, t) => {
     const coup = 25.01 - 23.72; const z = (u < coup ? 1.5 : 1.85) + 0.05 * u / 2.2;
     plan(m(3), { fx: 0.7, fy: 0.55, z }); vapeur(t, 700, 1200, 300, 0.8, 0.8); etalonner();
   } },
   // 8 · LE DÉFI
-  { de: 25.95, a: 27.95, carte: 3 },
+  { de: tt(25.95), a: tt(27.95), carte: 3 },
   // 9 · TROIS MOTS QUI FRAPPENT
-  { de: 27.95, a: 29.45, rep: 27.95, dessin: (u, t) => { const z = t >= 28.74 ? 1.95 + 0.06 * (t - 28.74) : 1.6 + 0.1 * u; plan(m(2), { fx: 0.52, fy: 0.68, z }); vapeur(t, 540, 1500, 380, 0.7, 1); etalonner(0.28); } },
-  { de: 29.45, a: 30.7, rep: 27.95, dessin: (u, t) => { const z = t >= 29.8 ? 2.0 + 0.06 * (t - 29.8) : 1.7; plan(m(3), { fx: 0.66, fy: 0.56, z }); etalonner(0.28); } },
-  { de: 30.7, a: 32.95, rep: 27.95, dessin: (u, t) => { plan(m(4), { fx: 0.52, fy: 0.46, z: 1.2 + 0.12 * douce(u / 2.25) }); vapeur(t, 560, 1180, 260, 1, 0.8); etalonner(); } },
+  { de: tt(27.95), a: tt(29.45), rep: tt(27.95), dessin: (u, t) => { const z = t >= tt(28.74) ? 1.95 + 0.06 * (t - tt(28.74)) : 1.6 + 0.1 * u; plan(m(2), { fx: 0.52, fy: 0.68, z }); vapeur(t, 540, 1500, 380, 0.7, 1); etalonner(0.28); } },
+  { de: tt(29.45), a: tt(30.7), rep: tt(27.95), dessin: (u, t) => { const z = t >= tt(29.8) ? 2.0 + 0.06 * (t - tt(29.8)) : 1.7; plan(m(3), { fx: 0.66, fy: 0.56, z }); etalonner(0.28); } },
+  { de: tt(30.7), a: tt(32.95), rep: tt(27.95), dessin: (u, t) => { plan(m(4), { fx: 0.52, fy: 0.46, z: 1.2 + 0.12 * douce(u / 2.25) }); vapeur(t, 560, 1180, 260, 1, 0.8); etalonner(); } },
   // 10 · LA CARTE DE FIN
-  { de: 32.95, a: DUREE + 1, fin: true, dessin: (u, t) => fin(u, t) },
+  { de: tt(32.95), a: DUREE + 1, fin: true, dessin: (u, t) => fin(u, t) },
 ];
 
 function dessinerSeg(k, t) {
@@ -510,7 +521,7 @@ function dessiner(t) {
   if (s.rep !== undefined && !s.carte) cadre(t, s.rep);
   if (!s.carte && !s.sig && !s.fin) { sousTitres(t); frappes(t); }
   // LE CLIC : l'image se fige dans un flash blanc
-  for (const f of [2.55, 32.95]) {
+  for (const f of [2.55, tt(32.95)]) {
     if (t >= f - 0.08 && t < f) { g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(0, 0, W, H); }
     const v = t - f; if (v >= 0 && v < 0.32) { g.fillStyle = `rgba(255,255,255,${Math.pow(1 - v / 0.32, 2)})`; g.fillRect(0, 0, W, H); }
   }
@@ -521,8 +532,8 @@ function dessiner(t) {
   const i = Math.floor(t * 10), ox = -Math.floor(hasard(i) * 540), oy = -Math.floor(hasard(i + 1) * 960);
   for (let x = ox; x < W; x += 540) for (let y = oy; y < H; y += 960) g.drawImage(GRAIN, x, y);
   g.restore();
-  if (t < 33.3) exemple();
-  else { g.save(); g.globalAlpha = borne((t - 33.3) / 0.4); texte("Exemple · Chez Bergine est un commerce inventé", W / 2, 1600, "600 28px Poppins", "rgba(255,244,230,.6)", { align: "center" }); g.restore(); }
+  if (t < tt(33.3)) exemple();
+  else { g.save(); g.globalAlpha = borne((t - tt(33.3)) / 0.4); texte("Exemple · Chez Bergine est un commerce inventé", W / 2, 1600, "600 28px Poppins", "rgba(255,244,230,.6)", { align: "center" }); g.restore(); }
 }
 function dessinerDans(t2, f) { const avant = g; g = t2.getContext("2d"); try { f(); } finally { g = avant; } }
 
@@ -561,7 +572,7 @@ async function mixer(piste = "tout") {
     src.connect(env); env.connect(voix); src.start(cl.T, cl.src[0], d);
     zones.push([cl.T, cl.T + d]);
   }
-  for (const [id, T] of [["derniere", 26.05], ["ademain", 34.3]]) {
+  for (const { id, T } of PAROLES_REPORTER) {
     const b = SON[id], src = ctx.createBufferSource(); src.buffer = b;
     const gg = ctx.createGain(); gg.gain.value = 0.9 / picDe(b);
     src.connect(gg); if (piste === "tout" || piste === "voix") gg.connect(maitre); src.start(T);
@@ -575,11 +586,11 @@ async function mixer(piste = "tout") {
   musique.gain.setValueAtTime(0.55, 0);
   for (const [a, b] of zones) { musique.gain.setTargetAtTime(0.16, a - 0.05, 0.05); musique.gain.setTargetAtTime(0.55, b + 0.1, 0.18); }
   // et s'étouffe sur les cartes, puis repart
-  for (const [a, b] of [[5.35, 6.75], [16.75, 18.25], [25.95, 27.95]]) {
+  for (const [a, b] of [[5.35, tt(6.75)], [tt(16.75), tt(18.25)], [tt(25.95), tt(27.95)]]) {
     filtre.frequency.setValueAtTime(18000, a); filtre.frequency.exponentialRampToValueAtTime(700, a + 0.25);
     filtre.frequency.setValueAtTime(700, b - 0.3); filtre.frequency.exponentialRampToValueAtTime(18000, b + 0.05);
   }
-  const DEBUT = 2.55, TEMPS = 0.6, MESURE = 2.4, FIN_GROOVE = 36.15;
+  const DEBUT = 2.55, TEMPS = 0.6, MESURE = 2.4, FIN_GROOVE = tt(36.15);
   const ACCORDS = [[53, 57, 60, 64, 67], [52, 55, 59, 62, 67], [50, 53, 57, 60, 64], [48, 52, 55, 59, 62]];
   const BASSES = [41, 40, 38, 36];
   function rhodes(n, t, dur, vel = 0.12) {
@@ -618,7 +629,7 @@ async function mixer(piste = "tout") {
     const gg = ctx.createGain(); gg.gain.setValueAtTime(0, t); gg.gain.linearRampToValueAtTime(0.42, t + 0.01); gg.gain.exponentialRampToValueAtTime(0.12, t + dur * 0.8); gg.gain.linearRampToValueAtTime(0, t + dur);
     o.connect(f); f.connect(gg); gg.connect(musique); o.start(t); o.stop(t + dur + 0.02);
   }
-  const SANS_BATTERIE = [[5.35, 6.75], [16.75, 18.25], [25.95, 27.95]];
+  const SANS_BATTERIE = [[5.35, tt(6.75)], [tt(16.75), tt(18.25)], [tt(25.95), tt(27.95)]];
   const calme = (t) => SANS_BATTERIE.some(([a, b]) => t >= a && t < b);
   // l'intro : une nappe, puis la montée
   nappe(ACCORDS[0], 0, 2.6, 0.035);
@@ -643,14 +654,14 @@ async function mixer(piste = "tout") {
   // ─── LES SONS ───
   const sfx = ctx.createGain(); sfx.gain.value = 0.9; if (piste === "tout" || piste === "sons") sfx.connect(maitre);
   // LE CLIC : deux déclics d'obturateur et un souffle grave
-  for (const t of [2.55, 32.95]) {
+  for (const t of [2.55, tt(32.95)]) {
     souffle(t, 0.02, "highpass", 3500, 0.9, sfx); souffle(t + 0.045, 0.025, "highpass", 2500, 0.7, sfx);
     const o = ctx.createOscillator(); o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.3);
     const gg = ctx.createGain(); gg.gain.setValueAtTime(0.9, t); gg.gain.exponentialRampToValueAtTime(0.001, t + 0.5); o.connect(gg); gg.connect(sfx); o.start(t); o.stop(t + 0.55);
     souffle(t, 0.9, "highpass", 5000, 0.12, sfx).connect(reverb);
   }
   // LE COUP DE FOUET des cartes
-  for (const t of [5.35, 16.75, 25.95]) {
+  for (const t of [5.35, tt(16.75), tt(25.95)]) {
     const s = ctx.createBufferSource(); s.buffer = bruit; const fl = ctx.createBiquadFilter(); fl.type = "bandpass"; fl.Q.value = 1.4;
     fl.frequency.setValueAtTime(400, t - 0.08); fl.frequency.exponentialRampToValueAtTime(5000, t + 0.2);
     const gg = ctx.createGain(); gg.gain.setValueAtTime(0, t - 0.08); gg.gain.linearRampToValueAtTime(0.5, t + 0.08); gg.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
@@ -659,9 +670,9 @@ async function mixer(piste = "tout") {
     for (const [n, d] of [[84, 0], [91, 0.09]]) { const o = ctx.createOscillator(); o.type = "sine"; o.frequency.value = freq(n); const g2 = ctx.createGain(); g2.gain.setValueAtTime(0.0001, t + 0.18 + d); g2.gain.linearRampToValueAtTime(0.12, t + 0.19 + d); g2.gain.exponentialRampToValueAtTime(0.0001, t + 1.1 + d); o.connect(g2); g2.connect(sfx); g2.connect(reverb); o.start(t + 0.18 + d); o.stop(t + 1.2 + d); }
   }
   // la sortie des cartes : un souffle qui passe
-  for (const t of [6.55, 18.05, 27.75]) souffle(t, 0.3, "bandpass", 2500, 0.18, sfx, 0.7);
+  for (const t of [tt(6.75) - 0.2, tt(18.25) - 0.2, tt(27.95) - 0.2]) souffle(t, 0.3, "bandpass", 2500, 0.18, sfx, 0.7);
   // LE RALENTI : un « vvvoum » grave qui s'étire
-  { const t = 12.72; const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(220, t); o.frequency.exponentialRampToValueAtTime(55, t + 0.9);
+  { const t = tt(12.72); const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(220, t); o.frequency.exponentialRampToValueAtTime(55, t + 0.9);
     const fl = ctx.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = 600; const gg = ctx.createGain(); gg.gain.setValueAtTime(0, t); gg.gain.linearRampToValueAtTime(0.16, t + 0.08); gg.gain.exponentialRampToValueAtTime(0.001, t + 1.1);
     o.connect(fl); fl.connect(gg); gg.connect(sfx); gg.connect(reverb); o.start(t); o.stop(t + 1.2); souffle(t, 0.5, "bandpass", 900, 0.2, sfx, 0.6).connect(reverb); }
   // LES FRAPPES
@@ -672,11 +683,11 @@ async function mixer(piste = "tout") {
     souffle(t, 0.22, "bandpass", 2200, 0.26, sfx, 0.7).connect(reverb);
   }
   // le tampon qui se pose
-  { const t = 33.95; const o = ctx.createOscillator(); o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(60, t + 0.15); const gg = ctx.createGain(); gg.gain.setValueAtTime(0.6, t); gg.gain.exponentialRampToValueAtTime(0.001, t + 0.3); o.connect(gg); gg.connect(sfx); o.start(t); o.stop(t + 0.35); }
+  { const t = tt(33.95); const o = ctx.createOscillator(); o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(60, t + 0.15); const gg = ctx.createGain(); gg.gain.setValueAtTime(0.6, t); gg.gain.exponentialRampToValueAtTime(0.001, t + 0.3); o.connect(gg); gg.connect(sfx); o.start(t); o.stop(t + 0.35); }
   // les lignes de la carte : de petits « pop »
-  for (const d of [0.55, 0.68, 0.82, 0.95, 1.25]) { const t = 32.95 + d; const o = ctx.createOscillator(); o.type = "sine"; o.frequency.setValueAtTime(900, t); o.frequency.exponentialRampToValueAtTime(1500, t + 0.05); const gg = ctx.createGain(); gg.gain.setValueAtTime(0.08, t); gg.gain.exponentialRampToValueAtTime(0.001, t + 0.09); o.connect(gg); gg.connect(sfx); o.start(t); o.stop(t + 0.1); }
+  for (const d of [0.55, 0.68, 0.82, 0.95, 1.25]) { const t = tt(32.95) + d; const o = ctx.createOscillator(); o.type = "sine"; o.frequency.setValueAtTime(900, t); o.frequency.exponentialRampToValueAtTime(1500, t + 0.05); const gg = ctx.createGain(); gg.gain.setValueAtTime(0.08, t); gg.gain.exponentialRampToValueAtTime(0.001, t + 0.09); o.connect(gg); gg.connect(sfx); o.start(t); o.stop(t + 0.1); }
   // LA SIGNATURE SONORE : un « clic », puis deux notes claires
-  { const t = 36.15; souffle(t, 0.015, "highpass", 4000, 0.7, sfx);
+  { const t = tt(36.15); souffle(t, 0.015, "highpass", 4000, 0.7, sfx);
     for (const [n, d] of [[76, 0.06], [83, 0.24]]) for (const [h, a] of [[1, 0.32], [4, 0.06], [2.01, 0.08]]) {
       const o = ctx.createOscillator(); o.type = "sine"; o.frequency.value = freq(n) * h; const gg = ctx.createGain();
       gg.gain.setValueAtTime(0.0001, t + d); gg.gain.linearRampToValueAtTime(a, t + d + 0.005); gg.gain.exponentialRampToValueAtTime(0.0001, t + d + (h === 1 ? 1.6 : 0.4));
@@ -706,12 +717,11 @@ window.pret = (async () => {
   GRAIN = fabriquerGrain();
   preparerMots();
   SON.voix = await decoder("a/bergine-magret.mp3");
-  SON.derniere = await decoder("a/derniere.mp3");
-  SON.ademain = await decoder("a/a-demain-chef.mp3");
-  SON.derniereEnv = enveloppe(SON.derniere); SON.ademainEnv = enveloppe(SON.ademain);
+  for (const p of PAROLES_REPORTER) { SON[p.id] = await decoder(p.src); SON[p.id + "Env"] = enveloppe(SON[p.id]); }
   return { morceaux: MORCEAUX.length, frappes: FRAPPES_EP.map((w) => [w.m, +w.a.toFixed(2)]) };
 })();
 window.dessiner = dessiner;
+window.DUREE = DUREE;
 window.mixer = mixer;
 </script>
 </body>

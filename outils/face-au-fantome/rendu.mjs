@@ -1,7 +1,7 @@
 // L'ÉPISODE EN MP4 : le son (mixer), puis chaque image (dessiner), encodés par ffmpeg.
 // node outils/face-au-fantome/rendu.mjs [son|tout|apercu t1 t2 …]
 //   son     → son.wav
-//   tout    → face-au-fantome.mp4 (≈ 2 min)
+//   tout    → face-au-fantome.mp4 (≈ 3 min)
 //   apercu  → k-<t>.jpg, des images clés pour juger sans tout encoder
 // Variables : FFMPEG (défaut : ffmpeg), CHROMIUM (défaut : /opt/pw-browsers/chromium), PLAYWRIGHT (chemin du module).
 import { createReadStream, existsSync, statSync, writeFileSync } from "fs";
@@ -15,7 +15,7 @@ const FF = process.env.FFMPEG || "ffmpeg";
 const CHROMIUM = process.env.CHROMIUM || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined);
 const pw = (await import(process.env.PLAYWRIGHT || "/opt/node22/lib/node_modules/playwright/index.js")).default;
 const [quoi = "tout", ...temps] = process.argv.slice(2);
-const IPS = 30, DUREE = 39.5;
+const IPS = 30;
 
 // un petit serveur pour la page et ses fichiers
 const TYPES = { ".html": "text/html; charset=utf-8", ".json": "application/json", ".jpg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".mp3": "audio/mpeg", ".woff2": "font/woff2" };
@@ -33,6 +33,7 @@ const err = [];
 p.on("pageerror", (e) => err.push(e.message));
 await p.goto(`http://127.0.0.1:${port}/episode.html`, { waitUntil: "load" });
 console.log(JSON.stringify(await p.evaluate(() => window.pret)));
+const DUREE = await p.evaluate(() => window.DUREE); // ≈ 42 s depuis que le fantôme dit ses questions
 const t0 = Date.now();
 
 if (quoi === "apercu") {

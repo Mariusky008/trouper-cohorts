@@ -30,12 +30,19 @@ fs.mkdirSync(A, { recursive: true });
     .toFile(path.join(A, "fond-accueil.jpg"));
   // LE LOGO BLANC
   await sharp(pub("clikme-logo-blanc.png")).resize(240).png().toFile(path.join(A, "logo.png"));
-  // SA VOIX, CELLE DU REPORTER, ET LE REPORTER LUI-MÊME
+  // SA VOIX, ET LE REPORTER LUI-MÊME
   for (const [src, nom] of [
     ["direct/voix/bergine-magret.mp3", "bergine-magret.mp3"],
-    ["direct/interview/voix/derniere.mp3", "derniere.mp3"],
-    ["direct/interview/voix/a-demain-chef.mp3", "a-demain-chef.mp3"],
     ...[0, 1, 2, 3].map((k) => [`direct/interview/reporter-${k}.webp`, `reporter-${k}.webp`]),
   ]) fs.copyFileSync(pub(src), path.join(A, nom));
+  // LA VOIX DU FANTÔME : ses questions et son au revoir, pris dans les répliques enregistrées (voix-fantome/)
+  const V = path.join(ICI, "voix-fantome");
+  for (const [debut, nom] of [
+    ["restaurant-02-", "f-q1.mp3"], // « Montre-moi le geste qui fait la différence. »
+    ["restaurant-03-", "f-q2.mp3"], // « Et c'est quoi, ton secret, pour qu'il soit si bon ? »
+    ["commun-05-", "f-derniere.mp3"], // « Dernière question ! »
+    ["restaurant-05-", "f-defi.mp3"], // « Ton plat en trois mots ? »
+    ["restaurant-09-", "f-ademain.mp3"], // « À demain, et bon appétit ! »
+  ]) fs.copyFileSync(path.join(V, fs.readdirSync(V).find((f) => f.startsWith(debut))), path.join(A, nom));
   console.log("prêt :", fs.readdirSync(A).join(", "));
 })();
