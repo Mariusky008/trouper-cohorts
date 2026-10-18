@@ -88,6 +88,7 @@ import { accord, demandesEnMots, effetDesAnnonces, phraseDeLaVeille, semaineDuCo
 import { lignesDeLaSemaine } from "@/lib/site-internet/semaine-en-clients";
 import type { SemaineEnClients } from "@/lib/site-internet/compteurs-jour";
 import { partagerEnStatut, type Statut, type SortieStatut } from "@/lib/direct/statut-whatsapp";
+import { PiocherPhototheque } from "./phototheque-comptoir";
 
 type Commerce = CommerceComptoir;
 
@@ -1720,6 +1721,7 @@ function EtapeMission({
       : null,
   );
   const [ennui, setEnnui] = useState("");
+  const [piocher, setPiocher] = useState(false);
   /* L'EXEMPLE SERT DE MODÈLE DANS LES CHAMPS : « Magret frites maison » et « 19 € ». */
   const modele = etape.type === "dire" ? exempleEnChamps(etape.exemple) : { nom: "", prix: "" };
 
@@ -1733,7 +1735,7 @@ function EtapeMission({
     onSuivante();
   };
 
-  const ajouterPhotos = async (fichiers: FileList | null) => {
+  const ajouterPhotos = async (fichiers: FileList | File[] | null) => {
     if (!fichiers || etape.type !== "photos") return;
     const place = etape.max - brouillon.photos.length;
     const pris = Array.from(fichiers)
@@ -1878,6 +1880,20 @@ function EtapeMission({
                 Choisir dans ma galerie
                 <input type="file" accept="image/*" multiple onChange={(e) => void ajouterPhotos(e.target.files)} />
               </label>
+            )}
+            {/* SA PHOTOTHÈQUE : ce qu'il a déposé une fois, sans reprendre de photo. */}
+            {brouillon.photos.length < etape.max && (
+              <button type="button" className="cz-lien cz-pioche" onClick={() => setPiocher(true)}>
+                🖼️ Dans ma photothèque
+              </button>
+            )}
+            {piocher && (
+              <PiocherPhototheque
+                commerce={commerce}
+                place={Math.max(1, etape.max - brouillon.photos.length)}
+                onPris={(fichiers) => ajouterPhotos(fichiers)}
+                onFermer={() => setPiocher(false)}
+              />
             )}
           </div>
         )}
@@ -2700,6 +2716,7 @@ body{background:#0B0806;}
 
 /* LES PHOTOS */
 .cz-photos{display:flex;flex-direction:column;gap:12px;}
+.cz-photos .cz-pioche{color:#FFD9A8;text-decoration:none;border:1px solid rgba(245,162,58,.42);border-radius:999px;padding:9px 16px;background:rgba(245,162,58,.07);}
 .cz-vignettes:empty{display:none;}
 .cz-vignettes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
 .cz-vignette{position:relative;aspect-ratio:1;border-radius:16px;overflow:hidden;background:var(--nappe2);

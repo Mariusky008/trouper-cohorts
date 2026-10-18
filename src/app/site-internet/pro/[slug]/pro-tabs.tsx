@@ -13,6 +13,15 @@ export type ProTab = { key: string; label: string; icon: string; node: ReactNode
 export function ProTabs({ tabs }: { tabs: ProTab[] }) {
   const [active, setActive] = useState(tabs[0]?.key || "");
 
+  // UN LIEN QUI OUVRE UN ONGLET : `…?k=…#phototheque` (le comptoir y envoie
+  // quand sa photothèque est vide). Lu après le premier rendu, pour que celui
+  // du navigateur reste celui du serveur.
+  useEffect(() => {
+    const cle = window.location.hash.replace(/^#/, "");
+    if (cle && tabs.some((t) => t.key === cle)) setActive(cle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Le « briefing » (et tout autre bloc) peut demander de basculer d'onglet via
   // un évènement global — découplé, sans remonter d'état.
   useEffect(() => {

@@ -434,7 +434,7 @@ async function stockage(req, res, url) {
       if (regle?.allowed_mime_types?.length && !regle.allowed_mime_types.includes(f.type)) {
         return repondre(res, 400, { statusCode: "415", error: "invalid_mime_type", message: `mime type ${f.type} is not supported` });
       }
-      fichiers.set(cle, f);
+      fichiers.set(cle, { ...f, cree: maintenant() });
       signes.delete(url.searchParams.get("token") || "");
       return repondre(res, 200, { Key: cle });
     }
@@ -469,13 +469,25 @@ async function stockage(req, res, url) {
     res.writeHead(200, { "content-type": f.type });
     return res.end(f.octets);
   }
+  // LA LISTE D'UN DOSSIER (`list`) : ses fichiers directs, les plus récents d'abord si on le demande.
+  if (p.startsWith("list/") && req.method === "POST") {
+    const seau = p.slice(5);
+    const { prefix = "", limit = 100, offset = 0, sortBy } = JSON.parse((await corps(req)).toString() || "{}");
+    const debut = `${seau}/${prefix ? `${String(prefix).replace(/\/+$/, "")}/` : ""}`;
+    let liste = [...fichiers]
+      .filter(([cle]) => cle.startsWith(debut) && !cle.slice(debut.length).includes("/"))
+      .map(([cle, f]) => ({ name: cle.slice(debut.length), id: cle, created_at: f.cree ?? null, updated_at: f.cree ?? null, metadata: { size: f.octets.length, mimetype: f.type } }));
+    if (sortBy?.column === "created_at") liste.sort((x, y) => String(x.created_at).localeCompare(String(y.created_at)) * (sortBy.order === "desc" ? -1 : 1));
+    else liste.sort((x, y) => x.name.localeCompare(y.name));
+    return repondre(res, 200, liste.slice(offset, offset + limit));
+  }
   if (req.method === "DELETE") {
     const { prefixes = [] } = JSON.parse((await corps(req)).toString() || "{}");
     for (const c of prefixes) fichiers.delete(`${p}/${c}`);
     return repondre(res, 200, prefixes.map((name) => ({ name })));
   }
   if (req.method === "POST" || req.method === "PUT") {
-    fichiers.set(p, { type: req.headers["content-type"] || "application/octet-stream", octets: await corps(req) });
+    fichiers.set(p, { type: req.headers["content-type"] || "application/octet-stream", octets: await corps(req), cree: maintenant() });
     return repondre(res, 200, { Key: p, Id: randomUUID() });
   }
   return repondre(res, 404, { message: "inconnu" });

@@ -25,6 +25,7 @@ import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 import { ProEngagements } from "./pro-engagements";
 import { ProWhatsapp } from "./pro-whatsapp";
 import { ProGallery } from "./pro-gallery";
+import { EntreePhototheque, ProPhototheque } from "./pro-phototheque";
 import { ProPhotosDuLieu } from "./pro-photos-lieu";
 import { ProMusique } from "./pro-musique";
 import { ProCadeau } from "./pro-cadeau";
@@ -618,6 +619,7 @@ export default async function EspacePro({
           <a className="af-seeclient" href={`/site-internet/apercu/${slug}`} target="_blank" rel="noreferrer">
             👁 Voir mon site comme un client <span>↗</span>
           </a>
+          <EntreePhototheque slug={slug} token={token} />
           <div className="siteblock">
             <ProApproche
               slug={slug}
@@ -657,6 +659,20 @@ export default async function EspacePro({
           })()}
           <div className="siteblock"><ProGallery slug={slug} token={token} /></div>
           <div className="siteblock"><ProAssistant slug={slug} token={token} /></div>
+        </div>
+      ),
+    },
+    {
+      // SA PHOTOTHÈQUE — toutes ses photos et vidéos, où le comptoir pioche.
+      // Un onglet à elle, hors de la barre (un 5e onglet y tronquait « Mes
+      // réservations ») : on y entre par « Mon site » et par le comptoir (#phototheque).
+      key: "phototheque",
+      label: "Photothèque",
+      icon: "🖼️",
+      hidden: true,
+      node: (
+        <div className="sitepage">
+          <div className="siteblock"><ProPhototheque slug={slug} token={token} /></div>
         </div>
       ),
     },
