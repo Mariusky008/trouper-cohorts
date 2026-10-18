@@ -77,9 +77,12 @@ nouée (« comme ça »).
 
 **Les photos, la voix de Lou et la musique ne sont pas dans le dépôt** (droits) :
 `lou/preparer.cjs` les prend dans un dossier qu'on lui donne et dit les noms
-attendus. Six photos viennent de Pexels ; la veste à sequins (Amazon) et la pile
-de pulls (un blog) **ne sont pas libres de droits** : maquette interne
-seulement. Le dépôt garde ce qui permet de refaire le montage : le moteur
+attendus. Les six photos viennent de Pexels. La veste à sequins (Amazon) et la
+pile de pulls (un blog), qui n'étaient **pas libres de droits**, ont été
+retirées : « Douce » passe sur la laine de tout près, « surprises » sur le
+manteau en pied, sur le quai. Pexels autorise l'usage commercial, mais ce sont
+des personnes reconnaissables présentées comme « Lou » : pour une diffusion
+publique, préférer les photos du vrai commerçant. Le dépôt garde ce qui permet de refaire le montage : le moteur
 (`lou/episode.html`), l'instant de chaque mot (`lou/mots.json`, posé à la main
 sur les pauses et les syllabes mesurées), les recadrages, et le masque du
 détourage (`lou/masque.png`).
