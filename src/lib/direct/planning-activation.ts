@@ -226,6 +226,8 @@ export async function activerPlanning(
           photo: a.photo,
           ...(a.comptoir?.voixTexte ? { mots: a.comptoir.voixTexte } : {}),
           ...(a.comptoir?.rayon ? { piece: a.id } : {}),
+          // SON CHOIX, fait au comptoir en la programmant : ces réseaux-là seulement.
+          ...(a.comptoir?.reseaux ? { plateformes: a.comptoir.reseaux } : {}),
         },
       ).catch(() => null);
     }

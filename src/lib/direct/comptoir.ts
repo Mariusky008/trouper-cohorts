@@ -41,6 +41,8 @@ export type Publication = {
   serie?: string;
   /** Démonstration : déjà partie dans la ville du téléphone, le jour venu. */
   envoyee?: boolean;
+  /** « OÙ JE LE PUBLIE ? » — ses réseaux choisis (vide : juste ClikMe). Absent : tous, s'ils partent tout seuls. */
+  reseaux?: string[];
   /**
    * SON ANNONCE DANS LE DIRECT (vrai commerçant) — l'identifiant de la base.
    * Jamais gardé dans le téléphone : il vient de la lecture de ce qui tourne

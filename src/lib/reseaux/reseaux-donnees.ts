@@ -85,6 +85,17 @@ const ICONES: Record<string, string> = {
 };
 
 export const nomDuReseau = (p: string) => NOMS[p] ?? p.charAt(0).toUpperCase() + p.slice(1);
+
+/**
+ * « OÙ JE VEUX LE PUBLIER » — son choix pour UNE annonce : « partout ? juste
+ * certains réseaux ? juste ClikMe ? ». Une liste de plateformes (vide : juste
+ * ClikMe) ; `null` quand il n'a rien choisi (l'écran d'avant) : on fait comme
+ * d'habitude, tous ses réseaux s'ils partent tout seuls.
+ */
+export function plateformesChoisies(v: unknown): string[] | null {
+  if (!Array.isArray(v)) return null;
+  return [...new Set(v.map((x) => s(x).toLowerCase().slice(0, 40)).filter(Boolean))].slice(0, 12);
+}
 export const iconeDuReseau = (p: string) => ICONES[p] ?? "🌐";
 
 /** « Instagram, Facebook et LinkedIn ». */
