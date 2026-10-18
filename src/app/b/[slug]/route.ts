@@ -29,7 +29,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
   if (!/^[\w.-]{1,120}$/.test(slug)) return new NextResponse("Lien introuvable", { status: 404 });
   const ici = new URL(request.url);
   const cible = new URL(`/site-internet/apercu/${encodeURIComponent(slug)}`, ici.origin);
-  cible.searchParams.set("via", "reseaux");
+  // LE MESSAGE DU MOIS (`?via=diffusion`) se compte à part : « 37 amis sont venus par ton message ».
+  cible.searchParams.set("via", ici.searchParams.get("via") === "diffusion" ? "diffusion" : "reseaux");
   cible.searchParams.set("onglet", "experience");
   const piece = idDePiece(ici.searchParams.get("p"));
   if (piece) cible.searchParams.set("essayer", piece);

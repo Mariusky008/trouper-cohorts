@@ -33,7 +33,7 @@ export type QuoiCompte = "vues" | "ecoutes" | "demandes" | "partages" | QuoiClie
  * Seul `essais` vient du navigateur (le rendu se fait chez le client) ; les
  * autres sont comptés par le serveur, là où le geste a lieu.
  */
-export type QuoiClient = "essais" | "cotes" | "confirmees" | "avis" | "amis" | "voisins";
+export type QuoiClient = "essais" | "cotes" | "confirmees" | "avis" | "amis" | "voisins" | "diffusion";
 export const QUOI_PUBLICS: QuoiCompte[] = ["ecoutes", "demandes", "partages", "essais"];
 
 const str = (v: unknown) => (v == null ? "" : String(v));

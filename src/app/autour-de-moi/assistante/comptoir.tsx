@@ -89,6 +89,7 @@ import { lignesDeLaSemaine } from "@/lib/site-internet/semaine-en-clients";
 import type { SemaineEnClients } from "@/lib/site-internet/compteurs-jour";
 import { partagerEnStatut, type Statut, type SortieStatut } from "@/lib/direct/statut-whatsapp";
 import { PiocherPhototheque } from "./phototheque-comptoir";
+import { CarteMessageDuMois } from "./message-du-mois";
 
 type Commerce = CommerceComptoir;
 
@@ -1293,6 +1294,10 @@ function Accueil({
 
         {/* DES CLIENTS ATTENDENT UNE RÉPONSE : ça passe avant le reste. */}
         {enAttente > 0 && boutonSavoir}
+
+        {/* SON MESSAGE DU MOIS, pour ses amis d'ici (liste de diffusion WhatsApp) : une carte tant qu'il
+            n'est pas parti, une ligne ensuite. Voir `message-du-mois.tsx`. */}
+        <CarteMessageDuMois commerce={commerce} nouveautesIci={actives.map((p) => ({ nom: p.nom, ...(p.prix ? { prix: p.prix } : {}) }))} />
 
         {/* ═══ MES OUTILS ═══ « Toutes ces lignes avec tous ces textes, ça fait
             pas beau », puis « les six boutons sont encore trop imposants » : une

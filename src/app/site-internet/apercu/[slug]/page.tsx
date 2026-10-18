@@ -81,7 +81,7 @@ import { IndexDesDemos } from "./index-demos";
 // `avis` : l'ami d'un client, venu du lien « Ça me va ? » (voir `app/ca-me-va`).
 // `voisin` : un client envoyé par la rue d'un commerçant voisin (voir `components/direct/la-rue.tsx`).
 // `reseaux` : la porte de ses posts Instagram, Facebook et Google (`app/b/[slug]`).
-const VIA_PUBLIC = new Set(["direct", "catalogue", "digest", "alerte", "offre", "affiche", "ecran", "avis", "voisin", "reseaux"]);
+const VIA_PUBLIC = new Set(["direct", "catalogue", "digest", "alerte", "offre", "affiche", "ecran", "avis", "voisin", "reseaux", "diffusion"]);
 
 // « Le collectif lui a-t-il amené quelqu'un ? » est autre chose, et c'est LE
 // chiffre qu'il regarde pour juger ce que les autres lui apportent. Un client
@@ -485,6 +485,8 @@ export default async function ApercuMaquette({
       // et le client envoyé par un voisin (sa rue). Voir `compteurs-jour.ts`.
       if (str(via) === "avis") after(() => compterLeJour(idSite, "amis"));
       if (str(via) === "voisin") after(() => compterLeJour(idSite, "voisins"));
+      // SES AMIS, VENUS PAR SON MESSAGE DU MOIS (liste de diffusion WhatsApp).
+      if (str(via) === "diffusion") after(() => compterLeJour(idSite, "diffusion"));
     }
   } catch {
     /* colonnes non migrées → best-effort, la page reste complète */
