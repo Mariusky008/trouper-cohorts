@@ -50,7 +50,7 @@
 // (étiquetés), tout reste dans ce téléphone, le premier voisin qui vient
 // prendre son produit est simulé, et le scan chez l'autre commerçant se
 // simule d'un bouton marqué « démo ».
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { COMMERCES_DEMO } from "@/lib/direct/missions-commercant";
 import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
@@ -72,7 +72,7 @@ import {
 } from "@/lib/echanges/echanges";
 import { PanneauEquipe, StylesEquipe } from "./echanges-equipe";
 import { ExempleDeFacture } from "./echanges-factures";
-import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, debloquerSon, jouer, vibrer } from "./echanges-magie";
+import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, debloquerSon, ecouterLePremierGeste, jouer, vibrer } from "./echanges-magie";
 import { Feuille, reduirePhoto, useQr } from "./echanges-communs";
 import { StylesVille } from "./echanges-ville";
 import { ChoixPaiementOffre, PanneauOffres, StylesOffres, legendePaiement } from "./echanges-offres";
@@ -308,33 +308,27 @@ export function EchangesComptoir({ commerce, dossier, onRetour }: { commerce: Co
   return (
     <div className="ec">
       <StylesEchanges />
-      <div className="ec-haut">
-        <button type="button" className="ec-retour" onClick={onRetour}>
-          ‹ Mon comptoir
-        </button>
-        <span className="ec-haut-d">
-          <span className="ec-exemple">Exemple</span>
-          <BoutonSon />
-        </span>
-      </div>
       <StylesMagie />
       <StylesVille />
       <StylesEquipe />
       <StylesOffres />
       {!etat.mien || modifier ? (
-        <Depart
-          commerce={commerce}
-          dossier={dossier}
-          envies={envies}
-          initial={etat.mien}
-          equipe={equipeDe(etat)}
-          onFini={(mien) => {
-            changer((e) => ({ ...e, mien }));
-            setModifier(false);
-          }}
-        />
+        <>
+          <EnTeteEchange onRetour={onRetour} />
+          <Depart
+            commerce={commerce}
+            dossier={dossier}
+            envies={envies}
+            initial={etat.mien}
+            equipe={equipeDe(etat)}
+            onFini={(mien) => {
+              changer((e) => ({ ...e, mien }));
+              setModifier(false);
+            }}
+          />
+        </>
       ) : (
-        <Echanger commerce={commerce} etat={etat} changer={changer} onModifier={() => setModifier(true)} />
+        <Echanger commerce={commerce} etat={etat} changer={changer} onModifier={() => setModifier(true)} onRetour={onRetour} />
       )}
     </div>
   );
@@ -796,13 +790,55 @@ export function Depart({
   );
 }
 
+/* ═══ L'EN-TÊTE : LE RETOUR, ET SON CRÉDIT — RIEN D'AUTRE ═══════════════
+   « Il y a beaucoup trop de choses qui nous distraient » : plus d'étiquette
+   « Exemple », plus de bouton du son (il est dans « Comment ça marche »), plus
+   de gros bandeau « Tu peux dépenser » — son crédit tient dans une pastille,
+   en haut à droite, et le détail s'ouvre d'un geste. */
+export function EnTeteEchange({ onRetour, children }: { onRetour?: () => void; children?: ReactNode }) {
+  // Le bouton du son réveillait le son au premier geste ; l'en-tête le fait désormais.
+  useEffect(() => ecouterLePremierGeste(), []);
+  return (
+    <div className="ec-haut">
+      {onRetour && (
+        <button type="button" className="ec-retour" onClick={onRetour} aria-label="Mon comptoir">
+          ‹ <span>Mon comptoir</span>
+        </button>
+      )}
+      {children}
+    </div>
+  );
+}
+
+/** « Crédit : 100 € » — ce qu'il peut dépenser ; ce qu'il doit s'y voit aussi, et le « +60 € » gagné y monte. */
+export function PastilleCredit({
+  montant,
+  du = 0,
+  gain,
+  onOuvrir,
+}: {
+  montant: number;
+  du?: number;
+  gain?: { n: number; cle: number } | null;
+  onOuvrir: () => void;
+}) {
+  return (
+    <button type="button" className="ec-solde" onClick={onOuvrir}>
+      <span>Crédit :</span>
+      <b key={montant}>{montant}&nbsp;€</b>
+      {du > 0 && <i>dois {du}&nbsp;€</i>}
+      {gain && <GainQuiMonte key={gain.cle} montant={gain.n} />}
+    </button>
+  );
+}
+
 /* ═══ LA PAGE : LES OFFRES À GLISSER, EN VEDETTE ═════════════════════════
-   « La star, c'est le catalogue à swiper, et il est quasiment invisible au
-   départ. » Il était sous un gros solde, la dette, le voisin et « Comment ça
-   marche ». Désormais : le solde tient en UNE ligne (le détail s'ouvre d'un
-   geste), les villes, puis la pile, tout de suite. Le reste — comment ça
-   marche, mes bons, mon offre — devient trois petits boutons qui ouvrent un
-   panneau, et le voisin qui passe est une notification qui s'en va seule. */
+   « La star, c'est le catalogue à swiper. » Son crédit est dans l'en-tête,
+   puis la pile, tout de suite — UNE pile : sa ville d'abord, puis les villes
+   voisines (le choix de la ville a été retiré, « pas vraiment utile pour le
+   moment »). Le reste — comment ça marche, mes bons, mes offres — devient de
+   petits boutons qui ouvrent un panneau, et le voisin qui passe est une
+   notification qui s'en va seule. */
 type Panneau = "solde" | "comment" | "bons" | "offre" | "equipe" | "factures";
 
 function Echanger({
@@ -810,15 +846,16 @@ function Echanger({
   etat,
   changer,
   onModifier,
+  onRetour,
 }: {
   commerce: CommerceComptoir;
   etat: Etat;
   changer: (maj: (e: Etat) => Etat) => void;
   onModifier: () => void;
+  onRetour: () => void;
 }) {
   const mien = etat.mien as Mien;
   const famille = commerce.famille;
-  const [ville, setVille] = useState("");
   const [vus, setVus] = useState<string[]>([]);
   const [choisie, setChoisie] = useState<Offre | null>(null);
   const [recu, setRecu] = useState<Bon | null>(null);
@@ -828,9 +865,9 @@ function Echanger({
   /** La scène « C'est à toi ! » qui précède le QR, et le « +60 € » qui monte du solde. */
   const [fete, setFete] = useState<{ bon: Bon; offre: Offre } | null>(null);
   const [gain, setGain] = useState<{ n: number; cle: number } | null>(null);
+  /* Sa ville d'abord, puis les villes voisines. */
   const toutes = useMemo(() => [...offresDeSaVille(commerce), ...AILLEURS], [commerce]);
-  const deLaVille = toutes.filter((o) => o.ville === ville);
-  const pile = deLaVille.filter((o) => !vus.includes(o.id));
+  const pile = toutes.filter((o) => !vus.includes(o.id));
   const decouvert = decouvertDe(etat);
   const reste = aDepenser(etat);
   const du = aRendre(etat);
@@ -889,32 +926,16 @@ function Echanger({
 
   return (
     <section className="ec-page">
-      <button type="button" className="ec-solde" onClick={() => setPanneau("solde")}>
-        <span>Tu peux dépenser</span>
-        <b key={reste}>{reste} €</b>
-        {du > 0 && <i>Tu dois {du} €</i>}
-        <s aria-hidden="true">›</s>
-        {gain && <GainQuiMonte key={gain.cle} montant={gain.n} />}
-      </button>
-
-      <div className="ec-villes">
-        {[
-          ["", "📍 Ta ville"],
-          ["Biarritz", "Biarritz"],
-          ["Bayonne", "Bayonne"],
-        ].map(([v, mot]) => (
-          <button key={v || "ici"} type="button" className={ville === v ? "on" : ""} onClick={() => setVille(v)}>
-            {mot}
-          </button>
-        ))}
-      </div>
+      <EnTeteEchange onRetour={onRetour}>
+        <PastilleCredit montant={reste} du={du} gain={gain} onOuvrir={() => setPanneau("solde")} />
+      </EnTeteEchange>
 
       {pile.length > 0 ? (
         <Pile key={pile[0].id} offres={pile} onPasser={passer} onPrendre={vouloir} indice={vus.length === 0} />
       ) : (
         <div className="ec-fin-pile">
-          <p>Tu as vu toutes les offres {ville ? `de ${ville}` : "de ta ville"}.</p>
-          <button type="button" className="cz-lien" onClick={() => setVus((v) => v.filter((id) => !deLaVille.some((o) => o.id === id)))}>
+          <p>Tu as vu toutes les offres.</p>
+          <button type="button" className="cz-lien" onClick={() => setVus([])}>
             Les revoir
           </button>
         </div>
@@ -952,7 +973,7 @@ function Echanger({
 
       {panneau === "comment" && (
         <Feuille titre="Comment ça marche" onFermer={() => setPanneau(null)}>
-          <ReglesDuReseau decouvert={decouvert} equipe={equipeDe(etat)} />
+          <CommentCaMarche decouvert={decouvert} equipe={equipeDe(etat)} />
         </Feuille>
       )}
 
@@ -1166,6 +1187,19 @@ export function ReglesDuReseau({ decouvert, equipe, seuil }: { decouvert: number
   );
 }
 
+/** « Comment ça marche », et les sons de l'échange (le bouton a quitté l'en-tête). */
+export function CommentCaMarche(props: { decouvert: number; equipe: number; seuil?: number }) {
+  return (
+    <>
+      <ReglesDuReseau {...props} />
+      <p className="ec-sons">
+        <span>Les sons de l’échange</span>
+        <BoutonSon />
+      </p>
+    </>
+  );
+}
+
 /* ═══ « COMMENT TU PAIES ? » ══════════════════════════════════════════════
    Avec ses crédits (0 €, s'ils suffisent), ou à moitié prix (la moitié en
    euros, sur place, et c'est tout : aucun crédit ne bouge). */
@@ -1244,7 +1278,6 @@ export function Pile({
   indice = false,
   tampon = "JE PRENDS",
   bouton = (o) => (o.paiement === "moitie" ? `Je prends · ${enEuros(moitieDe(o.prix))}` : `Je prends · ${o.prix}\u00a0€`),
-  astuce = "Glisse la carte : à droite je prends, à gauche je passe.",
 }: {
   offres: Offre[];
   onPasser: (o: Offre) => void;
@@ -1254,7 +1287,6 @@ export function Pile({
   /** Les mots du « oui », s'il en faut d'autres que « JE PRENDS ». */
   tampon?: string;
   bouton?: (o: Offre) => string;
-  astuce?: string;
 }) {
   const [dx, setDx] = useState(0);
   const [sortie, setSortie] = useState<"g" | "d" | null>(null);
@@ -1285,6 +1317,9 @@ export function Pile({
 
   return (
     <div className="ec-pile">
+      {/* LA LUEUR DE LA PHOTO derrière la carte : ses couleurs débordent, et changent à chaque offre. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="ec-aura" src={o.photo || o.visage} alt="" aria-hidden="true" draggable={false} />
       {suivante && (
         <CarteOffre
           o={suivante}
@@ -1332,19 +1367,25 @@ export function Pile({
         </span>
       </div>
       <div className="ec-gestes">
-        <button type="button" className="ec-non" style={{ transform: `scale(${1 + 0.1 * kNon})` }} onClick={() => partir(false)}>
-          ✕ Je passe
+        <button type="button" className="ec-non" aria-label="Je passe" title="Je passe" style={{ transform: `scale(${1 + 0.1 * kNon})` }} onClick={() => partir(false)}>
+          ✕
         </button>
         <button type="button" className="ec-oui" style={{ transform: `scale(${1 + 0.08 * kOui})` }} onClick={() => partir(true)}>
           {bouton(o)}
         </button>
       </div>
-      <p className="ec-astuce">{astuce}</p>
     </div>
   );
 }
 
+/* LA CARTE D'UNE OFFRE — « les annonces ne font pas très envie » : la photo
+   prend toute la carte, comme une story ; le commerçant en haut, le « −50 % »
+   en macaron ; en bas, sur un dégradé, ce qu'il reste ce mois-ci, le titre en
+   grand et le prix. Sans photo, son fantôme. */
 export function CarteOffre({ o, dessous = false, style }: { o: Offre; dessous?: boolean; style?: CSSProperties }) {
+  const echangeSeul = o.sansMoitie || o.paiement === "credits";
+  const moitieSeule = !echangeSeul && o.paiement === "moitie";
+  const rare = o.restant !== undefined && o.restant <= 2;
   return (
     <article className={`ec-carte${o.hotel ? " hotel" : ""}${dessous ? " dessous" : ""}`} aria-hidden={dessous || undefined} style={style}>
       <div className="ec-carte-photo">
@@ -1358,10 +1399,8 @@ export function CarteOffre({ o, dessous = false, style }: { o: Offre; dessous?: 
             <img src={o.visage} alt="" draggable={false} />
           </span>
         )}
-        <span className="ec-prix">{o.prix} €</span>
-        {o.hotel && <span className="ec-hotel">🏨 Hôtel</span>}
       </div>
-      <div className="ec-carte-t">
+      <div className="ec-carte-haut">
         <div className="ec-qui">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={o.visage} alt="" draggable={false} />
@@ -1372,15 +1411,28 @@ export function CarteOffre({ o, dessous = false, style }: { o: Offre; dessous?: 
             </em>
           </span>
         </div>
-        <h4>{o.titre}</h4>
+        {!echangeSeul && <span className="ec-macaron">−50&nbsp;%</span>}
+      </div>
+      <div className="ec-carte-t">
         <p className="ec-cap">
-          {o.restant !== undefined ? `Encore ${o.restant} ce mois-ci` : `Jusqu’à ${o.parMois} par mois`}
-          {o.sansMoitie || o.paiement === "credits" ? (
-            <b className="ec-cap-echange"> · en échange seulement</b>
-          ) : o.paiement === "moitie" ? (
-            <b className="ec-cap-moitie"> · à −50 % seulement : {enEuros(moitieDe(o.prix))}</b>
+          <span className={rare ? "rare" : undefined}>
+            {o.restant !== undefined ? (rare ? `🔥 Plus que ${o.restant} ce mois-ci` : `Encore ${o.restant} ce mois-ci`) : `Jusqu’à ${o.parMois} par mois`}
+          </span>
+          {o.hotel && <span>🏨 Hôtel</span>}
+        </p>
+        <h4>{o.titre}</h4>
+        <p className="ec-carte-prix">
+          {moitieSeule ? (
+            <>
+              <s>{o.prix}&nbsp;€</s>
+              <b className="ec-prix">{enEuros(moitieDe(o.prix))}</b>
+              <em className="ec-cap-moitie">à −50 % seulement</em>
+            </>
           ) : (
-            <b className="ec-cap-moitie"> · ou {enEuros(moitieDe(o.prix))} à −50 %</b>
+            <>
+              <b className="ec-prix">{o.prix}&nbsp;€</b>
+              {echangeSeul ? <em className="ec-cap-echange">en échange seulement</em> : <em className="ec-cap-moitie">ou {enEuros(moitieDe(o.prix))} à −50 %</em>}
+            </>
           )}
         </p>
       </div>
@@ -1444,8 +1496,8 @@ export function StylesEchanges() {
 .ec::-webkit-scrollbar{display:none;}
 .ec-haut{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 .ec-retour{border:1px solid var(--trait);border-radius:999px;padding:9px 14px;background:var(--nappe);font-weight:700;white-space:nowrap;flex-shrink:0;}
-.ec-exemple{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:999px;
-  background:rgba(245,162,58,.18);color:var(--ambre);}
+/* Petit écran : le retour devient un rond « ‹ », pour laisser la place au crédit (et à ce qu'il doit). */
+@media (max-width:360px){.ec-retour{display:grid;place-items:center;width:40px;height:40px;padding:0;font-size:20px;}.ec-retour span{display:none;}}
 .ec-gris{color:var(--gris);font-size:14px;line-height:1.4;margin:0;}
 .ec-centre{text-align:center;}
 .ec-depart{display:flex;flex-direction:column;gap:14px;}
@@ -1559,12 +1611,16 @@ export function StylesEchanges() {
 @keyframes ec-pouls{from{transform:scale(1.15);}to{transform:none;}}
 .ec-gros em{font-style:normal;font-size:13.5px;color:var(--gris);line-height:1.4;}
 .ec-gros strong{color:var(--creme);}
-.ec-solde{display:flex;align-items:center;gap:10px;width:100%;padding:9px 14px;border-radius:18px;border:1px solid rgba(245,162,58,.45);
-  background:linear-gradient(160deg,rgba(245,162,58,.18),rgba(255,46,154,.06));color:var(--creme);text-align:left;}
-.ec-solde span{font-weight:700;font-size:14px;color:var(--gris);}
-.ec-solde b{font-family:var(--font-clikme),sans-serif;font-size:24px;font-weight:900;color:var(--ambre);animation:ec-pouls .5s ease-out;}
-.ec-solde i{font-style:normal;font-size:12px;font-weight:800;padding:4px 9px;border-radius:999px;background:rgba(255,46,154,.16);color:#FF8FB8;white-space:nowrap;}
-.ec-solde s{margin-left:auto;text-decoration:none;font-size:24px;line-height:1;color:var(--gris);}
+/* « Crédit : 100 € », en haut à droite : le détail s'ouvre d'un geste. */
+.ec-solde{position:relative;display:inline-flex;align-items:baseline;gap:5px;min-width:0;height:38px;margin-left:auto;padding:0 14px;
+  border-radius:999px;border:1px solid rgba(245,162,58,.5);background:rgba(245,162,58,.12);color:var(--creme);white-space:nowrap;
+  line-height:36px;}
+.ec-solde span{font-weight:700;font-size:13px;color:var(--gris);}
+.ec-solde b{display:inline-block;font-family:var(--font-clikme),sans-serif;font-size:17px;font-weight:900;color:var(--ambre);animation:ec-pouls .5s ease-out;}
+.ec-solde i{align-self:center;margin-left:2px;font-style:normal;font-size:11.5px;font-weight:800;line-height:1;padding:5px 8px;border-radius:999px;
+  background:rgba(255,46,154,.18);color:#FF8FB8;}
+/* Le « +60 € » gagné part d'en dessous et monte dans la pastille. */
+.ec-solde .mg-gain{top:calc(100% + 30px);}
 .ec-tiroirs{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;}
 .ec-tiroirs button{height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--trait);background:none;color:var(--gris);
   font-weight:800;font-size:13px;}
@@ -1582,34 +1638,54 @@ export function StylesEchanges() {
 .ec-regles{list-style:decimal;margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:15px;line-height:1.45;color:var(--gris);}
 .ec-regles b{color:var(--creme);}
 .ec-regles li::marker{color:var(--ambre);font-weight:900;}
-.ec-villes{display:flex;flex-wrap:wrap;gap:8px;}
-.ec-villes button{height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--trait);background:var(--nappe);color:var(--creme);
-  font-weight:800;font-size:14px;}
-.ec-villes button.on{background:var(--rose);border-color:var(--rose);color:#fff;}
-.ec-pile{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:420px;margin:0 auto;}
-.ec-pile > .ec-carte.dessous{position:absolute;top:0;left:0;right:0;transform:scale(.95) translateY(10px);opacity:.55;}
+/* LA PILE : la carte en grand, la suivante qui dépasse dessous, et la lueur de la photo derrière. */
+.ec-pile{position:relative;display:flex;flex-direction:column;align-items:center;gap:24px;width:100%;max-width:420px;margin:2px auto 0;}
+.ec-aura{position:absolute;left:8%;right:8%;top:6%;height:calc(100% - 120px);width:84%;object-fit:cover;border-radius:40px;
+  filter:blur(40px) saturate(1.6);opacity:.42;pointer-events:none;z-index:0;}
+.ec-pile > .ec-carte.dessous{position:absolute;top:0;left:0;right:0;transform-origin:50% 100%;transform:scale(.94) translateY(12px);opacity:.55;}
 .ec-glisse{position:relative;width:100%;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none;z-index:1;}
-.ec-carte{border-radius:24px;overflow:hidden;background:var(--nappe);border:1px solid var(--trait);box-shadow:0 18px 40px -18px rgba(0,0,0,.7);}
-.ec-carte.hotel{border-color:rgba(245,162,58,.55);box-shadow:0 0 26px rgba(245,162,58,.16);}
-.ec-carte-photo{position:relative;}
-.ec-carte-photo img{display:block;width:100%;aspect-ratio:1;max-height:48vh;object-fit:cover;pointer-events:none;}
-.ec-sans-photo{display:grid;place-items:center;width:100%;aspect-ratio:1;max-height:48vh;background:radial-gradient(circle at 50% 40%,rgba(245,162,58,.22),var(--nappe2));}
-.ec-carte-photo .ec-sans-photo img{width:42%;max-height:none;aspect-ratio:1;border-radius:50%;object-fit:cover;}
+/* LA CARTE : la photo plein cadre, comme une story ; le texte posé dessus, sur un dégradé. */
+.ec-carte{position:relative;width:100%;aspect-ratio:4/5;max-height:min(58vh,520px);border-radius:28px;overflow:hidden;background:var(--nappe2);
+  box-shadow:0 26px 50px -24px rgba(0,0,0,.9),0 0 0 1px rgba(255,244,230,.09);isolation:isolate;}
+.ec-carte.hotel{box-shadow:0 26px 50px -24px rgba(0,0,0,.9),0 0 0 1.5px rgba(245,162,58,.6),0 0 30px rgba(245,162,58,.2);}
+.ec-carte-photo{position:absolute;inset:0;z-index:-1;}
+.ec-carte-photo > img{display:block;width:100%;height:100%;object-fit:cover;pointer-events:none;}
+.ec-glisse .ec-carte-photo > img:not(.entier){animation:ec-vivant 9s ease-in-out infinite alternate;}
+.ec-carte-photo::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(12,8,6,.5) 0%,rgba(12,8,6,0) 24%,rgba(12,8,6,0) 42%,rgba(12,8,6,.72) 70%,rgba(12,8,6,.95) 100%);}
+.ec-sans-photo{display:grid;place-items:start center;width:100%;height:100%;padding-top:20%;
+  background:radial-gradient(circle at 50% 34%,rgba(245,162,58,.3),var(--nappe2) 70%);}
+.ec-carte-photo .ec-sans-photo img{width:46%;aspect-ratio:1;border-radius:50%;object-fit:cover;}
 .ec-erreur{margin:0;padding:10px 12px;border-radius:14px;background:rgba(255,46,154,.12);border:1px solid rgba(255,46,154,.4);color:#FFB3D6;font-size:14px;line-height:1.4;}
-.ec-carte-photo img.entier,.ec-feuille-c > img.entier{object-fit:contain;padding:12px 0;background:var(--nappe2);}
-.ec-prix{position:absolute;left:12px;bottom:12px;padding:7px 12px;border-radius:999px;background:var(--ambre);color:#2A1608;
-  font-family:var(--font-clikme),sans-serif;font-weight:900;font-size:17px;}
-.ec-hotel{position:absolute;left:12px;top:12px;padding:5px 10px;border-radius:999px;background:rgba(18,12,9,.72);color:var(--creme);
-  font-size:12.5px;font-weight:800;}
-.ec-carte-t{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;}
-.ec-qui{display:flex;align-items:center;gap:10px;}
-.ec-qui img{width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--nappe2);pointer-events:none;}
-.ec-qui b{display:block;font-size:14.5px;}
-.ec-qui em{display:block;font-style:normal;font-size:12.5px;color:var(--gris);}
-.ec-carte h4{margin:2px 0 0;font-family:var(--font-clikme),sans-serif;font-size:19px;font-weight:800;line-height:1.2;}
-.ec-cap{margin:0;font-size:12.5px;color:var(--gris);}
-.ec-cap-moitie{font-weight:800;color:#FF8FBF;}
-.ec-cap-echange{font-weight:800;color:var(--ambre);}
+.ec-carte-photo > img.entier{object-fit:contain;padding:18px 0 38%;}
+.ec-feuille-c > img.entier{object-fit:contain;padding:12px 0;background:var(--nappe2);}
+/* En haut : le commerçant (sa pastille de verre) et le macaron −50 %. */
+.ec-carte-haut{position:absolute;left:12px;right:12px;top:12px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.ec-qui{display:flex;align-items:center;gap:8px;min-width:0;padding:4px 12px 4px 4px;border-radius:999px;
+  background:rgba(14,10,8,.5);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid rgba(255,244,230,.14);}
+.ec-qui img{flex:none;width:32px;height:32px;border-radius:50%;object-fit:cover;background:var(--nappe2);pointer-events:none;}
+.ec-qui span{min-width:0;}
+.ec-qui b{display:block;font-size:13.5px;line-height:1.2;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ec-qui em{display:block;font-style:normal;font-size:11.5px;line-height:1.25;color:rgba(255,244,230,.75);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ec-macaron{flex:none;display:grid;place-items:center;width:60px;height:60px;border-radius:50%;background:var(--rose);color:#fff;
+  font-family:var(--font-clikme),sans-serif;font-weight:900;font-size:16px;letter-spacing:-.02em;transform:rotate(-12deg);
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.28),0 10px 22px -8px rgba(255,46,154,.9);}
+/* En bas : ce qu'il en reste, le titre en grand, le prix. */
+.ec-carte-t{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;gap:7px;padding:16px 16px 18px;color:#fff;}
+.ec-cap{display:flex;flex-wrap:wrap;gap:6px;margin:0;}
+.ec-cap span{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:800;color:#fff;
+  background:rgba(255,244,230,.16);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
+.ec-cap span.rare{background:rgba(255,46,154,.85);}
+.ec-carte h4{margin:0;font-family:var(--font-clikme),sans-serif;font-size:26px;font-weight:800;line-height:1.08;letter-spacing:-.01em;
+  text-wrap:balance;text-shadow:0 2px 16px rgba(0,0,0,.55);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;}
+.ec-carte-prix{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:2px 0 0;}
+.ec-prix{font-family:var(--font-clikme),sans-serif;font-size:30px;font-weight:900;line-height:1;color:var(--ambre);text-shadow:0 2px 14px rgba(0,0,0,.5);}
+.ec-carte-prix s{font-size:17px;font-weight:700;color:rgba(255,244,230,.6);}
+.ec-carte-prix em{font-style:normal;font-size:13px;font-weight:800;line-height:1;padding:7px 11px;border-radius:999px;white-space:nowrap;}
+.ec-cap-moitie{background:var(--rose);color:#fff;}
+.ec-cap-echange{background:rgba(245,162,58,.18);color:var(--ambre);border:1px solid rgba(245,162,58,.55);}
+.ec-sons{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0 0;padding-top:12px;border-top:1px solid var(--trait);
+  font-size:14px;color:var(--gris);}
 .ec-payer{display:flex;flex-direction:column;gap:8px;text-align:left;}
 .ec-payer h3{margin:4px 0 0;font-family:var(--font-clikme),sans-serif;font-size:18px;font-weight:800;}
 .ec-payer-b{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:12px 14px;border-radius:18px;
@@ -1626,23 +1702,23 @@ export function StylesEchanges() {
 .ec-payer-b.moitie{border-color:rgba(255,46,154,.55);background:rgba(255,46,154,.08);}
 .ec-payer-b.moitie .ec-payer-i{background:var(--rose);color:#fff;}
 .ec-payer-b.moitie strong{color:#FF8FBF;}
-.ec-tampon{position:absolute;top:22px;padding:6px 12px;border:3px solid currentColor;border-radius:10px;font-weight:900;font-size:20px;
+.ec-tampon{position:absolute;top:30%;padding:6px 12px;border:3px solid currentColor;border-radius:10px;font-weight:900;font-size:20px;
   letter-spacing:.04em;pointer-events:none;background:rgba(18,12,9,.55);}
 .ec-tampon.oui{left:18px;color:#7CF0A2;transform:rotate(-12deg);transform-origin:left center;}
 .ec-tampon.non{right:18px;color:#FF8FB8;transform:rotate(12deg);transform-origin:right center;}
-.ec-teinte{position:absolute;inset:0;border-radius:24px;pointer-events:none;mix-blend-mode:screen;}
+.ec-teinte{position:absolute;inset:0;border-radius:28px;pointer-events:none;mix-blend-mode:screen;}
 .ec-glisse > .ec-carte{animation:ec-arrive .38s cubic-bezier(.2,1.25,.4,1) both;}
 @keyframes ec-arrive{from{transform:scale(.93) translateY(10px);opacity:.4;}to{transform:none;opacity:1;}}
 .ec-glisse.indice > .ec-carte{animation:ec-arrive .38s cubic-bezier(.2,1.25,.4,1) both,ec-indice 1.5s 1.1s ease-in-out 2;}
 @keyframes ec-indice{0%,100%{transform:none;}20%{transform:translateX(-16px) rotate(-3deg);}45%{transform:translateX(18px) rotate(3deg);}70%{transform:none;}}
 .ec-gestes button{transition:transform .15s;}
 .ec-gestes button:active{transform:scale(.93) !important;}
-.ec-solde{position:relative;}
-.ec-haut-d{display:flex;align-items:center;gap:6px;min-width:0;}
-.ec-gestes{display:grid;grid-template-columns:auto 1fr;gap:10px;width:100%;}
-.ec-gestes button{height:52px;border-radius:999px;border:0;font-weight:900;font-size:15.5px;padding:0 18px;}
-.ec-non{background:var(--nappe);color:#FF8FB8;border:1px solid var(--trait) !important;}
-.ec-oui{background:var(--rose);color:#fff;box-shadow:0 10px 26px -8px rgba(255,46,154,.7);}
+/* « ✕ » rond pour passer, « Je prends » en grand pour prendre. */
+.ec-gestes{position:relative;z-index:1;display:flex;align-items:center;gap:12px;width:100%;}
+.ec-gestes button{height:58px;border-radius:999px;border:0;font-weight:900;font-size:16px;padding:0 20px;}
+.ec-non{flex:none;width:58px;padding:0 !important;font-size:22px !important;background:rgba(255,244,230,.06);color:#FF8FB8;
+  border:1.5px solid rgba(255,143,184,.45) !important;}
+.ec-oui{flex:1;min-width:0;background:linear-gradient(135deg,#FF4FA8,var(--rose));color:#fff;box-shadow:0 12px 28px -10px rgba(255,46,154,.85);}
 .ec-astuce{margin:0;font-size:12.5px;color:var(--gris);text-align:center;}
 .ec-fin-pile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:22px 14px;border-radius:20px;border:1px dashed var(--trait);
   text-align:center;color:var(--gris);}
@@ -1681,7 +1757,7 @@ export function StylesEchanges() {
 .ec-calcul b{color:var(--ambre);font-size:18px;}
 .ec-calcul.petit{font-size:14px;color:var(--gris);}
 .ec-bravo{text-align:center;font-size:30px !important;color:#fff;}
-@media (prefers-reduced-motion: reduce){.ec-glisse{transition:none !important;}.ec-gros b,.ec-solde b,.ec-feuille-c,.ec-toast,.ec-glisse > .ec-carte{animation:none !important;}
+@media (prefers-reduced-motion: reduce){.ec-glisse{transition:none !important;}.ec-gros b,.ec-solde b,.ec-feuille-c,.ec-toast,.ec-glisse > .ec-carte,.ec-glisse .ec-carte-photo > img{animation:none !important;}
   .ec-guide,.ec-guide > img,.ec-photo-choix img,.ec-egal,.ec-egal .ec-or,.ec-assiettes i.pleine,.ec-envie.ok i{animation:none !important;}.ec-goutte{display:none;}}
 `,
       }}

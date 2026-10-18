@@ -3,13 +3,13 @@
 // Voir `page.tsx`. La page d'un membre de l'équipe : les mêmes pièces que le
 // comptoir (`echanges-comptoir.tsx`, `echanges-reels.tsx`,
 // `echanges-ville.tsx`), réduites à ce qui est à lui.
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { FamilleDouble } from "@/lib/direct/double-metiers";
 import { CLE_ACCES_COMPTOIR, JOURS_VALIDITE, PAR_PERSONNE, chezNom, deNom, type BonReel, type EtatEchanges, type ModePaiement } from "@/lib/echanges/echanges";
-import { ChoixDuPaiement, Feuille, Pile, StylesEchanges, visageDe, type Offre } from "@/app/autour-de-moi/assistante/echanges-comptoir";
+import { ChoixDuPaiement, Feuille, PastilleCredit, Pile, StylesEchanges, visageDe, type Offre } from "@/app/autour-de-moi/assistante/echanges-comptoir";
 import { BonVue, StylesReels } from "@/app/autour-de-moi/assistante/echanges-reels";
 import { StylesVille, VilleFermee, messageInvitation } from "@/app/autour-de-moi/assistante/echanges-ville";
-import { BoutonSon, FeteDuMatch, StylesMagie, jouer, vibrer } from "@/app/autour-de-moi/assistante/echanges-magie";
+import { BoutonSon, FeteDuMatch, StylesMagie, ecouterLePremierGeste, jouer, vibrer } from "@/app/autour-de-moi/assistante/echanges-magie";
 
 type Commerce = { nom: string; slug: string; famille: FamilleDouble; metier: string; branche: string; photo: string };
 type Reponse = { etat?: EtatEchanges; ok?: boolean; message?: string; code?: string; error?: string };
@@ -113,15 +113,7 @@ export function EspaceMembre({ jeton, prenom, commerce }: { jeton: string; preno
       <StylesVille />
       <StylesReels />
       <div className="ec">
-        <header className="em-tete">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={visage} alt="" />
-          <span>
-            <b>{prenom}</b>
-            <em>Équipe {deNom(commerce.nom)}</em>
-          </span>
-          <BoutonSon />
-        </header>
+        {!(etat?.pret) && <TeteMembre visage={visage} prenom={prenom} nom={commerce.nom} />}
         {!etat ? (
           <div className="ec-fin-pile">
             {erreur ? (
@@ -142,7 +134,7 @@ export function EspaceMembre({ jeton, prenom, commerce }: { jeton: string; preno
             </p>
           </div>
         ) : (
-          <PageMembre jeton={jeton} prenom={prenom} commerce={commerce} etat={etat} setEtat={setEtat} />
+          <PageMembre jeton={jeton} prenom={prenom} visage={visage} commerce={commerce} etat={etat} setEtat={setEtat} />
         )}
       </div>
       {bienvenue && etat && (
@@ -209,21 +201,39 @@ export function EspaceMembre({ jeton, prenom, commerce }: { jeton: string; preno
   );
 }
 
+/** Son prénom, son équipe — et, une fois la page là, son crédit du mois (le son est dans « Comment ça marche »). */
+function TeteMembre({ visage, prenom, nom, children }: { visage: string; prenom: string; nom: string; children?: ReactNode }) {
+  // Le bouton du son réveillait le son au premier geste ; l'en-tête le fait désormais.
+  useEffect(() => ecouterLePremierGeste(), []);
+  return (
+    <header className="em-tete">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={visage} alt="" />
+      <span>
+        <b>{prenom}</b>
+        <em>Équipe {deNom(nom)}</em>
+      </span>
+      {children}
+    </header>
+  );
+}
+
 function PageMembre({
   jeton,
   prenom,
+  visage,
   commerce,
   etat,
   setEtat,
 }: {
   jeton: string;
   prenom: string;
+  visage: string;
   commerce: Commerce;
   etat: EtatEchanges;
   setEtat: (e: EtatEchanges) => void;
 }) {
   const { maVille, moi, compte } = etat;
-  const [ville, setVille] = useState(maVille.slug);
   const [vus, setVus] = useState<string[]>([]);
   const [choisie, setChoisie] = useState<Offre | null>(null);
   const [fete, setFete] = useState<{ bon: BonReel; offre: Offre } | null>(null);
@@ -275,9 +285,10 @@ function PageMembre({
         })),
     [etat.offres],
   );
-  const villes = useMemo(() => etat.villes.map((v) => ({ slug: v.slug, nom: v.slug === maVille.slug ? "📍 Ta ville" : v.nom })), [etat.villes, maVille.slug]);
-  const deLaVille = offres.filter((o) => o.villeSlug === ville);
-  const pile = deLaVille.filter((o) => !vus.includes(o.id) && (o.restant ?? 1) > 0);
+  /* UNE PILE : sa ville d'abord, puis les autres villes ouvertes (le choix de la ville a été retiré). */
+  const pile = offres
+    .filter((o) => !vus.includes(o.id) && (o.restant ?? 1) > 0)
+    .sort((a, b) => Number(a.villeSlug !== maVille.slug) - Number(b.villeSlug !== maVille.slug));
 
   const agir = async (action: string, extra: Record<string, unknown> = {}) => {
     setEnvoi(true);
@@ -298,11 +309,9 @@ function PageMembre({
 
   return (
     <section className="ec-page">
-      <button type="button" className="ec-solde" onClick={() => setPanneau("solde")}>
-        <span>Ce mois-ci, il te reste</span>
-        <b key={moi.reste}>{moi.reste} €</b>
-        <s aria-hidden="true">›</s>
-      </button>
+      <TeteMembre visage={visage} prenom={prenom} nom={commerce.nom}>
+        <PastilleCredit montant={moi.reste} onOuvrir={() => setPanneau("solde")} />
+      </TeteMembre>
 
       {!etat.mien ? (
         <div className="ec-fin-pile">
@@ -322,21 +331,12 @@ function PageMembre({
         />
       ) : (
         <>
-          {villes.length > 1 && (
-            <div className="ec-villes">
-              {villes.map((v) => (
-                <button key={v.slug} type="button" className={ville === v.slug ? "on" : ""} onClick={() => setVille(v.slug)}>
-                  {v.nom}
-                </button>
-              ))}
-            </div>
-          )}
           {pile.length > 0 ? (
             <Pile key={pile[0].id} offres={pile} indice={vus.length === 0} onPasser={(o) => setVus((v) => [...v, o.id])} onPrendre={(o) => (setVus((v) => [...v, o.id]), setChoisie(o))} />
           ) : (
             <div className="ec-fin-pile">
               <p>{offres.length === 0 ? "Pas encore d’offre dans ta ville." : "Tu as vu toutes les offres."}</p>
-              {deLaVille.some((o) => (o.restant ?? 1) > 0) && (
+              {offres.some((o) => (o.restant ?? 1) > 0) && (
                 <button type="button" className="cz-lien" onClick={() => setVus([])}>
                   Les revoir
                 </button>
@@ -412,6 +412,10 @@ function PageMembre({
               Pour le retrouver d’un geste, ajoute cette page à ton écran d’accueil — iPhone : Safari › Partager › « Sur l’écran d’accueil » ; Android : menu ⋮ › « Ajouter à l’écran d’accueil ».
             </li>
           </ol>
+          <p className="ec-sons">
+            <span>Les sons de l’échange</span>
+            <BoutonSon />
+          </p>
         </Feuille>
       )}
 
@@ -550,9 +554,9 @@ body{background:#0B0806;}
 .em-tete{display:flex;align-items:center;gap:12px;}
 .em-tete > img{width:48px;height:48px;border-radius:50%;object-fit:cover;background:var(--nappe2);border:2px solid rgba(245,162,58,.6);}
 .em-tete > span{flex:1;min-width:0;display:flex;flex-direction:column;}
-.em-tete b{font-family:var(--font-clikme),sans-serif;font-size:19px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.em-tete .mg-son{flex-shrink:0;}
-.em-tete em{font-style:normal;font-size:13px;color:var(--gris);}
+.em-tete > span b{font-family:var(--font-clikme),sans-serif;font-size:19px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.em-tete .ec-solde{flex-shrink:0;}
+.em-tete > span em{font-style:normal;font-size:13px;color:var(--gris);}
 .cz-go{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
   min-height:56px;padding:0 22px;border:0;border-radius:999px;background:var(--rose);color:#fff;
   font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:18px;letter-spacing:-.02em;

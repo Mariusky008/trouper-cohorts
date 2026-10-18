@@ -28,11 +28,13 @@ import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { CLE_ACCES_COMPTOIR, chezNom, enEuros, sansMoitie, type BonReel, type EtatEchanges, type ModePaiement } from "@/lib/echanges/echanges";
 import {
   ChoixDuPaiement,
+  CommentCaMarche,
   DetailDuSolde,
   Depart,
+  EnTeteEchange,
   Feuille,
+  PastilleCredit,
   Pile,
-  ReglesDuReseau,
   StylesEchanges,
   soitEnProduits,
   useQr,
@@ -42,7 +44,7 @@ import {
   type Offre,
 } from "./echanges-comptoir";
 import { StylesVille, VilleFermee, messageInvitation } from "./echanges-ville";
-import { BoutonSon, FeteDuMatch, GainQuiMonte, StylesMagie, jouer, vibrer } from "./echanges-magie";
+import { FeteDuMatch, StylesMagie, jouer, vibrer } from "./echanges-magie";
 import { PanneauEquipe, StylesEquipe } from "./echanges-equipe";
 import { PanneauFactures, type ReponseFactures } from "./echanges-factures";
 import { PanneauOffres, StylesOffres } from "./echanges-offres";
@@ -209,16 +211,11 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
   return (
     <div className="ec">
       <StylesEchanges />
-      <div className="ec-haut">
-        <button type="button" className="ec-retour" onClick={onRetour}>
-          ‹ Mon comptoir
-        </button>
-        <BoutonSon />
-      </div>
       <StylesMagie />
       <StylesVille />
       <StylesEquipe />
       <StylesOffres />
+      {!(etat?.pret && mien && !modifier) && <EnTeteEchange onRetour={onRetour} />}
       {!etat ? (
         <div className="ec-fin-pile">
           {erreur ? (
@@ -264,7 +261,7 @@ export function EchangesReels({ commerce, dossier, onRetour }: { commerce: Comme
           }}
         />
       ) : (
-        <PageReelle commerce={commerce} reel={reel} etat={etat} mien={mien} setEtat={setEtat} onModifier={() => setModifier(true)} />
+        <PageReelle commerce={commerce} reel={reel} etat={etat} mien={mien} setEtat={setEtat} onModifier={() => setModifier(true)} onRetour={onRetour} />
       )}
     </div>
   );
@@ -279,6 +276,7 @@ function PageReelle({
   mien,
   setEtat,
   onModifier,
+  onRetour,
 }: {
   commerce: CommerceComptoir;
   reel: Reel;
@@ -286,10 +284,10 @@ function PageReelle({
   mien: Mien;
   setEtat: (e: EtatEchanges) => void;
   onModifier: () => void;
+  onRetour: () => void;
 }) {
   const famille = commerce.famille;
   const { compte, maVille } = etat;
-  const [ville, setVille] = useState(maVille.slug);
   const [vus, setVus] = useState<string[]>([]);
   const [choisie, setChoisie] = useState<Offre | null>(null);
   const [recu, setRecu] = useState<BonReel | null>(null);
@@ -339,11 +337,10 @@ function PageReelle({
         })),
     [etat.offres],
   );
-  /* LES VILLES OUVERTES : la sienne d'abord. */
-  const villes = useMemo(() => etat.villes.map((v) => ({ slug: v.slug, nom: v.slug === maVille.slug ? "📍 Ta ville" : v.nom })), [etat.villes, maVille.slug]);
-  const deLaVille = offres.filter((o) => o.villeSlug === ville);
-  const pile = deLaVille.filter((o) => !vus.includes(o.id) && (o.restant ?? 1) > 0);
-  const nomVille = ville === maVille.slug ? "de ta ville" : `de ${villes.find((v) => v.slug === ville)?.nom ?? "cette ville"}`;
+  /* UNE PILE : sa ville d'abord, puis les autres villes ouvertes (le choix de la ville a été retiré). */
+  const pile = offres
+    .filter((o) => !vus.includes(o.id) && (o.restant ?? 1) > 0)
+    .sort((a, b) => Number(a.villeSlug !== maVille.slug) - Number(b.villeSlug !== maVille.slug));
   const duApres = choisie ? Math.max(0, compte.pris + choisie.prix - compte.gagne) : 0;
 
   /* SES FACTURES : le panneau les lit lui-même (stable : il ne relit pas à chaque rendu). */
@@ -385,13 +382,9 @@ function PageReelle({
         </div>
       )}
 
-      <button type="button" className="ec-solde" onClick={() => setPanneau("solde")}>
-        <span>{maVille.ouverte ? "Tu peux dépenser" : "À l’ouverture, tu pourras dépenser"}</span>
-        <b key={compte.aDepenser}>{compte.aDepenser} €</b>
-        {compte.du > 0 && <i>Tu dois {compte.du} €</i>}
-        <s aria-hidden="true">›</s>
-        {gain && <GainQuiMonte key={gain.cle} montant={gain.n} />}
-      </button>
+      <EnTeteEchange onRetour={onRetour}>
+        <PastilleCredit montant={compte.aDepenser} du={compte.du} gain={gain} onOuvrir={() => setPanneau("solde")} />
+      </EnTeteEchange>
 
       {!maVille.ouverte ? (
         <VilleFermee
@@ -404,16 +397,6 @@ function PageReelle({
         />
       ) : (
         <>
-          {villes.length > 1 && (
-            <div className="ec-villes">
-              {villes.map((v) => (
-                <button key={v.slug} type="button" className={ville === v.slug ? "on" : ""} onClick={() => setVille(v.slug)}>
-                  {v.nom}
-                </button>
-              ))}
-            </div>
-          )}
-
           {pile.length > 0 ? (
             <Pile
               key={pile[0].id}
@@ -431,14 +414,12 @@ function PageReelle({
           ) : (
             <div className="ec-fin-pile">
               <p>
-                {deLaVille.length === 0
-                  ? `Pas encore d’offre ${nomVille}.`
-                  : deLaVille.every((o) => o.restant === 0)
-                    ? `Les commerçants ${nomVille} ont déjà donné tout ce qu’ils pouvaient ce mois-ci.`
-                    : `Tu as vu toutes les offres ${nomVille}.`}
+                {offres.every((o) => o.restant === 0)
+                  ? "Les commerçants ont déjà donné tout ce qu’ils pouvaient ce mois-ci."
+                  : "Tu as vu toutes les offres."}
               </p>
-              {deLaVille.some((o) => (o.restant ?? 1) > 0) && (
-                <button type="button" className="cz-lien" onClick={() => setVus((v) => v.filter((id) => !deLaVille.some((o) => o.id === id)))}>
+              {offres.some((o) => (o.restant ?? 1) > 0) && (
+                <button type="button" className="cz-lien" onClick={() => setVus([])}>
                   Les revoir
                 </button>
               )}
@@ -484,7 +465,7 @@ function PageReelle({
 
       {panneau === "comment" && (
         <Feuille titre="Comment ça marche" onFermer={() => setPanneau(null)}>
-          <ReglesDuReseau decouvert={compte.decouvert} equipe={compte.equipe} seuil={maVille.seuil} />
+          <CommentCaMarche decouvert={compte.decouvert} equipe={compte.equipe} seuil={maVille.seuil} />
         </Feuille>
       )}
 

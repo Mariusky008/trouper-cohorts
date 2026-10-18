@@ -7,7 +7,8 @@
 //
 // LES SONS SONT FABRIQUÉS PAR LE TÉLÉPHONE (Web Audio), aucun fichier à
 // charger : un souffle quand la carte part, un carillon quand c'est à toi, une
-// pièce quand tu gagnes. Un bouton 🔊 / 🔇 les coupe, et c'est retenu.
+// pièce quand tu gagnes. Un bouton 🔊 / 🔇 les coupe, et c'est retenu — dans
+// « Comment ça marche » (il a quitté l'en-tête : « trop de choses qui distraient »).
 //
 // « IL N'Y A AUCUN SON. » Deux raisons, toutes deux sur iPhone :
 //   1. LE SON N'ÉTAIT PAS DÉBLOQUÉ. Un navigateur ne joue un son qu'après un
@@ -19,8 +20,8 @@
 //   2. LE MODE SILENCIEUX. Par défaut, Safari range ces sons parmi les sons
 //      « d'ambiance », que le bouton silencieux coupe. On les déclare comme
 //      une lecture (`navigator.audioSession.type = "playback"`, iOS 17) : ils
-//      s'entendent comme le son d'une vidéo. Le 🔇 de l'écran reste là pour
-//      les couper.
+//      s'entendent comme le son d'une vidéo. Le 🔇 de « Comment ça marche »
+//      reste là pour les couper.
 // Et chaque son attend que le son soit vraiment réveillé avant de partir.
 //
 // MOUVEMENT RÉDUIT : si le téléphone le demande, pas de confettis ni de
@@ -209,7 +210,7 @@ export function vibrer(motif: number | number[]) {
 
 export function BoutonSon() {
   const coupe = useMuet();
-  // Affiché dans l'en-tête de l'échange : à partir de là, le premier geste réveille le son.
+  // Où qu'il soit affiché : à partir de là, le premier geste réveille le son.
   useEffect(() => ecouterLePremierGeste(), []);
   return (
     <button
