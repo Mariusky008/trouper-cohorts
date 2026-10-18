@@ -333,6 +333,7 @@ function PageReelle({
           ou: o.aPied || o.ville,
           parMois: o.parMois,
           restant: o.restant,
+          reservations: o.reservations,
           sansMoitie: o.sansMoitie,
         })),
     [etat.offres],
@@ -511,7 +512,7 @@ function PageReelle({
               <span>
                 <b>{b.autre}</b>
                 <em>
-                  {b.titre} · {b.mode === "moitie" ? `à moitié prix : encaisse ${enEuros(b.aRegler)} sur place` : `${b.prix} €`} · jusqu’au {dateCourte(b.expire)}
+                  {b.titre} · {b.mode === "moitie" ? `à moitié prix : encaisse ${enEuros(b.aRegler)} sur place` : `${b.prix} € de crédit à gagner`} · jusqu’au {dateCourte(b.expire)}
                 </em>
               </span>
               <button type="button" className="cz-lien" disabled={envoi || compte.du > 0} onClick={() => void agir("annuler", { bon: b.id })}>
@@ -693,7 +694,7 @@ export function BonVue({ b, ouvert, onOuvrir, onAnnuler }: { b: BonReel; ouvert:
           <b>{b.titre}</b>
           <em>
             {b.autre}
-            {b.autreVille ? ` · ${b.autreVille}` : ""} · {b.mode === "moitie" ? `à moitié prix : ${enEuros(b.aRegler)}` : `${b.prix} €`}
+            {b.autreVille ? ` · ${b.autreVille}` : ""} · {b.mode === "moitie" ? `à moitié prix : ${enEuros(b.aRegler)}` : `${b.prix} € de crédit`}
           </em>
           <small className={b.statut === "utilise" ? "fait" : ""}>
             {b.qui ? `Pris par ${b.qui} · ` : ""}

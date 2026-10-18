@@ -289,11 +289,15 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
      plus ; un ancien bon cadeau compte comme un autre (pris par celui qui
      offrait, gagné par celui qui servait). À MOITIÉ PRIX, tout se paie en
      euros : rien de pris en crédits, rien de gagné. CHAQUE OFFRE A SA LIMITE :
-     on compte ses bons du mois offre par offre. */
+     on compte ses bons du mois offre par offre. ET COMBIEN DE FOIS ELLE A ÉTÉ
+     RÉSERVÉE depuis sa mise en ligne (« pour montrer la communauté ») : ses
+     bons réservés ou utilisés — une offre dont le titre change repart de zéro. */
   const gagne = new Map<string, number>();
   const pris = new Map<string, number>();
   const ceMoisPourEux = new Map<string, number>();
+  const reservations = new Map<string, number>();
   const cleOffre = (fournisseur: string, offre: string | null) => `${fournisseur}|${offre ?? ""}`;
+  const cleTitre = (fournisseur: string, offre: string | null, duJour: boolean, titre: string) => `${cleOffre(fournisseur, offre)}|${duJour ? "" : titre}`;
   const debut = debutDuMois();
   for (const b of bons) {
     if (b.statut === "expire") continue;
@@ -301,7 +305,9 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
       if (b.statut === "utilise") ajouter(gagne, b.fournisseur_id, b.prix);
       ajouter(pris, b.preneur_id, b.prix);
     }
-    if (b.pour !== "client" && Date.parse(b.cree_le) >= debut) ajouter(ceMoisPourEux, cleOffre(b.fournisseur_id, b.offre_id), 1);
+    if (b.pour === "client") continue;
+    if (Date.parse(b.cree_le) >= debut) ajouter(ceMoisPourEux, cleOffre(b.fournisseur_id, b.offre_id), 1);
+    ajouter(reservations, cleTitre(b.fournisseur_id, b.offre_id, b.du_jour, b.titre), 1);
   }
   const doit = (id: string) => (pris.get(id) ?? 0) > (gagne.get(id) ?? 0);
 
@@ -373,6 +379,7 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
         photo: photoMontrable(o.photo),
         parMois: o.par_mois,
         restant: Math.max(0, o.par_mois - (ceMoisPourEux.get(cleOffre(o.site_id, null)) ?? 0)),
+        reservations: reservations.get(cleTitre(o.site_id, null, o.du_jour, o.titre)) ?? 0,
       };
       return [
         premiere,
@@ -386,6 +393,7 @@ async function lireEtat(supabase: ReturnType<typeof createAdminClient>, moi: Moi
           photo: photoMontrable(a.photo),
           parMois: a.par_mois,
           restant: Math.max(0, a.par_mois - (ceMoisPourEux.get(cleOffre(o.site_id, a.id)) ?? 0)),
+          reservations: reservations.get(cleTitre(o.site_id, a.id, false, a.titre)) ?? 0,
         })),
       ];
     });

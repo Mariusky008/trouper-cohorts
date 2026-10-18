@@ -281,6 +281,7 @@ function PageMembre({
           ou: o.aPied || o.ville,
           parMois: o.parMois,
           restant: o.restant,
+          reservations: o.reservations,
           sansMoitie: o.sansMoitie,
         })),
     [etat.offres],
@@ -399,9 +400,9 @@ function PageMembre({
             </li>
             <li>Glisse une offre à droite : « Je prends ». Tu reçois un bon (un QR) à montrer chez le commerçant.</li>
             <li>
-              Avec tes crédits (0 €), ou <b>à moitié prix</b> quand l’offre le propose : tu règles la moitié en euros, sur place, et tes {PAR_PERSONNE} € ne bougent pas.
+              <b>🪙 Avec tes crédits</b> (tu ne sors pas d’argent), ou <b>💶 à moitié prix</b> quand l’offre le propose : tu règles la moitié en euros, sur place, et tes {PAR_PERSONNE} € ne bougent pas.
             </li>
-            <li>Chaque commerçant dit, pour chacune de ses offres (jusqu’à 3), comment on la lui paie : la carte l’indique (« en échange seulement », « à −50 % seulement »).</li>
+            <li>Chaque commerçant dit, pour chacune de ses offres (jusqu’à 3), comment on la lui paie : la carte l’indique (« 🪙 Échange seulement », « 💶 Moitié prix seulement »).</li>
             <li>
               Ce que tu prends, {commerce.nom} le rend <b>en ses produits</b> : jamais en euros, et jamais par toi.
             </li>

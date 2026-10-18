@@ -121,6 +121,8 @@ export type OffreReelle = {
   parMois: number;
   /** Combien on peut encore lui en prendre ce mois-ci. */
   restant: number;
+  /** Combien de fois elle a été réservée depuis sa mise en ligne (bons réservés ou utilisés). */
+  reservations: number;
   /** Il doit au réseau : son offre passe en tête. */
   doit: boolean;
   /** « 4 min à pied », quand on sait où sont les deux commerces. */

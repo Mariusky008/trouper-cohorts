@@ -27,7 +27,7 @@
 // personne a son propre accès, qu'il lui envoie depuis « Mon équipe »
 // (`echanges-equipe.tsx`). Arrivé au bout, il sert avant de reprendre.
 //
-// DEUX FAÇONS DE PRENDRE : avec ses crédits (0 €), ou à moitié prix quand
+// DEUX FAÇONS DE PRENDRE : avec ses crédits (sans sortir d'argent), ou à moitié prix quand
 // l'offre le propose — une vente en euros, sur place, pour écouler son stock,
 // sans aucun crédit d'un côté ni de l'autre. « Comment tu paies ? »
 // (`ChoixDuPaiement`) sert la démonstration, le vrai comptoir et la page d'un
@@ -114,8 +114,10 @@ export type Offre = {
   hotel?: boolean;
   cadrage?: string;
   entier?: boolean;
-  /** Chez un vrai commerçant : combien on peut encore lui en prendre ce mois-ci. */
+  /** Combien on peut encore lui en prendre ce mois-ci. */
   restant?: number;
+  /** Combien de fois elle a été réservée depuis sa mise en ligne. */
+  reservations?: number;
   /** Pas de moitié prix chez lui : une librairie (prix unique du livre). */
   sansMoitie?: boolean;
   /** Le commerce qui la propose (absent : `id`, sa seule offre). */
@@ -221,6 +223,14 @@ const AUTRES_DEMO: Partial<Record<FamilleDouble, Array<{ titre: string; prix: nu
   table: [{ titre: "Les lasagnes du chef, à emporter", prix: 14, photo: "/direct/table/lasagnes-portion.jpg", parMois: 8, paiement: "moitie" }],
   createur: [{ titre: "Une bougie parfumée", prix: 18, photo: "/direct/table-salon-bougie.jpg", parMois: 4, paiement: "credits" }],
 };
+
+/* L'ACTIVITÉ D'UNE OFFRE D'EXEMPLE : combien de fois elle a été réservée, et ce
+   qu'il en reste ce mois-ci — des chiffres d'exemple, les mêmes à chaque visite. */
+function avecActivite(o: Offre): Offre {
+  let h = 7;
+  for (const ch of o.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return { ...o, reservations: 3 + (h % 22), restant: Math.max(1, o.parMois - (h % o.parMois)) };
+}
 
 function offresDeSaVille(moi: CommerceComptoir): Offre[] {
   return COMMERCES_DEMO.filter((c) => c.famille !== moi.famille).flatMap((c, i) => {
@@ -824,7 +834,7 @@ export function PastilleCredit({
 }) {
   return (
     <button type="button" className="ec-solde" onClick={onOuvrir}>
-      <span>Crédit :</span>
+      <span>🪙 Crédit :</span>
       <b key={montant}>{montant}&nbsp;€</b>
       {du > 0 && <i>dois {du}&nbsp;€</i>}
       {gain && <GainQuiMonte key={gain.cle} montant={gain.n} />}
@@ -866,7 +876,7 @@ function Echanger({
   const [fete, setFete] = useState<{ bon: Bon; offre: Offre } | null>(null);
   const [gain, setGain] = useState<{ n: number; cle: number } | null>(null);
   /* Sa ville d'abord, puis les villes voisines. */
-  const toutes = useMemo(() => [...offresDeSaVille(commerce), ...AILLEURS], [commerce]);
+  const toutes = useMemo(() => [...offresDeSaVille(commerce), ...AILLEURS].map(avecActivite), [commerce]);
   const pile = toutes.filter((o) => !vus.includes(o.id));
   const decouvert = decouvertDe(etat);
   const reste = aDepenser(etat);
@@ -1156,7 +1166,7 @@ export function ReglesDuReseau({ decouvert, equipe, seuil }: { decouvert: number
   return (
     <ol className="ec-regles">
       <li>
-        Chez un commerçant ClikMe, tu prends <b>avec tes crédits</b> (0 €), ou <b>à moitié prix</b> quand son offre le propose — selon ce que chaque offre accepte.
+        Chez un commerçant ClikMe, tu prends <b>🪙 avec tes crédits</b> (tu ne sors pas d’argent : c’est pris sur ton crédit), ou <b>💶 à moitié prix</b> (tu paies la moitié en euros, sur place) quand son offre le propose — selon ce que chaque offre accepte.
       </li>
       <li>
         Un commerçant vient prendre ton produit avec ses crédits : <b>quand tu valides son code, tu gagnes son prix</b>.
@@ -1232,37 +1242,54 @@ export function ChoixDuPaiement({
   const assez = reste >= prix;
   const enCredits = accepte(paiement, "credits");
   const aMoitie = accepte(paiement, "moitie") && !sansMoitie;
-  const pourquoiPasMoitie = sansMoitie
-    ? "Pas chez une librairie : prix unique du livre"
-    : !aMoitie
-      ? "Il le propose en échange seulement"
-      : "−50 %, à régler en euros sur place";
+  /* LES CRÉDITS EN AMBRE AVEC UNE PIÈCE 🪙, LES EUROS EN ROSE AVEC UN BILLET 💶 —
+     « on ne comprend pas en une seconde » : les deux s'écrivaient « € », côte à
+     côte, presque pareils, et « 0 € » avec ses crédits embrouillait tout. */
   return (
     <div className="ec-payer">
-      <h3>Comment tu paies ?</h3>
+      <h3>Comment tu le paies ?</h3>
       {bloque && <p className="ec-calcul petit">{bloque}</p>}
       <button type="button" className="ec-payer-b credits" disabled={!enCredits || !assez || occupe || Boolean(bloque)} onClick={() => onPayer("credits")}>
         <span className="ec-payer-i" aria-hidden="true">
-          €
+          🪙
         </span>
         <span>
-          <b>Avec mes crédits</b>
+          <b>Avec tes crédits</b>
           <small>
-            {!enCredits ? "Il le propose à moitié prix seulement" : assez ? `Il te restera ${reste - prix} € de crédits` : manque || `Il te manque ${prix - reste} € de crédits`}
+            {!enCredits
+              ? "Il le propose à moitié prix seulement."
+              : assez
+                ? `Tu ne sors pas d’argent\u00a0: c’est pris sur ton crédit. Il te restera ${reste - prix}\u00a0€.`
+                : manque || `Ton crédit ne suffit pas\u00a0: il te manque ${prix - reste}\u00a0€.`}
           </small>
         </span>
-        <strong>0&nbsp;€</strong>
+        <span className="ec-payer-m">
+          <strong>{prix}&nbsp;€</strong>
+          <em>de crédit</em>
+        </span>
       </button>
       {enCredits && assez && apres && <p className="ec-calcul petit">{apres}</p>}
+      <p className="ec-payer-ou" aria-hidden="true">
+        ou
+      </p>
       <button type="button" className="ec-payer-b moitie" disabled={!aMoitie || occupe || Boolean(bloque)} onClick={() => onPayer("moitie")}>
         <span className="ec-payer-i" aria-hidden="true">
-          ½
+          💶
         </span>
         <span>
           <b>À moitié prix</b>
-          <small>{pourquoiPasMoitie}</small>
+          <small>
+            {sansMoitie
+              ? "Pas chez une librairie\u00a0: prix unique du livre."
+              : !aMoitie
+                ? "Il le propose en échange seulement."
+                : "Tu paies en euros, sur place. Ton crédit ne bouge pas."}
+          </small>
         </span>
-        <strong>{enEuros(moitieDe(prix))}</strong>
+        <span className="ec-payer-m">
+          <strong>{enEuros(moitieDe(prix))}</strong>
+          <em>à payer</em>
+        </span>
       </button>
     </div>
   );
@@ -1277,7 +1304,6 @@ export function Pile({
   onPrendre,
   indice = false,
   tampon = "JE PRENDS",
-  bouton = (o) => (o.paiement === "moitie" ? `Je prends · ${enEuros(moitieDe(o.prix))}` : `Je prends · ${o.prix}\u00a0€`),
 }: {
   offres: Offre[];
   onPasser: (o: Offre) => void;
@@ -1286,7 +1312,6 @@ export function Pile({
   indice?: boolean;
   /** Les mots du « oui », s'il en faut d'autres que « JE PRENDS ». */
   tampon?: string;
-  bouton?: (o: Offre) => string;
 }) {
   const [dx, setDx] = useState(0);
   const [sortie, setSortie] = useState<"g" | "d" | null>(null);
@@ -1370,8 +1395,9 @@ export function Pile({
         <button type="button" className="ec-non" aria-label="Je passe" title="Je passe" style={{ transform: `scale(${1 + 0.1 * kNon})` }} onClick={() => partir(false)}>
           ✕
         </button>
+        {/* SANS MONTANT : « Je prends · 35 € » se lisait comme 35 € à payer. Crédits ou euros, ça se choisit après. */}
         <button type="button" className="ec-oui" style={{ transform: `scale(${1 + 0.08 * kOui})` }} onClick={() => partir(true)}>
-          {bouton(o)}
+          Je prends
         </button>
       </div>
     </div>
@@ -1380,12 +1406,15 @@ export function Pile({
 
 /* LA CARTE D'UNE OFFRE — « les annonces ne font pas très envie » : la photo
    prend toute la carte, comme une story ; le commerçant en haut, le « −50 % »
-   en macaron ; en bas, sur un dégradé, ce qu'il reste ce mois-ci, le titre en
-   grand et le prix. Sans photo, son fantôme. */
+   en macaron ; en bas, sur un dégradé, combien de fois elle a été réservée et
+   ce qu'il en reste ce mois-ci (« pour montrer la communauté »), le titre en
+   grand, et ses deux prix, chacun sa couleur : 🪙 avec ses crédits, 💶 à payer
+   sur place. Sans photo, son fantôme. */
 export function CarteOffre({ o, dessous = false, style }: { o: Offre; dessous?: boolean; style?: CSSProperties }) {
   const echangeSeul = o.sansMoitie || o.paiement === "credits";
   const moitieSeule = !echangeSeul && o.paiement === "moitie";
   const rare = o.restant !== undefined && o.restant <= 2;
+  const n = o.reservations;
   return (
     <article className={`ec-carte${o.hotel ? " hotel" : ""}${dessous ? " dessous" : ""}`} aria-hidden={dessous || undefined} style={style}>
       <div className="ec-carte-photo">
@@ -1415,26 +1444,31 @@ export function CarteOffre({ o, dessous = false, style }: { o: Offre; dessous?: 
       </div>
       <div className="ec-carte-t">
         <p className="ec-cap">
+          {n !== undefined && <span>{n > 0 ? `👥 ${n} réservation${n > 1 ? "s" : ""}` : "✨ Nouvelle offre"}</span>}
           <span className={rare ? "rare" : undefined}>
-            {o.restant !== undefined ? (rare ? `🔥 Plus que ${o.restant} ce mois-ci` : `Encore ${o.restant} ce mois-ci`) : `Jusqu’à ${o.parMois} par mois`}
+            {o.restant !== undefined ? (rare ? `🔥 Plus que ${o.restant} ce mois-ci` : `Il en reste ${o.restant} ce mois-ci`) : `Jusqu’à ${o.parMois} par mois`}
           </span>
-          {o.hotel && <span>🏨 Hôtel</span>}
         </p>
         <h4>{o.titre}</h4>
-        <p className="ec-carte-prix">
-          {moitieSeule ? (
-            <>
-              <s>{o.prix}&nbsp;€</s>
-              <b className="ec-prix">{enEuros(moitieDe(o.prix))}</b>
-              <em className="ec-cap-moitie">à −50 % seulement</em>
-            </>
-          ) : (
-            <>
-              <b className="ec-prix">{o.prix}&nbsp;€</b>
-              {echangeSeul ? <em className="ec-cap-echange">en échange seulement</em> : <em className="ec-cap-moitie">ou {enEuros(moitieDe(o.prix))} à −50 %</em>}
-            </>
+        <div className={`ec-tarifs${echangeSeul || moitieSeule ? "" : " deux"}`}>
+          {!moitieSeule && (
+            <span className="ec-tarif credits">
+              <small>🪙 {echangeSeul ? "Échange seulement" : "Tes crédits"}</small>
+              <b>{o.prix}&nbsp;€</b>
+              <em>pris sur ton crédit</em>
+            </span>
           )}
-        </p>
+          {!echangeSeul && (
+            <span className="ec-tarif moitie">
+              <small>💶 {moitieSeule ? "Moitié prix seulement" : "Moitié prix"}</small>
+              <b>
+                {enEuros(moitieDe(o.prix))}
+                {moitieSeule && <s>{o.prix}&nbsp;€</s>}
+              </b>
+              <em>à payer sur place</em>
+            </span>
+          )}
+        </div>
       </div>
     </article>
   );
@@ -1451,7 +1485,7 @@ function BonPris({ b, ouvert, onOuvrir, onScanner }: { b: Bon; ouvert: boolean; 
           <b>{b.titre}</b>
           <em>
             {b.commerce}
-            {b.ville ? ` · ${b.ville}` : ""} · {b.mode === "moitie" ? `à moitié prix : ${enEuros(moitieDe(b.prix))}` : `${b.prix} €`}
+            {b.ville ? ` · ${b.ville}` : ""} · {b.mode === "moitie" ? `à moitié prix : ${enEuros(moitieDe(b.prix))}` : `${b.prix} € de crédit`}
           </em>
           <small className={b.scanne ? "fait" : ""}>{b.scanne ? "Utilisé ✓" : "Réservé, en attente de ton passage"}</small>
         </span>
@@ -1676,32 +1710,44 @@ export function StylesEchanges() {
 .ec-cap span{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:800;color:#fff;
   background:rgba(255,244,230,.16);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
 .ec-cap span.rare{background:rgba(255,46,154,.85);}
-.ec-carte h4{margin:0;font-family:var(--font-clikme),sans-serif;font-size:26px;font-weight:800;line-height:1.08;letter-spacing:-.01em;
+.ec-carte h4{margin:0;font-family:var(--font-clikme),sans-serif;font-size:24px;font-weight:800;line-height:1.08;letter-spacing:-.01em;
   text-wrap:balance;text-shadow:0 2px 16px rgba(0,0,0,.55);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;}
-.ec-carte-prix{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:2px 0 0;}
-.ec-prix{font-family:var(--font-clikme),sans-serif;font-size:30px;font-weight:900;line-height:1;color:var(--ambre);text-shadow:0 2px 14px rgba(0,0,0,.5);}
-.ec-carte-prix s{font-size:17px;font-weight:700;color:rgba(255,244,230,.6);}
-.ec-carte-prix em{font-style:normal;font-size:13px;font-weight:800;line-height:1;padding:7px 11px;border-radius:999px;white-space:nowrap;}
-.ec-cap-moitie{background:var(--rose);color:#fff;}
-.ec-cap-echange{background:rgba(245,162,58,.18);color:var(--ambre);border:1px solid rgba(245,162,58,.55);}
+/* SES DEUX PRIX, chacun sa couleur : 🪙 ambre, pris sur son crédit ; 💶 rose, à payer sur place. */
+.ec-tarifs{display:grid;grid-template-columns:1fr;gap:8px;margin-top:2px;}
+.ec-tarifs.deux{grid-template-columns:1fr 1fr;}
+.ec-tarif{display:flex;flex-direction:column;gap:1px;min-width:0;padding:8px 11px 9px;border-radius:16px;
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}
+.ec-tarif small{font-size:11.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ec-tarif b{display:flex;align-items:baseline;gap:7px;font-family:var(--font-clikme),sans-serif;font-size:25px;font-weight:900;line-height:1.1;}
+.ec-tarif b s{font-size:14px;font-weight:700;color:rgba(255,244,230,.6);}
+.ec-tarif em{font-style:normal;font-size:11.5px;font-weight:700;color:rgba(255,244,230,.82);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ec-tarif.credits{background:rgba(70,42,8,.55);border:1.5px solid rgba(245,162,58,.85);}
+.ec-tarif.credits small,.ec-tarif.credits b{color:var(--ambre);}
+.ec-tarif.moitie{background:rgba(80,10,45,.55);border:1.5px solid rgba(255,46,154,.9);}
+.ec-tarif.moitie small,.ec-tarif.moitie b{color:#FF7DBC;}
 .ec-sons{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0 0;padding-top:12px;border-top:1px solid var(--trait);
   font-size:14px;color:var(--gris);}
 .ec-payer{display:flex;flex-direction:column;gap:8px;text-align:left;}
 .ec-payer h3{margin:4px 0 0;font-family:var(--font-clikme),sans-serif;font-size:18px;font-weight:800;}
-.ec-payer-b{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:12px 14px;border-radius:18px;
-  border:1px solid var(--trait);background:var(--nappe);color:var(--creme);text-align:left;transition:transform .15s,opacity .2s;}
+.ec-payer-b{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:14px;border-radius:20px;
+  border:1.5px solid var(--trait);background:var(--nappe);color:var(--creme);text-align:left;transition:transform .15s,opacity .2s;}
 .ec-payer-b:active:not(:disabled){transform:scale(.98);}
 .ec-payer-b:disabled{opacity:.45;}
 .ec-payer-b b{display:block;font-size:16px;font-weight:800;}
 .ec-payer-b small{display:block;font-size:12.5px;line-height:1.3;color:var(--gris);}
-.ec-payer-b strong{font-family:var(--font-clikme),sans-serif;font-size:22px;font-weight:900;white-space:nowrap;}
-.ec-payer-i{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;font-weight:900;font-size:18px;}
-.ec-payer-b.credits{border-color:rgba(245,162,58,.6);background:rgba(245,162,58,.1);}
-.ec-payer-b.credits .ec-payer-i{background:var(--ambre);color:#3A2200;}
-.ec-payer-b.credits strong{color:#7CF0A2;}
-.ec-payer-b.moitie{border-color:rgba(255,46,154,.55);background:rgba(255,46,154,.08);}
-.ec-payer-b.moitie .ec-payer-i{background:var(--rose);color:#fff;}
-.ec-payer-b.moitie strong{color:#FF8FBF;}
+.ec-payer-m{display:flex;flex-direction:column;align-items:flex-end;}
+.ec-payer-m strong{font-family:var(--font-clikme),sans-serif;font-size:23px;font-weight:900;line-height:1.05;white-space:nowrap;}
+.ec-payer-m em{font-style:normal;font-size:11.5px;font-weight:800;color:var(--gris);white-space:nowrap;}
+.ec-payer-i{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;font-size:22px;}
+.ec-payer-b.credits{border-color:var(--ambre);background:linear-gradient(135deg,rgba(245,162,58,.26),rgba(245,162,58,.07));}
+.ec-payer-b.credits .ec-payer-i{background:rgba(245,162,58,.3);}
+.ec-payer-b.credits strong,.ec-payer-b.credits b{color:var(--ambre);}
+.ec-payer-b.moitie{border-color:var(--rose);background:linear-gradient(135deg,rgba(255,46,154,.26),rgba(255,46,154,.07));}
+.ec-payer-b.moitie .ec-payer-i{background:rgba(255,46,154,.3);}
+.ec-payer-b.moitie strong,.ec-payer-b.moitie b{color:#FF7DBC;}
+.ec-payer-b:disabled{filter:grayscale(.8);}
+.ec-payer-ou{display:flex;align-items:center;gap:10px;margin:0;font-size:12px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--gris);}
+.ec-payer-ou::before,.ec-payer-ou::after{content:"";flex:1;height:1px;background:var(--trait);}
 .ec-tampon{position:absolute;top:30%;padding:6px 12px;border:3px solid currentColor;border-radius:10px;font-weight:900;font-size:20px;
   letter-spacing:.04em;pointer-events:none;background:rgba(18,12,9,.55);}
 .ec-tampon.oui{left:18px;color:#7CF0A2;transform:rotate(-12deg);transform-origin:left center;}
@@ -1718,7 +1764,8 @@ export function StylesEchanges() {
 .ec-gestes button{height:58px;border-radius:999px;border:0;font-weight:900;font-size:16px;padding:0 20px;}
 .ec-non{flex:none;width:58px;padding:0 !important;font-size:22px !important;background:rgba(255,244,230,.06);color:#FF8FB8;
   border:1.5px solid rgba(255,143,184,.45) !important;}
-.ec-oui{flex:1;min-width:0;background:linear-gradient(135deg,#FF4FA8,var(--rose));color:#fff;box-shadow:0 12px 28px -10px rgba(255,46,154,.85);}
+/* « Je prends » en blanc, neutre : le rose est la couleur des euros, l'ambre celle des crédits. */
+.ec-oui{flex:1;min-width:0;background:#FFF4E6;color:#1C1411;box-shadow:0 12px 28px -12px rgba(255,244,230,.45);}
 .ec-astuce{margin:0;font-size:12.5px;color:var(--gris);text-align:center;}
 .ec-fin-pile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:22px 14px;border-radius:20px;border:1px dashed var(--trait);
   text-align:center;color:var(--gris);}
