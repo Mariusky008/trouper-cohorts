@@ -58,6 +58,30 @@ export type Relance = {
   exemple: string;
 };
 
+/**
+ * 🔦 CE QU'IL VA FAIRE POUR LUI, DIT AVANT DE LUI DEMANDER QUOI QUE CE SOIT.
+ *
+ * « Lorsqu'on arrive, on ne sait pas vraiment ce qu'il se passe : il faudrait
+ * que le fantôme au milieu de l'écran explique avant de dire l'action à
+ * réaliser. Du type : Aujourd'hui, on braque les projecteurs sur votre menu !
+ * Nous allons diffuser votre menu du jour sur tous vos réseaux simultanément…
+ * À vous de jouer : quel est l'intitulé de votre menu du jour ? Évidemment, le
+ * texte est à modifier selon le métier. »
+ *
+ * LA PHRASE NE PROMET QUE CE QUI VA SE PASSER. Les réseaux qu'elle nomme sont
+ * ceux qui partiront vraiment (voir `planDuFantome`) ; pas d'heure de relais ni
+ * de « milliers » de vues : l'annonce est sur ClikMe dès qu'il la publie, et
+ * chez un vrai commerçant on ne connaît pas son audience d'avance.
+ */
+export type Projecteurs = {
+  /** « Aujourd'hui, on braque les projecteurs sur ton menu ! » */
+  titre: string;
+  /** « Je LE diffuse » (le menu, le bouquet) ou « je LA diffuse » (la coupe, la pièce). */
+  pronom: "le" | "la";
+  /** Ce que les gens du coin cherchent sur ClikMe : « où et quoi manger ce midi ». */
+  cherchent: string;
+};
+
 export type Mission = {
   famille: FamilleDouble;
   /** Ce qu'il publie, en deux mots : « Le plat du jour ». */
@@ -65,6 +89,8 @@ export type Mission = {
   /** L'emoji du métier, pour les cartes et la fête. */
   icone: string;
   etapes: Etape[];
+  /** Ce qu'il dit avant la première question — voir `Projecteurs`. */
+  projecteurs: Projecteurs;
   /** Ce que dit le fantôme une fois que c'est en ligne. */
   bravo: string;
   relance?: Relance;
@@ -83,8 +109,9 @@ export const MISSIONS: Record<FamilleDouble, Mission> = {
     icone: "🍽️",
     etapes: [
       /* « POUR L'ÉTAPE 1, SUPPRIMER LA VOIX : JUSTE "ÉCRIS L'INTITULÉ DE TON MENU
-         DU JOUR". » La voix est pour l'étape 3. */
-      { type: "dire", question: "Écris l’intitulé de ton menu du jour", exemple: "« Magret frites maison, 19 euros »", nomDuChamp: "Le plat" },
+         DU JOUR". » La voix est pour l'étape 3. Elle se pose maintenant en question,
+         après le plan du fantôme : « À toi de jouer : quel est l'intitulé… ? » */
+      { type: "dire", question: "Quel est l’intitulé de ton menu du jour ?", exemple: "« Magret frites maison, 19 euros »", nomDuChamp: "Le plat" },
       { type: "photos", question: "Montre-moi l’assiette !", conseil: "De près, avec la lumière du jour si tu peux.", min: 1, max: 4 },
       {
         type: "voix",
@@ -95,6 +122,7 @@ export const MISSIONS: Record<FamilleDouble, Mission> = {
           "« Mon magret vient d’une ferme à vingt kilomètres. Je le cuis côté peau, tout doucement, et mes frites sont faites à la graisse de canard. »",
       },
     ],
+    projecteurs: { titre: "Aujourd’hui, on braque les projecteurs sur ton menu !", pronom: "le", cherchent: "où et quoi manger ce midi" },
     bravo: "Ton plat est en ligne ! S’il t’en reste après le service, reviens me le dire.",
     relance: {
       apres: 14,
@@ -112,6 +140,7 @@ export const MISSIONS: Record<FamilleDouble, Mission> = {
       { type: "photos", question: "Montre-moi l’ambiance !", conseil: "Le comptoir, la terrasse, ou le groupe qui s’installe.", min: 1, max: 4 },
       { type: "voix", question: "Un mot pour donner envie de passer ?", exemple: "« Venez tôt, la terrasse se remplit vite. »" },
     ],
+    projecteurs: { titre: "Ce soir, on braque les projecteurs sur ta soirée !", pronom: "la", cherchent: "où sortir ce soir" },
     bravo: "Ta soirée est en ligne : les gens du coin la voient dès maintenant.",
   },
   coiffure: {
@@ -124,6 +153,7 @@ export const MISSIONS: Record<FamilleDouble, Mission> = {
       { type: "duree", question: "Je la laisse à l’essai combien de temps ?", choix: [{ jours: 7, mot: "Une semaine" }, { jours: 30, mot: "Un mois" }, { jours: 365, mot: "Toujours" }] },
       { type: "voix", question: "Un mot pour la présenter ?", exemple: "« Facile à coiffer le matin, elle tient trois mois. »" },
     ],
+    projecteurs: { titre: "Aujourd’hui, on braque les projecteurs sur ta coupe !", pronom: "la", cherchent: "une idée de coupe" },
     bravo: "Ta coupe est en ligne : tes clients peuvent déjà l’essayer sur eux !",
   },
   ongles: {
@@ -136,6 +166,7 @@ export const MISSIONS: Record<FamilleDouble, Mission> = {
       { type: "duree", question: "Je la laisse à l’essai combien de temps ?", choix: [{ jours: 7, mot: "Une semaine" }, { jours: 30, mot: "Un mois" }, { jours: 365, mot: "Toujours" }] },
       { type: "voix", question: "Un mot pour la présenter ?", exemple: "« Parfaite pour l’automne, elle tient trois semaines. »" },
     ],
+    projecteurs: { titre: "Aujourd’hui, on braque les projecteurs sur ta pose !", pronom: "la", cherchent: "une idée pour leurs ongles" },
     bravo: "Ta pose est en ligne : tes clientes peuvent l’essayer sur leur main !",
   },
   mode: {
@@ -148,6 +179,7 @@ export const MISSIONS: Record<FamilleDouble, Mission> = {
       { type: "duree", question: "Je la mets en avant combien de temps ?", choix: JOURNEE },
       { type: "voix", question: "Un mot pour la présenter ?", exemple: "« Elle taille juste, prenez votre taille habituelle. »" },
     ],
+    projecteurs: { titre: "Aujourd’hui, on braque les projecteurs sur ta nouvelle pièce !", pronom: "la", cherchent: "quoi porter" },
     bravo: "Ta pièce est en ligne : on peut déjà l’essayer depuis ta page !",
   },
   fleurs: {
@@ -159,6 +191,7 @@ export const MISSIONS: Record<FamilleDouble, Mission> = {
       { type: "photos", question: "Montre-moi le bouquet !", conseil: "Sur un fond simple, il ressort mieux.", min: 1, max: 4 },
       { type: "voix", question: "Un mot pour tes clients ?", exemple: "« Arrivées ce matin, elles tiennent une semaine. »" },
     ],
+    projecteurs: { titre: "Aujourd’hui, on braque les projecteurs sur ton bouquet !", pronom: "le", cherchent: "un bouquet à offrir" },
     bravo: "Ton bouquet est en ligne ! S’il t’en reste en fin de journée, dis-le moi.",
     relance: {
       apres: 17,
@@ -177,6 +210,7 @@ export const MISSIONS: Record<FamilleDouble, Mission> = {
       { type: "duree", question: "Je la mets en avant combien de temps ?", choix: JOURNEE },
       { type: "voix", question: "Raconte-la en une phrase ?", exemple: "« Coulée à la main, dans l’atelier, rue Neuve. »" },
     ],
+    projecteurs: { titre: "Aujourd’hui, on braque les projecteurs sur ta création !", pronom: "la", cherchent: "une idée de cadeau" },
     bravo: "Ta création est en ligne !",
   },
   lunettes: {
@@ -189,6 +223,7 @@ export const MISSIONS: Record<FamilleDouble, Mission> = {
       { type: "duree", question: "Je la laisse à l’essai combien de temps ?", choix: [{ jours: 7, mot: "Une semaine" }, { jours: 30, mot: "Un mois" }, { jours: 365, mot: "Toujours" }] },
       { type: "voix", question: "Un mot pour la présenter ?", exemple: "« Légère, elle va à presque tous les visages. »" },
     ],
+    projecteurs: { titre: "Aujourd’hui, on braque les projecteurs sur ta monture !", pronom: "la", cherchent: "de nouvelles lunettes" },
     bravo: "Ta monture est en ligne : on peut l’essayer sur son visage !",
   },
   seance: {
@@ -201,6 +236,7 @@ export const MISSIONS: Record<FamilleDouble, Mission> = {
       { type: "duree", question: "Je la propose combien de temps ?", choix: JOURNEE },
       { type: "voix", question: "Un mot pour expliquer comment ça se passe ?", exemple: "« On commence toujours par parler dix minutes. »" },
     ],
+    projecteurs: { titre: "Aujourd’hui, on braque les projecteurs sur ta séance !", pronom: "la", cherchent: "un moment pour souffler" },
     bravo: "Ta séance est en ligne : les gens du coin la voient dès maintenant.",
   },
   librairie: {
@@ -213,6 +249,7 @@ export const MISSIONS: Record<FamilleDouble, Mission> = {
       { type: "photos", question: "Montre-moi la couverture !", conseil: "Bien droite, sans reflet.", min: 1, max: 3 },
       { type: "voix", question: "Pourquoi tu l’aimes ?", exemple: "« Je l’ai lu d’une traite, je l’offre à tout le monde. »" },
     ],
+    projecteurs: { titre: "Aujourd’hui, on braque les projecteurs sur ton coup de cœur !", pronom: "le", cherchent: "leur prochaine lecture" },
     bravo: "Ton conseil est en ligne ! Pas besoin de revenir avant qu’il se termine.",
   },
 };
@@ -310,6 +347,18 @@ export function rangerLaPhrase(texte: string, opts: { titre?: boolean } = {}): {
     .trim();
   if (nom) nom = nom[0].toUpperCase() + nom.slice(1);
   return { nom, prix };
+}
+
+/**
+ * « Je le diffuse sur Instagram et Facebook en même temps, et je le mets en avant sur ClikMe,
+ * devant les gens du coin qui cherchent où et quoi manger ce midi. » `reseaux` : ceux qui
+ * partiront vraiment, déjà mis en mots (« Instagram et Facebook ») — vide, il ne parle que de ClikMe.
+ */
+export function planDuFantome(p: Projecteurs, reseaux: string): string {
+  const clikme = `devant les gens du coin qui cherchent ${p.cherchent}.`;
+  return reseaux
+    ? `Je ${p.pronom} diffuse sur ${reseaux} en même temps, et je ${p.pronom} mets en avant sur ClikMe, ${clikme}`
+    : `Je ${p.pronom} mets en avant sur ClikMe, ${clikme}`;
 }
 
 /** La mission d'un commerce, d'après sa famille. */

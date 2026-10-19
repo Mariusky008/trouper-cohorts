@@ -29,7 +29,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
-import { COMMERCES_DEMO, missionDe, type Etape, type Mission } from "@/lib/direct/missions-commercant";
+import { COMMERCES_DEMO, missionDe, planDuFantome, type Etape, type Mission } from "@/lib/direct/missions-commercant";
 import {
   ajouterSansPoints,
   aVenir,
@@ -432,6 +432,16 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
     if (!("relance" in phase) || !phase.relance || !mission.relance) return base;
     return [{ type: "dire", question: mission.relance.question, exemple: mission.relance.exemple, nomDuChamp: "Il en reste" }];
   }, [phase, mission, plusTard]);
+
+  /* 🔦 AVANT LA PREMIÈRE QUESTION, SON PLAN : « on braque les projecteurs sur ton menu ». Les
+     réseaux nommés sont ceux qui partiront vraiment (en démonstration, ceux de tout le monde).
+     Pas pour une annonce préparée pour un autre jour, ni pour « il en reste » : il sait déjà. */
+  const annonce = (() => {
+    if (phase.ou !== "mission" || phase.etape !== 0 || phase.relance || plusTard) return null;
+    const { parDefaut } = reseauxCochables(reseaux, Boolean(commerce.reel));
+    const ou = parDefaut.length ? parDefaut : commerce.reel ? [] : PLATEFORMES_PAR_DEFAUT;
+    return { titre: mission.projecteurs.titre, plan: planDuFantome(mission.projecteurs, reseauxEnMots(ou)) };
+  })();
 
   const commencer = (relance = false) => {
     setPlusTard(false);
@@ -989,6 +999,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           numero={phase.etape}
           total={etapes.length}
           premiere={false}
+          annonce={annonce}
           brouillon={brouillon}
           setBrouillon={setBrouillon}
           onSuivante={() => suivante(phase.relance)}
@@ -1072,10 +1083,16 @@ function Scene({
   ecoute = false,
   petit = false,
   mini = false,
+  puis,
+  projecteur = false,
 }: {
   dossier: string;
   texte: string;
   sous?: string;
+  /** Ce qu'on attend de lui, après l'explication : « ✍️ À toi de jouer : … ? » */
+  puis?: string;
+  /** Un cône de lumière sur le fantôme : « on braque les projecteurs ». */
+  projecteur?: boolean;
   humeur?: "salut" | "ecoute" | "montre" | "repos";
   ecoute?: boolean;
   petit?: boolean;
@@ -1085,7 +1102,7 @@ function Scene({
   const { ecrit, fini } = useMachine(texte);
   const pose = useFantome(!fini && !ecoute, ecoute ? "ecoute" : humeur);
   return (
-    <section className={`cz-scene${petit ? " petit" : ""}${mini ? " mini" : ""}${ecoute ? " ecoute" : ""}`}>
+    <section className={`cz-scene${petit ? " petit" : ""}${mini ? " mini" : ""}${ecoute ? " ecoute" : ""}${projecteur ? " projecteur" : ""}`}>
       <div className="cz-bulle" aria-live="polite">
         <p>
           {ecrit}
@@ -1094,8 +1111,10 @@ function Scene({
           </span>
         </p>
         {sous && <small className={fini ? "vu" : ""}>{sous}</small>}
+        {puis && <strong className={`cz-puis${fini ? " vu" : ""}`}>{puis}</strong>}
       </div>
       <div className="cz-fantome">
+        {projecteur && <span className="cz-spot" aria-hidden="true" />}
         <span className="cz-halo" aria-hidden="true" />
         {ecoute && (
           <span className="cz-ondes" aria-hidden="true">
@@ -1726,6 +1745,7 @@ function EtapeMission({
   numero,
   total,
   premiere,
+  annonce,
   brouillon,
   setBrouillon,
   onSuivante,
@@ -1737,6 +1757,8 @@ function EtapeMission({
   numero: number;
   total: number;
   premiere: boolean;
+  /** Son plan, dit avant la question (première étape seulement) — voir `Projecteurs`. */
+  annonce?: { titre: string; plan: string } | null;
   brouillon: Brouillon;
   setBrouillon: React.Dispatch<React.SetStateAction<Brouillon>>;
   onSuivante: () => void;
@@ -1827,13 +1849,26 @@ function EtapeMission({
         </span>
       </div>
 
-      <Scene
-        dossier={dossier}
-        texte={question}
-        sous={sous}
-        humeur={humeur}
-        ecoute={micro.ecoute}
-      />
+      {annonce && etape.type === "dire" ? (
+        <Scene
+          dossier={dossier}
+          texte={annonce.titre}
+          sous={annonce.plan}
+          puis={`✍️ À toi de jouer : ${etape.question.charAt(0).toLowerCase()}${etape.question.slice(1)}`}
+          humeur={humeur}
+          ecoute={micro.ecoute}
+          projecteur
+          petit
+        />
+      ) : (
+        <Scene
+          dossier={dossier}
+          texte={question}
+          sous={sous}
+          humeur={humeur}
+          ecoute={micro.ecoute}
+        />
+      )}
 
       <div className="cz-panneau">
         {/* CE QU'IL DIT, PENDANT QU'IL LE DIT */}
@@ -2684,6 +2719,32 @@ body{background:#0B0806;}
 .cz-bulle small{display:block;margin-top:8px;font-size:13.5px;line-height:1.4;color:#7A5A44;
   opacity:0;transition:opacity .4s;}
 .cz-bulle small.vu{opacity:1;}
+/* « À toi de jouer » arrive après le plan, sous un trait. */
+.cz-puis{display:block;margin-top:10px;padding-top:9px;border-top:1.5px dashed rgba(122,90,68,.3);
+  font-size:15.5px;font-weight:800;line-height:1.3;color:#A9530C;opacity:0;transform:translateY(4px);
+  transition:opacity .45s .9s,transform .45s .9s;}
+.cz-puis.vu{opacity:1;transform:none;}
+/* Le projecteur : un cône de lumière qui balaie, puis se pose sur lui. */
+.cz-spot{position:absolute;left:50%;top:-14%;width:118%;height:112%;margin-left:-59%;pointer-events:none;
+  background:linear-gradient(to bottom,rgba(255,226,170,0),rgba(255,226,170,.18) 70%,rgba(255,226,170,.3));
+  clip-path:polygon(43% 0,57% 0,100% 100%,0 100%);-webkit-mask:linear-gradient(#000 62%,transparent);
+  mask:linear-gradient(#000 62%,transparent);transform-origin:50% 0;animation:cz-spot 1.1s cubic-bezier(.2,.9,.3,1.3) both;}
+@keyframes cz-spot{from{opacity:0;transform:rotate(-14deg)}to{opacity:1;transform:none}}
+/* Son plan prend de la place : le fantôme se fait plus petit pour que la bulle ne cache pas le fil. */
+.cz-scene.projecteur.petit .cz-fantome{height:min(28vh,250px);}
+@media (max-height:800px){.cz-scene.projecteur.petit .cz-fantome{height:22vh;}}
+@media (max-height:720px){
+  .cz-scene.projecteur.petit .cz-fantome{height:min(16vh,130px);}
+  .cz-scene.projecteur .cz-bulle{padding:13px 16px 12px;}
+  .cz-scene.projecteur .cz-bulle p{font-size:clamp(18px,5vw,21px);}
+  .cz-scene.projecteur .cz-bulle small{margin-top:6px;font-size:13px;line-height:1.35;}
+  .cz-scene.projecteur .cz-puis{margin-top:8px;padding-top:7px;font-size:14.5px;}
+}
+@media (max-height:600px){
+  .cz-scene.projecteur.petit .cz-fantome{height:min(12vh,80px);}
+  .cz-scene.projecteur .cz-bulle p{font-size:18px;}
+  .cz-scene.projecteur .cz-bulle small{font-size:12.5px;line-height:1.3;}
+}
 .cz-fantome{position:relative;height:min(36vh,300px);aspect-ratio:1;flex:none;}
 .cz-scene.petit .cz-fantome{height:min(26vh,210px);}
 .cz-scene.mini .cz-fantome{height:min(15vh,128px);}
