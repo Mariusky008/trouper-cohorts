@@ -54,7 +54,7 @@ export async function POST(request: Request) {
   if (!ext) return NextResponse.json({ error: "Format non accepté (mp4 ou webm)." }, { status: 400 });
   const taille = Number(p?.taille);
   if (!Number.isFinite(taille) || taille <= 0) return NextResponse.json({ error: "Vidéo vide." }, { status: 400 });
-  if (taille > MAX_OCTETS) return NextResponse.json({ error: "Vidéo trop lourde (50 Mo au plus) : refais-la avec moins de questions." }, { status: 400 });
+  if (taille > MAX_OCTETS) return NextResponse.json({ error: "Vidéo trop lourde (50 Mo au plus) : refais-la plus courte." }, { status: 400 });
 
   const supabase = createAdminClient();
   const { data } = await supabase.from("human_vitrine_sites").select("id, pro_token").eq("slug", slug).eq("channel", "letter").maybeSingle();

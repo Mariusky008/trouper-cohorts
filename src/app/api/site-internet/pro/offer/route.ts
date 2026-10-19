@@ -561,7 +561,11 @@ export async function POST(request: Request) {
       // LA PIÈCE DE SON CATALOGUE QUE CE POST MONTRE : la porte ouvre son essai.
       const piece = idDePiece(p?.piece);
       // SON INTERVIEW : sa durée et son format, mesurés par son téléphone (le serveur ne lit pas une vidéo).
-      const secondes = Number(p?.videoSecondes);
+      // SON ÉPISODE : le film entier reste dans Le Direct, sa bande-annonce part sur ses réseaux.
+      const videoReseaux = videoAcceptee(str(p?.videoReseaux));
+      const secondes = Number(videoReseaux ? p?.videoReseauxSecondes : p?.videoSecondes);
+      const versReel = videoReseaux ?? video;
+      const mp4Reel = (videoReseaux ? p?.videoReseauxMp4 : p?.videoMp4) === true;
       await publierSurSesReseauxEnFond(
         { id, slug: str(site.slug), nom: str(site.business_name), ville: str(site.city), activite: str(site.activite) },
         {
@@ -570,7 +574,7 @@ export async function POST(request: Request) {
           autres: photosReseaux,
           ...(mots ? { mots } : {}),
           ...(piece ? { piece } : {}),
-          ...(video && Number.isFinite(secondes) && secondes > 0 ? { video: { url: video, secondes, mp4: p?.videoMp4 === true } } : {}),
+          ...(versReel && Number.isFinite(secondes) && secondes > 0 ? { video: { url: versReel, secondes, mp4: mp4Reel } } : {}),
           ...(choisis ? { plateformes: versReseaux } : {}),
         },
       );

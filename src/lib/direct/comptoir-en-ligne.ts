@@ -309,6 +309,47 @@ export async function envoyerInterview(
   return { ok: true, ou: ["Le Direct", "ta page"], ...(reseaux.length ? { reseaux } : {}) };
 }
 
+/**
+ * ═══ SON ÉPISODE PART EN LIGNE ════════════════════════════════════════════
+ *
+ * Le chemin de l'interview (`deposerVideo`, puis l'annonce), avec deux films :
+ * l'ÉPISODE entier (deux à quatre minutes) pour Le Direct et sa page, et la
+ * BANDE-ANNONCE pour ses réseaux — Instagram et Facebook ne prennent en Reel
+ * que 90 secondes au plus (`REEL_MAX_S`). Un épisode assez court part tel quel
+ * partout (`bande` absente).
+ */
+export async function envoyerEpisode(
+  c: CommerceComptoir,
+  e: { texte: string; affiche: string; episode: { blob: Blob; type: string; duree: number }; bande?: { blob: Blob; type: string; duree: number } | null },
+): Promise<ResultatEnvoi> {
+  if (!c.reel) return { ok: false, ou: [], erreur: "Ce commerce n'a pas de lien pro." };
+  const { slug, token } = c.reel;
+  const film = await deposerVideo(c, e.episode.blob, e.episode.type);
+  if ("erreur" in film) return { ok: false, ou: [], erreur: film.erreur };
+  const bande = e.bande ? await deposerVideo(c, e.bande.blob, e.bande.type) : null;
+  const ceSoir = new Date();
+  ceSoir.setHours(23, 59, 0, 0);
+  const r = await poster("/api/site-internet/pro/offer", {
+    slug,
+    token,
+    action: "set",
+    text: e.texte,
+    photo: e.affiche,
+    video: film.url,
+    videoSecondes: Math.round(e.episode.duree * 10) / 10,
+    videoMp4: enMp4(e.episode.type),
+    // LA BANDE-ANNONCE, POUR SES RÉSEAUX : si elle n'a pas pu partir, ses réseaux prennent l'image
+    ...(e.bande && bande && "url" in bande
+      ? { videoReseaux: bande.url, videoReseauxSecondes: Math.round(e.bande.duree * 10) / 10, videoReseauxMp4: enMp4(e.bande.type) }
+      : {}),
+    until: ceSoir.toISOString(),
+    famille: c.famille === "table" ? "menu" : "offre",
+  });
+  if (!r.ok) return { ok: false, ou: [], erreur: r.erreur ?? "L'annonce n'a pas pu partir." };
+  const reseaux = Array.isArray(r.json?.reseaux) ? (r.json.reseaux as unknown[]).map(String) : [];
+  return { ok: true, ou: ["Le Direct", "ta page"], ...(reseaux.length ? { reseaux } : {}) };
+}
+
 /** Retirer en ligne : le plat de sa page, et l'annonce du Direct qui porte ce texte. */
 export async function retirerEnLigne(c: CommerceComptoir, mission: Mission, p: Publication): Promise<void> {
   if (!c.reel) return;

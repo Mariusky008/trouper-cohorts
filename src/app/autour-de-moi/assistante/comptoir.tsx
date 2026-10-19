@@ -52,6 +52,7 @@ import { useMicro } from "./use-micro";
 import { envoyerALaVille, retirerDeLaVille, type CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import {
   envoyerEnLigne,
+  envoyerEpisode,
   envoyerInterview,
   publicationDeLaBase,
   retirerDeLaBase,
@@ -99,6 +100,8 @@ type Commerce = CommerceComptoir;
 
 /* 🎬 L'INTERVIEW VIDÉO (restaurant) : la même que la page d'essai, chargée seulement quand on l'ouvre. */
 const Interview = dynamic(() => import("../essai-interview/essai-interview").then((m) => m.EssaiInterview), { ssr: false });
+/* 🎬 L'ÉPISODE : le téléphone posé pendant qu'il fabrique — chargé seulement quand on l'ouvre. */
+const Episode = dynamic(() => import("./episode-comptoir").then((m) => m.EpisodeComptoir), { ssr: false });
 
 /**
  * LE PLAT DE SON INTERVIEW : celui qu'il a publié aujourd'hui (et sa photo) ;
@@ -366,6 +369,8 @@ type Phase =
   | { ou: "phototheque" }
   /** 🎬 L'interview vidéo du restaurant — voir `essai-interview/essai-interview.tsx`. */
   | { ou: "interview" }
+  /** 🎬 L'épisode : sa session filmée pendant qu'il fabrique, montée en film — voir `episode-comptoir.tsx`. */
+  | { ou: "episode" }
   /** Ma carte : ses rubriques, ses lignes et ses prix — voir `carte-comptoir.tsx`. */
   | { ou: "carte" }
   /** Ce que mon fantôme sait : ses réponses, et les questions de ses clients — voir `savoir-comptoir.tsx`. */
@@ -910,6 +915,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           /* L'INTERVIEW, MÉTIER PAR MÉTIER : chaque métier dont les questions
              sont validées — voir `INTERVIEW_VALIDEE`. */
           onInterview={interviewOuverte(commerce.famille, Boolean(commerce.reel)) ? () => setPhase({ ou: "interview" }) : undefined}
+          onEpisode={() => setPhase({ ou: "episode" })}
           propositionActive={Boolean(propositionAMontrer(proposition))}
           proposition={
             <CarteProposition
@@ -1018,6 +1024,32 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
             }}
           />
         </div>
+      )}
+
+      {/* 🎬 L'ÉPISODE, PAR-DESSUS LE COMPTOIR : « Épisode 1 de sa série 2026 », publié comme son interview —
+          l'épisode entier dans Le Direct et sur sa page, sa bande-annonce sur ses réseaux. */}
+      {phase.ou === "episode" && (
+        <Episode
+          commerce={commerce}
+          dossier={dossier}
+          ville={villeDe(commerce)}
+          onRetour={() => setPhase({ ou: "accueil" })}
+          publier={
+            commerce.reel
+              ? async (e) => {
+                  const r = await envoyerEpisode(commerce, e);
+                  if (!r.ok) return { ok: false, message: r.erreur ?? "L’envoi a échoué. Réessaie, de préférence en wifi." };
+                  return {
+                    ok: true,
+                    message: `C’est en ligne : ${r.ou.join(" et ")}.${r.reseaux?.length ? ` 📣 En route vers ${reseauxEnMots(r.reseaux)}.` : ""}`,
+                  };
+                }
+              : async () => {
+                  await new Promise((ok) => setTimeout(ok, 1400));
+                  return { ok: true, message: `C’est en ligne : Le Direct et ta page. 📣 En route vers ${reseauxEnMots(PLATEFORMES_PAR_DEFAUT)}.` };
+                }
+          }
+        />
       )}
 
       {phase.ou === "mission" && (
@@ -1219,6 +1251,7 @@ function Accueil({
   proposition,
   propositionActive,
   onInterview,
+  onEpisode,
 }: {
   commerce: Commerce;
   mission: Mission;
@@ -1249,6 +1282,8 @@ function Accueil({
   echanges?: React.ReactNode;
   /** 🎬 L'interview vidéo — un restaurant seulement : le reporter pose ses questions au chef. */
   onInterview?: () => void;
+  /** 🎬 L'épisode : il pose son téléphone AVANT de fabriquer — un bouton à part, pas un choix au moment de publier. */
+  onEpisode?: () => void;
   /** ☀️ La proposition du matin, quand rien n'est encore en ligne. */
   proposition?: React.ReactNode;
   /** Elle est là : le grand bouton « Publier » devient « Publier autre chose ». */
@@ -1352,6 +1387,20 @@ function Accueil({
               <s aria-hidden="true">→</s>
             </button>
           ))}
+
+        {/* 🎬 L'ÉPISODE : « l'artisan place son téléphone là où il fabrique, démarre la session, l'arrête quand il a
+            terminé — et c'est l'épisode 1 de sa série 2026 ». Il se lance AVANT de fabriquer : un bouton à lui. */}
+        {onEpisode && (
+          <button type="button" className="cz-vers-episode" onClick={onEpisode}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`${dossier}montre.webp`} alt="" />
+            <span>
+              <b>Épisode : je commence une fabrication</b>
+              <em>Pose ton téléphone, je filme et je monte ta série.</em>
+            </span>
+            <i className="cz-nouveau">Nouveau</i>
+          </button>
+        )}
 
         {actives.length > 0 && (
           <section className="cz-bloc">
@@ -3467,6 +3516,15 @@ label.cz-go{cursor:pointer;}
 .cz-vers-interview img{position:absolute;left:10px;top:4px;height:62px;width:auto;}
 .cz-vers-interview b{flex:1;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:16px;}
 .cz-vers-interview s{text-decoration:none;font-size:20px;color:#3DE2A6;}
+/* 🎬 L'ÉPISODE : sa série, un bouton à part */
+.cz-vers-episode{position:relative;display:flex;align-items:center;gap:10px;min-height:76px;padding:28px 14px 12px 78px;border:0;border-radius:20px;
+  overflow:hidden;text-align:left;color:var(--creme);background:radial-gradient(120% 140% at 0% 0%,#5A2A4C,#2E1530 60%,#1C0F20);
+  box-shadow:inset 0 0 0 1.5px rgba(255,46,154,.55),0 12px 26px -14px rgba(255,46,154,.6);}
+.cz-vers-episode img{position:absolute;left:6px;bottom:-4px;height:72px;width:auto;}
+.cz-vers-episode span{flex:1;display:flex;flex-direction:column;gap:2px;}
+.cz-vers-episode b{font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:16px;line-height:1.2;}
+.cz-vers-episode em{font-style:normal;font-size:13px;opacity:.85;}
+.cz-vers-episode .cz-nouveau{position:absolute;top:8px;right:10px;background:var(--rose);color:#fff;}
 
 /* MES OUTILS : une barre fine, une icone au trait par outil */
 .cz-outils{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;padding:10px 4px 9px;margin-top:2px;

@@ -1224,8 +1224,8 @@ function resserrer(ctx: BaseAudioContext, p: PriseAMonter, coupes: readonly { de
 }
 type MediaPret = { genre: "photo"; img: HTMLImageElement } | { genre: "video"; v: HTMLVideoElement };
 
-/** Un lecteur muet, prêt à donner ses images. */
-function lecteurMuet(url: string, boucle = false): Promise<HTMLVideoElement> {
+/** Un lecteur muet, prêt à donner ses images (l'épisode s'en sert aussi : `episode-montage.ts`). */
+export function lecteurMuet(url: string, boucle = false): Promise<HTMLVideoElement> {
   return new Promise((ok) => {
     const v = document.createElement("video");
     v.muted = true;

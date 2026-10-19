@@ -33,7 +33,8 @@
     "verifier:annonce-essayable": "node scripts/verifier-annonce-essayable.mjs",
     "verifier:raccord": "node scripts/verifier-raccord-sous-le-texte.mjs",
     "verifier:ecran-choix": "node scripts/verifier-ecran-choix.mjs",
-    "verifier:parcours": "node scripts/verifier-parcours-coherent.mjs"
+    "verifier:parcours": "node scripts/verifier-parcours-coherent.mjs",
+    "verifier:episode": "node scripts/verifier-episode.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.27",
