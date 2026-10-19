@@ -936,8 +936,10 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
               famille: commerce.famille,
               onFermer: () => setPhase({ ou: "accueil" }),
               /* 🎬 « PUBLIER PARTOUT » : Le Direct, sa page, ses réseaux — voir
-                 `envoyerInterview`. La démonstration n'a pas de lien pro : elle
-                 garde « Partager » et « Télécharger ». */
+                 `envoyerInterview`. « Quand je veux publier l'annonce sur mes
+                 réseaux sociaux, je ne vois pas le bouton » : la démonstration
+                 l'a aussi, et fait comme pour ses autres annonces — rien ne part,
+                 l'écran montre où la vidéo arriverait. */
               ...(commerce.reel
                 ? {
                     publier: async (m: { blob: Blob; type: string; duree: number; affiche: string; plat: string; prix: string; mots?: string }) => {
@@ -957,7 +959,12 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
                       };
                     },
                   }
-                : {}),
+                : {
+                    publier: async () => {
+                      await new Promise((ok) => setTimeout(ok, 1400));
+                      return { ok: true, message: `C’est en ligne : Le Direct et ta page. 📣 En route vers ${reseauxEnMots(PLATEFORMES_PAR_DEFAUT)}.` };
+                    },
+                  }),
             }}
           />
         </div>
