@@ -19,6 +19,7 @@
 // RIEN NE PART SANS SA CASE COCHÉE, ET TOUT S'EFFACE EN UN GESTE. Sa voix est
 // à lui : « Supprimer ma voix » l'efface chez ElevenLabs, pas seulement ici.
 import { useCallback, useEffect, useRef, useState } from "react";
+import { sessionPourLeMicro } from "@/lib/direct/session-audio";
 
 type Etat = {
   disponible: boolean;
@@ -143,6 +144,7 @@ export function ProVoix({
     }
     try {
       if (!flux.current) {
+        sessionPourLeMicro();
         flux.current = await navigator.mediaDevices.getUserMedia({
           audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
         });

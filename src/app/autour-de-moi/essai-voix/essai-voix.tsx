@@ -30,6 +30,7 @@
 // si la carte de validation est un confort ou une condition d'existence.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { chiffresDits, chiffresRetrouves } from "@/lib/direct/chiffres-dits";
+import { sessionPourLeMicro } from "@/lib/direct/session-audio";
 
 /**
  * LA PHRASE DE RÉFÉRENCE — et elle n'est pas choisie au hasard.
@@ -232,6 +233,7 @@ export function EssaiVoix() {
     // ── LE CHEMIN B · L'ENREGISTREMENT ──
     if (separe !== "tel") {
       try {
+        sessionPourLeMicro();
         const f = await navigator.mediaDevices.getUserMedia(CONTRAINTES);
         flux.current = f;
         const type = conteneur();

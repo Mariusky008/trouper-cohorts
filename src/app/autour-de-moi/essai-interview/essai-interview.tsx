@@ -68,6 +68,7 @@ import {
   type Montage,
   type PriseAMonter,
 } from "@/lib/direct/interview-montage";
+import { sessionPourLeMicro } from "@/lib/direct/session-audio";
 
 type Etape = "reglages" | "preparation" | "placement" | "interview" | "merci" | "reponses" | "montage" | "resultat" | "erreur";
 
@@ -234,6 +235,8 @@ const DEMANDES: Record<Mode, MediaStreamConstraints[]> = {
 
 async function ouvrirAppareils(mode: Mode): Promise<MediaStream> {
   let derniere: unknown = null;
+  // SAFARI REFUSE LE MICRO à une page qui s'est déclarée « lecture seule » (les sons des échanges, au comptoir)
+  sessionPourLeMicro();
   for (const demande of DEMANDES[mode]) {
     try {
       return await navigator.mediaDevices.getUserMedia(demande);
