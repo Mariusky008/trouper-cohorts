@@ -2,9 +2,10 @@
  * 🖼️ SA PHOTOTHÈQUE — toutes ses photos et vidéos, rangées une fois, où l'on pioche ensuite.
  *
  * « Il faudrait un endroit sur son admin où il peut placer toutes ses photos et
- * vidéos, dans lesquelles on peut piocher. » Il les dépose depuis son Espace Pro
- * (onglet « Photothèque ») ; au comptoir, à l'étape des photos, « Dans ma
- * photothèque » les lui propose au lieu de reprendre une photo.
+ * vidéos, dans lesquelles on peut piocher. » Il les dépose depuis son comptoir
+ * (l'outil « Photos », `phototheque-comptoir.tsx`) ou son Espace Pro (onglet
+ * « Photothèque ») ; à l'étape des photos d'une annonce, « Dans ma photothèque »
+ * les lui propose au lieu de reprendre une photo.
  *
  * RIEN EN BASE : les fichiers vivent dans le seau `phototheque`, un dossier par
  * commerce (`<id du site>/…`), et la liste est celle du dossier. Pas de table à

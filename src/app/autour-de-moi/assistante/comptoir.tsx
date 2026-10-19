@@ -88,7 +88,7 @@ import { accord, demandesEnMots, effetDesAnnonces, phraseDeLaVeille, semaineDuCo
 import { lignesDeLaSemaine } from "@/lib/site-internet/semaine-en-clients";
 import type { SemaineEnClients } from "@/lib/site-internet/compteurs-jour";
 import { partagerEnStatut, type Statut, type SortieStatut } from "@/lib/direct/statut-whatsapp";
-import { PiocherPhototheque } from "./phototheque-comptoir";
+import { PhotothequeComptoir, PiocherPhototheque } from "./phototheque-comptoir";
 import { CarteMessageDuMois } from "./message-du-mois";
 
 type Commerce = CommerceComptoir;
@@ -335,6 +335,8 @@ type Phase =
   | { ou: "planning" }
   /** Ma vitrine : ses photos de produits, avec leur libellé — voir `vitrine-comptoir.tsx`. */
   | { ou: "vitrine" }
+  /** 🖼️ Ma photothèque : toutes ses photos et vidéos, où il pioche à chaque annonce — voir `phototheque-comptoir.tsx`. */
+  | { ou: "phototheque" }
   /** 🎬 L'interview vidéo du restaurant — voir `essai-interview/essai-interview.tsx`. */
   | { ou: "interview" }
   /** Ma carte : ses rubriques, ses lignes et ses prix — voir `carte-comptoir.tsx`. */
@@ -849,6 +851,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           onCommencer={commencer}
           onRetirer={enlever}
           onVitrine={() => setPhase({ ou: "vitrine" })}
+          onPhototheque={() => setPhase({ ou: "phototheque" })}
           onCarte={() => setPhase({ ou: "carte" })}
           savoir={savoir}
           onSavoir={() => setPhase({ ou: "savoir" })}
@@ -919,6 +922,10 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
 
       {phase.ou === "vitrine" && (
         <VitrineComptoir commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
+      )}
+
+      {phase.ou === "phototheque" && (
+        <PhotothequeComptoir commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
       )}
 
       {/* 🎬 L'INTERVIEW, PAR-DESSUS LE COMPTOIR : son nom, son plat du jour s'il
@@ -1107,6 +1114,7 @@ function Accueil({
   onCommencer,
   onRetirer,
   onVitrine,
+  onPhototheque,
   onCarte,
   savoir,
   onSavoir,
@@ -1130,6 +1138,8 @@ function Accueil({
   onRetirer: (id: string) => void;
   /** Ouvrir « Ma vitrine ». */
   onVitrine: () => void;
+  /** Ouvrir « Ma photothèque ». */
+  onPhototheque: () => void;
   /** Ouvrir « Ma carte ». */
   onCarte: () => void;
   savoir: SavoirDuComptoir;
@@ -1307,6 +1317,8 @@ function Accueil({
         <nav className="cz-outils" aria-label="Mes outils">
           <Outil icone="planning" nom="Planning" badge={programmees.length || undefined} onClick={onPlanning} />
           <Outil icone="vitrine" nom="Vitrine" onClick={onVitrine} />
+          {/* « Je ne vois pas la photothèque où je vais mettre les photos, vidéos » : ici. */}
+          <Outil icone="photos" nom="Photos" onClick={onPhototheque} />
           <Outil icone="carte" nom={carte.titre.replace(/^(Ma|Mes)\s+/, "").replace(/^./, (x) => x.toUpperCase())} onClick={onCarte} />
           <Outil
             icone="fantome"
@@ -1346,6 +1358,13 @@ const ICONES = {
     <>
       <path d="M4.5 8.5h2.8l1.5-2.5h6.4l1.5 2.5h2.8A1.5 1.5 0 0 1 21 10v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18v-8a1.5 1.5 0 0 1 1.5-1.5z" />
       <circle cx="12" cy="13.6" r="3.4" />
+    </>
+  ),
+  photos: (
+    <>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
+      <circle cx="9" cy="9.5" r="1.7" />
+      <path d="M4 17.5l5-5 3.5 3.5 2.5-2.5 5 5" />
     </>
   ),
   carte: (
@@ -2996,6 +3015,18 @@ label.cz-go{cursor:pointer;}
 .cz-outil.phare.chaud .cz-outil-badge{color:#fff;background:var(--rose);border-color:var(--rose);}
 @media (max-width:350px){.cz-outils{padding:10px 2px 9px;}.cz-outil-i{width:36px;height:36px;}.cz-outil-i svg{width:20px;height:20px;}
   .cz-outil b{font-size:9.5px;letter-spacing:-.02em;}.cz-outil-badge{left:calc(50% + 7px);}.cz-deux-choix b{font-size:17px;}}
+/* SEPT OUTILS (« Photos », et « Réseaux » quand il est branché) : des colonnes égales ne
+   suffisent plus — « Réseaux » touchait « Échanges ». Chaque outil prend la place de son mot,
+   et ce qui reste se partage entre eux. */
+.cz-outils:has(> .cz-outil:nth-child(7)){grid-auto-columns:auto;justify-content:space-between;padding:10px 8px 9px;}
+.cz-outils:has(> .cz-outil:nth-child(7)) .cz-outil b{font-size:10.5px;letter-spacing:-.02em;}
+.cz-outils:has(> .cz-outil:nth-child(7)) .cz-outil-i{width:40px;height:40px;}
+@media (max-width:370px){.cz-outils:has(> .cz-outil:nth-child(7)) .cz-outil b{font-size:9.5px;}
+  .cz-outils:has(> .cz-outil:nth-child(7)) .cz-outil-i{width:36px;height:36px;}}
+@media (max-width:340px){.cz-outils:has(> .cz-outil:nth-child(7)){padding:10px 5px 9px;}
+  .cz-outils:has(> .cz-outil:nth-child(7)) .cz-outil b{font-size:9px;}
+  .cz-outils:has(> .cz-outil:nth-child(7)) .cz-outil-i{width:34px;height:34px;}
+  .cz-outils:has(> .cz-outil:nth-child(7)) .cz-outil-i svg{width:19px;height:19px;}}
 
 /* L'INTERVIEW, PAR-DESSUS LE COMPTOIR */
 .cz-interview{position:absolute;inset:0;z-index:40;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#05090C;}
