@@ -62,6 +62,9 @@ button.ei-retour{font-family:inherit;cursor:pointer}
 .ei-cloche .ei-n{margin:6px 0 10px}
 .ei-cloche .ei-r-ajout{display:inline-block}
 .ei-n{margin:10px 0 0;font-size:12.5px;line-height:1.5;color:var(--craie3)}
+.ei-questions{margin:12px 0 0;padding:0 0 0 22px;display:grid;gap:8px;font-size:14px;line-height:1.4}
+.ei-questions b{display:block;font-weight:850;color:var(--craie)}
+.ei-questions span{color:var(--craie2)}
 .ei-publier{margin:16px 0 0}
 .ei-publier .ei-go{width:100%}
 .ei-publier .ei-n.ei-erreur{margin-top:10px}
@@ -87,9 +90,9 @@ button.ei-retour{font-family:inherit;cursor:pointer}
 .ei-attente{width:44px;height:44px;margin:40px auto;border-radius:50%;
   border:4px solid var(--trait);border-top-color:var(--menthe);animation:eiTourne 1s linear infinite}
 @keyframes eiTourne{to{transform:rotate(360deg)}}
-/* ses reponses, une par ligne : la question, et la photo ou la video qu'il y met */
+/* ses reponses, une par bloc : la question, puis ses photos ou videos (trois au plus) */
 .ei-reponses{list-style:none;margin:20px 0 0;padding:0;display:grid;gap:10px}
-.ei-reponses li{display:flex;gap:12px;align-items:center;justify-content:space-between;
+.ei-reponses li{display:grid;gap:10px;
   padding:12px 14px;border-radius:14px;background:var(--nuit2);border:1px solid var(--trait)}
 .ei-r-texte{min-width:0}
 .ei-r-texte b{display:block;font-size:15px;font-weight:850}
@@ -97,10 +100,12 @@ button.ei-retour{font-family:inherit;cursor:pointer}
 .ei-r-ajout{position:relative;flex:none;font-size:14px;font-weight:850;color:#04150E;
   background:var(--menthe);border-radius:999px;padding:10px 14px;cursor:pointer;overflow:hidden}
 .ei-r-ajout input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
-.ei-r-media{display:flex;align-items:center;gap:8px;flex:none}
-.ei-r-media img,.ei-r-media video{width:64px;height:64px;object-fit:cover;border-radius:10px;background:#000}
-.ei-r-media button{font:inherit;font-size:12.5px;font-weight:700;color:var(--craie2);cursor:pointer;
-  background:transparent;border:1px solid var(--trait);border-radius:999px;padding:7px 11px}
+.ei-r-medias{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.ei-r-media{position:relative;flex:none}
+.ei-r-media img,.ei-r-media video{display:block;width:64px;height:64px;object-fit:cover;border-radius:10px;background:#000}
+.ei-r-media button{position:absolute;top:-7px;right:-7px;width:26px;height:26px;padding:0;
+  font:inherit;font-size:16px;line-height:1;font-weight:800;color:var(--craie);cursor:pointer;
+  background:var(--nuit);border:1px solid var(--trait);border-radius:50%}
 .ei-mesures{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .ei-mesures li{padding:11px 13px;border-radius:13px;background:var(--nuit2);border:1px solid var(--trait)}
 .ei-mesures li b{display:block;font-size:13.5px;font-weight:800}

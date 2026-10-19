@@ -1,17 +1,24 @@
 /**
  * 🎬 LE MONTAGE DE L'INTERVIEW — fait par le téléphone, sans serveur.
  *
- * « À la fin de l'interview, il faut que tu fasses quand même un joli montage
- * comme tu l'as fait avec la dernière vidéo. » La dernière vidéo, c'est
- * l'épisode du Bordeaux : l'ardoise du jour qui s'écrit à la craie, le
- * fantôme qui arrive dans une pluie d'étincelles, qui parle avec une bulle,
- * qui se fait petit au coin de l'ardoise quand le chef parle, et qui dit « à
- * demain » sur l'ardoise de fin. Ce fichier refait exactement ça, avec le
- * reporter de ClikMe et les prises de l'interview.
+ * « Est-ce que le mode "en interview" a bien été pensé pour que le résultat
+ * soit à la hauteur de ce que tu viens de réaliser ? » — « Oui, faisons
+ * cela. » Le montage n'est plus l'ardoise à la craie : c'est l'émission FACE
+ * AU FANTÔME, celle des épisodes de Jean-Marie et de Lou. Le clic et son nom
+ * en géant ; une carte par question, que le reporter pose avec sa voix ; ses
+ * réponses en plein écran, dans le cadre rose, avec ses mots qui s'allument un
+ * à un ; les réponses courtes qui frappent ; le coup de zoom sur son plat ; la
+ * carte de fin avec le prix et le bouton ; une musique, et la même petite
+ * mélodie à chaque fin. Le dessin et les sons sont dans
+ * `interview-signature.ts` ; ici, le plan, le son calé sur l'image et
+ * l'enregistrement.
  *
- * ET PENDANT QU'IL RÉPOND, CE QU'IL MONTRE : la photo ou la vidéo ajoutée à
- * la question passe en grand, son visage reste dans un médaillon — ou, s'il a
+ * ET PENDANT QU'IL RÉPOND, CE QU'IL MONTRE, au rythme de ses mots : son
+ * visage, puis ses photos (trois au plus par question), une nouvelle image à
+ * chaque phrase, et la photo de son produit juste avant qu'il le nomme (voir
+ * `plansDeCoupe`) ; sur une photo, son visage reste dans un médaillon. S'il a
  * choisi de ne pas se montrer, c'est son fantôme qui parle, avec sa voix.
+ * Le restaurant garde sa cloche, après le titre.
  *
  * ─── POURQUOI DANS LE TÉLÉPHONE ──────────────────────────────────────────
  *
@@ -36,39 +43,69 @@ import {
   CLOCHE,
   DEBIT_SON,
   SCRIPTS,
-  repliquesDuScript,
-  FIN,
-  OUVERTURE,
   REPLIQUES,
-  coteDuMontage,
+  carteDeQuestion,
   debitDuMontage,
-  dureeFin,
+  enDeuxLignes,
+  enFrappes,
   enteteArdoise,
-  dureeOuverture,
+  frappesDesMots,
+  morceauxDeMots,
+  motsDesSousTitres,
+  motsForts,
+  plansDeCoupe,
   repliquesDuLieu,
   type Cote,
-  type IdQuestion,
-  type IdReplique,
   type Mode,
   type ScriptInterview,
   type SousTitre,
 } from "@/lib/direct/interview-fantome";
-import { MARQUE } from "@/lib/marque";
+import {
+  HAUTEUR,
+  LARGEUR,
+  bruitBlanc,
+  couvrirImage,
+  dessinerCadre,
+  dessinerCarte,
+  dessinerFin,
+  dessinerFrappe,
+  dessinerGrain,
+  dessinerSousTitres,
+  dessinerTitre,
+  douce,
+  eclairDuClic,
+  fabriquerFondCarte,
+  fabriquerGrain,
+  fabriquerMusique,
+  fabriquerVignette,
+  flouter,
+  fuite,
+  rebond,
+  reverbe,
+  secousse,
+  sonCarte,
+  sonClic,
+  sonFrappe,
+  sonSignature,
+  sonSortieCarte,
+  sonTampon,
+  sonTic,
+  sonZoom,
+  sortie,
+  type Fin,
+  type Polices,
+  type SortieSon,
+  type Titre,
+} from "@/lib/direct/interview-signature";
 import { BRODERIE, arcsDuNom, lignesDuNom, type Pt } from "@/lib/direct/fantome-assis";
+import { fichierEnregistre } from "@/lib/direct/voix-fantome";
 
-export const LARGEUR = 720;
-export const HAUTEUR = 1280;
-/** La vidéo du chef en haut, la bande d'ardoise en dessous (487 px). */
-const HAUT_VIDEO = 793;
+export { LARGEUR, HAUTEUR };
 const IPS = 30;
 const DOSSIER = "/direct/interview";
 
-const CRAIE = "#EEEEE4";
-const CRAIE_DOUCE = "rgba(238,238,228,.78)";
-const CRAIE_J = "#F6DE78";
 /** Le rose de ClikMe, celui du « ? » de la cloche. */
 const ROSE = "#FF2E9A";
-const ENCRE = "#1E1E22";
 
 /* ═══ LES FORMATS QUE LE TÉLÉPHONE SAIT ÉCRIRE ═════════════════════════════
  *
@@ -120,21 +157,28 @@ export type Elements = {
   reporter: HTMLImageElement[];
   /** Le fantôme du chef — à sa place quand il ne veut pas se montrer. */
   chef: HTMLImageElement[];
-  ardoise: HTMLImageElement;
-  bande: HTMLImageElement;
-  grain: HTMLImageElement;
   logo: HTMLImageElement;
-  voix: Record<IdReplique, AudioBuffer>;
-  /** L'ouverture de la bouche, trente valeurs par seconde de réplique. */
-  bouche: Record<IdReplique, Float32Array>;
-  /** Qui a parlé pour le reporter : « elevenlabs:eleven_v3 », « openai:ash »… ou « secours ». */
+  /** SA VOIX, phrase par phrase, retrouvée par son texte — une phrase absente s'écrit au lieu de se dire. */
+  voix: Record<string, AudioBuffer>;
+  /** L'ouverture de la bouche, trente valeurs par seconde de phrase. */
+  bouche: Record<string, Float32Array>;
+  /** Ce qui a parlé pour le reporter : combien de phrases enregistrées, dites par le serveur, ou écrites. */
   sourceVoix: string;
-  sons: { gril: AudioBuffer; craie: AudioBuffer; cloches: AudioBuffer; souffle: AudioBuffer };
-  police: { craie: string; bulle: string; enseigne: string };
+  /** Les phrases qu'il n'a pas pu dire (pas enregistrées, et le serveur n'a pas encore sa voix). */
+  voixManquantes: string[];
+  /** La cloche du restaurant : le souffle quand elle se soulève, les clochettes. */
+  sons: { cloches: AudioBuffer; souffle: AudioBuffer };
+  /** La musique de l'émission, fabriquée note par note (voir `fabriquerMusique`) — `null` si ce téléphone n'a pas su. */
+  musique: AudioBuffer | null;
+  /** `bulle` : le texte (Poppins) ; `enseigne` : Playfair ; `affiche` : Anton. */
+  police: { bulle: string; enseigne: string; affiche: string };
 };
 
-/** Changer un texte de réplique → changer ce numéro, sinon le cache resservirait l'ancienne voix. */
-export const VERSION_VOIX = "2";
+/**
+ * Changer un texte, ou la voix (`INTERVIEW_VOIX_ID`) → changer ce numéro, sinon
+ * le cache resservirait l'ancienne synthèse.
+ */
+export const VERSION_VOIX = "3";
 
 function image(src: string): Promise<HTMLImageElement> {
   return new Promise((ok, ko) => {
@@ -191,68 +235,80 @@ export function ouvertures(buf: AudioBuffer, depuis = 0): Float32Array {
 const attendre = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
- * LA VOIX DU REPORTER : LIAM, PAR LE SERVEUR — OU TOUTES CELLES DE SECOURS.
+ * LA VOIX DU FANTÔME, PHRASE PAR PHRASE.
  *
- * TOUT OU RIEN. Une réplique refusée au milieu (un quota, une limite de
- * requêtes simultanées) ne doit pas donner un reporter qui change de voix
- * entre deux questions : au premier échec, on reprend TOUTES les répliques de
- * secours. Deux demandes à la fois seulement — un compte ElevenLabs modeste en
- * refuse davantage —, et une seconde chance après un refus pour cause
- * d'affluence.
+ * D'abord ses enregistrements (`voix-fantome.ts`) ; une phrase qu'il n'a pas
+ * enregistrée est demandée au serveur, qui la dit avec la même voix — quand
+ * il en a l'identifiant. Sinon, elle n'a pas de son : l'écran et la carte
+ * l'écrivent. Au premier « pas encore réglée » (503), on n'insiste plus.
+ * Deux demandes à la fois seulement — un compte ElevenLabs modeste en refuse
+ * davantage.
  */
-async function chargerVoix(ctx: BaseAudioContext, ids: readonly IdReplique[]): Promise<{ voix: Record<IdReplique, AudioBuffer>; source: string }> {
-  const voix = {} as Record<IdReplique, AudioBuffer>;
-  let source = "";
-  try {
-    const une = async (id: IdReplique) => {
-      for (let essai = 0; essai < 2; essai++) {
-        const stop = new AbortController();
-        const minuterie = setTimeout(() => stop.abort(), 25_000);
-        try {
-          const r = await fetch(`/api/direct/interview/voix?id=${id}&v=${VERSION_VOIX}`, { signal: stop.signal });
-          if (r.ok) {
-            source = source || r.headers.get("x-interview-voix") || "serveur";
-            voix[id] = await ctx.decodeAudioData(await r.arrayBuffer());
-            return;
-          }
-          if (r.status !== 429 && r.status < 500) throw new Error(`HTTP ${r.status}`);
-          if (r.status === 503) throw new Error("voix non configurée");
-        } finally {
-          clearTimeout(minuterie);
-        }
-        await attendre(1500);
+async function chargerVoix(
+  ctx: BaseAudioContext,
+  textes: readonly string[],
+  metier: string,
+): Promise<{ voix: Record<string, AudioBuffer>; source: string; manquantes: string[] }> {
+  const voix: Record<string, AudioBuffer> = {};
+  const manquantes: string[] = [];
+  let enregistrees = 0;
+  let parLeServeur = 0;
+  let serveurSansVoix = false;
+  const une = async (texte: string): Promise<"enregistree" | "serveur" | null> => {
+    const f = fichierEnregistre(texte);
+    if (f) {
+      try {
+        voix[texte] = await son(ctx, f);
+        return "enregistree";
+      } catch {
+        /* un fichier qui ne se lit pas : on demande au serveur */
       }
-      throw new Error("voix indisponible");
-    };
-    const file = [...ids];
-    let echec = false;
-    await Promise.all(
-      [0, 1].map(async () => {
-        while (file.length && !echec) {
-          try {
-            await une(file.shift()!);
-          } catch (e) {
-            echec = true;
-            throw e;
-          }
-        }
-      }),
-    );
-    return { voix, source };
-  } catch {
-    const liste = await Promise.all(ids.map((id) => son(ctx, `${DOSSIER}/voix/${id}.mp3`)));
-    const secours = {} as Record<IdReplique, AudioBuffer>;
-    ids.forEach((id, k) => (secours[id] = liste[k]));
-    return { voix: secours, source: "secours" };
-  }
+    }
+    if (serveurSansVoix) return null;
+    const stop = new AbortController();
+    const minuterie = setTimeout(() => stop.abort(), 25_000);
+    try {
+      const r = await fetch(`/api/direct/interview/voix?m=${encodeURIComponent(metier)}&t=${encodeURIComponent(texte)}&v=${VERSION_VOIX}`, { signal: stop.signal });
+      if (r.ok) {
+        voix[texte] = await ctx.decodeAudioData(await r.arrayBuffer());
+        return "serveur";
+      }
+      if (r.status === 503) serveurSansVoix = true;
+    } catch {
+      /* réseau : cette phrase s'écrira */
+    } finally {
+      clearTimeout(minuterie);
+    }
+    return null;
+  };
+  const file = [...new Set(textes.filter((t) => t.trim()))];
+  await Promise.all(
+    [0, 1].map(async () => {
+      while (file.length) {
+        const t = file.shift()!;
+        const d = await une(t);
+        if (d === "enregistree") enregistrees += 1;
+        else if (d === "serveur") parLeServeur += 1;
+        else manquantes.push(t);
+      }
+    }),
+  );
+  const source = `voix du fantôme : ${enregistrees} enregistrée${enregistrees > 1 ? "s" : ""}, ${parLeServeur} par le serveur, ${manquantes.length} écrite${manquantes.length > 1 ? "s" : ""}`;
+  return { voix, source, manquantes };
 }
 
+/**
+ * LES POLICES DE L'ÉMISSION SONT CELLES DE L'APPLICATION : Poppins pour le
+ * texte, Playfair pour l'enseigne, Anton pour l'affiche. `next/font` leur
+ * donne un nom à lui, qu'on lit sur un élément plutôt que de le deviner.
+ */
 async function polices(): Promise<Elements["police"]> {
-  const nom = "Craie ClikMe";
+  // LA CRAIE N'EST PLUS DANS LE MONTAGE, mais l'écran du direct en mode fantôme écrit
+  // encore son plat sur l'ardoise (`.ei-ardoise-fond`) : sa police se charge toujours ici.
   if (typeof FontFace !== "undefined") {
     for (const [poids, fichier] of [["400", "kalam-400"], ["700", "kalam-700"]] as const) {
       try {
-        const f = new FontFace(nom, `url(${DOSSIER}/${fichier}.woff2) format("woff2")`, { weight: poids });
+        const f = new FontFace("Craie ClikMe", `url(${DOSSIER}/${fichier}.woff2) format("woff2")`, { weight: poids });
         await f.load();
         document.fonts.add(f);
       } catch {
@@ -260,25 +316,30 @@ async function polices(): Promise<Elements["police"]> {
       }
     }
   }
-  // LA POLICE DES BULLES EST CELLE DE L'APPLICATION : `next/font` lui donne un
-  // nom à lui, qu'on lit sur un élément plutôt que de le deviner.
-  const sonde = document.createElement("span");
-  sonde.style.fontFamily = "var(--font-clikme), Poppins, system-ui, sans-serif";
-  sonde.textContent = "a";
-  document.body.appendChild(sonde);
-  const bulle = getComputedStyle(sonde).fontFamily || "system-ui, sans-serif";
-  sonde.remove();
-  // ET CELLE DU NOM BRODÉ SUR LA CASQUETTE, comme dans l'expérience du restaurant
-  sonde.style.fontFamily = "var(--font-enseigne), Georgia, serif";
-  document.body.appendChild(sonde);
-  const enseigne = getComputedStyle(sonde).fontFamily || "Georgia, serif";
-  sonde.remove();
+  const lire = (variable: string, repli: string) => {
+    const sonde = document.createElement("span");
+    sonde.style.fontFamily = `var(${variable}), ${repli}`;
+    sonde.textContent = "a";
+    document.body.appendChild(sonde);
+    const f = getComputedStyle(sonde).fontFamily || repli;
+    sonde.remove();
+    return f;
+  };
+  const bulle = lire("--font-clikme", "Poppins, system-ui, sans-serif");
+  const enseigne = lire("--font-enseigne", "Georgia, serif");
+  const affiche = lire("--font-affiche", "Impact, 'Arial Narrow', sans-serif");
   try {
-    await Promise.all([document.fonts.load(`700 27px ${bulle}`), document.fonts.load(`800 60px ${bulle}`), document.fonts.load(`italic 400 30px ${enseigne}`)]);
+    await Promise.all([
+      document.fonts.load(`600 27px ${bulle}`),
+      document.fonts.load(`800 60px ${bulle}`),
+      document.fonts.load(`900 60px ${bulle}`),
+      document.fonts.load(`italic 600 30px ${enseigne}`),
+      document.fonts.load(`200px ${affiche}`),
+    ]);
   } catch {
     /* repli sur la police du système */
   }
-  return { craie: `"${nom}", "Comic Sans MS", cursive`, bulle, enseigne };
+  return { bulle, enseigne, affiche };
 }
 
 /**
@@ -290,43 +351,40 @@ export const CHEF_DU_BORDEAUX = [0, 1, 2, 3].map((k) => `${DOSSIER}/chef-${k}.we
 export const chefEnPied = (dossier: string) => ["repos", "parle-1", "parle-2", "parle-2"].map((p) => `${dossier}${p}.webp`);
 
 /**
- * `ids` : LES RÉPLIQUES DE CE MÉTIER, et elles seules (`repliquesDuScript`) —
- * on ne fait plus fabriquer au serveur les phrases de huit métiers pour en
- * dire une dizaine.
+ * `textes` : LES PHRASES DE SON INTERVIEW, et elles seules — où se placer, les
+ * questions du jour, le merci, l'au revoir. `metier` : pour que le serveur
+ * vérifie que ce sont bien les textes validés de son métier.
  */
 export async function chargerElements(
   ctx: BaseAudioContext,
   imagesDuChef: string[] = CHEF_DU_BORDEAUX,
-  ids: readonly IdReplique[] = repliquesDuScript(SCRIPTS.table, "Le Bordeaux"),
+  textes: readonly string[] = [],
+  metier = "table",
 ): Promise<Elements> {
   const quatre = (nom: string) => Promise.all([0, 1, 2, 3].map((k) => image(`${DOSSIER}/${nom}-${k}.webp`)));
-  const [reporter, chef, ardoise, bande, grain, logo, voix, gril, craie, cloches, souffle, police] = await Promise.all([
+  const [reporter, chef, logo, voix, cloches, souffle, police, musique] = await Promise.all([
     quatre("reporter"),
     Promise.all(imagesDuChef.map(image)),
-    image(`${DOSSIER}/ardoise.webp`),
-    image(`${DOSSIER}/ardoise-bande.webp`),
-    image(`${DOSSIER}/grain-craie.webp`),
     image("/clikme-logo-blanc.png"),
-    chargerVoix(ctx, ids),
-    son(ctx, `${DOSSIER}/gril.mp3`),
-    son(ctx, `${DOSSIER}/craie.mp3`),
+    chargerVoix(ctx, textes, metier),
     son(ctx, `${DOSSIER}/cloches.mp3`),
     son(ctx, `${DOSSIER}/souffle.mp3`),
     polices(),
+    // LA MUSIQUE : seize secondes rendues hors du temps — sans elle, la vidéo se fait quand même
+    fabriquerMusique(ctx.sampleRate).catch(() => null),
   ]);
-  const bouche = {} as Record<IdReplique, Float32Array>;
-  for (const id of ids) bouche[id] = ouvertures(voix.voix[id]);
+  const bouche: Record<string, Float32Array> = {};
+  for (const [t, b] of Object.entries(voix.voix)) bouche[t] = ouvertures(b);
   return {
     reporter,
     chef,
-    ardoise,
-    bande,
-    grain,
     logo,
     voix: voix.voix,
     bouche,
     sourceVoix: voix.source,
-    sons: { gril, craie, cloches, souffle },
+    voixManquantes: voix.manquantes,
+    sons: { cloches, souffle },
+    musique,
     police,
   };
 }
@@ -365,110 +423,6 @@ function couperLignes(c2d: CanvasRenderingContext2D, texte: string, largeur: num
   return lignes;
 }
 
-/** Les espaces fines avant « : ! ? » et dans les guillemets, comme sur une vraie ardoise. */
-const fr = (t: string) =>
-  t
-    .replace(/\s*([:!?;])/g, " $1")
-    .replace(/«\s*/g, "« ")
-    .replace(/\s*»/g, " »");
-
-type Bloc = { lignes: HTMLCanvasElement[]; interligne: number };
-
-/**
- * UNE LIGNE À LA CRAIE : le texte, troué par le grain, avec un léger halo
- * poudreux dessous. On n'utilise pas les filtres du dessin — l'iPhone ne les
- * connaît pas — mais l'ombre portée, qui existe partout.
- */
-function ligneCraie(texte: string, police: string, taille: number, couleur: string, grain: HTMLImageElement): HTMLCanvasElement {
-  const m = toile(1, 1).getContext("2d")!;
-  m.font = police;
-  const w = m.measureText(texte).width;
-  const c = toile(w + 28, taille * 1.6);
-  const g = c.getContext("2d")!;
-  g.font = police;
-  g.textBaseline = "middle";
-  g.fillStyle = couleur;
-  g.fillText(texte, 14, c.height / 2);
-  const motif = g.createPattern(grain, "repeat");
-  if (motif) {
-    g.globalCompositeOperation = "destination-in";
-    g.fillStyle = motif;
-    g.fillRect(0, 0, c.width, c.height);
-  }
-  g.globalCompositeOperation = "destination-over";
-  g.shadowColor = "rgba(230,230,220,.5)";
-  g.shadowBlur = taille * 0.12;
-  g.fillStyle = "rgba(230,230,220,.14)";
-  g.fillText(texte, 14, c.height / 2);
-  return c;
-}
-
-class Craie {
-  private cache = new Map<string, Bloc>();
-  constructor(private el: Elements) {}
-
-  bloc(texte: string, taille: number, poids: 400 | 700, couleur = CRAIE, largeur = 600, interligne = taille * 1.22): Bloc {
-    const cle = [texte, taille, poids, couleur, largeur].join("§");
-    const deja = this.cache.get(cle);
-    if (deja) return deja;
-    const police = `${poids} ${taille}px ${this.el.police.craie}`;
-    const m = toile(1, 1).getContext("2d")!;
-    m.font = police;
-    const lignes = couperLignes(m, fr(texte), largeur).map((l) => ligneCraie(l, police, taille, couleur, this.el.grain));
-    const b = { lignes, interligne };
-    this.cache.set(cle, b);
-    return b;
-  }
-}
-
-/** Le bloc s'écrit de gauche à droite, ligne après ligne, jusqu'à `progres`. */
-function ecrire(c2d: CanvasRenderingContext2D, b: Bloc, cx: number, cy: number, progres: number, alpha = 1) {
-  if (progres <= 0 || alpha <= 0) return;
-  const tot = b.lignes.reduce((s, l) => s + l.width, 0);
-  let reste = progres * tot;
-  let y = cy - (b.interligne * b.lignes.length) / 2 + b.interligne / 2;
-  c2d.save();
-  c2d.globalAlpha = alpha;
-  for (const l of b.lignes) {
-    const vis = borne(reste, 0, l.width);
-    reste -= l.width;
-    if (vis > 0) c2d.drawImage(l, 0, 0, vis, l.height, cx - l.width / 2, y - l.height / 2, vis, l.height);
-    y += b.interligne;
-  }
-  c2d.restore();
-}
-
-/** Le trait de craie qui souligne, tracé à la main. */
-function trait(c2d: CanvasRenderingContext2D, el: Elements, cx: number, y: number, largeur: number, progres: number) {
-  if (progres <= 0) return;
-  const w = largeur * progres;
-  c2d.save();
-  c2d.globalAlpha = 0.9;
-  c2d.strokeStyle = CRAIE;
-  c2d.lineWidth = 5;
-  c2d.lineCap = "round";
-  c2d.beginPath();
-  for (let x = 0; x <= w; x += 8) {
-    const yy = y + Math.sin(x / 37) * 2.2 - (x / largeur) * 4;
-    if (x === 0) c2d.moveTo(cx - largeur / 2 + x, yy);
-    else c2d.lineTo(cx - largeur / 2 + x, yy);
-  }
-  c2d.stroke();
-  // le grain, comme sur les lettres : quelques trous dans le trait
-  const motif = c2d.createPattern(el.grain, "repeat");
-  if (motif) {
-    c2d.globalCompositeOperation = "destination-out";
-    c2d.globalAlpha = 0.35;
-    c2d.fillStyle = motif;
-    c2d.fillRect(cx - largeur / 2 - 4, y - 10, w + 8, 20);
-  }
-  c2d.restore();
-}
-
-/* ─── la bulle du fantôme ─── */
-type Bulle = { toile: HTMLCanvasElement; w: number; h: number };
-const MARGE = 16;
-
 function cheminArrondi(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   g.beginPath();
   g.moveTo(x + r, y);
@@ -477,54 +431,6 @@ function cheminArrondi(g: CanvasRenderingContext2D, x: number, y: number, w: num
   g.arcTo(x, y + h, x, y, r);
   g.arcTo(x, y, x + w, y, r);
   g.closePath();
-}
-
-function fabriquerBulle(texte: string, police: string, largeurMax = 540): Bulle {
-  const f = `700 27px ${police}`;
-  const m = toile(1, 1).getContext("2d")!;
-  m.font = f;
-  const lignes = couperLignes(m, fr(texte), largeurMax - 56);
-  const lw = Math.max(...lignes.map((l) => m.measureText(l).width));
-  const w = Math.ceil(lw + 56);
-  const h = lignes.length * 36 + 38;
-  const c = toile(w + 2 * MARGE, h + 2 * MARGE);
-  const g = c.getContext("2d")!;
-  g.shadowColor = "rgba(0,0,0,.35)";
-  g.shadowBlur = 14;
-  g.shadowOffsetY = 4;
-  g.fillStyle = "rgba(255,255,255,.98)";
-  cheminArrondi(g, MARGE, MARGE, w, h, 26);
-  g.fill();
-  g.shadowColor = "transparent";
-  g.font = f;
-  g.fillStyle = ENCRE;
-  g.textAlign = "center";
-  g.textBaseline = "middle";
-  lignes.forEach((l, k) => g.fillText(l, MARGE + w / 2, MARGE + 19 + 18 + k * 36));
-  return { toile: c, w, h };
-}
-
-/** La bulle, centrée en `cx`, posée au-dessus de `bas`, la pointe vers `xPointe`. */
-function dessinerBulle(c2d: CanvasRenderingContext2D, b: Bulle, cx: number, bas: number, xPointe: number, alpha: number) {
-  if (alpha <= 0) return;
-  const x = borne(cx - b.w / 2, 14, LARGEUR - 14 - b.w);
-  const y = bas - 26 - b.h;
-  const e = 0.92 + 0.08 * alpha;
-  c2d.save();
-  c2d.globalAlpha = alpha;
-  c2d.translate(x + b.w / 2, y + b.h);
-  c2d.scale(e, e);
-  c2d.translate(-(x + b.w / 2), -(y + b.h));
-  c2d.drawImage(b.toile, x - MARGE, y - MARGE);
-  const px = borne(xPointe, x + 34, x + b.w - 34);
-  c2d.fillStyle = "rgba(255,255,255,.98)";
-  c2d.beginPath();
-  c2d.moveTo(px - 22, y + b.h - 2);
-  c2d.lineTo(px + 22, y + b.h - 2);
-  c2d.lineTo(px + 4, y + b.h + 26);
-  c2d.closePath();
-  c2d.fill();
-  c2d.restore();
 }
 
 /* ─── le fantôme ─── */
@@ -562,37 +468,6 @@ function dessinerFantome(
   c2d.translate(p.cx, p.bas + flotte);
   if (angle) c2d.rotate((angle * Math.PI) / 180);
   c2d.drawImage(img, -w / 2, -h, w, h);
-  c2d.restore();
-}
-
-/** Les étincelles quand il arrive ou qu'il salue — les mêmes que dans l'épisode. */
-const ETINCELLES = Array.from({ length: 18 }, (_, k) => {
-  const a = Math.sin(k * 12.9898) * 43758.5453;
-  const b = Math.sin(k * 78.233) * 12345.678;
-  return { u: (a - Math.floor(a)) * 2 - 1, v: (b - Math.floor(b)) * 2 - 1, k };
-});
-function etincelles(c2d: CanvasRenderingContext2D, cx: number, cy: number, age: number, rayon = 260) {
-  if (age < 0 || age > 1.2) return;
-  c2d.save();
-  for (const { u, v, k } of ETINCELLES) {
-    const r = rayon * (0.3 + 0.7 * age) * (0.6 + 0.4 * Math.abs(u));
-    const x = cx + r * Math.cos(k * 0.7 + u);
-    const y = cy + r * Math.sin(k * 0.7 + v) * 0.8;
-    const s = 13 * (1 - age / 1.2);
-    if (s < 1) continue;
-    c2d.fillStyle = `rgba(255,246,214,${0.9 * (1 - age / 1.2)})`;
-    c2d.beginPath();
-    c2d.moveTo(x, y - s);
-    c2d.lineTo(x + s * 0.25, y - s * 0.25);
-    c2d.lineTo(x + s, y);
-    c2d.lineTo(x + s * 0.25, y + s * 0.25);
-    c2d.lineTo(x, y + s);
-    c2d.lineTo(x - s * 0.25, y + s * 0.25);
-    c2d.lineTo(x - s, y);
-    c2d.lineTo(x - s * 0.25, y - s * 0.25);
-    c2d.closePath();
-    c2d.fill();
-  }
   c2d.restore();
 }
 
@@ -1185,7 +1060,11 @@ export type Reglages = {
   ville: string;
   plat: string;
   prix: string;
-  /** Où était le reporter sur l'aperçu, pendant l'interview. */
+  /**
+   * Où était le reporter sur l'aperçu, pendant l'interview. Le montage ne
+   * s'en sert plus : le reporter n'est plus à l'image pendant les réponses —
+   * il pose ses questions sur les cartes.
+   */
   coteApercu: Cote;
   /** Le chef filmé, ou son fantôme à sa place. */
   mode: Mode;
@@ -1195,8 +1074,14 @@ export type Reglages = {
    * en a une (l'étape 2 de l'expérience la montre à la place de la photo).
    */
   cloche: { photo: string; scene?: string } | null;
-  /** Ses mots, selon son métier : le bonjour, les questions, l'au revoir — le restaurant par défaut. */
+  /** Ses mots, selon son métier : les questions, l'au revoir — le restaurant par défaut. */
   script?: ScriptInterview;
+  /**
+   * LA PHOTO DE CE QU'IL PRÉSENTE AUJOURD'HUI (sa pièce, son bouquet, son plat) :
+   * le fond du titre, la carte postale de la fin, et le plan de coupe quand il
+   * la nomme. Celle de la cloche, pour un restaurant.
+   */
+  photo?: string | null;
 };
 
 /** La photo ou la vidéo qu'il a ajoutée à une question, après l'interview. */
@@ -1205,9 +1090,12 @@ export type Media = { genre: "photo" | "video"; url: string };
 export type PriseAMonter = {
   /** La vidéo de la prise — `null` quand il n'a enregistré que sa voix. */
   url: string | null;
-  question: IdQuestion;
-  /** Ce que dit le reporter, en secondes depuis le début de la prise. */
-  paroles: { id: IdReplique; debut: number }[];
+  /** Le titre de sa carte, en très gros (« LE GESTE », « JEAN OU ROBE ? »). */
+  titre: string;
+  /** La question, écrite sous le titre. */
+  question: string;
+  /** Ce que le reporter a dit à voix haute, en secondes depuis le début de la prise (rien pour une question écrite). */
+  paroles: { texte: string; debut: number }[];
   questionFin: number;
   /** Où couper la prise : la fin de sa parole, plus un souffle. */
   coupe: number;
@@ -1216,7 +1104,8 @@ export type PriseAMonter = {
   /** La bouche de son fantôme, trente valeurs par seconde de prise (quand il ne se montre pas). */
   bouche: Float32Array | null;
   sousTitres: SousTitre[];
-  media: Media | null;
+  /** Les photos ou vidéos qu'il a ajoutées à cette réponse (trois au plus) : elles passent au rythme de ses mots. */
+  medias: Media[];
 };
 
 export type Montage = {
@@ -1231,7 +1120,7 @@ export type Montage = {
   cloche: "montree" | "aucune" | "illisible";
 };
 
-type Segment = { genre: "ouverture" } | { genre: "cloche" } | { genre: "prise"; k: number } | { genre: "fin" };
+type Segment = { genre: "titre" } | { genre: "cloche" } | { genre: "prise"; k: number } | { genre: "fin" };
 type MediaPret = { genre: "photo"; img: HTMLImageElement } | { genre: "video"; v: HTMLVideoElement };
 
 /** Un lecteur muet, prêt à donner ses images. */
@@ -1254,6 +1143,23 @@ function lecteurMuet(url: string, boucle = false): Promise<HTMLVideoElement> {
   });
 }
 
+/**
+ * LES TEMPS DE LA SIGNATURE, en secondes. Le titre : un instant de noir, le
+ * clic, son nom. Les cartes : elles arrivent en coup de fouet et repartent en
+ * fonçant vers nous juste avant sa réponse.
+ */
+const TITRE = { clic: 0.25, duree: 3.1 } as const;
+const FOUET = 0.24;
+const CARTE_SORTIE = 0.2;
+/** La musique : pleine sur le titre et la fin, étouffée sous les questions, tout bas sous ses réponses. */
+const MUSIQUE = { pleine: 0.3, question: 0.16, reponse: 0.055, adieu: 0.12 } as const;
+
+/** « CE MIDI AU BORDEAUX », « AUJOURD'HUI CHEZ MAISON LOU », « AUJOURD'HUI À L'ATELIER ». */
+function enteteEnCapitales(commerce: string, quand: string): string {
+  const e = enteteArdoise(commerce, quand);
+  return `${e.avant}${/['’]$/.test(e.avant) ? "" : " "}${e.nom}`.toLocaleUpperCase("fr-FR");
+}
+
 export async function monter(o: {
   ctx: AudioContext;
   el: Elements;
@@ -1263,7 +1169,7 @@ export async function monter(o: {
   /** Le commerçant entend-il le montage pendant qu'il se fabrique ? */
   ecouter: boolean;
   surProgres?: (p: number) => void;
-  /** L'image d'attente du lecteur : l'ardoise du jour, une fois écrite, avec le reporter. */
+  /** L'image d'attente du lecteur : son nom en géant, une fois posé. */
   surAffiche?: (image: string) => void;
   signal?: AbortSignal;
 }): Promise<Montage> {
@@ -1273,42 +1179,119 @@ export async function monter(o: {
   if (typeof o.toile.captureStream !== "function") throw new Error("Ce téléphone ne sait pas enregistrer un dessin animé (captureStream).");
   o.toile.width = LARGEUR;
   o.toile.height = HAUTEUR;
-  const craie = new Craie(el);
-  const cote = coteDuMontage(reglages.coteApercu);
-  const aGauche = cote === "gauche";
   const enFantome = reglages.mode === "fantome";
+  const script = reglages.script ?? SCRIPTS.table;
+  const LIEU = repliquesDuLieu(reglages.commerce, script);
+  const P: Polices = { affiche: el.police.affiche, texte: el.police.bulle, serif: el.police.enseigne };
 
   /* ─── les lecteurs (muets) et les photos ─── */
   const lecteurs = await Promise.all(prises.map((p) => (p.url ? lecteurMuet(p.url) : Promise.resolve(null))));
-  const medias: (MediaPret | null)[] = await Promise.all(
-    prises.map(async (p): Promise<MediaPret | null> => {
-      if (!p.media) return null;
-      if (p.media.genre === "photo") {
-        const img = await image(p.media.url).catch(() => null);
-        return img ? { genre: "photo", img } : null;
-      }
-      const v = await lecteurMuet(p.media.url, true);
-      return v.videoWidth ? { genre: "video", v } : null;
-    }),
-  );
+  const preparer = async (m: Media): Promise<MediaPret | null> => {
+    if (m.genre === "photo") {
+      const img = await image(m.url).catch(() => null);
+      return img ? { genre: "photo", img } : null;
+    }
+    const v = await lecteurMuet(m.url, true);
+    return v.videoWidth ? { genre: "video", v } : null;
+  };
+  const chargees = await Promise.all(prises.map((p) => Promise.all(p.medias.map(preparer))));
+  /** Ses photos et vidéos lisibles, réponse par réponse. */
+  const medias: MediaPret[][] = chargees.map((l) => l.filter((m): m is MediaPret => m != null));
   // LA CLOCHE : préparée une fois ; une photo illisible et la vidéo s'en passe
   const decor = reglages.cloche ? await preparerCloche(reglages.cloche, reglages, el.police).catch(() => null) : null;
 
+  /* ─── ce qui ne bouge pas, dessiné une fois ─── */
+  const vignette = fabriquerVignette();
+  const grain = fabriquerGrain();
+  const fondCarte = fabriquerFondCarte();
+  // LA PHOTO DU JOUR : celle de la cloche, sinon la première qu'il a ajoutée à une réponse
+  let imageDuJour: HTMLImageElement | null = null;
+  const adresseDuJour = reglages.cloche?.photo ?? reglages.photo ?? null;
+  if (adresseDuJour) imageDuJour = await image(adresseDuJour).catch(() => null);
+  for (const l of medias) for (const m of l) if (!imageDuJour && m.genre === "photo") imageDuJour = m.img;
+  const photoDuJour = imageDuJour ? { src: imageDuJour as CanvasImageSource, w: imageDuJour.naturalWidth, h: imageDuJour.naturalHeight } : null;
+  // LE FOND DU TITRE ET DE LA FIN : la photo du jour floutée — sinon la première image de lui
+  let fond: HTMLCanvasElement | null = null;
+  try {
+    if (photoDuJour) fond = flouter(photoDuJour.src, photoDuJour.w, photoDuJour.h);
+    else {
+      const v = lecteurs.find((x) => x && x.videoWidth);
+      if (v) fond = flouter(v, v.videoWidth, v.videoHeight);
+    }
+  } catch {
+    fond = null;
+  }
+  /** Une image de lui pendant sa première réponse : la carte postale de la fin, quand il n'a pas de photo. */
+  let instantane: { src: HTMLCanvasElement; w: number; h: number } | null = null;
+  /** La dernière image d'un plan, pour que la carte suivante la chasse en coup de fouet. */
+  const derniere = toile(LARGEUR, HAUTEUR);
+  const dg = derniere.getContext("2d")!;
+  let aDerniere = false;
+  /** La carte, dessinée à part quand elle doit glisser ou s'envoler. */
+  const carteT = toile(LARGEUR, HAUTEUR);
+  const cg = carteT.getContext("2d")!;
+
+  /* ─── les mots de ses réponses ─── */
+  const n = prises.length;
+  const cartes = prises.map((p, k) => carteDeQuestion(p.titre, k, n, p.question));
+  const forts = motsForts(reglages.plat, reglages.prix);
+  const mots = prises.map((p) => motsDesSousTitres(p.sousTitres, forts));
+  const frappent = mots.map((m) => enFrappes(m));
+  const morceaux = mots.map((m, k) => (frappent[k] ? [] : morceauxDeMots(m)));
+  const frappes = mots.map((m, k) => (frappent[k] ? frappesDesMots(m) : []));
+  // LE COUP DE ZOOM : sur le premier mot fort de sa réponse (son plat, son prix)
+  const zoomA = mots.map((m, k) => (frappent[k] ? null : (m.find((w) => w.fort)?.a ?? null)));
+  // LES PLANS DE COUPE : ses photos à lui, plus la photo du jour, qui revient quand il nomme son produit.
+  // Son fantôme sans photo garde l'écran pour lui seul, en grand.
+  const vues: MediaPret[][] = medias.map((l, k) =>
+    imageDuJour && (l.length || (lecteurs[k] && !enFantome)) && !l.some((m) => m.genre === "photo" && m.img === imageDuJour)
+      ? [...l, { genre: "photo", img: imageDuJour }]
+      : l,
+  );
+  const plans = prises.map((p, k) =>
+    plansDeCoupe({
+      debut: p.questionFin + 0.05,
+      fin: p.coupe,
+      mots: mots[k],
+      medias: vues[k].length,
+      produit: imageDuJour ? vues[k].findIndex((m) => m.genre === "photo" && m.img === imageDuJour) : null,
+      visage: Boolean(lecteurs[k]) && !enFantome,
+      produitSeul: !medias[k].length,
+    }),
+  );
+
   /* ─── le son : un bus, un compresseur, la sortie enregistrée (et les haut-parleurs si on écoute) ─── */
-  const sortie = ctx.createMediaStreamDestination();
+  const enregistree = ctx.createMediaStreamDestination();
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -18;
   comp.ratio.value = 3;
   comp.attack.value = 0.005;
   comp.release.value = 0.2;
+  // ET UN LIMITEUR derrière : un clic qui tombe sur un temps fort de la musique ne sature pas
+  const limite = ctx.createDynamicsCompressor();
+  limite.threshold.value = -2;
+  limite.knee.value = 0;
+  limite.ratio.value = 20;
+  limite.attack.value = 0.002;
+  limite.release.value = 0.1;
   const bus = ctx.createGain();
   bus.connect(comp);
-  comp.connect(sortie);
+  comp.connect(limite);
+  limite.connect(enregistree);
   const ecoute = ctx.createGain();
   ecoute.gain.value = o.ecouter ? 1 : 0;
-  comp.connect(ecoute);
+  limite.connect(ecoute);
   ecoute.connect(ctx.destination);
   const sources: AudioScheduledSourceNode[] = [];
+  const salle = reverbe(ctx);
+  const retour = ctx.createGain();
+  retour.gain.value = 0.3;
+  salle.connect(retour);
+  retour.connect(bus);
+  const effets = ctx.createGain();
+  effets.gain.value = 0.9;
+  effets.connect(bus);
+  const S: SortieSon = { ctx, bruit: bruitBlanc(ctx), dest: effets, salle };
 
   const jouer = (buf: AudioBuffer, quand: number, gain = 1, offset = 0, duree?: number) => {
     const s = ctx.createBufferSource();
@@ -1330,247 +1313,273 @@ export async function monter(o: {
     }
     sources.push(s);
   };
-  const crayon = (quand: number, duree: number, gain = 0.85) => {
-    const d = Math.min(duree, el.sons.craie.duration - 0.1);
-    jouer(el.sons.craie, quand, gain, Math.random() * Math.max(0, el.sons.craie.duration - d - 0.05), d);
-  };
 
-  // le grésillement du gril, en fond, d'un bout à l'autre — EN CUISINE SEULEMENT :
-  // un gril qui grésille derrière un salon de coiffure ne se raconte pas.
-  const enCuisine = (reglages.script ?? SCRIPTS.table) === SCRIPTS.table ? 1 : 0;
-  const lit = ctx.createGain();
-  lit.gain.value = 0;
-  lit.connect(bus);
-  const gril = ctx.createBufferSource();
-  gril.buffer = el.sons.gril;
-  gril.loop = true;
-  gril.connect(lit);
-  const niveauLit = (quand: number, niveau: number, en = 0.4) => {
-    lit.gain.cancelScheduledValues(quand);
-    lit.gain.setValueAtTime(lit.gain.value, quand);
-    lit.gain.linearRampToValueAtTime(niveau * enCuisine, quand + en);
+  // LA MUSIQUE, en boucle, qui baisse et s'étouffe selon ce qui se dit
+  const musique = ctx.createGain();
+  musique.gain.value = 0;
+  const filtre = ctx.createBiquadFilter();
+  filtre.type = "lowpass";
+  filtre.frequency.value = 18000;
+  filtre.Q.value = 0.8;
+  musique.connect(filtre);
+  filtre.connect(bus);
+  const niveau = (quand: number, v: number, en = 0.25) => {
+    musique.gain.cancelScheduledValues(quand);
+    musique.gain.setTargetAtTime(Math.max(0.0001, v), quand, en / 3);
+  };
+  const etouffer = (quand: number, f: number, en = 0.25) => {
+    filtre.frequency.cancelScheduledValues(quand);
+    filtre.frequency.setTargetAtTime(f, quand, en / 3);
   };
 
   /* ─── l'enregistreur ─── */
   const format = formatVideo();
-  const flux = new MediaStream([...o.toile.captureStream(IPS).getVideoTracks(), ...sortie.stream.getAudioTracks()]);
-  // LA LONGUEUR PRÉVUE : l'ouverture, la cloche, ses réponses coupées, la fin — voir `debitDuMontage`.
-  const prevue = 7 + (decor ? CLOCHE.duree : 0) + prises.reduce((t, p) => t + p.coupe, 0) + 6;
+  const flux = new MediaStream([...o.toile.captureStream(IPS).getVideoTracks(), ...enregistree.stream.getAudioTracks()]);
+  // L'AU REVOIR : sa voix s'il l'a, sinon la bulle seule, le temps de la lire
+  const texteAdieu = REPLIQUES[LIEU.adieu];
+  const voixAdieu = el.voix[texteAdieu] ?? null;
+  const adieu = voixAdieu?.duration ?? 1.6;
+  /** La mélodie de fin : quand le fantôme a dit au revoir, jamais avant 3,4 s. */
+  const SIGNATURE = Math.max(3.4, 1.6 + adieu + 0.35);
+  const dFin = SIGNATURE + 1.7;
+  // LA LONGUEUR PRÉVUE : le titre, la cloche, ses réponses coupées, la fin — voir `debitDuMontage`.
+  const prevue = TITRE.duree + (decor ? CLOCHE.duree : 0) + prises.reduce((t, p) => t + p.coupe, 0) + dFin;
   const rec = new MediaRecorder(flux, {
     ...(format ? { mimeType: format } : {}),
     videoBitsPerSecond: debitDuMontage(prevue),
     audioBitsPerSecond: DEBIT_SON,
   });
-  const morceaux: Blob[] = [];
+  const morceauxVideo: Blob[] = [];
   rec.ondataavailable = (e) => {
-    if (e.data && e.data.size) morceaux.push(e.data);
+    if (e.data && e.data.size) morceauxVideo.push(e.data);
   };
   const arrete = new Promise<void>((ok) => (rec.onstop = () => ok()));
 
   /* ─── le plan ─── */
-  // LE BONJOUR ET L'AU REVOIR : nommés pour Le Bordeaux, sans nom de lieu ailleurs
-  // CHAQUE MÉTIER SES MOTS — voir `SCRIPTS` ; le restaurant par défaut.
-  const script = reglages.script ?? SCRIPTS.table;
-  const LIEU = repliquesDuLieu(reglages.commerce, script);
-  const dOuv = dureeOuverture(el.voix[LIEU.bonjour].duration);
-  const dFin = dureeFin(el.voix[LIEU.adieu].duration);
-  const estime = dOuv + (decor ? CLOCHE.duree : 0) + prises.reduce((s, p) => s + p.coupe, 0) + dFin;
-  // LE RESTAURANT : après le bonjour du reporter, on soulève la cloche, puis on revient à l'interview
+  // LE RESTAURANT : après le titre, on soulève la cloche, puis viennent les questions
   const segments: Segment[] = [
-    { genre: "ouverture" },
+    { genre: "titre" },
     ...(decor ? [{ genre: "cloche" as const }] : []),
     ...prises.map((_, k) => ({ genre: "prise" as const, k })),
     { genre: "fin" },
   ];
   const sonDesReponses: Montage["sonDesReponses"] = prises.map(() => "aucun");
 
-  // les blocs de craie, préparés une fois
-  const entete = enteteArdoise(reglages.commerce, script.quand);
-  const MENU = [
-    { b: craie.bloc(entete.avant, 46, 400), cy: 200, debut: 0.2, duree: 0.5 },
-    { b: craie.bloc(entete.nom, 84, 700, CRAIE, 640), cy: 284, debut: 0.6, duree: 0.6 },
-    { b: craie.bloc(reglages.plat, 48, 700, CRAIE_J, 600), cy: 404, debut: 1.3, duree: 0.7 },
-  ];
-  const lignesPlat = MENU[2].b.lignes.length;
-  if (reglages.prix.trim()) MENU.push({ b: craie.bloc(reglages.prix, 60, 700), cy: 404 + (lignesPlat - 1) * 30 + 78, debut: 2.1, duree: 0.4 });
-  const ADIEU = [
-    { b: craie.bloc(reglages.commerce, 80, 700), cy: 220, debut: 0.25, duree: 0.7 },
-    ...(reglages.ville.trim() ? [{ b: craie.bloc(reglages.ville, 42, 400), cy: 312, debut: 0.95, duree: 0.3 }] : []),
-  ];
-  const bulles = new Map<string, Bulle>();
-  const bulle = (texte: string) => {
-    let b = bulles.get(texte);
-    if (!b) bulles.set(texte, (b = fabriquerBulle(texte, el.police.bulle)));
-    return b;
+  const plat = reglages.plat.trim() || script.quoi;
+  const titre: Titre = {
+    fond,
+    nom: reglages.commerce,
+    haut: [reglages.ville.trim(), script.quand].filter(Boolean).join(" · ").toLocaleUpperCase("fr-FR"),
+    bas: reglages.plat.trim() && reglages.plat.trim() !== script.quoi ? [script.quoi.toLocaleLowerCase("fr-FR"), plat] : ["", plat],
   };
-  const texteDe = (paroles: { id: IdReplique }[]) => paroles.map((p) => REPLIQUES[p.id]).join(" ");
-  const TITRES = Object.fromEntries(script.questions.map((q) => [q.id, q.titre])) as Record<IdQuestion, string>;
-  const mention = `Essai ${MARQUE} · la voix du reporter est une voix de synthèse`;
+  const nomCadre = reglages.ville.trim() ? `${reglages.commerce} · ${reglages.ville.trim()}` : reglages.commerce;
+  const NOM = reglages.commerce.toLocaleUpperCase("fr-FR");
+  const fin: Fin = {
+    fond,
+    photo: null,
+    legende: plat,
+    entete: enteteEnCapitales(reglages.commerce, script.quand),
+    plat: enDeuxLignes(plat, 16),
+    prix: reglages.prix.trim(),
+    infos: reglages.ville.trim(),
+    bouton: "À découvrir sur",
+    logo: el.logo,
+    tampon: `FACE AU FANTÔME · ${NOM} · `.length <= 40 ? `FACE AU FANTÔME · ${NOM} · ` : "FACE AU FANTÔME · FACE AU FANTÔME · ",
+    mention: "La voix du fantôme est une voix de synthèse",
+  };
+  const bulleFin = { lignes: enDeuxLignes(texteAdieu, 14), de: 1.6, a: 1.6 + adieu + 0.3 };
 
-  /* les places : le reporter grand quand il demande, petit au coin quand le chef répond ;
-     le fantôme du chef dans le haut, de l'autre côté, quand c'est lui qui parle */
-  const GRAND_ARD: Place = { cx: 360, bas: 1262, h: 560 };
-  const GRAND: Place = { cx: aGauche ? 225 : 495, bas: 1266, h: 470 };
-  const PETIT: Place = { cx: aGauche ? 128 : 592, bas: 1272, h: 265 };
-  const CHEF_HAUT: Place = { cx: aGauche ? 505 : 215, bas: 808, h: 440 };
-  const REPORTER_FIN: Place = { cx: 200, bas: 1262, h: 460 };
-  const CHEF_FIN: Place = { cx: 525, bas: 1262, h: 440 };
-  /** Le milieu de la place laissée à la craie, à côté du petit reporter. */
-  const X_TEXTE = aGauche ? 478 : 242;
-  const mi = (a: Place, b: Place, q: number): Place => ({ cx: a.cx + (b.cx - a.cx) * q, bas: a.bas + (b.bas - a.bas) * q, h: a.h + (b.h - a.h) * q });
-  const bouche = (id: IdReplique, t: number) => {
-    const b = el.bouche[id];
+  /* les places : le reporter en bas à droite des cartes ; le fantôme du chef, quand il ne se montre pas */
+  const REPORTER_CARTE: Place = { cx: 560, bas: 1290, h: 430 };
+  const CHEF_GRAND: Place = { cx: 360, bas: 1236, h: 560 };
+  const CHEF_COIN: Place = { cx: 590, bas: 1262, h: 300 };
+  const bouche = (texte: string, t: number) => {
+    const b = el.bouche[texte];
     const i = Math.floor(t * IPS);
-    return i >= 0 && i < b.length ? b[i] : 0;
+    return b && i >= 0 && i < b.length ? b[i] : 0;
   };
-  const boucheReporter = (paroles: { id: IdReplique; debut: number }[], t: number) => {
-    for (const p of paroles) if (t >= p.debut && t < p.debut + el.voix[p.id].duration) return bouche(p.id, t - p.debut);
+  const boucheReporter = (paroles: { texte: string; debut: number }[], t: number) => {
+    for (const p of paroles) {
+      const v = el.voix[p.texte];
+      if (v && t >= p.debut && t < p.debut + v.duration) return bouche(p.texte, t - p.debut);
+    }
     return 0;
   };
 
   /* ─── chaque image ─── */
-  const ouverture = (t: number) => {
-    c2d.drawImage(el.ardoise, 0, 0, LARGEUR, HAUTEUR);
-    for (const m of MENU) ecrire(c2d, m.b, LARGEUR / 2, m.cy, doux((t - m.debut) / m.duree));
-    trait(c2d, el, LARGEUR / 2, 334, 300, doux((t - 1.2) / 0.35));
-    const arrivee = entree(t, 0.3, 0.7);
-    const place = { ...GRAND_ARD, bas: GRAND_ARD.bas + 900 * (1 - arrivee) };
-    dessinerFantome(c2d, el.reporter, place, t, bouche(LIEU.bonjour, t - OUVERTURE.voix));
-    etincelles(c2d, 360, 900, t - 0.4);
-    const al = entree(t, OUVERTURE.voix - 0.15, 0.2) * (1 - entree(t, OUVERTURE.voix + el.voix[LIEU.bonjour].duration + 0.25, 0.2));
-    dessinerBulle(c2d, bulle(REPLIQUES[LIEU.bonjour]), 360, place.bas - place.h * 0.97, 360, al);
-    noir(c2d, 1 - t / 0.3);
+  const dessinerTitreA = (t: number) => {
+    const u = t - TITRE.clic;
+    if (u < 0) {
+      c2d.fillStyle = "#000";
+      c2d.fillRect(0, 0, LARGEUR, HAUTEUR);
+    } else dessinerTitre(c2d, P, titre, u);
+    eclairDuClic(c2d, u);
+    dessinerGrain(c2d, grain, t);
   };
 
-  /** Le haut d'une prise sans visage ni photo : l'ardoise, et le plat du jour écrit dessus. */
-  const fondArdoise = (tc: number) => {
-    couvrir(c2d, el.ardoise, el.ardoise.naturalWidth, el.ardoise.naturalHeight, 0, 0, LARGEUR, HAUT_VIDEO, 1, 0);
-    ecrire(c2d, craie.bloc(reglages.plat, 46, 700, CRAIE_J, 600), LARGEUR / 2, 112, doux(tc / 0.8));
+  /** Le plan de coupe de cet instant. */
+  const planA = (k: number, tc: number) => plans[k].find((x) => tc >= x.de && tc < x.a) ?? plans[k][tc < plans[k][0].de ? 0 : plans[k].length - 1];
+
+  /** Ce qu'on voit pendant sa réponse : lui, une de ses photos (selon ses mots), ou son fantôme sur le fond. */
+  const visuel = (k: number, tc: number, z: number) => {
+    const v = lecteurs[k];
+    const pl = planA(k, tc);
+    if (pl.quoi === "visage" && v) couvrirImage(c2d, v, v.videoWidth, v.videoHeight, { z });
+    else if (typeof pl.quoi === "number" && vues[k][pl.quoi]) {
+      const m = vues[k][pl.quoi];
+      // UNE PHOTO NE RESTE PAS FIGÉE : elle avance doucement, une fois vers la gauche, une fois vers la droite
+      const u = borne((tc - pl.de) / Math.max(0.5, pl.a - pl.de));
+      const sens = pl.quoi % 2 ? 1 : -1;
+      if (m.genre === "photo") couvrirImage(c2d, m.img, m.img.naturalWidth, m.img.naturalHeight, { z: z * (1.04 + 0.08 * u), fx: 0.5 + sens * 0.05 * (u - 0.5) });
+      else couvrirImage(c2d, m.v, m.v.videoWidth, m.v.videoHeight, { z });
+    } else c2d.drawImage(fond ?? fondCarte, 0, 0);
+    c2d.drawImage(vignette, 0, 0);
+    // SON VISAGE RESTE LÀ, dans un médaillon, quand on montre ce dont il parle
+    if (v && !enFantome && pl.quoi !== "visage") medaillon(c2d, v, 598, 236, 86, 1);
   };
-  const dessinerMedia = (m: MediaPret, k: number, tc: number, alpha: number) => {
-    c2d.save();
-    c2d.globalAlpha = alpha;
-    if (m.genre === "photo") {
-      // UNE PHOTO NE RESTE PAS FIGÉE : elle avance doucement, comme une caméra qui s'approche du plat
-      couvrir(c2d, m.img, m.img.naturalWidth, m.img.naturalHeight, 0, 0, LARGEUR, HAUT_VIDEO, 1 + 0.09 * borne(tc / prises[k].coupe), 0.5);
-    } else couvrir(c2d, m.v, m.v.videoWidth, m.v.videoHeight, 0, 0, LARGEUR, HAUT_VIDEO, 1, 0.5);
-    c2d.restore();
+
+  /** Le reporter sur la carte : il arrive en rebondissant, et sa bouche suit sa voix. */
+  const reporterSurCarte = (g: CanvasRenderingContext2D, k: number, tl: number, tc: number) => {
+    const a = rebond((tl - 0.18) / 0.4);
+    if (a <= 0) return;
+    dessinerFantome(g, el.reporter, { ...REPORTER_CARTE, h: REPORTER_CARTE.h * a }, tl, boucheReporter(prises[k].paroles, tc), 1.7 * Math.sin(tl * 1.7));
+  };
+  const carteDans = (g: CanvasRenderingContext2D, k: number, tl: number, tc: number) => {
+    dessinerCarte(g, P, fondCarte, cartes[k], tl);
+    reporterSurCarte(g, k, tl, tc);
   };
 
   const prise = (k: number, tc: number, tl: number) => {
     const p = prises[k];
-    const m = medias[k];
-    const v = lecteurs[k];
-    const repond = tc - (p.questionFin + 0.05);
-    // LE HAUT : son visage pendant la question et au début de sa réponse, puis ce qu'il montre
-    const partMedia = m ? (enFantome ? 1 : entree(repond, 1.2, 0.45)) : 0;
-    if (v && partMedia < 1) couvrir(c2d, v, v.videoWidth, v.videoHeight, 0, 0, LARGEUR, HAUT_VIDEO);
-    else if (!v && !m) fondArdoise(tc);
-    if (m && partMedia > 0) dessinerMedia(m, k, tc, partMedia);
-    if (v && m) medaillon(c2d, v, aGauche ? LARGEUR - 150 : 150, 168, 116, partMedia);
-    const voile = c2d.createLinearGradient(0, HAUT_VIDEO - 110, 0, HAUT_VIDEO);
-    voile.addColorStop(0, "rgba(10,8,6,0)");
-    voile.addColorStop(1, "rgba(10,8,6,.6)");
-    c2d.fillStyle = voile;
-    c2d.fillRect(0, HAUT_VIDEO - 110, LARGEUR, 110);
-    c2d.drawImage(el.bande, 0, HAUT_VIDEO, LARGEUR, HAUTEUR - HAUT_VIDEO);
-
-    // L'ARDOISE : la question en titre, puis ce qu'il dit, à la craie
-    const avecSousTitres = p.sousTitres.length > 0;
-    const titre = avecSousTitres ? craie.bloc(TITRES[p.question], 32, 400, CRAIE_DOUCE, 430) : craie.bloc(TITRES[p.question], 54, 700, CRAIE, 430);
-    ecrire(c2d, titre, X_TEXTE, avecSousTitres ? 848 : 1018, doux((repond - 0.05) / 0.5));
-    let reaction = 0;
-    p.sousTitres.forEach((s, j) => {
-      const suivant = j + 1 < p.sousTitres.length ? p.sousTitres[j + 1].debut : s.fin + 0.8;
-      if (tc >= s.debut && tc < s.debut + 0.35) reaction = 4 * Math.sin((tc - s.debut) * 22);
-      if (tc < s.debut - 0.05 || tc >= suivant - 0.05) return;
-      const b = craie.bloc(s.texte, 40, 700, CRAIE, 430, 50);
-      ecrire(c2d, b, X_TEXTE, 1040, doux((tc - s.debut + 0.05) / Math.max(0.35, Math.min(0.8, (s.fin - s.debut) * 0.6))), 1 - entree(tc, suivant - 0.17, 0.12));
-    });
-
-    // SON FANTÔME, quand il ne se montre pas : dans le haut, et il parle avec SA voix
-    if (enFantome) {
-      const i = Math.floor(tc * IPS);
-      const ouv = repond > 0 && p.bouche && i < p.bouche.length ? p.bouche[i] : 0;
-      dessinerFantome(c2d, el.chef, CHEF_HAUT, tc + 0.7, ouv, 2 * Math.sin(tc * 1.3) + (repond > 0 ? reaction * 0.6 : 0));
+    const debutReponse = p.questionFin + 0.05;
+    const repond = tc - debutReponse;
+    // LE COUP DE ZOOM, puis l'image revient doucement
+    const uz = zoomA[k] != null ? tc - (zoomA[k] as number) : -1;
+    const z = uz >= 0 ? 1 + 0.14 * sortie(uz / 0.28) - 0.08 * douce((uz - 0.28) / 1.5) : 1;
+    // LES FRAPPES secouent l'image
+    let dx = 0;
+    let dy = 0;
+    for (const f of frappes[k]) {
+      const [x, y] = secousse(tc - f.a);
+      dx += x;
+      dy += y;
     }
 
-    // LE REPORTER : grand quand il demande, petit au coin pendant la réponse
-    const place = mi(GRAND, PETIT, entree(repond, 0, 0.4));
-    let angle = enFantome ? 0 : reaction;
-    if (!avecSousTitres && repond > 0) angle = 2.5 * Math.sin(tc * 1.7) * Math.max(0, Math.sin(tc * 0.45));
-    dessinerFantome(c2d, el.reporter, place, tc, boucheReporter(p.paroles, tc), angle);
-    const debutQ = p.paroles[0]?.debut ?? 0;
-    const al = entree(tc, debutQ - 0.1, 0.2) * (1 - entree(tc, p.questionFin + 0.2, 0.2));
-    const teteY = place.bas - place.h * 0.97;
-    dessinerBulle(c2d, bulle(texteDe(p.paroles)), place.cx + (aGauche ? 110 : -110), teteY + 6, place.cx + (aGauche ? 30 : -30), al);
-    noir(c2d, 1 - tl / 0.25);
+    if (repond < -CARTE_SORTIE) {
+      // LA CARTE DE LA QUESTION — qui chasse l'image d'avant en coup de fouet
+      if (tl < FOUET && aDerniere) {
+        const e = sortie(tl / FOUET);
+        carteDans(cg, k, tl, tc);
+        c2d.drawImage(derniere, -LARGEUR * e, 0);
+        c2d.drawImage(carteT, LARGEUR * (1 - e), 0);
+        c2d.save();
+        c2d.globalAlpha = 0.16;
+        for (const tr of [18, 36]) {
+          c2d.drawImage(derniere, -LARGEUR * e - tr * (1 - e), 0);
+          c2d.drawImage(carteT, LARGEUR * (1 - e) + tr * (1 - e), 0);
+        }
+        c2d.restore();
+      } else carteDans(c2d, k, tl, tc);
+    } else {
+      c2d.save();
+      c2d.translate(dx, dy);
+      visuel(k, tc, z);
+      c2d.restore();
+      // le flou du coup de zoom : l'image, deux fois de plus, un peu plus grande
+      if (uz >= 0 && uz < 0.3) {
+        const force = Math.sin((Math.PI * uz) / 0.3);
+        c2d.save();
+        for (const j of [1, 2]) {
+          const s = 1 + 0.035 * j * force;
+          c2d.globalAlpha = 0.16 * force;
+          c2d.drawImage(o.toile, (LARGEUR * (1 - s)) / 2, (HAUTEUR * (1 - s)) / 2, LARGEUR * s, HAUTEUR * s);
+        }
+        c2d.restore();
+      }
+      if (uz >= 0) fuite(c2d, uz / 0.7, 0.9);
+      if (repond >= 0) {
+        // SON FANTÔME, quand il ne se montre pas : il parle avec SA voix
+        if (enFantome) {
+          const i = Math.floor(tc * IPS);
+          const ouv = p.bouche && i < p.bouche.length ? p.bouche[i] : 0;
+          dessinerFantome(c2d, el.chef, vues[k].length ? CHEF_COIN : CHEF_GRAND, tc + 0.7, ouv, 2 * Math.sin(tc * 1.3));
+        }
+        dessinerCadre(c2d, P, repond, nomCadre);
+        const yMots = enFantome && !vues[k].length ? 470 : 923;
+        dessinerSousTitres(c2d, P, morceaux[k].find((m) => tc >= m.de && tc < m.fin), tc, yMots);
+        for (const f of frappes[k]) dessinerFrappe(c2d, P, f.m, tc - f.a, f.fin - f.a);
+      } else {
+        // LA CARTE S'ENVOLE vers nous et laisse voir sa réponse
+        const e = sortie((repond + CARTE_SORTIE) / CARTE_SORTIE);
+        carteDans(cg, k, tl, tc);
+        c2d.save();
+        c2d.globalAlpha = 1 - e;
+        c2d.translate(LARGEUR / 2, HAUTEUR / 2);
+        c2d.scale(1 + 0.6 * e, 1 + 0.6 * e);
+        c2d.drawImage(carteT, -LARGEUR / 2, -HAUTEUR / 2);
+        c2d.restore();
+      }
+    }
+    // UNE IMAGE DE LUI, pour la carte postale de la fin
+    const v = lecteurs[k];
+    if (!photoDuJour && !instantane && !enFantome && v && v.videoWidth && repond > 1.2 && planA(k, tc).quoi === "visage") {
+      const t2 = toile(540, 960);
+      couvrirImage(t2.getContext("2d")!, v, v.videoWidth, v.videoHeight, { w: 540, h: 960 });
+      instantane = { src: t2, w: 540, h: 960 };
+    }
+    dessinerGrain(c2d, grain, tc + k * 7);
   };
 
-  const fin = (t: number) => {
-    c2d.drawImage(el.ardoise, 0, 0, LARGEUR, HAUTEUR);
-    for (const m of ADIEU) ecrire(c2d, m.b, LARGEUR / 2, m.cy, doux((t - m.debut) / m.duree));
-    const finVoix = FIN.voix + el.voix[LIEU.adieu].duration;
-    const a = entree(t, finVoix + 0.3, 0.6);
-    if (a > 0) {
-      const lw = 170;
-      const lh = (el.logo.height * lw) / el.logo.width;
-      c2d.save();
-      c2d.globalAlpha = a * 0.95;
-      c2d.drawImage(el.logo, (LARGEUR - lw) / 2, 372, lw, lh);
-      c2d.globalAlpha = a * 0.8;
-      c2d.font = `500 14px ${el.police.bulle}`;
-      c2d.fillStyle = "rgb(200,205,198)";
-      c2d.textAlign = "center";
-      c2d.fillText(mention, LARGEUR / 2, 1250);
-      c2d.restore();
-    }
-    // ils apparaissent, le reporter dit « à demain », puis un petit salut
-    const e = 0.7 + 0.3 * entree(t, 0, 0.35);
-    const salut = t - (finVoix + 0.2);
-    const saut = salut > 0 ? 40 * Math.abs(Math.sin((Math.min(salut, 1.2) * Math.PI) / 0.6)) * (1 - (Math.min(salut, 1.2) / 1.2) * 0.3) : 0;
-    const angle = salut > 0 ? 7 * Math.sin(salut * 9) * Math.max(0, 1 - salut / 1.6) : 0;
-    const placeR = enFantome ? REPORTER_FIN : GRAND_ARD;
-    if (enFantome) dessinerFantome(c2d, el.chef, { ...CHEF_FIN, h: CHEF_FIN.h * e, bas: CHEF_FIN.bas - saut * 0.8 }, t + 0.7, 0, -angle * 0.8);
-    dessinerFantome(c2d, el.reporter, { ...placeR, h: placeR.h * e, bas: placeR.bas - saut }, t, bouche(LIEU.adieu, t - FIN.voix), angle);
-    etincelles(c2d, 360, 920, t - 0.05, 220);
-    etincelles(c2d, 360, 900, salut, 300);
-    const al = entree(t, FIN.voix - 0.15, 0.2) * (1 - entree(t, finVoix + 0.25, 0.2));
-    dessinerBulle(c2d, bulle(REPLIQUES[LIEU.adieu]), placeR.cx, placeR.bas - placeR.h * 0.97 + 10, placeR.cx, al);
-    noir(c2d, (t - (dFin - 0.5)) / 0.5);
+  const dessinerFinA = (t: number) => {
+    fin.photo = photoDuJour ?? instantane;
+    const i = Math.floor((t - bulleFin.de) * IPS);
+    const b = el.bouche[texteAdieu];
+    const ouv = b && i >= 0 && i < b.length ? b[i] : 0;
+    dessinerFin(
+      c2d,
+      P,
+      fin,
+      t,
+      t,
+      SIGNATURE,
+      (cx, cy, r) => {
+        const img = el.reporter[Math.min(3, Math.round(borne(ouv) * 3))];
+        const w = 2.5 * r;
+        const h = (img.height * w) / Math.max(1, img.width);
+        c2d.drawImage(img, cx - w / 2, cy - r * 0.78, w, h);
+      },
+      bulleFin,
+    );
+    eclairDuClic(c2d, t);
+    dessinerGrain(c2d, grain, t + 99);
+    noir(c2d, (t - (dFin - 0.45)) / 0.45);
   };
 
   /* ─── les sons de chaque temps, posés quand il commence ─── */
-  const sonsOuverture = (t0: number) => {
-    niveauLit(t0, 0.42, 0.6);
-    for (const m of MENU) crayon(t0 + m.debut, m.duree);
-    crayon(t0 + 1.2, 0.35, 0.6);
-    jouer(el.sons.souffle, t0 + 0.15, 0.55);
-    jouer(el.sons.cloches, t0 + 0.35, 0.5);
-    jouer(el.voix[LIEU.bonjour], t0 + OUVERTURE.voix, 0.95);
-  };
-  const sonsFin = (t0: number) => {
-    niveauLit(t0, 0.4, 0.4);
-    lit.gain.setValueAtTime(0.4, t0 + dFin - 0.9);
-    lit.gain.linearRampToValueAtTime(0, t0 + dFin);
-    for (const m of ADIEU) crayon(t0 + m.debut, m.duree);
-    jouer(el.sons.souffle, t0, 0.5);
-    jouer(el.voix[LIEU.adieu], t0 + FIN.voix, 0.95);
-    jouer(el.sons.cloches, t0 + FIN.voix + el.voix[LIEU.adieu].duration + 0.25, 0.55);
+  const sonsTitre = (t0: number) => {
+    niveau(t0, MUSIQUE.pleine, 0.15);
+    sonClic(S, t0 + TITRE.clic);
   };
   const sonsCloche = (t0: number) => {
-    niveauLit(t0, 0.3, 0.5);
+    niveau(t0, MUSIQUE.pleine * 0.8, 0.5);
     jouer(el.sons.souffle, t0 + CLOCHE.leve, 0.55);
     jouer(el.sons.cloches, t0 + CLOCHE.leve + 0.3, 0.55);
+  };
+  const sonsCarte = (t0: number) => {
+    sonCarte(S, t0 + 0.02);
+    etouffer(t0, 700);
+    niveau(t0, MUSIQUE.question);
   };
   /** Une prise : appelé quand elle démarre vraiment, `zero` = l'heure de son début. */
   const sonsPrise = (k: number, zero: number, v: HTMLVideoElement | null) => {
     const p = prises[k];
-    niveauLit(ctx.currentTime, 0.16, 0.5);
-    jouer(el.sons.souffle, ctx.currentTime, 0.3);
-    for (const pa of p.paroles) jouer(el.voix[pa.id], zero + pa.debut, 0.95);
-    crayon(zero + p.questionFin + 0.1, 0.5, 0.6);
-    for (const s of p.sousTitres) crayon(zero + s.debut, Math.max(0.35, Math.min(0.8, (s.fin - s.debut) * 0.6)), 0.45);
+    for (const pa of p.paroles) if (el.voix[pa.texte]) jouer(el.voix[pa.texte], zero + pa.debut, 0.95);
+    const rep = zero + p.questionFin + 0.05;
+    sonSortieCarte(S, rep - CARTE_SORTIE);
+    etouffer(rep - 0.1, 18000, 0.3);
+    niveau(rep - 0.1, MUSIQUE.reponse, 0.3);
+    for (const f of frappes[k]) sonFrappe(S, zero + f.a);
+    if (zoomA[k] != null) sonZoom(S, zero + (zoomA[k] as number));
     // SA RÉPONSE : muette pendant la question (le micro a entendu le reporter
     // dans le haut-parleur), puis à pleine voix.
     const g = ctx.createGain();
@@ -1598,22 +1607,42 @@ export async function monter(o: {
       }
     }
   };
+  const sonsFin = (t0: number) => {
+    etouffer(t0, 18000, 0.15);
+    niveau(t0, MUSIQUE.pleine, 0.2);
+    sonClic(S, t0);
+    for (const d of [0.55, 0.68, 0.82, 0.95, 1.25]) sonTic(S, t0 + d);
+    sonTampon(S, t0 + 1.0);
+    niveau(t0 + bulleFin.de - 0.1, MUSIQUE.adieu, 0.2);
+    if (voixAdieu) jouer(voixAdieu, t0 + bulleFin.de, 0.95);
+    niveau(t0 + bulleFin.de + adieu + 0.05, MUSIQUE.pleine, 0.3);
+    sonSignature(S, t0 + SIGNATURE);
+    etouffer(t0 + SIGNATURE, 900, 0.3);
+    niveau(t0 + SIGNATURE + 0.2, 0.0001, 2.4);
+  };
 
   /* ─── la boucle : l'horloge du son mène, l'image suit ─── */
   if (ctx.state !== "running") await ctx.resume().catch(() => {});
-  gril.start();
-  sources.push(gril);
-  ouverture(0);
+  dessinerTitreA(0);
   rec.start(1000);
   const T0 = ctx.currentTime + 0.12;
-  sonsOuverture(T0);
+  if (el.musique) {
+    const boucle = ctx.createBufferSource();
+    boucle.buffer = el.musique;
+    boucle.loop = true;
+    boucle.connect(musique);
+    // LE PREMIER TEMPS TOMBE SUR LE CLIC
+    boucle.start(T0 + TITRE.clic);
+    sources.push(boucle);
+  }
+  sonsTitre(T0);
 
   let seg = 0;
   let debutSeg = T0;
   let lance = false;
   let sonsPoses = false;
   let mediaLance = false;
-  let derniere = -1;
+  let derniereImage = -1;
   let bloqueDepuis = 0;
   let affiche = false;
   let erreur: Error | null = null;
@@ -1623,17 +1652,21 @@ export async function monter(o: {
       const s = segments[seg];
       if (s.genre === "prise") {
         lecteurs[s.k]?.pause();
-        const m = medias[s.k];
-        if (m?.genre === "video") m.v.pause();
+        for (const m of medias[s.k]) if (m.genre === "video") m.v.pause();
       }
+      // la dernière image du plan, pour le coup de fouet de la carte suivante
+      dg.drawImage(o.toile, 0, 0);
+      aDerniere = true;
       seg += 1;
       debutSeg = maintenant;
       lance = false;
       sonsPoses = false;
       mediaLance = false;
       if (seg >= segments.length) return fini();
-      if (segments[seg].genre === "cloche") sonsCloche(maintenant);
-      if (segments[seg].genre === "fin") sonsFin(maintenant);
+      const g = segments[seg].genre;
+      if (g === "cloche") sonsCloche(maintenant);
+      if (g === "prise") sonsCarte(maintenant);
+      if (g === "fin") sonsFin(maintenant);
     };
     const tic = () => {
       if (seg >= segments.length) return;
@@ -1645,10 +1678,10 @@ export async function monter(o: {
       const maintenant = ctx.currentTime;
       const t = maintenant - debutSeg;
       const s = segments[seg];
-      const dessiner = maintenant - derniere >= 1 / (IPS + 2);
-      if (s.genre === "ouverture") {
-        if (dessiner) ouverture(Math.max(0, t));
-        if (dessiner && !affiche && t >= 2.8) {
+      const dessiner = maintenant - derniereImage >= 1 / (IPS + 2);
+      if (s.genre === "titre") {
+        if (dessiner) dessinerTitreA(Math.max(0, t));
+        if (dessiner && !affiche && t >= 2.7) {
           affiche = true;
           try {
             o.surAffiche?.(o.toile.toDataURL("image/jpeg", 0.82));
@@ -1656,14 +1689,13 @@ export async function monter(o: {
             /* pas d'image d'attente : le lecteur montrera sa première image */
           }
         }
-        if (t >= dOuv) suivant(maintenant);
+        if (t >= TITRE.duree) suivant(maintenant);
       } else if (s.genre === "cloche") {
         if (dessiner && decor) decouverte(c2d, decor, Math.max(0, t));
         if (t >= CLOCHE.duree) suivant(maintenant);
       } else if (s.genre === "prise") {
         const v = lecteurs[s.k];
         const p = prises[s.k];
-        const m = medias[s.k];
         let tc = t;
         if (v) {
           // FILMÉ : la vidéo mène, et le son se cale sur elle quand elle tourne vraiment
@@ -1686,20 +1718,24 @@ export async function monter(o: {
           sonsPoses = true;
           sonsPrise(s.k, debutSeg, null);
         }
-        if (m?.genre === "video" && !mediaLance && (enFantome || tc - p.questionFin > 1.1)) {
+        // SES VIDÉOS tournent dès le début de sa réponse : un plan de coupe peut tomber dessus à tout moment
+        if (!mediaLance && tc > p.questionFin) {
           mediaLance = true;
-          m.v.currentTime = 0;
-          m.v.play().catch(() => {});
+          for (const m of medias[s.k]) {
+            if (m.genre !== "video") continue;
+            m.v.currentTime = 0;
+            m.v.play().catch(() => {});
+          }
         }
         if (dessiner) prise(s.k, tc, t);
         if (tc >= p.coupe || (v && (v.ended || maintenant - bloqueDepuis > 3))) suivant(maintenant);
       } else {
-        if (dessiner) fin(Math.max(0, t));
+        if (dessiner) dessinerFinA(Math.max(0, t));
         if (t >= dFin) suivant(maintenant);
       }
       if (seg >= segments.length) return;
-      if (dessiner) derniere = maintenant;
-      o.surProgres?.(borne((maintenant - T0) / estime));
+      if (dessiner) derniereImage = maintenant;
+      o.surProgres?.(borne((maintenant - T0) / prevue));
       requestAnimationFrame(tic);
     };
     requestAnimationFrame(tic);
@@ -1719,9 +1755,11 @@ export async function monter(o: {
   }
   bus.disconnect();
   comp.disconnect();
+  limite.disconnect();
   ecoute.disconnect();
-  lit.disconnect();
-  const aRanger = [...lecteurs, ...medias.map((m) => (m?.genre === "video" ? m.v : null))];
+  musique.disconnect();
+  salle.disconnect();
+  const aRanger = [...lecteurs, ...medias.flat().map((m) => (m.genre === "video" ? m.v : null))];
   for (const v of aRanger) {
     if (!v) continue;
     v.pause();
@@ -1733,7 +1771,7 @@ export async function monter(o: {
   if (erreur) throw erreur;
   const type = rec.mimeType || format || "video/webm";
   // UNE VIDÉO QUE CE TÉLÉPHONE NE SAIT PAS LIRE NE DISPARAÎT PAS EN SILENCE : l'écran d'essai le dit
-  const mediaDesReponses = prises.map((p, k) => (!p.media ? "aucun" : medias[k] ? "montre" : "illisible")) as Montage["mediaDesReponses"];
+  const mediaDesReponses = prises.map((p, k) => (!p.medias.length ? "aucun" : chargees[k].every(Boolean) ? "montre" : "illisible")) as Montage["mediaDesReponses"];
   const cloche: Montage["cloche"] = !reglages.cloche ? "aucune" : decor ? "montree" : "illisible";
-  return { blob: new Blob(morceaux, { type }), type, duree: ctx.currentTime - T0, sonDesReponses, mediaDesReponses, cloche };
+  return { blob: new Blob(morceauxVideo, { type }), type, duree: ctx.currentTime - T0, sonDesReponses, mediaDesReponses, cloche };
 }

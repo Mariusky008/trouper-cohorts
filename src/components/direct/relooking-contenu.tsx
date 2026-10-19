@@ -534,7 +534,7 @@ export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
               setEtape("pourqui");
             }}
           >
-            Voir un exemple
+            Voir sans ma photo
           </button>
         </section>
       )}
@@ -655,7 +655,7 @@ export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
             <p className="rl-main">Pas de retouche, juste du style&nbsp;!</p>
           </div>
 
-          <p className="rl-ex-t">Exemples de photos qui fonctionnent bien</p>
+          <p className="rl-ex-t">Les photos qui fonctionnent bien</p>
           <ul className="rl-ex">
             {PHOTOS_EXEMPLE[genre].map((src) => (
               <li key={src}>

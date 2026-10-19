@@ -41,6 +41,8 @@
 // ville coûte un commerçant : la carte de validation est ce qui autorise le
 // vocal à exister.
 
+import { sessionPourLeMicro } from "@/lib/direct/session-audio";
+
 /** Ce qu'une écoute a produit, et par quel chemin. */
 export type Ecoute = {
   texte: string;
@@ -184,6 +186,7 @@ async function obtenirMicro(neuf = false): Promise<MediaStream | null> {
   fluxPartage?.getTracks().forEach((t) => t.stop());
   fluxPartage = null;
   if (!demande) {
+    sessionPourLeMicro();
     demande = navigator.mediaDevices
       .getUserMedia({ audio: true })
       .then((f) => {

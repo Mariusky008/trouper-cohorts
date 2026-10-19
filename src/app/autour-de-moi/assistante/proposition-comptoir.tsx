@@ -38,7 +38,7 @@ const EXEMPLES: Partial<Record<FamilleDouble, { nom: string; photo: string }[]>>
 };
 
 const exemplesDe = (f: FamilleDouble): PieceComptoir[] =>
-  (EXEMPLES[f] ?? []).map((x, i) => ({ id: `exemple-${f}-${i}`, nom: x.nom, photo: x.photo, rayon: "Exemple", publieLe: new Date(0).toISOString(), vitrine: true }));
+  (EXEMPLES[f] ?? []).map((x, i) => ({ id: `exemple-${f}-${i}`, nom: x.nom, photo: x.photo, rayon: "Nouveautés", publieLe: new Date(0).toISOString(), vitrine: true }));
 
 async function appeler(reel: NonNullable<CommerceComptoir["reel"]>, corps: Record<string, unknown>): Promise<EtatCarte> {
   const r = await fetch("/api/site-internet/pro/proposition", {
@@ -128,7 +128,6 @@ export function propositionAMontrer(p: PropositionDuComptoir): Proposition | nul
 }
 
 export function CarteProposition({
-  commerce,
   proposition: p,
   onOui,
   onVoir,
@@ -145,14 +144,12 @@ export function CarteProposition({
   const [occupe, setOccupe] = useState(false);
   const x = propositionAMontrer(p);
   if (!x) return null;
-  const demo = !commerce.reel;
   const piece = x.piece;
   return (
     <section className="pm" aria-label="Ta proposition du jour">
       <StylesProposition />
       <div className="pm-tete">
         <span>☀️ Ta proposition du jour</span>
-        {demo && <i className="pm-exemple">Exemple</i>}
       </div>
       {x.occasion && <p className="pm-occasion">🗓️ {x.occasion}</p>}
 

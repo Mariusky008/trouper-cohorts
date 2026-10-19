@@ -154,7 +154,7 @@ export default async function AutourDeMoiPage({
       })),
       retour: /^\/(?!\/)/.test(retour) ? retour : undefined,
       fictifs: choisis.length > 0,
-      ...(choisis.length ? {} : { villeDerriere: "Voir l'exemple de Dax" }),
+      ...(choisis.length ? {} : { villeDerriere: "Voir la démo de Dax" }),
     };
     ville = {
       moi: { id: carte.id, nom: carte.nom, ville: ou, fantome: fantomeDe(carte) },

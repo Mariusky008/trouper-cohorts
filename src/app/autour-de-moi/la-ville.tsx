@@ -68,6 +68,7 @@ import {
 import { reduirePhoto } from "@/lib/site-internet/reduire-photo";
 import type { Salon } from "@/lib/direct/salons";
 import { CarteSimple, SceneDuFil } from "./scene-ville";
+import { sessionPourLeMicro } from "@/lib/direct/session-audio";
 
 const TEINTES = ["#FF5FA8", "#F5A23A", "#7FB7FF", "#7BD3A8", "#C99BFF", "#FF8A65"];
 function hache(nom: string): number {
@@ -1627,6 +1628,7 @@ function useEnregistreur() {
       return;
     }
     try {
+      sessionPourLeMicro();
       const flux = await navigator.mediaDevices.getUserMedia({ audio: true });
       const r = new MediaRecorder(flux);
       const morceaux: Blob[] = [];

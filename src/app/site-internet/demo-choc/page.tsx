@@ -63,7 +63,7 @@ export default async function DemoChocPage() {
     <main className="hoc">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
-      <div className="hoc-demo">✦ Démonstration {MARQUE} · exemple de site partenaire</div>
+      <div className="hoc-demo">✦ Démonstration {MARQUE} · site partenaire</div>
 
       {/* ── HERO immersif + assistante IA ── */}
       <header className="hoc-hero">
@@ -139,7 +139,7 @@ export default async function DemoChocPage() {
             <div className="hoc-rev" key={r.n}>
               <div className="hoc-rev-s">★★★★★</div>
               <div className="hoc-rev-t">« {r.t} »</div>
-              <div className="hoc-rev-n">{r.n} · exemple</div>
+              <div className="hoc-rev-n">{r.n}</div>
             </div>
           ))}
         </div>

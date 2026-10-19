@@ -168,7 +168,7 @@ export function ProMotifs({
           <div className="tip">
             Ou partez des motifs proposés pour votre métier, puis reformulez avec vos mots.
             <br />
-            <button type="button" onClick={fillFromSuggestions}>Partir des exemples</button>
+            <button type="button" onClick={fillFromSuggestions}>Partir des modèles</button>
           </div>
         )}
 

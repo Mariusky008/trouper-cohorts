@@ -13,7 +13,7 @@ Rien ici ne fait partie de l'application : c'est un outil pour juger le format.
 - **Réel** : sa voix et ses mots (`public/direct/voix/bergine-magret.mp3`,
   seulement coupés), ses photos du magret, la carte de Chez Bergine, la voix du
   fantôme reporter : il pose ses questions à voix haute, avec les répliques
-  enregistrées sur ElevenLabs (`voix-fantome/`, voir plus bas).
+  enregistrées sur ElevenLabs (`public/direct/interview/fantome/`, voir plus bas).
 - **Maquette** : Jean-Marie est en photos animées, pas filmé ; la musique est composée par le navigateur
   (aucun droit) ; les sous-titres sont calés sur les pauses de sa voix
   (`mots.json`), pas sur une transcription ; Chez Bergine est inventé.
@@ -43,7 +43,10 @@ Il faut Chromium et Playwright (présents dans l'environnement cloud) et un
 - `polices/` — Anton, Playfair Display et Poppins (Google Fonts, licence SIL
   Open Font License 1.1), en local : le rendu ne dépend pas du réseau.
 
-## La voix du fantôme (`voix-fantome/`)
+## La voix du fantôme (`public/direct/interview/fantome/`)
+
+Elles sont dans l'app, pas ici : l'interview du commerçant les joue aussi
+(voir `src/lib/direct/voix-fantome.ts`).
 
 « J'aime pas du tout la voix du fantôme interviewer, on dirait qu'il est malade
 et très métallique. » Les questions de tous les métiers ont donc été
@@ -77,9 +80,12 @@ nouée (« comme ça »).
 
 **Les photos, la voix de Lou et la musique ne sont pas dans le dépôt** (droits) :
 `lou/preparer.cjs` les prend dans un dossier qu'on lui donne et dit les noms
-attendus. Six photos viennent de Pexels ; la veste à sequins (Amazon) et la pile
-de pulls (un blog) **ne sont pas libres de droits** : maquette interne
-seulement. Le dépôt garde ce qui permet de refaire le montage : le moteur
+attendus. Les six photos viennent de Pexels. La veste à sequins (Amazon) et la
+pile de pulls (un blog), qui n'étaient **pas libres de droits**, ont été
+retirées : « Douce » passe sur la laine de tout près, « surprises » sur le
+manteau en pied, sur le quai. Pexels autorise l'usage commercial, mais ce sont
+des personnes reconnaissables présentées comme « Lou » : pour une diffusion
+publique, préférer les photos du vrai commerçant. Le dépôt garde ce qui permet de refaire le montage : le moteur
 (`lou/episode.html`), l'instant de chaque mot (`lou/mots.json`, posé à la main
 sur les pauses et les syllabes mesurées), les recadrages, et le masque du
 détourage (`lou/masque.png`).

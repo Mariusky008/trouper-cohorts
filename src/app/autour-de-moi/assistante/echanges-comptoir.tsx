@@ -279,7 +279,6 @@ export function CarteEchanges({ commerce, onOuvrir }: { commerce: CommerceCompto
       <span>
         <b>
           Échanger avec les commerçants
-          <i className="cz-pastille calme">Exemple</i>
         </b>
         <em>
           {etat.mien
@@ -1052,7 +1051,7 @@ function Echanger({
           onEnvoyer={() => {
             setSignales((l) => [...l, aSignaler.id]);
             setASignaler(null);
-            setNouvelle("Exemple : en vrai, ton signalement part chez ClikMe. Un bon encore réservé est annulé, et tes crédits te reviennent.");
+            setNouvelle("Ton signalement part chez ClikMe. Un bon encore réservé est annulé, et tes crédits te reviennent.");
           }}
         />
       )}
@@ -1537,7 +1536,7 @@ function BonPris({
   signale?: boolean;
   onSignaler?: () => void;
 }) {
-  const qr = useQr(ouvert ? `ClikMe · Bon ${b.code} · ${b.titre} (${b.prix} €) ${chezNom(b.commerce)} · Exemple` : null);
+  const qr = useQr(ouvert ? `ClikMe · Bon ${b.code} · ${b.titre} (${b.prix} €) ${chezNom(b.commerce)} · Démonstration` : null);
   return (
     <article className={`ec-recu${ouvert ? " ouvert" : ""}`}>
       <button type="button" className="ec-recu-h" onClick={onOuvrir} aria-expanded={ouvert}>

@@ -9726,7 +9726,7 @@ export function ApercuHabitant({
                           className="ap-ac-famb"
                           disabled={!ouvrable}
                           aria-pressed={on}
-                          aria-label={`Voir l’exemple ${f.mot}`}
+                          aria-label={`Voir ${f.mot}`}
                           /* LE GESTE COMMENCE SUR LE BOUTON, DONC LA CARTE NE
                              LE CAPTURE PAS. `setPointerCapture` sur l'écran
                              d'ouverture détourne tous les événements suivants

@@ -28,7 +28,6 @@ export function LookSurElle({ look, delai = 0, classe = "" }: { look: LookVitrin
       <i className="ls-scan" aria-hidden="true" />
       <span className="ls-k av">Sa photo</span>
       <span className="ls-k ap">Avec son jean ✨</span>
-      <span className="ls-ex">Exemple · rendu indicatif</span>
       <StylesLook />
     </figure>
   );

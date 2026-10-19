@@ -2980,7 +2980,6 @@ export function DemoTour({
                             <img src={cartesVille[carteVille]?.photo} alt="" />
                             <b>{ESSAI_DU_FIL.quoi}</b>
                           </span>
-                          <span className="qi-essai-ex">Exemple · rendu indicatif</span>
                         </div>
                       )}
                       {/* LE PANNEAU DU PRODUIT, pas une pop-up de démo : mêmes
@@ -3127,7 +3126,7 @@ export function DemoTour({
                       )}
                       {G.motVoix && (G.momentVoix ? voixDite : photoN >= 1) && (
                         <p className="ph-mot">
-                          « {G.motVoix} »<small>Exemple de vocal</small>
+                          « {G.motVoix} »<small>Son vocal</small>
                         </p>
                       )}
                     </div>
@@ -3348,7 +3347,6 @@ export function DemoTour({
             <div className="mp-bar">
               <span className="d" /><span className="d" /><span className="d" />
               <span className="mp-lb">site d&apos;un commerce partenaire</span>
-              <span className="mp-ex">exemple</span>
             </div>
             <div className="mp-body">
               <div className={`mp-k${mstep >= 4 ? " in" : ""}`}>À découvrir près de chez vous</div>

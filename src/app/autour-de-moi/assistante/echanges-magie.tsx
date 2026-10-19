@@ -20,7 +20,8 @@
 //   2. LE MODE SILENCIEUX. Par défaut, Safari range ces sons parmi les sons
 //      « d'ambiance », que le bouton silencieux coupe. On les déclare comme
 //      une lecture (`navigator.audioSession.type = "playback"`, iOS 17) : ils
-//      s'entendent comme le son d'une vidéo. Le 🔇 de « Comment ça marche »
+//      s'entendent comme le son d'une vidéo — sauf sur une page qui ouvre le
+//      micro, que « playback » interdit (voir `session-audio.ts`). Le 🔇 de « Comment ça marche »
 //      reste là pour les couper.
 // Et chaque son attend que le son soit vraiment réveillé avant de partir.
 //
@@ -31,6 +32,7 @@
 // (`echanges-reels.tsx`).
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { chezNom, enCredits, enEuros } from "@/lib/echanges/echanges";
+import { sessionPourLesSons } from "@/lib/direct/session-audio";
 
 /* ═══ LE SON ══════════════════════════════════════════════════════════════ */
 const CLE_MUET = "clikme-echanges-muet";
@@ -66,8 +68,7 @@ let audio: AudioContext | null = null;
 export function debloquerSon() {
   if (typeof window === "undefined") return null;
   try {
-    const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
-    if (session && session.type !== "playback") session.type = "playback";
+    sessionPourLesSons();
     if (!audio) {
       const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Ctx) return null;

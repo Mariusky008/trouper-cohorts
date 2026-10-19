@@ -11,10 +11,12 @@
  * à l'instant (`photoDeLaPhototheque` en fait un fichier). Il peut aussi en
  * ajouter depuis la feuille, sans revenir ici. Voir `lib/site-internet/phototheque.ts`.
  *
- * EN DÉMONSTRATION, quelques photos de la démo par métier, marquées « Exemple »,
- * et ce qu'il ajoute reste dans ce téléphone le temps de la visite.
+ * EN DÉMONSTRATION, sa photothèque part de quelques photos de la démo, par
+ * métier, sans étiquette (« le commerçant que je vais démarcher le sait bien que
+ * c'est un exemple ») : il en ajoute, en retire, et tout reste dans ce téléphone
+ * le temps de la visite.
  */
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import type { FamilleDouble } from "@/lib/direct/double-metiers";
 import { motsDeLaVitrine } from "@/lib/direct/vitrine";
@@ -34,13 +36,21 @@ const EXEMPLES: Partial<Record<FamilleDouble, string[]>> = {
   seance: ["cabinet-hypnose.jpeg"],
 };
 
-type Element = ElementPhototheque & { exemple?: boolean };
+type Element = ElementPhototheque;
 
-/* ═══ CE QU'IL AJOUTE EN DÉMONSTRATION ═══ dans ce téléphone, le temps de la
-   visite : l'écran et la feuille le voient tous les deux. */
-const ajoutsDemo = new Map<string, Element[]>();
+/* ═══ SA PHOTOTHÈQUE EN DÉMONSTRATION ═══ dans ce téléphone, le temps de la
+   visite : l'écran et la feuille la voient tous les deux. Elle part des photos
+   de la démo de son métier. */
+const demo = new Map<string, Element[]>();
 const abonnes = new Set<() => void>();
 const AUCUN: Element[] = [];
+const departDemo = (famille: FamilleDouble): Element[] =>
+  (EXEMPLES[famille] ?? EXEMPLES.table ?? []).map((n) => ({ chemin: `demo/${n}`, url: D + n, genre: "photo", octets: 0, ajouteLe: null }));
+/** La même liste à chaque lecture : la première crée celle de départ. */
+const demoDe = (id: string, famille: FamilleDouble) => {
+  if (!demo.has(id)) demo.set(id, departDemo(famille));
+  return demo.get(id) ?? AUCUN;
+};
 const abonnerDemo = (f: () => void) => {
   abonnes.add(f);
   return () => {
@@ -48,14 +58,14 @@ const abonnerDemo = (f: () => void) => {
   };
 };
 const poserDemo = (id: string, l: Element[]) => {
-  ajoutsDemo.set(id, l);
+  demo.set(id, l);
   abonnes.forEach((f) => f());
 };
 
 /** SA PHOTOTHÈQUE : la liste (en ligne, ou celle de la démonstration), déposer, retirer. */
 function usePhototheque(commerce: CommerceComptoir) {
   const reel = commerce.reel;
-  const ajouts = useSyncExternalStore(abonnerDemo, () => ajoutsDemo.get(commerce.id) ?? AUCUN, () => AUCUN);
+  const enDemo = useSyncExternalStore(abonnerDemo, () => demoDe(commerce.id, commerce.famille), () => AUCUN);
   const [enLigne, setEnLigne] = useState<Element[] | null>(null);
   const [erreurs, setErreurs] = useState<string[]>([]);
   const [envoi, setEnvoi] = useState<{ fait: number; total: number } | null>(null);
@@ -73,15 +83,8 @@ function usePhototheque(commerce: CommerceComptoir) {
     };
   }, [reel]);
 
-  const exemples = useMemo<Element[]>(
-    () =>
-      reel
-        ? []
-        : (EXEMPLES[commerce.famille] ?? EXEMPLES.table ?? []).map((n) => ({ chemin: `exemple/${n}`, url: D + n, genre: "photo", octets: 0, ajouteLe: null, exemple: true })),
-    [reel, commerce.famille],
-  );
-  const elements: Element[] | null = reel ? enLigne : [...ajouts, ...exemples];
-  const nb = reel ? (enLigne?.length ?? 0) : ajouts.length;
+  const elements: Element[] | null = reel ? enLigne : enDemo;
+  const nb = elements?.length ?? 0;
 
   const deposer = async (liste: FileList | null): Promise<Element[]> => {
     if (!liste?.length || envoi) return [];
@@ -109,7 +112,7 @@ function usePhototheque(commerce: CommerceComptoir) {
           ajouteLe: new Date().toISOString(),
         };
         rangees.push(e);
-        poserDemo(commerce.id, [e, ...(ajoutsDemo.get(commerce.id) ?? [])]);
+        poserDemo(commerce.id, [e, ...demoDe(commerce.id, commerce.famille)]);
       } else ratees.push(`« ${f.name} » n’est ni une photo ni une vidéo.`);
       setEnvoi({ fait: i + 1, total: pris.length });
     }
@@ -119,10 +122,9 @@ function usePhototheque(commerce: CommerceComptoir) {
   };
 
   const retirer = async (e: Element) => {
-    if (e.exemple) return;
     if (!reel) {
-      URL.revokeObjectURL(e.url);
-      poserDemo(commerce.id, (ajoutsDemo.get(commerce.id) ?? []).filter((x) => x.chemin !== e.chemin));
+      if (e.url.startsWith("blob:")) URL.revokeObjectURL(e.url);
+      poserDemo(commerce.id, demoDe(commerce.id, commerce.famille).filter((x) => x.chemin !== e.chemin));
       return;
     }
     setEnLigne((l) => (l ?? []).filter((x) => x.chemin !== e.chemin));
@@ -198,7 +200,6 @@ export function PhotothequeComptoir({ commerce, dossier, onRetour }: { commerce:
           </button>
         </p>
       )}
-      {!commerce.reel && <p className="ph-note">Exemple : ici, des photos de la démonstration. En vrai, ce sont les tiennes, gardées en ligne.</p>}
 
       <section className="ph-bloc" aria-label="Mes photos et vidéos">
         {elements === null ? (
@@ -231,7 +232,6 @@ export function PhotothequeComptoir({ commerce, dossier, onRetour }: { commerce:
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={e.url} alt="" loading="lazy" />
                   )}
-                  {e.exemple && <span className="ph-badge ex">Exemple</span>}
                 </button>
               ))}
             </div>
@@ -253,11 +253,9 @@ export function PhotothequeComptoir({ commerce, dossier, onRetour }: { commerce:
             <img src={ouvert.url} alt="" onClick={(ev) => ev.stopPropagation()} />
           )}
           <div className="ph-actions" onClick={(ev) => ev.stopPropagation()}>
-            {!ouvert.exemple && (
-              <button type="button" className="ph-retirer" onClick={() => confirmerRetrait(ouvert)}>
-                Retirer
-              </button>
-            )}
+            <button type="button" className="ph-retirer" onClick={() => confirmerRetrait(ouvert)}>
+              Retirer
+            </button>
             <button type="button" className="ph-fermer" onClick={() => setOuvert(null)}>
               Fermer
             </button>
@@ -329,7 +327,7 @@ export function PiocherPhototheque({
             ✕
           </button>
         </div>
-        {!commerce.reel && <p className="pp-note">Exemple : en vrai, ce sont les photos que tu as déposées dans ta photothèque.</p>}
+        {!commerce.reel && <p className="pp-note">Ici, les photos que tu as déposées dans ta photothèque.</p>}
         {photos === null ? (
           <p className="pp-note">J’ouvre ta photothèque…</p>
         ) : (
@@ -397,7 +395,6 @@ const STYLES = `
 .ph-message{display:flex;align-items:center;gap:10px;margin:0;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.4;
   background:rgba(245,162,58,.14);border:1px solid rgba(245,162,58,.4);}
 .ph-message button{margin-left:auto;flex:none;border:0;background:none;font-size:16px;}
-.ph-note{margin:0;font-size:13px;line-height:1.4;color:var(--gris);}
 .ph-vide{margin:0;padding:18px;border-radius:18px;border:1px dashed var(--trait);text-align:center;font-size:14px;line-height:1.45;color:var(--gris);}
 .ph-tete{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-size:13.5px;font-weight:700;color:var(--gris);}
 .ph-filtres{display:flex;gap:6px;}
@@ -407,7 +404,6 @@ const STYLES = `
 .ph-case{position:relative;aspect-ratio:1;padding:0;border:1px solid var(--trait);border-radius:12px;overflow:hidden;background:var(--nappe2);}
 .ph-case img,.ph-case video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}
 .ph-badge{position:absolute;left:6px;bottom:6px;padding:3px 8px;border-radius:999px;background:rgba(12,8,6,.66);color:#fff;font-size:11px;font-weight:800;}
-.ph-badge.ex{left:auto;right:6px;bottom:auto;top:6px;color:#FFD9A8;}
 .ph-comment{margin:0;font-size:13px;line-height:1.45;color:var(--gris);}
 .ph-comment b{color:var(--creme);font-weight:700;}
 .ph-voile{position:fixed;inset:0;z-index:80;background:rgba(8,5,4,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px;}

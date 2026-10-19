@@ -23,7 +23,7 @@ export function FactureVue({ facture, exemple = false }: { facture: FactureCompl
   const livree = dateFr(facture.livree);
   return (
     <article className={`fx${exemple ? " exemple" : ""}`} aria-label={`Facture ${facture.numero}`}>
-      {exemple && <p className="fx-exemple">Exemple</p>}
+      {exemple && <p className="fx-exemple">Démonstration</p>}
       <header className="fx-tete">
         <div>
           <h1>Facture</h1>

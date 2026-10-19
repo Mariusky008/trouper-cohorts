@@ -270,12 +270,12 @@ export function PhotoDeck({ slug, photos, videos, nom, metierLabel, note, review
                           style={c.img ? { backgroundImage: `linear-gradient(165deg,rgba(6,35,26,.55),rgba(6,35,26,.9)), url("${c.img}")` } : undefined}
                         />
                         <div className="pdk-scrim" />
-                        <div className="pdk-offbadge">{c.example ? "🚀 Exemple d’Action Flash" : "🎁 Offre du moment"}</div>
+                        <div className="pdk-offbadge">{c.example ? "🚀 Une annonce" : "🎁 Offre du moment"}</div>
                         {countdown(c.until) && <div className="pdk-cd">⏳ <span>{countdown(c.until)}</span></div>}
                         <div className="pdk-info">
                           <div className="pdk-name">{c.example ? "Une annonce, en un clic" : "Rien que pour vous"}</div>
                           <div className="pdk-offtext">{c.text}</div>
-                          <div className="pdk-meta">{c.example ? "Exemple — vous annoncez ce que vous voulez" : `chez ${nom}`}</div>
+                          <div className="pdk-meta">{c.example ? "Vous annoncez ce que vous voulez" : `chez ${nom}`}</div>
                         </div>
                       </>
                     )}

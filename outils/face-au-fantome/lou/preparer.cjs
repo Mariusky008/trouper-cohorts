@@ -2,7 +2,7 @@
 // node outils/face-au-fantome/lou/preparer.cjs <dossier reçu>   (depuis la racine du dépôt)
 //
 // Le dossier reçu contient ce qui n'est PAS dans le dépôt, pour des raisons de droits :
-//   - les 8 photos, sous leurs noms d'origine (voir PHOTOS) ;
+//   - les 6 photos libres (Pexels), sous leurs noms d'origine (voir PHOTOS) ;
 //   - sa voix : reponse-1.mp3, reponse-2.mp3, defi.mp3, invitation.mp3 (ElevenLabs) ;
 //   - musique.mp3 : « Tech House Vibes », Mixkit.
 const fs = require("fs");
@@ -13,12 +13,10 @@ const ICI = __dirname;
 const RACINE = path.resolve(ICI, "../../..");
 const RECU = path.resolve(process.argv[2] || "");
 const A = path.join(ICI, "a");
-const V = path.join(ICI, "../voix-fantome");
+const V = path.join(ICI, "../../../public/direct/interview/fantome");
 fs.mkdirSync(A, { recursive: true });
 
 const PHOTOS = {
-  sequins: "71YYJudHERL._AC_UY350_.jpg", // la veste à sequins — Amazon, pas libre de droits
-  pulls: "ca-deforme-le-pull-decouvrez-la-pire-erreur-a-ne-surtout-pas-faire-avec-vos-pulls-en-maille-pour-ne-pas-les-abimer.jpg", // un blog, pas libre de droits
   portrait: "pexels-anh-nguyen-517648218-19163082.jpg",
   rue: "pexels-ekam-juneja-61080223-19192418.jpg",
   parc: "pexels-lichtberlin-19166121.jpg",
@@ -37,8 +35,6 @@ async function decoupe(k, x, y, w, h, sortie, haut = 1920) {
 }
 
 (async () => {
-  await sharp(f("sequins")).jpeg({ quality: 92 }).toFile(path.join(A, "sequins.jpg"));
-  await sharp(f("pulls")).jpeg({ quality: 92 }).toFile(path.join(A, "pulls.jpg"));
   for (const k of ["portrait", "rue", "parc", "metro", "quai", "tourne"])
     await sharp(f(k)).resize({ height: 2400, kernel: "lanczos3", withoutEnlargement: true }).jpeg({ quality: 88 }).toFile(path.join(A, `${k}.jpg`));
   // le fond flou derrière elle (plan titre, relief)

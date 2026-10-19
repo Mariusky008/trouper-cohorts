@@ -858,7 +858,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
                       l'assistante a deviné son planning — elle ne le fait pas,
                       et le parcours perd sa crédibilité au moment précis où il
                       devrait l'installer. */}
-                  <span className="at">{it.action}<i>Exemple&nbsp;: {it.exempleDemo}</i></span>
+                  <span className="at">{it.action}<i>«&nbsp;{it.exempleDemo}&nbsp;»</i></span>
                 </button>
               );
             })}
@@ -929,7 +929,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
             <button className="asx-back" onClick={() => setView("creneauIn")}>‹ Retour</button>
             <div className="asx-say"><b>Dites-moi en une phrase.</b> Je rédige l’annonce pour vous.</div>
             <div className="asx-ex">
-              <span className="asx-exk">Exemple</span>
+              <span className="asx-exk">Essayez</span>
               Un créneau vient de se libérer samedi à 16 h.
             </div>
             <textarea

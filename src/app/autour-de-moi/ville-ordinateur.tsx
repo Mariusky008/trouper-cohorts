@@ -521,7 +521,7 @@ function LeDirectOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) {
     : dansLesCopains && moi
       ? lesCopainsDe(moi.nom)
       : moi && !nbCopains
-        ? "En attendant, l’exemple de Dax"
+        ? "En attendant, la démo de Dax"
         : reelle
           ? `${reelle.nom}, en ce moment`
           : "Toute la ville, en ce moment";

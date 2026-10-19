@@ -223,7 +223,7 @@ const QUESTIONS = {
   3: { num: "DERNIÈRE QUESTION · LE DÉFI", l1: "TA BOUTIQUE", l2: "EN 3 MOTS", sous: ["Trois mots,", "pas un de plus."], defi: true },
 };
 // CE QUE DIT LE FANTÔME, ET QUAND : ses questions sur les cartes, son au revoir sur la carte de fin.
-// Sa voix : les répliques enregistrées sur ElevenLabs (voix-fantome/ dans le dépôt).
+// Sa voix : les répliques enregistrées sur ElevenLabs (`public/direct/interview/fantome/` dans le dépôt).
 const PAROLES_REPORTER = [
   { id: "fq1", src: "a/f-q1.mp3", T: 5.55 },
   { id: "fq2", src: "a/f-q2.mp3", T: 16.05 },
@@ -298,12 +298,6 @@ function cadre(t, depuis) {
   texte("FACE AU FANTÔME", 124, 212, "800 32px Poppins", CREME, { ls: 4, ombre: 14 });
   texte("Lou · Maison Lou", 124, 258, "600 30px Poppins", "rgba(255,244,230,.85)", { ombre: 14 });
   g.restore();
-}
-function exemple() {
-  g.save(); g.font = "800 24px Poppins"; g.letterSpacing = "3px";
-  const w = g.measureText("EXEMPLE").width + 36;
-  rectArrondi(W - 56 - w, 180, w, 46, 23); g.fillStyle = "rgba(0,0,0,.38)"; g.fill();
-  g.fillStyle = "rgba(255,255,255,.78)"; g.textAlign = "center"; g.fillText("EXEMPLE", W - 56 - w / 2, 212); g.restore();
 }
 
 /* ─── LE PLAN SIGNATURE : SON NOM DERRIÈRE ELLE ─── */
@@ -486,10 +480,11 @@ const SEGS = [
   { de: 20.75, a: 23.1, rep: 17.7, dessin: ralenti },
   { de: 23.1, a: 25.2, rep: 17.7, dessin: (u, t) => { plan(IM.tourne, { fx: 0.58, fy: 0.5, z: 1.18 - 0.14 * douce(u / 2.1) }); etalonner(0.1); } },
   { de: 25.2, a: 27.77, carte: 3 },
-  // 5 · TROIS MOTS QUI FRAPPENT : DOUCE (la maille), VRAIE (elle), SURPRISES (la pièce inattendue)
-  { de: 27.77, a: 28.74, rep: 27.77, dessin: (u, t) => vitrine(IM.pulls, IM.pullsFlou, u, 0.97, t >= 27.85 ? 1.08 + 0.05 * (t - 27.85) : 1.0) },
+  // 5 · TROIS MOTS QUI FRAPPENT : DOUCE (la laine), VRAIE (elle), SURPRISES (le manteau en pied, sur le quai).
+  //     Seulement des photos libres : la veste à sequins (Amazon) et les pulls (un blog) sont retirés.
+  { de: 27.77, a: 28.74, rep: 27.77, dessin: (u, t) => vitrine(IM.laine, IM.laineFlou, u, 0.97, t >= 27.85 ? 1.08 + 0.05 * (t - 27.85) : 1.0) },
   { de: 28.74, a: 30.22, rep: 27.77, dessin: (u, t) => { const z = t >= 28.84 ? 1.3 + 0.05 * (t - 28.84) : 1.15; plan(IM.portrait, { fx: 0.4, fy: 0.3, z }); etalonner(0.08); } },
-  { de: 30.22, a: FIN, rep: 27.77, dessin: (u, t) => vitrine(IM.sequins, IM.sequinsFlou, u, FIN - 30.22, t >= 30.34 ? 1.08 + 0.08 * (t - 30.34) : 1.0) },
+  { de: 30.22, a: FIN, rep: 27.77, dessin: (u, t) => vitrine(IM.quai, IM.quaiFlou, u, FIN - 30.22, t >= 30.34 ? 1.08 + 0.08 * (t - 30.34) : 1.0) },
   // 6 · LA CARTE DE FIN
   { de: FIN, a: DUREE + 1, fin: true, dessin: (u, t) => fin(u, t) },
 ];
@@ -543,8 +538,6 @@ function dessiner(t) {
   const i = Math.floor(t * 10), ox = -Math.floor(hasard(i) * 540), oy = -Math.floor(hasard(i + 1) * 960);
   for (let x = ox; x < W; x += 540) for (let y = oy; y < H; y += 960) g.drawImage(GRAIN, x, y);
   g.restore();
-  if (t < FIN + 0.35) exemple();
-  else { g.save(); g.globalAlpha = borne((t - FIN - 0.35) / 0.4); texte("Exemple · Maison Lou est inventée · maquette interne", W / 2, 1600, "600 28px Poppins", "rgba(255,244,230,.6)", { align: "center" }); g.restore(); }
 }
 function dessinerDans(t2, f) { const avant = g; g = t2.getContext("2d"); try { f(); } finally { g = avant; } }
 
@@ -665,11 +658,11 @@ async function mixer(piste = "tout") {
 
 /* ═══ LE CHARGEMENT ═══ */
 window.pret = (async () => {
-  const imgs = { tourne: "a/tourne.jpg", rue: "a/rue.jpg", laine: "a/laine.jpg", parc: "a/parc.jpg", metro: "a/metro.jpg", quai: "a/quai.jpg", bottes: "a/bottes.jpg", ceinture: "a/ceinture.jpg", portrait: "a/portrait.jpg", pulls: "a/pulls.jpg", sequins: "a/sequins.jpg", lou: "a/lou.png", fondLou: "a/fond-lou.jpg", logo: "a/logo.png", r0: "a/reporter-0.webp", r1: "a/reporter-1.webp", r2: "a/reporter-2.webp", r3: "a/reporter-3.webp" };
+  const imgs = { tourne: "a/tourne.jpg", rue: "a/rue.jpg", laine: "a/laine.jpg", parc: "a/parc.jpg", metro: "a/metro.jpg", quai: "a/quai.jpg", bottes: "a/bottes.jpg", ceinture: "a/ceinture.jpg", portrait: "a/portrait.jpg", lou: "a/lou.png", fondLou: "a/fond-lou.jpg", logo: "a/logo.png", r0: "a/reporter-0.webp", r1: "a/reporter-1.webp", r2: "a/reporter-2.webp", r3: "a/reporter-3.webp" };
   await Promise.all(Object.entries(imgs).map(([k, s]) => new Promise((ok, ko) => { const i = new Image(); i.onload = () => { IM[k] = i; ok(); }; i.onerror = () => ko(new Error(s)); i.src = s; })));
   await Promise.all(["340px Anton", "italic 600 80px 'Playfair Display'", "italic 700 80px 'Playfair Display'", "900 76px Poppins", "800 30px Poppins", "600 50px Poppins"].map((f) => document.fonts.load(f)));
   MOTS = await (await fetch("mots.json")).json();
-  IM.tourneFlou = flou(IM.tourne, 34); IM.pullsFlou = flou(IM.pulls, 30); IM.sequinsFlou = flou(IM.sequins, 24);
+  IM.tourneFlou = flou(IM.tourne, 34); IM.laineFlou = flou(IM.laine, 30); IM.quaiFlou = flou(IM.quai, 24);
   GRAIN = fabriquerGrain();
   preparerMots();
   for (const f of ["reponse-1", "reponse-2", "defi", "invitation"]) SON[f] = await decoder(`a/${f}.mp3`);

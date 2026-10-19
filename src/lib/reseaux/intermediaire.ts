@@ -425,7 +425,7 @@ export async function publierSurSesReseaux(
       legendeReseaux({ texte, mots: annonce.mots, nom: site.nom, ville: site.ville, metier, porte: porte.mot, lien, reseau });
     const pour = (c: CompteReseau): ParReseau => ({
       content: legende(c.plateforme),
-      // LA COUVERTURE DU REEL : l'image que le montage a choisie, pas la première de la vidéo (une ardoise vide).
+      // LA COUVERTURE DU REEL : l'image que le montage a choisie (son nom en géant), pas la première de la vidéo (un écran noir).
       ...(reel && couverture && "url" in couverture
         ? {
             platformSpecificData:

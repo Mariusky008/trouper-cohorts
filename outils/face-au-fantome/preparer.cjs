@@ -36,7 +36,7 @@ fs.mkdirSync(A, { recursive: true });
     ...[0, 1, 2, 3].map((k) => [`direct/interview/reporter-${k}.webp`, `reporter-${k}.webp`]),
   ]) fs.copyFileSync(pub(src), path.join(A, nom));
   // LA VOIX DU FANTÔME : ses questions et son au revoir, pris dans les répliques enregistrées (voix-fantome/)
-  const V = path.join(ICI, "voix-fantome");
+  const V = path.join(ICI, "../../public/direct/interview/fantome");
   for (const [debut, nom] of [
     ["restaurant-02-", "f-q1.mp3"], // « Montre-moi le geste qui fait la différence. »
     ["restaurant-03-", "f-q2.mp3"], // « Et c'est quoi, ton secret, pour qu'il soit si bon ? »

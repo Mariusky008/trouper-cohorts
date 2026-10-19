@@ -228,7 +228,7 @@ const QUESTIONS = {
   3: { num: "DERNIÈRE QUESTION · LE DÉFI", l1: "TON PLAT", l2: "EN 3 MOTS", sous: ["Trois mots,", "pas un de plus."], defi: true },
 };
 // CE QUE DIT LE FANTÔME, ET QUAND : ses questions sur les cartes, son au revoir sur la carte de fin.
-// Sa voix : les répliques enregistrées sur ElevenLabs (voir `voix-fantome/`).
+// Sa voix : les répliques enregistrées sur ElevenLabs (voir `public/direct/interview/fantome/`).
 const PAROLES_REPORTER = [
   { id: "q1", src: "a/f-q1.mp3", T: 5.62 },
   { id: "q2", src: "a/f-q2.mp3", T: tt(16.75) + 0.27 },
@@ -303,12 +303,6 @@ function cadre(t, depuis) {
   texte("FACE AU FANTÔME", 124, 212, "800 32px Poppins", CREME, { ls: 4, ombre: 14 });
   texte("Jean-Marie · Chez Bergine", 124, 258, "600 30px Poppins", "rgba(255,244,230,.85)", { ombre: 14 });
   g.restore();
-}
-function exemple() {
-  g.save(); g.font = "800 24px Poppins"; g.letterSpacing = "3px";
-  const w = g.measureText("EXEMPLE").width + 36;
-  rectArrondi(W - 56 - w, 180, w, 46, 23); g.fillStyle = "rgba(0,0,0,.38)"; g.fill();
-  g.fillStyle = "rgba(255,255,255,.78)"; g.textAlign = "center"; g.fillText("EXEMPLE", W - 56 - w / 2, 212); g.restore();
 }
 
 /* ─── LE PLAN SIGNATURE : SON NOM DERRIÈRE LUI ─── */
@@ -532,8 +526,6 @@ function dessiner(t) {
   const i = Math.floor(t * 10), ox = -Math.floor(hasard(i) * 540), oy = -Math.floor(hasard(i + 1) * 960);
   for (let x = ox; x < W; x += 540) for (let y = oy; y < H; y += 960) g.drawImage(GRAIN, x, y);
   g.restore();
-  if (t < tt(33.3)) exemple();
-  else { g.save(); g.globalAlpha = borne((t - tt(33.3)) / 0.4); texte("Exemple · Chez Bergine est un commerce inventé", W / 2, 1600, "600 28px Poppins", "rgba(255,244,230,.6)", { align: "center" }); g.restore(); }
 }
 function dessinerDans(t2, f) { const avant = g; g = t2.getContext("2d"); try { f(); } finally { g = avant; } }
 

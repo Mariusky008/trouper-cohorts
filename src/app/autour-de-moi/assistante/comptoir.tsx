@@ -107,7 +107,7 @@ function platDuJour(principal: Publication | undefined, vitrine: { nom: string; 
   return { plat: "", prix: "", photoPlat: null };
 }
 
-/** La ville, lue dans son adresse (« …, 40100 Dax » → « Dax ») : écrite sous son nom sur l'ardoise de fin. */
+/** La ville, lue dans son adresse (« …, 40100 Dax » → « Dax ») : écrite sous son nom sur la carte de fin. */
 function villeDe(c: Commerce): string {
   const m = (c.adresse ?? "").match(/\b\d{5}\s+([^,]+)$/);
   return m ? m[1].trim() : "";
@@ -943,8 +943,10 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
               famille: commerce.famille,
               onFermer: () => setPhase({ ou: "accueil" }),
               /* 🎬 « PUBLIER PARTOUT » : Le Direct, sa page, ses réseaux — voir
-                 `envoyerInterview`. La démonstration n'a pas de lien pro : elle
-                 garde « Partager » et « Télécharger ». */
+                 `envoyerInterview`. « Quand je veux publier l'annonce sur mes
+                 réseaux sociaux, je ne vois pas le bouton » : la démonstration
+                 l'a aussi, et fait comme pour ses autres annonces — rien ne part,
+                 l'écran montre où la vidéo arriverait. */
               ...(commerce.reel
                 ? {
                     publier: async (m: { blob: Blob; type: string; duree: number; affiche: string; plat: string; prix: string; mots?: string }) => {
@@ -964,7 +966,12 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
                       };
                     },
                   }
-                : {}),
+                : {
+                    publier: async () => {
+                      await new Promise((ok) => setTimeout(ok, 1400));
+                      return { ok: true, message: `C’est en ligne : Le Direct et ta page. 📣 En route vers ${reseauxEnMots(PLATEFORMES_PAR_DEFAUT)}.` };
+                    },
+                  }),
             }}
           />
         </div>
@@ -2323,7 +2330,7 @@ function OuPublier({ reseaux, reel, choix, onChoix }: { reseaux: ReseauxDuCompto
           </button>
         ))}
       </div>
-      {!reel && dispo.length > 0 && <p className="cz-ou-note">Exemple : chez toi, ce sont les comptes que tu as connectés dans « Réseaux ».</p>}
+      {!reel && dispo.length > 0 && <p className="cz-ou-note">Chez toi, ce sont les comptes que tu as connectés dans « Réseaux ».</p>}
       {reel && reseaux.etat?.configure && !dispo.length && (
         <p className="cz-ou-note">Instagram, Facebook, Google : connecte-les une fois dans « Réseaux », et tu pourras y publier d’ici.</p>
       )}
@@ -2352,7 +2359,7 @@ function OuPublie({ reel, envoi, publication }: { reel: boolean; envoi: Envoi | 
   const ailleurs = reel ? (fini?.reseaux ?? []) : publication.genre === "relance" ? [] : (publication.reseaux ?? PLATEFORMES_PAR_DEFAUT);
   return (
     <div className="cz-ou-fait" role="status">
-      <b>{reel ? "Ton annonce est ici" : "Ton annonce est ici (exemple)"}</b>
+      <b>Ton annonce est ici</b>
       <div className="cz-ou-l">
         {ici.map((o) => (
           <span key={o} className="cz-ou-c on">
@@ -2361,7 +2368,7 @@ function OuPublie({ reel, envoi, publication }: { reel: boolean; envoi: Envoi | 
         ))}
         {ailleurs.map((x) => (
           <span key={x} className="cz-ou-c route">
-            <i aria-hidden="true">{iconeDuReseau(x)}</i> {nomDuReseau(x)} <small>{reel ? "en route…" : "exemple"}</small>
+            <i aria-hidden="true">{iconeDuReseau(x)}</i> {nomDuReseau(x)} <small>en route…</small>
           </span>
         ))}
       </div>

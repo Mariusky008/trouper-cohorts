@@ -114,7 +114,7 @@ export function LaRue({ moi, voisins, retour, fictifs, villeDerriere }: LaRuePro
         {vitrine(deux[0], "gauche")}
         {vitrine(deux[1], "droite")}
       </div>
-      {fictifs && !personne && <p className="lr-note">Exemples · Commerces et offres fictifs</p>}
+      {fictifs && !personne && <p className="lr-note">Commerces et offres fictifs</p>}
       </div>
 
       <button type="button" className="lr-ville" onClick={() => setOuvert(false)}>

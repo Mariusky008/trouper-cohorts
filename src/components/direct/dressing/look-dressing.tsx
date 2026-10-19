@@ -327,7 +327,7 @@ export function LookAvecMonDressing({
                     setExemple(false);
                   }}
                 >
-                  {exemple ? "Je range l’exemple…" : "Essayer avec un dressing d’exemple"}
+                  {exemple ? "Je range les vêtements…" : "Essayer avec un dressing tout prêt"}
                 </button>
               )}
               <button type="button" className="dr-lien" onClick={onFermer}>
