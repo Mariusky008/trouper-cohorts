@@ -261,13 +261,26 @@ export const REPONSE_MAX_S = 30;
  * (`voix-micro.ts`, sept cents millisecondes). Là-bas, on attend une
  * phrase ; ici, on attend une réponse filmée, et un chef qui réfléchit deux
  * secondes devant la caméra n'a pas fini : il cherche le bon mot, et c'est
- * souvent ce qui vient après qui est le meilleur.
+ * souvent ce qui vient après qui est le meilleur. Trois secondes : « un peu
+ * plus de temps avant de couper, pour qu'une pause pour réfléchir ne tranche
+ * pas sa phrase ». Le montage coupe ce blanc final (`coupeDeLaPrise`).
  */
-export const SILENCE_FIN_S = 2.2;
+export const SILENCE_FIN_S = 3;
 /** Le même seuil que l'assistante : il a été mesuré dans un commerce. */
 export const SEUIL_VOIX = 0.012;
 /** Sans un mot au bout de ce temps, on passe à la suite plutôt que d'attendre. */
 export const ATTENTE_SANS_PAROLE_S = 10;
+/**
+ * IL RÉFLÉCHIT AVANT DE RÉPONDRE — « peut-être aussi peut-il avoir d'abord la
+ * question, et quand il est prêt il appuie sur enregistrer ». Il a tout son
+ * temps : la question reste à l'écran avec ses pistes (`interview-pistes.ts`),
+ * il touche « Je réponds » quand il veut, et le montage coupe ce temps-là.
+ * Au bout de six secondes sans qu'il touche, le reporter le relance d'une
+ * question plus simple ; et trois secondes après avoir touché, s'il n'a encore
+ * rien dit, aussi (une fois par question).
+ */
+export const RELANCE_AVANT_S = 6;
+export const RELANCE_PENDANT_S = 3;
 
 /* ═══ OÙ EST LE FANTÔME ════════════════════════════════════════════════════
  *

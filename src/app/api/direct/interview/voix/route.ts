@@ -32,6 +32,7 @@ import { NextResponse } from "next/server";
 import { IDS_REPLIQUES, REPLIQUES, SCRIPTS, repliquesDuScript, scriptDe, type IdReplique } from "@/lib/direct/interview-fantome";
 import { BANQUES, phrasesDuMetier, type MetierPlanning } from "@/lib/direct/interview-planning";
 import { cleDeReplique } from "@/lib/direct/voix-fantome";
+import { relancesDuMetier } from "@/lib/direct/interview-pistes";
 
 export const dynamic = "force-dynamic";
 
@@ -58,7 +59,8 @@ function permises(metier: string): Map<string, string> {
   let p = PERMISES.get(m);
   if (!p) {
     const script = m in SCRIPTS ? scriptDe(m) : SCRIPTS.table;
-    p = new Map([...phrasesDuMetier(m), ...repliquesDuScript(script).map((id) => REPLIQUES[id])].map((t) => [cleDeReplique(t), t]));
+    // ses questions, ses répliques, et les relances du reporter quand il bloque (`interview-pistes.ts`)
+    p = new Map([...phrasesDuMetier(m), ...repliquesDuScript(script).map((id) => REPLIQUES[id]), ...relancesDuMetier(m)].map((t) => [cleDeReplique(t), t]));
     PERMISES.set(m, p);
   }
   return p;

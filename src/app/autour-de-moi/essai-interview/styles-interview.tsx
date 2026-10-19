@@ -153,6 +153,20 @@ button.ei-retour{font-family:inherit;cursor:pointer}
 .ei-temps i{display:block;height:100%;background:#3DE2A6;transform-origin:left}
 .ei-fini{font:inherit;font-size:18px;font-weight:850;color:#04150E;cursor:pointer;
   background:#3DE2A6;border:0;border-radius:999px;padding:16px 30px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+/* LE SOUFFLEUR : la question et ses trois pistes, en haut, pres de la camera */
+.ei-souffleur{position:absolute;top:calc(env(safe-area-inset-top) + 58px);left:50%;transform:translateX(-50%);
+  width:min(92vw,520px);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;
+  transition:opacity .3s}
+.ei-question{margin:0;padding:12px 16px;border-radius:18px;background:rgba(0,0,0,.55);
+  font-size:clamp(19px,5.2vw,26px);font-weight:850;line-height:1.25;color:#fff}
+.ei-pistes{margin:0;display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.ei-pistes span{padding:7px 13px;border-radius:999px;background:rgba(61,226,166,.92);color:#04150E;
+  font-size:15px;font-weight:800;line-height:1.2}
+.ei-pistes span::before{content:"💡 ";font-size:.85em}
+.ei-souffleur.discret{opacity:.8}
+.ei-souffleur.discret .ei-pistes span{background:rgba(0,0,0,.55);color:#fff;font-size:13.5px;padding:6px 11px}
+.ei-reponds{font-size:20px;padding:18px 38px}
+.ei-prends{margin:0;font-size:13.5px;font-weight:700;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.7)}
 .ei-scene .ei-go{box-shadow:0 8px 24px rgba(0,0,0,.35)}
 /* sur la camera, un bouton grise a moitie transparent disparait : il reste lisible */
 .ei-scene .ei-go:disabled{opacity:1;color:#fff;background:rgba(20,24,22,.72);box-shadow:none}
