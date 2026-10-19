@@ -434,8 +434,8 @@ function cheminArrondi(g: CanvasRenderingContext2D, x: number, y: number, w: num
 }
 
 /* ─── le fantôme ─── */
-type Place = { cx: number; bas: number; h: number };
-function dessinerFantome(
+export type Place = { cx: number; bas: number; h: number };
+export function dessinerFantome(
   c2d: CanvasRenderingContext2D,
   images: HTMLImageElement[],
   p: Place,

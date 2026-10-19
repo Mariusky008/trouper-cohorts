@@ -137,12 +137,21 @@ export async function envoyerEnLigne(
   mission: Mission,
   p: Publication,
   principal?: Publication,
+  /** 🎬 Le film du reporter (il n'a pas voulu parler) : il part avec l'annonce, comme une interview. */
+  film?: { blob: Blob; type: string; duree: number },
 ): Promise<ResultatEnvoi> {
   if (!c.reel) return { ok: false, ou: [], erreur: "Ce commerce n'a pas de lien pro." };
   const { slug, token } = c.reel;
   const ou: string[] = [];
   const erreurs: string[] = [];
   let reseaux: string[] = [];
+  // LE FILM D'ABORD : son adresse part avec l'annonce. Un film qui n'a pas pu partir n'empêche pas l'annonce.
+  let video: { video: string; videoSecondes: number; videoMp4: boolean } | null = null;
+  if (film && p.genre === "principal") {
+    const depot = await deposerVideo(c, film.blob, film.type);
+    if ("erreur" in depot) erreurs.push(`Le film du reporter n'a pas pu partir : ${depot.erreur}`);
+    else video = { video: depot.url, videoSecondes: Math.round(film.duree * 10) / 10, videoMp4: enMp4(film.type) };
+  }
 
   // ── LE PLAT DU RESTAURANT : SA PAGE, ÉTAPE 2 ──
   if (c.famille === "table" && p.genre === "principal") {
@@ -209,6 +218,7 @@ export async function envoyerEnLigne(
       // Le Direct, lui, garde ses 140 signes. Et LA PIÈCE que la porte du post fait essayer.
       ...(p.genre !== "relance" && p.voixTexte ? { mots: p.voixTexte } : {}),
       ...(p.genre === "principal" && AVEC_PIECE.includes(c.famille) ? { piece: p.id } : {}),
+      ...(video ?? {}),
     });
     // UNE ANNONCE PARTIE SANS RÉSEAUX N'EST PAS UNE ERREUR : l'ancien « sinon » prenait l'absence
     // de réseaux (rien de connecté, ou « juste ClikMe ») pour un échec — « une partie n'a pas suivi :
@@ -247,24 +257,37 @@ export function texteDeLInterview(nom: string, prix: string): string {
  * `mots` : ce qu'il a répondu à la première question, transcrit — ses mots,
  * cités dans la légende de ses posts.
  */
+/**
+ * LA VIDÉO DÉPOSÉE DANS NOTRE STOCKAGE, depuis son téléphone : une adresse signée contre son jeton pro,
+ * puis le fichier directement dans le seau. Rend l'adresse publique de la vidéo, ou l'erreur à dire.
+ */
+async function deposerVideo(c: CommerceComptoir, blob: Blob, typeBrut: string): Promise<{ url: string } | { erreur: string }> {
+  if (!c.reel) return { erreur: "Ce commerce n'a pas de lien pro." };
+  const { slug, token } = c.reel;
+  const type = typeBrut.split(";")[0];
+  const signe = await poster("/api/site-internet/pro/interview", { slug, token, type, taille: blob.size });
+  const s = signe.json as { seau?: string; chemin?: string; jeton?: string; url?: string } | undefined;
+  if (!signe.ok || !s?.seau || !s.chemin || !s.jeton || !s.url) return { erreur: signe.erreur ?? "L'envoi n'a pas pu commencer." };
+  try {
+    // LE TYPE NU (« video/mp4 », sans « ;codecs=… ») : c'est celui que le seau accepte.
+    const fichier = new Blob([blob], { type });
+    const { error } = await createClient().storage.from(s.seau).uploadToSignedUrl(s.chemin, s.jeton, fichier, { contentType: type });
+    if (error) throw new Error(error.message);
+  } catch {
+    return { erreur: "La vidéo n'a pas pu partir. Réessaie, de préférence en wifi." };
+  }
+  return { url: s.url };
+}
+
 export async function envoyerInterview(
   c: CommerceComptoir,
   i: { nom: string; prix: string; blob: Blob; type: string; duree: number; affiche: string; mots?: string },
 ): Promise<ResultatEnvoi> {
   if (!c.reel) return { ok: false, ou: [], erreur: "Ce commerce n'a pas de lien pro." };
   const { slug, token } = c.reel;
-  const type = i.type.split(";")[0];
-  const signe = await poster("/api/site-internet/pro/interview", { slug, token, type, taille: i.blob.size });
-  const s = signe.json as { seau?: string; chemin?: string; jeton?: string; url?: string } | undefined;
-  if (!signe.ok || !s?.seau || !s.chemin || !s.jeton || !s.url) return { ok: false, ou: [], erreur: signe.erreur ?? "L'envoi n'a pas pu commencer." };
-  try {
-    // LE TYPE NU (« video/mp4 », sans « ;codecs=… ») : c'est celui que le seau accepte.
-    const fichier = new Blob([i.blob], { type });
-    const { error } = await createClient().storage.from(s.seau).uploadToSignedUrl(s.chemin, s.jeton, fichier, { contentType: type });
-    if (error) throw new Error(error.message);
-  } catch {
-    return { ok: false, ou: [], erreur: "La vidéo n'a pas pu partir. Réessaie, de préférence en wifi." };
-  }
+  const depot = await deposerVideo(c, i.blob, i.type);
+  if ("erreur" in depot) return { ok: false, ou: [], erreur: depot.erreur };
+  const s = depot;
   // SA VIDÉO VIT JUSQU'À CE SOIR, COMME SON PLAT DU JOUR.
   const ceSoir = new Date();
   ceSoir.setHours(23, 59, 0, 0);

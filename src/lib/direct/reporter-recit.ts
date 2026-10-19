@@ -331,6 +331,8 @@ function remplir(phrase: string, d: Donnees): string | null {
       // « LE PLAT DU JOUR S'APPELLE « MAGRET » » : les guillemets ne se séparent pas de leur mot
       .replace(/«\s+/g, `«${insecable}`)
       .replace(/\s+»/g, `${insecable}»`)
+      // « 19 € » ne se coupe pas entre le nombre et sa monnaie
+      .replace(/(\d)\s+€/g, `$1${insecable}€`)
   );
 }
 
@@ -353,6 +355,21 @@ export function graineDe(...morceaux: (string | number)[]): number {
     h = Math.imul(h, 16777619);
   }
   return h >>> 0;
+}
+
+/**
+ * LES BOUTS DE PHRASE D'UNE PHRASE : ses suites de quatre mots, les trous comptant pour un mot. Deux
+ * phrases d'un même récit n'en partagent aucun — « on va voir ce qui sort de la cuisine. Et voici ce
+ * qui sort de la cuisine », « je file voir le plat du jour. Le plat du jour, le voilà ».
+ */
+export function boutsDePhrase(p: string): Set<string> {
+  const mots = p
+    .toLowerCase()
+    .replace(/\{\w+\}/g, " x ")
+    .replace(/[^a-zà-ÿœ’'0-9 ]+/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+  return new Set(mots.slice(0, Math.max(0, mots.length - 3)).map((_, k) => mots.slice(k, k + 4).join(" ")));
 }
 
 /** Les numéros des phrases de cette banque qu'on peut remplir avec ce qu'il a donné. */
@@ -422,11 +439,16 @@ function tirerUneFois(metier: MetierReporter, d: Donnees, graine: number, dejaDi
   /* DEUX PHRASES DE SUITE NE COMMENCENT PAS PAR LE MÊME MOT : « Et c'est fait maison. Et c'est
      végétarien. Et c'est 19 €. » sonne comme une liste. `precedent` : le premier mot de la phrase d'avant. */
   let precedent = "";
+  const dits = new Set<string>();
   const premier = (t: string | null) => (t ?? "").split(/\s+/)[0].toLowerCase().replace(/[^a-zà-ÿ0-9]/g, "");
   const suite = (l: readonly string[], candidats: number[], eviter: readonly number[] = []) => {
-    const varies = candidats.filter((k) => premier(remplir(l[k], d)) !== precedent);
-    const k = choisir(r, varies.length ? varies : candidats, eviter);
+    // NI LE MÊME PREMIER MOT QUE LA PHRASE D'AVANT, NI UN BOUT DE PHRASE DÉJÀ DIT DANS CE RÉCIT
+    const sansEcho = candidats.filter((k) => ![...boutsDePhrase(l[k])].some((b) => dits.has(b)));
+    const base = sansEcho.length ? sansEcho : candidats;
+    const varies = base.filter((k) => premier(remplir(l[k], d)) !== precedent);
+    const k = choisir(r, varies.length ? varies : base, eviter);
     precedent = premier(remplir(l[k], d));
+    boutsDePhrase(l[k]).forEach((b) => dits.add(b));
     return k;
   };
   const tous = (l: readonly unknown[]) => l.map((_, k) => k);

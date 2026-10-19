@@ -30,6 +30,8 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import dynamic from "next/dynamic";
 import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
 import { COMMERCES_DEMO, missionDe, planDuFantome, type Etape, type Mission } from "@/lib/direct/missions-commercant";
+import { BANQUES_REPORTER, graineDe, recitDepuisIds, reporterOuvert, retenir, tirerRecit, type Deja, type Donnees, type IdsRecit, type MetierReporter } from "@/lib/direct/reporter-recit";
+import { tournerFilm, type Film } from "@/lib/direct/reporter-film";
 import {
   ajouterSansPoints,
   aVenir,
@@ -78,7 +80,7 @@ import { ReseauxComptoir, useReseaux, type ReseauxDuComptoir } from "./reseaux-c
 import { EchangesComptoir, resumeDesEchanges } from "./echanges-comptoir";
 import { EchangesReels, useEchangesReels } from "./echanges-reels";
 import { StylesInterview } from "../essai-interview/styles-interview";
-import { chefEnPied } from "@/lib/direct/interview-montage";
+import { chargerElements, chefEnPied } from "@/lib/direct/interview-montage";
 import { interviewOuverte, scriptDe } from "@/lib/direct/interview-fantome";
 import { BANQUES, questionsDeLInterview, type MetierPlanning } from "@/lib/direct/interview-planning";
 import { pistesAMontrer, pistesDe } from "@/lib/direct/interview-pistes";
@@ -130,7 +132,28 @@ type Brouillon = {
   voixTexte?: string;
   /** « OÙ JE LE PUBLIE ? » — ses réseaux cochés au récapitulatif (vide : juste ClikMe). Absent : comme d'habitude. */
   reseaux?: string[];
+  /** 🎙️ Il ne veut pas parler : le reporter raconte à sa place (voir `ReporterRaconte`). `graine` : le numéro de la version. */
+  recit?: { texte: string; ids: IdsRecit; faits: string[]; graine: number };
 };
+
+/* ═══ CE QUE LE REPORTER A DÉJÀ DIT ═══ Les phrases de ses derniers films, pour que le suivant ne les
+   redise pas (voir `retenir`) — gardées dans ce téléphone, commerce par commerce. */
+const cleDeja = (id: string) => `clikme-reporter-deja-${id}`;
+function lireDeja(id: string): Deja | undefined {
+  try {
+    const v = JSON.parse(window.localStorage.getItem(cleDeja(id)) ?? "null") as Deja | null;
+    return v && Array.isArray(v.a) ? v : undefined;
+  } catch {
+    return undefined;
+  }
+}
+function garderDeja(id: string, recit: { texte: string; ids: IdsRecit }) {
+  try {
+    window.localStorage.setItem(cleDeja(id), JSON.stringify(retenir(lireDeja(id), recit)));
+  } catch {
+    /* un téléphone plein : le prochain film peut redire une phrase, rien de plus */
+  }
+}
 
 const brouillonVide = (genre: Brouillon["genre"] = "principal"): Brouillon => ({ genre, nom: "", prix: "", photos: [], jours: 1 });
 
@@ -333,6 +356,8 @@ type Phase =
     }
   /** La question de plus d'une annonce préparée d'avance : quel jour, combien de jours. */
   | { ou: "quand" }
+  /** 🎬 Le reporter tourne son film, juste avant de publier — voir `TournageReporter`. */
+  | { ou: "tournage" }
   /** Mon planning : ses prochains jours, et ce qui est programmé — voir `planning-comptoir.tsx`. */
   | { ou: "planning" }
   /** Ma vitrine : ses photos de produits, avec leur libellé — voir `vitrine-comptoir.tsx`. */
@@ -657,15 +682,18 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
   };
 
   const [envoi, setEnvoi] = useState<Envoi | null>(null);
-  const envoyerEnBase = async (p: Publication, principalAvant?: Publication) => {
+  /** 🎬 Le film du reporter de sa dernière annonce, pour l'écran de fête. Le son se crée au toucher de « Publier ». */
+  const [film, setFilm] = useState<(Film & { url: string }) | null>(null);
+  const sonDuFilm = useRef<AudioContext | null>(null);
+  const envoyerEnBase = async (p: Publication, principalAvant?: Publication, f?: Film | null) => {
     setEnvoi({ etat: "en-cours" });
-    const r = await envoyerEnLigne(commerce, mission, p, principalAvant);
+    const r = await envoyerEnLigne(commerce, mission, p, principalAvant, f ?? undefined);
     setEnvoi({ etat: "fini", ...r });
     setRelire((n) => n + 1);
   };
 
   /** Rend l'envoi en ligne en cours (vrai commerçant), pour qui doit attendre qu'il soit fini. */
-  const envoyer = (b: Brouillon = brouillon): Promise<void> | undefined => {
+  const envoyer = (b: Brouillon = brouillon, f?: Film | null): Promise<void> | undefined => {
     const brouillon = b;
     const t = Date.now();
     const relance = brouillon.genre === "relance";
@@ -679,6 +707,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
       voix: brouillon.voix,
       voixSecondes: brouillon.voixSecondes,
       voixTexte: brouillon.voixTexte,
+      ...(!relance && brouillon.recit ? { recit: { texte: brouillon.recit.texte, ids: brouillon.recit.ids, faits: brouillon.recit.faits } } : {}),
       jours: relance ? 1 : brouillon.jours,
       publieLe: t,
       finLe: finApres(relance ? 1 : brouillon.jours, t),
@@ -689,12 +718,13 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
     const r = publier(etat, p);
     setEtat(r.comptoir);
     garderComptoir(memoire, r.comptoir);
+    if (p.recit) garderDeja(memoire, p.recit);
     // ET ÇA PART DANS LA VILLE — Le Direct, sa carte, l'essayage, son libraire.
     // Un vrai commerçant publie en base ; la démonstration, dans le téléphone.
     let enCours: Promise<void> | undefined;
     if (commerce.reel) {
       setPublieesIci((l) => [...l, p.id]);
-      enCours = envoyerEnBase(p, principal);
+      enCours = envoyerEnBase(p, principal, f);
     } else envoyerALaVille(commerce, mission, p, principal);
     setMaintenant(t);
     setPhase({ ou: "fete", points: r.points, gagnes: r.gagnes, publication: p });
@@ -1000,6 +1030,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           total={etapes.length}
           premiere={false}
           annonce={annonce}
+          reporter={reporterOuvert(commerce.famille, Boolean(commerce.reel)) && !plusTard && !phase.relance}
           brouillon={brouillon}
           setBrouillon={setBrouillon}
           onSuivante={() => suivante(phase.relance)}
@@ -1030,7 +1061,23 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           reseaux={reseaux}
           reel={Boolean(commerce.reel)}
           onChoixReseaux={(l) => setBrouillon((b) => ({ ...b, reseaux: l }))}
-          onPublier={() => void envoyer()}
+          onPublier={() => {
+            // 🎬 LE REPORTER RACONTE : il tourne son film d'abord. Le son naît ici, au toucher — un
+            // téléphone refuse de jouer un son qui ne vient pas d'un geste.
+            if (brouillon.recit && !phase.relance && reporterOuvert(commerce.famille, Boolean(commerce.reel))) {
+              try {
+                sonDuFilm.current?.close().catch(() => {});
+                sonDuFilm.current = new AudioContext();
+                void sonDuFilm.current.resume().catch(() => {});
+              } catch {
+                sonDuFilm.current = null;
+              }
+              setPhase({ ou: "tournage" });
+              return;
+            }
+            setFilm(null);
+            void envoyer();
+          }}
           onModifier={() => setPhase({ ou: "mission", etape: 0, relance: phase.relance })}
           plusTard={plusTard && !phase.relance ? quand : undefined}
           ennui={ennuiPlanning}
@@ -1050,8 +1097,26 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
         />
       )}
 
+      {phase.ou === "tournage" && (
+        <TournageReporter
+          commerce={commerce}
+          mission={mission}
+          dossier={dossier}
+          brouillon={brouillon}
+          ctx={sonDuFilm.current}
+          onFini={(f) => {
+            setFilm((ancien) => {
+              if (ancien) URL.revokeObjectURL(ancien.url);
+              return f ? { ...f, url: URL.createObjectURL(f.blob) } : null;
+            });
+            void envoyer(brouillon, f);
+          }}
+        />
+      )}
+
       {phase.ou === "fete" && (
         <Fete
+          film={phase.publication.recit && film ? { url: film.url, affiche: film.affiche } : undefined}
           dossier={dossier}
           mission={mission}
           points={phase.points}
@@ -1746,6 +1811,7 @@ function EtapeMission({
   total,
   premiere,
   annonce,
+  reporter: reporterPossible = false,
   brouillon,
   setBrouillon,
   onSuivante,
@@ -1759,6 +1825,8 @@ function EtapeMission({
   premiere: boolean;
   /** Son plan, dit avant la question (première étape seulement) — voir `Projecteurs`. */
   annonce?: { titre: string; plan: string } | null;
+  /** À l'étape de sa voix : il peut laisser le reporter raconter à sa place (voir `ReporterRaconte`). */
+  reporter?: boolean;
   brouillon: Brouillon;
   setBrouillon: React.Dispatch<React.SetStateAction<Brouillon>>;
   onSuivante: () => void;
@@ -1780,6 +1848,9 @@ function EtapeMission({
   );
   const [ennui, setEnnui] = useState("");
   const [piocher, setPiocher] = useState(false);
+  /** 🎙️ « Je ne veux pas parler » : le reporter raconte — ouvert d'office s'il l'avait déjà choisi. */
+  const [parReporter, setParReporter] = useState(etape.type === "voix" && reporterPossible && Boolean(brouillon.recit));
+  const reporterIci = etape.type === "voix" && reporterPossible && parReporter;
   /* L'EXEMPLE SERT DE MODÈLE DANS LES CHAMPS : « Magret frites maison » et « 19 € ». */
   const modele = etape.type === "dire" ? exempleEnChamps(etape.exemple) : { nom: "", prix: "" };
 
@@ -1859,6 +1930,15 @@ function EtapeMission({
           ecoute={micro.ecoute}
           projecteur
           petit
+        />
+      ) : reporterIci ? (
+        <Scene
+          dossier={dossier}
+          texte="Le reporter raconte à ta place"
+          sous="Coche ce qu’il peut dire : il ne dira rien d’autre sur ton commerce. Il tourne le film quand tu publies."
+          humeur="montre"
+          petit
+          mini
         />
       ) : (
         <Scene
@@ -1988,8 +2068,25 @@ function EtapeMission({
           </div>
         )}
 
+        {/* ── LE REPORTER RACONTE ── */}
+        {reporterIci && (
+          <ReporterRaconte
+            commerce={commerce}
+            brouillon={brouillon}
+            onValider={(recit) => {
+              setBrouillon((b) => ({ ...b, recit, voix: undefined, voixSecondes: undefined, voixTexte: undefined }));
+              onSuivante();
+            }}
+            onParler={() => {
+              setBrouillon((b) => ({ ...b, recit: undefined }));
+              setParReporter(false);
+            }}
+          />
+        )}
+
         {/* ── SA VOIX ── */}
         {etape.type === "voix" &&
+          !reporterIci &&
           (brouillon.voix && !micro.ecoute ? (
             <div className="cz-voix">
               <Lecteur src={brouillon.voix} secondes={brouillon.voixSecondes} texte={brouillon.voixTexte} />
@@ -2022,11 +2119,22 @@ function EtapeMission({
                       return;
                     }
                     setEnnui("");
-                    setBrouillon((b) => ({ ...b, voix: r.audio, voixSecondes: r.secondes, voixTexte: r.texte }));
+                    setBrouillon((b) => ({ ...b, voix: r.audio, voixSecondes: r.secondes, voixTexte: r.texte, recit: undefined }));
                   }, true)
                 }
                 mot={micro.ecoute ? "Je t’écoute… appuie pour finir" : "Appuie et parle à tes clients"}
               />
+              {!micro.ecoute && reporterPossible && (
+                <button type="button" className="cz-vers-reporter" onClick={() => setParReporter(true)}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/direct/interview/reporter-0.webp" alt="" />
+                  <span>
+                    <b>Je ne veux pas parler</b>
+                    <em>Le reporter raconte à ta place</em>
+                  </span>
+                  <s aria-hidden="true">→</s>
+                </button>
+              )}
               {!micro.ecoute && (
                 <button type="button" className="cz-lien" onClick={onSuivante}>
                   Passer cette étape
@@ -2035,6 +2143,202 @@ function EtapeMission({
             </div>
           ))}
       </div>
+    </div>
+  );
+}
+
+/**
+ * ═══ 🎙️ LE REPORTER RACONTE ═══════════════════════════════════════════════
+ *
+ * « Pour ceux qui ne veulent pas parler, et rien faire… un mode journaliste :
+ * quelqu'un qui parle de leurs produits à leur place. » Il coche ce que le
+ * reporter peut dire — rien d'autre ne sera dit sur son commerce —, lit le
+ * récit, en tire un autre s'il veut. Le film se tourne quand il publie. Les
+ * phrases et leurs règles sont dans `reporter-recit.ts`.
+ */
+const PAS_UN_PRENOM = /^(chef|cheffe|patron|patronne|boss)$/i;
+/** Ce que le reporter sait de lui — le même au tirage et au tournage, sinon le serveur refuserait le récit. */
+const donneesDuReporter = (commerce: Commerce, brouillon: Brouillon, faits: string[]): Donnees => ({
+  commerce: commerce.nom,
+  // « Chef » n'est pas un prénom : « passez dire bonjour à Chef » sonnerait faux
+  prenom: PAS_UN_PRENOM.test(commerce.prenom.trim()) ? "" : commerce.prenom,
+  ville: villeDe(commerce),
+  plat: brouillon.nom,
+  prix: brouillon.prix,
+  faits,
+});
+function ReporterRaconte({
+  commerce,
+  brouillon,
+  onValider,
+  onParler,
+}: {
+  commerce: Commerce;
+  brouillon: Brouillon;
+  onValider: (recit: NonNullable<Brouillon["recit"]>) => void;
+  onParler: () => void;
+}) {
+  const metier = commerce.famille as MetierReporter;
+  const banque = BANQUES_REPORTER[metier];
+  const [faits, setFaits] = useState<string[]>(brouillon.recit?.faits ?? []);
+  const [essai, setEssai] = useState(brouillon.recit?.graine ?? 0);
+  const [deja] = useState(() => lireDeja(commerce.id.startsWith("comptoir-") ? commerce.famille : commerce.id));
+  const [jour] = useState(jourParis);
+  const recit = useMemo(
+    () =>
+      tirerRecit(metier, donneesDuReporter(commerce, brouillon, faits), { graine: graineDe(commerce.id, jour, essai), deja }),
+    [metier, commerce, brouillon, faits, essai, deja, jour],
+  );
+  return (
+    <div className="cz-reporter">
+      <div className="cz-cases" role="group" aria-label="Ce que le reporter peut dire">
+        {banque.faits.map((f) => {
+          const coche = faits.includes(f.id);
+          return (
+            <button key={f.id} type="button" aria-pressed={coche} className={coche ? "on" : ""} onClick={() => setFaits((l) => (coche ? l.filter((x) => x !== f.id) : [...l, f.id]))}>
+              {coche ? "✓ " : ""}
+              {f.mot}
+            </button>
+          );
+        })}
+      </div>
+      <figure className="cz-recit">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/direct/interview/reporter-0.webp" alt="Le reporter de ClikMe" />
+        <blockquote aria-live="polite">{recit.texte}</blockquote>
+      </figure>
+      <button type="button" className="cz-lien" onClick={() => setEssai((n) => n + 1)}>
+        🎲 Une autre version
+      </button>
+      <button type="button" className="cz-go" onClick={() => onValider({ texte: recit.texte, ids: recit.ids, faits, graine: essai })}>
+        C’est lui qui raconte <s aria-hidden="true">✓</s>
+      </button>
+      <button type="button" className="cz-lien" onClick={onParler}>
+        Finalement, je parle moi-même
+      </button>
+    </div>
+  );
+}
+
+/**
+ * ═══ 🎬 LE REPORTER TOURNE SON FILM ══════════════════════════════════════
+ *
+ * Juste avant de publier, sous ses yeux et en musique : sa voix demandée au
+ * serveur (sans elle, ses phrases s'écrivent en grand), puis le film joué une
+ * fois et enregistré (`reporter-film.ts`). Fini — ou raté —, l'annonce part :
+ * un film qui n'a pas pu se faire ne retient jamais sa publication.
+ */
+function TournageReporter({
+  commerce,
+  mission,
+  dossier,
+  brouillon,
+  ctx,
+  onFini,
+}: {
+  commerce: Commerce;
+  mission: Mission;
+  dossier: string;
+  brouillon: Brouillon;
+  ctx: AudioContext | null;
+  onFini: (film: Film | null) => void;
+}) {
+  const toile = useRef<HTMLCanvasElement>(null);
+  const [etat, setEtat] = useState("Le reporter prend son micro…");
+  const [progres, setProgres] = useState(0);
+  const fini = useRef(false);
+  const arret = useRef<AbortController | null>(null);
+  const terminer = useRef(onFini);
+  terminer.current = onFini;
+  useEffect(() => {
+    const stop = new AbortController();
+    arret.current = stop;
+    const finir = (f: Film | null) => {
+      if (fini.current) return;
+      fini.current = true;
+      terminer.current(f);
+    };
+    void (async () => {
+      const r = brouillon.recit;
+      const metier = commerce.famille as MetierReporter;
+      const donnees = r ? donneesDuReporter(commerce, brouillon, r.faits) : null;
+      const recit = r && donnees ? recitDepuisIds(metier, donnees, r.ids) : null;
+      if (!ctx || !recit || !donnees || !toile.current) return finir(null);
+      try {
+        // SA VOIX : le serveur refait le récit d'après ses numéros et le fait dire
+        let voix: AudioBuffer | null = null;
+        let mots: { m: string; a: number; b: number }[] | null = null;
+        try {
+          const rep = await fetch("/api/direct/reporter/voix", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ metier, ids: r!.ids, donnees }),
+            signal: stop.signal,
+          });
+          if (rep.ok) {
+            const j = (await rep.json()) as { audio?: string; mots?: { m: string; a: number; b: number }[] };
+            if (j.audio) {
+              const octets = Uint8Array.from(atob(j.audio), (c) => c.charCodeAt(0));
+              voix = await ctx.decodeAudioData(octets.buffer);
+              mots = j.mots?.length ? j.mots : null;
+            }
+          }
+        } catch {
+          voix = null;
+        }
+        if (stop.signal.aborted) return;
+        setEtat(voix ? "Le reporter tourne ton film…" : "Le reporter tourne ton film. Sa voix n’est pas encore réglée : ses phrases s’écrivent en grand.");
+        const el = await chargerElements(ctx, chefEnPied(dossier), [], commerce.famille);
+        const f = await tournerFilm({
+          ctx,
+          el,
+          toile: toile.current!,
+          morceaux: recit.morceaux,
+          voix,
+          mots,
+          photos: brouillon.photos,
+          commerce: commerce.nom,
+          ville: villeDe(commerce),
+          quoi: mission.quoi,
+          plat: brouillon.nom || mission.quoi,
+          prix: brouillon.prix,
+          quand: commerce.famille === "table" ? "Ce midi" : "Aujourd’hui",
+          ecouter: true,
+          surProgres: setProgres,
+          signal: stop.signal,
+        });
+        finir(f);
+      } catch {
+        if (!stop.signal.aborted) finir(null);
+      }
+    })();
+    return () => stop.abort();
+    // un seul tournage par passage sur cet écran
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <div className="cz-corps cz-tournage">
+      <h2>🎬 Le reporter tourne ton film</h2>
+      <p className="cz-tournage-etat" role="status">
+        {etat}
+      </p>
+      <canvas ref={toile} className="cz-tournage-toile" />
+      <span className="cz-tournage-barre" aria-hidden="true">
+        <i style={{ width: `${Math.round(progres * 100)}%` }} />
+      </span>
+      <button
+        type="button"
+        className="cz-lien"
+        onClick={() => {
+          arret.current?.abort();
+          if (!fini.current) {
+            fini.current = true;
+            terminer.current(null);
+          }
+        }}
+      >
+        Publier sans attendre le film
+      </button>
     </div>
   );
 }
@@ -2288,6 +2592,13 @@ function Recap({
               <Lecteur src={brouillon.voix} secondes={brouillon.voixSecondes} />
             </div>
           )}
+          {!relance && brouillon.recit && (
+            <figure className="cz-recit petit">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/direct/interview/reporter-0.webp" alt="Le reporter de ClikMe" />
+              <blockquote>{brouillon.recit.texte}</blockquote>
+            </figure>
+          )}
         </article>
         {/* « OÙ JE LE PUBLIE ? » — pas pour « Il en reste ! », qui reste chez nous. */}
         {!relance && <OuPublier reseaux={reseaux} reel={reel} choix={brouillon.reseaux} onChoix={onChoixReseaux} />}
@@ -2495,7 +2806,10 @@ function Fete({
   programme,
   onEncore,
   onPlanning,
+  film,
 }: {
+  /** 🎬 Le film du reporter, quand il a raconté à sa place — et son image de titre, en affiche. */
+  film?: { url: string; affiche: string };
   dossier: string;
   mission: Mission;
   points: number;
@@ -2578,6 +2892,12 @@ function Fete({
       </div>
       <h2>C’est en ligne !</h2>
       <p>{bravo}</p>
+      {film && (
+        <figure className="cz-film">
+          <video src={film.url} poster={film.affiche || undefined} controls playsInline preload="metadata" />
+          <figcaption>🎬 Le film du reporter, avec ton annonce</figcaption>
+        </figure>
+      )}
       <div className="cz-gains">
         <span className="cz-gain">
           <b>+{points}</b> points
@@ -2767,6 +3087,9 @@ body{background:#0B0806;}
 .cz-panneau{position:relative;flex:none;max-height:58vh;overflow-y:auto;padding:16px 16px max(18px,env(safe-area-inset-bottom));
   background:linear-gradient(180deg,rgba(28,20,17,.92),var(--nappe) 30%);border-top:1px solid var(--trait);
   border-radius:26px 26px 0 0;display:flex;flex-direction:column;gap:12px;}
+/* CE QUI NE TIENT PAS DÉFILE, RIEN NE S'ÉCRASE : sans ça, l'aperçu du récap perdait son nom et son
+   prix (la colonne rétrécissait la carte, qui coupe ce qui dépasse). */
+.cz-panneau > *{flex-shrink:0;}
 .cz-go{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
   min-height:56px;padding:0 22px;border:0;border-radius:999px;background:var(--rose);color:#fff;
   font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:18px;letter-spacing:-.02em;
@@ -3097,6 +3420,35 @@ label.cz-go{cursor:pointer;}
 .cz-demain li b{display:block;font-size:15px;line-height:1.3;}
 .cz-demain li span{display:block;margin-top:3px;font-size:13px;color:#3DE2A6;font-weight:700;}
 .cz-demain p{margin:10px 0 13px;font-size:12.5px;opacity:.75;}
+/* 🎬 LE TOURNAGE, ET LE FILM À LA FÊTE */
+.cz-tournage{align-items:center;gap:12px;padding:18px 18px max(18px,env(safe-area-inset-bottom));text-align:center;overflow-y:auto;}
+.cz-tournage h2{margin:0;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:22px;}
+.cz-tournage-etat{margin:0;font-size:14px;color:var(--gris);max-width:34ch;}
+.cz-tournage-toile{flex:1;min-height:0;max-height:62vh;aspect-ratio:9/16;max-width:100%;border-radius:18px;background:#000;box-shadow:0 18px 40px rgba(0,0,0,.5);}
+.cz-tournage-barre{display:block;width:min(100%,320px);height:6px;border-radius:9px;background:var(--nappe2);overflow:hidden;}
+.cz-tournage-barre i{display:block;height:100%;background:var(--rose);transition:width .3s;}
+.cz-film{margin:4px auto 0;width:min(78%,260px);}
+.cz-film video{display:block;width:100%;aspect-ratio:9/16;border-radius:16px;background:#000;}
+.cz-film figcaption{margin-top:6px;font-size:13px;font-weight:700;color:var(--ambre);}
+/* 🎙️ LE REPORTER RACONTE */
+.cz-vers-reporter{position:relative;display:flex;align-items:center;gap:10px;align-self:stretch;min-height:58px;margin-top:6px;padding:0 16px 0 70px;
+  border:1px solid var(--trait);border-radius:20px;background:var(--nappe2);color:var(--creme);text-align:left;overflow:hidden;}
+.cz-vers-reporter img{position:absolute;left:10px;top:4px;height:60px;width:auto;}
+.cz-vers-reporter span{flex:1;display:flex;flex-direction:column;}
+.cz-vers-reporter b{font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:15.5px;}
+.cz-vers-reporter em{font-style:normal;font-size:13px;color:var(--gris);}
+.cz-vers-reporter s{text-decoration:none;font-size:20px;color:var(--rose);}
+.cz-reporter{display:flex;flex-direction:column;gap:10px;}
+.cz-cases{display:flex;flex-wrap:wrap;gap:6px;}
+.cz-cases button{min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--trait);background:var(--nappe2);
+  color:var(--creme);font-size:13.5px;font-weight:700;}
+.cz-cases button.on{background:rgba(61,226,166,.16);border-color:#3DE2A6;color:#3DE2A6;}
+.cz-recit{position:relative;margin:0;padding:14px 14px 14px 76px;border-radius:18px;background:var(--creme);color:#2A1A10;min-height:84px;}
+.cz-recit img{position:absolute;left:8px;bottom:6px;height:70px;width:auto;}
+.cz-recit blockquote{margin:0;font-size:14.5px;line-height:1.42;font-weight:600;}
+.cz-recit.petit{margin:0 12px 12px;padding:10px 12px 10px 62px;min-height:64px;}
+.cz-recit.petit img{height:54px;}
+.cz-recit.petit blockquote{font-size:13px;font-weight:500;}
 .cz-vers-interview{position:relative;display:flex;align-items:center;gap:10px;min-height:58px;padding:0 16px 0 70px;border:0;border-radius:20px;
   overflow:hidden;text-align:left;color:var(--creme);background:radial-gradient(120% 140% at 0% 0%,#2C5A4C,#15302A 60%,#0F221D);
   box-shadow:inset 0 0 0 1.5px rgba(61,226,166,.5);}

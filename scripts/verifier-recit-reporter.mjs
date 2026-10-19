@@ -25,7 +25,7 @@ const js = ts.transpileModule(readFileSync("src/lib/direct/reporter-recit.ts", "
 }).outputText;
 const m = { exports: {} };
 new Function("exports", "module", "require", js)(m.exports, m, () => ({}));
-const { BANQUES_REPORTER, tirerRecit, recitDepuisIds, retenir, graineDe, lieuDuCommerce, RECIT_MAX } = m.exports;
+const { BANQUES_REPORTER, tirerRecit, recitDepuisIds, retenir, graineDe, lieuDuCommerce, boutsDePhrase, RECIT_MAX } = m.exports;
 
 let echecs = 0;
 const ok = (cond, quoi, detail = "") => {
@@ -93,6 +93,8 @@ for (const [metier, liste] of Object.entries(COMMERCES)) {
   let refait = true;
   let memeTexte = 0;
   let memeDebut = 0;
+  let echos = 0;
+  const exemplesEchos = [];
   const parJour = new Map();
   for (const c of liste) {
     let deja = null;
@@ -112,6 +114,15 @@ for (const [metier, liste] of Object.entries(COMMERCES)) {
       const avantTexte = textesDuCommerce.lastIndexOf(r.texte);
       if (avantTexte >= 0 && textesDuCommerce.length - avantTexte < 60) memeTexte += 1;
       textesDuCommerce.push(r.texte);
+      // DEUX PHRASES DU MÊME RÉCIT NE PARTAGENT PAS UN BOUT DE PHRASE (« … ce qui sort de la cuisine. Et voici ce qui sort de la cuisine »)
+      const vus = new Set();
+      for (const x of r.morceaux) {
+        const lieu = lieuDuCommerce(c.commerce);
+        const t = x.texte.replace(c.plat, "{plat}").replace(lieu.de, "{de}").replace(lieu.chez, "{chez}").replace(c.commerce, "{commerce}");
+        const b = boutsDePhrase(t);
+        if ([...b].some((y) => vus.has(y))) { echos += 1; if (echos <= 2) exemplesEchos.push(r.texte); break; }
+        b.forEach((y) => vus.add(y));
+      }
       const phrases = r.morceaux.map((x) => x.texte.split(/\s+/)[0].toLowerCase());
       if (phrases.some((p, k) => k > 0 && p === phrases[k - 1])) memeDebut += 1;
       const refaitTexte = recitDepuisIds(metier, d, r.ids)?.texte;
@@ -127,6 +138,7 @@ for (const [metier, liste] of Object.entries(COMMERCES)) {
   ok(memeJour <= 365 * 0.25, `${metier} : deux de ses commerces commencent pareil le même jour ${memeJour} fois sur 365`);
   ok(refait, `${metier} : le serveur refait le même texte à partir des numéros`);
   ok(!memeTexte, `${metier} : jamais le même texte deux fois en deux mois pour un commerce`, `${memeTexte} fois`);
+  ok(!echos, `${metier} : aucun récit ne répète un bout de phrase (« … ce qui sort de la cuisine. Et voici ce qui sort de la cuisine »)`, `${echos} récits — ${exemplesEchos.join(" | ")}`);
   ok(memeDebut <= liste.length * 365 * 0.02, `${metier} : deux phrases de suite qui commencent pareil — ${memeDebut} récits sur ${liste.length * 365}`);
 }
 ok(new Set(textes).size >= textes.length * 0.995, `${textes.length} films, ${new Set(textes).size} textes différents`);
@@ -144,7 +156,7 @@ ok(new Set(textes).size >= textes.length * 0.995, `${textes.length} films, ${new
 }
 {
   const r = tirerRecit("table", { commerce: "Chez Bergine", plat: "Magret", prix: "19", faits: [] }, { graine: 11 });
-  ok(/19 €/.test(r.texte) && r.morceaux.some((x) => x.role === "regard"), "« 19 » devient « 19 € » ; sans case, le reporter regarde les photos", r.texte);
+  ok(/19\u00a0€/.test(r.texte) && r.morceaux.some((x) => x.role === "regard"), "« 19 » devient « 19 € » ; sans case, le reporter regarde les photos", r.texte);
 }
 
 console.log("\nQuelques récits :");

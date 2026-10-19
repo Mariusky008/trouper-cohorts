@@ -248,7 +248,8 @@ function tailleQuiTient(g: CanvasRenderingContext2D, lignes: string[], police: (
 
 /* ═══ LE CADRE DE L'ÉMISSION ═══════════════════════════════════════════════
  * Quatre coins roses, et en haut à gauche le nom de l'émission et le sien. */
-export function dessinerCadre(g: CanvasRenderingContext2D, p: Polices, u: number, nom: string) {
+/** `emission` : le nom de l'émission en haut à gauche — « LE REPORTER CLIKME » pour le film du reporter. */
+export function dessinerCadre(g: CanvasRenderingContext2D, p: Polices, u: number, nom: string, emission = "FACE AU FANTÔME") {
   if (u < 0) return;
   const s = mix(1.08, 1, sortie(u / 0.22));
   const a = borne(u / 0.12);
@@ -281,7 +282,7 @@ export function dessinerCadre(g: CanvasRenderingContext2D, p: Polices, u: number
   g.arc(65, 133, 7, 0, Math.PI * 2);
   g.fillStyle = ROSE;
   g.fill();
-  texte(g, "FACE AU FANTÔME", 83, 141, `800 21px ${p.texte}`, CREME, { ls: 3, ombre: 2 });
+  texte(g, emission, 83, 141, `800 21px ${p.texte}`, CREME, { ls: 3, ombre: 2 });
   texte(g, nom, 83, 172, `600 20px ${p.texte}`, "rgba(255,244,230,.88)", { ombre: 2 });
   g.restore();
 }
@@ -421,6 +422,8 @@ export type Titre = {
   haut: string;
   /** En bas, à l'enseigne : « la pièce du moment », puis le plat, en rose. */
   bas: [string, string];
+  /** Le nom de l'émission — « FACE AU FANTÔME » par défaut. */
+  emission?: string;
 };
 
 export function dessinerTitre(g: CanvasRenderingContext2D, p: Polices, o: Titre, u: number) {
@@ -483,7 +486,7 @@ export function dessinerTitre(g: CanvasRenderingContext2D, p: Polices, o: Titre,
   const a = sortie((u - 0.35) / 0.4);
   g.save();
   g.globalAlpha = a;
-  texte(g, "FACE AU FANTÔME", 49, 133, `800 23px ${p.texte}`, ROSE, { ls: 5, ombre: 2 });
+  texte(g, o.emission ?? "FACE AU FANTÔME", 49, 133, `800 23px ${p.texte}`, ROSE, { ls: 5, ombre: 2 });
   texte(g, o.haut, 49, 167, `600 20px ${p.texte}`, "rgba(255,244,230,.8)", { ls: 3, ombre: 2 });
   g.restore();
   const b = sortie((u - 0.55) / 0.45);

@@ -13,6 +13,7 @@
  *
  * FICHIER NAVIGATEUR : lit et écrit `localStorage`, toujours dans un try.
  */
+import type { IdsRecit } from "@/lib/direct/reporter-recit";
 import type { FamilleDouble } from "@/lib/direct/double-metiers";
 
 export type Publication = {
@@ -31,6 +32,11 @@ export type Publication = {
   voixSecondes?: number;
   /** Ce qu'il a dit, écrit : sous-titre du lecteur, et repli sans audio. */
   voixTexte?: string;
+  /**
+   * 🎙️ LE REPORTER A RACONTÉ À SA PLACE (il ne voulait pas parler) : son récit, les numéros de ses
+   * phrases et les cases cochées — voir `reporter-recit.ts`. Le film se tourne d'après eux.
+   */
+  recit?: { texte: string; ids: IdsRecit; faits: string[] };
   jours: number;
   /** DANS LE FUTUR pour une annonce programmée : elle n'est « en ligne » qu'à partir de là. */
   publieLe: number;
