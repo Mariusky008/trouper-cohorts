@@ -2844,6 +2844,9 @@ function Fete({
   if (programme) {
     return (
       <div className="cz-fete" role="dialog" aria-label="C’est programmé">
+        <button type="button" className="cz-fete-x" aria-label="Revenir au comptoir" onClick={onFin}>
+          ✕
+        </button>
         <div className="cz-confettis" aria-hidden="true">
           {Array.from({ length: 22 }, (_, i) => (
             <i key={i} style={{ left: `${(i * 37) % 100}%`, animationDelay: `${(i % 7) * 0.12}s`, ["--r" as string]: `${(i * 53) % 360}deg` }} />
@@ -2880,6 +2883,9 @@ function Fete({
   }
   return (
     <div className="cz-fete" role="dialog" aria-label="C’est en ligne">
+      <button type="button" className="cz-fete-x" aria-label="Revenir au comptoir" onClick={onFin}>
+        ✕
+      </button>
       <div className="cz-confettis" aria-hidden="true">
         {Array.from({ length: 28 }, (_, i) => (
           <i key={i} style={{ left: `${(i * 37) % 100}%`, animationDelay: `${(i % 7) * 0.12}s`, ["--r" as string]: `${(i * 53) % 360}deg` }} />
@@ -3249,7 +3255,13 @@ label.cz-go{cursor:pointer;}
 .cz-fete{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:safe center;overflow-y:auto;
   gap:12px;padding:24px 22px max(24px,env(safe-area-inset-bottom));text-align:center;
   background:radial-gradient(70% 50% at 50% 35%,rgba(245,162,58,.28),transparent 70%),rgba(18,12,9,.97);
-  animation:cz-fondu .3s both;overflow:hidden;}
+  animation:cz-fondu .3s both;overflow-x:hidden;}
+/* « JE NE PEUX PAS SCROLLER VERS LE BAS POUR TOUT VOIR, NI REVENIR À L'ACCUEIL » : la fête se
+   déroule (un « overflow:hidden » oublié l'en empêchait), rien ne s'y écrase, et une croix,
+   toujours en haut, ramène au comptoir. */
+.cz-fete > *{flex-shrink:0;}
+.cz-fete-x{position:sticky;top:0;z-index:3;align-self:flex-end;width:40px;height:40px;margin:-8px -6px -32px 0;display:grid;place-items:center;
+  border-radius:50%;border:1px solid var(--trait);background:rgba(18,12,9,.85);color:var(--creme);font-size:17px;line-height:1;}
 .cz-fete-f{position:relative;width:min(58vw,250px);aspect-ratio:1;animation:cz-saut .8s cubic-bezier(.2,.9,.3,1.4) both;}
 .cz-fete-f img{position:relative;width:100%;height:100%;object-fit:contain;}
 .cz-fete h2{margin:0;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:34px;letter-spacing:-.035em;
@@ -3298,7 +3310,7 @@ label.cz-go{cursor:pointer;}
 .cz-envoi-etat.ko{background:rgba(255,46,154,.12);color:#FFC2E0;}
 .cz-envoi-etat button{border:1px solid currentColor;background:none;border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px;}
 .cz-envoi-reseaux{display:block;margin-top:4px;font-weight:700;}
-.cz-confettis{position:absolute;inset:0;pointer-events:none;}
+.cz-confettis{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
 .cz-confettis i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;
   background:var(--rose);animation:cz-tombe 2.6s cubic-bezier(.3,.6,.5,1) both;transform:rotate(var(--r));}
 .cz-confettis i:nth-child(3n){background:var(--ambre);}
