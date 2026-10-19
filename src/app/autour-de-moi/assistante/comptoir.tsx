@@ -80,6 +80,8 @@ import { EchangesReels, useEchangesReels } from "./echanges-reels";
 import { StylesInterview } from "../essai-interview/styles-interview";
 import { chefEnPied } from "@/lib/direct/interview-montage";
 import { interviewOuverte, scriptDe } from "@/lib/direct/interview-fantome";
+import { BANQUES, questionsDeLInterview, type MetierPlanning } from "@/lib/direct/interview-planning";
+import { pistesAMontrer, pistesDe } from "@/lib/direct/interview-pistes";
 import { CarteProposition, propositionAMontrer, useProposition, type PieceProposee } from "./proposition-comptoir";
 import { PLATEFORMES_PAR_DEFAUT, iconeDuReseau, nomDuReseau, reseauxEnMots } from "@/lib/reseaux/reseaux-donnees";
 import { useSavoir, type SavoirDuComptoir } from "./use-savoir";
@@ -941,6 +943,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
               ...platDuJour(principal, chargerVitrines().articles[commerce.id]?.[0]),
               chef: chefEnPied(dossier),
               famille: commerce.famille,
+              demonstration: !commerce.reel,
               onFermer: () => setPhase({ ou: "accueil" }),
               /* 🎬 « PUBLIER PARTOUT » : Le Direct, sa page, ses réseaux — voir
                  `envoyerInterview`. « Quand je veux publier l'annonce sur mes
@@ -1302,6 +1305,8 @@ function Accueil({
             <s aria-hidden="true">→</s>
           </button>
         )}
+
+        {onInterview && <DemainLeFantome commerce={commerce} />}
 
         {principal && (
           <button type="button" className="cz-second" onClick={() => onCommencer(false)}>
@@ -2338,6 +2343,36 @@ function OuPublier({ reseaux, reel, choix, onChoix }: { reseaux: ReseauxDuCompto
   );
 }
 
+/**
+ * 🎬 LES QUESTIONS DE DEMAIN — « J'ai une seule peur : c'est que le commerçant ne sache pas quoi
+ * dire. » La veille, il voit ce que le fantôme lui demandera (les deux questions du comptoir, voir
+ * `questionsDeLInterview`) et leurs pistes : il y pense en servant ses clients, et arrive avec ses idées.
+ */
+const demainAParis = () =>
+  new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(Date.now() + 86_400_000));
+function DemainLeFantome({ commerce }: { commerce: Commerce }) {
+  const metier = (commerce.famille && commerce.famille in BANQUES ? commerce.famille : "table") as MetierPlanning;
+  const [demain] = useState(demainAParis);
+  const questions = useMemo(() => questionsDeLInterview(metier, demain, 2, scriptDe(commerce.famille).quoi), [metier, demain, commerce.famille]);
+  const avecPistes = pistesAMontrer(!commerce.reel);
+  return (
+    <details className="cz-demain">
+      <summary>
+        <span aria-hidden="true">🎬</span> Demain, le fantôme te demandera…
+      </summary>
+      <ol>
+        {questions.map((q) => (
+          <li key={q.question}>
+            <b>{q.question}</b>
+            {avecPistes && <span>💡 {pistesDe(metier, q).pistes.join(" · ")}</span>}
+          </li>
+        ))}
+      </ol>
+      <p>Penses-y en servant tes clients : demain, tu auras déjà tes idées.</p>
+    </details>
+  );
+}
+
 /** « Ton annonce est ici » : là où elle est arrivée — ClikMe tout de suite, ses réseaux en route. */
 const LIEUX: Record<string, [string, string]> = {
   "Le Direct": ["⚡", "Le Direct de ClikMe"],
@@ -2992,6 +3027,15 @@ label.cz-go{cursor:pointer;}
 .cz-nouveau{display:inline-block;font-style:normal;font-weight:800;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
   padding:4px 8px;border-radius:999px;background:#3DE2A6;color:#04150E;}
 .cz-choix-interview .cz-nouveau{position:absolute;top:11px;left:11px;}
+.cz-demain{border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);padding:0 14px;}
+.cz-demain summary{list-style:none;cursor:pointer;padding:13px 0;font-weight:800;font-size:14.5px;display:flex;gap:8px;align-items:center;}
+.cz-demain summary::-webkit-details-marker{display:none}
+.cz-demain summary::after{content:"+";margin-left:auto;font-size:18px;color:#3DE2A6;}
+.cz-demain[open] summary::after{content:"–"}
+.cz-demain ol{margin:0;padding:0 0 4px 18px;display:grid;gap:10px;}
+.cz-demain li b{display:block;font-size:15px;line-height:1.3;}
+.cz-demain li span{display:block;margin-top:3px;font-size:13px;color:#3DE2A6;font-weight:700;}
+.cz-demain p{margin:10px 0 13px;font-size:12.5px;opacity:.75;}
 .cz-vers-interview{position:relative;display:flex;align-items:center;gap:10px;min-height:58px;padding:0 16px 0 70px;border:0;border-radius:20px;
   overflow:hidden;text-align:left;color:var(--creme);background:radial-gradient(120% 140% at 0% 0%,#2C5A4C,#15302A 60%,#0F221D);
   box-shadow:inset 0 0 0 1.5px rgba(61,226,166,.5);}

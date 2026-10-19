@@ -1097,6 +1097,12 @@ export type PriseAMonter = {
   /** Ce que le reporter a dit à voix haute, en secondes depuis le début de la prise (rien pour une question écrite). */
   paroles: { texte: string; debut: number }[];
   questionFin: number;
+  /**
+   * Où sa réponse commence vraiment : après qu'il a touché « Je réponds », à son premier mot. Entre la
+   * fin de la question et ce moment, il réfléchissait — le montage coupe ce temps (voir `sansAttente`).
+   * Absent : sa réponse suit la question.
+   */
+  reponseDebut?: number | null;
   /** Où couper la prise : la fin de sa parole, plus un souffle. */
   coupe: number;
   /** Le son de la prise, décodé — `null` si le téléphone n'a pas su. */
@@ -1121,6 +1127,50 @@ export type Montage = {
 };
 
 type Segment = { genre: "titre" } | { genre: "cloche" } | { genre: "prise"; k: number } | { genre: "fin" };
+
+/**
+ * LE TEMPS DE RÉFLEXION, COUPÉ. « Peut-être aussi peut-il avoir d'abord la question, et quand il est
+ * prêt il appuie sur enregistrer. » La prise a tourné pendant qu'il réfléchissait ; on retire ce
+ * moment-là — de la fin de la question au début de sa réponse — de son son, de la bouche de son
+ * fantôme et de ses sous-titres. Le montage travaille ensuite comme si sa réponse avait suivi la
+ * question ; seule sa vidéo saute ce temps (voir `tic`). `d` : la durée retirée.
+ */
+function sansAttente(ctx: BaseAudioContext, p: PriseAMonter, d: number): PriseAMonter {
+  if (d <= 0) return p;
+  const de = p.questionFin;
+  const a = p.questionFin + d;
+  const t = (x: number) => (x <= de ? x : x >= a ? x - d : de);
+  let audio = p.audio;
+  if (audio) {
+    const i0 = Math.min(audio.length, Math.round(de * audio.sampleRate));
+    const i1 = Math.min(audio.length, Math.round(a * audio.sampleRate));
+    const b = ctx.createBuffer(audio.numberOfChannels, Math.max(1, audio.length - (i1 - i0)), audio.sampleRate);
+    for (let c = 0; c < audio.numberOfChannels; c++) {
+      const src = audio.getChannelData(c);
+      const dst = b.getChannelData(c);
+      dst.set(src.subarray(0, i0), 0);
+      dst.set(src.subarray(i1), i0);
+    }
+    audio = b;
+  }
+  let bouche = p.bouche;
+  if (bouche) {
+    const j0 = Math.min(bouche.length, Math.round(de * IPS));
+    const j1 = Math.min(bouche.length, Math.round(a * IPS));
+    const nb = new Float32Array(bouche.length - (j1 - j0));
+    nb.set(bouche.subarray(0, j0), 0);
+    nb.set(bouche.subarray(j1), j0);
+    bouche = nb;
+  }
+  return {
+    ...p,
+    audio,
+    bouche,
+    // ce qui a été dit pendant qu'il réfléchissait (un « euh », un client) part avec
+    sousTitres: p.sousTitres.filter((x) => x.fin > a).map((x) => ({ ...x, debut: t(x.debut), fin: t(x.fin) })),
+    coupe: Math.max(p.questionFin + 0.8, p.coupe - d),
+  };
+}
 type MediaPret = { genre: "photo"; img: HTMLImageElement } | { genre: "video"; v: HTMLVideoElement };
 
 /** Un lecteur muet, prêt à donner ses images. */
@@ -1173,7 +1223,10 @@ export async function monter(o: {
   surAffiche?: (image: string) => void;
   signal?: AbortSignal;
 }): Promise<Montage> {
-  const { ctx, el, prises, reglages } = o;
+  const { ctx, el, reglages } = o;
+  /** Le temps de réflexion de chaque prise, coupé — voir `sansAttente`. Ses vidéos le sautent (`tic`). */
+  const sauts = o.prises.map((p) => (p.reponseDebut != null && p.reponseDebut > p.questionFin + 0.3 ? p.reponseDebut - p.questionFin : 0));
+  const prises = o.prises.map((p, k) => sansAttente(ctx, p, sauts[k]));
   const c2d = o.toile.getContext("2d");
   if (!c2d) throw new Error("Ce téléphone ne sait pas dessiner la vidéo.");
   if (typeof o.toile.captureStream !== "function") throw new Error("Ce téléphone ne sait pas enregistrer un dessin animé (captureStream).");
@@ -1570,10 +1623,17 @@ export async function monter(o: {
     etouffer(t0, 700);
     niveau(t0, MUSIQUE.question);
   };
-  /** Une prise : appelé quand elle démarre vraiment, `zero` = l'heure de son début. */
-  const sonsPrise = (k: number, zero: number, v: HTMLVideoElement | null) => {
+  /** La question d'une prise : la voix du reporter. `zero` = l'heure de son début. */
+  const sonsQuestion = (k: number, zero: number) => {
+    for (const pa of prises[k].paroles) if (el.voix[pa.texte]) jouer(el.voix[pa.texte], zero + pa.debut, 0.95);
+  };
+  /**
+   * Sa réponse : la carte qui s'envole, la musique qui se tait, ses frappes, et SA voix. Posés quand la
+   * prise démarre — ou, quand sa vidéo saute son temps de réflexion, une fois le saut fait : `zero` est
+   * alors l'heure à laquelle la prise aurait commencé sans ce temps-là.
+   */
+  const sonsReponse = (k: number, zero: number, v: HTMLVideoElement | null) => {
     const p = prises[k];
-    for (const pa of p.paroles) if (el.voix[pa.texte]) jouer(el.voix[pa.texte], zero + pa.debut, 0.95);
     const rep = zero + p.questionFin + 0.05;
     sonSortieCarte(S, rep - CARTE_SORTIE);
     etouffer(rep - 0.1, 18000, 0.3);
@@ -1591,7 +1651,7 @@ export async function monter(o: {
       const s = ctx.createBufferSource();
       s.buffer = p.audio;
       s.connect(g);
-      const depuis = v ? v.currentTime : Math.max(0, ctx.currentTime - zero);
+      const depuis = Math.max(0, ctx.currentTime - zero);
       s.start(ctx.currentTime, Math.min(p.audio.duration - 0.01, depuis));
       s.stop(zero + p.coupe + 0.05);
       sources.push(s);
@@ -1642,6 +1702,9 @@ export async function monter(o: {
   let lance = false;
   let sonsPoses = false;
   let mediaLance = false;
+  /** Sa vidéo a sauté son temps de réflexion ; et les sons de sa réponse sont posés. */
+  let saute = false;
+  let reponsePosee = false;
   let derniereImage = -1;
   let bloqueDepuis = 0;
   let affiche = false;
@@ -1662,6 +1725,8 @@ export async function monter(o: {
       lance = false;
       sonsPoses = false;
       mediaLance = false;
+      saute = false;
+      reponsePosee = false;
       if (seg >= segments.length) return fini();
       const g = segments[seg].genre;
       if (g === "cloche") sonsCloche(maintenant);
@@ -1707,16 +1772,32 @@ export async function monter(o: {
               /* muet : la lecture ne devrait jamais être refusée — sinon, le garde-fou ci-dessous passe la prise */
             });
           }
-          tc = v.currentTime;
+          const d = sauts[s.k];
+          // LE SAUT : sous la carte, juste avant qu'elle s'envole, sa vidéo passe son temps de réflexion
+          if (d && !saute && v.currentTime >= p.questionFin - 0.3) {
+            saute = true;
+            v.currentTime = v.currentTime + d;
+          }
+          tc = saute ? v.currentTime - d : v.currentTime;
           if (tc > 0.02 && !sonsPoses) {
             sonsPoses = true;
-            sonsPrise(s.k, maintenant - tc, v);
+            sonsQuestion(s.k, maintenant - tc);
+            if (!d) {
+              reponsePosee = true;
+              sonsReponse(s.k, maintenant - tc, v);
+            }
           }
-          if (tc > 0.02) bloqueDepuis = maintenant;
+          // …et le son de sa réponse part quand l'image repart, calé sur elle
+          if (d && saute && !reponsePosee && !v.seeking && tc > p.questionFin - 0.27) {
+            reponsePosee = true;
+            sonsReponse(s.k, maintenant - tc, v);
+          }
+          if (tc > 0.02 && !v.seeking) bloqueDepuis = maintenant;
         } else if (!sonsPoses) {
-          // SA VOIX SEULE : c'est l'horloge qui mène
+          // SA VOIX SEULE : c'est l'horloge qui mène (son son est déjà sans le temps de réflexion)
           sonsPoses = true;
-          sonsPrise(s.k, debutSeg, null);
+          sonsQuestion(s.k, debutSeg);
+          sonsReponse(s.k, debutSeg, null);
         }
         // SES VIDÉOS tournent dès le début de sa réponse : un plan de coupe peut tomber dessus à tout moment
         if (!mediaLance && tc > p.questionFin) {

@@ -22,9 +22,12 @@
 //   3. les questions DU JOUR, tirées du planning de la semaine (le produit, la
 //      rubrique du jour, le jour de l'année, la chute — voir
 //      `interview-planning.ts`), dites avec la voix du fantôme quand elle les a,
-//      écrites à l'écran sinon. Une prise par question, trente secondes au
-//      plus ; la réponse s'arrête sur un silence, sur « J'ai fini », ou au bout
-//      du temps ;
+//      écrites à l'écran sinon. Puis il a tout son temps : la question reste
+//      écrite avec trois pistes (`interview-pistes.ts`), le reporter le relance
+//      s'il bloque, et il touche « Je réponds » quand il est prêt — le montage
+//      coupe ce temps de réflexion. Une prise par question, trente secondes de
+//      réponse au plus ; elle s'arrête sur un silence, sur « J'ai fini », ou au
+//      bout du temps ;
 //   4. ses réponses : il ajoute, s'il le veut, jusqu'à trois photos ou vidéos
 //      à chacune, pendant que le téléphone les écoute (ses mots, sous-titrés) ;
 //      elles passeront au rythme de ses mots (voir `plansDeCoupe`) ;
@@ -38,6 +41,8 @@ import {
   ENTRE_DEUX_S,
   FORMATS,
   REPLIQUES,
+  RELANCE_AVANT_S,
+  RELANCE_PENDANT_S,
   REPONSE_MAX_S,
   SEUIL_VOIX,
   SILENCE_FIN_S,
@@ -69,6 +74,7 @@ import {
   type PriseAMonter,
 } from "@/lib/direct/interview-montage";
 import { sessionPourLeMicro } from "@/lib/direct/session-audio";
+import { pistesAMontrer, pistesDe } from "@/lib/direct/interview-pistes";
 
 type Etape = "reglages" | "preparation" | "placement" | "interview" | "merci" | "reponses" | "montage" | "resultat" | "erreur";
 
@@ -82,6 +88,8 @@ type PriseBrute = {
   /** Ce que le reporter a dit à voix haute (rien pour une question seulement écrite). */
   paroles: { texte: string; debut: number }[];
   questionFin: number;
+  /** Quand il a touché « Je réponds » (secondes depuis le début de la prise) : avant, il réfléchissait. */
+  reponseDebut: number;
   duree: number;
 };
 
@@ -183,10 +191,11 @@ async function analyser(ctx: AudioContext, p: PriseBrute, enFantome: boolean, co
     audio = null;
   }
   if (!audio) return { audio: null, parole: null, sousTitres: [], bouche: null, transcription: "sans-son" };
-  // SA BOUCHE SUIT SA VOIX — à partir de sa réponse seulement : avant, le micro a entendu le reporter
-  const bouche = enFantome ? ouvertures(audio, p.questionFin + 0.05) : null;
+  // SA BOUCHE SUIT SA VOIX — à partir de sa réponse seulement : avant, le micro a entendu le reporter,
+  // puis l'a entendu réfléchir (et peut-être un client derrière lui)
+  const bouche = enFantome ? ouvertures(audio, p.reponseDebut + 0.05) : null;
   const pas = 0.05;
-  const parole = fenetreDeParole(energie(audio, pas), pas, p.questionFin + 0.25);
+  const parole = fenetreDeParole(energie(audio, pas), pas, p.reponseDebut + 0.1);
   if (!parole) return { audio, parole: null, sousTitres: [], bouche, transcription: "vide" };
   try {
     const wav = await versWav(audio, parole.debut, Math.min(audio.duration, parole.fin));
@@ -287,6 +296,8 @@ export type InterviewDuCommerce = {
   chef: string[];
   /** Son métier (`famille` du comptoir) : les mots du reporter — voir `scriptDe`. Le restaurant sans lui. */
   famille?: string;
+  /** Le comptoir de démonstration : les pistes s'y montrent avant d'être validées (voir `pistesAMontrer`). */
+  demonstration?: boolean;
   onFermer: () => void;
   /**
    * « PUBLIER PARTOUT » : Le Direct, sa page, ses réseaux — voir
@@ -317,11 +328,17 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
   const metier = (du?.famille && du.famille in BANQUES ? du.famille : "table") as MetierPlanning;
   // LE JOUR, fixé à l'ouverture de l'écran : les questions ne changent pas sous ses yeux à minuit
   const [jour] = useState(aujourdhuiAParis);
+  // SES PISTES À L'ÉCRAN : la page d'essai et la démonstration tout de suite, un vrai commerçant après validation
+  const montrerPistes = pistesAMontrer(!du || Boolean(du.demonstration));
   // TOUTES LES PHRASES QU'IL PEUT AVOIR À DIRE AUJOURD'HUI, quel que soit le nombre de questions choisi
   const textesDuJour = useMemo(() => {
     const l: string[] = [REPLIQUES["place-droite"], REPLIQUES["place-gauche"], REPLIQUES["place-fantome"], REPLIQUES[script.merci], REPLIQUES[script.adieu]];
     for (const n of [1, 2, 3, 4] as const)
-      for (const q of questionsDeLInterview(metier, jour, n, script.quoi)) l.push(...phrasesDe(q).filter((p) => p.aVoix !== false).map((p) => p.texte));
+      for (const q of questionsDeLInterview(metier, jour, n, script.quoi)) {
+        l.push(...phrasesDe(q).filter((p) => p.aVoix !== false).map((p) => p.texte));
+        // ET SA RELANCE : dite s'il a la voix pour elle, écrite sinon
+        l.push(pistesDe(metier, q).relance);
+      }
     return [...new Set(l)];
   }, [metier, jour, script]);
   const [etape, setEtape] = useState<Etape>("reglages");
@@ -338,7 +355,8 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
   const [erreur, setErreur] = useState("");
   const [bulle, setBulle] = useState<string | null>(null);
   const [question, setQuestion] = useState(0);
-  const [phase, setPhase] = useState<"question" | "reponse">("question");
+  // « question » : le reporter la pose ; « pret » : il réfléchit, ses pistes sous les yeux ; « reponse » : il répond
+  const [phase, setPhase] = useState<"question" | "pret" | "reponse">("question");
   const [decompte, setDecompte] = useState(0);
   const [reste, setReste] = useState({ reponse: 0, max: 1 });
   const [progres, setProgres] = useState(0);
@@ -360,8 +378,12 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
   const fluxRef = useRef<MediaStream | null>(null);
   const analyseurRef = useRef<AnalyserNode | null>(null);
   const parle = useRef<{ texte: string; t0: number } | null>(null);
-  const phaseRef = useRef<"question" | "reponse">("question");
+  const phaseRef = useRef<"question" | "pret" | "reponse">("question");
   const fini = useRef(false);
+  /** « Je réponds » : il a touché, la promesse de l'attente se tient. */
+  const jeReponds = useRef<(() => void) | null>(null);
+  /** Une relance par question, pas plus. */
+  const relanceFaite = useRef(false);
   const annule = useRef(false);
   const reponsesRef = useRef<Reponse[]>([]);
   const veille = useRef<{ release: () => Promise<void> } | null>(null);
@@ -396,6 +418,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
   useEffect(
     () => () => {
       annule.current = true;
+      jeReponds.current?.();
       stopMontage.current?.abort();
       fluxRef.current?.getTracks().forEach((t) => t.stop());
       veille.current?.release().catch(() => {});
@@ -567,9 +590,35 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     }
   }, [chef, cote, direSuite, garderAllume, libererAppareils, metier, mode, textesDuJour]);
 
-  /** Attend la fin de sa réponse : un silence, « J'ai fini », ou le temps écoulé. */
+  /** Le reporter le relance — une fois par question : dans sa bulle, et à voix haute s'il a la voix pour cette phrase. */
+  const relancer = useCallback(
+    (texte: string) => {
+      if (relanceFaite.current || annule.current) return;
+      relanceFaite.current = true;
+      setBulle(insecable(texte));
+      if (elRef.current?.voix[texte]) void dire(texte);
+    },
+    [dire],
+  );
+
+  /** Il réfléchit : on attend qu'il touche « Je réponds ». Au bout de quelques secondes, le reporter le relance. */
+  const attendreQuIlSoitPret = useCallback(
+    (relance: string) =>
+      new Promise<number>((ok) => {
+        relanceFaite.current = false;
+        const minuterie = setTimeout(() => relancer(relance), RELANCE_AVANT_S * 1000);
+        jeReponds.current = () => {
+          clearTimeout(minuterie);
+          jeReponds.current = null;
+          ok(performance.now());
+        };
+      }),
+    [relancer],
+  );
+
+  /** Attend la fin de sa réponse : un silence, « J'ai fini », ou le temps écoulé. Muet au début : `auBlanc`, une fois. */
   const ecouterReponse = useCallback(
-    (max: number) =>
+    (max: number, auBlanc?: () => void) =>
       new Promise<void>((ok) => {
         const debut = performance.now();
         let dernierSon = 0;
@@ -587,6 +636,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
           setReste({ reponse: max - ecoule, max });
           const silence = parole > 0.4 && (n - dernierSon) / 1000 >= SILENCE_FIN_S;
           const muet = parole <= 0.4 && ecoule >= ATTENTE_SANS_PAROLE_S;
+          if (parole <= 0.4 && ecoule >= RELANCE_PENDANT_S) auBlanc?.();
           if (annule.current || fini.current || silence || muet || ecoule >= max) return ok();
           setTimeout(tic, 100);
         };
@@ -640,10 +690,17 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
       await attendre(250);
       const voix = await direSuite(phrasesDe(q));
       setBulle(null);
+      // IL A TOUT SON TEMPS : la question reste, ses pistes avec, et il touche « Je réponds » quand il est
+      // prêt. On continue d'enregistrer — le montage coupe ce temps-là (voir `reponseDebut`).
+      const { relance } = pistesDe(metier, q);
+      setPhase("pret");
+      phaseRef.current = "pret";
+      const touche = await attendreQuIlSoitPret(relance);
+      if (annule.current) return;
       setPhase("reponse");
       phaseRef.current = "reponse";
       setReste({ reponse: REPONSE_MAX_S, max: REPONSE_MAX_S });
-      await ecouterReponse(REPONSE_MAX_S);
+      await ecouterReponse(REPONSE_MAX_S, () => relancer(relance));
       phaseRef.current = "question";
       const blob = await new Promise<Blob>((ok) => {
         rec.onstop = () => ok(new Blob(morceaux, { type: rec.mimeType || type || (enFantome ? "audio/webm" : "video/webm") }));
@@ -656,6 +713,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
         url: enFantome ? null : URL.createObjectURL(blob),
         paroles: voix.paroles.map((p) => ({ texte: p.texte, debut: (p.debut - t0) / 1000 })),
         questionFin: (voix.fin - t0) / 1000,
+        reponseDebut: Math.max((voix.fin - t0) / 1000, (touche - t0) / 1000),
         duree: (performance.now() - t0) / 1000,
       });
     }
@@ -724,6 +782,8 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
         question: r.question,
         paroles: r.paroles,
         questionFin: r.questionFin,
+        // LE TEMPS DE RÉFLEXION EST COUPÉ : la réponse part de son premier mot (le geste vers l'écran avec)
+        reponseDebut: Math.max(r.reponseDebut + 0.15, (r.analyse?.parole?.debut ?? r.reponseDebut) - 0.35),
         coupe: coupeDeLaPrise({ duree: r.duree, questionFin: r.questionFin, paroleFin: r.analyse?.parole?.fin ?? null }),
         audio: r.analyse?.audio ?? null,
         bouche: r.analyse?.bouche ?? null,
@@ -779,6 +839,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
 
   const recommencer = () => {
     annule.current = true;
+    jeReponds.current?.();
     stopMontage.current?.abort();
     libererAppareils();
     for (const r of reponsesRef.current) {
@@ -1006,7 +1067,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
               <span className="ei-rec">● REC</span>
               <span>
                 Question {question + 1}/{questions.length}
-                {phase === "reponse" ? ` · ${insecable(q.titre)}` : ""}
+                {phase !== "question" ? ` · ${insecable(q.titre)}` : ""}
               </span>
             </>
           ) : (
@@ -1016,11 +1077,35 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
 
         {decompte ? <div className="ei-decompte">{decompte}</div> : null}
 
+        {/* ═══ IL RÉFLÉCHIT, PUIS IL RÉPOND ═══ « J'ai une seule peur : c'est que le commerçant
+            ne sache pas quoi dire. » La question reste écrite, et trois pistes près de la caméra
+            (c'est là que ses yeux doivent être) : des mots, pas des phrases à lire. */}
+        {etape === "interview" && phase !== "question" ? (
+          <div className={`ei-souffleur${phase === "reponse" ? " discret" : ""}`}>
+            {phase === "pret" ? <p className="ei-question">{insecable(q.question)}</p> : null}
+            {montrerPistes ? (
+              <p className="ei-pistes" aria-label="Des pistes pour répondre">
+                {pistesDe(metier, q).pistes.map((x) => (
+                  <span key={x}>{x}</span>
+                ))}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
         <div className="ei-bas">
           {etape === "placement" ? (
             <button type="button" className="ei-go" onClick={lancer} disabled={!pret}>
               {pret ? "Je suis prêt" : "Écoute le reporter…"}
             </button>
+          ) : null}
+          {etape === "interview" && phase === "pret" ? (
+            <>
+              <button type="button" className="ei-fini ei-reponds" onClick={() => jeReponds.current?.()}>
+                ● Je réponds
+              </button>
+              <p className="ei-prends">Prends ton temps : la vidéo ne garde que ta réponse.</p>
+            </>
           ) : null}
           {etape === "interview" && phase === "reponse" ? (
             <>
