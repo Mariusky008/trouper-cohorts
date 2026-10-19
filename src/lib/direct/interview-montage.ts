@@ -1099,7 +1099,7 @@ export type PriseAMonter = {
   questionFin: number;
   /**
    * Où sa réponse commence vraiment : après qu'il a touché « Je réponds », à son premier mot. Entre la
-   * fin de la question et ce moment, il réfléchissait — le montage coupe ce temps (voir `sansAttente`).
+   * fin de la question et ce moment, il réfléchissait — le montage coupe ce temps (voir `resserrer`).
    * Absent : sa réponse suit la question.
    */
   reponseDebut?: number | null;
@@ -1110,6 +1110,12 @@ export type PriseAMonter = {
   /** La bouche de son fantôme, trente valeurs par seconde de prise (quand il ne se montre pas). */
   bouche: Float32Array | null;
   sousTitres: SousTitre[];
+  /**
+   * SA VOIX RESSERRÉE : ses « euh », ses silences de plus d'une demi-seconde, ses débuts de phrase ratés
+   * — en secondes depuis le début de la prise (voir `interview-resserrer.ts`). Retirés du son, de la
+   * bouche, des sous-titres et de la vidéo ; chaque saut est caché par une photo ou un coup de zoom.
+   */
+  coupes?: { de: number; a: number }[];
   /** Les photos ou vidéos qu'il a ajoutées à cette réponse (trois au plus) : elles passent au rythme de ses mots. */
   medias: Media[];
 };
@@ -1128,47 +1134,92 @@ export type Montage = {
 
 type Segment = { genre: "titre" } | { genre: "cloche" } | { genre: "prise"; k: number } | { genre: "fin" };
 
+/** Un morceau gardé d'une prise : de `de` à `a` dans la prise, à partir de `m` dans le montage. */
+type Garde = { de: number; a: number; m: number };
+
+/** Les morceaux gardés entre des coupes triées ; le dernier va jusqu'au bout de la prise. */
+function gardesEntre(coupes: readonly { de: number; a: number }[]): Garde[] {
+  const g: Garde[] = [];
+  let t = 0;
+  let m = 0;
+  for (const c of coupes) {
+    if (c.de > t) {
+      g.push({ de: t, a: c.de, m });
+      m += c.de - t;
+    }
+    t = Math.max(t, c.a);
+  }
+  g.push({ de: t, a: Infinity, m });
+  return g;
+}
+/** Un instant de la prise → le montage (dans une coupe : là où elle est recollée). */
+const versMontage = (g: readonly Garde[], x: number) => {
+  for (const s of g) if (x < s.a) return s.m + Math.max(0, x - s.de);
+  return x;
+};
+/** Le morceau gardé où tombe l'instant `t` du montage. */
+const gardeA = (g: readonly Garde[], t: number) => g.find((s) => t < s.m + (s.a - s.de)) ?? g[g.length - 1];
+
 /**
- * LE TEMPS DE RÉFLEXION, COUPÉ. « Peut-être aussi peut-il avoir d'abord la question, et quand il est
- * prêt il appuie sur enregistrer. » La prise a tourné pendant qu'il réfléchissait ; on retire ce
- * moment-là — de la fin de la question au début de sa réponse — de son son, de la bouche de son
- * fantôme et de ses sous-titres. Le montage travaille ensuite comme si sa réponse avait suivi la
- * question ; seule sa vidéo saute ce temps (voir `tic`). `d` : la durée retirée.
+ * ✂️ LE TEMPS DE RÉFLEXION ET SES HÉSITATIONS, COUPÉS. « Peut-être aussi peut-il avoir d'abord la
+ * question, et quand il est prêt il appuie sur enregistrer. » Puis : « le montage couperait les "euh",
+ * les silences de plus d'une demi-seconde et les débuts de phrase ratés ». La prise a tourné pendant
+ * tout ça ; on retire ces morceaux de son son (recollé sans clic, en fondu de quelques millisecondes),
+ * de la bouche de son fantôme et de ses sous-titres. Le montage travaille ensuite sur la prise
+ * resserrée ; seule sa vidéo saute ces morceaux à la lecture (voir `tic`), guidée par `gardes`.
  */
-function sansAttente(ctx: BaseAudioContext, p: PriseAMonter, d: number): PriseAMonter {
-  if (d <= 0) return p;
-  const de = p.questionFin;
-  const a = p.questionFin + d;
-  const t = (x: number) => (x <= de ? x : x >= a ? x - d : de);
+function resserrer(ctx: BaseAudioContext, p: PriseAMonter, coupes: readonly { de: number; a: number }[]): { prise: PriseAMonter; gardes: Garde[] } {
+  const gardes = gardesEntre(coupes);
+  if (!coupes.length) return { prise: p, gardes };
+  const t = (x: number) => versMontage(gardes, x);
   let audio = p.audio;
   if (audio) {
-    const i0 = Math.min(audio.length, Math.round(de * audio.sampleRate));
-    const i1 = Math.min(audio.length, Math.round(a * audio.sampleRate));
-    const b = ctx.createBuffer(audio.numberOfChannels, Math.max(1, audio.length - (i1 - i0)), audio.sampleRate);
+    const sr = audio.sampleRate;
+    const morceaux = gardes
+      .map((g) => [Math.min(audio!.length, Math.round(g.de * sr)), Math.min(audio!.length, Number.isFinite(g.a) ? Math.round(g.a * sr) : audio!.length)] as const)
+      .filter(([i0, i1]) => i1 > i0);
+    const total = morceaux.reduce((n, [i0, i1]) => n + i1 - i0, 0);
+    const b = ctx.createBuffer(audio.numberOfChannels, Math.max(1, total), sr);
+    const fondu = Math.round(0.006 * sr);
     for (let c = 0; c < audio.numberOfChannels; c++) {
       const src = audio.getChannelData(c);
       const dst = b.getChannelData(c);
-      dst.set(src.subarray(0, i0), 0);
-      dst.set(src.subarray(i1), i0);
+      let o = 0;
+      morceaux.forEach(([i0, i1], k) => {
+        dst.set(src.subarray(i0, i1), o);
+        const n = Math.min(fondu, (i1 - i0) >> 1);
+        // RECOLLÉ SANS CLIC : un fondu de six millisecondes de part et d'autre de chaque coupe
+        for (let j = 0; j < n; j++) {
+          if (k > 0) dst[o + j] *= j / n;
+          if (k < morceaux.length - 1) dst[o + i1 - i0 - 1 - j] *= j / n;
+        }
+        o += i1 - i0;
+      });
     }
     audio = b;
   }
   let bouche = p.bouche;
   if (bouche) {
-    const j0 = Math.min(bouche.length, Math.round(de * IPS));
-    const j1 = Math.min(bouche.length, Math.round(a * IPS));
-    const nb = new Float32Array(bouche.length - (j1 - j0));
-    nb.set(bouche.subarray(0, j0), 0);
-    nb.set(bouche.subarray(j1), j0);
-    bouche = nb;
+    const garde: number[] = [];
+    for (const g of gardes) {
+      const j0 = Math.min(bouche.length, Math.round(g.de * IPS));
+      const j1 = Math.min(bouche.length, Number.isFinite(g.a) ? Math.round(g.a * IPS) : bouche.length);
+      for (let j = j0; j < j1; j++) garde.push(bouche[j]);
+    }
+    bouche = Float32Array.from(garde);
   }
+  const dansUneCoupe = (x: number) => coupes.some((c) => x >= c.de && x < c.a);
+  const sousTitres = p.sousTitres
+    .map((x) => {
+      const mots = x.mots?.filter((w) => !dansUneCoupe((w.a + w.b) / 2)).map((w) => ({ ...w, a: t(w.a), b: t(w.b) }));
+      if (x.mots && !mots?.length) return null;
+      return { ...x, debut: t(x.debut), fin: t(x.fin), ...(mots ? { mots, texte: mots.map((w) => w.m).join(" ") } : {}) };
+    })
+    // ce qui a été dit dans une coupe (un « euh », un client pendant qu'il réfléchissait) part avec
+    .filter((x): x is SousTitre => x != null && x.fin - x.debut >= 0.1);
   return {
-    ...p,
-    audio,
-    bouche,
-    // ce qui a été dit pendant qu'il réfléchissait (un « euh », un client) part avec
-    sousTitres: p.sousTitres.filter((x) => x.fin > a).map((x) => ({ ...x, debut: t(x.debut), fin: t(x.fin) })),
-    coupe: Math.max(p.questionFin + 0.8, p.coupe - d),
+    prise: { ...p, audio, bouche, sousTitres, coupe: Math.max(p.questionFin + 0.8, t(p.coupe)) },
+    gardes,
   };
 }
 type MediaPret = { genre: "photo"; img: HTMLImageElement } | { genre: "video"; v: HTMLVideoElement };
@@ -1224,9 +1275,21 @@ export async function monter(o: {
   signal?: AbortSignal;
 }): Promise<Montage> {
   const { ctx, el, reglages } = o;
-  /** Le temps de réflexion de chaque prise, coupé — voir `sansAttente`. Ses vidéos le sautent (`tic`). */
-  const sauts = o.prises.map((p) => (p.reponseDebut != null && p.reponseDebut > p.questionFin + 0.3 ? p.reponseDebut - p.questionFin : 0));
-  const prises = o.prises.map((p, k) => sansAttente(ctx, p, sauts[k]));
+  /* ✂️ CE QUI EST COUPÉ DE CHAQUE PRISE (voir `resserrer`) : son temps de réflexion — de la fin de la
+     question à sa réponse, retiré trois dixièmes plus tôt pour que sa vidéo le saute sous la carte —, puis
+     ses hésitations, s'il y a son son (sans lui, c'est le lecteur qui joue sa voix, telle quelle). */
+  const reflexion = o.prises.map((p) => (p.reponseDebut != null && p.questionFin > 0.4 && p.reponseDebut > p.questionFin + 0.3 ? p.reponseDebut - p.questionFin : 0));
+  const coupesDe = o.prises.map((p, k) => {
+    const l: { de: number; a: number }[] = reflexion[k] ? [{ de: p.questionFin - 0.3, a: p.questionFin - 0.3 + reflexion[k] }] : [];
+    const apres = (l[0]?.a ?? p.questionFin) + 0.05;
+    if (p.audio) for (const c of p.coupes ?? []) if (c.de >= apres && c.a > c.de && c.de >= (l[l.length - 1]?.a ?? 0)) l.push({ de: c.de, a: c.a });
+    return l;
+  });
+  const resserrees = o.prises.map((p, k) => resserrer(ctx, p, coupesDe[k]));
+  const prises = resserrees.map((x) => x.prise);
+  const gardes = resserrees.map((x) => x.gardes);
+  /** Les sauts de sa réponse (pas celui de sa réflexion, caché par la carte), dans le temps du montage. */
+  const sautsReponse = coupesDe.map((l, k) => l.slice(reflexion[k] ? 1 : 0).map((c) => versMontage(gardes[k], c.a)));
   const c2d = o.toile.getContext("2d");
   if (!c2d) throw new Error("Ce téléphone ne sait pas dessiner la vidéo.");
   if (typeof o.toile.captureStream !== "function") throw new Error("Ce téléphone ne sait pas enregistrer un dessin animé (captureStream).");
@@ -1239,6 +1302,15 @@ export async function monter(o: {
 
   /* ─── les lecteurs (muets) et les photos ─── */
   const lecteurs = await Promise.all(prises.map((p) => (p.url ? lecteurMuet(p.url) : Promise.resolve(null))));
+  /**
+   * LA DOUBLURE : un second lecteur de la même prise, quand sa réponse a des sauts. Pendant que l'un joue,
+   * l'autre attend, déjà calé sur le morceau suivant ; au saut, on passe de l'un à l'autre. Un lecteur
+   * qui cherche un autre instant de la vidéo met jusqu'à un tiers de seconde à repartir : l'image se
+   * figerait sur sa bouche pendant que sa voix continue.
+   */
+  const doublures = await Promise.all(prises.map((p, k) => (p.url && p.audio && sautsReponse[k].length ? lecteurMuet(p.url) : Promise.resolve(null))));
+  /** Le lecteur qu'on voit, prise par prise : le premier, ou sa doublure après un saut. */
+  const actifs = [...lecteurs];
   const preparer = async (m: Media): Promise<MediaPret | null> => {
     if (m.genre === "photo") {
       const img = await image(m.url).catch(() => null);
@@ -1310,8 +1382,15 @@ export async function monter(o: {
       produit: imageDuJour ? vues[k].findIndex((m) => m.genre === "photo" && m.img === imageDuJour) : null,
       visage: Boolean(lecteurs[k]) && !enFantome,
       produitSeul: !medias[k].length,
+      sauts: sautsReponse[k],
     }),
   );
+  /**
+   * LE COUP DE ZOOM DES SAUTS : quand un saut tombe sur son visage (pas de photo pour le cacher), l'image
+   * passe d'un cadrage à l'autre — un peu plus serré, puis normal, puis plus serré —, comme sur les Reels :
+   * le saut devient un effet, pas un accroc.
+   */
+  const cadrageDesSauts = (k: number, tc: number) => (sautsReponse[k].filter((x) => tc >= x).length % 2 ? 1.09 : 1);
 
   /* ─── le son : un bus, un compresseur, la sortie enregistrée (et les haut-parleurs si on écoute) ─── */
   const enregistree = ctx.createMediaStreamDestination();
@@ -1475,9 +1554,9 @@ export async function monter(o: {
 
   /** Ce qu'on voit pendant sa réponse : lui, une de ses photos (selon ses mots), ou son fantôme sur le fond. */
   const visuel = (k: number, tc: number, z: number) => {
-    const v = lecteurs[k];
+    const v = actifs[k];
     const pl = planA(k, tc);
-    if (pl.quoi === "visage" && v) couvrirImage(c2d, v, v.videoWidth, v.videoHeight, { z });
+    if (pl.quoi === "visage" && v) couvrirImage(c2d, v, v.videoWidth, v.videoHeight, { z: z * cadrageDesSauts(k, tc) });
     else if (typeof pl.quoi === "number" && vues[k][pl.quoi]) {
       const m = vues[k][pl.quoi];
       // UNE PHOTO NE RESTE PAS FIGÉE : elle avance doucement, une fois vers la gauche, une fois vers la droite
@@ -1574,7 +1653,7 @@ export async function monter(o: {
       }
     }
     // UNE IMAGE DE LUI, pour la carte postale de la fin
-    const v = lecteurs[k];
+    const v = actifs[k];
     if (!photoDuJour && !instantane && !enFantome && v && v.videoWidth && repond > 1.2 && planA(k, tc).quoi === "visage") {
       const t2 = toile(540, 960);
       couvrirImage(t2.getContext("2d")!, v, v.videoWidth, v.videoHeight, { w: 540, h: 960 });
@@ -1702,9 +1781,15 @@ export async function monter(o: {
   let lance = false;
   let sonsPoses = false;
   let mediaLance = false;
-  /** Sa vidéo a sauté son temps de réflexion ; et les sons de sa réponse sont posés. */
+  /** Sa vidéo a sauté son temps de réflexion ; et les sons de sa réponse sont posés (`zeroReponse` : leur zéro). */
   let saute = false;
   let reponsePosee = false;
+  let zeroReponse = 0;
+  /** Le morceau gardé sur lequel la doublure attend (−1 : aucun). */
+  let calage = -1;
+  /** Ce que met un lecteur à repartir après avoir cherché un instant, mesuré sur ce téléphone. */
+  let latence = 0.25;
+  let chercheDepuis = -1;
   let derniereImage = -1;
   let bloqueDepuis = 0;
   let affiche = false;
@@ -1715,6 +1800,7 @@ export async function monter(o: {
       const s = segments[seg];
       if (s.genre === "prise") {
         lecteurs[s.k]?.pause();
+        doublures[s.k]?.pause();
         for (const m of medias[s.k]) if (m.genre === "video") m.v.pause();
       }
       // la dernière image du plan, pour le coup de fouet de la carte suivante
@@ -1727,6 +1813,8 @@ export async function monter(o: {
       mediaLance = false;
       saute = false;
       reponsePosee = false;
+      calage = -1;
+      chercheDepuis = -1;
       if (seg >= segments.length) return fini();
       const g = segments[seg].genre;
       if (g === "cloche") sonsCloche(maintenant);
@@ -1759,7 +1847,7 @@ export async function monter(o: {
         if (dessiner && decor) decouverte(c2d, decor, Math.max(0, t));
         if (t >= CLOCHE.duree) suivant(maintenant);
       } else if (s.genre === "prise") {
-        const v = lecteurs[s.k];
+        const v = actifs[s.k];
         const p = prises[s.k];
         let tc = t;
         if (v) {
@@ -1772,27 +1860,75 @@ export async function monter(o: {
               /* muet : la lecture ne devrait jamais être refusée — sinon, le garde-fou ci-dessous passe la prise */
             });
           }
-          const d = sauts[s.k];
-          // LE SAUT : sous la carte, juste avant qu'elle s'envole, sa vidéo passe son temps de réflexion
-          if (d && !saute && v.currentTime >= p.questionFin - 0.3) {
-            saute = true;
-            v.currentTime = v.currentTime + d;
-          }
-          tc = saute ? v.currentTime - d : v.currentTime;
-          if (tc > 0.02 && !sonsPoses) {
-            sonsPoses = true;
-            sonsQuestion(s.k, maintenant - tc);
-            if (!d) {
-              reponsePosee = true;
-              sonsReponse(s.k, maintenant - tc, v);
+          const g = gardes[s.k];
+          const d = reflexion[s.k];
+          if (reponsePosee && p.audio) {
+            // ═══ SA RÉPONSE EST LANCÉE : SON SON MÈNE, ET SA VIDÉO LE SUIT ═══ Elle saute ses « euh » et ses
+            // silences : au bout d'un morceau gardé, on passe à la doublure, déjà calée sur le suivant.
+            tc = maintenant - zeroReponse;
+            const ici = gardeA(g, tc);
+            const i = g.indexOf(ici);
+            const apres = g[i + 1];
+            const finIci = ici.m + (ici.a - ici.de);
+            const autre = v === lecteurs[s.k] ? doublures[s.k] : lecteurs[s.k];
+            // ce que met ce téléphone à repartir après avoir cherché
+            if (chercheDepuis >= 0 && !v.seeking) {
+              latence = borne(maintenant - chercheDepuis, 0.05, 0.6);
+              chercheDepuis = -1;
             }
+            // LA DOUBLURE ATTEND SUR LE MORCEAU SUIVANT
+            if (autre && apres && calage !== i + 1) {
+              autre.pause();
+              autre.playbackRate = 1;
+              autre.currentTime = apres.de;
+              calage = i + 1;
+            }
+            if (apres && tc >= finIci - 0.03) {
+              if (autre && calage === i + 1 && !autre.seeking && autre.readyState >= 2) {
+                // LE SAUT : on passe à la doublure, déjà au bon endroit
+                actifs[s.k] = autre;
+                autre.play().catch(() => {});
+                v.pause();
+                v.playbackRate = 1;
+                calage = -1;
+              } else if (!v.seeking && v.currentTime < apres.de) {
+                // pas de doublure prête : le lecteur cherche lui-même, en avance de ce qu'il met à repartir
+                v.currentTime = apres.de + latence;
+                chercheDepuis = maintenant;
+              }
+            } else if (!v.seeking && !v.paused && tc > ici.m + 0.15 && tc < finIci - 0.1) {
+              // EN RETARD OU EN AVANCE : il accélère ou ralentit un peu ; très loin, il cherche
+              const ecart = ici.de + (tc - ici.m) - v.currentTime;
+              if (Math.abs(ecart) > 0.8) {
+                v.currentTime = ici.de + (tc - ici.m) + latence;
+                chercheDepuis = maintenant;
+              } else v.playbackRate = ecart > 0.04 ? 1.25 : ecart < -0.04 ? 0.8 : 1;
+            }
+            bloqueDepuis = maintenant;
+          } else {
+            // LE SAUT : sous la carte, juste avant qu'elle s'envole, sa vidéo passe son temps de réflexion
+            if (d && !saute && v.currentTime >= g[0].a) {
+              saute = true;
+              v.currentTime = g[1].de + (v.currentTime - g[0].a);
+            }
+            tc = versMontage(g, v.currentTime);
+            if (tc > 0.02 && !sonsPoses) {
+              sonsPoses = true;
+              sonsQuestion(s.k, maintenant - tc);
+              if (!d) {
+                reponsePosee = true;
+                zeroReponse = maintenant - tc;
+                sonsReponse(s.k, zeroReponse, v);
+              }
+            }
+            // …et le son de sa réponse part quand l'image repart, calé sur elle
+            if (d && saute && !reponsePosee && !v.seeking && tc > p.questionFin - 0.27) {
+              reponsePosee = true;
+              zeroReponse = maintenant - tc;
+              sonsReponse(s.k, zeroReponse, v);
+            }
+            if (tc > 0.02 && !v.seeking) bloqueDepuis = maintenant;
           }
-          // …et le son de sa réponse part quand l'image repart, calé sur elle
-          if (d && saute && !reponsePosee && !v.seeking && tc > p.questionFin - 0.27) {
-            reponsePosee = true;
-            sonsReponse(s.k, maintenant - tc, v);
-          }
-          if (tc > 0.02 && !v.seeking) bloqueDepuis = maintenant;
         } else if (!sonsPoses) {
           // SA VOIX SEULE : c'est l'horloge qui mène (son son est déjà sans le temps de réflexion)
           sonsPoses = true;
@@ -1840,7 +1976,7 @@ export async function monter(o: {
   ecoute.disconnect();
   musique.disconnect();
   salle.disconnect();
-  const aRanger = [...lecteurs, ...medias.flat().map((m) => (m.genre === "video" ? m.v : null))];
+  const aRanger = [...lecteurs, ...doublures, ...medias.flat().map((m) => (m.genre === "video" ? m.v : null))];
   for (const v of aRanger) {
     if (!v) continue;
     v.pause();

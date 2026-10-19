@@ -74,6 +74,7 @@ import {
   type PriseAMonter,
 } from "@/lib/direct/interview-montage";
 import { sessionPourLeMicro } from "@/lib/direct/session-audio";
+import { alignerMots, resserrerLaReponse, resumeDesCoupes, sousTitresDesMots, type Coupe, type MotHorodate } from "@/lib/direct/interview-resserrer";
 import { pistesAMontrer, pistesDe } from "@/lib/direct/interview-pistes";
 
 type Etape = "reglages" | "preparation" | "placement" | "interview" | "merci" | "reponses" | "montage" | "resultat" | "erreur";
@@ -102,6 +103,8 @@ type Analyse = {
   transcription: "ok" | "vide" | "echec" | "sans-son";
   texte?: string;
   detail?: string;
+  /** Ses « euh », ses silences trop longs, ses débuts ratés : ce que le montage retire (voir `interview-resserrer.ts`). */
+  coupes: Coupe[];
 };
 
 /** Ses photos et vidéos d'une réponse : trois au plus, elles passent au rythme de ses mots (voir `plansDeCoupe`). */
@@ -183,20 +186,21 @@ async function versWav(audio: AudioBuffer, debut: number, fin: number): Promise<
   });
 }
 
-async function analyser(ctx: AudioContext, p: PriseBrute, enFantome: boolean, contexte: string): Promise<Analyse> {
+async function analyser(ctx: AudioContext, p: PriseBrute, enFantome: boolean, contexte: string, filme: boolean): Promise<Analyse> {
   let audio: AudioBuffer | null = null;
   try {
     audio = await ctx.decodeAudioData(await p.blob.arrayBuffer());
   } catch {
     audio = null;
   }
-  if (!audio) return { audio: null, parole: null, sousTitres: [], bouche: null, transcription: "sans-son" };
+  if (!audio) return { audio: null, parole: null, sousTitres: [], bouche: null, transcription: "sans-son", coupes: [] };
   // SA BOUCHE SUIT SA VOIX — à partir de sa réponse seulement : avant, le micro a entendu le reporter,
   // puis l'a entendu réfléchir (et peut-être un client derrière lui)
   const bouche = enFantome ? ouvertures(audio, p.reponseDebut + 0.05) : null;
   const pas = 0.05;
-  const parole = fenetreDeParole(energie(audio, pas), pas, p.reponseDebut + 0.1);
-  if (!parole) return { audio, parole: null, sousTitres: [], bouche, transcription: "vide" };
+  const rms = energie(audio, pas);
+  const parole = fenetreDeParole(rms, pas, p.reponseDebut + 0.1);
+  if (!parole) return { audio, parole: null, sousTitres: [], bouche, transcription: "vide", coupes: [] };
   try {
     const wav = await versWav(audio, parole.debut, Math.min(audio.duration, parole.fin));
     const stop = new AbortController();
@@ -204,16 +208,22 @@ async function analyser(ctx: AudioContext, p: PriseBrute, enFantome: boolean, co
     const r = await fetch("/api/direct/transcrire", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ audio: wav, contexte }),
+      // L'INSTANT DE CHAQUE MOT : les sous-titres s'allument au mot près, et le montage resserre sa voix
+      body: JSON.stringify({ audio: wav, contexte, mots: true }),
       signal: stop.signal,
     }).finally(() => clearTimeout(minuterie));
-    const j = (await r.json().catch(() => ({}))) as { texte?: string; erreur?: string };
-    if (!r.ok) return { audio, parole, sousTitres: [], bouche, transcription: "echec", detail: j.erreur || `HTTP ${r.status}` };
+    const j = (await r.json().catch(() => ({}))) as { texte?: string; erreur?: string; mots?: MotHorodate[] };
+    if (!r.ok) return { audio, parole, sousTitres: [], bouche, transcription: "echec", detail: j.erreur || `HTTP ${r.status}`, coupes: [] };
     const texte = String(j.texte ?? "").trim();
-    if (!texte) return { audio, parole, sousTitres: [], bouche, transcription: "vide" };
-    return { audio, parole, texte, bouche, transcription: "ok", sousTitres: horairesSousTitres(decouperSousTitres(texte), parole.debut, parole.fin) };
+    if (!texte) return { audio, parole, sousTitres: [], bouche, transcription: "vide", coupes: [] };
+    // SANS L'INSTANT DES MOTS (un service qui ne le donne pas) : les sous-titres au prorata, et rien n'est coupé
+    if (!j.mots?.length) return { audio, parole, texte, bouche, transcription: "ok", sousTitres: horairesSousTitres(decouperSousTitres(texte), parole.debut, parole.fin), coupes: [] };
+    // ses instants comptent depuis le début du son envoyé : on les ramène au début de la prise
+    const mots = alignerMots(texte, j.mots.map((w) => ({ m: w.m, a: w.a + parole.debut, b: w.b + parole.debut })));
+    const { coupes, gardes } = resserrerLaReponse({ mots, debut: parole.debut - 0.1, fin: parole.fin + 0.1, rms, pas, filme });
+    return { audio, parole, texte, bouche, transcription: "ok", sousTitres: sousTitresDesMots(gardes), coupes };
   } catch (e) {
-    return { audio, parole, sousTitres: [], bouche, transcription: "echec", detail: (e as Error)?.message || "réseau" };
+    return { audio, parole, sousTitres: [], bouche, transcription: "echec", detail: (e as Error)?.message || "réseau", coupes: [] };
   }
 }
 
@@ -728,7 +738,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     majReponses(() => prises.map((p) => ({ ...p, medias: [] })));
     setEcoute(true);
     setEtape("reponses");
-    const analyses = await Promise.all(prises.map((p) => analyser(ctx, p, enFantome, script.contexte)));
+    const analyses = await Promise.all(prises.map((p) => analyser(ctx, p, enFantome, script.contexte, Boolean(p.url))));
     majReponses((rs) => rs.map((r, k) => ({ ...r, analyse: analyses[k] })));
     setEcoute(false);
   };
@@ -788,6 +798,8 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
         audio: r.analyse?.audio ?? null,
         bouche: r.analyse?.bouche ?? null,
         sousTitres: r.analyse?.sousTitres ?? [],
+        // SA VOIX RESSERRÉE : ses « euh », ses silences trop longs et ses débuts ratés partent
+        coupes: r.analyse?.coupes ?? [],
         medias: r.medias.map((m) => ({ genre: m.genre, url: m.url })),
       }));
       const m = await monter({
@@ -1329,6 +1341,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
                         : r.analyse?.transcription === "vide"
                           ? "rien entendu"
                           : "sans son"}
+                    {r.analyse?.transcription === "ok" ? ` · resserré : ${resumeDesCoupes(r.analyse.coupes)}` : ""}
                   </em>
                 </li>
               ))}

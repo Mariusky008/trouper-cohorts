@@ -133,6 +133,15 @@ dire(
   pc.length === 2 && pc[0].quoi === "visage" && pc[1].quoi === 0 && couvre(pc, 2.55, 4.95) && pc.every((x) => x.a - x.de >= 0.999) && courte.some((w) => Math.abs(w.a - 0.04 - pc[1].de) < 1e-9),
   `une réponse de 2,4 s avec sa photo : lui, puis elle, coupé au début d'un mot — ${pc.map((x) => `${x.quoi}@${x.de.toFixed(2)}`).join(" ")}`,
 );
+// SA VOIX RESSERRÉE : un saut (un « euh » retiré) tombe sur un changement d'image, la photo le cache
+const ps2 = plansDeCoupe({ debut: 3.35, fin: 12, mots: reponse, medias: 2, visage: true, sauts: [7.03] });
+dire(
+  couvre(ps2, 3.35, 12) && ps2.some((x) => Math.abs(x.de - 7.03) < 1e-9),
+  `un saut à 7,03 s : l'image change pile dessus — ${ps2.map((x) => `${x.quoi}@${x.de.toFixed(2)}`).join(" ")}`,
+);
+// L'INSTANT DE CHAQUE MOT, quand la transcription l'a donné : le mot s'allume à son instant, pas au prorata
+const exacts = motsDesSousTitres([{ texte: "Douce. Vraie.", debut: 5.4, fin: 7.0, mots: [{ m: "Douce.", a: 5.4, b: 5.8 }, { m: "Vraie.", a: 6.6, b: 7.0 }] }], forts);
+dire(exacts.length === 2 && exacts[1].a === 6.6 && exacts[0].b === 5.8, "avec l'instant de chaque mot, les sous-titres s'allument au mot près");
 const tresCourte = plansDeCoupe({ debut: 2.55, fin: 4.2, mots: courte, medias: 2, visage: true });
 dire(tresCourte.length === 1 && tresCourte[0].quoi === 0, "trop courte pour deux plans : sa photo seule");
 const deuxMots = motsDesSousTitres([{ texte: "Douce. Vraie.", debut: 2.6, fin: 4.0 }], forts);

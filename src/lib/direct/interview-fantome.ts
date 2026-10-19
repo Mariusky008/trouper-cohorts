@@ -324,11 +324,11 @@ export function fenetreDeParole(
 }
 
 /**
- * LES SOUS-TITRES À LA CRAIE : la réponse transcrite, coupée en morceaux qui
- * tiennent sur deux lignes d'ardoise, puis répartis sur le temps où il parle,
- * au prorata de leur longueur. Ce n'est pas un minutage au mot près — le
- * service de transcription ne le donne pas — mais à l'œil, un morceau
- * apparaît quand on l'entend.
+ * LES SOUS-TITRES À LA CRAIE, QUAND ON N'A PAS L'INSTANT DE CHAQUE MOT : la
+ * réponse transcrite, coupée en morceaux qui tiennent sur deux lignes
+ * d'ardoise, puis répartis sur le temps où il parle, au prorata de leur
+ * longueur. Pas au mot près, mais à l'œil, un morceau apparaît quand on
+ * l'entend. Avec les instants, c'est `sousTitresDesMots` (interview-resserrer).
  */
 export function decouperSousTitres(texte: string, max = 46): string[] {
   const mots = texte.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
@@ -350,7 +350,13 @@ export function decouperSousTitres(texte: string, max = 46): string[] {
   return morceaux;
 }
 
-export type SousTitre = { texte: string; debut: number; fin: number };
+export type SousTitre = {
+  texte: string;
+  debut: number;
+  fin: number;
+  /** Ses mots et leur instant, quand la transcription les a donnés (voir `sousTitresDesMots`). */
+  mots?: { m: string; a: number; b: number }[];
+};
 
 export function horairesSousTitres(morceaux: string[], debut: number, fin: number): SousTitre[] {
   const total = morceaux.reduce((s, m) => s + m.length + 6, 0);
@@ -377,15 +383,19 @@ export function horairesSousTitres(morceaux: string[], debut: number, fin: numbe
 export type MotDit = { m: string; a: number; b: number; fort?: boolean };
 
 /**
- * LES MOTS UN À UN. Le service de transcription donne des phrases, pas des
- * mots : chaque sous-titre est réparti sur son temps au prorata de la longueur
- * de ses mots. Ce n'est pas un minutage au mot près, mais à l'œil, le mot
- * s'allume quand on l'entend. `forts` : les mots à mettre en rose (son plat,
- * son prix).
+ * LES MOTS UN À UN. Quand la transcription a donné l'instant de chaque mot
+ * (`SousTitre.mots`), le mot s'allume à son instant. Sinon, chaque sous-titre
+ * est réparti sur son temps au prorata de la longueur de ses mots : pas au mot
+ * près, mais à l'œil, le mot s'allume quand on l'entend. `forts` : les mots à
+ * mettre en rose (son plat, son prix).
  */
 export function motsDesSousTitres(sousTitres: readonly SousTitre[], forts: ((mot: string) => boolean) | null = null): MotDit[] {
   const out: MotDit[] = [];
   for (const s of sousTitres) {
+    if (s.mots?.length) {
+      for (const w of s.mots) out.push({ m: w.m, a: w.a, b: w.b, ...(forts?.(w.m) ? { fort: true } : {}) });
+      continue;
+    }
     // « moment ? » : le point d'interrogation reste collé à son mot
     const mots = s.texte
       .replace(/\s+/g, " ")
@@ -499,7 +509,10 @@ export function motsForts(plat: string, prix: string): ((mot: string) => boolean
  *     juste avant le mot sur la photo du produit — dès 0,6 s de plan, il passe
  *     avant tout —, et le coup de zoom tombe dessus ;
  *   · s'il n'a mis aucune photo à cette réponse, celle de son produit ne vient
- *     QUE quand il le nomme : pas la même image à chaque phrase.
+ *     QUE quand il le nomme : pas la même image à chaque phrase ;
+ *   · SA VOIX RESSERRÉE SAUTE (un « euh », un silence retiré) : l'image change
+ *     de préférence pile sur le saut — la photo le cache. Ceux qui tombent sur
+ *     son visage, le montage les cache d'un coup de zoom.
  * `quoi` : « visage » (sa vidéo), « fond » (ni vidéo ni photo : son fantôme
  * parle sur le fond), ou le numéro d'une photo.
  */
@@ -519,6 +532,8 @@ export function plansDeCoupe(o: {
   visage: boolean;
   /** Seule la photo de son produit est là (il n'en a pas mis à cette réponse) : elle attend qu'il le nomme. */
   produitSeul?: boolean;
+  /** Les instants où sa vidéo saute (une hésitation retirée, voir `interview-resserrer.ts`). */
+  sauts?: readonly number[];
 }): PlanDeCoupe[] {
   const { debut, fin, mots, medias, visage } = o;
   const seul: PlanDeCoupe["quoi"] = visage ? "visage" : medias ? 0 : "fond";
@@ -541,9 +556,13 @@ export function plansDeCoupe(o: {
   const sesPhotos = medias > 0 && visage && !o.produitSeul;
   if (!medias || fin - debut < 2.5) return sesPhotos ? luiPuisElle() : [{ de: debut, a: fin, quoi: seul }];
   // LES ENDROITS OÙ L'ON PEUT COUPER : le début d'une phrase (après une ponctuation ou un silence)
+  const sauts = o.sauts ?? [];
   const coupures = mots
     .filter((w, k) => k > 0 && (/[,.;:!?…]$/.test(mots[k - 1].m) || w.a - mots[k - 1].b > 0.25 || k % 5 === 0))
-    .map((w) => w.a - 0.04);
+    .map((w) => w.a - 0.04)
+    // UN SAUT TOUT PRÈS D'UN DÉBUT DE PHRASE : on coupe sur le saut, la photo le cache
+    .filter((c) => !sauts.some((x) => Math.abs(x - c) < 0.35));
+  coupures.push(...sauts);
   // ET LE NOM DE SON PRODUIT : on coupe juste avant
   const produit = o.produit != null && o.produit >= 0 && o.produit < medias ? o.produit : null;
   const fort = produit != null ? mots.find((w) => w.fort && w.a > debut + 0.6) : undefined;

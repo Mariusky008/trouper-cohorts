@@ -84,6 +84,22 @@ const CONTEXTE =
 const MAX_CONTEXTE = 400;
 
 /**
+ * ═══ L'INSTANT DE CHAQUE MOT, POUR RESSERRER SA VOIX ═══
+ *
+ * « Le montage couperait automatiquement les "euh", les silences de plus d'une
+ * demi-seconde et les débuts de phrase ratés… il faut que la transcription
+ * donne l'instant exact de chaque mot. » Avec `mots: true`, la route le rend
+ * (voir `interview-resserrer.ts`). Seul `whisper-1` sait le donner
+ * (`verbose_json`, au mot) : on le prend pour cette demande-là.
+ *
+ * ET ON LUI DEMANDE DE GARDER LES HÉSITATIONS. Sans rien dire, le modèle les
+ * efface du texte et les noie dans le mot voisin : on ne pourrait plus les
+ * couper. Un début de consigne qui en contient lui apprend à les écrire. Ce
+ * n'est que du vocabulaire : il n'invente pas un « euh » qui n'a pas été dit.
+ */
+const HESITATIONS = " Euh… alors, euh, je… hum, je fais ça.";
+
+/**
  * LE MODÈLE RECRACHE LE CONTEXTE QUAND IL N'ENTEND RIEN — et il le fait mot
  * pour mot. Le raisonnement complet et le seuil sont dans
  * `echo-transcription.ts`, à part, parce qu'ils se vérifient : un garde-fou
@@ -132,13 +148,17 @@ function audioDataUrl(v: string): { type: string; octets: Buffer; nom: string } 
   return { type, octets: Buffer.from(m[2], "base64"), nom: `voix.${ext}` };
 }
 
+/** Un mot et son instant, en secondes depuis le début du son envoyé. */
+type MotDuService = { m: string; a: number; b: number };
+
 async function transcrire(
   cle: string,
   fichier: Blob,
   nom: string,
   modele: string,
   contexte: string,
-): Promise<{ ok: true; texte: string } | { ok: false; statut: number; detail: string }> {
+  auMot = false,
+): Promise<{ ok: true; texte: string; mots?: MotDuService[] } | { ok: false; statut: number; detail: string }> {
   const form = new FormData();
   form.append("file", fichier, nom);
   form.append("model", modele);
@@ -146,6 +166,10 @@ async function transcrire(
   // fait parfois prendre pour de l'anglais, et le résultat est du charabia.
   form.append("language", "fr");
   form.append("prompt", contexte);
+  if (auMot) {
+    form.append("response_format", "verbose_json");
+    form.append("timestamp_granularities[]", "word");
+  }
   const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
     method: "POST",
     headers: { authorization: `Bearer ${cle}` },
@@ -154,8 +178,15 @@ async function transcrire(
   if (!res.ok) {
     return { ok: false, statut: res.status, detail: (await res.text()).slice(0, 300) };
   }
-  const data = (await res.json()) as { text?: unknown };
-  return { ok: true, texte: s(data.text) };
+  const data = (await res.json()) as { text?: unknown; words?: unknown };
+  if (!auMot) return { ok: true, texte: s(data.text) };
+  const mots = (Array.isArray(data.words) ? data.words : [])
+    .map((w) => {
+      const x = (w ?? {}) as { word?: unknown; start?: unknown; end?: unknown };
+      return { m: s(x.word), a: Number(x.start), b: Number(x.end) };
+    })
+    .filter((w) => w.m && Number.isFinite(w.a) && Number.isFinite(w.b) && w.b >= w.a);
+  return { ok: true, texte: s(data.text), mots };
 }
 
 export async function POST(request: Request) {
@@ -196,17 +227,25 @@ export async function POST(request: Request) {
     );
   }
 
-  const contexte = s(p?.contexte).slice(0, MAX_CONTEXTE) || CONTEXTE;
+  const auMot = p?.mots === true;
+  const contexte = (s(p?.contexte).slice(0, MAX_CONTEXTE) || CONTEXTE) + (auMot ? HESITATIONS : "");
 
   const debut = Date.now();
   try {
     const fichier = new Blob([new Uint8Array(a.octets)], { type: a.type });
-    let r = await transcrire(cle, fichier, a.nom, MODELE, contexte);
+    let modele = auMot ? SOCLE : MODELE;
+    let r = await transcrire(cle, fichier, a.nom, modele, contexte, auMot);
+    // AU MOT, ET LE SERVICE REFUSE : le texte seul, comme avant — les sous-titres
+    // seront répartis au prorata et rien ne sera coupé, mais il aura sa vidéo.
+    if (!r.ok && auMot) {
+      console.warn(`[transcrire] au mot refusé (${r.statut}), texte seul`);
+      modele = MODELE;
+      r = await transcrire(cle, fichier, a.nom, MODELE, contexte);
+    }
     // LE REPLI SUR LE SOCLE. Un compte sans accès au modèle récent rend un 400
     // ou un 404 sur le nom du modèle : on refait l'appel avec `whisper-1` plutôt
     // que de renvoyer une panne pour une question de droits.
-    let modele = MODELE;
-    if (!r.ok && MODELE !== SOCLE && (r.statut === 400 || r.statut === 404)) {
+    if (!r.ok && modele !== SOCLE && (r.statut === 400 || r.statut === 404)) {
       console.warn(`[transcrire] ${MODELE} refusé (${r.statut}), repli sur ${SOCLE}`);
       modele = SOCLE;
       r = await transcrire(cle, fichier, a.nom, SOCLE, contexte);
@@ -226,6 +265,7 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({
       texte,
+      ...(texte && r.mots?.length ? { mots: r.mots } : {}),
       modele,
       ms: Date.now() - debut,
       octets: a.octets.length,
