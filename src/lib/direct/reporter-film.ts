@@ -147,6 +147,9 @@ export async function tournerFilm(o: {
   /** « Ce midi », « Aujourd'hui ». */
   quand: string;
   ecouter: boolean;
+  /** Le nom de l'émission, sur le titre, le cadre et le tampon — « Le spécialiste culinaire » dans les
+   *  démonstrations. Sans lui : « Le reporter ClikMe ». */
+  signature?: string;
   surProgres?: (p: number) => void;
   surAffiche?: (image: string) => void;
   signal?: AbortSignal;
@@ -243,12 +246,15 @@ export async function tournerFilm(o: {
 
   /* ─── ce qu'on voit ─── */
   const NOM = o.commerce.trim();
+  const SIGNE = o.signature?.trim().toLocaleUpperCase("fr-FR") || "LE REPORTER CLIKME";
+  // le tampon tourne autour d'un rond : 40 signes au plus
+  const tampon = `${SIGNE} · ${NOM.toLocaleUpperCase("fr-FR")} · `;
   const titre: Titre = {
     fond,
     nom: NOM,
     haut: [o.ville.trim(), o.quand].filter(Boolean).join(" · ").toLocaleUpperCase("fr-FR"),
     bas: [o.quoi.toLocaleLowerCase("fr-FR"), o.plat.trim() || o.quoi],
-    emission: "LE REPORTER CLIKME",
+    emission: SIGNE,
   };
   const fin: Fin = {
     fond,
@@ -260,8 +266,8 @@ export async function tournerFilm(o: {
     infos: o.ville.trim(),
     bouton: "À découvrir sur",
     logo: el.logo,
-    tampon: `LE REPORTER CLIKME · ${NOM.toLocaleUpperCase("fr-FR")} · `.length <= 40 ? `LE REPORTER CLIKME · ${NOM.toLocaleUpperCase("fr-FR")} · ` : "LE REPORTER CLIKME · LE REPORTER CLIKME · ",
-    mention: o.voix ? "La voix du reporter est une voix de synthèse" : "",
+    tampon: tampon.length <= 40 ? tampon : o.signature ? `${SIGNE} · CLIKME · ` : `${SIGNE} · ${SIGNE} · `,
+    mention: o.voix ? (o.signature ? "Sa voix est une voix de synthèse" : "La voix du reporter est une voix de synthèse") : "",
   };
   const nomCadre = o.ville.trim() ? `${NOM} · ${o.ville.trim()}` : NOM;
   const ouverture = (t: number) => {
@@ -303,7 +309,7 @@ export async function tournerFilm(o: {
     const arrive = sortie((u - 0.05) / 0.45);
     const place = grand ? { ...REPORTER_GRAND, cx: REPORTER_GRAND.cx + (1 - arrive) * 420 } : REPORTER_COIN;
     dessinerFantome(c2d, el.reporter, place, u, ouverture(tr), 2 * Math.sin(u * 1.3));
-    dessinerCadre(c2d, P, u, nomCadre, "LE REPORTER CLIKME");
+    dessinerCadre(c2d, P, u, nomCadre, SIGNE);
     // LE PRIX FRAPPE
     if (prixA != null && tr >= prixA && tr < prixA + 1.3) dessinerFrappe(c2d, P, o.prix.trim(), tr - prixA, 1.3, H * 0.42);
     // SES MOTS : en haut quand le reporter est en grand, en bas sur les photos
