@@ -113,6 +113,17 @@ export default async function proxy(request: NextRequest) {
     return copyResponseCookies(NextResponse.rewrite(rewriteUrl, { request: { headers: downstreamHeaders } }), response);
   }
 
+  // L'ACCUEIL EST LA PAGE DES COMMERÇANTS — « cette page peut devenir clikme.fr ».
+  // Une page statique (public/commercants/), avec le même générateur que l'ancien
+  // accueil : mêmes appels, mêmes photos, même suite. Placé APRÈS les domaines
+  // perso, qui gardent leur racine. Retirer ce bloc rend l'ancien accueil
+  // (src/app/page.tsx), resté en place.
+  if (pathname === "/") {
+    const rewriteUrl = request.nextUrl.clone();
+    rewriteUrl.pathname = "/commercants/index.html";
+    return copyResponseCookies(NextResponse.rewrite(rewriteUrl, { request: { headers: downstreamHeaders } }), response);
+  }
+
   const forceAuthScreen = request.nextUrl.searchParams.get("force") === "1";
 
   if (!user && (isHumanMemberArea || isHumanAdminArea)) {

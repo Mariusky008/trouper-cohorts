@@ -1,3 +1,6 @@
+// ⚠ PLUS SERVIE SUR « / » : src/proxy.ts y sert la page des commerçants
+// (public/commercants/). Gardée pour revenir en arrière en retirant ce bloc.
+//
 // Page d'accueil publique — volontairement MINIMALE : elle n'a
 // qu'un seul job, faire créer le site (hero + formulaire), puis une bande « après
 // votre clic » et le pied de page. Tout l'argumentaire (Action Flash, catalogue,

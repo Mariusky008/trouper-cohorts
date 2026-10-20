@@ -1,10 +1,37 @@
 <!doctype html>
 <html lang="fr">
 <meta charset="utf-8">
-<title>ClikMe pour les commerçants — plus de clients, moins de dépenses</title>
-<meta name="description" content="Votre fantôme fait parler de votre commerce partout et transforme votre métier en monnaie entre commerçants. Votre page est créée en 60 secondes, gratuitement, à partir de votre fiche Google.">
-<meta name="robots" content="noindex">
-<link rel="icon" href="/favicon.ico">
+<title>ClikMe — plus de clients, moins de dépenses pour votre commerce</title>
+<meta name="description" content="Votre fantôme fait parler de votre commerce partout et transforme votre métier en monnaie entre commerçants. Votre page est créée en une minute, gratuitement, à partir de votre fiche Google.">
+<link rel="canonical" href="https://www.clikme.fr/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ClikMe">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://www.clikme.fr/">
+<meta property="og:title" content="ClikMe — plus de clients, moins de dépenses pour votre commerce">
+<meta property="og:description" content="Votre fantôme fait parler de votre commerce partout et transforme votre métier en monnaie entre commerçants. Votre page est créée en une minute, gratuitement, à partir de votre fiche Google.">
+<meta property="og:image" content="https://www.clikme.fr/opengraph-image">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ClikMe — plus de clients, moins de dépenses pour votre commerce">
+<meta name="twitter:description" content="Votre fantôme fait parler de votre commerce partout et transforme votre métier en monnaie entre commerçants. Votre page est créée en une minute, gratuitement, à partir de votre fiche Google.">
+<meta name="twitter:image" content="https://www.clikme.fr/opengraph-image">
+<link rel="icon" href="/direct/icone-autour.svg" type="image/svg+xml">
+<link rel="icon" href="/direct/icone-autour-512.png" sizes="512x512" type="image/png">
+<link rel="apple-touch-icon" href="/direct/icone-autour-180.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="clikme-serveur" content="1">
+<script>
+(() => {
+  // Un lien « mot de passe oublié » qui retombe sur l'accueil part vers /update-password, avec son jeton
+  const u = new URL(location.href), h = new URLSearchParams(u.hash.slice(1));
+  if (u.searchParams.get("type") !== "recovery" && h.get("type") !== "recovery") return;
+  const t = new URL("/update-password", u.origin), th = u.searchParams.get("token_hash");
+  if (th) { t.searchParams.set("token_hash", th); t.searchParams.set("type", "recovery"); }
+  location.replace(t.pathname + t.search + u.hash);
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="clikme-base" content="/commercants/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -428,6 +455,9 @@ details p { padding: 0 0 22px; color: var(--gris); max-width: 46em }
 footer { padding: 26px 0 60px; border-top: 1px solid var(--trait); color: var(--gris2); font-size: 13px }
 footer .w { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; justify-content: space-between }
 footer img { height: 22px; width: auto; opacity: .8 }
+footer .pied { justify-content: flex-start; gap: 8px 18px; margin-top: 18px }
+footer .pied a { color: var(--gris2); text-decoration: none }
+footer .pied a:hover { color: var(--creme) }
 
 /* L'arrivée des blocs au défilement */
 .monte { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s cubic-bezier(.2, .8, .2, 1) }
@@ -775,6 +805,19 @@ footer img { height: 22px; width: auto; opacity: .8 }
     <img src="/commercants/logo.png" alt="ClikMe" width="55" height="22">
     <span>ClikMe · Le commerce de votre ville, en direct · clikme.fr</span>
   </div>
+  <!-- Ce que l'ancien accueil donnait en pied de page, et qu'une page d'accueil doit garder : les
+       conditions, les mentions légales et une façon de nous joindre -->
+  <nav class="w pied" aria-label="Informations">
+    <a href="#creer">Créer ma page</a>
+    <a href="/legal#cgu">Conditions d’utilisation</a>
+    <a href="/legal#cgv">Conditions de vente</a>
+    <a href="/legal#remboursement">Remboursement</a>
+    <a href="/legal#confidentialite">Confidentialité</a>
+    <a href="/legal#mentions">Mentions légales</a>
+    <a href="https://wa.me/33768233347?text=Bonjour%20Marius%2C%20je%20voudrais%20en%20savoir%20plus%20sur%20ClikMe." target="_blank" rel="noopener">WhatsApp</a>
+    <a href="tel:+33768233347">07 68 23 33 47</a>
+    <a href="mailto:contact@popey.academy">contact@popey.academy</a>
+  </nav>
 </footer>
 
 <div id="vol" data-cote="droite">
@@ -1154,8 +1197,9 @@ footer img { height: 22px; width: auto; opacity: .8 }
   /* ═══ LA CRÉATION DE SA PAGE — le générateur de l'accueil de clikme.fr ═══
      Mêmes champs, même envoi (`/api/site-internet/public-generate`), mêmes photos rangées sous leur
      intitulé (`/api/site-internet/photos-lieu`), même suite : la maquette de sa page. Ces appels ne
-     répondent qu'à clikme.fr : ailleurs (l'aperçu), on l'y emmène avec ce qu'il a déjà tapé. */
-  const SUR_CLIKME = /(^|\.)clikme\.fr$|(^|\.)popey\.academy$|^localhost$|^127\.0\.0\.1$/.test(location.hostname);
+     répondent qu'au site lui-même, qui pose la balise clikme-serveur en servant la page : ailleurs
+     (l'aperçu), on l'emmène sur clikme.fr avec ce qu'il a déjà tapé. */
+  const SUR_CLIKME = !!$('meta[name="clikme-serveur"]');
   const WA_LIMITE = "https://wa.me/33768233347?text=" + encodeURIComponent("Bonjour Marius, je voudrais voir ce que ClikMe construirait pour mon activité.");
   const ETAPES = ["Je cherche votre établissement sur Google…", "Je récupère vos photos et vos avis…", "Je choisis vos couleurs et vos textes…", "J'installe votre assistante IA…", "Je construis votre site…", "Presque prêt…"];
   const LIEU = [
@@ -1240,7 +1284,7 @@ footer img { height: 22px; width: auto; opacity: .8 }
       const ailleurs = $("#g-ailleurs");
       ailleurs.hidden = false;
       ailleurs.textContent = "La création se fait sur clikme.fr : je vous y emmène avec votre nom, votre activité et votre ville." + (photo || Object.keys(autres).length ? " Vos photos sont à remettre là-bas." : "");
-      window.open("https://www.clikme.fr/commercants?" + q.toString() + "#creer", "_blank", "noopener");
+      window.open("https://www.clikme.fr/?" + q.toString() + "#creer", "_blank", "noopener");
       return;
     }
     enCours = true; majPret(); construire(true);
@@ -1280,6 +1324,9 @@ footer img { height: 22px; width: auto; opacity: .8 }
     if (q.get("activite")) { gAct.value = q.get("activite"); gAct.dataset.auto = ""; }
     majPret();
   })();
+  // Revenu de la maquette par le bouton Retour : le navigateur rend la page telle qu'il l'a quittée,
+  // construction en cours et bouton grisé. On la rouvre prête à servir.
+  addEventListener("pageshow", (e) => { if (e.persisted && enCours) { construire(false); enCours = false; majPret(); } });
 
   /* ═══ Ce qui se déclenche à la lecture ═══ */
   if ("IntersectionObserver" in window) {
