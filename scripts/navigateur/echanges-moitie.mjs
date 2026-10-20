@@ -109,7 +109,7 @@ await demo.goto(`${BASE}/autour-de-moi/assistante`, { waitUntil: "networkidle", 
 await demo.waitForTimeout(1500);
 await demo.getByRole("button", { name: /Restaurant/ }).first().click();
 await demo.waitForTimeout(2500);
-await demo.locator("button.cz-outil", { hasText: "Échanges" }).first().click({ timeout: 60000 });
+await demo.locator(".ak-nav button", { hasText: "Catalogue" }).first().click({ timeout: 60000 });
 await demo.waitForTimeout(6500);
 await demo.getByRole("button", { name: /C’est ça/ }).click();
 await demo.waitForTimeout(800);
