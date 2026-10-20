@@ -22,7 +22,9 @@ const config: NextConfig = {
   // route — une exclusion ici retirerait aussi ces fichiers-là : aucune ne
   // touche une image.
   outputFileTracingExcludes: {
-    "*": ["./public/**/*.{mp4,mov,webm}", "./public/mediapipe/**", "./public/flyers/**", "./public/**/*.{html,pdf}"],
+    // `commercants/` : la page d'accueil des commerçants démarchés et ses fichiers (images, voix,
+    // films), servis tels quels au navigateur, jamais lus par une route.
+    "*": ["./public/**/*.{mp4,mov,webm}", "./public/mediapipe/**", "./public/flyers/**", "./public/**/*.{html,pdf}", "./public/commercants/**"],
   },
   outputFileTracingIncludes: {
     // L'IMAGE DE PARTAGE LIT SA POLICE ET LE FANTÔME SUR LE DISQUE (voir
@@ -297,6 +299,16 @@ const config: NextConfig = {
       toHome("/emploi"),
       toHome("/connexion"),
       toHome("/login"),
+    ];
+  },
+  async rewrites() {
+    return [
+      // LA PAGE D'ACCUEIL DES COMMERÇANTS DÉMARCHÉS — une page HTML faite d'un seul tenant (le fantôme
+      // qui vole, le parcours du client, les voix), rangée avec ses fichiers dans `public/commercants/`.
+      // Elle vit ICI, et pas seulement en aperçu, pour une raison : son formulaire crée la page du
+      // commerçant avec le même générateur que l'accueil (`/api/site-internet/public-generate`), et ces
+      // routes ne répondent qu'au site lui-même. L'adresse courte est celle qu'on donne au démarchage.
+      { source: "/commercants", destination: "/commercants/index.html" },
     ];
   },
 };

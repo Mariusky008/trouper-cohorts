@@ -1,0 +1,1332 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<title>ClikMe pour les commerçants — plus de clients, moins de dépenses</title>
+<meta name="description" content="Votre fantôme fait parler de votre commerce partout et transforme votre métier en monnaie entre commerçants. Votre page est créée en 60 secondes, gratuitement, à partir de votre fiche Google.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.ico">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="clikme-base" content="/commercants/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Playfair+Display:ital,wght@1,600;1,700&family=Poppins:wght@400;500;600;700;800&display=swap">
+<style>
+/* Une seule histoire, racontée par le fantôme : on choisit son métier, puis deux chapitres qui ne se
+   confondent jamais (rose : plus de clients, or : moins de dépenses), reliés par le fil sous la barre et
+   par le pont au milieu. Le fantôme vole jusqu'à la scène dont il parle, et y reste tant qu'il n'a pas
+   fini ; la page se termine sur la vraie création de la page commerçant. */
+:root {
+  --nuit: #120c09; --encre: #0b0806; --creme: #fff4e6; --gris: #cdb8a4; --gris2: #9c8571;
+  --c1: #ff2e9a; --c1-clair: #ff6bbd; --c1-nuit: #1c0914; --c1-nuit2: #12070d;
+  --c2: #f6b54b; --c2-clair: #ffd27a; --c2-nuit: #1c1306; --c2-nuit2: #110b04;
+  --menthe: #3de2a6; --wa: #25d366; --trait: rgba(255, 196, 140, .14);
+  --t-affiche: "Anton", "Impact", "Haettenschweiler", "Arial Narrow", sans-serif;
+  --t-texte: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --t-plume: "Playfair Display", Georgia, "Times New Roman", serif;
+  --acc: var(--c1); --acc-clair: var(--c1-clair);
+  color-scheme: dark;
+}
+* { box-sizing: border-box }
+[hidden] { display: none !important }
+html { scroll-behavior: smooth; scroll-padding-top: 72px }
+body { position: relative; margin: 0; background: var(--nuit); color: var(--creme); font: 400 16px/1.6 var(--t-texte); -webkit-font-smoothing: antialiased; overflow-x: hidden }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 40; background: var(--nuit) }
+a { color: inherit }
+img, video { max-width: 100%; display: block }
+button, input { font: inherit; color: inherit }
+.w { max-width: 1160px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+h1, h2, h3 { text-wrap: balance; margin: 0; font-weight: 400 }
+p { margin: 0 }
+:focus-visible { outline: 2px solid var(--c2); outline-offset: 3px; border-radius: 6px }
+.sur { font-size: 12.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--gris) }
+.plume { font-family: var(--t-plume); font-style: italic; font-weight: 600 }
+/* L'accent du É d'Anton dépasse la ligne : le mot qui le porte prend un peu d'air au-dessus. */
+.haut { display: inline-block; margin-top: .2em }
+
+/* ── Boutons ── */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 54px; padding: 0 26px; border-radius: 999px; border: 0; cursor: pointer;
+  font: 700 16px/1 var(--t-texte); text-decoration: none; transition: transform .2s, box-shadow .2s, opacity .2s }
+.btn.rose { background: linear-gradient(120deg, var(--c1-clair), var(--c1)); color: #fff; box-shadow: 0 18px 40px -16px rgba(255, 46, 154, .85) }
+.btn.rose:hover { transform: translateY(-2px) }
+.btn.ligne { background: none; border: 1.5px solid rgba(255, 244, 230, .3); color: var(--creme) }
+.btn svg { width: 18px; height: 18px; flex: none }
+.btn:disabled { opacity: .45; cursor: not-allowed; transform: none }
+
+/* ── La barre, et le fil des deux chapitres juste dessous ── */
+.nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; background: rgba(18, 12, 9, .82); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px) }
+.nav .w { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 62px }
+.nav .logo img { height: 27px; width: auto }
+.nav .chap { display: flex; gap: 6px; font-size: 13.5px; font-weight: 700 }
+.nav .chap a { text-decoration: none; padding: 7px 12px; border-radius: 999px; color: var(--gris2); transition: color .3s, background .3s }
+.nav .chap a b { font-family: var(--t-affiche); font-weight: 400; margin-right: 6px; letter-spacing: .02em }
+body[data-chap="1"] .nav .chap .l1 { color: var(--c1-clair); background: rgba(255, 46, 154, .12) }
+body[data-chap="2"] .nav .chap .l2 { color: var(--c2-clair); background: rgba(246, 181, 75, .12) }
+.nav .btn { min-height: 40px; padding: 0 18px; font-size: 14px }
+@media (max-width: 820px) { .nav .chap { display: none } }
+.fil { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; height: 4px; background: var(--nuit) }
+.fil span { position: relative; overflow: hidden; background: rgba(255, 255, 255, .07) }
+.fil i { position: absolute; inset: 0; transform-origin: 0 50%; transform: scaleX(var(--p, 0)) }
+.fil .s1 i { background: var(--c1) }
+.fil .s2 i { background: var(--c2) }
+
+/* ── L'accueil : la promesse, la place du fantôme, et la question ── */
+.hero { position: relative; padding-block: 34px 56px; overflow: hidden }
+.hero::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(40% 50% at 10% 20%, rgba(255, 46, 154, .2), transparent 70%), radial-gradient(40% 50% at 92% 70%, rgba(246, 181, 75, .16), transparent 70%) }
+.hero .w { position: relative; display: grid; gap: 22px; grid-template-areas: "titre" "fantome" "choix" }
+@media (min-width: 980px) { .hero { padding-block: 56px 80px } .hero .w { grid-template-columns: 1.25fr .75fr; grid-template-areas: "titre fantome" "choix fantome"; column-gap: 40px; row-gap: 34px } }
+.hero-txt { grid-area: titre; display: grid; gap: 14px; align-content: start }
+.titre { font: 400 clamp(50px, 8vw, 100px)/1 var(--t-affiche); text-transform: uppercase; letter-spacing: .005em }
+.titre span { display: block }
+.titre .c1 i, .titre .c2 i { font-style: normal }
+.titre .c1 i { color: var(--c1) }
+.titre .c2 i { color: var(--c2) }
+.hero .plume { font-size: clamp(21px, 2.6vw, 30px); color: var(--creme) }
+.hero .plume em { color: var(--c1-clair) } .hero .plume strong { color: var(--c2-clair); font-weight: 600 }
+/* La place du fantôme dans l'accueil : vide, il s'y pose */
+.accueil { grid-area: fantome; min-height: 168px }
+@media (min-width: 980px) { .accueil { min-height: 470px } }
+
+.choix { grid-area: choix; display: grid; gap: 14px }
+.choix h2 { font: 700 clamp(19px, 2vw, 22px)/1.2 var(--t-texte) }
+.metiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px }
+@media (min-width: 620px) { .metiers { grid-template-columns: repeat(6, 1fr); gap: 10px } }
+.metiers button { position: relative; display: grid; justify-items: center; gap: 2px; padding: 8px 4px 10px; border-radius: 18px; cursor: pointer;
+  background: rgba(255, 244, 230, .05); border: 1.5px solid rgba(255, 244, 230, .12); transition: transform .2s, border-color .2s, background .2s }
+.metiers button:hover { transform: translateY(-3px); border-color: rgba(255, 244, 230, .35) }
+.metiers img { width: 64px; height: 64px; object-fit: contain }
+.metiers span { font-size: 12.5px; font-weight: 700; line-height: 1.2; text-align: center }
+.metiers button[aria-pressed="true"] { background: rgba(255, 46, 154, .14); border-color: var(--c1) }
+.metiers button[aria-pressed="true"]::after { content: "✓"; position: absolute; top: 6px; right: 8px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; background: var(--c1); color: #fff }
+.choix .bas { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px }
+.rassure { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--gris) }
+.rassure span::before { content: "✓ "; color: var(--menthe) }
+.parti { display: none }
+.choisi .parti { display: inline-flex; animation: pouf .5s ease-out }
+@keyframes pouf { 0% { transform: scale(.3) rotate(-12deg); opacity: 0; filter: blur(6px) } 100% { transform: none; opacity: 1 } }
+
+/* ── Le fantôme qui vole ──
+   Il est posé dans la page (pas dans l'écran) : il reste avec la scène dont il parle et défile avec elle.
+   Une « perche » vide en tête de chaque scène lui garde sa place, pour qu'il ne cache jamais le texte. */
+.perche { height: 132px; pointer-events: none }
+@media (min-width: 760px) { .perche { height: 124px } }
+#vol { position: absolute; top: 0; left: 0; z-index: 25; width: var(--gw, 88px); height: var(--gw, 88px); pointer-events: none; will-change: transform;
+  --bord: #b89a86; transition: width .6s cubic-bezier(.3, 1.2, .5, 1), height .6s cubic-bezier(.3, 1.2, .5, 1) }
+body[data-chap="1"] #vol { --bord: var(--c1) }
+body[data-chap="2"] #vol { --bord: var(--c2) }
+#vol .vg { position: absolute; inset: 0; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto }
+#vol .vg img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 14px 18px rgba(0, 0, 0, .55)); animation: flotte 3.2s ease-in-out infinite }
+@keyframes flotte { 50% { transform: translateY(-7px) } }
+#vol.vole .vg img { animation: ondule .45s ease-in-out infinite }
+@keyframes ondule { 0%, 100% { transform: rotate(-7deg) scaleY(1.04) } 50% { transform: rotate(5deg) scaleY(.96) } }
+#vol.parle .vg img { animation: parle .34s ease-in-out infinite }
+@keyframes parle { 50% { transform: translateY(-3px) scale(1.035) } }
+#vol .traine { position: absolute; inset: 20% 10%; border-radius: 50%; opacity: 0; pointer-events: none; background: radial-gradient(circle, rgba(255, 140, 210, .55), transparent 65%); transition: opacity .3s }
+#vol.vole .traine { opacity: 1 }
+#vol .bulle { position: absolute; width: var(--bw, 300px); pointer-events: auto; opacity: 0; transform: scale(.6); transition: opacity .3s, transform .35s cubic-bezier(.3, 1.5, .5, 1) }
+#vol .bulle.ouverte { opacity: 1; transform: none }
+#vol[data-cote="gauche"] .bulle { right: calc(100% + 8px); top: 50%; translate: 0 -50%; transform-origin: 100% 50%; border-radius: 20px 20px 6px 20px }
+#vol[data-cote="droite"] .bulle { left: calc(100% + 8px); top: 50%; translate: 0 -50%; transform-origin: 0 50%; border-radius: 20px 20px 20px 6px }
+#vol[data-cote="dessus"] .bulle { bottom: calc(100% + 16px); left: 50%; translate: -50% 0; transform-origin: 50% 100%; border-radius: 22px }
+#vol[data-cote="dessus"] .bulle::after { content: ""; position: absolute; left: 50%; bottom: -11px; width: 20px; height: 20px; background: var(--creme); border: 2px solid var(--bord); border-width: 0 2px 2px 0; transform: translateX(-50%) rotate(45deg); border-radius: 0 0 5px 0 }
+
+/* La bulle : le texte complet garde la place, le texte tapé se pose par-dessus (rien ne saute). */
+.bulle { position: relative; background: var(--creme); color: #2a1a12; border-radius: 20px; padding: 12px 15px; font: 500 15px/1.45 var(--t-texte); box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .7); border: 2px solid var(--bord, transparent) }
+.bulle .corps { position: relative }
+.bulle .plein { visibility: hidden }
+.bulle .tape { position: absolute; inset: 0; pointer-events: none }
+.b-son { display: flex; width: max-content; align-items: center; gap: 7px; margin-top: 8px; padding: 6px 12px 6px 9px; border-radius: 999px; border: 0; cursor: pointer; background: #2a1a12; color: var(--creme); font: 700 12.5px/1 var(--t-texte) }
+.b-son svg { width: 14px; height: 14px }
+.b-son[aria-pressed="true"] { background: rgba(42, 26, 18, .12); color: #2a1a12 }
+@media (max-width: 620px) { #vol .bulle { font-size: 13.5px; line-height: 1.4; padding: 10px 12px } }
+@media (min-width: 980px) { #vol[data-cote="dessus"] .bulle { font-size: 17px; padding: 16px 20px } }
+
+/* ── Les chapitres : chacun son monde ── */
+.chapitre.c1 { --acc: var(--c1); --acc-clair: var(--c1-clair); background: linear-gradient(180deg, var(--c1-nuit), var(--c1-nuit2)) }
+.chapitre.c2 { --acc: var(--c2); --acc-clair: var(--c2-clair); background: linear-gradient(180deg, var(--c2-nuit), var(--c2-nuit2)) }
+.bandeau { position: relative; overflow: hidden; background: var(--acc); color: #1d0611; padding-block: 34px 30px }
+.c2 .bandeau { color: #2a1800 }
+.bandeau .w { position: relative; display: grid; gap: 4px }
+.bandeau .num { position: absolute; right: 8px; bottom: -.12em; font: 400 clamp(120px, 22vw, 240px)/.8 var(--t-affiche); opacity: .16 }
+.bandeau small { font-size: 12.5px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase }
+.bandeau h2 { font: 400 clamp(54px, 10vw, 124px)/1 var(--t-affiche); text-transform: uppercase }
+.bandeau p { font: italic 600 clamp(18px, 2.4vw, 26px)/1.3 var(--t-plume) }
+
+.scene { padding-block: 18px clamp(60px, 9vw, 112px) }
+.scene + .scene { border-top: 1px solid rgba(255, 255, 255, .05) }
+.grille { display: grid; gap: 36px; align-items: center }
+@media (min-width: 900px) { .grille { grid-template-columns: 1fr 1fr; gap: 64px } .grille.inv > :first-child { order: 2 } }
+.texte { display: grid; gap: 16px; min-width: 0 }
+.etape { font-size: 12.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--acc) }
+.grand { font: 400 clamp(40px, 6.4vw, 78px)/1.04 var(--t-affiche); text-transform: uppercase }
+.grand em { display: block; font: italic 600 .62em/1.15 var(--t-plume); text-transform: none; color: var(--acc-clair); margin-top: .12em }
+.lead { font-size: clamp(16.5px, 1.6vw, 19px); color: var(--gris); max-width: 34em }
+.lead b { color: var(--creme); font-weight: 600 }
+.centre-t { text-align: center; justify-items: center; margin-inline: auto }
+.centre-t .lead { margin-inline: auto }
+
+/* Le téléphone */
+.tel { position: relative; width: min(300px, 80vw); margin: 0 auto; border-radius: 42px; padding: 10px; background: #050302;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .08), 0 40px 80px -30px rgba(0, 0, 0, .9), 0 0 90px -30px var(--acc) }
+.tel .ecran { position: relative; display: flex; flex-direction: column; border-radius: 33px; overflow: hidden; background: #120c09 }
+.tel .encoche { position: absolute; top: 9px; left: 50%; width: 34%; height: 22px; transform: translateX(-50%); border-radius: 999px; background: #050302; z-index: 5 }
+.legende { margin-top: 14px; text-align: center; font-size: 12.5px; color: var(--gris2) }
+.statut { display: flex; align-items: center; justify-content: space-between; aspect-ratio: 390 / 47; padding: 0 9% 0 11%; font: 600 13px/1 var(--t-texte); color: #fff; background: #120c09 }
+.statut i { position: relative; width: 22px; height: 11px; border: 1.5px solid rgba(255, 255, 255, .85); border-radius: 3px }
+.statut i::after { content: ""; position: absolute; inset: 1.5px 5px 1.5px 1.5px; border-radius: 1px; background: #fff }
+
+/* Le parcours du client, de la ville jusqu'à WhatsApp : les vrais écrans de l'application */
+.pile { position: relative; aspect-ratio: 390 / 844; overflow: hidden; background: #120c09 }
+.ecr { position: absolute; inset: 0; transform: translateX(100%); transition: transform .5s cubic-bezier(.3, .7, .2, 1), opacity .45s ease }
+.ecr > img { width: 100%; height: 100%; object-fit: cover }
+.ecr.la { transform: none; z-index: 2 }
+.ecr.passe { transform: translateX(-100%) }
+.ecr.dessous { transform: none; z-index: 1 }
+.ecr.fondu { transform: scale(.96); opacity: 0 }
+.ecr.net { transition: none }
+.ecr .ici { position: absolute; left: 50%; top: 13%; display: none; white-space: nowrap; padding: 8px 15px; border-radius: 999px; background: var(--c1); color: #fff;
+  font-size: 13px; font-weight: 800; box-shadow: 0 10px 24px -6px rgba(255, 46, 154, .9); transform: translateX(-50%); animation: battement 1.6s ease-in-out infinite }
+.ecr.vous .ici { display: block }
+@keyframes battement { 50% { transform: translateX(-50%) scale(1.07) } }
+.doigt { position: absolute; z-index: 6; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; pointer-events: none; opacity: 0;
+  background: rgba(255, 255, 255, .55); box-shadow: 0 0 0 3px rgba(255, 255, 255, .9), 0 6px 18px rgba(0, 0, 0, .45) }
+.doigt.tape { animation: tape .62s ease-out }
+@keyframes tape { 0% { opacity: 0; transform: scale(1.5) } 30% { opacity: 1; transform: scale(1) } 55% { transform: scale(.82) } 100% { opacity: 0; transform: scale(1.25) } }
+.etapes-client { display: grid; gap: 8px; margin: 6px 0 0; padding: 0; list-style: none; counter-reset: e }
+.etapes-client li { counter-increment: e; display: grid; grid-template-columns: 32px 1fr; gap: 12px; align-items: center; padding: 10px 14px 10px 10px; border-radius: 16px; color: var(--gris2); font-weight: 600; transition: background .3s, color .3s }
+.etapes-client li::before { content: counter(e); width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font: 400 17px/1 var(--t-affiche); background: rgba(255, 255, 255, .07); color: var(--gris) }
+.etapes-client li.la { background: rgba(255, 46, 154, .12); color: var(--creme) }
+.etapes-client li.la::before { background: var(--c1); color: #fff }
+.etapes-client li.fait::before { content: "✓"; background: rgba(61, 226, 166, .18); color: var(--menthe); font: 800 14px/1 var(--t-texte) }
+/* WhatsApp, côté commerçant, dans le même téléphone */
+.ecr-wa { display: flex; flex-direction: column; background: #0b141a }
+.wa-tete { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #1f2c33 }
+.wa-tete i { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #7c5cff; font-style: normal; font-weight: 800; font-size: 14px }
+.wa-tete b { display: block; font-size: 14px } .wa-tete small { color: #8fa3ad; font-size: 11px }
+.wa-fil { flex: 1; display: grid; gap: 9px; padding: 14px 10px; align-content: start; background: #0b141a radial-gradient(rgba(255, 255, 255, .03) 1px, transparent 1px) 0 0 / 14px 14px }
+.wa-jour { justify-self: center; font-size: 10.5px; color: #e9c46a; background: #1f2c33; padding: 4px 10px; border-radius: 8px; font-weight: 600 }
+.msg { max-width: 88%; padding: 8px 10px 17px; border-radius: 11px; font-size: 12.5px; line-height: 1.4; position: relative; white-space: pre-line; opacity: 0; transform: translateY(10px) scale(.96); transition: opacity .4s, transform .4s }
+.msg small { position: absolute; right: 9px; bottom: 3px; font-size: 9.5px; color: rgba(255, 255, 255, .5) }
+.msg.lui { justify-self: start; background: #202c33; border-top-left-radius: 4px }
+.msg.moi { justify-self: end; background: #005c4b; border-top-right-radius: 4px }
+.msg.vu-la { opacity: 1; transform: none }
+.ecrit { justify-self: end; display: none; gap: 4px; padding: 11px 13px; border-radius: 12px; background: #005c4b }
+.ecrit.vu-la { display: flex }
+.ecrit i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, .7); animation: point 1s infinite }
+.ecrit i:nth-child(2) { animation-delay: .15s } .ecrit i:nth-child(3) { animation-delay: .3s }
+@keyframes point { 50% { transform: translateY(-4px); opacity: .4 } }
+.wa-bas { margin: 0 10px 12px; padding: 9px 14px; border-radius: 999px; background: #1f2c33; color: #8fa3ad; font-size: 12px }
+
+/* Une minute, trois façons */
+.trois { display: grid; gap: 14px; margin-top: 34px }
+@media (min-width: 860px) { .trois { grid-template-columns: repeat(3, 1fr) } }
+.facon { position: relative; display: grid; gap: 10px; align-content: start; padding: 26px 24px; border-radius: 26px; background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .08) }
+.facon .ic { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: rgba(255, 46, 154, .16); color: var(--c1-clair) }
+.facon .ic svg { width: 26px; height: 26px }
+.facon h4 { margin: 0; font-size: 20px; line-height: 1.25 }
+.facon p { color: var(--gris); font-size: 15px }
+.facon .min { justify-self: start; margin-top: 4px; display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px 7px 8px; border-radius: 999px; background: var(--c1); color: #fff; font-size: 13.5px; font-weight: 700 }
+.facon .min i { font: 400 18px/1 var(--t-affiche); font-style: normal; background: #fff; color: var(--c1); border-radius: 999px; padding: 3px 8px 2px }
+
+/* Le film */
+.film-tel { position: relative; width: min(300px, 80vw); margin: 0 auto }
+.cadre { position: relative; padding: 16px }
+.cadre::before, .cadre::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(var(--c1), var(--c1)) 0 0 / 34px 4px no-repeat, linear-gradient(var(--c1), var(--c1)) 0 0 / 4px 34px no-repeat,
+              linear-gradient(var(--c1), var(--c1)) 100% 0 / 34px 4px no-repeat, linear-gradient(var(--c1), var(--c1)) 100% 0 / 4px 34px no-repeat }
+.cadre::after { transform: scaleY(-1) }
+.cadre video { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 26px; background: #000; box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .9), 0 0 90px -30px var(--c1) }
+.son { position: absolute; right: 30px; bottom: 30px; display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; border: 0; cursor: pointer;
+  background: rgba(0, 0, 0, .65); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); font-size: 13.5px; font-weight: 700 }
+.son svg { width: 17px; height: 17px }
+
+/* Partout, en un geste */
+.diffusion { position: relative; display: grid; justify-items: center; gap: 0; margin-top: 40px }
+.annonce { position: relative; z-index: 2; display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: center; width: min(340px, 100%); padding: 10px; border-radius: 20px; background: var(--creme); color: #2a1a12; box-shadow: 0 20px 40px -18px rgba(0, 0, 0, .8) }
+.annonce img { width: 64px; height: 64px; border-radius: 14px; object-fit: cover; background: #2a1020 }
+.annonce b { display: block; font-size: 15px; line-height: 1.2 }
+.annonce small { color: #8a6a55; font-size: 12px }
+.tronc { width: 3px; height: 34px; background: linear-gradient(var(--c1), rgba(255, 46, 154, .3)) }
+.rail { position: relative; width: 100%; max-width: 980px; height: 3px; background: rgba(255, 46, 154, .3); overflow: hidden }
+.rail::after { content: ""; position: absolute; inset: 0; width: 30%; background: linear-gradient(90deg, transparent, var(--c1-clair), transparent); animation: file 1.8s linear infinite }
+@keyframes file { from { transform: translateX(-100%) } to { transform: translateX(400%) } }
+.dest { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; max-width: 980px; margin: 0; padding: 0 }
+.dest li { list-style: none; position: relative; display: grid; justify-items: center; gap: 8px; padding: 28px 6px 14px; text-align: center; opacity: .35; transform: translateY(8px); transition: opacity .4s, transform .4s }
+.dest li::before { content: ""; position: absolute; top: 0; left: 50%; width: 3px; height: 22px; transform: translateX(-50%); background: rgba(255, 46, 154, .3) }
+.dest li.ok { opacity: 1; transform: none }
+.dest li.ok::before { background: var(--c1) }
+.dest .logo { width: 58px; height: 58px; border-radius: 18px; display: grid; place-items: center; color: #fff; box-shadow: 0 12px 24px -10px rgba(0, 0, 0, .8) }
+.dest .logo svg { width: 30px; height: 30px }
+.dest b { font-size: 13.5px; line-height: 1.2 }
+.dest small { font-size: 11.5px; color: var(--gris2); line-height: 1.3 }
+.dest .coche { position: absolute; top: 20px; right: calc(50% - 38px); width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--menthe); color: #05301f; font-size: 13px; font-weight: 900; transform: scale(0); transition: transform .35s cubic-bezier(.3, 1.8, .5, 1) .15s }
+.dest li.ok .coche { transform: scale(1) }
+.l-ig { background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285aeb 90%) }
+.l-fb { background: #1877f2 }
+.l-gg { background: #fff; color: #4285f4 !important }
+.l-wa { background: var(--wa) }
+.l-ck { background: linear-gradient(135deg, var(--c1-clair), var(--c1)) }
+@media (max-width: 620px) { .dest { grid-template-columns: repeat(3, 1fr); row-gap: 0 } .rail { display: none } .dest li::before { display: none } .dest li { padding-top: 16px } .dest .coche { top: 8px } }
+.choisir-ou { margin-top: 26px; text-align: center; color: var(--gris); font-size: 15px }
+
+/* ── Le pont : deux promesses, un seul commerçant ── */
+.pont { position: relative; padding-block: 18px clamp(70px, 10vw, 120px); background: linear-gradient(180deg, var(--c1-nuit2), #150d0b 50%, var(--c2-nuit)) }
+.balance { display: grid; gap: 0; align-items: center; justify-items: center; max-width: 980px; margin: 0 auto }
+@media (min-width: 820px) { .balance { grid-template-columns: 1fr auto 1fr } }
+.plateau { display: grid; gap: 4px; width: 100%; padding: 26px 26px; border-radius: 26px; text-align: center }
+.plateau b { font: 400 clamp(34px, 4.6vw, 52px)/1 var(--t-affiche); text-transform: uppercase }
+.plateau span { color: var(--gris); font-size: 15px }
+.plateau.p1 { background: rgba(255, 46, 154, .1); border: 1.5px solid rgba(255, 46, 154, .5) } .plateau.p1 b { color: var(--c1) }
+.plateau.p2 { background: rgba(246, 181, 75, .1); border: 1.5px solid rgba(246, 181, 75, .5) } .plateau.p2 b { color: var(--c2) }
+.coeur { position: relative; z-index: 2; display: grid; justify-items: center; gap: 6px; margin: -18px 0; padding: 0 18px }
+@media (min-width: 820px) { .coeur { margin: 0 -18px } }
+.coeur .rond { width: 176px; height: 176px; border-radius: 50%; padding: 6px; background: conic-gradient(var(--c1), var(--c2), var(--c1)); animation: tourne 8s linear infinite }
+.coeur .rond div { width: 100%; height: 100%; border-radius: 50%; background: #150d0b; display: grid; place-items: center; animation: tourne 8s linear infinite reverse }
+.coeur img { width: 82%; height: 82%; object-fit: contain }
+@keyframes tourne { to { transform: rotate(360deg) } }
+.coeur strong { font-size: 15px; padding: 6px 14px; border-radius: 999px; background: var(--creme); color: #2a1a12 }
+.pont-titre { margin-top: 40px; text-align: center; font: 400 clamp(36px, 5.6vw, 66px)/1.05 var(--t-affiche); text-transform: uppercase }
+.pont-titre em { display: block; font: italic 600 .6em/1.2 var(--t-plume); text-transform: none; background: linear-gradient(90deg, var(--c1-clair), var(--c2-clair)); -webkit-background-clip: text; background-clip: text; color: transparent }
+
+/* ── Moins de dépenses ── */
+.equation { display: grid; gap: 14px; align-items: center; justify-items: center; margin-top: 40px }
+@media (min-width: 900px) { .equation { grid-template-columns: 1fr auto auto auto 1.15fr } }
+.bloc { display: grid; gap: 10px; justify-items: center; text-align: center; width: 100%; padding: 22px; border-radius: 26px; background: rgba(255, 255, 255, .04); border: 1px solid rgba(246, 181, 75, .22) }
+.bloc small { font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--gris2) }
+.bloc b { font-size: 21px; line-height: 1.2 }
+.bloc > span { font-size: 14px; color: var(--gris) }
+.bloc .photo { width: 120px; height: 120px; border-radius: 22px; object-fit: cover; box-shadow: 0 14px 28px -12px rgba(0, 0, 0, .8) }
+.bon { display: block; width: 190px; padding: 16px 14px; border-radius: 16px; text-align: center; color: #2a1800; background: linear-gradient(135deg, #ffe2a3, var(--c2));
+  -webkit-mask: radial-gradient(circle at 0 50%, transparent 12px, #000 13px) left / 51% 100% no-repeat, radial-gradient(circle at 100% 50%, transparent 12px, #000 13px) right / 51% 100% no-repeat;
+          mask: radial-gradient(circle at 0 50%, transparent 12px, #000 13px) left / 51% 100% no-repeat, radial-gradient(circle at 100% 50%, transparent 12px, #000 13px) right / 51% 100% no-repeat }
+.bon small { color: #6a4300; letter-spacing: .14em } .bon strong { display: block; font: 400 40px/1.1 var(--t-affiche) } .bon i { font-style: normal; font-size: 12px; font-weight: 700 }
+.op { font: 400 46px/1 var(--t-affiche); color: var(--c2) }
+.piece { width: 190px; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; text-align: center; color: #2a1500;
+  background: radial-gradient(circle at 35% 30%, #ffe9b8, var(--c2) 45%, #b8741b); box-shadow: inset 0 0 0 7px rgba(255, 255, 255, .25), inset 0 -10px 22px rgba(120, 60, 0, .4), 0 22px 60px -14px rgba(246, 181, 75, .8) }
+.piece b { display: block; font: 400 58px/1 var(--t-affiche) }
+.piece span { display: block; max-width: 9.5em; margin: 6px auto 0; font-size: 12.5px; font-weight: 700; color: #4a2a06; line-height: 1.3 }
+.equation.vu-la .piece { animation: pouf .8s cubic-bezier(.3, 1.6, .5, 1) both .2s }
+.prendre { display: flex; justify-content: center; gap: 10px }
+.prendre figure { margin: 0; display: grid; gap: 6px; justify-items: center; font-size: 12.5px; font-weight: 600; color: var(--creme) }
+.prendre img { width: 76px; height: 76px; border-radius: 50%; object-fit: cover; border: 3px solid var(--c2) }
+
+.tarif { display: grid; gap: 14px; margin-top: 36px; position: relative }
+@media (min-width: 760px) { .tarif { grid-template-columns: 1fr 1fr } }
+.prix { display: grid; gap: 4px; padding: 30px 28px; border-radius: 28px; background: rgba(246, 181, 75, .08); border: 1.5px solid rgba(246, 181, 75, .35) }
+.prix b { font: 400 clamp(64px, 9vw, 104px)/1 var(--t-affiche); color: var(--c2) }
+.prix strong { font-size: 19px }
+.prix span { color: var(--gris); font-size: 15px }
+.tampon { justify-self: center; margin-top: 28px; padding: 10px 22px; border: 4px solid var(--c2); border-radius: 12px; color: var(--c2); transform: rotate(-4deg);
+  font: 400 clamp(30px, 4.4vw, 46px)/1 var(--t-affiche); text-transform: uppercase; letter-spacing: .02em; box-shadow: inset 0 0 0 2px rgba(246, 181, 75, .25) }
+.note-livre { display: none; margin-top: 18px; text-align: center; font-size: 14px; color: var(--gris) }
+body[data-metier="librairie"] .note-livre { display: block }
+
+.regles { display: grid; gap: 12px; margin: 34px 0 0; padding: 0; list-style: none }
+@media (min-width: 760px) { .regles { grid-template-columns: repeat(2, 1fr) } }
+.regles li { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; padding: 22px; border-radius: 22px; background: rgba(0, 0, 0, .25); border: 1px solid rgba(246, 181, 75, .18) }
+.regles i { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font: 400 20px/1 var(--t-affiche); font-style: normal; background: var(--c2); color: #2a1800 }
+.regles b { display: block; font-size: 17px; margin-bottom: 2px }
+.regles span { color: var(--gris); font-size: 15px }
+.ouverture { padding: 24px 26px; border-radius: 24px; border: 1.5px dashed rgba(246, 181, 75, .55); background: rgba(246, 181, 75, .07); display: grid; gap: 4px }
+.ouverture b { font-size: 18px } .ouverture span { color: var(--gris) }
+
+/* ── Ce que vous gagnez ── */
+.bilan { padding-block: 18px clamp(70px, 10vw, 120px); background: var(--nuit) }
+.gains { display: grid; gap: 14px; margin-top: 38px }
+@media (min-width: 700px) { .gains { grid-template-columns: repeat(2, 1fr) } }
+@media (min-width: 1080px) { .gains { grid-template-columns: repeat(4, 1fr) } }
+.gain { display: grid; gap: 10px; align-content: start; padding: 26px 24px; border-radius: 26px; background: rgba(255, 255, 255, .035); border-top: 5px solid var(--k) }
+.gain small { font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--k) }
+.gain b { font: 400 clamp(30px, 3.4vw, 40px)/1.05 var(--t-affiche); text-transform: uppercase }
+.gain span { color: var(--gris); font-size: 15px }
+.gain.g-temps { --k: var(--menthe) } .gain.g-cli { --k: var(--c1) } .gain.g-arg, .gain.g-dep { --k: var(--c2) }
+
+/* ── La démo ── */
+.demo { padding-block: 0 clamp(70px, 10vw, 110px); background: var(--nuit) }
+.demo-boite { display: grid; gap: 20px; align-items: center; padding: 28px; border-radius: 30px; background: linear-gradient(120deg, rgba(255, 46, 154, .14), rgba(246, 181, 75, .12)); border: 1px solid rgba(255, 255, 255, .1) }
+@media (min-width: 820px) { .demo-boite { grid-template-columns: auto 1fr auto } }
+.demo-boite img { width: 110px; height: 110px; object-fit: contain }
+.demo-boite h2 { font: 400 clamp(30px, 4vw, 44px)/1.05 var(--t-affiche); text-transform: uppercase }
+.demo-boite p { color: var(--gris) }
+.autres-tours { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; font-size: 13.5px }
+.autres-tours a { padding: 7px 13px; border-radius: 999px; background: rgba(255, 255, 255, .06); text-decoration: none; color: var(--gris) }
+.autres-tours a:hover { color: var(--creme) }
+
+/* ── Questions ── */
+.questions { padding-block: 0 clamp(70px, 10vw, 110px); background: var(--nuit) }
+.questions h2 { font: 400 clamp(36px, 5vw, 56px)/1 var(--t-affiche); text-transform: uppercase; margin-bottom: 18px }
+details { border-bottom: 1px solid var(--trait) }
+summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 16px; padding: 20px 0; font-weight: 700; font-size: 17px }
+summary::-webkit-details-marker { display: none }
+summary::after { content: "+"; color: var(--c1); font-size: 24px; line-height: 1; transition: transform .2s }
+details[open] summary::after { transform: rotate(45deg) }
+details p { padding: 0 0 22px; color: var(--gris); max-width: 46em }
+
+/* ── La création de sa page : le même générateur que l'accueil de clikme.fr ── */
+.creer { position: relative; overflow: hidden; padding-block: 18px clamp(70px, 10vw, 120px); background: radial-gradient(60% 60% at 50% 100%, rgba(255, 46, 154, .2), transparent 70%), var(--nuit) }
+.creer .w { max-width: 760px }
+.creer-tete { display: grid; gap: 10px; text-align: center; justify-items: center; margin-bottom: 26px }
+.creer-tete h2 { font: 400 clamp(46px, 8.4vw, 96px)/1 var(--t-affiche); text-transform: uppercase }
+.creer-tete .plume { font-size: clamp(19px, 2.4vw, 25px); color: var(--c1-clair) }
+.gen { display: grid; gap: 12px; padding: 22px; border-radius: 28px; background: rgba(255, 244, 230, .05); border: 1px solid rgba(255, 244, 230, .12); box-shadow: 0 40px 80px -40px rgba(0, 0, 0, .8) }
+.gen .deux { display: grid; gap: 12px }
+@media (min-width: 600px) { .gen .deux { grid-template-columns: 1fr 1fr } }
+.gen input[type=text] { width: 100%; min-height: 56px; padding: 0 18px; border-radius: 16px; border: 1.5px solid rgba(255, 244, 230, .16); background: rgba(0, 0, 0, .3); color: var(--creme); font-size: 16px; outline: none; transition: border-color .2s }
+.gen input[type=text]::placeholder { color: var(--gris2) }
+.gen input[type=text]:focus { border-color: var(--c1) }
+.g-photo { position: relative; display: grid; grid-template-columns: 56px 1fr; grid-template-rows: auto auto; column-gap: 14px; align-items: center; padding: 12px; border-radius: 18px; border: 1.5px dashed rgba(255, 244, 230, .22); cursor: pointer }
+.g-photo input, .g-lieu-c input { position: absolute; inset: 0; opacity: 0; cursor: pointer }
+.g-photo .vignette { grid-row: span 2; width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; background: rgba(255, 255, 255, .06); font-size: 24px; overflow: hidden }
+.g-photo .vignette img, .g-lieu-c .vignette img { width: 100%; height: 100%; object-fit: cover }
+.g-photo b { font-size: 15px } .g-photo em { font-style: normal; font-size: 12.5px; color: var(--gris2); line-height: 1.4 }
+.g-photo.on { border-style: solid; border-color: var(--menthe) }
+.g-plus { justify-self: start; border: 0; background: none; padding: 4px 0; cursor: pointer; color: var(--gris); font-weight: 600; font-size: 14.5px }
+.g-plus em { font-style: normal; color: var(--gris2); font-weight: 500 }
+.g-lieu p { font-size: 13.5px; color: var(--gris); margin-bottom: 10px }
+.g-lieu-g { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px }
+@media (min-width: 600px) { .g-lieu-g { grid-template-columns: repeat(3, 1fr) } }
+.g-lieu-c { position: relative; display: grid; gap: 4px; justify-items: center; text-align: center; padding: 10px 8px; border-radius: 16px; border: 1.5px dashed rgba(255, 244, 230, .2); cursor: pointer }
+.g-lieu-c .vignette { width: 52px; height: 52px; border-radius: 12px; display: grid; place-items: center; background: rgba(255, 255, 255, .06); overflow: hidden }
+.g-lieu-c b { font-size: 12.5px; line-height: 1.25 } .g-lieu-c em { font-style: normal; font-size: 11px; color: var(--gris2); line-height: 1.3 }
+.g-lieu-c.on { border-style: solid; border-color: var(--menthe) }
+.g-go { width: 100%; min-height: 60px; font-size: 17px; margin-top: 4px }
+.g-err { padding: 12px 14px; border-radius: 14px; background: rgba(255, 90, 90, .12); color: #ffc2c2; font-size: 14.5px; display: grid; gap: 10px }
+.g-err a { justify-self: start; color: var(--wa); font-weight: 700 }
+.g-ailleurs { padding: 12px 14px; border-radius: 14px; background: rgba(246, 181, 75, .1); color: var(--c2-clair); font-size: 14px }
+.creer .rassure { justify-content: center; margin-top: 4px }
+.contact { margin-top: 26px; text-align: center; font-size: 15px; color: var(--gris) }
+.contact a { color: var(--wa); font-weight: 700 }
+/* La construction, pendant la minute d'attente */
+.construit { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 20px; background: rgba(12, 7, 5, .92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px) }
+.construit[hidden] { display: none }
+.c-in { display: grid; gap: 22px; justify-items: center; width: min(420px, 100%) }
+.c-tel { width: 230px; border-radius: 30px; padding: 8px; background: #050302; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .08), 0 30px 60px -20px rgba(0, 0, 0, .9), 0 0 70px -20px var(--c1) }
+.c-ec { border-radius: 23px; overflow: hidden; background: #fff8f0; color: #2a1a12; min-height: 330px }
+.c-bar { display: flex; align-items: center; gap: 4px; padding: 8px 10px; background: #efe4d6; font-size: 10px; color: #8a6a55 }
+.c-bar span { width: 6px; height: 6px; border-radius: 50%; background: #d9c7b3 }
+.c-bar em { margin-left: 6px; font-style: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.c-hero { height: 110px; display: grid; align-content: end; padding: 10px; background: linear-gradient(135deg, #3a2018, #1a0d09); color: #fff; transition: background .6s }
+.c-hero.lit { background: linear-gradient(135deg, var(--c1), #6b1c4c) }
+.c-nom { font-weight: 800; font-size: 15px; opacity: .25; transition: opacity .5s } .c-nom.on { opacity: 1 }
+.c-role { font-size: 11px; opacity: 0; transition: opacity .5s } .c-role.on { opacity: .85 }
+.c-etoiles { font-size: 11px; color: #ffd27a; opacity: 0; transition: opacity .5s } .c-etoiles.on { opacity: 1 }
+.c-corps { display: grid; gap: 8px; padding: 10px }
+.c-vignettes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; opacity: .2; transition: opacity .5s } .c-vignettes.on { opacity: 1 }
+.c-vignettes i { aspect-ratio: 1; border-radius: 8px; background: linear-gradient(135deg, #e7d6c3, #d2b89c) }
+.c-annonce, .c-chat, .c-direct { opacity: 0; transform: translateY(6px); transition: opacity .5s, transform .5s; font-size: 10.5px; border-radius: 10px; padding: 7px 9px }
+.c-annonce.on, .c-chat.on, .c-direct.on { opacity: 1; transform: none }
+.c-annonce { background: #fff0f7; border: 1px dashed var(--c1); color: #9a1a5c } .c-annonce b { display: block; font-size: 9px; letter-spacing: .1em }
+.c-chat { background: #f2ece5 } .c-chat p + p { margin-top: 4px; text-align: right; color: #0a6b56 }
+.c-direct { background: #2a1a12; color: #fff } .c-direct b { display: block; color: var(--c1-clair) }
+.c-titre { text-align: center; font-size: 18px } .c-titre b { color: var(--c1-clair) }
+.c-pas { display: flex; align-items: center; gap: 10px; color: var(--gris); font-size: 14.5px }
+.c-pas i { width: 10px; height: 10px; border-radius: 50%; background: var(--c1); animation: point 1s infinite }
+.c-jauge { width: 100%; height: 6px; border-radius: 999px; background: rgba(255, 255, 255, .1); overflow: hidden }
+.c-jauge i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--c1), var(--c2)); transition: width .6s }
+.c-g { width: 90px; animation: flotte 3s ease-in-out infinite }
+
+footer { padding: 26px 0 60px; border-top: 1px solid var(--trait); color: var(--gris2); font-size: 13px }
+footer .w { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; justify-content: space-between }
+footer img { height: 22px; width: auto; opacity: .8 }
+
+/* L'arrivée des blocs au défilement */
+.monte { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s cubic-bezier(.2, .8, .2, 1) }
+.monte.vu-la { opacity: 1; transform: none }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important }
+  html { scroll-behavior: auto }
+  .monte { opacity: 1; transform: none }
+}
+</style>
+
+<div class="nav">
+  <div class="w">
+    <a class="logo" href="#haut" aria-label="ClikMe, retour en haut"><img src="/commercants/logo.png" alt="ClikMe" width="68" height="27"></a>
+    <nav class="chap" aria-label="Les deux chapitres">
+      <a class="l1" href="#clients"><b>01</b>Plus de clients</a>
+      <a class="l2" href="#depenses"><b>02</b>Moins de dépenses</a>
+    </nav>
+    <a class="btn rose" href="#creer">Créer mon espace</a>
+  </div>
+  <div class="fil" aria-hidden="true"><span class="s1"><i></i></span><span class="s2"><i></i></span></div>
+</div>
+
+<header class="hero" id="haut" data-dit="accueil">
+  <div class="w">
+    <div class="hero-txt">
+      <p class="sur">ClikMe · pour les commerçants de Dax</p>
+      <h1 class="titre"><span class="c1">Plus de <i>clients.</i></span><span class="c2">Moins de <i class="haut">dépenses.</i></span></h1>
+      <p class="plume"><em>Les clients</em> et <strong>les économies</strong> : votre fantôme s’occupe des deux.</p>
+    </div>
+    <div class="accueil perche-accueil" aria-hidden="true"></div>
+    <div class="choix" id="choix">
+      <h2>Quel est votre commerce ?</h2>
+      <div class="metiers" role="group" aria-label="Votre métier">
+        <button type="button" data-m="restaurant" aria-pressed="false"><img src="/commercants/g-restaurant.webp" alt=""><span>Restaurant</span></button>
+        <button type="button" data-m="mode" aria-pressed="false"><img src="/commercants/g-mode.webp" alt=""><span>Vêtements</span></button>
+        <button type="button" data-m="coiffure" aria-pressed="false"><img src="/commercants/g-coiffure.webp" alt=""><span>Coiffure</span></button>
+        <button type="button" data-m="librairie" aria-pressed="false"><img src="/commercants/g-librairie.webp" alt=""><span>Librairie</span></button>
+        <button type="button" data-m="bijou" aria-pressed="false"><img src="/commercants/g-bijou.webp" alt=""><span>Bijoux, créateurs</span></button>
+        <button type="button" data-m="autre" aria-pressed="false"><img src="/commercants/g-clikme.webp" alt=""><span>Autre commerce</span></button>
+      </div>
+      <div class="bas">
+        <a class="btn rose parti" href="#clients">Suivez-moi
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
+        <p class="rassure"><span>60 secondes</span><span>Gratuit</span><span>À partir de votre fiche Google</span></p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ═══ CHAPITRE 1 : ce que vous faites, où ça part, ce que vit le client ═══ -->
+<section class="chapitre c1" id="clients" aria-labelledby="t-c1">
+  <div class="bandeau"><div class="w">
+    <span class="num" aria-hidden="true">01</span>
+    <small>Chapitre 1</small>
+    <h2 id="t-c1">Plus de clients</h2>
+    <p>Ce que je fais pour que la ville vous trouve.</p>
+  </div></div>
+
+  <div class="scene" data-dit="minute">
+    <div class="w">
+      <div class="perche"></div>
+      <div class="texte centre-t monte">
+        <p class="etape">1 · Ce que vous faites</p>
+        <h3 class="grand">Une minute. <em>Trois façons au choix.</em></h3>
+        <p class="lead">Vous choisissez comment raconter <b data-t="produit">ce que vous proposez</b>. Je fais tout le reste : le film, les mots, la mise en page.</p>
+      </div>
+      <div class="trois">
+        <article class="facon monte">
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="m15.5 10.5 6-3.5v10l-6-3.5"/></svg></span>
+          <h4>Je vous filme</h4>
+          <p>Posez votre téléphone et travaillez comme d’habitude, une heure au plus. Je garde les meilleurs moments et j’en fais un épisode.</p>
+          <span class="min"><i>1 min</i>pour poser le téléphone</span>
+        </article>
+        <article class="facon monte">
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></span>
+          <h4>Je vous interviewe</h4>
+          <p>Trois questions, vous répondez à la voix, comme à un client. Je coupe les hésitations et je monte le film.</p>
+          <span class="min"><i>1 min</i>de réponses</span>
+        </article>
+        <article class="facon monte">
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9zM19 15l.9 2.6 2.6.9-2.6.9L19 22l-.9-2.6-2.6-.9 2.6-.9z"/></svg></span>
+          <h4>Je m’occupe de tout</h4>
+          <p>Quatre photos, et notre spécialiste raconte à votre place. Vous n’avez rien à dire.</p>
+          <span class="min"><i>1 min</i>pour 4 photos</span>
+        </article>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene" data-dit="film">
+    <div class="w">
+      <div class="perche"></div>
+      <div class="grille inv">
+        <div class="texte monte">
+          <p class="etape">Regardez : l’interview</p>
+          <h3 class="grand">Trois questions. <em>Une minute. Un film.</em></h3>
+          <p class="lead">Le fantôme pose ses questions, <b data-t="filmQui">Jean-Marie</b> répond comme à un client. Le film se monte tout seul : les sous-titres, la musique, le cadre ClikMe.</p>
+          <p><button type="button" class="btn ligne" id="ecouter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg>
+            Regarder avec le son</button></p>
+        </div>
+        <figure class="monte" style="margin:0">
+          <div class="film-tel"><div class="cadre">
+            <video id="film" muted loop playsinline preload="none" poster="/commercants/i-restaurant.jpg" aria-label="L’interview Face au fantôme"></video>
+            <button type="button" class="son" id="son" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path id="onde" d="M16 9a4 4 0 0 1 0 6"/></svg><span>Le son</span></button>
+          </div></div>
+          <figcaption class="legende">Démo · <span data-t="filmNom">Jean-Marie, Chez Bergine</span></figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene" data-dit="partout">
+    <div class="w">
+      <div class="perche"></div>
+      <div class="texte centre-t monte">
+        <p class="etape">2 · Où ça part</p>
+        <h3 class="grand">Puis partout. <em>En un geste.</em></h3>
+      </div>
+      <div class="diffusion" id="diffusion">
+        <div class="annonce"><img data-src="vousImg" src="/commercants/v-restaurant.jpg" alt=""><span><b data-t="vousTitre">Votre annonce du jour</b><small>Prête, au format de chaque endroit</small></span></div>
+        <span class="tronc" aria-hidden="true"></span>
+        <span class="rail" aria-hidden="true"></span>
+        <ul class="dest">
+          <li><span class="logo l-ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor"/></svg></span><b>Instagram</b><small>une publication</small><span class="coche">✓</span></li>
+          <li><span class="logo l-fb"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.8 1.4-3.8 3.9v2.3H8v3h2.5V21z"/></svg></span><b>Facebook</b><small>votre page</small><span class="coche">✓</span></li>
+          <li><span class="logo l-gg"><svg viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.3-.2-1.9H12v3.6h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.2z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2z"/><path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10c.8-2.4 3-4.1 5.6-4.1z"/></svg></span><b>Google</b><small>votre fiche</small><span class="coche">✓</span></li>
+          <li><span class="logo l-wa"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5a9.4 9.4 0 0 0-8.1 14.2L2.6 21.4l4.8-1.3A9.4 9.4 0 1 0 12 2.5zm5.4 13.3c-.2.6-1.3 1.2-1.8 1.3-.5 0-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 2 1.1 1 2 1.3 2.3 1.4.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 1c.3.1.5.2.5.3.1.2.1.6-.1 1.1z"/></svg></span><b>WhatsApp</b><small>votre statut</small><span class="coche">✓</span></li>
+          <li><span class="logo l-ck"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></span><b>Le Direct</b><small>toute la ville</small><span class="coche">✓</span></li>
+        </ul>
+      </div>
+      <p class="choisir-ou monte">Vous gardez la main : partout, sur certains réseaux, ou seulement sur ClikMe.</p>
+    </div>
+  </div>
+
+  <div class="scene" data-dit="direct">
+    <div class="w">
+      <div class="perche"></div>
+      <div class="grille">
+        <div class="texte monte">
+          <p class="etape">3 · Ce que vit votre client</p>
+          <h3 class="grand">Le Direct. <em>De la ville jusqu’à chez vous.</em></h3>
+          <p class="lead">Vos clients font défiler <b data-t="directQuoi">ce que propose chaque commerce</b> de Dax : <b>qui fait quoi aujourd’hui</b>, à deux pas. Votre annonce les arrête, et en quelques gestes ils vous écrivent.</p>
+          <ol class="etapes-client" id="etapes-client"></ol>
+        </div>
+        <figure class="monte" style="margin:0">
+          <div class="tel"><div class="ecran">
+            <span class="encoche"></span>
+            <div class="statut" aria-hidden="true"><b>11:42</b><i></i></div>
+            <div class="pile" id="pile" role="img" aria-label="Le parcours d’un client dans l’application ClikMe, du Direct jusqu’au message WhatsApp"><span class="doigt" id="doigt"></span></div>
+          </div></div>
+          <figcaption class="legende">Les vrais écrans de l’application · commerces de démonstration</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LE PONT ═══ -->
+<section class="pont" data-dit="pont" aria-labelledby="t-pont">
+  <div class="w">
+    <div class="perche"></div>
+    <div class="balance monte">
+      <div class="plateau p1"><b>+ de clients</b><span>qui vous trouvent, et qui viennent</span></div>
+      <div class="coeur"><div class="rond"><div><img id="pont-g" src="/commercants/g-clikme.webp" alt=""></div></div><strong data-t="chez">Votre commerce</strong></div>
+      <div class="plateau p2"><b>− de dépenses</b><span>pour tout ce que vous achetez en ville</span></div>
+    </div>
+    <h2 class="pont-titre monte" id="t-pont">Deux promesses. <em>Un seul gagnant : vous.</em></h2>
+  </div>
+</section>
+
+<!-- ═══ CHAPITRE 2 ═══ -->
+<section class="chapitre c2" id="depenses" aria-labelledby="t-c2">
+  <div class="bandeau"><div class="w">
+    <span class="num" aria-hidden="true">02</span>
+    <small>Chapitre 2</small>
+    <h2 id="t-c2">Moins de <span class="haut">dépenses</span></h2>
+    <p>Ce que je fais pour que vous dépensiez moins.</p>
+  </div></div>
+
+  <div class="scene" data-dit="monnaie">
+    <div class="w">
+      <div class="perche"></div>
+      <div class="texte centre-t monte">
+        <p class="etape">Votre monnaie</p>
+        <h3 class="grand">Votre métier <em>devient votre monnaie.</em></h3>
+        <p class="lead">Entre commerçants ClikMe, on ne se paie pas en euros : on se paie avec ce qu’on sait faire.</p>
+      </div>
+      <div class="equation monte" id="equation" role="group" aria-label="Ce que vous offrez vaut 50 euros à dépenser chez les commerçants du réseau">
+        <div class="bloc"><small>Vous offrez</small><div id="offre-visuel"></div><b data-t="offreTitre">Un bon d’achat de 50 €</b><span data-t="offreCout">Payé avec votre métier, pas avec votre caisse.</span></div>
+        <div class="op" aria-hidden="true">=</div>
+        <div class="piece"><div><b>50 €</b><span>à dépenser chez les commerçants du réseau</span></div></div>
+        <div class="op" aria-hidden="true">→</div>
+        <div class="bloc"><small>Vous prenez</small><div class="prendre" id="prendre"></div><span>Chez les autres commerçants ClikMe</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene" data-dit="tarif">
+    <div class="w">
+      <div class="perche"></div>
+      <div class="texte centre-t monte">
+        <p class="etape">Partout dans le réseau</p>
+        <h3 class="grand">Jamais <em>plein tarif.</em></h3>
+      </div>
+      <div class="tarif monte">
+        <div class="prix"><b>0 €</b><strong>Avec vos crédits</strong><span>Ce que vos offres vous ont rapporté se dépense comme de l’argent.</span></div>
+        <div class="prix"><b>−50 %</b><strong>Sinon, à moitié prix</strong><span>Même sans crédits, vous ne payez que la moitié, réglée sur place.</span></div>
+      </div>
+      <p style="text-align:center"><span class="tampon monte" style="display:inline-block">Jamais plein tarif</span></p>
+      <p class="note-livre">Pour les livres, prix unique oblige : chez vous, on règle en crédits, jamais à moitié prix.</p>
+    </div>
+  </div>
+
+  <div class="scene" data-dit="regles">
+    <div class="w">
+      <div class="perche"></div>
+      <div class="texte monte">
+        <p class="etape">Les règles, en quatre lignes</p>
+        <h3 class="grand">C’est vous <em>qui fixez les limites.</em></h3>
+      </div>
+      <ul class="regles">
+        <li class="monte"><i>1</i><div><b>Vous prenez avant d’avoir donné</b><span>Chaque mois, 50 € par personne de votre équipe, jusqu’à cinq personnes.</span></div></li>
+        <li class="monte"><i>2</i><div><b>Vous rendez en servant</b><span>Ce que vous prenez, vous le rendez en produits ou en services. Jamais en euros.</span></div></li>
+        <li class="monte"><i>3</i><div><b>Vous fixez la limite</b><span>Jusqu’à 3 offres, et pour chacune, combien par mois au maximum.</span></div></li>
+        <li class="monte"><i>4</i><div><b>Votre comptabilité est prête</b><span>Une facture d’échange est préparée à votre nom pour chaque bon validé.</span></div></li>
+      </ul>
+      <div data-dit="dax">
+        <div class="perche"></div>
+        <div class="ouverture monte">
+          <b>Les échanges s’ouvrent à Dax dès 12 commerçants inscrits.</b>
+          <span>Inscrivez-vous maintenant : vous en serez dès l’ouverture.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CE QUE VOUS GAGNEZ ═══ -->
+<section class="bilan" data-dit="bilan" aria-labelledby="t-bilan">
+  <div class="w">
+    <div class="perche"></div>
+    <div class="texte centre-t monte">
+      <p class="sur">Au total</p>
+      <h2 class="grand" id="t-bilan" style="--acc-clair: var(--creme)">Ce que vous gagnez <em>avec votre fantôme.</em></h2>
+    </div>
+    <div class="gains">
+      <div class="gain g-temps monte"><small>Du temps</small><b>1 minute par jour</b><span>Chaque matin, votre annonce est prête : vous dites « Oui », elle part.</span></div>
+      <div class="gain g-cli monte"><small>Des clients</small><b>Partout à la fois</b><span>Vos réseaux, Google, et Le Direct, là où la ville choisit où aller.</span></div>
+      <div class="gain g-arg monte"><small>De l’argent</small><b>Jusqu’à 250 € par mois</b><span>D’achats chez les commerçants (50 € par personne, cinq au plus), rendus en produits, pas en euros.</span></div>
+      <div class="gain g-dep monte"><small>Moins de dépenses</small><b>Jamais plein tarif</b><span>Gratuit avec vos crédits, sinon à moitié prix, chez tous les commerçants ClikMe.</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="demo" data-dit="demo" aria-labelledby="t-demo">
+  <div class="w">
+    <div class="perche"></div>
+    <div class="demo-boite monte">
+      <img id="demo-g" src="/commercants/g-clikme.webp" alt="">
+      <div>
+        <h2 id="t-demo">Faites le tour <span data-t="demoNom">de votre métier</span></h2>
+        <p>Deux minutes, comme si c’était votre commerce : ce que votre fantôme fait pour vous, puis ce que vit votre client.</p>
+        <div class="autres-tours" id="autres-tours"></div>
+      </div>
+      <a class="btn rose" id="demo-lien" href="https://claude.ai/artifact/PNE42Bh4RcW7yJUQ2e2oZ5" target="_blank" rel="noopener">Voir la démo
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<section class="questions" aria-labelledby="t-questions">
+  <div class="w">
+    <h2 id="t-questions">Vos questions</h2>
+    <div>
+      <details><summary>Je n’ai pas le temps.</summary><p>Une minute par jour suffit : vous dites ce que vous proposez, ou vous touchez « Oui » à l’annonce du matin. Et si vous n’avez même pas une minute, posez votre téléphone pendant que vous travaillez : il fait le film tout seul.</p></details>
+      <details><summary>Je ne sais pas faire de vidéos.</summary><p>Vous n’avez rien à monter. Le film se fait tout seul, avec la signature ClikMe : le titre, la musique, le cadre et la carte de fin. Et si vous ne voulez pas parler, notre spécialiste raconte à votre place, à partir de 4 photos.</p></details>
+      <details><summary>Je gère déjà mes réseaux.</summary><p>Gardez la main : pour chaque annonce, vous choisissez où elle part. Partout, sur certains réseaux, ou seulement sur ClikMe. Votre fantôme vous évite seulement de tout refaire trois fois.</p></details>
+      <details><summary>Les échanges, ça me coûte combien ?</summary><p>Pas d’euros : ce que vous prenez chez un commerçant, vous le rendez en servant. Vous fixez vous-même combien vous offrez par mois. Et si vous préférez écouler un stock, vous pouvez aussi vendre à moitié prix, réglé sur place.</p></details>
+      <details><summary>Et si un commerçant ne rend pas ?</summary><p>Tant qu’il doit, son offre passe en tête et il ne peut pas refuser un bon. Un bon non honoré se signale, et après deux signalements, le commerçant est mis en pause.</p></details>
+      <details><summary>Combien coûte ClikMe ?</summary><p>La création de votre espace est gratuite : votre site est prêt en 60 secondes, à partir de votre fiche Google.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LA CRÉATION DE SA PAGE : même générateur, mêmes champs, même suite que l'accueil de clikme.fr ═══ -->
+<section class="creer" id="creer" data-dit="creer" aria-labelledby="t-creer">
+  <div class="w">
+    <div class="perche"></div>
+    <div class="creer-tete monte">
+      <h2 id="t-creer">Votre fantôme <span class="haut">vous attend.</span></h2>
+      <p class="plume">Créez votre page : je la construis sous vos yeux, à partir de votre fiche Google.</p>
+    </div>
+    <form class="gen" id="gen" novalidate>
+      <input type="text" id="g-nom" placeholder="Nom de votre établissement" aria-label="Nom de votre établissement" autocomplete="organization">
+      <div class="deux">
+        <input type="text" id="g-activite" placeholder="Votre activité (ex. coiffeur)" aria-label="Votre activité">
+        <input type="text" id="g-ville" placeholder="Votre ville" aria-label="Votre ville" autocomplete="address-level2">
+      </div>
+      <label class="g-photo" id="g-photo">
+        <input type="file" accept="image/*" id="g-photo-f">
+        <span class="vignette" aria-hidden="true">📷</span>
+        <b>Photo de votre devanture</b>
+        <em>Facultatif — de face, de jour, en entier. Sinon on prend celle de votre fiche Google</em>
+      </label>
+      <p class="g-err" id="g-photo-err" hidden></p>
+      <button type="button" class="g-plus" id="g-plus">➕ Ajouter d’autres photos <em>(facultatif)</em></button>
+      <div class="g-lieu" id="g-lieu" hidden>
+        <p>Elles servent à votre page et à La ville. Téléphone à l’horizontale, à hauteur d’yeux, sans filtre. Vous pourrez les changer plus tard dans votre Espace Pro.</p>
+        <div class="g-lieu-g" id="g-lieu-g"></div>
+      </div>
+      <button type="submit" class="btn rose g-go" id="g-go" disabled>✨ Créer mon espace gratuitement</button>
+      <div class="g-err" id="g-err" hidden></div>
+      <p class="g-ailleurs" id="g-ailleurs" hidden></p>
+      <p class="rassure"><span>60 secondes</span><span>Gratuit</span><span>À partir de votre fiche Google</span></p>
+    </form>
+    <p class="contact">Une question ? Marius vous répond sur WhatsApp : <a href="https://wa.me/33768233347?text=Bonjour%20Marius%2C%20je%20voudrais%20en%20savoir%20plus%20sur%20ClikMe." target="_blank" rel="noopener">07 68 23 33 47</a></p>
+  </div>
+</section>
+
+<div class="construit" id="construit" role="dialog" aria-label="Construction de votre page" hidden>
+  <div class="c-in">
+    <img class="c-g" src="/commercants/g-vol.webp" alt="">
+    <div class="c-tel"><div class="c-ec">
+      <div class="c-bar"><span></span><span></span><span></span><em id="c-adr">clikme.fr</em></div>
+      <div class="c-hero" id="c-hero"><div class="c-nom" id="c-nom">Votre établissement</div><div class="c-role" id="c-role">Votre activité</div><div class="c-etoiles" id="c-etoiles">★★★★★ avis Google</div></div>
+      <div class="c-corps">
+        <div class="c-vignettes" id="c-vign"><i></i><i></i><i></i></div>
+        <div class="c-annonce" id="c-annonce"><b>✦ AUJOURD’HUI</b>votre actualité s’affiche ici</div>
+        <div class="c-chat" id="c-chat"><p id="c-q">Bonsoir, il vous reste une place samedi ?</p><p>Je note votre demande et je la transmets tout de suite.</p></div>
+        <div class="c-direct" id="c-direct"><b id="c-dk">📍 Le Direct de votre ville</b>Votre actualité y paraît aussi, à côté des autres commerces.</div>
+      </div>
+    </div></div>
+    <p class="c-titre">Je construis la page de <b id="c-titre-nom">votre établissement</b>…</p>
+    <p class="c-pas"><i></i><span id="c-pas">Je cherche votre établissement sur Google…</span></p>
+    <div class="c-jauge"><i id="c-jauge"></i></div>
+  </div>
+</div>
+
+<footer>
+  <div class="w">
+    <img src="/commercants/logo.png" alt="ClikMe" width="55" height="22">
+    <span>ClikMe · Le commerce de votre ville, en direct · clikme.fr</span>
+  </div>
+</footer>
+
+<div id="vol" data-cote="droite">
+  <span class="traine" aria-hidden="true"></span>
+  <button type="button" class="vg" id="vol-g" aria-label="Le fantôme : réentendre ce qu’il dit"><img src="/commercants/g-vol.webp" alt=""></button>
+  <div class="bulle" id="vol-b" aria-live="polite">
+    <p class="corps"><span class="plein"></span><span class="tape" aria-hidden="true"></span></p>
+    <button type="button" class="b-son" id="b-son" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg><span>Écouter</span></button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const calme = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Sur clikme.fr, les fichiers de la page sont rangés à part : leur dossier est donné par cette balise
+  const BASE = ($('meta[name="clikme-base"]') || {}).content || "";
+  const A = (f) => BASE + f;
+
+  /* ═══ Les métiers : tout ce qui change d'un commerce à l'autre ═══ */
+  const TOURS = {
+    restaurant: ["Restaurant", "https://claude.ai/artifact/PNE42Bh4RcW7yJUQ2e2oZ5"],
+    mode: ["Vêtements", "https://claude.ai/artifact/KbADXsnQA55uqkSQEVbXR5"],
+    coiffure: ["Coiffure", "https://claude.ai/artifact/HjzV4zwSsUHTpNcBSnQXFG"],
+    librairie: ["Librairie", "https://claude.ai/artifact/GrCdASNbis5crVFVUrf9P2"],
+    bijou: ["Bijouterie", "https://claude.ai/artifact/LtmrpKqY5rbcqGc7WA1DkX"],
+  };
+  const PRENDRE = { diner: ["o-diner.jpg", "Un dîner"], fleurs: ["o-fleurs.jpg", "Des fleurs"], coiffure: ["o-coiffure.jpg", "Une coupe"], hotel: ["o-hotel.jpg", "Un hôtel"] };
+  const M = {
+    autre: { nom: "Votre commerce", chez: "Votre commerce", dit: "Très bien !", g: "clikme", activite: "",
+      directQuoi: "ce que propose chaque commerce", produit: "ce que vous proposez", vousImg: "", vousTitre: "Votre annonce du jour",
+      film: "restaurant", filmQui: "Jean-Marie", filmNom: "Jean-Marie, Chez Bergine",
+      offre: "bon", offreTitre: "Un bon d’achat de 50 €", offreCout: "Payé avec votre métier, pas avec votre caisse.", prendre: ["diner", "coiffure", "hotel"], demoNom: "de votre métier" },
+    restaurant: { nom: "Restaurant", chez: "Votre restaurant", dit: "Un restaurant !", g: "restaurant", activite: "restaurant",
+      directQuoi: "les menus du jour", produit: "votre plat du jour", vousImg: "v-restaurant.jpg", vousTitre: "Votre plat du jour",
+      film: "restaurant", filmQui: "Jean-Marie", filmNom: "Jean-Marie, Chez Bergine",
+      offre: "o-diner.jpg", offreTitre: "Un dîner pour deux", offreCout: "Payé avec votre cuisine, pas avec votre caisse.", prendre: ["fleurs", "coiffure", "hotel"], demoNom: "du restaurant" },
+    mode: { nom: "Vêtements", chez: "Votre boutique", dit: "Une boutique de vêtements !", g: "mode", activite: "boutique de vêtements",
+      directQuoi: "les nouveautés des boutiques", produit: "votre pièce du jour", vousImg: "v-mode.jpg", vousTitre: "Votre pièce du jour",
+      film: "mode", filmQui: "Lou", filmNom: "Lou, Maison Lou",
+      offre: "bon", offreTitre: "Un bon d’achat de 50 €", offreCout: "Payé avec vos articles, pas avec votre caisse.", prendre: ["diner", "coiffure", "hotel"], demoNom: "de la boutique" },
+    coiffure: { nom: "Coiffure", chez: "Votre salon", dit: "Un salon de coiffure !", g: "coiffure", activite: "coiffeur",
+      directQuoi: "les coupes du jour", produit: "votre coupe du jour", vousImg: "v-coiffure.jpg", vousTitre: "Votre coupe du jour",
+      film: "coiffure", filmQui: "Clara", filmNom: "Clara, Salon Clara",
+      offre: "bon", offreTitre: "Un bon d’achat de 50 €", offreCout: "Payé avec vos ciseaux, pas avec votre caisse.", prendre: ["diner", "fleurs", "hotel"], demoNom: "du salon" },
+    librairie: { nom: "Librairie", chez: "Votre librairie", dit: "Une librairie !", g: "librairie", activite: "librairie",
+      directQuoi: "ce que propose chaque commerce", produit: "votre coup de cœur", vousImg: "v-librairie.jpg", vousTitre: "Votre coup de cœur",
+      film: "librairie", filmQui: "Alice", filmNom: "Alice, La Page d’Alice",
+      offre: "bon", offreTitre: "Un bon d’achat de 50 €", offreCout: "Payé avec vos livres, pas avec votre caisse.", prendre: ["diner", "coiffure", "hotel"], demoNom: "de la librairie" },
+    bijou: { nom: "Bijoux, créateurs", chez: "Votre atelier", dit: "Un atelier de créateur !", g: "bijou", activite: "créatrice de bijoux",
+      directQuoi: "les créations du jour", produit: "votre création du jour", vousImg: "v-bijou.jpg", vousTitre: "Votre création du jour",
+      film: "bijou", filmQui: "Inès", filmNom: "Inès, Atelier Inès",
+      offre: "bon", offreTitre: "Un bon d’achat de 50 €", offreCout: "Payé avec vos créations, pas avec votre caisse.", prendre: ["diner", "coiffure", "hotel"], demoNom: "de l’atelier" },
+  };
+
+  /* ═══ Le parcours du client, dans les vrais écrans de l'application (commerces de démonstration) ═══
+     Trois annonces de la ville défilent, puis celle de son métier ; chaque toucher est celui qu'on fait
+     vraiment dans l'application, à l'endroit du vrai bouton (mesuré sur l'écran). Il finit sur le
+     WhatsApp du commerçant, avec le message que l'application prépare mot pour mot. */
+  const PARCOURS = {
+    restaurant: { ville: ["07", "09", "14"], ecrans: [0, 1, 2, 3, 5],
+      taps: [[50, 87.6], [50, 90.4], [50, 94.5], [50, 78.8], [50, 90]], quelle: [1, 2, 2, 3, 3],
+      etapes: ["Camille fait défiler la ville", "Votre plat l’arrête", "Elle le découvre, avec votre voix", "Elle demande une table", "Vous répondez sur WhatsApp"],
+      message: "Bonjour Chez Bergine,\nJe souhaiterais réserver une table pour 2 personnes, ce soir vers 20 h.\nEst-ce possible ?\nMerci d’avance — Camille\n(vu sur ClikMe)",
+      reponse: "Avec plaisir Camille ! C’est noté : 2 personnes, ce soir à 20 h. À tout à l’heure 🙂" },
+    coiffure: { ville: ["08", "07", "04"], ecrans: [0, 1, 2],
+      taps: [[91.3, 68.2], [53, 77], [50, 95]], quelle: [1, 2, 2],
+      etapes: ["Camille fait défiler la ville", "Votre coupe l’arrête", "Elle choisit son moment", "Vous répondez sur WhatsApp"],
+      message: "Bonjour, j'ai vu « Le carré, au ras des épaules » sur Clikme. Est-ce qu'il reste de la place ? Merci !",
+      reponse: "Oui ! Je vous attends cet après-midi, ça vous va à 17 h ? 🙂" },
+    mode: { ville: ["15", "13", "00"], ecrans: [0, 1, 2],
+      taps: [[91.3, 68.8], [51.9, 85.2], [50, 95]], quelle: [1, 2, 2],
+      etapes: ["Camille fait défiler la ville", "Votre nouveauté l’arrête", "Elle réserve un essayage", "Vous répondez sur WhatsApp"],
+      message: "Bonjour, j'ai vu « Essayage privé » sur Clikme. Est-ce qu'il reste de la place ? Merci !",
+      reponse: "Oui, l’essayage de 15 h est à vous ! Je vous prépare la veste en 38 🙂" },
+    bijou: { ville: ["08", "13", "07"], ecrans: [0, 1, 2],
+      taps: [[91.3, 68.8], [52, 73.6], [50, 95]], quelle: [1, 2, 2],
+      etapes: ["Camille fait défiler la ville", "Votre création l’arrête", "Elle choisit son moment", "Vous répondez sur WhatsApp"],
+      message: "Bonjour, j'ai vu « Bracelet monté devant vous » sur Clikme. Est-ce qu'il reste de la place ? Merci !",
+      reponse: "Oui, il reste de la place ! Passez quand vous voulez entre 14 h et 18 h 💎" },
+    librairie: { ville: ["11", "07", "08"], ecrans: [0, 1, 2, 3],
+      taps: [[35.3, 80.2], [39.3, 53.3], [51.9, 83.9], [50, 95]], quelle: [1, 2, 2, 2],
+      etapes: ["Camille fait défiler la ville", "Votre coup de cœur l’arrête", "Elle vous demande de le garder", "Vous répondez sur WhatsApp"],
+      message: "Bonjour, j'ai vu « Son coup de cœur : L’Anomalie » sur Clikme. Est-ce que vous pouvez m'en garder ? Merci !",
+      reponse: "Bien sûr ! Je vous le mets de côté, il vous attend à la caisse 📚" },
+  };
+
+  /* ═══ Ce que dit le fantôme, scène par scène (une phrase par enregistrement) ═══ */
+  const DIT = {
+    accueil: "Bonjour ! Je suis votre fantôme. Dites-moi votre métier : je vous montre tout ce que je vais faire pour vous.",
+    suite: "Je vais m’occuper de deux choses : vous amener des clients, et vous faire dépenser moins. Suivez-moi !",
+    minute: "Pour y être, il vous faut une minute. Vous choisissez comment, et je fais tout le reste.",
+    film: "Trois questions, une minute de réponses… et voilà le film. Montez le son !",
+    partout: "Ensuite, en un geste, je publie partout : Instagram, Facebook, Google, WhatsApp, et Le Direct.",
+    direct: "Regardez : en quelques secondes, vos clients voient qui fait quoi aujourd’hui, dans toute la ville. Et vous êtes dedans.",
+    whatsapp: "Et quand un client a envie, il vous écrit sur WhatsApp. Le message est déjà prêt : vous n’avez plus qu’à répondre.",
+    pont: "Ça, c’était pour faire entrer des clients. Maintenant, je vous aide à dépenser moins.",
+    monnaie: "Entre commerçants ClikMe, on ne se paie pas en euros. On se paie avec ce qu’on sait faire.",
+    tarif: "Où que vous alliez dans le réseau, vous ne payez jamais plein tarif : gratuit avec vos crédits, ou à moitié prix.",
+    regles: "Et c’est vous qui fixez les limites. Ce que vous prenez, vous le rendez en servant, jamais en euros.",
+    dax: "Les échanges s’ouvrent à Dax dès douze commerçants inscrits. Soyez des premiers !",
+    bilan: "Du temps, des clients, de l’argent, et moins de dépenses. Voilà ce que je fais pour vous.",
+    demo: "Vous voulez voir en vrai ? Faites le tour de votre métier : deux minutes, comme si c’était chez vous.",
+    creer: "Il ne me manque plus que votre nom. Soixante secondes, et c’est gratuit !",
+  };
+  /* Les voix enregistrées (une phrase par fichier) et leur durée en secondes, pour taper la bulle au même rythme */
+  const VOIX = { "accueil": "voix-01-accueil.mp3", "choix-restaurant": "voix-02-choix-restaurant.mp3", "choix-mode": "voix-03-choix-mode.mp3", "choix-coiffure": "voix-04-choix-coiffure.mp3", "choix-librairie": "voix-05-choix-librairie.mp3", "choix-bijou": "voix-06-choix-bijou.mp3", "choix-autre": "voix-07-choix-autre.mp3", "suite": "voix-08-suite.mp3", "direct": "voix-09-direct.mp3", "minute": "voix-10-minute.mp3", "film": "voix-11-film.mp3", "partout": "voix-12-partout.mp3", "whatsapp": "voix-13-whatsapp.mp3", "pont": "voix-14-pont.mp3", "monnaie": "voix-15-monnaie.mp3", "tarif": "voix-16-tarif.mp3", "regles": "voix-17-regles.mp3", "dax": "voix-18-dax.mp3", "bilan": "voix-19-bilan.mp3", "demo": "voix-20-demo.mp3", "creer": "voix-21-fin.mp3" };
+  const DUREE = { "accueil": 6.1, "choix-restaurant": 0.94, "choix-mode": 1.25, "choix-coiffure": 1.48, "choix-librairie": 1.05, "choix-bijou": 1.67, "choix-autre": 0.75, "suite": 5.28, "direct": 6.58, "minute": 4.51, "film": 4.22, "partout": 6.37, "whatsapp": 5.74, "pont": 4.46, "monnaie": 4.66, "tarif": 6.15, "regles": 5.54, "dax": 4.3, "bilan": 5.04, "demo": 4.72, "creer": 3.58 };
+
+  // Les espaces fines avant ! ? : ; et dans les guillemets, pour que la ponctuation ne passe jamais seule à la ligne
+  const fin = (t) => t.replace(/ ([!?:;»])/g, " $1").replace(/« /g, "« ");
+  (function espacer(n) {
+    for (const c of n.childNodes) {
+      if (c.nodeType === 3) c.nodeValue = fin(c.nodeValue);
+      else if (c.nodeType === 1 && !/^(SCRIPT|STYLE)$/.test(c.tagName)) espacer(c);
+    }
+  })(document.body);
+
+  let cle = "autre", choisi = false;
+  const petit = () => innerWidth < 620;
+
+  /* ═══ LA PAROLE : la bulle se tape au rythme de la voix ; un seul lecteur pour toutes les phrases ═══ */
+  let voixOn = false, voixCoupee = false;
+  // Lancé une première fois par un toucher, ce lecteur peut ensuite parler seul (iPhone compris)
+  const voix = new Audio(); voix.preload = "auto";
+  const vol = $("#vol"), volB = $("#vol-b"), plein = $(".plein", volB), tape = $(".tape", volB), bSon = $("#b-son");
+  let parleT = null, finT = null, quandFini = null;
+  function taire() {
+    clearInterval(parleT); clearTimeout(finT); voix.onended = null; voix.pause();
+    tape.textContent = plein.textContent; vol.classList.remove("parle"); quandFini = null;
+  }
+  function parler(texte, cles, ensuite) {
+    taire();
+    texte = fin(texte); plein.textContent = texte; quandFini = ensuite || null;
+    const jouees = voixOn ? cles.filter((k) => VOIX[k]) : [];
+    const duree = jouees.reduce((s, k) => s + DUREE[k], 0);
+    let texteFini = false, voixFinie = !jouees.length;
+    const peutEtreFini = () => {
+      if (!texteFini || !voixFinie) return;
+      vol.classList.remove("parle");
+      // Sans sa voix, on lui laisse le temps d'être lu avant qu'il reparte
+      const lire = jouees.length ? 500 : Math.min(2600, 800 + texte.length * 14);
+      finT = setTimeout(() => { const f = quandFini; quandFini = null; if (f) f(); }, lire);
+    };
+    vol.classList.add("parle");
+    if (jouees.length) {
+      let i = 0;
+      const suivant = () => {
+        if (i >= jouees.length) { voix.onended = null; voixFinie = true; peutEtreFini(); return; }
+        voix.src = A(VOIX[jouees[i++]]); voix.onended = suivant;
+        voix.play().catch(() => { voix.onended = null; voixFinie = true; peutEtreFini(); });
+      };
+      suivant();
+    }
+    if (calme) { tape.textContent = texte; texteFini = true; peutEtreFini(); return; }
+    tape.textContent = ""; let f = 0;
+    const pas = jouees.length ? texte.length / (duree * 920 / 30) : 2;
+    parleT = setInterval(() => {
+      f += pas; const n = Math.min(texte.length, Math.round(f)); tape.textContent = texte.slice(0, n);
+      if (n >= texte.length) { clearInterval(parleT); texteFini = true; peutEtreFini(); }
+    }, 30);
+  }
+  function majVoix() {
+    bSon.setAttribute("aria-pressed", String(voixOn));
+    $("span", bSon).textContent = voixOn ? "Couper sa voix" : "Écouter";
+  }
+
+  /* ═══ LE VOL : il va jusqu'à la scène dont il parle, et y reste tant qu'il n'a pas fini ═══
+     Une scène qui arrive pendant qu'il parle ne l'interrompt pas : il finit sa phrase, puis il vole
+     jusqu'à la dernière scène atteinte (pas à toutes celles qu'on a passées). */
+  let ici = null, pos = null, occupe = false, voulu = null;
+  const dits = new Set();
+  const t = (p, r = 0) => `translate(${Math.round(p.x)}px, ${Math.round(p.y)}px) rotate(${r}deg)`;
+  const percheDe = (k) => k === "accueil" ? $(".perche-accueil") : $(`[data-dit="${k}"] > .w > .perche, [data-dit="${k}"] > .perche`);
+  function cible(k) {
+    const p = percheDe(k); if (!p) return null;
+    const r = p.getBoundingClientRect(), x0 = r.left + scrollX, y0 = r.top + scrollY;
+    if (k === "accueil") {
+      if (innerWidth >= 980) { const gw = 210; return { gw, cote: "dessus", bw: Math.min(380, r.width), x: x0 + (r.width - gw) / 2, y: y0 + r.height - gw - 10 }; }
+      const gw = 92; return { gw, cote: "droite", bw: r.width - gw - 10, x: x0, y: y0 + (r.height - gw) / 2 };
+    }
+    const gw = petit() ? 70 : 92;
+    return { gw, cote: "gauche", bw: Math.min(540, r.width - gw - 12), x: x0 + r.width - gw, y: y0 + (r.height - gw) / 2 };
+  }
+  function poser(c) {
+    vol.dataset.cote = c.cote; vol.style.setProperty("--gw", c.gw + "px"); vol.style.setProperty("--bw", Math.max(180, c.bw) + "px");
+    pos = { x: c.x, y: c.y }; vol.style.transform = t(pos);
+  }
+  function voler(k, ensuite) {
+    const c = cible(k); if (!c) { ensuite(); return; }
+    volB.classList.remove("ouverte");
+    const de = pos;
+    if (calme || !de || !vol.animate) { poser(c); ensuite(); return; }
+    const vers = { x: c.x, y: c.y }, d = Math.hypot(vers.x - de.x, vers.y - de.y);
+    vol.dataset.cote = c.cote; vol.style.setProperty("--gw", c.gw + "px"); vol.style.setProperty("--bw", Math.max(180, c.bw) + "px");
+    vol.classList.add("vole");
+    const arrive = () => { vol.classList.remove("vole"); pos = vers; vol.style.transform = t(vers); ensuite(); };
+    if (d > innerHeight * 1.8) {
+      // Trop loin pour traverser la page : il s'évapore, et réapparaît là où on lit
+      vol.animate([{ transform: t(de), opacity: 1 }, { transform: t({ x: de.x, y: de.y - 40 }) + " scale(.5)", opacity: 0 }], { duration: 260, easing: "ease-in" }).onfinish = () => {
+        vol.style.transform = t(vers);
+        vol.animate([{ transform: t({ x: vers.x, y: vers.y - 50 }) + " scale(.4)", opacity: 0 }, { transform: t(vers), opacity: 1 }], { duration: 520, easing: "cubic-bezier(.3,1.5,.5,1)" }).onfinish = arrive;
+      };
+      return;
+    }
+    // Un vol de fantôme : une courbe qui monte un peu, qui ondule, et qui se pose
+    const dx = vers.x - de.x, dy = vers.y - de.y, haut = Math.min(140, 50 + d * .12);
+    const m1 = { x: de.x + dx * .3 - 30, y: de.y + dy * .3 - haut }, m2 = { x: de.x + dx * .7 + 25, y: de.y + dy * .7 - haut * .6 };
+    const dur = Math.max(800, Math.min(1700, 500 + d * .55));
+    vol.style.transform = t(vers);
+    vol.animate([{ transform: t(de) }, { transform: t(m1, -9), offset: .35 }, { transform: t(m2, 7), offset: .72 }, { transform: t(vers) }], { duration: dur, easing: "cubic-bezier(.45,.05,.35,1)" }).onfinish = arrive;
+  }
+  const ligne = (k) => {
+    if (k === "accueil") return choisi ? [M[cle].dit + " " + DIT.suite, ["choix-" + cle, "suite"]] : [DIT.accueil, ["accueil"]];
+    return [DIT[k], [k]];
+  };
+  function dire(k, force) {
+    const [texte, cles] = ligne(k);
+    volB.classList.add("ouverte");
+    if (dits.has(k) && !force) { taire(); plein.textContent = tape.textContent = fin(texte); finDeParole(); return; }
+    occupe = true;
+    parler(texte, cles, () => { dits.add(k); finDeParole(); });
+  }
+  function finDeParole() {
+    occupe = false;
+    if (voulu && voulu !== ici) partir(); else voulu = null;
+  }
+  function partir() {
+    const k = voulu; voulu = null; if (!k) return;
+    if (k === ici) { if (!dits.has(k)) dire(k); return; }
+    occupe = true;
+    voler(k, () => { ici = k; occupe = false; dire(k); });
+  }
+  function demander(k) { voulu = k; if (!occupe) partir(); }
+  // Une réplique en plus, sans changer de scène (le message WhatsApp du parcours)
+  function direAussi(k) {
+    if (occupe || ici !== "direct" || dits.has(k)) return;
+    occupe = true; volB.classList.add("ouverte");
+    parler(DIT[k], [k], () => { dits.add(k); finDeParole(); });
+  }
+  // Le toucher sur lui : il répète ; son bouton : sa voix
+  $("#vol-g").addEventListener("click", () => {
+    if (!ici) return;
+    if (!voixCoupee && !voixOn) { voixOn = true; majVoix(); }
+    voulu = null; dire(ici, true);
+  });
+  bSon.addEventListener("click", () => {
+    voixOn = !voixOn; voixCoupee = !voixOn; majVoix();
+    if (voixOn && ici) { voulu = null; dire(ici, true); } else if (!voixOn) { voix.onended = null; voix.pause(); }
+  });
+  // La page bouge sous lui (une image qui arrive, une fenêtre retournée) : il se recale sans voler
+  const recaler = () => { if (!ici || vol.classList.contains("vole")) return; const c = cible(ici); if (c) poser(c); };
+  addEventListener("resize", recaler);
+  if ("ResizeObserver" in window) new ResizeObserver(() => requestAnimationFrame(recaler)).observe(document.body);
+
+  /* ═══ Appliquer un métier à toute la page ═══ */
+  const lire = () => {
+    const q = (location.search.match(/[?&]metier=([a-z]+)/) || [])[1] || location.hash.replace("#metier-", "");
+    if (M[q]) return q;
+    try { const s = localStorage.getItem("clikme-metier"); if (M[s]) return s; } catch (e) {}
+    return null;
+  };
+  function appliquer(c) {
+    cle = c; const m = M[c];
+    document.body.dataset.metier = c;
+    $$("[data-t]").forEach((el) => { const v = m[el.dataset.t]; if (v != null) el.textContent = fin(v); });
+    $$(".metiers button").forEach((b) => b.setAttribute("aria-pressed", String(choisi && b.dataset.m === c)));
+    const repos = A(`g-${m.g}.webp`);
+    $("#pont-g").src = repos; $("#demo-g").src = repos;
+    const vi = $("[data-src='vousImg']"); vi.src = A(m.vousImg || "g-clikme.webp"); vi.style.objectFit = m.vousImg ? "cover" : "contain";
+    $("#offre-visuel").innerHTML = m.offre === "bon"
+      ? `<div class="bon"><small>BON D’ACHAT</small><strong>50 €</strong><i>chez vous</i></div>`
+      : `<img class="photo" src="${A(m.offre)}" alt="">`;
+    $("#prendre").innerHTML = m.prendre.map((k) => `<figure><img src="${A(PRENDRE[k][0])}" alt=""><figcaption>${PRENDRE[k][1]}</figcaption></figure>`).join("");
+    const tr = TOURS[c];
+    $("#demo-lien").href = tr ? tr[1] : TOURS.restaurant[1];
+    $("#demo-lien").firstChild.nodeValue = tr ? "Voir la démo " : "Voir une démo ";
+    $("#autres-tours").innerHTML = Object.keys(TOURS).filter((k) => k !== c).map((k) => `<a href="${TOURS[k][1]}" target="_blank" rel="noopener">${TOURS[k][0]}</a>`).join("");
+    // Son activité, déjà écrite dans le formulaire de création (s'il n'y a rien tapé lui-même)
+    const act = $("#g-activite");
+    if (!act.value || act.dataset.auto === act.value) { act.value = m.activite; act.dataset.auto = m.activite; majPret(); }
+    film(); preparerParcours();
+  }
+
+  /* ═══ Le parcours du client : la ville, sa carte, les vrais écrans, puis WhatsApp ═══ */
+  const pileEl = $("#pile"), doigt = $("#doigt");
+  let jeton = 0, parcoursVu = false;
+  const dors = (ms, j) => new Promise((ok, ko) => setTimeout(() => (j === jeton ? ok() : ko("arrêt")), ms));
+  const P = () => PARCOURS[cle] || PARCOURS.restaurant;
+  const leMetier = () => (PARCOURS[cle] ? cle : "restaurant");
+  function preparerParcours() {
+    const p = P(), mt = leMetier();
+    $("#etapes-client").innerHTML = p.etapes.map((e) => `<li>${fin(e)}</li>`).join("");
+    pileEl.querySelectorAll(".ecr").forEach((e) => e.remove());
+    const html = [
+      ...p.ville.map((n) => `<div class="ecr ville"><img src="${A(`direct-${n}.jpg`)}" alt="" loading="lazy"></div>`),
+      ...p.ecrans.map((n, i) => `<div class="ecr app${i === 0 ? " vous" : ""}"><img src="${A(`p-${mt}-${n}.jpg`)}" alt="" loading="lazy"><span class="ici">Ici, ce sera vous</span></div>`),
+      `<div class="ecr ecr-wa"><div class="wa-tete"><i>C</i><span><b>Camille</b><small>en ligne</small></span></div>
+        <div class="wa-fil"><span class="wa-jour">Aujourd’hui</span><p class="msg lui">${fin(p.message)}<small>11:42</small></p>
+        <span class="ecrit" aria-hidden="true"><i></i><i></i><i></i></span><p class="msg moi">${fin(p.reponse)}<small>11:43 ✓✓</small></p></div>
+        <div class="wa-bas">Message</div></div>`,
+    ].join("");
+    pileEl.insertAdjacentHTML("afterbegin", html);
+    const premier = $(".ecr", pileEl); premier.classList.add("net", "la"); void premier.offsetWidth; premier.classList.remove("net");
+    if (parcoursVu) jouer();
+  }
+  const etapeLa = (i) => $$("#etapes-client li").forEach((li, n) => { li.classList.toggle("la", n === i); li.classList.toggle("fait", n < i); });
+  function glisser(avant, apres) {
+    apres.classList.add("net"); apres.classList.remove("passe", "fondu", "dessous"); void apres.offsetWidth; apres.classList.remove("net");
+    avant.classList.remove("la"); avant.classList.add("passe"); apres.classList.add("la");
+  }
+  function ouvrir(avant, apres) {
+    // Un toucher ouvre l'écran suivant par-dessus, comme dans l'application
+    apres.classList.add("net", "fondu", "la"); apres.classList.remove("passe"); void apres.offsetWidth; apres.classList.remove("net", "fondu");
+    avant.classList.remove("la"); avant.classList.add("dessous");
+    setTimeout(() => { if (!avant.classList.contains("la")) avant.classList.remove("dessous"); avant.classList.add("passe"); }, 480);
+  }
+  function taper(x, y) {
+    doigt.style.left = x + "%"; doigt.style.top = y + "%";
+    doigt.classList.remove("tape"); void doigt.offsetWidth; doigt.classList.add("tape");
+  }
+  async function jouer() {
+    const j = ++jeton, p = P();
+    const ecrs = $$(".ecr", pileEl);
+    ecrs.forEach((e, i) => { e.classList.add("net"); e.classList.remove("la", "passe", "dessous", "fondu"); if (i === 0) e.classList.add("la"); void e.offsetWidth; e.classList.remove("net"); });
+    $$(".msg, .ecrit", pileEl).forEach((e) => e.classList.remove("vu-la"));
+    etapeLa(0);
+    if (calme) { ecrs.forEach((e) => e.classList.remove("la")); ecrs[p.ville.length].classList.add("la"); etapeLa(1); return; }
+    try {
+      let n = 0;
+      for (let i = 0; i < p.ville.length; i++) { await dors(1250, j); glisser(ecrs[n], ecrs[n + 1]); n++; }
+      etapeLa(p.quelle[0]);
+      for (let i = 0; i < p.ecrans.length; i++) {
+        await dors(i === 0 ? 2300 : 1700, j);
+        taper(p.taps[i][0], p.taps[i][1]);
+        await dors(520, j);
+        ouvrir(ecrs[n], ecrs[n + 1]); n++;
+        etapeLa(i + 1 < p.ecrans.length ? p.quelle[i + 1] : p.etapes.length - 1);
+      }
+      const wa = ecrs[n];
+      await dors(600, j); $(".msg.lui", wa).classList.add("vu-la");
+      direAussi("whatsapp");
+      await dors(1800, j); $(".ecrit", wa).classList.add("vu-la");
+      await dors(1600, j); $(".ecrit", wa).classList.remove("vu-la"); $(".msg.moi", wa).classList.add("vu-la");
+      $$("#etapes-client li").forEach((li) => { li.classList.remove("la"); li.classList.add("fait"); });
+      await dors(5200, j);
+      jouer();
+    } catch (e) { /* le parcours a été arrêté : il reprendra du début */ }
+  }
+
+  /* ═══ Le film de son métier ═══ */
+  const video = $("#film"), son = $("#son");
+  let filmVu = false;
+  function film() {
+    const f = M[cle].film, src = A(`i-${f}.mp4`);
+    if (video.dataset.f === f) return;
+    video.dataset.f = f; video.pause(); video.poster = A(`i-${f}.jpg`); video.muted = true; majSon();
+    if (filmVu) { video.src = src; video.load(); if (!calme) video.play().catch(() => {}); } else video.dataset.src = src;
+  }
+  function majSon() { son.setAttribute("aria-pressed", String(!video.muted)); $("#onde").style.opacity = video.muted ? ".25" : "1"; $("span", son).textContent = video.muted ? "Le son" : "Couper"; }
+  const ecouter = () => { if (!video.src) video.src = video.dataset.src; video.muted = false; video.currentTime = 0; video.play().catch(() => {}); majSon(); voix.pause(); };
+  son.addEventListener("click", () => { if (video.muted) ecouter(); else { video.muted = true; majSon(); } });
+  $("#ecouter").addEventListener("click", ecouter);
+  if (calme) video.controls = true;
+
+  /* ═══ Le choix du métier ═══ */
+  $$(".metiers button").forEach((b) => b.addEventListener("click", () => {
+    choisi = true; appliquer(b.dataset.m);
+    try { localStorage.setItem("clikme-metier", cle); } catch (e) {}
+    $("#choix").classList.add("choisi");
+    // Choisir son métier, c'est un toucher : le fantôme peut se mettre à parler (sauf si on lui a coupé la voix)
+    if (!voixCoupee) { voixOn = true; majVoix(); }
+    dits.delete("accueil");
+    if (ici === "accueil") { voulu = null; dire("accueil", true); } else { taire(); occupe = false; demander("accueil"); }
+  }));
+
+  /* ═══ LA CRÉATION DE SA PAGE — le générateur de l'accueil de clikme.fr ═══
+     Mêmes champs, même envoi (`/api/site-internet/public-generate`), mêmes photos rangées sous leur
+     intitulé (`/api/site-internet/photos-lieu`), même suite : la maquette de sa page. Ces appels ne
+     répondent qu'à clikme.fr : ailleurs (l'aperçu), on l'y emmène avec ce qu'il a déjà tapé. */
+  const SUR_CLIKME = /(^|\.)clikme\.fr$|(^|\.)popey\.academy$|^localhost$|^127\.0\.0\.1$/.test(location.hostname);
+  const WA_LIMITE = "https://wa.me/33768233347?text=" + encodeURIComponent("Bonjour Marius, je voudrais voir ce que ClikMe construirait pour mon activité.");
+  const ETAPES = ["Je cherche votre établissement sur Google…", "Je récupère vos photos et vos avis…", "Je choisis vos couleurs et vos textes…", "J'installe votre assistante IA…", "Je construis votre site…", "Presque prêt…"];
+  const LIEU = [
+    { cle: "interieur", intitule: "L'intérieur", conseil: "Depuis l'entrée, avec une table ou un comptoir au premier plan." },
+    { cle: "portrait", intitule: "Votre portrait", conseil: "Vous, souriant, dans votre commerce." },
+    { cle: "produit1", intitule: "Produit phare n° 1", conseil: "Un plat, une coupe, une pièce : ce qu'on vient chercher chez vous." },
+    { cle: "produit2", intitule: "Produit phare n° 2", conseil: "Un autre, sous un autre angle." },
+    { cle: "produit3", intitule: "Produit phare n° 3", conseil: "Facultatif, comme les autres." },
+    { cle: "soir", intitule: "L'ambiance du soir", conseil: "Pour un bar ou un restaurant : la salle lumières allumées." },
+  ];
+  const gNom = $("#g-nom"), gAct = $("#g-activite"), gVille = $("#g-ville"), gGo = $("#g-go"), gErr = $("#g-err");
+  let photo = "", autres = {}, enCours = false;
+  const pret = () => gNom.value.trim().length >= 2 && gVille.value.trim().length >= 2 && gAct.value.trim().length >= 2;
+  function majPret() { gGo.disabled = !pret() || enCours; }
+  [gNom, gAct, gVille].forEach((i) => i.addEventListener("input", majPret));
+  // Une photo de téléphone pèse plusieurs mégaoctets : on la redessine ici, 1600 points au plus, en JPEG
+  async function reduirePhoto(fichier, cote = 1600) {
+    const url = URL.createObjectURL(fichier);
+    try {
+      const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ko(new Error("photo illisible")); i.src = url; });
+      const k = Math.min(1, cote / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+      const ctx = c.getContext("2d"); if (!ctx) throw new Error("photo illisible");
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      return c.toDataURL("image/jpeg", 0.86);
+    } finally { URL.revokeObjectURL(url); }
+  }
+  const direPhoto = (t) => { const e = $("#g-photo-err"); e.textContent = t; e.hidden = !t; };
+  $("#g-photo-f").addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0]; if (!f) return; direPhoto("");
+    try { photo = await reduirePhoto(f); } catch (er) { photo = ""; direPhoto("Cette photo n'a pas pu être lue. Essayez-en une autre, ou continuez sans."); }
+    const l = $("#g-photo"); l.classList.toggle("on", !!photo);
+    $(".vignette", l).innerHTML = photo ? `<img src="${photo}" alt="">` : "📷";
+    $("b", l).textContent = photo ? "Photo de votre devanture ajoutée" : "Photo de votre devanture";
+    $("em", l).textContent = photo ? "Touchez pour en choisir une autre" : "Facultatif — de face, de jour, en entier. Sinon on prend celle de votre fiche Google";
+  });
+  $("#g-lieu-g").innerHTML = LIEU.map((x) => `<label class="g-lieu-c" title="${x.conseil}" data-cle="${x.cle}"><input type="file" accept="image/*"><span class="vignette" aria-hidden="true">📷</span><b>${x.intitule}</b><em>${x.conseil}</em></label>`).join("");
+  $$("#g-lieu-g .g-lieu-c").forEach((l) => $("input", l).addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    const x = LIEU.find((y) => y.cle === l.dataset.cle);
+    try { autres[x.cle] = await reduirePhoto(f); l.classList.add("on"); $(".vignette", l).innerHTML = `<img src="${autres[x.cle]}" alt="">`; }
+    catch (er) { direPhoto(`« ${x.intitule} » n'a pas pu être lue. Essayez-en une autre, ou continuez sans.`); }
+  }));
+  $("#g-plus").addEventListener("click", () => { $("#g-lieu").hidden = false; $("#g-plus").hidden = true; });
+
+  // La construction qui se dessine pendant la minute d'attente
+  let animT = [];
+  function construire(on) {
+    animT.forEach(clearInterval); animT = [];
+    const o = $("#construit"); o.hidden = !on; if (!on) return;
+    const nom = gNom.value.trim(), act = gAct.value.trim(), ville = gVille.value.trim();
+    $("#c-nom").textContent = nom || "Votre établissement"; $("#c-titre-nom").textContent = nom || "votre établissement";
+    $("#c-role").textContent = [act, ville].filter(Boolean).join(" · ") || "Votre activité";
+    $("#c-adr").textContent = "clikme.fr/" + (nom || "votre-page").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 22);
+    $("#c-dk").textContent = "📍 Le Direct de " + (ville || "votre ville");
+    const resto = /restau|resto|brasserie|bistro|pizz|cr[eê]p|bar|caf[eé]|traiteur|tapas/i.test(act), rdv = /coiff|barb|ongl|esth[eé]t|beaut|spa|massage|institut|soin/i.test(act);
+    $("#c-q").textContent = `Bonsoir, il vous reste ${resto ? "une table" : rdv ? "un créneau" : "de la place"} samedi ?`;
+    let step = 0, pct = 0;
+    const montrer = () => {
+      $("#c-pas").textContent = ETAPES[step];
+      [["#c-hero", 1, "lit"], ["#c-nom", 1, "on"], ["#c-role", 2, "on"], ["#c-etoiles", 2, "on"], ["#c-vign", 3, "on"], ["#c-annonce", 4, "on"], ["#c-chat", 4, "on"], ["#c-direct", 5, "on"]]
+        .forEach(([s, n, cl]) => $(s).classList.toggle(cl, step >= n));
+    };
+    montrer();
+    // Comme sur clikme.fr : vers 94 % en une petite minute (la lecture de la fiche Google couvre l'attente)
+    animT.push(setInterval(() => { pct = pct < 94 ? pct + Math.max(0.4, (94 - pct) / 28) : pct; $("#c-jauge").style.width = Math.round(pct) + "%"; }, 650));
+    animT.push(setInterval(() => { if (step < ETAPES.length - 1) { step++; montrer(); } }, 6000));
+  }
+  const erreur = (t, limite) => {
+    gErr.innerHTML = ""; gErr.hidden = !t; if (!t) return;
+    gErr.append(document.createTextNode(t));
+    if (limite) { const a = document.createElement("a"); a.href = WA_LIMITE; a.target = "_blank"; a.rel = "noreferrer"; a.textContent = "💬 Continuer sur WhatsApp"; gErr.append(a); }
+  };
+  $("#gen").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!pret() || enCours) return;
+    erreur("");
+    const nom = gNom.value.trim(), ville = gVille.value.trim(), activite = gAct.value.trim();
+    if (!SUR_CLIKME) {
+      // L'aperçu ne peut pas parler au serveur de clikme.fr : on l'y emmène, avec ce qu'il a déjà tapé
+      const q = new URLSearchParams({ nom, activite, ville, ...(choisi ? { metier: cle } : {}) });
+      const ailleurs = $("#g-ailleurs");
+      ailleurs.hidden = false;
+      ailleurs.textContent = "La création se fait sur clikme.fr : je vous y emmène avec votre nom, votre activité et votre ville." + (photo || Object.keys(autres).length ? " Vos photos sont à remettre là-bas." : "");
+      window.open("https://www.clikme.fr/commercants?" + q.toString() + "#creer", "_blank", "noopener");
+      return;
+    }
+    enCours = true; majPret(); construire(true);
+    try {
+      const r = await fetch("/api/site-internet/public-generate", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ businessName: nom, city: ville, activite, ...(photo ? { photo } : {}) }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.slug) {
+        // Ses photos, une à une, avec leur intitulé. Une photo refusée ne bloque rien : il la remettra depuis son Espace Pro.
+        const aEnvoyer = [...(photo ? [["devanture", photo]] : []), ...Object.entries(autres)].filter((x) => x[1]);
+        if (j.jetonPhotos && aEnvoyer.length) {
+          let n = 0;
+          for (const [cleP, valeur] of aEnvoyer) {
+            $("#c-pas").textContent = `J'enregistre vos photos… ${++n}/${aEnvoyer.length}`;
+            await fetch("/api/site-internet/photos-lieu", { method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ slug: j.slug, jeton: j.jetonPhotos, action: "poser", cle: cleP, photo: valeur }) }).catch(() => null);
+          }
+        }
+        animT.forEach(clearInterval); $("#c-jauge").style.width = "100%"; $("#c-pas").textContent = ETAPES[ETAPES.length - 1];
+        setTimeout(() => { location.href = `/site-internet/apercu/${j.slug}`; }, 900);
+        return;
+      }
+      construire(false); enCours = false; majPret();
+      erreur(typeof j.error === "string" ? j.error : "La construction a échoué. Réessayez dans un instant.", !!j.limited);
+    } catch (er) {
+      construire(false); enCours = false; majPret();
+      erreur("Connexion interrompue. Réessayez dans un instant.");
+    }
+  });
+  // Arrivé depuis l'aperçu : ce qu'il avait tapé l'attend
+  (() => {
+    const q = new URLSearchParams(location.search);
+    if (q.get("nom")) gNom.value = q.get("nom");
+    if (q.get("ville")) gVille.value = q.get("ville");
+    if (q.get("activite")) { gAct.value = q.get("activite"); gAct.dataset.auto = ""; }
+    majPret();
+  })();
+
+  /* ═══ Ce qui se déclenche à la lecture ═══ */
+  if ("IntersectionObserver" in window) {
+    // La scène qui passe au milieu de l'écran appelle le fantôme
+    const scenes = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) demander(e.target.dataset.dit); }), { rootMargin: "-44% 0px -44% 0px" });
+    $$("[data-dit]").forEach((el) => scenes.observe(el));
+    const vu = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("vu-la"); vu.unobserve(e.target); } }), { threshold: .18 });
+    $$(".monte").forEach((el) => vu.observe(el));
+    new IntersectionObserver((es) => es.forEach((e) => {
+      parcoursVu = e.isIntersecting;
+      if (e.isIntersecting) jouer(); else jeton++;
+    }), { threshold: .35 }).observe(pileEl);
+    new IntersectionObserver((es) => es.forEach((e) => {
+      if (e.isIntersecting) { if (!filmVu) { filmVu = true; video.preload = "auto"; video.src = video.dataset.src; } if (!calme) video.play().catch(() => {}); }
+      else video.pause();
+    }), { threshold: .25 }).observe(video);
+    new IntersectionObserver((es) => es.forEach((e) => {
+      if (!e.isIntersecting || e.target.dataset.fait) return; e.target.dataset.fait = "1";
+      $$(".dest li").forEach((li, i) => setTimeout(() => li.classList.add("ok"), calme ? 0 : 350 + i * 380));
+    }), { threshold: .35 }).observe($("#diffusion"));
+    new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) e.target.classList.add("vu-la"); }), { threshold: .3 }).observe($("#equation"));
+  } else {
+    $$(".monte").forEach((el) => el.classList.add("vu-la")); $$(".dest li").forEach((li) => li.classList.add("ok"));
+    filmVu = true;
+  }
+
+  /* ═══ Le fil sous la barre : où l'on en est des deux chapitres ═══ */
+  const c1 = $("#clients"), c2 = $("#depenses"), f1 = $(".fil .s1 i"), f2 = $(".fil .s2 i");
+  let rq = 0;
+  const part = (s) => { const r = s.getBoundingClientRect(); return Math.max(0, Math.min(1, (innerHeight * .5 - r.top) / r.height)); };
+  function fil() {
+    rq = 0; const a = part(c1), b = part(c2);
+    f1.style.setProperty("--p", a); f2.style.setProperty("--p", b);
+    document.body.dataset.chap = b > 0 ? "2" : a > 0 ? "1" : "";
+  }
+  addEventListener("scroll", () => { if (!rq) rq = requestAnimationFrame(fil); }, { passive: true });
+  addEventListener("resize", fil);
+
+  /* ═══ Départ : le fantôme est déjà dans l'accueil ═══ */
+  const deja = lire();
+  if (deja) { choisi = true; $("#choix").classList.add("choisi"); }
+  appliquer(deja || "autre");
+  majVoix(); fil();
+  const c0 = cible("accueil"); if (c0) poser(c0);
+  ici = "accueil"; dire("accueil");
+  if (location.hash === "#creer") setTimeout(() => $("#creer").scrollIntoView(), 300);
+})();
+</script>
+
+</html>
