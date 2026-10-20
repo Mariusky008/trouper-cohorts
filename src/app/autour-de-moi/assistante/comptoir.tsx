@@ -404,6 +404,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
       return { ou: "accueil" };
     }
   });
+  /* LA VOIE CHOISIE À L'ACCUEIL (« plus de clients »), gardée quand il revient d'une annonce. */
+  const [voie, setVoie] = useState<Voie>("choix");
   /* CE QUE SON FANTÔME SAIT, lu une fois : l'accueil y compte les questions
      de ses clients, l'écran du savoir y répond. */
   const savoir = useSavoir(commerce);
@@ -841,26 +843,13 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
         </button>
         {/* LES STATS SONT DANS UN BOUTON, PAS SUR L'ACCUEIL. « Ces stats devraient
             être dans un bouton en haut, à côté de la flamme, plutôt qu'en page
-            d'accueil avec le CTA. » L'accueil ne garde qu'un geste — publier ;
-            les chiffres, on va les voir. Les trois puces ouvrent le même
-            panneau : on touche ce qui attire l'œil. */}
+            d'accueil avec le CTA. » La flamme et les vues ouvrent le même panneau
+            (ses points y sont). Ses échanges ne sont plus là-haut : « Moins de
+            dépenses » est l'une des deux grandes cartes de l'accueil. */}
         <div className="cz-jeu">
           <button type="button" className={`cz-puce${s ? " allume" : ""}`} onClick={() => setStats(true)} aria-label={`${s} jours d’affilée — voir mes stats`}>
             🔥 {s}
           </button>
-          {puceEchanges && (
-            <button
-              type="button"
-              className={`cz-puce echanges${puceEchanges.chaud ? " chaud" : ""}`}
-              onClick={() => setPhase({ ou: "echanges" })}
-              aria-label={puceEchanges.chaud ? `${puceEchanges.mot} bons à valider — mes échanges` : "Mes échanges entre commerçants"}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 8.5h13.5l-3.2-3.2M20 15.5H6.5l3.2 3.2" />
-              </svg>
-              {puceEchanges.mot}
-            </button>
-          )}
           {chiffres && (
             <button type="button" className="cz-puce stats" onClick={() => setStats(true)} aria-label="Voir mes stats">
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -869,9 +858,6 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
               {chiffres[chiffres.length - 1].vues}
             </button>
           )}
-          <button type="button" className="cz-puce or" onClick={() => setStats(true)} aria-label={`${etat.points} points — voir mes stats`}>
-            ⭐ {etat.points}
-          </button>
           {/* SES RÉGLAGES : l'ancien Espace Pro — horaires, galerie, voix du
               double, WhatsApp. « Je garde le lien Réglages ? — Oui. » */}
           {commerce.reglages && (
@@ -894,7 +880,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           enLigne={enLigneAffichees}
           principal={principal}
           semaine={chiffres}
-          onStats={() => setStats(true)}
+          voie={voie}
+          onVoie={setVoie}
           onCommencer={commencer}
           onRetirer={enlever}
           onVitrine={() => setPhase({ ou: "vitrine" })}
@@ -905,13 +892,9 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           programmees={programmees}
           onPlanning={() => setPhase({ ou: "planning" })}
           reseaux={<OutilReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
-          echanges={
-            commerce.reel ? (
-              <OutilEchangesReelle commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />
-            ) : (
-              <OutilEchanges commerce={commerce} onOuvrir={() => setPhase({ ou: "echanges" })} />
-            )
-          }
+          /* « MOINS DE DÉPENSES » : ses échanges entre commerçants — ce qu'il peut dépenser, ou les bons à valider. */
+          depenses={puceEchanges}
+          onDepenses={() => setPhase({ ou: "echanges" })}
           /* L'INTERVIEW, MÉTIER PAR MÉTIER : chaque métier dont les questions
              sont validées — voir `INTERVIEW_VALIDEE`. */
           onInterview={interviewOuverte(commerce.famille, Boolean(commerce.reel)) ? () => setPhase({ ou: "interview" }) : undefined}
@@ -1228,7 +1211,46 @@ function Scene({
   );
 }
 
-/* ═══ L'ACCUEIL : CE QUE ÇA LUI A RAPPORTÉ, ET LA SUITE ════════════════════ */
+/* ═══ L'ACCUEIL : LE FANTÔME DEMANDE CE QU'ON VEUT ═══════════════════════════
+   « La page d'accueil est horrible : aucune direction artistique, plein de texte
+   partout, on ne sait pas sur quoi appuyer. Notre fantôme pourrait demander quelle
+   est notre demande — plus de clients, ou moins de dépenses — et à partir de là,
+   être conduit sur les différentes options. »
+
+   DEUX TEMPS, UNE SEULE QUESTION À LA FOIS :
+     · « Qu'est-ce qu'on fait aujourd'hui ? » — deux grandes cartes, et c'est tout
+       (plus, en haut, ce qui ne peut pas attendre : des clients qui attendent une
+       réponse). Ses outils sont rangés dessous, dans « Ma boutique ».
+     · « Plus de clients » : comment se montrer — sa proposition du jour, puis en
+       photo, en interview, en épisode ; ce qui est en ligne, et le « il en reste ? »
+       du soir. « Moins de dépenses » ouvre ses échanges entre commerçants.
+   Le choix reste quand il revient d'une annonce (`voie`, gardée par l'écran). */
+type Voie = "choix" | "clients";
+
+/** Le fantôme, à côté de sa bulle : il pose LA question de l'écran. */
+function Guide({ dossier, texte, sous }: { dossier: string; texte: string; sous?: string }) {
+  const { ecrit, fini } = useMachine(texte);
+  const pose = useFantome(!fini, "salut");
+  return (
+    <section className="ac-guide">
+      <div className="ac-guide-f">
+        <span className="cz-halo" aria-hidden="true" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`${dossier}${pose}.webp`} alt="Ton fantôme" draggable={false} />
+      </div>
+      <div className="ac-guide-b" aria-live="polite">
+        <p>
+          {ecrit}
+          <span className="cz-reste" aria-hidden="true">
+            {texte.slice(ecrit.length)}
+          </span>
+        </p>
+        {sous && <small className={fini ? "vu" : ""}>{sous}</small>}
+      </div>
+    </section>
+  );
+}
+
 function Accueil({
   commerce,
   mission,
@@ -1236,7 +1258,8 @@ function Accueil({
   enLigne: actives,
   principal,
   semaine,
-  onStats,
+  voie,
+  onVoie,
   onCommencer,
   onRetirer,
   onVitrine,
@@ -1247,7 +1270,8 @@ function Accueil({
   programmees,
   onPlanning,
   reseaux,
-  echanges,
+  depenses,
+  onDepenses,
   proposition,
   propositionActive,
   onInterview,
@@ -1260,7 +1284,8 @@ function Accueil({
   principal?: Publication;
   /** `null` : un vrai commerçant dont la page ne compte pas encore. */
   semaine: JourStats[] | null;
-  onStats: () => void;
+  voie: Voie;
+  onVoie: (v: Voie) => void;
   onCommencer: (relance?: boolean) => void;
   onRetirer: (id: string) => void;
   /** Ouvrir « Ma vitrine ». */
@@ -1278,16 +1303,18 @@ function Accueil({
   onPlanning: () => void;
   /** L'outil « Réseaux » — absent tant que l'intermédiaire n'est pas branché. */
   reseaux?: React.ReactNode;
-  /** L'outil « Échanges » (démonstration, ou en vrai). */
-  echanges?: React.ReactNode;
-  /** 🎬 L'interview vidéo — un restaurant seulement : le reporter pose ses questions au chef. */
-  onInterview?: () => void;
-  /** 🎬 L'épisode : il pose son téléphone AVANT de fabriquer — un bouton à part, pas un choix au moment de publier. */
-  onEpisode?: () => void;
+  /** Ce que ses échanges lui disent : ce qu'il peut dépenser, ou les bons à valider (`chaud`). */
+  depenses: { mot: string; chaud: boolean } | null;
+  /** Ouvrir ses échanges entre commerçants. */
+  onDepenses: () => void;
   /** ☀️ La proposition du matin, quand rien n'est encore en ligne. */
   proposition?: React.ReactNode;
-  /** Elle est là : le grand bouton « Publier » devient « Publier autre chose ». */
+  /** Elle est là : elle passe avant les autres façons de publier. */
   propositionActive?: boolean;
+  /** 🎬 L'interview vidéo — les métiers dont les questions sont validées. */
+  onInterview?: () => void;
+  /** 🎬 L'épisode : il pose son téléphone AVANT de fabriquer. */
+  onEpisode?: () => void;
 }) {
   const relance = mission.relance;
   const carte = motsDeLaCarte(commerce.famille, commerce.metier);
@@ -1295,195 +1322,190 @@ function Accueil({
   const questions = questionsDuMetier(commerce.famille, commerce.metier);
   const sues = savoir.savoir ? reponduesDuMetier(savoir.savoir, questions) : 0;
   const enAttente = savoir.savoir?.attente.length ?? 0;
-  /* ═══ CE QUE MON FANTÔME SAIT ═══ « Un endroit dans l'admin où le
-     commerçant donne tous les détails de son commerce, pour que le chat puisse
-     répondre. » Quand des clients ont posé une question sans réponse, le
-     bouton monte et s'allume : c'est la chose à faire avant tout le reste. */
-  const boutonSavoir = (
-    <button type="button" className={`cz-relance cz-savoir${enAttente ? " chaud" : ""}`} onClick={onSavoir}>
-      <span className="cz-relance-i">🧠</span>
-      <span>
-        <b>
-          Ce que mon fantôme sait
-          {enAttente > 0 && <i className="cz-pastille">{enAttente}</i>}
-        </b>
-        <em>
-          {enAttente
-            ? `${enAttente > 1 ? `${enAttente} questions de clients t’attendent` : "Une question de client t’attend"} : réponds une fois, il le saura.`
-            : sues >= questions.length
-              ? "Il connaît ton métier par cœur. Essaie-le !"
-              : `${sues}/${questions.length} réponses : il répond à tes clients avec tes mots.`}
-        </em>
-      </span>
-      <s aria-hidden="true">→</s>
-    </button>
-  );
   const h = heureDecimale();
   const auj = semaine?.[semaine.length - 1];
+  const relanceChaude = Boolean(principal && relance && !relanceFaite && h >= relance.apres);
   // UN VRAI COMMERÇANT N'A PAS DE CHIFFRES INVENTÉS : tant que sa page ne les
-  // compte pas, le fantôme ne lui parle pas de « personnes qui ont vu ». Dès
-  // qu'elle les compte, il lui parle des vrais.
+  // compte pas, le fantôme ne lui parle pas de « personnes qui ont vu ».
   const veille = semaine ? phraseDeLaVeille(semaine, mission.quoi) : null;
-  const texte = principal
-    ? relance && !relanceFaite && h >= relance.apres
-      ? `Re-bonjour${aQui(commerce)} ! Le service est passé : il t’en reste ?`
-      : !auj || auj.vues === 0
-        ? `Tout roule${aQui(commerce, ",")} ! ${mission.quoi} est en ligne sur ta page.`
-        : `Tout roule${aQui(commerce, ",")} ! Déjà ${auj.vues} ${accord(auj.vues, "personne a", "personnes ont")} vu ta page aujourd’hui.`
-    : veille
-      ? `Salut${aQui(commerce)} ! ${veille} On remet ça ?`
-      : `Salut${aQui(commerce)} ! Prêt pour aujourd’hui ?`;
-  return (
-    <div className="cz-corps accueil">
-      <Scene dossier={dossier} texte={texte} humeur="salut" petit />
-      <div className="cz-panneau">
-        {!principal && proposition}
 
-        {!principal &&
-          (propositionActive ? (
-            <>
-              <button type="button" className="cz-second" onClick={() => onCommencer(false)}>
-                Publier autre chose
-              </button>
-              {/* SA PROPOSITION DU MATIN PREND LA PLACE DES DEUX TUILES : l'interview reste à portée. */}
-              {onInterview && (
-                <button type="button" className="cz-vers-interview" onClick={onInterview}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/direct/interview/reporter-0.webp" alt="" />
-                  <b>Mon interview vidéo</b>
-                  <i className="cz-nouveau">Nouveau</i>
-                  <s aria-hidden="true">→</s>
-                </button>
-              )}
-            </>
-          ) : onInterview ? (
-            /* ═══ LE PLAT DU JOUR : EN PHOTOS, OU EN INTERVIEW ═══ « Où est
-               l'interview ou le mode normal sur l'admin commerçant ? Je ne le
-               vois pas. » Les deux, côte à côte, à la place du seul bouton. */
-            <section className="cz-deux" aria-label={`Publier ${mission.quoi.toLowerCase()}`}>
-              <h2>
-                {mission.icone} Publier {mission.quoi.toLowerCase()}
-              </h2>
-              <div className="cz-deux-choix">
-                <button type="button" className="cz-choix-photo" onClick={() => onCommencer(false)}>
-                  <span className="cz-choix-i" aria-hidden="true">
-                    📸
-                  </span>
-                  <b>En photos</b>
-                  <em>1 minute</em>
-                </button>
-                <button type="button" className="cz-choix-interview" onClick={onInterview}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/direct/interview/reporter-0.webp" alt="" />
-                  <i className="cz-nouveau">Nouveau</i>
-                  <b>En interview</b>
-                  <em>une vidéo · 2 min</em>
-                </button>
-              </div>
-            </section>
-          ) : (
-            <button type="button" className="cz-go grand" onClick={() => onCommencer(false)}>
-              {mission.icone} Publier {mission.quoi.toLowerCase()}
+  /* ═══ CE QUI NE PEUT PAS ATTENDRE : des clients qui attendent une réponse ═══ */
+  const aFaire =
+    enAttente > 0 ? (
+      <button type="button" className="ac-afaire" onClick={onSavoir}>
+        <span aria-hidden="true">💬</span>
+        <b>{enAttente > 1 ? `${enAttente} questions de clients t’attendent` : "Une question de client t’attend"}</b>
+        <s aria-hidden="true">→</s>
+      </button>
+    ) : null;
+
+  if (voie === "clients") {
+    const texte = relanceChaude
+      ? `Le service est passé${aQui(commerce, ",")} : il t’en reste ?`
+      : principal
+        ? `C’est en ligne${aQui(commerce, ",")} ! On en remet une couche ?`
+        : "Comment veux-tu te montrer aujourd’hui ?";
+    const sous = principal && auj && auj.vues > 0 ? `Déjà ${auj.vues} ${accord(auj.vues, "personne a", "personnes ont")} vu ta page aujourd’hui.` : undefined;
+    return (
+      <div className="cz-corps accueil ac">
+        <div className="ac-fil">
+          <button type="button" className="ac-retour" onClick={() => onVoie("choix")}>
+            ‹ Accueil
+          </button>
+          <span className="ac-fil-t">📣 Plus de clients</span>
+        </div>
+        <Guide key="clients" dossier={dossier} texte={texte} sous={sous} />
+        <div className="ac-contenu">
+          {/* IL EN RESTE ? Le soir, c'est LA chose à faire : en premier. */}
+          {principal && relance && !relanceFaite && (
+            <button type="button" className={`ac-relance${relanceChaude ? " chaud" : ""}`} onClick={() => onCommencer(true)}>
+              <span aria-hidden="true">⚡</span>
+              <span>
+                <b>{relance.titre}</b>
+                <em>{relanceChaude ? "Dis-moi ce qu’il te reste, je préviens le quartier." : `Je te le propose à partir de ${enHeure(relance.apres)}.`}</em>
+              </span>
               <s aria-hidden="true">→</s>
             </button>
-          ))}
+          )}
 
-        {/* 🎬 L'ÉPISODE : « l'artisan place son téléphone là où il fabrique, démarre la session, l'arrête quand il a
-            terminé — et c'est l'épisode 1 de sa série 2026 ». Il se lance AVANT de fabriquer : un bouton à lui. */}
-        {onEpisode && (
-          <button type="button" className="cz-vers-episode" onClick={onEpisode}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`${dossier}montre.webp`} alt="" />
-            <span>
-              <b>Épisode : je commence une fabrication</b>
-              <em>Pose ton téléphone, je filme et je monte ta série.</em>
-            </span>
-            <i className="cz-nouveau">Nouveau</i>
-          </button>
-        )}
+          {actives.length > 0 && (
+            <section className="ac-enligne" aria-label="En ligne maintenant">
+              <h2>
+                <i aria-hidden="true" /> En ligne maintenant
+              </h2>
+              {actives.map((p) => (
+                <CarteAnnonce key={p.id} p={p} mission={mission} onRetirer={() => onRetirer(p.id)} />
+              ))}
+              <a className="ac-voir" href={commerce.ville ?? "/autour-de-moi"}>
+                {commerce.reel ? "Voir ma page" : "Voir mon annonce dans la ville"} <s aria-hidden="true">→</s>
+              </a>
+            </section>
+          )}
 
-        {actives.length > 0 && (
-          <section className="cz-bloc">
-            <h2>En ligne maintenant</h2>
-            {actives.map((p) => (
-              <CarteAnnonce key={p.id} p={p} mission={mission} onRetirer={() => onRetirer(p.id)} />
-            ))}
+          {/* ☀️ SA PROPOSITION DU MATIN : prête, un geste — avant les autres façons de publier. */}
+          {!principal && proposition}
+
+          <section className="ac-options" aria-label="Comment publier">
+            <h2>{principal ? "Publier autre chose" : propositionActive ? "Ou bien, à ta façon" : `Publier ${mission.quoi.toLowerCase()}`}</h2>
+            <button type="button" className="ac-option photo" onClick={() => onCommencer(false)}>
+              <span className="ac-option-i" aria-hidden="true">
+                📸
+              </span>
+              <span className="ac-option-t">
+                <b>En photo</b>
+                <em>{principal ? `Remplace ${mission.quoi.toLowerCase()}` : "Ta photo et un mot · 1 minute"}</em>
+              </span>
+              <s aria-hidden="true">→</s>
+            </button>
+            {onInterview && (
+              <button type="button" className="ac-option interview" onClick={onInterview}>
+                <span className="ac-option-i" aria-hidden="true">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/direct/interview/reporter-0.webp" alt="" />
+                </span>
+                <span className="ac-option-t">
+                  <b>En interview</b>
+                  <em>Le reporter te pose ses questions · une vidéo</em>
+                </span>
+                <s aria-hidden="true">→</s>
+              </button>
+            )}
+            {onEpisode && (
+              <button type="button" className="ac-option episode" onClick={onEpisode}>
+                <span className="ac-option-i" aria-hidden="true">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`${dossier}montre.webp`} alt="" />
+                </span>
+                <span className="ac-option-t">
+                  <b>
+                    En épisode <i className="ac-nouveau">Nouveau</i>
+                  </b>
+                  <em>Je filme ta fabrication et j’en fais ta série</em>
+                </span>
+                <s aria-hidden="true">→</s>
+              </button>
+            )}
           </section>
-        )}
 
-        {principal && relance && !relanceFaite && (
-          <button type="button" className={`cz-relance${h >= relance.apres ? " chaud" : ""}`} onClick={() => onCommencer(true)}>
-            <span className="cz-relance-i">⚡</span>
-            <span>
-              <b>{relance.titre}</b>
-              <em>{h >= relance.apres ? "Dis-moi ce qu’il te reste, je préviens le quartier." : `Je te le propose à partir de ${enHeure(relance.apres)}.`}</em>
-            </span>
-            <s aria-hidden="true">→</s>
-          </button>
-        )}
+          {/* POUR ALLER PLUS LOIN : son message du mois (WhatsApp), et l'interview de demain. */}
+          <CarteMessageDuMois commerce={commerce} nouveautesIci={actives.map((p) => ({ nom: p.nom, ...(p.prix ? { prix: p.prix } : {}) }))} />
+          {onInterview && <DemainLeFantome commerce={commerce} />}
+        </div>
+      </div>
+    );
+  }
 
-        {actives.length > 0 && (
-          <a className="cz-ville" href={commerce.ville ?? "/autour-de-moi"}>
-            <span aria-hidden="true">🏙️</span> {commerce.reel ? "Voir ma page" : "Voir mon annonce dans la ville"} <s aria-hidden="true">→</s>
-          </a>
-        )}
-
-        {/* SON PLAT EST EN LIGNE : L'INTERVIEW RESTE À PORTÉE, pour la vidéo à envoyer sur WhatsApp. */}
-        {principal && onInterview && (
-          <button type="button" className="cz-vers-interview" onClick={onInterview}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/direct/interview/reporter-0.webp" alt="" />
-            <b>Mon interview vidéo</b>
-            <i className="cz-nouveau">Nouveau</i>
-            <s aria-hidden="true">→</s>
-          </button>
-        )}
-
-        {onInterview && <DemainLeFantome commerce={commerce} />}
-
-        {principal && (
-          <button type="button" className="cz-second" onClick={() => onCommencer(false)}>
-            Changer {mission.quoi.toLowerCase()}
-          </button>
-        )}
-
-        {/* DES CLIENTS ATTENDENT UNE RÉPONSE : ça passe avant le reste. */}
-        {enAttente > 0 && boutonSavoir}
-
-        {/* SON MESSAGE DU MOIS, pour ses amis d'ici (liste de diffusion WhatsApp) : une carte tant qu'il
-            n'est pas parti, une ligne ensuite. Voir `message-du-mois.tsx`. */}
-        <CarteMessageDuMois commerce={commerce} nouveautesIci={actives.map((p) => ({ nom: p.nom, ...(p.prix ? { prix: p.prix } : {}) }))} />
-
-        {/* ═══ MES OUTILS ═══ « Toutes ces lignes avec tous ces textes, ça fait
-            pas beau », puis « les six boutons sont encore trop imposants » : une
-            seule barre, fine, sous les deux grands choix — une icône au trait,
-            un mot, et une pastille seulement quand il y a quelque chose à faire.
-            Ce que chaque outil ouvre n'a pas changé, seule sa porte. */}
-        <nav className="cz-outils" aria-label="Mes outils">
-          <Outil icone="planning" nom="Planning" badge={programmees.length || undefined} onClick={onPlanning} />
-          <Outil icone="vitrine" nom="Vitrine" onClick={onVitrine} />
-          {/* « Je ne vois pas la photothèque où je vais mettre les photos, vidéos » : ici. */}
-          <Outil icone="photos" nom="Photos" onClick={onPhototheque} />
-          <Outil icone="carte" nom={carte.titre.replace(/^(Ma|Mes)\s+/, "").replace(/^./, (x) => x.toUpperCase())} onClick={onCarte} />
-          <Outil
-            icone="fantome"
-            nom="Fantôme"
-            badge={enAttente > 0 ? enAttente : sues < questions.length ? `${sues}/${questions.length}` : undefined}
-            chaud={enAttente > 0}
-            onClick={onSavoir}
-          />
-          {reseaux}
-          {echanges}
-        </nav>
-
-        {/* UN SEUL CHIFFRE ICI, ET IL MÈNE AUX AUTRES : celui d'aujourd'hui. */}
-        {auj && <button type="button" className="cz-apercu-stats" onClick={onStats}>
-          <span>
-            <b>{auj.vues}</b> {auj.vues > 1 ? "visites" : "visite"} aujourd’hui
-            {auj.publie ? <i className="cz-direct">en direct</i> : null}
+  /* ═══ LA QUESTION DU FANTÔME : PLUS DE CLIENTS, OU MOINS DE DÉPENSES ? ═══ */
+  const texte = `Salut${aQui(commerce)} ! Qu’est-ce qu’on fait aujourd’hui ?`;
+  const sous = principal
+    ? auj && auj.vues > 0
+      ? `Ton annonce est en ligne : ${auj.vues} ${accord(auj.vues, "personne l’a vue", "personnes l’ont vue")} aujourd’hui.`
+      : `${mission.quoi} est en ligne sur ta page.`
+    : (veille ?? undefined);
+  const metaClients = relanceChaude
+    ? { mot: "⚡ Il t’en reste ? Dis-le au quartier", chaud: true }
+    : principal
+      ? { mot: `En ligne : ${principal.nom}`, chaud: false, vert: true }
+      : propositionActive
+        ? { mot: "☀️ Ton annonce est prête", chaud: true }
+        : { mot: "Photo, interview ou épisode", chaud: false };
+  const metaDepenses = depenses?.chaud
+    ? { mot: `${depenses.mot} ${Number(depenses.mot) > 1 ? "bons" : "bon"} à valider`, chaud: true }
+    : depenses?.mot
+      ? { mot: `${depenses.mot} à dépenser chez tes voisins`, chaud: false }
+      : { mot: "Jamais plein tarif", chaud: false };
+  return (
+    <div className="cz-corps accueil ac">
+      <Guide key="choix" dossier={dossier} texte={texte} sous={sous} />
+      <div className="ac-contenu">
+        {aFaire}
+        <button type="button" className="ac-voie clients" onClick={() => onVoie("clients")}>
+          <span className="ac-voie-art" aria-hidden="true">
+            <i className="ac-tete a" />
+            <i className="ac-tete b" />
+            <i className="ac-tete c" />
+            <i className="ac-coeur">♥</i>
           </span>
-          <em>Mes stats →</em>
-        </button>}
+          <span className="ac-voie-t">
+            <b>Plus de clients</b>
+            <em>Montre ce que tu fais aujourd’hui</em>
+            <i className={`ac-meta${metaClients.chaud ? " chaud" : ""}${"vert" in metaClients ? " vert" : ""}`}>{metaClients.mot}</i>
+          </span>
+          <s aria-hidden="true">→</s>
+        </button>
+        <button type="button" className="ac-voie depenses" onClick={onDepenses}>
+          <span className="ac-voie-art" aria-hidden="true">
+            <i className="ac-piece a">€</i>
+            <i className="ac-piece b">€</i>
+            <i className="ac-piece c">€</i>
+          </span>
+          <span className="ac-voie-t">
+            <b>Moins de dépenses</b>
+            <em>Échange avec les commerçants du coin</em>
+            <i className={`ac-meta${metaDepenses.chaud ? " chaud" : ""}`}>{metaDepenses.mot}</i>
+          </span>
+          <s aria-hidden="true">→</s>
+        </button>
+
+        {/* ═══ MA BOUTIQUE ═══ ses outils, rangés sous les deux choix : une icône, un mot,
+            une pastille seulement quand il y a quelque chose à faire. */}
+        <section className="ac-boutique" aria-label="Ma boutique">
+          <h2>Ma boutique</h2>
+          <nav className="cz-outils">
+            <Outil icone="planning" nom="Planning" badge={programmees.length || undefined} onClick={onPlanning} />
+            <Outil icone="vitrine" nom="Vitrine" onClick={onVitrine} />
+            <Outil icone="photos" nom="Photos" onClick={onPhototheque} />
+            <Outil icone="carte" nom={carte.titre.replace(/^(Ma|Mes)\s+/, "").replace(/^./, (x) => x.toUpperCase())} onClick={onCarte} />
+            <Outil
+              icone="fantome"
+              nom="Fantôme"
+              badge={enAttente > 0 ? enAttente : sues < questions.length ? `${sues}/${questions.length}` : undefined}
+              chaud={enAttente > 0}
+              onClick={onSavoir}
+            />
+            {reseaux}
+          </nav>
+        </section>
       </div>
     </div>
   );
@@ -1566,29 +1588,6 @@ function OutilReseaux({ commerce, reseaux, onOuvrir }: { commerce: Commerce; res
   if (!etat || !etat.configure) return null;
   const connectes = etat.plateformes.filter((p) => p.compte).length;
   return <Outil icone="reseaux" nom="Réseaux" badge={!connectes && commerce.reel ? "!" : undefined} chaud={!connectes && Boolean(commerce.reel)} onClick={onOuvrir} />;
-}
-
-/** L'outil « Échanges » de la démonstration : la caisse commune entre commerçants. */
-function OutilEchanges({ commerce, onOuvrir }: { commerce: Commerce; onOuvrir: () => void }) {
-  const [r] = useState(() => resumeDesEchanges(commerce));
-  return <Outil icone="echanges" nom="Échanges" phare badge={r.pret && r.aDepenser > 0 ? `${r.aDepenser} €` : undefined} onClick={onOuvrir} />;
-}
-
-/** L'outil « Échanges » d'un vrai commerçant : absent tant que la base ne répond pas, comme l'ancienne carte. */
-function OutilEchangesReelle({ commerce, onOuvrir }: { commerce: Commerce; onOuvrir: () => void }) {
-  const etat = useEchangesReels(commerce);
-  if (!etat?.pret) return null;
-  const aValider = etat.recus.filter((b) => b.statut === "reserve").length;
-  return (
-    <Outil
-      icone="echanges"
-      nom="Échanges"
-      phare
-      badge={aValider > 0 ? aValider : etat.mien && etat.maVille.ouverte && etat.compte.aDepenser > 0 ? `${etat.compte.aDepenser} €` : undefined}
-      chaud={aValider > 0}
-      onClick={onOuvrir}
-    />
-  );
 }
 
 /* ═══ LE PANNEAU DES STATS ═══════════════════════════════════════════════
@@ -3064,10 +3063,8 @@ body{background:#0B0806;}
 .cz-puce.echanges{color:#9FF5C9;border-color:rgba(61,226,166,.55);background:rgba(61,226,166,.1);}
 .cz-puce.echanges.chaud{color:#fff;border-color:var(--rose);background:rgba(255,46,154,.25);}
 .cz-puce.echanges svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
-/* SUR UN TÉLÉPHONE, LA PLACE DU NOM : avec Échanges en haut, cinq pastilles coupaient « Chez Bergine ».
-   Celle des vues s'efface (les vues sont en bas, « visites aujourd'hui », et dans les stats, que la
-   flamme et l'étoile ouvrent aussi) ; les autres se serrent. */
-@media (max-width:430px){.cz-puce.stats{display:none;}.cz-jeu{gap:3px;}.cz-puce{padding:6px 8px;gap:4px;}}
+/* SUR UN TÉLÉPHONE, LA PLACE DU NOM : trois puces au plus (la flamme, les vues, les réglages) ; elles se serrent. */
+@media (max-width:430px){.cz-jeu{gap:3px;}.cz-puce{padding:6px 8px;gap:4px;}}
 .cz-corps{flex:1;min-height:0;display:flex;flex-direction:column;}
 
 /* LE FIL DES QUESTIONS */
@@ -3525,6 +3522,101 @@ label.cz-go{cursor:pointer;}
 .cz-vers-episode b{font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:16px;line-height:1.2;}
 .cz-vers-episode em{font-style:normal;font-size:13px;opacity:.85;}
 .cz-vers-episode .cz-nouveau{position:absolute;top:8px;right:10px;background:var(--rose);color:#fff;}
+
+/* ═══ L'ACCUEIL : PLUS DE CLIENTS, OU MOINS DE DÉPENSES ═══ */
+.ac{overflow-y:auto;overflow-x:hidden;padding:0 16px max(22px,env(safe-area-inset-bottom));gap:14px;scrollbar-width:none;}
+.ac::-webkit-scrollbar{display:none;}
+.ac-guide{display:grid;grid-template-columns:clamp(96px,28vw,124px) 1fr;align-items:center;gap:4px;margin-top:4px;}
+.ac-guide-f{position:relative;aspect-ratio:1;}
+.ac-guide-f img{position:relative;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 12px 18px rgba(0,0,0,.45));}
+.ac-guide-b{position:relative;padding:14px 16px 13px;border-radius:24px 24px 24px 8px;background:var(--creme);color:#2A1A10;
+  box-shadow:0 14px 30px -12px rgba(0,0,0,.6);}
+.ac-guide-b::before{content:"";position:absolute;left:-7px;bottom:16px;width:16px;height:16px;background:var(--creme);transform:rotate(45deg);border-radius:3px;}
+.ac-guide-b p{position:relative;margin:0;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:clamp(18px,5.2vw,22px);line-height:1.2;letter-spacing:-.015em;}
+.ac-guide-b small{position:relative;display:block;margin-top:6px;font-size:13px;line-height:1.38;color:#7A5A44;opacity:0;transition:opacity .4s;}
+.ac-guide-b small.vu{opacity:1;}
+.ac-contenu{display:flex;flex-direction:column;gap:12px;}
+.ac-afaire{display:flex;align-items:center;gap:10px;min-height:52px;padding:10px 16px;border-radius:18px;border:1.5px solid var(--rose);
+  background:rgba(255,46,154,.12);color:var(--creme);font-size:14.5px;text-align:left;animation:ac-entre .45s cubic-bezier(.2,.9,.3,1.2) both;}
+.ac-afaire b{flex:1;font-weight:800;}
+.ac-afaire s{text-decoration:none;font-size:20px;color:var(--rose);}
+.ac-voie{position:relative;display:grid;grid-template-columns:92px minmax(0,1fr) auto;align-items:center;gap:14px;min-height:132px;padding:16px 18px 16px 14px;
+  border:0;border-radius:28px;text-align:left;color:#fff;overflow:hidden;isolation:isolate;
+  transition:transform .2s cubic-bezier(.34,1.5,.64,1);animation:ac-entre .55s cubic-bezier(.2,.9,.3,1.2) both;}
+.ac-voie:active{transform:scale(.97);}
+.ac-voie::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.22) 50%,transparent 65%);
+  transform:translateX(-120%);animation:cz-reflet 4.2s ease-in-out infinite;}
+.ac-voie.clients{background:radial-gradient(120% 120% at 0% 0%,#FF7CC4,#FF2E9A 45%,#A8105F);box-shadow:0 20px 36px -16px rgba(255,46,154,.85);}
+.ac-voie.depenses{background:radial-gradient(120% 120% at 0% 0%,#FFD98A,#F5A23A 45%,#A85E0C);color:#2A1500;box-shadow:0 20px 36px -16px rgba(245,162,58,.8);animation-delay:.08s;}
+.ac-voie.depenses::after{animation-delay:2.1s;}
+.ac-voie-t{min-width:0;}
+.ac-voie-t b{display:block;font-family:var(--font-clikme),sans-serif;font-weight:900;font-size:clamp(21px,6vw,25px);letter-spacing:-.025em;line-height:1.05;}
+.ac-voie-t em{display:block;margin-top:4px;font-style:normal;font-size:14px;line-height:1.3;opacity:.92;}
+.ac-meta{display:inline-flex;align-items:center;max-width:100%;margin-top:10px;padding:5px 11px;border-radius:14px;font-style:normal;font-size:12.5px;font-weight:800;
+  line-height:1.25;background:rgba(0,0,0,.2);}
+.ac-voie.depenses .ac-meta{background:rgba(42,21,0,.14);}
+.ac-meta.chaud{background:#fff;color:#C4146E;box-shadow:0 6px 16px -6px rgba(0,0,0,.4);animation:ac-pouls 1.8s ease-in-out infinite;}
+.ac-voie.depenses .ac-meta.chaud{color:#8A4A00;}
+.ac-meta.vert::before{content:"";flex:none;width:8px;height:8px;margin-right:7px;border-radius:50%;background:#3DE2A6;box-shadow:0 0 0 3px rgba(61,226,166,.35);}
+.ac-voie > s{text-decoration:none;font-size:28px;font-weight:800;opacity:.9;}
+/* les dessins des deux cartes : trois clients qui arrivent, trois pièces qui tombent */
+.ac-voie-art{position:relative;width:92px;height:92px;}
+.ac-tete{position:absolute;width:52px;height:52px;border-radius:50%;border:3px solid #fff;background:#FFE7F2 center 18%/cover no-repeat;
+  box-shadow:0 8px 16px -6px rgba(0,0,0,.45);animation:ac-flotte 3.4s ease-in-out infinite;}
+.ac-tete.a{left:0;top:4px;background-image:url(/direct/double/pied/fleurs/visage.webp);}
+.ac-tete.b{right:0;top:0;width:44px;height:44px;background-image:url(/direct/double/pied/lunettes/visage.webp);animation-delay:-1.1s;}
+.ac-tete.c{left:22px;bottom:0;width:48px;height:48px;background-image:url(/direct/double/pied/librairie/visage.webp);animation-delay:-2.2s;}
+.ac-coeur{position:absolute;right:2px;bottom:10px;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#fff;color:#FF2E9A;
+  font-style:normal;font-size:16px;box-shadow:0 6px 12px -4px rgba(0,0,0,.4);animation:ac-pouls 1.6s ease-in-out infinite;}
+.ac-piece{position:absolute;display:grid;place-items:center;width:54px;height:54px;border-radius:50%;font-style:normal;font-weight:900;font-size:24px;color:#7A4300;
+  background:radial-gradient(circle at 35% 30%,#FFF1C4,#FFC24A 50%,#C77A12);border:3px solid #FFE08A;
+  box-shadow:inset 0 0 0 4px rgba(255,255,255,.25),0 10px 16px -6px rgba(0,0,0,.45);animation:ac-flotte 3s ease-in-out infinite;}
+.ac-piece.a{left:0;top:6px;transform:rotate(-12deg);}
+.ac-piece.b{right:0;top:0;width:44px;height:44px;font-size:19px;animation-delay:-1s;}
+.ac-piece.c{left:26px;bottom:0;width:50px;height:50px;font-size:22px;animation-delay:-2s;}
+.ac-boutique{margin-top:6px;}
+.ac-boutique h2,.ac-options h2,.ac-enligne h2{margin:2px 2px 8px;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--gris);}
+.ac-boutique .cz-outils{margin-top:0;}
+/* « Plus de clients » : comment se montrer */
+.ac-fil{display:flex;align-items:center;gap:10px;padding-top:6px;}
+.ac-retour{border:1px solid var(--trait);border-radius:999px;padding:8px 14px;background:var(--nappe);color:var(--creme);font-weight:700;font-size:14px;}
+.ac-fil-t{font-size:12.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--rose);}
+.ac-options{display:flex;flex-direction:column;gap:10px;}
+.ac-options h2{color:var(--ambre);margin-bottom:0;}
+.ac-option{display:grid;grid-template-columns:58px minmax(0,1fr) auto;align-items:center;gap:13px;min-height:80px;padding:10px 16px 10px 11px;border-radius:24px;
+  border:1px solid var(--trait);background:var(--nappe);color:var(--creme);text-align:left;transition:transform .2s cubic-bezier(.34,1.5,.64,1),border-color .2s;
+  animation:ac-entre .5s cubic-bezier(.2,.9,.3,1.2) both;}
+.ac-option:nth-of-type(2){animation-delay:.06s;}
+.ac-option:nth-of-type(3){animation-delay:.12s;}
+.ac-option:active{transform:scale(.97);border-color:var(--rose);}
+.ac-option-i{position:relative;width:58px;height:58px;border-radius:19px;display:grid;place-items:center;font-size:28px;overflow:hidden;}
+.ac-option.photo .ac-option-i{background:linear-gradient(140deg,#FF5AB6,#D9157C);box-shadow:0 10px 20px -10px rgba(255,46,154,.8);}
+.ac-option.interview .ac-option-i{background:radial-gradient(120% 100% at 30% 0%,#3B7A66,#15302A);}
+.ac-option.episode .ac-option-i{background:radial-gradient(120% 100% at 30% 0%,#8A3778,#3A1430);}
+.ac-option-i img{position:absolute;left:50%;bottom:-8px;width:120%;height:auto;transform:translateX(-50%);}
+.ac-option-t{min-width:0;}
+.ac-option-t b{display:flex;align-items:center;flex-wrap:wrap;gap:7px;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:17.5px;letter-spacing:-.01em;}
+.ac-option-t em{display:block;margin-top:3px;font-style:normal;font-size:13.5px;line-height:1.3;color:var(--gris);}
+.ac-option > s{text-decoration:none;font-size:22px;color:var(--rose);}
+.ac-nouveau{font-family:var(--font-geist-sans),system-ui,sans-serif;font-style:normal;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  padding:3px 8px;border-radius:999px;background:var(--rose);color:#fff;}
+.ac-relance{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 16px;border-radius:22px;text-align:left;color:var(--creme);
+  border:1.5px solid var(--trait);background:var(--nappe);font-size:22px;}
+.ac-relance.chaud{border-color:var(--ambre);background:rgba(245,162,58,.12);box-shadow:0 0 26px rgba(245,162,58,.22);}
+.ac-relance b{display:block;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:16px;}
+.ac-relance em{display:block;margin-top:2px;font-style:normal;font-size:13px;color:var(--gris);}
+.ac-relance s{text-decoration:none;font-size:20px;color:var(--ambre);}
+.ac-enligne{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:24px;background:rgba(61,226,166,.06);border:1px solid rgba(61,226,166,.28);}
+.ac-enligne h2{display:flex;align-items:center;gap:8px;margin:0 2px 2px;color:#7FF0C5;}
+.ac-enligne h2 i{width:8px;height:8px;border-radius:50%;background:#3DE2A6;box-shadow:0 0 0 3px rgba(61,226,166,.3);animation:ac-pouls 1.8s ease-in-out infinite;}
+.ac-voir{display:flex;align-items:center;justify-content:center;gap:6px;min-height:46px;border-radius:999px;border:1px solid var(--trait);color:var(--creme);
+  font-weight:700;font-size:14.5px;text-decoration:none;}
+.ac-voir s{text-decoration:none;}
+@keyframes ac-entre{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes ac-pouls{50%{transform:scale(1.05)}}
+@keyframes ac-flotte{50%{translate:0 -4px}}
+@media (prefers-reduced-motion:reduce){.ac *,.ac{animation:none!important;}}
+@media (max-width:350px){.ac-voie{grid-template-columns:70px minmax(0,1fr) auto;gap:10px;padding:14px 12px 14px 10px;}.ac-voie-art{transform:scale(.78);transform-origin:0 50%;}}
 
 /* MES OUTILS : une barre fine, une icone au trait par outil */
 .cz-outils{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;padding:10px 4px 9px;margin-top:2px;
