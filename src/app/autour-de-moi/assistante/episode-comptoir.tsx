@@ -40,11 +40,36 @@ const EXEMPLES: Partial<Record<FamilleDouble, string>> = {
   mode: "Ex. : la robe retouchée",
 };
 
-/** La caméra arrière, posée : la plus grande image qu'il donne en vertical, et le micro sans filtre (l'atelier tel qu'il sonne). */
-async function ouvrirCamera(face: "environment" | "user"): Promise<MediaStream> {
+/* ═══ LA CAMÉRA : LE PLAN LE PLUS LARGE ════════════════════════════════════
+   « Quand je clique sur Démarrer la session, j'ai un écran assez étroit où on ne
+   voit pas en plan large ; or c'est un plan large qu'il faut pour avoir toute la
+   scène, parce que la personne bouge dans la pièce. »
+
+   TROIS CHOSES RÉTRÉCISSAIENT L'IMAGE, l'une après l'autre :
+     · on demandait une image 9:16 (720 × 1280) : le capteur est en 4:3, le
+       téléphone en coupait un quart ;
+     · on prenait l'objectif ordinaire (1×) : l'ultra grand-angle (0,5×) des
+       téléphones qui en ont un voit deux fois plus large ;
+     · l'aperçu, puis le film, remplissaient l'écran en coupant les côtés.
+   Maintenant : le capteur entier (4:3), l'ultra grand-angle d'office quand il
+   existe (sinon le zoom au plus bas, là où le navigateur le permet), l'aperçu
+   montre toute l'image, et le film aussi (`dessinerLarge`). ↺ passe d'une
+   caméra à l'autre, son nom écrit à l'écran. */
+type Camera = { id: string; nom: string; large: boolean; avant: boolean };
+
+const ULTRA = /ultra/i;
+const AVANT = /front|avant|facing front|user|selfie/i;
+/** « Caméra arrière double / triple », téléobjectif : la même vue que la 1×, ou plus serrée. */
+const VIRTUELLE = /dual|double|triple|tele|télé/i;
+/** Le capteur entier : 4:3, aussi grand qu'il le donne (le navigateur prend le plus proche). */
+const CAPTEUR = { width: { ideal: 1920 }, height: { ideal: 1440 } };
+/** Le micro sans filtre : l'atelier tel qu'il sonne. */
+const MICRO = { echoCancellation: false, noiseSuppression: false };
+
+async function ouvrir(video: MediaTrackConstraints): Promise<MediaStream> {
   const demandes: MediaStreamConstraints[] = [
-    { video: { facingMode: { ideal: face }, width: { ideal: 720 }, height: { ideal: 1280 } }, audio: { echoCancellation: false, noiseSuppression: false } },
-    { video: { facingMode: { ideal: face } }, audio: true },
+    { video: { ...video, ...CAPTEUR }, audio: MICRO },
+    { video, audio: true },
     { video: true, audio: true },
     { video: true, audio: false },
   ];
@@ -58,6 +83,56 @@ async function ouvrirCamera(face: "environment" | "user"): Promise<MediaStream> 
     }
   }
   throw derniere ?? new Error("Caméra indisponible");
+}
+
+/** Les caméras du téléphone, la plus large d'abord, celle de devant en dernier. Leurs noms ne se lisent qu'une fois la caméra permise. */
+async function camerasDuTelephone(): Promise<Camera[]> {
+  try {
+    const toutes = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "videoinput" && d.deviceId);
+    const rang = (l: string) => (ULTRA.test(l) ? 0 : AVANT.test(l) ? 3 : VIRTUELLE.test(l) ? 2 : 1);
+    let liste = toutes.map((d, k) => ({ d, k, r: rang(d.label) })).sort((a, b) => a.r - b.r || a.k - b.k);
+    if (liste.some((x) => x.r <= 1)) liste = liste.filter((x) => x.r !== 2);
+    const arriere = liste.filter((x) => x.r < 3).length;
+    let n = 0;
+    return liste.map(({ d, r }) => ({
+      id: d.deviceId,
+      large: r === 0,
+      avant: r === 3,
+      nom: r === 0 ? "Plan large · 0,5×" : r === 3 ? "Caméra avant" : arriere > 1 && !liste.some((x) => x.r === 0) ? `Caméra arrière ${++n}` : "Caméra arrière · 1×",
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/** Là où le navigateur le permet (zoom sous 1×), le plus large possible. */
+async function dezoomer(flux: MediaStream) {
+  const piste = flux.getVideoTracks()[0];
+  try {
+    const c = piste?.getCapabilities?.() as (MediaTrackCapabilities & { zoom?: { min: number } }) | undefined;
+    if (piste && c?.zoom && c.zoom.min < 1) await piste.applyConstraints({ advanced: [{ zoom: c.zoom.min } as MediaTrackConstraintSet] });
+  } catch {
+    /* pas de zoom ici */
+  }
+}
+
+/** La caméra voulue — sinon, la première fois, la plus large de l'arrière. */
+async function ouvrirCamera(voulue: string | null): Promise<{ flux: MediaStream; cameras: Camera[]; id: string }> {
+  let flux = await ouvrir(voulue ? { deviceId: { exact: voulue } } : { facingMode: { ideal: "environment" } });
+  const cameras = await camerasDuTelephone();
+  const idDe = (f: MediaStream) => f.getVideoTracks()[0]?.getSettings().deviceId ?? "";
+  const large = cameras.find((c) => c.large);
+  if (!voulue && large && large.id !== idDe(flux)) {
+    // UN SEUL FLUX DE CAMÉRA À LA FOIS sur un iPhone : on lâche le premier avant d'ouvrir l'ultra grand-angle
+    flux.getTracks().forEach((p) => p.stop());
+    try {
+      flux = await ouvrir({ deviceId: { exact: large.id } });
+    } catch {
+      flux = await ouvrir({ facingMode: { ideal: "environment" } });
+    }
+  }
+  await dezoomer(flux);
+  return { flux, cameras, id: idDe(flux) || voulue || "" };
 }
 
 const enHorloge = (s: number) => {
@@ -85,7 +160,11 @@ export function EpisodeComptoir({
   const [produit, setProduit] = useState("");
   const [prix, setPrix] = useState("");
   const [sonAtelier, setSonAtelier] = useState(true);
-  const [face, setFace] = useState<"environment" | "user">("environment");
+  /** La caméra en cours (son identifiant), et toutes celles du téléphone, la plus large d'abord. */
+  const [camera, setCamera] = useState<string | null>(null);
+  const [cameras, setCameras] = useState<Camera[]>([]);
+  /** La forme de l'image (largeur ÷ hauteur) : la grille de l'aperçu se pose dessus. */
+  const [forme, setForme] = useState(3 / 4);
   const [erreur, setErreur] = useState("");
   const [etat, setEtat] = useState<EtatSession | null>(null);
   const [confirmer, setConfirmer] = useState(false);
@@ -143,22 +222,38 @@ export function EpisodeComptoir({
     return () => document.removeEventListener("visibilitychange", revenir);
   }, [etape, garderAllume]);
 
-  const brancher = useCallback(async (f: "environment" | "user") => {
-    const s = await ouvrirCamera(f);
+  const brancher = useCallback(async (voulue: string | null) => {
     flux.current?.getTracks().forEach((t) => t.stop());
-    flux.current = s;
+    flux.current = null;
+    const r = await ouvrirCamera(voulue);
+    flux.current = r.flux;
+    setCamera(r.id || null);
+    if (r.cameras.length) setCameras(r.cameras);
     if (video.current) {
-      video.current.srcObject = s;
+      video.current.srcObject = r.flux;
       await video.current.play().catch(() => {});
     }
-    return s;
+    return r.flux;
+  }, []);
+
+  /* LA FORME DE L'IMAGE, lue sur la vidéo (elle change avec la caméra, ou si on couche le téléphone) */
+  useEffect(() => {
+    const v = video.current;
+    if (!v) return;
+    const lire = () => v.videoWidth && v.videoHeight && setForme(v.videoWidth / v.videoHeight);
+    v.addEventListener("loadedmetadata", lire);
+    v.addEventListener("resize", lire);
+    return () => {
+      v.removeEventListener("loadedmetadata", lire);
+      v.removeEventListener("resize", lire);
+    };
   }, []);
 
   const placer = async () => {
     setErreur("");
     setEtape("cadre");
     try {
-      await brancher(face);
+      await brancher(camera);
       void garderAllume();
     } catch (e) {
       setErreur(
@@ -169,15 +264,20 @@ export function EpisodeComptoir({
     }
   };
 
-  const retourner = async () => {
-    const f = face === "environment" ? "user" : "environment";
-    setFace(f);
+  /** ↺ : la caméra suivante du téléphone (la plus large d'abord, celle de devant en dernier). */
+  const changerDeCamera = async () => {
+    setErreur("");
+    const i = cameras.findIndex((c) => c.id === camera);
+    const suivante = cameras[(i + 1) % Math.max(1, cameras.length)];
+    if (!suivante || cameras.length < 2) return setErreur("Ce téléphone n’a qu’une caméra ici.");
     try {
-      await brancher(f);
+      await brancher(suivante.id);
     } catch {
-      setErreur("L’autre caméra ne s’ouvre pas.");
+      setErreur("Cette caméra ne s’ouvre pas.");
+      await brancher(camera).catch(() => {});
     }
   };
+  const nomCamera = cameras.find((c) => c.id === camera)?.nom ?? "";
 
   const demarrer = () => {
     if (!flux.current || !video.current) return;
@@ -191,7 +291,7 @@ export function EpisodeComptoir({
   /* LA CAMÉRA S'EST COUPÉE (un appel, une autre application) : on la redonne à la session */
   const reprendre = async () => {
     try {
-      const s = await brancher(face);
+      const s = await brancher(camera);
       session.current?.changerFlux(s);
       void garderAllume();
     } catch {
@@ -395,7 +495,7 @@ export function EpisodeComptoir({
             </span>
           </label>
           <ul className="ep-conseils">
-            <li>📱 Debout sur un support, en hauteur : ton plan de travail dans le cadre.</li>
+            <li>📱 Sur un support, en hauteur et un peu en retrait : je prends l’objectif le plus large, pour que toute la pièce tienne dans le cadre.</li>
             <li>🔌 Branché : une session filmée vide la batterie.</li>
             <li>📵 Ne t’en sers pas pendant la session : un appel ou une autre appli coupe la caméra.</li>
             <li>🙋 Les personnes filmées doivent être d’accord : cadre plutôt tes mains et ton plan de travail.</li>
@@ -409,13 +509,17 @@ export function EpisodeComptoir({
 
       {etape === "cadre" && (
         <div className="ep-calque">
-          <div className="ep-grille" aria-hidden="true" />
+          {/* LA GRILLE SUR L'IMAGE, pas sur l'écran : l'aperçu montre l'image entière, bandes noires comprises */}
+          <div className="ep-grille" aria-hidden="true" style={{ aspectRatio: String(forme), width: `min(100%, calc(100dvh * ${forme.toFixed(4)}))` }} />
           <div className="ep-calque-haut">
             <button type="button" className="ep-rond" onClick={() => (eteindre(), setEtape("intro"))} aria-label="Revenir">
               ‹
             </button>
-            <p>Ton plan de travail est bien dans le cadre ?</p>
-            <button type="button" className="ep-rond" onClick={() => void retourner()} aria-label="Changer de caméra">
+            <p>
+              Toute la scène est dans le cadre ?
+              {nomCamera && <span className="ep-objectif">{nomCamera}</span>}
+            </p>
+            <button type="button" className="ep-rond" onClick={() => void changerDeCamera()} aria-label="Changer de caméra">
               ↺
             </button>
           </div>
@@ -542,7 +646,7 @@ export function EpisodeComptoir({
 
 const STYLES = `
 .ep{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;background:var(--fond);overflow:hidden;}
-.ep-camera{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;opacity:0;pointer-events:none;}
+.ep-camera{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;opacity:0;pointer-events:none;}
 .ep-filme .ep-camera{opacity:1;}
 .ep-haut{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px 0;}
 .ep-retour{border:1px solid var(--trait);border-radius:999px;padding:9px 16px;background:var(--nappe);font-weight:700;}
@@ -561,11 +665,12 @@ const STYLES = `
 .ep-conseils{margin:0;padding:12px 14px;border-radius:18px;background:rgba(255,244,230,.04);border:1px dashed var(--trait);list-style:none;display:grid;gap:7px;font-size:13.5px;line-height:1.4;color:var(--gris);}
 .ep-calque{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:max(14px,env(safe-area-inset-top,0px)) 14px calc(18px + env(safe-area-inset-bottom,0px));
   background:linear-gradient(rgba(0,0,0,.45),transparent 22%,transparent 62%,rgba(0,0,0,.7));}
-.ep-grille{position:absolute;inset:0;pointer-events:none;
+.ep-grille{position:absolute;left:50%;top:50%;max-height:100%;transform:translate(-50%,-50%);pointer-events:none;
   background:linear-gradient(90deg,transparent calc(33.3% - 1px),rgba(255,255,255,.35) 33.3%,transparent calc(33.3% + 1px),transparent calc(66.6% - 1px),rgba(255,255,255,.35) 66.6%,transparent calc(66.6% + 1px)),
     linear-gradient(transparent calc(33.3% - 1px),rgba(255,255,255,.35) 33.3%,transparent calc(33.3% + 1px),transparent calc(66.6% - 1px),rgba(255,255,255,.35) 66.6%,transparent calc(66.6% + 1px));}
 .ep-calque-haut{position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;}
-.ep-calque-haut p{margin:0;flex:1;text-align:center;font-weight:800;font-size:15px;text-shadow:0 1px 6px rgba(0,0,0,.7);}
+.ep-calque-haut p{margin:0;flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;font-weight:800;font-size:15px;text-shadow:0 1px 6px rgba(0,0,0,.7);}
+.ep-objectif{padding:4px 11px;border-radius:999px;background:rgba(20,12,9,.62);border:1px solid rgba(255,255,255,.28);font-size:12.5px;font-weight:700;text-shadow:none;}
 .ep-rond{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(20,12,9,.55);color:#fff;font-size:20px;}
 .ep-calque-bas{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;}
 .ep-calque-bas small{font-size:13px;color:#fff;opacity:.85;text-shadow:0 1px 6px rgba(0,0,0,.8);}

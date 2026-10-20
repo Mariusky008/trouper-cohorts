@@ -67,6 +67,41 @@ const MUSIQUE = { pleine: 0.3, accelere: 0.3, sousAtelier: 0.1, moment: 0.22, re
 
 type Lecteur = { v: HTMLVideoElement; url: string };
 
+/** Le fond flou d'un plan large : l'image, toute petite, puis agrandie — presque rien à chaque image. */
+let fondFlou: HTMLCanvasElement | null = null;
+
+/**
+ * LE PLAN LARGE, EN ENTIER. « C'est un plan large qu'il faut pour avoir toute
+ * la scène, parce que la personne bouge dans la pièce. » Couper une image plus
+ * large que le film (le 4:3 de la caméra, ou le téléphone posé en paysage) pour
+ * remplir le 9:16, c'était perdre les côtés de la pièce — et lui, quand il y
+ * passe. L'image entière tient donc dans la largeur du film ; au-dessus et en
+ * dessous, la même image, floue et assombrie. Une image déjà aussi haute que le
+ * film le remplit, comme avant. `z` : le lent zoom avant des moments — pour
+ * celle-là seulement : sur un plan large, il rognait de nouveau les bords.
+ */
+function dessinerLarge(g: CanvasRenderingContext2D, img: CanvasImageSource, iw: number, ih: number, z = 1) {
+  if (!iw || !ih || iw / ih <= (W / H) * 1.12) {
+    couvrirImage(g, img, iw, ih, { z, fy: 0.5 });
+    return;
+  }
+  fondFlou ??= nouvelleToile(36, 64);
+  const fg = fondFlou.getContext("2d")!;
+  couvrirImage(fg, img, iw, ih, { w: 36, h: 64, fy: 0.5 });
+  g.save();
+  g.imageSmoothingEnabled = true;
+  g.imageSmoothingQuality = "high";
+  g.drawImage(fondFlou, 0, 0, W, H);
+  g.fillStyle = "rgba(14,9,7,.5)";
+  g.fillRect(0, 0, W, H);
+  const s = W / iw;
+  const dw = iw * s;
+  const dh = ih * s;
+  // UN PEU AU-DESSUS DU MILIEU : les pastilles du bas (l'heure, la vitesse) restent sur le flou
+  g.drawImage(img, (W - dw) / 2, (H - dh) / 2 - H * 0.03, dw, dh);
+  g.restore();
+}
+
 /** Un lecteur prêt à l'endroit voulu : chargé, et calé sur `depuis` (une seconde et demie au plus pour chercher). */
 async function preparerLecteur(blob: Blob, depuis: number): Promise<Lecteur> {
   const url = URL.createObjectURL(blob);
@@ -217,7 +252,7 @@ export async function monterEpisode(o: {
   if (imgs.length) {
     await demander(imgs.length - 1);
     const b = bitmaps.get(imgs.length - 1);
-    if (b) couvrirImage(pf, b, b.width, b.height, { fy: 0.5 });
+    if (b) dessinerLarge(pf, b, b.width, b.height);
   }
   const fondTitre = flouter(photoFin, W, H);
   const vignette = fabriquerVignette();
@@ -439,7 +474,7 @@ export async function monterEpisode(o: {
         const img = bitmaps.get(k) ?? derniereImage;
         if (img) {
           derniereImage = img;
-          couvrirImage(c2d, img, img.width, img.height, { z: 1.02, fy: 0.5 });
+          dessinerLarge(c2d, img, img.width, img.height, 1.02);
         } else c2d.drawImage(fondTitre, 0, 0);
         c2d.drawImage(vignette, 0, 0);
         dessinerCadre(c2d, P, corps, nomCadre, EMISSION);
@@ -451,9 +486,9 @@ export async function monterEpisode(o: {
         const prog = borne(u / b.duree);
         if (enVideo) lancer(i, l);
         if (enVideo && l && l.v.readyState >= 2 && l.v.videoWidth) {
-          couvrirImage(c2d, l.v, l.v.videoWidth, l.v.videoHeight, { z: 1.02 + 0.05 * prog, fy: 0.5 });
+          dessinerLarge(c2d, l.v, l.v.videoWidth, l.v.videoHeight, 1.02 + 0.05 * prog);
           // LA RÉVÉLATION : sa dernière image devient la photo de la carte de fin
-          if (b.genre === "revelation") couvrirImage(pf, l.v, l.v.videoWidth, l.v.videoHeight, { fy: 0.5 });
+          if (b.genre === "revelation") dessinerLarge(pf, l.v, l.v.videoWidth, l.v.videoHeight);
         } else if (!enVideo) {
           // TENUE : le produit fini, qui avance doucement vers nous
           const v = u - b.duree;
@@ -463,7 +498,7 @@ export async function monterEpisode(o: {
           c2d.scale(z, z);
           c2d.drawImage(photoFin, -W / 2, -H / 2);
           c2d.restore();
-        } else if (derniereImage) couvrirImage(c2d, derniereImage, derniereImage.width, derniereImage.height, { fy: 0.5 });
+        } else if (derniereImage) dessinerLarge(c2d, derniereImage, derniereImage.width, derniereImage.height);
         else c2d.drawImage(fondTitre, 0, 0);
         c2d.drawImage(vignette, 0, 0);
         dessinerCadre(c2d, P, corps, nomCadre, EMISSION);

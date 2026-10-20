@@ -36,21 +36,22 @@ export type EtatSession = {
   poids: number;
 };
 
-/** L'image des accélérés : 9:16, assez grande pour un écran de téléphone, légère. */
-const IMAGE = { w: 450, h: 800, qualite: 0.72 };
-/** L'image minuscule qui mesure le mouvement. */
+/**
+ * L'image des accélérés : LA SCÈNE ENTIÈRE, 800 points au plus grand côté — plus
+ * recadrée en 9:16, ce qui perdait les côtés de la pièce (le montage, lui, garde
+ * l'image entière : `dessinerLarge`).
+ */
+const IMAGE = { cote: 800, qualite: 0.72 };
+/** L'image minuscule qui mesure le mouvement — toute la scène, écrasée : on y compare des points, pas des formes. */
 const SONDE = { w: 32, h: 56 };
 const DEBIT_MORCEAU = 2_000_000;
 
 const attendre = (ms: number) => new Promise<void>((ok) => setTimeout(ok, ms));
 
-/** Une image de la vidéo, recadrée en 9:16 comme le film. */
-function cadrer(g: CanvasRenderingContext2D, v: HTMLVideoElement, w: number, h: number) {
-  const vw = v.videoWidth;
-  const vh = v.videoHeight;
-  if (!vw || !vh) return false;
-  const s = Math.max(w / vw, h / vh);
-  g.drawImage(v, (w - vw * s) / 2, (h - vh * s) / 2, vw * s, vh * s);
+/** Toute l'image de la vidéo, dans la toile entière. */
+function reduire(g: CanvasRenderingContext2D, v: HTMLVideoElement) {
+  if (!v.videoWidth || !v.videoHeight) return false;
+  g.drawImage(v, 0, 0, g.canvas.width, g.canvas.height);
   return true;
 }
 
@@ -88,8 +89,6 @@ export class SessionEpisode {
     s.height = SONDE.h;
     this.sonde = s.getContext("2d", { willReadFrequently: true });
     this.image = document.createElement("canvas");
-    this.image.width = IMAGE.w;
-    this.image.height = IMAGE.h;
   }
 
   /** À appeler dans le geste du doigt (« Démarrer la session ») : le micro s'écoute à partir de là. */
@@ -226,7 +225,7 @@ export class SessionEpisode {
     }
     if (!g || v.readyState < 2) return;
     try {
-      if (!cadrer(g, v, SONDE.w, SONDE.h)) return;
+      if (!reduire(g, v)) return;
       const d = g.getImageData(0, 0, SONDE.w, SONDE.h).data;
       let lum = 0;
       let diff = 0;
@@ -253,8 +252,16 @@ export class SessionEpisode {
     }
     const t = this.ecoule;
     if (this.accelere.aPrendre(t)) {
+      // À LA FORME DE LA CAMÉRA (debout, couchée, 4:3…) : elle peut changer si on change de caméra
+      const k = IMAGE.cote / Math.max(v.videoWidth, v.videoHeight, 1);
+      const w = Math.max(1, Math.round(v.videoWidth * k));
+      const h = Math.max(1, Math.round(v.videoHeight * k));
+      if (this.image.width !== w || this.image.height !== h) {
+        this.image.width = w;
+        this.image.height = h;
+      }
       const ig = this.image.getContext("2d");
-      if (ig && cadrer(ig, v, IMAGE.w, IMAGE.h)) {
+      if (ig && reduire(ig, v)) {
         this.image.toBlob((b) => b && this.accelere.ajouter({ t, blob: b }), "image/jpeg", IMAGE.qualite);
       }
     }
