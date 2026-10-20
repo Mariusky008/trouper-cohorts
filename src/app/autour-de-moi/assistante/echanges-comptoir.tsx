@@ -292,7 +292,8 @@ export function CarteEchanges({ commerce, onOuvrir }: { commerce: CommerceCompto
 }
 
 /* ═══ L'ÉCRAN ═════════════════════════════════════════════════════════════ */
-export function EchangesComptoir({ commerce, dossier, onRetour }: { commerce: CommerceComptoir; dossier: string; onRetour: () => void }) {
+/** `onRetour` : venu d'un écran du comptoir. Sans lui, c'est l'onglet « Catalogue » du menu du bas. */
+export function EchangesComptoir({ commerce, dossier, onRetour }: { commerce: CommerceComptoir; dossier: string; onRetour?: () => void }) {
   const [etat, setEtat] = useState<Etat>(() => charger(commerce));
   const changer = useCallback(
     (maj: (e: Etat) => Etat) =>
@@ -812,10 +813,12 @@ export function EnTeteEchange({ onRetour, children }: { onRetour?: () => void; c
   useEffect(() => ecouterLePremierGeste(), []);
   return (
     <div className="ec-haut">
-      {onRetour && (
+      {onRetour ? (
         <button type="button" className="ec-retour" onClick={onRetour} aria-label="Mon comptoir">
           ‹ <span>Mon comptoir</span>
         </button>
+      ) : (
+        <h1 className="ec-titre">Catalogue</h1>
       )}
       {children}
     </div>
@@ -865,7 +868,7 @@ function Echanger({
   etat: Etat;
   changer: (maj: (e: Etat) => Etat) => void;
   onModifier: () => void;
-  onRetour: () => void;
+  onRetour?: () => void;
 }) {
   const mien = etat.mien as Mien;
   const famille = commerce.famille;
@@ -1599,6 +1602,7 @@ export function StylesEchanges() {
   scrollbar-width:none;display:flex;flex-direction:column;gap:14px;}
 .ec::-webkit-scrollbar{display:none;}
 .ec-haut{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.ec-titre{margin:0;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:24px;letter-spacing:-.035em;color:var(--creme,#FFF4E6);}
 .ec-retour{border:1px solid var(--trait);border-radius:999px;padding:9px 14px;background:var(--nappe);font-weight:700;white-space:nowrap;flex-shrink:0;}
 /* Petit écran : le retour devient un rond « ‹ », pour laisser la place au crédit (et à ce qu'il doit). */
 @media (max-width:360px){.ec-retour{display:grid;place-items:center;width:40px;height:40px;padding:0;font-size:20px;}.ec-retour span{display:none;}}

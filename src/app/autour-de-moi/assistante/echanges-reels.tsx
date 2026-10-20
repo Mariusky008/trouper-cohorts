@@ -168,7 +168,8 @@ export function CarteEchangesReelle({ commerce, onOuvrir }: { commerce: Commerce
 }
 
 /* ═══ L'ÉCRAN ═════════════════════════════════════════════════════════════ */
-export function EchangesReels({ commerce, dossier, onRetour }: { commerce: CommerceComptoir; dossier: string; onRetour: () => void }) {
+/** `onRetour` : venu d'un écran du comptoir. Sans lui, c'est l'onglet « Catalogue » du menu du bas. */
+export function EchangesReels({ commerce, dossier, onRetour }: { commerce: CommerceComptoir; dossier: string; onRetour?: () => void }) {
   const reel = commerce.reel as Reel;
   const [etat, setEtat] = useState<EtatEchanges | null>(null);
   const [erreur, setErreur] = useState("");
@@ -286,7 +287,7 @@ function PageReelle({
   mien: Mien;
   setEtat: (e: EtatEchanges) => void;
   onModifier: () => void;
-  onRetour: () => void;
+  onRetour?: () => void;
 }) {
   const famille = commerce.famille;
   const { compte, maVille } = etat;

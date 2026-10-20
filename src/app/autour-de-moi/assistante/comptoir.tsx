@@ -89,12 +89,13 @@ import { CarteProposition, propositionAMontrer, useProposition, type PiecePropos
 import { PLATEFORMES_PAR_DEFAUT, iconeDuReseau, nomDuReseau, reseauxEnMots } from "@/lib/reseaux/reseaux-donnees";
 import { useSavoir, type SavoirDuComptoir } from "./use-savoir";
 import { questionsDuMetier, reponduesDuMetier } from "@/lib/direct/savoir-fantome";
-import { accord, demandesEnMots, effetDesAnnonces, phraseDeLaVeille, semaineDuComptoir, type JourStats } from "@/lib/direct/stats-comptoir";
+import { accord, demandesEnMots, effetDesAnnonces, semaineDuComptoir, type JourStats } from "@/lib/direct/stats-comptoir";
 import { lignesDeLaSemaine } from "@/lib/site-internet/semaine-en-clients";
 import type { SemaineEnClients } from "@/lib/site-internet/compteurs-jour";
 import { partagerEnStatut, type Statut, type SortieStatut } from "@/lib/direct/statut-whatsapp";
 import { PhotothequeComptoir, PiocherPhototheque } from "./phototheque-comptoir";
 import { CarteMessageDuMois } from "./message-du-mois";
+import { MotMarque } from "@/components/direct/mot-marque";
 
 type Commerce = CommerceComptoir;
 
@@ -377,8 +378,10 @@ type Phase =
   | { ou: "savoir" }
   /** Mes réseaux : Instagram et Facebook connectés une fois — voir `reseaux-comptoir.tsx`. */
   | { ou: "reseaux" }
-  /** Échanger avec les autres commerçants — démonstration (`echanges-comptoir.tsx`), ou en vrai chez un commerçant venu par son lien pro (`echanges-reels.tsx`). */
-  | { ou: "echanges" };
+  /** 📣 Plus de clients : comment se montrer aujourd'hui — photo, interview, épisode. */
+  | { ou: "clients" }
+  /** Mes infos : ce que ses clients lisent de lui. */
+  | { ou: "infos" };
 
 /** L'envoi en ligne d'un vrai commerçant : en cours, arrivé, ou à refaire. */
 type Envoi = { etat: "en-cours" } | ({ etat: "fini" } & ResultatEnvoi);
@@ -393,19 +396,31 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
   const [brouillon, setBrouillon] = useState<Brouillon>(brouillonVide());
   const [maintenant, setMaintenant] = useState(() => Date.now());
   /* ON ARRIVE TOUJOURS PAR L'ACCUEIL : « je ne vois aucune stat de ma
-     journée pour me motiver ». Ce que sa dernière annonce a rapporté est la
-     première chose qu'il voit — et le bouton de la suivante est juste dessous. */
-  /* `?ouvrir=echanges` : on arrive directement sur l'échange — c'est là que
+     journée pour me motiver ». Ce que sa page a fait est la première chose
+     qu'il voit — et le bouton de la prochaine annonce est juste dessous.
+     `phase` « accueil » : l'un des quatre onglets du menu du bas (`onglet`). */
+  const [phase, setPhase] = useState<Phase>({ ou: "accueil" });
+  /* `?ouvrir=echanges` : on arrive directement sur le catalogue des échanges — c'est là que
      mène « Essaie avec des commerçants d'exemple » depuis une ville pas encore ouverte. */
-  const [phase, setPhase] = useState<Phase>(() => {
+  const [onglet, setOnglet] = useState<Onglet>(() => {
     try {
-      return new URLSearchParams(window.location.search).get("ouvrir") === "echanges" ? { ou: "echanges" } : { ou: "accueil" };
+      return new URLSearchParams(window.location.search).get("ouvrir") === "echanges" ? "catalogue" : "accueil";
     } catch {
-      return { ou: "accueil" };
+      return "accueil";
     }
   });
-  /* LA VOIE CHOISIE À L'ACCUEIL (« plus de clients »), gardée quand il revient d'une annonce. */
-  const [voie, setVoie] = useState<Voie>("choix");
+  /* VENU DE « PLUS DE CLIENTS » ? Il y revient après une annonce, sa vitrine… — comme avant. */
+  const [depuisClients, setDepuisClients] = useState(false);
+  const revenir = () => setPhase(depuisClients ? { ou: "clients" } : { ou: "accueil" });
+  const ouvrirClients = () => {
+    setDepuisClients(true);
+    setPhase({ ou: "clients" });
+  };
+  const allerA = (o: Onglet) => {
+    setDepuisClients(false);
+    setOnglet(o);
+    setPhase({ ou: "accueil" });
+  };
   /* CE QUE SON FANTÔME SAIT, lu une fois : l'accueil y compte les questions
      de ses clients, l'écran du savoir y répond. */
   const savoir = useSavoir(commerce);
@@ -830,8 +845,21 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
   /** Les chiffres qu'on montre : simulés en démonstration, les vrais sinon — ou aucun. */
   const chiffres = reel ? vrais : semaine;
 
+  /* LES QUATRE ONGLETS : la page d'un onglet, et le menu du bas. Ailleurs (une annonce, sa vitrine…), l'en-tête du comptoir. */
+  const racine = phase.ou === "accueil";
+  /* « Mes infos » est une page du profil : son propre en-tête, pas celui du comptoir. */
+  const sansTete = racine || phase.ou === "infos";
+  const propositionPrete = Boolean(propositionAMontrer(proposition));
+  const enAttente = savoir.savoir?.attente.length ?? 0;
+  const pastilles: Partial<Record<Onglet, string>> = {
+    ...(puceEchanges?.chaud ? { catalogue: puceEchanges.mot } : {}),
+    ...(propositionPrete && !principal ? { boutique: "" } : {}),
+    ...(enAttente > 0 ? { profil: String(enAttente) } : {}),
+  };
+
   return (
     <div className="cz-ecran">
+      {!sansTete && (
       <header className="cz-tete">
         <button type="button" className="cz-qui" onClick={onChanger} disabled={!onChanger} aria-label={onChanger ? "Changer de métier (démonstration)" : commerce.nom}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -867,12 +895,13 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           )}
         </div>
       </header>
+      )}
 
       {stats && (
         <PanneauStats famille={commerce.famille} branche={commerce.branche} semaine={chiffres} clients={reel ? clients : null} etat={etat} serie={s} reel={Boolean(commerce.reel)} onFermer={() => setStats(false)} />
       )}
 
-      {phase.ou === "accueil" && (
+      {racine && onglet === "accueil" && (
         <Accueil
           commerce={commerce}
           mission={mission}
@@ -880,26 +909,80 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           enLigne={enLigneAffichees}
           principal={principal}
           semaine={chiffres}
-          voie={voie}
-          onVoie={setVoie}
-          onCommencer={commencer}
-          onRetirer={enlever}
+          serie={s}
+          reglages={commerce.reglages}
+          savoir={savoir}
+          programmees={programmees}
+          /* « MOINS DE DÉPENSES » : ses échanges entre commerçants — ce qu'il peut dépenser, ou les bons à valider. */
+          depenses={puceEchanges}
+          propositionActive={propositionPrete}
+          reseaux={<OutilReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
+          onPublier={ouvrirClients}
+          onDepenses={() => allerA("catalogue")}
+          onStats={() => setStats(true)}
+          onSavoir={() => setPhase({ ou: "savoir" })}
+          onPlanning={() => setPhase({ ou: "planning" })}
           onVitrine={() => setPhase({ ou: "vitrine" })}
           onPhototheque={() => setPhase({ ou: "phototheque" })}
           onCarte={() => setPhase({ ou: "carte" })}
-          savoir={savoir}
-          onSavoir={() => setPhase({ ou: "savoir" })}
+        />
+      )}
+
+      {/* LE CATALOGUE : les offres des autres commerçants, à glisser — démonstration (`echanges-comptoir.tsx`),
+          ou en vrai chez un commerçant venu par son lien pro (`echanges-reels.tsx`). C'est un onglet : pas de « ‹ ». */}
+      {racine &&
+        onglet === "catalogue" &&
+        (commerce.reel ? <EchangesReels commerce={commerce} dossier={dossier} /> : <EchangesComptoir commerce={commerce} dossier={dossier} />)}
+
+      {racine && onglet === "boutique" && (
+        <Boutique
+          commerce={commerce}
+          mission={mission}
+          enLigne={enLigneAffichees}
+          principal={principal}
           programmees={programmees}
+          propositionActive={propositionPrete}
+          onClients={ouvrirClients}
           onPlanning={() => setPhase({ ou: "planning" })}
-          reseaux={<OutilReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
-          /* « MOINS DE DÉPENSES » : ses échanges entre commerçants — ce qu'il peut dépenser, ou les bons à valider. */
-          depenses={puceEchanges}
-          onDepenses={() => setPhase({ ou: "echanges" })}
+          onVitrine={() => setPhase({ ou: "vitrine" })}
+          onPhototheque={() => setPhase({ ou: "phototheque" })}
+          onCarte={() => setPhase({ ou: "carte" })}
+        />
+      )}
+
+      {racine && onglet === "profil" && (
+        <Profil
+          commerce={commerce}
+          dossier={dossier}
+          savoir={savoir}
+          reseaux={reseaux}
+          serie={s}
+          onInfos={() => setPhase({ ou: "infos" })}
+          onReseaux={() => setPhase({ ou: "reseaux" })}
+          onSavoir={() => setPhase({ ou: "savoir" })}
+          onStats={() => setStats(true)}
+          onChanger={onChanger}
+        />
+      )}
+
+      {racine && <MenuDuBas onglet={onglet} onOnglet={allerA} pastilles={pastilles} />}
+
+      {phase.ou === "clients" && (
+        <PlusDeClients
+          commerce={commerce}
+          mission={mission}
+          dossier={dossier}
+          enLigne={enLigneAffichees}
+          principal={principal}
+          semaine={chiffres}
+          onRetour={() => allerA(onglet)}
+          onCommencer={commencer}
+          onRetirer={enlever}
           /* L'INTERVIEW, MÉTIER PAR MÉTIER : chaque métier dont les questions
              sont validées — voir `INTERVIEW_VALIDEE`. */
           onInterview={interviewOuverte(commerce.famille, Boolean(commerce.reel)) ? () => setPhase({ ou: "interview" }) : undefined}
           onEpisode={() => setPhase({ ou: "episode" })}
-          propositionActive={Boolean(propositionAMontrer(proposition))}
+          propositionActive={propositionPrete}
           proposition={
             <CarteProposition
               commerce={commerce}
@@ -913,15 +996,10 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
         />
       )}
 
-      {phase.ou === "echanges" &&
-        (commerce.reel ? (
-          <EchangesReels commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
-        ) : (
-          <EchangesComptoir commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
-        ))}
+      {phase.ou === "infos" && <MesInfos commerce={commerce} dossier={dossier} onRetour={() => allerA("profil")} />}
 
       {phase.ou === "reseaux" && (
-        <ReseauxComptoir commerce={commerce} dossier={dossier} reseaux={reseaux} onRetour={() => setPhase({ ou: "accueil" })} />
+        <ReseauxComptoir commerce={commerce} dossier={dossier} reseaux={reseaux} onRetour={revenir} />
       )}
 
       {phase.ou === "planning" && (
@@ -939,24 +1017,24 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           occupe={occupePlanning}
           onProgrammer={commencerPlusTard}
           onRetirer={(id, toute) => void deprogrammer(id, toute)}
-          onRetour={() => setPhase({ ou: "accueil" })}
+          onRetour={revenir}
         />
       )}
 
       {phase.ou === "savoir" && (
-        <SavoirComptoir commerce={commerce} dossier={dossier} savoir={savoir} onRetour={() => setPhase({ ou: "accueil" })} />
+        <SavoirComptoir commerce={commerce} dossier={dossier} savoir={savoir} onRetour={revenir} />
       )}
 
       {phase.ou === "carte" && (
-        <CarteComptoir commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
+        <CarteComptoir commerce={commerce} dossier={dossier} onRetour={revenir} />
       )}
 
       {phase.ou === "vitrine" && (
-        <VitrineComptoir commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
+        <VitrineComptoir commerce={commerce} dossier={dossier} onRetour={revenir} />
       )}
 
       {phase.ou === "phototheque" && (
-        <PhotothequeComptoir commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
+        <PhotothequeComptoir commerce={commerce} dossier={dossier} onRetour={revenir} />
       )}
 
       {/* 🎬 L'INTERVIEW, PAR-DESSUS LE COMPTOIR : son nom, son plat du jour s'il
@@ -973,7 +1051,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
               chef: chefEnPied(dossier),
               famille: commerce.famille,
               demonstration: !commerce.reel,
-              onFermer: () => setPhase({ ou: "accueil" }),
+              onFermer: revenir,
               /* 🎬 « PUBLIER PARTOUT » : Le Direct, sa page, ses réseaux — voir
                  `envoyerInterview`. « Quand je veux publier l'annonce sur mes
                  réseaux sociaux, je ne vois pas le bouton » : la démonstration
@@ -1016,7 +1094,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           commerce={commerce}
           dossier={dossier}
           ville={villeDe(commerce)}
-          onRetour={() => setPhase({ ou: "accueil" })}
+          onRetour={revenir}
           publier={
             commerce.reel
               ? async (e) => {
@@ -1050,7 +1128,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           setBrouillon={setBrouillon}
           onSuivante={() => suivante(phase.relance)}
           onRetour={() =>
-            phase.etape > 0 ? setPhase({ ou: "mission", etape: phase.etape - 1, relance: phase.relance }) : setPhase({ ou: "accueil" })
+            phase.etape > 0 ? setPhase({ ou: "mission", etape: phase.etape - 1, relance: phase.relance }) : revenir()
           }
         />
       )}
@@ -1144,7 +1222,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           reel={Boolean(commerce.reel)}
           envoi={envoi}
           onReessayer={() => phase.ou === "fete" && void envoyerEnBase(phase.publication, principal)}
-          onFin={() => setPhase({ ou: "accueil" })}
+          onFin={revenir}
           programme={phase.programme}
           onEncore={() => commencerPlusTard(phase.programme ? ajouterJours(phase.programme.quand.jour, 1) : undefined)}
           onPlanning={() => setPhase({ ou: "planning" })}
@@ -1211,21 +1289,626 @@ function Scene({
   );
 }
 
-/* ═══ L'ACCUEIL : LE FANTÔME DEMANDE CE QU'ON VEUT ═══════════════════════════
-   « La page d'accueil est horrible : aucune direction artistique, plein de texte
-   partout, on ne sait pas sur quoi appuyer. Notre fantôme pourrait demander quelle
-   est notre demande — plus de clients, ou moins de dépenses — et à partir de là,
-   être conduit sur les différentes options. »
+/* ═══ L'ADMIN EN QUATRE ONGLETS ════════════════════════════════════════════
+   « Pour la page d'accueil du commerçant, on pourrait reprendre l'idée de ce
+   HTML en mettant les fonctionnalités qu'on a déjà. Pour le menu du bas :
+   Accueil, Catalogue (les cartes commerçants à swiper), Ma boutique (Plus de
+   clients, Planning, Vitrine, Photos, Tarifs), Profil (Mes infos, Réseaux,
+   Fantôme). »
 
-   DEUX TEMPS, UNE SEULE QUESTION À LA FOIS :
-     · « Qu'est-ce qu'on fait aujourd'hui ? » — deux grandes cartes, et c'est tout
-       (plus, en haut, ce qui ne peut pas attendre : des clients qui attendent une
-       réponse). Ses outils sont rangés dessous, dans « Ma boutique ».
-     · « Plus de clients » : comment se montrer — sa proposition du jour, puis en
-       photo, en interview, en épisode ; ce qui est en ligne, et le « il en reste ? »
-       du soir. « Moins de dépenses » ouvre ses échanges entre commerçants.
-   Le choix reste quand il revient d'une annonce (`voie`, gardée par l'écran). */
-type Voie = "choix" | "clients";
+   UN MENU EN BAS, QUATRE PORTES :
+     · Accueil — son fantôme, « Qu'est-ce qu'on fait aujourd'hui ? », ce que sa
+       page a fait, puis LE bouton rose (publier) et la carte « Moins de
+       dépenses » ; ses raccourcis dessous.
+     · Catalogue — les offres des autres commerçants, à glisser : ses échanges.
+     · Ma boutique — « Plus de clients » (photo, interview, épisode) et ce qu'il
+       vend : planning, vitrine, photos, tarifs.
+     · Profil — qui il est, ses réseaux, ce que son fantôme sait, ses stats.
+   LE MENU N'EST QUE SUR CES QUATRE PAGES : dès qu'il fait quelque chose (une
+   annonce, sa vitrine…), l'écran est à lui, et « ‹ » le ramène d'où il venait. */
+type Onglet = "accueil" | "catalogue" | "boutique" | "profil";
+
+const ONGLETS: { id: Onglet; nom: string; icone: React.ReactNode }[] = [
+  { id: "accueil", nom: "Accueil", icone: <path d="M4 10.6 12 4l8 6.6V19a1.5 1.5 0 0 1-1.5 1.5H15v-5.5H9v5.5H5.5A1.5 1.5 0 0 1 4 19z" /> },
+  {
+    id: "catalogue",
+    nom: "Catalogue",
+    icone: (
+      <>
+        <rect x="9" y="3.6" width="10.5" height="14.5" rx="2.4" transform="rotate(10 14.2 10.9)" />
+        <rect x="4.5" y="5.5" width="10.5" height="14.5" rx="2.4" />
+      </>
+    ),
+  },
+  {
+    id: "boutique",
+    nom: "Ma boutique",
+    icone: (
+      <>
+        <path d="M5 8.5h14l-1.1 10.9a1.5 1.5 0 0 1-1.5 1.35H7.6a1.5 1.5 0 0 1-1.5-1.35z" />
+        <path d="M9 8.5V7a3 3 0 0 1 6 0v1.5" />
+      </>
+    ),
+  },
+  {
+    id: "profil",
+    nom: "Profil",
+    icone: (
+      <>
+        <circle cx="12" cy="8.4" r="3.8" />
+        <path d="M4.6 20.2a7.4 7.4 0 0 1 14.8 0" />
+      </>
+    ),
+  },
+];
+
+/** Le menu du bas : quatre onglets, et une pastille quand quelque chose l'y attend. */
+function MenuDuBas({ onglet, onOnglet, pastilles }: { onglet: Onglet; onOnglet: (o: Onglet) => void; pastilles: Partial<Record<Onglet, string>> }) {
+  return (
+    <nav className="ak-nav" aria-label="Menu">
+      {ONGLETS.map((o) => {
+        const p = pastilles[o.id];
+        return (
+          <button key={o.id} type="button" className={onglet === o.id ? "on" : ""} aria-current={onglet === o.id ? "page" : undefined} onClick={() => onOnglet(o.id)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              {o.icone}
+            </svg>
+            <span>{o.nom}</span>
+            {p !== undefined && <i className={`ak-nav-p${p ? "" : " point"}`}>{p}</i>}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+/** Ce que sa page a fait : ses vues d'aujourd'hui, sinon d'hier — rien d'inventé chez un vrai commerçant. */
+function vuesRecentes(semaine: JourStats[] | null): { n: number; quand: string } | null {
+  const auj = semaine?.[semaine.length - 1];
+  const hier = semaine?.[semaine.length - 2];
+  if (auj && auj.vues > 0) return { n: auj.vues, quand: "aujourd’hui" };
+  if (hier && hier.vues > 0) return { n: hier.vues, quand: "hier" };
+  return null;
+}
+
+/** Ce que le bouton « Plus de clients » dit de sa journée : l'heure du « il en reste ? », ce qui est en ligne, ce qui est prêt. */
+function etatDesClients(mission: Mission, actives: Publication[], principal: Publication | undefined, propositionActive: boolean) {
+  const relance = mission.relance;
+  const relanceFaite = actives.some((p) => p.genre === "relance");
+  const relanceChaude = Boolean(principal && relance && !relanceFaite && heureDecimale() >= relance.apres);
+  if (relanceChaude) return { mot: "⚡ Il t’en reste ? Dis-le au quartier", chaud: true, vert: false, pret: false, relanceChaude };
+  if (principal) return { mot: `En ligne : ${principal.nom}`, chaud: false, vert: true, pret: false, relanceChaude };
+  if (propositionActive) return { mot: "✨ Ton annonce est prête", chaud: true, vert: false, pret: true, relanceChaude };
+  return { mot: "", chaud: false, vert: false, pret: false, relanceChaude };
+}
+
+/** Ce que la carte « Moins de dépenses » dit de ses échanges. */
+function motDesDepenses(depenses: { mot: string; chaud: boolean } | null) {
+  if (depenses?.chaud) return { mot: `${depenses.mot} ${Number(depenses.mot) > 1 ? "bons" : "bon"} à valider`, chaud: true };
+  if (depenses?.mot) return { mot: `${depenses.mot} à dépenser chez tes voisins`, chaud: false };
+  return { mot: "Jamais plein tarif", chaud: false };
+}
+
+/** Un raccourci de la boutique : l'icône au trait, un mot, une pastille quand il y a quelque chose à faire. */
+function Raccourci({ icone, nom, badge, chaud, onClick }: { icone: keyof typeof ICONES; nom: string; badge?: string | number; chaud?: boolean; onClick: () => void }) {
+  return (
+    <button type="button" className={`ak-tuile${chaud ? " chaud" : ""}`} onClick={onClick}>
+      <span className="ak-tuile-i" aria-hidden="true">
+        <svg viewBox="0 0 24 24">{ICONES[icone]}</svg>
+      </span>
+      <b>{nom}</b>
+      {badge !== undefined && badge !== "" ? <i className="ak-tuile-p">{badge}</i> : null}
+    </button>
+  );
+}
+
+/** « Ma carte » → « Carte », « Mes tarifs » → « Tarifs » : le mot de son métier. */
+const motDeLaCarte = (commerce: Commerce) =>
+  motsDeLaCarte(commerce.famille, commerce.metier)
+    .titre.replace(/^(Ma|Mes)\s+/, "")
+    .replace(/^./, (x) => x.toUpperCase());
+
+/* ═══ ACCUEIL ═══════════════════════════════════════════════════════════════
+   Le fantôme, « Qu'est-ce qu'on fait aujourd'hui ? », ce que sa page a fait —
+   puis un seul bouton rose, la carte « Moins de dépenses », et ses raccourcis.
+   Ce qui ne peut pas attendre (des clients qui attendent une réponse) passe
+   avant le bouton. */
+function Accueil({
+  commerce,
+  mission,
+  dossier,
+  enLigne: actives,
+  principal,
+  semaine,
+  serie: jours,
+  reglages,
+  savoir,
+  programmees,
+  depenses,
+  propositionActive,
+  reseaux,
+  onPublier,
+  onDepenses,
+  onStats,
+  onSavoir,
+  onPlanning,
+  onVitrine,
+  onPhototheque,
+  onCarte,
+}: {
+  commerce: Commerce;
+  mission: Mission;
+  dossier: string;
+  enLigne: Publication[];
+  principal?: Publication;
+  /** `null` : un vrai commerçant dont la page ne compte pas encore. */
+  semaine: JourStats[] | null;
+  serie: number;
+  /** L'ancien Espace Pro, quand il en a un. */
+  reglages?: string;
+  savoir: SavoirDuComptoir;
+  programmees: Programmee[];
+  /** Ce que ses échanges lui disent : ce qu'il peut dépenser, ou les bons à valider (`chaud`). */
+  depenses: { mot: string; chaud: boolean } | null;
+  propositionActive: boolean;
+  /** Le raccourci « Réseaux » — absent tant que l'intermédiaire n'est pas branché. */
+  reseaux?: React.ReactNode;
+  onPublier: () => void;
+  onDepenses: () => void;
+  onStats: () => void;
+  onSavoir: () => void;
+  onPlanning: () => void;
+  onVitrine: () => void;
+  onPhototheque: () => void;
+  onCarte: () => void;
+}) {
+  const pose = useFantome(false, "salut");
+  const questions = questionsDuMetier(commerce.famille, commerce.metier);
+  const sues = savoir.savoir ? reponduesDuMetier(savoir.savoir, questions) : 0;
+  const enAttente = savoir.savoir?.attente.length ?? 0;
+  const vues = vuesRecentes(semaine);
+  const clients = etatDesClients(mission, actives, principal, propositionActive);
+  const dep = motDesDepenses(depenses);
+  return (
+    <div className="cz-corps ak">
+      <header className="ak-haut">
+        <MotMarque className="ak-marque" />
+        <div className="ak-haut-d">
+          <button type="button" className={`ak-rond serie${jours ? " allume" : ""}`} onClick={onStats} aria-label={`${jours} jours d’affilée — voir mes stats`}>
+            🔥 {jours}
+          </button>
+          {reglages && (
+            <a className="ak-rond" href={reglages} aria-label="Réglages">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="3.2" />
+                <path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M18 6l-1.6 1.6M7.6 16.4 6 18M18 18l-1.6-1.6M7.6 7.6 6 6" />
+              </svg>
+            </a>
+          )}
+        </div>
+      </header>
+
+      <section className="ak-hero">
+        <span className="ak-halos" aria-hidden="true" />
+        <div className="ak-fantome">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`${dossier}${pose}.webp`} alt="Ton fantôme" draggable={false} />
+        </div>
+        <p className="ak-bonjour">Bonjour{commerce.prenom ? `, ${commerce.prenom}` : ""} 👋</p>
+        <h1 className="ak-titre">Qu’est-ce qu’on fait aujourd’hui&nbsp;?</h1>
+        {vues ? (
+          <button type="button" className="ak-stat" onClick={onStats}>
+            <b>{vues.n}</b> {accord(vues.n, "vue", "vues")} sur ta page <i aria-hidden="true" /> {vues.quand}
+          </button>
+        ) : jours > 0 ? (
+          <button type="button" className="ak-stat" onClick={onStats}>
+            <b>{jours}</b> {accord(jours, "jour", "jours")} d’affilée <i aria-hidden="true" /> continue&nbsp;!
+          </button>
+        ) : null}
+      </section>
+
+      <div className="ak-actions">
+        {enAttente > 0 && (
+          <button type="button" className="ac-afaire" onClick={onSavoir}>
+            <span aria-hidden="true">💬</span>
+            <b>{enAttente > 1 ? `${enAttente} questions de clients t’attendent` : "Une question de client t’attend"}</b>
+            <s aria-hidden="true">→</s>
+          </button>
+        )}
+        <button type="button" className="ak-cta" onClick={onPublier}>
+          <span className="ak-cta-i" aria-hidden="true">
+            📣
+          </span>
+          <span className="ak-cta-t">
+            <b>Publier une annonce</b>
+            <em>{clients.vert ? <span className="ak-vert">{clients.mot}</span> : "Montre ce que tu fais aujourd’hui"}</em>
+          </span>
+          {clients.chaud ? <i className="ak-badge">{clients.pret ? "✨ Prête" : "⚡ Maintenant"}</i> : <s aria-hidden="true">›</s>}
+        </button>
+        <button type="button" className="ak-second" onClick={onDepenses}>
+          <span className="ak-second-i" aria-hidden="true">
+            🤝
+          </span>
+          <span className="ak-cta-t">
+            <b>Moins de dépenses</b>
+            <em>Échange avec les commerçants du coin</em>
+            <i className={`ak-meta${dep.chaud ? " chaud" : ""}`}>{dep.mot}</i>
+          </span>
+          <s aria-hidden="true">›</s>
+        </button>
+      </div>
+
+      <section className="ak-raccourcis" aria-label="Ma boutique">
+        <h2>Ma boutique</h2>
+        <div className="ak-grille">
+          <Raccourci icone="planning" nom="Planning" badge={programmees.length || undefined} onClick={onPlanning} />
+          <Raccourci icone="vitrine" nom="Vitrine" onClick={onVitrine} />
+          <Raccourci icone="photos" nom="Photos" onClick={onPhototheque} />
+          <Raccourci icone="carte" nom={motDeLaCarte(commerce)} onClick={onCarte} />
+          <Raccourci
+            icone="fantome"
+            nom="Fantôme"
+            badge={enAttente > 0 ? enAttente : sues < questions.length ? `${sues}/${questions.length}` : undefined}
+            chaud={enAttente > 0}
+            onClick={onSavoir}
+          />
+          {reseaux ?? <Raccourci icone="stats" nom="Mes stats" onClick={onStats} />}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+/* ═══ MA BOUTIQUE ═════════════════════════════════════════════════════════
+   « Plus de clients » d'abord — c'est pour ça qu'il est là —, puis ce qu'il
+   vend, une ligne par outil, avec ce que chacun fait pour lui. */
+function Boutique({
+  commerce,
+  mission,
+  enLigne: actives,
+  principal,
+  programmees,
+  propositionActive,
+  onClients,
+  onPlanning,
+  onVitrine,
+  onPhototheque,
+  onCarte,
+}: {
+  commerce: Commerce;
+  mission: Mission;
+  enLigne: Publication[];
+  principal?: Publication;
+  programmees: Programmee[];
+  propositionActive: boolean;
+  onClients: () => void;
+  onPlanning: () => void;
+  onVitrine: () => void;
+  onPhototheque: () => void;
+  onCarte: () => void;
+}) {
+  const clients = etatDesClients(mission, actives, principal, propositionActive);
+  const prochaine = programmees[0];
+  return (
+    <div className="cz-corps ak onglet">
+      <header className="ak-page-t">
+        <h1>Ma boutique</h1>
+        <p>{commerce.nom}</p>
+      </header>
+      <button type="button" className="ak-cta" onClick={onClients}>
+        <span className="ak-cta-i" aria-hidden="true">
+          📣
+        </span>
+        <span className="ak-cta-t">
+          <b>Plus de clients</b>
+          <em>{clients.vert ? <span className="ak-vert">{clients.mot}</span> : "En photo, en interview ou en épisode"}</em>
+        </span>
+        {clients.chaud ? <i className="ak-badge">{clients.pret ? "✨ Prête" : "⚡ Maintenant"}</i> : <s aria-hidden="true">›</s>}
+      </button>
+      <div className="ak-liste">
+        <Ligne
+          icone="planning"
+          nom="Planning"
+          sous={prochaine ? `${programmees.length} ${accord(programmees.length, "annonce prévue", "annonces prévues")} · prochaine ${jourCourt(prochaine.jour)}` : "Prépare tes prochains jours à l’avance"}
+          badge={programmees.length || undefined}
+          onClick={onPlanning}
+        />
+        <Ligne icone="vitrine" nom="Vitrine" sous="Tes produits, en photo, avec leur nom" onClick={onVitrine} />
+        <Ligne icone="photos" nom="Photos" sous="Ta photothèque, où tu pioches à chaque annonce" onClick={onPhototheque} />
+        <Ligne icone="carte" nom={motDeLaCarte(commerce)} sous={`${motsDeLaCarte(commerce.famille, commerce.metier).titre.replace(/^Ma /, "Ta ").replace(/^Mes /, "Tes ")}, ligne par ligne`} onClick={onCarte} />
+      </div>
+    </div>
+  );
+}
+
+/** Une ligne de liste : l'icône, son nom, ce qu'elle fait, et « › ». */
+function Ligne({
+  icone,
+  nom,
+  sous,
+  badge,
+  chaud,
+  inactif,
+  onClick,
+}: {
+  icone: keyof typeof ICONES;
+  nom: string;
+  sous: string;
+  badge?: string | number;
+  chaud?: boolean;
+  inactif?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button type="button" className={`ak-ligne${chaud ? " chaud" : ""}`} onClick={onClick} disabled={inactif || !onClick}>
+      <span className="ak-tuile-i" aria-hidden="true">
+        <svg viewBox="0 0 24 24">{ICONES[icone]}</svg>
+      </span>
+      <span className="ak-ligne-t">
+        <b>{nom}</b>
+        <em>{sous}</em>
+      </span>
+      {badge !== undefined && badge !== "" ? <i className="ak-tuile-p">{badge}</i> : null}
+      {!inactif && <s aria-hidden="true">›</s>}
+    </button>
+  );
+}
+
+/* ═══ PROFIL ══════════════════════════════════════════════════════════════
+   Qui il est, ses réseaux, ce que son fantôme sait — et ses stats. */
+function Profil({
+  commerce,
+  dossier,
+  savoir,
+  reseaux,
+  serie: jours,
+  onInfos,
+  onReseaux,
+  onSavoir,
+  onStats,
+  onChanger,
+}: {
+  commerce: Commerce;
+  dossier: string;
+  savoir: SavoirDuComptoir;
+  reseaux: ReseauxDuComptoir;
+  serie: number;
+  onInfos: () => void;
+  onReseaux: () => void;
+  onSavoir: () => void;
+  onStats: () => void;
+  /** La démonstration : changer de métier. */
+  onChanger?: () => void;
+}) {
+  const questions = questionsDuMetier(commerce.famille, commerce.metier);
+  const sues = savoir.savoir ? reponduesDuMetier(savoir.savoir, questions) : 0;
+  const enAttente = savoir.savoir?.attente.length ?? 0;
+  const etat = reseaux.etat;
+  const branches = Boolean(etat?.configure);
+  const connectes = etat?.plateformes.filter((p) => p.compte) ?? [];
+  return (
+    <div className="cz-corps ak onglet">
+      <header className="ak-profil">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`${dossier}visage.webp`} alt="" />
+        <h1>{commerce.nom}</h1>
+        <p>
+          {commerce.metier}
+          {commerce.adresse ? ` · ${commerce.adresse}` : ""}
+        </p>
+      </header>
+      <div className="ak-liste">
+        <Ligne icone="infos" nom="Mes infos" sous={commerce.horaires ? `Adresse, horaires · ${commerce.horaires}` : "Ton nom, ton adresse, tes horaires"} onClick={onInfos} />
+        <Ligne
+          icone="reseaux"
+          nom="Réseaux"
+          sous={
+            !branches
+              ? "Bientôt : tes annonces sur Instagram et Facebook"
+              : connectes.length
+                ? `Connectés : ${connectes.map((p) => p.nom).join(", ")}`
+                : "Connecte Instagram et Facebook, une fois"
+          }
+          badge={branches && !connectes.length && commerce.reel ? "!" : undefined}
+          chaud={branches && !connectes.length && Boolean(commerce.reel)}
+          inactif={!branches}
+          onClick={branches ? onReseaux : undefined}
+        />
+        <Ligne
+          icone="fantome"
+          nom="Fantôme"
+          sous={enAttente > 0 ? `${enAttente} ${accord(enAttente, "question attend", "questions attendent")} ta réponse` : `Ce qu’il sait de toi : ${sues} réponse${sues > 1 ? "s" : ""} sur ${questions.length}`}
+          badge={enAttente > 0 ? enAttente : undefined}
+          chaud={enAttente > 0}
+          onClick={onSavoir}
+        />
+        <Ligne icone="stats" nom="Mes stats" sous={jours > 0 ? `🔥 ${jours} ${accord(jours, "jour", "jours")} d’affilée · tes vues, tes badges` : "Tes vues, ta série, tes badges"} onClick={onStats} />
+      </div>
+      {onChanger && (
+        <button type="button" className="cz-lien ak-changer" onClick={onChanger}>
+          Changer de métier (démonstration)
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ═══ MES INFOS ═══════════════════════════════════════════════════════════
+   Ce que ses clients lisent de lui. Chez un vrai commerçant, ça se change dans
+   ses réglages (l'ancien Espace Pro) ; la démonstration montre un commerce
+   d'exemple. */
+function MesInfos({ commerce, dossier, onRetour }: { commerce: Commerce; dossier: string; onRetour: () => void }) {
+  const lignes: [string, string][] = [
+    ["Nom", commerce.nom],
+    ["Métier", commerce.metier],
+    ...(commerce.prenom ? ([["Ton fantôme t’appelle", commerce.prenom]] as [string, string][]) : []),
+    ...(commerce.adresse ? ([["Adresse", commerce.adresse]] as [string, string][]) : []),
+    ...(commerce.horaires ? ([["Horaires", commerce.horaires]] as [string, string][]) : []),
+  ];
+  return (
+    <div className="cz-corps ak onglet">
+      <div className="ac-fil">
+        <button type="button" className="ac-retour" onClick={onRetour}>
+          ‹ Profil
+        </button>
+      </div>
+      <header className="ak-profil petit">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`${dossier}visage.webp`} alt="" />
+        <h1>Mes infos</h1>
+      </header>
+      <dl className="ak-infos">
+        {lignes.map(([k, v]) => (
+          <div key={k}>
+            <dt>{k}</dt>
+            <dd>{v}</dd>
+          </div>
+        ))}
+      </dl>
+      {commerce.reglages ? (
+        <a className="cz-go" href={commerce.reglages}>
+          Modifier dans mes réglages <s aria-hidden="true">→</s>
+        </a>
+      ) : (
+        <p className="ak-note">En démonstration, ce sont les infos d’un commerce d’exemple.</p>
+      )}
+    </div>
+  );
+}
+
+/* ═══ PLUS DE CLIENTS : COMMENT SE MONTRER ════════════════════════════════
+   Sa proposition du jour, puis en photo, en interview, en épisode ; ce qui est
+   en ligne, et le « il en reste ? » du soir. */
+function PlusDeClients({
+  commerce,
+  mission,
+  dossier,
+  enLigne: actives,
+  principal,
+  semaine,
+  onRetour,
+  onCommencer,
+  onRetirer,
+  proposition,
+  propositionActive,
+  onInterview,
+  onEpisode,
+}: {
+  commerce: Commerce;
+  mission: Mission;
+  dossier: string;
+  enLigne: Publication[];
+  principal?: Publication;
+  semaine: JourStats[] | null;
+  onRetour: () => void;
+  onCommencer: (relance?: boolean) => void;
+  onRetirer: (id: string) => void;
+  /** ☀️ La proposition du matin, quand rien n'est encore en ligne. */
+  proposition?: React.ReactNode;
+  propositionActive?: boolean;
+  /** 🎬 L'interview vidéo — les métiers dont les questions sont validées. */
+  onInterview?: () => void;
+  /** 🎬 L'épisode : il pose son téléphone AVANT de fabriquer. */
+  onEpisode?: () => void;
+}) {
+  const relance = mission.relance;
+  const relanceFaite = actives.some((p) => p.genre === "relance");
+  const relanceChaude = Boolean(principal && relance && !relanceFaite && heureDecimale() >= relance.apres);
+  const auj = semaine?.[semaine.length - 1];
+  const texte = relanceChaude
+    ? `Le service est passé${aQui(commerce, ",")} : il t’en reste ?`
+    : principal
+      ? `C’est en ligne${aQui(commerce, ",")} ! On en remet une couche ?`
+      : "Comment veux-tu te montrer aujourd’hui ?";
+  const sous = principal && auj && auj.vues > 0 ? `Déjà ${auj.vues} ${accord(auj.vues, "personne a", "personnes ont")} vu ta page aujourd’hui.` : undefined;
+  return (
+    <div className="cz-corps accueil ac">
+      <div className="ac-fil">
+        <button type="button" className="ac-retour" onClick={onRetour}>
+          ‹ Retour
+        </button>
+        <span className="ac-fil-t">📣 Plus de clients</span>
+      </div>
+      <Guide key="clients" dossier={dossier} texte={texte} sous={sous} />
+      <div className="ac-contenu">
+        {/* IL EN RESTE ? Le soir, c'est LA chose à faire : en premier. */}
+        {principal && relance && !relanceFaite && (
+          <button type="button" className={`ac-relance${relanceChaude ? " chaud" : ""}`} onClick={() => onCommencer(true)}>
+            <span aria-hidden="true">⚡</span>
+            <span>
+              <b>{relance.titre}</b>
+              <em>{relanceChaude ? "Dis-moi ce qu’il te reste, je préviens le quartier." : `Je te le propose à partir de ${enHeure(relance.apres)}.`}</em>
+            </span>
+            <s aria-hidden="true">→</s>
+          </button>
+        )}
+
+        {actives.length > 0 && (
+          <section className="ac-enligne" aria-label="En ligne maintenant">
+            <h2>
+              <i aria-hidden="true" /> En ligne maintenant
+            </h2>
+            {actives.map((p) => (
+              <CarteAnnonce key={p.id} p={p} mission={mission} onRetirer={() => onRetirer(p.id)} />
+            ))}
+            <a className="ac-voir" href={commerce.ville ?? "/autour-de-moi"}>
+              {commerce.reel ? "Voir ma page" : "Voir mon annonce dans la ville"} <s aria-hidden="true">→</s>
+            </a>
+          </section>
+        )}
+
+        {/* ☀️ SA PROPOSITION DU MATIN : prête, un geste — avant les autres façons de publier. */}
+        {!principal && proposition}
+
+        <section className="ac-options" aria-label="Comment publier">
+          <h2>{principal ? "Publier autre chose" : propositionActive ? "Ou bien, à ta façon" : `Publier ${mission.quoi.toLowerCase()}`}</h2>
+          <button type="button" className="ac-option photo" onClick={() => onCommencer(false)}>
+            <span className="ac-option-i" aria-hidden="true">
+              📸
+            </span>
+            <span className="ac-option-t">
+              <b>En photo</b>
+              <em>{principal ? `Remplace ${mission.quoi.toLowerCase()}` : "Ta photo et un mot · 1 minute"}</em>
+            </span>
+            <s aria-hidden="true">→</s>
+          </button>
+          {onInterview && (
+            <button type="button" className="ac-option interview" onClick={onInterview}>
+              <span className="ac-option-i" aria-hidden="true">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/direct/interview/reporter-0.webp" alt="" />
+              </span>
+              <span className="ac-option-t">
+                <b>En interview</b>
+                <em>Le reporter te pose ses questions · une vidéo</em>
+              </span>
+              <s aria-hidden="true">→</s>
+            </button>
+          )}
+          {onEpisode && (
+            <button type="button" className="ac-option episode" onClick={onEpisode}>
+              <span className="ac-option-i" aria-hidden="true">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`${dossier}montre.webp`} alt="" />
+              </span>
+              <span className="ac-option-t">
+                <b>
+                  En épisode <i className="ac-nouveau">Nouveau</i>
+                </b>
+                <em>Je filme ta fabrication et j’en fais ta série</em>
+              </span>
+              <s aria-hidden="true">→</s>
+            </button>
+          )}
+        </section>
+
+        {/* POUR ALLER PLUS LOIN : son message du mois (WhatsApp), et l'interview de demain. */}
+        <CarteMessageDuMois commerce={commerce} nouveautesIci={actives.map((p) => ({ nom: p.nom, ...(p.prix ? { prix: p.prix } : {}) }))} />
+        {onInterview && <DemainLeFantome commerce={commerce} />}
+      </div>
+    </div>
+  );
+}
 
 /** Le fantôme, à côté de sa bulle : il pose LA question de l'écran. */
 function Guide({ dossier, texte, sous }: { dossier: string; texte: string; sous?: string }) {
@@ -1251,269 +1934,8 @@ function Guide({ dossier, texte, sous }: { dossier: string; texte: string; sous?
   );
 }
 
-function Accueil({
-  commerce,
-  mission,
-  dossier,
-  enLigne: actives,
-  principal,
-  semaine,
-  voie,
-  onVoie,
-  onCommencer,
-  onRetirer,
-  onVitrine,
-  onPhototheque,
-  onCarte,
-  savoir,
-  onSavoir,
-  programmees,
-  onPlanning,
-  reseaux,
-  depenses,
-  onDepenses,
-  proposition,
-  propositionActive,
-  onInterview,
-  onEpisode,
-}: {
-  commerce: Commerce;
-  mission: Mission;
-  dossier: string;
-  enLigne: Publication[];
-  principal?: Publication;
-  /** `null` : un vrai commerçant dont la page ne compte pas encore. */
-  semaine: JourStats[] | null;
-  voie: Voie;
-  onVoie: (v: Voie) => void;
-  onCommencer: (relance?: boolean) => void;
-  onRetirer: (id: string) => void;
-  /** Ouvrir « Ma vitrine ». */
-  onVitrine: () => void;
-  /** Ouvrir « Ma photothèque ». */
-  onPhototheque: () => void;
-  /** Ouvrir « Ma carte ». */
-  onCarte: () => void;
-  savoir: SavoirDuComptoir;
-  /** Ouvrir « Ce que mon fantôme sait ». */
-  onSavoir: () => void;
-  /** Ses annonces programmées, la plus proche d'abord. */
-  programmees: Programmee[];
-  /** Ouvrir « Mon planning ». */
-  onPlanning: () => void;
-  /** L'outil « Réseaux » — absent tant que l'intermédiaire n'est pas branché. */
-  reseaux?: React.ReactNode;
-  /** Ce que ses échanges lui disent : ce qu'il peut dépenser, ou les bons à valider (`chaud`). */
-  depenses: { mot: string; chaud: boolean } | null;
-  /** Ouvrir ses échanges entre commerçants. */
-  onDepenses: () => void;
-  /** ☀️ La proposition du matin, quand rien n'est encore en ligne. */
-  proposition?: React.ReactNode;
-  /** Elle est là : elle passe avant les autres façons de publier. */
-  propositionActive?: boolean;
-  /** 🎬 L'interview vidéo — les métiers dont les questions sont validées. */
-  onInterview?: () => void;
-  /** 🎬 L'épisode : il pose son téléphone AVANT de fabriquer. */
-  onEpisode?: () => void;
-}) {
-  const relance = mission.relance;
-  const carte = motsDeLaCarte(commerce.famille, commerce.metier);
-  const relanceFaite = actives.some((p) => p.genre === "relance");
-  const questions = questionsDuMetier(commerce.famille, commerce.metier);
-  const sues = savoir.savoir ? reponduesDuMetier(savoir.savoir, questions) : 0;
-  const enAttente = savoir.savoir?.attente.length ?? 0;
-  const h = heureDecimale();
-  const auj = semaine?.[semaine.length - 1];
-  const relanceChaude = Boolean(principal && relance && !relanceFaite && h >= relance.apres);
-  // UN VRAI COMMERÇANT N'A PAS DE CHIFFRES INVENTÉS : tant que sa page ne les
-  // compte pas, le fantôme ne lui parle pas de « personnes qui ont vu ».
-  const veille = semaine ? phraseDeLaVeille(semaine, mission.quoi) : null;
-
-  /* ═══ CE QUI NE PEUT PAS ATTENDRE : des clients qui attendent une réponse ═══ */
-  const aFaire =
-    enAttente > 0 ? (
-      <button type="button" className="ac-afaire" onClick={onSavoir}>
-        <span aria-hidden="true">💬</span>
-        <b>{enAttente > 1 ? `${enAttente} questions de clients t’attendent` : "Une question de client t’attend"}</b>
-        <s aria-hidden="true">→</s>
-      </button>
-    ) : null;
-
-  if (voie === "clients") {
-    const texte = relanceChaude
-      ? `Le service est passé${aQui(commerce, ",")} : il t’en reste ?`
-      : principal
-        ? `C’est en ligne${aQui(commerce, ",")} ! On en remet une couche ?`
-        : "Comment veux-tu te montrer aujourd’hui ?";
-    const sous = principal && auj && auj.vues > 0 ? `Déjà ${auj.vues} ${accord(auj.vues, "personne a", "personnes ont")} vu ta page aujourd’hui.` : undefined;
-    return (
-      <div className="cz-corps accueil ac">
-        <div className="ac-fil">
-          <button type="button" className="ac-retour" onClick={() => onVoie("choix")}>
-            ‹ Accueil
-          </button>
-          <span className="ac-fil-t">📣 Plus de clients</span>
-        </div>
-        <Guide key="clients" dossier={dossier} texte={texte} sous={sous} />
-        <div className="ac-contenu">
-          {/* IL EN RESTE ? Le soir, c'est LA chose à faire : en premier. */}
-          {principal && relance && !relanceFaite && (
-            <button type="button" className={`ac-relance${relanceChaude ? " chaud" : ""}`} onClick={() => onCommencer(true)}>
-              <span aria-hidden="true">⚡</span>
-              <span>
-                <b>{relance.titre}</b>
-                <em>{relanceChaude ? "Dis-moi ce qu’il te reste, je préviens le quartier." : `Je te le propose à partir de ${enHeure(relance.apres)}.`}</em>
-              </span>
-              <s aria-hidden="true">→</s>
-            </button>
-          )}
-
-          {actives.length > 0 && (
-            <section className="ac-enligne" aria-label="En ligne maintenant">
-              <h2>
-                <i aria-hidden="true" /> En ligne maintenant
-              </h2>
-              {actives.map((p) => (
-                <CarteAnnonce key={p.id} p={p} mission={mission} onRetirer={() => onRetirer(p.id)} />
-              ))}
-              <a className="ac-voir" href={commerce.ville ?? "/autour-de-moi"}>
-                {commerce.reel ? "Voir ma page" : "Voir mon annonce dans la ville"} <s aria-hidden="true">→</s>
-              </a>
-            </section>
-          )}
-
-          {/* ☀️ SA PROPOSITION DU MATIN : prête, un geste — avant les autres façons de publier. */}
-          {!principal && proposition}
-
-          <section className="ac-options" aria-label="Comment publier">
-            <h2>{principal ? "Publier autre chose" : propositionActive ? "Ou bien, à ta façon" : `Publier ${mission.quoi.toLowerCase()}`}</h2>
-            <button type="button" className="ac-option photo" onClick={() => onCommencer(false)}>
-              <span className="ac-option-i" aria-hidden="true">
-                📸
-              </span>
-              <span className="ac-option-t">
-                <b>En photo</b>
-                <em>{principal ? `Remplace ${mission.quoi.toLowerCase()}` : "Ta photo et un mot · 1 minute"}</em>
-              </span>
-              <s aria-hidden="true">→</s>
-            </button>
-            {onInterview && (
-              <button type="button" className="ac-option interview" onClick={onInterview}>
-                <span className="ac-option-i" aria-hidden="true">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/direct/interview/reporter-0.webp" alt="" />
-                </span>
-                <span className="ac-option-t">
-                  <b>En interview</b>
-                  <em>Le reporter te pose ses questions · une vidéo</em>
-                </span>
-                <s aria-hidden="true">→</s>
-              </button>
-            )}
-            {onEpisode && (
-              <button type="button" className="ac-option episode" onClick={onEpisode}>
-                <span className="ac-option-i" aria-hidden="true">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={`${dossier}montre.webp`} alt="" />
-                </span>
-                <span className="ac-option-t">
-                  <b>
-                    En épisode <i className="ac-nouveau">Nouveau</i>
-                  </b>
-                  <em>Je filme ta fabrication et j’en fais ta série</em>
-                </span>
-                <s aria-hidden="true">→</s>
-              </button>
-            )}
-          </section>
-
-          {/* POUR ALLER PLUS LOIN : son message du mois (WhatsApp), et l'interview de demain. */}
-          <CarteMessageDuMois commerce={commerce} nouveautesIci={actives.map((p) => ({ nom: p.nom, ...(p.prix ? { prix: p.prix } : {}) }))} />
-          {onInterview && <DemainLeFantome commerce={commerce} />}
-        </div>
-      </div>
-    );
-  }
-
-  /* ═══ LA QUESTION DU FANTÔME : PLUS DE CLIENTS, OU MOINS DE DÉPENSES ? ═══ */
-  const texte = `Salut${aQui(commerce)} ! Qu’est-ce qu’on fait aujourd’hui ?`;
-  const sous = principal
-    ? auj && auj.vues > 0
-      ? `Ton annonce est en ligne : ${auj.vues} ${accord(auj.vues, "personne l’a vue", "personnes l’ont vue")} aujourd’hui.`
-      : `${mission.quoi} est en ligne sur ta page.`
-    : (veille ?? undefined);
-  const metaClients = relanceChaude
-    ? { mot: "⚡ Il t’en reste ? Dis-le au quartier", chaud: true }
-    : principal
-      ? { mot: `En ligne : ${principal.nom}`, chaud: false, vert: true }
-      : propositionActive
-        ? { mot: "☀️ Ton annonce est prête", chaud: true }
-        : { mot: "Photo, interview ou épisode", chaud: false };
-  const metaDepenses = depenses?.chaud
-    ? { mot: `${depenses.mot} ${Number(depenses.mot) > 1 ? "bons" : "bon"} à valider`, chaud: true }
-    : depenses?.mot
-      ? { mot: `${depenses.mot} à dépenser chez tes voisins`, chaud: false }
-      : { mot: "Jamais plein tarif", chaud: false };
-  return (
-    <div className="cz-corps accueil ac">
-      <Guide key="choix" dossier={dossier} texte={texte} sous={sous} />
-      <div className="ac-contenu">
-        {aFaire}
-        <button type="button" className="ac-voie clients" onClick={() => onVoie("clients")}>
-          <span className="ac-voie-art" aria-hidden="true">
-            <i className="ac-tete a" />
-            <i className="ac-tete b" />
-            <i className="ac-tete c" />
-            <i className="ac-coeur">♥</i>
-          </span>
-          <span className="ac-voie-t">
-            <b>Plus de clients</b>
-            <em>Montre ce que tu fais aujourd’hui</em>
-            <i className={`ac-meta${metaClients.chaud ? " chaud" : ""}${"vert" in metaClients ? " vert" : ""}`}>{metaClients.mot}</i>
-          </span>
-          <s aria-hidden="true">→</s>
-        </button>
-        <button type="button" className="ac-voie depenses" onClick={onDepenses}>
-          <span className="ac-voie-art" aria-hidden="true">
-            <i className="ac-piece a">€</i>
-            <i className="ac-piece b">€</i>
-            <i className="ac-piece c">€</i>
-          </span>
-          <span className="ac-voie-t">
-            <b>Moins de dépenses</b>
-            <em>Échange avec les commerçants du coin</em>
-            <i className={`ac-meta${metaDepenses.chaud ? " chaud" : ""}`}>{metaDepenses.mot}</i>
-          </span>
-          <s aria-hidden="true">→</s>
-        </button>
-
-        {/* ═══ MA BOUTIQUE ═══ ses outils, rangés sous les deux choix : une icône, un mot,
-            une pastille seulement quand il y a quelque chose à faire. */}
-        <section className="ac-boutique" aria-label="Ma boutique">
-          <h2>Ma boutique</h2>
-          <nav className="cz-outils">
-            <Outil icone="planning" nom="Planning" badge={programmees.length || undefined} onClick={onPlanning} />
-            <Outil icone="vitrine" nom="Vitrine" onClick={onVitrine} />
-            <Outil icone="photos" nom="Photos" onClick={onPhototheque} />
-            <Outil icone="carte" nom={carte.titre.replace(/^(Ma|Mes)\s+/, "").replace(/^./, (x) => x.toUpperCase())} onClick={onCarte} />
-            <Outil
-              icone="fantome"
-              nom="Fantôme"
-              badge={enAttente > 0 ? enAttente : sues < questions.length ? `${sues}/${questions.length}` : undefined}
-              chaud={enAttente > 0}
-              onClick={onSavoir}
-            />
-            {reseaux}
-          </nav>
-        </section>
-      </div>
-    </div>
-  );
-}
-
-/* ═══ UN OUTIL DE LA BARRE ═══════════════════════════════════════════════
-   Une icône au trait, un mot, et une pastille quand il y a quelque chose à
-   faire (un nombre, ce qu'il reste à remplir). */
+/* ═══ LES ICÔNES DES OUTILS ═══════════════════════════════════════════════
+   Au trait, comme le reste de la charte : une par outil de sa boutique. */
 const ICONES = {
   planning: (
     <>
@@ -1554,40 +1976,21 @@ const ICONES = {
     </>
   ),
   echanges: <path d="M4 8.5h13.5l-3.2-3.2M20 15.5H6.5l3.2 3.2" />,
+  infos: (
+    <>
+      <rect x="4" y="4.5" width="16" height="15" rx="3" />
+      <circle cx="9.5" cy="10.5" r="2.2" />
+      <path d="M6.5 16.5a3.2 3.2 0 0 1 6 0M14.5 9.5h3M14.5 12.5h3" />
+    </>
+  ),
+  stats: <path d="M4 19V11M10 19V5M16 19v-6M22 19H2" />,
 };
-function Outil({
-  icone,
-  nom,
-  badge,
-  chaud,
-  phare,
-  onClick,
-}: {
-  icone: keyof typeof ICONES;
-  nom: string;
-  badge?: string | number;
-  chaud?: boolean;
-  /** « Échanges », la fonctionnalité phare : sa couleur à lui, pas celle des autres outils. */
-  phare?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button type="button" className={`cz-outil${chaud ? " chaud" : ""}${phare ? " phare" : ""}`} onClick={onClick}>
-      <span className="cz-outil-i" aria-hidden="true">
-        <svg viewBox="0 0 24 24">{ICONES[icone]}</svg>
-      </span>
-      <b>{nom}</b>
-      {badge !== undefined && badge !== "" ? <i className="cz-outil-badge">{badge}</i> : null}
-    </button>
-  );
-}
-
-/** L'outil « Réseaux » : absent tant que l'intermédiaire n'est pas branché, comme l'ancienne carte. */
+/** Le raccourci « Réseaux » : absent tant que l'intermédiaire n'est pas branché, comme l'ancienne carte. */
 function OutilReseaux({ commerce, reseaux, onOuvrir }: { commerce: Commerce; reseaux: ReseauxDuComptoir; onOuvrir: () => void }) {
   const { etat } = reseaux;
   if (!etat || !etat.configure) return null;
   const connectes = etat.plateformes.filter((p) => p.compte).length;
-  return <Outil icone="reseaux" nom="Réseaux" badge={!connectes && commerce.reel ? "!" : undefined} chaud={!connectes && Boolean(commerce.reel)} onClick={onOuvrir} />;
+  return <Raccourci icone="reseaux" nom="Réseaux" badge={!connectes && commerce.reel ? "!" : undefined} chaud={!connectes && Boolean(commerce.reel)} onClick={onOuvrir} />;
 }
 
 /* ═══ LE PANNEAU DES STATS ═══════════════════════════════════════════════
@@ -3540,43 +3943,7 @@ label.cz-go{cursor:pointer;}
   background:rgba(255,46,154,.12);color:var(--creme);font-size:14.5px;text-align:left;animation:ac-entre .45s cubic-bezier(.2,.9,.3,1.2) both;}
 .ac-afaire b{flex:1;font-weight:800;}
 .ac-afaire s{text-decoration:none;font-size:20px;color:var(--rose);}
-.ac-voie{position:relative;display:grid;grid-template-columns:92px minmax(0,1fr) auto;align-items:center;gap:14px;min-height:132px;padding:16px 18px 16px 14px;
-  border:0;border-radius:28px;text-align:left;color:#fff;overflow:hidden;isolation:isolate;
-  transition:transform .2s cubic-bezier(.34,1.5,.64,1);animation:ac-entre .55s cubic-bezier(.2,.9,.3,1.2) both;}
-.ac-voie:active{transform:scale(.97);}
-.ac-voie::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.22) 50%,transparent 65%);
-  transform:translateX(-120%);animation:cz-reflet 4.2s ease-in-out infinite;}
-.ac-voie.clients{background:radial-gradient(120% 120% at 0% 0%,#FF7CC4,#FF2E9A 45%,#A8105F);box-shadow:0 20px 36px -16px rgba(255,46,154,.85);}
-.ac-voie.depenses{background:radial-gradient(120% 120% at 0% 0%,#FFD98A,#F5A23A 45%,#A85E0C);color:#2A1500;box-shadow:0 20px 36px -16px rgba(245,162,58,.8);animation-delay:.08s;}
-.ac-voie.depenses::after{animation-delay:2.1s;}
-.ac-voie-t{min-width:0;}
-.ac-voie-t b{display:block;font-family:var(--font-clikme),sans-serif;font-weight:900;font-size:clamp(21px,6vw,25px);letter-spacing:-.025em;line-height:1.05;}
-.ac-voie-t em{display:block;margin-top:4px;font-style:normal;font-size:14px;line-height:1.3;opacity:.92;}
-.ac-meta{display:inline-flex;align-items:center;max-width:100%;margin-top:10px;padding:5px 11px;border-radius:14px;font-style:normal;font-size:12.5px;font-weight:800;
-  line-height:1.25;background:rgba(0,0,0,.2);}
-.ac-voie.depenses .ac-meta{background:rgba(42,21,0,.14);}
-.ac-meta.chaud{background:#fff;color:#C4146E;box-shadow:0 6px 16px -6px rgba(0,0,0,.4);animation:ac-pouls 1.8s ease-in-out infinite;}
-.ac-voie.depenses .ac-meta.chaud{color:#8A4A00;}
-.ac-meta.vert::before{content:"";flex:none;width:8px;height:8px;margin-right:7px;border-radius:50%;background:#3DE2A6;box-shadow:0 0 0 3px rgba(61,226,166,.35);}
-.ac-voie > s{text-decoration:none;font-size:28px;font-weight:800;opacity:.9;}
-/* les dessins des deux cartes : trois clients qui arrivent, trois pièces qui tombent */
-.ac-voie-art{position:relative;width:92px;height:92px;}
-.ac-tete{position:absolute;width:52px;height:52px;border-radius:50%;border:3px solid #fff;background:#FFE7F2 center 18%/cover no-repeat;
-  box-shadow:0 8px 16px -6px rgba(0,0,0,.45);animation:ac-flotte 3.4s ease-in-out infinite;}
-.ac-tete.a{left:0;top:4px;background-image:url(/direct/double/pied/fleurs/visage.webp);}
-.ac-tete.b{right:0;top:0;width:44px;height:44px;background-image:url(/direct/double/pied/lunettes/visage.webp);animation-delay:-1.1s;}
-.ac-tete.c{left:22px;bottom:0;width:48px;height:48px;background-image:url(/direct/double/pied/librairie/visage.webp);animation-delay:-2.2s;}
-.ac-coeur{position:absolute;right:2px;bottom:10px;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#fff;color:#FF2E9A;
-  font-style:normal;font-size:16px;box-shadow:0 6px 12px -4px rgba(0,0,0,.4);animation:ac-pouls 1.6s ease-in-out infinite;}
-.ac-piece{position:absolute;display:grid;place-items:center;width:54px;height:54px;border-radius:50%;font-style:normal;font-weight:900;font-size:24px;color:#7A4300;
-  background:radial-gradient(circle at 35% 30%,#FFF1C4,#FFC24A 50%,#C77A12);border:3px solid #FFE08A;
-  box-shadow:inset 0 0 0 4px rgba(255,255,255,.25),0 10px 16px -6px rgba(0,0,0,.45);animation:ac-flotte 3s ease-in-out infinite;}
-.ac-piece.a{left:0;top:6px;transform:rotate(-12deg);}
-.ac-piece.b{right:0;top:0;width:44px;height:44px;font-size:19px;animation-delay:-1s;}
-.ac-piece.c{left:26px;bottom:0;width:50px;height:50px;font-size:22px;animation-delay:-2s;}
-.ac-boutique{margin-top:6px;}
-.ac-boutique h2,.ac-options h2,.ac-enligne h2{margin:2px 2px 8px;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--gris);}
-.ac-boutique .cz-outils{margin-top:0;}
+.ac-options h2,.ac-enligne h2{margin:2px 2px 8px;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--gris);}
 /* « Plus de clients » : comment se montrer */
 .ac-fil{display:flex;align-items:center;gap:10px;padding-top:6px;}
 .ac-retour{border:1px solid var(--trait);border-radius:999px;padding:8px 14px;background:var(--nappe);color:var(--creme);font-weight:700;font-size:14px;}
@@ -3614,45 +3981,110 @@ label.cz-go{cursor:pointer;}
 .ac-voir s{text-decoration:none;}
 @keyframes ac-entre{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 @keyframes ac-pouls{50%{transform:scale(1.05)}}
-@keyframes ac-flotte{50%{translate:0 -4px}}
 @media (prefers-reduced-motion:reduce){.ac *,.ac{animation:none!important;}}
-@media (max-width:350px){.ac-voie{grid-template-columns:70px minmax(0,1fr) auto;gap:10px;padding:14px 12px 14px 10px;}.ac-voie-art{transform:scale(.78);transform-origin:0 50%;}}
 
-/* MES OUTILS : une barre fine, une icone au trait par outil */
-.cz-outils{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;padding:10px 4px 9px;margin-top:2px;
-  border-radius:22px;background:rgba(255,244,230,.035);border:1px solid var(--trait);}
-.cz-outil{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:2px 0;border:0;background:none;
-  color:var(--gris);transition:transform .15s ease,color .15s ease;}
-.cz-outil:active{transform:scale(.9);color:var(--creme);}
-.cz-outil-i{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;color:#F2D9BC;background:rgba(245,162,58,.08);
-  transition:background .2s ease;}
-.cz-outil:active .cz-outil-i{background:rgba(245,162,58,.2);}
-.cz-outil-i svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
-.cz-outil b{font-weight:600;font-size:11.5px;letter-spacing:-.01em;white-space:nowrap;}
-.cz-outil-badge{position:absolute;top:-4px;left:calc(50% + 11px);min-width:17px;height:17px;padding:0 5px;border-radius:999px;
-  font-style:normal;font-weight:800;font-size:9.5px;line-height:15px;text-align:center;color:var(--gris);background:var(--nappe2);
-  border:1px solid var(--trait);white-space:nowrap;}
-.cz-outil.chaud .cz-outil-i{color:#fff;background:var(--rose);box-shadow:0 0 16px rgba(255,46,154,.45);}
-.cz-outil.chaud .cz-outil-badge{color:#fff;background:var(--rose);border-color:var(--rose);}
-/* ÉCHANGES, LA FONCTIONNALITÉ PHARE : sa couleur à lui, le vert de l'argent qu'on ne sort pas. */
-.cz-outil.phare b{color:#9FF5C9;}
-.cz-outil.phare .cz-outil-i{color:#04150E;background:linear-gradient(135deg,#9FF5C9,#3DE2A6);box-shadow:0 0 16px rgba(61,226,166,.4);}
-.cz-outil.phare .cz-outil-badge{color:#04150E;background:#9FF5C9;border-color:#3DE2A6;}
-.cz-outil.phare.chaud .cz-outil-badge{color:#fff;background:var(--rose);border-color:var(--rose);}
-@media (max-width:350px){.cz-outils{padding:10px 2px 9px;}.cz-outil-i{width:36px;height:36px;}.cz-outil-i svg{width:20px;height:20px;}
-  .cz-outil b{font-size:9.5px;letter-spacing:-.02em;}.cz-outil-badge{left:calc(50% + 7px);}.cz-deux-choix b{font-size:17px;}}
-/* SEPT OUTILS (« Photos », et « Réseaux » quand il est branché) : des colonnes égales ne
-   suffisent plus — « Réseaux » touchait « Échanges ». Chaque outil prend la place de son mot,
-   et ce qui reste se partage entre eux. */
-.cz-outils:has(> .cz-outil:nth-child(7)){grid-auto-columns:auto;justify-content:space-between;padding:10px 8px 9px;}
-.cz-outils:has(> .cz-outil:nth-child(7)) .cz-outil b{font-size:10.5px;letter-spacing:-.02em;}
-.cz-outils:has(> .cz-outil:nth-child(7)) .cz-outil-i{width:40px;height:40px;}
-@media (max-width:370px){.cz-outils:has(> .cz-outil:nth-child(7)) .cz-outil b{font-size:9.5px;}
-  .cz-outils:has(> .cz-outil:nth-child(7)) .cz-outil-i{width:36px;height:36px;}}
-@media (max-width:340px){.cz-outils:has(> .cz-outil:nth-child(7)){padding:10px 5px 9px;}
-  .cz-outils:has(> .cz-outil:nth-child(7)) .cz-outil b{font-size:9px;}
-  .cz-outils:has(> .cz-outil:nth-child(7)) .cz-outil-i{width:34px;height:34px;}
-  .cz-outils:has(> .cz-outil:nth-child(7)) .cz-outil-i svg{width:19px;height:19px;}}
+@media (max-width:350px){.cz-deux-choix b{font-size:17px;}}
+/* ═══ LES QUATRE ONGLETS — d'après la maquette « Clikme.html » ═══ */
+.ak{overflow-y:auto;overflow-x:hidden;padding:0 20px 24px;scrollbar-width:none;}
+.ak::-webkit-scrollbar{display:none;}
+.ak-haut{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin:0 -20px;padding:max(12px,env(safe-area-inset-top)) 20px 10px;background:linear-gradient(var(--fond) 72%,rgba(18,12,9,0));}
+.ak-marque{font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:23px;letter-spacing:-.04em;color:var(--creme);}
+.ak-haut-d{display:flex;gap:8px;}
+.ak-rond{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:38px;height:38px;padding:0 11px;border-radius:999px;
+  border:1px solid rgba(255,196,140,.18);background:rgba(28,20,17,.75);color:var(--gris);font-weight:800;font-size:13.5px;text-decoration:none;}
+.ak-rond.serie.allume{color:var(--ambre);border-color:rgba(245,162,58,.45);}
+.ak-rond svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;}
+.ak-hero{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:2px;}
+.ak-halos{position:absolute;inset:-70px -12px auto;height:300px;pointer-events:none;
+  background:radial-gradient(150px 150px at 22% 34%,rgba(245,162,58,.28),transparent 70%),radial-gradient(130px 130px at 82% 26%,rgba(255,46,154,.2),transparent 70%);}
+.ak-fantome{position:relative;width:clamp(120px,36vw,150px);aspect-ratio:1;margin-bottom:4px;animation:ak-flotte 4s ease-in-out infinite;}
+.ak-fantome img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 10px 22px rgba(245,162,58,.28));}
+.ak-bonjour{position:relative;margin:0 0 8px;font-size:14px;color:var(--gris);}
+.ak-titre{position:relative;margin:0 0 16px;font-family:var(--font-clikme),sans-serif;font-weight:900;font-size:clamp(27px,8.2vw,33px);line-height:1.08;
+  letter-spacing:-.04em;text-wrap:balance;}
+.ak-stat{position:relative;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;border:1px solid rgba(255,196,140,.18);
+  background:var(--nappe);color:var(--gris);font-size:13.5px;}
+.ak-stat b{font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:15.5px;color:var(--ambre);font-variant-numeric:tabular-nums;}
+.ak-stat i{width:3px;height:3px;border-radius:50%;background:#9A7A62;}
+.ak-actions{display:flex;flex-direction:column;gap:12px;padding-top:26px;}
+.ak-cta,.ak-second{position:relative;display:flex;align-items:center;gap:14px;width:100%;border-radius:22px;text-align:left;overflow:hidden;transition:transform .12s;}
+.ak-cta{flex:none;padding:18px 18px 18px 16px;border:0;background:var(--rose);color:#fff;box-shadow:0 14px 30px -14px rgba(255,46,154,.75);}
+.ak-cta::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,rgba(255,255,255,.14),transparent 60%);}
+.ak-cta:active,.ak-second:active{transform:scale(.98);}
+.ak-cta-i,.ak-second-i{flex:none;display:grid;place-items:center;width:50px;height:50px;border-radius:15px;font-size:25px;}
+.ak-cta-i{background:rgba(255,255,255,.2);}
+.ak-cta-t{flex:1;min-width:0;}
+.ak-cta-t b{display:block;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:18px;letter-spacing:-.025em;line-height:1.15;}
+.ak-cta-t em{display:block;margin-top:3px;font-style:normal;font-size:13.5px;line-height:1.3;opacity:.86;}
+.ak-cta > s,.ak-second > s{flex:none;text-decoration:none;font-size:26px;line-height:1;opacity:.8;}
+.ak-badge{flex:none;padding:4px 10px;border-radius:999px;background:#fff;color:#C4146E;font-style:normal;font-weight:800;font-size:12px;white-space:nowrap;
+  animation:ac-pouls 1.8s ease-in-out infinite;}
+.ak-vert{display:inline-flex;align-items:center;gap:7px;max-width:100%;}
+.ak-vert::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:#3DE2A6;box-shadow:0 0 0 3px rgba(61,226,166,.35);}
+.ak-second{padding:16px 18px 16px 16px;border:1px solid rgba(255,196,140,.18);background:var(--nappe);color:var(--creme);}
+.ak-second-i{background:rgba(245,162,58,.14);}
+.ak-second .ak-cta-t em{color:var(--gris);opacity:1;}
+.ak-second > s{color:#9A7A62;opacity:1;}
+.ak-meta{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:999px;background:rgba(245,162,58,.12);color:var(--ambre);
+  font-style:normal;font-weight:700;font-size:12px;}
+.ak-meta.chaud{background:var(--rose);color:#fff;}
+.ak-raccourcis{padding-top:26px;}
+.ak-raccourcis h2{margin:0 2px 12px;font-size:12.5px;font-weight:600;letter-spacing:.02em;color:#9A7A62;}
+.ak-grille{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.ak-tuile{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 6px 12px;border-radius:16px;
+  border:1px solid var(--trait);background:var(--nappe);color:var(--gris);transition:transform .12s,background .15s;}
+.ak-tuile:active{transform:scale(.96);background:var(--nappe2);}
+.ak-tuile-i{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:13px;color:#F2D9BC;background:rgba(245,162,58,.09);}
+.ak-tuile-i svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+.ak-tuile b{font-weight:600;font-size:12px;letter-spacing:-.01em;white-space:nowrap;}
+.ak-tuile-p{position:absolute;top:8px;right:8px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;font-style:normal;font-weight:800;font-size:10px;
+  line-height:16px;text-align:center;color:var(--gris);background:var(--nappe2);border:1px solid var(--trait);}
+.ak-tuile.chaud .ak-tuile-i,.ak-ligne.chaud .ak-tuile-i{color:#fff;background:var(--rose);box-shadow:0 0 16px rgba(255,46,154,.45);}
+.ak-tuile.chaud .ak-tuile-p,.ak-ligne.chaud .ak-tuile-p{color:#fff;background:var(--rose);border-color:var(--rose);}
+/* les pages des onglets : Ma boutique, Profil, Mes infos */
+.ak.onglet{display:flex;flex-direction:column;gap:14px;padding-top:max(16px,env(safe-area-inset-top));}
+.ak-page-t h1{margin:4px 0 2px;font-family:var(--font-clikme),sans-serif;font-weight:900;font-size:30px;letter-spacing:-.04em;}
+.ak-page-t p{margin:0;color:var(--gris);font-size:14px;}
+.ak-liste{display:flex;flex-direction:column;border-radius:20px;border:1px solid var(--trait);background:var(--nappe);overflow:hidden;}
+.ak-ligne{position:relative;display:flex;align-items:center;gap:13px;min-height:68px;padding:12px 14px;border:0;border-top:1px solid var(--trait);
+  background:none;color:var(--creme);text-align:left;}
+.ak-ligne:first-child{border-top:0;}
+.ak-ligne:active:not(:disabled){background:var(--nappe2);}
+.ak-ligne:disabled{opacity:.6;}
+.ak-ligne-t{flex:1;min-width:0;}
+.ak-ligne-t b{display:block;font-family:var(--font-clikme),sans-serif;font-weight:700;font-size:15.5px;letter-spacing:-.01em;}
+.ak-ligne-t em{display:block;margin-top:2px;font-style:normal;font-size:13px;line-height:1.3;color:var(--gris);}
+.ak-ligne .ak-tuile-p{position:static;flex:none;}
+.ak-ligne > s{text-decoration:none;font-size:22px;color:#9A7A62;}
+.ak-profil{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:6px 0 4px;}
+.ak-profil img{width:84px;height:84px;border-radius:50%;object-fit:cover;object-position:50% 10%;background:var(--nappe2);box-shadow:0 0 0 3px var(--ambre);margin-bottom:8px;}
+.ak-profil h1{margin:0;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:23px;letter-spacing:-.03em;}
+.ak-profil p{margin:0;color:var(--gris);font-size:13.5px;}
+.ak-profil.petit img{width:64px;height:64px;}
+.ak-changer{align-self:center;}
+.ak-infos{margin:0;display:flex;flex-direction:column;border-radius:20px;border:1px solid var(--trait);background:var(--nappe);}
+.ak-infos div{padding:12px 16px;border-top:1px solid var(--trait);}
+.ak-infos div:first-child{border-top:0;}
+.ak-infos dt{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9A7A62;}
+.ak-infos dd{margin:3px 0 0;font-size:15.5px;}
+.ak-note{margin:0;text-align:center;font-size:13.5px;color:var(--gris);}
+a.cz-go{text-decoration:none;}
+/* le menu du bas */
+.ak-nav{flex:none;display:flex;gap:4px;padding:8px 12px max(10px,env(safe-area-inset-bottom));background:rgba(18,12,9,.94);
+  border-top:1px solid rgba(255,196,140,.16);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);}
+.ak-nav button{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px 6px;border:0;border-radius:14px;
+  background:none;color:#9A7A62;transition:color .15s,background .15s;}
+.ak-nav button.on{color:var(--rose);background:rgba(255,46,154,.1);}
+.ak-nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.ak-nav span{font-size:11px;font-weight:600;white-space:nowrap;}
+.ak-nav-p{position:absolute;top:2px;left:calc(50% + 7px);min-width:13px;height:17px;padding:0 3px;border-radius:999px;background:var(--rose);color:#fff;
+  font-style:normal;font-weight:800;font-size:10px;line-height:17px;text-align:center;border:2px solid var(--fond);}
+.ak-nav-p.point{min-width:0;width:8px;height:8px;padding:0;top:5px;}
+@keyframes ak-flotte{50%{transform:translateY(-7px)}}
+@media (prefers-reduced-motion:reduce){.ak *,.ak{animation:none!important;}}
+@media (max-width:350px){.ak{padding:0 14px 20px;}.ak-haut{margin:0 -14px;padding-left:14px;padding-right:14px;}.ak-grille{gap:6px;}
+  .ak-tuile b{font-size:11px;}.ak-nav span{font-size:10px;}.ak-cta-i,.ak-second-i{width:44px;height:44px;font-size:22px;}}
 
 /* L'INTERVIEW, PAR-DESSUS LE COMPTOIR */
 .cz-interview{position:absolute;inset:0;z-index:40;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#05090C;}
