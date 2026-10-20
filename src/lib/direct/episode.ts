@@ -24,8 +24,8 @@ export const GARDES_MAX = 40;
 export const IMAGES_MAX = 220;
 /** Une image toutes les deux secondes au début ; l'écart double quand il y en a trop. */
 export const IMAGE_PAS_S = 2;
-/** La session s'arrête toute seule au bout d'une heure et demie. */
-export const SESSION_MAX_S = 90 * 60;
+/** La session s'arrête toute seule au bout d'une heure : « maximum 1 heure » (le temps d'une préparation). */
+export const SESSION_MAX_S = 60 * 60;
 /** En dessous, il n'y a pas d'épisode à monter. */
 export const SESSION_MIN_S = 30;
 

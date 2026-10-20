@@ -513,7 +513,10 @@ export async function monterEpisode(o: {
           if (a > 0) {
             c2d.save();
             c2d.globalAlpha = a;
-            texte(c2d, o.produit.trim(), W / 2, 1070, `italic 600 52px ${P.serif}`, CREME, { align: "center", ombre: 3 });
+            // UN NOM LONG (« Magret grillé, pommes sarladaises ») RAPETISSE pour tenir entre les bords
+            c2d.font = `italic 600 52px ${P.serif}`;
+            const corpsNom = Math.max(30, Math.min(52, Math.floor((52 * (W - 120)) / Math.max(1, c2d.measureText(o.produit.trim()).width))));
+            texte(c2d, o.produit.trim(), W / 2, 1070, `italic 600 ${corpsNom}px ${P.serif}`, CREME, { align: "center", ombre: 3 });
             c2d.restore();
           }
         }

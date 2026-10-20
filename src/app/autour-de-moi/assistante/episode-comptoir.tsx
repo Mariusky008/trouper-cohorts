@@ -395,7 +395,7 @@ export function EpisodeComptoir({
     await monter(t, sonAtelier);
   };
 
-  /* LA SESSION S'ARRÊTE TOUTE SEULE AU BOUT D'UNE HEURE ET DEMIE */
+  /* LA SESSION S'ARRÊTE TOUTE SEULE AU BOUT D'UNE HEURE */
   const auto = useRef(false);
   useEffect(() => {
     if (etape !== "session" || !etat || etat.ecoule < SESSION_MAX_S || auto.current) return;
@@ -473,7 +473,7 @@ export function EpisodeComptoir({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`${dossier}repos.webp`} alt="" />
             <p>
-              Pose ton téléphone là où tu fabriques, et travaille comme d’habitude. Je filme, je garde les meilleurs moments, et j’en fais{" "}
+              Pose ton téléphone là où tu fabriques, et travaille comme d’habitude (1 h au plus). Je filme, je garde les meilleurs moments, et j’en fais{" "}
               <b>
                 l’épisode {serie.numero} de ta série {serie.saison}
               </b>
