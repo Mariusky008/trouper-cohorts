@@ -9246,10 +9246,13 @@ export function ApercuHabitant({
                    remontre. */
                 !ouvertureVue ? (
                   <EcranSalon
-                    onEntrer={() => setOuvertureVue(true)}
-                    /* PASSER LA DÉMO : le même geste que « Entrer » de l'écran de
-                       choix — on arrive dans l'application. */
-                    onPasser={() => {
+                    /* « CACHE LA DÉMO : LE BOUTON "JE TENTE L'EXPÉRIENCE" AMÈNE
+                       DIRECTEMENT À L'APP. » Il fait ce que faisait « Passer la
+                       démo », et ce lien disparaît (pas d'`onPasser`) : on va
+                       dans l'application quoi qu'il en soit. L'écran de choix et
+                       les parcours ci-dessous restent dans le code, mais plus
+                       rien n'y mène depuis cet accueil. */
+                    onEntrer={() => {
                       setOuvertureVue(true);
                       jouer("ouvrir");
                       marquerVu("accueil");
