@@ -199,6 +199,22 @@ export type GesteDuJour = {
   /** Ce que l'assistante en tire, tel qu'elle l'affiche. */
   extrait: { titre: string; lignes: string[]; prix: string };
   /**
+   * ═══ CE QU'IL PEUT FAIRE SAVOIR, EN TROIS PUCES — l'étape 3 ═══════════════
+   *
+   * « D'abord quel type d'infos le commerçant veut envoyer, ensuite en
+   * fonction on lui demande des photos ou des vocaux ou juste de lancer sa
+   * caméra, ensuite de notre côté nous construisons automatiquement sa vidéo
+   * animée et commentée et enfin elle part sur tous les réseaux sociaux et sur
+   * ClikMe. » Le premier temps de l'étape 3 est ce choix : trois puces dans
+   * les mots du métier, et LA PREMIÈRE EST CELLE QU'IL TOUCHE — celle dont
+   * `extrait` est la réponse.
+   */
+  sujets: [string, string, string];
+  /** LA PHRASE QUI OUVRE L'ÉTAPE 3, quand « Et pour apparaître dans Le Direct… » ne suit pas l'étape 2 chez lui. */
+  pont?: string;
+  /** UNE PHRASE APRÈS LE DÉPART, quand le métier a plus à dire : chez la mode, l'essayage. */
+  ensuite?: string;
+  /**
    * CE QUI EST PUBLIÉ, EN UN GROUPE NOMINAL — pour la phrase qui ouvre le
    * dernier acte : « Une fois votre menu dans Le Direct… ». Il se déduisait de
    * `envoi` en retirant le verbe, et donnait chez un commerce de passage
@@ -431,6 +447,7 @@ export function gesteDuJour(
           lignes: ["Jazz en trio, à partir de 21 h", "Ardoise et verres au comptoir"],
           prix: "",
         },
+        sujets: ["🎷 La soirée de ce soir", "🍷 Une nouveauté", "🪑 Des places libres"],
         retours: [
           { heure: "18 h 20", icone: "❤️", nombre: "41", quoi: `${gentile} l'auront vu passer` },
           { heure: "19 h 05", icone: "🍷", nombre: "9", quoi: "ont dit qu'ils venaient", demande: true },
@@ -473,6 +490,7 @@ export function gesteDuJour(
         lignes: ["Garbure landaise", "Magret grillé", "Dessert maison"],
         prix: "19 €",
       },
+      sujets: ["🍽️ Le menu du jour", "🕐 Des tables libres", "🎉 Une soirée"],
       // LES PRÉCOMMANDES ONT DISPARU DE CETTE LISTE : la fonction n'existe pas.
       // Les j'aime et les réservations, si. Un seul élément faux au milieu de
       // deux vrais suffit à rendre les deux autres suspects.
@@ -531,6 +549,7 @@ export function gesteDuJour(
         lignes: ["Un roman qu'on ne lâche plus", "Je vous le mets de côté"],
         prix: "",
       },
+      sujets: ["📚 Mon coup de cœur", "📦 Une nouveauté", "✍️ Une rencontre"],
       retours: [
         { heure: "10 h 40", icone: "❤️", nombre: "26", quoi: `${gentile} l'auront vu passer` },
         { heure: "12 h 15", icone: "📚", nombre: "5", quoi: "livres mis de côté", demande: true },
@@ -609,6 +628,13 @@ export function gesteDuJour(
         lignes: ["Chemise à volants rose poudré", "Du 36 au 44 · à essayer sur soi"],
         prix: "59 €",
       },
+      sujets: ["👗 La pièce du jour", "📦 Un arrivage", "✨ Une pièce particulière"],
+      /* L'ÉTAPE 2 S'EST TERMINÉE CHEZ ELLE, dans sa Maison : « Le Direct » n'y est
+         plus le dernier mot, sa pièce l'est. */
+      pont: "Et pour que votre pièce arrive jusqu'à elles, vous n'avez presque rien à faire.",
+      /* Ses mots, repris de `suite` : c'est l'essayage qui distingue sa publication.
+         « Votre pièce » et non « l' » : la phrase d'avant finit sur la vidéo. */
+      ensuite: "Ensuite, chacune peut essayer votre pièce sur sa photo et entendre votre propre voix lui en parler.",
       /* « Les heures et les nombres ne sont pas bons : 15 h 30, 549 habitants
          l'auront vue passer ; 16 h 05, 19 l'auront essayée virtuellement. » */
       /* « Maintenant, imaginons votre pièce publiée cet après-midi. 15 h 30 —
@@ -708,6 +734,7 @@ export function gesteDuJour(
         lignes: ["Arrivé ce matin", "Ce qui part le plus vite"],
         prix: "",
       },
+      sujets: ["🧺 Ce qui arrive ce matin", "✨ Une nouveauté", "🏷️ Ce qu'il reste ce soir"],
       retours: [
         { heure: "7 h 40", icone: "❤️", nombre: "28", quoi: `${gentile} l'auront vu passer` },
         { heure: "8 h 15", icone: "🧺", nombre: "6", quoi: "pièces mises de côté", demande: true },
@@ -742,6 +769,7 @@ export function gesteDuJour(
         lignes: [`3 ${v.places} libres cet après-midi`, "À partir de 14 h"],
         prix: "",
       },
+      sujets: [`🕐 Mes ${v.places} libres`, "✨ Une nouveauté", "🎁 Un geste pour mes habitués"],
       retours: [
         { heure: "9 h 25", icone: "❤️", nombre: "22", quoi: `${gentile} l'auront vu passer` },
         // L'accord suit le genre du mot, qui est rangé à côté de lui : sans
@@ -773,6 +801,7 @@ export function gesteDuJour(
     demande: "Quand êtes-vous disponible cette semaine ?",
     envoi: "votre disponibilité part",
     extrait: { titre: "Cette semaine", lignes: ["Disponible à partir de jeudi"], prix: "" },
+    sujets: ["📅 Mes disponibilités", "🛠️ Un chantier terminé", "✨ Une nouveauté"],
     retours: [
       { heure: "9 h 25", icone: "❤️", nombre: "18", quoi: `${gentile} l'auront vu passer` },
       { heure: "10 h 40", icone: "📞", nombre: "2", quoi: "demandes reçues", demande: true },

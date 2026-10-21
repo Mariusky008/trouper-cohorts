@@ -151,8 +151,7 @@ type Scene =
   | ""
   | "bascule"
   | "qui"
-  | "invisible"
-  | "photo"
+  | "geste"
   | "garde"
   | "salons"
   | "retour"
@@ -456,67 +455,61 @@ export function DemoTour({
     return i < 0 ? null : (QUI_AT[i] ?? null);
   };
 
-  // ── ACTE 4 · ET VOUS ? ─────────────────────────────────────────────────
-  //    Trois temps : où dort son information, le compliment, le retournement.
-  //    Le compliment n'est pas de la politesse — sans lui, la phrase suivante
-  //    se lit comme un reproche sur son ardoise, et il se ferme.
-  /* DEUX TEMPS AU LIEU DE TROIS. Le troisième — « et eux cherchent,
-     maintenant, à quatre cents mètres de chez vous » — redit l'acte d'avant,
-     qui vient de montrer la ville en train de chercher. On garde le constat et
-     le compliment ; la comparaison a déjà été faite à l'écran. */
-  const iEux = G ? G.pasVu.indexOf("Et eux") : -1;
-  const INVISIBLE_DIT = G
-    ? [G.ouDort, iEux > 0 ? G.pasVu.slice(0, iEux).trim() : G.pasVu].filter(Boolean)
-    : [];
+  // ── ÉTAPE 3 · VOUS N'AVEZ PRESQUE RIEN À FAIRE ─────────────────────────
+  /* ═══ ELLE NE REVIENT PLUS EN ARRIÈRE ═══════════════════════════════════
 
-  // ── ACTE 5 · LE GESTE ──────────────────────────────────────────────────
-  //    Trois secondes, et rien d'autre à faire. Le verbe de lecture suit le
-  //    geste (on ne « lit » pas ce qui est dicté), et ce qui part vient de
-  //    `geste-du-jour` avec son accord déjà fait : « votre menu part », mais
-  //    « vos créneaux libres partent ».
-  const PHOTO_DIT = G
+     « "Vous, à cette heure-là, ce qui se passe chez vous ce soir, vous êtes
+     seul à le savoir" : la liaison est mal faite avec la dernière phrase,
+     "et la demande arrive chez vous", parce que si la demande arrive chez
+     vous, c'est qu'ils ont déjà été découverts grâce au Direct — et là, tout à
+     coup, on a l'impression de revenir en arrière dans la narration. »
+
+     LE CONSTAT EST PARTI (`ouDort`, `pasVu`) : il disait le manque après que
+     l'étape 2 l'avait comblé. L'étape s'ouvre sur ce qui suit vraiment une
+     demande reçue — comment on apparaît dans Le Direct —, puis déroule le tour
+     du fantôme, un temps par phrase : « d'abord quel type d'infos le
+     commerçant veut envoyer, ensuite en fonction on lui demande des photos ou
+     des vocaux ou juste de lancer sa caméra, ensuite nous construisons
+     automatiquement sa vidéo animée et commentée, et enfin elle part sur tous
+     les réseaux sociaux et sur ClikMe ».
+
+     LES RÉSEAUX NOMMÉS SONT CEUX QUE L'APPLICATION PUBLIE par défaut
+     (`PLATEFORMES_PAR_DEFAUT`), et la phrase dit « vos réseaux » : ce sont
+     ses comptes à lui, une fois reliés. `temps` est le panneau qu'elle montre
+     (−1 : le fil des quatre temps, seul). */
+  const GESTE_TEMPS: { dit: string; temps: number }[] = G
     ? [
-        // LE GESTE SE DIT EN UNE PROPOSITION. « Pour rejoindre Le Direct, tout
-        // ce que vous avez à faire, c'est de me dire… » met huit mots avant le
-        // verbe ; la version courte le met en tête, là où on l'entend.
-        `${G.gesteCourt ?? G.gesteDit}`,
-        /* ═══ ET ELLE DIT CE QUE LA CONVERSATION PRODUIT VRAIMENT ══════════
-
-           « On discute avec l'IA pour lui dire le menu et les spécificités qui
-           iront dans le parcours en quatre étapes, avec la voix du restaurateur
-           à l'étape 3. »
-
-           LA PHRASE S'ARRÊTAIT À LA CARTE DU DIRECT, et c'était la moitié de la
-           vérité. La seconde moitié est celle qui distingue ClikMe de n'importe
-           quelle publication : la même conversation remplit son parcours, et sa
-           VOIX y reste telle quelle. Une photo d'ardoise n'aurait jamais pu
-           produire ça — c'est pour cette raison que le geste a changé, et il
-           faut donc que la phrase le dise. */
-        G.suite ?? `${G.parPhoto ? "Je la lis, je l'écris" : "Je l'écris"}, et ${G.envoi} sur votre page et dans Le Direct.`,
-        /* ═══ LA TROISIÈME PHRASE EST PARTIE, ET LA PASTILLE AVEC ══════════
-
-           « Étape 3 : supprimer "4 écrans, votre voix à l'étape 3". »
-
-           ELLE DISAIT VRAI ET ELLE ARRIVAIT TROP TÔT. L'acte montre UNE chose —
-           ce qu'il dit part dans Le Direct — et on lui en empilait une seconde,
-           en vocabulaire interne (« votre parcours », « l'étape 3 ») devant
-           quelqu'un qui n'a encore vu aucun parcours. Le bloc « Ce que votre
-           page fera », lui, est sur sa page, en entier, avec les quatre écrans
-           nommés : c'est là que cette phrase a un sens, et pas avant. */
+        { temps: -1, dit: G.pont ?? "Et pour apparaître dans Le Direct, vous n'avez presque rien à faire." },
+        { temps: 0, dit: "D'abord, vous me dites ce que vous voulez faire savoir, en une phrase." },
+        { temps: 1, dit: "Selon ce que c'est, je vous demande une photo, un vocal, ou simplement de lancer votre caméra." },
+        { temps: 2, dit: "Ensuite, nous montons votre vidéo automatiquement : animée, sous-titrée, et commentée par votre voix ou par notre spécialiste." },
+        { temps: 3, dit: `Et elle part sur vos réseaux, Instagram, Facebook et Google, et dans Le Direct de ${laVille}.` },
+        ...(G.ensuite ? [{ temps: 3, dit: G.ensuite }] : []),
       ]
     : [];
-  /**
-   * LE MANQUE ET SA RÉPONSE, EN UNE SEULE RÉPLIQUE — donc en un seul acte.
-   *
-   * Voir l'acte « Et vous ? » plus bas : les deux moitiés se disaient dans
-   * deux étapes séparées par une transition d'écran, alors qu'elles forment
-   * une phrase. `PART_GESTE` est l'instant où la voix passe de l'une à
-   * l'autre, et c'est là que la scène bascule.
-   */
-  const SAY_MANQUE = [...INVISIBLE_DIT, ...PHOTO_DIT].join(" ");
-  const INVISIBLE_AT = INVISIBLE_DIT.map((p) => partAu(SAY_MANQUE, p));
-  const PHOTO_AT2 = PHOTO_DIT.map((p) => partAu(SAY_MANQUE, p));
-  const PART_GESTE = PHOTO_AT2[0] ?? 1;
+  const GESTE_DIT = GESTE_TEMPS.map((t) => t.dit);
+  const SAY_GESTE = GESTE_DIT.join(" ");
+  const GESTE_AT = GESTE_DIT.map((p) => partAu(SAY_GESTE, p));
+  /** L'INSTANT D'UN MOT, CHERCHÉ DANS SA PHRASE : « Le Direct » est aussi dans la première. */
+  const gesteMot = (i: number, mot: string): number => {
+    const j = i < 0 ? -1 : GESTE_DIT[i].indexOf(mot);
+    return (GESTE_AT[i] ?? 0) + (j < 0 ? 0 : j / SAY_GESTE.length);
+  };
+  const gesteDe = (temps: number) => GESTE_TEMPS.findIndex((t) => t.temps === temps);
+  /** Le titre du panneau, par temps (le premier : le fil seul, sur la phrase d'ouverture). */
+  const GESTE_TITRES = [
+    "Deux gestes pour vous. Le reste, pour nous.",
+    "Ce que vous voulez faire savoir",
+    "Une photo, un vocal, ou votre caméra",
+    "Votre vidéo se monte toute seule",
+    "Et elle part partout",
+  ];
+  /** Les trois façons de la page d'accueil et du tour du fantôme, dans les mêmes mots. */
+  const FACONS = [
+    { ic: "📷", t: "Des photos", s: "Notre spécialiste raconte à votre place" },
+    { ic: "🎙️", t: "Un vocal", s: "Trois questions, vous répondez à la voix" },
+    { ic: "🎥", t: "Votre caméra", s: "Posez le téléphone, je vous filme au travail" },
+  ];
 
   // ── ACTE 6 · CE QUI VOUS REVIENT ───────────────────────────────────────
   //    Le seul moment de toute la démonstration où quelque chose revient VERS
@@ -692,10 +685,17 @@ export function DemoTour({
    * des quatre écrans du récit. */
   /** VRAI sur le dernier temps de l'acte 7 : les quatre cartes se rassemblent. */
   const [quiN, setQuiN] = useState(0);
-  const [invN, setInvN] = useState(0);
-  const [photoN, setPhotoN] = useState(0);
-  /** Le vocal est-il dit ? Chez la mode, il arrive sur « ajoutez votre voix » (`momentVoix`). */
-  const [voixDite, setVoixDite] = useState(false);
+  /** La phrase de l'étape 3 que la voix dit — voir `GESTE_TEMPS`. */
+  const [gesteN, setGesteN] = useState(0);
+  /** Il a touché sa puce (premier temps). */
+  const [gsChoisi, setGsChoisi] = useState(false);
+  /** Combien de façons sont allumées (deuxième temps), de destinations (quatrième). */
+  const [gsFacon, setGsFacon] = useState(0);
+  const [gsReseau, setGsReseau] = useState(0);
+  /** La durée du montage (troisième temps) : celle de sa phrase. */
+  const [gsFilmMs, setGsFilmMs] = useState(0);
+  /** Le panneau de l'étape 3 que montre la phrase dite (−1 : le fil seul). */
+  const gsTemps = GESTE_TEMPS[gesteN]?.temps ?? -1;
   const [retourN, setRetourN] = useState(0);
   /** La phrase de l'étape 2 que la voix dit : 0 l'essai, puis 1 à 3 les salons. */
   const [essaiN, setEssaiN] = useState(0);
@@ -1449,67 +1449,39 @@ export function DemoTour({
         respire: 1500,
       });
 
-      // ── ACTE 4. ET VOUS ? ────────────────────────────────────────────────
+      // ── ÉTAPE 3. VOUS N'AVEZ PRESQUE RIEN À FAIRE ───────────────────────
       //
-      // On vient de montrer la ville ; on montre maintenant qu'il n'y est pas.
-      // Sans le compliment du deuxième temps, la phrase se lit comme un
-      // reproche sur son ardoise — et il se ferme au lieu d'écouter.
-      /* ═══ LE PROBLÈME ET SA RÉPONSE NE FONT PLUS QU'UN ACTE ════════════
-
-         « Votre information dort dans votre carnet » et « voilà le geste de
-         trois secondes » sont les deux moitiés d'une même phrase : l'une pose
-         le manque, l'autre le comble. Séparées par une transition d'écran,
-         on laissait refroidir le manque avant d'y répondre — et on payait huit
-         secondes pour ça.
-
-         LA SCÈNE BASCULE AU MILIEU DE LA VOIX, pas entre deux actes. C'est le
-         mécanisme qui sert déjà au dernier acte, où le retour laisse la place
-         à la clôture sans qu'on change d'étape : on repère l'instant où la
-         voix attaque la seconde moitié, et l'image suit. */
+      // L'étape 2 vient de finir sur une demande reçue ; celle-ci dit comment
+      // on en arrive là, dans l'ordre du tour du fantôme — voir `GESTE_TEMPS`.
+      // CHAQUE TEMPS TOMBE SUR SA PHRASE, et dans chaque temps le geste tombe
+      // sur son mot : la puce qu'il touche, la façon qu'elle nomme, la
+      // destination qu'elle cite. Le montage, lui, dure sa phrase entière.
       steps.push({
         title: "Vous n'avez presque rien à faire",
-        say: SAY_MANQUE,
+        say: SAY_GESTE,
         enter: () => {
-          setScene("invisible");
-          suivre(SAY_MANQUE, INVISIBLE_DIT, INVISIBLE_AT, setInvN);
-          window.setTimeout(() => {
-            chime();
-            setScene("photo");
-            setPhotoN(0);
-            setVoixDite(false);
-            /* ═══ TROIS TEMPS, ET LE DERNIER DURE ═════════════════════════
-
-               « Étape 4, les annonces ne se voient qu'une ou deux secondes et
-               le reste du temps c'est vide. »
-
-               C'EST ENCORE MOI, ET C'EST LE MÊME GENRE DE FAUTE. La carte du
-               Direct n'apparaît qu'à `photoN >= 2`, et je l'avais calée sur
-               les mots « sur votre page ». Dans la réplique courte d'avant,
-               ces mots tombaient au milieu ; dans la réplique fusionnée, ils
-               tombent à quatre-vingt-cinq pour cent — donc la carte n'avait
-               plus qu'une seconde d'écran, tout à la fin.
-
-               ELLE SE POSE MAINTENANT AU DÉBUT DE LA SECONDE PHRASE, celle qui
-               dit « je l'écris, et ça part sur votre page et dans Le Direct »,
-               et elle y reste jusqu'au bout de l'acte. C'est l'image de
-               bascule de toute la démonstration : le même contenu, mais dans
-               l'écran de ses clients. Elle mérite plus qu'une seconde. */
-            const t0 = quand(SAY_MANQUE, PART_GESTE);
-            // ① ON LIT L'ARDOISE, OU ON L'ÉCOUTE — le temps de l'animation.
-            //    CHEZ LA MODE, SUR SES MOTS : la photo arrive sur « Une photo
-            //    suffit », le vocal sur « ajoutez votre voix ».
-            const motA = (m?: string) => (m && SAY_MANQUE.includes(m) ? quand(SAY_MANQUE, partAu(SAY_MANQUE, m)) - t0 : null);
-            const tPhoto = motA(G.momentPhoto);
-            window.setTimeout(() => setPhotoN(1), tPhoto != null ? Math.max(600, tPhoto) : 1200);
-            const tVoix = motA(G.momentVoix);
-            if (tVoix != null) window.setTimeout(() => setVoixDite(true), Math.max(900, tVoix));
-            // ② PUIS ÇA PART, et la carte reste à l'écran jusqu'à la fin.
-            const t1 = quand(SAY_MANQUE, PHOTO_AT2[1] ?? PART_GESTE) - t0;
-            window.setTimeout(() => {
-              setPhotoN(2);
-            }, Math.max(1400, t1));
-          }, quand(SAY_MANQUE, PART_GESTE));
+          chime();
+          setGsChoisi(false);
+          setGsFacon(0);
+          setGsReseau(0);
+          setScene("geste");
+          suivre(SAY_GESTE, GESTE_DIT, GESTE_AT, setGesteN);
+          const iDire = gesteDe(0);
+          const iFacons = gesteDe(1);
+          const iFilm = gesteDe(2);
+          const iPart = gesteDe(3);
+          // ① SA PUCE, UN TEMPS APRÈS LA PHRASE : on voit le choix, puis sa réponse.
+          window.setTimeout(() => setGsChoisi(true), quand(SAY_GESTE, GESTE_AT[iDire]) + 1100);
+          ["une photo", "un vocal", "caméra"].forEach((mot, k) =>
+            window.setTimeout(() => setGsFacon(k + 1), quand(SAY_GESTE, gesteMot(iFacons, mot))),
+          );
+          setGsFilmMs(Math.max(2500, quand(SAY_GESTE, (GESTE_AT[iFilm + 1] ?? 1) - GESTE_AT[iFilm])));
+          ["Instagram", "Facebook", "Google", "Le Direct de"].forEach((mot, k) =>
+            window.setTimeout(() => setGsReseau(k + 1), quand(SAY_GESTE, gesteMot(iPart, mot))),
+          );
         },
+        // La carte du Direct vient de s'ouvrir sur la dernière phrase : on la laisse voir.
+        respire: 1400,
       });
 
       // ── ACTE 6. CE QUI LUI REVIENT ───────────────────────────────────────
@@ -1771,7 +1743,7 @@ export function DemoTour({
              maintenant la charte de ses pages — nuit brune (#120C09), crème
              (#FFF4E6), ambre (#F5A23A) pour ce qui s'allume, rose (#FF2E9A)
              pour ce qu'on touche — et ses titres sont dans la police ClikMe. */
-          .dtour-launch .t,.dtour-top .dt-title,.cp-1,.bo-1,.bo-2,.qi-n,.qi-q b,.ph-h,.rt-h,.iv-h,.qi-resa-t{
+          .dtour-launch .t,.dtour-top .dt-title,.cp-1,.bo-1,.bo-2,.qi-n,.qi-q b,.ph-h,.rt-h,.qi-resa-t{
             font-family:var(--font-clikme),var(--font-geist-sans),system-ui,sans-serif;}
 
           /* ── L'ÉCRAN DE LANCEMENT ────────────────────────────────────── */
@@ -2209,76 +2181,15 @@ export function DemoTour({
              va (voir .qi-tete). Il partageait l'écran avec la carte, et les
              deux y perdaient — un nombre trop petit pour frapper, une carte
              trop petite pour se lire. */
-          /* ── ACTE 4 · ET VOUS ? ──────────────────────────────────────── */
-          .dtour-card.iv{text-align:center;}
-          .iv-h{font-size:15.5px;line-height:1.4;font-weight:700;color:#1A0F08;text-wrap:balance;
-            animation:dtRise .45s var(--exp) .12s both;}
-          /* L'ardoise se pose de travers puis se redresse : elle a l'air posée
-             devant la porte, pas collée dans une maquette. */
-          .iv-ard{margin:14px 0 0;border-radius:14px;padding:14px 12px;background:#2A1C15;color:#FFF4E6;
-            display:flex;flex-direction:column;gap:5px;font-family:Georgia,serif;
-            box-shadow:0 20px 40px -22px rgba(28,20,17,.9);animation:dtArd .58s var(--exp) .22s both;}
-          @keyframes dtArd{
-            from{opacity:0;transform:translate3d(0,16px,0) rotate(-2.2deg) scale(.96);filter:blur(10px)}
-            to{opacity:1;transform:none;filter:blur(0)}
-          }
-          .iv-ard span{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#CDB8A4;}
-          .iv-ard i{font-style:normal;font-size:14.5px;}
-          /* LE COMPLIMENT. Il n'est pas de la politesse : sans lui, la phrase
-             suivante se lit comme un reproche sur son ardoise, et il se ferme
-             au lieu d'écouter. Il est donc écrit en petit et en gris — un
-             constat, pas une accusation. */
-          .iv-ok{padding-top:15px;font-size:14.5px;line-height:1.45;color:#8C7666;text-wrap:balance;}
-          /* LE RETOURNEMENT. Il n'est plus crié en capitales — « ET EUX SONT À
-             QUATRE CENTS MÈTRES » hurlait sur une carte blanche. Une phrase
-             posée, en gros, qui se découvre par le volet et dont
-             l'interlettrage se resserre en arrivant : le sens porte tout seul. */
-          .iv-x{padding-top:16px;margin-top:15px;border-top:1px solid #F3E9DD;
-            font-size:clamp(16px,3.6vw,19px);font-weight:800;line-height:1.28;
-            color:#1A0F08;text-wrap:balance;}
-          .dt-ouvre.on .iv-x{animation:dtSerre .58s var(--exp) .12s both;}
-          @keyframes dtSerre{
-            from{opacity:0;letter-spacing:.04em;clip-path:inset(0 0 104% 0);transform:translate3d(0,8px,0)}
-            to{opacity:1;letter-spacing:-.02em;clip-path:inset(0 0 -8% 0);transform:none}
-          }
-
-          /* ── ACTE 5 · LE GESTE ───────────────────────────────────────── */
-          /* Plus de carte blanche : cet acte doit montrer un OBJET (l'ardoise)
-             puis un ÉCRAN (la carte du Direct). Une carte de démonstration
-             autour des deux les aurait mis au même plan. */
+          /* ── ÉTAPE 3 · VOUS N'AVEZ PRESQUE RIEN À FAIRE ──────────────── */
+          /* Plus de carte blanche : l'étape montre ce qu'il fait (le panneau
+             des quatre temps), puis un ÉCRAN (la carte du Direct). Une carte de
+             démonstration autour des deux les aurait mis au même plan. */
           .dtour-ov.ph-ov{align-items:flex-start;padding-top:90px;padding-bottom:150px;}
           .ph-wrap{width:100%;max-width:340px;margin:0 auto;display:flex;flex-direction:column;gap:9px;pointer-events:auto;}
           .ph-h{text-align:center;font-size:19px;font-weight:850;letter-spacing:-.03em;color:#fff;
             text-shadow:0 2px 20px rgba(0,0,0,.8);animation:dtRise .4s var(--exp) both;}
-          .ph-h em{display:block;margin-top:2px;font-style:normal;font-size:13px;font-weight:600;color:#CDB8A4;}
 
-          /* LE CADRE DE VISÉE SE POSE SUR SON ARDOISE. Vide, il ne montrait
-             rien — on voyait un appareil photo et du texte, jamais l'objet
-             qu'il est censé photographier. */
-          .ph-shot{position:relative;border-radius:18px;overflow:hidden;padding:14px 14px;
-            background:linear-gradient(160deg,#2A1C15,#1C1411);border:1px solid rgba(255,255,255,.08);
-            box-shadow:0 30px 60px -28px rgba(0,0,0,.9);transition:box-shadow .6s var(--exp);
-            animation:dtRise .45s var(--exp) .1s both;}
-          .ph-shot.lu{box-shadow:0 30px 60px -26px rgba(245,162,58,.55),0 0 0 1px rgba(255,201,122,.35);}
-          .ph-ard{display:flex;flex-direction:column;gap:3px;text-align:center;font-family:Georgia,serif;color:#FFF4E6;}
-          .ph-ard span{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#CDB8A4;}
-          .ph-ard i{font-style:normal;font-size:13.5px;}
-          .ph-ard b{margin-top:3px;font-size:19px;font-weight:700;color:#fff;}
-          /* Quatre coins, pas un cadre entier : un cadre serait une bordure. */
-          .ph-shot::before{content:"";position:absolute;border:2px solid rgba(255,201,122,.55);border-radius:9px;
-            -webkit-mask:linear-gradient(#000,#000) top left/26px 26px no-repeat,linear-gradient(#000,#000) top right/26px 26px no-repeat,
-              linear-gradient(#000,#000) bottom left/26px 26px no-repeat,linear-gradient(#000,#000) bottom right/26px 26px no-repeat;
-            mask:linear-gradient(#000,#000) top left/26px 26px no-repeat,linear-gradient(#000,#000) top right/26px 26px no-repeat,
-              linear-gradient(#000,#000) bottom left/26px 26px no-repeat,linear-gradient(#000,#000) bottom right/26px 26px no-repeat;
-            animation:dtVise .75s var(--exp) both;pointer-events:none;}
-          @keyframes dtVise{from{opacity:0;inset:1px}to{opacity:1;inset:9px}}
-          /* Une ligne qui BALAIE l'ardoise, au lieu d'un aplat blanc en plein
-             écran — le flash de 2010, éblouissant sur un téléphone tenu à
-             trente centimètres. */
-          .ph-flash{position:absolute;left:0;right:0;height:38%;
-            background:linear-gradient(180deg,transparent,rgba(255,201,122,.3),transparent);
-            animation:dtScan 1.4s var(--exp) .3s;pointer-events:none;}
-          @keyframes dtScan{from{transform:translateY(-120%)}to{transform:translateY(320%)}}
 
           /* ── LA CONVERSATION, QUAND LE GESTE N'EST PAS UNE PHOTO ──
              Deux tours, et ils ne se ressemblent pas : le sien est aligne a
@@ -2350,16 +2261,6 @@ export function DemoTour({
           .ph-parle-av i+i{animation-delay:.8s;}
           @keyframes phAnneau{from{transform:scale(1);opacity:.9}to{transform:scale(1.65);opacity:0}}
           @keyframes phParle{from{opacity:0;transform:translateY(14px) scale(.8)}to{opacity:1;transform:none}}
-          /* LA BOUTIQUE DE VÊTEMENTS : la photo de la pièce, puis la bulle du vocal. */
-          .ph-piece{width:96px;height:124px;object-fit:cover;border-radius:13px;border-top-right-radius:5px;
-            border:1px solid rgba(255,201,122,.35);}
-          .ph-vocal{display:inline-flex;align-items:center;gap:8px;padding:6px 11px 6px 6px;border-radius:13px;
-            background:rgba(255,201,122,.16);}
-          .ph-play{width:24px;height:24px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;
-            font-size:10px;color:#1A0F08;background:#FFC97A;}
-          .ph-vocal em{font-style:normal;font-size:11.5px;color:#FFE2B8;}
-          .ph-lui p.ph-mot{font-size:12px;font-style:italic;color:#F2E3D0;background:rgba(255,255,255,.05);}
-          .ph-mot small{display:block;margin-top:3px;font-style:normal;font-size:10.5px;color:#BFA88F;}
 
 
           /* ── LE TAMPON « LU » / « ECRIT » ──
@@ -2374,6 +2275,84 @@ export function DemoTour({
             box-shadow:0 8px 18px -8px rgba(245,162,58,.8);
             animation:dtRise .35s var(--exp) both;}
 
+
+          /* ── ÉTAPE 3 · LES QUATRE TEMPS DU TOUR DU FANTÔME ──────────────
+             Le fil dit où l'on en est et qui fait quoi — « vous » pour les
+             deux premiers temps, « nous » pour les deux autres. Le panneau,
+             lui, change à chaque phrase : un temps, une image. */
+          .gs{position:relative;border-radius:18px;padding:12px 12px 14px;display:flex;flex-direction:column;gap:11px;
+            background:linear-gradient(160deg,#2A1C15,#1C1411);border:1px solid rgba(255,255,255,.08);
+            box-shadow:0 30px 60px -28px rgba(0,0,0,.9);animation:dtRise .45s var(--exp) .1s both;}
+          .gs-fil{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+          .gs-fil li{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;opacity:.5;
+            transition:opacity .4s var(--exp);}
+          .gs-fil li.ici,.gs-fil li.fait{opacity:1;}
+          .gs-fil b{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+            font-size:12px;font-weight:850;color:#FFC97A;border:1.5px solid rgba(255,201,122,.45);transition:all .4s var(--exp);}
+          .gs-fil li.ici b{color:#1A0F08;background:#FFC97A;border-color:#FFC97A;box-shadow:0 0 0 4px rgba(255,201,122,.18);}
+          .gs-fil li.fait b{color:#1A0F08;background:rgba(255,201,122,.7);border-color:transparent;}
+          .gs-fil span{font-size:10.5px;font-weight:750;line-height:1.2;color:#F2E3D0;}
+          .gs-fil em{font-style:normal;font-size:9px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:#BFA88F;}
+          .gs-p{display:flex;flex-direction:column;gap:10px;animation:dtRise .45s var(--exp) both;}
+          /* ① Ses trois puces ; la première est la sienne. */
+          .gs-sujets{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;}
+          .gs-sujet{padding:7px 11px;border-radius:999px;font-size:12.5px;font-weight:750;color:#F2E3D0;
+            background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);transition:all .35s var(--exp);}
+          .gs-sujet.on{color:#1A0F08;background:#FFC97A;border-color:#FFC97A;transform:scale(1.06);
+            box-shadow:0 10px 22px -10px rgba(245,162,58,.9);}
+          /* ② Les trois façons, et ce que chacune donne quand elle s'allume. */
+          .gs-facons{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+          .gs-facon{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 7px 9px;border-radius:14px;
+            text-align:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);opacity:.45;
+            transform:scale(.96);transition:opacity .4s var(--exp),transform .4s var(--exp),border-color .4s,background .4s;}
+          .gs-facon.on{opacity:1;transform:none;border-color:rgba(255,201,122,.5);background:rgba(255,201,122,.1);}
+          .gs-f-ic{font-size:22px;line-height:1;}
+          .gs-facon b{font-size:12.5px;font-weight:850;color:#fff;}
+          .gs-facon em{font-style:normal;font-size:10.5px;line-height:1.3;color:#CDB8A4;}
+          .gs-f-preuve{height:44px;display:flex;align-items:center;justify-content:center;}
+          .gs-f-preuve img{width:40px;height:44px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,201,122,.4);
+            animation:dtRise .4s var(--exp) both;}
+          .gs-rec{font-size:11px;font-weight:850;letter-spacing:.06em;color:#FF6B6B;animation:gsRec 1s steps(2) infinite;}
+          @keyframes gsRec{50%{opacity:.35}}
+          /* ③ Le montage : l'image s'anime, les sous-titres passent, chaque
+             ingrédient se coche, et le tout dure la phrase qui le dit. */
+          .gs-film{flex-direction:row;align-items:center;gap:14px;}
+          .gs-ecran{position:relative;flex:none;width:118px;aspect-ratio:9/16;border-radius:14px;overflow:hidden;
+            background:#120c09;border:1px solid rgba(255,201,122,.35);box-shadow:0 18px 36px -18px rgba(0,0,0,.9);}
+          .gs-ecran img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;animation:gsKen var(--film,6s) linear both;}
+          @keyframes gsKen{from{transform:scale(1.02)}to{transform:scale(1.18) translate3d(-4%,-3%,0)}}
+          .gs-ecran::after{content:"";position:absolute;inset:0;
+            background:linear-gradient(180deg,rgba(0,0,0,.4),transparent 30%,transparent 55%,rgba(0,0,0,.75));}
+          .gs-nom{position:absolute;z-index:1;left:7px;right:7px;top:7px;font-size:9.5px;font-weight:850;color:#fff;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+          .gs-st{position:absolute;z-index:1;left:6px;right:6px;bottom:22px;padding:3px 5px;border-radius:5px;text-align:center;
+            font-size:10px;font-weight:800;line-height:1.25;color:#1A0F08;background:#FFC97A;opacity:0;
+            animation:gsSt calc(var(--film,6s) / var(--n)) var(--exp) calc(var(--film,6s) / var(--n) * var(--k)) both;}
+          .gs-st.der{animation-name:gsStDer;}
+          @keyframes gsSt{0%{opacity:0;transform:translateY(5px)}14%,86%{opacity:1;transform:none}100%{opacity:0}}
+          @keyframes gsStDer{0%{opacity:0;transform:translateY(5px)}14%,100%{opacity:1;transform:none}}
+          .gs-voix{position:absolute;z-index:1;left:7px;bottom:5px;font-size:11px;}
+          .gs-mont{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;}
+          .gs-mont ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;}
+          .gs-mont li{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:750;color:#F2E3D0;}
+          .gs-mont li i{flex:none;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+            font-style:normal;font-size:11px;font-weight:900;color:#1A0F08;background:#FFC97A;
+            animation:gsCoche .35s var(--exp) calc(var(--film,6s) * (var(--k) + 1) / 5) both;}
+          @keyframes gsCoche{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+          .gs-barre{height:5px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden;}
+          .gs-barre i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#FF4FB0,#FFC97A);
+            animation:gsBarre var(--film,6s) linear both;}
+          @keyframes gsBarre{from{width:0}to{width:100%}}
+          /* ④ Partout : chaque destination s'allume quand elle la nomme. */
+          .gs-partout{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:7px;}
+          .gs-dest{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;font-size:12.5px;
+            font-weight:800;color:#F2E3D0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);opacity:.4;
+            transition:all .35s var(--exp);}
+          .gs-dest i{font-style:normal;}
+          .gs-dest img{width:20px;height:20px;border-radius:50%;object-fit:cover;}
+          .gs-dest.on{opacity:1;color:#1A0F08;background:#FFC97A;border-color:#FFC97A;}
+          .gs-dest.on::after{content:"✓";font-weight:900;}
+          .gs-dest.direct.on{color:#fff;background:linear-gradient(140deg,#FF4FB0,#FF2E9A);border-color:transparent;}
 
           .ph-vers{display:flex;align-items:center;justify-content:center;gap:7px;padding-top:9px;
             font-size:12px;font-weight:800;color:#FFC97A;}
@@ -2406,7 +2385,7 @@ export function DemoTour({
             .ph-wrap{max-width:780px;display:grid;grid-template-columns:minmax(0,1fr) 300px;column-gap:34px;row-gap:12px;align-items:start;}
             .ph-wrap .ph-h{grid-column:1 / -1;}
             .ph-wrap > .dt-ouvre{grid-column:2;grid-row:2;}
-            .ph-wrap > .ph-dial,.ph-wrap > .ph-shot{grid-column:1;grid-row:2;}
+            .ph-wrap > .gs{grid-column:1;grid-row:2;}
             .ph-wrap .ph-mini{--z:.66;margin-top:4px;}
           }
           /* « PASSER » REMONTE DANS LE BANDEAU, à droite de « Étape 4 / 5 » : sous
@@ -2443,9 +2422,6 @@ export function DemoTour({
               font-size:clamp(10px,3.1cqw,12.5px);font-weight:850;line-height:1.3;color:#FFC97A;opacity:0;}
             .ph-parle-dit i{font-style:normal;white-space:nowrap;}
             .dt-ouvre.on .ph-parle-dit{animation:phParle .55s cubic-bezier(.34,1.5,.64,1) .9s both;}
-            .ph-piece{width:58px;height:76px;}
-            .ph-wrap.vv .ph-lui{flex-direction:row;align-items:flex-end;}
-            .ph-wrap.vv .ph-lui p.ph-mot{display:none;}
             /* La légende du bas partie, la carte reprend sa place. */
             .ph-wrap.vv .ph-mini{--z:.5;}
           }
@@ -2453,12 +2429,8 @@ export function DemoTour({
             .dtour-ov.ph-ov{padding-top:78px;}
             .ph-wrap{gap:6px;}
             .ph-h{font-size:17px;}
-            .ph-h em{font-size:12px;}
-            .ph-shot{padding:11px 12px;}
-            .ph-ard{gap:2px;}
-            .ph-ard span{font-size:10.5px;}
-            .ph-ard i{font-size:12px;}
-            .ph-ard b{font-size:16px;}
+            .gs{padding:10px 10px 11px;gap:9px;}
+            .gs-ecran{width:100px;}
             .ph-dial{padding:10px 11px 11px;gap:7px;}
             .ph-elle p,.ph-lui p{font-size:12px;padding:7px 10px;}
             .ph-parc{padding:6px 10px;}
@@ -2718,8 +2690,11 @@ export function DemoTour({
           @media (prefers-reduced-motion:reduce){
             .dtour-launch>*,.dtour-end>*,.dtour-card,.dtour-ov,.dtour-top,.dtour-bar,.dtour-bar .cap,
             .dtour-bar .mini::before,.dtour-top .dt-prog i::after,.dtour-end .end-go::after,
-            .ph-shot::before,.ph-flash,.ph-lu,.dtour-alive .al-ring,.dtour-mark::after{display:none;}
-            .ph-onde i,.ph-parle-onde i,.ph-parle-av i{animation:none;}
+            .ph-lu,.dtour-alive .al-ring,.dtour-mark::after{display:none;}
+            .ph-onde i,.ph-parle-onde i,.ph-parle-av i,.gs-ecran img,.gs-rec{animation:none;}
+            .gs-st,.gs-mont li i,.gs-barre i{animation:none;opacity:1;}
+            .gs-st:not(.der){display:none;}
+            .gs-barre i{width:100%;}
             .dt-ouvre.on .ph-parle,.dt-ouvre.on .ph-parle-dit{animation:none;opacity:1;}
             .al-fly{display:none;}
             .rt-i,.rt-t b{transition:opacity .2s linear;transform:none;filter:none;}
@@ -3026,158 +3001,152 @@ export function DemoTour({
             </div>
           )}
 
-          {/* ── ACTE 4 · ET VOUS ? ────────────────────────────────────────
-              « Mais qui la voit ? Google, Instagram, votre vitrine… » a été
-              retiré : deux plateformes et un bout de verre dans la même liste,
-              et un pronom qui ne renvoyait à rien. Ça ouvrait un débat sur le
-              référencement au lieu de fermer une évidence.
-
-              Trois temps le remplacent, et le deuxième est un compliment. Ce
-              n'est pas de la politesse : sans lui, la phrase d'après se lit
-              comme un reproche sur son ardoise, et il se ferme. */}
           {/* MA MAISON, PAR-DESSUS LE DIRECT — à partir de sa phrase. */}
           {scene === "qui" && G && QUI_MAISON >= 0 && quiN >= QUI_MAISON && (
             <SceneMaison n={quiN - QUI_MAISON} fantome={{ visage: fantomeBoutique || "/clikme-fantome.png", nom }} look={lookVu} />
           )}
-          {scene === "invisible" && G && (
-            <div className="dtour-ov">
-              <div className="dtour-card iv">
-                <div className="iv-h">{G.ouDort}</div>
-                <div className="iv-ard" aria-hidden="true">
-                  <span>{G.extrait.titre}</span>
-                  {G.extrait.lignes.map((l) => (<i key={l}>{l}</i>))}
-                </div>
-                <div className={`dt-ouvre${invN >= 1 ? " on" : ""}`}>
-                  <div className="iv-ok">{INVISIBLE_DIT[1]}</div>
-                </div>
-                <div className={`dt-ouvre${invN >= 2 ? " on" : ""}`}>
-                  <div className="iv-x">{INVISIBLE_DIT[2]}</div>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* ── ÉTAPE 3 · VOUS N'AVEZ PRESQUE RIEN À FAIRE ──────────────────
+              LE TOUR DU FANTÔME, EN QUATRE TEMPS — voir `GESTE_TEMPS`. Le fil
+              du haut les annonce sur la phrase d'ouverture ; chacun prend
+              ensuite le panneau sur sa phrase. Les deux premiers sont à lui,
+              les deux derniers à nous, et le fil le dit.
 
-          {/* ── ACTE 5 · LE GESTE ─────────────────────────────────────────
-              CE QU'IL FALLAIT MONTRER, ET QUI N'ÉTAIT PAS MONTRÉ.
-
-              L'écran disait « photographiez » avec un cadre de visée vide, puis
-              affichait un encadré de texte. On voyait donc un appareil photo, et
-              du texte. Il manquait les deux choses qui comptent : CE QU'IL
-              PHOTOGRAPHIE, et CE QUE ÇA DEVIENT chez ses clients.
-
-              Trois temps, et chacun montre une chose :
-                1. son ardoise, sous le cadre de visée — l'objet réel ;
-                2. ce que l'assistante en a tiré, ligne par ligne ;
-                3. la carte du Direct, celle que ses clients reçoivent.
-
-              Le troisième temps est le seul qui vend quoi que ce soit. Il
-              n'existait pas. */}
-          {scene === "photo" && G && maCarte && (
+              LA CARTE DU DIRECT S'OUVRE AVEC LE DERNIER : c'est toujours le
+              moment de bascule de la démonstration, le même contenu dans
+              l'écran de ses clients. Ses images sont celles de la carte
+              (`maCarte.photo`) : la sienne, sa pièce, ou l'illustration de
+              l'exemple chez un restaurant — jamais sa façade derrière un menu
+              inventé (voir `carteDeLExemple`). */}
+          {scene === "geste" && G && maCarte && (
             <div className="dtour-ov ph-ov">
               <div className={`ph-wrap${G.photoEtVoix ? " vv" : ""}`}>
-                <div className="ph-h">{G.geste}<em>C&apos;est tout.</em></div>
+                <div className="ph-h" key={gsTemps}>{GESTE_TITRES[gsTemps + 1]}</div>
+                <div className="gs">
+                  <ol className="gs-fil">
+                    {["Vous le dites", "Photo, vocal ou caméra", "Votre vidéo", "Partout"].map((t, k) => (
+                      <li key={t} className={k < gsTemps ? "fait" : k === gsTemps ? "ici" : ""}>
+                        <b>{k < gsTemps ? "✓" : k + 1}</b>
+                        <span>{t}</span>
+                        <em>{k < 2 ? "vous" : "nous"}</em>
+                      </li>
+                    ))}
+                  </ol>
 
-                {/* ═══ ON PHOTOGRAPHIE, OU ON PARLE — ET CE N'EST PLUS LE
-                        MÊME ÉCRAN ══════════════════════════════════════════
-
-                    « On ne photographie plus le menu : on discute avec l'IA
-                    pour lui dire le menu et les spécificités. »
-
-                    LE CADRE DE VISÉE SE JOUAIT POUR TOUT LE MONDE, y compris
-                    là où la voix disait « dites-le-moi » depuis toujours : un
-                    coiffeur s'entendait demander de dicter ses créneaux pendant
-                    qu'un appareil photo visait une ardoise. Le défaut existait
-                    donc avant le changement de concept ; le restaurateur l'a
-                    simplement rendu visible en rejoignant sa famille.
-
-                    LA CONVERSATION N'EST PAS UN CADRE VIDE POUR AUTANT. On
-                    montre les deux tours — sa question à elle, sa réponse à lui
-                    — parce que c'est exactement ce qui fait la différence avec
-                    une photo : ce qu'il DIT en plus des lignes de l'ardoise est
-                    ce qui remplit l'étape 3. Sa réponse se compose depuis le
-                    même `extrait` que la carte qui en sort ; aucune des deux ne
-                    peut donc dire autre chose que l'autre. */}
-                {G.photoEtVoix ? (
-                  /* ═══ UNE PHOTO, PUIS UN VOCAL ═══ « On montre à l'assistante
-                     une photo du vêtement, et on laisse un vocal pour donner
-                     des infos aux clients quand ils l'essaient. » Son tour à
-                     lui : la photo de la pièce, puis la bulle de sa voix. */
-                  <div className={`ph-dial${photoN >= 1 ? " lu" : ""}`}>
-                    <div className="ph-elle">
-                      <span className="ph-av" aria-hidden="true">✦</span>
-                      <p>{G.demande}</p>
-                    </div>
-                    <div className="ph-lui">
-                      {/* LA PHOTO, PUIS LA VOIX, CHACUNE SUR SES MOTS (voir `momentPhoto`, `momentVoix`). */}
-                      {pieceMontree && photoN >= 1 && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img className="ph-piece" src={pieceMontree} alt="" />
-                      )}
-                      {(G.momentVoix ? voixDite : photoN >= 1) && (
-                      <span className="ph-vocal">
-                        <span className="ph-play" aria-hidden="true">▶</span>
-                        <span className="ph-onde" aria-hidden="true">
-                          {[7, 13, 9, 17, 11, 20, 14, 8, 16, 10, 12, 18, 9].map((h, i) => (
-                            <i key={`${h}-${i}`} style={{ ["--h" as string]: `${h}px`, ["--i" as string]: i }} />
-                          ))}
-                        </span>
-                        {/* PAS DE DURÉE AFFICHÉE : « 10 secondes c'est très court » — elle parle le temps qu'il faut. */}
-                      </span>
-                      )}
-                      {G.motVoix && (G.momentVoix ? voixDite : photoN >= 1) && (
-                        <p className="ph-mot">
-                          « {G.motVoix} »<small>Son vocal</small>
-                        </p>
-                      )}
-                    </div>
-                    {(G.momentVoix ? voixDite : photoN >= 1) && <span className="ph-lu" aria-hidden="true">✓ reçu</span>}
-                  </div>
-                ) : G.parPhoto ? (
-                  <div className={`ph-shot${photoN >= 1 ? " lu" : ""}`}>
-                    <div className="ph-ard" aria-hidden="true">
-                      <span>{G.extrait.titre}</span>
-                      {G.extrait.lignes.map((l) => (<i key={l}>{l}</i>))}
-                      {G.extrait.prix && <b>{G.extrait.prix}</b>}
-                    </div>
-                    {photoN < 1 && <span className="ph-flash" aria-hidden="true" />}
-                    {photoN >= 1 && <span className="ph-lu" aria-hidden="true">✓ lu</span>}
-                  </div>
-                ) : (
-                  <div className={`ph-dial${photoN >= 1 ? " lu" : ""}`}>
-                    <div className="ph-elle">
-                      <span className="ph-av" aria-hidden="true">✦</span>
-                      <p>{G.demande}</p>
-                    </div>
-                    <div className="ph-lui">
-                      {/* LES BARRES DISENT QUE C'EST SA VOIX, PAS UN CHAMP DE
-                          SAISIE. C'est toute la promesse de l'étape 3 : ce
-                          qu'on garde est ce qu'il a dit, pas ce qu'il a tapé. */}
-                      <span className="ph-onde" aria-hidden="true">
-                        {[7, 13, 9, 17, 11, 20, 14, 8, 16, 10].map((h, i) => (
-                          <i key={`${h}-${i}`} style={{ ["--h" as string]: `${h}px`, ["--i" as string]: i }} />
+                  {/* ① CE QU'IL VEUT FAIRE SAVOIR : il touche sa puce, puis il le dit. */}
+                  {gsTemps === 0 && (
+                    <div className="gs-p">
+                      <div className="gs-sujets">
+                        {G.sujets.map((s, k) => (
+                          <span key={s} className={`gs-sujet${gsChoisi && k === 0 ? " on" : ""}`}>{s}</span>
                         ))}
-                      </span>
-                      {/* UN POINT ENTRE LES LIGNES, PAS UNE VIRGULE. Les
-                          lignes de l'extrait ne sont pas toujours une liste :
-                          chez un bar ce sont deux phrases — « Jazz en trio, à
-                          partir de 21 h » puis « Ardoise et verres au
-                          comptoir » — et la virgule y collait une majuscule au
-                          milieu d'une phrase. Le point marche dans les deux
-                          cas, et c'est de toute façon ainsi qu'on parle quand
-                          on énumère à voix haute. */}
-                      <p>
-                        {G.extrait.lignes.join(". ")}
-                        {G.extrait.prix ? `. ${G.extrait.prix}.` : "."}
-                      </p>
+                      </div>
+                      {gsChoisi && (
+                        <div className="ph-dial lu">
+                          <div className="ph-elle">
+                            <span className="ph-av" aria-hidden="true">✦</span>
+                            <p>{G.demande}</p>
+                          </div>
+                          <div className="ph-lui">
+                            <span className="ph-onde" aria-hidden="true">
+                              {[7, 13, 9, 17, 11, 20, 14, 8, 16, 10].map((h, i) => (
+                                <i key={`${h}-${i}`} style={{ ["--h" as string]: `${h}px`, ["--i" as string]: i }} />
+                              ))}
+                            </span>
+                            {/* UN POINT ENTRE LES LIGNES, PAS UNE VIRGULE : chez un bar ce
+                                sont deux phrases, et la virgule y collait une majuscule. */}
+                            <p>
+                              {G.extrait.lignes.join(". ")}
+                              {G.extrait.prix ? `. ${G.extrait.prix}.` : "."}
+                            </p>
+                          </div>
+                          <span className="ph-lu" aria-hidden="true">✓ écrit</span>
+                        </div>
+                      )}
                     </div>
-                    {photoN >= 1 && <span className="ph-lu" aria-hidden="true">✓ écrit</span>}
-                  </div>
-                )}
+                  )}
+
+                  {/* ② SELON CE QUE C'EST : chaque façon s'allume sur son mot, avec ce qu'elle donne. */}
+                  {gsTemps === 1 && (
+                    <div className="gs-p gs-facons">
+                      {FACONS.map((f, k) => (
+                        <div key={f.t} className={`gs-facon${gsFacon > k ? " on" : ""}`}>
+                          <span className="gs-f-ic" aria-hidden="true">{f.ic}</span>
+                          <b>{f.t}</b>
+                          <em>{f.s}</em>
+                          <span className="gs-f-preuve" aria-hidden="true">
+                            {k === 0 && gsFacon > 0 && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={maCarte.photo} alt="" referrerPolicy="no-referrer" />
+                            )}
+                            {k === 1 && gsFacon > 1 && (
+                              <span className="ph-onde">
+                                {[7, 13, 9, 17, 11, 20, 14, 8].map((h, i) => (
+                                  <i key={`${h}-${i}`} style={{ ["--h" as string]: `${h}px`, ["--i" as string]: i }} />
+                                ))}
+                              </span>
+                            )}
+                            {k === 2 && gsFacon > 2 && <span className="gs-rec">● REC</span>}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* ③ LE MONTAGE DURE SA PHRASE (`--film`) : l'image s'anime, les
+                      sous-titres passent, et chaque ingrédient se coche. */}
+                  {gsTemps === 2 && (
+                    <div className="gs-p gs-film" style={{ ["--film" as string]: `${gsFilmMs}ms` }}>
+                      <div className="gs-ecran">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={maCarte.photo} alt="" referrerPolicy="no-referrer" />
+                        <span className="gs-nom">{nom}</span>
+                        {[G.extrait.titre, ...G.extrait.lignes].slice(0, 3).map((l, k, tout) => (
+                          <span
+                            key={l}
+                            className={`gs-st${k === tout.length - 1 ? " der" : ""}`}
+                            style={{ ["--k" as string]: k, ["--n" as string]: tout.length }}
+                          >
+                            {l}
+                          </span>
+                        ))}
+                        <span className="gs-voix" aria-hidden="true">🎙️</span>
+                      </div>
+                      <div className="gs-mont">
+                        <ul>
+                          {["Le montage", "Les sous-titres", "La voix", "La musique"].map((m, k) => (
+                            <li key={m} style={{ ["--k" as string]: k }}>
+                              <i aria-hidden="true">✓</i>
+                              {m}
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="gs-barre" aria-hidden="true"><i /></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ④ PARTOUT : chaque destination s'allume quand elle la nomme. */}
+                  {gsTemps === 3 && (
+                    <div className="gs-p gs-partout">
+                      {[["📸", "Instagram"], ["👍", "Facebook"], ["📍", "Google"]].map(([ic, n], k) => (
+                        <span key={n} className={`gs-dest${gsReseau > k ? " on" : ""}`}>
+                          <i aria-hidden="true">{ic}</i>
+                          {n}
+                        </span>
+                      ))}
+                      <span className={`gs-dest direct${gsReseau > 3 ? " on" : ""}`}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={fantomeBoutique || "/clikme-fantome.png"} alt="" aria-hidden="true" />
+                        Le Direct de {laVille}
+                      </span>
+                    </div>
+                  )}
+                </div>
 
                 {/* CE QUE ÇA DEVIENT — et c'est le moment de bascule de toute
                     la démonstration : le même contenu, mais dans l'écran de ses
                     clients, avec son nom et sa photo. */}
-                <div className={`dt-ouvre${photoN >= 2 ? " on" : ""}`}>
+                <div className={`dt-ouvre${gsTemps >= 3 ? " on" : ""}`}>
                   <div className="dt-ec">
                     <div className="ph-vers"><i aria-hidden="true">↓</i>Dans Le Direct de {laVille}, à l&apos;instant</div>
                     <Reduit
