@@ -7,7 +7,7 @@
 import os, re, shutil, sys
 
 S = sys.argv[1]
-TOURS = ["tour", "tour-vetements", "tour-coiffure", "tour-librairie", "tour-bijouterie"]
+TOURS = ["tour", "tour-vetements", "tour-coiffure", "tour-librairie", "tour-bijouterie", "tour-lunettes"]
 
 CSS_ANCIEN_DEBUT = "/* L'ÉPISODE : le téléphone posé, la session, le montage */"
 CSS_ANCIEN_FIN = '.cz[data-sous="ep-fini"] .cz-cam{height:11.5em}\n'

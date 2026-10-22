@@ -4455,6 +4455,8 @@ h1 em{font-style:normal;color:var(--rose)}
   const DX_DUREE = "0:" + String(Math.max(1, Math.round((3.13) || 0))).padStart(2, "0");
   const DX_VERDICTS = { ok: "✓ Ça marche", moyen: "Le film plaît, la réservation ne suit pas", non: "✗ Ça ne prend pas" };
   const prMin = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+  // « de Margaux », « d’Inès » : l'élision devant une voyelle
+  const prDe = (n) => (/^[aeiouyàâäéèêëîïôöùûüh]/i.test(n) ? "d’" : "de ") + n;
   const DECORS_PR = {
     nuit: () => '<div class="nx"><div class="nx-ciel"></div><div class="nx-nuit"></div><div class="nx-aube"></div>' +
       '<div class="nx-etoiles">' + Array.from({ length: 22 }, (_, k) => '<i style="--x:' + ((k * 37) % 97 + 1) + "%;--y:" + ((k * 53) % 88 + 4) + "%;--s:" + (1.5 + (k % 3)) + "px;--d:" + ((k % 7) * 0.12).toFixed(2) + 's"></i>').join("") + "</div>" +
@@ -4472,23 +4474,23 @@ h1 em{font-style:normal;color:var(--rose)}
     demain: () => '<div class="dx">' +
       '<div class="dx-haut"><span class="dx-annee">2026</span><div class="dx-relai"><span class="vous">Vous</span><span class="dx-fl">→</span><span class="releve">La relève</span></div></div>' +
       '<div class="dx-cahier">' +
-        '<div class="dx-page dx-p2"><h3 class="dx-titre"><small>Le livre de ' + lieuVous() + "</small>Ce qui marche… ou pas</h3>" +
+        '<div class="dx-page dx-p2"><h3 class="dx-titre"><small>Le livre ' + deLieuTexte() + "</small>Ce qui marche… ou pas</h3>" +
           PR.stats.map(([e, nom, vues, resas, v], k) => '<div class="dx-prod" style="--d:' + (k * 0.15).toFixed(2) + 's"><b>' + e + " " + nom + "</b><span>🎬 " + vues.toLocaleString("fr-FR") +
             " vues · 📅 " + resas + " réservation" + (resas > 1 ? "s" : "") + '</span><strong class="dx-verdict ' + v + '">' + DX_VERDICTS[v] + "</strong></div>").join("") +
           '<span class="dx-exemple">exemple</span></div>' +
-        '<div class="dx-page dx-p1"><h3 class="dx-titre"><small>Le livre de ' + lieuVous() + "</small>Tout ce qui fait votre commerce</h3>" +
+        '<div class="dx-page dx-p1"><h3 class="dx-titre"><small>Le livre ' + deLieuTexte() + "</small>Tout ce qui fait votre commerce</h3>" +
           '<div class="dx-grille">' +
             '<div class="dx-item" data-k="0" style="--r:-3deg"><div class="dx-cadre"><img src="' + PR.geste + '" alt=""></div><em>Vos gestes</em></div>' +
-            '<div class="dx-item secret" data-k="1" style="--r:2.5deg"><div class="dx-cadre memo"><b>' + (SIEN.nom ? (PR.voix ? "🎙️ " : "✒️ ") + "Votre secret" : (PR.voix ? "🎙️ Le secret de " : "✒️ Le secret de ") + PR.qui) + "</b>" +
+            '<div class="dx-item secret" data-k="1" style="--r:2.5deg"><div class="dx-cadre memo"><b>' + (SIEN.nom ? (PR.voix ? "🎙️ " : "✒️ ") + "Votre secret" : (PR.voix ? "🎙️ Le secret " : "✒️ Le secret ") + prDe(PR.qui)) + "</b>" +
               (PR.voix ? '<span class="mini">' + Array.from({ length: 12 }, (_, k) => '<i style="--h:' + (25 + ((k * 37) % 75)) + '%"></i>').join("") + "</span><small>▶ " + DX_DUREE + "</small>"
                 : '<span class="mini plume">✒️</span><small>de sa main</small>') + "</div><em>Vos secrets</em></div>" +
             '<div class="dx-item" data-k="2" style="--r:2deg"><div class="dx-cadre film"><img src="' + PR.film + '" alt=""></div><em>Vos histoires</em></div>' +
             '<div class="dx-item" data-k="3" style="--r:-2deg"><div class="dx-cadre ville">' + [["C", "#FF2E9A"], ["M", "#7C4DFF"], ["S", "#2FBF8F"], ["L", "#FF8A3D"], ["+", "#c9a46a"]].map(([l, c]) => '<b style="--c:' + c + '">' + l + "</b>").join("") +
               "<span>♥ vous suivent</span></div><em>Votre ville</em></div>" +
           '</div><span class="dx-tampon">✓ Transmis à la relève</span></div>' +
-        '<div class="dx-couv"><img src="' + PR.fant + '" alt=""><small>Le livre de</small><b>' + lieuVous() + "</b><small>depuis 2026</small></div>" +
+        '<div class="dx-couv"><img src="' + PR.fant + '" alt=""><small>Le livre ' + deLieu()[0].trim() + "</small><b>" + deLieu()[1] + "</b><small>depuis 2026</small></div>" +
       "</div>" +
-      '<div class="dx-voix"><small>📖 Gardé dans le livre · ' + (PR.voix ? "la voix de " : "les mots de ") + PR.qui + '</small><div class="dx-voix-corps">' +
+      '<div class="dx-voix"><small>📖 Gardé dans le livre · ' + (PR.voix ? "la voix " : "les mots ") + prDe(PR.qui) + '</small><div class="dx-voix-corps">' +
         (PR.voix ? '<div class="dx-onde">' + Array.from({ length: 9 }, (_, k) => '<i style="--h:' + (30 + ((k * 41) % 70)) + '%"></i>').join("") + "</div>" : '<div class="dx-plume">✒️</div>') +
         "<p></p></div><em>— " + PR.qui + " · " + PR.lieu + (SIEN.nom ? " · exemple" : "") + "</em></div>" +
       '<div class="dx-promesse"><h2>Votre savoir-faire<br>ne mourra <em>jamais</em>.</h2>' + prEtin(14) + "</div></div>",
@@ -4706,9 +4708,17 @@ h1 em{font-style:normal;color:var(--rose)}
   const sienEchapper = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   // son commerce s'il a été tapé, sinon celui de l'exemple
   const lieuVous = () => SIEN.nom ? sienEchapper(SIEN.nom) : PR.lieu;
+  // « de » devant son nom, comme on le dit : « des Lunettes de Margaux », « du Fournil », « de la Page d’Alice »,
+  // « de l’Atelier », « d’Acuitis », « de Chez Bergine »
+  const deLieu = () => {
+    const n = lieuVous(), m = n.match(/^(?:(Les|Le|La) |(L[’']))(.+)$/);
+    if (m) return m[1] === "Les" ? ["des ", m[3]] : m[1] === "Le" ? ["du ", m[3]] : m[1] === "La" ? ["de la ", m[3]] : ["de l’", m[3]];
+    return /^[aeiouyàâäéèêëîïôöùûüœæh]/i.test(n) ? ["d’", n] : ["de ", n];
+  };
+  const deLieuTexte = () => deLieu().join("");
   // le titre de la conclusion, à son nom
   const ouiTitre = () => SIEN.nom
-    ? '<h2 class="oy-titre nomme">On crée la page de <em>' + sienEchapper(SIEN.nom) + "</em>" + NB + "?</h2>"
+    ? '<h2 class="oy-titre nomme">On crée la page ' + deLieu()[0] + "<em>" + deLieu()[1] + "</em>" + NB + "?</h2>"
     : '<h2 class="oy-titre">Alors, on y <em>va</em>' + NB + "?</h2>";
   // le nom reste sur ce téléphone le temps de la visite (jamais envoyé)
   try { SIEN.nom = sessionStorage.getItem("tour-pour") || ""; } catch (e) { /* stockage fermé : on le retape */ }

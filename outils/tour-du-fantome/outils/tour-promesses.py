@@ -86,6 +86,14 @@ TOURS = {
                             surprise=dict(photo="m2.jpg", titre="Le collier saphir", raison="Vous aimez le bleu nuit et l’or.", bouton="Je le fais mettre de côté",
                                           fait="✓ Mis de côté pour vous", notif="Mis de côté · collier saphir · Léa"),
                             stats=[("💎", "Collier saphir", 890, 18, "ok"), ("📿", "Bracelet jonc", 600, 2, "moyen"), ("✨", "Boucles d’oreilles perle", 140, 1, "non")]),
+    "tour-lunettes": dict(geste="geste.jpg", lieu="Les Lunettes de Margaux", qui="Margaux", fant="fant.webp", pages=["message.jpg", "specialiste.jpg", "episode.jpg"],
+                          extrait=(3.52, 6.09, "Si légère qu’on l’oublie sur le nez."),
+                          maisons=[("Léa", "cherche une monture légère", "Monture ronde mise de côté"), ("Hugo", "a cassé ses lunettes", "Samedi 10 h · réparation"),
+                                   ("Nora", "veut changer de style", "Mardi 18 h · essayage")],
+                          pieces=[("miroir", "Cherche une monture légère"), ("dressing", "Aime le cristal et le noir"), ("cuisine", "Pas de porc"), ("sorties", "Un verre, tranquille")],
+                          surprise=dict(photo="m1.jpg", titre="La monture ronde, cristal", raison="Vous cherchiez une monture légère.", bouton="Je la fais mettre de côté",
+                                        fait="✓ Mise de côté pour vous", notif="Mise de côté · monture ronde · Léa"),
+                          stats=[("👓", "Monture ronde, cristal", 920, 21, "ok"), ("🕶️", "Solaire polarisée", 640, 3, "moyen"), ("🧽", "Kit d’entretien", 130, 1, "non")]),
 }
 # les pièces de Ma Maison, telles que l'application les montre (src/lib/direct/maison.ts : nom, photo, teinte)
 PIECES = {"cuisine": ("Ma Cuisine", "piece-cuisine.webp", "#FC9023"), "dressing": ("Mon Dressing", "piece-dressing.webp", "#E2B884"),
@@ -378,6 +386,8 @@ JS = r"""
   const DX_DUREE = "0:" + String(Math.max(1, Math.round((__DUREE_VOIX__) || 0))).padStart(2, "0");
   const DX_VERDICTS = { ok: "✓ Ça marche", moyen: "Le film plaît, la réservation ne suit pas", non: "✗ Ça ne prend pas" };
   const prMin = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+  // « de Margaux », « d’Inès » : l'élision devant une voyelle
+  const prDe = (n) => (/^[aeiouyàâäéèêëîïôöùûüh]/i.test(n) ? "d’" : "de ") + n;
   const DECORS_PR = {
     nuit: () => '<div class="nx"><div class="nx-ciel"></div><div class="nx-nuit"></div><div class="nx-aube"></div>' +
       '<div class="nx-etoiles">' + Array.from({ length: 22 }, (_, k) => '<i style="--x:' + ((k * 37) % 97 + 1) + "%;--y:" + ((k * 53) % 88 + 4) + "%;--s:" + (1.5 + (k % 3)) + "px;--d:" + ((k % 7) * 0.12).toFixed(2) + 's"></i>').join("") + "</div>" +
@@ -402,7 +412,7 @@ JS = r"""
         '<div class="dx-page dx-p1"><h3 class="dx-titre"><small>Le livre de ' + PR.lieu + "</small>Tout ce qui fait votre commerce</h3>" +
           '<div class="dx-grille">' +
             '<div class="dx-item" data-k="0" style="--r:-3deg"><div class="dx-cadre"><img src="' + PR.geste + '" alt=""></div><em>Vos gestes</em></div>' +
-            '<div class="dx-item secret" data-k="1" style="--r:2.5deg"><div class="dx-cadre memo"><b>' + (PR.voix ? "🎙️ Le secret de " : "✒️ Le secret de ") + PR.qui + "</b>" +
+            '<div class="dx-item secret" data-k="1" style="--r:2.5deg"><div class="dx-cadre memo"><b>' + (PR.voix ? "🎙️ Le secret " : "✒️ Le secret ") + prDe(PR.qui) + "</b>" +
               (PR.voix ? '<span class="mini">' + Array.from({ length: 12 }, (_, k) => '<i style="--h:' + (25 + ((k * 37) % 75)) + '%"></i>').join("") + "</span><small>▶ " + DX_DUREE + "</small>"
                 : '<span class="mini plume">✒️</span><small>de sa main</small>') + "</div><em>Vos secrets</em></div>" +
             '<div class="dx-item" data-k="2" style="--r:2deg"><div class="dx-cadre film"><img src="' + PR.film + '" alt=""></div><em>Vos histoires</em></div>' +
@@ -411,7 +421,7 @@ JS = r"""
           '</div><span class="dx-tampon">✓ Transmis à la relève</span></div>' +
         '<div class="dx-couv"><img src="' + PR.fant + '" alt=""><small>Le livre de</small><b>' + PR.lieu + "</b><small>depuis 2026</small></div>" +
       "</div>" +
-      '<div class="dx-voix"><small>📖 Gardé dans le livre · ' + (PR.voix ? "la voix de " : "les mots de ") + PR.qui + '</small><div class="dx-voix-corps">' +
+      '<div class="dx-voix"><small>📖 Gardé dans le livre · ' + (PR.voix ? "la voix " : "les mots ") + prDe(PR.qui) + '</small><div class="dx-voix-corps">' +
         (PR.voix ? '<div class="dx-onde">' + Array.from({ length: 9 }, (_, k) => '<i style="--h:' + (30 + ((k * 41) % 70)) + '%"></i>').join("") + "</div>" : '<div class="dx-plume">✒️</div>') +
         "<p></p></div><em>— " + PR.qui + " · " + PR.lieu + "</em></div>" +
       '<div class="dx-promesse"><h2>Votre savoir-faire<br>ne mourra <em>jamais</em>.</h2>' + prEtin(14) + "</div></div>",

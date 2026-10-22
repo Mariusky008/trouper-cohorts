@@ -6,7 +6,7 @@
 import sys
 
 S = sys.argv[1]
-TOURS = ["tour", "tour-vetements", "tour-coiffure", "tour-librairie", "tour-bijouterie"]
+TOURS = ["tour", "tour-vetements", "tour-coiffure", "tour-librairie", "tour-bijouterie", "tour-lunettes"]
 
 AVANT = """        agir() {
           if (prises >= PRISES.length) return;
