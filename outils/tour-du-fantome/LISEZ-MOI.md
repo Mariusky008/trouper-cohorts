@@ -53,7 +53,7 @@ page 1 et tapez le nom de son commerce. Il s'affiche sur la page 1 (« Préparé
 notification (chapitre 03), sur le livre de son commerce (chapitre 04) et dans le titre de la conclusion. Seul le nom
 change : photos, voix et mots restent ceux de l'exemple. Il reste sur ce téléphone le temps de la visite, sans être envoyé.
 Son temps, du nom du plat à « Publier », est mesuré : il s'affiche dans le ticket de fin de « Plus de clients » et dans
-la conclusion. Aucune ligne « commission » tant qu'elle n'est pas confirmée.
+la conclusion. Le ticket dit aussi « Commission : 0 € » : ClikMe n'en prend aucune.
 
 Pour une nouvelle voix de l'intro : remplacer `voix-intro/court/<nom>.mp3`, mettre son texte dans
 `outils/mesurer-intro2.py` (et dans `tour-intro3.py`), lancer `python3 -I $D/outils/mesurer-intro2.py $D`,
