@@ -2,10 +2,13 @@
 # équipe) ; il lui faut une image, et le rapport coût / valeur, qui est le vrai wow économique :
 #  · en ouverture (sous le projecteur, à la place de « Et si tes dîners payaient tes courses ? ») : « Et si
 #    tes tables vides du mardi midi payaient ton coiffeur ? », dans les mots de chaque métier ;
-#  · au bilan : ce que son offre lui coûte vraiment, et ce qu'elle vaut chez ses voisins (« Par exemple… »).
-#    Le fantôme de son comptoir le dit dans une bulle, à la place des règles du réseau, qui reviennent après.
+#  · dès qu'il fixe son offre (« 1 dîner = 50 € à dépenser ») : ce qu'elle lui coûte vraiment, et ce qu'elle
+#    vaut chez ses voisins (« Par exemple… »). « Je l'aurais mis dans un endroit plus approprié pour comprendre
+#    dès le départ » : le fantôme de son comptoir le dit dans une bulle posée sur la photo de son offre.
+#  · au bilan, plus de bulle : les règles du réseau, et un écran resserré pour que les boutons de la fin ne
+#    les recouvrent plus.
 # Les voix (enregistrements ElevenLabs « Mike ») : recu/depenses/brut/<métier>.mp3 (la question) et
-# <métier>2.mp3 (le bilan). « 50 € » s'écrit en chiffres mais se mesure « cinquante euros » (un seul mot,
+# <métier>2.mp3 (le coût réel, dit à l'offre). « 50 € » s'écrit en chiffres mais se mesure « cinquante euros » (un seul mot,
 # lié par une espace insécable : chaque mot garde son instant).
 # À lancer après tour-gestes.py (même index.html) :  python3 -I tour-depenses.py <dossier>
 import json, os, subprocess, sys
@@ -56,44 +59,48 @@ def preparer(src, dst, texte):
 
 
 CSS = """
-/* « MOINS DE DÉPENSES » : au bilan, le fantôme de son comptoir dit ce que son offre lui coûte vraiment, et ce
-   qu'elle vaut chez ses voisins ; sa bulle prend la place des règles du réseau, qui reviennent ensuite */
-.xb-mot{position:absolute;left:.9em;right:.9em;top:30.9em;display:flex;align-items:flex-start;gap:.65em;padding:.8em .9em;border-radius:1.1em;background:#FFF1DF;color:#2A1A10;
-  box-shadow:0 .8em 1.6em -.8em rgba(0,0,0,.75);opacity:0;transform:translateY(.6em) scale(.96);transition:opacity .35s,transform .5s var(--ease);pointer-events:none}
-.xb-mot.on{opacity:1;transform:none}
-.xb-mot.fini{opacity:0;transform:translateY(-.4em) scale(.97)}
-.xb-mot img{flex:none;width:2.5em;height:2.5em;object-fit:contain;transform-origin:50% 85%}
-.xb-mot.parle img{animation:fx-hoche .62s ease-in-out infinite}
-.xb-mot p{margin:0;font-size:.88em;font-weight:700;line-height:1.36}
-@media (prefers-reduced-motion:reduce){.xb-mot.parle img{animation:none}}
+/* « MOINS DE DÉPENSES » : dès qu'il fixe son offre, le fantôme de son comptoir dit ce qu'elle lui coûte vraiment
+   et ce qu'elle vaut chez ses voisins, dans une bulle posée sur la photo de l'offre */
+.ex-mot{position:absolute;z-index:4;left:.9em;right:.9em;top:.5em;display:flex;align-items:center;gap:.65em;padding:.75em .9em;border-radius:1.2em 1.2em .4em .4em;
+  background:#FFF1DF;color:#2A1A10;box-shadow:0 .8em 1.6em -.8em rgba(0,0,0,.75);opacity:0;transform:translateY(.6em) scale(.96);transition:opacity .35s,transform .5s var(--ease);pointer-events:none}
+.ex-mot.on{opacity:1;transform:none}
+.ex-mot img{flex:none;width:2.6em;height:2.6em;object-fit:contain;transform-origin:50% 85%}
+.ex-mot.parle img{animation:fx-hoche .62s ease-in-out infinite}
+.ex-mot p{margin:0;font-size:.86em;font-weight:700;line-height:1.36}
+@media (prefers-reduced-motion:reduce){.ex-mot.parle img{animation:none}}
+/* le bilan, resserré : ses lignes moins hautes, et les règles empilées juste dessous (quelle que soit la
+   hauteur des lignes), la place pour les boutons de la fin */
+.xb-l{min-height:3.5em;padding:.45em .75em}
+.xb-pile{position:absolute;left:.9em;right:.9em;top:12.4em;display:flex;flex-direction:column;gap:.75em}
+.xb-pile>.xb-lignes,.xb-pile>.xb-regles{position:static}
 """
 
 JS = """
   /* « Moins de dépenses » : la phrase qui fait tilt (voir tour-depenses.py) */
   Object.assign(TEMPS, __TEMPS_DEP__);
   __ENR_DEP__.forEach((n) => { if (!ENREGISTREES.includes(n)) ENREGISTREES.push(n); });
-  const BILAN_MOT = __BILAN_MOT__;
-  const motBilanFin = () => { $("#xb-mot").classList.add("fini"); $("#xb-regles").classList.add("on"); };
+  const VRAI_MOT = __VRAI_MOT__;
+  /* ce que son offre lui coûte vraiment : sa bulle se pose sur la photo de l'offre, et il le dit */
+  async function direVrai(j) {
+    const mot = $("#x1-mot");
+    if (!mot || j !== jetonVoix) return;
+    $("p", mot).textContent = ""; $("img", mot).src = $("#v-x1 .ex-fant").getAttribute("src");
+    mot.classList.add("on");
+    if (!(await pause(400, j))) return;
+    if (await prononcer(mot, $("p", mot), VRAI_MOT, "depenses-vrai")) mot.dataset.fini = "1";
+  }
+  /* « Suivant » touché avant qu'il l'ait dit : il se tait, sa phrase s'écrit en entier ; on continue au
+     toucher suivant (c'est le wow économique, on ne le saute pas sans l'avoir vu) */
+  function vraiDit() {
+    const mot = $("#x1-mot");
+    if (mot.dataset.fini === "1") return true;
+    taireVoix(); effacer();
+    $("img", mot).src = $("#v-x1 .ex-fant").getAttribute("src");
+    $("p", mot).textContent = VRAI_MOT.replace(/\\*/g, "");
+    mot.classList.remove("parle", "ouvre"); mot.classList.add("on"); mot.dataset.fini = "1";
+    return false;
+  }
 """
-AVANT_BILAN = """          plus(() => r.classList.add("on"), 2600);
-          $("#tampon-d").classList.remove("on");
-          plus(finBilan, 3600);
-        },
-        agir() { effacer(); finBilan(); },"""
-APRES_BILAN = """          $("#tampon-d").classList.remove("on");
-          // ce que son offre lui coûte vraiment, et ce qu'elle vaut chez ses voisins ; puis les règles du réseau
-          const mot = $("#xb-mot"), j = jetonVoix;
-          mot.classList.remove("on", "fini"); $("p", mot).textContent = ""; $("img", mot).src = $("#v-xb .cz-av").getAttribute("src");
-          plus(async () => {
-            mot.classList.add("on");
-            if (!(await pause(450, j)) || !(await prononcer(mot, $("p", mot), BILAN_MOT, "depenses-bilan"))) return;
-            plus(motBilanFin, 1600);
-            plus(finBilan, 2600);
-          }, 2400);
-        },
-        agir() { effacer(); taireVoix(); motBilanFin(); finBilan(); },"""
-
-
 def une_fois(t, avant, apres, quoi):
     if t.count(avant) != 1:
         raise SystemExit(f"{quoi} : {t.count(avant)} fois")
@@ -104,15 +111,21 @@ for d, (metier, titre, bilan) in METIERS.items():
     page = f"{S}/{d}/index.html"
     t = open(page, encoding="utf-8").read()
     temps = {"depenses-titre": preparer(f"{R}/brut/{metier}.mp3", f"{S}/{d}/depenses-titre.mp3", titre),
-             "depenses-bilan": preparer(f"{R}/brut/{metier}2.mp3", f"{S}/{d}/depenses-bilan.mp3", bilan)}
+             "depenses-vrai": preparer(f"{R}/brut/{metier}2.mp3", f"{S}/{d}/depenses-vrai.mp3", bilan)}
     ancien = next(a for a in ANCIENS if a in t)
     t = une_fois(t, ancien, "titre: " + json.dumps(titre, ensure_ascii=False) + ', voix: "depenses-titre"', f"{d} titre")
     t = une_fois(t, "</style>\n", CSS.lstrip("\n") + "</style>\n", f"{d} style")
-    t = une_fois(t, '<ul class="xb-regles" id="xb-regles"></ul>',
-                 '<ul class="xb-regles" id="xb-regles"></ul><div class="xb-mot" id="xb-mot" aria-live="polite"><img alt=""><p></p></div>', f"{d} bulle")
+    t = une_fois(t, '<div class="ex-egal" id="x1-egal">',
+                 '<div class="ex-mot" id="x1-mot" aria-live="polite"><img alt=""><p></p></div><div class="ex-egal" id="x1-egal">', f"{d} bulle")
+    t = une_fois(t, '<div class="xb-lignes" id="xb-lignes"></div>\n            <ul class="xb-regles" id="xb-regles"></ul>',
+                 '<div class="xb-pile"><div class="xb-lignes" id="xb-lignes"></div><ul class="xb-regles" id="xb-regles"></ul></div>', f"{d} bilan")
     js = (JS.replace("__TEMPS_DEP__", json.dumps(temps)).replace("__ENR_DEP__", json.dumps(sorted(temps)))
-          .replace("__BILAN_MOT__", json.dumps(bilan, ensure_ascii=False)))
+          .replace("__VRAI_MOT__", json.dumps(bilan, ensure_ascii=False)))
     t = une_fois(t, "  /* ═══ PAGE 1 → PAGE 2 ═══ */\n", js.lstrip("\n") + "  /* ═══ PAGE 1 → PAGE 2 ═══ */\n", f"{d} js")
-    t = une_fois(t, AVANT_BILAN, APRES_BILAN, f"{d} bilan")
+    # l'offre : la bulle se range quand on revient ; elle vient après la pièce « 1 … = 50 € »
+    t = une_fois(t, '$("#x1-egal").classList.remove("on");', '$("#x1-egal").classList.remove("on"); $("#x1-mot").classList.remove("on"); $("#x1-mot").dataset.fini = "";', f"{d} offre remise")
+    t = une_fois(t, '() => plus(monnaie, 300)));', '() => { plus(monnaie, 300); plus(() => direVrai(j), 2000); }));', f"{d} offre")
+    t = une_fois(t, 'monnaie(); return; }\n          son("pop"); aller(idx + 1);',
+                 'monnaie(); plus(() => direVrai(jetonVoix), 1600); return; }\n          if (!vraiDit()) return;\n          son("pop"); aller(idx + 1);', f"{d} offre passée")
     open(page, "w", encoding="utf-8").write(t)
-    print(d, "· question", temps["depenses-titre"]["d"], "s · bilan", temps["depenses-bilan"]["d"], "s")
+    print(d, "· question", temps["depenses-titre"]["d"], "s · coût réel", temps["depenses-vrai"]["d"], "s")

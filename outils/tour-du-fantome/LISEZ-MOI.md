@@ -17,7 +17,7 @@ sur clikme.fr (le dossier est hors de `public/` et exclu du déploiement par `.v
 - `tour*/` : la page à publier (`index.html`), sa base (`index.avant-episode2.html`) et tout ce qu'elle
   charge (photos, voix, films).
 - `recu/` : les voix reçues (enregistrements ElevenLabs « Mike »), brutes et découpées ; `recu/depenses/brut/`
-  la question (`<métier>.mp3`) et la phrase du bilan (`<métier>2.mp3`) de « Moins de dépenses ».
+  la question (`<métier>.mp3`) et le coût réel de l'offre (`<métier>2.mp3`, dit à l'étape de l'offre) de « Moins de dépenses ».
 - `voix-intro/court/` : les voix de l'intro et `temps.json` (l'instant de chaque mot).
 - `accueil2/page/g-restaurant-salue.webp` : le fantôme du restaurant qui salue.
 - `outils/` : les scripts.
@@ -34,7 +34,7 @@ python3 -I $D/outils/tour-intro3.py $D      # + l'intro (chapitres 1 et 2, voix 
 python3 -I $D/outils/tour-promesses.py $D   # + « Pendant la nuit » (03), « Quand vous passerez la main » (04), fins de chat, écran du oui
 python3 -I $D/outils/tour-direct.py $D      # + « Pourquoi autant de monde ? » à l'étape du Direct
 python3 -I $D/outils/tour-gestes.py $D      # + les 4 photos en un seul appui
-python3 -I $D/outils/tour-depenses.py $D    # + « Moins de dépenses » : la question du métier, le coût réel au bilan
+python3 -I $D/outils/tour-depenses.py $D    # + « Moins de dépenses » : la question du métier, le coût réel à l'offre
 ```
 
 Les six scripts se lancent **dans cet ordre**. Chacun repart de `index.avant-episode2.html`, on peut
@@ -42,7 +42,9 @@ donc les relancer autant qu'on veut. Conséquence : une retouche faite à la mai
 écrasée au passage suivant. On retouche dans les scripts, ou dans `index.avant-episode2.html` pour la base.
 
 L'écran du oui (à la toute fin) : ses répliques sont dans `TEXTES` de `tour-promesses.py` (`oui-a`, `oui-nuit`,
-`oui-main`, `oui-b`) ; leurs enregistrements se posent dans `recu/oui/<nom>.mp3`. L'offre (prix, essai,
+`oui-main`, `oui-b`) ; leurs enregistrements se posent dans `recu/oui/<nom>.mp3`. Il coche toujours les quatre
+promesses, et ne vient que quand on touche « Passer à la conclusion » : après un chapitre (03 ou 04), on revient
+au chat, où le chapitre vu se coche. L'offre (prix, essai,
 engagement) se règle dans `OFFRE` du même script : vide, rien ne s'affiche.
 
 Pour une nouvelle voix de l'intro : remplacer `voix-intro/court/<nom>.mp3`, mettre son texte dans
