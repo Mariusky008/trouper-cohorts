@@ -1,0 +1,5 @@
+# fabriqués ou propres à une machine
+/ffmpeg
+/captures/
+/*/index.avant-intro.html
+__pycache__/
