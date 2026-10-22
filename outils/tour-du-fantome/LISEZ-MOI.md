@@ -16,7 +16,8 @@ sur clikme.fr (le dossier est hors de `public/` et exclu du déploiement par `.v
 
 - `tour*/` : la page à publier (`index.html`), sa base (`index.avant-episode2.html`) et tout ce qu'elle
   charge (photos, voix, films).
-- `recu/` : les voix reçues (enregistrements ElevenLabs « Mike »), brutes et découpées.
+- `recu/` : les voix reçues (enregistrements ElevenLabs « Mike »), brutes et découpées ; `recu/depenses/brut/`
+  la question (`<métier>.mp3`) et la phrase du bilan (`<métier>2.mp3`) de « Moins de dépenses ».
 - `voix-intro/court/` : les voix de l'intro et `temps.json` (l'instant de chaque mot).
 - `accueil2/page/g-restaurant-salue.webp` : le fantôme du restaurant qui salue.
 - `outils/` : les scripts.
@@ -33,9 +34,10 @@ python3 -I $D/outils/tour-intro3.py $D      # + l'intro (chapitres 1 et 2, voix 
 python3 -I $D/outils/tour-promesses.py $D   # + « Pendant la nuit » (03), « Quand vous passerez la main » (04), fins de chat, écran du oui
 python3 -I $D/outils/tour-direct.py $D      # + « Pourquoi autant de monde ? » à l'étape du Direct
 python3 -I $D/outils/tour-gestes.py $D      # + les 4 photos en un seul appui
+python3 -I $D/outils/tour-depenses.py $D    # + « Moins de dépenses » : la question du métier, le coût réel au bilan
 ```
 
-Les cinq scripts se lancent **dans cet ordre**. Chacun repart de `index.avant-episode2.html`, on peut
+Les six scripts se lancent **dans cet ordre**. Chacun repart de `index.avant-episode2.html`, on peut
 donc les relancer autant qu'on veut. Conséquence : une retouche faite à la main dans `index.html` est
 écrasée au passage suivant. On retouche dans les scripts, ou dans `index.avant-episode2.html` pour la base.
 
@@ -45,7 +47,7 @@ engagement) se règle dans `OFFRE` du même script : vide, rien ne s'affiche.
 
 Pour une nouvelle voix de l'intro : remplacer `voix-intro/court/<nom>.mp3`, mettre son texte dans
 `outils/mesurer-intro2.py` (et dans `tour-intro3.py`), lancer `python3 -I $D/outils/mesurer-intro2.py $D`,
-puis les cinq scripts.
+puis les six scripts.
 
 ## Vérifier
 

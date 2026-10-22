@@ -1804,6 +1804,16 @@ h1 em{font-style:normal;color:var(--rose)}
 .di-fx .fx-fant{top:28.2em}
 .di-fx .fx-bulle{bottom:calc(100% - 27.7em)}
 .di-fx-passer{position:absolute;left:0;right:0;bottom:2.2em;text-align:center;font-size:.7em;font-weight:700;color:rgba(255,255,255,.45)}
+/* « MOINS DE DÉPENSES » : au bilan, le fantôme de son comptoir dit ce que son offre lui coûte vraiment, et ce
+   qu'elle vaut chez ses voisins ; sa bulle prend la place des règles du réseau, qui reviennent ensuite */
+.xb-mot{position:absolute;left:.9em;right:.9em;top:30.9em;display:flex;align-items:flex-start;gap:.65em;padding:.8em .9em;border-radius:1.1em;background:#FFF1DF;color:#2A1A10;
+  box-shadow:0 .8em 1.6em -.8em rgba(0,0,0,.75);opacity:0;transform:translateY(.6em) scale(.96);transition:opacity .35s,transform .5s var(--ease);pointer-events:none}
+.xb-mot.on{opacity:1;transform:none}
+.xb-mot.fini{opacity:0;transform:translateY(-.4em) scale(.97)}
+.xb-mot img{flex:none;width:2.5em;height:2.5em;object-fit:contain;transform-origin:50% 85%}
+.xb-mot.parle img{animation:fx-hoche .62s ease-in-out infinite}
+.xb-mot p{margin:0;font-size:.88em;font-weight:700;line-height:1.36}
+@media (prefers-reduced-motion:reduce){.xb-mot.parle img{animation:none}}
 </style>
 
 <section class="accueil" id="accueil">
@@ -2274,7 +2284,7 @@ h1 em{font-style:normal;color:var(--rose)}
             <div class="ex-barre" aria-hidden="true"><span class="ex-retour">‹ Échanges</span><span class="ex-son"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9zM16.5 8.5a5 5 0 0 1 0 7"/></svg></span></div>
             <h4 class="xb-t">Mon bilan</h4>
             <div class="xb-lignes" id="xb-lignes"></div>
-            <ul class="xb-regles" id="xb-regles"></ul>
+            <ul class="xb-regles" id="xb-regles"></ul><div class="xb-mot" id="xb-mot" aria-live="polite"><img alt=""><p></p></div>
             <span class="tampon" id="tampon-d">Moins de dépenses.</span>
             <div class="fin" id="fin-depenses"><button type="button" class="go fin-chap" id="fin-d-autre">Et pendant la nuit ? →</button><button type="button" class="go fin-chap" id="fin-d-demain">Et quand vous passerez la main →</button><button type="button" class="fin-conclure" id="fin-d-oui">Passer à la conclusion →</button></div>
           </div>
@@ -2773,7 +2783,7 @@ h1 em{font-style:normal;color:var(--rose)}
       question: "quel est l’intitulé de ton menu du jour" + NB + "?", voixQuestion: "clients-5",
     },
     depenses: {
-      titre: "Et si *tes" + INS + "dîners payaient tes courses" + NB + "?", voix: "depenses-1",
+      titre: "Et si tes *tables vides du mardi midi payaient ton coiffeur ?", voix: "depenses-titre",
       plan: [
         { ico: '<span class="fx-ico"><img src="m3.jpg" alt=""></span>', txt: "Tu offres un dîner aux commerçants du réseau.", voix: "depenses-2" },
         { ico: '<span class="fx-ico piece">€</span>', txt: "Chaque dîner servi te rapporte des crédits.", voix: "depenses-3" },
@@ -4092,11 +4102,18 @@ h1 em{font-style:normal;color:var(--rose)}
             "Pas besoin d’échange direct : " + p.prenom + " n’avait pas besoin de vos dîners, " + vs.map((s) => s.v.prenom).join(" et ") + ", si.",
             "Vous fixez la limite : " + (ech.par > 1 ? ech.par + " dîners" : "un dîner") + " par mois maximum.",
           ].forEach((t) => { const li = document.createElement("li"); li.textContent = t; r.appendChild(li); });
-          plus(() => r.classList.add("on"), 2600);
           $("#tampon-d").classList.remove("on");
-          plus(finBilan, 3600);
+          // ce que son offre lui coûte vraiment, et ce qu'elle vaut chez ses voisins ; puis les règles du réseau
+          const mot = $("#xb-mot"), j = jetonVoix;
+          mot.classList.remove("on", "fini"); $("p", mot).textContent = ""; $("img", mot).src = $("#v-xb .cz-av").getAttribute("src");
+          plus(async () => {
+            mot.classList.add("on");
+            if (!(await pause(450, j)) || !(await prononcer(mot, $("p", mot), BILAN_MOT, "depenses-bilan"))) return;
+            plus(motBilanFin, 1600);
+            plus(finBilan, 2600);
+          }, 2400);
         },
-        agir() { effacer(); finBilan(); },
+        agir() { effacer(); taireVoix(); motBilanFin(); finBilan(); },
       },
     ],
   };
@@ -4577,6 +4594,11 @@ h1 em{font-style:normal;color:var(--rose)}
     plus(revelerDirect, 450 + reste.length * 1000 + 150);
   }
   $("#di-fx").addEventListener("click", (e) => { e.stopPropagation(); taireVoix(); finPourquoi(); });
+  /* « Moins de dépenses » : la phrase qui fait tilt (voir tour-depenses.py) */
+  Object.assign(TEMPS, {"depenses-titre": {"d": 3.11, "m": [0.0, 0.19, 0.39, 0.58, 1.17, 1.36, 1.75, 2.33, 2.53, 2.72], "b": "1111111101110111111111111111111111111111111111111111000011111110111111111111"}, "depenses-bilan": {"d": 8.75, "m": [0.0, 0.21, 0.86, 1.06, 1.46, 1.66, 1.86, 2.06, 2.86, 3.06, 3.26, 3.77, 3.97, 4.17, 4.37, 4.97, 5.18, 5.78, 5.98, 6.69, 6.86, 7.04, 7.55, 7.72, 7.89, 8.06], "b": "1111111111111111000001111111111111111111111110111111111111111111111111110111011111001100000000111111111110111001111110011111111111111111111111110011111111100000000000011111111111111111100001111111111111111111111111111"}});
+  ["depenses-bilan", "depenses-titre"].forEach((n) => { if (!ENREGISTREES.includes(n)) ENREGISTREES.push(n); });
+  const BILAN_MOT = "Par exemple, un dîner pour deux, c’est 50 € sur ta carte… mais à peine *15 € de marchandise pour toi. Chez tes voisins, il vaut bien *50 €.";
+  const motBilanFin = () => { $("#xb-mot").classList.add("fini"); $("#xb-regles").classList.add("on"); };
   /* ═══ PAGE 1 → PAGE 2 ═══ */
   $("#decouvrir").addEventListener("click", () => {
     contexte(); chargerVoix();
