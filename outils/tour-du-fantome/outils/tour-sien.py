@@ -8,7 +8,7 @@
 #  · son vrai temps. Du nom du plat jusqu'à « Publier », le temps qu'il y passe est mesuré. À la fin de
 #    « Plus de clients », après WhatsApp, un ticket : son temps (mesuré), les vues et la demande (exemple).
 #    La conclusion le reprend : « Plus de clients · votre annonce en 1 min 48, aujourd'hui ».
-#    Pas de ligne « commission » tant qu'elle n'est pas confirmée.
+#    Et « Commission : 0 € » : ClikMe ne prend aucune commission sur ce que ses clients lui demandent (confirmé).
 # À lancer après tour-depenses.py (même index.html) :  python3 -I tour-sien.py <dossier>
 import json, sys
 
@@ -61,6 +61,7 @@ CSS = """
 .wb-l em{flex:none;padding:.15em .5em;border-radius:1em;font-style:normal;font-size:.6em;font-weight:800;background:rgba(42,26,16,.08);color:#8A6A55}
 .wb-l em.vrai{background:rgba(61,226,166,.22);color:#0F7A54}
 .wb-temps b{font-size:1.35em;color:#E0167A;letter-spacing:-.02em}
+.wb-zero b{font-size:1.2em;color:#0F7A54}
 """
 
 POUR_HTML = ('\n    <button type="button" class="pour" id="pour">✎ Pour qui est cette démo ?</button>\n'
@@ -78,6 +79,7 @@ BILAN_HTML = ('<div class="wa-bilan" id="wa-bilan" aria-live="polite">'
               '<div class="wb-l wb-temps"><i>⏱</i><span><small>Votre temps pour créer et publier</small><b id="wb-temps"></b></span><em class="vrai">mesuré</em></div>'
               '<div class="wb-l"><i>👁</i><span><small>Votre annonce sur ClikMe</small><b>1 400 vues</b></span><em>exemple</em></div>'
               '<div class="wb-l"><i>💬</i><span><small id="wb-quand"></small><b id="wb-demande"></b></span><em>exemple</em></div>'
+              '<div class="wb-l wb-zero"><i>🤝</i><span><small>Commission ClikMe sur cette demande</small><b>0 €</b></span><em class="vrai">toujours</em></div>'
               '</div>')
 
 JS = """
