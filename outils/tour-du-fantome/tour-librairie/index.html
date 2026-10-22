@@ -1851,6 +1851,44 @@ h1 em{font-style:normal;color:var(--rose)}
 .xb-l{min-height:3.5em;padding:.45em .75em}
 .xb-pile{position:absolute;left:.9em;right:.9em;top:12.4em;display:flex;flex-direction:column;gap:.75em}
 .xb-pile>.xb-lignes,.xb-pile>.xb-regles{position:static}
+/* SON NOM : le présentateur le tape avant de tendre le téléphone (page 1) */
+.pour{position:relative;z-index:6;display:inline-flex;align-items:center;gap:6px;max-width:100%;margin-top:10px;padding:6px 13px;border-radius:999px;border:1px dashed rgba(255,244,230,.3);
+  background:rgba(14,9,7,.55);color:rgba(255,244,230,.62);font-weight:700;font-size:12.5px;line-height:1.2}
+/* à son nom : sous le logo s'il ne tient pas à côté, sur deux lignes s'il le faut */
+.pour.a-nom{display:inline-block;order:2;margin:10px auto 0;border-radius:16px;border:1px solid rgba(255,93,184,.65);background:rgba(255,46,154,.16);color:#fff;font-size:14px;text-align:center}
+.accueil .tete:has(.pour.a-nom){flex-wrap:wrap}
+.pour b{font-weight:900}
+/* son enseigne, la nuit : un nom long passe sur deux lignes au lieu de sortir du décor */
+.pr-enseigne{width:max-content;max-width:118%;white-space:normal;text-align:center;line-height:1.15}
+.accueil.en-intro .pour{opacity:0;visibility:hidden}
+.pour-feuille{position:fixed;inset:0;z-index:7;display:grid;place-items:center;padding:20px;background:rgba(11,2,2,.74);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.pour-feuille[hidden]{display:none}
+.pour-carte{width:100%;max-width:340px;margin:0;padding:18px;border-radius:20px;background:#1A0F14;border:1px solid rgba(255,255,255,.12);text-align:left;display:flex;flex-direction:column;gap:10px}
+.pour-carte label{font-weight:900;font-size:18px;letter-spacing:-.01em}
+.pour-carte input{height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.22);background:#0E0709;color:#fff;padding:0 14px;font:inherit;font-size:16px;font-weight:700}
+.pour-carte small{color:rgba(255,244,230,.66);font-size:12.5px;line-height:1.4}
+.pour-actions{display:flex;gap:8px;margin-top:2px}
+.pour-actions button{flex:1;height:46px;border-radius:999px;font-weight:800;font-size:15px}
+.pour-ok{background:linear-gradient(90deg,#FF4FA8,#E0167A);color:#fff}
+.pour-effacer{border:1px solid rgba(255,255,255,.25);color:rgba(255,244,230,.85)}
+/* la conclusion à son nom : un titre plus long, un peu plus petit */
+.oy-titre.nomme{font-size:clamp(21px,6.6cqmin,40px)}
+/* SON TEMPS : le ticket de « Plus de clients », sur le WhatsApp, après la demande */
+.wa-bilan{position:absolute;left:.9em;right:.9em;top:8.6em;z-index:12;padding:.85em .95em .55em;border-radius:1.1em;background:#FFF6EA;color:#2A1A10;box-shadow:0 1.2em 2.4em -1em rgba(0,0,0,.85);
+  opacity:0;transform:translateY(1.2em) scale(.96);transition:opacity .4s,transform .55s var(--ease);pointer-events:none}
+.wa-bilan.on{opacity:1;transform:none}
+.wb-t{margin:0 0 .45em;display:flex;align-items:center;justify-content:space-between;gap:.5em}
+.wb-t b{padding:.2em .55em;border-radius:.45em;background:var(--rose);color:#fff;font-size:1.2em;font-weight:900;letter-spacing:-.02em;transform:rotate(-3deg);white-space:nowrap}
+.wb-t small{font-size:.66em;font-weight:800;color:#8A6A55;text-transform:uppercase;letter-spacing:.05em;text-align:right;line-height:1.25}
+.wb-l{display:flex;align-items:center;gap:.6em;padding:.5em 0;border-top:1px dashed rgba(42,26,16,.24)}
+.wb-l[hidden]{display:none}
+.wb-l>i{flex:none;display:grid;place-items:center;width:2.1em;height:2.1em;border-radius:.6em;background:rgba(255,46,154,.1);font-style:normal}
+.wb-l span{flex:1;min-width:0}
+.wb-l small{display:block;font-size:.68em;font-weight:700;color:#8A6A55}
+.wb-l b{display:block;font-size:.95em;font-weight:900;line-height:1.2}
+.wb-l em{flex:none;padding:.15em .5em;border-radius:1em;font-style:normal;font-size:.6em;font-weight:800;background:rgba(42,26,16,.08);color:#8A6A55}
+.wb-l em.vrai{background:rgba(61,226,166,.22);color:#0F7A54}
+.wb-temps b{font-size:1.35em;color:#E0167A;letter-spacing:-.02em}
 </style>
 
 <section class="accueil" id="accueil">
@@ -1863,7 +1901,9 @@ h1 em{font-style:normal;color:var(--rose)}
   </div>
   <header class="tete">
     <img src="logo.png" alt="ClikMe">
+    <button type="button" class="pour" id="pour">✎ Pour qui est cette démo ?</button>
   </header>
+  <div class="pour-feuille" id="pour-feuille" hidden><form class="pour-carte" id="pour-form"><label for="pour-nom">Pour qui est cette démo ?</label><input id="pour-nom" type="text" maxlength="40" autocomplete="off" autocapitalize="words" enterkeyhint="done" placeholder="Le nom de son commerce"><small>Son nom s’affiche aux moments forts : sa boutique la nuit, le livre de son commerce, la conclusion. Il reste sur ce téléphone le temps de la visite, et n’est envoyé nulle part.</small><div class="pour-actions"><button type="button" class="pour-effacer" id="pour-effacer">Effacer</button><button type="submit" class="pour-ok">C’est noté</button></div></form></div>
   <h1><span class="ligne">Plus de clients.</span><em class="ligne">Moins de dépenses.</em><span class="sous">Votre fantôme s’occupe des deux.</span></h1>
   <p class="devise">Vous faites. <em>Votre fantôme raconte.</em></p>
   <button type="button" class="decouvrir" id="decouvrir">Découvrez votre fantôme →</button>
@@ -2182,7 +2222,7 @@ h1 em{font-style:normal;color:var(--rose)}
               <div class="wa-msg wa-moi" id="wa-moi"><pre id="wa-reponse"></pre><time>11:43 ✓✓</time></div>
             </div>
             <div class="wa-saisie" aria-hidden="true"><span>Message</span><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fff"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></i></div>
-            <div class="wa-notif" id="wa-notif"><span class="ic"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z"/></svg></span><span><b>WhatsApp · Camille</b><small id="wa-apercu"></small></span><em>maintenant</em></div>
+            <div class="wa-bilan" id="wa-bilan" aria-live="polite"><p class="wb-t"><b>Plus de clients.</b><small>Ce que votre fantôme<br>a fait pour vous</small></p><div class="wb-l wb-temps"><i>⏱</i><span><small>Votre temps pour créer et publier</small><b id="wb-temps"></b></span><em class="vrai">mesuré</em></div><div class="wb-l"><i>👁</i><span><small>Votre annonce sur ClikMe</small><b>1 400 vues</b></span><em>exemple</em></div><div class="wb-l"><i>💬</i><span><small id="wb-quand"></small><b id="wb-demande"></b></span><em>exemple</em></div></div><div class="wa-notif" id="wa-notif"><span class="ic"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z"/></svg></span><span><b>WhatsApp · Camille</b><small id="wa-apercu"></small></span><em>maintenant</em></div>
             <span class="tampon" id="tampon-c" style="--y:60%">Plus de clients.</span>
             <div class="fin" id="fin-clients" style="--b:3.6em"><button type="button" class="go fin-chap" id="fin-c-autre">Et pendant la nuit ? →</button><button type="button" class="go fin-chap" id="fin-c-demain">Et quand vous passerez la main →</button><button type="button" class="fin-conclure" id="fin-c-oui">Passer à la conclusion →</button></div>
           </div>
@@ -3138,6 +3178,7 @@ h1 em{font-style:normal;color:var(--rose)}
   function finWhatsapp() {
     $("#wa-notif").classList.remove("on"); $("#wa-ecrit").classList.remove("on");
     ["#wa-recu", "#wa-moi", "#tampon-c"].forEach((s) => $(s).classList.add("on"));
+    plus(montrerBilanClients, 1500);
     son("magie"); geste("magie", 950); etincelles(8);
     dire(parcours === "episode" ? EPISODE.fin : parcours === "spe" ? DIT_FIN_SPE : DIT_FIN_CLIENTS);
     terminer();
@@ -3638,7 +3679,7 @@ h1 em{font-style:normal;color:var(--rose)}
           const txt = message();
           $("#wa-texte").textContent = txt; $("#wa-apercu").textContent = txt.split("\n").slice(0, 2).join(" ");
           $("#wa-reponse").textContent = reponse();
-          ["#wa-recu", "#wa-moi", "#wa-ecrit", "#wa-notif", "#tampon-c"].forEach((s) => $(s).classList.remove("on"));
+          ["#wa-recu", "#wa-moi", "#wa-ecrit", "#wa-notif", "#tampon-c", "#wa-bilan"].forEach((s) => $(s).classList.remove("on"));
           plus(() => { $("#wa-notif").classList.add("on"); son("ding"); }, 350);
           plus(() => { $("#wa-notif").classList.remove("on"); $("#wa-recu").classList.add("on"); }, 2300);
           plus(() => $("#wa-ecrit").classList.add("on"), 3600);
@@ -4396,7 +4437,7 @@ h1 em{font-style:normal;color:var(--rose)}
      Racontées comme l'intro, sur le même écran (jouerPromesse) ; chacune à la fin de son chapitre, sur son
      bouton (« 🌙 Et cette nuit ? », « ✨ Et demain ? »). Une idée par écran ; les mots déclenchent les gestes. */
   const PR = {"lieu": "La Page d’Alice", "qui": "Alice", "fant": "fant.webp", "extrait": "Je l’ai lu d’une traite, à douze ans.", "voix": false, "lea": ["Léa", "adore les romans d’aventure"], "piece": "piece-librairie.webp", "geste": "m1.jpg", "film": "message.jpg", "surprise": {"photo": "m2.jpg", "titre": "Le Comte de Monte-Cristo", "raison": "Vous adorez les romans d’aventure.", "bouton": "Je le fais mettre de côté", "fait": "✓ Mis de côté pour vous", "notif": "Mis de côté · Monte-Cristo · Léa"}, "stats": [["📖", "Le Comte de Monte-Cristo", 640, 22, "ok"], ["🎁", "Coffret jeunesse", 510, 3, "moyen"], ["🔎", "Polar du mois", 120, 1, "non"]]};
-  const prBoutique = () => '<div class="pr-boutique"><span class="pr-enseigne">' + PR.lieu + '</span><svg viewBox="0 0 100 105" aria-hidden="true"><defs>' +
+  const prBoutique = () => '<div class="pr-boutique"><span class="pr-enseigne">' + lieuVous() + '</span><svg viewBox="0 0 100 105" aria-hidden="true"><defs>' +
     '<pattern id="pr-ray" width="12" height="10" patternUnits="userSpaceOnUse"><rect width="6" height="10" fill="#ff5db8"/><rect x="6" width="6" height="10" fill="#fff4e6"/></pattern></defs>' +
     '<rect class="mur" x="8" y="22" width="84" height="83" rx="4"/><path d="M2 22H98L92 38H8Z" fill="url(#pr-ray)"/>' +
     '<path d="M8 38q6 6 12 0t12 0 12 0 12 0 12 0 12 0 12 0" fill="none" stroke="#ff5db8" stroke-width="2"/>' +
@@ -4416,38 +4457,38 @@ h1 em{font-style:normal;color:var(--rose)}
       '<div class="nx-vol"><img src="' + PR.fant + '" alt=""></div><div class="nx-cadeau">🎁</div>' +
       '<div class="nx-notifs"><div class="nx-n nx-n1"><header><img src="fantome-maison.webp" alt="">Chez ' + PR.lea[0] + "<em>☀️ 8:02</em></header>" +
           "<b>🎁 Votre surprise : " + prMin(PR.surprise.titre) + '</b><u data-fait="' + PR.surprise.fait + '">' + PR.surprise.bouton + "</u></div>" +
-        '<div class="nx-n nx-n2"><header><img src="' + PR.fant + '" alt="">Chez vous · ' + PR.lieu + "<em>exemple</em></header><b>🔔 " + PR.surprise.notif + "</b></div></div>" +
+        '<div class="nx-n nx-n2"><header><img src="' + PR.fant + '" alt="">Chez vous · ' + lieuVous() + "<em>exemple</em></header><b>🔔 " + PR.surprise.notif + "</b></div></div>" +
       prEtin(12) + "</div>",
     // LE LIVRE DE SON COMMERCE : la couverture à son nom ; page 1, ce qui fait son commerce (sa photo, son
     // mémo vocal, son film, sa ville) et le tampon de la relève ; page 2, ses chiffres ; puis son mémo, ouvert
     demain: () => '<div class="dx">' +
       '<div class="dx-haut"><span class="dx-annee">2026</span><div class="dx-relai"><span class="vous">Vous</span><span class="dx-fl">→</span><span class="releve">La relève</span></div></div>' +
       '<div class="dx-cahier">' +
-        '<div class="dx-page dx-p2"><h3 class="dx-titre"><small>Le livre de ' + PR.lieu + "</small>Ce qui marche… ou pas</h3>" +
+        '<div class="dx-page dx-p2"><h3 class="dx-titre"><small>Le livre de ' + lieuVous() + "</small>Ce qui marche… ou pas</h3>" +
           PR.stats.map(([e, nom, vues, resas, v], k) => '<div class="dx-prod" style="--d:' + (k * 0.15).toFixed(2) + 's"><b>' + e + " " + nom + "</b><span>🎬 " + vues.toLocaleString("fr-FR") +
             " vues · 📅 " + resas + " réservation" + (resas > 1 ? "s" : "") + '</span><strong class="dx-verdict ' + v + '">' + DX_VERDICTS[v] + "</strong></div>").join("") +
           '<span class="dx-exemple">exemple</span></div>' +
-        '<div class="dx-page dx-p1"><h3 class="dx-titre"><small>Le livre de ' + PR.lieu + "</small>Tout ce qui fait votre commerce</h3>" +
+        '<div class="dx-page dx-p1"><h3 class="dx-titre"><small>Le livre de ' + lieuVous() + "</small>Tout ce qui fait votre commerce</h3>" +
           '<div class="dx-grille">' +
             '<div class="dx-item" data-k="0" style="--r:-3deg"><div class="dx-cadre"><img src="' + PR.geste + '" alt=""></div><em>Vos gestes</em></div>' +
-            '<div class="dx-item secret" data-k="1" style="--r:2.5deg"><div class="dx-cadre memo"><b>' + (PR.voix ? "🎙️ Le secret de " : "✒️ Le secret de ") + PR.qui + "</b>" +
+            '<div class="dx-item secret" data-k="1" style="--r:2.5deg"><div class="dx-cadre memo"><b>' + (SIEN.nom ? (PR.voix ? "🎙️ " : "✒️ ") + "Votre secret" : (PR.voix ? "🎙️ Le secret de " : "✒️ Le secret de ") + PR.qui) + "</b>" +
               (PR.voix ? '<span class="mini">' + Array.from({ length: 12 }, (_, k) => '<i style="--h:' + (25 + ((k * 37) % 75)) + '%"></i>').join("") + "</span><small>▶ " + DX_DUREE + "</small>"
                 : '<span class="mini plume">✒️</span><small>de sa main</small>') + "</div><em>Vos secrets</em></div>" +
             '<div class="dx-item" data-k="2" style="--r:2deg"><div class="dx-cadre film"><img src="' + PR.film + '" alt=""></div><em>Vos histoires</em></div>' +
             '<div class="dx-item" data-k="3" style="--r:-2deg"><div class="dx-cadre ville">' + [["C", "#FF2E9A"], ["M", "#7C4DFF"], ["S", "#2FBF8F"], ["L", "#FF8A3D"], ["+", "#c9a46a"]].map(([l, c]) => '<b style="--c:' + c + '">' + l + "</b>").join("") +
               "<span>♥ vous suivent</span></div><em>Votre ville</em></div>" +
           '</div><span class="dx-tampon">✓ Transmis à la relève</span></div>' +
-        '<div class="dx-couv"><img src="' + PR.fant + '" alt=""><small>Le livre de</small><b>' + PR.lieu + "</b><small>depuis 2026</small></div>" +
+        '<div class="dx-couv"><img src="' + PR.fant + '" alt=""><small>Le livre de</small><b>' + lieuVous() + "</b><small>depuis 2026</small></div>" +
       "</div>" +
       '<div class="dx-voix"><small>📖 Gardé dans le livre · ' + (PR.voix ? "la voix de " : "les mots de ") + PR.qui + '</small><div class="dx-voix-corps">' +
         (PR.voix ? '<div class="dx-onde">' + Array.from({ length: 9 }, (_, k) => '<i style="--h:' + (30 + ((k * 41) % 70)) + '%"></i>').join("") + "</div>" : '<div class="dx-plume">✒️</div>') +
-        "<p></p></div><em>— " + PR.qui + " · " + PR.lieu + "</em></div>" +
+        "<p></p></div><em>— " + PR.qui + " · " + PR.lieu + (SIEN.nom ? " · exemple" : "") + "</em></div>" +
       '<div class="dx-promesse"><h2>Votre savoir-faire<br>ne mourra <em>jamais</em>.</h2>' + prEtin(14) + "</div></div>",
     carte: (l) => '<div class="s0"><span class="s0-num">' + l.num + "</span><small>" + l.petit + "</small><h2>" + l.titre + "</h2><p>" + l.sous + "</p></div>",
     // LE OUI : les quatre promesses, cochées une à une, puis le bouton qui crée sa page
-    oui: () => '<div class="oy"><h2 class="oy-titre">Alors, on y <em>va</em>' + NB + "?</h2><div class=\"oy-liste\">" +
+    oui: () => '<div class="oy">' + ouiTitre() + "<div class=\"oy-liste\">" +
       OUI_PROMESSES.map((p, k) => '<div class="oy-p" data-k="' + k + '"><span class="s2-tuile"><svg viewBox="0 0 24 24" aria-hidden="true">' + p.ico +
-        "</svg></span><span><b>" + p.titre + "</b><small>" + p.sous + "</small></span><i>✓</i></div>").join("") + "</div>" +
+        "</svg></span><span><b>" + p.titre + "</b><small>" + (k === 0 && SIEN.temps ? "votre annonce en " + SIEN.temps + ", aujourd’hui" : p.sous) + "</small></span><i>✓</i></div>").join("") + "</div>" +
       '<a class="oy-go" href="' + OUI_CREER + '" target="_blank" rel="noopener">Créer ma page maintenant →<small>avec votre fiche Google · 2 minutes</small></a>' +
       (OUI_OFFRE ? '<p class="oy-offre">' + OUI_OFFRE + "</p>" : "") + prEtin(14) + "</div>",
   };
@@ -4651,6 +4692,60 @@ h1 em{font-style:normal;color:var(--rose)}
     $("p", mot).textContent = VRAI_MOT.replace(/\*/g, "");
     mot.classList.remove("parle", "ouvre"); mot.classList.add("on"); mot.dataset.fini = "1";
     return false;
+  }
+  /* ═══ SON NOM, SON TEMPS (voir tour-sien.py) ═══ */
+  const SIEN = { nom: "", temps: "", t0: 0 };
+  const sienEchapper = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  // son commerce s'il a été tapé, sinon celui de l'exemple
+  const lieuVous = () => SIEN.nom ? sienEchapper(SIEN.nom) : PR.lieu;
+  // le titre de la conclusion, à son nom
+  const ouiTitre = () => SIEN.nom
+    ? '<h2 class="oy-titre nomme">On crée la page de <em>' + sienEchapper(SIEN.nom) + "</em>" + NB + "?</h2>"
+    : '<h2 class="oy-titre">Alors, on y <em>va</em>' + NB + "?</h2>";
+  // le nom reste sur ce téléphone le temps de la visite (jamais envoyé)
+  try { SIEN.nom = sessionStorage.getItem("tour-pour") || ""; } catch (e) { /* stockage fermé : on le retape */ }
+  function montrerPour() {
+    const b = $("#pour");
+    b.classList.toggle("a-nom", !!SIEN.nom);
+    b.innerHTML = SIEN.nom ? "✨ Préparé pour <b>" + sienEchapper(SIEN.nom) + "</b>" : "✎ Pour qui est cette démo ?";
+  }
+  function poserPour(nom) {
+    SIEN.nom = nom.trim().replace(/\s+/g, " ").slice(0, 40);
+    try { if (SIEN.nom) sessionStorage.setItem("tour-pour", SIEN.nom); else sessionStorage.removeItem("tour-pour"); } catch (e) { /* stockage fermé */ }
+    $("#pour-feuille").hidden = true;
+    montrerPour();
+  }
+  montrerPour();
+  $("#pour").addEventListener("click", (e) => {
+    e.stopPropagation();
+    $("#pour-nom").value = SIEN.nom; $("#pour-feuille").hidden = false;
+    setTimeout(() => $("#pour-nom").focus(), 60);
+  });
+  $("#pour-form").addEventListener("submit", (e) => { e.preventDefault(); poserPour($("#pour-nom").value); });
+  $("#pour-effacer").addEventListener("click", () => poserPour(""));
+  $("#pour-feuille").addEventListener("click", (e) => { if (e.target.id === "pour-feuille") $("#pour-feuille").hidden = true; });
+
+  /* SON VRAI TEMPS : du nom du plat jusqu'à « Publier », mesuré pendant qu'il le fait */
+  const dureeSien = (ms) => {
+    const s = Math.max(1, Math.round(ms / 1000));
+    return s < 60 ? s + " s" : Math.floor(s / 60) + " min" + (s % 60 ? " " + String(s % 60).padStart(2, "0") : "");
+  };
+  {
+    const nom = DEMOS.clients.moments.find((m) => m.id === "nom"), entrerNom = nom.entrer;
+    nom.entrer = function () { SIEN.t0 = performance.now(); SIEN.temps = ""; return entrerNom.apply(this, arguments); };
+    const pub = DEMOS.clients.moments.find((m) => m.id === "publier"), agirPub = pub.agir;
+    pub.agir = function () { if (SIEN.t0 && !SIEN.temps) SIEN.temps = dureeSien(performance.now() - SIEN.t0); return agirPub.apply(this, arguments); };
+  }
+  // le ticket, après la demande WhatsApp : le tampon « Plus de clients. » se pose dessus
+  const DEMANDE_BILAN = () => "« " + PLAT + " », mis de côté";
+  function montrerBilanClients() {
+    const q = QUAND[choix.quand];
+    $("#wb-temps").textContent = SIEN.temps;
+    $("#wb-temps").closest(".wb-l").hidden = !SIEN.temps;
+    $("#wb-demande").textContent = DEMANDE_BILAN();
+    $("#wb-quand").textContent = "Sur votre WhatsApp · " + q.mot.toLowerCase() + " vers " + q.heures[choix.heure];
+    $("#tampon-c").classList.remove("on");
+    $("#wa-bilan").classList.add("on"); son("pop");
   }
   /* ═══ PAGE 1 → PAGE 2 ═══ */
   $("#decouvrir").addEventListener("click", () => {

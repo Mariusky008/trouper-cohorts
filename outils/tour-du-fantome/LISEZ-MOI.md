@@ -35,9 +35,10 @@ python3 -I $D/outils/tour-promesses.py $D   # + « Pendant la nuit » (03), « Q
 python3 -I $D/outils/tour-direct.py $D      # + « Pourquoi autant de monde ? » à l'étape du Direct
 python3 -I $D/outils/tour-gestes.py $D      # + les 4 photos en un seul appui
 python3 -I $D/outils/tour-depenses.py $D    # + « Moins de dépenses » : la question du métier, le coût réel à l'offre
+python3 -I $D/outils/tour-sien.py $D        # + son nom (« Pour qui est cette démo ? ») et son vrai temps (le ticket de « Plus de clients »)
 ```
 
-Les six scripts se lancent **dans cet ordre**. Chacun repart de `index.avant-episode2.html`, on peut
+Les sept scripts se lancent **dans cet ordre**. Chacun repart de `index.avant-episode2.html`, on peut
 donc les relancer autant qu'on veut. Conséquence : une retouche faite à la main dans `index.html` est
 écrasée au passage suivant. On retouche dans les scripts, ou dans `index.avant-episode2.html` pour la base.
 
@@ -47,9 +48,16 @@ promesses, et ne vient que quand on touche « Passer à la conclusion » : aprè
 au chat, où le chapitre vu se coche. L'offre (prix, essai,
 engagement) se règle dans `OFFRE` du même script : vide, rien ne s'affiche.
 
+**Le jour de la démo, son nom** : avant de tendre le téléphone, touchez « ✎ Pour qui est cette démo ? » en haut de la
+page 1 et tapez le nom de son commerce. Il s'affiche sur la page 1 (« Préparé pour… »), sur sa boutique et dans sa
+notification (chapitre 03), sur le livre de son commerce (chapitre 04) et dans le titre de la conclusion. Seul le nom
+change : photos, voix et mots restent ceux de l'exemple. Il reste sur ce téléphone le temps de la visite, sans être envoyé.
+Son temps, du nom du plat à « Publier », est mesuré : il s'affiche dans le ticket de fin de « Plus de clients » et dans
+la conclusion. Aucune ligne « commission » tant qu'elle n'est pas confirmée.
+
 Pour une nouvelle voix de l'intro : remplacer `voix-intro/court/<nom>.mp3`, mettre son texte dans
 `outils/mesurer-intro2.py` (et dans `tour-intro3.py`), lancer `python3 -I $D/outils/mesurer-intro2.py $D`,
-puis les six scripts.
+puis les sept scripts.
 
 ## Vérifier
 
