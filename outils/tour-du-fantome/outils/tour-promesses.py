@@ -25,9 +25,19 @@ TEXTES = {
     "nuit-a": f"Ce soir, vous fermez. Moi, je *sors. Je frappe chez les fantômes de vos *habitants{NB}: eux savent ce qui leur ferait *plaisir. On s’arrange entre fantômes… et demain *matin, vos clients sont déjà *là.",
     # à enregistrer (voix du fantôme) — tant qu'elle manque, elle s'écrit au rythme estimé, sans son
     "demain-chiffres": "Et je retiens ce qui a *marché… et ce qui n’a *pas marché.",
+    # l'écran du oui, à la toute fin (à enregistrer)
+    "oui-a": "Alors, on récapitule. Plus de *clients, sans y passer de temps. Moins de *dépenses, grâce à vos commerçants voisins.",
+    "oui-nuit": "Et même la *nuit, je travaille pour vous.",
+    "oui-main": "Et votre savoir-faire ne mourra *jamais.",
+    "oui-b": f"On crée votre *page maintenant{NB}? Ça prend deux minutes.",
 }
 # où chaque réplique arrive (recu/<dossier>/<nom>.mp3)
-DOSSIER_VOIX = {"nuit-a": "nuit", "demain-chiffres": "demain"}
+DOSSIER_VOIX = {"nuit-a": "nuit", "demain-chiffres": "demain", "oui-a": "oui", "oui-nuit": "oui", "oui-main": "oui", "oui-b": "oui"}
+# L'OFFRE, dite sur l'écran du oui (prix, essai, engagement) : vide tant qu'elle n'est pas décidée, et alors
+# rien ne s'affiche — on n'invente pas un prix
+OFFRE = ""
+# le bouton du oui : la création de sa page, sur la page des commerçants (#creer ouvre le formulaire)
+CREER = "https://clikme.fr/commercants#creer"
 # chaque tour : son commerce, sa mémoire (ses films), sa vraie voix (un passage de son interview,
 # voix.mp3, avec son texte), et la nuit de sa ville (trois habitants : leur envie, leur rendez-vous)
 # chaque tour : son commerce, sa mémoire (ses films), sa vraie voix (un passage de son interview,
@@ -306,6 +316,41 @@ CSS = r"""
   .dx.promesse .dx-voix{top:72%}
 }
 @media (prefers-reduced-motion:reduce){.nx-etoiles i,.nx-vol img{animation:none!important}}
+
+/* ── LE OUI, À LA TOUTE FIN. « Lors de la démo, je n'aurai qu'une chance pour qu'à la fin il dise OUI » : ce qu'il
+   vient de voir, en trois lignes qui se cochent une à une sur la voix, puis un seul gros bouton, qui crée sa page
+   (un petit geste immédiat, pas une signature). Il reste à l'écran jusqu'à ce qu'on le ferme. */
+.oy{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(10px,3.2cqh,24px)}
+.oy-titre{margin:0;font-size:clamp(26px,8.6cqmin,54px);font-weight:900;letter-spacing:-.03em;line-height:1.05;text-align:center;opacity:0;transform:translateY(12px);transition:opacity .5s,transform .6s var(--ressort)}
+.oy.on .oy-titre{opacity:1;transform:none}
+.oy-titre em{font-style:normal;background:linear-gradient(90deg,#FF5DB8,#FFB347);-webkit-background-clip:text;background-clip:text;color:transparent}
+.oy-liste{display:flex;flex-direction:column;gap:clamp(7px,2cqh,14px);width:min(100%,460px)}
+.oy-p{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:9px 12px 9px 9px;border-radius:16px;text-align:left;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);opacity:.28;transform:scale(.96);transition:opacity .4s,transform .5s var(--ressort),background .4s,border-color .4s}
+.oy-p.on{opacity:1;transform:none;background:rgba(255,46,154,.12);border-color:rgba(255,93,184,.6)}
+.oy-p .s2-tuile{font-size:clamp(34px,10cqmin,46px)}
+.oy-p b{display:block;font-size:clamp(15px,4.6cqmin,20px);font-weight:900;letter-spacing:-.01em}
+.oy-p small{display:block;margin-top:2px;font-size:clamp(11.5px,3.4cqmin,14px);font-weight:600;line-height:1.25;color:rgba(255,255,255,.75)}
+.oy-p i{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;font-style:normal;font-weight:900;font-size:14px;color:#fff;
+  background:linear-gradient(135deg,#2FBF8F,#3DE2A6);box-shadow:0 0 0 3px rgba(61,226,166,.18);transform:scale(0);transition:transform .45s var(--ressort) .12s}
+.oy-p.on i{transform:none}
+.oy-go{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:3px;padding:14px 28px 12px;border-radius:999px;color:#fff;text-decoration:none;text-align:center;
+  font-weight:900;font-size:clamp(17px,5cqmin,23px);letter-spacing:-.01em;background:linear-gradient(135deg,#FF2E9A,#FF8A3D);box-shadow:0 16px 36px -10px rgba(255,46,154,.9);
+  opacity:0;transform:translateY(14px) scale(.85);transition:opacity .4s,transform .7s var(--ressort)}
+.oy-go small{font-size:clamp(10.5px,3.1cqmin,13px);font-weight:700;opacity:.95}
+.oy.lance .oy-go{opacity:1;transform:none;animation:oy-pouls 1.9s ease-in-out 1.2s infinite}
+@keyframes oy-pouls{50%{transform:scale(1.045);box-shadow:0 0 0 9px rgba(255,93,184,.16),0 16px 36px -10px rgba(255,46,154,.9)}}
+.oy-offre{margin:0;font-size:clamp(12px,3.5cqmin,15px);font-weight:700;color:rgba(255,255,255,.82);text-align:center;opacity:0;transition:opacity .5s .4s}
+.oy.lance .oy-offre{opacity:1}
+@container (max-height:430px){
+  .oy{gap:9px}
+  .oy-titre{font-size:clamp(22px,7.4cqmin,40px)}
+  .oy-p{padding:6px 10px 6px 6px;gap:9px;border-radius:13px}
+  .oy-p .s2-tuile{font-size:30px}
+  .oy-go{padding:11px 22px 10px}
+}
+@media (prefers-reduced-motion:reduce){.oy.lance .oy-go{animation:none}}
+.fin .fin-conclure{align-self:center;padding:.3em .8em;border:0;background:none;color:rgba(255,255,255,.62);font-weight:700;font-size:.86em;text-decoration:underline;text-underline-offset:.2em}
 """
 
 JS = r"""
@@ -361,6 +406,28 @@ JS = r"""
         "<p></p></div><em>— " + PR.qui + " · " + PR.lieu + "</em></div>" +
       '<div class="dx-promesse"><h2>Votre savoir-faire<br>ne mourra <em>jamais</em>.</h2>' + prEtin(14) + "</div></div>",
     carte: (l) => '<div class="s0"><span class="s0-num">' + l.num + "</span><small>" + l.petit + "</small><h2>" + l.titre + "</h2><p>" + l.sous + "</p></div>",
+    // LE OUI : ce qu'il a vu (le chapitre bonus, s'il en a vu un), puis le bouton qui crée sa page
+    oui: () => '<div class="oy"><h2 class="oy-titre">Alors, on y <em>va</em>' + NB + "?</h2><div class=\"oy-liste\">" +
+      OUI_PROMESSES.filter((p) => !p.vu || p.vu === ouiVu).map((p, k) => '<div class="oy-p" data-k="' + k + '"><span class="s2-tuile"><svg viewBox="0 0 24 24" aria-hidden="true">' + p.ico +
+        "</svg></span><span><b>" + p.titre + "</b><small>" + p.sous + "</small></span><i>✓</i></div>").join("") + "</div>" +
+      '<a class="oy-go" href="' + OUI_CREER + '" target="_blank" rel="noopener">Créer ma page maintenant →<small>avec votre fiche Google · 2 minutes</small></a>' +
+      (OUI_OFFRE ? '<p class="oy-offre">' + OUI_OFFRE + "</p>" : "") + prEtin(14) + "</div>",
+  };
+  const OUI_OFFRE = __OUI_OFFRE__, OUI_CREER = __OUI_CREER__;
+  const OUI_PROMESSES = [
+    { titre: "Plus de clients", sous: "sans y passer de temps", ico: '<circle cx="9" cy="8" r="3.2"/><path d="M3 19.5a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.4"/><path d="M15.6 14.2A4.6 4.6 0 0 1 21 19"/>' },
+    { titre: "Moins de dépenses", sous: "grâce à vos commerçants voisins", ico: '<circle cx="12" cy="12" r="8.5"/><path d="M15.4 8.7a4.3 4.3 0 1 0 0 6.6M7 10.8h6.2M7 13.3h6.2"/>' },
+    { vu: "nuit", titre: "Même la nuit", sous: "votre fantôme vous ramène des clients", ico: '<path d="M20 14.6A8 8 0 1 1 9.4 4a6.4 6.4 0 0 0 10.6 10.6Z"/>' },
+    { vu: "demain", titre: "Votre savoir-faire", sous: "gardé pour toujours, transmis à la relève", ico: '<path d="M4 5.6A2.6 2.6 0 0 1 6.6 3H20v14.5H6.6A2.6 2.6 0 0 0 4 20.1Z"/><path d="M4 20.1A1.9 1.9 0 0 0 5.9 22H20"/>' },
+  ];
+  let ouiVu = null;
+  const ouiCoche = (k) => iTout(iAllume('.oy-p[data-k="' + k + '"]'), iSon("ding"));
+  const OUI = {
+    a: { nom: "oui-a", x: 50, decor: "oui", apres: 450, dit: __OUI_A__, debut: iTout(iAllume(".oy"), iSon("apparition")),
+      mots: { clients: ouiCoche(0), "dépenses": ouiCoche(1) } },
+    nuit: { nom: "oui-nuit", x: 50, garde: true, apres: 450, dit: __OUI_NUIT__, mots: { nuit: ouiCoche(2) } },
+    demain: { nom: "oui-main", x: 50, garde: true, apres: 450, dit: __OUI_MAIN__, mots: { jamais: ouiCoche(2) } },
+    b: { nom: "oui-b", x: 50, garde: true, apres: 300, dit: __OUI_B__, mots: { page: iTout(iAllume(".oy", "lance"), iGeste("salue", 1500), iSon("arrivee")) } },
   };
   /* le titre de la nuit, en trois temps */
   const nxTitre = (txt) => () => {
@@ -408,7 +475,7 @@ JS = r"""
   Object.assign(TEMPS, __PR_TEMPS__);
   __PR_ENR__.forEach((n) => { if (!ENREGISTREES.includes(n)) ENREGISTREES.push(n); });
   // une réplique pas encore enregistrée : un rythme de parole estimé, sans son (comme l'intro)
-  [...NUIT, ...DEMAIN].forEach((l) => {
+  [...NUIT, ...DEMAIN, ...Object.values(OUI)].forEach((l) => {
     if (!l.nom || TEMPS[l.nom]) return;
     const m = [], ouvert = []; let t = 0.12;
     for (const mot of l.dit.split(" ")) {
@@ -475,11 +542,23 @@ JS = r"""
     }
     ecoute.disconnect();
     fant.classList.remove("parle", "ouvre", "salue");
+    if (SEQ.reste) {
+      if (!decorIntro(".oy")) decor.innerHTML = DECORS_PR.oui();
+      const oy = decorIntro(".oy"); oy.classList.add("on", "lance"); $$(".oy-p", oy).forEach((p) => p.classList.add("on"));
+      await new Promise((ok) => { $("#intro-passer").onclick = (e) => { e.stopPropagation(); taireVoix(); ok(); }; });
+    }
     it.classList.add("si-sort");
     await attendreMs(reduit ? 0 : 420);
     it.hidden = true;
     it.classList.remove("si-sort", "pr-scene", "si-c3", "si-c4", "si-chap-la");
     prog.innerHTML = ancien; decor.innerHTML = ""; dit.textContent = "";
+  }
+  /* LE OUI : après le chapitre bonus qu'il a vu (ou directement), ce qu'il a vu, coché, et le bouton */
+  async function jouerOui(vu) {
+    ouiVu = vu || null;
+    const seq = [OUI.a, ...(ouiVu ? [OUI[ouiVu]] : []), OUI.b];
+    seq.reste = true;
+    await jouerPromesse(seq);
   }
 """
 
@@ -515,7 +594,8 @@ for nom, dossier_voix in DOSSIER_VOIX.items():
 print("demain", {k: (v["d"], len(v["m"])) for k, v in mesures.items()}, "· nuit enregistrée :", sorted(nuit) or "pas encore")
 
 BOUTONS_FIN = ('<button type="button" class="go fin-chap" id="fin-%s-autre">Et pendant la nuit' + NB + '? →</button>'
-               '<button type="button" class="go fin-chap" id="fin-%s-demain">Et quand vous passerez la main →</button>')
+               '<button type="button" class="go fin-chap" id="fin-%s-demain">Et quand vous passerez la main →</button>'
+               '<button type="button" class="fin-conclure" id="fin-%s-oui">Passer à la conclusion →</button>')
 for d, c in TOURS.items():
     dossier = f"{S}/{d}"
     page = f"{dossier}/index.html"
@@ -553,26 +633,30 @@ for d, c in TOURS.items():
             .replace("__NUIT_A__", js(TEXTES["nuit-a"]))
             .replace("__DEMAIN_CHIFFRES__", js(TEXTES["demain-chiffres"]))
             .replace("__DUREE_VOIX__", js(temps["demain-voix"]["d"] if a_voix else 0))
-            .replace("__DEMAIN_A__", js(TEXTES["demain-a"])).replace("__DEMAIN_B__", js(TEXTES["demain-b"])))
+            .replace("__DEMAIN_A__", js(TEXTES["demain-a"])).replace("__DEMAIN_B__", js(TEXTES["demain-b"]))
+            .replace("__OUI_A__", js(TEXTES["oui-a"])).replace("__OUI_NUIT__", js(TEXTES["oui-nuit"])).replace("__OUI_MAIN__", js(TEXTES["oui-main"]))
+            .replace("__OUI_B__", js(TEXTES["oui-b"])).replace("__OUI_OFFRE__", js(OFFRE)).replace("__OUI_CREER__", js(CREER)))
     t = une_fois(t, "</style>\n", CSS.lstrip("\n") + "</style>\n", "style")
     t = une_fois(t, "  /* ═══ PAGE 1 → PAGE 2 ═══ */\n", code.lstrip("\n") + "  /* ═══ PAGE 1 → PAGE 2 ═══ */\n", "js")
     # LES DEUX CHAPITRES DE PLUS, au bout des deux conversations (« Plus de clients » comme « Moins de
     # dépenses ») : « Pendant la nuit » (03) et « Quand vous passerez la main » (04), « avec le même graphisme
     # puisqu'elles valent autant l'une que l'autre ». « Rejouer » et « Et sans rien dire ? Notre spécialiste » s'en vont.
-    t = une_fois(t, '<button type="button" class="go" id="fin-c-autre">Et vos dépenses ? →</button>', BOUTONS_FIN % ("c", "c"), "boutons clients")
+    t = une_fois(t, '<button type="button" class="go" id="fin-c-autre">Et vos dépenses ? →</button>', BOUTONS_FIN % ("c", "c", "c"), "boutons clients")
     t, n = re.subn(r'<button type="button" class="fin-rejouer fin-scenario" id="fin-c-scenario">[^<]*</button>', "", t)
     t, m = re.subn(r'  /\* « Montrer les 3 façons ».*?\n  \}\);\n', "", t, flags=re.S)
     if (n, m) != (1, 1):
         raise SystemExit(f"{d} : bouton « autre façon » introuvable ({n}, {m})")
     t = une_fois(t, '<button type="button" class="fin-rejouer" id="fin-c-rejouer">↺ Rejouer</button>', "", "rejouer clients")
     t = une_fois(t, '<button type="button" class="go" id="fin-d-autre">Et vos clients ? →</button><button type="button" class="fin-rejouer" id="fin-d-rejouer">↺ Rejouer</button>',
-                 BOUTONS_FIN % ("d", "d"), "boutons dépenses")
+                 BOUTONS_FIN % ("d", "d", "d"), "boutons dépenses")
     t = une_fois(t, '  $("#fin-c-autre").addEventListener("click", () => { contexte(); changer("depenses"); });\n'
                  '  $("#fin-d-autre").addEventListener("click", () => { contexte(); changer("clients"); });\n',
                  '  /* Les deux chapitres de plus, au bout des deux conversations : « Pendant la nuit » (03) et « Quand vous\n'
                  '     passerez la main » (04). On reste ensuite sur la fin ; les onglets du haut mènent à l\'autre conversation. */\n'
                  '  [["#fin-c-autre", "nuit"], ["#fin-d-autre", "nuit"], ["#fin-c-demain", "demain"], ["#fin-d-demain", "demain"]].forEach(([sel, quoi]) =>\n'
-                 '    $(sel).addEventListener("click", async () => { contexte(); await jouerPromesse(quoi === "nuit" ? NUIT : DEMAIN); }));\n', "clics")
+                 '    $(sel).addEventListener("click", async () => { contexte(); await jouerPromesse(quoi === "nuit" ? NUIT : DEMAIN); await jouerOui(quoi); }));\n'
+                 '  /* « Un seul chapitre bonus, choisi pour lui », puis le oui ; ou le oui tout de suite */\n'
+                 '  ["#fin-c-oui", "#fin-d-oui"].forEach((sel) => $(sel).addEventListener("click", async () => { contexte(); await jouerOui(null); }));\n', "clics")
     t = une_fois(t, '  $("#fin-c-rejouer").addEventListener("click", () => { contexte(); aller(0); });\n', "", "clic rejouer clients")
     t = une_fois(t, '  $("#fin-d-rejouer").addEventListener("click", () => { contexte(); aller(0); });\n', "", "clic rejouer dépenses")
     open(page, "w", encoding="utf-8").write(t)

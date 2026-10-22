@@ -30,17 +30,22 @@ D=outils/tour-du-fantome
 ln -s "$(command -v ffmpeg)" $D/ffmpeg
 python3 -I $D/outils/tour-episode2.py $D    # la base → index.avant-intro.html (le mode « épisode »)
 python3 -I $D/outils/tour-intro3.py $D      # + l'intro (chapitres 1 et 2, voix de voix-intro/court)
-python3 -I $D/outils/tour-promesses.py $D   # + « Pendant la nuit » (03), « Quand vous passerez la main » (04), fins de chat
+python3 -I $D/outils/tour-promesses.py $D   # + « Pendant la nuit » (03), « Quand vous passerez la main » (04), fins de chat, écran du oui
 python3 -I $D/outils/tour-direct.py $D      # + « Pourquoi autant de monde ? » à l'étape du Direct
+python3 -I $D/outils/tour-gestes.py $D      # + les 4 photos en un seul appui
 ```
 
-Les quatre scripts se lancent **dans cet ordre**. Chacun repart de `index.avant-episode2.html`, on peut
+Les cinq scripts se lancent **dans cet ordre**. Chacun repart de `index.avant-episode2.html`, on peut
 donc les relancer autant qu'on veut. Conséquence : une retouche faite à la main dans `index.html` est
 écrasée au passage suivant. On retouche dans les scripts, ou dans `index.avant-episode2.html` pour la base.
 
+L'écran du oui (à la toute fin) : ses répliques sont dans `TEXTES` de `tour-promesses.py` (`oui-a`, `oui-nuit`,
+`oui-main`, `oui-b`) ; leurs enregistrements se posent dans `recu/oui/<nom>.mp3`. L'offre (prix, essai,
+engagement) se règle dans `OFFRE` du même script : vide, rien ne s'affiche.
+
 Pour une nouvelle voix de l'intro : remplacer `voix-intro/court/<nom>.mp3`, mettre son texte dans
 `outils/mesurer-intro2.py` (et dans `tour-intro3.py`), lancer `python3 -I $D/outils/mesurer-intro2.py $D`,
-puis les quatre scripts.
+puis les cinq scripts.
 
 ## Vérifier
 
