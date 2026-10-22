@@ -35,7 +35,7 @@ TEXTES = {
 DOSSIER_VOIX = {"nuit-a": "nuit", "demain-chiffres": "demain", "oui-a": "oui", "oui-nuit": "oui", "oui-main": "oui", "oui-b": "oui"}
 # L'OFFRE, dite sur l'écran du oui (prix, essai, engagement) : vide tant qu'elle n'est pas décidée, et alors
 # rien ne s'affiche — on n'invente pas un prix
-OFFRE = ""
+OFFRE = "Gratuit et sans engagement."
 # le bouton du oui : la création de sa page, sur la page des commerçants (#creer ouvre le formulaire)
 CREER = "https://clikme.fr/commercants#creer"
 # chaque tour : son commerce, sa mémoire (ses films), sa vraie voix (un passage de son interview,
