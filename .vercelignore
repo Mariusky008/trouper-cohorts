@@ -5,3 +5,5 @@ dist
 .trae
 .log
 .figma
+# le tour du fantôme : sources des démos publiées comme artefacts, pas le site
+outils/tour-du-fantome
