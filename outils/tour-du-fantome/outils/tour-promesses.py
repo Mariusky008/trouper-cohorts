@@ -122,8 +122,15 @@ CSS = r"""
   font-weight:900;font-size:clamp(10px,3.3cqmin,15px);color:#fff;box-shadow:0 0 16px -2px var(--acc);transition:box-shadow .7s,border-color .7s,color .7s}
 .pr-boutique.eteinte .pr-enseigne{box-shadow:none;border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.45)}
 /* le bouton du chapitre 4, au bout des deux conversations */
-/* les deux chapitres de la fin, côte à côte en valeur : même bouton, un peu moins haut que d'habitude */
-.fin .fin-chap{height:3.3em;font-size:1em}
+/* les deux chapitres de la fin, côte à côte, à égalité : petits, pour ne rien cacher de l'écran du dessous.
+   Un chapitre vu se coche ; l'autre appelle ; la conclusion attend qu'on la demande. */
+#fin-clients,#fin-depenses{flex-direction:row;flex-wrap:wrap;gap:.45em}
+.fin .fin-chap{flex:1 1 0;min-width:0;height:auto;min-height:3.2em;padding:.45em .75em;border-radius:1.3em;font-size:.8em;line-height:1.2;text-align:center}
+.fin .fin-chap.vu{background:rgba(14,9,7,.82);box-shadow:inset 0 0 0 1px rgba(255,255,255,.24);color:rgba(255,255,255,.72)}
+.fin .fin-chap.vu::before{content:"✓";flex:none;display:grid;place-items:center;width:1.35em;height:1.35em;border-radius:50%;background:rgba(61,226,166,.2);color:var(--menthe);font-size:.9em}
+.fin:has(.fin-chap.vu) .fin-chap:not(.vu){animation:fin-appel 1.9s ease-in-out .6s infinite}
+@keyframes fin-appel{50%{transform:scale(1.04);box-shadow:0 0 0 .4em rgba(255,93,184,.18),0 .6em 1.6em -.5em rgba(255,46,154,.75)}}
+@media (prefers-reduced-motion:reduce){.fin .fin-chap{animation:none!important}}
 .pr-etin{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
 .pr-etin i{position:absolute;left:-7px;top:-7px;width:14px;height:14px;opacity:0;background:linear-gradient(135deg,var(--acc),var(--acc2));
   clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%)}
@@ -350,7 +357,10 @@ CSS = r"""
   .oy-go{padding:11px 22px 10px}
 }
 @media (prefers-reduced-motion:reduce){.oy.lance .oy-go{animation:none}}
-.fin .fin-conclure{align-self:center;padding:.3em .8em;border:0;background:none;color:rgba(255,255,255,.62);font-weight:700;font-size:.86em;text-decoration:underline;text-underline-offset:.2em}
+.fin .fin-conclure{flex-basis:100%;padding:.25em .8em;border:0;background:none;color:rgba(255,255,255,.7);font-weight:700;font-size:.82em;text-align:center;text-decoration:underline;text-underline-offset:.2em}
+/* les deux chapitres vus : il ne reste que la conclusion, elle devient un vrai bouton */
+.fin.tout-vu .fin-conclure{margin:.15em 14% 0;padding:.6em 1.2em;border-radius:2em;background:linear-gradient(90deg,#FF4FA8,#E0167A);color:#fff;text-decoration:none;font-weight:800;
+  box-shadow:0 .6em 1.6em -.5em rgba(255,46,154,.75);animation:fin-appel 1.9s ease-in-out .6s infinite}
 """
 
 JS = r"""
@@ -406,9 +416,9 @@ JS = r"""
         "<p></p></div><em>— " + PR.qui + " · " + PR.lieu + "</em></div>" +
       '<div class="dx-promesse"><h2>Votre savoir-faire<br>ne mourra <em>jamais</em>.</h2>' + prEtin(14) + "</div></div>",
     carte: (l) => '<div class="s0"><span class="s0-num">' + l.num + "</span><small>" + l.petit + "</small><h2>" + l.titre + "</h2><p>" + l.sous + "</p></div>",
-    // LE OUI : ce qu'il a vu (le chapitre bonus, s'il en a vu un), puis le bouton qui crée sa page
+    // LE OUI : les quatre promesses, cochées une à une, puis le bouton qui crée sa page
     oui: () => '<div class="oy"><h2 class="oy-titre">Alors, on y <em>va</em>' + NB + "?</h2><div class=\"oy-liste\">" +
-      OUI_PROMESSES.filter((p) => !p.vu || p.vu === ouiVu).map((p, k) => '<div class="oy-p" data-k="' + k + '"><span class="s2-tuile"><svg viewBox="0 0 24 24" aria-hidden="true">' + p.ico +
+      OUI_PROMESSES.map((p, k) => '<div class="oy-p" data-k="' + k + '"><span class="s2-tuile"><svg viewBox="0 0 24 24" aria-hidden="true">' + p.ico +
         "</svg></span><span><b>" + p.titre + "</b><small>" + p.sous + "</small></span><i>✓</i></div>").join("") + "</div>" +
       '<a class="oy-go" href="' + OUI_CREER + '" target="_blank" rel="noopener">Créer ma page maintenant →<small>avec votre fiche Google · 2 minutes</small></a>' +
       (OUI_OFFRE ? '<p class="oy-offre">' + OUI_OFFRE + "</p>" : "") + prEtin(14) + "</div>",
@@ -417,16 +427,15 @@ JS = r"""
   const OUI_PROMESSES = [
     { titre: "Plus de clients", sous: "sans y passer de temps", ico: '<circle cx="9" cy="8" r="3.2"/><path d="M3 19.5a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.4"/><path d="M15.6 14.2A4.6 4.6 0 0 1 21 19"/>' },
     { titre: "Moins de dépenses", sous: "grâce à vos commerçants voisins", ico: '<circle cx="12" cy="12" r="8.5"/><path d="M15.4 8.7a4.3 4.3 0 1 0 0 6.6M7 10.8h6.2M7 13.3h6.2"/>' },
-    { vu: "nuit", titre: "Même la nuit", sous: "votre fantôme vous ramène des clients", ico: '<path d="M20 14.6A8 8 0 1 1 9.4 4a6.4 6.4 0 0 0 10.6 10.6Z"/>' },
-    { vu: "demain", titre: "Votre savoir-faire", sous: "gardé pour toujours, transmis à la relève", ico: '<path d="M4 5.6A2.6 2.6 0 0 1 6.6 3H20v14.5H6.6A2.6 2.6 0 0 0 4 20.1Z"/><path d="M4 20.1A1.9 1.9 0 0 0 5.9 22H20"/>' },
+    { titre: "Même la nuit", sous: "votre fantôme vous ramène des clients", ico: '<path d="M20 14.6A8 8 0 1 1 9.4 4a6.4 6.4 0 0 0 10.6 10.6Z"/>' },
+    { titre: "Votre savoir-faire", sous: "gardé pour toujours, transmis à la relève", ico: '<path d="M4 5.6A2.6 2.6 0 0 1 6.6 3H20v14.5H6.6A2.6 2.6 0 0 0 4 20.1Z"/><path d="M4 20.1A1.9 1.9 0 0 0 5.9 22H20"/>' },
   ];
-  let ouiVu = null;
   const ouiCoche = (k) => iTout(iAllume('.oy-p[data-k="' + k + '"]'), iSon("ding"));
   const OUI = {
     a: { nom: "oui-a", x: 50, decor: "oui", apres: 450, dit: __OUI_A__, debut: iTout(iAllume(".oy"), iSon("apparition")),
       mots: { clients: ouiCoche(0), "dépenses": ouiCoche(1) } },
     nuit: { nom: "oui-nuit", x: 50, garde: true, apres: 450, dit: __OUI_NUIT__, mots: { nuit: ouiCoche(2) } },
-    demain: { nom: "oui-main", x: 50, garde: true, apres: 450, dit: __OUI_MAIN__, mots: { jamais: ouiCoche(2) } },
+    demain: { nom: "oui-main", x: 50, garde: true, apres: 450, dit: __OUI_MAIN__, mots: { jamais: ouiCoche(3) } },
     b: { nom: "oui-b", x: 50, garde: true, apres: 300, dit: __OUI_B__, mots: { page: iTout(iAllume(".oy", "lance"), iGeste("salue", 1500), iSon("arrivee")) } },
   };
   /* le titre de la nuit, en trois temps */
@@ -553,10 +562,9 @@ JS = r"""
     it.classList.remove("si-sort", "pr-scene", "si-c3", "si-c4", "si-chap-la");
     prog.innerHTML = ancien; decor.innerHTML = ""; dit.textContent = "";
   }
-  /* LE OUI : après le chapitre bonus qu'il a vu (ou directement), ce qu'il a vu, coché, et le bouton */
-  async function jouerOui(vu) {
-    ouiVu = vu || null;
-    const seq = [OUI.a, ...(ouiVu ? [OUI[ouiVu]] : []), OUI.b];
+  /* LE OUI : quand il le demande (« Passer à la conclusion »), les quatre promesses cochées, et le bouton */
+  async function jouerOui() {
+    const seq = [OUI.a, OUI.nuit, OUI.demain, OUI.b];
     seq.reste = true;
     await jouerPromesse(seq);
   }
@@ -652,11 +660,15 @@ for d, c in TOURS.items():
     t = une_fois(t, '  $("#fin-c-autre").addEventListener("click", () => { contexte(); changer("depenses"); });\n'
                  '  $("#fin-d-autre").addEventListener("click", () => { contexte(); changer("clients"); });\n',
                  '  /* Les deux chapitres de plus, au bout des deux conversations : « Pendant la nuit » (03) et « Quand vous\n'
-                 '     passerez la main » (04). On reste ensuite sur la fin ; les onglets du haut mènent à l\'autre conversation. */\n'
-                 '  [["#fin-c-autre", "nuit"], ["#fin-d-autre", "nuit"], ["#fin-c-demain", "demain"], ["#fin-d-demain", "demain"]].forEach(([sel, quoi]) =>\n'
-                 '    $(sel).addEventListener("click", async () => { contexte(); await jouerPromesse(quoi === "nuit" ? NUIT : DEMAIN); await jouerOui(quoi); }));\n'
-                 '  /* « Un seul chapitre bonus, choisi pour lui », puis le oui ; ou le oui tout de suite */\n'
-                 '  ["#fin-c-oui", "#fin-d-oui"].forEach((sel) => $(sel).addEventListener("click", async () => { contexte(); await jouerOui(null); }));\n', "clics")
+                 '     passerez la main » (04). Le chapitre fini, on revient au chat : son bouton se coche, l\'autre appelle.\n'
+                 '     La conclusion ne vient que quand on la demande (« Passer à la conclusion »). */\n'
+                 '  const CHAP_FIN = { nuit: ["#fin-c-autre", "#fin-d-autre"], demain: ["#fin-c-demain", "#fin-d-demain"] };\n'
+                 '  Object.entries(CHAP_FIN).forEach(([quoi, sels]) => sels.forEach((sel) => $(sel).addEventListener("click", async () => {\n'
+                 '    contexte(); await jouerPromesse(quoi === "nuit" ? NUIT : DEMAIN);\n'
+                 '    sels.forEach((s) => $(s).classList.add("vu"));\n'
+                 '    if ($$(".fin-chap.vu").length === 4) $$("#fin-clients, #fin-depenses").forEach((f) => f.classList.add("tout-vu"));\n'
+                 '  })));\n'
+                 '  ["#fin-c-oui", "#fin-d-oui"].forEach((sel) => $(sel).addEventListener("click", async () => { contexte(); await jouerOui(); }));\n', "clics")
     t = une_fois(t, '  $("#fin-c-rejouer").addEventListener("click", () => { contexte(); aller(0); });\n', "", "clic rejouer clients")
     t = une_fois(t, '  $("#fin-d-rejouer").addEventListener("click", () => { contexte(); aller(0); });\n', "", "clic rejouer dépenses")
     open(page, "w", encoding="utf-8").write(t)

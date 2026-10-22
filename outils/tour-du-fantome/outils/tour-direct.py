@@ -68,6 +68,11 @@ CSS = """
 .di-fx .fx-fant{top:28.2em}
 .di-fx .fx-bulle{bottom:calc(100% - 27.7em)}
 .di-fx-passer{position:absolute;left:0;right:0;bottom:2.2em;text-align:center;font-size:.7em;font-weight:700;color:rgba(255,255,255,.45)}
+/* le chiffre qu'on annonce partout (1 400 vues sur ClikMe), en tête de la bulle : l'explication en est la raison */
+.di-fx-vues{display:inline-flex;align-items:center;gap:.35em;margin:0 0 .5em;padding:.25em .7em .25em .5em;border-radius:2em;background:linear-gradient(90deg,#FF4FA8,#E0167A);color:#fff;
+  font-size:.9em;font-weight:800;box-shadow:0 .4em 1em -.5em rgba(255,46,154,.8)}
+.di-fx-vues svg{width:1.15em;height:1.15em;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.di-fx-vues b{font-variant-numeric:tabular-nums;font-weight:900}
 """
 
 JS = """
@@ -85,6 +90,9 @@ JS = """
   async function pourquoiDirect() {
     const fx = $("#di-fx"), j = jetonVoix;
     remettreScene(fx); fx.classList.add("on");
+    // 1 400 vues sur ClikMe : le compteur monte quand la bulle s'ouvre
+    const vues = $(".di-fx-vues b", fx); vues.textContent = "0";
+    plus(() => nombre(vues, 1400, 1300), 1150);
     // derrière lui, le fil défile : deux offres passent pendant qu'il parle
     plus(() => defilerDirect(0, true), 7000); plus(() => defilerDirect(1, true), 13000);
     if (!(await jouerScene(fx, DIRECT_POURQUOI, j)) || !(await pause(1500, j))) return;
@@ -123,7 +131,8 @@ for d in TOURS:
                  '<div id="di-autres"></div>\n'
                  '            <div class="fx di-fx" id="di-fx"><span class="di-fx-voile" aria-hidden="true"></span>'
                  '<span class="fx-spot" aria-hidden="true"></span><span class="fx-sol" aria-hidden="true"></span>'
-                 '<div class="fx-bulle"><p class="fx-dit"></p><ul class="fx-plan"></ul></div>' + fant +
+                 '<div class="fx-bulle"><span class="di-fx-vues"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/>'
+                 '<circle cx="12" cy="12" r="2.8"/></svg><b>1 400</b> vues sur ClikMe</span><p class="fx-dit"></p><ul class="fx-plan"></ul></div>' + fant +
                  '<small class="di-fx-passer">Touchez pour passer</small></div>\n', f"{d} décor")
     js = (JS.replace("__POURQUOI__", json.dumps(pourquoi, ensure_ascii=False)).replace("__TEMPS_DIRECT__", json.dumps(temps))
           .replace("__ENR_DIRECT__", json.dumps(sorted(temps))))
