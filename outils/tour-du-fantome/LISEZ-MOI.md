@@ -1,6 +1,6 @@
-# Le tour du fantôme — les cinq démos pour les commerçants
+# Le tour du fantôme — les six démos pour les commerçants
 
-Ce dossier fabrique les cinq pages « Le tour du fantôme », publiées comme artefacts claude.ai. Il est la
+Ce dossier fabrique les six pages « Le tour du fantôme », publiées comme artefacts claude.ai. Il est la
 **référence** : on modifie ici, puis on republie. Rien ici ne fait partie de l'application ni n'est servi
 sur clikme.fr (le dossier est hors de `public/` et exclu du déploiement par `.vercelignore`).
 
@@ -11,6 +11,7 @@ sur clikme.fr (le dossier est hors de `public/` et exclu du déploiement par `.v
 | Coiffure (Salon Clara) | `tour-coiffure/` | https://claude.ai/artifact/HjzV4zwSsUHTpNcBSnQXFG |
 | Librairie (La Page d'Alice) | `tour-librairie/` | https://claude.ai/artifact/GrCdASNbis5crVFVUrf9P2 |
 | Bijouterie (Atelier Inès) | `tour-bijouterie/` | https://claude.ai/artifact/LtmrpKqY5rbcqGc7WA1DkX |
+| Lunetier (Les Lunettes de Margaux) | `tour-lunettes/` | https://claude.ai/artifact/9R2sn9qYN141C4f54T2Q3C |
 
 ## Ce qu'il y a dedans
 
@@ -18,6 +19,8 @@ sur clikme.fr (le dossier est hors de `public/` et exclu du déploiement par `.v
   charge (photos, voix, films).
 - `recu/` : les voix reçues (enregistrements ElevenLabs « Mike »), brutes et découpées ; `recu/depenses/brut/`
   la question (`<métier>.mp3`) et le coût réel de l'offre (`<métier>2.mp3`, dit à l'étape de l'offre) de « Moins de dépenses ».
+- `recu/lunettes/` : les photos (allégées) et les voix du tour lunetier ; `recu/depenses/brut/lunettes*.mp3` ses deux
+  phrases de « Moins de dépenses ».
 - `voix-intro/court/` : les voix de l'intro et `temps.json` (l'instant de chaque mot).
 - `accueil2/page/g-restaurant-salue.webp` : le fantôme du restaurant qui salue.
 - `outils/` : les scripts.
@@ -38,7 +41,9 @@ python3 -I $D/outils/tour-depenses.py $D    # + « Moins de dépenses » : la qu
 python3 -I $D/outils/tour-sien.py $D        # + son nom (« Pour qui est cette démo ? ») et son vrai temps (le ticket de « Plus de clients »)
 ```
 
-Les sept scripts se lancent **dans cet ordre**. Chacun repart de `index.avant-episode2.html`, on peut
+Les sept scripts se lancent **dans cet ordre**. Le tour lunetier a d'abord sa propre base, tirée de celle de la
+bijouterie : `python3 -I $D/outils/tour-lunettes.py $D` (ses images, ses voix mesurées, sa page de base), à
+relancer avant la chaîne si l'on change la bijouterie ou ses textes. Chacun repart de `index.avant-episode2.html`, on peut
 donc les relancer autant qu'on veut. Conséquence : une retouche faite à la main dans `index.html` est
 écrasée au passage suivant. On retouche dans les scripts, ou dans `index.avant-episode2.html` pour la base.
 
@@ -58,6 +63,14 @@ la conclusion. Le ticket dit aussi « Commission : 0 € » : ClikMe n'en prend 
 Pour une nouvelle voix de l'intro : remplacer `voix-intro/court/<nom>.mp3`, mettre son texte dans
 `outils/mesurer-intro2.py` (et dans `tour-intro3.py`), lancer `python3 -I $D/outils/mesurer-intro2.py $D`,
 puis les sept scripts.
+
+## Les films du lunetier
+
+Ses trois films (`message.mp4`, `specialiste.mp4`, `episode.mp4`, avec leur affiche et leur dernière image) ont été
+montés par le vrai moteur de l'application, comme ceux des autres tours métier : deux pages temporaires
+(`zz-film`, `zz-episode`, jamais commitées) sur un serveur local, à partir des 4 photos et du geste ; l'épisode à
+partir de « rushes » fabriqués depuis ces photos. Puis H.264 pour Safari. Ils sont rangés dans `tour-lunettes/` :
+`tour-lunettes.py` lit leur durée.
 
 ## Vérifier
 

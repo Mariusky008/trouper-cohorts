@@ -1,4 +1,4 @@
-# L'INTRO DES CINQ TOURS, VERSION 3 : la scène au centre et en grand, le fantôme en bas qui raconte.
+# L'INTRO DES TOURS, VERSION 3 : la scène au centre et en grand, le fantôme en bas qui raconte.
 # « Les animations devraient être au centre au lieu d'être tout en haut. » « Ces icônes et ces effets ne
 # font pas moderne : tu peux faire cent fois mieux. » « Les animations sont toutes petites. »
 #   python3 -I tour-intro3.py <dossier>
@@ -32,6 +32,10 @@ CONF = {
         moments=[("m1.jpg", "Un geste"), ("m2.jpg", "Une création"), ("m4.jpg", "Une pièce unique")],
         fant=["fant.webp", "fant-parle.webp", "fant-viens.webp"], qui="Inès", lieu="Atelier Inès", offre="Un bijou",
         voisins=[("o-diner.jpg", "Restaurant"), ("o-fleurs.jpg", "Fleuriste"), ("o-coiffure.jpg", "Coiffeur"), ("o-hotel.jpg", "Hôtel")]),
+    "tour-lunettes": dict(
+        moments=[("geste.jpg", "Un geste"), ("m3.jpg", "Un détail"), ("m1.jpg", "Un regard")],
+        fant=["fant.webp", "fant-parle.webp", "fant-viens.webp"], qui="Margaux", lieu="Les Lunettes de Margaux", offre="Des lunettes",
+        voisins=[("o-diner.jpg", "Restaurant"), ("o-fleurs.jpg", "Fleuriste"), ("o-coiffure.jpg", "Coiffeur"), ("o-hotel.jpg", "Hôtel")]),
 }
 # « Une photo » : la photo du produit telle qu'on la publierait, avec sa légende. « Une vidéo ClikMe » : le film
 # que le tour montre à la fin, monté en interview avec ses trois questions (son film, son affiche). Il s'ouvre sur
@@ -40,7 +44,8 @@ AVANT = {"tour": ("m3.jpg", "Plat du jour : magret grillé, pommes sarladaises."
          "tour-vetements": ("m1.jpg", "Nouveau en boutique : manteau long camel.", "interview"),
          "tour-coiffure": ("m4.jpg", "Coupe du jour : carré court, brun profond.", "message"),
          "tour-librairie": ("m2.jpg", "Coup de cœur : Le Comte de Monte-Cristo.", "message"),
-         "tour-bijouterie": ("m2.jpg", "Nouveau : collier saphir, chaîne dorée.", "message")}
+         "tour-bijouterie": ("m2.jpg", "Nouveau : collier saphir, chaîne dorée.", "message"),
+         "tour-lunettes": ("m1.jpg", "Nouveau : monture ronde, cristal.", "message")}
 # Le restaurant n'avait pas de fantôme qui salue : c'est celui de la page d'accueil, le même dessin.
 SALUE_RESTO = f"{S}/accueil2/page/g-restaurant-salue.webp"
 VOIX = f"{S}/voix-intro/court"

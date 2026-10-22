@@ -20,6 +20,7 @@ DEMANDES = {
     "tour-vetements": '"« " + PLAT + " », mis de côté"',
     "tour-librairie": '"« " + PLAT + " », mis de côté"',
     "tour-bijouterie": '"« " + PLAT + " », mis de côté"',
+    "tour-lunettes": '"« " + PLAT + " », mise de côté"',
 }
 
 CSS = """
@@ -88,9 +89,17 @@ JS = """
   const sienEchapper = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   // son commerce s'il a été tapé, sinon celui de l'exemple
   const lieuVous = () => SIEN.nom ? sienEchapper(SIEN.nom) : PR.lieu;
+  // « de » devant son nom, comme on le dit : « des Lunettes de Margaux », « du Fournil », « de la Page d’Alice »,
+  // « de l’Atelier », « d’Acuitis », « de Chez Bergine »
+  const deLieu = () => {
+    const n = lieuVous(), m = n.match(/^(?:(Les|Le|La) |(L[’']))(.+)$/);
+    if (m) return m[1] === "Les" ? ["des ", m[3]] : m[1] === "Le" ? ["du ", m[3]] : m[1] === "La" ? ["de la ", m[3]] : ["de l’", m[3]];
+    return /^[aeiouyàâäéèêëîïôöùûüœæh]/i.test(n) ? ["d’", n] : ["de ", n];
+  };
+  const deLieuTexte = () => deLieu().join("");
   // le titre de la conclusion, à son nom
   const ouiTitre = () => SIEN.nom
-    ? '<h2 class="oy-titre nomme">On crée la page de <em>' + sienEchapper(SIEN.nom) + "</em>" + NB + "?</h2>"
+    ? '<h2 class="oy-titre nomme">On crée la page ' + deLieu()[0] + "<em>" + deLieu()[1] + "</em>" + NB + "?</h2>"
     : '<h2 class="oy-titre">Alors, on y <em>va</em>' + NB + "?</h2>";
   // le nom reste sur ce téléphone le temps de la visite (jamais envoyé)
   try { SIEN.nom = sessionStorage.getItem("tour-pour") || ""; } catch (e) { /* stockage fermé : on le retape */ }
@@ -161,11 +170,11 @@ for d, demande in DEMANDES.items():
     # son nom : sa boutique et sa notification la nuit, le livre de son commerce, la conclusion
     t = une_fois(t, '<span class="pr-enseigne">\' + PR.lieu + \'</span>', '<span class="pr-enseigne">\' + lieuVous() + \'</span>', f"{d} enseigne")
     t = une_fois(t, '" alt="">Chez vous · \' + PR.lieu + "<em>exemple</em>', '" alt="">Chez vous · \' + lieuVous() + "<em>exemple</em>', f"{d} notification")
-    t = une_fois(t, '<small>Le livre de \' + PR.lieu + "</small>Ce qui marche', '<small>Le livre de \' + lieuVous() + "</small>Ce qui marche', f"{d} livre p2")
-    t = une_fois(t, '<small>Le livre de \' + PR.lieu + "</small>Tout ce qui fait', '<small>Le livre de \' + lieuVous() + "</small>Tout ce qui fait', f"{d} livre p1")
-    t = une_fois(t, "<small>Le livre de</small><b>' + PR.lieu + \"</b>", "<small>Le livre de</small><b>' + lieuVous() + \"</b>", f"{d} couverture")
-    t = une_fois(t, '(PR.voix ? "🎙️ Le secret de " : "✒️ Le secret de ") + PR.qui',
-                 '(SIEN.nom ? (PR.voix ? "🎙️ " : "✒️ ") + "Votre secret" : (PR.voix ? "🎙️ Le secret de " : "✒️ Le secret de ") + PR.qui)', f"{d} secret")
+    t = une_fois(t, '<small>Le livre de \' + PR.lieu + "</small>Ce qui marche', '<small>Le livre \' + deLieuTexte() + "</small>Ce qui marche', f"{d} livre p2")
+    t = une_fois(t, '<small>Le livre de \' + PR.lieu + "</small>Tout ce qui fait', '<small>Le livre \' + deLieuTexte() + "</small>Tout ce qui fait', f"{d} livre p1")
+    t = une_fois(t, "<small>Le livre de</small><b>' + PR.lieu + \"</b>", "<small>Le livre ' + deLieu()[0].trim() + \"</small><b>\" + deLieu()[1] + \"</b>", f"{d} couverture")
+    t = une_fois(t, '(PR.voix ? "🎙️ Le secret " : "✒️ Le secret ") + prDe(PR.qui)',
+                 '(SIEN.nom ? (PR.voix ? "🎙️ " : "✒️ ") + "Votre secret" : (PR.voix ? "🎙️ Le secret " : "✒️ Le secret ") + prDe(PR.qui))', f"{d} secret")
     t = une_fois(t, '"<p></p></div><em>— " + PR.qui + " · " + PR.lieu + "</em></div>"',
                  '"<p></p></div><em>— " + PR.qui + " · " + PR.lieu + (SIEN.nom ? " · exemple" : "") + "</em></div>"', f"{d} voix du livre")
     t = une_fois(t, '\'<div class="oy"><h2 class="oy-titre">Alors, on y <em>va</em>\' + NB + "?</h2>',
