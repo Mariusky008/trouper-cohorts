@@ -44,6 +44,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .colonne > b em{font-style:normal;color:var(--creme)}
 .tel{position:relative;width:100%;aspect-ratio:372/760;border-radius:46px;padding:11px;background:linear-gradient(145deg,#2E2420,#0B0706);box-shadow:0 30px 60px -20px rgba(0,0,0,.8),inset 0 0 0 1.5px rgba(255,255,255,.08)}
 .ecran{position:absolute;inset:11px;border-radius:36px;overflow:hidden;overflow:clip;background:var(--nuit);container-type:size}
+/* dans les téléphones, on fait défiler au doigt : pas de barre de défilement visible */
+.ecran,.ecran *{scrollbar-width:none}
+.ecran::-webkit-scrollbar,.ecran ::-webkit-scrollbar{display:none;width:0;height:0}
 .encoche{position:absolute;top:9px;left:50%;width:30%;height:22px;margin-left:-15%;border-radius:20px;background:#000;z-index:60}
 .barre{position:absolute;top:0;left:0;right:0;height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-weight:700;font-size:12.5px;z-index:55;pointer-events:none}
 
@@ -458,6 +461,21 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .bravo .gros,.bravo .fermer{text-align:center}
 .ligne small{display:block;font-size:11px;color:var(--gris)}
 #m-dore,#m-toc{white-space:nowrap}
+/* LA GUIRLANDE DES COUCOUS : sous le store, chaque coucou entre habitants l'allume un peu ; pleine, la vitrine s'illumine */
+.sc-guirlande{position:absolute;left:4.5%;right:4.5%;top:25.2%;height:5cqw;z-index:5;pointer-events:none}
+.sc-guirlande::before{content:"";position:absolute;left:0;right:0;top:-1.4cqw;height:3.2cqw;border-bottom:.35cqw solid rgba(25,15,8,.85);border-radius:0 0 50% 50%/0 0 100% 100%}
+.sc-guirlande i{position:absolute;width:2.1cqw;height:2.6cqw;margin-left:-1.05cqw;border-radius:50% 50% 45% 45%;background:#5B4636;box-shadow:inset 0 -.4cqw 0 rgba(0,0,0,.35);transition:background .4s,box-shadow .4s}
+.sc-guirlande i::before{content:"";position:absolute;left:30%;right:30%;top:-.6cqw;height:.8cqw;border-radius:.2cqw;background:#2A1A10}
+.sc-guirlande i.on{background:radial-gradient(circle at 40% 35%,#FFF6C8,#FFC94A 60%,#E89B1A);box-shadow:0 0 1.4cqw #FFD45E,0 0 3cqw rgba(255,200,80,.55)}
+.sc-guirlande i.neuve{animation:ampoule .7s ease-out}
+@keyframes ampoule{30%{transform:scale(1.8)}}
+.sc.allumee .sc-guirlande i.on{animation:scintille-a 1.1s ease-in-out infinite;animation-delay:calc(var(--k) * -.09s)}
+@keyframes scintille-a{50%{filter:brightness(1.5)}}
+.sc.allumee .sc-vit{box-shadow:inset 0 0 0 1.2cqw #2A0810,0 0 0 .55cqw #C9A45C,0 0 16cqw rgba(255,190,90,.75)}
+.sc.allumee .sc-fac{filter:brightness(1.12)}
+.etincelle{position:absolute;z-index:695;font-size:16px;line-height:1;pointer-events:none;transform:translate(-50%,-50%)}
+.bf-lien{margin:3px 0 0;font-size:10.5px;font-weight:700;color:#0B5A3E}
+.fg.ola img{animation:saute .6s cubic-bezier(.3,1.6,.5,1) both;animation-delay:var(--ola,0s)}
 /* UN PETIT MOT AU CHEF : il lit tout ; son 💛 l'affiche à l'ardoise ; parfois il offre */
 .fg.chouchou .nom{display:block;background:#FFE08A;color:#5A3A00}
 .bf-tag.or{background:#FFE08A;color:#5A3A00}
@@ -767,7 +785,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
           <h5>Ce qu’on touche dans votre vitrine</h5>
           <div class="ligne"><span>✨ Votre fantôme doré<small id="m-dore-ou"></small></span><span class="droite" id="m-dore"></span></div>
           <div class="ligne"><span>🚪 « Toc-toc » à votre porte</span><span class="droite" id="m-toc"></span></div>
-          <div class="ligne"><span>👋 Coucous entre habitants</span><span class="droite" id="m-coucou"></span></div>
+          <div class="ligne"><span>👋 Coucous entre habitants<small id="m-coucou-s"></small></span><span class="droite" id="m-coucou"></span></div>
+          <span class="lbl">Quand la guirlande est pleine</span>
+          <div class="puces" id="guirlande-choix"></div>
           <label class="lbl" for="porte">Quand on frappe, votre fantôme répond</label>
           <input class="champ" id="porte" maxlength="60" value="Plus que 6 magrets ce midi !" autocomplete="off">
           <p class="note">Le cadeau du fantôme doré : 🍮 le dessert offert, 5 à gagner (exemple). Il se cache ailleurs chaque matin.</p>
@@ -803,7 +823,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     <div><b>Tenir parole se voit</b>Le pin du commerce sur son fantôme, sa tournée de Dax, puis sa place attitrée.</div>
     <div><b>Ça se partage</b>Chacun partage la vidéo avec sa fin à lui : son fantôme dans la vitrine. Ses amis n’ont pas besoin de ClikMe : un lien, une page, une cage, et ils le rejoignent.</div>
     <div><b>Un petit mot au chef</b>On lui écrit ; il lit tout. Les mots qui lui font chaud au cœur passent dans sa vitrine, et parfois il offre un café ou un dessert. Une surprise, pas un concours.</div>
-    <div><b>Tout se touche</b>Chaque fantôme dit son petit mot (choisi, jamais écrit) et reçoit un coucou ; la porte répond ; chaque matin, un fantôme doré se cache, et le trouver fait gagner un petit cadeau.</div>
+    <div><b>Tout se touche</b>Chaque fantôme dit son petit mot ; la porte répond ; chaque matin, un fantôme doré se cache, et le trouver fait gagner un petit cadeau.</div>
+    <div><b>Des coucous qui allument la vitrine</b>Un coucou à un ami sert à s’organiser. Entre inconnus, pas besoin de se connaître : chaque coucou allume une ampoule de la guirlande ; pleine, la vitrine s’illumine, et Jean-Marie peut offrir le café à toute la vitrine.</div>
     <div><b>Sur Instagram aussi</b>Là, la vidéo ne se clique pas : elle finit sur la vitrine pleine de fantômes et un lien. Une page, sans appli, et les trois cages.</div>
   </div>
 </div>
@@ -861,6 +882,11 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     { ou: "derrière le carnet", indice: "il lit le carnet par-derrière", couche: "sc", x: 71.5, y: 51, s: .44, z: 3 },
     { ou: "à la fenêtre de la porte", indice: "il guette à la porte", couche: "sc", x: 84, y: 48.5, s: .42, z: 4 },
   ];
+  // LES COUCOUS ENTRE HABITANTS : pas besoin de se connaître, on allume la guirlande ensemble
+  const AMPOULES = 12, PAR_AMPOULE = 4;
+  // ce qu'on a en commun avec un inconnu de la vitrine (ce que chacun accepte de montrer)
+  const LIENS = ["🤝 Du même quartier que vous", "🤝 Vient le midi, comme vous", "🤝 6e visite chez Bergine", "🤝 Passe aussi chez Maison Lou", "🤝 Nouvelle tête à Dax", "🤝 Fan de garbure, comme vous"];
+  const CADEAUX_VITRINE = [["cafe", "☕ Le café pour toute la vitrine"], ["fete", "🎶 Juste la fête"]];
   const doreDuJour = (jour, trouves) => ({ k: (jour - 1) % CACHETTES.length, trouves, max: 5, trouve: false, indice: false });
 
   let S;
@@ -872,7 +898,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       bon: null, bonsTenus: 0, tournee: 7, badgeParole: false, pins: 0, habitue: 0,
       foule: [], carnet: [], fil: [], semaine: [21, 24, 27, 30, 34, 29], tenues: 4,
       merci: false, appel: false, vus: new Set(CONTACTS.map((c) => c[0])), suiv: 0, promisJour: 0, amenes: 0, envoyes: new Set(), source: garderMoi && S ? S.source : "app",
-      mot: null, tChoix: 0, astuceVue: false, dore: doreDuJour(1, 2), ors: 0, toc: 9, coucous: 14, porte: garderMoi && S ? S.porte : "Plus que 6 magrets ce midi !",
+      allumee: false, cadeauVitrine: false, guirlande: garderMoi && S ? S.guirlande : "cafe",
+      mot: null, tChoix: 0, astuceVue: false, dore: doreDuJour(1, 2), ors: 0, toc: 9, coucous: 38, porte: garderMoi && S ? S.porte : "Plus que 6 magrets ce midi !",
       lettres: [], lettre: null, libre: 0, offerts: 3, cadeauRecu: null, _offrir: null,
       ardoise: { nom: "Rose", texte: "On a fêté nos 40 ans de mariage chez vous. Merci pour la bougie sur le gâteau.", quand: "hier", cadeau: "le café" },
     };
@@ -890,7 +917,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   }
   function ajouter(type, opts = {}) {
     const f = { id: "f" + (++S.suiv), nom: opts.nom || nouveauNom(), look: opts.look || pick(LOOKS), type, ami: !!opts.ami, invite: !!opts.invite, d: hasard(0, 2.4).toFixed(2), recent: !!opts.recent,
-      t: opts.t || Date.now(), mot: pick(MOTS[type]), quand: opts.quand };
+      t: opts.t || Date.now(), mot: pick(MOTS[type]), quand: opts.quand, lien: opts.ami || opts.invite ? null : pick(LIENS) };
     if (type === "table") { f.heure = opts.heure || pick(HEURES); f.n = opts.n || pick([1, 2, 2, 3, 4]); }
     S.foule.push(f);
     if (type === "promis") S.carnet.unshift({ nom: f.nom, quand: opts.quand || "à l’instant", neuf: !!opts.recent });
@@ -950,12 +977,14 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   /* ═══ LA SCÈNE DU COMMERCE ═══ */
   const ICONE_PIN = '<svg viewBox="0 0 24 24"><path d="M8 3v7a2 2 0 0 0 2 2M12 3v18M8 3v4M16 3c-1.5 2-1.5 6 0 8v10"/></svg>';
   function construireScene(el, mini) {
-    el.innerHTML = '<div class="sc-fac"></div><div class="sc-ens"><b>Chez Bergine</b><small>BISTROT · DAX</small></div><div class="sc-store"></div>' +
+    // la guirlande pend sous le store : ses ampoules suivent la courbe du fil
+    const ampoules = Array.from({ length: AMPOULES }, (_, k) => { const u = k / (AMPOULES - 1); return '<i style="--k:' + k + ";left:" + (u * 100).toFixed(1) + "%;top:" + (1.75 * (1 - Math.pow(2 * u - 1, 2))).toFixed(2) + 'cqw"></i>'; }).join("");
+    el.innerHTML = '<div class="sc-fac"></div><div class="sc-ens"><b>Chez Bergine</b><small>BISTROT · DAX</small></div><div class="sc-store"></div><div class="sc-guirlande">' + ampoules + "</div>" +
       '<div class="sc-vit"><img src="a/interieur.webp" alt=""><div class="calque-salle"></div><em>Magret · Garbure · Axoa</em></div>' +
       '<div class="sc-carnet"><b>Le carnet</b><div class="noms"></div></div><div class="sc-pied"></div>' +
       '<div class="sc-porte"><i></i></div><span class="sc-ouvert">OUVERT</span><img class="sc-hote" src="a/bergine-salue.webp" alt="">' +
       '<div class="sc-trot"></div><div class="calque"></div><span class="sc-plus" hidden></span><div class="sc-dit">Merci à vous tous !</div>';
-    el._mini = !!mini; el._fg = new Map(); el._dore = null;
+    el._mini = !!mini; el._fg = new Map(); el._dore = null; el._guir = undefined;
   }
   function elFantome(f) {
     const d = document.createElement("div");
@@ -1032,7 +1061,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     const noms = $(".noms", el);
     const derniers = S.carnet.slice(0, 3);
     noms.innerHTML = derniers.map((c) => '<span class="' + (c.neuf ? "neuf" : "") + '">' + echap(c.nom) + "</span>").join("");
-    rendreDore(el);
+    rendreDore(el); rendreGuirlande(el);
     if (el === scH) suivreBulle();
   }
   // le fantôme doré du jour, à sa cachette (l'habitant qui l'a trouvé ne le voit plus)
@@ -1115,6 +1144,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       '<span class="' + (S.ors ? "gagne" : "") + '">Chasseur d’or' + (S.ors ? " · " + S.ors : "") + "</span>" +
       '<span class="' + (S.lettre && S.lettre.coeur ? "gagne" : "") + '">Coup de cœur du chef</span>';
     const lignes = [];
+    if (S.cadeauVitrine) lignes.push('<div class="bon bon-chef"><img src="a/chef.jpg" alt=""><div><small>Chez Bergine · la vitrine allumée</small><b>Le café offert</b><span>Ce midi, à toute la vitrine · exemple</span></div></div>');
     if (S.cadeauRecu) lignes.push('<div class="bon bon-chef"><img src="a/chef.jpg" alt=""><div><small>Chez Bergine · coup de cœur du chef</small><b>' + S.cadeauRecu.n + " offert</b><span>Pour votre petit mot · exemple</span></div></div>");
     if (S.dore.trouve) lignes.push('<div class="bon dore"><img src="' + img("soleil", "salue") + '" alt=""><div><small>Chez Bergine · fantôme doré</small><b>Le dessert offert</b><span>Avec votre plat, aujourd’hui · exemple</span></div></div>');
     if (S.bon) lignes.push('<div class="bon' + (S.bon.tenu ? " tenu" : "") + '"><img src="a/magret.jpg" alt=""><div><small>Chez Bergine · promesse</small><b>' + S.bon.quoi + "</b><span>" + (S.bon.tenu ? "Tenue aujourd’hui" : "Valable encore " + S.bon.jours + " jours") + "</span></div></div>");
@@ -1243,11 +1273,15 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       (coeur ? '<span class="bf-tag or">💛 coup de cœur du chef</span>' : "");
     const b = document.createElement("div");
     b.className = "bulle-fg"; b._cle = f.id; b._d = d;
-    b.innerHTML = '<div class="bf-haut"><b>' + echap(moi ? S.moi.nom : f.nom) + "</b>" + tag + "<small>" + quoi + "</small></div>" +
+    // un ami : le coucou sert à s'organiser ; un inconnu : un point commun, et le coucou allume la guirlande
+    const inconnu = !moi && !f.ami && !f.invite;
+    const libelle = f.coucou ? "👋 Coucou envoyé" : inconnu && !S.allumee ? "👋 Coucou · +1 ampoule 💡" : "👋 Coucou";
+    b.innerHTML = '<div class="bf-haut"><b>' + echap(moi ? S.moi.nom : f.nom) + "</b>" + tag + "<small>" + quoi + "</small>" +
+      (inconnu && f.lien ? '<p class="bf-lien">' + echap(f.lien) + "</p>" : "") + "</div>" +
       (mot ? '<p class="bf-mot">« ' + echap(mot) + " »</p>" : "") +
       (note ? '<p class="bf-astuce">' + echap(note) + "</p>" : "") +
       '<div class="bf-act">' + (moi ? (S.lettre ? "" : '<button type="button" data-mot>✎ Écrire à Jean-Marie</button>')
-        : '<button type="button" data-coucou' + (f.coucou ? " disabled" : "") + ">" + (f.coucou ? "👋 Coucou envoyé" : "👋 Coucou") + "</button>") + "</div>";
+        : '<button type="button" data-coucou' + (f.coucou ? " disabled" : "") + ">" + libelle + "</button>") + "</div>";
     scH.appendChild(b); bulle = b;
     placerBulle();
     clearTimeout(ouvrirBulle._t); ouvrirBulle._t = setTimeout(() => { if (bulle === b) fermerBulle(); }, astuce ? 6500 : 8000);
@@ -1281,21 +1315,74 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     s.style.left = (r.left + r.width / 2 - R.left) + "px"; s.style.top = (r.top - R.top) + "px";
     scH.appendChild(s); setTimeout(() => s.remove(), 1700);
   }
-  // un coucou : il se retourne et salue ; un ami (et souvent un inconnu) répond
+  // un coucou : il se retourne et salue. Un ami répond pour s'organiser ; avec un inconnu, chacun
+  // des deux coucous (l'envoyé, le rendu) monte en étincelle allumer la guirlande
   function coucou(d) {
     const f = d._f; if (!f || f.coucou) return;
-    f.coucou = true; S.coucous++; ac(); bip(988, .08, "sine", .06); bip(1319, .12, "sine", .05, .09);
+    const inconnu = !f.ami && !f.invite;
+    f.coucou = true; ac(); bip(988, .08, "sine", .06); bip(1319, .12, "sine", .05, .09);
     const btn = bulle && $("[data-coucou]", bulle); if (btn) { btn.disabled = true; btn.textContent = "👋 Coucou envoyé"; }
     emoji(d, "👋");
     setTimeout(fermerBulle, 650);
+    etincelle(d, () => { S.coucous++; rendreTout(); });
     setTimeout(() => {
       const d2 = scH._fg.get(f.id); if (!d2) return;
       const im = $("img", d2);
       if (d2._type === "adore") { im.setAttribute("src", img(f.look, "salue")); setTimeout(() => { if (d2._type === "adore") im.setAttribute("src", img(f.look, "debout")); }, 1900); }
       sauter(d2); emoji(d2, "👋"); SON.pop();
+      etincelle(d2, () => { S.coucous++; rendreTout(); });
     }, 900);
-    if (f.ami || Math.random() < .6) setTimeout(() => notifier(img(f.look, "salue"), f.nom, "vous fait coucou aussi 👋" + (f.ami ? " « On se retrouve chez Bergine ce midi ? »" : ""), "Devant la vitrine de Chez Bergine"), 2100);
-    rendreComptoir();
+    if (f.ami) setTimeout(() => notifier(img(f.look, "salue"), f.nom, "vous fait coucou aussi 👋 « On se retrouve chez Bergine ce midi ? »", "Devant la vitrine de Chez Bergine"), 2100);
+    else if (inconnu && Math.random() < .5) setTimeout(() => {
+      const reste = AMPOULES * PAR_AMPOULE - S.coucous;
+      if (S.allumee || reste <= 0) return; // la vitrine s'est illuminée entre-temps : c'est sa nouvelle qui compte
+      notifier(img(f.look, "salue"), f.nom, "vous rend votre coucou 👋 Encore " + reste + (reste > 1 ? " coucous" : " coucou") + " et la vitrine s’illumine !", "La guirlande de Chez Bergine");
+    }, 2300);
+  }
+  // l'étincelle d'un coucou monte jusqu'à la prochaine ampoule de la guirlande
+  function etincelle(d, fin) {
+    const amp = $$(".sc-guirlande i", scH)[Math.min(AMPOULES - 1, Math.floor(S.coucous / PAR_AMPOULE))];
+    if (reduit || S.allumee || !amp || !d.isConnected) { fin(); return; }
+    const R = scH.getBoundingClientRect(), r = $("img", d).getBoundingClientRect(), a = amp.getBoundingClientRect();
+    const s = document.createElement("span"); s.className = "etincelle"; s.textContent = "✨";
+    const x0 = r.left + r.width / 2 - R.left, y0 = r.top - R.top, x1 = a.left + a.width / 2 - R.left, y1 = a.top + a.height / 2 - R.top;
+    s.style.left = x0 + "px"; s.style.top = y0 + "px"; scH.appendChild(s);
+    const anim = s.animate([{ transform: "translate(-50%,-50%) scale(.6)", opacity: 0 }, { opacity: 1, offset: .15 },
+      { transform: `translate(calc(-50% + ${(x1 - x0) / 2}px),calc(-50% + ${(y1 - y0) / 2 - 30}px)) scale(1.1)`, offset: .55 },
+      { transform: `translate(calc(-50% + ${x1 - x0}px),calc(-50% + ${y1 - y0}px)) scale(.7)`, opacity: 1 }], { duration: 850, easing: "ease-in-out" });
+    anim.onfinish = () => { s.remove(); bip(1760, .05, "sine", .03); fin(); };
+  }
+  // les ampoules allumées, dans toutes les vitrines ; celle qui vient de s'allumer clignote
+  function rendreGuirlande(el) {
+    const n = Math.min(AMPOULES, Math.floor(S.coucous / PAR_AMPOULE));
+    $$(".sc-guirlande i", el).forEach((i, k) => {
+      const on = k < n;
+      if (on && !i.classList.contains("on") && el._guir !== undefined) { i.classList.remove("neuve"); void i.offsetWidth; i.classList.add("neuve"); }
+      i.classList.toggle("on", on);
+    });
+    el._guir = n;
+    el.classList.toggle("allumee", S.allumee);
+  }
+  // toute la guirlande allumée : la vitrine s'illumine, la foule fait la ola, Jean-Marie sort
+  function verifierGuirlande() {
+    if (S.allumee || S.coucous < AMPOULES * PAR_AMPOULE) return;
+    S.allumee = true;
+    const cafe = S.guirlande === "cafe";
+    for (const sc of [scH, scC, scI, scA, scP]) rendreGuirlande(sc);
+    if (!reduit) {
+      const ghosts = [...scH._fg.values()].sort((a, b) => parseFloat(a.style.left) - parseFloat(b.style.left));
+      ghosts.forEach((g, k) => { g.style.setProperty("--ola", (k * .045).toFixed(2) + "s"); g.classList.remove("ola"); void g.offsetWidth; g.classList.add("ola"); setTimeout(() => g.classList.remove("ola"), 2600); });
+      confettis(scH);
+    }
+    SON.chime(); applaudir(12);
+    hote(scH, cafe ? "Toute la vitrine allumée ! Le café est pour moi ☕" : "Toute la vitrine allumée ! Merci à vous 💛", 5200);
+    hote(scC, "Toute la vitrine allumée !", 5200);
+    evenement("est toute allumée : " + AMPOULES * PAR_AMPOULE + " coucous entre habitants ✨", { nom: "Votre vitrine", look: "soleil" });
+    fete("Votre vitrine est toute allumée !", AMPOULES * PAR_AMPOULE + " coucous entre habitants ce matin" + (cafe ? " · le café offert à toute la vitrine (exemple)" : ""), false);
+    if (S.choix) {
+      if (cafe) S.cadeauVitrine = true;
+      setTimeout(() => notifier("a/chef.jpg", "Chez Bergine", "La vitrine est toute allumée grâce à vos coucous ✨" + (cafe ? " Jean-Marie offre le café à toute la vitrine ce midi ☕" : ""), cafe ? "Il est dans Ma Maison · exemple" : "La guirlande se rallume demain"), 1200);
+    }
   }
   function ouvrirMots() {
     if (S.lettre) return;
@@ -1553,7 +1640,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     $("#m-dore").textContent = tr + (tr > 1 ? " trouvés" : " trouvé") + " sur " + S.dore.max;
     $("#m-dore-ou").textContent = tr < S.dore.max ? "caché " + CACHETTES[S.dore.k].ou + " · 🍮 le dessert offert" : "tous trouvés · demain, il se cache ailleurs";
     $("#m-toc").textContent = S.toc + " ce matin";
-    $("#m-coucou").textContent = String(S.coucous);
+    $("#m-coucou").textContent = S.coucous + " · 💡 " + Math.min(AMPOULES, Math.floor(S.coucous / PAR_AMPOULE)) + "/" + AMPOULES;
+    $("#m-coucou-s").textContent = S.allumee ? "guirlande pleine : la vitrine est allumée ✨" : "pleine à " + AMPOULES * PAR_AMPOULE + " coucous : la vitrine s’illumine";
+    $("#guirlande-choix").innerHTML = CADEAUX_VITRINE.map(([k, l]) => '<button type="button" class="' + (k === S.guirlande ? "on" : "") + '" data-guirlande="' + k + '"' + (S.allumee ? " disabled" : "") + ">" + l + "</button>").join("");
     rendreLettres();
     $("#m-vitrine").textContent = a + " devant";
     rendreScene(scC);
@@ -1673,6 +1762,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     S.choix = null; S.table = null; S.premier = false; S.merci = false; S.appel = false; S.fil = []; S.promisJour = 0;
     // le fantôme doré change de cachette ; la porte et les coucous repartent de zéro
     S.dore = doreDuJour(S.jour, 0); S.toc = 0; S.coucous = 0; S.mot = null; fermerBulle(); planifierDore();
+    S.allumee = false; S.cadeauVitrine = false; // la guirlande s'éteint la nuit
+    for (const sc of [scH, scC, scI, scA, scP]) sc._guir = undefined;
     // un nouveau mot par jour ; l'ardoise garde le coup de cœur d'hier
     S.lettres = []; S.lettre = null; S._offrir = null;
     if (S.ardoise) S.ardoise.quand = "hier";
@@ -1689,7 +1780,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     planifier();
   }
 
-  function rendreTout() { rendreHabitant(); rendreComptoir(); if ($("#f-maison").classList.contains("on")) rendreMaison(); }
+  function rendreTout() { rendreHabitant(); rendreComptoir(); if ($("#f-maison").classList.contains("on")) rendreMaison(); verifierGuirlande(); }
 
   /* ═══ LES GESTES ═══ */
   function brancher() {
@@ -1778,6 +1869,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       else { const c = e.target.closest("[data-cadeau]"); if (c) coeurPour(l, CADEAUX[+c.dataset.cadeau]); }
     });
     $("#porte").addEventListener("input", (e) => { S.porte = e.target.value.trim() || "Bienvenue chez Bergine !"; });
+    $("#guirlande-choix").addEventListener("click", (e) => { const b = e.target.closest("[data-guirlande]"); if (!b || b.disabled) return; S.guirlande = b.dataset.guirlande; ac(); SON.pop(); rendreComptoir(); });
     $("#montrer-bon").addEventListener("click", () => feuille("f-qr"));
     $("#scanner").addEventListener("click", tenirPromesse);
     // le comptoir

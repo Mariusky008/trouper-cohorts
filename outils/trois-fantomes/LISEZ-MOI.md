@@ -40,8 +40,15 @@ le dit, pour donner envie d'écrire. D'autres habitants écrivent aussi (simulé
 - **Chaque fantôme** : on le touche, une bulle dit son prénom, son geste et quand (« 💗 a adoré · il y a 24 min »,
   « 🍽️ vient à 12 h 30 · à 2 ») et son petit mot : celui de la liste, ou celui qu'il a écrit au chef s'il a eu
   son 💛 (avec, le cas échéant, « 🎁 Jean-Marie lui a offert le dessert »). Jean-Marie les lit dans son fil.
-- **👋 Coucou** : le fantôme touché se retourne et salue ; un ami répond toujours (« On se retrouve chez Bergine
-  ce midi ? »), un inconnu souvent. Le comptoir compte les coucous échangés devant sa vitrine.
+- **👋 Coucou** : le fantôme touché se retourne et salue.
+  - **Un ami** répond pour s'organiser (« On se retrouve chez Bergine ce midi ? »).
+  - **Un inconnu** : on ne sait pas qui c'est, et ce n'est pas grave. Sa bulle montre un point commun (« Du même
+    quartier que vous », « Passe aussi chez Maison Lou » : ce que chacun accepte de montrer), et le coucou sert à
+    tous : le coucou envoyé et le coucou rendu montent en étincelle allumer une ampoule de **la guirlande** pendue
+    sous le store (12 ampoules, une tous les 4 coucous). Les autres habitants en allument aussi.
+  - **Guirlande pleine** : la vitrine s'illumine, la foule fait la ola, le fantôme de Jean-Marie sort. S'il l'a
+    choisi au comptoir (« Quand la guirlande est pleine »), il offre le café à toute la vitrine (exemple) : un bon
+    pour chacun dans Ma Maison. Ou « juste la fête ». La guirlande s'éteint la nuit.
 - **Son propre fantôme** : il saute et dit son mot ; tant qu'il n'a rien écrit, « Écrire à Jean-Marie ». La
   première fois, sa bulle s'ouvre seule pour le proposer.
 - **Toc-toc** : toucher la porte la fait trembler, le fantôme de Jean-Marie sort et dit ce que Jean-Marie a écrit
