@@ -41,16 +41,16 @@ le dit, pour donner envie d'écrire. D'autres habitants écrivent aussi (simulé
 - **Chaque fantôme** : on le touche, une bulle dit son prénom, son geste et quand (« 💗 a adoré · il y a 24 min »,
   « 🍽️ vient à 12 h 30 · à 2 ») et son petit mot : celui de la liste, ou celui qu'il a écrit au chef s'il a eu
   son 💛 (avec, le cas échéant, « 🎁 Jean-Marie lui a offert le dessert »). Jean-Marie les lit dans son fil.
-- **🍴 Le conseil de ceux qui ont mangé ici** : une petite fourchette verte marque les fantômes déjà venus
-  chez Bergine (un sur deux, simulé). Leur bulle dit quand (« A mangé ici mardi ») et leur conseil (« Prenez le
-  magret, et gardez de la place pour le gâteau basque »), avec combien l'ont gardé. **📌 Garder son conseil** : il
-  part dans Ma Maison (« À commander chez Bergine »), pour le jour où l'on y va, et son auteur sait que son conseil
-  a servi (🙏). Toucher quelqu'un sert donc à quelque chose qui vient de lui : ce qu'il a goûté.
+- **❤️ Aimer ce que dit quelqu'un** : un seul geste, sur la personne elle-même. Une petite fourchette verte 🍴
+  marque les fantômes déjà venus chez Bergine (un sur deux, simulé) : leur bulle dit quand (« A mangé ici mardi »)
+  et leur conseil (« Prenez le magret, et gardez de la place pour le gâteau basque »). Les autres ont leur petit
+  mot. **❤️ J'aime son conseil** (ou **son mot**) : il voit le ❤️, le compteur monte (« 4 personnes aiment ce
+  conseil, dont vous »), et un conseil aimé attend dans Ma Maison (« Les conseils que vous aimez »), pour le jour
+  où l'on y va.
 - **Son conseil à soi** : après avoir tenu sa promesse (bon scanné), on choisit le sien ; son fantôme prend la
-  fourchette, d'autres le gardent à leur tour (« Robin a gardé votre conseil 📌 »), badge « Bon conseil ».
-  Au comptoir, Jean-Marie voit combien de conseils sont gardés et le plat le plus conseillé.
-- **👋 Coucou**, entre amis seulement : l'ami se retourne, salue et répond pour s'organiser (« On se retrouve
-  chez Bergine ce midi ? »).
+  fourchette, d'autres l'aiment à leur tour (« Robin aime votre conseil ❤️ »), badge « Bon conseil ». Un petit
+  mot choisi dans la liste peut lui aussi être aimé. Au comptoir, Jean-Marie voit combien de conseils sont aimés
+  et le plat le plus conseillé.
 - **Son propre fantôme** : il saute et dit son mot ; tant qu'il n'a rien écrit, « Écrire à Jean-Marie ». La
   première fois, sa bulle s'ouvre seule pour le proposer.
 - **Toc-toc** : toucher la porte la fait trembler, le fantôme de Jean-Marie sort et dit ce que Jean-Marie a écrit
