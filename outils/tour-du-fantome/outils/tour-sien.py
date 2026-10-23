@@ -5,14 +5,16 @@
 #    chapitre 04, et dans le titre de la conclusion. Rien d'inventé : seulement le nom qu'on tape ; les photos,
 #    les voix et les mots de l'exemple restent ceux de l'exemple (la voix du livre garde son auteur, « exemple »).
 #    Le nom reste sur ce téléphone le temps de la visite (sessionStorage), jamais envoyé.
-#  · son vrai temps. Du nom du plat jusqu'à « Publier », le temps qu'il y passe est mesuré. À la fin de
-#    « Plus de clients », après WhatsApp, un ticket : son temps (mesuré), les vues et la demande (exemple).
-#    La conclusion le reprend : « Plus de clients · votre annonce en 1 min 48, aujourd'hui ».
+#  · son temps. À la fin de « Plus de clients », après WhatsApp, un ticket : le temps pour créer et publier
+#    une annonce, toujours le même, 1 min 30 en moyenne (pas le chrono de la démo : on s'y arrête pour
+#    expliquer, il ne veut rien dire), les vues et la demande (exemple). La conclusion le reprend :
+#    « Plus de clients · votre annonce en 1 min 30, en moyenne ».
 #    Et « Commission : 0 € » : ClikMe ne prend aucune commission sur ce que ses clients lui demandent (confirmé).
 # À lancer après tour-depenses.py (même index.html) :  python3 -I tour-sien.py <dossier>
 import json, sys
 
 S = sys.argv[1]
+TEMPS_MOYEN = "1\u00a0min\u00a030"      # le temps moyen pour créer et publier une annonce
 # la demande qu'il a reçue, en une ligne, dans les mots du métier (pourCombien, PLAT : ceux de la page)
 DEMANDES = {
     "tour": '"Une table pour " + pourCombien()',
@@ -77,7 +79,7 @@ POUR_HTML = ('\n    <button type="button" class="pour" id="pour">✎ Pour qui es
 
 BILAN_HTML = ('<div class="wa-bilan" id="wa-bilan" aria-live="polite">'
               '<p class="wb-t"><b>Plus de clients.</b><small>Ce que votre fantôme<br>a fait pour vous</small></p>'
-              '<div class="wb-l wb-temps"><i>⏱</i><span><small>Votre temps pour créer et publier</small><b id="wb-temps"></b></span><em class="vrai">mesuré</em></div>'
+              '<div class="wb-l wb-temps"><i>⏱</i><span><small>Votre temps pour créer et publier</small><b>' + TEMPS_MOYEN + '</b></span><em class="vrai">en moyenne</em></div>'
               '<div class="wb-l"><i>👁</i><span><small>Votre annonce sur ClikMe</small><b>1 400 vues</b></span><em>exemple</em></div>'
               '<div class="wb-l"><i>💬</i><span><small id="wb-quand"></small><b id="wb-demande"></b></span><em>exemple</em></div>'
               '<div class="wb-l wb-zero"><i>🤝</i><span><small>Commission ClikMe sur cette demande</small><b>0 €</b></span><em class="vrai">toujours</em></div>'
@@ -85,7 +87,7 @@ BILAN_HTML = ('<div class="wa-bilan" id="wa-bilan" aria-live="polite">'
 
 JS = """
   /* ═══ SON NOM, SON TEMPS (voir tour-sien.py) ═══ */
-  const SIEN = { nom: "", temps: "", t0: 0 };
+  const SIEN = { nom: "" };
   const sienEchapper = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   // son commerce s'il a été tapé, sinon celui de l'exemple
   const lieuVous = () => SIEN.nom ? sienEchapper(SIEN.nom) : PR.lieu;
@@ -124,23 +126,10 @@ JS = """
   $("#pour-effacer").addEventListener("click", () => poserPour(""));
   $("#pour-feuille").addEventListener("click", (e) => { if (e.target.id === "pour-feuille") $("#pour-feuille").hidden = true; });
 
-  /* SON VRAI TEMPS : du nom du plat jusqu'à « Publier », mesuré pendant qu'il le fait */
-  const dureeSien = (ms) => {
-    const s = Math.max(1, Math.round(ms / 1000));
-    return s < 60 ? s + " s" : Math.floor(s / 60) + " min" + (s % 60 ? " " + String(s % 60).padStart(2, "0") : "");
-  };
-  {
-    const nom = DEMOS.clients.moments.find((m) => m.id === "nom"), entrerNom = nom.entrer;
-    nom.entrer = function () { SIEN.t0 = performance.now(); SIEN.temps = ""; return entrerNom.apply(this, arguments); };
-    const pub = DEMOS.clients.moments.find((m) => m.id === "publier"), agirPub = pub.agir;
-    pub.agir = function () { if (SIEN.t0 && !SIEN.temps) SIEN.temps = dureeSien(performance.now() - SIEN.t0); return agirPub.apply(this, arguments); };
-  }
   // le ticket, après la demande WhatsApp : le tampon « Plus de clients. » se pose dessus
   const DEMANDE_BILAN = () => __DEMANDE__;
   function montrerBilanClients() {
     const q = QUAND[choix.quand];
-    $("#wb-temps").textContent = SIEN.temps;
-    $("#wb-temps").closest(".wb-l").hidden = !SIEN.temps;
     $("#wb-demande").textContent = DEMANDE_BILAN();
     $("#wb-quand").textContent = "Sur votre WhatsApp · " + q.mot.toLowerCase() + " vers " + q.heures[choix.heure];
     $("#tampon-c").classList.remove("on");
@@ -180,6 +169,6 @@ for d, demande in DEMANDES.items():
     t = une_fois(t, '\'<div class="oy"><h2 class="oy-titre">Alors, on y <em>va</em>\' + NB + "?</h2>',
                  '\'<div class="oy">\' + ouiTitre() + "', f"{d} titre du oui")
     t = une_fois(t, '"</b><small>" + p.sous + "</small>',
-                 '"</b><small>" + (k === 0 && SIEN.temps ? "votre annonce en " + SIEN.temps + ", aujourd’hui" : p.sous) + "</small>', f"{d} oui temps")
+                 '"</b><small>" + (k === 0 ? "votre annonce en ' + TEMPS_MOYEN + ', en moyenne" : p.sous) + "</small>', f"{d} oui temps")
     open(page, "w", encoding="utf-8").write(t)
     print(d, "· son nom, son temps")

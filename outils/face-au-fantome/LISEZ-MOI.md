@@ -95,3 +95,23 @@ node outils/face-au-fantome/lou/preparer.cjs /chemin/du/dossier/recu
 DOSSIER=lou node outils/face-au-fantome/rendu.mjs apercu 3.6 22.4
 DOSSIER=lou FFMPEG=/chemin/ffmpeg node outils/face-au-fantome/rendu.mjs tout
 ```
+
+## L'épisode 14 : Margaux, lunetier (`margaux/`)
+
+Le même moteur, pour le tour du fantôme du lunetier (« Les Lunettes de Margaux », un commerce fictif) : 30 secondes
+sur la monture ronde en cristal. Le fantôme pose deux questions avec sa voix (« Alors, c'est quoi, la monture du
+moment ? », « Et à quel visage elle va le mieux ? ») et dit « À bientôt, chez l'opticien ! ». Margaux répond avec
+la voix d'Aurore (ElevenLabs, `recu/lunettes/voix/margaux.mp3` du tour) : sa réponse à la question 1, coupée sur ses
+phrases, rien d'autre. Ses mots (`margaux/mots.json`) ont été relevés à l'écoute par Whisper « base », puis corrigés.
+Chaque photo montre ce qu'elle dit : la monture de côté, « CRISTAL » en plein écran sur le cristal de tout près, le nez
+sur « l'oublie sur le nez », le ralenti sur ses mains à « en cinq minutes », la boutique sur « presque tout le monde ».
+
+Les photos et la voix sont dans le dépôt (fournies par le propriétaire) ; seule la musique vient d'ailleurs (la même
+que Lou). Le détourage du plan signature : `margaux/masque.png` (MediaPipe « selfie segmentation », affiné sur le
+fond bleu uni de la photo).
+
+```sh
+node outils/face-au-fantome/margaux/preparer.cjs [dossier contenant musique.mp3]
+DOSSIER=margaux node outils/face-au-fantome/rendu.mjs apercu 4.2 10.1 18.9
+DOSSIER=margaux FFMPEG=/chemin/ffmpeg node outils/face-au-fantome/rendu.mjs tout
+```

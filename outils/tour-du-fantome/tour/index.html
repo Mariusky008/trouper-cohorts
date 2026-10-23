@@ -2205,7 +2205,7 @@ h1 em{font-style:normal;color:var(--rose)}
               <div class="wa-msg wa-moi" id="wa-moi"><pre id="wa-reponse"></pre><time>11:43 ✓✓</time></div>
             </div>
             <div class="wa-saisie" aria-hidden="true"><span>Message</span><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fff"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></i></div>
-            <div class="wa-bilan" id="wa-bilan" aria-live="polite"><p class="wb-t"><b>Plus de clients.</b><small>Ce que votre fantôme<br>a fait pour vous</small></p><div class="wb-l wb-temps"><i>⏱</i><span><small>Votre temps pour créer et publier</small><b id="wb-temps"></b></span><em class="vrai">mesuré</em></div><div class="wb-l"><i>👁</i><span><small>Votre annonce sur ClikMe</small><b>1 400 vues</b></span><em>exemple</em></div><div class="wb-l"><i>💬</i><span><small id="wb-quand"></small><b id="wb-demande"></b></span><em>exemple</em></div><div class="wb-l wb-zero"><i>🤝</i><span><small>Commission ClikMe sur cette demande</small><b>0 €</b></span><em class="vrai">toujours</em></div></div><div class="wa-notif" id="wa-notif"><span class="ic"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z"/></svg></span><span><b>WhatsApp · Camille</b><small id="wa-apercu"></small></span><em>maintenant</em></div>
+            <div class="wa-bilan" id="wa-bilan" aria-live="polite"><p class="wb-t"><b>Plus de clients.</b><small>Ce que votre fantôme<br>a fait pour vous</small></p><div class="wb-l wb-temps"><i>⏱</i><span><small>Votre temps pour créer et publier</small><b>1 min 30</b></span><em class="vrai">en moyenne</em></div><div class="wb-l"><i>👁</i><span><small>Votre annonce sur ClikMe</small><b>1 400 vues</b></span><em>exemple</em></div><div class="wb-l"><i>💬</i><span><small id="wb-quand"></small><b id="wb-demande"></b></span><em>exemple</em></div><div class="wb-l wb-zero"><i>🤝</i><span><small>Commission ClikMe sur cette demande</small><b>0 €</b></span><em class="vrai">toujours</em></div></div><div class="wa-notif" id="wa-notif"><span class="ic"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z"/></svg></span><span><b>WhatsApp · Camille</b><small id="wa-apercu"></small></span><em>maintenant</em></div>
             <span class="tampon" id="tampon-c" style="--y:60%">Plus de clients.</span>
             <div class="fin" id="fin-clients" style="--b:3.6em"><button type="button" class="go fin-chap" id="fin-c-autre">Et pendant la nuit ? →</button><button type="button" class="go fin-chap" id="fin-c-demain">Et quand vous passerez la main →</button><button type="button" class="fin-conclure" id="fin-c-oui">Passer à la conclusion →</button></div>
           </div>
@@ -4474,7 +4474,7 @@ h1 em{font-style:normal;color:var(--rose)}
     // LE OUI : les quatre promesses, cochées une à une, puis le bouton qui crée sa page
     oui: () => '<div class="oy">' + ouiTitre() + "<div class=\"oy-liste\">" +
       OUI_PROMESSES.map((p, k) => '<div class="oy-p" data-k="' + k + '"><span class="s2-tuile"><svg viewBox="0 0 24 24" aria-hidden="true">' + p.ico +
-        "</svg></span><span><b>" + p.titre + "</b><small>" + (k === 0 && SIEN.temps ? "votre annonce en " + SIEN.temps + ", aujourd’hui" : p.sous) + "</small></span><i>✓</i></div>").join("") + "</div>" +
+        "</svg></span><span><b>" + p.titre + "</b><small>" + (k === 0 ? "votre annonce en 1 min 30, en moyenne" : p.sous) + "</small></span><i>✓</i></div>").join("") + "</div>" +
       '<a class="oy-go" href="' + OUI_CREER + '" target="_blank" rel="noopener">Créer ma page maintenant →<small>avec votre fiche Google · 2 minutes</small></a>' +
       (OUI_OFFRE ? '<p class="oy-offre">' + OUI_OFFRE + "</p>" : "") + prEtin(14) + "</div>",
   };
@@ -4680,7 +4680,7 @@ h1 em{font-style:normal;color:var(--rose)}
     return false;
   }
   /* ═══ SON NOM, SON TEMPS (voir tour-sien.py) ═══ */
-  const SIEN = { nom: "", temps: "", t0: 0 };
+  const SIEN = { nom: "" };
   const sienEchapper = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   // son commerce s'il a été tapé, sinon celui de l'exemple
   const lieuVous = () => SIEN.nom ? sienEchapper(SIEN.nom) : PR.lieu;
@@ -4719,23 +4719,10 @@ h1 em{font-style:normal;color:var(--rose)}
   $("#pour-effacer").addEventListener("click", () => poserPour(""));
   $("#pour-feuille").addEventListener("click", (e) => { if (e.target.id === "pour-feuille") $("#pour-feuille").hidden = true; });
 
-  /* SON VRAI TEMPS : du nom du plat jusqu'à « Publier », mesuré pendant qu'il le fait */
-  const dureeSien = (ms) => {
-    const s = Math.max(1, Math.round(ms / 1000));
-    return s < 60 ? s + " s" : Math.floor(s / 60) + " min" + (s % 60 ? " " + String(s % 60).padStart(2, "0") : "");
-  };
-  {
-    const nom = DEMOS.clients.moments.find((m) => m.id === "nom"), entrerNom = nom.entrer;
-    nom.entrer = function () { SIEN.t0 = performance.now(); SIEN.temps = ""; return entrerNom.apply(this, arguments); };
-    const pub = DEMOS.clients.moments.find((m) => m.id === "publier"), agirPub = pub.agir;
-    pub.agir = function () { if (SIEN.t0 && !SIEN.temps) SIEN.temps = dureeSien(performance.now() - SIEN.t0); return agirPub.apply(this, arguments); };
-  }
   // le ticket, après la demande WhatsApp : le tampon « Plus de clients. » se pose dessus
   const DEMANDE_BILAN = () => "Une table pour " + pourCombien();
   function montrerBilanClients() {
     const q = QUAND[choix.quand];
-    $("#wb-temps").textContent = SIEN.temps;
-    $("#wb-temps").closest(".wb-l").hidden = !SIEN.temps;
     $("#wb-demande").textContent = DEMANDE_BILAN();
     $("#wb-quand").textContent = "Sur votre WhatsApp · " + q.mot.toLowerCase() + " vers " + q.heures[choix.heure];
     $("#tampon-c").classList.remove("on");

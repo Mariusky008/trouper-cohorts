@@ -435,17 +435,17 @@ h1 em{font-style:normal;color:var(--rose)}
 .fx-corps img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 .8em 1.1em rgba(0,0,0,.5))}
 .fx-corps .ouverte,.ouvre .fx-corps .fermee{opacity:0}
 .ouvre .fx-corps .ouverte{opacity:1}
-.fx-bulle{position:absolute;left:1.05em;right:1.05em;bottom:calc(100% - 20.2em);padding:.85em .95em .9em;border-radius:1.35em;color:var(--encre);
+.fx-bulle{position:absolute;left:.5em;right:.5em;bottom:calc(100% - 20.2em);padding:.85em .95em .9em;border-radius:1.35em;color:var(--encre);
   background:linear-gradient(180deg,#FFF9F1,#FFEEDA);box-shadow:0 1em 2.2em rgba(0,0,0,.5),inset 0 1px 0 #fff;
   transform-origin:50% 100%;opacity:0;transform:scale(.86) translateY(.6em);transition:opacity .3s,transform .45s var(--ease)}
 .fx-bulle.on{opacity:1;transform:none}
 .fx-bulle::after{content:"";position:absolute;left:50%;bottom:-.42em;width:.95em;height:.95em;margin-left:-.47em;background:#FFEEDA;transform:rotate(45deg);border-radius:.18em}
-.fx-dit{margin:0;font-size:1.15em;font-weight:800;line-height:1.2;letter-spacing:-.012em;min-height:1.2em}
+.fx-dit{margin:0;font-size:1.05em;font-weight:800;line-height:1.2;letter-spacing:-.012em;min-height:1.2em}
 .fx-plan{list-style:none;margin:0;padding:0;display:grid;gap:.42em}
 .fx-plan:not(:empty){margin-top:.65em;padding-top:.6em;border-top:1px solid rgba(106,84,68,.16)}
-.fx-plan li{display:grid;grid-template-columns:2.1em minmax(0,1fr);gap:.6em;align-items:center;animation:fx-ligne .4s var(--ease) both}
+.fx-plan li{display:grid;grid-template-columns:1.8em minmax(0,1fr);gap:.5em;align-items:center;animation:fx-ligne .4s var(--ease) both}
 @keyframes fx-ligne{from{opacity:0;transform:translateY(.5em) scale(.96)}}
-.fx-ico{width:2.1em;height:2.1em;border-radius:50%;display:grid;place-items:center;overflow:hidden}
+.fx-ico{width:1.8em;height:1.8em;border-radius:50%;display:grid;place-items:center;overflow:hidden}
 .fx-ico svg{width:1.15em;height:1.15em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .fx-ico.rose{background:rgba(255,46,154,.14);color:var(--rose2)}
 .fx-ico.ambre{background:rgba(245,162,58,.2);color:#B9640E}
@@ -454,7 +454,7 @@ h1 em{font-style:normal;color:var(--rose)}
 .fx-ico.trio{position:relative;overflow:visible}
 .fx-ico.trio img{position:absolute;width:1.45em;height:1.45em;border-radius:50%;border:2px solid #FFF6EC}
 .fx-ico.trio img:nth-child(1){left:-.2em;top:.1em}.fx-ico.trio img:nth-child(2){left:.55em;top:-.2em}.fx-ico.trio img:nth-child(3){left:.45em;top:.7em}
-.fx-ligne{font-size:.82em;font-weight:600;line-height:1.3;color:#4A3426}
+.fx-ligne{font-size:.75em;font-weight:600;line-height:1.24;color:#4A3426}
 .fx-mot{display:inline-block;animation:fx-mot .26s ease-out both}
 @keyframes fx-mot{from{opacity:0;transform:translateY(.25em);filter:blur(2px)}}
 .fx-cle{background:linear-gradient(transparent 60%,rgba(255,46,154,.32) 60%) no-repeat 0 0/0% 100%;transition:background-size .6s ease;border-radius:.1em}
@@ -687,21 +687,39 @@ h1 em{font-style:normal;color:var(--rose)}
 .xr-bas{position:absolute;left:1.1em;right:1.1em;bottom:1.6em}
 .xr-pied{display:flex;align-items:center;gap:.8em;margin:.7em 0 0;font-size:.74em;color:var(--gris)}
 .xr-pied::before,.xr-pied::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.2)}
-/* L'ÉTUI SUR LE COMPTOIR : à la place de la cloche. Il frémit tant qu'on attend ; touché, son
-   couvercle se lève et la monture apparaît — et derrière, son film. */
-.rideau{position:absolute;left:16%;right:16%;top:35%;height:30%;z-index:3;overflow:visible}
-.rideau .dedans{position:absolute;left:0;right:0;top:26%;bottom:0;overflow:hidden;border-radius:.8em .8em 1.6em 1.6em;border:.35em solid #1B2A5E;background:#0C1230;box-shadow:0 .9em 1.6em rgba(0,0,0,.6)}
-.rideau .dedans img{width:100%;height:100%;object-fit:cover;opacity:0;transform:scale(1.08);transition:opacity .6s .35s,transform 1.2s cubic-bezier(.3,0,.2,1)}
-.rideau .pan.g{position:absolute;left:-.25em;right:-.25em;top:26%;bottom:-.1em;z-index:2;border-radius:1em 1em 1.8em 1.8em;transform-origin:50% 0;
-  background:linear-gradient(180deg,#4561C2,#253C8A 55%,#152452);box-shadow:inset 0 .25em .3em rgba(255,255,255,.25),inset 0 -.4em .6em rgba(0,0,0,.4),0 .7em 1.3em rgba(0,0,0,.5);
-  transition:transform 1s cubic-bezier(.6,0,.25,1)}
-.rideau .pan.g::after{content:"";position:absolute;left:50%;top:6%;width:1.6em;height:.5em;margin-left:-.8em;border-radius:.25em;background:linear-gradient(#F4F6FB,#9AA6C4)}
+/* L'ÉTUI À LUNETTES SUR LE COMPTOIR (à la place de la cloche) : un étui rigide en capsule, cuir bleu nuit,
+   surpiqûres, fermoir argenté. Il frémit tant qu'on attend (le couvercle s'entrouvre) ; touché, le couvercle
+   bascule vers l'arrière sur sa charnière : la monture ronde repose sur la doublure rose — et derrière, son film. */
+.rideau{position:absolute;left:14%;right:14%;top:33%;height:auto;aspect-ratio:2.7;z-index:3;overflow:visible;padding:0;border:0;background:none;perspective:40em}
+.rideau::before{content:"";position:absolute;left:5%;right:5%;bottom:-11%;height:26%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.62),rgba(0,0,0,0))}
+.rideau .dedans{position:absolute;inset:0;border-radius:999px;overflow:hidden;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23g)' opacity='.13'/%3E%3C/svg%3E"),
+    linear-gradient(180deg,#2E448F 0%,#1B2C66 50%,#0E1840 100%);
+  box-shadow:inset 0 -.55em .9em rgba(0,0,0,.5),inset 0 .12em .2em rgba(255,255,255,.14),0 .35em .7em rgba(0,0,0,.5)}
+.rideau .dedans::after{content:"";position:absolute;inset:8% 3.4%;border-radius:999px;border:1.5px dashed rgba(246,232,214,.6);clip-path:inset(56% 0 0 0)}
+.rideau .doublure{position:absolute;left:4.5%;right:4.5%;top:9%;bottom:15%;border-radius:999px;clip-path:inset(0 0 47% 0);transition:clip-path .45s .2s;
+  background:radial-gradient(85% 130% at 50% 20%,#FF8AC6,#E0167A 58%,#7E0B43);box-shadow:inset 0 .5em .8em rgba(0,0,0,.5),inset 0 -.2em .4em rgba(255,255,255,.2)}
+.rideau .etui-lun{position:absolute;left:13%;top:11%;width:74%;height:auto;opacity:0;transform:translateY(30%) scale(.86);
+  transition:opacity .35s .35s,transform .75s .35s cubic-bezier(.2,1.5,.4,1);filter:drop-shadow(0 .18em .12em rgba(80,0,35,.6))}
+.rideau .pan.g{position:absolute;left:-1.6%;right:-1.6%;top:-5%;height:61%;z-index:2;transform-origin:50% 0;
+  border-radius:18% 18% 2.5% 2.5% / 82% 82% 12% 12%;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23g)' opacity='.13'/%3E%3C/svg%3E"),
+    linear-gradient(180deg,#6A84DC 0%,#3A56B0 26%,#25397E 70%,#1B2C66 100%);
+  box-shadow:inset 0 .32em .35em rgba(255,255,255,.3),inset 0 -.22em .25em rgba(0,0,0,.4),0 .22em .3em rgba(0,0,0,.5);
+  transition:transform .85s cubic-bezier(.5,0,.2,1),box-shadow .12s .38s}
+.rideau .pan.g::before{content:"";position:absolute;left:3%;right:3%;top:13%;height:125%;border-radius:999px;border:1.5px dashed rgba(246,232,214,.62);clip-path:inset(0 0 36% 0);transition:opacity .1s .38s}
+.rideau .pan.g::after{content:"";position:absolute;left:50%;bottom:-.42em;width:2.3em;height:.95em;margin-left:-1.15em;border-radius:.38em;transition:opacity .1s .38s;
+  background:linear-gradient(180deg,#FBFCFF,#C4CCE0 50%,#808AA8);box-shadow:inset 0 .1em 0 rgba(255,255,255,.9),0 .12em .22em rgba(0,0,0,.55)}
 .rideau .pan.d,.rideau .tringle{display:none}
 .rideau.doigt{animation:none}
 .rideau.doigt .pan.g{animation:fremit 2.6s ease-in-out infinite}
-@keyframes fremit{0%,70%,100%{transform:none}78%{transform:translateY(-.3em) rotate(-1.5deg)}86%{transform:none}}
-.rideau.leve .pan.g{animation:none;transform:translateY(-46%) scaleY(.42)}
-.rideau.leve .dedans img{opacity:1;transform:none}
+@keyframes fremit{0%,68%,100%{transform:none}76%{transform:rotateX(-38deg)}84%{transform:rotateX(-9deg)}90%{transform:none}}
+/* ouvert : le couvercle bascule (on voit sa doublure), la monture se pose */
+.rideau.leve .pan.g{animation:none;transform:rotateX(-118deg);box-shadow:inset 0 0 0 999px #C8126B,0 0 0 rgba(0,0,0,0)}
+.rideau.leve .pan.g::before,.rideau.leve .pan.g::after{opacity:0}
+.rideau.leve .doublure{clip-path:inset(0)}
+.rideau.leve .etui-lun{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.rideau .pan.g{transition:none}}
 .plan > .e1-fant{position:absolute;left:-1%;top:52%;width:31%;height:auto;z-index:4;pointer-events:none;filter:drop-shadow(0 .5em .7em rgba(0,0,0,.5));transform-origin:50% 100%;animation:fant-signe 2.8s ease-in-out infinite}
 @keyframes fant-signe{0%,70%,100%{transform:none}78%{transform:translateY(-6%) rotate(-3deg)}86%{transform:none}}
 @media (prefers-reduced-motion:reduce){.plan > .e1-fant{animation:none}}
@@ -2112,7 +2130,7 @@ h1 em{font-style:normal;color:var(--rose)}
             <img class="di-photo" src="m1.jpg" alt="La monture ronde cristal des Lunettes de Margaux">
             <div class="di-voile"></div>
             <span class="di-vues"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><b id="di-vues">0</b>vues</span>
-            <span class="di-film"><i>🎬</i><span data-spe="LE FILM DU SPÉCIALISTE · 0:28" data-episode="SON ÉPISODE · 0:54">SON INTERVIEW · 0:32</span></span>
+            <span class="di-film"><i>🎬</i><span data-spe="LE FILM DU SPÉCIALISTE · 0:28" data-episode="SON ÉPISODE · 0:54">SON INTERVIEW · 0:30</span></span>
             <div class="di-tete">
               <img src="av.jpg" alt="">
               <span class="di-qui"><b>Les Lunettes de Margaux</b><small>★ 4,8 (128 avis)</small><small>📍 300 m · Dax</small></span>
@@ -2150,7 +2168,7 @@ h1 em{font-style:normal;color:var(--rose)}
           <div class="v xr" id="v-e1">
             <div class="plan">
               <img src="e1.webp" alt="Les Lunettes de Margaux, un étui fermé sur le comptoir">
-              <button type="button" class="rideau" id="e1-cloche" aria-label="Ouvrir l’étui"><span class="dedans"><img src="m4.jpg" alt=""></span><span class="pan g"></span><span class="pan d"></span><span class="tringle"></span></button>
+              <button type="button" class="rideau" id="e1-cloche" aria-label="Ouvrir l’étui"><span class="dedans"><span class="doublure"></span><svg class="etui-lun" viewBox="0 0 120 46" aria-hidden="true" fill="none" stroke-linecap="round"><path d="M19 19 Q42 30 74 37M101 19 Q78 30 46 38" stroke="rgba(200,220,245,.75)" stroke-width="2.6"/><g stroke="rgba(150,175,210,.85)" stroke-width="5.2"><circle cx="34" cy="21" r="15"/><circle cx="86" cy="21" r="15"/><path d="M49 19q11-7 22 0"/></g><g stroke="#F6FAFF" stroke-width="2.4"><circle cx="34" cy="21" r="15" fill="rgba(255,255,255,.16)"/><circle cx="86" cy="21" r="15" fill="rgba(255,255,255,.16)"/><path d="M49 19q11-7 22 0"/></g><path d="M25 13a12 12 0 0 1 9-4M77 13a12 12 0 0 1 9-4" stroke="#fff" stroke-width="2.2" opacity=".9"/></svg></span><span class="pan g"></span><span class="pan d"></span><span class="tringle"></span></button>
               <img class="e1-fant" src="fant-viens.webp" alt="">
             </div>
             <div class="xr-voile"></div>
@@ -2223,7 +2241,7 @@ h1 em{font-style:normal;color:var(--rose)}
               <div class="wa-msg wa-moi" id="wa-moi"><pre id="wa-reponse"></pre><time>11:43 ✓✓</time></div>
             </div>
             <div class="wa-saisie" aria-hidden="true"><span>Message</span><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fff"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></i></div>
-            <div class="wa-bilan" id="wa-bilan" aria-live="polite"><p class="wb-t"><b>Plus de clients.</b><small>Ce que votre fantôme<br>a fait pour vous</small></p><div class="wb-l wb-temps"><i>⏱</i><span><small>Votre temps pour créer et publier</small><b id="wb-temps"></b></span><em class="vrai">mesuré</em></div><div class="wb-l"><i>👁</i><span><small>Votre annonce sur ClikMe</small><b>1 400 vues</b></span><em>exemple</em></div><div class="wb-l"><i>💬</i><span><small id="wb-quand"></small><b id="wb-demande"></b></span><em>exemple</em></div><div class="wb-l wb-zero"><i>🤝</i><span><small>Commission ClikMe sur cette demande</small><b>0 €</b></span><em class="vrai">toujours</em></div></div><div class="wa-notif" id="wa-notif"><span class="ic"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z"/></svg></span><span><b>WhatsApp · Camille</b><small id="wa-apercu"></small></span><em>maintenant</em></div>
+            <div class="wa-bilan" id="wa-bilan" aria-live="polite"><p class="wb-t"><b>Plus de clients.</b><small>Ce que votre fantôme<br>a fait pour vous</small></p><div class="wb-l wb-temps"><i>⏱</i><span><small>Votre temps pour créer et publier</small><b>1 min 30</b></span><em class="vrai">en moyenne</em></div><div class="wb-l"><i>👁</i><span><small>Votre annonce sur ClikMe</small><b>1 400 vues</b></span><em>exemple</em></div><div class="wb-l"><i>💬</i><span><small id="wb-quand"></small><b id="wb-demande"></b></span><em>exemple</em></div><div class="wb-l wb-zero"><i>🤝</i><span><small>Commission ClikMe sur cette demande</small><b>0 €</b></span><em class="vrai">toujours</em></div></div><div class="wa-notif" id="wa-notif"><span class="ic"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z"/></svg></span><span><b>WhatsApp · Camille</b><small id="wa-apercu"></small></span><em>maintenant</em></div>
             <span class="tampon" id="tampon-c" style="--y:60%">Plus de clients.</span>
             <div class="fin" id="fin-clients" style="--b:3.6em"><button type="button" class="go fin-chap" id="fin-c-autre">Et pendant la nuit ? →</button><button type="button" class="go fin-chap" id="fin-c-demain">Et quand vous passerez la main →</button><button type="button" class="fin-conclure" id="fin-c-oui">Passer à la conclusion →</button></div>
           </div>
@@ -2664,9 +2682,9 @@ h1 em{font-style:normal;color:var(--rose)}
      jouer » est dans la pastille). Les mots se coupent sur les espaces ordinaires : « ta monture ! »,
      « 11 h » ou « 1 000 » n'en font qu'un (espaces insécables). « * » : surligné une fois dit. */
   const NB = "\u202F", INS = "\u00A0";
-  const TEMPS = {"lunettes-clients-1":{"d":3.396,"m":[0.1,0.8,1.1,1.28,1.44,2.08,2.42],"b":"0011111111011111000011100011111000110011111100011110001100001111011100011000000000000"},"lou-clients-2":{"d":2.769,"m":[0.05,0.26,0.47,0.98,1.23,1.44,1.57,1.99,2.19,2.47],"b":"0000111110010001111010000100000111001111110011100011111111110011000000"},"lou-clients-3":{"d":2.273,"m":[0.04,0.21,0.54,0.72,0.91,1.37,1.6],"b":"001111111111111111111011111111111000011101110011100000000"},"lunettes-clients-4":{"d":3.396,"m":[0.04,0.52,0.78,0.98,1.2,1.74,2.02,2.23,2.53,3.12],"b":"0001111111001111011111111111001110001111111000111111101111011111111111111110000000000"},"lunettes-clients-5":{"d":3.161,"m":[0.05,0.17,0.27,0.41,1.19,1.37,1.48,1.72,1.86,2.01,2.25,2.57,2.73],"b":"01110011111111110000000000000011111111111111111110111111100011001110111000000000","a":5},"lou-depenses-1":{"d":2.351,"m":[0.09,0.35,0.5,1.33,1.66,1.84],"b":"00111011110011101111111111111000011101110110101100000000000"},"lou-depenses-2":{"d":2.769,"m":[0.06,0.3,0.45,0.62,0.91,1.26,1.41,2.0,2.26],"b":"0011100111001111110111111111111111011101111111111111111111110110000000"},"lou-depenses-3":{"d":3.082,"m":[0.04,0.32,0.51,1.12,1.44,1.6,1.77,2.27,2.47],"b":"001111101000111111110111101111110001111100001111110111001111101111100000000000"},"depenses-5":{"d":1.802,"m":[0.1,0.33,0.68,0.89,1.07,1.13],"b":"000111001100011001111001111111110001110000000"},"lou-depenses-combien":{"d":5.251,"m":[0.04,0.48,0.61,0.72,1.18,1.56,1.82,2.38,2.58,3.58,3.85,4.11,4.28,4.61,4.97],"b":"011111111111110000111000010001111000000001100011000000000001111111100001111100000000000000100001111100011001100011111000000000000000"},"lou-depenses-pret":{"d":4.833,"m":[0.01,0.16,0.94,1.07,1.22,1.3,1.82,2.09,2.41,2.71,2.91,3.28,3.71,3.97,4.31],"b":"0000110011110000000000001111101111100011000000000000000110000011000001100001110001110111000001111111110110000000000000000"},"clients-message":{"d":4.911,"m":[0.07,0.61,0.71,1.17,1.32,1.58,2.15,2.29,2.87,3.07,3.3,3.6,3.71,4.16,4.36],"b":"001111111111001111110011111001100110111111100000000001111111111111111111110011110111111000111111100111001111100000000000000"},"clients-vocal-pret":{"d":3.004,"m":[0.03,0.82,0.98,1.24,1.43,1.88,2.05,2.44,2.74],"b":"0001111111111000000001111111111111011111000000000011111101100111110000000000"},"clients-recit-pret":{"d":5.146,"m":[0.03,0.82,0.95,1.21,1.46,1.87,2.05,2.93,3.12,3.36,4.01,4.18,4.6,4.89],"b":"001111111111100000000111111011111100111100000000110011000110011111100011000011111100110001100000000000011111101100111010000000000"},"depenses-4":{"d":5.251,"m":[0.19,0.79,1.57,2.45,2.76,3.16,3.41,4.05,4.18,4.35,4.8],"b":"00000111111110000000011100011111110000011100111111000000000001111111000111111111101110011110100000000111110001111110111000000000000"},"lunettes-clients-photos":{"d":2.351,"m":[0.03,0.61,0.99,1.45,1.61,1.82],"b":"01111111111111011111111111110011100011111100011101110000000"},"lunettes-clients-qui":{"d":5.564,"m":[0.06,0.25,0.6,0.69,1.71,2.04,2.36,2.53,2.95,3.12,3.38,4.01,4.78,5.06,5.19],"b":"00111111101111000111111011111000000000000001111110011111001111111111100000111111111100110001111111100011111111100000000111111011100000000000"},"lunettes-clients-specialiste":{"d":6.113,"m":[0.05,0.28,0.99,1.44,1.89,2.15,3.22,3.4,3.56,3.82,4.0,4.66,4.8,5.1,5.56,5.8],"b":"001110111000111001111100111111111100000111111011110001111110000100000000000000001111111001110011111111100000000000001111111011111110111111111000000000000"},"lunettes-clients-comment":{"d":3.709,"m":[0.06,0.21,0.47,0.85,0.95,1.82,2.07,2.75,3.07,3.31],"b":"011111111110110011100111010000110000000000000011110111010100000000000001110111110001100000000"},"lunettes-episode-cadre":{"d":5.721,"m":[0.06,0.19,0.32,0.69,0.82,1.87,2.08,2.24,2.99,3.18,3.35,3.56,3.72,4.39,4.59,4.96,5.2,5.35],"b":"001110001101111100111111110011111000000000000001100111111111111000000000001111111111001111111110101110000000001111111011111111110111100000000000"},"lunettes-episode-session":{"d":4.127,"m":[0.06,0.42,0.59,1.62,1.94,2.44,2.61,2.77,2.97,3.17,3.58],"b":"01111111111100111111111101010000000000000011100111111110000001111111111110111111111111111111110000000000"},"commun-episode-pret":{"d":3.161,"m":[0.03,0.82,0.96,1.36,1.58,2.04,2.23,2.55,2.78],"b":"00011111111110000000111111111101111100111100000000001111111110011111000000000000"},"commun-interview":{"d":3.396,"m":[0.04,0.46,0.54,0.73,1.52,1.73,2.3,2.42,2.59,2.93],"b":"0011111011111111111100000000000000000011100111111110000000001110111111100111000000000"}};
+  const TEMPS = {"lunettes-clients-1":{"d":3.396,"m":[0.1,0.8,1.1,1.28,1.44,2.08,2.42],"b":"0011111111011111000011100011111000110011111100011110001100001111011100011000000000000"},"lunettes-clients-5":{"d":3.161,"m":[0.05,0.17,0.27,0.41,1.19,1.37,1.48,1.72,1.86,2.01,2.25,2.57,2.73],"b":"01110011111111110000000000000011111111111111111110111111100011001110111000000000","a":5},"lou-depenses-1":{"d":2.351,"m":[0.09,0.35,0.5,1.33,1.66,1.84],"b":"00111011110011101111111111111000011101110110101100000000000"},"lou-depenses-2":{"d":2.769,"m":[0.06,0.3,0.45,0.62,0.91,1.26,1.41,2.0,2.26],"b":"0011100111001111110111111111111111011101111111111111111111110110000000"},"lou-depenses-3":{"d":3.082,"m":[0.04,0.32,0.51,1.12,1.44,1.6,1.77,2.27,2.47],"b":"001111101000111111110111101111110001111100001111110111001111101111100000000000"},"depenses-5":{"d":1.802,"m":[0.1,0.33,0.68,0.89,1.07,1.13],"b":"000111001100011001111001111111110001110000000"},"lou-depenses-combien":{"d":5.251,"m":[0.04,0.48,0.61,0.72,1.18,1.56,1.82,2.38,2.58,3.58,3.85,4.11,4.28,4.61,4.97],"b":"011111111111110000111000010001111000000001100011000000000001111111100001111100000000000000100001111100011001100011111000000000000000"},"lou-depenses-pret":{"d":4.833,"m":[0.01,0.16,0.94,1.07,1.22,1.3,1.82,2.09,2.41,2.71,2.91,3.28,3.71,3.97,4.31],"b":"0000110011110000000000001111101111100011000000000000000110000011000001100001110001110111000001111111110110000000000000000"},"clients-message":{"d":4.911,"m":[0.07,0.61,0.71,1.17,1.32,1.58,2.15,2.29,2.87,3.07,3.3,3.6,3.71,4.16,4.36],"b":"001111111111001111110011111001100110111111100000000001111111111111111111110011110111111000111111100111001111100000000000000"},"clients-vocal-pret":{"d":3.004,"m":[0.03,0.82,0.98,1.24,1.43,1.88,2.05,2.44,2.74],"b":"0001111111111000000001111111111111011111000000000011111101100111110000000000"},"clients-recit-pret":{"d":5.146,"m":[0.03,0.82,0.95,1.21,1.46,1.87,2.05,2.93,3.12,3.36,4.01,4.18,4.6,4.89],"b":"001111111111100000000111111011111100111100000000110011000110011111100011000011111100110001100000000000011111101100111010000000000"},"depenses-4":{"d":5.251,"m":[0.19,0.79,1.57,2.45,2.76,3.16,3.41,4.05,4.18,4.35,4.8],"b":"00000111111110000000011100011111110000011100111111000000000001111111000111111111101110011110100000000111110001111110111000000000000"},"lunettes-clients-photos":{"d":2.351,"m":[0.03,0.61,0.99,1.45,1.61,1.82],"b":"01111111111111011111111111110011100011111100011101110000000"},"lunettes-clients-qui":{"d":5.564,"m":[0.06,0.25,0.6,0.69,1.71,2.04,2.36,2.53,2.95,3.12,3.38,4.01,4.78,5.06,5.19],"b":"00111111101111000111111011111000000000000001111110011111001111111111100000111111111100110001111111100011111111100000000111111011100000000000"},"lunettes-clients-specialiste":{"d":6.113,"m":[0.05,0.28,0.99,1.44,1.89,2.15,3.22,3.4,3.56,3.82,4.0,4.66,4.8,5.1,5.56,5.8],"b":"001110111000111001111100111111111100000111111011110001111110000100000000000000001111111001110011111111100000000000001111111011111110111111111000000000000"},"lunettes-clients-comment":{"d":3.709,"m":[0.06,0.21,0.47,0.85,0.95,1.82,2.07,2.75,3.07,3.31],"b":"011111111110110011100111010000110000000000000011110111010100000000000001110111110001100000000"},"lunettes-episode-cadre":{"d":5.721,"m":[0.06,0.19,0.32,0.69,0.82,1.87,2.08,2.24,2.99,3.18,3.35,3.56,3.72,4.39,4.59,4.96,5.2,5.35],"b":"001110001101111100111111110011111000000000000001100111111111111000000000001111111111001111111110101110000000001111111011111111110111100000000000"},"lunettes-episode-session":{"d":4.127,"m":[0.06,0.42,0.59,1.62,1.94,2.44,2.61,2.77,2.97,3.17,3.58],"b":"01111111111100111111111101010000000000000011100111111110000001111111111110111111111111111111110000000000"},"commun-episode-pret":{"d":3.161,"m":[0.03,0.82,0.96,1.36,1.58,2.04,2.23,2.55,2.78],"b":"00011111111110000000111111111101111100111100000000001111111110011111000000000000"},"commun-interview":{"d":3.396,"m":[0.04,0.46,0.54,0.73,1.52,1.73,2.3,2.42,2.59,2.93],"b":"0011111011111111111100000000000000000011100111111110000000001110111111100111000000000"},"lunettes-dax-1":{"d":4.989,"m":[0.06,0.36,0.54,0.89,1.27,1.86,2.25,2.47,2.8,3.27,3.68,3.92,4.3,4.49],"b":"00111111111111111111101000000000111001111110011111011110101110000111111111011101111111101110111100111111111111001111100000000"},"lunettes-dax-2":{"d":5.642,"m":[0.08,0.3,0.71,0.84,1.26,1.41,1.71,2.28,2.57,2.94,3.15,3.45,3.66,3.89,4.2,4.45,4.7,4.94,5.21],"b":"0011110111001110011001111101110110000011101111111110111101110111111000000111001111110011011111011111001111111110111111001110101100001110000000"},"lunettes-dax-3":{"d":4.754,"m":[0.06,0.22,0.48,0.75,0.96,1.42,1.54,1.91,2.22,2.78,3.02,3.13,3.3,3.48,3.93,4.1,4.45],"b":"00001111111011101111100011110011000000110001100011011100000000100000001111011111101110011000111100111111111110011000000"},"lunettes-dax-4":{"d":6.113,"m":[0.06,0.24,0.46,0.61,0.93,1.12,1.31,1.82,2.03,2.21,2.38,2.67,3.13,3.59,3.73,4.32,4.59,4.93,5.43,5.64],"b":"011101111111111111111111110111000111000000000111110000111111111111111111111011111100111001111011111111111101111111111110110111011111111111100011100000000"}};
   /* Celles qui ont un fichier ; les autres s'écrivent à un rythme estimé, sans le son (pas encore enregistrées). */
-  const ENREGISTREES = ["lunettes-clients-1", "lou-clients-2", "lou-clients-3", "lunettes-clients-4", "lunettes-clients-5", "lou-depenses-1", "lou-depenses-2", "lou-depenses-3", "depenses-5", "lou-depenses-combien", "lou-depenses-pret", "clients-message", "clients-vocal-pret", "clients-recit-pret", "depenses-4", "lunettes-clients-photos", "lunettes-clients-qui", "lunettes-clients-specialiste", "lunettes-clients-comment", "lunettes-episode-cadre", "lunettes-episode-session", "commun-episode-pret", "commun-interview"];
+  const ENREGISTREES = ["lunettes-clients-1", "lunettes-dax-1", "lunettes-dax-2", "lunettes-dax-3", "lunettes-dax-4", "lunettes-clients-5", "lou-depenses-1", "lou-depenses-2", "lou-depenses-3", "depenses-5", "lou-depenses-combien", "lou-depenses-pret", "clients-message", "clients-vocal-pret", "clients-recit-pret", "depenses-4", "lunettes-clients-photos", "lunettes-clients-qui", "lunettes-clients-specialiste", "lunettes-clients-comment", "lunettes-episode-cadre", "lunettes-episode-session", "commun-episode-pret", "commun-interview"];
   /* ═══ L'INTRO (voir jouerIntro) ═══
      Six répliques, chacune avec sa scène, au milieu de l'écran. « debut » : ce qui se passe quand la
      scène arrive ; « mots » : ce qui se passe quand un mot s'écrit dans la bulle — c'est-à-dire au moment
@@ -2852,9 +2870,10 @@ h1 em{font-style:normal;color:var(--rose)}
     clients: {
       titre: "Aujourd’hui, on braque les projecteurs sur *ta" + INS + "monture" + NB + "!", voix: "lunettes-clients-1",
       plan: [
-        { ico: '<span class="fx-ico rose">' + ICONES.reseaux + "</span>", txt: "Je la diffuse sur tous tes réseaux en même temps.", voix: "lou-clients-2" },
-        { ico: '<span class="fx-ico ambre">' + ICONES.heure + "</span>", txt: "Je la relaie à 11" + INS + "h sur ClikMe…", voix: "lou-clients-3" },
-        { ico: '<span class="fx-ico rose">' + ICONES.monde + "</span>", txt: "…devant plus de 1" + INS + "000 personnes qui cherchent de nouvelles lunettes.", voix: "lunettes-clients-4" },
+        { ico: '<span class="fx-ico rose">' + ICONES.monde + "</span>", txt: "Chaque jour à Dax, environ 40 à 50 personnes décident de changer de lunettes.", voix: "lunettes-dax-1" },
+        { ico: '<span class="fx-ico ambre"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1.2"/></svg></span>', txt: "Pour capter ces 40 à 50 acheteurs du jour, il faut être présent là où ils passent leur temps.", voix: "lunettes-dax-2" },
+        { ico: '<span class="fx-ico rose">' + ICONES.reseaux + "</span>", txt: "C’est la raison pour laquelle je diffuse votre annonce sur tous vos réseaux sociaux en même temps…", voix: "lunettes-dax-3" },
+        { ico: '<span class="fx-ico ambre"><svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.8"/></svg></span>', txt: "…et que je la relaie sur ClikMe, où plus de 1" + INS + "000 Dacquois consultent les nouveautés des commerces locaux chaque jour.", voix: "lunettes-dax-4" },
       ],
       question: "quel est le nom de ta monture du jour" + NB + "?", voixQuestion: "lunettes-clients-5",
     },
@@ -3000,12 +3019,10 @@ h1 em{font-style:normal;color:var(--rose)}
   /* Ce qu'elle dit, au moment où elle le dit (son vocal ; instants estimés tant qu'il n'est pas enregistré). */
   const PAROLES = [
     [0.0, "Aujourd’hui, c’est la monture ronde, en cristal."],
-    [3.52, "Si légère qu’on l’oublie sur le nez."],
-    [6.09, "Elle adoucit les visages carrés."],
-    [8.79, "Je l’ajuste devant vous, en cinq minutes."],
-    [11.93, "Elle va à presque tout le monde."],
-    [14.31, "Et elle s’essaie sur ClikMe, avant de passer."],
-    [17.48, "Passez l’essayer, je vous la garde !"],
+    [3.16, "Si légère qu’on l’oublie sur le nez."],
+    [5.52, "Elle adoucit les visages carrés."],
+    [7.3, "Je l’ajuste devant vous, en cinq minutes."],
+    [9.64, "Elle va à presque tout le monde."],
   ];
 
   /* Les 4 photos. */
@@ -3097,7 +3114,7 @@ h1 em{font-style:normal;color:var(--rose)}
     dit: "Deux : comment raconter la monture ? Elle répond à une interview, ou notre spécialiste s’occupe de tout. Bientôt, elle pourra aussi se filmer pendant qu’elle travaille. Touchez l’une des deux.",
     modes: {
       episode: { titre: "Je te filme pendant que tu travailles", sous: "Pose ton téléphone à l’atelier pendant que tu travailles (1 h au plus) : je garde les meilleurs moments et j’en fais un film.", temps: "Bientôt" },
-      voix: { titre: "Je t’interviewe", sous: "Trois questions sur ta monture, tu réponds à la voix : j’en fais une belle vidéo.", temps: "⏱ 3 minutes" },
+      voix: { titre: "Je t’interviewe", sous: "Deux questions sur ta monture, tu réponds à la voix : j’en fais une belle vidéo.", temps: "⏱ 3 minutes" },
       spe: { titre: "Je m’occupe de tout", sous: "Donne-moi 4 photos : notre spécialiste lunettes raconte ta monture à ta place.", temps: "⏱ 1 minute" },
     },
     part: ["Le nom de la monture", "Une façon de la raconter : en interview, ou par notre spécialiste (bientôt aussi : filmée pendant que vous travaillez)", "Selon la façon : 4 photos et vos réponses, ou 4 photos"],
@@ -3108,8 +3125,8 @@ h1 em{font-style:normal;color:var(--rose)}
     s: "Tu parles, je fais le montage.",
     voix: "commun-interview",
     dit: "Quatre : ses réponses. Le fantôme lui pose trois questions ; elle répond à la voix. Touchez le micro.",
-    questions: ["Ta monture du jour : alors, c’est laquelle ?", "Ton geste : comment tu l’ajustes ?", "Ta monture en 3 mots : pas un de plus."],
-    ecoute: "Elle répond, j’écoute. On écoute 14 secondes ici : ses réponses en durent 20. Touchez le micro pour couper.",
+    questions: ["Ta monture du moment : alors, c’est quoi ?", "À quel visage : elle va le mieux ?"],
+    ecoute: "Elle répond, j’écoute. Sa réponse dure 11 secondes. Touchez le micro pour couper.",
   };
   /* L'ÉPISODE : le téléphone posé dans la boutique pendant qu'elle compose la tenue, puis son film */
   const EPISODE = {
@@ -3444,7 +3461,7 @@ h1 em{font-style:normal;color:var(--rose)}
         entrer() {
           cz.dataset.sous = "voix"; cz.classList.remove("enregistre");
           guide(INTERVIEW.q, INTERVIEW.s, 4, "", INTERVIEW.voix);
-          $("#cz-question").innerHTML = "<b>Question 1 sur 3</b> · " + INTERVIEW.questions[0];
+          $("#cz-question").innerHTML = "<b>Question 1 sur 2</b> · " + INTERVIEW.questions[0];
           transcritVide(); $("#minuteur").textContent = "0:00"; $("#minuteur").classList.remove("rouge"); $("#cz-publier").hidden = true;
         },
         agir() {
@@ -3468,7 +3485,7 @@ h1 em{font-style:normal;color:var(--rose)}
             const p = document.createElement("p"); p.className = "gris"; p.textContent = "… puis « " + INTERVIEW.questions.slice(1).map((q) => q.split(" :")[0]).join(" » et « ") + " »."; $("#transcrit").appendChild(p);
             aller(idx + 1, true);
           };
-          plus(arretEnregistrement, 14300);
+          plus(arretEnregistrement, 11850);
         },
       },
       {
@@ -3560,7 +3577,7 @@ h1 em{font-style:normal;color:var(--rose)}
             tr.innerHTML = "";
             PAROLES.forEach(([, l]) => { const p = document.createElement("p"); p.textContent = l; tr.appendChild(p); });
           }
-          $("#minuteur").classList.remove("rouge"); $("#minuteur").textContent = "0:20 ✓";
+          $("#minuteur").classList.remove("rouge"); $("#minuteur").textContent = "0:11 ✓";
           $("#cz-publier").hidden = false;
         },
         agir() { son("pop"); aller(idx + 1); },
@@ -4437,7 +4454,7 @@ h1 em{font-style:normal;color:var(--rose)}
   /* ═══ LES DEUX PROMESSES : « Et cette nuit… », « Et demain… » ═══
      Racontées comme l'intro, sur le même écran (jouerPromesse) ; chacune à la fin de son chapitre, sur son
      bouton (« 🌙 Et cette nuit ? », « ✨ Et demain ? »). Une idée par écran ; les mots déclenchent les gestes. */
-  const PR = {"lieu": "Les Lunettes de Margaux", "qui": "Margaux", "fant": "fant.webp", "extrait": "Si légère qu’on l’oublie sur le nez.", "voix": false, "lea": ["Léa", "cherche une monture légère"], "piece": "piece-miroir.webp", "geste": "geste.jpg", "film": "message.jpg", "surprise": {"photo": "m1.jpg", "titre": "La monture ronde, cristal", "raison": "Vous cherchiez une monture légère.", "bouton": "Je la fais mettre de côté", "fait": "✓ Mise de côté pour vous", "notif": "Mise de côté · monture ronde · Léa"}, "stats": [["👓", "Monture ronde, cristal", 920, 21, "ok"], ["🕶️", "Solaire polarisée", 640, 3, "moyen"], ["🧽", "Kit d’entretien", 130, 1, "non"]]};
+  const PR = {"lieu": "Les Lunettes de Margaux", "qui": "Margaux", "fant": "fant.webp", "extrait": "Si légère qu’on l’oublie sur le nez.", "voix": true, "lea": ["Léa", "cherche une monture légère"], "piece": "piece-miroir.webp", "geste": "geste.jpg", "film": "message.jpg", "surprise": {"photo": "m1.jpg", "titre": "La monture ronde, cristal", "raison": "Vous cherchiez une monture légère.", "bouton": "Je la fais mettre de côté", "fait": "✓ Mise de côté pour vous", "notif": "Mise de côté · monture ronde · Léa"}, "stats": [["👓", "Monture ronde, cristal", 920, 21, "ok"], ["🕶️", "Solaire polarisée", 640, 3, "moyen"], ["🧽", "Kit d’entretien", 130, 1, "non"]]};
   const prBoutique = () => '<div class="pr-boutique"><span class="pr-enseigne">' + lieuVous() + '</span><svg viewBox="0 0 100 105" aria-hidden="true"><defs>' +
     '<pattern id="pr-ray" width="12" height="10" patternUnits="userSpaceOnUse"><rect width="6" height="10" fill="#ff5db8"/><rect x="6" width="6" height="10" fill="#fff4e6"/></pattern></defs>' +
     '<rect class="mur" x="8" y="22" width="84" height="83" rx="4"/><path d="M2 22H98L92 38H8Z" fill="url(#pr-ray)"/>' +
@@ -4445,7 +4462,7 @@ h1 em{font-style:normal;color:var(--rose)}
     '<rect class="vitre" x="15" y="50" width="44" height="38" rx="3"/><rect class="porte" x="66" y="50" width="20" height="55" rx="3"/><circle cx="82" cy="78" r="1.7" fill="#f6b54b"/></svg></div>';
   const prEtin = (n) => '<span class="pr-etin">' + Array.from({ length: n }, (_, k) => '<i style="--a:' + Math.round(k * 360 / n) + "deg;--d:" + ((k % 3) * 0.07).toFixed(2) + 's"></i>').join("") + "</span>";
   /* la durée de son mémo vocal, comme sur un téléphone (0:03) */
-  const DX_DUREE = "0:" + String(Math.max(1, Math.round((0) || 0))).padStart(2, "0");
+  const DX_DUREE = "0:" + String(Math.max(1, Math.round((1.88) || 0))).padStart(2, "0");
   const DX_VERDICTS = { ok: "✓ Ça marche", moyen: "Le film plaît, la réservation ne suit pas", non: "✗ Ça ne prend pas" };
   const prMin = (s) => s.charAt(0).toLowerCase() + s.slice(1);
   // « de Margaux », « d’Inès » : l'élision devant une voyelle
@@ -4491,7 +4508,7 @@ h1 em{font-style:normal;color:var(--rose)}
     // LE OUI : les quatre promesses, cochées une à une, puis le bouton qui crée sa page
     oui: () => '<div class="oy">' + ouiTitre() + "<div class=\"oy-liste\">" +
       OUI_PROMESSES.map((p, k) => '<div class="oy-p" data-k="' + k + '"><span class="s2-tuile"><svg viewBox="0 0 24 24" aria-hidden="true">' + p.ico +
-        "</svg></span><span><b>" + p.titre + "</b><small>" + (k === 0 && SIEN.temps ? "votre annonce en " + SIEN.temps + ", aujourd’hui" : p.sous) + "</small></span><i>✓</i></div>").join("") + "</div>" +
+        "</svg></span><span><b>" + p.titre + "</b><small>" + (k === 0 ? "votre annonce en 1 min 30, en moyenne" : p.sous) + "</small></span><i>✓</i></div>").join("") + "</div>" +
       '<a class="oy-go" href="' + OUI_CREER + '" target="_blank" rel="noopener">Créer ma page maintenant →<small>avec votre fiche Google · 2 minutes</small></a>' +
       (OUI_OFFRE ? '<p class="oy-offre">' + OUI_OFFRE + "</p>" : "") + prEtin(14) + "</div>",
   };
@@ -4553,8 +4570,8 @@ h1 em{font-style:normal;color:var(--rose)}
     { nom: "demain-b", x: 50, garde: true, apres: 2800, debut: iAllume(".dx", "promesse"), dit: "Votre savoir-faire ne mourra *jamais.",
       mots: { jamais: iTout(iAllume(".dx", "jaillit"), iGeste("salue", 1800), iSon("ding")) } },
   ];
-  Object.assign(TEMPS, {"demain-a": {"d": 11.44, "m": [0.0, 0.27, 0.54, 0.95, 1.08, 1.49, 1.62, 2.22, 2.42, 3.03, 3.22, 3.41, 3.8, 4.57, 4.9, 5.38, 5.61, 6.25, 6.52, 7.55, 7.86, 8.02, 8.19, 8.36, 8.52, 8.69, 9.36, 9.58, 9.8, 10.4, 10.55, 10.71, 10.86], "b": "011111111111111111111001111101111111111111111000000000011111111111111110000011111111111111111111011111111000000000111111111111110110001111111111111111111000111111111110111111110000000000001110001111111111111111111111111111000000000000111111111111011110000000001111111111111111111000000"}, "demain-b": {"d": 2.06, "m": [0.0, 0.2, 0.79, 0.99, 1.39], "b": "11111111111111111111111111111111111111111111100000"}, "nuit-a": {"d": 11.55, "m": [0.0, 0.32, 0.78, 0.97, 1.77, 2.25, 2.47, 3.29, 3.45, 3.6, 3.75, 3.9, 4.21, 4.36, 4.51, 5.45, 5.6, 5.75, 5.9, 6.05, 6.21, 6.65, 7.54, 7.75, 8.16, 8.37, 9.1, 9.25, 9.56, 10.03, 10.22, 10.41, 10.6, 10.98], "b": "01111111111111111001111111111111110000000000111111100000111111111111000000000000001111111111111111111111111111111111111110111100000000001111111111111111111111111111111111111100000000000000111111111111111111111111111111110000000111111111111110111110001111101111111111111111111111110000000"}, "demain-chiffres": {"d": 3.87, "m": [0.13, 0.31, 0.49, 0.85, 1.03, 1.21, 1.39, 2.28, 2.48, 2.68, 2.87, 3.07, 3.27], "b": "000111111111111111111111111111111111111111110000000000000111111111111111111100111111111111110000"}, "oui-a": {"d": 6.92, "m": [0.0, 0.59, 0.74, 1.82, 2.06, 2.31, 2.73, 2.9, 3.07, 3.41, 3.57, 4.18, 4.42, 4.65, 5.25, 5.44, 5.63, 5.82, 6.38], "b": "00111111110000111111111111111111100000000000011111111111111111110000111111111110111111111101110000000000111111111111110111111111000111111111111111111111111111111111111110000"}, "oui-nuit": {"d": 2.35, "m": [0.0, 0.23, 0.46, 0.69, 1.1, 1.3, 1.71, 1.91], "b": "0011111111111111111111100001111101111111111101111111100000"}, "oui-main": {"d": 2.59, "m": [0.0, 0.23, 0.47, 1.17, 1.4, 1.87], "b": "0111111111111111111111111111111111111111111111111111111111100000"}, "oui-b": {"d": 2.59, "m": [0.12, 0.28, 0.43, 0.58, 0.74, 1.5, 1.69, 1.87, 2.05], "b": "0001111111111111111111111011110000000011111111111111111111111000"}});
-  ["demain-a", "demain-b", "demain-chiffres", "nuit-a", "oui-a", "oui-b", "oui-main", "oui-nuit"].forEach((n) => { if (!ENREGISTREES.includes(n)) ENREGISTREES.push(n); });
+  Object.assign(TEMPS, {"demain-a": {"d": 11.44, "m": [0.0, 0.27, 0.54, 0.95, 1.08, 1.49, 1.62, 2.22, 2.42, 3.03, 3.22, 3.41, 3.8, 4.57, 4.9, 5.38, 5.61, 6.25, 6.52, 7.55, 7.86, 8.02, 8.19, 8.36, 8.52, 8.69, 9.36, 9.58, 9.8, 10.4, 10.55, 10.71, 10.86], "b": "011111111111111111111001111101111111111111111000000000011111111111111110000011111111111111111111011111111000000000111111111111110110001111111111111111111000111111111110111111110000000000001110001111111111111111111111111111000000000000111111111111011110000000001111111111111111111000000"}, "demain-b": {"d": 2.06, "m": [0.0, 0.2, 0.79, 0.99, 1.39], "b": "11111111111111111111111111111111111111111111100000"}, "demain-voix": {"d": 1.88, "m": [0.0, 0.23, 0.7, 0.94, 1.17, 1.41, 1.65], "b": "0011111111111111111011111111111111111111111111"}, "nuit-a": {"d": 11.55, "m": [0.0, 0.32, 0.78, 0.97, 1.77, 2.25, 2.47, 3.29, 3.45, 3.6, 3.75, 3.9, 4.21, 4.36, 4.51, 5.45, 5.6, 5.75, 5.9, 6.05, 6.21, 6.65, 7.54, 7.75, 8.16, 8.37, 9.1, 9.25, 9.56, 10.03, 10.22, 10.41, 10.6, 10.98], "b": "01111111111111111001111111111111110000000000111111100000111111111111000000000000001111111111111111111111111111111111111110111100000000001111111111111111111111111111111111111100000000000000111111111111111111111111111111110000000111111111111110111110001111101111111111111111111111110000000"}, "demain-chiffres": {"d": 3.87, "m": [0.13, 0.31, 0.49, 0.85, 1.03, 1.21, 1.39, 2.28, 2.48, 2.68, 2.87, 3.07, 3.27], "b": "000111111111111111111111111111111111111111110000000000000111111111111111111100111111111111110000"}, "oui-a": {"d": 6.92, "m": [0.0, 0.59, 0.74, 1.82, 2.06, 2.31, 2.73, 2.9, 3.07, 3.41, 3.57, 4.18, 4.42, 4.65, 5.25, 5.44, 5.63, 5.82, 6.38], "b": "00111111110000111111111111111111100000000000011111111111111111110000111111111110111111111101110000000000111111111111110111111111000111111111111111111111111111111111111110000"}, "oui-nuit": {"d": 2.35, "m": [0.0, 0.23, 0.46, 0.69, 1.1, 1.3, 1.71, 1.91], "b": "0011111111111111111111100001111101111111111101111111100000"}, "oui-main": {"d": 2.59, "m": [0.0, 0.23, 0.47, 1.17, 1.4, 1.87], "b": "0111111111111111111111111111111111111111111111111111111111100000"}, "oui-b": {"d": 2.59, "m": [0.12, 0.28, 0.43, 0.58, 0.74, 1.5, 1.69, 1.87, 2.05], "b": "0001111111111111111111111011110000000011111111111111111111111000"}});
+  ["demain-a", "demain-b", "demain-chiffres", "demain-voix", "nuit-a", "oui-a", "oui-b", "oui-main", "oui-nuit"].forEach((n) => { if (!ENREGISTREES.includes(n)) ENREGISTREES.push(n); });
   // une réplique pas encore enregistrée : un rythme de parole estimé, sans son (comme l'intro)
   [...NUIT, ...DEMAIN, ...Object.values(OUI)].forEach((l) => {
     if (!l.nom || TEMPS[l.nom]) return;
@@ -4697,7 +4714,7 @@ h1 em{font-style:normal;color:var(--rose)}
     return false;
   }
   /* ═══ SON NOM, SON TEMPS (voir tour-sien.py) ═══ */
-  const SIEN = { nom: "", temps: "", t0: 0 };
+  const SIEN = { nom: "" };
   const sienEchapper = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   // son commerce s'il a été tapé, sinon celui de l'exemple
   const lieuVous = () => SIEN.nom ? sienEchapper(SIEN.nom) : PR.lieu;
@@ -4736,23 +4753,10 @@ h1 em{font-style:normal;color:var(--rose)}
   $("#pour-effacer").addEventListener("click", () => poserPour(""));
   $("#pour-feuille").addEventListener("click", (e) => { if (e.target.id === "pour-feuille") $("#pour-feuille").hidden = true; });
 
-  /* SON VRAI TEMPS : du nom du plat jusqu'à « Publier », mesuré pendant qu'il le fait */
-  const dureeSien = (ms) => {
-    const s = Math.max(1, Math.round(ms / 1000));
-    return s < 60 ? s + " s" : Math.floor(s / 60) + " min" + (s % 60 ? " " + String(s % 60).padStart(2, "0") : "");
-  };
-  {
-    const nom = DEMOS.clients.moments.find((m) => m.id === "nom"), entrerNom = nom.entrer;
-    nom.entrer = function () { SIEN.t0 = performance.now(); SIEN.temps = ""; return entrerNom.apply(this, arguments); };
-    const pub = DEMOS.clients.moments.find((m) => m.id === "publier"), agirPub = pub.agir;
-    pub.agir = function () { if (SIEN.t0 && !SIEN.temps) SIEN.temps = dureeSien(performance.now() - SIEN.t0); return agirPub.apply(this, arguments); };
-  }
   // le ticket, après la demande WhatsApp : le tampon « Plus de clients. » se pose dessus
   const DEMANDE_BILAN = () => "« " + PLAT + " », mise de côté";
   function montrerBilanClients() {
     const q = QUAND[choix.quand];
-    $("#wb-temps").textContent = SIEN.temps;
-    $("#wb-temps").closest(".wb-l").hidden = !SIEN.temps;
     $("#wb-demande").textContent = DEMANDE_BILAN();
     $("#wb-quand").textContent = "Sur votre WhatsApp · " + q.mot.toLowerCase() + " vers " + q.heures[choix.heure];
     $("#tampon-c").classList.remove("on");

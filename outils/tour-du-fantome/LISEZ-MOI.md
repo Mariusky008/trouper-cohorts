@@ -57,8 +57,9 @@ engagement) se règle dans `OFFRE` du même script : vide, rien ne s'affiche.
 page 1 et tapez le nom de son commerce. Il s'affiche sur la page 1 (« Préparé pour… »), sur sa boutique et dans sa
 notification (chapitre 03), sur le livre de son commerce (chapitre 04) et dans le titre de la conclusion. Seul le nom
 change : photos, voix et mots restent ceux de l'exemple. Il reste sur ce téléphone le temps de la visite, sans être envoyé.
-Son temps, du nom du plat à « Publier », est mesuré : il s'affiche dans le ticket de fin de « Plus de clients » et dans
-la conclusion. Le ticket dit aussi « Commission : 0 € » : ClikMe n'en prend aucune.
+Le temps pour créer et publier une annonce est toujours le même, 1 min 30 en moyenne (pas le chrono de la démo) : il
+s'affiche dans le ticket de fin de « Plus de clients » et dans la conclusion. Le ticket dit aussi « Commission : 0 € » :
+ClikMe n'en prend aucune.
 
 Pour une nouvelle voix de l'intro : remplacer `voix-intro/court/<nom>.mp3`, mettre son texte dans
 `outils/mesurer-intro2.py` (et dans `tour-intro3.py`), lancer `python3 -I $D/outils/mesurer-intro2.py $D`,
@@ -66,11 +67,21 @@ puis les sept scripts.
 
 ## Les films du lunetier
 
-Ses trois films (`message.mp4`, `specialiste.mp4`, `episode.mp4`, avec leur affiche et leur dernière image) ont été
-montés par le vrai moteur de l'application, comme ceux des autres tours métier : deux pages temporaires
-(`zz-film`, `zz-episode`, jamais commitées) sur un serveur local, à partir des 4 photos et du geste ; l'épisode à
-partir de « rushes » fabriqués depuis ces photos. Puis H.264 pour Safari. Ils sont rangés dans `tour-lunettes/` :
-`tour-lunettes.py` lit leur durée.
+Son interview (`message.mp4`, 30 s : l'intro, puis derrière l'étui) est l'épisode 14 de « Face au fantôme », monté
+comme celui du restaurant : `outils/face-au-fantome/margaux/` (le reporter pose deux questions, Aurore répond avec la
+voix de Margaux, sous-titres mot à mot, « CRISTAL » en plein écran, ralenti sur « en cinq minutes », carte de fin) :
+
+```sh
+node outils/face-au-fantome/margaux/preparer.cjs
+DOSSIER=margaux FFMPEG=$D/ffmpeg node outils/face-au-fantome/rendu.mjs tout
+$D/ffmpeg -i outils/face-au-fantome/margaux/face-au-fantome.mp4 -vf scale=540:960 -c:v libx264 -crf 25 -c:a aac -b:a 128k \
+  -movflags +faststart $D/tour-lunettes/message.mp4      # affiche message.jpg à 4,6 s, message-fin.jpg à la fin
+```
+
+Les deux autres (`specialiste.mp4`, `episode.mp4`, avec leur affiche et leur dernière image) ont été montés par le
+vrai moteur de l'application, comme ceux des autres tours métier : deux pages temporaires (`zz-film`, `zz-episode`,
+jamais commitées) sur un serveur local, à partir des 4 photos et du geste ; l'épisode à partir de « rushes » fabriqués
+depuis ces photos. Puis H.264 pour Safari. Ils sont rangés dans `tour-lunettes/` : `tour-lunettes.py` lit leur durée.
 
 ## Vérifier
 

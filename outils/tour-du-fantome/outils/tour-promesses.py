@@ -87,7 +87,7 @@ TOURS = {
                                           fait="✓ Mis de côté pour vous", notif="Mis de côté · collier saphir · Léa"),
                             stats=[("💎", "Collier saphir", 890, 18, "ok"), ("📿", "Bracelet jonc", 600, 2, "moyen"), ("✨", "Boucles d’oreilles perle", 140, 1, "non")]),
     "tour-lunettes": dict(geste="geste.jpg", lieu="Les Lunettes de Margaux", qui="Margaux", fant="fant.webp", pages=["message.jpg", "specialiste.jpg", "episode.jpg"],
-                          extrait=(3.52, 6.09, "Si légère qu’on l’oublie sur le nez."),
+                          extrait=(2.95, 5.25, "Si légère qu’on l’oublie sur le nez."),
                           maisons=[("Léa", "cherche une monture légère", "Monture ronde mise de côté"), ("Hugo", "a cassé ses lunettes", "Samedi 10 h · réparation"),
                                    ("Nora", "veut changer de style", "Mardi 18 h · essayage")],
                           pieces=[("miroir", "Cherche une monture légère"), ("dressing", "Aime le cristal et le noir"), ("cuisine", "Pas de porc"), ("sorties", "Un verre, tranquille")],
