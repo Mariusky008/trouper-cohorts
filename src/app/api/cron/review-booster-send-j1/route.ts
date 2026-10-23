@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import twilio from "twilio";
+import { raisonWhatsAppTwilioIndisponible, whatsappTwilioConfig } from "@/lib/popey-human/whatsapp-twilio-config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SITE_URL } from "@/lib/site-url";
 
@@ -18,6 +19,9 @@ export async function GET(request: Request) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // WHATSAPP PAR TWILIO COUPÉ (TWILIO_WHATSAPP_ACTIF) — voir `whatsapp-twilio-config.ts`.
+  if (!whatsappTwilioConfig.actif) return NextResponse.json({ skipped: true, reason: raisonWhatsAppTwilioIndisponible() });
 
   const accountSid = String(process.env.TWILIO_ACCOUNT_SID || "").trim();
   const authToken = String(process.env.TWILIO_AUTH_TOKEN || "").trim();

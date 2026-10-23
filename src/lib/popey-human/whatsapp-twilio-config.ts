@@ -19,6 +19,12 @@ function readBoolean(value: string | undefined, fallback: boolean): boolean {
 }
 
 export const whatsappTwilioConfig = {
+  // ÉTEINT PAR DÉFAUT. « Je veux supprimer mon numéro de Twilio pour l'utiliser sur mon WhatsApp
+  // personnel » : plus aucun WhatsApp ne part de ClikMe par Twilio (relances d'avis, proposition du
+  // matin, file d'envoi, Privilège, chat de l'admin…) tant que TWILIO_WHATSAPP_ACTIF n'est pas mis à
+  // « true » sur Vercel, avec un nouveau numéro dans TWILIO_WHATSAPP_FROM. Les SMS et les appels ne
+  // passent pas par ici : ils continuent.
+  actif: readBoolean(process.env.TWILIO_WHATSAPP_ACTIF, false),
   accountSid: String(process.env.TWILIO_ACCOUNT_SID || "").trim(),
   authToken: String(process.env.TWILIO_AUTH_TOKEN || "").trim(),
   whatsappFrom: normalizeWhatsAppFrom(process.env.TWILIO_WHATSAPP_FROM),
@@ -40,7 +46,8 @@ export const whatsappTwilioConfig = {
 
 export function isWhatsAppTwilioConfigured() {
   return Boolean(
-    whatsappTwilioConfig.accountSid &&
+    whatsappTwilioConfig.actif &&
+      whatsappTwilioConfig.accountSid &&
       whatsappTwilioConfig.authToken &&
       whatsappTwilioConfig.whatsappFrom &&
       whatsappTwilioConfig.contentSid,
@@ -49,9 +56,17 @@ export function isWhatsAppTwilioConfigured() {
 
 export function isWhatsAppTwilioDirectConfigured() {
   return Boolean(
-    whatsappTwilioConfig.accountSid &&
+    whatsappTwilioConfig.actif &&
+      whatsappTwilioConfig.accountSid &&
       whatsappTwilioConfig.authToken &&
       whatsappTwilioConfig.whatsappFrom &&
       (whatsappTwilioConfig.directContentSid || whatsappTwilioConfig.contentSid),
   );
+}
+
+/** Pourquoi un WhatsApp ne part pas : coupé exprès, ou configuration incomplète. */
+export function raisonWhatsAppTwilioIndisponible(detail = "account SID, auth token, from") {
+  return whatsappTwilioConfig.actif
+    ? `Configuration Twilio WhatsApp incomplète (${detail}).`
+    : "Envois WhatsApp par Twilio coupés : mettre TWILIO_WHATSAPP_ACTIF=true sur Vercel pour les rallumer.";
 }

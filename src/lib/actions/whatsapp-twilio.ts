@@ -2,7 +2,7 @@
 
 import twilio from "twilio";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isWhatsAppTwilioConfigured, isWhatsAppTwilioDirectConfigured, whatsappTwilioConfig } from "@/lib/popey-human/whatsapp-twilio-config";
+import { isWhatsAppTwilioConfigured, isWhatsAppTwilioDirectConfigured, raisonWhatsAppTwilioIndisponible, whatsappTwilioConfig } from "@/lib/popey-human/whatsapp-twilio-config";
 import { enqueueVoiceCall } from "@/lib/actions/voice-twilio";
 
 type InboundClassification = "positive" | "negative" | "stop" | "neutral";
@@ -370,7 +370,7 @@ export async function sendPartnerOutreach(
   if (!configured) {
     return {
       success: false as const,
-      error: "Configuration Twilio WhatsApp incomplète (account SID, auth token, from, content SID).",
+      error: raisonWhatsAppTwilioIndisponible("account SID, auth token, from, content SID"),
     };
   }
 
@@ -485,7 +485,7 @@ export async function sendPrivilegeAlertOptin(
   vars: { merchantName: string; city: string },
 ): Promise<{ success: boolean; skipped?: boolean; error?: string; sid?: string }> {
   const cfg = whatsappTwilioConfig;
-  if (!cfg.accountSid || !cfg.authToken || !cfg.whatsappFrom || !cfg.alertOptinContentSid) {
+  if (!cfg.actif || !cfg.accountSid || !cfg.authToken || !cfg.whatsappFrom || !cfg.alertOptinContentSid) {
     return { success: false, skipped: true };
   }
   const to = normalizeTwilioWhatsAppAddress(targetPhone);
@@ -517,7 +517,7 @@ export async function sendPrivilegeAlertBroadcast(
   vars: { merchantName: string; offerText: string; link: string },
 ): Promise<{ skipped?: boolean; results: Array<{ phone: string; sid: string | null; error: string | null }> }> {
   const cfg = whatsappTwilioConfig;
-  if (!cfg.accountSid || !cfg.authToken || !cfg.whatsappFrom || !cfg.alertBroadcastContentSid) {
+  if (!cfg.actif || !cfg.accountSid || !cfg.authToken || !cfg.whatsappFrom || !cfg.alertBroadcastContentSid) {
     return { skipped: true, results: [] };
   }
   const client = twilio(cfg.accountSid, cfg.authToken);
@@ -558,7 +558,7 @@ export async function sendPrivilegeMatchNotif(
   vars: { merchantName: string; reward: string; link: string },
 ): Promise<{ success: boolean; skipped?: boolean; error?: string; sid?: string }> {
   const cfg = whatsappTwilioConfig;
-  if (!cfg.accountSid || !cfg.authToken || !cfg.whatsappFrom || !cfg.matchContentSid) {
+  if (!cfg.actif || !cfg.accountSid || !cfg.authToken || !cfg.whatsappFrom || !cfg.matchContentSid) {
     return { success: false, skipped: true };
   }
   const to = normalizeTwilioWhatsAppAddress(targetPhone);
@@ -591,7 +591,7 @@ export async function sendPrivilegeProDigest(
   vars: { merchantName: string; summary: string; link: string },
 ): Promise<{ success: boolean; skipped?: boolean; error?: string; sid?: string }> {
   const cfg = whatsappTwilioConfig;
-  if (!cfg.accountSid || !cfg.authToken || !cfg.whatsappFrom || !cfg.proDigestContentSid) {
+  if (!cfg.actif || !cfg.accountSid || !cfg.authToken || !cfg.whatsappFrom || !cfg.proDigestContentSid) {
     return { success: false, skipped: true };
   }
   const to = normalizeTwilioWhatsAppAddress(targetPhone);
@@ -912,7 +912,7 @@ export async function sendWhatsAppTextMessage(
   if (!isWhatsAppTwilioConfigured()) {
     return {
       success: false as const,
-      error: "Configuration Twilio WhatsApp incomplète (account SID, auth token, from).",
+      error: raisonWhatsAppTwilioIndisponible(),
     };
   }
 
@@ -1056,7 +1056,7 @@ export async function sendWhatsAppMediaMessage(
   if (!isWhatsAppTwilioConfigured()) {
     return {
       success: false as const,
-      error: "Configuration Twilio WhatsApp incomplète (account SID, auth token, from).",
+      error: raisonWhatsAppTwilioIndisponible(),
     };
   }
 
@@ -1256,7 +1256,7 @@ async function computeDailySentCount(ownerMemberId: string) {
 
 export async function runTwilioWhatsAppOutboundQueueSweep(limit = 40, skipRateLimit = false) {
   if (!isWhatsAppTwilioConfigured()) {
-    return { success: false, error: "Configuration Twilio WhatsApp incomplète.", processed: 0, sent: 0, failed: 0, blocked: 0 };
+    return { success: false, error: raisonWhatsAppTwilioIndisponible(), processed: 0, sent: 0, failed: 0, blocked: 0 };
   }
   const safeLimit = Math.max(1, Math.min(120, Math.round(limit || 40)));
   const supabaseAdmin = createAdminClient();
