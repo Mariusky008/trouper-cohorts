@@ -424,6 +424,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 @keyframes bulle{from{opacity:0;transform:translateY(8px) scale(.85)}}
 .bulle-fg::after{content:"";position:absolute;left:var(--q,50%);bottom:-5px;width:11px;height:11px;margin-left:-5.5px;background:var(--papier);transform:rotate(45deg);border-radius:2px}
 .bulle-fg.bas::after{bottom:auto;top:-5px}
+.bulle-fg.sans-pointe::after{display:none}
 .bf-haut b{font-size:13px;font-weight:800}
 .bf-haut small{display:block;font-size:10.5px;color:#7A6352}
 .bf-tag{display:inline-block;margin-left:5px;padding:0 6px;border-radius:999px;font-size:9.5px;font-weight:800;vertical-align:2px;background:rgba(61,226,166,.32);color:#0B5A3E}
@@ -461,21 +462,19 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .bravo .gros,.bravo .fermer{text-align:center}
 .ligne small{display:block;font-size:11px;color:var(--gris)}
 #m-dore,#m-toc{white-space:nowrap}
-/* LA GUIRLANDE DES COUCOUS : sous le store, chaque coucou entre habitants l'allume un peu ; pleine, la vitrine s'illumine */
-.sc-guirlande{position:absolute;left:4.5%;right:4.5%;top:25.2%;height:5cqw;z-index:5;pointer-events:none}
-.sc-guirlande::before{content:"";position:absolute;left:0;right:0;top:-1.4cqw;height:3.2cqw;border-bottom:.35cqw solid rgba(25,15,8,.85);border-radius:0 0 50% 50%/0 0 100% 100%}
-.sc-guirlande i{position:absolute;width:2.1cqw;height:2.6cqw;margin-left:-1.05cqw;border-radius:50% 50% 45% 45%;background:#5B4636;box-shadow:inset 0 -.4cqw 0 rgba(0,0,0,.35);transition:background .4s,box-shadow .4s}
-.sc-guirlande i::before{content:"";position:absolute;left:30%;right:30%;top:-.6cqw;height:.8cqw;border-radius:.2cqw;background:#2A1A10}
-.sc-guirlande i.on{background:radial-gradient(circle at 40% 35%,#FFF6C8,#FFC94A 60%,#E89B1A);box-shadow:0 0 1.4cqw #FFD45E,0 0 3cqw rgba(255,200,80,.55)}
-.sc-guirlande i.neuve{animation:ampoule .7s ease-out}
-@keyframes ampoule{30%{transform:scale(1.8)}}
-.sc.allumee .sc-guirlande i.on{animation:scintille-a 1.1s ease-in-out infinite;animation-delay:calc(var(--k) * -.09s)}
-@keyframes scintille-a{50%{filter:brightness(1.5)}}
-.sc.allumee .sc-vit{box-shadow:inset 0 0 0 1.2cqw #2A0810,0 0 0 .55cqw #C9A45C,0 0 16cqw rgba(255,190,90,.75)}
-.sc.allumee .sc-fac{filter:brightness(1.12)}
-.etincelle{position:absolute;z-index:695;font-size:16px;line-height:1;pointer-events:none;transform:translate(-50%,-50%)}
-.bf-lien{margin:3px 0 0;font-size:10.5px;font-weight:700;color:#0B5A3E}
-.fg.ola img{animation:saute .6s cubic-bezier(.3,1.6,.5,1) both;animation-delay:var(--ola,0s)}
+/* LE CONSEIL DE CEUX QUI ONT DÉJÀ MANGÉ ICI : toucher un fantôme, c'est savoir quoi prendre ; garder son
+   conseil le remercie. Une petite fourchette verte marque ceux qui en ont un. */
+.fg .fourchette{position:absolute;right:-4%;top:4%;width:4.6cqw;height:4.6cqw;border-radius:50%;background:var(--vert);color:#06281C;display:grid;place-items:center;font-size:2.7cqw;line-height:1;box-shadow:0 .3cqw .7cqw rgba(0,0,0,.45)}
+.bf-venu{margin:3px 0 0;font-size:10.5px;font-weight:800;color:#0B5A3E}
+.bf-conseil{margin:6px 0 3px;padding:6px 9px 7px;border-radius:10px;background:rgba(61,226,166,.18)}
+.bf-conseil small{display:block;font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#0B5A3E}
+.bf-conseil p{margin:2px 0 0;font:700 17px/1.1 var(--f-main);color:#163C2E}
+.bf-gardes{margin:0 0 7px;font-size:10px;color:#6B5444}
+.bf-act button[data-garder]{background:#0F7A54;color:#fff}
+.bravo .puces{justify-content:center}
+.gardes{display:flex;flex-direction:column;gap:6px}
+.garde{padding:8px 12px;border-radius:12px;background:var(--nuit-2);font-size:11.5px;color:var(--gris)}
+.garde b{display:block;font:700 17px/1.15 var(--f-main);color:var(--creme)}
 /* UN PETIT MOT AU CHEF : il lit tout ; son 💛 l'affiche à l'ardoise ; parfois il offre */
 .fg.chouchou .nom{display:block;background:#FFE08A;color:#5A3A00}
 .bf-tag.or{background:#FFE08A;color:#5A3A00}
@@ -685,6 +684,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
           <div class="moi-carte"><div class="fg-solo" id="maison-fg"></div><div><b id="maison-nom"></b><div class="badges" id="maison-badges"></div></div></div>
           <span class="lbl">Mes promesses</span>
           <div id="maison-promesses" style="display:flex;flex-direction:column;gap:8px"></div>
+          <span class="lbl" id="lbl-gardes" hidden>À commander chez Bergine</span>
+          <div class="gardes" id="maison-gardes"></div>
           <button type="button" class="gros" id="montrer-bon">Je suis chez Bergine : montrer mon bon</button>
           <span class="lbl">Ma tournée de Dax</span>
           <div class="ligne"><span>Commerces où j’ai tenu parole</span><span class="droite" id="tournee"></span></div>
@@ -707,6 +708,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
           <h4>Parole de fantôme !</h4>
           <p class="sous" id="bravo-txt"></p>
           <div class="badges" id="bravo-badges"></div>
+          <span class="lbl">Votre conseil, pour les prochains</span>
+          <p class="note">Vous y avez mangé : votre fantôme porte maintenant la fourchette verte. Ceux qui le touchent liront votre conseil.</p>
+          <div class="puces" id="conseils"></div>
           <button type="button" class="gros" data-ferme>Voir ma vitrine</button>
         </section>
         <!-- son petit mot, lu par ceux qui touchent son fantôme -->
@@ -785,9 +789,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
           <h5>Ce qu’on touche dans votre vitrine</h5>
           <div class="ligne"><span>✨ Votre fantôme doré<small id="m-dore-ou"></small></span><span class="droite" id="m-dore"></span></div>
           <div class="ligne"><span>🚪 « Toc-toc » à votre porte</span><span class="droite" id="m-toc"></span></div>
-          <div class="ligne"><span>👋 Coucous entre habitants<small id="m-coucou-s"></small></span><span class="droite" id="m-coucou"></span></div>
-          <span class="lbl">Quand la guirlande est pleine</span>
-          <div class="puces" id="guirlande-choix"></div>
+          <div class="ligne"><span>📌 Conseils de vos clients gardés<small id="m-conseil-s"></small></span><span class="droite" id="m-conseils"></span></div>
           <label class="lbl" for="porte">Quand on frappe, votre fantôme répond</label>
           <input class="champ" id="porte" maxlength="60" value="Plus que 6 magrets ce midi !" autocomplete="off">
           <p class="note">Le cadeau du fantôme doré : 🍮 le dessert offert, 5 à gagner (exemple). Il se cache ailleurs chaque matin.</p>
@@ -824,7 +826,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     <div><b>Ça se partage</b>Chacun partage la vidéo avec sa fin à lui : son fantôme dans la vitrine. Ses amis n’ont pas besoin de ClikMe : un lien, une page, une cage, et ils le rejoignent.</div>
     <div><b>Un petit mot au chef</b>On lui écrit ; il lit tout. Les mots qui lui font chaud au cœur passent dans sa vitrine, et parfois il offre un café ou un dessert. Une surprise, pas un concours.</div>
     <div><b>Tout se touche</b>Chaque fantôme dit son petit mot ; la porte répond ; chaque matin, un fantôme doré se cache, et le trouver fait gagner un petit cadeau.</div>
-    <div><b>Des coucous qui allument la vitrine</b>Un coucou à un ami sert à s’organiser. Entre inconnus, pas besoin de se connaître : chaque coucou allume une ampoule de la guirlande ; pleine, la vitrine s’illumine, et Jean-Marie peut offrir le café à toute la vitrine.</div>
+    <div><b>Le conseil de ceux qui y ont mangé</b>Un fantôme avec la fourchette verte a déjà mangé chez Bergine : on le touche, il dit quoi prendre. On garde son conseil pour sa visite, et il sait qu’il a servi. Un ami, lui, on lui fait coucou pour s’organiser.</div>
     <div><b>Sur Instagram aussi</b>Là, la vidéo ne se clique pas : elle finit sur la vitrine pleine de fantômes et un lien. Une page, sans appli, et les trois cages.</div>
   </div>
 </div>
@@ -882,11 +884,11 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     { ou: "derrière le carnet", indice: "il lit le carnet par-derrière", couche: "sc", x: 71.5, y: 51, s: .44, z: 3 },
     { ou: "à la fenêtre de la porte", indice: "il guette à la porte", couche: "sc", x: 84, y: 48.5, s: .42, z: 4 },
   ];
-  // LES COUCOUS ENTRE HABITANTS : pas besoin de se connaître, on allume la guirlande ensemble
-  const AMPOULES = 12, PAR_AMPOULE = 4;
-  // ce qu'on a en commun avec un inconnu de la vitrine (ce que chacun accepte de montrer)
-  const LIENS = ["🤝 Du même quartier que vous", "🤝 Vient le midi, comme vous", "🤝 6e visite chez Bergine", "🤝 Passe aussi chez Maison Lou", "🤝 Nouvelle tête à Dax", "🤝 Fan de garbure, comme vous"];
-  const CADEAUX_VITRINE = [["cafe", "☕ Le café pour toute la vitrine"], ["fete", "🎶 Juste la fête"]];
+  // LE CONSEIL DE CEUX QUI ONT DÉJÀ MANGÉ ICI : ce qu'il faut prendre, et le plat qu'il désigne (pour le comptoir)
+  const CONSEILS = [["Prenez le magret, et gardez de la place pour le gâteau basque", "le magret"], ["La garbure, surtout quand il fait froid", "la garbure"],
+    ["L’axoa du jeudi, sans hésiter", "l’axoa"], ["Le gâteau basque maison : on peut l’emporter", "le gâteau basque"], ["Le magret saignant, avec les pommes sautées", "le magret"],
+    ["Arrivez avant midi et quart : ça se remplit vite", "l’heure"], ["Demandez la table près de la fenêtre", "la table"], ["La garbure, puis le café au comptoir avec Jean-Marie", "la garbure"]];
+  const VENUS = ["mardi", "samedi", "dimanche", "la semaine dernière", "hier", "jeudi dernier"];
   const doreDuJour = (jour, trouves) => ({ k: (jour - 1) % CACHETTES.length, trouves, max: 5, trouve: false, indice: false });
 
   let S;
@@ -898,8 +900,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       bon: null, bonsTenus: 0, tournee: 7, badgeParole: false, pins: 0, habitue: 0,
       foule: [], carnet: [], fil: [], semaine: [21, 24, 27, 30, 34, 29], tenues: 4,
       merci: false, appel: false, vus: new Set(CONTACTS.map((c) => c[0])), suiv: 0, promisJour: 0, amenes: 0, envoyes: new Set(), source: garderMoi && S ? S.source : "app",
-      allumee: false, cadeauVitrine: false, guirlande: garderMoi && S ? S.guirlande : "cafe",
-      mot: null, tChoix: 0, astuceVue: false, dore: doreDuJour(1, 2), ors: 0, toc: 9, coucous: 38, porte: garderMoi && S ? S.porte : "Plus que 6 magrets ce midi !",
+      gardes: [], gardesJour: 7, monConseil: null, monPlat: null, monVenu: null, monConseilGardes: 0,
+      mot: null, tChoix: 0, astuceVue: false, dore: doreDuJour(1, 2), ors: 0, toc: 9, porte: garderMoi && S ? S.porte : "Plus que 6 magrets ce midi !",
       lettres: [], lettre: null, libre: 0, offerts: 3, cadeauRecu: null, _offrir: null,
       ardoise: { nom: "Rose", texte: "On a fêté nos 40 ans de mariage chez vous. Merci pour la bougie sur le gâteau.", quand: "hier", cadeau: "le café" },
     };
@@ -917,7 +919,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   }
   function ajouter(type, opts = {}) {
     const f = { id: "f" + (++S.suiv), nom: opts.nom || nouveauNom(), look: opts.look || pick(LOOKS), type, ami: !!opts.ami, invite: !!opts.invite, d: hasard(0, 2.4).toFixed(2), recent: !!opts.recent,
-      t: opts.t || Date.now(), mot: pick(MOTS[type]), quand: opts.quand, lien: opts.ami || opts.invite ? null : pick(LIENS) };
+      t: opts.t || Date.now(), mot: pick(MOTS[type]), quand: opts.quand };
+    // un sur deux a déjà mangé chez Bergine : il a un conseil (ceux qui arrivent par un partage, pas encore)
+    if (!opts.invite && (opts.venu || Math.random() < .5)) { const c = pick(CONSEILS); f.venu = pick(VENUS); f.conseil = c[0]; f.plat = c[1]; f.gardes = Math.floor(hasard(1, 16)); }
     if (type === "table") { f.heure = opts.heure || pick(HEURES); f.n = opts.n || pick([1, 2, 2, 3, 4]); }
     S.foule.push(f);
     if (type === "promis") S.carnet.unshift({ nom: f.nom, quand: opts.quand || "à l’instant", neuf: !!opts.recent });
@@ -925,7 +929,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   }
   function peupler() {
     const ilYa = (a, b) => Date.now() - hasard(a, b) * 60000;
-    AMIS.forEach(([nom, look]) => { S.vus.add(nom); ajouter("adore", { nom, look, ami: true, t: ilYa(8, 50) }); });
+    AMIS.forEach(([nom, look], k) => { S.vus.add(nom); ajouter("adore", { nom, look, ami: true, t: ilYa(8, 50), venu: k < 2 }); });
     for (let k = 0; k < 33; k++) ajouter("adore", { t: ilYa(2, 150) });
     // trois habitants ont déjà écrit à Jean-Marie ce matin
     S.foule.filter((f) => !f.ami).slice(0, 3).forEach((f) => ecrire(f, MOTS_LIBRES[S.libre++], f.t + 60000));
@@ -977,14 +981,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   /* ═══ LA SCÈNE DU COMMERCE ═══ */
   const ICONE_PIN = '<svg viewBox="0 0 24 24"><path d="M8 3v7a2 2 0 0 0 2 2M12 3v18M8 3v4M16 3c-1.5 2-1.5 6 0 8v10"/></svg>';
   function construireScene(el, mini) {
-    // la guirlande pend sous le store : ses ampoules suivent la courbe du fil
-    const ampoules = Array.from({ length: AMPOULES }, (_, k) => { const u = k / (AMPOULES - 1); return '<i style="--k:' + k + ";left:" + (u * 100).toFixed(1) + "%;top:" + (1.75 * (1 - Math.pow(2 * u - 1, 2))).toFixed(2) + 'cqw"></i>'; }).join("");
-    el.innerHTML = '<div class="sc-fac"></div><div class="sc-ens"><b>Chez Bergine</b><small>BISTROT · DAX</small></div><div class="sc-store"></div><div class="sc-guirlande">' + ampoules + "</div>" +
+    el.innerHTML = '<div class="sc-fac"></div><div class="sc-ens"><b>Chez Bergine</b><small>BISTROT · DAX</small></div><div class="sc-store"></div>' +
       '<div class="sc-vit"><img src="a/interieur.webp" alt=""><div class="calque-salle"></div><em>Magret · Garbure · Axoa</em></div>' +
       '<div class="sc-carnet"><b>Le carnet</b><div class="noms"></div></div><div class="sc-pied"></div>' +
       '<div class="sc-porte"><i></i></div><span class="sc-ouvert">OUVERT</span><img class="sc-hote" src="a/bergine-salue.webp" alt="">' +
       '<div class="sc-trot"></div><div class="calque"></div><span class="sc-plus" hidden></span><div class="sc-dit">Merci à vous tous !</div>';
-    el._mini = !!mini; el._fg = new Map(); el._dore = null; el._guir = undefined;
+    el._mini = !!mini; el._fg = new Map(); el._dore = null;
   }
   function elFantome(f) {
     const d = document.createElement("div");
@@ -1046,8 +1048,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       if (im.getAttribute("src") !== src) im.setAttribute("src", src);
       $(".nom", d).textContent = (coeur ? "💛 " : "") + (p.moi ? S.moi.nom : f.invite ? "💌 " + f.nom : f.nom);
       // ce que porte son fantôme : son rang du matin, le pin du commerce, sa réservation
-      d.querySelectorAll(".rang,.pin,.table-tag").forEach((x) => x.remove());
-      if (p.moi && S.premier && S.choix === "adore") d.insertAdjacentHTML("beforeend", '<span class="rang">1er ce matin</span>');
+      d.querySelectorAll(".rang,.pin,.table-tag,.fourchette").forEach((x) => x.remove());
+      // la fourchette verte : il a déjà mangé ici, son conseil se lit en le touchant
+      if (!el._mini && (p.moi ? S.monConseil : f.conseil)) d.insertAdjacentHTML("beforeend", '<span class="fourchette">🍴</span>');
       if (p.moi && S.pins) d.insertAdjacentHTML("beforeend", '<span class="pin">' + ICONE_PIN + "</span>");
       if (p.pose === "assis" && (p.moi ? (S.table || S.habitue >= 3) : f.heure)) {
         const txt = p.moi ? (S.habitue >= 3 && !S.table ? S.moi.nom + " · sa place" : S.table.heure) : f.heure;
@@ -1061,7 +1064,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     const noms = $(".noms", el);
     const derniers = S.carnet.slice(0, 3);
     noms.innerHTML = derniers.map((c) => '<span class="' + (c.neuf ? "neuf" : "") + '">' + echap(c.nom) + "</span>").join("");
-    rendreDore(el); rendreGuirlande(el);
+    rendreDore(el);
     if (el === scH) suivreBulle();
   }
   // le fantôme doré du jour, à sa cachette (l'habitant qui l'a trouvé ne le voit plus)
@@ -1111,7 +1114,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     const amis = S.foule.filter((f) => f.ami);
     $("#v-tetes").innerHTML = amis.map((f) => '<img src="' + img(f.look, "debout") + '" alt="">').join("");
     const nA = compte("adore");
-    $("#v-ligne").textContent = nA ? nA + " fantômes devant la vitrine" + (amis.length ? ", dont " + amis.map((f) => f.nom).join(", ") : "") : "La vitrine vient d’ouvrir : soyez le premier devant";
+    $("#v-ligne").textContent = nA ? nA + " fantômes devant la vitrine" + (amis.length ? ", dont " + amis.map((f) => f.nom).join(", ") : "") : "Nouvelle vidéo ce matin : la vitrine se remplit";
     $("#v-dore").hidden = S.dore.trouve || S.dore.trouves >= S.dore.max;
     $("#chasse").textContent = texteChasse();
     // l'ardoise : le dernier coup de cœur du chef, et l'envie d'écrire le sien
@@ -1128,7 +1131,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     }
     const st = $("#statut");
     if (!S.choix) st.innerHTML = '<img src="' + img(S.moi.look, "debout") + '" alt=""><div><b>Votre fantôme attend</b>Touchez un des trois : il ira se placer devant la vitrine, au carnet, ou à table.</div>';
-    else if (S.choix === "adore") st.innerHTML = '<img src="' + img(S.moi.look, "debout") + '" alt=""><div><b>' + (S.premier ? "Premier devant la vitrine ce matin !" : "Votre fantôme applaudit") + "</b>Jean-Marie le voit sur son comptoir" + (amis.length ? ", avec ceux de " + amis.map((f) => f.nom).join(", ") : "") + ".</div>";
+    else if (S.choix === "adore") st.innerHTML = '<img src="' + img(S.moi.look, "debout") + '" alt=""><div><b>Votre fantôme applaudit</b>Jean-Marie le voit sur son comptoir' + (amis.length ? ", avec ceux de " + amis.map((f) => f.nom).join(", ") : "") + ".</div>";
     else if (S.choix === "promis") st.innerHTML = '<img src="' + img(S.moi.look, "salue") + '" alt=""><div><b>Votre prénom est dans le carnet</b>Bon : le café offert, 7 jours.</div><button type="button" class="lien" data-maison>Mon bon ›</button>';
     else st.innerHTML = '<img src="' + img(S.moi.look, "assis") + '" alt=""><div><b>Place gardée · ' + S.table.heure + " · " + S.table.n + (S.table.n > 1 ? " personnes" : " personne") + "</b>Jean-Marie vous attend.</div>";
     $("#vers-maison").classList.toggle("signal", !!S.bon && !S.bon.tenu);
@@ -1142,9 +1145,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     $("#maison-nom").textContent = "Le fantôme de " + S.moi.nom;
     $("#maison-badges").innerHTML = '<span class="' + (S.badgeParole ? "gagne" : "") + '">Parole de fantôme</span><span class="' + (S.pins ? "gagne" : "") + '">Pin de Chez Bergine</span><span class="' + (S.amenes ? "gagne" : "") + '">Ambassadeur' + (S.amenes ? " · " + S.amenes : "") + "</span>" +
       '<span class="' + (S.ors ? "gagne" : "") + '">Chasseur d’or' + (S.ors ? " · " + S.ors : "") + "</span>" +
-      '<span class="' + (S.lettre && S.lettre.coeur ? "gagne" : "") + '">Coup de cœur du chef</span>';
+      '<span class="' + (S.lettre && S.lettre.coeur ? "gagne" : "") + '">Coup de cœur du chef</span>' +
+      '<span class="' + (S.monConseilGardes ? "gagne" : "") + '">Bon conseil' + (S.monConseilGardes ? " · " + S.monConseilGardes : "") + "</span>";
+    // les conseils gardés : ce qu'il faudra commander, le jour où l'on y va
+    $("#lbl-gardes").hidden = !S.gardes.length;
+    $("#maison-gardes").innerHTML = S.gardes.map((g) => '<div class="garde"><b>« ' + echap(g.conseil) + " »</b>Le conseil de " + echap(g.nom) + "</div>").join("");
     const lignes = [];
-    if (S.cadeauVitrine) lignes.push('<div class="bon bon-chef"><img src="a/chef.jpg" alt=""><div><small>Chez Bergine · la vitrine allumée</small><b>Le café offert</b><span>Ce midi, à toute la vitrine · exemple</span></div></div>');
     if (S.cadeauRecu) lignes.push('<div class="bon bon-chef"><img src="a/chef.jpg" alt=""><div><small>Chez Bergine · coup de cœur du chef</small><b>' + S.cadeauRecu.n + " offert</b><span>Pour votre petit mot · exemple</span></div></div>");
     if (S.dore.trouve) lignes.push('<div class="bon dore"><img src="' + img("soleil", "salue") + '" alt=""><div><small>Chez Bergine · fantôme doré</small><b>Le dessert offert</b><span>Avec votre plat, aujourd’hui · exemple</span></div></div>');
     if (S.bon) lignes.push('<div class="bon' + (S.bon.tenu ? " tenu" : "") + '"><img src="a/magret.jpg" alt=""><div><small>Chez Bergine · promesse</small><b>' + S.bon.quoi + "</b><span>" + (S.bon.tenu ? "Tenue aujourd’hui" : "Valable encore " + S.bon.jours + " jours") + "</span></div></div>");
@@ -1167,7 +1173,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     const avant = S.choix;
     if (avant === choix && choix !== "table") { vue("h-scene"); return; }
     if (avant === "table" && choix !== "table") S.table = null;
-    S.premier = choix === "adore" && compte("adore") < 3 && S.jour > 1;
+    S.premier = false; // plus de « premier rang du matin » : l'idée n'était pas claire
     S.choix = choix; S.tChoix = Date.now();
     if (choix === "promis" && !(S.bon && !S.bon.tenu)) {
       S.bon = { quoi: "Le café offert", jours: 7, tenu: false };
@@ -1242,6 +1248,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     const gfg = $("#bravo-fg"); gfg.innerHTML = ""; const d = elFantome(moiF()); d.classList.add("moi"); $("img", d).src = img(S.moi.look, "debout"); $(".nom", d).textContent = S.moi.nom; d.insertAdjacentHTML("beforeend", '<span class="pin">' + ICONE_PIN + "</span>"); gfg.appendChild(d);
     $("#bravo-txt").textContent = "Votre fantôme porte désormais le pin de Chez Bergine." + (premiereFois ? " Votre tournée de Dax passe à " + S.tournee + " commerces sur 40." : "") + (S.habitue >= 3 ? " Et vous avez votre place attitrée en salle !" : " Habitué : " + S.habitue + " sur 3.");
     $("#bravo-badges").innerHTML = '<span class="gagne">Parole de fantôme</span><span class="gagne">Pin de Chez Bergine</span>';
+    $("#conseils").innerHTML = CONSEILS.slice(0, 5).map((c, k) => '<button type="button" data-conseil="' + k + '"' + (S.monConseil === c[0] ? ' class="on"' : "") + ">" + echap(c[0]) + "</button>").join("");
     feuille("f-bravo");
     // le comptoir : le moment qui fait plaisir
     fete(S.moi.nom + " a tenu sa promesse !", "Promis " + (S.jour > 1 ? "hier" : "ce matin") + " · bon « café offert » montré au comptoir.");
@@ -1266,22 +1273,31 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     const mot = coeur ? l.texte : moi ? S.mot : f.mot;
     let note = "";
     if (moi && l && !coeur && !l.choisi) note = "💌 Votre mot est chez Jean-Marie · " + (l.vu ? "lu ✓" : "envoyé");
-    else if (moi && !l) note = astuce ? "Écrivez un petit mot à Jean-Marie : il les lit tous, et parfois il offre un petit quelque chose 💛 Touchez aussi les autres fantômes." : "Pas encore de mot pour Jean-Marie.";
+    else if (moi && !l) note = astuce ? "Les fantômes à la 🍴 ont déjà mangé ici : touchez-les, ils disent quoi prendre. Et écrivez un petit mot à Jean-Marie 💛" : "Pas encore de mot pour Jean-Marie.";
     else if (coeur && l.cadeau) note = "🎁 Jean-Marie " + (moi ? "vous" : "lui") + " a offert " + minus(l.cadeau.n);
     else if (!moi && l && !coeur) note = "💌 A écrit un mot à Jean-Marie";
     const tag = (moi ? '<span class="bf-tag rose">vous</span>' : f.invite ? '<span class="bf-tag rose">💌 grâce à votre vitrine</span>' : f.ami ? '<span class="bf-tag">dans vos amis</span>' : "") +
       (coeur ? '<span class="bf-tag or">💛 coup de cœur du chef</span>' : "");
     const b = document.createElement("div");
     b.className = "bulle-fg"; b._cle = f.id; b._d = d;
-    // un ami : le coucou sert à s'organiser ; un inconnu : un point commun, et le coucou allume la guirlande
-    const inconnu = !moi && !f.ami && !f.invite;
-    const libelle = f.coucou ? "👋 Coucou envoyé" : inconnu && !S.allumee ? "👋 Coucou · +1 ampoule 💡" : "👋 Coucou";
+    // celui qui a déjà mangé ici dit quoi prendre : garder son conseil sert à soi, et le remercie.
+    // Un ami, on lui fait coucou pour s'organiser.
+    const conseil = moi ? S.monConseil : f.conseil, venu = moi ? (S.monConseil ? S.monVenu : null) : f.venu;
+    const gardes = moi ? S.monConseilGardes : (f.gardes || 0) + (f.garde ? 1 : 0);
+    if (!note && !moi && !conseil) note = "Pas encore mangé ici : son conseil viendra après sa visite.";
+    let actions = "";
+    if (moi) actions = S.lettre ? "" : '<button type="button" data-mot>✎ Écrire à Jean-Marie</button>';
+    else {
+      if (f.ami) actions += '<button type="button" data-coucou' + (f.coucou ? " disabled" : "") + ">" + (f.coucou ? "👋 Envoyé" : "👋 Coucou") + "</button>";
+      if (conseil) actions += '<button type="button" data-garder' + (f.garde ? " disabled" : "") + ">" + (f.garde ? "📌 Gardé" : "📌 Garder son conseil") + "</button>";
+    }
     b.innerHTML = '<div class="bf-haut"><b>' + echap(moi ? S.moi.nom : f.nom) + "</b>" + tag + "<small>" + quoi + "</small>" +
-      (inconnu && f.lien ? '<p class="bf-lien">' + echap(f.lien) + "</p>" : "") + "</div>" +
-      (mot ? '<p class="bf-mot">« ' + echap(mot) + " »</p>" : "") +
+      (venu ? '<p class="bf-venu">🍴 A mangé ici ' + echap(venu) + "</p>" : "") + "</div>" +
+      (conseil ? '<div class="bf-conseil"><small>' + (moi ? "Votre conseil" : "Son conseil") + "</small><p>« " + echap(conseil) + " »</p></div>" +
+        '<p class="bf-gardes">' + (gardes ? "📌 Gardé par " + gardes + (gardes > 1 ? " personnes" : " personne") + (f.garde ? ", dont vous" : "") : "📌 Pas encore gardé") + "</p>" : "") +
+      (mot && (!conseil || coeur) ? '<p class="bf-mot">« ' + echap(mot) + " »</p>" : "") +
       (note ? '<p class="bf-astuce">' + echap(note) + "</p>" : "") +
-      '<div class="bf-act">' + (moi ? (S.lettre ? "" : '<button type="button" data-mot>✎ Écrire à Jean-Marie</button>')
-        : '<button type="button" data-coucou' + (f.coucou ? " disabled" : "") + ">" + libelle + "</button>") + "</div>";
+      '<div class="bf-act">' + actions + "</div>";
     scH.appendChild(b); bulle = b;
     placerBulle();
     clearTimeout(ouvrirBulle._t); ouvrirBulle._t = setTimeout(() => { if (bulle === b) fermerBulle(); }, astuce ? 6500 : 8000);
@@ -1295,6 +1311,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     const w = bulle.offsetWidth, h = bulle.offsetHeight, x = r.left + r.width / 2 - R.left;
     let top = r.top - R.top - h - 7, bas = false;
     if (top < 4) { top = r.bottom - R.top + 7; bas = true; }
+    // ni au-dessus ni en dessous (un fantôme en salle, une bulle haute) : elle reste dans la vitrine
+    if (top + h > R.height - 4) { top = Math.max(4, R.height - h - 4); bas = false; bulle.classList.add("sans-pointe"); } else bulle.classList.remove("sans-pointe");
     const L = Math.max(6, Math.min(R.width - w - 6, x - w / 2));
     bulle.style.left = L + "px"; bulle.style.top = top + "px"; bulle.style.setProperty("--q", Math.max(14, Math.min(w - 14, x - L)) + "px");
     bulle.classList.toggle("bas", bas);
@@ -1315,74 +1333,48 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     s.style.left = (r.left + r.width / 2 - R.left) + "px"; s.style.top = (r.top - R.top) + "px";
     scH.appendChild(s); setTimeout(() => s.remove(), 1700);
   }
-  // un coucou : il se retourne et salue. Un ami répond pour s'organiser ; avec un inconnu, chacun
-  // des deux coucous (l'envoyé, le rendu) monte en étincelle allumer la guirlande
+  // un coucou à un ami : il se retourne, salue, et répond pour s'organiser
   function coucou(d) {
-    const f = d._f; if (!f || f.coucou) return;
-    const inconnu = !f.ami && !f.invite;
+    const f = d._f; if (!f || f.coucou || !f.ami) return;
     f.coucou = true; ac(); bip(988, .08, "sine", .06); bip(1319, .12, "sine", .05, .09);
-    const btn = bulle && $("[data-coucou]", bulle); if (btn) { btn.disabled = true; btn.textContent = "👋 Coucou envoyé"; }
+    const btn = bulle && $("[data-coucou]", bulle); if (btn) { btn.disabled = true; btn.textContent = "👋 Envoyé"; }
     emoji(d, "👋");
     setTimeout(fermerBulle, 650);
-    etincelle(d, () => { S.coucous++; rendreTout(); });
     setTimeout(() => {
       const d2 = scH._fg.get(f.id); if (!d2) return;
       const im = $("img", d2);
       if (d2._type === "adore") { im.setAttribute("src", img(f.look, "salue")); setTimeout(() => { if (d2._type === "adore") im.setAttribute("src", img(f.look, "debout")); }, 1900); }
       sauter(d2); emoji(d2, "👋"); SON.pop();
-      etincelle(d2, () => { S.coucous++; rendreTout(); });
     }, 900);
-    if (f.ami) setTimeout(() => notifier(img(f.look, "salue"), f.nom, "vous fait coucou aussi 👋 « On se retrouve chez Bergine ce midi ? »", "Devant la vitrine de Chez Bergine"), 2100);
-    else if (inconnu && Math.random() < .5) setTimeout(() => {
-      const reste = AMPOULES * PAR_AMPOULE - S.coucous;
-      if (S.allumee || reste <= 0) return; // la vitrine s'est illuminée entre-temps : c'est sa nouvelle qui compte
-      notifier(img(f.look, "salue"), f.nom, "vous rend votre coucou 👋 Encore " + reste + (reste > 1 ? " coucous" : " coucou") + " et la vitrine s’illumine !", "La guirlande de Chez Bergine");
-    }, 2300);
+    setTimeout(() => notifier(img(f.look, "salue"), f.nom, "vous fait coucou aussi 👋 « On se retrouve chez Bergine ce midi ? »", "Devant la vitrine de Chez Bergine"), 2100);
   }
-  // l'étincelle d'un coucou monte jusqu'à la prochaine ampoule de la guirlande
-  function etincelle(d, fin) {
-    const amp = $$(".sc-guirlande i", scH)[Math.min(AMPOULES - 1, Math.floor(S.coucous / PAR_AMPOULE))];
-    if (reduit || S.allumee || !amp || !d.isConnected) { fin(); return; }
-    const R = scH.getBoundingClientRect(), r = $("img", d).getBoundingClientRect(), a = amp.getBoundingClientRect();
-    const s = document.createElement("span"); s.className = "etincelle"; s.textContent = "✨";
-    const x0 = r.left + r.width / 2 - R.left, y0 = r.top - R.top, x1 = a.left + a.width / 2 - R.left, y1 = a.top + a.height / 2 - R.top;
-    s.style.left = x0 + "px"; s.style.top = y0 + "px"; scH.appendChild(s);
-    const anim = s.animate([{ transform: "translate(-50%,-50%) scale(.6)", opacity: 0 }, { opacity: 1, offset: .15 },
-      { transform: `translate(calc(-50% + ${(x1 - x0) / 2}px),calc(-50% + ${(y1 - y0) / 2 - 30}px)) scale(1.1)`, offset: .55 },
-      { transform: `translate(calc(-50% + ${x1 - x0}px),calc(-50% + ${y1 - y0}px)) scale(.7)`, opacity: 1 }], { duration: 850, easing: "ease-in-out" });
-    anim.onfinish = () => { s.remove(); bip(1760, .05, "sine", .03); fin(); };
+  // garder le conseil de quelqu'un : il attend dans Ma Maison pour le jour où l'on y va, et lui sait qu'il a servi
+  function garderConseil(d) {
+    const f = d._f; if (!f || !f.conseil || f.garde) return;
+    f.garde = true; S.gardesJour++;
+    S.gardes.unshift({ nom: f.nom, conseil: f.conseil });
+    ac(); bip(784, .08, "sine", .05); bip(1175, .12, "sine", .04, .08);
+    const btn = bulle && $("[data-garder]", bulle); if (btn) { btn.disabled = true; btn.textContent = "📌 Gardé dans Ma Maison"; }
+    const g = bulle && $(".bf-gardes", bulle); if (g) g.textContent = "📌 Gardé par " + (f.gardes + 1) + " personnes, dont vous";
+    emoji(d, "📌");
+    setTimeout(() => { const d2 = scH._fg.get(f.id); if (d2) { sauter(d2); emoji(d2, "🙏"); } }, 750);
+    setTimeout(() => { if (bulle && bulle._cle === f.id) fermerBulle(); }, 1700);
+    evenement("a gardé le conseil de " + f.nom + " : " + f.plat + " 📌", { nom: S.moi.nom, look: S.moi.look });
+    setTimeout(() => notifier(img(f.look, "salue"), f.nom, "sait que son conseil vous a servi 🙏", "Gardé dans Ma Maison, pour votre visite chez Bergine"), 1900);
+    rendreComptoir();
   }
-  // les ampoules allumées, dans toutes les vitrines ; celle qui vient de s'allumer clignote
-  function rendreGuirlande(el) {
-    const n = Math.min(AMPOULES, Math.floor(S.coucous / PAR_AMPOULE));
-    $$(".sc-guirlande i", el).forEach((i, k) => {
-      const on = k < n;
-      if (on && !i.classList.contains("on") && el._guir !== undefined) { i.classList.remove("neuve"); void i.offsetWidth; i.classList.add("neuve"); }
-      i.classList.toggle("on", on);
-    });
-    el._guir = n;
-    el.classList.toggle("allumee", S.allumee);
-  }
-  // toute la guirlande allumée : la vitrine s'illumine, la foule fait la ola, Jean-Marie sort
-  function verifierGuirlande() {
-    if (S.allumee || S.coucous < AMPOULES * PAR_AMPOULE) return;
-    S.allumee = true;
-    const cafe = S.guirlande === "cafe";
-    for (const sc of [scH, scC, scI, scA, scP]) rendreGuirlande(sc);
-    if (!reduit) {
-      const ghosts = [...scH._fg.values()].sort((a, b) => parseFloat(a.style.left) - parseFloat(b.style.left));
-      ghosts.forEach((g, k) => { g.style.setProperty("--ola", (k * .045).toFixed(2) + "s"); g.classList.remove("ola"); void g.offsetWidth; g.classList.add("ola"); setTimeout(() => g.classList.remove("ola"), 2600); });
-      confettis(scH);
-    }
-    SON.chime(); applaudir(12);
-    hote(scH, cafe ? "Toute la vitrine allumée ! Le café est pour moi ☕" : "Toute la vitrine allumée ! Merci à vous 💛", 5200);
-    hote(scC, "Toute la vitrine allumée !", 5200);
-    evenement("est toute allumée : " + AMPOULES * PAR_AMPOULE + " coucous entre habitants ✨", { nom: "Votre vitrine", look: "soleil" });
-    fete("Votre vitrine est toute allumée !", AMPOULES * PAR_AMPOULE + " coucous entre habitants ce matin" + (cafe ? " · le café offert à toute la vitrine (exemple)" : ""), false);
-    if (S.choix) {
-      if (cafe) S.cadeauVitrine = true;
-      setTimeout(() => notifier("a/chef.jpg", "Chez Bergine", "La vitrine est toute allumée grâce à vos coucous ✨" + (cafe ? " Jean-Marie offre le café à toute la vitrine ce midi ☕" : ""), cafe ? "Il est dans Ma Maison · exemple" : "La guirlande se rallume demain"), 1200);
-    }
+  // son propre conseil, après avoir tenu sa promesse : d'autres le gardent à leur tour
+  function choisirConseil(k) {
+    const premier = !S.monConseil;
+    S.monConseil = CONSEILS[k][0]; S.monPlat = CONSEILS[k][1]; S.monVenu = "aujourd’hui";
+    $$("#conseils button").forEach((b) => b.classList.toggle("on", +b.dataset.conseil === k));
+    ac(); SON.pop(); rendreTout();
+    if (!premier) return;
+    [[6500, "curieux"], [15000, "lecteur"]].forEach(([t, look]) => setTimeout(() => {
+      S.monConseilGardes++; const nom = nouveauNom();
+      notifier(img(look, "salue"), nom, "a gardé votre conseil 📌 « " + S.monConseil + " »", "Votre conseil a servi " + S.monConseilGardes + (S.monConseilGardes > 1 ? " fois" : " fois") + " · Chez Bergine");
+      rendreTout();
+    }, t));
   }
   function ouvrirMots() {
     if (S.lettre) return;
@@ -1640,9 +1632,13 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     $("#m-dore").textContent = tr + (tr > 1 ? " trouvés" : " trouvé") + " sur " + S.dore.max;
     $("#m-dore-ou").textContent = tr < S.dore.max ? "caché " + CACHETTES[S.dore.k].ou + " · 🍮 le dessert offert" : "tous trouvés · demain, il se cache ailleurs";
     $("#m-toc").textContent = S.toc + " ce matin";
-    $("#m-coucou").textContent = S.coucous + " · 💡 " + Math.min(AMPOULES, Math.floor(S.coucous / PAR_AMPOULE)) + "/" + AMPOULES;
-    $("#m-coucou-s").textContent = S.allumee ? "guirlande pleine : la vitrine est allumée ✨" : "pleine à " + AMPOULES * PAR_AMPOULE + " coucous : la vitrine s’illumine";
-    $("#guirlande-choix").innerHTML = CADEAUX_VITRINE.map(([k, l]) => '<button type="button" class="' + (k === S.guirlande ? "on" : "") + '" data-guirlande="' + k + '"' + (S.allumee ? " disabled" : "") + ">" + l + "</button>").join("");
+    // les conseils de ses clients : combien sont gardés, et le plat qu'ils conseillent le plus
+    const avecConseil = S.foule.filter((f) => f.conseil), parPlat = {};
+    avecConseil.forEach((f) => { parPlat[f.plat] = (parPlat[f.plat] || 0) + 1; });
+    if (S.monConseil) parPlat[S.monPlat] = (parPlat[S.monPlat] || 0) + 1;
+    const top = Object.entries(parPlat).filter(([pl]) => pl !== "l’heure" && pl !== "la table").sort((x, y) => y[1] - x[1])[0];
+    $("#m-conseils").textContent = S.gardesJour + " ce matin";
+    $("#m-conseil-s").textContent = (avecConseil.length + (S.monConseil ? 1 : 0)) + " conseils dans votre vitrine" + (top ? " · le plus conseillé : " + top[0] : "");
     rendreLettres();
     $("#m-vitrine").textContent = a + " devant";
     rendreScene(scC);
@@ -1748,7 +1744,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     // certains écrivent aussi un mot au chef ; d'autres frappent à la porte, d'autres se font coucou
     if (type !== "table" && Math.random() < .22 && S.libre < MOTS_LIBRES.length) { ecrire(f, MOTS_LIBRES[S.libre++]); signaler("c", f.nom + " vous a écrit un petit mot"); }
     if (Math.random() < .3) S.toc++;
-    if (Math.random() < .35) S.coucous++;
+    if (Math.random() < .3) S.gardesJour++;
     rendreTout();
     if (type === "adore" && Math.random() < .5) coeurs(scH, 2);
     planifier();
@@ -1760,10 +1756,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     S.jour++;
     S.foule = S.foule.filter(() => false);
     S.choix = null; S.table = null; S.premier = false; S.merci = false; S.appel = false; S.fil = []; S.promisJour = 0;
-    // le fantôme doré change de cachette ; la porte et les coucous repartent de zéro
-    S.dore = doreDuJour(S.jour, 0); S.toc = 0; S.coucous = 0; S.mot = null; fermerBulle(); planifierDore();
-    S.allumee = false; S.cadeauVitrine = false; // la guirlande s'éteint la nuit
-    for (const sc of [scH, scC, scI, scA, scP]) sc._guir = undefined;
+    // le fantôme doré change de cachette ; les toc-toc et les conseils gardés repartent de zéro
+    S.dore = doreDuJour(S.jour, 0); S.toc = 0; S.gardesJour = 0; S.mot = null; fermerBulle(); planifierDore();
+    if (S.monConseil) S.monVenu = "hier"; // son conseil reste : il y a mangé
     // un nouveau mot par jour ; l'ardoise garde le coup de cœur d'hier
     S.lettres = []; S.lettre = null; S._offrir = null;
     if (S.ardoise) S.ardoise.quand = "hier";
@@ -1775,12 +1770,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     // ses amis reviennent vite ; la vitrine se remplit
     feuille(null); S._avantAmi = null; $("#adresse-url").textContent = "clikme.fr/bergine";
     rendreTout(); $("#ecran-h").classList.remove("web"); vue(S.source === "insta" ? "h-insta" : "h-video");
-    notifier("a/chef.jpg", "Chez Bergine", "Nouvelle vidéo de Jean-Marie ce matin. La vitrine est vide : soyez le premier devant !", "Le Direct · 8 h 02");
+    notifier("a/chef.jpg", "Chez Bergine", "Nouvelle vidéo de Jean-Marie ce matin : un nouveau plat, une nouvelle vitrine.", "Le Direct · 8 h 02");
     setTimeout(() => { const [nom, look] = AMIS[0]; ajouter("adore", { nom, look, ami: true, recent: true }); evenement("a adoré votre magret", { nom, look }); rendreTout(); SON.arrive(); }, 4200);
     planifier();
   }
 
-  function rendreTout() { rendreHabitant(); rendreComptoir(); if ($("#f-maison").classList.contains("on")) rendreMaison(); verifierGuirlande(); }
+  function rendreTout() { rendreHabitant(); rendreComptoir(); if ($("#f-maison").classList.contains("on")) rendreMaison(); }
 
   /* ═══ LES GESTES ═══ */
   function brancher() {
@@ -1838,7 +1833,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     // dans la vitrine, tout se touche
     scH.addEventListener("click", (e) => {
       const btn = e.target.closest(".bulle-fg button");
-      if (btn) { if (btn.hasAttribute("data-mot")) ouvrirMots(); else if (bulle) coucou(bulle._d); return; }
+      if (btn) { if (btn.hasAttribute("data-mot")) ouvrirMots(); else if (btn.hasAttribute("data-garder")) { if (bulle) garderConseil(bulle._d); } else if (bulle) coucou(bulle._d); return; }
       if (e.target.closest(".bulle-fg")) return;
       if (e.target.closest(".fg-dore")) { attraperDore(); return; }
       const d = e.target.closest(".fg");
@@ -1869,7 +1864,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       else { const c = e.target.closest("[data-cadeau]"); if (c) coeurPour(l, CADEAUX[+c.dataset.cadeau]); }
     });
     $("#porte").addEventListener("input", (e) => { S.porte = e.target.value.trim() || "Bienvenue chez Bergine !"; });
-    $("#guirlande-choix").addEventListener("click", (e) => { const b = e.target.closest("[data-guirlande]"); if (!b || b.disabled) return; S.guirlande = b.dataset.guirlande; ac(); SON.pop(); rendreComptoir(); });
+    $("#conseils").addEventListener("click", (e) => { const b = e.target.closest("[data-conseil]"); if (b) choisirConseil(+b.dataset.conseil); });
     $("#montrer-bon").addEventListener("click", () => feuille("f-qr"));
     $("#scanner").addEventListener("click", tenirPromesse);
     // le comptoir
