@@ -713,6 +713,10 @@ JS = r"""
   });
 
   /* ── LES MOMENTS, À LEUR PLACE DANS « PLUS DE CLIENTS » ── */
+  // WhatsApp : sa réponse affichée, un appui passe tout de suite à sa vitrine
+  const mWa = CLIENTS.moments.find((m) => m.id === "whatsapp"), entrerWa = mWa.entrer;
+  mWa.entrer = function () { WA.fini = false; entrerWa.call(this); };
+  mWa.agir = function () { effacer(); if (WA.fini) aller(idx + 1); else finWhatsapp(); };
   CLIENTS.moments.splice(CLIENTS.moments.findIndex((m) => m.id === "plat") + 1, 0, {
     id: "trois", chap: 4, ecran: "tf", cible: null,
     dit: T3.textes["trois-1"].replace(/\*/g, ""),
@@ -838,9 +842,11 @@ for d, M in METIERS.items():
     # WhatsApp ne finit plus la démo : sa vitrine suit, puis le ticket (l'ancienne fin devient finClients)
     t = une_fois(t, "  function finWhatsapp() {\n",
                  "  /* LA DEMANDE EST LÀ : sa vitrine suit (voir tour-trois.py), puis le ticket (finClients) */\n"
+                 "  const WA = { fini: false };\n"
                  "  function finWhatsapp() {\n"
                  "    $(\"#wa-notif\").classList.remove(\"on\"); $(\"#wa-ecrit\").classList.remove(\"on\");\n"
                  "    [\"#wa-recu\", \"#wa-moi\"].forEach((s) => $(s).classList.add(\"on\"));\n"
+                 "    WA.fini = true;\n"
                  "    if (DEMOS[vue].moments[idx].id === \"whatsapp\") plus(() => aller(idx + 1), 1900);\n"
                  "  }\n"
                  "  function finClients() {\n", f"{d} fin de WhatsApp")
