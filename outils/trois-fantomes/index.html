@@ -65,27 +65,46 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 
 /* la fin de sa vidéo, et les trois fantômes */
 .video{background:#0E0907}
-.video video{position:absolute;left:0;right:0;top:0;width:100%;height:57%;object-fit:cover;object-position:50% 0;background:#000}
+.video video{position:absolute;left:0;right:0;top:0;width:100%;height:53%;object-fit:cover;object-position:50% 0;background:#000}
 .video .haut{position:absolute;top:44px;left:14px;right:14px;display:flex;align-items:center;gap:10px;z-index:3}
 .av{width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid #fff}
 .video .haut b{display:block;font-size:14px;line-height:1.1}
 .video .haut small{font-size:11.5px;color:rgba(255,255,255,.8)}
-.revoir{position:absolute;left:14px;top:calc(57% - 46px);z-index:4;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;background:rgba(0,0,0,.5);font-weight:700;font-size:12px}
-.revoir svg{width:12px;height:12px;fill:currentColor}
-.choix{position:absolute;left:0;right:0;top:57%;bottom:0;padding:12px 12px 14px;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(180deg,rgba(14,9,7,.6),#0E0907 22px);box-shadow:0 -18px 24px -6px rgba(14,9,7,.9);z-index:3;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .3s}
+.revoir{position:absolute;right:12px;top:calc(53% - 46px);z-index:4;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.55);border:1.5px solid rgba(255,255,255,.55)}
+.revoir svg{width:13px;height:13px;fill:currentColor;margin-left:2px}
+.choix{position:absolute;left:0;right:0;top:53%;bottom:0;padding:10px 10px 12px;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(180deg,rgba(14,9,7,.6),#0E0907 22px);box-shadow:0 -18px 24px -6px rgba(14,9,7,.9);z-index:3;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .3s}
 .video.joue .choix{transform:translateY(100%);opacity:0}
 .video.joue video{height:100%}
 .choix h3{margin:0 0 2px;text-align:center;font:italic 700 22px/1.15 var(--f-titre)}
-.choix > p{margin:0 0 10px;text-align:center;font-size:12px;color:var(--gris)}
-.trois{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.f3{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 10px;border-radius:18px;border:1.5px solid var(--trait);background:rgba(255,244,230,.05);text-align:center;transition:transform .15s,border-color .2s,background .2s}
-.f3:active{transform:scale(.96)}
-.f3 img{height:64px;width:auto;margin-bottom:2px;filter:drop-shadow(0 6px 6px rgba(0,0,0,.4))}
-.f3 b{font-size:12.5px;font-weight:800;line-height:1.15}
-.f3 small{font-size:10.5px;color:var(--gris);line-height:1.2}
-.f3.adore{border-color:rgba(255,46,154,.55)}.f3.promis{border-color:rgba(245,162,58,.55)}.f3.table{border-color:rgba(61,226,166,.5)}
-.f3.on{background:rgba(255,46,154,.16)}
-.direct-ligne{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;font-size:11.5px;color:var(--gris)}
+.choix > p{margin:0 0 8px;text-align:center;font-size:12px;color:var(--gris)}
+/* LES TROIS CAGES : son fantôme attend dedans ; touchée, la porte s'ouvre et il s'envole */
+.trois{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;align-items:start}
+.f3{display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 0 0;text-align:center;border-radius:16px}
+.cg{position:relative;display:flex;flex-direction:column;align-items:center;width:84%;transform-origin:50% 0;animation:balance 3.6s ease-in-out infinite}
+.f3.promis .cg{animation-delay:-1.2s}.f3.table .cg{animation-delay:-2.4s}
+@keyframes balance{0%,100%{transform:rotate(-2.2deg)}50%{transform:rotate(2.2deg)}}
+.cg-anneau{position:relative;z-index:2;width:15px;height:15px;margin-bottom:-3px;border-radius:50%;border:2.5px solid var(--or)}
+.cg-noeud{position:absolute;top:13px;left:50%;z-index:5;width:26px;height:12px;margin-left:-13px;
+  background:radial-gradient(ellipse 45% 48% at 22% 50%,var(--c) 96%,transparent),radial-gradient(ellipse 45% 48% at 78% 50%,var(--c) 96%,transparent),radial-gradient(circle at 50% 50%,var(--c) 30%,transparent 33%)}
+.cg-dome{position:relative;width:100%;aspect-ratio:.86;overflow:hidden;border:2.5px solid var(--or);border-bottom:0;border-radius:50% 50% 10% 10% / 44% 44% 6% 6%;
+  background:radial-gradient(ellipse 70% 55% at 50% 42%,rgba(255,226,180,.2),transparent 72%),rgba(255,244,230,.035)}
+.cg-dome::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:repeating-linear-gradient(90deg,transparent 0 calc(16.66% - 1.4px),rgba(232,199,122,.85) calc(16.66% - 1.4px) 16.66%)}
+.cg-dome::after{content:"";position:absolute;left:0;right:0;top:36%;height:2px;z-index:3;background:rgba(232,199,122,.9)}
+.cg-dome img{position:absolute;left:50%;bottom:4%;z-index:2;height:70%;width:auto;transform:translateX(-50%);filter:drop-shadow(0 4px 4px rgba(0,0,0,.45));animation:bob 2.4s ease-in-out infinite;transition:opacity .2s}
+@keyframes bob{50%{transform:translate(-50%,-7%)}}
+.cg-porte{position:absolute;left:29%;width:42%;bottom:0;height:54%;z-index:4;border:2.5px solid var(--or);border-bottom:0;border-radius:45% 45% 0 0 / 35% 35% 0 0;transform-origin:0 50%;
+  background:repeating-linear-gradient(90deg,transparent 0 calc(33.3% - 1.4px),rgba(232,199,122,.95) calc(33.3% - 1.4px) 33.3%),rgba(20,12,9,.12);transition:transform .45s cubic-bezier(.3,1.4,.5,1)}
+.cg-socle{width:110%;height:13px;margin-top:-1px;border-radius:5px;background:linear-gradient(#F3DFA0,#B38A3A);box-shadow:0 6px 10px -4px rgba(0,0,0,.65),inset 0 -4px 0 var(--c)}
+.f3.adore{--c:#FF2E9A}.f3.promis{--c:#F5A23A}.f3.table{--c:#3DE2A6}
+.f3:hover .cg-porte{transform:perspective(160px) rotateY(-28deg)}
+.f3.ouverte .cg-porte,.f3.on .cg-porte{transform:perspective(160px) rotateY(-118deg)}
+.f3.on .cg-dome img{opacity:0}
+.f3:active .cg{animation-play-state:paused}
+.f3 b{margin-top:5px;font-size:13px;font-weight:800;line-height:1.1}
+.f3 small{font-size:10.5px;color:var(--gris);line-height:1.2;max-width:98%}
+.f3.on b::after{content:" ✓";color:var(--c)}
+.f3.on small{color:var(--creme)}
+.direct-ligne{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;font-size:11.5px;color:var(--gris)}
 .tetes{display:flex}
 .tetes img{width:22px;height:22px;object-fit:contain;border-radius:50%;background:var(--nuit-3);border:1.5px solid var(--nuit);margin-left:-6px}
 .tetes img:first-child{margin-left:0}
@@ -313,6 +332,49 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .legende div{padding:12px 14px;border-radius:16px;background:var(--nuit-2);border:1px solid var(--trait);font-size:13px;color:var(--gris);min-width:0}
 .legende b{display:block;color:var(--creme);font-size:13.5px;margin-bottom:2px}
 
+/* PARTAGER SA VITRINE : la vidéo de Jean-Marie, qui finit sur son fantôme */
+.partager{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;text-align:left;background:linear-gradient(90deg,rgba(255,46,154,.22),rgba(245,162,58,.16));border:1.5px solid rgba(255,46,154,.55)}
+.partager b{display:block;font-size:13.5px}
+.partager small{display:block;font-size:11.5px;color:var(--gris);line-height:1.3}
+.partager i{margin-left:auto;font-style:normal;font-weight:900;font-size:18px;color:var(--rose)}
+.story{position:relative;align-self:center;width:78%;aspect-ratio:9/15;border-radius:18px;overflow:hidden;background:#0E0907;box-shadow:0 16px 30px -14px rgba(0,0,0,.9);display:flex;flex-direction:column}
+.story-haut{position:relative;flex:none;height:40%}
+.story-affiche{width:100%;height:100%;object-fit:cover;object-position:50% 18%}
+.story-sc{flex:none}
+.story-txt{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;gap:3px;padding:22px 10px 7px;text-align:center;background:linear-gradient(180deg,transparent,rgba(14,9,7,.82) 40%,#0E0907)}
+.story-txt b{font-size:12px;line-height:1.25}
+.story-txt span{font-size:10.5px;color:var(--gris);line-height:1.25}
+.story-lien{position:absolute;left:50%;bottom:8px;transform:translateX(-50%) rotate(-2deg);padding:4px 10px;border-radius:8px;background:#fff;color:#1E1E22;font-weight:800;font-size:11px;white-space:nowrap}
+.puces button.choisi{border-color:var(--rose);background:rgba(255,46,154,.15)}
+.fg.invite .nom{display:block;background:var(--papier);color:var(--rose-2)}
+/* ARRIVER DEPUIS INSTAGRAM : la vidéo ne se clique pas ; elle finit sur la vitrine et un lien */
+.source{display:flex;gap:4px;padding:3px;border-radius:999px;background:var(--nuit-2);border:1px solid var(--trait)}
+.source button{height:32px;padding:0 12px;border-radius:999px;font-weight:800;font-size:12px;color:var(--gris)}
+.source button.on{background:var(--creme);color:var(--nuit)}
+.insta{background:#000}
+.insta-barres{position:absolute;top:40px;left:10px;right:10px;display:flex;gap:4px;z-index:3}
+.insta-barres i{flex:1;height:2.5px;border-radius:2px;background:rgba(255,255,255,.35)}
+.insta-barres i.on{background:#fff}
+.insta-haut{position:absolute;top:50px;left:12px;right:12px;display:flex;align-items:center;gap:8px;z-index:3;font-size:13px}
+.insta-haut .av{width:30px;height:30px}
+.insta-haut small{color:rgba(255,255,255,.7)}
+.insta-fin{position:absolute;left:0;right:0;top:92px;bottom:64px;display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 12px;background:radial-gradient(30rem 20rem at 50% 30%,rgba(255,46,154,.18),transparent 70%)}
+.insta-fin .sc-cadre{width:100%;margin:0}
+.insta-fin > b{font-size:15px;text-align:center;line-height:1.25}
+.insta-fin > span{font-size:12.5px;color:rgba(255,255,255,.75);text-align:center}
+.insta-lien{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 16px;border-radius:12px;background:#fff;color:#1E1E22;font-weight:800;font-size:14px;transform:rotate(-2deg);box-shadow:0 10px 20px -8px rgba(0,0,0,.7);animation:attire 1.8s ease-in-out infinite}
+@keyframes attire{50%{transform:rotate(2deg) scale(1.05)}}
+.insta-note{font-size:10.5px;color:rgba(255,255,255,.5);text-align:center}
+.insta-bas{position:absolute;left:12px;right:12px;bottom:16px;display:flex;align-items:center;gap:8px}
+.insta-bas span{flex:1;height:40px;display:flex;align-items:center;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.4);font-size:13px;color:rgba(255,255,255,.8)}
+.insta-bas button{width:40px;height:40px;border-radius:50%;font-size:20px;background:rgba(255,255,255,.12)}
+.adresse{position:absolute;top:34px;left:12px;right:12px;z-index:58;height:26px;display:none;align-items:center;justify-content:center;gap:6px;border-radius:9px;background:#2E2420;box-shadow:0 6px 14px -6px rgba(0,0,0,.8);font-size:11.5px;font-weight:700}
+.adresse small{font-weight:600;color:var(--gris)}
+.web .adresse{display:flex}
+.web .video .haut{top:66px}
+.web .sc-haut{padding-top:66px}
+.web .onb{padding-top:72px}
+
 @media (max-width:859px){
   .onglets{display:flex}
   .duo{gap:0}
@@ -348,8 +410,23 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     <!-- ═══ L'HABITANT ═══ -->
     <div class="colonne on" id="col-h">
       <b>Vous, <em>habitant de Dax</em></b>
+      <div class="source" role="group" aria-label="D’où arrive l’habitant"><button type="button" class="on" data-source="app">Il a ClikMe</button><button type="button" data-source="insta">Il voit la vidéo sur Instagram</button></div>
       <div class="tel"><div class="ecran" id="ecran-h">
-        <span class="encoche"></span><div class="barre"><span>12:04</span><span>ClikMe</span></div>
+        <span class="encoche"></span><div class="barre"><span>12:04</span><span id="barre-app">ClikMe</span></div>
+        <div class="adresse">🔒 clikme.fr/bergine <small>· sans appli, sans compte</small></div>
+
+        <section class="vue insta" id="h-insta">
+          <div class="insta-barres"><i class="on"></i><i class="on"></i><i></i></div>
+          <div class="insta-haut"><img class="av" src="a/chef.jpg" alt=""><b>chezbergine</b><small>· 2 h</small></div>
+          <div class="insta-fin">
+            <div class="sc-cadre"><div class="sc" id="sc-i"></div></div>
+            <b id="insta-t">Déjà 294 Dacquois devant la vitrine</b>
+            <span>La fin de la vidéo de Jean-Marie : sa vitrine, en direct. Mets ton fantôme avec eux.</span>
+            <button type="button" class="insta-lien" id="insta-lien">🔗 Choisis ta cage</button>
+            <p class="insta-note">Le lien de la story (en publication : « lien en bio »)</p>
+          </div>
+          <div class="insta-bas"><span>Répondre à chezbergine…</span><button type="button" id="insta-fantome" aria-label="Répondre 👻">👻</button></div>
+        </section>
 
         <section class="vue onb" id="h-onb">
           <h2>D’abord, votre fantôme</h2>
@@ -363,14 +440,14 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
         <section class="vue video" id="h-video">
           <video id="vid" src="a/interview.mp4" poster="a/affiche.jpg" playsinline preload="none"></video>
           <div class="haut"><img class="av" src="a/chef.jpg" alt=""><div><b>Chez Bergine</b><small>Jean-Marie · Le Direct · ce matin</small></div></div>
-          <button type="button" class="revoir" id="revoir"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg>Revoir la vidéo</button>
+          <button type="button" class="revoir" id="revoir" aria-label="Revoir la vidéo" title="Revoir la vidéo"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg></button>
           <div class="choix">
             <h3>Et vous ?</h3>
             <p>Un geste, sans engagement : votre fantôme va se placer chez Bergine.</p>
             <div class="trois">
-              <button type="button" class="f3 adore" data-choix="adore"><img alt="" data-pose="debout"><b>💗 J’adore</b><small>« J’ai aimé ta vidéo »</small></button>
-              <button type="button" class="f3 promis" data-choix="promis"><img alt="" data-pose="salue"><b>📌 Je viendrai, c’est sûr</b><small>« Promis, je passe un jour »</small></button>
-              <button type="button" class="f3 table" data-choix="table"><img alt="" data-pose="assis"><b>🍽️ J’y vais aujourd’hui</b><small>« Garde-moi une place »</small></button>
+              <button type="button" class="f3 adore" data-choix="adore"><span class="cg"><i class="cg-anneau"></i><i class="cg-noeud"></i><span class="cg-dome"><img alt="" data-pose="debout"><i class="cg-porte"></i></span><i class="cg-socle"></i></span><b>💗 J’adore</b><small>« J’ai aimé ta vidéo »</small></button>
+              <button type="button" class="f3 promis" data-choix="promis"><span class="cg"><i class="cg-anneau"></i><i class="cg-noeud"></i><span class="cg-dome"><img alt="" data-pose="salue"><i class="cg-porte"></i></span><i class="cg-socle"></i></span><b>📌 Je viendrai</b><small>« Promis, je passe un jour »</small></button>
+              <button type="button" class="f3 table" data-choix="table"><span class="cg"><i class="cg-anneau"></i><i class="cg-noeud"></i><span class="cg-dome"><img alt="" data-pose="assis"><i class="cg-porte"></i></span><i class="cg-socle"></i></span><b>🍽️ J’y vais</b><small>« Garde-moi une place »</small></button>
             </div>
             <div class="direct-ligne"><span class="tetes" id="v-tetes"></span><span id="v-ligne"></span></div>
           </div>
@@ -386,6 +463,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
           <div class="sc-cadre"><div class="sc" id="sc-h"></div></div>
           <div class="sc-bas">
             <div class="statut" id="statut"></div>
+            <button type="button" class="partager" id="partager" hidden><span><b>📣 Partager ma vitrine</b><small id="partager-s">La vidéo de Jean-Marie, qui finit sur votre fantôme. Vos amis vous rejoignent en un geste.</small></span><i>›</i></button>
             <div class="mini3" id="mini3">
               <button type="button" data-choix="adore">💗 J’adore</button>
               <button type="button" data-choix="promis">📌 Je viendrai</button>
@@ -403,8 +481,22 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
           <div class="puces" id="heures"></div>
           <span class="lbl">Pour combien ?</span>
           <div class="puces" id="couverts"></div>
+          <span class="lbl">Avec qui ? (il reçoit votre invitation)</span>
+          <div class="puces" id="avec"></div>
           <button type="button" class="gros" id="table-ok">Mon fantôme s’assoit →</button>
           <button type="button" class="fermer" data-ferme>Annuler</button>
+        </section>
+        <!-- sa vitrine, à partager -->
+        <section class="feuille" id="f-partage">
+          <h4>Votre vitrine, à partager</h4>
+          <p class="sous">La vidéo de Jean-Marie, avec une fin à vous : votre fantôme devant Chez Bergine, au milieu de la ville. Ceux qui la reçoivent touchent une cage, et leur fantôme vient à côté du vôtre.</p>
+          <div class="story"><div class="story-haut"><img class="story-affiche" src="a/affiche.jpg" alt="">
+            <div class="story-txt"><b id="story-t"></b><span>Et toi ? Touche une cage : ton fantôme vient à côté du mien.</span></div></div>
+            <div class="story-sc"><div class="sc" id="sc-p"></div></div><span class="story-lien">🔗 clikme.fr/bergine</span></div>
+          <span class="lbl">L’envoyer à</span>
+          <div class="puces" id="contacts"></div>
+          <button type="button" class="gros" id="envoyer">Envoyer ma vitrine</button>
+          <button type="button" class="fermer" data-ferme>Plus tard</button>
         </section>
         <!-- le bon de promesse -->
         <section class="feuille" id="f-bon">
@@ -469,6 +561,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
         <div class="bloc">
           <h5>Votre vitrine en ce moment<span id="m-vitrine"></span></h5>
           <div class="mini-sc"><div class="sc" id="sc-c"></div></div>
+          <div class="ligne"><span>Venus grâce à un partage</span><span class="droite" id="m-partage">0</span></div>
           <div class="actions">
             <button type="button" class="act" id="merci">💗 Dire merci aux fantômes</button>
             <button type="button" class="act" id="appel">📣 Appeler mes promesses</button>
@@ -509,6 +602,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     <div><b>Jamais « 0 réservation »</b>Le comptoir montre ceux qui ont adoré, promis, réservé ; un matin vide, il montre la semaine.</div>
     <div><b>Une promesse vaut quelque chose</b>Elle donne un bon, elle se voit dans le carnet, et on n’en tient que 3 à la fois.</div>
     <div><b>Tenir parole se voit</b>Le pin du commerce sur son fantôme, sa tournée de Dax, puis sa place attitrée.</div>
+    <div><b>Ça se partage</b>Chacun partage la vidéo avec sa fin à lui : son fantôme dans la vitrine. Un geste, et ses amis le rejoignent.</div>
+    <div><b>Sur Instagram aussi</b>Là, la vidéo ne se clique pas : elle finit sur la vitrine pleine de fantômes et un lien. Une page, sans appli, et les trois cages.</div>
   </div>
 </div>
 
@@ -525,8 +620,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 
   /* ═══ LES DONNÉES DE LA VILLE (simulées) ═══ */
   const LOOKS = ["denim", "fleuri", "rebelle", "soleil", "artiste", "cosy", "curieux", "jardinier", "lecteur", "melomane", "voyageur"];
-  const NOMS = ["Chloé", "Malik", "Jeanne", "Lucas", "Sarah", "Nathan", "Emma", "Paul", "Zoé", "Yanis", "Camille", "Louis", "Manon", "Théo", "Clara", "Hamza", "Lina", "Jules", "Rose", "Sami", "Alice", "Martin", "Nina", "Adam", "Elsa", "Noé", "Iris", "Gabin", "Lou", "Maël", "Anaïs", "Bastien", "Léon", "Mila", "Victor", "Agathe", "Simon", "Ambre", "Robin", "Jade", "Hugo B.", "Margot", "Axel", "Lise", "Tiago", "Louna", "Enzo", "Salomé"];
+  const NOMS = ["Chloé", "Malik", "Jeanne", "Lucas", "Sarah", "Nathan", "Emma", "Paul", "Zoé", "Yanis", "Céline", "Louis", "Manon", "Théo", "Clara", "Hamza", "Lina", "Jules", "Rose", "Sami", "Alice", "Martin", "Nina", "Adam", "Elsa", "Noé", "Iris", "Gabin", "Lou", "Maël", "Anaïs", "Bastien", "Léon", "Mila", "Victor", "Agathe", "Simon", "Ambre", "Robin", "Jade", "Hugo B.", "Margot", "Axel", "Lise", "Tiago", "Louna", "Enzo", "Salomé"];
   const AMIS = [["Tom", "rebelle"], ["Inès", "fleuri"], ["Hugo", "voyageur"]];
+  // ses contacts, qui ne sont pas encore sur ClikMe : ceux à qui il envoie sa vitrine
+  const CONTACTS = [["Camille", "cosy"], ["Maman", "jardinier"], ["Noah", "melomane"]];
   const HEURES = ["12 h 15", "12 h 30", "13 h", "19 h 30", "20 h 15"];
   const img = (look, pose) => `a/g/${look}-${pose}.webp`;
   const POSE = { adore: "debout", promis: "salue", table: "assis" };
@@ -548,7 +645,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       autres: [{ chez: "Maison Lou", quoi: "Un foulard offert dès 40 €", reste: 4 }],
       bon: null, bonsTenus: 0, tournee: 7, badgeParole: false, pins: 0, habitue: 0,
       foule: [], carnet: [], fil: [], semaine: [21, 24, 27, 30, 34, 29], tenues: 4,
-      merci: false, appel: false, vus: new Set(), suiv: 0, promisJour: 0,
+      merci: false, appel: false, vus: new Set(CONTACTS.map((c) => c[0])), suiv: 0, promisJour: 0, amenes: 0, envoyes: new Set(), source: garderMoi && S ? S.source : "app",
     };
     return s;
   }
@@ -563,7 +660,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     S.vus.add(n); return n;
   }
   function ajouter(type, opts = {}) {
-    const f = { id: "f" + (++S.suiv), nom: opts.nom || nouveauNom(), look: opts.look || pick(LOOKS), type, ami: !!opts.ami, d: hasard(0, 2.4).toFixed(2), recent: !!opts.recent, t: Date.now() };
+    const f = { id: "f" + (++S.suiv), nom: opts.nom || nouveauNom(), look: opts.look || pick(LOOKS), type, ami: !!opts.ami, invite: !!opts.invite, d: hasard(0, 2.4).toFixed(2), recent: !!opts.recent, t: Date.now() };
     if (type === "table") { f.heure = opts.heure || pick(HEURES); f.n = opts.n || pick([1, 2, 2, 3, 4]); }
     S.foule.push(f);
     if (type === "promis") S.carnet.unshift({ nom: f.nom, quand: opts.quand || "à l’instant", neuf: !!opts.recent });
@@ -632,20 +729,20 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     const L = [];
     const adore = S.foule.filter((f) => f.type === "adore");
     // les amis devant, puis les derniers arrivés : on ne voit pas tout le monde (le reste : « +N »)
-    adore.sort((a, b) => (b.ami - a.ami) || (b.t - a.t));
+    adore.sort((a, b) => (b.invite - a.invite) || (b.ami - a.ami) || (b.t - a.t));
     const places = RANGS_ADORE.slice();
     let moiPlace = null;
     if (S.choix === "adore") moiPlace = S.premier ? places.shift() : places.splice(6, 1)[0];
     const visibles = adore.slice(0, places.length);
     visibles.forEach((f, k) => L.push({ f, ...places[k], pose: "debout", couche: "calque" }));
     if (moiPlace) L.push({ f: moiF(), ...moiPlace, pose: "debout", couche: "calque", moi: true });
-    const promis = S.foule.filter((f) => f.type === "promis").sort((a, b) => b.t - a.t);
+    const promis = S.foule.filter((f) => f.type === "promis").sort((a, b) => (b.invite - a.invite) || (b.t - a.t));
     const pp = PLACES_PROMIS.slice();
     let moiP = null;
     if (S.choix === "promis") moiP = pp.splice(3, 1)[0];
     promis.slice(0, pp.length).forEach((f, k) => L.push({ f, ...pp[k], pose: "salue", couche: "calque" }));
     if (moiP) L.push({ f: moiF(), ...moiP, pose: "salue", couche: "calque", moi: true });
-    const tables = S.foule.filter((f) => f.type === "table");
+    const tables = S.foule.filter((f) => f.type === "table").sort((a, b) => b.invite - a.invite);
     const sieges = SIEGES.slice();
     let moiS = null;
     if (S.choix === "table") moiS = sieges.splice(1, 1)[0];
@@ -671,12 +768,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
         if (f.recent && !p.moi) { d.classList.add("neuf"); setTimeout(() => d.classList.remove("neuf"), 700); }
       }
       const type = p.pose === "debout" ? "adore" : p.pose === "salue" ? "promis" : "table";
-      d.className = "fg " + type + (f.ami ? " ami" : "") + (p.moi ? " moi" : "") + (f.recent ? " recent" : "") + (d.classList.contains("neuf") ? " neuf" : "") + (d.classList.contains("cache") ? " cache" : "");
+      d.className = "fg " + type + (f.ami ? " ami" : "") + (f.invite ? " invite" : "") + (p.moi ? " moi" : "") + (f.recent ? " recent" : "") + (d.classList.contains("neuf") ? " neuf" : "") + (d.classList.contains("cache") ? " cache" : "");
       d.style.left = p.x + "%"; d.style.top = p.y + "%"; d.style.setProperty("--s", p.s); d.style.setProperty("--d", f.d + "s");
       d.style.zIndex = p.couche === "calque" ? String(100 + Math.round(p.y)) : String(10 + Math.round(p.y / 10));
       const im = $("img", d), src = img(f.look, p.pose);
       if (im.getAttribute("src") !== src) im.setAttribute("src", src);
-      $(".nom", d).textContent = p.moi ? S.moi.nom : f.nom;
+      $(".nom", d).textContent = p.moi ? S.moi.nom : f.invite ? "💌 " + f.nom : f.nom;
       // ce que porte son fantôme : son rang du matin, le pin du commerce, sa réservation
       d.querySelectorAll(".rang,.pin,.table-tag").forEach((x) => x.remove());
       if (p.moi && S.premier && S.choix === "adore") d.insertAdjacentHTML("beforeend", '<span class="rang">1er ce matin</span>');
@@ -721,6 +818,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   function rendreHabitant() {
     $$("[data-pose]").forEach((im) => { im.src = img(S.moi.look, im.dataset.pose); });
     $$(".f3, #mini3 button").forEach((b) => b.classList.toggle("on", b.dataset.choix === S.choix));
+    $$(".f3").forEach((b) => { if (b.dataset.choix !== S.choix) b.classList.remove("ouverte"); });
+    $("#partager").hidden = !S.choix;
+    $("#partager-s").textContent = S.amenes ? "Votre vitrine a déjà fait venir " + S.amenes + (S.amenes > 1 ? " fantômes" : " fantôme") + ". Envoyez-la encore." : "La vidéo de Jean-Marie, qui finit sur votre fantôme. Vos amis vous rejoignent en un geste.";
+    if (S.source === "insta") { rendreScene(scI); $("#insta-t").textContent = "Déjà " + (compte("adore") + compte("promis") + compte("table")) + " Dacquois devant la vitrine"; }
     const amis = S.foule.filter((f) => f.ami);
     $("#v-tetes").innerHTML = amis.map((f) => '<img src="' + img(f.look, "debout") + '" alt="">').join("");
     const nA = compte("adore");
@@ -743,7 +844,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     if (S.pins) d.insertAdjacentHTML("beforeend", '<span class="pin">' + ICONE_PIN + "</span>");
     solo.appendChild(d);
     $("#maison-nom").textContent = "Le fantôme de " + S.moi.nom;
-    $("#maison-badges").innerHTML = '<span class="' + (S.badgeParole ? "gagne" : "") + '">Parole de fantôme</span><span class="' + (S.pins ? "gagne" : "") + '">Pin de Chez Bergine</span>';
+    $("#maison-badges").innerHTML = '<span class="' + (S.badgeParole ? "gagne" : "") + '">Parole de fantôme</span><span class="' + (S.pins ? "gagne" : "") + '">Pin de Chez Bergine</span><span class="' + (S.amenes ? "gagne" : "") + '">Ambassadeur' + (S.amenes ? " · " + S.amenes : "") + "</span>";
     const lignes = [];
     if (S.bon) lignes.push('<div class="bon' + (S.bon.tenu ? " tenu" : "") + '"><img src="a/magret.jpg" alt=""><div><small>Chez Bergine · promesse</small><b>' + S.bon.quoi + "</b><span>" + (S.bon.tenu ? "Tenue aujourd’hui" : "Valable encore " + S.bon.jours + " jours") + "</span></div></div>");
     S.autres.forEach((a) => lignes.push('<div class="bon"><img src="a/g/fleuri-salue.webp" alt="" style="object-fit:contain;background:#F1E4D2"><div><small>' + a.chez + " · promesse</small><b>" + a.quoi + "</b><span>Valable encore " + a.reste + " jours</span></div></div>"));
@@ -815,6 +916,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     S._heure = S._heure || "12 h 30"; S._n = S._n || 2;
     $("#heures").innerHTML = HEURES.map((h) => '<button type="button" class="' + (h === S._heure ? "on" : "") + '" data-h="' + h + '">' + h + "</button>").join("");
     $("#couverts").innerHTML = [1, 2, 3, 4].map((n) => '<button type="button" class="' + (n === S._n ? "on" : "") + '" data-n="' + n + '">' + n + "</button>").join("");
+    S._avec = S._avec || "";
+    $("#avec").innerHTML = [["", "Personne"], ...CONTACTS.map((c) => [c[0], "+ " + c[0]])].map(([v, l]) => '<button type="button" class="' + (v === S._avec ? "on" : "") + '" data-avec="' + v + '">' + l + "</button>").join("");
     vue("h-scene"); feuille("f-table");
   }
   function remplirBon() {
@@ -838,6 +941,66 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     fete(S.moi.nom + " a tenu sa promesse !", "Promis " + (S.jour > 1 ? "hier" : "ce matin") + " · bon « café offert » montré au comptoir.");
     evenement("a tenu sa promesse", { nom: S.moi.nom, look: S.moi.look, moi: true });
     rendreTout();
+  }
+
+  /* ═══ PARTAGER SA VITRINE : ceux qui la reçoivent le rejoignent ═══ */
+  const scP = $("#sc-p"), scI = $("#sc-i");
+  function ouvrirPartage() {
+    rendreScene(scP);
+    $("#story-t").textContent = S.moi.nom + " et " + (compte("adore") + compte("promis") + compte("table") - 1) + " Dacquois sont devant Chez Bergine.";
+    S._dest = S._dest || new Set(CONTACTS.map((c) => c[0]).filter((n) => !S.envoyes.has(n)));
+    $("#contacts").innerHTML = [...CONTACTS.map((c) => c[0]), "Ma story Instagram"].map((n) => '<button type="button" class="' + (S._dest.has(n) ? "choisi" : "") + '" data-dest="' + n + '"' + (S.envoyes.has(n) ? " disabled" : "") + ">" + (S.envoyes.has(n) ? "✓ " : "") + n + "</button>").join("");
+    feuille("f-partage");
+  }
+  function rejoindre(nom, look, type, delai, texte) {
+    setTimeout(() => {
+      const f = ajouter(type, { nom, look, invite: true, recent: true, heure: S.table && S.table.heure, n: 1 });
+      S.amenes++;
+      setTimeout(() => { f.recent = false; rendreTout(); }, 2600);
+      evenement((type === "promis" ? "a promis de venir" : type === "table" ? "s’assoit avec " + S.moi.nom : "a adoré votre magret") + " · venue par la vitrine de " + S.moi.nom, f);
+      SON.pose(); rendreTout();
+      if (type === "adore") coeurs(scH, 3);
+      notifier(img(look, type === "table" ? "assis" : "debout"), nom, texte, "Son fantôme est à côté du vôtre");
+    }, delai);
+  }
+  function envoyer() {
+    const dest = [...(S._dest || [])].filter((n) => !S.envoyes.has(n));
+    if (!dest.length) { feuille(null); return; }
+    dest.forEach((n) => S.envoyes.add(n)); S._dest = new Set();
+    feuille(null); ac(); SON.pop();
+    const amis = dest.filter((n) => n !== "Ma story Instagram");
+    notifier(img(S.moi.look, "debout"), "Votre vitrine est partie", (amis.length ? "Chez " + amis.join(", ") : "") + (dest.includes("Ma story Instagram") ? (amis.length ? " et " : "") + "en story" : "") + ".", "Ils la reçoivent avec la fin à votre nom");
+    let delai = 3200;
+    for (const n of amis) {
+      const [, look] = CONTACTS.find((c) => c[0] === n);
+      if (n === "Noah") continue; // tout le monde ne répond pas
+      const type = n === "Maman" ? "promis" : (S.choix === "table" ? "adore" : S.choix || "adore");
+      rejoindre(n, look, type, delai, n === "Maman" ? "a ouvert votre vitrine… et promet de passer chez Bergine 💛" : "a ouvert votre vitrine… et son fantôme vous rejoint !");
+      delai += 3800;
+    }
+    if (dest.includes("Ma story Instagram")) for (let k = 0; k < 3; k++) rejoindre(nouveauNom(), pick(LOOKS), "adore", delai + k * 1800, "a vu votre story et vous rejoint devant Chez Bergine.");
+  }
+  function inviterATable(nom) {
+    const [, look] = CONTACTS.find((c) => c[0] === nom);
+    S._avec = ""; S.envoyes.add(nom);
+    setTimeout(() => notifier(img(look, "debout"), nom, "a reçu votre invitation : « " + S.moi.nom + " t’a gardé une place chez Bergine à " + S.table.heure + " ».", "Elle a la vidéo, et une cage à toucher"), 1600);
+    rejoindre(nom, look, "table", 5200, "a accepté : son fantôme s’assoit à côté du vôtre, à " + (S.table ? S.table.heure : "midi") + ".");
+  }
+
+  /* ═══ ARRIVER DEPUIS INSTAGRAM ═══ */
+  function source(s) {
+    S.source = s;
+    $$(".source button").forEach((b) => b.classList.toggle("on", b.dataset.source === s));
+    $("#ecran-h").classList.remove("web");
+    $("#barre-app").textContent = s === "insta" ? "Instagram" : "ClikMe";
+    feuille(null); $("#notif").classList.remove("on");
+    if (s === "insta") { rendreScene(scI); rendreHabitant(); vue("h-insta"); }
+    else vue(S.pret ? "h-video" : "h-onb");
+  }
+  function ouvrirLien() {
+    ac(); SON.pop(); $("#notif").classList.remove("on");
+    $("#ecran-h").classList.add("web"); $("#barre-app").textContent = "Safari";
+    vue(S.pret ? "h-video" : "h-onb");
   }
 
   /* ═══ CE QUE VOIT LE COMMERÇANT ═══ */
@@ -878,6 +1041,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     const tete = 62 + S.jour * 3, ici = totalJour();
     $("#direct").textContent = ici > tete ? "1er de Dax 🎉" : "2e · encore " + (tete - ici + 1) + " fantômes pour passer 1er";
     $("#p-tenues").textContent = S.tenues + " sur 12";
+    $("#m-partage").textContent = S.amenes ? S.amenes + " · dont " + S.amenes + " par " + S.moi.nom : "0";
     $("#merci").classList.toggle("fait", S.merci); $("#merci").textContent = S.merci ? "💗 Merci envoyé" : "💗 Dire merci aux " + a + " fantômes";
     $("#appel").classList.toggle("fait", S.appel); $("#appel").textContent = S.appel ? "📣 Appel envoyé · demain" : "📣 Appeler mes " + enCours + " promesses";
   }
@@ -898,6 +1062,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   /* ═══ LES NOTIFICATIONS, ET LE TÉLÉPHONE QU'ON NE VOIT PAS ═══ */
   function notifier(icone, titre, texte, sous) {
     const n = $("#notif");
+    n.dataset.lien = "";
     $("#notif-img").src = icone; $("#notif-t").textContent = titre; $("#notif-p").textContent = texte; $("#notif-s").textContent = sous || "";
     n.classList.remove("on"); void n.offsetWidth; n.classList.add("on"); SON.notif();
     signaler("h", titre + " : " + texte);
@@ -950,7 +1115,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     S.carnet.forEach((c) => { if (!c.tenu) c.quand = c.quand === "à l’instant" ? "hier" : c.quand; });
     S.carnet = S.carnet.filter((c) => !c.tenu);
     // ses amis reviennent vite ; la vitrine se remplit
-    rendreTout(); vue("h-video");
+    rendreTout(); $("#ecran-h").classList.remove("web"); vue(S.source === "insta" ? "h-insta" : "h-video");
     notifier("a/chef.jpg", "Chez Bergine", "Nouvelle vidéo de Jean-Marie ce matin. La vitrine est vide : soyez le premier devant !", "Le Direct · 8 h 02");
     setTimeout(() => { const [nom, look] = AMIS[0]; ajouter("adore", { nom, look, ami: true, recent: true }); evenement("a adoré votre magret", { nom, look }); rendreTout(); SON.arrive(); }, 4200);
     planifier();
@@ -970,19 +1135,32 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     v.addEventListener("ended", () => { $("#h-video").classList.remove("joue"); v.load(); v.poster = "a/affiche.jpg"; });
     v.addEventListener("click", () => { if (!v.paused) { v.pause(); $("#h-video").classList.remove("joue"); } });
     // les trois fantômes
-    $$(".f3").forEach((b) => b.addEventListener("click", () => choisir(b.dataset.choix, b)));
+    $$(".f3").forEach((b) => b.addEventListener("click", () => {
+      if (b.classList.contains("on")) { vue("h-scene"); return; }
+      ac(); b.classList.add("ouverte"); bip(1320, .06, "triangle", .04);
+      setTimeout(() => choisir(b.dataset.choix, b), reduit ? 0 : 280);
+    }));
+    $("#partager").addEventListener("click", ouvrirPartage);
+    $("#contacts").addEventListener("click", (e) => { const b = e.target.closest("[data-dest]"); if (!b || b.disabled) return; const n = b.dataset.dest; S._dest.has(n) ? S._dest.delete(n) : S._dest.add(n); b.classList.toggle("choisi", S._dest.has(n)); });
+    $("#envoyer").addEventListener("click", envoyer);
+    $$(".source button").forEach((b) => b.addEventListener("click", () => source(b.dataset.source)));
+    $("#insta-lien").addEventListener("click", ouvrirLien);
+    $("#insta-fantome").addEventListener("click", () => { ac(); notifier("a/chef.jpg", "chezbergine · message", "👻 Ta place devant la vitrine t’attend : clikme.fr/bergine", "Réponse automatique à votre 👻 · touchez pour ouvrir"); $("#notif").dataset.lien = "1"; });
     $("#mini3").addEventListener("click", (e) => { const b = e.target.closest("[data-choix]"); if (!b) return; if (b.dataset.choix === "table") { ouvrirTable(); return; } choisir(b.dataset.choix, S.choix ? scH._fg.get("moi") : $('.f3[data-choix="' + b.dataset.choix + '"]')); });
     $("#vers-video").addEventListener("click", () => vue("h-video"));
     $("#vers-maison").addEventListener("click", () => { rendreMaison(); feuille("f-maison"); });
     $("#ecran-h").addEventListener("click", (e) => {
       if (e.target.closest("[data-ferme]") || e.target.id === "voile") feuille(null);
       if (e.target.closest("[data-maison]")) { rendreMaison(); feuille("f-maison"); }
-      if (e.target.closest("#notif")) $("#notif").classList.remove("on");
+      if (e.target.closest("#notif")) { $("#notif").classList.remove("on"); if ($("#notif").dataset.lien) { $("#notif").dataset.lien = ""; ouvrirLien(); } }
     });
     $("#heures").addEventListener("click", (e) => { const b = e.target.closest("[data-h]"); if (!b) return; S._heure = b.dataset.h; $$("#heures button").forEach((x) => x.classList.toggle("on", x === b)); });
     $("#couverts").addEventListener("click", (e) => { const b = e.target.closest("[data-n]"); if (!b) return; S._n = +b.dataset.n; $$("#couverts button").forEach((x) => x.classList.toggle("on", x === b)); });
+    $("#avec").addEventListener("click", (e) => { const b = e.target.closest("[data-avec]"); if (!b) return; S._avec = b.dataset.avec; $$("#avec button").forEach((x) => x.classList.toggle("on", x === b));
+      if (S._avec && S._n < 2) { S._n = 2; $$("#couverts button").forEach((x) => x.classList.toggle("on", x.dataset.n === "2")); } });
     $("#table-ok").addEventListener("click", () => {
       S.table = { heure: S._heure, n: S._n };
+      if (S._avec) inviterATable(S._avec);
       feuille(null);
       if (S.choix === "table") { rendreTout(); return; }
       choisir("table", S.choix ? scH._fg.get("moi") : $(".f3.table"));
@@ -1013,7 +1191,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     $("#fete").addEventListener("click", () => $("#fete").classList.remove("on"));
     // la page
     $("#lendemain").addEventListener("click", () => { ac(); lendemain(); if (estEtroit()) montrerCol("h"); });
-    $("#zero").addEventListener("click", () => { clearTimeout(minuterie); S = etatInitial(true); for (const sc of [scH, scC]) construireScene(sc, sc === scC); peupler(); rendreTout(); vue(S.pret ? "h-video" : "h-onb"); feuille(null); $("#act-note").textContent = "Un appel par jour au plus, et seulement au carnet : jamais à toute la ville."; planifier(); });
+    $("#zero").addEventListener("click", () => { clearTimeout(minuterie); S = etatInitial(true); for (const sc of [scH, scC, scP, scI]) construireScene(sc, sc !== scH); peupler(); rendreTout(); source(S.source); feuille(null); $("#act-note").textContent = "Un appel par jour au plus, et seulement au carnet : jamais à toute la ville."; planifier(); });
     $("#son").addEventListener("click", () => { sonOn = !sonOn; $("#son span").textContent = "Son : " + (sonOn ? "oui" : "non"); if (sonOn) { ac(); SON.pop(); } });
     $$(".onglets button").forEach((b) => b.addEventListener("click", () => montrerCol(b.dataset.col)));
     $("#toast-voir").addEventListener("click", () => montrerCol($("#toast").dataset.col || "c"));
@@ -1021,7 +1199,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 
   /* ═══ DÉPART ═══ */
   S = etatInitial(false);
-  construireScene(scH, false); construireScene(scC, true);
+  construireScene(scH, false); construireScene(scC, true); construireScene(scP, true); construireScene(scI, true);
   peupler();
   brancher();
   $$("#looks button").forEach((b) => b.classList.toggle("on", b.dataset.look === S.moi.look));
