@@ -40,7 +40,7 @@ python3 -I $D/outils/tour-gestes.py $D      # + les 4 photos en un seul appui
 python3 -I $D/outils/tour-depenses.py $D    # + « Moins de dépenses » : la question du métier, le coût réel à l'offre
 python3 -I $D/outils/tour-sien.py $D        # + son nom (« Pour qui est cette démo ? ») et son temps (le ticket de « Plus de clients »)
 python3 -I $D/outils/tour-dax.py $D         # + sous le projecteur, combien de Dacquois cherchent ce qu'il vend (sauf le restaurant)
-python3 -I $D/outils/tour-trois.py $D       # + « Les trois fantômes » et « Votre vitrine » (restaurant, vêtements, coiffure)
+python3 -I $D/outils/tour-trois.py $D       # + « Les trois fantômes » et « Un jour creux » (restaurant, vêtements, coiffure)
 ```
 
 Les neuf scripts se lancent **dans cet ordre**. Le tour lunetier a d'abord sa propre base, tirée de celle de la
@@ -77,17 +77,28 @@ Le lunetier les a dans sa base (`tour-lunettes.py`), les quatre autres par `tour
   et la troisième du métier (« J'y vais », « De côté », « Aujourd'hui »). Le fantôme de Camille s'envole se placer dans la
   vitrine du commerce : devant, à la porte, ou dedans. Puis le carnet, où un prénom s'écrit, et le bon de promesse.
   « Ça me tente » mène à la demande (table, mise de côté, rendez-vous).
-- **Son comptoir, après WhatsApp** : sa vitrine se remplit, avec les trois compteurs, le carnet, puis « 📣 Appeler mes
-  promesses » (le message ne part qu'aux personnes du carnet). Viennent ensuite le bon scanné (« venue grâce à votre vidéo »),
-  le petit mot (💛 et le café offert) et le partage, où des amis arrivent sans appli. Le ticket de « Plus de clients »
-  suit, avec une ligne de plus : sa vitrine. Chiffres et cadeaux : exemples.
+- **Son comptoir, après WhatsApp : un jour creux.** La première version montrait trop de choses (« un peu long, et on a
+  du mal à voir la plus-value »). Il n'y a plus qu'une histoire, celle qui rapporte :
+  1. Mardi, 11 h, la salle est à moitié vide.
+  2. Sur Instagram, des j'aime et personne à prévenir ; ici, la liste de ceux qui ont promis.
+  3. « 📣 Appeler mes promesses » : le message ne part qu'à elles.
+  4. Les réponses arrivent une à une et la salle se remplit (la jauge monte).
+  5. Le bon est scanné : « venue grâce à votre vidéo ».
+  6. « Un j'aime s'oublie. Une promesse, vous l'encaissez le jour où vous en avez besoin. »
 
-Les voix sont dans `recu/trois/` : `trois-1`, `trois-4` et `vitrine-1` à `-6` sont communes. `trois-2-<métier>` est suivie de
-« Touchez une cage. », pris à la fin de la version du restaurant. `trois-3` n'est dite en entier (« …devant, à la porte, ou
-à table. ») qu'au restaurant. Ailleurs, elle s'arrête à « …dans votre vitrine. », jusqu'à ce qu'on pose
-`recu/trois/trois-3-vetements.mp3` (« …ou en cabine. ») ou `trois-3-coiffure.mp3` (« …ou dans le fauteuil. »). Les
-images sont copiées dans chaque tour : les fantômes des habitants (`tf/`), l'intérieur (`tf-interieur.webp`) et son
-fantôme qui salue (`tf-hote.webp`).
+  Le ticket de « Plus de clients » suit, avec une ligne de plus : « +4 tables mardi midi » (« +4 clientes », « +4
+  rendez-vous »). Chiffres et cadeaux : exemples. Le cadeau de promesse, c'est le commerçant qui le choisit.
+
+Les voix sont dans `recu/trois/`. Communes : `trois-1`, `trois-4`, `creux-2`, `vitrine-3`, `vitrine-4` et `creux-3`. Par
+métier : `creux-1-<métier>` (« Mardi, 11 h… ») et `trois-2-<métier>`, suivie de « Touchez une cage. », pris à la fin de la
+version du restaurant. Ne servent plus : `trois-3` (les trois places), `vitrine-1`, `-2`, `-5` et `-6` (la vitrine qui se
+remplit, le petit mot, le partage). Les images sont copiées dans chaque tour : les fantômes des habitants (`tf/`),
+l'intérieur (`tf-interieur.webp`) et son fantôme qui salue (`tf-hote.webp`).
+
+**L'intro** : « Qui a le temps de filmer, de monter, de publier ? » montre une quatrième tuile, « Animer la communauté ».
+Elle s'allume juste après « publier », car la voix ne la dit pas encore. Dans « Et ça tombe plutôt bien… »
+(`intro-4b`), le début est prononcé très vite dans l'enregistrement. Le « ding » de la phrase d'avant tombait dessus ;
+il est maintenant joué avant, et la pause entre les deux phrases est plus longue.
 
 Pour une nouvelle voix de l'intro : remplacer `voix-intro/court/<nom>.mp3`, mettre son texte dans
 `outils/mesurer-intro2.py` (et dans `tour-intro3.py`), lancer `python3 -I $D/outils/mesurer-intro2.py $D`,
