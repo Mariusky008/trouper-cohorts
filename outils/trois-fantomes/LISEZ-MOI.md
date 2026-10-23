@@ -19,16 +19,31 @@ la scène du commerce (la cage reste vide, cochée) :
   demain, ce qui reste privé ;
 - **« Le lendemain matin »** : la vitrine se vide, et les premiers arrivés ont le premier rang.
 
+## Un petit mot au chef
+
+L'habitant écrit un petit mot à Jean-Marie (un par jour), ou en choisit un dans la liste. Jean-Marie les lit
+tous au comptoir, dans « Vos petits mots » :
+
+- **💛 Coup de cœur** : le mot passe dans sa vitrine. Il s'écrit à l'ardoise (« Le coup de cœur de
+  Jean-Marie », sous la vitrine) et le fantôme de son auteur porte un 💛.
+- **🎁 Offrir…** : en plus, il offre un petit quelque chose (le café, le dessert, l'apéritif : exemples). L'habitant
+  reçoit son mot de Jean-Marie (« Votre mot m'a fait chaud au cœur. Le dessert est pour moi. ») et un bon dans Ma
+  Maison, avec le badge « Coup de cœur du chef ».
+
+La modération, c'est lui : un mot écrit ne se voit dans la vitrine qu'après son 💛. Un mot choisi dans la liste
+s'affiche tout de suite (il est gentil par construction). Offrir reste une surprise, à son idée : ce n'est pas
+un concours, rien n'est promis, et le comptoir montre ce qu'il a offert ce mois-ci. Hier, Rose a eu le café : l'ardoise
+le dit, pour donner envie d'écrire. D'autres habitants écrivent aussi (simulés).
+
 ## Dans la vitrine, tout se touche
 
 - **Chaque fantôme** : on le touche, une bulle dit son prénom, son geste et quand (« 💗 a adoré · il y a 24 min »,
-  « 🍽️ vient à 12 h 30 · à 2 ») et **son petit mot** (« La meilleure garbure de Dax »). Les mots se choisissent
-  dans une liste par geste, ils ne s'écrivent pas : la vitrine ne dit que du gentil, sans modération. Jean-Marie
-  les lit dans son fil, au comptoir.
+  « 🍽️ vient à 12 h 30 · à 2 ») et son petit mot : celui de la liste, ou celui qu'il a écrit au chef s'il a eu
+  son 💛 (avec, le cas échéant, « 🎁 Jean-Marie lui a offert le dessert »). Jean-Marie les lit dans son fil.
 - **👋 Coucou** : le fantôme touché se retourne et salue ; un ami répond toujours (« On se retrouve chez Bergine
   ce midi ? »), un inconnu souvent. Le comptoir compte les coucous échangés devant sa vitrine.
-- **Son propre fantôme** : il saute et dit son mot ; « Changer son mot » ouvre la liste. La première fois, sa
-  bulle s'ouvre seule et apprend que tout se touche.
+- **Son propre fantôme** : il saute et dit son mot ; tant qu'il n'a rien écrit, « Écrire à Jean-Marie ». La
+  première fois, sa bulle s'ouvre seule pour le proposer.
 - **Toc-toc** : toucher la porte la fait trembler, le fantôme de Jean-Marie sort et dit ce que Jean-Marie a écrit
   au comptoir (« Plus que 6 magrets ce midi ! ») : l'info du moment, qui donne envie d'y aller maintenant. Il voit
   combien ont frappé.
