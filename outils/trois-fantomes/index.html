@@ -325,7 +325,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 @keyframes tombe{to{transform:translateY(560px) rotate(540deg);opacity:.2}}
 
 /* le message en bas de page (un seul téléphone à l'écran) */
-.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:1000;max-width:min(420px,calc(100% - 32px));transform:translate(-50%,150%);display:flex;align-items:center;gap:10px;padding:10px 10px 10px 16px;border-radius:16px;background:#2B1C16;border:1px solid var(--trait);box-shadow:0 14px 30px -10px rgba(0,0,0,.8);font-size:13px;transition:transform .4s cubic-bezier(.2,1.2,.3,1)}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:1000;width:max-content;max-width:min(420px,calc(100% - 32px));transform:translate(-50%,150%);display:flex;align-items:center;gap:10px;padding:10px 10px 10px 16px;border-radius:16px;background:#2B1C16;border:1px solid var(--trait);box-shadow:0 14px 30px -10px rgba(0,0,0,.8);font-size:13px;transition:transform .4s cubic-bezier(.2,1.2,.3,1)}
 .toast.on{transform:translate(-50%,0)}
 .toast button{flex:none;height:34px;padding:0 14px;border-radius:999px;background:var(--rose);color:#fff;font-weight:800;font-size:12.5px}
 
@@ -424,6 +424,37 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .bravo .gros,.bravo .fermer{text-align:center}
 .ligne small{display:block;font-size:11px;color:var(--gris)}
 #m-dore,#m-toc{white-space:nowrap}
+/* UN PETIT MOT AU CHEF : il lit tout ; son 💛 l'affiche à l'ardoise ; parfois il offre */
+.fg.chouchou .nom{display:block;background:#FFE08A;color:#5A3A00}
+.bf-tag.or{background:#FFE08A;color:#5A3A00}
+.bf-act:empty{display:none}
+.ardoise{padding:10px 12px;border-radius:12px;background:radial-gradient(120% 90% at 30% 20%,#2F3A33,#1B221E);border:5px solid #6B4A2B;box-shadow:inset 0 0 18px rgba(0,0,0,.5),0 6px 14px -8px rgba(0,0,0,.8);color:#F4F1E8;display:flex;flex-direction:column;gap:2px}
+.ardoise b{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#FFE08A}
+.ardoise p{margin:0;font:700 19px/1.1 var(--f-main);color:#fff}
+.ardoise small{font-size:11px;color:rgba(244,241,232,.7)}
+.ard-btn{align-self:flex-start;margin-top:5px;height:30px;padding:0 12px;border-radius:999px;background:#FFE08A;color:#3A2A00;font-weight:800;font-size:12px}
+.mot-txt{min-height:70px;border-radius:14px;border:1px solid var(--trait);background:var(--nuit-2);color:var(--creme);padding:10px 12px;font:700 19px/1.2 var(--f-main);resize:none}
+.lettres{display:flex;flex-direction:column;gap:8px}
+.lettre{display:flex;gap:10px;padding:10px;border-radius:14px;background:var(--papier);color:var(--encre)}
+.lettre.moi{box-shadow:0 0 0 2.5px var(--rose)}
+.lettre.neuf{animation:entre .4s}
+.lettre img{width:34px;height:38px;object-fit:contain;flex:none}
+.l-corps{min-width:0;flex:1}
+.l-corps b{font-size:13px}
+.l-corps small{margin-left:6px;font-size:10.5px;color:#7A6352}
+.l-corps p{margin:2px 0 6px;font:700 17px/1.12 var(--f-main);color:#3A2416}
+.l-act,.l-cadeaux{display:flex;gap:6px;flex-wrap:wrap}
+.l-act button,.l-cadeaux button{height:30px;padding:0 9px;border-radius:999px;font-weight:800;font-size:11.5px;background:var(--encre);color:var(--papier)}
+.l-act button[data-coeur]{background:#FFE08A;color:#5A3A00}
+.l-cadeaux{margin-top:6px}
+.l-cadeaux button{background:#fff;color:var(--encre);border:1.5px solid rgba(42,26,16,.25)}
+.l-fait{display:inline-block;font-size:11.5px;font-weight:800;color:#8A5A00}
+.cadeau-chef{align-self:stretch;display:flex;gap:10px;align-items:flex-start;text-align:left;padding:12px;border-radius:16px;background:var(--nuit-2)}
+.cadeau-chef img{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none;border:2px solid #fff}
+.cadeau-chef p{margin:0;font:700 19px/1.15 var(--f-main)}
+.cadeau-chef small{display:block;margin-top:4px;font:600 11px var(--f-ui);color:var(--gris)}
+.bon.bon-chef{background:linear-gradient(135deg,#FFF6D6,#FFE08A)}
+.bon.bon-chef::before,.bon.bon-chef::after{background:#1C120E}
 .champ{width:100%;height:42px;border-radius:12px;border:1px solid var(--trait);background:var(--nuit);color:var(--creme);padding:0 12px;font:700 13px var(--f-ui)}
 .fil i{font:700 14.5px/1 var(--f-main);color:var(--or)}
 
@@ -516,6 +547,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
           <div class="sc-cadre"><div class="sc" id="sc-h"></div></div>
           <div class="sc-bas">
             <div class="statut" id="statut"></div>
+            <div class="ardoise" id="ardoise" hidden><b>💛 Le coup de cœur de Jean-Marie</b><p id="ard-mot"></p><small id="ard-qui"></small><button type="button" class="ard-btn" id="ard-ecrire">✎ Lui écrire un petit mot</button></div>
             <button type="button" class="partager" id="partager" hidden><span><b>📣 Partager ma vitrine</b><small id="partager-s">La vidéo de Jean-Marie, qui finit sur votre fantôme. Vos amis vous rejoignent en un geste.</small></span><i>›</i></button>
             <div class="mini3" id="mini3">
               <button type="button" data-choix="adore">💗 J’adore</button>
@@ -592,10 +624,23 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
         </section>
         <!-- son petit mot, lu par ceux qui touchent son fantôme -->
         <section class="feuille" id="f-mot">
-          <h4>Ce que dit votre fantôme</h4>
-          <p class="sous">Ceux qui le touchent le lisent, et Jean-Marie aussi, au comptoir. Les mots se choisissent, ils ne s’écrivent pas : la vitrine ne dit que du gentil.</p>
+          <h4>Votre petit mot à Jean-Marie</h4>
+          <p class="sous">Il les lit tous. Quand un mot lui fait chaud au cœur, il l’affiche dans sa vitrine, et parfois il offre un petit quelque chose. Une surprise, pas un concours.</p>
+          <textarea class="mot-txt" id="mot-txt" maxlength="90" placeholder="Écrivez-lui ce que vous voulez…"></textarea>
+          <span class="lbl">Ou choisissez-en un</span>
           <div class="puces" id="mots"></div>
-          <button type="button" class="fermer" data-ferme>Fermer</button>
+          <p class="note">Un mot choisi s’affiche tout de suite sur votre fantôme. Un mot écrit, Jean-Marie le lit d’abord : il ne passe dans la vitrine qu’avec son 💛. Un mot par jour.</p>
+          <button type="button" class="gros" id="mot-ok">Envoyer à Jean-Marie 💌</button>
+          <button type="button" class="fermer" data-ferme>Plus tard</button>
+        </section>
+        <!-- le coup de cœur du chef, avec son cadeau -->
+        <section class="feuille bravo" id="f-cadeau">
+          <h4>Un coup de cœur du chef 💛</h4>
+          <p class="sous" id="cadeau-mot"></p>
+          <div class="cadeau-chef"><img src="a/chef.jpg" alt=""><p><span id="cadeau-dit"></span><small>Jean-Marie, Chez Bergine</small></p></div>
+          <div class="bon bon-chef" id="cadeau-bon"></div>
+          <button type="button" class="gros" data-maison>Le ranger dans Ma Maison</button>
+          <button type="button" class="fermer" data-ferme>Voir la vitrine</button>
         </section>
         <!-- le fantôme doré, trouvé -->
         <section class="feuille bravo" id="f-dore">
@@ -627,6 +672,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
           </div>
           <p class="phrase" id="m-phrase"></p>
           <div class="fil" id="fil"></div>
+        </div>
+        <div class="bloc" id="bloc-lettres">
+          <h5>Vos petits mots<span id="m-lettres"></span></h5>
+          <div class="lettres" id="lettres"></div>
+          <div class="ligne"><span>🎁 Offerts ce mois-ci</span><span class="droite" id="m-offerts"></span></div>
+          <p class="note">Les mots écrits arrivent ici d’abord : rien ne passe dans votre vitrine sans votre 💛. Offrir reste votre surprise, quand vous le voulez (cadeaux en exemple).</p>
         </div>
         <div class="bloc">
           <h5>Votre vitrine en ce moment<span id="m-vitrine"></span></h5>
@@ -682,6 +733,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     <div><b>Une promesse vaut quelque chose</b>Elle donne un bon, elle se voit dans le carnet, et on n’en tient que 3 à la fois.</div>
     <div><b>Tenir parole se voit</b>Le pin du commerce sur son fantôme, sa tournée de Dax, puis sa place attitrée.</div>
     <div><b>Ça se partage</b>Chacun partage la vidéo avec sa fin à lui : son fantôme dans la vitrine. Un geste, et ses amis le rejoignent.</div>
+    <div><b>Un petit mot au chef</b>On lui écrit ; il lit tout. Les mots qui lui font chaud au cœur passent dans sa vitrine, et parfois il offre un café ou un dessert. Une surprise, pas un concours.</div>
     <div><b>Tout se touche</b>Chaque fantôme dit son petit mot (choisi, jamais écrit) et reçoit un coucou ; la porte répond ; chaque matin, un fantôme doré se cache, et le trouver fait gagner un petit cadeau.</div>
     <div><b>Sur Instagram aussi</b>Là, la vidéo ne se clique pas : elle finit sur la vitrine pleine de fantômes et un lien. Une page, sans appli, et les trois cages.</div>
   </div>
@@ -722,6 +774,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     promis: ["Promis, je passe jeudi", "Je viens avec ma mère", "Mon anniversaire, ce sera ici", "Je garde mon bon pour samedi"],
     table: ["À tout à l’heure, Jean-Marie !", "On arrive affamés", "Le magret, d’office", "Gardez-moi une part de gâteau"],
   };
+  // LES MOTS ÉCRITS au chef (simulés) : il les lit d'abord ; son 💛 les affiche ; parfois il offre
+  const MOTS_LIBRES = ["Votre magret m’a rappelé celui de ma grand-mère", "On a fêté nos 10 ans de mariage chez vous, merci", "Mon fils ne veut plus manger ailleurs le dimanche",
+    "Merci d’avoir gardé une table pour mon père mardi", "La garbure de l’hiver dernier, je m’en souviens encore", "Premier resto de ma fille : elle a tout fini !",
+    "Votre sourire au comptoir, ça vaut le détour", "Vous êtes la raison pour laquelle je déjeune à Dax", "Le seul endroit où mon mari dit merci au chef"];
+  const CADEAUX = [{ e: "☕", n: "Le café" }, { e: "🍮", n: "Le dessert" }, { e: "🥂", n: "L’apéritif" }];
+  const minus = (s) => s.charAt(0).toLowerCase() + s.slice(1);
   // LE FANTÔME DORÉ : chaque matin, Jean-Marie le cache ailleurs (x, y comme les fantômes ; « salle » : en %
   // de la vitrine) ; les cinq premiers qui le trouvent gagnent son petit cadeau
   const CACHETTES = [
@@ -743,6 +801,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       foule: [], carnet: [], fil: [], semaine: [21, 24, 27, 30, 34, 29], tenues: 4,
       merci: false, appel: false, vus: new Set(CONTACTS.map((c) => c[0])), suiv: 0, promisJour: 0, amenes: 0, envoyes: new Set(), source: garderMoi && S ? S.source : "app",
       mot: null, tChoix: 0, astuceVue: false, dore: doreDuJour(1, 2), ors: 0, toc: 9, coucous: 14, porte: garderMoi && S ? S.porte : "Plus que 6 magrets ce midi !",
+      lettres: [], lettre: null, libre: 0, offerts: 3, cadeauRecu: null, _offrir: null,
+      ardoise: { nom: "Rose", texte: "On a fêté nos 40 ans de mariage chez vous. Merci pour la bougie sur le gâteau.", quand: "hier", cadeau: "le café" },
     };
     return s;
   }
@@ -768,10 +828,18 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     const ilYa = (a, b) => Date.now() - hasard(a, b) * 60000;
     AMIS.forEach(([nom, look]) => { S.vus.add(nom); ajouter("adore", { nom, look, ami: true, t: ilYa(8, 50) }); });
     for (let k = 0; k < 33; k++) ajouter("adore", { t: ilYa(2, 150) });
+    // trois habitants ont déjà écrit à Jean-Marie ce matin
+    S.foule.filter((f) => !f.ami).slice(0, 3).forEach((f) => ecrire(f, MOTS_LIBRES[S.libre++], f.t + 60000));
     const quand = ["hier", "hier", "lundi", "lundi", "mardi", "mardi", "mercredi", "dimanche", "samedi", "samedi", "vendredi"];
     for (let k = 0; k < 11; k++) ajouter("promis", { quand: quand[k] });
     S.carnet.reverse();
     ajouter("table", { nom: "Inès B.", heure: "12 h 30", n: 2, t: ilYa(20, 90) }); ajouter("table", { nom: "Paulo", heure: "13 h", n: 1, t: ilYa(10, 60) });
+  }
+  // un mot écrit au chef : il arrive au comptoir, rien ne se voit dans la vitrine sans son 💛
+  function ecrire(f, texte, t) {
+    const l = { id: "l" + (++S.suiv), nom: f.nom, look: f.look, texte, t: t || Date.now(), coeur: false, cadeau: null, neuf: !t, moi: !!f.moi, vu: false };
+    f.lettre = l; S.lettres.push(l);
+    return l;
   }
   const compte = (type) => S.foule.filter((f) => f.type === type).length + (type === "promis" ? (S.promisJour === S.jour ? 1 : 0) : (S.choix === type ? 1 : 0));
   const totalJour = () => compte("adore") + compte("promis") + compte("table");
@@ -869,11 +937,13 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       const type = p.pose === "debout" ? "adore" : p.pose === "salue" ? "promis" : "table";
       d.className = "fg " + type + (f.ami ? " ami" : "") + (f.invite ? " invite" : "") + (p.moi ? " moi" : "") + (f.recent ? " recent" : "") + (d.classList.contains("neuf") ? " neuf" : "") + (d.classList.contains("cache") ? " cache" : "");
       d._f = f; d._type = type; d._moi = !!p.moi;
+      const coeur = p.moi ? !!(S.lettre && S.lettre.coeur) : !!(f.lettre && f.lettre.coeur);
+      d.classList.toggle("chouchou", coeur);
       d.style.left = p.x + "%"; d.style.top = p.y + "%"; d.style.setProperty("--s", p.s); d.style.setProperty("--d", f.d + "s");
       d.style.zIndex = p.couche === "calque" ? String(100 + Math.round(p.y)) : String(10 + Math.round(p.y / 10));
       const im = $("img", d), src = img(f.look, p.pose);
       if (im.getAttribute("src") !== src) im.setAttribute("src", src);
-      $(".nom", d).textContent = p.moi ? S.moi.nom : f.invite ? "💌 " + f.nom : f.nom;
+      $(".nom", d).textContent = (coeur ? "💛 " : "") + (p.moi ? S.moi.nom : f.invite ? "💌 " + f.nom : f.nom);
       // ce que porte son fantôme : son rang du matin, le pin du commerce, sa réservation
       d.querySelectorAll(".rang,.pin,.table-tag").forEach((x) => x.remove());
       if (p.moi && S.premier && S.choix === "adore") d.insertAdjacentHTML("beforeend", '<span class="rang">1er ce matin</span>');
@@ -942,6 +1012,14 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     $("#v-ligne").textContent = nA ? nA + " fantômes devant la vitrine" + (amis.length ? ", dont " + amis.map((f) => f.nom).join(", ") : "") : "La vitrine vient d’ouvrir : soyez le premier devant";
     $("#v-dore").hidden = S.dore.trouve || S.dore.trouves >= S.dore.max;
     $("#chasse").textContent = texteChasse();
+    // l'ardoise : le dernier coup de cœur du chef, et l'envie d'écrire le sien
+    const a = S.ardoise;
+    $("#ardoise").hidden = !a;
+    if (a) {
+      $("#ard-mot").textContent = "« " + a.texte + " »";
+      $("#ard-qui").textContent = a.nom + " · " + a.quand + (a.cadeau ? " · Jean-Marie lui a offert " + a.cadeau : " · affiché par Jean-Marie");
+    }
+    $("#ard-ecrire").hidden = !!S.lettre || !S.choix;
     for (const [id, t, e] of [["#c-adore", "adore", "💗"], ["#c-promis", "promis", "📌"], ["#c-table", "table", "🍽️"]]) {
       const el = $(id), v = e + " " + compte(t);
       if (el.textContent !== v) { el.textContent = v; el.classList.remove("bat"); void el.offsetWidth; el.classList.add("bat"); }
@@ -961,8 +1039,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     solo.appendChild(d);
     $("#maison-nom").textContent = "Le fantôme de " + S.moi.nom;
     $("#maison-badges").innerHTML = '<span class="' + (S.badgeParole ? "gagne" : "") + '">Parole de fantôme</span><span class="' + (S.pins ? "gagne" : "") + '">Pin de Chez Bergine</span><span class="' + (S.amenes ? "gagne" : "") + '">Ambassadeur' + (S.amenes ? " · " + S.amenes : "") + "</span>" +
-      '<span class="' + (S.ors ? "gagne" : "") + '">Chasseur d’or' + (S.ors ? " · " + S.ors : "") + "</span>";
+      '<span class="' + (S.ors ? "gagne" : "") + '">Chasseur d’or' + (S.ors ? " · " + S.ors : "") + "</span>" +
+      '<span class="' + (S.lettre && S.lettre.coeur ? "gagne" : "") + '">Coup de cœur du chef</span>';
     const lignes = [];
+    if (S.cadeauRecu) lignes.push('<div class="bon bon-chef"><img src="a/chef.jpg" alt=""><div><small>Chez Bergine · coup de cœur du chef</small><b>' + S.cadeauRecu.n + " offert</b><span>Pour votre petit mot · exemple</span></div></div>");
     if (S.dore.trouve) lignes.push('<div class="bon dore"><img src="' + img("soleil", "salue") + '" alt=""><div><small>Chez Bergine · fantôme doré</small><b>Le dessert offert</b><span>Avec votre plat, aujourd’hui · exemple</span></div></div>');
     if (S.bon) lignes.push('<div class="bon' + (S.bon.tenu ? " tenu" : "") + '"><img src="a/magret.jpg" alt=""><div><small>Chez Bergine · promesse</small><b>' + S.bon.quoi + "</b><span>" + (S.bon.tenu ? "Tenue aujourd’hui" : "Valable encore " + S.bon.jours + " jours") + "</span></div></div>");
     S.autres.forEach((a) => lignes.push('<div class="bon"><img src="a/g/fleuri-salue.webp" alt="" style="object-fit:contain;background:#F1E4D2"><div><small>' + a.chez + " · promesse</small><b>" + a.quoi + "</b><span>Valable encore " + a.reste + " jours</span></div></div>"));
@@ -986,7 +1066,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     if (avant === "table" && choix !== "table") S.table = null;
     S.premier = choix === "adore" && compte("adore") < 3 && S.jour > 1;
     S.choix = choix; S.tChoix = Date.now();
-    if (!MOTS[choix].includes(S.mot)) S.mot = MOTS[choix][0];
     if (choix === "promis" && !(S.bon && !S.bon.tenu)) {
       S.bon = { quoi: "Le café offert", jours: 7, tenu: false };
       S.promisJour = S.jour;
@@ -1079,13 +1158,22 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       : t === "adore" ? "💗 a adoré · " + depuis(f.t)
       : t === "promis" ? "📌 a promis de venir · " + (moi ? depuis(f.t) : f.quand || depuis(f.t))
       : "🍽️ vient à " + (moi ? (S.table ? S.table.heure : "midi") : f.heure) + (!moi && f.n > 1 ? " · à " + f.n : "");
-    const tag = moi ? '<span class="bf-tag rose">vous</span>' : f.invite ? '<span class="bf-tag rose">💌 grâce à votre vitrine</span>' : f.ami ? '<span class="bf-tag">dans vos amis</span>' : "";
+    // son mot : celui de la liste, ou celui qu'il a écrit au chef, une fois que le chef y a mis son 💛
+    const l = moi ? S.lettre : f.lettre, coeur = !!(l && l.coeur);
+    const mot = coeur ? l.texte : moi ? S.mot : f.mot;
+    let note = "";
+    if (moi && l && !coeur && !l.choisi) note = "💌 Votre mot est chez Jean-Marie · " + (l.vu ? "lu ✓" : "envoyé");
+    else if (moi && !l) note = astuce ? "Écrivez un petit mot à Jean-Marie : il les lit tous, et parfois il offre un petit quelque chose 💛 Touchez aussi les autres fantômes." : "Pas encore de mot pour Jean-Marie.";
+    else if (coeur && l.cadeau) note = "🎁 Jean-Marie " + (moi ? "vous" : "lui") + " a offert " + minus(l.cadeau.n);
+    else if (!moi && l && !coeur) note = "💌 A écrit un mot à Jean-Marie";
+    const tag = (moi ? '<span class="bf-tag rose">vous</span>' : f.invite ? '<span class="bf-tag rose">💌 grâce à votre vitrine</span>' : f.ami ? '<span class="bf-tag">dans vos amis</span>' : "") +
+      (coeur ? '<span class="bf-tag or">💛 coup de cœur du chef</span>' : "");
     const b = document.createElement("div");
     b.className = "bulle-fg"; b._cle = f.id; b._d = d;
     b.innerHTML = '<div class="bf-haut"><b>' + echap(moi ? S.moi.nom : f.nom) + "</b>" + tag + "<small>" + quoi + "</small></div>" +
-      '<p class="bf-mot">« ' + echap(f.mot || "") + " »</p>" +
-      (astuce ? '<p class="bf-astuce">Touchez les autres fantômes : chacun a son petit mot. Et cherchez l’or ✨</p>' : "") +
-      '<div class="bf-act">' + (moi ? '<button type="button" data-mot>✎ Changer son mot</button>'
+      (mot ? '<p class="bf-mot">« ' + echap(mot) + " »</p>" : "") +
+      (note ? '<p class="bf-astuce">' + echap(note) + "</p>" : "") +
+      '<div class="bf-act">' + (moi ? (S.lettre ? "" : '<button type="button" data-mot>✎ Écrire à Jean-Marie</button>')
         : '<button type="button" data-coucou' + (f.coucou ? " disabled" : "") + ">" + (f.coucou ? "👋 Coucou envoyé" : "👋 Coucou") + "</button>") + "</div>";
     scH.appendChild(b); bulle = b;
     placerBulle();
@@ -1137,8 +1225,49 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     rendreComptoir();
   }
   function ouvrirMots() {
-    $("#mots").innerHTML = MOTS[S.choix || "adore"].map((m) => '<button type="button" class="' + (m === S.mot ? "on" : "") + '" data-mot="' + echap(m) + '">' + echap(m) + "</button>").join("");
+    if (S.lettre) return;
+    $("#mot-txt").value = "";
+    $("#mots").innerHTML = MOTS[S.choix || "adore"].map((m) => '<button type="button" data-mot="' + echap(m) + '">' + echap(m) + "</button>").join("");
     feuille("f-mot");
+  }
+  // un mot par jour : il part au comptoir ; un mot de la liste s'affiche tout de suite, un mot écrit attend le 💛
+  function envoyerMot() {
+    const t = $("#mot-txt").value.trim().replace(/\s+/g, " ").slice(0, 90);
+    if (!t) { $("#mot-txt").focus(); return; }
+    const choisi = Object.values(MOTS).some((m) => m.includes(t));
+    if (choisi) S.mot = t;
+    const moi = { nom: S.moi.nom, look: S.moi.look, moi: true };
+    const l = ecrire(moi, t); l.choisi = choisi; S.lettre = l;
+    evenement("vous a écrit un petit mot 💌", moi);
+    feuille(null); ac(); SON.pop(); rendreTout();
+    notifier(img(S.moi.look, "salue"), "Votre mot est parti", "Jean-Marie le lit au comptoir." + (choisi ? " Il s’affiche déjà sur votre fantôme." : " S’il lui fait chaud au cœur, il l’affichera dans sa vitrine."), "Un mot par jour, chez chaque commerçant");
+    // au comptoir, il arrive en haut de « Vos petits mots »
+    setTimeout(() => {
+      const ec = $("#ecran-c"), bl = $("#bloc-lettres");
+      ec.scrollTo({ top: Math.max(0, bl.offsetTop - 50), behavior: reduit ? "auto" : "smooth" });
+      signaler("c", S.moi.nom + " vous a écrit un petit mot");
+    }, 700);
+    setTimeout(() => { l.vu = true; rendreTout(); }, 3500);
+  }
+  // le 💛 du chef (et parfois son cadeau) : le mot passe à l'ardoise et sur le fantôme
+  function coeurPour(l, cadeau) {
+    if (l.cadeau) return;
+    l.coeur = true; S._offrir = null;
+    if (cadeau) { l.cadeau = cadeau; S.offerts++; }
+    S.ardoise = { nom: l.nom, texte: l.texte, quand: "à l’instant", cadeau: l.cadeau ? minus(l.cadeau.n) : null };
+    evenement(cadeau ? "reçoit " + minus(cadeau.n) + " pour son petit mot 🎁" : "voit son petit mot dans votre vitrine 💛", { nom: l.nom, look: l.look });
+    ac(); SON.chime();
+    if (l.moi) {
+      notifier("a/chef.jpg", "Jean-Marie · Chez Bergine", "a eu un coup de cœur pour votre mot 💛" + (cadeau ? " et vous offre " + minus(cadeau.n) + " !" : " Il l’affiche dans sa vitrine."), "« " + l.texte + " »");
+      if (cadeau) {
+        S.cadeauRecu = cadeau;
+        $("#cadeau-mot").textContent = "Votre mot : « " + l.texte + " »";
+        $("#cadeau-dit").textContent = "« Votre mot m’a fait chaud au cœur. " + cadeau.n + " est pour moi. »";
+        $("#cadeau-bon").innerHTML = '<img src="a/magret.jpg" alt=""><div><small>Chez Bergine · coup de cœur du chef</small><b>' + cadeau.e + " " + cadeau.n + " offert</b><span>À votre prochaine visite · exemple</span></div>";
+        setTimeout(() => { feuille("f-cadeau"); confettis(scH); }, 1400);
+      }
+    }
+    rendreTout();
   }
   // toc-toc : la porte tremble, le fantôme de Jean-Marie sort et dit ce que Jean-Marie a écrit
   function tocToc() {
@@ -1275,6 +1404,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     $("#m-dore-ou").textContent = tr < S.dore.max ? "caché " + CACHETTES[S.dore.k].ou + " · 🍮 le dessert offert" : "tous trouvés · demain, il se cache ailleurs";
     $("#m-toc").textContent = S.toc + " ce matin";
     $("#m-coucou").textContent = String(S.coucous);
+    rendreLettres();
     $("#m-vitrine").textContent = a + " devant";
     rendreScene(scC);
     // le carnet
@@ -1299,6 +1429,27 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     $("#m-partage").textContent = S.amenes ? S.amenes + " · dont " + S.amenes + " par " + S.moi.nom : "0";
     $("#merci").classList.toggle("fait", S.merci); $("#merci").textContent = S.merci ? "💗 Merci envoyé" : "💗 Dire merci aux " + a + " fantômes";
     $("#appel").classList.toggle("fait", S.appel); $("#appel").textContent = S.appel ? "📣 Appel envoyé · demain" : "📣 Appeler mes " + enCours + " promesses";
+  }
+  // les petits mots écrits : le sien en haut, puis les plus récents ; 💛 ou 🎁, au choix du chef
+  function rendreLettres() {
+    const L = S.lettres.slice().sort((a, b) => (b.moi - a.moi) || (b.t - a.t)).slice(0, 4);
+    const el = $("#lettres");
+    const cle = L.map((l) => l.id + l.nom + l.texte + l.coeur + !!l.cadeau + depuis(l.t)).join() + S._offrir;
+    if (cle !== el._cle) {
+      el._cle = cle;
+      el.innerHTML = L.length ? L.map((l) => '<div class="lettre' + (l.neuf ? " neuf" : "") + (l.moi ? " moi" : "") + '" data-id="' + l.id + '">' +
+        '<img src="' + img(l.look, "debout") + '" alt=""><div class="l-corps"><b>' + echap(l.nom) + "</b><small>" + depuis(l.t) + "</small>" +
+        "<p>« " + echap(l.texte) + " »</p>" +
+        (l.cadeau ? '<span class="l-fait">🎁 ' + l.cadeau.n + " offert · 💛 dans votre vitrine</span>"
+          : (l.coeur ? '<span class="l-fait">💛 Dans votre vitrine</span>' : "") +
+            '<div class="l-act">' + (l.coeur ? "" : '<button type="button" data-coeur>💛 Coup de cœur</button>') + '<button type="button" data-offrir>🎁 Offrir…</button></div>' +
+            '<div class="l-cadeaux"' + (S._offrir === l.id ? "" : " hidden") + ">" + CADEAUX.map((c, k) => '<button type="button" data-cadeau="' + k + '">' + c.e + " " + c.n + "</button>").join("") + "</div>") +
+        "</div></div>").join("") : '<p class="note">Pas encore de mot aujourd’hui.</p>';
+      S.lettres.forEach((l) => { l.neuf = false; });
+    }
+    const attente = S.lettres.filter((l) => !l.coeur).length;
+    $("#m-lettres").textContent = S.lettres.length + (S.lettres.length > 1 ? " mots" : " mot") + (attente ? " · " + attente + " à lire" : "");
+    $("#m-offerts").textContent = String(S.offerts);
   }
   function evenement(quoi, f) {
     S.fil.unshift({ nom: f.nom, look: f.look, quoi, mot: f.mot, moi: !!f.moi, pose: /promis|promesse/.test(quoi) ? "salue" : /aujourd|table/.test(quoi) ? "assis" : "debout" });
@@ -1353,7 +1504,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     setTimeout(() => { f.recent = false; rendreScene(scH); rendreScene(scC); }, 2600);
     evenement(type === "adore" ? "a adoré votre magret" : type === "promis" ? "a promis de venir" : "vient aujourd’hui à " + f.heure, f);
     SON.arrive();
-    // d'autres frappent à la porte, d'autres se font coucou
+    // certains écrivent aussi un mot au chef ; d'autres frappent à la porte, d'autres se font coucou
+    if (type !== "table" && Math.random() < .22 && S.libre < MOTS_LIBRES.length) { ecrire(f, MOTS_LIBRES[S.libre++]); signaler("c", f.nom + " vous a écrit un petit mot"); }
     if (Math.random() < .3) S.toc++;
     if (Math.random() < .35) S.coucous++;
     rendreTout();
@@ -1369,6 +1521,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     S.choix = null; S.table = null; S.premier = false; S.merci = false; S.appel = false; S.fil = []; S.promisJour = 0;
     // le fantôme doré change de cachette ; la porte et les coucous repartent de zéro
     S.dore = doreDuJour(S.jour, 0); S.toc = 0; S.coucous = 0; S.mot = null; fermerBulle(); planifierDore();
+    // un nouveau mot par jour ; l'ardoise garde le coup de cœur d'hier
+    S.lettres = []; S.lettre = null; S._offrir = null;
+    if (S.ardoise) S.ardoise.quand = "hier";
     if (S.bon && !S.bon.tenu) S.bon.jours = Math.max(1, S.bon.jours - 1);
     if (S.bon && S.bon.tenu) S.bon = null;
     S.autres.forEach((a) => { a.reste = Math.max(1, a.reste - 1); });
@@ -1443,12 +1598,20 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       const g = scH._dore; if (g) { g.classList.remove("appel"); void g.offsetWidth; g.classList.add("appel"); }
       bip(1568, .08, "sine", .04); bip(2093, .1, "sine", .03, .08);
     });
+    // le petit mot au chef
     $("#mots").addEventListener("click", (e) => {
       const b = e.target.closest("[data-mot]"); if (!b) return;
-      S.mot = b.dataset.mot;
-      const ev = S.fil.find((x) => x.moi && x.mot); if (ev) ev.mot = S.mot;
-      feuille(null); rendreTout();
-      setTimeout(() => { const d = scH._fg.get("moi") || scH._fg.get("moi-place"); if (d) ouvrirBulle(d); }, 450);
+      $("#mot-txt").value = b.dataset.mot; $$("#mots button").forEach((x) => x.classList.toggle("on", x === b));
+    });
+    $("#mot-txt").addEventListener("input", () => $$("#mots button").forEach((x) => x.classList.toggle("on", x.dataset.mot === $("#mot-txt").value.trim())));
+    $("#mot-ok").addEventListener("click", envoyerMot);
+    $("#ard-ecrire").addEventListener("click", ouvrirMots);
+    $("#lettres").addEventListener("click", (e) => {
+      const box = e.target.closest(".lettre"), l = box && S.lettres.find((x) => x.id === box.dataset.id);
+      if (!l) return;
+      if (e.target.closest("[data-coeur]")) coeurPour(l, null);
+      else if (e.target.closest("[data-offrir]")) { S._offrir = S._offrir === l.id ? null : l.id; ac(); SON.pop(); rendreLettres(); }
+      else { const c = e.target.closest("[data-cadeau]"); if (c) coeurPour(l, CADEAUX[+c.dataset.cadeau]); }
     });
     $("#porte").addEventListener("input", (e) => { S.porte = e.target.value.trim() || "Bienvenue chez Bergine !"; });
     $("#montrer-bon").addEventListener("click", () => feuille("f-qr"));
