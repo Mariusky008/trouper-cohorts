@@ -38,10 +38,11 @@ python3 -I $D/outils/tour-promesses.py $D   # + « Pendant la nuit » (03), « Q
 python3 -I $D/outils/tour-direct.py $D      # + « Pourquoi autant de monde ? » à l'étape du Direct
 python3 -I $D/outils/tour-gestes.py $D      # + les 4 photos en un seul appui
 python3 -I $D/outils/tour-depenses.py $D    # + « Moins de dépenses » : la question du métier, le coût réel à l'offre
-python3 -I $D/outils/tour-sien.py $D        # + son nom (« Pour qui est cette démo ? ») et son vrai temps (le ticket de « Plus de clients »)
+python3 -I $D/outils/tour-sien.py $D        # + son nom (« Pour qui est cette démo ? ») et son temps (le ticket de « Plus de clients »)
+python3 -I $D/outils/tour-dax.py $D         # + sous le projecteur, combien de Dacquois cherchent ce qu'il vend (sauf le restaurant)
 ```
 
-Les sept scripts se lancent **dans cet ordre**. Le tour lunetier a d'abord sa propre base, tirée de celle de la
+Les huit scripts se lancent **dans cet ordre**. Le tour lunetier a d'abord sa propre base, tirée de celle de la
 bijouterie : `python3 -I $D/outils/tour-lunettes.py $D` (ses images, ses voix mesurées, sa page de base), à
 relancer avant la chaîne si l'on change la bijouterie ou ses textes. Chacun repart de `index.avant-episode2.html`, on peut
 donc les relancer autant qu'on veut. Conséquence : une retouche faite à la main dans `index.html` est
@@ -61,9 +62,16 @@ Le temps pour créer et publier une annonce est toujours le même, 1 min 30 en m
 s'affiche dans le ticket de fin de « Plus de clients » et dans la conclusion. Le ticket dit aussi « Commission : 0 € » :
 ClikMe n'en prend aucune.
 
+**Sous le projecteur, les chiffres de Dax** : le restaurant garde « …devant plus de 1 000 personnes qui cherchent où
+manger ce midi » (juste). Les autres métiers disent quatre phrases : combien de Dacquois cherchent ce qu'il vend
+chaque jour (vêtements 900, coiffure 380, librairie 250, bijouterie 60, lunettes 40 à 50), « Pour capter ces …
+personnes… », puis la diffusion sur ses réseaux et sur ClikMe (« plus de 1 000 Dacquois… chaque jour »). Les voix :
+`recu/dax/<métier>-1.mp3` et `-2.mp3` (`recu/lunettes/voix/` pour le lunetier, et pour les phrases 3 et 4, communes).
+Le lunetier les a dans sa base (`tour-lunettes.py`), les quatre autres par `tour-dax.py`.
+
 Pour une nouvelle voix de l'intro : remplacer `voix-intro/court/<nom>.mp3`, mettre son texte dans
 `outils/mesurer-intro2.py` (et dans `tour-intro3.py`), lancer `python3 -I $D/outils/mesurer-intro2.py $D`,
-puis les sept scripts.
+puis les huit scripts.
 
 ## Les films du lunetier
 

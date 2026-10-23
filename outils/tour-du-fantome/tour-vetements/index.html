@@ -1895,6 +1895,13 @@ h1 em{font-style:normal;color:var(--rose)}
 .wb-l em.vrai{background:rgba(61,226,166,.22);color:#0F7A54}
 .wb-temps b{font-size:1.35em;color:#E0167A;letter-spacing:-.02em}
 .wb-zero b{font-size:1.2em;color:#0F7A54}
+/* QUATRE PHRASES SOUS LE PROJECTEUR (voir tour-dax.py) : la bulle s'élargit et son texte se resserre, pour
+   tenir entière entre le haut de l'écran et le fantôme */
+.fx-bulle{left:.5em;right:.5em}
+.fx-dit{font-size:1.05em}
+.fx-plan li{grid-template-columns:1.8em minmax(0,1fr);gap:.5em}
+.fx-ico{width:1.8em;height:1.8em}
+.fx-ligne{font-size:.75em;line-height:1.24}
 </style>
 
 <section class="accueil" id="accueil">
@@ -2857,9 +2864,10 @@ h1 em{font-style:normal;color:var(--rose)}
     clients: {
       titre: "Aujourd’hui, on braque les projecteurs sur *ta" + INS + "pièce" + NB + "!", voix: "lou-clients-1",
       plan: [
-        { ico: '<span class="fx-ico rose">' + ICONES.reseaux + "</span>", txt: "Je la diffuse sur tous tes réseaux en même temps.", voix: "lou-clients-2" },
-        { ico: '<span class="fx-ico ambre">' + ICONES.heure + "</span>", txt: "Je la relaie à 11" + INS + "h sur ClikMe…", voix: "lou-clients-3" },
-        { ico: '<span class="fx-ico rose">' + ICONES.monde + "</span>", txt: "…devant plus de 1" + INS + "000 personnes qui cherchent quoi se mettre.", voix: "lou-clients-4" },
+        { ico: '<span class="fx-ico rose">' + ICONES.monde + '</span>', txt: "Chaque jour à Dax, environ 900 personnes cherchent à s’habiller.", voix: "dax-1" },
+        { ico: '<span class="fx-ico ambre"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1.2"/></svg></span>', txt: "Pour capter ces 900 personnes, il faut être présent là où ils passent leur temps.", voix: "dax-2" },
+        { ico: '<span class="fx-ico rose">' + ICONES.reseaux + '</span>', txt: "C’est la raison pour laquelle je diffuse votre annonce sur tous vos réseaux sociaux en même temps…", voix: "dax-3" },
+        { ico: '<span class="fx-ico ambre"><svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.8"/></svg></span>', txt: "…et que je la relaie sur ClikMe, où plus de 1" + INS + "000 Dacquois consultent les nouveautés des commerces locaux chaque jour.", voix: "dax-4" },
       ],
       question: "quel est le nom de ta pièce du jour" + NB + "?", voixQuestion: "lou-clients-5",
     },
@@ -4752,6 +4760,9 @@ h1 em{font-style:normal;color:var(--rose)}
     $("#tampon-c").classList.remove("on");
     $("#wa-bilan").classList.add("on"); son("pop");
   }
+  /* Combien de clients, à Dax, chaque jour (voir tour-dax.py) */
+  Object.assign(TEMPS, {"dax-1": {"d": 3.6, "m": [0.0, 0.28, 0.56, 0.84, 1.28, 1.86, 2.25, 2.63, 2.83, 3.02], "b": "11111111111111111111111111110001111111111111111111111111111111111111111111111111111111111"}, "dax-2": {"d": 4.23, "m": [0.0, 0.21, 0.62, 0.83, 1.24, 1.81, 2.05, 2.29, 2.53, 2.78, 3.02, 3.26, 3.5, 3.75, 3.99], "b": "11101110001111111111111111101111111111111100011111111111111111111111111111111111110011111101111111111011"}, "dax-3": {"d": 4.47, "m": [0.0, 0.19, 0.37, 0.74, 0.93, 1.3, 1.48, 1.85, 2.04, 2.41, 2.8, 2.99, 3.17, 3.54, 3.91, 4.1, 4.28], "b": "11111111111110111111111111111111110111111111111111111110011111000001111111111111111111111111110011111111111011"}, "dax-4": {"d": 5.75, "m": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.19, 1.75, 1.96, 2.17, 2.38, 2.59, 3.01, 3.43, 3.64, 4.28, 4.49, 4.91, 5.33, 5.54], "b": "1111111111111111111111110111111111100000000111111001111111111111111111111011111101111111111111111111111111111111111111111111111111111111111111"}});
+  ["dax-1", "dax-2", "dax-3", "dax-4"].forEach((n) => { if (!ENREGISTREES.includes(n)) ENREGISTREES.push(n); });
   /* ═══ PAGE 1 → PAGE 2 ═══ */
   $("#decouvrir").addEventListener("click", () => {
     contexte(); chargerVoix();

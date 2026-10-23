@@ -12,7 +12,7 @@
 #  · son interview (message.mp4) est l'épisode 14 de « Face au fantôme » (outils/face-au-fantome/margaux) ;
 #    le spécialiste et l'épisode sont montés à part par le moteur de l'application. Tous sont rangés dans
 #    tour-lunettes/ (voir LISEZ-MOI : les films du lunetier) : ce script lit leur durée.
-# À lancer avant la chaîne des sept scripts :  python3 -I tour-lunettes.py <dossier>
+# À lancer avant la chaîne des huit scripts :  python3 -I tour-lunettes.py <dossier>
 import json, os, re, shutil, subprocess, sys
 
 S = sys.argv[1]
