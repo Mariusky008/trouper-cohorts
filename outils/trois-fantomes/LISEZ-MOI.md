@@ -56,9 +56,16 @@ le dit, pour donner envie d'écrire. D'autres habitants écrivent aussi (simulé
 ## Pour que la vidéo se partage
 
 - **Partager ma vitrine** : l'habitant envoie la vidéo de Jean-Marie, qui finit sur **sa** vitrine (son fantôme
-  devant, « Léa et 49 Dacquois sont devant Chez Bergine. Et toi ? »), à un ami ou en story. Ceux qui la
+  devant, « Léa et 49 Dacquois sont devant Chez Bergine. Et toi ? »), par le partage du téléphone (message,
+  WhatsApp, Messenger) ou en story. ClikMe n'a besoin ni de ses contacts, ni d'un compte chez l'ami. Ceux qui la
   reçoivent touchent une cage et leur fantôme vient à côté du sien (étiquette 💌). L'habitant voit combien il
   en a fait venir ; le comptoir voit « Venus grâce à un partage ».
+- **Un ami qui n'a pas ClikMe** (« Voir ce que reçoit Camille ») : on joue Camille. Elle reçoit un simple lien
+  (aperçu : l'affiche, « Léa t'attend devant Chez Bergine », `clikme.fr/bergine/lea`). Le lien ouvre une page web,
+  sans appli ni compte : la vidéo, puis la vitrine de Léa et les trois cages ; elle tape son prénom, touche une
+  cage, son fantôme s'envole à côté de celui de Léa. L'appli ne lui est proposée qu'ensuite, « si tu veux, plus
+  tard ». De retour chez Léa : « Camille a ouvert votre vitrine… et son fantôme vous rejoint ! ». Le lien
+  personnel (`/lea`) dit qui l'a fait venir. Pendant qu'on joue Camille, les nouvelles de Léa attendent son retour.
 - **Garde-moi une place, avec qui ?** : choisir un ami envoie une invitation qui sert à quelque chose (une
   place gardée à une heure) ; s'il accepte, son fantôme s'assoit à la même table.
 - **Sur Instagram (ou Facebook)**, quand le commerçant publie la vidéo sur ses propres réseaux, il n'y a pas de

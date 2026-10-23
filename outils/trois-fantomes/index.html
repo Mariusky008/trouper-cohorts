@@ -376,6 +376,40 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .web .sc-haut{padding-top:66px}
 .web .onb{padding-top:72px}
 
+/* CE QUE REÇOIT UN AMI SANS CLIKME : un lien dans ses messages, puis une page web, sans appli ni compte */
+.ami{background:var(--nuit)}
+.ami-msg{position:absolute;inset:0;display:flex;flex-direction:column;padding-top:44px}
+.msg-haut{display:flex;align-items:center;gap:10px;padding:4px 14px 10px;border-bottom:1px solid var(--trait)}
+.msg-haut .av{object-fit:contain;background:var(--nuit-2)}
+.msg-haut b{display:block;font-size:14px}
+.msg-haut small{font-size:11px;color:var(--gris)}
+.msg-fil{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding:14px}
+.msg-heure{align-self:center;margin-bottom:4px;font-size:10.5px;color:var(--gris)}
+.msg-bulle{align-self:flex-start;max-width:80%;padding:9px 12px;border-radius:18px 18px 18px 6px;background:var(--nuit-3);font-size:14px;line-height:1.35}
+.msg-lien{align-self:flex-start;width:80%;display:flex;flex-direction:column;border-radius:18px 18px 18px 6px;overflow:hidden;background:var(--nuit-3);text-align:left;animation:lueur 2.2s ease-in-out infinite}
+@keyframes lueur{50%{box-shadow:0 0 0 3px rgba(255,46,154,.55)}}
+.msg-lien img{width:100%;aspect-ratio:1.6;object-fit:cover;object-position:50% 20%}
+.msg-lien span{padding:8px 12px 10px}
+.msg-lien b{display:block;font-size:13.5px;line-height:1.25}
+.msg-lien small{font-size:11.5px;color:var(--gris)}
+.ami-note{margin:0 14px 10px;padding:8px 10px;border-radius:12px;background:rgba(245,162,58,.14);color:var(--ambre);font-size:11.5px;font-weight:700;line-height:1.35;text-align:center}
+.msg-saisie{margin:0 12px 16px;height:40px;display:flex;align-items:center;padding:0 14px;border-radius:999px;border:1px solid var(--trait);font-size:13px;color:var(--gris)}
+.ami-web{position:absolute;inset:0;display:none;flex-direction:column;gap:8px;padding:68px 12px 14px;overflow:auto}
+.ami.etape2 .ami-msg{display:none}
+.ami.etape2 .ami-web{display:flex}
+.ami-web .sc-cadre{flex:none;width:74%;margin:0 auto}
+.ami-web > b{text-align:center;font:italic 700 18px/1.15 var(--f-titre)}
+.ami-choix,.ami-fait{display:flex;flex-direction:column;gap:8px}
+.ami-fait{display:none;text-align:center}
+.ami.fait .ami-choix{display:none}
+.ami.fait .ami-fait{display:flex}
+.ami-fait b{font-size:15px}
+.ami-fait p{margin:0;font-size:12.5px;color:var(--gris);line-height:1.4}
+.ami-nom{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--gris)}
+.ami-nom input{flex:1;min-width:0;height:36px;border-radius:10px;border:1px solid var(--trait);background:var(--nuit-2);color:var(--creme);padding:0 10px;font:700 14px var(--f-ui)}
+.ami-pied{text-align:center}
+.ami-voir{height:44px;border-radius:999px;border:1.5px dashed rgba(245,162,58,.7);color:var(--ambre);font-weight:800;font-size:13px}
+
 /* DANS LA VITRINE, TOUT SE TOUCHE : chaque fantôme dit son petit mot et reçoit un coucou ; la porte répond ;
    chaque matin, un fantôme doré s'y cache */
 #sc-h .fg,#sc-h .sc-porte,#sc-h .sc-ouvert,#sc-h .sc-hote,#sc-h .fg-dore{cursor:pointer}
@@ -496,7 +530,39 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       <div class="source" role="group" aria-label="D’où arrive l’habitant"><button type="button" class="on" data-source="app">Il a ClikMe</button><button type="button" data-source="insta">Il voit la vidéo sur Instagram</button></div>
       <div class="tel"><div class="ecran" id="ecran-h">
         <span class="encoche"></span><div class="barre"><span>12:04</span><span id="barre-app">ClikMe</span></div>
-        <div class="adresse">🔒 clikme.fr/bergine <small>· sans appli, sans compte</small></div>
+        <div class="adresse">🔒 <span id="adresse-url">clikme.fr/bergine</span> <small>· sans appli, sans compte</small></div>
+
+        <!-- ce que reçoit un ami qui n'a pas ClikMe : un lien dans ses messages, puis une page web -->
+        <section class="vue ami" id="h-ami">
+          <div class="ami-msg">
+            <div class="msg-haut"><button type="button" class="retour" id="ami-annuler" aria-label="Revenir"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><img class="av" id="ami-av" alt=""><div><b id="ami-de"></b><small>Messages · à l’instant</small></div></div>
+            <div class="msg-fil">
+              <span class="msg-heure">Aujourd’hui 12:04</span>
+              <div class="msg-bulle">Je suis devant Chez Bergine 👻 Viens me rejoindre !</div>
+              <button type="button" class="msg-lien" id="ami-lien"><img src="a/affiche.jpg" alt=""><span><b id="ami-lien-t"></b><small id="ami-lien-u"></small></span></button>
+            </div>
+            <p class="ami-note">Camille n’a pas ClikMe. Elle reçoit un simple lien, par SMS ou WhatsApp : elle le touche.</p>
+            <div class="msg-saisie">Message…</div>
+          </div>
+          <div class="ami-web">
+            <div class="sc-cadre"><div class="sc" id="sc-a"></div></div>
+            <b id="ami-t"></b>
+            <div class="ami-choix">
+              <div class="trois" id="ami-cages">
+                <button type="button" class="f3 adore" data-choix="adore"><span class="cg"><i class="cg-anneau"></i><i class="cg-noeud"></i><span class="cg-dome"><img alt="" data-ami-pose="debout"><i class="cg-porte"></i></span><i class="cg-socle"></i></span><b>💗 J’adore</b></button>
+                <button type="button" class="f3 promis" data-choix="promis"><span class="cg"><i class="cg-anneau"></i><i class="cg-noeud"></i><span class="cg-dome"><img alt="" data-ami-pose="salue"><i class="cg-porte"></i></span><i class="cg-socle"></i></span><b>📌 Je viendrai</b></button>
+                <button type="button" class="f3 table" data-choix="table"><span class="cg"><i class="cg-anneau"></i><i class="cg-noeud"></i><span class="cg-dome"><img alt="" data-ami-pose="assis"><i class="cg-porte"></i></span><i class="cg-socle"></i></span><b>🍽️ J’y vais</b></button>
+              </div>
+              <label class="ami-nom">Ton prénom <input id="ami-nom" maxlength="14" autocomplete="off"></label>
+              <p class="note ami-pied">Sans appli, sans compte : la page joue la vidéo de Jean-Marie, puis s’arrête ici.</p>
+            </div>
+            <div class="ami-fait">
+              <b id="ami-fait-t"></b>
+              <p id="ami-fait-p"></p>
+              <button type="button" class="gros" id="ami-retour">Revenir chez <span id="ami-retour-nom"></span> →</button>
+            </div>
+          </div>
+        </section>
 
         <section class="vue insta" id="h-insta">
           <div class="insta-barres"><i class="on"></i><i class="on"></i><i></i></div>
@@ -574,13 +640,16 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
         <!-- sa vitrine, à partager -->
         <section class="feuille" id="f-partage">
           <h4>Votre vitrine, à partager</h4>
-          <p class="sous">La vidéo de Jean-Marie, avec une fin à vous : votre fantôme devant Chez Bergine, au milieu de la ville. Ceux qui la reçoivent touchent une cage, et leur fantôme vient à côté du vôtre.</p>
+          <p class="sous">La vidéo de Jean-Marie, avec une fin à vous. Elle part comme un simple lien, par message ou en story : vos amis n’ont besoin ni de l’appli, ni d’un compte. Ils touchent une cage, et leur fantôme vient à côté du vôtre.</p>
           <div class="story"><div class="story-haut"><img class="story-affiche" src="a/affiche.jpg" alt="">
             <div class="story-txt"><b id="story-t"></b><span>Et toi ? Touche une cage : ton fantôme vient à côté du mien.</span></div></div>
             <div class="story-sc"><div class="sc" id="sc-p"></div></div><span class="story-lien">🔗 clikme.fr/bergine</span></div>
-          <span class="lbl">L’envoyer à</span>
+          <span class="lbl">L’envoyer par</span>
+          <div class="puces" id="canaux"></div>
+          <span class="lbl" id="lbl-contacts">À</span>
           <div class="puces" id="contacts"></div>
           <button type="button" class="gros" id="envoyer">Envoyer ma vitrine</button>
+          <button type="button" class="ami-voir" id="voir-ami">👀 Voir ce que reçoit Camille, qui n’a pas ClikMe</button>
           <button type="button" class="fermer" data-ferme>Plus tard</button>
         </section>
         <!-- le bon de promesse -->
@@ -732,7 +801,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     <div><b>Jamais « 0 réservation »</b>Le comptoir montre ceux qui ont adoré, promis, réservé ; un matin vide, il montre la semaine.</div>
     <div><b>Une promesse vaut quelque chose</b>Elle donne un bon, elle se voit dans le carnet, et on n’en tient que 3 à la fois.</div>
     <div><b>Tenir parole se voit</b>Le pin du commerce sur son fantôme, sa tournée de Dax, puis sa place attitrée.</div>
-    <div><b>Ça se partage</b>Chacun partage la vidéo avec sa fin à lui : son fantôme dans la vitrine. Un geste, et ses amis le rejoignent.</div>
+    <div><b>Ça se partage</b>Chacun partage la vidéo avec sa fin à lui : son fantôme dans la vitrine. Ses amis n’ont pas besoin de ClikMe : un lien, une page, une cage, et ils le rejoignent.</div>
     <div><b>Un petit mot au chef</b>On lui écrit ; il lit tout. Les mots qui lui font chaud au cœur passent dans sa vitrine, et parfois il offre un café ou un dessert. Une surprise, pas un concours.</div>
     <div><b>Tout se touche</b>Chaque fantôme dit son petit mot (choisi, jamais écrit) et reçoit un coucou ; la porte répond ; chaque matin, un fantôme doré se cache, et le trouver fait gagner un petit cadeau.</div>
     <div><b>Sur Instagram aussi</b>Là, la vidéo ne se clique pas : elle finit sur la vitrine pleine de fantômes et un lien. Une page, sans appli, et les trois cages.</div>
@@ -756,6 +825,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   const AMIS = [["Tom", "rebelle"], ["Inès", "fleuri"], ["Hugo", "voyageur"]];
   // ses contacts, qui ne sont pas encore sur ClikMe : ceux à qui il envoie sa vitrine
   const CONTACTS = [["Camille", "cosy"], ["Maman", "jardinier"], ["Noah", "melomane"]];
+  const AMI = CONTACTS[0]; // celle dont on joue l'arrivée : elle n'a pas ClikMe
+  // la vitrine part par le partage du téléphone : aucun accès aux contacts, aucun compte chez l'ami
+  const CANAUX = [["message", "💬 Message", "message"], ["whatsapp", "WhatsApp", "WhatsApp"], ["messenger", "Messenger", "Messenger"], ["story", "📸 Ma story", "story"]];
   const HEURES = ["12 h 15", "12 h 30", "13 h", "19 h 30", "20 h 15"];
   const img = (look, pose) => `a/g/${look}-${pose}.webp`;
   const POSE = { adore: "debout", promis: "salue", table: "assis" };
@@ -1001,8 +1073,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   }
   function rendreHabitant() {
     $$("[data-pose]").forEach((im) => { im.src = img(S.moi.look, im.dataset.pose); });
-    $$(".f3, #mini3 button").forEach((b) => b.classList.toggle("on", b.dataset.choix === S.choix));
-    $$(".f3").forEach((b) => { if (b.dataset.choix !== S.choix) b.classList.remove("ouverte"); });
+    $$("#h-video .f3, #mini3 button").forEach((b) => b.classList.toggle("on", b.dataset.choix === S.choix));
+    $$("#h-video .f3").forEach((b) => { if (b.dataset.choix !== S.choix) b.classList.remove("ouverte"); });
+    $("#voir-ami").hidden = S.foule.some((f) => f.nom === AMI[0]);
     $("#partager").hidden = !S.choix;
     $("#partager-s").textContent = S.amenes ? "Votre vitrine a déjà fait venir " + S.amenes + (S.amenes > 1 ? " fantômes" : " fantôme") + ". Envoyez-la encore." : "La vidéo de Jean-Marie, qui finit sur votre fantôme. Vos amis vous rejoignent en un geste.";
     if (S.source === "insta") { rendreScene(scI); $("#insta-t").textContent = "Déjà " + (compte("adore") + compte("promis") + compte("table")) + " Dacquois devant la vitrine"; }
@@ -1327,8 +1400,15 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     rendreScene(scP);
     $("#story-t").textContent = S.moi.nom + " et " + (compte("adore") + compte("promis") + compte("table") - 1) + " Dacquois sont devant Chez Bergine.";
     S._dest = S._dest || new Set(CONTACTS.map((c) => c[0]).filter((n) => !S.envoyes.has(n)));
-    $("#contacts").innerHTML = [...CONTACTS.map((c) => c[0]), "Ma story Instagram"].map((n) => '<button type="button" class="' + (S._dest.has(n) ? "choisi" : "") + '" data-dest="' + n + '"' + (S.envoyes.has(n) ? " disabled" : "") + ">" + (S.envoyes.has(n) ? "✓ " : "") + n + "</button>").join("");
+    S._canal = S._canal || "message";
+    rendreCanaux();
+    $("#contacts").innerHTML = CONTACTS.map((c) => c[0]).map((n) => '<button type="button" class="' + (S._dest.has(n) ? "choisi" : "") + '" data-dest="' + n + '"' + (S.envoyes.has(n) ? " disabled" : "") + ">" + (S.envoyes.has(n) ? "✓ " : "") + n + "</button>").join("");
     feuille("f-partage");
+  }
+  function rendreCanaux() {
+    $("#canaux").innerHTML = CANAUX.map(([k, l]) => '<button type="button" class="' + (k === S._canal ? "choisi" : "") + '" data-canal="' + k + '"' + (k === "story" && S.envoyes.has("Ma story Instagram") ? " disabled" : "") + ">" + l + "</button>").join("");
+    const story = S._canal === "story";
+    $("#lbl-contacts").hidden = story; $("#contacts").hidden = story;
   }
   function rejoindre(nom, look, type, delai, texte) {
     setTimeout(() => {
@@ -1342,16 +1422,21 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     }, delai);
   }
   function envoyer() {
-    const dest = [...(S._dest || [])].filter((n) => !S.envoyes.has(n));
+    const story = S._canal === "story";
+    const dest = (story ? ["Ma story Instagram"] : [...(S._dest || [])]).filter((n) => !S.envoyes.has(n));
     if (!dest.length) { feuille(null); return; }
-    dest.forEach((n) => S.envoyes.add(n)); S._dest = new Set();
+    dest.forEach((n) => S.envoyes.add(n)); if (!story) S._dest = new Set();
     feuille(null); ac(); SON.pop();
     const amis = dest.filter((n) => n !== "Ma story Instagram");
-    notifier(img(S.moi.look, "debout"), "Votre vitrine est partie", (amis.length ? "Chez " + amis.join(", ") : "") + (dest.includes("Ma story Instagram") ? (amis.length ? " et " : "") + "en story" : "") + ".", "Ils la reçoivent avec la fin à votre nom");
+    const par = (CANAUX.find((c) => c[0] === S._canal) || CANAUX[0])[2];
+    notifier(img(S.moi.look, "debout"), "Votre vitrine est partie", story ? "En story, avec le lien vers votre vitrine." : "Chez " + amis.join(", ") + ", par " + par + ", comme un simple lien.",
+      amis.includes(AMI[0]) ? AMI[0] + " n’a pas ClikMe : touchez pour voir ce qu’elle reçoit" : "Ils la reçoivent avec la fin à votre nom");
+    if (amis.includes(AMI[0])) $("#notif").dataset.ami = "1";
     let delai = 3200;
     for (const n of amis) {
       const [, look] = CONTACTS.find((c) => c[0] === n);
       if (n === "Noah") continue; // tout le monde ne répond pas
+      if (n === AMI[0]) continue; // son arrivée à elle se joue à la main : « Voir ce que reçoit Camille »
       const type = n === "Maman" ? "promis" : (S.choix === "table" ? "adore" : S.choix || "adore");
       rejoindre(n, look, type, delai, n === "Maman" ? "a ouvert votre vitrine… et promet de passer chez Bergine 💛" : "a ouvert votre vitrine… et son fantôme vous rejoint !");
       delai += 3800;
@@ -1377,8 +1462,73 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   }
   function ouvrirLien() {
     ac(); SON.pop(); $("#notif").classList.remove("on");
-    $("#ecran-h").classList.add("web"); $("#barre-app").textContent = "Safari";
+    $("#ecran-h").classList.add("web"); $("#barre-app").textContent = "Safari"; $("#adresse-url").textContent = "clikme.fr/bergine";
     vue(S.pret ? "h-video" : "h-onb");
+  }
+
+  /* ═══ CE QUE REÇOIT UN AMI QUI N'A PAS CLIKME ═══ */
+  // un lien dans ses messages → une page web (la vidéo, puis la vitrine de son ami) → une cage, sans appli ni compte
+  const scA = $("#sc-a");
+  const slug = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  function ouvrirAmi() {
+    if (S.foule.some((f) => f.nom === AMI[0])) return;
+    ac(); feuille(null); $("#notif").classList.remove("on");
+    const e = $("#ecran-h"), v = $("#h-ami");
+    if (!S._avantAmi) S._avantAmi = { web: e.classList.contains("web"), barre: $("#barre-app").textContent, vue: ($("#ecran-h .vue.on") || {}).id };
+    e.classList.remove("web"); $("#barre-app").textContent = "Messages";
+    v.classList.remove("etape2", "fait");
+    $("#ami-av").src = img(S.moi.look, "debout"); $("#ami-de").textContent = S.moi.nom;
+    $("#ami-lien-t").textContent = S.moi.nom + " t’attend devant Chez Bergine";
+    $("#ami-lien-u").textContent = "clikme.fr/bergine/" + slug(S.moi.nom);
+    $("#ami-nom").value = AMI[0];
+    $$("[data-ami-pose]").forEach((im) => { im.src = img(AMI[1], im.dataset.amiPose); });
+    $$("#ami-cages .f3").forEach((b) => b.classList.remove("on", "ouverte"));
+    vue("h-ami");
+  }
+  function amiOuvreLien() {
+    ac(); SON.pop();
+    $("#ecran-h").classList.add("web"); $("#barre-app").textContent = "Safari"; $("#adresse-url").textContent = "clikme.fr/bergine/" + slug(S.moi.nom);
+    $("#ami-t").textContent = S.moi.nom + " t’attend devant Chez Bergine. Et toi ?";
+    $("#h-ami").classList.add("etape2");
+    rendreScene(scA);
+  }
+  function amiChoisit(b) {
+    if ($("#h-ami").classList.contains("fait") || S.foule.some((f) => f.nom === AMI[0])) return;
+    const type = b.dataset.choix, nom = ($("#ami-nom").value.trim() || AMI[0]).slice(0, 14);
+    ac(); b.classList.add("ouverte"); bip(1320, .06, "triangle", .04);
+    setTimeout(() => {
+      b.classList.add("on");
+      const f = ajouter(type, { nom, look: AMI[1], invite: true, recent: true, heure: S.table ? S.table.heure : "12 h 30", n: 1 });
+      S.amenes++; S.envoyes.add(AMI[0]); S.vus.add(nom); S._amiNom = nom; S._amiType = type;
+      evenement((type === "promis" ? "a promis de venir" : type === "table" ? "vient aujourd’hui avec " + S.moi.nom : "a adoré votre magret") + " · venue par la vitrine de " + S.moi.nom + ", sans ClikMe", f);
+      rendreTout(); rendreScene(scA);
+      const cible = scA._fg.get(f.id);
+      if (cible) cible.classList.add("cache");
+      SON.vol();
+      voler($("img", b), cible && $("img", cible), () => {
+        if (cible) cible.classList.remove("cache");
+        SON.pose(); applaudir(4);
+        $("#ami-t").textContent = S.moi.nom + " et " + nom + ", devant Chez Bergine 💛";
+        $("#ami-fait-t").textContent = "C’est fait ! Ton fantôme est à côté de celui de " + S.moi.nom + ".";
+        $("#ami-fait-p").textContent = S.moi.nom + " le voit déjà, et Jean-Marie aussi. Rien à installer. Pour garder ton fantôme et le retrouver chez les autres commerçants de Dax : l’appli ClikMe, si tu veux, plus tard.";
+        $("#ami-retour-nom").textContent = S.moi.nom;
+        $("#h-ami").classList.add("fait");
+      });
+      setTimeout(() => { f.recent = false; rendreTout(); }, 2600);
+    }, reduit ? 0 : 280);
+  }
+  function revenirChezMoi() {
+    const a = S._avantAmi || {}; S._avantAmi = null;
+    $("#ecran-h").classList.toggle("web", !!a.web); $("#barre-app").textContent = a.barre || "ClikMe"; $("#adresse-url").textContent = "clikme.fr/bergine";
+    const venue = S.foule.some((f) => f.nom === S._amiNom && f.invite);
+    vue(S.choix ? "h-scene" : (a.vue && a.vue !== "h-ami" ? a.vue : "h-video"));
+    if (venue) setTimeout(() => {
+      notifier(img(AMI[1], S._amiType === "table" ? "assis" : "debout"), S._amiNom, "a ouvert votre vitrine… et son fantôme vous rejoint ! Sans appli, sans compte.", "Son fantôme est à côté du vôtre");
+      if (S._amiType === "adore") coeurs(scH, 3);
+    }, 500);
+    // ce qui est arrivé chez elle pendant ce temps : la dernière nouvelle, ensuite
+    const enAttente = S._attente || []; S._attente = [];
+    if (enAttente.length) setTimeout(() => notifier(...enAttente[enAttente.length - 1]), venue ? 5900 : 500);
   }
 
   /* ═══ CE QUE VOIT LE COMMERÇANT ═══ */
@@ -1468,7 +1618,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   /* ═══ LES NOTIFICATIONS, ET LE TÉLÉPHONE QU'ON NE VOIT PAS ═══ */
   function notifier(icone, titre, texte, sous) {
     const n = $("#notif");
-    n.dataset.lien = "";
+    // pendant qu'on joue l'amie, les nouvelles de l'habitant attendent son retour
+    if ($("#h-ami").classList.contains("on")) { (S._attente = S._attente || []).push([icone, titre, texte, sous]); return; }
+    n.dataset.lien = ""; n.dataset.ami = "";
     $("#notif-img").src = icone; $("#notif-t").textContent = titre; $("#notif-p").textContent = texte; $("#notif-s").textContent = sous || "";
     n.classList.remove("on"); void n.offsetWidth; n.classList.add("on"); SON.notif();
     signaler("h", titre + " : " + texte);
@@ -1530,6 +1682,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     S.carnet.forEach((c) => { if (!c.tenu) c.quand = c.quand === "à l’instant" ? "hier" : c.quand; });
     S.carnet = S.carnet.filter((c) => !c.tenu);
     // ses amis reviennent vite ; la vitrine se remplit
+    feuille(null); S._avantAmi = null; $("#adresse-url").textContent = "clikme.fr/bergine";
     rendreTout(); $("#ecran-h").classList.remove("web"); vue(S.source === "insta" ? "h-insta" : "h-video");
     notifier("a/chef.jpg", "Chez Bergine", "Nouvelle vidéo de Jean-Marie ce matin. La vitrine est vide : soyez le premier devant !", "Le Direct · 8 h 02");
     setTimeout(() => { const [nom, look] = AMIS[0]; ajouter("adore", { nom, look, ami: true, recent: true }); evenement("a adoré votre magret", { nom, look }); rendreTout(); SON.arrive(); }, 4200);
@@ -1550,7 +1703,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     v.addEventListener("ended", () => { $("#h-video").classList.remove("joue"); v.load(); v.poster = "a/affiche.jpg"; });
     v.addEventListener("click", () => { if (!v.paused) { v.pause(); $("#h-video").classList.remove("joue"); } });
     // les trois fantômes
-    $$(".f3").forEach((b) => b.addEventListener("click", () => {
+    $$("#h-video .f3").forEach((b) => b.addEventListener("click", () => {
       if (b.classList.contains("on")) { vue("h-scene"); return; }
       ac(); b.classList.add("ouverte"); bip(1320, .06, "triangle", .04);
       setTimeout(() => choisir(b.dataset.choix, b), reduit ? 0 : 280);
@@ -1558,16 +1711,27 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     $("#partager").addEventListener("click", ouvrirPartage);
     $("#contacts").addEventListener("click", (e) => { const b = e.target.closest("[data-dest]"); if (!b || b.disabled) return; const n = b.dataset.dest; S._dest.has(n) ? S._dest.delete(n) : S._dest.add(n); b.classList.toggle("choisi", S._dest.has(n)); });
     $("#envoyer").addEventListener("click", envoyer);
+    $("#canaux").addEventListener("click", (e) => { const b = e.target.closest("[data-canal]"); if (!b || b.disabled) return; S._canal = b.dataset.canal; rendreCanaux(); });
+    // l'ami sans ClikMe : son message, la page, la cage, puis retour chez soi
+    $("#voir-ami").addEventListener("click", ouvrirAmi);
+    $("#ami-lien").addEventListener("click", amiOuvreLien);
+    $$("#ami-cages .f3").forEach((b) => b.addEventListener("click", () => amiChoisit(b)));
+    $("#ami-retour").addEventListener("click", revenirChezMoi);
+    $("#ami-annuler").addEventListener("click", revenirChezMoi);
     $$(".source button").forEach((b) => b.addEventListener("click", () => source(b.dataset.source)));
     $("#insta-lien").addEventListener("click", ouvrirLien);
     $("#insta-fantome").addEventListener("click", () => { ac(); notifier("a/chef.jpg", "chezbergine · message", "👻 Ta place devant la vitrine t’attend : clikme.fr/bergine", "Réponse automatique à votre 👻 · touchez pour ouvrir"); $("#notif").dataset.lien = "1"; });
-    $("#mini3").addEventListener("click", (e) => { const b = e.target.closest("[data-choix]"); if (!b) return; if (b.dataset.choix === "table") { ouvrirTable(); return; } choisir(b.dataset.choix, S.choix ? scH._fg.get("moi") : $('.f3[data-choix="' + b.dataset.choix + '"]')); });
+    $("#mini3").addEventListener("click", (e) => { const b = e.target.closest("[data-choix]"); if (!b) return; if (b.dataset.choix === "table") { ouvrirTable(); return; } choisir(b.dataset.choix, S.choix ? scH._fg.get("moi") : $('#h-video .f3[data-choix="' + b.dataset.choix + '"]')); });
     $("#vers-video").addEventListener("click", () => vue("h-video"));
     $("#vers-maison").addEventListener("click", () => { rendreMaison(); feuille("f-maison"); });
     $("#ecran-h").addEventListener("click", (e) => {
       if (e.target.closest("[data-ferme]") || e.target.id === "voile") feuille(null);
       if (e.target.closest("[data-maison]")) { rendreMaison(); feuille("f-maison"); }
-      if (e.target.closest("#notif")) { $("#notif").classList.remove("on"); if ($("#notif").dataset.lien) { $("#notif").dataset.lien = ""; ouvrirLien(); } }
+      if (e.target.closest("#notif")) {
+        const n = $("#notif"); n.classList.remove("on");
+        if (n.dataset.lien) { n.dataset.lien = ""; ouvrirLien(); }
+        if (n.dataset.ami) { n.dataset.ami = ""; ouvrirAmi(); }
+      }
     });
     $("#heures").addEventListener("click", (e) => { const b = e.target.closest("[data-h]"); if (!b) return; S._heure = b.dataset.h; $$("#heures button").forEach((x) => x.classList.toggle("on", x === b)); });
     $("#couverts").addEventListener("click", (e) => { const b = e.target.closest("[data-n]"); if (!b) return; S._n = +b.dataset.n; $$("#couverts button").forEach((x) => x.classList.toggle("on", x === b)); });
@@ -1578,7 +1742,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       if (S._avec) inviterATable(S._avec);
       feuille(null);
       if (S.choix === "table") { rendreTout(); return; }
-      choisir("table", S.choix ? scH._fg.get("moi") : $(".f3.table"));
+      choisir("table", S.choix ? scH._fg.get("moi") : $("#h-video .f3.table"));
     });
     // dans la vitrine, tout se touche
     scH.addEventListener("click", (e) => {
@@ -1639,7 +1803,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     $("#fete").addEventListener("click", () => $("#fete").classList.remove("on"));
     // la page
     $("#lendemain").addEventListener("click", () => { ac(); lendemain(); if (estEtroit()) montrerCol("h"); });
-    $("#zero").addEventListener("click", () => { clearTimeout(minuterie); fermerBulle(); planifierDore(); S = etatInitial(true); $("#porte").value = S.porte; for (const sc of [scH, scC, scP, scI]) construireScene(sc, sc !== scH); peupler(); rendreTout(); source(S.source); feuille(null); $("#act-note").textContent = "Un appel par jour au plus, et seulement au carnet : jamais à toute la ville."; planifier(); });
+    $("#zero").addEventListener("click", () => { clearTimeout(minuterie); fermerBulle(); planifierDore(); S = etatInitial(true); $("#porte").value = S.porte; for (const sc of [scH, scC, scP, scI, scA]) construireScene(sc, sc !== scH); peupler(); rendreTout(); source(S.source); feuille(null); $("#act-note").textContent = "Un appel par jour au plus, et seulement au carnet : jamais à toute la ville."; planifier(); });
     $("#son").addEventListener("click", () => { sonOn = !sonOn; $("#son span").textContent = "Son : " + (sonOn ? "oui" : "non"); if (sonOn) { ac(); SON.pop(); } });
     $$(".onglets button").forEach((b) => b.addEventListener("click", () => montrerCol(b.dataset.col)));
     $("#toast-voir").addEventListener("click", () => montrerCol($("#toast").dataset.col || "c"));
@@ -1647,7 +1811,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 
   /* ═══ DÉPART ═══ */
   S = etatInitial(false);
-  construireScene(scH, false); construireScene(scC, true); construireScene(scP, true); construireScene(scI, true);
+  construireScene(scH, false); construireScene(scC, true); construireScene(scP, true); construireScene(scI, true); construireScene(scA, true);
   peupler();
   brancher();
   $$("#looks button").forEach((b) => b.classList.toggle("on", b.dataset.look === S.moi.look));
