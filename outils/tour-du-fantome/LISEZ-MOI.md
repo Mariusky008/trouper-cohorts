@@ -95,8 +95,10 @@ version du restaurant. Ne servent plus : `trois-3` (les trois places), `vitrine-
 remplit, le petit mot, le partage). Les images sont copiées dans chaque tour : les fantômes des habitants (`tf/`),
 l'intérieur (`tf-interieur.webp`) et son fantôme qui salue (`tf-hote.webp`).
 
-**L'intro** : « Qui a le temps de filmer, de monter, de publier ? » montre une quatrième tuile, « Animer la communauté ».
-Elle s'allume juste après « publier », car la voix ne la dit pas encore. Dans « Et ça tombe plutôt bien… »
+**L'intro** : « Qui a le temps de filmer, monter, publier et animer les réseaux sociaux ? » (nouvel enregistrement) a
+une quatrième tuile, « Animer les réseaux sociaux », qui s'allume sur « animer ». La voix étire « de… » avant
+« filmer » : le repérage automatique se trompait d'un demi-temps, donc les instants de ses mots sont relevés à
+l'écoute (`CALES` dans `outils/mesurer-intro2.py`). Dans « Et ça tombe plutôt bien… »
 (`intro-4b`), le début est prononcé très vite dans l'enregistrement. Le « ding » de la phrase d'avant tombait dessus ;
 il est maintenant joué avant, et la pause entre les deux phrases est plus longue.
 
