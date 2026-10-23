@@ -193,14 +193,14 @@ CSS = r"""
 .s2.vide .s2-anneau .piste{animation:s2-alarme .45s ease 3}
 @keyframes s2-alarme{50%{stroke:rgba(255,46,154,.6)}}
 .s2-mots{position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);display:flex;flex-direction:column;align-items:flex-start;gap:.2em;font-size:clamp(27px,9.4cqmin,52px)}
-.s2-mot b small{display:block;margin-top:.12em;font-size:.4em;font-weight:800;letter-spacing:.01em;opacity:.85}
+.s2-mot b small{display:block;margin-top:.12em;font-size:.4em;font-weight:800;letter-spacing:.01em;white-space:nowrap;opacity:.85}
 .s2-mot{position:relative;display:flex;align-items:center;gap:.32em;opacity:0;transform:translateX(.9em) skewX(-12deg);filter:blur(6px);
   transition:opacity .22s,transform .55s var(--ressort),filter .3s}
 .s2-mot.on{opacity:1;transform:none;filter:none}
 .s2-tuile{display:grid;place-items:center;flex:none;width:1.12em;height:1.12em;border-radius:.3em;background:linear-gradient(135deg,#FF2E9A,#FF8A3D);
   box-shadow:inset 0 .06em 0 rgba(255,255,255,.35),0 .25em .6em -.2em rgba(255,46,154,.85)}
 .s2-tuile svg{width:.62em;height:.62em;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.s2-mot b{font-weight:900;letter-spacing:-.04em;line-height:1;color:#fff}
+.s2-mot b{font-weight:900;letter-spacing:-.04em;line-height:1;color:#fff;text-align:left}
 .s2-mot::after{content:"";position:absolute;left:1.3em;right:-.12em;top:54%;height:.12em;border-radius:.06em;background:linear-gradient(90deg,#FF2E9A,#FFB347);
   box-shadow:0 0 .3em rgba(255,46,154,.7);transform:scaleX(0);transform-origin:0 50%;transition:transform .32s ease var(--d)}
 .s2.barre .s2-mot::after{transform:none}
@@ -573,8 +573,8 @@ JS_DONNEES = r"""
         return '<line class="tic' + (fort ? " fort" : "") + '" x1="' + (50 + r1 * Math.cos(a)).toFixed(2) + '" y1="' + (50 + r1 * Math.sin(a)).toFixed(2) +
           '" x2="' + (50 + 44.6 * Math.cos(a)).toFixed(2) + '" y2="' + (50 + 44.6 * Math.sin(a)).toFixed(2) + '"/>';
       }).join("") + '<circle class="temps" cx="50" cy="50" r="47" pathLength="1"/></svg><div class="s2-mots">' +
-      // « filmer, monter, publier : et rajouter animer la communauté »
-      [["camera", "Filmer"], ["ciseaux", "Monter"], ["envoi", "Publier"], ["bulle", "Animer", "la communauté"]].map(([i, t, s], k) => '<div class="s2-mot" data-k="' + k + '" style="--d:' + k * 0.12 + 's"><span class="s2-tuile">' +
+      // « filmer, monter, publier : et rajouter animer les réseaux sociaux »
+      [["camera", "Filmer"], ["ciseaux", "Monter"], ["envoi", "Publier"], ["bulle", "Animer", "les réseaux sociaux"]].map(([i, t, s], k) => '<div class="s2-mot" data-k="' + k + '" style="--d:' + k * 0.12 + 's"><span class="s2-tuile">' +
         iIco(i, "") + "</span><b>" + t + (s ? "<small>" + s + "</small>" : "") + "</b></div>").join("") + '</div><span class="s2-verdict">Pas le temps.</span></div>',
     // ②b la chaîne : vidéos partagées avec le cœur → sympathie → fidélité, puis ses clients qui s'attachent
     attache: () => '<div class="s2b">' +
@@ -627,10 +627,10 @@ JS_DONNEES = r"""
     { nom: "intro-1", x: 42, decor: "moments", apres: 450, debut: iAllume(".s1-chip"), dit: "Chaque jour, chez vous, il se passe quelque chose qui mérite d’être *vu.",
       mots: { jour: iTout(iAllume('[data-k="0"]'), iSon("pop")), vous: iTout(iAllume('[data-k="1"]'), iSon("pop")), passe: iTout(iAllume('[data-k="2"]'), iSon("glissement")),
         vu: iTout(iAllume(".s1", "vu"), iSon("magie")) } },
-    { nom: "intro-2", x: 58, decor: "temps", apres: 1500, debut: iAllume(".s2", "file"), dit: "Qui a le *temps de filmer, de monter, de publier" + NB + "?",
+    { nom: "intro-2", x: 58, decor: "temps", apres: 1500, debut: iAllume(".s2", "file"), dit: "Qui a le *temps de filmer, monter, publier et animer les réseaux sociaux" + NB + "?",
       mots: { filmer: iTout(iAllume('[data-k="0"]'), iSon("declic")), monter: iTout(iAllume('[data-k="1"]'), iSon("declic")),
-        publier: iTout(iAllume('[data-k="2"]'), iSon("declic"), iPuis(380, iTout(iAllume('[data-k="3"]'), iSon("declic"))),
-          iPuis(820, iTout(iAllume(".s2", "barre"), iAllume(".s2", "vide"), iGeste("inquiet", 900), iSon("choc")))) } },
+        publier: iTout(iAllume('[data-k="2"]'), iSon("declic")), animer: iTout(iAllume('[data-k="3"]'), iSon("declic")),
+        sociaux: iPuis(420, iTout(iAllume(".s2", "barre"), iAllume(".s2", "vide"), iGeste("inquiet", 900), iSon("choc"))) } },
     // « il faudrait rajouter ici que c'est pourtant essentiel » : la chaîne de la sympathie, sur le même anneau
     { nom: "intro-2b", x: 50, decor: "attache", garde: true, apres: 1500,
       dit: "Pourtant, c’est *essentiel" + NB + ": des vidéos partagées avec le *cœur créent de la *sympathie, et la sympathie crée la *fidélité. Vos clients *s’attachent à vous, naturellement.",

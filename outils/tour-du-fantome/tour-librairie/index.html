@@ -1288,14 +1288,14 @@ h1 em{font-style:normal;color:var(--rose)}
 .s2.vide .s2-anneau .piste{animation:s2-alarme .45s ease 3}
 @keyframes s2-alarme{50%{stroke:rgba(255,46,154,.6)}}
 .s2-mots{position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);display:flex;flex-direction:column;align-items:flex-start;gap:.2em;font-size:clamp(27px,9.4cqmin,52px)}
-.s2-mot b small{display:block;margin-top:.12em;font-size:.4em;font-weight:800;letter-spacing:.01em;opacity:.85}
+.s2-mot b small{display:block;margin-top:.12em;font-size:.4em;font-weight:800;letter-spacing:.01em;white-space:nowrap;opacity:.85}
 .s2-mot{position:relative;display:flex;align-items:center;gap:.32em;opacity:0;transform:translateX(.9em) skewX(-12deg);filter:blur(6px);
   transition:opacity .22s,transform .55s var(--ressort),filter .3s}
 .s2-mot.on{opacity:1;transform:none;filter:none}
 .s2-tuile{display:grid;place-items:center;flex:none;width:1.12em;height:1.12em;border-radius:.3em;background:linear-gradient(135deg,#FF2E9A,#FF8A3D);
   box-shadow:inset 0 .06em 0 rgba(255,255,255,.35),0 .25em .6em -.2em rgba(255,46,154,.85)}
 .s2-tuile svg{width:.62em;height:.62em;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.s2-mot b{font-weight:900;letter-spacing:-.04em;line-height:1;color:#fff}
+.s2-mot b{font-weight:900;letter-spacing:-.04em;line-height:1;color:#fff;text-align:left}
 .s2-mot::after{content:"";position:absolute;left:1.3em;right:-.12em;top:54%;height:.12em;border-radius:.06em;background:linear-gradient(90deg,#FF2E9A,#FFB347);
   box-shadow:0 0 .3em rgba(255,46,154,.7);transform:scaleX(0);transform-origin:0 50%;transition:transform .32s ease var(--d)}
 .s2.barre .s2-mot::after{transform:none}
@@ -2753,8 +2753,8 @@ h1 em{font-style:normal;color:var(--rose)}
         return '<line class="tic' + (fort ? " fort" : "") + '" x1="' + (50 + r1 * Math.cos(a)).toFixed(2) + '" y1="' + (50 + r1 * Math.sin(a)).toFixed(2) +
           '" x2="' + (50 + 44.6 * Math.cos(a)).toFixed(2) + '" y2="' + (50 + 44.6 * Math.sin(a)).toFixed(2) + '"/>';
       }).join("") + '<circle class="temps" cx="50" cy="50" r="47" pathLength="1"/></svg><div class="s2-mots">' +
-      // « filmer, monter, publier : et rajouter animer la communauté »
-      [["camera", "Filmer"], ["ciseaux", "Monter"], ["envoi", "Publier"], ["bulle", "Animer", "la communauté"]].map(([i, t, s], k) => '<div class="s2-mot" data-k="' + k + '" style="--d:' + k * 0.12 + 's"><span class="s2-tuile">' +
+      // « filmer, monter, publier : et rajouter animer les réseaux sociaux »
+      [["camera", "Filmer"], ["ciseaux", "Monter"], ["envoi", "Publier"], ["bulle", "Animer", "les réseaux sociaux"]].map(([i, t, s], k) => '<div class="s2-mot" data-k="' + k + '" style="--d:' + k * 0.12 + 's"><span class="s2-tuile">' +
         iIco(i, "") + "</span><b>" + t + (s ? "<small>" + s + "</small>" : "") + "</b></div>").join("") + '</div><span class="s2-verdict">Pas le temps.</span></div>',
     // ②b la chaîne : vidéos partagées avec le cœur → sympathie → fidélité, puis ses clients qui s'attachent
     attache: () => '<div class="s2b">' +
@@ -2807,10 +2807,10 @@ h1 em{font-style:normal;color:var(--rose)}
     { nom: "intro-1", x: 42, decor: "moments", apres: 450, debut: iAllume(".s1-chip"), dit: "Chaque jour, chez vous, il se passe quelque chose qui mérite d’être *vu.",
       mots: { jour: iTout(iAllume('[data-k="0"]'), iSon("pop")), vous: iTout(iAllume('[data-k="1"]'), iSon("pop")), passe: iTout(iAllume('[data-k="2"]'), iSon("glissement")),
         vu: iTout(iAllume(".s1", "vu"), iSon("magie")) } },
-    { nom: "intro-2", x: 58, decor: "temps", apres: 1500, debut: iAllume(".s2", "file"), dit: "Qui a le *temps de filmer, de monter, de publier" + NB + "?",
+    { nom: "intro-2", x: 58, decor: "temps", apres: 1500, debut: iAllume(".s2", "file"), dit: "Qui a le *temps de filmer, monter, publier et animer les réseaux sociaux" + NB + "?",
       mots: { filmer: iTout(iAllume('[data-k="0"]'), iSon("declic")), monter: iTout(iAllume('[data-k="1"]'), iSon("declic")),
-        publier: iTout(iAllume('[data-k="2"]'), iSon("declic"), iPuis(380, iTout(iAllume('[data-k="3"]'), iSon("declic"))),
-          iPuis(820, iTout(iAllume(".s2", "barre"), iAllume(".s2", "vide"), iGeste("inquiet", 900), iSon("choc")))) } },
+        publier: iTout(iAllume('[data-k="2"]'), iSon("declic")), animer: iTout(iAllume('[data-k="3"]'), iSon("declic")),
+        sociaux: iPuis(420, iTout(iAllume(".s2", "barre"), iAllume(".s2", "vide"), iGeste("inquiet", 900), iSon("choc"))) } },
     // « il faudrait rajouter ici que c'est pourtant essentiel » : la chaîne de la sympathie, sur le même anneau
     { nom: "intro-2b", x: 50, decor: "attache", garde: true, apres: 1500,
       dit: "Pourtant, c’est *essentiel" + NB + ": des vidéos partagées avec le *cœur créent de la *sympathie, et la sympathie crée la *fidélité. Vos clients *s’attachent à vous, naturellement.",
@@ -2838,7 +2838,7 @@ h1 em{font-style:normal;color:var(--rose)}
     { nom: "intro-6", x: 50, decor: "regardez", apres: 700, dit: "Regardons tout ça de plus *près.",
       mots: { regardons: iTout(iGeste("salue"), iSon("elan")), "près": iPuis(150, iTout(iAllume(".s6", "plonge"), iGeste("zoom"))) } },
   ];
-  Object.assign(TEMPS, {"intro-1": {"d": 4.28, "m": [0.04, 0.39, 0.9, 1.18, 1.69, 1.88, 2.18, 2.46, 2.66, 2.99, 3.14, 3.58, 3.93], "b": "011111111111111100000011111111111000000000111111100111001111111111111110001111111111111001110001100000000000"}, "intro-2": {"d": 2.82, "m": [0.04, 0.22, 0.39, 0.6, 0.73, 0.85, 1.25, 1.43, 1.86, 2.16], "b": "01111111110111111110111111111111111111111111001111111111001111111111110"}, "intro-2b": {"d": 10.031, "m": [0.08, 0.65, 0.94, 1.98, 2.23, 2.77, 3.29, 3.56, 3.82, 4.0, 4.14, 4.38, 4.63, 5.29, 5.46, 5.6, 5.99, 6.26, 6.41, 7.75, 7.89, 8.2, 8.55, 8.67, 9.18], "b": "00111101111110000001100011111111010111100000000000011111111111101110011111111111111110011111100001111111111100111111110010100000000011110011111111101111100011111111100011111111101110000000000000111111111100011101111111110110000001111101111111001000000"}, "intro-3": {"d": 3.56, "m": [0.03, 0.65, 0.91, 1.05, 1.23, 2.28, 2.41, 2.86, 3.18, 3.33], "b": "011111111000000001111111111101010001100111000000000000000111111111111111110011011100000000"}, "intro-4": {"d": 1.88, "m": [0.11, 0.3, 0.49, 1.1, 1.36, 1.49], "b": "00011111111110111111000000001101001110011110000"}, "intro-4b": {"d": 7.001, "m": [0.05, 0.19, 0.33, 0.61, 0.93, 1.3, 1.44, 1.9, 2.11, 2.52, 2.61, 3.34, 3.55, 3.73, 4.13, 4.42, 5.16, 5.36, 5.62, 5.7, 5.98, 6.11], "b": "00101110111100011011100111000000110000011111000111111111111110011111000111111111000000110000000001100001111110111011110011110000011000001111111111110011011001100011000000000000"}, "intro-5": {"d": 6.844, "m": [0.03, 0.29, 0.61, 1.2, 1.34, 1.53, 1.74, 2.15, 2.29, 2.44, 2.62, 3.05, 3.63, 3.98, 4.42, 4.55, 4.76, 5.26, 5.46, 5.9, 6.04, 6.37], "b": "0011111111111111111100001110011011100011100111000000011001111100111001101100111000000000001111111011111100000011101110011111111011111000111011000001111111001100000000000000"}, "intro-6": {"d": 1.802, "m": [0.05, 0.71, 0.88, 1.02, 1.24, 1.39], "b": "0010111111111110011110111110000110000110000000"}});
+  Object.assign(TEMPS, {"intro-1": {"d": 4.28, "m": [0.04, 0.39, 0.9, 1.18, 1.69, 1.88, 2.18, 2.46, 2.66, 2.99, 3.14, 3.58, 3.93], "b": "011111111111111100000011111111111000000000111111100111001111111111111110001111111111111001110001100000000000"}, "intro-2": {"d": 4.833, "m": [0.05, 0.18, 0.26, 0.32, 0.46, 1.0, 1.78, 2.56, 3.22, 3.44, 3.98, 4.04, 4.32], "b": "0011111111001111111111001100001111111111111011111110001111110000111111111011111001110011111111111111011011001100111000000"}, "intro-2b": {"d": 10.031, "m": [0.08, 0.65, 0.94, 1.98, 2.23, 2.77, 3.29, 3.56, 3.82, 4.0, 4.14, 4.38, 4.63, 5.29, 5.46, 5.6, 5.99, 6.26, 6.41, 7.75, 7.89, 8.2, 8.55, 8.67, 9.18], "b": "00111101111110000001100011111111010111100000000000011111111111101110011111111111111110011111100001111111111100111111110010100000000011110011111111101111100011111111100011111111101110000000000000111111111100011101111111110110000001111101111111001000000"}, "intro-3": {"d": 3.56, "m": [0.03, 0.65, 0.91, 1.05, 1.23, 2.28, 2.41, 2.86, 3.18, 3.33], "b": "011111111000000001111111111101010001100111000000000000000111111111111111110011011100000000"}, "intro-4": {"d": 1.88, "m": [0.11, 0.3, 0.49, 1.1, 1.36, 1.49], "b": "00011111111110111111000000001101001110011110000"}, "intro-4b": {"d": 7.001, "m": [0.05, 0.19, 0.33, 0.61, 0.93, 1.3, 1.44, 1.9, 2.11, 2.52, 2.61, 3.34, 3.55, 3.73, 4.13, 4.42, 5.16, 5.36, 5.62, 5.7, 5.98, 6.11], "b": "00101110111100011011100111000000110000011111000111111111111110011111000111111111000000110000000001100001111110111011110011110000011000001111111111110011011001100011000000000000"}, "intro-5": {"d": 6.844, "m": [0.03, 0.29, 0.61, 1.2, 1.34, 1.53, 1.74, 2.15, 2.29, 2.44, 2.62, 3.05, 3.63, 3.98, 4.42, 4.55, 4.76, 5.26, 5.46, 5.9, 6.04, 6.37], "b": "0011111111111111111100001110011011100011100111000000011001111100111001101100111000000000001111111011111100000011101110011111111011111000111011000001111111001100000000000000"}, "intro-6": {"d": 1.802, "m": [0.05, 0.71, 0.88, 1.02, 1.24, 1.39], "b": "0010111111111110011110111110000110000110000000"}});
   INTRO.forEach((l) => {
     if (!l.nom) return;
     if (["intro-1", "intro-2", "intro-2b", "intro-3", "intro-4", "intro-4b", "intro-5", "intro-6"].includes(l.nom)) { if (!ENREGISTREES.includes(l.nom)) ENREGISTREES.push(l.nom); return; }
