@@ -80,3 +80,7 @@ next-env.d.ts
 # LE MODELE, LUI, EST VERSIONNE — voir ce script pour pourquoi ce partage.
 /public/mediapipe/vision_wasm_*
 /public/mediapipe/vision_bundle.mjs
+
+# LES TOURS DU FANTÔME sont recopiés depuis outils/tour-du-fantome/ par
+# scripts/poser-tours.mjs, appelé en `prebuild` : la source est là-bas.
+/public/tours/

@@ -726,7 +726,7 @@ footer .pied a:hover { color: var(--creme) }
         <p>Deux minutes, comme si c’était votre commerce : ce que votre fantôme fait pour vous, puis ce que vit votre client.</p>
         <div class="autres-tours" id="autres-tours"></div>
       </div>
-      <a class="btn rose" id="demo-lien" href="https://claude.ai/artifact/PNE42Bh4RcW7yJUQ2e2oZ5" target="_blank" rel="noopener">Voir la démo
+      <a class="btn rose" id="demo-lien" href="/tours/restaurant" target="_blank" rel="noopener">Voir la démo
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     </div>
   </div>
@@ -838,12 +838,14 @@ footer .pied a:hover { color: var(--creme) }
   const A = (f) => BASE + f;
 
   /* ═══ Les métiers : tout ce qui change d'un commerce à l'autre ═══ */
+  // les tours du fantôme, servis par le site (public/tours/, recopiés à chaque déploiement par
+  // scripts/poser-tours.mjs) : ils suivent main, sans dépendre d'un compte claude.ai
   const TOURS = {
-    restaurant: ["Restaurant", "https://claude.ai/artifact/PNE42Bh4RcW7yJUQ2e2oZ5"],
-    mode: ["Vêtements", "https://claude.ai/artifact/KbADXsnQA55uqkSQEVbXR5"],
-    coiffure: ["Coiffure", "https://claude.ai/artifact/HjzV4zwSsUHTpNcBSnQXFG"],
-    librairie: ["Librairie", "https://claude.ai/artifact/GrCdASNbis5crVFVUrf9P2"],
-    bijou: ["Bijouterie", "https://claude.ai/artifact/LtmrpKqY5rbcqGc7WA1DkX"],
+    restaurant: ["Restaurant", "/tours/restaurant"],
+    mode: ["Vêtements", "/tours/vetements"],
+    coiffure: ["Coiffure", "/tours/coiffure"],
+    librairie: ["Librairie", "/tours/librairie"],
+    bijou: ["Bijouterie", "/tours/bijouterie"],
   };
   const PRENDRE = { diner: ["o-diner.jpg", "Un dîner"], fleurs: ["o-fleurs.jpg", "Des fleurs"], coiffure: ["o-coiffure.jpg", "Une coupe"], hotel: ["o-hotel.jpg", "Un hôtel"] };
   const M = {

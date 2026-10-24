@@ -5,5 +5,10 @@ dist
 .trae
 .log
 .figma
-# le tour du fantôme : sources des démos publiées comme artefacts, pas le site
-outils/tour-du-fantome
+# le tour du fantôme : ses sources (voix brutes, scripts, bases) ne servent pas au site. Seules les
+# six pages des tours partent, pour que `scripts/poser-tours.mjs` (prebuild) les range dans
+# public/tours/ : clikme.fr/tours/<métier>.
+outils/tour-du-fantome/*
+!outils/tour-du-fantome/tour
+!outils/tour-du-fantome/tour-*
+outils/tour-du-fantome/tour*/index.avant*

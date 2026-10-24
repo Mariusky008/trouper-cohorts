@@ -1,17 +1,17 @@
 # Le tour du fantôme — les six démos pour les commerçants
 
-Ce dossier fabrique les six pages « Le tour du fantôme », publiées comme artefacts claude.ai. Il est la
-**référence** : on modifie ici, puis on republie. Rien ici ne fait partie de l'application ni n'est servi
-sur clikme.fr (le dossier est hors de `public/` et exclu du déploiement par `.vercelignore`).
+Ce dossier fabrique les six pages « Le tour du fantôme ». Il est la **référence** : on modifie ici, on pousse
+sur `main`, et le site les met en ligne tout seul, à `clikme.fr/tours/<métier>` (voir « Publier »). Le
+bouton « Voir la démo » de la page des commerçants (`public/commercants/`) mène à ces adresses.
 
-| Tour | Dossier | Page publiée |
-|---|---|---|
-| Restaurant (Chez Bergine) | `tour/` | https://claude.ai/artifact/PNE42Bh4RcW7yJUQ2e2oZ5 |
-| Vêtements (Maison Lou) | `tour-vetements/` | https://claude.ai/artifact/KbADXsnQA55uqkSQEVbXR5 |
-| Coiffure (Salon Clara) | `tour-coiffure/` | https://claude.ai/artifact/HjzV4zwSsUHTpNcBSnQXFG |
-| Librairie (La Page d'Alice) | `tour-librairie/` | https://claude.ai/artifact/GrCdASNbis5crVFVUrf9P2 |
-| Bijouterie (Atelier Inès) | `tour-bijouterie/` | https://claude.ai/artifact/LtmrpKqY5rbcqGc7WA1DkX |
-| Lunetier (Les Lunettes de Margaux) | `tour-lunettes/` | https://claude.ai/artifact/9R2sn9qYN141C4f54T2Q3C |
+| Tour | Dossier | Sur le site | Ancien artefact claude.ai (plus mis à jour) |
+|---|---|---|---|
+| Restaurant (Chez Bergine) | `tour/` | https://www.clikme.fr/tours/restaurant | https://claude.ai/artifact/PNE42Bh4RcW7yJUQ2e2oZ5 |
+| Vêtements (Maison Lou) | `tour-vetements/` | https://www.clikme.fr/tours/vetements | https://claude.ai/artifact/KbADXsnQA55uqkSQEVbXR5 |
+| Coiffure (Salon Clara) | `tour-coiffure/` | https://www.clikme.fr/tours/coiffure | https://claude.ai/artifact/HjzV4zwSsUHTpNcBSnQXFG |
+| Librairie (La Page d'Alice) | `tour-librairie/` | https://www.clikme.fr/tours/librairie | https://claude.ai/artifact/GrCdASNbis5crVFVUrf9P2 |
+| Bijouterie (Atelier Inès) | `tour-bijouterie/` | https://www.clikme.fr/tours/bijouterie | https://claude.ai/artifact/LtmrpKqY5rbcqGc7WA1DkX |
+| Lunetier (Les Lunettes de Margaux) | `tour-lunettes/` | https://www.clikme.fr/tours/lunettes | https://claude.ai/artifact/9R2sn9qYN141C4f54T2Q3C |
 
 ## Ce qu'il y a dedans
 
@@ -175,13 +175,19 @@ noirs pendant les essais, sauf à poser des copies webm dans `intro/zz-webm/` (n
 
 ## Publier
 
-Avec l'outil Artifact d'un Claude :
+**Pousser sur `main` suffit.** À chaque déploiement Vercel, `scripts/poser-tours.mjs` (appelé en `prebuild`)
+recopie les six dossiers dans `public/tours/<métier>/` (non versionné) et ajoute à chaque page l'en-tête
+qu'un artefact recevait à la publication (doctype, encodage, viewport) et `noindex` (les commerces sont
+fictifs). `clikme.fr/tours/<métier>` redirige vers `…/index.html` (`next.config.ts`), où les chemins
+relatifs des images et des voix tombent juste. `.vercelignore` n'envoie que les six dossiers des tours, sans
+leurs `index.avant*.html` (ni les voix brutes, ni les scripts). Si un dossier manque, la compilation échoue
+exprès : le site en ligne reste celui d'avant, plutôt qu'une démo en 404.
 
-1. **Lire** d'abord la page (action `read` sur son lien). Pour pouvoir la modifier, il faut qu'elle
-   réponde qu'on peut l'éditer (« writer »). Ce droit se donne par le menu **Partager** de la page, à
-   l'adresse e-mail exacte du compte claude.ai, en modification.
-2. **Publier** `<tour>/index.html` sur le **même lien** (`url`), en ajoutant dans `files` les fichiers
-   nouveaux ou changés (une nouvelle voix, une image), et `null` pour un fichier qui ne sert plus. Un lien = un tour.
+Pour voir le résultat avant de pousser : `node scripts/poser-tours.mjs`, puis le site en local
+(`npm run dev`), et `http://localhost:3000/tours/restaurant`.
+
+Les anciens artefacts claude.ai restent en ligne mais ne sont plus mis à jour : ils appartiennent au compte
+qui les a créés, et le partage « en modification » à un autre compte n'y donne que la lecture (essayé).
 
 Le prototype « Les trois fantômes » (`outils/trois-fantomes/`) a son propre lien, privé :
 https://claude.ai/artifact/GzdV7YsCpbRwXYzYce4Ae6 .
@@ -192,9 +198,10 @@ Tout ce qu'il faut est dans le dépôt : les pages, les voix, les scripts, les e
 `outils/trois-fantomes/LISEZ-MOI.md`). À faire avant :
 
 - **GitHub** : la nouvelle session doit avoir accès au dépôt `Mariusky008/trouper-cohorts`.
-- **Les pages publiées** : elles appartiennent au compte claude.ai qui les a créées. Pour qu'un autre compte les mette
-  à jour sur le même lien, partagez chacune (les 6 tours et le prototype) en **modification** à son adresse e-mail
-  (menu Partager). Sans ce droit, il ne peut que publier de nouveaux liens.
+- **Les tours** sont servis par le site : rien à transmettre, `main` suffit (voir « Publier »).
+- **Le prototype** reste un artefact claude.ai : il appartient au compte qui l'a créé. Entre deux comptes séparés,
+  le partage « en modification » ne donne que la lecture (essayé avec les tours) : un autre compte le publiera sur
+  un nouveau lien, depuis `outils/trois-fantomes/`.
 - **Le premier message à la nouvelle session** : « Lis `outils/tour-du-fantome/LISEZ-MOI.md` et
   `outils/trois-fantomes/LISEZ-MOI.md` avant de commencer. »
 
@@ -207,7 +214,7 @@ La façon de travailler :
   mot** dans le script (les chiffres en tête de mot sont lus en lettres : `EN_LETTRES`), puis on relance la chaîne :
   `outils/alignement.py` cale les mots sur l'enregistrement, sans reconnaissance vocale. Vérifiez à l'oreille que le
   texte est bien celui qui est dit.
-- Après une modification : relancer la chaîne, `essai-parcours.mjs` sur les tours touchés, puis republier.
+- Après une modification : relancer la chaîne, `essai-parcours.mjs` sur les tours touchés, puis pousser sur `main` : le site les met en ligne.
 - Les essais GitHub (« ClikMe — vérifications ») s'annulent quand un nouvel envoi arrive sur la même branche avant
   leur fin (`cancel-in-progress`) : GitHub affiche alors une croix rouge sur le commit précédent, sans que rien n'ait
   échoué. Ce qui compte, ce sont les coches de la PR et de `main`.

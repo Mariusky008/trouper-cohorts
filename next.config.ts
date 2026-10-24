@@ -23,8 +23,9 @@ const config: NextConfig = {
   // touche une image.
   outputFileTracingExcludes: {
     // `commercants/` : la page d'accueil des commerçants démarchés et ses fichiers (images, voix,
-    // films), servis tels quels au navigateur, jamais lus par une route.
-    "*": ["./public/**/*.{mp4,mov,webm}", "./public/mediapipe/**", "./public/flyers/**", "./public/**/*.{html,pdf}", "./public/commercants/**"],
+    // films), servis tels quels au navigateur, jamais lus par une route. `tours/` : les tours du
+    // fantôme (115 Mo), recopiés à la compilation par `scripts/poser-tours.mjs`, pareil.
+    "*": ["./public/**/*.{mp4,mov,webm}", "./public/mediapipe/**", "./public/flyers/**", "./public/**/*.{html,pdf}", "./public/commercants/**", "./public/tours/**"],
   },
   outputFileTracingIncludes: {
     // L'IMAGE DE PARTAGE LIT SA POLICE ET LE FANTÔME SUR LE DISQUE (voir
@@ -287,6 +288,13 @@ const config: NextConfig = {
       // L'app cliente v3 (/m/<ville>) est retirée. Une icône restée sur un écran
       // d'accueil doit atterrir sur le catalogue actuel, pas sur une erreur.
       { source: "/m/:ville", destination: "/ville/:ville", permanent: false },
+      // LES TOURS DU FANTÔME (public/tours/<métier>/, voir `scripts/poser-tours.mjs`) : l'adresse
+      // courte mène à la page. Une REDIRECTION et pas une réécriture : la page appelle ses images et
+      // ses voix par des chemins relatifs (« m1.jpg ») et ses icônes par `<use href="#…">`. Servie
+      // à `/tours/restaurant`, « m1.jpg » partirait chercher `/tours/m1.jpg` ; une balise `<base>`
+      // réparerait les fichiers mais casserait les icônes. À `/tours/restaurant/index.html`, tout
+      // tombe juste. Temporaire (307) : l'adresse courte reste celle qu'on donne.
+      { source: "/tours/:metier", destination: "/tours/:metier/index.html", permanent: false },
       toHome("/inscription/spheres"),
       toHome("/popey-human-test"),
       toHome("/popey-human-test-v2"),
