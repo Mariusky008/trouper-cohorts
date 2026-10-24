@@ -3,16 +3,17 @@
 #   1. « Les trois fantômes » (côté client, à la fin de sa vidéo, à la place des trois petits fantômes
 #      d'avis) : trois cages ; il en touche une, son fantôme s'envole dans la vitrine du commerce ; s'il
 #      promet, son prénom s'écrit au carnet, avec un bon. « Ça me tente » mène à la demande.
-#   2. « Un jour creux » (côté commerçant, après WhatsApp) : « c'est un peu long, et on a du mal à voir la
-#      plus-value de ces fantômes ». Une seule histoire, celle qui rapporte : mardi, 11 h, la salle à moitié
-#      vide ; sur Instagram, des j'aime et personne à prévenir ; ici, la liste de ceux qui ont promis ; un
-#      geste (« Appeler mes promesses »), les réponses arrivent, la salle se remplit, le bon est scanné.
-#      « Un j'aime s'oublie. Une promesse, vous l'encaissez le jour où vous en avez besoin. »
-# Puis le ticket de « Plus de clients », avec une ligne de plus : le jour creux rempli.
-# Les voix (enregistrements ElevenLabs « Mike ») : recu/trois/. Communes : trois-1, trois-4, creux-2,
-# vitrine-3, vitrine-4, creux-3 ; par métier : creux-1-<métier> (« Mardi, 11 h… ») et trois-2-<métier>
-# (« J'adore, je viendrai… ») suivi de « Touchez une cage. » (la fin de trois-2-restaurant). Plus servies :
-# trois-3 (les trois places), vitrine-1, 2, 5 et 6 (la vitrine qui se remplit, le petit mot, le partage).
+#   2. « Mike, votre assistant » (côté commerçant, après WhatsApp) : une conversation. Mike ne dit que ce
+#      que ClikMe sait (« 11 personnes ont promis de venir… aucune n'est encore passée ») ; ce qu'il ne peut
+#      pas savoir (la salle est calme), c'est le commerçant qui le dit, d'un appui sur une bulle. Puis un
+#      geste (« Appeler mes promesses »), les réponses arrivent, un bon est scanné : « Un j'aime s'oublie.
+#      Une promesse, vous l'encaissez le jour où vous en avez besoin. » Et sa suggestion suivante : la
+#      prochaine vidéo, à planifier. Seul Mike parle ; le commerçant répond par des bulles et des appuis.
+# Puis le ticket de « Plus de clients », avec une ligne de plus : le jour calme rempli.
+# Les voix (enregistrements ElevenLabs « Mike ») : recu/trois/. Communes : trois-1, trois-4, mike-appeler,
+# mike-scan, mike-promesse, mike-video ; par métier : mike-bonjour-<métier> (« Bonjour Jean-Marie… ») et
+# trois-2-<métier> (« J'adore, je viendrai… ») suivi de « Touchez une cage. » (la fin de trois-2-restaurant).
+# Plus servies : trois-3, vitrine-1 à 6, creux-1-<métier>, creux-2, creux-3 (les versions précédentes).
 # Les images : les fantômes des habitants (outils/trois-fantomes/a/g → <tour>/tf/), l'intérieur du commerce
 # (tf-interieur.webp) et son fantôme qui salue (tf-hote.webp).
 # À lancer après tour-dax.py (même index.html) :  python3 -I tour-trois.py <dossier>
@@ -34,13 +35,18 @@ TOUCHEZ_DE = 3.45
 COMMUNES = {
     "trois-1": "À la fin de votre vidéo, votre client ne met pas juste un «" + NB + "j’aime" + NB + "»" + NB + ": il choisit un des *trois *fantômes.",
     "trois-4": "Et s’il promet de venir, son prénom s’écrit dans votre carnet, avec un petit *cadeau pour tenir parole.",
-    "creux-2": "Sur Instagram, vous publiez et vous attendez. Ici, vous avez une *liste" + NB + ": ceux qui ont promis de venir.",
-    "vitrine-3": "Ceux qui ont promis, vous les *rappelez d’un geste. Un message à eux seuls, jamais à toute la ville. Touchez «" + NB + "Appeler mes promesses" + NB + "».",
-    "vitrine-4": "Quand leur bon est scanné au comptoir, vous savez qu’ils sont venus *grâce à votre vidéo.",
-    "creux-3": "Un «" + NB + "j’aime" + NB + "» s’oublie. Une *promesse, vous *l’encaissez le jour où vous en avez besoin.",
+    "mike-appeler": "Ceux qui ont promis, vous les *rappelez d’un geste. Touchez «" + NB + "Appeler mes promesses" + NB + "».",
+    "mike-scan": "Quand leur bon est scanné au comptoir, vous savez qu’ils sont venus *grâce à votre vidéo.",
+    "mike-promesse": "Un «" + NB + "j’aime" + NB + "» s’oublie. Une *promesse, vous *l’encaissez le jour où vous en avez besoin.",
+    "mike-video": "Et votre prochaine vidéo n’est pas encore *prévue. On la cale *jeudi" + NB + "?",
 }
-# « 11 h » s'écrit en chiffres, mais se mesure comme il se dit
-EN_LETTRES = {"11" + INS + "h.": "onze" + INS + "heures."}
+# « 11 personnes » s'écrit en chiffres, mais se mesure comme il se dit
+EN_LETTRES = {"9": "neuf", "10": "dix", "11": "onze"}
+
+
+def bonjour(M):
+    """Sa première réplique : ce que ClikMe sait (ceux qui ont promis, le carnet de son tour)."""
+    return f"Bonjour {M['qui']}. {M['compte'][1]}{INS}personnes ont *promis de venir après votre vidéo. *Aucune n’est encore passée."
 
 # Ce qui change d'un métier à l'autre. Les commerces sont ceux des démos (fictifs) ; chiffres et cadeaux : exemples.
 METIERS = {
@@ -50,11 +56,10 @@ METIERS = {
         cages=[["adore", "💗 J’adore", "« J’ai aimé ta vidéo »"], ["promis", "📌 Je viendrai", "« Promis, je passe un jour »"], ["table", "🍽️ J’y vais", "« Garde-moi une place »"]],
         pose3="assis", heures=["12 h 30", "13 h", "12 h 15"], compte=[36, 11, 2],
         bon="Le café offert", tente="Ça me tente →",
-        creux1="Mardi, 11" + INS + "h. La salle est à moitié vide.",
         appel="Il me reste des tables ce midi ! Votre café vous attend.",
-        creux=dict(titre="Ce midi", unite=["table réservée", "tables réservées"], sur=12, surVu=True, de=6, assis=2,
+        creux=dict(calme="C’est calme ce midi", quand="Ce midi",
                    reponses=[["Léa", "On arrive à deux, 12 h 30 !"], ["Malik", "Une table pour quatre, 12 h 15"], ["Chloé", "Je passe à 13 h"], ["Martin", "À deux, vers 12 h 45"]],
-                   bilan=["+4 tables ce midi", "9 couverts · environ 170 €"], ticket="+4 tables mardi midi"),
+                   bilan=["+4 tables ce midi", "9 couverts"], ticket="+4 tables un midi calme"),
         couleurs=dict(f1="#62182B", f2="#45101F", s1="#F3E5D0", s2="#8E1C33", ens="#2C0912", vit="#2A0810"),
         interieur=("copie", f"{P}/interieur.webp"), hote=f"{P}/bergine-salue.webp",
     ),
@@ -64,11 +69,10 @@ METIERS = {
         cages=[["adore", "💗 J’adore", "« J’ai aimé ta vidéo »"], ["promis", "📌 Je viendrai", "« Promis, je viens l’essayer »"], ["table", "🛍️ De côté", "« Mettez-la-moi de côté »"]],
         pose3="debout", heures=["de côté", "de côté", "de côté"], compte=[31, 9, 3],
         bon="Les retouches offertes", tente="Ça me tente →",
-        creux1="Mardi, 11" + INS + "h. Le magasin est vide.",
         appel="Le manteau camel vous attend aujourd’hui ! Vos retouches sont offertes.",
-        creux=dict(titre="Aujourd’hui", unite=["cliente", "clientes"], sur=6, surVu=False, de=0, assis=0,
+        creux=dict(calme="C’est calme aujourd’hui", quand="Aujourd’hui",
                    reponses=[["Inès", "Je passe l’essayer à 14 h"], ["Chloé", "Gardez-moi le 38, j’arrive !"], ["Sarah", "À 17 h, avec ma sœur"], ["Emma", "16 h pour moi"]],
-                   bilan=["+4 clientes aujourd’hui", "dont 2 pour le manteau camel"], ticket="+4 clientes mardi"),
+                   bilan=["+4 clientes aujourd’hui", "dont 2 pour le manteau camel"], ticket="+4 clientes un jour calme"),
         couleurs=dict(f1="#4A3A2E", f2="#2F241C", s1="#F1E6D6", s2="#2A211B", ens="#1E1712", vit="#1E1712"),
         interieur=("e1", "e1.webp"), hote="fant-viens.webp",
     ),
@@ -78,11 +82,10 @@ METIERS = {
         cages=[["adore", "💗 J’adore", "« J’ai aimé ta vidéo »"], ["promis", "📅 Je prendrai RDV", "« Promis, je prends rendez-vous »"], ["table", "✂️ Aujourd’hui", "« Un créneau aujourd’hui »"]],
         pose3="assis", heures=["15 h 30", "17 h", "11 h"], compte=[28, 10, 3],
         bon="Le soin offert", tente="Ça me tente →",
-        creux1="Mardi, 11" + INS + "h. Le salon est à moitié vide.",
         appel="Il me reste des créneaux aujourd’hui ! Votre soin vous attend.",
-        creux=dict(titre="Aujourd’hui", unite=["fauteuil réservé", "fauteuils réservés"], sur=8, surVu=True, de=4, assis=2,
+        creux=dict(calme="C’est calme aujourd’hui", quand="Aujourd’hui",
                    reponses=[["Sarah", "Je prends 14 h !"], ["Léa", "16 h 30, pour une coupe"], ["Zoé", "15 h, une couleur"], ["Emma", "17 h, si c’est bon"]],
-                   bilan=["+4 rendez-vous aujourd’hui", "environ 260 €"], ticket="+4 rendez-vous mardi"),
+                   bilan=["+4 rendez-vous aujourd’hui", "14" + INS + "h · 15" + INS + "h · 16" + INS + "h" + INS + "30 · 17" + INS + "h"], ticket="+4 rendez-vous un jour calme"),
         couleurs=dict(f1="#3B1631", f2="#250D1F", s1="#F7E3EC", s2="#B01E6A", ens="#1C0A17", vit="#1C0A17"),
         interieur=("e1", "e1.webp"), hote="fant-viens.webp",
     ),
@@ -102,7 +105,7 @@ NETTOYER = "silenceremove=start_periods=1:start_threshold=-45dB,areverse,silence
 
 
 def mesurer(dst, texte):
-    t = aligner(FF, dst, " ".join(EN_LETTRES.get(w, w) for w in texte.split(" ")))
+    t = aligner(FF, dst, " ".join(re.sub(r"^\d+", lambda n: EN_LETTRES.get(n.group(0), n.group(0)), w) for w in texte.split(" ")))
     if len(t["m"]) != len(texte.split(" ")):
         raise SystemExit(f"{dst} : {len(t['m'])} instants pour {len(texte.split(' '))} mots")
     return t
@@ -275,47 +278,72 @@ CSS = r"""
 .tf-bon em{display:block;font-style:normal;font-size:.66em;color:#6A5444}
 .tf .go{position:absolute;left:.9em;right:.9em;width:auto;bottom:2em}
 
-/* ── 2. SON COMPTOIR : UN JOUR CREUX ── */
-.tv .t3-dit{top:5.2em;z-index:30}
-.tv .t3-sc{left:.9em;right:.9em;top:10.6em}
-/* sa salle ce jour-là, sur le trottoir vide */
-.tv-jauge{position:absolute;left:1.6em;right:1.6em;top:32.3em;z-index:5;display:flex;flex-direction:column;gap:.35em;padding:.55em .75em .6em;border-radius:.9em;background:rgba(14,9,7,.84);border:1px solid var(--trait);box-shadow:0 .6em 1.2em -.4em rgba(0,0,0,.7)}
-.tv-jauge span{display:flex;align-items:baseline;justify-content:space-between;gap:.5em}
-.tv-jauge small{font-size:.62em;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--ambre)}
-.tv-jauge b{font-size:.9em;font-weight:900;font-variant-numeric:tabular-nums}
-.tv-jauge > i{display:block;height:.5em;border-radius:1em;background:rgba(255,255,255,.1);overflow:hidden}
-.tv-jauge > i em{display:block;height:100%;width:0;border-radius:1em;background:linear-gradient(90deg,#FF4FA8,#3DE2A6);transition:width .6s var(--ease)}
-.tv-jauge.creux > i em{background:linear-gradient(90deg,#7D6455,#A88E7D)}
-.tv-jauge.monte{animation:tv-monte .5s var(--ease)}
-@keyframes tv-monte{40%{transform:scale(1.04)}}
-.tv-zone{position:absolute;left:.9em;right:.9em;top:38.9em;bottom:6.5em}
-.tv.appele .tv-zone{top:38.6em;bottom:1.4em}
-.tv-carte{position:absolute;inset:0 0 auto;display:flex;align-items:center;gap:.65em;padding:.6em .75em;border-radius:1em;background:#FFF8EA;color:var(--encre);box-shadow:0 .8em 1.6em -.6em rgba(0,0,0,.8);
-  opacity:0;transform:translateY(.8em) scale(.97);transition:opacity .35s,transform .5s var(--ease);pointer-events:none}
-.tv-carte.on{opacity:1;transform:none}
-.tv-carte > i{flex:none;display:grid;place-items:center;width:2.3em;height:2.3em;border-radius:.7em;font-style:normal;font-size:1.05em;background:#FFE2EF}
-.tv-carte span{flex:1;min-width:0}
-.tv-carte small{display:block;font-size:.6em;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#E0167A}
-.tv-carte b{display:block;font-size:.84em;line-height:1.22}
-.tv-carte em{display:block;font-style:normal;font-size:.64em;color:#6A5444;line-height:1.25}
-.tv-carte strong{flex:none;display:flex;flex-direction:column;align-items:center;font-size:1.5em;font-weight:900;line-height:1;color:#E0167A}
-.tv-carte strong b{font-size:1em}
-.tv-carte strong small{font-size:.38em;letter-spacing:.04em;color:#6A5444;text-transform:none;font-weight:700}
-.tv-insta{background:#F4EFEA;filter:saturate(.7)}
-.tv-insta > i{background:linear-gradient(135deg,#FEDA75,#FA7E1E 30%,#D62976 60%,#962FBF);color:#fff}
-.tv-insta small{color:#962FBF}
+/* ── 2. SON COMPTOIR : MIKE, SON ASSISTANT ── */
+/* sa barre : Mike, en ligne */
+.mk-tete{position:absolute;left:.9em;right:.9em;top:5.5em;display:flex;align-items:center;gap:.55em;padding:.4em .75em .4em .5em;border-radius:1.1em;background:rgba(255,255,255,.05);border:1px solid var(--trait)}
+.mk-tete img{flex:none;width:2.4em;height:2.4em;object-fit:contain;filter:drop-shadow(0 .2em .3em rgba(0,0,0,.5))}
+.mk-tete span{flex:1;min-width:0;display:flex;flex-direction:column}
+.mk-tete b{font-size:.95em;font-weight:900;line-height:1.1}
+.mk-tete small{font-size:.66em;color:var(--gris)}
+.mk-tete em{display:flex;align-items:center;gap:.4em;font-style:normal;font-size:.64em;font-weight:800;color:var(--menthe)}
+.mk-tete em::before{content:"";width:.6em;height:.6em;border-radius:50%;background:var(--menthe);box-shadow:0 0 .5em var(--menthe)}
+/* le fil : les messages arrivent en bas, les plus anciens montent et s'effacent */
+.mk-fil{position:absolute;left:.9em;right:.9em;top:9.1em;bottom:7.5em;display:flex;flex-direction:column;justify-content:flex-end;gap:.5em;overflow:hidden;
+  -webkit-mask:linear-gradient(transparent,#000 2.4em);mask:linear-gradient(transparent,#000 2.4em)}
+@keyframes mk-vient{from{opacity:0;transform:translateY(.8em) scale(.97)}}
+.mk-date{flex:none;align-self:center;padding:.25em .8em;border-radius:1em;background:rgba(255,255,255,.07);color:var(--gris);font-size:.62em;font-weight:800;letter-spacing:.04em}
+/* Mike : son petit fantôme, sa bulle */
+.mk-l{flex:none;display:flex;align-items:flex-end;gap:.45em;animation:mk-vient .4s var(--ease) both}
+.mk-l .t3-fant{width:2.5em;height:2.5em;animation:none}
+.mk-l.parle .t3-fant{animation:flotte 3.2s ease-in-out infinite}
+.mk-l p{margin:0;max-width:86%;padding:.55em .8em;border-radius:1.1em 1.1em 1.1em .3em;background:var(--creme);color:var(--encre);font-size:.86em;font-weight:700;line-height:1.3;box-shadow:0 .5em 1.2em -.4em rgba(0,0,0,.6)}
+.mk-l .fx-cle{background:linear-gradient(transparent 60%,rgba(255,46,154,.35) 60%) no-repeat 0 0/0% 100%}
+.mk-l .fx-cle.vu{background-size:100% 100%}
+.mk-tape{display:flex;align-items:center;gap:.3em;min-height:1.1em}
+.mk-tape i{width:.45em;height:.45em;border-radius:50%;background:#A08A7A;animation:mk-point 1s infinite}
+.mk-tape i:nth-child(2){animation-delay:.15s}.mk-tape i:nth-child(3){animation-delay:.3s}
+@keyframes mk-point{0%,60%,100%{opacity:.35;transform:none}30%{opacity:1;transform:translateY(-.2em)}}
+/* lui : ses bulles, à droite */
+.mk-moi{flex:none;align-self:flex-end;max-width:80%;padding:.55em .85em;border-radius:1.1em 1.1em .3em 1.1em;background:linear-gradient(135deg,#FF4FA8,#E0167A);color:#fff;font-size:.86em;font-weight:800;line-height:1.3;
+  box-shadow:0 .5em 1.2em -.4em rgba(255,46,154,.6);animation:mk-vient .35s var(--ease) both}
+.mk-moi small{display:block;margin-bottom:.15em;font-size:.74em;font-weight:700;opacity:.85}
+/* ce que Mike montre : des cartes, sous sa bulle */
+.mk-c{flex:none;margin-left:2.95em;border-radius:1em;background:#FFF8EA;color:var(--encre);box-shadow:0 .8em 1.6em -.6em rgba(0,0,0,.8);animation:mk-vient .45s var(--ease) both}
+.tv-carte{display:flex;align-items:center;gap:.65em;padding:.55em .75em}
+.tv-carte > i{flex:none;display:grid;place-items:center;width:2.2em;height:2.2em;border-radius:.7em;font-style:normal;font-size:1.05em;background:#FFE2EF}
+.tv-carte > span{flex:1;min-width:0}
+.tv-carte > span small{display:block;font-size:.6em;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#E0167A}
+.tv-carte > span b{display:block;font-size:.84em;line-height:1.22}
+.tv-carte > span em{display:block;font-style:normal;font-size:.64em;color:#6A5444;line-height:1.25}
+.tv-carte > strong{flex:none;display:flex;flex-direction:column;align-items:center;font-size:1.5em;font-weight:900;line-height:1;color:#E0167A}
+.tv-carte > strong small{font-size:.38em;letter-spacing:.04em;color:#6A5444;font-weight:700}
+.tv-carte.vert > i{background:#D7F8EA}
+.tv-carte.vert > span small{color:#0B7A55}
 .tv-bilan{background:linear-gradient(135deg,#FFF8EA,#FFE2EF);box-shadow:0 0 0 .2em rgba(255,46,154,.55),0 .8em 1.6em -.6em rgba(0,0,0,.8)}
-.tv-bilan b{font-size:1.08em;font-weight:900}
-/* les réponses, une à une */
-.tv-reps{position:absolute;inset:0;display:flex;flex-direction:column;gap:.32em;transition:opacity .35s}
-.tv-reps.part{opacity:0}
-.tv-rep{display:flex;align-items:center;gap:.55em;padding:.32em .6em;border-radius:.9em;background:#fff;color:var(--encre);box-shadow:0 .5em 1em -.5em rgba(0,0,0,.7);opacity:0;transform:translateY(.6em) scale(.96);transition:opacity .3s,transform .45s var(--ease)}
+.tv-bilan > span b{font-size:1.08em;font-weight:900}
+/* leurs réponses, une à une */
+.tv-reps{display:flex;flex-direction:column;gap:.3em;padding:.5em .55em .55em}
+.tv-reps-t{display:flex;align-items:baseline;justify-content:space-between;padding:0 .2em}
+.tv-reps-t small{font-size:.6em;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#E0167A}
+.tv-reps-t b{font-size:.8em;font-weight:900;color:#E0167A;font-variant-numeric:tabular-nums}
+.tv-rep{display:flex;align-items:center;gap:.5em;padding:.22em .5em .22em .3em;border-radius:.8em;background:#fff;box-shadow:0 .3em .8em -.4em rgba(0,0,0,.35);opacity:0;transform:translateY(.5em) scale(.97);transition:opacity .3s,transform .45s var(--ease)}
 .tv-rep.on{opacity:1;transform:none}
-.tv-rep > i{flex:none;display:grid;place-items:center;width:1.75em;height:1.75em;border-radius:50%;background:#25D366;color:#fff;font-style:normal;font-weight:900;font-size:.82em}
+.tv-rep img{flex:none;width:2em;height:2em;object-fit:contain;border-radius:50%;background:#FBE9F1}
 .tv-rep span{flex:1;min-width:0;font-size:.72em;line-height:1.25}
 .tv-rep span b{display:block;font-weight:900}
-.tv-rep em{flex:none;font-style:normal;font-size:.7em;font-weight:900;color:#0B7A55}
-.tv .go{position:absolute;left:.9em;right:.9em;width:auto;bottom:2em}
+.tv-rep em{flex:none;font-style:normal;font-size:.68em;font-weight:900;color:#0B7A55;transition:background .3s}
+.tv-rep.scanne em{padding:.2em .55em;border-radius:1em;background:#D7F8EA}
+/* ses réponses à toucher, et la saisie (pour le décor) */
+.mk-choix{position:absolute;left:.9em;right:.9em;bottom:4.6em;display:flex;justify-content:flex-end;gap:.45em;animation:mk-vient .35s var(--ease) both}
+.mk-ch{display:inline-flex;align-items:center;justify-content:center;gap:.4em;height:2.7em;padding:0 1.1em;border-radius:2em;border:1.5px solid rgba(255,46,154,.6);background:rgba(255,46,154,.08);color:#fff;font:inherit;font-size:.86em;font-weight:800;white-space:nowrap;cursor:pointer}
+.mk-ch.fort{border-color:transparent;background:linear-gradient(135deg,#FF4FA8,#E0167A);box-shadow:0 .5em 1.4em -.4em rgba(255,46,154,.8)}
+.mk-ch.large{position:absolute;left:.9em;right:.9em;bottom:4.6em;height:3em;font-size:.98em;animation:mk-vient .35s var(--ease) both}
+.mk-ch.secoue{animation:mk-secoue .45s}
+@keyframes mk-secoue{20%,60%{transform:translateX(-.3em)}40%,80%{transform:translateX(.3em)}}
+.mk-saisie{position:absolute;left:.9em;right:.9em;bottom:1.3em;height:2.7em;display:flex;align-items:center;justify-content:space-between;padding:0 .35em 0 1em;border-radius:2em;background:rgba(255,255,255,.06);border:1px solid var(--trait);color:var(--gris)}
+.mk-saisie span{font-size:.8em}
+.mk-saisie i{display:grid;place-items:center;width:2.1em;height:2.1em;border-radius:50%;background:rgba(255,255,255,.08);font-style:normal;font-size:.9em}
+/* l'appel : à ses promesses seulement */
 .tv-envoi{position:absolute;left:0;right:0;bottom:0;z-index:40;padding:1em .95em 1.6em;border-radius:1.4em 1.4em 0 0;background:#1C120E;border-top:1px solid var(--trait);box-shadow:0 -1em 2em rgba(0,0,0,.5);
   transform:translateY(105%);transition:transform .45s cubic-bezier(.2,.8,.2,1)}
 .tv-envoi.on{transform:none}
@@ -327,7 +355,7 @@ CSS = r"""
 .tv-envoye{display:flex;align-items:center;gap:.45em;font-size:.74em;font-weight:800;color:var(--menthe);opacity:0;transition:opacity .3s}
 .tv-envoi.envoye .tv-envoye{opacity:1}
 @media (prefers-reduced-motion: reduce){
-  .t3-fg img,.t3-fg.neuf,.t3-cg,.t3-dome img,.t3-fant{animation:none!important}
+  .t3-fg img,.t3-fg.neuf,.t3-cg,.t3-dome img,.t3-fant,.mk-l,.mk-moi,.mk-c,.mk-choix,.mk-ch,.mk-tape i{animation:none!important}
 }
 """
 
@@ -348,20 +376,14 @@ HTML = r"""
             <button type="button" class="go" id="tf-go" hidden>__TENTE__</button>
           </div>
 
-          <!-- ══ 5b. SON COMPTOIR : UN JOUR CREUX (voir tour-trois.py) ══ -->
-          <div class="v ex tv" id="v-tv" style="__COULEURS__">
+          <!-- ══ 5b. SON COMPTOIR : MIKE, SON ASSISTANT (voir tour-trois.py) ══ -->
+          <div class="v ex tv" id="v-tv">
             __TETE__
-            <div class="t3-dit"><span class="t3-fant" aria-hidden="true"><img class="fermee" src="__FANT__" alt=""><img class="ouverte" src="__FANT_PARLE__" alt=""></span><p aria-live="polite"></p></div>
-            <div class="t3-sc" id="tv-sc" aria-hidden="true"></div>
-            <div class="tv-jauge creux" id="tv-jauge"><span><small>__JAUGE_T__</small><b id="tv-jauge-n"></b></span><i><em id="tv-jauge-barre"></em></i></div>
-            <div class="tv-zone" id="tv-zone">
-              <div class="tv-carte tv-insta" id="tv-insta"><i aria-hidden="true">📷</i><span><small>Sur Instagram</small><b>124 ❤️ · 8 commentaires</b><em>Et personne à prévenir un mardi calme · exemple</em></span></div>
-              <div class="tv-carte" id="tv-carnet"><i aria-hidden="true">📌</i><span><small>Ceux qui ont promis de venir</small><b id="tv-noms"></b><em>Leur bon : __BON_MIN__ · exemple</em></span><strong><b id="tv-n-promis"></b><small>promesses</small></strong></div>
-              <div class="tv-reps" id="tv-reps"></div>
-              <div class="tv-carte" id="tv-scan"><i aria-hidden="true" style="background:#D7F8EA">✓</i><span><small style="color:#0B7A55">Bon scanné au comptoir</small><b id="tv-scan-b"></b><em>Elle avait promis de venir · exemple</em></span></div>
-              <div class="tv-carte tv-bilan" id="tv-bilan"><i aria-hidden="true">🎉</i><span><small>Mardi, grâce à vos promesses</small><b>__BILAN_B__</b><em>__BILAN_E__ · exemple</em></span></div>
-            </div>
-            <button type="button" class="go" id="tv-appeler" hidden>📣 Appeler mes promesses</button>
+            <div class="mk-tete"><img src="__FANT__" alt=""><span><b>Mike</b><small>Votre assistant ClikMe</small></span><em>en ligne</em></div>
+            <div class="mk-fil" id="mk-fil" aria-live="polite"></div>
+            <div class="mk-choix" id="mk-choix" hidden><button type="button" class="mk-ch" id="mk-non">Plus tard</button><button type="button" class="mk-ch fort" id="mk-oui"></button></div>
+            <button type="button" class="mk-ch fort large" id="tv-appeler" hidden>📣 Appeler mes promesses</button>
+            <div class="mk-saisie" aria-hidden="true"><span>Écrire à Mike…</span><i>🎙️</i></div>
             <div class="tv-envoi" id="tv-envoi">
               <h4>📣 Un message à vos promesses</h4>
               <p>À elles seules : jamais à toute la ville.</p>
@@ -372,13 +394,13 @@ HTML = r"""
           </div>
 """
 
-BILAN = '<div class="wb-l"><i>👻</i><span><small>Mardi, grâce à vos promesses</small><b id="wb-vitrine"></b></span><em>exemple</em></div>'
+BILAN = '<div class="wb-l"><i>👻</i><span><small>Grâce à vos promesses</small><b id="wb-vitrine"></b></span><em>exemple</em></div>'
 
 JS = r"""
   /* ═══ LES TROIS FANTÔMES (voir tour-trois.py) ═══
      À la fin de sa vidéo, le client ne met pas un « j'aime » : il choisit un des trois fantômes, qui
-     s'envole se placer dans la vitrine du commerce. Puis le comptoir : sa vitrine qui se remplit, le
-     carnet des promesses, l'appel, le bon scanné, le petit mot, le partage. Chiffres : exemples. */
+     s'envole se placer dans la vitrine du commerce. Puis le comptoir : Mike, son assistant, et ceux qui
+     ont promis de venir, qu'un geste rappelle le jour où c'est calme. Chiffres : exemples. */
   const T3 = __T3__;
   Object.assign(TEMPS, __TEMPS_T3__);
   __ENR_T3__.forEach((n) => { if (!ENREGISTREES.includes(n)) ENREGISTREES.push(n); });
@@ -408,7 +430,7 @@ JS = r"""
     $(".t3-ens b", el).textContent = T3.lieu; $(".t3-ens small", el).textContent = T3.sous; $(".t3-vit em", el).textContent = T3.carte;
     el._fg = new Map();
   }
-  t3Scene($("#tf-sc")); t3Scene($("#tv-sc"));
+  t3Scene($("#tf-sc"));
   /* La foule : nA ont adoré, nP ont promis, nT viennent ; dans l'ordre d'arrivée. */
   function t3Foule(nA, nP, nT, amis) {
     const L = [];
@@ -611,92 +633,165 @@ JS = r"""
     e.stopPropagation(); contexte(); son("pop"); aller(idx + 1, true);
   });
 
-  /* ── 2. SON COMPTOIR : UN JOUR CREUX ── */
-  const vTv = $("#v-tv"), scTv = $("#tv-sc"), zone = $("#tv-zone"), C = T3.creux;
-  const TV = { appele: false, fini: false, foule: [], n: 0 };
+  /* ── 2. SON COMPTOIR : MIKE, SON ASSISTANT ──
+     Une conversation. Mike ne dit que ce que ClikMe sait (ceux qui ont promis, les réponses, les bons
+     scannés, la prochaine vidéo) ; ce qu'il ne peut pas savoir (c'est calme), le commerçant le lui dit
+     d'un appui. Seul Mike parle. */
+  const vTv = $("#v-tv"), fil = $("#mk-fil"), C = T3.creux;
+  const TV = { calme: false, appele: false, plan: false, planifie: false, fini: false, bulle: null };
   // ceux qui ont promis : ceux qui vont répondre d'abord, puis les autres
   const tvPromis = () => C.reponses.map(([nom]) => nom).concat(T3_NOMS.filter((n) => !C.reponses.some(([r]) => r === n))).slice(0, T3.compte[1]);
-  function tvJauge(n, monte) {
-    TV.n = n;
-    $("#tv-jauge-n").textContent = n + " " + C.unite[n > 1 ? 1 : 0] + (C.surVu ? " sur " + C.sur : "");
-    $("#tv-jauge-barre").style.width = Math.min(100, (n / C.sur) * 100) + "%";
-    if (monte) rejouer($("#tv-jauge"), "monte");
+  const mkEl = (balise, cl, texte) => { const e = document.createElement(balise); if (cl) e.className = cl; if (texte != null) e.textContent = texte; return e; };
+  // une ligne du fil : elle arrive en bas ; les plus anciennes montent et sortent
+  function mkAjouter(e) {
+    fil.appendChild(e);
+    while (fil.children.length > 12) fil.firstElementChild.remove();
+    return e;
   }
-  const tvCarte = (id) => $$(".tv-carte", zone).forEach((c) => c.classList.toggle("on", c.id === id));
+  /* Mike écrit (trois points), puis dit sa réplique, mot à mot, avec sa voix. quand : [[n° du mot, fn], …] */
+  async function mkDire(nom, quand) {
+    const j = jetonVoix, texte = T3.textes[nom];
+    const l = mkEl("div", "mk-l parle"), f = mkEl("span", "t3-fant"), p = mkEl("p", "mk-tape");
+    f.setAttribute("aria-hidden", "true");
+    [["fermee", T3.fant[0]], ["ouverte", T3.fant[1]]].forEach(([c, src]) => { const i = mkEl("img", c); i.src = src; i.alt = ""; f.appendChild(i); });
+    p.innerHTML = "<i></i><i></i><i></i>";
+    l.append(f, p);
+    $$(".mk-l.parle", fil).forEach((x) => x.classList.remove("parle"));
+    mkAjouter(l); TV.bulle = [l, p, texte];
+    if (!(await pause(520, j))) return false;
+    p.className = ""; p.textContent = "";
+    if (!TEMPS[nom]) { p.textContent = texte.replace(/\*/g, ""); (quand || []).forEach(([, fn]) => fn()); return pause(texte.split(" ").length * 330, j); }
+    (quand || []).forEach(([n, fn]) => quandMot(p, n, fn));
+    return prononcer(f, p, texte, nom);
+  }
+  // on lui coupe la parole (il a touché avant la fin) : sa bulle s'écrit d'un coup
+  function mkTaire() {
+    taireVoix(); viser(null);
+    if (!TV.bulle) return;
+    const [l, p, texte] = TV.bulle;
+    TV.bulle = null; l.classList.remove("parle"); p.className = "";
+    if ($$(".fx-mot", p).length < texte.split(" ").length) p.textContent = texte.replace(/\*/g, "");
+  }
+  // lui : sa bulle, à droite
+  function mkMoi(texte, petit) {
+    const b = mkEl("div", "mk-moi");
+    if (petit) b.appendChild(mkEl("small", "", petit));
+    b.append(texte); son("pop");
+    return mkAjouter(b);
+  }
+  // ce que Mike montre : une carte sous sa bulle (icône, titre, ligne, détail, chiffre)
+  function mkCarte(icone, petit, gros, sous, cl, chiffre) {
+    const c = mkEl("div", "mk-c tv-carte" + (cl ? " " + cl : "")), s = mkEl("span");
+    c.appendChild(mkEl("i", "", icone)).setAttribute("aria-hidden", "true");
+    s.append(mkEl("small", "", petit), mkEl("b", "", gros), mkEl("em", "", sous));
+    c.appendChild(s);
+    if (chiffre) { const n = mkEl("strong"); n.append(mkEl("b", "", chiffre[0]), mkEl("small", "", chiffre[1])); c.appendChild(n); }
+    return mkAjouter(c);
+  }
+  function mkChoix(oui, quoi) {
+    const z = $("#mk-choix");
+    $("#mk-oui").textContent = oui; z.dataset.quoi = quoi;
+    z.hidden = false; viser("#mk-oui"); son("pret");
+  }
   function tvEntrer() {
     const j = jetonVoix;
-    TV.appele = false; TV.fini = false;
-    vTv.classList.remove("appele");
-    $(".t3-dit", vTv).classList.remove("on"); $(".t3-dit p", vTv).textContent = "";
-    $("#tv-appeler").hidden = true; $("#tv-envoi").classList.remove("on", "envoye");
-    $("#tv-reps").innerHTML = ""; $("#tv-reps").classList.remove("part");
-    tvCarte(null); $("#tv-jauge").classList.add("creux");
-    // mardi, 11 h : personne devant, la salle à moitié vide
-    TV.foule = Array.from({ length: C.assis }, (_, k) => ({ id: "s" + k, nom: "", look: T3_LOOKS[(k * 3 + 2) % T3_LOOKS.length], type: "table", d: (k * 0.7).toFixed(2) }));
-    scTv._carnet = tvPromis().slice(0, 3);
-    $(".t3-noms", scTv).dataset.noms = "";
-    t3Rendre(scTv, TV.foule);
-    tvJauge(C.de);
+    Object.assign(TV, { calme: false, appele: false, plan: false, planifie: false, fini: false, bulle: null });
+    fil.innerHTML = ""; mkAjouter(mkEl("div", "mk-date", "Aujourd’hui · " + HEURES.tv.replace(":", " h ")));
+    $("#mk-choix").hidden = true; $("#tv-appeler").hidden = true; $("#tv-envoi").classList.remove("on", "envoye");
     (async () => {
-      if (!(await pause(450, j)) || !(await t3Dire(vTv, "creux-1")) || !(await pause(250, j))) return;
-      // sur Instagram, des j'aime ; ici, une liste
-      const p = $(".t3-dit p", vTv), i2 = T3.mots["creux-2"];
-      quandMot(p, i2[0], () => { tvCarte("tv-insta"); son("pop"); });
-      quandMot(p, i2[1], tvCarnet);
-      if (!(await t3Dire(vTv, "creux-2")) || !(await pause(250, j))) return;
-      quandMot(p, T3.mots["vitrine-3"][0], () => { $("#tv-appeler").hidden = false; viser("#tv-appeler"); });
-      if (!(await t3Dire(vTv, "vitrine-3"))) return;
-      $("#tv-appeler").hidden = false; viser("#tv-appeler");
+      if (!(await pause(450, j))) return;
+      // « 11 personnes ont promis… » : le carnet ; « aucune n'est encore passée »
+      if (!(await mkDire("mike-bonjour", [[T3.mots["mike-bonjour"][0], tvCarnet]])) || !(await pause(250, j))) return;
+      mkChoix(C.calme, "calme");
     })();
   }
   function tvCarnet() {
+    if ($(".tv-carnet", fil)) return;
     const noms = tvPromis();
-    $("#tv-n-promis").textContent = noms.length;
-    $("#tv-noms").textContent = noms.slice(0, 4).join(" · ") + (noms.length > 4 ? " +" + (noms.length - 4) : "");
-    tvCarte("tv-carnet"); son("billet");
-    rejouer($(".t3-carnet", scTv), "zoom"); plus(() => $(".t3-carnet", scTv).classList.remove("zoom"), 2000);
+    mkCarte("📌", "Ceux qui ont promis de venir", noms.slice(0, 4).join(" · ") + (noms.length > 4 ? " +" + (noms.length - 4) : ""),
+      "Leur bon : " + T3.bon.charAt(0).toLowerCase() + T3.bon.slice(1) + " · exemple", "tv-carnet", [String(noms.length), "promesses"]);
+    son("billet");
   }
+  // « C'est calme » : c'est lui qui le dit ; Mike propose le geste
+  function mkCalme() {
+    if (TV.calme || DEMOS[vue].moments[idx].id !== "creux") return;
+    mkTaire();
+    const j = jetonVoix;
+    TV.calme = true; $("#mk-choix").hidden = true;
+    tvCarnet(); mkMoi(C.calme);
+    (async () => {
+      if (!(await pause(500, j))) return;
+      if (!(await mkDire("mike-appeler", [[T3.mots["mike-appeler"][0], mkBouton]]))) return;
+      mkBouton();
+    })();
+  }
+  function mkBouton() { if (TV.appele) return; $("#tv-appeler").hidden = false; viser("#tv-appeler"); }
   function tvAppeler() {
     if (TV.appele || DEMOS[vue].moments[idx].id !== "creux") return;
-    taireVoix(); viser(null);
+    mkTaire();
     const j = jetonVoix;
-    TV.appele = true;
+    if (!TV.calme) { TV.calme = true; tvCarnet(); mkMoi(C.calme); }
+    TV.appele = true; $("#mk-choix").hidden = true; $("#tv-appeler").hidden = true;
     const noms = tvPromis();
     $("#tv-a").innerHTML = "";
-    noms.slice(0, 5).forEach((n) => { const s = document.createElement("span"); s.textContent = n; $("#tv-a").appendChild(s); });
-    if (noms.length > 5) { const s = document.createElement("span"); s.textContent = "+" + (noms.length - 5); $("#tv-a").appendChild(s); }
+    noms.slice(0, 5).forEach((n) => $("#tv-a").appendChild(mkEl("span", "", n)));
+    if (noms.length > 5) $("#tv-a").appendChild(mkEl("span", "", "+" + (noms.length - 5)));
     $("#tv-envoye-n").textContent = noms.length + " personnes, rien qu’elles";
-    $("#tv-appeler").hidden = true; vTv.classList.add("appele"); tvCarte(null);
     const e = $("#tv-envoi"); e.classList.remove("envoye"); e.classList.add("on"); son("pop");
     plus(() => { e.classList.add("envoye"); son("billet"); }, 1200);
-    plus(() => { e.classList.remove("on"); tvReponses(j); }, 2600);
+    plus(() => { e.classList.remove("on"); mkMoi(T3.appel, "📣 À vos " + noms.length + " promesses"); tvReponses(j); }, 2600);
   }
-  // les réponses arrivent, une à une, et la salle se remplit
+  // leurs réponses arrivent, une à une ; un bon est scanné ; le bilan ; la suggestion suivante
   async function tvReponses(j) {
-    $("#tv-jauge").classList.remove("creux");
-    const reps = $("#tv-reps"), pas = 750;
+    if (!(await pause(650, j))) return;
+    const noms = tvPromis(), pas = 750;
+    const c = mkAjouter(mkEl("div", "mk-c tv-reps")), t = mkEl("div", "tv-reps-t"), n = mkEl("b", "", "0 / " + noms.length);
+    t.append(mkEl("small", "", "Leurs réponses"), n); c.appendChild(t);
+    son("note", 1);
     C.reponses.forEach(([nom, mot], k) => plus(() => {
-      const r = document.createElement("div"); r.className = "tv-rep";
-      r.innerHTML = "<i></i><span><b></b></span><em>✓</em>";
-      $("i", r).textContent = nom.charAt(0); $("b", r).textContent = nom; $("span", r).append(mot);
-      reps.appendChild(r); requestAnimationFrame(() => r.classList.add("on"));
-      TV.foule.push({ id: "r" + k, nom, look: T3_LOOKS[(k * 2 + 1) % T3_LOOKS.length], type: "table", neuf: true, d: "0" });
-      t3Rendre(scTv, TV.foule); tvJauge(TV.n + 1, true); son("note", 3 + k * 2);
-    }, 250 + k * pas));
-    if (!(await pause(250 + C.reponses.length * pas + 900, j))) return;
-    const p = $(".t3-dit p", vTv);
+      const r = mkEl("div", "tv-rep"), im = mkEl("img"), s = mkEl("span");
+      im.src = t3img(T3_LOOKS[(k * 2 + 1) % T3_LOOKS.length], "debout"); im.alt = "";
+      s.append(mkEl("b", "", nom), mot);
+      r.append(im, s, mkEl("em", "", "✓"));
+      c.appendChild(r); requestAnimationFrame(() => r.classList.add("on"));
+      n.textContent = (k + 1) + " / " + noms.length; son("note", 3 + k * 2);
+    }, 350 + k * pas));
+    if (!(await pause(350 + C.reponses.length * pas + 800, j))) return;
     // le bon de la première est scanné : elle est venue grâce à la vidéo
-    quandMot(p, 0, () => {
-      reps.classList.add("part");
-      $("#tv-scan-b").textContent = C.reponses[0][0] + " est venue grâce à votre vidéo";
-      tvCarte("tv-scan"); son("piece");
-      const d = scTv._fg.get("r0"); if (d) d.classList.add("scanne");
-    });
-    if (!(await t3Dire(vTv, "vitrine-4")) || !(await pause(300, j))) return;
-    quandMot(p, T3.mots["creux-3"][0], () => { tvCarte("tv-bilan"); son("magie"); etincelles(8); });
-    if (!(await t3Dire(vTv, "creux-3")) || !(await pause(1500, j))) return;
-    TV.fini = true; aller(idx + 1);
+    if (!(await mkDire("mike-scan", [[0, () => {
+      const r = $(".tv-rep", c); if (r) { r.classList.add("scanne"); $("em", r).textContent = "✓ venue"; }
+      mkCarte("✓", "Bon scanné au comptoir", C.reponses[0][0] + " est venue grâce à votre vidéo", "Elle avait promis de venir · exemple", "vert");
+      son("piece");
+    }]])) || !(await pause(300, j))) return;
+    if (!(await mkDire("mike-promesse", [[T3.mots["mike-promesse"][0], () => {
+      mkCarte("🎉", C.quand + ", grâce à vos promesses", C.bilan[0], C.bilan[1] + " · exemple", "tv-bilan");
+      son("magie"); etincelles(8);
+    }]])) || !(await pause(500, j))) return;
+    // et la suite : sa prochaine vidéo
+    TV.plan = true;
+    if (!(await mkDire("mike-video")) || !(await pause(250, j))) return;
+    mkChoix("📅 Oui, jeudi 10 h", "plan");
   }
+  function mkPlanifier() {
+    if (TV.planifie || !TV.plan || DEMOS[vue].moments[idx].id !== "creux") return;
+    mkTaire();
+    const j = jetonVoix;
+    TV.planifie = true; $("#mk-choix").hidden = true;
+    mkMoi("Oui, jeudi 10 h");
+    plus(() => { mkCarte("📅", "C’est prévu", "Jeudi, 10 h : votre prochaine vidéo", "Mike vous envoie les questions la veille · exemple"); son("pret"); }, 650);
+    plus(() => { if (j === jetonVoix && DEMOS[vue].moments[idx].id === "creux") { TV.fini = true; aller(idx + 1); } }, 3000);
+  }
+  // « Plus tard » : dans la démo, on l'invite à essayer l'autre
+  $("#mk-non").addEventListener("click", (e) => {
+    if (fini || DEMOS[vue].moments[idx].id !== "creux") return;
+    e.stopPropagation(); contexte(); rejouer($("#mk-oui"), "secoue"); viser("#mk-oui");
+    plus(() => $("#mk-oui").classList.remove("secoue"), 500);
+  });
+  $("#mk-oui").addEventListener("click", (e) => {
+    if (fini || DEMOS[vue].moments[idx].id !== "creux") return;
+    e.stopPropagation(); contexte();
+    if ($("#mk-choix").dataset.quoi === "plan") mkPlanifier(); else mkCalme();
+  });
   $("#tv-appeler").addEventListener("click", (e) => {
     if (fini || DEMOS[vue].moments[idx].id !== "creux") return;
     e.stopPropagation(); contexte(); tvAppeler();
@@ -719,14 +814,17 @@ JS = r"""
   });
   CLIENTS.moments.splice(CLIENTS.moments.findIndex((m) => m.id === "whatsapp") + 1, 0, {
     id: "creux", chap: 5, ecran: "tv", cible: null,
-    dit: T3.textes["creux-1"].replace(/\*/g, ""),
+    dit: T3.textes["mike-bonjour"].replace(/\*/g, ""),
     entrer() { tvEntrer(); },
     agir() {
+      if (!TV.calme) { mkCalme(); return; }
       if (!TV.appele) { tvAppeler(); return; }
+      if (TV.plan && !TV.planifie && !$("#mk-choix").hidden) { mkPlanifier(); return; }
+      if (TV.planifie) return;
       taireVoix(); effacer(); TV.fini = true; aller(idx + 1);
     },
   }, {
-    // le ticket de « Plus de clients », sur son WhatsApp, avec son jour creux rempli
+    // le ticket de « Plus de clients », sur son WhatsApp, avec son jour calme rempli
     id: "ticket", chap: 5, ecran: "wa", cible: null,
     dit: "Plus de clients.",
     entrer() {
@@ -769,18 +867,18 @@ for d, M in METIERS.items():
     # les voix
     textes = dict(COMMUNES)
     textes["trois-2"] = M["trois2"]
-    textes["creux-1"] = M["creux1"]
+    textes["mike-bonjour"] = bonjour(M)
     temps = {}
     for nom, txt in textes.items():
         dst = f"{S}/{d}/{nom}.mp3"
         if nom == "trois-2":
             temps[nom] = preparer(f"{R}/trois-2-restaurant.mp3", dst, txt) if M["metier"] == "restaurant" else coller(f"{R}/trois-2-{M['metier']}.mp3", dst, txt)
-        elif nom == "creux-1":
-            temps[nom] = preparer(f"{R}/creux-1-{M['metier']}.mp3", dst, txt)
+        elif nom == "mike-bonjour":
+            temps[nom] = preparer(f"{R}/mike-bonjour-{M['metier']}.mp3", dst, txt)
         else:
             temps[nom] = preparer(f"{R}/{nom}.mp3", dst, txt)
-    # celles de la première version (les trois places, la vitrine qui se remplit, le petit mot, le partage)
-    for vieille in ("trois-3", "vitrine-1", "vitrine-2", "vitrine-5", "vitrine-6"):
+    # celles des versions précédentes (les trois places, la vitrine, le petit mot, le partage, « Mardi, 11 h »)
+    for vieille in ("trois-3", "vitrine-1", "vitrine-2", "vitrine-3", "vitrine-4", "vitrine-5", "vitrine-6", "creux-1", "creux-2", "creux-3"):
         if os.path.exists(f"{S}/{d}/{vieille}.mp3"):
             os.remove(f"{S}/{d}/{vieille}.mp3")
     # les mots où quelque chose se passe à l'écran
@@ -788,17 +886,18 @@ for d, M in METIERS.items():
     mots = {
         "trois-2": [0, mot(t2, "je"), mot(t2, "ou", 1), mot(t2, "Touchez")],
         "trois-4": [mot(textes["trois-4"], "prénom"), mot(textes["trois-4"], "cadeau")],
-        "creux-2": [mot(textes["creux-2"], "Instagram"), mot(textes["creux-2"], "liste")],
-        "vitrine-3": [mot(textes["vitrine-3"], "Touchez")],
-        "creux-3": [mot(textes["creux-3"], "promesse")],
+        "mike-bonjour": [mot(textes["mike-bonjour"], "promis")],
+        "mike-appeler": [mot(textes["mike-appeler"], "Touchez")],
+        "mike-promesse": [mot(textes["mike-promesse"], "promesse")],
     }
     T3 = {k: M[k] for k in ("lieu", "sous", "carte", "qui", "cages", "pose3", "heures", "compte", "creux")}
-    T3.update(textes=textes, mots=mots)
+    T3.update(textes=textes, mots=mots, bon=M["bon"], appel=M["appel"])
 
     # l'écran : ses couleurs, son fantôme (bouche fermée, ouverte), ses en-têtes
     fant = re.search(r'const src = ouverte \? "([^"]+)" : "([^"]+)";', t)
     if not fant:
         raise SystemExit(f"{d} : la bouche du fantôme introuvable")
+    T3["fant"] = [fant.group(2), fant.group(1)]
     tete, haut = html_tete(t)
     film_fin = re.search(r'voix: \{ src: "[^"]+", affiche: "[^"]+", fin: "([^"]+)"', t).group(1)
     couleurs = ";".join(f"--{k}:{v}" for k, v in M["couleurs"].items())
@@ -807,8 +906,7 @@ for d, M in METIERS.items():
                     for c, b, s in M["cages"])
     html = (HTML.replace("__COULEURS__", couleurs).replace("__FIN__", film_fin).replace("__HAUT__", haut).replace("__TETE__", tete)
             .replace("__FANT__", fant.group(2)).replace("__FANT_PARLE__", fant.group(1)).replace("__CHEZ__", M["chez"]).replace("__CAGES__", cages)
-            .replace("__BON__", M["bon"]).replace("__BON_MIN__", M["bon"][0].lower() + M["bon"][1:]).replace("__TENTE__", M["tente"]).replace("__APPEL__", M["appel"])
-            .replace("__JAUGE_T__", M["creux"]["titre"]).replace("__BILAN_B__", M["creux"]["bilan"][0]).replace("__BILAN_E__", M["creux"]["bilan"][1]))
+            .replace("__BON__", M["bon"]).replace("__BON_MIN__", M["bon"][0].lower() + M["bon"][1:]).replace("__TENTE__", M["tente"]).replace("__APPEL__", M["appel"]))
     t = une_fois(t, "          <!-- ══ MOINS DE DÉPENSES : 0. COMMENT ÇA MARCHE ══", html.lstrip("\n") + "\n          <!-- ══ MOINS DE DÉPENSES : 0. COMMENT ÇA MARCHE ══", f"{d} écrans")
     t = une_fois(t, '<div class="wb-l wb-zero">', BILAN + '<div class="wb-l wb-zero">', f"{d} ticket")
     t = une_fois(t, "</style>\n", CSS.lstrip("\n") + "</style>\n", f"{d} style")
@@ -834,4 +932,4 @@ for d, M in METIERS.items():
           .replace("__ENR_T3__", json.dumps(sorted(temps))))
     t = une_fois(t, "  /* ═══ PAGE 1 → PAGE 2 ═══ */\n", js.lstrip("\n") + "  /* ═══ PAGE 1 → PAGE 2 ═══ */\n", f"{d} js")
     open(page, "w", encoding="utf-8").write(t)
-    print(d, "· trois fantômes, jour creux :", " ".join(f"{k} {v['d']:.2f} s" for k, v in temps.items()))
+    print(d, "· trois fantômes, Mike :", " ".join(f"{k} {v['d']:.2f} s" for k, v in temps.items()))
