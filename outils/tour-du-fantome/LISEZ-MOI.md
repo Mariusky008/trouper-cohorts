@@ -64,7 +64,7 @@ engagement) se règle dans `OFFRE` du même script : vide, rien ne s'affiche.
 **Le jour de la démo, son nom** : avant de tendre le téléphone, touchez « ✎ Pour qui est cette démo ? » en haut de la
 page 1 et tapez le nom de son commerce. Il s'affiche sur la page 1 (« Préparé pour… »), sur sa boutique et dans sa
 notification (chapitre 03), sur le livre de son commerce (chapitre 04) et dans le titre de la conclusion. Seul le nom
-change : photos, voix et mots restent ceux de l'exemple. Il reste sur ce téléphone le temps de la visite, sans être envoyé.
+change : photos, voix et mots restent ceux de la démo. Il reste sur ce téléphone le temps de la visite, sans être envoyé.
 Le temps pour créer et publier une annonce est toujours le même, 1 min 30 en moyenne (pas le chrono de la démo) : il
 s'affiche dans le ticket de fin de « Plus de clients » et dans la conclusion. Le ticket dit aussi « Commission : 0 € » :
 ClikMe n'en prend aucune.
@@ -152,7 +152,15 @@ python3 -m http.server 8790 --bind 127.0.0.1 --directory outils/tour-du-fantome 
 node $D/outils/essai-telephone.mjs <dossier de sortie> tour 414x747 tout   # l'intro et les chapitres 03/04, en captures
 node $D/outils/essai-etape.mjs <dossier de sortie> tour 414x747 direct 28  # une étape de la démo, par son id
 node $D/outils/essai-fins.mjs <dossier de sortie>/                         # les deux fins de conversation
+node $D/outils/essai-parcours.mjs <dossier de sortie> tour 414x747 clients voix   # toute la démo, comme un commerçant
+node $D/outils/essai-actions.mjs <dossier de sortie> tour 414x747 clients creux 60 '[[1000,"quand","#mk-oui"],[1000,"quand","#tv-envoyer"]]'
 ```
+
+`essai-parcours.mjs` joue toute la page 2 (vue `clients` ou `depenses`, façon `voix`, `spe` ou `episode`) en
+touchant le fantôme dès qu'il a fini de parler : il dit la durée de chaque étape et les erreurs de la page (« aucune
+erreur » attendu ; 2 min environ). À lancer sur les trois façons après chaque changement d'une scène. `essai-actions.mjs`
+photographie une étape chaque seconde, avec des appuis (« quand » attend que le bouton se montre). L'étape de Mike
+s'appelle `creux`, celle des cages `trois`.
 
 Il faut Playwright avec Chromium. Le Chromium de Playwright ne lit pas les mp4 (h264) : les films restent
 noirs pendant les essais, sauf à poser des copies webm dans `intro/zz-webm/` (non fournies).
@@ -166,15 +174,48 @@ Avec l'outil Artifact d'un Claude :
    réponde qu'on peut l'éditer (« writer »). Ce droit se donne par le menu **Partager** de la page, à
    l'adresse e-mail exacte du compte claude.ai, en modification.
 2. **Publier** `<tour>/index.html` sur le **même lien** (`url`), en ajoutant dans `files` les fichiers
-   nouveaux ou changés (une nouvelle voix, une image). Un lien = un tour.
+   nouveaux ou changés (une nouvelle voix, une image), et `null` pour un fichier qui ne sert plus. Un lien = un tour.
+
+Le prototype « Les trois fantômes » (`outils/trois-fantomes/`) a son propre lien, privé :
+https://claude.ai/artifact/GzdV7YsCpbRwXYzYce4Ae6 .
+
+## Reprendre le travail (une autre session, un autre compte)
+
+Tout ce qu'il faut est dans le dépôt : les pages, les voix, les scripts, les essais et ces deux LISEZ-MOI (celui-ci et
+`outils/trois-fantomes/LISEZ-MOI.md`). À faire avant :
+
+- **GitHub** : la nouvelle session doit avoir accès au dépôt `Mariusky008/trouper-cohorts`.
+- **Les pages publiées** : elles appartiennent au compte claude.ai qui les a créées. Pour qu'un autre compte les mette
+  à jour sur le même lien, partagez chacune (les 6 tours et le prototype) en **modification** à son adresse e-mail
+  (menu Partager). Sans ce droit, il ne peut que publier de nouveaux liens.
+- **Le premier message à la nouvelle session** : « Lis `outils/tour-du-fantome/LISEZ-MOI.md` et
+  `outils/trois-fantomes/LISEZ-MOI.md` avant de commencer. »
+
+La façon de travailler :
+
+- Le propriétaire travaille en français : on lui répond en français, en le vouvoyant. Il essaie sur iPhone, iPad et Mac.
+- On travaille sur une branche, puis une PR vers `main`, fusionnée. Les pages temporaires d'essai (`src/app/zz-*`,
+  `public/zz-*`) ne sont jamais commitées.
+- Une nouvelle voix arrive en mp3 (ElevenLabs, « Mike »). Elle se range dans `recu/…`, son texte s'écrit **mot pour
+  mot** dans le script (les chiffres en tête de mot sont lus en lettres : `EN_LETTRES`), puis on relance la chaîne :
+  `outils/alignement.py` cale les mots sur l'enregistrement, sans reconnaissance vocale. Vérifiez à l'oreille que le
+  texte est bien celui qui est dit.
+- Après une modification : relancer la chaîne, `essai-parcours.mjs` sur les tours touchés, puis republier.
+- Les essais GitHub (« ClikMe — vérifications ») s'annulent quand un nouvel envoi arrive sur la même branche avant
+  leur fin (`cancel-in-progress`) : GitHub affiche alors une croix rouge sur le commit précédent, sans que rien n'ait
+  échoué. Ce qui compte, ce sont les coches de la PR et de `main`.
+
+En suspens (attend la réponse du propriétaire) : dans le prototype, fondre le petit mot, le conseil et la fourchette
+verte en un seul « mot » ; et faire des écussons les pins des commerces, la tournée de Dax devenant le nombre de pins.
 
 ## Règles du projet
 
 - **Jamais de voix de synthèse du téléphone.** Toutes les voix du fantôme sont des enregistrements
   ElevenLabs (« Mike ») fournis par le propriétaire. Une réplique pas encore enregistrée s'écrit au rythme
   estimé, sans son.
-- **Ne jamais inventer les mots ni les prix d'un vrai commerçant.** Les commerces des démos sont fictifs,
-  et les chiffres d'exemple sont toujours marqués « exemple ».
+- **Ne jamais inventer les mots ni les prix d'un vrai commerçant.** Les commerces des démos sont fictifs, leurs
+  chiffres et leurs cadeaux inventés, et **jamais le mot « exemple » à l'écran** (voir plus haut). Ne jamais publier
+  une page qui se fait passer pour une vraie marque ou un vrai commerce.
 - **Droits à vérifier.** Les images de la boulangerie (`tour/episode.mp4`, `tour/episode.jpg`,
   `tour/episode-fin.jpg`) viennent de la vidéo YouTube d'« Eva ». La question des droits n'est pas
   réglée : ne pas les copier dans `public/` ni les diffuser ailleurs que dans le tour avant accord.
