@@ -92,6 +92,11 @@ Le lunetier les a dans sa base (`tour-lunettes.py`), les quatre autres par `tour
   moitié vide » : ClikMe ne connaît pas ses réservations. Mike ne dit donc que ce que ClikMe sait ; ce qu'il ne peut pas
   savoir, c'est le commerçant qui le lui dit, d'un appui. Seul Mike parle (sa voix ElevenLabs) ; le commerçant répond par
   des bulles et des appuis, comme dans l'app. Le visiteur de la démo joue le commerçant.
+  0. **La transition, sa fiche** (pour qu'on sache qui est Mike en arrivant de WhatsApp) : « La réservation est faite,
+     mais mon travail continue. Je suis Mike, votre assistant : comme un employé de plus. Je fais vos vidéos, je relance
+     vos clients, j'organise votre semaine. Quand je sens qu'il faut agir, je vous le propose : vous n'avez qu'à dire
+     oui. » Ses trois métiers s'allument à mesure (Vos vidéos, Vos clients, Votre semaine), puis « Il vous propose ·
+     vous dites oui ». La fiche se range dans sa barre (« Mike, en ligne ») et la conversation commence, « Mardi · 11 h ».
   1. « Bonjour Jean-Marie. 11 personnes ont promis de venir après votre vidéo. Aucune n'est encore passée. » Le carnet
      (Lou : 9, Clara : 10, les carnets de leurs tours).
   2. « Si c'est calme aujourd'hui, je peux les prévenir pour vous. On le fait ? » Deux bulles à toucher : « Pas
@@ -101,19 +106,20 @@ Le lunetier les a dans sa base (`tour-lunettes.py`), les quatre autres par `tour
      qui faisait penser au téléphone.
   4. Leurs réponses arrivent une à une.
   5. « Quand leur bon est scanné au comptoir, vous savez qu'ils sont venus grâce à votre vidéo. »
-  6. « Un j'aime s'oublie. Une promesse, vous l'encaissez le jour où vous en avez besoin. » Le bilan (« +4 tables ce
-     midi, 9 couverts » : tiré des réponses, sans euros, que ClikMe ne connaît pas).
-  7. « Et votre prochaine vidéo n'est pas encore prévue. On la cale jeudi ? » Il touche « Oui, jeudi 10 h ».
 
-  Le ticket de « Plus de clients » suit, avec une ligne de plus : « +4 tables un midi calme » (« +4 clientes », « +4
-  rendez-vous »). Chiffres et cadeaux inventés (commerces fictifs). Le cadeau de promesse, c'est le commerçant qui le
-  choisit, s'il le veut. Si on
-  touche une bulle avant la fin d'une réplique, Mike se tait et sa bulle s'écrit d'un coup.
+  Le ticket de « Plus de clients » suit **dans le comptoir de Mike** (plus sur WhatsApp), par-dessus la conversation :
+  « Ce que Mike a fait pour vous », avec une ligne de plus, « +4 tables un midi calme » (« +4 clientes », « +4
+  rendez-vous »), puis les boutons de la suite. Retirés (trop long) : « Un j'aime s'oublie… » et son bilan, et « Et
+  votre prochaine vidéo… On la cale jeudi ? ». Chiffres et cadeaux inventés (commerces fictifs). Le cadeau de promesse,
+  c'est le commerçant qui le choisit, s'il le veut. Si on touche une bulle avant la fin d'une réplique, Mike se tait
+  et sa bulle s'écrit d'un coup.
 
-Les voix sont dans `recu/trois/`. Communes : `trois-1`, `trois-4`, `mike-question`, `mike-message`, `mike-scan`,
-`mike-promesse` et `mike-video`. Par métier : `mike-bonjour-<métier>` (« Bonjour Jean-Marie… ») et `trois-2-<métier>`, suivie de « Touchez
-une cage. », pris à la fin de la version du restaurant. Ne servent plus : `trois-3`, `vitrine-1` à `-6`,
-`creux-1-<métier>`, `creux-2`, `creux-3` et `mike-appeler` (les versions précédentes). Les images sont copiées dans chaque tour : les
+Les voix sont dans `recu/trois/`. Communes : `trois-1`, `trois-4`, `mike-assistant` (la fiche), `mike-question`,
+`mike-message` et `mike-scan`. Par métier : `mike-bonjour-<métier>` (« Bonjour Jean-Marie… ») et `trois-2-<métier>`, suivie de « Touchez
+une cage. », pris à la fin de la version du restaurant. Tant que `recu/trois/<nom>.mp3` manque, la réplique s'écrit au
+rythme estimé, sans son (`estimer()` dans `tour-trois.py`) : il suffit de poser le fichier et de relancer la chaîne.
+Ne servent plus : `trois-3`, `vitrine-1` à `-6`, `creux-1-<métier>`, `creux-2`, `creux-3`, `mike-appeler`,
+`mike-promesse` et `mike-video` (les versions précédentes). Les images sont copiées dans chaque tour : les
 fantômes des habitants (`tf/`), l'intérieur (`tf-interieur.webp`) et son fantôme qui salue (`tf-hote.webp`).
 
 **L'intro** : « Qui a le temps de filmer, monter, publier et animer les réseaux sociaux ? » (nouvel enregistrement) a
