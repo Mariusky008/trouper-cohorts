@@ -135,13 +135,19 @@ scènes, après « Et une histoire, ça se partage. »
 - `intro-4c` « Une belle vidéo, tout le monde sait en faire. Moi, je fais réagir. » : sur la fin de la vidéo, l'écran
   s'assombrit et la carte « Et vous ? » arrive avec ses trois cages (le dessin de l'étape des trois fantômes).
 - `intro-4d` « À la fin de votre vidéo, chacun libère son fantôme de sa cage. Et c'est là que mon vrai travail
-  commence : je leur pose des questions, je les fais parler de vous. » : les portes s'ouvrent, les fantômes montent ;
-  ses questions (« C'est pour offrir ? »), puis leurs réponses (« Pour ma sœur 🎁 »).
-- `intro-4e` « Sur Instagram, vous voyez qui a aimé. Mais écrire à chacun pour créer du lien, qui a le temps ? » : la
-  liste des j'aime, un « Répondre » sur chacun, puis « Pas le temps. » (comme au début de l'intro).
+  commence : je leur pose des questions, je les fais parler de vous. » : UNE cage, comme dans la vraie vie : sur
+  « chacun », Camille touche « Je viendrai » ; sur « libère », son fantôme s'envole avec son prénom (les deux autres
+  cages pâlissent) ; sur « commence », sa question à lui, propre au commerce (`QR` dans `tour-intro3.py`, « Camille,
+  plutôt midi ou soir ? Je te garde une part de magret. ») ; sur « questions », sa réponse à elle ; sur « parler »,
+  « Camille en parle à sa sœur ». « Trois cages qui s'ouvrent à la fois » embrouillait : on ne voyait pas la plus-value.
+- `intro-4e` « Sur Instagram, vous voyez qui a aimé. Mais écrire à chacun pour créer du lien, qui a le temps ? » :
+  « ♥ 214 j'aime », les noms qui défilent ; sur « chacun », « ✉ à écrire » sur chacun et « 0 message écrit sur 214 » ;
+  sur « temps », « Pas le temps. » et « 214 messages à écrire, chaque jour ».
 - `intro-4f` « Moi, je le fais. Chacun par son prénom, au bon moment. Si bien que le jour où ils poussent votre porte,
-  ils se sentent déjà comme des habitués. » : ses messages à Camille, Mehdi et Sophie, puis la porte du commerce
-  (son nom en enseigne), et « Déjà des habitués ».
+  ils se sentent déjà comme des habitués. » : « Vos fantômes : 214 ont libéré leur fantôme sur votre vidéo » (ceux
+  qui ont ouvert une cage sur ClikMe, pas les j'aime d'Instagram) ; sur « prénom », un message chacun, par son
+  prénom, « ✓ envoyé », et le compteur jusqu'à 214 ; sur « porte », la porte du commerce (son nom en enseigne) ; sur
+  « habitués », « Déjà des habitués ».
 Les fantômes des cages sont ceux des habitants (`outils/trois-fantomes/a/g`), copiés dans chaque tour en `si-g1` à
 `si-g3`. La barre de l'intro a une case par réplique : 9 au chapitre 1, 2 au chapitre 2.
 
