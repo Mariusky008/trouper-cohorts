@@ -48,7 +48,8 @@ def bonjour(M):
     """Sa première réplique : ce que ClikMe sait (ceux qui ont promis, le carnet de son tour)."""
     return f"Bonjour {M['qui']}. {M['compte'][1]}{INS}personnes ont *promis de venir après votre vidéo. *Aucune n’est encore passée."
 
-# Ce qui change d'un métier à l'autre. Les commerces sont ceux des démos (fictifs) ; chiffres et cadeaux : exemples.
+# Ce qui change d'un métier à l'autre. Les commerces sont ceux des démos (fictifs) ; chiffres et cadeaux inventés,
+# sans le mot « exemple » à l'écran (il reste sur le ticket, à côté de son vrai nom, comme les lignes voisines).
 METIERS = {
     "tour": dict(
         metier="restaurant", lieu="Chez Bergine", sous="BISTROT · DAX", chez="chez Bergine", carte="Magret · Garbure · Axoa", qui="Jean-Marie",
@@ -604,7 +605,7 @@ JS = r"""
   function tfBon() {
     const lui = TF.choix === "promis";
     $("#tf-bon-t").textContent = lui ? "Votre bon de promesse · " + T3.lieu : "Le bon de promesse · " + T3.lieu;
-    $("#tf-bon-s").textContent = (lui ? "À montrer en arrivant · valable 7 jours" : "Pour ceux qui promettent de venir · 7 jours") + " · exemple";
+    $("#tf-bon-s").textContent = (lui ? "À montrer en arrivant · valable 7 jours" : "Pour ceux qui promettent de venir · 7 jours");
     $("#tf-bon").classList.add("on"); son("piece");
   }
   // tout de suite (le fantôme touché pendant qu'il explique) : sa place, le carnet, le bon
@@ -709,7 +710,7 @@ JS = r"""
     if ($(".tv-carnet", fil)) return;
     const noms = tvPromis();
     mkCarte("📌", "Ceux qui ont promis de venir", noms.slice(0, 4).join(" · ") + (noms.length > 4 ? " +" + (noms.length - 4) : ""),
-      "Leur bon : " + T3.bon.charAt(0).toLowerCase() + T3.bon.slice(1) + " · exemple", "tv-carnet", [String(noms.length), "promesses"]);
+      "Leur bon : " + T3.bon.charAt(0).toLowerCase() + T3.bon.slice(1), "tv-carnet", [String(noms.length), "promesses"]);
     son("billet");
   }
   // « C'est calme » : c'est lui qui le dit ; Mike propose le geste
@@ -760,11 +761,11 @@ JS = r"""
     // le bon de la première est scanné : elle est venue grâce à la vidéo
     if (!(await mkDire("mike-scan", [[0, () => {
       const r = $(".tv-rep", c); if (r) { r.classList.add("scanne"); $("em", r).textContent = "✓ venue"; }
-      mkCarte("✓", "Bon scanné au comptoir", C.reponses[0][0] + " est venue grâce à votre vidéo", "Elle avait promis de venir · exemple", "vert");
+      mkCarte("✓", "Bon scanné au comptoir", C.reponses[0][0] + " est venue grâce à votre vidéo", "Elle avait promis de venir", "vert");
       son("piece");
     }]])) || !(await pause(300, j))) return;
     if (!(await mkDire("mike-promesse", [[T3.mots["mike-promesse"][0], () => {
-      mkCarte("🎉", C.quand + ", grâce à vos promesses", C.bilan[0], C.bilan[1] + " · exemple", "tv-bilan");
+      mkCarte("🎉", C.quand + ", grâce à vos promesses", C.bilan[0], C.bilan[1], "tv-bilan");
       son("magie"); etincelles(8);
     }]])) || !(await pause(500, j))) return;
     // et la suite : sa prochaine vidéo
@@ -778,7 +779,7 @@ JS = r"""
     const j = jetonVoix;
     TV.planifie = true; $("#mk-choix").hidden = true;
     mkMoi("Oui, jeudi 10 h");
-    plus(() => { mkCarte("📅", "C’est prévu", "Jeudi, 10 h : votre prochaine vidéo", "Mike vous envoie les questions la veille · exemple"); son("pret"); }, 650);
+    plus(() => { mkCarte("📅", "C’est prévu", "Jeudi, 10 h : votre prochaine vidéo", "Mike vous envoie les questions la veille"); son("pret"); }, 650);
     plus(() => { if (j === jetonVoix && DEMOS[vue].moments[idx].id === "creux") { TV.fini = true; aller(idx + 1); } }, 3000);
   }
   // « Plus tard » : dans la démo, on l'invite à essayer l'autre
