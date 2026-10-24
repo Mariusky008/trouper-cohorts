@@ -40,7 +40,7 @@ python3 -I $D/outils/tour-gestes.py $D      # + les 4 photos en un seul appui
 python3 -I $D/outils/tour-depenses.py $D    # + « Moins de dépenses » : la question du métier, le coût réel à l'offre
 python3 -I $D/outils/tour-sien.py $D        # + son nom (« Pour qui est cette démo ? ») et son temps (le ticket de « Plus de clients »)
 python3 -I $D/outils/tour-dax.py $D         # + sous le projecteur, combien de Dacquois cherchent ce qu'il vend (sauf le restaurant)
-python3 -I $D/outils/tour-trois.py $D       # + « Les trois fantômes » et « Un jour creux » (restaurant, vêtements, coiffure)
+python3 -I $D/outils/tour-trois.py $D       # + « Les trois fantômes » et « Mike, votre assistant » (restaurant, vêtements, coiffure)
 ```
 
 Les neuf scripts se lancent **dans cet ordre**. Le tour lunetier a d'abord sa propre base, tirée de celle de la
@@ -77,23 +77,29 @@ Le lunetier les a dans sa base (`tour-lunettes.py`), les quatre autres par `tour
   et la troisième du métier (« J'y vais », « De côté », « Aujourd'hui »). Le fantôme de Camille s'envole se placer dans la
   vitrine du commerce : devant, à la porte, ou dedans. Puis le carnet, où un prénom s'écrit, et le bon de promesse.
   « Ça me tente » mène à la demande (table, mise de côté, rendez-vous).
-- **Son comptoir, après WhatsApp : un jour creux.** La première version montrait trop de choses (« un peu long, et on a
-  du mal à voir la plus-value »). Il n'y a plus qu'une histoire, celle qui rapporte :
-  1. Mardi, 11 h, la salle est à moitié vide.
-  2. Sur Instagram, des j'aime et personne à prévenir ; ici, la liste de ceux qui ont promis.
-  3. « 📣 Appeler mes promesses » : le message ne part qu'à elles.
-  4. Les réponses arrivent une à une et la salle se remplit (la jauge monte).
-  5. Le bon est scanné : « venue grâce à votre vidéo ».
-  6. « Un j'aime s'oublie. Une promesse, vous l'encaissez le jour où vous en avez besoin. »
+- **Son comptoir, après WhatsApp : Mike, son assistant.** Une conversation, à la place de « Mardi, 11 h, la salle est à
+  moitié vide » : ClikMe ne connaît pas ses réservations. Mike ne dit donc que ce que ClikMe sait ; ce qu'il ne peut pas
+  savoir, c'est le commerçant qui le lui dit, d'un appui. Seul Mike parle (sa voix ElevenLabs) ; le commerçant répond par
+  des bulles et des appuis, comme dans l'app. Le visiteur de la démo joue le commerçant.
+  1. « Bonjour Jean-Marie. 11 personnes ont promis de venir après votre vidéo. Aucune n'est encore passée. » Le carnet
+     (Lou : 9, Clara : 10, les carnets de leurs tours).
+  2. Il touche « C'est calme ce midi » (« … aujourd'hui »).
+  3. « Ceux qui ont promis, vous les rappelez d'un geste. Touchez « Appeler mes promesses ». » Le message ne part qu'à elles.
+  4. Leurs réponses arrivent une à une.
+  5. « Quand leur bon est scanné au comptoir, vous savez qu'ils sont venus grâce à votre vidéo. »
+  6. « Un j'aime s'oublie. Une promesse, vous l'encaissez le jour où vous en avez besoin. » Le bilan (« +4 tables ce
+     midi, 9 couverts » : tiré des réponses, sans euros, que ClikMe ne connaît pas).
+  7. « Et votre prochaine vidéo n'est pas encore prévue. On la cale jeudi ? » Il touche « Oui, jeudi 10 h ».
 
-  Le ticket de « Plus de clients » suit, avec une ligne de plus : « +4 tables mardi midi » (« +4 clientes », « +4
-  rendez-vous »). Chiffres et cadeaux : exemples. Le cadeau de promesse, c'est le commerçant qui le choisit.
+  Le ticket de « Plus de clients » suit, avec une ligne de plus : « +4 tables un midi calme » (« +4 clientes », « +4
+  rendez-vous »). Chiffres et cadeaux : exemples. Le cadeau de promesse, c'est le commerçant qui le choisit. Si on
+  touche une bulle avant la fin d'une réplique, Mike se tait et sa bulle s'écrit d'un coup.
 
-Les voix sont dans `recu/trois/`. Communes : `trois-1`, `trois-4`, `creux-2`, `vitrine-3`, `vitrine-4` et `creux-3`. Par
-métier : `creux-1-<métier>` (« Mardi, 11 h… ») et `trois-2-<métier>`, suivie de « Touchez une cage. », pris à la fin de la
-version du restaurant. Ne servent plus : `trois-3` (les trois places), `vitrine-1`, `-2`, `-5` et `-6` (la vitrine qui se
-remplit, le petit mot, le partage). Les images sont copiées dans chaque tour : les fantômes des habitants (`tf/`),
-l'intérieur (`tf-interieur.webp`) et son fantôme qui salue (`tf-hote.webp`).
+Les voix sont dans `recu/trois/`. Communes : `trois-1`, `trois-4`, `mike-appeler`, `mike-scan`, `mike-promesse` et
+`mike-video`. Par métier : `mike-bonjour-<métier>` (« Bonjour Jean-Marie… ») et `trois-2-<métier>`, suivie de « Touchez
+une cage. », pris à la fin de la version du restaurant. Ne servent plus : `trois-3`, `vitrine-1` à `-6`,
+`creux-1-<métier>`, `creux-2` et `creux-3` (les versions précédentes). Les images sont copiées dans chaque tour : les
+fantômes des habitants (`tf/`), l'intérieur (`tf-interieur.webp`) et son fantôme qui salue (`tf-hote.webp`).
 
 **L'intro** : « Qui a le temps de filmer, monter, publier et animer les réseaux sociaux ? » (nouvel enregistrement) a
 une quatrième tuile, « Animer les réseaux sociaux », qui s'allume sur « animer ». La voix étire « de… » avant
