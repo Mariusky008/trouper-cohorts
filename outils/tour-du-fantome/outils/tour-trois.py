@@ -42,10 +42,11 @@ COMMUNES = {
     "trois-1": "À la fin de votre vidéo, votre client ne met pas juste un «" + NB + "j’aime" + NB + "»" + NB + ": il choisit un des *trois *fantômes.",
     # « on ne peut pas obliger le commerçant à faire un cadeau » : ce qu'il y gagne, lui, c'est de pouvoir les relancer
     "trois-4": "Et s’il promet de venir, son prénom s’écrit dans votre *carnet. Le jour où c’est calme, vous pourrez le *relancer d’un geste.",
-    # le lien entre la réservation et son comptoir : qui est Mike, et ce qu'il fait pour lui
-    "mike-assistant": "La réservation est faite, mais mon travail continue. Je suis Mike, votre assistant" + NB + ": comme un employé de plus. "
-                      "Je fais vos *vidéos, je *relance vos clients, *j’organise votre semaine. Quand je sens qu’il faut agir, je vous le *propose" + NB + ": "
-                      "vous n’avez qu’à dire oui.",
+    # le lien entre la réservation et son comptoir : ce que Mike fait pour lui (« Comme un employé de plus » est
+    # écrit sur sa fiche) ; le texte de l'enregistrement, mot pour mot
+    "mike-assistant": "La réservation est faite, mais mon travail continue. "
+                      "Je fais vos *vidéos, *relance vos clients, *organise votre semaine et quand je sens qu’il faut agir, je vous le *propose "
+                      "et vous n’avez qu’à dire oui.",
     # Mike pose la question (le commerçant répond d'un appui), puis montre le message avant qu'il parte
     "mike-question": "Si c’est calme aujourd’hui, je peux les *prévenir pour vous. On le fait" + NB + "?",
     "mike-message": "Voici le *message. Il ne part qu’à eux, jamais à toute la ville. Touchez «" + NB + "Envoyer" + NB + "».",
@@ -997,7 +998,7 @@ for d, M in METIERS.items():
         "trois-4": [mot(textes["trois-4"], "carnet"), mot(textes["trois-4"], "relancer")],
         "mike-bonjour": [mot(textes["mike-bonjour"], "promis")],
         "mike-message": [0, mot(textes["mike-message"], "Touchez")],
-        "mike-assistant": [mot(textes["mike-assistant"], w) for w in ("vidéos", "relance", "j’organise", "propose")],
+        "mike-assistant": [mot(textes["mike-assistant"], w) for w in ("vidéos", "relance", "organise", "propose")],
     }
     T3 = {k: M[k] for k in ("lieu", "sous", "carte", "qui", "cages", "pose3", "heures", "compte", "creux")}
     T3.update(textes=textes, mots=mots, bon=M["bon"], appel=M["appel"])

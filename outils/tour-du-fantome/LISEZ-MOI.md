@@ -92,11 +92,12 @@ Le lunetier les a dans sa base (`tour-lunettes.py`), les quatre autres par `tour
   moitié vide » : ClikMe ne connaît pas ses réservations. Mike ne dit donc que ce que ClikMe sait ; ce qu'il ne peut pas
   savoir, c'est le commerçant qui le lui dit, d'un appui. Seul Mike parle (sa voix ElevenLabs) ; le commerçant répond par
   des bulles et des appuis, comme dans l'app. Le visiteur de la démo joue le commerçant.
-  0. **La transition, sa fiche** (pour qu'on sache qui est Mike en arrivant de WhatsApp) : « La réservation est faite,
-     mais mon travail continue. Je suis Mike, votre assistant : comme un employé de plus. Je fais vos vidéos, je relance
-     vos clients, j'organise votre semaine. Quand je sens qu'il faut agir, je vous le propose : vous n'avez qu'à dire
-     oui. » Ses trois métiers s'allument à mesure (Vos vidéos, Vos clients, Votre semaine), puis « Il vous propose ·
-     vous dites oui ». La fiche se range dans sa barre (« Mike, en ligne ») et la conversation commence, « Mardi · 11 h ».
+  0. **La transition, sa fiche** (pour qu'on sache qui est Mike en arrivant de WhatsApp), avec sa voix
+     (`recu/trois/mike-assistant.mp3`) : « La réservation est faite, mais mon travail continue. Je fais vos vidéos,
+     relance vos clients, organise votre semaine et quand je sens qu'il faut agir, je vous le propose et vous n'avez
+     qu'à dire oui. » « Comme un employé de plus » est écrit sur la fiche, sous son nom. Ses trois métiers s'allument
+     à mesure (Vos vidéos, Vos clients, Votre semaine), puis « Il vous propose · vous dites oui ». La fiche se range
+     dans sa barre (« Mike, en ligne ») et la conversation commence, « Mardi · 11 h ».
   1. « Bonjour Jean-Marie. 11 personnes ont promis de venir après votre vidéo. Aucune n'est encore passée. » Le carnet
      (Lou : 9, Clara : 10, les carnets de leurs tours).
   2. « Si c'est calme aujourd'hui, je peux les prévenir pour vous. On le fait ? » Deux bulles à toucher : « Pas
