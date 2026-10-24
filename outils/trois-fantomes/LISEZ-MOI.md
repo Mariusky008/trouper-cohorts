@@ -112,7 +112,8 @@ salle et le fantôme de Chez Bergine, l'affiche et la vidéo de l'interview (`a/
 ## L'essayer, le publier
 
 Il est publié (privé) sur https://claude.ai/artifact/GzdV7YsCpbRwXYzYce4Ae6 : on republie `index.html` sur ce même
-lien, avec dans `files` les images ou vidéos nouvelles. En local :
+lien, avec dans `files` les images ou vidéos nouvelles. Seul le compte qui l'a créé peut le faire ; depuis un autre
+compte, on publie un nouveau lien et on le remplace dans les deux LISEZ-MOI. En local :
 
 ```sh
 python3 -m http.server 8791 --directory outils/trois-fantomes &
