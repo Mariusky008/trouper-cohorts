@@ -44,7 +44,7 @@ CREER = "https://clikme.fr/commercants#creer"
 # voix.mp3, avec son texte) ; la nuit de sa ville (trois habitants : leur envie, ce que les fantômes
 # arrangent) ; la Maison de Léa (la pièce où tombe la surprise d'abord, puis trois autres, avec ce
 # que son fantôme y sait) et la surprise ; les chiffres du livre (produit, vues du film, réservations,
-# verdict). Tout est fictif, comme les commerces : « exemple » est écrit à l'écran.
+# verdict). Tout est fictif, comme les commerces (sans le mot « exemple » à l'écran : jamais).
 TOURS = {
     "tour": dict(geste="m2.jpg", lieu="Chez Bergine", qui="Jean-Marie", fant="resto.webp", pages=["interview.jpg", "specialiste.jpg", "episode-bergine.jpg"],
                  extrait=(3.6, 6.6, "Bon, mon magret, je commence par quadriller la peau."),
@@ -398,7 +398,7 @@ JS = r"""
       '<div class="nx-vol"><img src="' + PR.fant + '" alt=""></div><div class="nx-cadeau">🎁</div>' +
       '<div class="nx-notifs"><div class="nx-n nx-n1"><header><img src="fantome-maison.webp" alt="">Chez ' + PR.lea[0] + "<em>☀️ 8:02</em></header>" +
           "<b>🎁 Votre surprise : " + prMin(PR.surprise.titre) + '</b><u data-fait="' + PR.surprise.fait + '">' + PR.surprise.bouton + "</u></div>" +
-        '<div class="nx-n nx-n2"><header><img src="' + PR.fant + '" alt="">Chez vous · ' + PR.lieu + "<em>exemple</em></header><b>🔔 " + PR.surprise.notif + "</b></div></div>" +
+        '<div class="nx-n nx-n2"><header><img src="' + PR.fant + '" alt="">Chez vous · ' + PR.lieu + "</header><b>🔔 " + PR.surprise.notif + "</b></div></div>" +
       prEtin(12) + "</div>",
     // LE LIVRE DE SON COMMERCE : la couverture à son nom ; page 1, ce qui fait son commerce (sa photo, son
     // mémo vocal, son film, sa ville) et le tampon de la relève ; page 2, ses chiffres ; puis son mémo, ouvert
@@ -408,7 +408,7 @@ JS = r"""
         '<div class="dx-page dx-p2"><h3 class="dx-titre"><small>Le livre de ' + PR.lieu + "</small>Ce qui marche… ou pas</h3>" +
           PR.stats.map(([e, nom, vues, resas, v], k) => '<div class="dx-prod" style="--d:' + (k * 0.15).toFixed(2) + 's"><b>' + e + " " + nom + "</b><span>🎬 " + vues.toLocaleString("fr-FR") +
             " vues · 📅 " + resas + " réservation" + (resas > 1 ? "s" : "") + '</span><strong class="dx-verdict ' + v + '">' + DX_VERDICTS[v] + "</strong></div>").join("") +
-          '<span class="dx-exemple">exemple</span></div>' +
+          "</div>" +
         '<div class="dx-page dx-p1"><h3 class="dx-titre"><small>Le livre de ' + PR.lieu + "</small>Tout ce qui fait votre commerce</h3>" +
           '<div class="dx-grille">' +
             '<div class="dx-item" data-k="0" style="--r:-3deg"><div class="dx-cadre"><img src="' + PR.geste + '" alt=""></div><em>Vos gestes</em></div>' +

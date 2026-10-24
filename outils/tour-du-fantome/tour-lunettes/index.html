@@ -1353,9 +1353,8 @@ h1 em{font-style:normal;color:var(--rose)}
    contre la vidéo ClikMe) a été retiré : « on ne devrait mettre que ce que le fantôme fabrique comme vidéo et
    oublier ce que le restaurateur aurait mis ». Le téléphone reste seul, en grand ; au-dessus, qui l'a monté
    (ClikMe, sans effort pour vous) ; ses amis l'aiment et le partagent ; dessous, une ligne de chiffres
-   d'exemple, annoncés comme tels. */
-/* 100 px : qui l'a monté, au-dessus (42) ; les chiffres, à cheval sur le bas du téléphone, et leur mention
-   « exemple », dessous. « La vidéo est mal ajustée au téléphone » : son écran a maintenant la forme du film
+   (sans le mot « exemple » : jamais à l'écran). */
+/* 100 px : qui l'a monté, au-dessus (42) ; les chiffres, à cheval sur le bas du téléphone. « La vidéo est mal ajustée au téléphone » : son écran a maintenant la forme du film
    (9:16, cadre compris : 1,7375 × la largeur), le film le remplit en entier, sans bandes noires. */
 .s3,.s4{--pw:min(68cqw,calc((100cqh - 100px) / 1.7375));--py:calc(50% - 6px);--ph:calc(var(--pw) * 1.7375)}
 .s3{--w:calc(var(--pw) * 1.05)}
@@ -2242,7 +2241,7 @@ h1 em{font-style:normal;color:var(--rose)}
               <div class="wa-msg wa-moi" id="wa-moi"><pre id="wa-reponse"></pre><time>11:43 ✓✓</time></div>
             </div>
             <div class="wa-saisie" aria-hidden="true"><span>Message</span><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fff"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></i></div>
-            <div class="wa-bilan" id="wa-bilan" aria-live="polite"><p class="wb-t"><b>Plus de clients.</b><small>Ce que votre fantôme<br>a fait pour vous</small></p><div class="wb-l wb-temps"><i>⏱</i><span><small>Votre temps pour créer et publier</small><b>1 min 30</b></span><em class="vrai">en moyenne</em></div><div class="wb-l"><i>👁</i><span><small>Votre annonce sur ClikMe</small><b>1 400 vues</b></span><em>exemple</em></div><div class="wb-l"><i>💬</i><span><small id="wb-quand"></small><b id="wb-demande"></b></span><em>exemple</em></div><div class="wb-l wb-zero"><i>🤝</i><span><small>Commission ClikMe sur cette demande</small><b>0 €</b></span><em class="vrai">toujours</em></div></div><div class="wa-notif" id="wa-notif"><span class="ic"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z"/></svg></span><span><b>WhatsApp · Camille</b><small id="wa-apercu"></small></span><em>maintenant</em></div>
+            <div class="wa-bilan" id="wa-bilan" aria-live="polite"><p class="wb-t"><b>Plus de clients.</b><small>Ce que votre fantôme<br>a fait pour vous</small></p><div class="wb-l wb-temps"><i>⏱</i><span><small>Votre temps pour créer et publier</small><b>1 min 30</b></span><em class="vrai">en moyenne</em></div><div class="wb-l"><i>👁</i><span><small>Votre annonce sur ClikMe</small><b>1 400 vues</b></span></div><div class="wb-l"><i>💬</i><span><small id="wb-quand"></small><b id="wb-demande"></b></span></div><div class="wb-l wb-zero"><i>🤝</i><span><small>Commission ClikMe sur cette demande</small><b>0 €</b></span><em class="vrai">toujours</em></div></div><div class="wa-notif" id="wa-notif"><span class="ic"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z"/></svg></span><span><b>WhatsApp · Camille</b><small id="wa-apercu"></small></span><em>maintenant</em></div>
             <span class="tampon" id="tampon-c" style="--y:60%">Plus de clients.</span>
             <div class="fin" id="fin-clients" style="--b:3.6em"><button type="button" class="go fin-chap" id="fin-c-autre">Et pendant la nuit ? →</button><button type="button" class="go fin-chap" id="fin-c-demain">Et quand vous passerez la main →</button><button type="button" class="fin-conclure" id="fin-c-oui">Passer à la conclusion →</button></div>
           </div>
@@ -2784,7 +2783,7 @@ h1 em{font-style:normal;color:var(--rose)}
       '<div class="s-qui"><img src="' + INTRO_FANT + '" alt=""><span><b>Monté par ClikMe</b><small>sans effort pour vous</small></span></div>' +
       '<div class="s-stats">' + [["coeur", "J’aime"], ["vue", "vues"], ["part", "partages"]].map(([i, l], k) =>
         '<span><b data-n="' + I_STATS[k] + '">0</b><small>' + I_ICO_PLEIN[i] + l + "</small></span>").join("") + "</div>" +
-      '<p class="s-exemple">Exemple pour illustrer : chiffres fictifs</p></div>',
+      "</div>",
     partage: () => '<div class="s4">' +
       I_AMIS.map(([l, c, nom, t], k) => '<div class="s4-notif verre" data-k="' + k + '" style="--k:' + k + ";--d:" + k * 0.22 + 's"><b class="s4-av" style="--c:' + c + '">' + l +
         "</b><span><strong>" + nom + "</strong><small>maintenant</small><em>" + t + "</em></span></div>").join("") +
@@ -4480,7 +4479,7 @@ h1 em{font-style:normal;color:var(--rose)}
       '<div class="nx-vol"><img src="' + PR.fant + '" alt=""></div><div class="nx-cadeau">🎁</div>' +
       '<div class="nx-notifs"><div class="nx-n nx-n1"><header><img src="fantome-maison.webp" alt="">Chez ' + PR.lea[0] + "<em>☀️ 8:02</em></header>" +
           "<b>🎁 Votre surprise : " + prMin(PR.surprise.titre) + '</b><u data-fait="' + PR.surprise.fait + '">' + PR.surprise.bouton + "</u></div>" +
-        '<div class="nx-n nx-n2"><header><img src="' + PR.fant + '" alt="">Chez vous · ' + lieuVous() + "<em>exemple</em></header><b>🔔 " + PR.surprise.notif + "</b></div></div>" +
+        '<div class="nx-n nx-n2"><header><img src="' + PR.fant + '" alt="">Chez vous · ' + lieuVous() + "</header><b>🔔 " + PR.surprise.notif + "</b></div></div>" +
       prEtin(12) + "</div>",
     // LE LIVRE DE SON COMMERCE : la couverture à son nom ; page 1, ce qui fait son commerce (sa photo, son
     // mémo vocal, son film, sa ville) et le tampon de la relève ; page 2, ses chiffres ; puis son mémo, ouvert
@@ -4490,7 +4489,7 @@ h1 em{font-style:normal;color:var(--rose)}
         '<div class="dx-page dx-p2"><h3 class="dx-titre"><small>Le livre ' + deLieuTexte() + "</small>Ce qui marche… ou pas</h3>" +
           PR.stats.map(([e, nom, vues, resas, v], k) => '<div class="dx-prod" style="--d:' + (k * 0.15).toFixed(2) + 's"><b>' + e + " " + nom + "</b><span>🎬 " + vues.toLocaleString("fr-FR") +
             " vues · 📅 " + resas + " réservation" + (resas > 1 ? "s" : "") + '</span><strong class="dx-verdict ' + v + '">' + DX_VERDICTS[v] + "</strong></div>").join("") +
-          '<span class="dx-exemple">exemple</span></div>' +
+          "</div>" +
         '<div class="dx-page dx-p1"><h3 class="dx-titre"><small>Le livre ' + deLieuTexte() + "</small>Tout ce qui fait votre commerce</h3>" +
           '<div class="dx-grille">' +
             '<div class="dx-item" data-k="0" style="--r:-3deg"><div class="dx-cadre"><img src="' + PR.geste + '" alt=""></div><em>Vos gestes</em></div>' +
@@ -4505,7 +4504,7 @@ h1 em{font-style:normal;color:var(--rose)}
       "</div>" +
       '<div class="dx-voix"><small>📖 Gardé dans le livre · ' + (PR.voix ? "la voix " : "les mots ") + prDe(PR.qui) + '</small><div class="dx-voix-corps">' +
         (PR.voix ? '<div class="dx-onde">' + Array.from({ length: 9 }, (_, k) => '<i style="--h:' + (30 + ((k * 41) % 70)) + '%"></i>').join("") + "</div>" : '<div class="dx-plume">✒️</div>') +
-        "<p></p></div><em>— " + PR.qui + " · " + PR.lieu + (SIEN.nom ? " · exemple" : "") + "</em></div>" +
+        "<p></p></div><em>— " + PR.qui + " · " + PR.lieu + "</em></div>" +
       '<div class="dx-promesse"><h2>Votre savoir-faire<br>ne mourra <em>jamais</em>.</h2>' + prEtin(14) + "</div></div>",
     carte: (l) => '<div class="s0"><span class="s0-num">' + l.num + "</span><small>" + l.petit + "</small><h2>" + l.titre + "</h2><p>" + l.sous + "</p></div>",
     // LE OUI : les quatre promesses, cochées une à une, puis le bouton qui crée sa page
