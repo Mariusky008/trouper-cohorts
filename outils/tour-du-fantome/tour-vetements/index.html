@@ -2092,8 +2092,39 @@ h1 em{font-style:normal;color:var(--rose)}
 .tv-carte > strong small{font-size:.38em;letter-spacing:.04em;color:#6A5444;font-weight:700}
 .tv-carte.vert > i{background:#D7F8EA}
 .tv-carte.vert > span small{color:#0B7A55}
-.tv-bilan{background:linear-gradient(135deg,#FFF8EA,#FFE2EF);box-shadow:0 0 0 .2em rgba(255,46,154,.55),0 .8em 1.6em -.6em rgba(0,0,0,.8)}
-.tv-bilan > span b{font-size:1.08em;font-weight:900}
+/* d'abord sa fiche : qui est Mike, ce qu'il fait pour lui ; puis elle se range dans sa barre */
+.tv .mk-tete,.tv .mk-saisie,.tv .mk-fil{transition:opacity .45s}
+.tv.mk-presente .mk-tete,.tv.mk-presente .mk-saisie{opacity:0}
+.mk-tete.allume{animation:mk-allume 1.2s var(--ease)}
+@keyframes mk-allume{30%{background:rgba(255,46,154,.18);box-shadow:0 0 0 .22em rgba(255,46,154,.55)}}
+.mk-fiche{position:absolute;left:.9em;right:.9em;top:5.6em;z-index:20;padding:.85em .85em .8em;border-radius:1.3em;background:linear-gradient(165deg,#FFF8EA 55%,#FFE6F1);color:var(--encre);
+  box-shadow:0 1.6em 3em -1em rgba(0,0,0,.9);text-align:left;transform-origin:50% 0;animation:mk-vient .5s var(--ease) both}
+.mk-fiche[hidden]{display:none}
+.mk-f-haut{display:flex;align-items:center;gap:.6em}
+.mk-f-haut .t3-fant{width:3.8em;height:3.8em;animation:none}
+.mk-fiche.parle .t3-fant{animation:flotte 3.2s ease-in-out infinite}
+.mk-f-haut span{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.mk-f-haut b{font-size:1.45em;font-weight:900;line-height:1}
+.mk-f-haut small{margin-top:.15em;font-size:.72em;font-weight:700;color:#6A5444}
+.mk-f-haut em{margin-top:.35em;padding:.2em .6em;border-radius:1em;background:#E0167A;color:#fff;font-style:normal;font-size:.62em;font-weight:900;letter-spacing:.02em}
+.mk-f-dit{margin:.65em 0 .6em;min-height:4em;font-size:.84em;font-weight:700;line-height:1.32}
+.mk-f-dit .fx-cle{background:linear-gradient(transparent 60%,rgba(255,46,154,.35) 60%) no-repeat 0 0/0% 100%;transition:background-size .5s}
+.mk-f-dit .fx-cle.vu{background-size:100% 100%}
+.mk-roles{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.35em}
+.mk-role{display:flex;align-items:center;gap:.6em;padding:.4em .6em .4em .4em;border-radius:.9em;background:#fff;opacity:.4;transform:scale(.97);transition:opacity .35s,transform .45s var(--ease),box-shadow .35s}
+.mk-role.on{opacity:1;transform:none;box-shadow:0 0 0 .15em rgba(255,46,154,.55),0 .4em 1em -.5em rgba(0,0,0,.4)}
+.mk-role > i{flex:none;display:grid;place-items:center;width:2em;height:2em;border-radius:.65em;background:#FFE2EF;font-style:normal}
+.mk-role span{flex:1;min-width:0}
+.mk-role b{display:block;font-size:.84em;font-weight:900;line-height:1.15}
+.mk-role em{display:block;font-style:normal;font-size:.66em;color:#6A5444}
+.mk-role strong{flex:none;display:grid;place-items:center;width:1.5em;height:1.5em;border-radius:50%;background:#D7F8EA;color:#0B7A55;font-size:.8em;opacity:0;transform:scale(.4);transition:opacity .3s,transform .4s var(--ease)}
+.mk-role.on strong{opacity:1;transform:none}
+.mk-f-pied{margin:.6em 0 0;padding:.45em;border-radius:.9em;border:1.5px dashed rgba(224,22,122,.45);text-align:center;font-size:.76em;font-weight:900;color:#E0167A;opacity:.35;transition:opacity .35s,background .35s}
+.mk-f-pied.on{opacity:1;background:rgba(255,46,154,.08)}
+/* le ticket de « Plus de clients » : dans son comptoir, par-dessus la conversation */
+.tv .wa-bilan{top:9.1em}
+.tv #fin-clients{bottom:4.6em}
+.tv.mk-ticket .mk-fil{opacity:.2}
 /* leurs réponses, une à une */
 .tv-reps{display:flex;flex-direction:column;gap:.3em;padding:.5em .55em .55em}
 .tv-reps-t{display:flex;align-items:baseline;justify-content:space-between;padding:0 .2em}
@@ -2129,7 +2160,7 @@ h1 em{font-style:normal;color:var(--rose)}
 .tv-brouillon.envoye .tv-envoyer{display:none}
 .tv-brouillon.envoye .tv-envoye{display:flex}
 @media (prefers-reduced-motion: reduce){
-  .t3-fg img,.t3-fg.neuf,.t3-cg,.t3-dome img,.t3-fant,.mk-l,.mk-moi,.mk-c,.mk-choix,.mk-ch,.mk-tape i,.t3-fg.moi .t3-nom,.t3-fg.moi::before{animation:none!important}
+  .t3-fg img,.t3-fg.neuf,.t3-cg,.t3-dome img,.t3-fant,.mk-l,.mk-moi,.mk-c,.mk-choix,.mk-ch,.mk-tape i,.t3-fg.moi .t3-nom,.t3-fg.moi::before,.mk-fiche,.mk-tete{animation:none!important}
 }
 </style>
 
@@ -2464,7 +2495,7 @@ h1 em{font-style:normal;color:var(--rose)}
               <div class="wa-msg wa-moi" id="wa-moi"><pre id="wa-reponse"></pre><time>11:43 ✓✓</time></div>
             </div>
             <div class="wa-saisie" aria-hidden="true"><span>Message</span><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fff"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></i></div>
-            <div class="wa-bilan" id="wa-bilan" aria-live="polite"><p class="wb-t"><b>Plus de clients.</b><small>Ce que votre fantôme<br>a fait pour vous</small></p><div class="wb-l wb-temps"><i>⏱</i><span><small>Votre temps pour créer et publier</small><b>1 min 30</b></span><em class="vrai">en moyenne</em></div><div class="wb-l"><i>👁</i><span><small>Votre annonce sur ClikMe</small><b>1 400 vues</b></span></div><div class="wb-l"><i>💬</i><span><small id="wb-quand"></small><b id="wb-demande"></b></span></div><div class="wb-l"><i>👻</i><span><small>Grâce à vos promesses</small><b id="wb-vitrine"></b></span></div><div class="wb-l wb-zero"><i>🤝</i><span><small>Commission ClikMe sur cette demande</small><b>0 €</b></span><em class="vrai">toujours</em></div></div><div class="wa-notif" id="wa-notif"><span class="ic"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z"/></svg></span><span><b>WhatsApp · Camille</b><small id="wa-apercu"></small></span><em>maintenant</em></div>
+            <div class="wa-bilan" id="wa-bilan" aria-live="polite"><p class="wb-t"><b>Plus de clients.</b><small>Ce que Mike<br>a fait pour vous</small></p><div class="wb-l wb-temps"><i>⏱</i><span><small>Votre temps pour créer et publier</small><b>1 min 30</b></span><em class="vrai">en moyenne</em></div><div class="wb-l"><i>👁</i><span><small>Votre annonce sur ClikMe</small><b>1 400 vues</b></span></div><div class="wb-l"><i>💬</i><span><small id="wb-quand"></small><b id="wb-demande"></b></span></div><div class="wb-l"><i>👻</i><span><small>Grâce à vos promesses</small><b id="wb-vitrine"></b></span></div><div class="wb-l wb-zero"><i>🤝</i><span><small>Commission ClikMe sur cette demande</small><b>0 €</b></span><em class="vrai">toujours</em></div></div><div class="wa-notif" id="wa-notif"><span class="ic"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z"/></svg></span><span><b>WhatsApp · Camille</b><small id="wa-apercu"></small></span><em>maintenant</em></div>
             <span class="tampon" id="tampon-c" style="--y:60%">Plus de clients.</span>
             <div class="fin" id="fin-clients" style="--b:3.6em"><button type="button" class="go fin-chap" id="fin-c-autre">Et pendant la nuit ? →</button><button type="button" class="go fin-chap" id="fin-c-demain">Et quand vous passerez la main →</button><button type="button" class="fin-conclure" id="fin-c-oui">Passer à la conclusion →</button></div>
           </div>
@@ -2490,6 +2521,16 @@ h1 em{font-style:normal;color:var(--rose)}
             <div class="cz-tete"><img class="cz-av" src="v-mode.webp" alt=""><div class="cz-qui"><b>Maison Lou</b><small>Ton comptoir</small></div><div class="cz-pastilles" aria-hidden="true"><span>🔥 3</span><span class="r">📈 4</span><span>⭐ 12</span></div></div>
             <div class="mk-tete"><img src="fant.webp" alt=""><span><b>Mike</b><small>Votre assistant ClikMe</small></span><em>en ligne</em></div>
             <div class="mk-fil" id="mk-fil" aria-live="polite"></div>
+            <div class="mk-fiche" id="mk-fiche" hidden>
+              <div class="mk-f-haut"><span class="t3-fant" aria-hidden="true"><img class="fermee" src="fant.webp" alt=""><img class="ouverte" src="fant-parle.webp" alt=""></span><span><b>Mike</b><small>Votre assistant ClikMe</small><em>Comme un employé de plus</em></span></div>
+              <p class="mk-f-dit" aria-live="polite"></p>
+              <ul class="mk-roles">
+                <li class="mk-role"><i aria-hidden="true">🎬</i><span><b>Vos vidéos</b><em>Filmées, montées, publiées</em></span><strong aria-hidden="true">✓</strong></li>
+                <li class="mk-role"><i aria-hidden="true">💬</i><span><b>Vos clients</b><em>Relancés au bon moment</em></span><strong aria-hidden="true">✓</strong></li>
+                <li class="mk-role"><i aria-hidden="true">📅</i><span><b>Votre semaine</b><em>Organisée avec vous</em></span><strong aria-hidden="true">✓</strong></li>
+              </ul>
+              <p class="mk-f-pied">Il vous propose · vous dites oui</p>
+            </div>
             <div class="mk-choix" id="mk-choix" hidden><button type="button" class="mk-ch" id="mk-non">Plus tard</button><button type="button" class="mk-ch fort" id="mk-oui"></button></div>
             <div class="mk-saisie" aria-hidden="true"><span>Écrire à Mike…</span><i>🎙️</i></div>
           </div>
@@ -5030,9 +5071,9 @@ h1 em{font-style:normal;color:var(--rose)}
      À la fin de sa vidéo, le client ne met pas un « j'aime » : il choisit un des trois fantômes, qui
      s'envole se placer dans la vitrine du commerce. Puis le comptoir : Mike, son assistant, et ceux qui
      ont promis de venir, qu'un geste rappelle le jour où c'est calme. Chiffres : exemples. */
-  const T3 = {"lieu": "Maison Lou", "sous": "BOUTIQUE · DAX", "carte": "Manteaux · Mailles · Jeans", "qui": "Lou", "cages": [["adore", "💗 J’adore", "« J’ai aimé ta vidéo »"], ["promis", "📌 Je viendrai", "« Promis, je viens l’essayer »"], ["table", "🛍️ De côté", "« Mettez-la-moi de côté »"]], "pose3": "debout", "heures": ["de côté", "de côté", "de côté"], "compte": [31, 9, 3], "creux": {"calme": "Oui, c’est calme aujourd’hui : préviens‑les !", "quand": "Aujourd’hui", "reponses": [["Inès", "Je passe l’essayer à 14 h"], ["Chloé", "Gardez-moi le 38, j’arrive !"], ["Sarah", "À 17 h, avec ma sœur"], ["Emma", "16 h pour moi"]], "bilan": ["+4 clientes aujourd’hui", "dont 2 pour le manteau camel"], "ticket": "+4 clientes un jour calme"}, "textes": {"trois-1": "À la fin de votre vidéo, votre client ne met pas juste un « j’aime » : il choisit un des *trois *fantômes.", "trois-4": "Et s’il promet de venir, son prénom s’écrit dans votre *carnet. Le jour où c’est calme, vous pourrez le *relancer d’un geste.", "mike-question": "Si c’est calme aujourd’hui, je peux les *prévenir pour vous. On le fait ?", "mike-message": "Voici le *message. Il ne part qu’à eux, jamais à toute la ville. Touchez « Envoyer ».", "mike-scan": "Quand leur bon est scanné au comptoir, vous savez qu’ils sont venus *grâce à votre vidéo.", "mike-promesse": "Un « j’aime » s’oublie. Une *promesse, vous *l’encaissez le jour où vous en avez besoin.", "mike-video": "Et votre prochaine vidéo n’est pas encore *prévue. On la cale *jeudi ?", "trois-2": "J’adore, je viendrai l’essayer, ou mettez-la-moi de côté. Touchez une cage.", "mike-bonjour": "Bonjour Lou. 9 personnes ont *promis de venir après votre vidéo. *Aucune n’est encore passée."}, "mots": {"trois-2": [0, 1, 5, 8], "trois-4": [10, 19], "mike-bonjour": [4], "mike-message": [0, 13], "mike-promesse": [4]}, "bon": "Les retouches offertes", "appel": "Le manteau camel vous attend aujourd’hui ! Vos retouches sont offertes.", "fant": ["fant.webp", "fant-parle.webp"]};
-  Object.assign(TEMPS, {"trois-1": {"d": 5.41, "m": [0.0, 0.15, 0.31, 0.46, 0.61, 0.77, 1.42, 1.66, 1.9, 2.14, 2.38, 2.62, 2.87, 3.11, 3.75, 3.96, 4.37, 4.58, 4.79, 5.0], "b": "11111111111111111111111111111110000111111111111111111111100111111111011111111111111100000000001111111111111111001111111111111111111011"}, "trois-4": {"d": 6.19, "m": [0.0, 0.18, 0.36, 0.72, 0.91, 1.41, 1.59, 1.96, 2.33, 2.51, 2.7, 3.5, 3.69, 3.88, 4.08, 4.27, 4.46, 4.65, 5.04, 5.23, 5.81, 6.0], "b": "111111111111111111111111111111110000111111111111111111111111111111111111111110000000000111111111111111110111111111100111111111111111111111111111111111111"}, "mike-question": {"d": 3.27, "m": [0.0, 0.2, 0.39, 0.59, 1.35, 1.5, 1.64, 1.79, 2.24, 2.39, 2.93, 3.05, 3.16], "b": "11111111111111111111111111111100011111111111111111111101111111110000000001111111"}, "mike-message": {"d": 5.22, "m": [0.0, 0.33, 0.5, 1.2, 1.39, 1.58, 1.78, 1.97, 2.44, 2.86, 3.08, 3.29, 3.5, 4.16, 4.82], "b": "111111111111111111111000000000111111101111100111101111100000111111111111111011101111111111111100000000001111111111000000111111111"}, "mike-scan": {"d": 4.31, "m": [0.0, 0.2, 0.39, 0.59, 0.78, 1.18, 1.37, 1.76, 1.96, 2.35, 2.55, 2.74, 3.13, 3.33, 3.53, 3.72], "b": "1111111111111111110111111111111111111111101000011111111111111111011111111111111111111111111111111111111111"}, "mike-promesse": {"d": 4.36, "m": [0.0, 0.19, 0.37, 0.56, 0.75, 1.55, 1.76, 2.41, 2.63, 2.84, 3.06, 3.28, 3.49, 3.93], "b": "11111111111111111111111111110000000000111111111111111111101111111111111111111111111111111111111111111111111"}, "mike-video": {"d": 3.47, "m": [0.0, 0.17, 0.34, 0.69, 1.21, 1.51, 1.69, 2.03, 2.55, 2.73, 2.92, 3.1], "b": "1111111111111111111111111111111000111111111110111111111000000000111111111111111111111"}, "trois-2": {"d": 4.75, "m": [0.0, 0.77, 0.97, 1.37, 2.0, 2.15, 2.99, 3.15, 3.94, 4.35, 4.55], "b": "111111111111110000011111111111111111111111110000001111111100000111110111111111101111111000000000001111111111111111111"}, "mike-bonjour": {"d": 5.17, "m": [0.0, 0.4, 0.98, 1.49, 1.66, 2.0, 2.17, 2.51, 2.86, 3.03, 3.96, 4.31, 4.48, 4.83], "b": "11111111111111100000000011111111011111111111111111111111111111111111111111111111111111111000000000011100111111111011101110111111"}});
-  ["mike-bonjour", "mike-message", "mike-promesse", "mike-question", "mike-scan", "mike-video", "trois-1", "trois-2", "trois-4"].forEach((n) => { if (!ENREGISTREES.includes(n)) ENREGISTREES.push(n); });
+  const T3 = {"lieu": "Maison Lou", "sous": "BOUTIQUE · DAX", "carte": "Manteaux · Mailles · Jeans", "qui": "Lou", "cages": [["adore", "💗 J’adore", "« J’ai aimé ta vidéo »"], ["promis", "📌 Je viendrai", "« Promis, je viens l’essayer »"], ["table", "🛍️ De côté", "« Mettez-la-moi de côté »"]], "pose3": "debout", "heures": ["de côté", "de côté", "de côté"], "compte": [31, 9, 3], "creux": {"calme": "Oui, c’est calme aujourd’hui : préviens‑les !", "reponses": [["Inès", "Je passe l’essayer à 14 h"], ["Chloé", "Gardez-moi le 38, j’arrive !"], ["Sarah", "À 17 h, avec ma sœur"], ["Emma", "16 h pour moi"]], "ticket": "+4 clientes un jour calme"}, "textes": {"trois-1": "À la fin de votre vidéo, votre client ne met pas juste un « j’aime » : il choisit un des *trois *fantômes.", "trois-4": "Et s’il promet de venir, son prénom s’écrit dans votre *carnet. Le jour où c’est calme, vous pourrez le *relancer d’un geste.", "mike-assistant": "La réservation est faite, mais mon travail continue. Je suis Mike, votre assistant : comme un employé de plus. Je fais vos *vidéos, je *relance vos clients, *j’organise votre semaine. Quand je sens qu’il faut agir, je vous le *propose : vous n’avez qu’à dire oui.", "mike-question": "Si c’est calme aujourd’hui, je peux les *prévenir pour vous. On le fait ?", "mike-message": "Voici le *message. Il ne part qu’à eux, jamais à toute la ville. Touchez « Envoyer ».", "mike-scan": "Quand leur bon est scanné au comptoir, vous savez qu’ils sont venus *grâce à votre vidéo.", "trois-2": "J’adore, je viendrai l’essayer, ou mettez-la-moi de côté. Touchez une cage.", "mike-bonjour": "Bonjour Lou. 9 personnes ont *promis de venir après votre vidéo. *Aucune n’est encore passée."}, "mots": {"trois-2": [0, 1, 5, 8], "trois-4": [10, 19], "mike-bonjour": [4], "mike-message": [0, 13], "mike-assistant": [21, 23, 26, 38]}, "bon": "Les retouches offertes", "appel": "Le manteau camel vous attend aujourd’hui ! Vos retouches sont offertes.", "fant": ["fant.webp", "fant-parle.webp"]};
+  Object.assign(TEMPS, {"trois-1": {"d": 5.41, "m": [0.0, 0.15, 0.31, 0.46, 0.61, 0.77, 1.42, 1.66, 1.9, 2.14, 2.38, 2.62, 2.87, 3.11, 3.75, 3.96, 4.37, 4.58, 4.79, 5.0], "b": "11111111111111111111111111111110000111111111111111111111100111111111011111111111111100000000001111111111111111001111111111111111111011"}, "trois-4": {"d": 6.19, "m": [0.0, 0.18, 0.36, 0.72, 0.91, 1.41, 1.59, 1.96, 2.33, 2.51, 2.7, 3.5, 3.69, 3.88, 4.08, 4.27, 4.46, 4.65, 5.04, 5.23, 5.81, 6.0], "b": "111111111111111111111111111111110000111111111111111111111111111111111111111110000000000111111111111111110111111111100111111111111111111111111111111111111"}, "mike-assistant": {"d": 16.06, "m": [0.0, 0.23, 0.97, 1.2, 1.58, 1.81, 2.04, 2.44, 3.19, 3.42, 3.65, 4.03, 4.26, 5.18, 5.41, 5.64, 6.04, 6.27, 6.85, 7.08, 7.31, 7.54, 8.26, 8.49, 8.89, 9.12, 9.5, 10.07, 10.3, 11.05, 11.28, 11.51, 11.74, 11.97, 12.2, 12.75, 12.98, 13.21, 13.44, 14.19, 14.42, 14.82, 15.05, 15.28], "b": ""}, "mike-question": {"d": 3.27, "m": [0.0, 0.2, 0.39, 0.59, 1.35, 1.5, 1.64, 1.79, 2.24, 2.39, 2.93, 3.05, 3.16], "b": "11111111111111111111111111111100011111111111111111111101111111110000000001111111"}, "mike-message": {"d": 5.22, "m": [0.0, 0.33, 0.5, 1.2, 1.39, 1.58, 1.78, 1.97, 2.44, 2.86, 3.08, 3.29, 3.5, 4.16, 4.82], "b": "111111111111111111111000000000111111101111100111101111100000111111111111111011101111111111111100000000001111111111000000111111111"}, "mike-scan": {"d": 4.31, "m": [0.0, 0.2, 0.39, 0.59, 0.78, 1.18, 1.37, 1.76, 1.96, 2.35, 2.55, 2.74, 3.13, 3.33, 3.53, 3.72], "b": "1111111111111111110111111111111111111111101000011111111111111111011111111111111111111111111111111111111111"}, "trois-2": {"d": 4.75, "m": [0.0, 0.77, 0.97, 1.37, 2.0, 2.15, 2.99, 3.15, 3.94, 4.35, 4.55], "b": "111111111111110000011111111111111111111111110000001111111100000111110111111111101111111000000000001111111111111111111"}, "mike-bonjour": {"d": 5.17, "m": [0.0, 0.4, 0.98, 1.49, 1.66, 2.0, 2.17, 2.51, 2.86, 3.03, 3.96, 4.31, 4.48, 4.83], "b": "11111111111111100000000011111111011111111111111111111111111111111111111111111111111111111000000000011100111111111011101110111111"}});
+  ["mike-bonjour", "mike-message", "mike-question", "mike-scan", "trois-1", "trois-2", "trois-4"].forEach((n) => { if (!ENREGISTREES.includes(n)) ENREGISTREES.push(n); });
   HEURES.tf = "12:05"; HEURES.tv = "11:00";
   const T3_LOOKS = ["denim", "fleuri", "rebelle", "soleil", "curieux", "voyageur", "artiste"];
   const T3_NOMS = ["Léa", "Malik", "Martin", "Chloé", "Lucas", "Sarah", "Nathan", "Emma", "Paul", "Zoé", "Yanis", "Rose", "Jules", "Lina", "Elsa", "Noé", "Iris", "Axel", "Margot", "Simon", "Jade", "Victor", "Ambre", "Robin", "Agathe", "Louna", "Enzo", "Mila", "Gabin", "Théo", "Nina", "Adam", "Salomé", "Bastien", "Manon", "Louis", "Céline", "Hamza", "Anaïs", "Maël"];
@@ -5269,11 +5310,14 @@ h1 em{font-style:normal;color:var(--rose)}
   });
 
   /* ── 2. SON COMPTOIR : MIKE, SON ASSISTANT ──
-     Une conversation. Mike ne dit que ce que ClikMe sait (ceux qui ont promis, les réponses, les bons
-     scannés, la prochaine vidéo) ; ce qu'il ne peut pas savoir (c'est calme), le commerçant le lui dit
-     d'un appui. Seul Mike parle. */
-  const vTv = $("#v-tv"), fil = $("#mk-fil"), C = T3.creux;
-  const TV = { calme: false, appele: false, plan: false, planifie: false, fini: false, bulle: null };
+     D'abord sa fiche, pour faire le lien avec la réservation : qui est Mike, ce qu'il fait pour lui. Puis
+     une conversation. Mike ne dit que ce que ClikMe sait (ceux qui ont promis, les réponses, les bons
+     scannés) ; ce qu'il ne peut pas savoir (c'est calme), le commerçant le lui dit d'un appui. Seul Mike
+     parle. */
+  const vTv = $("#v-tv"), fil = $("#mk-fil"), fiche = $("#mk-fiche"), C = T3.creux;
+  const TV = { intro: false, calme: false, appele: false, fini: false, bulle: null };
+  // le ticket de « Plus de clients » vient dans son comptoir (plus sur WhatsApp)
+  vTv.append($("#wa-bilan"), $("#tampon-c"), $("#fin-clients"));
   // ceux qui ont promis : ceux qui vont répondre d'abord, puis les autres
   const tvPromis = () => C.reponses.map(([nom]) => nom).concat(T3_NOMS.filter((n) => !C.reponses.some(([r]) => r === n))).slice(0, T3.compte[1]);
   const mkEl = (balise, cl, texte) => { const e = document.createElement(balise); if (cl) e.className = cl; if (texte != null) e.textContent = texte; return e; };
@@ -5330,9 +5374,50 @@ h1 em{font-style:normal;color:var(--rose)}
   }
   function tvEntrer() {
     const j = jetonVoix;
-    Object.assign(TV, { calme: false, appele: false, plan: false, planifie: false, fini: false, bulle: null });
-    fil.innerHTML = ""; mkAjouter(mkEl("div", "mk-date", "Aujourd’hui · " + HEURES.tv.replace(":", " h ")));
-    $("#mk-choix").hidden = true;
+    Object.assign(TV, { intro: true, calme: false, appele: false, fini: false, bulle: null });
+    fil.innerHTML = ""; $("#mk-choix").hidden = true;
+    ["#wa-bilan", "#tampon-c"].forEach((s) => $(s).classList.remove("on"));
+    vTv.classList.remove("mk-ticket"); vTv.classList.add("mk-presente");
+    // sa fiche : ses trois métiers s'allument à mesure qu'il les dit
+    const dit = $(".mk-f-dit", fiche), roles = $$(".mk-role", fiche), ix = T3.mots["mike-assistant"];
+    dit.textContent = ""; roles.forEach((r) => r.classList.remove("on")); $(".mk-f-pied", fiche).classList.remove("on");
+    fiche.getAnimations().forEach((a) => a.cancel());
+    fiche.hidden = false;
+    roles.forEach((r, k) => quandMot(dit, ix[k], () => { r.classList.add("on"); son("note", 2 + k * 2); }));
+    quandMot(dit, ix[3], () => $(".mk-f-pied", fiche).classList.add("on"));
+    (async () => {
+      if (!(await pause(600, j))) return;
+      fiche.classList.add("parle");
+      const ok = await prononcer($(".t3-fant", fiche), dit, T3.textes["mike-assistant"], "mike-assistant");
+      fiche.classList.remove("parle");
+      if (ok && (await pause(1100, j))) tvRanger();
+    })();
+  }
+  // sa fiche se range dans sa barre (« Mike, en ligne ») ; la conversation commence
+  function tvRanger() {
+    if (!TV.intro || DEMOS[vue].moments[idx].id !== "creux") return;
+    taireVoix();
+    TV.intro = false;
+    const j = jetonVoix;
+    fiche.classList.remove("parle");
+    $$(".mk-role", fiche).forEach((r) => r.classList.add("on")); $(".mk-f-pied", fiche).classList.add("on");
+    const fin = () => {
+      fiche.hidden = true; vTv.classList.remove("mk-presente");
+      rejouer($(".mk-tete", vTv), "allume"); son("pop");
+      tvConversation(j);
+    };
+    const a = fiche.getBoundingClientRect(), b = $(".mk-tete", vTv).getBoundingClientRect();
+    if (reduit || !a.width || !fiche.animate) { fin(); return; }
+    // le téléphone peut être mis à l'échelle : les déplacements se comptent dans ses pixels à lui
+    const k = a.width / fiche.offsetWidth;
+    const dx = (b.left + b.width / 2 - (a.left + a.width / 2)) / k, dy = (b.top - a.top) / k;
+    fiche.animate([
+      { transform: "none", opacity: 1 },
+      { transform: "translate(" + dx + "px," + dy + "px) scale(" + b.width / a.width + "," + b.height / a.height + ")", opacity: 0 },
+    ], { duration: 650, easing: "cubic-bezier(.55,0,.25,1)", fill: "forwards" }).onfinish = () => { if (j === jetonVoix) fin(); };
+  }
+  function tvConversation(j) {
+    mkAjouter(mkEl("div", "mk-date", "Mardi · " + HEURES.tv.replace(":", " h ")));
     (async () => {
       if (!(await pause(450, j))) return;
       // « 11 personnes ont promis… » : le carnet ; « aucune n'est encore passée »
@@ -5384,7 +5469,7 @@ h1 em{font-style:normal;color:var(--rose)}
     $(".tv-brouillon", fil).classList.add("envoye"); son("billet");
     tvReponses(j);
   }
-  // leurs réponses arrivent, une à une ; un bon est scanné ; le bilan ; la suggestion suivante
+  // leurs réponses arrivent, une à une ; un bon est scanné ; puis le ticket
   async function tvReponses(j) {
     if (!(await pause(650, j))) return;
     const noms = tvPromis(), pas = 750;
@@ -5405,24 +5490,8 @@ h1 em{font-style:normal;color:var(--rose)}
       const r = $(".tv-rep", c); if (r) { r.classList.add("scanne"); $("em", r).textContent = "✓ venue"; }
       mkCarte("✓", "Bon scanné au comptoir", C.reponses[0][0] + " est venue grâce à votre vidéo", "Elle avait promis de venir", "vert");
       son("piece");
-    }]])) || !(await pause(300, j))) return;
-    if (!(await mkDire("mike-promesse", [[T3.mots["mike-promesse"][0], () => {
-      mkCarte("🎉", C.quand + ", grâce à vos promesses", C.bilan[0], C.bilan[1], "tv-bilan");
-      son("magie"); etincelles(8);
-    }]])) || !(await pause(500, j))) return;
-    // et la suite : sa prochaine vidéo
-    TV.plan = true;
-    if (!(await mkDire("mike-video")) || !(await pause(250, j))) return;
-    mkChoix("📅 Oui, jeudi 10 h", "plan");
-  }
-  function mkPlanifier() {
-    if (TV.planifie || !TV.plan || DEMOS[vue].moments[idx].id !== "creux") return;
-    mkTaire();
-    const j = jetonVoix;
-    TV.planifie = true; $("#mk-choix").hidden = true;
-    mkMoi("Oui, jeudi 10 h");
-    plus(() => { mkCarte("📅", "C’est prévu", "Jeudi, 10 h : votre prochaine vidéo", "Mike vous envoie les questions la veille"); son("pret"); }, 650);
-    plus(() => { if (j === jetonVoix && DEMOS[vue].moments[idx].id === "creux") { TV.fini = true; aller(idx + 1); } }, 3000);
+    }]])) || !(await pause(1800, j))) return;
+    if (DEMOS[vue].moments[idx].id === "creux") { TV.fini = true; aller(idx + 1); }
   }
   // « Plus tard » : dans la démo, on l'invite à essayer l'autre
   $("#mk-non").addEventListener("click", (e) => {
@@ -5432,8 +5501,7 @@ h1 em{font-style:normal;color:var(--rose)}
   });
   $("#mk-oui").addEventListener("click", (e) => {
     if (fini || DEMOS[vue].moments[idx].id !== "creux") return;
-    e.stopPropagation(); contexte();
-    if ($("#mk-choix").dataset.quoi === "plan") mkPlanifier(); else mkCalme();
+    e.stopPropagation(); contexte(); mkCalme();
   });
   fil.addEventListener("click", (e) => {
     if (fini || DEMOS[vue].moments[idx].id !== "creux" || !e.target.closest(".tv-envoyer")) return;
@@ -5457,23 +5525,23 @@ h1 em{font-style:normal;color:var(--rose)}
   });
   CLIENTS.moments.splice(CLIENTS.moments.findIndex((m) => m.id === "whatsapp") + 1, 0, {
     id: "creux", chap: 5, ecran: "tv", cible: null,
-    dit: T3.textes["mike-bonjour"].replace(/\*/g, ""),
+    dit: T3.textes["mike-assistant"].replace(/\*/g, ""),
     entrer() { tvEntrer(); },
     agir() {
+      if (TV.intro) { tvRanger(); return; }
       if (!TV.calme) { mkCalme(); return; }
       if (!TV.appele) { tvEnvoyer(); return; }
-      if (TV.plan && !TV.planifie && !$("#mk-choix").hidden) { mkPlanifier(); return; }
-      if (TV.planifie) return;
       taireVoix(); effacer(); TV.fini = true; aller(idx + 1);
     },
   }, {
-    // le ticket de « Plus de clients », sur son WhatsApp, avec son jour calme rempli
-    id: "ticket", chap: 5, ecran: "wa", cible: null,
+    // le ticket de « Plus de clients », dans son comptoir, avec son jour calme rempli
+    id: "ticket", chap: 5, ecran: "tv", cible: null,
     dit: "Plus de clients.",
     entrer() {
       $("#wa-texte").textContent = message(); $("#wa-reponse").textContent = reponse();
       ["#wa-notif", "#wa-ecrit", "#wa-bilan", "#tampon-c"].forEach((s) => $(s).classList.remove("on"));
-      ["#wa-recu", "#wa-moi"].forEach((s) => $(s).classList.add("on"));
+      fiche.hidden = true; vTv.classList.remove("mk-presente"); vTv.classList.add("mk-ticket"); $("#mk-choix").hidden = true;
+      if (!fil.children.length) mkAjouter(mkEl("div", "mk-date", "Mardi · " + HEURES.tv.replace(":", " h ")));
       $("#wb-vitrine").textContent = C.ticket;
       plus(finClients, 450);
     },
