@@ -81,7 +81,10 @@ Le lunetier les a dans sa base (`tour-lunettes.py`), les quatre autres par `tour
 
 - **À la fin de sa vidéo** (à la place des trois petits fantômes d'avis) : trois cages, « J'adore », « Je viendrai »,
   et la troisième du métier (« J'y vais », « De côté », « Aujourd'hui »). Le fantôme de Camille s'envole se placer dans la
-  vitrine du commerce : devant, à la porte, ou dedans. Puis le carnet, où un prénom s'écrit, et le bon de promesse.
+  vitrine du commerce : devant, à la porte, ou dedans. « Et s'il promet de venir, son prénom s'écrit dans votre carnet.
+  Le jour où c'est calme, vous pourrez le relancer d'un geste. » Le carnet s'ouvre, et la carte de la promesse
+  (« Jean-Marie vous préviendra · d'un jour calme · son petit plus : le café offert ») : on ne peut pas obliger le
+  commerçant à offrir un cadeau, c'est lui qui choisit.
   « Ça me tente » mène à la demande (table, mise de côté, rendez-vous). Camille se repère dans la foule : premier
   rang (ou première place), un peu plus grande, halo rose, « Vous · Camille » (en salle : « Vous · 15 h 30 ») ; à son
   arrivée, la foule s'efface un instant.
@@ -91,8 +94,11 @@ Le lunetier les a dans sa base (`tour-lunettes.py`), les quatre autres par `tour
   des bulles et des appuis, comme dans l'app. Le visiteur de la démo joue le commerçant.
   1. « Bonjour Jean-Marie. 11 personnes ont promis de venir après votre vidéo. Aucune n'est encore passée. » Le carnet
      (Lou : 9, Clara : 10, les carnets de leurs tours).
-  2. Il touche « C'est calme ce midi » (« … aujourd'hui »).
-  3. « Ceux qui ont promis, vous les rappelez d'un geste. Touchez « Appeler mes promesses ». » Le message ne part qu'à elles.
+  2. « Si c'est calme aujourd'hui, je peux les prévenir pour vous. On le fait ? » Deux bulles à toucher : « Pas
+     aujourd'hui » et « Oui, préviens-les ». Sa réponse s'écrit : « Oui, c'est calme ce midi : préviens-les ! ».
+  3. « Voici le message. Il ne part qu'à eux, jamais à toute la ville. Touchez « Envoyer ». » Le message prêt à partir
+     s'affiche dans le fil (à qui, le texte) avec « Envoyer aux 11 personnes ». Plus de « Appeler mes promesses »,
+     qui faisait penser au téléphone.
   4. Leurs réponses arrivent une à une.
   5. « Quand leur bon est scanné au comptoir, vous savez qu'ils sont venus grâce à votre vidéo. »
   6. « Un j'aime s'oublie. Une promesse, vous l'encaissez le jour où vous en avez besoin. » Le bilan (« +4 tables ce
@@ -100,13 +106,14 @@ Le lunetier les a dans sa base (`tour-lunettes.py`), les quatre autres par `tour
   7. « Et votre prochaine vidéo n'est pas encore prévue. On la cale jeudi ? » Il touche « Oui, jeudi 10 h ».
 
   Le ticket de « Plus de clients » suit, avec une ligne de plus : « +4 tables un midi calme » (« +4 clientes », « +4
-  rendez-vous »). Chiffres et cadeaux : exemples. Le cadeau de promesse, c'est le commerçant qui le choisit. Si on
+  rendez-vous »). Chiffres et cadeaux inventés (commerces fictifs). Le cadeau de promesse, c'est le commerçant qui le
+  choisit, s'il le veut. Si on
   touche une bulle avant la fin d'une réplique, Mike se tait et sa bulle s'écrit d'un coup.
 
-Les voix sont dans `recu/trois/`. Communes : `trois-1`, `trois-4`, `mike-appeler`, `mike-scan`, `mike-promesse` et
-`mike-video`. Par métier : `mike-bonjour-<métier>` (« Bonjour Jean-Marie… ») et `trois-2-<métier>`, suivie de « Touchez
+Les voix sont dans `recu/trois/`. Communes : `trois-1`, `trois-4`, `mike-question`, `mike-message`, `mike-scan`,
+`mike-promesse` et `mike-video`. Par métier : `mike-bonjour-<métier>` (« Bonjour Jean-Marie… ») et `trois-2-<métier>`, suivie de « Touchez
 une cage. », pris à la fin de la version du restaurant. Ne servent plus : `trois-3`, `vitrine-1` à `-6`,
-`creux-1-<métier>`, `creux-2` et `creux-3` (les versions précédentes). Les images sont copiées dans chaque tour : les
+`creux-1-<métier>`, `creux-2`, `creux-3` et `mike-appeler` (les versions précédentes). Les images sont copiées dans chaque tour : les
 fantômes des habitants (`tf/`), l'intérieur (`tf-interieur.webp`) et son fantôme qui salue (`tf-hote.webp`).
 
 **L'intro** : « Qui a le temps de filmer, monter, publier et animer les réseaux sociaux ? » (nouvel enregistrement) a

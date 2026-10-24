@@ -15,10 +15,13 @@ la scène du commerce (la cage reste vide, cochée) :
   déjà là, le bon de promesse (3 promesses au plus), Ma Maison, le bon montré au comptoir, le pin du commerce,
   sa tournée de Dax, sa place d'habitué après 3 promesses tenues ;
 - **le comptoir** : jamais « 0 » (un matin vide montre la semaine), la vitrine en direct, « Merci » à tous,
-  l'appel aux seules personnes du carnet (une fois par jour), le carnet, les tables, la semaine, le Direct de
-  demain, ce qui reste privé ;
-- **« Le lendemain matin »** : nouvelle vidéo, la vitrine se vide et se remplit à nouveau (le fantôme doré
-  change de cachette).
+  le message aux seules personnes qui ont promis (« Prévenir ceux qui ont promis », une fois par jour), l'info du
+  moment sur l'ardoise de la vitrine, le carnet, les tables, la semaine, le Direct de demain, ce qui reste privé ;
+- **« Le lendemain matin »** : nouvelle vidéo, la vitrine se vide et se remplit à nouveau.
+
+**Simplifié** (« beaucoup de mécaniques à la fois : un habitant risque de s'y perdre ») : le fantôme doré, le
+toc-toc et « Garde-moi une place, avec qui ? » sont retirés. L'info du moment du commerçant passe sur l'ardoise
+de sa vitrine. Le cadeau pour un joli mot reste : c'est le commerçant qui choisit d'offrir.
 
 ## Ses écussons, cousus sur son fantôme
 
@@ -31,11 +34,10 @@ vitrines, et la bulle de qui le touche les nomme : une preuve, pas un tableau de
 | 🤝 Parole de fantôme | tenir une promesse |
 | Le pin de Chez Bergine | tenir parole chez Bergine |
 | 💌 Ambassadeur | faire venir un ami par sa vitrine |
-| ✦ Chasseur d'or | trouver le fantôme doré |
 | 💛 Coup de cœur du chef | un petit mot qui touche Jean-Marie |
 | 👍 Bon conseil | un conseil que d'autres aiment |
 
-Ma Maison montre son fantôme en grand avec ses écussons, puis les six : ceux gagnés en couleur, les autres en
+Ma Maison montre son fantôme en grand avec ses écussons, puis les cinq : ceux gagnés en couleur, les autres en
 pointillés, avec la façon de les gagner. Quand une promesse est tenue, les deux premiers se cousent sous ses yeux
 (et à nouveau, la première fois qu'il revoit sa vitrine). Les autres habitants en portent aussi (simulé : qui a
 mangé ici a souvent tenu parole).
@@ -78,14 +80,8 @@ le dit, pour donner envie d'écrire. D'autres habitants écrivent aussi (simulé
   et le plat le plus conseillé.
 - **Son propre fantôme** : il saute et dit son mot ; tant qu'il n'a rien écrit, « Écrire à Jean-Marie ». La
   première fois, sa bulle s'ouvre seule pour le proposer.
-- **Toc-toc** : toucher la porte la fait trembler, le fantôme de Jean-Marie sort et dit ce que Jean-Marie a écrit
-  au comptoir (« Plus que 6 magrets ce midi ! ») : l'info du moment, qui donne envie d'y aller maintenant. Il voit
-  combien ont frappé.
-- **Le fantôme doré** : chaque matin, Jean-Marie le cache ailleurs dans sa vitrine (sur le store, en salle,
-  dans la foule, derrière le carnet, à la fenêtre de la porte). Les cinq premiers qui le trouvent gagnent un petit
-  cadeau (ici, en exemple, le dessert offert), rangé dans Ma Maison, avec le badge « Chasseur d'or ». Un indice
-  se demande sous le titre. Sur Instagram, la vidéo dit qu'un fantôme doré s'y cache : une raison de plus de
-  toucher le lien. Il en reste toujours un pour celui qui cherche (les autres trouveurs sont simulés).
+- **L'ardoise** : sous la vitrine, l'info du moment que Jean-Marie écrit au comptoir (« Plus que 6 magrets ce
+  midi ! »), qui donne envie d'y aller maintenant, puis son dernier coup de cœur.
 
 ## Pour que la vidéo se partage
 
@@ -100,8 +96,6 @@ le dit, pour donner envie d'écrire. D'autres habitants écrivent aussi (simulé
   cage, son fantôme s'envole à côté de celui de Léa. L'appli ne lui est proposée qu'ensuite, « si tu veux, plus
   tard ». De retour chez Léa : « Camille a ouvert votre vitrine… et son fantôme vous rejoint ! ». Le lien
   personnel (`/lea`) dit qui l'a fait venir. Pendant qu'on joue Camille, les nouvelles de Léa attendent son retour.
-- **Garde-moi une place, avec qui ?** : choisir un ami envoie une invitation qui sert à quelque chose (une
-  place gardée à une heure) ; s'il accepte, son fantôme s'assoit à la même table.
 - **Sur Instagram (ou Facebook)**, quand le commerçant publie la vidéo sur ses propres réseaux, il n'y a pas de
   cage à toucher : la vidéo publiée finit donc sur la vitrine en direct, pleine de fantômes, avec un sticker
   lien « Choisis ta cage » (en publication : « lien en bio »). Répondre « 👻 » renvoie automatiquement un message

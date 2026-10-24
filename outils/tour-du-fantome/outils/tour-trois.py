@@ -2,18 +2,21 @@
 # clients », reprises du prototype outils/trois-fantomes :
 #   1. « Les trois fantômes » (côté client, à la fin de sa vidéo, à la place des trois petits fantômes
 #      d'avis) : trois cages ; il en touche une, son fantôme s'envole dans la vitrine du commerce ; s'il
-#      promet, son prénom s'écrit au carnet, avec un bon. « Ça me tente » mène à la demande.
+#      promet, son prénom s'écrit au carnet : le commerçant pourra le relancer un jour calme (pas de cadeau
+#      promis : c'est le commerçant qui choisit d'en offrir un). « Ça me tente » mène à la demande.
 #   2. « Mike, votre assistant » (côté commerçant, après WhatsApp) : une conversation. Mike ne dit que ce
-#      que ClikMe sait (« 11 personnes ont promis de venir… aucune n'est encore passée ») ; ce qu'il ne peut
-#      pas savoir (la salle est calme), c'est le commerçant qui le dit, d'un appui sur une bulle. Puis un
-#      geste (« Appeler mes promesses »), les réponses arrivent, un bon est scanné : « Un j'aime s'oublie.
-#      Une promesse, vous l'encaissez le jour où vous en avez besoin. » Et sa suggestion suivante : la
-#      prochaine vidéo, à planifier. Seul Mike parle ; le commerçant répond par des bulles et des appuis.
+#      que ClikMe sait (« 11 personnes ont promis de venir… aucune n'est encore passée ») et propose : « Si
+#      c'est calme aujourd'hui, je peux les prévenir pour vous. On le fait ? ». Le commerçant répond d'un
+#      appui (« Oui, préviens-les »), Mike lui montre le message avant qu'il parte (« Envoyer aux 11
+#      personnes »), les réponses arrivent, un bon est scanné : « Un j'aime s'oublie. Une promesse, vous
+#      l'encaissez le jour où vous en avez besoin. » Et sa suggestion suivante : la prochaine vidéo, à
+#      planifier. Seul Mike parle ; le commerçant répond par des bulles et des appuis.
 # Puis le ticket de « Plus de clients », avec une ligne de plus : le jour calme rempli.
-# Les voix (enregistrements ElevenLabs « Mike ») : recu/trois/. Communes : trois-1, trois-4, mike-appeler,
-# mike-scan, mike-promesse, mike-video ; par métier : mike-bonjour-<métier> (« Bonjour Jean-Marie… ») et
-# trois-2-<métier> (« J'adore, je viendrai… ») suivi de « Touchez une cage. » (la fin de trois-2-restaurant).
-# Plus servies : trois-3, vitrine-1 à 6, creux-1-<métier>, creux-2, creux-3 (les versions précédentes).
+# Les voix (enregistrements ElevenLabs « Mike ») : recu/trois/. Communes : trois-1, trois-4, mike-question,
+# mike-message, mike-scan, mike-promesse, mike-video ; par métier : mike-bonjour-<métier> (« Bonjour
+# Jean-Marie… ») et trois-2-<métier> (« J'adore, je viendrai… ») suivi de « Touchez une cage. » (la fin de
+# trois-2-restaurant). Plus servies : trois-3, vitrine-1 à 6, creux-1-<métier>, creux-2, creux-3,
+# mike-appeler (les versions précédentes).
 # Les images : les fantômes des habitants (outils/trois-fantomes/a/g → <tour>/tf/), l'intérieur du commerce
 # (tf-interieur.webp) et son fantôme qui salue (tf-hote.webp).
 # À lancer après tour-dax.py (même index.html) :  python3 -I tour-trois.py <dossier>
@@ -34,8 +37,11 @@ TOUCHEZ_DE = 3.45
 
 COMMUNES = {
     "trois-1": "À la fin de votre vidéo, votre client ne met pas juste un «" + NB + "j’aime" + NB + "»" + NB + ": il choisit un des *trois *fantômes.",
-    "trois-4": "Et s’il promet de venir, son prénom s’écrit dans votre carnet, avec un petit *cadeau pour tenir parole.",
-    "mike-appeler": "Ceux qui ont promis, vous les *rappelez d’un geste. Touchez «" + NB + "Appeler mes promesses" + NB + "».",
+    # « on ne peut pas obliger le commerçant à faire un cadeau » : ce qu'il y gagne, lui, c'est de pouvoir les relancer
+    "trois-4": "Et s’il promet de venir, son prénom s’écrit dans votre *carnet. Le jour où c’est calme, vous pourrez le *relancer d’un geste.",
+    # Mike pose la question (le commerçant répond d'un appui), puis montre le message avant qu'il parte
+    "mike-question": "Si c’est calme aujourd’hui, je peux les *prévenir pour vous. On le fait" + NB + "?",
+    "mike-message": "Voici le *message. Il ne part qu’à eux, jamais à toute la ville. Touchez «" + NB + "Envoyer" + NB + "».",
     "mike-scan": "Quand leur bon est scanné au comptoir, vous savez qu’ils sont venus *grâce à votre vidéo.",
     "mike-promesse": "Un «" + NB + "j’aime" + NB + "» s’oublie. Une *promesse, vous *l’encaissez le jour où vous en avez besoin.",
     "mike-video": "Et votre prochaine vidéo n’est pas encore *prévue. On la cale *jeudi" + NB + "?",
@@ -58,7 +64,7 @@ METIERS = {
         pose3="assis", heures=["12 h 30", "13 h", "12 h 15"], compte=[36, 11, 2],
         bon="Le café offert", tente="Ça me tente →",
         appel="Il me reste des tables ce midi ! Votre café vous attend.",
-        creux=dict(calme="C’est calme ce midi", quand="Ce midi",
+        creux=dict(calme="Oui, c’est calme ce midi" + NB + ": préviens\u2011les" + NB + "!", quand="Ce midi",
                    reponses=[["Léa", "On arrive à deux, 12 h 30 !"], ["Malik", "Une table pour quatre, 12 h 15"], ["Chloé", "Je passe à 13 h"], ["Martin", "À deux, vers 12 h 45"]],
                    bilan=["+4 tables ce midi", "9 couverts"], ticket="+4 tables un midi calme"),
         couleurs=dict(f1="#62182B", f2="#45101F", s1="#F3E5D0", s2="#8E1C33", ens="#2C0912", vit="#2A0810"),
@@ -71,7 +77,7 @@ METIERS = {
         pose3="debout", heures=["de côté", "de côté", "de côté"], compte=[31, 9, 3],
         bon="Les retouches offertes", tente="Ça me tente →",
         appel="Le manteau camel vous attend aujourd’hui ! Vos retouches sont offertes.",
-        creux=dict(calme="C’est calme aujourd’hui", quand="Aujourd’hui",
+        creux=dict(calme="Oui, c’est calme aujourd’hui" + NB + ": préviens\u2011les" + NB + "!", quand="Aujourd’hui",
                    reponses=[["Inès", "Je passe l’essayer à 14 h"], ["Chloé", "Gardez-moi le 38, j’arrive !"], ["Sarah", "À 17 h, avec ma sœur"], ["Emma", "16 h pour moi"]],
                    bilan=["+4 clientes aujourd’hui", "dont 2 pour le manteau camel"], ticket="+4 clientes un jour calme"),
         couleurs=dict(f1="#4A3A2E", f2="#2F241C", s1="#F1E6D6", s2="#2A211B", ens="#1E1712", vit="#1E1712"),
@@ -84,7 +90,7 @@ METIERS = {
         pose3="assis", heures=["15 h 30", "17 h", "11 h"], compte=[28, 10, 3],
         bon="Le soin offert", tente="Ça me tente →",
         appel="Il me reste des créneaux aujourd’hui ! Votre soin vous attend.",
-        creux=dict(calme="C’est calme aujourd’hui", quand="Aujourd’hui",
+        creux=dict(calme="Oui, c’est calme aujourd’hui" + NB + ": préviens\u2011les" + NB + "!", quand="Aujourd’hui",
                    reponses=[["Sarah", "Je prends 14 h !"], ["Léa", "16 h 30, pour une coupe"], ["Zoé", "15 h, une couleur"], ["Emma", "17 h, si c’est bon"]],
                    bilan=["+4 rendez-vous aujourd’hui", "14" + INS + "h · 15" + INS + "h · 16" + INS + "h" + INS + "30 · 17" + INS + "h"], ticket="+4 rendez-vous un jour calme"),
         couleurs=dict(f1="#3B1631", f2="#250D1F", s1="#F7E3EC", s2="#B01E6A", ens="#1C0A17", vit="#1C0A17"),
@@ -241,7 +247,7 @@ CSS = r"""
 .tf .t3-sc{left:.7em;right:.7em;top:4.6em;opacity:0;transition:opacity .45s}
 .tf.vitrine .t3-sc{opacity:1}
 .tf.vitrine .tf-film{opacity:0}
-.tf.vitrine .t3-dit{top:33.2em}
+.tf.vitrine .t3-dit{top:32.7em}
 .tf-choix{position:absolute;left:.6em;right:.6em;top:25.4em;display:flex;flex-direction:column;align-items:center;transition:opacity .35s,transform .45s}
 .tf.vitrine .tf-choix{opacity:0;transform:translateY(2em);pointer-events:none}
 .tf-choix h3{margin:0;font:italic 700 1.7em/1.1 Georgia,"Times New Roman",serif}
@@ -276,7 +282,7 @@ CSS = r"""
 .t3-f3.luit .t3-cg{animation:t3-luit .7s var(--ease)}
 .t3-f3.luit .t3-dome{box-shadow:0 0 0 .2em var(--c),0 0 1.6em var(--c)}
 @keyframes t3-luit{40%{transform:scale(1.12) rotate(-3deg)}}
-.tf-bon{position:absolute;left:.9em;right:.9em;top:38.4em;display:flex;align-items:center;gap:.7em;padding:.6em .8em;border-radius:1em;background:#FFF8EA;color:var(--encre);box-shadow:0 .8em 1.6em -.6em rgba(0,0,0,.8);
+.tf-bon{position:absolute;left:.9em;right:.9em;top:39.3em;display:flex;align-items:center;gap:.7em;padding:.6em .8em;border-radius:1em;background:#FFF8EA;color:var(--encre);box-shadow:0 .8em 1.6em -.6em rgba(0,0,0,.8);
   opacity:0;transform:translateY(1em) scale(.96);transition:opacity .35s,transform .5s var(--ease)}
 .tf-bon.on{opacity:1;transform:none}
 .tf-bon > i{flex:none;display:grid;place-items:center;width:2.4em;height:2.4em;border-radius:.7em;background:linear-gradient(135deg,#FF4FA8,#E0167A);font-style:normal;font-size:1.1em}
@@ -351,17 +357,18 @@ CSS = r"""
 .mk-saisie{position:absolute;left:.9em;right:.9em;bottom:1.3em;height:2.7em;display:flex;align-items:center;justify-content:space-between;padding:0 .35em 0 1em;border-radius:2em;background:rgba(255,255,255,.06);border:1px solid var(--trait);color:var(--gris)}
 .mk-saisie span{font-size:.8em}
 .mk-saisie i{display:grid;place-items:center;width:2.1em;height:2.1em;border-radius:50%;background:rgba(255,255,255,.08);font-style:normal;font-size:.9em}
-/* l'appel : à ses promesses seulement */
-.tv-envoi{position:absolute;left:0;right:0;bottom:0;z-index:40;padding:1em .95em 1.6em;border-radius:1.4em 1.4em 0 0;background:#1C120E;border-top:1px solid var(--trait);box-shadow:0 -1em 2em rgba(0,0,0,.5);
-  transform:translateY(105%);transition:transform .45s cubic-bezier(.2,.8,.2,1)}
-.tv-envoi.on{transform:none}
-.tv-envoi h4{margin:0;font-size:1em;font-weight:800}
-.tv-envoi > p{margin:.2em 0 .6em;font-size:.7em;color:var(--gris)}
-.tv-a{display:flex;flex-wrap:wrap;gap:.3em;margin-bottom:.7em}
-.tv-a span{padding:.25em .6em;border-radius:1em;background:rgba(245,162,58,.16);border:1px solid rgba(245,162,58,.45);font-size:.66em;font-weight:800}
-.tv-msg{margin:0 0 .7em auto;max-width:86%;padding:.6em .8em;border-radius:1em 1em .3em 1em;background:linear-gradient(135deg,#FF4FA8,#E0167A);color:#fff;font-size:.82em;font-weight:700;line-height:1.3}
-.tv-envoye{display:flex;align-items:center;gap:.45em;font-size:.74em;font-weight:800;color:var(--menthe);opacity:0;transition:opacity .3s}
-.tv-envoi.envoye .tv-envoye{opacity:1}
+/* le message prêt à partir : une carte du fil, à eux seuls, avec son bouton */
+.tv-brouillon{display:flex;flex-direction:column;gap:.45em;padding:.6em .7em .7em}
+.tv-b-t{display:flex}
+.tv-b-t small{font-size:.6em;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#E0167A}
+.tv-b-t b{font-size:.78em;font-weight:900;color:#E0167A}
+.tv-a{display:flex;flex-wrap:wrap;gap:.25em}
+.tv-a span{padding:.2em .55em;border-radius:1em;background:rgba(245,162,58,.18);border:1px solid rgba(245,162,58,.5);color:#7A4A12;font-size:.62em;font-weight:800}
+.tv-msg{margin:0 0 0 auto;max-width:90%;padding:.55em .8em;border-radius:1em 1em .3em 1em;background:linear-gradient(135deg,#FF4FA8,#E0167A);color:#fff;font-size:.8em;font-weight:700;line-height:1.3}
+.tv-envoyer.mk-ch{width:100%;height:2.7em;font-size:.86em}
+.tv-envoye{display:none;align-items:center;justify-content:center;gap:.4em;margin:0;font-size:.74em;font-weight:900;color:#0B7A55}
+.tv-brouillon.envoye .tv-envoyer{display:none}
+.tv-brouillon.envoye .tv-envoye{display:flex}
 @media (prefers-reduced-motion: reduce){
   .t3-fg img,.t3-fg.neuf,.t3-cg,.t3-dome img,.t3-fant,.mk-l,.mk-moi,.mk-c,.mk-choix,.mk-ch,.mk-tape i,.t3-fg.moi .t3-nom,.t3-fg.moi::before{animation:none!important}
 }
@@ -380,7 +387,7 @@ HTML = r"""
               <div class="tf-trois" id="tf-trois">__CAGES__</div>
               <p class="tf-ligne"><span class="tf-tetes"><img src="tf/rebelle-debout.webp" alt=""><img src="tf/fleuri-debout.webp" alt=""><img src="tf/voyageur-debout.webp" alt=""></span><span id="tf-ligne"></span></p>
             </div>
-            <div class="tf-bon" id="tf-bon"><i aria-hidden="true">🎁</i><span><small id="tf-bon-t"></small><b>__BON__</b><em id="tf-bon-s"></em></span></div>
+            <div class="tf-bon" id="tf-bon"><i aria-hidden="true">📌</i><span><small id="tf-bon-t"></small><b id="tf-bon-b"></b><em id="tf-bon-s"></em></span></div>
             <button type="button" class="go" id="tf-go" hidden>__TENTE__</button>
           </div>
 
@@ -390,15 +397,7 @@ HTML = r"""
             <div class="mk-tete"><img src="__FANT__" alt=""><span><b>Mike</b><small>Votre assistant ClikMe</small></span><em>en ligne</em></div>
             <div class="mk-fil" id="mk-fil" aria-live="polite"></div>
             <div class="mk-choix" id="mk-choix" hidden><button type="button" class="mk-ch" id="mk-non">Plus tard</button><button type="button" class="mk-ch fort" id="mk-oui"></button></div>
-            <button type="button" class="mk-ch fort large" id="tv-appeler" hidden>📣 Appeler mes promesses</button>
             <div class="mk-saisie" aria-hidden="true"><span>Écrire à Mike…</span><i>🎙️</i></div>
-            <div class="tv-envoi" id="tv-envoi">
-              <h4>📣 Un message à vos promesses</h4>
-              <p>À elles seules : jamais à toute la ville.</p>
-              <div class="tv-a" id="tv-a"></div>
-              <p class="tv-msg">__APPEL__</p>
-              <p class="tv-envoye">✓ Envoyé · <span id="tv-envoye-n"></span></p>
-            </div>
           </div>
 """
 
@@ -615,9 +614,10 @@ JS = r"""
     plus(() => c.classList.remove("zoom"), 2600);
   }
   function tfBon() {
-    const lui = TF.choix === "promis";
-    $("#tf-bon-t").textContent = lui ? "Votre bon de promesse · " + T3.lieu : "Le bon de promesse · " + T3.lieu;
-    $("#tf-bon-s").textContent = (lui ? "À montrer en arrivant · valable 7 jours" : "Pour ceux qui promettent de venir · 7 jours");
+    const lui = TF.choix === "promis", plus_ = "Son petit plus : " + T3.bon.charAt(0).toLowerCase() + T3.bon.slice(1);
+    $("#tf-bon-t").textContent = (lui ? "Votre promesse · " : "Ceux qui promettent · ") + T3.lieu;
+    $("#tf-bon-b").textContent = lui ? T3.qui + " vous préviendra" : T3.qui + " les prévient";
+    $("#tf-bon-s").textContent = "D’un jour calme · " + plus_.charAt(0).toLowerCase() + plus_.slice(1);
     $("#tf-bon").classList.add("on"); son("piece");
   }
   // tout de suite (le fantôme touché pendant qu'il explique) : sa place, le carnet, le bon
@@ -701,21 +701,23 @@ JS = r"""
     if (chiffre) { const n = mkEl("strong"); n.append(mkEl("b", "", chiffre[0]), mkEl("small", "", chiffre[1])); c.appendChild(n); }
     return mkAjouter(c);
   }
-  function mkChoix(oui, quoi) {
+  function mkChoix(oui, quoi, non) {
     const z = $("#mk-choix");
-    $("#mk-oui").textContent = oui; z.dataset.quoi = quoi;
+    $("#mk-oui").textContent = oui; $("#mk-non").textContent = non || "Plus tard"; z.dataset.quoi = quoi;
     z.hidden = false; viser("#mk-oui"); son("pret");
   }
   function tvEntrer() {
     const j = jetonVoix;
     Object.assign(TV, { calme: false, appele: false, plan: false, planifie: false, fini: false, bulle: null });
     fil.innerHTML = ""; mkAjouter(mkEl("div", "mk-date", "Aujourd’hui · " + HEURES.tv.replace(":", " h ")));
-    $("#mk-choix").hidden = true; $("#tv-appeler").hidden = true; $("#tv-envoi").classList.remove("on", "envoye");
+    $("#mk-choix").hidden = true;
     (async () => {
       if (!(await pause(450, j))) return;
       // « 11 personnes ont promis… » : le carnet ; « aucune n'est encore passée »
       if (!(await mkDire("mike-bonjour", [[T3.mots["mike-bonjour"][0], tvCarnet]])) || !(await pause(250, j))) return;
-      mkChoix(C.calme, "calme");
+      // « Si c'est calme aujourd'hui, je peux les prévenir pour vous. On le fait ? » : il répond d'un appui
+      if (!(await mkDire("mike-question")) || !(await pause(200, j))) return;
+      mkChoix("Oui, préviens\u2011les", "calme", "Pas aujourd’hui");
     })();
   }
   function tvCarnet() {
@@ -725,7 +727,7 @@ JS = r"""
       "Leur bon : " + T3.bon.charAt(0).toLowerCase() + T3.bon.slice(1), "tv-carnet", [String(noms.length), "promesses"]);
     son("billet");
   }
-  // « C'est calme » : c'est lui qui le dit ; Mike propose le geste
+  // « Oui, c'est calme : préviens-les ! » : c'est lui qui le dit ; Mike lui montre le message avant qu'il parte
   function mkCalme() {
     if (TV.calme || DEMOS[vue].moments[idx].id !== "creux") return;
     mkTaire();
@@ -734,25 +736,31 @@ JS = r"""
     tvCarnet(); mkMoi(C.calme);
     (async () => {
       if (!(await pause(500, j))) return;
-      if (!(await mkDire("mike-appeler", [[T3.mots["mike-appeler"][0], mkBouton]]))) return;
-      mkBouton();
+      const vise = () => { if (!TV.appele) viser("#tv-envoyer"); };
+      if (!(await mkDire("mike-message", [[0, tvBrouillon], [T3.mots["mike-message"][1], vise]]))) return;
+      vise();
     })();
   }
-  function mkBouton() { if (TV.appele) return; $("#tv-appeler").hidden = false; viser("#tv-appeler"); }
-  function tvAppeler() {
+  // le message prêt à partir : à qui, le texte, et « Envoyer aux 11 personnes »
+  function tvBrouillon() {
+    if ($(".tv-brouillon", fil)) return;
+    const noms = tvPromis(), c = mkEl("div", "mk-c tv-brouillon"), t = mkEl("div", "tv-b-t"), a = mkEl("div", "tv-a"), b = mkEl("button", "mk-ch fort tv-envoyer", "Envoyer aux " + noms.length + " personnes");
+    t.append(mkEl("small", "", "À ceux qui ont promis · " + noms.length + " personnes"));
+    noms.slice(0, 5).forEach((n) => a.appendChild(mkEl("span", "", n)));
+    if (noms.length > 5) a.appendChild(mkEl("span", "", "+" + (noms.length - 5)));
+    b.type = "button"; b.id = "tv-envoyer";
+    c.append(t, a, mkEl("p", "tv-msg", T3.appel), b, mkEl("p", "tv-envoye", "✓ Envoyé · rien qu’à eux"));
+    mkAjouter(c); son("pop");
+  }
+  function tvEnvoyer() {
     if (TV.appele || DEMOS[vue].moments[idx].id !== "creux") return;
     mkTaire();
     const j = jetonVoix;
-    if (!TV.calme) { TV.calme = true; tvCarnet(); mkMoi(C.calme); }
-    TV.appele = true; $("#mk-choix").hidden = true; $("#tv-appeler").hidden = true;
-    const noms = tvPromis();
-    $("#tv-a").innerHTML = "";
-    noms.slice(0, 5).forEach((n) => $("#tv-a").appendChild(mkEl("span", "", n)));
-    if (noms.length > 5) $("#tv-a").appendChild(mkEl("span", "", "+" + (noms.length - 5)));
-    $("#tv-envoye-n").textContent = noms.length + " personnes, rien qu’elles";
-    const e = $("#tv-envoi"); e.classList.remove("envoye"); e.classList.add("on"); son("pop");
-    plus(() => { e.classList.add("envoye"); son("billet"); }, 1200);
-    plus(() => { e.classList.remove("on"); mkMoi(T3.appel, "📣 À vos " + noms.length + " promesses"); tvReponses(j); }, 2600);
+    if (!TV.calme) { TV.calme = true; $("#mk-choix").hidden = true; tvCarnet(); mkMoi(C.calme); }
+    TV.appele = true;
+    tvBrouillon();
+    $(".tv-brouillon", fil).classList.add("envoye"); son("billet");
+    tvReponses(j);
   }
   // leurs réponses arrivent, une à une ; un bon est scanné ; le bilan ; la suggestion suivante
   async function tvReponses(j) {
@@ -805,9 +813,9 @@ JS = r"""
     e.stopPropagation(); contexte();
     if ($("#mk-choix").dataset.quoi === "plan") mkPlanifier(); else mkCalme();
   });
-  $("#tv-appeler").addEventListener("click", (e) => {
-    if (fini || DEMOS[vue].moments[idx].id !== "creux") return;
-    e.stopPropagation(); contexte(); tvAppeler();
+  fil.addEventListener("click", (e) => {
+    if (fini || DEMOS[vue].moments[idx].id !== "creux" || !e.target.closest(".tv-envoyer")) return;
+    e.stopPropagation(); contexte(); tvEnvoyer();
   });
 
   /* ── LES MOMENTS, À LEUR PLACE DANS « PLUS DE CLIENTS » ── */
@@ -831,7 +839,7 @@ JS = r"""
     entrer() { tvEntrer(); },
     agir() {
       if (!TV.calme) { mkCalme(); return; }
-      if (!TV.appele) { tvAppeler(); return; }
+      if (!TV.appele) { tvEnvoyer(); return; }
       if (TV.plan && !TV.planifie && !$("#mk-choix").hidden) { mkPlanifier(); return; }
       if (TV.planifie) return;
       taireVoix(); effacer(); TV.fini = true; aller(idx + 1);
@@ -891,16 +899,16 @@ for d, M in METIERS.items():
         else:
             temps[nom] = preparer(f"{R}/{nom}.mp3", dst, txt)
     # celles des versions précédentes (les trois places, la vitrine, le petit mot, le partage, « Mardi, 11 h »)
-    for vieille in ("trois-3", "vitrine-1", "vitrine-2", "vitrine-3", "vitrine-4", "vitrine-5", "vitrine-6", "creux-1", "creux-2", "creux-3"):
+    for vieille in ("trois-3", "vitrine-1", "vitrine-2", "vitrine-3", "vitrine-4", "vitrine-5", "vitrine-6", "creux-1", "creux-2", "creux-3", "mike-appeler"):
         if os.path.exists(f"{S}/{d}/{vieille}.mp3"):
             os.remove(f"{S}/{d}/{vieille}.mp3")
     # les mots où quelque chose se passe à l'écran
     t2 = textes["trois-2"]
     mots = {
         "trois-2": [0, mot(t2, "je"), mot(t2, "ou", 1), mot(t2, "Touchez")],
-        "trois-4": [mot(textes["trois-4"], "prénom"), mot(textes["trois-4"], "cadeau")],
+        "trois-4": [mot(textes["trois-4"], "carnet"), mot(textes["trois-4"], "relancer")],
         "mike-bonjour": [mot(textes["mike-bonjour"], "promis")],
-        "mike-appeler": [mot(textes["mike-appeler"], "Touchez")],
+        "mike-message": [0, mot(textes["mike-message"], "Touchez")],
         "mike-promesse": [mot(textes["mike-promesse"], "promesse")],
     }
     T3 = {k: M[k] for k in ("lieu", "sous", "carte", "qui", "cages", "pose3", "heures", "compte", "creux")}
