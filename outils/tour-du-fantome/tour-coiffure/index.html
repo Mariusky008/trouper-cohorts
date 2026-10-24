@@ -1334,9 +1334,8 @@ h1 em{font-style:normal;color:var(--rose)}
    contre la vidéo ClikMe) a été retiré : « on ne devrait mettre que ce que le fantôme fabrique comme vidéo et
    oublier ce que le restaurateur aurait mis ». Le téléphone reste seul, en grand ; au-dessus, qui l'a monté
    (ClikMe, sans effort pour vous) ; ses amis l'aiment et le partagent ; dessous, une ligne de chiffres
-   d'exemple, annoncés comme tels. */
-/* 100 px : qui l'a monté, au-dessus (42) ; les chiffres, à cheval sur le bas du téléphone, et leur mention
-   « exemple », dessous. « La vidéo est mal ajustée au téléphone » : son écran a maintenant la forme du film
+   (sans le mot « exemple » : jamais à l'écran). */
+/* 100 px : qui l'a monté, au-dessus (42) ; les chiffres, à cheval sur le bas du téléphone. « La vidéo est mal ajustée au téléphone » : son écran a maintenant la forme du film
    (9:16, cadre compris : 1,7375 × la largeur), le film le remplit en entier, sans bandes noires. */
 .s3,.s4{--pw:min(68cqw,calc((100cqh - 100px) / 1.7375));--py:calc(50% - 6px);--ph:calc(var(--pw) * 1.7375)}
 .s3{--w:calc(var(--pw) * 1.05)}
@@ -1956,7 +1955,7 @@ h1 em{font-style:normal;color:var(--rose)}
 .t3-plus{position:absolute;left:3%;top:68.5%;z-index:400;padding:.6cqw 2cqw;border-radius:9cqw;background:rgba(20,12,9,.8);font:800 2.7cqw/1.2 var(--titre);color:var(--creme)}
 .t3-hote{position:absolute;left:84%;top:66%;height:24cqw;z-index:6;transform:translate(-50%,-100%);transform-origin:50% 100%;filter:drop-shadow(0 1cqw 1cqw rgba(0,0,0,.5))}
 /* les fantômes : posés par leurs pieds (x, y), leur taille suit leur rang */
-.t3-fg{position:absolute;height:calc(var(--s) * 15.5cqw);aspect-ratio:.91;transform:translate(-50%,-100%);transition:left .6s,top .6s,opacity .4s}
+.t3-fg{position:absolute;height:calc(var(--s) * 15.5cqw);aspect-ratio:.91;transform:translate(-50%,-100%);transition:left .6s,top .6s,opacity .4s,filter .5s}
 .t3-fg img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 .7cqw .6cqw rgba(0,0,0,.5));transform-origin:50% 100%}
 .t3-fg.adore img{animation:t3-hop 2.6s ease-in-out infinite;animation-delay:var(--d,0s)}
 @keyframes t3-hop{0%,66%,100%{transform:none}74%{transform:translateY(-13%) rotate(-4deg)}82%{transform:none}90%{transform:translateY(-6%) rotate(3deg)}}
@@ -1974,6 +1973,13 @@ h1 em{font-style:normal;color:var(--rose)}
 .t3-fg.moi .t3-nom,.t3-fg.vedette .t3-nom{background:var(--rose);color:#fff}
 .t3-fg.invite .t3-nom{background:#FFF8EA;color:#E0167A}
 .t3-fg.moi::before{content:"";position:absolute;left:8%;right:8%;bottom:-6%;height:16%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,46,154,.8),transparent);z-index:-1}
+/* Camille, dans la foule : un repère qu'on ne rate pas (premier rang, un peu plus grande, son halo, « Vous ») */
+.t3-fg.moi .t3-nom{padding:.6cqw 2.3cqw;font-size:3.2cqw;font-weight:800;box-shadow:0 0 0 .45cqw #fff,0 1cqw 2cqw rgba(0,0,0,.55);transform:translate(-50%,-140%);animation:t3-repere 1.7s ease-in-out infinite}
+.t3-fg.moi .t3-nom::after{content:"";position:absolute;left:50%;bottom:-1.25cqw;width:2.3cqw;height:2.3cqw;margin-left:-1.15cqw;background:var(--rose);transform:rotate(45deg);box-shadow:.45cqw .45cqw 0 0 #fff;border-radius:.3cqw}
+@keyframes t3-repere{50%{transform:translate(-50%,-158%)}}
+.t3-fg.moi::before{left:-22%;right:-22%;bottom:-10%;height:26%;background:radial-gradient(closest-side,rgba(255,46,154,.95),rgba(255,46,154,.4) 55%,transparent);animation:t3-halo 1.7s ease-in-out infinite}
+@keyframes t3-halo{50%{opacity:.55;transform:scale(.82)}}
+.t3-sc.repere .t3-fg:not(.moi),.t3-sc.repere .t3-hote{filter:brightness(.4) saturate(.5)}
 .t3-tag{position:absolute;left:50%;top:-4%;transform:translate(-50%,-100%);padding:.3cqw 1.2cqw;border-radius:.8cqw;background:#FFF8EA;color:var(--encre);font:700 2.3cqw/1.2 var(--titre);white-space:nowrap}
 .t3-fg.moi .t3-tag,.t3-fg.vedette .t3-tag{top:-34%}
 .t3-fg.scanne::after{content:"✓";position:absolute;right:-6%;top:6%;width:5cqw;height:5cqw;border-radius:50%;background:var(--menthe);color:#06281C;display:grid;place-items:center;font:900 3cqw/1 var(--titre);box-shadow:0 .3cqw .7cqw rgba(0,0,0,.45)}
@@ -2116,7 +2122,7 @@ h1 em{font-style:normal;color:var(--rose)}
 .tv-envoye{display:flex;align-items:center;gap:.45em;font-size:.74em;font-weight:800;color:var(--menthe);opacity:0;transition:opacity .3s}
 .tv-envoi.envoye .tv-envoye{opacity:1}
 @media (prefers-reduced-motion: reduce){
-  .t3-fg img,.t3-fg.neuf,.t3-cg,.t3-dome img,.t3-fant,.mk-l,.mk-moi,.mk-c,.mk-choix,.mk-ch,.mk-tape i{animation:none!important}
+  .t3-fg img,.t3-fg.neuf,.t3-cg,.t3-dome img,.t3-fant,.mk-l,.mk-moi,.mk-c,.mk-choix,.mk-ch,.mk-tape i,.t3-fg.moi .t3-nom,.t3-fg.moi::before{animation:none!important}
 }
 </style>
 
@@ -2451,7 +2457,7 @@ h1 em{font-style:normal;color:var(--rose)}
               <div class="wa-msg wa-moi" id="wa-moi"><pre id="wa-reponse"></pre><time>11:43 ✓✓</time></div>
             </div>
             <div class="wa-saisie" aria-hidden="true"><span>Message</span><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fff"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></i></div>
-            <div class="wa-bilan" id="wa-bilan" aria-live="polite"><p class="wb-t"><b>Plus de clients.</b><small>Ce que votre fantôme<br>a fait pour vous</small></p><div class="wb-l wb-temps"><i>⏱</i><span><small>Votre temps pour créer et publier</small><b>1 min 30</b></span><em class="vrai">en moyenne</em></div><div class="wb-l"><i>👁</i><span><small>Votre annonce sur ClikMe</small><b>1 400 vues</b></span><em>exemple</em></div><div class="wb-l"><i>💬</i><span><small id="wb-quand"></small><b id="wb-demande"></b></span><em>exemple</em></div><div class="wb-l"><i>👻</i><span><small>Grâce à vos promesses</small><b id="wb-vitrine"></b></span><em>exemple</em></div><div class="wb-l wb-zero"><i>🤝</i><span><small>Commission ClikMe sur cette demande</small><b>0 €</b></span><em class="vrai">toujours</em></div></div><div class="wa-notif" id="wa-notif"><span class="ic"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z"/></svg></span><span><b>WhatsApp · Camille</b><small id="wa-apercu"></small></span><em>maintenant</em></div>
+            <div class="wa-bilan" id="wa-bilan" aria-live="polite"><p class="wb-t"><b>Plus de clients.</b><small>Ce que votre fantôme<br>a fait pour vous</small></p><div class="wb-l wb-temps"><i>⏱</i><span><small>Votre temps pour créer et publier</small><b>1 min 30</b></span><em class="vrai">en moyenne</em></div><div class="wb-l"><i>👁</i><span><small>Votre annonce sur ClikMe</small><b>1 400 vues</b></span></div><div class="wb-l"><i>💬</i><span><small id="wb-quand"></small><b id="wb-demande"></b></span></div><div class="wb-l"><i>👻</i><span><small>Grâce à vos promesses</small><b id="wb-vitrine"></b></span></div><div class="wb-l wb-zero"><i>🤝</i><span><small>Commission ClikMe sur cette demande</small><b>0 €</b></span><em class="vrai">toujours</em></div></div><div class="wa-notif" id="wa-notif"><span class="ic"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z"/></svg></span><span><b>WhatsApp · Camille</b><small id="wa-apercu"></small></span><em>maintenant</em></div>
             <span class="tampon" id="tampon-c" style="--y:60%">Plus de clients.</span>
             <div class="fin" id="fin-clients" style="--b:3.6em"><button type="button" class="go fin-chap" id="fin-c-autre">Et pendant la nuit ? →</button><button type="button" class="go fin-chap" id="fin-c-demain">Et quand vous passerez la main →</button><button type="button" class="fin-conclure" id="fin-c-oui">Passer à la conclusion →</button></div>
           </div>
@@ -3025,7 +3031,7 @@ h1 em{font-style:normal;color:var(--rose)}
       '<div class="s-qui"><img src="' + INTRO_FANT + '" alt=""><span><b>Monté par ClikMe</b><small>sans effort pour vous</small></span></div>' +
       '<div class="s-stats">' + [["coeur", "J’aime"], ["vue", "vues"], ["part", "partages"]].map(([i, l], k) =>
         '<span><b data-n="' + I_STATS[k] + '">0</b><small>' + I_ICO_PLEIN[i] + l + "</small></span>").join("") + "</div>" +
-      '<p class="s-exemple">Exemple pour illustrer : chiffres fictifs</p></div>',
+      "</div>",
     partage: () => '<div class="s4">' +
       I_AMIS.map(([l, c, nom, t], k) => '<div class="s4-notif verre" data-k="' + k + '" style="--k:' + k + ";--d:" + k * 0.22 + 's"><b class="s4-av" style="--c:' + c + '">' + l +
         "</b><span><strong>" + nom + "</strong><small>maintenant</small><em>" + t + "</em></span></div>").join("") +
@@ -4731,7 +4737,7 @@ h1 em{font-style:normal;color:var(--rose)}
       '<div class="nx-vol"><img src="' + PR.fant + '" alt=""></div><div class="nx-cadeau">🎁</div>' +
       '<div class="nx-notifs"><div class="nx-n nx-n1"><header><img src="fantome-maison.webp" alt="">Chez ' + PR.lea[0] + "<em>☀️ 8:02</em></header>" +
           "<b>🎁 Votre surprise : " + prMin(PR.surprise.titre) + '</b><u data-fait="' + PR.surprise.fait + '">' + PR.surprise.bouton + "</u></div>" +
-        '<div class="nx-n nx-n2"><header><img src="' + PR.fant + '" alt="">Chez vous · ' + lieuVous() + "<em>exemple</em></header><b>🔔 " + PR.surprise.notif + "</b></div></div>" +
+        '<div class="nx-n nx-n2"><header><img src="' + PR.fant + '" alt="">Chez vous · ' + lieuVous() + "</header><b>🔔 " + PR.surprise.notif + "</b></div></div>" +
       prEtin(12) + "</div>",
     // LE LIVRE DE SON COMMERCE : la couverture à son nom ; page 1, ce qui fait son commerce (sa photo, son
     // mémo vocal, son film, sa ville) et le tampon de la relève ; page 2, ses chiffres ; puis son mémo, ouvert
@@ -4741,7 +4747,7 @@ h1 em{font-style:normal;color:var(--rose)}
         '<div class="dx-page dx-p2"><h3 class="dx-titre"><small>Le livre ' + deLieuTexte() + "</small>Ce qui marche… ou pas</h3>" +
           PR.stats.map(([e, nom, vues, resas, v], k) => '<div class="dx-prod" style="--d:' + (k * 0.15).toFixed(2) + 's"><b>' + e + " " + nom + "</b><span>🎬 " + vues.toLocaleString("fr-FR") +
             " vues · 📅 " + resas + " réservation" + (resas > 1 ? "s" : "") + '</span><strong class="dx-verdict ' + v + '">' + DX_VERDICTS[v] + "</strong></div>").join("") +
-          '<span class="dx-exemple">exemple</span></div>' +
+          "</div>" +
         '<div class="dx-page dx-p1"><h3 class="dx-titre"><small>Le livre ' + deLieuTexte() + "</small>Tout ce qui fait votre commerce</h3>" +
           '<div class="dx-grille">' +
             '<div class="dx-item" data-k="0" style="--r:-3deg"><div class="dx-cadre"><img src="' + PR.geste + '" alt=""></div><em>Vos gestes</em></div>' +
@@ -4756,7 +4762,7 @@ h1 em{font-style:normal;color:var(--rose)}
       "</div>" +
       '<div class="dx-voix"><small>📖 Gardé dans le livre · ' + (PR.voix ? "la voix " : "les mots ") + prDe(PR.qui) + '</small><div class="dx-voix-corps">' +
         (PR.voix ? '<div class="dx-onde">' + Array.from({ length: 9 }, (_, k) => '<i style="--h:' + (30 + ((k * 41) % 70)) + '%"></i>').join("") + "</div>" : '<div class="dx-plume">✒️</div>') +
-        "<p></p></div><em>— " + PR.qui + " · " + PR.lieu + (SIEN.nom ? " · exemple" : "") + "</em></div>" +
+        "<p></p></div><em>— " + PR.qui + " · " + PR.lieu + "</em></div>" +
       '<div class="dx-promesse"><h2>Votre savoir-faire<br>ne mourra <em>jamais</em>.</h2>' + prEtin(14) + "</div></div>",
     carte: (l) => '<div class="s0"><span class="s0-num">' + l.num + "</span><small>" + l.petit + "</small><h2>" + l.titre + "</h2><p>" + l.sous + "</p></div>",
     // LE OUI : les quatre promesses, cochées une à une, puis le bouton qui crée sa page
@@ -5040,7 +5046,8 @@ h1 em{font-style:normal;color:var(--rose)}
   ];
   const T3_PROMIS = [{ x: 69, y: 87, s: .9 }, { x: 64, y: 73, s: .76 }, { x: 75, y: 75.5, s: .78 }, { x: 87, y: 73.5, s: .76 }, { x: 81, y: 89, s: .92 }, { x: 93, y: 86, s: .86 }];
   // dedans, derrière la vitre (x, y en % de la vitrine)
-  const T3_SIEGES = [{ x: 45, y: 82, s: .74 }, { x: 22, y: 85, s: .82 }, { x: 65, y: 86, s: .82 }, { x: 84, y: 81, s: .72 }, { x: 33, y: 100, s: .92 }, { x: 74, y: 100, s: .92 }];
+  // la première place (celle de Camille) : au premier plan, contre la vitre
+  const T3_SIEGES = [{ x: 52, y: 100, s: .92 }, { x: 45, y: 82, s: .74 }, { x: 22, y: 85, s: .82 }, { x: 65, y: 86, s: .82 }, { x: 84, y: 81, s: .72 }, { x: 74, y: 100, s: .92 }];
   const camille = (t) => ({ id: "camille", nom: "Camille", look: "cosy", type: t, heure: T3.heures[0] });
 
   function t3Scene(el) {
@@ -5092,13 +5099,15 @@ h1 em{font-style:normal;color:var(--rose)}
       }
       const garde = ["neuf", "cache", "saute", "scanne"].filter((x) => d.classList.contains(x));
       d.className = "t3-fg " + f.type + (f.ami ? " ami" : "") + (f.invite ? " invite" : "") + (f.moi ? " moi" : "") + (f.vedette ? " vedette" : "") + (f.recent ? " recent" : "") + (garde.length ? " " + garde.join(" ") : "");
-      d.style.left = p.x + "%"; d.style.top = p.y + "%"; d.style.setProperty("--s", p.s); d.style.setProperty("--d", (f.d || 0) + "s");
-      d.style.zIndex = couche === "t3-calque" ? String(100 + Math.round(p.y)) : String(10 + Math.round(p.y / 10));
+      // Camille : un peu plus grande, devant tout le monde
+      d.style.left = p.x + "%"; d.style.top = p.y + "%"; d.style.setProperty("--s", f.moi ? p.s * 1.15 : p.s); d.style.setProperty("--d", (f.d || 0) + "s");
+      d.style.zIndex = f.moi ? (couche === "t3-calque" ? "400" : "60") : couche === "t3-calque" ? String(100 + Math.round(p.y)) : String(10 + Math.round(p.y / 10));
       const im = $("img", d), src = t3img(f.look, T3_POSE[f.type]);
       if (im.getAttribute("src") !== src) im.setAttribute("src", src);
-      $(".t3-nom", d).textContent = (f.invite ? "💌 " : "") + f.nom;
+      // en salle, la place est étroite : « Vous » et son heure
+      $(".t3-nom", d).textContent = f.moi ? "Vous · " + (f.type === "table" && f.heure ? f.heure : f.nom) : (f.invite ? "💌 " : "") + f.nom;
       const tag = $(".t3-tag", d);
-      if (f.type === "table" && f.heure && (f.moi || f.vedette)) { if (!tag) d.insertAdjacentHTML("beforeend", '<span class="t3-tag"></span>'); $(".t3-tag", d).textContent = f.heure; } else if (tag) tag.remove();
+      if (f.type === "table" && f.heure && f.vedette) { if (!tag) d.insertAdjacentHTML("beforeend", '<span class="t3-tag"></span>'); $(".t3-tag", d).textContent = f.heure; } else if (tag) tag.remove();
     }
     for (const [cle, d] of el._fg) if (!vus.has(cle)) { d.classList.add("part"); el._fg.delete(cle); setTimeout(() => d.remove(), 450); }
     const plus_ = $(".t3-plus", el);
@@ -5202,6 +5211,8 @@ h1 em{font-style:normal;color:var(--rose)}
       plus(() => t3Voler(a, src.src, $("img", cible), () => {
         cible.classList.remove("cache", "neuf"); void cible.offsetWidth; cible.classList.add("neuf");
         setTimeout(() => cible.classList.remove("neuf"), 700);
+        // à son arrivée, la foule s'efface un instant : « vous êtes là »
+        if (!reduit) { rejouer(scTf, "repere"); setTimeout(() => scTf.classList.remove("repere"), 1900); }
         son("magie"); if (t === "adore") t3Coeurs(scTf, 4);
         tfSuite(j);
       }), 420);

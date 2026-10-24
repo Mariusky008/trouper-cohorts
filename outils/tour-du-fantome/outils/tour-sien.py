@@ -3,11 +3,12 @@
 #    cette démo ? » en haut de la page 1 et tape le nom de son commerce. Il s'affiche sur la page 1 (« Préparé
 #    pour… »), sur sa boutique et dans sa notification au chapitre 03, sur le livre de son commerce au
 #    chapitre 04, et dans le titre de la conclusion. Rien d'inventé : seulement le nom qu'on tape ; les photos,
-#    les voix et les mots de l'exemple restent ceux de l'exemple (la voix du livre garde son auteur, « exemple »).
+#    les voix et les mots de l'exemple restent ceux de l'exemple (la voix du livre garde son auteur). Jamais le
+#    mot « exemple » à l'écran.
 #    Le nom reste sur ce téléphone le temps de la visite (sessionStorage), jamais envoyé.
 #  · son temps. À la fin de « Plus de clients », après WhatsApp, un ticket : le temps pour créer et publier
 #    une annonce, toujours le même, 1 min 30 en moyenne (pas le chrono de la démo : on s'y arrête pour
-#    expliquer, il ne veut rien dire), les vues et la demande (exemple). La conclusion le reprend :
+#    expliquer, il ne veut rien dire), les vues et la demande. La conclusion le reprend :
 #    « Plus de clients · votre annonce en 1 min 30, en moyenne ».
 #    Et « Commission : 0 € » : ClikMe ne prend aucune commission sur ce que ses clients lui demandent (confirmé).
 # À lancer après tour-depenses.py (même index.html) :  python3 -I tour-sien.py <dossier>
@@ -80,8 +81,8 @@ POUR_HTML = ('\n    <button type="button" class="pour" id="pour">✎ Pour qui es
 BILAN_HTML = ('<div class="wa-bilan" id="wa-bilan" aria-live="polite">'
               '<p class="wb-t"><b>Plus de clients.</b><small>Ce que votre fantôme<br>a fait pour vous</small></p>'
               '<div class="wb-l wb-temps"><i>⏱</i><span><small>Votre temps pour créer et publier</small><b>' + TEMPS_MOYEN + '</b></span><em class="vrai">en moyenne</em></div>'
-              '<div class="wb-l"><i>👁</i><span><small>Votre annonce sur ClikMe</small><b>1 400 vues</b></span><em>exemple</em></div>'
-              '<div class="wb-l"><i>💬</i><span><small id="wb-quand"></small><b id="wb-demande"></b></span><em>exemple</em></div>'
+              '<div class="wb-l"><i>👁</i><span><small>Votre annonce sur ClikMe</small><b>1 400 vues</b></span></div>'
+              '<div class="wb-l"><i>💬</i><span><small id="wb-quand"></small><b id="wb-demande"></b></span></div>'
               '<div class="wb-l wb-zero"><i>🤝</i><span><small>Commission ClikMe sur cette demande</small><b>0 €</b></span><em class="vrai">toujours</em></div>'
               '</div>')
 
@@ -158,14 +159,12 @@ for d, demande in DEMANDES.items():
                  '["#wa-recu", "#wa-moi", "#tampon-c"].forEach((s) => $(s).classList.add("on"));\n    plus(montrerBilanClients, 1500);', f"{d} ticket posé")
     # son nom : sa boutique et sa notification la nuit, le livre de son commerce, la conclusion
     t = une_fois(t, '<span class="pr-enseigne">\' + PR.lieu + \'</span>', '<span class="pr-enseigne">\' + lieuVous() + \'</span>', f"{d} enseigne")
-    t = une_fois(t, '" alt="">Chez vous · \' + PR.lieu + "<em>exemple</em>', '" alt="">Chez vous · \' + lieuVous() + "<em>exemple</em>', f"{d} notification")
+    t = une_fois(t, '" alt="">Chez vous · \' + PR.lieu + "</header>', '" alt="">Chez vous · \' + lieuVous() + "</header>', f"{d} notification")
     t = une_fois(t, '<small>Le livre de \' + PR.lieu + "</small>Ce qui marche', '<small>Le livre \' + deLieuTexte() + "</small>Ce qui marche', f"{d} livre p2")
     t = une_fois(t, '<small>Le livre de \' + PR.lieu + "</small>Tout ce qui fait', '<small>Le livre \' + deLieuTexte() + "</small>Tout ce qui fait', f"{d} livre p1")
     t = une_fois(t, "<small>Le livre de</small><b>' + PR.lieu + \"</b>", "<small>Le livre ' + deLieu()[0].trim() + \"</small><b>\" + deLieu()[1] + \"</b>", f"{d} couverture")
     t = une_fois(t, '(PR.voix ? "🎙️ Le secret " : "✒️ Le secret ") + prDe(PR.qui)',
                  '(SIEN.nom ? (PR.voix ? "🎙️ " : "✒️ ") + "Votre secret" : (PR.voix ? "🎙️ Le secret " : "✒️ Le secret ") + prDe(PR.qui))', f"{d} secret")
-    t = une_fois(t, '"<p></p></div><em>— " + PR.qui + " · " + PR.lieu + "</em></div>"',
-                 '"<p></p></div><em>— " + PR.qui + " · " + PR.lieu + (SIEN.nom ? " · exemple" : "") + "</em></div>"', f"{d} voix du livre")
     t = une_fois(t, '\'<div class="oy"><h2 class="oy-titre">Alors, on y <em>va</em>\' + NB + "?</h2>',
                  '\'<div class="oy">\' + ouiTitre() + "', f"{d} titre du oui")
     t = une_fois(t, '"</b><small>" + p.sous + "</small>',

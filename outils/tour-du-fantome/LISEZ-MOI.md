@@ -25,6 +25,12 @@ sur clikme.fr (le dossier est hors de `public/` et exclu du déploiement par `.v
 - `accueil2/page/g-restaurant-salue.webp` : le fantôme du restaurant qui salue.
 - `outils/` : les scripts.
 
+## Jamais « exemple » à l'écran
+
+Les commerces des tours sont fictifs, leurs chiffres et leurs cadeaux inventés : aucun écran ne porte le mot
+« exemple » (ni le ticket, ni la notification de la nuit, ni le livre, ni l'intro, ni les cartes). Seule la voix
+de « Moins de dépenses » dit « Par exemple, un dîner pour deux… » : c'est sa phrase enregistrée.
+
 ## Refaire les pages
 
 Il faut Python 3 avec numpy, et ffmpeg, appelé par un lien `ffmpeg` dans ce dossier (non versionné) :
@@ -76,7 +82,9 @@ Le lunetier les a dans sa base (`tour-lunettes.py`), les quatre autres par `tour
 - **À la fin de sa vidéo** (à la place des trois petits fantômes d'avis) : trois cages, « J'adore », « Je viendrai »,
   et la troisième du métier (« J'y vais », « De côté », « Aujourd'hui »). Le fantôme de Camille s'envole se placer dans la
   vitrine du commerce : devant, à la porte, ou dedans. Puis le carnet, où un prénom s'écrit, et le bon de promesse.
-  « Ça me tente » mène à la demande (table, mise de côté, rendez-vous).
+  « Ça me tente » mène à la demande (table, mise de côté, rendez-vous). Camille se repère dans la foule : premier
+  rang (ou première place), un peu plus grande, halo rose, « Vous · Camille » (en salle : « Vous · 15 h 30 ») ; à son
+  arrivée, la foule s'efface un instant.
 - **Son comptoir, après WhatsApp : Mike, son assistant.** Une conversation, à la place de « Mardi, 11 h, la salle est à
   moitié vide » : ClikMe ne connaît pas ses réservations. Mike ne dit donc que ce que ClikMe sait ; ce qu'il ne peut pas
   savoir, c'est le commerçant qui le lui dit, d'un appui. Seul Mike parle (sa voix ElevenLabs) ; le commerçant répond par

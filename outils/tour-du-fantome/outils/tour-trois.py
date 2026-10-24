@@ -49,7 +49,7 @@ def bonjour(M):
     return f"Bonjour {M['qui']}. {M['compte'][1]}{INS}personnes ont *promis de venir après votre vidéo. *Aucune n’est encore passée."
 
 # Ce qui change d'un métier à l'autre. Les commerces sont ceux des démos (fictifs) ; chiffres et cadeaux inventés,
-# sans le mot « exemple » à l'écran (il reste sur le ticket, à côté de son vrai nom, comme les lignes voisines).
+# sans le mot « exemple » à l'écran (jamais, nulle part).
 METIERS = {
     "tour": dict(
         metier="restaurant", lieu="Chez Bergine", sous="BISTROT · DAX", chez="chez Bergine", carte="Magret · Garbure · Axoa", qui="Jean-Marie",
@@ -196,7 +196,7 @@ CSS = r"""
 .t3-plus{position:absolute;left:3%;top:68.5%;z-index:400;padding:.6cqw 2cqw;border-radius:9cqw;background:rgba(20,12,9,.8);font:800 2.7cqw/1.2 var(--titre);color:var(--creme)}
 .t3-hote{position:absolute;left:84%;top:66%;height:24cqw;z-index:6;transform:translate(-50%,-100%);transform-origin:50% 100%;filter:drop-shadow(0 1cqw 1cqw rgba(0,0,0,.5))}
 /* les fantômes : posés par leurs pieds (x, y), leur taille suit leur rang */
-.t3-fg{position:absolute;height:calc(var(--s) * 15.5cqw);aspect-ratio:.91;transform:translate(-50%,-100%);transition:left .6s,top .6s,opacity .4s}
+.t3-fg{position:absolute;height:calc(var(--s) * 15.5cqw);aspect-ratio:.91;transform:translate(-50%,-100%);transition:left .6s,top .6s,opacity .4s,filter .5s}
 .t3-fg img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 .7cqw .6cqw rgba(0,0,0,.5));transform-origin:50% 100%}
 .t3-fg.adore img{animation:t3-hop 2.6s ease-in-out infinite;animation-delay:var(--d,0s)}
 @keyframes t3-hop{0%,66%,100%{transform:none}74%{transform:translateY(-13%) rotate(-4deg)}82%{transform:none}90%{transform:translateY(-6%) rotate(3deg)}}
@@ -214,6 +214,13 @@ CSS = r"""
 .t3-fg.moi .t3-nom,.t3-fg.vedette .t3-nom{background:var(--rose);color:#fff}
 .t3-fg.invite .t3-nom{background:#FFF8EA;color:#E0167A}
 .t3-fg.moi::before{content:"";position:absolute;left:8%;right:8%;bottom:-6%;height:16%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,46,154,.8),transparent);z-index:-1}
+/* Camille, dans la foule : un repère qu'on ne rate pas (premier rang, un peu plus grande, son halo, « Vous ») */
+.t3-fg.moi .t3-nom{padding:.6cqw 2.3cqw;font-size:3.2cqw;font-weight:800;box-shadow:0 0 0 .45cqw #fff,0 1cqw 2cqw rgba(0,0,0,.55);transform:translate(-50%,-140%);animation:t3-repere 1.7s ease-in-out infinite}
+.t3-fg.moi .t3-nom::after{content:"";position:absolute;left:50%;bottom:-1.25cqw;width:2.3cqw;height:2.3cqw;margin-left:-1.15cqw;background:var(--rose);transform:rotate(45deg);box-shadow:.45cqw .45cqw 0 0 #fff;border-radius:.3cqw}
+@keyframes t3-repere{50%{transform:translate(-50%,-158%)}}
+.t3-fg.moi::before{left:-22%;right:-22%;bottom:-10%;height:26%;background:radial-gradient(closest-side,rgba(255,46,154,.95),rgba(255,46,154,.4) 55%,transparent);animation:t3-halo 1.7s ease-in-out infinite}
+@keyframes t3-halo{50%{opacity:.55;transform:scale(.82)}}
+.t3-sc.repere .t3-fg:not(.moi),.t3-sc.repere .t3-hote{filter:brightness(.4) saturate(.5)}
 .t3-tag{position:absolute;left:50%;top:-4%;transform:translate(-50%,-100%);padding:.3cqw 1.2cqw;border-radius:.8cqw;background:#FFF8EA;color:var(--encre);font:700 2.3cqw/1.2 var(--titre);white-space:nowrap}
 .t3-fg.moi .t3-tag,.t3-fg.vedette .t3-tag{top:-34%}
 .t3-fg.scanne::after{content:"✓";position:absolute;right:-6%;top:6%;width:5cqw;height:5cqw;border-radius:50%;background:var(--menthe);color:#06281C;display:grid;place-items:center;font:900 3cqw/1 var(--titre);box-shadow:0 .3cqw .7cqw rgba(0,0,0,.45)}
@@ -356,7 +363,7 @@ CSS = r"""
 .tv-envoye{display:flex;align-items:center;gap:.45em;font-size:.74em;font-weight:800;color:var(--menthe);opacity:0;transition:opacity .3s}
 .tv-envoi.envoye .tv-envoye{opacity:1}
 @media (prefers-reduced-motion: reduce){
-  .t3-fg img,.t3-fg.neuf,.t3-cg,.t3-dome img,.t3-fant,.mk-l,.mk-moi,.mk-c,.mk-choix,.mk-ch,.mk-tape i{animation:none!important}
+  .t3-fg img,.t3-fg.neuf,.t3-cg,.t3-dome img,.t3-fant,.mk-l,.mk-moi,.mk-c,.mk-choix,.mk-ch,.mk-tape i,.t3-fg.moi .t3-nom,.t3-fg.moi::before{animation:none!important}
 }
 """
 
@@ -395,7 +402,7 @@ HTML = r"""
           </div>
 """
 
-BILAN = '<div class="wb-l"><i>👻</i><span><small>Grâce à vos promesses</small><b id="wb-vitrine"></b></span><em>exemple</em></div>'
+BILAN = '<div class="wb-l"><i>👻</i><span><small>Grâce à vos promesses</small><b id="wb-vitrine"></b></span></div>'
 
 JS = r"""
   /* ═══ LES TROIS FANTÔMES (voir tour-trois.py) ═══
@@ -419,7 +426,8 @@ JS = r"""
   ];
   const T3_PROMIS = [{ x: 69, y: 87, s: .9 }, { x: 64, y: 73, s: .76 }, { x: 75, y: 75.5, s: .78 }, { x: 87, y: 73.5, s: .76 }, { x: 81, y: 89, s: .92 }, { x: 93, y: 86, s: .86 }];
   // dedans, derrière la vitre (x, y en % de la vitrine)
-  const T3_SIEGES = [{ x: 45, y: 82, s: .74 }, { x: 22, y: 85, s: .82 }, { x: 65, y: 86, s: .82 }, { x: 84, y: 81, s: .72 }, { x: 33, y: 100, s: .92 }, { x: 74, y: 100, s: .92 }];
+  // la première place (celle de Camille) : au premier plan, contre la vitre
+  const T3_SIEGES = [{ x: 52, y: 100, s: .92 }, { x: 45, y: 82, s: .74 }, { x: 22, y: 85, s: .82 }, { x: 65, y: 86, s: .82 }, { x: 84, y: 81, s: .72 }, { x: 74, y: 100, s: .92 }];
   const camille = (t) => ({ id: "camille", nom: "Camille", look: "cosy", type: t, heure: T3.heures[0] });
 
   function t3Scene(el) {
@@ -471,13 +479,15 @@ JS = r"""
       }
       const garde = ["neuf", "cache", "saute", "scanne"].filter((x) => d.classList.contains(x));
       d.className = "t3-fg " + f.type + (f.ami ? " ami" : "") + (f.invite ? " invite" : "") + (f.moi ? " moi" : "") + (f.vedette ? " vedette" : "") + (f.recent ? " recent" : "") + (garde.length ? " " + garde.join(" ") : "");
-      d.style.left = p.x + "%"; d.style.top = p.y + "%"; d.style.setProperty("--s", p.s); d.style.setProperty("--d", (f.d || 0) + "s");
-      d.style.zIndex = couche === "t3-calque" ? String(100 + Math.round(p.y)) : String(10 + Math.round(p.y / 10));
+      // Camille : un peu plus grande, devant tout le monde
+      d.style.left = p.x + "%"; d.style.top = p.y + "%"; d.style.setProperty("--s", f.moi ? p.s * 1.15 : p.s); d.style.setProperty("--d", (f.d || 0) + "s");
+      d.style.zIndex = f.moi ? (couche === "t3-calque" ? "400" : "60") : couche === "t3-calque" ? String(100 + Math.round(p.y)) : String(10 + Math.round(p.y / 10));
       const im = $("img", d), src = t3img(f.look, T3_POSE[f.type]);
       if (im.getAttribute("src") !== src) im.setAttribute("src", src);
-      $(".t3-nom", d).textContent = (f.invite ? "💌 " : "") + f.nom;
+      // en salle, la place est étroite : « Vous » et son heure
+      $(".t3-nom", d).textContent = f.moi ? "Vous · " + (f.type === "table" && f.heure ? f.heure : f.nom) : (f.invite ? "💌 " : "") + f.nom;
       const tag = $(".t3-tag", d);
-      if (f.type === "table" && f.heure && (f.moi || f.vedette)) { if (!tag) d.insertAdjacentHTML("beforeend", '<span class="t3-tag"></span>'); $(".t3-tag", d).textContent = f.heure; } else if (tag) tag.remove();
+      if (f.type === "table" && f.heure && f.vedette) { if (!tag) d.insertAdjacentHTML("beforeend", '<span class="t3-tag"></span>'); $(".t3-tag", d).textContent = f.heure; } else if (tag) tag.remove();
     }
     for (const [cle, d] of el._fg) if (!vus.has(cle)) { d.classList.add("part"); el._fg.delete(cle); setTimeout(() => d.remove(), 450); }
     const plus_ = $(".t3-plus", el);
@@ -581,6 +591,8 @@ JS = r"""
       plus(() => t3Voler(a, src.src, $("img", cible), () => {
         cible.classList.remove("cache", "neuf"); void cible.offsetWidth; cible.classList.add("neuf");
         setTimeout(() => cible.classList.remove("neuf"), 700);
+        // à son arrivée, la foule s'efface un instant : « vous êtes là »
+        if (!reduit) { rejouer(scTf, "repere"); setTimeout(() => scTf.classList.remove("repere"), 1900); }
         son("magie"); if (t === "adore") t3Coeurs(scTf, 4);
         tfSuite(j);
       }), 420);

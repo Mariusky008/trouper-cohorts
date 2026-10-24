@@ -240,9 +240,8 @@ CSS = r"""
    contre la vidéo ClikMe) a été retiré : « on ne devrait mettre que ce que le fantôme fabrique comme vidéo et
    oublier ce que le restaurateur aurait mis ». Le téléphone reste seul, en grand ; au-dessus, qui l'a monté
    (ClikMe, sans effort pour vous) ; ses amis l'aiment et le partagent ; dessous, une ligne de chiffres
-   d'exemple, annoncés comme tels. */
-/* 100 px : qui l'a monté, au-dessus (42) ; les chiffres, à cheval sur le bas du téléphone, et leur mention
-   « exemple », dessous. « La vidéo est mal ajustée au téléphone » : son écran a maintenant la forme du film
+   (sans le mot « exemple » : jamais à l'écran). */
+/* 100 px : qui l'a monté, au-dessus (42) ; les chiffres, à cheval sur le bas du téléphone. « La vidéo est mal ajustée au téléphone » : son écran a maintenant la forme du film
    (9:16, cadre compris : 1,7375 × la largeur), le film le remplit en entier, sans bandes noires. */
 .s3,.s4{--pw:min(68cqw,calc((100cqh - 100px) / 1.7375));--py:calc(50% - 6px);--ph:calc(var(--pw) * 1.7375)}
 .s3{--w:calc(var(--pw) * 1.05)}
@@ -595,7 +594,7 @@ JS_DONNEES = r"""
       '<div class="s-qui"><img src="' + INTRO_FANT + '" alt=""><span><b>Monté par ClikMe</b><small>sans effort pour vous</small></span></div>' +
       '<div class="s-stats">' + [["coeur", "J’aime"], ["vue", "vues"], ["part", "partages"]].map(([i, l], k) =>
         '<span><b data-n="' + I_STATS[k] + '">0</b><small>' + I_ICO_PLEIN[i] + l + "</small></span>").join("") + "</div>" +
-      '<p class="s-exemple">Exemple pour illustrer : chiffres fictifs</p></div>',
+      "</div>",
     partage: () => '<div class="s4">' +
       I_AMIS.map(([l, c, nom, t], k) => '<div class="s4-notif verre" data-k="' + k + '" style="--k:' + k + ";--d:" + k * 0.22 + 's"><b class="s4-av" style="--c:' + c + '">' + l +
         "</b><span><strong>" + nom + "</strong><small>maintenant</small><em>" + t + "</em></span></div>").join("") +
