@@ -150,7 +150,10 @@ démo (à côté de « i ») ; au clavier, Espace ou P. Pour répondre à une qu
 (sa voix, ses mots, ses animations, les films, les minuteries) et « Reprendre » la relance au même instant. Pendant la
 pause, un voile retient les appuis. Le script remplace, avant tout le reste, les minuteries de la page par des
 minuteries qui savent s'arrêter, ignore le temps passé en pause (`performance.now`, `requestAnimationFrame`),
-suspend le contexte audio, et met en pause les animations CSS et les films en cours.
+arrête sa voix (et la relance du même instant), suspend le contexte audio, et met en pause les animations CSS et
+les films en cours. Chaque étape est à part, la voix d'abord : sur Safari, mettre en pause certaines animations en
+boucle lève une erreur, qui arrêtait tout le reste (l'écran figé, sa voix qui continuait, pas de « Reprendre »).
+Une animation qui refuse la pause est figée à vitesse nulle. `essai-pause.mjs … safari` rejoue ce cas.
 
 Pour une nouvelle voix de l'intro : remplacer `voix-intro/court/<nom>.mp3`, mettre son texte dans
 `outils/mesurer-intro2.py` (et dans `tour-intro3.py`), lancer `python3 -I $D/outils/mesurer-intro2.py $D`,
@@ -183,7 +186,7 @@ node $D/outils/essai-etape.mjs <dossier de sortie> tour 414x747 direct 28  # une
 node $D/outils/essai-fins.mjs <dossier de sortie>/                         # les deux fins de conversation
 node $D/outils/essai-parcours.mjs <dossier de sortie> tour 414x747 clients voix   # toute la démo, comme un commerçant
 node $D/outils/essai-actions.mjs <dossier de sortie> tour 414x747 clients creux 60 '[[1000,"quand","#mk-oui"],[1000,"quand","#tv-envoyer"]]'
-node $D/outils/essai-pause.mjs <dossier de sortie> tour                       # la pause : dans l'intro, puis pendant que Mike parle
+node $D/outils/essai-pause.mjs <dossier de sortie> tour [414x747 safari]      # la pause : dans l'intro, puis pendant que Mike parle
 ```
 
 `essai-parcours.mjs` joue toute la page 2 (vue `clients` ou `depenses`, façon `voix`, `spe` ou `episode`) en

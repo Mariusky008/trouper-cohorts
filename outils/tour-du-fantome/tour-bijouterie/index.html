@@ -2537,13 +2537,17 @@ h1 em{font-style:normal;color:var(--rose)}
   /* ═══ LA PAUSE (tour-pause.py) ═══
      Un appui sur ⏸ fige la page entière, « Reprendre » la relance au même instant. Ce bloc passe AVANT tout
      le reste : les minuteries posées ensuite sont déjà les siennes. Le temps passé en pause n'existe pas
-     (performance.now, requestAnimationFrame) ; le contexte audio est suspendu (sa voix et ses mots, qui
-     suivent son horloge) ; les animations CSS et les films en cours s'arrêtent, puis repartent, eux seuls. */
+     (performance.now, requestAnimationFrame) ; sa voix s'arrête, et repart du même instant ; le contexte audio
+     est suspendu ; les animations CSS et les films en cours s'arrêtent, puis repartent, eux seuls.
+     CHAQUE ÉTAPE EST À PART, ET LA VOIX D'ABORD : sur Safari, mettre en pause certaines animations en boucle
+     lève une erreur ; elle arrêtait tout le reste, et sa voix continuait pendant que l'écran s'était figé. */
+  let voixEnCours = null;  // la réplique en cours (voir sonDe) : la pause l'arrête et la relance du même instant
   const GEL = (() => {
     const vrai = { st: setTimeout.bind(window), ct: clearTimeout.bind(window), raf: requestAnimationFrame.bind(window),
       caf: cancelAnimationFrame.bind(window), now: performance.now.bind(performance) };
     const minut = new Map(), images = new Map(), enAttente = new Set();
-    let fige = false, debut = 0, decal = 0, n = 1e6, animations = [], films = [], sonGele = false;
+    let fige = false, debut = 0, decal = 0, n = 1e6, animations = [], films = [], sonGele = false, voixGelee = null;
+    const essai = (f) => { try { f(); } catch (e) { /* une étape qui échoue n'empêche pas les autres */ } };
     // une minuterie : son échéance, et ce qui lui reste quand on fige
     const armer = (id, t) => {
       t.reel = vrai.st(() => {
@@ -2575,30 +2579,44 @@ h1 em{font-style:normal;color:var(--rose)}
     function figer() {
       if (fige) return;
       fige = true; debut = vrai.now();
+      // sa voix : arrêtée net, l'instant où elle en était gardé (ses mots suivent cet instant)
+      essai(() => {
+        const v = voixEnCours;
+        if (v && !v.fini && !muet && v.s && v.s === sourceVoix && ac) {
+          v.gel = Math.max(0, ac.currentTime - v.debut);
+          try { v.s.stop(); } catch (e) { /* déjà fini */ }
+          voixGelee = v;
+        }
+      });
+      essai(() => { sonGele = !!(ac && ac.state === "running"); if (sonGele) Promise.resolve(ac.suspend()).catch(() => {}); });
+      essai(() => { films = [...document.querySelectorAll("video, audio")].filter((m) => !m.paused && !m.ended); });
+      films.forEach((m) => essai(() => m.pause()));
       minut.forEach((t) => { vrai.ct(t.reel); t.reste = Math.max(0, t.fin - debut); });
       images.forEach((r, id) => { if (r.reel) { vrai.caf(r.reel); r.reel = 0; enAttente.add(id); } });
-      animations = document.getAnimations ? document.getAnimations().filter((x) => x.playState === "running") : [];
-      animations.forEach((x) => x.pause());
-      films = [...document.querySelectorAll("video, audio")].filter((m) => !m.paused && !m.ended);
-      films.forEach((m) => m.pause());
-      sonGele = !!(ac && ac.state === "running");
-      if (sonGele) Promise.resolve(ac.suspend()).catch(() => {});
+      essai(() => { animations = document.getAnimations ? document.getAnimations().filter((x) => x.playState === "running") : []; });
+      // une animation qui refuse la pause (Safari, une boucle sans fin) : figée à vitesse nulle
+      animations.forEach((x) => essai(() => { try { x.pause(); } catch (e) { x.__vitesse = x.playbackRate; x.playbackRate = 0; } }));
     }
     function relancer() {
       if (!fige) return;
       const t0 = vrai.now();
       decal += t0 - debut; fige = false;
-      if (sonGele) Promise.resolve(ac.resume()).catch(() => {});
-      films.forEach((m) => { const p = m.play(); if (p) p.catch(() => {}); });
-      animations.forEach((x) => { if (x.playState === "paused") x.play(); });
+      essai(() => { if (sonGele) Promise.resolve(ac.resume()).catch(() => {}); });
+      // sa voix repart de l'instant où elle s'était arrêtée
+      essai(() => {
+        const v = voixGelee;
+        if (v && !v.fini && v.gel != null) { const r = v.gel; v.gel = null; if (r < v.tampon.duration - 0.05) v.lancer(r); }
+      });
+      films.forEach((m) => essai(() => { const p = m.play(); if (p) p.catch(() => {}); }));
+      animations.forEach((x) => essai(() => { if (x.__vitesse != null) { x.playbackRate = x.__vitesse; delete x.__vitesse; } else if (x.playState === "paused") x.play(); }));
       minut.forEach((t, id) => { t.fin = t0 + t.reste; armer(id, t); });
       enAttente.forEach((id) => { const r = images.get(id); if (r) r.reel = vrai.raf(r.go); });
-      enAttente.clear(); animations = []; films = []; sonGele = false;
+      enAttente.clear(); animations = []; films = []; sonGele = false; voixGelee = null;
     }
 
     const voile = document.getElementById("gel"), reprendre = document.getElementById("gel-reprendre");
-    function entrer() { figer(); voile.hidden = false; reprendre.focus({ preventScroll: true }); }
-    function sortir() { voile.hidden = true; relancer(); }
+    function entrer() { essai(figer); voile.hidden = false; essai(() => reprendre.focus({ preventScroll: true })); }
+    function sortir() { voile.hidden = true; essai(relancer); }
     ["pause", "intro-pause"].forEach((id) => {
       const b = document.getElementById(id);
       if (b) b.addEventListener("click", (e) => { e.stopPropagation(); entrer(); });
@@ -3157,12 +3175,18 @@ h1 em{font-style:normal;color:var(--rose)}
     if (a.state !== "running") return null;
     for (let k = 0; k < 40 && !tampons[nom]; k++) await attendreMs(50);
     if (!tampons[nom] || muet) return null;
-    const s = a.createBufferSource();
-    s.buffer = tampons[nom]; s.connect(a.destination);
-    const debut = a.currentTime + 0.04;
-    s.start(debut);
-    sourceVoix = s;
-    return { arreter: () => { try { s.stop(); } catch (e) { /* déjà fini */ } }, temps: () => a.currentTime - debut };
+    // la réplique, que la pause (tour-pause.py) arrête et relance du même instant (« depuis »)
+    const v = { tampon: tampons[nom], debut: 0, gel: null, s: null, fini: false };
+    v.lancer = (depuis) => {
+      const s = a.createBufferSource();
+      s.buffer = v.tampon; s.connect(a.destination);
+      v.debut = a.currentTime + 0.04 - depuis;
+      s.start(a.currentTime + 0.04, depuis);
+      v.s = s; sourceVoix = s;
+    };
+    v.lancer(0);
+    voixEnCours = v;
+    return { arreter: () => { v.fini = true; try { v.s.stop(); } catch (e) { /* déjà fini */ } }, temps: () => (v.gel != null ? v.gel : a.currentTime - v.debut) };
   }
   /* On quitte le moment : il se tait, et ce qu'il allait dire ne s'écrit plus. */
   function taireVoix() {
