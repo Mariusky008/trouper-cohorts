@@ -20,6 +20,31 @@ la scène du commerce (la cage reste vide, cochée) :
 - **« Le lendemain matin »** : nouvelle vidéo, la vitrine se vide et se remplit à nouveau (le fantôme doré
   change de cachette).
 
+## Ses écussons, cousus sur son fantôme
+
+Les badges ne sont plus une liste de pastilles : ce sont des écussons brodés, cousus sur le bas du corps de son
+fantôme, comme le nom du commerce sur le tablier du fantôme du commerçant. Ils se voient donc dans toutes les
+vitrines, et la bulle de qui le touche les nomme : une preuve, pas un tableau de score.
+
+| L'écusson | Comment on le gagne |
+|---|---|
+| 🤝 Parole de fantôme | tenir une promesse |
+| Le pin de Chez Bergine | tenir parole chez Bergine |
+| 💌 Ambassadeur | faire venir un ami par sa vitrine |
+| ✦ Chasseur d'or | trouver le fantôme doré |
+| 💛 Coup de cœur du chef | un petit mot qui touche Jean-Marie |
+| 👍 Bon conseil | un conseil que d'autres aiment |
+
+Ma Maison montre son fantôme en grand avec ses écussons, puis les six : ceux gagnés en couleur, les autres en
+pointillés, avec la façon de les gagner. Quand une promesse est tenue, les deux premiers se cousent sous ses yeux
+(et à nouveau, la première fois qu'il revoit sa vitrine). Les autres habitants en portent aussi (simulé : qui a
+mangé ici a souvent tenu parole).
+
+**Se retrouver dans la foule** : son fantôme se place au premier rang, un peu plus grand, sur un halo rose, sous un
+repère « Vous · Léa » ; à son arrivée, la foule s'efface un instant autour de lui.
+
+Pas de mot « exemple » à l'écran : les cadeaux et les chiffres de Chez Bergine (commerce fictif) sont inventés.
+
 ## Un petit mot au chef
 
 L'habitant écrit un petit mot à Jean-Marie (un par jour), ou en choisit un dans la liste. Jean-Marie les lit

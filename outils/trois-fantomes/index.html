@@ -184,7 +184,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .sc-dit{position:absolute;right:3%;top:24%;z-index:420;pointer-events:none;max-width:44%;padding:1.4cqw 2.4cqw;border-radius:2.6cqw;background:#fff;color:#1E1E22;font:800 3cqw/1.2 var(--f-ui);opacity:0;transform:translateY(2cqw);transition:opacity .3s,transform .4s}
 .sc-dit.on{opacity:1;transform:none}
 /* les fantômes : posés par leurs pieds (x, y), leur taille suit leur rang */
-.fg{position:absolute;height:calc(var(--s) * 15.5cqw);aspect-ratio:.91;transform:translate(-50%,-100%);transition:left .6s,top .6s,height .6s,opacity .4s}
+.fg{position:absolute;height:calc(var(--s) * 15.5cqw);aspect-ratio:.91;transform:translate(-50%,-100%);transition:left .6s,top .6s,height .6s,opacity .4s,filter .5s}
 .fg img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 .7cqw .6cqw rgba(0,0,0,.5));transform-origin:50% 100%}
 .fg.adore img{animation:hop 2.6s ease-in-out infinite;animation-delay:var(--d,0s)}
 @keyframes hop{0%,66%,100%{transform:none}74%{transform:translateY(-13%) rotate(-4deg)}82%{transform:none}90%{transform:translateY(-6%) rotate(3deg)}}
@@ -237,17 +237,50 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .ligne .droite{margin-left:auto;font-weight:800;color:var(--gris);font-variant-numeric:tabular-nums}
 .jauge{height:8px;border-radius:9px;background:var(--nuit-3);overflow:hidden}
 .jauge i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,var(--ambre),var(--rose));transition:width .6s}
-.moi-carte{display:flex;align-items:center;gap:12px}
-.moi-carte .fg-solo{position:relative;width:76px;height:84px;flex:none;container-type:inline-size}
-.moi-carte .fg-solo .fg{left:50%;top:100%;--s:6.2}
-.badges{display:flex;flex-wrap:wrap;gap:6px}
-.badges span{padding:5px 10px;border-radius:999px;background:var(--nuit-2);border:1px solid var(--trait);font-size:12px;font-weight:700;color:var(--gris)}
-.badges span.gagne{border-color:var(--or);color:var(--or)}
+/* SES ÉCUSSONS : cousus sur son fantôme, comme le nom du commerce brodé sur le tablier du sien. Ils se
+   voient dans toutes les vitrines : une preuve, pas une liste. */
+.fg .ecussons{position:absolute;inset:0;pointer-events:none}
+.fg.table .ecussons{top:6%}
+.ecus{position:absolute;width:var(--t,17%);aspect-ratio:1;transform:translate(-50%,-50%) rotate(var(--r,0deg));border-radius:50%;container-type:inline-size;display:grid;place-items:center;
+  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.38),transparent 58%),var(--e);box-shadow:0 1px 2px rgba(0,0,0,.5)}
+.ecus::before{content:"";position:absolute;inset:9%;border-radius:50%;border:max(.6px,5cqw) dashed rgba(255,248,234,.85)}
+.ecus i{font-style:normal;font-size:52cqw;line-height:1;color:#FFF8EA;text-shadow:0 1px 1px rgba(0,0,0,.35)}
+.ecus svg{width:58%;height:58%;fill:none;stroke:#6A1626;stroke-width:2.6;stroke-linecap:round}
+.ecus.pin{background:radial-gradient(circle at 35% 30%,#FFE6A6,#C9962E)}
+.ecus.pin::before{border-color:rgba(106,22,38,.5)}
+.ecus.neuf{animation:coud .9s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes coud{0%{opacity:0;transform:translate(-50%,-50%) scale(2.8) rotate(-40deg)}60%{opacity:1}}
+.maison-moi{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 0 4px;border-radius:20px;background:radial-gradient(60% 70% at 50% 62%,rgba(255,46,154,.22),transparent 70%)}
+.maison-fg{position:relative;width:150px;height:150px;container-type:inline-size}
+.maison-fg .fg{left:50%;top:100%;--s:5.9}
+.maison-fg .nom{display:none!important}
+.maison-moi b{font-size:17px;font-weight:800}
+.maison-moi small{font-size:12px;color:var(--gris);text-align:center}
+.ecus-grille{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.slot{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 9px;border-radius:14px;background:var(--nuit-2);text-align:center}
+.slot .porte{position:relative;width:42px;height:42px}
+.slot .ecus{left:50%;top:50%;--t:100%}
+.slot .vide{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;border:2px dashed var(--trait);font-size:17px;filter:grayscale(1);opacity:.45}
+.slot b{font-size:11.5px;font-weight:800;line-height:1.15}
+.slot small{font-size:10.5px;line-height:1.2;color:var(--gris)}
+.slot.gagne{background:linear-gradient(160deg,rgba(255,224,138,.16),var(--nuit-2) 60%);box-shadow:inset 0 0 0 1px rgba(232,199,122,.45)}
+.slot.gagne small{color:var(--or)}
+/* dans une bulle, ou sous un titre : en ligne */
+.ecus.ligne-e{position:relative;display:inline-grid;width:17px;transform:rotate(var(--r,0deg));vertical-align:-4px;margin-right:2px}
+.bf-ecus{margin:4px 0 0;font-size:10.5px;font-weight:700;line-height:1.5;color:#5A4334}
+/* lui, dans la foule : un repère qu'on ne rate pas (le premier rang, plus grand, son halo, « Vous ») */
+.sc:not(.mini) .fg.moi .nom{display:block;padding:.6cqw 2.3cqw;font-size:3.2cqw;font-weight:800;background:var(--rose);color:#fff;box-shadow:0 0 0 .45cqw #fff,0 1cqw 2cqw rgba(0,0,0,.55);transform:translate(-50%,-140%);animation:repere 1.7s ease-in-out infinite}
+.sc:not(.mini) .fg.moi .nom::after{content:"";position:absolute;left:50%;bottom:-1.25cqw;width:2.3cqw;height:2.3cqw;margin-left:-1.15cqw;background:var(--rose);transform:rotate(45deg);box-shadow:.45cqw .45cqw 0 0 #fff;border-radius:.3cqw}
+@keyframes repere{50%{transform:translate(-50%,-158%)}}
+.sc:not(.mini) .fg.moi::before{left:-22%;right:-22%;bottom:-10%;height:26%;background:radial-gradient(closest-side,rgba(255,46,154,.95),rgba(255,46,154,.4) 55%,transparent);animation:halo 1.7s ease-in-out infinite}
+@keyframes halo{50%{opacity:.55;transform:scale(.82)}}
+.sc.repere .fg:not(.moi),.sc.repere .fg-dore,.sc.repere .sc-hote{filter:brightness(.4) saturate(.5)}
 .qr{align-self:center;width:150px;height:150px;border-radius:14px;background:#fff;padding:10px}
 .qr img{width:100%;height:100%;image-rendering:pixelated}
 .bravo{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
-.bravo .gfg{position:relative;width:110px;height:120px;container-type:inline-size}
-.bravo .gfg .fg{left:50%;top:100%;--s:6.4}
+.bravo .gfg{position:relative;width:140px;height:146px;container-type:inline-size}
+.bravo .gfg .fg{left:50%;top:100%;--s:5.9}
+.bravo .gfg .nom{display:none!important}
 .bravo h4{font-size:24px}
 
 /* la notification qui tombe */
@@ -517,7 +550,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   .colonne > b{display:none}
 }
 @media (prefers-reduced-motion:reduce){
-  .fg.adore img,.fg.promis img,.fg.table img,.fg.neuf,.fg-dore img,.fg-dore i{animation:none}
+  .fg.adore img,.fg.promis img,.fg.table img,.fg.neuf,.fg-dore img,.fg-dore i,.ecus.neuf,.fg.moi .nom,.fg.moi::before{animation:none!important}
   .vue,.feuille,.notif{transition:none}
 }
 </style>
@@ -682,7 +715,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
         <!-- Ma Maison -->
         <section class="feuille" id="f-maison">
           <h4>Ma Maison</h4>
-          <div class="moi-carte"><div class="fg-solo" id="maison-fg"></div><div><b id="maison-nom"></b><div class="badges" id="maison-badges"></div></div></div>
+          <div class="maison-moi"><div class="maison-fg" id="maison-fg"></div><b id="maison-nom"></b><small>Ses écussons sont cousus sur lui : ils se voient dans toutes les vitrines.</small></div>
+          <span class="lbl">Ses écussons · <span id="maison-n"></span></span>
+          <div class="ecus-grille" id="maison-badges"></div>
           <span class="lbl">Mes promesses</span>
           <div id="maison-promesses" style="display:flex;flex-direction:column;gap:8px"></div>
           <span class="lbl" id="lbl-gardes" hidden>Les conseils que vous aimez · chez Bergine</span>
@@ -708,7 +743,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
           <div class="gfg" id="bravo-fg"></div>
           <h4>Parole de fantôme !</h4>
           <p class="sous" id="bravo-txt"></p>
-          <div class="badges" id="bravo-badges"></div>
           <span class="lbl">Votre conseil, pour les prochains</span>
           <p class="note">Vous y avez mangé : votre fantôme porte maintenant la fourchette verte. Ceux qui le touchent liront votre conseil.</p>
           <div class="puces" id="conseils"></div>
@@ -739,7 +773,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
           <div class="dore-grand"><img src="a/g/soleil-salue.webp" alt=""></div>
           <h4>Trouvé ! ✨</h4>
           <p class="sous" id="dore-txt"></p>
-          <div class="bon dore"><img src="a/g/soleil-salue.webp" alt=""><div><small>Chez Bergine · fantôme doré</small><b>Le dessert offert</b><span>Avec votre plat, aujourd’hui · exemple</span></div></div>
+          <div class="bon dore"><img src="a/g/soleil-salue.webp" alt=""><div><small>Chez Bergine · fantôme doré</small><b>Le dessert offert</b><span>Avec votre plat, aujourd’hui</span></div></div>
           <p class="note">Demain matin, Jean-Marie le cache ailleurs.</p>
           <button type="button" class="gros" data-maison>Le ranger dans Ma Maison</button>
           <button type="button" class="fermer" data-ferme>Voir la vitrine</button>
@@ -769,7 +803,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
           <h5>Vos petits mots<span id="m-lettres"></span></h5>
           <div class="lettres" id="lettres"></div>
           <div class="ligne"><span>🎁 Offerts ce mois-ci</span><span class="droite" id="m-offerts"></span></div>
-          <p class="note">Les mots écrits arrivent ici d’abord : rien ne passe dans votre vitrine sans votre 💛. Offrir reste votre surprise, quand vous le voulez (cadeaux en exemple).</p>
+          <p class="note">Les mots écrits arrivent ici d’abord : rien ne passe dans votre vitrine sans votre 💛. Offrir reste votre surprise, quand vous le voulez.</p>
         </div>
         <div class="bloc">
           <h5>Votre vitrine en ce moment<span id="m-vitrine"></span></h5>
@@ -793,7 +827,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
           <div class="ligne"><span>❤️ Conseils de vos clients aimés<small id="m-conseil-s"></small></span><span class="droite" id="m-conseils"></span></div>
           <label class="lbl" for="porte">Quand on frappe, votre fantôme répond</label>
           <input class="champ" id="porte" maxlength="60" value="Plus que 6 magrets ce midi !" autocomplete="off">
-          <p class="note">Le cadeau du fantôme doré : 🍮 le dessert offert, 5 à gagner (exemple). Il se cache ailleurs chaque matin.</p>
+          <p class="note">Le cadeau du fantôme doré : 🍮 le dessert offert, 5 à gagner. Il se cache ailleurs chaque matin.</p>
         </div>
         <div class="bloc">
           <h5>Le carnet des promesses<span id="m-carnet"></span></h5>
@@ -898,7 +932,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     const s = {
       moi, pret: !!(garderMoi && S && S.pret), choix: null, table: null, premier: false, jour: 1,
       autres: [{ chez: "Maison Lou", quoi: "Un foulard offert dès 40 €", reste: 4 }],
-      bon: null, bonsTenus: 0, tournee: 7, badgeParole: false, pins: 0, habitue: 0,
+      bon: null, bonsTenus: 0, tournee: 7, badgeParole: false, pins: 0, habitue: 0, ecusVus: new Set(),
       foule: [], carnet: [], fil: [], semaine: [21, 24, 27, 30, 34, 29], tenues: 4,
       merci: false, appel: false, vus: new Set(CONTACTS.map((c) => c[0])), suiv: 0, promisJour: 0, amenes: 0, envoyes: new Set(), source: garderMoi && S ? S.source : "app",
       aimes: [], aimesJour: 7, monConseil: null, monPlat: null, monVenu: null, monConseilLikes: 0, monMotLikes: 0,
@@ -924,6 +958,13 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     // un sur deux a déjà mangé chez Bergine : il a un conseil (ceux qui arrivent par un partage, pas encore)
     if (!opts.invite && (opts.venu || Math.random() < .5)) { const c = pick(CONSEILS); f.venu = pick(VENUS); f.conseil = c[0]; f.plat = c[1]; f.likes = Math.floor(hasard(1, 16)); }
     f.likesMot = Math.floor(hasard(0, 9));
+    f.ecus = [];
+    if (!opts.invite) {
+      if (f.venu && Math.random() < .7) f.ecus.push("parole", "pin"); else if (Math.random() < .2) f.ecus.push("parole");
+      if (Math.random() < .12) f.ecus.push("or");
+      if (Math.random() < .15) f.ecus.push("ambassadeur");
+      if (f.conseil && f.likes >= 9) f.ecus.push("conseil");
+    }
     if (type === "table") { f.heure = opts.heure || pick(HEURES); f.n = opts.n || pick([1, 2, 2, 3, 4]); }
     S.foule.push(f);
     if (type === "promis") S.carnet.unshift({ nom: f.nom, quand: opts.quand || "à l’instant", neuf: !!opts.recent });
@@ -982,13 +1023,45 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 
   /* ═══ LA SCÈNE DU COMMERCE ═══ */
   const ICONE_PIN = '<svg viewBox="0 0 24 24"><path d="M8 3v7a2 2 0 0 0 2 2M12 3v18M8 3v4M16 3c-1.5 2-1.5 6 0 8v10"/></svg>';
+  /* SES ÉCUSSONS : cousus sur son fantôme (le bas du corps, toujours dégagé), ils se voient dans toutes les
+     vitrines, et dans la bulle de qui le touche. */
+  const ECUSSONS = [
+    { id: "parole", nom: "Parole de fantôme", ic: "🤝", c: "#1E8F69", gagner: "Tenir une promesse" },
+    { id: "pin", nom: "Pin de Chez Bergine", c: "#C9962E", gagner: "Tenir parole ici" },
+    { id: "ambassadeur", nom: "Ambassadeur", ic: "💌", c: "#E0167A", gagner: "Faire venir un ami" },
+    { id: "or", nom: "Chasseur d’or", ic: "✦", c: "#A9700E", gagner: "Trouver le fantôme doré" },
+    { id: "chef", nom: "Coup de cœur du chef", ic: "💛", c: "#7A1E33", gagner: "Un mot qui touche le chef" },
+    { id: "conseil", nom: "Bon conseil", ic: "👍", c: "#2F64C8", gagner: "Un conseil que d’autres aiment" },
+  ];
+  const ECUSSON = Object.fromEntries(ECUSSONS.map((e) => [e.id, e]));
+  // où on les coud, selon leur nombre (x, y en % du fantôme)
+  const ECUS_PLACES = [[], [[50, 72]], [[40, 72], [60, 72]], [[34, 70], [50, 73], [66, 70]], [[39, 65], [61, 65], [39, 81], [61, 81]],
+    [[34, 65], [50, 67], [66, 65], [42, 81], [58, 81]], [[34, 65], [50, 67], [66, 65], [34, 80], [50, 82], [66, 80]]];
+  const mesEcussons = () => ECUSSONS.filter((e) => ({ parole: S.badgeParole, pin: S.pins, ambassadeur: S.amenes, or: S.ors, chef: S.lettre && S.lettre.coeur, conseil: S.monConseilLikes })[e.id]).map((e) => e.id);
+  const ecussonsDe = (f) => ECUSSONS.filter((e) => (f.ecus || []).includes(e.id) || (e.id === "chef" && f.lettre && f.lettre.coeur)).map((e) => e.id);
+  function ecusHTML(id, k, cl) {
+    const e = ECUSSON[id];
+    return '<span class="ecus' + (id === "pin" ? " pin" : "") + (cl ? " " + cl : "") + '" style="--e:' + e.c + ";--r:" + (k % 2 ? 8 : -8) + 'deg" title="' + e.nom + '">' + (id === "pin" ? ICONE_PIN : "<i>" + e.ic + "</i>") + "</span>";
+  }
+  // les coudre sur un fantôme ; « neufs » : ceux qui se cousent sous nos yeux
+  function coudre(d, liste, neufs) {
+    const cle = liste.join("|");
+    if (d._ecus === cle && !(neufs && neufs.length)) return;
+    d._ecus = cle;
+    d.querySelectorAll(".ecussons").forEach((x) => x.remove());
+    if (!liste.length) return;
+    const pl = ECUS_PLACES[Math.min(6, liste.length)], c = document.createElement("span");
+    c.className = "ecussons";
+    c.innerHTML = liste.slice(0, 6).map((id, k) => ecusHTML(id, k, neufs && neufs.includes(id) ? "neuf" : "").replace('style="', 'style="left:' + pl[k][0] + "%;top:" + pl[k][1] + "%;")).join("");
+    d.appendChild(c);
+  }
   function construireScene(el, mini) {
     el.innerHTML = '<div class="sc-fac"></div><div class="sc-ens"><b>Chez Bergine</b><small>BISTROT · DAX</small></div><div class="sc-store"></div>' +
       '<div class="sc-vit"><img src="a/interieur.webp" alt=""><div class="calque-salle"></div><em>Magret · Garbure · Axoa</em></div>' +
       '<div class="sc-carnet"><b>Le carnet</b><div class="noms"></div></div><div class="sc-pied"></div>' +
       '<div class="sc-porte"><i></i></div><span class="sc-ouvert">OUVERT</span><img class="sc-hote" src="a/bergine-salue.webp" alt="">' +
       '<div class="sc-trot"></div><div class="calque"></div><span class="sc-plus" hidden></span><div class="sc-dit">Merci à vous tous !</div>';
-    el._mini = !!mini; el._fg = new Map(); el._dore = null;
+    el._mini = !!mini; el._fg = new Map(); el._dore = null; el.classList.toggle("mini", !!mini);
   }
   function elFantome(f) {
     const d = document.createElement("div");
@@ -1004,7 +1077,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     adore.sort((a, b) => (b.invite - a.invite) || (b.ami - a.ami) || (b.t - a.t));
     const places = RANGS_ADORE.slice();
     let moiPlace = null;
-    if (S.choix === "adore") moiPlace = S.premier ? places.shift() : places.splice(6, 1)[0];
+    if (S.choix === "adore") moiPlace = places.shift();
     const visibles = adore.slice(0, places.length);
     visibles.forEach((f, k) => L.push({ f, ...places[k], pose: "debout", couche: "calque" }));
     if (moiPlace) L.push({ f: moiF(), ...moiPlace, pose: "debout", couche: "calque", moi: true });
@@ -1044,16 +1117,21 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       d._f = f; d._type = type; d._moi = !!p.moi;
       const coeur = p.moi ? !!(S.lettre && S.lettre.coeur) : !!(f.lettre && f.lettre.coeur);
       d.classList.toggle("chouchou", coeur);
-      d.style.left = p.x + "%"; d.style.top = p.y + "%"; d.style.setProperty("--s", p.s); d.style.setProperty("--d", f.d + "s");
-      d.style.zIndex = p.couche === "calque" ? String(100 + Math.round(p.y)) : String(10 + Math.round(p.y / 10));
+      // lui, dans la foule : un peu plus grand, devant tout le monde
+      const repere = p.moi && !el._mini;
+      d.style.left = p.x + "%"; d.style.top = p.y + "%"; d.style.setProperty("--s", repere ? p.s * 1.15 : p.s); d.style.setProperty("--d", f.d + "s");
+      d.style.zIndex = repere ? (p.couche === "calque" ? "400" : "60") : p.couche === "calque" ? String(100 + Math.round(p.y)) : String(10 + Math.round(p.y / 10));
       const im = $("img", d), src = img(f.look, p.pose);
       if (im.getAttribute("src") !== src) im.setAttribute("src", src);
-      $(".nom", d).textContent = (coeur ? "💛 " : "") + (p.moi ? S.moi.nom : f.invite ? "💌 " + f.nom : f.nom);
+      $(".nom", d).textContent = (coeur ? "💛 " : "") + (p.moi ? (el._mini ? S.moi.nom : "Vous · " + S.moi.nom) : f.invite ? "💌 " + f.nom : f.nom);
       // ce que porte son fantôme : son rang du matin, le pin du commerce, sa réservation
       d.querySelectorAll(".rang,.pin,.table-tag,.fourchette").forEach((x) => x.remove());
       // la fourchette verte : il a déjà mangé ici, son conseil se lit en le touchant
       if (!el._mini && (p.moi ? S.monConseil : f.conseil)) d.insertAdjacentHTML("beforeend", '<span class="fourchette">🍴</span>');
-      if (p.moi && S.pins) d.insertAdjacentHTML("beforeend", '<span class="pin">' + ICONE_PIN + "</span>");
+      // ses écussons : les siens se cousent sous ses yeux la première fois qu'il les voit dans la vitrine
+      if (el._mini) coudre(d, []);
+      else if (p.moi) { const l = mesEcussons(), neufs = el === scH ? l.filter((id) => !S.ecusVus.has(id)) : []; coudre(d, l, neufs); if (el === scH) neufs.forEach((id) => S.ecusVus.add(id)); }
+      else coudre(d, ecussonsDe(f));
       if (p.pose === "assis" && (p.moi ? (S.table || S.habitue >= 3) : f.heure)) {
         const txt = p.moi ? (S.habitue >= 3 && !S.table ? S.moi.nom + " · sa place" : S.table.heure) : f.heure;
         if (!el._mini) d.insertAdjacentHTML("beforeend", '<span class="table-tag">' + txt + "</span>");
@@ -1141,20 +1219,23 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   }
   function rendreMaison() {
     const solo = $("#maison-fg");
-    solo.innerHTML = ""; const d = elFantome(moiF()); d.classList.add("moi"); $("img", d).src = img(S.moi.look, "debout"); $(".nom", d).textContent = S.moi.nom;
-    if (S.pins) d.insertAdjacentHTML("beforeend", '<span class="pin">' + ICONE_PIN + "</span>");
+    solo.innerHTML = ""; const d = elFantome(moiF()); d.classList.add("moi"); $("img", d).src = img(S.moi.look, "debout");
+    const miens = mesEcussons();
+    coudre(d, miens);
     solo.appendChild(d);
     $("#maison-nom").textContent = "Le fantôme de " + S.moi.nom;
-    $("#maison-badges").innerHTML = '<span class="' + (S.badgeParole ? "gagne" : "") + '">Parole de fantôme</span><span class="' + (S.pins ? "gagne" : "") + '">Pin de Chez Bergine</span><span class="' + (S.amenes ? "gagne" : "") + '">Ambassadeur' + (S.amenes ? " · " + S.amenes : "") + "</span>" +
-      '<span class="' + (S.ors ? "gagne" : "") + '">Chasseur d’or' + (S.ors ? " · " + S.ors : "") + "</span>" +
-      '<span class="' + (S.lettre && S.lettre.coeur ? "gagne" : "") + '">Coup de cœur du chef</span>' +
-      '<span class="' + (S.monConseilLikes ? "gagne" : "") + '">Bon conseil' + (S.monConseilLikes ? " · ❤️ " + S.monConseilLikes : "") + "</span>";
+    $("#maison-n").textContent = miens.length + " sur " + ECUSSONS.length;
+    const gagne = { parole: "Promesse tenue", pin: "Tenu chez Bergine", ambassadeur: S.amenes + (S.amenes > 1 ? " amis venus" : " ami venu"), or: "Trouvé " + S.ors + " fois",
+      chef: "Votre mot, dans sa vitrine", conseil: "❤️ " + S.monConseilLikes + (S.monConseilLikes > 1 ? " personnes" : " personne") };
+    $("#maison-badges").innerHTML = ECUSSONS.map((e, k) => miens.includes(e.id)
+      ? '<div class="slot gagne"><span class="porte">' + ecusHTML(e.id, k) + "</span><b>" + e.nom + "</b><small>" + gagne[e.id] + "</small></div>"
+      : '<div class="slot"><span class="vide">' + (e.id === "pin" ? "📍" : e.ic) + "</span><b>" + e.nom + "</b><small>" + e.gagner + "</small></div>").join("");
     // les conseils gardés : ce qu'il faudra commander, le jour où l'on y va
     $("#lbl-gardes").hidden = !S.aimes.length;
     $("#maison-gardes").innerHTML = S.aimes.map((g) => '<div class="garde"><b>« ' + echap(g.conseil) + " »</b>Le conseil de " + echap(g.nom) + "</div>").join("");
     const lignes = [];
-    if (S.cadeauRecu) lignes.push('<div class="bon bon-chef"><img src="a/chef.jpg" alt=""><div><small>Chez Bergine · coup de cœur du chef</small><b>' + S.cadeauRecu.n + " offert</b><span>Pour votre petit mot · exemple</span></div></div>");
-    if (S.dore.trouve) lignes.push('<div class="bon dore"><img src="' + img("soleil", "salue") + '" alt=""><div><small>Chez Bergine · fantôme doré</small><b>Le dessert offert</b><span>Avec votre plat, aujourd’hui · exemple</span></div></div>');
+    if (S.cadeauRecu) lignes.push('<div class="bon bon-chef"><img src="a/chef.jpg" alt=""><div><small>Chez Bergine · coup de cœur du chef</small><b>' + S.cadeauRecu.n + " offert</b><span>Pour votre petit mot</span></div></div>");
+    if (S.dore.trouve) lignes.push('<div class="bon dore"><img src="' + img("soleil", "salue") + '" alt=""><div><small>Chez Bergine · fantôme doré</small><b>Le dessert offert</b><span>Avec votre plat, aujourd’hui</span></div></div>');
     if (S.bon) lignes.push('<div class="bon' + (S.bon.tenu ? " tenu" : "") + '"><img src="a/magret.jpg" alt=""><div><small>Chez Bergine · promesse</small><b>' + S.bon.quoi + "</b><span>" + (S.bon.tenu ? "Tenue aujourd’hui" : "Valable encore " + S.bon.jours + " jours") + "</span></div></div>");
     S.autres.forEach((a) => lignes.push('<div class="bon"><img src="a/g/fleuri-salue.webp" alt="" style="object-fit:contain;background:#F1E4D2"><div><small>' + a.chez + " · promesse</small><b>" + a.quoi + "</b><span>Valable encore " + a.reste + " jours</span></div></div>"));
     $("#maison-promesses").innerHTML = lignes.join("") || '<p class="note">Aucune promesse en cours.</p>';
@@ -1195,6 +1276,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     poser(() => {
       cible.classList.remove("cache");
       if (!reduit && depuisVideo) { cible.classList.add("neuf"); setTimeout(() => cible.classList.remove("neuf"), 700); }
+      if (!reduit) { scH.classList.add("repere"); setTimeout(() => scH.classList.remove("repere"), 1900); }
       SON.pose();
       if (choix === "adore") { applaudir(8); coeurs(scH, 5); }
       if (choix === "promis") { SON.plume(); setTimeout(() => { rendreMaison(); remplirBon(); feuille("f-bon"); }, 900); }
@@ -1247,9 +1329,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     const c = S.carnet.find((x) => x.moi); if (c) { c.tenu = true; c.quand = "a tenu sa promesse"; }
     SON.chime();
     // l'habitant : bravo
-    const gfg = $("#bravo-fg"); gfg.innerHTML = ""; const d = elFantome(moiF()); d.classList.add("moi"); $("img", d).src = img(S.moi.look, "debout"); $(".nom", d).textContent = S.moi.nom; d.insertAdjacentHTML("beforeend", '<span class="pin">' + ICONE_PIN + "</span>"); gfg.appendChild(d);
-    $("#bravo-txt").textContent = "Votre fantôme porte désormais le pin de Chez Bergine." + (premiereFois ? " Votre tournée de Dax passe à " + S.tournee + " commerces sur 40." : "") + (S.habitue >= 3 ? " Et vous avez votre place attitrée en salle !" : " Habitué : " + S.habitue + " sur 3.");
-    $("#bravo-badges").innerHTML = '<span class="gagne">Parole de fantôme</span><span class="gagne">Pin de Chez Bergine</span>';
+    const gfg = $("#bravo-fg"); gfg.innerHTML = ""; const d = elFantome(moiF()); d.classList.add("moi"); $("img", d).src = img(S.moi.look, "debout"); gfg.appendChild(d);
+    coudre(d, mesEcussons(), ["parole", "pin"]);
+    $("#bravo-txt").textContent = "Deux écussons cousus sur votre fantôme : « Parole de fantôme » et le pin de Chez Bergine. Ils se voient dans toutes les vitrines." + (premiereFois ? " Votre tournée de Dax passe à " + S.tournee + " commerces sur 40." : "") + (S.habitue >= 3 ? " Et vous avez votre place attitrée en salle !" : " Habitué : " + S.habitue + " sur 3.");
     $("#conseils").innerHTML = CONSEILS.slice(0, 5).map((c, k) => '<button type="button" data-conseil="' + k + '"' + (S.monConseil === c[0] ? ' class="on"' : "") + ">" + echap(c[0]) + "</button>").join("");
     feuille("f-bravo");
     // le comptoir : le moment qui fait plaisir
@@ -1291,8 +1373,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     if (moi) actions = S.lettre ? "" : '<button type="button" data-mot>✎ Écrire à Jean-Marie</button>';
     else if (conseil || mot) actions = '<button type="button" data-aimer' + (f.aime ? " disabled" : "") + ">" + (f.aime ? "❤️ Vous aimez" : conseil ? "❤️ J’aime son conseil" : "❤️ J’aime son mot") + "</button>";
     const ligneLikes = '<p class="bf-likes">❤️ ' + (likes ? likes + (likes > 1 ? " personnes aiment" : " personne aime") + (conseil ? " ce conseil" : " ce mot") + (f.aime ? ", dont vous" : "") : "Personne ne l’a encore aimé") + "</p>";
+    const ses = moi ? mesEcussons() : ecussonsDe(f);
+    const ligneEcus = ses.length ? '<p class="bf-ecus">' + ses.map((id, k) => ecusHTML(id, k, "ligne-e") + ECUSSON[id].nom).join(" · ") + "</p>" : "";
     b.innerHTML = '<div class="bf-haut"><b>' + echap(moi ? S.moi.nom : f.nom) + "</b>" + tag + "<small>" + quoi + "</small>" +
-      (venu ? '<p class="bf-venu">🍴 A mangé ici ' + echap(venu) + "</p>" : "") + "</div>" +
+      (venu ? '<p class="bf-venu">🍴 A mangé ici ' + echap(venu) + "</p>" : "") + ligneEcus + "</div>" +
       (conseil ? '<div class="bf-conseil"><small>' + (moi ? "Votre conseil" : "Son conseil") + "</small><p>« " + echap(conseil) + " »</p></div>" +
         ligneLikes : "") +
       (mot && (!conseil || coeur) ? '<p class="bf-mot">« ' + echap(mot) + " »</p>" + (conseil ? "" : ligneLikes) : "") +
@@ -1404,7 +1488,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
         S.cadeauRecu = cadeau;
         $("#cadeau-mot").textContent = "Votre mot : « " + l.texte + " »";
         $("#cadeau-dit").textContent = "« Votre mot m’a fait chaud au cœur. " + cadeau.n + " est pour moi. »";
-        $("#cadeau-bon").innerHTML = '<img src="a/magret.jpg" alt=""><div><small>Chez Bergine · coup de cœur du chef</small><b>' + cadeau.e + " " + cadeau.n + " offert</b><span>À votre prochaine visite · exemple</span></div>";
+        $("#cadeau-bon").innerHTML = '<img src="a/magret.jpg" alt=""><div><small>Chez Bergine · coup de cœur du chef</small><b>' + cadeau.e + " " + cadeau.n + " offert</b><span>À votre prochaine visite</span></div>";
         setTimeout(() => { feuille("f-cadeau"); confettis(scH); }, 1400);
       }
     }
@@ -1680,7 +1764,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     S.fil = S.fil.slice(0, 6);
   }
   function fete(titre, texte, pin = true) {
-    const g = $("#fete-fg"); g.innerHTML = ""; const d = elFantome(moiF()); d.classList.add("moi"); $("img", d).src = img(S.moi.look, "debout"); $(".nom", d).textContent = S.moi.nom; if (pin) d.insertAdjacentHTML("beforeend", '<span class="pin">' + ICONE_PIN + "</span>"); g.appendChild(d);
+    const g = $("#fete-fg"); g.innerHTML = ""; const d = elFantome(moiF()); d.classList.add("moi"); $("img", d).src = img(S.moi.look, "debout"); $(".nom", d).textContent = S.moi.nom; if (pin) coudre(d, mesEcussons()); g.appendChild(d);
     $("#fete-t").textContent = titre; $("#fete-p").textContent = texte;
     const cf = $("#confetti"); cf.innerHTML = "";
     if (!reduit) for (let k = 0; k < 40; k++) { const i = document.createElement("i"); i.style.left = hasard(0, 100) + "%"; i.style.background = pick(["#FF2E9A", "#F5A23A", "#3DE2A6", "#E8C77A", "#FFFFFF"]); i.style.animationDelay = hasard(0, .5) + "s"; cf.appendChild(i); }
