@@ -274,7 +274,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 @keyframes repere{50%{transform:translate(-50%,-158%)}}
 .sc:not(.mini) .fg.moi::before{left:-22%;right:-22%;bottom:-10%;height:26%;background:radial-gradient(closest-side,rgba(255,46,154,.95),rgba(255,46,154,.4) 55%,transparent);animation:halo 1.7s ease-in-out infinite}
 @keyframes halo{50%{opacity:.55;transform:scale(.82)}}
-.sc.repere .fg:not(.moi),.sc.repere .fg-dore,.sc.repere .sc-hote{filter:brightness(.4) saturate(.5)}
+.sc.repere .fg:not(.moi),.sc.repere .sc-hote{filter:brightness(.4) saturate(.5)}
 .qr{align-self:center;width:150px;height:150px;border-radius:14px;background:#fff;padding:10px}
 .qr img{width:100%;height:100%;image-rendering:pixelated}
 .bravo{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
@@ -446,9 +446,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .ami-pied{text-align:center}
 .ami-voir{height:44px;border-radius:999px;border:1.5px dashed rgba(245,162,58,.7);color:var(--ambre);font-weight:800;font-size:13px}
 
-/* DANS LA VITRINE, TOUT SE TOUCHE : chaque fantôme dit son conseil ou son petit mot, qu’on peut aimer ; la porte répond ;
-   chaque matin, un fantôme doré s'y cache */
-#sc-h .fg,#sc-h .sc-porte,#sc-h .sc-ouvert,#sc-h .sc-hote,#sc-h .fg-dore{cursor:pointer}
+/* DANS LA VITRINE, TOUT SE TOUCHE : chaque fantôme dit son conseil ou son petit mot, qu’on peut aimer */
+#sc-h .fg{cursor:pointer}
 #sc-h .fg:hover img{filter:brightness(1.14) drop-shadow(0 .7cqw .6cqw rgba(0,0,0,.5))}
 .fg.saute img{animation:saute .6s cubic-bezier(.3,1.6,.5,1)}
 @keyframes saute{40%{transform:translateY(-24%) rotate(-8deg)}}
@@ -469,32 +468,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .bf-act button:disabled{opacity:.45;cursor:default}
 .em-monte{position:absolute;z-index:690;font-size:20px;line-height:1;pointer-events:none;animation:emonte 1.6s ease-out forwards}
 @keyframes emonte{from{opacity:0;transform:translate(-50%,-20%) scale(.6)}20%{opacity:1}to{opacity:0;transform:translate(-50%,-240%) scale(1.3)}}
-.sc-porte.toc{animation:toc .45s}
-@keyframes toc{20%,60%{transform:translateX(-.7cqw)}40%,80%{transform:translateX(.7cqw)}}
-/* le fantôme doré : petit, il brille, il se cache ; on le touche, il s'envole en confettis */
-.fg-dore{position:absolute;display:none;height:calc(var(--s) * 15.5cqw);aspect-ratio:.91;transform:translate(-50%,-100%);transform-origin:50% 100%}
-.fg-dore.on{display:block}
-.fg-dore::after{content:"";position:absolute;inset:-45%}
-.fg-dore img{width:100%;height:100%;object-fit:contain;filter:sepia(1) saturate(3.6) hue-rotate(-14deg) brightness(1.15) drop-shadow(0 0 .8cqw rgba(255,214,102,.9));animation:luit 2.4s ease-in-out infinite}
-@keyframes luit{50%{filter:sepia(1) saturate(3.6) hue-rotate(-14deg) brightness(1.4) drop-shadow(0 0 2.2cqw rgba(255,224,130,1))}}
-.fg-dore i{position:absolute;right:-28%;top:-18%;font-style:normal;font-size:3.4cqw;line-height:1;color:#FFF4C8;text-shadow:0 0 1.2cqw #FFD45E;animation:scintille 1.7s ease-in-out infinite}
-@keyframes scintille{0%,100%{opacity:.2;transform:scale(.6) rotate(0)}50%{opacity:1;transform:scale(1.1) rotate(45deg)}}
-.fg-dore.appel{animation:appel .55s ease-in-out 3}
-@keyframes appel{50%{transform:translate(-50%,-100%) scale(1.7)}}
-.fg-dore.attrape{animation:attrape .9s cubic-bezier(.3,.9,.4,1) forwards}
-@keyframes attrape{35%{transform:translate(-50%,-140%) scale(2.2) rotate(-12deg)}100%{transform:translate(-50%,-320%) scale(.3) rotate(320deg);opacity:0}}
 .sc .confetti{z-index:650;border-radius:0}
-.chasse{display:block;margin-top:2px;font-size:11px;font-weight:800;line-height:1.25;color:var(--or);text-align:left}
-.dore-ligne{margin-top:5px;text-align:center;font-size:11.5px;font-weight:800;color:var(--or)}
-.bon.dore{background:linear-gradient(135deg,#FFF1C2,#F2D27A)}
-.bon.dore::before,.bon.dore::after{background:#1C120E}
-.bon.dore img,.dore-grand img{object-fit:contain;filter:sepia(1) saturate(3.6) hue-rotate(-14deg) brightness(1.15)}
-.dore-grand{width:130px;height:130px;display:grid;place-items:center;border-radius:50%;background:radial-gradient(closest-side,rgba(255,214,102,.45),transparent)}
-.dore-grand img{height:108px;width:auto;filter:sepia(1) saturate(3.6) hue-rotate(-14deg) brightness(1.15) drop-shadow(0 0 14px rgba(255,214,102,.8))}
 .bravo .bon,.bravo .gros,.bravo .fermer{align-self:stretch;text-align:left}
 .bravo .gros,.bravo .fermer{text-align:center}
 .ligne small{display:block;font-size:11px;color:var(--gris)}
-#m-dore,#m-toc{white-space:nowrap}
 /* LE CONSEIL DE CEUX QUI ONT DÉJÀ MANGÉ ICI : toucher un fantôme, c'est savoir quoi prendre ; garder son
    conseil le remercie. Une petite fourchette verte marque ceux qui en ont un. */
 .fg .fourchette{position:absolute;right:-4%;top:4%;width:4.6cqw;height:4.6cqw;border-radius:50%;background:var(--vert);color:#06281C;display:grid;place-items:center;font-size:2.7cqw;line-height:1;box-shadow:0 .3cqw .7cqw rgba(0,0,0,.45)}
@@ -517,6 +494,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .ardoise b{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#FFE08A}
 .ardoise p{margin:0;font:700 19px/1.1 var(--f-main);color:#fff}
 .ardoise small{font-size:11px;color:rgba(244,241,232,.7)}
+.ard-info{margin:0 0 6px;padding-bottom:6px;border-bottom:1px dashed rgba(244,241,232,.25);font:700 15px/1.2 var(--f-main);color:#fff}
+.ard-info b{display:block;margin-bottom:2px}
 .ard-btn{align-self:flex-start;margin-top:5px;height:30px;padding:0 12px;border-radius:999px;background:#FFE08A;color:#3A2A00;font-weight:800;font-size:12px}
 .mot-txt{min-height:70px;border-radius:14px;border:1px solid var(--trait);background:var(--nuit-2);color:var(--creme);padding:10px 12px;font:700 19px/1.2 var(--f-main);resize:none}
 .lettres{display:flex;flex-direction:column;gap:8px}
@@ -550,7 +529,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   .colonne > b{display:none}
 }
 @media (prefers-reduced-motion:reduce){
-  .fg.adore img,.fg.promis img,.fg.table img,.fg.neuf,.fg-dore img,.fg-dore i,.ecus.neuf,.fg.moi .nom,.fg.moi::before{animation:none!important}
+  .fg.adore img,.fg.promis img,.fg.table img,.fg.neuf,.ecus.neuf,.fg.moi .nom,.fg.moi::before{animation:none!important}
   .vue,.feuille,.notif{transition:none}
 }
 </style>
@@ -621,7 +600,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
           <div class="insta-fin">
             <div class="sc-cadre"><div class="sc" id="sc-i"></div></div>
             <b id="insta-t">Déjà 294 Dacquois devant la vitrine</b>
-            <span>La fin de la vidéo de Jean-Marie : sa vitrine, en direct. Un fantôme doré s’y cache : le trouver, c’est le dessert offert.</span>
+            <span>La fin de la vidéo de Jean-Marie : sa vitrine, en direct.</span>
             <button type="button" class="insta-lien" id="insta-lien">🔗 Choisis ta cage</button>
             <p class="insta-note">Le lien de la story (en publication : « lien en bio »)</p>
           </div>
@@ -650,21 +629,20 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
               <button type="button" class="f3 table" data-choix="table"><span class="cg"><i class="cg-anneau"></i><i class="cg-noeud"></i><span class="cg-dome"><img alt="" data-pose="assis"><i class="cg-porte"></i></span><i class="cg-socle"></i></span><b>🍽️ J’y vais</b><small>« Garde-moi une place »</small></button>
             </div>
             <div class="direct-ligne"><span class="tetes" id="v-tetes"></span><span id="v-ligne"></span></div>
-            <div class="dore-ligne" id="v-dore">✨ Ce matin, un fantôme doré se cache dans sa vitrine</div>
           </div>
         </section>
 
         <section class="vue scene" id="h-scene">
           <div class="sc-haut">
             <button type="button" class="retour" id="vers-video" aria-label="Revoir la vidéo"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button>
-            <div class="titre"><b>Chez Bergine, en ce moment</b><button type="button" class="chasse" id="chasse"></button></div>
+            <div class="titre"><b>Chez Bergine, en ce moment</b></div>
             <button type="button" class="maison-btn" id="vers-maison" aria-label="Ma Maison"><svg viewBox="0 0 24 24"><path d="M3.5 11 12 4l8.5 7M6 9.5V20h12V9.5"/></svg><i></i></button>
           </div>
           <div class="compteurs"><span id="c-adore">💗 0</span><span id="c-promis">📌 0</span><span id="c-table">🍽️ 0</span></div>
           <div class="sc-cadre"><div class="sc" id="sc-h"></div></div>
           <div class="sc-bas">
             <div class="statut" id="statut"></div>
-            <div class="ardoise" id="ardoise" hidden><b>💛 Le coup de cœur de Jean-Marie</b><p id="ard-mot"></p><small id="ard-qui"></small><button type="button" class="ard-btn" id="ard-ecrire">✎ Lui écrire un petit mot</button></div>
+            <div class="ardoise" id="ardoise" hidden><p class="ard-info" id="ard-info"></p><div id="ard-coeur"><b>💛 Le coup de cœur de Jean-Marie</b><p id="ard-mot"></p><small id="ard-qui"></small></div><button type="button" class="ard-btn" id="ard-ecrire">✎ Lui écrire un petit mot</button></div>
             <button type="button" class="partager" id="partager" hidden><span><b>📣 Partager ma vitrine</b><small id="partager-s">La vidéo de Jean-Marie, qui finit sur votre fantôme. Vos amis vous rejoignent en un geste.</small></span><i>›</i></button>
             <div class="mini3" id="mini3">
               <button type="button" data-choix="adore">💗 J’adore</button>
@@ -683,8 +661,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
           <div class="puces" id="heures"></div>
           <span class="lbl">Pour combien ?</span>
           <div class="puces" id="couverts"></div>
-          <span class="lbl">Avec qui ? (il reçoit votre invitation)</span>
-          <div class="puces" id="avec"></div>
           <button type="button" class="gros" id="table-ok">Mon fantôme s’assoit →</button>
           <button type="button" class="fermer" data-ferme>Annuler</button>
         </section>
@@ -768,16 +744,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
           <button type="button" class="gros" data-maison>Le ranger dans Ma Maison</button>
           <button type="button" class="fermer" data-ferme>Voir la vitrine</button>
         </section>
-        <!-- le fantôme doré, trouvé -->
-        <section class="feuille bravo" id="f-dore">
-          <div class="dore-grand"><img src="a/g/soleil-salue.webp" alt=""></div>
-          <h4>Trouvé ! ✨</h4>
-          <p class="sous" id="dore-txt"></p>
-          <div class="bon dore"><img src="a/g/soleil-salue.webp" alt=""><div><small>Chez Bergine · fantôme doré</small><b>Le dessert offert</b><span>Avec votre plat, aujourd’hui</span></div></div>
-          <p class="note">Demain matin, Jean-Marie le cache ailleurs.</p>
-          <button type="button" class="gros" data-maison>Le ranger dans Ma Maison</button>
-          <button type="button" class="fermer" data-ferme>Voir la vitrine</button>
-        </section>
 
         <div class="notif" id="notif"><img alt="" id="notif-img"><div><b id="notif-t"></b><p id="notif-p"></p><small id="notif-s"></small></div></div>
       </div></div>
@@ -811,23 +777,20 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
           <div class="ligne"><span>Venus grâce à un partage</span><span class="droite" id="m-partage">0</span></div>
           <div class="actions">
             <button type="button" class="act" id="merci">💗 Dire merci aux fantômes</button>
-            <button type="button" class="act" id="appel">📣 Appeler mes promesses</button>
+            <button type="button" class="act" id="appel">💬 Prévenir ceux qui ont promis</button>
           </div>
           <div class="compose" id="compose">
             <label class="lbl" for="msg">À ceux qui ont promis de passer (et à eux seuls)</label>
             <textarea id="msg">Ce midi, le café est pour moi ☕</textarea>
             <div class="rang2"><button type="button" class="annuler" id="msg-non">Annuler</button><button type="button" class="envoyer" id="msg-oui">Envoyer</button></div>
           </div>
-          <p class="note" id="act-note">Un appel par jour au plus, et seulement au carnet : jamais à toute la ville.</p>
+          <p class="note" id="act-note">Un message par jour au plus, et seulement à ceux qui ont promis : jamais à toute la ville.</p>
         </div>
         <div class="bloc">
           <h5>Ce qu’on touche dans votre vitrine</h5>
-          <div class="ligne"><span>✨ Votre fantôme doré<small id="m-dore-ou"></small></span><span class="droite" id="m-dore"></span></div>
-          <div class="ligne"><span>🚪 « Toc-toc » à votre porte</span><span class="droite" id="m-toc"></span></div>
           <div class="ligne"><span>❤️ Conseils de vos clients aimés<small id="m-conseil-s"></small></span><span class="droite" id="m-conseils"></span></div>
-          <label class="lbl" for="porte">Quand on frappe, votre fantôme répond</label>
-          <input class="champ" id="porte" maxlength="60" value="Plus que 6 magrets ce midi !" autocomplete="off">
-          <p class="note">Le cadeau du fantôme doré : 🍮 le dessert offert, 5 à gagner. Il se cache ailleurs chaque matin.</p>
+          <label class="lbl" for="info">L’info du moment, sur l’ardoise de votre vitrine</label>
+          <input class="champ" id="info" maxlength="60" value="Plus que 6 magrets ce midi !" autocomplete="off">
         </div>
         <div class="bloc">
           <h5>Le carnet des promesses<span id="m-carnet"></span></h5>
@@ -860,7 +823,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     <div><b>Tenir parole se voit</b>Le pin du commerce sur son fantôme, sa tournée de Dax, puis sa place attitrée.</div>
     <div><b>Ça se partage</b>Chacun partage la vidéo avec sa fin à lui : son fantôme dans la vitrine. Ses amis n’ont pas besoin de ClikMe : un lien, une page, une cage, et ils le rejoignent.</div>
     <div><b>Un petit mot au chef</b>On lui écrit ; il lit tout. Les mots qui lui font chaud au cœur passent dans sa vitrine, et parfois il offre un café ou un dessert. Une surprise, pas un concours.</div>
-    <div><b>Tout se touche</b>Chaque fantôme dit son petit mot ; la porte répond ; chaque matin, un fantôme doré se cache, et le trouver fait gagner un petit cadeau.</div>
+    <div><b>Tout se touche</b>Chaque fantôme dit son petit mot ; l’ardoise de la vitrine donne l’info du moment, écrite par Jean-Marie.</div>
     <div><b>Aimer ce que dit quelqu’un</b>Un fantôme avec la fourchette verte a déjà mangé chez Bergine : on le touche, il dit quoi prendre. Les autres ont leur petit mot. Un ❤️, et il le voit ; un conseil aimé attend dans Ma Maison, pour le jour où l’on y va.</div>
     <div><b>Sur Instagram aussi</b>Là, la vidéo ne se clique pas : elle finit sur la vitrine pleine de fantômes et un lien. Une page, sans appli, et les trois cages.</div>
   </div>
@@ -910,21 +873,11 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     "Votre sourire au comptoir, ça vaut le détour", "Vous êtes la raison pour laquelle je déjeune à Dax", "Le seul endroit où mon mari dit merci au chef"];
   const CADEAUX = [{ e: "☕", n: "Le café" }, { e: "🍮", n: "Le dessert" }, { e: "🥂", n: "L’apéritif" }];
   const minus = (s) => s.charAt(0).toLowerCase() + s.slice(1);
-  // LE FANTÔME DORÉ : chaque matin, Jean-Marie le cache ailleurs (x, y comme les fantômes ; « salle » : en %
-  // de la vitrine) ; les cinq premiers qui le trouvent gagnent son petit cadeau
-  const CACHETTES = [
-    { ou: "sur le store", indice: "levez les yeux, vers le store", couche: "sc", x: 92, y: 25.4, s: .44, z: 6 },
-    { ou: "dans la salle", indice: "il s’est assis en salle", couche: "salle", x: 92, y: 74, s: .55, z: 12 },
-    { ou: "dans la foule", indice: "il se faufile dans la foule", couche: "sc", x: 59, y: 77.5, s: .5, z: 150 },
-    { ou: "derrière le carnet", indice: "il lit le carnet par-derrière", couche: "sc", x: 71.5, y: 51, s: .44, z: 3 },
-    { ou: "à la fenêtre de la porte", indice: "il guette à la porte", couche: "sc", x: 84, y: 48.5, s: .42, z: 4 },
-  ];
   // LE CONSEIL DE CEUX QUI ONT DÉJÀ MANGÉ ICI : ce qu'il faut prendre, et le plat qu'il désigne (pour le comptoir)
   const CONSEILS = [["Prenez le magret, et gardez de la place pour le gâteau basque", "le magret"], ["La garbure, surtout quand il fait froid", "la garbure"],
     ["L’axoa du jeudi, sans hésiter", "l’axoa"], ["Le gâteau basque maison : on peut l’emporter", "le gâteau basque"], ["Le magret saignant, avec les pommes sautées", "le magret"],
     ["Arrivez avant midi et quart : ça se remplit vite", "l’heure"], ["Demandez la table près de la fenêtre", "la table"], ["La garbure, puis le café au comptoir avec Jean-Marie", "la garbure"]];
   const VENUS = ["mardi", "samedi", "dimanche", "la semaine dernière", "hier", "jeudi dernier"];
-  const doreDuJour = (jour, trouves) => ({ k: (jour - 1) % CACHETTES.length, trouves, max: 5, trouve: false, indice: false });
 
   let S;
   function etatInitial(garderMoi) {
@@ -936,7 +889,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       foule: [], carnet: [], fil: [], semaine: [21, 24, 27, 30, 34, 29], tenues: 4,
       merci: false, appel: false, vus: new Set(CONTACTS.map((c) => c[0])), suiv: 0, promisJour: 0, amenes: 0, envoyes: new Set(), source: garderMoi && S ? S.source : "app",
       aimes: [], aimesJour: 7, monConseil: null, monPlat: null, monVenu: null, monConseilLikes: 0, monMotLikes: 0,
-      mot: null, tChoix: 0, astuceVue: false, dore: doreDuJour(1, 2), ors: 0, toc: 9, porte: garderMoi && S ? S.porte : "Plus que 6 magrets ce midi !",
+      mot: null, tChoix: 0, astuceVue: false, info: garderMoi && S ? S.info : "Plus que 6 magrets ce midi !",
       lettres: [], lettre: null, libre: 0, offerts: 3, cadeauRecu: null, _offrir: null,
       ardoise: { nom: "Rose", texte: "On a fêté nos 40 ans de mariage chez vous. Merci pour la bougie sur le gâteau.", quand: "hier", cadeau: "le café" },
     };
@@ -961,7 +914,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     f.ecus = [];
     if (!opts.invite) {
       if (f.venu && Math.random() < .7) f.ecus.push("parole", "pin"); else if (Math.random() < .2) f.ecus.push("parole");
-      if (Math.random() < .12) f.ecus.push("or");
       if (Math.random() < .15) f.ecus.push("ambassadeur");
       if (f.conseil && f.likes >= 9) f.ecus.push("conseil");
     }
@@ -1029,7 +981,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     { id: "parole", nom: "Parole de fantôme", ic: "🤝", c: "#1E8F69", gagner: "Tenir une promesse" },
     { id: "pin", nom: "Pin de Chez Bergine", c: "#C9962E", gagner: "Tenir parole ici" },
     { id: "ambassadeur", nom: "Ambassadeur", ic: "💌", c: "#E0167A", gagner: "Faire venir un ami" },
-    { id: "or", nom: "Chasseur d’or", ic: "✦", c: "#A9700E", gagner: "Trouver le fantôme doré" },
     { id: "chef", nom: "Coup de cœur du chef", ic: "💛", c: "#7A1E33", gagner: "Un mot qui touche le chef" },
     { id: "conseil", nom: "Bon conseil", ic: "👍", c: "#2F64C8", gagner: "Un conseil que d’autres aiment" },
   ];
@@ -1037,7 +988,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   // où on les coud, selon leur nombre (x, y en % du fantôme)
   const ECUS_PLACES = [[], [[50, 72]], [[40, 72], [60, 72]], [[34, 70], [50, 73], [66, 70]], [[39, 65], [61, 65], [39, 81], [61, 81]],
     [[34, 65], [50, 67], [66, 65], [42, 81], [58, 81]], [[34, 65], [50, 67], [66, 65], [34, 80], [50, 82], [66, 80]]];
-  const mesEcussons = () => ECUSSONS.filter((e) => ({ parole: S.badgeParole, pin: S.pins, ambassadeur: S.amenes, or: S.ors, chef: S.lettre && S.lettre.coeur, conseil: S.monConseilLikes })[e.id]).map((e) => e.id);
+  const mesEcussons = () => ECUSSONS.filter((e) => ({ parole: S.badgeParole, pin: S.pins, ambassadeur: S.amenes, chef: S.lettre && S.lettre.coeur, conseil: S.monConseilLikes })[e.id]).map((e) => e.id);
   const ecussonsDe = (f) => ECUSSONS.filter((e) => (f.ecus || []).includes(e.id) || (e.id === "chef" && f.lettre && f.lettre.coeur)).map((e) => e.id);
   function ecusHTML(id, k, cl) {
     const e = ECUSSON[id];
@@ -1061,7 +1012,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       '<div class="sc-carnet"><b>Le carnet</b><div class="noms"></div></div><div class="sc-pied"></div>' +
       '<div class="sc-porte"><i></i></div><span class="sc-ouvert">OUVERT</span><img class="sc-hote" src="a/bergine-salue.webp" alt="">' +
       '<div class="sc-trot"></div><div class="calque"></div><span class="sc-plus" hidden></span><div class="sc-dit">Merci à vous tous !</div>';
-    el._mini = !!mini; el._fg = new Map(); el._dore = null; el.classList.toggle("mini", !!mini);
+    el._mini = !!mini; el._fg = new Map(); el.classList.toggle("mini", !!mini);
   }
   function elFantome(f) {
     const d = document.createElement("div");
@@ -1144,18 +1095,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     const noms = $(".noms", el);
     const derniers = S.carnet.slice(0, 3);
     noms.innerHTML = derniers.map((c) => '<span class="' + (c.neuf ? "neuf" : "") + '">' + echap(c.nom) + "</span>").join("");
-    rendreDore(el);
     if (el === scH) suivreBulle();
-  }
-  // le fantôme doré du jour, à sa cachette (l'habitant qui l'a trouvé ne le voit plus)
-  function rendreDore(el) {
-    let g = el._dore;
-    if (!g) { g = document.createElement("div"); g.className = "fg-dore"; g.innerHTML = '<img src="' + img("soleil", "salue") + '" alt="Le fantôme doré"><i>✦</i>'; el._dore = g; }
-    const c = CACHETTES[S.dore.k], parent = c.couche === "salle" ? $(".sc-vit", el) : el;
-    if (g.parentNode !== parent) parent.appendChild(g);
-    const voir = S.dore.trouves < S.dore.max && !(el === scH && S.dore.trouve);
-    g.classList.toggle("on", voir || g.classList.contains("attrape"));
-    g.style.left = c.x + "%"; g.style.top = c.y + "%"; g.style.setProperty("--s", c.s); g.style.zIndex = c.z;
   }
   const echap = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   function coeurs(el, n = 3) {
@@ -1195,11 +1135,11 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     $("#v-tetes").innerHTML = amis.map((f) => '<img src="' + img(f.look, "debout") + '" alt="">').join("");
     const nA = compte("adore");
     $("#v-ligne").textContent = nA ? nA + " fantômes devant la vitrine" + (amis.length ? ", dont " + amis.map((f) => f.nom).join(", ") : "") : "Nouvelle vidéo ce matin : la vitrine se remplit";
-    $("#v-dore").hidden = S.dore.trouve || S.dore.trouves >= S.dore.max;
-    $("#chasse").textContent = texteChasse();
-    // l'ardoise : le dernier coup de cœur du chef, et l'envie d'écrire le sien
+    // l'ardoise : l'info du moment (écrite au comptoir), le dernier coup de cœur du chef, et l'envie d'écrire le sien
     const a = S.ardoise;
-    $("#ardoise").hidden = !a;
+    $("#ardoise").hidden = !a && !S.info;
+    $("#ard-info").hidden = !S.info; $("#ard-info").innerHTML = "<b>📌 Aujourd’hui</b>" + echap(S.info);
+    $("#ard-coeur").hidden = !a;
     if (a) {
       $("#ard-mot").textContent = "« " + a.texte + " »";
       $("#ard-qui").textContent = a.nom + " · " + a.quand + (a.cadeau ? " · Jean-Marie lui a offert " + a.cadeau : " · affiché par Jean-Marie");
@@ -1225,7 +1165,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     solo.appendChild(d);
     $("#maison-nom").textContent = "Le fantôme de " + S.moi.nom;
     $("#maison-n").textContent = miens.length + " sur " + ECUSSONS.length;
-    const gagne = { parole: "Promesse tenue", pin: "Tenu chez Bergine", ambassadeur: S.amenes + (S.amenes > 1 ? " amis venus" : " ami venu"), or: "Trouvé " + S.ors + " fois",
+    const gagne = { parole: "Promesse tenue", pin: "Tenu chez Bergine", ambassadeur: S.amenes + (S.amenes > 1 ? " amis venus" : " ami venu"),
       chef: "Votre mot, dans sa vitrine", conseil: "❤️ " + S.monConseilLikes + (S.monConseilLikes > 1 ? " personnes" : " personne") };
     $("#maison-badges").innerHTML = ECUSSONS.map((e, k) => miens.includes(e.id)
       ? '<div class="slot gagne"><span class="porte">' + ecusHTML(e.id, k) + "</span><b>" + e.nom + "</b><small>" + gagne[e.id] + "</small></div>"
@@ -1235,7 +1175,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     $("#maison-gardes").innerHTML = S.aimes.map((g) => '<div class="garde"><b>« ' + echap(g.conseil) + " »</b>Le conseil de " + echap(g.nom) + "</div>").join("");
     const lignes = [];
     if (S.cadeauRecu) lignes.push('<div class="bon bon-chef"><img src="a/chef.jpg" alt=""><div><small>Chez Bergine · coup de cœur du chef</small><b>' + S.cadeauRecu.n + " offert</b><span>Pour votre petit mot</span></div></div>");
-    if (S.dore.trouve) lignes.push('<div class="bon dore"><img src="' + img("soleil", "salue") + '" alt=""><div><small>Chez Bergine · fantôme doré</small><b>Le dessert offert</b><span>Avec votre plat, aujourd’hui</span></div></div>');
     if (S.bon) lignes.push('<div class="bon' + (S.bon.tenu ? " tenu" : "") + '"><img src="a/magret.jpg" alt=""><div><small>Chez Bergine · promesse</small><b>' + S.bon.quoi + "</b><span>" + (S.bon.tenu ? "Tenue aujourd’hui" : "Valable encore " + S.bon.jours + " jours") + "</span></div></div>");
     S.autres.forEach((a) => lignes.push('<div class="bon"><img src="a/g/fleuri-salue.webp" alt="" style="object-fit:contain;background:#F1E4D2"><div><small>' + a.chez + " · promesse</small><b>" + a.quoi + "</b><span>Valable encore " + a.reste + " jours</span></div></div>"));
     $("#maison-promesses").innerHTML = lignes.join("") || '<p class="note">Aucune promesse en cours.</p>';
@@ -1312,8 +1251,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     S._heure = S._heure || "12 h 30"; S._n = S._n || 2;
     $("#heures").innerHTML = HEURES.map((h) => '<button type="button" class="' + (h === S._heure ? "on" : "") + '" data-h="' + h + '">' + h + "</button>").join("");
     $("#couverts").innerHTML = [1, 2, 3, 4].map((n) => '<button type="button" class="' + (n === S._n ? "on" : "") + '" data-n="' + n + '">' + n + "</button>").join("");
-    S._avec = S._avec || "";
-    $("#avec").innerHTML = [["", "Personne"], ...CONTACTS.map((c) => [c[0], "+ " + c[0]])].map(([v, l]) => '<button type="button" class="' + (v === S._avec ? "on" : "") + '" data-avec="' + v + '">' + l + "</button>").join("");
     vue("h-scene"); feuille("f-table");
   }
   function remplirBon() {
@@ -1494,39 +1431,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     }
     rendreTout();
   }
-  // toc-toc : la porte tremble, le fantôme de Jean-Marie sort et dit ce que Jean-Marie a écrit
-  function tocToc() {
-    ac(); bip(150, .09, "triangle", .14); bip(140, .09, "triangle", .14, .17);
-    const p = $(".sc-porte", scH); p.classList.remove("toc"); void p.offsetWidth; p.classList.add("toc");
-    S.toc++; fermerBulle();
-    setTimeout(() => { hote(scH, S.porte); hote(scC, S.porte); }, 450);
-    rendreComptoir();
-  }
   function hote(sc, texte, duree = 4200) {
     const h = $(".sc-hote", sc), dit = $(".sc-dit", sc);
     dit.textContent = texte; h.classList.add("on"); dit.classList.add("on");
     clearTimeout(sc._hote); sc._hote = setTimeout(() => { h.classList.remove("on"); dit.classList.remove("on"); }, duree);
-  }
-  // le fantôme doré : les premiers qui le trouvent gagnent le cadeau de Jean-Marie
-  function texteChasse() {
-    const reste = S.dore.max - S.dore.trouves;
-    if (S.dore.trouve) return "✨ Trouvé ! Votre dessert est dans Ma Maison";
-    if (reste <= 0) return "✨ Tous trouvés · demain, il se cache ailleurs";
-    return S.dore.indice ? "✨ Indice : " + CACHETTES[S.dore.k].indice : "✨ Fantôme doré caché · encore " + reste;
-  }
-  function attraperDore() {
-    if (S.dore.trouve || S.dore.trouves >= S.dore.max) return;
-    ac(); fermerBulle();
-    S.dore.trouve = true; S.dore.trouves++; S.ors++;
-    const rang = S.dore.trouves, r = rang === 1 ? "1er" : rang + "e";
-    const g = scH._dore;
-    if (g && !reduit) { g.classList.add("attrape"); setTimeout(() => { g.classList.remove("attrape"); rendreScene(scH); }, 950); }
-    SON.chime(); applaudir(5); confettis(scH);
-    evenement("a trouvé votre fantôme doré ✨", { nom: S.moi.nom, look: S.moi.look, moi: true });
-    $("#dore-txt").textContent = "Il était caché " + CACHETTES[S.dore.k].ou + ". Vous êtes le " + r + " sur " + S.dore.max + " à l’avoir trouvé ce matin.";
-    setTimeout(() => feuille("f-dore"), reduit ? 0 : 1000);
-    fete(S.moi.nom + " a trouvé votre fantôme doré !", r + " sur " + S.dore.max + " ce matin · 🍮 le dessert offert", false);
-    rendreTout();
   }
   function confettis(sc) {
     if (reduit) return;
@@ -1534,18 +1442,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     for (let k = 0; k < 34; k++) { const i = document.createElement("i"); i.style.left = hasard(0, 100) + "%"; i.style.background = pick(["#E8C77A", "#FFD45E", "#FFF4C8", "#FF2E9A", "#F5A23A"]); i.style.animationDelay = hasard(0, .4) + "s"; c.appendChild(i); }
     sc.appendChild(c); setTimeout(() => c.remove(), 2400);
   }
-  // les autres habitants le trouvent aussi, peu à peu (il en reste toujours un pour celui qui cherche)
-  let minDore = null;
-  function planifierDore() { clearTimeout(minDore); minDore = setTimeout(unAutreTrouve, hasard(38000, 60000)); }
-  function unAutreTrouve() {
-    if (S.dore.max - S.dore.trouves > (S.dore.trouve ? 0 : 1)) {
-      S.dore.trouves++;
-      evenement("a trouvé votre fantôme doré ✨", { nom: nouveauNom(), look: pick(LOOKS) });
-      rendreTout();
-    }
-    if (S.dore.trouves < S.dore.max) planifierDore();
-  }
-
   /* ═══ PARTAGER SA VITRINE : ceux qui la reçoivent le rejoignent ═══ */
   const scP = $("#sc-p"), scI = $("#sc-i");
   function ouvrirPartage() {
@@ -1595,13 +1491,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     }
     if (dest.includes("Ma story Instagram")) for (let k = 0; k < 3; k++) rejoindre(nouveauNom(), pick(LOOKS), "adore", delai + k * 1800, "a vu votre story et vous rejoint devant Chez Bergine.");
   }
-  function inviterATable(nom) {
-    const [, look] = CONTACTS.find((c) => c[0] === nom);
-    S._avec = ""; S.envoyes.add(nom);
-    setTimeout(() => notifier(img(look, "debout"), nom, "a reçu votre invitation : « " + S.moi.nom + " t’a gardé une place chez Bergine à " + S.table.heure + " ».", "Elle a la vidéo, et une cage à toucher"), 1600);
-    rejoindre(nom, look, "table", 5200, "a accepté : son fantôme s’assoit à côté du vôtre, à " + (S.table ? S.table.heure : "midi") + ".");
-  }
-
   /* ═══ ARRIVER DEPUIS INSTAGRAM ═══ */
   function source(s) {
     S.source = s;
@@ -1700,11 +1589,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       $("#m-phrase").innerHTML = "Ce matin, <em>" + a + (a > 1 ? " personnes</em> ont adoré" : " personne</em> a adoré") + " votre magret, <em>" + p + "</em> " + (p > 1 ? "ont" : "a") + " promis de venir, <em>" + t + "</em> " + (t > 1 ? "viennent" : "vient") + " aujourd’hui.";
     }
     $("#fil").innerHTML = S.fil.slice(0, 4).map((e) => '<div><img src="' + img(e.look, e.pose) + '" alt=""><span><b>' + echap(e.nom) + "</b> " + e.quoi + (e.mot ? " <i>« " + echap(e.mot) + " »</i>" : "") + "</span></div>").join("");
-    // ce qu'on touche dans sa vitrine
-    const tr = S.dore.trouves;
-    $("#m-dore").textContent = tr + (tr > 1 ? " trouvés" : " trouvé") + " sur " + S.dore.max;
-    $("#m-dore-ou").textContent = tr < S.dore.max ? "caché " + CACHETTES[S.dore.k].ou + " · 🍮 le dessert offert" : "tous trouvés · demain, il se cache ailleurs";
-    $("#m-toc").textContent = S.toc + " ce matin";
     // les conseils de ses clients : combien sont gardés, et le plat qu'ils conseillent le plus
     const avecConseil = S.foule.filter((f) => f.conseil), parPlat = {};
     avecConseil.forEach((f) => { parPlat[f.plat] = (parPlat[f.plat] || 0) + 1; });
@@ -1736,7 +1620,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     $("#p-tenues").textContent = S.tenues + " sur 12";
     $("#m-partage").textContent = S.amenes ? S.amenes + " · dont " + S.amenes + " par " + S.moi.nom : "0";
     $("#merci").classList.toggle("fait", S.merci); $("#merci").textContent = S.merci ? "💗 Merci envoyé" : "💗 Dire merci aux " + a + " fantômes";
-    $("#appel").classList.toggle("fait", S.appel); $("#appel").textContent = S.appel ? "📣 Appel envoyé · demain" : "📣 Appeler mes " + enCours + " promesses";
+    $("#appel").classList.toggle("fait", S.appel); $("#appel").textContent = S.appel ? "💬 Message envoyé · demain" : "💬 Prévenir les " + enCours + " qui ont promis";
   }
   // les petits mots écrits : le sien en haut, puis les plus récents ; 💛 ou 🎁, au choix du chef
   function rendreLettres() {
@@ -1814,9 +1698,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     setTimeout(() => { f.recent = false; rendreScene(scH); rendreScene(scC); }, 2600);
     evenement(type === "adore" ? "a adoré votre magret" : type === "promis" ? "a promis de venir" : "vient aujourd’hui à " + f.heure, f);
     SON.arrive();
-    // certains écrivent aussi un mot au chef ; d'autres frappent à la porte, d'autres aiment un conseil
+    // certains écrivent aussi un mot au chef ; d'autres aiment un conseil
     if (type !== "table" && Math.random() < .22 && S.libre < MOTS_LIBRES.length) { ecrire(f, MOTS_LIBRES[S.libre++]); signaler("c", f.nom + " vous a écrit un petit mot"); }
-    if (Math.random() < .3) S.toc++;
     if (Math.random() < .3) S.aimesJour++;
     rendreTout();
     if (type === "adore" && Math.random() < .5) coeurs(scH, 2);
@@ -1829,8 +1712,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     S.jour++;
     S.foule = S.foule.filter(() => false);
     S.choix = null; S.table = null; S.premier = false; S.merci = false; S.appel = false; S.fil = []; S.promisJour = 0;
-    // le fantôme doré change de cachette ; les toc-toc et les conseils gardés repartent de zéro
-    S.dore = doreDuJour(S.jour, 0); S.toc = 0; S.aimesJour = 0; S.mot = null; fermerBulle(); planifierDore();
+    // les conseils gardés repartent de zéro
+    S.aimesJour = 0; S.mot = null; fermerBulle();
     if (S.monConseil) S.monVenu = "hier"; // son conseil reste : il y a mangé
     // un nouveau mot par jour ; l'ardoise garde le coup de cœur d'hier
     S.lettres = []; S.lettre = null; S._offrir = null;
@@ -1894,11 +1777,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     });
     $("#heures").addEventListener("click", (e) => { const b = e.target.closest("[data-h]"); if (!b) return; S._heure = b.dataset.h; $$("#heures button").forEach((x) => x.classList.toggle("on", x === b)); });
     $("#couverts").addEventListener("click", (e) => { const b = e.target.closest("[data-n]"); if (!b) return; S._n = +b.dataset.n; $$("#couverts button").forEach((x) => x.classList.toggle("on", x === b)); });
-    $("#avec").addEventListener("click", (e) => { const b = e.target.closest("[data-avec]"); if (!b) return; S._avec = b.dataset.avec; $$("#avec button").forEach((x) => x.classList.toggle("on", x === b));
-      if (S._avec && S._n < 2) { S._n = 2; $$("#couverts button").forEach((x) => x.classList.toggle("on", x.dataset.n === "2")); } });
     $("#table-ok").addEventListener("click", () => {
       S.table = { heure: S._heure, n: S._n };
-      if (S._avec) inviterATable(S._avec);
       feuille(null);
       if (S.choix === "table") { rendreTout(); return; }
       choisir("table", S.choix ? scH._fg.get("moi") : $("#h-video .f3.table"));
@@ -1908,18 +1788,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       const btn = e.target.closest(".bulle-fg button");
       if (btn) { if (btn.hasAttribute("data-mot")) ouvrirMots(); else if (btn.hasAttribute("data-aimer") && bulle) aimer(bulle._d); return; }
       if (e.target.closest(".bulle-fg")) return;
-      if (e.target.closest(".fg-dore")) { attraperDore(); return; }
       const d = e.target.closest(".fg");
       if (d && d._f) { if (bulle && bulle._d === d) fermerBulle(); else ouvrirBulle(d); return; }
-      if (e.target.closest(".sc-porte, .sc-ouvert, .sc-hote")) { tocToc(); return; }
       fermerBulle();
-    });
-    $("#chasse").addEventListener("click", () => {
-      if (S.dore.trouve) { rendreMaison(); feuille("f-maison"); return; }
-      if (S.dore.trouves >= S.dore.max) return;
-      ac(); S.dore.indice = true; rendreHabitant();
-      const g = scH._dore; if (g) { g.classList.remove("appel"); void g.offsetWidth; g.classList.add("appel"); }
-      bip(1568, .08, "sine", .04); bip(2093, .1, "sine", .03, .08);
     });
     // le petit mot au chef
     $("#mots").addEventListener("click", (e) => {
@@ -1936,7 +1807,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       else if (e.target.closest("[data-offrir]")) { S._offrir = S._offrir === l.id ? null : l.id; ac(); SON.pop(); rendreLettres(); }
       else { const c = e.target.closest("[data-cadeau]"); if (c) coeurPour(l, CADEAUX[+c.dataset.cadeau]); }
     });
-    $("#porte").addEventListener("input", (e) => { S.porte = e.target.value.trim() || "Bienvenue chez Bergine !"; });
+    // l'info du moment : il l'écrit au comptoir, elle passe à l'ardoise de sa vitrine
+    $("#info").addEventListener("input", (e) => { S.info = e.target.value.trim(); rendreHabitant(); });
     $("#conseils").addEventListener("click", (e) => { const b = e.target.closest("[data-conseil]"); if (b) choisirConseil(+b.dataset.conseil); });
     $("#montrer-bon").addEventListener("click", () => feuille("f-qr"));
     $("#scanner").addEventListener("click", tenirPromesse);
@@ -1955,7 +1827,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       const m = $("#msg").value.trim() || "Ce midi, le café est pour moi ☕";
       S.appel = true; $("#compose").classList.remove("on"); ac(); SON.pop();
       const n = S.carnet.filter((c) => !c.tenu).length;
-      $("#act-note").textContent = "Envoyé aux " + n + " personnes du carnet. Prochain appel : demain.";
+      $("#act-note").textContent = "Envoyé aux " + n + " personnes qui ont promis. Prochain message : demain.";
       if (S.choix === "promis" || (S.bon && !S.bon.tenu)) notifier("a/chef.jpg", "Chez Bergine · à ceux qui ont promis", "« " + m + " »", "Vous l’avez reçu parce que vous avez promis de passer.");
       else signaler("c", "message envoyé au carnet (vous ne l’avez pas reçu : vous n’avez pas promis).");
       rendreTout();
@@ -1963,7 +1835,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     $("#fete").addEventListener("click", () => $("#fete").classList.remove("on"));
     // la page
     $("#lendemain").addEventListener("click", () => { ac(); lendemain(); if (estEtroit()) montrerCol("h"); });
-    $("#zero").addEventListener("click", () => { clearTimeout(minuterie); fermerBulle(); planifierDore(); S = etatInitial(true); $("#porte").value = S.porte; for (const sc of [scH, scC, scP, scI, scA]) construireScene(sc, sc !== scH); peupler(); rendreTout(); source(S.source); feuille(null); $("#act-note").textContent = "Un appel par jour au plus, et seulement au carnet : jamais à toute la ville."; planifier(); });
+    $("#zero").addEventListener("click", () => { clearTimeout(minuterie); fermerBulle(); S = etatInitial(true); $("#info").value = S.info; for (const sc of [scH, scC, scP, scI, scA]) construireScene(sc, sc !== scH); peupler(); rendreTout(); source(S.source); feuille(null); $("#act-note").textContent = "Un message par jour au plus, et seulement à ceux qui ont promis : jamais à toute la ville."; planifier(); });
     $("#son").addEventListener("click", () => { sonOn = !sonOn; $("#son span").textContent = "Son : " + (sonOn ? "oui" : "non"); if (sonOn) { ac(); SON.pop(); } });
     $$(".onglets button").forEach((b) => b.addEventListener("click", () => montrerCol(b.dataset.col)));
     $("#toast-voir").addEventListener("click", () => montrerCol($("#toast").dataset.col || "c"));
@@ -1980,6 +1852,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   S.pret = deja;
   rendreTout();
   vue(deja ? "h-video" : "h-onb");
-  planifier(); planifierDore();
+  planifier();
 })();
 </script>
