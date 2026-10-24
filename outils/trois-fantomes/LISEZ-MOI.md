@@ -109,8 +109,19 @@ Les images viennent du dépôt : les fantômes des habitants (`public/direct/ens
 salle et le fantôme de Chez Bergine, l'affiche et la vidéo de l'interview (`a/interview.mp4` est un lien vers
 `outils/tour-du-fantome/tour/interview.mp4`).
 
-Pour l'essayer en local :
+## L'essayer, le publier
+
+Il est publié (privé) sur https://claude.ai/artifact/GzdV7YsCpbRwXYzYce4Ae6 : on republie `index.html` sur ce même
+lien, avec dans `files` les images ou vidéos nouvelles. En local :
 
 ```sh
-python3 -m http.server 8791 --directory outils/trois-fantomes
+python3 -m http.server 8791 --directory outils/trois-fantomes &
+node outils/trois-fantomes/essai.mjs <dossier de sortie> promis 1400x950 '[[500,"shot","vitrine"],[300,"click","#vers-maison"],[1500,"shot","ma-maison"]]'
 ```
+
+`essai.mjs` choisit une cage (`adore`, `promis` ou `table`), puis joue les appuis donnés en photographiant la page ;
+il doit finir sur « aucune erreur ». À 1400 de large, l'habitant et le comptoir sont côte à côte ; sur téléphone,
+un onglet chacun (`[data-col=c]` pour le comptoir).
+
+Pour reprendre ce travail depuis une autre session ou un autre compte : voir « Reprendre le travail » dans
+`outils/tour-du-fantome/LISEZ-MOI.md` (accès, partage des pages, façon de travailler, règles).
