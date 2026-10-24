@@ -10,7 +10,11 @@ TEXTES = {
     "intro-2b": f"Pourtant, c’est essentiel{NB}: des vidéos partagées avec le cœur créent de la sympathie, et la sympathie crée la fidélité. Vos clients s’attachent à vous, naturellement.",
     "intro-3": "Moi, je suis votre fantôme. Je raconte à votre place.",
     "intro-4": "Et une histoire, ça se partage.",
-    "intro-4b": "Et ça tombe plutôt bien, parce qu’au-delà de monter des vidéos, je sais surtout les raconter et créer l’envie de les partager.",
+    # « je fais réagir » (à la place de « …je sais surtout les raconter et créer l’envie de les partager »)
+    "intro-4c": "Une belle vidéo, tout le monde sait en faire. Moi, je fais réagir.",
+    "intro-4d": f"À la fin de votre vidéo, chacun libère son fantôme de sa cage. Et c’est là que mon vrai travail commence{NB}: je leur pose des questions, je les fais parler de vous.",
+    "intro-4e": f"Sur Instagram, vous voyez qui a aimé. Mais écrire à chacun pour créer du lien, qui a le temps{NB}?",
+    "intro-4f": "Moi, je le fais. Chacun par son prénom, au bon moment. Si bien que le jour où ils poussent votre porte, ils se sentent déjà comme des habitués.",
     "intro-5": "Vos voisins commerçants sont à deux pas, et vous n’en profitez pas. Avec moi, vous vous échangez vos produits et vos services.",
     "intro-6": "Regardons tout ça de plus près.",
 }

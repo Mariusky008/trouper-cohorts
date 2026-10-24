@@ -47,9 +47,10 @@ python3 -I $D/outils/tour-depenses.py $D    # + « Moins de dépenses » : la qu
 python3 -I $D/outils/tour-sien.py $D        # + son nom (« Pour qui est cette démo ? ») et son temps (le ticket de « Plus de clients »)
 python3 -I $D/outils/tour-dax.py $D         # + sous le projecteur, combien de Dacquois cherchent ce qu'il vend (sauf le restaurant)
 python3 -I $D/outils/tour-trois.py $D       # + « Les trois fantômes » et « Mike, votre assistant » (restaurant, vêtements, coiffure)
+python3 -I $D/outils/tour-pause.py $D       # + le bouton pause (les six tours)
 ```
 
-Les neuf scripts se lancent **dans cet ordre**. Le tour lunetier a d'abord sa propre base, tirée de celle de la
+Les dix scripts se lancent **dans cet ordre**. Le tour lunetier a d'abord sa propre base, tirée de celle de la
 bijouterie : `python3 -I $D/outils/tour-lunettes.py $D` (ses images, ses voix mesurées, sa page de base), à
 relancer avant la chaîne si l'on change la bijouterie ou ses textes. Chacun repart de `index.avant-episode2.html`, on peut
 donc les relancer autant qu'on veut. Conséquence : une retouche faite à la main dans `index.html` est
@@ -126,13 +127,34 @@ fantômes des habitants (`tf/`), l'intérieur (`tf-interieur.webp`) et son fant�
 **L'intro** : « Qui a le temps de filmer, monter, publier et animer les réseaux sociaux ? » (nouvel enregistrement) a
 une quatrième tuile, « Animer les réseaux sociaux », qui s'allume sur « animer ». La voix étire « de… » avant
 « filmer » : le repérage automatique se trompait d'un demi-temps, donc les instants de ses mots sont relevés à
-l'écoute (`CALES` dans `outils/mesurer-intro2.py`). Dans « Et ça tombe plutôt bien… »
-(`intro-4b`), le début est prononcé très vite dans l'enregistrement. Le « ding » de la phrase d'avant tombait dessus ;
-il est maintenant joué avant, et la pause entre les deux phrases est plus longue.
+l'écoute (`CALES` dans `outils/mesurer-intro2.py`).
+
+**« Je fais réagir »** (à la place de « Et ça tombe plutôt bien… je sais surtout les raconter et créer l'envie de les
+partager », `intro-4b`, qui ne sert plus) : ce qui fait la différence avec une vidéo ordinaire, en quatre voix et trois
+scènes, après « Et une histoire, ça se partage. »
+- `intro-4c` « Une belle vidéo, tout le monde sait en faire. Moi, je fais réagir. » : sur la fin de la vidéo, l'écran
+  s'assombrit et la carte « Et vous ? » arrive avec ses trois cages (le dessin de l'étape des trois fantômes).
+- `intro-4d` « À la fin de votre vidéo, chacun libère son fantôme de sa cage. Et c'est là que mon vrai travail
+  commence : je leur pose des questions, je les fais parler de vous. » : les portes s'ouvrent, les fantômes montent ;
+  ses questions (« C'est pour offrir ? »), puis leurs réponses (« Pour ma sœur 🎁 »).
+- `intro-4e` « Sur Instagram, vous voyez qui a aimé. Mais écrire à chacun pour créer du lien, qui a le temps ? » : la
+  liste des j'aime, un « Répondre » sur chacun, puis « Pas le temps. » (comme au début de l'intro).
+- `intro-4f` « Moi, je le fais. Chacun par son prénom, au bon moment. Si bien que le jour où ils poussent votre porte,
+  ils se sentent déjà comme des habitués. » : ses messages à Camille, Mehdi et Sophie, puis la porte du commerce
+  (son nom en enseigne), et « Déjà des habitués ».
+Les fantômes des cages sont ceux des habitants (`outils/trois-fantomes/a/g`), copiés dans chaque tour en `si-g1` à
+`si-g3`. La barre de l'intro a une case par réplique : 9 au chapitre 1, 2 au chapitre 2.
+
+**La pause** (`tour-pause.py`) : un bouton ⏸ en haut de l'intro (à côté de « Passer ») et dans la barre du bas de la
+démo (à côté de « i ») ; au clavier, Espace ou P. Pour répondre à une question du commerçant : la page entière se fige
+(sa voix, ses mots, ses animations, les films, les minuteries) et « Reprendre » la relance au même instant. Pendant la
+pause, un voile retient les appuis. Le script remplace, avant tout le reste, les minuteries de la page par des
+minuteries qui savent s'arrêter, ignore le temps passé en pause (`performance.now`, `requestAnimationFrame`),
+suspend le contexte audio, et met en pause les animations CSS et les films en cours.
 
 Pour une nouvelle voix de l'intro : remplacer `voix-intro/court/<nom>.mp3`, mettre son texte dans
 `outils/mesurer-intro2.py` (et dans `tour-intro3.py`), lancer `python3 -I $D/outils/mesurer-intro2.py $D`,
-puis les neuf scripts.
+puis les dix scripts. (Il appelle `python3` lui-même : celui du `PATH` doit avoir numpy.)
 
 ## Les films du lunetier
 
@@ -161,6 +183,7 @@ node $D/outils/essai-etape.mjs <dossier de sortie> tour 414x747 direct 28  # une
 node $D/outils/essai-fins.mjs <dossier de sortie>/                         # les deux fins de conversation
 node $D/outils/essai-parcours.mjs <dossier de sortie> tour 414x747 clients voix   # toute la démo, comme un commerçant
 node $D/outils/essai-actions.mjs <dossier de sortie> tour 414x747 clients creux 60 '[[1000,"quand","#mk-oui"],[1000,"quand","#tv-envoyer"]]'
+node $D/outils/essai-pause.mjs <dossier de sortie> tour                       # la pause : dans l'intro, puis pendant que Mike parle
 ```
 
 `essai-parcours.mjs` joue toute la page 2 (vue `clients` ou `depenses`, façon `voix`, `spe` ou `episode`) en

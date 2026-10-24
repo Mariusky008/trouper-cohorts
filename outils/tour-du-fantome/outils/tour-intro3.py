@@ -49,6 +49,8 @@ AVANT = {"tour": ("m3.jpg", "Plat du jour : magret grillé, pommes sarladaises."
 # Le restaurant n'avait pas de fantôme qui salue : c'est celui de la page d'accueil, le même dessin.
 SALUE_RESTO = f"{S}/accueil2/page/g-restaurant-salue.webp"
 VOIX = f"{S}/voix-intro/court"
+# Les fantômes des habitants dans les trois cages de « je fais réagir » (outils/trois-fantomes/a/g).
+FANTOMES_CAGES = ["cosy-debout", "fleuri-debout", "curieux-debout"]
 
 CSS = r"""
 /* ═══ L'INTRO : SON FANTÔME LUI RACONTE ═══
@@ -372,10 +374,10 @@ CSS = r"""
   font-size:12.5px;font-weight:800;color:#fff;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);opacity:0;transform:translateX(-50%) translateY(-6px);transition:opacity .4s,transform .5s var(--ressort)}
 .si-chap b{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:900;color:#140a06;background:linear-gradient(135deg,var(--acc),var(--acc2))}
 .intro.si-chap-la .si-chap{opacity:1;transform:translateX(-50%)}
-.si-progres i:nth-child(7){margin-left:9px}
+.si-progres i:nth-child(10){margin-left:9px}
 @media (max-height:780px){.intro{--fant:clamp(96px,min(34vw,17vh),190px)}}
-.si-progres i:nth-child(7)::after{background:linear-gradient(90deg,#f6b54b,#ffd27a)}
-.si-progres i:nth-child(8){margin-left:9px}
+.si-progres i:nth-child(n+10)::after{background:linear-gradient(90deg,#f6b54b,#ffd27a)}
+.si-progres i:nth-child(11){margin-left:9px}
 .intro.si-c2 .si-bulle .fx-cle{background-image:linear-gradient(90deg,#f6b54b,#ffd27a)}
 .intro.si-c2 .si-fant::before{background:radial-gradient(closest-side,rgba(246,181,75,.34),transparent)}
 .intro.si-c2 .si-sol{background:radial-gradient(closest-side,rgba(246,181,75,.55),rgba(246,181,75,.12) 65%,transparent)}
@@ -467,6 +469,116 @@ CSS = r"""
 @media (prefers-reduced-motion:reduce){
   .si-aurore i,.si-flotte,.si-fant::before,.si-sol,.s-direct,.s3-halo,.s-av::before,.s5-radar,.s6-jouer::before,.s6-jouer::after,.s1.vu .s1-carte,.s3.fete .s-tel{animation:none!important}
 }
+/* ④c–④f « JE FAIS RÉAGIR » : ce qui fait la différence avec une vidéo ordinaire. Les trois cages sur la fin
+   de sa vidéo (le dessin de l'étape des trois fantômes) ; chacun libère son fantôme, qui répond à ses
+   questions ; Instagram et ses j'aime auxquels personne n'a le temps de répondre ; ses messages, chacun par
+   son prénom, et la porte qu'on pousse comme un habitué. */
+.s7{--pw:min(68cqw,calc((100cqh - 100px) / 1.7375));--py:calc(50% - 6px);--ph:calc(var(--pw) * 1.7375);z-index:5;pointer-events:none}
+/* la fin de sa vidéo : l'écran s'assombrit sous la carte « Et vous ? » */
+.s7-voile{position:absolute;left:50%;top:var(--py);width:calc(var(--pw) - var(--ph) * .03);height:calc(var(--ph) * .97);transform:translate(-50%,-50%);border-radius:calc(var(--ph) * .1);
+  background:linear-gradient(180deg,rgba(12,5,9,.42),rgba(12,5,9,.8));opacity:0;transition:opacity .5s}
+.s7.on .s7-voile{opacity:1}
+.s7-carte{position:absolute;left:50%;top:calc(var(--py) + var(--ph) * .03);width:calc(var(--pw) * .92);padding:.6em .45em .75em;border-radius:1.2em;text-align:center;
+  font-size:calc(var(--pw) * .052);color:#FFF4E6;background:linear-gradient(180deg,rgba(30,16,23,.62),rgba(16,8,12,.94));border:1px solid rgba(255,255,255,.13);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 18px 40px -16px rgba(0,0,0,.85);opacity:0;transform:translate(-50%,14px) scale(.94);
+  transition:opacity .35s,transform .7s var(--ressort)}
+.s7.on .s7-carte{opacity:1;transform:translate(-50%,0)}
+.s7-titre{display:block;margin-bottom:.35em;font-size:1.3em;font-weight:900}
+.s7-rang{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.25em}
+.s7-f3{position:relative;display:flex;flex-direction:column;align-items:center}
+.s7-f3.adore{--c:#FF2E9A}.s7-f3.promis{--c:#F5A23A}.s7-f3.auj{--c:#3DE2A6}
+.s7-f3>b{margin-top:.35em;font-size:.86em;font-weight:800;white-space:nowrap}
+.s7-cg{position:relative;display:flex;flex-direction:column;align-items:center;width:78%;transform-origin:50% 0;animation:s7-balance 3.6s ease-in-out infinite}
+.s7-f3.promis .s7-cg{animation-delay:-1.2s}.s7-f3.auj .s7-cg{animation-delay:-2.4s}
+@keyframes s7-balance{0%,100%{transform:rotate(-2.2deg)}50%{transform:rotate(2.2deg)}}
+.s7-anneau{position:relative;z-index:2;width:1.1em;height:1.1em;margin-bottom:-.22em;border-radius:50%;border:.18em solid #E8C77A}
+.s7-noeud{position:absolute;top:.95em;left:50%;z-index:5;width:1.9em;height:.88em;margin-left:-.95em;
+  background:radial-gradient(ellipse 45% 48% at 22% 50%,var(--c) 96%,transparent),radial-gradient(ellipse 45% 48% at 78% 50%,var(--c) 96%,transparent),radial-gradient(circle at 50% 50%,var(--c) 30%,transparent 33%)}
+.s7-dome{position:relative;width:100%;aspect-ratio:.86;overflow:hidden;border:.18em solid #E8C77A;border-bottom:0;border-radius:50% 50% 10% 10% / 44% 44% 6% 6%;
+  background:radial-gradient(ellipse 70% 55% at 50% 42%,rgba(255,226,180,.2),transparent 72%),rgba(255,244,230,.035)}
+.s7-dome::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:repeating-linear-gradient(90deg,transparent 0 calc(16.66% - 1.4px),rgba(232,199,122,.85) calc(16.66% - 1.4px) 16.66%)}
+.s7-dome::after{content:"";position:absolute;left:0;right:0;top:36%;height:2px;z-index:3;background:rgba(232,199,122,.9)}
+.s7-dome img{position:absolute;left:50%;bottom:4%;z-index:2;height:70%;width:auto;transform:translateX(-50%);filter:drop-shadow(0 4px 4px rgba(0,0,0,.45));transition:opacity .2s}
+.s7-porte{position:absolute;left:29%;width:42%;bottom:0;height:54%;z-index:4;border:.18em solid #E8C77A;border-bottom:0;border-radius:45% 45% 0 0 / 35% 35% 0 0;transform-origin:0 50%;
+  background:repeating-linear-gradient(90deg,transparent 0 calc(33.3% - 1.4px),rgba(232,199,122,.95) calc(33.3% - 1.4px) 33.3%),rgba(20,12,9,.12);transition:transform .45s cubic-bezier(.3,1.4,.5,1)}
+.s7-socle{width:110%;height:.9em;margin-top:-1px;border-radius:.4em;background:linear-gradient(#F3DFA0,#B38A3A);box-shadow:0 .45em .8em -.3em rgba(0,0,0,.65),inset 0 -.3em 0 var(--c)}
+.s7.libere .s7-porte{transform:perspective(160px) rotateY(-118deg);transition-delay:calc(var(--k) * .12s)}
+.s7.libere .s7-dome img{opacity:0;transition-delay:calc(.15s + var(--k) * .12s)}
+/* il sort, monte au-dessus de la carte ; sa bulle : la question de son fantôme, puis sa réponse */
+.s7-envol{position:absolute;z-index:6;left:50%;top:1.5em;width:calc(var(--pw) * .17);opacity:0;transform:translate(-50%,0) scale(.55);
+  transition:opacity .25s calc(.15s + var(--k) * .12s),transform 1s var(--ressort) calc(.15s + var(--k) * .12s)}
+.s7-envol img{display:block;width:100%;height:auto;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5))}
+.s7.libere .s7-envol{opacity:1;transform:translate(-50%,calc(var(--ph) * -.24)) scale(1)}
+.s7.libere .s7-f3.promis .s7-envol{transform:translate(-50%,calc(var(--ph) * -.4)) scale(1)}
+.s7.libere .s7-envol img{animation:s7-bob 2.4s ease-in-out 1.2s infinite}
+@keyframes s7-bob{50%{transform:translateY(-8%)}}
+.s7-q,.s7-r{position:absolute;left:50%;bottom:calc(100% + 4px);width:max-content;max-width:calc(var(--pw) * .34);padding:.36em .55em;font-size:calc(var(--pw) * .046);font-weight:800;line-height:1.2;
+  text-align:center;transform:translateX(-50%) scale(0);transform-origin:50% 100%;transition:transform .5s var(--ressort) calc(var(--k) * .16s)}
+.s7-q{display:flex;align-items:center;gap:.35em;border-radius:.9em .9em .9em .25em;color:#fff;background:linear-gradient(135deg,#FF4FAE,#E0167A);box-shadow:0 8px 18px -8px rgba(255,46,154,.8)}
+.s7-q img{width:1.5em;height:1.5em;flex:none;object-fit:contain;border-radius:50%;background:#FFF4E6}
+.s7-r{border-radius:.9em .9em .25em .9em;color:#2A1A10;background:#FFF4E6;box-shadow:0 8px 18px -8px rgba(0,0,0,.7)}
+.s7.demande .s7-q{transform:translateX(-50%) scale(1)}
+.s7.parle .s7-q{transform:translateX(-50%) scale(0);transition-delay:0s}
+.s7.parle .s7-r{transform:translateX(-50%) scale(1);transition-delay:calc(.2s + var(--k) * .2s)}
+
+.s8{z-index:4}
+.s8-carte{position:absolute;left:50%;top:50%;width:min(88cqw,340px);padding:12px 10px 10px;border-radius:22px;color:#fff;
+  background:linear-gradient(180deg,rgba(54,32,44,.97),rgba(26,14,20,.97));border:1px solid rgba(255,255,255,.12);box-shadow:0 24px 60px -20px rgba(0,0,0,.85);
+  opacity:0;transform:translate(-50%,-50%) translateY(16px) scale(.96);transition:opacity .4s,transform .7s var(--ressort)}
+.s8.on .s8-carte{opacity:1;transform:translate(-50%,-50%)}
+.s8-tete{display:flex;align-items:baseline;justify-content:space-between;margin:0 6px 6px}
+.s8-tete b{font-size:15px;font-weight:800;letter-spacing:-.01em}
+.s8-tete span{font-size:12px;font-weight:700;color:rgba(255,255,255,.5)}
+.s8-ligne{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:9px;padding:6px;border-radius:12px;font-size:12.5px;line-height:1.25;
+  opacity:0;transform:translateX(-14px);transition:opacity .3s calc(var(--k) * .09s),transform .5s var(--ressort) calc(var(--k) * .09s),filter .5s}
+.s8.aime .s8-ligne{opacity:1;transform:none}
+.s8-ligne .s4-av{width:30px;height:30px}
+.s8-ligne span{min-width:0;color:rgba(255,255,255,.82)}
+.s8-ligne strong{font-weight:800;color:#fff}
+.s8-ligne i{font-style:normal;color:#FF5D8F}
+.s8-ligne small{position:relative;display:grid;place-items:center;min-width:64px;font-size:11px;font-weight:700;color:rgba(255,255,255,.45)}
+.s8-ligne small em{position:absolute;inset:-3px 0;display:grid;place-items:center;border-radius:999px;font-style:normal;font-weight:800;color:#fff;
+  background:rgba(255,255,255,.12);border:1px dashed rgba(255,255,255,.4);opacity:0;transform:scale(.6);transition:opacity .25s calc(var(--k) * .12s),transform .45s var(--ressort) calc(var(--k) * .12s)}
+.s8.ecrit .s8-ligne small em{opacity:1;transform:none}
+.s8-plus{margin:6px 6px 0;font-size:12px;font-weight:700;color:rgba(255,255,255,.5);opacity:0;transition:opacity .4s .55s}
+.s8.aime .s8-plus{opacity:1}
+.s8.rien .s8-ligne{filter:grayscale(1) brightness(.6)}
+.s8-verdict{position:absolute;left:50%;top:50%;padding:.28em .85em;border-radius:999px;white-space:nowrap;font-weight:900;font-size:clamp(18px,6cqmin,30px);color:#fff;
+  background:linear-gradient(135deg,#FF2E9A,#FF8A3D);box-shadow:0 0 0 4px rgba(11,3,6,.9),0 14px 34px -10px rgba(255,46,154,.9);transform:translate(-50%,-50%) rotate(-4deg) scale(0);
+  transition:transform .6s var(--ressort) .2s}
+.s8.rien .s8-verdict{transform:translate(-50%,-50%) rotate(-4deg)}
+
+.s9{z-index:4}
+.s9-fil{position:absolute;left:50%;top:50%;width:min(88cqw,340px);display:grid;gap:10px;transform:translate(-50%,-50%);transition:opacity .4s,transform .6s var(--ressort)}
+.s9.porte .s9-fil{opacity:0;transform:translate(-50%,-62%) scale(.92)}
+.s9-msg{display:flex;align-items:center;gap:10px;padding:9px 12px 9px 9px;border-radius:18px;text-align:left;
+  background:linear-gradient(180deg,rgba(62,36,49,.96),rgba(36,19,27,.96));border:1px solid rgba(255,255,255,.12);box-shadow:0 16px 34px -18px rgba(0,0,0,.8);
+  opacity:0;transform:translateY(16px) scale(.9);transition:opacity .35s calc(var(--k) * .3s),transform .7s var(--ressort) calc(var(--k) * .3s)}
+.s9.ecrit .s9-msg{opacity:1;transform:none}
+.s9-msg>img{width:36px;height:36px;flex:none;object-fit:contain;border-radius:50%;background:#FFF4E6;padding:2px}
+.s9-msg span{display:grid;gap:2px;min-width:0}
+.s9-msg small{font-size:11px;font-weight:700;color:rgba(255,255,255,.55)}
+.s9-msg small b{color:#fff}
+.s9-msg em{font-style:normal;font-size:13.5px;font-weight:700;line-height:1.3;color:#fff}
+.s9-msg em i{font-style:normal;font-weight:900;background:linear-gradient(90deg,#FF5DB8,#FFB347);-webkit-background-clip:text;background-clip:text;color:transparent}
+.s9-porte{position:absolute;left:50%;top:50%;display:flex;flex-direction:column;align-items:center;width:min(60cqmin,240px);opacity:0;transform:translate(-50%,-50%) scale(.9);
+  transition:opacity .45s .15s,transform .8s var(--ressort) .15s}
+.s9.porte .s9-porte{opacity:1;transform:translate(-50%,-50%)}
+.s9-enseigne{max-width:100%;margin-bottom:10px;padding:6px 14px;border-radius:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:900;font-size:14px;color:#FFD9A0;
+  background:linear-gradient(180deg,#3B1E2B,#22111A);border:1px solid rgba(255,214,140,.5);box-shadow:0 0 22px rgba(255,180,90,.25)}
+.s9-cadre{position:relative;width:58%;aspect-ratio:.62;border-radius:14px 14px 4px 4px;background:linear-gradient(#2A1E1A,#1A100C);box-shadow:inset 0 0 0 4px #C9A45C,0 20px 40px -14px rgba(0,0,0,.8)}
+.s9-vitre{position:absolute;left:14%;right:14%;top:8%;height:46%;border-radius:8px;background:radial-gradient(ellipse at 50% 85%,#FFC27A,#B9652B 58%,#4A1E10);
+  box-shadow:inset 0 0 14px rgba(0,0,0,.55);transition:filter .6s}
+.s9.habitue .s9-vitre{filter:brightness(1.4) saturate(1.2)}
+.s9-poignee{position:absolute;right:12%;top:60%;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFE6A6,#B98A2E)}
+.s9-av{position:relative;z-index:2;display:flex;gap:6px;margin-top:-20px}
+.s9-av b{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;font-weight:900;font-size:13px;color:#fff;background:var(--c);box-shadow:0 0 0 3px rgba(20,10,14,.9);
+  opacity:0;transform:translateY(40px) scale(.6);transition:opacity .3s calc(.4s + var(--k) * .15s),transform .7s var(--ressort) calc(.4s + var(--k) * .15s)}
+.s9.porte .s9-av b{opacity:1;transform:none}
+.s9-badge{margin-top:12px;padding:7px 15px;border-radius:999px;white-space:nowrap;font-weight:900;font-size:15px;color:#2A1406;background:linear-gradient(135deg,#FFE08A,#E7A52E);
+  box-shadow:0 10px 26px -8px rgba(231,165,46,.8);transform:rotate(-4deg) scale(0);transition:transform .6s var(--ressort)}
+.s9.habitue .s9-badge{transform:rotate(-4deg)}
+@media (prefers-reduced-motion:reduce){.s7-cg,.s7.libere .s7-envol img{animation:none}}
 """
 
 HTML_DEVISE = '  <p class="devise">Vous faites. <em>Votre fantôme raconte.</em></p>\n'
@@ -480,7 +592,7 @@ HTML_INTRO = """  <div class="intro" id="intro" hidden>
     <div class="si-aurore si-aurore-or" aria-hidden="true"><i></i><i></i><i></i></div>
     <div class="si-haut">
       <img src="logo.png" alt="ClikMe">
-      <div class="si-progres" id="si-progres" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="si-progres" id="si-progres" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <button type="button" class="intro-passer" id="intro-passer">Passer ›</button>
     </div>
     <div class="si-chap" id="si-chap" aria-live="polite"></div>
@@ -524,6 +636,7 @@ JS_DONNEES = r"""
   };
   const decorIntro = (sel) => { const d = $("#si-decor"); return sel ? d.querySelector(sel) : d; };
   const iAllume = (sel, cls = "on") => () => { const e = decorIntro(sel); if (e) e.classList.add(cls); };
+  const iEteins = (sel, ...cls) => () => { const e = decorIntro(sel); if (e) e.classList.remove(...cls); };
   const iGeste = (cls, ms) => () => { const f = $("#si-fant"); f.classList.add(cls); if (ms) setTimeout(() => f.classList.remove(cls), ms); };
   const iSon = (n) => () => son(n);
   const iTout = (...fs) => () => fs.forEach((f) => f());
@@ -560,6 +673,14 @@ JS_DONNEES = r"""
   }); };
   const I_AMIS = [["C", "linear-gradient(135deg,#FF2E9A,#FF8A3D)", "Camille", "Regarde ce que fait " + INTRO_QUI + NB + "!"],
     ["M", "linear-gradient(135deg,#7C4DFF,#FF5DB8)", "Mehdi", "Trop beau 😍"], ["S", "linear-gradient(135deg,#2FBF8F,#3DA8E2)", "Sophie", "On y va samedi" + NB + "?"]];
+  // ④d ses questions, une fois sortis de leur cage, et leurs réponses ; ④e qui a aimé, sur Instagram (des comptes
+  // inventés) ; ④f ce qu'il leur écrit, chacun par son prénom, au bon moment
+  const I_CAGES = [["adore", "J’adore"], ["promis", "Je viendrai"], ["auj", "Aujourd’hui"]];
+  const I_QUESTIONS = ["Qu’est-ce qui t’a plu" + NB + "?", "C’est pour offrir" + NB + "?", "Tu passes quand" + NB + "?"];
+  const I_REPONSES = ["Tout" + NB + "! 😍", "Pour ma sœur 🎁", "Samedi, avec Léa" + NB + "!"];
+  const I_LIKES = [["camille.dx", "linear-gradient(135deg,#FF2E9A,#FF8A3D)", 2], ["mehdi_b", "linear-gradient(135deg,#7C4DFF,#FF5DB8)", 5],
+    ["sophie.lmr", "linear-gradient(135deg,#2FBF8F,#3DA8E2)", 9], ["thomas_40", "linear-gradient(135deg,#F5A23A,#FF5D5D)", 14], ["ines.dax", "linear-gradient(135deg,#3DA8E2,#7C4DFF)", 21]];
+  const I_MOTS = ["c’est le moment" + NB + ": il en reste trois" + NB + "!", "tu passes samedi" + NB + "?", "ton amie Léa vient aussi 😊"];
   const DECORS_INTRO = {
     moments: () => '<div class="s1"><div class="s1-chip verre"><i class="s-direct"></i>Aujourd’hui · ' + INTRO_LIEU + "</div>" +
       INTRO_MOMENTS.map(([s, l], k) => '<figure class="s1-carte" data-k="' + k + '"><div class="s1-ph"><img src="' + s + '" alt=""></div><figcaption>' + l + "</figcaption></figure>").join("") +
@@ -600,6 +721,22 @@ JS_DONNEES = r"""
         "</b><span><strong>" + nom + "</strong><small>maintenant</small><em>" + t + "</em></span></div>").join("") +
       Array.from({ length: 10 }, (_, k) => '<svg class="s4-coeur" viewBox="0 0 24 24" aria-hidden="true" style="--dx:' + Math.round(Math.sin(k * 2.3) * 70) + "px;--s:" + (16 + (k * 7) % 16) +
         "px;--r:" + ((k * 37) % 60 - 30) + "deg;--d:" + (0.1 + k * 0.11).toFixed(2) + 's"><use href="#si-coeur"/></svg>').join("") + "</div>",
+    // ④c ④d les trois cages, sur la fin de sa vidéo ; chacun libère son fantôme, qui monte lui répondre
+    cages: () => '<div class="s7"><span class="s7-voile"></span><div class="s7-carte"><b class="s7-titre">Et vous' + NB + '?</b><div class="s7-rang">' +
+      I_CAGES.map(([c, l], k) => '<div class="s7-f3 ' + c + '" style="--k:' + k + '"><span class="s7-cg"><i class="s7-anneau"></i><i class="s7-noeud"></i><span class="s7-dome"><img src="si-g' + (k + 1) +
+        '.webp" alt=""><i class="s7-porte"></i></span><i class="s7-socle"></i></span><b>' + l + '</b><span class="s7-envol"><span class="s7-q"><img src="' + INTRO_FANT + '" alt="">' +
+        I_QUESTIONS[k] + '</span><span class="s7-r">' + I_REPONSES[k] + '</span><img src="si-g' + (k + 1) + '.webp" alt=""></span></div>').join("") + "</div></div></div>",
+    // ④e qui a aimé, sur Instagram : il faudrait répondre à chacun… et personne n'a le temps
+    instagram: () => '<div class="s8"><div class="s8-carte"><div class="s8-tete"><b>Instagram</b><span>Vos j’aime</span></div>' +
+      I_LIKES.map(([nom, c, min], k) => '<div class="s8-ligne" style="--k:' + k + '"><b class="s4-av" style="--c:' + c + '">' + nom[0].toUpperCase() + "</b><span><strong>" + nom +
+        "</strong> <i>♥</i> a aimé votre vidéo</span><small>" + min + " min<em>Répondre</em></small></div>").join("") +
+      '<div class="s8-plus">+ 42 autres j’aime</div></div><span class="s8-verdict">Pas le temps.</span></div>',
+    // ④f ses messages, chacun par son prénom ; puis la porte qu'ils poussent, comme des habitués
+    prenoms: () => '<div class="s9"><div class="s9-fil">' +
+      I_AMIS.map(([l, c, nom], k) => '<div class="s9-msg" style="--k:' + k + '"><img src="' + INTRO_FANT + '" alt=""><span><small>Votre fantôme → <b>' + nom + "</b></small><em><i>" + nom + "</i>, " +
+        I_MOTS[k] + "</em></span></div>").join("") + "</div>" +
+      '<div class="s9-porte"><span class="s9-enseigne">' + INTRO_LIEU + '</span><span class="s9-cadre"><i class="s9-vitre"></i><i class="s9-poignee"></i></span>' +
+      '<span class="s9-av">' + I_AMIS.map(([l, c], k) => '<b style="--c:' + c + ";--k:" + k + '">' + l + "</b>").join("") + '</span><span class="s9-badge">⭐ Déjà des habitués</span></div></div>',
     voisins: () => {
       const ou = [[20, 24], [80, 24], [20, 70], [80, 70]], cx = 50, cy = 47;
       const arc = ([x, y]) => { const dx = x - cx, dy = y - cy; return "M" + cx + " " + cy + " Q" + ((cx + x) / 2 - dy * 0.25).toFixed(1) + " " + ((cy + y) / 2 + dx * 0.25).toFixed(1) + " " + x + " " + y; };
@@ -642,11 +779,25 @@ JS_DONNEES = r"""
     { nom: "intro-4", x: 50, decor: "partage", garde: true, apres: 750, debut: iTout(iAllume(".s3", "chiffres"), iSon("pop"), iPuis(700, iCompte(".s-stats", 3200))), dit: "Et une histoire, ça se *partage.",
       mots: { histoire: iTout(iAllume(".s3", "aime"), iSon("pop")),
         partage: iTout(iAllume(".s4", "vole"), iAllume(".s3", "envoie"), iSon("carte"), iPuis(450, iTout(iAllume(".s3", "gagne"), iSon("ding")))) } },
-    // « Il manque du texte » : la suite, pendant que la vidéo reste à l'écran ; ClikMe s'illumine sur
-    // « raconter », une nouvelle volée de cœurs part sur « partager ».
-    { nom: "intro-4b", x: 50, garde: true, apres: 2000,
-      dit: "Et ça tombe plutôt bien, parce qu’au-delà de monter des vidéos, je sais surtout les *raconter et créer l’envie de les *partager.",
-      mots: { raconter: iTout(iAllume(".s3", "brille"), iSon("magie")), partager: iTout(iAllume(".s4", "vole2"), iSon("carte")) } },
+    // « On ne sait pas pourquoi ni comment il donne envie de les partager » : ce qui fait la différence avec une
+    // vidéo ordinaire. Il fait réagir (les trois cages, sur la fin de la vidéo) ; chacun libère son fantôme et
+    // répond à ses questions ; sur Instagram, on voit qui a aimé, mais personne n'a le temps d'écrire à chacun ;
+    // lui le fait, par leur prénom, et ils poussent la porte comme des habitués.
+    { nom: "intro-4c", x: 50, decor: "cages", garde: true, apres: 300, debut: iEteins(".s4", "vole", "vole2"),
+      dit: "Une belle vidéo, tout le monde sait en faire. Moi, je fais *réagir.",
+      mots: { moi: iGeste("saute", 800), "réagir": iTout(iAllume(".s7"), iSon("pop")) } },
+    { nom: "intro-4d", x: 50, garde: true, apres: 700,
+      dit: "À la fin de votre vidéo, chacun *libère son fantôme de sa cage. Et c’est là que mon vrai travail commence" + NB + ": je leur pose des *questions, je les fais *parler de vous.",
+      mots: { "libère": iTout(iAllume(".s7", "libere"), iSon("magie")), commence: iGeste("saute", 800), questions: iTout(iAllume(".s7", "demande"), iSon("pop")),
+        parler: iTout(iAllume(".s7", "parle"), iSon("carte")) } },
+    { nom: "intro-4e", x: 50, decor: "instagram", apres: 900, debut: iAllume(".s8"),
+      dit: "Sur Instagram, vous voyez qui a *aimé. Mais écrire à *chacun pour créer du lien, qui a le *temps" + NB + "?",
+      mots: { "aimé": iTout(iAllume(".s8", "aime"), iSon("pop")), chacun: iTout(iAllume(".s8", "ecrit"), iSon("declic")),
+        temps: iTout(iAllume(".s8", "rien"), iGeste("inquiet", 900), iSon("choc")) } },
+    { nom: "intro-4f", x: 50, decor: "prenoms", apres: 1600,
+      dit: "Moi, je le fais. Chacun par son *prénom, au bon moment. Si bien que le jour où ils poussent votre *porte, ils se sentent déjà comme des *habitués.",
+      mots: { moi: iTout(iGeste("saute", 800), iSon("magie")), "prénom": iTout(iAllume(".s9", "ecrit"), iSon("pop")), porte: iTout(iAllume(".s9", "porte"), iSon("glissement")),
+        "habitués": iTout(iAllume(".s9", "habitue"), iGeste("salue", 1500), iSon("ding")) } },
     { chapitre: 2, nomChap: "Moins de dépenses", titre: "Moins de <em>dépenses</em>", sous: "Grâce à vos commerçants voisins." },
     { nom: "intro-5", x: 60, decor: "voisins", apres: 800, debut: iAllume(".s5-carte"),
       dit: "Vos *voisins commerçants sont à deux pas, et vous n’en profitez pas. Avec moi, vous vous *échangez vos produits et vos services.",
@@ -808,7 +959,7 @@ for d, c in CONF.items():
     t = une_fois(t, ANCIEN_PASSAGE, NOUVEAU_PASSAGE, "passage")
     open(f"{S}/{d}/index.html", "w", encoding="utf-8").write(t)
     # Ses voix : les répliques enregistrées, et plus rien de la version longue.
-    for k in ["1", "2", "2b", "3", "4", "4b", "5", "6"]:
+    for k in ["1", "2", "2b", "3", "4", "4b", "4c", "4d", "4e", "4f", "5", "6"]:
         cible = f"{S}/{d}/intro-{k}.mp3"
         if os.path.exists(cible):
             os.remove(cible)
@@ -816,6 +967,9 @@ for d, c in CONF.items():
             shutil.copy2(f"{VOIX}/intro-{k}.mp3", cible)
     if d == "tour":
         shutil.copy2(SALUE_RESTO, f"{S}/{d}/resto-salue.webp")
+    # les fantômes des trois cages (④c) : ceux des habitants, comme à l'étape des trois fantômes
+    for k, look in enumerate(FANTOMES_CAGES):
+        shutil.copy2(f"{S}/../trois-fantomes/a/g/{look}.webp", f"{S}/{d}/si-g{k + 1}.webp")
     for f in c["fant"] + [x for x, _ in c["moments"]] + [x for x, _ in c["voisins"]] + ["logo.png", AVANT[d][0], AVANT[d][2] + ".mp4", AVANT[d][2] + ".jpg"]:
         if not os.path.exists(f"{S}/{d}/{f}"):
             raise SystemExit(f"{d} : image manquante {f}")
