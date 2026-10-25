@@ -133,12 +133,16 @@ l'écoute (`CALES` dans `outils/mesurer-intro2.py`).
 partager », `intro-4b`, qui ne sert plus) : ce qui fait la différence avec une vidéo ordinaire, en quatre voix et trois
 scènes, après « Et une histoire, ça se partage. »
 - `intro-4c` « Une belle vidéo, tout le monde sait en faire. Moi, je fais réagir. » : sur la fin de la vidéo, l'écran
-  s'assombrit et la carte « Et vous ? » arrive avec ses trois cages (le dessin de l'étape des trois fantômes).
+  s'assombrit et la carte « Et vous ? » arrive avec ses trois cages (le dessin de l'étape des trois fantômes), qui
+  disent ce qu'elles veulent dire (« J'adore : on comprend pas ») : « J'adore la vidéo », « Je viendrai un jour »,
+  « Je réserve aujourd'hui » (resto, coiffure) ou « Je passe aujourd'hui » (le troisième élément de `QR`).
 - `intro-4d` « À la fin de votre vidéo, chacun libère son fantôme de sa cage. Et c'est là que mon vrai travail
   commence : je leur pose des questions, je les fais parler de vous. » : UNE cage, comme dans la vraie vie : sur
   « chacun », Camille touche « Je viendrai » ; sur « libère », son fantôme s'envole avec son prénom (les deux autres
   cages pâlissent) ; sur « commence », ce que son fantôme lui propose (`QR` dans `tour-intro3.py` : il en reste peu,
-  « tu viens avec une amie ? », un petit plus offert ; pas « quand », elle vient de dire qu'elle viendrait) ; sur
+  « tu viens avec une amie ? », un petit plus qui coûte peu au commerçant ; pas « quand », elle vient de dire qu'elle
+  viendrait ; au resto, « le chef vous fait goûter son nouveau dessert » : un café gourmand, c'est trop cher à
+  offrir, un café seul, trop peu) ; sur
   « parler », sa réponse (« Oui ! Avec ma sœur 😍 »). L'écran de la vidéo s'éteint sous la carte, et « Monté par
   ClikMe » et les compteurs de la vidéo s'effacent : « il y a énormément à regarder, le message est noyé ».
 - `intro-4e` « Sur Instagram, vous voyez qui a aimé. Mais écrire à chacun pour créer du lien, qui a le temps ? » :
@@ -149,7 +153,12 @@ scènes, après « Et une histoire, ça se partage. »
   qui ont ouvert une cage sur ClikMe, pas les j'aime d'Instagram) ; sur « prénom », un message chacun, par son
   prénom, « ✓ envoyé », et le compteur jusqu'à 214 ; sur « porte », la façade du commerce (comme la scène de l'étape
   des trois fantômes : enseigne, store, vitrine, porte ; `FACADE` dans `tour-intro3.py`), son fantôme qui sort de la
-  porte et les trois qui arrivent sur le trottoir ; sur « habitués », « Déjà des habitués ».
+  porte, et Camille (son fantôme de la cage) qui arrive avec sa sœur ; sur « habitués », il l'appelle par son prénom
+  (« Camille ! On t'attendait 😊 », sur le store pour laisser voir la salle). Au resto, le chef porte une toque (un
+  dessin, `I_TOQUE`, posé sur sa casquette) et la vitrine montre une vraie salle (la bande du milieu de
+  `public/direct/table/restaurant/salle.webp`, recadrée par ffmpeg en `tour/si-interieur.webp`).
+Instagram, les prénoms et la façade prennent la scène, comme les voisins (« les animations sont toutes petites par
+rapport aux précédentes ») : leurs tailles suivent `--u`, un px d'une carte de 340 px à l'échelle de la scène.
 Les fantômes des cages sont ceux des habitants (`outils/trois-fantomes/a/g`), copiés dans chaque tour en `si-g1` à
 `si-g3`. La barre de l'intro a une case par réplique : 9 au chapitre 1, 2 au chapitre 2.
 

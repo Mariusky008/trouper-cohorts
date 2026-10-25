@@ -1562,7 +1562,7 @@ h1 em{font-style:normal;color:var(--rose)}
 .s7-rang{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.25em}
 .s7-f3{position:relative;display:flex;flex-direction:column;align-items:center}
 .s7-f3.adore{--c:#FF2E9A}.s7-f3.promis{--c:#F5A23A}.s7-f3.auj{--c:#3DE2A6}
-.s7-f3>b{margin-top:.35em;font-size:.86em;font-weight:800;white-space:nowrap}
+.s7-f3>b{margin-top:.35em;font-size:.8em;font-weight:800;line-height:1.15;text-align:center;letter-spacing:-.01em}
 .s7-cg{position:relative;display:flex;flex-direction:column;align-items:center;width:78%;transform-origin:50% 0;animation:s7-balance 3.6s ease-in-out infinite}
 .s7-f3.promis .s7-cg{animation-delay:-1.2s}.s7-f3.auj .s7-cg{animation-delay:-2.4s}
 @keyframes s7-balance{0%,100%{transform:rotate(-2.2deg)}50%{transform:rotate(2.2deg)}}
@@ -1605,67 +1605,70 @@ h1 em{font-style:normal;color:var(--rose)}
   font-size:calc(var(--pw) * .05);color:#2A1A10;background:#FFF4E6;box-shadow:0 10px 22px -10px rgba(0,0,0,.8);transform-origin:0 100%}
 .s7.demande .s7-q,.s7.repond .s7-r{transform:none}
 
-/* ④e Instagram : 214 j'aime, des noms qui défilent ; il faudrait écrire à chacun… 0 message écrit */
+/* ④e Instagram : 214 j'aime, des noms qui défilent ; il faudrait écrire à chacun… 0 message écrit.
+   « Les animations sont toutes petites par rapport aux précédentes ou aux suivantes » : la carte prend la scène,
+   comme les voisins (--u : un px de la carte de 340 px, à l'échelle de la scène). */
+.s8,.s9{--u:calc(min(92cqw,90cqh,640px) / 340)}
 .s8{z-index:4}
-.s8-carte{position:absolute;left:50%;top:50%;width:min(88cqw,340px);padding:12px 10px 10px;border-radius:22px;color:#fff;
-  background:linear-gradient(180deg,rgba(54,32,44,.97),rgba(26,14,20,.97));border:1px solid rgba(255,255,255,.12);box-shadow:0 24px 60px -20px rgba(0,0,0,.85);
-  opacity:0;transform:translate(-50%,-50%) translateY(16px) scale(.96);transition:opacity .4s,transform .7s var(--ressort),filter .5s}
+.s8-carte{position:absolute;left:50%;top:50%;width:calc(340 * var(--u));padding:calc(12 * var(--u)) calc(10 * var(--u)) calc(10 * var(--u));border-radius:calc(22 * var(--u));color:#fff;
+  background:linear-gradient(180deg,rgba(54,32,44,.97),rgba(26,14,20,.97));border:1px solid rgba(255,255,255,.12);box-shadow:0 calc(24 * var(--u)) calc(60 * var(--u)) calc(-20 * var(--u)) rgba(0,0,0,.85);
+  opacity:0;transform:translate(-50%,-50%) translateY(calc(16 * var(--u))) scale(.96);transition:opacity .4s,transform .7s var(--ressort),filter .5s}
 .s8.on .s8-carte{opacity:1;transform:translate(-50%,-50%)}
-.s8-tete{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 6px 2px}
-.s8-tete b{font-size:15px;font-weight:800}
-.s8-tete span{font-size:12px;font-weight:700;color:rgba(255,255,255,.5)}
-.s8-total{display:flex;align-items:baseline;gap:7px;margin:0 6px 6px}
-.s8-total i{font-style:normal;font-size:24px;color:#FF5D8F}
-.s8-total b{font-size:32px;font-weight:900;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.s8-total small{font-size:14px;font-weight:700;color:rgba(255,255,255,.75)}
-.s8-liste{position:relative;height:172px;overflow:hidden;-webkit-mask-image:linear-gradient(transparent,#000 12%,#000 82%,transparent);mask-image:linear-gradient(transparent,#000 12%,#000 82%,transparent)}
-.s8-defile{display:grid;gap:2px}
+.s8-tete{display:flex;align-items:center;justify-content:space-between;gap:calc(8 * var(--u));margin:0 calc(6 * var(--u)) calc(2 * var(--u))}
+.s8-tete b{font-size:calc(15 * var(--u));font-weight:800}
+.s8-tete span{font-size:calc(12 * var(--u));font-weight:700;color:rgba(255,255,255,.5)}
+.s8-total{display:flex;align-items:baseline;gap:calc(7 * var(--u));margin:0 calc(6 * var(--u)) calc(6 * var(--u))}
+.s8-total i{font-style:normal;font-size:calc(24 * var(--u));color:#FF5D8F}
+.s8-total b{font-size:calc(32 * var(--u));font-weight:900;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.s8-total small{font-size:calc(14 * var(--u));font-weight:700;color:rgba(255,255,255,.75)}
+.s8-liste{position:relative;height:calc(172 * var(--u));overflow:hidden;-webkit-mask-image:linear-gradient(transparent,#000 12%,#000 82%,transparent);mask-image:linear-gradient(transparent,#000 12%,#000 82%,transparent)}
+.s8-defile{display:grid;gap:calc(2 * var(--u))}
 .s8.aime .s8-defile{animation:s8-defile 10s linear infinite}
 @keyframes s8-defile{to{transform:translateY(-50%)}}
-.s8-ligne{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:9px;padding:5px 6px;font-size:12.5px}
-.s8-ligne .s4-av{width:28px;height:28px}
+.s8-ligne{display:grid;grid-template-columns:calc(28 * var(--u)) minmax(0,1fr) auto;align-items:center;gap:calc(9 * var(--u));padding:calc(5 * var(--u)) calc(6 * var(--u));font-size:calc(12.5 * var(--u))}
+.s8-ligne .s4-av{width:calc(28 * var(--u));height:calc(28 * var(--u));font-size:calc(12 * var(--u))}
 .s8-ligne span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(255,255,255,.8)}
 .s8-ligne strong{font-weight:800;color:#fff}
 .s8-ligne i{font-style:normal;color:#FF5D8F}
-.s8-ligne em{font-style:normal;font-size:11px;font-weight:800;white-space:nowrap;padding:3px 8px;border-radius:999px;color:#fff;border:1px dashed rgba(255,255,255,.5);background:rgba(255,255,255,.08);
+.s8-ligne em{font-style:normal;font-size:calc(11 * var(--u));font-weight:800;white-space:nowrap;padding:calc(3 * var(--u)) calc(8 * var(--u));border-radius:calc(999 * var(--u));color:#fff;border:1px dashed rgba(255,255,255,.5);background:rgba(255,255,255,.08);
   opacity:0;transform:scale(.6);transition:opacity .25s calc(var(--k) * .06s),transform .45s var(--ressort) calc(var(--k) * .06s)}
 .s8.ecrit .s8-ligne em{opacity:1;transform:none}
-.s8-compte{margin:8px 6px 0;padding:7px 10px;border-radius:12px;text-align:center;font-size:13px;font-weight:800;color:#fff;background:rgba(255,255,255,.07);
-  border:1px solid rgba(255,255,255,.14);opacity:0;transform:translateY(6px);transition:opacity .3s .35s,transform .5s var(--ressort) .35s}
+.s8-compte{margin:calc(8 * var(--u)) calc(6 * var(--u)) 0;padding:calc(7 * var(--u)) calc(10 * var(--u));border-radius:calc(12 * var(--u));text-align:center;font-size:calc(13 * var(--u));font-weight:800;color:#fff;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.14);opacity:0;transform:translateY(calc(6 * var(--u)));transition:opacity .3s .35s,transform .5s var(--ressort) .35s}
 .s8-compte b{color:#FF5D8F}
 .s8.ecrit .s8-compte{opacity:1;transform:none}
 .s8.rien .s8-carte{filter:grayscale(.85) brightness(.5)}
-.s8-verdict{position:absolute;left:50%;top:50%;display:grid;justify-items:center;gap:8px;transform:translate(-50%,-50%) rotate(-4deg) scale(0);transition:transform .6s var(--ressort) .15s;pointer-events:none}
-.s8-verdict b{padding:.28em .85em;border-radius:999px;white-space:nowrap;font-weight:900;font-size:clamp(20px,6.4cqmin,32px);color:#fff;background:linear-gradient(135deg,#FF2E9A,#FF8A3D);
-  box-shadow:0 0 0 4px rgba(11,3,6,.9),0 14px 34px -10px rgba(255,46,154,.9)}
-.s8-verdict small{padding:.35em .9em;border-radius:999px;white-space:nowrap;font-size:13px;font-weight:800;color:#2A1406;background:#FFF4E6;box-shadow:0 8px 20px -8px rgba(0,0,0,.8)}
+.s8-verdict{position:absolute;left:50%;top:50%;display:grid;justify-items:center;gap:calc(8 * var(--u));transform:translate(-50%,-50%) rotate(-4deg) scale(0);transition:transform .6s var(--ressort) .15s;pointer-events:none}
+.s8-verdict b{padding:.28em .85em;border-radius:calc(999 * var(--u));white-space:nowrap;font-weight:900;font-size:calc(32 * var(--u));color:#fff;background:linear-gradient(135deg,#FF2E9A,#FF8A3D);
+  box-shadow:0 0 0 calc(4 * var(--u)) rgba(11,3,6,.9),0 calc(14 * var(--u)) calc(34 * var(--u)) calc(-10 * var(--u)) rgba(255,46,154,.9)}
+.s8-verdict small{padding:.35em .9em;border-radius:calc(999 * var(--u));white-space:nowrap;font-size:calc(13 * var(--u));font-weight:800;color:#2A1406;background:#FFF4E6;box-shadow:0 calc(8 * var(--u)) calc(20 * var(--u)) calc(-8 * var(--u)) rgba(0,0,0,.8)}
 .s8.rien .s8-verdict{transform:translate(-50%,-50%) rotate(-4deg)}
 
 /* ④f lui le fait : les 214 qui ont libéré leur fantôme, un message chacun, par son prénom ; puis la porte */
 .s9{z-index:4}
-.s9-carte{position:absolute;left:50%;top:50%;width:min(88cqw,340px);padding:12px 10px 10px;border-radius:22px;color:#fff;
-  background:linear-gradient(180deg,rgba(62,36,49,.97),rgba(30,16,23,.97));border:1px solid rgba(255,214,140,.25);box-shadow:0 24px 60px -20px rgba(0,0,0,.85);
-  opacity:0;transform:translate(-50%,-50%) translateY(16px) scale(.96);transition:opacity .4s,transform .7s var(--ressort)}
+.s9-carte{position:absolute;left:50%;top:50%;width:calc(340 * var(--u));padding:calc(12 * var(--u)) calc(10 * var(--u)) calc(10 * var(--u));border-radius:calc(22 * var(--u));color:#fff;
+  background:linear-gradient(180deg,rgba(62,36,49,.97),rgba(30,16,23,.97));border:1px solid rgba(255,214,140,.25);box-shadow:0 calc(24 * var(--u)) calc(60 * var(--u)) calc(-20 * var(--u)) rgba(0,0,0,.85);
+  opacity:0;transform:translate(-50%,-50%) translateY(calc(16 * var(--u))) scale(.96);transition:opacity .4s,transform .7s var(--ressort)}
 .s9.on .s9-carte{opacity:1;transform:translate(-50%,-50%)}
 .s9.porte .s9-carte{opacity:0;transform:translate(-50%,-60%) scale(.92)}
-.s9-tete{display:flex;align-items:center;gap:9px;margin:0 4px 6px}
-.s9-tete img{width:34px;height:34px;flex:none;object-fit:contain;border-radius:50%;background:#FFF4E6;padding:2px}
+.s9-tete{display:flex;align-items:center;gap:calc(9 * var(--u));margin:0 calc(4 * var(--u)) calc(6 * var(--u))}
+.s9-tete img{width:calc(34 * var(--u));height:calc(34 * var(--u));flex:none;object-fit:contain;border-radius:50%;background:#FFF4E6;padding:calc(2 * var(--u))}
 .s9-tete span{display:grid;gap:1px}
-.s9-tete b{font-size:15px;font-weight:800}
-.s9-tete small{font-size:12px;font-weight:700;color:rgba(255,255,255,.6)}
-.s9-ligne{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:8px;padding:5px 4px;font-size:12.5px;line-height:1.3;
-  opacity:0;transform:translateX(-12px);transition:opacity .3s calc(var(--k) * .22s),transform .5s var(--ressort) calc(var(--k) * .22s)}
+.s9-tete b{font-size:calc(15 * var(--u));font-weight:800}
+.s9-tete small{font-size:calc(12 * var(--u));font-weight:700;color:rgba(255,255,255,.6)}
+.s9-ligne{display:grid;grid-template-columns:calc(28 * var(--u)) minmax(0,1fr) auto;align-items:center;gap:calc(8 * var(--u));padding:calc(5 * var(--u)) calc(4 * var(--u));font-size:calc(12.5 * var(--u));line-height:1.3;
+  opacity:0;transform:translateX(calc(-12 * var(--u)));transition:opacity .3s calc(var(--k) * .22s),transform .5s var(--ressort) calc(var(--k) * .22s)}
 .s9.ecrit .s9-ligne{opacity:1;transform:none}
-.s9-ligne .s4-av{width:28px;height:28px}
+.s9-ligne .s4-av{width:calc(28 * var(--u));height:calc(28 * var(--u));font-size:calc(12 * var(--u))}
 .s9-ligne span{min-width:0;color:#fff;font-weight:700}
 .s9-ligne span i{font-style:normal;font-weight:900;background:linear-gradient(90deg,#FF5DB8,#FFB347);-webkit-background-clip:text;background-clip:text;color:transparent}
-.s9-ligne em{font-style:normal;font-size:11px;font-weight:800;color:#3DE2A6;white-space:nowrap;opacity:0;transition:opacity .3s calc(.3s + var(--k) * .22s)}
+.s9-ligne em{font-style:normal;font-size:calc(11 * var(--u));font-weight:800;color:#3DE2A6;white-space:nowrap;opacity:0;transition:opacity .3s calc(.3s + var(--k) * .22s)}
 .s9.ecrit .s9-ligne em{opacity:1}
-.s9-compte{margin:8px 4px 0;padding:7px 10px;border-radius:12px;text-align:center;font-size:13px;font-weight:800;color:#04150E;background:linear-gradient(135deg,#9FF5C9,#3DE2A6);
-  opacity:0;transform:translateY(6px);transition:opacity .3s .5s,transform .5s var(--ressort) .5s}
+.s9-compte{margin:calc(8 * var(--u)) calc(4 * var(--u)) 0;padding:calc(7 * var(--u)) calc(10 * var(--u));border-radius:calc(12 * var(--u));text-align:center;font-size:calc(13 * var(--u));font-weight:800;color:#04150E;background:linear-gradient(135deg,#9FF5C9,#3DE2A6);
+  opacity:0;transform:translateY(calc(6 * var(--u)));transition:opacity .3s .5s,transform .5s var(--ressort) .5s}
 .s9-compte b{font-variant-numeric:tabular-nums}
 .s9.ecrit .s9-compte{opacity:1;transform:none}
-.s9-fac{position:absolute;left:50%;top:50%;width:min(78cqw,70cqh,300px);aspect-ratio:360/430;container-type:inline-size;overflow:hidden;border-radius:18px;
+.s9-fac{position:absolute;left:50%;top:50%;width:min(92cqw,75cqh,560px);aspect-ratio:360/430;container-type:inline-size;overflow:hidden;border-radius:calc(18 * var(--u));
   background:linear-gradient(#0B0608,#170C10 40%);box-shadow:0 24px 50px -20px rgba(0,0,0,.9);opacity:0;transform:translate(-50%,-50%) scale(.9);
   transition:opacity .45s .15s,transform .8s var(--ressort) .15s}
 .s9.porte .s9-fac{opacity:1;transform:translate(-50%,-50%)}
@@ -1690,19 +1693,28 @@ h1 em{font-style:normal;color:var(--rose)}
 .s9-porte::after{content:"";position:absolute;right:12%;top:60%;width:2.2cqw;height:2.2cqw;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFE6A6,#B98A2E)}
 .s9-trot{left:0;right:0;top:66%;bottom:0;background:radial-gradient(ellipse 60% 70% at 34% 0,rgba(255,180,100,.26),transparent 70%),radial-gradient(ellipse 30% 50% at 82% 0,rgba(255,180,100,.2),transparent 70%),
   repeating-linear-gradient(90deg,transparent 0 9cqw,rgba(0,0,0,.2) 9cqw 9.35cqw),linear-gradient(#3E322D,#262020)}
-.s9-hote{position:absolute;left:82%;top:67%;z-index:4;height:30cqw;width:auto;transform:translate(-50%,-100%) scale(.45);transform-origin:50% 100%;opacity:0;
+.s9-hote{position:absolute;left:82%;top:67%;z-index:4;display:block;transform:translate(-50%,-100%) scale(.45);transform-origin:50% 100%;opacity:0;
   filter:drop-shadow(0 1cqw 1cqw rgba(0,0,0,.5));transition:opacity .3s .5s,transform .9s var(--ressort) .5s}
+.s9-hote img{display:block;height:30cqw;width:auto}
+.s9-toque{position:absolute;left:18.5%;top:-20%;width:64%;overflow:visible}
 .s9.porte .s9-hote{opacity:1;transform:translate(-50%,-100%) translateX(-8cqw) scale(1)}
-.s9-av{position:absolute;left:8%;top:79%;z-index:5;display:flex;gap:2cqw}
-.s9-av b{display:grid;place-items:center;width:11cqw;height:11cqw;border-radius:50%;font-weight:900;font-size:4.4cqw;color:#fff;background:var(--c);box-shadow:0 0 0 1cqw rgba(20,10,14,.9);
-  opacity:0;transform:translateX(-30cqw);transition:opacity .3s calc(1s + var(--k) * .18s),transform .9s var(--ressort) calc(1s + var(--k) * .18s)}
-.s9.porte .s9-av b{opacity:1;transform:none}
-.s9-badge{position:absolute;left:50%;bottom:4%;z-index:6;padding:2cqw 4.5cqw;border-radius:999px;white-space:nowrap;font-weight:900;font-size:5cqw;color:#2A1406;
-  background:linear-gradient(135deg,#FFE08A,#E7A52E);box-shadow:0 3cqw 7cqw -2cqw rgba(231,165,46,.8);transform:translateX(-50%) rotate(-4deg) scale(0);transition:transform .6s var(--ressort)}
-.s9.habitue .s9-badge{transform:translateX(-50%) rotate(-4deg)}
+.s9.habitue .s9-hote img{animation:s9-hop .45s ease-in-out 2}
+@keyframes s9-hop{50%{transform:translateY(-6%)}}
+/* « on comprend pas trop ce que c'est, C M S » : ce sont Camille (son fantôme, celui de la cage) et sa sœur */
+.s9-cli{position:absolute;inset:0;z-index:5;pointer-events:none}
+.s9-cli>span{position:absolute;top:90%;display:block;opacity:0;transform:translate(-50%,-100%) translateX(-40cqw);
+  transition:opacity .35s calc(.9s + var(--k) * .25s),transform 1.1s var(--ressort) calc(.9s + var(--k) * .25s)}
+.s9-c1{left:24%}.s9-c2{left:47%}
+.s9.porte .s9-cli>span{opacity:1;transform:translate(-50%,-100%)}
+.s9-cli img{display:block;height:26cqw;width:auto;filter:drop-shadow(0 1.2cqw 1.2cqw rgba(0,0,0,.55))}
+.s9-cli b{position:absolute;left:50%;top:92%;transform:translateX(-50%);padding:.5cqw 2.4cqw;border-radius:2cqw;white-space:nowrap;font-size:3.9cqw;font-weight:800;color:#fff;background:#F5A23A}
+/* il l'appelle par son prénom (« déjà comme des habitués ») ; sa bulle sur le store, pour qu'on voie la salle */
+.s9-bulle{position:absolute;right:27%;top:16.5%;z-index:6;margin:0;max-width:56%;padding:1.8cqw 3cqw;border-radius:3cqw 3cqw .8cqw 3cqw;font-size:4.8cqw;font-weight:800;line-height:1.2;
+  color:#2A1A10;background:#FFF4E6;box-shadow:0 2cqw 5cqw -1cqw rgba(0,0,0,.7);transform:scale(0);transform-origin:100% 100%;transition:transform .55s var(--ressort)}
+.s9.habitue .s9-bulle{transform:none}
 .s9.habitue .s9-vit{box-shadow:inset 0 0 0 1.2cqw var(--vit),0 0 0 .55cqw #C9A45C,0 0 14cqw rgba(255,190,110,.75)}
 .s9.habitue .s9-porte i{filter:brightness(1.4) saturate(1.2)}
-@media (prefers-reduced-motion:reduce){.s7-cg,.s7.libere .s7-envol img,.s8.aime .s8-defile{animation:none}}
+@media (prefers-reduced-motion:reduce){.s7-cg,.s7.libere .s7-envol img,.s8.aime .s8-defile,.s9.habitue .s9-hote img{animation:none}}
 /* ═══ LES DEUX PROMESSES : « Et cette nuit… », « Et demain… » ═══
    « Hyper compliqué à comprendre, ça dure très longtemps et on se perd » : une idée par écran, peu de
    choses à l'écran, en grand. Le même écran que l'intro : décor au milieu, fantôme en bas qui raconte. */
@@ -3225,7 +3237,7 @@ h1 em{font-style:normal;color:var(--rose)}
      où sa voix le dit ; « apres » : le temps laissé à la scène avant la phrase suivante ; « garde » : la
      scène s'ajoute à la précédente au lieu de la remplacer. Les répliques enregistrées ont leurs instants
      mesurés ; une réplique pas encore enregistrée s'écrit sur un rythme estimé, sans son. */
-  const INTRO_MOMENTS = [["m2.jpg", "Un geste"], ["m1.jpg", "Un chef"], ["m3.jpg", "Une création"]], INTRO_QUI = "Jean-Marie", INTRO_LIEU = "Chez Bergine", INTRO_OFFRE = "Un dîner", INTRO_VOISINS = [["o-fleurs.jpg", "Fleuriste", "Un bouquet"], ["o-coiffure.jpg", "Coiffeur", "Une coupe"], ["o-hotel.jpg", "Hôtel", "Une nuit"], ["o-lunettes.jpg", "Opticien", "Des lunettes"]], INTRO_FANT = "resto.webp", INTRO_AVANT = ["m3.jpg", "Plat du jour : magret grillé, pommes sarladaises.", "interview"], INTRO_QR = ["Camille, il reste deux places demain midi. Tu viens avec une amie ? Le café gourmand est offert !", "Oui ! Avec ma sœur 😍"], INTRO_FAC = ["BISTROT · DAX", ["#62182B", "#45101F", "#F3E5D0", "#8E1C33", "#2C0912", "#2A0810"], "si-interieur.webp"], INTRO_SALUE = "resto-salue.webp";
+  const INTRO_MOMENTS = [["m2.jpg", "Un geste"], ["m1.jpg", "Un chef"], ["m3.jpg", "Une création"]], INTRO_QUI = "Jean-Marie", INTRO_LIEU = "Chez Bergine", INTRO_OFFRE = "Un dîner", INTRO_VOISINS = [["o-fleurs.jpg", "Fleuriste", "Un bouquet"], ["o-coiffure.jpg", "Coiffeur", "Une coupe"], ["o-hotel.jpg", "Hôtel", "Une nuit"], ["o-lunettes.jpg", "Opticien", "Des lunettes"]], INTRO_FANT = "resto.webp", INTRO_AVANT = ["m3.jpg", "Plat du jour : magret grillé, pommes sarladaises.", "interview"], INTRO_QR = ["Camille, il reste deux places demain midi. Tu viens avec une amie ? Le chef vous fait goûter son nouveau dessert 😋", "Oui ! Avec ma sœur 😍", "Je réserve<br>aujourd’hui"], INTRO_FAC = ["BISTROT · DAX", ["#62182B", "#45101F", "#F3E5D0", "#8E1C33", "#2C0912", "#2A0810"], "si-interieur.webp", true], INTRO_SALUE = "resto-salue.webp";
   /* Le film monté en interview (celui de la fin du tour) : un seul lecteur, créé dès le début de l'intro pour qu'il
      soit chargé quand le fantôme dit « je raconte », puis posé dans l'écran du téléphone. Sans son : c'est
      le fantôme qui parle. */
@@ -3286,13 +3298,22 @@ h1 em{font-style:normal;color:var(--rose)}
     ["M", "linear-gradient(135deg,#7C4DFF,#FF5DB8)", "Mehdi", "Trop beau 😍"], ["S", "linear-gradient(135deg,#2FBF8F,#3DA8E2)", "Sophie", "On y va samedi" + NB + "?"]];
   // ④d la cage qu'elle choisit (« Je viendrai ») ; ④e qui a aimé, sur Instagram ; ④f ses messages, chacun par son
   // prénom. Des prénoms et des comptes inventés ; sa question et sa réponse sont propres au commerce (INTRO_QR).
-  const I_CAGES = [["adore", "J’adore"], ["promis", "Je viendrai"], ["auj", "Aujourd’hui"]];
+  // « J'adore : on comprend pas » : ce que chacune veut dire (la troisième est propre au commerce, INTRO_QR[2])
+  const I_CAGES = [["adore", "J’adore<br>la vidéo"], ["promis", "Je viendrai<br>un jour"], ["auj", INTRO_QR[2]]];
   const I_LIKES = [["camille.dx", "Camille"], ["mehdi_b", "Mehdi"], ["sophie.lmr", "Sophie"], ["thomas_40", "Thomas"], ["ines.dax", "Inès"],
     ["lucas.rd", "Lucas"], ["jade.b", "Jade"], ["hugo_dx", "Hugo"], ["lea.mrt", "Léa"], ["nadia.k", "Nadia"]];
   const I_TEINTES = ["#FF2E9A,#FF8A3D", "#7C4DFF,#FF5DB8", "#2FBF8F,#3DA8E2", "#F5A23A,#FF5D5D", "#3DA8E2,#7C4DFF"];
   const I_MOTS = ["c’est le moment" + NB + ": il en reste trois" + NB + "!", "tu passes samedi" + NB + "?", "ton amie Léa vient aussi 😊",
     "ça t’a plu" + NB + "? Dis-le-moi" + NB + "!", "on se voit cette semaine" + NB + "?"];
   const I_TOTAL = 214;
+  // la toque du chef, posée sur sa casquette (la cache entière)
+  const I_TOQUE = '<svg class="s9-toque" viewBox="0 0 100 80" aria-hidden="true"><defs><radialGradient id="si-tq1" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/>' +
+    '<stop offset=".6" stop-color="#F4F1EC"/><stop offset="1" stop-color="#D9D2C8"/></radialGradient><linearGradient id="si-tq2" x1="0" x2="1"><stop offset="0" stop-color="#DCD5CB"/>' +
+    '<stop offset=".3" stop-color="#fff"/><stop offset=".7" stop-color="#F7F4EF"/><stop offset="1" stop-color="#CFC7BB"/></linearGradient></defs>' +
+    '<g fill="url(#si-tq1)"><circle cx="24" cy="36" r="18"/><circle cx="76" cy="36" r="18"/><circle cx="38" cy="22" r="20"/><circle cx="62" cy="22" r="20"/><circle cx="50" cy="30" r="22"/></g>' +
+    '<path d="M50 6c-4 8-4 22 0 34M33 12c-2 9 0 20 4 28M67 12c2 9 0 20-4 28" stroke="#D8D0C4" stroke-width="1" fill="none" opacity=".7"/>' +
+    '<path d="M11 44Q50 38 89 44L92 79Q50 70 8 79Z" fill="url(#si-tq2)"/><path d="M11 44Q50 38 89 44" stroke="#E2DBD0" stroke-width="1.2" fill="none"/>' +
+    '<path d="M24 43V74M37 41.5V71M50 41V70M63 41.5V71M76 43V74" stroke="#E4DED4" stroke-width=".9"/></svg>';
   const DECORS_INTRO = {
     moments: () => '<div class="s1"><div class="s1-chip verre"><i class="s-direct"></i>Aujourd’hui · ' + INTRO_LIEU + "</div>" +
       INTRO_MOMENTS.map(([s, l], k) => '<figure class="s1-carte" data-k="' + k + '"><div class="s1-ph"><img src="' + s + '" alt=""></div><figcaption>' + l + "</figcaption></figure>").join("") +
@@ -3349,7 +3370,8 @@ h1 em{font-style:normal;color:var(--rose)}
         '<div class="s8-compte"><b>0</b> message écrit sur ' + I_TOTAL + "</div></div>" +
         '<div class="s8-verdict"><b>Pas le temps.</b><small>' + I_TOTAL + " messages à écrire, chaque jour</small></div></div>";
     },
-    // ④f lui le fait : un message à chacun, par son prénom ; puis la porte qu'ils poussent, comme des habitués
+    // ④f lui le fait : un message à chacun, par son prénom ; puis la porte : Camille arrive avec sa sœur, et le chef
+    // qui sort l'accueille par son prénom, comme une habituée
     prenoms: () => '<div class="s9"><div class="s9-carte"><div class="s9-tete"><img src="' + INTRO_FANT + '" alt=""><span><b>Vos fantômes</b><small>' + I_TOTAL +
       " ont libéré leur fantôme sur votre vidéo</small></span></div>" +
       I_MOTS.map((m, k) => '<div class="s9-ligne" style="--k:' + k + '"><b class="s4-av" style="--c:linear-gradient(135deg,' + I_TEINTES[k] + ')">' + I_LIKES[k][1][0] + "</b><span><i>" +
@@ -3357,8 +3379,9 @@ h1 em{font-style:normal;color:var(--rose)}
       '<div class="s9-compte"><b data-n="' + I_TOTAL + '">0</b> messages envoyés, chacun par son prénom</div></div>' +
       '<div class="s9-fac" style="--f1:' + INTRO_FAC[1][0] + ";--f2:" + INTRO_FAC[1][1] + ";--s1:" + INTRO_FAC[1][2] + ";--s2:" + INTRO_FAC[1][3] + ";--ens:" + INTRO_FAC[1][4] + ";--vit:" + INTRO_FAC[1][5] +
         '"><i class="s9-f"></i><div class="s9-ens"><b>' + INTRO_LIEU + "</b><small>" + INTRO_FAC[0] + '</small></div><i class="s9-store"></i><div class="s9-vit"><img src="' + INTRO_FAC[2] +
-        '" alt=""></div><div class="s9-porte"><i></i></div><i class="s9-trot"></i><img class="s9-hote" src="' + INTRO_SALUE + '" alt="">' +
-        '<span class="s9-av">' + I_AMIS.map(([l, c], k) => '<b style="--c:' + c + ";--k:" + k + '">' + l + "</b>").join("") + '</span><span class="s9-badge">⭐ Déjà des habitués</span></div></div>',
+        '" alt=""></div><div class="s9-porte"><i></i></div><i class="s9-trot"></i><span class="s9-hote"><img src="' + INTRO_SALUE + '" alt="">' + (INTRO_FAC[3] ? I_TOQUE : "") + "</span>" +
+        '<span class="s9-cli"><span class="s9-c1" style="--k:1"><img src="si-g1.webp" alt=""></span><span class="s9-c2" style="--k:0"><img src="si-g2.webp" alt=""><b>Camille</b></span></span>' +
+        '<p class="s9-bulle">Camille' + NB + "! On t’attendait 😊</p></div></div>",
     voisins: () => {
       const ou = [[20, 24], [80, 24], [20, 70], [80, 70]], cx = 50, cy = 47;
       const arc = ([x, y]) => { const dx = x - cx, dy = y - cy; return "M" + cx + " " + cy + " Q" + ((cx + x) / 2 - dy * 0.25).toFixed(1) + " " + ((cy + y) / 2 + dx * 0.25).toFixed(1) + " " + x + " " + y; };
