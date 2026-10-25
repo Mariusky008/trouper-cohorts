@@ -87,7 +87,7 @@ export const HEURES_FERMEES = "Mike n’écrit pas avant 9 h ni après 20 h 30."
 /** Peut-on lui écrire maintenant ? Sinon, pourquoi — en mots simples. */
 export function peutLuiEcrire(messages: MessageEnvoye[], maintenant = Date.now()): { oui: boolean; pourquoi: string } {
   const aujourdhui = jourDe(maintenant);
-  if (messages.some((m) => jourDe(Date.parse(m.le)) === aujourdhui)) return { oui: false, pourquoi: "Déjà prévenu aujourd’hui" };
+  if (messages.some((m) => jourDe(Date.parse(m.le)) === aujourdhui)) return { oui: false, pourquoi: "Déjà un message aujourd’hui" };
   const semaine = messages.filter((m) => maintenant - Date.parse(m.le) < 7 * 86_400_000).length;
   if (semaine >= 2) return { oui: false, pourquoi: "Déjà deux messages cette semaine" };
   return { oui: true, pourquoi: "" };

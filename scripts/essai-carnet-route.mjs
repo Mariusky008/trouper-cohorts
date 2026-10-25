@@ -7,7 +7,9 @@
 // on peut l'enlever) ; le stop efface le numéro, et redire oui à la fin d'un film l'annule ; un mauvais
 // jeton, une ligne d'un autre commerce, une référence qui n'en est pas une. Puis « Oui, préviens-les » : les numéros
 // de ceux qui veulent être prévenus (et d'eux seuls), le message envoyé gardé avec son petit plus, et les règles —
-// pas d'alcool offert, pas deux messages le même jour, pas plus de deux par semaine, rien hors de 9 h – 20 h 30.
+// pas d'alcool offert, pas deux messages le même jour, pas plus de deux par semaine, rien hors de 9 h – 20 h 30. Puis le
+// moteur de messages : le merci de Mike dans la Maison de Zoé, sa réponse d'un appui (et seulement la sienne, une fois,
+// parmi les choix), le stop et la reprise, « A répondu sur WhatsApp », et le silence après un message sans réponse.
 //
 //   node scripts/faux-supabase.mjs 54321
 //   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=faux NEXT_PUBLIC_SUPABASE_ANON_KEY=faux \
@@ -113,6 +115,52 @@ if (ouvert) {
   await semer("clik_message", [{ site_id: SITE, habitant_id: hLeo, texte: "un", envoye_le: il(1) }, { site_id: SITE, habitant_id: hLeo, texte: "deux", envoye_le: il(3) }]);
   p = await carnet({ action: "envoye", ref: refs["Léo"], texte: "Léo, il reste de la place ce soir." });
   ok(p.statut === 409 && /semaine/.test(p.error), `un troisième message dans la semaine : refusé (${p.statut}, « ${p.error} »)`);
+
+  // ── 💬 LE MOTEUR DE MESSAGES (étape 4) : Ma Maison, la réponse, le stop, « A répondu », le silence ──
+  ok((await cage("zoe", { cage: "adore", prenom: "Zoé", look: "soleil" })) === 200, "Zoé : « J'adore la vidéo », sans numéro");
+  const refZoe = ligne(await carnet({ action: "lire" }), "Zoé")?.ref;
+  const merci = { action: "maison", ref: refZoe, texte: "Merci Zoé ! Toi, plutôt viande ou poisson ?", modele: "merci", choix: ["Viande", "Poisson"] };
+  ok((await carnet({ ...merci, modele: "promo" })).statut === 400, "un modèle qui n'est pas celui de Mike : refusé");
+  p = await carnet(merci);
+  ok(p.statut === 200, `le merci de Mike, dans la Maison de Zoé (${p.statut} ${p.error || ""})`);
+  p = await carnet({ ...merci, modele: "memoire" });
+  ok(p.statut === 409, `un second message le même jour : refusé (${p.statut}, « ${p.error} »)`);
+  const maison = async (qui, corps) => {
+    const r = await fetch(`${BASE}/api/direct/messages`, corps
+      ? { method: "POST", headers: { "content-type": "application/json", cookie: cookies[qui] }, body: JSON.stringify(corps) }
+      : { headers: { cookie: cookies[qui] } });
+    return { statut: r.status, ...(await r.json().catch(() => ({}))) };
+  };
+  let mm = await maison("zoe");
+  ok(mm.messages?.length === 1 && mm.messages[0].commerce.nom === "Le Bistrot du Carnet" && mm.messages[0].choix.join() === "Viande,Poisson" && /visage\.webp$/.test(mm.messages[0].commerce.visage),
+    `Zoé le voit dans sa Maison, avec ses deux réponses (${JSON.stringify(mm.messages?.[0])})`);
+  ok((await maison("hugo")).messages?.length === 0, "Hugo, lui, n'a rien reçu");
+  const idZoe = mm.messages[0].id;
+  ok((await maison("hugo", { action: "repondre", id: idZoe, reponse: "Poisson" })).statut === 404, "Hugo ne peut pas répondre à la place de Zoé");
+  ok((await maison("zoe", { action: "repondre", id: idZoe, reponse: "Fromage" })).statut === 400, "une réponse qui n'est pas proposée : refusée");
+  ok((await maison("zoe", { action: "repondre", id: idZoe, reponse: "Poisson" })).statut === 200, "Zoé répond « Poisson » d'un appui");
+  ok((await maison("zoe", { action: "repondre", id: idZoe, reponse: "Viande" })).statut === 409, "une seule réponse");
+  c = ligne(await carnet({ action: "lire" }), "Zoé");
+  ok(c?.messages?.[0]?.canal === "maison" && c.messages[0].modele === "merci" && c.messages[0].reponse === "Poisson", `sa réponse revient dans le carnet (${JSON.stringify(c?.messages?.[0])})`);
+  ok((await maison("zoe", { action: "stop", cle: SLUG })).statut === 200, "Zoé : ne plus recevoir ses messages");
+  ok((await maison("zoe")).messages?.[0]?.stop === true && ligne(await carnet({ action: "lire" }), "Zoé")?.stop === true, "le stop, dans sa Maison et dans le carnet");
+  p = await carnet({ ...merci, modele: "memoire" });
+  ok(p.statut === 409 && /stop/.test(p.error), `un message après son stop : refusé (« ${p.error} »)`);
+  ok((await maison("zoe", { action: "reprendre", cle: SLUG })).statut === 200 && ligne(await carnet({ action: "lire" }), "Zoé")?.stop === false, "Zoé reprend ses messages");
+  // « A répondu sur WhatsApp » : le message WhatsApp de Camille prend la réponse
+  p = await carnet({ action: "repondu", ref: refs.Camille });
+  ok(p.statut === 200 && ligne(await carnet({ action: "lire" }), "Camille")?.messages?.[0]?.reponse === "(sur WhatsApp)", `Camille a répondu sur WhatsApp, il le note (${p.statut})`);
+  ok((await carnet({ action: "repondu", ref: refs.Camille })).statut === 404, "plus rien n'attend sa réponse : refusé");
+  ok((await carnet({ action: "repondu", ref: refZoe })).statut === 404, "Zoé n'a pas de message WhatsApp : refusé");
+  // Le silence : un message sans réponse il y a trois jours, rien d'autre cette semaine
+  ok((await cage("max", { cage: "un-jour", prenom: "Max", whatsapp: "06 55 44 33 22" })) === 200, "Max laisse son numéro");
+  const hMax = (await (await fetch(`${F}/clik_cage?site_id=eq.${SITE}&prenom=eq.Max`)).json())[0]?.habitant_id;
+  await semer("clik_message", { site_id: SITE, habitant_id: hMax, texte: "Max, il reste de la place ce soir.", envoye_le: new Date(Date.now() - 3 * 86_400_000).toISOString() });
+  const refMax = ligne(await carnet({ action: "lire" }), "Max")?.ref;
+  // Sa cage, libérée il y a cinq jours (avant ce message) : sinon une cage plus récente remettrait le silence à zéro.
+  await fetch(`${F}/clik_cage?site_id=eq.${SITE}&prenom=eq.Max`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ updated_at: new Date(Date.now() - 5 * 86_400_000).toISOString() }) });
+  p = await carnet({ action: "envoye", ref: refMax, texte: "Max, il reste de la place demain soir. Tu viens à combien ?" });
+  ok(p.statut === 409 && /semaine prochaine/.test(p.error), `un message sans réponse il y a trois jours : Mike attend (${p.statut}, « ${p.error} »)`);
 } else {
   ok(p.statut === 409, `hors des heures (9 h – 20 h 30) : refusé (${p.statut}, « ${p.error} »)`);
   console.log("  (hors des heures d'envoi : l'envoi accepté, le même jour et la semaine ne sont pas vérifiés)");

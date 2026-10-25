@@ -97,6 +97,7 @@ import { PhotothequeComptoir, PiocherPhototheque } from "./phototheque-comptoir"
 import { CarteMessageDuMois } from "./message-du-mois";
 import { CarnetComptoir, CarteCarnet, useCarnet } from "./carnet-comptoir";
 import { CarteMike, PreviensLes } from "./previens-les";
+import { MessagesDeMike } from "./messages-de-mike";
 import { MotMarque } from "@/components/direct/mot-marque";
 
 type Commerce = CommerceComptoir;
@@ -387,7 +388,9 @@ type Phase =
   /** 📒 Mon carnet : ceux qui ont libéré leur fantôme à la fin de ses vidéos — voir `carnet-comptoir.tsx`. */
   | { ou: "carnet" }
   /** 📲 « Oui, préviens-les » : Mike écrit, il envoie depuis son WhatsApp — voir `previens-les.tsx`. */
-  | { ou: "prevenir" };
+  | { ou: "prevenir" }
+  /** 💬 Les messages que Mike a préparés pour leur Maison : il relit, il dit oui — voir `messages-de-mike.tsx`. */
+  | { ou: "messages" };
 
 /** L'envoi en ligne d'un vrai commerçant : en cours, arrivé, ou à refaire. */
 type Envoi = { etat: "en-cours" } | ({ etat: "fini" } & ResultatEnvoi);
@@ -926,7 +929,15 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           propositionActive={propositionPrete}
           reseaux={<OutilReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
           carnet={<CarteCarnet carnet={carnet} onOuvrir={() => setPhase({ ou: "carnet" })} />}
-          mike={<CarteMike commerce={commerce} dossier={dossier} carnet={carnet} onOui={() => setPhase({ ou: "prevenir" })} />}
+          mike={
+            <CarteMike
+              commerce={commerce}
+              dossier={dossier}
+              carnet={carnet}
+              onOui={() => setPhase({ ou: "prevenir" })}
+              onMessages={() => setPhase({ ou: "messages" })}
+            />
+          }
           onPublier={ouvrirClients}
           onDepenses={() => allerA("catalogue")}
           onStats={() => setStats(true)}
@@ -1032,10 +1043,19 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
       )}
 
       {phase.ou === "carnet" && (
-        <CarnetComptoir commerce={commerce} dossier={dossier} carnet={carnet} onRetour={revenir} onPrevenir={() => setPhase({ ou: "prevenir" })} />
+        <CarnetComptoir
+          commerce={commerce}
+          dossier={dossier}
+          carnet={carnet}
+          onRetour={revenir}
+          onPrevenir={() => setPhase({ ou: "prevenir" })}
+          onMessages={() => setPhase({ ou: "messages" })}
+        />
       )}
 
       {phase.ou === "prevenir" && <PreviensLes commerce={commerce} dossier={dossier} carnet={carnet} onRetour={revenir} />}
+
+      {phase.ou === "messages" && <MessagesDeMike commerce={commerce} dossier={dossier} carnet={carnet} onRetour={revenir} />}
 
       {phase.ou === "savoir" && (
         <SavoirComptoir commerce={commerce} dossier={dossier} savoir={savoir} onRetour={revenir} />

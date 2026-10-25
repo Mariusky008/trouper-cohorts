@@ -29,7 +29,6 @@ import {
   heureOuverte,
   lienWhatsApp,
   messagePour,
-  peutLuiEcrire,
   plusDe,
   plusPermis,
   plusPourLui,
@@ -37,11 +36,14 @@ import {
   quandsDe,
   sorteDe,
 } from "@/lib/direct/previens-les";
+import { silenceDe } from "@/lib/direct/moteur-messages";
 import type { CarnetDuComptoir } from "./carnet-comptoir";
+/* TU OU VOUS : il choisit une fois, Mike s'en souvient (ici et pour ses messages). Le carnet de messages tutoie. */
+import { combienDeMessages, garderTu, lireTu } from "./messages-de-mike";
 
-/** Ceux qu'on peut prévenir aujourd'hui : un numéro, pas de stop, et les règles le permettent. */
+/** Ceux qu'on peut prévenir aujourd'hui : un numéro, pas de stop, et les règles le permettent (`silenceDe`). */
 export function aPrevenir(lignes: LigneCarnet[], maintenant = Date.now()): LigneCarnet[] {
-  return lignes.filter((l) => l.prevenir && !l.stop && peutLuiEcrire(l.messages, maintenant).oui);
+  return lignes.filter((l) => l.prevenir && !l.stop && !silenceDe(l, maintenant));
 }
 
 /* « PAS AUJOURD'HUI » : la carte revient demain. Gardé dans ce téléphone, par commerce. */
@@ -54,16 +56,6 @@ function lirePasAujourdhui(c: CommerceComptoir): string {
   }
 }
 
-/* TU OU VOUS : il choisit une fois, Mike s'en souvient. Le carnet de messages tutoie. */
-const cleTu = (c: CommerceComptoir) => `clikme:mike-tu:${c.id}`;
-function lireTu(c: CommerceComptoir): boolean {
-  try {
-    return window.localStorage.getItem(cleTu(c)) !== "vous";
-  } catch {
-    return true;
-  }
-}
-
 /** Ce que Mike propose, selon ce qui se libère chez lui. */
 function proposition(commerce: CommerceComptoir): string {
   const sorte = sorteDe(commerce.famille);
@@ -72,24 +64,30 @@ function proposition(commerce: CommerceComptoir): string {
   return "C’est calme aujourd’hui ? Je les préviens sur ton WhatsApp.";
 }
 
-/** 📲 La carte de Mike, en haut de l'accueil : seulement quand il y a quelqu'un à prévenir, et à une heure où l'on peut écrire. */
+/**
+ * 📲 La carte de Mike, en haut de l'accueil, à une heure où l'on peut écrire : ceux qui attendent son signal
+ * (« Oui, préviens-les », sur son WhatsApp), et les messages qu'il a préparés pour leur Maison (étape 4).
+ */
 export function CarteMike({
   commerce,
   dossier,
   carnet,
   onOui,
+  onMessages,
 }: {
   commerce: CommerceComptoir;
   dossier: string;
   carnet: CarnetDuComptoir;
   onOui: () => void;
+  onMessages: () => void;
 }) {
   const [refuse, setRefuse] = useState(() => lirePasAujourdhui(commerce));
   if (!carnet.pret || !heureOuverte()) return null;
   const aujourdhui = jourParis();
   if (refuse === aujourdhui) return null;
   const n = aPrevenir(carnet.lignes).length;
-  if (!n) return null;
+  const m = combienDeMessages(carnet.lignes, commerce);
+  if (!n && !m) return null;
   const pasAujourdhui = () => {
     try {
       window.localStorage.setItem(clePasAujourdhui(commerce), aujourdhui);
@@ -107,20 +105,35 @@ export function CarteMike({
           <b>Mike</b> · ton assistant
         </span>
       </div>
-      <p className="pl-carte-dit">
-        <b>
-          {n} {n > 1 ? "personnes attendent" : "personne attend"} ton signal.
-        </b>{" "}
-        {proposition(commerce)}
-      </p>
-      <div className="pl-carte-boutons">
-        <button type="button" className="pl-oui" onClick={onOui}>
-          Oui, préviens-les
-        </button>
-        <button type="button" className="pl-non" onClick={pasAujourdhui}>
-          Pas aujourd’hui
-        </button>
-      </div>
+      {n > 0 && (
+        <>
+          <p className="pl-carte-dit">
+            <b>
+              {n} {n > 1 ? "personnes attendent" : "personne attend"} ton signal.
+            </b>{" "}
+            {proposition(commerce)}
+          </p>
+          <button type="button" className="pl-oui" onClick={onOui}>
+            Oui, préviens-les
+          </button>
+        </>
+      )}
+      {m > 0 && (
+        <>
+          <p className="pl-carte-dit">
+            <b>
+              J’ai préparé {m} {m > 1 ? "messages" : "message"}
+            </b>{" "}
+            pour ton carnet : un merci, une question facile… Ils arrivent dans leur Maison, sur l’appli.
+          </p>
+          <button type="button" className="pl-oui rose" onClick={onMessages}>
+            {m > 1 ? "Les relire" : "Le relire"}
+          </button>
+        </>
+      )}
+      <button type="button" className="pl-non" onClick={pasAujourdhui}>
+        Pas aujourd’hui
+      </button>
       <style>{STYLES}</style>
     </section>
   );
@@ -170,11 +183,7 @@ export function PreviensLes({
 
   const choisirTu = (oui: boolean) => {
     setTu(oui);
-    try {
-      window.localStorage.setItem(cleTu(commerce), oui ? "tu" : "vous");
-    } catch {
-      /* stockage indisponible */
-    }
+    garderTu(commerce, oui);
   };
 
   const choisirPlus = (p: string) => {
@@ -194,7 +203,7 @@ export function PreviensLes({
   const ouvert = heureOuverte();
   // Ceux qui voulaient être prévenus. Ceux qu'on ne peut pas prévenir aujourd'hui restent visibles, grisés, avec la raison.
   const destinataires = carnet.lignes.filter((l) => l.prevenir && !l.stop);
-  const aEnvoyer = destinataires.filter((l) => !envoyes[l.ref] && peutLuiEcrire(l.messages, maintenant).oui).length;
+  const aEnvoyer = destinataires.filter((l) => !envoyes[l.ref] && !silenceDe(l, maintenant)).length;
 
   return (
     <div className="pl">
@@ -293,7 +302,7 @@ export function PreviensLes({
         )}
         {destinataires.length === 0 && <p className="pl-vide">Personne à prévenir pour l’instant.</p>}
         {destinataires.map((l) => {
-          const regle = peutLuiEcrire(l.messages, maintenant);
+          const tais = silenceDe(l, maintenant).replace(/\.$/, "");
           const envoye = Boolean(envoyes[l.ref]);
           const sonPlus = !plusInterdit && plusPourLui(l.messages, petitPlus) ? petitPlus : "";
           const propose = messagePour({
@@ -310,7 +319,7 @@ export function PreviensLes({
           const texte = textes[l.ref] ?? propose;
           const qui = l.prenom || "cette personne";
           const numero = numeros?.[l.ref] ?? "";
-          const bloque = !envoye && !regle.oui;
+          const bloque = !envoye && Boolean(tais);
           const peut = ouvert && !envoye && !bloque && texte.trim().length > 0;
           const marquer = async () => {
             if (await carnet.envoye(l.ref, texte.trim(), sonPlus)) setEnvoyes((e) => ({ ...e, [l.ref]: true }));
@@ -321,7 +330,7 @@ export function PreviensLes({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={lookDe(l.look).image} alt="" />
                 <b>{l.prenom || "Sans prénom"}</b>
-                {bloque && <em>{regle.pourquoi}</em>}
+                {bloque && <em>{tais}</em>}
                 {!bloque && !envoye && petitPlus && !sonPlus && !plusInterdit && <em>Sans le petit plus : déjà offert récemment</em>}
               </div>
               {!bloque && (
@@ -387,9 +396,9 @@ const STYLES = `
 .pl-carte-haut b{font-family:var(--font-clikme),sans-serif;font-size:15px;font-weight:800;color:var(--creme,#FFF4E6);}
 .pl-carte-dit{margin:0;font-size:14.5px;line-height:1.45;}
 .pl-carte-dit b{font-family:var(--font-clikme),sans-serif;font-weight:800;}
-.pl-carte-boutons{display:flex;flex-wrap:wrap;gap:8px;}
-.pl-oui{min-height:42px;padding:0 18px;border:0;border-radius:999px;background:#25D366;color:#06260F;font-weight:800;font-size:14.5px;}
-.pl-non{min-height:42px;padding:0 14px;border:0;background:none;color:var(--gris,#CDB8A4);font-weight:700;font-size:13.5px;}
+.pl-oui{align-self:flex-start;min-height:42px;padding:0 18px;border:0;border-radius:999px;background:#25D366;color:#06260F;font-weight:800;font-size:14.5px;}
+.pl-oui.rose{background:var(--rose,#FF2E9A);color:#fff;}
+.pl-non{align-self:flex-start;min-height:36px;padding:0 4px;border:0;background:none;color:var(--gris,#CDB8A4);font-weight:700;font-size:13.5px;}
 .pl{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:12px 16px calc(28px + env(safe-area-inset-bottom,0px));scrollbar-width:none;
   display:flex;flex-direction:column;gap:16px;}
 .pl::-webkit-scrollbar{display:none;}

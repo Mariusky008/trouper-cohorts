@@ -37,12 +37,29 @@ export type LigneCarnet = {
   /** Ses passages notés au comptoir, et le dernier jour (« 2026-10-25 », heure de Paris). */
   passages: number;
   dernierPassage: string | null;
-  /** Les messages que le commerçant lui a envoyés depuis le comptoir, le plus récent d'abord (5 au plus) :
-   *  quand, et le petit plus offert (vide s'il n'y en avait pas). Voir `lib/direct/previens-les.ts`. */
+  /** Les messages que le commerçant lui a envoyés depuis le comptoir, le plus récent d'abord (20 au plus) :
+   *  quand, le petit plus offert (vide s'il n'y en avait pas), par où, et sa réponse.
+   *  Voir `lib/direct/previens-les.ts` et `lib/direct/moteur-messages.ts`. */
   messages: MessageEnvoye[];
 };
 
-export type MessageEnvoye = { le: string; plus: string };
+export type MessageEnvoye = {
+  le: string;
+  plus: string;
+  id?: string;
+  /** Par son WhatsApp à lui (« Oui, préviens-les »), ou dans Ma Maison (les messages de Mike). Absent : WhatsApp. */
+  canal?: "whatsapp" | "maison";
+  /** Le modèle du moteur (`merci`, `memoire`…), vide pour une invitation datée. */
+  modele?: string;
+  /** Ce qu'elle a répondu (un des choix dans Ma Maison ; `REPONDU_WHATSAPP` quand il l'a noté), vide sinon. */
+  reponse?: string;
+  /** Les réponses faciles proposées avec le message (Ma Maison). */
+  choix?: string[];
+  texte?: string;
+};
+
+/** Ce que le carnet garde quand le commerçant note « A répondu » à un message WhatsApp. */
+export const REPONDU_WHATSAPP = "(sur WhatsApp)";
 
 /** L'ordre des groupes du carnet : c'est décidé, puis la promesse, puis l'envie. */
 export const ORDRE_CAGES: Cage[] = ["aujourdhui", "un-jour", "adore"];
@@ -118,22 +135,47 @@ type Graine = {
   prevenir?: boolean;
   passages?: number;
   joursDepuis?: number;
-  /** Un message déjà envoyé, il y a tant de jours, avec ce petit plus. */
-  message?: { jours: number; plus: string };
+  /** Les messages déjà envoyés (le plus récent d'abord), il y a tant de jours. */
+  messages?: { jours: number; plus?: string; canal?: "whatsapp" | "maison"; modele?: string; reponse?: string; texte?: string }[];
 };
 const GRAINES: Graine[] = [
   { prenom: "Camille", look: "fleuri", cage: "aujourdhui", heures: 1, films: 3, passages: 2, joursDepuis: 9 },
   { prenom: "Hugo", look: "denim", cage: "aujourdhui", heures: 4, films: 1 },
   { prenom: "Inès", look: "artiste", cage: "aujourdhui", heures: 27, films: 2, passages: 1, joursDepuis: 1 },
   { prenom: "Manon", look: "cosy", cage: "un-jour", heures: 2, films: 1, prevenir: true },
-  { prenom: "Nathan", look: "curieux", cage: "un-jour", heures: 20, films: 2, prevenir: true, message: { jours: 3, plus: "le café" } },
+  {
+    prenom: "Nathan",
+    look: "curieux",
+    cage: "un-jour",
+    heures: 100,
+    films: 2,
+    prevenir: true,
+    messages: [{ jours: 3, plus: "le café", reponse: REPONDU_WHATSAPP, texte: "Nathan, il reste de la place ce soir. Tu viens à combien ? Et le café, c’est cadeau 🎁" }],
+  },
   { prenom: "Sarah", look: "lecteur", cage: "un-jour", heures: 52, films: 1 },
   { prenom: "Jules", look: "voyageur", cage: "un-jour", heures: 98, films: 1, prevenir: true },
   { prenom: "Zoé", look: "soleil", cage: "adore", heures: 3, films: 4, passages: 3, joursDepuis: 5 },
   { prenom: "Adam", look: "melomane", cage: "adore", heures: 9, films: 1 },
-  { prenom: "Chloé", look: "jardinier", cage: "adore", heures: 30, films: 2 },
-  { prenom: "Louis", look: "flaneur", cage: "adore", heures: 75, films: 1 },
-  { prenom: "Emma", look: "rebelle", cage: "adore", heures: 140, films: 1 },
+  {
+    prenom: "Chloé",
+    look: "jardinier",
+    cage: "adore",
+    heures: 120,
+    films: 2,
+    messages: [{ jours: 3, canal: "maison", modele: "merci", reponse: "Poisson", texte: "Merci Chloé ! Ton fantôme est bien arrivé : ça fait plaisir. Toi, plutôt viande ou poisson ?" }],
+  },
+  {
+    prenom: "Louis",
+    look: "flaneur",
+    cage: "adore",
+    heures: 480,
+    films: 1,
+    messages: [
+      { jours: 8, canal: "maison", modele: "memoire" },
+      { jours: 16, canal: "maison", modele: "merci", texte: "Merci Louis ! Ton fantôme est bien arrivé : ça fait plaisir. Toi, plutôt viande ou poisson ?" },
+    ],
+  },
+  { prenom: "Emma", look: "rebelle", cage: "adore", heures: 140, films: 1, messages: [{ jours: 2, canal: "maison", modele: "merci" }] },
 ];
 
 /** Le carnet inventé d'un commerce de démonstration, daté par rapport à maintenant. */
@@ -149,6 +191,13 @@ export function carnetDemo(maintenant: number, aujourdhui: string): LigneCarnet[
     stop: false,
     passages: g.passages ?? 0,
     dernierPassage: g.passages ? jourMoins(aujourdhui, g.joursDepuis ?? 0) : null,
-    messages: g.message ? [{ le: new Date(maintenant - g.message.jours * 86_400_000).toISOString(), plus: g.message.plus }] : [],
+    messages: (g.messages ?? []).map((m) => ({
+      le: new Date(maintenant - m.jours * 86_400_000).toISOString(),
+      plus: m.plus ?? "",
+      canal: m.canal ?? "whatsapp",
+      modele: m.modele ?? "",
+      reponse: m.reponse ?? "",
+      texte: m.texte ?? "",
+    })),
   }));
 }

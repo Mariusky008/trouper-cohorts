@@ -79,6 +79,7 @@ export function MaMaison({
   demandeGeste = 0,
   pieceDeDepart = null,
   reglagesEnPlus,
+  messages,
 }: {
   /** Dans une vraie ville : la Maison est gardée par le serveur et l'adresse la retrouve. */
   reelle: boolean;
@@ -109,6 +110,8 @@ export function MaMaison({
   pieceDeDepart?: { cle: ClePiece; cible: string } | null;
   /** Ce que les réglages gardent de l'application (aide, mes fantômes, installer). */
   reglagesEnPlus?: ReactNode;
+  /** 💬 Mes messages : ce que les commerçants m'ont écrit — voir `mes-messages.tsx`. Rien quand il n'y en a pas. */
+  messages?: ReactNode;
 }) {
   const etat = useSyncExternalStore(abonnerMaisonPrivee, chargerMaisonPrivee, maisonPriveeServeur);
   const look = useSyncExternalStore(abonnerLook, monLook, monLook);
@@ -308,6 +311,8 @@ export function MaMaison({
       {surprises && !tournee && !surprises.aOuvrir.length && surprises.duJour.length > 0 && (
         <RevoirLesSurprises n={surprises.duJour.length} onRevoir={() => surprises.onOuvrir(true)} />
       )}
+
+      {messages}
 
       <button type="button" className="mz-connait" onClick={() => setVue({ ou: "reglages" })}>
         <Dessin d={DESSINS.maison} plein />

@@ -25,6 +25,7 @@ import {
   ORDRE_CAGES,
   passagesEnClair,
   quandEnClair,
+  REPONDU_WHATSAPP,
   resumeDuCarnet,
   sensDuGroupe,
   titreDuGroupe,
@@ -34,6 +35,7 @@ import { lookDe } from "@/lib/direct/look";
 import { jourParis } from "@/lib/jour-paris";
 import { heureOuverte } from "@/lib/direct/previens-les";
 import { aPrevenir } from "./previens-les";
+import { combienDeMessages } from "./messages-de-mike";
 
 type Etat = { pret: boolean; actif: boolean; lignes: LigneCarnet[]; aujourdhui: string };
 
@@ -181,7 +183,58 @@ export function useCarnet(commerce: CommerceComptoir) {
     }
   };
 
-  return { ...etat, occupe, ennui, recharger: charger, passage, stop, numeros, envoye, demo: !reel };
+  /** 💬 Il a dit oui au message de Mike : il arrive dans la Maison de la personne. */
+  const maison = async (ref: string, texte: string, modele: string, choix: string[]): Promise<boolean> => {
+    setEnnui("");
+    const ajoute = (l: LigneCarnet): LigneCarnet => ({
+      ...l,
+      messages: [{ le: new Date().toISOString(), plus: "", canal: "maison" as const, modele, choix, texte, reponse: "" }, ...l.messages].slice(0, 20),
+    });
+    if (!reel) {
+      const l = etat.lignes.find((x) => x.ref === ref);
+      if (!l) return false;
+      const neuve = ajoute(l);
+      garderDemo(commerce, neuve);
+      changer(ref, () => neuve);
+      return true;
+    }
+    try {
+      await demander(reel, { action: "maison", ref, texte, modele, choix });
+      changer(ref, ajoute);
+      return true;
+    } catch (e) {
+      setEnnui(e instanceof Error ? e.message : String(e));
+      return false;
+    }
+  };
+
+  /** Elle lui a répondu sur WhatsApp : il le note (ClikMe ne lit pas son WhatsApp). */
+  const repondu = async (ref: string) => {
+    setEnnui("");
+    const marque = (l: LigneCarnet): LigneCarnet => {
+      const i = l.messages.findIndex((m) => (m.canal ?? "whatsapp") === "whatsapp" && !m.reponse);
+      return i < 0 ? l : { ...l, messages: l.messages.map((m, j) => (j === i ? { ...m, reponse: REPONDU_WHATSAPP } : m)) };
+    };
+    if (!reel) {
+      const l = etat.lignes.find((x) => x.ref === ref);
+      if (!l) return;
+      const neuve = marque(l);
+      garderDemo(commerce, neuve);
+      changer(ref, () => neuve);
+      return;
+    }
+    setOccupe(ref);
+    try {
+      await demander(reel, { action: "repondu", ref });
+      changer(ref, marque);
+    } catch (e) {
+      setEnnui(e instanceof Error ? e.message : String(e));
+    } finally {
+      setOccupe("");
+    }
+  };
+
+  return { ...etat, occupe, ennui, recharger: charger, passage, stop, numeros, envoye, maison, repondu, demo: !reel };
 }
 export type CarnetDuComptoir = ReturnType<typeof useCarnet>;
 
@@ -234,6 +287,7 @@ export function CarnetComptoir({
   carnet,
   onRetour,
   onPrevenir,
+  onMessages,
 }: {
   commerce: CommerceComptoir;
   dossier: string;
@@ -241,6 +295,8 @@ export function CarnetComptoir({
   onRetour: () => void;
   /** 📲 « Préviens-les » : l'écran de Mike, pour ceux qui attendent son signal. */
   onPrevenir?: () => void;
+  /** 💬 Les messages que Mike a préparés pour leur Maison. */
+  onMessages?: () => void;
 }) {
   const { recharger } = carnet;
   useEffect(() => {
@@ -269,6 +325,12 @@ export function CarnetComptoir({
       {onPrevenir && heureOuverte(maintenant) && aPrevenir(carnet.lignes, maintenant).length > 0 && (
         <button type="button" className="ck-prevenir" onClick={onPrevenir}>
           📲 Mike peut prévenir ceux qui attendent ton signal <i>{aPrevenir(carnet.lignes, maintenant).length}</i>
+        </button>
+      )}
+
+      {onMessages && heureOuverte(maintenant) && combienDeMessages(carnet.lignes, commerce) > 0 && (
+        <button type="button" className="ck-prevenir rose" onClick={onMessages}>
+          💬 Les messages que Mike a préparés <i>{combienDeMessages(carnet.lignes, commerce)}</i>
         </button>
       )}
 
@@ -305,6 +367,7 @@ export function CarnetComptoir({
                 occupe={carnet.occupe === l.ref}
                 onPassage={(oui) => void carnet.passage(l.ref, oui)}
                 onStop={() => void carnet.stop(l.ref)}
+                onRepondu={() => void carnet.repondu(l.ref)}
               />
             ))}
           </section>
@@ -322,6 +385,7 @@ function LigneDuCarnet({
   occupe,
   onPassage,
   onStop,
+  onRepondu,
 }: {
   l: LigneCarnet;
   maintenant: number;
@@ -329,9 +393,13 @@ function LigneDuCarnet({
   occupe: boolean;
   onPassage: (oui: boolean) => void;
   onStop: () => void;
+  onRepondu: () => void;
 }) {
   const [confirmer, setConfirmer] = useState(false);
   const venu = l.dernierPassage === aujourdhui;
+  /* 💬 SA DERNIÈRE RÉPONSE dans Ma Maison ; et son dernier message WhatsApp, s'il attend qu'il note sa réponse. */
+  const reponse = l.messages.find((m) => m.reponse && m.reponse !== REPONDU_WHATSAPP)?.reponse;
+  const waMuet = l.messages[0] && (l.messages[0].canal ?? "whatsapp") === "whatsapp" && !l.messages[0].reponse;
   const qui = l.prenom || "Sans prénom";
   const passages = passagesEnClair(l, aujourdhui);
   return (
@@ -347,7 +415,8 @@ function LigneDuCarnet({
         {(l.prevenir || l.stop || passages || l.messages.length > 0) && (
           <span className="ck-puces">
             {l.prevenir && <em className="wa">📲 À prévenir sur WhatsApp</em>}
-            {l.messages[0] && <em className="msg">Prévenu {quandEnClair(l.messages[0].le, maintenant)}</em>}
+            {l.messages[0] && <em className="msg">Dernier message {quandEnClair(l.messages[0].le, maintenant)}</em>}
+            {reponse && <em className="rep">💬 A répondu : {reponse}</em>}
             {l.stop && <em className="non">A dit stop</em>}
             {passages && <em className="ok">{passages}</em>}
           </span>
@@ -357,6 +426,11 @@ function LigneDuCarnet({
         <button type="button" className={`ck-passage${venu ? " fait" : ""}`} aria-pressed={venu} disabled={occupe} onClick={() => onPassage(!venu)}>
           {venu ? "✓ Passage noté" : "Passage aujourd’hui"}
         </button>
+        {waMuet && !l.stop && (
+          <button type="button" className="ck-stop" disabled={occupe} onClick={onRepondu}>
+            A répondu sur WhatsApp
+          </button>
+        )}
         {l.prevenir && !confirmer && (
           <button type="button" className="ck-stop" disabled={occupe} onClick={() => setConfirmer(true)}>
             A dit stop
@@ -427,8 +501,11 @@ const STYLES = `
 .ck-puces .non{background:rgba(205,184,164,.14);color:var(--gris);}
 .ck-puces .ok{background:rgba(245,162,58,.14);color:var(--ambre);}
 .ck-puces .msg{background:rgba(37,211,102,.08);color:#BFE8CD;}
+.ck-puces .rep{background:rgba(255,46,154,.14);color:#FFC2E2;}
 .ck-prevenir{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:8px 16px;border-radius:999px;border:0;
   background:#25D366;color:#06260F;font-weight:800;font-size:14px;text-align:center;}
+.ck-prevenir.rose{background:var(--rose);color:#fff;}
+.ck-prevenir.rose i{background:#fff;color:#C4146E;}
 .ck-prevenir i{font-style:normal;min-width:22px;height:22px;padding:0 6px;border-radius:999px;display:inline-grid;place-items:center;background:#06260F;color:#7CF0A2;font-size:12.5px;}
 .ck-gestes{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
 .ck-passage,.ck-stop,.ck-annuler{min-height:36px;padding:0 12px;border-radius:999px;font-weight:800;font-size:13px;white-space:nowrap;}

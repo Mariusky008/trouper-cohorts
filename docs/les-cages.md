@@ -4,8 +4,8 @@
 > son fantôme de sa cage. »
 
 C'est l'étape 1 du passage de la démo (`outils/tour-du-fantome`) dans l'application ; l'étape 2 (le carnet au
-comptoir) et l'étape 3 (« Oui, préviens-les », Mike) sont plus bas. Les étapes suivantes : le moteur de messages,
-le ticket de Mike.
+comptoir), l'étape 3 (« Oui, préviens-les », Mike) et l'étape 4 (le moteur de messages) sont plus bas. L'étape
+suivante : le ticket de Mike.
 
 ## Ce que voit l'habitant
 
@@ -85,8 +85,44 @@ La démonstration n'a pas de numéros (prénoms inventés) : « Envoyer » montr
   l'écran) et `envoye` (le message envoyé, gardé après avoir revérifié les règles).
 - `supabase/migrations/20261028090000_clik_messages.sql` : `clik_message`, les messages envoyés et leur petit plus.
 
-Reste pour l'étape 4 (le moteur de messages) : « jamais deux d'affilée sans réponse » et le silence après deux
-messages sans réponse — il faut savoir qui a répondu, ce que le commerçant notera d'un geste.
+## 💬 Le moteur de messages (étape 4)
+
+Le carnet de messages du fantôme (trente messages, cinq règles) devient des modèles pour tous les métiers
+(`src/lib/direct/moteur-messages.ts`). Pour chaque personne du carnet, selon sa cage, le moment et ce qu'on sait
+d'elle, Mike propose **un** message — ou se tait, et dit pourquoi :
+
+| Situation | Message de Mike | Ses réponses |
+|---|---|---|
+| Premier message, « J'adore » | « Merci Camille ! Margot a vu passer ton fantôme : ça fait plaisir. Toi, plutôt viande ou poisson ? » (la question change selon le métier) | Viande · Poisson |
+| Premier message, « Un jour » | « Merci ! Tu nous as promis de venir un jour 😊 Je te fais signe dès qu'une table se libère. Plutôt en semaine ou le week-end ? » | En semaine · Le week-end |
+| Elle a répondu | « Noté : poisson ! Je le dis à Margot. Je te fais signe quand il y a du nouveau de ce côté-là ? » | Oui ! · Pas besoin |
+| Trois de ses vidéos aimées, pas venue | l'invitation douce, « l'envers du décor » | Avec plaisir · Peut-être |
+| « Un jour », un mois après | « Ton fantôme s'impatiente ! » | Un midi · Un dîner |
+| « Aujourd'hui », pas venue après deux jours | « Pas de souci… je te garde une place une prochaine fois ? » | Oui, bientôt · Plus tard |
+| Après une visite | « Merci pour ta visite ! Alors, verdict ? » ; à la troisième, « tu fais partie de la maison » | |
+| Deux messages sans réponse | la porte ouverte, une fois | J'ai envie |
+
+Il se tait : après un stop (définitif) ; deux messages par semaine au plus, pas deux le même jour ; un message
+sans réponse → rien d'autre dans la semaine ; trois sans réponse → plus rien jusqu'à son prochain fantôme ;
+« aujourd'hui » → rien avant sa visite. Jamais deux fois le même modèle, jamais d'offre ici (le petit plus, c'est
+« Oui, préviens-les »). Ces règles valent aussi pour les invitations WhatsApp de l'étape 3.
+
+- **Au comptoir**, la carte de Mike dit aussi « J'ai préparé 10 messages pour ton carnet » → l'écran « Les messages de
+  Mike » (`messages-de-mike.tsx`) : chaque message se relit et se change, avec ses réponses à toucher ; « Oui,
+  envoie », « Pas celui-là » (de côté pour aujourd'hui), ou « Oui, envoie les N ». En bas, ceux à qui Mike ne dit
+  rien, avec la raison. Tu ou vous : le même choix que « Oui, préviens-les ». Le carnet le propose aussi.
+- **Dans le carnet**, « 💬 A répondu : Poisson » ; et pour un message WhatsApp, « A répondu sur WhatsApp » (ClikMe
+  ne lit pas son WhatsApp : c'est ce qui remet le silence à zéro).
+- **Chez l'habitant**, dans Ma Maison, « 💬 Mes messages » (`mes-messages.tsx`) : le visage du fantôme du commerce,
+  son nom, le message, ses réponses d'un appui (une fois) ; « Ne plus recevoir ses messages » (plus rien de ce
+  commerce, ni ici ni sur WhatsApp) et « Reprendre ». Rien quand il n'y a pas de message.
+- **La démonstration** : au comptoir, le carnet inventé a un historique (Chloé a répondu « Poisson », Louis deux
+  fois sans réponse, Emma attend…). Dans l'appli des habitants (`/autour-de-moi`), libérer son fantôme à la fin du
+  film d'un commerce de la démonstration dépose dans Ma Maison le message que Mike aurait proposé
+  (`messages-maison.ts`) — jamais pour un vrai commerçant.
+- Les routes : celle du carnet (`maison`, `repondu`) et `src/app/api/direct/messages/route.ts` (l'habitant : lire,
+  répondre, stop, reprendre). La migration `supabase/migrations/20261029090000_clik_messages_maison.sql` ajoute à
+  `clik_message` le canal, le modèle, les réponses proposées et la réponse.
 
 ## L'activer en production
 
@@ -97,7 +133,9 @@ commerçant ; un numéro donné reçoit « Ce n'est pas encore possible chez ce 
 
 **Le carnet demande en plus** `supabase/migrations/20261027090000_clik_visites.sql` (les passages), et « Oui,
 préviens-les » `supabase/migrations/20261028090000_clik_messages.sql` (les messages envoyés), à coller de la même
-façon. Sans la seconde, « Envoyer » ouvre bien WhatsApp, mais répond « Les messages ne sont pas encore activés. » Sans les cages, la carte dit « Bientôt, à la fin de tes vidéos » ; sans les passages, le carnet
+façon. Sans la seconde, « Envoyer » ouvre bien WhatsApp, mais répond « Les messages ne sont pas encore activés. »
+Le moteur de messages demande enfin `supabase/migrations/20261029090000_clik_messages_maison.sql` (après celle des
+messages) ; sans elle, « Oui, envoie » répond « Les messages dans Ma Maison ne sont pas encore activés. » Sans les cages, la carte dit « Bientôt, à la fin de tes vidéos » ; sans les passages, le carnet
 s'affiche mais « Passage aujourd'hui » répond « Les passages ne sont pas encore activés. »
 
 ## Vérifier
@@ -105,7 +143,8 @@ s'affiche mais « Passage aujourd'hui » répond « Les passages ne sont pas enc
 - `node scripts/essai-cages-route.mjs` (lancé aussi par la CI, dans `scripts/navigateur/lancer-essais.sh`) : la
   route contre le faux Supabase.
 - `node scripts/essai-carnet-route.mjs` (CI aussi) : le carnet, ses passages, le stop, et « Oui, préviens-les »
-  (les numéros, le message gardé, les règles), contre le faux Supabase. Hors de 9 h – 20 h 30, il vérifie le refus.
+  (les numéros, le message gardé, les règles), et le moteur de messages (Ma Maison, la réponse, le stop, « A
+  répondu », le silence), contre le faux Supabase. Hors de 9 h – 20 h 30, il vérifie le refus.
 - Le carnet dans le navigateur : `/autour-de-moi/assistante?metier=table`, la carte « Mon carnet ».
 - Dans le navigateur : `/autour-de-moi`, Restaurants, Chez Bergine, « Voir toutes les offres + infos », le film
   « En cuisine, pendant le service » jusqu'au bout.

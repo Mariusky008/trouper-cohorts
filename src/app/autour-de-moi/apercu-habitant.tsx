@@ -331,6 +331,9 @@ import {
 import { MARQUE } from "@/lib/marque";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { CagesFantomes, type ChoixCage } from "./cages-fantomes";
+import { MesMessages } from "./mes-messages";
+import { deposerMessageDemo } from "@/lib/direct/messages-maison";
+import { copieNommee } from "@/lib/direct/copies-presentation";
 import { numeroWhatsApp, quoiAujourdhui, type Cage } from "@/lib/direct/cages";
 
 /** Au-delà de cette distance en pixels, le doigt a décidé : la carte part. */
@@ -4952,6 +4955,12 @@ export function ApercuHabitant({
         const avant = chargerCages()[cleFilm(c, m)];
         poserCage(cleFilm(c, m), avant?.whatsapp ? { cage, whatsapp: avant.whatsapp } : { cage });
         void envoyerCage(c, m, cage);
+        // 💬 LA DÉMONSTRATION n'a pas de commerçant pour dire oui : le premier message que Mike aurait
+        // proposé arrive dans Ma Maison (jamais pour un vrai commerçant — voir `messages-maison.ts`).
+        if (!c.villeReelle && !copieNommee(c.id)) {
+          const films = Object.keys(chargerCages()).filter((k) => k.startsWith(`${c.id}|`)).length;
+          deposerMessageDemo({ carte: c, cage, prenom: monPrenom(), films });
+        }
         if (cage === "aujourdhui") aujourdhuiCage(c, m);
       }),
     );
@@ -12607,6 +12616,7 @@ export function ApercuHabitant({
                 }}
                 demandeGeste={demandeGeste}
                 pieceDeDepart={pieceDeDepart}
+                messages={<MesMessages reelle={Boolean(reelle)} />}
                 reglagesEnPlus={
                   <>
                 {/* AIDE : le tuto d'arrivée, à revoir quand on veut. */}

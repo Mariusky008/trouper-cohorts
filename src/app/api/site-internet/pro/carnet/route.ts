@@ -19,13 +19,21 @@
 // envoyé le message de Mike à quelqu'un ; on le garde (`clik_message`), après avoir revérifié
 // les règles du carnet de messages : elle veut toujours être prévenue, pas deux messages le
 // même jour ni plus de deux par semaine, rien avant 9 h ni après 20 h 30, pas d'alcool offert.
+//
+// 💬 LE MOTEUR DE MESSAGES (étape 4, `lib/direct/moteur-messages.ts`) :
+// « maison » : il a dit oui au message que Mike a préparé ; il arrive dans la Maison de
+// la personne (« Mes messages »), avec ses réponses faciles. Revérifié ici : pas de stop, les
+// mêmes règles, et le silence (jamais deux d'affilée sans réponse dans la semaine ; après
+// trois sans réponse, plus rien jusqu'à son prochain fantôme), jamais deux fois le même modèle.
+// « repondu » : elle lui a répondu sur WhatsApp — ClikMe ne le voit pas, il le note.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { estCage } from "@/lib/direct/cages";
 import { lookValide } from "@/lib/direct/look";
 import { jourParis } from "@/lib/jour-paris";
-import type { LigneCarnet } from "@/lib/direct/carnet";
-import { HEURES_FERMEES, heureOuverte, peutLuiEcrire, plusPermis, plusPropre } from "@/lib/direct/previens-les";
+import { HEURES_FERMEES, heureOuverte, plusPermis, plusPropre } from "@/lib/direct/previens-les";
+import { estModele, silenceDe } from "@/lib/direct/moteur-messages";
+import { REPONDU_WHATSAPP, type LigneCarnet, type MessageEnvoye } from "@/lib/direct/carnet";
 
 export const dynamic = "force-dynamic";
 
@@ -47,11 +55,29 @@ async function passagesDe(supabase: Supabase, siteId: string, habitantId?: strin
 
 /** Ses messages envoyés, du plus récent au plus ancien — vide tant que `clik_message` n'existe pas. */
 async function messagesDe(supabase: Supabase, siteId: string, habitantId?: string): Promise<Ligne[]> {
-  let q = supabase.from("clik_message").select("habitant_id, plus, envoye_le").eq("site_id", siteId);
-  if (habitantId) q = q.eq("habitant_id", habitantId);
-  const { data, error } = await q.order("envoye_le", { ascending: false }).limit(5000);
-  if (error) return [];
-  return Array.isArray(data) ? (data as Ligne[]) : [];
+  // Les colonnes du moteur (`…_clik_messages_maison.sql`) d'abord ; sans elles, celles de « Oui, préviens-les ».
+  for (const colonnes of ["id, habitant_id, plus, envoye_le, canal, modele, choix, reponse, texte", "id, habitant_id, plus, envoye_le"]) {
+    let q = supabase.from("clik_message").select(colonnes).eq("site_id", siteId);
+    if (habitantId) q = q.eq("habitant_id", habitantId);
+    const { data, error } = await q.order("envoye_le", { ascending: false }).limit(5000);
+    if (!error) return Array.isArray(data) ? (data as unknown as Ligne[]) : [];
+  }
+  return [];
+}
+
+/** Une ligne de `clik_message`, telle que le carnet et le moteur la lisent. */
+function enMessage(m: Ligne): MessageEnvoye {
+  const canal = s(m.canal) === "maison" ? "maison" : "whatsapp";
+  return {
+    id: s(m.id),
+    le: s(m.envoye_le),
+    plus: s(m.plus),
+    canal,
+    modele: s(m.modele),
+    reponse: s(m.reponse),
+    choix: Array.isArray(m.choix) ? (m.choix as unknown[]).map(s).filter(Boolean) : [],
+    texte: s(m.texte),
+  };
 }
 
 /** La personne d'une ligne du carnet : sa cage doit être une cage de CE commerce. */
@@ -148,7 +174,7 @@ export async function POST(request: Request) {
     }
     for (const m of messages) {
       const l = parPersonne.get(s(m.habitant_id));
-      if (l && l.messages.length < 5) l.messages.push({ le: s(m.envoye_le), plus: s(m.plus) });
+      if (l && l.messages.length < 20) l.messages.push(enMessage(m));
     }
     return NextResponse.json({ ok: true, actif: true, aujourdhui: jourParis(), lignes: [...parPersonne.values()] });
   }
@@ -245,12 +271,63 @@ export async function POST(request: Request) {
     if (!contact || !s(contact.whatsapp) || contact.stop_le) {
       return NextResponse.json({ error: "Cette personne ne veut pas, ou plus, être prévenue." }, { status: 409 });
     }
-    const deja = (await messagesDe(supabase, siteId, habitantId)).map((m) => ({ le: s(m.envoye_le), plus: s(m.plus) }));
-    const regle = peutLuiEcrire(deja);
-    if (!regle.oui) return NextResponse.json({ error: `${regle.pourquoi}.` }, { status: 409 });
+    // LES MÊMES RÈGLES QUE LES MESSAGES DE MIKE : pas deux le même jour, deux par semaine, et le silence.
+    const [deja, { data: cg }] = await Promise.all([
+      messagesDe(supabase, siteId, habitantId),
+      supabase.from("clik_cage").select("updated_at").eq("site_id", siteId).eq("habitant_id", habitantId).order("updated_at", { ascending: false }).limit(1),
+    ]);
+    const le = s((Array.isArray(cg) ? (cg[0] as Ligne | undefined) : undefined)?.updated_at);
+    const tais = silenceDe({ le, messages: deja.map(enMessage), stop: false });
+    if (tais) return NextResponse.json({ error: tais }, { status: 409 });
     const { error } = await supabase.from("clik_message").insert({ site_id: siteId, habitant_id: habitantId, texte, plus });
     if (error) {
       if (migrationManquante(error.message)) return NextResponse.json({ error: "Les messages ne sont pas encore activés." }, { status: 503 });
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  // ── 💬 IL A DIT OUI AU MESSAGE DE MIKE : IL ARRIVE DANS SA MAISON ─────────────
+  if (action === "maison") {
+    const texte = s(p?.texte).slice(0, 600);
+    const modele = p?.modele;
+    const choix = (Array.isArray(p?.choix) ? (p?.choix as unknown[]) : []).map((x) => s(x).slice(0, 30)).filter(Boolean).slice(0, 2);
+    if (!texte) return NextResponse.json({ error: "Le message est vide." }, { status: 400 });
+    if (!estModele(modele)) return NextResponse.json({ error: "Ce message n'est pas un message de Mike." }, { status: 400 });
+    if (!heureOuverte()) return NextResponse.json({ error: HEURES_FERMEES }, { status: 409 });
+    // Ce que le moteur sait d'elle : sa dernière cage, son stop, ses messages.
+    const [{ data: c }, { data: k }, deja] = await Promise.all([
+      supabase.from("clik_cage").select("updated_at").eq("site_id", siteId).eq("habitant_id", habitantId).order("updated_at", { ascending: false }).limit(1),
+      supabase.from("clik_contact").select("stop_le").eq("site_id", siteId).eq("habitant_id", habitantId).maybeSingle(),
+      messagesDe(supabase, siteId, habitantId),
+    ]);
+    const messages = deja.map(enMessage);
+    const le = s((Array.isArray(c) ? (c[0] as Ligne | undefined) : undefined)?.updated_at);
+    const tais = silenceDe({ le, messages, stop: Boolean((k as Ligne | null)?.stop_le) });
+    if (tais) return NextResponse.json({ error: tais }, { status: 409 });
+    if (messages.some((m) => m.modele === modele)) return NextResponse.json({ error: "Ce message lui a déjà été envoyé." }, { status: 409 });
+    const { error } = await supabase
+      .from("clik_message")
+      .insert({ site_id: siteId, habitant_id: habitantId, texte, plus: "", canal: "maison", modele, choix });
+    if (error) {
+      if (migrationManquante(error.message)) return NextResponse.json({ error: "Les messages dans Ma Maison ne sont pas encore activés." }, { status: 503 });
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  // ── ELLE A RÉPONDU SUR WHATSAPP ────────────────────────────────────────────
+  // Son dernier message WhatsApp sans réponse la prend : c'est ce qui remet le silence à zéro.
+  if (action === "repondu") {
+    const sienne = (await messagesDe(supabase, siteId, habitantId)).map(enMessage).find((m) => m.canal === "whatsapp" && !m.reponse);
+    if (!sienne?.id) return NextResponse.json({ error: "Aucun message WhatsApp n'attend sa réponse." }, { status: 404 });
+    const { error } = await supabase
+      .from("clik_message")
+      .update({ reponse: REPONDU_WHATSAPP, repondu_le: new Date().toISOString() })
+      .eq("id", sienne.id)
+      .eq("site_id", siteId);
+    if (error) {
+      if (migrationManquante(error.message)) return NextResponse.json({ error: "Les réponses ne sont pas encore activées." }, { status: 503 });
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     return NextResponse.json({ ok: true });
