@@ -3,7 +3,7 @@
  *
  * Il répond comme PostgREST (`/rest/v1/<table>`) et comme le stockage
  * (`/storage/v1/object/…`) à ce dont l'application se sert : filtres eq, neq,
- * in, is, gte, lt, lte, gt ; order ; limit ; offset (pagination) ; select de colonnes ; count ;
+ * in, is, not, gte, lt, lte, gt ; order ; limit ; offset (pagination) ; select de colonnes ; count ;
  * insert / update / delete ; envoi d'un fichier ; adresse signée (lecture et
  * envoi) ; seaux (lire, créer) ; adresse publique — REFUSÉE pour un seau
  * privé, comme le vrai.
@@ -84,6 +84,7 @@ const DEFAUTS = {
   clik_cage: () => ({ id: randomUUID(), prenom: "", look: "", created_at: maintenant(), updated_at: maintenant() }),
   clik_contact: () => ({ id: randomUUID(), whatsapp: null, accord_le: null, stop_le: null, created_at: maintenant(), updated_at: maintenant() }),
   clik_visite: () => ({ id: randomUUID(), created_at: maintenant() }),
+  clik_message: () => ({ id: randomUUID(), plus: "", envoye_le: maintenant() }),
 };
 const CLES = {
   human_conversations: ["id"],
@@ -160,6 +161,8 @@ function filtre(param, brut) {
         return x !== null && x !== undefined && String(x) === valeur(reste);
       case "neq":
         return String(x) !== valeur(reste);
+      case "not":
+        return !filtre(param, reste)(r);
       case "is":
         return reste === "null" ? x === null || x === undefined : reste === "true" ? x === true : x === false;
       case "in": {

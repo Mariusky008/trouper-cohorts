@@ -32,11 +32,13 @@ import {
 } from "@/lib/direct/carnet";
 import { lookDe } from "@/lib/direct/look";
 import { jourParis } from "@/lib/jour-paris";
+import { heureOuverte } from "@/lib/direct/previens-les";
+import { aPrevenir } from "./previens-les";
 
 type Etat = { pret: boolean; actif: boolean; lignes: LigneCarnet[]; aujourdhui: string };
 
 /* ═══ LES GESTES DE LA DÉMONSTRATION, GARDÉS DANS CE TÉLÉPHONE ═══════════ */
-type Retenu = Pick<LigneCarnet, "passages" | "dernierPassage" | "stop">;
+type Retenu = Pick<LigneCarnet, "passages" | "dernierPassage" | "stop" | "prevenir" | "messages">;
 const cleDemo = (c: CommerceComptoir) => `clikme:carnet-demo:${c.id}`;
 function lireDemo(c: CommerceComptoir): Record<string, Retenu> {
   try {
@@ -47,7 +49,8 @@ function lireDemo(c: CommerceComptoir): Record<string, Retenu> {
 }
 function garderDemo(c: CommerceComptoir, l: LigneCarnet) {
   try {
-    window.localStorage.setItem(cleDemo(c), JSON.stringify({ ...lireDemo(c), [l.ref]: { passages: l.passages, dernierPassage: l.dernierPassage, stop: l.stop } }));
+    const r: Retenu = { passages: l.passages, dernierPassage: l.dernierPassage, stop: l.stop, prevenir: l.prevenir, messages: l.messages };
+    window.localStorage.setItem(cleDemo(c), JSON.stringify({ ...lireDemo(c), [l.ref]: r }));
   } catch {
     /* Navigation privée : le geste vit le temps de la visite. */
   }
@@ -146,7 +149,39 @@ export function useCarnet(commerce: CommerceComptoir) {
     }
   };
 
-  return { ...etat, occupe, ennui, recharger: charger, passage, stop, demo: !reel };
+  /** 📲 Les numéros de ceux qui veulent être prévenus (sa ligne → son numéro), lus quand il va leur écrire.
+   *  La démonstration n'en a pas : ses prénoms sont inventés. */
+  const numeros = useCallback(async (): Promise<Record<string, string>> => {
+    if (!reel) return {};
+    const j = await demander(reel, { action: "numeros" });
+    const n: Record<string, string> = {};
+    for (const x of Array.isArray(j.numeros) ? (j.numeros as { ref: string; whatsapp: string }[]) : []) n[x.ref] = x.whatsapp;
+    return n;
+  }, [reel]);
+
+  /** 📲 Il a envoyé le message de Mike : on le garde (les règles du carnet de messages comptent dessus). */
+  const envoye = async (ref: string, texte: string, plus: string): Promise<boolean> => {
+    setEnnui("");
+    const ajoute = (l: LigneCarnet) => ({ ...l, messages: [{ le: new Date().toISOString(), plus }, ...l.messages].slice(0, 5) });
+    if (!reel) {
+      const l = etat.lignes.find((x) => x.ref === ref);
+      if (!l) return false;
+      const neuve = ajoute(l);
+      garderDemo(commerce, neuve);
+      changer(ref, () => neuve);
+      return true;
+    }
+    try {
+      await demander(reel, { action: "envoye", ref, texte, plus });
+      changer(ref, ajoute);
+      return true;
+    } catch (e) {
+      setEnnui(e instanceof Error ? e.message : String(e));
+      return false;
+    }
+  };
+
+  return { ...etat, occupe, ennui, recharger: charger, passage, stop, numeros, envoye, demo: !reel };
 }
 export type CarnetDuComptoir = ReturnType<typeof useCarnet>;
 
@@ -198,11 +233,14 @@ export function CarnetComptoir({
   dossier,
   carnet,
   onRetour,
+  onPrevenir,
 }: {
   commerce: CommerceComptoir;
   dossier: string;
   carnet: CarnetDuComptoir;
   onRetour: () => void;
+  /** 📲 « Préviens-les » : l'écran de Mike, pour ceux qui attendent son signal. */
+  onPrevenir?: () => void;
 }) {
   const { recharger } = carnet;
   useEffect(() => {
@@ -227,6 +265,12 @@ export function CarnetComptoir({
           <p>À la fin de tes vidéos, tes clients libèrent leur fantôme. Les voici, avec ce qu’ils t’ont dit.</p>
         </div>
       </section>
+
+      {onPrevenir && heureOuverte(maintenant) && aPrevenir(carnet.lignes, maintenant).length > 0 && (
+        <button type="button" className="ck-prevenir" onClick={onPrevenir}>
+          📲 Mike peut prévenir ceux qui attendent ton signal <i>{aPrevenir(carnet.lignes, maintenant).length}</i>
+        </button>
+      )}
 
       {carnet.demo && <p className="ck-note">Démonstration : ces prénoms sont inventés. Tes gestes restent dans ce téléphone.</p>}
 
@@ -300,9 +344,10 @@ function LigneDuCarnet({
           {quandEnClair(l.le, maintenant)}
           {l.films > 1 ? ` · ${l.films} de tes vidéos` : ""}
         </small>
-        {(l.prevenir || l.stop || passages) && (
+        {(l.prevenir || l.stop || passages || l.messages.length > 0) && (
           <span className="ck-puces">
             {l.prevenir && <em className="wa">📲 À prévenir sur WhatsApp</em>}
+            {l.messages[0] && <em className="msg">Prévenu {quandEnClair(l.messages[0].le, maintenant)}</em>}
             {l.stop && <em className="non">A dit stop</em>}
             {passages && <em className="ok">{passages}</em>}
           </span>
@@ -381,6 +426,10 @@ const STYLES = `
 .ck-puces .wa{background:rgba(37,211,102,.13);color:#9FE7B8;}
 .ck-puces .non{background:rgba(205,184,164,.14);color:var(--gris);}
 .ck-puces .ok{background:rgba(245,162,58,.14);color:var(--ambre);}
+.ck-puces .msg{background:rgba(37,211,102,.08);color:#BFE8CD;}
+.ck-prevenir{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:8px 16px;border-radius:999px;border:0;
+  background:#25D366;color:#06260F;font-weight:800;font-size:14px;text-align:center;}
+.ck-prevenir i{font-style:normal;min-width:22px;height:22px;padding:0 6px;border-radius:999px;display:inline-grid;place-items:center;background:#06260F;color:#7CF0A2;font-size:12.5px;}
 .ck-gestes{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
 .ck-passage,.ck-stop,.ck-annuler{min-height:36px;padding:0 12px;border-radius:999px;font-weight:800;font-size:13px;white-space:nowrap;}
 .ck-passage{border:1.5px solid var(--ambre);background:none;color:var(--ambre);}

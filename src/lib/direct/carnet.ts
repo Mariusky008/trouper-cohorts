@@ -37,7 +37,12 @@ export type LigneCarnet = {
   /** Ses passages notés au comptoir, et le dernier jour (« 2026-10-25 », heure de Paris). */
   passages: number;
   dernierPassage: string | null;
+  /** Les messages que le commerçant lui a envoyés depuis le comptoir, le plus récent d'abord (5 au plus) :
+   *  quand, et le petit plus offert (vide s'il n'y en avait pas). Voir `lib/direct/previens-les.ts`. */
+  messages: MessageEnvoye[];
 };
+
+export type MessageEnvoye = { le: string; plus: string };
 
 /** L'ordre des groupes du carnet : c'est décidé, puis la promesse, puis l'envie. */
 export const ORDRE_CAGES: Cage[] = ["aujourdhui", "un-jour", "adore"];
@@ -104,13 +109,24 @@ function jourMoins(jour: string, n: number): string {
 // carnet est rempli de prénoms inventés, pour qu'on voie ce que ça donne. Les
 // gestes (un passage, un stop) se gardent dans le téléphone.
 
-type Graine = { prenom: string; look: string; cage: Cage; heures: number; films: number; prevenir?: boolean; passages?: number; joursDepuis?: number };
+type Graine = {
+  prenom: string;
+  look: string;
+  cage: Cage;
+  heures: number;
+  films: number;
+  prevenir?: boolean;
+  passages?: number;
+  joursDepuis?: number;
+  /** Un message déjà envoyé, il y a tant de jours, avec ce petit plus. */
+  message?: { jours: number; plus: string };
+};
 const GRAINES: Graine[] = [
   { prenom: "Camille", look: "fleuri", cage: "aujourdhui", heures: 1, films: 3, passages: 2, joursDepuis: 9 },
   { prenom: "Hugo", look: "denim", cage: "aujourdhui", heures: 4, films: 1 },
   { prenom: "Inès", look: "artiste", cage: "aujourdhui", heures: 27, films: 2, passages: 1, joursDepuis: 1 },
   { prenom: "Manon", look: "cosy", cage: "un-jour", heures: 2, films: 1, prevenir: true },
-  { prenom: "Nathan", look: "curieux", cage: "un-jour", heures: 20, films: 2, prevenir: true },
+  { prenom: "Nathan", look: "curieux", cage: "un-jour", heures: 20, films: 2, prevenir: true, message: { jours: 3, plus: "le café" } },
   { prenom: "Sarah", look: "lecteur", cage: "un-jour", heures: 52, films: 1 },
   { prenom: "Jules", look: "voyageur", cage: "un-jour", heures: 98, films: 1, prevenir: true },
   { prenom: "Zoé", look: "soleil", cage: "adore", heures: 3, films: 4, passages: 3, joursDepuis: 5 },
@@ -133,5 +149,6 @@ export function carnetDemo(maintenant: number, aujourdhui: string): LigneCarnet[
     stop: false,
     passages: g.passages ?? 0,
     dernierPassage: g.passages ? jourMoins(aujourdhui, g.joursDepuis ?? 0) : null,
+    messages: g.message ? [{ le: new Date(maintenant - g.message.jours * 86_400_000).toISOString(), plus: g.message.plus }] : [],
   }));
 }

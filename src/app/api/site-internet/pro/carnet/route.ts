@@ -12,12 +12,20 @@
 // « stop » : elle lui a répondu stop sur WhatsApp. DÉFINITIF pour ce commerce : son
 // numéro est effacé, et seule elle peut redire oui — en laissant à nouveau son numéro
 // à la fin d'un film (`api/direct/cage` efface alors le stop).
+//
+// 📲 « OUI, PRÉVIENS-LES » (étape 3, `lib/direct/previens-les.ts`) :
+// « numeros » : les numéros de ceux qui veulent être prévenus — seulement quand il ouvre
+// l'écran pour leur écrire, puisque c'est son WhatsApp qui enverra. « envoye » : il a
+// envoyé le message de Mike à quelqu'un ; on le garde (`clik_message`), après avoir revérifié
+// les règles du carnet de messages : elle veut toujours être prévenue, pas deux messages le
+// même jour ni plus de deux par semaine, rien avant 9 h ni après 20 h 30, pas d'alcool offert.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { estCage } from "@/lib/direct/cages";
 import { lookValide } from "@/lib/direct/look";
 import { jourParis } from "@/lib/jour-paris";
 import type { LigneCarnet } from "@/lib/direct/carnet";
+import { HEURES_FERMEES, heureOuverte, peutLuiEcrire, plusPermis, plusPropre } from "@/lib/direct/previens-les";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +41,15 @@ async function passagesDe(supabase: Supabase, siteId: string, habitantId?: strin
   let q = supabase.from("clik_visite").select("habitant_id, jour").eq("site_id", siteId);
   if (habitantId) q = q.eq("habitant_id", habitantId);
   const { data, error } = await q.order("jour", { ascending: false }).limit(5000);
+  if (error) return [];
+  return Array.isArray(data) ? (data as Ligne[]) : [];
+}
+
+/** Ses messages envoyés, du plus récent au plus ancien — vide tant que `clik_message` n'existe pas. */
+async function messagesDe(supabase: Supabase, siteId: string, habitantId?: string): Promise<Ligne[]> {
+  let q = supabase.from("clik_message").select("habitant_id, plus, envoye_le").eq("site_id", siteId);
+  if (habitantId) q = q.eq("habitant_id", habitantId);
+  const { data, error } = await q.order("envoye_le", { ascending: false }).limit(5000);
   if (error) return [];
   return Array.isArray(data) ? (data as Ligne[]) : [];
 }
@@ -71,7 +88,7 @@ export async function POST(request: Request) {
 
   // ── LIRE LE CARNET ──────────────────────────────────────────────────────
   if (action === "lire") {
-    const [cages, contacts, passages] = await Promise.all([
+    const [cages, contacts, passages, messages] = await Promise.all([
       supabase
         .from("clik_cage")
         .select("id, habitant_id, cage, prenom, look, updated_at")
@@ -80,6 +97,7 @@ export async function POST(request: Request) {
         .limit(2000),
       supabase.from("clik_contact").select("habitant_id, whatsapp, stop_le").eq("site_id", siteId).limit(2000),
       passagesDe(supabase, siteId),
+      messagesDe(supabase, siteId),
     ]);
     if (cages.error) {
       // Les cages pas encore activées : un carnet vide, qui le dit, plutôt qu'une page en erreur.
@@ -113,6 +131,7 @@ export async function POST(request: Request) {
         stop: false,
         passages: 0,
         dernierPassage: null,
+        messages: [],
       });
     }
     for (const k of (Array.isArray(contacts.data) ? contacts.data : []) as Ligne[]) {
@@ -127,7 +146,46 @@ export async function POST(request: Request) {
       l.passages += 1;
       if (!l.dernierPassage) l.dernierPassage = s(v.jour).slice(0, 10);
     }
+    for (const m of messages) {
+      const l = parPersonne.get(s(m.habitant_id));
+      if (l && l.messages.length < 5) l.messages.push({ le: s(m.envoye_le), plus: s(m.plus) });
+    }
     return NextResponse.json({ ok: true, actif: true, aujourdhui: jourParis(), lignes: [...parPersonne.values()] });
+  }
+
+  // ── LES NUMÉROS DE CEUX QUI VEULENT ÊTRE PRÉVENUS ──────────────────────────
+  // Chacun avec la référence de sa ligne du carnet (sa dernière cage), pour que l'écran les relie.
+  if (action === "numeros") {
+    const { data: ks, error } = await supabase
+      .from("clik_contact")
+      .select("habitant_id, whatsapp, stop_le")
+      .eq("site_id", siteId)
+      .not("whatsapp", "is", null)
+      .is("stop_le", null)
+      .limit(2000);
+    if (error) {
+      if (migrationManquante(error.message)) return NextResponse.json({ ok: true, numeros: [] });
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    const numero = new Map<string, string>();
+    for (const k of (Array.isArray(ks) ? ks : []) as Ligne[]) if (s(k.whatsapp) && !k.stop_le) numero.set(s(k.habitant_id), s(k.whatsapp));
+    const numeros: { ref: string; whatsapp: string }[] = [];
+    if (numero.size) {
+      const { data: cs } = await supabase
+        .from("clik_cage")
+        .select("id, habitant_id, updated_at")
+        .eq("site_id", siteId)
+        .in("habitant_id", [...numero.keys()])
+        .order("updated_at", { ascending: false })
+        .limit(2000);
+      for (const c of (Array.isArray(cs) ? cs : []) as Ligne[]) {
+        const h = s(c.habitant_id);
+        if (!numero.has(h)) continue;
+        numeros.push({ ref: s(c.id), whatsapp: numero.get(h) as string });
+        numero.delete(h);
+      }
+    }
+    return NextResponse.json({ ok: true, numeros });
   }
 
   const ref = s(p?.ref).slice(0, 64);
@@ -162,6 +220,37 @@ export async function POST(request: Request) {
       );
     if (error) {
       if (migrationManquante(error.message)) return NextResponse.json({ error: "Le carnet n'est pas encore activé." }, { status: 503 });
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  // ── IL A ENVOYÉ LE MESSAGE DE MIKE ────────────────────────────────────────
+  if (action === "envoye") {
+    const texte = s(p?.texte).slice(0, 1000);
+    const plus = plusPropre(s(p?.plus));
+    if (!texte) return NextResponse.json({ error: "Le message est vide." }, { status: 400 });
+    if (!plusPermis(plus)) {
+      return NextResponse.json({ error: "Pas d'alcool offert (loi Évin)." }, { status: 400 });
+    }
+    if (!heureOuverte()) return NextResponse.json({ error: HEURES_FERMEES }, { status: 409 });
+    const { data: k, error: ek } = await supabase
+      .from("clik_contact")
+      .select("whatsapp, stop_le")
+      .eq("site_id", siteId)
+      .eq("habitant_id", habitantId)
+      .maybeSingle();
+    if (ek && migrationManquante(ek.message)) return NextResponse.json({ error: "Le carnet n'est pas encore activé." }, { status: 503 });
+    const contact = k as Ligne | null;
+    if (!contact || !s(contact.whatsapp) || contact.stop_le) {
+      return NextResponse.json({ error: "Cette personne ne veut pas, ou plus, être prévenue." }, { status: 409 });
+    }
+    const deja = (await messagesDe(supabase, siteId, habitantId)).map((m) => ({ le: s(m.envoye_le), plus: s(m.plus) }));
+    const regle = peutLuiEcrire(deja);
+    if (!regle.oui) return NextResponse.json({ error: `${regle.pourquoi}.` }, { status: 409 });
+    const { error } = await supabase.from("clik_message").insert({ site_id: siteId, habitant_id: habitantId, texte, plus });
+    if (error) {
+      if (migrationManquante(error.message)) return NextResponse.json({ error: "Les messages ne sont pas encore activés." }, { status: 503 });
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     return NextResponse.json({ ok: true });

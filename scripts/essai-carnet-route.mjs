@@ -5,7 +5,9 @@
 // cage libérée en dernier et le nombre de films ; « à prévenir » pour celle qui a laissé son numéro, mais
 // jamais le numéro ni l'identifiant de personne ; un passage par jour (noter deux fois compte une fois, et
 // on peut l'enlever) ; le stop efface le numéro, et redire oui à la fin d'un film l'annule ; un mauvais
-// jeton, une ligne d'un autre commerce, une référence qui n'en est pas une.
+// jeton, une ligne d'un autre commerce, une référence qui n'en est pas une. Puis « Oui, préviens-les » : les numéros
+// de ceux qui veulent être prévenus (et d'eux seuls), le message envoyé gardé avec son petit plus, et les règles —
+// pas d'alcool offert, pas deux messages le même jour, pas plus de deux par semaine, rien hors de 9 h – 20 h 30.
 //
 //   node scripts/faux-supabase.mjs 54321
 //   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=faux NEXT_PUBLIC_SUPABASE_ANON_KEY=faux \
@@ -83,6 +85,38 @@ ok(contacts.length === 1 && contacts[0].whatsapp === null && !!contacts[0].stop_
 ok((await cage("camille", { cage: "un-jour", prenom: "Camille", whatsapp: "06 12 34 56 78" })) === 200, "Camille redit oui à la fin d'un film");
 c = ligne(await carnet({ action: "lire" }), "Camille");
 ok(c?.stop === false && c?.prevenir === true, "le stop est levé : c'est elle qui l'a redit");
+
+// ── 📲 « OUI, PRÉVIENS-LES » (étape 3) ──
+ok((await cage("leo", { cage: "un-jour", prenom: "Léo", look: "denim", whatsapp: "07 11 22 33 44" })) === 200, "Léo : « Je viendrai un jour », avec son numéro");
+const n = await carnet({ action: "numeros" });
+const refs = Object.fromEntries((await carnet({ action: "lire" })).lignes.map((l) => [l.prenom, l.ref]));
+const num = Object.fromEntries((n.numeros || []).map((x) => [x.ref, x.whatsapp]));
+ok(n.statut === 200 && num[refs.Camille] === "33612345678" && num[refs["Léo"]] === "33711223344" && !num[refs.Hugo] && Object.keys(num).length === 2,
+  `les numéros, seulement de ceux qui veulent être prévenus (${JSON.stringify(n.numeros)})`);
+const heureParis = new Date().toLocaleTimeString("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit", hour12: false }).split(":").map(Number);
+const ouvert = heureParis[0] * 60 + heureParis[1] >= 540 && heureParis[0] * 60 + heureParis[1] < 1230;
+p = await carnet({ action: "envoye", ref: refs.Camille, texte: "Camille, il reste de la place ce soir. Tu viens à combien ?", plus: "un verre de vin" });
+ok(p.statut === 400, `un verre de vin offert : refusé, loi Évin (${p.statut})`);
+p = await carnet({ action: "envoye", ref: refs.Camille, texte: "  " });
+ok(p.statut === 400, `un message vide : refusé (${p.statut})`);
+p = await carnet({ action: "envoye", ref: refs.Hugo, texte: "Hugo, il reste de la place ce soir." });
+ok(p.statut === 409, `Hugo n'a pas laissé de numéro : refusé (${p.statut})`);
+p = await carnet({ action: "envoye", ref: refs.Camille, texte: "Camille, il reste de la place ce soir. Tu viens à combien ?", plus: "le café" });
+if (ouvert) {
+  ok(p.statut === 200, `le message de Mike à Camille, gardé (${p.statut} ${p.error || ""})`);
+  c = ligne(await carnet({ action: "lire" }), "Camille");
+  ok(c?.messages?.length === 1 && c.messages[0].plus === "le café", `le carnet relu : un message, avec son petit plus (${JSON.stringify(c?.messages)})`);
+  p = await carnet({ action: "envoye", ref: refs.Camille, texte: "Camille, encore de la place !" });
+  ok(p.statut === 409 && /aujourd/.test(p.error), `deux messages le même jour : refusé (${p.statut}, « ${p.error} »)`);
+  const hLeo = (await (await fetch(`${F}/clik_cage?site_id=eq.${SITE}&prenom=eq.L%C3%A9o`)).json())[0]?.habitant_id;
+  const il = (j) => new Date(Date.now() - j * 86_400_000).toISOString();
+  await semer("clik_message", [{ site_id: SITE, habitant_id: hLeo, texte: "un", envoye_le: il(1) }, { site_id: SITE, habitant_id: hLeo, texte: "deux", envoye_le: il(3) }]);
+  p = await carnet({ action: "envoye", ref: refs["Léo"], texte: "Léo, il reste de la place ce soir." });
+  ok(p.statut === 409 && /semaine/.test(p.error), `un troisième message dans la semaine : refusé (${p.statut}, « ${p.error} »)`);
+} else {
+  ok(p.statut === 409, `hors des heures (9 h – 20 h 30) : refusé (${p.statut}, « ${p.error} »)`);
+  console.log("  (hors des heures d'envoi : l'envoi accepté, le même jour et la semaine ne sont pas vérifiés)");
+}
 
 ok((await carnet({ action: "lire" }, "mauvais-jeton")).statut === 403, "un mauvais jeton : refusé");
 const autre = (await (await fetch(`${F}/clik_cage?site_id=eq.${AUTRE}`)).json())[0];

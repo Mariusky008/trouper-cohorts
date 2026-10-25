@@ -96,6 +96,7 @@ import { partagerEnStatut, type Statut, type SortieStatut } from "@/lib/direct/s
 import { PhotothequeComptoir, PiocherPhototheque } from "./phototheque-comptoir";
 import { CarteMessageDuMois } from "./message-du-mois";
 import { CarnetComptoir, CarteCarnet, useCarnet } from "./carnet-comptoir";
+import { CarteMike, PreviensLes } from "./previens-les";
 import { MotMarque } from "@/components/direct/mot-marque";
 
 type Commerce = CommerceComptoir;
@@ -384,7 +385,9 @@ type Phase =
   /** Mes infos : ce que ses clients lisent de lui. */
   | { ou: "infos" }
   /** 📒 Mon carnet : ceux qui ont libéré leur fantôme à la fin de ses vidéos — voir `carnet-comptoir.tsx`. */
-  | { ou: "carnet" };
+  | { ou: "carnet" }
+  /** 📲 « Oui, préviens-les » : Mike écrit, il envoie depuis son WhatsApp — voir `previens-les.tsx`. */
+  | { ou: "prevenir" };
 
 /** L'envoi en ligne d'un vrai commerçant : en cours, arrivé, ou à refaire. */
 type Envoi = { etat: "en-cours" } | ({ etat: "fini" } & ResultatEnvoi);
@@ -923,6 +926,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           propositionActive={propositionPrete}
           reseaux={<OutilReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
           carnet={<CarteCarnet carnet={carnet} onOuvrir={() => setPhase({ ou: "carnet" })} />}
+          mike={<CarteMike commerce={commerce} dossier={dossier} carnet={carnet} onOui={() => setPhase({ ou: "prevenir" })} />}
           onPublier={ouvrirClients}
           onDepenses={() => allerA("catalogue")}
           onStats={() => setStats(true)}
@@ -1027,7 +1031,11 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
         />
       )}
 
-      {phase.ou === "carnet" && <CarnetComptoir commerce={commerce} dossier={dossier} carnet={carnet} onRetour={revenir} />}
+      {phase.ou === "carnet" && (
+        <CarnetComptoir commerce={commerce} dossier={dossier} carnet={carnet} onRetour={revenir} onPrevenir={() => setPhase({ ou: "prevenir" })} />
+      )}
+
+      {phase.ou === "prevenir" && <PreviensLes commerce={commerce} dossier={dossier} carnet={carnet} onRetour={revenir} />}
 
       {phase.ou === "savoir" && (
         <SavoirComptoir commerce={commerce} dossier={dossier} savoir={savoir} onRetour={revenir} />
@@ -1436,6 +1444,7 @@ function Accueil({
   propositionActive,
   reseaux,
   carnet,
+  mike,
   onPublier,
   onDepenses,
   onStats,
@@ -1464,6 +1473,8 @@ function Accueil({
   reseaux?: React.ReactNode;
   /** 📒 La carte « Mon carnet » : ceux qui ont libéré leur fantôme à la fin de ses vidéos. */
   carnet?: React.ReactNode;
+  /** 📲 La carte de Mike, en haut : « N personnes attendent ton signal » — absente quand il n'y a personne à prévenir. */
+  mike?: React.ReactNode;
   onPublier: () => void;
   onDepenses: () => void;
   onStats: () => void;
@@ -1519,6 +1530,7 @@ function Accueil({
       </section>
 
       <div className="ak-actions">
+        {mike}
         {enAttente > 0 && (
           <button type="button" className="ac-afaire" onClick={onSavoir}>
             <span aria-hidden="true">💬</span>

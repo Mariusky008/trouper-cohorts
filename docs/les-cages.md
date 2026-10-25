@@ -3,8 +3,9 @@
 > « Une belle vidéo, tout le monde sait en faire. Moi, je fais réagir. À la fin de votre vidéo, chacun libère
 > son fantôme de sa cage. »
 
-C'est l'étape 1 du passage de la démo (`outils/tour-du-fantome`) dans l'application ; l'étape 2, le carnet au
-comptoir, est plus bas. Les étapes suivantes : « Oui, préviens-les » (Mike), les messages, le ticket de Mike.
+C'est l'étape 1 du passage de la démo (`outils/tour-du-fantome`) dans l'application ; l'étape 2 (le carnet au
+comptoir) et l'étape 3 (« Oui, préviens-les », Mike) sont plus bas. Les étapes suivantes : le moteur de messages,
+le ticket de Mike.
 
 ## Ce que voit l'habitant
 
@@ -56,6 +57,37 @@ téléphone. Un vrai commerçant (son lien pro `/p/…`) lit le sien en base.
 - `src/app/api/site-internet/pro/carnet/route.ts` : `lire`, `passage`, `stop` (jeton pro).
 - `supabase/migrations/20261027090000_clik_visites.sql` : `clik_visite`, un passage par personne et par jour.
 
+## 📲 « Oui, préviens-les » : Mike (étape 3)
+
+Mike, l'assistant du comptoir (le fantôme du métier, comme dans les tours), propose ; le commerçant dit oui ; les
+messages partent de **son** WhatsApp, à ceux qui ont demandé à être prévenus, et à eux seuls.
+
+- **En haut de l'accueil**, la carte de Mike : « 3 personnes attendent ton signal. Une table libre aujourd'hui ? Je
+  les préviens sur ton WhatsApp. » — « Oui, préviens-les » ou « Pas aujourd'hui » (elle revient demain). Elle ne se
+  montre que s'il y a quelqu'un à prévenir aujourd'hui, et entre 9 h et 20 h 30. Le carnet la propose aussi.
+- **L'écran** : il dit ce qui est vrai aujourd'hui — quand (ce midi, ce soir, demain… et l'heure s'il veut), combien
+  de places ou de créneaux s'il le sait, un petit plus s'il en veut un (« Rien, juste prévenir » par défaut), tu ou
+  vous (gardé ; tu par défaut, comme le carnet de messages). Mike écrit un message par personne ; il se relit et se
+  change. « Envoyer à Manon » ouvre WhatsApp sur sa conversation, le message prêt : il n'a qu'à toucher Envoyer.
+- **Le premier message** dit qui écrit et pourquoi (« Bonjour Manon, c'est La Table de Margot ! Tu nous as demandé de
+  te prévenir à la fin de notre vidéo : c'est le moment 😊 ») ; les suivants vont droit au fait. Une seule question,
+  à la fin.
+- **Les règles du carnet de messages** (`src/lib/direct/previens-les.ts`, revérifiées par la route) : deux messages
+  par semaine au plus et pas deux le même jour ; rien avant 9 h ni après 20 h 30 ; un petit plus au plus un message
+  sur cinq, jamais deux fois le même à la même personne ; jamais d'alcool offert (loi Évin) ; les places, c'est lui
+  qui les donne, ou on n'en parle pas.
+
+La démonstration n'a pas de numéros (prénoms inventés) : « Envoyer » montre le message parti, rien ne s'ouvre.
+
+- `src/lib/direct/previens-les.ts` : les « quand », les petits plus par métier, les règles, le message.
+- `src/app/autour-de-moi/assistante/previens-les.tsx` : la carte de Mike et l'écran.
+- La route du carnet : `numeros` (les numéros de ceux qui veulent être prévenus, lus seulement à l'ouverture de
+  l'écran) et `envoye` (le message envoyé, gardé après avoir revérifié les règles).
+- `supabase/migrations/20261028090000_clik_messages.sql` : `clik_message`, les messages envoyés et leur petit plus.
+
+Reste pour l'étape 4 (le moteur de messages) : « jamais deux d'affilée sans réponse » et le silence après deux
+messages sans réponse — il faut savoir qui a répondu, ce que le commerçant notera d'un geste.
+
 ## L'activer en production
 
 **Les deux tables doivent être créées une fois** : coller le contenu de
@@ -63,15 +95,17 @@ téléphone. Un vrai commerçant (son lien pro `/p/…`) lit le sien en base.
 Tant que ce n'est pas fait, les cages s'affichent et se gardent dans le téléphone, mais rien n'arrive chez le
 commerçant ; un numéro donné reçoit « Ce n'est pas encore possible chez ce commerçant. Réessayez plus tard. »
 
-**Le carnet demande en plus** `supabase/migrations/20261027090000_clik_visites.sql` (les passages), à coller de la
-même façon. Sans les cages, la carte dit « Bientôt, à la fin de tes vidéos » ; sans les passages, le carnet
+**Le carnet demande en plus** `supabase/migrations/20261027090000_clik_visites.sql` (les passages), et « Oui,
+préviens-les » `supabase/migrations/20261028090000_clik_messages.sql` (les messages envoyés), à coller de la même
+façon. Sans la seconde, « Envoyer » ouvre bien WhatsApp, mais répond « Les messages ne sont pas encore activés. » Sans les cages, la carte dit « Bientôt, à la fin de tes vidéos » ; sans les passages, le carnet
 s'affiche mais « Passage aujourd'hui » répond « Les passages ne sont pas encore activés. »
 
 ## Vérifier
 
 - `node scripts/essai-cages-route.mjs` (lancé aussi par la CI, dans `scripts/navigateur/lancer-essais.sh`) : la
   route contre le faux Supabase.
-- `node scripts/essai-carnet-route.mjs` (CI aussi) : le carnet, ses passages et le stop, contre le faux Supabase.
+- `node scripts/essai-carnet-route.mjs` (CI aussi) : le carnet, ses passages, le stop, et « Oui, préviens-les »
+  (les numéros, le message gardé, les règles), contre le faux Supabase. Hors de 9 h – 20 h 30, il vérifie le refus.
 - Le carnet dans le navigateur : `/autour-de-moi/assistante?metier=table`, la carte « Mon carnet ».
 - Dans le navigateur : `/autour-de-moi`, Restaurants, Chez Bergine, « Voir toutes les offres + infos », le film
   « En cuisine, pendant le service » jusqu'au bout.
