@@ -330,7 +330,8 @@ import {
 } from "@/lib/direct/apercu-habitant";
 import { MARQUE } from "@/lib/marque";
 import { MotMarque } from "@/components/direct/mot-marque";
-import { AvisFantomes, type Avis } from "./avis-fantomes";
+import { CagesFantomes, type ChoixCage } from "./cages-fantomes";
+import { numeroWhatsApp, quoiAujourdhui, type Cage } from "@/lib/direct/cages";
 
 /** Au-delà de cette distance en pixels, le doigt a décidé : la carte part. */
 /**
@@ -804,38 +805,39 @@ function ajouterAvis(cle: string, avis: AvisPlat) {
   abonnes.forEach((f) => f());
 }
 
-// ── 👻 L'AVIS SUR SES FILMS (son interview), GARDÉ DANS SON NAVIGATEUR ─────
+// ── 🔓 LA CAGE LIBÉRÉE À LA FIN DE SES FILMS, GARDÉE DANS SON NAVIGATEUR ─────
 //
-// « On a oublié, à la fin de l'interview, de mettre nos petits fantômes pour
-// récolter l'avis du client. » Ils apparaissent quand le film arrive à sa fin ;
-// l'avis est gardé ici (on le retrouve en revenant) et, chez un vrai commerçant,
-// envoyé à son espace — voir `donnerAvisFilm` et `api/direct/avis-film`.
-const CLE_AVIS_FILMS = "clikme-avis-films-v1";
-const AUCUN_AVIS_FILM: Record<string, Avis> = {};
-let avisFilmsMemoire: Record<string, Avis> | null = null;
-const abonnesFilms = new Set<() => void>();
+// « À la fin de votre vidéo, chacun libère son fantôme de sa cage. » Les trois
+// cages remplacent ici les trois avis (« J'aime pas / Sympa / J'adore ») : voir
+// `cages-fantomes.tsx` et `lib/direct/cages.ts`. Le choix est gardé ici (on le
+// retrouve en revenant) et, chez un vrai commerçant, envoyé à son carnet —
+// voir `donnerCage` et `api/direct/cage`.
+const CLE_CAGES = "clikme-cages-v1";
+const AUCUNE_CAGE: Record<string, ChoixCage> = {};
+let cagesMemoire: Record<string, ChoixCage> | null = null;
+const abonnesCages = new Set<() => void>();
 
-function chargerAvisFilms(): Record<string, Avis> {
-  if (avisFilmsMemoire) return avisFilmsMemoire;
+function chargerCages(): Record<string, ChoixCage> {
+  if (cagesMemoire) return cagesMemoire;
   try {
-    avisFilmsMemoire = JSON.parse(window.localStorage.getItem(CLE_AVIS_FILMS) || "{}");
+    cagesMemoire = JSON.parse(window.localStorage.getItem(CLE_CAGES) || "{}");
   } catch {
-    avisFilmsMemoire = {};
+    cagesMemoire = {};
   }
-  return avisFilmsMemoire ?? AUCUN_AVIS_FILM;
+  return cagesMemoire ?? AUCUNE_CAGE;
 }
-function abonnerAvisFilms(f: () => void) {
-  abonnesFilms.add(f);
-  return () => void abonnesFilms.delete(f);
+function abonnerCages(f: () => void) {
+  abonnesCages.add(f);
+  return () => void abonnesCages.delete(f);
 }
-function poserAvisFilm(cle: string, a: Avis) {
-  avisFilmsMemoire = { ...chargerAvisFilms(), [cle]: a };
+function poserCage(cle: string, c: ChoixCage) {
+  cagesMemoire = { ...chargerCages(), [cle]: c };
   try {
-    window.localStorage.setItem(CLE_AVIS_FILMS, JSON.stringify(avisFilmsMemoire));
+    window.localStorage.setItem(CLE_CAGES, JSON.stringify(cagesMemoire));
   } catch {
-    /* Navigation privée : l'avis vit le temps de la visite. */
+    /* Navigation privée : le choix vit le temps de la visite. */
   }
-  abonnesFilms.forEach((f) => f());
+  abonnesCages.forEach((f) => f());
 }
 
 /**
@@ -2283,7 +2285,7 @@ export function ApercuHabitant({
 
   const miens = useSyncExternalStore(abonnerAvis, chargerAvis, () => VIDE);
   /** 👻 Ses avis sur les films, et les films vus jusqu'au bout pendant cette visite. */
-  const avisFilms = useSyncExternalStore(abonnerAvisFilms, chargerAvisFilms, () => AUCUN_AVIS_FILM);
+  const cagesFilms = useSyncExternalStore(abonnerCages, chargerCages, () => AUCUNE_CAGE);
   const [filmsFinis, setFilmsFinis] = useState<Record<string, true>>({});
   const mesRappels = useSyncExternalStore(abonnerRappels, chargerRappels, () => RIEN);
   const mesFlammes = useSyncExternalStore(abonnerFlammes, chargerFlammes, () => AUCUNE);
@@ -4910,19 +4912,83 @@ export function ApercuHabitant({
   const cleMoment = (c: CarteAutour, m: MomentJour) => `${c.id}|${m.titre}`;
   /** La clé d'un film : le commerce et l'adresse du film (une interview par jour). */
   const cleFilm = (c: CarteAutour, m: MomentJour) => `${c.id}|${m.video?.mp4 ?? ""}`;
-  /** 👻 Son avis à la fin du film : gardé ici, et envoyé à l'espace d'un vrai commerçant. */
-  const donnerAvisFilm = (c: CarteAutour, m: MomentJour, a: Avis) => {
-    if (!m.video) return;
-    poserAvisFilm(cleFilm(c, m), a);
-    if (c.villeReelle) {
-      void fetch("/api/direct/avis-film", {
+  /** Envoie la cage (et le numéro, s'il y en a un) au carnet d'un vrai commerçant. Rend l'erreur à dire, ou `null`. */
+  const envoyerCage = async (c: CarteAutour, m: MomentJour, cage: Cage, whatsapp?: string): Promise<string | null> => {
+    if (!c.villeReelle || !m.video) return null;
+    try {
+      const r = await fetch("/api/direct/cage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: c.id, ville: c.villeReelle, film: m.video.mp4, sens: a }),
-      }).catch(() => {
-        /* Réseau : l'avis reste dans ce téléphone. */
+        body: JSON.stringify({
+          slug: c.id,
+          ville: c.villeReelle,
+          film: m.video.mp4,
+          cage,
+          prenom: monPrenom(),
+          look: monLook().id,
+          ...(whatsapp ? { whatsapp } : {}),
+        }),
       });
+      if (r.ok || !whatsapp) return null;
+      // LES TABLES PAS ENCORE CRÉÉES (503) : la raison technique ne lui dit rien, la suite si.
+      if (r.status === 503) return "Ce n'est pas encore possible chez ce commerçant. Réessayez plus tard.";
+      const j = (await r.json().catch(() => null)) as { error?: string } | null;
+      return j?.error || "Le numéro n'a pas pu être gardé. Réessayez dans un instant.";
+    } catch {
+      // Réseau : la cage reste dans ce téléphone ; un numéro, lui, doit arriver chez le commerçant.
+      return whatsapp ? "Pas de réseau : le numéro n'a pas pu être envoyé. Réessayez dans un instant." : null;
     }
+  };
+  /**
+   * 🔓 LIBÉRER SON FANTÔME. Son fantôme et son prénom d'abord, s'il ne les a
+   * jamais donnés (les mêmes questions que partout) ; puis la cage est gardée
+   * ici et envoyée au carnet d'un vrai commerçant.
+   */
+  const donnerCage = (c: CarteAutour, m: MomentJour, cage: Cage) => {
+    if (!m.video) return;
+    choisirPuis(() =>
+      avecMonPrenom(() => {
+        // SA RÉPONSE À « ON VOUS PRÉVIENT ? » LA SUIT d'une cage à l'autre : elle n'a pas à la redonner.
+        const avant = chargerCages()[cleFilm(c, m)];
+        poserCage(cleFilm(c, m), avant?.whatsapp ? { cage, whatsapp: avant.whatsapp } : { cage });
+        void envoyerCage(c, m, cage);
+        if (cage === "aujourdhui") aujourdhuiCage(c, m);
+      }),
+    );
+  };
+  /** « Je viendrai un jour » : le numéro pour qu'il la prévienne, ou `null` pour « Non merci ». */
+  const whatsappCage = async (c: CarteAutour, m: MomentJour, saisie: string | null): Promise<string | null> => {
+    const cle = cleFilm(c, m);
+    if (saisie === null) {
+      poserCage(cle, { cage: "un-jour", whatsapp: "non" });
+      return null;
+    }
+    const n = numeroWhatsApp(saisie);
+    if (!n) return "Ce numéro ne ressemble pas à un numéro de téléphone.";
+    const e = await envoyerCage(c, m, "un-jour", n);
+    if (e) return e;
+    // LE NUMÉRO N'EST PAS GARDÉ DANS LE TÉLÉPHONE : il est chez le commerçant, c'est tout ce qui compte.
+    poserCage(cle, { cage: "un-jour", whatsapp: "oui" });
+    return null;
+  };
+  /**
+   * « AUJOURD'HUI » : LA DEMANDE QUI EXISTE DÉJÀ. Le moment a un bouton de
+   * réservation (« Réserver ») : on ouvre la même feuille, sur ce créneau. Sinon,
+   * on lui demande directement sur WhatsApp — c'est elle qui le prévient, et lui
+   * a son numéro par le message.
+   */
+  const aujourdhuiCage = (c: CarteAutour, m: MomentJour) => {
+    if (m.action && (m.places ?? 1) > 0) {
+      setCreneau(m.titre);
+      setFeuille("resa");
+      return;
+    }
+    setPrevenir({
+      nom: c.nom,
+      telephone: c.telephone || numeroDeFiction(c.id),
+      quoi: quoiAujourdhui(c.branche),
+      demande: true,
+    });
   };
   const avisDe = (c: CarteAutour, m: MomentJour): AvisPlat[] => [
     ...(miens[cleMoment(c, m)] ?? []),
@@ -10871,17 +10937,20 @@ export function ApercuHabitant({
                                     </span>
                                   </div>
                                 )}
-                                {/* 👻 À LA FIN DU FILM, SON AVIS : les trois fantômes de
-                                    l'essayage. Ils restent là une fois l'avis donné. */}
+                                {/* 🔓 À LA FIN DU FILM, SES TROIS CAGES : elle libère son
+                                    fantôme. Elles restent là une fois le choix fait. */}
                                 {!passe &&
                                   m.video &&
-                                  (filmsFinis[cleFilm(dessus, m)] || avisFilms[cleFilm(dessus, m)] !== undefined) && (
+                                  (filmsFinis[cleFilm(dessus, m)] || cagesFilms[cleFilm(dessus, m)] !== undefined) && (
                                     <div className="ap-film-avis" onPointerDown={(ev) => ev.stopPropagation()}>
-                                      <AvisFantomes
-                                        avis={avisFilms[cleFilm(dessus, m)]}
-                                        onAvis={(a) => donnerAvisFilm(dessus, m, a)}
-                                        question="Et vous, ça vous tente ?"
-                                        libelle="Votre avis sur son film"
+                                      <CagesFantomes
+                                        nom={dessus.nom}
+                                        branche={dessus.branche}
+                                        choix={cagesFilms[cleFilm(dessus, m)]}
+                                        prenom={prenom}
+                                        onChoix={(cage) => donnerCage(dessus, m, cage)}
+                                        onWhatsapp={(n) => whatsappCage(dessus, m, n)}
+                                        onAujourdhui={() => aujourdhuiCage(dessus, m)}
                                       />
                                     </div>
                                   )}

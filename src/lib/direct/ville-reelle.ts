@@ -206,7 +206,7 @@ export function momentsDuCommercant(
   // l'adresse du film n'était pas gardée dans son annonce. Elle l'est
   // (`current_offer.video`) ; elle va sur le moment dont parle l'annonce — son
   // plat du jour, le plus souvent —, sinon sur la ligne de l'annonce. La carte du
-  // Direct la joue alors en fond, et sa journée la montre avec les fantômes d'avis.
+  // Direct la joue alors en fond, et sa journée la montre avec ses trois cages.
   const film = enCours ? str(o?.video) : "";
   if (/^https:\/\//i.test(film)) {
     const t = texte.toLowerCase();
