@@ -110,7 +110,7 @@ METIERS = {
         creux=dict(calme="Oui, c’est calme aujourd’hui" + NB + ": préviens\u2011les" + NB + "!",
                    reponses=[["Sarah", "Je prends 14 h !"], ["Léa", "16 h 30, pour un massage"], ["Zoé", "15 h, un kobido"], ["Emma", "17 h, si c’est bon"]], ticket="+4 rendez-vous un jour calme"),
         couleurs=dict(f1="#2E3B2C", f2="#1C2619", s1="#EEF3E6", s2="#5E7A4E", ens="#141C12", vit="#141C12"),
-        interieur=("e1", "e1.webp"), hote="fant-viens.webp",
+        interieur=("copie", f"{S}/tour-massage/si-interieur.webp"), hote="fant-viens.webp",
     ),
 }
 

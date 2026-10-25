@@ -142,9 +142,10 @@ scènes, après « Et une histoire, ça se partage. »
   s'assombrit et la carte « Et vous ? » arrive avec ses trois cages (le dessin de l'étape des trois fantômes), qui
   disent ce qu'elles veulent dire (« J'adore : on comprend pas ») : « J'adore la vidéo », « Je viendrai un jour »,
   « Je réserve aujourd'hui » (resto, coiffure) ou « Je passe aujourd'hui » (le troisième élément de `QR`).
-- `intro-4d` « À la fin de votre vidéo, chacun libère son fantôme de sa cage. Et c'est là que mon vrai travail
+- `intro-4d` « À la fin de votre vidéo, au lieu d'un like banal, votre client potentiel peut libérer un fantôme de sa
+  cage. Et c'est là que mon vrai travail
   commence : je leur pose des questions, je les fais parler de vous. » : UNE cage, comme dans la vraie vie : sur
-  « chacun », Camille touche « Je viendrai » ; sur « libère », son fantôme s'envole avec son prénom (les deux autres
+  « client », Camille touche « Je viendrai » ; sur « libérer », son fantôme s'envole avec son prénom (les deux autres
   cages pâlissent) ; sur « commence », ce que son fantôme lui propose (`QR` dans `tour-intro3.py` : il en reste peu,
   « tu viens avec une amie ? », un petit plus qui coûte peu au commerçant ; pas « quand », elle vient de dire qu'elle
   viendrait ; au resto, « le chef vous fait goûter son nouveau dessert » : un café gourmand, c'est trop cher à

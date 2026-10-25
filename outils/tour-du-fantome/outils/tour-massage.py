@@ -105,6 +105,11 @@ x0, y0 = round(167 - taille / 2), round(COMPTOIR + 64 - bas * taille / 640)
 ff("-i", f"{D}/e1.webp", "-i", f"{FANT}/salut-1.webp", "-filter_complex", f"[1]scale={taille}:{taille}[f];[0][f]overlay={x0}:{y0}",
    "-c:v", "libwebp", "-quality", "82", f"{D}/e3.webp")
 
+# SA VITRINE (la façade de l'intro, celle des trois fantômes) : « on voit pas bien l'intérieur, c'est pas beau » ;
+# la salle de sa photo boutique, deux tables et l'éventail sur la pierre, en paysage, réchauffée
+ff("-i", photo("boutique") or f"{B}/m2.jpg", "-vf", "crop=iw:iw/1.43:0:ih*0.30,scale=540:-2:flags=lanczos,eq=saturation=1.15:brightness=-0.03:gamma_r=1.04",
+   "-c:v", "libwebp", "-quality", "82", f"{D}/si-interieur.webp")
+
 # ═══ 2. CE QUI EST COMMUN AUX TOURS MÉTIER (depuis la coiffure) ═══
 PROPRES = {"index.html", "index.avant-episode2.html", "index.avant-intro.html", "voix.mp3", "b-1.jpg", "b-2.jpg", "b-3.jpg",
            "message.mp4", "message.jpg", "message-fin.jpg", "specialiste.mp4", "specialiste.jpg", "specialiste-fin.jpg",

@@ -12,7 +12,8 @@ TEXTES = {
     "intro-4": "Et une histoire, ça se partage.",
     # « je fais réagir » (à la place de « …je sais surtout les raconter et créer l’envie de les partager »)
     "intro-4c": "Une belle vidéo, tout le monde sait en faire. Moi, je fais réagir.",
-    "intro-4d": f"À la fin de votre vidéo, chacun libère son fantôme de sa cage. Et c’est là que mon vrai travail commence{NB}: je leur pose des questions, je les fais parler de vous.",
+    # « on comprend pas ce que ça veut dire, "chacun libère son fantôme" » : au lieu d'un like, un fantôme libéré
+    "intro-4d": f"À la fin de votre vidéo, au lieu d’un like banal, votre client potentiel peut libérer un fantôme de sa cage. Et c’est là que mon vrai travail commence{NB}: je leur pose des questions, je les fais parler de vous.",
     "intro-4e": f"Sur Instagram, vous voyez qui a aimé. Mais écrire à chacun pour créer du lien, qui a le temps{NB}?",
     "intro-4f": "Moi, je le fais. Chacun par son prénom, au bon moment. Si bien que le jour où ils poussent votre porte, ils se sentent déjà comme des habitués.",
     # la transition du chapitre 1 au chapitre 2

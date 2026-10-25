@@ -72,7 +72,7 @@ FACADE = {
     "tour-librairie": ("LIBRAIRIE · DAX", ["#1F3A2E", "#13261D", "#F1E9D6", "#1F5A40", "#0F1E17", "#0F1E17"], "e1.webp", False),
     "tour-bijouterie": ("BIJOUTERIE · DAX", ["#1E2442", "#12162B", "#F3EBDD", "#2B3A7A", "#0E1124", "#0E1124"], "e1.webp", False),
     "tour-lunettes": ("OPTICIEN · DAX", ["#173A40", "#0E2529", "#E8F2F1", "#1D6670", "#0B1D20", "#0B1D20"], "e1.webp", False),
-    "tour-massage": ("MASSAGES · DAX", ["#2E3B2C", "#1C2619", "#EEF3E6", "#5E7A4E", "#141C12", "#141C12"], "e1.webp", False),
+    "tour-massage": ("MASSAGES · DAX", ["#2E3B2C", "#1C2619", "#EEF3E6", "#5E7A4E", "#141C12", "#141C12"], "si-interieur.webp", False),
 }
 # Le restaurant n'avait pas de fantôme qui salue : c'est celui de la page d'accueil, le même dessin.
 SALUE_RESTO = f"{S}/accueil2/page/g-restaurant-salue.webp"
@@ -932,8 +932,9 @@ JS_DONNEES = r"""
       dit: "Une belle vidéo, tout le monde sait en faire. Moi, je fais *réagir.",
       mots: { moi: iGeste("saute", 800), "réagir": iTout(iAllume(".s7"), iSon("pop")) } },
     { nom: "intro-4d", x: 50, garde: true, apres: 2200,
-      dit: "À la fin de votre vidéo, chacun *libère son fantôme de sa cage. Et c’est là que mon vrai travail commence" + NB + ": je leur pose des *questions, je les fais *parler de vous.",
-      mots: { chacun: iTout(iAllume(".s7-f3.promis", "choisie"), iSon("declic")), "libère": iTout(iAllume(".s7", "libere"), iSon("magie")),
+      // « on comprend pas ce que ça veut dire, "chacun libère son fantôme" » : au lieu d'un like, un fantôme libéré
+      dit: "À la fin de votre vidéo, au lieu d’un *like banal, votre client potentiel peut *libérer un fantôme de sa cage. Et c’est là que mon vrai travail commence" + NB + ": je leur pose des *questions, je les fais *parler de vous.",
+      mots: { client: iTout(iAllume(".s7-f3.promis", "choisie"), iSon("declic")), "libérer": iTout(iAllume(".s7", "libere"), iSon("magie")),
         commence: iTout(iAllume(".s7", "demande"), iSon("pop")), parler: iTout(iAllume(".s7", "repond"), iSon("carte")) } },
     { nom: "intro-4e", x: 50, decor: "instagram", apres: 1200, debut: iTout(iAllume(".s8"), iPuis(250, iCompte(".s8-total", 1800))),
       dit: "Sur Instagram, vous voyez qui a *aimé. Mais écrire à *chacun pour créer du lien, qui a le *temps" + NB + "?",
