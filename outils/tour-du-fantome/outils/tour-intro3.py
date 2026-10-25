@@ -36,6 +36,10 @@ CONF = {
         moments=[("geste.jpg", "Un geste"), ("m3.jpg", "Un détail"), ("m1.jpg", "Un regard")],
         fant=["fant.webp", "fant-parle.webp", "fant-viens.webp"], qui="Margaux", lieu="Les Lunettes de Margaux", offre="Des lunettes",
         voisins=[("o-diner.jpg", "Restaurant"), ("o-fleurs.jpg", "Fleuriste"), ("o-coiffure.jpg", "Coiffeur"), ("o-hotel.jpg", "Hôtel")]),
+    "tour-massage": dict(
+        moments=[("m2.jpg", "Un lieu"), ("m3.jpg", "Un geste"), ("m1.jpg", "Un moment")],
+        fant=["fant.webp", "fant-parle.webp", "fant-viens.webp"], qui="Élise", lieu="Le Cocon d’Élise", offre="Un massage",
+        voisins=[("o-diner.jpg", "Restaurant"), ("o-fleurs.jpg", "Fleuriste"), ("o-mode.jpg", "Boutique"), ("o-hotel.jpg", "Hôtel")]),
 }
 # « Une photo » : la photo du produit telle qu'on la publierait, avec sa légende. « Une vidéo ClikMe » : le film
 # que le tour montre à la fin, monté en interview avec ses trois questions (son film, son affiche). Il s'ouvre sur
@@ -45,7 +49,8 @@ AVANT = {"tour": ("m3.jpg", "Plat du jour : magret grillé, pommes sarladaises."
          "tour-coiffure": ("m4.jpg", "Coupe du jour : carré court, brun profond.", "message"),
          "tour-librairie": ("m2.jpg", "Coup de cœur : Le Comte de Monte-Cristo.", "message"),
          "tour-bijouterie": ("m2.jpg", "Nouveau : collier saphir, chaîne dorée.", "message"),
-         "tour-lunettes": ("m1.jpg", "Nouveau : monture ronde, cristal.", "message")}
+         "tour-lunettes": ("m1.jpg", "Nouveau : monture ronde, cristal.", "message"),
+         "tour-massage": ("m1.jpg", "Massage du jour : détente musculaire, à l’huile chaude.", "message")}
 # ④d ce que son fantôme propose à celle qui a choisi « Je viendrai un jour » (pas « quand », elle l'a déjà dit : il
 # en reste peu, viens avec une amie, un petit plus qui coûte peu au commerçant), sa réponse, et le libellé de la
 # troisième cage. Propres au commerce.
@@ -56,6 +61,7 @@ QR = {
     "tour-librairie": ("Camille, il reste deux éditions illustrées. Tu viens avec une amie ? Le café est offert !", "Oui ! Samedi, avec ma sœur 😍", "Je passe<br>aujourd’hui"),
     "tour-bijouterie": ("Camille, il reste deux colliers saphir. Tu viens avec une amie ? La gravure est offerte !", "Oui ! Avec ma sœur 😍", "Je passe<br>aujourd’hui"),
     "tour-lunettes": ("Camille, il reste deux montures cristal. Tu viens avec une amie ? L’étui est offert !", "Oui ! Samedi, avec ma sœur 😍", "Je passe<br>aujourd’hui"),
+    "tour-massage": ("Camille, il reste un créneau demain 18 h. Tu viens avec une amie ? Le thé ayurvédique est offert !", "Oui ! Avec ma sœur 😍", "Je réserve<br>aujourd’hui"),
 }
 # ④f sa façade (comme la scène du commerce de l'étape des trois fantômes) : sa ligne sous l'enseigne, ses couleurs
 # (façade, store, enseigne, vitrine), l'image de sa vitrine, et si son fantôme porte la toque (le chef).
@@ -66,6 +72,7 @@ FACADE = {
     "tour-librairie": ("LIBRAIRIE · DAX", ["#1F3A2E", "#13261D", "#F1E9D6", "#1F5A40", "#0F1E17", "#0F1E17"], "e1.webp", False),
     "tour-bijouterie": ("BIJOUTERIE · DAX", ["#1E2442", "#12162B", "#F3EBDD", "#2B3A7A", "#0E1124", "#0E1124"], "e1.webp", False),
     "tour-lunettes": ("OPTICIEN · DAX", ["#173A40", "#0E2529", "#E8F2F1", "#1D6670", "#0B1D20", "#0B1D20"], "e1.webp", False),
+    "tour-massage": ("MASSAGES · DAX", ["#2E3B2C", "#1C2619", "#EEF3E6", "#5E7A4E", "#141C12", "#141C12"], "e1.webp", False),
 }
 # Le restaurant n'avait pas de fantôme qui salue : c'est celui de la page d'accueil, le même dessin.
 SALUE_RESTO = f"{S}/accueil2/page/g-restaurant-salue.webp"

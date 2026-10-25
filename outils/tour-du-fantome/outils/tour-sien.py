@@ -24,6 +24,7 @@ DEMANDES = {
     "tour-librairie": '"« " + PLAT + " », mis de côté"',
     "tour-bijouterie": '"« " + PLAT + " », mis de côté"',
     "tour-lunettes": '"« " + PLAT + " », mise de côté"',
+    "tour-massage": '"Un rendez-vous : « " + PLAT + " »"',
 }
 
 CSS = """

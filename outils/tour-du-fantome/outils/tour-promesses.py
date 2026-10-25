@@ -45,6 +45,9 @@ CREER = "https://clikme.fr/commercants#creer"
 # arrangent) ; la Maison de Léa (la pièce où tombe la surprise d'abord, puis trois autres, avec ce
 # que son fantôme y sait) et la surprise ; les chiffres du livre (produit, vues du film, réservations,
 # verdict). Tout est fictif, comme les commerces (sans le mot « exemple » à l'écran : jamais).
+# l'extrait de la voix d'Élise (sa troisième phrase), mesuré par tour-massage.py sur sa réponse
+_p = json.load(open(f"{S}/tour-massage/paroles.json", encoding="utf-8"))["paroles"] if os.path.exists(f"{S}/tour-massage/paroles.json") else [[0, ""]] * 4
+EXTRAIT_MASSAGE = (_p[2][0], _p[3][0] - 0.2, _p[2][1])
 TOURS = {
     "tour": dict(geste="m2.jpg", lieu="Chez Bergine", qui="Jean-Marie", fant="resto.webp", pages=["interview.jpg", "specialiste.jpg", "episode-bergine.jpg"],
                  extrait=(3.6, 6.6, "Bon, mon magret, je commence par quadriller la peau."),
@@ -94,6 +97,15 @@ TOURS = {
                           surprise=dict(photo="m1.jpg", titre="La monture ronde, cristal", raison="Vous cherchiez une monture légère.", bouton="Je la fais mettre de côté",
                                         fait="✓ Mise de côté pour vous", notif="Mise de côté · monture ronde · Léa"),
                           stats=[("👓", "Monture ronde, cristal", 920, 21, "ok"), ("🕶️", "Solaire polarisée", 640, 3, "moyen"), ("🧽", "Kit d’entretien", 130, 1, "non")]),
+    # le salon de massage (tour-massage.py) : l'extrait de sa voix est mesuré sur sa réponse (paroles.json)
+    "tour-massage": dict(geste="geste.jpg", lieu="Le Cocon d’Élise", qui="Élise", fant="fant.webp", pages=["message.jpg", "specialiste.jpg", "episode.jpg"],
+                         extrait=EXTRAIT_MASSAGE,
+                         maisons=[("Léa", "a mal au dos", "Jeudi 18 h · massage détente"), ("Hugo", "offre un massage à sa mère", "Samedi 10 h · bon cadeau"),
+                                  ("Nora", "veut essayer le kobido", "Mardi 17 h · kobido")],
+                         pieces=[("miroir", "Envie de se détendre"), ("dressing", "Plutôt camel et noir"), ("cuisine", "Pas de porc"), ("sorties", "Un verre, tranquille")],
+                         surprise=dict(photo="m1.jpg", titre="Le massage détente musculaire", raison="Vous aviez envie de vous détendre.", bouton="Je prends rendez-vous",
+                                       fait="✓ Jeudi 18 h", notif="Nouveau rendez-vous · Léa · jeudi 18 h"),
+                         stats=[("🌿", "Massage détente musculaire", 980, 31, "ok"), ("🪔", "Massage ayurvédique", 720, 5, "moyen"), ("💆", "Kobido, le visage", 160, 2, "non")]),
 }
 # les pièces de Ma Maison, telles que l'application les montre (src/lib/direct/maison.ts : nom, photo, teinte)
 PIECES = {"cuisine": ("Ma Cuisine", "piece-cuisine.webp", "#FC9023"), "dressing": ("Mon Dressing", "piece-dressing.webp", "#E2B884"),

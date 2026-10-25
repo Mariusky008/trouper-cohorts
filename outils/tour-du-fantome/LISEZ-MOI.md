@@ -12,6 +12,7 @@ bouton « Voir la démo » de la page des commerçants (`public/commercants/`) m
 | Librairie (La Page d'Alice) | `tour-librairie/` | https://www.clikme.fr/tours/librairie | https://claude.ai/artifact/GrCdASNbis5crVFVUrf9P2 |
 | Bijouterie (Atelier Inès) | `tour-bijouterie/` | https://www.clikme.fr/tours/bijouterie | https://claude.ai/artifact/LtmrpKqY5rbcqGc7WA1DkX |
 | Lunetier (Les Lunettes de Margaux) | `tour-lunettes/` | https://www.clikme.fr/tours/lunettes | https://claude.ai/artifact/9R2sn9qYN141C4f54T2Q3C |
+| Massage (Le Cocon d’Élise) | `tour-massage/` | https://www.clikme.fr/tours/massage | — |
 
 ## Ce qu'il y a dedans
 
@@ -49,6 +50,11 @@ python3 -I $D/outils/tour-dax.py $D         # + sous le projecteur, combien de D
 python3 -I $D/outils/tour-trois.py $D       # + « Les trois fantômes » et « Mike, votre assistant » (restaurant, vêtements, coiffure)
 python3 -I $D/outils/tour-pause.py $D       # + le bouton pause (les six tours)
 ```
+
+Le tour massage a d'abord sa base, tirée de celle de la coiffure, et ses films :
+`python3 -I $D/outils/tour-massage.py $D` (ses photos et ses voix, `recu/massage/`, mesurées), puis
+`node $D/outils/films-massage.mjs` (ses trois films, d'après `outils/films-massage/film.html`), puis à nouveau
+`tour-massage.py` (qui lit leur durée), avant la chaîne. Voir « Le tour massage » plus bas.
 
 Les dix scripts se lancent **dans cet ordre**. Le tour lunetier a d'abord sa propre base, tirée de celle de la
 bijouterie : `python3 -I $D/outils/tour-lunettes.py $D` (ses images, ses voix mesurées, sa page de base), à
@@ -182,6 +188,24 @@ Une animation qui refuse la pause est figée à vitesse nulle. `essai-pause.mjs 
 Pour une nouvelle voix de l'intro : remplacer `voix-intro/court/<nom>.mp3`, mettre son texte dans
 `outils/mesurer-intro2.py` (et dans `tour-intro3.py`), lancer `python3 -I $D/outils/mesurer-intro2.py $D`,
 puis les dix scripts. (Il appelle `python3` lui-même : celui du `PATH` doit avoir numpy.)
+
+## Le tour massage
+
+« Le Cocon d’Élise » (fictif), massage détente musculaire, ayurvédique, kobido : fait pour une démonstration dans un
+salon de massage. Tiré du tour coiffure (les rendez-vous, les créneaux, Mike au comptoir) par `tour-massage.py`, comme
+le lunetier l'a été de la bijouterie. Tout ce qui lui est propre :
+- `recu/massage/photos/` : m1 (le massage, dos et épaules), m2 (la cabine), m3 (les mains, l'huile), m4 (le kobido ;
+  coupée en haut, une marque brodée y dépassait), geste, boutique ;
+- `recu/massage/voix/` : ses répliques de Mike (`massage-clients-*`, `massage-episode-*`) et `elise.mp3`, la voix de la
+  praticienne qui répond à la question 1 ; `recu/dax/massage-1|2.mp3` (« environ 150 personnes… ») ;
+  `recu/trois/mike-bonjour-massage.mp3`, `trois-2-massage.mp3` ; `recu/depenses/brut/massage2.mp3` (la question de
+  « Moins de dépenses » est celle de la coiffure, sa voix sert telle quelle) ;
+- son fantôme : celui du bien-être de l'application (`public/direct/double/pied/bien-etre`) ;
+- ses films : montés par `films-massage.mjs` sur le gabarit `outils/films-massage/film.html` (la carte titre, ses
+  photos qui s'animent, ses mots sous-titrés mot à mot, la carte de fin et son prix ; une nappe douce composée par le
+  navigateur, aucun droit). Le film de notre spécialiste n'a pas de voix : son récit s'écrit en sous-titres.
+Une réplique pas encore enregistrée s'écrit au rythme estimé, sans le son ; une photo manquante est remplacée par
+celle de la coiffure, et `tour-massage.py` le dit (« EN ATTENTE »).
 
 ## Les films du lunetier
 

@@ -11,7 +11,7 @@
 # communes, sont celles du lunetier (recu/lunettes/voix/lunettes-dax-3.mp3, -4.mp3). Les nombres s'écrivent
 # en chiffres mais se mesurent en toutes lettres (liés par des espaces insécables : un mot, un instant).
 # À lancer après tour-sien.py (même index.html) :  python3 -I tour-dax.py <dossier>
-import json, re, sys
+import json, os, re, sys
 import subprocess
 
 S = sys.argv[1]
@@ -29,9 +29,11 @@ METIERS = {
     "tour-coiffure": ("coiffure", "Chaque jour à Dax, environ 380 personnes cherchent un coiffeur.", "380"),
     "tour-librairie": ("librairie", "Chaque jour à Dax, en moyenne 250 personnes cherchent un nouveau livre à acquérir.", "250"),  # titre sur 3 lignes : voir SERRE
     "tour-bijouterie": ("bijouterie", "Chaque jour à Dax, en moyenne 60 personnes cherchent un bijou à acheter.", "60"),
+    "tour-massage": ("massage", "Chaque jour à Dax, environ 150 personnes cherchent un massage ou un moment de bien-être.", "150",
+                     "Pour capter ces 150 personnes, il faut être présent là où elles passent leur temps."),
 }
 EN_LETTRES = {"900": "neuf" + INS + "cents", "380": "trois" + INS + "cent" + INS + "quatre-vingts", "250": "deux" + INS + "cent" + INS + "cinquante",
-              "60": "soixante", "1" + INS + "000": "mille"}
+              "60": "soixante", "150": "cent" + INS + "cinquante", "1" + INS + "000": "mille"}
 ICONES = ["' + ICONES.monde + '", '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1.2"/></svg>',
           "' + ICONES.reseaux + '", '<svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.8"/></svg>']
 TEINTES = ["rose", "ambre", "rose", "ambre"]
@@ -76,11 +78,12 @@ def une_fois(t, avant, apres, quoi):
     return t.replace(avant, apres)
 
 
-for d, (metier, phrase1, nombre) in METIERS.items():
+for d, (metier, phrase1, nombre, *phrase2) in METIERS.items():
     page = f"{S}/{d}/index.html"
     t = open(page, encoding="utf-8").read()
-    phrases = [(phrase1, f"{R}/{metier}-1.mp3"), (POUR_CAPTER.format(nombre), f"{R}/{metier}-2.mp3")] + COMMUNES
-    temps = {f"dax-{k + 1}": preparer(src, f"{S}/{d}/dax-{k + 1}.mp3", txt) for k, (txt, src) in enumerate(phrases)}
+    phrases = [(phrase1, f"{R}/{metier}-1.mp3"), (phrase2[0] if phrase2 else POUR_CAPTER.format(nombre), f"{R}/{metier}-2.mp3")] + COMMUNES
+    # une phrase pas encore enregistrée (un nouveau métier) : elle s'écrit au rythme estimé, sans le son
+    temps = {f"dax-{k + 1}": preparer(src, f"{S}/{d}/dax-{k + 1}.mp3", txt) for k, (txt, src) in enumerate(phrases) if os.path.exists(src)}
     # les trois lignes d'avant (« Je la diffuse… », « Je la relaie à 11 h… », « …devant plus de 1 000 personnes… »)
     motif = re.compile(r"        \{ ico: '<span class=\"fx-ico rose\">' \+ ICONES\.reseaux \+ \"</span>\", txt: \"Je l[ae] diffuse sur tous tes réseaux en même temps\.\".*?"
                        r"000 personnes qui cherchent [^\"]*\", voix: \"[a-z0-9-]+\" \},\n", re.S)

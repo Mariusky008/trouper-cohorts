@@ -15,7 +15,7 @@ from alignement import aligner  # noqa: E402
 FF = f"{S}/ffmpeg"
 R = f"{S}/recu/direct"
 NB = " "
-TOURS = ["tour", "tour-vetements", "tour-coiffure", "tour-librairie", "tour-bijouterie", "tour-lunettes"]
+TOURS = ["tour", "tour-vetements", "tour-coiffure", "tour-librairie", "tour-bijouterie", "tour-lunettes", "tour-massage"]
 
 # Les cinq phrases, telles qu'il les dit. « 30 » s'écrit en chiffres mais se mesure « trente » (le même
 # nombre de mots : chaque mot garde son instant).

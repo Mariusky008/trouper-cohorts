@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<title>Les films du Cocon d’Élise</title>
+<!--
+  LES TROIS FILMS DU TOUR MASSAGE (voir films-massage.mjs) : son mot (sa voix, ses mots sous-titrés), le film de notre
+  spécialiste bien-être (son récit en sous-titres), son épisode (la séance en accéléré). Tout est fonction du temps :
+  dessiner(t) dessine l'image de l'instant t, mixer() fabrique le son (sa voix, et une nappe douce composée ici : aucun
+  droit). Le même langage que les films des autres tours : la carte titre, les coins roses, la carte de fin et son prix.
+-->
+<style>
+@font-face{font-family:Anton;src:url(/outils/face-au-fantome/polices/Anton-normal-400-latin.woff2) format("woff2")}
+@font-face{font-family:Poppins;font-weight:800;src:url(/outils/face-au-fantome/polices/Poppins-normal-800-latin.woff2) format("woff2")}
+@font-face{font-family:Poppins;font-weight:900;src:url(/outils/face-au-fantome/polices/Poppins-normal-900-latin.woff2) format("woff2")}
+@font-face{font-family:Poppins;font-weight:600;src:url(/outils/face-au-fantome/polices/Poppins-normal-600-latin.woff2) format("woff2")}
+@font-face{font-family:Playfair;font-style:italic;font-weight:700;src:url(/outils/face-au-fantome/polices/PlayfairDisplay-italic-700-latin.woff2) format("woff2")}
+body{margin:0;background:#000}
+canvas{width:360px;height:640px}
+</style>
+<canvas id="c" width="720" height="1280"></canvas>
+<script>
+"use strict";
+const W = 720, H = 1280, ROSE = "#FF2E9A", CREME = "#FFF4E6";
+const c = document.getElementById("c"), x = c.getContext("2d");
+const R = "/outils/tour-du-fantome/recu/massage/photos/", T = "/outils/tour-du-fantome/tour-massage/";
+const NOM = "LE COCON\nD’ÉLISE", PLAT = "Massage détente musculaire", PRIX = "60 €";
+const RECIT = ["Je pousse la porte du Cocon d’Élise.", "Le massage du jour : massage détente musculaire.", "Une heure pour dénouer le dos et les épaules, à l’huile chaude.",
+  "On ressort léger.", "Combien ? 60 €.", "Prenez rendez-vous au Cocon d’Élise !"];
+const IMG = {}, FLOU = {};
+let MODE = "message", MOTS = [], VOIX = 0, DUREE = 0, PLANS = [], CHRONO = [];
+const charger = (nom, src) => new Promise((ok, ko) => { const i = new Image(); i.onload = () => { IMG[nom] = i; ok(); }; i.onerror = () => ko(new Error(src)); i.src = src; });
+const ease = (u) => (u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u));
+
+/* une photo qui remplit l'écran, un peu agrandie et décalée (u de 0 à 1 : le temps du plan) */
+function couvrir(img, u, zoom = [1.02, 1.1], dx = 0) {
+  const z = zoom[0] + (zoom[1] - zoom[0]) * u, r = Math.max(W / img.width, H / img.height) * z;
+  const w = img.width * r, h = img.height * r;
+  x.drawImage(img, (W - w) / 2 + dx * (u - 0.5) * 40, (H - h) / 2, w, h);
+}
+function flou(nom) {
+  if (FLOU[nom]) return FLOU[nom];
+  const k = document.createElement("canvas"); k.width = W; k.height = H; const y = k.getContext("2d");
+  const img = IMG[nom], r = Math.max(W / img.width, H / img.height) * 1.15;
+  y.filter = "blur(28px) brightness(.5) saturate(1.1)";
+  y.drawImage(img, (W - img.width * r) / 2, (H - img.height * r) / 2, img.width * r, img.height * r);
+  return (FLOU[nom] = k);
+}
+function texte(t, px, py, { font, couleur = "#fff", align = "left", ombre = true, lettre = 0 } = {}) {
+  x.save(); x.font = font; x.fillStyle = couleur; x.textAlign = align; x.textBaseline = "alphabetic";
+  if (lettre) x.letterSpacing = lettre + "px";
+  if (ombre) { x.shadowColor = "rgba(0,0,0,.55)"; x.shadowBlur = 14; x.shadowOffsetY = 3; }
+  x.fillText(t, px, py); x.restore();
+}
+function coins(a = 1) {
+  x.save(); x.globalAlpha = a; x.strokeStyle = ROSE; x.lineWidth = 6; x.lineCap = "round";
+  const m = 34, l = 58;
+  for (const [cx, cy, sx, sy] of [[m, m, 1, 1], [W - m, m, -1, 1], [m, H - m, 1, -1], [W - m, H - m, -1, -1]]) {
+    x.beginPath(); x.moveTo(cx, cy + sy * l); x.lineTo(cx, cy); x.lineTo(cx + sx * l, cy); x.stroke();
+  }
+  x.restore();
+}
+function entete(titre) {
+  texte(titre, 54, 92, { font: "800 22px Poppins", couleur: CREME, lettre: 2 });
+  x.save(); x.fillStyle = ROSE; x.beginPath(); x.arc(44, 85, 6, 0, 7); x.fill(); x.restore();
+  texte("Le Cocon d’Élise · Dax", 54, 122, { font: "600 20px Poppins", couleur: "rgba(255,244,230,.8)" });
+}
+
+/* LA CARTE TITRE : la photo floutée, le nom en grand, ce qu'on va voir */
+function carteTitre(u, haut, bas1, bas2) {
+  x.drawImage(flou("m1"), 0, 0);
+  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "rgba(20,8,14,.35)"); g.addColorStop(1, "rgba(20,8,14,.85)");
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  x.save(); x.globalAlpha = ease(u * 3);
+  texte(haut, 60, 120, { font: "800 22px Poppins", couleur: ROSE, lettre: 3, ombre: false });
+  texte("DAX · AUJOURD’HUI", 60, 152, { font: "800 18px Poppins", couleur: "rgba(255,244,230,.7)", lettre: 2, ombre: false });
+  const k = ease((u - 0.08) * 3);
+  x.translate(0, (1 - k) * 30); x.globalAlpha = k;
+  // le nom, aussi grand que la largeur le permet
+  x.font = "200px Anton"; const pl = Math.min(200, 200 * (W - 120) / Math.max(...NOM.split("\n").map((l) => x.measureText(l).width)));
+  NOM.split("\n").forEach((l, i) => texte(l, 60, 470 + i * pl * 1.02, { font: `${pl}px Anton`, couleur: CREME }));
+  x.restore();
+  x.save(); x.globalAlpha = ease((u - 0.25) * 3);
+  texte(bas1, W / 2, 1080, { font: "italic 700 40px Playfair", couleur: "#fff", align: "center" });
+  texte(bas2, W / 2, 1140, { font: "italic 700 46px Playfair", couleur: ROSE, align: "center" });
+  x.restore();
+}
+
+/* LA CARTE DE FIN : sa photo en polaroïd, le nom du soin, le prix, où le découvrir */
+function carteFin(u) {
+  x.drawImage(flou("m1"), 0, 0);
+  x.fillStyle = "rgba(20,8,14,.55)"; x.fillRect(0, 0, W, H);
+  const k = ease(u * 2.5);
+  x.save(); x.translate(W / 2, 420 + (1 - k) * 60); x.rotate(-0.05); x.globalAlpha = k;
+  x.shadowColor = "rgba(0,0,0,.5)"; x.shadowBlur = 30; x.fillStyle = "#FBF7F0"; x.fillRect(-250, -300, 500, 600); x.shadowBlur = 0;
+  const img = IMG.m1, r = Math.max(460 / img.width, 470 / img.height);
+  x.save(); x.beginPath(); x.rect(-230, -280, 460, 470); x.clip();
+  x.drawImage(img, -img.width * r / 2, -280 + (470 - img.height * r) / 2, img.width * r, img.height * r); x.restore();
+  texte(PLAT, 0, 255, { font: "italic 700 30px Playfair", couleur: "#2A1A10", align: "center", ombre: false });
+  x.restore();
+  // la pastille du commerce
+  x.save(); x.globalAlpha = ease((u - 0.1) * 3); x.translate(W / 2 + 230, 160); x.rotate(0.2);
+  x.fillStyle = ROSE; x.beginPath(); x.arc(0, 0, 78, 0, 7); x.fill();
+  x.strokeStyle = "#fff"; x.lineWidth = 3; x.setLineDash([6, 6]); x.beginPath(); x.arc(0, 0, 66, 0, 7); x.stroke();
+  texte("LE COCON", 0, -8, { font: "800 22px Poppins", align: "center", ombre: false }); texte("D’ÉLISE", 0, 22, { font: "800 22px Poppins", align: "center", ombre: false });
+  x.restore();
+  x.save(); x.globalAlpha = ease((u - 0.2) * 3);
+  texte("AUJOURD’HUI · LE COCON D’ÉLISE", 70, 830, { font: "800 22px Poppins", couleur: ROSE, lettre: 2 });
+  texte("Massage détente", 70, 895, { font: "900 54px Poppins" });
+  texte("musculaire", 70, 955, { font: "900 54px Poppins" });
+  texte(PRIX, 70, 1050, { font: "900 84px Poppins", couleur: ROSE });
+  texte("Une heure · Dax", W - 70, 1045, { font: "600 24px Poppins", couleur: "rgba(255,244,230,.75)", align: "right" });
+  x.restore();
+  x.save(); x.globalAlpha = ease((u - 0.35) * 3);
+  x.strokeStyle = ROSE; x.lineWidth = 4; x.fillStyle = "rgba(255,46,154,.12)";
+  x.beginPath(); x.roundRect(150, 1095, 420, 84, 42); x.fill(); x.stroke();
+  texte("À découvrir sur clikme", W / 2, 1149, { font: "800 30px Poppins", align: "center", ombre: false });
+  x.restore();
+}
+
+/* SES MOTS, MOT À MOT : trois au plus, le dernier dit surligné en rose */
+function sousTitres(t) {
+  let k = -1; for (let i = 0; i < MOTS.length; i++) if (MOTS[i][0] <= t) k = i;
+  if (k < 0) return;
+  // le groupe du mot dit : on coupe tous les trois mots, et après une ponctuation
+  let debut = 0, n = 0;
+  for (let i = 0; i <= k; i++) { if (n === 3 || (i > 0 && /[.,:;!?…]$/.test(MOTS[i - 1][1]))) { debut = i; n = 0; } n++; }
+  if (t - MOTS[k][0] > 1.6 && /[.!?…]$/.test(MOTS[k][1])) return;
+  const mots = MOTS.slice(debut, k + 1).map((m) => m[1]);
+  // trop large pour l'écran : le groupe se resserre
+  x.save(); x.font = "900 54px Poppins"; x.textBaseline = "middle";
+  let esp = 16, larg = mots.map((m) => x.measureText(m).width), tot = larg.reduce((a, b) => a + b, 0) + esp * (mots.length - 1);
+  if (tot > W - 90) { const r = (W - 90) / tot; x.font = `900 ${Math.floor(54 * r)}px Poppins`; esp *= r; larg = larg.map((l) => l * r); tot = W - 90; }
+  let px = (W - tot) / 2; const py = 900;
+  mots.forEach((m, i) => {
+    if (i === mots.length - 1) { x.fillStyle = ROSE; x.beginPath(); x.roundRect(px - 10, py - 38, larg[i] + 20, 74, 14); x.fill(); }
+    x.shadowColor = "rgba(0,0,0,.6)"; x.shadowBlur = i === mots.length - 1 ? 0 : 12; x.fillStyle = "#fff"; x.fillText(m, px, py + 2); x.shadowBlur = 0;
+    px += larg[i] + esp;
+  });
+  x.restore();
+}
+function fantome(nom, t, taille = 190) {
+  const img = IMG[nom], h = taille, w = img.width / img.height * h, b = Math.sin(t * 2.2) * 6;
+  x.save(); x.shadowColor = "rgba(0,0,0,.45)"; x.shadowBlur = 20; x.drawImage(img, W - w - 46, H - h - 60 + b, w, h); x.restore();
+}
+/* les plans : [image, début, fin] ; un fondu de 0,35 s entre deux */
+function plans(t) {
+  for (let i = 0; i < PLANS.length; i++) {
+    const [nom, a, z] = PLANS[i];
+    if (t < a - 0.35 || t > z) continue;
+    x.save(); x.globalAlpha = i === 0 ? 1 : ease((t - (a - 0.35)) / 0.35);
+    couvrir(IMG[nom], (t - a + 0.35) / (z - a + 0.35), [1.02, 1.12], i % 2 ? 1 : -1);
+    x.restore();
+  }
+  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "rgba(0,0,0,.45)"); g.addColorStop(0.22, "rgba(0,0,0,0)"); g.addColorStop(0.6, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.55)");
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+}
+
+const TITRE = 2.4, FIN = 3.4;
+window.preparer = async (mode) => {
+  MODE = mode;
+  await Promise.all([...["m1", "m2", "m3", "m4", "geste", "boutique"].map((k) => charger(k, R + k + ".jpg")),
+    charger("fant", "/public/direct/double/pied/bien-etre/salut-1.webp"), charger("spe", "/outils/tour-du-fantome/tour-coiffure/specialiste-perso.webp")]);
+  await document.fonts.load("200px Anton"); await document.fonts.load("900 54px Poppins"); await document.fonts.load("800 22px Poppins");
+  await document.fonts.load("600 20px Poppins"); await document.fonts.load("italic 700 40px Playfair");
+  if (mode === "message") {
+    const p = await (await fetch(T + "paroles.json")).json();
+    VOIX = p.duree; MOTS = p.mots.map(([a, m]) => [a + TITRE, m]);
+    const fin = TITRE + VOIX + 0.8, seq = ["m1", "m3", "m4", "geste", "m2"], d = (fin - TITRE) / seq.length;
+    PLANS = seq.map((k, i) => [k, TITRE + i * d, TITRE + (i + 1) * d]);
+    DUREE = fin + FIN;
+  } else if (mode === "specialiste") {
+    // son récit, phrase après phrase, au rythme d'une voix posée
+    MOTS = []; let t = TITRE + 0.3;
+    for (const ph of RECIT) { for (const m of ph.split(" ")) { MOTS.push([t, m]); t += 0.2 + m.length * 0.045; } t += 0.45; }
+    const fin = t + 0.6, seq = ["m2", "m1", "m3", "geste", "m4", "boutique"], d = (fin - TITRE) / seq.length;
+    PLANS = seq.map((k, i) => [k, TITRE + i * d, TITRE + (i + 1) * d]);
+    DUREE = fin + FIN;
+  } else {
+    // la séance en accéléré : la cabine, puis les gestes, le chrono qui file
+    const seq = [["m2", "⏱ 2 min"], ["m3", "⏱ 9 min"], ["m1", "⏩ ×20"], ["geste", "⏱ 24 min"], ["m1", "⏱ 37 min"], ["m4", "⏱ 48 min"], ["m2", "⏱ 55 min"]];
+    PLANS = seq.map(([k], i) => [k, TITRE + i * 3.3, TITRE + (i + 1) * 3.3]);
+    CHRONO = seq.map(([, c], i) => [TITRE + i * 3.3, c]);
+    MOTS = [];
+    DUREE = TITRE + seq.length * 3.3 + FIN;
+  }
+  return DUREE;
+};
+window.dessiner = (t) => {
+  x.clearRect(0, 0, W, H);
+  if (t < TITRE) {
+    const titres = { message: ["LE MOT D’ÉLISE", "le massage du jour", PLAT], specialiste: ["LE SPÉCIALISTE BIEN-ÊTRE", "le massage du jour", PLAT],
+      episode: ["SAISON 2026 · ÉPISODE 3", "épisode 3", PLAT] }[MODE];
+    carteTitre(t / TITRE, ...titres);
+    return;
+  }
+  if (t > DUREE - FIN) { carteFin((t - (DUREE - FIN)) / FIN); return; }
+  plans(t);
+  coins(ease((t - TITRE) * 3));
+  entete({ message: "LE MOT D’ÉLISE", specialiste: "LE SPÉCIALISTE BIEN-ÊTRE", episode: "SAISON 2026 · ÉPISODE 3" }[MODE]);
+  if (MODE === "episode") {
+    let ch = CHRONO[0][1]; for (const [a, cc] of CHRONO) if (a <= t) ch = cc;
+    x.save(); x.font = "800 28px Poppins"; const l = x.measureText(ch).width;
+    x.fillStyle = "rgba(20,8,14,.7)"; x.beginPath(); x.roundRect(60, H - 150, l + 40, 60, 30); x.fill();
+    texte(ch, 80, H - 109, { font: "800 28px Poppins", ombre: false }); x.restore();
+    return;
+  }
+  sousTitres(t);
+  fantome(MODE === "message" ? "fant" : "spe", t);
+};
+
+/* LE SON : sa voix (son mot), et une nappe douce, accords lents, sous elle */
+function wav(buf) {
+  const n = buf.length, ch = buf.numberOfChannels, out = new DataView(new ArrayBuffer(44 + n * ch * 2));
+  const s = (o, t) => [...t].forEach((c, i) => out.setUint8(o + i, c.charCodeAt(0)));
+  s(0, "RIFF"); out.setUint32(4, 36 + n * ch * 2, true); s(8, "WAVE"); s(12, "fmt "); out.setUint32(16, 16, true); out.setUint16(20, 1, true);
+  out.setUint16(22, ch, true); out.setUint32(24, buf.sampleRate, true); out.setUint32(28, buf.sampleRate * ch * 2, true); out.setUint16(32, ch * 2, true);
+  out.setUint16(34, 16, true); s(36, "data"); out.setUint32(40, n * ch * 2, true);
+  const d = [...Array(ch).keys()].map((k) => buf.getChannelData(k));
+  let o = 44; for (let i = 0; i < n; i++) for (let k = 0; k < ch; k++) { out.setInt16(o, Math.max(-1, Math.min(1, d[k][i])) * 32767, true); o += 2; }
+  let b = ""; const u8 = new Uint8Array(out.buffer); for (let i = 0; i < u8.length; i += 0x8000) b += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  return btoa(b);
+}
+window.mixer = async () => {
+  const sr = 48000, ac = new OfflineAudioContext(2, Math.ceil(DUREE * sr), sr);
+  const bus = ac.createGain(), filtre = ac.createBiquadFilter();
+  filtre.type = "lowpass"; filtre.frequency.value = 1400; bus.connect(filtre); filtre.connect(ac.destination);
+  const fort = MODE === "message" ? 0.05 : 0.11;
+  bus.gain.setValueAtTime(0, 0); bus.gain.linearRampToValueAtTime(fort * 1.6, 1.2);
+  if (MODE === "message") { bus.gain.setValueAtTime(fort * 1.6, TITRE - 0.3); bus.gain.linearRampToValueAtTime(fort, TITRE); bus.gain.setValueAtTime(fort, TITRE + VOIX); bus.gain.linearRampToValueAtTime(fort * 1.6, TITRE + VOIX + 0.8); }
+  bus.gain.setValueAtTime(MODE === "message" ? fort * 1.6 : fort, DUREE - 1.6); bus.gain.linearRampToValueAtTime(0, DUREE);
+  // la min, fa, do, sol : quatre secondes chacun, chaque note douce (sinus et triangle, légèrement désaccordés)
+  const ACC = [[220, 261.63, 329.63], [174.61, 220, 261.63], [261.63, 329.63, 392], [196, 246.94, 293.66]];
+  for (let a = 0, i = 0; a < DUREE; a += 4, i++) {
+    for (const f of ACC[i % 4]) for (const [type, det, g] of [["sine", 0, 0.5], ["triangle", 3, 0.18], ["sine", -4, 0.3]]) {
+      const o = ac.createOscillator(), e = ac.createGain();
+      o.type = type; o.frequency.value = f; o.detune.value = det;
+      e.gain.setValueAtTime(0, a); e.gain.linearRampToValueAtTime(g, a + 1.4); e.gain.setValueAtTime(g, a + 3.4); e.gain.linearRampToValueAtTime(0, a + 5.2);
+      o.connect(e); e.connect(bus); o.start(a); o.stop(Math.min(DUREE, a + 5.4));
+    }
+    // une note claire, au début de chaque accord
+    const o = ac.createOscillator(), e = ac.createGain(); o.type = "sine"; o.frequency.value = ACC[i % 4][2] * 2;
+    e.gain.setValueAtTime(0, a + 0.2); e.gain.linearRampToValueAtTime(0.12, a + 0.25); e.gain.exponentialRampToValueAtTime(0.001, a + 3);
+    o.connect(e); e.connect(bus); o.start(a + 0.2); o.stop(Math.min(DUREE, a + 3.1));
+  }
+  if (MODE === "message") {
+    const voix = await ac.decodeAudioData(await (await fetch(T + "voix.mp3")).arrayBuffer());
+    const s = ac.createBufferSource(), g = ac.createGain(); g.gain.value = 1; s.buffer = voix; s.connect(g); g.connect(ac.destination); s.start(TITRE);
+  }
+  return wav(await ac.startRendering());
+};
+window.pret = true;
+</script>
+</html>

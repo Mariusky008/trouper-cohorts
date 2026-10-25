@@ -41,7 +41,13 @@ METIERS = {
     "tour-bijouterie": ("bijouterie",
              "Et si les *bijoux qui dorment en vitrine payaient ton restaurant" + NB + "?",
              "Par exemple, un bon de " + E50 + " dépensé chez toi ne te coûte que le *prix de revient du bijou. Chez tes voisins, il vaut bien *" + E50 + "."),
+    # le salon de massage : la question de la coiffure (les mêmes créneaux vides, la même voix), son massage à lui
+    "tour-massage": ("massage",
+             "Et si tes *créneaux" + INS + "vides du mardi matin payaient ton restaurant" + NB + "?",
+             "Par exemple, un massage à " + E50 + ", sur un créneau qui serait resté vide, ne te coûte presque que ton *temps. Chez tes voisins, il vaut bien *" + E50 + "."),
 }
+# la même question qu'un autre métier : sa voix sert telle quelle
+MEME_QUESTION = {"massage": "coiffure"}
 # l'ancien titre de la scène, à remplacer (le restaurant a ses dîners, les autres leurs bons d'achat)
 ANCIENS = ['titre: "Et si *tes" + INS + "dîners payaient tes courses" + NB + "?", voix: "depenses-1"',
            'titre: "Et si *tes" + INS + "bons" + INS + "d’achat payaient tes courses" + NB + "?", voix: "lou-depenses-1"']
@@ -113,8 +119,10 @@ def une_fois(t, avant, apres, quoi):
 for d, (metier, titre, bilan) in METIERS.items():
     page = f"{S}/{d}/index.html"
     t = open(page, encoding="utf-8").read()
-    temps = {"depenses-titre": preparer(f"{R}/brut/{metier}.mp3", f"{S}/{d}/depenses-titre.mp3", titre),
-             "depenses-vrai": preparer(f"{R}/brut/{metier}2.mp3", f"{S}/{d}/depenses-vrai.mp3", bilan)}
+    temps = {"depenses-titre": preparer(f"{R}/brut/{MEME_QUESTION.get(metier, metier)}.mp3", f"{S}/{d}/depenses-titre.mp3", titre)}
+    # le coût réel, pas encore enregistré (un nouveau métier) : il s'écrit au rythme estimé, sans le son
+    if os.path.exists(f"{R}/brut/{metier}2.mp3"):
+        temps["depenses-vrai"] = preparer(f"{R}/brut/{metier}2.mp3", f"{S}/{d}/depenses-vrai.mp3", bilan)
     ancien = next(a for a in ANCIENS if a in t)
     t = une_fois(t, ancien, "titre: " + json.dumps(titre, ensure_ascii=False) + ', voix: "depenses-titre"', f"{d} titre")
     t = une_fois(t, "</style>\n", CSS.lstrip("\n") + "</style>\n", f"{d} style")
@@ -131,4 +139,4 @@ for d, (metier, titre, bilan) in METIERS.items():
     t = une_fois(t, 'monnaie(); return; }\n          son("pop"); aller(idx + 1);',
                  'monnaie(); plus(() => direVrai(jetonVoix), 1600); return; }\n          if (!vraiDit()) return;\n          son("pop"); aller(idx + 1);', f"{d} offre passée")
     open(page, "w", encoding="utf-8").write(t)
-    print(d, "· question", temps["depenses-titre"]["d"], "s · coût réel", temps["depenses-vrai"]["d"], "s")
+    print(d, "· question", temps["depenses-titre"]["d"], "s · coût réel", temps["depenses-vrai"]["d"] if "depenses-vrai" in temps else "(pas encore enregistré)", "s")

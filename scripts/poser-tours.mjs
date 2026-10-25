@@ -35,6 +35,7 @@ const TOURS = {
   "tour-librairie": "librairie",
   "tour-bijouterie": "bijouterie",
   "tour-lunettes": "lunettes",
+  "tour-massage": "massage",
 };
 
 // les étapes intermédiaires de la chaîne (`index.avant-episode2.html`…) ne sont pas la page

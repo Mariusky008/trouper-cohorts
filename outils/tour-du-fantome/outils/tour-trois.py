@@ -99,6 +99,19 @@ METIERS = {
         couleurs=dict(f1="#3B1631", f2="#250D1F", s1="#F7E3EC", s2="#B01E6A", ens="#1C0A17", vit="#1C0A17"),
         interieur=("e1", "e1.webp"), hote="fant-viens.webp",
     ),
+    # le salon de massage (tour-massage.py) : les créneaux de la coiffure, ses mots à lui
+    "tour-massage": dict(
+        metier="massage", lieu="Le Cocon d’Élise", sous="MASSAGES · DAX", chez="au Cocon d’Élise", carte="Détente · Ayurvédique · Kobido", qui="Élise",
+        trois2="J’adore, je prendrai rendez-vous, ou un créneau aujourd’hui. Touchez une cage.",
+        cages=[["adore", "💗 J’adore", "« J’ai aimé ta vidéo »"], ["promis", "📅 Je prendrai RDV", "« Promis, je prends rendez-vous »"], ["table", "🌿 Aujourd’hui", "« Un créneau aujourd’hui »"]],
+        pose3="assis", heures=["15 h 30", "17 h", "11 h"], compte=[28, 10, 3],
+        bon="Le thé offert", tente="Ça me tente →",
+        appel="Il me reste des créneaux aujourd’hui ! Votre massage vous attend.",
+        creux=dict(calme="Oui, c’est calme aujourd’hui" + NB + ": préviens\u2011les" + NB + "!",
+                   reponses=[["Sarah", "Je prends 14 h !"], ["Léa", "16 h 30, pour un massage"], ["Zoé", "15 h, un kobido"], ["Emma", "17 h, si c’est bon"]], ticket="+4 rendez-vous un jour calme"),
+        couleurs=dict(f1="#2E3B2C", f2="#1C2619", s1="#EEF3E6", s2="#5E7A4E", ens="#141C12", vit="#141C12"),
+        interieur=("e1", "e1.webp"), hote="fant-viens.webp",
+    ),
 }
 
 def une_fois(t, avant, apres, quoi):
@@ -973,11 +986,13 @@ for d, M in METIERS.items():
     temps, enregistrees = {}, []
     for nom, txt in textes.items():
         dst = f"{S}/{d}/{nom}.mp3"
-        if nom == "trois-2":
-            temps[nom] = preparer(f"{R}/trois-2-restaurant.mp3", dst, txt) if M["metier"] == "restaurant" else coller(f"{R}/trois-2-{M['metier']}.mp3", dst, txt)
-        elif nom == "mike-bonjour":
-            temps[nom] = preparer(f"{R}/mike-bonjour-{M['metier']}.mp3", dst, txt)
-        elif os.path.exists(f"{R}/{nom}.mp3"):
+        # les deux répliques du métier ; pas encore reçues (un nouveau métier) : comme les autres, au rythme estimé
+        src = {"trois-2": f"{R}/trois-2-{M['metier']}.mp3", "mike-bonjour": f"{R}/mike-bonjour-{M['metier']}.mp3"}.get(nom, f"{R}/{nom}.mp3")
+        if nom == "trois-2" and os.path.exists(src):
+            temps[nom] = preparer(src, dst, txt) if M["metier"] == "restaurant" else coller(src, dst, txt)
+        elif nom == "mike-bonjour" and os.path.exists(src):
+            temps[nom] = preparer(src, dst, txt)
+        elif nom not in ("trois-2", "mike-bonjour") and os.path.exists(src):
             temps[nom] = preparer(f"{R}/{nom}.mp3", dst, txt)
         else:  # pas encore reçue : elle s'écrit au rythme estimé, sans son
             temps[nom] = estimer(txt)
