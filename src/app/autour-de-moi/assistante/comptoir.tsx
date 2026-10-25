@@ -95,6 +95,7 @@ import type { SemaineEnClients } from "@/lib/site-internet/compteurs-jour";
 import { partagerEnStatut, type Statut, type SortieStatut } from "@/lib/direct/statut-whatsapp";
 import { PhotothequeComptoir, PiocherPhototheque } from "./phototheque-comptoir";
 import { CarteMessageDuMois } from "./message-du-mois";
+import { CarnetComptoir, CarteCarnet, useCarnet } from "./carnet-comptoir";
 import { MotMarque } from "@/components/direct/mot-marque";
 
 type Commerce = CommerceComptoir;
@@ -381,7 +382,9 @@ type Phase =
   /** 📣 Plus de clients : comment se montrer aujourd'hui — photo, interview, épisode. */
   | { ou: "clients" }
   /** Mes infos : ce que ses clients lisent de lui. */
-  | { ou: "infos" };
+  | { ou: "infos" }
+  /** 📒 Mon carnet : ceux qui ont libéré leur fantôme à la fin de ses vidéos — voir `carnet-comptoir.tsx`. */
+  | { ou: "carnet" };
 
 /** L'envoi en ligne d'un vrai commerçant : en cours, arrivé, ou à refaire. */
 type Envoi = { etat: "en-cours" } | ({ etat: "fini" } & ResultatEnvoi);
@@ -428,6 +431,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
   const reseaux = useReseaux(commerce);
   /* ☀️ SA PROPOSITION DU MATIN : une pièce de sa vitrine, prête — « oui » et c'est parti. */
   const proposition = useProposition(commerce);
+  /* 📒 SON CARNET, lu une fois : la carte de l'accueil, et son écran (qui le relit). */
+  const carnet = useCarnet(commerce);
   /* ⇄ SES ÉCHANGES, EN HAUT AUSSI, À CÔTÉ DE LA FLAMME — « c'est quand même une fonctionnalité
      phare ». Ce qu'il peut dépenser chez les autres commerçants, ou les bons à valider. La
      démonstration relit son téléphone à chaque affichage (un petit objet) : juste au retour. */
@@ -917,6 +922,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           depenses={puceEchanges}
           propositionActive={propositionPrete}
           reseaux={<OutilReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
+          carnet={<CarteCarnet carnet={carnet} onOuvrir={() => setPhase({ ou: "carnet" })} />}
           onPublier={ouvrirClients}
           onDepenses={() => allerA("catalogue")}
           onStats={() => setStats(true)}
@@ -1020,6 +1026,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           onRetour={revenir}
         />
       )}
+
+      {phase.ou === "carnet" && <CarnetComptoir commerce={commerce} dossier={dossier} carnet={carnet} onRetour={revenir} />}
 
       {phase.ou === "savoir" && (
         <SavoirComptoir commerce={commerce} dossier={dossier} savoir={savoir} onRetour={revenir} />
@@ -1427,6 +1435,7 @@ function Accueil({
   depenses,
   propositionActive,
   reseaux,
+  carnet,
   onPublier,
   onDepenses,
   onStats,
@@ -1453,6 +1462,8 @@ function Accueil({
   propositionActive: boolean;
   /** Le raccourci « Réseaux » — absent tant que l'intermédiaire n'est pas branché. */
   reseaux?: React.ReactNode;
+  /** 📒 La carte « Mon carnet » : ceux qui ont libéré leur fantôme à la fin de ses vidéos. */
+  carnet?: React.ReactNode;
   onPublier: () => void;
   onDepenses: () => void;
   onStats: () => void;
@@ -1525,6 +1536,7 @@ function Accueil({
           </span>
           {clients.chaud ? <i className="ak-badge">{clients.pret ? "✨ Prête" : "⚡ Maintenant"}</i> : <s aria-hidden="true">›</s>}
         </button>
+        {carnet}
         <button type="button" className="ak-second" onClick={onDepenses}>
           <span className="ak-second-i" aria-hidden="true">
             🤝

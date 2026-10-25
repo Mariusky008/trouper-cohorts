@@ -80,6 +80,10 @@ const DEFAUTS = {
   // « SIGNALER » UN BON NON HONORÉ — `…_echanges_signalements.sql`.
   human_echanges_signalements: () => ({ id: randomUUID(), detail: null, statut: "ouvert", cree_le: maintenant(), traite_le: null }),
   human_echanges_pauses: () => ({ depuis: maintenant(), offre_active_avant: true, levee_le: null }),
+  // LES CAGES ET LE CARNET — `…_clik_cages.sql` et `…_clik_visites.sql` : la vraie table donne son `id`.
+  clik_cage: () => ({ id: randomUUID(), prenom: "", look: "", created_at: maintenant(), updated_at: maintenant() }),
+  clik_contact: () => ({ id: randomUUID(), whatsapp: null, accord_le: null, stop_le: null, created_at: maintenant(), updated_at: maintenant() }),
+  clik_visite: () => ({ id: randomUUID(), created_at: maintenant() }),
 };
 const CLES = {
   human_conversations: ["id"],
@@ -98,6 +102,9 @@ const CLES = {
   human_echanges_facturation: ["site_id"],
   human_echanges_signalements: ["id"],
   human_echanges_pauses: ["site_id"],
+  clik_cage: ["habitant_id", "site_id", "film"],
+  clik_contact: ["habitant_id", "site_id"],
+  clik_visite: ["site_id", "habitant_id", "jour"],
 };
 
 /** Le déclencheur `echanges_pause_garde` : en pause après deux signalements, une offre ne se remet pas en ligne. */
