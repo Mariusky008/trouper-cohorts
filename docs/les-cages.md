@@ -4,8 +4,8 @@
 > son fantôme de sa cage. »
 
 C'est l'étape 1 du passage de la démo (`outils/tour-du-fantome`) dans l'application ; l'étape 2 (le carnet au
-comptoir), l'étape 3 (« Oui, préviens-les », Mike) et l'étape 4 (le moteur de messages) sont plus bas. L'étape
-suivante : le ticket de Mike.
+comptoir), l'étape 3 (« Oui, préviens-les », Mike), l'étape 4 (le moteur de messages) et l'étape 5 (le ticket de
+Mike) sont plus bas.
 
 ## Ce que voit l'habitant
 
@@ -124,6 +124,27 @@ sans réponse → rien d'autre dans la semaine ; trois sans réponse → plus ri
   répondre, stop, reprendre). La migration `supabase/migrations/20261029090000_clik_messages_maison.sql` ajoute à
   `clik_message` le canal, le modèle, les réponses proposées et la réponse.
 
+## 🧾 Le ticket de Mike (étape 5)
+
+Le ticket de « Plus de clients » des tours (« Grâce à vos promesses : +4 tables un midi calme »), au comptoir, avec ce
+que ClikMe sait vraiment des **sept derniers jours** — rien d'inventé ni d'estimé (`src/lib/direct/ticket-mike.ts`) :
+
+- 👻 les fantômes libérés à la fin de ses vidéos, cage par cage ;
+- 🚶 les personnes venues (les passages qu'il a notés dans son carnet) ;
+- 📲 « Grâce à tes promesses » : celles venues le jour même ou le lendemain d'une invitation « Oui, préviens-les » —
+  « +3 tables un jour calme » (« +3 rendez-vous », « +3 clients » selon le métier) ; la ligne n'apparaît que s'il y
+  en a ;
+- 💬 les messages de Mike envoyés, et les réponses ;
+- 👁 les vues de sa page (les chiffres du comptoir) ; 🤝 la commission ClikMe : 0 €, toujours.
+
+Sur l'accueil, sous « Mon carnet », la carte « Ce que Mike a fait pour toi » (« 3 venus · 11 fantômes libérés · cette
+semaine »), avec un point rose tant qu'il ne l'a pas ouverte depuis sept jours ; rien quand ses deux semaines sont
+vides. La feuille montre « Cette semaine » et « La semaine d'avant », et mène au carnet. La démonstration calcule son
+ticket sur le carnet inventé (Nathan, venu le lendemain de son invitation : « +1 table un jour calme »). Un vrai
+commerçant le lit par la route du carnet (`ticket`) — aucune table de plus.
+
+- `src/app/autour-de-moi/assistante/ticket-mike.tsx` : la carte et la feuille.
+
 ## L'activer en production
 
 **Les deux tables doivent être créées une fois** : coller le contenu de
@@ -144,7 +165,7 @@ s'affiche mais « Passage aujourd'hui » répond « Les passages ne sont pas enc
   route contre le faux Supabase.
 - `node scripts/essai-carnet-route.mjs` (CI aussi) : le carnet, ses passages, le stop, et « Oui, préviens-les »
   (les numéros, le message gardé, les règles), et le moteur de messages (Ma Maison, la réponse, le stop, « A
-  répondu », le silence), contre le faux Supabase. Hors de 9 h – 20 h 30, il vérifie le refus.
+  répondu », le silence) et le ticket de Mike, contre le faux Supabase. Hors de 9 h – 20 h 30, il vérifie le refus.
 - Le carnet dans le navigateur : `/autour-de-moi/assistante?metier=table`, la carte « Mon carnet ».
 - Dans le navigateur : `/autour-de-moi`, Restaurants, Chez Bergine, « Voir toutes les offres + infos », le film
   « En cuisine, pendant le service » jusqu'au bout.

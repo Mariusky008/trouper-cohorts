@@ -10,6 +10,7 @@
 // pas d'alcool offert, pas deux messages le même jour, pas plus de deux par semaine, rien hors de 9 h – 20 h 30. Puis le
 // moteur de messages : le merci de Mike dans la Maison de Zoé, sa réponse d'un appui (et seulement la sienne, une fois,
 // parmi les choix), le stop et la reprise, « A répondu sur WhatsApp », et le silence après un message sans réponse.
+// Enfin le ticket de Mike : fantômes libérés, venus, venus après son signal, messages et réponses de la semaine.
 //
 //   node scripts/faux-supabase.mjs 54321
 //   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=faux NEXT_PUBLIC_SUPABASE_ANON_KEY=faux \
@@ -165,6 +166,22 @@ if (ouvert) {
   ok(p.statut === 409, `hors des heures (9 h – 20 h 30) : refusé (${p.statut}, « ${p.error} »)`);
   console.log("  (hors des heures d'envoi : l'envoi accepté, le même jour et la semaine ne sont pas vérifiés)");
 }
+
+// ── 🧾 LE TICKET DE MIKE (étape 5) : ses sept derniers jours, et les sept d'avant ──
+ok((await carnet({ action: "passage", ref: refs.Camille, oui: true })).passages === 1, "Camille passe aujourd'hui");
+const tk = await carnet({ action: "ticket" });
+const cagesSite = await (await fetch(`${F}/clik_cage?site_id=eq.${SITE}`)).json();
+const totalTk = tk.semaine ? tk.semaine.fantomes.adore + tk.semaine.fantomes["un-jour"] + tk.semaine.fantomes.aujourdhui : -1;
+ok(tk.statut === 200 && totalTk === cagesSite.length, `le ticket : les fantômes libérés de la semaine (${totalTk} / ${cagesSite.length}, ${JSON.stringify(tk.semaine?.fantomes)})`);
+ok(tk.semaine?.venus === 1 && tk.semaine?.passages === 1, `venus : Camille (${tk.semaine?.venus}, ${tk.semaine?.passages} passage)`);
+const msgSite = (await (await fetch(`${F}/clik_message?site_id=eq.${SITE}`)).json()).length;
+ok(tk.semaine?.messages === msgSite, `les messages de la semaine (${tk.semaine?.messages} / ${msgSite})`);
+if (ouvert) {
+  ok(tk.semaine?.apresSignal === 1, `Camille, venue le jour de son invitation : « après ton signal » (${tk.semaine?.apresSignal})`);
+  ok(tk.semaine?.reponses === 2, `les réponses : Zoé dans sa Maison, Camille sur WhatsApp (${tk.semaine?.reponses})`);
+}
+ok(tk.avant && tk.avant.messages === 0 && tk.avant.venus === 0 && tk.avant.fantomes.adore + tk.avant.fantomes["un-jour"] + tk.avant.fantomes.aujourdhui === 0,
+  `la semaine d'avant : vide (${JSON.stringify(tk.avant)})`);
 
 ok((await carnet({ action: "lire" }, "mauvais-jeton")).statut === 403, "un mauvais jeton : refusé");
 const autre = (await (await fetch(`${F}/clik_cage?site_id=eq.${AUTRE}`)).json())[0];

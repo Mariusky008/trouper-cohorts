@@ -26,6 +26,9 @@
 // mêmes règles, et le silence (jamais deux d'affilée sans réponse dans la semaine ; après
 // trois sans réponse, plus rien jusqu'à son prochain fantôme), jamais deux fois le même modèle.
 // « repondu » : elle lui a répondu sur WhatsApp — ClikMe ne le voit pas, il le note.
+//
+// 🧾 LE TICKET DE MIKE (étape 5, `lib/direct/ticket-mike.ts`) : « ticket » rend ses sept derniers
+// jours et les sept d'avant — fantômes libérés, venus, venus après son signal, messages, réponses.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { estCage } from "@/lib/direct/cages";
@@ -33,6 +36,7 @@ import { lookValide } from "@/lib/direct/look";
 import { jourParis } from "@/lib/jour-paris";
 import { HEURES_FERMEES, heureOuverte, plusPermis, plusPropre } from "@/lib/direct/previens-les";
 import { estModele, silenceDe } from "@/lib/direct/moteur-messages";
+import { calculerTicket, type Gestes } from "@/lib/direct/ticket-mike";
 import { REPONDU_WHATSAPP, type LigneCarnet, type MessageEnvoye } from "@/lib/direct/carnet";
 
 export const dynamic = "force-dynamic";
@@ -56,7 +60,7 @@ async function passagesDe(supabase: Supabase, siteId: string, habitantId?: strin
 /** Ses messages envoyés, du plus récent au plus ancien — vide tant que `clik_message` n'existe pas. */
 async function messagesDe(supabase: Supabase, siteId: string, habitantId?: string): Promise<Ligne[]> {
   // Les colonnes du moteur (`…_clik_messages_maison.sql`) d'abord ; sans elles, celles de « Oui, préviens-les ».
-  for (const colonnes of ["id, habitant_id, plus, envoye_le, canal, modele, choix, reponse, texte", "id, habitant_id, plus, envoye_le"]) {
+  for (const colonnes of ["id, habitant_id, plus, envoye_le, canal, modele, choix, reponse, repondu_le, texte", "id, habitant_id, plus, envoye_le"]) {
     let q = supabase.from("clik_message").select(colonnes).eq("site_id", siteId);
     if (habitantId) q = q.eq("habitant_id", habitantId);
     const { data, error } = await q.order("envoye_le", { ascending: false }).limit(5000);
@@ -212,6 +216,30 @@ export async function POST(request: Request) {
       }
     }
     return NextResponse.json({ ok: true, numeros });
+  }
+
+  // ── 🧾 LE TICKET DE MIKE : SES SEPT DERNIERS JOURS, ET LES SEPT D'AVANT ─────────
+  if (action === "ticket") {
+    const maintenant = Date.now();
+    const depuis = new Date(maintenant - 16 * 86_400_000).toISOString();
+    const [cs, vs, ms] = await Promise.all([
+      supabase.from("clik_cage").select("habitant_id, cage, created_at").eq("site_id", siteId).gte("created_at", depuis).limit(5000),
+      supabase.from("clik_visite").select("habitant_id, jour").eq("site_id", siteId).gte("jour", depuis.slice(0, 10)).limit(5000),
+      messagesDe(supabase, siteId),
+    ]);
+    if (cs.error) {
+      if (migrationManquante(cs.error.message)) return NextResponse.json({ ok: true, actif: false });
+      return NextResponse.json({ error: cs.error.message }, { status: 500 });
+    }
+    const gestes: Gestes = {
+      cages: ((cs.data ?? []) as Ligne[]).filter((c) => estCage(c.cage)).map((c) => ({ qui: s(c.habitant_id), cage: c.cage as Gestes["cages"][number]["cage"], le: s(c.created_at) })),
+      visites: vs.error ? [] : ((vs.data ?? []) as Ligne[]).map((v) => ({ qui: s(v.habitant_id), jour: s(v.jour).slice(0, 10) })),
+      messages: ms.map((m) => {
+        const e = enMessage(m);
+        return { qui: s(m.habitant_id), le: e.le, canal: e.canal ?? "whatsapp", modele: e.modele ?? "", reponse: e.reponse ?? "", repondu: s(m.repondu_le) };
+      }),
+    };
+    return NextResponse.json({ ok: true, actif: true, semaine: calculerTicket(gestes, maintenant), avant: calculerTicket(gestes, maintenant - 7 * 86_400_000) });
   }
 
   const ref = s(p?.ref).slice(0, 64);

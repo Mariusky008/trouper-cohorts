@@ -98,6 +98,7 @@ import { CarteMessageDuMois } from "./message-du-mois";
 import { CarnetComptoir, CarteCarnet, useCarnet } from "./carnet-comptoir";
 import { CarteMike, PreviensLes } from "./previens-les";
 import { MessagesDeMike } from "./messages-de-mike";
+import { CarteTicket } from "./ticket-mike";
 import { MotMarque } from "@/components/direct/mot-marque";
 
 type Commerce = CommerceComptoir;
@@ -929,6 +930,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           propositionActive={propositionPrete}
           reseaux={<OutilReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
           carnet={<CarteCarnet carnet={carnet} onOuvrir={() => setPhase({ ou: "carnet" })} />}
+          ticket={<CarteTicket commerce={commerce} dossier={dossier} carnet={carnet} semaine={chiffres} onCarnet={() => setPhase({ ou: "carnet" })} />}
           mike={
             <CarteMike
               commerce={commerce}
@@ -1465,6 +1467,7 @@ function Accueil({
   reseaux,
   carnet,
   mike,
+  ticket,
   onPublier,
   onDepenses,
   onStats,
@@ -1495,6 +1498,8 @@ function Accueil({
   carnet?: React.ReactNode;
   /** 📲 La carte de Mike, en haut : « N personnes attendent ton signal » — absente quand il n'y a personne à prévenir. */
   mike?: React.ReactNode;
+  /** 🧾 Le ticket de Mike : ce qu'il a fait pour lui cette semaine — absent quand la semaine est vide. */
+  ticket?: React.ReactNode;
   onPublier: () => void;
   onDepenses: () => void;
   onStats: () => void;
@@ -1569,6 +1574,7 @@ function Accueil({
           {clients.chaud ? <i className="ak-badge">{clients.pret ? "✨ Prête" : "⚡ Maintenant"}</i> : <s aria-hidden="true">›</s>}
         </button>
         {carnet}
+        {ticket}
         <button type="button" className="ak-second" onClick={onDepenses}>
           <span className="ak-second-i" aria-hidden="true">
             🤝

@@ -150,6 +150,9 @@ const GRAINES: Graine[] = [
     heures: 100,
     films: 2,
     prevenir: true,
+    // Venu le lendemain de son invitation : la ligne « après ton signal » du ticket de Mike.
+    passages: 1,
+    joursDepuis: 2,
     messages: [{ jours: 3, plus: "le café", reponse: REPONDU_WHATSAPP, texte: "Nathan, il reste de la place ce soir. Tu viens à combien ? Et le café, c’est cadeau 🎁" }],
   },
   { prenom: "Sarah", look: "lecteur", cage: "un-jour", heures: 52, films: 1 },
