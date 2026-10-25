@@ -160,7 +160,14 @@ scènes, après « Et une histoire, ça se partage. »
 Instagram, les prénoms et la façade prennent la scène, comme les voisins (« les animations sont toutes petites par
 rapport aux précédentes ») : leurs tailles suivent `--u`, un px d'une carte de 340 px à l'échelle de la scène.
 Les fantômes des cages sont ceux des habitants (`outils/trois-fantomes/a/g`), copiés dans chaque tour en `si-g1` à
-`si-g3`. La barre de l'intro a une case par réplique : 9 au chapitre 1, 2 au chapitre 2.
+`si-g3`.
+
+**Du chapitre 1 au chapitre 2** (`intro-5a`, juste avant la carte « Moins de dépenses ») : « Voilà comment je vous
+amène des clients, et comment je les fais revenir. Maintenant, voyons comment je fais baisser vos dépenses. » La scène
+`bilan` : la ligne « 01 Plus de clients » reçoit « Nouveaux clients » (sur « amène ») puis « Ils reviennent » et sa
+coche (sur « revenir ») ; sur « maintenant », la ligne « 02 Moins de dépenses » arrive en or, et s'allume sur
+« dépenses ». La carte du chapitre 2 qui suit est plus courte (1,7 s au lieu de 2,3 : la voix vient de l'annoncer).
+La barre de l'intro a une case par réplique : 10 au chapitre 1 (la transition comprise), 2 au chapitre 2.
 
 **La pause** (`tour-pause.py`) : un bouton ⏸ en haut de l'intro (à côté de « Passer ») et dans la barre du bas de la
 démo (à côté de « i ») ; au clavier, Espace ou P. Pour répondre à une question du commerçant : la page entière se fige

@@ -397,10 +397,10 @@ CSS = r"""
   font-size:12.5px;font-weight:800;color:#fff;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);opacity:0;transform:translateX(-50%) translateY(-6px);transition:opacity .4s,transform .5s var(--ressort)}
 .si-chap b{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:900;color:#140a06;background:linear-gradient(135deg,var(--acc),var(--acc2))}
 .intro.si-chap-la .si-chap{opacity:1;transform:translateX(-50%)}
-.si-progres i:nth-child(10){margin-left:9px}
-@media (max-height:780px){.intro{--fant:clamp(96px,min(34vw,17vh),190px)}}
-.si-progres i:nth-child(n+10)::after{background:linear-gradient(90deg,#f6b54b,#ffd27a)}
 .si-progres i:nth-child(11){margin-left:9px}
+@media (max-height:780px){.intro{--fant:clamp(96px,min(34vw,17vh),190px)}}
+.si-progres i:nth-child(n+11)::after{background:linear-gradient(90deg,#f6b54b,#ffd27a)}
+.si-progres i:nth-child(12){margin-left:9px}
 .intro.si-c2 .si-bulle .fx-cle{background-image:linear-gradient(90deg,#f6b54b,#ffd27a)}
 .intro.si-c2 .si-fant::before{background:radial-gradient(closest-side,rgba(246,181,75,.34),transparent)}
 .intro.si-c2 .si-sol{background:radial-gradient(closest-side,rgba(246,181,75,.55),rgba(246,181,75,.12) 65%,transparent)}
@@ -662,7 +662,35 @@ CSS = r"""
 .s9.habitue .s9-bulle{transform:none}
 .s9.habitue .s9-vit{box-shadow:inset 0 0 0 1.2cqw var(--vit),0 0 0 .55cqw #C9A45C,0 0 14cqw rgba(255,190,110,.75)}
 .s9.habitue .s9-porte i{filter:brightness(1.4) saturate(1.2)}
-@media (prefers-reduced-motion:reduce){.s7-cg,.s7.libere .s7-envol img,.s8.aime .s8-defile,.s9.habitue .s9-hote img{animation:none}}
+/* ④g le bilan du chapitre 1, et ce qui vient : « Voilà comment je vous amène des clients, et comment je les fais
+   revenir. Maintenant, voyons comment je fais baisser vos dépenses. » La ligne 01 se coche, la 02 arrive en or. */
+.s10{--u:calc(min(92cqw,90cqh,640px) / 340);display:grid;place-items:center;z-index:4}
+.s10-carte{width:calc(320 * var(--u));display:grid;gap:calc(12 * var(--u));opacity:0;transform:translateY(calc(14 * var(--u))) scale(.96);transition:opacity .4s,transform .7s var(--ressort)}
+.s10.on .s10-carte{opacity:1;transform:none}
+.s10-l{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;text-align:left;gap:calc(12 * var(--u));padding:calc(14 * var(--u)) calc(16 * var(--u));border-radius:calc(22 * var(--u));color:#fff;
+  background:linear-gradient(180deg,rgba(62,36,49,.97),rgba(30,16,23,.97));border:1px solid rgba(255,255,255,.12);box-shadow:0 calc(20 * var(--u)) calc(50 * var(--u)) calc(-18 * var(--u)) rgba(0,0,0,.85);
+  transition:opacity .5s,transform .7s var(--ressort),box-shadow .6s,border-color .6s}
+.s10-l>b{font-size:calc(34 * var(--u));font-weight:900;line-height:1;letter-spacing:-.04em;color:transparent;-webkit-text-stroke:1.5px #FF5DB8}
+.s10-l>span{display:grid;gap:calc(6 * var(--u));min-width:0}
+.s10-l strong{font-size:calc(19 * var(--u));font-weight:900;letter-spacing:-.02em}
+.s10-puces{display:flex;flex-wrap:wrap;gap:calc(6 * var(--u))}
+.s10-puces em{font-style:normal;font-size:calc(12 * var(--u));font-weight:800;padding:calc(3 * var(--u)) calc(9 * var(--u));border-radius:999px;color:#fff;background:rgba(255,93,184,.16);
+  border:1px solid rgba(255,93,184,.5);opacity:0;transform:scale(.6);transition:opacity .25s,transform .45s var(--ressort)}
+.s10.amene .s10-p1,.s10.revient .s10-p2{opacity:1;transform:none}
+.s10-ok{display:grid;place-items:center;width:calc(34 * var(--u));height:calc(34 * var(--u));border-radius:50%;font-style:normal;font-weight:900;font-size:calc(18 * var(--u));color:#04150E;
+  background:linear-gradient(135deg,#9FF5C9,#3DE2A6);transform:scale(0) rotate(-30deg);transition:transform .55s var(--ressort)}
+.s10.revient .s10-ok{transform:none}
+.s10.suite .s10-l1{opacity:.55;transform:scale(.96)}
+.s10-l2{opacity:0;transform:translateY(calc(18 * var(--u)))}
+.s10.suite .s10-l2{opacity:1;transform:none}
+.s10-l2>b{-webkit-text-stroke-color:#f6b54b}
+.s10-l2 strong{color:#ffd27a}
+.s10-l2 em{font-style:normal;font-size:calc(13 * var(--u));font-weight:700;color:rgba(255,255,255,.7)}
+.s10-fl{font-style:normal;font-size:calc(24 * var(--u));font-weight:900;color:#f6b54b}
+.s10.depenses .s10-l2{border-color:rgba(246,181,75,.7);box-shadow:0 0 0 calc(3 * var(--u)) rgba(246,181,75,.25),0 calc(20 * var(--u)) calc(50 * var(--u)) calc(-14 * var(--u)) rgba(246,181,75,.6)}
+.s10.depenses .s10-fl{animation:s10-fl .9s ease-in-out infinite}
+@keyframes s10-fl{50%{transform:translateX(calc(6 * var(--u)))}}
+@media (prefers-reduced-motion:reduce){.s7-cg,.s7.libere .s7-envol img,.s8.aime .s8-defile,.s9.habitue .s9-hote img,.s10.depenses .s10-fl{animation:none}}
 """
 
 HTML_DEVISE = '  <p class="devise">Vous faites. <em>Votre fantôme raconte.</em></p>\n'
@@ -676,7 +704,7 @@ HTML_INTRO = """  <div class="intro" id="intro" hidden>
     <div class="si-aurore si-aurore-or" aria-hidden="true"><i></i><i></i><i></i></div>
     <div class="si-haut">
       <img src="logo.png" alt="ClikMe">
-      <div class="si-progres" id="si-progres" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="si-progres" id="si-progres" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <button type="button" class="intro-passer" id="intro-passer">Passer ›</button>
     </div>
     <div class="si-chap" id="si-chap" aria-live="polite"></div>
@@ -843,6 +871,10 @@ JS_DONNEES = r"""
         '" alt=""></div><div class="s9-porte"><i></i></div><i class="s9-trot"></i><span class="s9-hote"><img src="' + INTRO_SALUE + '" alt="">' + (INTRO_FAC[3] ? I_TOQUE : "") + "</span>" +
         '<span class="s9-cli"><span class="s9-c1" style="--k:1"><img src="si-g1.webp" alt=""></span><span class="s9-c2" style="--k:0"><img src="si-g2.webp" alt=""><b>Camille</b></span></span>' +
         '<p class="s9-bulle">Camille' + NB + "! On t’attendait 😊</p></div></div>",
+    // ④g le bilan : le chapitre 1 se coche, le chapitre 2 arrive
+    bilan: () => '<div class="s10"><div class="s10-carte">' +
+      '<div class="s10-l s10-l1"><b>01</b><span><strong>Plus de clients</strong><span class="s10-puces"><em class="s10-p1">Nouveaux clients</em><em class="s10-p2">Ils reviennent</em></span></span><i class="s10-ok">✓</i></div>' +
+      '<div class="s10-l s10-l2"><b>02</b><span><strong>Moins de dépenses</strong><em>Avec vos commerçants voisins</em></span><i class="s10-fl">→</i></div></div></div>',
     voisins: () => {
       const ou = [[20, 24], [80, 24], [20, 70], [80, 70]], cx = 50, cy = 47;
       const arc = ([x, y]) => { const dx = x - cx, dy = y - cy; return "M" + cx + " " + cy + " Q" + ((cx + x) / 2 - dy * 0.25).toFixed(1) + " " + ((cy + y) / 2 + dx * 0.25).toFixed(1) + " " + x + " " + y; };
@@ -904,7 +936,13 @@ JS_DONNEES = r"""
       dit: "Moi, je le fais. Chacun par son *prénom, au bon moment. Si bien que le jour où ils poussent votre *porte, ils se sentent déjà comme des *habitués.",
       mots: { moi: iTout(iGeste("saute", 800), iSon("magie")), "prénom": iTout(iAllume(".s9", "ecrit"), iPuis(500, iCompte(".s9-compte", 1800)), iSon("pop")),
         porte: iTout(iAllume(".s9", "porte"), iSon("glissement")), "habitués": iTout(iAllume(".s9", "habitue"), iGeste("salue", 1500), iSon("ding")) } },
-    { chapitre: 2, nomChap: "Moins de dépenses", titre: "Moins de <em>dépenses</em>", sous: "Grâce à vos commerçants voisins." },
+    // « On vient de voir comment je travaille sur la fidélité de vos clients, maintenant regardons comment je travaille
+    // pour diminuer vos dépenses » : le bilan du chapitre 1, et l'annonce du 2 (la carte du chapitre suit, plus courte)
+    { nom: "intro-5a", x: 50, decor: "bilan", apres: 500, debut: iAllume(".s10"),
+      dit: "Voilà comment je vous *amène des clients, et comment je les fais *revenir. Maintenant, voyons comment je fais baisser vos *dépenses.",
+      mots: { "voilà": iGeste("salue", 1200), "amène": iTout(iAllume(".s10", "amene"), iSon("declic")), revenir: iTout(iAllume(".s10", "revient"), iSon("ding")),
+        maintenant: iTout(iAllume(".s10", "suite"), iGeste("saute", 800), iSon("glissement")), "dépenses": iTout(iAllume(".s10", "depenses"), iSon("pop")) } },
+    { chapitre: 2, nomChap: "Moins de dépenses", titre: "Moins de <em>dépenses</em>", sous: "Grâce à vos commerçants voisins.", ms: 1700 },
     { nom: "intro-5", x: 60, decor: "voisins", apres: 800, debut: iAllume(".s5-carte"),
       dit: "Vos *voisins commerçants sont à deux pas, et vous n’en profitez pas. Avec moi, vous vous *échangez vos produits et vos services.",
       mots: { voisins: iTout(iAllume(".s5", "la"), iSon("pop")), pas: iTout(iAllume(".s5", "pas"), iSon("souffle")), profitez: iTout(iAllume(".s5", "dort"), iGeste("inquiet", 600)),
@@ -976,7 +1014,7 @@ JS_JOUER = r"""
         if (iFilm && !iFilm.isConnected) iFilm.pause();
         fant.classList.add("salue");
         son("accord");
-        await new Promise((ok) => { passeCarte = ok; setTimeout(ok, reduit ? 900 : 2300); });
+        await new Promise((ok) => { passeCarte = ok; setTimeout(ok, reduit ? 900 : l.ms || 2300); });
         passeCarte = null;
         it.classList.add("si-chap-la");
         continue;
@@ -1065,7 +1103,7 @@ for d, c in CONF.items():
     t = une_fois(t, ANCIEN_PASSAGE, NOUVEAU_PASSAGE, "passage")
     open(f"{S}/{d}/index.html", "w", encoding="utf-8").write(t)
     # Ses voix : les répliques enregistrées, et plus rien de la version longue.
-    for k in ["1", "2", "2b", "3", "4", "4b", "4c", "4d", "4e", "4f", "5", "6"]:
+    for k in ["1", "2", "2b", "3", "4", "4b", "4c", "4d", "4e", "4f", "5a", "5", "6"]:
         cible = f"{S}/{d}/intro-{k}.mp3"
         if os.path.exists(cible):
             os.remove(cible)

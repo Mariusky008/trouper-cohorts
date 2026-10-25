@@ -15,6 +15,8 @@ TEXTES = {
     "intro-4d": f"À la fin de votre vidéo, chacun libère son fantôme de sa cage. Et c’est là que mon vrai travail commence{NB}: je leur pose des questions, je les fais parler de vous.",
     "intro-4e": f"Sur Instagram, vous voyez qui a aimé. Mais écrire à chacun pour créer du lien, qui a le temps{NB}?",
     "intro-4f": "Moi, je le fais. Chacun par son prénom, au bon moment. Si bien que le jour où ils poussent votre porte, ils se sentent déjà comme des habitués.",
+    # la transition du chapitre 1 au chapitre 2
+    "intro-5a": "Voilà comment je vous amène des clients, et comment je les fais revenir. Maintenant, voyons comment je fais baisser vos dépenses.",
     "intro-5": "Vos voisins commerçants sont à deux pas, et vous n’en profitez pas. Avec moi, vous vous échangez vos produits et vos services.",
     "intro-6": "Regardons tout ça de plus près.",
 }

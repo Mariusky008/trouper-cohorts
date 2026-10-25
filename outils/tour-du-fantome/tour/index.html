@@ -1449,10 +1449,10 @@ h1 em{font-style:normal;color:var(--rose)}
   font-size:12.5px;font-weight:800;color:#fff;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);opacity:0;transform:translateX(-50%) translateY(-6px);transition:opacity .4s,transform .5s var(--ressort)}
 .si-chap b{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:900;color:#140a06;background:linear-gradient(135deg,var(--acc),var(--acc2))}
 .intro.si-chap-la .si-chap{opacity:1;transform:translateX(-50%)}
-.si-progres i:nth-child(10){margin-left:9px}
-@media (max-height:780px){.intro{--fant:clamp(96px,min(34vw,17vh),190px)}}
-.si-progres i:nth-child(n+10)::after{background:linear-gradient(90deg,#f6b54b,#ffd27a)}
 .si-progres i:nth-child(11){margin-left:9px}
+@media (max-height:780px){.intro{--fant:clamp(96px,min(34vw,17vh),190px)}}
+.si-progres i:nth-child(n+11)::after{background:linear-gradient(90deg,#f6b54b,#ffd27a)}
+.si-progres i:nth-child(12){margin-left:9px}
 .intro.si-c2 .si-bulle .fx-cle{background-image:linear-gradient(90deg,#f6b54b,#ffd27a)}
 .intro.si-c2 .si-fant::before{background:radial-gradient(closest-side,rgba(246,181,75,.34),transparent)}
 .intro.si-c2 .si-sol{background:radial-gradient(closest-side,rgba(246,181,75,.55),rgba(246,181,75,.12) 65%,transparent)}
@@ -1714,7 +1714,35 @@ h1 em{font-style:normal;color:var(--rose)}
 .s9.habitue .s9-bulle{transform:none}
 .s9.habitue .s9-vit{box-shadow:inset 0 0 0 1.2cqw var(--vit),0 0 0 .55cqw #C9A45C,0 0 14cqw rgba(255,190,110,.75)}
 .s9.habitue .s9-porte i{filter:brightness(1.4) saturate(1.2)}
-@media (prefers-reduced-motion:reduce){.s7-cg,.s7.libere .s7-envol img,.s8.aime .s8-defile,.s9.habitue .s9-hote img{animation:none}}
+/* ④g le bilan du chapitre 1, et ce qui vient : « Voilà comment je vous amène des clients, et comment je les fais
+   revenir. Maintenant, voyons comment je fais baisser vos dépenses. » La ligne 01 se coche, la 02 arrive en or. */
+.s10{--u:calc(min(92cqw,90cqh,640px) / 340);display:grid;place-items:center;z-index:4}
+.s10-carte{width:calc(320 * var(--u));display:grid;gap:calc(12 * var(--u));opacity:0;transform:translateY(calc(14 * var(--u))) scale(.96);transition:opacity .4s,transform .7s var(--ressort)}
+.s10.on .s10-carte{opacity:1;transform:none}
+.s10-l{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;text-align:left;gap:calc(12 * var(--u));padding:calc(14 * var(--u)) calc(16 * var(--u));border-radius:calc(22 * var(--u));color:#fff;
+  background:linear-gradient(180deg,rgba(62,36,49,.97),rgba(30,16,23,.97));border:1px solid rgba(255,255,255,.12);box-shadow:0 calc(20 * var(--u)) calc(50 * var(--u)) calc(-18 * var(--u)) rgba(0,0,0,.85);
+  transition:opacity .5s,transform .7s var(--ressort),box-shadow .6s,border-color .6s}
+.s10-l>b{font-size:calc(34 * var(--u));font-weight:900;line-height:1;letter-spacing:-.04em;color:transparent;-webkit-text-stroke:1.5px #FF5DB8}
+.s10-l>span{display:grid;gap:calc(6 * var(--u));min-width:0}
+.s10-l strong{font-size:calc(19 * var(--u));font-weight:900;letter-spacing:-.02em}
+.s10-puces{display:flex;flex-wrap:wrap;gap:calc(6 * var(--u))}
+.s10-puces em{font-style:normal;font-size:calc(12 * var(--u));font-weight:800;padding:calc(3 * var(--u)) calc(9 * var(--u));border-radius:999px;color:#fff;background:rgba(255,93,184,.16);
+  border:1px solid rgba(255,93,184,.5);opacity:0;transform:scale(.6);transition:opacity .25s,transform .45s var(--ressort)}
+.s10.amene .s10-p1,.s10.revient .s10-p2{opacity:1;transform:none}
+.s10-ok{display:grid;place-items:center;width:calc(34 * var(--u));height:calc(34 * var(--u));border-radius:50%;font-style:normal;font-weight:900;font-size:calc(18 * var(--u));color:#04150E;
+  background:linear-gradient(135deg,#9FF5C9,#3DE2A6);transform:scale(0) rotate(-30deg);transition:transform .55s var(--ressort)}
+.s10.revient .s10-ok{transform:none}
+.s10.suite .s10-l1{opacity:.55;transform:scale(.96)}
+.s10-l2{opacity:0;transform:translateY(calc(18 * var(--u)))}
+.s10.suite .s10-l2{opacity:1;transform:none}
+.s10-l2>b{-webkit-text-stroke-color:#f6b54b}
+.s10-l2 strong{color:#ffd27a}
+.s10-l2 em{font-style:normal;font-size:calc(13 * var(--u));font-weight:700;color:rgba(255,255,255,.7)}
+.s10-fl{font-style:normal;font-size:calc(24 * var(--u));font-weight:900;color:#f6b54b}
+.s10.depenses .s10-l2{border-color:rgba(246,181,75,.7);box-shadow:0 0 0 calc(3 * var(--u)) rgba(246,181,75,.25),0 calc(20 * var(--u)) calc(50 * var(--u)) calc(-14 * var(--u)) rgba(246,181,75,.6)}
+.s10.depenses .s10-fl{animation:s10-fl .9s ease-in-out infinite}
+@keyframes s10-fl{50%{transform:translateX(calc(6 * var(--u)))}}
+@media (prefers-reduced-motion:reduce){.s7-cg,.s7.libere .s7-envol img,.s8.aime .s8-defile,.s9.habitue .s9-hote img,.s10.depenses .s10-fl{animation:none}}
 /* ═══ LES DEUX PROMESSES : « Et cette nuit… », « Et demain… » ═══
    « Hyper compliqué à comprendre, ça dure très longtemps et on se perd » : une idée par écran, peu de
    choses à l'écran, en grand. Le même écran que l'intro : décor au milieu, fantôme en bas qui raconte. */
@@ -2346,7 +2374,7 @@ h1 em{font-style:normal;color:var(--rose)}
     <div class="si-aurore si-aurore-or" aria-hidden="true"><i></i><i></i><i></i></div>
     <div class="si-haut">
       <img src="logo.png" alt="ClikMe">
-      <div class="si-progres" id="si-progres" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="si-progres" id="si-progres" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <button type="button" class="intro-pause" id="intro-pause" aria-label="Mettre la démo en pause"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4.5" width="4.2" height="15" rx="1.2"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.2"/></svg></button><button type="button" class="intro-passer" id="intro-passer">Passer ›</button>
     </div>
     <div class="si-chap" id="si-chap" aria-live="polite"></div>
@@ -3382,6 +3410,10 @@ h1 em{font-style:normal;color:var(--rose)}
         '" alt=""></div><div class="s9-porte"><i></i></div><i class="s9-trot"></i><span class="s9-hote"><img src="' + INTRO_SALUE + '" alt="">' + (INTRO_FAC[3] ? I_TOQUE : "") + "</span>" +
         '<span class="s9-cli"><span class="s9-c1" style="--k:1"><img src="si-g1.webp" alt=""></span><span class="s9-c2" style="--k:0"><img src="si-g2.webp" alt=""><b>Camille</b></span></span>' +
         '<p class="s9-bulle">Camille' + NB + "! On t’attendait 😊</p></div></div>",
+    // ④g le bilan : le chapitre 1 se coche, le chapitre 2 arrive
+    bilan: () => '<div class="s10"><div class="s10-carte">' +
+      '<div class="s10-l s10-l1"><b>01</b><span><strong>Plus de clients</strong><span class="s10-puces"><em class="s10-p1">Nouveaux clients</em><em class="s10-p2">Ils reviennent</em></span></span><i class="s10-ok">✓</i></div>' +
+      '<div class="s10-l s10-l2"><b>02</b><span><strong>Moins de dépenses</strong><em>Avec vos commerçants voisins</em></span><i class="s10-fl">→</i></div></div></div>',
     voisins: () => {
       const ou = [[20, 24], [80, 24], [20, 70], [80, 70]], cx = 50, cy = 47;
       const arc = ([x, y]) => { const dx = x - cx, dy = y - cy; return "M" + cx + " " + cy + " Q" + ((cx + x) / 2 - dy * 0.25).toFixed(1) + " " + ((cy + y) / 2 + dx * 0.25).toFixed(1) + " " + x + " " + y; };
@@ -3443,7 +3475,13 @@ h1 em{font-style:normal;color:var(--rose)}
       dit: "Moi, je le fais. Chacun par son *prénom, au bon moment. Si bien que le jour où ils poussent votre *porte, ils se sentent déjà comme des *habitués.",
       mots: { moi: iTout(iGeste("saute", 800), iSon("magie")), "prénom": iTout(iAllume(".s9", "ecrit"), iPuis(500, iCompte(".s9-compte", 1800)), iSon("pop")),
         porte: iTout(iAllume(".s9", "porte"), iSon("glissement")), "habitués": iTout(iAllume(".s9", "habitue"), iGeste("salue", 1500), iSon("ding")) } },
-    { chapitre: 2, nomChap: "Moins de dépenses", titre: "Moins de <em>dépenses</em>", sous: "Grâce à vos commerçants voisins." },
+    // « On vient de voir comment je travaille sur la fidélité de vos clients, maintenant regardons comment je travaille
+    // pour diminuer vos dépenses » : le bilan du chapitre 1, et l'annonce du 2 (la carte du chapitre suit, plus courte)
+    { nom: "intro-5a", x: 50, decor: "bilan", apres: 500, debut: iAllume(".s10"),
+      dit: "Voilà comment je vous *amène des clients, et comment je les fais *revenir. Maintenant, voyons comment je fais baisser vos *dépenses.",
+      mots: { "voilà": iGeste("salue", 1200), "amène": iTout(iAllume(".s10", "amene"), iSon("declic")), revenir: iTout(iAllume(".s10", "revient"), iSon("ding")),
+        maintenant: iTout(iAllume(".s10", "suite"), iGeste("saute", 800), iSon("glissement")), "dépenses": iTout(iAllume(".s10", "depenses"), iSon("pop")) } },
+    { chapitre: 2, nomChap: "Moins de dépenses", titre: "Moins de <em>dépenses</em>", sous: "Grâce à vos commerçants voisins.", ms: 1700 },
     { nom: "intro-5", x: 60, decor: "voisins", apres: 800, debut: iAllume(".s5-carte"),
       dit: "Vos *voisins commerçants sont à deux pas, et vous n’en profitez pas. Avec moi, vous vous *échangez vos produits et vos services.",
       mots: { voisins: iTout(iAllume(".s5", "la"), iSon("pop")), pas: iTout(iAllume(".s5", "pas"), iSon("souffle")), profitez: iTout(iAllume(".s5", "dort"), iGeste("inquiet", 600)),
@@ -3453,10 +3491,10 @@ h1 em{font-style:normal;color:var(--rose)}
     { nom: "intro-6", x: 50, decor: "regardez", apres: 700, dit: "Regardons tout ça de plus *près.",
       mots: { regardons: iTout(iGeste("salue"), iSon("elan")), "près": iPuis(150, iTout(iAllume(".s6", "plonge"), iGeste("zoom"))) } },
   ];
-  Object.assign(TEMPS, {"intro-1": {"d": 4.28, "m": [0.04, 0.39, 0.9, 1.18, 1.69, 1.88, 2.18, 2.46, 2.66, 2.99, 3.14, 3.58, 3.93], "b": "011111111111111100000011111111111000000000111111100111001111111111111110001111111111111001110001100000000000"}, "intro-2": {"d": 4.833, "m": [0.05, 0.18, 0.26, 0.32, 0.46, 1.0, 1.78, 2.56, 3.22, 3.44, 3.98, 4.04, 4.32], "b": "0011111111001111111111001100001111111111111011111110001111110000111111111011111001110011111111111111011011001100111000000"}, "intro-2b": {"d": 10.031, "m": [0.08, 0.65, 0.94, 1.98, 2.23, 2.77, 3.29, 3.56, 3.82, 4.0, 4.14, 4.38, 4.63, 5.29, 5.46, 5.6, 5.99, 6.26, 6.41, 7.75, 7.89, 8.2, 8.55, 8.67, 9.18], "b": "00111101111110000001100011111111010111100000000000011111111111101110011111111111111110011111100001111111111100111111110010100000000011110011111111101111100011111111100011111111101110000000000000111111111100011101111111110110000001111101111111001000000"}, "intro-3": {"d": 3.56, "m": [0.03, 0.65, 0.91, 1.05, 1.23, 2.28, 2.41, 2.86, 3.18, 3.33], "b": "011111111000000001111111111101010001100111000000000000000111111111111111110011011100000000"}, "intro-4": {"d": 1.88, "m": [0.11, 0.3, 0.49, 1.1, 1.36, 1.49], "b": "00011111111110111111000000001101001110011110000"}, "intro-4c": {"d": 4.206, "m": [0.03, 0.29, 0.46, 1.14, 1.27, 1.4, 1.52, 1.66, 1.8, 2.39, 2.93, 3.31, 3.85], "b": "0011110111111101111111110000011111111000111000111000000000000001111100000000110001100111110000000000000000"}, "intro-4d": {"d": 8.673, "m": [0.05, 0.2, 0.36, 0.48, 0.59, 0.83, 1.45, 1.83, 2.31, 2.47, 2.78, 2.95, 3.1, 3.73, 3.91, 4.09, 4.25, 4.43, 4.68, 4.78, 5.14, 5.99, 6.11, 6.32, 6.55, 6.68, 7.43, 7.53, 7.69, 7.88, 8.15, 8.32], "b": "0111111011111111111111101111111100001111111011111101111000100111011111110010001110000000000001100011111111001111110011100011111011100000000000000000001111100001110111111000000100000000000111001100011101111000000000000"}, "intro-4e": {"d": 5.721, "m": [0.08, 0.26, 1.01, 1.28, 1.42, 1.62, 1.8, 2.55, 2.78, 3.24, 3.4, 3.81, 4.06, 4.25, 4.44, 4.86, 5.01, 5.18, 5.33], "b": "000011111101111111111110000111111111110000011111111111000000000011100111011111111111111101111101100111111011111111110000000111111100111000000000"}, "intro-4f": {"d": 8.046, "m": [0.03, 0.45, 0.56, 0.83, 1.3, 1.73, 1.93, 2.13, 2.65, 2.88, 3.0, 3.64, 3.84, 4.06, 4.26, 4.46, 4.75, 4.88, 5.06, 5.25, 5.41, 6.09, 6.28, 6.45, 6.62, 6.89, 7.21, 7.35], "b": "0111111110011111100011100000000011111101110110001100111111110000001110011111111110000000000011111111011111001111111111111110001110011001100111100000000011011111111110011111111011111111110000000100000000"}, "intro-5": {"d": 6.844, "m": [0.03, 0.29, 0.61, 1.2, 1.34, 1.53, 1.74, 2.15, 2.29, 2.44, 2.62, 3.05, 3.63, 3.98, 4.42, 4.55, 4.76, 5.26, 5.46, 5.9, 6.04, 6.37], "b": "0011111111111111111100001110011011100011100111000000011001111100111001101100111000000000001111111011111100000011101110011111111011111000111011000001111111001100000000000000"}, "intro-6": {"d": 1.802, "m": [0.05, 0.71, 0.88, 1.02, 1.24, 1.39], "b": "0010111111111110011110111110000110000110000000"}});
+  Object.assign(TEMPS, {"intro-1": {"d": 4.28, "m": [0.04, 0.39, 0.9, 1.18, 1.69, 1.88, 2.18, 2.46, 2.66, 2.99, 3.14, 3.58, 3.93], "b": "011111111111111100000011111111111000000000111111100111001111111111111110001111111111111001110001100000000000"}, "intro-2": {"d": 4.833, "m": [0.05, 0.18, 0.26, 0.32, 0.46, 1.0, 1.78, 2.56, 3.22, 3.44, 3.98, 4.04, 4.32], "b": "0011111111001111111111001100001111111111111011111110001111110000111111111011111001110011111111111111011011001100111000000"}, "intro-2b": {"d": 10.031, "m": [0.08, 0.65, 0.94, 1.98, 2.23, 2.77, 3.29, 3.56, 3.82, 4.0, 4.14, 4.38, 4.63, 5.29, 5.46, 5.6, 5.99, 6.26, 6.41, 7.75, 7.89, 8.2, 8.55, 8.67, 9.18], "b": "00111101111110000001100011111111010111100000000000011111111111101110011111111111111110011111100001111111111100111111110010100000000011110011111111101111100011111111100011111111101110000000000000111111111100011101111111110110000001111101111111001000000"}, "intro-3": {"d": 3.56, "m": [0.03, 0.65, 0.91, 1.05, 1.23, 2.28, 2.41, 2.86, 3.18, 3.33], "b": "011111111000000001111111111101010001100111000000000000000111111111111111110011011100000000"}, "intro-4": {"d": 1.88, "m": [0.11, 0.3, 0.49, 1.1, 1.36, 1.49], "b": "00011111111110111111000000001101001110011110000"}, "intro-4c": {"d": 4.206, "m": [0.03, 0.29, 0.46, 1.14, 1.27, 1.4, 1.52, 1.66, 1.8, 2.39, 2.93, 3.31, 3.85], "b": "0011110111111101111111110000011111111000111000111000000000000001111100000000110001100111110000000000000000"}, "intro-4d": {"d": 8.673, "m": [0.05, 0.2, 0.36, 0.48, 0.59, 0.83, 1.45, 1.83, 2.31, 2.47, 2.78, 2.95, 3.1, 3.73, 3.91, 4.09, 4.25, 4.43, 4.68, 4.78, 5.14, 5.99, 6.11, 6.32, 6.55, 6.68, 7.43, 7.53, 7.69, 7.88, 8.15, 8.32], "b": "0111111011111111111111101111111100001111111011111101111000100111011111110010001110000000000001100011111111001111110011100011111011100000000000000000001111100001110111111000000100000000000111001100011101111000000000000"}, "intro-4e": {"d": 5.721, "m": [0.08, 0.26, 1.01, 1.28, 1.42, 1.62, 1.8, 2.55, 2.78, 3.24, 3.4, 3.81, 4.06, 4.25, 4.44, 4.86, 5.01, 5.18, 5.33], "b": "000011111101111111111110000111111111110000011111111111000000000011100111011111111111111101111101100111111011111111110000000111111100111000000000"}, "intro-4f": {"d": 8.046, "m": [0.03, 0.45, 0.56, 0.83, 1.3, 1.73, 1.93, 2.13, 2.65, 2.88, 3.0, 3.64, 3.84, 4.06, 4.26, 4.46, 4.75, 4.88, 5.06, 5.25, 5.41, 6.09, 6.28, 6.45, 6.62, 6.89, 7.21, 7.35], "b": "0111111110011111100011100000000011111101110110001100111111110000001110011111111110000000000011111111011111001111111111111110001110011001100111100000000011011111111110011111111011111111110000000100000000"}, "intro-5a": {"d": 7.079, "m": [0.05, 0.45, 0.58, 0.83, 0.96, 1.25, 1.46, 2.04, 2.15, 2.36, 2.53, 2.69, 2.8, 4.04, 4.68, 4.94, 5.2, 5.45, 5.71, 6.14, 6.39], "b": "001111111111111111110111111111111010111110000000000111110001111111111111100111111000000000000000000001110111111100000000111111110111111101100011000111000111011011001000000000000"}, "intro-5": {"d": 6.844, "m": [0.03, 0.29, 0.61, 1.2, 1.34, 1.53, 1.74, 2.15, 2.29, 2.44, 2.62, 3.05, 3.63, 3.98, 4.42, 4.55, 4.76, 5.26, 5.46, 5.9, 6.04, 6.37], "b": "0011111111111111111100001110011011100011100111000000011001111100111001101100111000000000001111111011111100000011101110011111111011111000111011000001111111001100000000000000"}, "intro-6": {"d": 1.802, "m": [0.05, 0.71, 0.88, 1.02, 1.24, 1.39], "b": "0010111111111110011110111110000110000110000000"}});
   INTRO.forEach((l) => {
     if (!l.nom) return;
-    if (["intro-1", "intro-2", "intro-2b", "intro-3", "intro-4", "intro-4c", "intro-4d", "intro-4e", "intro-4f", "intro-5", "intro-6"].includes(l.nom)) { if (!ENREGISTREES.includes(l.nom)) ENREGISTREES.push(l.nom); return; }
+    if (["intro-1", "intro-2", "intro-2b", "intro-3", "intro-4", "intro-4c", "intro-4d", "intro-4e", "intro-4f", "intro-5", "intro-5a", "intro-6"].includes(l.nom)) { if (!ENREGISTREES.includes(l.nom)) ENREGISTREES.push(l.nom); return; }
     // Pas encore enregistrée : un rythme de parole estimé, mot à mot, une pause à chaque ponctuation.
     const m = [], ouvert = [];
     let t = 0.12;
@@ -5048,7 +5086,7 @@ h1 em{font-style:normal;color:var(--rose)}
         if (iFilm && !iFilm.isConnected) iFilm.pause();
         fant.classList.add("salue");
         son("accord");
-        await new Promise((ok) => { passeCarte = ok; setTimeout(ok, reduit ? 900 : 2300); });
+        await new Promise((ok) => { passeCarte = ok; setTimeout(ok, reduit ? 900 : l.ms || 2300); });
         passeCarte = null;
         it.classList.add("si-chap-la");
         continue;
