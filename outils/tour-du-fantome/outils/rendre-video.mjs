@@ -4,7 +4,7 @@
 //
 //   node outils/tour-du-fantome/outils/rendre-video.mjs <adresse de la page> <sortie.mp4> [images par seconde = 30] [attente avant = 1]
 //
-// « attente avant » : les secondes de la cage qui se balance, avant qu'on la touche.
+// « attente avant » : les secondes de la cage qui se balance, avant qu'on la touche (`__attente(x)`, x < 0).
 import pw from "/opt/node22/lib/node_modules/playwright/index.js";
 import fs from "node:fs";
 import os from "node:os";
@@ -26,7 +26,7 @@ const N = Math.ceil((duree + AVANT) * IPS);
 const t0 = Date.now();
 for (let i = 0; i < N; i++) {
   const t = i / IPS - AVANT;
-  await p.evaluate((x) => (x < 0 ? window.__attente(x + 10) : window.__rendre(x)), t);
+  await p.evaluate((x) => (x < 0 ? window.__attente(x) : window.__rendre(x)), t);
   await p.screenshot({ path: path.join(dossier, String(i).padStart(5, "0") + ".jpg"), type: "jpeg", quality: 90 });
   if (i % 60 === 0) process.stdout.write(`\r${i}/${N} images…`);
 }

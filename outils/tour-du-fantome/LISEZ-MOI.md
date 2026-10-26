@@ -232,6 +232,36 @@ pour mot) :
 Vérifier : servir `public/` après `node scripts/poser-tours.mjs`, puis jouer la page en entier dans Playwright
 (touchez la cage avec `force` : elle se balance) et regarder les captures ; « aucune erreur » attendu.
 
+### La deuxième version (`tour-court2/`, pas encore publiée)
+
+Un nouveau scénario et un nouveau moteur. Le moteur : une scène fixe de 1080 × 1920 mise à l'échelle de l'écran, une
+seule caméra qui voyage dans un grand décor (la cage, le téléphone, la foule, la façade), tout piloté par une seule
+ligne de temps GSAP 3.13 (`recu/gsap/`, gratuit même en usage commercial) ; les étincelles, la poussière d'or et les
+cœurs sont dessinés sur une toile en fonction du temps seulement. On peut donc dessiner n'importe quel instant, et en
+faire une vidéo MP4 avec le son :
+
+```sh
+/usr/bin/python3 -I outils/tour-du-fantome/outils/tour-court2.py outils/tour-du-fantome
+node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-court2/index.html sortie.mp4 30 1.5
+```
+
+(la page, ouverte avec `?rendu`, dessine l'instant demandé et calcule son propre son hors ligne ; ffmpeg assemble). Les
+voix : `recu/court/v2-1…6.mp3` et `demo1-g.mp3`, lues mot pour mot.
+
+| Voix | Ce qui est dit | À l'écran |
+|---|---|---|
+| — | (avant de toucher) | la cage se balance, Mike frappe : « Libérez-moi ! » ; toucher la cage ou n'importe où |
+| 1 | « Merci ! Je suis Mike, votre futur fantôme préféré. » | la cage explose (rayons, onde, étincelles), Mike jaillit en traînée, se pose, la toque lui tombe sur la tête, « Mike » |
+| 2 | « Avec quelques photos, je fais une très belle vidéo de votre commerce, puis je la publie partout pour que tout le monde la voie. » | quatre photos arrivent, plongent dans le téléphone et deviennent un film (« Le plat du jour », « Monté par Mike ») ; Instagram, Facebook, Google, WhatsApp et le Direct en sortent et se cochent ; les vues montent |
+| 3 | « Mais ce n'est pas là que je suis le plus fort. C'est juste après. » | les réseaux s'éteignent, le film file en avance rapide jusqu'à sa fin |
+| 4 | « À la fin de la vidéo, chaque personne peut libérer son fantôme pour dire ce qu'elle en pense : “J'adore la vidéo”, “Je passerai un jour, c'est sûr”, ou “Je passe aujourd'hui”. » | la caméra plonge dans les trois cages ; trois doigts ; à chaque choix dit, sa cage s'allume et ses fantômes en sortent ; la caméra recule : 21, 12 et 5 |
+| 5 | « Et à partir de là, mon vrai travail commence. » | la foule s'assombrit, Mike au milieu, en grand ; la batterie se tait, puis repart |
+| 6 | « J'écris à chaque personne qui a libéré son fantôme, pour faire connaissance. Je la connais un peu mieux à chaque réponse… jusqu'au jour où elle pousse votre porte. » | un message part vers chacun des 38 ; la caméra s'approche de Camille, la conversation monte et sa fiche se remplit ; un mardi calme, sur votre WhatsApp ; « J'arrive ! » ; la façade, la porte s'ouvre, « Camille ! On t'attendait 😊 », « Camille est venue, grâce à votre vidéo » |
+| 7 | « Votre fantôme vous attend. » | Mike, « Créer mon espace · gratuit », le tour complet, « Revoir » |
+
+Le calage des voix aide `caler()` (`coupures`, `liees`, dans `tour-court2.py`) : l'enregistrement se tait aussi
+devant un « p » ou un « t » (« elle | pousse »), pas seulement aux virgules.
+
 ## La démo des entrepreneurs : « Libère ton fantôme »
 
 Pour ceux qui ne sont pas commerçants : pas de vitrine, pas de Direct (leur ville n'est pas forcément ouverte) ; tout

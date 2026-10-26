@@ -1,38 +1,43 @@
 <meta charset="utf-8">
 <title>Le fantôme en 45 secondes — ClikMe</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&family=Playfair+Display:ital,wght@1,700&display=swap">
 <style>
 /* 🎬 LE FANTÔME EN 45 SECONDES, deuxième version (voir `tour-court2.py`).
    Une scène fixe de 1080 × 1920 (mise à l'échelle de l'écran), une seule caméra qui voyage d'un plan à l'autre,
-   tout piloté par une seule ligne de temps (GSAP) : on peut la mettre en pause, en capturer n'importe quel
-   instant, et en faire une vidéo image par image (`rendre-video.mjs`). Les particules et la lumière sont
-   dessinées sur une toile, en fonction du temps seulement. */
-:root{--rose:#FF2E9A;--rose2:#FF5DB8;--orange:#FFB347;--or:#F2C46B;--creme:#FFF4E6;--nuit:#12060F}
+   tout piloté par une seule ligne de temps (GSAP) : on peut la mettre en pause, en capturer n'importe quel instant,
+   et en faire une vidéo image par image (`rendre-video.mjs`). Les particules et la lumière sont dessinées sur une
+   toile, en fonction du temps seulement. */
+:root{--rose:#FF2E9A;--rose2:#FF5DB8;--orange:#F5A23A;--vert:#3DE2A6;--or:#F2C46B;--creme:#FFF4E6;--nuit:#12060F}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:#0C040A;color:var(--creme);font-family:Poppins,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 #cadre{position:fixed;inset:0;overflow:hidden;background:#0C040A}
 #scene{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:0 0;overflow:hidden;
   background:radial-gradient(ellipse 85% 60% at 50% 42%,#3D1433 0%,#1D0819 52%,#0C040A 100%)}
 canvas{position:absolute;left:0;top:0;width:1080px;height:1920px;pointer-events:none}
-#monde{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:0 0;will-change:transform}
+/* le décor ne prend aucun toucher (Mike, encore invisible, est posé sur la cage) : seule la cage les prend */
+#monde{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:0 0;will-change:transform;pointer-events:none}
+#cage{pointer-events:auto}
 .abs{position:absolute;left:0;top:0;will-change:transform}
 img{display:block;-webkit-user-drag:none;user-select:none}
+.toque{position:absolute;left:18.5%;top:-20%;width:64%;overflow:visible}
 
-/* ── la cage (dessin vectoriel, deux couches : le verre derrière le fantôme, les barreaux devant) ── */
+/* ── la cage (deux couches : le verre derrière le fantôme, les barreaux devant) ── */
 #cage{width:520px;height:760px;cursor:pointer}
 #cage>svg{position:absolute;left:0;top:0;width:520px;height:760px;overflow:visible}
 #c-fant{position:absolute;left:105px;top:300px;width:310px}
 #c-fant img{width:100%;height:auto;filter:drop-shadow(0 18px 24px rgba(0,0,0,.5))}
-#c-porte{position:absolute;left:176px;top:446px;width:168px;height:252px;transform-origin:0 50%;transform:perspective(900px)}
+#c-porte{position:absolute;left:176px;top:446px;width:168px;height:252px}
 #c-porte svg{width:168px;height:252px}
 #c-lueur{position:absolute;left:30px;top:40px;width:460px;height:660px;border-radius:50% 50% 8% 8% / 42% 42% 6% 6%;opacity:0;
   background:radial-gradient(ellipse 60% 50% at 50% 62%,rgba(255,240,200,.95),rgba(255,190,120,.55) 35%,rgba(255,46,154,.15) 65%,transparent 75%);mix-blend-mode:screen}
-.toque{position:absolute;left:18.5%;top:-20%;width:64%;overflow:visible}
-/* ── son fantôme, une fois sorti ── */
+#bulle-cage{left:690px;top:700px;padding:22px 34px;border-radius:40px 40px 40px 10px;font-size:46px;font-weight:900;color:#2A1A10;background:var(--creme);box-shadow:0 18px 40px -12px rgba(0,0,0,.7);transform-origin:0 100%;opacity:0}
+/* ── Mike, une fois sorti ── */
 #heros{width:600px;opacity:0}
 #heros .corps{position:relative;width:600px}
 #heros img{width:100%;height:auto;filter:drop-shadow(0 30px 40px rgba(0,0,0,.55))}
+#nom-mike{position:absolute;left:50%;top:94%;padding:10px 34px;border-radius:40px;white-space:nowrap;font-size:52px;font-weight:900;color:#fff;background:linear-gradient(135deg,#FF5DB8,#E0167A);
+  box-shadow:0 14px 30px -10px rgba(255,46,154,.9)}
 .trace{width:600px;opacity:0;filter:blur(2px) saturate(1.4)}
 .trace img{width:100%;height:auto}
 #rayons{width:1400px;height:1400px;border-radius:50%;opacity:0;mix-blend-mode:screen;
@@ -40,71 +45,160 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   -webkit-mask:radial-gradient(circle,#000 0 12%,rgba(0,0,0,.85) 30%,transparent 70%);mask:radial-gradient(circle,#000 0 12%,rgba(0,0,0,.85) 30%,transparent 70%)}
 #eclat{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 52%,#fff 0,rgba(255,240,215,.85) 18%,rgba(255,120,190,.3) 45%,transparent 70%)}
 #onde{width:120px;height:120px;border-radius:50%;opacity:0;border:10px solid rgba(255,235,190,.9);box-shadow:0 0 50px rgba(255,200,140,.8),inset 0 0 40px rgba(255,200,140,.6)}
-#doigt{width:150px;height:150px;border-radius:50%;opacity:0;border:8px solid #fff;background:rgba(255,255,255,.22);box-shadow:0 0 40px rgba(255,255,255,.5)}
+.doigt{width:150px;height:150px;border-radius:50%;opacity:0;border:8px solid #fff;background:rgba(255,255,255,.22);box-shadow:0 0 40px rgba(255,255,255,.5)}
 
-/* ── le téléphone (sa vidéo sur les réseaux) ── */
+/* ── ses photos (polaroïds), puis le film dans le téléphone ── */
+.polar{width:300px;padding:16px 16px 54px;border-radius:10px;background:#FBF7F0;box-shadow:0 30px 60px -20px rgba(0,0,0,.85);opacity:0}
+.polar img{width:268px;height:268px;object-fit:cover;border-radius:4px}
 #tel{width:620px;height:1250px;border-radius:96px;padding:18px;background:linear-gradient(145deg,#3A2A33,#120A0F 40%,#2A1D24);
   box-shadow:0 0 0 3px rgba(255,255,255,.12),0 60px 120px -30px rgba(0,0,0,.9),inset 0 0 0 2px rgba(255,255,255,.08)}
 #ecran{position:relative;width:100%;height:100%;border-radius:80px;overflow:hidden;background:#000}
-#ecran .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-#ilot{position:absolute;left:50%;top:22px;width:170px;height:46px;margin-left:-85px;border-radius:30px;background:#000;z-index:5}
-.ui{position:absolute;inset:0;z-index:3;pointer-events:none;background:linear-gradient(rgba(0,0,0,.45),transparent 22%,transparent 60%,rgba(0,0,0,.75))}
-.ui-haut{position:absolute;left:36px;top:96px;display:flex;align-items:center;gap:16px;font-size:30px;font-weight:800;color:#fff}
-.ui-haut i{width:62px;height:62px;border-radius:50%;background:url(m4.jpg) center/cover;box-shadow:0 0 0 4px #FF2E9A}
-.ui-haut em{font-style:normal;font-size:24px;padding:6px 16px;border-radius:14px;border:2px solid rgba(255,255,255,.7)}
-.ui-cote{position:absolute;right:28px;bottom:250px;display:grid;gap:34px;justify-items:center;font-size:24px;font-weight:800;color:#fff}
-.ui-cote span{display:grid;justify-items:center;gap:6px}
-.ui-cote svg{width:64px;height:64px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5))}
-#coeur{position:relative}
-#coeur-x{position:absolute;left:50%;top:32px;width:96px;height:12px;margin-left:-48px;border-radius:8px;background:#FF3B5C;transform:rotate(-35deg) scaleX(0);box-shadow:0 0 0 4px rgba(0,0,0,.4)}
-.ui-bas{position:absolute;left:36px;right:130px;bottom:96px;font-size:28px;font-weight:600;line-height:1.35;color:#fff}
-.ui-bas b{font-weight:800}
-#anonyme{position:absolute;left:50%;top:42%;z-index:6;padding:20px 30px;border-radius:24px;white-space:nowrap;text-align:center;font-size:40px;font-weight:900;line-height:1.1;color:#fff;
-  background:rgba(40,32,38,.92);border:4px solid rgba(255,255,255,.35);opacity:0;transform:translate(-50%,-50%) rotate(-7deg) scale(0)}
-#anonyme small{display:block;margin-top:6px;font-size:26px;font-weight:700;color:rgba(255,255,255,.7)}
+#ecran .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0}
+#ilot{position:absolute;left:50%;top:22px;width:170px;height:46px;margin-left:-85px;border-radius:30px;background:#000;z-index:9}
+.film-voile{position:absolute;inset:0;z-index:2;background:linear-gradient(rgba(0,0,0,.5),transparent 28%,transparent 58%,rgba(0,0,0,.78))}
+.film-lumiere{position:absolute;inset:-20%;z-index:2;opacity:0;mix-blend-mode:screen;background:radial-gradient(ellipse 40% 30% at 20% 20%,rgba(255,170,90,.55),transparent 70%),radial-gradient(ellipse 35% 25% at 85% 70%,rgba(255,80,170,.4),transparent 70%)}
+.film-sig{position:absolute;left:34px;top:92px;z-index:3;padding:10px 22px;border-radius:30px;font-size:26px;font-weight:800;color:#fff;background:rgba(255,46,154,.88);opacity:0}
+.film-titre{position:absolute;left:0;right:0;top:180px;z-index:3;text-align:center;opacity:0}
+.film-titre small{display:block;font-size:26px;font-weight:800;letter-spacing:.32em;color:var(--or)}
+.film-titre b{display:block;margin-top:10px;font:italic 700 74px/1.05 "Playfair Display",Georgia,serif;color:#fff;text-shadow:0 6px 24px rgba(0,0,0,.6)}
+.film-vues{position:absolute;left:50%;bottom:120px;z-index:3;padding:14px 30px;border-radius:40px;white-space:nowrap;font-size:36px;font-weight:900;color:#fff;background:rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.3);opacity:0}
+.film-barre{position:absolute;left:44px;right:44px;bottom:58px;z-index:3;height:10px;border-radius:6px;background:rgba(255,255,255,.25);opacity:0}
+.film-barre i{display:block;height:100%;width:100%;border-radius:6px;background:linear-gradient(90deg,#FF5DB8,#FFB347);transform-origin:0 50%;transform:scaleX(0)}
+.film-avance{position:absolute;right:50px;bottom:84px;z-index:3;font-size:40px;font-weight:900;color:#fff;opacity:0}
 /* les trois cages, à la fin de sa vidéo */
-#tcages{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;opacity:0;
-  background:radial-gradient(ellipse at 50% 45%,rgba(70,25,55,.96),rgba(14,6,12,.98) 70%)}
-#tcages h3{margin:0;font-size:64px;font-weight:900;letter-spacing:-.02em}
-#jaime{position:relative;margin:0 0 6px;padding:14px 34px;border-radius:99px;font-size:40px;font-weight:800;color:#fff;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.28)}
-#jaime span{color:#FF3B5C}
-#jaime i{position:absolute;left:-6%;right:-6%;top:50%;height:10px;border-radius:6px;background:#FF3B5C;transform:rotate(-12deg) scaleX(0);box-shadow:0 0 0 3px rgba(0,0,0,.35)}
-.trang{display:grid;grid-template-columns:repeat(3,160px);gap:22px}
-.tc{display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;font-size:24px;font-weight:800;line-height:1.15}
-.tc svg{width:150px;height:220px;overflow:visible}
+#tcages{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:46px;opacity:0;
+  background:radial-gradient(ellipse at 50% 45%,rgba(70,25,55,.97),rgba(14,6,12,.99) 70%)}
+#tcages h3{margin:0;font-size:68px;font-weight:900;letter-spacing:-.02em}
+.trang{display:grid;grid-template-columns:repeat(3,170px);gap:16px}
+.tc{display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center;font-size:25px;font-weight:800;line-height:1.15}
+.tc-c{position:relative;width:150px;height:220px}
+.tc svg{position:absolute;left:0;top:0;width:150px;height:220px;overflow:visible}
 .tc .tc-fant{position:absolute;width:86px;left:32px;top:96px}
-.tc .tc-c{position:relative;width:150px;height:220px}
+.tc .halo{position:absolute;left:-30px;top:-20px;width:210px;height:270px;border-radius:50%;opacity:0;filter:blur(18px)}
+/* les réseaux, autour du téléphone */
+.rs{width:170px;display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0}
+.rs>i{position:relative;display:grid;place-items:center;width:118px;height:118px;border-radius:32px;font-style:normal;box-shadow:0 22px 40px -16px rgba(0,0,0,.85)}
+.rs svg{width:62%;height:62%}
+.rs>b{font-size:24px;font-weight:800;white-space:nowrap}
+.rs>em{position:absolute;right:6px;top:-12px;display:grid;place-items:center;width:52px;height:52px;border-radius:50%;font-style:normal;font-size:30px;font-weight:900;color:#04150E;background:var(--vert);box-shadow:0 0 0 7px #1D0819}
+.rs>small{padding:6px 16px;border-radius:20px;font-size:26px;font-weight:800;color:#fff;background:rgba(255,255,255,.12)}
+.rs.ig>i{background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fdf497 5%,#fd5949 45%,#d6249f 60%,#285AEB 90%)}
+.rs.fb>i{background:#1877F2}
+.rs.go>i{background:#fff}
+.rs.wa>i{background:#25D366}
+.rs.di>i{background:linear-gradient(135deg,#FF5DB8,#E0167A)}
+.rs.di>i span{font-size:28px;font-weight:900;letter-spacing:.04em;color:#fff}
 
-/* ── les fantômes nommés, la foule ── */
+/* ── la foule : trois groupes, un par cage ── */
 .mini{width:150px;opacity:0}
 .mini img{width:100%;height:auto;filter:drop-shadow(0 10px 14px rgba(0,0,0,.5))}
-.mini b{position:absolute;left:50%;top:92%;transform:translateX(-50%);padding:4px 14px;border-radius:16px;white-space:nowrap;font-size:24px;font-weight:800;color:#fff;background:var(--c,#F5A23A);box-shadow:0 6px 14px rgba(0,0,0,.4)}
-.mini.camille{width:230px}
+.mini b{position:absolute;left:50%;top:90%;transform:translateX(-50%);padding:4px 14px;border-radius:16px;white-space:nowrap;font-size:24px;font-weight:800;color:#fff;background:var(--c);box-shadow:0 6px 14px rgba(0,0,0,.4)}
+.mini .msg-b{position:absolute;right:-6px;top:4px;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:30px;background:#fff;box-shadow:0 6px 14px rgba(0,0,0,.4)}
+.mini.camille{width:220px}
 .mini.camille b{font-size:34px;padding:6px 20px}
+.groupe{padding:12px 26px;border-radius:40px;white-space:nowrap;font-size:34px;font-weight:900;color:#fff;background:var(--c);box-shadow:0 18px 40px -14px var(--c);opacity:0}
+.envoi{width:70px;height:70px;border-radius:50%;display:grid;place-items:center;font-size:36px;background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.4);opacity:0}
 
-/* ── les mots dits, en grand (typographie animée) ── */
-#mots{position:absolute;left:60px;right:60px;top:110px;height:420px;pointer-events:none}
-.ligne{position:absolute;left:0;right:0;text-align:center;font-weight:900;letter-spacing:-.025em;line-height:1;white-space:nowrap}
-.m{display:inline-block;margin:0 .13em;opacity:0;will-change:transform,opacity,filter}
+/* ── la façade du commerce (celle des tours) : la porte qu'elle pousse ── */
+.fac{--f1:#62182B;--f2:#45101F;--s1:#F3E5D0;--s2:#8E1C33;--ens:#2C0912;--vit:#2A0810;width:1000px;aspect-ratio:360/430;container-type:inline-size;overflow:hidden;border-radius:30px;
+  background:linear-gradient(#0B0608,#170C10 40%);box-shadow:0 60px 120px -30px rgba(0,0,0,.9)}
+.fac>i{position:absolute;display:block}
+.fac-f{left:0;right:0;top:2%;height:64%;background:linear-gradient(90deg,rgba(0,0,0,.3),transparent 18%,transparent 82%,rgba(0,0,0,.35)),
+  repeating-linear-gradient(90deg,transparent 0 11.6cqw,rgba(0,0,0,.12) 11.6cqw 11.9cqw),linear-gradient(var(--f1),var(--f2))}
+.fac-ens{position:absolute;left:7%;right:7%;top:3.2%;height:12%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6cqw;border-radius:1cqw;background:var(--ens);
+  box-shadow:inset 0 0 0 .55cqw var(--ens),inset 0 0 0 .85cqw rgba(201,164,92,.75),0 1.2cqw 2.4cqw rgba(0,0,0,.45)}
+.fac-ens b{max-width:94%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:italic 700 7cqw/1.1 "Playfair Display",Georgia,serif;color:#E8C77A;text-shadow:0 0 3cqw rgba(232,199,122,.4)}
+.fac-ens small{font-weight:700;font-size:1.9cqw;line-height:1;letter-spacing:.4em;color:rgba(232,199,122,.8)}
+.fac-store{left:3%;right:3%;top:16.8%;height:8.2%;z-index:2;
+  background:linear-gradient(rgba(0,0,0,.28),transparent 45%),repeating-linear-gradient(90deg,var(--s1) 0 5.4cqw,var(--s2) 5.4cqw 10.8cqw);
+  -webkit-mask:linear-gradient(#000 0 0) top/100% calc(100% - 2.7cqw) no-repeat,radial-gradient(circle at 50% 0,#000 2.65cqw,transparent 2.75cqw) bottom/5.4cqw 2.7cqw repeat-x;
+  mask:linear-gradient(#000 0 0) top/100% calc(100% - 2.7cqw) no-repeat,radial-gradient(circle at 50% 0,#000 2.65cqw,transparent 2.75cqw) bottom/5.4cqw 2.7cqw repeat-x}
+.fac-vit{position:absolute;left:5%;width:58%;top:29%;height:34%;border-radius:1cqw;overflow:hidden;background:#1A0D08;
+  box-shadow:inset 0 0 0 1.2cqw var(--vit),0 0 0 .55cqw #C9A45C,0 0 9cqw rgba(255,170,90,.38)}
+.fac-vit>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%}
+.fac-porte{position:absolute;left:70%;width:24%;top:29%;height:37%;border-radius:1.2cqw 1.2cqw 0 0;overflow:visible;
+  background:radial-gradient(ellipse at 50% 70%,#FFE2A8,#FFB45E 45%,#B9652B);box-shadow:inset 0 0 0 .6cqw #C9A45C}
+.fac-lumiere{position:absolute;left:58%;width:48%;top:24%;height:80%;border-radius:50%;opacity:0;mix-blend-mode:screen;background:radial-gradient(ellipse at 50% 50%,rgba(255,220,150,.75),transparent 65%)}
+.fac-battant{position:absolute;inset:0;border-radius:1.2cqw 1.2cqw 0 0;background:linear-gradient(#2A1E1A,#1A100C);box-shadow:inset 0 0 0 .6cqw #C9A45C;transform-origin:0 50%}
+.fac-battant i{position:absolute;left:14%;right:14%;top:8%;height:47%;border-radius:.8cqw;background:radial-gradient(ellipse at 50% 85%,#FFC27A,#B9652B 58%,#4A1E10);box-shadow:inset 0 0 2cqw rgba(0,0,0,.55)}
+.fac-battant::after{content:"";position:absolute;right:12%;top:60%;width:2.2cqw;height:2.2cqw;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFE6A6,#B98A2E)}
+.fac-trot{left:0;right:0;top:66%;bottom:0;background:radial-gradient(ellipse 60% 70% at 34% 0,rgba(255,180,100,.26),transparent 70%),radial-gradient(ellipse 30% 50% at 82% 0,rgba(255,180,100,.2),transparent 70%),
+  repeating-linear-gradient(90deg,transparent 0 9cqw,rgba(0,0,0,.2) 9cqw 9.35cqw),linear-gradient(#3E322D,#262020)}
+.fac .fg{position:absolute;z-index:5}
+.fac .fg img{height:var(--h);width:auto;filter:drop-shadow(0 1cqw 1cqw rgba(0,0,0,.5))}
+.fac .fg b{position:absolute;left:50%;top:92%;transform:translateX(-50%);padding:.4cqw 2.2cqw;border-radius:2cqw;white-space:nowrap;font-size:3.6cqw;font-weight:800;color:#fff;background:var(--orange)}
+#bulle-chef{position:absolute;right:2%;top:26%;z-index:8;margin:0;max-width:52%;padding:2cqw 3.4cqw;border-radius:3.4cqw 3.4cqw 1cqw 3.4cqw;font-size:5cqw;font-weight:800;line-height:1.2;
+  color:#2A1A10;background:var(--creme);box-shadow:0 2cqw 5cqw -1cqw rgba(0,0,0,.7);transform-origin:100% 100%}
+#venue{padding:16px 34px;border-radius:40px;white-space:nowrap;font-size:42px;font-weight:900;color:#04150E;background:linear-gradient(135deg,#9FF5C9,#3DE2A6);box-shadow:0 18px 40px -14px rgba(61,226,166,.8);opacity:0}
+
+/* ── la conversation avec Camille (à l'écran, par-dessus) ── */
+#chat{position:absolute;left:40px;right:40px;top:800px;height:1080px;padding:34px 34px 30px;border-radius:56px;background:linear-gradient(180deg,rgba(48,26,38,.97),rgba(22,10,17,.98));
+  border:2px solid rgba(255,214,140,.22);box-shadow:0 -30px 80px -20px rgba(0,0,0,.8);transform:translateY(1200px)}
+.ch-tete{display:flex;align-items:center;gap:24px;padding-bottom:22px;border-bottom:2px solid rgba(255,255,255,.08)}
+.ch-tete img{width:110px;height:auto}
+.ch-tete b{display:block;font-size:48px;font-weight:900;line-height:1.05}
+.ch-tete small{display:block;font-size:28px;font-weight:700;color:rgba(255,244,230,.6)}
+.tags{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.tags em{font-style:normal;padding:6px 18px;border-radius:30px;font-size:26px;font-weight:800;white-space:nowrap;color:#fff;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.18);display:none}
+.tags em.on{display:inline-block}
+.tags em.vert{color:#04150E;background:linear-gradient(135deg,#9FF5C9,#3DE2A6);border-color:transparent}
+#fil{position:absolute;left:34px;right:34px;top:250px;bottom:30px;display:flex;flex-direction:column;justify-content:flex-end;gap:18px;overflow:hidden;
+  -webkit-mask-image:linear-gradient(transparent,#000 14%);mask-image:linear-gradient(transparent,#000 14%)}
+#fil>*{flex:none;display:none}
+.jour{align-self:center;padding:8px 26px;border-radius:30px;font-size:28px;font-weight:800;color:rgba(255,244,230,.85);background:rgba(255,255,255,.08)}
+.jour.calme{color:#FFD27A;background:rgba(246,181,75,.16)}
+.msg{max-width:82%;padding:20px 28px;border-radius:34px;font-size:34px;font-weight:600;line-height:1.32}
+.msg small{display:block;margin-bottom:4px;font-size:24px;font-weight:800;opacity:.85}
+.msg.mike{align-self:flex-start;border-bottom-left-radius:8px;color:#fff;background:linear-gradient(135deg,#FF4FAE,#E0167A)}
+.msg.wa{align-self:flex-start;border-bottom-left-radius:8px;color:#0B2A17;background:#DCF8C6}
+.msg.wa small{color:#128C3E}
+.msg.elle{align-self:flex-end;border-bottom-right-radius:8px;color:#2A1A10;background:var(--creme);font-weight:800}
+.oui{align-self:flex-start;margin-top:-8px;padding:6px 20px;border-radius:30px;font-size:24px;font-weight:800;color:#04150E;background:var(--vert)}
+
+/* ── les mots dits, en grand ── */
+/* sous les mots, quand la scène derrière est chargée (la foule, la conversation) */
+#voile{position:absolute;left:0;right:0;top:0;height:470px;opacity:0;pointer-events:none;background:linear-gradient(rgba(12,4,10,.94),rgba(12,4,10,.8) 55%,rgba(12,4,10,0))}
+#mots{position:absolute;left:60px;right:60px;top:110px;height:330px;pointer-events:none}
+.bloc{position:absolute;left:0;right:0;top:0;text-align:center}
+.ligne{display:block;font-weight:900;letter-spacing:-.025em;line-height:1.04;white-space:nowrap}
+.m{display:inline-block;margin:0 .12em;opacity:0;will-change:transform,opacity,filter}
 .m.fort{background:linear-gradient(95deg,#FF5DB8,#FF2E9A 45%,#FFB347);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 24px rgba(255,46,154,.55))}
-.compteur{position:absolute;left:0;right:0;top:96px;text-align:center;opacity:0}
-.compteur b{display:block;font-size:150px;font-weight:900;line-height:1;letter-spacing:-.03em;background:linear-gradient(95deg,#FF5DB8,#FFB347);-webkit-background-clip:text;background-clip:text;color:transparent}
-.compteur small{display:block;margin-top:14px;font-size:44px;font-weight:800;color:var(--creme)}
-.compteur small s{color:rgba(255,244,230,.55);text-decoration-thickness:4px}
+#eclair-diag{position:absolute;left:-60%;top:-20%;width:40%;height:140%;opacity:0;pointer-events:none;transform:rotate(18deg);background:linear-gradient(90deg,transparent,rgba(255,235,200,.35),transparent);mix-blend-mode:screen}
 
-/* ── l'écran de départ (avant de toucher) ── */
-#depart{position:absolute;inset:0;pointer-events:none}
+/* ── le départ, la fin ── */
 .marque{position:absolute;left:64px;top:84px;font-size:56px;font-weight:900;letter-spacing:-.03em}
 .marque b{color:var(--rose)}
-#appel{position:absolute;left:0;right:0;top:1520px;text-align:center;font-size:76px;font-weight:900;letter-spacing:-.02em}
+#pour{position:absolute;right:56px;top:86px;padding:14px 30px;border-radius:40px;border:2px dashed rgba(255,244,230,.4);background:rgba(255,244,230,.06);color:var(--creme);font:700 30px Poppins,sans-serif;cursor:pointer;pointer-events:auto;max-width:560px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#pour.a-nom{border-style:solid;border-color:rgba(255,46,154,.6)}
+#pour b{color:var(--rose2)}
+.rendu #pour{display:none}
+#depart{position:absolute;inset:0;pointer-events:none}
+#appel{position:absolute;left:0;right:0;top:1560px;text-align:center;font-size:76px;font-weight:900;letter-spacing:-.02em}
 #appel small{display:block;margin-top:18px;font-size:34px;font-weight:700;color:rgba(255,244,230,.6)}
-#toc{position:absolute;left:800px;top:820px;font:italic 700 54px/1 Georgia,serif;color:var(--or);opacity:0}
-#fin{position:absolute;inset:0;display:grid;place-items:center;opacity:0;background:#0C040A;pointer-events:none}
-#fin b{font-size:120px;font-weight:900;letter-spacing:-.03em}
-#fin b i{font-style:normal;color:var(--rose)}
+#finale{position:absolute;inset:0;opacity:0;pointer-events:none;background:radial-gradient(ellipse 90% 60% at 50% 35%,#3D1433,#0C040A 75%)}
+#fi-mike{position:absolute;left:50%;top:150px;width:460px;margin-left:-230px}
+#fi-mike img{width:100%;height:auto;filter:drop-shadow(0 30px 40px rgba(0,0,0,.55))}
+#fi-titre{position:absolute;left:40px;right:40px;top:700px;margin:0;text-align:center;font-size:118px;font-weight:900;line-height:1.02;letter-spacing:-.03em}
+#fi-titre .m.fort{display:inline-block}
+.fi-puces{position:absolute;left:60px;right:60px;top:1000px;display:flex;flex-wrap:wrap;justify-content:center;gap:16px}
+.fi-puces span{padding:14px 28px;border-radius:40px;font-size:32px;font-weight:800;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.16);opacity:0}
+.fi-boutons{position:absolute;left:110px;right:110px;top:1300px;display:grid;gap:26px;opacity:0}
+.fi-boutons a,.fi-boutons button{display:block;padding:34px;border-radius:70px;text-align:center;text-decoration:none;font:900 44px Poppins,sans-serif;color:#fff;border:0;cursor:pointer}
+.fi-boutons .go{background:linear-gradient(135deg,#FF5DB8,#E0167A);box-shadow:0 26px 60px -20px rgba(255,46,154,.9)}
+.fi-boutons .go2{padding:28px;font-size:38px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2)}
+.fi-boutons button{padding:14px;font-size:34px;background:none;color:rgba(255,244,230,.75)}
+.fi-note{position:absolute;left:0;right:0;bottom:60px;margin:0;text-align:center;font-size:26px;font-weight:600;color:rgba(255,244,230,.4)}
 #pause{position:absolute;right:40px;bottom:40px;z-index:50;display:none;width:96px;height:96px;border-radius:50%;border:2px solid rgba(255,255,255,.3);background:rgba(0,0,0,.35);color:#fff;font-size:40px;cursor:pointer}
 .joue #pause{display:block}
-.rendu #pause{display:none!important}
+.rendu #pause,.fini #pause{display:none!important}
+#pour-feuille{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:rgba(5,3,4,.75)}
+#pour-feuille[hidden]{display:none}
+#pour-form{width:min(88vw,380px);padding:22px;border-radius:20px;background:#22121A;border:1px solid rgba(255,255,255,.14);display:grid;gap:12px;font-family:Poppins,sans-serif}
+#pour-form label{font-weight:800;font-size:17px}
+#pour-form input{font:inherit;font-size:18px;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:#140A0F;color:#fff}
+#pour-form div{display:flex;gap:10px;justify-content:flex-end}
+#pour-form button{padding:10px 16px;border-radius:99px;border:0;font-weight:800;cursor:pointer;background:rgba(255,255,255,.1);color:#fff}
+#pour-form button[type=submit]{background:var(--rose)}
 </style>
 
 <div id="cadre"><div id="scene">
@@ -112,8 +206,8 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   <div id="monde">
     <div id="rayons" class="abs"></div>
     <div id="onde" class="abs"></div>
-    <!-- la cage -->
-    <div id="cage" class="abs" role="button" aria-label="Libérer le fantôme et lancer la démo">
+    <!-- ① la cage -->
+    <div id="cage" class="abs" role="button" aria-label="Libérer Mike et lancer la démo">
       <svg viewBox="0 0 520 760" aria-hidden="true">
         <defs>
           <linearGradient id="or" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF3C4"/><stop offset=".28" stop-color="#F2C46B"/><stop offset=".62" stop-color="#A9742A"/><stop offset=".82" stop-color="#FFE3A0"/><stop offset="1" stop-color="#7E5219"/></linearGradient>
@@ -138,40 +232,65 @@ img{display:block;-webkit-user-drag:none;user-select:none}
       <div id="c-porte"><svg viewBox="0 0 168 252" aria-hidden="true"><path d="M8 250V96C8 44 42 10 84 10S160 44 160 96V250" fill="rgba(30,15,20,.18)" stroke="url(#or)" stroke-width="12"/>
         <rect x="52" y="20" width="8" height="232" fill="url(#orb)"/><rect x="108" y="20" width="8" height="232" fill="url(#orb)"/></svg></div>
     </div>
-    <!-- son fantôme, et sa traînée -->
-    <div class="trace abs"><img src="hote.webp" alt=""></div><div class="trace abs"><img src="hote.webp" alt=""></div><div class="trace abs"><img src="hote.webp" alt=""></div><div class="trace abs"><img src="hote.webp" alt=""></div>
-    <!-- le téléphone : sa vidéo, puis les cages -->
+    <p id="bulle-cage" class="abs">Libérez-moi !</p>
+    <!-- ② ses photos -->
+    <div class="polar abs"><img src="m4.jpg" alt=""></div><div class="polar abs"><img src="m2.jpg" alt=""></div><div class="polar abs"><img src="m1.jpg" alt=""></div><div class="polar abs"><img src="m3.jpg" alt=""></div>
+    <!-- le téléphone : son film, puis les cages -->
     <div id="tel" class="abs"><div id="ecran">
-      <img class="ph" id="ph1" src="m4.jpg" alt=""><img class="ph" id="ph2" src="m2.jpg" alt="" style="opacity:0">
-      <div class="ui">
-        <div class="ui-haut"><i></i><span>chezbergine</span><em>Suivre</em></div>
-        <div class="ui-cote">
-          <span id="coeur"><svg viewBox="0 0 24 24"><path fill="#fff" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.5 1.2 4.3 2.4.8-1.2 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></svg><b id="nlikes">0</b><i id="coeur-x"></i></span>
-          <span><svg viewBox="0 0 24 24"><path fill="none" stroke="#fff" stroke-width="2" d="M4 5h16v11H9l-5 4z"/></svg>18</span>
-          <span><svg viewBox="0 0 24 24"><path fill="none" stroke="#fff" stroke-width="2" d="M3 12l18-8-6 18-3-7z"/></svg>Partager</span>
-        </div>
-        <div class="ui-bas"><b>chezbergine</b> Le plat du jour, tout juste sorti de la cuisine 🍽️</div>
-      </div>
-      <p id="anonyme">♥ 214 j’aime<small>et pas un seul prénom</small></p>
-      <div id="tcages"><p id="jaime"><span>♥</span> J’aime<i></i></p><h3>Et vous ?</h3><div class="trang">
-        <div class="tc"><div class="tc-c"><img class="tc-fant" src="g/cosy-debout.webp" alt="">@CAGE_ROSE@</div>J’adore<br>la vidéo</div>
-        <div class="tc" id="tc-promis"><div class="tc-c"><img class="tc-fant" src="g/fleuri-debout.webp" alt="">@CAGE_ORANGE@</div>Je viendrai<br>un jour</div>
-        <div class="tc"><div class="tc-c"><img class="tc-fant" src="g/curieux-debout.webp" alt="">@CAGE_VERTE@</div>Je réserve<br>aujourd’hui</div>
+      <img class="ph" src="m4.jpg" alt=""><img class="ph" src="m2.jpg" alt=""><img class="ph" src="m1.jpg" alt=""><img class="ph" src="m3.jpg" alt="">
+      <div class="film-voile"></div><div class="film-lumiere"></div>
+      <span class="film-sig">✨ Monté par Mike</span>
+      <div class="film-titre"><small>LE PLAT DU JOUR</small><b class="nom-commerce">Chez Bergine</b></div>
+      <span class="film-vues">👁 <span id="nvues">0</span> vues</span>
+      <span class="film-avance">▶▶</span>
+      <div class="film-barre"><i></i></div>
+      <div id="tcages"><h3>Et vous ?</h3><div class="trang">
+        <div class="tc" id="tc1"><div class="tc-c"><i class="halo" style="background:#FF2E9A"></i><img class="tc-fant" src="g/cosy-debout.webp" alt="">@CAGE_ROSE@</div>J’adore<br>la vidéo</div>
+        <div class="tc" id="tc2"><div class="tc-c"><i class="halo" style="background:#F5A23A"></i><img class="tc-fant" src="g/fleuri-debout.webp" alt="">@CAGE_ORANGE@</div>Je passerai<br>un jour</div>
+        <div class="tc" id="tc3"><div class="tc-c"><i class="halo" style="background:#3DE2A6"></i><img class="tc-fant" src="g/curieux-debout.webp" alt="">@CAGE_VERTE@</div>Je passe<br>aujourd’hui</div>
       </div></div>
       <div id="ilot"></div>
     </div></div>
+    <!-- les réseaux -->
+    <span class="rs ig abs"><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg><em>✓</em></i><b>Instagram</b><small data-vues="1240">👁 0</small></span>
+    <span class="rs fb abs"><i><svg viewBox="0 0 24 24"><path fill="#fff" d="M13.6 21v-7.6h2.6l.4-3h-3V8.5c0-.9.3-1.5 1.6-1.5h1.6V4.3c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.2H8v3h2.6V21z"/></svg><em>✓</em></i><b>Facebook</b><small data-vues="860">👁 0</small></span>
+    <span class="rs go abs"><i><svg viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2z"/><path fill="#EA4335" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10C7.2 7.7 9.4 6 12 6z"/></svg><em>✓</em></i><b>Google</b><small data-vues="540">👁 0</small></span>
+    <span class="rs wa abs"><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9"><path d="M4.2 19.8l1.1-3.6A8.5 8.5 0 1 1 8 18.9z" stroke-linejoin="round"/><path fill="#fff" stroke="none" d="M9.2 7.9c.2 0 .4 0 .5.4l.7 1.6c.1.2 0 .4-.1.6l-.5.6c-.1.1-.2.3 0 .5a6 6 0 0 0 2.6 2.3c.2.1.4.1.5-.1l.6-.7c.2-.2.4-.2.6-.1l1.6.8c.2.1.3.2.3.4 0 .5-.2 1.2-.8 1.6-.6.4-1.5.5-2.6.1a9 9 0 0 1-4.6-4.2c-.6-1.1-.6-2.1-.2-2.8.3-.6.8-.9 1.4-1z"/></svg><em>✓</em></i><b>WhatsApp</b><small data-vues="310">👁 0</small></span>
+    <span class="rs di abs"><i><span>DIRECT</span><em>✓</em></i><b>Le Direct de Dax</b><small data-vues="532">👁 0</small></span>
+    <!-- la foule, les messages, les étiquettes des groupes -->
     <div id="foule"></div>
-    <div id="heros" class="abs"><div class="corps"><img src="hote.webp" alt="">@TOQUE@</div></div>
-    <div id="doigt" class="abs"></div>
+    <div id="envois"></div>
+    <span class="groupe abs" id="g1" style="--c:#E0167A">💗 21 adorent la vidéo</span>
+    <span class="groupe abs" id="g2" style="--c:#E08A1E">📌 12 passeront un jour</span>
+    <span class="groupe abs" id="g3" style="--c:#1BA97A">🍽️ 5 passent aujourd’hui</span>
+    <!-- la façade : la porte qu'elle pousse -->
+    @FACADE@
+    <span id="venue" class="abs">✓ Camille est venue, grâce à votre vidéo</span>
+    <!-- Mike -->
+    <div class="trace abs"><img src="hote.webp" alt=""></div><div class="trace abs"><img src="hote.webp" alt=""></div><div class="trace abs"><img src="hote.webp" alt=""></div><div class="trace abs"><img src="hote.webp" alt=""></div>
+    <div id="heros" class="abs"><div class="corps"><img src="hote.webp" alt="">@TOQUE@<span id="nom-mike">Mike</span></div></div>
+    <div class="doigt abs" id="doigt0"></div><div class="doigt abs" id="doigt1"></div><div class="doigt abs" id="doigt2"></div><div class="doigt abs" id="doigt3"></div>
   </div>
   <canvas id="fx" width="1080" height="1920"></canvas>
   <div id="eclat"></div>
+  <div id="eclair-diag"></div>
+  <div id="chat"><div class="ch-tete"><img src="g/fleuri-debout.webp" alt=""><div><b>Camille</b><small>Ce que Mike sait d’elle</small><div class="tags">
+    <em class="on">📌 Passera un jour</em><em id="tag1">📅 En semaine</em><em id="tag2">🐟 Plutôt poisson</em><em id="tag3">🔔 À prévenir</em><em id="tag4" class="vert">✓ Est venue</em></div></div></div><div id="fil"></div></div>
+  <div id="voile"></div>
   <div id="mots"></div>
-  <div class="compteur" id="compteur"><b><span id="n38">0</span> prénoms</b><small><s>214 j’aime anonymes</s><br>38 personnes à faire venir</small></div>
-  <div id="depart"><span class="marque">Clik<b>Me</b></span><p id="toc">toc toc</p><p id="appel">Touchez la cage<small id="charge"></small></p></div>
-  <div id="fin"><b>Clik<i>Me</i></b></div>
+  <div id="depart"><span class="marque">Clik<b>Me</b></span><button id="pour" type="button">✎ Pour qui est cette démo ?</button><p id="appel">Touchez la cage<small id="charge"></small></p></div>
+  <div id="finale">
+    <div id="fi-mike"><img src="hote.webp" alt="">@TOQUE@</div>
+    <h1 id="fi-titre"></h1>
+    <div class="fi-puces"><span>🎬 Une belle vidéo</span><span>👻 38 fantômes libérés</span><span>💬 Un message à chacun</span><span>🚪 Des visites, pas des likes</span></div>
+    <div class="fi-boutons"><a class="go" href="/commercants#creer">Créer mon espace · gratuit</a><a class="go2" href="../restaurant/index.html">Voir le tour complet · 2 min</a><button id="revoir" type="button">↺ Revoir</button></div>
+    <p class="fi-note" id="fi-note">Commerce et chiffres imaginaires</p>
+  </div>
   <button id="pause" type="button" aria-label="Pause">⏸</button>
 </div></div>
+<div id="pour-feuille" hidden><form id="pour-form"><label for="pour-nom">Pour qui est cette démo ?</label>
+  <input id="pour-nom" maxlength="40" autocomplete="off" placeholder="Le nom de son commerce">
+  <div><button type="button" id="pour-effacer">Effacer</button><button type="submit">C’est lui</button></div></form></div>
 
 <script src="js/gsap.min.js"></script>
 <script src="js/MotionPathPlugin.min.js"></script>
@@ -184,6 +303,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const RENDU = /[?&]rendu\b/.test(location.search);
 if (RENDU) document.body.classList.add("rendu");
+const NB = " ";
 
 /* ── LA SCÈNE À L'ÉCHELLE DE L'ÉCRAN ── */
 function ajuster() {
@@ -192,423 +312,541 @@ function ajuster() {
 }
 addEventListener("resize", ajuster); ajuster();
 
-/* ── UN HASARD QUI SE REJOUE À L'IDENTIQUE (pour les particules) ── */
+/* ── SON NOM (« Pour qui est cette démo ? », le même que dans les tours) ── */
+let NOM = "";
+try { NOM = sessionStorage.getItem("tour-pour") || ""; } catch (e) { /* stockage fermé */ }
+const echapper = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+function poserNom() {
+  $$(".nom-commerce").forEach((e) => { e.textContent = NOM || "Chez Bergine"; });
+  $$(".fac-ens small").forEach((e) => { e.textContent = NOM ? "RESTAURANT" : "BISTROT · DAX"; });
+  $("#fi-note").textContent = NOM ? "Chiffres imaginaires" : "Commerce et chiffres imaginaires";
+  const b = $("#pour"); b.classList.toggle("a-nom", !!NOM);
+  b.innerHTML = NOM ? "✨ Préparé pour <b>" + echapper(NOM) + "</b>" : "✎ Pour qui est cette démo" + NB + "?";
+}
+$("#pour").addEventListener("click", (e) => { e.stopPropagation(); $("#pour-nom").value = NOM; $("#pour-feuille").hidden = false; setTimeout(() => $("#pour-nom").focus(), 60); });
+function garderNom(n) {
+  NOM = n.trim().replace(/\s+/g, " ").slice(0, 40);
+  try { if (NOM) sessionStorage.setItem("tour-pour", NOM); else sessionStorage.removeItem("tour-pour"); } catch (e) { /* stockage fermé */ }
+  $("#pour-feuille").hidden = true; poserNom();
+}
+$("#pour-form").addEventListener("submit", (e) => { e.preventDefault(); garderNom($("#pour-nom").value); });
+$("#pour-effacer").addEventListener("click", () => garderNom(""));
+$("#pour-feuille").addEventListener("click", (e) => { if (e.target.id === "pour-feuille") $("#pour-feuille").hidden = true; });
+
+/* ── UN HASARD QUI SE REJOUE À L'IDENTIQUE ── */
 function hasard(graine) { let a = graine >>> 0; return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
-/* ── LES INSTANTS : les voix, et ce que la page fait sur leurs mots ── */
-const VOIX = { a: 0.62, d: 3.62, e: 8.8 };
-const fin = (c) => VOIX[c] + (TEMPS[c]?.d ?? 3);
+/* ── LES INSTANTS : chaque voix à la suite, et ce que la page fait sur ses mots ── */
+const d = (c) => TEMPS[c]?.d ?? 3;
+const VOIX = {};
+VOIX.v1 = 0.62; VOIX.v2 = VOIX.v1 + d("v1") + .55; VOIX.v3 = VOIX.v2 + d("v2") + .45; VOIX.v4 = VOIX.v3 + d("v3") + .5;
+VOIX.v5 = VOIX.v4 + d("v4") + 1.25; VOIX.v6 = VOIX.v5 + d("v5") + .45; VOIX.v7 = VOIX.v6 + d("v6") + 1.35;
+const fin = (c) => VOIX[c] + d(c);
 const net = (w) => w.toLowerCase().replace(/[^a-zàâäéèêëîïôöùûüÿœæç’']/g, "");
+const mots = (c) => SOUS[c].replace(/ \| /g, " ").split(" ");
 function mot(c, w, n = 0) {
-  const ws = SOUS[c].replace(/ \| /g, " ").split(" ");
+  const ws = mots(c);
   let vu = 0;
   for (let i = 0; i < ws.length; i++) if (net(ws[i]) === net(w) && vu++ === n) return VOIX[c] + (TEMPS[c]?.m?.[i] ?? i * .3);
-  return VOIX[c];
+  console.warn("mot introuvable", c, w); return VOIX[c];
 }
-const T = {
-  eclate: 0.24,                              // la porte saute
-  panD: 2.85,                                // la caméra file vers le téléphone
-  rien: mot("d", "Moi,"),                    // les j'aime deviennent gris : personne
-  ramene: mot("d", "ramène"),                // son fantôme tourne autour du téléphone
-  cages: fin("d") + 0.15,                    // la fin de la vidéo : les cages
-  like: mot("e", "like,"),
-  libere: mot("e", "libèrent") - 0.12,       // le doigt sur « Je viendrai un jour »
-  fin: fin("e") + 2.3,
-};
-const DUREE = T.fin + 0.9;
+const T = { eclate: 0.24 };
+T.duree = fin("v7") + 2.8;
+const DUREE = T.duree;
 
-/* ── LA CAMÉRA : le point du monde qu'elle regarde, son zoom, ses secousses ── */
+/* ── LA CAMÉRA ── */
 const cam = { x: 540, y: 960, s: 1 };
 function secousse(t) {
-  const d = t - T.eclate;
-  if (d < 0 || d > 0.45) return [0, 0];
-  const a = 26 * Math.pow(1 - d / 0.45, 2);
-  return [a * Math.sin(d * 97), a * Math.cos(d * 71)];
+  let sx = 0, sy = 0;
+  for (const [t0, amp, dur] of [[T.eclate, 26, .45], [T.porte ?? 99, 10, .3]]) {
+    const dd = t - t0; if (dd < 0 || dd > dur) continue;
+    const a = amp * Math.pow(1 - dd / dur, 2); sx += a * Math.sin(dd * 97); sy += a * Math.cos(dd * 71);
+  }
+  return [sx, sy];
 }
 function versEcran(wx, wy, t) { const [sx, sy] = secousse(t); return [540 + sx + (wx - cam.x) * cam.s, 960 + sy + (wy - cam.y) * cam.s]; }
-function poserCamera(t) {
-  const [sx, sy] = secousse(t);
-  $("#monde").style.transform = `translate(${540 + sx - cam.x * cam.s}px,${960 + sy - cam.y * cam.s}px) scale(${cam.s})`;
-}
+function poserCamera(t) { const [sx, sy] = secousse(t); $("#monde").style.transform = `translate(${540 + sx - cam.x * cam.s}px,${960 + sy - cam.y * cam.s}px) scale(${cam.s})`; }
 
-/* ── LES MOTS DITS, EN GRAND ── */
-// [voix, lignes : [y, taille, mots…], mot fort]
-const PHRASES = [
-  { c: "a", lignes: [[0, 170, 1], [185, 150, 2]], fort: ["fantôme."], sort: fin("a") + 0.25 },
-  { c: "d", lignes: [[0, 118, 2], [130, 118, 2], [255, 118, 2]], fort: [], sort: T.rien - 0.05, de: 0, a: 6 },
-  { c: "d", lignes: [[0, 118, 2], [130, 118, 2], [255, 104, 4]], fort: ["ramène"], sort: fin("d") + 0.3, de: 6, a: 14 },
-  { c: "e", lignes: [[0, 118, 4], [140, 118, 4]], fort: ["fantôme."], sort: fin("e") + 0.1 },
-];
+/* ── LES MOTS DITS, EN GRAND : chaque morceau (« | ») arrive mot à mot, puis cède la place au suivant ── */
+const FORTS = { v1: ["Mike,", "préféré."], v2: ["belle", "partout"], v3: ["plus", "fort.", "après."], v4: ["“J’adore", "la", "vidéo”,", "“Je", "passerai", "un", "jour,", "c’est", "sûr”,", "passe", "aujourd’hui”."], v5: ["vrai", "travail"], v6: ["chaque", "personne", "mieux", "porte."] };
+const TAILLE = { v1: 130, v2: 108, v3: 112, v4: 104, v5: 132, v6: 104 };
 const mesure = document.createElement("canvas").getContext("2d");
+function largeur(texte, fs) { mesure.font = `900 ${fs}px Poppins`; return mesure.measureText(texte).width + texte.split(" ").length * .24 * fs; }
+function couper(ws, fs) {
+  // une ou deux lignes, la coupure la plus équilibrée ; la taille baisse jusqu'à tenir dans 960 px
+  for (let f = fs; f >= 56; f -= 4) {
+    if (largeur(ws.join(" "), f) <= 960) return { f, lignes: [ws] };
+    let best = null;
+    for (let k = 1; k < ws.length; k++) { const a = ws.slice(0, k), b = ws.slice(k), w = Math.max(largeur(a.join(" "), f), largeur(b.join(" "), f)); if (w <= 960 && (!best || w < best.w)) best = { w, k }; }
+    if (best) return { f, lignes: [ws.slice(0, best.k), ws.slice(best.k)] };
+  }
+  return { f: 56, lignes: [ws] };
+}
 function construireMots(tl) {
   const boite = $("#mots");
-  for (const ph of PHRASES) {
-    const ws = SOUS[ph.c].replace(/ \| /g, " ").split(" ");
-    const de = ph.de ?? 0, jusqua = ph.a ?? ws.length;
-    let i = de;
-    const spans = [];
-    for (const [y, taille, n] of ph.lignes) {
-      const l = document.createElement("div");
-      l.className = "ligne"; l.style.top = y + "px";
-      const texte = ws.slice(i, Math.min(jusqua, i + n)).join(" ");
-      let fs = taille; mesure.font = `900 ${fs}px Poppins`; while (fs > 40 && mesure.measureText(texte).width * .99 > 960) { fs -= 4; mesure.font = `900 ${fs}px Poppins`; }
-      l.style.fontSize = fs + "px";
-      for (let k = 0; k < n && i < jusqua; k++, i++) {
-        const s = document.createElement("span");
-        s.className = "m" + (ph.fort.includes(ws[i]) ? " fort" : "");
-        s.textContent = ws[i];
-        l.append(s);
-        spans.push([s, VOIX[ph.c] + (TEMPS[ph.c]?.m?.[i] ?? 0)]);
+  for (const c of Object.keys(TAILLE)) {
+    const morceaux = SOUS[c].split(" | ");
+    let i = 0;
+    const blocs = morceaux.map((p) => { const ws = p.split(" "); const b = { de: i, ws }; i += ws.length; return b; });
+    let libre = 0;   // l'instant où le morceau d'avant a fini de s'effacer : les mots du suivant n'arrivent pas avant
+    blocs.forEach((b, kb) => {
+      const { f, lignes } = couper(b.ws, TAILLE[c]);
+      const el = document.createElement("div"); el.className = "bloc"; el.style.top = (lignes.length === 1 ? 70 : 0) + "px";
+      let j = b.de; const spans = [];
+      for (const l of lignes) {
+        const ligne = document.createElement("span"); ligne.className = "ligne"; ligne.style.fontSize = f + "px";
+        for (const w of l) { const s = document.createElement("span"); s.className = "m" + (FORTS[c]?.includes(w) ? " fort" : ""); s.textContent = w; ligne.append(s); spans.push([s, Math.max(0, VOIX[c] + (TEMPS[c]?.m?.[j] ?? 0) - .05, libre)]); j++; }
+        el.append(ligne);
       }
-      boite.append(l);
-    }
-    for (const [s, quand] of spans) {
-      tl.fromTo(s, { opacity: 0, y: 70, scale: 1.35, filter: "blur(16px)" },
-        { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.42, ease: "expo.out", immediateRender: false }, Math.max(0, quand - 0.06));
-      if (s.classList.contains("fort")) tl.to(s, { scale: 1.08, duration: 0.18, yoyo: true, repeat: 1, ease: "sine.inOut" }, quand + 0.3);
-    }
-    tl.to(spans.map((x) => x[0]), { opacity: 0, y: -60, filter: "blur(10px)", duration: 0.35, stagger: 0.03, ease: "power2.in" }, ph.sort);
+      boite.append(el);
+      for (const [s, quand] of spans) tl.fromTo(s, { opacity: 0, y: 70, scale: 1.3, filter: "blur(14px)" }, { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: .38, ease: "expo.out", immediateRender: false }, quand);
+      // le morceau s'efface d'un coup, juste avant que le suivant arrive (sinon les deux se mêlent),
+      // mais jamais avant que son dernier mot soit apparu (il reviendrait à l'écran)
+      const sort = Math.max(kb + 1 < blocs.length ? VOIX[c] + (TEMPS[c]?.m?.[blocs[kb + 1].de] ?? 0) - .24 : fin(c) + .3, spans[spans.length - 1][1] + .3);
+      tl.to(spans.map((x) => x[0]), { opacity: 0, y: -36, filter: "blur(8px)", duration: .17, ease: "power2.in" }, sort);
+      libre = sort + .17;
+    });
   }
 }
 
-/* ── LES PARTICULES ET LA LUMIÈRE (fonction du temps seulement) ── */
+/* ── LES PARTICULES ET LA LUMIÈRE ── */
 const fond = $("#fond").getContext("2d"), fx = $("#fx").getContext("2d");
 const BOKEH = (() => { const r = hasard(7); return Array.from({ length: 46 }, () => ({ x: r() * 1400 - 160, y: r() * 2100 - 90, rr: 14 + r() * 70, v: 6 + r() * 22, a: .05 + r() * .13, rose: r() < .5, ph: r() * 6.28 })); })();
 function dessinerFond(t) {
   fond.clearRect(0, 0, 1080, 1920);
-  const px = -(cam.x - 540) * 0.18;
+  const px = -(cam.x - 540) * .12, py = -(cam.y - 960) * .08;
   for (const b of BOKEH) {
     const x = ((b.x + px + Math.sin(t * .3 + b.ph) * 30) % 1400 + 1400) % 1400 - 160;
-    const y = ((b.y - b.v * t) % 2100 + 2100) % 2100 - 90;
-    const g = fond.createRadialGradient(x, y, 0, x, y, b.rr);
-    const c = b.rose ? "255,93,184" : "255,200,120";
+    const y = ((b.y + py - b.v * t) % 2100 + 2100) % 2100 - 90;
+    const g = fond.createRadialGradient(x, y, 0, x, y, b.rr), c = b.rose ? "255,93,184" : "255,200,120";
     g.addColorStop(0, `rgba(${c},${b.a})`); g.addColorStop(1, `rgba(${c},0)`);
     fond.fillStyle = g; fond.beginPath(); fond.arc(x, y, b.rr, 0, 6.283); fond.fill();
   }
 }
-// l'éclatement de la cage : des étincelles, avec traînée, gravité et frottement
 const CAGE_C = [540, 1010];
-const ETINCELLES = (() => { const r = hasard(11); return Array.from({ length: 150 }, () => {
-  const ang = r() * 6.283, v = 500 + r() * 1700;
-  return { vx: Math.cos(ang) * v, vy: Math.sin(ang) * v - 380, k: 2.2 + r() * 1.6, vie: .7 + r() * 1.1, l: 2 + r() * 5,
-    c: r() < .55 ? [255, 214, 140] : r() < .5 ? [255, 93, 184] : [255, 255, 255] }; }); })();
-function posEtincelle(p, d) { const e = (1 - Math.exp(-p.k * d)) / p.k; return [CAGE_C[0] + p.vx * e, CAGE_C[1] + p.vy * e + 700 * d * d]; }
-let SILLAGE = [];        // la poussière d'or laissée par son fantôme en vol (positions relevées sur la ligne de temps)
-let COEURS = [];         // les j'aime qui montent de sa vidéo
-let FLASH_CAGE = null;   // le petit éclatement de la cage « Je viendrai un jour »
+const TEL = [1620, 1060];
+const FAC = [3000, 1080];   // assez loin pour ne pas dépasser au bord quand la caméra recule
+// des éclatements : chacun, des étincelles avec traînée, gravité et frottement
+function gerbe(graine, n, x, y, vmin, vmax, couleurs, t0, k = [2.2, 3.8], vie = [.7, 1.8], g = 700) {
+  const r = hasard(graine);
+  return { t0, x, y, g, p: Array.from({ length: n }, () => { const a = r() * 6.283, v = vmin + r() * (vmax - vmin);
+    return { vx: Math.cos(a) * v, vy: Math.sin(a) * v - vmin * .5, k: k[0] + r() * (k[1] - k[0]), vie: vie[0] + r() * (vie[1] - vie[0]), l: 2 + r() * 5, c: couleurs[Math.floor(r() * couleurs.length)] }; }) };
+}
+let GERBES = [], SILLAGE = [], COEURS = [];
 function dessinerFx(t) {
   fx.clearRect(0, 0, 1080, 1920);
-  fx.globalCompositeOperation = "lighter";
-  // ① l'éclatement
-  const d = t - T.eclate;
-  if (d > 0 && d < 2.2) {
-    for (const p of ETINCELLES) {
-      if (d > p.vie) continue;
-      const [x1, y1] = versEcran(...posEtincelle(p, d), t), [x0, y0] = versEcran(...posEtincelle(p, Math.max(0, d - 0.045)), t);
-      const a = Math.pow(1 - d / p.vie, 1.4);
-      fx.strokeStyle = `rgba(${p.c[0]},${p.c[1]},${p.c[2]},${a})`; fx.lineWidth = p.l * cam.s; fx.lineCap = "round";
-      fx.beginPath(); fx.moveTo(x0, y0); fx.lineTo(x1, y1); fx.stroke();
+  fx.globalCompositeOperation = "lighter"; fx.lineCap = "round";
+  for (const G of GERBES) {
+    const dd = t - G.t0; if (dd <= 0 || dd > 2.2) continue;
+    for (const p of G.p) {
+      if (dd > p.vie) continue;
+      const pos = (u) => { const e = (1 - Math.exp(-p.k * u)) / p.k; return versEcran(G.x + p.vx * e, G.y + p.vy * e + G.g * u * u, t); };
+      const [x1, y1] = pos(dd), [x0, y0] = pos(Math.max(0, dd - .045)), a = Math.pow(1 - dd / p.vie, 1.4);
+      fx.strokeStyle = `rgba(${p.c},${a})`; fx.lineWidth = p.l * cam.s; fx.beginPath(); fx.moveTo(x0, y0); fx.lineTo(x1, y1); fx.stroke();
     }
   }
-  // ② sa poussière d'or
   for (const s of SILLAGE) {
-    const age = t - s.t;
-    if (age < 0 || age > s.vie) continue;
-    const a = 1 - age / s.vie;
-    const [x, y] = versEcran(s.x + s.dx * age, s.y + s.dy * age + 60 * age * age, t);
-    const r = s.r * (0.6 + 0.4 * a) * cam.s;
+    const age = t - s.t; if (age < 0 || age > s.vie) continue;
+    const a = 1 - age / s.vie, [x, y] = versEcran(s.x + s.dx * age, s.y + s.dy * age + 60 * age * age, t), r = s.r * (.6 + .4 * a) * cam.s;
     const g = fx.createRadialGradient(x, y, 0, x, y, r * 3);
     g.addColorStop(0, `rgba(255,236,180,${a})`); g.addColorStop(.35, `rgba(255,150,200,${a * .5})`); g.addColorStop(1, "rgba(255,120,190,0)");
     fx.fillStyle = g; fx.beginPath(); fx.arc(x, y, r * 3, 0, 6.283); fx.fill();
   }
-  // ③ les j'aime de sa vidéo : ils montent ; puis ils deviennent gris (personne) ; puis il les ramène
   fx.globalCompositeOperation = "source-over";
   for (const c of COEURS) {
-    let age = t - c.t;
-    if (age < 0) continue;
-    const gele = t >= T.rien;
-    const ageG = Math.min(age, T.rien - c.t);
-    if (!gele && age > c.vie) continue;
-    if (gele && T.rien - c.t > c.vie) continue;
-    let x = c.x + Math.sin(ageG * 3 + c.ph) * 22, y = c.y - c.v * ageG;
-    let a = gele ? 0.9 : Math.min(1, age * 5) * (1 - Math.max(0, age - c.vie * .6) / (c.vie * .4));
-    let gris = gele ? Math.min(1, (t - T.rien) / 0.25) : 0;
-    // il les ramène : une spirale vers le téléphone, en or
-    const dr = t - (T.ramene + c.k * 0.012);
-    if (dr > 0) {
-      const u = Math.min(1, dr / 0.9), e = u * u * (3 - 2 * u);
-      const ang = e * 5 + c.ph, rr = (1 - e) * 180;
-      x = x + (TEL[0] + Math.cos(ang) * rr - x) * e; y = y + (TEL[1] - 60 + Math.sin(ang) * rr - y) * e;
-      gris = Math.max(0, gris - u * 2); a *= 1 - Math.max(0, u - .8) * 5;
-    }
-    if (a <= 0) continue;
-    const [sx, sy] = versEcran(x, y, t);
-    const taille = c.r * cam.s * (1 + Math.min(1, ageG * 2) * .4);
-    coeur(fx, sx, sy, taille, gris, a, dr > 0 ? Math.min(1, dr / .5) : 0);
+    const age = t - c.t; if (age < 0 || age > c.vie) continue;
+    const [x, y] = versEcran(c.x + Math.sin(age * 3 + c.ph) * 22, c.y - c.v * age, t);
+    const a = Math.min(1, age * 5) * (1 - Math.max(0, age - c.vie * .6) / (c.vie * .4));
+    fx.save(); fx.translate(x, y); const s = c.r * cam.s * (1 + Math.min(1, age * 2) * .4) / 12; fx.scale(s, s); fx.globalAlpha = a; fx.fillStyle = c.c;
+    fx.beginPath(); fx.moveTo(0, 10); fx.bezierCurveTo(-14, 1, -11, -11, 0, -4); fx.bezierCurveTo(11, -11, 14, 1, 0, 10); fx.fill(); fx.restore();
   }
-  // ④ le petit éclatement de la cage choisie
-  const d2 = t - T.libere - 0.05;
-  if (FLASH_CAGE && d2 > 0 && d2 < 1.2) {
-    fx.globalCompositeOperation = "lighter";
-    for (const p of FLASH_CAGE) {
-      if (d2 > p.vie) continue;
-      const e = (1 - Math.exp(-p.k * d2)) / p.k;
-      const [x1, y1] = versEcran(p.x + p.vx * e, p.y + p.vy * e + 500 * d2 * d2, t);
-      const a = 1 - d2 / p.vie;
-      fx.fillStyle = `rgba(${p.c},${a})`; fx.beginPath(); fx.arc(x1, y1, p.r * cam.s, 0, 6.283); fx.fill();
-    }
-  }
-  fx.globalCompositeOperation = "source-over";
 }
-function coeur(g, x, y, r, gris, a, or) {
-  g.save(); g.translate(x, y); g.scale(r / 12, r / 12); g.globalAlpha = a;
-  const rouge = [255, 59, 92], g0 = [150, 140, 146], o = [255, 200, 110];
-  const c = rouge.map((v, i) => Math.round(v + (g0[i] - v) * gris + (o[i] - v) * or * (1 - gris)));
-  g.fillStyle = `rgb(${c.join(",")})`;
-  g.beginPath(); g.moveTo(0, 10); g.bezierCurveTo(-14, 1, -11, -11, 0, -4); g.bezierCurveTo(11, -11, 14, 1, 0, 10); g.fill();
-  if (gris > .5) { g.fillStyle = `rgba(255,255,255,${a * .9})`; g.font = "900 11px Poppins,sans-serif"; g.textAlign = "center"; g.fillText("?", 0, 3); }
-  g.restore();
+
+/* ── LA FOULE : trois groupes (une cage chacun) autour du téléphone ; Camille parmi « Je passerai un jour » ── */
+const GROUPES = [
+  { n: 21, c: "#E0167A", tag: "💗", cage: 0 },
+  { n: 12, c: "#E08A1E", tag: "📌", cage: 1 },
+  { n: 5, c: "#1BA97A", tag: "🍽️", cage: 2 },
+];
+const PRENOMS = ["Hugo", "Inès", "Nathan", "Manon", "Jules", "Sarah", "Adam", "Zoé", "Louis", "Chloé", "Emma", "Léo", "Lina", "Tom", "Jade", "Noah", "Rose", "Malo"];
+const LOOKS = ["cosy", "fleuri", "curieux", "artiste", "denim", "rebelle", "soleil", "voyageur"];
+const FOULE = (() => {
+  const r = hasard(5), f = [];
+  // ① « J'adore » : à gauche, 3 colonnes ; ② « Je passerai un jour » : à droite, 2 colonnes ; ③ « aujourd'hui » : en bas
+  // (la caméra recule à 0,68 : on voit le monde de x = 826 à 2414)
+  for (let k = 0; k < 21; k++) { const col = Math.floor(k / 7), rang = k % 7; f.push({ g: 0, x: [1215, 1080, 945][col] + (r() - .5) * 24, y: 560 + rang * 160 + (col % 2) * 60 + (r() - .5) * 30, s: .72 + r() * .2 }); }
+  for (let k = 0; k < 12; k++) { const col = Math.floor(k / 6), rang = k % 6; f.push({ g: 1, x: [2040, 2185][col] + (r() - .5) * 24, y: 580 + rang * 165 + col * 60 + (r() - .5) * 30, s: .76 + r() * .2 }); }
+  for (let k = 0; k < 5; k++) f.push({ g: 2, x: 1380 + k * 120, y: 1840 + (k % 2) * 40, s: .8 + r() * .2 });
+  let p = 0;
+  f.forEach((m, k) => { m.look = LOOKS[(k * 3) % 8]; m.nom = k % 3 === 0 ? PRENOMS[p++ % PRENOMS.length] : ""; });
+  // Camille : la 3e de « Je passerai un jour », plus grande, avec son prénom
+  const cam_ = f[21 + 2]; cam_.camille = true; cam_.nom = "Camille"; cam_.look = "fleuri"; cam_.s = .9;
+  return f;
+})();
+const CAMILLE = FOULE.findIndex((m) => m.camille);
+function foule() {
+  $("#foule").innerHTML = FOULE.map((m, k) => `<div class="mini abs${m.camille ? " camille" : ""}" style="--c:${GROUPES[m.g].c}"><img src="g/${m.look}-${k % 3 === 2 ? "salue" : "debout"}.webp" alt="">` +
+    `${m.nom ? `<b>${GROUPES[m.g].tag} ${m.nom}</b>` : ""}<span class="msg-b">💬</span></div>`).join("");
+  $("#envois").innerHTML = FOULE.map(() => '<span class="envoi abs">💬</span>').join("");
 }
 
 /* ── LA LIGNE DE TEMPS ── */
-const TEL = [1620, 1120];     // le centre du téléphone, dans le monde
 const tl = gsap.timeline({ paused: true });
+const HG = 300;   // la moitié de la boîte de Mike (600 px)
 function construire() {
   const H = $("#heros"), traces = $$(".trace");
   gsap.set("#cage", { x: CAGE_C[0] - 260, y: CAGE_C[1] - 400 });
-  gsap.set("#rayons", { x: CAGE_C[0] - 700, y: CAGE_C[1] - 700, scale: .3 });
-  gsap.set("#onde", { x: CAGE_C[0] - 60, y: CAGE_C[1] - 60 });
   gsap.set("#c-porte", { transformPerspective: 900, transformOrigin: "0% 50%" });
-  gsap.set("#doigt", { x: CAGE_C[0] - 75, y: CAGE_C[1] + 60 });
+  gsap.set("#rayons", { x: CAGE_C[0] - 700, y: CAGE_C[1] - 700 });
+  gsap.set("#onde", { x: CAGE_C[0] - 60, y: CAGE_C[1] - 60 });
+  gsap.set("#doigt0", { x: CAGE_C[0] - 75, y: CAGE_C[1] + 60 });
   gsap.set("#tel", { x: TEL[0] - 310, y: TEL[1] - 625 });
-  const depart = { x: CAGE_C[0] - 300, y: CAGE_C[1] - 245 };   // son fantôme, là où il est dans la cage (coin haut-gauche de 600 px)
-  gsap.set([H, ...traces], { ...depart, scale: .52, transformOrigin: "50% 50%" });
+  gsap.set(".fac", { x: FAC[0] - 500, y: FAC[1] - 597 });
+  // les centrages et les départs à zéro, posés ici plutôt qu'en CSS (GSAP lit mal un translate(-50 %) ou un scale(0) déjà là)
+  gsap.set("#nom-mike", { xPercent: -50, scale: 0 });
+  gsap.set(".film-vues", { xPercent: -50 });
+  gsap.set(".fac .fg", { xPercent: -50, yPercent: -100 });
+  gsap.set(["#bulle-chef", ".msg-b"], { scale: 0 });
+  const dans = { x: CAGE_C[0] - HG, y: CAGE_C[1] - 245 };     // Mike dans la cage
+  const pose = { x: 540 - HG, y: 960 - HG };                   // Mike posé, au milieu
+  gsap.set([H, ...traces], { ...dans, scale: .52, transformOrigin: "50% 50%" });
 
-  // ① TOUCHER LA CAGE : le doigt, la cage se tasse, la lumière monte… et tout saute
-  tl.fromTo("#doigt", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: .8, duration: .12, ease: "power2.out" }, 0)
-    .to("#doigt", { opacity: 0, scale: 2, duration: .35, ease: "power2.out" }, .12)
-    .to("#depart", { opacity: 0, duration: .3 }, 0)
-    .to("#cage", { scaleY: .93, scaleX: 1.04, y: CAGE_C[1] - 400 + 26, transformOrigin: "50% 100%", duration: .2, ease: "power2.in" }, 0)
+  // ═══ ① « Merci ! Je suis Mike, votre futur fantôme préféré. » : la cage explose ═══
+  tl.fromTo("#doigt0", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: .8, duration: .12 }, 0).to("#doigt0", { opacity: 0, scale: 2, duration: .35 }, .12)
+    .to(["#depart", "#bulle-cage"], { opacity: 0, duration: .25 }, 0)
+    .to("#cage", { scaleY: .93, scaleX: 1.04, y: CAGE_C[1] - 374, transformOrigin: "50% 100%", duration: .2, ease: "power2.in" }, 0)
     .to("#c-lueur", { opacity: 1, duration: .22, ease: "power2.in" }, 0)
     .to("#c-fant", { y: -20, scale: 1.08, duration: .2, ease: "power2.in" }, 0)
-    .to("#cage", { scaleY: 1.06, scaleX: .97, y: CAGE_C[1] - 400 - 30, rotation: -4, duration: .18, ease: "power3.out" }, T.eclate)
+    .to("#cage", { scaleY: 1.06, scaleX: .97, y: CAGE_C[1] - 430, rotation: -4, duration: .18, ease: "power3.out" }, T.eclate)
     .to("#cage", { scaleY: 1, scaleX: 1, rotation: 0, duration: 1.1, ease: "elastic.out(1,.35)" }, T.eclate + .18)
     .to("#c-porte", { rotationY: -128, duration: .5, ease: "back.out(2.2)" }, T.eclate)
     .set("#c-fant", { opacity: 0 }, T.eclate)
-    .to("#c-lueur", { opacity: 0, duration: .9, ease: "power2.out" }, T.eclate + .1)
-    .fromTo("#eclat", { opacity: 0 }, { opacity: .95, duration: .05 }, T.eclate)
-    .to("#eclat", { opacity: 0, duration: .55, ease: "power2.out" }, T.eclate + .05)
+    .to("#c-lueur", { opacity: 0, duration: .9 }, T.eclate + .1)
+    .fromTo("#eclat", { opacity: 0 }, { opacity: .95, duration: .05 }, T.eclate).to("#eclat", { opacity: 0, duration: .55 }, T.eclate + .05)
     .fromTo("#onde", { opacity: 1, scale: .5 }, { opacity: 0, scale: 22, duration: .85, ease: "expo.out" }, T.eclate)
     .fromTo("#rayons", { opacity: 0, scale: .25, rotation: 0 }, { opacity: 1, scale: 1.1, rotation: 18, duration: .35, ease: "expo.out" }, T.eclate)
-    .to("#rayons", { opacity: 0, rotation: 40, duration: 1.1, ease: "power2.out" }, T.eclate + .35)
-    // la cage s'efface dans le fond
-    .to("#cage", { y: CAGE_C[1] - 400 + 520, scale: .55, opacity: 0, duration: .9, ease: "power3.in" }, T.eclate + .75);
-
-  // ② SON VOL : il jaillit vers nous, fait une boucle, et se pose au milieu ; sa traînée le suit
-  const chemin = [ { x: depart.x, y: depart.y }, { x: depart.x + 40, y: depart.y - 420 }, { x: depart.x + 250, y: depart.y - 640 }, { x: depart.x + 330, y: depart.y - 380 },
-    { x: depart.x + 120, y: depart.y - 250 }, { x: depart.x - 150, y: depart.y - 430 }, { x: depart.x, y: depart.y - 170 } ];
-  const vol = (cible, retard, dur) => tl.to(cible, { motionPath: { path: chemin, curviness: 1.4 }, duration: dur, ease: "power2.inOut" }, T.eclate + retard);
+    .to("#rayons", { opacity: 0, rotation: 40, duration: 1.1 }, T.eclate + .35)
+    .to("#cage", { y: CAGE_C[1] + 120, scale: .55, opacity: 0, duration: .9, ease: "power3.in" }, T.eclate + .75);
+  const chemin = [dans, { x: dans.x + 40, y: dans.y - 420 }, { x: dans.x + 250, y: dans.y - 640 }, { x: dans.x + 330, y: dans.y - 380 }, { x: dans.x + 120, y: dans.y - 250 }, { x: dans.x - 150, y: dans.y - 430 }, pose];
+  const vol = (cible, retard) => tl.to(cible, { motionPath: { path: chemin, curviness: 1.4 }, duration: 1.15, ease: "power2.inOut" }, T.eclate + retard);
   tl.set(H, { opacity: 1 }, T.eclate);
-  vol(H, 0, 1.15);
-  traces.forEach((tr, k) => { tl.set(tr, { opacity: .32 - k * .06 }, T.eclate + .02); vol(tr, .045 * (k + 1), 1.15); tl.to(tr, { opacity: 0, duration: .2 }, T.eclate + 1.1 + k * .04); });
+  vol(H, 0);
+  traces.forEach((tr, k) => { tl.set(tr, { opacity: .32 - k * .06 }, T.eclate + .02); vol(tr, .045 * (k + 1)); tl.fromTo(tr, { scale: .52 }, { scale: 1.25, duration: .55 }, T.eclate + .045 * (k + 1)).to(tr, { opacity: 0, duration: .2 }, T.eclate + 1.1 + k * .04); });
   tl.fromTo(H, { scale: .52, rotation: -10 }, { scale: 1.32, rotation: 8, duration: .5, ease: "power2.out" }, T.eclate)
     .to(H, { scale: 1.05, rotation: -6, duration: .45, ease: "sine.inOut" }, T.eclate + .5)
-    .to(H, { scale: 1, rotation: 0, duration: .3, ease: "back.out(2)" }, T.eclate + .95);
-  traces.forEach((tr, k) => tl.fromTo(tr, { scale: .52 }, { scale: 1.25, duration: .55 }, T.eclate + .045 * (k + 1)));
-  // il atterrit : il s'écrase un peu, rebondit ; la toque lui tombe sur la tête ; il flotte
-  tl.to("#heros .corps", { scaleY: .86, scaleX: 1.1, transformOrigin: "50% 100%", duration: .1, ease: "power2.out" }, T.eclate + 1.15)
+    .to(H, { scale: 1, rotation: 0, duration: .3, ease: "back.out(2)" }, T.eclate + .95)
+    .to("#heros .corps", { scaleY: .86, scaleX: 1.1, transformOrigin: "50% 100%", duration: .1 }, T.eclate + 1.15)
     .to("#heros .corps", { scaleY: 1, scaleX: 1, duration: .55, ease: "elastic.out(1.2,.4)" }, T.eclate + 1.25)
     .fromTo("#heros .toque", { y: -520, rotation: -25, opacity: 0 }, { y: 0, rotation: 0, opacity: 1, duration: .55, ease: "bounce.out" }, T.eclate + 1.25)
-    .to("#heros .corps", { y: -24, duration: .9, yoyo: true, repeat: 1, ease: "sine.inOut" }, T.eclate + 1.8);
+    .to("#nom-mike", { scale: 1, duration: .5, ease: "back.out(2.4)" }, mot("v1", "Mike,") - .05)
+    .to("#heros .corps", { y: -22, duration: .9, yoyo: true, repeat: 3, ease: "sine.inOut" }, T.eclate + 1.8)
+    .to("#heros .corps", { rotation: 8, duration: .14, yoyo: true, repeat: 3, ease: "sine.inOut" }, mot("v1", "préféré.") - .05);
 
-  // ③ LA CAMÉRA FILE VERS LE TÉLÉPHONE ; son fantôme y vole et se perche sur le coin
-  tl.to(cam, { x: TEL[0], duration: .75, ease: "expo.inOut" }, T.panD)
-    .to(H, { motionPath: { path: [{ x: depart.x, y: depart.y - 170 }, { x: TEL[0] - 380, y: 260 }, { x: TEL[0] - 610, y: 560 }], curviness: 1.2 }, scale: .42, rotation: -10, duration: .85, ease: "power3.inOut" }, T.panD - .05)
-    .fromTo("#tel", { y: TEL[1] - 625 + 300, rotation: 6, opacity: 0 }, { y: TEL[1] - 625, rotation: 0, opacity: 1, duration: .8, ease: "expo.out" }, T.panD + .25)
-    .to(H, { rotation: 0, duration: .6, ease: "elastic.out(1,.4)" }, T.panD + .8);
-  // sa vidéo joue ; les j'aime montent et le compteur grimpe
-  tl.fromTo("#ph1", { scale: 1.02 }, { scale: 1.18, duration: 2.4, ease: "none" }, T.panD + .3)
-    .to("#ph2", { opacity: 1, duration: .35 }, VOIX.d + 1.4)
-    .fromTo("#ph2", { scale: 1.12 }, { scale: 1.02, duration: 2.2, ease: "none" }, VOIX.d + 1.4);
-  const nl = { v: 0 };
-  tl.to(nl, { v: 214, duration: T.rien - VOIX.d, ease: "power1.in", onUpdate: () => { $("#nlikes").textContent = Math.round(nl.v); } }, VOIX.d);
-  // « Moi, » : les j'aime deviennent gris, personne derrière
-  tl.to(["#ph1", "#ph2"], { filter: "brightness(.42) saturate(.4)", duration: .35 }, T.rien)
-    .to("#anonyme", { opacity: 1, scale: 1, rotation: -7, duration: .5, ease: "back.out(2.5)" }, T.rien + .05)
-    .to("#anonyme", { opacity: 0, scale: .6, duration: .3, ease: "power2.in" }, T.ramene + .2);
-  // « …je vous ramène ceux qui l'ont regardée » : il fait le tour du téléphone, et les ramène
-  // (les coins haut-gauche de sa boîte de 600 px : son centre est 300 px plus loin)
-  const tour = [{ x: TEL[0] - 610, y: 560 }, { x: TEL[0] - 540, y: 120 }, { x: TEL[0] + 40, y: 150 }, { x: TEL[0] + 100, y: 600 }, { x: TEL[0] - 20, y: 1200 }, { x: TEL[0] - 300, y: 1420 }, { x: TEL[0] - 620, y: 1150 }, { x: TEL[0] - 610, y: 560 }];
-  tl.to(H, { motionPath: { path: tour, curviness: 1.25 }, duration: 1.35, ease: "power1.inOut" }, T.ramene - .1)
-    .to(H, { scale: .5, rotation: 360, duration: 1.35, ease: "power1.inOut" }, T.ramene - .1)
-    .set(H, { rotation: 0 }, T.ramene + 1.26);
-
-  // ④ LA FIN DE SA VIDÉO : « Et vous ? », les trois cages ; le j'aime barré ; le doigt sur « Je viendrai un jour »
-  tl.to(["#ph1", "#ph2"], { filter: "brightness(.9) saturate(1)", duration: .3 }, T.ramene + .9)
-    .fromTo("#tcages", { opacity: 0, scale: 1.08 }, { opacity: 1, scale: 1, duration: .5, ease: "expo.out" }, T.cages)
-    .fromTo(".tc", { y: 90, opacity: 0 }, { y: 0, opacity: 1, duration: .6, stagger: .09, ease: "back.out(1.8)" }, T.cages + .1)
-    .to(".tc .tc-c", { rotation: 3, transformOrigin: "50% 0", duration: .9, yoyo: true, repeat: 3, ease: "sine.inOut", stagger: .2 }, T.cages + .6)
-    .to("#jaime", { scale: 1.15, duration: .15, ease: "power2.out" }, T.like - .15)
-    .to("#jaime i", { scaleX: 1, duration: .22, ease: "power3.out" }, T.like + .02)
-    .to("#jaime", { y: 160, rotation: -18, opacity: 0, duration: .6, ease: "power2.in" }, T.like + .45)
-    .fromTo("#doigt", { x: TEL[0] - 75, y: TEL[1] - 40, opacity: 0, scale: 1.5 }, { opacity: 1, scale: .8, duration: .14, ease: "power2.out" }, T.libere - .14)
-    .to("#doigt", { opacity: 0, scale: 2, duration: .35 }, T.libere)
-    .to("#tc-promis .tc-c", { scale: 1.18, duration: .14, ease: "power2.out" }, T.libere - .1)
-    .to("#tc-promis .porte-tc", { scaleX: -.35, transformOrigin: "0% 50%", duration: .4, ease: "back.out(2)" }, T.libere)
-    .to("#tc-promis .tc-fant", { opacity: 0, duration: .05 }, T.libere + .02)
-    .to("#tc-promis .tc-c", { scale: 1, duration: .5, ease: "elastic.out(1,.4)" }, T.libere + .1);
-
-  // ⑤ LA NUÉE : Camille d'abord, puis tous les autres, avec leur prénom ; la caméra recule
-  const sortie = { x: TEL[0] - 75, y: TEL[1] - 120 };
-  const minis = $$(".mini");
-  minis.forEach((m, k) => {
-    const c = CIBLES[k], quand = T.libere + .12 + (k === 0 ? 0 : .35 + k * .045);
-    gsap.set(m, { x: sortie.x, y: sortie.y, scale: .15 });
-    tl.set(m, { opacity: 1 }, quand)
-      .to(m, { motionPath: { path: [sortie, { x: (sortie.x + c.x) / 2 + (c.x < TEL[0] ? -220 : 220), y: Math.min(sortie.y, c.y) - 380 }, c], curviness: 1.3 }, duration: .95, ease: "power3.out" }, quand)
-      .to(m, { scale: c.s, duration: .95, ease: "back.out(1.6)" }, quand)
-      .fromTo(m.querySelector("b") || m, { opacity: m.querySelector("b") ? 0 : 1 }, { opacity: 1, duration: .2 }, quand + .7)
-      .to(m, { y: c.y - 16, duration: .8, yoyo: true, repeat: 1, ease: "sine.inOut" }, quand + 1.05);
+  // ═══ ② « Avec quelques photos, je fais une très belle vidéo de votre commerce, puis je la publie partout… » ═══
+  const polar = $$(".polar");
+  const PL = [{ x: 60, y: 480, r: -12 }, { x: 720, y: 500, r: 10 }, { x: 70, y: 1290, r: 8 }, { x: 710, y: 1270, r: -9 }];
+  const venues = [[-500, 200], [1500, 300], [-500, 1500], [1500, 1600]];
+  const tP = mot("v2", "photos,") - .35;
+  polar.forEach((p, k) => {
+    tl.fromTo(p, { x: venues[k][0], y: venues[k][1], rotation: PL[k].r * 4, scale: .6, opacity: 0 }, { x: PL[k].x, y: PL[k].y, rotation: PL[k].r, scale: 1, opacity: 1, duration: .55, ease: "back.out(1.4)", immediateRender: false }, tP + k * .14);
   });
-  tl.to(cam, { s: .72, y: TEL[1] - 40, duration: 1.4, ease: "expo.inOut" }, T.libere + .3)
-    .to("#tcages", { opacity: .0, duration: .5 }, T.libere + 1.2)
-    .to(H, { x: TEL[0] - 300, y: 300, scale: .5, duration: 1, ease: "power3.inOut" }, T.libere + .3);
-  const n = { v: 0 };
-  tl.fromTo("#compteur", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .5, ease: "expo.out" }, fin("e") + .4)
-    .to(n, { v: 38, duration: 1.1, ease: "power2.out", onUpdate: () => { $("#n38").textContent = Math.round(n.v); } }, fin("e") + .4);
-  // la fin de l'aperçu
-  tl.to("#fin", { opacity: 1, duration: .6 }, T.fin);
+  tl.to("#nom-mike", { scale: 0, duration: .25, ease: "power2.in" }, tP + .5);
+  // « je fais une très belle vidéo » : la caméra file vers le téléphone ; les photos y plongent ; Mike se perche sur le bord
+  const tF = mot("v2", "fais") - .15;
+  tl.to(cam, { x: TEL[0], duration: .8, ease: "expo.inOut" }, tF)
+    .fromTo("#tel", { y: TEL[1] - 625 + 260, rotation: 6, opacity: 0 }, { y: TEL[1] - 625, rotation: 0, opacity: 1, duration: .8, ease: "expo.out", immediateRender: false }, tF + .25);
+  polar.forEach((p, k) => tl.to(p, { x: TEL[0] - 150, y: TEL[1] - 180, rotation: 0, scale: .25, opacity: 0, duration: .55, ease: "power3.in" }, tF + .45 + k * .09));
+  // (en bas à gauche du téléphone : il ne cache ni le titre du film ni les réseaux)
+  tl.to(H, { motionPath: { path: [pose, { x: TEL[0] - 760, y: 900 }, { x: TEL[0] - 330 - HG, y: 1590 - HG }], curviness: 1.2 }, scale: .42, rotation: -10, duration: .85, ease: "power3.inOut" }, tF)
+    .to(H, { rotation: 0, duration: .6, ease: "elastic.out(1,.4)" }, tF + .85);
+  // le film : ses photos qui s'enchaînent, le titre, la lumière
+  const ph = $$("#ecran .ph"), tFilm = tF + .9;
+  ph.forEach((p, k) => {
+    const a = tFilm + k * 1.25;
+    tl.fromTo(p, { opacity: 0, scale: 1.16 }, { opacity: 1, scale: 1.02, duration: .5, ease: "power2.out", immediateRender: false }, a).to(p, { scale: 1.16, duration: 1.6, ease: "none" }, a + .5);
+  });
+  tl.fromTo(".film-sig", { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: .4 }, tFilm + .3)
+    .fromTo(".film-titre", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .6, ease: "expo.out" }, mot("v2", "commerce,") - .25)
+    .to(".film-lumiere", { opacity: 1, duration: .5, yoyo: true, repeat: 3 }, tFilm + .2);
+  // « puis je la publie partout » : les réseaux sortent du téléphone, et se cochent
+  const RS = [[TEL[0] - 445, 660], [TEL[0] + 445, 660], [TEL[0] - 445, 1210], [TEL[0] + 445, 1210], [TEL[0], 1820]];
+  const tR = mot("v2", "publie") - .1;
+  $$(".rs").forEach((r, k) => {
+    tl.fromTo(r, { x: TEL[0] - 85, y: TEL[1] - 90, scale: .2, opacity: 0 }, { x: RS[k][0] - 85, y: RS[k][1] - 90, scale: 1, opacity: 1, duration: .6, ease: "back.out(1.6)", immediateRender: false }, tR + k * .1)
+      .fromTo(r.querySelector("em"), { scale: 0 }, { scale: 1, duration: .4, ease: "back.out(3)", immediateRender: false }, tR + .45 + k * .1);
+  });
+  // « pour que tout le monde la voie » : les vues montent partout, les cœurs aussi
+  const tV = mot("v2", "monde") - .3;
+  $$(".rs small").forEach((s) => { const o = { v: 0 }, n = +s.dataset.vues; tl.to(o, { v: n, duration: 1.4, ease: "power2.out", onUpdate: () => { s.textContent = "👁 " + Math.round(o.v).toLocaleString("fr-FR"); } }, tV); });
+  const nv = { v: 0 };
+  tl.fromTo(".film-vues", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .4 }, tV)
+    .to(nv, { v: 3482, duration: 1.4, ease: "power2.out", onUpdate: () => { $("#nvues").textContent = Math.round(nv.v).toLocaleString("fr-FR"); } }, tV);
+
+  // ═══ ③ « Mais ce n'est pas là que je suis le plus fort. C'est juste après. » ═══
+  const t3 = VOIX.v3;
+  tl.to(".rs", { opacity: .18, scale: .85, duration: .5, stagger: .04 }, t3 + .1)
+    .to(".film-vues", { opacity: 0, duration: .3 }, t3)
+    .to(H, { rotation: 12, duration: .12, yoyo: true, repeat: 5, ease: "sine.inOut" }, mot("v3", "plus") - .1)
+    .to(cam, { s: 1.06, y: 916, duration: 1.4, ease: "power2.inOut" }, t3 + .2)   // le haut du téléphone reste sous les mots
+    .fromTo(".film-barre", { opacity: 0 }, { opacity: 1, duration: .25 }, t3 + .3)
+    .fromTo(".film-barre i", { scaleX: .45 }, { scaleX: 1, duration: mot("v3", "après.") - t3 - .3, ease: "power2.in" }, t3 + .3)
+    .fromTo(".film-avance", { opacity: 0 }, { opacity: 1, duration: .2, yoyo: true, repeat: 5 }, t3 + .4)
+    .to(".film-titre", { opacity: 0, duration: .3 }, t3 + .4);
+  ph.forEach((p, k) => tl.to(p, { opacity: k === 3 ? 1 : 0, duration: .12 }, t3 + .5 + k * .3));
+  // « C'est juste après. » : la fin de la vidéo ; Mike la montre du doigt (il bondit)
+  tl.to(H, { y: "-=60", duration: .2, yoyo: true, repeat: 1, ease: "power2.out" }, mot("v3", "juste") - .05)
+    .to("#ecran .ph", { filter: "brightness(.25) blur(6px)", duration: .4 }, mot("v3", "après.") + .05)
+    .to([".film-barre", ".film-sig", ".film-avance"], { opacity: 0, duration: .3 }, mot("v3", "après.") + .15);
+
+  // ═══ ④ « À la fin de la vidéo, chaque personne peut libérer son fantôme… : j'adore, je passerai un jour, je passe aujourd'hui » ═══
+  const t4 = VOIX.v4;
+  // la caméra plonge dans le téléphone : les trois cages, en grand ; Mike se pousse en bas à gauche
+  tl.to(cam, { s: 1.45, y: 1000, duration: .9, ease: "power3.inOut" }, t4 - .2)
+    .to(H, { x: TEL[0] - 250 - HG, y: 1450 - HG, scale: .4, duration: .9, ease: "power3.inOut" }, t4 - .2)
+    .to("#ilot", { opacity: 0, duration: .3 }, t4 - .2).to("#ilot", { opacity: 1, duration: .3 }, mot("v4", "“J’adore") + .4)   // (l'encoche passerait sous les mots)
+    .fromTo("#tcages", { opacity: 0, scale: 1.08 }, { opacity: 1, scale: 1, duration: .5, ease: "expo.out", immediateRender: false }, t4)
+    .fromTo(".tc", { y: 90, opacity: 0 }, { y: 0, opacity: 1, duration: .6, stagger: .1, ease: "back.out(1.8)", immediateRender: false }, t4 + .1)
+    .to(".tc-c", { rotation: 3, transformOrigin: "50% 0", duration: .9, yoyo: true, repeat: 9, ease: "sine.inOut", stagger: .25 }, t4 + .7);
+  // trois personnes touchent chacune une cage
+  const CG = [[TEL[0] - 186, TEL[1] - 10], [TEL[0], TEL[1] - 10], [TEL[0] + 186, TEL[1] - 10]];
+  ["personne", "libérer", "fantôme"].forEach((w, k) => {
+    const q = mot("v4", w) - .1, dg = "#doigt" + (k + 1);
+    tl.fromTo(dg, { x: CG[k][0] - 75, y: CG[k][1] - 20, opacity: 0, scale: 1.5 }, { opacity: 1, scale: .8, duration: .12, immediateRender: false }, q).to(dg, { opacity: 0, scale: 2, duration: .3 }, q + .12)
+      .to(`#tc${k + 1} .tc-c`, { scale: 1.15, duration: .12 }, q).to(`#tc${k + 1} .tc-c`, { scale: 1, duration: .5, ease: "elastic.out(1,.4)" }, q + .12);
+    GERBES.push(gerbe(20 + k, 40, CG[k][0], CG[k][1] - 40, 250, 800, ["255,190,110", "255,93,184", "255,255,255"], q + .05, [3, 5], [.4, .9], 400));
+  });
+  tl.to(".rs", { opacity: 0, duration: .4 }, t4);   // les réseaux ont fait leur travail
+  // chaque choix dit : sa cage s'allume, et son groupe de fantômes en jaillit
+  const dits = [mot("v4", "“J’adore") - .1, mot("v4", "“Je") - .1, mot("v4", "“Je", 1) - .1];
+  const minis = $$(".mini");
+  GROUPES.forEach((G, g) => {
+    const q = dits[g];
+    tl.to(`#tc${g + 1} .halo`, { opacity: .85, duration: .25 }, q).to(`#tc${g + 1} .halo`, { opacity: .25, duration: .6 }, q + .9)
+      .to(`#tc${g + 1}`, { scale: 1.12, duration: .2, yoyo: true, repeat: 1 }, q)
+      .to(`#tc${g + 1} .porte-tc`, { scaleX: -.35, transformOrigin: "0% 50%", duration: .35, ease: "back.out(2)" }, q);
+    GERBES.push(gerbe(30 + g, 50, CG[g][0], CG[g][1] - 60, 300, 1000, g === 0 ? ["255,93,184", "255,200,230"] : g === 1 ? ["255,190,110", "255,230,170"] : ["61,226,166", "200,255,230"], q + .05, [3, 5], [.5, 1], 300));
+    const idx = FOULE.map((m, k) => [m, k]).filter(([m]) => m.g === g);
+    idx.forEach(([m, k], j) => {
+      const el = minis[k], a = q + .05 + j * (g === 0 ? .045 : .07), dep = { x: CG[g][0] - 75, y: CG[g][1] - 120 };
+      const ar = { x: m.x - 75, y: m.y - 90 };
+      gsap.set(el, { ...dep, scale: .15 });
+      tl.set(el, { opacity: 1 }, a)
+        .to(el, { motionPath: { path: [dep, { x: (dep.x + ar.x) / 2, y: Math.min(dep.y, ar.y) - 300 }, ar], curviness: 1.3 }, duration: .9, ease: "power3.out" }, a)
+        .to(el, { scale: m.s, duration: .9, ease: "back.out(1.6)" }, a)
+        .to(el, { y: ar.y - 14, duration: .7, yoyo: true, repeat: 1, ease: "sine.inOut" }, a + 1);
+    });
+  });
+  // dès « J'adore », la caméra recule : les fantômes sortent des cages et se rangent autour, chaque groupe avec ce qu'il a dit
+  tl.to(cam, { s: .68, y: TEL[1] + 60, duration: 1.5, ease: "power2.inOut" }, dits[0] - .2)
+    .to("#voile", { opacity: 1, duration: .6 }, dits[0])
+    .to("#tcages", { opacity: .35, duration: .5 }, fin("v4"));
+  const GP = [[1150, 430], [2100, 430], [TEL[0], 2120]];
+  ["#g1", "#g2", "#g3"].forEach((g, k) => { gsap.set(g, { x: GP[k][0], y: GP[k][1], xPercent: -50, yPercent: -50 }); tl.fromTo(g, { opacity: 0, scale: .4 }, { opacity: 1, scale: 1, duration: .5, ease: "back.out(2)", immediateRender: false }, dits[k] + .9); });
+  tl.to(H, { x: TEL[0] - HG, y: 370 - HG, scale: .5, duration: .9, ease: "power3.inOut" }, fin("v4") + .2);
+
+  // ═══ ⑤ « Et à partir de là, mon vrai travail commence. » ═══
+  const t5 = VOIX.v5, centre = { x: TEL[0] - HG, y: TEL[1] + 60 + (1180 - 960) / .68 - HG };
+  tl.to(["#foule", "#tel", ".groupe"], { filter: "brightness(.35) saturate(.6)", duration: .5 }, t5 - .1)
+    .to(H, { ...centre, scale: 1.45, duration: .8, ease: "expo.out" }, t5 - .1)
+    .to("#heros .corps", { rotation: -8, duration: .18, yoyo: true, repeat: 3 }, mot("v5", "travail") - .1)
+    .fromTo("#eclair-diag", { opacity: 0, x: 0 }, { opacity: 1, x: 2400, duration: .9, ease: "power2.inOut", immediateRender: false }, mot("v5", "vrai") - .2);
+  GERBES.push(gerbe(40, 70, centre.x + HG, centre.y + HG - 80, 400, 1300, ["255,214,140", "255,93,184", "255,255,255"], mot("v5", "commence.") - .05, [2.5, 4], [.6, 1.3], 500));
+
+  // ═══ ⑥ « J'écris à chaque personne qui a libéré son fantôme, pour faire connaissance… » ═══
+  const t6 = VOIX.v6, envois = $$(".envoi");
+  tl.to(["#foule", "#tel", ".groupe"], { filter: "brightness(1) saturate(1)", duration: .4 }, t6 - .05)
+    .to(H, { x: TEL[0] - HG, y: TEL[1] - 100 - HG, scale: .7, duration: .6, ease: "power3.inOut" }, t6 - .1);
+  FOULE.forEach((m, k) => {
+    const a = t6 + .25 + k * .035, dep = { x: TEL[0] - 35, y: TEL[1] - 160 }, ar = { x: m.x - 35, y: m.y - 110 };
+    tl.fromTo(envois[k], { ...dep, opacity: 0, scale: .3 }, { opacity: 1, scale: 1, duration: .1, immediateRender: false }, a)
+      .to(envois[k], { motionPath: { path: [dep, { x: (dep.x + ar.x) / 2, y: Math.min(dep.y, ar.y) - 200 }, ar], curviness: 1.2 }, duration: .55, ease: "power2.inOut" }, a)
+      .to(envois[k], { opacity: 0, scale: .4, duration: .15 }, a + .55)
+      .to(minis[k].querySelector(".msg-b"), { scale: 1, duration: .35, ease: "back.out(3)" }, a + .55);
+  });
+  // « pour faire connaissance » : la caméra s'approche de Camille ; la conversation monte
+  // (son centre : la boîte de Camille fait 220 px de large, posée comme celle des autres, 150 px)
+  const cm = FOULE[CAMILLE], cc = { x: cm.x + 35, y: cm.y + 31 }, tC = mot("v6", "pour") - .3;
+  tl.to(cam, { x: cc.x, y: cc.y + 283, s: 1.2, duration: 1, ease: "expo.inOut" }, tC)      // elle, au-dessus de la conversation
+    .to(H, { x: cc.x - 290 - HG, y: cc.y - 10 - HG, scale: .45, duration: 1, ease: "expo.inOut" }, tC)
+    .to("#chat", { y: 0, duration: .8, ease: "expo.out" }, tC + .4)
+    .to(".mini:not(.camille)", { opacity: .22, duration: .5 }, tC)    // la foule s'efface : elle seule
+    .to([".groupe", "#tel"], { opacity: 0, duration: .3 }, tC);
+  // la conversation : chaque bulle est déjà dans la page, la ligne de temps l'affiche (rien ne dépend de l'horloge)
+  FIL = [
+    [mot("v6", "pour") + .2, '<span class="jour">Le lendemain</span>'],
+    [mot("v6", "pour") + .3, '<p class="msg mike"><small>👻 Mike, pour Camille</small>Merci Camille' + NB + '! Tu passeras un jour, c’est promis 😊 Plutôt en semaine ou le week-end' + NB + '?</p>'],
+    [mot("v6", "connaissance.") + .4, '<p class="msg elle">En semaine</p>', 1],
+    [mot("v6", "Je") - .05, '<p class="msg mike"><small>👻 Mike</small>Noté' + NB + '! Et plutôt viande ou poisson' + NB + '?</p>'],
+    [mot("v6", "mieux"), '<p class="msg elle">Poisson 🐟</p>', 2],
+    [mot("v6", "chaque", 1) - .05, '<p class="msg mike"><small>👻 Mike</small>Je te préviens quand il y a de la place' + NB + '?</p>'],
+    [mot("v6", "réponse…") + .15, '<p class="msg elle">Oui' + NB + '!</p>', 3],
+    [mot("v6", "jusqu’au") - .15, '<span class="jour calme">Mardi · 11 h · c’est calme</span>'],
+    [mot("v6", "jusqu’au") - .05, '<p class="msg wa"><small>Sur votre WhatsApp</small>Il reste une table ce midi, Camille. Je te la garde' + NB + '?</p>'],
+    [mot("v6", "où") + .05, '<p class="msg elle">J’arrive' + NB + '! 😍</p>'],
+  ];
+  $("#fil").innerHTML = FIL.map((x) => x[1]).join("");
+  [...$("#fil").children].forEach((el, k) => {
+    const [q, , tag] = FIL[k];
+    tl.set(el, { display: "block" }, q)
+      .fromTo(el, { opacity: 0, y: 40, scale: .94 }, { opacity: 1, y: 0, scale: 1, duration: .4, ease: "back.out(1.8)", immediateRender: false }, q);
+    if (tag) etiquette(tag, q + .1);
+  });
+  // « elle pousse votre porte » : la conversation descend ; la caméra file vers sa façade ; la porte s'ouvre
+  const tPo = mot("v6", "pousse") - .25;
+  T.porte = tPo + 1.0;
+  tl.to("#chat", { y: 1200, duration: .6, ease: "power3.in" }, tPo - .1)
+    .to("#voile", { opacity: 0, duration: .5 }, tPo + .3)
+    .to(cam, { x: FAC[0], y: FAC[1], s: 1, duration: 1.1, ease: "expo.inOut" }, tPo)
+    .to(H, { x: FAC[0] + 330 - HG, y: FAC[1] + 260 - HG, scale: .42, duration: 1.1, ease: "expo.inOut" }, tPo)
+    .fromTo(".fac .arrivent .fg", { x: -620, opacity: 0 }, { x: 0, opacity: 1, duration: 1.1, stagger: .18, ease: "power2.out", immediateRender: false }, tPo + .5)
+    .to(".fac-battant", { rotationY: -105, transformPerspective: 800, duration: .7, ease: "power3.out" }, T.porte)
+    .to(".fac-lumiere", { opacity: 1, duration: .5 }, T.porte + .05)
+    .to(".fac .arrivent .fg", { x: "+=170", scale: .72, opacity: 0, duration: .7, stagger: .15, ease: "power2.in" }, T.porte + .55)
+    .to("#bulle-chef", { scale: 1, duration: .5, ease: "back.out(2.4)" }, T.porte + .3);
+  etiquette(4, T.porte + .9);
+  gsap.set("#venue", { x: FAC[0], y: FAC[1] + 700, xPercent: -50 });
+  tl.fromTo("#venue", { opacity: 0, y: FAC[1] + 760 }, { opacity: 1, y: FAC[1] + 700, duration: .5, ease: "back.out(2)", immediateRender: false }, T.porte + 1.0);
+
+  // ═══ ⑦ « Votre fantôme vous attend. » ═══
+  const t7 = VOIX.v7;
+  tl.to("#finale", { opacity: 1, duration: .6 }, t7 - .5)
+    .set("#finale", { pointerEvents: "auto" }, t7)
+    .fromTo("#fi-mike", { y: -260, scale: .6, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: .9, ease: "elastic.out(1,.55)", immediateRender: false }, t7 - .35)
+    .to("#fi-mike", { y: -18, duration: .9, yoyo: true, repeat: 3, ease: "sine.inOut" }, t7 + .6);
+  const tt = $("#fi-titre"), ws = mots("v7");
+  tt.innerHTML = ws.map((w) => `<span class="m${["vous", "attend."].includes(w) ? " fort" : ""}">${w}</span>`).join(" ");
+  $$("#fi-titre .m").forEach((s, i) => tl.fromTo(s, { opacity: 0, y: 70, scale: 1.3, filter: "blur(14px)" }, { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: .4, ease: "expo.out", immediateRender: false }, VOIX.v7 + (TEMPS.v7?.m?.[i] ?? i * .3) - .05));
+  tl.fromTo(".fi-puces span", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .4, stagger: .14, ease: "back.out(2)", immediateRender: false }, fin("v7") + .1)
+    .fromTo(".fi-boutons", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .5, ease: "expo.out", immediateRender: false }, fin("v7") + .6);
+  GERBES.push(gerbe(50, 90, 540 + 0, 400, 400, 1400, ["255,214,140", "255,93,184", "61,226,166", "255,255,255"], t7 - .1, [2, 3.5], [.8, 1.6], 600));
   construireMots(tl);
 }
-// la foule : 38 fantômes nommés autour du téléphone (Camille la première, plus grande)
-const PRENOMS = ["Camille", "Hugo", "Inès", "Nathan", "Manon", "Jules", "Sarah", "Adam", "Zoé", "Louis", "Chloé", "Emma", "Léo", "Lina", "Tom", "Jade", "Noah", "Rose", "Malo"];
-const LOOKS = ["fleuri", "cosy", "curieux", "artiste", "denim", "rebelle", "soleil", "voyageur"];
-const COULEURS = ["#F5A23A", "#FF2E9A", "#3DE2A6", "#8E7CFF", "#FF7A59", "#4FB8FF"];
-const CIBLES = (() => {
-  const r = hasard(5), c = [];
-  c.push({ x: TEL[0] - 115, y: 1790, s: 1 });   // Camille, devant, en bas au milieu
-  for (let k = 1; k < 38; k++) {
-    const g = k % 2 === 0, j = Math.floor((k - 1) / 2), rang = j % 6, col = Math.floor(j / 6);
-    const cx = g ? [1190, 1050, 910][col] : [2040, 2170, 2300][col];
-    c.push({ x: cx - 75 + (r() - .5) * 40, y: TEL[1] - 600 + rang * 215 + (r() - .5) * 60 + col * 40, s: .85 + r() * .3 });
-  }
-  return c;
-})();
-function foule() {
-  $("#foule").innerHTML = CIBLES.map((c, k) => {
-    const nom = k < PRENOMS.length && (k === 0 || k % 2 === 0 || k < 6) ? PRENOMS[k] : "";
-    return `<div class="mini abs${k === 0 ? " camille" : ""}" style="--c:${COULEURS[k % COULEURS.length]}"><img src="g/${LOOKS[k % 8]}-${k % 3 === 2 ? "salue" : "debout"}.webp" alt="">${nom ? `<b>${nom}</b>` : ""}</div>`;
-  }).join("");
+let FIL = [];   // [instant, bulle, étiquette] de la conversation avec Camille (le son en a besoin)
+// ce que Mike apprend d'elle : une étiquette de plus dans l'en-tête de la conversation
+function etiquette(k, q) {
+  tl.set("#tag" + k, { display: "inline-block" }, q)
+    .fromTo("#tag" + k, { scale: 0 }, { scale: 1, duration: .4, ease: "back.out(2.5)", immediateRender: false }, q);
 }
 
-/* ── LES PARTICULES QUI DÉPENDENT DE LA LIGNE DE TEMPS : relevées une fois ── */
+/* ── LES PARTICULES RELEVÉES SUR LA LIGNE DE TEMPS ── */
 function relever() {
-  // sa poussière d'or : là où il passe, toutes les 25 ms de son vol
   const r = hasard(3), H = $("#heros");
+  GERBES.unshift(gerbe(11, 150, CAGE_C[0], CAGE_C[1], 500, 2200, ["255,214,140", "255,93,184", "255,255,255"], T.eclate));
   SILLAGE = [];
-  const vols = [[T.eclate + .05, T.eclate + 1.2], [T.panD, T.panD + .85], [T.ramene - .1, T.ramene + 1.25]];
-  for (const [a, b] of vols) for (let t = a; t < b; t += 0.025) {
-    tl.seek(t, false);
-    const x = gsap.getProperty(H, "x") + 300, y = gsap.getProperty(H, "y") + 300 + 170 * gsap.getProperty(H, "scale");
+  for (const [a, b] of [[T.eclate + .05, T.eclate + 1.2], [mot("v2", "fais") - .15, mot("v2", "fais") + .7], [VOIX.v5 - .1, VOIX.v5 + .7]]) for (let t = a; t < b; t += .025) {
+    tl.seek(t, true);
+    const x = gsap.getProperty(H, "x") + HG, y = gsap.getProperty(H, "y") + HG + 170 * gsap.getProperty(H, "scale");
     SILLAGE.push({ t, x: x + (r() - .5) * 60, y: y + (r() - .5) * 60, dx: (r() - .5) * 60, dy: 20 + r() * 50, vie: .5 + r() * .5, r: 4 + r() * 7 });
   }
-  // les j'aime : 46, de son cœur vers le haut
-  const rc = hasard(9), cx = TEL[0] + 250, cy = TEL[1] + 250;
-  COEURS = Array.from({ length: 46 }, (_, k) => ({ k, t: VOIX.d + .05 + k * (T.rien - VOIX.d - .1) / 46, x: cx + (rc() - .5) * 40, y: cy, v: 260 + rc() * 220, vie: 1.4 + rc() * .8, r: 18 + rc() * 16, ph: rc() * 6.28 }));
-  // la cage choisie : un petit feu d'artifice
-  const rf = hasard(13);
-  FLASH_CAGE = Array.from({ length: 60 }, () => { const a = rf() * 6.283, v = 300 + rf() * 900;
-    return { x: TEL[0] + 5, y: TEL[1] - 40, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 200, k: 3 + rf() * 2, vie: .5 + rf() * .6, r: 3 + rf() * 5, c: rf() < .5 ? "255,190,110" : "255,93,184" }; });
-  tl.seek(0, false);
+  const rc = hasard(9), tV = mot("v2", "monde") - .3;
+  COEURS = Array.from({ length: 40 }, (_, k) => ({ t: tV + k * .045, x: TEL[0] + 240 + (rc() - .5) * 60, y: TEL[1] + 330, v: 280 + rc() * 260, vie: 1.3 + rc() * .8, r: 18 + rc() * 18, ph: rc() * 6.28,
+    c: ["#FF3B5C", "#FF5DB8", "#FFB347"][k % 3] }));
+  tl.seek(0, true);
 }
 
-/* ── LE SON : les voix, une musique pop (120 BPM, en majeur) et les bruits, joués par le navigateur ── */
+/* ── LE SON : les voix, une musique pop (120 BPM, en majeur), les bruits — joués par le navigateur ── */
 const NOTE = (n) => 440 * Math.pow(2, (n - 69) / 12);
 function composer(ctx, sortie, t0, voix) {
   const maitre = ctx.createGain(); maitre.gain.value = .9;
   const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -10; comp.knee.value = 6; comp.ratio.value = 4; comp.attack.value = .003; comp.release.value = .2;
   maitre.connect(comp); comp.connect(sortie);
-  const busV = ctx.createGain(); busV.gain.value = 1; busV.connect(maitre);
-  const busM = ctx.createGain(); busM.gain.value = 1; busM.connect(maitre);
+  const busV = ctx.createGain(); busV.connect(maitre);
+  const busM = ctx.createGain(); busM.connect(maitre);
   const busS = ctx.createGain(); busS.gain.value = .7; busS.connect(maitre);
-  // un écho pour les arpèges
   const echo = ctx.createDelay(1); echo.delayTime.value = .375; const fb = ctx.createGain(); fb.gain.value = .32; const wet = ctx.createGain(); wet.gain.value = .3;
   echo.connect(fb); fb.connect(echo); echo.connect(wet); wet.connect(busM);
   const bruitB = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate); { const c = bruitB.getChannelData(0); const r = hasard(1); for (let i = 0; i < c.length; i++) c[i] = r() * 2 - 1; }
-  const env = (g, t, a, pic, d) => { g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(pic, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + a + d); };
-  const osc = (type, f, t, a, pic, d, dest, f2, detune = 0) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); o.detune.value = detune;
-    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + a + d); env(g, t, a, pic, d); o.connect(g); g.connect(dest); o.start(t); o.stop(t + a + d + .05); return g; };
-  const bruit = (t, d, type, f, q, pic, dest, f2) => { const s = ctx.createBufferSource(); s.buffer = bruitB; const fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.setValueAtTime(f, t); fl.Q.value = q;
-    if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + d); const g = ctx.createGain(); env(g, t, .002, pic, d); s.connect(fl); fl.connect(g); g.connect(dest); s.start(t, Math.random()); s.stop(t + d + .05); };
-  // ─ la musique : do – sol – la mineur – fa, une mesure chacun (2 s), dès que la cage saute
-  const BPM = 120, temps = 60 / BPM, debutM = t0 + T.eclate, finM = t0 + DUREE;
+  const rr = hasard(77);
+  const env = (g, t, a, pic, dd) => { g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(pic, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + a + dd); };
+  const osc = (type, f, t, a, pic, dd, dest, f2) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + a + dd); env(g, t, a, pic, dd); o.connect(g); g.connect(dest); o.start(t); o.stop(t + a + dd + .05); };
+  const bruit = (t, dd, type, f, q, pic, dest, f2) => { const s = ctx.createBufferSource(); s.buffer = bruitB; const fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.setValueAtTime(f, t); fl.Q.value = q;
+    if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + dd); const g = ctx.createGain(); env(g, t, .002, pic, dd); s.connect(fl); fl.connect(g); g.connect(dest); s.start(t, rr()); s.stop(t + dd + .05); };
+  // ─ la musique : do – sol – la mineur – fa ; la batterie se tait sous « mon vrai travail commence », puis repart
+  const temps = .5, debutM = t0 + T.eclate, finM = t0 + DUREE;
+  const pause0 = t0 + VOIX.v5 - .1, pause1 = t0 + VOIX.v6 - .05;
   const ACC = [[48, 52, 55, 60, 64], [43, 47, 50, 55, 62], [45, 48, 52, 57, 64], [41, 45, 48, 53, 60]];
   for (let b = 0; debutM + b * temps < finM - .2; b++) {
-    const t = debutM + b * temps, mes = Math.floor(b / 4), acc = ACC[mes % 4], dansMes = b % 4;
-    // la grosse caisse, à chaque temps
-    const k = ctx.createOscillator(), kg = ctx.createGain(); k.frequency.setValueAtTime(150, t); k.frequency.exponentialRampToValueAtTime(46, t + .12);
-    kg.gain.setValueAtTime(.0001, t); kg.gain.exponentialRampToValueAtTime(.95, t + .004); kg.gain.exponentialRampToValueAtTime(.0001, t + .32); k.connect(kg); kg.connect(busM); k.start(t); k.stop(t + .35);
-    // le claquement, sur 2 et 4
-    if (dansMes % 2 === 1) { for (const dt of [0, .011, .022]) bruit(t + dt, .02, "bandpass", 1600, .9, .28, busM); bruit(t + .03, .16, "bandpass", 1400, .8, .2, busM); }
-    // les charleys, entre les temps (et un peu sur les doubles-croches)
-    bruit(t + temps / 2, .045, "highpass", 7500, .7, .13, busM); bruit(t + temps / 4, .02, "highpass", 9000, .7, .045, busM); bruit(t + temps * 3 / 4, .02, "highpass", 9000, .7, .045, busM);
-    // la basse, en contretemps (elle « pompe »)
-    const bs = ctx.createOscillator(), bf = ctx.createBiquadFilter(), bg = ctx.createGain(); bs.type = "sawtooth"; bs.frequency.value = NOTE(acc[0] - 12);
-    bf.type = "lowpass"; bf.frequency.value = 420; env(bg, t + temps / 2, .006, .3, .2); bs.connect(bf); bf.connect(bg); bg.connect(busM); bs.start(t + temps / 2); bs.stop(t + temps);
-    // l'arpège, en doubles-croches, avec son écho
+    const t = debutM + b * temps, acc = ACC[Math.floor(b / 4) % 4], dm = b % 4, batterie = t < pause0 || t >= pause1;
+    if (batterie) {
+      const k = ctx.createOscillator(), kg = ctx.createGain(); k.frequency.setValueAtTime(150, t); k.frequency.exponentialRampToValueAtTime(46, t + .12);
+      kg.gain.setValueAtTime(.0001, t); kg.gain.exponentialRampToValueAtTime(.95, t + .004); kg.gain.exponentialRampToValueAtTime(.0001, t + .32); k.connect(kg); kg.connect(busM); k.start(t); k.stop(t + .35);
+      if (dm % 2 === 1) { for (const dt of [0, .011, .022]) bruit(t + dt, .02, "bandpass", 1600, .9, .28, busM); bruit(t + .03, .16, "bandpass", 1400, .8, .2, busM); }
+      bruit(t + temps / 2, .045, "highpass", 7500, .7, .13, busM); bruit(t + temps / 4, .02, "highpass", 9000, .7, .045, busM); bruit(t + temps * 3 / 4, .02, "highpass", 9000, .7, .045, busM);
+      const bs = ctx.createOscillator(), bf = ctx.createBiquadFilter(), bg = ctx.createGain(); bs.type = "sawtooth"; bs.frequency.value = NOTE(acc[0] - 12);
+      bf.type = "lowpass"; bf.frequency.value = 420; env(bg, t + temps / 2, .006, .3, .2); bs.connect(bf); bf.connect(bg); bg.connect(busM); bs.start(t + temps / 2); bs.stop(t + temps);
+    }
     for (let s = 0; s < 4; s++) {
-      const n = acc[[2, 3, 4, 3][s] + 0] + 12, ts = t + s * temps / 4;
+      const n = acc[[2, 3, 4, 3][s]] + 12, ts = t + s * temps / 4;
       const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain(); o.type = "square"; o.frequency.value = NOTE(n);
-      f.type = "lowpass"; f.frequency.setValueAtTime(3200, ts); f.frequency.exponentialRampToValueAtTime(700, ts + .12); env(g, ts, .003, .055, .13);
+      f.type = "lowpass"; f.frequency.setValueAtTime(3200, ts); f.frequency.exponentialRampToValueAtTime(700, ts + .12); env(g, ts, .003, batterie ? .055 : .07, .13);
       o.connect(f); f.connect(g); g.connect(busM); g.connect(echo); o.start(ts); o.stop(ts + .16);
     }
-    // la nappe, au début de chaque mesure
-    if (dansMes === 0) for (const n of acc.slice(1, 4)) for (const det of [-9, 0, 9]) {
+    if (dm === 0) for (const n of acc.slice(1, 4)) for (const det of [-9, 0, 9]) {
       const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain(); o.type = "sawtooth"; o.frequency.value = NOTE(n); o.detune.value = det;
       f.type = "lowpass"; f.frequency.value = 1500; g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.018, t + .25); g.gain.linearRampToValueAtTime(.012, t + 1.8); g.gain.linearRampToValueAtTime(.0001, t + 2.05);
       o.connect(f); f.connect(g); g.connect(busM); o.start(t); o.stop(t + 2.1);
     }
   }
+  // la montée avant que la batterie reparte
+  bruit(pause1 - 1.2, 1.2, "bandpass", 300, 1.2, .28, busM, 6000);
   // sous les voix, la musique se fait plus discrète
-  for (const [c, x] of Object.entries(VOIX)) { const a = t0 + x, b = t0 + fin(c);
+  for (const c of Object.keys(VOIX)) { const a = t0 + VOIX[c], b = t0 + fin(c);
     busM.gain.setValueAtTime(1, a - .12); busM.gain.linearRampToValueAtTime(.42, a - .02); busM.gain.setValueAtTime(.42, b); busM.gain.linearRampToValueAtTime(1, b + .25); }
-  busM.gain.setValueAtTime(busM.gain.value, t0 + T.fin); busM.gain.linearRampToValueAtTime(.0001, t0 + DUREE);
+  busM.gain.setValueAtTime(1, finM - 1.6); busM.gain.linearRampToValueAtTime(.0001, finM);
   // ─ les bruits
   const S = {
     eclate: (t) => { osc("sine", 70, t, .004, .9, .9, busS, 38); bruit(t, 1.5, "highpass", 3500, .5, .32, busS); bruit(t, .45, "bandpass", 900, .6, .4, busS, 200);
       [1568, 2093, 2637, 3136, 4186].forEach((f, i) => osc("sine", f, t + .04 + i * .05, .004, .1, .9, busS)); },
-    vol: (t, d = .7) => bruit(t, d, "bandpass", 300, 1.1, .22, busS, 3200),
+    petit: (t) => { bruit(t, .5, "highpass", 3000, .5, .18, busS); [1318.5, 1760, 2349].forEach((f, i) => osc("sine", f, t + i * .04, .004, .08, .5, busS)); },
+    vol: (t, dd = .7) => bruit(t, dd, "bandpass", 300, 1.1, .22, busS, 3200),
     pop: (t) => osc("sine", 520, t, .004, .3, .18, busS, 1100),
     tic: (t) => osc("triangle", 1500, t, .003, .08, .07, busS),
+    clic: (t) => { bruit(t, .06, "highpass", 2500, .7, .4, busS); osc("square", 1100, t, .002, .05, .03, busS); },
     magie: (t) => { [784, 988, 1175, 1568, 1976, 2349].forEach((f, i) => osc("sine", f, t + i * .07, .005, .12, .7, busS)); bruit(t, 1.1, "bandpass", 600, .9, .12, busS, 5000); },
     tape: (t) => { osc("square", 900, t, .002, .06, .03, busS); bruit(t, .05, "highpass", 4000, .7, .2, busS); },
-    nom: (t, k) => osc("sine", [1318.5, 1568, 1760, 2093][k % 4], t, .004, .07, .25, busS),
+    rembobine: (t, dd) => bruit(t, dd, "bandpass", 500, 2, .16, busS, 4000),
+    note: (t, f) => osc("sine", f, t, .004, .07, .25, busS),
+    message: (t) => osc("sine", 1975.5, t, .003, .05, .12, busS),
+    cloche: (t) => { for (const dt of [0, .22]) { osc("sine", 2093, t + dt, .002, .16, 1.1, busS); osc("sine", 2637, t + dt, .002, .1, .9, busS); osc("sine", 3951, t + dt, .002, .05, .5, busS); } },
   };
-  S.tape(t0); S.eclate(t0 + T.eclate); S.vol(t0 + T.eclate + .05, .9); S.pop(t0 + T.eclate + 1.4); S.vol(t0 + T.panD, .8);
-  for (let k = 0; k < 14; k++) S.tic(t0 + VOIX.d + .1 + k * .14);
-  S.pop(t0 + T.rien + .05); S.magie(t0 + T.ramene - .1); S.vol(t0 + T.ramene, 1.2); S.pop(t0 + T.cages + .1);
-  S.pop(t0 + T.like + .05); S.tape(t0 + T.libere - .02); S.eclate(t0 + T.libere + .05); S.magie(t0 + T.libere + .3);
-  for (let k = 0; k < 20; k++) S.nom(t0 + T.libere + .5 + k * .08, k);
+  S.tape(t0); S.eclate(t0 + T.eclate); S.vol(t0 + T.eclate + .05, .9); S.pop(t0 + T.eclate + 1.45); S.pop(t0 + mot("v1", "Mike,"));
+  const tP = mot("v2", "photos,") - .35; for (let k = 0; k < 4; k++) S.clic(t0 + tP + k * .14 + .3);
+  S.vol(t0 + mot("v2", "fais") - .15, .9); S.magie(t0 + mot("v2", "commerce,") - .25);
+  for (let k = 0; k < 5; k++) S.tic(t0 + mot("v2", "publie") + .35 + k * .1);
+  for (let k = 0; k < 12; k++) S.tic(t0 + mot("v2", "monde") - .3 + k * .11);
+  S.rembobine(t0 + VOIX.v3 + .3, mot("v3", "après.") - VOIX.v3 - .3); S.pop(t0 + mot("v3", "après.") + .05);
+  S.pop(t0 + VOIX.v4 + .05);
+  for (const w of ["personne", "libérer", "fantôme"]) { S.tape(t0 + mot("v4", w) - .1); S.petit(t0 + mot("v4", w) - .05); }
+  [mot("v4", "“J’adore"), mot("v4", "“Je"), mot("v4", "“Je", 1)].forEach((q, g) => { S.petit(t0 + q - .05); for (let k = 0; k < (g === 0 ? 10 : 6); k++) S.note(t0 + q + k * .07, [1046.5, 1318.5, 1568, 2093][(k + g) % 4]); });
+  S.vol(t0 + mot("v4", "“J’adore") - .3, 1.4);
+  S.magie(t0 + mot("v5", "vrai") - .2); S.eclate(t0 + mot("v5", "commence.") - .05);
+  for (let k = 0; k < 38; k++) S.message(t0 + VOIX.v6 + .8 + k * .035);
+  for (const [q, html] of FIL) if (!html.includes("jour")) (html.includes("elle") ? S.pop : S.message)(t0 + q);
+  S.vol(t0 + mot("v6", "pour") - .3, 1);
+  S.vol(t0 + mot("v6", "pousse") - .25, 1.1); S.cloche(t0 + T.porte + .05);
+  S.eclate(t0 + VOIX.v7 - .1);
   // ─ les voix
-  for (const [c, x] of Object.entries(VOIX)) if (voix[c]) { const s = ctx.createBufferSource(); s.buffer = voix[c]; s.connect(busV); s.start(t0 + x); }
+  for (const c of Object.keys(VOIX)) if (voix[c]) { const s = ctx.createBufferSource(); s.buffer = voix[c]; s.connect(busV); s.start(t0 + VOIX[c]); }
 }
+// les bruits de la conversation (des sons courts, déclenchés à l'instant où les bulles arrivent)
 
 /* ── LE DÉROULÉ ── */
 const bruts = {};
 const charge = Promise.all(Object.keys(VOIX).map((c) => fetch(`voix/${c}.mp3`).then((r) => r.ok ? r.arrayBuffer() : null).then((b) => { if (b) bruts[c] = b; }).catch(() => {})));
 const decoder = (ctx, b) => new Promise((ok) => { try { const p = ctx.decodeAudioData(b.slice(0), ok, () => ok(null)); if (p && p.catch) p.catch(() => ok(null)); } catch (e) { ok(null); } });
 function etat(t) { tl.seek(Math.max(0, t), false); poserCamera(t); dessinerFond(t); dessinerFx(t); }
-// avant de toucher : la cage se balance, son fantôme frappe (« toc toc »)
+// avant de toucher : la cage se balance, Mike frappe, sa bulle « Libérez-moi ! »
 const attente = gsap.timeline({ repeat: -1 });
 attente.to("#cage", { rotation: 3, transformOrigin: "50% 0", duration: 1.6, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0)
   .to("#c-fant", { x: 14, rotation: 6, duration: .08, yoyo: true, repeat: 3, ease: "power1.inOut" }, 1.0)
-  .fromTo("#toc", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .25 }, 1.0).to("#toc", { opacity: 0, duration: .4 }, 1.9)
+  .fromTo("#bulle-cage", { opacity: 0, scale: .4, rotation: -8 }, { opacity: 1, scale: 1, rotation: 0, duration: .5, ease: "back.out(2.4)" }, .9)
+  .to("#bulle-cage", { opacity: 0, scale: .8, duration: .3 }, 2.8)
   .to("#appel", { scale: 1.05, duration: .8, yoyo: true, repeat: 1, ease: "sine.inOut" }, 0);
 if (RENDU) attente.pause(0);
 let enRoute = false, AC = null, t0 = 0, depuisPerf = 0, enPause = false, pauseA = 0, pauseTot = 0;
 function boucleAttente(now) { if (enRoute) return; dessinerFond(now / 1000); requestAnimationFrame(boucleAttente); }
 if (!RENDU) requestAnimationFrame(boucleAttente);
-const construit = (document.fonts ? Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]) : Promise.resolve()).then(() => { foule(); construire(); relever(); });
+const construit = (document.fonts ? Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]) : Promise.resolve()).then(() => { poserNom(); foule(); construire(); relever(); });
 async function lancer() {
   if (enRoute) return; enRoute = true;
   await construit;
@@ -621,16 +859,19 @@ async function lancer() {
   $("#charge").textContent = "";
   document.body.classList.add("joue");
   if (AC && AC.state === "running") { t0 = AC.currentTime + .05; composer(AC, AC.destination, t0, voix); } else depuisPerf = performance.now();
-  const maintenant = () => AC && AC.state !== "closed" && t0 ? AC.currentTime - t0 : (performance.now() - depuisPerf - pauseTot - (enPause ? performance.now() - pauseA : 0)) / 1000;
-  const boucle = () => { const t = maintenant(); etat(t); if (t < DUREE) requestAnimationFrame(boucle); else window.__fin = true; };
+  const maintenant = () => AC && t0 ? AC.currentTime - t0 : (performance.now() - depuisPerf - pauseTot - (enPause ? performance.now() - pauseA : 0)) / 1000;
+  const boucle = () => { const t = maintenant(); etat(t); if (t < DUREE) requestAnimationFrame(boucle); else { window.__fin = true; document.body.classList.add("fini"); } };
   requestAnimationFrame(boucle);
 }
-$("#cage").addEventListener("click", lancer);
+// toucher la cage… ou n'importe où sur l'écran de départ
+$("#scene").addEventListener("click", (e) => { if (!e.target.closest("#pour, #finale, #pause")) lancer(); });
 $("#pause").addEventListener("click", () => { enPause = !enPause; $("#pause").textContent = enPause ? "▶" : "⏸"; if (AC && t0) { if (enPause) AC.suspend(); else AC.resume(); } else if (enPause) pauseA = performance.now(); else pauseTot += performance.now() - pauseA; });
+$("#revoir").addEventListener("click", () => location.reload());
 
-/* ── POUR EN FAIRE UNE VIDÉO (`rendre-video.mjs`) : une image à un instant donné, et le son, calculé hors ligne ── */
+/* ── POUR EN FAIRE UNE VIDÉO (`rendre-video.mjs`) ── */
 window.__duree = DUREE;
-window.__attente = (t) => { attente.seek(t % attente.duration(), false); dessinerFond(t); };
+// x < 0 : les secondes avant qu'on touche la cage ; on finit sur sa bulle « Libérez-moi ! », bien visible
+window.__attente = (x) => { const D = attente.duration(), u = 2.7 + x; attente.seek(((u % D) + D) % D, false); dessinerFond(x + 10); };
 window.__rendre = (t) => { if (!enRoute) { enRoute = true; attente.pause(0); gsap.set("#cage", { rotation: 0 }); gsap.set("#c-fant", { x: 0, rotation: 0 }); } etat(t); };
 window.__son = async (avant) => {
   await charge;
