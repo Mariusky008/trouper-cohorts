@@ -36,6 +36,8 @@ const TOURS = {
   "tour-bijouterie": "bijouterie",
   "tour-lunettes": "lunettes",
   "tour-massage": "massage",
+  // la démo courte des commerçants, « Le fantôme en 45 secondes » (`outils/tour-court.py`)
+  "tour-court": "court",
 };
 
 // les étapes intermédiaires de la chaîne (`index.avant-episode2.html`…) ne sont pas la page

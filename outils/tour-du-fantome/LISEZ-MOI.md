@@ -1,6 +1,6 @@
 # Le tour du fantôme — les six démos pour les commerçants
 
-Ce dossier fabrique les six pages « Le tour du fantôme ». Il est la **référence** : on modifie ici, on pousse
+Ce dossier fabrique les pages « Le tour du fantôme » (un tour par métier, et la démo courte). Il est la **référence** : on modifie ici, on pousse
 sur `main`, et le site les met en ligne tout seul, à `clikme.fr/tours/<métier>` (voir « Publier »). Le
 bouton « Voir la démo » de la page des commerçants (`public/commercants/`) mène à ces adresses.
 
@@ -13,6 +13,7 @@ bouton « Voir la démo » de la page des commerçants (`public/commercants/`) m
 | Bijouterie (Atelier Inès) | `tour-bijouterie/` | https://www.clikme.fr/tours/bijouterie | https://claude.ai/artifact/LtmrpKqY5rbcqGc7WA1DkX |
 | Lunetier (Les Lunettes de Margaux) | `tour-lunettes/` | https://www.clikme.fr/tours/lunettes | https://claude.ai/artifact/9R2sn9qYN141C4f54T2Q3C |
 | Massage (Le Cocon d’Élise) | `tour-massage/` | https://www.clikme.fr/tours/massage | — |
+| **Démo courte, 45 s** (Chez Bergine) | `tour-court/` | https://www.clikme.fr/tours/court | — |
 
 ## Ce qu'il y a dedans
 
@@ -189,6 +190,46 @@ Une animation qui refuse la pause est figée à vitesse nulle. `essai-pause.mjs 
 Pour une nouvelle voix de l'intro : remplacer `voix-intro/court/<nom>.mp3`, mettre son texte dans
 `outils/mesurer-intro2.py` (et dans `tour-intro3.py`), lancer `python3 -I $D/outils/mesurer-intro2.py $D`,
 puis les dix scripts. (Il appelle `python3` lui-même : celui du `PATH` doit avoir numpy.)
+
+## La démo courte : « Le fantôme en 45 secondes »
+
+La bande-annonce des tours, pour les commerçants : 45 secondes, un seul geste (toucher la cage), puis le tour complet
+si l'on veut (« Voir le tour complet · 2 min »). Faite par `outils/tour-court.py` d'après le modèle
+`outils/tour-court.html` (on retouche le modèle ou le script, jamais `tour-court/index.html`) :
+
+```sh
+/usr/bin/python3 -I outils/tour-du-fantome/outils/tour-court.py outils/tour-du-fantome
+```
+
+Une promesse, puis trois preuves de plus en plus fortes, chacune sur une voix (`recu/court/demo1-a…g.mp3`, lues mot
+pour mot) :
+
+| Voix | Ce qui est dit | À l'écran |
+|---|---|---|
+| A | « Libérez votre fantôme. » | la cage s'ouvre, son fantôme (le chef, sa toque) sort et vole vers nous |
+| B | « Une photo le matin. Des clients le jour même. » | sa façade, son fantôme à la porte ; 9 h 02, la photo du chef qui tend son plat ; 12 h 30, les clients arrivent, « +4 tables ce midi » |
+| C | « Je fais votre film… et je le publie partout. » | les photos se montent en film (« Le plat du jour »), puis Instagram, Facebook, Google, WhatsApp et Le Direct se cochent |
+| D | « Une vidéo, vous savez la faire. Moi, je vous ramène ceux qui l'ont regardée. » | la même vidéo, côte à côte : seule (« ♥ 214 », « Aucun prénom ») ou avec son fantôme (les cages, « 38 prénoms ») |
+| E | « Au lieu d'un like, ils libèrent un fantôme. » | le « J'aime » barré, les trois cages, Camille ouvre « Je viendrai un jour » ; puis la nuée : 38 fantômes sur sa façade, « 12 ont promis de venir » |
+| F | « Puis j'écris à chaque personne un message rien qu'à elle. Je la connais un peu mieux à chaque réponse… jusqu'au jour où elle pousse votre porte. » | sa fiche se remplit (en semaine, à prévenir) au fil des messages du moteur (`moteur-messages.ts`), chacun « ✓ Vous avez dit oui » ; un mardi calme, sur son WhatsApp : « Il reste une table ce midi » ; « J'arrive ! » ; la porte, « Camille ! On t'attendait 😊 », « Est venue » ; « Et pareil pour les 37 autres. » |
+| G | « Votre fantôme vous attend. » | le ticket de la semaine, « Créer mon espace · gratuit » (`/commercants#creer`), le tour complet, « Revoir » |
+
+- **Les mots à l'instant où ils sont dits** : chaque voix est égalisée (même volume) et ses mots calés sur
+  l'enregistrement, pour les sous-titres mot à mot (la vidéo se regarde souvent sans le son) et pour caler les gestes
+  de la page. Quand une réplique a autant de phrases que de morceaux de voix, ils vont un pour un (`caler()`) ;
+  sinon, `alignement.py`.
+- **Le son** passe par le navigateur (Web Audio) : les voix à leur instant, et une petite musique et des bruits
+  (la cage, l'appareil photo, les messages, la nuée) composés dans la page, sans droits.
+- **Son nom** : « ✎ Pour qui est cette démo ? », comme dans les tours (le même, gardé le temps de la visite). Il
+  s'affiche sur l'enseigne, le film et le ticket ; la note du bas dit alors « Chiffres imaginaires » (et
+  « Commerce et chiffres imaginaires » sans nom).
+- **La pause** : le bouton ⏸ en bas à droite, Espace ou P.
+- **Pour en faire une vidéo** : `…/index.html?video` démarre seule (sans le bouton pause) ; il faut un navigateur
+  qui laisse jouer le son sans geste.
+- Les images sont celles du tour du restaurant (`tour/`), copiées par le script.
+
+Vérifier : servir `public/` après `node scripts/poser-tours.mjs`, puis jouer la page en entier dans Playwright
+(touchez la cage avec `force` : elle se balance) et regarder les captures ; « aucune erreur » attendu.
 
 ## Le tour massage
 

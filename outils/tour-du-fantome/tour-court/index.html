@@ -1,0 +1,743 @@
+<title>Le fantôme en 45 secondes — ClikMe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800;900&family=Playfair+Display:ital,wght@1,700&display=swap">
+<style>
+/* 🎬 LE FANTÔME EN 45 SECONDES — la démo courte des commerçants (voir `tour-court.py`).
+   Une scène au format d'un téléphone (9:16) ; toutes les tailles en cqw/cqh de la scène. */
+:root{--nuit:#0B0608;--rose:#FF2E9A;--rose2:#FF5DB8;--or:#E8C77A;--vert:#3DE2A6;--creme:#FFF4E6;--wa:#25D366;--ressort:cubic-bezier(.3,1.45,.5,1)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#050304;color:var(--creme);font-family:Poppins,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit}
+#ecran{position:fixed;inset:0;display:grid;place-items:center;background:var(--nuit)}
+#scene{position:relative;width:min(100vw,calc(100vh * 9 / 16));width:min(100vw,calc(100dvh * 9 / 16));aspect-ratio:9/16;container-type:size;overflow:hidden;
+  background:radial-gradient(ellipse 90% 60% at 50% 38%,#2A121C,var(--nuit) 72%)}
+.sc{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .45s,visibility 0s .45s}
+.sc.on{opacity:1;visibility:visible;transition:opacity .45s}
+body.pause *,body.pause *::before,body.pause *::after{animation-play-state:paused!important}
+@keyframes flotte{50%{transform:translateY(-4%)}}
+
+/* ═══ LE DÉPART : la cage, « Touchez la cage » ═══ */
+.dep-haut{position:absolute;left:5cqw;right:5cqw;top:4cqh;display:flex;align-items:center;justify-content:space-between;gap:3cqw;transition:opacity .3s}
+.marque{font-weight:900;font-size:5.4cqw;letter-spacing:-.02em}
+.marque b{color:var(--rose)}
+#pour{border:1px dashed rgba(255,244,230,.4);background:rgba(255,244,230,.06);border-radius:99px;padding:1.6cqw 3.6cqw;font-size:3.4cqw;font-weight:700;cursor:pointer;max-width:62cqw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.video #pour{display:none}
+#pour.a-nom{border-style:solid;border-color:rgba(255,46,154,.6)}
+#pour b{color:var(--rose2)}
+.ouvre .dep-haut,.ouvre .dep-bas{opacity:0}
+.cage{position:absolute;left:50%;top:22cqh;width:54cqw;margin-left:-27cqw;padding:0;border:0;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;transform-origin:50% 0;
+  animation:balance 3.6s ease-in-out infinite}
+@keyframes balance{0%,100%{transform:rotate(-2.4deg)}50%{transform:rotate(2.4deg)}}
+.cage-anneau{position:relative;z-index:2;width:9cqw;height:9cqw;margin-bottom:-1.6cqw;border-radius:50%;border:1.5cqw solid var(--or)}
+.cage-noeud{position:absolute;top:7.6cqw;left:50%;z-index:5;width:15cqw;height:7cqw;margin-left:-7.5cqw;
+  background:radial-gradient(ellipse 45% 48% at 22% 50%,var(--rose) 96%,transparent),radial-gradient(ellipse 45% 48% at 78% 50%,var(--rose) 96%,transparent),radial-gradient(circle at 50% 50%,var(--rose) 30%,transparent 33%)}
+.cage-dome{position:relative;width:100%;aspect-ratio:.86;overflow:hidden;border:1.4cqw solid var(--or);border-bottom:0;border-radius:50% 50% 10% 10% / 44% 44% 6% 6%;
+  background:radial-gradient(ellipse 70% 55% at 50% 42%,rgba(255,226,180,.26),transparent 72%),rgba(255,244,230,.04)}
+.cage-dome::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:repeating-linear-gradient(90deg,transparent 0 calc(16.66% - 1.2cqw),rgba(232,199,122,.85) calc(16.66% - 1.2cqw) 16.66%)}
+.cage-dome::after{content:"";position:absolute;left:0;right:0;top:36%;height:1.2cqw;z-index:3;background:rgba(232,199,122,.9)}
+.cd-fant{position:absolute;left:50%;bottom:3%;z-index:2;height:62%;aspect-ratio:1;transform:translateX(-50%);filter:drop-shadow(0 2cqw 2cqw rgba(0,0,0,.45));animation:toc 1.8s ease-in-out infinite}
+.cd-fant img{display:block;width:100%;height:100%}
+@keyframes toc{0%,62%,100%{transform:translateX(-50%) rotate(0)}68%{transform:translateX(-46%) rotate(5deg)}74%{transform:translateX(-50%)}80%{transform:translateX(-46%) rotate(5deg)}86%{transform:translateX(-50%)}}
+.cage-porte{position:absolute;left:29%;width:42%;bottom:0;height:54%;z-index:4;border:1.4cqw solid var(--or);border-bottom:0;border-radius:45% 45% 0 0 / 35% 35% 0 0;transform-origin:0 50%;
+  background:repeating-linear-gradient(90deg,transparent 0 calc(33.3% - 1cqw),rgba(232,199,122,.95) calc(33.3% - 1cqw) 33.3%),rgba(20,12,9,.12);transition:transform .5s cubic-bezier(.3,1.4,.5,1)}
+.cage-socle{width:110%;height:6cqw;margin-top:-1px;border-radius:2.6cqw;background:linear-gradient(#F3DFA0,#B38A3A);box-shadow:0 3cqw 5cqw -2cqw rgba(0,0,0,.65),inset 0 -2cqw 0 var(--rose)}
+.toc-toc{position:absolute;left:76cqw;top:29cqh;margin:0;font:italic 700 4.4cqw/1 "Playfair Display",Georgia,serif;color:var(--or);opacity:0;animation:toctoc 1.8s ease-in-out infinite}
+@keyframes toctoc{0%,60%{opacity:0;transform:translateY(1cqw)}70%,90%{opacity:1;transform:none}100%{opacity:0}}
+.dep-bas{position:absolute;left:0;right:0;top:70cqh;text-align:center;transition:opacity .3s}
+.dep-appel{margin:0;font-size:7.4cqw;font-weight:900;letter-spacing:-.02em;animation:appel 1.6s ease-in-out infinite}
+@keyframes appel{50%{transform:scale(1.05);color:#fff}}
+.dep-sous{margin:2cqw 0 0;font-size:3.6cqw;font-weight:600;color:rgba(255,244,230,.65)}
+.dep-sous.charge::after{content:" · un instant…"}
+/* on l'ouvre : la porte s'ouvre, le fantôme sort et vole vers nous */
+.ouvre .cage{animation:none;transform:none;cursor:default}
+.ouvre .cage-porte{transform:perspective(60cqw) rotateY(-118deg)}
+.ouvre .cd-fant{animation:none;opacity:0;transition:opacity .15s .55s}
+.ouvre .toc-toc{display:none}
+.sortie{position:absolute;left:50%;top:38cqh;z-index:9;width:30cqw;margin-left:-15cqw;opacity:0;pointer-events:none}
+.sortie img{display:block;width:100%;height:auto;filter:drop-shadow(0 3cqw 4cqw rgba(0,0,0,.55))}
+.sort .sortie{animation:sortir 1.9s cubic-bezier(.25,.8,.3,1) forwards}
+@keyframes sortir{0%{opacity:0;transform:translateY(6cqh) scale(.55)}12%{opacity:1}45%{transform:translateY(-14cqh) scale(1.25) rotate(-6deg)}75%{opacity:1;transform:translateY(-6cqh) scale(2.6) rotate(4deg)}100%{opacity:0;transform:translateY(-2cqh) scale(5)}}
+.etincelles i{position:absolute;left:50%;top:46cqh;width:2.4cqw;height:2.4cqw;border-radius:50%;background:var(--or);opacity:0;box-shadow:0 0 3cqw var(--or)}
+.sort .etincelles i{animation:etincelle 1.1s ease-out forwards;animation-delay:calc(var(--k) * .04s)}
+@keyframes etincelle{0%{opacity:1;transform:translate(-50%,-50%)}100%{opacity:0;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(.3)}}
+#eclair{position:absolute;inset:0;z-index:40;background:#fff;opacity:0;pointer-events:none}
+#eclair.on{animation:eclair .55s ease-out}
+@keyframes eclair{0%{opacity:0}25%{opacity:.85}100%{opacity:0}}
+
+/* ═══ LA FAÇADE (le commerce) — reprise de l'intro des tours ═══ */
+.fac{--f1:#62182B;--f2:#45101F;--s1:#F3E5D0;--s2:#8E1C33;--ens:#2C0912;--vit:#2A0810;position:absolute;left:0;width:100cqw;aspect-ratio:360/430;container-type:inline-size;overflow:hidden;
+  background:linear-gradient(#0B0608,#170C10 40%)}
+.fac>i{position:absolute;display:block}
+.fac-f{left:0;right:0;top:2%;height:64%;background:linear-gradient(90deg,rgba(0,0,0,.3),transparent 18%,transparent 82%,rgba(0,0,0,.35)),
+  repeating-linear-gradient(90deg,transparent 0 11.6cqw,rgba(0,0,0,.12) 11.6cqw 11.9cqw),linear-gradient(var(--f1),var(--f2))}
+.fac-ens{position:absolute;left:7%;right:7%;top:3.2%;height:12%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6cqw;border-radius:1cqw;background:var(--ens);
+  box-shadow:inset 0 0 0 .55cqw var(--ens),inset 0 0 0 .85cqw rgba(201,164,92,.75),0 1.2cqw 2.4cqw rgba(0,0,0,.45)}
+.fac-ens b{max-width:94%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:italic 700 7cqw/1.1 "Playfair Display",Georgia,serif;color:var(--or);text-shadow:0 0 3cqw rgba(232,199,122,.4)}
+.fac-ens small{font-weight:700;font-size:1.9cqw;line-height:1;letter-spacing:.4em;color:rgba(232,199,122,.8)}
+.fac-store{left:3%;right:3%;top:16.8%;height:8.2%;z-index:2;
+  background:linear-gradient(rgba(0,0,0,.28),transparent 45%),repeating-linear-gradient(90deg,var(--s1) 0 5.4cqw,var(--s2) 5.4cqw 10.8cqw);
+  -webkit-mask:linear-gradient(#000 0 0) top/100% calc(100% - 2.7cqw) no-repeat,radial-gradient(circle at 50% 0,#000 2.65cqw,transparent 2.75cqw) bottom/5.4cqw 2.7cqw repeat-x;
+  mask:linear-gradient(#000 0 0) top/100% calc(100% - 2.7cqw) no-repeat,radial-gradient(circle at 50% 0,#000 2.65cqw,transparent 2.75cqw) bottom/5.4cqw 2.7cqw repeat-x}
+.fac-vit{position:absolute;left:5%;width:58%;top:29%;height:34%;border-radius:1cqw;overflow:hidden;background:#1A0D08;
+  box-shadow:inset 0 0 0 1.2cqw var(--vit),0 0 0 .55cqw #C9A45C,0 0 9cqw rgba(255,170,90,.38);transition:box-shadow .5s}
+.fac-vit>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%}
+.fac-vit::after{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:linear-gradient(112deg,rgba(255,255,255,.16),transparent 26%,transparent 62%,rgba(255,255,255,.07) 70%,transparent 78%);
+  box-shadow:inset 0 0 0 1.2cqw var(--vit)}
+.fac-porte{position:absolute;left:70%;width:24%;top:29%;height:37%;border-radius:1.2cqw 1.2cqw 0 0;background:linear-gradient(#2A1E1A,#1A100C);box-shadow:inset 0 0 0 .6cqw #C9A45C}
+.fac-porte i{position:absolute;left:14%;right:14%;top:8%;height:47%;border-radius:.8cqw;background:radial-gradient(ellipse at 50% 85%,#FFC27A,#B9652B 58%,#4A1E10);box-shadow:inset 0 0 2cqw rgba(0,0,0,.55);transition:filter .6s}
+.fac-porte::after{content:"";position:absolute;right:12%;top:60%;width:2.2cqw;height:2.2cqw;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFE6A6,#B98A2E)}
+.fac-trot{left:0;right:0;top:66%;bottom:0;background:radial-gradient(ellipse 60% 70% at 34% 0,rgba(255,180,100,.26),transparent 70%),radial-gradient(ellipse 30% 50% at 82% 0,rgba(255,180,100,.2),transparent 70%),
+  repeating-linear-gradient(90deg,transparent 0 9cqw,rgba(0,0,0,.2) 9cqw 9.35cqw),linear-gradient(#3E322D,#262020)}
+.fac.lumiere .fac-vit{box-shadow:inset 0 0 0 1.2cqw var(--vit),0 0 0 .55cqw #C9A45C,0 0 14cqw rgba(255,190,110,.75)}
+.fac.lumiere .fac-porte i{filter:brightness(1.45) saturate(1.2)}
+/* son fantôme à lui, à la porte (le chef : sa toque) */
+.hote{position:absolute;left:82%;top:67%;z-index:6;display:block;transform:translate(-50%,-100%) translateX(-8cqw);transform-origin:50% 100%;filter:drop-shadow(0 1cqw 1cqw rgba(0,0,0,.5))}
+.hote img{display:block;height:30cqw;width:auto}
+.toque{position:absolute;left:18.5%;top:-20%;width:64%;overflow:visible}
+.fac .hote{opacity:0;transform:translate(-50%,-100%) translateX(-8cqw) translateY(-60cqw) scale(.6);transition:opacity .2s,transform .9s var(--ressort)}
+.fac.hote-la .hote{opacity:1;transform:translate(-50%,-100%) translateX(-8cqw)}
+.fac.hote-la .hote img{animation:flotte 2.6s ease-in-out .9s infinite}
+.bulle-hote{position:absolute;right:27%;top:16.5%;z-index:8;margin:0;max-width:60%;padding:1.8cqw 3cqw;border-radius:3cqw 3cqw .8cqw 3cqw;font-size:4.8cqw;font-weight:800;line-height:1.2;
+  color:#2A1A10;background:var(--creme);box-shadow:0 2cqw 5cqw -1cqw rgba(0,0,0,.7);transform:scale(0);transform-origin:100% 100%;transition:transform .55s var(--ressort)}
+.fac.parle .bulle-hote{transform:none}
+/* les fantômes des habitants posés sur la façade */
+.foule,.clients,.arrivent{position:absolute;inset:0;z-index:5;pointer-events:none}
+.foule.dedans{z-index:2}
+.fg{position:absolute;z-index:5;display:block;transform:translate(-50%,-100%);pointer-events:none}
+.fg img{display:block;height:var(--h,14cqw);width:auto;filter:drop-shadow(0 .8cqw .8cqw rgba(0,0,0,.5))}
+.fg b{position:absolute;left:50%;top:94%;transform:translateX(-50%);padding:.4cqw 2cqw;border-radius:2cqw;white-space:nowrap;font-size:3.4cqw;font-weight:800;color:#fff;background:#F5A23A}
+
+/* ═══ ② « Une photo le matin. Des clients le jour même. » ═══ */
+#s-fac .fac{top:14cqh}
+.heure{position:absolute;left:50%;top:5cqh;z-index:9;padding:1.6cqw 4.4cqw;border-radius:99px;font-size:4.6cqw;font-weight:800;white-space:nowrap;background:rgba(255,244,230,.1);border:1px solid rgba(255,244,230,.22);
+  transform:translateX(-50%) scale(0);transition:transform .5s var(--ressort)}
+.heure.on{transform:translateX(-50%)}
+.heure.bip{animation:bip .5s var(--ressort)}
+@keyframes bip{40%{transform:translateX(-50%) scale(1.18)}}
+.polar{position:absolute;left:6cqw;top:51cqh;z-index:8;width:40cqw;margin:0;padding:2cqw 2cqw 6.5cqw;border-radius:1.2cqw;background:#FBF7F0;box-shadow:0 3cqw 6cqw -2cqw rgba(0,0,0,.8);
+  opacity:0;transform:translateY(10cqh) rotate(-14deg) scale(.7);transition:opacity .3s,transform .7s var(--ressort)}
+.polar img{display:block;width:100%;aspect-ratio:1;object-fit:cover;object-position:50% 45%;border-radius:.6cqw}
+.polar figcaption{position:absolute;left:0;right:0;bottom:1.6cqw;text-align:center;font-size:3.1cqw;font-weight:800;color:#3A2A20}
+.polar.on{opacity:1;transform:rotate(-6deg)}
+.polar.flash img{animation:flash .5s ease-out}
+@keyframes flash{0%{filter:brightness(3.5)}100%{filter:none}}
+.polar.cote{transform:translate(-5cqw,9cqh) rotate(-10deg) scale(.68)}
+.polar.zoom{z-index:30;transform:translate(24cqw,-27cqh) rotate(0) scale(1.4);opacity:0;transition:opacity .35s .35s,transform .7s cubic-bezier(.6,0,.3,1)}
+.plus4{position:absolute;right:5cqw;top:57cqh;z-index:9;padding:2cqw 4cqw;border-radius:99px;font-size:5.2cqw;font-weight:900;color:#04150E;background:linear-gradient(135deg,#9FF5C9,var(--vert));
+  box-shadow:0 2cqw 5cqw -2cqw rgba(61,226,166,.8);transform:scale(0) rotate(-8deg);transition:transform .55s var(--ressort)}
+.plus4.on{transform:rotate(-4deg)}
+#s-fac .clients .fg{transition:opacity .3s calc(var(--k) * .22s),left 1.3s cubic-bezier(.3,.7,.3,1) calc(var(--k) * .22s);opacity:0}
+#s-fac .clients.on .fg{opacity:1}
+
+/* ═══ ③ « Je fais votre film… et je le publie partout. » ═══ */
+.film{position:absolute;left:50%;top:10cqh;width:56cqw;margin-left:-28cqw;aspect-ratio:9/16;border-radius:5cqw;overflow:hidden;background:#000;
+  box-shadow:0 0 0 1.4cqw #1E1418,0 0 0 1.8cqw rgba(255,255,255,.12),0 5cqw 10cqw -3cqw rgba(0,0,0,.9);transition:transform .8s cubic-bezier(.6,0,.3,1)}
+.film-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0}
+.film-img img:nth-child(1){opacity:1}
+.montage .film-img img{animation:arrive .7s var(--ressort) both}
+.montage .film-img img:nth-child(1){--x:-60cqw;--r:-18deg}
+.montage .film-img img:nth-child(2){--x:60cqw;--r:16deg;animation-delay:.18s}
+.montage .film-img img:nth-child(3){--x:-40cqw;--r:10deg;animation-delay:.36s}
+@keyframes arrive{0%{opacity:0;transform:translateX(var(--x)) rotate(var(--r)) scale(.6)}100%{opacity:1;transform:none}}
+.joue .film-img img{animation:kb 4.6s linear both}
+.joue .film-img img:nth-child(1){animation-name:kb1}
+.joue .film-img img:nth-child(2){animation-name:kb2}
+.joue .film-img img:nth-child(3){animation-name:kb3}
+@keyframes kb1{0%{opacity:1;transform:scale(1.04)}30%{opacity:1}38%,100%{opacity:0;transform:scale(1.16)}}
+@keyframes kb2{0%,30%{opacity:0;transform:scale(1.18) translateX(3%)}38%{opacity:1}66%{opacity:1}74%,100%{opacity:0;transform:scale(1.04)}}
+@keyframes kb3{0%,66%{opacity:0;transform:scale(1.04)}74%,100%{opacity:1;transform:scale(1.16)}}
+.film-voile{position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.45),transparent 30%,transparent 62%,rgba(0,0,0,.7))}
+.film-titre{position:absolute;left:0;right:0;top:9%;text-align:center;opacity:0;transform:translateY(-3cqw);transition:opacity .4s .3s,transform .6s var(--ressort) .3s}
+.film-titre small{display:block;font-size:3cqw;font-weight:800;letter-spacing:.3em;text-transform:uppercase;color:var(--or)}
+.film-titre b{display:block;margin-top:.6cqw;padding:0 3cqw;font:italic 700 6.6cqw/1.1 "Playfair Display",Georgia,serif;color:#fff;text-shadow:0 .6cqw 2cqw rgba(0,0,0,.6)}
+.joue .film-titre{opacity:1;transform:none}
+.film-mots{position:absolute;left:6%;right:6%;bottom:9%;text-align:center;font-size:4.4cqw;font-weight:900;line-height:1.25;color:#fff;text-shadow:0 .5cqw 1.6cqw rgba(0,0,0,.7)}
+.film-mots span{opacity:.25;transition:opacity .2s,color .2s}
+.joue .film-mots span{animation:allume .3s both;animation-delay:calc(1.2s + var(--k) * .42s)}
+@keyframes allume{to{opacity:1;color:#FFE37A}}
+.film-rec{position:absolute;left:4%;top:3%;padding:.8cqw 2.2cqw;border-radius:99px;font-style:normal;font-size:2.6cqw;font-weight:800;color:#fff;background:rgba(255,46,154,.85)}
+.film.petit{transform:translateY(5cqh) scale(.62)}
+.reseaux{position:absolute;inset:0;pointer-events:none}
+.rs{position:absolute;left:50%;top:36cqh;width:22cqw;display:flex;flex-direction:column;align-items:center;gap:1.4cqw;opacity:0;transform:translate(-50%,-50%) scale(.3);
+  transition:opacity .25s calc(var(--k) * .16s),left .7s var(--ressort) calc(var(--k) * .16s),top .7s var(--ressort) calc(var(--k) * .16s),transform .7s var(--ressort) calc(var(--k) * .16s)}
+.rs>i{position:relative;display:grid;place-items:center;width:15cqw;height:15cqw;border-radius:4cqw;font-style:normal;box-shadow:0 2.4cqw 4cqw -1.6cqw rgba(0,0,0,.8)}
+.rs svg{width:62%;height:62%}
+.rs>b{font-size:3.3cqw;font-weight:800;white-space:nowrap}
+.rs>em{position:absolute;right:2.6cqw;top:-1.4cqw;display:grid;place-items:center;width:6.4cqw;height:6.4cqw;border-radius:50%;font-style:normal;font-size:3.6cqw;font-weight:900;color:#04150E;
+  background:var(--vert);box-shadow:0 0 0 .8cqw var(--nuit);transform:scale(0);transition:transform .45s var(--ressort) calc(.35s + var(--k) * .16s)}
+.partout .rs{opacity:1;transform:translate(-50%,-50%);left:var(--x);top:var(--y)}
+.partout .rs>em{transform:none}
+.rs.ig>i{background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fdf497 5%,#fd5949 45%,#d6249f 60%,#285AEB 90%)}
+.rs.fb>i{background:#1877F2}
+.rs.go>i{background:#fff}
+.rs.wa>i{background:var(--wa)}
+.rs.di>i{background:linear-gradient(135deg,#FF5DB8,#E0167A)}
+.rs.di>i span{font-size:3.2cqw;font-weight:900;letter-spacing:.04em;color:#fff}
+.rs.di>i span::before{content:"";display:inline-block;width:2cqw;height:2cqw;margin-right:.8cqw;border-radius:50%;background:#fff;vertical-align:.2cqw;animation:clignote 1s steps(2) infinite}
+@keyframes clignote{50%{opacity:.2}}
+
+/* ═══ ④ l'écran partagé : « Une vidéo, vous savez la faire. Moi, je vous ramène ceux qui l'ont regardée. » ═══ */
+.tel{position:absolute;top:13cqh;width:44cqw;transition:opacity .6s,filter .6s,transform .9s cubic-bezier(.6,0,.3,1)}
+.tel.g{left:4cqw}.tel.d{left:52cqw}
+.tel-titre{margin:0 0 2.6cqw;text-align:center;font-size:3.9cqw;font-weight:900;line-height:1.15}
+.tel.d .tel-titre{color:var(--rose2)}
+.tel-ecran{position:relative;width:100%;aspect-ratio:9/17;border-radius:5cqw;overflow:hidden;background:#000;box-shadow:0 0 0 1.2cqw #1E1418,0 0 0 1.5cqw rgba(255,255,255,.12),0 4cqw 8cqw -3cqw rgba(0,0,0,.9)}
+.tel.d .tel-ecran{box-shadow:0 0 0 1.2cqw #1E1418,0 0 0 1.5cqw rgba(255,46,154,.6),0 4cqw 8cqw -3cqw rgba(0,0,0,.9)}
+.tel-ecran>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:filter .5s,opacity .5s}
+.duel.joue .tel-ecran>img{animation:kbtel 1.8s linear both}
+@keyframes kbtel{from{transform:scale(1.02)}to{transform:scale(1.14)}}
+.tel-fin{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:3cqw;opacity:0;transition:opacity .4s;background:linear-gradient(transparent 20%,rgba(8,4,6,.94) 60%)}
+.tel.fin .tel-fin{opacity:1}
+.tel.fin .tel-ecran>img{filter:brightness(.55)}
+.likes b{font-size:8cqw;font-weight:900;line-height:1}
+.likes b i{font-style:normal;color:#FF3B5C}
+.likes ul{list-style:none;margin:1.6cqw 0 0;padding:0;display:grid;gap:1cqw;font-size:2.7cqw;font-weight:600;color:rgba(255,255,255,.72)}
+.likes ul li::before{content:"";display:inline-block;width:3.6cqw;height:3.6cqw;margin-right:1.2cqw;border-radius:50%;vertical-align:-1cqw;background:var(--c,#777)}
+.tampon{position:absolute;left:50%;top:40%;padding:1.4cqw 2.6cqw;border-radius:1.4cqw;white-space:nowrap;font-size:3.2cqw;font-weight:900;color:#fff;background:#3B3438;border:.5cqw solid #8A8086;
+  transform:translate(-50%,-50%) rotate(-9deg) scale(0);transition:transform .5s var(--ressort)}
+.tel.rien .tampon{transform:translate(-50%,-50%) rotate(-9deg)}
+.mini-cages{display:flex;justify-content:center;gap:1.6cqw;margin-bottom:2cqw}
+.mini-cages span{width:9cqw;aspect-ratio:.86;border:.6cqw solid var(--or);border-bottom-width:1.4cqw;border-radius:50% 50% 10% 10% / 44% 44% 6% 6%;
+  background:repeating-linear-gradient(90deg,transparent 0 1.2cqw,rgba(232,199,122,.8) 1.2cqw 1.5cqw)}
+.mini-cages span:nth-child(1){border-bottom-color:var(--rose)}.mini-cages span:nth-child(2){border-bottom-color:#F5A23A}.mini-cages span:nth-child(3){border-bottom-color:var(--vert)}
+.prenoms{display:flex;flex-wrap:wrap;justify-content:center;gap:.9cqw;min-height:15cqw;align-content:flex-end}
+.prenoms em{font-style:normal;padding:.5cqw 1.6cqw;border-radius:99px;font-size:2.6cqw;font-weight:800;color:#fff;background:var(--c);animation:pop .4s var(--ressort) both}
+@keyframes pop{from{transform:scale(0)}to{transform:none}}
+.compte{display:block;margin-top:2cqw;text-align:center;font-size:5.6cqw;font-weight:900;line-height:1}
+.compte span{font-variant-numeric:tabular-nums;color:var(--rose2)}
+.duel.gagne .tel.g{opacity:.35;filter:grayscale(1)}
+.duel.gagne .tel.d{transform:scale(1.04)}
+.duel.zoom .tel.g{opacity:0}
+.duel.zoom .tel.d{transform:translate(-24cqw,10cqh) scale(2.2);opacity:0;transition:transform .7s cubic-bezier(.6,0,.3,1),opacity .3s .45s}
+
+/* ═══ ⑤ « Au lieu d'un like, ils libèrent un fantôme. » — les trois cages, puis la nuée ═══ */
+.carte-cages{position:absolute;left:5cqw;right:5cqw;top:20cqh;padding:5cqw 3cqw 6cqw;border-radius:6cqw;text-align:center;background:linear-gradient(180deg,rgba(40,20,30,.85),rgba(16,8,12,.96));
+  border:1px solid rgba(255,255,255,.13);box-shadow:0 5cqw 10cqw -5cqw rgba(0,0,0,.9);opacity:0;transform:translateY(4cqw) scale(.94);transition:opacity .35s,transform .7s var(--ressort)}
+#s-cages.carte .carte-cages{opacity:1;transform:none}
+#s-cages.nuee .carte-cages{opacity:0;transform:scale(.9);transition:opacity .4s,transform .5s}
+.cc-titre{display:block;margin-bottom:4cqw;font-size:7cqw;font-weight:900}
+.like{position:absolute;left:50%;top:10.5cqh;z-index:3;display:flex;align-items:center;gap:2cqw;padding:2cqw 5cqw;border-radius:99px;font-size:5cqw;font-weight:800;color:#fff;background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.25);transform:translateX(-50%) scale(0);transition:transform .5s var(--ressort),opacity .5s}
+.like i{font-style:normal;color:#FF3B5C}
+#s-cages.carte .like{transform:translateX(-50%)}
+.like::after{content:"";position:absolute;left:-4%;right:-4%;top:50%;height:1cqw;border-radius:1cqw;background:#FF3B5C;transform:rotate(-12deg) scaleX(0);transition:transform .3s}
+.like.barre::after{transform:rotate(-12deg) scaleX(1)}
+.like.tombe{opacity:0;transform:translateX(-50%) translateY(8cqh) rotate(-20deg)}
+.rang{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2cqw;font-size:4cqw}
+.f3{position:relative;display:flex;flex-direction:column;align-items:center;transition:opacity .5s}
+.f3.adore{--c:var(--rose)}.f3.promis{--c:#F5A23A}.f3.auj{--c:var(--vert)}
+.f3>b{margin-top:2.6cqw;font-size:3.5cqw;font-weight:800;line-height:1.15;letter-spacing:-.01em}
+.cg{position:relative;display:flex;flex-direction:column;align-items:center;width:80%;transform-origin:50% 0;animation:balance 3.6s ease-in-out infinite}
+.f3.promis .cg{animation-delay:-1.2s}.f3.auj .cg{animation-delay:-2.4s}
+.cg-anneau{position:relative;z-index:2;width:4.4cqw;height:4.4cqw;margin-bottom:-.9cqw;border-radius:50%;border:.75cqw solid var(--or)}
+.cg-noeud{position:absolute;top:3.8cqw;left:50%;z-index:5;width:7.6cqw;height:3.5cqw;margin-left:-3.8cqw;
+  background:radial-gradient(ellipse 45% 48% at 22% 50%,var(--c) 96%,transparent),radial-gradient(ellipse 45% 48% at 78% 50%,var(--c) 96%,transparent),radial-gradient(circle at 50% 50%,var(--c) 30%,transparent 33%)}
+.cg-dome{position:relative;width:100%;aspect-ratio:.86;overflow:hidden;border:.75cqw solid var(--or);border-bottom:0;border-radius:50% 50% 10% 10% / 44% 44% 6% 6%;
+  background:radial-gradient(ellipse 70% 55% at 50% 42%,rgba(255,226,180,.2),transparent 72%),rgba(255,244,230,.035)}
+.cg-dome::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:repeating-linear-gradient(90deg,transparent 0 calc(16.66% - .6cqw),rgba(232,199,122,.85) calc(16.66% - .6cqw) 16.66%)}
+.cg-dome::after{content:"";position:absolute;left:0;right:0;top:36%;height:.6cqw;z-index:3;background:rgba(232,199,122,.9)}
+.cg-dome img{position:absolute;left:50%;bottom:4%;z-index:2;height:70%;width:auto;transform:translateX(-50%);transition:opacity .2s}
+.cg-porte{position:absolute;left:29%;width:42%;bottom:0;height:54%;z-index:4;border:.75cqw solid var(--or);border-bottom:0;border-radius:45% 45% 0 0 / 35% 35% 0 0;transform-origin:0 50%;
+  background:repeating-linear-gradient(90deg,transparent 0 calc(33.3% - .5cqw),rgba(232,199,122,.95) calc(33.3% - .5cqw) 33.3%),rgba(20,12,9,.12);transition:transform .45s cubic-bezier(.3,1.4,.5,1)}
+.cg-socle{width:110%;height:3.2cqw;margin-top:-1px;border-radius:1.4cqw;background:linear-gradient(#F3DFA0,#B38A3A);box-shadow:0 1.6cqw 3cqw -1cqw rgba(0,0,0,.65),inset 0 -1cqw 0 var(--c)}
+.doigt{position:absolute;z-index:7;left:50%;top:9cqw;width:11cqw;height:11cqw;margin-left:-5.5cqw;border-radius:50%;border:.7cqw solid #fff;background:rgba(255,255,255,.25);opacity:0;pointer-events:none}
+.f3.choisie .doigt{animation:doigt .9s ease-out both}
+@keyframes doigt{0%{opacity:0;transform:scale(1.6)}35%{opacity:1;transform:scale(.8)}100%{opacity:0;transform:scale(1.9)}}
+.f3.choisie .cg{animation:luit .7s var(--ressort)}
+.f3.choisie .cg-dome{box-shadow:0 0 0 .8cqw var(--c),0 0 6cqw var(--c)}
+@keyframes luit{40%{transform:scale(1.14) rotate(-3deg)}}
+.libere .f3:not(.choisie){opacity:.38}
+.libere .f3.choisie .cg-porte{transform:perspective(40cqw) rotateY(-118deg)}
+.libere .f3.choisie .cg-dome img{opacity:0;transition-delay:.15s}
+.envol{position:absolute;z-index:8;left:50%;top:44cqh;width:22cqw;margin-left:-11cqw;opacity:0;transform:scale(.5);transition:opacity .25s .15s,transform 1.1s var(--ressort) .15s;pointer-events:none}
+.envol img{display:block;width:100%;height:auto;filter:drop-shadow(0 2cqw 3cqw rgba(0,0,0,.55))}
+.envol b{position:absolute;left:50%;top:96%;transform:translateX(-50%);padding:.6cqw 2.6cqw;border-radius:2.6cqw;white-space:nowrap;font-size:3.8cqw;font-weight:800;color:#fff;background:#F5A23A}
+.libere .envol{opacity:1;transform:translateY(-41cqh) scale(1.1)}
+.nuee .envol{opacity:0;transform:translateY(-44cqh) scale(.6);transition:opacity .3s,transform .5s}
+#s-cages .fac{top:20cqh;opacity:0;transform:scale(1.06);transition:opacity .5s,transform .9s cubic-bezier(.3,.7,.3,1)}
+#s-cages.nuee .fac{opacity:1;transform:none}
+.foule .fg{opacity:0;transform:translate(-50%,-100%) translate(var(--dx,0),60cqw) scale(.4) rotate(var(--rot,-20deg));transition:opacity .2s var(--d),transform 1s var(--ressort) var(--d)}
+.nuee .foule .fg{opacity:1;transform:translate(-50%,-100%)}
+.compteur{position:absolute;left:0;right:0;top:4.5cqh;z-index:9;text-align:center;opacity:0;transform:translateY(-3cqw);transition:opacity .4s,transform .6s var(--ressort)}
+.nuee .compteur{opacity:1;transform:none}
+.compteur b{display:block;font-size:8.6cqw;font-weight:900;line-height:1.05;letter-spacing:-.02em}
+.compteur b span{font-variant-numeric:tabular-nums;background:linear-gradient(90deg,var(--rose2),#FFB347);-webkit-background-clip:text;background-clip:text;color:transparent}
+.compteur small{display:block;margin-top:1cqw;font-size:4cqw;font-weight:700;color:rgba(255,244,230,.8)}
+.compteur em{display:inline-block;margin-top:2cqw;padding:1cqw 3cqw;border-radius:99px;font-style:normal;font-size:3.5cqw;font-weight:800;color:#2B1D16;background:#FBF4E4;
+  transform:scale(0);transition:transform .5s var(--ressort)}
+.compteur em.on{transform:rotate(-2deg)}
+
+/* ═══ ⑥ l'histoire de Camille : un message rien qu'à elle, à chaque fois un peu mieux ═══ */
+.fiche{position:absolute;left:5cqw;right:5cqw;top:4cqh;z-index:6;display:flex;align-items:center;gap:3.4cqw;padding:2.6cqw 3.4cqw;border-radius:4.4cqw;
+  background:linear-gradient(180deg,rgba(62,36,49,.97),rgba(30,16,23,.97));border:1px solid rgba(255,214,140,.25);box-shadow:0 4cqw 8cqw -4cqw rgba(0,0,0,.9);
+  opacity:0;transform:translateY(-4cqw);transition:opacity .35s,transform .6s var(--ressort)}
+#s-camille.on .fiche{opacity:1;transform:none}
+.fiche>img{flex:none;width:14cqw;height:auto;filter:drop-shadow(0 1cqw 1cqw rgba(0,0,0,.5))}
+.fiche>div{min-width:0}
+.fiche>div>b{display:block;font-size:5.4cqw;font-weight:900;line-height:1.1}
+.fiche>div>small{display:block;margin-bottom:1.4cqw;font-size:2.9cqw;font-weight:700;color:rgba(255,244,230,.6)}
+.tags{display:flex;flex-wrap:wrap;gap:1.2cqw}
+.tags em{font-style:normal;padding:.7cqw 2.2cqw;border-radius:99px;font-size:2.9cqw;font-weight:800;white-space:nowrap;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);display:none}
+.tags em.on{display:inline-block;animation:pop .45s var(--ressort) both}
+.tags em.venue{color:#04150E;background:linear-gradient(135deg,#9FF5C9,var(--vert));border-color:transparent}
+.fil{position:absolute;left:4cqw;right:4cqw;top:24cqh;bottom:21cqh;display:flex;flex-direction:column;justify-content:flex-end;gap:2.2cqw;overflow:hidden;
+  -webkit-mask-image:linear-gradient(transparent,#000 16%);mask-image:linear-gradient(transparent,#000 16%);transition:opacity .45s,transform .6s}
+.fil.part{opacity:0;transform:translateY(-6cqh)}
+.fil>*{flex:none;animation:monte .45s var(--ressort) both}
+@keyframes monte{from{opacity:0;transform:translateY(5cqw) scale(.94)}to{opacity:1;transform:none}}
+.jour{align-self:center;padding:.9cqw 3.4cqw;border-radius:99px;font-size:3.2cqw;font-weight:800;color:rgba(255,244,230,.85);background:rgba(255,255,255,.08)}
+.jour.calme{color:#FFD27A;background:rgba(246,181,75,.14)}
+.msg{max-width:84%;padding:2.4cqw 3.4cqw;border-radius:4cqw;font-size:3.7cqw;font-weight:600;line-height:1.35}
+.msg small{display:block;margin-bottom:.6cqw;font-size:2.7cqw;font-weight:800;opacity:.8}
+.msg.mike{align-self:flex-start;border-bottom-left-radius:1cqw;color:#fff;background:linear-gradient(135deg,#FF4FAE,#E0167A)}
+.msg.wa{align-self:flex-start;border-bottom-left-radius:1cqw;color:#0B2A17;background:#DCF8C6}
+.msg.wa small{color:#128C3E}
+.msg.elle{align-self:flex-end;border-bottom-right-radius:1cqw;color:#2A1A10;background:var(--creme);font-weight:800}
+.oui{align-self:flex-start;margin-top:-1.2cqw;padding:.6cqw 2.4cqw;border-radius:99px;font-size:2.8cqw;font-weight:800;color:#04150E;background:var(--vert)}
+#s-camille .fac{left:10cqw;width:80cqw;top:23.5cqh;opacity:0;transform:scale(.92);transition:opacity .5s .1s,transform .9s var(--ressort) .1s}
+#s-camille.porte .fac{opacity:1;transform:none}
+.arrivent .fg{transition:opacity .35s calc(.5s + var(--k) * .25s),transform 1.2s var(--ressort) calc(.5s + var(--k) * .25s);opacity:0;transform:translate(-50%,-100%) translateX(-44cqw)}
+.porte .arrivent .fg{opacity:1;transform:translate(-50%,-100%)}
+.bandeau{position:absolute;left:5cqw;right:5cqw;top:79cqh;margin:0;text-align:center;font-size:6cqw;font-weight:900;line-height:1.15;opacity:0;transform:translateY(3cqw);transition:opacity .4s,transform .6s var(--ressort)}
+.bandeau.on{opacity:1;transform:none}
+.bandeau-sous{position:absolute;left:6cqw;right:6cqw;top:88cqh;margin:0;text-align:center;font-size:3.5cqw;font-weight:700;color:rgba(255,244,230,.72);opacity:0;transition:opacity .4s}
+.bandeau-sous.on{opacity:1}
+
+/* ═══ ⑦ « Votre fantôme vous attend. » ═══ */
+.fin-haut{position:absolute;left:5cqw;right:5cqw;top:5cqh;display:flex;align-items:center;gap:4cqw}
+.fin-fant{position:relative;flex:none;width:28cqw;opacity:0;transform:translateY(-4cqh) scale(.6);transition:opacity .3s,transform .9s var(--ressort)}
+.fin-fant img{display:block;width:100%;height:auto;filter:drop-shadow(0 2cqw 3cqw rgba(0,0,0,.55))}
+.fin-titre{margin:0;font-size:8.4cqw;font-weight:900;line-height:1.05;letter-spacing:-.02em;opacity:0;transform:translateX(4cqw);transition:opacity .4s .2s,transform .7s var(--ressort) .2s}
+.fin-titre em{font-style:normal;background:linear-gradient(90deg,var(--rose2),#FFB347);-webkit-background-clip:text;background-clip:text;color:transparent}
+#s-fin.dit .fin-fant{opacity:1;transform:none}
+#s-fin.dit .fin-fant img{animation:flotte 2.6s ease-in-out 1s infinite}
+#s-fin.dit .fin-titre{opacity:1;transform:none}
+.ticket{position:absolute;left:7cqw;right:7cqw;top:24cqh;padding:4cqw 5cqw 3cqw;border-radius:3cqw;color:#2B1D16;background:#FBF7F0;box-shadow:0 4cqw 9cqw -4cqw rgba(0,0,0,.9);
+  -webkit-mask:radial-gradient(circle at 50% 100%,transparent 1.6cqw,#000 1.7cqw) bottom/5cqw 3.4cqw repeat-x,linear-gradient(#000 0 0) top/100% calc(100% - 3.3cqw) no-repeat;
+  mask:radial-gradient(circle at 50% 100%,transparent 1.6cqw,#000 1.7cqw) bottom/5cqw 3.4cqw repeat-x,linear-gradient(#000 0 0) top/100% calc(100% - 3.3cqw) no-repeat;
+  opacity:0;transform:translateY(4cqw);transition:opacity .4s,transform .7s var(--ressort)}
+#s-fin.dit .ticket{opacity:1;transform:none}
+.tk-tete{margin:0 0 2.4cqw;font-size:3.3cqw;font-weight:900;letter-spacing:.06em;text-transform:uppercase;text-align:center;color:#8A6A55}
+.tk-tete b{display:block;font:italic 700 5.4cqw/1.2 "Playfair Display",Georgia,serif;letter-spacing:0;text-transform:none;color:#2B1D16}
+.ticket ul{list-style:none;margin:0;padding:0;display:grid;gap:.4cqw}
+.ticket li{display:flex;align-items:baseline;gap:2.6cqw;padding:1.6cqw 0;border-top:1px dashed rgba(43,29,22,.22);font-size:3.8cqw;font-weight:600;opacity:0;transform:translateX(-3cqw);
+  transition:opacity .3s calc(var(--k) * .32s),transform .5s var(--ressort) calc(var(--k) * .32s)}
+.ticket li b{font-weight:900}
+.ticket li.vert b{color:#0E8F5F}
+#s-fin.lignes .ticket li{opacity:1;transform:none}
+.fin-boutons{position:absolute;left:7cqw;right:7cqw;top:69cqh;display:grid;gap:2.6cqw;opacity:0;transform:translateY(3cqw);transition:opacity .4s,transform .6s var(--ressort)}
+#s-fin.boutons .fin-boutons{opacity:1;transform:none}
+.go,.go2{display:block;padding:3.6cqw 4cqw;border-radius:99px;text-align:center;text-decoration:none;font-size:4.4cqw;font-weight:900;color:#fff}
+.go{background:linear-gradient(135deg,#FF5DB8,#E0167A);box-shadow:0 3cqw 6cqw -2cqw rgba(255,46,154,.85)}
+.go2{padding:3cqw 4cqw;font-size:3.9cqw;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2)}
+.fin-pied{display:flex;justify-content:space-between;align-items:center;gap:3cqw;margin-top:.6cqw}
+#revoir{border:0;background:none;padding:1cqw 0;font-size:3.6cqw;font-weight:800;color:rgba(255,244,230,.8);cursor:pointer}
+.fin-note{margin:0;font-size:2.7cqw;font-weight:600;color:rgba(255,244,230,.45);text-align:right}
+
+/* ═══ LES SOUS-TITRES, mot à mot ═══ */
+#st{position:absolute;left:5cqw;right:5cqw;bottom:6.5cqh;z-index:30;min-height:13cqw;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+#st p{margin:0;font-size:6cqw;font-weight:900;line-height:1.18;letter-spacing:-.01em;text-shadow:0 .5cqw 2cqw rgba(0,0,0,.85),0 0 .4cqw rgba(0,0,0,.9)}
+#st span{opacity:.42;transition:opacity .12s,color .12s}
+#st span.dit{opacity:1}
+#st span.la{opacity:1;color:#FFE37A}
+/* la pause */
+#pause{position:absolute;right:2.6cqw;bottom:1.4cqh;z-index:50;display:none;width:8cqw;height:8cqw;padding:0;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);font-size:3.4cqw;cursor:pointer}
+.joue-demo #pause{display:block}
+.video #pause{display:none!important}
+#pause-voile{position:absolute;inset:0;z-index:45;display:none;place-items:center;background:rgba(5,3,4,.55)}
+body.pause #pause-voile{display:grid}
+#pause-voile b{padding:3cqw 7cqw;border-radius:99px;font-size:5cqw;font-weight:900;background:var(--rose);cursor:pointer}
+/* « Pour qui est cette démo ? » */
+#pour-feuille{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:rgba(5,3,4,.75)}
+#pour-feuille[hidden]{display:none}
+#pour-form{width:min(88vw,380px);padding:22px;border-radius:20px;background:#22121A;border:1px solid rgba(255,255,255,.14);display:grid;gap:12px}
+#pour-form label{font-weight:800;font-size:17px}
+#pour-form input{font:inherit;font-size:18px;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:#140A0F;color:#fff}
+#pour-form div{display:flex;gap:10px;justify-content:flex-end}
+#pour-form button{padding:10px 16px;border-radius:99px;border:0;font-weight:800;cursor:pointer;background:rgba(255,255,255,.1)}
+#pour-form button[type=submit]{background:var(--rose)}
+@media (prefers-reduced-motion:reduce){.cage,.cg,.cd-fant,.dep-appel,.hote img,.fin-fant img{animation:none!important}}
+</style>
+
+<div id="ecran"><div id="scene">
+
+  <!-- ① LA CAGE -->
+  <section class="sc on" id="s-cage">
+    <div class="dep-haut"><span class="marque">Clik<b>Me</b></span><button id="pour" type="button">✎ Pour qui est cette démo ?</button></div>
+    <button class="cage" id="cage" type="button" aria-label="Libérer le fantôme et lancer la démo">
+      <span class="cage-anneau"></span><span class="cage-noeud"></span>
+      <span class="cage-dome"><span class="cd-fant"><img src="hote.webp" alt=""><svg class="toque" viewBox="0 0 100 80" aria-hidden="true"><defs><radialGradient id="tq4a" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#F4F1EC"/><stop offset="1" stop-color="#D9D2C8"/></radialGradient><linearGradient id="tq4b" x1="0" x2="1"><stop offset="0" stop-color="#DCD5CB"/><stop offset=".3" stop-color="#fff"/><stop offset=".7" stop-color="#F7F4EF"/><stop offset="1" stop-color="#CFC7BB"/></linearGradient></defs><g fill="url(#tq4a)"><circle cx="24" cy="36" r="18"/><circle cx="76" cy="36" r="18"/><circle cx="38" cy="22" r="20"/><circle cx="62" cy="22" r="20"/><circle cx="50" cy="30" r="22"/></g><path d="M50 6c-4 8-4 22 0 34M33 12c-2 9 0 20 4 28M67 12c2 9 0 20-4 28" stroke="#D8D0C4" stroke-width="1" fill="none" opacity=".7"/><path d="M11 44Q50 38 89 44L92 79Q50 70 8 79Z" fill="url(#tq4b)"/><path d="M11 44Q50 38 89 44" stroke="#E2DBD0" stroke-width="1.2" fill="none"/><path d="M24 43V74M37 41.5V71M50 41V70M63 41.5V71M76 43V74" stroke="#E4DED4" stroke-width=".9"/></svg></span></span>
+      <span class="cage-porte"></span>
+      <span class="cage-socle"></span>
+    </button>
+    <p class="toc-toc">toc toc</p>
+    <div class="sortie"><img src="hote.webp" alt=""><svg class="toque" viewBox="0 0 100 80" aria-hidden="true"><defs><radialGradient id="tq5a" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#F4F1EC"/><stop offset="1" stop-color="#D9D2C8"/></radialGradient><linearGradient id="tq5b" x1="0" x2="1"><stop offset="0" stop-color="#DCD5CB"/><stop offset=".3" stop-color="#fff"/><stop offset=".7" stop-color="#F7F4EF"/><stop offset="1" stop-color="#CFC7BB"/></linearGradient></defs><g fill="url(#tq5a)"><circle cx="24" cy="36" r="18"/><circle cx="76" cy="36" r="18"/><circle cx="38" cy="22" r="20"/><circle cx="62" cy="22" r="20"/><circle cx="50" cy="30" r="22"/></g><path d="M50 6c-4 8-4 22 0 34M33 12c-2 9 0 20 4 28M67 12c2 9 0 20-4 28" stroke="#D8D0C4" stroke-width="1" fill="none" opacity=".7"/><path d="M11 44Q50 38 89 44L92 79Q50 70 8 79Z" fill="url(#tq5b)"/><path d="M11 44Q50 38 89 44" stroke="#E2DBD0" stroke-width="1.2" fill="none"/><path d="M24 43V74M37 41.5V71M50 41V70M63 41.5V71M76 43V74" stroke="#E4DED4" stroke-width=".9"/></svg></div>
+    <div class="etincelles" aria-hidden="true"></div>
+    <div class="dep-bas"><p class="dep-appel">Touchez la cage</p><p class="dep-sous" id="dep-sous">45 secondes · montez le son 🔊</p></div>
+  </section>
+
+  <!-- ② LA FAÇADE : une photo le matin, des clients le jour même -->
+  <section class="sc" id="s-fac">
+    <p class="heure" id="heure">☀️ 9 h 02</p>
+    <div class="fac" id="fac1"><i class="fac-f"></i><div class="fac-ens"><b class="nom-commerce">Chez Bergine</b><small>BISTROT · DAX</small></div><i class="fac-store"></i><div class="fac-vit"><img src="si-interieur.webp" alt=""></div><div class="fac-porte"><i></i></div><i class="fac-trot"></i><span class="hote"><img src="hote.webp" alt=""><svg class="toque" viewBox="0 0 100 80" aria-hidden="true"><defs><radialGradient id="tq1a" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#F4F1EC"/><stop offset="1" stop-color="#D9D2C8"/></radialGradient><linearGradient id="tq1b" x1="0" x2="1"><stop offset="0" stop-color="#DCD5CB"/><stop offset=".3" stop-color="#fff"/><stop offset=".7" stop-color="#F7F4EF"/><stop offset="1" stop-color="#CFC7BB"/></linearGradient></defs><g fill="url(#tq1a)"><circle cx="24" cy="36" r="18"/><circle cx="76" cy="36" r="18"/><circle cx="38" cy="22" r="20"/><circle cx="62" cy="22" r="20"/><circle cx="50" cy="30" r="22"/></g><path d="M50 6c-4 8-4 22 0 34M33 12c-2 9 0 20 4 28M67 12c2 9 0 20-4 28" stroke="#D8D0C4" stroke-width="1" fill="none" opacity=".7"/><path d="M11 44Q50 38 89 44L92 79Q50 70 8 79Z" fill="url(#tq1b)"/><path d="M11 44Q50 38 89 44" stroke="#E2DBD0" stroke-width="1.2" fill="none"/><path d="M24 43V74M37 41.5V71M50 41V70M63 41.5V71M76 43V74" stroke="#E4DED4" stroke-width=".9"/></svg></span><div class="clients"><span class="fg" style="left:-14%;top:93%;--k:0;--h:15cqw" data-x="46%"><img src="g/denim-debout.webp" alt=""></span><span class="fg" style="left:-14%;top:93%;--k:1;--h:15cqw" data-x="56%"><img src="g/soleil-debout.webp" alt=""></span><span class="fg" style="left:-14%;top:93%;--k:2;--h:15cqw" data-x="64%"><img src="g/artiste-debout.webp" alt=""></span></div></div>
+    <figure class="polar" id="polar"><img src="m4.jpg" alt=""><figcaption>📷 Votre photo du matin</figcaption></figure>
+    <b class="plus4" id="plus4">+4 tables ce midi</b>
+  </section>
+
+  <!-- ③ LE FILM, PUIS PARTOUT -->
+  <section class="sc" id="s-film">
+    <div class="film" id="film">
+      <div class="film-img"><img src="m4.jpg" alt=""><img src="m2.jpg" alt=""><img src="m1.jpg" alt=""></div>
+      <div class="film-voile"></div>
+      <i class="film-rec">🎬 Monté par votre fantôme</i>
+      <div class="film-titre"><small>Le plat du jour</small><b class="nom-commerce">Chez Bergine</b></div>
+      <p class="film-mots"><span style="--k:0">Ce</span> <span style="--k:1">midi,</span> <span style="--k:2">en</span> <span style="--k:3">cuisine</span></p>
+    </div>
+    <div class="reseaux" id="reseaux">
+      <span class="rs ig" style="--k:0;--x:17cqw;--y:24cqh"><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></i><b>Instagram</b><em>✓</em></span>
+      <span class="rs fb" style="--k:1;--x:83cqw;--y:24cqh"><i><svg viewBox="0 0 24 24"><path fill="#fff" d="M13.6 21v-7.6h2.6l.4-3h-3V8.5c0-.9.3-1.5 1.6-1.5h1.6V4.3c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.2H8v3h2.6V21z"/></svg></i><b>Facebook</b><em>✓</em></span>
+      <span class="rs go" style="--k:2;--x:15cqw;--y:52cqh"><i><svg viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2z"/><path fill="#EA4335" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10C7.2 7.7 9.4 6 12 6z"/></svg></i><b>Google</b><em>✓</em></span>
+      <span class="rs wa" style="--k:3;--x:85cqw;--y:52cqh"><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9"><path d="M4.2 19.8l1.1-3.6A8.5 8.5 0 1 1 8 18.9z" stroke-linejoin="round"/><path fill="#fff" stroke="none" d="M9.2 7.9c.2 0 .4 0 .5.4l.7 1.6c.1.2 0 .4-.1.6l-.5.6c-.1.1-.2.3 0 .5a6 6 0 0 0 2.6 2.3c.2.1.4.1.5-.1l.6-.7c.2-.2.4-.2.6-.1l1.6.8c.2.1.3.2.3.4 0 .5-.2 1.2-.8 1.6-.6.4-1.5.5-2.6.1a9 9 0 0 1-4.6-4.2c-.6-1.1-.6-2.1-.2-2.8.3-.6.8-.9 1.4-1z"/></svg></i><b>WhatsApp</b><em>✓</em></span>
+      <span class="rs di" style="--k:4;--x:50cqw;--y:70cqh"><i><span>DIRECT</span></i><b>Le Direct de Dax</b><em>✓</em></span>
+    </div>
+  </section>
+
+  <!-- ④ L'ÉCRAN PARTAGÉ -->
+  <section class="sc duel" id="s-duel">
+    <div class="tel g"><p class="tel-titre">Une vidéo,<br>seule</p><div class="tel-ecran"><img src="m4.jpg" alt="">
+      <div class="tel-fin likes"><b><i>♥</i> 214</b><ul><li style="--c:#7A8BA6">lucas_dx a aimé</li><li style="--c:#A6867A">marie.b a aimé</li><li style="--c:#7AA68B">j.dupont a aimé</li><li style="--c:#9C7AA6">+ 211 autres</li></ul></div>
+      <span class="tampon">Aucun prénom</span></div></div>
+    <div class="tel d"><p class="tel-titre">Avec votre<br>fantôme</p><div class="tel-ecran"><img src="m4.jpg" alt="">
+      <div class="tel-fin fantomes"><div class="mini-cages"><span></span><span></span><span></span></div><div class="prenoms" id="prenoms"></div><b class="compte"><span id="n-prenoms">0</span> prénoms</b></div></div></div>
+  </section>
+
+  <!-- ⑤ LES CAGES, PUIS LA NUÉE -->
+  <section class="sc" id="s-cages">
+    <p class="like" id="like"><i>♥</i> J’aime</p>
+    <div class="carte-cages" id="carte-cages"><b class="cc-titre">Et vous ?</b><div class="rang">
+      <div class="f3 adore"><span class="cg"><span class="cg-anneau"></span><span class="cg-noeud"></span><span class="cg-dome"><img src="g/cosy-debout.webp" alt=""></span><span class="cg-porte"></span><span class="cg-socle"></span></span><b>J’adore<br>la vidéo</b></div>
+      <div class="f3 promis" id="cage-promis"><span class="cg"><span class="cg-anneau"></span><span class="cg-noeud"></span><span class="cg-dome"><img src="g/fleuri-debout.webp" alt=""></span><span class="cg-porte"></span><span class="cg-socle"></span></span><b>Je viendrai<br>un jour</b><i class="doigt"></i></div>
+      <div class="f3 auj"><span class="cg"><span class="cg-anneau"></span><span class="cg-noeud"></span><span class="cg-dome"><img src="g/curieux-debout.webp" alt=""></span><span class="cg-porte"></span><span class="cg-socle"></span></span><b>Je réserve<br>aujourd’hui</b></div>
+    </div></div>
+    <div class="envol" id="envol"><img src="g/fleuri-debout.webp" alt=""><b>Camille</b></div>
+    <div class="compteur"><b><span id="n-fantomes">0</span> fantômes libérés</b><small>sur votre vidéo de ce matin</small><em id="carnet">📒 12 ont promis de venir : Camille, Hugo, Inès…</em></div>
+    <div class="fac" id="fac2"><i class="fac-f"></i><div class="fac-ens"><b class="nom-commerce">Chez Bergine</b><small>BISTROT · DAX</small></div><i class="fac-store"></i><div class="fac-vit"><img src="si-interieur.webp" alt=""><div class="foule dedans"></div></div><div class="fac-porte"><i></i></div><i class="fac-trot"></i><span class="hote"><img src="hote.webp" alt=""><svg class="toque" viewBox="0 0 100 80" aria-hidden="true"><defs><radialGradient id="tq2a" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#F4F1EC"/><stop offset="1" stop-color="#D9D2C8"/></radialGradient><linearGradient id="tq2b" x1="0" x2="1"><stop offset="0" stop-color="#DCD5CB"/><stop offset=".3" stop-color="#fff"/><stop offset=".7" stop-color="#F7F4EF"/><stop offset="1" stop-color="#CFC7BB"/></linearGradient></defs><g fill="url(#tq2a)"><circle cx="24" cy="36" r="18"/><circle cx="76" cy="36" r="18"/><circle cx="38" cy="22" r="20"/><circle cx="62" cy="22" r="20"/><circle cx="50" cy="30" r="22"/></g><path d="M50 6c-4 8-4 22 0 34M33 12c-2 9 0 20 4 28M67 12c2 9 0 20-4 28" stroke="#D8D0C4" stroke-width="1" fill="none" opacity=".7"/><path d="M11 44Q50 38 89 44L92 79Q50 70 8 79Z" fill="url(#tq2b)"/><path d="M11 44Q50 38 89 44" stroke="#E2DBD0" stroke-width="1.2" fill="none"/><path d="M24 43V74M37 41.5V71M50 41V70M63 41.5V71M76 43V74" stroke="#E4DED4" stroke-width=".9"/></svg></span><div class="foule dehors"></div></div>
+  </section>
+
+  <!-- ⑥ CAMILLE -->
+  <section class="sc" id="s-camille">
+    <div class="fiche"><img src="g/fleuri-debout.webp" alt=""><div><b>Camille</b><small>Ce que votre fantôme sait d’elle</small><div class="tags">
+      <em class="on">🔓 Je viendrai un jour</em><em id="tag-semaine">📅 Plutôt en semaine</em><em id="tag-prevenir">🔔 À prévenir</em><em class="venue" id="tag-venue">✓ Est venue</em></div></div></div>
+    <div class="fil" id="fil"></div>
+    <div class="fac" id="fac3"><i class="fac-f"></i><div class="fac-ens"><b class="nom-commerce">Chez Bergine</b><small>BISTROT · DAX</small></div><i class="fac-store"></i><div class="fac-vit"><img src="si-interieur.webp" alt=""></div><div class="fac-porte"><i></i></div><i class="fac-trot"></i><span class="hote"><img src="hote.webp" alt=""><svg class="toque" viewBox="0 0 100 80" aria-hidden="true"><defs><radialGradient id="tq3a" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#F4F1EC"/><stop offset="1" stop-color="#D9D2C8"/></radialGradient><linearGradient id="tq3b" x1="0" x2="1"><stop offset="0" stop-color="#DCD5CB"/><stop offset=".3" stop-color="#fff"/><stop offset=".7" stop-color="#F7F4EF"/><stop offset="1" stop-color="#CFC7BB"/></linearGradient></defs><g fill="url(#tq3a)"><circle cx="24" cy="36" r="18"/><circle cx="76" cy="36" r="18"/><circle cx="38" cy="22" r="20"/><circle cx="62" cy="22" r="20"/><circle cx="50" cy="30" r="22"/></g><path d="M50 6c-4 8-4 22 0 34M33 12c-2 9 0 20 4 28M67 12c2 9 0 20-4 28" stroke="#D8D0C4" stroke-width="1" fill="none" opacity=".7"/><path d="M11 44Q50 38 89 44L92 79Q50 70 8 79Z" fill="url(#tq3b)"/><path d="M11 44Q50 38 89 44" stroke="#E2DBD0" stroke-width="1.2" fill="none"/><path d="M24 43V74M37 41.5V71M50 41V70M63 41.5V71M76 43V74" stroke="#E4DED4" stroke-width=".9"/></svg></span><div class="arrivent"><span class="fg" style="left:33%;top:93%;--k:0;--h:21cqw"><img src="g/fleuri-debout.webp" alt=""><b>Camille</b></span><span class="fg" style="left:53%;top:93%;--k:1;--h:20cqw"><img src="g/cosy-debout.webp" alt=""></span></div><p class="bulle-hote">Camille ! On t’attendait 😊</p></div>
+    <p class="bandeau" id="bandeau">Et pareil pour les 37 autres.</p>
+    <p class="bandeau-sous" id="bandeau-sous">Jamais plus de 2 messages par semaine. Vous validez chacun.</p>
+  </section>
+
+  <!-- ⑦ LA FIN -->
+  <section class="sc" id="s-fin">
+    <div class="fin-haut"><span class="fin-fant"><img src="hote.webp" alt=""><svg class="toque" viewBox="0 0 100 80" aria-hidden="true"><defs><radialGradient id="tq6a" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#F4F1EC"/><stop offset="1" stop-color="#D9D2C8"/></radialGradient><linearGradient id="tq6b" x1="0" x2="1"><stop offset="0" stop-color="#DCD5CB"/><stop offset=".3" stop-color="#fff"/><stop offset=".7" stop-color="#F7F4EF"/><stop offset="1" stop-color="#CFC7BB"/></linearGradient></defs><g fill="url(#tq6a)"><circle cx="24" cy="36" r="18"/><circle cx="76" cy="36" r="18"/><circle cx="38" cy="22" r="20"/><circle cx="62" cy="22" r="20"/><circle cx="50" cy="30" r="22"/></g><path d="M50 6c-4 8-4 22 0 34M33 12c-2 9 0 20 4 28M67 12c2 9 0 20-4 28" stroke="#D8D0C4" stroke-width="1" fill="none" opacity=".7"/><path d="M11 44Q50 38 89 44L92 79Q50 70 8 79Z" fill="url(#tq6b)"/><path d="M11 44Q50 38 89 44" stroke="#E2DBD0" stroke-width="1.2" fill="none"/><path d="M24 43V74M37 41.5V71M50 41V70M63 41.5V71M76 43V74" stroke="#E4DED4" stroke-width=".9"/></svg></span><h1 class="fin-titre">Votre fantôme <em>vous attend.</em></h1></div>
+    <div class="ticket"><p class="tk-tete">Une semaine avec votre fantôme<b class="nom-commerce">Chez Bergine</b></p><ul>
+      <li style="--k:0">🎬 <span><b>7 films</b>, publiés partout</span></li>
+      <li style="--k:1">👻 <span><b>38 prénoms</b>, dont 12 promesses</span></li>
+      <li style="--k:2">💬 <span>Un message <b>rien qu’à chacun</b></span></li>
+      <li class="vert" style="--k:3">🍽️ <span><b>+4 tables</b> un midi calme</span></li>
+      <li style="--k:4">⏱ <span><b>1 minute</b> par jour pour vous</span></li>
+    </ul></div>
+    <div class="fin-boutons">
+      <a class="go" href="/commercants#creer">Créer mon espace · gratuit</a>
+      <a class="go2" href="../restaurant/index.html">Voir le tour complet · 2 min</a>
+      <div class="fin-pied"><button id="revoir" type="button">↺ Revoir</button><p class="fin-note">Commerce et chiffres imaginaires</p></div>
+    </div>
+  </section>
+
+  <div id="st" aria-live="off"></div>
+  <div id="eclair"></div>
+  <button id="pause" type="button" aria-label="Pause">⏸</button>
+  <div id="pause-voile"><b>▶ Reprendre</b></div>
+</div></div>
+
+<div id="pour-feuille" hidden><form id="pour-form"><label for="pour-nom">Pour qui est cette démo ?</label>
+  <input id="pour-nom" maxlength="40" autocomplete="off" placeholder="Le nom de son commerce">
+  <div><button type="button" id="pour-effacer">Effacer</button><button type="submit">C’est lui</button></div></form></div>
+
+<script>
+"use strict";
+// Les voix et l'instant de chaque mot (mesurés par `tour-court.py`, d'après les enregistrements).
+const TEMPS = {"c1": {"d": 1.88, "m": [0.12, 0.76, 0.98]}, "c2": {"d": 3.0, "m": [0.0, 0.16, 0.48, 0.64, 1.4, 1.65, 1.9, 2.16, 2.41]}, "c3": {"d": 3.4, "m": [0.12, 0.38, 0.64, 0.9, 1.77, 1.95, 2.13, 2.31, 2.49]}, "c4": {"d": 4.21, "m": [0.0, 0.18, 0.86, 1.03, 1.36, 1.52, 2.02, 2.45, 2.6, 2.74, 3.03, 3.17, 3.31, 3.46]}, "c5": {"d": 2.69, "m": [0.0, 0.24, 0.48, 0.72, 1.2, 1.37, 1.7, 1.87]}, "c6": {"d": 7.81, "m": [0.0, 0.22, 0.65, 0.87, 1.09, 1.52, 1.74, 2.17, 2.39, 2.61, 3.27, 3.43, 3.59, 3.91, 4.07, 4.23, 4.39, 4.55, 4.71, 5.54, 5.9, 6.08, 6.54, 6.84, 7.02, 7.2]}, "c7": {"d": 2.12, "m": [0.14, 0.38, 0.85, 1.08]}};
+const SOUS = {"c1": "Libérez votre fantôme.", "c2": "Une photo le matin. | Des clients le jour même.", "c3": "Je fais votre film… | et je le publie partout.", "c4": "Une vidéo, vous savez la faire. | Moi, je vous ramène | ceux qui l’ont regardée.", "c5": "Au lieu d’un like, | ils libèrent un fantôme.", "c6": "Puis j’écris à chaque personne | un message rien qu’à elle. | Je la connais un peu mieux | à chaque réponse… | jusqu’au jour où | elle pousse votre porte.", "c7": "Votre fantôme vous attend."};
+const NOM_DEMO = "Chez Bergine";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const VIDEO = /[?&]video\b/.test(location.search);
+if (VIDEO) document.body.classList.add("video");
+
+/* ── SON NOM (le même que dans les tours, gardé le temps de la visite) ── */
+let NOM = "";
+try { NOM = sessionStorage.getItem("tour-pour") || ""; } catch (e) { /* stockage fermé */ }
+const echapper = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+function poserNom() {
+  const n = NOM || NOM_DEMO;
+  $$(".nom-commerce").forEach((e) => { e.textContent = n; });
+  $$(".fac-ens small").forEach((e) => { e.textContent = NOM ? "RESTAURANT" : "BISTROT · DAX"; });
+  // son vrai commerce, des chiffres inventés : on ne dit pas « commerce imaginaire » sous son nom
+  $(".fin-note").textContent = NOM ? "Chiffres imaginaires" : "Commerce et chiffres imaginaires";
+  const b = $("#pour");
+  b.classList.toggle("a-nom", !!NOM);
+  b.innerHTML = NOM ? "✨ Préparé pour <b>" + echapper(NOM) + "</b>" : "✎ Pour qui est cette démo ?";
+}
+poserNom();
+$("#pour").addEventListener("click", (e) => { e.stopPropagation(); $("#pour-nom").value = NOM; $("#pour-feuille").hidden = false; setTimeout(() => $("#pour-nom").focus(), 60); });
+function garderNom(n) {
+  NOM = n.trim().replace(/\s+/g, " ").slice(0, 40);
+  try { if (NOM) sessionStorage.setItem("tour-pour", NOM); else sessionStorage.removeItem("tour-pour"); } catch (e) { /* stockage fermé */ }
+  $("#pour-feuille").hidden = true; poserNom();
+}
+$("#pour-form").addEventListener("submit", (e) => { e.preventDefault(); garderNom($("#pour-nom").value); });
+$("#pour-effacer").addEventListener("click", () => garderNom(""));
+$("#pour-feuille").addEventListener("click", (e) => { if (e.target.id === "pour-feuille") $("#pour-feuille").hidden = true; });
+
+/* ── LES ÉTINCELLES de la cage, la foule de la nuée ── */
+$(".etincelles").innerHTML = Array.from({ length: 14 }, (_, k) => {
+  const a = (k / 14) * Math.PI * 2, r = 26 + (k % 3) * 9;
+  return `<i style="--k:${k};--x:${(Math.cos(a) * r).toFixed(1)}cqw;--y:${(Math.sin(a) * r).toFixed(1)}cqw"></i>`;
+}).join("");
+const LOOKS = ["cosy", "fleuri", "curieux", "artiste", "denim", "rebelle", "soleil", "voyageur"];
+const COULEURS = ["#FF2E9A", "#F5A23A", "#3DE2A6", "#8E7CFF", "#FF7A59", "#4FB8FF"];
+const PRENOMS = ["Camille", "Hugo", "Inès", "Nathan", "Manon", "Jules", "Sarah", "Adam", "Zoé", "Louis", "Chloé", "Emma", "Léo", "Lina", "Tom", "Jade", "Noah", "Rose", "Malo", "Nina", "Théo", "Alice", "Sacha", "Lou", "Yanis", "Anna", "Paul", "Iris", "Gabin", "Léna", "Axel", "Mila", "Enzo", "Julia", "Robin", "Eva", "Max", "Clara"];
+function foule() {
+  const h = [];
+  let k = 0;
+  // à table, derrière la vitre (« Je réserve aujourd'hui ») : 8
+  const dedans = [];
+  for (let i = 0; i < 8; i++) dedans.push(`<span class="fg" style="left:${10 + i * 11.4}%;top:${100 - (i % 2) * 6}%;--h:${11 - (i % 2)}cqw;--d:${(k++ * .05).toFixed(2)}s;--rot:${i % 2 ? 14 : -14}deg"><img src="g/${LOOKS[i % 8]}-assis.webp" alt=""></span>`);
+  // à la porte (« Je viendrai un jour ») : 12
+  for (let i = 0; i < 12; i++) {
+    const rang = Math.floor(i / 6), j = i % 6;
+    h.push(`<span class="fg" style="left:${66 + j * 6.3 - rang * 2}%;top:${79 + rang * 7}%;--h:${12 + rang}cqw;--d:${(k++ * .05).toFixed(2)}s;--dx:${(j - 3) * 4}cqw;--rot:${j % 2 ? 18 : -18}deg"><img src="g/${LOOKS[(i + 3) % 8]}-debout.webp" alt=""></span>`);
+  }
+  // sur le trottoir (« J'adore la vidéo ») : 18
+  for (let i = 0; i < 18; i++) {
+    const rang = Math.floor(i / 9), j = i % 9;
+    h.push(`<span class="fg" style="left:${5 + j * 7.2 + rang * 3.4}%;top:${83 + rang * 13}%;--h:${12 + rang * 2}cqw;--d:${(k++ * .05).toFixed(2)}s;--dx:${(j - 4) * 5}cqw;--rot:${j % 2 ? -16 : 16}deg"><img src="g/${LOOKS[(i + 5) % 8]}-salue.webp" alt=""></span>`);
+  }
+  $("#s-cages .foule.dedans").innerHTML = dedans.join("");
+  $("#s-cages .foule.dehors").innerHTML = h.join("");
+}
+foule();
+
+/* ── LES SOUS-TITRES : la réplique coupée en morceaux (« | »), le mot dit s'allume ── */
+const st = $("#st");
+const morceaux = {};
+for (const [c, s] of Object.entries(SOUS)) {
+  const parts = s.split(" | ");
+  let i = 0;
+  morceaux[c] = parts.map((p) => { const mots = p.split(" "); const m = { de: i, mots }; i += mots.length; return m; });
+}
+let stCourant = "";
+function sousTitres(now) {
+  let c = null;
+  for (const v of VOIX) if (now >= v.t - .05 && now <= v.t + (TEMPS[v.c]?.d ?? 3) + .35) c = v;
+  if (!c) { if (stCourant) { st.innerHTML = ""; stCourant = ""; } return; }
+  const m = TEMPS[c.c]?.m ?? [];
+  const dt = now - c.t;
+  let k = 0;
+  for (let i = 0; i < m.length; i++) if (m[i] <= dt + .04) k = i;
+  const ms = morceaux[c.c];
+  let mo = ms[0];
+  for (const x of ms) if (k >= x.de) mo = x;
+  const cle = c.c + ":" + mo.de;
+  if (cle !== stCourant) {
+    st.innerHTML = "<p>" + mo.mots.map((w) => "<span>" + echapper(w) + "</span>").join(" ") + "</p>";
+    stCourant = cle;
+  }
+  $$("span", st).forEach((s, i) => { const j = mo.de + i; s.classList.toggle("dit", j < k); s.classList.toggle("la", j === k && dt >= (m[j] ?? 0) - .04); });
+}
+
+/* ── LE TEMPS : chaque voix à son instant ; les gestes calés sur ses mots ── */
+const VOIX = [
+  { c: "c1", t: 0.35 }, { c: "c2", t: 3.0 }, { c: "c3", t: 7.3 }, { c: "c4", t: 12.3 },
+  { c: "c5", t: 18.0 }, { c: "c6", t: 23.5 }, { c: "c7", t: 36.0 },
+];
+const debut = Object.fromEntries(VOIX.map((v) => [v.c, v.t]));
+const fin = (c) => debut[c] + (TEMPS[c]?.d ?? 3);
+const net = (w) => w.toLowerCase().replace(/[^a-zàâäéèêëîïôöùûüÿœæç’']/g, "");
+/** L'instant où la voix `c` dit le mot `w` (son `n`-ième). */
+function mot(c, w, n = 0) {
+  const ws = SOUS[c].replace(/ \| /g, " ").split(" ");
+  let vu = 0;
+  for (let i = 0; i < ws.length; i++) if (net(ws[i]) === net(w) && vu++ === n) return debut[c] + (TEMPS[c]?.m?.[i] ?? i * .3);
+  return debut[c];
+}
+const scene = (id) => { $$(".sc").forEach((s) => s.classList.toggle("on", s.id === id)); };
+const cl = (sel, c, oui = true) => { const e = typeof sel === "string" ? $(sel) : sel; if (e) e.classList.toggle(c, oui); };
+
+function compter(el, jusqua, duree) {
+  const t0 = performance.now();
+  const pas = () => { if (document.body.classList.contains("pause")) { requestAnimationFrame(pas); return; }
+    const x = Math.min(1, (performance.now() - t0) / (duree * 1000)); el.textContent = Math.round(jusqua * (1 - Math.pow(1 - x, 2))); if (x < 1) requestAnimationFrame(pas); };
+  requestAnimationFrame(pas);
+}
+function ajouterFil(html) { const f = $("#fil"); f.insertAdjacentHTML("beforeend", html); }
+
+function gestes() {
+  const g = [];
+  const a = (t, f, son) => g.push({ t, f, son });
+  // ① la cage s'ouvre, le fantôme sort et vole vers nous
+  a(0, () => cl("#s-cage", "ouvre"), "ting");
+  a(mot("c1", "fantôme.") - .15, () => cl("#s-cage", "sort"), "vol");
+  a(2.45, () => cl("#eclair", "on"));
+  a(2.6, () => scene("s-fac"));
+  // ② il se pose à sa porte ; la photo du matin ; les clients du jour
+  a(2.75, () => cl("#fac1", "hote-la"), "pop");
+  a(mot("c2", "photo") - .1, () => { cl("#heure", "on"); cl("#polar", "on"); setTimeout(() => cl("#polar", "flash"), 120); }, "clic");
+  a(mot("c2", "clients"), () => { const h = $("#heure"); h.textContent = "🕛 12 h 30"; h.classList.remove("bip"); void h.offsetWidth; h.classList.add("bip"); cl("#polar", "cote"); cl("#fac1 .clients", "on"); cl("#fac1", "lumiere"); $$("#fac1 .clients .fg").forEach((e) => { e.style.left = e.dataset.x; }); }, "vol");
+  a(fin("c2") + .1, () => cl("#plus4", "on"), "pop");
+  a(6.6, () => { cl("#polar", "cote", false); cl("#polar", "zoom"); }, "vol");
+  a(7.0, () => scene("s-film"));
+  // ③ le film se monte, puis il part partout
+  a(mot("c3", "Je"), () => cl("#film", "montage"));
+  a(mot("c3", "film…") + .35, () => { cl("#film", "montage", false); cl("#film", "joue"); });
+  a(mot("c3", "publie") , () => cl("#film", "petit"));
+  a(mot("c3", "partout.") - .1, () => cl("#reseaux", "partout"), "tick");
+  for (let k = 0; k < 5; k++) a(mot("c3", "partout.") + .45 + k * .16, () => {}, "tick");
+  a(11.9, () => scene("s-duel"));
+  // ④ la même vidéo : seule, ou avec son fantôme
+  a(mot("c4", "Une"), () => cl("#s-duel", "joue"));
+  a(mot("c4", "faire.") + .1, () => cl("#s-duel .tel.g", "fin"));
+  a(mot("c4", "Moi,"), () => cl("#s-duel .tel.g", "rien"), "pop");
+  a(mot("c4", "ramène"), () => {
+    cl("#s-duel .tel.d", "fin");
+    const p = $("#prenoms");
+    PRENOMS.slice(0, 9).forEach((n, i) => setTimeout(() => p.insertAdjacentHTML("beforeend", `<em style="--c:${COULEURS[i % COULEURS.length]}">${n}</em>`), i * 140));
+    compter($("#n-prenoms"), 38, 1.6);
+  }, "ding");
+  a(fin("c4") + .15, () => cl("#s-duel", "gagne"));
+  a(17.2, () => cl("#s-duel", "zoom"), "vol");
+  a(17.6, () => { scene("s-cages"); cl("#s-cages", "carte"); });
+  // ⑤ au lieu d'un like, ils libèrent un fantôme ; puis la nuée
+  a(mot("c5", "like,") + .15, () => cl("#like", "barre"));
+  a(mot("c5", "like,") + .55, () => cl("#like", "tombe"));
+  a(mot("c5", "libèrent") - .2, () => cl("#cage-promis", "choisie"), "ting");
+  a(mot("c5", "libèrent") + .2, () => cl("#s-cages", "libere"), "vol");
+  a(fin("c5") + .15, () => { cl("#s-cages", "nuee"); compter($("#n-fantomes"), 38, 2.3); }, "nuee");
+  a(fin("c5") + 1.6, () => cl("#carnet", "on"), "pop");
+  a(23.3, () => scene("s-camille"));
+  // ⑥ Camille : à chaque message, un peu mieux
+  const c6 = debut.c6;
+  a(c6 + .05, () => ajouterFil('<span class="jour">Le lendemain</span><p class="msg mike"><small>👻 Votre fantôme, pour Camille</small>Merci Camille ! Tu nous as promis de venir un jour 😊 Plutôt en semaine ou le week-end ?</p>'), "ding");
+  a(c6 + 1.25, () => ajouterFil('<span class="oui">✓ Vous avez dit oui</span>'), "tick");
+  a(c6 + 2.2, () => { ajouterFil('<p class="msg elle">En semaine</p>'); cl("#tag-semaine", "on"); }, "pop");
+  a(mot("c6", "Je"), () => ajouterFil('<span class="jour">5 jours plus tard</span><p class="msg mike"><small>👻 Votre fantôme, pour Camille</small>Noté : en semaine ! Je te fais signe dès qu’une table se libère.</p><span class="oui">✓ Vous avez dit oui</span>'), "ding");
+  a(mot("c6", "réponse…") - .2, () => { ajouterFil('<p class="msg elle">Oui ! 🔔</p>'); cl("#tag-prevenir", "on"); }, "pop");
+  a(mot("c6", "jusqu’au") - .3, () => ajouterFil('<span class="jour calme">Mardi · 11 h · c’est calme</span><p class="msg wa"><small>Sur votre WhatsApp</small>Il reste une table ce midi, Camille. Je te la garde ?</p>'), "ding");
+  a(mot("c6", "elle", 1) - .3, () => ajouterFil('<p class="msg elle">J’arrive ! 😍</p>'), "pop");
+  a(mot("c6", "porte.") - .1, () => { cl("#fil", "part"); cl("#s-camille", "porte"); cl("#fac3", "hote-la"); }, "vol");
+  a(mot("c6", "porte.") + .9, () => { cl("#fac3", "parle"); cl("#fac3", "lumiere"); cl("#tag-venue", "on"); }, "ding");
+  a(fin("c6") + 1.1, () => cl("#bandeau", "on"));
+  a(fin("c6") + 2.0, () => cl("#bandeau-sous", "on"));
+  a(35.5, () => scene("s-fin"));
+  // ⑦ son fantôme l'attend
+  a(debut.c7 - .1, () => cl("#s-fin", "dit"), "pop");
+  a(debut.c7 + .9, () => cl("#s-fin", "lignes"));
+  for (let k = 0; k < 5; k++) a(debut.c7 + 1.1 + k * .32, () => {}, "tick");
+  a(debut.c7 + 3.1, () => cl("#s-fin", "boutons"));
+  a(debut.c7 + 4.5, () => { window.__fin = true; document.body.classList.remove("joue-demo"); });
+  return g.sort((x, y) => x.t - y.t);
+}
+
+/* ── LE SON : les voix, et une petite musique jouée par le navigateur (aucun droit) ── */
+let AC = null, maitre = null, busV = null, busS = null, bruitBuf = null;
+const bruts = {}, tampons = {};
+const charge = Promise.all(VOIX.map((v) => fetch(`voix/${v.c}.mp3`).then((r) => (r.ok ? r.arrayBuffer() : null)).then((b) => { if (b) bruts[v.c] = b; }).catch(() => {})));
+function decoder(b) { return new Promise((ok) => { try { const p = AC.decodeAudioData(b.slice(0), ok, () => ok(null)); if (p && p.catch) p.catch(() => ok(null)); } catch (e) { ok(null); } }); }
+function enveloppe(g, t, a, pic, d) { g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(pic, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + a + d); }
+function oscil(type, f, t, a, pic, d, f2) {
+  const o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + a + d);
+  enveloppe(g, t, a, pic, d); o.connect(g); g.connect(busS); o.start(t); o.stop(t + a + d + .05);
+}
+function bruit() {
+  if (!bruitBuf) { bruitBuf = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate); const c = bruitBuf.getChannelData(0); for (let i = 0; i < c.length; i++) c[i] = Math.random() * 2 - 1; }
+  return bruitBuf;
+}
+function souffle(t, d, f1, f2, pic) {
+  const s = AC.createBufferSource(); s.buffer = bruit();
+  const bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 1.1; bp.frequency.setValueAtTime(f1, t); bp.frequency.exponentialRampToValueAtTime(f2, t + d);
+  const g = AC.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(pic, t + d * .4); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  s.connect(bp); bp.connect(g); g.connect(busS); s.start(t); s.stop(t + d + .05);
+}
+const SONS = {
+  ting: (t) => [1568, 2349, 3136].forEach((f, i) => oscil("sine", f, t, .004, .16 / (i + 1), 1.3)),
+  clic: (t) => { souffle(t, .08, 2500, 6000, .45); oscil("square", 1100, t, .002, .05, .03); },
+  pop: (t) => oscil("sine", 620, t, .004, .2, .16, 980),
+  ding: (t) => { oscil("sine", 1318.5, t, .004, .14, .45); oscil("sine", 1975.5, t + .06, .004, .09, .4); },
+  vol: (t) => souffle(t, .65, 300, 2600, .16),
+  tick: (t) => oscil("triangle", 1480, t, .003, .1, .08),
+  nuee: (t) => { souffle(t, 2.2, 200, 3000, .14); [523.3, 659.3, 784, 1046.5, 1318.5, 1568, 2093].forEach((f, i) => oscil("sine", f, t + i * .2, .01, .09, .9)); },
+};
+function nappe(t, duree) {
+  // quatre accords doux, en boucle, sous les voix
+  const acc = [[130.8, 196, 246.9, 329.6], [110, 164.8, 261.6, 329.6], [87.3, 174.6, 261.6, 349.2], [98, 196, 246.9, 293.7]];
+  const lp = AC.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1100;
+  const g = AC.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.06, t + 1.5); g.gain.setValueAtTime(.06, t + duree - 3); g.gain.exponentialRampToValueAtTime(.0001, t + duree);
+  lp.connect(g); g.connect(maitre);
+  const pas = 3.2;
+  for (let k = 0; k * pas < duree; k++) for (const f of acc[k % 4]) {
+    const o = AC.createOscillator(), og = AC.createGain(), s = t + k * pas;
+    o.type = "triangle"; o.frequency.value = f; o.detune.value = (Math.random() - .5) * 8;
+    og.gain.setValueAtTime(.0001, s); og.gain.linearRampToValueAtTime(.2, s + .5); og.gain.linearRampToValueAtTime(.16, s + pas - .3); og.gain.linearRampToValueAtTime(.0001, s + pas + .35);
+    o.connect(og); og.connect(lp); o.start(s); o.stop(s + pas + .4);
+  }
+}
+
+/* ── LE DÉROULÉ ── */
+let t0 = 0, horlogeAudio = false, departPerf = 0, enPause = false, pauseDepuis = 0, pauseTotale = 0, lance = false;
+const maintenant = () => (horlogeAudio ? AC.currentTime - t0 : (performance.now() - departPerf - pauseTotale - (enPause ? performance.now() - pauseDepuis : 0)) / 1000);
+async function lancer() {
+  if (lance) return; lance = true;
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    maitre = AC.createGain(); maitre.connect(AC.destination);
+    busV = AC.createGain(); busV.gain.value = 1; busV.connect(maitre);
+    busS = AC.createGain(); busS.gain.value = .5; busS.connect(maitre);
+    if (AC.state === "suspended") await AC.resume().catch(() => {});
+  } catch (e) { AC = null; }
+  $("#dep-sous").classList.add("charge");
+  await Promise.race([charge, new Promise((r) => setTimeout(r, 6000))]);
+  if (AC) for (const v of VOIX) if (bruts[v.c]) tampons[v.c] = await decoder(bruts[v.c]);
+  $("#dep-sous").classList.remove("charge");
+  const G = gestes();
+  if (AC && AC.state === "running") {
+    horlogeAudio = true; t0 = AC.currentTime + .06;
+    for (const v of VOIX) if (tampons[v.c]) { const s = AC.createBufferSource(); s.buffer = tampons[v.c]; s.connect(busV); s.start(t0 + v.t); }
+    for (const x of G) if (x.son && SONS[x.son]) SONS[x.son](t0 + x.t);
+    nappe(t0 + .2, debut.c7 + 6);
+  } else { departPerf = performance.now(); }
+  document.body.classList.add("joue-demo");
+  let i = 0;
+  const boucle = () => {
+    const now = maintenant();
+    while (i < G.length && G[i].t <= now) { try { G[i].f(); } catch (e) { console.error(e); } i++; }
+    sousTitres(now);
+    if (i < G.length || now < debut.c7 + 4) requestAnimationFrame(boucle); else st.innerHTML = "";
+  };
+  requestAnimationFrame(boucle);
+}
+$("#cage").addEventListener("click", lancer);
+if (VIDEO) setTimeout(lancer, 900);
+
+/* ── LA PAUSE ── */
+function basculer() {
+  if (!lance || window.__fin) return;
+  enPause = !enPause;
+  document.body.classList.toggle("pause", enPause);
+  $("#pause").textContent = enPause ? "▶" : "⏸";
+  if (horlogeAudio) { if (enPause) AC.suspend(); else AC.resume(); }
+  else if (enPause) pauseDepuis = performance.now(); else pauseTotale += performance.now() - pauseDepuis;
+}
+$("#pause").addEventListener("click", basculer);
+$("#pause-voile").addEventListener("click", basculer);
+document.addEventListener("keydown", (e) => { if ((e.key === " " || e.key === "p") && lance) { e.preventDefault(); basculer(); } });
+$("#revoir").addEventListener("click", () => location.reload());
+</script>
