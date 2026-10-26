@@ -14,6 +14,7 @@ bouton « Voir la démo » de la page des commerçants (`public/commercants/`) m
 | Lunetier (Les Lunettes de Margaux) | `tour-lunettes/` | https://www.clikme.fr/tours/lunettes | https://claude.ai/artifact/9R2sn9qYN141C4f54T2Q3C |
 | Massage (Le Cocon d’Élise) | `tour-massage/` | https://www.clikme.fr/tours/massage | — |
 | **Démo courte, 45 s** (Chez Bergine) | `tour-court/` | https://www.clikme.fr/tours/court | — |
+| **Démo des entrepreneurs** (Nina, céramiste · Claire, sophrologue) | `tour-entrepreneurs/` | https://www.clikme.fr/tours/entrepreneurs (`?v=local` : Claire) | — |
 
 ## Ce qu'il y a dedans
 
@@ -216,8 +217,8 @@ pour mot) :
 
 - **Les mots à l'instant où ils sont dits** : chaque voix est égalisée (même volume) et ses mots calés sur
   l'enregistrement, pour les sous-titres mot à mot (la vidéo se regarde souvent sans le son) et pour caler les gestes
-  de la page. Quand une réplique a autant de phrases que de morceaux de voix, ils vont un pour un (`caler()`) ;
-  sinon, `alignement.py`.
+  de la page. Quand une réplique a autant de phrases que de morceaux de voix, ils vont un pour un (`caler()` de
+  `outils/voix_courtes.py`, commun aux deux démos courtes) ; sinon, `alignement.py`.
 - **Le son** passe par le navigateur (Web Audio) : les voix à leur instant, et une petite musique et des bruits
   (la cage, l'appareil photo, les messages, la nuée) composés dans la page, sans droits.
 - **Son nom** : « ✎ Pour qui est cette démo ? », comme dans les tours (le même, gardé le temps de la visite). Il
@@ -230,6 +231,40 @@ pour mot) :
 
 Vérifier : servir `public/` après `node scripts/poser-tours.mjs`, puis jouer la page en entier dans Playwright
 (touchez la cage avec `force` : elle se balance) et regarder les captures ; « aucune erreur » attendu.
+
+## La démo des entrepreneurs : « Libère ton fantôme »
+
+Pour ceux qui ne sont pas commerçants : pas de vitrine, pas de Direct (leur ville n'est pas forcément ouverte) ; tout
+se passe sur leurs réseaux et sur leur page ClikMe. ClikMe s'adresse à tout le monde en France, et chacun à sa
+mesure : deux variantes, choisies avant de toucher la cage (ou `?v=local` dans l'adresse).
+
+- **Nina, céramiste**, envoie ses créations : toute la France (la carte s'allume, ses colis partent vers 14 villes).
+- **Claire, sophrologue**, reçoit près de chez elle : sa ville (la carte zoome sur Annecy, le cercle de 20 km et
+  ses communes).
+
+```sh
+/usr/bin/python3 -I outils/tour-du-fantome/outils/tour-entrepreneurs.py outils/tour-du-fantome
+```
+
+Le même habillage et la même mécanique que la démo courte (`outils/tour-entrepreneurs.html`, ses voix
+`recu/court/demo2-a…h.mp3` et les deux promesses `demo2-promesse-createur|local.mp3`), dans cet ordre : qui (« Libère
+ton fantôme. » ; « Il porte ton métier, et il travaille pour toi. » : le fantôme ClikMe enfile la salopette de son
+métier), pour qui (la promesse de la variante, la carte), comment (« Une photo… et chaque jour, une nouvelle vidéo,
+publiée sur tous tes réseaux. » : sa semaine de sept vidéos, Instagram, TikTok, Facebook, son statut WhatsApp, sa page ;
+l'écran partagé ; les cages et la nuée devant sa page, avec leurs villes), puis Camille, un message rien qu'à elle à
+chaque fois un peu mieux (`moteur-messages.ts`), « jusqu'au jour où elle devient ta cliente » (📦 « Commandé, envoi à
+Lyon » ; 📅 « Jeudi 10 h »), « Et elle revient. », et le ticket de sa semaine. Son nom (« Pour qui est cette démo ? »)
+remplace celui de Nina ou de Claire : sur sa page, son adresse, les messages de son fantôme et le ticket.
+
+**Ses photos** (`recu/entrepreneurs/createur|local/`) sont au propriétaire ; la personne de l'atelier a donné son
+accord. Le coffret est recadré (ses deux filigranes « leboncoin », en haut). Pas utilisées : la devanture « Julie Z
+céramique » (le nom d'un vrai commerce, sous celui de Nina, qui n'a pas de boutique) et le geste de massage
+(`geste-dos.jpg`, pas celui d'une sophrologue).
+
+**Ce que le produit ne fait pas encore** pour ces entrepreneurs (la démo le montre) : la page web sans appli et ses
+cages, le lien depuis Instagram (étapes 4 et 5 du prototype), l'inscription sans fiche Google, leurs réponses quand
+le message part sur WhatsApp (pour que le fantôme apprenne), et « Vendu » ou « Venue » noté par eux. Le bouton
+« Créer ma page » mène pour l'instant à l'inscription des commerçants (`/commercants#creer`).
 
 ## Le tour massage
 

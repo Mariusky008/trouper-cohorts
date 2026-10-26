@@ -38,6 +38,8 @@ const TOURS = {
   "tour-massage": "massage",
   // la démo courte des commerçants, « Le fantôme en 45 secondes » (`outils/tour-court.py`)
   "tour-court": "court",
+  // la démo des entrepreneurs, « Libère ton fantôme » (`outils/tour-entrepreneurs.py`)
+  "tour-entrepreneurs": "entrepreneurs",
 };
 
 // les étapes intermédiaires de la chaîne (`index.avant-episode2.html`…) ne sont pas la page

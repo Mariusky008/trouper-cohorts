@@ -1,0 +1,803 @@
+<title>Libère ton fantôme — ClikMe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800;900&family=Playfair+Display:ital,wght@1,700&display=swap">
+<style>
+/* 👻 LIBÈRE TON FANTÔME — la démo des entrepreneurs (voir `tour-entrepreneurs.py`). Deux variantes : Nina,
+   céramiste, qui envoie ses créations dans toute la France ; Claire, sophrologue, qui reçoit à Annecy. Le même
+   habillage que la démo courte des commerçants (`tour-court.html`). Toutes les tailles en cqw/cqh de la scène. */
+:root{--nuit:#0B0608;--rose:#FF2E9A;--rose2:#FF5DB8;--or:#E8C77A;--vert:#3DE2A6;--creme:#FFF4E6;--wa:#25D366;--ressort:cubic-bezier(.3,1.45,.5,1)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--nuit);color:var(--creme);font-family:Poppins,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit}
+#ecran{position:fixed;inset:0;display:grid;place-items:center;background:var(--nuit)}
+#scene{position:relative;width:min(100vw,calc(100vh * 9 / 16));width:min(100vw,calc(100dvh * 9 / 16));aspect-ratio:9/16;container-type:size;overflow:hidden;
+  background:radial-gradient(ellipse 90% 60% at 50% 38%,#2A121C,var(--nuit) 72%)}
+.sc{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .45s,visibility 0s .45s}
+.sc.on{opacity:1;visibility:visible;transition:opacity .45s}
+body.pause *,body.pause *::before,body.pause *::after{animation-play-state:paused!important}
+@keyframes flotte{50%{transform:translateY(-4%)}}
+@keyframes pop{from{transform:scale(0)}to{transform:none}}
+
+/* ═══ ① LE DÉPART : la cage, sa variante, « Touchez la cage » ═══ */
+.dep-haut{position:absolute;left:5cqw;right:5cqw;top:4cqh;display:flex;align-items:center;justify-content:space-between;gap:3cqw;transition:opacity .3s}
+.marque{font-weight:900;font-size:5.4cqw;letter-spacing:-.02em}
+.marque b{color:var(--rose)}
+#pour{border:1px dashed rgba(255,244,230,.4);background:rgba(255,244,230,.06);border-radius:99px;padding:1.6cqw 3.6cqw;font-size:3.4cqw;font-weight:700;cursor:pointer;max-width:62cqw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.video #pour,.video .variantes{display:none}
+#pour.a-nom{border-style:solid;border-color:rgba(255,46,154,.6)}
+#pour b{color:var(--rose2)}
+.variantes{position:absolute;left:5cqw;right:5cqw;top:11cqh;display:grid;grid-template-columns:1fr 1fr;gap:2.4cqw;transition:opacity .3s}
+.variantes button{display:flex;align-items:center;gap:2cqw;padding:2cqw 2.6cqw;border-radius:3.4cqw;border:1px solid rgba(255,244,230,.18);background:rgba(255,244,230,.05);text-align:left;cursor:pointer;opacity:.6}
+.variantes button.on{opacity:1;border-color:rgba(255,46,154,.7);background:rgba(255,46,154,.12)}
+.variantes img{flex:none;width:9cqw;height:9cqw;object-fit:contain}
+.variantes span{display:grid;line-height:1.15}
+.variantes b{font-size:3.6cqw;font-weight:900}
+.variantes small{font-size:2.7cqw;font-weight:600;color:rgba(255,244,230,.7)}
+.ouvre .dep-haut,.ouvre .dep-bas,.ouvre .variantes{opacity:0;pointer-events:none}
+.cage{position:absolute;left:50%;top:27cqh;width:50cqw;margin-left:-25cqw;padding:0;border:0;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;transform-origin:50% 0;
+  animation:balance 3.6s ease-in-out infinite}
+@keyframes balance{0%,100%{transform:rotate(-2.4deg)}50%{transform:rotate(2.4deg)}}
+.cage-anneau{position:relative;z-index:2;width:9cqw;height:9cqw;margin-bottom:-1.6cqw;border-radius:50%;border:1.5cqw solid var(--or)}
+.cage-noeud{position:absolute;top:7.6cqw;left:50%;z-index:5;width:15cqw;height:7cqw;margin-left:-7.5cqw;
+  background:radial-gradient(ellipse 45% 48% at 22% 50%,var(--rose) 96%,transparent),radial-gradient(ellipse 45% 48% at 78% 50%,var(--rose) 96%,transparent),radial-gradient(circle at 50% 50%,var(--rose) 30%,transparent 33%)}
+.cage-dome{position:relative;width:100%;aspect-ratio:.86;overflow:hidden;border:1.4cqw solid var(--or);border-bottom:0;border-radius:50% 50% 10% 10% / 44% 44% 6% 6%;
+  background:radial-gradient(ellipse 70% 55% at 50% 42%,rgba(255,226,180,.26),transparent 72%),rgba(255,244,230,.04)}
+.cage-dome::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:repeating-linear-gradient(90deg,transparent 0 calc(16.66% - 1.2cqw),rgba(232,199,122,.85) calc(16.66% - 1.2cqw) 16.66%)}
+.cage-dome::after{content:"";position:absolute;left:0;right:0;top:36%;height:1.2cqw;z-index:3;background:rgba(232,199,122,.9)}
+.cd-fant{position:absolute;left:50%;bottom:4%;z-index:2;width:76%;transform:translateX(-50%);filter:drop-shadow(0 2cqw 2cqw rgba(0,0,0,.45));animation:toc 1.8s ease-in-out infinite}
+.cd-fant img{display:block;width:100%;height:auto}
+@keyframes toc{0%,62%,100%{transform:translateX(-50%) rotate(0)}68%{transform:translateX(-46%) rotate(5deg)}74%{transform:translateX(-50%)}80%{transform:translateX(-46%) rotate(5deg)}86%{transform:translateX(-50%)}}
+.cage-porte{position:absolute;left:29%;width:42%;bottom:0;height:54%;z-index:4;border:1.4cqw solid var(--or);border-bottom:0;border-radius:45% 45% 0 0 / 35% 35% 0 0;transform-origin:0 50%;
+  background:repeating-linear-gradient(90deg,transparent 0 calc(33.3% - 1cqw),rgba(232,199,122,.95) calc(33.3% - 1cqw) 33.3%),rgba(20,12,9,.12);transition:transform .5s cubic-bezier(.3,1.4,.5,1)}
+.cage-socle{width:110%;height:6cqw;margin-top:-1px;border-radius:2.6cqw;background:linear-gradient(#F3DFA0,#B38A3A);box-shadow:0 3cqw 5cqw -2cqw rgba(0,0,0,.65),inset 0 -2cqw 0 var(--rose)}
+.toc-toc{position:absolute;left:76cqw;top:33cqh;margin:0;font:italic 700 4.4cqw/1 "Playfair Display",Georgia,serif;color:var(--or);opacity:0;animation:toctoc 1.8s ease-in-out infinite}
+@keyframes toctoc{0%,60%{opacity:0;transform:translateY(1cqw)}70%,90%{opacity:1;transform:none}100%{opacity:0}}
+.dep-bas{position:absolute;left:0;right:0;top:72cqh;text-align:center;transition:opacity .3s}
+.dep-appel{margin:0;font-size:7.4cqw;font-weight:900;letter-spacing:-.02em;animation:appel 1.6s ease-in-out infinite}
+@keyframes appel{50%{transform:scale(1.05);color:#fff}}
+.dep-sous{margin:2cqw 0 0;font-size:3.6cqw;font-weight:600;color:rgba(255,244,230,.65)}
+.dep-sous.charge::after{content:" · un instant…"}
+.ouvre .cage{animation:none;transform:none;cursor:default}
+.ouvre .cage-porte{transform:perspective(60cqw) rotateY(-118deg)}
+.ouvre .cd-fant{animation:none;opacity:0;transition:opacity .15s .55s}
+.ouvre .toc-toc{display:none}
+.sortie{position:absolute;left:50%;top:42cqh;z-index:9;width:34cqw;margin-left:-17cqw;opacity:0;pointer-events:none}
+.sortie img{display:block;width:100%;height:auto;filter:drop-shadow(0 3cqw 4cqw rgba(0,0,0,.55))}
+.sort .sortie{animation:sortir 1.9s cubic-bezier(.25,.8,.3,1) forwards}
+@keyframes sortir{0%{opacity:0;transform:translateY(5cqh) scale(.55)}12%{opacity:1}45%{transform:translateY(-14cqh) scale(1.2) rotate(-6deg)}75%{opacity:1;transform:translateY(-8cqh) scale(2.2) rotate(4deg)}100%{opacity:0;transform:translateY(-4cqh) scale(4)}}
+.etincelles i{position:absolute;left:50%;top:50cqh;width:2.4cqw;height:2.4cqw;border-radius:50%;background:var(--or);opacity:0;box-shadow:0 0 3cqw var(--or)}
+.sort .etincelles i,.habille .etincelles i{animation:etincelle 1.1s ease-out forwards;animation-delay:calc(var(--k) * .04s)}
+@keyframes etincelle{0%{opacity:1;transform:translate(-50%,-50%)}100%{opacity:0;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(.3)}}
+#eclair{position:absolute;inset:0;z-index:40;background:#fff;opacity:0;pointer-events:none}
+#eclair.on{animation:eclair .55s ease-out}
+@keyframes eclair{0%{opacity:0}25%{opacity:.85}100%{opacity:0}}
+
+/* ═══ ② « Il porte ton métier, et il travaille pour toi. » ═══ */
+.metier-f{position:absolute;left:50%;top:22cqh;width:56cqw;margin-left:-28cqw;aspect-ratio:1;opacity:0;transform:translateY(-20cqh) scale(.5);transition:opacity .3s,transform .9s var(--ressort)}
+#s-metier.on .metier-f{opacity:1;transform:none}
+.metier-f img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 3cqw 4cqw rgba(0,0,0,.55));transition:opacity .25s,transform .5s var(--ressort)}
+.metier-f img.apres{opacity:0;transform:scale(.7)}
+.habille .metier-f img.avant{opacity:0;transform:scale(1.25) rotate(-8deg)}
+.habille .metier-f img.apres{opacity:1;transform:none}
+#s-metier .etincelles i{top:42cqh}
+.badge{position:absolute;left:50%;top:60cqh;padding:2cqw 5cqw;border-radius:99px;white-space:nowrap;font-size:5.4cqw;font-weight:900;color:#2B1D16;background:var(--creme);box-shadow:0 2cqw 5cqw -2cqw rgba(0,0,0,.8);
+  transform:translateX(-50%) scale(0) rotate(-6deg);transition:transform .55s var(--ressort)}
+.habille .badge{transform:translateX(-50%) rotate(-3deg)}
+.puces{position:absolute;left:5cqw;right:5cqw;top:70cqh;display:flex;justify-content:center;flex-wrap:wrap;gap:2cqw}
+.puces span{padding:1.6cqw 3.4cqw;border-radius:99px;font-size:3.8cqw;font-weight:800;color:#fff;background:rgba(255,46,154,.16);border:1px solid rgba(255,46,154,.5);
+  opacity:0;transform:translateY(3cqw) scale(.7);transition:opacity .25s calc(var(--k) * .22s),transform .5s var(--ressort) calc(var(--k) * .22s)}
+.travaille .puces span{opacity:1;transform:none}
+
+/* ═══ ③ la promesse : toute la France, ou ta ville ═══ */
+.carte{position:absolute;left:5cqw;top:10cqh;width:90cqw;aspect-ratio:1;opacity:0;transform:scale(.9);transition:opacity .45s,transform .8s var(--ressort)}
+#s-carte.on .carte{opacity:1;transform:none}
+.carte svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.france{transition:transform 1s cubic-bezier(.6,0,.3,1),opacity .35s .3s}
+.france path.pays{fill:rgba(255,244,230,.07);stroke:rgba(232,199,122,.75);stroke-width:3;stroke-linejoin:round}
+.zoom .france{transform:var(--z);opacity:0}
+.locale{opacity:0;transform:scale(.25);transform-origin:50% 50%;transition:opacity .4s .3s,transform 1s cubic-bezier(.6,0,.3,1)}
+.zoom .locale{opacity:1;transform:none}
+.lac{fill:rgba(79,184,255,.32);stroke:rgba(79,184,255,.7);stroke-width:2}
+.rayon{fill:rgba(255,46,154,.07);stroke:var(--rose2);stroke-width:3;stroke-dasharray:14 10;opacity:0;transform-origin:500px 500px;transform:scale(.2);transition:opacity .4s,transform .9s var(--ressort)}
+.cercle .rayon{opacity:1;transform:none}
+.lieu circle{fill:var(--or)}
+.lieu text{font:700 26px Poppins,system-ui,sans-serif;fill:#FFF4E6;paint-order:stroke;stroke:rgba(11,6,8,.85);stroke-width:6px}
+.lieu{opacity:0;transform-box:fill-box;transform-origin:center;transition:opacity .3s calc(var(--k) * .12s)}
+.villes .lieu,.cercle .lieu{opacity:1}
+.ville-moi circle{fill:var(--rose)}
+.locale .lieu text{font-size:38px}
+.locale .ville-moi text{font-size:46px;font-weight:900}
+.trajet{fill:none;stroke:var(--rose2);stroke-width:3;stroke-linecap:round;stroke-dasharray:var(--l);stroke-dashoffset:var(--l);opacity:.85;transition:stroke-dashoffset .9s ease-out calc(var(--k) * .12s)}
+.villes .trajet{stroke-dashoffset:0}
+.pin{position:absolute;z-index:2;width:16cqw;transform:translate(-50%,-92%);opacity:0;transition:opacity .3s,left 1.3s cubic-bezier(.6,0,.3,1),top 1.3s cubic-bezier(.6,0,.3,1);filter:drop-shadow(0 1.4cqw 1.6cqw rgba(0,0,0,.6))}
+.pin img{display:block;width:100%;height:auto}
+#s-carte.on .pin{opacity:1}
+.zoom .pin{left:50%!important;top:50%!important}
+.colis{position:absolute;font-size:6cqw;opacity:0;transform:translate(-50%,-50%) scale(0);transition:opacity .2s,transform .5s var(--ressort)}
+.colis.on{opacity:1;transform:translate(-50%,-50%)}
+.carte-titre{position:absolute;left:0;right:0;top:73cqh;margin:0;text-align:center;font-size:6.6cqw;font-weight:900;line-height:1.1;opacity:0;transform:translateY(2cqw);transition:opacity .4s,transform .6s var(--ressort)}
+.carte-titre.on{opacity:1;transform:none}
+.carte-titre em{font-style:normal;background:linear-gradient(90deg,var(--rose2),#FFB347);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* ═══ ④ « Une photo… et chaque jour, une nouvelle vidéo, publiée sur tous tes réseaux. » ═══ */
+.polar{position:absolute;left:50%;top:9cqh;z-index:8;width:46cqw;margin:0 0 0 -23cqw;padding:2cqw 2cqw 6.5cqw;border-radius:1.2cqw;background:#FBF7F0;box-shadow:0 3cqw 6cqw -2cqw rgba(0,0,0,.8);
+  opacity:0;transform:translateY(8cqh) rotate(-14deg) scale(.7);transition:opacity .3s,transform .7s var(--ressort)}
+.polar img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:.6cqw}
+.polar figcaption{position:absolute;left:0;right:0;bottom:1.6cqw;text-align:center;font-size:3.1cqw;font-weight:800;color:#3A2A20}
+.polar.on{opacity:1;transform:rotate(-4deg)}
+.polar.flash img{animation:flash .5s ease-out}
+@keyframes flash{0%{filter:brightness(3.5)}100%{filter:none}}
+.polar.range{opacity:0;transform:translate(-31cqw,8cqh) rotate(0) scale(.26);transition:opacity .3s .35s,transform .7s cubic-bezier(.6,0,.3,1)}
+.semaine{position:absolute;left:3cqw;right:3cqw;top:16cqh;display:grid;grid-template-columns:repeat(7,1fr);gap:1.4cqw}
+.jourf{position:relative;display:flex;flex-direction:column;align-items:center;gap:1.2cqw;opacity:0;transform:translateY(-6cqw) rotate(-10deg) scale(.6);
+  transition:opacity .25s calc(var(--k) * .17s),transform .6s var(--ressort) calc(var(--k) * .17s)}
+.chaque .jourf{opacity:1;transform:none}
+.jourf b{font-size:3.4cqw;font-weight:900;color:rgba(255,244,230,.8)}
+.jourf>span{position:relative;display:block;width:100%;aspect-ratio:9/16;overflow:hidden;border-radius:2.2cqw;background:#000;box-shadow:0 0 0 .6cqw #1E1418,0 0 0 .8cqw rgba(255,255,255,.14)}
+.jourf img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.chaque .jourf img{animation:kbj 3.4s linear calc(var(--k) * .17s) both}
+@keyframes kbj{from{transform:scale(1.02)}to{transform:scale(1.18)}}
+.jourf>span::after{content:"▶";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:grid;place-items:center;width:5cqw;height:5cqw;border-radius:50%;font-size:2.2cqw;color:#fff;background:rgba(0,0,0,.45)}
+.jourf.aujourdhui>span{box-shadow:0 0 0 .6cqw #1E1418,0 0 0 1cqw var(--rose2)}
+.jourf.aujourdhui b{color:var(--rose2)}
+.reseaux{position:absolute;inset:0;pointer-events:none}
+.rs{position:absolute;left:50%;top:32cqh;width:22cqw;display:flex;flex-direction:column;align-items:center;gap:1.4cqw;opacity:0;transform:translate(-50%,-50%) scale(.3);
+  transition:opacity .25s calc(var(--k) * .14s),left .7s var(--ressort) calc(var(--k) * .14s),top .7s var(--ressort) calc(var(--k) * .14s),transform .7s var(--ressort) calc(var(--k) * .14s)}
+.rs>i{position:relative;display:grid;place-items:center;width:15cqw;height:15cqw;border-radius:4cqw;font-style:normal;box-shadow:0 2.4cqw 4cqw -1.6cqw rgba(0,0,0,.8)}
+.rs svg{width:62%;height:62%}
+.rs>b{font-size:3.3cqw;font-weight:800;white-space:nowrap}
+.rs>em{position:absolute;right:2.6cqw;top:-1.4cqw;display:grid;place-items:center;width:6.4cqw;height:6.4cqw;border-radius:50%;font-style:normal;font-size:3.6cqw;font-weight:900;color:#04150E;
+  background:var(--vert);box-shadow:0 0 0 .8cqw var(--nuit);transform:scale(0);transition:transform .45s var(--ressort) calc(.35s + var(--k) * .14s)}
+.partout .rs{opacity:1;transform:translate(-50%,-50%);left:var(--x);top:var(--y)}
+.partout .rs>em{transform:none}
+.rs.ig>i{background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fdf497 5%,#fd5949 45%,#d6249f 60%,#285AEB 90%)}
+.rs.tt>i{background:#010101}
+.rs.tt>i span{font-size:9cqw;font-weight:900;line-height:1;color:#fff;text-shadow:-.6cqw -.4cqw 0 #25F4EE,.6cqw .4cqw 0 #FE2C55}
+.rs.fb>i{background:#1877F2}
+.rs.wa>i{background:var(--wa)}
+.rs.pg>i{background:linear-gradient(135deg,#FF5DB8,#E0167A)}
+.rs.pg>i img{width:78%;height:auto}
+
+/* ═══ ⑤ l'écran partagé : « Une vidéo, tu sais la faire. Moi, je te ramène ceux qui l'ont regardée. » ═══ */
+.tel{position:absolute;top:13cqh;width:44cqw;transition:opacity .6s,filter .6s,transform .9s cubic-bezier(.6,0,.3,1)}
+.tel.g{left:4cqw}.tel.d{left:52cqw}
+.tel-titre{margin:0 0 2.6cqw;text-align:center;font-size:3.9cqw;font-weight:900;line-height:1.15}
+.tel.d .tel-titre{color:var(--rose2)}
+.tel-ecran{position:relative;width:100%;aspect-ratio:9/17;border-radius:5cqw;overflow:hidden;background:#000;box-shadow:0 0 0 1.2cqw #1E1418,0 0 0 1.5cqw rgba(255,255,255,.12),0 4cqw 8cqw -3cqw rgba(0,0,0,.9)}
+.tel.d .tel-ecran{box-shadow:0 0 0 1.2cqw #1E1418,0 0 0 1.5cqw rgba(255,46,154,.6),0 4cqw 8cqw -3cqw rgba(0,0,0,.9)}
+.tel-ecran>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:filter .5s,opacity .5s}
+.duel.joue .tel-ecran>img{animation:kbtel 1.8s linear both}
+@keyframes kbtel{from{transform:scale(1.02)}to{transform:scale(1.14)}}
+.tel-fin{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:3cqw;opacity:0;transition:opacity .4s;background:linear-gradient(transparent 20%,rgba(8,4,6,.94) 60%)}
+.tel.fin .tel-fin{opacity:1}
+.tel.fin .tel-ecran>img{filter:brightness(.55)}
+.likes b{font-size:8cqw;font-weight:900;line-height:1}
+.likes b i{font-style:normal;color:#FF3B5C}
+.likes ul{list-style:none;margin:1.6cqw 0 0;padding:0;display:grid;gap:1cqw;font-size:2.7cqw;font-weight:600;color:rgba(255,255,255,.72)}
+.likes ul li::before{content:"";display:inline-block;width:3.6cqw;height:3.6cqw;margin-right:1.2cqw;border-radius:50%;vertical-align:-1cqw;background:var(--c,#777)}
+.tampon{position:absolute;left:50%;top:40%;padding:1.4cqw 2.6cqw;border-radius:1.4cqw;white-space:nowrap;font-size:3.2cqw;font-weight:900;color:#fff;background:#3B3438;border:.5cqw solid #8A8086;
+  transform:translate(-50%,-50%) rotate(-9deg) scale(0);transition:transform .5s var(--ressort)}
+.tel.rien .tampon{transform:translate(-50%,-50%) rotate(-9deg)}
+.mini-cages{display:flex;justify-content:center;gap:1.6cqw;margin-bottom:2cqw}
+.mini-cages span{width:9cqw;aspect-ratio:.86;border:.6cqw solid var(--or);border-bottom-width:1.4cqw;border-radius:50% 50% 10% 10% / 44% 44% 6% 6%;
+  background:repeating-linear-gradient(90deg,transparent 0 1.2cqw,rgba(232,199,122,.8) 1.2cqw 1.5cqw)}
+.mini-cages span:nth-child(1){border-bottom-color:var(--rose)}.mini-cages span:nth-child(2){border-bottom-color:#F5A23A}.mini-cages span:nth-child(3){border-bottom-color:var(--vert)}
+.prenoms{display:flex;flex-wrap:wrap;justify-content:center;gap:.9cqw;min-height:15cqw;align-content:flex-end}
+.prenoms em{font-style:normal;padding:.5cqw 1.6cqw;border-radius:99px;font-size:2.6cqw;font-weight:800;color:#fff;background:var(--c);animation:pop .4s var(--ressort) both}
+.compte{display:block;margin-top:2cqw;text-align:center;font-size:5.6cqw;font-weight:900;line-height:1}
+.compte span{font-variant-numeric:tabular-nums;color:var(--rose2)}
+.duel.gagne .tel.g{opacity:.35;filter:grayscale(1)}
+.duel.gagne .tel.d{transform:scale(1.04)}
+.duel.zoom .tel.g{opacity:0}
+.duel.zoom .tel.d{transform:translate(-24cqw,10cqh) scale(2.2);opacity:0;transition:transform .7s cubic-bezier(.6,0,.3,1),opacity .3s .45s}
+
+/* ═══ ⑥ « Au lieu d'un like, ils libèrent leur fantôme. » — les cages, puis la nuée sur sa page ═══ */
+.carte-cages{position:absolute;left:5cqw;right:5cqw;top:20cqh;padding:5cqw 3cqw 6cqw;border-radius:6cqw;text-align:center;background:linear-gradient(180deg,rgba(40,20,30,.85),rgba(16,8,12,.96));
+  border:1px solid rgba(255,255,255,.13);box-shadow:0 5cqw 10cqw -5cqw rgba(0,0,0,.9);opacity:0;transform:translateY(4cqw) scale(.94);transition:opacity .35s,transform .7s var(--ressort)}
+#s-cages.carte-on .carte-cages{opacity:1;transform:none}
+#s-cages.nuee .carte-cages{opacity:0;transform:scale(.9);transition:opacity .4s,transform .5s}
+.cc-titre{display:block;margin-bottom:4cqw;font-size:7cqw;font-weight:900}
+.like{position:absolute;left:50%;top:10.5cqh;z-index:3;display:flex;align-items:center;gap:2cqw;padding:2cqw 5cqw;border-radius:99px;font-size:5cqw;font-weight:800;color:#fff;background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.25);transform:translateX(-50%) scale(0);transition:transform .5s var(--ressort),opacity .5s}
+.like i{font-style:normal;color:#FF3B5C}
+#s-cages.carte-on .like{transform:translateX(-50%)}
+.like::after{content:"";position:absolute;left:-4%;right:-4%;top:50%;height:1cqw;border-radius:1cqw;background:#FF3B5C;transform:rotate(-12deg) scaleX(0);transition:transform .3s}
+.like.barre::after{transform:rotate(-12deg) scaleX(1)}
+.like.tombe{opacity:0;transform:translateX(-50%) translateY(8cqh) rotate(-20deg)}
+.rang{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2cqw;font-size:4cqw}
+.f3{position:relative;display:flex;flex-direction:column;align-items:center;transition:opacity .5s}
+.f3:nth-child(1){--c:var(--rose)}.f3:nth-child(2){--c:#F5A23A}.f3:nth-child(3){--c:var(--vert)}
+.f3>b{margin-top:2.6cqw;font-size:3.5cqw;font-weight:800;line-height:1.15;letter-spacing:-.01em}
+.cg{position:relative;display:flex;flex-direction:column;align-items:center;width:80%;transform-origin:50% 0;animation:balance 3.6s ease-in-out infinite}
+.f3:nth-child(2) .cg{animation-delay:-1.2s}.f3:nth-child(3) .cg{animation-delay:-2.4s}
+.cg-anneau{position:relative;z-index:2;width:4.4cqw;height:4.4cqw;margin-bottom:-.9cqw;border-radius:50%;border:.75cqw solid var(--or)}
+.cg-noeud{position:absolute;top:3.8cqw;left:50%;z-index:5;width:7.6cqw;height:3.5cqw;margin-left:-3.8cqw;
+  background:radial-gradient(ellipse 45% 48% at 22% 50%,var(--c) 96%,transparent),radial-gradient(ellipse 45% 48% at 78% 50%,var(--c) 96%,transparent),radial-gradient(circle at 50% 50%,var(--c) 30%,transparent 33%)}
+.cg-dome{position:relative;width:100%;aspect-ratio:.86;overflow:hidden;border:.75cqw solid var(--or);border-bottom:0;border-radius:50% 50% 10% 10% / 44% 44% 6% 6%;
+  background:radial-gradient(ellipse 70% 55% at 50% 42%,rgba(255,226,180,.2),transparent 72%),rgba(255,244,230,.035)}
+.cg-dome::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:repeating-linear-gradient(90deg,transparent 0 calc(16.66% - .6cqw),rgba(232,199,122,.85) calc(16.66% - .6cqw) 16.66%)}
+.cg-dome::after{content:"";position:absolute;left:0;right:0;top:36%;height:.6cqw;z-index:3;background:rgba(232,199,122,.9)}
+.cg-dome img{position:absolute;left:50%;bottom:4%;z-index:2;height:70%;width:auto;transform:translateX(-50%);transition:opacity .2s}
+.cg-porte{position:absolute;left:29%;width:42%;bottom:0;height:54%;z-index:4;border:.75cqw solid var(--or);border-bottom:0;border-radius:45% 45% 0 0 / 35% 35% 0 0;transform-origin:0 50%;
+  background:repeating-linear-gradient(90deg,transparent 0 calc(33.3% - .5cqw),rgba(232,199,122,.95) calc(33.3% - .5cqw) 33.3%),rgba(20,12,9,.12);transition:transform .45s cubic-bezier(.3,1.4,.5,1)}
+.cg-socle{width:110%;height:3.2cqw;margin-top:-1px;border-radius:1.4cqw;background:linear-gradient(#F3DFA0,#B38A3A);box-shadow:0 1.6cqw 3cqw -1cqw rgba(0,0,0,.65),inset 0 -1cqw 0 var(--c)}
+.doigt{position:absolute;z-index:7;left:50%;top:9cqw;width:11cqw;height:11cqw;margin-left:-5.5cqw;border-radius:50%;border:.7cqw solid #fff;background:rgba(255,255,255,.25);opacity:0;pointer-events:none}
+.f3.choisie .doigt{animation:doigt .9s ease-out both}
+@keyframes doigt{0%{opacity:0;transform:scale(1.6)}35%{opacity:1;transform:scale(.8)}100%{opacity:0;transform:scale(1.9)}}
+.f3.choisie .cg{animation:luit .7s var(--ressort)}
+.f3.choisie .cg-dome{box-shadow:0 0 0 .8cqw var(--c),0 0 6cqw var(--c)}
+@keyframes luit{40%{transform:scale(1.14) rotate(-3deg)}}
+.libere .f3:not(.choisie){opacity:.38}
+.libere .f3.choisie .cg-porte{transform:perspective(40cqw) rotateY(-118deg)}
+.libere .f3.choisie .cg-dome img{opacity:0;transition-delay:.15s}
+.envol{position:absolute;z-index:8;left:50%;top:44cqh;width:22cqw;margin-left:-11cqw;opacity:0;transform:scale(.5);transition:opacity .25s .15s,transform 1.1s var(--ressort) .15s;pointer-events:none}
+.envol img{display:block;width:100%;height:auto;filter:drop-shadow(0 2cqw 3cqw rgba(0,0,0,.55))}
+.envol b{position:absolute;left:50%;top:96%;transform:translateX(-50%);padding:.6cqw 2.6cqw;border-radius:2.6cqw;white-space:nowrap;font-size:3.8cqw;font-weight:800;color:#fff;background:#F5A23A}
+.libere .envol{opacity:1;transform:translateY(-41cqh) scale(1.1)}
+.nuee .envol{opacity:0;transform:translateY(-44cqh) scale(.6);transition:opacity .12s,transform .5s}
+/* sa page à elle : la bannière, son fantôme, son nom ; ceux qui arrivent devant */
+.page{position:absolute;left:5cqw;right:5cqw;top:21cqh;height:66cqh;overflow:hidden;border-radius:5cqw;background:linear-gradient(#1C1015,#120A0E);border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 5cqw 10cqw -5cqw rgba(0,0,0,.9);opacity:0;transform:scale(1.06);transition:opacity .5s,transform .9s cubic-bezier(.3,.7,.3,1)}
+#s-cages.nuee .page{opacity:1;transform:none}
+.page-url{position:absolute;left:50%;top:2cqw;z-index:3;padding:.6cqw 2.6cqw;border-radius:99px;white-space:nowrap;font-size:2.7cqw;font-weight:700;color:rgba(255,255,255,.85);background:rgba(0,0,0,.45);transform:translateX(-50%)}
+.page-ban{position:absolute;left:0;right:0;top:0;height:30cqw}
+.page-ban img{width:100%;height:100%;object-fit:cover}
+.page-ban::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.1),rgba(18,10,14,.95))}
+.page-moi{position:absolute;left:4cqw;top:17cqw;z-index:2;display:flex;align-items:flex-end;gap:3cqw}
+.page-moi img{width:22cqw;height:auto;filter:drop-shadow(0 1.4cqw 1.6cqw rgba(0,0,0,.6))}
+.page-moi span{display:grid;padding-bottom:2cqw}
+.page-moi b{font-size:6.4cqw;font-weight:900;line-height:1.05}
+.page-moi small{font-size:3.2cqw;font-weight:700;color:rgba(255,244,230,.75)}
+.page-devant{position:absolute;left:3cqw;right:3cqw;top:44cqw;bottom:3cqw;border-radius:3.4cqw;background:rgba(255,255,255,.04)}
+.page-devant::before{content:attr(data-titre);position:absolute;left:3cqw;top:2cqw;font-size:3cqw;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,244,230,.55)}
+.fg{position:absolute;z-index:5;display:block;transform:translate(-50%,-100%);pointer-events:none}
+.fg img{display:block;height:var(--h,14cqw);width:auto;filter:drop-shadow(0 .8cqw .8cqw rgba(0,0,0,.5))}
+.fg b{position:absolute;left:50%;top:92%;transform:translateX(-50%);padding:.2cqw 1.4cqw;border-radius:2cqw;white-space:nowrap;font-size:2.4cqw;font-weight:800;color:#2B1D16;background:var(--creme)}
+.foule .fg{opacity:0;transform:translate(-50%,-100%) translate(var(--dx,0),50cqw) scale(.4) rotate(var(--rot,-20deg));transition:opacity .2s var(--d),transform 1s var(--ressort) var(--d)}
+.nuee .foule .fg{opacity:1;transform:translate(-50%,-100%)}
+.compteur{position:absolute;left:0;right:0;top:4.5cqh;z-index:9;text-align:center;opacity:0;transform:translateY(-3cqw);transition:opacity .4s .25s,transform .6s var(--ressort) .25s}
+.nuee .compteur{opacity:1;transform:none}
+.compteur b{display:block;font-size:8.2cqw;font-weight:900;line-height:1.05;letter-spacing:-.02em}
+.compteur b span{font-variant-numeric:tabular-nums;background:linear-gradient(90deg,var(--rose2),#FFB347);-webkit-background-clip:text;background-clip:text;color:transparent}
+.compteur small{display:block;margin-top:1cqw;font-size:4cqw;font-weight:700;color:rgba(255,244,230,.8)}
+.compteur em{display:inline-block;margin-top:1.6cqw;padding:1cqw 3cqw;border-radius:99px;font-style:normal;font-size:3.5cqw;font-weight:800;color:#2B1D16;background:#FBF4E4;
+  transform:scale(0);transition:transform .5s var(--ressort)}
+.compteur em.on{transform:rotate(-2deg)}
+
+/* ═══ ⑦ Camille : un message rien qu'à elle, à chaque fois un peu mieux ═══ */
+.fiche{position:absolute;left:5cqw;right:5cqw;top:4cqh;z-index:6;display:flex;align-items:center;gap:3.4cqw;padding:2.6cqw 3.4cqw;border-radius:4.4cqw;
+  background:linear-gradient(180deg,rgba(62,36,49,.97),rgba(30,16,23,.97));border:1px solid rgba(255,214,140,.25);box-shadow:0 4cqw 8cqw -4cqw rgba(0,0,0,.9);
+  opacity:0;transform:translateY(-4cqw);transition:opacity .35s,transform .6s var(--ressort)}
+#s-camille.on .fiche{opacity:1;transform:none}
+.fiche>img{flex:none;width:14cqw;height:auto;filter:drop-shadow(0 1cqw 1cqw rgba(0,0,0,.5))}
+.fiche>div{min-width:0}
+.fiche>div>b{display:block;font-size:5.4cqw;font-weight:900;line-height:1.1}
+.fiche>div>small{display:block;margin-bottom:1.4cqw;font-size:2.9cqw;font-weight:700;color:rgba(255,244,230,.6)}
+.tags{display:flex;flex-wrap:wrap;gap:1.2cqw}
+.tags em{font-style:normal;padding:.7cqw 2.2cqw;border-radius:99px;font-size:2.9cqw;font-weight:800;white-space:nowrap;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);display:none}
+.tags em.on{display:inline-block;animation:pop .45s var(--ressort) both}
+.tags em.vert{color:#04150E;background:linear-gradient(135deg,#9FF5C9,var(--vert));border-color:transparent}
+.fil{position:absolute;left:4cqw;right:4cqw;top:24cqh;bottom:21cqh;display:flex;flex-direction:column;justify-content:flex-end;gap:2.2cqw;overflow:hidden;
+  -webkit-mask-image:linear-gradient(transparent,#000 16%);mask-image:linear-gradient(transparent,#000 16%)}
+.fil>*{flex:none;animation:monte .45s var(--ressort) both}
+@keyframes monte{from{opacity:0;transform:translateY(5cqw) scale(.94)}to{opacity:1;transform:none}}
+.jour{align-self:center;padding:.9cqw 3.4cqw;border-radius:99px;font-size:3.2cqw;font-weight:800;color:rgba(255,244,230,.85);background:rgba(255,255,255,.08)}
+.jour.calme{color:#FFD27A;background:rgba(246,181,75,.14)}
+.msg{max-width:84%;padding:2.4cqw 3.4cqw;border-radius:4cqw;font-size:3.7cqw;font-weight:600;line-height:1.35}
+.msg small{display:block;margin-bottom:.6cqw;font-size:2.7cqw;font-weight:800;opacity:.8}
+.msg.mike{align-self:flex-start;border-bottom-left-radius:1cqw;color:#fff;background:linear-gradient(135deg,#FF4FAE,#E0167A)}
+.msg.wa{align-self:flex-start;border-bottom-left-radius:1cqw;color:#0B2A17;background:#DCF8C6}
+.msg.wa small{color:#128C3E}
+.msg.elle{align-self:flex-end;border-bottom-right-radius:1cqw;color:#2A1A10;background:var(--creme);font-weight:800}
+.oui{align-self:flex-start;margin-top:-1.2cqw;padding:.6cqw 2.4cqw;border-radius:99px;font-size:2.8cqw;font-weight:800;color:#04150E;background:var(--vert)}
+.carton{align-self:center;display:flex;align-items:center;gap:3cqw;padding:3cqw 5cqw;border-radius:4cqw;font-size:4.4cqw;font-weight:900;color:#04150E;background:linear-gradient(135deg,#9FF5C9,var(--vert));
+  box-shadow:0 3cqw 6cqw -2cqw rgba(61,226,166,.7);animation:tampon .6s var(--ressort) both!important}
+.carton i{font-style:normal;font-size:7cqw}
+.carton small{display:block;font-size:3cqw;font-weight:700}
+@keyframes tampon{from{opacity:0;transform:scale(2) rotate(-8deg)}to{opacity:1;transform:rotate(-2deg)}}
+.bandeau{position:absolute;left:5cqw;right:5cqw;top:80cqh;margin:0;text-align:center;font-size:6cqw;font-weight:900;line-height:1.15;opacity:0;transform:translateY(3cqw);transition:opacity .4s,transform .6s var(--ressort)}
+.bandeau.on{opacity:1;transform:none}
+.bandeau-sous{position:absolute;left:6cqw;right:6cqw;top:89cqh;margin:0;text-align:center;font-size:3.5cqw;font-weight:700;color:rgba(255,244,230,.72);opacity:0;transition:opacity .4s}
+.bandeau-sous.on{opacity:1}
+
+/* ═══ ⑧ « Ton fantôme t'attend. » ═══ */
+.fin-haut{position:absolute;left:5cqw;right:5cqw;top:5cqh;display:flex;align-items:center;gap:4cqw}
+.fin-fant{position:relative;flex:none;width:28cqw;opacity:0;transform:translateY(-4cqh) scale(.6);transition:opacity .3s,transform .9s var(--ressort)}
+.fin-fant img{display:block;width:100%;height:auto;filter:drop-shadow(0 2cqw 3cqw rgba(0,0,0,.55))}
+.fin-titre{margin:0;font-size:8.4cqw;font-weight:900;line-height:1.05;letter-spacing:-.02em;opacity:0;transform:translateX(4cqw);transition:opacity .4s .2s,transform .7s var(--ressort) .2s}
+.fin-titre em{font-style:normal;background:linear-gradient(90deg,var(--rose2),#FFB347);-webkit-background-clip:text;background-clip:text;color:transparent}
+#s-fin.dit .fin-fant{opacity:1;transform:none}
+#s-fin.dit .fin-fant img{animation:flotte 2.6s ease-in-out 1s infinite}
+#s-fin.dit .fin-titre{opacity:1;transform:none}
+.ticket{position:absolute;left:7cqw;right:7cqw;top:24cqh;padding:4cqw 5cqw 3cqw;border-radius:3cqw;color:#2B1D16;background:#FBF7F0;box-shadow:0 4cqw 9cqw -4cqw rgba(0,0,0,.9);
+  -webkit-mask:radial-gradient(circle at 50% 100%,transparent 1.6cqw,#000 1.7cqw) bottom/5cqw 3.4cqw repeat-x,linear-gradient(#000 0 0) top/100% calc(100% - 3.3cqw) no-repeat;
+  mask:radial-gradient(circle at 50% 100%,transparent 1.6cqw,#000 1.7cqw) bottom/5cqw 3.4cqw repeat-x,linear-gradient(#000 0 0) top/100% calc(100% - 3.3cqw) no-repeat;
+  opacity:0;transform:translateY(4cqw);transition:opacity .4s,transform .7s var(--ressort)}
+#s-fin.dit .ticket{opacity:1;transform:none}
+.tk-tete{margin:0 0 2.4cqw;font-size:3.3cqw;font-weight:900;letter-spacing:.06em;text-transform:uppercase;text-align:center;color:#8A6A55}
+.tk-tete b{display:block;font:italic 700 5.4cqw/1.2 "Playfair Display",Georgia,serif;letter-spacing:0;text-transform:none;color:#2B1D16}
+.ticket ul{list-style:none;margin:0;padding:0;display:grid;gap:.4cqw}
+.ticket li{display:flex;align-items:baseline;gap:2.6cqw;padding:1.6cqw 0;border-top:1px dashed rgba(43,29,22,.22);font-size:3.8cqw;font-weight:600;opacity:0;transform:translateX(-3cqw);
+  transition:opacity .3s calc(var(--k) * .32s),transform .5s var(--ressort) calc(var(--k) * .32s)}
+.ticket li b{font-weight:900}
+.ticket li.vert b{color:#0E8F5F}
+#s-fin.lignes .ticket li{opacity:1;transform:none}
+.fin-boutons{position:absolute;left:7cqw;right:7cqw;top:69cqh;display:grid;gap:2.6cqw;opacity:0;transform:translateY(3cqw);transition:opacity .4s,transform .6s var(--ressort)}
+#s-fin.boutons .fin-boutons{opacity:1;transform:none}
+.go,.go2{display:block;padding:3.6cqw 4cqw;border-radius:99px;text-align:center;text-decoration:none;font-size:4.4cqw;font-weight:900;color:#fff;cursor:pointer}
+.go{background:linear-gradient(135deg,#FF5DB8,#E0167A);box-shadow:0 3cqw 6cqw -2cqw rgba(255,46,154,.85)}
+.go2{padding:3cqw 4cqw;font-size:3.9cqw;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2)}
+.fin-pied{display:flex;justify-content:space-between;align-items:center;gap:3cqw;margin-top:.6cqw}
+#revoir{border:0;background:none;padding:1cqw 0;font-size:3.6cqw;font-weight:800;color:rgba(255,244,230,.8);cursor:pointer}
+.fin-note{margin:0;font-size:2.7cqw;font-weight:600;color:rgba(255,244,230,.45);text-align:right}
+
+/* ═══ LES SOUS-TITRES, LA PAUSE, « POUR QUI » ═══ */
+#st{position:absolute;left:5cqw;right:5cqw;bottom:6.5cqh;z-index:30;min-height:13cqw;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+#st p{margin:0;font-size:6cqw;font-weight:900;line-height:1.18;letter-spacing:-.01em;text-shadow:0 .5cqw 2cqw rgba(0,0,0,.85),0 0 .4cqw rgba(0,0,0,.9)}
+#st span{opacity:.42;transition:opacity .12s,color .12s}
+#st span.dit{opacity:1}
+#st span.la{opacity:1;color:#FFE37A}
+#pause{position:absolute;right:2.6cqw;bottom:1.4cqh;z-index:50;display:none;width:8cqw;height:8cqw;padding:0;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);font-size:3.4cqw;cursor:pointer}
+.joue-demo #pause{display:block}
+.video #pause{display:none!important}
+#pause-voile{position:absolute;inset:0;z-index:45;display:none;place-items:center;background:rgba(5,3,4,.55)}
+body.pause #pause-voile{display:grid}
+#pause-voile b{padding:3cqw 7cqw;border-radius:99px;font-size:5cqw;font-weight:900;background:var(--rose);cursor:pointer}
+#pour-feuille{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:rgba(5,3,4,.75)}
+#pour-feuille[hidden]{display:none}
+#pour-form{width:min(88vw,380px);padding:22px;border-radius:20px;background:#22121A;border:1px solid rgba(255,255,255,.14);display:grid;gap:12px}
+#pour-form label{font-weight:800;font-size:17px}
+#pour-form input{font:inherit;font-size:18px;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:#140A0F;color:#fff}
+#pour-form div{display:flex;gap:10px;justify-content:flex-end}
+#pour-form button{padding:10px 16px;border-radius:99px;border:0;font-weight:800;cursor:pointer;background:rgba(255,255,255,.1)}
+#pour-form button[type=submit]{background:var(--rose)}
+@media (prefers-reduced-motion:reduce){.cage,.cg,.cd-fant,.dep-appel,.fin-fant img{animation:none!important}}
+</style>
+
+<div id="ecran"><div id="scene">
+
+  <!-- ① LA CAGE -->
+  <section class="sc on" id="s-cage">
+    <div class="dep-haut"><span class="marque">Clik<b>Me</b></span><button id="pour" type="button">✎ Pour qui est cette démo ?</button></div>
+    <div class="variantes" id="variantes"></div>
+    <button class="cage" id="cage" type="button" aria-label="Libérer le fantôme et lancer la démo">
+      <span class="cage-anneau"></span><span class="cage-noeud"></span>
+      <span class="cage-dome"><span class="cd-fant"><img src="fantome.webp" alt=""></span></span>
+      <span class="cage-porte"></span>
+      <span class="cage-socle"></span>
+    </button>
+    <p class="toc-toc">toc toc</p>
+    <div class="sortie"><img src="fantome.webp" alt=""></div>
+    <div class="etincelles" aria-hidden="true"></div>
+    <div class="dep-bas"><p class="dep-appel">Touchez la cage</p><p class="dep-sous" id="dep-sous">45 secondes · montez le son 🔊</p></div>
+  </section>
+
+  <!-- ② IL PORTE TON MÉTIER -->
+  <section class="sc" id="s-metier">
+    <div class="metier-f"><img class="avant" src="fantome.webp" alt=""><img class="apres" data-v="fantome" alt=""></div>
+    <div class="etincelles" aria-hidden="true"></div>
+    <p class="badge" data-v="badge"></p>
+    <div class="puces"><span style="--k:0">🎬 Tes vidéos</span><span style="--k:1">📣 Tes réseaux</span><span style="--k:2">💬 Tes clients</span></div>
+  </section>
+
+  <!-- ③ LA PROMESSE : TOUTE LA FRANCE, OU TA VILLE -->
+  <section class="sc" id="s-carte">
+    <div class="carte" id="carte">
+      <svg viewBox="0 0 1000 1000" aria-hidden="true">
+        <g class="france" id="france"><path class="pays" d="M525 50L555 77L631 124L670 138L734 193L772 201L849 240L887 247L846 375L804 393L753 472L743 510L798 524L811 589L788 631L814 691L843 730L785 789L708 784L657 765L587 777L558 840L566 856L471 849L408 821L315 807L249 768L283 654L286 552L222 440L203 403L145 366L62 356L59 305L139 263L235 277L264 277L238 180L286 212L369 203L452 147L465 77ZM964 803L974 886L955 951L913 905L919 840Z"/><g id="trajets"></g><g id="villes"></g></g>
+        <g class="locale" id="locale"><circle class="rayon" cx="500" cy="500" r="391"/><path class="lac" d="M517 493L532 530L554 574L585 617L607 661L630 704L653 737L662 770L645 763L615 726L582 683L551 633L524 580L506 533Z"/><g id="communes"></g></g>
+      </svg>
+      <span class="pin" id="pin"><img data-v="fantome" alt=""></span>
+      <span class="colis" id="colis">📦</span>
+    </div>
+    <p class="carte-titre" id="carte-titre"></p>
+  </section>
+
+  <!-- ④ UNE PHOTO, UNE VIDÉO PAR JOUR, PARTOUT -->
+  <section class="sc" id="s-semaine">
+    <figure class="polar" id="polar"><img data-v="photo" alt=""><figcaption>📷 Ta photo</figcaption></figure>
+    <div class="semaine" id="semaine"></div>
+    <div class="reseaux" id="reseaux">
+      <span class="rs ig" style="--k:0;--x:18cqw;--y:52cqh"><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></i><b>Instagram</b><em>✓</em></span>
+      <span class="rs tt" style="--k:1;--x:50cqw;--y:52cqh"><i><span>♪</span></i><b>TikTok</b><em>✓</em></span>
+      <span class="rs fb" style="--k:2;--x:82cqw;--y:52cqh"><i><svg viewBox="0 0 24 24"><path fill="#fff" d="M13.6 21v-7.6h2.6l.4-3h-3V8.5c0-.9.3-1.5 1.6-1.5h1.6V4.3c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.2H8v3h2.6V21z"/></svg></i><b>Facebook</b><em>✓</em></span>
+      <span class="rs wa" style="--k:3;--x:32cqw;--y:70cqh"><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9"><path d="M4.2 19.8l1.1-3.6A8.5 8.5 0 1 1 8 18.9z" stroke-linejoin="round"/><path fill="#fff" stroke="none" d="M9.2 7.9c.2 0 .4 0 .5.4l.7 1.6c.1.2 0 .4-.1.6l-.5.6c-.1.1-.2.3 0 .5a6 6 0 0 0 2.6 2.3c.2.1.4.1.5-.1l.6-.7c.2-.2.4-.2.6-.1l1.6.8c.2.1.3.2.3.4 0 .5-.2 1.2-.8 1.6-.6.4-1.5.5-2.6.1a9 9 0 0 1-4.6-4.2c-.6-1.1-.6-2.1-.2-2.8.3-.6.8-.9 1.4-1z"/></svg></i><b>Statut WhatsApp</b><em>✓</em></span>
+      <span class="rs pg" style="--k:4;--x:68cqw;--y:70cqh"><i><img src="fantome.webp" alt=""></i><b class="page-adresse">Ta page</b><em>✓</em></span>
+    </div>
+  </section>
+
+  <!-- ⑤ L'ÉCRAN PARTAGÉ -->
+  <section class="sc duel" id="s-duel">
+    <div class="tel g"><p class="tel-titre">Ta vidéo,<br>seule</p><div class="tel-ecran"><img data-v="photo" alt="">
+      <div class="tel-fin likes"><b><i>♥</i> <span data-v="likes"></span></b><ul><li style="--c:#7A8BA6">lea.mrt a aimé</li><li style="--c:#A6867A">sam_b a aimé</li><li style="--c:#7AA68B">j.morel a aimé</li><li style="--c:#9C7AA6" data-v="likes-autres"></li></ul></div>
+      <span class="tampon">Aucun prénom</span></div></div>
+    <div class="tel d"><p class="tel-titre">Avec ton<br>fantôme</p><div class="tel-ecran"><img data-v="photo" alt="">
+      <div class="tel-fin fantomes"><div class="mini-cages"><span></span><span></span><span></span></div><div class="prenoms" id="prenoms"></div><b class="compte"><span id="n-prenoms">0</span> prénoms</b></div></div></div>
+  </section>
+
+  <!-- ⑥ LES CAGES, PUIS LA NUÉE SUR SA PAGE -->
+  <section class="sc" id="s-cages">
+    <p class="like" id="like"><i>♥</i> J’aime</p>
+    <div class="carte-cages"><b class="cc-titre">Et toi ?</b><div class="rang" id="rang"></div></div>
+    <div class="envol" id="envol"><img alt=""><b>Camille</b></div>
+    <div class="compteur"><b><span id="n-fantomes">0</span> fantômes libérés</b><small>sur ta vidéo de ce matin</small><em id="d-ou"></em></div>
+    <div class="page" id="page">
+      <span class="page-url" data-v="url"></span>
+      <div class="page-ban"><img data-v="banniere" alt=""></div>
+      <div class="page-moi"><img data-v="fantome" alt=""><span><b class="nom-pro"></b><small data-v="sous-nom"></small></span></div>
+      <div class="page-devant foule" id="devant" data-titre="Devant ta page"></div>
+    </div>
+  </section>
+
+  <!-- ⑦ CAMILLE -->
+  <section class="sc" id="s-camille">
+    <div class="fiche"><img alt="" id="fiche-img"><div><b>Camille</b><small>Ce que ton fantôme sait d’elle</small><div class="tags" id="tags"></div></div></div>
+    <div class="fil" id="fil"></div>
+    <p class="bandeau" id="bandeau"></p>
+    <p class="bandeau-sous" id="bandeau-sous">Jamais plus de 2 messages par semaine. Tu valides chacun.</p>
+  </section>
+
+  <!-- ⑧ LA FIN -->
+  <section class="sc" id="s-fin">
+    <div class="fin-haut"><span class="fin-fant"><img data-v="fantome" alt=""></span><h1 class="fin-titre">Ton fantôme <em>t’attend.</em></h1></div>
+    <div class="ticket"><p class="tk-tete">Une semaine avec ton fantôme<b class="nom-pro-long"></b></p><ul id="ticket"></ul></div>
+    <div class="fin-boutons">
+      <a class="go" href="/commercants#creer">Créer ma page · gratuit</a>
+      <button class="go2" id="autre" type="button"></button>
+      <div class="fin-pied"><button id="revoir" type="button">↺ Revoir</button><p class="fin-note"></p></div>
+    </div>
+  </section>
+
+  <div id="st" aria-live="off"></div>
+  <div id="eclair"></div>
+  <button id="pause" type="button" aria-label="Pause">⏸</button>
+  <div id="pause-voile"><b>▶ Reprendre</b></div>
+</div></div>
+
+<div id="pour-feuille" hidden><form id="pour-form"><label for="pour-nom">Pour qui est cette démo ?</label>
+  <input id="pour-nom" maxlength="40" autocomplete="off" placeholder="Son nom, ou celui de son activité">
+  <div><button type="button" id="pour-effacer">Effacer</button><button type="submit">C’est lui</button></div></form></div>
+
+<script>
+"use strict";
+// Mesuré et écrit par `tour-entrepreneurs.py` : l'instant de chaque mot, les répliques, les deux variantes.
+const TEMPS = {"a": {"d": 1.72, "m": [0.14, 0.58, 0.8]}, "b": {"d": 2.93, "m": [0.0, 0.2, 0.4, 0.6, 1.63, 1.8, 1.96, 2.3, 2.47]}, "p-createur": {"d": 3.47, "m": [0.0, 0.18, 0.35, 0.53, 1.42, 1.62, 1.81, 2.01, 2.57, 2.76, 2.94, 3.13]}, "p-local": {"d": 3.08, "m": [0.0, 0.17, 0.35, 0.52, 0.69, 0.86, 1.53, 1.7, 1.87, 2.03, 2.37, 2.54, 2.71]}, "c": {"d": 4.99, "m": [0.0, 0.21, 1.12, 1.38, 1.63, 2.06, 2.2, 2.48, 3.3, 3.79, 4.11, 4.24, 4.38]}, "d": {"d": 3.97, "m": [0.0, 0.17, 0.84, 1.02, 1.19, 1.36, 1.85, 2.02, 2.18, 2.35, 2.68, 2.85, 3.02, 3.19]}, "e": {"d": 2.69, "m": [0.0, 0.24, 0.48, 0.72, 1.19, 1.38, 1.76, 1.95]}, "f": {"d": 7.71, "m": [0.0, 0.22, 0.65, 0.86, 1.08, 1.51, 1.72, 2.16, 2.37, 2.59, 3.26, 3.42, 3.58, 3.91, 4.07, 4.23, 4.39, 4.55, 4.72, 5.52, 5.95, 6.17, 6.56, 6.77, 6.99, 7.2]}, "g": {"d": 1.49, "m": [0.0, 0.42, 0.68]}, "h": {"d": 1.88, "m": [0.14, 0.37, 0.81]}};
+const SOUS = {"a": "Libère ton fantôme.", "b": "Il porte ton métier, | et il travaille pour toi.", "p-createur": "Tu envoies tes créations ? | Je te fais connaître | dans toute la France.", "p-local": "Tu reçois près de chez toi ? | Je te fais connaître | dans ta ville.", "c": "Une photo… | et chaque jour, une nouvelle vidéo, | publiée sur tous tes réseaux.", "d": "Une vidéo, tu sais la faire. | Moi, je te ramène | ceux qui l’ont regardée.", "e": "Au lieu d’un like, | ils libèrent leur fantôme.", "f": "Puis j’écris à chaque personne | un message rien qu’à elle. | Je la connais un peu mieux | à chaque réponse… | jusqu’au jour où | elle devient ta cliente.", "g": "Et elle revient.", "h": "Ton fantôme t’attend."};
+const VARIANTES = {"createur": {"nom": "Nina", "metier": "céramiste", "choix": "Envoie dans toute la France", "fantome": "metier-createur.webp", "badge": "🏺 Céramiste", "photo": "bol-bleu.jpg", "banniere": "table.jpg", "likes": 214, "prenoms": 52, "sousNom": "céramiste · envoie dans toute la France", "carteTitre": "Toute la France <em>te découvre.</em>", "dOu": "📍 de 23 villes de France", "semaine": ["bol-bleu.jpg", "pieces.jpg", "mains.jpg", "table.jpg", "tour.jpg", "coffret.jpg", "atelier.jpg"], "cages": ["J’adore<br>la vidéo", "Un jour,<br>je craque", "Je le<br>veux"], "cageCamille": 0, "voixPromesse": "p-createur", "tags": [{"texte": "💗 A adoré la vidéo"}, {"texte": "🎁 Pour offrir"}, {"texte": "🔔 À prévenir"}, {"texte": "✓ Cliente", "vert": true}, {"texte": "🔁 Revient", "vert": true}], "fil": [{"quand": "f0", "de": "jour", "texte": "Le lendemain"}, {"quand": "f0", "plus": 0.05, "de": "mike", "texte": "Merci Camille ! {nom} a vu passer ton fantôme : ça fait plaisir. Toi, plutôt un plaisir pour soi ou un cadeau à offrir ?"}, {"quand": "f1", "de": "oui"}, {"quand": "f2", "de": "elle", "texte": "Pour offrir 🎁", "tag": 1}, {"quand": "je", "de": "jour", "texte": "5 jours plus tard"}, {"quand": "je", "plus": 0.05, "de": "mike", "texte": "Noté : pour offrir ! Je le dis à {nom}. Je te fais signe quand il y a du nouveau de ce côté-là ?"}, {"quand": "je", "plus": 0.9, "de": "oui"}, {"quand": "rep", "de": "elle", "texte": "Oui !", "tag": 2}, {"quand": "jus", "de": "jour", "texte": "Vendredi · sortie du four", "calme": true}, {"quand": "jus", "plus": 0.05, "de": "wa", "texte": "3 bols bleus sortent du four, dont un en coffret cadeau. Je t’en garde un ?"}, {"quand": "elle", "de": "elle", "texte": "Oui, je le prends ! 😍"}, {"quand": "cliente", "de": "carton", "icone": "📦", "texte": "Commandé", "sous": "envoi à Lyon", "tag": 3, "son": "ting"}, {"quand": "g", "de": "jour", "texte": "Un mois plus tard"}, {"quand": "g", "plus": 0.05, "de": "mike", "texte": "Alors Camille, ce bol bleu, il a plu ?"}, {"quand": "g2", "de": "elle", "texte": "Adoré ! J’en reprends un pour moi 😍", "tag": 4}], "ticket": [{"texte": "🎬 <span><b>7 vidéos</b>, publiées partout</span>"}, {"texte": "👻 <span><b>52 prénoms</b>, de 23 villes</span>"}, {"texte": "🎁 <span><b>9</b> veulent une de tes pièces</span>"}, {"texte": "📦 <span><b>+3 commandes</b> cette semaine</span>", "vert": true}, {"texte": "⏱ <span><b>1 minute</b> par jour pour toi</span>"}], "foule": ["Lyon", "Lille", "Nantes", "Bordeaux", "Paris", "Marseille", "Rennes", "Toulouse", "Strasbourg", "Nice"], "carte": {"moi": [529, 468], "villes": [["Lille", 559, 93], ["Paris", 513, 258], ["Rennes", 255, 327], ["Nantes", 264, 410], ["Bordeaux", 326, 631], ["Toulouse", 455, 747], ["Montpellier", 611, 746], ["Marseille", 706, 775], ["Nice", 827, 738], ["Lyon", 672, 546], ["Strasbourg", 859, 284], ["Dijon", 685, 401], ["Brest", 75, 301], ["Tours", 407, 394]]}}, "local": {"nom": "Claire", "metier": "sophrologue", "choix": "Reçoit à Annecy", "fantome": "metier-local.webp", "badge": "🌿 Sophrologue", "photo": "cabinet.jpg", "banniere": "detail.jpg", "likes": 168, "prenoms": 41, "sousNom": "sophrologue · Annecy et autour", "carteTitre": "Annecy et autour <em>te découvrent.</em>", "dOu": "📍 d’Annecy et 9 communes autour", "semaine": ["cabinet.jpg", "geste.jpg", "detail.jpg", "entree.jpg", "cabinet.jpg", "geste.jpg", "detail.jpg"], "cages": ["J’adore<br>la vidéo", "Un jour, je<br>prends RDV", "Je prends<br>rendez-vous"], "cageCamille": 1, "voixPromesse": "p-local", "tags": [{"texte": "🔓 Viendra un jour"}, {"texte": "📅 Plutôt en semaine"}, {"texte": "🔔 À prévenir"}, {"texte": "✓ Cliente", "vert": true}, {"texte": "🔁 Revient", "vert": true}], "fil": [{"quand": "f0", "de": "jour", "texte": "Le lendemain"}, {"quand": "f0", "plus": 0.05, "de": "mike", "texte": "Merci Camille ! Tu as promis de venir un jour 😊 Je te fais signe dès qu’un créneau se libère. Plutôt en semaine ou le week-end ?"}, {"quand": "f1", "de": "oui"}, {"quand": "f2", "de": "elle", "texte": "En semaine", "tag": 1}, {"quand": "je", "de": "jour", "texte": "5 jours plus tard"}, {"quand": "je", "plus": 0.05, "de": "mike", "texte": "Noté : en semaine ! Je te fais signe dès qu’un créneau se libère."}, {"quand": "je", "plus": 0.9, "de": "oui"}, {"quand": "rep", "de": "elle", "texte": "Oui !", "tag": 2}, {"quand": "jus", "de": "jour", "texte": "Mardi · un créneau s’est libéré", "calme": true}, {"quand": "jus", "plus": 0.05, "de": "wa", "texte": "Jeudi 10 h vient de se libérer. Je te le garde ?"}, {"quand": "elle", "de": "elle", "texte": "Oui ! 😍"}, {"quand": "cliente", "de": "carton", "icone": "📅", "texte": "Jeudi 10 h", "sous": "rendez-vous de Camille", "tag": 3, "son": "ting"}, {"quand": "g", "de": "jour", "texte": "Après sa séance"}, {"quand": "g", "plus": 0.05, "de": "mike", "texte": "Merci pour ta séance, Camille ! Alors, verdict ?"}, {"quand": "g2", "de": "elle", "texte": "J’ai adoré. On en refait une ?", "tag": 4}], "ticket": [{"texte": "🎬 <span><b>7 vidéos</b>, publiées partout</span>"}, {"texte": "👻 <span><b>41 prénoms</b>, à Annecy et autour</span>"}, {"texte": "🔓 <span><b>8</b> promettent de venir</span>"}, {"texte": "📅 <span><b>+3 rendez-vous</b> cette semaine</span>", "vert": true}, {"texte": "⏱ <span><b>1 minute</b> par jour pour toi</span>"}], "foule": ["Annecy", "Seynod", "Rumilly", "Thônes", "Sévrier", "Faverges", "Cran-Gevrier", "Talloires", "Épagny", "Cruseilles"], "carte": {"moi": [755, 533], "communes": [["Annecy", 500, 500, ""], ["Frangy", 200, 239, ""], ["Alby-sur-Chéran", 331, 678, ""], ["Sévrier", 520, 574, ""], ["Talloires", 629, 628, ""], ["Rumilly", 220, 572, ""], ["Thônes", 797, 537, "e"], ["Faverges", 748, 826, "e"], ["La Roche-sur-Foron", 775, 135, "e"], ["Cruseilles", 468, 207, ""]]}}};
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const VIDEO = /[?&]video\b/.test(location.search);
+if (VIDEO) document.body.classList.add("video");
+const echapper = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+/* ── LA VARIANTE : Nina (toute la France) ou Claire (sa ville) — dans l'adresse (?v=local), ou touchée ── */
+let V = /[?&]v=local\b/.test(location.search) ? "local" : "createur";
+let VA = VARIANTES[V];
+let NOM = "";
+try { NOM = sessionStorage.getItem("tour-pour") || ""; } catch (e) { /* stockage fermé */ }
+const nomPro = () => NOM || VA.nom;
+
+$("#variantes").innerHTML = Object.entries(VARIANTES).map(([k, v]) =>
+  `<button type="button" data-k="${k}"><img src="${v.fantome}" alt=""><span><b>${v.nom}, ${v.metier}</b><small>${v.choix}</small></span></button>`).join("");
+$$("#variantes button").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); poserVariante(b.dataset.k); }));
+
+function poserVariante(k) {
+  V = k; VA = VARIANTES[k];
+  $$("#variantes button").forEach((b) => b.classList.toggle("on", b.dataset.k === k));
+  $$('[data-v="fantome"]').forEach((e) => { e.src = VA.fantome; });
+  $$('[data-v="photo"]').forEach((e) => { e.src = VA.photo; });
+  $$('[data-v="banniere"]').forEach((e) => { e.src = VA.banniere; });
+  $('[data-v="badge"]').textContent = VA.badge;
+  $('[data-v="likes"]').textContent = VA.likes;
+  $('[data-v="likes-autres"]').textContent = `+ ${VA.likes - 3} autres`;
+  $('[data-v="sous-nom"]').textContent = VA.sousNom;
+  $("#carte-titre").innerHTML = VA.carteTitre;
+  $("#d-ou").textContent = VA.dOu;
+  $("#bandeau").textContent = `Et pareil pour les ${VA.prenoms - 1} autres.`;
+  $("#autre").textContent = "Voir avec " + VARIANTES[k === "local" ? "createur" : "local"].nom + ", " + VARIANTES[k === "local" ? "createur" : "local"].metier;
+  // les sept vidéos de sa semaine
+  $("#semaine").innerHTML = "LMMJVSD".split("").map((j, i) =>
+    `<div class="jourf${i === 0 ? " aujourdhui" : ""}" style="--k:${i}"><b>${j}</b><span><img src="${VA.semaine[i]}" alt=""></span></div>`).join("");
+  // les trois cages de son métier ; Camille ouvre la sienne
+  $("#rang").innerHTML = VA.cages.map((c, i) =>
+    `<div class="f3${i === VA.cageCamille ? " " : ""}" ${i === VA.cageCamille ? 'id="cage-camille"' : ""}><span class="cg"><span class="cg-anneau"></span><span class="cg-noeud"></span><span class="cg-dome"><img src="g/${["cosy", "fleuri", "curieux"][i]}-debout.webp" alt=""></span><span class="cg-porte"></span><span class="cg-socle"></span></span><b>${c}</b>${i === VA.cageCamille ? '<i class="doigt"></i>' : ""}</div>`).join("");
+  $("#envol img").src = `g/${["cosy", "fleuri", "curieux"][VA.cageCamille]}-debout.webp`;
+  $("#fiche-img").src = `g/${["cosy", "fleuri", "curieux"][VA.cageCamille]}-debout.webp`;
+  $("#tags").innerHTML = VA.tags.map((t, i) => `<em id="tag${i}"${i === 0 ? ' class="on"' : ""}${t.vert ? ' data-vert="1"' : ""}>${t.texte}</em>`).join("");
+  $$("#tags em[data-vert]").forEach((e) => e.classList.add("vert"));
+  $("#ticket").innerHTML = VA.ticket.map((l, i) => `<li style="--k:${i}"${l.vert ? ' class="vert"' : ""}>${l.texte}</li>`).join("");
+  cartes();
+  foule();
+  poserNom();
+}
+
+/* ── SON NOM : celui de son activité, à la place de Nina ou de Claire ── */
+function poserNom() {
+  $$(".nom-pro").forEach((e) => { e.textContent = nomPro(); });
+  $$(".nom-pro-long").forEach((e) => { e.textContent = NOM ? NOM : `${VA.nom}, ${VA.metier}`; });
+  $$('[data-v="url"]').forEach((e) => { e.textContent = "clikme.fr/" + (NOM ? NOM.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") : VA.nom.toLowerCase()); });
+  $(".page-adresse").textContent = "Ta page";
+  $(".fin-note").textContent = NOM ? "Chiffres imaginaires" : "Personne et chiffres imaginaires";
+  const b = $("#pour");
+  b.classList.toggle("a-nom", !!NOM);
+  b.innerHTML = NOM ? "✨ Préparé pour <b>" + echapper(NOM) + "</b>" : "✎ Pour qui est cette démo ?";
+}
+$("#pour").addEventListener("click", (e) => { e.stopPropagation(); $("#pour-nom").value = NOM; $("#pour-feuille").hidden = false; setTimeout(() => $("#pour-nom").focus(), 60); });
+function garderNom(n) {
+  NOM = n.trim().replace(/\s+/g, " ").slice(0, 40);
+  try { if (NOM) sessionStorage.setItem("tour-pour", NOM); else sessionStorage.removeItem("tour-pour"); } catch (e) { /* stockage fermé */ }
+  $("#pour-feuille").hidden = true; poserNom();
+}
+$("#pour-form").addEventListener("submit", (e) => { e.preventDefault(); garderNom($("#pour-nom").value); });
+$("#pour-effacer").addEventListener("click", () => garderNom(""));
+$("#pour-feuille").addEventListener("click", (e) => { if (e.target.id === "pour-feuille") $("#pour-feuille").hidden = true; });
+
+/* ── LES CARTES : ses villes de France, ou les communes autour d'elle ── */
+function cartes() {
+  const moi = VA.carte.moi;
+  const pin = $("#pin");
+  pin.style.left = moi[0] / 10 + "%"; pin.style.top = moi[1] / 10 + "%";
+  $("#colis").style.left = moi[0] / 10 + "%"; $("#colis").style.top = (moi[1] / 10 - 7) + "%";
+  // le zoom sur sa ville : la carte grossit autour d'elle, et sa ville vient au centre (là où commence la carte locale)
+  $("#france").style.transformOrigin = `${moi[0]}px ${moi[1]}px`;
+  $("#france").style.setProperty("--z", `translate(${500 - moi[0]}px,${500 - moi[1]}px) scale(7)`);
+  const villes = VA.carte.villes || [];
+  $("#villes").innerHTML = villes.map((v, k) => `<g class="lieu" style="--k:${k}"><circle cx="${v[1]}" cy="${v[2]}" r="9"/><text x="${v[1] + 14}" y="${v[2] + 9}">${v[0]}</text></g>`).join("");
+  $("#trajets").innerHTML = villes.map((v, k) => {
+    const mx = (moi[0] + v[1]) / 2, my = (moi[1] + v[2]) / 2 - Math.hypot(v[1] - moi[0], v[2] - moi[1]) * .25;
+    const l = Math.round(Math.hypot(v[1] - moi[0], v[2] - moi[1]) * 1.15);
+    return `<path class="trajet" style="--k:${k};--l:${l}" d="M${moi[0]} ${moi[1]}Q${mx.toFixed(0)} ${my.toFixed(0)} ${v[1]} ${v[2]}"/>`;
+  }).join("");
+  const communes = VA.carte.communes || [];
+  $("#communes").innerHTML = communes.map((v, k) => `<g class="lieu${k === 0 ? " ville-moi" : ""}" style="--k:${k}"><circle cx="${v[1]}" cy="${v[2]}" r="${k === 0 ? 13 : 9}"/>` +
+    // sa ville à elle : son nom sous son fantôme (qui se pose dessus)
+    (k === 0 ? `<text x="${v[1]}" y="${v[2] + 64}" text-anchor="middle">${v[0]}</text></g>`
+      : `<text x="${v[3] === "e" ? v[1] - 18 : v[1] + 18}" y="${v[2] + 12}" text-anchor="${v[3] === "e" ? "end" : "start"}">${v[0]}</text></g>`)).join("");
+  $("#carte").classList.remove("villes", "zoom", "cercle");
+}
+
+/* ── LES ÉTINCELLES, LA FOULE DEVANT SA PAGE ── */
+$$(".etincelles").forEach((el) => { el.innerHTML = Array.from({ length: 14 }, (_, k) => {
+  const a = (k / 14) * Math.PI * 2, r = 26 + (k % 3) * 9;
+  return `<i style="--k:${k};--x:${(Math.cos(a) * r).toFixed(1)}cqw;--y:${(Math.sin(a) * r).toFixed(1)}cqw"></i>`;
+}).join(""); });
+const LOOKS = ["cosy", "fleuri", "curieux", "artiste", "denim", "rebelle", "soleil", "voyageur"];
+const COULEURS = ["#FF2E9A", "#F5A23A", "#3DE2A6", "#8E7CFF", "#FF7A59", "#4FB8FF"];
+const PRENOMS = ["Camille", "Hugo", "Inès", "Nathan", "Manon", "Jules", "Sarah", "Adam", "Zoé"];
+function foule() {
+  const h = [], lieux = VA.foule;
+  for (let i = 0; i < 30; i++) {
+    const rang = Math.floor(i / 10), j = i % 10;
+    const lieu = i % 3 === 0 ? lieux[(i / 3) % lieux.length] : "";
+    h.push(`<span class="fg" style="left:${7 + j * 9.6 + (rang % 2) * 4}%;top:${40 + rang * 26}%;--h:${11 + rang * 1.5}cqw;--d:${(i * .06).toFixed(2)}s;--dx:${(j - 5) * 5}cqw;--rot:${j % 2 ? 16 : -16}deg">` +
+      `<img src="g/${LOOKS[(i * 3) % 8]}-${rang === 2 ? "salue" : "debout"}.webp" alt="">${lieu ? `<b>${lieu}</b>` : ""}</span>`);
+  }
+  $("#devant").innerHTML = h.join("");
+}
+
+/* ── LES SOUS-TITRES : la réplique coupée en morceaux (« | »), le mot dit s'allume ── */
+const st = $("#st");
+const morceaux = {};
+for (const [c, s] of Object.entries(SOUS)) {
+  let i = 0;
+  morceaux[c] = s.split(" | ").map((p) => { const mots = p.split(" "); const m = { de: i, mots }; i += mots.length; return m; });
+}
+let stCourant = "";
+let VOIX = [];
+function sousTitres(now) {
+  let c = null;
+  for (const v of VOIX) if (now >= v.t - .05 && now <= v.t + (TEMPS[v.c]?.d ?? 3) + .35) c = v;
+  if (!c) { if (stCourant) { st.innerHTML = ""; stCourant = ""; } return; }
+  const m = TEMPS[c.c]?.m ?? [];
+  const dt = now - c.t;
+  let k = 0;
+  for (let i = 0; i < m.length; i++) if (m[i] <= dt + .04) k = i;
+  let mo = morceaux[c.c][0];
+  for (const x of morceaux[c.c]) if (k >= x.de) mo = x;
+  const cle = c.c + ":" + mo.de;
+  if (cle !== stCourant) { st.innerHTML = "<p>" + mo.mots.map((w) => "<span>" + echapper(w) + "</span>").join(" ") + "</p>"; stCourant = cle; }
+  $$("span", st).forEach((s, i) => { const j = mo.de + i; s.classList.toggle("dit", j < k); s.classList.toggle("la", j === k && dt >= (m[j] ?? 0) - .04); });
+}
+
+/* ── LE TEMPS : chaque voix à son instant ; les gestes calés sur ses mots ── */
+let debut = {};
+const fin = (c) => debut[c] + (TEMPS[c]?.d ?? 3);
+const net = (w) => w.toLowerCase().replace(/[^a-zàâäéèêëîïôöùûüÿœæç’']/g, "");
+function mot(c, w, n = 0) {
+  const ws = SOUS[c].replace(/ \| /g, " ").split(" ");
+  let vu = 0;
+  for (let i = 0; i < ws.length; i++) if (net(ws[i]) === net(w) && vu++ === n) return debut[c] + (TEMPS[c]?.m?.[i] ?? i * .3);
+  return debut[c];
+}
+const scene = (id) => { $$(".sc").forEach((s) => s.classList.toggle("on", s.id === id)); };
+const cl = (sel, c, oui = true) => { const e = typeof sel === "string" ? $(sel) : sel; if (e) e.classList.toggle(c, oui); };
+function compter(el, jusqua, duree) {
+  const t0 = performance.now();
+  const pas = () => { if (document.body.classList.contains("pause")) { requestAnimationFrame(pas); return; }
+    const x = Math.min(1, (performance.now() - t0) / (duree * 1000)); el.textContent = Math.round(jusqua * (1 - Math.pow(1 - x, 2))); if (x < 1) requestAnimationFrame(pas); };
+  requestAnimationFrame(pas);
+}
+const ajouterFil = (html) => $("#fil").insertAdjacentHTML("beforeend", html);
+const bulle = (m0) => { const m = { ...m0, texte: (m0.texte || "").replace(/\{nom\}/g, echapper(nomPro())) }; return m.de === "elle" ? `<p class="msg elle">${m.texte}</p>`
+  : m.de === "wa" ? `<p class="msg wa"><small>Sur ton WhatsApp</small>${m.texte}</p>`
+  : m.de === "jour" ? `<span class="jour${m.calme ? " calme" : ""}">${m.texte}</span>`
+  : m.de === "oui" ? '<span class="oui">✓ Tu as dit oui</span>'
+  : m.de === "carton" ? `<div class="carton"><i>${m.icone}</i><span>${m.texte}<small>${m.sous}</small></span></div>`
+  : `<p class="msg mike"><small>👻 Ton fantôme, pour Camille</small>${m.texte}</p>`; };
+
+function gestes() {
+  const g = [];
+  const a = (t, f, son) => g.push({ t, f, son });
+  const p = VA.voixPromesse;
+  // ① la cage s'ouvre, son fantôme sort
+  a(0, () => cl("#s-cage", "ouvre"), "ting");
+  a(mot("a", "fantôme.") - .2, () => cl("#s-cage", "sort"), "vol");
+  a(2.3, () => cl("#eclair", "on"));
+  a(2.45, () => scene("s-metier"));
+  // ② il enfile la tenue de son métier, et se met au travail
+  a(mot("b", "métier,") - .05, () => cl("#s-metier", "habille"), "ting");
+  a(mot("b", "travaille") - .1, () => cl("#s-metier", "travaille"), "pop");
+  a(fin("b") + .2, () => scene("s-carte"));
+  // ③ toute la France, ou sa ville
+  if (V === "createur") {
+    a(mot(p, "créations") - .1, () => cl("#colis", "on"), "pop");
+    a(mot(p, "connaître") - .2, () => { cl("#colis", "on", false); cl("#carte", "villes"); }, "vol");
+    for (let k = 0; k < 6; k++) a(mot(p, "connaître") + .1 + k * .24, () => {}, "tick");
+  } else {
+    a(mot(p, "connaître") - .3, () => cl("#carte", "zoom"), "vol");
+    a(mot(p, "ville.") - .15, () => cl("#carte", "cercle"), "ting");
+  }
+  a(fin(p) + .1, () => cl("#carte-titre", "on"), "pop");
+  a(debut.c - .35, () => scene("s-semaine"));
+  // ④ une photo, une vidéo chaque jour, partout
+  a(mot("c", "photo…") - .1, () => { cl("#polar", "on"); setTimeout(() => cl("#polar", "flash"), 120); }, "clic");
+  a(mot("c", "chaque") - .1, () => { cl("#polar", "range"); cl("#semaine", "chaque"); });
+  for (let k = 0; k < 7; k++) a(mot("c", "chaque") + .1 + k * .17, () => {}, "tick");
+  a(mot("c", "publiée") - .05, () => cl("#reseaux", "partout"), "vol");
+  for (let k = 0; k < 5; k++) a(mot("c", "publiée") + .45 + k * .14, () => {}, "tick");
+  a(debut.d - .3, () => scene("s-duel"));
+  // ⑤ la même vidéo : seule, ou avec son fantôme
+  a(mot("d", "Une"), () => cl("#s-duel", "joue"));
+  a(mot("d", "faire.") + .1, () => cl("#s-duel .tel.g", "fin"));
+  a(mot("d", "Moi,"), () => cl("#s-duel .tel.g", "rien"), "pop");
+  a(mot("d", "ramène"), () => {
+    cl("#s-duel .tel.d", "fin");
+    const pr = $("#prenoms");
+    PRENOMS.forEach((n, i) => setTimeout(() => pr.insertAdjacentHTML("beforeend", `<em style="--c:${COULEURS[i % COULEURS.length]}">${n}</em>`), i * 140));
+    compter($("#n-prenoms"), VA.prenoms, 1.6);
+  }, "ding");
+  a(fin("d") + .15, () => cl("#s-duel", "gagne"));
+  a(debut.e - .7, () => cl("#s-duel", "zoom"), "vol");
+  a(debut.e - .3, () => { scene("s-cages"); cl("#s-cages", "carte-on"); });
+  // ⑥ au lieu d'un like, ils libèrent leur fantôme ; puis la nuée, devant sa page
+  a(mot("e", "like,") + .15, () => cl("#like", "barre"));
+  a(mot("e", "like,") + .55, () => cl("#like", "tombe"));
+  a(mot("e", "libèrent") - .2, () => cl("#cage-camille", "choisie"), "ting");
+  a(mot("e", "libèrent") + .2, () => cl("#s-cages", "libere"), "vol");
+  a(fin("e") + .15, () => { cl("#s-cages", "nuee"); compter($("#n-fantomes"), VA.prenoms, 2.3); }, "nuee");
+  a(fin("e") + 1.6, () => cl("#d-ou", "on"), "pop");
+  a(debut.f - .2, () => scene("s-camille"));
+  // ⑦ Camille : à chaque message, un peu mieux ; jusqu'au jour où elle devient sa cliente ; et elle revient
+  const f0 = debut.f;
+  const instants = { f0: f0 + .05, f1: f0 + 1.25, f2: f0 + 2.2, je: mot("f", "Je"), rep: mot("f", "réponse…") - .2, jus: mot("f", "jusqu’au") - .3,
+    elle: mot("f", "elle", 1) - .3, cliente: mot("f", "cliente.") - .05, g: debut.g + .05, g2: mot("g", "revient.") + .1 };
+  for (const x of VA.fil) a(instants[x.quand] + (x.plus || 0), () => { ajouterFil(bulle(x)); if (x.tag != null) cl("#tag" + x.tag, "on"); }, x.son || (x.de === "elle" ? "pop" : x.de === "oui" ? "tick" : "ding"));
+  a(fin("g") + .7, () => cl("#bandeau", "on"));
+  a(fin("g") + 1.5, () => cl("#bandeau-sous", "on"));
+  a(debut.h - .4, () => scene("s-fin"));
+  // ⑧ son fantôme l'attend
+  a(debut.h - .1, () => cl("#s-fin", "dit"), "pop");
+  a(debut.h + .9, () => cl("#s-fin", "lignes"));
+  for (let k = 0; k < 5; k++) a(debut.h + 1.1 + k * .32, () => {}, "tick");
+  a(debut.h + 3.1, () => cl("#s-fin", "boutons"));
+  a(debut.h + 4.5, () => { window.__fin = true; document.body.classList.remove("joue-demo"); });
+  return g.sort((x, y) => x.t - y.t);
+}
+
+/* ── LE SON : les voix, et une petite musique jouée par le navigateur (aucun droit) ── */
+let AC = null, maitre = null, busV = null, busS = null, bruitBuf = null;
+const bruts = {}, tampons = {};
+const FICHIERS = ["a", "b", "c", "d", "e", "f", "g", "h", ...Object.values(VARIANTES).map((v) => v.voixPromesse)];
+const charge = Promise.all(FICHIERS.map((c) => fetch(`voix/${c}.mp3`).then((r) => (r.ok ? r.arrayBuffer() : null)).then((b) => { if (b) bruts[c] = b; }).catch(() => {})));
+function decoder(b) { return new Promise((ok) => { try { const p = AC.decodeAudioData(b.slice(0), ok, () => ok(null)); if (p && p.catch) p.catch(() => ok(null)); } catch (e) { ok(null); } }); }
+function enveloppe(g, t, a, pic, d) { g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(pic, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + a + d); }
+function oscil(type, f, t, a, pic, d, f2) {
+  const o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + a + d);
+  enveloppe(g, t, a, pic, d); o.connect(g); g.connect(busS); o.start(t); o.stop(t + a + d + .05);
+}
+function bruit() {
+  if (!bruitBuf) { bruitBuf = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate); const c = bruitBuf.getChannelData(0); for (let i = 0; i < c.length; i++) c[i] = Math.random() * 2 - 1; }
+  return bruitBuf;
+}
+function souffle(t, d, f1, f2, pic) {
+  const s = AC.createBufferSource(); s.buffer = bruit();
+  const bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 1.1; bp.frequency.setValueAtTime(f1, t); bp.frequency.exponentialRampToValueAtTime(f2, t + d);
+  const g = AC.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(pic, t + d * .4); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  s.connect(bp); bp.connect(g); g.connect(busS); s.start(t); s.stop(t + d + .05);
+}
+const SONS = {
+  ting: (t) => [1568, 2349, 3136].forEach((f, i) => oscil("sine", f, t, .004, .16 / (i + 1), 1.3)),
+  clic: (t) => { souffle(t, .08, 2500, 6000, .45); oscil("square", 1100, t, .002, .05, .03); },
+  pop: (t) => oscil("sine", 620, t, .004, .2, .16, 980),
+  ding: (t) => { oscil("sine", 1318.5, t, .004, .14, .45); oscil("sine", 1975.5, t + .06, .004, .09, .4); },
+  vol: (t) => souffle(t, .65, 300, 2600, .16),
+  tick: (t) => oscil("triangle", 1480, t, .003, .1, .08),
+  nuee: (t) => { souffle(t, 2.2, 200, 3000, .14); [523.3, 659.3, 784, 1046.5, 1318.5, 1568, 2093].forEach((f, i) => oscil("sine", f, t + i * .2, .01, .09, .9)); },
+};
+function nappe(t, duree) {
+  const acc = [[130.8, 196, 246.9, 329.6], [110, 164.8, 261.6, 329.6], [87.3, 174.6, 261.6, 349.2], [98, 196, 246.9, 293.7]];
+  const lp = AC.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1100;
+  const g = AC.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.06, t + 1.5); g.gain.setValueAtTime(.06, t + duree - 3); g.gain.exponentialRampToValueAtTime(.0001, t + duree);
+  lp.connect(g); g.connect(maitre);
+  const pas = 3.2;
+  for (let k = 0; k * pas < duree; k++) for (const f of acc[k % 4]) {
+    const o = AC.createOscillator(), og = AC.createGain(), s = t + k * pas;
+    o.type = "triangle"; o.frequency.value = f; o.detune.value = (Math.random() - .5) * 8;
+    og.gain.setValueAtTime(.0001, s); og.gain.linearRampToValueAtTime(.2, s + .5); og.gain.linearRampToValueAtTime(.16, s + pas - .3); og.gain.linearRampToValueAtTime(.0001, s + pas + .35);
+    o.connect(og); og.connect(lp); o.start(s); o.stop(s + pas + .4);
+  }
+}
+
+/* ── LE DÉROULÉ ── */
+let t0 = 0, horlogeAudio = false, departPerf = 0, enPause = false, pauseDepuis = 0, pauseTotale = 0, lance = false;
+const maintenant = () => (horlogeAudio ? AC.currentTime - t0 : (performance.now() - departPerf - pauseTotale - (enPause ? performance.now() - pauseDepuis : 0)) / 1000);
+function calendrier() {
+  // les voix de la variante, à leur instant (la promesse de Nina est un peu plus longue que celle de Claire)
+  const p = VA.voixPromesse, d = (c) => TEMPS[c]?.d ?? 3;
+  const t = { a: .35 }; t.b = t.a + d("a") + .55; t[p] = t.b + d("b") + .45; t.c = t[p] + d(p) + 1.8; t.d = t.c + d("c") + .75;
+  t.e = t.d + d("d") + 1.2; t.f = t.e + d("e") + 2.3; t.g = t.f + d("f") + 1.3; t.h = t.g + d("g") + 2.6;
+  debut = t;
+  VOIX = Object.entries(t).map(([c, x]) => ({ c, t: x })).sort((x, y) => x.t - y.t);
+}
+async function lancer() {
+  if (lance) return; lance = true;
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    maitre = AC.createGain(); maitre.connect(AC.destination);
+    busV = AC.createGain(); busV.gain.value = 1; busV.connect(maitre);
+    busS = AC.createGain(); busS.gain.value = .5; busS.connect(maitre);
+    if (AC.state === "suspended") await AC.resume().catch(() => {});
+  } catch (e) { AC = null; }
+  $("#dep-sous").classList.add("charge");
+  await Promise.race([charge, new Promise((r) => setTimeout(r, 6000))]);
+  calendrier();
+  if (AC) for (const v of VOIX) if (bruts[v.c]) tampons[v.c] = await decoder(bruts[v.c]);
+  $("#dep-sous").classList.remove("charge");
+  const G = gestes();
+  if (AC && AC.state === "running") {
+    horlogeAudio = true; t0 = AC.currentTime + .06;
+    for (const v of VOIX) if (tampons[v.c]) { const s = AC.createBufferSource(); s.buffer = tampons[v.c]; s.connect(busV); s.start(t0 + v.t); }
+    for (const x of G) if (x.son && SONS[x.son]) SONS[x.son](t0 + x.t);
+    nappe(t0 + .2, debut.h + 6);
+  } else { departPerf = performance.now(); }
+  document.body.classList.add("joue-demo");
+  let i = 0;
+  const boucle = () => {
+    const now = maintenant();
+    while (i < G.length && G[i].t <= now) { try { G[i].f(); } catch (e) { console.error(e); } i++; }
+    sousTitres(now);
+    if (i < G.length || now < debut.h + 4) requestAnimationFrame(boucle); else st.innerHTML = "";
+  };
+  requestAnimationFrame(boucle);
+}
+$("#cage").addEventListener("click", lancer);
+poserVariante(V);
+if (VIDEO) setTimeout(lancer, 900);
+
+/* ── LA PAUSE, REVOIR, L'AUTRE VARIANTE ── */
+function basculer() {
+  if (!lance || window.__fin) return;
+  enPause = !enPause;
+  document.body.classList.toggle("pause", enPause);
+  $("#pause").textContent = enPause ? "▶" : "⏸";
+  if (horlogeAudio) { if (enPause) AC.suspend(); else AC.resume(); }
+  else if (enPause) pauseDepuis = performance.now(); else pauseTotale += performance.now() - pauseDepuis;
+}
+$("#pause").addEventListener("click", basculer);
+$("#pause-voile").addEventListener("click", basculer);
+document.addEventListener("keydown", (e) => { if ((e.key === " " || e.key === "p") && lance) { e.preventDefault(); basculer(); } });
+const aller = (v) => { location.href = location.pathname + (v === "local" ? "?v=local" : ""); };
+$("#revoir").addEventListener("click", () => aller(V));
+$("#autre").addEventListener("click", () => aller(V === "local" ? "createur" : "local"));
+</script>

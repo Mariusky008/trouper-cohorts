@@ -17,7 +17,7 @@
 import json, os, re, shutil, subprocess, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from alignement import aligner, duree, segments, syllabes  # noqa: E402
+from voix_courtes import caler, egaliser  # noqa: E402
 
 S = sys.argv[1]
 FF = f"{S}/ffmpeg" if os.path.exists(f"{S}/ffmpeg") else shutil.which("ffmpeg")
@@ -37,47 +37,6 @@ SOUS = {
 }
 # Les looks des habitants (les fantômes de la foule), copiés du tour du restaurant.
 LOOKS = ["cosy", "fleuri", "curieux", "artiste", "denim", "rebelle", "soleil", "voyageur"]
-
-
-def caler(f, texte, seuil):
-    """Chaque mot à son instant. Quand la réplique a autant de phrases que de morceaux de voix (entre ses
-    respirations), ils vont un pour un, et les mots se partagent leur morceau selon leurs syllabes ; sinon,
-    l'alignement des tours (`alignement.py`), qui regroupe au débit le plus régulier — et qui, sur « …la faire.
-    Moi, je vous ramène… », collait « Moi » à la phrase d'avant."""
-    mots = texte.split(" ")
-    phrases, cur = [], []
-    for i, w in enumerate(mots):
-        cur.append(i)
-        if re.search(r"[,;:.?!…]$", w):
-            phrases.append(cur); cur = []
-    if cur:
-        phrases.append(cur)
-    d = duree(FF, f)
-    segs = segments(FF, f, d, seuil)
-    if len(segs) != len(phrases):
-        return aligner(FF, f, texte, (), seuil)
-    m = [0.0] * len(mots)
-    for p, (a0, b0) in zip(phrases, segs):
-        sy = [max(1, syllabes(mots[i].replace("*", ""))) for i in p]
-        avant = 0
-        for i, s in zip(p, sy):
-            m[i] = round(a0 + (b0 - a0) * avant / sum(sy), 2)
-            avant += s
-    return {"d": round(d, 3), "m": m}
-
-
-def ff(*a):
-    subprocess.run([FF, "-hide_banner", "-loglevel", "error", "-y", *a], check=True)
-
-
-def egaliser(src, dst, cible=-18):
-    """Le même volume pour toutes les voix (deux passes de loudnorm, en linéaire : la voix n'est pas tassée)."""
-    out = subprocess.run([FF, "-hide_banner", "-i", src, "-af", f"loudnorm=I={cible}:TP=-1.5:LRA=11:print_format=json", "-f", "null", "-"],
-                         capture_output=True, text=True).stderr
-    m = json.loads(out[out.rindex("{"):out.rindex("}") + 1])
-    af = (f"loudnorm=I={cible}:TP=-1.5:LRA=11:measured_I={m['input_i']}:measured_TP={m['input_tp']}:measured_LRA={m['input_lra']}"
-          f":measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true")
-    ff("-i", src, "-af", af, "-ar", "44100", "-ac", "1", "-c:a", "libmp3lame", "-b:a", "128k", dst)
 
 
 # la toque du chef (le dessin de l'intro des tours, `I_TOQUE` de tour-intro3.py), un identifiant par copie
@@ -119,9 +78,9 @@ os.makedirs(f"{D}/g", exist_ok=True)
 TEMPS = {}
 for c, (fichier, texte) in SOUS.items():
     src = f"{R}/{fichier}.mp3"
-    egaliser(src, f"{D}/voix/{c}.mp3")
+    egaliser(FF, src, f"{D}/voix/{c}.mp3")
     # les respirations de ces voix sont à -38 dB (mesuré) : à -45, deux phrases se collent
-    a = caler(src, texte.replace(" | ", " "), "-38dB")
+    a = caler(FF, src, texte.replace(" | ", " "), "-38dB")
     TEMPS[c] = {"d": a["d"], "m": a["m"]}
     print(c, a["d"], "s ·", len(a["m"]), "mots")
 
