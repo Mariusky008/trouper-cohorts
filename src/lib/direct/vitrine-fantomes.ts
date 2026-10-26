@@ -22,6 +22,7 @@
  * FICHIER PARTAGÉ (navigateur et serveur) : aucun accès à la base ici.
  */
 import type { Cage } from "./cages";
+import type { Ecusson } from "./ecussons";
 
 export type FantomeVitrine = {
   /** Un identifiant pour l'écran — jamais celui de la personne. */
@@ -38,6 +39,8 @@ export type FantomeVitrine = {
   /** Le commerçant a eu un coup de cœur pour son mot ; et ce qu'il lui a offert. */
   coeur?: boolean;
   cadeau?: string;
+  /** 🧵 Ses écussons, cousus sur son fantôme (`lib/direct/ecussons.ts`). */
+  ecussons?: Ecusson[];
 };
 
 export type Vitrine = {

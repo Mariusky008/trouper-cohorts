@@ -20,6 +20,7 @@ import { copieNommee } from "@/lib/direct/copies-presentation";
 import type { Cage } from "@/lib/direct/cages";
 import { fouleDemo, geste, placer, type Place, type Vitrine } from "@/lib/direct/vitrine-fantomes";
 import { MOT_MAX, motPropre, motsDeLaListe } from "@/lib/direct/petits-mots";
+import { ECUSSON, PLACES_ECUSSONS, type Ecusson } from "@/lib/direct/ecussons";
 import { familleDuDouble } from "@/lib/direct/double-metiers";
 
 /** L'image d'un fantôme selon sa cage : debout bras ouverts, la main levée, assis. */
@@ -86,11 +87,12 @@ export function VitrineFantomes({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imageDe(f.look, f.cage)} alt="" draggable={false} />
         {f.moi && <span className="nom">{f.prenom && vitrine.prenomVisible ? `Vous · ${f.prenom}` : "Vous"}</span>}
-        {f.coeur && (
+        {f.coeur && !f.ecussons?.includes("coeur") && (
           <i className="vf-coeur" aria-hidden="true">
             💛
           </i>
         )}
+        {f.ecussons && f.ecussons.length > 0 && <Ecussons liste={f.ecussons} />}
       </button>
     );
   };
@@ -132,6 +134,11 @@ export function VitrineFantomes({
               {geste(choisi.f.cage, branche)} · {quandEnClair(choisi.f.le, maintenant)}
             </span>
             {choisi.f.mot && <q>{choisi.f.mot}</q>}
+            {/* Ses écussons — sans redire le coup de cœur que la maison a eu ici (dit juste dessous). */}
+            {(() => {
+              const dits = (choisi.f.ecussons ?? []).filter((e) => e !== "coeur" || !choisi.f.coeur);
+              return dits.length > 0 && <small>{dits.map((e) => `${ECUSSON[e].icone} ${e === "pin" ? "Pin de la maison" : ECUSSON[e].nom}`).join(" · ")}</small>;
+            })()}
             {choisi.f.cadeau ? <em>🎁 La maison lui a offert {choisi.f.cadeau}</em> : choisi.f.coeur ? <em>💛 Coup de cœur de la maison</em> : null}
           </div>
         )}
@@ -163,8 +170,33 @@ export function VitrineFantomes({
           )}
         </p>
       )}
-      <style>{STYLES}</style>
+      <style>{STYLES + STYLES_ECUSSONS}</style>
     </div>
+  );
+}
+
+/** Le petit pin du commerce (une fourchette, comme dans le prototype). */
+const ICONE_PIN = (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M8 3v7a2 2 0 0 0 2 2M12 3v18M8 3v4M16 3c-1.5 2-1.5 6 0 8v10" />
+  </svg>
+);
+
+/** 🧵 SES ÉCUSSONS, cousus sur le bas de son fantôme (`neufs` : ceux qui se cousent sous nos yeux). */
+export function Ecussons({ liste, neufs = [] }: { liste: Ecusson[]; neufs?: Ecusson[] }) {
+  const places = PLACES_ECUSSONS[Math.min(3, liste.length)];
+  return (
+    <span className="vf-ecussons" aria-hidden="true">
+      {liste.slice(0, 3).map((id, k) => (
+        <span
+          key={id}
+          className={`vf-ecus${id === "pin" ? " pin" : ""}${neufs.includes(id) ? " neuf" : ""}`}
+          style={{ left: `${places[k][0]}%`, top: `${places[k][1]}%`, "--e": ECUSSON[id].couleur, "--r": `${k % 2 ? 8 : -8}deg` } as CSSProperties}
+        >
+          {id === "pin" ? ICONE_PIN : <i>{ECUSSON[id].icone}</i>}
+        </span>
+      ))}
+    </span>
   );
 }
 
@@ -367,8 +399,15 @@ export function VitrineDuCommerce({
   if (!reelle) {
     if (copieNommee(carte.id)) return null;
     vitrine = {
-      // La foule inventée porte des mots de la liste (un sur trois).
-      fantomes: [...fouleDemo(carte.id, maintenant).map((f, k) => (k % 3 === 0 ? { ...f, mot: liste[k % liste.length] } : f)), { ...sien, ...(motDemo ? { mot: motDemo } : {}) }],
+      // La foule inventée porte des mots de la liste (un sur trois), et des écussons (qui a promis a souvent tenu parole).
+      fantomes: [
+        ...fouleDemo(carte.id, maintenant).map((f, k) => ({
+          ...f,
+          ...(k % 3 === 0 ? { mot: liste[k % liste.length] } : {}),
+          ...(f.cage !== "adore" && k % 2 === 0 ? { ecussons: (k % 4 === 0 ? ["parole", "pin"] : ["parole"]) as Ecusson[] } : k % 5 === 1 ? { ecussons: ["coeur"] as Ecusson[] } : {}),
+        })),
+        { ...sien, ...(motDemo ? { mot: motDemo } : {}) },
+      ],
       ardoise: ardoise ?? null,
       prenomVisible: visibleDemo,
       ecritAujourdhui: Boolean(motDemo),
@@ -434,6 +473,22 @@ export function PrenomDansLesVitrines({ reelle }: { reelle: boolean }) {
     </div>
   );
 }
+
+/** Le style des écussons — dans la vitrine, et sur le grand fantôme de Ma Maison (`mes-ecussons.tsx`). */
+export const STYLES_ECUSSONS = `
+.vf-ecussons{position:absolute;inset:0;pointer-events:none;}
+.vf-fg.aujourdhui .vf-ecussons{top:6%;}
+.vf-ecus{position:absolute;width:17%;aspect-ratio:1;transform:translate(-50%,-50%) rotate(var(--r,0deg));border-radius:50%;container-type:inline-size;display:grid;place-items:center;
+  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.38),transparent 58%),var(--e);box-shadow:0 1px 2px rgba(0,0,0,.5);}
+.vf-ecus::before{content:"";position:absolute;inset:9%;border-radius:50%;border:max(.6px,5cqw) dashed rgba(255,248,234,.85);}
+.vf-ecus i{font-style:normal;font-size:52cqw;line-height:1;color:#FFF8EA;text-shadow:0 1px 1px rgba(0,0,0,.35);}
+.vf-ecus svg{width:58%;height:58%;fill:none;stroke:#6A1626;stroke-width:2.6;stroke-linecap:round;}
+.vf-ecus.pin{background:radial-gradient(circle at 35% 30%,#FFE6A6,#C9962E);}
+.vf-ecus.pin::before{border-color:rgba(106,22,38,.5);}
+.vf-ecus.neuf{animation:vf-coud .9s cubic-bezier(.2,1.5,.4,1) both;}
+@keyframes vf-coud{0%{opacity:0;transform:translate(-50%,-50%) scale(2.8) rotate(-40deg)}60%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.vf-ecus.neuf{animation:none!important;}}
+`;
 
 const STYLES = `
 .vf{--or:#E8C77A;--papier:#FFF8EA;--encre:#2A1A10;--bordeaux:#5E1628;--rose:#FF2E9A;--creme:#FFF4E6;display:flex;flex-direction:column;gap:8px;margin-top:10px;}
@@ -502,6 +557,8 @@ const STYLES = `
 .vf-ardoise p.coeur{font-size:14px;}
 .vf-ardoise p + p{padding-top:8px;border-top:1px dashed rgba(244,241,232,.25);}
 .vf-ardoise small{display:block;margin-bottom:2px;font:800 10.5px/1 system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#E8C77A;}
+@media (prefers-reduced-motion:reduce){.vf-fg img,.vf-fg .nom,.vf-fg.moi::before{animation:none!important;}}
+.vf-bulle small{font:700 2.6cqw/1.3 system-ui,sans-serif;color:#1E8F69;}
 .vf-coeur{position:absolute;right:-6%;top:6%;font-style:normal;font-size:4.6cqw;line-height:1;filter:drop-shadow(0 .3cqw .5cqw rgba(0,0,0,.5));pointer-events:none;}
 .vf-salle .vf-coeur{font-size:9cqw;}
 .vf-bulle q{font:italic 600 2.9cqw/1.3 Georgia,serif;color:#2B1D16;}

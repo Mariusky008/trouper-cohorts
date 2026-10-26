@@ -333,6 +333,7 @@ import { MotMarque } from "@/components/direct/mot-marque";
 import { CagesFantomes, type ChoixCage } from "./cages-fantomes";
 import { MesMessages, useMessagesEnAttente } from "./mes-messages";
 import { PrenomDansLesVitrines, VitrineDuCommerce } from "./vitrine-fantomes";
+import { MesEcussons } from "./mes-ecussons";
 import { deposerMessageDemo } from "@/lib/direct/messages-maison";
 import { copieNommee } from "@/lib/direct/copies-presentation";
 import { numeroWhatsApp, quoiAujourdhui, type Cage } from "@/lib/direct/cages";
@@ -12628,7 +12629,13 @@ export function ApercuHabitant({
                 }}
                 demandeGeste={demandeGeste}
                 pieceDeDepart={pieceDeDepart}
-                messages={<MesMessages reelle={Boolean(reelle)} />}
+                messages={
+                  <>
+                    <MesMessages reelle={Boolean(reelle)} />
+                    {/* 🧵 SES ÉCUSSONS, cousus sur son fantôme (voir `mes-ecussons.tsx`). */}
+                    <MesEcussons reelle={Boolean(reelle)} />
+                  </>
+                }
                 reglagesEnPlus={
                   <>
                 {/* AIDE : le tuto d'arrivée, à revoir quand on veut. */}

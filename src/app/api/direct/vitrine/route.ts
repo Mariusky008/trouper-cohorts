@@ -4,6 +4,7 @@
 // avec leur prénom — sauf qui l'a caché —, le sien marqué (« Vous »), et l'ardoise du jour.
 // 💌 Et leurs petits mots (étape 2) : ceux de la liste, et les mots écrits qui ont eu le 💛 du
 // commerçant (le sien, toujours) ; son dernier coup de cœur ; s'il a déjà écrit aujourd'hui.
+// 🧵 Et leurs écussons (étape 3) : la parole tenue, le pin de ce commerce, le coup de cœur.
 // Jamais l'identifiant de personne : chaque fantôme a un numéro d'écran. Voir
 // `lib/direct/vitrine-fantomes.ts`.
 //
@@ -11,6 +12,7 @@
 // prénom dans les vitrines.
 //
 // Jamais d'habitant créé ici : sans cookie, on voit la vitrine, sans « Vous ».
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
@@ -18,6 +20,7 @@ import { estCage } from "@/lib/direct/cages";
 import { lookValide } from "@/lib/direct/look";
 import { jourParis } from "@/lib/jour-paris";
 import type { FantomeVitrine } from "@/lib/direct/vitrine-fantomes";
+import { ecussonsIci, promessesTenues } from "@/lib/direct/ecussons";
 
 export const dynamic = "force-dynamic";
 
@@ -81,17 +84,33 @@ export async function GET(request: Request) {
     vues.add(h);
     lignes.push(c);
   }
-  const visibles = await prenomsVisibles(supabase, [...vues]);
+  // 🧵 LEURS ÉCUSSONS : leurs promesses tenues (partout : la parole ; ici : le pin) et leurs coups de cœur.
+  const ids = [...vues];
+  const [visibles, promis, passes, coeursDe] = await Promise.all([
+    prenomsVisibles(supabase, ids),
+    ids.length
+      ? supabase.from("clik_cage").select("habitant_id, site_id, cage, created_at").in("habitant_id", ids).in("cage", ["un-jour", "aujourdhui"]).limit(3000)
+      : null,
+    ids.length ? supabase.from("clik_visite").select("habitant_id, site_id, jour").in("habitant_id", ids).limit(5000) : null,
+    ids.length ? supabase.from("clik_mot").select("habitant_id").in("habitant_id", ids).not("coeur_le", "is", null).limit(3000) : null,
+  ]);
+  const tenues = promessesTenues(
+    ((promis && !promis.error ? promis.data : null) ?? []).map((c: Ligne) => ({ qui: s(c.habitant_id), site: s(c.site_id), cage: s(c.cage), le: s(c.created_at) })),
+    ((passes && !passes.error ? passes.data : null) ?? []).map((v: Ligne) => ({ qui: s(v.habitant_id), site: s(v.site_id), jour: s(v.jour) })),
+  );
+  const ontCoeur = new Set(((coeursDe && !coeursDe.error ? coeursDe.data : null) ?? []).map((m: Ligne) => s(m.habitant_id)));
   // 💌 SON DERNIER MOT, par personne — que les autres ne voient que s'il vient de la liste, ou a eu le 💛.
   const motDe = new Map<string, Ligne>();
   for (const m of (mots.error ? [] : (mots.data ?? [])) as Ligne[]) if (!motDe.has(s(m.habitant_id))) motDe.set(s(m.habitant_id), m);
-  const fantomes: FantomeVitrine[] = lignes.slice(0, 60).map((c, k) => {
+  const fantomes: FantomeVitrine[] = lignes.slice(0, 60).map((c) => {
     const h = s(c.habitant_id);
     const estMoi = Boolean(moi && moi.id === h);
     const m = motDe.get(h);
     const montre = m && (estMoi || m.liste === true || Boolean(m.coeur_le));
+    const ecussons = ecussonsIci({ tenues: tenues.get(h), site: siteId, coeur: ontCoeur.has(h) });
     return {
-      id: `f${k}`,
+      // Un numéro d'écran qui ne bouge pas quand un autre arrive (sinon la bulle ouverte change de personne).
+      id: `f${createHash("sha256").update(`${siteId}:${h}`).digest("hex").slice(0, 12)}`,
       prenom: estMoi || visibles.get(h) !== false ? s(c.prenom) : "",
       look: lookValide(c.look) ? s(c.look) : "",
       cage: c.cage as FantomeVitrine["cage"],
@@ -100,6 +119,7 @@ export async function GET(request: Request) {
       ...(montre ? { mot: s(m.texte) } : {}),
       ...(m && m.coeur_le ? { coeur: true } : {}),
       ...(m && s(m.cadeau) ? { cadeau: s(m.cadeau) } : {}),
+      ...(ecussons.length ? { ecussons } : {}),
     };
   });
 

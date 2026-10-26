@@ -7,7 +7,9 @@
 // (route du carnet, action « ardoise ») s'affiche le jour même, plus le lendemain, et s'efface ; un mauvais
 // commerce, un réglage sans fantôme. Puis les petits mots : un par jour, seulement avec son fantôme ; un mot de
 // la liste se voit tout de suite, un mot écrit après le 💛 du commerçant ; le coup de cœur sous l'ardoise ;
-// « offrir » (jamais d'alcool, un cadeau par mot) ; les réponses dans la Maison de chacun.
+// « offrir » (jamais d'alcool, un cadeau par mot) ; les réponses dans la Maison de chacun. Puis les écussons :
+// la parole tenue (une promesse, puis un passage noté au comptoir — jamais avant la promesse), le pin de ce
+// commerce seulement là où il a tenu parole, le coup de cœur ; et ceux de chacun dans sa Maison.
 //
 //   node scripts/faux-supabase.mjs 54321
 //   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=faux NEXT_PUBLIC_SUPABASE_ANON_KEY=faux \
@@ -62,7 +64,7 @@ await semer("clik_cage", { site_id: SITE, habitant_id: "aaaaaaaa-0000-4000-8000-
 let v = await vitrine("passant");
 const noms = (v.fantomes || []).map((f) => `${f.prenom}/${f.cage}`).sort().join(",");
 ok(v.statut === 200 && v.fantomes?.length === 3 && noms === "Inès/aujourdhui,Léa/adore,Tom/aujourdhui", `trois fantômes, la dernière cage de chacun, pas l'ancien (${noms})`);
-ok(!JSON.stringify(v).includes("habitant") && v.fantomes.every((f) => /^f\d+$/.test(f.id)), "jamais l'identifiant de personne");
+ok(!JSON.stringify(v).includes("habitant") && v.fantomes.every((f) => /^f[0-9a-f]{12}$/.test(f.id)), "jamais l'identifiant de personne");
 ok(!v.fantomes.some((f) => f.moi), "un passant sans fantôme : personne n'est « Vous »");
 ok(v.ardoise === null, "pas d'ardoise");
 
@@ -130,5 +132,43 @@ ok(rt.length === 1 && rt[0].cadeau === "" && rt[0].mot.startsWith("Merci pour sa
 ok((await maisonDe("ines")).length === 0, "Inès n'a rien reçu");
 ok((await pro({ action: "coeur", id: idTom, oui: false })).statut === 200 && !(await vitrine("passant")).fantomes.find((f) => f.prenom === "Tom")?.mot, "le 💛 retiré : le mot écrit quitte la vitrine");
 ok((await pro({ action: "coeur", id: "pas-un-id" })).statut === 404, "un mot inconnu : refusé");
+
+// ── 🧵 LES ÉCUSSONS (étape 3) ──
+const ecus = (qui) => (v.fantomes.find((f) => f.prenom === qui)?.ecussons ?? []).join(",");
+const mesEcussons = async (qui) => (await (await fetch(`${BASE}/api/direct/ecussons`, { headers: { cookie: cookies[qui] || "" } })).json());
+v = await vitrine("passant");
+ok(ecus("Léa") === "coeur" && ecus("Tom") === "" && ecus("Inès") === "", `avant tout passage : le coup de cœur de Léa (son café offert), rien d'autre (Léa ${ecus("Léa")}, Tom ${ecus("Tom")})`);
+const refs = Object.fromEntries(((await pro({ action: "lire" })).lignes ?? []).map((l) => [l.prenom, l.ref]));
+ok((await pro({ action: "passage", ref: refs.Tom, oui: true })).statut === 200, "le comptoir note le passage de Tom (il avait promis : aujourd'hui)");
+ok((await pro({ action: "passage", ref: refs["Léa"], oui: true })).statut === 200, "et celui de Léa (« J'adore » : elle n'avait rien promis)");
+v = await vitrine("passant");
+ok(ecus("Tom") === "parole,pin", `Tom : la parole tenue et le pin de ce commerce (${ecus("Tom")})`);
+ok(ecus("Léa") === "coeur", `Léa : pas de parole sans promesse (${ecus("Léa")})`);
+ok((await pro({ action: "coeur", id: idTom, oui: true })).statut === 200 && (v = await vitrine("passant")) && ecus("Tom") === "parole,pin,coeur", `le 💛 revient : les trois sur Tom (${ecus("Tom")})`);
+// Inès promet ailleurs, et tient parole ailleurs : la parole se voit ici, pas le pin
+const AILLEURS = "ffffffff-0000-4000-8000-00000000000a";
+await semer("human_vitrine_sites", { id: AILLEURS, slug: "boulangerie-d-ailleurs-dax", channel: "letter", pro_token: "jeton-d-ailleurs", business_name: "La Boulangerie d'Ailleurs", city: "Dax", published: true });
+const idInes = (await (await fetch(`${F}/clik_cage?site_id=eq.${SITE}&prenom=eq.In%C3%A8s&select=habitant_id`)).json())[0]?.habitant_id;
+const ilYa = (j) => new Date(Date.now() - j * 86_400_000).toISOString();
+await semer("clik_cage", { site_id: AILLEURS, habitant_id: idInes, film: "https://films.essai-vitrine.fr/pain.mp4", cage: "un-jour", prenom: "Inès", look: "artiste", created_at: ilYa(5), updated_at: ilYa(5) });
+await semer("clik_visite", { site_id: AILLEURS, habitant_id: idInes, jour: ilYa(6).slice(0, 10) });
+v = await vitrine("passant");
+ok(ecus("Inès") === "", `un passage AVANT la promesse ne la tient pas (${ecus("Inès")})`);
+await semer("clik_visite", { site_id: AILLEURS, habitant_id: idInes, jour: ilYa(2).slice(0, 10) });
+v = await vitrine("passant");
+ok(ecus("Inès") === "parole", `Inès a tenu parole ailleurs : la parole ici, pas le pin (${ecus("Inès")})`);
+const et = await mesEcussons("tom");
+ok(et.ok && et.pins?.map((x) => `${x.cle}/${x.nom}`).join() === `${SLUG}/Le Café de la Vitrine` && et.coeurs?.length === 1, `Ma Maison de Tom : son pin du Café de la Vitrine, son coup de cœur (${JSON.stringify(et)})`);
+const ei = await mesEcussons("ines");
+ok(ei.pins?.map((x) => x.nom).join() === "La Boulangerie d'Ailleurs" && ei.coeurs?.length === 0, `Ma Maison d'Inès : le pin de la Boulangerie d'Ailleurs (${ei.pins?.map((x) => x.nom)})`);
+const el = await mesEcussons("lea");
+ok(el.pins?.length === 0 && el.coeurs?.map((x) => x.nom).join() === "Le Café de la Vitrine", "Ma Maison de Léa : un coup de cœur, pas de pin");
+const ep = await mesEcussons("passant");
+ok(ep.ok && ep.pins.length === 0 && ep.coeurs.length === 0, "un passant sans fantôme : aucun écusson");
+ok(!JSON.stringify([et, ei, el]).includes(idInes) && !JSON.stringify(et).includes("habitant"), "jamais l'identifiant de personne");
+const avant = Object.fromEntries((await vitrine("passant")).fantomes.map((f) => [f.prenom, f.id]));
+ok((await cage("zoe", { cage: "aujourdhui", prenom: "Zoé", look: "cosy" })) === 200, "Zoé arrive");
+const apres = Object.fromEntries((await vitrine("passant")).fantomes.map((f) => [f.prenom, f.id]));
+ok(["Léa", "Tom", "Inès"].every((n) => apres[n] === avant[n]) && apres["Zoé"] && !Object.values(avant).includes(apres["Zoé"]), "chacun garde son numéro d'écran quand un autre arrive");
 console.log(echecs ? `${echecs} ÉCHEC(S)` : "TOUT EST BON");
 process.exit(echecs ? 1 : 0);

@@ -196,6 +196,31 @@ des habitants, la foule inventée porte des mots de la liste, et son propre mot 
 - `src/app/autour-de-moi/assistante/petits-mots.tsx` : la carte et l'écran du comptoir.
 - `supabase/migrations/20261031090000_clik_mots.sql` : `clik_mot`.
 
+## 🧵 Les écussons (prototype « Les trois fantômes », étape 3)
+
+Brodés, cousus sur le bas du corps de son fantôme : ils se voient dans toutes les vitrines, et la bulle de qui le
+touche les nomme. Trois, qu'on peut gagner aujourd'hui (`src/lib/direct/ecussons.ts`) :
+
+- **🤝 Parole de fantôme** : il a promis de venir (« Je viendrai un jour » ou « aujourd'hui »), puis le commerçant a
+  noté son passage au carnet — le jour même ou après, jamais avant la promesse.
+- **📍 Le pin du commerce** : un par commerce où il a tenu parole. Dans la vitrine de ce commerce, son fantôme porte
+  son pin (« Pin de la maison ») ; ailleurs, seulement la parole.
+- **💛 Coup de cœur** : un de ses petits mots a eu le 💛 d'un commerçant (ou un cadeau).
+
+« Ambassadeur » viendra avec le partage, « Bon conseil » avec les conseils : on ne montre pas un écusson qu'on ne
+peut pas gagner. Dans Ma Maison, « 🧵 Mes écussons » : son fantôme en grand avec ses écussons, puis les trois —
+gagnés en couleur, avec les commerces ; les autres en pointillés, avec la façon de les gagner. Un écusson tout neuf
+se coud sous ses yeux, une fois (le téléphone retient ceux qu'il a vus).
+
+La démonstration : dans l'appli des habitants, la foule inventée porte des écussons ; dans Ma Maison, tout est en
+pointillés (personne n'a noté son passage, et c'est vrai). Au comptoir, sa vitrine coud la parole et le pin à qui
+a promis puis est passé, d'après son carnet.
+
+- La vitrine (`api/direct/vitrine`) calcule les écussons de chaque fantôme ; `api/direct/ecussons` rend à
+  l'habitant ses pins et ses coups de cœur (les commerces), pour Ma Maison.
+- `src/app/autour-de-moi/mes-ecussons.tsx` : Ma Maison ; `Ecussons` dans `vitrine-fantomes.tsx` : la broderie.
+- **Aucune nouvelle table** : tout vient des cages, des passages et des petits mots.
+
 ## L'activer en production
 
 **Les deux tables doivent être créées une fois** : coller le contenu de
@@ -222,7 +247,9 @@ s'affiche mais « Passage aujourd'hui » répond « Les passages ne sont pas enc
   (les numéros, le message gardé, les règles), et le moteur de messages (Ma Maison, la réponse, le stop, « A
   répondu », le silence) et le ticket de Mike, contre le faux Supabase. Hors de 9 h – 20 h 30, il vérifie le refus.
 - `node scripts/essai-vitrine-route.mjs` (CI aussi) : la vitrine, les prénoms cachés, « Vous », l'ardoise du jour, et
-  les petits mots (un par jour, la modération, le 💛, offrir sans alcool, les réponses dans Ma Maison).
+  les petits mots (un par jour, la modération, le 💛, offrir sans alcool, les réponses dans Ma Maison), et les
+  écussons (la parole tenue, jamais avant la promesse ; le pin seulement chez ce commerce ; le coup de cœur ; Ma
+  Maison de chacun ; un numéro d'écran qui ne bouge pas quand un autre arrive).
 - Le carnet dans le navigateur : `/autour-de-moi/assistante?metier=table`, la carte « Mon carnet ».
 - Dans le navigateur : `/autour-de-moi`, Restaurants, Chez Bergine, « Voir toutes les offres + infos », le film
   « En cuisine, pendant le service » jusqu'au bout.

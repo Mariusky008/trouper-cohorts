@@ -38,6 +38,7 @@ import { aPrevenir } from "./previens-les";
 import { combienDeMessages } from "./messages-de-mike";
 import { VitrineFantomes } from "../vitrine-fantomes";
 import type { FantomeVitrine } from "@/lib/direct/vitrine-fantomes";
+import type { Ecusson } from "@/lib/direct/ecussons";
 
 /** `ardoise` : l'info du moment sous sa vitrine, si elle est du jour. */
 type Etat = { pret: boolean; actif: boolean; lignes: LigneCarnet[]; aujourdhui: string; ardoise: string | null };
@@ -444,7 +445,15 @@ function VitrineDuComptoir({
   const [fait, setFait] = useState(false);
   const fantomes: FantomeVitrine[] = carnet.lignes
     .filter((l) => !l.stop && maintenant - Date.parse(l.le) < 7 * 86_400_000)
-    .map((l) => ({ id: l.ref, prenom: l.prenom, look: l.look, cage: l.cage, le: l.le }));
+    // 🧵 Leurs écussons, tels que son carnet les voit : promesse puis passage noté → la parole et son pin.
+    .map((l) => ({
+      id: l.ref,
+      prenom: l.prenom,
+      look: l.look,
+      cage: l.cage,
+      le: l.le,
+      ...(l.cage !== "adore" && l.passages > 0 ? { ecussons: ["parole", "pin"] as Ecusson[] } : {}),
+    }));
   const ecrit = texte ?? carnet.ardoise ?? "";
   const ecrire = async (t: string) => {
     if (await carnet.ecrireArdoise(t)) {
