@@ -39,8 +39,9 @@ const TOURS = {
   // la démo courte des commerçants, « Le fantôme en 45 secondes », deuxième version (`outils/tour-court2.py` ;
   // la première, `tour-court/`, reste dans le dépôt sans être publiée)
   "tour-court2": "court",
-  // la démo des entrepreneurs, « Libère ton fantôme » (`outils/tour-entrepreneurs.py`)
-  "tour-entrepreneurs": "entrepreneurs",
+  // la démo des entrepreneurs, « Libère ton fantôme », deuxième version (`outils/tour-entrepreneurs2.py` ; la première,
+  // `tour-entrepreneurs/`, reste dans le dépôt sans être publiée)
+  "tour-entrepreneurs2": "entrepreneurs",
 };
 
 // les étapes intermédiaires de la chaîne (`index.avant-episode2.html`…) ne sont pas la page

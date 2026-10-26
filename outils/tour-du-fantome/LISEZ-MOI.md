@@ -14,7 +14,7 @@ bouton « Voir la démo » de la page des commerçants (`public/commercants/`) m
 | Lunetier (Les Lunettes de Margaux) | `tour-lunettes/` | https://www.clikme.fr/tours/lunettes | https://claude.ai/artifact/9R2sn9qYN141C4f54T2Q3C |
 | Massage (Le Cocon d’Élise) | `tour-massage/` | https://www.clikme.fr/tours/massage | — |
 | **Démo courte, 45 s** (Chez Bergine) | `tour-court2/` (deuxième version) | https://www.clikme.fr/tours/court | — |
-| **Démo des entrepreneurs** (Nina, céramiste · Claire, sophrologue) | `tour-entrepreneurs/` | https://www.clikme.fr/tours/entrepreneurs (`?v=local` : Claire) | — |
+| **Démo des entrepreneurs** (Nina, céramiste · Claire, sophrologue) | `tour-entrepreneurs2/` (deuxième version) | https://www.clikme.fr/tours/entrepreneurs (`?v=local` : Claire) | — |
 
 ## Ce qu'il y a dedans
 
@@ -267,6 +267,9 @@ devant un « p » ou un « t » (« elle | pousse »), pas seulement aux virgule
 
 ## La démo des entrepreneurs : « Libère ton fantôme »
 
+Publiée aujourd'hui dans sa deuxième version (`tour-entrepreneurs2/`, plus bas). La première (`tour-entrepreneurs/`),
+décrite ici, reste dans le dépôt sans être publiée.
+
 Pour ceux qui ne sont pas commerçants : pas de vitrine, pas de Direct (leur ville n'est pas forcément ouverte) ; tout
 se passe sur leurs réseaux et sur leur page ClikMe. ClikMe s'adresse à tout le monde en France, et chacun à sa
 mesure : deux variantes, choisies avant de toucher la cage (ou `?v=local` dans l'adresse).
@@ -299,7 +302,7 @@ cages, le lien depuis Instagram (étapes 4 et 5 du prototype), l'inscription san
 le message part sur WhatsApp (pour que le fantôme apprenne), et « Vendu » ou « Venue » noté par eux. Le bouton
 « Créer ma page » mène pour l'instant à l'inscription des commerçants (`/commercants#creer`).
 
-### La deuxième version (`tour-entrepreneurs2/`, pas encore publiée)
+### La deuxième version (`tour-entrepreneurs2/`, publiée à /tours/entrepreneurs)
 
 Le scénario et le moteur de la deuxième démo des commerçants (`tour-court2/`, plus haut), en « tu », avec ses deux
 variantes (`?v=local` : Claire ; choisir sur l'écran de départ recharge la page). Faite par
