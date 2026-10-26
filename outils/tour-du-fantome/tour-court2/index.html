@@ -747,7 +747,7 @@ function relever() {
 /* ── LE SON : les voix, une musique pop (120 BPM, en majeur), les bruits — joués par le navigateur ── */
 const NOTE = (n) => 440 * Math.pow(2, (n - 69) / 12);
 function composer(ctx, sortie, t0, voix) {
-  const maitre = ctx.createGain(); maitre.gain.value = .9;
+  const maitre = ctx.createGain(); maitre.gain.value = .78;   // (à .9, la crête dépassait 0 dB une fois en AAC)
   const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -10; comp.knee.value = 6; comp.ratio.value = 4; comp.attack.value = .003; comp.release.value = .2;
   maitre.connect(comp); comp.connect(sortie);
   const busV = ctx.createGain(); busV.connect(maitre);
