@@ -36,8 +36,22 @@ import { jourParis } from "@/lib/jour-paris";
 import { heureOuverte } from "@/lib/direct/previens-les";
 import { aPrevenir } from "./previens-les";
 import { combienDeMessages } from "./messages-de-mike";
+import { VitrineFantomes } from "../vitrine-fantomes";
+import type { FantomeVitrine } from "@/lib/direct/vitrine-fantomes";
 
-type Etat = { pret: boolean; actif: boolean; lignes: LigneCarnet[]; aujourdhui: string };
+/** `ardoise` : l'info du moment sous sa vitrine, si elle est du jour. */
+type Etat = { pret: boolean; actif: boolean; lignes: LigneCarnet[]; aujourdhui: string; ardoise: string | null };
+
+/* L'ARDOISE DE LA DÉMONSTRATION, dans ce téléphone : le texte, et le jour où il l'a écrite. */
+const cleArdoise = (c: CommerceComptoir) => `clikme:ardoise-demo:${c.id}`;
+function lireArdoiseDemo(c: CommerceComptoir): string | null {
+  try {
+    const v = JSON.parse(window.localStorage.getItem(cleArdoise(c)) || "null") as { texte?: string; jour?: string } | null;
+    return v?.texte && v.jour === jourParis() ? v.texte : null;
+  } catch {
+    return null;
+  }
+}
 
 /* ═══ LES GESTES DE LA DÉMONSTRATION, GARDÉS DANS CE TÉLÉPHONE ═══════════ */
 type Retenu = Pick<LigneCarnet, "passages" | "dernierPassage" | "stop" | "prevenir" | "messages">;
@@ -71,7 +85,7 @@ async function demander(reel: { slug: string; token: string }, corps: Record<str
 
 /** Son carnet : lu une fois à l'accueil, relu à l'ouverture de l'écran ; et ses deux gestes. */
 export function useCarnet(commerce: CommerceComptoir) {
-  const [etat, setEtat] = useState<Etat>({ pret: false, actif: true, lignes: [], aujourdhui: "" });
+  const [etat, setEtat] = useState<Etat>({ pret: false, actif: true, lignes: [], aujourdhui: "", ardoise: null });
   const [occupe, setOccupe] = useState("");
   const [ennui, setEnnui] = useState("");
   const reel = commerce.reel;
@@ -80,7 +94,13 @@ export function useCarnet(commerce: CommerceComptoir) {
     if (!reel) {
       const aujourdhui = jourParis();
       const retenus = lireDemo(commerce);
-      setEtat({ pret: true, actif: true, aujourdhui, lignes: carnetDemo(Date.now(), aujourdhui).map((l) => ({ ...l, ...retenus[l.ref] })) });
+      setEtat({
+        pret: true,
+        actif: true,
+        aujourdhui,
+        lignes: carnetDemo(Date.now(), aujourdhui).map((l) => ({ ...l, ...retenus[l.ref] })),
+        ardoise: lireArdoiseDemo(commerce),
+      });
       return;
     }
     try {
@@ -90,6 +110,7 @@ export function useCarnet(commerce: CommerceComptoir) {
         actif: j.actif !== false,
         aujourdhui: String(j.aujourdhui || jourParis()),
         lignes: Array.isArray(j.lignes) ? (j.lignes as LigneCarnet[]) : [],
+        ardoise: j.ardoise ? String(j.ardoise) : null,
       });
     } catch {
       // Le carnet ne s'affiche pas plutôt que de mettre l'accueil en erreur.
@@ -234,7 +255,31 @@ export function useCarnet(commerce: CommerceComptoir) {
     }
   };
 
-  return { ...etat, occupe, ennui, recharger: charger, passage, stop, numeros, envoye, maison, repondu, demo: !reel };
+  /** 🏪 L'ardoise de sa vitrine : l'info du moment (vide : on l'efface). */
+  const ecrireArdoise = async (texte: string): Promise<boolean> => {
+    setEnnui("");
+    const propre = texte.replace(/\s+/g, " ").trim().slice(0, 90);
+    if (!reel) {
+      try {
+        if (propre) window.localStorage.setItem(cleArdoise(commerce), JSON.stringify({ texte: propre, jour: jourParis() }));
+        else window.localStorage.removeItem(cleArdoise(commerce));
+      } catch {
+        /* stockage indisponible : l'ardoise vit le temps de la visite */
+      }
+      setEtat((e) => ({ ...e, ardoise: propre || null }));
+      return true;
+    }
+    try {
+      const j = await demander(reel, { action: "ardoise", texte: propre });
+      setEtat((e) => ({ ...e, ardoise: j.ardoise ? String(j.ardoise) : null }));
+      return true;
+    } catch (e) {
+      setEnnui(e instanceof Error ? e.message : String(e));
+      return false;
+    }
+  };
+
+  return { ...etat, occupe, ennui, recharger: charger, passage, stop, numeros, envoye, maison, repondu, ecrireArdoise, demo: !reel };
 }
 export type CarnetDuComptoir = ReturnType<typeof useCarnet>;
 
@@ -334,6 +379,8 @@ export function CarnetComptoir({
         </button>
       )}
 
+      <VitrineDuComptoir commerce={commerce} dossier={dossier} carnet={carnet} maintenant={maintenant} />
+
       {carnet.demo && <p className="ck-note">Démonstration : ces prénoms sont inventés. Tes gestes restent dans ce téléphone.</p>}
 
       {carnet.pret && !carnet.actif && (
@@ -375,6 +422,65 @@ export function CarnetComptoir({
       })}
       <style>{STYLES}</style>
     </div>
+  );
+}
+
+/**
+ * 🏪 SA VITRINE, EN DIRECT : ce que voient ses clients à la fin de ses vidéos — les fantômes de la
+ * semaine (lui voit tous les prénoms : c'est son carnet) — et l'ardoise, qu'il écrit ici.
+ */
+function VitrineDuComptoir({
+  commerce,
+  dossier,
+  carnet,
+  maintenant,
+}: {
+  commerce: CommerceComptoir;
+  dossier: string;
+  carnet: CarnetDuComptoir;
+  maintenant: number;
+}) {
+  const [texte, setTexte] = useState<string | null>(null);
+  const [fait, setFait] = useState(false);
+  const fantomes: FantomeVitrine[] = carnet.lignes
+    .filter((l) => !l.stop && maintenant - Date.parse(l.le) < 7 * 86_400_000)
+    .map((l) => ({ id: l.ref, prenom: l.prenom, look: l.look, cage: l.cage, le: l.le }));
+  const ecrit = texte ?? carnet.ardoise ?? "";
+  const ecrire = async (t: string) => {
+    if (await carnet.ecrireArdoise(t)) {
+      setTexte(null);
+      setFait(true);
+      window.setTimeout(() => setFait(false), 2200);
+    }
+  };
+  return (
+    <section className="ck-vitrine" aria-label="Ma vitrine">
+      <h3>
+        Ta vitrine <small>cette semaine</small>
+      </h3>
+      <VitrineFantomes
+        nom={commerce.nom}
+        sous={commerce.metier}
+        interieur={commerce.photo}
+        hote={`${dossier}salut-1.webp`}
+        branche={commerce.branche}
+        vitrine={{ fantomes, ardoise: carnet.ardoise, prenomVisible: true }}
+      />
+      <div className="ck-ardoise">
+        <label htmlFor="ck-ardoise">L’ardoise : l’info du moment, sous ta vitrine (aujourd’hui seulement)</label>
+        <div>
+          <input id="ck-ardoise" value={ecrit} maxLength={90} placeholder="Plus que 6 parts ce midi !" onChange={(e) => setTexte(e.target.value)} />
+          <button type="button" className="ck-passage" disabled={texte === null || texte.trim() === (carnet.ardoise ?? "")} onClick={() => void ecrire(ecrit)}>
+            {fait ? "✓ Écrit" : "Écrire"}
+          </button>
+        </div>
+        {carnet.ardoise && (
+          <button type="button" className="ck-annuler" onClick={() => void ecrire("")}>
+            Effacer l’ardoise
+          </button>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -483,6 +589,14 @@ const STYLES = `
 .ck-note{margin:-4px 2px 0;font-size:12.5px;line-height:1.4;color:#9A7A62;}
 .ck-vide{margin:0;padding:16px;border-radius:16px;border:1px dashed var(--trait);text-align:center;font-size:14px;line-height:1.45;color:var(--gris);}
 .ck-ennui{margin:0;padding:10px 14px;border-radius:14px;background:rgba(255,46,154,.12);border:1px solid rgba(255,46,154,.4);font-size:13.5px;}
+.ck-vitrine{display:flex;flex-direction:column;gap:8px;}
+.ck-vitrine h3{margin:6px 2px 0;display:flex;align-items:baseline;gap:8px;font-family:var(--font-clikme),sans-serif;font-size:17px;font-weight:800;}
+.ck-vitrine h3 small{font-family:inherit;font-size:12.5px;font-weight:700;color:var(--gris);}
+.ck-vitrine .vf{margin-top:0;}
+.ck-ardoise{display:flex;flex-direction:column;gap:6px;}
+.ck-ardoise label{font-size:12.5px;color:var(--gris);}
+.ck-ardoise div{display:flex;gap:8px;}
+.ck-ardoise input{flex:1;min-width:0;min-height:40px;padding:0 12px;border-radius:12px;border:1px solid var(--trait);background:var(--fond);color:var(--creme);font:inherit;font-size:14.5px;}
 .ck-groupe{display:flex;flex-direction:column;gap:8px;}
 .ck-groupe h3{margin:6px 2px 0;display:flex;align-items:center;gap:8px;font-family:var(--font-clikme),sans-serif;font-size:17px;font-weight:800;letter-spacing:-.01em;}
 .ck-groupe h3 i{font-style:normal;min-width:24px;height:24px;padding:0 7px;border-radius:999px;display:inline-grid;place-items:center;

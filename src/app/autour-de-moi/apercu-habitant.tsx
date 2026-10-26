@@ -332,6 +332,7 @@ import { MARQUE } from "@/lib/marque";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { CagesFantomes, type ChoixCage } from "./cages-fantomes";
 import { MesMessages, useMessagesEnAttente } from "./mes-messages";
+import { PrenomDansLesVitrines, VitrineDuCommerce } from "./vitrine-fantomes";
 import { deposerMessageDemo } from "@/lib/direct/messages-maison";
 import { copieNommee } from "@/lib/direct/copies-presentation";
 import { numeroWhatsApp, quoiAujourdhui, type Cage } from "@/lib/direct/cages";
@@ -10963,6 +10964,15 @@ export function ApercuHabitant({
                                         onWhatsapp={(n) => whatsappCage(dessus, m, n)}
                                         onAujourdhui={() => aujourdhuiCage(dessus, m)}
                                       />
+                                      {/* 🏪 SON FANTÔME A REJOINT LA VITRINE DU COMMERCE, avec ceux des autres. */}
+                                      {cagesFilms[cleFilm(dessus, m)] && (
+                                        <VitrineDuCommerce
+                                          carte={dessus}
+                                          cage={cagesFilms[cleFilm(dessus, m)].cage}
+                                          prenom={prenom}
+                                          ardoise={`En ce moment : ${m.titre}`}
+                                        />
+                                      )}
                                     </div>
                                   )}
 
@@ -12638,6 +12648,9 @@ export function ApercuHabitant({
                     <s aria-hidden="true">›</s>
                   </button>
                 </div>
+
+                {/* 🏪 SON PRÉNOM DANS LES VITRINES : visible, et il peut le cacher (voir `vitrine-fantomes.tsx`). */}
+                <PrenomDansLesVitrines reelle={Boolean(reelle)} />
 
                 {/* ═══ OÙ EST MON FANTÔME ═══
                     « Comment accéder au mur du commerçant si on n'a plus accès à

@@ -51,6 +51,7 @@ const DEFAUTS = {
     unsub_token: hex(8),
     telephone: null,
     look: null,
+    prenom_vitrine: true,
   }),
   human_conversations: () => ({ cree_le: maintenant(), activite: maintenant(), prive: true, supprime_le: null, createur: null }),
   human_conversation_gestes: () => ({ id: suite++, cree_le: maintenant(), masque_le: null }),
@@ -85,6 +86,7 @@ const DEFAUTS = {
   clik_contact: () => ({ id: randomUUID(), whatsapp: null, accord_le: null, stop_le: null, created_at: maintenant(), updated_at: maintenant() }),
   clik_visite: () => ({ id: randomUUID(), created_at: maintenant() }),
   clik_message: () => ({ id: randomUUID(), plus: "", envoye_le: maintenant() }),
+  clik_ardoise: () => ({ ecrite_le: maintenant() }),
 };
 const CLES = {
   human_conversations: ["id"],
@@ -106,6 +108,7 @@ const CLES = {
   clik_cage: ["habitant_id", "site_id", "film"],
   clik_contact: ["habitant_id", "site_id"],
   clik_visite: ["site_id", "habitant_id", "jour"],
+  clik_ardoise: ["site_id"],
 };
 
 /** Le déclencheur `echanges_pause_garde` : en pause après deux signalements, une offre ne se remet pas en ligne. */

@@ -29,6 +29,9 @@
 //
 // 🧾 LE TICKET DE MIKE (étape 5, `lib/direct/ticket-mike.ts`) : « ticket » rend ses sept derniers
 // jours et les sept d'avant — fantômes libérés, venus, venus après son signal, messages, réponses.
+//
+// 🏪 L'ARDOISE DE SA VITRINE (`lib/direct/vitrine-fantomes.ts`) : « ardoise » écrit l'info du moment
+// (90 signes au plus), vide l'efface ; « lire » la rend, si elle est du jour.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { estCage } from "@/lib/direct/cages";
@@ -180,7 +183,10 @@ export async function POST(request: Request) {
       const l = parPersonne.get(s(m.habitant_id));
       if (l && l.messages.length < 20) l.messages.push(enMessage(m));
     }
-    return NextResponse.json({ ok: true, actif: true, aujourdhui: jourParis(), lignes: [...parPersonne.values()] });
+    const { data: ard, error: eArd } = await supabase.from("clik_ardoise").select("texte, ecrite_le").eq("site_id", siteId).maybeSingle();
+    const a = eArd ? null : (ard as Ligne | null);
+    const ardoise = a && jourParis(new Date(s(a.ecrite_le))) === jourParis() ? s(a.texte) : null;
+    return NextResponse.json({ ok: true, actif: true, aujourdhui: jourParis(), lignes: [...parPersonne.values()], ardoise });
   }
 
   // ── LES NUMÉROS DE CEUX QUI VEULENT ÊTRE PRÉVENUS ──────────────────────────
@@ -216,6 +222,19 @@ export async function POST(request: Request) {
       }
     }
     return NextResponse.json({ ok: true, numeros });
+  }
+
+  // ── 🏪 L'ARDOISE DE SA VITRINE : L'INFO DU MOMENT (vide : on l'efface) ─────────
+  if (action === "ardoise") {
+    const texte = s(p?.texte).replace(/\s+/g, " ").slice(0, 90);
+    const { error } = texte
+      ? await supabase.from("clik_ardoise").upsert({ site_id: siteId, texte, ecrite_le: new Date().toISOString() }, { onConflict: "site_id" })
+      : await supabase.from("clik_ardoise").delete().eq("site_id", siteId);
+    if (error) {
+      if (migrationManquante(error.message)) return NextResponse.json({ error: "L'ardoise n'est pas encore activée." }, { status: 503 });
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true, ardoise: texte || null });
   }
 
   // ── 🧾 LE TICKET DE MIKE : SES SEPT DERNIERS JOURS, ET LES SEPT D'AVANT ─────────

@@ -147,6 +147,31 @@ commerçant le lit par la route du carnet (`ticket`) — aucune table de plus.
 
 - `src/app/autour-de-moi/assistante/ticket-mike.tsx` : la carte et la feuille.
 
+## 🏪 La vitrine du commerce (prototype « Les trois fantômes », étape 1)
+
+La scène du prototype (`outils/trois-fantomes`) dans l'application : la façade dessinée, l'enseigne à son nom, le
+store, la vitrine sur sa salle (sa photo), le carnet, la porte et son fantôme qui salue, le trottoir. Les fantômes
+libérés à la fin de ses vidéos s'y posent (`src/lib/direct/vitrine-fantomes.ts`, `src/app/autour-de-moi/vitrine-fantomes.tsx`) :
+
+- « J'adore la vidéo » sur le trottoir (ils sautillent), « Je viendrai un jour » à la porte (leurs prénoms s'écrivent au
+  carnet de la façade), « Aujourd'hui » à table derrière la vitre. Les sept derniers jours, une place par personne
+  (sa dernière cage) ; ceux qui ne tiennent pas font le « +N ».
+- Son propre fantôme au premier rang, sur un halo rose, « Vous · Rose ». Un fantôme touché dit son prénom, son geste
+  et quand (« Tom · 🍽️ a réservé aujourd'hui · à l'instant »).
+- **Les prénoms** (décision du 26 octobre) : visibles, et chacun peut cacher le sien — « Cacher mon prénom » sous la
+  vitrine (c'est dit : « Ton fantôme et ton prénom sont dans la vitrine de… »), et « Mon prénom dans les vitrines »
+  dans les réglages de Ma Maison. Caché, il reste son fantôme et son geste ; lui seul voit encore son prénom.
+- **L'ardoise**, sous la vitrine : l'info du moment que le commerçant écrit au comptoir (90 signes), le jour même
+  seulement. Dans la démonstration, l'ardoise dit le moment en cours (« En ce moment : Le service du midi »).
+
+Où : dans l'appli des habitants, sous les cages, dès qu'il a libéré son fantôme ; au comptoir, en haut du carnet
+(« Ta vitrine, cette semaine », où il voit tous les prénoms, et écrit son ardoise). La démonstration remplit la
+vitrine d'un commerce inventé d'une foule inventée (jamais pour un vrai commerçant).
+
+- `src/app/api/direct/vitrine/route.ts` : la vitrine d'un commerce (jamais l'identifiant d'une personne), son
+  réglage ; l'ardoise par la route du carnet (`ardoise`).
+- `supabase/migrations/20261030090000_clik_vitrine.sql` : `clik_ardoise`, et `human_habitants.prenom_vitrine`.
+
 ## L'activer en production
 
 **Les deux tables doivent être créées une fois** : coller le contenu de
@@ -158,7 +183,9 @@ commerçant ; un numéro donné reçoit « Ce n'est pas encore possible chez ce 
 préviens-les » `supabase/migrations/20261028090000_clik_messages.sql` (les messages envoyés), à coller de la même
 façon. Sans la seconde, « Envoyer » ouvre bien WhatsApp, mais répond « Les messages ne sont pas encore activés. »
 Le moteur de messages demande enfin `supabase/migrations/20261029090000_clik_messages_maison.sql` (après celle des
-messages) ; sans elle, « Oui, envoie » répond « Les messages dans Ma Maison ne sont pas encore activés. » Sans les cages, la carte dit « Bientôt, à la fin de tes vidéos » ; sans les passages, le carnet
+messages) ; sans elle, « Oui, envoie » répond « Les messages dans Ma Maison ne sont pas encore activés. »
+La vitrine demande `supabase/migrations/20261030090000_clik_vitrine.sql` (l'ardoise et le réglage du prénom) ; sans
+elle, la vitrine s'affiche, mais l'ardoise répond « L'ardoise n'est pas encore activée » et le prénom ne se cache pas. Sans les cages, la carte dit « Bientôt, à la fin de tes vidéos » ; sans les passages, le carnet
 s'affiche mais « Passage aujourd'hui » répond « Les passages ne sont pas encore activés. »
 
 ## Vérifier
@@ -168,6 +195,7 @@ s'affiche mais « Passage aujourd'hui » répond « Les passages ne sont pas enc
 - `node scripts/essai-carnet-route.mjs` (CI aussi) : le carnet, ses passages, le stop, et « Oui, préviens-les »
   (les numéros, le message gardé, les règles), et le moteur de messages (Ma Maison, la réponse, le stop, « A
   répondu », le silence) et le ticket de Mike, contre le faux Supabase. Hors de 9 h – 20 h 30, il vérifie le refus.
+- `node scripts/essai-vitrine-route.mjs` (CI aussi) : la vitrine, les prénoms cachés, « Vous », l'ardoise du jour.
 - Le carnet dans le navigateur : `/autour-de-moi/assistante?metier=table`, la carte « Mon carnet ».
 - Dans le navigateur : `/autour-de-moi`, Restaurants, Chez Bergine, « Voir toutes les offres + infos », le film
   « En cuisine, pendant le service » jusqu'au bout.
