@@ -1,0 +1,648 @@
+<meta charset="utf-8">
+<title>Le fantôme en 45 secondes — ClikMe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap">
+<style>
+/* 🎬 LE FANTÔME EN 45 SECONDES, deuxième version (voir `tour-court2.py`).
+   Une scène fixe de 1080 × 1920 (mise à l'échelle de l'écran), une seule caméra qui voyage d'un plan à l'autre,
+   tout piloté par une seule ligne de temps (GSAP) : on peut la mettre en pause, en capturer n'importe quel
+   instant, et en faire une vidéo image par image (`rendre-video.mjs`). Les particules et la lumière sont
+   dessinées sur une toile, en fonction du temps seulement. */
+:root{--rose:#FF2E9A;--rose2:#FF5DB8;--orange:#FFB347;--or:#F2C46B;--creme:#FFF4E6;--nuit:#12060F}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#0C040A;color:var(--creme);font-family:Poppins,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+#cadre{position:fixed;inset:0;overflow:hidden;background:#0C040A}
+#scene{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:0 0;overflow:hidden;
+  background:radial-gradient(ellipse 85% 60% at 50% 42%,#3D1433 0%,#1D0819 52%,#0C040A 100%)}
+canvas{position:absolute;left:0;top:0;width:1080px;height:1920px;pointer-events:none}
+#monde{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:0 0;will-change:transform}
+.abs{position:absolute;left:0;top:0;will-change:transform}
+img{display:block;-webkit-user-drag:none;user-select:none}
+
+/* ── la cage (dessin vectoriel, deux couches : le verre derrière le fantôme, les barreaux devant) ── */
+#cage{width:520px;height:760px;cursor:pointer}
+#cage>svg{position:absolute;left:0;top:0;width:520px;height:760px;overflow:visible}
+#c-fant{position:absolute;left:105px;top:300px;width:310px}
+#c-fant img{width:100%;height:auto;filter:drop-shadow(0 18px 24px rgba(0,0,0,.5))}
+#c-porte{position:absolute;left:176px;top:446px;width:168px;height:252px;transform-origin:0 50%;transform:perspective(900px)}
+#c-porte svg{width:168px;height:252px}
+#c-lueur{position:absolute;left:30px;top:40px;width:460px;height:660px;border-radius:50% 50% 8% 8% / 42% 42% 6% 6%;opacity:0;
+  background:radial-gradient(ellipse 60% 50% at 50% 62%,rgba(255,240,200,.95),rgba(255,190,120,.55) 35%,rgba(255,46,154,.15) 65%,transparent 75%);mix-blend-mode:screen}
+.toque{position:absolute;left:18.5%;top:-20%;width:64%;overflow:visible}
+/* ── son fantôme, une fois sorti ── */
+#heros{width:600px;opacity:0}
+#heros .corps{position:relative;width:600px}
+#heros img{width:100%;height:auto;filter:drop-shadow(0 30px 40px rgba(0,0,0,.55))}
+.trace{width:600px;opacity:0;filter:blur(2px) saturate(1.4)}
+.trace img{width:100%;height:auto}
+#rayons{width:1400px;height:1400px;border-radius:50%;opacity:0;mix-blend-mode:screen;
+  background:repeating-conic-gradient(from 0deg,rgba(255,230,170,.0) 0deg 5deg,rgba(255,230,170,.55) 6deg 7deg,rgba(255,230,170,0) 8deg 14deg);
+  -webkit-mask:radial-gradient(circle,#000 0 12%,rgba(0,0,0,.85) 30%,transparent 70%);mask:radial-gradient(circle,#000 0 12%,rgba(0,0,0,.85) 30%,transparent 70%)}
+#eclat{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 52%,#fff 0,rgba(255,240,215,.85) 18%,rgba(255,120,190,.3) 45%,transparent 70%)}
+#onde{width:120px;height:120px;border-radius:50%;opacity:0;border:10px solid rgba(255,235,190,.9);box-shadow:0 0 50px rgba(255,200,140,.8),inset 0 0 40px rgba(255,200,140,.6)}
+#doigt{width:150px;height:150px;border-radius:50%;opacity:0;border:8px solid #fff;background:rgba(255,255,255,.22);box-shadow:0 0 40px rgba(255,255,255,.5)}
+
+/* ── le téléphone (sa vidéo sur les réseaux) ── */
+#tel{width:620px;height:1250px;border-radius:96px;padding:18px;background:linear-gradient(145deg,#3A2A33,#120A0F 40%,#2A1D24);
+  box-shadow:0 0 0 3px rgba(255,255,255,.12),0 60px 120px -30px rgba(0,0,0,.9),inset 0 0 0 2px rgba(255,255,255,.08)}
+#ecran{position:relative;width:100%;height:100%;border-radius:80px;overflow:hidden;background:#000}
+#ecran .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#ilot{position:absolute;left:50%;top:22px;width:170px;height:46px;margin-left:-85px;border-radius:30px;background:#000;z-index:5}
+.ui{position:absolute;inset:0;z-index:3;pointer-events:none;background:linear-gradient(rgba(0,0,0,.45),transparent 22%,transparent 60%,rgba(0,0,0,.75))}
+.ui-haut{position:absolute;left:36px;top:96px;display:flex;align-items:center;gap:16px;font-size:30px;font-weight:800;color:#fff}
+.ui-haut i{width:62px;height:62px;border-radius:50%;background:url(m4.jpg) center/cover;box-shadow:0 0 0 4px #FF2E9A}
+.ui-haut em{font-style:normal;font-size:24px;padding:6px 16px;border-radius:14px;border:2px solid rgba(255,255,255,.7)}
+.ui-cote{position:absolute;right:28px;bottom:250px;display:grid;gap:34px;justify-items:center;font-size:24px;font-weight:800;color:#fff}
+.ui-cote span{display:grid;justify-items:center;gap:6px}
+.ui-cote svg{width:64px;height:64px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5))}
+#coeur{position:relative}
+#coeur-x{position:absolute;left:50%;top:32px;width:96px;height:12px;margin-left:-48px;border-radius:8px;background:#FF3B5C;transform:rotate(-35deg) scaleX(0);box-shadow:0 0 0 4px rgba(0,0,0,.4)}
+.ui-bas{position:absolute;left:36px;right:130px;bottom:96px;font-size:28px;font-weight:600;line-height:1.35;color:#fff}
+.ui-bas b{font-weight:800}
+#anonyme{position:absolute;left:50%;top:42%;z-index:6;padding:20px 30px;border-radius:24px;white-space:nowrap;text-align:center;font-size:40px;font-weight:900;line-height:1.1;color:#fff;
+  background:rgba(40,32,38,.92);border:4px solid rgba(255,255,255,.35);opacity:0;transform:translate(-50%,-50%) rotate(-7deg) scale(0)}
+#anonyme small{display:block;margin-top:6px;font-size:26px;font-weight:700;color:rgba(255,255,255,.7)}
+/* les trois cages, à la fin de sa vidéo */
+#tcages{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;opacity:0;
+  background:radial-gradient(ellipse at 50% 45%,rgba(70,25,55,.96),rgba(14,6,12,.98) 70%)}
+#tcages h3{margin:0;font-size:64px;font-weight:900;letter-spacing:-.02em}
+#jaime{position:relative;margin:0 0 6px;padding:14px 34px;border-radius:99px;font-size:40px;font-weight:800;color:#fff;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.28)}
+#jaime span{color:#FF3B5C}
+#jaime i{position:absolute;left:-6%;right:-6%;top:50%;height:10px;border-radius:6px;background:#FF3B5C;transform:rotate(-12deg) scaleX(0);box-shadow:0 0 0 3px rgba(0,0,0,.35)}
+.trang{display:grid;grid-template-columns:repeat(3,160px);gap:22px}
+.tc{display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;font-size:24px;font-weight:800;line-height:1.15}
+.tc svg{width:150px;height:220px;overflow:visible}
+.tc .tc-fant{position:absolute;width:86px;left:32px;top:96px}
+.tc .tc-c{position:relative;width:150px;height:220px}
+
+/* ── les fantômes nommés, la foule ── */
+.mini{width:150px;opacity:0}
+.mini img{width:100%;height:auto;filter:drop-shadow(0 10px 14px rgba(0,0,0,.5))}
+.mini b{position:absolute;left:50%;top:92%;transform:translateX(-50%);padding:4px 14px;border-radius:16px;white-space:nowrap;font-size:24px;font-weight:800;color:#fff;background:var(--c,#F5A23A);box-shadow:0 6px 14px rgba(0,0,0,.4)}
+.mini.camille{width:230px}
+.mini.camille b{font-size:34px;padding:6px 20px}
+
+/* ── les mots dits, en grand (typographie animée) ── */
+#mots{position:absolute;left:60px;right:60px;top:110px;height:420px;pointer-events:none}
+.ligne{position:absolute;left:0;right:0;text-align:center;font-weight:900;letter-spacing:-.025em;line-height:1;white-space:nowrap}
+.m{display:inline-block;margin:0 .13em;opacity:0;will-change:transform,opacity,filter}
+.m.fort{background:linear-gradient(95deg,#FF5DB8,#FF2E9A 45%,#FFB347);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 24px rgba(255,46,154,.55))}
+.compteur{position:absolute;left:0;right:0;top:96px;text-align:center;opacity:0}
+.compteur b{display:block;font-size:150px;font-weight:900;line-height:1;letter-spacing:-.03em;background:linear-gradient(95deg,#FF5DB8,#FFB347);-webkit-background-clip:text;background-clip:text;color:transparent}
+.compteur small{display:block;margin-top:14px;font-size:44px;font-weight:800;color:var(--creme)}
+.compteur small s{color:rgba(255,244,230,.55);text-decoration-thickness:4px}
+
+/* ── l'écran de départ (avant de toucher) ── */
+#depart{position:absolute;inset:0;pointer-events:none}
+.marque{position:absolute;left:64px;top:84px;font-size:56px;font-weight:900;letter-spacing:-.03em}
+.marque b{color:var(--rose)}
+#appel{position:absolute;left:0;right:0;top:1520px;text-align:center;font-size:76px;font-weight:900;letter-spacing:-.02em}
+#appel small{display:block;margin-top:18px;font-size:34px;font-weight:700;color:rgba(255,244,230,.6)}
+#toc{position:absolute;left:800px;top:820px;font:italic 700 54px/1 Georgia,serif;color:var(--or);opacity:0}
+#fin{position:absolute;inset:0;display:grid;place-items:center;opacity:0;background:#0C040A;pointer-events:none}
+#fin b{font-size:120px;font-weight:900;letter-spacing:-.03em}
+#fin b i{font-style:normal;color:var(--rose)}
+#pause{position:absolute;right:40px;bottom:40px;z-index:50;display:none;width:96px;height:96px;border-radius:50%;border:2px solid rgba(255,255,255,.3);background:rgba(0,0,0,.35);color:#fff;font-size:40px;cursor:pointer}
+.joue #pause{display:block}
+.rendu #pause{display:none!important}
+</style>
+
+<div id="cadre"><div id="scene">
+  <canvas id="fond" width="1080" height="1920"></canvas>
+  <div id="monde">
+    <div id="rayons" class="abs"></div>
+    <div id="onde" class="abs"></div>
+    <!-- la cage -->
+    <div id="cage" class="abs" role="button" aria-label="Libérer le fantôme et lancer la démo">
+      <svg viewBox="0 0 520 760" aria-hidden="true">
+        <defs>
+          <linearGradient id="or" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF3C4"/><stop offset=".28" stop-color="#F2C46B"/><stop offset=".62" stop-color="#A9742A"/><stop offset=".82" stop-color="#FFE3A0"/><stop offset="1" stop-color="#7E5219"/></linearGradient>
+          <linearGradient id="orb" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7A4E1A"/><stop offset=".45" stop-color="#FFE9AE"/><stop offset=".7" stop-color="#C8933F"/><stop offset="1" stop-color="#6E4516"/></linearGradient>
+          <radialGradient id="verre" cx=".5" cy=".55" r=".6"><stop offset="0" stop-color="#FFE7C4" stop-opacity=".16"/><stop offset="1" stop-color="#FFE7C4" stop-opacity=".02"/></radialGradient>
+          <clipPath id="dome"><path d="M30 700V330C30 140 150 46 260 46S490 140 490 330V700Z"/></clipPath>
+        </defs>
+        <path d="M30 700V330C30 140 150 46 260 46S490 140 490 330V700Z" fill="url(#verre)"/>
+      </svg>
+      <div id="c-lueur"></div>
+      <div id="c-fant"><img src="hote.webp" alt=""></div>
+      <svg viewBox="0 0 520 760" aria-hidden="true">
+        <g clip-path="url(#dome)"><g fill="url(#orb)">
+          <rect x="86" y="0" width="10" height="720"/><rect x="152" y="0" width="10" height="720"/><rect x="218" y="0" width="10" height="720"/>
+          <rect x="292" y="0" width="10" height="720"/><rect x="358" y="0" width="10" height="720"/><rect x="424" y="0" width="10" height="720"/></g></g>
+        <rect x="26" y="322" width="468" height="16" rx="6" fill="url(#or)"/>
+        <path d="M30 700V330C30 140 150 46 260 46S490 140 490 330V700" fill="none" stroke="url(#or)" stroke-width="16" stroke-linejoin="round"/>
+        <circle cx="260" cy="22" r="22" fill="none" stroke="url(#or)" stroke-width="10"/>
+        <g fill="#FF2E9A"><ellipse cx="226" cy="58" rx="34" ry="18"/><ellipse cx="294" cy="58" rx="34" ry="18"/><circle cx="260" cy="58" r="14"/></g>
+        <rect x="0" y="690" width="520" height="62" rx="24" fill="url(#or)"/><rect x="10" y="728" width="500" height="14" rx="7" fill="#FF2E9A" opacity=".9"/>
+      </svg>
+      <div id="c-porte"><svg viewBox="0 0 168 252" aria-hidden="true"><path d="M8 250V96C8 44 42 10 84 10S160 44 160 96V250" fill="rgba(30,15,20,.18)" stroke="url(#or)" stroke-width="12"/>
+        <rect x="52" y="20" width="8" height="232" fill="url(#orb)"/><rect x="108" y="20" width="8" height="232" fill="url(#orb)"/></svg></div>
+    </div>
+    <!-- son fantôme, et sa traînée -->
+    <div class="trace abs"><img src="hote.webp" alt=""></div><div class="trace abs"><img src="hote.webp" alt=""></div><div class="trace abs"><img src="hote.webp" alt=""></div><div class="trace abs"><img src="hote.webp" alt=""></div>
+    <!-- le téléphone : sa vidéo, puis les cages -->
+    <div id="tel" class="abs"><div id="ecran">
+      <img class="ph" id="ph1" src="m4.jpg" alt=""><img class="ph" id="ph2" src="m2.jpg" alt="" style="opacity:0">
+      <div class="ui">
+        <div class="ui-haut"><i></i><span>chezbergine</span><em>Suivre</em></div>
+        <div class="ui-cote">
+          <span id="coeur"><svg viewBox="0 0 24 24"><path fill="#fff" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.5 1.2 4.3 2.4.8-1.2 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></svg><b id="nlikes">0</b><i id="coeur-x"></i></span>
+          <span><svg viewBox="0 0 24 24"><path fill="none" stroke="#fff" stroke-width="2" d="M4 5h16v11H9l-5 4z"/></svg>18</span>
+          <span><svg viewBox="0 0 24 24"><path fill="none" stroke="#fff" stroke-width="2" d="M3 12l18-8-6 18-3-7z"/></svg>Partager</span>
+        </div>
+        <div class="ui-bas"><b>chezbergine</b> Le plat du jour, tout juste sorti de la cuisine 🍽️</div>
+      </div>
+      <p id="anonyme">♥ 214 j’aime<small>et pas un seul prénom</small></p>
+      <div id="tcages"><p id="jaime"><span>♥</span> J’aime<i></i></p><h3>Et vous ?</h3><div class="trang">
+        <div class="tc"><div class="tc-c"><img class="tc-fant" src="g/cosy-debout.webp" alt=""><svg viewBox="0 0 150 220" aria-hidden="true"><defs><clipPath id="dm"><path d="M10 200V96C10 42 42 14 75 14S140 42 140 96V200Z"/></clipPath></defs><path d="M10 200V96C10 42 42 14 75 14S140 42 140 96V200Z" fill="rgba(255,235,210,.05)"/><g clip-path="url(#dm)" fill="url(#orb)"><rect x="30" y="0" width="5" height="210"/><rect x="52" y="0" width="5" height="210"/><rect x="93" y="0" width="5" height="210"/><rect x="115" y="0" width="5" height="210"/></g><rect x="8" y="92" width="134" height="7" rx="3" fill="url(#or)"/><path d="M10 200V96C10 42 42 14 75 14S140 42 140 96V200" fill="none" stroke="url(#or)" stroke-width="7"/><circle cx="75" cy="7" r="7" fill="none" stroke="url(#or)" stroke-width="4"/><g fill="#FF2E9A"><ellipse cx="65" cy="20" rx="11" ry="6"/><ellipse cx="85" cy="20" rx="11" ry="6"/><circle cx="75" cy="20" r="5"/></g><g class="porte-tc"><path d="M52 200V146C52 130 62 120 75 120S98 130 98 146V200" fill="rgba(30,15,20,.15)" stroke="url(#or)" stroke-width="5"/><rect x="73" y="122" width="4" height="78" fill="url(#orb)"/></g><rect x="2" y="196" width="146" height="22" rx="9" fill="url(#or)"/><rect x="6" y="210" width="138" height="6" rx="3" fill="#FF2E9A"/></svg></div>J’adore<br>la vidéo</div>
+        <div class="tc" id="tc-promis"><div class="tc-c"><img class="tc-fant" src="g/fleuri-debout.webp" alt=""><svg viewBox="0 0 150 220" aria-hidden="true"><path d="M10 200V96C10 42 42 14 75 14S140 42 140 96V200Z" fill="rgba(255,235,210,.05)"/><g clip-path="url(#dm)" fill="url(#orb)"><rect x="30" y="0" width="5" height="210"/><rect x="52" y="0" width="5" height="210"/><rect x="93" y="0" width="5" height="210"/><rect x="115" y="0" width="5" height="210"/></g><rect x="8" y="92" width="134" height="7" rx="3" fill="url(#or)"/><path d="M10 200V96C10 42 42 14 75 14S140 42 140 96V200" fill="none" stroke="url(#or)" stroke-width="7"/><circle cx="75" cy="7" r="7" fill="none" stroke="url(#or)" stroke-width="4"/><g fill="#F5A23A"><ellipse cx="65" cy="20" rx="11" ry="6"/><ellipse cx="85" cy="20" rx="11" ry="6"/><circle cx="75" cy="20" r="5"/></g><g class="porte-tc"><path d="M52 200V146C52 130 62 120 75 120S98 130 98 146V200" fill="rgba(30,15,20,.15)" stroke="url(#or)" stroke-width="5"/><rect x="73" y="122" width="4" height="78" fill="url(#orb)"/></g><rect x="2" y="196" width="146" height="22" rx="9" fill="url(#or)"/><rect x="6" y="210" width="138" height="6" rx="3" fill="#F5A23A"/></svg></div>Je viendrai<br>un jour</div>
+        <div class="tc"><div class="tc-c"><img class="tc-fant" src="g/curieux-debout.webp" alt=""><svg viewBox="0 0 150 220" aria-hidden="true"><path d="M10 200V96C10 42 42 14 75 14S140 42 140 96V200Z" fill="rgba(255,235,210,.05)"/><g clip-path="url(#dm)" fill="url(#orb)"><rect x="30" y="0" width="5" height="210"/><rect x="52" y="0" width="5" height="210"/><rect x="93" y="0" width="5" height="210"/><rect x="115" y="0" width="5" height="210"/></g><rect x="8" y="92" width="134" height="7" rx="3" fill="url(#or)"/><path d="M10 200V96C10 42 42 14 75 14S140 42 140 96V200" fill="none" stroke="url(#or)" stroke-width="7"/><circle cx="75" cy="7" r="7" fill="none" stroke="url(#or)" stroke-width="4"/><g fill="#3DE2A6"><ellipse cx="65" cy="20" rx="11" ry="6"/><ellipse cx="85" cy="20" rx="11" ry="6"/><circle cx="75" cy="20" r="5"/></g><g class="porte-tc"><path d="M52 200V146C52 130 62 120 75 120S98 130 98 146V200" fill="rgba(30,15,20,.15)" stroke="url(#or)" stroke-width="5"/><rect x="73" y="122" width="4" height="78" fill="url(#orb)"/></g><rect x="2" y="196" width="146" height="22" rx="9" fill="url(#or)"/><rect x="6" y="210" width="138" height="6" rx="3" fill="#3DE2A6"/></svg></div>Je réserve<br>aujourd’hui</div>
+      </div></div>
+      <div id="ilot"></div>
+    </div></div>
+    <div id="foule"></div>
+    <div id="heros" class="abs"><div class="corps"><img src="hote.webp" alt=""><svg class="toque" viewBox="0 0 100 80" aria-hidden="true"><defs><radialGradient id="tq1a" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#F4F1EC"/><stop offset="1" stop-color="#D9D2C8"/></radialGradient><linearGradient id="tq1b" x1="0" x2="1"><stop offset="0" stop-color="#DCD5CB"/><stop offset=".3" stop-color="#fff"/><stop offset=".7" stop-color="#F7F4EF"/><stop offset="1" stop-color="#CFC7BB"/></linearGradient></defs><g fill="url(#tq1a)"><circle cx="24" cy="36" r="18"/><circle cx="76" cy="36" r="18"/><circle cx="38" cy="22" r="20"/><circle cx="62" cy="22" r="20"/><circle cx="50" cy="30" r="22"/></g><path d="M50 6c-4 8-4 22 0 34M33 12c-2 9 0 20 4 28M67 12c2 9 0 20-4 28" stroke="#D8D0C4" stroke-width="1" fill="none" opacity=".7"/><path d="M11 44Q50 38 89 44L92 79Q50 70 8 79Z" fill="url(#tq1b)"/><path d="M11 44Q50 38 89 44" stroke="#E2DBD0" stroke-width="1.2" fill="none"/><path d="M24 43V74M37 41.5V71M50 41V70M63 41.5V71M76 43V74" stroke="#E4DED4" stroke-width=".9"/></svg></div></div>
+    <div id="doigt" class="abs"></div>
+  </div>
+  <canvas id="fx" width="1080" height="1920"></canvas>
+  <div id="eclat"></div>
+  <div id="mots"></div>
+  <div class="compteur" id="compteur"><b><span id="n38">0</span> prénoms</b><small><s>214 j’aime anonymes</s><br>38 personnes à faire venir</small></div>
+  <div id="depart"><span class="marque">Clik<b>Me</b></span><p id="toc">toc toc</p><p id="appel">Touchez la cage<small id="charge"></small></p></div>
+  <div id="fin"><b>Clik<i>Me</i></b></div>
+  <button id="pause" type="button" aria-label="Pause">⏸</button>
+</div></div>
+
+<script src="js/gsap.min.js"></script>
+<script src="js/MotionPathPlugin.min.js"></script>
+<script>
+"use strict";
+gsap.registerPlugin(MotionPathPlugin);
+const TEMPS = {"a": {"d": 1.88, "m": [0.12, 0.76, 0.98]}, "d": {"d": 4.21, "m": [0.0, 0.18, 0.86, 1.03, 1.36, 1.52, 2.02, 2.45, 2.6, 2.74, 3.03, 3.17, 3.31, 3.46]}, "e": {"d": 2.69, "m": [0.0, 0.24, 0.48, 0.72, 1.2, 1.37, 1.7, 1.87]}};
+const SOUS = {"a": "Libérez votre fantôme.", "d": "Une vidéo, vous savez la faire. | Moi, je vous ramène | ceux qui l’ont regardée.", "e": "Au lieu d’un like, | ils libèrent un fantôme."};
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const RENDU = /[?&]rendu\b/.test(location.search);
+if (RENDU) document.body.classList.add("rendu");
+
+/* ── LA SCÈNE À L'ÉCHELLE DE L'ÉCRAN ── */
+function ajuster() {
+  const W = innerWidth, H = innerHeight, k = Math.min(W / 1080, H / 1920);
+  $("#scene").style.transform = `translate(${(W - 1080 * k) / 2}px,${(H - 1920 * k) / 2}px) scale(${k})`;
+}
+addEventListener("resize", ajuster); ajuster();
+
+/* ── UN HASARD QUI SE REJOUE À L'IDENTIQUE (pour les particules) ── */
+function hasard(graine) { let a = graine >>> 0; return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+/* ── LES INSTANTS : les voix, et ce que la page fait sur leurs mots ── */
+const VOIX = { a: 0.62, d: 3.62, e: 8.8 };
+const fin = (c) => VOIX[c] + (TEMPS[c]?.d ?? 3);
+const net = (w) => w.toLowerCase().replace(/[^a-zàâäéèêëîïôöùûüÿœæç’']/g, "");
+function mot(c, w, n = 0) {
+  const ws = SOUS[c].replace(/ \| /g, " ").split(" ");
+  let vu = 0;
+  for (let i = 0; i < ws.length; i++) if (net(ws[i]) === net(w) && vu++ === n) return VOIX[c] + (TEMPS[c]?.m?.[i] ?? i * .3);
+  return VOIX[c];
+}
+const T = {
+  eclate: 0.24,                              // la porte saute
+  panD: 2.85,                                // la caméra file vers le téléphone
+  rien: mot("d", "Moi,"),                    // les j'aime deviennent gris : personne
+  ramene: mot("d", "ramène"),                // son fantôme tourne autour du téléphone
+  cages: fin("d") + 0.15,                    // la fin de la vidéo : les cages
+  like: mot("e", "like,"),
+  libere: mot("e", "libèrent") - 0.12,       // le doigt sur « Je viendrai un jour »
+  fin: fin("e") + 2.3,
+};
+const DUREE = T.fin + 0.9;
+
+/* ── LA CAMÉRA : le point du monde qu'elle regarde, son zoom, ses secousses ── */
+const cam = { x: 540, y: 960, s: 1 };
+function secousse(t) {
+  const d = t - T.eclate;
+  if (d < 0 || d > 0.45) return [0, 0];
+  const a = 26 * Math.pow(1 - d / 0.45, 2);
+  return [a * Math.sin(d * 97), a * Math.cos(d * 71)];
+}
+function versEcran(wx, wy, t) { const [sx, sy] = secousse(t); return [540 + sx + (wx - cam.x) * cam.s, 960 + sy + (wy - cam.y) * cam.s]; }
+function poserCamera(t) {
+  const [sx, sy] = secousse(t);
+  $("#monde").style.transform = `translate(${540 + sx - cam.x * cam.s}px,${960 + sy - cam.y * cam.s}px) scale(${cam.s})`;
+}
+
+/* ── LES MOTS DITS, EN GRAND ── */
+// [voix, lignes : [y, taille, mots…], mot fort]
+const PHRASES = [
+  { c: "a", lignes: [[0, 170, 1], [185, 150, 2]], fort: ["fantôme."], sort: fin("a") + 0.25 },
+  { c: "d", lignes: [[0, 118, 2], [130, 118, 2], [255, 118, 2]], fort: [], sort: T.rien - 0.05, de: 0, a: 6 },
+  { c: "d", lignes: [[0, 118, 2], [130, 118, 2], [255, 104, 4]], fort: ["ramène"], sort: fin("d") + 0.3, de: 6, a: 14 },
+  { c: "e", lignes: [[0, 118, 4], [140, 118, 4]], fort: ["fantôme."], sort: fin("e") + 0.1 },
+];
+const mesure = document.createElement("canvas").getContext("2d");
+function construireMots(tl) {
+  const boite = $("#mots");
+  for (const ph of PHRASES) {
+    const ws = SOUS[ph.c].replace(/ \| /g, " ").split(" ");
+    const de = ph.de ?? 0, jusqua = ph.a ?? ws.length;
+    let i = de;
+    const spans = [];
+    for (const [y, taille, n] of ph.lignes) {
+      const l = document.createElement("div");
+      l.className = "ligne"; l.style.top = y + "px";
+      const texte = ws.slice(i, Math.min(jusqua, i + n)).join(" ");
+      let fs = taille; mesure.font = `900 ${fs}px Poppins`; while (fs > 40 && mesure.measureText(texte).width * .99 > 960) { fs -= 4; mesure.font = `900 ${fs}px Poppins`; }
+      l.style.fontSize = fs + "px";
+      for (let k = 0; k < n && i < jusqua; k++, i++) {
+        const s = document.createElement("span");
+        s.className = "m" + (ph.fort.includes(ws[i]) ? " fort" : "");
+        s.textContent = ws[i];
+        l.append(s);
+        spans.push([s, VOIX[ph.c] + (TEMPS[ph.c]?.m?.[i] ?? 0)]);
+      }
+      boite.append(l);
+    }
+    for (const [s, quand] of spans) {
+      tl.fromTo(s, { opacity: 0, y: 70, scale: 1.35, filter: "blur(16px)" },
+        { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.42, ease: "expo.out", immediateRender: false }, Math.max(0, quand - 0.06));
+      if (s.classList.contains("fort")) tl.to(s, { scale: 1.08, duration: 0.18, yoyo: true, repeat: 1, ease: "sine.inOut" }, quand + 0.3);
+    }
+    tl.to(spans.map((x) => x[0]), { opacity: 0, y: -60, filter: "blur(10px)", duration: 0.35, stagger: 0.03, ease: "power2.in" }, ph.sort);
+  }
+}
+
+/* ── LES PARTICULES ET LA LUMIÈRE (fonction du temps seulement) ── */
+const fond = $("#fond").getContext("2d"), fx = $("#fx").getContext("2d");
+const BOKEH = (() => { const r = hasard(7); return Array.from({ length: 46 }, () => ({ x: r() * 1400 - 160, y: r() * 2100 - 90, rr: 14 + r() * 70, v: 6 + r() * 22, a: .05 + r() * .13, rose: r() < .5, ph: r() * 6.28 })); })();
+function dessinerFond(t) {
+  fond.clearRect(0, 0, 1080, 1920);
+  const px = -(cam.x - 540) * 0.18;
+  for (const b of BOKEH) {
+    const x = ((b.x + px + Math.sin(t * .3 + b.ph) * 30) % 1400 + 1400) % 1400 - 160;
+    const y = ((b.y - b.v * t) % 2100 + 2100) % 2100 - 90;
+    const g = fond.createRadialGradient(x, y, 0, x, y, b.rr);
+    const c = b.rose ? "255,93,184" : "255,200,120";
+    g.addColorStop(0, `rgba(${c},${b.a})`); g.addColorStop(1, `rgba(${c},0)`);
+    fond.fillStyle = g; fond.beginPath(); fond.arc(x, y, b.rr, 0, 6.283); fond.fill();
+  }
+}
+// l'éclatement de la cage : des étincelles, avec traînée, gravité et frottement
+const CAGE_C = [540, 1010];
+const ETINCELLES = (() => { const r = hasard(11); return Array.from({ length: 150 }, () => {
+  const ang = r() * 6.283, v = 500 + r() * 1700;
+  return { vx: Math.cos(ang) * v, vy: Math.sin(ang) * v - 380, k: 2.2 + r() * 1.6, vie: .7 + r() * 1.1, l: 2 + r() * 5,
+    c: r() < .55 ? [255, 214, 140] : r() < .5 ? [255, 93, 184] : [255, 255, 255] }; }); })();
+function posEtincelle(p, d) { const e = (1 - Math.exp(-p.k * d)) / p.k; return [CAGE_C[0] + p.vx * e, CAGE_C[1] + p.vy * e + 700 * d * d]; }
+let SILLAGE = [];        // la poussière d'or laissée par son fantôme en vol (positions relevées sur la ligne de temps)
+let COEURS = [];         // les j'aime qui montent de sa vidéo
+let FLASH_CAGE = null;   // le petit éclatement de la cage « Je viendrai un jour »
+function dessinerFx(t) {
+  fx.clearRect(0, 0, 1080, 1920);
+  fx.globalCompositeOperation = "lighter";
+  // ① l'éclatement
+  const d = t - T.eclate;
+  if (d > 0 && d < 2.2) {
+    for (const p of ETINCELLES) {
+      if (d > p.vie) continue;
+      const [x1, y1] = versEcran(...posEtincelle(p, d), t), [x0, y0] = versEcran(...posEtincelle(p, Math.max(0, d - 0.045)), t);
+      const a = Math.pow(1 - d / p.vie, 1.4);
+      fx.strokeStyle = `rgba(${p.c[0]},${p.c[1]},${p.c[2]},${a})`; fx.lineWidth = p.l * cam.s; fx.lineCap = "round";
+      fx.beginPath(); fx.moveTo(x0, y0); fx.lineTo(x1, y1); fx.stroke();
+    }
+  }
+  // ② sa poussière d'or
+  for (const s of SILLAGE) {
+    const age = t - s.t;
+    if (age < 0 || age > s.vie) continue;
+    const a = 1 - age / s.vie;
+    const [x, y] = versEcran(s.x + s.dx * age, s.y + s.dy * age + 60 * age * age, t);
+    const r = s.r * (0.6 + 0.4 * a) * cam.s;
+    const g = fx.createRadialGradient(x, y, 0, x, y, r * 3);
+    g.addColorStop(0, `rgba(255,236,180,${a})`); g.addColorStop(.35, `rgba(255,150,200,${a * .5})`); g.addColorStop(1, "rgba(255,120,190,0)");
+    fx.fillStyle = g; fx.beginPath(); fx.arc(x, y, r * 3, 0, 6.283); fx.fill();
+  }
+  // ③ les j'aime de sa vidéo : ils montent ; puis ils deviennent gris (personne) ; puis il les ramène
+  fx.globalCompositeOperation = "source-over";
+  for (const c of COEURS) {
+    let age = t - c.t;
+    if (age < 0) continue;
+    const gele = t >= T.rien;
+    const ageG = Math.min(age, T.rien - c.t);
+    if (!gele && age > c.vie) continue;
+    if (gele && T.rien - c.t > c.vie) continue;
+    let x = c.x + Math.sin(ageG * 3 + c.ph) * 22, y = c.y - c.v * ageG;
+    let a = gele ? 0.9 : Math.min(1, age * 5) * (1 - Math.max(0, age - c.vie * .6) / (c.vie * .4));
+    let gris = gele ? Math.min(1, (t - T.rien) / 0.25) : 0;
+    // il les ramène : une spirale vers le téléphone, en or
+    const dr = t - (T.ramene + c.k * 0.012);
+    if (dr > 0) {
+      const u = Math.min(1, dr / 0.9), e = u * u * (3 - 2 * u);
+      const ang = e * 5 + c.ph, rr = (1 - e) * 180;
+      x = x + (TEL[0] + Math.cos(ang) * rr - x) * e; y = y + (TEL[1] - 60 + Math.sin(ang) * rr - y) * e;
+      gris = Math.max(0, gris - u * 2); a *= 1 - Math.max(0, u - .8) * 5;
+    }
+    if (a <= 0) continue;
+    const [sx, sy] = versEcran(x, y, t);
+    const taille = c.r * cam.s * (1 + Math.min(1, ageG * 2) * .4);
+    coeur(fx, sx, sy, taille, gris, a, dr > 0 ? Math.min(1, dr / .5) : 0);
+  }
+  // ④ le petit éclatement de la cage choisie
+  const d2 = t - T.libere - 0.05;
+  if (FLASH_CAGE && d2 > 0 && d2 < 1.2) {
+    fx.globalCompositeOperation = "lighter";
+    for (const p of FLASH_CAGE) {
+      if (d2 > p.vie) continue;
+      const e = (1 - Math.exp(-p.k * d2)) / p.k;
+      const [x1, y1] = versEcran(p.x + p.vx * e, p.y + p.vy * e + 500 * d2 * d2, t);
+      const a = 1 - d2 / p.vie;
+      fx.fillStyle = `rgba(${p.c},${a})`; fx.beginPath(); fx.arc(x1, y1, p.r * cam.s, 0, 6.283); fx.fill();
+    }
+  }
+  fx.globalCompositeOperation = "source-over";
+}
+function coeur(g, x, y, r, gris, a, or) {
+  g.save(); g.translate(x, y); g.scale(r / 12, r / 12); g.globalAlpha = a;
+  const rouge = [255, 59, 92], g0 = [150, 140, 146], o = [255, 200, 110];
+  const c = rouge.map((v, i) => Math.round(v + (g0[i] - v) * gris + (o[i] - v) * or * (1 - gris)));
+  g.fillStyle = `rgb(${c.join(",")})`;
+  g.beginPath(); g.moveTo(0, 10); g.bezierCurveTo(-14, 1, -11, -11, 0, -4); g.bezierCurveTo(11, -11, 14, 1, 0, 10); g.fill();
+  if (gris > .5) { g.fillStyle = `rgba(255,255,255,${a * .9})`; g.font = "900 11px Poppins,sans-serif"; g.textAlign = "center"; g.fillText("?", 0, 3); }
+  g.restore();
+}
+
+/* ── LA LIGNE DE TEMPS ── */
+const TEL = [1620, 1120];     // le centre du téléphone, dans le monde
+const tl = gsap.timeline({ paused: true });
+function construire() {
+  const H = $("#heros"), traces = $$(".trace");
+  gsap.set("#cage", { x: CAGE_C[0] - 260, y: CAGE_C[1] - 400 });
+  gsap.set("#rayons", { x: CAGE_C[0] - 700, y: CAGE_C[1] - 700, scale: .3 });
+  gsap.set("#onde", { x: CAGE_C[0] - 60, y: CAGE_C[1] - 60 });
+  gsap.set("#c-porte", { transformPerspective: 900, transformOrigin: "0% 50%" });
+  gsap.set("#doigt", { x: CAGE_C[0] - 75, y: CAGE_C[1] + 60 });
+  gsap.set("#tel", { x: TEL[0] - 310, y: TEL[1] - 625 });
+  const depart = { x: CAGE_C[0] - 300, y: CAGE_C[1] - 245 };   // son fantôme, là où il est dans la cage (coin haut-gauche de 600 px)
+  gsap.set([H, ...traces], { ...depart, scale: .52, transformOrigin: "50% 50%" });
+
+  // ① TOUCHER LA CAGE : le doigt, la cage se tasse, la lumière monte… et tout saute
+  tl.fromTo("#doigt", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: .8, duration: .12, ease: "power2.out" }, 0)
+    .to("#doigt", { opacity: 0, scale: 2, duration: .35, ease: "power2.out" }, .12)
+    .to("#depart", { opacity: 0, duration: .3 }, 0)
+    .to("#cage", { scaleY: .93, scaleX: 1.04, y: CAGE_C[1] - 400 + 26, transformOrigin: "50% 100%", duration: .2, ease: "power2.in" }, 0)
+    .to("#c-lueur", { opacity: 1, duration: .22, ease: "power2.in" }, 0)
+    .to("#c-fant", { y: -20, scale: 1.08, duration: .2, ease: "power2.in" }, 0)
+    .to("#cage", { scaleY: 1.06, scaleX: .97, y: CAGE_C[1] - 400 - 30, rotation: -4, duration: .18, ease: "power3.out" }, T.eclate)
+    .to("#cage", { scaleY: 1, scaleX: 1, rotation: 0, duration: 1.1, ease: "elastic.out(1,.35)" }, T.eclate + .18)
+    .to("#c-porte", { rotationY: -128, duration: .5, ease: "back.out(2.2)" }, T.eclate)
+    .set("#c-fant", { opacity: 0 }, T.eclate)
+    .to("#c-lueur", { opacity: 0, duration: .9, ease: "power2.out" }, T.eclate + .1)
+    .fromTo("#eclat", { opacity: 0 }, { opacity: .95, duration: .05 }, T.eclate)
+    .to("#eclat", { opacity: 0, duration: .55, ease: "power2.out" }, T.eclate + .05)
+    .fromTo("#onde", { opacity: 1, scale: .5 }, { opacity: 0, scale: 22, duration: .85, ease: "expo.out" }, T.eclate)
+    .fromTo("#rayons", { opacity: 0, scale: .25, rotation: 0 }, { opacity: 1, scale: 1.1, rotation: 18, duration: .35, ease: "expo.out" }, T.eclate)
+    .to("#rayons", { opacity: 0, rotation: 40, duration: 1.1, ease: "power2.out" }, T.eclate + .35)
+    // la cage s'efface dans le fond
+    .to("#cage", { y: CAGE_C[1] - 400 + 520, scale: .55, opacity: 0, duration: .9, ease: "power3.in" }, T.eclate + .75);
+
+  // ② SON VOL : il jaillit vers nous, fait une boucle, et se pose au milieu ; sa traînée le suit
+  const chemin = [ { x: depart.x, y: depart.y }, { x: depart.x + 40, y: depart.y - 420 }, { x: depart.x + 250, y: depart.y - 640 }, { x: depart.x + 330, y: depart.y - 380 },
+    { x: depart.x + 120, y: depart.y - 250 }, { x: depart.x - 150, y: depart.y - 430 }, { x: depart.x, y: depart.y - 170 } ];
+  const vol = (cible, retard, dur) => tl.to(cible, { motionPath: { path: chemin, curviness: 1.4 }, duration: dur, ease: "power2.inOut" }, T.eclate + retard);
+  tl.set(H, { opacity: 1 }, T.eclate);
+  vol(H, 0, 1.15);
+  traces.forEach((tr, k) => { tl.set(tr, { opacity: .32 - k * .06 }, T.eclate + .02); vol(tr, .045 * (k + 1), 1.15); tl.to(tr, { opacity: 0, duration: .2 }, T.eclate + 1.1 + k * .04); });
+  tl.fromTo(H, { scale: .52, rotation: -10 }, { scale: 1.32, rotation: 8, duration: .5, ease: "power2.out" }, T.eclate)
+    .to(H, { scale: 1.05, rotation: -6, duration: .45, ease: "sine.inOut" }, T.eclate + .5)
+    .to(H, { scale: 1, rotation: 0, duration: .3, ease: "back.out(2)" }, T.eclate + .95);
+  traces.forEach((tr, k) => tl.fromTo(tr, { scale: .52 }, { scale: 1.25, duration: .55 }, T.eclate + .045 * (k + 1)));
+  // il atterrit : il s'écrase un peu, rebondit ; la toque lui tombe sur la tête ; il flotte
+  tl.to("#heros .corps", { scaleY: .86, scaleX: 1.1, transformOrigin: "50% 100%", duration: .1, ease: "power2.out" }, T.eclate + 1.15)
+    .to("#heros .corps", { scaleY: 1, scaleX: 1, duration: .55, ease: "elastic.out(1.2,.4)" }, T.eclate + 1.25)
+    .fromTo("#heros .toque", { y: -520, rotation: -25, opacity: 0 }, { y: 0, rotation: 0, opacity: 1, duration: .55, ease: "bounce.out" }, T.eclate + 1.25)
+    .to("#heros .corps", { y: -24, duration: .9, yoyo: true, repeat: 1, ease: "sine.inOut" }, T.eclate + 1.8);
+
+  // ③ LA CAMÉRA FILE VERS LE TÉLÉPHONE ; son fantôme y vole et se perche sur le coin
+  tl.to(cam, { x: TEL[0], duration: .75, ease: "expo.inOut" }, T.panD)
+    .to(H, { motionPath: { path: [{ x: depart.x, y: depart.y - 170 }, { x: TEL[0] - 380, y: 260 }, { x: TEL[0] - 610, y: 560 }], curviness: 1.2 }, scale: .42, rotation: -10, duration: .85, ease: "power3.inOut" }, T.panD - .05)
+    .fromTo("#tel", { y: TEL[1] - 625 + 300, rotation: 6, opacity: 0 }, { y: TEL[1] - 625, rotation: 0, opacity: 1, duration: .8, ease: "expo.out" }, T.panD + .25)
+    .to(H, { rotation: 0, duration: .6, ease: "elastic.out(1,.4)" }, T.panD + .8);
+  // sa vidéo joue ; les j'aime montent et le compteur grimpe
+  tl.fromTo("#ph1", { scale: 1.02 }, { scale: 1.18, duration: 2.4, ease: "none" }, T.panD + .3)
+    .to("#ph2", { opacity: 1, duration: .35 }, VOIX.d + 1.4)
+    .fromTo("#ph2", { scale: 1.12 }, { scale: 1.02, duration: 2.2, ease: "none" }, VOIX.d + 1.4);
+  const nl = { v: 0 };
+  tl.to(nl, { v: 214, duration: T.rien - VOIX.d, ease: "power1.in", onUpdate: () => { $("#nlikes").textContent = Math.round(nl.v); } }, VOIX.d);
+  // « Moi, » : les j'aime deviennent gris, personne derrière
+  tl.to(["#ph1", "#ph2"], { filter: "brightness(.42) saturate(.4)", duration: .35 }, T.rien)
+    .to("#anonyme", { opacity: 1, scale: 1, rotation: -7, duration: .5, ease: "back.out(2.5)" }, T.rien + .05)
+    .to("#anonyme", { opacity: 0, scale: .6, duration: .3, ease: "power2.in" }, T.ramene + .2);
+  // « …je vous ramène ceux qui l'ont regardée » : il fait le tour du téléphone, et les ramène
+  // (les coins haut-gauche de sa boîte de 600 px : son centre est 300 px plus loin)
+  const tour = [{ x: TEL[0] - 610, y: 560 }, { x: TEL[0] - 540, y: 120 }, { x: TEL[0] + 40, y: 150 }, { x: TEL[0] + 100, y: 600 }, { x: TEL[0] - 20, y: 1200 }, { x: TEL[0] - 300, y: 1420 }, { x: TEL[0] - 620, y: 1150 }, { x: TEL[0] - 610, y: 560 }];
+  tl.to(H, { motionPath: { path: tour, curviness: 1.25 }, duration: 1.35, ease: "power1.inOut" }, T.ramene - .1)
+    .to(H, { scale: .5, rotation: 360, duration: 1.35, ease: "power1.inOut" }, T.ramene - .1)
+    .set(H, { rotation: 0 }, T.ramene + 1.26);
+
+  // ④ LA FIN DE SA VIDÉO : « Et vous ? », les trois cages ; le j'aime barré ; le doigt sur « Je viendrai un jour »
+  tl.to(["#ph1", "#ph2"], { filter: "brightness(.9) saturate(1)", duration: .3 }, T.ramene + .9)
+    .fromTo("#tcages", { opacity: 0, scale: 1.08 }, { opacity: 1, scale: 1, duration: .5, ease: "expo.out" }, T.cages)
+    .fromTo(".tc", { y: 90, opacity: 0 }, { y: 0, opacity: 1, duration: .6, stagger: .09, ease: "back.out(1.8)" }, T.cages + .1)
+    .to(".tc .tc-c", { rotation: 3, transformOrigin: "50% 0", duration: .9, yoyo: true, repeat: 3, ease: "sine.inOut", stagger: .2 }, T.cages + .6)
+    .to("#jaime", { scale: 1.15, duration: .15, ease: "power2.out" }, T.like - .15)
+    .to("#jaime i", { scaleX: 1, duration: .22, ease: "power3.out" }, T.like + .02)
+    .to("#jaime", { y: 160, rotation: -18, opacity: 0, duration: .6, ease: "power2.in" }, T.like + .45)
+    .fromTo("#doigt", { x: TEL[0] - 75, y: TEL[1] - 40, opacity: 0, scale: 1.5 }, { opacity: 1, scale: .8, duration: .14, ease: "power2.out" }, T.libere - .14)
+    .to("#doigt", { opacity: 0, scale: 2, duration: .35 }, T.libere)
+    .to("#tc-promis .tc-c", { scale: 1.18, duration: .14, ease: "power2.out" }, T.libere - .1)
+    .to("#tc-promis .porte-tc", { scaleX: -.35, transformOrigin: "0% 50%", duration: .4, ease: "back.out(2)" }, T.libere)
+    .to("#tc-promis .tc-fant", { opacity: 0, duration: .05 }, T.libere + .02)
+    .to("#tc-promis .tc-c", { scale: 1, duration: .5, ease: "elastic.out(1,.4)" }, T.libere + .1);
+
+  // ⑤ LA NUÉE : Camille d'abord, puis tous les autres, avec leur prénom ; la caméra recule
+  const sortie = { x: TEL[0] - 75, y: TEL[1] - 120 };
+  const minis = $$(".mini");
+  minis.forEach((m, k) => {
+    const c = CIBLES[k], quand = T.libere + .12 + (k === 0 ? 0 : .35 + k * .045);
+    gsap.set(m, { x: sortie.x, y: sortie.y, scale: .15 });
+    tl.set(m, { opacity: 1 }, quand)
+      .to(m, { motionPath: { path: [sortie, { x: (sortie.x + c.x) / 2 + (c.x < TEL[0] ? -220 : 220), y: Math.min(sortie.y, c.y) - 380 }, c], curviness: 1.3 }, duration: .95, ease: "power3.out" }, quand)
+      .to(m, { scale: c.s, duration: .95, ease: "back.out(1.6)" }, quand)
+      .fromTo(m.querySelector("b") || m, { opacity: m.querySelector("b") ? 0 : 1 }, { opacity: 1, duration: .2 }, quand + .7)
+      .to(m, { y: c.y - 16, duration: .8, yoyo: true, repeat: 1, ease: "sine.inOut" }, quand + 1.05);
+  });
+  tl.to(cam, { s: .72, y: TEL[1] - 40, duration: 1.4, ease: "expo.inOut" }, T.libere + .3)
+    .to("#tcages", { opacity: .0, duration: .5 }, T.libere + 1.2)
+    .to(H, { x: TEL[0] - 300, y: 300, scale: .5, duration: 1, ease: "power3.inOut" }, T.libere + .3);
+  const n = { v: 0 };
+  tl.fromTo("#compteur", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .5, ease: "expo.out" }, fin("e") + .4)
+    .to(n, { v: 38, duration: 1.1, ease: "power2.out", onUpdate: () => { $("#n38").textContent = Math.round(n.v); } }, fin("e") + .4);
+  // la fin de l'aperçu
+  tl.to("#fin", { opacity: 1, duration: .6 }, T.fin);
+  construireMots(tl);
+}
+// la foule : 38 fantômes nommés autour du téléphone (Camille la première, plus grande)
+const PRENOMS = ["Camille", "Hugo", "Inès", "Nathan", "Manon", "Jules", "Sarah", "Adam", "Zoé", "Louis", "Chloé", "Emma", "Léo", "Lina", "Tom", "Jade", "Noah", "Rose", "Malo"];
+const LOOKS = ["fleuri", "cosy", "curieux", "artiste", "denim", "rebelle", "soleil", "voyageur"];
+const COULEURS = ["#F5A23A", "#FF2E9A", "#3DE2A6", "#8E7CFF", "#FF7A59", "#4FB8FF"];
+const CIBLES = (() => {
+  const r = hasard(5), c = [];
+  c.push({ x: TEL[0] - 115, y: 1790, s: 1 });   // Camille, devant, en bas au milieu
+  for (let k = 1; k < 38; k++) {
+    const g = k % 2 === 0, j = Math.floor((k - 1) / 2), rang = j % 6, col = Math.floor(j / 6);
+    const cx = g ? [1190, 1050, 910][col] : [2040, 2170, 2300][col];
+    c.push({ x: cx - 75 + (r() - .5) * 40, y: TEL[1] - 600 + rang * 215 + (r() - .5) * 60 + col * 40, s: .85 + r() * .3 });
+  }
+  return c;
+})();
+function foule() {
+  $("#foule").innerHTML = CIBLES.map((c, k) => {
+    const nom = k < PRENOMS.length && (k === 0 || k % 2 === 0 || k < 6) ? PRENOMS[k] : "";
+    return `<div class="mini abs${k === 0 ? " camille" : ""}" style="--c:${COULEURS[k % COULEURS.length]}"><img src="g/${LOOKS[k % 8]}-${k % 3 === 2 ? "salue" : "debout"}.webp" alt="">${nom ? `<b>${nom}</b>` : ""}</div>`;
+  }).join("");
+}
+
+/* ── LES PARTICULES QUI DÉPENDENT DE LA LIGNE DE TEMPS : relevées une fois ── */
+function relever() {
+  // sa poussière d'or : là où il passe, toutes les 25 ms de son vol
+  const r = hasard(3), H = $("#heros");
+  SILLAGE = [];
+  const vols = [[T.eclate + .05, T.eclate + 1.2], [T.panD, T.panD + .85], [T.ramene - .1, T.ramene + 1.25]];
+  for (const [a, b] of vols) for (let t = a; t < b; t += 0.025) {
+    tl.seek(t, false);
+    const x = gsap.getProperty(H, "x") + 300, y = gsap.getProperty(H, "y") + 300 + 170 * gsap.getProperty(H, "scale");
+    SILLAGE.push({ t, x: x + (r() - .5) * 60, y: y + (r() - .5) * 60, dx: (r() - .5) * 60, dy: 20 + r() * 50, vie: .5 + r() * .5, r: 4 + r() * 7 });
+  }
+  // les j'aime : 46, de son cœur vers le haut
+  const rc = hasard(9), cx = TEL[0] + 250, cy = TEL[1] + 250;
+  COEURS = Array.from({ length: 46 }, (_, k) => ({ k, t: VOIX.d + .05 + k * (T.rien - VOIX.d - .1) / 46, x: cx + (rc() - .5) * 40, y: cy, v: 260 + rc() * 220, vie: 1.4 + rc() * .8, r: 18 + rc() * 16, ph: rc() * 6.28 }));
+  // la cage choisie : un petit feu d'artifice
+  const rf = hasard(13);
+  FLASH_CAGE = Array.from({ length: 60 }, () => { const a = rf() * 6.283, v = 300 + rf() * 900;
+    return { x: TEL[0] + 5, y: TEL[1] - 40, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 200, k: 3 + rf() * 2, vie: .5 + rf() * .6, r: 3 + rf() * 5, c: rf() < .5 ? "255,190,110" : "255,93,184" }; });
+  tl.seek(0, false);
+}
+
+/* ── LE SON : les voix, une musique pop (120 BPM, en majeur) et les bruits, joués par le navigateur ── */
+const NOTE = (n) => 440 * Math.pow(2, (n - 69) / 12);
+function composer(ctx, sortie, t0, voix) {
+  const maitre = ctx.createGain(); maitre.gain.value = .9;
+  const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -10; comp.knee.value = 6; comp.ratio.value = 4; comp.attack.value = .003; comp.release.value = .2;
+  maitre.connect(comp); comp.connect(sortie);
+  const busV = ctx.createGain(); busV.gain.value = 1; busV.connect(maitre);
+  const busM = ctx.createGain(); busM.gain.value = 1; busM.connect(maitre);
+  const busS = ctx.createGain(); busS.gain.value = .7; busS.connect(maitre);
+  // un écho pour les arpèges
+  const echo = ctx.createDelay(1); echo.delayTime.value = .375; const fb = ctx.createGain(); fb.gain.value = .32; const wet = ctx.createGain(); wet.gain.value = .3;
+  echo.connect(fb); fb.connect(echo); echo.connect(wet); wet.connect(busM);
+  const bruitB = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate); { const c = bruitB.getChannelData(0); const r = hasard(1); for (let i = 0; i < c.length; i++) c[i] = r() * 2 - 1; }
+  const env = (g, t, a, pic, d) => { g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(pic, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + a + d); };
+  const osc = (type, f, t, a, pic, d, dest, f2, detune = 0) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); o.detune.value = detune;
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + a + d); env(g, t, a, pic, d); o.connect(g); g.connect(dest); o.start(t); o.stop(t + a + d + .05); return g; };
+  const bruit = (t, d, type, f, q, pic, dest, f2) => { const s = ctx.createBufferSource(); s.buffer = bruitB; const fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.setValueAtTime(f, t); fl.Q.value = q;
+    if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + d); const g = ctx.createGain(); env(g, t, .002, pic, d); s.connect(fl); fl.connect(g); g.connect(dest); s.start(t, Math.random()); s.stop(t + d + .05); };
+  // ─ la musique : do – sol – la mineur – fa, une mesure chacun (2 s), dès que la cage saute
+  const BPM = 120, temps = 60 / BPM, debutM = t0 + T.eclate, finM = t0 + DUREE;
+  const ACC = [[48, 52, 55, 60, 64], [43, 47, 50, 55, 62], [45, 48, 52, 57, 64], [41, 45, 48, 53, 60]];
+  for (let b = 0; debutM + b * temps < finM - .2; b++) {
+    const t = debutM + b * temps, mes = Math.floor(b / 4), acc = ACC[mes % 4], dansMes = b % 4;
+    // la grosse caisse, à chaque temps
+    const k = ctx.createOscillator(), kg = ctx.createGain(); k.frequency.setValueAtTime(150, t); k.frequency.exponentialRampToValueAtTime(46, t + .12);
+    kg.gain.setValueAtTime(.0001, t); kg.gain.exponentialRampToValueAtTime(.95, t + .004); kg.gain.exponentialRampToValueAtTime(.0001, t + .32); k.connect(kg); kg.connect(busM); k.start(t); k.stop(t + .35);
+    // le claquement, sur 2 et 4
+    if (dansMes % 2 === 1) { for (const dt of [0, .011, .022]) bruit(t + dt, .02, "bandpass", 1600, .9, .28, busM); bruit(t + .03, .16, "bandpass", 1400, .8, .2, busM); }
+    // les charleys, entre les temps (et un peu sur les doubles-croches)
+    bruit(t + temps / 2, .045, "highpass", 7500, .7, .13, busM); bruit(t + temps / 4, .02, "highpass", 9000, .7, .045, busM); bruit(t + temps * 3 / 4, .02, "highpass", 9000, .7, .045, busM);
+    // la basse, en contretemps (elle « pompe »)
+    const bs = ctx.createOscillator(), bf = ctx.createBiquadFilter(), bg = ctx.createGain(); bs.type = "sawtooth"; bs.frequency.value = NOTE(acc[0] - 12);
+    bf.type = "lowpass"; bf.frequency.value = 420; env(bg, t + temps / 2, .006, .3, .2); bs.connect(bf); bf.connect(bg); bg.connect(busM); bs.start(t + temps / 2); bs.stop(t + temps);
+    // l'arpège, en doubles-croches, avec son écho
+    for (let s = 0; s < 4; s++) {
+      const n = acc[[2, 3, 4, 3][s] + 0] + 12, ts = t + s * temps / 4;
+      const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain(); o.type = "square"; o.frequency.value = NOTE(n);
+      f.type = "lowpass"; f.frequency.setValueAtTime(3200, ts); f.frequency.exponentialRampToValueAtTime(700, ts + .12); env(g, ts, .003, .055, .13);
+      o.connect(f); f.connect(g); g.connect(busM); g.connect(echo); o.start(ts); o.stop(ts + .16);
+    }
+    // la nappe, au début de chaque mesure
+    if (dansMes === 0) for (const n of acc.slice(1, 4)) for (const det of [-9, 0, 9]) {
+      const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain(); o.type = "sawtooth"; o.frequency.value = NOTE(n); o.detune.value = det;
+      f.type = "lowpass"; f.frequency.value = 1500; g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.018, t + .25); g.gain.linearRampToValueAtTime(.012, t + 1.8); g.gain.linearRampToValueAtTime(.0001, t + 2.05);
+      o.connect(f); f.connect(g); g.connect(busM); o.start(t); o.stop(t + 2.1);
+    }
+  }
+  // sous les voix, la musique se fait plus discrète
+  for (const [c, x] of Object.entries(VOIX)) { const a = t0 + x, b = t0 + fin(c);
+    busM.gain.setValueAtTime(1, a - .12); busM.gain.linearRampToValueAtTime(.42, a - .02); busM.gain.setValueAtTime(.42, b); busM.gain.linearRampToValueAtTime(1, b + .25); }
+  busM.gain.setValueAtTime(busM.gain.value, t0 + T.fin); busM.gain.linearRampToValueAtTime(.0001, t0 + DUREE);
+  // ─ les bruits
+  const S = {
+    eclate: (t) => { osc("sine", 70, t, .004, .9, .9, busS, 38); bruit(t, 1.5, "highpass", 3500, .5, .32, busS); bruit(t, .45, "bandpass", 900, .6, .4, busS, 200);
+      [1568, 2093, 2637, 3136, 4186].forEach((f, i) => osc("sine", f, t + .04 + i * .05, .004, .1, .9, busS)); },
+    vol: (t, d = .7) => bruit(t, d, "bandpass", 300, 1.1, .22, busS, 3200),
+    pop: (t) => osc("sine", 520, t, .004, .3, .18, busS, 1100),
+    tic: (t) => osc("triangle", 1500, t, .003, .08, .07, busS),
+    magie: (t) => { [784, 988, 1175, 1568, 1976, 2349].forEach((f, i) => osc("sine", f, t + i * .07, .005, .12, .7, busS)); bruit(t, 1.1, "bandpass", 600, .9, .12, busS, 5000); },
+    tape: (t) => { osc("square", 900, t, .002, .06, .03, busS); bruit(t, .05, "highpass", 4000, .7, .2, busS); },
+    nom: (t, k) => osc("sine", [1318.5, 1568, 1760, 2093][k % 4], t, .004, .07, .25, busS),
+  };
+  S.tape(t0); S.eclate(t0 + T.eclate); S.vol(t0 + T.eclate + .05, .9); S.pop(t0 + T.eclate + 1.4); S.vol(t0 + T.panD, .8);
+  for (let k = 0; k < 14; k++) S.tic(t0 + VOIX.d + .1 + k * .14);
+  S.pop(t0 + T.rien + .05); S.magie(t0 + T.ramene - .1); S.vol(t0 + T.ramene, 1.2); S.pop(t0 + T.cages + .1);
+  S.pop(t0 + T.like + .05); S.tape(t0 + T.libere - .02); S.eclate(t0 + T.libere + .05); S.magie(t0 + T.libere + .3);
+  for (let k = 0; k < 20; k++) S.nom(t0 + T.libere + .5 + k * .08, k);
+  // ─ les voix
+  for (const [c, x] of Object.entries(VOIX)) if (voix[c]) { const s = ctx.createBufferSource(); s.buffer = voix[c]; s.connect(busV); s.start(t0 + x); }
+}
+
+/* ── LE DÉROULÉ ── */
+const bruts = {};
+const charge = Promise.all(Object.keys(VOIX).map((c) => fetch(`voix/${c}.mp3`).then((r) => r.ok ? r.arrayBuffer() : null).then((b) => { if (b) bruts[c] = b; }).catch(() => {})));
+const decoder = (ctx, b) => new Promise((ok) => { try { const p = ctx.decodeAudioData(b.slice(0), ok, () => ok(null)); if (p && p.catch) p.catch(() => ok(null)); } catch (e) { ok(null); } });
+function etat(t) { tl.seek(Math.max(0, t), false); poserCamera(t); dessinerFond(t); dessinerFx(t); }
+// avant de toucher : la cage se balance, son fantôme frappe (« toc toc »)
+const attente = gsap.timeline({ repeat: -1 });
+attente.to("#cage", { rotation: 3, transformOrigin: "50% 0", duration: 1.6, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0)
+  .to("#c-fant", { x: 14, rotation: 6, duration: .08, yoyo: true, repeat: 3, ease: "power1.inOut" }, 1.0)
+  .fromTo("#toc", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .25 }, 1.0).to("#toc", { opacity: 0, duration: .4 }, 1.9)
+  .to("#appel", { scale: 1.05, duration: .8, yoyo: true, repeat: 1, ease: "sine.inOut" }, 0);
+if (RENDU) attente.pause(0);
+let enRoute = false, AC = null, t0 = 0, depuisPerf = 0, enPause = false, pauseA = 0, pauseTot = 0;
+function boucleAttente(now) { if (enRoute) return; dessinerFond(now / 1000); requestAnimationFrame(boucleAttente); }
+if (!RENDU) requestAnimationFrame(boucleAttente);
+const construit = (document.fonts ? Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]) : Promise.resolve()).then(() => { foule(); construire(); relever(); });
+async function lancer() {
+  if (enRoute) return; enRoute = true;
+  await construit;
+  attente.pause(0); gsap.set("#cage", { rotation: 0 }); gsap.set("#c-fant", { x: 0, rotation: 0 });
+  try { AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === "suspended") await AC.resume().catch(() => {}); } catch (e) { AC = null; }
+  $("#charge").textContent = "Un instant…";
+  await Promise.race([charge, new Promise((r) => setTimeout(r, 6000))]);
+  const voix = {};
+  if (AC) for (const c of Object.keys(bruts)) voix[c] = await decoder(AC, bruts[c]);
+  $("#charge").textContent = "";
+  document.body.classList.add("joue");
+  if (AC && AC.state === "running") { t0 = AC.currentTime + .05; composer(AC, AC.destination, t0, voix); } else depuisPerf = performance.now();
+  const maintenant = () => AC && AC.state !== "closed" && t0 ? AC.currentTime - t0 : (performance.now() - depuisPerf - pauseTot - (enPause ? performance.now() - pauseA : 0)) / 1000;
+  const boucle = () => { const t = maintenant(); etat(t); if (t < DUREE) requestAnimationFrame(boucle); else window.__fin = true; };
+  requestAnimationFrame(boucle);
+}
+$("#cage").addEventListener("click", lancer);
+$("#pause").addEventListener("click", () => { enPause = !enPause; $("#pause").textContent = enPause ? "▶" : "⏸"; if (AC && t0) { if (enPause) AC.suspend(); else AC.resume(); } else if (enPause) pauseA = performance.now(); else pauseTot += performance.now() - pauseA; });
+
+/* ── POUR EN FAIRE UNE VIDÉO (`rendre-video.mjs`) : une image à un instant donné, et le son, calculé hors ligne ── */
+window.__duree = DUREE;
+window.__attente = (t) => { attente.seek(t % attente.duration(), false); dessinerFond(t); };
+window.__rendre = (t) => { if (!enRoute) { enRoute = true; attente.pause(0); gsap.set("#cage", { rotation: 0 }); gsap.set("#c-fant", { x: 0, rotation: 0 }); } etat(t); };
+window.__son = async (avant) => {
+  await charge;
+  const sr = 44100, oc = new OfflineAudioContext(2, Math.ceil(sr * (DUREE + avant + .5)), sr);
+  const voix = {};
+  for (const c of Object.keys(bruts)) voix[c] = await decoder(oc, bruts[c]);
+  composer(oc, oc.destination, avant, voix);
+  const buf = await oc.startRendering();
+  const L = buf.getChannelData(0), R = buf.getChannelData(1), out = new Int16Array(L.length * 2);
+  for (let i = 0; i < L.length; i++) { out[2 * i] = Math.max(-1, Math.min(1, L[i])) * 32767; out[2 * i + 1] = Math.max(-1, Math.min(1, R[i])) * 32767; }
+  let s = ""; const u8 = new Uint8Array(out.buffer); for (let i = 0; i < u8.length; i += 32768) s += String.fromCharCode.apply(null, u8.subarray(i, i + 32768));
+  return { sr, pcm: btoa(s) };
+};
+window.__pret = construit.then(() => charge);
+</script>

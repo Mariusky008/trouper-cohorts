@@ -56,7 +56,7 @@ body.pause *,body.pause *::before,body.pause *::after{animation-play-state:pause
 .dep-appel{margin:0;font-size:7.4cqw;font-weight:900;letter-spacing:-.02em;animation:appel 1.6s ease-in-out infinite}
 @keyframes appel{50%{transform:scale(1.05);color:#fff}}
 .dep-sous{margin:2cqw 0 0;font-size:3.6cqw;font-weight:600;color:rgba(255,244,230,.65)}
-.dep-sous.charge::after{content:" · un instant…"}
+.dep-sous.charge::after{content:"Un instant…"}
 .ouvre .cage{animation:none;transform:none;cursor:default}
 .ouvre .cage-porte{transform:perspective(60cqw) rotateY(-118deg)}
 .ouvre .cd-fant{animation:none;opacity:0;transition:opacity .15s .55s}
@@ -369,7 +369,7 @@ body.pause #pause-voile{display:grid}
     <p class="toc-toc">toc toc</p>
     <div class="sortie"><img src="fantome.webp" alt=""></div>
     <div class="etincelles" aria-hidden="true"></div>
-    <div class="dep-bas"><p class="dep-appel">Touchez la cage</p><p class="dep-sous" id="dep-sous">45 secondes · montez le son 🔊</p></div>
+    <div class="dep-bas"><p class="dep-appel">Touchez la cage</p><p class="dep-sous" id="dep-sous"></p></div>
   </section>
 
   <!-- ② IL PORTE TON MÉTIER -->

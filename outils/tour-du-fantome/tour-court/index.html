@@ -47,7 +47,7 @@ body.pause *,body.pause *::before,body.pause *::after{animation-play-state:pause
 .dep-appel{margin:0;font-size:7.4cqw;font-weight:900;letter-spacing:-.02em;animation:appel 1.6s ease-in-out infinite}
 @keyframes appel{50%{transform:scale(1.05);color:#fff}}
 .dep-sous{margin:2cqw 0 0;font-size:3.6cqw;font-weight:600;color:rgba(255,244,230,.65)}
-.dep-sous.charge::after{content:" · un instant…"}
+.dep-sous.charge::after{content:"Un instant…"}
 /* on l'ouvre : la porte s'ouvre, le fantôme sort et vole vers nous */
 .ouvre .cage{animation:none;transform:none;cursor:default}
 .ouvre .cage-porte{transform:perspective(60cqw) rotateY(-118deg)}
@@ -373,7 +373,7 @@ body.pause #pause-voile{display:grid}
     <p class="toc-toc">toc toc</p>
     <div class="sortie"><img src="hote.webp" alt=""><svg class="toque" viewBox="0 0 100 80" aria-hidden="true"><defs><radialGradient id="tq5a" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#F4F1EC"/><stop offset="1" stop-color="#D9D2C8"/></radialGradient><linearGradient id="tq5b" x1="0" x2="1"><stop offset="0" stop-color="#DCD5CB"/><stop offset=".3" stop-color="#fff"/><stop offset=".7" stop-color="#F7F4EF"/><stop offset="1" stop-color="#CFC7BB"/></linearGradient></defs><g fill="url(#tq5a)"><circle cx="24" cy="36" r="18"/><circle cx="76" cy="36" r="18"/><circle cx="38" cy="22" r="20"/><circle cx="62" cy="22" r="20"/><circle cx="50" cy="30" r="22"/></g><path d="M50 6c-4 8-4 22 0 34M33 12c-2 9 0 20 4 28M67 12c2 9 0 20-4 28" stroke="#D8D0C4" stroke-width="1" fill="none" opacity=".7"/><path d="M11 44Q50 38 89 44L92 79Q50 70 8 79Z" fill="url(#tq5b)"/><path d="M11 44Q50 38 89 44" stroke="#E2DBD0" stroke-width="1.2" fill="none"/><path d="M24 43V74M37 41.5V71M50 41V70M63 41.5V71M76 43V74" stroke="#E4DED4" stroke-width=".9"/></svg></div>
     <div class="etincelles" aria-hidden="true"></div>
-    <div class="dep-bas"><p class="dep-appel">Touchez la cage</p><p class="dep-sous" id="dep-sous">45 secondes · montez le son 🔊</p></div>
+    <div class="dep-bas"><p class="dep-appel">Touchez la cage</p><p class="dep-sous" id="dep-sous"></p></div>
   </section>
 
   <!-- ② LA FAÇADE : une photo le matin, des clients le jour même -->
