@@ -299,6 +299,32 @@ cages, le lien depuis Instagram (étapes 4 et 5 du prototype), l'inscription san
 le message part sur WhatsApp (pour que le fantôme apprenne), et « Vendu » ou « Venue » noté par eux. Le bouton
 « Créer ma page » mène pour l'instant à l'inscription des commerçants (`/commercants#creer`).
 
+### La deuxième version (`tour-entrepreneurs2/`, pas encore publiée)
+
+Le scénario et le moteur de la deuxième démo des commerçants (`tour-court2/`, plus haut), en « tu », avec ses deux
+variantes (`?v=local` : Claire ; choisir sur l'écran de départ recharge la page). Faite par
+`outils/tour-entrepreneurs2.py` d'après `outils/tour-entrepreneurs2.html` ; les cartes viennent de `outils/cartes.py`
+et les petites cages de `outils/decor.py` (communs avec la première version et avec les commerçants).
+
+```sh
+/usr/bin/python3 -I outils/tour-du-fantome/outils/tour-entrepreneurs2.py outils/tour-du-fantome
+node outils/tour-du-fantome/outils/rendre-video.mjs "http://…/tour-entrepreneurs2/index.html?v=local" sortie.mp4 30 1.5
+```
+
+| Voix | Ce qui est dit | À l'écran |
+|---|---|---|
+| `e2-1` | « Merci ! Je suis Mike, ton futur fantôme préféré. » | la cage explose, Mike (dans la salopette de son métier) jaillit, « Mike » |
+| `e2-2` | « Avec quelques photos, je fais une très belle vidéo de ton activité, puis je la publie partout pour que tout le monde la voie. » | ses quatre photos, son film (« Sortie du four · L'atelier de Nina », « Un moment pour soi · Claire, sophrologue »), Instagram, Facebook, Google, WhatsApp et sa page ClikMe |
+| promesse | « Tu envoies tes créations ? Je te fais connaître dans toute la France. » / « Tu reçois près de chez toi ? Je te fais connaître dans ta ville. » | la carte : les courbes partent de son atelier vers 14 villes ; ou le cercle de 20 km autour d'Annecy s'ouvre et ses communes s'allument |
+| `v2-3` | « Mais ce n'est pas là que je suis le plus fort. C'est juste après. » | retour au téléphone, le film file en avance rapide |
+| `e2-4` + choix | « À la fin de la vidéo, chaque personne peut libérer son fantôme pour te dire ce qu'elle en pense : » puis « “J'adore la vidéo”, “Un jour, je craque”, ou “Je le veux”. » / « …“Un jour, je prends rendez-vous”, ou “Je prends rendez-vous”. » | les trois cages de son métier, en grand ; à chaque choix dit, ses fantômes sortent : 21, 12, 5 |
+| `v2-5` | « Et à partir de là, mon vrai travail commence. » | la foule s'assombrit, Mike au milieu |
+| `e2-6` | « J'écris à chaque personne qui a libéré son fantôme, pour faire connaissance. Je la connais un peu mieux à chaque réponse… jusqu'au jour où elle devient ta cliente. » | un message vers chacun, la conversation avec Camille (pour offrir, les bleus ; ou en semaine, le matin), sur ton WhatsApp ; la carte : le colis part vers Lyon (« Commandé · envoi à Lyon »), ou Camille vient au cabinet (« Jeudi 10 h ») |
+| `demo2-h` | « Ton fantôme t'attend. » | « Créer ma page · gratuit », « Voir avec Claire » (ou Nina), « Revoir » |
+
+À savoir : GSAP ignore une position donnée seulement au départ d'un `fromTo` (`{ x, y, opacity: 0 }` → `{ opacity: 1 }`) ;
+on la pose avant, avec `gsap.set`.
+
 ## Le tour massage
 
 « Le Cocon d’Élise » (fictif), massage détente musculaire, ayurvédique, kobido : fait pour une démonstration dans un

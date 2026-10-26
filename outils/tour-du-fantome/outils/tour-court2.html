@@ -611,7 +611,8 @@ function construire() {
   const CG = [[TEL[0] - 186, TEL[1] - 10], [TEL[0], TEL[1] - 10], [TEL[0] + 186, TEL[1] - 10]];
   ["personne", "libérer", "fantôme"].forEach((w, k) => {
     const q = mot("v4", w) - .1, dg = "#doigt" + (k + 1);
-    tl.fromTo(dg, { x: CG[k][0] - 75, y: CG[k][1] - 20, opacity: 0, scale: 1.5 }, { opacity: 1, scale: .8, duration: .12, immediateRender: false }, q).to(dg, { opacity: 0, scale: 2, duration: .3 }, q + .12)
+    gsap.set(dg, { x: CG[k][0] - 75, y: CG[k][1] - 20 });   // (une position donnée seulement au départ d'un fromTo, GSAP l'ignore)
+    tl.fromTo(dg, { opacity: 0, scale: 1.5 }, { opacity: 1, scale: .8, duration: .12, immediateRender: false }, q).to(dg, { opacity: 0, scale: 2, duration: .3 }, q + .12)
       .to(`#tc${k + 1} .tc-c`, { scale: 1.15, duration: .12 }, q).to(`#tc${k + 1} .tc-c`, { scale: 1, duration: .5, ease: "elastic.out(1,.4)" }, q + .12);
     GERBES.push(gerbe(20 + k, 40, CG[k][0], CG[k][1] - 40, 250, 800, ["255,190,110", "255,93,184", "255,255,255"], q + .05, [3, 5], [.4, .9], 400));
   });
