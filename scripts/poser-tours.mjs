@@ -36,8 +36,9 @@ const TOURS = {
   "tour-bijouterie": "bijouterie",
   "tour-lunettes": "lunettes",
   "tour-massage": "massage",
-  // la démo courte des commerçants, « Le fantôme en 45 secondes » (`outils/tour-court.py`)
-  "tour-court": "court",
+  // la démo courte des commerçants, « Le fantôme en 45 secondes », deuxième version (`outils/tour-court2.py` ;
+  // la première, `tour-court/`, reste dans le dépôt sans être publiée)
+  "tour-court2": "court",
   // la démo des entrepreneurs, « Libère ton fantôme » (`outils/tour-entrepreneurs.py`)
   "tour-entrepreneurs": "entrepreneurs",
 };

@@ -13,7 +13,7 @@ bouton « Voir la démo » de la page des commerçants (`public/commercants/`) m
 | Bijouterie (Atelier Inès) | `tour-bijouterie/` | https://www.clikme.fr/tours/bijouterie | https://claude.ai/artifact/LtmrpKqY5rbcqGc7WA1DkX |
 | Lunetier (Les Lunettes de Margaux) | `tour-lunettes/` | https://www.clikme.fr/tours/lunettes | https://claude.ai/artifact/9R2sn9qYN141C4f54T2Q3C |
 | Massage (Le Cocon d’Élise) | `tour-massage/` | https://www.clikme.fr/tours/massage | — |
-| **Démo courte, 45 s** (Chez Bergine) | `tour-court/` | https://www.clikme.fr/tours/court | — |
+| **Démo courte, 45 s** (Chez Bergine) | `tour-court2/` (deuxième version) | https://www.clikme.fr/tours/court | — |
 | **Démo des entrepreneurs** (Nina, céramiste · Claire, sophrologue) | `tour-entrepreneurs/` | https://www.clikme.fr/tours/entrepreneurs (`?v=local` : Claire) | — |
 
 ## Ce qu'il y a dedans
@@ -194,6 +194,9 @@ puis les dix scripts. (Il appelle `python3` lui-même : celui du `PATH` doit avo
 
 ## La démo courte : « Le fantôme en 45 secondes »
 
+Publiée aujourd'hui dans sa deuxième version (`tour-court2/`, plus bas). La première (`tour-court/`), décrite
+ici, reste dans le dépôt sans être publiée.
+
 La bande-annonce des tours, pour les commerçants : 45 secondes, un seul geste (toucher la cage), puis le tour complet
 si l'on veut (« Voir le tour complet · 2 min »). Faite par `outils/tour-court.py` d'après le modèle
 `outils/tour-court.html` (on retouche le modèle ou le script, jamais `tour-court/index.html`) :
@@ -232,7 +235,7 @@ pour mot) :
 Vérifier : servir `public/` après `node scripts/poser-tours.mjs`, puis jouer la page en entier dans Playwright
 (touchez la cage avec `force` : elle se balance) et regarder les captures ; « aucune erreur » attendu.
 
-### La deuxième version (`tour-court2/`, pas encore publiée)
+### La deuxième version (`tour-court2/`, publiée à /tours/court)
 
 Un nouveau scénario et un nouveau moteur. Le moteur : une scène fixe de 1080 × 1920 mise à l'échelle de l'écran, une
 seule caméra qui voyage dans un grand décor (la cage, le téléphone, la foule, la façade), tout piloté par une seule
