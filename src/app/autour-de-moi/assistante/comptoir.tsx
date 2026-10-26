@@ -99,6 +99,7 @@ import { CarnetComptoir, CarteCarnet, useCarnet } from "./carnet-comptoir";
 import { CarteMike, PreviensLes } from "./previens-les";
 import { MessagesDeMike } from "./messages-de-mike";
 import { CarteTicket } from "./ticket-mike";
+import { CartePetitsMots, PetitsMotsComptoir, usePetitsMots } from "./petits-mots";
 import { MotMarque } from "@/components/direct/mot-marque";
 
 type Commerce = CommerceComptoir;
@@ -391,7 +392,9 @@ type Phase =
   /** 📲 « Oui, préviens-les » : Mike écrit, il envoie depuis son WhatsApp — voir `previens-les.tsx`. */
   | { ou: "prevenir" }
   /** 💬 Les messages que Mike a préparés pour leur Maison : il relit, il dit oui — voir `messages-de-mike.tsx`. */
-  | { ou: "messages" };
+  | { ou: "messages" }
+  /** 💌 Vos petits mots : ce que ses clients lui écrivent sous sa vitrine — voir `petits-mots.tsx`. */
+  | { ou: "mots" };
 
 /** L'envoi en ligne d'un vrai commerçant : en cours, arrivé, ou à refaire. */
 type Envoi = { etat: "en-cours" } | ({ etat: "fini" } & ResultatEnvoi);
@@ -440,6 +443,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
   const proposition = useProposition(commerce);
   /* 📒 SON CARNET, lu une fois : la carte de l'accueil, et son écran (qui le relit). */
   const carnet = useCarnet(commerce);
+  /* 💌 SES PETITS MOTS, lus une fois : la carte de l'accueil, et leur écran. */
+  const petitsMots = usePetitsMots(commerce);
   /* ⇄ SES ÉCHANGES, EN HAUT AUSSI, À CÔTÉ DE LA FLAMME — « c'est quand même une fonctionnalité
      phare ». Ce qu'il peut dépenser chez les autres commerçants, ou les bons à valider. La
      démonstration relit son téléphone à chaque affichage (un petit objet) : juste au retour. */
@@ -931,6 +936,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           reseaux={<OutilReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
           carnet={<CarteCarnet carnet={carnet} onOuvrir={() => setPhase({ ou: "carnet" })} />}
           ticket={<CarteTicket commerce={commerce} dossier={dossier} carnet={carnet} semaine={chiffres} onCarnet={() => setPhase({ ou: "carnet" })} />}
+          mots={<CartePetitsMots petitsMots={petitsMots} onOuvrir={() => setPhase({ ou: "mots" })} />}
           mike={
             <CarteMike
               commerce={commerce}
@@ -1058,6 +1064,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
       {phase.ou === "prevenir" && <PreviensLes commerce={commerce} dossier={dossier} carnet={carnet} onRetour={revenir} />}
 
       {phase.ou === "messages" && <MessagesDeMike commerce={commerce} dossier={dossier} carnet={carnet} onRetour={revenir} />}
+
+      {phase.ou === "mots" && <PetitsMotsComptoir commerce={commerce} dossier={dossier} petitsMots={petitsMots} onRetour={revenir} />}
 
       {phase.ou === "savoir" && (
         <SavoirComptoir commerce={commerce} dossier={dossier} savoir={savoir} onRetour={revenir} />
@@ -1468,6 +1476,7 @@ function Accueil({
   carnet,
   mike,
   ticket,
+  mots,
   onPublier,
   onDepenses,
   onStats,
@@ -1500,6 +1509,8 @@ function Accueil({
   mike?: React.ReactNode;
   /** 🧾 Le ticket de Mike : ce qu'il a fait pour lui cette semaine — absent quand la semaine est vide. */
   ticket?: React.ReactNode;
+  /** 💌 Vos petits mots — absente tant que personne ne lui a écrit. */
+  mots?: React.ReactNode;
   onPublier: () => void;
   onDepenses: () => void;
   onStats: () => void;
@@ -1574,6 +1585,7 @@ function Accueil({
           {clients.chaud ? <i className="ak-badge">{clients.pret ? "✨ Prête" : "⚡ Maintenant"}</i> : <s aria-hidden="true">›</s>}
         </button>
         {carnet}
+        {mots}
         {ticket}
         <button type="button" className="ak-second" onClick={onDepenses}>
           <span className="ak-second-i" aria-hidden="true">

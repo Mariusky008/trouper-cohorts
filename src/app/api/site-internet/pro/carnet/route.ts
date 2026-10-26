@@ -32,6 +32,10 @@
 //
 // 🏪 L'ARDOISE DE SA VITRINE (`lib/direct/vitrine-fantomes.ts`) : « ardoise » écrit l'info du moment
 // (90 signes au plus), vide l'efface ; « lire » la rend, si elle est du jour.
+//
+// 💌 SES PETITS MOTS (`lib/direct/petits-mots.ts`) : « mots » les lit (soixante jours), avec le prénom et
+// le fantôme de leur auteur ; « coeur » {id, oui} : son 💛 (le mot passe dans sa vitrine) ; « offrir »
+// {id, cadeau} : il offre un petit quelque chose (jamais d'alcool), avec son 💛.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { estCage } from "@/lib/direct/cages";
@@ -40,6 +44,7 @@ import { jourParis } from "@/lib/jour-paris";
 import { HEURES_FERMEES, heureOuverte, plusPermis, plusPropre } from "@/lib/direct/previens-les";
 import { estModele, silenceDe } from "@/lib/direct/moteur-messages";
 import { calculerTicket, type Gestes } from "@/lib/direct/ticket-mike";
+import type { PetitMot } from "@/lib/direct/petits-mots";
 import { REPONDU_WHATSAPP, type LigneCarnet, type MessageEnvoye } from "@/lib/direct/carnet";
 
 export const dynamic = "force-dynamic";
@@ -235,6 +240,64 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     return NextResponse.json({ ok: true, ardoise: texte || null });
+  }
+
+  // ── 💌 SES PETITS MOTS ─────────────────────────────────────────────────────
+  if (action === "mots") {
+    const { data, error } = await supabase
+      .from("clik_mot")
+      .select("id, habitant_id, texte, liste, coeur_le, cadeau, created_at")
+      .eq("site_id", siteId)
+      .gte("created_at", new Date(Date.now() - 60 * 86_400_000).toISOString())
+      .order("created_at", { ascending: false })
+      .limit(300);
+    if (error) {
+      if (migrationManquante(error.message)) return NextResponse.json({ ok: true, actif: false, mots: [] });
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    const lignes = (data ?? []) as Ligne[];
+    const qui = new Map<string, Ligne>();
+    const ids = [...new Set(lignes.map((m) => s(m.habitant_id)))];
+    if (ids.length) {
+      const { data: cs } = await supabase.from("clik_cage").select("habitant_id, prenom, look, updated_at").eq("site_id", siteId).in("habitant_id", ids).order("updated_at", { ascending: false });
+      for (const c of (cs ?? []) as Ligne[]) if (!qui.has(s(c.habitant_id))) qui.set(s(c.habitant_id), c);
+    }
+    const mots: PetitMot[] = lignes.map((m) => {
+      const c = qui.get(s(m.habitant_id));
+      return {
+        id: s(m.id),
+        prenom: s(c?.prenom),
+        look: lookValide(c?.look) ? s(c?.look) : "",
+        texte: s(m.texte),
+        liste: m.liste === true,
+        le: s(m.created_at),
+        coeur: Boolean(m.coeur_le),
+        cadeau: s(m.cadeau),
+      };
+    });
+    return NextResponse.json({ ok: true, actif: true, mots });
+  }
+
+  // ── 💛 SON COUP DE CŒUR, 🎁 CE QU'IL OFFRE ─────────────────────────────────────
+  if (action === "coeur" || action === "offrir") {
+    const id = s(p?.id);
+    if (!UUID.test(id)) return NextResponse.json({ error: "Ce mot est introuvable." }, { status: 404 });
+    const { data: m } = await supabase.from("clik_mot").select("id, cadeau").eq("id", id).eq("site_id", siteId).maybeSingle();
+    if (!m) return NextResponse.json({ error: "Ce mot est introuvable." }, { status: 404 });
+    const maintenant = new Date().toISOString();
+    let maj: Record<string, unknown>;
+    if (action === "coeur") {
+      maj = { coeur_le: p?.oui === false ? null : maintenant };
+    } else {
+      const cadeau = plusPropre(s(p?.cadeau));
+      if (!cadeau) return NextResponse.json({ error: "Dis ce que tu offres." }, { status: 400 });
+      if (!plusPermis(cadeau)) return NextResponse.json({ error: "Pas d'alcool offert (loi Évin)." }, { status: 400 });
+      if (s((m as Ligne).cadeau)) return NextResponse.json({ error: "Tu lui as déjà offert quelque chose pour ce mot." }, { status: 409 });
+      maj = { cadeau, cadeau_le: maintenant, coeur_le: maintenant };
+    }
+    const { error } = await supabase.from("clik_mot").update(maj).eq("id", id).eq("site_id", siteId);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
   }
 
   // ── 🧾 LE TICKET DE MIKE : SES SEPT DERNIERS JOURS, ET LES SEPT D'AVANT ─────────

@@ -19,7 +19,9 @@ import {
   repondreDemo,
   stopDemo,
   type MessageMaison,
+  type ReponseAuMot,
 } from "@/lib/direct/messages-maison";
+import { reponseDuCadeau } from "@/lib/direct/petits-mots";
 import { quandEnClair } from "@/lib/direct/carnet";
 
 /* LES VRAIS MESSAGES, LUS UNE FOIS ET PARTAGÉS : « Mes messages » et la pastille de l'onglet Ma Maison
@@ -32,8 +34,14 @@ const abonnerVrais = (f: () => void) => {
 };
 const lireVrais = () => vraisCache;
 const vraisServeur = (): MessageMaison[] | null => null;
-function poserVrais(l: MessageMaison[]) {
+/** 💌 Ce que les commerçants ont répondu à ses petits mots (vraie ville). Une liste stable entre deux lectures. */
+const AUCUNE_REPONSE: ReponseAuMot[] = [];
+let reponsesCache: ReponseAuMot[] = AUCUNE_REPONSE;
+const lireReponses = () => reponsesCache;
+const reponsesServeur = () => AUCUNE_REPONSE;
+function poserVrais(l: MessageMaison[], reponses?: ReponseAuMot[]) {
   vraisCache = l;
+  if (reponses) reponsesCache = reponses;
   abonnesVrais.forEach((f) => f());
 }
 let enCours: Promise<void> | null = null;
@@ -41,7 +49,9 @@ let enCours: Promise<void> | null = null;
 export function relireMesMessages(): Promise<void> {
   enCours ??= fetch("/api/direct/messages", { cache: "no-store" })
     .then((r) => r.json())
-    .then((j: { messages?: MessageMaison[] } | null) => poserVrais(Array.isArray(j?.messages) ? j.messages : []))
+    .then((j: { messages?: MessageMaison[]; reponses?: ReponseAuMot[] } | null) =>
+      poserVrais(Array.isArray(j?.messages) ? j.messages : [], Array.isArray(j?.reponses) ? j.reponses : AUCUNE_REPONSE),
+    )
     .catch(() => {
       if (vraisCache === null) poserVrais([]);
     })
@@ -103,10 +113,12 @@ function useMesMessages(reelle: boolean) {
 
 export function MesMessages({ reelle }: { reelle: boolean }) {
   const { messages, ennui, repondre, arreter } = useMesMessages(reelle);
+  const reponses = useSyncExternalStore(abonnerVrais, lireReponses, reponsesServeur);
   const [tout, setTout] = useState(false);
   const [confirmer, setConfirmer] = useState("");
   const [maintenant] = useState(() => Date.now());
-  if (!messages.length) return null;
+  const auxMots = reelle ? reponses : AUCUNE_REPONSE;
+  if (!messages.length && !auxMots.length) return null;
   const aRepondre = messages.filter((m) => !m.reponse && !m.stop && m.choix.length > 0).length;
   const affiches = tout ? messages : messages.slice(0, 3);
   return (
@@ -119,6 +131,29 @@ export function MesMessages({ reelle }: { reelle: boolean }) {
           {ennui}
         </p>
       )}
+      {/* 💌 CE QUE LES COMMERÇANTS ONT RÉPONDU À SES PETITS MOTS : un cadeau à montrer au comptoir, ou un 💛. */}
+      {auxMots.slice(0, 3).map((r) => (
+        <article key={`mot-${r.id}`} className={`mx-msg mx-reponse${r.cadeau ? " cadeau" : ""}`}>
+          <div className="mx-de">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={r.commerce.visage} alt="" />
+            <span>
+              <b>{r.commerce.nom}</b>
+              <small>{quandEnClair(r.le, maintenant)}</small>
+            </span>
+          </div>
+          {r.cadeau ? (
+            <>
+              <p className="mx-bulle">🎁 {reponseDuCadeau(r.cadeau)}</p>
+              <p className="mx-repondu">Montre ce message au comptoir. Ton mot : « {r.mot} »</p>
+            </>
+          ) : (
+            <p className="mx-bulle">
+              💛 Un coup de cœur pour ton petit mot : « {r.mot} ». Il est dans sa vitrine.
+            </p>
+          )}
+        </article>
+      ))}
       {affiches.map((m) => (
         <article key={m.id} className={`mx-msg${m.stop ? " stop" : ""}`}>
           <div className="mx-de">
@@ -194,6 +229,7 @@ const STYLES = `
 .mx-ennui{margin:0;padding:9px 12px;border-radius:12px;background:rgba(255,46,154,.12);border:1px solid rgba(255,46,154,.4);font-size:13px;}
 .mx-msg{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:20px;background:#1F150F;border:1px solid rgba(255,235,215,.1);color:#FFF4E6;}
 .mx-msg.stop{opacity:.55;}
+.mx-reponse.cadeau{border-color:rgba(255,196,90,.55);background:linear-gradient(135deg,rgba(255,196,90,.14),#1F150F 60%);}
 .mx-de{display:flex;align-items:center;gap:10px;}
 .mx-de img{width:38px;height:38px;border-radius:50%;object-fit:cover;background:#2A1D15;flex:none;}
 .mx-de span{display:flex;flex-direction:column;min-width:0;}

@@ -159,7 +159,7 @@ libérés à la fin de ses vidéos s'y posent (`src/lib/direct/vitrine-fantomes.
 - Son propre fantôme au premier rang, sur un halo rose, « Vous · Rose ». Un fantôme touché dit son prénom, son geste
   et quand (« Tom · 🍽️ a réservé aujourd'hui · à l'instant »).
 - **Les prénoms** (décision du 26 octobre) : visibles, et chacun peut cacher le sien — « Cacher mon prénom » sous la
-  vitrine (c'est dit : « Ton fantôme et ton prénom sont dans la vitrine de… »), et « Mon prénom dans les vitrines »
+  vitrine (c'est dit : « Ton fantôme et ton prénom sont dans cette vitrine »), et « Mon prénom dans les vitrines »
   dans les réglages de Ma Maison. Caché, il reste son fantôme et son geste ; lui seul voit encore son prénom.
 - **L'ardoise**, sous la vitrine : l'info du moment que le commerçant écrit au comptoir (90 signes), le jour même
   seulement. Dans la démonstration, l'ardoise dit le moment en cours (« En ce moment : Le service du midi »).
@@ -171,6 +171,30 @@ vitrine d'un commerce inventé d'une foule inventée (jamais pour un vrai commer
 - `src/app/api/direct/vitrine/route.ts` : la vitrine d'un commerce (jamais l'identifiant d'une personne), son
   réglage ; l'ardoise par la route du carnet (`ardoise`).
 - `supabase/migrations/20261030090000_clik_vitrine.sql` : `clik_ardoise`, et `human_habitants.prenom_vitrine`.
+
+## 💌 Les petits mots (prototype « Les trois fantômes », étape 2)
+
+Sous la vitrine d'un commerce où il a libéré son fantôme, l'habitant écrit un petit mot au commerçant — un par
+jour —, ou en choisit un dans la liste (gentils par construction, un peu de son métier : `src/lib/direct/petits-mots.ts`).
+Le commerçant les lit tous au comptoir, dans « Vos petits mots » (une carte sur l'accueil, « 2 nouveaux ») :
+
+- **💛 Coup de cœur** : le mot passe dans sa vitrine — sous l'ardoise (« Le coup de cœur de la maison »), et son
+  auteur porte un 💛. Il peut le retirer.
+- **🎁 Offrir…** : un petit quelque chose (« le dessert », ses suggestions selon le métier, ou ce qu'il écrit) —
+  jamais d'alcool (loi Évin), un cadeau par mot. L'habitant le trouve dans Ma Maison : « Ton mot m'a fait chaud au
+  cœur. Le dessert est pour moi. Montre ce message au comptoir. » C'est une surprise : rien n'est promis. En haut
+  de l'écran, ce qu'il a offert ce mois-ci.
+- **La modération, c'est lui** : un mot écrit ne se voit dans la vitrine qu'après son 💛 ; un mot de la liste s'y
+  voit tout de suite. Touché, un fantôme montre son mot dans sa bulle.
+
+La démonstration : au comptoir, quatre mots inventés (Camille a écrit, Chloé a déjà eu le café) ; dans l'appli
+des habitants, la foule inventée porte des mots de la liste, et son propre mot reste dans le téléphone.
+
+- `src/app/api/direct/mot/route.ts` : écrire (un par jour, seulement avec son fantôme chez ce commerce).
+- La route du carnet : `mots`, `coeur`, `offrir` ; la vitrine (`api/direct/vitrine`) montre les mots visibles et
+  le coup de cœur ; `api/direct/messages` rend à l'habitant les 💛 et les cadeaux (`reponses`).
+- `src/app/autour-de-moi/assistante/petits-mots.tsx` : la carte et l'écran du comptoir.
+- `supabase/migrations/20261031090000_clik_mots.sql` : `clik_mot`.
 
 ## L'activer en production
 
@@ -185,7 +209,9 @@ façon. Sans la seconde, « Envoyer » ouvre bien WhatsApp, mais répond « Les 
 Le moteur de messages demande enfin `supabase/migrations/20261029090000_clik_messages_maison.sql` (après celle des
 messages) ; sans elle, « Oui, envoie » répond « Les messages dans Ma Maison ne sont pas encore activés. »
 La vitrine demande `supabase/migrations/20261030090000_clik_vitrine.sql` (l'ardoise et le réglage du prénom) ; sans
-elle, la vitrine s'affiche, mais l'ardoise répond « L'ardoise n'est pas encore activée » et le prénom ne se cache pas. Sans les cages, la carte dit « Bientôt, à la fin de tes vidéos » ; sans les passages, le carnet
+elle, la vitrine s'affiche, mais l'ardoise répond « L'ardoise n'est pas encore activée » et le prénom ne se cache pas.
+Les petits mots demandent `supabase/migrations/20261031090000_clik_mots.sql` ; sans elle, « Envoyer » répond « Les
+petits mots ne sont pas encore activés » et la carte du comptoir ne paraît pas. Sans les cages, la carte dit « Bientôt, à la fin de tes vidéos » ; sans les passages, le carnet
 s'affiche mais « Passage aujourd'hui » répond « Les passages ne sont pas encore activés. »
 
 ## Vérifier
@@ -195,7 +221,8 @@ s'affiche mais « Passage aujourd'hui » répond « Les passages ne sont pas enc
 - `node scripts/essai-carnet-route.mjs` (CI aussi) : le carnet, ses passages, le stop, et « Oui, préviens-les »
   (les numéros, le message gardé, les règles), et le moteur de messages (Ma Maison, la réponse, le stop, « A
   répondu », le silence) et le ticket de Mike, contre le faux Supabase. Hors de 9 h – 20 h 30, il vérifie le refus.
-- `node scripts/essai-vitrine-route.mjs` (CI aussi) : la vitrine, les prénoms cachés, « Vous », l'ardoise du jour.
+- `node scripts/essai-vitrine-route.mjs` (CI aussi) : la vitrine, les prénoms cachés, « Vous », l'ardoise du jour, et
+  les petits mots (un par jour, la modération, le 💛, offrir sans alcool, les réponses dans Ma Maison).
 - Le carnet dans le navigateur : `/autour-de-moi/assistante?metier=table`, la carte « Mon carnet ».
 - Dans le navigateur : `/autour-de-moi`, Restaurants, Chez Bergine, « Voir toutes les offres + infos », le film
   « En cuisine, pendant le service » jusqu'au bout.

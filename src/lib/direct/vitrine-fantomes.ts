@@ -33,9 +33,22 @@ export type FantomeVitrine = {
   le: string;
   /** C'est le sien. */
   moi?: boolean;
+  /** 💌 Son petit mot (de la liste, ou écrit et qui a eu le 💛 — le sien, toujours). */
+  mot?: string;
+  /** Le commerçant a eu un coup de cœur pour son mot ; et ce qu'il lui a offert. */
+  coeur?: boolean;
+  cadeau?: string;
 };
 
-export type Vitrine = { fantomes: FantomeVitrine[]; ardoise: string | null; prenomVisible: boolean };
+export type Vitrine = {
+  fantomes: FantomeVitrine[];
+  ardoise: string | null;
+  prenomVisible: boolean;
+  /** 💛 Son dernier coup de cœur (sept jours), sous l'ardoise. */
+  coupDeCoeur?: { texte: string; prenom: string } | null;
+  /** Il a déjà écrit son petit mot aujourd'hui. */
+  ecritAujourdhui?: boolean;
+};
 
 /** Les places, en % de la scène (x, y = ses pieds) et sa taille (s), d'après le prototype. */
 export const RANGS_ADORE = [

@@ -19,6 +19,8 @@ import { tenueDu } from "@/lib/direct/double-metiers";
 import { copieNommee } from "@/lib/direct/copies-presentation";
 import type { Cage } from "@/lib/direct/cages";
 import { fouleDemo, geste, placer, type Place, type Vitrine } from "@/lib/direct/vitrine-fantomes";
+import { MOT_MAX, motPropre, motsDeLaListe } from "@/lib/direct/petits-mots";
+import { familleDuDouble } from "@/lib/direct/double-metiers";
 
 /** L'image d'un fantôme selon sa cage : debout bras ouverts, la main levée, assis. */
 function imageDe(look: string, cage: Place["f"]["cage"]): string {
@@ -39,6 +41,8 @@ export function VitrineFantomes({
   branche,
   vitrine,
   onPrenom,
+  mots,
+  onMot,
 }: {
   nom: string;
   /** Sous l'enseigne : « RESTAURANT · DAX ». */
@@ -51,6 +55,9 @@ export function VitrineFantomes({
   vitrine: Vitrine;
   /** Montrer ou cacher son prénom (seulement quand son fantôme est là). */
   onPrenom?: (visible: boolean) => void;
+  /** 💌 Les mots de la liste, et l'envoi de son petit mot (rend l'erreur à dire, ou `null`). */
+  mots?: string[];
+  onMot?: (texte: string, liste: boolean) => Promise<string | null>;
 }) {
   const [touche, setTouche] = useState<string | null>(null);
   const [maintenant] = useState(() => Date.now());
@@ -79,6 +86,11 @@ export function VitrineFantomes({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imageDe(f.look, f.cage)} alt="" draggable={false} />
         {f.moi && <span className="nom">{f.prenom && vitrine.prenomVisible ? `Vous · ${f.prenom}` : "Vous"}</span>}
+        {f.coeur && (
+          <i className="vf-coeur" aria-hidden="true">
+            💛
+          </i>
+        )}
       </button>
     );
   };
@@ -119,19 +131,31 @@ export function VitrineFantomes({
             <span>
               {geste(choisi.f.cage, branche)} · {quandEnClair(choisi.f.le, maintenant)}
             </span>
+            {choisi.f.mot && <q>{choisi.f.mot}</q>}
+            {choisi.f.cadeau ? <em>🎁 La maison lui a offert {choisi.f.cadeau}</em> : choisi.f.coeur ? <em>💛 Coup de cœur de la maison</em> : null}
           </div>
         )}
       </div>
 
-      {vitrine.ardoise && (
-        <p className="vf-ardoise">
-          <small>L’ardoise</small>
-          {vitrine.ardoise}
-        </p>
+      {(vitrine.ardoise || vitrine.coupDeCoeur) && (
+        <div className="vf-ardoise">
+          {vitrine.ardoise && (
+            <p>
+              <small>L’ardoise</small>
+              {vitrine.ardoise}
+            </p>
+          )}
+          {vitrine.coupDeCoeur && (
+            <p className="coeur">
+              <small>💛 Le coup de cœur de la maison</small>« {vitrine.coupDeCoeur.texte} »{vitrine.coupDeCoeur.prenom ? ` — ${vitrine.coupDeCoeur.prenom}` : ""}
+            </p>
+          )}
+        </div>
       )}
+      {moi && onMot && mots && <PetitMot nom={nom} mots={mots} deja={Boolean(vitrine.ecritAujourdhui)} sien={moi.mot} onMot={onMot} />}
       {moi && onPrenom && (
         <p className="vf-moi">
-          {moi.prenom && vitrine.prenomVisible ? "Ton fantôme et ton prénom sont" : "Ton fantôme est"} dans la vitrine de {nom}.{" "}
+          {moi.prenom && vitrine.prenomVisible ? "Ton fantôme et ton prénom sont" : "Ton fantôme est"} dans cette vitrine.{" "}
           {moi.prenom && (
             <button type="button" onClick={() => onPrenom(!vitrine.prenomVisible)}>
               {vitrine.prenomVisible ? "Cacher mon prénom" : "Montrer mon prénom"}
@@ -142,6 +166,93 @@ export function VitrineFantomes({
       <style>{STYLES}</style>
     </div>
   );
+}
+
+/** 💌 « UN PETIT MOT À… » : un mot de la liste d'un appui, ou le sien, écrit (140 signes) — un par jour. */
+function PetitMot({
+  nom,
+  mots,
+  deja,
+  sien,
+  onMot,
+}: {
+  nom: string;
+  mots: string[];
+  deja: boolean;
+  sien?: string;
+  onMot: (texte: string, liste: boolean) => Promise<string | null>;
+}) {
+  const [ouvert, setOuvert] = useState(false);
+  const [texte, setTexte] = useState("");
+  const [envoye, setEnvoye] = useState(false);
+  const [ennui, setEnnui] = useState("");
+  const [occupe, setOccupe] = useState(false);
+  const envoyer = async (t: string, liste: boolean) => {
+    setEnnui("");
+    setOccupe(true);
+    const e = await onMot(t, liste);
+    setOccupe(false);
+    if (e) setEnnui(e);
+    else {
+      setEnvoye(true);
+      setOuvert(false);
+    }
+  };
+  if (envoye || deja)
+    return (
+      <p className="vf-mot-fait">
+        💌 Ton petit mot du jour est parti{sien ? ` : « ${sien} »` : ""}. {nom} le lira à son comptoir.
+      </p>
+    );
+  if (!ouvert)
+    return (
+      <button type="button" className="vf-mot-ouvrir" onClick={() => setOuvert(true)}>
+        ✍️ Un petit mot pour {nom}
+      </button>
+    );
+  return (
+    <div className="vf-mot">
+      <b>Un petit mot pour {nom}</b>
+      <div className="vf-mot-liste">
+        {mots.map((m) => (
+          <button key={m} type="button" disabled={occupe} onClick={() => void envoyer(m, true)}>
+            {m}
+          </button>
+        ))}
+      </div>
+      <textarea value={texte} maxLength={MOT_MAX} rows={2} placeholder="Ou écris le tien…" onChange={(e) => setTexte(e.target.value)} aria-label="Ton petit mot" />
+      <div className="vf-mot-bas">
+        <small>Un mot écrit apparaît dans sa vitrine s’il a un coup de cœur. Un par jour.</small>
+        <button type="button" className="vf-mot-envoyer" disabled={occupe || !texte.trim()} onClick={() => void envoyer(texte, false)}>
+          Envoyer
+        </button>
+      </div>
+      {ennui && (
+        <p className="vf-mot-ennui" role="alert">
+          {ennui}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* SON PETIT MOT DU JOUR DANS LA DÉMONSTRATION, par commerce : gardé dans ce téléphone. */
+const CLE_MOTS = "clikme-mots-demo-v1";
+function lireMotDemo(cle: string): string {
+  try {
+    const v = (JSON.parse(window.localStorage.getItem(CLE_MOTS) || "{}") as Record<string, { texte: string; jour: string }>)[cle];
+    return v && v.jour === new Date().toISOString().slice(0, 10) ? v.texte : "";
+  } catch {
+    return "";
+  }
+}
+function garderMotDemo(cle: string, texte: string) {
+  try {
+    const tous = JSON.parse(window.localStorage.getItem(CLE_MOTS) || "{}") as Record<string, unknown>;
+    window.localStorage.setItem(CLE_MOTS, JSON.stringify({ ...tous, [cle]: { texte, jour: new Date().toISOString().slice(0, 10) } }));
+  } catch {
+    /* stockage indisponible */
+  }
 }
 
 /* SON PRÉNOM DANS LES VITRINES DE LA DÉMONSTRATION : gardé dans ce téléphone (« non » : caché). */
@@ -177,6 +288,10 @@ export function VitrineDuCommerce({
   const [vraie, setVraie] = useState<Vitrine | null>(null);
   const [visibleDemo, setVisibleDemo] = useState(prenomDemoVisible);
   const [maintenant] = useState(() => Date.now());
+  /** Relire la vitrine (après son petit mot). */
+  const [tour, setTour] = useState(0);
+  const [motDemo, setMotDemo] = useState(() => lireMotDemo(carte.id));
+  const liste = motsDeLaListe(familleDuDouble(carte));
 
   useEffect(() => {
     if (!reelle) return;
@@ -185,7 +300,14 @@ export function VitrineDuCommerce({
       void fetch(`/api/direct/vitrine?slug=${encodeURIComponent(carte.id)}`, { cache: "no-store" })
         .then((r) => (r.ok ? r.json() : null))
         .then((j: (Vitrine & { ok?: boolean }) | null) => {
-          if (!fini && j?.ok) setVraie({ fantomes: j.fantomes ?? [], ardoise: j.ardoise ?? null, prenomVisible: j.prenomVisible !== false });
+          if (!fini && j?.ok)
+            setVraie({
+              fantomes: j.fantomes ?? [],
+              ardoise: j.ardoise ?? null,
+              prenomVisible: j.prenomVisible !== false,
+              coupDeCoeur: j.coupDeCoeur ?? null,
+              ecritAujourdhui: Boolean(j.ecritAujourdhui),
+            });
         })
         .catch(() => undefined);
     lire();
@@ -195,8 +317,32 @@ export function VitrineDuCommerce({
       fini = true;
       window.clearTimeout(t);
     };
-    // `cage` : sa cage vient de changer, la vitrine se relit.
-  }, [reelle, carte.id, cage]);
+    // `cage` : sa cage vient de changer, la vitrine se relit ; `tour` : son petit mot vient de partir.
+  }, [reelle, carte.id, cage, tour]);
+
+  /** 💌 Son petit mot : à la route dans une vraie ville, dans ce téléphone dans la démonstration. */
+  const envoyerMot = async (texte: string, deLaListe: boolean): Promise<string | null> => {
+    const propre = motPropre(texte);
+    if (!propre) return "Le mot est vide.";
+    if (!reelle) {
+      garderMotDemo(carte.id, propre);
+      setMotDemo(propre);
+      return null;
+    }
+    try {
+      const r = await fetch("/api/direct/mot", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ slug: carte.id, texte: propre, liste: deLaListe }),
+      });
+      const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!r.ok || !j.ok) return j.error || "Le mot n’est pas parti. Réessaie dans un instant.";
+      setTour((x) => x + 1);
+      return null;
+    } catch {
+      return "Pas de réseau : le mot n’est pas parti.";
+    }
+  };
 
   const changerPrenom = (visible: boolean) => {
     if (!reelle) {
@@ -221,9 +367,11 @@ export function VitrineDuCommerce({
   if (!reelle) {
     if (copieNommee(carte.id)) return null;
     vitrine = {
-      fantomes: [...fouleDemo(carte.id, maintenant), sien],
+      // La foule inventée porte des mots de la liste (un sur trois).
+      fantomes: [...fouleDemo(carte.id, maintenant).map((f, k) => (k % 3 === 0 ? { ...f, mot: liste[k % liste.length] } : f)), { ...sien, ...(motDemo ? { mot: motDemo } : {}) }],
       ardoise: ardoise ?? null,
       prenomVisible: visibleDemo,
+      ecritAujourdhui: Boolean(motDemo),
     };
   }
   if (!vitrine) return null;
@@ -237,6 +385,8 @@ export function VitrineDuCommerce({
       branche={carte.branche}
       vitrine={vitrine}
       onPrenom={changerPrenom}
+      mots={liste}
+      onMot={envoyerMot}
     />
   );
 }
@@ -347,8 +497,27 @@ const STYLES = `
   display:flex;flex-direction:column;gap:.4cqw;box-shadow:0 1.4cqw 3cqw rgba(0,0,0,.45);pointer-events:none;}
 .vf-bulle b{font:800 3.4cqw/1.15 system-ui,sans-serif;}
 .vf-bulle span{font:600 2.9cqw/1.25 system-ui,sans-serif;color:#4A3A30;}
-.vf-ardoise{margin:0;padding:10px 14px;border-radius:12px;background:#1E1E1C;border:3px solid #6B4A2E;color:#F4F1E8;font:600 15px/1.35 "Segoe Print","Comic Sans MS",cursive;text-align:center;}
+.vf-ardoise{display:flex;flex-direction:column;gap:8px;padding:10px 14px;border-radius:12px;background:#1E1E1C;border:3px solid #6B4A2E;color:#F4F1E8;font:600 15px/1.35 "Segoe Print","Comic Sans MS",cursive;text-align:center;}
+.vf-ardoise p{margin:0;}
+.vf-ardoise p.coeur{font-size:14px;}
+.vf-ardoise p + p{padding-top:8px;border-top:1px dashed rgba(244,241,232,.25);}
 .vf-ardoise small{display:block;margin-bottom:2px;font:800 10.5px/1 system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#E8C77A;}
+.vf-coeur{position:absolute;right:-6%;top:6%;font-style:normal;font-size:4.6cqw;line-height:1;filter:drop-shadow(0 .3cqw .5cqw rgba(0,0,0,.5));pointer-events:none;}
+.vf-salle .vf-coeur{font-size:9cqw;}
+.vf-bulle q{font:italic 600 2.9cqw/1.3 Georgia,serif;color:#2B1D16;}
+.vf-bulle em{font:700 2.7cqw/1.25 system-ui,sans-serif;font-style:normal;color:#C4146E;}
+.vf-mot-ouvrir{align-self:center;min-height:40px;padding:0 18px;border-radius:999px;border:1.5px solid #FF2E9A;background:rgba(255,46,154,.1);color:#FFC2E2;font-weight:800;font-size:14px;cursor:pointer;}
+.vf-mot{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:16px;background:#1F150F;border:1px solid rgba(255,235,215,.12);color:#FFF4E6;}
+.vf-mot b{font-size:15px;font-weight:800;}
+.vf-mot-liste{display:flex;flex-wrap:wrap;gap:6px;}
+.vf-mot-liste button{padding:7px 12px;border-radius:999px;border:1px solid rgba(255,235,215,.2);background:#2A1D15;color:#FFF4E6;font-size:13px;font-weight:600;text-align:left;cursor:pointer;}
+.vf-mot textarea{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,235,215,.2);background:#170F0B;color:#FFF4E6;font:inherit;font-size:14.5px;resize:vertical;}
+.vf-mot-bas{display:flex;align-items:center;gap:10px;}
+.vf-mot-bas small{flex:1;font-size:11.5px;line-height:1.35;color:#B3A59D;}
+.vf-mot-envoyer{min-height:38px;padding:0 16px;border:0;border-radius:999px;background:#FF2E9A;color:#fff;font-weight:800;font-size:14px;cursor:pointer;}
+.vf-mot-envoyer:disabled{opacity:.45;}
+.vf-mot-ennui{margin:0;font-size:13px;color:#FFC2E2;}
+.vf-mot-fait{margin:0;font-size:13px;line-height:1.4;color:#B3A59D;text-align:center;}
 .vf-moi{margin:0;font-size:12.5px;line-height:1.4;color:#B3A59D;text-align:center;}
 .vf-moi button{border:0;background:none;padding:0;color:#FF8CC6;text-decoration:underline;font:inherit;font-weight:700;cursor:pointer;}
 `;

@@ -29,6 +29,9 @@ export type MessageMaison = {
   stop: boolean;
 };
 
+/** 💌 Ce qu'un commerçant a répondu à son petit mot : son 💛, et ce qu'il offre (vide sinon). */
+export type ReponseAuMot = { id: string; commerce: MessageMaison["commerce"]; mot: string; cadeau: string; le: string };
+
 // ═══ LA DÉMONSTRATION, DANS CE TÉLÉPHONE ═══════════════════════════════════
 const CLE = "clikme-messages-demo-v1";
 type Demo = { messages: MessageMaison[]; stops: string[] };

@@ -2,6 +2,8 @@
 //
 // GET ?slug= : les fantômes des sept derniers jours (un par personne : sa dernière cage),
 // avec leur prénom — sauf qui l'a caché —, le sien marqué (« Vous »), et l'ardoise du jour.
+// 💌 Et leurs petits mots (étape 2) : ceux de la liste, et les mots écrits qui ont eu le 💛 du
+// commerçant (le sien, toujours) ; son dernier coup de cœur ; s'il a déjà écrit aujourd'hui.
 // Jamais l'identifiant de personne : chaque fantôme a un numéro d'écran. Voir
 // `lib/direct/vitrine-fantomes.ts`.
 //
@@ -50,7 +52,7 @@ export async function GET(request: Request) {
   if (!siteId) return NextResponse.json({ error: "Commerce introuvable." }, { status: 404 });
 
   const depuis = new Date(Date.now() - 7 * 86_400_000).toISOString();
-  const [cages, moi, ardoise] = await Promise.all([
+  const [cages, moi, ardoise, mots] = await Promise.all([
     supabase
       .from("clik_cage")
       .select("habitant_id, cage, prenom, look, updated_at")
@@ -60,6 +62,13 @@ export async function GET(request: Request) {
       .limit(400),
     habitantCourant(supabase),
     supabase.from("clik_ardoise").select("texte, ecrite_le").eq("site_id", siteId).maybeSingle(),
+    supabase
+      .from("clik_mot")
+      .select("habitant_id, texte, liste, jour, coeur_le, cadeau, created_at")
+      .eq("site_id", siteId)
+      .gte("created_at", new Date(Date.now() - 30 * 86_400_000).toISOString())
+      .order("created_at", { ascending: false })
+      .limit(500),
   ]);
   if (cages.error && !migrationManquante(cages.error.message)) return NextResponse.json({ error: cages.error.message }, { status: 500 });
 
@@ -73,9 +82,14 @@ export async function GET(request: Request) {
     lignes.push(c);
   }
   const visibles = await prenomsVisibles(supabase, [...vues]);
+  // 💌 SON DERNIER MOT, par personne — que les autres ne voient que s'il vient de la liste, ou a eu le 💛.
+  const motDe = new Map<string, Ligne>();
+  for (const m of (mots.error ? [] : (mots.data ?? [])) as Ligne[]) if (!motDe.has(s(m.habitant_id))) motDe.set(s(m.habitant_id), m);
   const fantomes: FantomeVitrine[] = lignes.slice(0, 60).map((c, k) => {
     const h = s(c.habitant_id);
     const estMoi = Boolean(moi && moi.id === h);
+    const m = motDe.get(h);
+    const montre = m && (estMoi || m.liste === true || Boolean(m.coeur_le));
     return {
       id: `f${k}`,
       prenom: estMoi || visibles.get(h) !== false ? s(c.prenom) : "",
@@ -83,13 +97,24 @@ export async function GET(request: Request) {
       cage: c.cage as FantomeVitrine["cage"],
       le: s(c.updated_at),
       ...(estMoi ? { moi: true } : {}),
+      ...(montre ? { mot: s(m.texte) } : {}),
+      ...(m && m.coeur_le ? { coeur: true } : {}),
+      ...(m && s(m.cadeau) ? { cadeau: s(m.cadeau) } : {}),
     };
   });
 
   const a = ardoise.error ? null : (ardoise.data as Ligne | null);
   const duJour = a && jourParis(new Date(s(a.ecrite_le))) === jourParis() ? s(a.texte) : null;
   const prenomVisible = moi ? (await prenomsVisibles(supabase, [moi.id])).get(moi.id) !== false : true;
-  return NextResponse.json({ ok: true, fantomes, ardoise: duJour, prenomVisible });
+  // LE DERNIER COUP DE CŒUR (sept jours), avec le prénom de son auteur s'il ne l'a pas caché.
+  const coeurs = ((mots.error ? [] : (mots.data ?? [])) as Ligne[]).filter((m) => m.coeur_le && Date.now() - Date.parse(s(m.coeur_le)) < 7 * 86_400_000);
+  const dernier = coeurs.sort((a, b) => s(b.coeur_le).localeCompare(s(a.coeur_le)))[0];
+  const auteur = dernier ? lignes.find((c) => s(c.habitant_id) === s(dernier.habitant_id)) : undefined;
+  const coupDeCoeur = dernier
+    ? { texte: s(dernier.texte), prenom: auteur && visibles.get(s(dernier.habitant_id)) !== false ? s(auteur.prenom) : "" }
+    : null;
+  const ecritAujourdhui = Boolean(moi && motDe.get(moi.id) && s(motDe.get(moi.id)?.jour).slice(0, 10) === jourParis());
+  return NextResponse.json({ ok: true, fantomes, ardoise: duJour, prenomVisible, coupDeCoeur, ecritAujourdhui });
 }
 
 export async function POST(request: Request) {
