@@ -10,7 +10,7 @@
 //
 // Rien quand il n'y a rien : la Maison ne se remplit pas d'un cadre vide.
 // Voir `lib/direct/messages-maison.ts`.
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   abonnerMessagesDemo,
   chargerMessagesDemo,
@@ -22,25 +22,57 @@ import {
 } from "@/lib/direct/messages-maison";
 import { quandEnClair } from "@/lib/direct/carnet";
 
-/** Ses messages : la route dans une vraie ville, ce téléphone dans la démonstration. */
-function useMesMessages(reelle: boolean) {
-  const demo = useSyncExternalStore(abonnerMessagesDemo, chargerMessagesDemo, messagesDemoServeur);
-  const [vrais, setVrais] = useState<MessageMaison[] | null>(null);
-  const [ennui, setEnnui] = useState("");
+/* LES VRAIS MESSAGES, LUS UNE FOIS ET PARTAGÉS : « Mes messages » et la pastille de l'onglet Ma Maison
+   lisent la même liste — répondre ici éteint la pastille là. `null` : pas encore lue. */
+let vraisCache: MessageMaison[] | null = null;
+const abonnesVrais = new Set<() => void>();
+const abonnerVrais = (f: () => void) => {
+  abonnesVrais.add(f);
+  return () => void abonnesVrais.delete(f);
+};
+const lireVrais = () => vraisCache;
+const vraisServeur = (): MessageMaison[] | null => null;
+function poserVrais(l: MessageMaison[]) {
+  vraisCache = l;
+  abonnesVrais.forEach((f) => f());
+}
+let enCours: Promise<void> | null = null;
+/** Relit ses messages (une lecture à la fois). */
+export function relireMesMessages(): Promise<void> {
+  enCours ??= fetch("/api/direct/messages", { cache: "no-store" })
+    .then((r) => r.json())
+    .then((j: { messages?: MessageMaison[] } | null) => poserVrais(Array.isArray(j?.messages) ? j.messages : []))
+    .catch(() => {
+      if (vraisCache === null) poserVrais([]);
+    })
+    .finally(() => {
+      enCours = null;
+    });
+  return enCours;
+}
 
-  const lire = useCallback(async () => {
-    if (!reelle) return;
-    try {
-      const r = await fetch("/api/direct/messages", { cache: "no-store" });
-      const j = (await r.json().catch(() => null)) as { messages?: MessageMaison[] } | null;
-      setVrais(Array.isArray(j?.messages) ? j.messages : []);
-    } catch {
-      setVrais([]);
-    }
-  }, [reelle]);
+/** Ses messages : la route dans une vraie ville, ce téléphone dans la démonstration. */
+function useLesMessages(reelle: boolean): MessageMaison[] {
+  const demo = useSyncExternalStore(abonnerMessagesDemo, chargerMessagesDemo, messagesDemoServeur);
+  const vrais = useSyncExternalStore(abonnerVrais, lireVrais, vraisServeur);
   useEffect(() => {
-    void lire();
-  }, [lire]);
+    if (reelle && lireVrais() === null) void relireMesMessages();
+  }, [reelle]);
+  return reelle ? (vrais ?? []) : messagesDemoAffiches(demo);
+}
+
+/** 🏠 LA PASTILLE DE L'ONGLET MA MAISON : les messages qui attendent sa réponse. */
+export function useMessagesEnAttente(reelle: boolean): number {
+  return useLesMessages(reelle).filter((m) => !m.reponse && !m.stop && m.choix.length > 0).length;
+}
+
+function useMesMessages(reelle: boolean) {
+  const messages = useLesMessages(reelle);
+  const [ennui, setEnnui] = useState("");
+  useEffect(() => {
+    // En ouvrant Ma Maison, on relit : un commerçant a pu écrire depuis.
+    if (reelle) void relireMesMessages();
+  }, [reelle]);
 
   const poster = async (corps: Record<string, unknown>) => {
     setEnnui("");
@@ -48,7 +80,7 @@ function useMesMessages(reelle: boolean) {
       const r = await fetch("/api/direct/messages", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
       const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!r.ok || !j.ok) throw new Error(j.error || "Ça n’a pas marché. Réessaie dans un instant.");
-      await lire();
+      await relireMesMessages();
     } catch (e) {
       setEnnui(e instanceof Error ? e.message : String(e));
     }
@@ -56,17 +88,16 @@ function useMesMessages(reelle: boolean) {
 
   const repondre = (m: MessageMaison, reponse: string) => {
     if (!reelle) return repondreDemo(m.id, reponse);
-    // La réponse s'affiche tout de suite ; la route la garde.
-    setVrais((l) => l?.map((x) => (x.id === m.id ? { ...x, reponse } : x)) ?? l);
+    // La réponse s'affiche tout de suite (et la pastille s'éteint) ; la route la garde.
+    poserVrais((lireVrais() ?? []).map((x) => (x.id === m.id ? { ...x, reponse } : x)));
     void poster({ action: "repondre", id: m.id, reponse });
   };
   const arreter = (cle: string, stop: boolean) => {
     if (!reelle) return stopDemo(cle, stop);
-    setVrais((l) => l?.map((x) => (x.commerce.cle === cle ? { ...x, stop } : x)) ?? l);
+    poserVrais((lireVrais() ?? []).map((x) => (x.commerce.cle === cle ? { ...x, stop } : x)));
     void poster({ action: stop ? "stop" : "reprendre", cle });
   };
 
-  const messages = reelle ? (vrais ?? []) : messagesDemoAffiches(demo);
   return { messages, ennui, repondre, arreter };
 }
 

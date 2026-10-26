@@ -115,7 +115,9 @@ sans réponse → rien d'autre dans la semaine ; trois sans réponse → plus ri
   ne lit pas son WhatsApp : c'est ce qui remet le silence à zéro).
 - **Chez l'habitant**, dans Ma Maison, « 💬 Mes messages » (`mes-messages.tsx`) : le visage du fantôme du commerce,
   son nom, le message, ses réponses d'un appui (une fois) ; « Ne plus recevoir ses messages » (plus rien de ce
-  commerce, ni ici ni sur WhatsApp) et « Reprendre ». Rien quand il n'y a pas de message.
+  commerce, ni ici ni sur WhatsApp) et « Reprendre ». Rien quand il n'y a pas de message. Une pastille rose sur
+  l'onglet Ma Maison compte les messages qui attendent sa réponse (avant celles des surprises et des favoris) ;
+  elle s'éteint dès qu'il répond.
 - **La démonstration** : au comptoir, le carnet inventé a un historique (Chloé a répondu « Poisson », Louis deux
   fois sans réponse, Emma attend…). Dans l'appli des habitants (`/autour-de-moi`), libérer son fantôme à la fin du
   film d'un commerce de la démonstration dépose dans Ma Maison le message que Mike aurait proposé

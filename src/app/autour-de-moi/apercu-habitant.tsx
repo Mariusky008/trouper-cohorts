@@ -331,7 +331,7 @@ import {
 import { MARQUE } from "@/lib/marque";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { CagesFantomes, type ChoixCage } from "./cages-fantomes";
-import { MesMessages } from "./mes-messages";
+import { MesMessages, useMessagesEnAttente } from "./mes-messages";
 import { deposerMessageDemo } from "@/lib/direct/messages-maison";
 import { copieNommee } from "@/lib/direct/copies-presentation";
 import { numeroWhatsApp, quoiAujourdhui, type Cage } from "@/lib/direct/cages";
@@ -1618,6 +1618,8 @@ export function ApercuHabitant({
    *     elles le disent — c'est leur état vide.
    */
   const reelle = useVilleReelle();
+  /* 💬 LES MESSAGES DES COMMERÇANTS QUI ATTENDENT SA RÉPONSE : la pastille de l'onglet Ma Maison. */
+  const messagesEnAttente = useMessagesEnAttente(Boolean(reelle));
   /**
    * CE QU'IL VIENT DE DICTER À SON ASSISTANTE — voir `journee.ts`.
    *
@@ -14660,7 +14662,12 @@ export function ApercuHabitant({
               {/* 🎁 LE FANTÔME A TROUVÉ QUELQUE CHOSE : l'ambre dit « du neuf »,
                   et il passe devant le compte des favoris tant qu'on n'a pas
                   ouvert ses surprises. */}
-              {tournee.aOuvrir.length > 0 ? (
+              {/* 💬 UN COMMERÇANT LUI A ÉCRIT : rose, et avant tout le reste — c'est à lui qu'on parle. */}
+              {messagesEnAttente > 0 ? (
+                <b className="msg" title={messagesEnAttente > 1 ? "Des commerçants vous ont écrit" : "Un commerçant vous a écrit"}>
+                  {messagesEnAttente}
+                </b>
+              ) : tournee.aOuvrir.length > 0 ? (
                 <b className="neuf" title="Le Fantôme a trouvé quelque chose pour vous">
                   {tournee.aOuvrir.length}
                 </b>
@@ -18858,6 +18865,8 @@ export function ApercuHabitant({
            neuf » ; changer la couleur en changeant d'endroit ferait perdre la
            seule chose qu'on n'a pas eu a expliquer. */
         .ap-onglets button b.neuf{background:#F0B429;}
+        /* UN COMMERÇANT LUI A ÉCRIT (« Mes messages », dans Ma Maison) : le rose des messages. */
+        .ap-onglets button b.msg{background:#FF2E9A;color:#fff;}
         /* LES LIBELLES EN CAPITALES ESPACEES — c'est ce que montre la maquette,
            et ca les distingue des mots de la carte, qui sont des phrases. */
         /* ─── LA CINQUIEME PLACE ───
