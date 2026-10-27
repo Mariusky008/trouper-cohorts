@@ -23,7 +23,7 @@ const CLIENTS: { cle: Client; icone: string; titre: string; sous: string }[] = [
   { cle: "chez-eux", icone: "🚗", titre: "vous allez chez eux", sous: "à domicile" },
   { cle: "distance", icone: "📦", titre: "vous leur envoyez, ou travaillez à distance", sous: "colis, en ligne, en visio" },
 ];
-type Ville = { nom: string; ouverte: boolean; inscrits: number };
+type Ville = { nom: string; ouverte: boolean; inscrits: number; echange: boolean };
 /** « de Dax », « d’Annecy », « du Havre », « des Sables-d’Olonne ». */
 function deVille(nom: string): string {
   if (/^le /i.test(nom)) return "du " + nom.slice(3);
@@ -59,9 +59,9 @@ export function Inscription() {
       try {
         const r = await fetch(`/api/inscription/ville?nom=${encodeURIComponent(v)}`);
         const j = await r.json();
-        if (vivant && r.ok) setInfoVille({ nom: String(j.nom || v), ouverte: Boolean(j.ouverte), inscrits: Number(j.inscrits) || 0 });
+        if (vivant && r.ok) setInfoVille({ nom: String(j.nom || v), ouverte: Boolean(j.ouverte), inscrits: Number(j.inscrits) || 0, echange: Boolean(j.echange) });
       } catch {
-        if (vivant) setInfoVille({ nom: v, ouverte: false, inscrits: 0 });
+        if (vivant) setInfoVille({ nom: v, ouverte: false, inscrits: 0, echange: false });
       }
     }, 450);
     return () => { vivant = false; window.clearTimeout(t); };
@@ -157,7 +157,12 @@ export function Inscription() {
               ) : (
                 <>
                   <li className="verrou"><i>🔒</i><span><b>Le Direct {deVille(v.nom)}</b><em>s&apos;ouvrira avec votre ville</em></span></li>
-                  <li className="verrou"><i>🔒</i><span><b>Dépenser moins</b>, l&apos;échange entre commerçants<em>s&apos;ouvrira avec votre ville</em></span></li>
+                  {/* l'échange s'ouvre tout seul dès 12 commerçants d'une même ville, même hors de la liste */}
+                  {v.echange ? (
+                    <li className="oui"><i>✓</i><span><b>Dépenser moins</b> : l&apos;échange entre commerçants {deVille(v.nom)}, déjà ouvert</span></li>
+                  ) : (
+                    <li className="verrou"><i>🔒</i><span><b>Dépenser moins</b>, l&apos;échange entre commerçants<em>s&apos;ouvrira avec votre ville, ou dès 12 commerçants inscrits</em></span></li>
+                  )}
                 </>
               ))}
               {distance && <li className="bientot"><i>⏳</i><span><b>Le Direct France de votre catégorie</b><em>bientôt</em></span></li>}

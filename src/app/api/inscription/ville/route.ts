@@ -1,7 +1,11 @@
 // 🟢 SA VILLE, POUR LA PAGE D'INSCRIPTION (`/inscription`) : est-elle ouverte (`villes-ouvertes.ts`), et combien de
 // commerçants de la ville ont déjà leur page ClikMe — ce que la page affiche dès qu'il a tapé sa ville.
 //
-//   GET /api/inscription/ville?nom=Annecy   →   { nom: "Annecy", slug: "annecy", ouverte: false, inscrits: 3 }
+//   GET /api/inscription/ville?nom=Annecy   →   { nom: "Annecy", slug: "annecy", ouverte: false, inscrits: 3, echange: false }
+//
+// L'ÉCHANGE (« dépenser moins ») S'OUVRE AUSSI TOUT SEUL : dès 12 commerçants d'une même ville qui y proposent une
+// offre (`seuilVilleEchanges`, la règle de l'échange), même hors de la liste des villes ouvertes. « Elle peut rester
+// ouverte s'il y a 12 commerçants d'une même ville, c'est plutôt mieux. » `echange` le dit.
 //
 // LES INSCRITS : les commerçants qui ont gardé leur page (`est_client`), pas les aperçus. Le nom stocké sur les fiches
 // n'est jamais propre (« 74000 Annecy, France ») : `ilike` large, puis le tri fin sur le slug, comme `configVille`.
@@ -9,6 +13,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { nomDeVille, villeSlug } from "@/lib/direct/ville";
 import { villeOuverte } from "@/lib/direct/villes-ouvertes";
+import { seuilVilleEchanges } from "@/lib/echanges/echanges";
 
 export const dynamic = "force-dynamic";
 
@@ -19,9 +24,10 @@ export async function GET(request: Request) {
   const slug = villeSlug(nom);
   if (slug.length < 2) return NextResponse.json({ error: "Indiquez votre ville." }, { status: 400 });
 
+  const supabase = createAdminClient();
   let inscrits = 0;
   try {
-    const { data } = await createAdminClient()
+    const { data } = await supabase
       .from("human_vitrine_sites")
       .select("city")
       .eq("channel", "letter")
@@ -35,8 +41,19 @@ export async function GET(request: Request) {
   } catch {
     /* base indisponible : on ne compte personne, la page n'affiche pas de nombre */
   }
+  // l'échange de sa ville : ses offres actives, contre le seuil de l'échange (sans la table : pas ouvert)
+  let echange = villeOuverte(slug);
+  if (!echange) {
+    try {
+      const seuil = seuilVilleEchanges();
+      const { data } = await supabase.from("human_echanges_offres").select("site_id").eq("ville_slug", slug).eq("actif", true).limit(seuil);
+      echange = Array.isArray(data) && data.length >= seuil;
+    } catch {
+      /* échange non migré : fermé */
+    }
+  }
   return NextResponse.json(
-    { nom: nomDeVille(nom), slug, ouverte: villeOuverte(slug), inscrits },
+    { nom: nomDeVille(nom), slug, ouverte: villeOuverte(slug), inscrits, echange },
     { headers: { "Cache-Control": "public, max-age=60" } },
   );
 }

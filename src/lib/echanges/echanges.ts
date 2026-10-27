@@ -27,6 +27,16 @@ export const PAR_MOIS = [1, 2, 4, 8];
 export const JOURS_VALIDITE = 30;
 /** L'échange s'ouvre dans une ville à partir de ce nombre de commerçants (`ECHANGES_SEUIL_VILLE` pour un essai). */
 export const SEUIL_VILLE = 12;
+/**
+ * LE SEUIL EN VIGUEUR : 12, ou moins pour un essai (`ECHANGES_SEUIL_VILLE`). Lu par l'échange et par la page
+ * d'inscription (`api/inscription/ville`) : une ville où il est atteint a l'échange ouvert, même si elle n'est pas
+ * encore dans `villes-ouvertes.ts` (« elle peut rester ouverte s'il y a 12 commerçants d'une même ville »).
+ * Serveur seulement (il lit l'environnement).
+ */
+export function seuilVilleEchanges(): number {
+  const n = Math.round(Number(process.env.ECHANGES_SEUIL_VILLE));
+  return Number.isFinite(n) && n >= 1 ? n : SEUIL_VILLE;
+}
 
 
 /** Son découvert : 50 € par personne de son équipe. */

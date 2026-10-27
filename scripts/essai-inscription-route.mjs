@@ -37,6 +37,15 @@ v = await ville("Dax");
 ok(v.ouverte === true && v.inscrits === 1, `Dax : ouverte, 1 inscrit (${v.ouverte}, ${v.inscrits})`);
 v = await ville("x");
 ok(v.statut === 400, `une ville d'une lettre : refusée (${v.statut})`);
+v = await ville("Annecy");
+ok(v.echange === false, `Annecy : l'échange pas encore ouvert (${v.echange})`);
+// assez d'offres actives pour le seuil de l'échange (12, 3 pour les essais : ECHANGES_SEUIL_VILLE) : il s'ouvre tout seul
+const seuil = Number(process.env.ECHANGES_SEUIL_VILLE) || 3;
+for (let k = 0; k < seuil; k++)
+  await fetch(`${F}/human_echanges_offres`, { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ site_id: `ffffffff-0000-4000-8000-00000000a${String(k).padStart(3, "0")}`, ville_slug: "lyon", ville: "Lyon", actif: true }) });
+v = await ville("Lyon");
+ok(v.ouverte === false && v.echange === true, `Lyon : ${seuil} offres, l'échange ouvert tout seul, la ville pas encore (${v.ouverte}, ${v.echange})`);
 
 // ② où sont ses clients, gardés avec sa page (et rien d'autre)
 const r = await fetch(`${BASE}/api/site-internet/public-generate`, {
@@ -70,6 +79,11 @@ await p.getByLabel("Votre ville").fill("Dax");
 await p.getByText("Dax est ouverte").waitFor({ timeout: 15000 }).catch(() => {});
 texte = await p.evaluate(() => document.body.innerText);
 ok(texte.includes("Dax est ouverte") && texte.includes("Le Direct de Dax") && !texte.includes("s'ouvrira avec votre ville"), "Dax : ouverte, tout est là");
+await p.getByLabel("Votre ville").fill("Lyon");
+await p.getByText("À Lyon, vous aurez").waitFor({ timeout: 15000 }).catch(() => {});
+await p.waitForTimeout(300);
+texte = await p.evaluate(() => document.body.innerText);
+ok(texte.includes("Le Direct de Lyon") && texte.includes("l'échange entre commerçants de Lyon, déjà ouvert"), "Lyon : le Direct verrouillé, l'échange déjà ouvert");
 await p.getByLabel("Le nom de votre activité").fill("Le Petit Zinc");
 await p.getByLabel("Votre métier").fill("restaurant");
 await p.getByLabel("Je n'ai pas de fiche Google").check();

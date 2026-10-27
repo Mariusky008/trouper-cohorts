@@ -74,7 +74,7 @@ import {
   MOTIFS_SIGNALEMENT,
   PAR_MOIS,
   PAR_PERSONNE,
-  SEUIL_VILLE,
+  seuilVilleEchanges,
   accepte,
   codeNormalise,
   decouvertDe,
@@ -103,10 +103,7 @@ const absente = (e: { code?: string; message?: string } | null | undefined) =>
   !!e && (e.code === "42P01" || e.code === "42883" || e.code === "42703" || /does not exist|schema cache|Could not find|PGRST20\d/i.test(String(e.message ?? "")));
 
 /** Le seuil d'ouverture d'une ville : 12, ou moins pour un essai (`ECHANGES_SEUIL_VILLE`). */
-function seuilVille(): number {
-  const n = Math.round(Number(process.env.ECHANGES_SEUIL_VILLE));
-  return Number.isFinite(n) && n >= 1 ? n : SEUIL_VILLE;
-}
+const seuilVille = seuilVilleEchanges;
 
 type LigneOffre = {
   site_id: string;
