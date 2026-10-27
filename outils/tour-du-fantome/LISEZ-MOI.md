@@ -260,7 +260,7 @@ voix : `recu/court/v2-1…6.mp3` et `demo1-g.mp3`, lues mot pour mot.
 | 4 | « À la fin de la vidéo, chaque personne peut libérer son fantôme pour dire ce qu'elle en pense : “J'adore la vidéo”, “Je passerai un jour, c'est sûr”, ou “Je passe aujourd'hui”. » | la caméra plonge dans les trois cages ; trois doigts ; à chaque choix dit, sa cage s'allume et ses fantômes en sortent ; la caméra recule : 21, 12 et 5 |
 | 5 | « Et à partir de là, mon vrai travail commence. » | la foule s'assombrit, Mike au milieu, en grand ; la batterie se tait, puis repart |
 | 6 | « J'écris à chaque personne qui a libéré son fantôme, pour faire connaissance. Je la connais un peu mieux à chaque réponse… jusqu'au jour où elle pousse votre porte. » | un message part vers chacun des 38 ; la caméra s'approche de Camille, la conversation monte et sa fiche se remplit ; un mardi calme, sur votre WhatsApp ; « J'arrive ! » ; la façade, la porte s'ouvre, « Camille ! On t'attendait 😊 », « Camille est venue, grâce à votre vidéo » |
-| 7 | « Votre fantôme vous attend. » | Mike, « Créer mon espace · gratuit », le tour complet, « Revoir » |
+| 7 | « Votre fantôme vous attend. » | Mike, « Créer mon espace · gratuit », « Revoir » (pas de lien vers les tours complets : ils parlent des dépenses, qui demandent une ville ouverte) |
 
 Le calage des voix aide `caler()` (`coupures`, `liees`, dans `tour-court2.py`) : l'enregistrement se tait aussi
 devant un « p » ou un « t » (« elle | pousse »), pas seulement aux virgules.
