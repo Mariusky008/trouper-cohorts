@@ -82,7 +82,7 @@ export type PageBoutiqueProps = {
    * SA PHOTO CLIKME, VUE PAR LUI. Absente pour un visiteur et pour les
    * commerces de démonstration. Voir `couverture-clikme.tsx`.
    */
-  couverture?: { etat: EtatCouverture | null; candidates: string[]; fiche?: { lue: boolean; erreurs: string[]; detail?: string; enCours?: boolean } };
+  couverture?: { etat: EtatCouverture | null; candidates: string[]; fiche?: { lue: boolean; erreurs: string[]; detail?: string; enCours?: boolean; sansFiche?: boolean } };
 };
 
 /**
@@ -284,7 +284,7 @@ export function PageBoutique(p: PageBoutiqueProps) {
   const aOnglets = aLaPageAOnglets(carte.branche);
   const garder = modeDemo ? (
     <>
-      {p.couverture && <ChoixCouverture slug={slug} initial={p.couverture.etat} candidates={p.couverture.candidates} />}
+      {p.couverture && <ChoixCouverture slug={slug} initial={p.couverture.etat} candidates={p.couverture.candidates} sansFiche={p.couverture.fiche?.sansFiche} />}
       <GarderCeSite slug={slug} phoneDisplay={phoneDisplay} />
     </>
   ) : null;

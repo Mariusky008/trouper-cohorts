@@ -416,6 +416,9 @@ details p { padding: 0 0 22px; color: var(--gris); max-width: 46em }
 .g-lieu-c .vignette { width: 52px; height: 52px; border-radius: 12px; display: grid; place-items: center; background: rgba(255, 255, 255, .06); overflow: hidden }
 .g-lieu-c b { font-size: 12.5px; line-height: 1.25 } .g-lieu-c em { font-style: normal; font-size: 11px; color: var(--gris2); line-height: 1.3 }
 .g-lieu-c.on { border-style: solid; border-color: var(--menthe) }
+.g-sans { display: flex; align-items: center; gap: 10px; padding: 4px 2px; cursor: pointer; font-size: 14.5px; font-weight: 600; color: var(--gris) }
+.g-sans input { width: 20px; height: 20px; accent-color: var(--c1); flex: none }
+.g-sans-dit { padding: 12px 14px; border-radius: 14px; background: rgba(255, 244, 230, .06); color: var(--gris); font-size: 14px; line-height: 1.45 }
 .g-go { width: 100%; min-height: 60px; font-size: 17px; margin-top: 4px }
 .g-err { padding: 12px 14px; border-radius: 14px; background: rgba(255, 90, 90, .12); color: #ffc2c2; font-size: 14.5px; display: grid; gap: 10px }
 .g-err a { justify-self: start; color: var(--wa); font-weight: 700 }
@@ -752,7 +755,7 @@ footer .pied a:hover { color: var(--creme) }
     <div class="perche"></div>
     <div class="creer-tete monte">
       <h2 id="t-creer">Votre fantôme <span class="haut">vous attend.</span></h2>
-      <p class="plume">Créez votre page : je la construis sous vos yeux, à partir de votre fiche Google.</p>
+      <p class="plume">Créez votre page : je la construis sous vos yeux, à partir de votre fiche Google. Pas de fiche Google ? Inscrivez-vous quand même.</p>
     </div>
     <form class="gen" id="gen" novalidate>
       <input type="text" id="g-nom" placeholder="Nom de votre établissement" aria-label="Nom de votre établissement" autocomplete="organization">
@@ -772,10 +775,13 @@ footer .pied a:hover { color: var(--creme) }
         <p>Elles servent à votre page et à La ville. Téléphone à l’horizontale, à hauteur d’yeux, sans filtre. Vous pourrez les changer plus tard dans votre Espace Pro.</p>
         <div class="g-lieu-g" id="g-lieu-g"></div>
       </div>
+      <!-- SANS FICHE GOOGLE : beaucoup d’entrepreneurs n’en ont pas ; il s’inscrit quand même et remplit sa page lui-même -->
+      <label class="g-sans"><input type="checkbox" id="g-sans"> Je n’ai pas de fiche Google</label>
+      <p class="g-sans-dit" id="g-sans-dit" hidden>Inscrivez-vous quand même. Votre page se crée sans présentation : vous y mettrez vous-même vos informations (présentation, horaires, photos) depuis votre Espace Pro.</p>
       <button type="submit" class="btn rose g-go" id="g-go" disabled>✨ Créer mon espace gratuitement</button>
       <div class="g-err" id="g-err" hidden></div>
       <p class="g-ailleurs" id="g-ailleurs" hidden></p>
-      <p class="rassure"><span>60 secondes</span><span>Gratuit</span><span>À partir de votre fiche Google</span></p>
+      <p class="rassure"><span>60 secondes</span><span>Gratuit</span><span id="g-source">À partir de votre fiche Google</span></p>
     </form>
     <p class="contact">Une question ? Marius vous répond sur WhatsApp : <a href="https://wa.me/33768233347?text=Bonjour%20Marius%2C%20je%20voudrais%20en%20savoir%20plus%20sur%20ClikMe." target="_blank" rel="noopener">07 68 23 33 47</a></p>
   </div>
@@ -1203,7 +1209,9 @@ footer .pied a:hover { color: var(--creme) }
      (l'aperçu), on l'emmène sur clikme.fr avec ce qu'il a déjà tapé. */
   const SUR_CLIKME = !!$('meta[name="clikme-serveur"]');
   const WA_LIMITE = "https://wa.me/33768233347?text=" + encodeURIComponent("Bonjour Marius, je voudrais voir ce que ClikMe construirait pour mon activité.");
-  const ETAPES = ["Je cherche votre établissement sur Google…", "Je récupère vos photos et vos avis…", "Je choisis vos couleurs et vos textes…", "J'installe votre assistante IA…", "Je construis votre site…", "Presque prêt…"];
+  const ETAPES_GOOGLE = ["Je cherche votre établissement sur Google…", "Je récupère vos photos et vos avis…", "Je choisis vos couleurs et vos textes…", "J'installe votre assistante IA…", "Je construis votre site…", "Presque prêt…"];
+  const ETAPES_SANS = ["Je prépare votre page…", "J'installe vos photos…", "Je choisis vos couleurs…", "J'installe votre assistante IA…", "Je construis votre site…", "Presque prêt…"];
+  let ETAPES = ETAPES_GOOGLE;
   const LIEU = [
     { cle: "interieur", intitule: "L'intérieur", conseil: "Depuis l'entrée, avec une table ou un comptoir au premier plan." },
     { cle: "portrait", intitule: "Votre portrait", conseil: "Vous, souriant, dans votre commerce." },
@@ -1236,7 +1244,7 @@ footer .pied a:hover { color: var(--creme) }
     const l = $("#g-photo"); l.classList.toggle("on", !!photo);
     $(".vignette", l).innerHTML = photo ? `<img src="${photo}" alt="">` : "📷";
     $("b", l).textContent = photo ? "Photo de votre devanture ajoutée" : "Photo de votre devanture";
-    $("em", l).textContent = photo ? "Touchez pour en choisir une autre" : "Facultatif — de face, de jour, en entier. Sinon on prend celle de votre fiche Google";
+    $("em", l).textContent = photo ? "Touchez pour en choisir une autre" : indicePhoto();
   });
   $("#g-lieu-g").innerHTML = LIEU.map((x) => `<label class="g-lieu-c" title="${x.conseil}" data-cle="${x.cle}"><input type="file" accept="image/*"><span class="vignette" aria-hidden="true">📷</span><b>${x.intitule}</b><em>${x.conseil}</em></label>`).join("");
   $$("#g-lieu-g .g-lieu-c").forEach((l) => $("input", l).addEventListener("change", async (e) => {
@@ -1246,6 +1254,15 @@ footer .pied a:hover { color: var(--creme) }
     catch (er) { direPhoto(`« ${x.intitule} » n'a pas pu être lue. Essayez-en une autre, ou continuez sans.`); }
   }));
   $("#g-plus").addEventListener("click", () => { $("#g-lieu").hidden = false; $("#g-plus").hidden = true; });
+  // SANS FICHE GOOGLE : on ne la cherche pas, et on lui dit ce qui l'attend
+  const gSans = $("#g-sans");
+  const indicePhoto = () => (gSans.checked ? "Facultatif — elle ouvrira votre page" : "Facultatif — de face, de jour, en entier. Sinon on prend celle de votre fiche Google");
+  function majSans() {
+    $("#g-sans-dit").hidden = !gSans.checked;
+    $("#g-source").textContent = gSans.checked ? "Sans fiche Google : vous la remplissez" : "À partir de votre fiche Google";
+    if (!photo) $("em", $("#g-photo")).textContent = indicePhoto();
+  }
+  gSans.addEventListener("change", majSans);
 
   // La construction qui se dessine pendant la minute d'attente
   let animT = [];
@@ -1257,6 +1274,8 @@ footer .pied a:hover { color: var(--creme) }
     $("#c-role").textContent = [act, ville].filter(Boolean).join(" · ") || "Votre activité";
     $("#c-adr").textContent = "clikme.fr/" + (nom || "votre-page").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 22);
     $("#c-dk").textContent = "📍 Le Direct de " + (ville || "votre ville");
+    ETAPES = gSans.checked ? ETAPES_SANS : ETAPES_GOOGLE;
+    $("#c-etoiles").hidden = gSans.checked;
     const resto = /restau|resto|brasserie|bistro|pizz|cr[eê]p|bar|caf[eé]|traiteur|tapas/i.test(act), rdv = /coiff|barb|ongl|esth[eé]t|beaut|spa|massage|institut|soin/i.test(act);
     $("#c-q").textContent = `Bonsoir, il vous reste ${resto ? "une table" : rdv ? "un créneau" : "de la place"} samedi ?`;
     let step = 0, pct = 0;
@@ -1282,7 +1301,7 @@ footer .pied a:hover { color: var(--creme) }
     const nom = gNom.value.trim(), ville = gVille.value.trim(), activite = gAct.value.trim();
     if (!SUR_CLIKME) {
       // L'aperçu ne peut pas parler au serveur de clikme.fr : on l'y emmène, avec ce qu'il a déjà tapé
-      const q = new URLSearchParams({ nom, activite, ville, ...(choisi ? { metier: cle } : {}) });
+      const q = new URLSearchParams({ nom, activite, ville, ...(choisi ? { metier: cle } : {}), ...(gSans.checked ? { sansFiche: "1" } : {}) });
       const ailleurs = $("#g-ailleurs");
       ailleurs.hidden = false;
       ailleurs.textContent = "La création se fait sur clikme.fr : je vous y emmène avec votre nom, votre activité et votre ville." + (photo || Object.keys(autres).length ? " Vos photos sont à remettre là-bas." : "");
@@ -1293,7 +1312,7 @@ footer .pied a:hover { color: var(--creme) }
     try {
       const r = await fetch("/api/site-internet/public-generate", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessName: nom, city: ville, activite, ...(photo ? { photo } : {}) }),
+        body: JSON.stringify({ businessName: nom, city: ville, activite, ...(photo ? { photo } : {}), ...(gSans.checked ? { sansFiche: true } : {}) }),
       });
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.slug) {
@@ -1324,6 +1343,7 @@ footer .pied a:hover { color: var(--creme) }
     if (q.get("nom")) gNom.value = q.get("nom");
     if (q.get("ville")) gVille.value = q.get("ville");
     if (q.get("activite")) { gAct.value = q.get("activite"); gAct.dataset.auto = ""; }
+    if (q.get("sansFiche") === "1") { gSans.checked = true; majSans(); }
     majPret();
   })();
   // Revenu de la maquette par le bouton Retour : le navigateur rend la page telle qu'il l'a quittée,

@@ -282,7 +282,7 @@ async function lireLaCopie(copie: CopiePresentation) {
  * récentes ; pour les plus anciennes, une page sans note, sans avis et sans
  * photo Google n'a visiblement rien reçu de sa fiche.
  */
-function ficheLue(row: Record<string, unknown>): { lue: boolean; erreurs: string[]; detail?: string; enCours: boolean; carteEnCours: boolean } {
+function ficheLue(row: Record<string, unknown>): { lue: boolean; erreurs: string[]; detail?: string; enCours: boolean; carteEnCours: boolean; sansFiche: boolean } {
   const d = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
   const e = etatDeLaFiche(d);
   const rien =
@@ -297,6 +297,8 @@ function ficheLue(row: Record<string, unknown>): { lue: boolean; erreurs: string
     enCours: e.enCours,
     // SA CARTE SE LIT ENCORE : la page continue de suivre, et se relit quand elle arrive.
     carteEnCours: e.carteEnCours,
+    // IL N'A PAS DE FICHE GOOGLE (la case cochée à l'inscription) : sa page attend ce qu'il y mettra lui-même.
+    sansFiche: d.sans_fiche === true,
   };
 }
 

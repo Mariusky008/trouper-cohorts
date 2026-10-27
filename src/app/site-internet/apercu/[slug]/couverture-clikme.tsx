@@ -139,7 +139,7 @@ export function VeilleCouverture({
   initial: Etat;
   aDesPhotos: boolean;
   /** Sa fiche Google a-t-elle été lue, et sinon pourquoi. */
-  fiche?: { lue: boolean; erreurs: string[]; detail?: string; enCours?: boolean; carteEnCours?: boolean };
+  fiche?: { lue: boolean; erreurs: string[]; detail?: string; enCours?: boolean; carteEnCours?: boolean; sansFiche?: boolean };
 }) {
   const { etat, demander, envoyerPhoto, occupe, dit } = useCouverture(slug, initial);
   const router = useRouter();
@@ -273,7 +273,39 @@ export function VeilleCouverture({
       </>
     );
   }
-  if (fiche && !fiche.lue && !ferme && !couvertureFaite(etat)) {
+  /**
+   * IL N'A PAS DE FICHE GOOGLE (la case cochée à l'inscription) : rien n'a été
+   * lu, et rien ne le sera. Lui dire « votre fiche n'a pas été lue, relisez-la »
+   * l'enverrait chercher ce qu'il n'a pas. On lui dit ce qui l'attend : sa page
+   * n'a ni présentation, ni horaires, ni avis, il les met lui-même.
+   */
+  if (fiche?.sansFiche && !ferme && etat?.etat !== "en_cours" && !couvertureFaite(etat)) {
+    return (
+      <>
+        <style>{STYLE_VEILLE}</style>
+        <div className="ccl-appel" role="status">
+          <button type="button" className="ccl-x" aria-label="Fermer" onClick={() => setFerme(true)}>
+            ×
+          </button>
+          <b>📝 Votre page, c&apos;est vous qui la remplissez</b>
+          <span>
+            Sans fiche Google, elle n&apos;a pas encore de présentation, d&apos;horaires ni d&apos;avis : vous les
+            ajouterez depuis votre Espace Pro.
+            {aDesPhotos ? "" : " Pour commencer, envoyez une photo de votre lieu ou de votre travail : on en fait votre photo ClikMe."}
+          </span>
+          {!aDesPhotos && (
+            <div>
+              <EnvoyerPhoto onPhoto={envoyerPhoto} desactive={occupe}>
+                {occupe ? "Envoi…" : "Envoyer une photo"}
+              </EnvoyerPhoto>
+            </div>
+          )}
+          {dit && <em>{dit}</em>}
+        </div>
+      </>
+    );
+  }
+  if (fiche && !fiche.lue && !fiche.sansFiche && !ferme && !couvertureFaite(etat)) {
     const raison = fiche.erreurs[0];
     return (
       <>
@@ -355,11 +387,14 @@ export function ChoixCouverture({
   slug,
   initial,
   candidates,
+  sansFiche,
 }: {
   slug: string;
   initial: Etat;
   /** Ses photos, prêtes à afficher (dans l'ordre que le serveur numérote). */
   candidates: string[];
+  /** Il n'a pas de fiche Google : ne pas lui parler de celle-ci. */
+  sansFiche?: boolean;
 }) {
   const { etat, essaisMax, dit, occupe, demander, envoyerPhoto } = useCouverture(slug, initial);
   const [choisir, setChoisir] = useState(false);
@@ -379,8 +414,9 @@ export function ChoixCouverture({
       {!candidates.length ? (
         <>
           <p className="ccl-note">
-            Votre fiche Google n&apos;a pas de photo utilisable. Envoyez celle de votre devanture : elle
-            deviendra votre photo ClikMe.
+            {sansFiche
+              ? "Envoyez une photo de votre lieu ou de votre travail : elle deviendra votre photo ClikMe."
+              : "Votre fiche Google n'a pas de photo utilisable. Envoyez celle de votre devanture : elle deviendra votre photo ClikMe."}
           </p>
           <div className="ccl-gestes">
             <EnvoyerPhoto onPhoto={envoyerPhoto} desactive={occupe || enCours}>

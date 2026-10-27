@@ -55,9 +55,19 @@ export async function POST(request: Request) {
   if (businessName.length < 2 || city.length < 2 || activite.length < 2) {
     return NextResponse.json({ error: "Indiquez le nom, la ville et l'activité." }, { status: 400 });
   }
+  /**
+   * ═══ SANS FICHE GOOGLE ═══════════════════════════════════════════════════
+   *
+   * « Pour un entrepreneur, parfois il n'a pas de fiche Google : qu'il
+   * s'inscrive quand même, mais il devra remplir ses infos lui-même sur sa
+   * page, et il n'aura pas de présentation au départ. » Il l'a dit en cochant
+   * la case : on ne cherche rien chez Apify (rien à trouver, et c'est payant),
+   * et sa page ne lui annonce pas « votre fiche Google n'a pas été lue ».
+   */
+  const sansFiche = p?.sansFiche === true;
 
   const apifyToken = str(process.env.APIFY_TOKEN);
-  if (!apifyToken) {
+  if (!apifyToken && !sansFiche) {
     return NextResponse.json({ error: "Le générateur est momentanément indisponible. Contactez-nous directement." }, { status: 503 });
   }
 
@@ -132,9 +142,10 @@ export async function POST(request: Request) {
     google_reviews: null,
     google_place_id: null,
     diagnostic: {
-      source: "apify",
-      places_found: null,
-      fiche_en_cours: maintenant,
+      source: sansFiche ? "sans_fiche" : "apify",
+      places_found: sansFiche ? false : null,
+      // (sans fiche, rien ne se lit : pas de « Lecture de votre fiche Google… »)
+      ...(sansFiche ? { sans_fiche: true } : { fiche_en_cours: maintenant }),
       profil,
       photos: [],
       reviews_top: [],
@@ -168,7 +179,7 @@ export async function POST(request: Request) {
     try {
       // LA LECTURE EST LANCÉE CHEZ APIFY, PUIS SUIVIE ; elle continue même si
       // ce suivi s'arrête — sa page prend le relais. Voir `avancerLaFiche`.
-      const lancee = await lancerLaFiche(slug, { renommer: true });
+      const lancee = sansFiche ? false : await lancerLaFiche(slug, { renommer: true });
       const etat = lancee ? await conduireLaFiche(slug, debut + 250_000) : null;
       // SA CARTE, LUE SUR LES PHOTOS DE SA FICHE — voir `carte-lue.ts`.
       if (etat?.lue && etat.photos && Date.now() - debut < 230_000) await lireLaCarte(slug, origine);

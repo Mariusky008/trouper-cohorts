@@ -223,6 +223,9 @@ export default function HomePage() {
           .pop-home .genphoto.on{border-style:solid;border-color:var(--a1);}
           .pop-home .genplus{display:block;width:100%;margin:-2px 0 10px;padding:6px 0;border:0;background:none;font:inherit;font-size:13.5px;font-weight:700;color:var(--a1);text-align:left;cursor:pointer;}
           .pop-home .genplus em{font-style:normal;font-weight:500;color:var(--faint);}
+          .pop-home .gensans{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:13.5px;font-weight:700;color:var(--ink);cursor:pointer;}
+          .pop-home .gensans input{width:18px;height:18px;flex:none;accent-color:var(--a1);}
+          .pop-home .gensans-dit{margin:-4px 0 10px;padding:8px 12px;border-radius:12px;background:#F3F5F1;font-size:12.5px;line-height:1.4;color:var(--faint);}
           .pop-home .genlieu{margin-bottom:10px;}
           .pop-home .genlieu p{margin:0 0 8px;font-size:12px;line-height:1.4;color:var(--faint);}
           .pop-home .genlieu-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}

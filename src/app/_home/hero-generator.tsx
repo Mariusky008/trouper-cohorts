@@ -20,6 +20,8 @@ const STEPS = [
   "Je construis votre site…",
   "Presque prêt…",
 ];
+// Sans fiche Google : rien à chercher, rien à récupérer chez Google.
+const STEPS_SANS_FICHE = ["Je prépare votre page…", "J'installe vos photos…", "Je choisis vos couleurs…", ...STEPS.slice(3)];
 
 export function HeroGenerator() {
   const [nom, setNom] = useState("");
@@ -47,6 +49,14 @@ export function HeroGenerator() {
    */
   const [autres, setAutres] = useState<Partial<Record<CleLieu, string>>>({});
   const [voirAutres, setVoirAutres] = useState(false);
+  /**
+   * SANS FICHE GOOGLE. « Pour un entrepreneur, parfois il n'a pas de fiche
+   * Google : il faudra que ce soit mentionné sur la page d'inscription, qu'il
+   * s'inscrive quand même, mais il devra remplir ses infos lui-même sur sa
+   * page, et il n'aura pas de présentation au départ. » Voir `public-generate`.
+   */
+  const [sansFiche, setSansFiche] = useState(false);
+  const etapes = sansFiche ? STEPS_SANS_FICHE : STEPS;
   const [envoi, setEnvoi] = useState("");
   const timers = useRef<number[]>([]);
 
@@ -74,7 +84,7 @@ export function HeroGenerator() {
     setPct(0);
     // Progression douce vers ~94 % en ~55 s (l'appel Apify couvre l'attente).
     const t1 = window.setInterval(() => setPct((v) => (v < 94 ? v + Math.max(0.4, (94 - v) / 28) : v)), 650);
-    const t2 = window.setInterval(() => setStep((s) => (s < STEPS.length - 1 ? s + 1 : s)), 6000);
+    const t2 = window.setInterval(() => setStep((s) => (s < etapes.length - 1 ? s + 1 : s)), 6000);
     timers.current.push(t1, t2);
   };
   const stopAnim = () => {
@@ -102,6 +112,7 @@ export function HeroGenerator() {
           city: ville.trim(),
           activite: activite.trim(),
           ...(photo ? { photo } : {}),
+          ...(sansFiche ? { sansFiche: true } : {}),
         }),
       });
       const j = await r.json().catch(() => ({}));
@@ -124,7 +135,7 @@ export function HeroGenerator() {
         }
         stopAnim();
         setPct(100);
-        setStep(STEPS.length - 1);
+        setStep(etapes.length - 1);
         // Petit temps de complétion avant de basculer vers la maquette.
         window.setTimeout(() => { window.location.href = `/site-internet/apercu/${j.slug}`; }, 900);
         return;
@@ -168,7 +179,7 @@ export function HeroGenerator() {
           />
           {photo ? <img src={photo} alt="" /> : <span aria-hidden="true">📷</span>}
           <b>{photo ? "Photo de votre devanture ajoutée" : "Photo de votre devanture"}</b>
-          <em>{photo ? "Touchez pour en choisir une autre" : "Facultatif — de face, de jour, en entier. Sinon on prend celle de votre fiche Google"}</em>
+          <em>{photo ? "Touchez pour en choisir une autre" : sansFiche ? "Facultatif — elle ouvrira votre page" : "Facultatif — de face, de jour, en entier. Sinon on prend celle de votre fiche Google"}</em>
         </label>
         {photoDit && <div className="generr">{photoDit}</div>}
         {!voirAutres ? (
@@ -205,6 +216,15 @@ export function HeroGenerator() {
             </div>
           </div>
         )}
+        <label className="gensans">
+          <input type="checkbox" checked={sansFiche} onChange={(e) => setSansFiche(e.target.checked)} /> Je n&apos;ai pas de fiche Google
+        </label>
+        {sansFiche && (
+          <p className="gensans-dit">
+            Inscrivez-vous quand même. Votre page se crée sans présentation : vous y mettrez vous-même vos informations
+            (présentation, horaires, photos) depuis votre Espace Pro.
+          </p>
+        )}
         <button className="genbtn" onClick={submit} disabled={!ready}>
           ✨ Créer mon site gratuitement
         </button>
@@ -230,7 +250,7 @@ export function HeroGenerator() {
                   <div className="bp-htxt">
                     <div className={`bp-name${step >= 1 ? " on" : ""}`}>{nom.trim() || "Votre établissement"}</div>
                     <div className={`bp-role${step >= 2 ? " on" : ""}`}>{[activite.trim(), ville.trim()].filter(Boolean).join(" · ") || "Votre activité"}</div>
-                    <div className={`bp-stars${step >= 2 ? " on" : ""}`}>★★★★★ <span>avis Google</span></div>
+                    {!sansFiche && <div className={`bp-stars${step >= 2 ? " on" : ""}`}>★★★★★ <span>avis Google</span></div>}
                   </div>
                 </div>
                 <div className="bp-body">
@@ -266,7 +286,7 @@ export function HeroGenerator() {
             </div>
             <div className="genov-status">
               <div className="genov-title">Je construis le site de <b>{nom.trim() || "votre établissement"}</b>…</div>
-              <div className="genov-step"><span className="genov-dot" />{envoi || STEPS[step]}</div>
+              <div className="genov-step"><span className="genov-dot" />{envoi || etapes[step]}</div>
               <div className="genov-bar"><i style={{ width: `${Math.min(100, Math.round(pct))}%` }} /></div>
             </div>
           </div>
