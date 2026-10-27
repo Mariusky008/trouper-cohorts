@@ -10,6 +10,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { familleDuDouble } from "@/lib/direct/double-metiers";
+import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 import { jourParis } from "@/lib/jour-paris";
 import { motPropre, motsDeLaListe } from "@/lib/direct/petits-mots";
 
@@ -39,7 +40,8 @@ export async function POST(request: Request) {
   const x = site as Ligne | null;
   const siteId = s(x?.id);
   if (!siteId) return NextResponse.json({ error: "Commerce introuvable." }, { status: 404 });
-  if (liste && !motsDeLaListe(familleDuDouble({ metier: s(x?.activite) })).includes(texte)) {
+  // La même liste que la vitrine et la page de la famille : par sa branche ET son métier (un « Bistrot » est une table).
+  if (liste && !motsDeLaListe(familleDuDouble({ branche: brancheDuMetier(s(x?.activite)), metier: s(x?.activite) })).includes(texte)) {
     return NextResponse.json({ error: "Ce mot n'est pas dans la liste." }, { status: 400 });
   }
   const { data: cage } = await supabase.from("clik_cage").select("id").eq("site_id", siteId).eq("habitant_id", moi.id).limit(1);

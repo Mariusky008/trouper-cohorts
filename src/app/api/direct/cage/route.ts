@@ -11,7 +11,14 @@
 //
 // Le film doit être celui du commerce (son annonce en cours, ou une de ses
 // publications) : sans ce contrôle, on pourrait remplir le carnet de
-// n'importe quel commerce au nom de n'importe qui.
+// n'importe quel commerce au nom de n'importe qui. Une exception : sa page
+// publique (`/f/<lien>`), quand il n'a pas encore de vidéo — le « film » est
+// alors la page elle-même (`FILM_PAGE`), qui n'existe que pour un commerce
+// client de ClikMe (`est_client`) : jamais au nom d'un commerçant qui n'a rien demandé.
+//
+// 👻 ET IL ENTRE DANS LA FOULE DU JOUR de ce commerce (`clik_presence`, une
+// fois par jour), avec, son premier jour, qui l'a amené (`de` : le code de
+// l'invitation). Voir `lib/direct/famille.ts`.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant } from "@/lib/direct/habitant";
@@ -19,6 +26,8 @@ import { villeSlug } from "@/lib/direct/ville";
 import { filmDuCommerce } from "@/lib/direct/avis-film";
 import { estCage, numeroWhatsApp } from "@/lib/direct/cages";
 import { lookValide } from "@/lib/direct/look";
+import { FILM_PAGE } from "@/lib/direct/famille";
+import { noterPresence } from "@/lib/direct/famille-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -45,10 +54,11 @@ export async function POST(request: Request) {
   if (whatsapp && cage !== "un-jour") return NextResponse.json({ error: "Le numéro ne se laisse qu'avec « Je viendrai un jour »." }, { status: 400 });
 
   const supabase = createAdminClient();
-  const { data: site } = await supabase.from("human_vitrine_sites").select("id, city").eq("slug", slug).maybeSingle();
+  const { data: site } = await supabase.from("human_vitrine_sites").select("id, city, est_client").eq("slug", slug).maybeSingle();
   const siteId = s((site as Record<string, unknown> | null)?.id);
   if (!siteId) return NextResponse.json({ error: "Commerce introuvable." }, { status: 404 });
-  if (!(await filmDuCommerce(supabase, siteId, film))) return NextResponse.json({ error: "Ce film n'est pas celui de ce commerce." }, { status: 404 });
+  const filmOk = film === FILM_PAGE ? (site as Record<string, unknown>).est_client === true : await filmDuCommerce(supabase, siteId, film);
+  if (!filmOk) return NextResponse.json({ error: "Ce film n'est pas celui de ce commerce." }, { status: 404 });
 
   const ville = villeSlug(s(p?.ville) || s((site as Record<string, unknown> | null)?.city));
   const habitant = await assurerHabitant(supabase, ville);
@@ -81,5 +91,7 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ error: msg }, { status: 500 });
   }
+  // La foule du jour : sans la table (migration pas encore collée), la cage est gardée quand même.
+  await noterPresence(supabase, siteId, habitant.id, s(p?.de)).catch(() => false);
   return NextResponse.json({ ok: true });
 }

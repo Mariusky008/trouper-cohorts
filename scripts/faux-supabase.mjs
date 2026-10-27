@@ -88,6 +88,8 @@ const DEFAUTS = {
   clik_message: () => ({ id: randomUUID(), plus: "", envoye_le: maintenant() }),
   clik_ardoise: () => ({ ecrite_le: maintenant() }),
   clik_mot: () => ({ id: randomUUID(), liste: false, coeur_le: null, cadeau: "", cadeau_le: null, created_at: maintenant() }),
+  // LA FOULE DU JOUR — `…_clik_famille.sql`.
+  clik_presence: () => ({ amene_par: null, created_at: maintenant() }),
 };
 const CLES = {
   human_conversations: ["id"],
@@ -111,6 +113,7 @@ const CLES = {
   clik_visite: ["site_id", "habitant_id", "jour"],
   clik_ardoise: ["site_id"],
   clik_mot: ["site_id", "habitant_id", "jour"],
+  clik_presence: ["site_id", "habitant_id", "jour"],
 };
 
 /** Le déclencheur `echanges_pause_garde` : en pause après deux signalements, une offre ne se remet pas en ligne. */

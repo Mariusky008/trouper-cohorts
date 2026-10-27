@@ -44,6 +44,7 @@ export function VitrineFantomes({
   onPrenom,
   mots,
   onMot,
+  moiDit = "Vous",
 }: {
   nom: string;
   /** Sous l'enseigne : « RESTAURANT · DAX ». */
@@ -59,6 +60,8 @@ export function VitrineFantomes({
   /** 💌 Les mots de la liste, et l'envoi de son petit mot (rend l'erreur à dire, ou `null`). */
   mots?: string[];
   onMot?: (texte: string, liste: boolean) => Promise<string | null>;
+  /** Le mot sous son fantôme : « Vous » dans l'appli, « Toi » sur la page de la famille. */
+  moiDit?: string;
 }) {
   const [touche, setTouche] = useState<string | null>(null);
   const [maintenant] = useState(() => Date.now());
@@ -86,7 +89,7 @@ export function VitrineFantomes({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imageDe(f.look, f.cage)} alt="" draggable={false} />
-        {f.moi && <span className="nom">{f.prenom && vitrine.prenomVisible ? `Vous · ${f.prenom}` : "Vous"}</span>}
+        {f.moi && <span className="nom">{f.prenom && vitrine.prenomVisible ? `${moiDit} · ${f.prenom}` : moiDit}</span>}
         {f.coeur && !f.ecussons?.includes("coeur") && (
           <i className="vf-coeur" aria-hidden="true">
             💛
@@ -307,6 +310,7 @@ export function VitrineDuCommerce({
   cage,
   prenom,
   ardoise,
+  moiDit,
 }: {
   carte: { id: string; nom: string; branche: string; metier?: string; photo?: string; villeReelle?: string };
   /** La cage qu'il vient de libérer. */
@@ -314,6 +318,8 @@ export function VitrineDuCommerce({
   prenom: string;
   /** Dans la démonstration : ce qui se passe en ce moment (« Le service du midi »). */
   ardoise?: string;
+  /** « Toi » sur la page de la famille (« Vous » sinon). */
+  moiDit?: string;
 }) {
   const look = useSyncExternalStore(abonnerLook, monLook, monLook);
   const reelle = Boolean(carte.villeReelle);
@@ -426,6 +432,7 @@ export function VitrineDuCommerce({
       onPrenom={changerPrenom}
       mots={liste}
       onMot={envoyerMot}
+      moiDit={moiDit}
     />
   );
 }

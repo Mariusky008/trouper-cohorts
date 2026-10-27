@@ -38,6 +38,11 @@ jobs:
           src/app/e src/app/bon src/app/facture
           src/app/api/site-internet/pro/echanges
           src/lib/echanges
+      - name: Lint de la famille
+        run: >-
+          npx eslint
+          src/app/f src/app/api/direct/famille
+          src/lib/direct/famille.ts src/lib/direct/famille-serveur.ts
 
   essais-sql:
     name: Essais SQL
@@ -72,6 +77,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: faux
       SUPABASE_SERVICE_ROLE_KEY: faux
       ECHANGES_SEUIL_VILLE: "3"
+      # Le numéro WhatsApp de ClikMe sur la page de la famille : un numéro réservé à la fiction (ARCEP), rien ne part.
+      CLIKME_WHATSAPP: "+33 6 39 98 00 00"
       # `src/lib/stripe.ts` refuse de se charger sans clé : une fausse suffit, rien ne part chez Stripe.
       STRIPE_SECRET_KEY: sk_test_faux
       NEXT_TELEMETRY_DISABLED: "1"

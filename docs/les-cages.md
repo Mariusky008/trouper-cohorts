@@ -221,6 +221,35 @@ a promis puis est passé, d'après son carnet.
 - `src/app/autour-de-moi/mes-ecussons.tsx` : Ma Maison ; `Ecussons` dans `vitrine-fantomes.tsx` : la broderie.
 - **Aucune nouvelle table** : tout vient des cages, des passages et des petits mots.
 
+## 👻 La famille d'un commerce : sa page publique `clikme.fr/f/<lien>` (chantier 1)
+
+« Rejoins ma famille de fantômes ! Tu m'aides à me faire connaître, je te gâte ! » : la fin de sa vidéo du jour,
+le lien de sa bio et le QR de son comptoir mènent ici. Sans compte et sans appli :
+
+- **L'accueil** : sa vidéo (son annonce en cours, sinon sa dernière publication filmée ; sinon sa photo, sinon son
+  fantôme qui salue), la foule d'aujourd'hui, le record à battre (« Plus que 4 pour battre le record »), et les
+  trois cages avec son fantôme à soi. La famille encore vide : « Sois le tout premier fantôme de… ».
+- **La fiche**, à la première cage : son fantôme (touche pour changer), son prénom, son petit mot s'il veut (la
+  liste du métier, ou le sien). « Entrer dans la famille ». Qui est déjà de la famille n'a rien à retaper.
+- **La famille** : « Tu es le fantôme n°48 de… » (l'ordre d'arrivée : sa première cage ici), son écusson bronze,
+  argent ou or cousu à son numéro, ce qui le fait monter, la vitrine (« Toi · Camille », les fantômes, leurs petits
+  mots), « 💬 Mes bons plans sur WhatsApp » vers le numéro de ClikMe (le message pour Mike est déjà écrit), et
+  « 📣 Il en manque 3 : inviter un ami » — son lien porte son code (`?de=`). Revenir le même jour rouvre sa famille.
+
+**Les paliers sont dans `PALIERS`, et seulement là** (`src/lib/direct/famille.ts`) : une condition suffit.
+Aujourd'hui, argent = 1 visite notée au comptoir **ou** 7 jours de cage ; or = 5 visites **ou** 3 amis amenés.
+Changer un chiffre change la page et la route à la fois.
+
+- **Seulement pour un commerce client** (`est_client`) : on n'invite personne dans la famille d'un prospect, et la
+  page elle-même ne sert de « film » (`FILM_PAGE`) qu'à un client.
+- La foule du jour : une ligne par personne, par commerce et par jour (`clik_presence`), écrite par la route des
+  cages. Le record à battre : le plus grand jour d'avant. Qui l'a amené : posé son premier jour seulement.
+- Le bouton WhatsApp ne paraît que si le numéro de ClikMe est réglé : variable `CLIKME_WHATSAPP` sur Vercel
+  (« +33 6 … »). Sans elle, il reste l'invitation.
+- `src/app/f/[slug]/page.tsx` (le chargement) et `famille.tsx` (le dessin) ; `api/direct/famille` (la foule, le
+  record, son numéro, son écusson) ; `src/lib/direct/famille-serveur.ts`.
+- `supabase/migrations/20261101090000_clik_famille.sql` : `clik_presence`.
+
 ## L'activer en production
 
 **Les deux tables doivent être créées une fois** : coller le contenu de
@@ -238,6 +267,9 @@ elle, la vitrine s'affiche, mais l'ardoise répond « L'ardoise n'est pas encore
 Les petits mots demandent `supabase/migrations/20261031090000_clik_mots.sql` ; sans elle, « Envoyer » répond « Les
 petits mots ne sont pas encore activés » et la carte du comptoir ne paraît pas. Sans les cages, la carte dit « Bientôt, à la fin de tes vidéos » ; sans les passages, le carnet
 s'affiche mais « Passage aujourd'hui » répond « Les passages ne sont pas encore activés. »
+La famille demande `supabase/migrations/20261101090000_clik_famille.sql` (la foule du jour) ; sans elle, la page
+`/f/<lien>` marche (les cages se gardent, le numéro et l'écusson se voient), mais la foule se compte d'après les
+cages du jour, le record ne paraît pas, et ni les jours de cage ni les amis amenés ne comptent pour les paliers.
 
 ## Vérifier
 
@@ -250,6 +282,10 @@ s'affiche mais « Passage aujourd'hui » répond « Les passages ne sont pas enc
   les petits mots (un par jour, la modération, le 💛, offrir sans alcool, les réponses dans Ma Maison), et les
   écussons (la parole tenue, jamais avant la promesse ; le pin seulement chez ce commerce ; le coup de cœur ; Ma
   Maison de chacun ; un numéro d'écran qui ne bouge pas quand un autre arrive).
+- `node scripts/essai-famille-route.mjs` (CI aussi) : la foule du jour, une fois par jour ; le numéro ; l'ami amené
+  (le premier jour seulement) ; le record d'avant ; les paliers ; jamais pour un prospect ; la page.
+- `node scripts/navigateur/famille-page.mjs` (CI aussi) : la page dans un téléphone, de l'accueil à la famille, le
+  retour le même jour, l'ami venu par le lien, la famille vide.
 - Le carnet dans le navigateur : `/autour-de-moi/assistante?metier=table`, la carte « Mon carnet ».
 - Dans le navigateur : `/autour-de-moi`, Restaurants, Chez Bergine, « Voir toutes les offres + infos », le film
   « En cuisine, pendant le service » jusqu'au bout.
