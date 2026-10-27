@@ -44,7 +44,7 @@ SOUS = {
            "jusqu’au jour où | elle pousse votre porte.", {"coupures": ("elle", "pousse")}),
     # la famille (d'après la démo du parcours) : la vidéo du jour, la foule devant la porte, l'écusson d'or
     "f1": ("v2-7-famille", "Et chaque jour, | une nouvelle vidéo invite | à rejoindre votre famille de fantômes. | Elle grandit devant votre porte.", {}),
-    "f2": ("v2-8-ecusson", f"Les plus fidèles | gagnent l’écusson d’or{NB}: | ce sont eux que je préviens en premier | de vos bons plans.", {}),
+    "f2": ("v2-8-ecusson", f"Les plus fidèles | gagnent l’écusson d’or{NB}: | ce sont eux que je préviens en premier | de vos bons plans.", {"coupures": ("eux",)}),
     "v7": ("demo1-g", "Votre fantôme vous attend.", {}),
 }
 LOOKS = ["cosy", "fleuri", "curieux", "artiste", "denim", "rebelle", "soleil", "voyageur"]

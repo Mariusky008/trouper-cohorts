@@ -249,7 +249,7 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-court2/index
 ```
 
 (la page, ouverte avec `?rendu`, dessine l'instant demandé et calcule son propre son hors ligne ; ffmpeg assemble). Les
-voix : `recu/court/v2-1…6.mp3` et `demo1-g.mp3`, lues mot pour mot (et bientôt `v2-7-famille.mp3`, `v2-8-ecusson.mp3`).
+voix : `recu/court/v2-1…8.mp3` et `demo1-g.mp3`, lues mot pour mot.
 
 | Voix | Ce qui est dit | À l'écran |
 |---|---|---|
@@ -265,11 +265,10 @@ voix : `recu/court/v2-1…6.mp3` et `demo1-g.mp3`, lues mot pour mot (et bientô
 | 7 | « Votre fantôme vous attend. » | Mike, « Créer mon espace · gratuit » (vers `/inscription`, la page d'inscription pour tout le monde), « Revoir » (pas de lien vers les tours complets : ils parlent des dépenses, qui demandent une ville ouverte) |
 
 **La famille (F1, F2)** reprend le plus fort de la démo du parcours (la vidéo du jour, la famille devant la porte,
-les écussons, les bons plans en premier), après la venue de Camille. Ses deux voix sont à enregistrer par le
-propriétaire, mot pour mot : `recu/court/v2-7-famille.mp3` et `recu/court/v2-8-ecusson.mp3`. Tant qu'un fichier manque,
-`estimer()` donne à la réplique une durée au rythme des autres, la page la montre en sous-titres sur la musique seule
-et ne cherche pas sa voix ; dès que les fichiers sont là, relancer le script la cale mot à mot. La démo passe ainsi
-d'environ 46 s à 60 s (à revoir avec les vraies durées).
+les écussons, les bons plans en premier), après la venue de Camille. Ses deux voix : `recu/court/v2-7-famille.mp3`
+et `recu/court/v2-8-ecusson.mp3` (on y entend une pause après « ce sont » : `coupures`). La démo passe ainsi d'environ
+46 s à 61 s. Une réplique ajoutée avant son enregistrement prend une durée estimée (`estimer()`) : la page la montre en
+sous-titres sur la musique seule, sans chercher sa voix, jusqu'à ce que le fichier arrive et qu'on relance le script.
 
 Le calage des voix aide `caler()` (`coupures`, `liees`, dans `tour-court2.py`) : l'enregistrement se tait aussi
 devant un « p » ou un « t » (« elle | pousse »), pas seulement aux virgules.
