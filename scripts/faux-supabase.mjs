@@ -3,7 +3,7 @@
  *
  * Il répond comme PostgREST (`/rest/v1/<table>`) et comme le stockage
  * (`/storage/v1/object/…`) à ce dont l'application se sert : filtres eq, neq,
- * in, is, not, gte, lt, lte, gt ; order ; limit ; offset (pagination) ; select de colonnes ; count ;
+ * in, is, not, gte, lt, lte, gt, ilike ; order ; limit ; offset (pagination) ; select de colonnes ; count ;
  * insert / update / delete ; envoi d'un fichier ; adresse signée (lecture et
  * envoi) ; seaux (lire, créer) ; adresse publique — REFUSÉE pour un seau
  * privé, comme le vrai.
@@ -182,6 +182,13 @@ function filtre(param, brut) {
         return x !== null && x !== undefined && String(x) <= valeur(reste);
       case "lt":
         return x !== null && x !== undefined && String(x) < valeur(reste);
+      case "ilike": {
+        // « %annecy% » : % pour n'importe quoi, _ pour un caractère, sans tenir compte de la casse
+        // (pas `valeur` : l'adresse est déjà décodée, et un « % » nu ne se décode pas)
+        const brut = reste.startsWith('"') && reste.endsWith('"') ? reste.slice(1, -1) : reste;
+        const motif = brut.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*").replace(/_/g, ".");
+        return x !== null && x !== undefined && new RegExp(`^${motif}$`, "is").test(String(x));
+      }
       default:
         return true;
     }

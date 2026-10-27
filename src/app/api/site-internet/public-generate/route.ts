@@ -65,6 +65,13 @@ export async function POST(request: Request) {
    * et sa page ne lui annonce pas « votre fiche Google n'a pas été lue ».
    */
   const sansFiche = p?.sansFiche === true;
+  /**
+   * OÙ SONT SES CLIENTS (la première question de `/inscription`) : ils viennent chez lui, il va chez eux, ou il
+   * leur envoie / travaille à distance — plusieurs à la fois. Gardé avec sa page : c'est ce qui dira, demain, s'il
+   * va dans le Direct de sa ville, dans celui de la France, ou les deux.
+   */
+  const CLIENTS = ["chez-moi", "chez-eux", "distance"];
+  const clients = Array.isArray(p?.clients) ? CLIENTS.filter((c) => (p?.clients as unknown[]).includes(c)) : [];
 
   const apifyToken = str(process.env.APIFY_TOKEN);
   if (!apifyToken && !sansFiche) {
@@ -158,7 +165,7 @@ export async function POST(request: Request) {
     // LE JETON DE SES PHOTOS : il a rempli le formulaire, il peut y joindre
     // ses autres photos tout de suite — pendant trois heures, et pour cette
     // page seulement (`/api/site-internet/photos-lieu`).
-    metadata: { self_serve: true, self_serve_ip: ipHash, self_serve_at: maintenant, jeton_photos: jetonPhotos, jeton_photos_at: maintenant },
+    metadata: { self_serve: true, self_serve_ip: ipHash, self_serve_at: maintenant, jeton_photos: jetonPhotos, jeton_photos_at: maintenant, ...(clients.length ? { clients } : {}) },
   };
 
   const { error } = await supabase.from("human_vitrine_sites").insert(row);
