@@ -5,10 +5,13 @@
 # une très belle vidéo du commerce et la publie partout ; « mais ce n'est pas là que je suis le plus fort, c'est juste
 # après » : à la fin de la vidéo, chacun libère son fantôme pour dire ce qu'il en pense (« J'adore la vidéo », « Je
 # passerai un jour, c'est sûr », « Je passe aujourd'hui ») ; « et à partir de là, mon vrai travail commence » : il écrit
-# à chacun, apprend à connaître Camille réponse après réponse, jusqu'au jour où elle pousse la porte.
+# à chacun, apprend à connaître Camille réponse après réponse, jusqu'au jour où elle pousse la porte. Puis la famille
+# (d'après la démo du parcours) : chaque jour, la vidéo invite à rejoindre la famille de fantômes, qui grandit devant
+# la porte ; les plus fidèles gagnent l'écusson d'or, et Mike les prévient en premier des bons plans.
 #
-# Les voix : les enregistrements « Mike » du propriétaire (`recu/court/v2-1…6.mp3`, `demo1-g.mp3`), lus mot pour mot,
-# égalisés et calés mot à mot sur leurs pauses (`voix_courtes.py`).
+# Les voix : les enregistrements « Mike » du propriétaire (`recu/court/v2-1…8.mp3`, `demo1-g.mp3`), lus mot pour mot,
+# égalisés et calés mot à mot sur leurs pauses (`voix_courtes.py`). Une réplique pas encore enregistrée prend une
+# durée estimée (`estimer`) : la page la montre en sous-titres, sur la musique seule.
 #
 #   /usr/bin/python3 -I outils/tour-du-fantome/outils/tour-court2.py outils/tour-du-fantome
 #   node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-court2/index.html sortie.mp4 30 1.5   (la vidéo, avec le son)
@@ -39,6 +42,9 @@ SOUS = {
     "v5": ("v2-5-travail", "Et à partir de là, | mon vrai travail commence.", {"coupures": ("commence.",)}),
     "v6": ("v2-6-camille", "J’écris à chaque personne | qui a libéré son fantôme, | pour faire connaissance. | Je la connais un peu mieux | à chaque réponse… | "
            "jusqu’au jour où | elle pousse votre porte.", {"coupures": ("elle", "pousse")}),
+    # la famille (d'après la démo du parcours) : la vidéo du jour, la foule devant la porte, l'écusson d'or
+    "f1": ("v2-7-famille", "Et chaque jour, | une nouvelle vidéo invite | à rejoindre votre famille de fantômes. | Elle grandit devant votre porte.", {}),
+    "f2": ("v2-8-ecusson", f"Les plus fidèles | gagnent l’écusson d’or{NB}: | ce sont eux que je préviens en premier | de vos bons plans.", {}),
     "v7": ("demo1-g", "Votre fantôme vous attend.", {}),
 }
 LOOKS = ["cosy", "fleuri", "curieux", "artiste", "denim", "rebelle", "soleil", "voyageur"]
@@ -51,15 +57,48 @@ FACADE = ('<div class="fac abs"><i class="fac-f"></i><div class="fac-ens"><b cla
           '<div class="fac-porte"><div class="fac-battant"><i></i></div></div><i class="fac-trot"></i>'
           '<div class="arrivent"><span class="fg" style="left:62%;top:93%;--h:21cqw"><img src="g/fleuri-debout.webp" alt=""><b>Camille</b></span>'
           '<span class="fg" style="left:74%;top:93%;--h:20cqw"><img src="g/cosy-debout.webp" alt=""></span></div>'
-          f'<p id="bulle-chef">Camille{NB}! On t’attendait 😊</p></div>')
+          f'<p id="bulle-chef">Camille{NB}! On t’attendait 😊</p>@FAMILLE@</div>')
+
+# la famille devant la porte : chaque fantôme porte son écusson cousu (bronze, argent, or) ; deux s'avancent avec leur mot
+FAMILLE = [  # (gauche %, pied %, hauteur cqw, look, écusson)
+    (18, 84, 14, "voyageur", "bronze"), (34, 83, 14, "rebelle", "bronze"), (50, 84, 14, "curieux", "argent"), (66, 83, 14, "soleil", "bronze"), (82, 84, 14, "artiste", "bronze"),
+    (9, 97, 18, "curieux", "argent"), (25, 98, 21, "soleil", "or"), (41, 97, 18, "denim", "bronze"), (58, 98, 18, "cosy", "argent"), (75, 97, 18, "artiste", "or"), (91, 98, 17, "fleuri", "bronze"),
+]
+FAMILLE_HTML = ('<div class="famille">' + "".join(
+    f'<span class="fg fam" style="left:{x}%;top:{y}%;--h:{h}cqw"><span class="corps"><img src="g/{g}-debout.webp" alt=""><i class="patch {e}"></i></span></span>'
+    for x, y, h, g, e in FAMILLE) + "</div>"
+    f'<p class="bulle-fam" id="bf1">« Merci pour l’accueil de samedi{NB}! »<small>Hugo · fantôme n°31 🥈</small></p>'
+    f'<p class="bulle-fam" id="bf2">« Le magret, sans hésiter 🔥 »<small>Léa · fantôme n°12 🥇</small></p>')
 
 # ─── LES VOIX ───────────────────────────────────────────────────────────────────────────────
 os.makedirs(f"{D}/voix", exist_ok=True)
 os.makedirs(f"{D}/g", exist_ok=True)
 os.makedirs(f"{D}/js", exist_ok=True)
 TEMPS = {}
+
+
+def estimer(texte):
+    """Une réplique pas encore enregistrée : ses mots au rythme des autres (un peu plus de 3 mots par seconde, un
+    temps aux virgules et aux points). La page la montre en sous-titres, sur la musique seule."""
+    t, m = 0.0, []
+    for w in texte.split(" "):
+        m.append(round(t, 3))
+        t += 0.12 + 0.035 * len(re.sub(r"\W", "", w))
+        if w[-1:] in ",:":
+            t += 0.2
+        elif w[-1:] in ".!?…":
+            t += 0.35
+    return {"d": round(t, 2), "m": m, "estime": True}
+
+
 for c, (fichier, texte, aide) in SOUS.items():
     src = f"{R}/{fichier}.mp3"
+    if not os.path.exists(src):
+        TEMPS[c] = estimer(texte.replace(" | ", " "))
+        if os.path.exists(f"{D}/voix/{c}.mp3"):
+            os.remove(f"{D}/voix/{c}.mp3")
+        print(c, TEMPS[c]["d"], "s · durée estimée : pas encore enregistrée", f"(recu/court/{fichier}.mp3)")
+        continue
     egaliser(FF, src, f"{D}/voix/{c}.mp3")
     a = caler(FF, src, texte.replace(" | ", " "), "-38dB", aide.get("coupures", ()), aide.get("liees", ()))
     TEMPS[c] = {"d": a["d"], "m": a["m"]}
@@ -77,7 +116,7 @@ for f in ("gsap.min.js", "MotionPathPlugin.min.js"):
 
 # ─── LA PAGE ─────────────────────────────────────────────────────────────────────────────────
 page = open(f"{S}/outils/tour-court2.html", encoding="utf-8").read()
-page = page.replace("@FACADE@", FACADE)
+page = page.replace("@FACADE@", FACADE.replace("@FAMILLE@", FAMILLE_HTML))
 page = re.sub("@TOQUE@", lambda m: toque(), page)
 page = page.replace("@CAGE_ROSE@", cage_mini("#FF2E9A", True)).replace("@CAGE_ORANGE@", cage_mini("#F5A23A", False)).replace("@CAGE_VERTE@", cage_mini("#3DE2A6", False))
 page = page.replace("/*@TEMPS@*/null", json.dumps(TEMPS, ensure_ascii=False))

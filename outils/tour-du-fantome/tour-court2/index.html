@@ -131,6 +131,36 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   color:#2A1A10;background:var(--creme);box-shadow:0 2cqw 5cqw -1cqw rgba(0,0,0,.7);transform-origin:100% 100%}
 #venue{padding:16px 34px;border-radius:40px;white-space:nowrap;font-size:42px;font-weight:900;color:#04150E;background:linear-gradient(135deg,#9FF5C9,#3DE2A6);box-shadow:0 18px 40px -14px rgba(61,226,166,.8);opacity:0}
 
+/* ── la famille devant la porte : chaque fantôme porte son écusson cousu ; deux s'avancent avec leur mot ── */
+.famille .fg{opacity:0}
+.fac .fg.fam .corps{position:relative;display:block}
+.fac .fg.fam img{display:block}
+.patch{position:absolute;left:46%;top:68%;width:30%;aspect-ratio:1;border-radius:50%;container-type:inline-size;
+  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.45),transparent 58%),var(--e);box-shadow:0 .3cqw .5cqw rgba(0,0,0,.5)}
+.patch::before{content:"";position:absolute;inset:10%;border-radius:50%;border:max(1px,5cqw) dashed rgba(255,248,234,.85)}
+.patch.bronze{--e:#C98A4B}.patch.argent{--e:#BFC5CF}.patch.or{--e:#E2B04A}
+.bulle-fam{position:absolute;left:50%;top:27%;z-index:9;width:78%;margin:0;padding:2.4cqw 3cqw 2cqw;border-radius:3.4cqw;text-align:center;font-size:4.8cqw;font-weight:800;line-height:1.25;
+  color:#2A1A10;background:var(--creme);box-shadow:0 2cqw 5cqw -1cqw rgba(0,0,0,.7);opacity:0}
+.bulle-fam small{display:block;margin-top:.8cqw;font-size:3.1cqw;font-weight:700;color:#7A5560}
+.bulle-fam::after{content:"";position:absolute;left:50%;bottom:-2.2cqw;margin-left:-2.4cqw;border:2.4cqw solid transparent;border-top-color:var(--creme);border-bottom:0}
+#record{padding:16px 34px;border-radius:40px;white-space:nowrap;font-size:42px;font-weight:900;color:#2A1206;background:linear-gradient(135deg,#FFE3A0,#F2C46B 55%,#C8933F);box-shadow:0 18px 40px -14px rgba(242,196,107,.8);opacity:0}
+
+/* ── la vidéo du jour (à l'écran, par-dessus) : « Rejoins ma famille de fantômes ! » ── */
+#jour{position:absolute;left:0;right:0;top:470px;height:1300px;pointer-events:none;opacity:0}
+.j-tel{position:absolute;left:250px;width:580px;top:30px;height:1050px;padding:16px;border-radius:72px;background:#050204;box-shadow:0 0 0 3px #3a2733,0 60px 120px -30px rgba(0,0,0,.9)}
+.j-ecran{position:relative;height:100%;overflow:hidden;border-radius:58px;padding:128px 40px 0;text-align:center;color:#fff;background:radial-gradient(circle at 50% 28%,#FF5DB8,#E0167A 55%,#7A0F4A)}
+.j-quand{position:absolute;left:0;right:0;top:56px;font-size:24px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+.j-titre{display:block;font-size:62px;font-weight:900;line-height:1.04;letter-spacing:-.01em;text-shadow:0 8px 30px rgba(80,0,40,.45)}
+.j-gate{display:inline-block;margin-top:30px;padding:18px 26px;border-radius:26px;font-size:36px;font-weight:900;line-height:1.2;color:#7A0F4A;background:var(--creme);box-shadow:0 16px 30px rgba(80,0,40,.35)}
+.j-fin{display:inline-block;margin-top:26px;padding:12px 28px;border-radius:40px;font-size:28px;font-weight:800;background:#2C0912}
+.j-chef{position:absolute;left:50%;bottom:34px;width:230px;margin-left:-115px;filter:drop-shadow(0 20px 30px rgba(80,0,40,.5))}
+.j-barre{position:absolute;left:0;bottom:0;width:100%;height:9px;background:#fff}
+.j-carte{position:absolute;top:110px;width:420px;height:760px;overflow:hidden;border-radius:52px;border:12px solid #050204;box-shadow:0 40px 80px -30px rgba(0,0,0,.9);opacity:0}
+.j-carte img{width:100%;height:100%;object-fit:cover;filter:brightness(.55)}
+.j-carte span{position:absolute;left:0;right:0;top:30px;text-align:center;font-size:30px;font-weight:900;color:#fff}
+#jc1{left:40px}#jc2{right:40px}
+#notif-or{position:absolute;left:60px;max-width:900px;top:500px;opacity:0;box-shadow:0 30px 60px -20px rgba(0,0,0,.8)}
+
 /* ── la conversation avec Camille (à l'écran, par-dessus) ── */
 #chat{position:absolute;left:40px;right:40px;top:800px;height:1080px;padding:34px 34px 30px;border-radius:56px;background:linear-gradient(180deg,rgba(48,26,38,.97),rgba(22,10,17,.98));
   border:2px solid rgba(255,214,140,.22);box-shadow:0 -30px 80px -20px rgba(0,0,0,.8);transform:translateY(1200px)}
@@ -264,8 +294,9 @@ img{display:block;-webkit-user-drag:none;user-select:none}
     <span class="groupe abs" id="g2" style="--c:#E08A1E">📌 12 passeront un jour</span>
     <span class="groupe abs" id="g3" style="--c:#1BA97A">🍽️ 5 passent aujourd’hui</span>
     <!-- la façade : la porte qu'elle pousse -->
-    <div class="fac abs"><i class="fac-f"></i><div class="fac-ens"><b class="nom-commerce">Chez Bergine</b><small>BISTROT · DAX</small></div><i class="fac-store"></i><div class="fac-vit"><img src="si-interieur.webp" alt=""></div><i class="fac-lumiere"></i><div class="fac-porte"><div class="fac-battant"><i></i></div></div><i class="fac-trot"></i><div class="arrivent"><span class="fg" style="left:62%;top:93%;--h:21cqw"><img src="g/fleuri-debout.webp" alt=""><b>Camille</b></span><span class="fg" style="left:74%;top:93%;--h:20cqw"><img src="g/cosy-debout.webp" alt=""></span></div><p id="bulle-chef">Camille ! On t’attendait 😊</p></div>
+    <div class="fac abs"><i class="fac-f"></i><div class="fac-ens"><b class="nom-commerce">Chez Bergine</b><small>BISTROT · DAX</small></div><i class="fac-store"></i><div class="fac-vit"><img src="si-interieur.webp" alt=""></div><i class="fac-lumiere"></i><div class="fac-porte"><div class="fac-battant"><i></i></div></div><i class="fac-trot"></i><div class="arrivent"><span class="fg" style="left:62%;top:93%;--h:21cqw"><img src="g/fleuri-debout.webp" alt=""><b>Camille</b></span><span class="fg" style="left:74%;top:93%;--h:20cqw"><img src="g/cosy-debout.webp" alt=""></span></div><p id="bulle-chef">Camille ! On t’attendait 😊</p><div class="famille"><span class="fg fam" style="left:18%;top:84%;--h:14cqw"><span class="corps"><img src="g/voyageur-debout.webp" alt=""><i class="patch bronze"></i></span></span><span class="fg fam" style="left:34%;top:83%;--h:14cqw"><span class="corps"><img src="g/rebelle-debout.webp" alt=""><i class="patch bronze"></i></span></span><span class="fg fam" style="left:50%;top:84%;--h:14cqw"><span class="corps"><img src="g/curieux-debout.webp" alt=""><i class="patch argent"></i></span></span><span class="fg fam" style="left:66%;top:83%;--h:14cqw"><span class="corps"><img src="g/soleil-debout.webp" alt=""><i class="patch bronze"></i></span></span><span class="fg fam" style="left:82%;top:84%;--h:14cqw"><span class="corps"><img src="g/artiste-debout.webp" alt=""><i class="patch bronze"></i></span></span><span class="fg fam" style="left:9%;top:97%;--h:18cqw"><span class="corps"><img src="g/curieux-debout.webp" alt=""><i class="patch argent"></i></span></span><span class="fg fam" style="left:25%;top:98%;--h:21cqw"><span class="corps"><img src="g/soleil-debout.webp" alt=""><i class="patch or"></i></span></span><span class="fg fam" style="left:41%;top:97%;--h:18cqw"><span class="corps"><img src="g/denim-debout.webp" alt=""><i class="patch bronze"></i></span></span><span class="fg fam" style="left:58%;top:98%;--h:18cqw"><span class="corps"><img src="g/cosy-debout.webp" alt=""><i class="patch argent"></i></span></span><span class="fg fam" style="left:75%;top:97%;--h:18cqw"><span class="corps"><img src="g/artiste-debout.webp" alt=""><i class="patch or"></i></span></span><span class="fg fam" style="left:91%;top:98%;--h:17cqw"><span class="corps"><img src="g/fleuri-debout.webp" alt=""><i class="patch bronze"></i></span></span></div><p class="bulle-fam" id="bf1">« Merci pour l’accueil de samedi ! »<small>Hugo · fantôme n°31 🥈</small></p><p class="bulle-fam" id="bf2">« Le magret, sans hésiter 🔥 »<small>Léa · fantôme n°12 🥇</small></p></div>
     <span id="venue" class="abs">✓ Camille est venue, grâce à votre vidéo</span>
+    <span id="record" class="abs">🎉 Record battu&#8239;: 39 fantômes aujourd’hui</span>
     <!-- Mike -->
     <div class="trace abs"><img src="hote.webp" alt=""></div><div class="trace abs"><img src="hote.webp" alt=""></div><div class="trace abs"><img src="hote.webp" alt=""></div><div class="trace abs"><img src="hote.webp" alt=""></div>
     <div id="heros" class="abs"><div class="corps"><img src="hote.webp" alt=""><svg class="toque" viewBox="0 0 100 80" aria-hidden="true"><defs><radialGradient id="tq1a" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#F4F1EC"/><stop offset="1" stop-color="#D9D2C8"/></radialGradient><linearGradient id="tq1b" x1="0" x2="1"><stop offset="0" stop-color="#DCD5CB"/><stop offset=".3" stop-color="#fff"/><stop offset=".7" stop-color="#F7F4EF"/><stop offset="1" stop-color="#CFC7BB"/></linearGradient></defs><g fill="url(#tq1a)"><circle cx="24" cy="36" r="18"/><circle cx="76" cy="36" r="18"/><circle cx="38" cy="22" r="20"/><circle cx="62" cy="22" r="20"/><circle cx="50" cy="30" r="22"/></g><path d="M50 6c-4 8-4 22 0 34M33 12c-2 9 0 20 4 28M67 12c2 9 0 20-4 28" stroke="#D8D0C4" stroke-width="1" fill="none" opacity=".7"/><path d="M11 44Q50 38 89 44L92 79Q50 70 8 79Z" fill="url(#tq1b)"/><path d="M11 44Q50 38 89 44" stroke="#E2DBD0" stroke-width="1.2" fill="none"/><path d="M24 43V74M37 41.5V71M50 41V70M63 41.5V71M76 43V74" stroke="#E4DED4" stroke-width=".9"/></svg><span id="nom-mike">Mike</span></div></div>
@@ -276,13 +307,17 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   <div id="eclair-diag"></div>
   <div id="chat"><div class="ch-tete"><img src="g/fleuri-debout.webp" alt=""><div><b>Camille</b><small>Ce que Mike sait d’elle</small><div class="tags">
     <em class="on">📌 Passera un jour</em><em id="tag1">📅 En semaine</em><em id="tag2">🐟 Plutôt poisson</em><em id="tag3">🔔 À prévenir</em><em id="tag4" class="vert">✓ Est venue</em></div></div></div><div id="fil"></div></div>
+  <div id="jour"><div class="j-carte" id="jc1"><img src="m1.jpg" alt=""><span>Lundi</span></div><div class="j-carte" id="jc2"><img src="m3.jpg" alt=""><span>Mardi</span></div>
+    <div class="j-tel"><div class="j-ecran"><span class="j-quand">Aujourd’hui · la vidéo du jour</span><b class="j-titre">👻 Rejoins ma famille de fantômes&#8239;!</b>
+      <span class="j-gate">Tu m’aides à me faire connaître, je te gâte&#8239;!</span><span class="j-fin">Rejoins la famille à la fin de la vidéo ↓</span><img class="j-chef" src="hote.webp" alt=""><i class="j-barre"></i></div></div></div>
+  <div id="notif-or" class="msg wa"><small>Sur le WhatsApp de Léa · en premier 🥇</small>Il reste 2 tables ce midi, Léa. Je te les garde&#8239;?</div>
   <div id="voile"></div>
   <div id="mots"></div>
   <div id="depart"><span class="marque">Clik<b>Me</b></span><button id="pour" type="button">✎ Pour qui est cette démo ?</button><p id="appel">Touchez la cage<small id="charge"></small></p></div>
   <div id="finale">
     <div id="fi-mike"><img src="hote.webp" alt=""><svg class="toque" viewBox="0 0 100 80" aria-hidden="true"><defs><radialGradient id="tq2a" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#F4F1EC"/><stop offset="1" stop-color="#D9D2C8"/></radialGradient><linearGradient id="tq2b" x1="0" x2="1"><stop offset="0" stop-color="#DCD5CB"/><stop offset=".3" stop-color="#fff"/><stop offset=".7" stop-color="#F7F4EF"/><stop offset="1" stop-color="#CFC7BB"/></linearGradient></defs><g fill="url(#tq2a)"><circle cx="24" cy="36" r="18"/><circle cx="76" cy="36" r="18"/><circle cx="38" cy="22" r="20"/><circle cx="62" cy="22" r="20"/><circle cx="50" cy="30" r="22"/></g><path d="M50 6c-4 8-4 22 0 34M33 12c-2 9 0 20 4 28M67 12c2 9 0 20-4 28" stroke="#D8D0C4" stroke-width="1" fill="none" opacity=".7"/><path d="M11 44Q50 38 89 44L92 79Q50 70 8 79Z" fill="url(#tq2b)"/><path d="M11 44Q50 38 89 44" stroke="#E2DBD0" stroke-width="1.2" fill="none"/><path d="M24 43V74M37 41.5V71M50 41V70M63 41.5V71M76 43V74" stroke="#E4DED4" stroke-width=".9"/></svg></div>
     <h1 id="fi-titre"></h1>
-    <div class="fi-puces"><span>🎬 Une belle vidéo</span><span>👻 38 fantômes libérés</span><span>💬 Un message à chacun</span><span>🚪 Des visites, pas des likes</span></div>
+    <div class="fi-puces"><span>🎬 Une belle vidéo, chaque jour</span><span>👻 Une famille de fantômes</span><span>💬 Un message à chacun</span><span>🥇 Les fidèles en premier</span><span>🚪 Des visites, pas des likes</span></div>
     <div class="fi-boutons"><a class="go" href="/inscription">Créer mon espace · gratuit</a><button id="revoir" type="button">↺ Revoir</button></div>
     <p class="fi-note" id="fi-note">Commerce et chiffres imaginaires</p>
   </div>
@@ -297,8 +332,8 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 <script>
 "use strict";
 gsap.registerPlugin(MotionPathPlugin);
-const TEMPS = {"v1": {"d": 3.97, "m": [0.0, 1.01, 1.25, 1.49, 1.9, 2.11, 2.54, 2.97]}, "v2": {"d": 6.61, "m": [0.0, 0.42, 0.64, 1.06, 1.27, 1.49, 1.82, 2.01, 2.2, 2.75, 2.94, 3.13, 3.69, 3.91, 4.12, 4.34, 4.74, 5.1, 5.28, 5.62, 5.76, 5.89, 6.03, 6.16]}, "v3": {"d": 3.16, "m": [0.14, 0.27, 0.39, 0.51, 0.64, 0.76, 0.89, 1.01, 1.14, 1.26, 1.39, 2.01, 2.21, 2.42]}, "v4": {"d": 9.72, "m": [0.12, 0.25, 0.38, 0.51, 0.63, 0.76, 1.27, 1.47, 1.86, 2.05, 2.64, 2.84, 3.23, 3.42, 3.62, 3.81, 4.01, 4.21, 4.91, 5.26, 5.44, 6.22, 6.4, 6.95, 7.13, 7.32, 7.5, 8.02, 8.55, 8.73, 8.91]}, "v5": {"d": 3.0, "m": [0.0, 0.17, 0.35, 0.7, 0.87, 1.38, 1.66, 1.94, 2.64]}, "v6": {"d": 9.48, "m": [0.0, 0.38, 0.57, 0.76, 1.14, 1.33, 1.52, 2.09, 2.28, 3.17, 3.36, 3.54, 4.71, 4.87, 5.03, 5.36, 5.52, 5.68, 5.85, 6.01, 6.17, 7.08, 7.38, 7.53, 8.02, 8.32, 8.52, 8.73]}, "v7": {"d": 2.12, "m": [0.14, 0.38, 0.85, 1.08]}};
-const SOUS = {"v1": "Merci ! | Je suis Mike, | votre futur fantôme préféré.", "v2": "Avec quelques photos, | je fais une très belle vidéo | de votre commerce, | puis je la publie partout | pour que tout le monde la voie.", "v3": "Mais ce n’est pas là | que je suis le plus fort. | C’est juste après.", "v4": "À la fin de la vidéo, | chaque personne peut libérer son fantôme | pour dire ce qu’elle en pense : | “J’adore la vidéo”, | “Je passerai un jour, c’est sûr”, | ou “Je passe aujourd’hui”.", "v5": "Et à partir de là, | mon vrai travail commence.", "v6": "J’écris à chaque personne | qui a libéré son fantôme, | pour faire connaissance. | Je la connais un peu mieux | à chaque réponse… | jusqu’au jour où | elle pousse votre porte.", "v7": "Votre fantôme vous attend."};
+const TEMPS = {"v1": {"d": 3.97, "m": [0.0, 1.01, 1.25, 1.49, 1.9, 2.11, 2.54, 2.97]}, "v2": {"d": 6.61, "m": [0.0, 0.42, 0.64, 1.06, 1.27, 1.49, 1.82, 2.01, 2.2, 2.75, 2.94, 3.13, 3.69, 3.91, 4.12, 4.34, 4.74, 5.1, 5.28, 5.62, 5.76, 5.89, 6.03, 6.16]}, "v3": {"d": 3.16, "m": [0.14, 0.27, 0.39, 0.51, 0.64, 0.76, 0.89, 1.01, 1.14, 1.26, 1.39, 2.01, 2.21, 2.42]}, "v4": {"d": 9.72, "m": [0.12, 0.25, 0.38, 0.51, 0.63, 0.76, 1.27, 1.47, 1.86, 2.05, 2.64, 2.84, 3.23, 3.42, 3.62, 3.81, 4.01, 4.21, 4.91, 5.26, 5.44, 6.22, 6.4, 6.95, 7.13, 7.32, 7.5, 8.02, 8.55, 8.73, 8.91]}, "v5": {"d": 3.0, "m": [0.0, 0.17, 0.35, 0.7, 0.87, 1.38, 1.66, 1.94, 2.64]}, "v6": {"d": 9.48, "m": [0.0, 0.38, 0.57, 0.76, 1.14, 1.33, 1.52, 2.09, 2.28, 3.17, 3.36, 3.54, 4.71, 4.87, 5.03, 5.36, 5.52, 5.68, 5.85, 6.01, 6.17, 7.08, 7.38, 7.53, 8.02, 8.32, 8.52, 8.73]}, "f1": {"d": 6.31, "m": [0.0, 0.19, 0.52, 0.98, 1.205, 1.605, 1.9, 2.23, 2.385, 2.82, 3.115, 3.48, 3.67, 4.42, 4.68, 5.045, 5.375, 5.67], "estime": true}, "f2": {"d": 5.4, "m": [0.0, 0.225, 0.485, 0.85, 1.215, 1.615, 2.04, 2.23, 2.49, 2.715, 2.94, 3.13, 3.53, 3.72, 4.085, 4.275, 4.5, 4.76], "estime": true}, "v7": {"d": 2.12, "m": [0.14, 0.38, 0.85, 1.08]}};
+const SOUS = {"v1": "Merci ! | Je suis Mike, | votre futur fantôme préféré.", "v2": "Avec quelques photos, | je fais une très belle vidéo | de votre commerce, | puis je la publie partout | pour que tout le monde la voie.", "v3": "Mais ce n’est pas là | que je suis le plus fort. | C’est juste après.", "v4": "À la fin de la vidéo, | chaque personne peut libérer son fantôme | pour dire ce qu’elle en pense : | “J’adore la vidéo”, | “Je passerai un jour, c’est sûr”, | ou “Je passe aujourd’hui”.", "v5": "Et à partir de là, | mon vrai travail commence.", "v6": "J’écris à chaque personne | qui a libéré son fantôme, | pour faire connaissance. | Je la connais un peu mieux | à chaque réponse… | jusqu’au jour où | elle pousse votre porte.", "f1": "Et chaque jour, | une nouvelle vidéo invite | à rejoindre votre famille de fantômes. | Elle grandit devant votre porte.", "f2": "Les plus fidèles | gagnent l’écusson d’or : | ce sont eux que je préviens en premier | de vos bons plans.", "v7": "Votre fantôme vous attend."};
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const RENDU = /[?&]rendu\b/.test(location.search);
@@ -340,7 +375,9 @@ function hasard(graine) { let a = graine >>> 0; return () => { a |= 0; a = (a + 
 const d = (c) => TEMPS[c]?.d ?? 3;
 const VOIX = {};
 VOIX.v1 = 0.62; VOIX.v2 = VOIX.v1 + d("v1") + .55; VOIX.v3 = VOIX.v2 + d("v2") + .45; VOIX.v4 = VOIX.v3 + d("v3") + .5;
-VOIX.v5 = VOIX.v4 + d("v4") + 1.25; VOIX.v6 = VOIX.v5 + d("v5") + .45; VOIX.v7 = VOIX.v6 + d("v6") + 1.35;
+VOIX.v5 = VOIX.v4 + d("v4") + 1.25; VOIX.v6 = VOIX.v5 + d("v5") + .45;
+// la famille, après la venue de Camille ; entre les deux répliques, Hugo s'avance avec son mot
+VOIX.f1 = VOIX.v6 + d("v6") + 1.35; VOIX.f2 = VOIX.f1 + d("f1") + 1.7; VOIX.v7 = VOIX.f2 + d("f2") + 1.1;
 const fin = (c) => VOIX[c] + d(c);
 const net = (w) => w.toLowerCase().replace(/[^a-zàâäéèêëîïôöùûüÿœæç’']/g, "");
 const mots = (c) => SOUS[c].replace(/ \| /g, " ").split(" ");
@@ -368,8 +405,9 @@ function versEcran(wx, wy, t) { const [sx, sy] = secousse(t); return [540 + sx +
 function poserCamera(t) { const [sx, sy] = secousse(t); $("#monde").style.transform = `translate(${540 + sx - cam.x * cam.s}px,${960 + sy - cam.y * cam.s}px) scale(${cam.s})`; }
 
 /* ── LES MOTS DITS, EN GRAND : chaque morceau (« | ») arrive mot à mot, puis cède la place au suivant ── */
-const FORTS = { v1: ["Mike,", "préféré."], v2: ["belle", "partout"], v3: ["plus", "fort.", "après."], v4: ["“J’adore", "la", "vidéo”,", "“Je", "passerai", "un", "jour,", "c’est", "sûr”,", "passe", "aujourd’hui”."], v5: ["vrai", "travail"], v6: ["chaque", "personne", "mieux", "porte."] };
-const TAILLE = { v1: 130, v2: 108, v3: 112, v4: 104, v5: 132, v6: 104 };
+const FORTS = { v1: ["Mike,", "préféré."], v2: ["belle", "partout"], v3: ["plus", "fort.", "après."], v4: ["“J’adore", "la", "vidéo”,", "“Je", "passerai", "un", "jour,", "c’est", "sûr”,", "passe", "aujourd’hui”."], v5: ["vrai", "travail"], v6: ["chaque", "personne", "mieux", "porte."],
+  f1: ["chaque", "jour,", "famille"], f2: ["fidèles", "premier", "plans."] };
+const TAILLE = { v1: 130, v2: 108, v3: 112, v4: 104, v5: 132, v6: 104, f1: 104, f2: 104 };
 const mesure = document.createElement("canvas").getContext("2d");
 function largeur(texte, fs) { mesure.font = `900 ${fs}px Poppins`; return mesure.measureText(texte).width + texte.split(" ").length * .24 * fs; }
 function couper(ws, fs) {
@@ -708,6 +746,53 @@ function construire() {
   gsap.set("#venue", { x: FAC[0], y: FAC[1] + 700, xPercent: -50 });
   tl.fromTo("#venue", { opacity: 0, y: FAC[1] + 760 }, { opacity: 1, y: FAC[1] + 700, duration: .5, ease: "back.out(2)", immediateRender: false }, T.porte + 1.0);
 
+  // ═══ ⑥ bis « Et chaque jour, une nouvelle vidéo invite à rejoindre votre famille de fantômes. Elle grandit devant
+  //     votre porte. » puis « Les plus fidèles gagnent l'écusson d'or : ce sont eux que je préviens en premier de vos
+  //     bons plans. » (d'après la démo du parcours) ═══
+  const tJ = VOIX.f1 - .25, tG = mot("f1", "Elle") - .25;
+  gsap.set(".j-gate", { rotation: -2 }); gsap.set(".j-barre", { scaleX: 0, transformOrigin: "0% 50%" });
+  gsap.set("#jc1", { rotation: -9 }); gsap.set("#jc2", { rotation: 9 });
+  tl.to(["#venue", "#bulle-chef"], { opacity: 0, duration: .3 }, tJ)
+    .to("#voile", { opacity: 1, duration: .4 }, tJ)
+    .to(H, { opacity: 0, duration: .3 }, tJ)
+    // la vidéo du jour, sur son téléphone, devant celles d'hier et d'avant-hier
+    .fromTo("#jour", { opacity: 0, y: 500 }, { opacity: 1, y: 0, duration: .7, ease: "expo.out", immediateRender: false }, tJ)
+    .fromTo("#jc1", { x: 120, opacity: 0 }, { x: 0, opacity: 1, duration: .6, ease: "back.out(1.6)", immediateRender: false }, mot("f1", "jour,") - .1)
+    .fromTo("#jc2", { x: -120, opacity: 0 }, { x: 0, opacity: 1, duration: .6, ease: "back.out(1.6)", immediateRender: false }, mot("f1", "jour,") + .05)
+    .fromTo(".j-titre", { opacity: 0, scale: .6 }, { opacity: 1, scale: 1, duration: .5, ease: "back.out(2.2)", immediateRender: false }, mot("f1", "vidéo") - .1)
+    .fromTo(".j-chef", { y: 300, opacity: 0 }, { y: 0, opacity: 1, duration: .6, ease: "back.out(1.8)", immediateRender: false }, mot("f1", "vidéo"))
+    .to(".j-chef", { rotation: 6, transformOrigin: "50% 100%", duration: .3, yoyo: true, repeat: 5, ease: "sine.inOut" }, mot("f1", "vidéo") + .5)
+    .fromTo(".j-gate", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .45, ease: "back.out(2)", immediateRender: false }, mot("f1", "invite") - .05)
+    .fromTo(".j-fin", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .4, ease: "expo.out", immediateRender: false }, mot("f1", "famille"))
+    .fromTo(".j-barre", { scaleX: 0 }, { scaleX: 1, duration: tG - tJ, ease: "none", immediateRender: false }, tJ)
+    // « Elle grandit devant votre porte » : la vidéo s'en va, la famille arrive devant la façade
+    .to("#jour", { opacity: 0, y: 900, duration: .6, ease: "power3.in" }, tG)
+    .fromTo(".famille .fg", { opacity: 0, y: -160, scale: .5 }, { opacity: 1, y: 0, scale: 1, duration: .55, stagger: { each: .07, from: "center" }, ease: "back.out(2)", immediateRender: false }, tG + .35);
+  gsap.set("#record", { x: FAC[0], y: FAC[1] + 700, xPercent: -50 });
+  tl.fromTo("#record", { opacity: 0, scale: .4 }, { opacity: 1, scale: 1, duration: .5, ease: "back.out(2.4)", immediateRender: false }, mot("f1", "porte.") + .1);
+  GERBES.push(gerbe(60, 60, FAC[0], FAC[1] + 700, 300, 1100, ["255,214,140", "255,93,184", "255,255,255"], mot("f1", "porte.") + .1, [2.5, 4], [.6, 1.2], 500));
+  // un fantôme de la famille s'avance vers l'écran, en grand, avec son mot ; puis il retourne à sa place
+  const FH = 1000 * 430 / 360, fams = $$(".famille .fg");
+  gsap.set(fams, { transformOrigin: "50% 100%" });
+  gsap.set(".patch", { xPercent: -50, yPercent: -50, rotation: -8 });
+  gsap.set(".bulle-fam", { xPercent: -50, transformOrigin: "50% 100%" });
+  const avancer = (k, bulle, de, a) => {
+    const el = fams[k], gx = parseFloat(el.style.left), gy = parseFloat(el.style.top);
+    tl.to(el, { x: (50 - gx) * 10, y: (FH - 30) - gy / 100 * FH, scale: 2.2, zIndex: 20, duration: .5, ease: "back.out(1.6)" }, de)
+      .fromTo(bulle, { opacity: 0, scale: .6, y: 30 }, { opacity: 1, scale: 1, y: 0, duration: .4, ease: "back.out(2.2)", immediateRender: false }, de + .25)
+      .to(bulle, { opacity: 0, duration: .25 }, a)
+      .to(el, { x: 0, y: 0, scale: 1, zIndex: 5, duration: .45, ease: "power2.inOut" }, a);
+  };
+  avancer(5, "#bf1", fin("f1") + .25, VOIX.f2 - .2);            // Hugo, écusson d'argent
+  avancer(6, "#bf2", VOIX.f2 - .1, VOIX.v7 - .4);               // Léa, écusson d'or
+  // « gagnent l'écusson d'or » : le sien se coud sous nos yeux ; « je préviens en premier » : son WhatsApp
+  const tOr = mot("f2", "d’or");
+  tl.to(cam, { y: FAC[1] + 150, s: 1.1, duration: 1, ease: "power2.inOut" }, VOIX.f2 - .2)
+    .fromTo(fams[6].querySelector(".patch"), { scale: 3.2, rotation: -50, opacity: 0 }, { scale: 1, rotation: -8, opacity: 1, duration: .6, ease: "back.out(2)", immediateRender: false }, tOr - .1)
+    .to("#bf2", { opacity: 0, scale: .9, duration: .25 }, mot("f2", "premier") - .45)
+    .fromTo("#notif-or", { opacity: 0, x: 300 }, { opacity: 1, x: 0, duration: .5, ease: "back.out(1.6)", immediateRender: false }, mot("f2", "premier") - .25);
+  GERBES.push(gerbe(61, 70, FAC[0], FAC[1] + 420, 300, 1200, ["255,214,140", "242,196,107", "255,255,255"], tOr + .2, [2.5, 4], [.6, 1.2], 500));
+
   // ═══ ⑦ « Votre fantôme vous attend. » ═══
   const t7 = VOIX.v7;
   tl.to("#finale", { opacity: 1, duration: .6 }, t7 - .5)
@@ -826,6 +911,13 @@ function composer(ctx, sortie, t0, voix) {
   for (const [q, html] of FIL) if (!html.startsWith('<span class="jour')) (html.startsWith('<p class="msg elle') ? S.pop : S.message)(t0 + q);
   S.vol(t0 + mot("v6", "pour") - .3, 1);
   S.vol(t0 + mot("v6", "pousse") - .25, 1.1); S.cloche(t0 + T.porte + .05);
+  // la famille : la vidéo du jour arrive, les fantômes se posent, deux s'avancent, l'écusson d'or, l'avant-première
+  S.vol(t0 + VOIX.f1 - .25, 1); S.magie(t0 + mot("f1", "vidéo") - .1);
+  for (let k = 0; k < 11; k++) S.pop(t0 + mot("f1", "Elle") + .1 + k * .07);
+  S.petit(t0 + mot("f1", "porte.") + .1);
+  S.vol(t0 + fin("f1") + .25, .6); S.pop(t0 + fin("f1") + .5);
+  S.vol(t0 + VOIX.f2 - .1, .6); S.pop(t0 + VOIX.f2 + .15);
+  S.magie(t0 + mot("f2", "d’or") - .1); S.message(t0 + mot("f2", "premier") - .25);
   S.eclate(t0 + VOIX.v7 - .1);
   // ─ les voix
   for (const c of Object.keys(VOIX)) if (voix[c]) { const s = ctx.createBufferSource(); s.buffer = voix[c]; s.connect(busV); s.start(t0 + VOIX[c]); }
@@ -834,7 +926,7 @@ function composer(ctx, sortie, t0, voix) {
 
 /* ── LE DÉROULÉ ── */
 const bruts = {};
-const charge = Promise.all(Object.keys(VOIX).map((c) => fetch(`voix/${c}.mp3`).then((r) => r.ok ? r.arrayBuffer() : null).then((b) => { if (b) bruts[c] = b; }).catch(() => {})));
+const charge = Promise.all(Object.keys(VOIX).filter((c) => !TEMPS[c]?.estime).map((c) => fetch(`voix/${c}.mp3`).then((r) => r.ok ? r.arrayBuffer() : null).then((b) => { if (b) bruts[c] = b; }).catch(() => {})));
 const decoder = (ctx, b) => new Promise((ok) => { try { const p = ctx.decodeAudioData(b.slice(0), ok, () => ok(null)); if (p && p.catch) p.catch(() => ok(null)); } catch (e) { ok(null); } });
 function etat(t) { tl.seek(Math.max(0, t), false); poserCamera(t); dessinerFond(t); dessinerFx(t); }
 // avant de toucher : la cage se balance, Mike frappe, sa bulle « Libérez-moi ! »

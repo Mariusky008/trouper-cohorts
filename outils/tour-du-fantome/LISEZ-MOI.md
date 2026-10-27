@@ -249,7 +249,7 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-court2/index
 ```
 
 (la page, ouverte avec `?rendu`, dessine l'instant demandé et calcule son propre son hors ligne ; ffmpeg assemble). Les
-voix : `recu/court/v2-1…6.mp3` et `demo1-g.mp3`, lues mot pour mot.
+voix : `recu/court/v2-1…6.mp3` et `demo1-g.mp3`, lues mot pour mot (et bientôt `v2-7-famille.mp3`, `v2-8-ecusson.mp3`).
 
 | Voix | Ce qui est dit | À l'écran |
 |---|---|---|
@@ -260,7 +260,16 @@ voix : `recu/court/v2-1…6.mp3` et `demo1-g.mp3`, lues mot pour mot.
 | 4 | « À la fin de la vidéo, chaque personne peut libérer son fantôme pour dire ce qu'elle en pense : “J'adore la vidéo”, “Je passerai un jour, c'est sûr”, ou “Je passe aujourd'hui”. » | la caméra plonge dans les trois cages ; trois doigts ; à chaque choix dit, sa cage s'allume et ses fantômes en sortent ; la caméra recule : 21, 12 et 5 |
 | 5 | « Et à partir de là, mon vrai travail commence. » | la foule s'assombrit, Mike au milieu, en grand ; la batterie se tait, puis repart |
 | 6 | « J'écris à chaque personne qui a libéré son fantôme, pour faire connaissance. Je la connais un peu mieux à chaque réponse… jusqu'au jour où elle pousse votre porte. » | un message part vers chacun des 38 ; la caméra s'approche de Camille, la conversation monte et sa fiche se remplit ; un mardi calme, sur votre WhatsApp ; « J'arrive ! » ; la façade, la porte s'ouvre, « Camille ! On t'attendait 😊 », « Camille est venue, grâce à votre vidéo » |
+| F1 | « Et chaque jour, une nouvelle vidéo invite à rejoindre votre famille de fantômes. Elle grandit devant votre porte. » | la vidéo du jour sur son téléphone, devant celles de lundi et de mardi : « 👻 Rejoins ma famille de fantômes ! Tu m'aides à me faire connaître, je te gâte ! Rejoins la famille à la fin de la vidéo », le fantôme du commerce qui fait coucou ; puis la famille se pose devant la façade, chacun son écusson cousu (bronze, argent, or) ; « 🎉 Record battu : 39 fantômes aujourd'hui » ; Hugo s'avance, en grand, avec son mot |
+| F2 | « Les plus fidèles gagnent l'écusson d'or : ce sont eux que je préviens en premier de vos bons plans. » | Léa (fantôme n°12) s'avance avec son mot, son écusson d'or se coud sous nos yeux ; sur son WhatsApp, en premier : « Il reste 2 tables ce midi, Léa. Je te les garde ? » |
 | 7 | « Votre fantôme vous attend. » | Mike, « Créer mon espace · gratuit » (vers `/inscription`, la page d'inscription pour tout le monde), « Revoir » (pas de lien vers les tours complets : ils parlent des dépenses, qui demandent une ville ouverte) |
+
+**La famille (F1, F2)** reprend le plus fort de la démo du parcours (la vidéo du jour, la famille devant la porte,
+les écussons, les bons plans en premier), après la venue de Camille. Ses deux voix sont à enregistrer par le
+propriétaire, mot pour mot : `recu/court/v2-7-famille.mp3` et `recu/court/v2-8-ecusson.mp3`. Tant qu'un fichier manque,
+`estimer()` donne à la réplique une durée au rythme des autres, la page la montre en sous-titres sur la musique seule
+et ne cherche pas sa voix ; dès que les fichiers sont là, relancer le script la cale mot à mot. La démo passe ainsi
+d'environ 46 s à 60 s (à revoir avec les vraies durées).
 
 Le calage des voix aide `caler()` (`coupures`, `liees`, dans `tour-court2.py`) : l'enregistrement se tait aussi
 devant un « p » ou un « t » (« elle | pousse »), pas seulement aux virgules.
