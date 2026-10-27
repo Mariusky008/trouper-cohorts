@@ -23,6 +23,7 @@
  */
 import type { Cage } from "./cages";
 import type { Ecusson } from "./ecussons";
+import type { Grade } from "./famille";
 
 export type FantomeVitrine = {
   /** Un identifiant pour l'écran — jamais celui de la personne. */
@@ -41,6 +42,9 @@ export type FantomeVitrine = {
   cadeau?: string;
   /** 🧵 Ses écussons, cousus sur son fantôme (`lib/direct/ecussons.ts`). */
   ecussons?: Ecusson[];
+  /** 👻 Sa place dans la famille de ce commerce : son numéro d'arrivée, et son palier (`lib/direct/famille.ts`). */
+  numero?: number;
+  grade?: Grade;
 };
 
 export type Vitrine = {
@@ -135,6 +139,9 @@ export function fouleDemo(cle: string, maintenant: number): FantomeVitrine[] {
         look: LOOKS[suivant() % LOOKS.length],
         cage,
         le: new Date(maintenant - (suivant() % (36 * 60)) * 60_000).toISOString(),
+        // Leur place dans la famille inventée : un numéro chacun, quelques fidèles en argent et en or.
+        numero: 2 + k * 3 + (suivant() % 3),
+        grade: ((r) => (r < 2 ? "or" : r < 5 ? "argent" : "bronze"))(suivant() % 10),
       });
     }
   }

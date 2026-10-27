@@ -250,6 +250,21 @@ Changer un chiffre change la page et la route à la fois.
   record, son numéro, son écusson) ; `src/lib/direct/famille-serveur.ts`.
 - `supabase/migrations/20261101090000_clik_famille.sql` : `clik_presence`.
 
+**La famille partout (chantier 2)** :
+
+- **Dans toutes les vitrines** (la page de la famille, l'appli, le comptoir), chaque fantôme porte son écusson de
+  la famille : la couleur de son palier, cousue à son numéro. Sa bulle dit « Fantôme n°12 · 🥈 Argent ». La foule
+  inventée de la démonstration a les siens. Les écussons d'avant (parole, pin, coup de cœur) restent.
+- **Son palier monte** (une visite notée au comptoir, son 7ᵉ jour de cage, son 3ᵉ ami) : à sa prochaine visite de
+  la page, « 🥈 Tu passes Argent ! Tu as les bons plans plus tôt. », et l'écusson se recoud. Une fois : le
+  téléphone retient le dernier palier vu.
+- **« 👻 Mes familles » dans Ma Maison** (vraie ville seulement) : chaque commerce où il a libéré son fantôme, son
+  numéro, son palier, ce qui le fera monter, et un lien vers sa page pour revenir ouvrir la cage du jour.
+- **Les prénoms** (`src/lib/direct/prenom.ts`) : des lettres seulement, pas de lien, pas de gros mot (cherchés mot à
+  mot : « Constance » passe). La page le dit avant d'envoyer ; la route des cages, elle, garde la cage sans le
+  prénom, pour ne jamais bloquer l'appli.
+- Une seule lecture de la famille d'un commerce (`lireFamille`) sert à la page, à la vitrine et à Ma Maison.
+
 ## L'activer en production
 
 **Les deux tables doivent être créées une fois** : coller le contenu de
@@ -283,9 +298,10 @@ cages du jour, le record ne paraît pas, et ni les jours de cage ni les amis ame
   écussons (la parole tenue, jamais avant la promesse ; le pin seulement chez ce commerce ; le coup de cœur ; Ma
   Maison de chacun ; un numéro d'écran qui ne bouge pas quand un autre arrive).
 - `node scripts/essai-famille-route.mjs` (CI aussi) : la foule du jour, une fois par jour ; le numéro ; l'ami amené
-  (le premier jour seulement) ; le record d'avant ; les paliers ; jamais pour un prospect ; la page.
+  (le premier jour seulement) ; le record d'avant ; les paliers ; jamais pour un prospect ; la page ; le numéro et
+  le palier dans la vitrine ; Mes familles ; les prénoms refusés.
 - `node scripts/navigateur/famille-page.mjs` (CI aussi) : la page dans un téléphone, de l'accueil à la famille, le
-  retour le même jour, l'ami venu par le lien, la famille vide.
+  retour le même jour, l'ami venu par le lien, « Tu passes Argent », les écussons de la vitrine, la famille vide.
 - Le carnet dans le navigateur : `/autour-de-moi/assistante?metier=table`, la carte « Mon carnet ».
 - Dans le navigateur : `/autour-de-moi`, Restaurants, Chez Bergine, « Voir toutes les offres + infos », le film
   « En cuisine, pendant le service » jusqu'au bout.

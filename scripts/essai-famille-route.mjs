@@ -6,7 +6,9 @@
 // le code d'invitation (`?de=`) note qui a amené qui, le premier jour seulement, et un code inconnu ne compte
 // pas ; le record à battre vient des jours d'avant ; les paliers (`PALIERS`) : 7 jours de cage → argent,
 // 3 amis → or, 1 visite → argent ; sans cookie, la foule sans « moi ». Puis la page `/f/<lien>` : 200 pour le
-// client, 404 pour le prospect et pour un lien inconnu. Et le petit mot de la liste d'une « Brasserie ».
+// client, 404 pour le prospect et pour un lien inconnu. Et le petit mot de la liste d'une « Brasserie ». Puis la
+// famille partout : le numéro et le palier de chaque fantôme dans la vitrine (sans identifiant de personne), ses
+// familles pour Ma Maison (`?moi=1`), et les prénoms qui ne peuvent pas se montrer (un gros mot, un lien).
 //
 //   node scripts/faux-supabase.mjs 54321
 //   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=faux NEXT_PUBLIC_SUPABASE_ANON_KEY=faux \
@@ -108,6 +110,29 @@ const m = await fetch(`${BASE}/api/direct/mot`, {
   body: JSON.stringify({ slug: SLUG, texte: "La meilleure terrasse du quartier", liste: true }),
 });
 ok(m.status === 200, `le mot de la liste d'une brasserie, accepté (${m.status})`);
+
+// 👻 LA FAMILLE DANS LA VITRINE : chaque fantôme porte son numéro et son palier.
+const v = await (await fetch(`${BASE}/api/direct/vitrine?slug=${SLUG}`, { headers: { cookie: cookies.Hugo } })).json();
+const parPrenom = Object.fromEntries((v.fantomes ?? []).map((x) => [x.prenom, x]));
+ok(parPrenom.Camille?.numero === 1 && parPrenom.Camille?.grade === "or", `dans la vitrine, Camille : n°1, or (${parPrenom.Camille?.numero}/${parPrenom.Camille?.grade})`);
+ok(parPrenom.Hugo?.numero === 2 && parPrenom.Hugo?.grade === "bronze" && parPrenom.Léa?.grade === "argent", `Hugo : n°2, bronze ; Léa : argent (${parPrenom.Hugo?.numero}/${parPrenom.Hugo?.grade}, ${parPrenom.Léa?.grade})`);
+ok((v.fantomes ?? []).every((x) => !JSON.stringify(x).includes(camille)), "jamais l'identifiant de personne dans la vitrine");
+
+// 🏠 SES FAMILLES, POUR MA MAISON.
+let mm = await (await fetch(`${BASE}/api/direct/famille?moi=1`, { headers: { cookie: cookies.Camille } })).json();
+ok(mm.familles?.length === 1 && mm.familles[0].slug === SLUG && mm.familles[0].numero === 1 && mm.familles[0].grade === "or" && mm.familles[0].membres === 4, `Ma Maison de Camille : 1 famille, n°1, or, 4 membres (${JSON.stringify(mm.familles?.[0] ?? null)})`);
+mm = await (await fetch(`${BASE}/api/direct/famille?moi=1`)).json();
+ok(mm.ok && Array.isArray(mm.familles) && mm.familles.length === 0, "sans cookie : aucune famille");
+
+// 🙂 LES PRÉNOMS QUI NE PEUVENT PAS SE MONTRER : son fantôme entre, sans prénom.
+await cage("Grossier", { prenom: "Connard" });
+await cage("Lien", { prenom: "www.pub.fr" });
+await cage("Constance", { prenom: "Constance" });
+await cage("Jean-Marie", { prenom: "Jean-Marie" });
+const prenoms = (await lignes("clik_cage")).map((x) => x.prenom);
+ok(!prenoms.includes("Connard") && !prenoms.includes("www.pub.fr"), "un gros mot, un lien : pas gardés comme prénom");
+ok(prenoms.includes("Constance") && prenoms.includes("Jean-Marie"), "« Constance » et « Jean-Marie » passent");
+ok((await lignes("clik_cage")).filter((x) => x.prenom === "").length === 2, "les deux fantômes sont entrés quand même, sans prénom");
 
 // LA PAGE.
 const page = await fetch(`${BASE}/f/${SLUG}`);

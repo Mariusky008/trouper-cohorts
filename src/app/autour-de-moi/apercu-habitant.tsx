@@ -334,6 +334,7 @@ import { CagesFantomes, type ChoixCage } from "./cages-fantomes";
 import { MesMessages, useMessagesEnAttente } from "./mes-messages";
 import { PrenomDansLesVitrines, VitrineDuCommerce } from "./vitrine-fantomes";
 import { MesEcussons } from "./mes-ecussons";
+import { MesFamilles } from "./mes-familles";
 import { deposerMessageDemo } from "@/lib/direct/messages-maison";
 import { copieNommee } from "@/lib/direct/copies-presentation";
 import { numeroWhatsApp, quoiAujourdhui, type Cage } from "@/lib/direct/cages";
@@ -12632,6 +12633,8 @@ export function ApercuHabitant({
                 messages={
                   <>
                     <MesMessages reelle={Boolean(reelle)} />
+                    {/* 👻 SES FAMILLES : son numéro et son palier chez chaque commerce (voir `mes-familles.tsx`). */}
+                    <MesFamilles reelle={Boolean(reelle)} />
                     {/* 🧵 SES ÉCUSSONS, cousus sur son fantôme (voir `mes-ecussons.tsx`). */}
                     <MesEcussons reelle={Boolean(reelle)} />
                   </>

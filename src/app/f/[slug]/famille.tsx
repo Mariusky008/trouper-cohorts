@@ -30,9 +30,11 @@ import {
   prochainPalier,
   recordBattu,
   type EtatFamille,
+  type Grade,
   type Parcours,
 } from "@/lib/direct/famille";
 import { deNom } from "@/lib/echanges/echanges";
+import { prenomRefuse } from "@/lib/direct/prenom";
 import { VitrineDuCommerce } from "@/app/autour-de-moi/vitrine-fantomes";
 
 export type CommerceFamille = {
@@ -63,6 +65,19 @@ const lookServeur = () => lookDe(null);
 /** « 1 234 » : l'espace fine de `toLocaleString` ne s'affiche pas partout. */
 const nb = (n: number) => n.toLocaleString("fr-FR").replace(/ /g, " ");
 const COULEUR_CAGE: Record<Cage, string> = { adore: "#FF2E9A", "un-jour": "#F5A23A", aujourdhui: "#3DE2A6" };
+/** Le dernier palier vu sur ce téléphone, par commerce : celui qui monte se fête une fois. */
+const CLE_PALIERS = "clikme-famille-paliers";
+function retenirPalier(slug: string, grade: Grade): Grade | null {
+  try {
+    const vus = JSON.parse(window.localStorage.getItem(CLE_PALIERS) || "{}") as Record<string, Grade>;
+    const avant = vus[slug];
+    window.localStorage.setItem(CLE_PALIERS, JSON.stringify({ ...vus, [slug]: grade }));
+    return avant && GRADES.indexOf(grade) > GRADES.indexOf(avant) ? grade : null;
+  } catch {
+    return null;
+  }
+}
+
 const MOTS_CHEMIN: Record<keyof Parcours, [string, string]> = {
   visites: ["visite", "visites"],
   jours: ["jour de cage", "jours de cage"],
@@ -82,6 +97,8 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
   /** Il vient d'entrer (« Bienvenue dans la famille ! »), ou il revient (« Re-bonjour »). */
   const [vientDEntrer, setVientDEntrer] = useState(false);
   const [copie, setCopie] = useState(false);
+  /** 🥈 Son palier vient de monter depuis sa dernière visite : on le fête (une fois). */
+  const [monte, setMonte] = useState<Grade | null>(null);
   const liste = motsDeLaListe(familleDuDouble({ branche: c.branche, metier: c.metier }));
   const libelles = libellesCages(c.branche);
 
@@ -91,6 +108,10 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
       const j = (await r.json().catch(() => null)) as (EtatFamille & { ok?: boolean }) | null;
       if (!r.ok || !j?.ok) return null;
       setEtat(j);
+      if (j.moi) {
+        const m = retenirPalier(c.slug, j.moi.grade);
+        if (m) setMonte(m);
+      }
       return j;
     } catch {
       return null;
@@ -247,7 +268,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
             <span className="flotte">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={salue} alt="Ton fantôme" />
-              <i className={`fm-patch ${moi.grade}${vientDEntrer ? " coud" : ""}`}>
+              <i className={`fm-patch ${moi.grade}${vientDEntrer || monte ? " coud" : ""}`} key={moi.grade}>
                 <b>{moi.numero}</b>
               </i>
             </span>
@@ -256,6 +277,14 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
           <p>
             Tu es le fantôme n°{nb(moi.numero)} {deNom(c.nom)}
           </p>
+          {monte && (
+            <div className="fm-monte" role="status">
+              <b>
+                {EMOJI_GRADE[monte]} Tu passes {NOM_GRADE[monte]} !
+              </b>
+              Tu as les bons plans {AVANTAGE_GRADE[monte]}.
+            </div>
+          )}
         </section>
 
         {etat && carteFoule(etat, true)}
@@ -411,6 +440,11 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
               const p = prenom.trim();
               if (!p) {
                 setErreur("Dis-nous ton prénom : c’est lui qu’on verra à côté de ton fantôme.");
+                return;
+              }
+              const refus = prenomRefuse(p);
+              if (refus) {
+                setErreur(refus);
                 return;
               }
               garderLook(look.id);
@@ -638,6 +672,9 @@ const STYLES = `
 .fm-patch.bronze{--e:#C98A4B}.fm-patch.argent{--e:#BFC5CF}.fm-patch.or{--e:#E2B04A}
 .fm-patch.coud{animation:fm-coud .9s cubic-bezier(.2,1.5,.4,1) .4s both}
 .fm-etincelle{position:absolute;font-style:normal;color:var(--or);font-size:16px;opacity:0;animation:fm-scintille 2.4s ease-in-out infinite;animation-delay:var(--d,0s)}
+.fm-monte{display:inline-block;margin:10px auto 0;padding:8px 14px;border-radius:14px;background:linear-gradient(90deg,rgba(242,196,107,.25),rgba(255,46,154,.2));border:1px solid rgba(242,196,107,.5);font-size:13px;color:var(--doux);animation:fm-pop .5s cubic-bezier(.2,1.4,.4,1) .6s both}
+.fm-monte b{display:block;font-size:16px;color:var(--creme)}
+@keyframes fm-pop{from{opacity:0;transform:scale(.6)}}
 .fm-chemin{display:flex;align-items:flex-start;margin:16px 16px 0}
 .fm-etape{flex:0 0 84px;text-align:center;line-height:1.2;position:relative}
 .fm-etape+.fm-etape{margin-left:auto}

@@ -5,7 +5,9 @@
 // « exemple ») ; la cage ouvre la fiche (son fantôme, son prénom, son petit mot) ; « Entrer dans la famille »
 // donne son numéro, son écusson, le chemin vers l'argent, la vitrine avec « Toi · Camille », WhatsApp (seulement
 // si le numéro de ClikMe est réglé : `CLIKME_WHATSAPP`) et l'invitation ; revenir le même jour rouvre sa famille ;
-// un ami venu par son lien compte pour elle ; la famille vide invite à être le premier. Rien ne déborde.
+// un ami venu par son lien compte pour elle ; une visite notée la fait passer argent (fêté une fois) ; chaque
+// fantôme de la vitrine porte son écusson de la famille, et sa bulle son numéro ; un gros mot en prénom est
+// refusé ; la famille vide invite à être le premier. Rien ne déborde.
 import { BASE, D, F, lancer } from "./commun.mjs";
 
 const SITE = "ffffffff-0000-4000-8000-000000000021";
@@ -79,6 +81,9 @@ await p.waitForTimeout(500);
 await p.screenshot({ path: `${D}/famille-2-fiche.png` });
 await p.locator(".fm-fiche button[type=submit]").click();
 ok((await texte(p, ".fm-fiche .fm-erreur")).includes("prénom"), "sans prénom : on le demande");
+await p.fill("#fm-prenom", "Connard");
+await p.locator(".fm-fiche button[type=submit]").click();
+ok((await texte(p, ".fm-fiche .fm-erreur")).includes("ne peut pas s’afficher"), "un gros mot en prénom : refusé avant d'envoyer");
 await p.locator(".fm-look").nth(3).click();
 await p.fill("#fm-prenom", "Camille");
 await p.locator(".fm-mots button").first().click();
@@ -99,6 +104,11 @@ else ok(wa === null, "pas de numéro ClikMe réglé : pas de bouton WhatsApp");
 await p.waitForSelector(".vf .vf-fg.moi", { timeout: 20000 });
 ok((await texte(p, ".vf-fg.moi .nom")) === "Toi · Camille", `sa place dans la vitrine (${await texte(p, ".vf-fg.moi .nom")})`);
 ok((await p.locator(".vf .vf-fg").count()) >= 3, `la famille devant le commerce (${await p.locator(".vf .vf-fg").count()} fantômes)`);
+await p.waitForSelector(".vf .vf-fg.moi .vf-palier", { timeout: 20000 });
+ok((await p.locator(".vf .vf-palier").count()) >= 4 && (await texte(p, ".vf-fg.moi .vf-palier")) === "4", `chaque fantôme porte son écusson de la famille (${await p.locator(".vf .vf-palier").count()})`);
+await p.locator('.vf-fg[aria-label^="Léa,"]').click();
+ok((await texte(p, ".vf-bulle")).includes("Fantôme n°1 · 🥉 Bronze"), `la bulle de Léa : son numéro et son palier (${await texte(p, ".vf-bulle")})`);
+await p.locator(".vf-sc").click({ position: { x: 5, y: 5 } });
 const mots = await lignes("clik_mot");
 ok(mots.some((m) => m.texte === motChoisi && m.liste === true), `son petit mot de la liste est parti (« ${motChoisi} »)`);
 ok((await debordement(p)) <= 0, "la famille ne déborde pas");
@@ -130,6 +140,18 @@ ok(pres.length === 1 && pres[0].amene_par === camille?.habitant_id, "il compte p
 await p.reload({ waitUntil: "networkidle" });
 await p.waitForSelector(".fm-prochain", { timeout: 20000 });
 ok((await texte(p, ".fm-actions")).includes("Il en manque 2"), "chez Camille : il en manque 2");
+
+// ═══ SON PALIER MONTE : UNE VISITE NOTÉE AU COMPTOIR ═══
+await semer("clik_visite", { site_id: SITE, habitant_id: camille?.habitant_id, jour: jour(new Date()) });
+await p.reload({ waitUntil: "networkidle" });
+await p.waitForSelector(".fm-monte", { timeout: 20000 });
+ok((await texte(p, ".fm-monte")).includes("🥈 Tu passes Argent ! Tu as les bons plans plus tôt."), "une visite : « Tu passes Argent ! »");
+ok((await p.locator(".fm-patch.argent.coud").count()) === 1 && (await texte(p, ".fm-prochain")).includes("Prochain : l’écusson or 🥇"), "l'écusson argent se coud, le prochain est l'or");
+await p.waitForTimeout(1500);
+await p.screenshot({ path: `${D}/famille-5-argent.png` });
+await p.reload({ waitUntil: "networkidle" });
+await p.waitForSelector(".fm-prochain", { timeout: 20000 });
+ok((await p.locator(".fm-monte").count()) === 0, "la fois suivante, on ne le refête pas");
 
 // ═══ LA FAMILLE VIDE ═══
 const vide = await tel();

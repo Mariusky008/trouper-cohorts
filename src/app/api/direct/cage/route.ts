@@ -26,6 +26,7 @@ import { villeSlug } from "@/lib/direct/ville";
 import { filmDuCommerce } from "@/lib/direct/avis-film";
 import { estCage, numeroWhatsApp } from "@/lib/direct/cages";
 import { lookValide } from "@/lib/direct/look";
+import { prenomRefuse } from "@/lib/direct/prenom";
 import { FILM_PAGE } from "@/lib/direct/famille";
 import { noterPresence } from "@/lib/direct/famille-serveur";
 
@@ -45,7 +46,10 @@ export async function POST(request: Request) {
   const cage = p?.cage;
   if (!slug || !film) return NextResponse.json({ error: "slug et film requis" }, { status: 400 });
   if (!estCage(cage)) return NextResponse.json({ error: "cage inconnue" }, { status: 400 });
-  const prenom = s(p?.prenom).slice(0, 24);
+  // UN PRÉNOM QUI NE PEUT PAS SE MONTRER (un lien, un gros mot) n'est pas gardé : son fantôme entre sans prénom.
+  // La page de la famille le dit avant d'envoyer ; l'appli, elle, ne bloque pas sa cage pour ça.
+  const prenomBrut = s(p?.prenom).slice(0, 24);
+  const prenom = prenomRefuse(prenomBrut) ? "" : prenomBrut;
   const look = lookValide(p?.look) ? String(p?.look) : "";
   // Un numéro donné mais illisible : on le dit, plutôt que de garder un numéro où personne ne répondra.
   const saisie = s(p?.whatsapp);

@@ -5,6 +5,7 @@
 // 💌 Et leurs petits mots (étape 2) : ceux de la liste, et les mots écrits qui ont eu le 💛 du
 // commerçant (le sien, toujours) ; son dernier coup de cœur ; s'il a déjà écrit aujourd'hui.
 // 🧵 Et leurs écussons (étape 3) : la parole tenue, le pin de ce commerce, le coup de cœur.
+// 👻 Et leur place dans la famille : leur numéro d'arrivée et leur palier (`lib/direct/famille.ts`).
 // Jamais l'identifiant de personne : chaque fantôme a un numéro d'écran. Voir
 // `lib/direct/vitrine-fantomes.ts`.
 //
@@ -21,6 +22,7 @@ import { lookValide } from "@/lib/direct/look";
 import { jourParis } from "@/lib/jour-paris";
 import type { FantomeVitrine } from "@/lib/direct/vitrine-fantomes";
 import { ecussonsIci, promessesTenues } from "@/lib/direct/ecussons";
+import { lireFamille } from "@/lib/direct/famille-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -86,13 +88,14 @@ export async function GET(request: Request) {
   }
   // 🧵 LEURS ÉCUSSONS : leurs promesses tenues (partout : la parole ; ici : le pin) et leurs coups de cœur.
   const ids = [...vues];
-  const [visibles, promis, passes, coeursDe] = await Promise.all([
+  const [visibles, promis, passes, coeursDe, famille] = await Promise.all([
     prenomsVisibles(supabase, ids),
     ids.length
       ? supabase.from("clik_cage").select("habitant_id, site_id, cage, created_at").in("habitant_id", ids).in("cage", ["un-jour", "aujourdhui"]).limit(3000)
       : null,
     ids.length ? supabase.from("clik_visite").select("habitant_id, site_id, jour").in("habitant_id", ids).limit(5000) : null,
     ids.length ? supabase.from("clik_mot").select("habitant_id").in("habitant_id", ids).not("coeur_le", "is", null).limit(3000) : null,
+    ids.length ? lireFamille(supabase, siteId).catch(() => null) : null,
   ]);
   const tenues = promessesTenues(
     ((promis && !promis.error ? promis.data : null) ?? []).map((c: Ligne) => ({ qui: s(c.habitant_id), site: s(c.site_id), cage: s(c.cage), le: s(c.created_at) })),
@@ -108,6 +111,7 @@ export async function GET(request: Request) {
     const m = motDe.get(h);
     const montre = m && (estMoi || m.liste === true || Boolean(m.coeur_le));
     const ecussons = ecussonsIci({ tenues: tenues.get(h), site: siteId, coeur: ontCoeur.has(h) });
+    const numero = famille?.numeroDe(h) ?? 0;
     return {
       // Un numéro d'écran qui ne bouge pas quand un autre arrive (sinon la bulle ouverte change de personne).
       id: `f${createHash("sha256").update(`${siteId}:${h}`).digest("hex").slice(0, 12)}`,
@@ -120,6 +124,7 @@ export async function GET(request: Request) {
       ...(m && m.coeur_le ? { coeur: true } : {}),
       ...(m && s(m.cadeau) ? { cadeau: s(m.cadeau) } : {}),
       ...(ecussons.length ? { ecussons } : {}),
+      ...(numero && famille ? { numero, grade: famille.gradeDe(h) } : {}),
     };
   });
 

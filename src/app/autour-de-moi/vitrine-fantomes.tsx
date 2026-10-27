@@ -22,6 +22,7 @@ import { fouleDemo, geste, placer, type Place, type Vitrine } from "@/lib/direct
 import { MOT_MAX, motPropre, motsDeLaListe } from "@/lib/direct/petits-mots";
 import { ECUSSON, PLACES_ECUSSONS, type Ecusson } from "@/lib/direct/ecussons";
 import { familleDuDouble } from "@/lib/direct/double-metiers";
+import { EMOJI_GRADE, NOM_GRADE } from "@/lib/direct/famille";
 
 /** L'image d'un fantôme selon sa cage : debout bras ouverts, la main levée, assis. */
 function imageDe(look: string, cage: Place["f"]["cage"]): string {
@@ -96,6 +97,12 @@ export function VitrineFantomes({
           </i>
         )}
         {f.ecussons && f.ecussons.length > 0 && <Ecussons liste={f.ecussons} />}
+        {/* 👻 Son écusson de la famille : la couleur de son palier, cousue à son numéro. */}
+        {f.grade && f.numero ? (
+          <i className={`vf-palier ${f.grade}`} aria-hidden="true">
+            <b>{f.numero}</b>
+          </i>
+        ) : null}
       </button>
     );
   };
@@ -133,6 +140,11 @@ export function VitrineFantomes({
         {choisi && (
           <div className="vf-bulle" style={{ left: `${Math.min(68, Math.max(32, dansLaScene(choisi).x))}%`, top: `${dansLaScene(choisi).y}%` } as CSSProperties}>
             <b>{choisi.f.moi ? "C’est toi !" : choisi.f.prenom || "Un fantôme"}</b>
+            {choisi.f.grade && choisi.f.numero ? (
+              <i className="vf-num">
+                Fantôme n°{choisi.f.numero} · {EMOJI_GRADE[choisi.f.grade]} {NOM_GRADE[choisi.f.grade]}
+              </i>
+            ) : null}
             <span>
               {geste(choisi.f.cage, branche)} · {quandEnClair(choisi.f.le, maintenant)}
             </span>
@@ -566,6 +578,13 @@ const STYLES = `
 .vf-ardoise small{display:block;margin-bottom:2px;font:800 10.5px/1 system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#E8C77A;}
 @media (prefers-reduced-motion:reduce){.vf-fg img,.vf-fg .nom,.vf-fg.moi::before{animation:none!important;}}
 .vf-bulle small{font:700 2.6cqw/1.3 system-ui,sans-serif;color:#1E8F69;}
+.vf-bulle .vf-num{font:700 2.6cqw/1.3 system-ui,sans-serif;font-style:normal;color:#8A5A2B;}
+.vf-palier{position:absolute;left:50%;top:50%;z-index:1;width:27%;aspect-ratio:1;transform:translate(-50%,-50%) rotate(-8deg);border-radius:50%;container-type:inline-size;display:grid;place-items:center;pointer-events:none;
+  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.45),transparent 58%),var(--e);box-shadow:0 1px 2px rgba(0,0,0,.5);}
+.vf-palier::before{content:"";position:absolute;inset:10%;border-radius:50%;border:max(.5px,5cqw) dashed rgba(255,248,234,.85);}
+.vf-palier b{font:800 38cqw/1 system-ui,sans-serif;color:#3A1D08;}
+.vf-palier.bronze{--e:#C98A4B;}.vf-palier.argent{--e:#BFC5CF;}.vf-palier.or{--e:#E2B04A;}
+.vf-fg.aujourdhui .vf-palier{top:56%;}
 .vf-coeur{position:absolute;right:-6%;top:6%;font-style:normal;font-size:4.6cqw;line-height:1;filter:drop-shadow(0 .3cqw .5cqw rgba(0,0,0,.5));pointer-events:none;}
 .vf-salle .vf-coeur{font-size:9cqw;}
 .vf-bulle q{font:italic 600 2.9cqw/1.3 Georgia,serif;color:#2B1D16;}

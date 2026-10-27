@@ -119,6 +119,9 @@ export type EtatFamille = {
   };
 };
 
+/** 🏠 Une de ses familles, dans Ma Maison. */
+export type MaFamille = { slug: string; nom: string; numero: number; membres: number; grade: Grade; parcours: Parcours };
+
 /** Il en manque combien pour battre le record (au moins 1 : égaler n'est pas battre). */
 export const manquePourRecord = (e: Pick<EtatFamille, "aujourdhui" | "record">) => Math.max(1, (e.record ?? 0) + 1 - e.aujourdhui);
 
