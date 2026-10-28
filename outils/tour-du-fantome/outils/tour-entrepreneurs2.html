@@ -51,7 +51,10 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 #tel{width:620px;height:1250px;border-radius:96px;padding:18px;background:linear-gradient(145deg,#3A2A33,#120A0F 40%,#2A1D24);
   box-shadow:0 0 0 3px rgba(255,255,255,.12),0 60px 120px -30px rgba(0,0,0,.9),inset 0 0 0 2px rgba(255,255,255,.08)}
 #ecran{position:relative;width:100%;height:100%;border-radius:80px;overflow:hidden;background:#000}
-#ecran .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0}
+/* LE FILM ENTIER DANS LE TÉLÉPHONE : chaque photo se voit en entier (contain), sur un fond flouté d'elle-même ; le zoom ne la rogne jamais (elle grandit jusqu'à sa taille, son fond bouge derrière). */
+#ecran .ph{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;opacity:0}
+#ecran .ph .fond{position:absolute;inset:-60px;width:calc(100% + 120px);height:calc(100% + 120px);object-fit:cover;filter:blur(40px) brightness(.55) saturate(1.2)}
+#ecran .ph .vue{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 #ilot{position:absolute;left:50%;top:22px;width:170px;height:46px;margin-left:-85px;border-radius:30px;background:#000;z-index:9}
 .film-voile{position:absolute;inset:0;z-index:2;background:linear-gradient(rgba(0,0,0,.5),transparent 28%,transparent 58%,rgba(0,0,0,.78))}
 .film-lumiere{position:absolute;inset:-20%;z-index:2;opacity:0;mix-blend-mode:screen;background:radial-gradient(ellipse 40% 30% at 20% 20%,rgba(255,170,90,.55),transparent 70%),radial-gradient(ellipse 35% 25% at 85% 70%,rgba(255,80,170,.4),transparent 70%)}
@@ -235,7 +238,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
     <div class="polar abs"><img alt=""></div><div class="polar abs"><img alt=""></div><div class="polar abs"><img alt=""></div><div class="polar abs"><img alt=""></div>
     <!-- le téléphone : son film, puis les cages -->
     <div id="tel" class="abs"><div id="ecran">
-      <img class="ph" alt=""><img class="ph" alt=""><img class="ph" alt=""><img class="ph" alt="">
+      <div class="ph"><img class="fond" alt=""><img class="vue" alt=""></div><div class="ph"><img class="fond" alt=""><img class="vue" alt=""></div><div class="ph"><img class="fond" alt=""><img class="vue" alt=""></div><div class="ph"><img class="fond" alt=""><img class="vue" alt=""></div>
       <div class="film-voile"></div><div class="film-lumiere"></div>
       <span class="film-sig">✨ Monté par Mike</span>
       <div class="film-titre"><small id="film-petit"></small><b id="film-grand"></b></div>
@@ -321,7 +324,7 @@ addEventListener("resize", ajuster); ajuster();
 function poserVariante() {
   $$("[data-fantome]").forEach((i) => { i.src = VA.fantome; });
   $$(".polar img").forEach((i, k) => { i.src = VA.polar[k]; });
-  $$("#ecran .ph").forEach((i, k) => { i.src = VA.film[k]; });
+  $$("#ecran .ph").forEach((d, k) => d.querySelectorAll("img").forEach((i) => { i.src = VA.film[k]; }));
   $("#film-petit").textContent = VA.filmPetit;
   $$(".tc-l").forEach((e, k) => { e.innerHTML = VA.cages[k]; });
   ["#g1", "#g2", "#g3"].forEach((g, k) => { $(g).textContent = VA.groupes[k]; });
@@ -590,7 +593,9 @@ function construire() {
   const ph = $$("#ecran .ph"), tFilm = tF + .9;
   ph.forEach((p, k) => {
     const a = tFilm + k * 1.25;
-    tl.fromTo(p, { opacity: 0, scale: 1.16 }, { opacity: 1, scale: 1.02, duration: .5, ease: "power2.out", immediateRender: false }, a).to(p, { scale: 1.16, duration: 1.6, ease: "none" }, a + .5);
+    tl.fromTo(p, { opacity: 0 }, { opacity: 1, duration: .5, ease: "power2.out", immediateRender: false }, a)
+      .fromTo(p.querySelector(".vue"), { scale: .9 }, { scale: 1, duration: 2.1, ease: "power1.out", immediateRender: false }, a)
+      .fromTo(p.querySelector(".fond"), { scale: 1.05 }, { scale: 1.25, duration: 2.1, ease: "none", immediateRender: false }, a);
   });
   tl.fromTo(".film-sig", { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: .4 }, tFilm + .3)
     .fromTo(".film-titre", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .6, ease: "expo.out" }, mot("v2", "activité,") - .25)

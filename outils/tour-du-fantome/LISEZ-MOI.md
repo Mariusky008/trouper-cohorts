@@ -251,6 +251,10 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-court2/index
 (la page, ouverte avec `?rendu`, dessine l'instant demandé et calcule son propre son hors ligne ; ffmpeg assemble). Les
 voix : `recu/court/v2-1…8.mp3` et `demo1-g.mp3`, lues mot pour mot.
 
+**Le film du téléphone montre chaque photo en entière** (`#ecran .ph` : la photo en `contain` sur un fond flouté
+d'elle-même ; son zoom la fait grandir jusqu'à sa taille, jamais au-delà). Les photos sont presque carrées et l'écran
+très haut : en `cover`, on n'en voyait que la moitié. Même chose dans `tour-entrepreneurs2.html`.
+
 | Voix | Ce qui est dit | À l'écran |
 |---|---|---|
 | — | (avant de toucher) | la cage se balance, Mike frappe : « Libérez-moi ! » ; toucher la cage ou n'importe où |

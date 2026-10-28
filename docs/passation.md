@@ -89,13 +89,14 @@ potentiel de l'outil et **le résultat visé à la fin du mois**, avec le propri
 community manager de 2027 », qui ne fait pas grossir une communauté pour rien, mais la fait vivre, grandir, et
 surtout venir chez le commerçant. Base : la démo courte `tour-court2/` (`clikme.fr/tours/court`).
 
-### 5.1 D'abord : la vidéo dans le téléphone (défaut signalé)
+### 5.1 La vidéo dans le téléphone — FAIT (28 octobre)
 
 « La vidéo annonce du commerçant n'est pas à 100 % dans le téléphone : plus grande que lui, on ne voit pas les scènes
-en entier. » Cause probable : `#ecran .ph{…object-fit:cover}` (ligne 56 de `outils/tour-du-fantome/outils/tour-court2.html`,
-même règle dans `tour-entrepreneurs2.html`) — chaque photo remplit l'écran et se fait rogner. Correction proposée :
-`object-fit:contain` sur la photo, posée sur un fond flouté de la même photo (comme Instagram), pour tout voir sans
-bande noire. Puis relancer `tour-court2.py` (et `tour-entrepreneurs2.py`), vérifier à l'œil (captures), pousser.
+en entier. » Cause : les photos du film sont presque carrées (560 × 619) et l'écran du téléphone très haut ; en
+`object-fit:cover`, on n'en voyait qu'à peu près la moitié, et le zoom (×1,16) en rognait encore. Corrigé dans
+`outils/tour-court2.html` et `outils/tour-entrepreneurs2.html` : chaque photo se voit en entier (`contain`) sur un fond
+flouté d'elle-même, et le zoom la fait grandir jusqu'à sa taille sans jamais la couper (son fond bouge derrière).
+Les deux pages refaites et vérifiées à l'image (`?rendu`, `__rendre(t)`), sans erreur.
 
 ### 5.2 Le propriétaire qui parle, façon photo d'identité
 
@@ -104,7 +105,8 @@ sur sa voix, tout au long de la présentation ; Mike l'accompagne.
 
 - **Technique proposée** (dans le moteur GSAP de `tour-court2`, nouveau dossier `tour-humain/` tiré de lui) : la carte
   « CV » fixée en haut (photo, prénom, « Community manager · nouvelle génération »), la bouche incrustée sur la photo.
-  Deux façons, à faire choisir :
+  Deux façons — **le propriétaire veut voir les deux avant de choisir** : faire d'abord un essai de quelques secondes
+  de chacune, sur sa photo et une de ses répliques enregistrées :
   1. **Une vraie bouche filmée** (l'effet voulu) : quelqu'un dit le texte face caméra, on ne garde que sa bouche
      (masque, cadrage fixe) et on la cale sur la photo ; la voix du propriétaire reste le son. Il faut la vidéo de la bouche
      (1080p, face caméra, lumière égale, sans bouger), et l'accord écrit de la personne filmée (droit à l'image).
@@ -112,7 +114,8 @@ sur sa voix, tout au long de la présentation ; Mike l'accompagne.
      `outils/alignement.py`) : rien à filmer, plus « cartoon ».
 - **Ce que le propriétaire fournit** : sa photo (de face, fond neutre), ses voix en mp3 (enregistrées, pas de synthèse), les nouvelles
   répliques de Mike (ElevenLabs), et la vidéo de la bouche (façon 1).
-- **L'arc proposé** (un mois chez un commerce fictif ; à faire valider et enregistrer, textes au mot près) :
+- **L'arc proposé** (un mois chez un commerce fictif). **Avant de coder : montrer au propriétaire toutes les
+  répliques écrites (textes au mot près) et ce qu'on voit à chacune, et attendre son accord**, puis les enregistrements :
 
 | # | Qui | Ce qui est dit (proposition) | À l'écran |
 |---|---|---|---|
@@ -140,13 +143,17 @@ stock : la cage se referme.
   pas la même dernière) ; la saisie au comptoir (à côté du bon plan) ; la cage sur `/f/<lien>` et à la fin des vidéos
   du jour. Jamais d'alcool (même filtre que le bon plan). Une surprise est gratuite à obtenir (aucun achat pour
   ouvrir la cage) : à garder ainsi, et faire relire la règle du jeu (jeu promotionnel) avant de l'ouvrir pour de vrai.
-- À décider : l'or tire-t-il en premier, comme pour les bons plans ? une surprise par personne et par jour ?
+- **Décidé** : **une surprise par personne, tant qu'il en reste**. Le stock est le total prévu par le commerçant (s'il
+  en a prévu 15 et que 15 sont prises, il n'y en a plus : la cage dorée se referme).
+- Pas encore tranché (la question était mal posée) : les fantômes d'or ont-ils accès à la cage dorée **avant** les
+  autres, comme pour les bons plans (qui s'ouvrent à l'or tout de suite, à l'argent 20 minutes après, au bronze 40
+  minutes après) ? Par défaut : non, le premier qui ouvre la cage tire.
 
 ### 5.4 Les paliers : des fantômes bronze, argent, or (plus des écussons)
 
 Demande : à la place des écussons, « des fantômes sur des pièces, ou des fantômes en bronze, argent et or ».
-Recommandation : **le fantôme debout sur sa pièce** (bronze, argent, or), parce que son look (ses vêtements) est son
-identité dans la famille ; un fantôme teint en métal la perdrait. À faire choisir avec deux maquettes. Endroits à
+**Décidé : le fantôme debout sur sa pièce** (bronze, argent, or), parce que son look (ses vêtements) est son
+identité dans la famille ; un fantôme teint en métal la perdrait. Endroits à
 changer : la pastille de la vitrine (`src/app/autour-de-moi/vitrine-fantomes.tsx`, `.vf-palier`), la page de la famille
 (`src/app/f/[slug]/famille.tsx`, `.fm-patch`), le comptoir (`famille-comptoir.tsx`, `carnet-comptoir.tsx`), la fin des
 vidéos (`COULEUR_GRADE` et `dessinerUn` dans `src/lib/direct/famille-video.ts`), les démos (`tour-court2` F1/F2 :
@@ -156,24 +163,29 @@ vidéos (`COULEUR_GRADE` et `dessinerUn` dans `src/lib/direct/famille-video.ts`)
 
 À dire dans la démo et sur le flyer. À décider d'abord avec le propriétaire, pour que la promesse se vérifie :
 
-- **Qu'est-ce qu'un client amené ?** Proposé : un fantôme venu pour de vrai, noté au comptoir (« Passage
+- **Qu'est-ce qu'un client amené ? Décidé** : un fantôme venu pour de vrai, noté au comptoir (« Passage
   aujourd'hui » du carnet, ou bon scanné) — le parcours « venus » existe déjà dans « Ma famille ».
-- **Combien ?** Un prix par client venu, ou un forfait seulement à partir de N clients dans le mois.
+- **Combien ?** À fixer avec le propriétaire : un prix par client venu, ou un forfait seulement à partir de N clients
+  dans le mois.
 - **Où l'écrire** : la fin de la démo, le flyer, `/inscription`, les conditions. Les tours actuels disent
   « Commission : 0 € » : à mettre d'accord avec la nouvelle promesse.
 
 ### 5.6 Le flyer
 
-Repartir de `docs/flyer/` (A5 recto-verso, ses trois règles d'impression : aucune ombre portée, captures entières,
-flèches qui ne se croisent pas). Nouvelle version : sa carte CV et Mike, le résultat visé à la fin du mois, « Vous ne
-payez que si je vous amène des clients », le QR de la démo, son contact. Jamais « exemple ».
+**Un nouveau style** (le propriétaire : le concept a énormément évolué, l'ancien flyer de `docs/flyer/` ne convient
+plus). On n'en garde que ses règles d'impression, apprises à l'essai (`docs/flyer/LISEZ-MOI.md` : aucune ombre portée,
+captures entières, flèches qui ne se croisent pas). Ce qu'il dit : sa carte CV et Mike, le parcours d'un mois (la
+vidéo, les cages, la famille, la surprise du chef, les fidèles bronze/argent/or), le résultat visé à la fin du mois,
+« Vous ne payez que si je vous amène des clients », le QR de la démo, son contact. Jamais « exemple ». Proposer deux
+pistes de maquette avant d'en finir une.
 
 ### 5.7 L'ordre proposé
 
-1. 5.1 la vidéo dans le téléphone (rapide, utile tout de suite).
-2. Les décisions du propriétaire : 5.2 (bouche filmée ou dessinée), 5.4 (pièce ou métal), 5.5 (la règle et le prix),
-   5.3 (les règles de la surprise).
-3. Le texte final des répliques (5.2), puis les enregistrements (le propriétaire, Mike, la bouche).
+1. ~~5.1 la vidéo dans le téléphone~~ : fait.
+2. Écrire toutes les répliques de la démo (5.2), avec ce qu'on voit à chacune, et les **montrer au propriétaire
+   avant de coder**. Ses réponses déjà données : paliers sur une pièce (5.4), client amené = venue notée au comptoir
+   (5.5), une surprise par personne tant qu'il en reste (5.3). Restent : le prix (5.5), la priorité de l'or (5.3).
+3. Un essai court des deux bouches (5.2), pour qu'il choisisse ; puis les enregistrements (le propriétaire, Mike, la bouche).
 4. La démo `tour-humain/` (5.2 + 5.3 en scène + 5.4), sa vidéo MP4 (`rendre-video.mjs`) pour l'envoyer.
 5. Le flyer (5.6).
 6. Dans l'app : les paliers en fantômes (5.4), puis la surprise du chef (5.3).
