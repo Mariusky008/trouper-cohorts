@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS public.clik_surprise_tirage (
   created_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (site_id, jour, habitant_id)
 );
+-- « Non merci » : il laisse sa surprise (elle reste pour les autres), sans autre tirage ce jour-là.
+ALTER TABLE public.clik_surprise_tirage ADD COLUMN IF NOT EXISTS laisse_le timestamptz;
 ALTER TABLE public.clik_surprise_tirage ENABLE ROW LEVEL SECURITY;
 
 COMMENT ON TABLE public.clik_surprise IS 'La surprise du chef : ce que le commerçant prévoit aujourd''hui, son stock et combien sont parties.';

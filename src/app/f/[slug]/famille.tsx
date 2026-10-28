@@ -96,6 +96,13 @@ const MOTS_CHEMIN: Record<keyof Parcours, [string, string]> = {
   amis: ["ami amené", "amis amenés"],
 };
 
+/**
+ * 💬 LE BOUTON WHATSAPP (« Mes bons plans sur WhatsApp »), CACHÉ POUR L'INSTANT : la page fait tout, et WhatsApp ne
+ * servira qu'à prévenir (la sonnette du chantier 4, voir `docs/passation.md`). Tant que personne n'y répond, on n'y
+ * envoie personne. Le jour venu : un petit lien « 🔔 Me prévenir des bons plans », après la surprise.
+ */
+const WHATSAPP_SONNETTE = false;
+
 export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: string }) {
   const look = useSyncExternalStore(abonnerLook, monLook, lookServeur);
   const [etat, setEtat] = useState<EtatFamille | null>(null);
@@ -288,16 +295,18 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
   };
 
   /** 🎁 LA CAGE DORÉE : l'ouvrir tire sa surprise du jour (au hasard, gardée) ; « Je prends ça » la lui donne. */
-  const surpriseGeste = async (action: "surprise-ouvrir" | "surprise-prendre") => {
+  const surpriseGeste = async (action: "surprise-ouvrir" | "surprise-prendre" | "surprise-laisser") => {
     setEnvoi(true);
     setEnnuiSurprise("");
     try {
       const r = await fetch("/api/direct/famille", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: c.slug, action }) });
-      const j = (await r.json().catch(() => null)) as { ok?: boolean; error?: string; libelle?: string; prise?: boolean } | null;
+      const j = (await r.json().catch(() => null)) as { ok?: boolean; error?: string; libelle?: string; prise?: boolean; laissee?: boolean } | null;
       if (r.ok && j?.ok && j.libelle) {
         const libelle = j.libelle;
         setEtat((e) =>
-          e?.surprise ? { ...e, surprise: { reste: Math.max(0, e.surprise.reste - (j.prise && !e.surprise.moi?.prise ? 1 : 0)), moi: { libelle, prise: Boolean(j.prise) } } } : e,
+          e?.surprise
+            ? { ...e, surprise: { reste: Math.max(0, e.surprise.reste - (j.prise && !e.surprise.moi?.prise ? 1 : 0)), moi: { libelle, prise: Boolean(j.prise), laissee: Boolean(j.laissee) } } }
+            : e,
         );
       } else {
         setEnnuiSurprise(j?.error || "Ça n’a pas marché. Réessaie dans un instant.");
@@ -313,6 +322,13 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
     const sp = e?.surprise;
     if (!sp) return null;
     const ennui = ennuiSurprise ? <em role="alert">{ennuiSurprise}</em> : null;
+    if (sp.moi?.laissee)
+      return (
+        <div className="fm-surprise fermee" role="status">
+          <small>🎁 Surprise du chef</small>
+          <span>Tu l’as laissée pour un autre fantôme. Une nouvelle surprise demain !</span>
+        </div>
+      );
     if (sp.moi?.prise)
       return (
         <div className="fm-surprise prise" role="status">
@@ -326,9 +342,14 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
         <div className="fm-surprise ouverte" role="status">
           <small>🎁 Surprise du chef</small>
           <b>{sp.moi.libelle}</b>
-          <button type="button" disabled={envoi} onClick={() => void surpriseGeste("surprise-prendre")}>
-            Je prends ça
-          </button>
+          <div className="fm-surprise-choix">
+            <button type="button" disabled={envoi} onClick={() => void surpriseGeste("surprise-prendre")}>
+              Je prends ça
+            </button>
+            <button type="button" className="non" disabled={envoi} onClick={() => void surpriseGeste("surprise-laisser")}>
+              Non merci
+            </button>
+          </div>
           {ennui}
         </div>
       );
@@ -494,7 +515,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
         </div>
 
         <div className="fm-actions">
-          {c.whatsapp && (
+          {WHATSAPP_SONNETTE && c.whatsapp && (
             <>
               <a
                 className="fm-bouton wa"
@@ -507,7 +528,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
               <p className="fm-note">Mike t’y explique tout 👻</p>
             </>
           )}
-          <button type="button" className={`fm-bouton ${c.whatsapp ? "second" : "rose"}`} onClick={() => void inviter()}>
+          <button type="button" className={`fm-bouton ${WHATSAPP_SONNETTE && c.whatsapp ? "second" : "rose"}`} onClick={() => void inviter()}>
             {copie
               ? "✓ Lien copié : colle-le à un ami"
               : etat && record !== null && record > 0 && !recordBattu(etat)
@@ -805,6 +826,8 @@ const STYLES = `
 .fm-surprise em{font-style:normal;font-size:13px;color:#FF8FB8}
 .fm-surprise.cage{cursor:pointer;align-items:center;text-align:center}
 .fm-surprise.cage i{font-style:normal;font-size:34px;animation:fm-flotte 2.4s ease-in-out infinite}
+.fm-surprise-choix{display:flex;gap:8px;flex-wrap:wrap}
+.fm-surprise button.non{background:rgba(255,255,255,.1);color:var(--creme)}
 .fm-surprise button{align-self:flex-start;margin-top:6px;padding:10px 18px;border:0;border-radius:999px;background:#FF2E9A;color:#fff;font:inherit;font-weight:800;cursor:pointer}
 .fm-surprise.fermee{opacity:.75;border-style:dashed}
 .fm-gate{margin:12px 16px 0;padding:10px 14px;border-radius:14px;background:rgba(242,196,107,.1);border:1px solid rgba(242,196,107,.35);font-size:13.5px;line-height:1.4;color:var(--doux)}

@@ -314,7 +314,7 @@ dit « 🚀 Ton départ : 1/3 ». Ensuite, son lien reste en petit, avec son car
 table de 11 h à 11 h 30 à −25 % », « 4 × Le café offert »…, six au plus, de 1 à 50 chacune, jamais d'alcool). Sur sa
 page `/f/<lien>`, sa famille a une cage dorée : l'ouvrir tire une surprise au hasard parmi celles qui restent (une par
 personne et par jour, gardée : rouvrir ne la change pas) ; « Je prends ça » la lui donne et en retire une du stock
-(jamais deux fois la dernière) ; plus de stock, « Toutes les surprises du jour sont parties ». Pas de priorité de
+(jamais deux fois la dernière) ; « Non merci » la laisse aux autres, sans autre tirage ce jour-là ; plus de stock, « Toutes les surprises du jour sont parties ». Pas de priorité de
 palier : le premier qui ouvre tire. Le comptoir voit qui a pris quoi (prénom, numéro). `surprisesDuJour`,
 `fixerSurprises`, `ouvrirSurprise`, `prendreSurprise`, `surprisesPrises` (`famille-serveur.ts`) ; « surprises » et
 « surprises-lire » (route du comptoir) ; « surprise-ouvrir » et « surprise-prendre » (`api/direct/famille`).

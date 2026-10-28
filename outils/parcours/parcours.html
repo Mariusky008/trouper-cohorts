@@ -590,6 +590,11 @@ h1 em{font-family:"Playfair Display",Georgia,serif;font-weight:700;color:var(--r
 .cd-bouton{margin-top:6px;padding:11px 20px;border:0;border-radius:999px;background:#FF2E9A;color:#fff;font:inherit;font-weight:800;font-size:14px;box-shadow:0 10px 22px -8px rgba(255,46,154,.8);cursor:pointer}
 .cd-bouton.or{background:linear-gradient(135deg,#F2C46B,#C9902F);color:#2C0912;box-shadow:0 10px 22px -8px rgba(242,196,107,.8)}
 .cd-reste{font-size:12px;color:#C9B8BF}
+.cd-choix{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.cd-bouton.non{background:rgba(255,255,255,.12);color:#FFF4E6;box-shadow:none}
+.cd-laisse-msg{display:none;margin:0;font-size:12px;color:#C9B8BF;max-width:230px}
+.cd.laisse .cd-laisse-msg{display:block}
+.cd.laisse .cd-carte{opacity:.35;filter:grayscale(.6);transition:opacity .4s,filter .4s}
 .cd-reste b{color:#F2C46B}
 .sp-liste{display:flex;flex-direction:column;gap:7px;margin:0 12px}
 .sp-ligne{display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(242,196,107,.25);font-size:12.5px}
@@ -1075,7 +1080,7 @@ h1 em{font-family:"Playfair Display",Georgia,serif;font-weight:700;color:var(--r
       <div class="cd-scene ${scene}">${p ? `<div class="cd-rayons"></div>` : ""}${cageDoree(p > 0)}
         ${p ? `<div class="cd-carte"><small>SURPRISE DU CHEF</small><b>${s.l}</b><span>Chez Bergine · aujourd’hui</span>${p === 2 ? `<i class="cd-tampon">✓ À toi</i>` : ""}</div>` : ""}</div>
       ${p === 0 ? `<button class="cd-bouton or cible"${cible(.8)}>Ouvrir la cage dorée</button><p class="cd-reste">Encore <b>${reste}</b> surprises ce midi</p>`
-        : p === 1 ? `<button class="cd-bouton cible"${cible(1.6)}>Je prends ça</button>`
+        : p === 1 ? `<div class="cd-choix"><button class="cd-bouton cible"${cible(1.6)}>Je prends ça</button><button class="cd-bouton non" onclick="this.closest('.cd').classList.add('laisse')">Non merci</button></div><p class="cd-laisse-msg">Elle reste pour un autre fantôme. Pas d’autre tirage aujourd’hui : une surprise par personne.</p>`
         : `<p class="cd-reste">Dis-le au comptoir : <b>fantôme n°${CAMILLE.n}</b>. Il en reste <b>${reste}</b> pour les autres.</p><button class="lien-wa cible"${cible(1.4)}>🔔 Me prévenir des bons plans sur WhatsApp</button>`}
     </div></div>`;
   };

@@ -18,7 +18,7 @@ const ok = (c, m) => {
   console.log(c ? "  ok  " : "ÉCHEC ", m);
 };
 const cookies = {};
-for (const qui of ["Olga", "Paul", "Zoé"]) {
+for (const qui of ["Olga", "Paul", "Zoé", "Max"]) {
   const r = await fetch(`${BASE}/api/direct/cage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: SLUG, film: "page", cage: "adore", prenom: qui }) });
   cookies[qui] = (r.headers.get("set-cookie") ?? "").split(";")[0];
 }
@@ -51,6 +51,13 @@ const p1 = await geste("Olga", "surprise-prendre");
 v = await vue("Olga");
 ok(p1.statut === 200 && p1.libelle === o1.libelle && v?.reste === 1 && v.moi?.prise === true, `« Je prends ça » : à elle, il en reste 1 (${JSON.stringify(v)})`);
 ok((await geste("Olga", "surprise-ouvrir")).libelle === o1.libelle, "une par personne : elle retrouve la sienne");
+// « NON MERCI » : Max laisse la sienne ; elle reste pour les autres, et lui n'en tire pas d'autre aujourd'hui
+const m1 = await geste("Max", "surprise-ouvrir");
+const m2 = await geste("Max", "surprise-laisser");
+const m3 = await geste("Max", "surprise-ouvrir");
+ok(m1.statut === 200 && m2.statut === 200 && m2.laissee === true && m3.statut === 409 && /laissé/.test(m3.error ?? ""), `« Non merci » : laissée, pas d'autre tirage (${m3.error})`);
+v = await vue("Max");
+ok(v?.reste === 1 && v.moi?.laissee === true, `elle reste pour les autres : encore 1 (${JSON.stringify(v)})`);
 const o3 = await geste("Paul", "surprise-ouvrir");
 ok(o3.libelle && o3.libelle !== o1.libelle, `Paul tire celle qui reste (« ${o3.libelle} »)`);
 // LA DERNIÈRE NE PART PAS DEUX FOIS : Zoé tire la même que Paul (c'est la seule qui reste), et ils la prennent en même temps
@@ -81,9 +88,10 @@ ok((await p.locator(".fm-surprise.cage").innerText()).includes("Encore 1 aujourd
 await p.locator(".fm-surprise.cage").click();
 await p.waitForSelector(".fm-surprise.ouverte", { timeout: 15000 });
 ok((await p.locator(".fm-surprise.ouverte").innerText()).includes("Un dessert offert"), "elle s'ouvre : « Un dessert offert »");
+ok((await p.locator(".fm-surprise.ouverte button.non").innerText()) === "Non merci", "« Non merci » à côté de « Je prends ça »");
 await p.locator(".fm-surprise.ouverte").scrollIntoViewIfNeeded();
 await p.screenshot({ path: `${D}/surprise-1-ouverte.png` });
-await p.locator(".fm-surprise.ouverte button").click();
+await p.locator(".fm-surprise.ouverte button:not(.non)").click();
 await p.waitForSelector(".fm-surprise.prise", { timeout: 15000 });
 ok((await p.locator(".fm-surprise.prise").innerText()).includes("Elle est à toi"), "« Je prends ça » : elle est à toi, dis-le au comptoir");
 ok((await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0, "la page ne déborde pas");

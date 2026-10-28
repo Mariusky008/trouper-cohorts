@@ -551,7 +551,7 @@ export async function fixerSurprises(supabase: Supabase, siteId: string, brut: u
 }
 
 async function tirageDe(supabase: Supabase, siteId: string, habitantId: string): Promise<Ligne | null> {
-  const { data, error } = await supabase.from("clik_surprise_tirage").select("surprise_id, pris_le").eq("site_id", siteId).eq("jour", jourParis()).eq("habitant_id", habitantId).maybeSingle();
+  const { data, error } = await supabase.from("clik_surprise_tirage").select("surprise_id, pris_le, laisse_le").eq("site_id", siteId).eq("jour", jourParis()).eq("habitant_id", habitantId).maybeSingle();
   return error ? null : ((data as Ligne | null) ?? null);
 }
 const oublierTirage = (supabase: Supabase, siteId: string, habitantId: string) =>
@@ -564,7 +564,7 @@ export async function surprisePour(supabase: Supabase, siteId: string, habitantI
   const reste = liste.reduce((n, x) => n + Math.max(0, x.stock - x.pris), 0);
   const t = habitantId ? await tirageDe(supabase, siteId, habitantId) : null;
   const sienne = t ? liste.find((x) => x.id === s(t.surprise_id)) : undefined;
-  const moi = t && sienne && (t.pris_le || sienne.pris < sienne.stock) ? { libelle: sienne.libelle, prise: Boolean(t.pris_le) } : null;
+  const moi = t && sienne && (t.pris_le || t.laisse_le || sienne.pris < sienne.stock) ? { libelle: sienne.libelle, prise: Boolean(t.pris_le), laissee: Boolean(t.laisse_le) && !t.pris_le } : null;
   return { reste, moi };
 }
 
@@ -573,6 +573,8 @@ export async function ouvrirSurprise(supabase: Supabase, siteId: string, habitan
   const { actif, liste } = await surprisesDuJour(supabase, siteId);
   if (!actif) return { ennui: "Les surprises ne sont pas encore activées." };
   const t = await tirageDe(supabase, siteId, habitantId);
+  // « NON MERCI » : une par personne et par jour, laisser ne permet pas d'en tirer une autre
+  if (t?.laisse_le && !t.pris_le) return { ennui: "Tu as laissé ta surprise pour aujourd’hui. Une nouvelle demain !" };
   if (t) {
     const sienne = liste.find((x) => x.id === s(t.surprise_id));
     if (sienne && (t.pris_le || sienne.pris < sienne.stock)) return { libelle: sienne.libelle, prise: Boolean(t.pris_le) };
@@ -614,6 +616,22 @@ export async function prendreSurprise(supabase: Supabase, siteId: string, habita
     }
   }
   return { ennui: "Beaucoup de monde en même temps : réessaie dans un instant." };
+}
+
+/** « Non merci » : il laisse sa surprise (elle reste pour les autres) ; pas d'autre tirage pour lui aujourd'hui. */
+export async function laisserSurprise(supabase: Supabase, siteId: string, habitantId: string): Promise<{ ennui?: string; libelle?: string }> {
+  const t = await tirageDe(supabase, siteId, habitantId);
+  if (!t) return { ennui: "Ouvre d’abord la cage dorée." };
+  if (t.pris_le) return { ennui: "Elle est déjà à toi." };
+  const { data } = await supabase.from("clik_surprise").select("libelle").eq("id", s(t.surprise_id)).maybeSingle();
+  const { error } = await supabase
+    .from("clik_surprise_tirage")
+    .update({ laisse_le: new Date().toISOString() })
+    .eq("site_id", siteId)
+    .eq("jour", jourParis())
+    .eq("habitant_id", habitantId);
+  if (error) return { ennui: pasEncoreSurprises(s(error.message)) };
+  return { libelle: s((data as Ligne | null)?.libelle) || "ta surprise" };
 }
 
 /** Pour le comptoir : qui a pris quelle surprise aujourd'hui (prénom et numéro, jamais d'identifiant). */

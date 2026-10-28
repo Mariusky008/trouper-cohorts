@@ -145,7 +145,13 @@ stock : la cage se referme.
   (`outils/parcours/`, étape « La cage dorée ») : la reprendre.
 - **Dans l'app : FAIT (28 octobre)**, voir `docs/les-cages.md` (« La surprise du chef ») et l'essai
   `famille-surprise.mjs`. **Le propriétaire doit coller `supabase/migrations/20261105090000_clik_surprises.sql`** dans
-  Supabase ; sans elle, la cage dorée ne paraît pas. Reste à faire : la cage dorée à la fin des vidéos du jour (chantier 5),
+  Supabase ; sans elle, la cage dorée ne paraît pas (déjà collée avant « Non merci » ? la recoller : elle ajoute
+  `laisse_le` et se rejoue sans rien casser). « Non merci » : la surprise reste pour les autres, pas d'autre tirage ce
+  jour-là (sinon on refuserait jusqu'à la meilleure).
+- **Prochaine étape proposée par le propriétaire : « Je l'offre à quelqu'un »** — un troisième bouton. Idée : la
+  surprise est réservée pour l'ami (jusqu'au soir, puis elle revient au stock), un lien à partager (avec le code
+  d'invitation `?de=`) ; l'ami ouvre une cage, entre dans la famille et la reçoit ; elle compte comme un ami amené
+  pour le palier de qui l'offre. À faire valider (durée de la réservation, une par personne) avant de coder. Reste à faire : la cage dorée à la fin des vidéos du jour (chantier 5),
   et une démonstration au comptoir de démo (aujourd'hui, seulement chez un vrai commerçant). Ce qui a été fait : une table `clik_surprise` (commerce, jour, libellé, stock, pris) et sa
   migration ; le tirage et la prise côté serveur, en une seule écriture (deux personnes au même instant ne prennent
   pas la même dernière) ; la saisie au comptoir (à côté du bon plan) ; la cage sur `/f/<lien>` et à la fin des vidéos

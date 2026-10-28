@@ -4,7 +4,7 @@
 // petit mot), et un atelier tout neuf. Puis : l'accueil (la foule du jour, le record, les trois cages, jamais
 // « exemple ») ; la cage ouvre la fiche (son fantôme, son prénom, son petit mot) ; « Entrer dans la famille »
 // donne son numéro, son écusson, le chemin vers l'argent, la vitrine avec « Toi · Camille », WhatsApp (seulement
-// si le numéro de ClikMe est réglé : `CLIKME_WHATSAPP`) et l'invitation ; revenir le même jour rouvre sa famille ;
+// caché jusqu'à la sonnette, chantier 4) et l'invitation ; revenir le même jour rouvre sa famille ;
 // un ami venu par son lien compte pour elle ; une visite notée la fait passer argent (fêté une fois) ; chaque
 // fantôme de la vitrine porte son écusson de la famille, et sa bulle son numéro ; un gros mot en prénom est
 // refusé ; la famille vide invite à être le premier. Rien ne déborde.
@@ -104,9 +104,8 @@ ok((await texte(p, ".fm-patch")) === "4" && (await p.locator(".fm-patch.bronze")
 ok(fam.includes("Prochain : l’écusson argent 🥈") && fam.includes("Viens une fois au Comptoir des Fantômes, ou ouvre la cage 7 jours."), "le chemin vers l'argent");
 ok(fam.includes("1 jour de cage sur 7") && fam.includes("aujourd’hui ✓"), "son premier jour de cage, compté");
 ok(/2 fantômes aujourd’hui/.test(fam) && fam.includes("📣 Il en manque 3 : inviter un ami"), "la foule passe à 2, il en manque 3");
-const wa = await p.locator("a.fm-bouton.wa").getAttribute("href").catch(() => null);
-if (process.env.CLIKME_WHATSAPP) ok(/^https:\/\/wa\.me\/\d{8,15}\?text=/.test(wa ?? "") && decodeURIComponent(wa ?? "").includes("c’est Camille, fantôme n°4 du Comptoir des Fantômes"), "WhatsApp : le message déjà écrit pour Mike");
-else ok(wa === null, "pas de numéro ClikMe réglé : pas de bouton WhatsApp");
+// LE BOUTON WHATSAPP EST CACHÉ tant que la sonnette n'existe pas (chantier 4) : personne n'y répondrait.
+ok((await p.locator("a.fm-bouton.wa").count()) === 0, "pas de bouton WhatsApp : caché jusqu'à la sonnette");
 await p.waitForSelector(".vf .vf-fg.moi", { timeout: 20000 });
 ok((await texte(p, ".vf-fg.moi .nom")) === "Toi · Camille", `sa place dans la vitrine (${await texte(p, ".vf-fg.moi .nom")})`);
 ok((await p.locator(".vf .vf-fg").count()) >= 3, `la famille devant le commerce (${await p.locator(".vf .vf-fg").count()} fantômes)`);

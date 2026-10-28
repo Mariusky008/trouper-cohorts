@@ -7,7 +7,8 @@
 // offrir ce mois-ci.
 // POST { slug, action: "video", oui } : 🎬 son prénom et son petit mot dans les vidéos de ce commerce
 // (oui / non, à tout moment) — seulement s'il est de la famille.
-// POST { slug, action: "surprise-ouvrir" | "surprise-prendre" } : 🎁 la cage dorée, sa surprise du jour, puis « Je prends ça ».
+// POST { slug, action: "surprise-ouvrir" | "surprise-prendre" | "surprise-laisser" } : 🎁 la cage dorée, sa surprise du
+// jour, puis « Je prends ça » ou « Non merci » (elle reste pour les autres ; pas d'autre tirage ce jour-là).
 // GET ?moi=1 : ses familles, pour Ma Maison (chaque commerce client où il a libéré son fantôme :
 // son numéro, son écusson, ce qu'il a fait).
 // Voir `lib/direct/famille.ts` (la règle, les paliers) et `lib/direct/famille-serveur.ts`.
@@ -17,6 +18,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import {
+  laisserSurprise,
   ouvrirSurprise,
   prendreSurprise,
   surprisePour, bonPlanEnCours, bonPlanPour, enregistrerAccordVideo, etatFamille, famillesDe, gateDuMois, lireFamille, motDuJour } from "@/lib/direct/famille-serveur";
@@ -68,7 +70,7 @@ export async function POST(request: Request) {
   }
   const slug = s(p?.slug);
   const action = s(p?.action);
-  const surprise = action === "surprise-ouvrir" || action === "surprise-prendre";
+  const surprise = action === "surprise-ouvrir" || action === "surprise-prendre" || action === "surprise-laisser";
   if (!surprise && (action !== "video" || typeof p?.oui !== "boolean")) return NextResponse.json({ error: "action inconnue" }, { status: 400 });
   if (!/^[a-z0-9-]{2,120}$/i.test(slug)) return NextResponse.json({ error: "Commerce introuvable." }, { status: 404 });
   const supabase = createAdminClient();
@@ -79,9 +81,14 @@ export async function POST(request: Request) {
   if (!moi || !(await lireFamille(supabase, siteId)).numeroDe(moi.id)) return NextResponse.json({ error: "Ouvre d’abord une cage." }, { status: 403 });
   // 🎁 LA CAGE DORÉE : l'ouvrir (sa surprise du jour, au hasard), puis « Je prends ça »
   if (surprise) {
-    const r = action === "surprise-ouvrir" ? await ouvrirSurprise(supabase, siteId, moi.id) : await prendreSurprise(supabase, siteId, moi.id);
+    const r =
+      action === "surprise-ouvrir"
+        ? await ouvrirSurprise(supabase, siteId, moi.id)
+        : action === "surprise-prendre"
+          ? await prendreSurprise(supabase, siteId, moi.id)
+          : await laisserSurprise(supabase, siteId, moi.id);
     if (r.ennui) return NextResponse.json({ error: r.ennui }, { status: /pas encore activées/.test(r.ennui) ? 503 : 409 });
-    return NextResponse.json({ ok: true, libelle: r.libelle, prise: action === "surprise-prendre" ? true : Boolean((r as { prise?: boolean }).prise) });
+    return NextResponse.json({ ok: true, libelle: r.libelle, prise: action === "surprise-prendre" ? true : Boolean((r as { prise?: boolean }).prise), laissee: action === "surprise-laisser" });
   }
   const ennui = await enregistrerAccordVideo(supabase, siteId, moi.id, p?.oui === true);
   if (ennui) return NextResponse.json({ error: ennui }, { status: /pas encore possible/.test(ennui) ? 503 : 500 });
