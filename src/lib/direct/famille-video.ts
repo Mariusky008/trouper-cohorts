@@ -49,7 +49,9 @@ export const FIN_FAMILLE = 8.4;
 /** La fin : la famille d'hier, puis les cages. */
 const SCENE_CAGES = 4.4;
 
-const COULEUR_GRADE: Record<Grade, string> = { bronze: "#C98A4B", argent: "#BFC5CF", or: "#E2B04A" };
+const COULEUR_GRADE: Record<Grade, string> = { bronze: "#D49B60", argent: "#DDE2EA", or: "#F2C762" };
+/** Le bord de sa pièce, plus sombre. */
+const BORD_GRADE: Record<Grade, string> = { bronze: "#874F1E", argent: "#7C8592", or: "#946410" };
 const COULEUR_CAGE = ["#FF2E9A", "#F5A23A", "#3DE2A6"];
 
 export type ImagesFamille = {
@@ -338,18 +340,23 @@ function dessinerUn(g: CanvasRenderingContext2D, img: HTMLImageElement | null, g
   const flotte = Math.sin(u * 2.2 + k * 1.3) * 5 * s;
   g.save();
   g.globalAlpha = alpha;
-  enPied(g, img, x, bas + flotte, h, 0.03 * Math.sin(u * 1.7 + k));
-  // SON ÉCUSSON DE LA FAMILLE : la couleur de son palier
-  const r = 15 * s * entre;
+  // SA PIÈCE, SOUS SES PIEDS : le métal de son palier (dessinée d'abord, il se tient dessus)
+  const rx = 0.3 * h,
+    ry = rx * 0.36,
+    cy = bas + flotte - ry * 0.25;
   g.beginPath();
-  g.arc(x - 4 * s, bas + flotte - h * 0.33, r, 0, Math.PI * 2);
-  g.fillStyle = COULEUR_GRADE[grade];
+  g.ellipse(x, cy + ry * 0.32, rx, ry, 0, 0, Math.PI * 2);
+  g.fillStyle = BORD_GRADE[grade];
   g.fill();
-  g.lineWidth = Math.max(1, 2 * s);
-  g.strokeStyle = "rgba(255,248,234,.9)";
-  g.setLineDash([3 * s, 2.5 * s]);
-  g.stroke();
-  g.setLineDash([]);
+  const reflet = g.createRadialGradient(x - rx * 0.25, cy - ry * 0.35, 1, x, cy, rx);
+  reflet.addColorStop(0, "rgba(255,255,255,.85)");
+  reflet.addColorStop(0.3, COULEUR_GRADE[grade]);
+  reflet.addColorStop(1, BORD_GRADE[grade]);
+  g.beginPath();
+  g.ellipse(x, cy, rx, ry, 0, 0, Math.PI * 2);
+  g.fillStyle = reflet;
+  g.fill();
+  enPied(g, img, x, bas + flotte, h, 0.03 * Math.sin(u * 1.7 + k));
   g.restore();
 }
 

@@ -145,15 +145,20 @@ stock : la cage se referme.
   ouvrir la cage) : à garder ainsi, et faire relire la règle du jeu (jeu promotionnel) avant de l'ouvrir pour de vrai.
 - **Décidé** : **une surprise par personne, tant qu'il en reste**. Le stock est le total prévu par le commerçant (s'il
   en a prévu 15 et que 15 sont prises, il n'y en a plus : la cage dorée se referme).
-- Pas encore tranché (la question était mal posée) : les fantômes d'or ont-ils accès à la cage dorée **avant** les
-  autres, comme pour les bons plans (qui s'ouvrent à l'or tout de suite, à l'argent 20 minutes après, au bronze 40
-  minutes après) ? Par défaut : non, le premier qui ouvre la cage tire.
+- **Recommandé (et retenu par défaut) : pas de priorité de palier** pour la cage dorée — le premier qui l'ouvre tire.
+  Les surprises font venir des gens aujourd'hui, nouveaux compris ; l'or a déjà son avantage avec les bons plans
+  (l'or tout de suite, l'argent 20 minutes après, le bronze 40 minutes après).
 
 ### 5.4 Les paliers : des fantômes bronze, argent, or (plus des écussons)
 
 Demande : à la place des écussons, « des fantômes sur des pièces, ou des fantômes en bronze, argent et or ».
 **Décidé : le fantôme debout sur sa pièce** (bronze, argent, or), parce que son look (ses vêtements) est son
-identité dans la famille ; un fantôme teint en métal la perdrait. Endroits à
+identité dans la famille ; un fantôme teint en métal la perdrait.
+**Fait dans l'app (28 octobre)** : la pièce, frappée de son numéro, sous ses pieds dans la vitrine (`.vf-palier`),
+sur la page de la famille (`.fm-patch`, qui tombe et se pose quand on monte de palier) et à la fin des vidéos
+(`dessinerUn`). **Reste** : les mots à l'écran disent encore « écusson » (« Prochain : l'écusson or 🥇 »…, et les
+essais les vérifient) ; la démo courte (F1, F2 : « son écusson cousu ») ; le prototype `outils/trois-fantomes`.
+Endroits d'origine, pour mémoire :
 changer : la pastille de la vitrine (`src/app/autour-de-moi/vitrine-fantomes.tsx`, `.vf-palier`), la page de la famille
 (`src/app/f/[slug]/famille.tsx`, `.fm-patch`), le comptoir (`famille-comptoir.tsx`, `carnet-comptoir.tsx`), la fin des
 vidéos (`COULEUR_GRADE` et `dessinerUn` dans `src/lib/direct/famille-video.ts`), les démos (`tour-court2` F1/F2 :

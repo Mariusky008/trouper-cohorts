@@ -807,13 +807,14 @@ const STYLES = `
 .fm-heros{position:relative;padding:28px 16px 6px;text-align:center;background:radial-gradient(70% 75% at 50% 38%,rgba(242,196,107,.3),rgba(255,46,154,.12) 48%,transparent 75%)}
 .fm-heros h1{margin:6px 0 0;font-family:var(--font-enseigne),"Playfair Display",Georgia,serif;font-style:italic;font-weight:700;font-size:26px;line-height:1.1}
 .fm-heros p{margin:4px 0 0;font-size:14px;color:var(--doux)}
-.fm-moi{position:relative;width:118px;height:118px;margin:0 auto}
+.fm-moi{position:relative;width:118px;height:118px;margin:0 auto 26px}
 .fm-moi .flotte{position:absolute;inset:0;animation:fm-flotte 3s ease-in-out infinite}
 .fm-moi img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5))}
-.fm-patch{position:absolute;width:32%;aspect-ratio:1;left:44%;top:74%;transform:translate(-50%,-50%) rotate(-8deg);border-radius:50%;container-type:inline-size;display:grid;place-items:center;background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.45),transparent 58%),var(--e);box-shadow:0 1px 2px rgba(0,0,0,.5)}
-.fm-patch::before{content:"";position:absolute;inset:10%;border-radius:50%;border:max(.6px,5cqw) dashed rgba(255,248,234,.85)}
-.fm-patch b{font-size:34cqw;font-weight:800;color:#3A1D08;line-height:1}
-.fm-patch.bronze{--e:#C98A4B}.fm-patch.argent{--e:#BFC5CF}.fm-patch.or{--e:#E2B04A}
+/* SA PIÈCE, sous ses pieds : bronze, argent ou or, frappée de son numéro (son look reste le sien). */
+.fm-patch{position:absolute;z-index:-1;width:84%;aspect-ratio:2.5;left:50%;bottom:-24%;transform:translateX(-50%);border-radius:50%;container-type:inline-size;display:grid;place-items:center;background:radial-gradient(ellipse 58% 52% at 40% 36%,rgba(255,255,255,.62),transparent 62%),radial-gradient(ellipse at 50% 46%,var(--e) 0 64%,var(--f) 66% 100%);box-shadow:0 3px 0 var(--f),0 9px 14px rgba(0,0,0,.45)}
+.fm-patch::before{content:"";position:absolute;inset:14% 9%;border-radius:50%;border:max(.6px,2cqw) solid rgba(255,255,255,.38)}
+.fm-patch b{font-size:17cqw;font-weight:800;color:var(--f);line-height:1;text-shadow:0 1px 0 rgba(255,255,255,.55);transform:translateY(62%)}
+.fm-patch.bronze{--e:#D49B60;--f:#874F1E}.fm-patch.argent{--e:#DDE2EA;--f:#7C8592}.fm-patch.or{--e:#F2C762;--f:#946410}
 .fm-patch.coud{animation:fm-coud .9s cubic-bezier(.2,1.5,.4,1) .4s both}
 .fm-etincelle{position:absolute;font-style:normal;color:var(--or);font-size:16px;opacity:0;animation:fm-scintille 2.4s ease-in-out infinite;animation-delay:var(--d,0s)}
 .fm-monte{display:inline-block;margin:10px auto 0;padding:8px 14px;border-radius:14px;background:linear-gradient(90deg,rgba(242,196,107,.25),rgba(255,46,154,.2));border:1px solid rgba(242,196,107,.5);font-size:13px;color:var(--doux);animation:fm-pop .5s cubic-bezier(.2,1.4,.4,1) .6s both}
@@ -843,6 +844,6 @@ const STYLES = `
 @keyframes fm-monte{from{transform:translateY(100%)}}
 @keyframes fm-flotte{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 @keyframes fm-scintille{0%,100%{opacity:0;transform:scale(.5)}50%{opacity:1;transform:scale(1.15)}}
-@keyframes fm-coud{0%{opacity:0;transform:translate(-50%,-50%) scale(2.8) rotate(-40deg)}60%{opacity:1}100%{opacity:1;transform:translate(-50%,-50%) rotate(-8deg)}}
+@keyframes fm-coud{0%{opacity:0;transform:translateX(-50%) translateY(-60px) scale(.4) rotateX(70deg)}55%{opacity:1;transform:translateX(-50%) translateY(4px) scale(1.12)}100%{opacity:1;transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){.fm *{animation:none!important;transition:none!important}.fm-cage img.envol{opacity:0}.fm-cage-b.ouverte .porte{transform:scaleX(.12)}}
 `;

@@ -97,7 +97,7 @@ export function VitrineFantomes({
           </i>
         )}
         {f.ecussons && f.ecussons.length > 0 && <Ecussons liste={f.ecussons} />}
-        {/* 👻 Son écusson de la famille : la couleur de son palier, cousue à son numéro. */}
+        {/* 👻 Sa pièce de la famille, sous ses pieds : bronze, argent ou or, frappée de son numéro. */}
         {f.grade && f.numero ? (
           <i className={`vf-palier ${f.grade}`} aria-hidden="true">
             <b>{f.numero}</b>
@@ -579,12 +579,12 @@ const STYLES = `
 @media (prefers-reduced-motion:reduce){.vf-fg img,.vf-fg .nom,.vf-fg.moi::before{animation:none!important;}}
 .vf-bulle small{font:700 2.6cqw/1.3 system-ui,sans-serif;color:#1E8F69;}
 .vf-bulle .vf-num{font:700 2.6cqw/1.3 system-ui,sans-serif;font-style:normal;color:#8A5A2B;}
-.vf-palier{position:absolute;left:50%;top:50%;z-index:1;width:27%;aspect-ratio:1;transform:translate(-50%,-50%) rotate(-8deg);border-radius:50%;container-type:inline-size;display:grid;place-items:center;pointer-events:none;
-  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.45),transparent 58%),var(--e);box-shadow:0 1px 2px rgba(0,0,0,.5);}
-.vf-palier::before{content:"";position:absolute;inset:10%;border-radius:50%;border:max(.5px,5cqw) dashed rgba(255,248,234,.85);}
-.vf-palier b{font:800 38cqw/1 system-ui,sans-serif;color:#3A1D08;}
-.vf-palier.bronze{--e:#C98A4B;}.vf-palier.argent{--e:#BFC5CF;}.vf-palier.or{--e:#E2B04A;}
-.vf-fg.aujourdhui .vf-palier{top:56%;}
+/* SA PIÈCE : le fantôme se tient dessus (son look reste le sien) ; le métal dit son palier, le chiffre son numéro. */
+.vf-palier{position:absolute;left:50%;bottom:-12%;z-index:-1;width:70%;aspect-ratio:2.5;transform:translateX(-50%);border-radius:50%;container-type:inline-size;display:grid;place-items:center;pointer-events:none;
+  background:radial-gradient(ellipse 58% 52% at 40% 36%,rgba(255,255,255,.62),transparent 62%),radial-gradient(ellipse at 50% 46%,var(--e) 0 64%,var(--f) 66% 100%);box-shadow:0 .5cqw 0 var(--f),0 1.4cqw 1.8cqw rgba(0,0,0,.45);}
+.vf-palier::before{content:"";position:absolute;inset:14% 9%;border-radius:50%;border:max(.5px,2cqw) solid rgba(255,255,255,.38);}
+.vf-palier b{font:800 17cqw/1 system-ui,sans-serif;color:var(--f);text-shadow:0 1px 0 rgba(255,255,255,.55);transform:translateY(62%);}
+.vf-palier.bronze{--e:#D49B60;--f:#874F1E;}.vf-palier.argent{--e:#DDE2EA;--f:#7C8592;}.vf-palier.or{--e:#F2C762;--f:#946410;}
 .vf-coeur{position:absolute;right:-6%;top:6%;font-style:normal;font-size:4.6cqw;line-height:1;filter:drop-shadow(0 .3cqw .5cqw rgba(0,0,0,.5));pointer-events:none;}
 .vf-salle .vf-coeur{font-size:9cqw;}
 .vf-bulle q{font:italic 600 2.9cqw/1.3 Georgia,serif;color:#2B1D16;}
