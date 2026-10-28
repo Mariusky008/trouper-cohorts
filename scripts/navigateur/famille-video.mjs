@@ -269,6 +269,16 @@ ok(d.fantomes === 12 && d.ecrits.includes("23 fantômes") && d.ecrits.includes("
 ok(suite(d).includes("Merci pour l’accueil de samedi !") && !d.ecrits.some((x) => /^[»!?;:]/.test(x.trim())), "un petit mot sur deux lignes : jamais un « » » ni un « ! » seul au début d'une ligne");
 ok(vrai.duree[0] === 3.4 && vrai.duree[1] === 8.4, `le début dure ${vrai.duree[0]} s, la fin ${vrai.duree[1]} s`);
 
+// 🥖 UNE BOULANGERIE A SES MOTS : sa fournée, pas un plat du jour.
+const prop = await (await fetch(`${BASE}/api/site-internet/pro/proposition`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: SLUG, token: "jeton-test", action: "lire" }) })).json();
+ok(/Ta fournée du jour \?/.test(prop.proposition?.phrase ?? "") && !/plat du jour/.test(prop.proposition?.phrase ?? ""), `sa proposition du matin : « Ta fournée du jour ? » (${prop.proposition?.phrase})`);
+await p.goto(`${BASE}/autour-de-moi/assistante?site=${SLUG}&k=jeton-test`, { waitUntil: "networkidle" });
+await p.getByText("Publier une annonce").first().click({ timeout: 30000 });
+await p.waitForSelector(".cz-deux h2", { timeout: 20000 });
+await p.waitForTimeout(2500);
+// La proposition du matin (« Ta fournée du jour ? ») ou le titre « Publier la fournée du jour », selon qu'elle est arrivée.
+const publier = (await p.locator("body").innerText()).replace(/\s+/g, " ");
+ok(/fournée du jour/i.test(publier) && !/plat du jour|menu du jour/i.test(publier), "au comptoir : sa fournée du jour, jamais le plat du jour");
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` : ${erreurs[0]}` : ""}`);
 await b.close();
 console.log(echecs ? `${echecs} ÉCHEC(S)` : "TOUT EST BON");

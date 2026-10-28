@@ -77,7 +77,7 @@ export async function GET(request: Request) {
     }
     const activite = s(row.activite);
     const famille = familleDuDouble({ branche: brancheDuMetier(activite), metier: activite });
-    const proposition = propositionDuJour({ famille, pieces: piecesDuDiagnostic(diag), etat: etat0, pays: paysDuCommerce(row) });
+    const proposition = propositionDuJour({ famille, metier: activite, pieces: piecesDuDiagnostic(diag), etat: etat0, pays: paysDuCommerce(row) });
     if (!proposition) {
       saute("rien");
       continue;

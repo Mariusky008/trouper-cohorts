@@ -404,7 +404,7 @@ type Phase =
 type Envoi = { etat: "en-cours" } | ({ etat: "fini" } & ResultatEnvoi);
 
 function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => void }) {
-  const mission = missionDe(commerce.famille);
+  const mission = missionDe(commerce.famille, commerce.metier);
   const dossier = dossierDuFantome(commerce);
   /* SA MÉMOIRE : celle de sa famille pour un commerce de la démonstration
      (comme avant), la sienne pour un commerce venu d'une page. */

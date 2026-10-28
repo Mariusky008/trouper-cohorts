@@ -19,6 +19,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { missionDe } from "@/lib/direct/missions-commercant";
+import { estBoulangerie } from "@/lib/direct/double-metiers";
 import { interviewOuverte } from "@/lib/direct/interview-fantome";
 import {
   adresseLisible,
@@ -339,7 +340,7 @@ function LienDeBio({ commerce }: { commerce: CommerceComptoir }) {
       /* presse-papiers refusé : le lien reste lisible, et se sélectionne d'un appui long */
     }
   };
-  const ouvre = CE_QU_IL_OUVRE[commerce.famille] ?? missionDe(commerce.famille).quoi.toLowerCase();
+  const ouvre = estBoulangerie(commerce.metier) ? "ta fournée du jour" : (CE_QU_IL_OUVRE[commerce.famille] ?? missionDe(commerce.famille).quoi.toLowerCase());
   return (
     <section className="rs-bio">
       <h3>Le lien de ta bio Instagram</h3>

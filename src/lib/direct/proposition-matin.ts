@@ -18,7 +18,7 @@
  *
  * FICHIER PARTAGÉ : aucune dépendance au serveur.
  */
-import type { FamilleDouble } from "@/lib/direct/double-metiers";
+import { estBoulangerie, type FamilleDouble } from "@/lib/direct/double-metiers";
 import type { PieceComptoir } from "@/lib/site-internet/pieces-comptoir";
 
 /* ═══ LE CALENDRIER ═════════════════════════════════════════════════════ */
@@ -213,6 +213,8 @@ const FAIT_SA_PHOTO: FamilleDouble[] = ["table", "bar"];
 /** Ce que le fantôme lui propose ce matin. `null` : rien aujourd'hui (passée, publiée, ou plus d'idée). */
 export function propositionDuJour(p: {
   famille: FamilleDouble;
+  /** Son métier : une boulangerie a sa fournée, pas un plat du jour. */
+  metier?: string;
   pieces: PieceComptoir[];
   etat: EtatProposition;
   pays?: string;
@@ -224,7 +226,7 @@ export function propositionDuJour(p: {
   if (FAIT_SA_PHOTO.includes(p.famille)) {
     return {
       genre: "photo",
-      phrase: `${avant}${p.famille === "bar" ? "Qu’est-ce qui se passe ce soir ?" : "Ton plat du jour ?"} Une photo, et je m’occupe du reste.`,
+      phrase: `${avant}${p.famille === "bar" ? "Qu’est-ce qui se passe ce soir ?" : estBoulangerie(p.metier) ? "Ta fournée du jour ?" : "Ton plat du jour ?"} Une photo, et je m’occupe du reste.`,
       ...(occ ? { occasion: occ.phrase } : {}),
     };
   }

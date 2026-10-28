@@ -124,6 +124,24 @@ const LIVRE_DE_COTE: ProfilDouble["demande"] = {
   phrase: (jour, heure) => `Je passe ${jour} vers ${heure}, tu me le mets de côté ?`,
 };
 
+/* LA FOURNÉE MISE DE CÔTÉ : à la boulangerie, on ne réserve pas une table, on fait garder sa part —
+   et on passe tôt, ou en fin de journée. */
+const HEURES_FOURNIL = ["7 h 30", "8 h 30", "10 h", "12 h", "16 h 30", "17 h 30", "18 h 30", "19 h"];
+const FOURNEE_DE_COTE: ProfilDouble["demande"] = {
+  titre: "Faire mettre de côté",
+  court: "Mettre de côté",
+  objet: "de te la mettre de côté",
+  verbe: "mettre de côté une part de la fournée pour un passage",
+  pastille: "Me la mettre de côté ?",
+  proposition: "Je te la mets de côté ?",
+  personnes: false,
+  heures: HEURES_FOURNIL,
+  phrase: (jour, heure) => `Je passe ${jour} vers ${heure}, tu me la mets de côté ?`,
+};
+
+/** Une boulangerie, une pâtisserie : à table (`familleDuDouble`), mais avec ses mots à elle (`profilDuDouble`). */
+export const estBoulangerie = (metier?: string | null) => /boulang|p[âa]tiss|viennoiser/.test((metier ?? "").toLowerCase());
+
 const PROFILS: Record<FamilleDouble, ProfilDouble> = {
   table: {
     famille: "table",
@@ -328,7 +346,7 @@ export function familleDuDouble(c: { branche?: string | null; metier?: string | 
     if (/tatou|tattoo|pierc/.test(m)) return "seance";
     /* UNE BOULANGERIE EST RANGÉE PARMI LES ARTISANS (`brancheDuMetier`), MAIS ELLE EST À TABLE, comme dans
        le Direct : elle tombait dans les séances, avec un « cabinet », des rendez-vous et « Un vrai moment pour soi ». */
-    if (/boulang|p[âa]tiss|viennoiser/.test(m)) return "table";
+    if (estBoulangerie(m)) return "table";
     /* UNE BOUTIQUE DE MEUBLES ET DE DÉCO VEND CE QU'ON MET DE CÔTÉ : elle
        tombait dans les séances, avec un « cabinet » et des rendez-vous. */
     if (/cir|bougie|bijou|bracelet|collier|joaill|c[ée]ram|potier|atelier|cr[ée]at|meuble|d[ée]co/.test(m))
@@ -354,6 +372,23 @@ export function profilDuDouble(c: { branche?: string | null; metier?: string | n
       vedette: "le flash du moment",
       questionVedette: "Le flash du moment ?",
       suggestions: ["Le flash du moment ?", "Ton histoire ?", "Un rendez-vous ?"],
+    };
+  }
+  /* UNE BOULANGERIE N'A NI CHEF, NI PLAT DU JOUR, NI TABLE : sa fournée, qu'on se fait mettre de côté. */
+  if (p.famille === "table" && estBoulangerie(c.metier)) {
+    const lieu = /boulang/.test((c.metier ?? "").toLowerCase()) ? "la boulangerie" : "la pâtisserie";
+    return {
+      ...p,
+      ...EQUIPE,
+      role: `qui tient ${lieu}`,
+      lieu,
+      typeLieu: lieu.replace(/^la /, ""),
+      vedette: "la fournée du jour",
+      questionVedette: "La fournée du jour ?",
+      carteNom: "Ce qui sort du four",
+      suggestions: ["La fournée du jour ?", "Ton histoire ?", "Ta spécialité ?"],
+      demande: FOURNEE_DE_COTE,
+      sensible: "Allergènes, ingrédients précis, commandes spéciales",
     };
   }
   return p;

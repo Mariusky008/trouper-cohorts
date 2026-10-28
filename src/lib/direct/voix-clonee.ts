@@ -20,7 +20,7 @@
  * FICHIER SERVEUR : il lit les clés.
  */
 import { createAdminClient } from "@/lib/supabase/admin";
-import { profilDuDouble } from "@/lib/direct/double-metiers";
+import { estBoulangerie, profilDuDouble } from "@/lib/direct/double-metiers";
 import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 
 const s = (v: unknown) => String(v ?? "").trim();
@@ -39,7 +39,7 @@ export const ACCORD_VOIX =
 export function questionsVoix(activite: string): string[] {
   const p = profilDuDouble({ branche: brancheDuMetier(activite), metier: activite });
   const premiere =
-    p.famille === "table"
+    p.famille === "table" && !estBoulangerie(activite)
       ? "Raconte-moi ton plat du jour, comme à un client au comptoir."
       : `Raconte-moi ${p.vedette}, comme à quelqu'un qui entre dans ${p.lieu.replace(/^(le|la|l')\s?/, (m) => (m === "le " ? "ton " : m === "la " ? "ta " : "ton "))}.`;
   return [premiere, "Pourquoi tu fais ce métier ? Qu'est-ce qui te plaît le plus ?", "Qu'est-ce que tu dirais à quelqu'un qui hésite à venir ?"];

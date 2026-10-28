@@ -60,7 +60,7 @@ export async function POST(request: Request) {
   else if (action === "whatsapp") etat = { ...etat, whatsapp: p?.on === true };
   else if (action !== "lire") return NextResponse.json({ error: "action inconnue" }, { status: 400 });
 
-  const proposition = propositionDuJour({ famille, pieces, etat, pays: paysDuCommerce(row) });
+  const proposition = propositionDuJour({ famille, metier: s(row.activite), pieces, etat, pays: paysDuCommerce(row) });
   etat = avecLaPiece(etat, proposition?.piece?.id);
 
   // ON N'ÉCRIT QUE CE QUI A CHANGÉ : relire sa page dix fois ne réécrit pas sa fiche dix fois.

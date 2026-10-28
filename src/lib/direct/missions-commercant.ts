@@ -21,7 +21,7 @@
  *
  * FICHIER PARTAGÉ : aucune dépendance au DOM.
  */
-import type { FamilleDouble } from "@/lib/direct/double-metiers";
+import { estBoulangerie, type FamilleDouble } from "@/lib/direct/double-metiers";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 
 /** Une question du fantôme. */
@@ -361,7 +361,37 @@ export function planDuFantome(p: Projecteurs, reseaux: string): string {
     : `Je ${p.pronom} mets en avant sur ClikMe, ${clikme}`;
 }
 
-/** La mission d'un commerce, d'après sa famille. */
-export function missionDe(famille: FamilleDouble): Mission {
+/**
+ * 🥖 LA BOULANGERIE EST À TABLE, MAIS ELLE N'A NI MENU DU JOUR NI ASSIETTE : sa fournée, ce qui sort du
+ * four. Ce qu'il en reste se dit en fin de journée, pas après le service.
+ */
+const FOURNEE: Mission = {
+  famille: "table",
+  quoi: "La fournée du jour",
+  icone: "🥖",
+  etapes: [
+    { type: "dire", question: "Qu’est-ce qui sort du four aujourd’hui ?", exemple: "« Pain au levain et chaussons aux pommes, 4,50 euros »", nomDuChamp: "La fournée" },
+    { type: "photos", question: "Montre-moi la fournée !", conseil: "De près, sur la plaque ou en vitrine, avec la lumière du jour si tu peux.", min: 1, max: 4 },
+    {
+      type: "voix",
+      question: "Enregistre un message pour tes clients",
+      consigne:
+        "Raconte-leur les petits secrets de ta fournée : ce qu’il y a dedans, comment tu la prépares, d’où viennent tes farines. Ils l’entendront de ta voix en ouvrant ton annonce.",
+      exemple: "« Mon levain a douze ans. La pâte repose toute la nuit, et la fournée sort à 7 h. »",
+    },
+  ],
+  projecteurs: { titre: "Aujourd’hui, on braque les projecteurs sur ta fournée !", pronom: "la", cherchent: "une bonne boulangerie près de chez eux" },
+  bravo: "Ta fournée est en ligne ! S’il t’en reste en fin de journée, reviens me le dire.",
+  relance: {
+    apres: 17,
+    titre: "Il en reste !",
+    question: "Il t’en reste combien, et à quel prix ?",
+    exemple: "« Il me reste 6 baguettes, à 1 euro »",
+  },
+};
+
+/** La mission d'un commerce, d'après sa famille (et son métier : une boulangerie a sa fournée). */
+export function missionDe(famille: FamilleDouble, metier?: string): Mission {
+  if (famille === "table" && estBoulangerie(metier)) return FOURNEE;
   return MISSIONS[famille] ?? MISSIONS.mode;
 }
