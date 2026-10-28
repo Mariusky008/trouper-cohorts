@@ -137,7 +137,8 @@ l'équipe à −25 %, 4 restes à emporter après 14 h, 4 cafés offerts, 2 caf�
 dernière cage dorée « Surprise du chef » en tire une au hasard ; « Je prends ça » en retire une du stock ; plus de
 stock : la cage se referme.
 
-- **Dans la démo** : une scène (5.2, n° 5 et 6), chiffres fictifs. À faire.
+- **Dans la démo** : une scène (5.2, n° 5 et 6), chiffres fictifs. À faire. Elle existe déjà dans « Le parcours ClikMe »
+  (`outils/parcours/`, étape « La cage dorée ») : la reprendre.
 - **Dans l'app : FAIT (28 octobre)**, voir `docs/les-cages.md` (« La surprise du chef ») et l'essai
   `famille-surprise.mjs`. **Le propriétaire doit coller `supabase/migrations/20261105090000_clik_surprises.sql`** dans
   Supabase ; sans elle, la cage dorée ne paraît pas. Reste à faire : la cage dorée à la fin des vidéos du jour (chantier 5),
