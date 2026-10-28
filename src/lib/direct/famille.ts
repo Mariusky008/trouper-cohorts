@@ -137,6 +137,8 @@ export type EtatFamille = {
   bonPlan?: BonPlanPublic | null;
   /** 🎁 Ce que la maison peut encore offrir ce mois-ci (`null` : rien, ou plus rien). */
   gate?: { quoi: string; reste: number } | null;
+  /** 🎁 La cage dorée de la surprise du chef (seulement pour la famille). */
+  surprise?: SurprisePublique | null;
 };
 
 /** 🏠 Une de ses familles, dans Ma Maison. */

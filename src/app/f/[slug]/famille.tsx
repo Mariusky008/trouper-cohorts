@@ -107,6 +107,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
   /** 🎬 Son prénom et son petit mot dans ses vidéos : jamais coché d'avance. */
   const [video, setVideo] = useState(false);
   const [ennuiVideo, setEnnuiVideo] = useState("");
+  const [ennuiSurprise, setEnnuiSurprise] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState("");
   /** Il vient d'entrer (« Bienvenue dans la famille ! »), ou il revient (« Re-bonjour »). */
@@ -286,6 +287,69 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
     );
   };
 
+  /** 🎁 LA CAGE DORÉE : l'ouvrir tire sa surprise du jour (au hasard, gardée) ; « Je prends ça » la lui donne. */
+  const surpriseGeste = async (action: "surprise-ouvrir" | "surprise-prendre") => {
+    setEnvoi(true);
+    setEnnuiSurprise("");
+    try {
+      const r = await fetch("/api/direct/famille", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: c.slug, action }) });
+      const j = (await r.json().catch(() => null)) as { ok?: boolean; error?: string; libelle?: string; prise?: boolean } | null;
+      if (r.ok && j?.ok && j.libelle) {
+        const libelle = j.libelle;
+        setEtat((e) =>
+          e?.surprise ? { ...e, surprise: { reste: Math.max(0, e.surprise.reste - (j.prise && !e.surprise.moi?.prise ? 1 : 0)), moi: { libelle, prise: Boolean(j.prise) } } } : e,
+        );
+      } else {
+        setEnnuiSurprise(j?.error || "Ça n’a pas marché. Réessaie dans un instant.");
+        void lire();
+      }
+    } catch {
+      setEnnuiSurprise("Pas de réseau : réessaie dans un instant.");
+    } finally {
+      setEnvoi(false);
+    }
+  };
+  const surprise = (e: EtatFamille | null) => {
+    const sp = e?.surprise;
+    if (!sp) return null;
+    const ennui = ennuiSurprise ? <em role="alert">{ennuiSurprise}</em> : null;
+    if (sp.moi?.prise)
+      return (
+        <div className="fm-surprise prise" role="status">
+          <small>🎁 Ta surprise du chef, aujourd’hui</small>
+          <b>{sp.moi.libelle}</b>
+          <span>Elle est à toi : dis-le au comptoir{e?.moi ? `, fantôme n°${e.moi.numero}` : ""}.</span>
+        </div>
+      );
+    if (sp.moi)
+      return (
+        <div className="fm-surprise ouverte" role="status">
+          <small>🎁 Surprise du chef</small>
+          <b>{sp.moi.libelle}</b>
+          <button type="button" disabled={envoi} onClick={() => void surpriseGeste("surprise-prendre")}>
+            Je prends ça
+          </button>
+          {ennui}
+        </div>
+      );
+    if (sp.reste <= 0)
+      return (
+        <div className="fm-surprise fermee" role="status">
+          <small>🎁 Surprise du chef</small>
+          <span>Toutes les surprises du jour sont parties. Reviens demain !</span>
+        </div>
+      );
+    return (
+      <button type="button" className="fm-surprise cage" disabled={envoi} onClick={() => void surpriseGeste("surprise-ouvrir")}>
+        <i aria-hidden="true">🔒</i>
+        <small>La cage dorée · surprise du chef</small>
+        <b>Ouvre-la : une surprise au hasard</b>
+        <span>Encore {nb(sp.reste)} aujourd’hui, une par personne.</span>
+        {ennui}
+      </button>
+    );
+  };
+
   /** 🎁 Ce que la maison peut encore offrir ce mois-ci. */
   const gate = (e: EtatFamille | null) =>
     e?.gate ? (
@@ -393,6 +457,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
         </section>
 
         {bonPlan(etat)}
+        {surprise(etat)}
         {motDuJour(etat)}
         {etat && carteFoule(etat, true)}
 
@@ -733,6 +798,15 @@ const STYLES = `
 .fm-bonplan small{font-size:12px;font-weight:700;letter-spacing:.03em;color:var(--or)}
 .fm-bonplan b{font-size:16px;line-height:1.35;color:var(--creme)}
 .fm-bonplan span{font-size:13px;color:var(--doux)}
+.fm-surprise{display:flex;flex-direction:column;gap:4px;width:calc(100% - 32px);box-sizing:border-box;margin:12px 16px 0;padding:14px;border-radius:16px;border:1.5px solid rgba(242,196,107,.75);background:linear-gradient(135deg,rgba(242,196,107,.3),rgba(201,138,75,.14));color:var(--creme);text-align:left;font:inherit}
+.fm-surprise small{font-size:12px;font-weight:800;letter-spacing:.03em;color:var(--or)}
+.fm-surprise b{font-size:17px;line-height:1.3}
+.fm-surprise span{font-size:13px;color:var(--doux)}
+.fm-surprise em{font-style:normal;font-size:13px;color:#FF8FB8}
+.fm-surprise.cage{cursor:pointer;align-items:center;text-align:center}
+.fm-surprise.cage i{font-style:normal;font-size:34px;animation:fm-flotte 2.4s ease-in-out infinite}
+.fm-surprise button{align-self:flex-start;margin-top:6px;padding:10px 18px;border:0;border-radius:999px;background:#FF2E9A;color:#fff;font:inherit;font-weight:800;cursor:pointer}
+.fm-surprise.fermee{opacity:.75;border-style:dashed}
 .fm-gate{margin:12px 16px 0;padding:10px 14px;border-radius:14px;background:rgba(242,196,107,.1);border:1px solid rgba(242,196,107,.35);font-size:13.5px;line-height:1.4;color:var(--doux)}
 .fm-gate b{color:var(--creme)}
 .fm-accord{display:flex!important;gap:10px;align-items:flex-start;margin:14px 0 0!important;font-size:13.5px!important;font-weight:600!important;color:var(--carnet-texte)!important;line-height:1.35;cursor:pointer}

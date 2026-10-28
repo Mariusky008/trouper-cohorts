@@ -32,6 +32,9 @@ import {
   familleAuComptoirDemo,
   GATE_MAX,
   ideesDeBonPlan,
+  ideesDeSurprises,
+  SURPRISES_MAX,
+  SURPRISE_STOCK_MAX,
   OUVERTURE_BON_PLAN,
   ouvertureDuBonPlan,
   resteDuGate,
@@ -395,6 +398,7 @@ export function FamilleComptoir({
           {commerce.reel && <Depart slug={commerce.reel.slug} />}
           <BonPlanDuComptoir commerce={commerce} famille={famille} f={f} />
           <JeTeGate commerce={commerce} famille={famille} f={f} />
+          <SurpriseDuChef commerce={commerce} />
 
           <section className="fc-paliers">
             <h3>Leurs écussons</h3>
@@ -741,7 +745,129 @@ function JeTeGate({ commerce, famille, f }: { commerce: CommerceComptoir; famill
   );
 }
 
+type EtatSurprises = {
+  actif: boolean;
+  surprises: { libelle: string; stock: number; pris: number }[];
+  prises: { libelle: string; prenom: string; numero: number }[];
+};
+
+/**
+ * 🎁 LA SURPRISE DU CHEF : ses surprises d'aujourd'hui, chacune avec combien il en offre. Sur sa page, sa famille
+ * ouvre une cage dorée : une surprise au hasard, une par personne, tant qu'il en reste. Il voit qui a pris quoi.
+ * Seulement chez un vrai commerçant (la route du comptoir, avec son jeton).
+ */
+function SurpriseDuChef({ commerce }: { commerce: CommerceComptoir }) {
+  const reel = commerce.reel;
+  const [etat, setEtat] = useState<EtatSurprises | null>(null);
+  const [lignes, setLignes] = useState<{ libelle: string; stock: string }[]>([{ libelle: "", stock: "4" }]);
+  const [ennui, setEnnui] = useState("");
+  const [occupe, setOccupe] = useState(false);
+  const [fait, setFait] = useState(false);
+  const appeler = useCallback(
+    async (corps: Record<string, unknown>): Promise<EtatSurprises> => {
+      const r = await fetch("/api/site-internet/pro/famille", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ slug: reel?.slug, token: reel?.token, ...corps }),
+      });
+      const j = (await r.json().catch(() => null)) as (EtatSurprises & { ok?: boolean; error?: string }) | null;
+      if (!r.ok || !j?.ok) throw new Error(j?.error || "Ça n’a pas marché. Réessaie dans un instant.");
+      return j;
+    },
+    [reel],
+  );
+  useEffect(() => {
+    if (!reel) return;
+    let fini = false;
+    appeler({ action: "surprises-lire" })
+      .then((j) => {
+        if (fini) return;
+        setEtat(j);
+        if (j.surprises.length) setLignes(j.surprises.map((x) => ({ libelle: x.libelle, stock: String(x.stock) })));
+      })
+      .catch(() => {});
+    return () => {
+      fini = true;
+    };
+  }, [reel, appeler]);
+  if (!reel || !etat?.actif) return null;
+  const changer = (k: number, quoi: Partial<{ libelle: string; stock: string }>) => setLignes((l) => l.map((x, i) => (i === k ? { ...x, ...quoi } : x)));
+  const mettreEnLigne = async () => {
+    setOccupe(true);
+    setEnnui("");
+    try {
+      const liste = lignes.filter((x) => x.libelle.trim()).map((x) => ({ libelle: x.libelle.trim(), stock: Number(x.stock) }));
+      setEtat(await appeler({ action: "surprises", liste }));
+      setFait(true);
+      window.setTimeout(() => setFait(false), 2200);
+    } catch (e) {
+      setEnnui((e as Error).message);
+    } finally {
+      setOccupe(false);
+    }
+  };
+  const interdite = lignes.some((x) => x.libelle.trim() && !plusPermis(x.libelle.trim()));
+  return (
+    <section className="fc-gate fc-surprise">
+      <h3>🎁 La surprise du chef</h3>
+      <p className="fc-regle">Tes surprises d’aujourd’hui, et combien tu en offres. Sur ta page, ta famille ouvre une cage dorée : une surprise au hasard, une par personne, tant qu’il en reste.</p>
+      {etat.surprises.length > 0 && (
+        <p className="fc-gate-etat">
+          Aujourd’hui :{" "}
+          {etat.surprises.map((x, k) => (
+            <span key={k}>
+              {k ? " · " : ""}
+              {x.libelle} <b>{nb(x.pris)}/{nb(x.stock)}</b>
+            </span>
+          ))}
+        </p>
+      )}
+      {etat.prises.length > 0 && (
+        <p className="fc-regle fc-prises">
+          Déjà prises : {etat.prises.map((x) => `${x.prenom || "un fantôme"} n°${x.numero} (${x.libelle})`).join(" · ")}
+        </p>
+      )}
+      {lignes.map((l, k) => (
+        <div className="fc-gate-form" key={k}>
+          <input type="number" inputMode="numeric" min={1} max={SURPRISE_STOCK_MAX} value={l.stock} aria-label="Combien" onChange={(e) => changer(k, { stock: e.target.value })} />
+          <span aria-hidden="true">×</span>
+          <input value={l.libelle} maxLength={80} placeholder="ta surprise" aria-label="Ta surprise" onChange={(e) => changer(k, { libelle: e.target.value })} />
+        </div>
+      ))}
+      <div className="fc-puces">
+        {ideesDeSurprises(commerce.branche).map((p) => (
+          <button
+            key={p}
+            type="button"
+            onClick={() =>
+              setLignes((l) => {
+                const vide = l.findIndex((x) => !x.libelle.trim());
+                if (vide >= 0) return l.map((x, i) => (i === vide ? { ...x, libelle: p } : x));
+                return l.length < SURPRISES_MAX ? [...l, { libelle: p, stock: "4" }] : l;
+              })
+            }
+          >
+            {p}
+          </button>
+        ))}
+      </div>
+      {lignes.length < SURPRISES_MAX && (
+        <button type="button" className="fc-lien-ajout" onClick={() => setLignes((l) => [...l, { libelle: "", stock: "4" }])}>
+          + Une autre surprise
+        </button>
+      )}
+      {interdite && <p className="ck-ennui">Pas d’alcool dans les surprises : la loi Évin l’interdit.</p>}
+      {ennui && <p className="ck-ennui">{ennui}</p>}
+      <button type="button" className="fc-envoyer" disabled={occupe || interdite} onClick={() => void mettreEnLigne()}>
+        {fait ? "✓ En ligne" : etat.surprises.length ? "Mettre à jour" : "Mettre en ligne"}
+      </button>
+    </section>
+  );
+}
+
 const STYLES = `
+.fc-lien-ajout{align-self:flex-start;padding:0;border:0;background:none;color:var(--ambre,#F5A23A);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+.fc-prises{font-size:12.5px}
 .fc-bonplan,.fc-gate{display:flex;flex-direction:column;gap:8px;}
 .fc-bp-encours{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:18px;background:var(--nappe);border:1.5px solid var(--ambre);}
 .fc-bp-encours q{font-size:16px;font-weight:700;line-height:1.35;}
