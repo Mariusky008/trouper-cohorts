@@ -940,7 +940,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           propositionActive={propositionPrete}
           reseaux={<OutilReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
           carnet={<CarteCarnet carnet={carnet} onOuvrir={() => setPhase({ ou: "carnet" })} />}
-          famille={<CarteFamille famille={famille} onOuvrir={() => setPhase({ ou: "famille" })} />}
+          famille={<CarteFamille famille={famille} slug={commerce.reel?.slug} onOuvrir={() => setPhase({ ou: "famille" })} />}
           ticket={<CarteTicket commerce={commerce} dossier={dossier} carnet={carnet} semaine={chiffres} onCarnet={() => setPhase({ ou: "carnet" })} />}
           mots={<CartePetitsMots petitsMots={petitsMots} onOuvrir={() => setPhase({ ou: "mots" })} />}
           mike={

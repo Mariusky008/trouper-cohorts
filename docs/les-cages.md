@@ -297,6 +297,19 @@ Changer un chiffre change la page et la route à la fois.
   rend le bon plan à l'heure de son palier, et ce qui reste à offrir ; la route du carnet compte les cadeaux.
 - `supabase/migrations/20261103090000_clik_bons_plans.sql` : `clik_bon_plan` et `clik_gate`.
 
+**🚀 Son départ (chantier 6)** : trois chemins mènent à sa famille, et le comptoir les lui fait faire un par un, dans
+« Ma famille » :
+
+1. **Son lien en premier dans sa bio** (`clikme.fr/f/<lien>`, à copier), avec « Comment, réseau par réseau ? »
+   (Instagram, Facebook, TikTok, WhatsApp Business, Google).
+2. **Son carton QR sur son comptoir** : `/f/<lien>/carton`, à imprimer en carton de comptoir (A6) ou en affiche de
+   vitrine (A5) — son nom, son fantôme qui salue, « Ses fantômes ont les bons plans en premier », le QR de sa page.
+   Seulement pour un commerce client, comme sa page.
+3. **Le dire à la fin de ses vidéos** : « Rejoins ma famille de fantômes : le lien est dans ma bio ! »
+
+Chaque geste se coche (ce téléphone le retient) ; tant que ce n'est pas fini, la carte « Ma famille » de l'accueil
+dit « 🚀 Ton départ : 1/3 ». Ensuite, son lien reste en petit, avec son carton et sa page. Pas de migration.
+
 ## L'activer en production
 
 **Les deux tables doivent être créées une fois** : coller le contenu de
@@ -339,7 +352,8 @@ famille » dit « Les bons plans arrivent bientôt », et les cadeaux des petits
   le palier dans la vitrine ; Mes familles ; les prénoms refusés.
 - `node scripts/navigateur/famille-comptoir.mjs` (CI aussi) : la route du comptoir (la foule, les paliers, les
   fidèles, le parcours, épingler, « Je te gâte » et sa limite, le bon plan palier par palier) puis l'écran « Ma
-  famille », le carnet, ses petits mots, et sur la page le mot du jour, le bon plan fermé et ce qui reste à offrir.
+  famille », le carnet, ses petits mots, et sur la page le mot du jour, le bon plan fermé et ce qui reste à offrir ;
+  son carton QR (A6, A5, le QR de sa page) et les trois gestes de son départ.
 - `node scripts/navigateur/famille-page.mjs` (CI aussi) : la page dans un téléphone, de l'accueil à la famille, le
   retour le même jour, l'ami venu par le lien, « Tu passes Argent », les écussons de la vitrine, la famille vide.
 - Le carnet dans le navigateur : `/autour-de-moi/assistante?metier=table`, la carte « Mon carnet ».

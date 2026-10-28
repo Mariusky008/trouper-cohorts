@@ -16,9 +16,14 @@
 //   · 🎁 JE TE GÂTE : ce qu'il peut offrir à sa famille ce mois-ci (« 10 × un café ») — il l'offre sur
 //     leurs petits mots, et sa page dit combien il en reste à gagner.
 //
+// 🚀 SON DÉPART, EN TROIS GESTES (le chantier « après l'inscription ») : son lien en premier dans sa bio
+// (réseau par réseau), son carton QR au comptoir (`/f/<lien>/carton`), et la phrase de la fin de ses
+// vidéos. Chacun se coche ; tant que ce n'est pas fini, la carte de l'accueil le rappelle (« 1/3 »).
+// Ce téléphone retient ce qui est coché. Seulement pour un vrai commerçant : il a un vrai lien.
+//
 // LA DÉMONSTRATION a une famille inventée (`familleAuComptoirDemo`), et le mot qu'il épingle reste
 // dans ce téléphone. Un vrai commerçant lit la sienne (`api/site-internet/pro/famille`).
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import {
   BON_PLAN_MAX,
@@ -92,6 +97,56 @@ function avecDemo(f: FamilleAuComptoir, c: CommerceComptoir): FamilleAuComptoir 
     gate: g && g.mois === mois ? { mois, quoi: g.quoi, combien: g.combien, offerts: 0 } : null,
     gateDernier: g ? { quoi: g.quoi, combien: g.combien } : null,
   };
+}
+
+/* ═══ 🚀 SON DÉPART, EN TROIS GESTES ═══════════════════════════════════════ */
+const ETAPES_DEPART = [
+  { id: "bio", titre: "Ton lien en premier dans ta bio", icone: "🔗" },
+  { id: "carton", titre: "Ton carton QR sur ton comptoir", icone: "🖨️" },
+  { id: "video", titre: "Le dire à la fin de tes vidéos", icone: "🎬" },
+] as const;
+type EtapeDepart = (typeof ETAPES_DEPART)[number]["id"];
+/** La phrase à dire (ou à écrire) à la fin de chaque vidéo. */
+export const PHRASE_FIN_DE_VIDEO = "Rejoins ma famille de fantômes : le lien est dans ma bio !";
+/** Où mettre son lien, réseau par réseau. */
+const BIO_PAR_RESEAU: { reseau: string; comment: string }[] = [
+  { reseau: "Instagram", comment: "« Modifier le profil » → « Liens » → « Ajouter un lien externe ». Titre : « Rejoins la famille 👻 ». Mets-le en premier." },
+  { reseau: "Facebook", comment: "Sur ta page, « Modifier » → la ligne « Site web »." },
+  { reseau: "TikTok", comment: "« Modifier le profil » → « Site web » (avec un compte professionnel)." },
+  { reseau: "WhatsApp Business", comment: "« Paramètres » → ton profil d’entreprise → « Site web »." },
+  { reseau: "Google", comment: "Dans une mise à jour de ta fiche, le bouton « En savoir plus » avec ton lien." },
+];
+const cleDepart = (slug: string) => `clikme:depart:${slug}`;
+const abonnesDepart = new Set<() => void>();
+const abonnerDepart = (f: () => void) => {
+  abonnesDepart.add(f);
+  return () => void abonnesDepart.delete(f);
+};
+function lireDepart(slug: string): string {
+  try {
+    return window.localStorage.getItem(cleDepart(slug)) || "";
+  } catch {
+    return "";
+  }
+}
+/** Ses gestes de départ, cochés sur ce téléphone. */
+export function useDepart(slug: string | undefined) {
+  const brut = useSyncExternalStore(abonnerDepart, () => (slug ? lireDepart(slug) : ""), () => "");
+  const faits = new Set(brut.split(",").filter(Boolean));
+  const cocher = (id: EtapeDepart, oui: boolean) => {
+    if (!slug) return;
+    const neufs = new Set(faits);
+    if (oui) neufs.add(id);
+    else neufs.delete(id);
+    try {
+      window.localStorage.setItem(cleDepart(slug), [...neufs].join(","));
+    } catch {
+      /* stockage indisponible */
+    }
+    abonnesDepart.forEach((f) => f());
+  };
+  const nb = ETAPES_DEPART.filter((e) => faits.has(e.id)).length;
+  return { faits, cocher, nb, total: ETAPES_DEPART.length, fini: nb === ETAPES_DEPART.length };
 }
 
 /** « 12 h 05 », heure de Paris. */
@@ -217,10 +272,13 @@ function motDeLaCarte(f: FamilleAuComptoir): { titre: string; mot: string; chaud
   return { titre, mot: mots.join(" · ") || `${nb(f.membres)} fantômes dans ta famille`, chaud: recordBattu(f) || f.nouveaux > 0 || Boolean(f.bonPlan) };
 }
 
-/** 👻 La carte en tête de l'accueil. */
-export function CarteFamille({ famille, onOuvrir }: { famille: FamilleDuComptoir; onOuvrir: () => void }) {
+/** 👻 La carte en tête de l'accueil (`slug` : un vrai commerçant, qui a son départ à faire). */
+export function CarteFamille({ famille, slug, onOuvrir }: { famille: FamilleDuComptoir; slug?: string; onOuvrir: () => void }) {
+  const depart = useDepart(slug);
   if (famille.pret && !famille.f) return null;
-  const m = famille.f ? motDeLaCarte(famille.f) : { titre: "", mot: "…", chaud: false };
+  const base = famille.f ? motDeLaCarte(famille.f) : { titre: "", mot: "…", chaud: false };
+  // 🚀 TANT QUE SON DÉPART N'EST PAS FAIT, la carte le rappelle.
+  const m = slug && famille.f && !depart.fini ? { ...base, mot: `🚀 Ton départ : ${depart.nb}/${depart.total} · ${base.mot}`, chaud: true } : base;
   const jauge = famille.f?.record ? Math.min(100, Math.round((famille.f.aujourdhui / (famille.f.record + 1)) * 100)) : 0;
   return (
     <>
@@ -261,18 +319,7 @@ export function FamilleComptoir({
   useEffect(() => {
     void recharger();
   }, [recharger]);
-  const [copie, setCopie] = useState(false);
   const f = famille.f;
-  const lien = commerce.reel ? `clikme.fr/f/${commerce.reel.slug}` : "";
-  const copier = async () => {
-    try {
-      await navigator.clipboard.writeText(`https://${lien}`);
-      setCopie(true);
-      window.setTimeout(() => setCopie(false), 2200);
-    } catch {
-      /* presse-papiers refusé : le lien reste écrit, à recopier */
-    }
-  };
   const tauxCages = f ? tauxDe(f.parcours.cages, f.parcours.pages) : null;
   const tauxVenues = f ? tauxDe(f.parcours.venues, f.parcours.cages) : null;
   const ORDRE: Grade[] = ["or", "argent", "bronze"];
@@ -345,24 +392,9 @@ export function FamilleComptoir({
             </ul>
           </section>
 
+          {commerce.reel && <Depart slug={commerce.reel.slug} />}
           <BonPlanDuComptoir commerce={commerce} famille={famille} f={f} />
           <JeTeGate commerce={commerce} famille={famille} f={f} />
-
-          {lien && (
-            <section className="fc-lien">
-              <h3>Ton lien</h3>
-              <p>À mettre en premier dans ta bio, et à dire à la fin de tes vidéos.</p>
-              <div>
-                <code>{lien}</code>
-                <button type="button" className="ck-passage" onClick={() => void copier()}>
-                  {copie ? "✓ Copié" : "Copier"}
-                </button>
-              </div>
-              <a href={`/f/${encodeURIComponent(commerce.reel!.slug)}?moi=1`} target="_blank" rel="noopener noreferrer">
-                Voir ma page ›
-              </a>
-            </section>
-          )}
 
           <section className="fc-paliers">
             <h3>Leurs écussons</h3>
@@ -476,6 +508,105 @@ export function FamilleComptoir({
       )}
       <style>{STYLES_CARNET + STYLES}</style>
     </div>
+  );
+}
+
+/**
+ * 🚀 SON DÉPART : tant que ce n'est pas fini, les trois gestes, chacun à cocher ; ensuite, son lien en
+ * petit (à copier), son carton et sa page.
+ */
+function Depart({ slug }: { slug: string }) {
+  const depart = useDepart(slug);
+  const [copie, setCopie] = useState(false);
+  const [comment, setComment] = useState(false);
+  const lien = `clikme.fr/f/${slug}`;
+  const copier = async () => {
+    try {
+      await navigator.clipboard.writeText(`https://${lien}`);
+      setCopie(true);
+      window.setTimeout(() => setCopie(false), 2200);
+    } catch {
+      /* presse-papiers refusé : le lien reste écrit, à recopier */
+    }
+  };
+  const carton = `/f/${encodeURIComponent(slug)}/carton`;
+  const ligneDuLien = (
+    <div className="fc-lien-ligne">
+      <code>{lien}</code>
+      <button type="button" className="ck-passage" onClick={() => void copier()}>
+        {copie ? "✓ Copié" : "Copier"}
+      </button>
+    </div>
+  );
+  if (depart.fini)
+    return (
+      <section className="fc-lien">
+        <h3>Ton lien</h3>
+        {ligneDuLien}
+        <div className="fc-lien-bas">
+          <a href={carton} target="_blank" rel="noopener noreferrer">
+            🖨️ Mon carton QR
+          </a>
+          <a href={`/f/${encodeURIComponent(slug)}?moi=1`} target="_blank" rel="noopener noreferrer">
+            Voir ma page ›
+          </a>
+        </div>
+      </section>
+    );
+  const fait = (id: EtapeDepart) => depart.faits.has(id);
+  const coche = (id: EtapeDepart) => (
+    <button type="button" className={`fc-coche${fait(id) ? " fait" : ""}`} aria-pressed={fait(id)} onClick={() => depart.cocher(id, !fait(id))}>
+      {fait(id) ? "✓ Fait" : "C’est fait"}
+    </button>
+  );
+  return (
+    <section className="fc-depart" aria-label="Ton départ">
+      <h3>
+        🚀 Ton départ, en 3 gestes{" "}
+        <small>
+          {depart.nb}/{depart.total}
+        </small>
+      </h3>
+      <p className="fc-regle">Trois chemins mènent à ta famille : ta bio, ton comptoir, la fin de tes vidéos.</p>
+      <ol>
+        <li className={fait("bio") ? "fait" : ""}>
+          <b>
+            {ETAPES_DEPART[0].icone} {ETAPES_DEPART[0].titre}
+          </b>
+          {ligneDuLien}
+          <button type="button" className="fc-comment" aria-expanded={comment} onClick={() => setComment(!comment)}>
+            {comment ? "Masquer" : "Comment, réseau par réseau ?"}
+          </button>
+          {comment && (
+            <ul className="fc-reseaux">
+              {BIO_PAR_RESEAU.map((r) => (
+                <li key={r.reseau}>
+                  <b>{r.reseau}</b> {r.comment}
+                </li>
+              ))}
+            </ul>
+          )}
+          {coche("bio")}
+        </li>
+        <li className={fait("carton") ? "fait" : ""}>
+          <b>
+            {ETAPES_DEPART[1].icone} {ETAPES_DEPART[1].titre}
+          </b>
+          <span>Ceux qui sont déjà chez toi le scannent avec leur appareil photo, sans appli.</span>
+          <a className="fc-carton" href={carton} target="_blank" rel="noopener noreferrer">
+            Imprimer mon carton ›
+          </a>
+          {coche("carton")}
+        </li>
+        <li className={fait("video") ? "fait" : ""}>
+          <b>
+            {ETAPES_DEPART[2].icone} {ETAPES_DEPART[2].titre}
+          </b>
+          <q>{PHRASE_FIN_DE_VIDEO}</q>
+          {coche("video")}
+        </li>
+      </ol>
+    </section>
   );
 }
 
@@ -648,7 +779,22 @@ const STYLES = `
 .fc-lien{display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:20px;background:var(--nappe);border:1px solid var(--trait);}
 .fc-lien h3{margin:0;}
 .fc-lien p{margin:0;font-size:13px;color:var(--gris);}
-.fc-lien div{display:flex;gap:8px;align-items:center;}
+.fc-lien-ligne{display:flex;gap:8px;align-items:center;}
+.fc-lien-ligne code{flex:1;min-width:0;padding:9px 12px;border-radius:12px;background:var(--fond);border:1px solid var(--trait);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fc-lien-bas{display:flex;justify-content:space-between;gap:10px;}
+.fc-depart{display:flex;flex-direction:column;gap:8px;}
+.fc-depart ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
+.fc-depart li{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:18px;background:var(--nappe);border:1.5px solid var(--ambre);}
+.fc-depart li.fait{border-color:var(--trait);opacity:.75;}
+.fc-depart li > b{font-size:15px;}
+.fc-depart li > span{font-size:13px;color:var(--gris);}
+.fc-depart q{font-size:15px;font-style:italic;line-height:1.35;}
+.fc-coche{align-self:flex-start;min-height:36px;padding:0 14px;border-radius:999px;border:1.5px solid var(--ambre);background:none;color:var(--ambre);font-weight:800;font-size:13.5px;}
+.fc-coche.fait{border-color:#3DE2A6;color:#3DE2A6;}
+.fc-comment{align-self:flex-start;border:0;background:none;padding:0;color:var(--ambre);font-weight:700;font-size:13px;text-decoration:underline;}
+.fc-reseaux{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.4;color:var(--gris);}
+.fc-reseaux b{color:var(--creme);}
+.fc-carton{font-size:14px;font-weight:700;color:var(--ambre);text-decoration:none;}
 .fc-lien code{flex:1;min-width:0;padding:9px 12px;border-radius:12px;background:var(--fond);border:1px solid var(--trait);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .fc-lien a{font-size:14px;font-weight:700;color:var(--ambre);text-decoration:none;}
 .fc-paliers,.fc-parcours,.fc-mots{display:flex;flex-direction:column;gap:8px;}

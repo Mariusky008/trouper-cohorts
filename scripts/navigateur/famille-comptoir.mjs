@@ -10,7 +10,10 @@
 // palier dans le carnet, et le mot du jour en haut de sa page. Puis 🎁 « Je te gâte » (jamais d'alcool, la limite du
 // mois sur les cadeaux des petits mots, ce qu'il en reste sur sa page) et 🔔 le bon plan (chez Lou : l'or le voit tout
 // de suite, le bronze 40 minutes après, un visiteur jamais ; un nouveau remplace l'ancien ; « C'est complet »), puis
-// les mêmes gestes depuis l'écran. Rien ne déborde, aucune erreur.
+// les mêmes gestes depuis l'écran. Et 🚀 son départ : le carton QR (A6, A5, le QR de sa page, jamais pour un lien
+// inconnu), les trois gestes à cocher (sa bio réseau par réseau), la carte qui le rappelle tant que ce n'est pas
+// fait. Rien ne déborde, aucune erreur.
+import QRCode from "qrcode";
 import { BASE, D, F, lancer } from "./commun.mjs";
 import { SITES } from "./semer.mjs";
 
@@ -109,6 +112,16 @@ const carnet = await (await fetch(`${BASE}/api/site-internet/pro/carnet`, { meth
 const lea = (carnet.lignes ?? []).find((l) => l.prenom === "Léa");
 ok(lea?.numero === 1 && lea?.grade === "or", `le carnet : Léa, n°1, or (${lea?.numero}/${lea?.grade})`);
 
+// ═══ 🖨️ SON CARTON QR ═══
+const carton = await fetch(`${BASE}/f/${SLUG}/carton`);
+const cartonHtml = await carton.text();
+const attendu = (await QRCode.toString(`${(process.env.NEXT_PUBLIC_SITE_URL || "https://www.clikme.fr").replace(/\/+$/, "")}/f/${SLUG}`, { type: "svg", margin: 0, errorCorrectionLevel: "M", color: { dark: "#2C0912", light: "#00000000" } })).replace(/<\?xml[^>]*\?>/i, "").trim();
+ok(carton.status === 200 && cartonHtml.includes("Chez Bergine") && cartonHtml.includes("Rejoins la famille") && cartonHtml.includes("size:A6"), `son carton A6 (${carton.status})`);
+ok(cartonHtml.includes(attendu.slice(0, 400)), "le QR mène à sa page de la famille");
+ok((await (await fetch(`${BASE}/f/${SLUG}/carton?format=a5`)).text()).includes("size:A5"), "l'affiche de vitrine, en A5");
+ok((await fetch(`${BASE}/f/page-inconnue-dax/carton`)).status === 404, "un lien inconnu : pas de carton");
+ok(!/exemple/i.test(cartonHtml.replace(/<script[\s\S]*?<\/script>/g, "")), "jamais le mot « exemple » sur le carton");
+
 // ═══ 🎁 JE TE GÂTE, PAR LA ROUTE ═══
 const carnetPro = async (corps) =>
   (await fetch(`${BASE}/api/site-internet/pro/carnet`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: SLUG, token: "jeton-test", ...corps }) })).json().then((j) => j);
@@ -178,6 +191,7 @@ await p.waitForSelector(".fc-carte", { timeout: 60000 });
 await p.waitForFunction(() => !document.querySelector(".fc-carte")?.textContent?.includes("…"), null, { timeout: 30000 }).catch(() => {});
 const carte = await texte(".fc-carte");
 ok(carte.includes("Aujourd’hui 3 · record 5") && carte.includes("+2 nouveaux") && carte.includes("Plus que 3 pour le record"), `la carte : ${carte}`);
+ok(carte.includes("🚀 Ton départ : 0/3"), "la carte rappelle son départ");
 ok(await p.evaluate(() => document.querySelector(".ak-actions")?.firstElementChild?.classList.contains("fc-carte")), "en tête de l'accueil");
 await p.screenshot({ path: `${D}/famille-comptoir-1-accueil.png` });
 
@@ -185,7 +199,7 @@ await p.locator(".fc-carte").click();
 await p.waitForSelector(".fc-foule", { timeout: 20000 });
 const ecran = await texte(".fc");
 ok(ecran.includes("Plus que 3 pour battre ton record") && ecran.includes("Nouveaux aujourd’hui 2"), "la foule du jour et le record");
-ok((await texte(".fc-lien code")) === `clikme.fr/f/${SLUG}`, "son lien");
+ok((await texte(".fc-depart .fc-lien-ligne code")) === `clikme.fr/f/${SLUG}`, "son lien, dans son départ");
 ok((await texte(".fc-tuile.or")).includes("1") && (await texte(".fc-tuile.bronze")).includes("4"), "les écussons : 1 or, 4 bronze");
 ok(ecran.includes("Argent : 1 visite ou 7 jours de cage. Or : 5 visites ou 3 amis amenés."), "la règle des paliers, depuis PALIERS");
 ok((await texte(".fc-fideles")).startsWith("Léa n°1 🥇"), `ses fidèles (${await texte(".fc-fideles")})`);
@@ -215,6 +229,18 @@ ok((await debordement()) <= 0, "l'écran ne déborde toujours pas");
 await p.locator(".fc-bonplan").scrollIntoViewIfNeeded();
 await p.screenshot({ path: `${D}/famille-comptoir-3-bonplan.png` });
 
+// 🚀 SON DÉPART, EN 3 GESTES.
+await p.locator(".fc-depart").scrollIntoViewIfNeeded();
+await p.screenshot({ path: `${D}/famille-comptoir-5-depart.png` });
+const dep = await texte(".fc-depart");
+ok(dep.includes("0/3") && dep.includes("Ton lien en premier dans ta bio") && dep.includes("Rejoins ma famille de fantômes : le lien est dans ma bio !"), "son départ, en 3 gestes");
+ok((await p.locator(".fc-carton").getAttribute("href")) === `/f/${SLUG}/carton`, "le lien vers son carton");
+await p.locator(".fc-comment").click();
+ok((await texte(".fc-reseaux")).includes("Instagram") && (await texte(".fc-reseaux")).includes("Mets-le en premier"), "la bio, réseau par réseau");
+for (let i = 0; i < 3; i++) await p.locator(".fc-coche:not(.fait)").first().click();
+await p.waitForSelector(".fc-lien-bas", { timeout: 10000 });
+ok((await p.locator(".fc-depart").count()) === 0 && (await texte(".fc-lien-ligne code")) === `clikme.fr/f/${SLUG}`, "les trois faits : son lien en petit, avec son carton");
+
 await p.locator(".ck-retour").click();
 await p.waitForSelector(".ck-carte", { timeout: 20000 });
 await p.locator(".ck-carte").click();
@@ -223,7 +249,7 @@ ok((await texte(".ck-palier.or")) === "n°1 🥇", `le carnet : le palier de Lé
 
 await p.locator(".ck-retour").click();
 await p.waitForSelector(".fc-carte", { timeout: 20000 });
-ok((await texte(".fc-carte")).includes("🔔 Bon plan en cours"), "la carte de l'accueil : bon plan en cours");
+ok((await texte(".fc-carte")).includes("🔔 Bon plan en cours") && !(await texte(".fc-carte")).includes("Ton départ"), "la carte de l'accueil : bon plan en cours, et le départ est fait");
 await p.locator(".pm-carte").click();
 await p.waitForSelector(".pm-offert", { timeout: 20000 });
 ok((await texte(".pm")).includes("tu peux encore offrir 3 × le café"), "ses petits mots : ce qu'il peut encore offrir");
@@ -236,6 +262,9 @@ const bp = (await page.locator(".fm-bonplan").innerText()).replace(/\s+/g, " ");
 ok(bp.includes("🔒 Un bon plan vient de sortir") && bp.includes("Il est pour sa famille : ouvre une cage") && !bp.includes("2 tables"), `un visiteur : le bon plan, fermé (${bp})`);
 ok((await page.locator(".fm-gate").innerText()).includes("encore 3 × le café"), "un visiteur : ce que la maison peut encore offrir");
 await page.screenshot({ path: `${D}/famille-comptoir-4-page.png` });
+await page.goto(`${BASE}/f/${SLUG}/carton`, { waitUntil: "networkidle" });
+await page.waitForSelector(".ct-carte svg", { timeout: 30000 });
+await page.screenshot({ path: `${D}/famille-carton-a6.png` });
 await new Promise((r) => setTimeout(r, 1000));
 const comptes = await (await fetch(`${F}/human_compteurs_jour?site_id=eq.${SITE}`)).json();
 ok(comptes.reduce((n, c) => n + (c.famille || 0), 0) === 12, "sa page ouverte depuis son comptoir ne compte pas");
