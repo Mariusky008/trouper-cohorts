@@ -93,6 +93,9 @@ const DEFAUTS = {
   // LES BONS PLANS ET « JE TE GÂTE » — `…_clik_bons_plans.sql`.
   clik_bon_plan: () => ({ id: randomUUID(), publie_le: maintenant(), retire_le: null, created_at: maintenant() }),
   clik_gate: () => ({ updated_at: maintenant() }),
+  // LA SURPRISE DU CHEF — `…_clik_surprises.sql`.
+  clik_surprise: () => ({ id: randomUUID(), pris: 0, retire_le: null, created_at: maintenant() }),
+  clik_surprise_tirage: () => ({ pris_le: null, created_at: maintenant() }),
   // SON ACCORD POUR LES VIDÉOS — `…_clik_accord_video.sql`.
   clik_accord: () => ({ video: false, updated_at: maintenant() }),
 };
@@ -121,6 +124,8 @@ const CLES = {
   clik_presence: ["site_id", "habitant_id", "jour"],
   clik_bon_plan: ["id"],
   clik_gate: ["site_id", "mois"],
+  clik_surprise: ["id"],
+  clik_surprise_tirage: ["site_id", "jour", "habitant_id"],
   clik_accord: ["site_id", "habitant_id"],
 };
 

@@ -34,6 +34,11 @@ import {
   type MembreAuComptoir,
   type MotDuJour,
   type Parcours,
+  SURPRISES_MAX,
+  SURPRISE_LIBELLE_MAX,
+  SURPRISE_STOCK_MAX,
+  type SurpriseDuJour,
+  type SurprisePublique,
 } from "@/lib/direct/famille";
 import { lookValide } from "@/lib/direct/look";
 import { plusPermis, plusPropre } from "@/lib/direct/previens-les";
@@ -505,4 +510,121 @@ export async function familleDeLaVideo(supabase: Supabase, siteId: string, o: { 
     quand,
     fantomes,
   };
+}
+
+// ═══ 🎁 LA SURPRISE DU CHEF ═══════════════════════════════════════════════
+// Le commerçant prévoit ses surprises du jour, chacune avec son stock. Un fantôme ouvre la cage dorée : une surprise
+// lui est tirée au hasard parmi celles qui restent (une par personne et par jour, gardée : rouvrir ne la change pas).
+// « Je prends ça » la lui donne et la retire du stock. Plus de stock : la cage se referme. Pas de priorité de palier.
+const pasEncoreSurprises = (m: string) => (/does not exist|schema cache|Could not find/i.test(m) ? "Les surprises ne sont pas encore activées." : m);
+
+/** Ses surprises d'aujourd'hui (heure de Paris), dans l'ordre où il les a écrites. */
+export async function surprisesDuJour(supabase: Supabase, siteId: string): Promise<{ actif: boolean; liste: SurpriseDuJour[] }> {
+  const { data, error } = await supabase
+    .from("clik_surprise")
+    .select("id, libelle, stock, pris")
+    .eq("site_id", siteId)
+    .eq("jour", jourParis())
+    .is("retire_le", null)
+    .order("created_at", { ascending: true });
+  if (error) return { actif: false, liste: [] };
+  return {
+    actif: true,
+    liste: ((Array.isArray(data) ? data : []) as Ligne[]).map((x) => ({ id: s(x.id), libelle: s(x.libelle), stock: Number(x.stock) || 0, pris: Number(x.pris) || 0 })),
+  };
+}
+
+/** Il écrit ses surprises du jour : elles remplacent celles d'avant (ce qui a été pris reste pris). */
+export async function fixerSurprises(supabase: Supabase, siteId: string, brut: unknown): Promise<string | null> {
+  const liste = (Array.isArray(brut) ? brut : [])
+    .map((x) => ({ libelle: s((x as Ligne)?.libelle).replace(/\s+/g, " ").slice(0, SURPRISE_LIBELLE_MAX), stock: Math.floor(Number((x as Ligne)?.stock)) }))
+    .filter((x) => x.libelle);
+  if (liste.length > SURPRISES_MAX) return `${SURPRISES_MAX} surprises au plus.`;
+  if (liste.some((x) => !(x.stock >= 1 && x.stock <= SURPRISE_STOCK_MAX))) return `Combien ? Entre 1 et ${SURPRISE_STOCK_MAX}.`;
+  if (liste.some((x) => !plusPermis(x.libelle))) return "Pas d’alcool dans les surprises (loi Évin).";
+  const maintenant = new Date().toISOString();
+  const { error: e1 } = await supabase.from("clik_surprise").update({ retire_le: maintenant }).eq("site_id", siteId).eq("jour", jourParis()).is("retire_le", null);
+  if (e1) return pasEncoreSurprises(s(e1.message));
+  if (!liste.length) return null;
+  const { error } = await supabase.from("clik_surprise").insert(liste.map((x) => ({ site_id: siteId, jour: jourParis(), libelle: x.libelle, stock: x.stock })));
+  return error ? pasEncoreSurprises(s(error.message)) : null;
+}
+
+async function tirageDe(supabase: Supabase, siteId: string, habitantId: string): Promise<Ligne | null> {
+  const { data, error } = await supabase.from("clik_surprise_tirage").select("surprise_id, pris_le").eq("site_id", siteId).eq("jour", jourParis()).eq("habitant_id", habitantId).maybeSingle();
+  return error ? null : ((data as Ligne | null) ?? null);
+}
+const oublierTirage = (supabase: Supabase, siteId: string, habitantId: string) =>
+  supabase.from("clik_surprise_tirage").delete().eq("site_id", siteId).eq("jour", jourParis()).eq("habitant_id", habitantId);
+
+/** Ce que voit la page : ce qu'il reste dans la cage dorée, et sa surprise à lui s'il l'a déjà tirée. */
+export async function surprisePour(supabase: Supabase, siteId: string, habitantId: string | null): Promise<SurprisePublique | null> {
+  const { actif, liste } = await surprisesDuJour(supabase, siteId);
+  if (!actif || !liste.length) return null;
+  const reste = liste.reduce((n, x) => n + Math.max(0, x.stock - x.pris), 0);
+  const t = habitantId ? await tirageDe(supabase, siteId, habitantId) : null;
+  const sienne = t ? liste.find((x) => x.id === s(t.surprise_id)) : undefined;
+  const moi = t && sienne && (t.pris_le || sienne.pris < sienne.stock) ? { libelle: sienne.libelle, prise: Boolean(t.pris_le) } : null;
+  return { reste, moi };
+}
+
+/** Il ouvre la cage dorée : sa surprise du jour (tirée au hasard parmi celles qui restent, puis gardée). */
+export async function ouvrirSurprise(supabase: Supabase, siteId: string, habitantId: string): Promise<{ ennui?: string; libelle?: string; prise?: boolean }> {
+  const { actif, liste } = await surprisesDuJour(supabase, siteId);
+  if (!actif) return { ennui: "Les surprises ne sont pas encore activées." };
+  const t = await tirageDe(supabase, siteId, habitantId);
+  if (t) {
+    const sienne = liste.find((x) => x.id === s(t.surprise_id));
+    if (sienne && (t.pris_le || sienne.pris < sienne.stock)) return { libelle: sienne.libelle, prise: Boolean(t.pris_le) };
+    await oublierTirage(supabase, siteId, habitantId);
+  }
+  const restantes = liste.filter((x) => x.pris < x.stock);
+  if (!restantes.length) return { ennui: "Toutes les surprises du jour sont parties. Reviens demain !" };
+  // AU HASARD, selon ce qu'il en reste : la surprise dont il reste 4 sort plus souvent que celle dont il reste 1
+  let n = Math.random() * restantes.reduce((a, x) => a + (x.stock - x.pris), 0);
+  const tiree = restantes.find((x) => (n -= x.stock - x.pris) < 0) ?? restantes[0];
+  const { error } = await supabase.from("clik_surprise_tirage").insert({ site_id: siteId, jour: jourParis(), habitant_id: habitantId, surprise_id: tiree.id });
+  if (error) {
+    // Deux appuis en même temps : on garde la première.
+    const deja = await tirageDe(supabase, siteId, habitantId);
+    const sienne = deja ? liste.find((x) => x.id === s(deja.surprise_id)) : undefined;
+    return sienne ? { libelle: sienne.libelle, prise: Boolean(deja?.pris_le) } : { ennui: pasEncoreSurprises(s(error.message)) };
+  }
+  return { libelle: tiree.libelle, prise: false };
+}
+
+/** « Je prends ça » : la surprise est à lui, et une de moins dans le stock (jamais deux fois la dernière). */
+export async function prendreSurprise(supabase: Supabase, siteId: string, habitantId: string): Promise<{ ennui?: string; libelle?: string }> {
+  const t = await tirageDe(supabase, siteId, habitantId);
+  if (!t) return { ennui: "Ouvre d’abord la cage dorée." };
+  const id = s(t.surprise_id);
+  for (let essai = 0; essai < 5; essai++) {
+    const { data } = await supabase.from("clik_surprise").select("libelle, stock, pris, retire_le").eq("id", id).maybeSingle();
+    const x = (data as Ligne | null) ?? null;
+    if (t.pris_le && x) return { libelle: s(x.libelle) };
+    if (!x || x.retire_le || Number(x.pris) >= Number(x.stock)) {
+      await oublierTirage(supabase, siteId, habitantId);
+      return { ennui: "Trop tard, elle vient de partir. Rouvre la cage : il en reste peut-être une autre !" };
+    }
+    // Une de moins, seulement si personne n'en a pris une entre-temps (sinon, on relit et on recommence).
+    const { data: fait } = await supabase.from("clik_surprise").update({ pris: Number(x.pris) + 1 }).eq("id", id).eq("pris", Number(x.pris)).select("id");
+    if (Array.isArray(fait) && fait.length) {
+      await supabase.from("clik_surprise_tirage").update({ pris_le: new Date().toISOString() }).eq("site_id", siteId).eq("jour", jourParis()).eq("habitant_id", habitantId);
+      return { libelle: s(x.libelle) };
+    }
+  }
+  return { ennui: "Beaucoup de monde en même temps : réessaie dans un instant." };
+}
+
+/** Pour le comptoir : qui a pris quelle surprise aujourd'hui (prénom et numéro, jamais d'identifiant). */
+export async function surprisesPrises(supabase: Supabase, siteId: string): Promise<{ libelle: string; prenom: string; numero: number }[]> {
+  const [{ liste }, tirages, f] = await Promise.all([
+    surprisesDuJour(supabase, siteId),
+    supabase.from("clik_surprise_tirage").select("habitant_id, surprise_id, pris_le").eq("site_id", siteId).eq("jour", jourParis()).not("pris_le", "is", null),
+    lireFamille(supabase, siteId),
+  ]);
+  const libelleDe = new Map(liste.map((x) => [x.id, x.libelle]));
+  return ((tirages.error ? [] : tirages.data ?? []) as Ligne[])
+    .filter((x) => libelleDe.has(s(x.surprise_id)))
+    .map((x) => ({ libelle: libelleDe.get(s(x.surprise_id)) ?? "", prenom: f.ficheDe(s(x.habitant_id))?.prenom ?? "", numero: f.numeroDe(s(x.habitant_id)) }));
 }

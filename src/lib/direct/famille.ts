@@ -323,3 +323,19 @@ export function messagePourMike(prenom: string, numero: number, nom: string, cod
   const qui = prenom ? `c’est ${prenom}, ` : "";
   return `Bonjour Mike, ${qui}fantôme n°${numero} ${deNom(nom)} 👻 Je veux les bons plans ! (${code})`;
 }
+
+// ═══ 🎁 LA SURPRISE DU CHEF ═══════════════════════════════════════════════
+/** Une surprise du jour, telle que le comptoir la voit : son stock et combien sont parties. */
+export type SurpriseDuJour = { id: string; libelle: string; stock: number; pris: number };
+/** Ce que voit la page : la cage dorée, ce qu'il en reste, et sa surprise à lui s'il l'a tirée. */
+export type SurprisePublique = { reste: number; moi: { libelle: string; prise: boolean } | null };
+export const SURPRISES_MAX = 6;
+export const SURPRISE_LIBELLE_MAX = 80;
+export const SURPRISE_STOCK_MAX = 50;
+/** Des idées, métier par métier (le commerçant écrit les siennes). */
+export function ideesDeSurprises(branche: string): string[] {
+  if (branche === "restaurant") return ["Une table de 11 h à 11 h 30 à −25 %", "Un reste du midi à emporter après 14 h", "Le café offert", "Un café gourmand"];
+  if (branche === "bar") return ["Un soft offert", "Une planche à partager à −20 %", "Une place au premier rang du concert"];
+  if (branche === "coiffeur" || branche === "ongles") return ["−20 % sur un créneau de 14 h", "Un soin offert avec la coupe", "Un diagnostic offert"];
+  return ["−15 % aujourd’hui", "Un petit cadeau avec ton achat", "Un emballage cadeau offert"];
+}

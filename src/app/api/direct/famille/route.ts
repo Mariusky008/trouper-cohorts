@@ -7,6 +7,7 @@
 // offrir ce mois-ci.
 // POST { slug, action: "video", oui } : 🎬 son prénom et son petit mot dans les vidéos de ce commerce
 // (oui / non, à tout moment) — seulement s'il est de la famille.
+// POST { slug, action: "surprise-ouvrir" | "surprise-prendre" } : 🎁 la cage dorée, sa surprise du jour, puis « Je prends ça ».
 // GET ?moi=1 : ses familles, pour Ma Maison (chaque commerce client où il a libéré son fantôme :
 // son numéro, son écusson, ce qu'il a fait).
 // Voir `lib/direct/famille.ts` (la règle, les paliers) et `lib/direct/famille-serveur.ts`.
@@ -15,7 +16,10 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { bonPlanEnCours, bonPlanPour, enregistrerAccordVideo, etatFamille, famillesDe, gateDuMois, lireFamille, motDuJour } from "@/lib/direct/famille-serveur";
+import {
+  ouvrirSurprise,
+  prendreSurprise,
+  surprisePour, bonPlanEnCours, bonPlanPour, enregistrerAccordVideo, etatFamille, famillesDe, gateDuMois, lireFamille, motDuJour } from "@/lib/direct/famille-serveur";
 import { resteDuGate } from "@/lib/direct/famille";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +46,8 @@ export async function GET(request: Request) {
     bonPlanEnCours(supabase, siteId).catch(() => ({ actif: false, plan: null })),
     gateDuMois(supabase, siteId).catch(() => ({ actif: false, gate: null, dernier: null })),
   ]);
+  // 🎁 LA CAGE DORÉE : seulement pour qui est de la famille
+  const surprise = etat.moi && moi ? await surprisePour(supabase, siteId, moi.id).catch(() => null) : null;
   const reste = gt.gate ? resteDuGate(gt.gate) : 0;
   return NextResponse.json({
     ok: true,
@@ -49,6 +55,7 @@ export async function GET(request: Request) {
     motDuJour: mot,
     bonPlan: bp.plan ? bonPlanPour(bp.plan, etat.moi?.grade ?? null) : null,
     gate: gt.gate && reste > 0 ? { quoi: gt.gate.quoi, reste } : null,
+    surprise,
   });
 }
 
@@ -60,7 +67,9 @@ export async function POST(request: Request) {
     p = null;
   }
   const slug = s(p?.slug);
-  if (s(p?.action) !== "video" || typeof p?.oui !== "boolean") return NextResponse.json({ error: "action inconnue" }, { status: 400 });
+  const action = s(p?.action);
+  const surprise = action === "surprise-ouvrir" || action === "surprise-prendre";
+  if (!surprise && (action !== "video" || typeof p?.oui !== "boolean")) return NextResponse.json({ error: "action inconnue" }, { status: 400 });
   if (!/^[a-z0-9-]{2,120}$/i.test(slug)) return NextResponse.json({ error: "Commerce introuvable." }, { status: 404 });
   const supabase = createAdminClient();
   const { data: site } = await supabase.from("human_vitrine_sites").select("id").eq("slug", slug).maybeSingle();
@@ -68,7 +77,13 @@ export async function POST(request: Request) {
   if (!siteId) return NextResponse.json({ error: "Commerce introuvable." }, { status: 404 });
   const moi = await habitantCourant(supabase);
   if (!moi || !(await lireFamille(supabase, siteId)).numeroDe(moi.id)) return NextResponse.json({ error: "Ouvre d’abord une cage." }, { status: 403 });
-  const ennui = await enregistrerAccordVideo(supabase, siteId, moi.id, p.oui);
+  // 🎁 LA CAGE DORÉE : l'ouvrir (sa surprise du jour, au hasard), puis « Je prends ça »
+  if (surprise) {
+    const r = action === "surprise-ouvrir" ? await ouvrirSurprise(supabase, siteId, moi.id) : await prendreSurprise(supabase, siteId, moi.id);
+    if (r.ennui) return NextResponse.json({ error: r.ennui }, { status: /pas encore activées/.test(r.ennui) ? 503 : 409 });
+    return NextResponse.json({ ok: true, libelle: r.libelle, prise: action === "surprise-prendre" ? true : Boolean((r as { prise?: boolean }).prise) });
+  }
+  const ennui = await enregistrerAccordVideo(supabase, siteId, moi.id, p?.oui === true);
   if (ennui) return NextResponse.json({ error: ennui }, { status: /pas encore possible/.test(ennui) ? 503 : 500 });
-  return NextResponse.json({ ok: true, video: p.oui });
+  return NextResponse.json({ ok: true, video: p?.oui === true });
 }

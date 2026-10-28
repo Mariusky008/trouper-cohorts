@@ -17,7 +17,7 @@
 // (`est_client`) : sans elle, ses vidéos se montent comme avant.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { epinglerMot, familleAuComptoir, familleDeLaVideo, fixerGate, publierBonPlan, retirerBonPlan } from "@/lib/direct/famille-serveur";
+import { epinglerMot, familleAuComptoir, familleDeLaVideo, fixerGate, fixerSurprises, publierBonPlan, retirerBonPlan, surprisesDuJour, surprisesPrises } from "@/lib/direct/famille-serveur";
 import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 import { tenueDu } from "@/lib/direct/double-metiers";
 import { estDureeBonPlan } from "@/lib/direct/famille";
@@ -54,6 +54,16 @@ export async function POST(request: Request) {
     const branche = brancheDuMetier(metier);
     const hote = `${tenueDu({ branche, metier })?.enPied ?? "/direct/double/pied/"}salut-1.webp`;
     return NextResponse.json({ ok: true, ...(await familleDeLaVideo(supabase, siteId, { nom: s(site.business_name), slug, branche, hote })) });
+  }
+
+  // 🎁 LA SURPRISE DU CHEF : « surprises » {liste: [{libelle, stock}]} les écrit (et remplace) ; « surprises-lire ».
+  if (action === "surprises" || action === "surprises-lire") {
+    if (action === "surprises") {
+      const ennui = await fixerSurprises(supabase, siteId, p?.liste);
+      if (ennui) return NextResponse.json({ error: ennui }, { status: /pas encore activées/.test(ennui) ? 503 : 400 });
+    }
+    const [{ actif, liste }, prises] = await Promise.all([surprisesDuJour(supabase, siteId), surprisesPrises(supabase, siteId)]);
+    return NextResponse.json({ ok: true, actif, surprises: liste.map(({ libelle, stock, pris }) => ({ libelle, stock, pris })), prises });
   }
 
   if (action === "epingler") {
