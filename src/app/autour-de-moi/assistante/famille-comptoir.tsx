@@ -808,11 +808,11 @@ function SurpriseDuChef({ commerce }: { commerce: CommerceComptoir }) {
   };
   const interdite = lignes.some((x) => x.libelle.trim() && !plusPermis(x.libelle.trim()));
   return (
-    <section className="fc-gate fc-surprise">
+    <section className="fc-surprise">
       <h3>🎁 La surprise du chef</h3>
       <p className="fc-regle">Tes surprises d’aujourd’hui, et combien tu en offres. Sur ta page, ta famille ouvre une cage dorée : une surprise au hasard, une par personne, tant qu’il en reste.</p>
       {etat.surprises.length > 0 && (
-        <p className="fc-gate-etat">
+        <p className="fc-surprise-etat">
           Aujourd’hui :{" "}
           {etat.surprises.map((x, k) => (
             <span key={k}>
@@ -828,7 +828,7 @@ function SurpriseDuChef({ commerce }: { commerce: CommerceComptoir }) {
         </p>
       )}
       {lignes.map((l, k) => (
-        <div className="fc-gate-form" key={k}>
+        <div className="fc-surprise-ligne" key={k}>
           <input type="number" inputMode="numeric" min={1} max={SURPRISE_STOCK_MAX} value={l.stock} aria-label="Combien" onChange={(e) => changer(k, { stock: e.target.value })} />
           <span aria-hidden="true">×</span>
           <input value={l.libelle} maxLength={80} placeholder="ta surprise" aria-label="Ta surprise" onChange={(e) => changer(k, { libelle: e.target.value })} />
@@ -868,7 +868,7 @@ function SurpriseDuChef({ commerce }: { commerce: CommerceComptoir }) {
 const STYLES = `
 .fc-lien-ajout{align-self:flex-start;padding:0;border:0;background:none;color:var(--ambre,#F5A23A);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
 .fc-prises{font-size:12.5px}
-.fc-bonplan,.fc-gate{display:flex;flex-direction:column;gap:8px;}
+.fc-bonplan,.fc-gate,.fc-surprise{display:flex;flex-direction:column;gap:8px;}
 .fc-bp-encours{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:18px;background:var(--nappe);border:1.5px solid var(--ambre);}
 .fc-bp-encours q{font-size:16px;font-weight:700;line-height:1.35;}
 .fc-bp-encours small{font-size:12.5px;color:var(--gris);}
@@ -876,15 +876,15 @@ const STYLES = `
 .fc-bp-heures li{padding:4px 10px;border-radius:999px;background:var(--fond);border:1px solid var(--trait);font-size:12.5px;}
 .fc-bp-heures b{margin-left:4px;}
 .fc-bp-ecrire{display:flex;flex-direction:column;gap:8px;}
-.fc-bp-ecrire input,.fc-gate-form input{min-height:42px;padding:0 12px;border-radius:12px;border:1px solid var(--trait);background:var(--fond);color:var(--creme);font:inherit;font-size:15px;}
+.fc-bp-ecrire input,.fc-gate-form input,.fc-surprise-ligne input{min-height:42px;padding:0 12px;border-radius:12px;border:1px solid var(--trait);background:var(--fond);color:var(--creme);font:inherit;font-size:15px;}
 .fc-puces{display:flex;flex-wrap:wrap;gap:6px;}
 .fc-puces button{min-height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--trait);background:var(--nappe);color:var(--creme);font-weight:700;font-size:13px;}
 .fc-puces button.on{border-color:var(--ambre);background:var(--ambre);color:#2A1404;}
 .fc-envoyer{min-height:46px;border:0;border-radius:14px;background:var(--rose,#FF2E9A);color:#fff;font-weight:800;font-size:15px;}
 .fc-envoyer:disabled{opacity:.45;}
-.fc-gate-form{display:grid;grid-template-columns:84px auto 1fr;gap:8px;align-items:center;}
-.fc-gate-form span{font-weight:800;color:var(--gris);}
-.fc-gate-etat{margin:0;padding:10px 14px;border-radius:14px;background:rgba(245,162,58,.1);border:1px solid rgba(245,162,58,.35);font-size:14px;}
+.fc-gate-form,.fc-surprise-ligne{display:grid;grid-template-columns:84px auto 1fr;gap:8px;align-items:center;}
+.fc-gate-form span,.fc-surprise-ligne span{font-weight:800;color:var(--gris);}
+.fc-gate-etat,.fc-surprise-etat{margin:0;padding:10px 14px;border-radius:14px;background:rgba(245,162,58,.1);border:1px solid rgba(245,162,58,.35);font-size:14px;}
 .fc-gate-etat b{color:var(--ambre);}
 .fc-carte .fc-carte-titre{font-family:var(--font-clikme),sans-serif;font-style:normal;font-size:15px;font-weight:800;color:var(--creme);}
 .fc-jauge{display:block;height:6px;margin-top:6px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden;}
