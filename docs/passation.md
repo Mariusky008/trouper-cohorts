@@ -102,6 +102,15 @@ en entier. » Cause : les photos du film sont presque carrées (560 × 619) et l
 flouté d'elle-même, et le zoom la fait grandir jusqu'à sa taille sans jamais la couper (son fond bouge derrière).
 Les deux pages refaites et vérifiées à l'image (`?rendu`, `__rendre(t)`), sans erreur.
 
+**À REFAIRE (demande du propriétaire, après coup)** : dans la démo de 45 s, le film du téléphone ne prend plus
+tout l'écran (photos entières sur fond flouté), et le propriétaire préfère **la vidéo de l'interview**, « qui a du
+punch et prend tout le téléphone » : `outils/tour-du-fantome/tour/interview.mp4` (celle du tour du restaurant, Chez
+Bergine). Remplacer les quatre photos de `#ecran .ph` (`outils/tour-court2.html`) par cette vidéo en plein écran
+(`object-fit:cover`, muette, la voix de Mike reste le son), calée sur la ligne de temps : en mode `?rendu`
+(`__rendre(t)`), poser `video.currentTime` à l'instant voulu et attendre `seeked` avant de dessiner, pour que
+`rendre-video.mjs` l'exporte. Même chose à voir pour `tour-entrepreneurs2` (ses vidéos à elle). Vérifier les droits
+de l'image avant tout autre usage que les tours.
+
 ### 5.2 Le propriétaire qui parle, façon photo d'identité
 
 Une photo du propriétaire, statique, « collée en haut comme la photo d'un CV », avec seulement une bouche qui bouge
