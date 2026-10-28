@@ -310,6 +310,16 @@ Changer un chiffre change la page et la route à la fois.
 Chaque geste se coche (ce téléphone le retient) ; tant que ce n'est pas fini, la carte « Ma famille » de l'accueil
 dit « 🚀 Ton départ : 1/3 ». Ensuite, son lien reste en petit, avec son carton et sa page. Pas de migration.
 
+**🎁 La surprise du chef** : le commerçant écrit ses surprises du jour au comptoir, dans « Ma famille » (« 4 × Une
+table de 11 h à 11 h 30 à −25 % », « 4 × Le café offert »…, six au plus, de 1 à 50 chacune, jamais d'alcool). Sur sa
+page `/f/<lien>`, sa famille a une cage dorée : l'ouvrir tire une surprise au hasard parmi celles qui restent (une par
+personne et par jour, gardée : rouvrir ne la change pas) ; « Je prends ça » la lui donne et en retire une du stock
+(jamais deux fois la dernière) ; plus de stock, « Toutes les surprises du jour sont parties ». Pas de priorité de
+palier : le premier qui ouvre tire. Le comptoir voit qui a pris quoi (prénom, numéro). `surprisesDuJour`,
+`fixerSurprises`, `ouvrirSurprise`, `prendreSurprise`, `surprisesPrises` (`famille-serveur.ts`) ; « surprises » et
+« surprises-lire » (route du comptoir) ; « surprise-ouvrir » et « surprise-prendre » (`api/direct/famille`).
+`supabase/migrations/20261105090000_clik_surprises.sql`.
+
 **🎬 La famille dans toutes ses vidéos (chantier 5)** : le film photo du reporter, l'interview et l'épisode
 s'ouvrent et se ferment pareil, sans rien à choisir (`src/lib/direct/famille-video.ts`) :
 
@@ -358,6 +368,8 @@ famille » dit « Les bons plans arrivent bientôt », et les cadeaux des petits
 L'accord pour les vidéos demande `supabase/migrations/20261104090000_clik_accord_video.sql` ; sans elle, personne n'a
 donné son accord : les vidéos montrent les fantômes sans prénom, et « Montrer mon prénom » répond « Ce choix n'est pas
 encore possible. »
+La surprise du chef demande `supabase/migrations/20261105090000_clik_surprises.sql` ; sans elle, la cage dorée ne
+paraît pas et le comptoir n'en parle pas.
 
 ## Vérifier
 
@@ -381,6 +393,9 @@ encore possible. »
   la route « video » (le prénom et le mot seulement avec l'accord, jamais d'identifiant, la semaine, jamais pour un
   prospect), puis le début et la fin dessinés image par image (ce qui s'écrit, rien de ce qui ne doit pas s'écrire).
   Les montages complets ne s'y jouent pas : il y faut des photos, une caméra et une voix.
+- `node scripts/navigateur/famille-surprise.mjs` (CI aussi) : la surprise du chef — jamais d'alcool, une par
+  personne, rouvrir ne change rien, la dernière ne part qu'une fois, plus de stock ; la cage dorée dans un téléphone
+  et la saisie au comptoir.
 - `node scripts/navigateur/famille-page.mjs` (CI aussi) : la page dans un téléphone, de l'accueil à la famille, le
   retour le même jour, l'ami venu par le lien, « Tu passes Argent », les écussons de la vitrine, la famille vide.
 - Le carnet dans le navigateur : `/autour-de-moi/assistante?metier=table`, la carte « Mon carnet ».

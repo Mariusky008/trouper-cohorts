@@ -137,8 +137,11 @@ l'équipe à −25 %, 4 restes à emporter après 14 h, 4 cafés offerts, 2 caf�
 dernière cage dorée « Surprise du chef » en tire une au hasard ; « Je prends ça » en retire une du stock ; plus de
 stock : la cage se referme.
 
-- **Dans la démo** : une scène (5.2, n° 5 et 6), chiffres fictifs.
-- **Dans l'app** (à décider après la démo) : une table `clik_surprise` (commerce, jour, libellé, stock, pris) et sa
+- **Dans la démo** : une scène (5.2, n° 5 et 6), chiffres fictifs. À faire.
+- **Dans l'app : FAIT (28 octobre)**, voir `docs/les-cages.md` (« La surprise du chef ») et l'essai
+  `famille-surprise.mjs`. **Le propriétaire doit coller `supabase/migrations/20261105090000_clik_surprises.sql`** dans
+  Supabase ; sans elle, la cage dorée ne paraît pas. Reste à faire : la cage dorée à la fin des vidéos du jour (chantier 5),
+  et une démonstration au comptoir de démo (aujourd'hui, seulement chez un vrai commerçant). Ce qui a été fait : une table `clik_surprise` (commerce, jour, libellé, stock, pris) et sa
   migration ; le tirage et la prise côté serveur, en une seule écriture (deux personnes au même instant ne prennent
   pas la même dernière) ; la saisie au comptoir (à côté du bon plan) ; la cage sur `/f/<lien>` et à la fin des vidéos
   du jour. Jamais d'alcool (même filtre que le bon plan). Une surprise est gratuite à obtenir (aucun achat pour
@@ -193,7 +196,8 @@ pistes de maquette avant d'en finir une.
 3. Un essai court des deux bouches (5.2), pour qu'il choisisse ; puis les enregistrements (le propriétaire, Mike, la bouche).
 4. La démo `tour-humain/` (5.2 + 5.3 en scène + 5.4), sa vidéo MP4 (`rendre-video.mjs`) pour l'envoyer.
 5. Le flyer (5.6).
-6. Dans l'app : les paliers en fantômes (5.4), puis la surprise du chef (5.3).
+6. ~~Dans l'app : les paliers sur une pièce (5.4), la surprise du chef (5.3)~~ : faits (restent les mots « écusson », la
+   démo courte, le prototype, et la cage dorée à la fin des vidéos).
 7. Plus tard : WhatsApp (4), l'interview des boulangeries (4).
 
 ## 6. Le premier message à donner à la nouvelle session
