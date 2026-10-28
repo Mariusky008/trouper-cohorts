@@ -106,6 +106,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
   const [motListe, setMotListe] = useState(false);
   /** 🎬 Son prénom et son petit mot dans ses vidéos : jamais coché d'avance. */
   const [video, setVideo] = useState(false);
+  const [ennuiVideo, setEnnuiVideo] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState("");
   /** Il vient d'entrer (« Bienvenue dans la famille ! »), ou il revient (« Re-bonjour »). */
@@ -205,11 +206,14 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
   /** 🎬 Il change d'avis : son prénom et son petit mot dans ses vidéos, ou pas. */
   const changerVideo = async (oui: boolean) => {
     setEnvoi(true);
+    setEnnuiVideo("");
     try {
       const r = await fetch("/api/direct/famille", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: c.slug, action: "video", oui }) });
+      const j = (await r.json().catch(() => null)) as { error?: string } | null;
       if (r.ok) setEtat((e) => (e?.moi ? { ...e, moi: { ...e.moi, video: oui } } : e));
+      else setEnnuiVideo(j?.error || "Ça n’a pas marché. Réessaie dans un instant.");
     } catch {
-      /* pas de réseau : rien ne change */
+      setEnnuiVideo("Pas de réseau : réessaie dans un instant.");
     } finally {
       setEnvoi(false);
     }
@@ -465,6 +469,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
           <button type="button" disabled={envoi} onClick={() => void changerVideo(!moi.video)}>
             {moi.video ? "Retirer mon prénom" : "Montrer mon prénom"}
           </button>
+          {ennuiVideo ? <small role="alert">{ennuiVideo}</small> : null}
         </p>
 
         <a className="fm-lien" href={`/b/${encodeURIComponent(c.slug)}`}>
@@ -734,6 +739,7 @@ const STYLES = `
 .fm-accord input{flex:none;width:20px;height:20px;margin:1px 0 0;accent-color:var(--rose)}
 .fm-accord small{display:block;margin-top:2px;font-size:12px;font-weight:400;color:var(--carnet-doux)}
 .fm-video-accord{margin:16px 16px 0;font-size:13px;line-height:1.45;color:var(--doux)}
+.fm-video-accord small{display:block;margin-top:4px;color:#FF8FB8}
 .fm-video-accord button{border:0;background:none;padding:0;color:var(--or);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
 .fm-motdujour{margin:12px 16px 0;padding:12px 14px;border-radius:16px;background:var(--creme);color:var(--carnet-texte);box-shadow:0 6px 18px rgba(0,0,0,.3)}
 .fm-motdujour small{display:block;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:var(--carnet-doux)}

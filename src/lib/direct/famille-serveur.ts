@@ -185,7 +185,7 @@ export async function etatFamille(supabase: Supabase, siteId: string, habitantId
       .limit(1);
     const derniere = ((Array.isArray(c) ? c : []) as Ligne[])[0] as Ligne | undefined;
     const parcours = f.parcoursDe(habitantId);
-    const accords = await accordsVideo(supabase, siteId);
+    const { data: accord } = await supabase.from("clik_accord").select("video").eq("site_id", siteId).eq("habitant_id", habitantId).maybeSingle();
     moi = {
       numero,
       prenom: s(derniere?.prenom),
@@ -194,7 +194,7 @@ export async function etatFamille(supabase: Supabase, siteId: string, habitantId
       parcours,
       present: f.actif ? f.lignes.some((p) => s(p.habitant_id) === habitantId && s(p.jour).slice(0, 10) === auj) : false,
       code: codeFantome(siteId, habitantId),
-      video: accords.has(habitantId),
+      video: (accord as Ligne | null)?.video === true,
     };
   }
   return { aujourdhui, hier, record, membres: f.ordre.length, moi };

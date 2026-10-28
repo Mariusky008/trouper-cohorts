@@ -310,6 +310,26 @@ Changer un chiffre change la page et la route à la fois.
 Chaque geste se coche (ce téléphone le retient) ; tant que ce n'est pas fini, la carte « Ma famille » de l'accueil
 dit « 🚀 Ton départ : 1/3 ». Ensuite, son lien reste en petit, avec son carton et sa page. Pas de migration.
 
+**🎬 La famille dans toutes ses vidéos (chantier 5)** : le film photo du reporter, l'interview et l'épisode
+s'ouvrent et se ferment pareil, sans rien à choisir (`src/lib/direct/famille-video.ts`) :
+
+- **Le début** (3,4 s) : son fantôme qui salue et la carte rose « Rejoins ma famille de fantômes ! Tu m'aides à me
+  faire connaître, je te gâte ! », puis « Rejoins la famille à la fin de la vidéo ↓ ».
+- **La fin** (8,4 s), après la carte postale : « La famille d'hier · 23 fantômes · Record : 29 » (ou « Record battu
+  ! ») ; ses fantômes, chacun avec la couleur de son palier ; deux qui s'avancent avec leur petit mot, leur prénom et
+  leur numéro ; puis les trois cages, « Libère ton fantôme », « Lien dans ma bio » et son lien. Hier vide : la famille
+  de la semaine. Famille encore vide : son fantôme invite à être le tout premier.
+- **Le prénom ne passe jamais sans son accord** : la vidéo part sur ses réseaux, bien plus public que sa page. Le
+  fantôme y est toujours (sans rien qui dise qui c'est) ; le prénom, le numéro et le petit mot seulement pour qui a
+  coché, sur la fiche de la page, « Mon prénom et mon petit mot peuvent apparaître dans ses vidéos » (une case jamais
+  cochée d'avance), et dont le prénom n'est pas caché partout. Le mot, seulement s'il est déjà public (de la liste,
+  avec son 💛, ou épinglé). On change d'avis sur sa page : « Retirer mon prénom » / « Montrer mon prénom ».
+- Seulement pour un commerce client (`est_client`) : sans lui, ses vidéos se montent comme avant. Une démonstration
+  a sa famille inventée (`familleVideoDemo`). Si la famille ne vient pas, la vidéo se monte sans elle.
+- `api/site-internet/pro/famille` (« video », `familleDeLaVideo`) ; `api/direct/famille` (POST « video » : l'accord) ;
+  `api/direct/cage` (`video`, depuis la fiche) ; `reporter-film.ts`, `interview-montage.ts`, `episode-montage.ts`.
+- `supabase/migrations/20261104090000_clik_accord_video.sql` : `clik_accord`.
+
 ## L'activer en production
 
 **Les deux tables doivent être créées une fois** : coller le contenu de
@@ -335,6 +355,9 @@ celle des compteurs de diffusion et celle des petits mots) ; sans elle, « Ma fa
 ta page » dit « Pas encore mesuré » et le mot du jour « arrive bientôt ».
 Les bons plans et « Je te gâte » demandent `supabase/migrations/20261103090000_clik_bons_plans.sql` ; sans elle, « Ma
 famille » dit « Les bons plans arrivent bientôt », et les cadeaux des petits mots restent sans limite.
+L'accord pour les vidéos demande `supabase/migrations/20261104090000_clik_accord_video.sql` ; sans elle, personne n'a
+donné son accord : les vidéos montrent les fantômes sans prénom, et « Montrer mon prénom » répond « Ce choix n'est pas
+encore possible. »
 
 ## Vérifier
 
@@ -354,6 +377,10 @@ famille » dit « Les bons plans arrivent bientôt », et les cadeaux des petits
   fidèles, le parcours, épingler, « Je te gâte » et sa limite, le bon plan palier par palier) puis l'écran « Ma
   famille », le carnet, ses petits mots, et sur la page le mot du jour, le bon plan fermé et ce qui reste à offrir ;
   son carton QR (A6, A5, le QR de sa page) et les trois gestes de son départ.
+- `node scripts/navigateur/famille-video.mjs` (CI aussi) : l'accord (la case jamais cochée d'avance, changer d'avis),
+  la route « video » (le prénom et le mot seulement avec l'accord, jamais d'identifiant, la semaine, jamais pour un
+  prospect), puis le début et la fin dessinés image par image (ce qui s'écrit, rien de ce qui ne doit pas s'écrire).
+  Les montages complets ne s'y jouent pas : il y faut des photos, une caméra et une voix.
 - `node scripts/navigateur/famille-page.mjs` (CI aussi) : la page dans un téléphone, de l'accueil à la famille, le
   retour le même jour, l'ami venu par le lien, « Tu passes Argent », les écussons de la vitrine, la famille vide.
 - Le carnet dans le navigateur : `/autour-de-moi/assistante?metier=table`, la carte « Mon carnet ».

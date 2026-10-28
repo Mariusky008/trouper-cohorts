@@ -262,6 +262,7 @@ const demo = await p.evaluate(async () => (await import("/__essai/famille.js")).
 const d = await dessiner(demo, "demo");
 enregistrer(d);
 ok(d.fantomes === 12 && d.ecrits.includes("23 fantômes") && d.ecrits.includes("Record : 29") && d.ecrits.includes("Léa · fantôme n°12"), `la démonstration : sa famille inventée (${d.fantomes} fantômes)`);
+ok(suite(d).includes("Merci pour l’accueil de samedi !") && !d.ecrits.some((x) => /^[»!?;:]/.test(x.trim())), "un petit mot sur deux lignes : jamais un « » » ni un « ! » seul au début d'une ligne");
 ok(vrai.duree[0] === 3.4 && vrai.duree[1] === 8.4, `le début dure ${vrai.duree[0]} s, la fin ${vrai.duree[1]} s`);
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` : ${erreurs[0]}` : ""}`);

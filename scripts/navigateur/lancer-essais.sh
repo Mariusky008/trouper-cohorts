@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 🔁 LES ESSAIS DES ROUTES (l’échange, les cages, le carnet, la vitrine, l’inscription sans fiche Google, la page d’inscription, la famille) ET LES ESSAIS NAVIGATEUR (l'échange, la page de la famille, la famille au comptoir), chacun sur un faux Supabase neuf.
+# 🔁 LES ESSAIS DES ROUTES (l’échange, les cages, le carnet, la vitrine, l’inscription sans fiche Google, la page d’inscription, la famille) ET LES ESSAIS NAVIGATEUR (l'échange, la page de la famille, la famille au comptoir, la famille dans ses vidéos), chacun sur un faux Supabase neuf.
 #
 # Suppose l'app déjà lancée sur ESSAI_BASE (http://localhost:3821 par défaut), branchée sur le faux
 # Supabase (NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321) et avec ECHANGES_SEUIL_VILLE=3.
@@ -22,7 +22,7 @@ neuf() {
 }
 
 echec=0
-for essai in scripts/essai-echanges-reseau.mjs scripts/essai-cages-route.mjs scripts/essai-carnet-route.mjs scripts/essai-vitrine-route.mjs scripts/essai-sans-fiche-route.mjs scripts/essai-inscription-route.mjs scripts/essai-famille-route.mjs scripts/navigateur/echanges-moitie.mjs scripts/navigateur/echanges-equipe.mjs scripts/navigateur/echanges-factures.mjs scripts/navigateur/famille-page.mjs scripts/navigateur/famille-comptoir.mjs; do
+for essai in scripts/essai-echanges-reseau.mjs scripts/essai-cages-route.mjs scripts/essai-carnet-route.mjs scripts/essai-vitrine-route.mjs scripts/essai-sans-fiche-route.mjs scripts/essai-inscription-route.mjs scripts/essai-famille-route.mjs scripts/navigateur/echanges-moitie.mjs scripts/navigateur/echanges-equipe.mjs scripts/navigateur/echanges-factures.mjs scripts/navigateur/famille-page.mjs scripts/navigateur/famille-comptoir.mjs scripts/navigateur/famille-video.mjs; do
   neuf
   if node "$essai" > /tmp/essai.log 2>&1; then
     echo "  ok   $essai ($(grep -c '^  ok' /tmp/essai.log) vérifications)"

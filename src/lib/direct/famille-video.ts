@@ -130,7 +130,8 @@ export async function familleDeLaVideoPour(
 
 /** Les mots d'un texte, en lignes qui tiennent dans `largeur` (`max` lignes, la dernière coupée d'un « … »). */
 function lignesDe(g: CanvasRenderingContext2D, t: string, police: string, largeur: number, max = 2): string[] {
-  const mots = t.replace(/\s+/g, " ").trim().split(" ");
+  // Les espaces insécables restent : un « » » ou un « ! » ne part jamais seul à la ligne.
+  const mots = t.replace(/[ \t\r\n]+/g, " ").trim().split(" ");
   const lignes: string[] = [];
   let l = "";
   for (const m of mots) {
@@ -354,7 +355,8 @@ function dessinerUn(g: CanvasRenderingContext2D, img: HTMLImageElement | null, g
 
 function bulleDuMot(g: CanvasRenderingContext2D, P: Polices, f: { mot?: string; prenom?: string; numero?: number; grade: Grade }, a: number) {
   const policeMot = `italic 700 38px ${P.serif}`;
-  const lignes = lignesDe(g, `« ${f.mot ?? ""} »`, policeMot, 540, 2);
+  const mot = `« ${f.mot ?? ""} »`.replace(/ ([!?;:»])/g, "\u00a0$1").replace(/« /g, "«\u00a0");
+  const lignes = lignesDe(g, mot, policeMot, 540, 2);
   const qui = [f.prenom, f.numero ? `fantôme n°${f.numero}` : ""].filter(Boolean).join(" · ");
   const h = 40 + lignes.length * 50 + (qui ? 44 : 0);
   const y = 620 - h;
