@@ -326,6 +326,9 @@ export function familleDuDouble(c: { branche?: string | null; metier?: string | 
   if (b === "lunetier") return "lunettes";
   if (b === "artisan") {
     if (/tatou|tattoo|pierc/.test(m)) return "seance";
+    /* UNE BOULANGERIE EST RANGÉE PARMI LES ARTISANS (`brancheDuMetier`), MAIS ELLE EST À TABLE, comme dans
+       le Direct : elle tombait dans les séances, avec un « cabinet », des rendez-vous et « Un vrai moment pour soi ». */
+    if (/boulang|p[âa]tiss|viennoiser/.test(m)) return "table";
     /* UNE BOUTIQUE DE MEUBLES ET DE DÉCO VEND CE QU'ON MET DE CÔTÉ : elle
        tombait dans les séances, avec un « cabinet » et des rendez-vous. */
     if (/cir|bougie|bijou|bracelet|collier|joaill|c[ée]ram|potier|atelier|cr[ée]at|meuble|d[ée]co/.test(m))
