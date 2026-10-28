@@ -15,6 +15,12 @@ const SLUG = "comptoir-des-fantomes-dax";
 const NEUF = "atelier-tout-neuf-dax";
 const jour = (d) => new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(d);
 const ilYa = (n) => new Date(Date.now() - n * 86_400_000);
+/** Hier, en jour de calendrier (le jour du passage à l'heure d'hiver dure 25 heures). */
+const hier = (() => {
+  const d = new Date(`${jour(new Date())}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+})();
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
 const h = (k) => `dddddddd-0000-4000-8000-00000000000${k}`;
 
@@ -40,7 +46,7 @@ await semer(
   })),
 );
 await semer("clik_presence", [
-  ...[1, 2, 3, 4].map((k) => ({ site_id: SITE, habitant_id: h(k), jour: jour(ilYa(1)) })),
+  ...[1, 2, 3, 4].map((k) => ({ site_id: SITE, habitant_id: h(k), jour: hier })),
   { site_id: SITE, habitant_id: h(1), jour: jour(new Date()) },
 ]);
 await semer("clik_mot", { site_id: SITE, habitant_id: h(1), texte: "Ça sent bon jusqu’ici", liste: true, jour: jour(new Date()) });

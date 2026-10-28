@@ -10,7 +10,7 @@
 // TANT QUE LA TABLE N'EST PAS CRÉÉE, la page marche quand même : la foule du jour se lit dans
 // les cages ouvertes aujourd'hui, le record ne se montre pas, et rien n'est écrit.
 import { createHash } from "node:crypto";
-import { jourParis } from "@/lib/jour-paris";
+import { jourAvant, jourParis } from "@/lib/jour-paris";
 import { gradeDe, type EtatFamille, type MaFamille, type Parcours } from "@/lib/direct/famille";
 import { estCage } from "@/lib/direct/cages";
 
@@ -68,7 +68,7 @@ export async function lireFamille(supabase: Supabase, siteId: string) {
       .from("clik_presence")
       .select("habitant_id, jour, amene_par")
       .eq("site_id", siteId)
-      .gte("jour", jourParis(new Date(Date.now() - 400 * 86_400_000)))
+      .gte("jour", jourAvant(jourParis(), 400))
       .limit(50000),
     supabase.from("clik_visite").select("habitant_id").eq("site_id", siteId).limit(20000),
   ]);
@@ -107,7 +107,7 @@ export async function lireFamille(supabase: Supabase, siteId: string) {
 /** La foule, le record, et lui (`habitantId`) s'il est de la famille. */
 export async function etatFamille(supabase: Supabase, siteId: string, habitantId?: string | null): Promise<EtatFamille> {
   const auj = jourParis();
-  const hier = jourParis(new Date(Date.now() - 86_400_000));
+  const hier = jourAvant(auj, 1);
   const f = await lireFamille(supabase, siteId);
   const parJour = new Map<string, number>();
   for (const p of f.lignes) {

@@ -44,7 +44,14 @@ const famille = async (qui) => {
 };
 const lignes = async (t, q = "") => (await (await fetch(`${F}/${t}?site_id=eq.${SITE}${q}`)).json());
 const jour = (d) => new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(d);
-const ilYa = (n) => jour(new Date(Date.now() - n * 86_400_000));
+// EN JOURS DE CALENDRIER, pas en tranches de 24 h : le jour du passage à l'heure d'hiver dure 25 heures, et
+// entre 23 h et minuit, « il y a 3 × 24 h » et « il y a 2 × 24 h » tombaient le même jour (la CI l'a attrapé).
+const AUJ = jour(new Date());
+const ilYa = (n) => {
+  const d = new Date(`${AUJ}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - n);
+  return d.toISOString().slice(0, 10);
+};
 const habitantDe = async (qui) => (await lignes("clik_cage")).find((c) => c.prenom === qui)?.habitant_id;
 
 let f = await famille();
