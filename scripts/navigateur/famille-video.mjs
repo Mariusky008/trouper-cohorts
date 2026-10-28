@@ -272,10 +272,12 @@ ok(vrai.duree[0] === 3.4 && vrai.duree[1] === 8.4, `le début dure ${vrai.duree[
 // 🥖 UNE BOULANGERIE A SES MOTS : sa fournée, pas un plat du jour.
 const prop = await (await fetch(`${BASE}/api/site-internet/pro/proposition`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: SLUG, token: "jeton-test", action: "lire" }) })).json();
 ok(/Ta fournée du jour \?/.test(prop.proposition?.phrase ?? "") && !/plat du jour/.test(prop.proposition?.phrase ?? ""), `sa proposition du matin : « Ta fournée du jour ? » (${prop.proposition?.phrase})`);
-await p.goto(`${BASE}/autour-de-moi/assistante?site=${SLUG}&k=jeton-test`, { waitUntil: "networkidle" });
-await p.getByText("Publier une annonce").first().click({ timeout: 30000 });
-await p.waitForSelector(".cz-deux h2", { timeout: 20000 });
-await p.waitForTimeout(2500);
+await p.goto(`${BASE}/autour-de-moi/assistante?site=${SLUG}&k=jeton-test`, { waitUntil: "networkidle", timeout: 400000 });
+// L'accueil est prêt quand sa carte « Ma famille » est là (avant, un toucher se perd).
+await p.waitForSelector(".fc-carte", { timeout: 60000 });
+await p.getByText("Publier une annonce", { exact: true }).first().click({ timeout: 30000 });
+await p.waitForTimeout(3000);
+await p.screenshot({ path: `${D}/famille-video-3-boulangerie.png` });
 // La proposition du matin (« Ta fournée du jour ? ») ou le titre « Publier la fournée du jour », selon qu'elle est arrivée.
 const publier = (await p.locator("body").innerText()).replace(/\s+/g, " ");
 ok(/fournée du jour/i.test(publier) && !/plat du jour|menu du jour/i.test(publier), "au comptoir : sa fournée du jour, jamais le plat du jour");
