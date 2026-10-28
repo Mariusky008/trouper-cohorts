@@ -10,15 +10,28 @@
 //   · SON PARCOURS DE LA SEMAINE : sa page ouverte → un fantôme libéré → venus pour de vrai, en
 //     pourcentages. WhatsApp s'y ajoutera avec le numéro de ClikMe ;
 //   · LE MOT DU JOUR : il épingle un des petits mots d'aujourd'hui ou d'hier, qui s'affiche en haut
-//     de sa page avec le prénom et le numéro de son auteur.
+//     de sa page avec le prénom et le numéro de son auteur ;
+//   · 🔔 UN BON PLAN POUR SA FAMILLE (« Il me reste des tables ») : l'or le voit tout de suite sur sa
+//     page, l'argent puis le bronze après (`OUVERTURE_BON_PLAN`) ; « C'est complet » le retire ;
+//   · 🎁 JE TE GÂTE : ce qu'il peut offrir à sa famille ce mois-ci (« 10 × un café ») — il l'offre sur
+//     leurs petits mots, et sa page dit combien il en reste à gagner.
 //
 // LA DÉMONSTRATION a une famille inventée (`familleAuComptoirDemo`), et le mot qu'il épingle reste
 // dans ce téléphone. Un vrai commerçant lit la sienne (`api/site-internet/pro/famille`).
 import { useCallback, useEffect, useState } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import {
+  BON_PLAN_MAX,
+  DUREES_BON_PLAN,
   EMOJI_GRADE,
   familleAuComptoirDemo,
+  GATE_MAX,
+  ideesDeBonPlan,
+  OUVERTURE_BON_PLAN,
+  ouvertureDuBonPlan,
+  resteDuGate,
+  type BonPlanComptoir,
+  type DureeBonPlan,
   manquePourRecord,
   NOM_GRADE,
   recordBattu,
@@ -30,6 +43,7 @@ import {
 import { lookDe } from "@/lib/direct/look";
 import { jourParis } from "@/lib/jour-paris";
 import { STYLES_CARNET } from "./carnet-comptoir";
+import { plusDe, plusPermis, plusPropre } from "@/lib/direct/previens-les";
 
 const nb = (n: number) => n.toLocaleString("fr-FR").replace(/ /g, " ");
 
@@ -43,6 +57,47 @@ function epingleDemo(c: CommerceComptoir): string {
     return "";
   }
 }
+/* SON BON PLAN ET CE QU'IL OFFRE, DANS LA DÉMONSTRATION : dans ce téléphone aussi. */
+const cleBonPlan = (c: CommerceComptoir) => `clikme:bonplan-demo:${c.id}`;
+const cleGate = (c: CommerceComptoir) => `clikme:gate-demo:${c.id}`;
+function lireLocal<T>(cle: string): T | null {
+  try {
+    return JSON.parse(window.localStorage.getItem(cle) || "null") as T | null;
+  } catch {
+    return null;
+  }
+}
+function garderLocal(cle: string, v: unknown) {
+  try {
+    if (v === null) window.localStorage.removeItem(cle);
+    else window.localStorage.setItem(cle, JSON.stringify(v));
+  } catch {
+    /* stockage indisponible : le geste vit le temps de la visite */
+  }
+}
+const planDemo = (texte: string, publieLe: string, finLe: string): BonPlanComptoir => ({
+  id: "demo",
+  texte,
+  publieLe,
+  finLe,
+  ouvertures: { or: ouvertureDuBonPlan(publieLe, "or"), argent: ouvertureDuBonPlan(publieLe, "argent"), bronze: ouvertureDuBonPlan(publieLe, "bronze") },
+});
+function avecDemo(f: FamilleAuComptoir, c: CommerceComptoir): FamilleAuComptoir {
+  const bp = lireLocal<{ texte: string; publieLe: string; finLe: string }>(cleBonPlan(c));
+  const g = lireLocal<{ mois: string; quoi: string; combien: number }>(cleGate(c));
+  const mois = jourParis().slice(0, 7);
+  return {
+    ...f,
+    bonPlan: bp && Date.parse(bp.finLe) > Date.now() ? planDemo(bp.texte, bp.publieLe, bp.finLe) : null,
+    gate: g && g.mois === mois ? { mois, quoi: g.quoi, combien: g.combien, offerts: 0 } : null,
+    gateDernier: g ? { quoi: g.quoi, combien: g.combien } : null,
+  };
+}
+
+/** « 12 h 05 », heure de Paris. */
+export const heureEnClair = (iso: string) =>
+  new Date(iso).toLocaleTimeString("fr-FR", { hour: "numeric", minute: "2-digit", timeZone: "Europe/Paris" }).replace(":", " h ");
+
 function avecEpingle(f: FamilleAuComptoir, id: string): FamilleAuComptoir {
   const mots = f.mots.map((m) => ({ ...m, epingle: m.id === id }));
   const m = mots.find((x) => x.epingle);
@@ -70,7 +125,7 @@ export function useFamille(commerce: CommerceComptoir) {
 
   const charger = useCallback(async () => {
     if (!reel) {
-      setF(avecEpingle(familleAuComptoirDemo(commerce.id, Date.now()), epingleDemo(commerce)));
+      setF(avecDemo(avecEpingle(familleAuComptoirDemo(commerce.id, Date.now()), epingleDemo(commerce)), commerce));
       setPret(true);
       return;
     }
@@ -111,7 +166,42 @@ export function useFamille(commerce: CommerceComptoir) {
     }
   };
 
-  return { f, pret, ennui, occupe, recharger: charger, epingler, demo: !reel };
+  /** Un geste du comptoir : à la route (qui rend la famille relue), ou dans ce téléphone pour la démonstration. */
+  const geste = async (quoi: string, corps: Record<string, unknown>, demo: () => void): Promise<boolean> => {
+    setEnnui("");
+    if (!reel) {
+      demo();
+      setF((x) => (x ? avecDemo(x, commerce) : x));
+      return true;
+    }
+    setOccupe(quoi);
+    try {
+      setF(await demander(reel, corps));
+      return true;
+    } catch (e) {
+      setEnnui(e instanceof Error ? e.message : String(e));
+      return false;
+    } finally {
+      setOccupe("");
+    }
+  };
+
+  /** 🔔 Un bon plan pour sa famille (il remplace celui d'avant). */
+  const bonPlan = (texte: string, duree: DureeBonPlan) =>
+    geste("bon-plan", { action: "bon-plan", texte, duree }, () => {
+      const maintenant = Date.now();
+      const soir = new Date();
+      soir.setHours(23, 0, 0, 0);
+      const fin = duree === "1h" ? maintenant + 3_600_000 : duree === "3h" ? maintenant + 3 * 3_600_000 : Math.max(soir.getTime(), maintenant + 3_600_000);
+      garderLocal(cleBonPlan(commerce), { texte: texte.trim().slice(0, BON_PLAN_MAX), publieLe: new Date(maintenant).toISOString(), finLe: new Date(fin).toISOString() });
+    });
+  /** « C'est complet » : il le retire. */
+  const retirerBonPlan = () => geste("bon-plan-retirer", { action: "bon-plan-retirer" }, () => garderLocal(cleBonPlan(commerce), null));
+  /** 🎁 Ce qu'il peut offrir ce mois-ci. */
+  const gate = (quoi: string, combien: number) =>
+    geste("gate", { action: "gate", quoi, combien }, () => garderLocal(cleGate(commerce), { mois: jourParis().slice(0, 7), quoi: plusPropre(quoi), combien }));
+
+  return { f, pret, ennui, occupe, recharger: charger, epingler, bonPlan, retirerBonPlan, gate, demo: !reel };
 }
 export type FamilleDuComptoir = ReturnType<typeof useFamille>;
 
@@ -120,10 +210,11 @@ function motDeLaCarte(f: FamilleAuComptoir): { titre: string; mot: string; chaud
   if (f.membres === 0) return { titre: "Ta famille commence aujourd’hui", mot: "Ton lien, à la fin de tes vidéos : les premiers fantômes arrivent", chaud: false };
   const titre = `Aujourd’hui ${nb(f.aujourdhui)}${f.record ? ` · record ${nb(Math.max(f.record, f.aujourdhui))}` : ""}`;
   const mots = [
+    f.bonPlan && "🔔 Bon plan en cours",
     f.nouveaux > 0 && `+${nb(f.nouveaux)} ${f.nouveaux > 1 ? "nouveaux" : "nouveau"}`,
     recordBattu(f) ? "🎉 Record battu !" : f.record ? `Plus que ${nb(manquePourRecord(f))} pour le record` : "",
   ].filter(Boolean);
-  return { titre, mot: mots.join(" · ") || `${nb(f.membres)} fantômes dans ta famille`, chaud: recordBattu(f) || f.nouveaux > 0 };
+  return { titre, mot: mots.join(" · ") || `${nb(f.membres)} fantômes dans ta famille`, chaud: recordBattu(f) || f.nouveaux > 0 || Boolean(f.bonPlan) };
 }
 
 /** 👻 La carte en tête de l'accueil. */
@@ -253,6 +344,9 @@ export function FamilleComptoir({
               </li>
             </ul>
           </section>
+
+          <BonPlanDuComptoir commerce={commerce} famille={famille} f={f} />
+          <JeTeGate commerce={commerce} famille={famille} f={f} />
 
           {lien && (
             <section className="fc-lien">
@@ -385,7 +479,156 @@ export function FamilleComptoir({
   );
 }
 
+/** 🔔 SON BON PLAN : celui en cours (ses heures, palier par palier), ou en écrire un. */
+function BonPlanDuComptoir({ commerce, famille, f }: { commerce: CommerceComptoir; famille: FamilleDuComptoir; f: FamilleAuComptoir }) {
+  const [texte, setTexte] = useState("");
+  const [duree, setDuree] = useState<DureeBonPlan>("3h");
+  const propre = texte.replace(/\s+/g, " ").trim();
+  const interdit = Boolean(propre) && !plusPermis(propre);
+  const bp = f.bonPlan;
+  return (
+    <section className="fc-bonplan">
+      <h3>🔔 Un bon plan pour ta famille</h3>
+      {!f.bonsPlansActifs ? (
+        <p className="ck-vide">Les bons plans arrivent bientôt sur ta page.</p>
+      ) : bp ? (
+        <div className="fc-bp-encours">
+          <q>{bp.texte}</q>
+          <ul className="fc-bp-heures">
+            <li>
+              🥇 Or <b>{heureEnClair(bp.ouvertures.or)}</b>
+            </li>
+            <li>
+              🥈 Argent <b>{heureEnClair(bp.ouvertures.argent)}</b>
+            </li>
+            <li>
+              🥉 Bronze <b>{heureEnClair(bp.ouvertures.bronze)}</b>
+            </li>
+          </ul>
+          <small>Jusqu’à {heureEnClair(bp.finLe)}</small>
+          <button type="button" className="ck-passage" disabled={Boolean(famille.occupe)} onClick={() => void famille.retirerBonPlan()}>
+            C’est complet : le retirer
+          </button>
+        </div>
+      ) : (
+        <div className="fc-bp-ecrire">
+          <div className="fc-puces">
+            {ideesDeBonPlan(commerce.branche).map((i) => (
+              <button key={i} type="button" className={propre === i ? "on" : ""} onClick={() => setTexte(i)}>
+                {i}
+              </button>
+            ))}
+          </div>
+          <input value={texte} maxLength={BON_PLAN_MAX} placeholder="Ou écris le tien" aria-label="Ton bon plan" onChange={(e) => setTexte(e.target.value)} />
+          <div className="fc-puces" role="radiogroup" aria-label="Pour combien de temps">
+            {DUREES_BON_PLAN.map((d) => (
+              <button key={d.id} type="button" role="radio" aria-checked={duree === d.id} className={duree === d.id ? "on" : ""} onClick={() => setDuree(d.id)}>
+                {d.mot}
+              </button>
+            ))}
+          </div>
+          {interdit && <p className="ck-ennui">Pas de promotion d’alcool : la loi Évin l’interdit.</p>}
+          <button
+            type="button"
+            className="fc-envoyer"
+            disabled={!propre || interdit || Boolean(famille.occupe)}
+            onClick={() =>
+              void famille.bonPlan(propre, duree).then((ok) => {
+                if (ok) setTexte("");
+              })
+            }
+          >
+            🔔 Envoyer à ma famille
+          </button>
+        </div>
+      )}
+      <p className="fc-regle">
+        Sur ta page, tes fantômes d’or le voient tout de suite, l’argent {OUVERTURE_BON_PLAN.argent} minutes après, le bronze {OUVERTURE_BON_PLAN.bronze} minutes après.
+        Bientôt aussi sur WhatsApp, par Mike.
+      </p>
+    </section>
+  );
+}
+
+/** 🎁 JE TE GÂTE : ce qu'il peut offrir à sa famille ce mois-ci, et combien il en reste. */
+function JeTeGate({ commerce, famille, f }: { commerce: CommerceComptoir; famille: FamilleDuComptoir; f: FamilleAuComptoir }) {
+  const depart = f.gate ?? f.gateDernier;
+  const [quoi, setQuoi] = useState(depart?.quoi ?? "");
+  const [combien, setCombien] = useState(String(depart?.combien ?? 10));
+  const [fait, setFait] = useState(false);
+  const propre = plusPropre(quoi);
+  const interdit = Boolean(propre) && !plusPermis(propre);
+  const n = Number(combien);
+  const valide = Boolean(propre) && !interdit && Number.isInteger(n) && n >= 0 && n <= GATE_MAX;
+  const mois = new Date().toLocaleDateString("fr-FR", { month: "long", timeZone: "Europe/Paris" });
+  if (!f.bonsPlansActifs) return null;
+  return (
+    <section className="fc-gate">
+      <h3>🎁 Je te gâte</h3>
+      <p className="fc-regle">Ce que tu peux offrir à ta famille en {mois}. Tu l’offres sur leurs petits mots (🎁 Offrir…), et ta page dit combien il en reste à gagner.</p>
+      {f.gate && (
+        <p className="fc-gate-etat">
+          En {mois} : <b>{nb(f.gate.combien)} × {f.gate.quoi}</b> · {nb(f.gate.offerts)} {f.gate.offerts > 1 ? "offerts" : "offert"} · il en reste <b>{nb(resteDuGate(f.gate))}</b>
+        </p>
+      )}
+      <div className="fc-gate-form">
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={GATE_MAX}
+          value={combien}
+          aria-label="Combien ce mois-ci"
+          onChange={(e) => setCombien(e.target.value)}
+        />
+        <span aria-hidden="true">×</span>
+        <input value={quoi} maxLength={60} placeholder="ce que tu offres" aria-label="Ce que tu offres" onChange={(e) => setQuoi(e.target.value)} />
+      </div>
+      <div className="fc-puces">
+        {plusDe(commerce.famille).map((p) => (
+          <button key={p} type="button" className={propre === p ? "on" : ""} onClick={() => setQuoi(p)}>
+            {p}
+          </button>
+        ))}
+      </div>
+      {interdit && <p className="ck-ennui">Pas d’alcool offert : la loi Évin l’interdit.</p>}
+      <button
+        type="button"
+        className="fc-envoyer"
+        disabled={!valide || Boolean(famille.occupe)}
+        onClick={() =>
+          void famille.gate(propre, n).then((ok) => {
+            if (!ok) return;
+            setFait(true);
+            window.setTimeout(() => setFait(false), 2200);
+          })
+        }
+      >
+        {fait ? "✓ Enregistré" : f.gate ? "Changer" : "Enregistrer"}
+      </button>
+    </section>
+  );
+}
+
 const STYLES = `
+.fc-bonplan,.fc-gate{display:flex;flex-direction:column;gap:8px;}
+.fc-bp-encours{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:18px;background:var(--nappe);border:1.5px solid var(--ambre);}
+.fc-bp-encours q{font-size:16px;font-weight:700;line-height:1.35;}
+.fc-bp-encours small{font-size:12.5px;color:var(--gris);}
+.fc-bp-heures{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0;}
+.fc-bp-heures li{padding:4px 10px;border-radius:999px;background:var(--fond);border:1px solid var(--trait);font-size:12.5px;}
+.fc-bp-heures b{margin-left:4px;}
+.fc-bp-ecrire{display:flex;flex-direction:column;gap:8px;}
+.fc-bp-ecrire input,.fc-gate-form input{min-height:42px;padding:0 12px;border-radius:12px;border:1px solid var(--trait);background:var(--fond);color:var(--creme);font:inherit;font-size:15px;}
+.fc-puces{display:flex;flex-wrap:wrap;gap:6px;}
+.fc-puces button{min-height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--trait);background:var(--nappe);color:var(--creme);font-weight:700;font-size:13px;}
+.fc-puces button.on{border-color:var(--ambre);background:var(--ambre);color:#2A1404;}
+.fc-envoyer{min-height:46px;border:0;border-radius:14px;background:var(--rose,#FF2E9A);color:#fff;font-weight:800;font-size:15px;}
+.fc-envoyer:disabled{opacity:.45;}
+.fc-gate-form{display:grid;grid-template-columns:84px auto 1fr;gap:8px;align-items:center;}
+.fc-gate-form span{font-weight:800;color:var(--gris);}
+.fc-gate-etat{margin:0;padding:10px 14px;border-radius:14px;background:rgba(245,162,58,.1);border:1px solid rgba(245,162,58,.35);font-size:14px;}
+.fc-gate-etat b{color:var(--ambre);}
 .fc-carte .fc-carte-titre{font-family:var(--font-clikme),sans-serif;font-style:normal;font-size:15px;font-weight:800;color:var(--creme);}
 .fc-jauge{display:block;height:6px;margin-top:6px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden;}
 .fc-jauge i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--rose,#FF2E9A),#F2C46B);}

@@ -8,14 +8,16 @@
 //     porte un 💛 (il peut le retirer) ;
 //   · 🎁 « Offrir… » : un petit quelque chose (jamais d'alcool, loi Évin) — l'habitant
 //     le trouve dans Ma Maison, à montrer au comptoir. C'est une surprise, à son idée.
-// En haut, ce qu'il a offert ce mois-ci. Sur l'accueil, une carte quand il y a des mots,
-// « 2 nouveaux » tant qu'il ne les a pas lus. Voir `lib/direct/petits-mots.ts`.
+// En haut, ce qu'il a offert ce mois-ci — et, s'il l'a fixé dans « Ma famille », ce qu'il peut encore
+// offrir (« Je te gâte » : sa limite du mois, proposée en premier). Sur l'accueil, une carte quand il
+// y a des mots, « 2 nouveaux » tant qu'il ne les a pas lus. Voir `lib/direct/petits-mots.ts`.
 import { useEffect, useState } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { lookDe } from "@/lib/direct/look";
 import { quandEnClair } from "@/lib/direct/carnet";
 import { motsDemo, offertCeMois, type PetitMot } from "@/lib/direct/petits-mots";
 import { plusDe, plusPermis, plusPropre } from "@/lib/direct/previens-les";
+import { resteDuGate, type Gate } from "@/lib/direct/famille";
 
 /* LES GESTES DE LA DÉMONSTRATION, dans ce téléphone. */
 const cleDemo = (c: CommerceComptoir) => `clikme:mots-demo:${c.id}`;
@@ -146,11 +148,17 @@ export function PetitsMotsComptoir({
   dossier,
   petitsMots,
   onRetour,
+  gate,
+  onOffert,
 }: {
   commerce: CommerceComptoir;
   dossier: string;
   petitsMots: PetitsMotsDuComptoir;
   onRetour: () => void;
+  /** 🎁 Ce qu'il peut offrir ce mois-ci (« Je te gâte », dans « Ma famille »). */
+  gate?: Gate | null;
+  /** Un cadeau vient de partir : « Ma famille » recompte ce qu'il reste. */
+  onOffert?: () => void;
 }) {
   const { mots, marquerLus } = petitsMots;
   useEffect(() => {
@@ -184,6 +192,19 @@ export function PetitsMotsComptoir({
           🎁 Ce mois-ci, tu as offert : <b>{offert.detail}</b>
         </p>
       )}
+      {gate && (
+        <p className="pm-offert">
+          {resteDuGate(gate) > 0 ? (
+            <>
+              🎁 Je te gâte : tu peux encore offrir <b>{resteDuGate(gate)} × {gate.quoi}</b> ce mois-ci.
+            </>
+          ) : (
+            <>
+              🎁 Tu as offert tes <b>{gate.combien} × {gate.quoi}</b> de ce mois-ci. Tu peux en ajouter dans « Ma famille ».
+            </>
+          )}
+        </p>
+      )}
       {petitsMots.ennui && (
         <p className="pm-ennui" role="alert">
           {petitsMots.ennui}
@@ -191,7 +212,7 @@ export function PetitsMotsComptoir({
       )}
       {mots && mots.length === 0 && <p className="pm-vide">Pas encore de petit mot. Ils arrivent sous ta vitrine, à la fin de tes vidéos.</p>}
       {(mots ?? []).map((m) => (
-        <MotDuComptoir key={m.id} m={m} commerce={commerce} maintenant={maintenant} petitsMots={petitsMots} />
+        <MotDuComptoir key={m.id} m={m} commerce={commerce} maintenant={maintenant} petitsMots={petitsMots} gate={gate ?? null} onOffert={onOffert} />
       ))}
       <style>{STYLES}</style>
     </div>
@@ -203,14 +224,20 @@ function MotDuComptoir({
   commerce,
   maintenant,
   petitsMots,
+  gate,
+  onOffert,
 }: {
   m: PetitMot;
   commerce: CommerceComptoir;
   maintenant: number;
   petitsMots: PetitsMotsDuComptoir;
+  gate: Gate | null;
+  onOffert?: () => void;
 }) {
   const [choisir, setChoisir] = useState(false);
-  const [cadeau, setCadeau] = useState("");
+  // CE QU'IL A DÉCIDÉ D'OFFRIR CE MOIS-CI, proposé en premier.
+  const [cadeau, setCadeau] = useState(gate && resteDuGate(gate) > 0 ? gate.quoi : "");
+  const idees = gate ? [gate.quoi, ...plusDe(commerce.famille).filter((p) => p !== gate.quoi)] : plusDe(commerce.famille);
   const propre = plusPropre(cadeau);
   const interdit = Boolean(propre) && !plusPermis(propre);
   const visible = m.liste || m.coeur;
@@ -245,7 +272,7 @@ function MotDuComptoir({
       {choisir && !m.cadeau && (
         <div className="pm-choix">
           <div className="pm-puces">
-            {plusDe(commerce.famille).map((p) => (
+            {idees.map((p) => (
               <button key={p} type="button" className={cadeau === p ? "on" : ""} onClick={() => setCadeau(p)}>
                 {p}
               </button>
@@ -260,7 +287,9 @@ function MotDuComptoir({
               disabled={!propre || interdit}
               onClick={() =>
                 void petitsMots.offrir(m, propre).then((ok) => {
-                  if (ok) setChoisir(false);
+                  if (!ok) return;
+                  setChoisir(false);
+                  onOffert?.();
                 })
               }
             >

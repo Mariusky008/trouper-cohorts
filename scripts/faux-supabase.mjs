@@ -90,6 +90,9 @@ const DEFAUTS = {
   clik_mot: () => ({ id: randomUUID(), liste: false, coeur_le: null, cadeau: "", cadeau_le: null, epingle_le: null, created_at: maintenant() }),
   // LA FOULE DU JOUR — `…_clik_famille.sql`.
   clik_presence: () => ({ amene_par: null, created_at: maintenant() }),
+  // LES BONS PLANS ET « JE TE GÂTE » — `…_clik_bons_plans.sql`.
+  clik_bon_plan: () => ({ id: randomUUID(), publie_le: maintenant(), retire_le: null, created_at: maintenant() }),
+  clik_gate: () => ({ updated_at: maintenant() }),
 };
 const CLES = {
   human_conversations: ["id"],
@@ -114,6 +117,8 @@ const CLES = {
   clik_ardoise: ["site_id"],
   clik_mot: ["site_id", "habitant_id", "jour"],
   clik_presence: ["site_id", "habitant_id", "jour"],
+  clik_bon_plan: ["id"],
+  clik_gate: ["site_id", "mois"],
 };
 
 /** Le déclencheur `echanges_pause_garde` : en pause après deux signalements, une offre ne se remet pas en ligne. */

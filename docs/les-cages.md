@@ -281,6 +281,22 @@ Changer un chiffre change la page et la route à la fois.
 - `supabase/migrations/20261102090000_clik_famille_comptoir.sql` : le compteur `famille` (les ouvertures de sa page)
   et `clik_mot.epingle_le`.
 
+**Ce que les paliers apportent pour de vrai (chantier 3b)** :
+
+- **🔔 Le bon plan** (« Il me reste des tables ») : il l'écrit dans « Ma famille » (une idée de son métier, ou le
+  sien, 90 signes), pour 1 heure, 3 heures ou jusqu'à ce soir. Sur sa page, **ses fantômes d'or le voient tout de
+  suite, l'argent 20 minutes après, le bronze 40 minutes après** (`OUVERTURE_BON_PLAN` dans `famille.ts`, aussi
+  facile à changer que les paliers). **Le serveur ne donne le texte qu'à l'heure de chacun** : avant, « 🔒 le tien
+  s'ouvre à 12 h 45 », et la page se relit à cette heure-là ; à qui n'est pas de la famille, « ouvre une cage pour
+  l'avoir ». Un seul en cours : un nouveau remplace l'ancien ; « C'est complet » le retire. Jamais de promotion
+  d'alcool (loi Évin). Bientôt aussi sur WhatsApp, dans le même ordre (chantier 4).
+- **🎁 Je te gâte** : ce qu'il peut offrir à sa famille ce mois-ci (« 10 × le café »). Il l'offre sur leurs petits
+  mots (🎁 Offrir…, qui le propose en premier) ; au-delà, la route refuse (« tu as offert tes 10 × le café »). Sa page
+  dit « encore 7 × le café à offrir : un petit mot peut te le faire gagner », tant qu'il en reste. Jamais d'alcool.
+- `api/site-internet/pro/famille` (« bon-plan », « bon-plan-retirer », « gate ») ; la route publique de la famille
+  rend le bon plan à l'heure de son palier, et ce qui reste à offrir ; la route du carnet compte les cadeaux.
+- `supabase/migrations/20261103090000_clik_bons_plans.sql` : `clik_bon_plan` et `clik_gate`.
+
 ## L'activer en production
 
 **Les deux tables doivent être créées une fois** : coller le contenu de
@@ -304,6 +320,8 @@ cages du jour, le record ne paraît pas, et ni les jours de cage ni les amis ame
 Le comptoir de la famille demande ensuite `supabase/migrations/20261102090000_clik_famille_comptoir.sql` (après
 celle des compteurs de diffusion et celle des petits mots) ; sans elle, « Ma famille » s'affiche, mais « Ont ouvert
 ta page » dit « Pas encore mesuré » et le mot du jour « arrive bientôt ».
+Les bons plans et « Je te gâte » demandent `supabase/migrations/20261103090000_clik_bons_plans.sql` ; sans elle, « Ma
+famille » dit « Les bons plans arrivent bientôt », et les cadeaux des petits mots restent sans limite.
 
 ## Vérifier
 
@@ -320,7 +338,8 @@ ta page » dit « Pas encore mesuré » et le mot du jour « arrive bientôt ».
   (le premier jour seulement) ; le record d'avant ; les paliers ; jamais pour un prospect ; la page ; le numéro et
   le palier dans la vitrine ; Mes familles ; les prénoms refusés.
 - `node scripts/navigateur/famille-comptoir.mjs` (CI aussi) : la route du comptoir (la foule, les paliers, les
-  fidèles, le parcours, épingler) puis l'écran « Ma famille », le carnet et le mot du jour sur la page.
+  fidèles, le parcours, épingler, « Je te gâte » et sa limite, le bon plan palier par palier) puis l'écran « Ma
+  famille », le carnet, ses petits mots, et sur la page le mot du jour, le bon plan fermé et ce qui reste à offrir.
 - `node scripts/navigateur/famille-page.mjs` (CI aussi) : la page dans un téléphone, de l'accueil à la famille, le
   retour le même jour, l'ami venu par le lien, « Tu passes Argent », les écussons de la vitrine, la famille vide.
 - Le carnet dans le navigateur : `/autour-de-moi/assistante?metier=table`, la carte « Mon carnet ».

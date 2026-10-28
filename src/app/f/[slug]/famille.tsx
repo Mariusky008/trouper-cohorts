@@ -13,6 +13,11 @@
 //      leurs petits mots, ses bons plans sur WhatsApp (le numéro de ClikMe, s'il est ouvert), et
 //      « Il en manque 3 : inviter un ami » — son lien porte son code (`?de=`), qui compte pour l'or.
 //
+// 🔔 SON BON PLAN (« Il me reste des tables ») en haut : le texte seulement à l'heure de son palier
+// (l'or d'abord — le serveur ne le donne pas avant) ; sinon « 🔒 le tien s'ouvre à 12 h 45 », et la
+// page se relit à cette heure-là. À qui n'est pas de la famille : « ouvre une cage pour l'avoir ».
+// 🎁 Et ce que la maison peut encore offrir ce mois-ci (« Je te gâte »).
+//
 // Celui qui a déjà ouvert une cage aujourd'hui arrive directement sur sa famille.
 import { useCallback, useEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { abonnerLook, garderLook, lookDe, LOOKS, monLook } from "@/lib/direct/look";
@@ -27,6 +32,7 @@ import {
   manquePourRecord,
   messagePourMike,
   NOM_GRADE,
+  OUVERTURE_BON_PLAN,
   prochainPalier,
   recordBattu,
   type EtatFamille,
@@ -63,6 +69,8 @@ type Ecran = "accueil" | "fiche" | "famille";
 
 const lookServeur = () => lookDe(null);
 /** « 1 234 » : l'espace fine de `toLocaleString` ne s'affiche pas partout. */
+/** « 12 h 45 », heure de Paris. */
+const heureParis = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { hour: "numeric", minute: "2-digit", timeZone: "Europe/Paris" }).replace(":", " h ");
 const nb = (n: number) => n.toLocaleString("fr-FR").replace(/ /g, " ");
 const COULEUR_CAGE: Record<Cage, string> = { adore: "#FF2E9A", "un-jour": "#F5A23A", aujourdhui: "#3DE2A6" };
 /** Le dernier palier vu sur ce téléphone, par commerce : celui qui monte se fête une fois. */
@@ -117,6 +125,16 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
       return null;
     }
   }, [c.slug]);
+
+  /* 🔔 SON BON PLAN EST FERMÉ JUSQU'À L'HEURE DE SON PALIER : la page se relit à cette heure-là. */
+  const ouvreA = etat?.bonPlan && !etat.bonPlan.ouvert && etat.bonPlan.membre ? Date.parse(etat.bonPlan.ouvertA) : 0;
+  useEffect(() => {
+    if (!ouvreA) return;
+    const dans = ouvreA - Date.now() + 1500;
+    if (dans <= 0 || dans > 3_600_000) return;
+    const t = window.setTimeout(() => void lire(), dans);
+    return () => window.clearTimeout(t);
+  }, [ouvreA, lire]);
 
   useEffect(() => {
     let fini = false;
@@ -200,6 +218,48 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
       window.open(`https://wa.me/?text=${encodeURIComponent(`${texte} ${lien}`)}`, "_blank", "noopener");
     }
   };
+
+  /** 🔔 Son bon plan : ouvert (le texte), fermé jusqu'à l'heure de son palier, ou réservé à la famille. */
+  const bonPlan = (e: EtatFamille | null) => {
+    const bp = e?.bonPlan;
+    if (!bp) return null;
+    if (bp.ouvert)
+      return (
+        <div className="fm-bonplan ouvert" role="status">
+          <small>🔔 Bon plan · jusqu’à {heureParis(bp.finLe)}</small>
+          <b>{bp.texte}</b>
+          <span>
+            {bp.grade === "or"
+              ? "Tu le vois en premier : tu es en or 🥇"
+              : bp.grade === "argent"
+                ? `Les fantômes d’or l’ont eu ${OUVERTURE_BON_PLAN.argent} minutes avant toi.`
+                : "L’or et l’argent l’ont eu avant toi : monte d’écusson pour l’avoir plus tôt."}
+          </span>
+        </div>
+      );
+    const passe = Date.parse(bp.ouvertA) <= Date.now();
+    return (
+      <div className="fm-bonplan" role="status">
+        <small>🔒 Un bon plan vient de sortir</small>
+        {bp.membre ? (
+          <>
+            <b>Les fantômes d’or le voient d’abord. Le tien s’ouvre à {heureParis(bp.ouvertA)}.</b>
+            <span>Monte d’écusson pour l’avoir plus tôt.</span>
+          </>
+        ) : (
+          <b>{passe ? "Il est pour sa famille : ouvre une cage pour le voir." : `Il est pour sa famille : ouvre une cage, il s’ouvrira pour toi à ${heureParis(bp.ouvertA)}.`}</b>
+        )}
+      </div>
+    );
+  };
+
+  /** 🎁 Ce que la maison peut encore offrir ce mois-ci. */
+  const gate = (e: EtatFamille | null) =>
+    e?.gate ? (
+      <p className="fm-gate">
+        🎁 Ce mois-ci, la maison gâte sa famille : encore <b>{nb(e.gate.reste)} × {e.gate.quoi}</b> à offrir. Un petit mot peut te le faire gagner.
+      </p>
+    ) : null;
 
   /** 📌 Le mot du jour, épinglé par le commerçant : son texte, et qui l'a écrit. */
   const motDuJour = (e: EtatFamille | null) =>
@@ -299,6 +359,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
           )}
         </section>
 
+        {bonPlan(etat)}
         {motDuJour(etat)}
         {etat && carteFoule(etat, true)}
 
@@ -357,6 +418,8 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
           </button>
         </div>
 
+        {gate(etat)}
+
         <section className="fm-vitrine" aria-label={`La famille devant ${c.nom}`}>
           <h2>La famille, devant {c.nom}</h2>
           <p className="fm-indice">Touche un fantôme pour lire son mot</p>
@@ -402,6 +465,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
         Tu l’aides à se faire connaître, et ses fantômes ont les bons plans en premier.
       </div>
 
+      {bonPlan(etat)}
       {motDuJour(etat)}
       {familleVide ? (
         <div className="fm-premier">
@@ -418,6 +482,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
         <div className="fm-foule attente" aria-hidden="true" />
       )}
 
+      {gate(etat)}
       {moi && !moi.present && (
         <p className="fm-revient">
           Re-bonjour, fantôme n°{nb(moi.numero)} {EMOJI_GRADE[moi.grade]} ! Ouvre une cage pour compter aujourd’hui.
@@ -615,6 +680,13 @@ const STYLES = `
 .fm-ident small{color:var(--pale);font-size:13px}
 .fm-accroche{margin:12px 16px 0;padding:12px 14px;border-radius:16px;background:var(--rose);color:#fff;font-size:14px;line-height:1.35;box-shadow:0 8px 24px rgba(255,46,154,.25)}
 .fm-accroche b{display:block;font-size:17px;font-weight:800;margin-bottom:2px}
+.fm-bonplan{display:flex;flex-direction:column;gap:3px;margin:12px 16px 0;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.06);border:1.5px dashed rgba(242,196,107,.6)}
+.fm-bonplan.ouvert{background:linear-gradient(135deg,rgba(242,196,107,.22),rgba(255,46,154,.16));border-style:solid}
+.fm-bonplan small{font-size:12px;font-weight:700;letter-spacing:.03em;color:var(--or)}
+.fm-bonplan b{font-size:16px;line-height:1.35;color:var(--creme)}
+.fm-bonplan span{font-size:13px;color:var(--doux)}
+.fm-gate{margin:12px 16px 0;padding:10px 14px;border-radius:14px;background:rgba(242,196,107,.1);border:1px solid rgba(242,196,107,.35);font-size:13.5px;line-height:1.4;color:var(--doux)}
+.fm-gate b{color:var(--creme)}
 .fm-motdujour{margin:12px 16px 0;padding:12px 14px;border-radius:16px;background:var(--creme);color:var(--carnet-texte);box-shadow:0 6px 18px rgba(0,0,0,.3)}
 .fm-motdujour small{display:block;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:var(--carnet-doux)}
 .fm-motdujour blockquote{margin:4px 0 0;font-family:var(--font-enseigne),"Playfair Display",Georgia,serif;font-style:italic;font-weight:700;font-size:18px;line-height:1.3}

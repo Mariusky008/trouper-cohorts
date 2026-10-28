@@ -1073,7 +1073,17 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
 
       {phase.ou === "messages" && <MessagesDeMike commerce={commerce} dossier={dossier} carnet={carnet} onRetour={revenir} />}
 
-      {phase.ou === "mots" && <PetitsMotsComptoir commerce={commerce} dossier={dossier} petitsMots={petitsMots} onRetour={revenir} />}
+      {phase.ou === "mots" && (
+        <PetitsMotsComptoir
+          commerce={commerce}
+          dossier={dossier}
+          petitsMots={petitsMots}
+          onRetour={revenir}
+          /* 🎁 « Je te gâte » : ce qu'il peut encore offrir ce mois-ci (« Ma famille »). */
+          gate={famille.f?.gate ?? null}
+          onOffert={() => void famille.recharger()}
+        />
+      )}
 
       {phase.ou === "savoir" && (
         <SavoirComptoir commerce={commerce} dossier={dossier} savoir={savoir} onRetour={revenir} />

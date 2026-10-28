@@ -131,10 +131,63 @@ export type EtatFamille = {
   };
   /** 📌 Le mot du jour, épinglé par le commerçant (la route publique l'ajoute). */
   motDuJour?: MotDuJour | null;
+  /** 🔔 Son bon plan en cours, à l'heure de son palier. */
+  bonPlan?: BonPlanPublic | null;
+  /** 🎁 Ce que la maison peut encore offrir ce mois-ci (`null` : rien, ou plus rien). */
+  gate?: { quoi: string; reste: number } | null;
 };
 
 /** 🏠 Une de ses familles, dans Ma Maison. */
 export type MaFamille = { slug: string; nom: string; numero: number; membres: number; grade: Grade; parcours: Parcours };
+
+// ═══ 🔔 LE BON PLAN, PAR PALIER ════════════════════════════════════════════
+/**
+ * « IL ME RESTE DES TABLES » : ses fantômes d'or le voient tout de suite, l'argent un peu après, le
+ * bronze ensuite — en minutes après sa publication. C'est ce que « les bons plans en premier » veut
+ * dire. Changer un chiffre ici change la page, la route et le comptoir à la fois.
+ */
+export const OUVERTURE_BON_PLAN: Record<Grade, number> = { or: 0, argent: 20, bronze: 40 };
+export const BON_PLAN_MAX = 90;
+/** Pour combien de temps : une heure, trois heures, ou jusqu'au soir (23 h, heure de Paris). */
+export const DUREES_BON_PLAN = [
+  { id: "1h", mot: "1 heure" },
+  { id: "3h", mot: "3 heures" },
+  { id: "soir", mot: "Jusqu’à ce soir" },
+] as const;
+export type DureeBonPlan = (typeof DUREES_BON_PLAN)[number]["id"];
+export const estDureeBonPlan = (v: unknown): v is DureeBonPlan => DUREES_BON_PLAN.some((d) => d.id === v);
+/** L'heure où un bon plan s'ouvre pour un palier (ISO). */
+export const ouvertureDuBonPlan = (publieLe: string, g: Grade) => new Date(Date.parse(publieLe) + OUVERTURE_BON_PLAN[g] * 60_000).toISOString();
+
+/** Des idées de bon plan, selon le métier (il écrit le sien, ou en touche une). */
+export function ideesDeBonPlan(branche: string): string[] {
+  if (branche === "restaurant" || branche === "bar") return ["Il me reste 2 tables ce midi", "Une table pour 4 vient de se libérer ce soir", "Encore 5 parts du plat du jour"];
+  if (branche === "coiffeur" || branche === "ongles") return ["Un créneau vient de se libérer à 15 h", "Deux places cet après-midi", "Un rendez-vous libre demain matin"];
+  if (branche === "fleuriste") return ["Les derniers bouquets du jour", "Une belle arrivée de roses ce matin"];
+  return ["Il m’en reste 3 en boutique", "Une nouveauté vient d’arriver", "Un créneau s’est libéré aujourd’hui"];
+}
+
+/** Le bon plan tel qu'un visiteur de la page le reçoit : le texte seulement quand c'est son heure. */
+export type BonPlanPublic = {
+  /** Il est de la famille (sinon : « ouvre une cage pour l'avoir »). */
+  membre: boolean;
+  grade: Grade | null;
+  ouvert: boolean;
+  /** Seulement quand `ouvert`. */
+  texte?: string;
+  /** Quand il s'ouvre pour lui (pour un visiteur : à l'heure du bronze). */
+  ouvertA: string;
+  finLe: string;
+};
+
+/** Le bon plan en cours, au comptoir : son texte, et l'heure de chaque palier. */
+export type BonPlanComptoir = { id: string; texte: string; publieLe: string; finLe: string; ouvertures: Record<Grade, string> };
+
+// ═══ 🎁 « JE TE GÂTE » ═════════════════════════════════════════════════════
+/** Ce qu'il peut offrir à sa famille ce mois-ci (« 10 × un café »), et combien il en a déjà offert. */
+export type Gate = { mois: string; quoi: string; combien: number; offerts: number };
+export const resteDuGate = (g: Pick<Gate, "combien" | "offerts">) => Math.max(0, g.combien - g.offerts);
+export const GATE_MAX = 500;
 
 /** 📌 Le mot du jour : le petit mot que le commerçant a épinglé, en haut de sa page. */
 export type MotDuJour = { texte: string; prenom: string; numero: number; grade: Grade | null };
@@ -164,6 +217,12 @@ export type FamilleAuComptoir = {
   motDuJour: MotDuJour | null;
   /** « Épingler » marche (la migration du comptoir est passée). */
   epinglable: boolean;
+  /** 🔔 Son bon plan en cours (`null` : aucun) ; `bonsPlansActifs` : la migration des bons plans est passée. */
+  bonPlan: BonPlanComptoir | null;
+  bonsPlansActifs: boolean;
+  /** 🎁 Ce qu'il offre ce mois-ci (`null` : rien de fixé) ; `gateDernier` : son dernier choix, pour le reprendre. */
+  gate: Gate | null;
+  gateDernier: { quoi: string; combien: number } | null;
 };
 
 /** « 42 % » d'une marche à la suivante (`null` quand la marche d'avant est vide, ou pas mesurée). */
@@ -206,6 +265,10 @@ export function familleAuComptoirDemo(cle: string, maintenant: number): FamilleA
     ],
     motDuJour: null,
     epinglable: true,
+    bonPlan: null,
+    bonsPlansActifs: true,
+    gate: null,
+    gateDernier: null,
   };
 }
 

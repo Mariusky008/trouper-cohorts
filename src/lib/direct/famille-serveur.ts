@@ -16,8 +16,15 @@
 import { createHash } from "node:crypto";
 import { jourAvant, jourParis } from "@/lib/jour-paris";
 import {
+  BON_PLAN_MAX,
+  GATE_MAX,
   gradeDe,
+  ouvertureDuBonPlan,
+  type BonPlanComptoir,
+  type BonPlanPublic,
+  type DureeBonPlan,
   type EtatFamille,
+  type Gate,
   type FamilleAuComptoir,
   type Grade,
   type MaFamille,
@@ -26,6 +33,7 @@ import {
   type Parcours,
 } from "@/lib/direct/famille";
 import { lookValide } from "@/lib/direct/look";
+import { plusPermis, plusPropre } from "@/lib/direct/previens-les";
 import { estCage } from "@/lib/direct/cages";
 
 type Supabase = { from: (t: string) => any }; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -268,11 +276,13 @@ export async function familleAuComptoir(supabase: Supabase, siteId: string): Pro
   const auj = jourParis();
   const semaine = jourAvant(auj, 6);
   const f = await lireFamille(supabase, siteId);
-  const [foule, recents, compteurs, mdj] = await Promise.all([
+  const [foule, recents, compteurs, mdj, bp, gt] = await Promise.all([
     fouleDe(supabase, siteId, f),
     motsRecents(supabase, siteId),
     supabase.from("human_compteurs_jour").select("jour, famille").eq("site_id", siteId).gte("jour", semaine).limit(20),
     motDuJour(supabase, siteId, f),
+    bonPlanEnCours(supabase, siteId),
+    gateDuMois(supabase, siteId),
   ]);
   const paliers: Record<Grade, number> = { bronze: 0, argent: 0, or: 0 };
   const fideles: MembreAuComptoir[] = [];
@@ -307,5 +317,104 @@ export async function familleAuComptoir(supabase: Supabase, siteId: string): Pro
     }),
     motDuJour: mdj,
     epinglable: recents.epinglable,
+    bonPlan: bp.plan ? bonPlanAuComptoir(bp.plan) : null,
+    bonsPlansActifs: bp.actif,
+    gate: gt.gate,
+    gateDernier: gt.dernier,
   };
+}
+
+// ═══ 🔔 LE BON PLAN, PAR PALIER ════════════════════════════════════════════
+
+/** Son bon plan en cours (ni retiré, ni fini) ; `actif` : la table existe. */
+export async function bonPlanEnCours(supabase: Supabase, siteId: string): Promise<{ actif: boolean; plan: Ligne | null }> {
+  const { data, error } = await supabase
+    .from("clik_bon_plan")
+    .select("id, texte, publie_le, fin_le, retire_le")
+    .eq("site_id", siteId)
+    .order("publie_le", { ascending: false })
+    .limit(1);
+  if (error) return { actif: false, plan: null };
+  const p = ((Array.isArray(data) ? data : []) as Ligne[])[0];
+  const enCours = p && !p.retire_le && Date.parse(s(p.fin_le)) > Date.now();
+  return { actif: true, plan: enCours ? p : null };
+}
+
+const bonPlanAuComptoir = (p: Ligne): BonPlanComptoir => ({
+  id: s(p.id),
+  texte: s(p.texte),
+  publieLe: s(p.publie_le),
+  finLe: s(p.fin_le),
+  ouvertures: { or: ouvertureDuBonPlan(s(p.publie_le), "or"), argent: ouvertureDuBonPlan(s(p.publie_le), "argent"), bronze: ouvertureDuBonPlan(s(p.publie_le), "bronze") },
+});
+
+/**
+ * LE BON PLAN TEL QUE CETTE PERSONNE LE VOIT : le texte seulement quand son palier est ouvert. Un
+ * visiteur qui n'est pas de la famille ne l'a jamais (« ouvre une cage ») ; il saura seulement
+ * quand il s'ouvrira pour lui, une fois en bronze.
+ */
+export function bonPlanPour(p: Ligne, grade: Grade | null, maintenant = Date.now()): BonPlanPublic {
+  const ouvertA = ouvertureDuBonPlan(s(p.publie_le), grade ?? "bronze");
+  const ouvert = grade !== null && maintenant >= Date.parse(ouvertA);
+  return { membre: grade !== null, grade, ouvert, ...(ouvert ? { texte: s(p.texte) } : {}), ouvertA, finLe: s(p.fin_le) };
+}
+
+/** 23 h ce soir, heure de Paris (ISO). */
+function ceSoir(maintenant = Date.now()): number {
+  const d = new Date(maintenant);
+  const ecart = Date.parse(d.toLocaleString("en-US", { timeZone: "Europe/Paris" })) - Date.parse(d.toLocaleString("en-US", { timeZone: "UTC" }));
+  const [a, m, j] = jourParis(d).split("-").map(Number);
+  return Date.UTC(a, m - 1, j, 23, 0) - ecart;
+}
+
+/** Il écrit un bon plan : il remplace celui d'avant. Rend l'erreur à dire, ou `null`. */
+export async function publierBonPlan(supabase: Supabase, siteId: string, texte: string, duree: DureeBonPlan): Promise<string | null> {
+  const propre = texte.replace(/\s+/g, " ").trim().slice(0, BON_PLAN_MAX);
+  if (!propre) return "Écris ton bon plan.";
+  if (!plusPermis(propre)) return "Pas de promotion d’alcool (loi Évin).";
+  const maintenant = Date.now();
+  let fin = duree === "1h" ? maintenant + 3_600_000 : duree === "3h" ? maintenant + 3 * 3_600_000 : ceSoir(maintenant);
+  // Après 22 h, « ce soir » laisse au moins une heure.
+  if (fin - maintenant < 3_600_000) fin = maintenant + 3_600_000;
+  const { error: e1 } = await supabase.from("clik_bon_plan").update({ retire_le: new Date(maintenant).toISOString() }).eq("site_id", siteId).is("retire_le", null);
+  if (e1) return /does not exist|schema cache|Could not find/i.test(s(e1.message)) ? "Les bons plans ne sont pas encore activés." : s(e1.message);
+  const { error } = await supabase.from("clik_bon_plan").insert({ site_id: siteId, texte: propre, publie_le: new Date(maintenant).toISOString(), fin_le: new Date(fin).toISOString() });
+  return error ? s(error.message) : null;
+}
+
+/** « C'est complet » : il retire son bon plan. */
+export async function retirerBonPlan(supabase: Supabase, siteId: string): Promise<string | null> {
+  const { error } = await supabase.from("clik_bon_plan").update({ retire_le: new Date().toISOString() }).eq("site_id", siteId).is("retire_le", null);
+  if (!error) return null;
+  return /does not exist|schema cache|Could not find/i.test(s(error.message)) ? "Les bons plans ne sont pas encore activés." : s(error.message);
+}
+
+// ═══ 🎁 « JE TE GÂTE » ═════════════════════════════════════════════════════
+
+/** Ce qu'il offre ce mois-ci (heure de Paris), combien il en a offert, et son dernier choix pour le reprendre. */
+export async function gateDuMois(supabase: Supabase, siteId: string): Promise<{ actif: boolean; gate: Gate | null; dernier: { quoi: string; combien: number } | null }> {
+  const mois = jourParis().slice(0, 7);
+  const { data, error } = await supabase.from("clik_gate").select("mois, quoi, combien").eq("site_id", siteId).order("mois", { ascending: false }).limit(2);
+  if (error) return { actif: false, gate: null, dernier: null };
+  const lignes = (Array.isArray(data) ? data : []) as Ligne[];
+  const ce = lignes.find((l) => s(l.mois) === mois);
+  const dernier = lignes[0] ? { quoi: s(lignes[0].quoi), combien: Number(lignes[0].combien) || 0 } : null;
+  if (!ce) return { actif: true, gate: null, dernier };
+  // SES CADEAUX DU MOIS : les 🎁 des petits mots (le mois de Paris commence la veille au soir en UTC).
+  const { data: ms } = await supabase.from("clik_mot").select("cadeau_le").eq("site_id", siteId).gte("cadeau_le", `${jourAvant(`${mois}-01`, 1)}T00:00:00Z`).limit(2000);
+  const offerts = ((Array.isArray(ms) ? ms : []) as Ligne[]).filter((m) => m.cadeau_le && jourParis(new Date(s(m.cadeau_le))).slice(0, 7) === mois).length;
+  return { actif: true, gate: { mois, quoi: s(ce.quoi), combien: Number(ce.combien) || 0, offerts }, dernier };
+}
+
+/** Il fixe ce qu'il peut offrir ce mois-ci. Rend l'erreur à dire, ou `null`. */
+export async function fixerGate(supabase: Supabase, siteId: string, quoi: string, combien: number): Promise<string | null> {
+  const propre = plusPropre(quoi);
+  if (!propre) return "Dis ce que tu offres.";
+  if (!plusPermis(propre)) return "Pas d’alcool offert (loi Évin).";
+  if (!Number.isInteger(combien) || combien < 0 || combien > GATE_MAX) return `Un nombre entre 0 et ${GATE_MAX}.`;
+  const { error } = await supabase
+    .from("clik_gate")
+    .upsert({ site_id: siteId, mois: jourParis().slice(0, 7), quoi: propre, combien, updated_at: new Date().toISOString() }, { onConflict: "site_id,mois" });
+  if (!error) return null;
+  return /does not exist|schema cache|Could not find/i.test(s(error.message)) ? "« Je te gâte » n’est pas encore activé." : s(error.message);
 }

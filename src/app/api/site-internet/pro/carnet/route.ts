@@ -36,7 +36,8 @@
 //
 // 💌 SES PETITS MOTS (`lib/direct/petits-mots.ts`) : « mots » les lit (soixante jours), avec le prénom et
 // le fantôme de leur auteur ; « coeur » {id, oui} : son 💛 (le mot passe dans sa vitrine) ; « offrir »
-// {id, cadeau} : il offre un petit quelque chose (jamais d'alcool), avec son 💛.
+// {id, cadeau} : il offre un petit quelque chose (jamais d'alcool), avec son 💛 — dans la limite de ce
+// qu'il a fixé pour le mois (« Je te gâte », `clik_gate`).
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { estCage } from "@/lib/direct/cages";
@@ -47,7 +48,8 @@ import { estModele, silenceDe } from "@/lib/direct/moteur-messages";
 import { calculerTicket, type Gestes } from "@/lib/direct/ticket-mike";
 import type { PetitMot } from "@/lib/direct/petits-mots";
 import { REPONDU_WHATSAPP, type LigneCarnet, type MessageEnvoye } from "@/lib/direct/carnet";
-import { lireFamille } from "@/lib/direct/famille-serveur";
+import { gateDuMois, lireFamille } from "@/lib/direct/famille-serveur";
+import { resteDuGate } from "@/lib/direct/famille";
 
 export const dynamic = "force-dynamic";
 
@@ -303,6 +305,11 @@ export async function POST(request: Request) {
       if (!cadeau) return NextResponse.json({ error: "Dis ce que tu offres." }, { status: 400 });
       if (!plusPermis(cadeau)) return NextResponse.json({ error: "Pas d'alcool offert (loi Évin)." }, { status: 400 });
       if (s((m as Ligne).cadeau)) return NextResponse.json({ error: "Tu lui as déjà offert quelque chose pour ce mot." }, { status: 409 });
+      // 🎁 « JE TE GÂTE » : ce qu'il a décidé d'offrir ce mois-ci est sa limite.
+      const { gate } = await gateDuMois(supabase, siteId);
+      if (gate && resteDuGate(gate) <= 0) {
+        return NextResponse.json({ error: `Tu as offert tes ${gate.combien} × ${gate.quoi} de ce mois-ci. Tu peux en ajouter dans « Ma famille », « Je te gâte ».` }, { status: 409 });
+      }
       maj = { cadeau, cadeau_le: maintenant, coeur_le: maintenant };
     }
     const { error } = await supabase.from("clik_mot").update(maj).eq("id", id).eq("site_id", siteId);
