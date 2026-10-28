@@ -13,3 +13,9 @@ Pour la regarder en local : un serveur de fichiers dans ce dossier, et l'encodag
 L'étape « La cage dorée » (après « Elle entre dans la famille ») : la surprise du chef — la cage dorée se balance ;
 on la touche, la porte s'ouvre et la surprise sort (« Un café gourmand ») ; « Je prends ça », et côté commerce le
 stock baisse (2/2 → 1/2) et le nom de Camille s'affiche. Ses surprises : `SURPRISES` dans la page.
+
+L'ordre de l'étape « Elle entre dans la famille » : la page (toucher une cage) → l'écusson (« Voir la famille ») → la
+foule, où « 🎁 Une surprise t'attend » mène à la cage dorée. Le bouton WhatsApp n'est plus en grand : un petit lien
+« 🔔 Me prévenir des bons plans sur WhatsApp » vient après la surprise prise, et mène à « Mike fait connaissance ».
+À revoir avec le chantier 4 : cette étape montre encore Mike qui pose trois questions, alors que WhatsApp ne doit plus
+servir qu'à prévenir (pas de robot qui converse).

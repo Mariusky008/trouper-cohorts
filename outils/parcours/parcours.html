@@ -561,6 +561,13 @@ h1 em{font-family:"Playfair Display",Georgia,serif;font-weight:700;color:var(--r
 }
 
 /* 🎁 LA CAGE DORÉE : la surprise du chef */
+.cd-teaser{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;border:0;border-radius:16px;text-align:left;font:inherit;cursor:pointer;
+  background:linear-gradient(135deg,#F2C46B,#C9902F);color:#2C0912;box-shadow:0 10px 24px -10px rgba(242,196,107,.9);animation:cd-appel 1.8s ease-in-out infinite}
+.cd-teaser i{font-style:normal;font-size:26px}
+.cd-teaser b{display:block;font-size:14.5px}
+.cd-teaser small{display:block;font-size:11.5px;opacity:.8}
+.lien-wa{margin-top:2px;padding:6px 8px;border:0;background:none;color:#9FE8C9;font:inherit;font-size:12px;font-weight:700;text-decoration:underline;cursor:pointer}
+@keyframes cd-appel{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .cd{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 14px 14px;text-align:center}
 .cd-titre{font-weight:800;font-size:15px;color:#F2C46B;letter-spacing:.02em}
 .cd-sous{font-size:12.5px;color:#C9B8BF;margin:0}
@@ -894,7 +901,7 @@ h1 em{font-family:"Playfair Display",Georgia,serif;font-weight:700;color:var(--r
           <p>Plus que <b>${nb(F.manque)}</b> pour battre le record</p></div>
         <div class="panneau-mot ap"${D(.3)}>${motHtml(`${lea.p} · fantôme n°${lea.n} ${GRADE[lea.gr]}`, lea.mot)}</div>
         <p class="indice">Touche un fantôme pour lire son mot</p>
-        <div class="pied-ecran"><button class="bouton-rose cible"${cible(1.4)}>Voir mon écusson 🥉</button></div>
+        <div class="pied-ecran"><button class="cd-teaser cible"${cible(1.4)}><i>🎁</i><span><b>Une surprise t’attend</b><small>La cage dorée de Bergine · ouvre-la</small></span></button></div>
       </div></div>`;
   };
   const ecranEcusson = (F) => `<div class="web">${barreWeb}<div class="pile">
@@ -910,7 +917,7 @@ h1 em{font-family:"Playfair Display",Georgia,serif;font-weight:700;color:var(--r
         <div class="etape-ch"><span class="med">🥇</span><b>Or</b><small>en premier</small></div>
       </div>
       <div class="prochain-carte ap"${D(.9)}><b>Prochain : l’écusson argent 🥈</b>Viens une fois chez Bergine, ou ouvre la cage 7 jours.<div class="jauge"><i style="width:14%"></i></div><small>1 jour sur 7 · aujourd’hui ✓</small></div>
-      <div class="pied-ecran"><button class="bouton-wa cible"${cible(1.6)}>💬 Mes bons plans sur WhatsApp</button><p class="note">Mike t’y explique tout 👻</p><button class="lien-partage">📣 Il en manque ${nb(F.manque)} : inviter un ami</button></div>
+      <div class="pied-ecran"><button class="bouton-rose cible"${cible(1.6)}>Voir la famille 👻</button><button class="lien-partage">📣 Il en manque ${nb(F.manque)} : inviter un ami</button></div>
     </div></div>`;
 
   const tete = (nom, sous) => `<div class="tete"><span class="retour">‹</span><span class="rond" style="background-image:url(${IMG.mike})"></span><span><b>${nom} <i>✓</i></b><small>${sous}</small></span></div>`;
@@ -1069,7 +1076,7 @@ h1 em{font-family:"Playfair Display",Georgia,serif;font-weight:700;color:var(--r
         ${p ? `<div class="cd-carte"><small>SURPRISE DU CHEF</small><b>${s.l}</b><span>Chez Bergine · aujourd’hui</span>${p === 2 ? `<i class="cd-tampon">✓ À toi</i>` : ""}</div>` : ""}</div>
       ${p === 0 ? `<button class="cd-bouton or cible"${cible(.8)}>Ouvrir la cage dorée</button><p class="cd-reste">Encore <b>${reste}</b> surprises ce midi</p>`
         : p === 1 ? `<button class="cd-bouton cible"${cible(1.6)}>Je prends ça</button>`
-        : `<p class="cd-reste">Dis-le au comptoir : <b>fantôme n°${CAMILLE.n}</b>. Il en reste <b>${reste}</b> pour les autres.</p>`}
+        : `<p class="cd-reste">Dis-le au comptoir : <b>fantôme n°${CAMILLE.n}</b>. Il en reste <b>${reste}</b> pour les autres.</p><button class="lien-wa cible"${cible(1.4)}>🔔 Me prévenir des bons plans sur WhatsApp</button>`}
     </div></div>`;
   };
   const mesSurprises = (p) => `${etatBarre(true)}<div class="carnet">
@@ -1123,7 +1130,7 @@ h1 em{font-family:"Playfair Display",Georgia,serif;font-weight:700;color:var(--r
         perte: "Passer de la page à WhatsApp : c'est ici que beaucoup s'arrêtent.",
         parade: "Le bouton dit enfin pourquoi y aller : « Mes bons plans sur WhatsApp ». Et sans WhatsApp, son fantôme reste dans la foule et compte pour le record. (Les paliers, 1 visite, 5 visites, 3 amis, sont à fixer.)",
       }),
-      cliente: (p, s, F) => (p === 0 ? page(F, { ouverte: true }) : p === 1 ? ecranFoule(F) : ecranEcusson(F)),
+      cliente: (p, s, F) => (p === 0 ? page(F, { ouverte: true }) : p === 1 ? ecranEcusson(F) : ecranFoule(F)),
       commerce: (p, s, F) => carnet(F, { monte: true }),
     },
     {

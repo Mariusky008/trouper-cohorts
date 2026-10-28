@@ -73,6 +73,10 @@ neuf (il sème ses commerces) : `lancer-essais.sh` le relance entre chaque.
   même app Meta que Popey, et son « Phone number ID » ; (2) l'adresse du webhook donnée à Meta ; (3) le modèle de
   message validé pour le bon plan (nom, langue, texte) — sans lui, on n'écrit en premier qu'à qui nous a écrit dans
   les 24 h ; (4) `CLIKME_WHATSAPP` posé sur Vercel.
+  **Le bouton « 💬 Mes bons plans sur WhatsApp » de `/f/<lien>`** est en trop avec ce principe (remarque du
+  propriétaire) : le transformer en petit lien « 🔔 Me prévenir des bons plans sur WhatsApp », après la surprise, et ne
+  le montrer qu'une fois la sonnette en place. Fait dans « Le parcours ClikMe » (`outils/parcours/`), pas encore dans
+  l'app. Dans le parcours, l'étape « Mike fait connaissance » (trois questions de Mike) est à refaire pour la sonnette.
 - **L'interview des boulangeries** : ses répliques sont les voix enregistrées du restaurant (« Bonjour chef », « Alors
   chef, c'est quoi, le plat du jour ? », `SCRIPTS.table` dans `src/lib/direct/interview-fantome.ts`). Il faut cinq
   enregistrements (bonjour, deux questions sur la fournée, celle pour rire, au revoir) pour un script « boulangerie ».
