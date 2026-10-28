@@ -323,11 +323,11 @@ export function VitrineComptoir({
               <div className="vt-champs">
                 <label>
                   <span>Libellé</span>
-                  <input value={b.nom} maxLength={80} placeholder={`Ex. : ${mots.exemple}`} onChange={(e) => changer(b.cle, { nom: e.target.value })} />
+                  <input value={b.nom} maxLength={80} placeholder={mots.exemple} onChange={(e) => changer(b.cle, { nom: e.target.value })} />
                 </label>
                 <label>
                   <span>Prix (facultatif)</span>
-                  <input value={b.prix} maxLength={20} placeholder="Ex. : 35 €" inputMode="decimal" onChange={(e) => changer(b.cle, { prix: e.target.value })} />
+                  <input value={b.prix} maxLength={20} placeholder="35 €" inputMode="decimal" onChange={(e) => changer(b.cle, { prix: e.target.value })} />
                 </label>
                 {b.erreur && <p className="vt-erreur">{b.erreur}</p>}
                 <div className="vt-gestes">

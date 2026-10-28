@@ -155,13 +155,13 @@ export function ProServices({
               <input
                 value={r.duration}
                 onChange={(e) => setRow(i, { duration: e.target.value })}
-                placeholder="Durée (ex. 1 h 15)"
+                placeholder="Durée : 1 h 15"
                 autoComplete="off"
               />
               <input
                 value={r.price}
                 onChange={(e) => setRow(i, { price: e.target.value })}
-                placeholder="Tarif (ex. 60 €)"
+                placeholder="Tarif : 60 €"
                 autoComplete="off"
               />
             </div>

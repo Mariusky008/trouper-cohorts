@@ -33,12 +33,12 @@ type Veille = { release: () => Promise<void> };
 type FilmPret = Film & { url: string };
 
 const EXEMPLES: Partial<Record<FamilleDouble, string>> = {
-  table: "Ex. : la tarte aux pommes",
-  fleurs: "Ex. : le bouquet de mariée",
-  createur: "Ex. : la bague « Lune »",
-  coiffure: "Ex. : le balayage miel",
-  ongles: "Ex. : la pose « French »",
-  mode: "Ex. : la robe retouchée",
+  table: "la tarte aux pommes",
+  fleurs: "le bouquet de mariée",
+  createur: "la bague « Lune »",
+  coiffure: "le balayage miel",
+  ongles: "la pose « French »",
+  mode: "la robe retouchée",
 };
 
 /* ═══ LA CAMÉRA : LE PLAN LE PLUS LARGE ════════════════════════════════════
@@ -486,11 +486,11 @@ export function EpisodeComptoir({
           </section>
           <label className="ep-champ">
             <span>Qu’est-ce que tu fabriques ?</span>
-            <input value={produit} onChange={(e) => setProduit(e.target.value.slice(0, 60))} placeholder={EXEMPLES[commerce.famille] ?? "Ex. : le fraisier"} />
+            <input value={produit} onChange={(e) => setProduit(e.target.value.slice(0, 60))} placeholder={EXEMPLES[commerce.famille] ?? "le fraisier"} />
           </label>
           <label className="ep-champ">
             <span>Son prix (facultatif)</span>
-            <input value={prix} onChange={(e) => setPrix(e.target.value.slice(0, 16))} placeholder="Ex. : 32 €" inputMode="text" />
+            <input value={prix} onChange={(e) => setPrix(e.target.value.slice(0, 16))} placeholder="32 €" inputMode="text" />
           </label>
           <label className="ep-case">
             <input type="checkbox" checked={sonAtelier} onChange={(e) => setSonAtelier(e.target.checked)} />

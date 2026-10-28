@@ -158,7 +158,7 @@ export function HeroGenerator() {
           <input value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Nom de votre établissement" aria-label="Nom de votre établissement" />
         </div>
         <div className="gen-row two">
-          <input value={activite} onChange={(e) => setActivite(e.target.value)} placeholder="Votre activité (ex. coiffeur)" aria-label="Votre activité" />
+          <input value={activite} onChange={(e) => setActivite(e.target.value)} placeholder="Votre activité : coiffeur, fleuriste…" aria-label="Votre activité" />
           <input value={ville} onChange={(e) => setVille(e.target.value)} placeholder="Votre ville" aria-label="Votre ville" onKeyDown={(e) => { if (e.key === "Enter") submit(); }} />
         </div>
         <label className={`genphoto${photo ? " on" : ""}`}>

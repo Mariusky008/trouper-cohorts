@@ -186,7 +186,7 @@ export function ProMotifs({
                 className="t"
                 value={r.title}
                 onChange={(e) => setRow(i, { title: e.target.value })}
-                placeholder="Titre (ex. Stress & burn-out)"
+                placeholder="Titre : Stress & burn-out"
                 autoComplete="off"
               />
             </div>

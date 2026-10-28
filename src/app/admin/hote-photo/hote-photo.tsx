@@ -114,7 +114,7 @@ export function HotePhoto({ raccourcis }: { raccourcis: { slug: string; nom: str
           <input
             value={saisie}
             onChange={(e) => setSaisie(e.target.value)}
-            placeholder="adresse de la page (ex. le-bordeaux-307d33)"
+            placeholder="adresse de la page : le-bordeaux-307d33"
             className="w-72 rounded-md border px-3 py-1.5 text-sm"
           />
           <button type="submit" className="rounded-md border px-3 py-1.5 text-sm">
