@@ -12,9 +12,14 @@
 // suite, l'argent puis le bronze après (`OUVERTURE_BON_PLAN`) ; il remplace celui d'avant.
 // « bon-plan-retirer » : c'est complet. Jamais d'alcool (loi Évin).
 // 🎁 « gate » {quoi, combien} : ce qu'il peut offrir à sa famille ce mois-ci.
+// 🎬 « video » : la famille d'hier pour la fin de ses vidéos — les fantômes, le record ; le prénom, le
+// numéro et le petit mot seulement de ceux qui l'ont accepté (`familleDeLaVideo`). Seulement pour un client
+// (`est_client`) : sans elle, ses vidéos se montent comme avant.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { epinglerMot, familleAuComptoir, fixerGate, publierBonPlan, retirerBonPlan } from "@/lib/direct/famille-serveur";
+import { epinglerMot, familleAuComptoir, familleDeLaVideo, fixerGate, publierBonPlan, retirerBonPlan } from "@/lib/direct/famille-serveur";
+import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
+import { tenueDu } from "@/lib/direct/double-metiers";
 import { estDureeBonPlan } from "@/lib/direct/famille";
 
 export const dynamic = "force-dynamic";
@@ -35,12 +40,21 @@ export async function POST(request: Request) {
   if (!slug || !token) return NextResponse.json({ error: "slug/token requis" }, { status: 400 });
 
   const supabase = createAdminClient();
-  const { data: row } = await supabase.from("human_vitrine_sites").select("id, pro_token").eq("slug", slug).eq("channel", "letter").maybeSingle();
+  const { data: row } = await supabase.from("human_vitrine_sites").select("id, pro_token, business_name, activite, est_client").eq("slug", slug).eq("channel", "letter").maybeSingle();
   const site = (row as Record<string, unknown> | null) ?? null;
   if (!site || !site.pro_token || s(site.pro_token) !== token) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   const siteId = s(site.id);
 
   if (action === "lire") return NextResponse.json({ ok: true, ...(await familleAuComptoir(supabase, siteId)) });
+
+  if (action === "video") {
+    // Sa page de la famille n'existe que pour un client : pas de fin de vidéo qui mène à une page introuvable.
+    if (site.est_client !== true) return NextResponse.json({ error: "Sa page de la famille n’est pas encore ouverte." }, { status: 404 });
+    const metier = s(site.activite);
+    const branche = brancheDuMetier(metier);
+    const hote = `${tenueDu({ branche, metier })?.enPied ?? "/direct/double/pied/"}salut-1.webp`;
+    return NextResponse.json({ ok: true, ...(await familleDeLaVideo(supabase, siteId, { nom: s(site.business_name), slug, branche, hote })) });
+  }
 
   if (action === "epingler") {
     const id = s(p?.id);

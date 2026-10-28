@@ -18,7 +18,8 @@
 //
 // 👻 ET IL ENTRE DANS LA FOULE DU JOUR de ce commerce (`clik_presence`, une
 // fois par jour), avec, son premier jour, qui l'a amené (`de` : le code de
-// l'invitation). Voir `lib/direct/famille.ts`.
+// l'invitation). Voir `lib/direct/famille.ts`. 🎬 `video` (oui / non) : son
+// accord pour que son prénom et son petit mot apparaissent dans ses vidéos.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant } from "@/lib/direct/habitant";
@@ -28,7 +29,7 @@ import { estCage, numeroWhatsApp } from "@/lib/direct/cages";
 import { lookValide } from "@/lib/direct/look";
 import { prenomRefuse } from "@/lib/direct/prenom";
 import { FILM_PAGE } from "@/lib/direct/famille";
-import { noterPresence } from "@/lib/direct/famille-serveur";
+import { enregistrerAccordVideo, noterPresence } from "@/lib/direct/famille-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -97,5 +98,7 @@ export async function POST(request: Request) {
   }
   // La foule du jour : sans la table (migration pas encore collée), la cage est gardée quand même.
   await noterPresence(supabase, siteId, habitant.id, s(p?.de)).catch(() => false);
+  // 🎬 SON ACCORD POUR LES VIDÉOS, quand la page de la famille le demande (une case jamais cochée d'avance).
+  if (typeof p?.video === "boolean") await enregistrerAccordVideo(supabase, siteId, habitant.id, p.video).catch(() => null);
   return NextResponse.json({ ok: true });
 }

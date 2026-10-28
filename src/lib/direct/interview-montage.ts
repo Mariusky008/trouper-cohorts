@@ -99,6 +99,16 @@ import {
 } from "@/lib/direct/interview-signature";
 import { BRODERIE, arcsDuNom, lignesDuNom, type Pt } from "@/lib/direct/fantome-assis";
 import { fichierEnregistre } from "@/lib/direct/voix-fantome";
+import type { FamilleVideo } from "@/lib/direct/famille";
+import {
+  dessinerFinFamille,
+  dessinerOuvertureFamille,
+  FIN_FAMILLE,
+  OUVERTURE_FAMILLE,
+  sonsFinFamille,
+  sonsOuvertureFamille,
+  type ImagesFamille,
+} from "@/lib/direct/famille-video";
 
 export { LARGEUR, HAUTEUR };
 const IPS = 30;
@@ -1132,7 +1142,8 @@ export type Montage = {
   cloche: "montree" | "aucune" | "illisible";
 };
 
-type Segment = { genre: "titre" } | { genre: "cloche" } | { genre: "prise"; k: number } | { genre: "fin" };
+/** 🎬 `ouverture` et `famille` : le début « Rejoins ma famille » et la fin « la famille d'hier » (`famille-video.ts`). */
+type Segment = { genre: "ouverture" } | { genre: "titre" } | { genre: "cloche" } | { genre: "prise"; k: number } | { genre: "fin" } | { genre: "famille" };
 
 /** Un morceau gardé d'une prise : de `de` à `a` dans la prise, à partir de `m` dans le montage. */
 type Garde = { de: number; a: number; m: number };
@@ -1273,8 +1284,11 @@ export async function monter(o: {
   /** L'image d'attente du lecteur : son nom en géant, une fois posé. */
   surAffiche?: (image: string) => void;
   signal?: AbortSignal;
+  /** 🎬 Sa famille : le début « Rejoins ma famille » et la fin « la famille d'hier » (`famille-video.ts`). */
+  famille?: { d: FamilleVideo; im: ImagesFamille } | null;
 }): Promise<Montage> {
   const { ctx, el, reglages } = o;
+  const fam = o.famille ?? null;
   /* ✂️ CE QUI EST COUPÉ DE CHAQUE PRISE (voir `resserrer`) : son temps de réflexion — de la fin de la
      question à sa réponse, retiré trois dixièmes plus tôt pour que sa vidéo le saute sous la carte —, puis
      ses hésitations, s'il y a son son (sans lui, c'est le lecteur qui joue sa voix, telle quelle). */
@@ -1475,7 +1489,7 @@ export async function monter(o: {
   const SIGNATURE = Math.max(3.4, 1.6 + adieu + 0.35);
   const dFin = SIGNATURE + 1.7;
   // LA LONGUEUR PRÉVUE : le titre, la cloche, ses réponses coupées, la fin — voir `debitDuMontage`.
-  const prevue = TITRE.duree + (decor ? CLOCHE.duree : 0) + prises.reduce((t, p) => t + p.coupe, 0) + dFin;
+  const prevue = (fam ? OUVERTURE_FAMILLE + FIN_FAMILLE : 0) + TITRE.duree + (decor ? CLOCHE.duree : 0) + prises.reduce((t, p) => t + p.coupe, 0) + dFin;
   const rec = new MediaRecorder(flux, {
     ...(format ? { mimeType: format } : {}),
     videoBitsPerSecond: debitDuMontage(prevue),
@@ -1490,10 +1504,12 @@ export async function monter(o: {
   /* ─── le plan ─── */
   // LE RESTAURANT : après le titre, on soulève la cloche, puis viennent les questions
   const segments: Segment[] = [
+    ...(fam ? [{ genre: "ouverture" as const }] : []),
     { genre: "titre" },
     ...(decor ? [{ genre: "cloche" as const }] : []),
     ...prises.map((_, k) => ({ genre: "prise" as const, k })),
     { genre: "fin" },
+    ...(fam ? [{ genre: "famille" as const }] : []),
   ];
   const sonDesReponses: Montage["sonDesReponses"] = prises.map(() => "aucun");
 
@@ -1757,12 +1773,22 @@ export async function monter(o: {
     niveau(t0 + bulleFin.de + adieu + 0.05, MUSIQUE.pleine, 0.3);
     sonSignature(S, t0 + SIGNATURE);
     etouffer(t0 + SIGNATURE, 900, 0.3);
-    niveau(t0 + SIGNATURE + 0.2, 0.0001, 2.4);
+    // AVEC LA FAMILLE D'HIER ENSUITE, la musique baisse sans s'éteindre
+    niveau(t0 + SIGNATURE + 0.2, fam ? MUSIQUE.pleine * 0.5 : 0.0001, fam ? 0.6 : 2.4);
+  };
+  /** 🎬 La famille d'hier : la musique reprend, puis s'éteint avec elle. */
+  const sonsFamille = (t0: number) => {
+    if (!fam) return;
+    etouffer(t0, 18000, 0.15);
+    niveau(t0, MUSIQUE.pleine, 0.3);
+    sonsFinFamille(S, t0, fam.d);
+    niveau(t0 + FIN_FAMILLE - 1.4, 0.0001, 1.4);
   };
 
   /* ─── la boucle : l'horloge du son mène, l'image suit ─── */
   if (ctx.state !== "running") await ctx.resume().catch(() => {});
-  dessinerTitreA(0);
+  if (fam) dessinerOuvertureFamille(c2d, P, fam.d, fam.im, 0, fond);
+  else dessinerTitreA(0);
   rec.start(1000);
   const T0 = ctx.currentTime + 0.12;
   if (el.musique) {
@@ -1770,11 +1796,14 @@ export async function monter(o: {
     boucle.buffer = el.musique;
     boucle.loop = true;
     boucle.connect(musique);
-    // LE PREMIER TEMPS TOMBE SUR LE CLIC
-    boucle.start(T0 + TITRE.clic);
+    // LE PREMIER TEMPS TOMBE SUR LE CLIC (ou dès l'ouverture de la famille)
+    boucle.start(fam ? T0 : T0 + TITRE.clic);
     sources.push(boucle);
   }
-  sonsTitre(T0);
+  if (fam) {
+    niveau(T0, MUSIQUE.pleine, 0.15);
+    sonsOuvertureFamille(S, T0);
+  } else sonsTitre(T0);
 
   let seg = 0;
   let debutSeg = T0;
@@ -1817,6 +1846,8 @@ export async function monter(o: {
       chercheDepuis = -1;
       if (seg >= segments.length) return fini();
       const g = segments[seg].genre;
+      if (g === "titre") sonsTitre(maintenant);
+      if (g === "famille") sonsFamille(maintenant);
       if (g === "cloche") sonsCloche(maintenant);
       if (g === "prise") sonsCarte(maintenant);
       if (g === "fin") sonsFin(maintenant);
@@ -1832,7 +1863,16 @@ export async function monter(o: {
       const t = maintenant - debutSeg;
       const s = segments[seg];
       const dessiner = maintenant - derniereImage >= 1 / (IPS + 2);
-      if (s.genre === "titre") {
+      if (s.genre === "ouverture" && fam) {
+        if (dessiner) dessinerOuvertureFamille(c2d, P, fam.d, fam.im, Math.max(0, t), fond);
+        if (t >= OUVERTURE_FAMILLE) suivant(maintenant);
+      } else if (s.genre === "famille" && fam) {
+        if (dessiner) {
+          dessinerFinFamille(c2d, P, fam.d, fam.im, Math.max(0, t), fond);
+          dessinerGrain(c2d, grain, t + 199);
+        }
+        if (t >= FIN_FAMILLE) suivant(maintenant);
+      } else if (s.genre === "titre") {
         if (dessiner) dessinerTitreA(Math.max(0, t));
         if (dessiner && !affiche && t >= 2.7) {
           affiche = true;

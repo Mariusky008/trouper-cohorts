@@ -35,6 +35,8 @@
 //      au fantôme » : son nom en géant, une carte par question, la carte de fin
 //      (voir `interview-montage.ts`) ;
 //   6. il la regarde, la partage, la télécharge.
+import type { FamilleVideo } from "@/lib/direct/famille";
+import type { ImagesFamille } from "@/lib/direct/famille-video";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ATTENTE_SANS_PAROLE_S,
@@ -315,6 +317,11 @@ export type InterviewDuCommerce = {
    * Absent sur la page d'essai : la vidéo s'y partage ou se télécharge.
    */
   publier?: (m: { blob: Blob; type: string; duree: number; affiche: string; plat: string; prix: string; mots?: string }) => Promise<{ ok: boolean; message: string }>;
+  /**
+   * 🎬 SA FAMILLE, pour le début « Rejoins ma famille » et la fin « la famille d'hier » (voir
+   * `famille-video.ts`). Absente sur la page d'essai : l'interview s'y monte sans.
+   */
+  familleVideo?: () => Promise<{ d: FamilleVideo; im: ImagesFamille } | null>;
 };
 
 /** Un nom de fichier sans accents ni espaces : « interview-la-table-de-margot.mp4 ». */
@@ -802,9 +809,12 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
         coupes: r.analyse?.coupes ?? [],
         medias: r.medias.map((m) => ({ genre: m.genre, url: m.url })),
       }));
+      // 🎬 SA FAMILLE (au comptoir seulement) : sans elle, l'interview se monte quand même
+      const famille = du?.familleVideo ? await du.familleVideo().catch(() => null) : null;
       const m = await monter({
         ctx,
         el,
+        famille,
         prises: aMonter,
         reglages: {
           commerce,

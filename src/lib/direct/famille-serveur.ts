@@ -23,7 +23,10 @@ import {
   type BonPlanComptoir,
   type BonPlanPublic,
   type DureeBonPlan,
+  FANTOMES_VIDEO_MAX,
   type EtatFamille,
+  type FamilleVideo,
+  type FantomeVideo,
   type Gate,
   type FamilleAuComptoir,
   type Grade,
@@ -182,6 +185,7 @@ export async function etatFamille(supabase: Supabase, siteId: string, habitantId
       .limit(1);
     const derniere = ((Array.isArray(c) ? c : []) as Ligne[])[0] as Ligne | undefined;
     const parcours = f.parcoursDe(habitantId);
+    const accords = await accordsVideo(supabase, siteId);
     moi = {
       numero,
       prenom: s(derniere?.prenom),
@@ -190,6 +194,7 @@ export async function etatFamille(supabase: Supabase, siteId: string, habitantId
       parcours,
       present: f.actif ? f.lignes.some((p) => s(p.habitant_id) === habitantId && s(p.jour).slice(0, 10) === auj) : false,
       code: codeFantome(siteId, habitantId),
+      video: accords.has(habitantId),
     };
   }
   return { aujourdhui, hier, record, membres: f.ordre.length, moi };
@@ -417,4 +422,87 @@ export async function fixerGate(supabase: Supabase, siteId: string, quoi: string
     .upsert({ site_id: siteId, mois: jourParis().slice(0, 7), quoi: propre, combien, updated_at: new Date().toISOString() }, { onConflict: "site_id,mois" });
   if (!error) return null;
   return /does not exist|schema cache|Could not find/i.test(s(error.message)) ? "« Je te gâte » n’est pas encore activé." : s(error.message);
+}
+
+// ═══ 🎬 LA FAMILLE DANS SES VIDÉOS ══════════════════════════════════════════
+
+/** Ceux qui ont dit oui : leur prénom et leur petit mot peuvent apparaître dans ses vidéos. */
+export async function accordsVideo(supabase: Supabase, siteId: string): Promise<Set<string>> {
+  const { data, error } = await supabase.from("clik_accord").select("habitant_id, video").eq("site_id", siteId).limit(20000);
+  if (error) return new Set();
+  return new Set(((Array.isArray(data) ? data : []) as Ligne[]).filter((a) => a.video === true).map((a) => s(a.habitant_id)));
+}
+
+/** Il dit oui (ou non) : son prénom et son petit mot dans les vidéos de ce commerce. Rend l'erreur à dire, ou `null`. */
+export async function enregistrerAccordVideo(supabase: Supabase, siteId: string, habitantId: string, oui: boolean): Promise<string | null> {
+  const { error } = await supabase
+    .from("clik_accord")
+    .upsert({ site_id: siteId, habitant_id: habitantId, video: oui, updated_at: new Date().toISOString() }, { onConflict: "site_id,habitant_id" });
+  if (!error) return null;
+  return /does not exist|schema cache|Could not find/i.test(s(error.message)) ? "Ce choix n’est pas encore possible." : s(error.message);
+}
+
+/**
+ * 🎬 LA FAMILLE D'HIER, POUR LA FIN DE SES VIDÉOS : les fantômes présents hier (ou, si hier était
+ * vide, ceux de la semaine), l'or d'abord ; le prénom, le numéro et le petit mot seulement pour ceux
+ * qui l'ont accepté — et dont le prénom n'est pas caché —, le mot seulement s'il est déjà public (de
+ * la liste, avec son 💛, ou épinglé).
+ */
+export async function familleDeLaVideo(supabase: Supabase, siteId: string, o: { nom: string; slug: string; branche: string; hote: string }): Promise<FamilleVideo> {
+  const auj = jourParis();
+  const hier = jourAvant(auj, 1);
+  const semaine = jourAvant(auj, 7);
+  const f = await lireFamille(supabase, siteId);
+  const [foule, accords, motsRes] = await Promise.all([
+    fouleDe(supabase, siteId, f),
+    accordsVideo(supabase, siteId),
+    supabase.from("clik_mot").select("habitant_id, texte, liste, coeur_le, epingle_le, jour, created_at").eq("site_id", siteId).gte("jour", semaine).order("created_at", { ascending: false }).limit(500),
+  ]);
+  const parJour = new Map<string, number>();
+  for (const p of f.lignes) {
+    const j = s(p.jour).slice(0, 10);
+    parJour.set(j, (parJour.get(j) ?? 0) + 1);
+  }
+  const avantHier = Math.max(0, ...[...parJour].filter(([j]) => j < hier).map(([, n]) => n));
+  const dHier = [...new Set(f.lignes.filter((p) => s(p.jour).slice(0, 10) === hier).map((p) => s(p.habitant_id)))];
+  const quand: FamilleVideo["quand"] = dHier.length ? "hier" : "semaine";
+  const qui = dHier.length ? dHier : [...new Set(f.lignes.filter((p) => s(p.jour).slice(0, 10) >= semaine && s(p.jour).slice(0, 10) < auj).map((p) => s(p.habitant_id)))];
+  // LEUR DERNIER MOT DÉJÀ PUBLIC
+  const motDe = new Map<string, string>();
+  for (const m of ((motsRes.error ? [] : motsRes.data) ?? []) as Ligne[]) {
+    const h = s(m.habitant_id);
+    if (!motDe.has(h) && (m.liste === true || m.coeur_le || m.epingle_le)) motDe.set(h, s(m.texte));
+  }
+  const caches = new Set<string>();
+  const avecAccord = qui.filter((h) => accords.has(h));
+  if (avecAccord.length) {
+    const { data, error } = await supabase.from("human_habitants").select("id, prenom_vitrine").in("id", avecAccord);
+    if (!error) for (const x of (Array.isArray(data) ? data : []) as Ligne[]) if (x.prenom_vitrine === false) caches.add(s(x.id));
+  }
+  const rangGrade = { or: 0, argent: 1, bronze: 2 } as const;
+  const fantomes: FantomeVideo[] = qui
+    .filter((h) => f.numeroDe(h))
+    .map((h) => {
+      const grade = f.gradeDe(h);
+      const fiche = f.ficheDe(h);
+      const oui = accords.has(h) && !caches.has(h);
+      const prenom = oui ? (fiche?.prenom ?? "") : "";
+      const mot = oui ? motDe.get(h) : undefined;
+      return { look: fiche?.look || "", grade, ...(oui ? { numero: f.numeroDe(h) } : {}), ...(prenom ? { prenom } : {}), ...(mot ? { mot } : {}) };
+    })
+    // Ceux qui ont un mot à dire d'abord (ils s'avancent), puis l'or, l'argent, le bronze.
+    .sort((a, b) => Number(Boolean(b.mot)) - Number(Boolean(a.mot)) || rangGrade[a.grade] - rangGrade[b.grade])
+    .slice(0, FANTOMES_VIDEO_MAX);
+  return {
+    nom: o.nom,
+    lien: `clikme.fr/f/${o.slug}`,
+    branche: o.branche,
+    hote: o.hote,
+    hier: foule.hier,
+    record: foule.record,
+    recordBattuHier: foule.record !== null && avantHier > 0 && foule.hier > avantHier,
+    membres: f.ordre.length,
+    quand,
+    fantomes,
+  };
 }

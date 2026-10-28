@@ -20,6 +20,9 @@
  * le film se tourne quand même : chaque phrase reste à l'écran le temps de la
  * lire, en grand, sur la musique.
  *
+ * 🎬 LE DÉBUT ET LA FIN CLIKME (`famille`) : avant le titre, « Rejoins ma famille de fantômes ! » ;
+ * après la carte postale, la famille d'hier et les cages — voir `famille-video.ts`.
+ *
  * FICHIER NAVIGATEUR : il dessine sur une toile et l'enregistre en direct.
  */
 import {
@@ -66,6 +69,16 @@ import {
 } from "@/lib/direct/interview-signature";
 import { sousTitresDesMots, type MotHorodate } from "@/lib/direct/interview-resserrer";
 import type { Role } from "@/lib/direct/reporter-recit";
+import type { FamilleVideo } from "@/lib/direct/famille";
+import {
+  dessinerFinFamille,
+  dessinerOuvertureFamille,
+  FIN_FAMILLE,
+  OUVERTURE_FAMILLE,
+  sonsFinFamille,
+  sonsOuvertureFamille,
+  type ImagesFamille,
+} from "@/lib/direct/famille-video";
 
 const IPS = 30;
 const TITRE = 2.9;
@@ -153,8 +166,13 @@ export async function tournerFilm(o: {
   surProgres?: (p: number) => void;
   surAffiche?: (image: string) => void;
   signal?: AbortSignal;
+  /** 🎬 Sa famille : le début « Rejoins ma famille » et la fin « la famille d'hier » (`famille-video.ts`). */
+  famille?: { d: FamilleVideo; im: ImagesFamille } | null;
 }): Promise<Film> {
   const { ctx, el } = o;
+  const fam = o.famille ?? null;
+  const OUV = fam ? OUVERTURE_FAMILLE : 0;
+  const FINF = fam ? FIN_FAMILLE : 0;
   const c2d = o.toile.getContext("2d");
   if (!c2d) throw new Error("Ce téléphone ne sait pas dessiner la vidéo.");
   if (typeof o.toile.captureStream !== "function") throw new Error("Ce téléphone ne sait pas enregistrer un dessin animé (captureStream).");
@@ -183,6 +201,8 @@ export async function tournerFilm(o: {
   const FIN = SIGNATURE + 1.7;
   const DEBUT_FIN = TITRE + RECIT;
   const TOTAL = DEBUT_FIN + FIN;
+  /** Avec le début et la fin de la famille. */
+  const TOUT = OUV + TOTAL + FINF;
   // SES MOTS À L'ÉCRAN : à leur instant, ou au prorata de chaque phrase
   const sousTitres: SousTitre[] = o.voix && o.mots?.length ? sousTitresDesMots(o.mots) : temps.map((t) => ({ texte: t.texte, debut: t.de, fin: t.a - 0.08 }));
   const forts = motsForts(o.plat, o.prix);
@@ -235,7 +255,7 @@ export async function tournerFilm(o: {
   const flux = new MediaStream([...o.toile.captureStream(IPS).getVideoTracks(), ...enregistree.stream.getAudioTracks()]);
   const rec = new MediaRecorder(flux, {
     ...(format ? { mimeType: format } : {}),
-    videoBitsPerSecond: debitDuMontage(TOTAL),
+    videoBitsPerSecond: debitDuMontage(TOUT),
     audioBitsPerSecond: DEBIT_SON,
   });
   const morceauxVideo: Blob[] = [];
@@ -346,14 +366,20 @@ export async function tournerFilm(o: {
   c2d.fillStyle = "#000";
   c2d.fillRect(0, 0, W, H);
   rec.start(1000);
-  const T0 = ctx.currentTime + 0.12;
+  // TD : le début de la vidéo (l'ouverture de la famille, s'il y en a une) ; T0 : le titre.
+  const TD = ctx.currentTime + 0.12;
+  const T0 = TD + OUV;
   if (el.musique) {
     const boucle = ctx.createBufferSource();
     boucle.buffer = el.musique;
     boucle.loop = true;
     boucle.connect(musique);
-    boucle.start(T0 + CLIC);
+    boucle.start(fam ? TD : T0 + CLIC);
     sources.push(boucle);
+  }
+  if (fam) {
+    niveau(TD, MUSIQUE.pleine, 0.15);
+    sonsOuvertureFamille(S, TD);
   }
   niveau(T0, MUSIQUE.pleine, 0.15);
   sonClic(S, T0 + CLIC);
@@ -377,7 +403,14 @@ export async function tournerFilm(o: {
   for (const d of [0.55, 0.68, 0.82, 0.95, 1.25]) sonTic(S, F0 + d);
   sonTampon(S, F0 + 1.0);
   sonSignature(S, F0 + SIGNATURE);
-  niveau(F0 + SIGNATURE + 0.2, 0.0001, 2.4);
+  if (fam) {
+    // LA FAMILLE D'HIER : la musique reprend, puis s'éteint avec elle
+    const F1 = F0 + FIN;
+    niveau(F0 + SIGNATURE + 0.2, MUSIQUE.fin * 0.5, 0.6);
+    niveau(F1, MUSIQUE.fin, 0.3);
+    sonsFinFamille(S, F1, fam.d);
+    niveau(F1 + FINF - 1.4, 0.0001, 1.4);
+  } else niveau(F0 + SIGNATURE + 0.2, 0.0001, 2.4);
 
   /* ─── la boucle : l'horloge du son mène, l'image suit ─── */
   let affiche = "";
@@ -389,8 +422,10 @@ export async function tournerFilm(o: {
         return fini();
       }
       const t = ctx.currentTime - T0;
-      if (t >= TOTAL) return fini();
-      if (t < TITRE) {
+      if (t >= TOTAL + FINF) return fini();
+      if (fam && t < 0) dessinerOuvertureFamille(c2d, P, fam.d, fam.im, t + OUV, fond);
+      else if (fam && t >= TOTAL) dessinerFinFamille(c2d, P, fam.d, fam.im, t - TOTAL, fond);
+      else if (t < TITRE) {
         const u = t - CLIC;
         if (u < 0) {
           c2d.fillStyle = "#000";
@@ -408,7 +443,7 @@ export async function tournerFilm(o: {
       } else if (t < DEBUT_FIN) dessinerRecit(t - TITRE);
       else dessinerFinA(t - DEBUT_FIN);
       dessinerGrain(c2d, grain, t);
-      o.surProgres?.(borne(t / TOTAL));
+      o.surProgres?.(borne((t + OUV) / TOUT));
       requestAnimationFrame(tic);
     };
     requestAnimationFrame(tic);
@@ -434,5 +469,5 @@ export async function tournerFilm(o: {
   flux.getTracks().forEach((t) => t.stop());
   if (erreur) throw erreur;
   const type = rec.mimeType || format || "video/webm";
-  return { blob: new Blob(morceauxVideo, { type }), type, duree: ctx.currentTime - T0, affiche };
+  return { blob: new Blob(morceauxVideo, { type }), type, duree: ctx.currentTime - TD, affiche };
 }

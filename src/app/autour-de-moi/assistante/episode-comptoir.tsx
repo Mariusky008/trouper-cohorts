@@ -21,6 +21,7 @@ import type { FamilleDouble } from "@/lib/direct/double-metiers";
 import { SESSION_MAX_S, SESSION_MIN_S, enDuree, prochainEpisode, retenirEpisode, texteDeLEpisode } from "@/lib/direct/episode";
 import { SessionEpisode, type EtatSession, type Tournage } from "@/lib/direct/episode-session";
 import { monterEpisode } from "@/lib/direct/episode-montage";
+import { familleDeLaVideoPour } from "@/lib/direct/famille-video";
 import { chefEnPied } from "@/lib/direct/interview-montage";
 import type { Film } from "@/lib/direct/reporter-film";
 
@@ -311,7 +312,10 @@ export function EpisodeComptoir({
       arret.current = ctl;
       const ctx = son.current ?? new AudioContext();
       son.current = ctx;
+      // 🎬 SA FAMILLE : le début « Rejoins ma famille » et la fin « la famille d'hier » (sans elle, l'épisode se monte quand même)
+      const famille = await familleDeLaVideoPour(commerce, `${dossier}salut-1.webp`, ctl.signal).catch(() => null);
       const commun = {
+        famille,
         ctx,
         tournage: t,
         commerce: commerce.nom,
@@ -363,7 +367,7 @@ export function EpisodeComptoir({
         veille.current = null;
       }
     },
-    [commerce.nom, dossier, prix, produit, serie, ville],
+    [commerce, dossier, prix, produit, serie, ville],
   );
 
   const terminer = async () => {

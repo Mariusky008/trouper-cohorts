@@ -97,6 +97,7 @@ import { PhotothequeComptoir, PiocherPhototheque } from "./phototheque-comptoir"
 import { CarteMessageDuMois } from "./message-du-mois";
 import { CarnetComptoir, CarteCarnet, useCarnet } from "./carnet-comptoir";
 import { CarteFamille, FamilleComptoir, useFamille } from "./famille-comptoir";
+import { familleDeLaVideoPour } from "@/lib/direct/famille-video";
 import { CarteMike, PreviensLes } from "./previens-les";
 import { MessagesDeMike } from "./messages-de-mike";
 import { CarteTicket } from "./ticket-mike";
@@ -1116,6 +1117,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
               famille: commerce.famille,
               demonstration: !commerce.reel,
               onFermer: revenir,
+              /* 🎬 SA FAMILLE : le début « Rejoins ma famille » et la fin « la famille d'hier ». */
+              familleVideo: () => familleDeLaVideoPour(commerce, `${dossier}salut-1.webp`),
               /* 🎬 « PUBLIER PARTOUT » : Le Direct, sa page, ses réseaux — voir
                  `envoyerInterview`. « Quand je veux publier l'annonce sur mes
                  réseaux sociaux, je ne vois pas le bouton » : la démonstration
@@ -2825,6 +2828,8 @@ function TournageReporter({
         if (stop.signal.aborted) return;
         setEtat(voix ? "Le reporter tourne ton film…" : "Le reporter tourne ton film. Sa voix n’est pas encore réglée : ses phrases s’écrivent en grand.");
         const el = await chargerElements(ctx, chefEnPied(dossier), [], commerce.famille);
+        // 🎬 SA FAMILLE : le début « Rejoins ma famille » et la fin « la famille d'hier » (sans elle, le film se tourne quand même)
+        const famille = await familleDeLaVideoPour(commerce, `${dossier}salut-1.webp`, stop.signal).catch(() => null);
         const f = await tournerFilm({
           ctx,
           el,
@@ -2842,6 +2847,7 @@ function TournageReporter({
           ecouter: true,
           surProgres: setProgres,
           signal: stop.signal,
+          famille,
         });
         finir(f);
       } catch {

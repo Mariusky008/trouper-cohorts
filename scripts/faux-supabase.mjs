@@ -93,6 +93,8 @@ const DEFAUTS = {
   // LES BONS PLANS ET « JE TE GÂTE » — `…_clik_bons_plans.sql`.
   clik_bon_plan: () => ({ id: randomUUID(), publie_le: maintenant(), retire_le: null, created_at: maintenant() }),
   clik_gate: () => ({ updated_at: maintenant() }),
+  // SON ACCORD POUR LES VIDÉOS — `…_clik_accord_video.sql`.
+  clik_accord: () => ({ video: false, updated_at: maintenant() }),
 };
 const CLES = {
   human_conversations: ["id"],
@@ -119,6 +121,7 @@ const CLES = {
   clik_presence: ["site_id", "habitant_id", "jour"],
   clik_bon_plan: ["id"],
   clik_gate: ["site_id", "mois"],
+  clik_accord: ["site_id", "habitant_id"],
 };
 
 /** Le déclencheur `echanges_pause_garde` : en pause après deux signalements, une offre ne se remet pas en ligne. */

@@ -128,6 +128,8 @@ export type EtatFamille = {
     present: boolean;
     /** Son code d'invitation (`?de=`) : le même numéro d'écran que dans la vitrine. */
     code: string;
+    /** 🎬 Il a dit oui : son prénom et son petit mot peuvent apparaître dans les vidéos de ce commerce. */
+    video: boolean;
   };
   /** 📌 Le mot du jour, épinglé par le commerçant (la route publique l'ajoute). */
   motDuJour?: MotDuJour | null;
@@ -182,6 +184,41 @@ export type BonPlanPublic = {
 
 /** Le bon plan en cours, au comptoir : son texte, et l'heure de chaque palier. */
 export type BonPlanComptoir = { id: string; texte: string; publieLe: string; finLe: string; ouvertures: Record<Grade, string> };
+
+// ═══ 🎬 LA FAMILLE DANS SES VIDÉOS ══════════════════════════════════════════
+/**
+ * CE QUE LA FIN DE SES VIDÉOS MONTRE : « la famille d'hier » (ou de la semaine, si hier était vide),
+ * le record, et quelques fantômes qui s'avancent avec leur petit mot. LE FANTÔME TOUJOURS ; le prénom,
+ * le numéro et le mot seulement avec son accord (`clik_accord`, une case jamais cochée d'avance).
+ */
+export type FantomeVideo = { look: string; grade: Grade; numero?: number; prenom?: string; mot?: string };
+export type FamilleVideo = {
+  nom: string;
+  /** « clikme.fr/f/chez-bergine-dax ». */
+  lien: string;
+  branche: string;
+  /** Son fantôme à lui, qui salue (l'ouverture, et la famille encore vide). */
+  hote: string;
+  hier: number;
+  /** Le record à battre aujourd'hui (`null` : pas encore mesuré). */
+  record: number | null;
+  /** Hier a battu le record d'avant. */
+  recordBattuHier: boolean;
+  membres: number;
+  /** Les fantômes montrés : ceux d'hier, ou de la semaine. */
+  quand: "hier" | "semaine";
+  fantomes: FantomeVideo[];
+};
+export const FANTOMES_VIDEO_MAX = 12;
+
+/** La famille d'une vidéo de démonstration : inventée (prénoms d'essai), jamais celle d'un vrai commerçant. */
+export function familleVideoDemo(o: { nom: string; branche: string; hote: string }): FamilleVideo {
+  const looks = ["cosy", "denim", "artiste", "voyageur", "fleuri", "soleil", "lecteur", "melomane", "curieux", "rebelle", "jardinier", "flaneur"];
+  const fantomes: FantomeVideo[] = looks.map((look, k) => ({ look, grade: k < 2 ? "or" : k < 5 ? "argent" : "bronze" }));
+  fantomes[0] = { ...fantomes[0], prenom: "Léa", numero: 12, mot: "Ma nouvelle adresse préférée 💛" };
+  fantomes[2] = { ...fantomes[2], prenom: "Hugo", numero: 31, mot: "Merci pour l’accueil de samedi !" };
+  return { nom: o.nom, lien: "clikme.fr/f/ton-commerce", branche: o.branche, hote: o.hote, hier: 23, record: 29, recordBattuHier: false, membres: 148, quand: "hier", fantomes };
+}
 
 // ═══ 🎁 « JE TE GÂTE » ═════════════════════════════════════════════════════
 /** Ce qu'il peut offrir à sa famille ce mois-ci (« 10 × un café »), et combien il en a déjà offert. */

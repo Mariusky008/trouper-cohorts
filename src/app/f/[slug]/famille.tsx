@@ -18,6 +18,10 @@
 // page se relit à cette heure-là. À qui n'est pas de la famille : « ouvre une cage pour l'avoir ».
 // 🎁 Et ce que la maison peut encore offrir ce mois-ci (« Je te gâte »).
 //
+// 🎬 SES VIDÉOS : la fin de chaque vidéo du commerce montre la famille d'hier. Son fantôme y est
+// toujours ; son prénom et son petit mot seulement s'il coche la case de la fiche (jamais cochée
+// d'avance) — et il change d'avis quand il veut, dans sa famille.
+//
 // Celui qui a déjà ouvert une cage aujourd'hui arrive directement sur sa famille.
 import { useCallback, useEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { abonnerLook, garderLook, lookDe, LOOKS, monLook } from "@/lib/direct/look";
@@ -100,6 +104,8 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
   const [prenom, setPrenom] = useState("");
   const [mot, setMot] = useState("");
   const [motListe, setMotListe] = useState(false);
+  /** 🎬 Son prénom et son petit mot dans ses vidéos : jamais coché d'avance. */
+  const [video, setVideo] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState("");
   /** Il vient d'entrer (« Bienvenue dans la famille ! »), ou il revient (« Re-bonjour »). */
@@ -141,6 +147,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
     void lire().then((j) => {
       if (fini || !j?.moi) return;
       setPrenom(j.moi.prenom);
+      setVideo(j.moi.video === true);
       // DÉJÀ DANS LA FOULE AUJOURD'HUI : sa famille, directement.
       if (j.moi.present) setEcran("famille");
     });
@@ -150,14 +157,23 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
   }, [lire]);
 
   /** Ouvrir la cage pour de bon : la route garde la cage, la foule du jour, et qui l'a amené. */
-  const entrer = async (choisie: Cage, sonPrenom: string) => {
+  const entrer = async (choisie: Cage, sonPrenom: string, accord?: boolean) => {
     setErreur("");
     setEnvoi(true);
     try {
       const r = await fetch("/api/direct/cage", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ slug: c.slug, film: c.film, cage: choisie, prenom: sonPrenom, look: look.id, ville: c.villeSlug, ...(de ? { de } : {}) }),
+        body: JSON.stringify({
+          slug: c.slug,
+          film: c.film,
+          cage: choisie,
+          prenom: sonPrenom,
+          look: look.id,
+          ville: c.villeSlug,
+          ...(de ? { de } : {}),
+          ...(typeof accord === "boolean" ? { video: accord } : {}),
+        }),
       });
       const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!r.ok || !j.ok) {
@@ -181,6 +197,19 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
       window.scrollTo({ top: 0 });
     } catch {
       setErreur("Pas de réseau : ta cage ne s’est pas ouverte.");
+    } finally {
+      setEnvoi(false);
+    }
+  };
+
+  /** 🎬 Il change d'avis : son prénom et son petit mot dans ses vidéos, ou pas. */
+  const changerVideo = async (oui: boolean) => {
+    setEnvoi(true);
+    try {
+      const r = await fetch("/api/direct/famille", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: c.slug, action: "video", oui }) });
+      if (r.ok) setEtat((e) => (e?.moi ? { ...e, moi: { ...e.moi, video: oui } } : e));
+    } catch {
+      /* pas de réseau : rien ne change */
     } finally {
       setEnvoi(false);
     }
@@ -431,6 +460,13 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
           />
         </section>
 
+        <p className="fm-video-accord">
+          🎬 Dans ses vidéos : {moi.video ? "ton fantôme, avec ton prénom et ton petit mot." : "ton fantôme seul, sans ton prénom."}{" "}
+          <button type="button" disabled={envoi} onClick={() => void changerVideo(!moi.video)}>
+            {moi.video ? "Retirer mon prénom" : "Montrer mon prénom"}
+          </button>
+        </p>
+
         <a className="fm-lien" href={`/b/${encodeURIComponent(c.slug)}`}>
           Voir la page {deNom(c.nom)} ›
         </a>
@@ -527,7 +563,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
                 return;
               }
               garderLook(look.id);
-              void entrer(cage, p);
+              void entrer(cage, p, video);
             }}
           >
             <div className="tete">
@@ -594,6 +630,13 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
                 {erreur}
               </p>
             )}
+            <label className="fm-accord">
+              <input type="checkbox" checked={video} onChange={(e) => setVideo(e.target.checked)} />
+              <span>
+                🎬 Mon prénom et mon petit mot peuvent apparaître dans ses vidéos, sur ses réseaux.
+                <small>Sans ça, seul ton fantôme y apparaît. Tu changes d’avis quand tu veux.</small>
+              </span>
+            </label>
             <button type="submit" className="fm-bouton rose" disabled={envoi}>
               {envoi ? "Un instant…" : "Entrer dans la famille"}
             </button>
@@ -687,6 +730,11 @@ const STYLES = `
 .fm-bonplan span{font-size:13px;color:var(--doux)}
 .fm-gate{margin:12px 16px 0;padding:10px 14px;border-radius:14px;background:rgba(242,196,107,.1);border:1px solid rgba(242,196,107,.35);font-size:13.5px;line-height:1.4;color:var(--doux)}
 .fm-gate b{color:var(--creme)}
+.fm-accord{display:flex!important;gap:10px;align-items:flex-start;margin:14px 0 0!important;font-size:13.5px!important;font-weight:600!important;color:var(--carnet-texte)!important;line-height:1.35;cursor:pointer}
+.fm-accord input{flex:none;width:20px;height:20px;margin:1px 0 0;accent-color:var(--rose)}
+.fm-accord small{display:block;margin-top:2px;font-size:12px;font-weight:400;color:var(--carnet-doux)}
+.fm-video-accord{margin:16px 16px 0;font-size:13px;line-height:1.45;color:var(--doux)}
+.fm-video-accord button{border:0;background:none;padding:0;color:var(--or);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
 .fm-motdujour{margin:12px 16px 0;padding:12px 14px;border-radius:16px;background:var(--creme);color:var(--carnet-texte);box-shadow:0 6px 18px rgba(0,0,0,.3)}
 .fm-motdujour small{display:block;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:var(--carnet-doux)}
 .fm-motdujour blockquote{margin:4px 0 0;font-family:var(--font-enseigne),"Playfair Display",Georgia,serif;font-style:italic;font-weight:700;font-size:18px;line-height:1.3}

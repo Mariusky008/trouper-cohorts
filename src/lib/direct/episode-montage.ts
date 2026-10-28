@@ -18,10 +18,23 @@
  * lus par des lecteurs muets préparés un bloc à l'avance ; leur son, décodé
  * avant, part à l'instant exact de son bloc.
  *
+ * 🎬 LE DÉBUT ET LA FIN CLIKME (`famille`) : avant le titre, « Rejoins ma famille de fantômes ! » ;
+ * après la carte postale, la famille d'hier et les cages — voir `famille-video.ts`.
+ *
  * FICHIER NAVIGATEUR : il dessine sur une toile et l'enregistre en direct.
  */
 import { DEBIT_SON, debitDuMontage, enDeuxLignes } from "@/lib/direct/interview-fantome";
 import { chargerElements, formatVideo, lecteurMuet } from "@/lib/direct/interview-montage";
+import type { FamilleVideo } from "@/lib/direct/famille";
+import {
+  dessinerFinFamille,
+  dessinerOuvertureFamille,
+  FIN_FAMILLE,
+  OUVERTURE_FAMILLE,
+  sonsFinFamille,
+  sonsOuvertureFamille,
+  type ImagesFamille,
+} from "@/lib/direct/famille-video";
 import {
   CREME,
   HAUTEUR as H,
@@ -192,8 +205,13 @@ export async function monterEpisode(o: {
   surProgres?: (p: number) => void;
   surEtape?: (mot: string) => void;
   signal?: AbortSignal;
+  /** 🎬 Sa famille : le début « Rejoins ma famille » et la fin « la famille d'hier » (`famille-video.ts`). */
+  famille?: { d: FamilleVideo; im: ImagesFamille } | null;
 }): Promise<Film> {
   const { ctx, tournage } = o;
+  const fam = o.famille ?? null;
+  const OUV = fam ? OUVERTURE_FAMILLE : 0;
+  const FINF = fam ? FIN_FAMILLE : 0;
   const c2d = o.toile.getContext("2d");
   if (!c2d) throw new Error("Ce téléphone ne sait pas dessiner la vidéo.");
   if (typeof o.toile.captureStream !== "function") throw new Error("Ce téléphone ne sait pas enregistrer un dessin animé (captureStream).");
@@ -212,6 +230,8 @@ export async function monterEpisode(o: {
     cumul += longueur(b);
   }
   const TOTAL = cumul;
+  /** Avec le début et la fin de la famille. */
+  const TOUT = OUV + TOTAL + FINF;
   o.surEtape?.("Je prépare la musique et ton fantôme…");
   const el = await chargerElements(ctx, o.fantome, [], "table");
   const P: Polices = { affiche: el.police.affiche, texte: el.police.bulle, serif: el.police.enseigne };
@@ -318,7 +338,7 @@ export async function monterEpisode(o: {
   /* ─── l'enregistreur ─── */
   const format = formatVideo();
   const flux = new MediaStream([...o.toile.captureStream(IPS).getVideoTracks(), ...enregistree.stream.getAudioTracks()]);
-  const rec = new MediaRecorder(flux, { ...(format ? { mimeType: format } : {}), videoBitsPerSecond: debitDuMontage(TOTAL), audioBitsPerSecond: DEBIT_SON });
+  const rec = new MediaRecorder(flux, { ...(format ? { mimeType: format } : {}), videoBitsPerSecond: debitDuMontage(TOUT), audioBitsPerSecond: DEBIT_SON });
   const morceauxVideo: Blob[] = [];
   rec.ondataavailable = (e) => {
     if (e.data && e.data.size) morceauxVideo.push(e.data);
@@ -358,14 +378,20 @@ export async function monterEpisode(o: {
   c2d.fillStyle = "#000";
   c2d.fillRect(0, 0, W, H);
   rec.start(1000);
-  const T0 = ctx.currentTime + 0.15;
+  // TD : le début de la vidéo (l'ouverture de la famille, s'il y en a une) ; T0 : le titre.
+  const TD = ctx.currentTime + 0.15;
+  const T0 = TD + OUV;
   if (el.musique) {
     const boucle = ctx.createBufferSource();
     boucle.buffer = el.musique;
     boucle.loop = true;
     boucle.connect(musique);
-    boucle.start(T0 + CLIC);
+    boucle.start(fam ? TD : T0 + CLIC);
     sources.push(boucle);
+  }
+  if (fam) {
+    niveau(TD, MUSIQUE.pleine, 0.15);
+    sonsOuvertureFamille(S, TD);
   }
   niveau(T0, MUSIQUE.pleine, 0.15);
   sonClic(S, T0 + CLIC);
@@ -401,7 +427,14 @@ export async function monterEpisode(o: {
       for (const d of [0.55, 0.68, 0.82, 0.95, 1.25]) sonTic(S, t0 + d);
       sonTampon(S, t0 + 1.0);
       sonSignature(S, t0 + SIGNATURE);
-      niveau(t0 + SIGNATURE + 0.2, 0.0001, 2.4);
+      if (fam) {
+        // LA FAMILLE D'HIER : la musique reprend, puis s'éteint avec elle
+        const F1 = T0 + TOTAL;
+        niveau(t0 + SIGNATURE + 0.2, MUSIQUE.pleine * 0.5, 0.6);
+        niveau(F1, MUSIQUE.pleine, 0.3);
+        sonsFinFamille(S, F1, fam.d);
+        niveau(F1 + FINF - 1.4, 0.0001, 1.4);
+      } else niveau(t0 + SIGNATURE + 0.2, 0.0001, 2.4);
     }
   });
 
@@ -446,7 +479,15 @@ export async function monterEpisode(o: {
         return fini();
       }
       const t = ctx.currentTime - T0;
-      if (t >= TOTAL) return fini();
+      if (t >= TOTAL + FINF) return fini();
+      if (fam && (t < 0 || t >= TOTAL)) {
+        if (t < 0) dessinerOuvertureFamille(c2d, P, fam.d, fam.im, t + OUV, fondTitre);
+        else dessinerFinFamille(c2d, P, fam.d, fam.im, t - TOTAL, fin?.fond ?? fondTitre);
+        dessinerGrain(c2d, grain, t);
+        o.surProgres?.(borne((t + OUV) / TOUT));
+        requestAnimationFrame(tic);
+        return;
+      }
       let i = Math.max(0, courant);
       while (i + 1 < plan.length && t >= debuts[i + 1]) i++;
       if (i !== courant) entrer(i);
@@ -544,7 +585,7 @@ export async function monterEpisode(o: {
         }
       }
       dessinerGrain(c2d, grain, t);
-      o.surProgres?.(borne(t / TOTAL));
+      o.surProgres?.(borne((t + OUV) / TOUT));
       requestAnimationFrame(tic);
     };
     requestAnimationFrame(tic);
@@ -572,5 +613,5 @@ export async function monterEpisode(o: {
   flux.getTracks().forEach((t) => t.stop());
   if (erreur) throw erreur;
   const type = rec.mimeType || format || "video/webm";
-  return { blob: new Blob(morceauxVideo, { type }), type, duree: ctx.currentTime - T0, affiche };
+  return { blob: new Blob(morceauxVideo, { type }), type, duree: ctx.currentTime - TD, affiche };
 }
