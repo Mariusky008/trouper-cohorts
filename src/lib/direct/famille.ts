@@ -76,6 +76,18 @@ export function aNom(nom: string): string {
   return `chez ${n}`;
 }
 
+/** La règle d'un palier, dite simplement : « 1 visite ou 7 jours de cage ». */
+export function regleEnMots(g: Exclude<Grade, "bronze">): string {
+  const c = PALIERS[g];
+  return (Object.keys(c) as (keyof Parcours)[])
+    .filter((k) => (c[k] ?? 0) > 0)
+    .map((k) => {
+      const n = c[k] ?? 0;
+      return k === "visites" ? `${n} ${n > 1 ? "visites" : "visite"}` : k === "jours" ? `${n} jours de cage` : `${n} ${n > 1 ? "amis amenés" : "ami amené"}`;
+    })
+    .join(" ou ");
+}
+
 /** « Viens une fois chez Bergine, ou ouvre la cage 7 jours. » */
 export function cheminEnMots(chemins: { quoi: keyof Parcours; faut: number }[], nom: string): string {
   const phrases = chemins.map(({ quoi, faut }) =>
@@ -117,10 +129,85 @@ export type EtatFamille = {
     /** Son code d'invitation (`?de=`) : le même numéro d'écran que dans la vitrine. */
     code: string;
   };
+  /** 📌 Le mot du jour, épinglé par le commerçant (la route publique l'ajoute). */
+  motDuJour?: MotDuJour | null;
 };
 
 /** 🏠 Une de ses familles, dans Ma Maison. */
 export type MaFamille = { slug: string; nom: string; numero: number; membres: number; grade: Grade; parcours: Parcours };
+
+/** 📌 Le mot du jour : le petit mot que le commerçant a épinglé, en haut de sa page. */
+export type MotDuJour = { texte: string; prenom: string; numero: number; grade: Grade | null };
+
+/** Une personne de la famille, telle que le comptoir la montre. */
+export type MembreAuComptoir = { prenom: string; numero: number; grade: Grade; look: string };
+
+/** 👻 CE QUE LE COMPTOIR MONTRE DE SA FAMILLE (l'écran « Ma famille »). */
+export type FamilleAuComptoir = {
+  aujourdhui: number;
+  hier: number;
+  /** Le record à battre (les jours d'avant) ; `null` tant que la présence n'est pas activée. */
+  record: number | null;
+  membres: number;
+  /** Arrivés aujourd'hui : leur toute première cage chez lui. */
+  nouveaux: number;
+  paliers: Record<Grade, number>;
+  /** Ses fidèles, l'or puis l'argent (douze au plus). */
+  fideles: MembreAuComptoir[];
+  /**
+   * SON PARCOURS, LES SEPT DERNIERS JOURS : sa page ouverte → une cage ouverte → venus pour de vrai.
+   * `pages` : `null` tant que l'ouverture de sa page n'est pas comptée (la migration du comptoir).
+   */
+  parcours: { pages: number | null; cages: number; venues: number };
+  /** Les petits mots d'aujourd'hui et d'hier, pour choisir le mot du jour. */
+  mots: { id: string; texte: string; prenom: string; numero: number; epingle: boolean }[];
+  motDuJour: MotDuJour | null;
+  /** « Épingler » marche (la migration du comptoir est passée). */
+  epinglable: boolean;
+};
+
+/** « 42 % » d'une marche à la suivante (`null` quand la marche d'avant est vide, ou pas mesurée). */
+export function tauxDe(apres: number, avant: number | null): number | null {
+  if (avant === null || avant <= 0) return null;
+  return Math.min(100, Math.round((apres / avant) * 100));
+}
+
+/**
+ * LA FAMILLE D'UN COMMERCE DE LA DÉMONSTRATION (le comptoir sans commerçant réel) : inventée, stable
+ * pour la journée, et jamais pour un vrai commerçant — son comptoir lit la sienne en base.
+ */
+export function familleAuComptoirDemo(cle: string, maintenant: number): FamilleAuComptoir {
+  let h = 2166136261;
+  for (const c of `${cle}|${new Date(maintenant).toISOString().slice(0, 10)}`) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
+  const tirer = (n: number) => (h = Math.imul(h ^ (h >>> 15), 2246822519) >>> 0) % n;
+  const record = 24 + tirer(12);
+  const aujourdhui = 9 + tirer(12);
+  const membres = 140 + tirer(90);
+  const fideles: MembreAuComptoir[] = [
+    { prenom: "Léa", numero: 12, grade: "or", look: "cosy" },
+    { prenom: "Hugo", numero: 7, grade: "or", look: "denim" },
+    { prenom: "Inès", numero: 31, grade: "argent", look: "artiste" },
+    { prenom: "Karim", numero: 45, grade: "argent", look: "voyageur" },
+    { prenom: "Sonia", numero: 58, grade: "argent", look: "fleuri" },
+  ];
+  return {
+    aujourdhui,
+    hier: record - 3 - tirer(6),
+    record,
+    membres,
+    nouveaux: 2 + tirer(5),
+    paliers: { or: 6 + tirer(4), argent: 21 + tirer(9), bronze: membres - 40 },
+    fideles,
+    parcours: { pages: 610 + tirer(200), cages: 160 + tirer(60), venues: 31 + tirer(12) },
+    mots: [
+      { id: "demo-1", texte: "Merci pour l’accueil de samedi !", prenom: "Hugo", numero: 7, epingle: false },
+      { id: "demo-2", texte: "Ma nouvelle adresse préférée 💛", prenom: "Léa", numero: 12, epingle: false },
+      { id: "demo-3", texte: "Toujours de bons conseils", prenom: "Inès", numero: 31, epingle: false },
+    ],
+    motDuJour: null,
+    epinglable: true,
+  };
+}
 
 /** Il en manque combien pour battre le record (au moins 1 : égaler n'est pas battre). */
 export const manquePourRecord = (e: Pick<EtatFamille, "aujourdhui" | "record">) => Math.max(1, (e.record ?? 0) + 1 - e.aujourdhui);

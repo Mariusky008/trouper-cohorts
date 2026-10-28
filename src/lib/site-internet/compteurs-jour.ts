@@ -31,9 +31,10 @@ export type QuoiCompte = "vues" | "ecoutes" | "demandes" | "partages" | QuoiClie
 /**
  * LES GESTES EN CLIENTS — voir la migration `20261016120000_compteurs_en_clients.sql`.
  * Seul `essais` vient du navigateur (le rendu se fait chez le client) ; les
- * autres sont comptés par le serveur, là où le geste a lieu.
+ * autres sont comptés par le serveur, là où le geste a lieu. `famille` : sa page
+ * de la famille s'ouvre (`/f/<lien>`, migration `20261102090000_clik_famille_comptoir.sql`).
  */
-export type QuoiClient = "essais" | "cotes" | "confirmees" | "avis" | "amis" | "voisins" | "diffusion";
+export type QuoiClient = "essais" | "cotes" | "confirmees" | "avis" | "amis" | "voisins" | "diffusion" | "famille";
 export const QUOI_PUBLICS: QuoiCompte[] = ["ecoutes", "demandes", "partages", "essais"];
 
 const str = (v: unknown) => (v == null ? "" : String(v));

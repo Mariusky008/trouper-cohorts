@@ -87,7 +87,7 @@ const DEFAUTS = {
   clik_visite: () => ({ id: randomUUID(), created_at: maintenant() }),
   clik_message: () => ({ id: randomUUID(), plus: "", envoye_le: maintenant() }),
   clik_ardoise: () => ({ ecrite_le: maintenant() }),
-  clik_mot: () => ({ id: randomUUID(), liste: false, coeur_le: null, cadeau: "", cadeau_le: null, created_at: maintenant() }),
+  clik_mot: () => ({ id: randomUUID(), liste: false, coeur_le: null, cadeau: "", cadeau_le: null, epingle_le: null, created_at: maintenant() }),
   // LA FOULE DU JOUR — `…_clik_famille.sql`.
   clik_presence: () => ({ amene_par: null, created_at: maintenant() }),
 };
@@ -593,7 +593,7 @@ http
       // `…_compteurs_du_comptoir.sql` et `…_compteurs_en_clients.sql`).
       if (url.pathname === "/rest/v1/rpc/compter_jour" && req.method === "POST") {
         const { sid, quoi } = JSON.parse((await corps(req)).toString() || "{}");
-        const COLS = ["vues", "ecoutes", "demandes", "partages", "essais", "cotes", "confirmees", "avis", "amis", "voisins", "diffusion"];
+        const COLS = ["vues", "ecoutes", "demandes", "partages", "essais", "cotes", "confirmees", "avis", "amis", "voisins", "diffusion", "famille"];
         if (!COLS.includes(quoi)) return repondre(res, 204, undefined);
         const jour = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
         const t = lignes("human_compteurs_jour");

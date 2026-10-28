@@ -201,6 +201,18 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
     }
   };
 
+  /** 📌 Le mot du jour, épinglé par le commerçant : son texte, et qui l'a écrit. */
+  const motDuJour = (e: EtatFamille | null) =>
+    e?.motDuJour ? (
+      <figure className="fm-motdujour">
+        <small>📌 Le mot du jour</small>
+        <blockquote>« {e.motDuJour.texte} »</blockquote>
+        <figcaption>
+          {[e.motDuJour.prenom, e.motDuJour.numero ? `fantôme n°${nb(e.motDuJour.numero)}${e.motDuJour.grade ? ` ${EMOJI_GRADE[e.motDuJour.grade]}` : ""}` : ""].filter(Boolean).join(" · ")}
+        </figcaption>
+      </figure>
+    ) : null;
+
   const carteFoule = (e: EtatFamille, compacte = false) => {
     const vide = e.aujourdhui === 0;
     const battu = recordBattu(e);
@@ -287,6 +299,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
           )}
         </section>
 
+        {motDuJour(etat)}
         {etat && carteFoule(etat, true)}
 
         <div className="fm-chemin" role="list" aria-label="Ton écusson">
@@ -389,6 +402,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
         Tu l’aides à se faire connaître, et ses fantômes ont les bons plans en premier.
       </div>
 
+      {motDuJour(etat)}
       {familleVide ? (
         <div className="fm-premier">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -601,6 +615,10 @@ const STYLES = `
 .fm-ident small{color:var(--pale);font-size:13px}
 .fm-accroche{margin:12px 16px 0;padding:12px 14px;border-radius:16px;background:var(--rose);color:#fff;font-size:14px;line-height:1.35;box-shadow:0 8px 24px rgba(255,46,154,.25)}
 .fm-accroche b{display:block;font-size:17px;font-weight:800;margin-bottom:2px}
+.fm-motdujour{margin:12px 16px 0;padding:12px 14px;border-radius:16px;background:var(--creme);color:var(--carnet-texte);box-shadow:0 6px 18px rgba(0,0,0,.3)}
+.fm-motdujour small{display:block;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:var(--carnet-doux)}
+.fm-motdujour blockquote{margin:4px 0 0;font-family:var(--font-enseigne),"Playfair Display",Georgia,serif;font-style:italic;font-weight:700;font-size:18px;line-height:1.3}
+.fm-motdujour figcaption{margin-top:4px;font-size:12.5px;font-weight:600;color:var(--carnet-doux)}
 .fm-foule{margin:12px 16px 0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px 14px}
 .fm-foule.attente{height:86px}
 .fm-foule .l1{display:flex;align-items:center;gap:10px}

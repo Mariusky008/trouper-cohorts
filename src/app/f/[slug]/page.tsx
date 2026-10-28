@@ -12,7 +12,11 @@
 //
 // SEULEMENT POUR UN COMMERCE CLIENT DE CLIKME (`est_client`). Un prospect n'a rien demandé : on
 // n'invite personne dans sa famille à sa place.
+//
+// CHAQUE OUVERTURE SE COMPTE (`compterLeJour(…, "famille")`) : la première marche de son parcours,
+// au comptoir. Sauf la sienne, depuis son comptoir (`?moi=1`).
 import type { Metadata } from "next";
+import { after } from "next/server";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -24,6 +28,7 @@ import { tenueDu } from "@/lib/direct/double-metiers";
 import { numeroWhatsApp } from "@/lib/direct/cages";
 import { FILM_PAGE } from "@/lib/direct/famille";
 import { deNom } from "@/lib/echanges/echanges";
+import { compterLeJour } from "@/lib/site-internet/compteurs-jour";
 import { Famille, type CommerceFamille } from "./famille";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +38,7 @@ const s = (v: unknown) => String(v ?? "").trim();
 const capWords = (t: string) => t.toLowerCase().replace(/(^|[\s'’-])(\p{L})/gu, (_m, p, c) => p + c.toUpperCase());
 const web = (u: unknown) => (/^https:\/\//i.test(s(u)) ? s(u) : "");
 
-const charger = cache(async (slug: string): Promise<CommerceFamille | null> => {
+const charger = cache(async (slug: string): Promise<(CommerceFamille & { siteId: string }) | null> => {
   if (!/^[a-z0-9-]{2,120}$/i.test(slug)) return null;
   try {
     const supabase = createAdminClient();
@@ -65,6 +70,7 @@ const charger = cache(async (slug: string): Promise<CommerceFamille | null> => {
     const lieu = lirePhotosDuLieu(row.metadata);
     const couverture = web(couvertureAffichee(couvertureDuDiagnostic(row.diagnostic)));
     return {
+      siteId: s(row.id),
       slug: s(row.slug) || slug,
       nom,
       metier,
@@ -96,9 +102,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-export default async function PageFamille({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ de?: string }> }) {
-  const [{ slug }, { de }] = await Promise.all([params, searchParams]);
-  const commerce = await charger(slug);
-  if (!commerce) notFound();
+export default async function PageFamille({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ de?: string; moi?: string }>;
+}) {
+  const [{ slug }, { de, moi }] = await Promise.all([params, searchParams]);
+  const charge = await charger(slug);
+  if (!charge) notFound();
+  const { siteId, ...commerce } = charge;
+  if (!moi) after(() => compterLeJour(siteId, "famille"));
   return <Famille commerce={commerce} de={/^f[0-9a-f]{12}$/.test(s(de)) ? s(de) : ""} />;
 }

@@ -265,6 +265,22 @@ Changer un chiffre change la page et la route à la fois.
   prénom, pour ne jamais bloquer l'appli.
 - Une seule lecture de la famille d'un commerce (`lireFamille`) sert à la page, à la vitrine et à Ma Maison.
 
+**Au comptoir : « Ma famille » (chantier 3a)** :
+
+- **En tête de l'accueil**, la carte « 👻 Ma famille » : « Aujourd'hui 3 · record 5 », une jauge, « +2 nouveaux · Plus
+  que 3 pour le record » (ou « 🎉 Record battu ! »).
+- **L'écran « Ma famille »** : la foule du jour, hier, les nouveaux, le total ; son lien `clikme.fr/f/<lien>` à copier
+  (« Voir ma page » l'ouvre avec `?moi=1`, qui ne compte pas) ; combien en or, en argent, en bronze, la règle des
+  paliers (écrite depuis `PALIERS`) et ses fidèles par leur prénom ; son parcours des sept derniers jours : sa page
+  ouverte → un fantôme libéré → venus pour de vrai, en pourcentages (WhatsApp s'y ajoutera au chantier 4).
+- **📌 Le mot du jour** : il épingle un des petits mots d'aujourd'hui ou d'hier ; il s'affiche en haut de sa page
+  publique, avec le prénom (s'il n'est pas caché) et le numéro de son auteur. Un par jour.
+- **Le carnet** montre le numéro et le palier de chacun (« Léa n°1 🥇 »).
+- `src/app/autour-de-moi/assistante/famille-comptoir.tsx` ; `api/site-internet/pro/famille` (« lire », « epingler ») ;
+  `familleAuComptoir`, `motDuJour`, `epinglerMot` dans `famille-serveur.ts`.
+- `supabase/migrations/20261102090000_clik_famille_comptoir.sql` : le compteur `famille` (les ouvertures de sa page)
+  et `clik_mot.epingle_le`.
+
 ## L'activer en production
 
 **Les deux tables doivent être créées une fois** : coller le contenu de
@@ -285,6 +301,9 @@ s'affiche mais « Passage aujourd'hui » répond « Les passages ne sont pas enc
 La famille demande `supabase/migrations/20261101090000_clik_famille.sql` (la foule du jour) ; sans elle, la page
 `/f/<lien>` marche (les cages se gardent, le numéro et l'écusson se voient), mais la foule se compte d'après les
 cages du jour, le record ne paraît pas, et ni les jours de cage ni les amis amenés ne comptent pour les paliers.
+Le comptoir de la famille demande ensuite `supabase/migrations/20261102090000_clik_famille_comptoir.sql` (après
+celle des compteurs de diffusion et celle des petits mots) ; sans elle, « Ma famille » s'affiche, mais « Ont ouvert
+ta page » dit « Pas encore mesuré » et le mot du jour « arrive bientôt ».
 
 ## Vérifier
 
@@ -300,6 +319,8 @@ cages du jour, le record ne paraît pas, et ni les jours de cage ni les amis ame
 - `node scripts/essai-famille-route.mjs` (CI aussi) : la foule du jour, une fois par jour ; le numéro ; l'ami amené
   (le premier jour seulement) ; le record d'avant ; les paliers ; jamais pour un prospect ; la page ; le numéro et
   le palier dans la vitrine ; Mes familles ; les prénoms refusés.
+- `node scripts/navigateur/famille-comptoir.mjs` (CI aussi) : la route du comptoir (la foule, les paliers, les
+  fidèles, le parcours, épingler) puis l'écran « Ma famille », le carnet et le mot du jour sur la page.
 - `node scripts/navigateur/famille-page.mjs` (CI aussi) : la page dans un téléphone, de l'accueil à la famille, le
   retour le même jour, l'ami venu par le lien, « Tu passes Argent », les écussons de la vitrine, la famille vide.
 - Le carnet dans le navigateur : `/autour-de-moi/assistante?metier=table`, la carte « Mon carnet ».

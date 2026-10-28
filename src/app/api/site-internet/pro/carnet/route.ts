@@ -2,7 +2,8 @@
 //
 // « lire » : une ligne par personne — la cage qu'elle a libérée en dernier, avec le
 // prénom et le fantôme qu'elle avait, combien de ses films elle a vus jusqu'au bout,
-// si elle veut être prévenue, si elle a dit stop, ses passages. JAMAIS son numéro ni
+// si elle veut être prévenue, si elle a dit stop, ses passages, et sa place dans sa
+// famille (son numéro, son palier : `lib/direct/famille.ts`). JAMAIS son numéro ni
 // son identifiant : le carnet n'en a pas besoin, et une ligne se désigne par sa
 // dernière cage (`ref`). Voir `lib/direct/carnet.ts`.
 //
@@ -46,6 +47,7 @@ import { estModele, silenceDe } from "@/lib/direct/moteur-messages";
 import { calculerTicket, type Gestes } from "@/lib/direct/ticket-mike";
 import type { PetitMot } from "@/lib/direct/petits-mots";
 import { REPONDU_WHATSAPP, type LigneCarnet, type MessageEnvoye } from "@/lib/direct/carnet";
+import { lireFamille } from "@/lib/direct/famille-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -126,7 +128,7 @@ export async function POST(request: Request) {
 
   // ── LIRE LE CARNET ──────────────────────────────────────────────────────
   if (action === "lire") {
-    const [cages, contacts, passages, messages] = await Promise.all([
+    const [cages, contacts, passages, messages, famille] = await Promise.all([
       supabase
         .from("clik_cage")
         .select("id, habitant_id, cage, prenom, look, updated_at")
@@ -136,6 +138,7 @@ export async function POST(request: Request) {
       supabase.from("clik_contact").select("habitant_id, whatsapp, stop_le").eq("site_id", siteId).limit(2000),
       passagesDe(supabase, siteId),
       messagesDe(supabase, siteId),
+      lireFamille(supabase, siteId).catch(() => null),
     ]);
     if (cages.error) {
       // Les cages pas encore activées : un carnet vide, qui le dit, plutôt qu'une page en erreur.
@@ -187,6 +190,13 @@ export async function POST(request: Request) {
     for (const m of messages) {
       const l = parPersonne.get(s(m.habitant_id));
       if (l && l.messages.length < 20) l.messages.push(enMessage(m));
+    }
+    // 👻 SA PLACE DANS SA FAMILLE : son numéro d'arrivée et son palier.
+    if (famille) {
+      for (const [h, l] of parPersonne) {
+        const numero = famille.numeroDe(h);
+        if (numero) Object.assign(l, { numero, grade: famille.gradeDe(h) });
+      }
     }
     const { data: ard, error: eArd } = await supabase.from("clik_ardoise").select("texte, ecrite_le").eq("site_id", siteId).maybeSingle();
     const a = eArd ? null : (ard as Ligne | null);

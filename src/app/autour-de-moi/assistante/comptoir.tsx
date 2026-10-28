@@ -96,6 +96,7 @@ import { partagerEnStatut, type Statut, type SortieStatut } from "@/lib/direct/s
 import { PhotothequeComptoir, PiocherPhototheque } from "./phototheque-comptoir";
 import { CarteMessageDuMois } from "./message-du-mois";
 import { CarnetComptoir, CarteCarnet, useCarnet } from "./carnet-comptoir";
+import { CarteFamille, FamilleComptoir, useFamille } from "./famille-comptoir";
 import { CarteMike, PreviensLes } from "./previens-les";
 import { MessagesDeMike } from "./messages-de-mike";
 import { CarteTicket } from "./ticket-mike";
@@ -389,6 +390,8 @@ type Phase =
   | { ou: "infos" }
   /** 📒 Mon carnet : ceux qui ont libéré leur fantôme à la fin de ses vidéos — voir `carnet-comptoir.tsx`. */
   | { ou: "carnet" }
+  /** 👻 Ma famille : la foule du jour, les paliers, le parcours, le mot du jour (`famille-comptoir.tsx`). */
+  | { ou: "famille" }
   /** 📲 « Oui, préviens-les » : Mike écrit, il envoie depuis son WhatsApp — voir `previens-les.tsx`. */
   | { ou: "prevenir" }
   /** 💬 Les messages que Mike a préparés pour leur Maison : il relit, il dit oui — voir `messages-de-mike.tsx`. */
@@ -443,6 +446,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
   const proposition = useProposition(commerce);
   /* 📒 SON CARNET, lu une fois : la carte de l'accueil, et son écran (qui le relit). */
   const carnet = useCarnet(commerce);
+  /* 👻 SA FAMILLE, lue une fois : la carte en tête de l'accueil, et son écran (qui la relit). */
+  const famille = useFamille(commerce);
   /* 💌 SES PETITS MOTS, lus une fois : la carte de l'accueil, et leur écran. */
   const petitsMots = usePetitsMots(commerce);
   /* ⇄ SES ÉCHANGES, EN HAUT AUSSI, À CÔTÉ DE LA FLAMME — « c'est quand même une fonctionnalité
@@ -935,6 +940,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           propositionActive={propositionPrete}
           reseaux={<OutilReseaux commerce={commerce} reseaux={reseaux} onOuvrir={() => setPhase({ ou: "reseaux" })} />}
           carnet={<CarteCarnet carnet={carnet} onOuvrir={() => setPhase({ ou: "carnet" })} />}
+          famille={<CarteFamille famille={famille} onOuvrir={() => setPhase({ ou: "famille" })} />}
           ticket={<CarteTicket commerce={commerce} dossier={dossier} carnet={carnet} semaine={chiffres} onCarnet={() => setPhase({ ou: "carnet" })} />}
           mots={<CartePetitsMots petitsMots={petitsMots} onOuvrir={() => setPhase({ ou: "mots" })} />}
           mike={
@@ -1060,6 +1066,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           onMessages={() => setPhase({ ou: "messages" })}
         />
       )}
+
+      {phase.ou === "famille" && <FamilleComptoir commerce={commerce} dossier={dossier} famille={famille} onRetour={revenir} />}
 
       {phase.ou === "prevenir" && <PreviensLes commerce={commerce} dossier={dossier} carnet={carnet} onRetour={revenir} />}
 
@@ -1474,6 +1482,7 @@ function Accueil({
   propositionActive,
   reseaux,
   carnet,
+  famille,
   mike,
   ticket,
   mots,
@@ -1505,6 +1514,8 @@ function Accueil({
   reseaux?: React.ReactNode;
   /** 📒 La carte « Mon carnet » : ceux qui ont libéré leur fantôme à la fin de ses vidéos. */
   carnet?: React.ReactNode;
+  /** 👻 La carte « Ma famille », en tête : la foule du jour et le record à battre. */
+  famille?: React.ReactNode;
   /** 📲 La carte de Mike, en haut : « N personnes attendent ton signal » — absente quand il n'y a personne à prévenir. */
   mike?: React.ReactNode;
   /** 🧾 Le ticket de Mike : ce qu'il a fait pour lui cette semaine — absent quand la semaine est vide. */
@@ -1566,6 +1577,8 @@ function Accueil({
       </section>
 
       <div className="ak-actions">
+        {/* 👻 EN TÊTE : SA FAMILLE DU JOUR, et le record à battre. */}
+        {famille}
         {mike}
         {enAttente > 0 && (
           <button type="button" className="ac-afaire" onClick={onSavoir}>

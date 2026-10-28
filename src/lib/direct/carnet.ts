@@ -18,6 +18,7 @@
  * FICHIER PARTAGÉ (navigateur et serveur) : aucun accès à la base ici.
  */
 import { libellesCages, type Cage } from "./cages";
+import type { Grade } from "./famille";
 
 export type LigneCarnet = {
   /** La référence de la ligne pour la route (sa dernière cage) — jamais l'identité de la personne. */
@@ -41,6 +42,9 @@ export type LigneCarnet = {
    *  quand, le petit plus offert (vide s'il n'y en avait pas), par où, et sa réponse.
    *  Voir `lib/direct/previens-les.ts` et `lib/direct/moteur-messages.ts`. */
   messages: MessageEnvoye[];
+  /** 👻 Sa place dans sa famille : son numéro d'arrivée et son palier (`lib/direct/famille.ts`). */
+  numero?: number;
+  grade?: Grade;
 };
 
 export type MessageEnvoye = {
@@ -185,6 +189,9 @@ const GRAINES: Graine[] = [
 export function carnetDemo(maintenant: number, aujourdhui: string): LigneCarnet[] {
   return GRAINES.map((g, i) => ({
     ref: `demo-${i}`,
+    // Sa place dans la famille inventée : un passage noté fait l'argent, cinq font l'or (`PALIERS`).
+    numero: 3 + i * 4,
+    grade: (g.passages ?? 0) >= 5 ? "or" : (g.passages ?? 0) >= 1 ? "argent" : "bronze",
     prenom: g.prenom,
     look: g.look,
     cage: g.cage,
