@@ -220,6 +220,27 @@ pistes de maquette avant d'en finir une.
    démo courte, le prototype, et la cage dorée à la fin des vidéos).
 7. Plus tard : WhatsApp (4), l'interview des boulangeries (4).
 
+## 5 bis. Le retour d'un premier testeur sur « Le parcours ClikMe » (29 octobre) — décidé
+
+Le propriétaire l'a fait tester à un ami ; l'analyse et nos réponses convergent. Dans l'ordre :
+
+1. **La surprise devient un vrai bon** (le trou signalé : une capture d'écran suffit, rien ne dit qu'elle a été
+   servie). Un code court et un écran qui bouge (une capture ne passe pas), valable aujourd'hui seulement (le service
+   du jour), et un toucher **« Servie »** au comptoir. Ce toucher compte comme **un client amené** : c'est la preuve
+   de « vous ne payez que si je vous amène des clients » (5.5). Réutiliser ce qui existe pour les bons scannés au
+   comptoir (`src/app/bon`, l'échange) avant d'inventer.
+2. **Moins de pertes entre la vidéo et la page** : tout de suite, la vidéo du jour aussi en story Instagram avec un
+   sticker lien (un seul toucher) — à dire dans « Son départ » (chantier 6). Puis tester, avec un premier commerçant,
+   le commentaire qui envoie le lien en message privé (« Commente FANTÔME », façon ManyChat : le message ne converse
+   pas, il donne le lien) ; il faut brancher le compte Instagram de chaque commerçant.
+3. **Sous les trois cages** de `/f/<lien>` et du parcours : « Les trois te font entrer dans la famille » (les garder :
+   c'est la signature, et elles disent qui viendra quand). Si l'hésitation reste, essayer une seule action puis
+   « Tu viens quand ? ».
+4. **Une idée par moment dans la vidéo** : la promesse au début (« Rejoins ma famille… »), l'action à la fin (le
+   lien) — alléger ce qui se répète (`famille-video.ts`).
+5. **« Je l'offre à un ami »** (5.3) plutôt qu'un bonus contre un partage en story : on ne vérifie pas un partage, et
+   récompenser un partage touche aux règles de Meta sur les promotions.
+
 ## 6. Le premier message à donner à la nouvelle session
 
 > Lis `docs/passation.md`, puis `CLAUDE.md`, `outils/tour-du-fantome/LISEZ-MOI.md`, `outils/trois-fantomes/LISEZ-MOI.md`
