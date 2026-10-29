@@ -240,6 +240,16 @@ Le propriétaire l'a fait tester à un ami ; l'analyse et nos réponses converge
    lien) — alléger ce qui se répète (`famille-video.ts`).
 5. **« Je l'offre à un ami »** (5.3) plutôt qu'un bonus contre un partage en story : on ne vérifie pas un partage, et
    récompenser un partage touche aux règles de Meta sur les promotions.
+6. **Une « carte à partager » (la fierté qui fait grandir la famille)** : une image 9:16 dessinée par la page (le
+   moteur de `famille-video.ts`) — son fantôme sur sa pièce, son prénom, son numéro, « Je fais partie de la famille
+   de Chez Bergine », son lien en grand. « Partager » ouvre le menu du téléphone (Instagram → Story ; sinon,
+   télécharger). Un lien écrit sur une image ne se touche pas et Instagram ne laisse pas préremplir le sticker lien :
+   au moment du partage, copier **son lien d'invitation** (`clikme.fr/f/<lien>?de=…`) et lui dire « colle-le dans un
+   sticker lien » — chaque ami venu par sa story compte pour son palier (3 amis → or). La même carte sert pour la
+   montée de palier et pour **le mot du jour** (qui existe déjà : il manque de **prévenir son auteur**, « Ton mot est
+   le mot du jour chez Bergine ! », par Ma Maison ou une notification web, et sa carte « Mon mot a été choisi »).
+   Précaution : ce sont des « petits mots » sur ClikMe, jamais des « avis », jamais vers Google (le commerçant peut
+   leur offrir un cadeau : un avis récompensé doit le dire, et Google l'interdit).
 
 ## 6. Le premier message à donner à la nouvelle session
 
