@@ -94,7 +94,7 @@ await p.locator(".fm-cage-b").first().click();
 await p.fill("#fm-prenom", "Lina");
 await p.locator(".fm-fiche button[type=submit]").click();
 await p.waitForSelector(".fm-surprise.cage", { timeout: 20000 });
-ok((await p.locator(".fm-surprise.cage").innerText()).includes("Encore 1 aujourd’hui"), "sur sa page : la cage dorée, encore 1");
+ok((await p.locator(".fm-surprise.cage").innerText()).includes("Le premier qui l’ouvre gagne la dernière surprise."), "sur sa page : la cage dorée, la dernière surprise pour le premier qui l'ouvre");
 await p.locator(".fm-surprise.cage").click();
 await p.waitForSelector(".fm-surprise.ouverte", { timeout: 15000 });
 ok((await p.locator(".fm-surprise.ouverte").innerText()).includes("Un dessert offert"), "elle s'ouvre : « Un dessert offert »");

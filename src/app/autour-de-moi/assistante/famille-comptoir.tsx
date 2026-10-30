@@ -831,7 +831,7 @@ function SurpriseDuChef({ commerce }: { commerce: CommerceComptoir }) {
   return (
     <section className="fc-surprise">
       <h3>🎁 La surprise du chef</h3>
-      <p className="fc-regle">Tes surprises d’aujourd’hui, et combien tu en offres. Sur ta page, ta famille ouvre une cage dorée : une surprise au hasard, une par personne, tant qu’il en reste.</p>
+      <p className="fc-regle">Tes surprises d’aujourd’hui, et combien tu en offres : c’est toi qui choisis. Sur ta page, les premiers qui ouvrent ta cage dorée gagnent une surprise au hasard, tant qu’il en reste.</p>
       {etat.surprises.length > 0 && (
         <p className="fc-surprise-etat">
           Aujourd’hui :{" "}

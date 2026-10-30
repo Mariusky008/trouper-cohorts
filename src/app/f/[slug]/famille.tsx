@@ -416,7 +416,8 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
         <i aria-hidden="true">🔒</i>
         <small>La cage dorée · surprise du chef</small>
         <b>Ouvre-la : une surprise au hasard</b>
-        <span>Encore {nb(sp.reste)} aujourd’hui, une par personne.</span>
+        {/* LA RÈGLE, DITE SIMPLEMENT (comme la fin du Reel) : premier arrivé, premier servi. Le nombre, c'est lui qui le choisit. */}
+        <span>{sp.reste > 1 ? `Les ${nb(sp.reste)} premiers qui l’ouvrent gagnent une surprise.` : "Le premier qui l’ouvre gagne la dernière surprise."}</span>
         {ennui}
       </button>
     );
