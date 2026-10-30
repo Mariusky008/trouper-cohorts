@@ -34,6 +34,10 @@ CREATE TABLE IF NOT EXISTS public.clik_surprise_tirage (
 );
 -- « Non merci » : il laisse sa surprise (elle reste pour les autres), sans autre tirage ce jour-là.
 ALTER TABLE public.clik_surprise_tirage ADD COLUMN IF NOT EXISTS laisse_le timestamptz;
+-- Le bon : son code (quatre signes, unique ce jour-là chez ce commerce), et « Servie » au comptoir (une venue).
+ALTER TABLE public.clik_surprise_tirage ADD COLUMN IF NOT EXISTS code text;
+ALTER TABLE public.clik_surprise_tirage ADD COLUMN IF NOT EXISTS servie_le timestamptz;
+CREATE UNIQUE INDEX IF NOT EXISTS clik_surprise_tirage_code ON public.clik_surprise_tirage (site_id, jour, code) WHERE code IS NOT NULL;
 ALTER TABLE public.clik_surprise_tirage ENABLE ROW LEVEL SECURITY;
 
 COMMENT ON TABLE public.clik_surprise IS 'La surprise du chef : ce que le commerçant prévoit aujourd''hui, son stock et combien sont parties.';

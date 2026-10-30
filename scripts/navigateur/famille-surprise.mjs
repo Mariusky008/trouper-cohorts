@@ -51,6 +51,16 @@ const p1 = await geste("Olga", "surprise-prendre");
 v = await vue("Olga");
 ok(p1.statut === 200 && p1.libelle === o1.libelle && v?.reste === 1 && v.moi?.prise === true, `« Je prends ça » : à elle, il en reste 1 (${JSON.stringify(v)})`);
 ok((await geste("Olga", "surprise-ouvrir")).libelle === o1.libelle, "une par personne : elle retrouve la sienne");
+// 🎟️ SON BON : un code de quatre signes ; « Servie » au comptoir, une seule fois, et c'est une venue
+ok(/^[ACDEFGHJKMNPQRTUVWXY3479]{4}$/.test(p1.code ?? "") && v.moi?.code === p1.code, `son bon : le code ${p1.code}`);
+ok((await pro({ action: "surprise-servie", code: "ZZZZ" })).statut === 404, "un code inconnu : refusé");
+const sv = await pro({ action: "surprise-servie", code: p1.code.toLowerCase() });
+ok(sv.statut === 200 && sv.servie?.prenom === "Olga" && sv.prises?.find((x) => x.code === p1.code)?.servie === true, `« Servie » : pour Olga (${JSON.stringify(sv.servie)})`);
+const sv2 = await pro({ action: "surprise-servie", code: p1.code });
+ok(sv2.statut === 409 && /Déjà servie/.test(sv2.error ?? ""), `une seule fois (${sv2.error})`);
+const visites = await (await fetch(`${F}/clik_visite?site_id=eq.${SITE}`)).json();
+ok(visites.length === 1 && visites[0].habitant_id === (await (await fetch(`${F}/clik_cage?site_id=eq.${SITE}`)).json()).find((c) => c.prenom === "Olga")?.habitant_id, "c'est une venue (son palier, un client amené)");
+ok(Boolean((await vue("Olga"))?.moi?.servieLe), "sa page sait qu'elle a été servie");
 // « NON MERCI » : Max laisse la sienne ; elle reste pour les autres, et lui n'en tire pas d'autre aujourd'hui
 const m1 = await geste("Max", "surprise-ouvrir");
 const m2 = await geste("Max", "surprise-laisser");
@@ -93,7 +103,7 @@ await p.locator(".fm-surprise.ouverte").scrollIntoViewIfNeeded();
 await p.screenshot({ path: `${D}/surprise-1-ouverte.png` });
 await p.locator(".fm-surprise.ouverte button:not(.non)").click();
 await p.waitForSelector(".fm-surprise.prise", { timeout: 15000 });
-ok((await p.locator(".fm-surprise.prise").innerText()).includes("Elle est à toi"), "« Je prends ça » : elle est à toi, dis-le au comptoir");
+ok((await p.locator(".fm-surprise.prise").innerText()).includes("Montre cet écran au comptoir"), "« Je prends ça » : son bon, à montrer au comptoir");
 ok((await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0, "la page ne déborde pas");
 
 // ═══ AU COMPTOIR ═══
@@ -112,6 +122,26 @@ const comptoir = (await q.locator(".fc-surprise").innerText()).replace(/\s+/g, "
 ok(comptoir.includes("La surprise du chef") && comptoir.includes("Un dessert offert 1/1") && comptoir.includes("Lina"), `au comptoir : ses surprises et qui les a prises (${comptoir.slice(0, 160)})`);
 await q.locator(".fc-surprise").scrollIntoViewIfNeeded();
 await q.screenshot({ path: `${D}/surprise-2-comptoir.png` });
+
+// 🎟️ LE BON DE LINA, SCANNÉ PAR LE TÉLÉPHONE DU COMMERÇANT (son comptoir l'y a reconnu) : « Servie »
+const codeLina = (await p.locator(".fm-bon-code").innerText()).trim();
+ok(/^[A-Z0-9]{4}$/.test(codeLina) && (await p.locator(".fm-bon-qr svg").count()) === 1 && /\d{2}:\d{2}:\d{2}/.test(await p.locator(".fm-bon-heure").innerText()), `son bon : le code ${codeLina}, le QR, l'heure qui défile`);
+await p.locator(".fm-bon").scrollIntoViewIfNeeded();
+await p.screenshot({ path: `${D}/surprise-3-bon.png` });
+const scan = await ctx.newPage();
+scan.on("pageerror", (e) => erreurs.push(String(e)));
+await scan.goto(`${BASE}/f/${SLUG}/bon/${codeLina}`, { waitUntil: "networkidle" });
+await scan.waitForSelector(".sb-go", { timeout: 20000 });
+await scan.locator(".sb-go").click();
+await scan.waitForSelector(".sb-r.ok", { timeout: 15000 });
+ok((await scan.locator(".sb-r").innerText()).includes("pour Lina"), `scanné : « ${await scan.locator(".sb-r").innerText()} »`);
+await scan.screenshot({ path: `${D}/surprise-4-scan.png` });
+const ailleurs = await (await nav.newContext()).newPage();
+await ailleurs.goto(`${BASE}/f/${SLUG}/bon/${codeLina}`, { waitUntil: "networkidle" });
+ok((await ailleurs.locator(".sb-go").count()) === 0 && (await ailleurs.locator(".sb-c").innerText()).includes("se valide au comptoir"), "sur un autre téléphone : rien à valider, rien du bon");
+await p.reload({ waitUntil: "networkidle" });
+await p.waitForSelector(".fm-bon-servie", { timeout: 20000 });
+ok((await p.locator(".fm-bon-servie").innerText()).startsWith("✓ Servie à"), "chez Lina : « ✓ Servie »");
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` : ${erreurs[0]}` : ""}`);
 await nav.close();

@@ -225,7 +225,8 @@ pistes de maquette avant d'en finir une.
 
 Le propriétaire l'a fait tester à un ami ; l'analyse et nos réponses convergent. Dans l'ordre :
 
-1. **La surprise devient un vrai bon** (le trou signalé : une capture d'écran suffit, rien ne dit qu'elle a été
+1. **FAIT (30 octobre)** — voir `docs/les-cages.md` (« La surprise du chef ») ; la migration des surprises est à
+   recoller (elle ajoute `code` et `servie_le`). **La surprise devient un vrai bon** (le trou signalé : une capture d'écran suffit, rien ne dit qu'elle a été
    servie). Un code court et un écran qui bouge (une capture ne passe pas), valable aujourd'hui seulement (le service
    du jour), et un toucher **« Servie »** au comptoir. Ce toucher compte comme **un client amené** : c'est la preuve
    de « vous ne payez que si je vous amène des clients » (5.5). Réutiliser ce qui existe pour les bons scannés au

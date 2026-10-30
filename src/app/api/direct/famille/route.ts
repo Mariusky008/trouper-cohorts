@@ -88,7 +88,13 @@ export async function POST(request: Request) {
           ? await prendreSurprise(supabase, siteId, moi.id)
           : await laisserSurprise(supabase, siteId, moi.id);
     if (r.ennui) return NextResponse.json({ error: r.ennui }, { status: /pas encore activées/.test(r.ennui) ? 503 : 409 });
-    return NextResponse.json({ ok: true, libelle: r.libelle, prise: action === "surprise-prendre" ? true : Boolean((r as { prise?: boolean }).prise), laissee: action === "surprise-laisser" });
+    return NextResponse.json({
+      ok: true,
+      libelle: r.libelle,
+      prise: action === "surprise-prendre" ? true : Boolean((r as { prise?: boolean }).prise),
+      laissee: action === "surprise-laisser",
+      ...((r as { code?: string }).code ? { code: (r as { code?: string }).code } : {}),
+    });
   }
   const ennui = await enregistrerAccordVideo(supabase, siteId, moi.id, p?.oui === true);
   if (ennui) return NextResponse.json({ error: ennui }, { status: /pas encore possible/.test(ennui) ? 503 : 500 });

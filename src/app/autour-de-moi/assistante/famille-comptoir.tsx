@@ -51,6 +51,7 @@ import {
 import { lookDe } from "@/lib/direct/look";
 import { jourParis } from "@/lib/jour-paris";
 import { STYLES_CARNET } from "./carnet-comptoir";
+import { CLE_ACCES_COMPTOIR } from "@/lib/echanges/echanges";
 import { plusDe, plusPermis, plusPropre } from "@/lib/direct/previens-les";
 
 const nb = (n: number) => n.toLocaleString("fr-FR").replace(/ /g, " ");
@@ -748,7 +749,7 @@ function JeTeGate({ commerce, famille, f }: { commerce: CommerceComptoir; famill
 type EtatSurprises = {
   actif: boolean;
   surprises: { libelle: string; stock: number; pris: number }[];
-  prises: { libelle: string; prenom: string; numero: number }[];
+  prises: { libelle: string; prenom: string; numero: number; code: string; servie: boolean }[];
 };
 
 /**
@@ -790,6 +791,15 @@ function SurpriseDuChef({ commerce }: { commerce: CommerceComptoir }) {
       fini = true;
     };
   }, [reel, appeler]);
+  // SON TÉLÉPHONE RECONNU : le QR d'un bon scanné avec l'appareil photo (`/f/<lien>/bon/<code>`) propose alors « Servie »
+  useEffect(() => {
+    if (!reel) return;
+    try {
+      window.localStorage.setItem(CLE_ACCES_COMPTOIR, JSON.stringify({ slug: reel.slug, token: reel.token, nom: commerce.nom }));
+    } catch {
+      /* stockage refusé : la liste ci-dessous suffit */
+    }
+  }, [reel, commerce.nom]);
   if (!reel || !etat?.actif) return null;
   const changer = (k: number, quoi: Partial<{ libelle: string; stock: string }>) => setLignes((l) => l.map((x, i) => (i === k ? { ...x, ...quoi } : x)));
   const mettreEnLigne = async () => {
@@ -800,6 +810,17 @@ function SurpriseDuChef({ commerce }: { commerce: CommerceComptoir }) {
       setEtat(await appeler({ action: "surprises", liste }));
       setFait(true);
       window.setTimeout(() => setFait(false), 2200);
+    } catch (e) {
+      setEnnui((e as Error).message);
+    } finally {
+      setOccupe(false);
+    }
+  };
+  const servir = async (code: string) => {
+    setOccupe(true);
+    setEnnui("");
+    try {
+      setEtat(await appeler({ action: "surprise-servie", code }));
     } catch (e) {
       setEnnui((e as Error).message);
     } finally {
@@ -823,9 +844,24 @@ function SurpriseDuChef({ commerce }: { commerce: CommerceComptoir }) {
         </p>
       )}
       {etat.prises.length > 0 && (
-        <p className="fc-regle fc-prises">
-          Déjà prises : {etat.prises.map((x) => `${x.prenom || "un fantôme"} n°${x.numero} (${x.libelle})`).join(" · ")}
-        </p>
+        <div className="fc-prises">
+          <p className="fc-regle">Déjà prises. Quand tu la sers, touche « Servie » (ou scanne le QR de son écran) : c’est une venue.</p>
+          {etat.prises.map((x, k) => (
+            <div className="fc-prise" key={x.code || k}>
+              <span>
+                {x.prenom || "Un fantôme"} n°{x.numero} · {x.libelle}
+                {x.code ? <code>{x.code}</code> : null}
+              </span>
+              {x.servie ? (
+                <b className="fc-prise-faite">✓ Servie</b>
+              ) : (
+                <button type="button" className="fc-servie" disabled={occupe || !x.code} onClick={() => void servir(x.code)}>
+                  Servie
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       )}
       {lignes.map((l, k) => (
         <div className="fc-surprise-ligne" key={k}>
@@ -867,7 +903,12 @@ function SurpriseDuChef({ commerce }: { commerce: CommerceComptoir }) {
 
 const STYLES = `
 .fc-lien-ajout{align-self:flex-start;padding:0;border:0;background:none;color:var(--ambre,#F5A23A);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
-.fc-prises{font-size:12.5px}
+.fc-prises{display:flex;flex-direction:column;gap:6px}
+.fc-prise{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid var(--trait);font-size:13px}
+.fc-prise span{flex:1;min-width:0}
+.fc-prise code{margin-left:6px;padding:1px 6px;border-radius:6px;background:rgba(245,162,58,.15);font-weight:800;letter-spacing:.08em}
+.fc-servie{padding:7px 12px;border:0;border-radius:999px;background:#3DE2A6;color:#04150E;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+.fc-prise-faite{color:#3DE2A6;font-size:13px;white-space:nowrap}
 .fc-bonplan,.fc-gate,.fc-surprise{display:flex;flex-direction:column;gap:8px;}
 .fc-bp-encours{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:18px;background:var(--nappe);border:1.5px solid var(--ambre);}
 .fc-bp-encours q{font-size:16px;font-weight:700;line-height:1.35;}

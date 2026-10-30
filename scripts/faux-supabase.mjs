@@ -95,7 +95,7 @@ const DEFAUTS = {
   clik_gate: () => ({ updated_at: maintenant() }),
   // LA SURPRISE DU CHEF — `…_clik_surprises.sql`.
   clik_surprise: () => ({ id: randomUUID(), pris: 0, retire_le: null, created_at: maintenant() }),
-  clik_surprise_tirage: () => ({ pris_le: null, laisse_le: null, created_at: maintenant() }),
+  clik_surprise_tirage: () => ({ pris_le: null, laisse_le: null, code: null, servie_le: null, created_at: maintenant() }),
   // SON ACCORD POUR LES VIDÉOS — `…_clik_accord_video.sql`.
   clik_accord: () => ({ video: false, updated_at: maintenant() }),
 };

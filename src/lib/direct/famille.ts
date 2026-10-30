@@ -330,7 +330,11 @@ export function messagePourMike(prenom: string, numero: number, nom: string, cod
 /** Une surprise du jour, telle que le comptoir la voit : son stock et combien sont parties. */
 export type SurpriseDuJour = { id: string; libelle: string; stock: number; pris: number };
 /** Ce que voit la page : la cage dorée, ce qu'il en reste, et sa surprise à lui s'il l'a tirée. */
-export type SurprisePublique = { reste: number; moi: { libelle: string; prise: boolean; laissee?: boolean } | null };
+export type SurprisePublique = {
+  reste: number;
+  /** Sa surprise à lui : `code` est celui de son bon (pris), `servieLe` dit qu'elle lui a été servie. */
+  moi: { libelle: string; prise: boolean; laissee?: boolean; code?: string; servieLe?: string } | null;
+};
 export const SURPRISES_MAX = 6;
 export const SURPRISE_LIBELLE_MAX = 80;
 export const SURPRISE_STOCK_MAX = 50;

@@ -24,6 +24,7 @@
 //
 // Celui qui a déjà ouvert une cage aujourd'hui arrive directement sur sa famille.
 import { useCallback, useEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
+import QRCode from "qrcode";
 import { abonnerLook, garderLook, lookDe, LOOKS, monLook } from "@/lib/direct/look";
 import { CAGES, libellesCages, type Cage } from "@/lib/direct/cages";
 import { familleDuDouble } from "@/lib/direct/double-metiers";
@@ -97,6 +98,49 @@ const MOTS_CHEMIN: Record<keyof Parcours, [string, string]> = {
 };
 
 /**
+ * 🎁 SON BON DE LA SURPRISE DU CHEF : son code et son QR (le commerçant le scanne avec l'appareil photo : `/f/<lien>/bon/<code>`),
+ * l'heure qui défile et un reflet qui passe (une capture d'écran ne passe pas), valable aujourd'hui. Une fois servie au
+ * comptoir, « ✓ Servie » : la page se relit d'elle-même.
+ */
+function BonSurprise({ slug, libelle, code, numero, servieLe }: { slug: string; libelle: string; code: string; numero: number; servieLe: string }) {
+  const [qr, setQr] = useState("");
+  const [heure, setHeure] = useState(() => new Date().toLocaleTimeString("fr-FR", { timeZone: "Europe/Paris" }));
+  useEffect(() => {
+    if (!code) return;
+    let fini = false;
+    QRCode.toString(`${window.location.origin}/f/${encodeURIComponent(slug)}/bon/${code}`, { type: "svg", margin: 0, errorCorrectionLevel: "M", color: { dark: "#2C0912", light: "#00000000" } })
+      .then((svg) => {
+        if (!fini) setQr(svg);
+      })
+      .catch(() => {});
+    return () => {
+      fini = true;
+    };
+  }, [slug, code]);
+  useEffect(() => {
+    if (servieLe) return;
+    const i = window.setInterval(() => setHeure(new Date().toLocaleTimeString("fr-FR", { timeZone: "Europe/Paris" })), 1000);
+    return () => window.clearInterval(i);
+  }, [servieLe]);
+  return (
+    <div className={`fm-surprise prise fm-bon${servieLe ? " servie" : ""}`} role="status">
+      <small>🎁 Ta surprise du chef, aujourd’hui</small>
+      <b>{libelle}</b>
+      {servieLe ? (
+        <span className="fm-bon-servie">✓ Servie à {heureParis(servieLe)}. Profite bien !</span>
+      ) : (
+        <>
+          {code ? <span className="fm-bon-code">{code}</span> : null}
+          {qr ? <span className="fm-bon-qr" aria-hidden="true" dangerouslySetInnerHTML={{ __html: qr }} /> : null}
+          <span className="fm-bon-heure">{heure}</span>
+          <span>Montre cet écran au comptoir{numero ? ` (fantôme n°${numero})` : ""} : on le scanne, c’est servi. Valable aujourd’hui.</span>
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
  * 💬 LE BOUTON WHATSAPP (« Mes bons plans sur WhatsApp »), CACHÉ POUR L'INSTANT : la page fait tout, et WhatsApp ne
  * servira qu'à prévenir (la sonnette du chantier 4, voir `docs/passation.md`). Tant que personne n'y répond, on n'y
  * envoie personne. Le jour venu : un petit lien « 🔔 Me prévenir des bons plans », après la surprise.
@@ -150,6 +194,14 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
     const t = window.setTimeout(() => void lire(), dans);
     return () => window.clearTimeout(t);
   }, [ouvreA, lire]);
+
+  // 🎁 SON BON ATTEND D'ÊTRE SERVI : la page se relit, pour dire « ✓ Servie » dès que le comptoir l'a validé
+  const bonEnAttente = Boolean(etat?.surprise?.moi?.prise && !etat.surprise.moi.servieLe);
+  useEffect(() => {
+    if (!bonEnAttente) return;
+    const i = window.setInterval(() => void lire(), 15000);
+    return () => window.clearInterval(i);
+  }, [bonEnAttente, lire]);
 
   useEffect(() => {
     let fini = false;
@@ -300,12 +352,18 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
     setEnnuiSurprise("");
     try {
       const r = await fetch("/api/direct/famille", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: c.slug, action }) });
-      const j = (await r.json().catch(() => null)) as { ok?: boolean; error?: string; libelle?: string; prise?: boolean; laissee?: boolean } | null;
+      const j = (await r.json().catch(() => null)) as { ok?: boolean; error?: string; libelle?: string; prise?: boolean; laissee?: boolean; code?: string } | null;
       if (r.ok && j?.ok && j.libelle) {
         const libelle = j.libelle;
         setEtat((e) =>
           e?.surprise
-            ? { ...e, surprise: { reste: Math.max(0, e.surprise.reste - (j.prise && !e.surprise.moi?.prise ? 1 : 0)), moi: { libelle, prise: Boolean(j.prise), laissee: Boolean(j.laissee) } } }
+            ? {
+                ...e,
+                surprise: {
+                  reste: Math.max(0, e.surprise.reste - (j.prise && !e.surprise.moi?.prise ? 1 : 0)),
+                  moi: { libelle, prise: Boolean(j.prise), laissee: Boolean(j.laissee), ...(j.code ? { code: j.code } : {}) },
+                },
+              }
             : e,
         );
       } else {
@@ -329,14 +387,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
           <span>Tu l’as laissée pour un autre fantôme. Une nouvelle surprise demain !</span>
         </div>
       );
-    if (sp.moi?.prise)
-      return (
-        <div className="fm-surprise prise" role="status">
-          <small>🎁 Ta surprise du chef, aujourd’hui</small>
-          <b>{sp.moi.libelle}</b>
-          <span>Elle est à toi : dis-le au comptoir{e?.moi ? `, fantôme n°${e.moi.numero}` : ""}.</span>
-        </div>
-      );
+    if (sp.moi?.prise) return <BonSurprise slug={c.slug} libelle={sp.moi.libelle} code={sp.moi.code ?? ""} numero={e?.moi?.numero ?? 0} servieLe={sp.moi.servieLe ?? ""} />;
     if (sp.moi)
       return (
         <div className="fm-surprise ouverte" role="status">
@@ -827,6 +878,14 @@ const STYLES = `
 .fm-surprise.cage{cursor:pointer;align-items:center;text-align:center}
 .fm-surprise.cage i{font-style:normal;font-size:34px;animation:fm-flotte 2.4s ease-in-out infinite}
 .fm-surprise-choix{display:flex;gap:8px;flex-wrap:wrap}
+.fm-bon{position:relative;overflow:hidden;align-items:center;text-align:center}
+.fm-bon::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.3) 50%,transparent 65%);transform:translateX(-100%);animation:fm-bon-reflet 2.6s linear infinite;pointer-events:none}
+.fm-surprise .fm-bon-code{font:800 38px/1 ui-monospace,Menlo,monospace;letter-spacing:.18em;color:var(--creme);margin:6px 0 2px}
+.fm-surprise .fm-bon-qr{width:132px;height:132px;padding:8px;border-radius:12px;background:#FFF8EE;margin:4px 0}
+.fm-surprise .fm-bon-qr svg{width:100%;height:100%;display:block}
+.fm-surprise .fm-bon-heure{font:700 15px ui-monospace,Menlo,monospace;color:var(--or)}
+.fm-surprise .fm-bon-servie{font-size:15px;font-weight:800;color:#3DE2A6}
+@keyframes fm-bon-reflet{to{transform:translateX(100%)}}
 .fm-surprise button.non{background:rgba(255,255,255,.1);color:var(--creme)}
 .fm-surprise button{align-self:flex-start;margin-top:6px;padding:10px 18px;border:0;border-radius:999px;background:#FF2E9A;color:#fff;font:inherit;font-weight:800;cursor:pointer}
 .fm-surprise.fermee{opacity:.75;border-style:dashed}
