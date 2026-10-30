@@ -7,8 +7,11 @@
 //                    chez l'intermédiaire. Son profil y est créé au premier appel.
 //   · `rafraichir` → relit ses comptes connectés ; le premier connecté allume l'envoi.
 //   · `auto`       → { on: boolean } : « chaque publication part aussi sur mes réseaux ».
+//   · `fantome`    → { on: boolean } : 👻 « je réponds moi-même aux commentaires FANTÔME » (voir
+//                    `Reseaux.fantome`) — même sans réseau connecté : il peut poster son Reel lui-même.
 //
-// PAS DE RÉPONSES AUTOMATIQUES : rien ici ne lit ni ne répond aux commentaires.
+// PAS DE RÉPONSES AUTOMATIQUES : rien ici ne lit ni ne répond aux commentaires. Avec `fantome`, c'est lui qui
+// répond, avec le message tout prêt du comptoir.
 import { NextResponse } from "next/server";
 import { ligneDuCommercant } from "@/lib/site-internet/experience-scenes";
 import { SITE_URL } from "@/lib/site-url";
@@ -40,6 +43,7 @@ function etat(r: Reseaux) {
       return { id, nom: nomDuReseau(id), ...(compte ? { compte: compte.nom || nomDuReseau(id) } : {}) };
     }),
     auto: r.auto,
+    fantome: r.fantome,
     ...(r.derniere ? { derniere: r.derniere } : {}),
   };
 }
@@ -58,6 +62,15 @@ export async function POST(request: Request) {
   const reseaux = reseauxDuDiagnostic(ligne.diag);
 
   if (action === "etat") return NextResponse.json(etat(reseaux));
+
+  if (action === "fantome") {
+    try {
+      const on = p?.on === true;
+      return NextResponse.json(etat(await changerReseaux(ligne.id, (r) => ({ ...r, fantome: on }))));
+    } catch (e) {
+      return NextResponse.json({ error: `Enregistrement impossible : ${String((e as Error)?.message ?? e)}` }, { status: 500 });
+    }
+  }
 
   if (!reseauxConfigures()) {
     return NextResponse.json({ error: "La publication sur les réseaux n'est pas encore branchée sur ClikMe." }, { status: 503 });

@@ -344,8 +344,14 @@ s'ouvrent et se ferment pareil, sans rien à choisir (`src/lib/direct/famille-vi
   pousse dans la cage dorée, elle s'envole, il est libre sous une pluie d'or, avec un cadeau. Sans surprise
   aujourd'hui, pas de cage ni de chiffre : « REJOINS LA FAMILLE · Libère ton fantôme : je te gâte ! ». Le même style
   que l'interview (Anton, Poppins, Playfair, étiquettes roses, cadre aux coins roses, fond des cartes), et tout
-  dans la zone sûre d'un Reel (rien sous la légende d'Instagram). Le chemin : « Lien dans ma bio » (« Écris FANTÔME en commentaire » seulement quand
-  l'envoi automatique du lien en message privé sera branché sur son compte : `motCle`, pas encore utilisé).
+  dans la zone sûre d'un Reel (rien sous la légende d'Instagram). Le chemin : « Lien dans ma bio » ; et s'il a allumé **« Je réponds moi-même aux
+  commentaires FANTÔME »** (« Mes réseaux », `Reseaux.fantome`, éteint par défaut) : « Écris FANTÔME en commentaire »
+  en gros, « ou lien dans ma bio » dessous, et la même ligne dans la légende Instagram (« Écris FANTÔME en
+  commentaire et je t'envoie le lien 👻 », toujours avec « lien en bio »). C'est lui qui répond, avec ses deux
+  réponses toutes prêtes à copier (dans « Mes réseaux » et sous son Reel) : en message privé « Coucou ! Voilà ma
+  famille de fantômes : https://www.clikme.fr/f/son-lien Ouvre la cage dorée 👻 » (`reponseFantome`), et sous le
+  commentaire « Je t'ai envoyé le lien en privé 👻 » (le message arrive souvent dans les « demandes »). Quand il y
+  aura trop de commentaires, il faudra la réponse automatique (le compte Instagram branché chez Meta).
   Seulement avec sa famille (commerce client ou démonstration). « Publier partout » : l'interview dans Le Direct et
   sur sa page, **le Reel sur ses réseaux** (`videoReseaux`) ; s'il n'a pas pu partir, ses réseaux prennent
   l'interview, comme avant.

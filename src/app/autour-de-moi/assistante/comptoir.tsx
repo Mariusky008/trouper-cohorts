@@ -77,7 +77,7 @@ import { jourCourt, PlanningComptoir } from "./planning-comptoir";
 import { CarteComptoir } from "./carte-comptoir";
 import { VitrineComptoir } from "./vitrine-comptoir";
 import { SavoirComptoir } from "./savoir-comptoir";
-import { ReseauxComptoir, useReseaux, type ReseauxDuComptoir } from "./reseaux-comptoir";
+import { ReseauxComptoir, lienDeLaFamille, useReseaux, type ReseauxDuComptoir } from "./reseaux-comptoir";
 import { EchangesComptoir, resumeDesEchanges } from "./echanges-comptoir";
 import { EchangesReels, useEchangesReels } from "./echanges-reels";
 import { StylesInterview } from "../essai-interview/styles-interview";
@@ -86,7 +86,7 @@ import { interviewOuverte, scriptDe } from "@/lib/direct/interview-fantome";
 import { BANQUES, questionsDeLInterview, type MetierPlanning } from "@/lib/direct/interview-planning";
 import { pistesAMontrer, pistesDe } from "@/lib/direct/interview-pistes";
 import { CarteProposition, propositionAMontrer, useProposition, type PieceProposee } from "./proposition-comptoir";
-import { PLATEFORMES_PAR_DEFAUT, iconeDuReseau, nomDuReseau, reseauxEnMots } from "@/lib/reseaux/reseaux-donnees";
+import { MOT_FANTOME, PLATEFORMES_PAR_DEFAUT, REPONSE_FANTOME_PUBLIQUE, iconeDuReseau, nomDuReseau, reponseFantome, reseauxEnMots } from "@/lib/reseaux/reseaux-donnees";
 import { useSavoir, type SavoirDuComptoir } from "./use-savoir";
 import { questionsDuMetier, reponduesDuMetier } from "@/lib/direct/savoir-fantome";
 import { accord, demandesEnMots, effetDesAnnonces, semaineDuComptoir, type JourStats } from "@/lib/direct/stats-comptoir";
@@ -1119,6 +1119,10 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
               onFermer: revenir,
               /* 🎬 SA FAMILLE : le début « Rejoins ma famille » et la fin « la famille d'hier ». */
               familleVideo: () => familleDeLaVideoPour(commerce, `${dossier}salut-1.webp`),
+              /* 👻 IL RÉPOND LUI-MÊME AUX COMMENTAIRES FANTÔME (« Mes réseaux ») : son Reel le demande, ses réponses sont prêtes. */
+              fantome: reseaux.etat?.fantome
+                ? { mot: MOT_FANTOME, prive: reponseFantome(lienDeLaFamille(commerce)), publique: REPONSE_FANTOME_PUBLIQUE }
+                : null,
               /* 🎬 « PUBLIER PARTOUT » : Le Direct, sa page, ses réseaux — voir
                  `envoyerInterview`. « Quand je veux publier l'annonce sur mes
                  réseaux sociaux, je ne vois pas le bouton » : la démonstration

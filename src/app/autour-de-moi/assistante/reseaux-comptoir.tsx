@@ -9,7 +9,9 @@
 // qu'il publie ensuite ici part dans Le Direct, sur sa page, ET sur ses réseaux.
 //
 // PAS DE RÉPONSES AUTOMATIQUES — « déjà les publications sur tous les réseaux
-// sociaux c'est déjà pas mal ».
+// sociaux c'est déjà pas mal ». 👻 MAIS IL PEUT RÉPONDRE LUI-MÊME aux
+// commentaires FANTÔME (`Reseaux.fantome`) : ses Reels et ses posts Instagram
+// le demandent alors, et la réponse est toute prête ici, à copier.
 //
 // UN VRAI COMMERÇANT ne voit cet écran que lorsque l'intermédiaire est branché
 // (sa clé posée sur Vercel). LA DÉMONSTRATION le montre toujours, en exemple :
@@ -26,17 +28,61 @@ import {
   iconeDuReseau,
   lienDeBio,
   nomDuReseau,
+  MOT_FANTOME,
   PLATEFORMES_PAR_DEFAUT,
+  REPONSE_FANTOME_PUBLIQUE,
+  reponseFantome,
   reseauxEnMots,
   type DernierePublication,
 } from "@/lib/reseaux/reseaux-donnees";
 import { SITE_URL } from "@/lib/site-url";
 
 type Plateforme = { id: string; nom: string; compte?: string };
-type Etat = { configure: boolean; plateformes: Plateforme[]; auto: boolean; derniere?: DernierePublication };
+type Etat = { configure: boolean; plateformes: Plateforme[]; auto: boolean; fantome?: boolean; derniere?: DernierePublication };
 
 /** La démonstration : les réseaux proposés, aucun connecté. */
-const DEMO: Etat = { configure: true, plateformes: PLATEFORMES_PAR_DEFAUT.map((id) => ({ id, nom: nomDuReseau(id) })), auto: false };
+const DEMO: Etat = { configure: true, plateformes: PLATEFORMES_PAR_DEFAUT.map((id) => ({ id, nom: nomDuReseau(id) })), auto: false, fantome: false };
+
+/** 👻 Sa page de la famille, en entier : le lien de sa réponse aux commentaires FANTÔME (cliquable en message privé). */
+export const lienDeLaFamille = (commerce: CommerceComptoir) => `${SITE_URL}/f/${commerce.reel?.slug ?? "ton-commerce"}`;
+
+/** Un texte à copier d'un geste, avec son bouton. */
+export function ACopier({ texte, quoi }: { texte: string; quoi: string }) {
+  const [copie, setCopie] = useState(false);
+  const copier = async () => {
+    try {
+      await navigator.clipboard.writeText(texte);
+      setCopie(true);
+      window.setTimeout(() => setCopie(false), 2200);
+    } catch {
+      /* presse-papiers refusé : le texte reste lisible, et se sélectionne d'un appui long */
+    }
+  };
+  return (
+    <div className="rs-bio-lien">
+      <code>{texte}</code>
+      <button type="button" onClick={() => void copier()} aria-label={`Copier ${quoi}`}>
+        {copie ? "Copié ✓" : "Copier"}
+      </button>
+    </div>
+  );
+}
+
+/** 👻 Ses deux réponses toutes prêtes : en message privé (le lien), et sous le commentaire (qu'elle regarde ses messages). */
+export function ReponsesFantome({ commerce }: { commerce: CommerceComptoir }) {
+  return (
+    <>
+      <p className="rs-fantome-etape">
+        <b>1. En message privé</b> à qui a écrit {MOT_FANTOME} :
+      </p>
+      <ACopier texte={reponseFantome(lienDeLaFamille(commerce))} quoi="le message privé" />
+      <p className="rs-fantome-etape">
+        <b>2. Sous son commentaire</b>, pour que la personne pense à regarder ses messages (souvent dans les « demandes ») :
+      </p>
+      <ACopier texte={REPONSE_FANTOME_PUBLIQUE} quoi="la réponse au commentaire" />
+    </>
+  );
+}
 
 async function appeler(reel: CommerceComptoir["reel"], corps: Record<string, unknown>): Promise<Etat & { url?: string; error?: string }> {
   if (!reel) throw new Error("démonstration");
@@ -187,6 +233,18 @@ export function ReseauxComptoir({
     }
   };
 
+  const basculerFantome = async (on: boolean) => {
+    if (demo) return setEtat((e) => (e ? { ...e, fantome: on } : e));
+    setOccupe("fantome");
+    try {
+      setEtat(await appeler(commerce.reel, { action: "fantome", on }));
+    } catch (e) {
+      setMessage((e as Error).message);
+    } finally {
+      setOccupe("");
+    }
+  };
+
   const connectes = etat?.plateformes.filter((p) => p.compte) ?? [];
   const d = etat?.derniere;
 
@@ -266,6 +324,32 @@ export function ReseauxComptoir({
           ouvre toujours les pièces du jour. » Ses posts finissent par
           « 👉 lien en bio » : c'est celui-ci. */}
       {etat?.plateformes.some((p) => p.id === "instagram") && <LienDeBio commerce={commerce} />}
+
+      {/* ═══ 👻 LES COMMENTAIRES FANTÔME ═══ « On garde les deux : lien en bio + Écris FANTÔME en commentaire ;
+          le commerçant répond lui-même. » Éteint par défaut : un commentaire sans réponse est une personne perdue. */}
+      {etat && (
+        <section className="rs-bio rs-fantome">
+          <h3>Les commentaires {MOT_FANTOME}</h3>
+          <label className="rs-auto">
+            <input type="checkbox" checked={etat.fantome ?? false} disabled={occupe === "fantome"} onChange={(e) => void basculerFantome(e.target.checked)} />
+            <span className="rs-interrupteur" aria-hidden="true" />
+            <span>
+              <b>Je réponds moi-même aux commentaires {MOT_FANTOME}</b>
+              <em>
+                {etat.fantome
+                  ? `Tes Reels et tes posts Instagram disent « Écris ${MOT_FANTOME} en commentaire », et toujours « lien dans ma bio » pour les pressés.`
+                  : "Éteint : tes Reels disent seulement « Lien dans ma bio »."}
+              </em>
+            </span>
+          </label>
+          {etat.fantome && (
+            <>
+              <p>Réponds vite : un commentaire sans réponse, c’est une personne qui ne vient pas. Tes deux réponses sont prêtes.</p>
+              <ReponsesFantome commerce={commerce} />
+            </>
+          )}
+        </section>
+      )}
 
       {d && (
         <section className="rs-derniere">
@@ -406,6 +490,11 @@ function StylesReseaux() {
 .rs-derniere,.rs-aide,.rs-bio{padding:14px;border-radius:18px;background:var(--nappe);border:1px solid var(--trait);}
 .rs-derniere h3,.rs-aide h3,.rs-bio h3{margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ambre);}
 .rs-bio p{margin:0;font-size:14px;line-height:1.4;color:var(--gris);}
+.rs-fantome{display:flex;flex-direction:column;gap:10px;}
+.rs-fantome h3{margin-bottom:0;}
+.rs-fantome .rs-auto{padding:0;border:0;background:none;}
+.rs-fantome .rs-bio-lien{margin-top:0;}
+.rs-fantome-etape b{color:var(--creme);}
 .rs-bio-lien{display:flex;align-items:center;gap:8px;margin-top:10px;padding:6px 6px 6px 12px;border-radius:14px;background:var(--nappe2);
   border:1px solid var(--trait);min-width:0;}
 .rs-bio-lien code{flex:1;min-width:0;overflow-wrap:anywhere;font-family:inherit;font-weight:700;font-size:14px;line-height:1.3;

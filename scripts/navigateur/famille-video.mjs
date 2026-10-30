@@ -340,6 +340,9 @@ const reel = await p.evaluate(
     const avecCage = [...ecrits];
     ecrits.clear();
     dessiner({ ...scene, appel: r.appelDuReel({ surprises: null }) }, T.appel + 2.9, "sans");
+    const sansCage = [...ecrits];
+    ecrits.clear();
+    dessiner({ ...scene, appel: r.appelDuReel({ surprises: d.surprises, motCle: "FANTÔME" }) }, T.appel + 2.9, "fantome");
     return {
       choix: choix && { k: choix.k, de: choix.de, a: choix.a, mots: choix.mots.map((w) => w.m).join(" ") },
       sansSon,
@@ -348,7 +351,8 @@ const reel = await p.evaluate(
       duree: r.dureeDuReel(choix),
       dureeSans: r.dureeDuReel(null),
       avecCage,
-      sansCage: [...ecrits],
+      sansCage,
+      fantome: [...ecrits],
       images,
       photo: Boolean(photo),
       cage: Boolean(im.cage),
@@ -366,7 +370,8 @@ ok(a15.cage && a15.lignes.join(" ") === "LES 15 PREMIERS" && a15.accent === "15"
 ok(a1.lignes.join(" ") === "LE PREMIER" && a1.sous === "qui ouvre ma cage dorée gagne une surprise.", `une seule : « ${a1.lignes.join(" ")} ${a1.sous} »`);
 ok(![a15, a1].some((x) => /par personne|aujourd/i.test(x.sous + x.etiquette)), "plus de « aujourd'hui · une par personne »");
 ok(!a0.cage && a0.lignes.join(" ") === "REJOINS LA FAMILLE" && a0.bas === "Lien dans ma bio", "plus de surprise : pas de cage dorée, pas de chiffre inventé");
-ok(aMot.bas === "Écris FANTÔME en commentaire" && a15.bas === "Lien dans ma bio", "« Écris FANTÔME » seulement avec l'envoi automatique du lien branché ; sinon sa bio");
+ok(aMot.bas === "Écris FANTÔME en commentaire" && aMot.ou === "ou lien dans ma bio" && a15.bas === "Lien dans ma bio" && a15.ou === null, "« Écris FANTÔME » (et « ou lien dans ma bio ») seulement s'il répond aux commentaires ; sinon sa bio seule");
+ok(reel.fantome.includes("Écris FANTÔME en commentaire") && reel.fantome.includes("ou lien dans ma bio") && !reel.fantome.includes("clikme.fr/f/ton-commerce"), `le Reel avec FANTÔME : le bouton, et la bio pour les pressés (${reel.fantome.slice(-4).join(" | ")})`);
 ok(reel.photo && reel.cage, "la photo de son plat et la cage dorée se chargent");
 ok(/MAGRET ?\|? ?AU MIEL/.test(reel.avecCage.join("|")) && ["18 €", "CE MIDI CHEZ BERGINE", "FACE AU FANTÔME", "Chez Bergine · Dax", "LA SURPRISE DU CHEF", "LES ", "15", "PREMIERS", "Lien dans ma bio", "clikme.fr/f/ton-commerce"].every((t) => reel.avecCage.includes(t)), `le Reel : son plat, son prix, la signature de l'émission, les 15 premiers, le chemin (${reel.avecCage.join(" | ").slice(0, 260)})`);
 ok(reel.avecCage.join(" ").includes("qui ouvrent ma cage dorée gagnent une surprise."), "la phrase dessous : qui ouvrent ma cage dorée gagnent une surprise");
@@ -374,6 +379,14 @@ ok(/anton/i.test(reel.polices.affiche) && /poppins/i.test(reel.polices.texte), `
 ok(reel.avecCage.some((t) => /magret/i.test(t) && t !== "MAGRET AU MIEL"), "ses mots s'allument pendant sa phrase");
 ok(reel.sansCage.includes("REJOINS") && reel.sansCage.includes("Libère ton fantôme : je te gâte !") && !reel.sansCage.some((t) => /surprise/i.test(t)), "sans surprise du jour : son fantôme invite, aucune surprise annoncée");
 ok(![...reel.avecCage, ...reel.sansCage].some((t) => /exemple/i.test(t)), "jamais « exemple » à l'écran");
+
+// 👻 « JE RÉPONDS MOI-MÊME AUX COMMENTAIRES FANTÔME » : éteint d'abord, puis allumé par la route de ses réseaux
+const reseaux = async (corps) => (await fetch(`${BASE}/api/site-internet/pro/reseaux`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: SLUG, token: "jeton-test", ...corps }) })).json();
+const avant = await reseaux({ action: "etat" });
+const allume = await reseaux({ action: "fantome", on: true });
+const relu = await reseaux({ action: "etat" });
+ok(avant.fantome === false && allume.fantome === true && relu.fantome === true, `les commentaires FANTÔME : éteints par défaut, allumés et gardés (${avant.fantome}/${allume.fantome}/${relu.fantome})`);
+ok((await reseaux({ action: "fantome", on: false })).fantome === false, "et il peut les éteindre");
 
 // 🥖 UNE BOULANGERIE A SES MOTS : sa fournée, pas un plat du jour.
 const prop = await (await fetch(`${BASE}/api/site-internet/pro/proposition`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: SLUG, token: "jeton-test", action: "lire" }) })).json();

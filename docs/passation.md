@@ -272,8 +272,10 @@ Suite à l'analyse du testeur sur la vidéo elle-même :
      « Publier le Reel » en avant. Le montage se fait en temps réel sur son téléphone (une minute pour l'interview).
 3. **FAIT en partie — L'appel s'adapte** : « Écris FANTÔME en commentaire » seulement si l'envoi automatique du lien est branché sur
    son compte (5 bis, n° 2) ; sinon « Lien dans ma bio ».
-   Fait : le Reel de l'interview dit « Lien dans ma bio » ; le mot-clé (`motCle` de `monterReel`) attend que l'envoi
-   automatique soit branché. Le Reel du film photo et de l'épisode reste à faire (l'épisode garde sa bande-annonce).
+   Décidé ensuite (30 octobre) : **les deux** — « Écris FANTÔME en commentaire » en gros et « ou lien dans ma bio »
+   dessous, quand le commerçant a allumé « Je réponds moi-même aux commentaires FANTÔME » (« Mes réseaux ») ; il
+   répond à la main avec ses réponses toutes prêtes. FAIT. La réponse automatique reste à faire quand le volume le
+   demandera. Le Reel du film photo et de l'épisode reste à faire (l'épisode garde sa bande-annonce).
 4. **FAIT — La ligne « Envoie ça à la personne avec qui tu viens ce midi 👇 »** dans le texte de publication que ClikMe
    écrit déjà (les envois en message privé comptent beaucoup pour toucher de nouveaux gens).
 5. **À ne pas faire** : inventer l'accroche ou une offre au nom du commerçant (« On t'offre le dessert si… ») — les

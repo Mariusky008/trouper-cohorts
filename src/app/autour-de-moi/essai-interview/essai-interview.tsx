@@ -335,6 +335,11 @@ export type InterviewDuCommerce = {
    * `famille-video.ts`). Absente sur la page d'essai : l'interview s'y monte sans.
    */
   familleVideo?: () => Promise<{ d: FamilleVideo; im: ImagesFamille } | null>;
+  /**
+   * 👻 Il répond lui-même aux commentaires FANTÔME (« Mes réseaux ») : son Reel dit « Écris FANTÔME en commentaire »
+   * (et « ou lien dans ma bio »), et ses deux réponses sont prêtes à copier sous la vidéo.
+   */
+  fantome?: { mot: string; prive: string; publique: string } | null;
 };
 
 /** Un nom de fichier sans accents ni espaces : « interview-la-table-de-margot.mp4 ». */
@@ -892,6 +897,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
             ville,
             quand: script.quand,
             famille,
+            motCle: du?.fantome?.mot ?? null,
             ecouter: reglages.current.ecouter,
             surProgres: setProgres,
             signal: stop.signal,
@@ -1349,6 +1355,21 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
                         montage.duree > 90 ? " : un Reel tient en 90 secondes" : " : ce téléphone n’écrit pas de MP4"
                       }.`)}
               </p>
+            </div>
+          ) : null}
+          {/* 👻 SES RÉPONSES AUX COMMENTAIRES FANTÔME, prêtes : il les copie quand on commente son Reel */}
+          {reel && du?.fantome ? (
+            <div className="ei-bloc ei-fantome">
+              <h2>Les commentaires {du.fantome.mot}</h2>
+              <p className="ei-n">Réponds vite : un commentaire sans réponse, c’est une personne qui ne vient pas.</p>
+              <div className="ei-act rangee">
+                <button type="button" className="ei-go second" onClick={() => void navigator.clipboard?.writeText(du.fantome!.prive).catch(() => {})}>
+                  Copier le message privé
+                </button>
+                <button type="button" className="ei-go second" onClick={() => void navigator.clipboard?.writeText(du.fantome!.publique).catch(() => {})}>
+                  Copier la réponse au commentaire
+                </button>
+              </div>
             </div>
           ) : null}
           <div className="ei-act rangee">

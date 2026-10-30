@@ -34,6 +34,7 @@ import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 import {
   legendeReseaux,
   ligneDEnvoi,
+  MOT_FANTOME,
   lienDeLaPorte,
   PLATEFORMES_PAR_DEFAUT,
   porteDuPost,
@@ -424,7 +425,7 @@ export async function publierSurSesReseaux(
     const lien = lienDeLaPorte(SITE_URL, site.slug, porte.essai ? annonce.piece : undefined);
     const envoi = ligneDEnvoi(brancheDuMetier(site.activite ?? ""));
     const legende = (reseau: string) =>
-      legendeReseaux({ texte, mots: annonce.mots, nom: site.nom, ville: site.ville, metier, porte: porte.mot, lien, reseau, envoi });
+      legendeReseaux({ texte, mots: annonce.mots, nom: site.nom, ville: site.ville, metier, porte: porte.mot, lien, reseau, envoi, ...(reseaux.fantome ? { motCle: MOT_FANTOME } : {}) });
     const pour = (c: CompteReseau): ParReseau => ({
       content: legende(c.plateforme),
       // LA COUVERTURE DU REEL : l'image que le montage a choisie (son nom en géant), pas la première de la vidéo (un écran noir).

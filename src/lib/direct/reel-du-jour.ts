@@ -80,20 +80,32 @@ export function phraseDuReel(prises: readonly PriseDuReel[], forts: ((mot: strin
 export const dureeDuReel = (phrase: PhraseDuReel | null) => (phrase ? REEL.accroche + (phrase.a - phrase.de) : REEL.accrocheSansPhrase) + REEL.appel;
 
 /** L'appel, prêt à dessiner : la petite étiquette rose, les lignes en géant (`accent` en rose), la phrase dessous. */
-export type AppelDuReel = { cage: boolean; etiquette: string; lignes: string[]; accent: string | null; sous: string; bas: string };
+export type AppelDuReel = {
+  cage: boolean;
+  etiquette: string;
+  lignes: string[];
+  accent: string | null;
+  sous: string;
+  /** Le chemin, dans le bouton rose. */
+  bas: string;
+  /** L'autre chemin, en petit dessous (« ou lien dans ma bio ») — `null` : son lien ClikMe à la place. */
+  ou: string | null;
+};
 
 /**
  * L'APPEL DE LA FIN, comme une carte de question de l'interview. `surprises` : ce qu'il reste VRAIMENT dans
  * sa cage dorée aujourd'hui — « LES 15 PREMIERS qui ouvrent ma cage dorée gagnent une surprise » : c'est la
  * règle (premier arrivé, premier servi), dite simplement. `null` ou 0 : pas de cage, pas de chiffre — son
- * fantôme invite dans la famille. `motCle` : seulement quand l'envoi automatique du lien en message privé est
- * branché sur son compte (« Écris FANTÔME en commentaire ») — sinon, sa bio.
+ * fantôme invite dans la famille. `motCle` : seulement quand quelqu'un répond aux commentaires — lui-même, avec la
+ * réponse toute prête du comptoir (`Reseaux.fantome`), ou un jour l'envoi automatique : « Écris FANTÔME en
+ * commentaire » en gros, « ou lien dans ma bio » dessous (les pressés ne sont pas perdus). Sinon, sa bio seule.
  */
 export function appelDuReel(o: { surprises: number | null; motCle?: string | null }): AppelDuReel {
   const n = Math.max(0, Math.floor(o.surprises ?? 0));
   const mot = o.motCle?.trim().toLocaleUpperCase("fr-FR");
   const bas = mot ? `Écris ${mot} en commentaire` : "Lien dans ma bio";
-  if (n > 1) return { cage: true, etiquette: "LA SURPRISE DU CHEF", lignes: [`LES ${n}`, "PREMIERS"], accent: String(n), sous: "qui ouvrent ma cage dorée gagnent une surprise.", bas };
-  if (n === 1) return { cage: true, etiquette: "LA SURPRISE DU CHEF", lignes: ["LE", "PREMIER"], accent: null, sous: "qui ouvre ma cage dorée gagne une surprise.", bas };
-  return { cage: false, etiquette: "MA FAMILLE DE FANTÔMES", lignes: ["REJOINS", "LA FAMILLE"], accent: null, sous: "Libère ton fantôme : je te gâte !", bas };
+  const ou = mot ? "ou lien dans ma bio" : null;
+  if (n > 1) return { cage: true, etiquette: "LA SURPRISE DU CHEF", lignes: [`LES ${n}`, "PREMIERS"], accent: String(n), sous: "qui ouvrent ma cage dorée gagnent une surprise.", bas, ou };
+  if (n === 1) return { cage: true, etiquette: "LA SURPRISE DU CHEF", lignes: ["LE", "PREMIER"], accent: null, sous: "qui ouvre ma cage dorée gagne une surprise.", bas, ou };
+  return { cage: false, etiquette: "MA FAMILLE DE FANTÔMES", lignes: ["REJOINS", "LA FAMILLE"], accent: null, sous: "Libère ton fantôme : je te gâte !", bas, ou };
 }

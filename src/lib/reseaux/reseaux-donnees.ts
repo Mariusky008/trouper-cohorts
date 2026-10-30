@@ -40,8 +40,23 @@ export type Reseaux = {
   comptes: CompteReseau[];
   /** « Chaque publication part aussi sur mes réseaux. » Allumé dès qu'il connecte un compte. */
   auto: boolean;
+  /**
+   * 👻 « Je réponds moi-même aux commentaires FANTÔME » : ses Reels et ses posts Instagram disent alors « Écris
+   * FANTÔME en commentaire » (en plus de sa bio), et c'est LUI qui envoie le lien en message privé, avec la réponse
+   * toute prête du comptoir (`reponseFantome`). Éteint par défaut : un commentaire sans réponse est une personne perdue.
+   */
+  fantome: boolean;
   derniere?: DernierePublication;
 };
+
+/** Le mot à écrire en commentaire, quand il y répond lui-même. */
+export const MOT_FANTOME = "FANTÔME";
+
+/** 👻 Ce qu'il envoie en message privé à qui a écrit FANTÔME (`lien` : sa page de la famille, en entier : il est cliquable en message). */
+export const reponseFantome = (lien: string) => `Coucou ! Voilà ma famille de fantômes : ${lien} Ouvre la cage dorée 👻`;
+
+/** Et sous son commentaire, en public : que la personne pense à regarder ses messages (souvent dans les « demandes »). */
+export const REPONSE_FANTOME_PUBLIQUE = "Je t’ai envoyé le lien en privé 👻";
 
 /**
  * Les réseaux proposés au comptoir, dans l'ordre où on les montre. Voir `plateformesProposees`.
@@ -135,6 +150,7 @@ export function reseauxDuDiagnostic(diag: unknown): Reseaux {
     ...(s(r.profil) ? { profil: s(r.profil).slice(0, 120) } : {}),
     comptes,
     auto: r.auto === true,
+    fantome: r.fantome === true,
     ...(derniere ? { derniere } : {}),
   };
 }
@@ -296,12 +312,15 @@ export function legendeReseaux(p: {
   reseau?: string;
   /** « Envoie ça à la personne avec qui tu viens ce midi 👇 » (voir `ligneDEnvoi`) — pas sur Google. */
   envoi?: string;
+  /** 👻 Il répond lui-même aux commentaires (`Reseaux.fantome`) : « Écris FANTÔME en commentaire… », sur Instagram seulement. */
+  motCle?: string;
 }): string {
   const mots = p.mots ? motsPourLesReseaux(p.mots) : "";
   if (p.reseau === "googlebusiness") return [p.texte.trim(), mots ? `« ${mots} »` : ""].filter(Boolean).join("\n\n").slice(0, 1500);
   const lignes = [p.texte.trim()];
   if (mots) lignes.push("", `« ${mots} »`);
   if (p.envoi) lignes.push("", p.envoi);
+  if (p.motCle && p.reseau === "instagram") lignes.push("", `Écris ${p.motCle} en commentaire et je t’envoie le lien 👻`);
   // INSTAGRAM NE CLIQUE PAS UN LIEN ÉCRIT : la porte renvoie à sa bio.
   const lien = p.reseau === "instagram" ? (p.porte ? "lien en bio" : "") : p.lien ?? "";
   if (p.porte) lignes.push("", lien ? `${p.porte} 👉 ${lien}` : p.porte);

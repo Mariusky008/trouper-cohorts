@@ -26,7 +26,7 @@ const charger = (chemin) => {
   new Function("exports", "module", js)(boite.exports, boite);
   return boite.exports;
 };
-const { porteDuPost, legendeReseaux, ligneDEnvoi, lienDeLaPorte, lienDeBio, adresseLisible, motsPourLesReseaux, idDePiece } = charger(
+const { porteDuPost, legendeReseaux, ligneDEnvoi, reponseFantome, lienDeLaPorte, lienDeBio, adresseLisible, motsPourLesReseaux, idDePiece } = charger(
   "src/lib/reseaux/reseaux-donnees.ts",
 );
 const { debitDuMontage, OCTETS_VISES, DEBIT_SON } = charger("src/lib/direct/interview-fantome.ts");
@@ -100,6 +100,12 @@ console.log("══ « Envoie ça à… » ══");
   const gg = legendeReseaux({ ...base, reseau: "googlebusiness" });
   dire(ig.indexOf(base.envoi) > ig.indexOf("« Il est cuit doucement. »") && ig.indexOf(base.envoi) < ig.indexOf("Réserve ta table"), "Instagram : après ses mots, avant la porte");
   dire(!gg.includes("Envoie ça"), "Google : pas de « Envoie ça »");
+  // 👻 IL RÉPOND LUI-MÊME AUX COMMENTAIRES FANTÔME
+  const igF = legendeReseaux({ ...base, motCle: "FANTÔME", reseau: "instagram" });
+  const fbF = legendeReseaux({ ...base, motCle: "FANTÔME", reseau: "facebook" });
+  dire(igF.includes("Écris FANTÔME en commentaire et je t’envoie le lien 👻") && igF.includes("👉 lien en bio"), "Instagram : « Écris FANTÔME en commentaire », et toujours le lien en bio");
+  dire(!fbF.includes("FANTÔME") && !ig.includes("FANTÔME"), "pas sur Facebook (le lien y est cliquable), ni quand il ne répond pas lui-même");
+  dire(reponseFantome("https://www.clikme.fr/f/chez-bergine") === "Coucou ! Voilà ma famille de fantômes : https://www.clikme.fr/f/chez-bergine Ouvre la cage dorée 👻", "sa réponse en message privé : son lien en entier");
 }
 
 console.log("══ ses mots, coupés proprement ══");

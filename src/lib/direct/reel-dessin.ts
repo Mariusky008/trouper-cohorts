@@ -332,17 +332,20 @@ function lAppel(g: CanvasRenderingContext2D, P: Polices, s: SceneReel, im: Image
     g.translate(cx, 995);
     g.scale(b, b);
     g.fillStyle = ROSE;
-    const w = Math.max(440, largeurTexte(g, a.bas, `800 42px ${P.texte}`) + 90);
+    // « Écris FANTÔME en commentaire » se resserre pour tenir dans le bouton
+    const tb = tailleQuiTient(g, [a.bas], (t) => `800 ${t}px ${P.texte}`, 42, 540, 0, 1);
+    const w = Math.max(440, largeurTexte(g, a.bas, `800 ${tb}px ${P.texte}`) + 80);
     rectArrondi(g, -w / 2, -46, w, 92, 46);
     g.fill();
-    texte(g, a.bas, 0, 15, `800 42px ${P.texte}`, "#FFFFFF", { align: "center" });
+    texte(g, a.bas, 0, tb * 0.36, `800 ${tb}px ${P.texte}`, "#FFFFFF", { align: "center" });
     g.restore();
   }
   const l = sortie((u - (a.cage ? APPEL.lien : 1.05)) / 0.4);
-  if (l > 0 && s.lien) {
+  const dessous = a.ou ?? s.lien;
+  if (l > 0 && dessous) {
     g.save();
     g.globalAlpha = l;
-    texte(g, s.lien, cx, 1072, `600 24px ${P.texte}`, "rgba(255,244,230,.8)", { align: "center", ls: 1 });
+    texte(g, dessous, cx, 1072, a.ou ? `700 28px ${P.texte}` : `600 24px ${P.texte}`, "rgba(255,244,230,.85)", { align: "center", ls: a.ou ? 0 : 1 });
     g.restore();
   }
 }
