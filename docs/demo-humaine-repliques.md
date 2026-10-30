@@ -16,20 +16,19 @@ de l'ancienne démo n'est repris. Les chiffres à l'écran sont inventés et éc
 | 5 | M | « Avec quelques photos, je fais une très belle vidéo où je mets à l'honneur votre menu du jour, puis je la publie partout pour que tout le monde la voie. » | la vidéo en plein téléphone, puis Instagram, Facebook, Google, Le Direct |
 | 6 | P | « Mais ce n'est pas là qu'il est le plus fort. C'est juste après. » | |
 | 7 | M | « À la fin de la vidéo, chaque personne peut libérer son fantôme pour dire ce qu'elle en pense : "J'adore la vidéo", "Je passerai un jour, c'est sûr", ou "Je passe aujourd'hui". » | les trois cages apparaissent |
-| 8 | M | « Et moi, je leur réponds ! Petit à petit, je découvre leurs envies, leurs habitudes… et je leur donne une bonne raison de pousser votre porte : une surprise du chef, pour les premiers qui ouvrent ma cage dorée. » | les cages s'ouvrent, des fantômes apparaissent ; la cage dorée, les surprises découvertes |
-| 9 | M | « Et chaque jour, une nouvelle vidéo invite à rejoindre votre famille de fantômes. Elle grandit devant votre porte. » | la famille devant la porte, qui grandit |
-| 10 | P | « Et les plus fidèles gagnent la pièce d'or. Ils deviennent vos privilégiés : Mike les prévient en premier de vos menus, de vos nouveautés et de vos surprises. » | les fantômes debout sur leur pièce (bronze, argent, or) ; un message « en premier 🥇 » |
-| 11 | P | « À la fin du mois, on fait le bilan ensemble : chaque bon validé à votre comptoir, c'est un client que je vous ai amené. » | « Fin du mois » ; le bon, « Servie ✓ » ; le bilan « Objectif du mois » (chiffres inventés) |
-| 12 | M | « Et voilà : pas de blabla, pas de fausses promesses. » | |
-| 13 | M | « On n'est pas là pour vous apporter des vues. On est là pour vous apporter des clients. » | en grand |
-| 14 | P | « Alors, on commence ? » | son contact, le QR, « Revoir » |
+| 8 | M | « Et moi, je leur réponds ! Petit à petit, je découvre leurs envies, leurs habitudes… et je leur donne une bonne raison de pousser votre porte. Et pour les plus fidèles, ceux qui ouvrent en premier ma cage dorée, je les bichonne avec des petites surprises. » | les cages s'ouvrent, des fantômes apparaissent ; la cage dorée, les surprises découvertes |
+| 9 | M | « Chaque jour, une nouvelle vidéo invite à rejoindre votre famille de fantômes. Elle grandit devant votre porte. » | la famille devant la porte, qui grandit |
+| 10 | P | « À la fin du mois, on fait le bilan ensemble : chaque bon validé à votre comptoir, c'est un client que je vous ai amené. » | « Fin du mois » ; le bon, « Servie ✓ » ; le bilan « Objectif du mois » (chiffres inventés) |
+| 11 | M | « Et voilà : pas de blabla, pas de fausses promesses. » | |
+| 12 | M | « On n'est pas là pour vous apporter des vues. On est là pour vous apporter des clients. » | en grand |
+| 13 | P | « Alors, on commence ? » | son contact, le QR, « Revoir » |
 
-Durée visée : environ 1 min 10.
+Durée visée : environ 1 min 05.
 
 ## Les enregistrements
 
-- **Le propriétaire** : 1, 3, 4, 6, 10, 11, 14. **Mike** (ElevenLabs, même voix que d'habitude) : 2, 5, 7, 8, 9, 12, 13.
-- Un fichier par réplique, nommé par son numéro et sa voix : `01-p.mp3`, `02-m.mp3`, … `14-p.mp3`.
+- **Le propriétaire** : 1, 3, 4, 6, 10, 13. **Mike** (ElevenLabs, même voix que d'habitude) : 2, 5, 7, 8, 9, 11, 12.
+- Un fichier par réplique, nommé par son numéro et sa voix : `01-p.mp3`, `02-m.mp3`, … `13-p.mp3`.
 - Une pièce calme, toujours à la même distance du micro ; une demi-seconde de silence avant et après ; si une phrase
   est ratée, refaire tout le fichier plutôt qu'une coupe au milieu.
 - **Pour l'essai des deux bouches** : sa photo (de face, fond neutre) et `01-p.mp3`. Pour la vraie bouche filmée, en
@@ -40,7 +39,8 @@ Durée visée : environ 1 min 10.
 
 - **La 8** (« Et moi, je leur réponds ! ») montre ce que fera la sonnette WhatsApp (chantier 4), pas encore branchée :
   la brancher avant de démarcher en nombre.
-- **La 10** dit « de vos surprises » : aujourd'hui, la cage dorée n'a pas de priorité de palier (le premier qui
-  l'ouvre gagne) ; ce sont les bons plans qui partent d'abord aux fidèles. À mettre d'accord (le texte, ou l'app).
+- **La 8** dit « les plus fidèles, ceux qui ouvrent en premier ma cage dorée » : aujourd'hui, la cage dorée n'a pas de
+  priorité de palier (le premier qui l'ouvre gagne, nouveau venu compris). À mettre d'accord : « les plus rapides »
+  dans le texte, ou une priorité des fidèles dans l'app.
 - **Le prix** (5.5) : la promesse « vous ne payez que si je vous amène des clients » n'est plus dans le texte ; à
   remettre quand le prix sera fixé.
