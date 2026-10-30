@@ -10,7 +10,7 @@ de l'ancienne démo n'est repris. Les chiffres à l'écran sont inventés et éc
 | # | Qui | Ce qui est dit (au mot près) | À l'écran |
 |---|---|---|---|
 | 1 | P | « Bonjour ! Moi, c'est [ton prénom]. Mon métier ? Faire en sorte que les gens ne se contentent plus de regarder votre commerce sur leur téléphone… mais qu'ils poussent votre porte. » | sa carte CV arrive en haut ; un téléphone qu'on fait défiler, puis une porte qui s'ouvre |
-| 2 | M | « Merci ! Je suis Mike, votre futur fantôme préféré. » | Mike jaillit de sa cage ; la carte dit « Mon assistant » |
+| 2 | M | « Et moi ! Je suis Mike, votre futur fantôme préféré. » | Mike jaillit de sa cage ; la carte dit « Mon assistant » |
 | 3 | P | « On a 30 jours pour transformer votre communauté en clients. Je vous montre ? » | « 30 jours », un calendrier |
 | 4 | P | « Jour 1 : je viens chez vous. Quelques photos, deux ou trois questions… et Mike s'occupe du reste. » | « Jour 1 » ; l'interview « Face au fantôme » dans le téléphone |
 | 5 | M | « Avec quelques photos, je fais une très belle vidéo où je mets à l'honneur votre menu du jour, puis je la publie partout pour que tout le monde la voie. » | la vidéo en plein téléphone, puis Instagram, Facebook, Google, Le Direct |
@@ -21,11 +21,20 @@ de l'ancienne démo n'est repris. Les chiffres à l'écran sont inventés et éc
 | 10 | P | « À la fin du mois, on fait le bilan ensemble : chaque bon validé à votre comptoir, c'est un client que je vous ai amené. » | « Fin du mois » ; le bon, « Servie ✓ » ; le bilan « Objectif du mois » (chiffres inventés) |
 | 11 | M | « Et voilà : pas de blabla, pas de fausses promesses. » | |
 | 12 | M | « On n'est pas là pour vous apporter des vues. On est là pour vous apporter des clients. » | en grand |
-| 13 | P | « Alors, on commence ? » | son contact, le QR, « Revoir » |
+| 13 | P | « 1 mois gratuit, un mois pour faire mes preuves, alors, on commence ? » | son contact, le QR, « Revoir » |
 
 Durée visée : environ 1 min 05.
 
-## Les enregistrements
+## Les enregistrements — REÇUS (30 octobre)
+
+Rangés dans `outils/tour-du-fantome/recu/humain/` sous leur numéro (`01-p.mp3` … `13-p.mp3`), d'après l'ordre de
+l'archive : Mike (« Mike - Young, Fragile and unsure ») de 18 h 57 à 19 h 00, le propriétaire (« Adrien Clairon -
+Podcast Narrator ») de 19 h 08 à 19 h 10 — les deux sur ElevenLabs. La durée de chacune colle à son nombre de
+syllabes. Une de trop : `piece-dor-p-non-utilisee.mp3` (9,5 s, 19 h 09 min 40), sans doute l'ancienne réplique de la
+pièce d'or, retirée du texte. La 5 dure ce que dure la phrase sans le doublon (« une très belle vidéo » une fois) :
+à confirmer à l'écoute. Aucune transcription automatique ici (les modèles ne se téléchargent pas) : l'écoute du
+propriétaire fait foi.
+
 
 - **Le propriétaire** : 1, 3, 4, 6, 10, 13. **Mike** (ElevenLabs, même voix que d'habitude) : 2, 5, 7, 8, 9, 11, 12.
 - Un fichier par réplique, nommé par son numéro et sa voix : `01-p.mp3`, `02-m.mp3`, … `13-p.mp3`.
