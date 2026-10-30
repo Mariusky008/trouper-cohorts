@@ -889,6 +889,8 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
             plat: platDuJour,
             prix: reglages.current.prix,
             commerce,
+            ville,
+            quand: script.quand,
             famille,
             ecouter: reglages.current.ecouter,
             surProgres: setProgres,

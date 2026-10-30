@@ -7,9 +7,24 @@
  *
  * FICHIER NAVIGATEUR.
  */
-import { DEBIT_SON, debitDuMontage } from "./interview-fantome";
+import { DEBIT_SON, debitDuMontage, enteteArdoise } from "./interview-fantome";
 import { formatVideo, lecteurMuet } from "./interview-montage";
-import { HAUTEUR as H, LARGEUR as W, borne, bruitBlanc, fabriquerGrain, flouter, reverbe, sonClic, sonSignature, sonTampon, sonZoom, type Polices, type SortieSon } from "./interview-signature";
+import {
+  HAUTEUR as H,
+  LARGEUR as W,
+  borne,
+  bruitBlanc,
+  fabriquerFondCarte,
+  fabriquerGrain,
+  reverbe,
+  sonCarte,
+  sonClic,
+  sonSignature,
+  sonTampon,
+  sonZoom,
+  type Polices,
+  type SortieSon,
+} from "./interview-signature";
 import type { FamilleVideo } from "./famille";
 import type { ImagesFamille } from "./famille-video";
 import { appelDuReel, dureeDuReel, type PhraseDuReel } from "./reel-du-jour";
@@ -40,6 +55,9 @@ export async function monterReel(o: {
   plat: string;
   prix: string;
   commerce: string;
+  ville: string;
+  /** « Ce midi », « Aujourd'hui » (le `quand` de son script). */
+  quand: string;
   /** Sa famille : le vrai stock de la cage dorée, son lien, son fantôme. */
   famille: { d: FamilleVideo; im: ImagesFamille } | null;
   /** « Écris FANTÔME en commentaire » : seulement si l'envoi automatique du lien est branché sur son compte. */
@@ -63,12 +81,6 @@ export async function monterReel(o: {
     chargerCageDoree(),
     phrase && o.prise?.url ? lecteurMuet(o.prise.url) : Promise.resolve(null),
   ]);
-  let fond: HTMLCanvasElement | null = null;
-  try {
-    if (photo) fond = flouter(photo, photo.naturalWidth, photo.naturalHeight);
-  } catch {
-    fond = null;
-  }
   // SA VIDÉO, CALÉE SUR LE DÉBUT DE SA PHRASE avant de commencer (un lecteur qui cherche met du temps)
   if (video && phrase && video.videoWidth) {
     await new Promise<void>((ok) => {
@@ -78,11 +90,13 @@ export async function monterReel(o: {
       video.currentTime = phrase.de;
     });
   }
-  const im: ImagesReel = { photo, fond, cage, hote: o.famille?.im.hote ?? null, grain: fabriquerGrain() };
+  const im: ImagesReel = { photo, fondCarte: fabriquerFondCarte(), cage, hote: o.famille?.im.hote ?? null, grain: fabriquerGrain() };
+  const e = enteteArdoise(o.commerce, o.quand);
   const scene: SceneReel = {
     plat: o.plat,
     prix: o.prix,
-    commerce: o.commerce,
+    entete: `${e.avant}${/['’]$/.test(e.avant) ? "" : " "}${e.nom}`.toLocaleUpperCase("fr-FR"),
+    nomCadre: o.ville.trim() ? `${o.commerce} · ${o.ville.trim()}` : o.commerce,
     phrase,
     appel: appelDuReel({ surprises: o.famille?.d.surprises ?? null, motCle: o.motCle }),
     lien: o.famille?.d.lien ?? null,
@@ -163,11 +177,16 @@ export async function monterReel(o: {
     s.start(B0, phrase.de, phrase.a - phrase.de);
     sources.push(s);
   }
+  // L'APPEL : la carte arrive en coup de fouet, la cage tremble, il est libre, le chemin se pose
   const C0 = T0 + T.appel;
   niveau(C0, 0.3, 0.2);
-  sonClic(S, C0);
-  sonTampon(S, C0 + (scene.appel.cage ? 1.05 : 0.4));
-  sonSignature(S, C0 + (scene.appel.cage ? 1.6 : 0.9));
+  sonCarte(S, C0);
+  if (scene.appel.cage) {
+    sonTampon(S, C0 + 0.55);
+    sonZoom(S, C0 + 1.4);
+  }
+  sonClic(S, C0 + (scene.appel.cage ? 1.75 : 0.75));
+  sonSignature(S, C0 + (scene.appel.cage ? 2.1 : 1.1));
   niveau(T0 + TOUT - 0.6, 0.0001, 0.6);
 
   /* ─── la boucle : l'horloge du son mène, l'image suit ─── */

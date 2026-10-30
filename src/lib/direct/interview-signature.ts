@@ -240,7 +240,7 @@ export function largeurTexte(g: CanvasRenderingContext2D, t: string, police: str
   return w;
 }
 /** La plus grande taille (pas de `pas`) où toutes les lignes tiennent dans `largeur`. */
-function tailleQuiTient(g: CanvasRenderingContext2D, lignes: string[], police: (taille: number) => string, max: number, largeur: number, ls = 0, pas = 4) {
+export function tailleQuiTient(g: CanvasRenderingContext2D, lignes: string[], police: (taille: number) => string, max: number, largeur: number, ls = 0, pas = 4) {
   let taille = max;
   while (taille > 20 && lignes.some((l) => largeurTexte(g, l, police(taille), ls) > largeur)) taille -= pas;
   return taille;

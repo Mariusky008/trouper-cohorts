@@ -300,12 +300,22 @@ const reel = await p.evaluate(
     const sansSon = r.phraseDuReel([prise([bonjour, magret], { audio: false })], forts);
     const hesite = r.phraseDuReel([prise([magret], { coupes: [{ de: 4.5, a: 5 }] })], forts);
     const appels = [r.appelDuReel({ surprises: 15 }), r.appelDuReel({ surprises: 1 }), r.appelDuReel({ surprises: 0 }), r.appelDuReel({ surprises: 3, motCle: "fantôme" })];
-    // LES IMAGES, DESSINÉES
-    const P = { affiche: "Impact, sans-serif", texte: getComputedStyle(document.body).fontFamily || "sans-serif", serif: "Georgia, serif" };
+    // LES IMAGES, DESSINÉES — avec les polices de l'app, comme `polices()` de l'interview les lit
+    const lire = (variable, repli) => {
+      const sonde = document.createElement("span");
+      sonde.style.fontFamily = `var(${variable}), ${repli}`;
+      document.body.appendChild(sonde);
+      const f = getComputedStyle(sonde).fontFamily || repli;
+      sonde.remove();
+      return f;
+    };
+    const P = { affiche: lire("--font-affiche", "Impact, sans-serif"), texte: lire("--font-clikme", "sans-serif"), serif: lire("--font-enseigne", "Georgia, serif") };
+    await Promise.all([`100px ${P.affiche}`, `800 23px ${P.texte}`, `600 34px ${P.texte}`, `900 56px ${P.texte}`].map((f) => document.fonts.load(f).catch(() => null)));
     const charge = (src) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; });
     const photo = await charge("/direct/table/magret/3.jpg");
     const famIm = await fv.chargerFamilleVideo(d);
-    const im = { photo, fond: null, cage: await des.chargerCageDoree(), hote: famIm.hote, grain: null };
+    const sig = await import("/__essai/interview-signature.js");
+    const im = { photo, fondCarte: sig.fabriquerFondCarte(), cage: await des.chargerCageDoree(), hote: famIm.hote, grain: null };
     const toile = document.createElement("canvas");
     toile.width = 720;
     toile.height = 1280;
@@ -321,15 +331,15 @@ const reel = await p.evaluate(
       des.dessinerReel(g, P, scene, im, t, des.morceauxDuReel(scene.phrase));
       if (nom) images[nom] = toile.toDataURL("image/png");
     };
-    const scene = { plat: "Magret au miel", prix: "18 €", commerce: "Chez Bergine", phrase: choix, appel: r.appelDuReel({ surprises: d.surprises }), lien: d.lien, video: null };
+    const scene = { plat: "Magret au miel", prix: "18 €", entete: "CE MIDI CHEZ BERGINE", nomCadre: "Chez Bergine · Dax", phrase: choix, appel: r.appelDuReel({ surprises: d.surprises }), lien: d.lien, video: null };
     const T = des.tempsDuReel(choix);
     dessiner(scene, 1.4, "accroche");
     for (const u of [0.5, 1.2, 2.0, 2.8]) dessiner(scene, T.phrase + u, u === 2.0 ? "phrase" : null);
-    for (const u of [0.3, 0.8]) dessiner(scene, T.appel + u, u === 0.3 ? "cage" : null);
-    dessiner(scene, T.appel + 2.6, "appel");
+    for (const u of [0.3, 0.8, 1.0, 1.55]) dessiner(scene, T.appel + u, u === 1.0 ? "cage" : u === 1.55 ? "libre" : null);
+    dessiner(scene, T.appel + 2.9, "appel");
     const avecCage = [...ecrits];
     ecrits.clear();
-    dessiner({ ...scene, appel: r.appelDuReel({ surprises: null }) }, T.appel + 2.6, "sans");
+    dessiner({ ...scene, appel: r.appelDuReel({ surprises: null }) }, T.appel + 2.9, "sans");
     return {
       choix: choix && { k: choix.k, de: choix.de, a: choix.a, mots: choix.mots.map((w) => w.m).join(" ") },
       sansSon,
@@ -342,6 +352,7 @@ const reel = await p.evaluate(
       images,
       photo: Boolean(photo),
       cage: Boolean(im.cage),
+      polices: P,
     };
   },
   { d: demo },
@@ -351,13 +362,17 @@ ok(reel.choix?.mots.startsWith("Notre magret au miel") && reel.choix.de < 3.4 &&
 ok(reel.sansSon === null && reel.hesite === null, "jamais sans son son, jamais une phrase où il hésite");
 ok(reel.duree >= 7 && reel.duree <= 12 && reel.dureeSans >= 6 && reel.dureeSans <= 8, `une dizaine de secondes (${reel.duree.toFixed(1)} s ; ${reel.dureeSans.toFixed(1)} s sans phrase)`);
 const [a15, a1, a0, aMot] = reel.appels;
-ok(a15.cage && a15.haut === "15 surprises du chef" && a15.sous === "aujourd’hui · une par personne" && a1.haut === "1 surprise du chef", `le vrai stock : « ${a15.haut} », « ${a1.haut} »`);
-ok(!a0.cage && a0.haut === "Rejoins ma famille" && a0.bas === "Lien dans ma bio", "plus de surprise : pas de cage dorée, pas de chiffre inventé");
+ok(a15.cage && a15.lignes.join(" ") === "LES 15 PREMIERS" && a15.accent === "15" && a15.sous === "qui ouvrent ma cage dorée gagnent une surprise.", `le vrai stock, dit comme la règle : « ${a15.lignes.join(" ")} ${a15.sous} »`);
+ok(a1.lignes.join(" ") === "LE PREMIER" && a1.sous === "qui ouvre ma cage dorée gagne une surprise.", `une seule : « ${a1.lignes.join(" ")} ${a1.sous} »`);
+ok(![a15, a1].some((x) => /par personne|aujourd/i.test(x.sous + x.etiquette)), "plus de « aujourd'hui · une par personne »");
+ok(!a0.cage && a0.lignes.join(" ") === "REJOINS LA FAMILLE" && a0.bas === "Lien dans ma bio", "plus de surprise : pas de cage dorée, pas de chiffre inventé");
 ok(aMot.bas === "Écris FANTÔME en commentaire" && a15.bas === "Lien dans ma bio", "« Écris FANTÔME » seulement avec l'envoi automatique du lien branché ; sinon sa bio");
 ok(reel.photo && reel.cage, "la photo de son plat et la cage dorée se chargent");
-ok(/MAGRET ?\|? ?AU MIEL/.test(reel.avecCage.join("|")) && ["18 €", "Chez Bergine", "15 surprises du chef", "aujourd’hui · une par personne", "Lien dans ma bio", "clikme.fr/f/ton-commerce"].every((t) => reel.avecCage.includes(t)), `le Reel : son plat, son prix, la cage dorée et son vrai stock, le chemin (${reel.avecCage.join(" | ").slice(0, 240)})`);
+ok(/MAGRET ?\|? ?AU MIEL/.test(reel.avecCage.join("|")) && ["18 €", "CE MIDI CHEZ BERGINE", "FACE AU FANTÔME", "Chez Bergine · Dax", "LA SURPRISE DU CHEF", "LES ", "15", "PREMIERS", "Lien dans ma bio", "clikme.fr/f/ton-commerce"].every((t) => reel.avecCage.includes(t)), `le Reel : son plat, son prix, la signature de l'émission, les 15 premiers, le chemin (${reel.avecCage.join(" | ").slice(0, 260)})`);
+ok(reel.avecCage.join(" ").includes("qui ouvrent ma cage dorée gagnent une surprise."), "la phrase dessous : qui ouvrent ma cage dorée gagnent une surprise");
+ok(/anton/i.test(reel.polices.affiche) && /poppins/i.test(reel.polices.texte), `les polices de l'interview (${reel.polices.affiche} · ${reel.polices.texte})`);
 ok(reel.avecCage.some((t) => /magret/i.test(t) && t !== "MAGRET AU MIEL"), "ses mots s'allument pendant sa phrase");
-ok(reel.sansCage.includes("Rejoins ma famille") && !reel.sansCage.some((t) => /surprise/i.test(t)), "sans surprise du jour : son fantôme invite, aucune surprise annoncée");
+ok(reel.sansCage.includes("REJOINS") && reel.sansCage.includes("Libère ton fantôme : je te gâte !") && !reel.sansCage.some((t) => /surprise/i.test(t)), "sans surprise du jour : son fantôme invite, aucune surprise annoncée");
 ok(![...reel.avecCage, ...reel.sansCage].some((t) => /exemple/i.test(t)), "jamais « exemple » à l'écran");
 
 // 🥖 UNE BOULANGERIE A SES MOTS : sa fournée, pas un plat du jour.

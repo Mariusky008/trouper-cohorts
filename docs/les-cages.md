@@ -338,10 +338,13 @@ s'ouvrent et se ferment pareil, sans rien à choisir (`src/lib/direct/famille-vi
   les règles, `reel-dessin.ts` pour l'image, `reel-montage.ts` pour l'enregistrement) : l'accroche (la photo de son
   plat qui arrive de près, son plat en géant, son prix) ; **une phrase qu'il a dite**, avec sa voix et ses mots qui
   s'allument (`phraseDuReel` : celle qui nomme son plat ou son prix d'abord, jamais une phrase où il hésite, jamais
-  écrite à sa place ; sans son, le Reel se fait sur sa photo) ; puis **la cage dorée** qui tombe, tremble et se
-  soulève sur un cadeau : « 3 surprises du chef · aujourd'hui · une par personne » — **le vrai stock** du jour
-  (`FamilleVideo.surprises`, ce qu'il reste) ; sans surprise aujourd'hui, pas de cage ni de chiffre : son fantôme
-  et « Rejoins ma famille ». Le chemin : « Lien dans ma bio » (« Écris FANTÔME en commentaire » seulement quand
+  écrite à sa place ; sans son, le Reel se fait sur sa photo) ; puis **l'appel, comme une carte de question** :
+  « LA SURPRISE DU CHEF · LES 15 PREMIERS qui ouvrent ma cage dorée gagnent une surprise. » — **le vrai stock** du
+  jour (`FamilleVideo.surprises`, ce qu'il reste), dit comme la règle : premier arrivé, premier servi. Son fantôme
+  pousse dans la cage dorée, elle s'envole, il est libre sous une pluie d'or, avec un cadeau. Sans surprise
+  aujourd'hui, pas de cage ni de chiffre : « REJOINS LA FAMILLE · Libère ton fantôme : je te gâte ! ». Le même style
+  que l'interview (Anton, Poppins, Playfair, étiquettes roses, cadre aux coins roses, fond des cartes), et tout
+  dans la zone sûre d'un Reel (rien sous la légende d'Instagram). Le chemin : « Lien dans ma bio » (« Écris FANTÔME en commentaire » seulement quand
   l'envoi automatique du lien en message privé sera branché sur son compte : `motCle`, pas encore utilisé).
   Seulement avec sa famille (commerce client ou démonstration). « Publier partout » : l'interview dans Le Direct et
   sur sa page, **le Reel sur ses réseaux** (`videoReseaux`) ; s'il n'a pas pu partir, ses réseaux prennent

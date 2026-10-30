@@ -9,15 +9,16 @@
  *   · SA PHRASE : une phrase qu'il a dite, avec sa voix et ses mots qui s'allument
  *     (`phraseDuReel` : celle qui nomme son plat ou son prix d'abord) — jamais une phrase écrite
  *     à sa place ;
- *   · L'APPEL (`REEL.appel`) : la cage dorée qui s'ouvre, avec le VRAI stock de ses surprises du
- *     jour (`appelDuReel` : sans surprise aujourd'hui, pas de chiffre inventé), et le chemin.
+ *   · L'APPEL (`REEL.appel`) : « LES 15 PREMIERS qui ouvrent ma cage dorée gagnent une surprise », avec
+ *     le VRAI stock de ses surprises du jour (`appelDuReel` : sans surprise aujourd'hui, pas de chiffre
+ *     inventé), la cage qui libère son fantôme, et le chemin.
  *
  * FICHIER PARTAGÉ (navigateur et essais) : aucun accès au téléphone ni à la base ici.
  */
 import { motsDesSousTitres, type MotDit, type SousTitre } from "./interview-fantome";
 
 /** Les temps du Reel, en secondes. Sa phrase dure ce qu'elle dure, entre `phraseMin` et `phraseMax`. */
-export const REEL = { accroche: 2.2, appel: 2.9, phraseMin: 1.6, phraseMax: 4.8, accrocheSansPhrase: 4.2 } as const;
+export const REEL = { accroche: 2.4, appel: 3.3, phraseMin: 1.6, phraseMax: 4.8, accrocheSansPhrase: 4.2 } as const;
 
 /** Sa phrase : la prise `k`, de `de` à `a` (en secondes depuis le début de la prise), et ses mots. */
 export type PhraseDuReel = { k: number; de: number; a: number; mots: MotDit[] };
@@ -78,18 +79,21 @@ export function phraseDuReel(prises: readonly PriseDuReel[], forts: ((mot: strin
 /** La durée du Reel : l'accroche, sa phrase (s'il y en a une), l'appel. */
 export const dureeDuReel = (phrase: PhraseDuReel | null) => (phrase ? REEL.accroche + (phrase.a - phrase.de) : REEL.accrocheSansPhrase) + REEL.appel;
 
+/** L'appel, prêt à dessiner : la petite étiquette rose, les lignes en géant (`accent` en rose), la phrase dessous. */
+export type AppelDuReel = { cage: boolean; etiquette: string; lignes: string[]; accent: string | null; sous: string; bas: string };
+
 /**
- * L'APPEL DE LA FIN. `surprises` : ce qu'il reste VRAIMENT dans sa cage dorée aujourd'hui (`null` ou 0 :
- * pas de surprise, la cage ne promet rien). `motCle` : seulement quand l'envoi automatique du lien en
- * message privé est branché sur son compte (« Écris FANTÔME en commentaire ») — sinon, sa bio.
+ * L'APPEL DE LA FIN, comme une carte de question de l'interview. `surprises` : ce qu'il reste VRAIMENT dans
+ * sa cage dorée aujourd'hui — « LES 15 PREMIERS qui ouvrent ma cage dorée gagnent une surprise » : c'est la
+ * règle (premier arrivé, premier servi), dite simplement. `null` ou 0 : pas de cage, pas de chiffre — son
+ * fantôme invite dans la famille. `motCle` : seulement quand l'envoi automatique du lien en message privé est
+ * branché sur son compte (« Écris FANTÔME en commentaire ») — sinon, sa bio.
  */
-export function appelDuReel(o: { surprises: number | null; motCle?: string | null }): { cage: boolean; haut: string; sous: string; bas: string } {
+export function appelDuReel(o: { surprises: number | null; motCle?: string | null }): AppelDuReel {
   const n = Math.max(0, Math.floor(o.surprises ?? 0));
   const mot = o.motCle?.trim().toLocaleUpperCase("fr-FR");
-  return {
-    cage: n > 0,
-    haut: n > 0 ? `${n} surprise${n > 1 ? "s" : ""} du chef` : "Rejoins ma famille",
-    sous: n > 0 ? "aujourd’hui · une par personne" : "de fantômes : je te gâte !",
-    bas: mot ? `Écris ${mot} en commentaire` : "Lien dans ma bio",
-  };
+  const bas = mot ? `Écris ${mot} en commentaire` : "Lien dans ma bio";
+  if (n > 1) return { cage: true, etiquette: "LA SURPRISE DU CHEF", lignes: [`LES ${n}`, "PREMIERS"], accent: String(n), sous: "qui ouvrent ma cage dorée gagnent une surprise.", bas };
+  if (n === 1) return { cage: true, etiquette: "LA SURPRISE DU CHEF", lignes: ["LE", "PREMIER"], accent: null, sous: "qui ouvre ma cage dorée gagne une surprise.", bas };
+  return { cage: false, etiquette: "MA FAMILLE DE FANTÔMES", lignes: ["REJOINS", "LA FAMILLE"], accent: null, sous: "Libère ton fantôme : je te gâte !", bas };
 }
