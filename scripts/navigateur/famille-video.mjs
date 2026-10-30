@@ -215,25 +215,31 @@ const dessiner = async (d, nom) =>
         return max - min;
       };
       const contrastes = [];
-      for (const u of [0.2, 1.2, 2.2, 3.0]) {
-        m.dessinerOuvertureFamille(g, P, d, im, u, null);
+      // LE BANDEAU, PAR-DESSUS UNE IMAGE DE SA VIDÉO (ici, un plan gris)
+      const plan = (u) => {
+        g.fillStyle = "#6B5A50";
+        g.fillRect(0, 0, 720, 1280);
+        m.dessinerBandeauFamille(g, P, im, u);
+      };
+      for (const u of [0.9, 1.6, 2.4]) {
+        plan(u);
         contrastes.push(varie());
       }
-      m.dessinerOuvertureFamille(g, P, d, im, 1.6, null);
+      plan(1.6);
       images.ouverture = toile.toDataURL("image/png");
-      for (const u of [0.5, 1.5, 2.6, 3.6, 4.6, 5.6, 6.6, 7.6]) {
+      for (const u of [0.5, 1.5, 2.6, 3.3, 4.0, 4.5]) {
         m.dessinerFinFamille(g, P, d, im, u, null);
         contrastes.push(varie());
       }
       m.dessinerFinFamille(g, P, d, im, 1.9, null);
       images.fin = toile.toDataURL("image/png");
-      m.dessinerFinFamille(g, P, d, im, 3.4, null);
+      m.dessinerFinFamille(g, P, d, im, 1.2, null);
       images.fin2 = toile.toDataURL("image/png");
-      m.dessinerFinFamille(g, P, d, im, 6.4, null);
+      m.dessinerFinFamille(g, P, d, im, 4.3, null);
       images.cages = toile.toDataURL("image/png");
-      m.dessinerFinFamille(g, P, d, im, 8.4, null);
+      m.dessinerFinFamille(g, P, d, im, m.FIN_FAMILLE, null);
       const noirFinal = varie();
-      return { nom, ecrits: [...ecrits], images, contrastes, noirFinal, hote: Boolean(im.hote), fantomes: im.fantomes.filter(Boolean).length, cages: im.cages.filter(Boolean).length, duree: [m.OUVERTURE_FAMILLE, m.FIN_FAMILLE] };
+      return { nom, ecrits: [...ecrits], images, contrastes, noirFinal, hote: Boolean(im.hote), fantomes: im.fantomes.filter(Boolean).length, cages: im.cages.filter(Boolean).length, duree: [m.OUVERTURE_FAMILLE, m.BANDEAU_FAMILLE, m.FIN_FAMILLE] };
     },
     { d, nom },
   );
@@ -247,7 +253,7 @@ const ecrit = vrai.ecrits.join(" | ");
 /** Le texte écrit, bout à bout (un petit mot peut tenir sur deux lignes). */
 const suite = (r) => r.ecrits.join(" ").replace(/[«»]/g, " ").replace(/\s+/g, " ");
 ok(vrai.hote && vrai.fantomes === 4 && vrai.cages === 3, `ses images : son fantôme, les 4 fantômes, les 3 cages (${vrai.hote}/${vrai.fantomes}/${vrai.cages})`);
-ok(["Rejoins ma famille", "de fantômes !", "Tu m’aides à me faire connaître,", "je te gâte !", "Rejoins la famille à la fin de la vidéo ↓"].every((t) => vrai.ecrits.includes(t)), "le début : « Rejoins ma famille de fantômes ! Tu m'aides à me faire connaître, je te gâte ! »");
+ok(["Rejoins ma famille de fantômes !", "Je te gâte : lien dans ma bio"].every((t) => vrai.ecrits.includes(t)), "le début : le bandeau « Rejoins ma famille de fantômes ! · Je te gâte : lien dans ma bio », par-dessus sa vidéo");
 ok(["LA FAMILLE D’HIER", "4 fantômes", "Record battu !"].every((t) => vrai.ecrits.includes(t)), `la fin : la famille d'hier, 4 fantômes, record battu (${ecrit.slice(0, 200)})`);
 ok(suite(vrai).includes("Le meilleur pain du quartier") && vrai.ecrits.includes("Léa · fantôme n°1"), "Léa s'avance avec son mot, son prénom et son numéro");
 ok(!ecrit.includes("Hugo"), "Hugo, sans petit mot public, ne s'avance pas : son fantôme dans la foule");
@@ -266,8 +272,9 @@ const demo = await p.evaluate(async () => (await import("/__essai/famille.js")).
 const d = await dessiner(demo, "demo");
 enregistrer(d);
 ok(d.fantomes === 12 && d.ecrits.includes("23 fantômes") && d.ecrits.includes("Record : 29") && d.ecrits.includes("Léa · fantôme n°12"), `la démonstration : sa famille inventée (${d.fantomes} fantômes)`);
-ok(suite(d).includes("Merci pour l’accueil de samedi !") && !d.ecrits.some((x) => /^[»!?;:]/.test(x.trim())), "un petit mot sur deux lignes : jamais un « » » ni un « ! » seul au début d'une ligne");
-ok(vrai.duree[0] === 3.4 && vrai.duree[1] === 8.4, `le début dure ${vrai.duree[0]} s, la fin ${vrai.duree[1]} s`);
+ok(suite(d).includes("Ma nouvelle adresse préférée") && !d.ecrits.some((x) => /^[»!?;:]/.test(x.trim())), "le petit mot de la démonstration : jamais un « » » ni un « ! » seul au début d'une ligne");
+ok(!suite(d).includes("Merci pour l’accueil de samedi"), "une fin resserrée : un seul fantôme s'avance");
+ok(vrai.duree[0] === 0 && vrai.duree[1] === 3 && vrai.duree[2] === 4.8, `le produit d'abord : pas d'écran d'ouverture, un bandeau de ${vrai.duree[1]} s, une fin de ${vrai.duree[2]} s`);
 
 // 🥖 UNE BOULANGERIE A SES MOTS : sa fournée, pas un plat du jour.
 const prop = await (await fetch(`${BASE}/api/site-internet/pro/proposition`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: SLUG, token: "jeton-test", action: "lire" }) })).json();

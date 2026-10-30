@@ -27,6 +27,7 @@ import { DEBIT_SON, debitDuMontage, enDeuxLignes } from "@/lib/direct/interview-
 import { chargerElements, formatVideo, lecteurMuet } from "@/lib/direct/interview-montage";
 import type { FamilleVideo } from "@/lib/direct/famille";
 import {
+  dessinerBandeauFamille,
   dessinerFinFamille,
   dessinerOuvertureFamille,
   FIN_FAMILLE,
@@ -386,10 +387,10 @@ export async function monterEpisode(o: {
     boucle.buffer = el.musique;
     boucle.loop = true;
     boucle.connect(musique);
-    boucle.start(fam ? TD : T0 + CLIC);
+    boucle.start(fam && OUV ? TD : T0 + CLIC);
     sources.push(boucle);
   }
-  if (fam) {
+  if (fam && OUV) {
     niveau(TD, MUSIQUE.pleine, 0.15);
     sonsOuvertureFamille(S, TD);
   }
@@ -480,7 +481,7 @@ export async function monterEpisode(o: {
       }
       const t = ctx.currentTime - T0;
       if (t >= TOTAL + FINF) return fini();
-      if (fam && (t < 0 || t >= TOTAL)) {
+      if (fam && ((OUV && t < 0) || t >= TOTAL)) {
         if (t < 0) dessinerOuvertureFamille(c2d, P, fam.d, fam.im, t + OUV, fondTitre);
         else dessinerFinFamille(c2d, P, fam.d, fam.im, t - TOTAL, fin?.fond ?? fondTitre);
         dessinerGrain(c2d, grain, t);
@@ -584,6 +585,8 @@ export async function monterEpisode(o: {
           c2d.fillRect(0, 0, W, H);
         }
       }
+      // 👻 LE BANDEAU « REJOINS MA FAMILLE », PAR-DESSUS SES PREMIÈRES SECONDES
+      if (fam) dessinerBandeauFamille(c2d, P, fam.im, t);
       dessinerGrain(c2d, grain, t);
       o.surProgres?.(borne((t + OUV) / TOUT));
       requestAnimationFrame(tic);

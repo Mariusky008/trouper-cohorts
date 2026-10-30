@@ -326,12 +326,14 @@ palier : le premier qui ouvre tire. Le comptoir voit qui a pris quoi (prénom, n
 **🎬 La famille dans toutes ses vidéos (chantier 5)** : le film photo du reporter, l'interview et l'épisode
 s'ouvrent et se ferment pareil, sans rien à choisir (`src/lib/direct/famille-video.ts`) :
 
-- **Le début** (3,4 s) : son fantôme qui salue et la carte rose « Rejoins ma famille de fantômes ! Tu m'aides à me
-  faire connaître, je te gâte ! », puis « Rejoins la famille à la fin de la vidéo ↓ ».
-- **La fin** (8,4 s), après la carte postale : « La famille d'hier · 23 fantômes · Record : 29 » (ou « Record battu
-  ! ») ; ses fantômes, chacun avec la couleur de son palier ; deux qui s'avancent avec leur petit mot, leur prénom et
-  leur numéro ; puis les trois cages, « Libère ton fantôme », « Lien dans ma bio » et son lien. Hier vide : la famille
-  de la semaine. Famille encore vide : son fantôme invite à être le tout premier.
+- **Le début : le produit d'abord.** La vidéo s'ouvre directement sur ses images ; l'invitation est un **bandeau
+  rose par-dessus** pendant les 3 premières secondes (`BANDEAU_FAMILLE`, `dessinerBandeauFamille`) : son fantôme,
+  « Rejoins ma famille de fantômes ! » et « Je te gâte : lien dans ma bio ». Plus d'écran d'ouverture
+  (`OUVERTURE_FAMILLE = 0`, l'ancienne carte reste dans le code si on veut y revenir).
+- **La fin** (4,8 s, `FIN_FAMILLE`), après la carte postale : « La famille d'hier · 23 fantômes · Record : 29 » (ou
+  « Record battu ! ») ; ses fantômes, chacun avec la couleur de son palier ; un qui s'avance avec son petit mot, son
+  prénom et son numéro ; puis les trois cages, « Libère ton fantôme », « Lien dans ma bio » et son lien. Hier vide :
+  la famille de la semaine. Famille encore vide : son fantôme invite à être le tout premier.
 - **Le prénom ne passe jamais sans son accord** : la vidéo part sur ses réseaux, bien plus public que sa page. Le
   fantôme y est toujours (sans rien qui dise qui c'est) ; le prénom, le numéro et le petit mot seulement pour qui a
   coché, sur la fiche de la page, « Mon prénom et mon petit mot peuvent apparaître dans ses vidéos » (une case jamais

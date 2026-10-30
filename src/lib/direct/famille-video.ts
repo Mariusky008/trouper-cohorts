@@ -43,11 +43,17 @@ import {
 } from "./interview-signature";
 import { lookDe } from "./look";
 
-/** La durée de l'ouverture, et celle de la fin (en secondes). */
-export const OUVERTURE_FAMILLE = 3.4;
-export const FIN_FAMILLE = 8.4;
+/**
+ * LE PRODUIT D'ABORD (le retour d'un testeur, 29 octobre) : plus d'écran d'ouverture à elle seule — c'est ce qui fait
+ * défiler un Reel. `OUVERTURE_FAMILLE` vaut 0 ; l'invitation est un **bandeau** par-dessus les premières secondes de
+ * sa vidéo (`BANDEAU_FAMILLE`, `dessinerBandeauFamille`). Et la fin est resserrée : la famille d'hier (un fantôme
+ * s'avance avec son mot), puis les cages et son lien.
+ */
+export const OUVERTURE_FAMILLE = 0;
+export const BANDEAU_FAMILLE = 3.0;
+export const FIN_FAMILLE = 4.8;
 /** La fin : la famille d'hier, puis les cages. */
-const SCENE_CAGES = 4.4;
+const SCENE_CAGES = 2.3;
 
 const COULEUR_GRADE: Record<Grade, string> = { bronze: "#D49B60", argent: "#DDE2EA", or: "#F2C762" };
 /** Le bord de sa pièce, plus sombre. */
@@ -224,6 +230,32 @@ export function dessinerOuvertureFamille(g: CanvasRenderingContext2D, P: Polices
   noir(g, (u - (OUVERTURE_FAMILLE - 0.3)) / 0.3);
 }
 
+/**
+ * 👻 LE BANDEAU, PAR-DESSUS SA VIDÉO : son fantôme et « Rejoins ma famille de fantômes ! · Je te gâte : lien dans ma
+ * bio », en haut, pendant les premières secondes (`u` : depuis le début de la vidéo). Le plan du commerçant reste
+ * entier dessous : c'est lui qui retient.
+ */
+export function dessinerBandeauFamille(g: CanvasRenderingContext2D, P: Polices, im: ImagesFamille, u: number) {
+  if (u < 0 || u >= BANDEAU_FAMILLE) return;
+  const entre = sortie((u - 0.35) / 0.4);
+  const sort = sortie((u - (BANDEAU_FAMILLE - 0.4)) / 0.4);
+  const v = entre * (1 - sort);
+  if (v <= 0) return;
+  g.save();
+  g.globalAlpha = borne(v * 1.4);
+  g.translate(0, mix(-140, 0, v));
+  g.fillStyle = "rgba(0,0,0,.28)";
+  rectArrondi(g, 46, 106, 640, 116, 58);
+  g.fill();
+  g.fillStyle = ROSE;
+  rectArrondi(g, 40, 98, 640, 116, 58);
+  g.fill();
+  enPied(g, im.hote, 104, 206, 104, 0.05 * Math.sin(u * 4));
+  texte(g, "Rejoins ma famille de fantômes !", 400, 148, `800 31px ${P.texte}`, "#FFFFFF", { align: "center" });
+  texte(g, "Je te gâte : lien dans ma bio", 400, 188, `700 25px ${P.texte}`, CREME, { align: "center" });
+  g.restore();
+}
+
 /** Ses sons : un clic quand la carte tombe, un tampon sous « à la fin de la vidéo ». `t0` : le début de l'ouverture. */
 export function sonsOuvertureFamille(S: SortieSon, t0: number) {
   sonClic(S, t0 + 0.22);
@@ -249,7 +281,7 @@ const PLACES: [number, number, number][] = [
   [625, 845, 0.62],
 ];
 /** Ceux qui s'avancent : quand, et combien de temps. */
-const AVANCEE = { debut: 1.0, duree: 1.55, ecart: 1.65 };
+const AVANCEE = { debut: 0.5, duree: 1.5, ecart: 1.65 };
 
 export function dessinerFinFamille(g: CanvasRenderingContext2D, P: Polices, d: FamilleVideo, im: ImagesFamille, u: number, fond: HTMLCanvasElement | null) {
   fondDe(g, fond, 0.68);
@@ -307,7 +339,7 @@ function familleDHier(g: CanvasRenderingContext2D, P: Polices, d: FamilleVideo, 
   g.restore();
 
   // CEUX QUI S'AVANCENT : ceux qui ont un petit mot (et l'ont accepté), deux au plus
-  const avancent = d.fantomes.map((f, k) => ({ f, k })).filter((x) => x.f.mot).slice(0, 2);
+  const avancent = d.fantomes.map((f, k) => ({ f, k })).filter((x) => x.f.mot).slice(0, 1);
   const actif = avancent.findIndex((_, j) => {
     const v = u - (AVANCEE.debut + j * AVANCEE.ecart);
     return v >= 0 && v < AVANCEE.duree;
@@ -440,7 +472,7 @@ function lesCages(g: CanvasRenderingContext2D, P: Polices, d: FamilleVideo, im: 
 /** Ses sons : un clic à l'entrée, un tic à chaque pas en avant, un tampon sur les cages. `t0` : le début de la fin. */
 export function sonsFinFamille(S: SortieSon, t0: number, d: FamilleVideo) {
   sonClic(S, t0 + 0.05);
-  const avancent = d.fantomes.filter((f) => f.mot).slice(0, 2).length;
+  const avancent = d.fantomes.filter((f) => f.mot).slice(0, 1).length;
   for (let j = 0; j < avancent; j++) sonTic(S, t0 + AVANCEE.debut + j * AVANCEE.ecart);
   sonClic(S, t0 + SCENE_CAGES);
   sonTampon(S, t0 + SCENE_CAGES + 0.95);

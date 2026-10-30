@@ -101,6 +101,7 @@ import { BRODERIE, arcsDuNom, lignesDuNom, type Pt } from "@/lib/direct/fantome-
 import { fichierEnregistre } from "@/lib/direct/voix-fantome";
 import type { FamilleVideo } from "@/lib/direct/famille";
 import {
+  dessinerBandeauFamille,
   dessinerFinFamille,
   dessinerOuvertureFamille,
   FIN_FAMILLE,
@@ -1504,7 +1505,7 @@ export async function monter(o: {
   /* ─── le plan ─── */
   // LE RESTAURANT : après le titre, on soulève la cloche, puis viennent les questions
   const segments: Segment[] = [
-    ...(fam ? [{ genre: "ouverture" as const }] : []),
+    ...(fam && OUVERTURE_FAMILLE ? [{ genre: "ouverture" as const }] : []),
     { genre: "titre" },
     ...(decor ? [{ genre: "cloche" as const }] : []),
     ...prises.map((_, k) => ({ genre: "prise" as const, k })),
@@ -1787,7 +1788,7 @@ export async function monter(o: {
 
   /* ─── la boucle : l'horloge du son mène, l'image suit ─── */
   if (ctx.state !== "running") await ctx.resume().catch(() => {});
-  if (fam) dessinerOuvertureFamille(c2d, P, fam.d, fam.im, 0, fond);
+  if (fam && OUVERTURE_FAMILLE) dessinerOuvertureFamille(c2d, P, fam.d, fam.im, 0, fond);
   else dessinerTitreA(0);
   rec.start(1000);
   const T0 = ctx.currentTime + 0.12;
@@ -1797,10 +1798,10 @@ export async function monter(o: {
     boucle.loop = true;
     boucle.connect(musique);
     // LE PREMIER TEMPS TOMBE SUR LE CLIC (ou dès l'ouverture de la famille)
-    boucle.start(fam ? T0 : T0 + TITRE.clic);
+    boucle.start(fam && OUVERTURE_FAMILLE ? T0 : T0 + TITRE.clic);
     sources.push(boucle);
   }
-  if (fam) {
+  if (fam && OUVERTURE_FAMILLE) {
     niveau(T0, MUSIQUE.pleine, 0.15);
     sonsOuvertureFamille(S, T0);
   } else sonsTitre(T0);
@@ -1882,6 +1883,8 @@ export async function monter(o: {
             /* pas d'image d'attente : le lecteur montrera sa première image */
           }
         }
+        // 👻 LE BANDEAU « REJOINS MA FAMILLE », PAR-DESSUS SES PREMIÈRES SECONDES (après l'image d'attente)
+        if (dessiner && fam) dessinerBandeauFamille(c2d, P, fam.im, maintenant - T0);
         if (t >= TITRE.duree) suivant(maintenant);
       } else if (s.genre === "cloche") {
         if (dessiner && decor) decouverte(c2d, decor, Math.max(0, t));

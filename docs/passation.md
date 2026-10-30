@@ -257,9 +257,10 @@ Le propriétaire l'a fait tester à un ami ; l'analyse et nos réponses converge
 
 Suite à l'analyse du testeur sur la vidéo elle-même :
 
-1. **Le produit d'abord.** Les vidéos s'ouvrent aujourd'hui sur 3,4 s de carte rose « Rejoins ma famille »
+1. **FAIT (30 octobre) — Le produit d'abord.** Les vidéos s'ouvrent aujourd'hui sur 3,4 s de carte rose « Rejoins ma famille »
    (`OUVERTURE_FAMILLE`, chantier 5) : c'est ce qui fait défiler. Ouvrir sur le meilleur plan du commerçant ;
    l'invitation devient un **bandeau par-dessus**, pas un écran ; la fin « la famille d'hier » passe de 8,4 s à 3–4 s.
+   Fait : bandeau de 3 s par-dessus ses images, fin de 4,8 s (un fantôme s'avance au lieu de deux).
 2. **Deux vidéos pour un tournage**, sans rien de plus à faire pour le commerçant :
    - **la longue** (l'interview ~1 min, l'épisode, le film photo), comme aujourd'hui : surtout sur sa page ClikMe,
      Facebook, et de temps en temps en publication Instagram ;
