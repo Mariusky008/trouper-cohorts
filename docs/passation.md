@@ -251,6 +251,32 @@ Le propriétaire l'a fait tester à un ami ; l'analyse et nos réponses converge
    Précaution : ce sont des « petits mots » sur ClikMe, jamais des « avis », jamais vers Google (le commerçant peut
    leur offrir un cadeau : un avis récompensé doit le dire, et Google l'interdit).
 
+## 5 ter. Les vidéos du comptoir : un tournage, deux vidéos (29 octobre) — décidé
+
+Suite à l'analyse du testeur sur la vidéo elle-même :
+
+1. **Le produit d'abord.** Les vidéos s'ouvrent aujourd'hui sur 3,4 s de carte rose « Rejoins ma famille »
+   (`OUVERTURE_FAMILLE`, chantier 5) : c'est ce qui fait défiler. Ouvrir sur le meilleur plan du commerçant ;
+   l'invitation devient un **bandeau par-dessus**, pas un écran ; la fin « la famille d'hier » passe de 8,4 s à 3–4 s.
+2. **Deux vidéos pour un tournage**, sans rien de plus à faire pour le commerçant :
+   - **la longue** (l'interview ~1 min, l'épisode, le film photo), comme aujourd'hui : surtout sur sa page ClikMe,
+     Facebook, et de temps en temps en publication Instagram ;
+   - **le Reel du jour, ~10 s**, monté tout seul des mêmes images, pour Instagram, TikTok et les Reels Facebook :
+     0–2 s son plan le plus fort ; 3–7 s le plat, avec une phrase forte tirée de ce qu'il a dit (sous-titre) ;
+     8–10 s l'appel et **la cage dorée qui s'ouvre** (la récompense à la fin, la boucle repart), avec **le vrai stock
+     du jour** (« 15 surprises ce midi » : jamais un stock inventé). L'épisode fait déjà une bande-annonce (~30 s,
+     `genre: "bande"` de `episode-montage.ts`) : le Reel de 10 s la remplace ou s'y ajoute. Au comptoir, les deux,
+     « Publier le Reel » en avant. Le montage se fait en temps réel sur son téléphone (une minute pour l'interview).
+3. **L'appel s'adapte** : « Écris FANTÔME en commentaire » seulement si l'envoi automatique du lien est branché sur
+   son compte (5 bis, n° 2) ; sinon « Lien dans ma bio ».
+4. **La ligne « Envoie ça à la personne avec qui tu viens ce midi 👇 »** dans le texte de publication que ClikMe
+   écrit déjà (les envois en message privé comptent beaucoup pour toucher de nouveaux gens).
+5. **À ne pas faire** : inventer l'accroche ou une offre au nom du commerçant (« On t'offre le dessert si… ») — les
+   mots viennent de lui (son plat, sa surprise du jour) ; mettre une musique « tendance » dans nos fichiers (sons
+   protégés ; un compte professionnel n'a que la bibliothèque libre de droits dans Instagram).
+6. « 7 à 12 secondes » est une bonne habitude, pas une règle : mesurer avec les statistiques Instagram du commerçant
+   (temps de visionnage, envois), Reel court contre format actuel.
+
 ## 6. Le premier message à donner à la nouvelle session
 
 > Lis `docs/passation.md`, puis `CLAUDE.md`, `outils/tour-du-fantome/LISEZ-MOI.md`, `outils/trois-fantomes/LISEZ-MOI.md`
