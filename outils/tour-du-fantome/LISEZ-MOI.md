@@ -15,6 +15,7 @@ bouton « Voir la démo » de la page des commerçants (`public/commercants/`) m
 | Massage (Le Cocon d’Élise) | `tour-massage/` | https://www.clikme.fr/tours/massage | — |
 | **Démo courte, 45 s** (Chez Bergine) | `tour-court2/` (deuxième version) | https://www.clikme.fr/tours/court | — |
 | **Démo des entrepreneurs** (Nina, céramiste · Claire, sophrologue) | `tour-entrepreneurs2/` (deuxième version) | https://www.clikme.fr/tours/entrepreneurs (`?v=local` : Claire) | — |
+| **Démo humaine**, « Un mois avec ClikMe » (le propriétaire et Mike, Chez Bergine) | `tour-humain/` | https://www.clikme.fr/tours/humain (une fois poussée sur `main`) | — |
 
 ## Ce qu'il y a dedans
 
@@ -345,6 +346,32 @@ node outils/tour-du-fantome/outils/rendre-video.mjs "http://…/tour-entrepreneu
 
 À savoir : GSAP ignore une position donnée seulement au départ d'un `fromTo` (`{ x, y, opacity: 0 }` → `{ opacity: 1 }`) ;
 on la pose avant, avec `gsap.set`.
+
+## La démo humaine : « Un mois avec ClikMe »
+
+Le propriétaire et Mike racontent un mois chez un commerce inventé (Chez Bergine), en treize répliques (le texte,
+au mot près, et ce qui se voit : `docs/demo-humaine-repliques.md`). Le propriétaire y est **sa figurine à grosse
+tête** : sa tête détourée (ses photos, avec son accord pour l'animer) posée sur le corps d'un fantôme ClikMe, qui
+dodeline au rythme de sa voix, ouvre la bouche sur les syllabes, fait un clin d'œil, louche sur un téléphone, éclate
+de rire. Faite par `outils/tour-humain.py` d'après `outils/tour-humain.html` (le moteur de `tour-court2/`).
+
+```sh
+/usr/bin/python3 -I outils/tour-du-fantome/outils/tour-humain.py outils/tour-du-fantome
+node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index.html sortie.mp4 30 1
+```
+
+- **Les voix** : `recu/humain/01-p.mp3` … `13-p.mp3` (« p » le propriétaire, « m » Mike), égalisées et calées mot
+  à mot sur leurs pauses (`caler`, aidé par `coupures`, `liees` ; « coupe » : un bruit après la phrase, la 9).
+- **La figurine** (`outils/figurine.py`) : ses six photos (`recu/humain/photos/` : neutre, parle, o, clin, rire,
+  louche), leurs repères (MediaPipe, `outils/reperes-visage.mjs`) et leur détourage (`outils/detourer.py`, le fond
+  rose uni). Les photos sont réalignées sur la neutre (yeux et nez au même endroit) : les têtes se remplacent sans
+  sauter. Le corps : le fantôme « denim » (`public/direct/ensemble/denim-debout.webp`) sans tête, les bras à part.
+  Pour chacune de ses répliques, des **pistes** à 30 images par seconde (la tête sur un ressort relancé à chaque
+  syllabe, le cou, les bras, l'expression) ; ses **moments** (`MOMENTS`) : un mot de départ, un mot de fin. La page
+  la dessine sur une toile (`dessinerFigurine`) ; la ligne de temps ne fait que la placer (`FIG`).
+- **Son prénom** (réplique 1, « Moi, c'est … ») : la constante `PRENOM` du script, à confirmer par le propriétaire.
+- Les chiffres à l'écran (vues, 15 surprises, 120 clients « objectif du mois ») sont inventés ; la page le dit
+  (« Commerce et chiffres imaginaires »).
 
 ## Le tour massage
 

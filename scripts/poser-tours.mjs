@@ -42,6 +42,9 @@ const TOURS = {
   // la démo des entrepreneurs, « Libère ton fantôme », deuxième version (`outils/tour-entrepreneurs2.py` ; la première,
   // `tour-entrepreneurs/`, reste dans le dépôt sans être publiée)
   "tour-entrepreneurs2": "entrepreneurs",
+  // la démo humaine, « Un mois avec ClikMe » : le propriétaire (sa figurine à grosse tête) et Mike, en treize
+  // répliques (`outils/tour-humain.py`)
+  "tour-humain": "humain",
 };
 
 // les étapes intermédiaires de la chaîne (`index.avant-episode2.html`…) ne sont pas la page

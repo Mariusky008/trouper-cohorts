@@ -44,6 +44,32 @@ propriétaire fait foi.
   plus : une vidéo de la bouche qui dit la réplique 1 (1080p, face caméra, lumière égale, sans bouger) et l'accord
   écrit de la personne filmée.
 
+## La démo construite (30 octobre)
+
+`outils/tour-du-fantome/tour-humain/` (script `outils/tour-humain.py`, voir le LISEZ-MOI du tour), à publier à
+`clikme.fr/tours/humain`. Environ 1 min 38 : les voix reçues durent 85 s à elles seules. Le propriétaire y est sa
+**figurine à grosse tête** (ses photos d'expressions, détourées et réalignées) ; Mike, le fantôme des démos.
+
+| # | Ce qui se voit |
+|---|---|
+| 1 | sa carte de CV (sa photo, « Community manager · nouvelle génération · 2027 ») ; sur « Mon métier ? » elle saute, éclate en étoiles d'or et devient sa figurine (un salut, un clin d'œil) ; un téléphone qu'on fait défiler (elle louche dessus), qui se retourne en porte : elle s'ouvre, deux fantômes entrent ; son grand rire |
+| 2 | la cage de Mike tombe à côté d'elle, toque, explose ; Mike jaillit, sa toque, sa carte « Mike · Mon assistant » ; elle le regarde |
+| 3 | « 30 jours » : le calendrier se remplit ; des « j'aime » qui deviennent des fantômes sur « en clients » ; ses bras s'ouvrent sur « Je vous montre ? » |
+| 4 | le jour 1 entouré ; la façade de Chez Bergine, quatre éclairs, quatre photos ; le téléphone : « Face au fantôme », question 2 sur 3 ; Mike tombe au pied du téléphone |
+| 5 | les photos plongent dans le téléphone, le film « Monté par Mike », « Votre menu du jour, à l'honneur », les réseaux, les vues, les cœurs |
+| 6 | elle revient et regarde Mike ; le film file en avance rapide |
+| 7 | les trois cages, trois doigts, les trois groupes de fantômes |
+| 8 | un message vers chacun ; la conversation avec Camille (en semaine, poisson) ; « Il reste une table ce midi » sur son WhatsApp ; la porte s'ouvre, « Camille est venue » ; la cage dorée (« La surprise du chef », 0/15 → 3/15), les fidèles et leur pièce cousue, les trois premiers et leur surprise |
+| 9 | la vidéo du jour « Rejoins ma famille de fantômes », la famille devant la porte, « Record battu » |
+| 10 | les 30 jours cochés, le 30e entouré ; « Le bilan du mois », le bon de Léa tamponné « Servie ✓ », « +1 client amené », « Objectif du mois : 120 clients amenés » |
+| 11 | Mike en grand ; des « bla bla » qui éclatent ; « Viral garanti ! », « +10 000 abonnés ! », « Succès en 24 h ! » barrés et qui tombent |
+| 12 | « 👁 12 480 vues » barré ; elle revient à côté de Mike ; une porte, des fantômes qui entrent, « Des clients » |
+| 13 | elle et Mike ; « 1 mois gratuit · pour faire mes preuves », son rire ; « On commence · 1 mois gratuit » (vers `/inscription`), « Revoir » |
+
+**À confirmer** : son prénom dans les sous-titres de la 1 (mis d'après le nom de son compte : `PRENOM` dans le
+script). **Pas encore à l'écran** : son contact et un QR code (la 13) — à fournir (le numéro ou l'adresse à
+afficher).
+
 ## À garder en tête
 
 - **La 8** (« Et moi, je leur réponds ! ») montre ce que fera la sonnette WhatsApp (chantier 4), pas encore branchée :
