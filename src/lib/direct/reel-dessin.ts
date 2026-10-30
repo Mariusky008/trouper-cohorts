@@ -7,6 +7,8 @@
  *   · L'ACCROCHE : la photo de son plat qui arrive de très près ; en bas, « CE MIDI CHEZ BERGINE » en rose,
  *     son plat en géant, son prix en rose.
  *   · SA PHRASE : sa vidéo (ou sa photo, s'il ne se montre pas) dans le cadre, ses mots qui s'allument un à un.
+ *     OU SES PLANS, quand il n'a pas parlé lui-même : ses autres photos (le film du reporter), ses meilleurs
+ *     gestes filmés (l'épisode), un peu plus d'une seconde chacun.
  *   · L'APPEL, comme une carte de question : « LA SURPRISE DU CHEF · LES 15 PREMIERS qui ouvrent ma cage dorée
  *     gagnent une surprise. » Son fantôme dans la cage dorée pousse, la cage s'envole, il est libre — une pluie
  *     d'or, un cadeau. Puis « Lien dans ma bio ». Sans surprise aujourd'hui : son fantôme libre, qui invite.
@@ -49,9 +51,14 @@ const OR = "#F2C762";
 /** La marge de gauche des cartes de l'interview. */
 const X = 52;
 
+/** Une image à dessiner : une photo chargée, ou une image prise dans sa vidéo. */
+export type Visuel = { src: CanvasImageSource; w: number; h: number };
+/** Un plan du milieu : une photo, ou un de ses gestes filmés (lecteur muet, déjà calé sur son début). */
+export type PlanReel = { visuel: Visuel } | { video: HTMLVideoElement };
+
 export type ImagesReel = {
-  /** La photo du jour (son plat). */
-  photo: HTMLImageElement | null;
+  /** La photo du jour (son plat), ou une image du produit fini. */
+  photo: Visuel | null;
   /** Le fond des cartes de question (`fabriquerFondCarte`). */
   fondCarte: HTMLCanvasElement | null;
   cage: HTMLImageElement | null;
@@ -73,14 +80,25 @@ export type SceneReel = {
   lien: string | null;
   /** Sa prise, pendant sa phrase — `null` : sa photo à la place (il ne se montre pas, ou pas de vidéo). */
   video: HTMLVideoElement | null;
+  /** Ses plans, quand il n'y a pas de phrase (`REEL.plansMax` au plus). */
+  plans: PlanReel[];
+  /** En haut à gauche : « FACE AU FANTÔME » (l'interview), « LE REPORTER CLIKME », « ÉPISODE 3 ». */
+  emission?: string;
 };
 
-/** Les temps de la scène : où commencent sa phrase et l'appel, et la fin. */
-export function tempsDuReel(phrase: PhraseDuReel | null) {
-  const accroche = phrase ? REEL.accroche : REEL.accrocheSansPhrase;
-  const longueur = phrase ? phrase.a - phrase.de : 0;
+/** Les temps de la scène : où commencent sa phrase (ou ses plans) et l'appel, et la fin. */
+export function tempsDuReel(phrase: PhraseDuReel | null, plans = 0) {
+  const n = Math.min(plans, REEL.plansMax);
+  const accroche = phrase || n ? REEL.accroche : REEL.accrocheSansPhrase;
+  const longueur = phrase ? phrase.a - phrase.de : n * REEL.plan;
   return { phrase: accroche, appel: accroche + longueur, fin: accroche + longueur + REEL.appel };
 }
+
+/** Le plan du milieu à `u` secondes de son début, et où on en est dedans. */
+export const planA = (u: number, n: number) => {
+  const k = Math.min(Math.max(0, n - 1), Math.floor(u / REEL.plan));
+  return { k, v: u - k * REEL.plan };
+};
 
 function image(src: string): Promise<HTMLImageElement | null> {
   return new Promise((ok) => {
@@ -136,13 +154,13 @@ function nuitDuBas(g: CanvasRenderingContext2D, depuis: number, a: number) {
 
 /* ═══ L'ACCROCHE ════════════════════════════════════════════════════════════ */
 function accroche(g: CanvasRenderingContext2D, P: Polices, s: SceneReel, im: ImagesReel, u: number) {
-  if (im.photo) couvrirImage(g, im.photo, im.photo.naturalWidth, im.photo.naturalHeight, { z: mix(1.34, 1.06, sortie(u / 0.55)) + 0.022 * u });
+  if (im.photo) couvrirImage(g, im.photo.src, im.photo.w, im.photo.h, { z: mix(1.34, 1.06, sortie(u / 0.55)) + 0.022 * u });
   else {
     g.fillStyle = NUIT;
     g.fillRect(0, 0, W, H);
   }
   nuitDuBas(g, 400, 0.94);
-  dessinerCadre(g, P, u - 0.25, s.nomCadre);
+  dessinerCadre(g, P, u - 0.25, s.nomCadre, s.emission);
   // DE BAS EN HAUT : le prix, son plat en géant, l'étiquette — le tout au-dessus de la légende d'Instagram
   const police = (t: number) => `${t}px ${P.affiche}`;
   const { lignes, taille } = enLignes(g, s.plat.trim().toLocaleUpperCase("fr-FR"), police, 150, 616);
@@ -181,19 +199,38 @@ function accroche(g: CanvasRenderingContext2D, P: Polices, s: SceneReel, im: Ima
 function saPhrase(g: CanvasRenderingContext2D, P: Polices, s: SceneReel, im: ImagesReel, u: number, morceaux: MorceauDit[], depuis: number) {
   const v = s.video;
   if (v && v.readyState >= 2 && v.videoWidth) couvrirImage(g, v, v.videoWidth, v.videoHeight, { fy: 0.38, z: 1 + 0.02 * u });
-  else if (im.photo) couvrirImage(g, im.photo, im.photo.naturalWidth, im.photo.naturalHeight, { z: 1.08 + 0.035 * u, fx: 0.46 + 0.02 * u });
+  else if (im.photo) couvrirImage(g, im.photo.src, im.photo.w, im.photo.h, { z: 1.08 + 0.035 * u, fx: 0.46 + 0.02 * u });
   else {
     g.fillStyle = NUIT;
     g.fillRect(0, 0, W, H);
   }
   nuitDuBas(g, 760, 0.55);
-  dessinerCadre(g, P, depuis, s.nomCadre);
+  dessinerCadre(g, P, depuis, s.nomCadre, s.emission);
   if (!s.phrase) return;
   const tr = s.phrase.de + u;
   const dernier = morceaux[morceaux.length - 1];
   const m = morceaux.find((x) => tr >= x.de && tr < x.fin) ?? (dernier && tr >= dernier.de ? dernier : undefined);
   dessinerSousTitres(g, P, m, tr);
   eclairDuClic(g, u);
+}
+
+/* ═══ SES PLANS ═════════════════════════════════════════════════════════════
+ * Quand il n'a pas parlé lui-même : ses autres photos, ou ses gestes filmés, coupés net au rythme de la musique,
+ * chacun qui avance doucement (un sens, puis l'autre). Pas un mot écrit à sa place. */
+function sesPlans(g: CanvasRenderingContext2D, P: Polices, s: SceneReel, u: number, depuis: number) {
+  const { k, v } = planA(u, s.plans.length);
+  const p = s.plans[k];
+  const sens = k % 2 ? 1 : -1;
+  const z = mix(1.16, 1.06, sortie(v / 0.35)) + 0.03 * v;
+  if (p && "video" in p && p.video.readyState >= 2 && p.video.videoWidth) couvrirImage(g, p.video, p.video.videoWidth, p.video.videoHeight, { z, fx: 0.5 + sens * 0.03 * v });
+  else if (p && "visuel" in p) couvrirImage(g, p.visuel.src, p.visuel.w, p.visuel.h, { z, fx: 0.5 + sens * 0.04 * v });
+  else {
+    g.fillStyle = NUIT;
+    g.fillRect(0, 0, W, H);
+  }
+  nuitDuBas(g, 860, 0.45);
+  dessinerCadre(g, P, depuis, s.nomCadre, s.emission);
+  eclairDuClic(g, v * 1.6);
 }
 
 /* ═══ L'APPEL ═══════════════════════════════════════════════════════════════ */
@@ -352,10 +389,12 @@ function lAppel(g: CanvasRenderingContext2D, P: Polices, s: SceneReel, im: Image
 
 /** Une image du Reel, à `t` secondes de son début. `morceaux` : ceux de sa phrase (`morceauxDuReel`). */
 export function dessinerReel(g: CanvasRenderingContext2D, P: Polices, s: SceneReel, im: ImagesReel, t: number, morceaux: MorceauDit[]) {
-  const T = tempsDuReel(s.phrase);
+  const T = tempsDuReel(s.phrase, s.plans.length);
   if (t < T.phrase) accroche(g, P, s, im, t);
-  else if (t < T.appel) saPhrase(g, P, s, im, t - T.phrase, morceaux, t - 0.25);
-  else lAppel(g, P, s, im, t - T.appel);
+  else if (t < T.appel) {
+    if (s.phrase) saPhrase(g, P, s, im, t - T.phrase, morceaux, t - 0.25);
+    else sesPlans(g, P, s, t - T.phrase, t - 0.25);
+  } else lAppel(g, P, s, im, t - T.appel);
   if (im.grain) dessinerGrain(g, im.grain, t);
 }
 

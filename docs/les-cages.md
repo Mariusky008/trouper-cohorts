@@ -334,7 +334,12 @@ s'ouvrent et se ferment pareil, sans rien à choisir (`src/lib/direct/famille-vi
   « Record battu ! ») ; ses fantômes, chacun avec la couleur de son palier ; un qui s'avance avec son petit mot, son
   prénom et son numéro ; puis les trois cages, « Libère ton fantôme », « Lien dans ma bio » et son lien. Hier vide :
   la famille de la semaine. Famille encore vide : son fantôme invite à être le tout premier.
-- **🎞️ Le Reel du jour (~9 s)**, monté tout seul juste après l'interview, des mêmes prises (`reel-du-jour.ts` pour
+- **🎞️ Le Reel du jour (~9 s)**, monté tout seul juste après l'interview, le film du reporter ou l'épisode — avec
+  sa famille seulement. Pour **le film du reporter** : sa première photo en accroche, ses autres photos en plans
+  (1,15 s chacun, trois au plus), « LE REPORTER CLIKME » dans le cadre — la voix du reporter n'y passe pas. Pour
+  **l'épisode** : une image du produit fini en accroche, ses trois meilleurs gestes filmés en plans, « ÉPISODE 3 »
+  dans le cadre ; il **remplace la bande-annonce** sur ses réseaux (sans Reel, la bande-annonce revient). Pour
+  **l'interview**, des mêmes prises (`reel-du-jour.ts` pour
   les règles, `reel-dessin.ts` pour l'image, `reel-montage.ts` pour l'enregistrement) : l'accroche (la photo de son
   plat qui arrive de près, son plat en géant, son prix) ; **une phrase qu'il a dite**, avec sa voix et ses mots qui
   s'allument (`phraseDuReel` : celle qui nomme son plat ou son prix d'abord, jamais une phrase où il hésite, jamais

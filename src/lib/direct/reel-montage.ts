@@ -27,8 +27,8 @@ import {
 } from "./interview-signature";
 import type { FamilleVideo } from "./famille";
 import type { ImagesFamille } from "./famille-video";
-import { appelDuReel, dureeDuReel, type PhraseDuReel } from "./reel-du-jour";
-import { chargerCageDoree, dessinerReel, morceauxDuReel, tempsDuReel, type ImagesReel, type SceneReel } from "./reel-dessin";
+import { REEL, appelDuReel, dureeDuReel, type PhraseDuReel } from "./reel-du-jour";
+import { chargerCageDoree, dessinerReel, morceauxDuReel, planA, tempsDuReel, type ImagesReel, type PlanReel, type SceneReel, type Visuel } from "./reel-dessin";
 
 const IPS = 30;
 export type Reel = { blob: Blob; type: string; duree: number; affiche: string };
@@ -42,13 +42,42 @@ function image(src: string): Promise<HTMLImageElement | null> {
   });
 }
 
+/** 🎬 Une image prise dans une vidéo, à `t` secondes (le produit fini de l'épisode, pour l'accroche) — `null` si illisible. */
+export async function imageDeLaVideo(url: string, t: number): Promise<HTMLCanvasElement | null> {
+  const v = await lecteurMuet(url);
+  try {
+    if (!v.videoWidth) return null;
+    await new Promise<void>((ok) => {
+      v.addEventListener("seeked", () => ok(), { once: true });
+      setTimeout(ok, 2500);
+      v.currentTime = Math.max(0, t);
+    });
+    const c = document.createElement("canvas");
+    c.width = v.videoWidth;
+    c.height = v.videoHeight;
+    c.getContext("2d")?.drawImage(v, 0, 0);
+    return c;
+  } catch {
+    return null;
+  } finally {
+    v.remove();
+  }
+}
+
 export async function monterReel(o: {
   ctx: AudioContext;
   toile: HTMLCanvasElement;
   police: Polices;
   musique: AudioBuffer | null;
-  /** La photo du jour : l'accroche. */
-  photo: string | null;
+  /** L'accroche : la photo du jour (son adresse), ou une image du produit fini prise dans sa vidéo (l'épisode). */
+  photo: string | HTMLCanvasElement | null;
+  /**
+   * Ses plans du milieu, quand il n'a pas parlé lui-même (`phrase` nulle) : ses autres photos (le film du reporter),
+   * ou ses meilleurs gestes filmés, à partir de `depuis` secondes (l'épisode). `REEL.plansMax` au plus.
+   */
+  plans?: ({ photo: string } | { video: string; depuis: number })[];
+  /** En haut à gauche, dans le cadre : « FACE AU FANTÔME » par défaut. */
+  emission?: string;
   /** Sa phrase (`phraseDuReel`), et la prise d'où elle vient : sa vidéo (`null` s'il ne se montre pas) et son son. */
   phrase: PhraseDuReel | null;
   prise: { url: string | null; audio: AudioBuffer | null } | null;
@@ -60,7 +89,7 @@ export async function monterReel(o: {
   quand: string;
   /** Sa famille : le vrai stock de la cage dorée, son lien, son fantôme. */
   famille: { d: FamilleVideo; im: ImagesFamille } | null;
-  /** « Écris FANTÔME en commentaire » : seulement si l'envoi automatique du lien est branché sur son compte. */
+  /** « Écris FANTÔME en commentaire » : seulement s'il répond lui-même aux commentaires (« Mes réseaux »). */
   motCle?: string | null;
   ecouter: boolean;
   surProgres?: (p: number) => void;
@@ -76,20 +105,41 @@ export async function monterReel(o: {
   const phrase = o.phrase && o.prise?.audio ? o.phrase : null;
 
   /* ─── les images ─── */
-  const [photo, cage, video] = await Promise.all([
-    o.photo ? image(o.photo) : Promise.resolve(null),
+  const visuel = async (x: string | HTMLCanvasElement): Promise<Visuel | null> => {
+    if (typeof x !== "string") return { src: x, w: x.width, h: x.height };
+    const i = await image(x);
+    return i ? { src: i, w: i.naturalWidth, h: i.naturalHeight } : null;
+  };
+  /** Un lecteur muet, CALÉ SUR `t` avant de commencer (un lecteur qui cherche met du temps à repartir). */
+  const lecteurA = async (url: string, t: number) => {
+    const v = await lecteurMuet(url);
+    if (v.videoWidth) {
+      await new Promise<void>((ok) => {
+        v.addEventListener("seeked", () => ok(), { once: true });
+        setTimeout(ok, 2500);
+        v.currentTime = t;
+      });
+    }
+    return v;
+  };
+  const [photo, cage, video, plansCharges] = await Promise.all([
+    o.photo ? visuel(o.photo) : Promise.resolve(null),
     chargerCageDoree(),
-    phrase && o.prise?.url ? lecteurMuet(o.prise.url) : Promise.resolve(null),
+    phrase && o.prise?.url ? lecteurA(o.prise.url, phrase.de) : Promise.resolve(null),
+    phrase
+      ? Promise.resolve([])
+      : Promise.all(
+          (o.plans ?? []).slice(0, REEL.plansMax).map(async (p): Promise<PlanReel | null> => {
+            if ("photo" in p) {
+              const v = await visuel(p.photo);
+              return v ? { visuel: v } : null;
+            }
+            const v = await lecteurA(p.video, p.depuis);
+            return v.videoWidth ? { video: v } : null;
+          }),
+        ),
   ]);
-  // SA VIDÉO, CALÉE SUR LE DÉBUT DE SA PHRASE avant de commencer (un lecteur qui cherche met du temps)
-  if (video && phrase && video.videoWidth) {
-    await new Promise<void>((ok) => {
-      const fini = () => ok();
-      video.addEventListener("seeked", fini, { once: true });
-      setTimeout(fini, 2500);
-      video.currentTime = phrase.de;
-    });
-  }
+  const plans = plansCharges.filter((p): p is PlanReel => p != null);
   const im: ImagesReel = { photo, fondCarte: fabriquerFondCarte(), cage, hote: o.famille?.im.hote ?? null, grain: fabriquerGrain() };
   const e = enteteArdoise(o.commerce, o.quand);
   const scene: SceneReel = {
@@ -101,10 +151,12 @@ export async function monterReel(o: {
     appel: appelDuReel({ surprises: o.famille?.d.surprises ?? null, motCle: o.motCle }),
     lien: o.famille?.d.lien ?? null,
     video: video && video.videoWidth ? video : null,
+    plans,
+    ...(o.emission ? { emission: o.emission } : {}),
   };
   const morceaux = morceauxDuReel(phrase);
-  const T = tempsDuReel(phrase);
-  const TOUT = dureeDuReel(phrase);
+  const T = tempsDuReel(phrase, plans.length);
+  const TOUT = dureeDuReel(phrase, plans.length);
 
   /* ─── le son ─── */
   const enregistree = ctx.createMediaStreamDestination();
@@ -177,6 +229,8 @@ export async function monterReel(o: {
     s.start(B0, phrase.de, phrase.a - phrase.de);
     sources.push(s);
   }
+  // SES PLANS : un petit coup à chaque coupe, la musique pleine
+  plans.forEach((_, k) => sonClic(S, T0 + T.phrase + k * REEL.plan));
   // L'APPEL : la carte arrive en coup de fouet, la cage tremble, il est libre, le chemin se pose
   const C0 = T0 + T.appel;
   niveau(C0, 0.3, 0.2);
@@ -193,6 +247,8 @@ export async function monterReel(o: {
   let affiche = "";
   let erreur: Error | null = null;
   let joue = false;
+  /** Le dernier de ses gestes filmés lancé (chacun part à son plan). */
+  let planLance = -1;
   await new Promise<void>((fini) => {
     const tic = () => {
       if (o.signal?.aborted) {
@@ -208,6 +264,12 @@ export async function monterReel(o: {
         if (scene.video && !joue && t >= T.phrase - 0.05) {
           joue = true;
           void scene.video.play().catch(() => {});
+        }
+        if (plans.length && t >= T.phrase - 0.05 && t < T.appel) {
+          const { k } = planA(Math.max(0, t - T.phrase), plans.length);
+          const p = plans[k];
+          if (k > planLance && "video" in p) void p.video.play().catch(() => {});
+          planLance = Math.max(planLance, k);
         }
         dessinerReel(c2d, o.police, scene, im, t, morceaux);
         if (!affiche && t >= 1.3) {
@@ -234,9 +296,10 @@ export async function monterReel(o: {
       /* déjà arrêtée */
     }
   }
-  if (video) {
-    video.pause();
-    video.remove();
+  for (const v of [video, ...plans.map((p) => ("video" in p ? p.video : null))]) {
+    if (!v) continue;
+    v.pause();
+    v.remove();
   }
   bus.disconnect();
   limite.disconnect();

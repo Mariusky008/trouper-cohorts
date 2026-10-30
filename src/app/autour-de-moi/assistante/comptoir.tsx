@@ -32,6 +32,7 @@ import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
 import { COMMERCES_DEMO, missionDe, planDuFantome, type Etape, type Mission } from "@/lib/direct/missions-commercant";
 import { BANQUES_REPORTER, graineDe, recitDepuisIds, reporterOuvert, retenir, tirerRecit, type Deja, type Donnees, type IdsRecit, type MetierReporter } from "@/lib/direct/reporter-recit";
 import { tournerFilm, type Film } from "@/lib/direct/reporter-film";
+import { monterReel, type Reel } from "@/lib/direct/reel-montage";
 import {
   ajouterSansPoints,
   aVenir,
@@ -402,6 +403,8 @@ type Phase =
 
 /** L'envoi en ligne d'un vrai commerçant : en cours, arrivé, ou à refaire. */
 type Envoi = { etat: "en-cours" } | ({ etat: "fini" } & ResultatEnvoi);
+/** 🎬 Le film du reporter, et 🎞️ son Reel de 10 s pour ses réseaux (`null` : sans famille, ou raté — le film part seul). */
+type FilmEtReel = Film & { reel?: Reel | null };
 
 function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => void }) {
   const mission = missionDe(commerce.famille, commerce.metier);
@@ -730,7 +733,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
   /** 🎬 Le film du reporter de sa dernière annonce, pour l'écran de fête. Le son se crée au toucher de « Publier ». */
   const [film, setFilm] = useState<(Film & { url: string }) | null>(null);
   const sonDuFilm = useRef<AudioContext | null>(null);
-  const envoyerEnBase = async (p: Publication, principalAvant?: Publication, f?: Film | null) => {
+  const envoyerEnBase = async (p: Publication, principalAvant?: Publication, f?: FilmEtReel | null) => {
     setEnvoi({ etat: "en-cours" });
     const r = await envoyerEnLigne(commerce, mission, p, principalAvant, f ?? undefined);
     setEnvoi({ etat: "fini", ...r });
@@ -738,7 +741,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
   };
 
   /** Rend l'envoi en ligne en cours (vrai commerçant), pour qui doit attendre qu'il soit fini. */
-  const envoyer = (b: Brouillon = brouillon, f?: Film | null): Promise<void> | undefined => {
+  const envoyer = (b: Brouillon = brouillon, f?: FilmEtReel | null): Promise<void> | undefined => {
     const brouillon = b;
     const t = Date.now();
     const relance = brouillon.genre === "relance";
@@ -1177,6 +1180,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           dossier={dossier}
           ville={villeDe(commerce)}
           onRetour={revenir}
+          motCle={reseaux.etat?.fantome ? MOT_FANTOME : null}
           publier={
             commerce.reel
               ? async (e) => {
@@ -1279,6 +1283,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           dossier={dossier}
           brouillon={brouillon}
           ctx={sonDuFilm.current}
+          motCle={reseaux.etat?.fantome ? MOT_FANTOME : null}
           onFini={(f) => {
             setFilm((ancien) => {
               if (ancien) URL.revokeObjectURL(ancien.url);
@@ -2788,6 +2793,7 @@ function TournageReporter({
   dossier,
   brouillon,
   ctx,
+  motCle,
   onFini,
 }: {
   commerce: Commerce;
@@ -2795,7 +2801,9 @@ function TournageReporter({
   dossier: string;
   brouillon: Brouillon;
   ctx: AudioContext | null;
-  onFini: (film: Film | null) => void;
+  /** 👻 « Écris FANTÔME en commentaire » au bout de son Reel, s'il répond lui-même (« Mes réseaux »). */
+  motCle: string | null;
+  onFini: (film: FilmEtReel | null) => void;
 }) {
   const toile = useRef<HTMLCanvasElement>(null);
   const [etat, setEtat] = useState("Le reporter prend son micro…");
@@ -2807,7 +2815,7 @@ function TournageReporter({
   useEffect(() => {
     const stop = new AbortController();
     arret.current = stop;
-    const finir = (f: Film | null) => {
+    const finir = (f: FilmEtReel | null) => {
       if (fini.current) return;
       fini.current = true;
       terminer.current(f);
@@ -2864,7 +2872,35 @@ function TournageReporter({
           signal: stop.signal,
           famille,
         });
-        finir(f);
+        /* 🎞️ ET SON REEL DE 10 S, POUR SES RÉSEAUX (avec sa famille seulement) : sa première photo en accroche, ses
+           autres photos en plans — la voix du reporter n'y passe pas —, puis la cage dorée. Raté : le film part seul. */
+        let reel: Reel | null = null;
+        if (famille && !stop.signal.aborted) {
+          setEtat("Et ton Reel de 10 secondes, pour Instagram, TikTok et Facebook…");
+          setProgres(0);
+          reel = await monterReel({
+            ctx,
+            toile: toile.current!,
+            police: { affiche: el.police.affiche, texte: el.police.bulle, serif: el.police.enseigne },
+            musique: el.musique,
+            photo: brouillon.photos[0] ?? null,
+            plans: brouillon.photos.slice(1).map((photo) => ({ photo })),
+            phrase: null,
+            prise: null,
+            plat: brouillon.nom || mission.quoi,
+            prix: brouillon.prix,
+            commerce: commerce.nom,
+            ville: villeDe(commerce),
+            quand: commerce.famille === "table" ? "Ce midi" : "Aujourd’hui",
+            famille,
+            motCle,
+            emission: "LE REPORTER CLIKME",
+            ecouter: true,
+            surProgres: setProgres,
+            signal: stop.signal,
+          }).catch(() => null);
+        }
+        finir({ ...f, reel });
       } catch {
         if (!stop.signal.aborted) finir(null);
       }

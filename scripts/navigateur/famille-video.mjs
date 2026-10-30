@@ -315,7 +315,7 @@ const reel = await p.evaluate(
     const photo = await charge("/direct/table/magret/3.jpg");
     const famIm = await fv.chargerFamilleVideo(d);
     const sig = await import("/__essai/interview-signature.js");
-    const im = { photo, fondCarte: sig.fabriquerFondCarte(), cage: await des.chargerCageDoree(), hote: famIm.hote, grain: null };
+    const im = { photo: photo && { src: photo, w: photo.naturalWidth, h: photo.naturalHeight }, fondCarte: sig.fabriquerFondCarte(), cage: await des.chargerCageDoree(), hote: famIm.hote, grain: null };
     const toile = document.createElement("canvas");
     toile.width = 720;
     toile.height = 1280;
@@ -331,7 +331,7 @@ const reel = await p.evaluate(
       des.dessinerReel(g, P, scene, im, t, des.morceauxDuReel(scene.phrase));
       if (nom) images[nom] = toile.toDataURL("image/png");
     };
-    const scene = { plat: "Magret au miel", prix: "18 €", entete: "CE MIDI CHEZ BERGINE", nomCadre: "Chez Bergine · Dax", phrase: choix, appel: r.appelDuReel({ surprises: d.surprises }), lien: d.lien, video: null };
+    const scene = { plat: "Magret au miel", prix: "18 €", entete: "CE MIDI CHEZ BERGINE", nomCadre: "Chez Bergine · Dax", plans: [], phrase: choix, appel: r.appelDuReel({ surprises: d.surprises }), lien: d.lien, video: null };
     const T = des.tempsDuReel(choix);
     dessiner(scene, 1.4, "accroche");
     for (const u of [0.5, 1.2, 2.0, 2.8]) dessiner(scene, T.phrase + u, u === 2.0 ? "phrase" : null);
@@ -343,6 +343,18 @@ const reel = await p.evaluate(
     const sansCage = [...ecrits];
     ecrits.clear();
     dessiner({ ...scene, appel: r.appelDuReel({ surprises: d.surprises, motCle: "FANTÔME" }) }, T.appel + 2.9, "fantome");
+    const avecFantome = [...ecrits];
+    // LE FILM DU REPORTER : pas sa voix, ses autres photos en plans (une coupe nette, puis la suivante)
+    ecrits.clear();
+    const photo2 = await charge("/direct/table/magret/1.jpg");
+    const v2 = photo2 && { src: photo2, w: photo2.naturalWidth, h: photo2.naturalHeight };
+    const film = { ...scene, phrase: null, emission: "LE REPORTER CLIKME", plans: [{ visuel: v2 }, { visuel: im.photo }] };
+    const TF = des.tempsDuReel(null, 2);
+    dessiner(film, TF.phrase + 0.6, "plan1");
+    const pixels1 = g.getImageData(200, 500, 1, 1).data.join(",");
+    dessiner(film, TF.phrase + 1.15 + 0.6, "plan2");
+    const pixels2 = g.getImageData(200, 500, 1, 1).data.join(",");
+    const avecPlans = [...ecrits];
     return {
       choix: choix && { k: choix.k, de: choix.de, a: choix.a, mots: choix.mots.map((w) => w.m).join(" ") },
       sansSon,
@@ -352,7 +364,8 @@ const reel = await p.evaluate(
       dureeSans: r.dureeDuReel(null),
       avecCage,
       sansCage,
-      fantome: [...ecrits],
+      fantome: avecFantome,
+      plans: { ecrits: avecPlans, change: pixels1 !== pixels2, debut: TF.phrase, appel: TF.appel, duree: r.dureeDuReel(null, 2), duree5: r.dureeDuReel(null, 5) },
       images,
       photo: Boolean(photo),
       cage: Boolean(im.cage),
@@ -379,6 +392,8 @@ ok(/anton/i.test(reel.polices.affiche) && /poppins/i.test(reel.polices.texte), `
 ok(reel.avecCage.some((t) => /magret/i.test(t) && t !== "MAGRET AU MIEL"), "ses mots s'allument pendant sa phrase");
 ok(reel.sansCage.includes("REJOINS") && reel.sansCage.includes("Libère ton fantôme : je te gâte !") && !reel.sansCage.some((t) => /surprise/i.test(t)), "sans surprise du jour : son fantôme invite, aucune surprise annoncée");
 ok(![...reel.avecCage, ...reel.sansCage].some((t) => /exemple/i.test(t)), "jamais « exemple » à l'écran");
+ok(reel.plans.ecrits.includes("LE REPORTER CLIKME") && reel.plans.change && !reel.plans.ecrits.some((t) => /magret au miel cuit/i.test(t)), `le film du reporter : ses photos en plans, sans un mot écrit à sa place (${reel.plans.ecrits.join(" | ")})`);
+ok(Math.abs(reel.plans.appel - reel.plans.debut - 2.3) < 0.01 && reel.plans.duree >= 7.5 && reel.plans.duree <= 8.5 && Math.abs(reel.plans.duree5 - (2.4 + 3 * 1.15 + 3.3)) < 0.01, `deux plans de 1,15 s, trois au plus (${reel.plans.duree.toFixed(2)} s ; ${reel.plans.duree5.toFixed(2)} s avec cinq photos)`);
 
 // 👻 « JE RÉPONDS MOI-MÊME AUX COMMENTAIRES FANTÔME » : éteint d'abord, puis allumé par la route de ses réseaux
 const reseaux = async (corps) => (await fetch(`${BASE}/api/site-internet/pro/reseaux`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: SLUG, token: "jeton-test", ...corps }) })).json();

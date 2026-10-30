@@ -22,8 +22,10 @@ import { SESSION_MAX_S, SESSION_MIN_S, enDuree, prochainEpisode, retenirEpisode,
 import { SessionEpisode, type EtatSession, type Tournage } from "@/lib/direct/episode-session";
 import { monterEpisode } from "@/lib/direct/episode-montage";
 import { familleDeLaVideoPour } from "@/lib/direct/famille-video";
-import { chefEnPied } from "@/lib/direct/interview-montage";
+import { chargerElements, chefEnPied } from "@/lib/direct/interview-montage";
 import type { Film } from "@/lib/direct/reporter-film";
+import { REEL } from "@/lib/direct/reel-du-jour";
+import { imageDeLaVideo, monterReel } from "@/lib/direct/reel-montage";
 
 /** Un Reel Instagram ou Facebook : 90 secondes au plus (`REEL_MAX_S` dans `lib/reseaux/intermediaire.ts`, côté serveur). */
 const REEL_MAX_S = 90;
@@ -148,6 +150,7 @@ export function EpisodeComptoir({
   ville,
   onRetour,
   publier,
+  motCle = null,
 }: {
   commerce: CommerceComptoir;
   dossier: string;
@@ -155,6 +158,8 @@ export function EpisodeComptoir({
   onRetour: () => void;
   /** Le film part en ligne (ou, en démonstration, fait comme si) : le message à lui dire. */
   publier: (e: { texte: string; affiche: string; episode: Film; bande: Film | null }) => Promise<{ ok: boolean; message: string }>;
+  /** 👻 « Écris FANTÔME en commentaire » au bout de son Reel, s'il répond lui-même (« Mes réseaux »). */
+  motCle?: string | null;
 }) {
   const [etape, setEtape] = useState<Etape>("intro");
   const [serie, setSerie] = useState({ saison: new Date().getFullYear(), numero: 1 });
@@ -172,6 +177,8 @@ export function EpisodeComptoir({
   const [montage, setMontage] = useState<{ quoi: string; p: number; mot: string } | null>(null);
   const [episode, setEpisode] = useState<FilmPret | null>(null);
   const [bande, setBande] = useState<FilmPret | null>(null);
+  /** 🎞️ Son Reel de 10 s (avec sa famille) : il part sur ses réseaux à la place de la bande-annonce. */
+  const [reel, setReel] = useState<FilmPret | null>(null);
   const [envoi, setEnvoi] = useState<{ etat: "en-cours" } | { etat: "fini"; ok: boolean; message: string } | null>(null);
 
   const video = useRef<HTMLVideoElement>(null);
@@ -308,6 +315,7 @@ export function EpisodeComptoir({
       films.current = [];
       setEpisode(null);
       setBande(null);
+      setReel(null);
       const ctl = new AbortController();
       arret.current = ctl;
       const ctx = son.current ?? new AudioContext();
@@ -342,8 +350,60 @@ export function EpisodeComptoir({
         const ep = { ...e, url: URL.createObjectURL(e.blob) };
         films.current.push(ep);
         setEpisode(ep);
-        // LA BANDE-ANNONCE, POUR SES RÉSEAUX : un Reel ne dépasse pas 90 secondes
-        if (e.duree > REEL_MAX_S - 5) {
+        /* 🎞️ SON REEL DE 10 S, POUR SES RÉSEAUX (avec sa famille) : le produit fini en accroche, ses trois meilleurs
+           gestes, la cage dorée. Il remplace la bande-annonce ; raté, on retombe sur elle. */
+        let r: Film | null = null;
+        if (famille) {
+          setMontage({ quoi: "Ton Reel", p: 0, mot: "Et ton Reel de 10 secondes, pour Instagram, TikTok et Facebook…" });
+          const adresses: string[] = [];
+          const adresse = (b: Blob) => {
+            const u = URL.createObjectURL(b);
+            adresses.push(u);
+            return u;
+          };
+          try {
+            const tous = t.morceaux;
+            const fin = tous[tous.length - 1];
+            const meilleurs = tous
+              .slice(0, -1)
+              .filter((m) => m.duree >= 1.4)
+              .sort((a, b) => b.score - a.score)
+              .slice(0, REEL.plansMax)
+              .sort((a, b) => a.debut - b.debut);
+            const el = await chargerElements(ctx, chefEnPied(dossier), [], commerce.famille);
+            const accroche = fin ? await imageDeLaVideo(adresse(fin.blob), Math.max(0, fin.duree - 0.6)) : null;
+            r = await monterReel({
+              ctx,
+              toile: toileFilm,
+              police: { affiche: el.police.affiche, texte: el.police.bulle, serif: el.police.enseigne },
+              musique: el.musique,
+              photo: accroche,
+              plans: meilleurs.map((m) => ({ video: adresse(m.blob), depuis: m.duree > 1.9 ? 0.35 : 0 })),
+              phrase: null,
+              prise: null,
+              plat: produit.trim(),
+              prix: prix.trim(),
+              commerce: commerce.nom,
+              ville,
+              quand: "Aujourd’hui",
+              famille,
+              motCle,
+              emission: `ÉPISODE ${serie.numero}`,
+              ecouter: true,
+              surProgres: (p) => setMontage({ quoi: "Ton Reel", p, mot: "Ton Reel de 10 secondes, pour tes réseaux." }),
+              signal: ctl.signal,
+            });
+            const rp = { ...r, url: URL.createObjectURL(r.blob) };
+            films.current.push(rp);
+            setReel(rp);
+          } catch {
+            r = null;
+          } finally {
+            adresses.forEach((u) => URL.revokeObjectURL(u));
+          }
+        }
+        // LA BANDE-ANNONCE, POUR SES RÉSEAUX (sans Reel) : un Reel ne dépasse pas 90 secondes
+        if (!r && !ctl.signal.aborted && e.duree > REEL_MAX_S - 5) {
           setMontage({ quoi: "La bande-annonce", p: 0, mot: "Et sa bande-annonce, pour tes réseaux…" });
           const b = await monterEpisode({
             ...commun,
@@ -367,7 +427,7 @@ export function EpisodeComptoir({
         veille.current = null;
       }
     },
-    [commerce, dossier, prix, produit, serie, ville],
+    [commerce, dossier, prix, produit, serie, ville, motCle],
   );
 
   const terminer = async () => {
@@ -431,7 +491,8 @@ export function EpisodeComptoir({
       texte: texteDeLEpisode(serie.saison, serie.numero, produit, prix),
       affiche: episode.affiche,
       episode,
-      bande,
+      // 🎞️ SES RÉSEAUX REÇOIVENT SON REEL, sinon la bande-annonce
+      bande: reel ?? bande,
     });
     setEnvoi({ etat: "fini", ...r });
     if (r.ok) {
@@ -593,17 +654,28 @@ export function EpisodeComptoir({
                   {titre} · {produit.trim()} · {enDuree(episode.duree)} · {enMo(episode.blob.size)}
                 </figcaption>
               </figure>
-              {bande && (
+              {reel ? (
                 <figure className="ep-film petit">
-                  <video src={bande.url} poster={bande.affiche || undefined} controls playsInline />
-                  <figcaption>La bande-annonce, pour tes réseaux · {Math.round(bande.duree)} s</figcaption>
+                  <video src={reel.url} poster={reel.affiche || undefined} controls playsInline />
+                  <figcaption>Ton Reel, pour Instagram, TikTok et Facebook · {Math.round(reel.duree)} s</figcaption>
                 </figure>
+              ) : (
+                bande && (
+                  <figure className="ep-film petit">
+                    <video src={bande.url} poster={bande.affiche || undefined} controls playsInline />
+                    <figcaption>La bande-annonce, pour tes réseaux · {Math.round(bande.duree)} s</figcaption>
+                  </figure>
+                )
               )}
               <button type="button" className="cz-go grand" onClick={() => void envoyer()} disabled={envoi?.etat === "en-cours"}>
                 {envoi?.etat === "en-cours" ? "J’envoie ton épisode…" : "📣 Publier l’épisode"}
               </button>
               <p className="ep-ou">
-                {bande ? "L’épisode entier dans Le Direct et sur ta page ; sa bande-annonce sur tes réseaux." : "Dans Le Direct, sur ta page et sur tes réseaux."}
+                {reel
+                  ? "L’épisode entier dans Le Direct et sur ta page ; ton Reel sur tes réseaux."
+                  : bande
+                    ? "L’épisode entier dans Le Direct et sur ta page ; sa bande-annonce sur tes réseaux."
+                    : "Dans Le Direct, sur ta page et sur tes réseaux."}
               </p>
               {envoi?.etat === "fini" && !envoi.ok && <p className="ep-erreur">{envoi.message}</p>}
               <div className="ep-actions">

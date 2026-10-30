@@ -18,7 +18,7 @@
 import { motsDesSousTitres, type MotDit, type SousTitre } from "./interview-fantome";
 
 /** Les temps du Reel, en secondes. Sa phrase dure ce qu'elle dure, entre `phraseMin` et `phraseMax`. */
-export const REEL = { accroche: 2.4, appel: 3.3, phraseMin: 1.6, phraseMax: 4.8, accrocheSansPhrase: 4.2 } as const;
+export const REEL = { accroche: 2.4, appel: 3.3, phraseMin: 1.6, phraseMax: 4.8, accrocheSansPhrase: 4.2, plan: 1.15, plansMax: 3 } as const;
 
 /** Sa phrase : la prise `k`, de `de` à `a` (en secondes depuis le début de la prise), et ses mots. */
 export type PhraseDuReel = { k: number; de: number; a: number; mots: MotDit[] };
@@ -76,8 +76,13 @@ export function phraseDuReel(prises: readonly PriseDuReel[], forts: ((mot: strin
   return { k, de: Math.max(0, de - 0.12), a: a + 0.25, mots };
 }
 
-/** La durée du Reel : l'accroche, sa phrase (s'il y en a une), l'appel. */
-export const dureeDuReel = (phrase: PhraseDuReel | null) => (phrase ? REEL.accroche + (phrase.a - phrase.de) : REEL.accrocheSansPhrase) + REEL.appel;
+/**
+ * La durée du Reel : l'accroche ; puis sa phrase (l'interview), ou ses plans — ses autres photos (le film du
+ * reporter : c'est la voix du reporter qui raconte, pas la sienne, elle ne passe pas dans le Reel), ses meilleurs
+ * gestes filmés (l'épisode) —, `REEL.plan` secondes chacun ; l'appel.
+ */
+export const dureeDuReel = (phrase: PhraseDuReel | null, plans = 0) =>
+  (phrase ? REEL.accroche + (phrase.a - phrase.de) : plans > 0 ? REEL.accroche + Math.min(plans, REEL.plansMax) * REEL.plan : REEL.accrocheSansPhrase) + REEL.appel;
 
 /** L'appel, prêt à dessiner : la petite étiquette rose, les lignes en géant (`accent` en rose), la phrase dessous. */
 export type AppelDuReel = {

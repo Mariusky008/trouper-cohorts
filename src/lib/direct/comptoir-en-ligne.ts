@@ -137,8 +137,11 @@ export async function envoyerEnLigne(
   mission: Mission,
   p: Publication,
   principal?: Publication,
-  /** 🎬 Le film du reporter (il n'a pas voulu parler) : il part avec l'annonce, comme une interview. */
-  film?: { blob: Blob; type: string; duree: number },
+  /**
+   * 🎬 Le film du reporter (il n'a pas voulu parler) : il part avec l'annonce, comme une interview. Et 🎞️ son
+   * Reel de 10 s (`reel`) : c'est lui que reçoivent ses réseaux ; s'il n'a pas pu partir, ils prennent le film.
+   */
+  film?: { blob: Blob; type: string; duree: number; reel?: { blob: Blob; type: string; duree: number } | null },
 ): Promise<ResultatEnvoi> {
   if (!c.reel) return { ok: false, ou: [], erreur: "Ce commerce n'a pas de lien pro." };
   const { slug, token } = c.reel;
@@ -146,11 +149,16 @@ export async function envoyerEnLigne(
   const erreurs: string[] = [];
   let reseaux: string[] = [];
   // LE FILM D'ABORD : son adresse part avec l'annonce. Un film qui n'a pas pu partir n'empêche pas l'annonce.
-  let video: { video: string; videoSecondes: number; videoMp4: boolean } | null = null;
+  let video: Record<string, string | number | boolean> | null = null;
   if (film && p.genre === "principal") {
     const depot = await deposerVideo(c, film.blob, film.type);
     if ("erreur" in depot) erreurs.push(`Le film du reporter n'a pas pu partir : ${depot.erreur}`);
-    else video = { video: depot.url, videoSecondes: Math.round(film.duree * 10) / 10, videoMp4: enMp4(film.type) };
+    else {
+      video = { video: depot.url, videoSecondes: Math.round(film.duree * 10) / 10, videoMp4: enMp4(film.type) };
+      const reel = film.reel ? await deposerVideo(c, film.reel.blob, film.reel.type) : null;
+      if (film.reel && reel && "url" in reel)
+        video = { ...video, videoReseaux: reel.url, videoReseauxSecondes: Math.round(film.reel.duree * 10) / 10, videoReseauxMp4: enMp4(film.reel.type) };
+    }
   }
 
   // ── LE PLAT DU RESTAURANT : SA PAGE, ÉTAPE 2 ──
