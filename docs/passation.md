@@ -128,6 +128,8 @@ sur sa voix, tout au long de la présentation ; Mike l'accompagne.
      `outils/alignement.py`) : rien à filmer, plus « cartoon ».
 - **Ce que le propriétaire fournit** : sa photo (de face, fond neutre), ses voix en mp3 (enregistrées, pas de synthèse), les nouvelles
   répliques de Mike (ElevenLabs), et la vidéo de la bouche (façon 1).
+- **Les répliques complètes, au mot près : `docs/demo-humaine-repliques.md`** (proposées le 30 octobre, avec le
+  Reel, FANTÔME, le bon « Servie » et la pièce d'or — à valider). Le tableau ci-dessous en est la première version.
 - **L'arc proposé** (un mois chez un commerce fictif). **Avant de coder : montrer au propriétaire toutes les
   répliques écrites (textes au mot près) et ce qu'on voit à chacune, et attendre son accord**, puis les enregistrements :
 
