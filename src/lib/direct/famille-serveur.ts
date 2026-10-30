@@ -459,10 +459,11 @@ export async function familleDeLaVideo(supabase: Supabase, siteId: string, o: { 
   const hier = jourAvant(auj, 1);
   const semaine = jourAvant(auj, 7);
   const f = await lireFamille(supabase, siteId);
-  const [foule, accords, motsRes] = await Promise.all([
+  const [foule, accords, motsRes, cage] = await Promise.all([
     fouleDe(supabase, siteId, f),
     accordsVideo(supabase, siteId),
     supabase.from("clik_mot").select("habitant_id, texte, liste, coeur_le, epingle_le, jour, created_at").eq("site_id", siteId).gte("jour", semaine).order("created_at", { ascending: false }).limit(500),
+    surprisesDuJour(supabase, siteId),
   ]);
   const parJour = new Map<string, number>();
   for (const p of f.lignes) {
@@ -510,6 +511,8 @@ export async function familleDeLaVideo(supabase: Supabase, siteId: string, o: { 
     membres: f.ordre.length,
     quand,
     fantomes,
+    // 🎁 LE VRAI STOCK DE LA CAGE DORÉE : ce qu'il reste aujourd'hui, jamais un chiffre inventé
+    surprises: cage.liste.length ? cage.liste.reduce((n, x) => n + Math.max(0, x.stock - x.pris), 0) : null,
   };
 }
 

@@ -87,6 +87,11 @@ button.ei-retour{font-family:inherit;cursor:pointer}
 .ei-toile canvas,.ei-resultat{display:block;width:100%;max-width:340px;height:auto;
   aspect-ratio:9/16;margin:0 auto;border-radius:18px;background:#000}
 .ei-resultat{margin-top:20px}
+.ei-deux{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.ei-deux figure{margin:0;min-width:0}
+.ei-deux .ei-resultat{margin-top:0;max-width:100%}
+.ei-deux figcaption{margin-top:8px;font-size:13px;line-height:1.35;text-align:center;opacity:.85}
+.ei-deux figcaption b{display:block;font-size:14px;opacity:1}
 .ei-attente{width:44px;height:44px;margin:40px auto;border-radius:50%;
   border:4px solid var(--trait);border-top-color:var(--menthe);animation:eiTourne 1s linear infinite}
 @keyframes eiTourne{to{transform:rotate(360deg)}}

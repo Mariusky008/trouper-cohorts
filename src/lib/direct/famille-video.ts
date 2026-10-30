@@ -79,7 +79,7 @@ function image(src: string): Promise<HTMLImageElement | null> {
 }
 
 /** La cage dorée des tours, en SVG (la même que sur la page de la famille). */
-function svgCage(couleur: string): string {
+export function svgCage(couleur: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 220" width="300" height="440"><defs>
 <linearGradient id="o" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF3C4"/><stop offset=".28" stop-color="#F2C46B"/><stop offset=".62" stop-color="#A9742A"/><stop offset=".82" stop-color="#FFE3A0"/><stop offset="1" stop-color="#7E5219"/></linearGradient>
 <linearGradient id="b" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7A4E1A"/><stop offset=".45" stop-color="#FFE9AE"/><stop offset=".7" stop-color="#C8933F"/><stop offset="1" stop-color="#6E4516"/></linearGradient>
@@ -176,7 +176,7 @@ function noir(g: CanvasRenderingContext2D, a: number) {
 }
 
 /** Une image posée par ses pieds (`bas`), centrée sur `cx`, de hauteur `h`. */
-function enPied(g: CanvasRenderingContext2D, img: HTMLImageElement | null, cx: number, bas: number, h: number, angle = 0) {
+export function enPied(g: CanvasRenderingContext2D, img: HTMLImageElement | null, cx: number, bas: number, h: number, angle = 0) {
   if (!img) return;
   const w = (img.naturalWidth * h) / Math.max(1, img.naturalHeight);
   g.save();

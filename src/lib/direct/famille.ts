@@ -210,6 +210,8 @@ export type FamilleVideo = {
   /** Les fantômes montrés : ceux d'hier, ou de la semaine. */
   quand: "hier" | "semaine";
   fantomes: FantomeVideo[];
+  /** 🎁 Ce qu'il reste VRAIMENT dans sa cage dorée aujourd'hui (la fin du Reel) — `null` : pas de surprise du jour. */
+  surprises: number | null;
 };
 export const FANTOMES_VIDEO_MAX = 12;
 
@@ -219,7 +221,7 @@ export function familleVideoDemo(o: { nom: string; branche: string; hote: string
   const fantomes: FantomeVideo[] = looks.map((look, k) => ({ look, grade: k < 2 ? "or" : k < 5 ? "argent" : "bronze" }));
   fantomes[0] = { ...fantomes[0], prenom: "Léa", numero: 12, mot: "Ma nouvelle adresse préférée 💛" };
   fantomes[2] = { ...fantomes[2], prenom: "Hugo", numero: 31, mot: "Merci pour l’accueil de samedi !" };
-  return { nom: o.nom, lien: "clikme.fr/f/ton-commerce", branche: o.branche, hote: o.hote, hier: 23, record: 29, recordBattuHier: false, membres: 148, quand: "hier", fantomes };
+  return { nom: o.nom, lien: "clikme.fr/f/ton-commerce", branche: o.branche, hote: o.hote, hier: 23, record: 29, recordBattuHier: false, membres: 148, quand: "hier", fantomes, surprises: 15 };
 }
 
 // ═══ 🎁 « JE TE GÂTE » ═════════════════════════════════════════════════════

@@ -258,6 +258,21 @@ export function motsPourLesReseaux(texte: unknown, max = 600): string {
 }
 
 /**
+ * « ENVOIE ÇA À… » : la ligne qui fait partager en message privé (ce qui compte le plus pour toucher de
+ * nouveaux gens). À table, la personne avec qui on vient — ce midi avant 15 h (heure de Paris), ce soir
+ * après ; ailleurs, quelqu'un qui va aimer. C'est ClikMe qui parle au lecteur : jamais une offre au nom
+ * du commerçant.
+ */
+export function ligneDEnvoi(branche: string, maintenant = new Date()): string {
+  if (branche === "restaurant" || branche === "bar") {
+    // « 11 h » : seulement le nombre
+    const heure = parseInt(new Intl.DateTimeFormat("fr-FR", { hour: "numeric", hour12: false, timeZone: "Europe/Paris" }).format(maintenant), 10);
+    return `Envoie ça à la personne avec qui tu viens ${heure < 15 ? "ce midi" : "ce soir"} 👇`;
+  }
+  return "Envoie ça à quelqu’un qui va adorer 👇";
+}
+
+/**
  * LA LÉGENDE DE SA PUBLICATION. Ses mots d'abord — ceux qu'il a écrits au
  * comptoir, puis ceux qu'il a dits à son micro, sans rien y ajouter qu'il
  * n'ait dit —, puis la porte, puis où le trouver : son nom, sa ville. Les
@@ -279,11 +294,14 @@ export function legendeReseaux(p: {
   porte?: string;
   lien?: string;
   reseau?: string;
+  /** « Envoie ça à la personne avec qui tu viens ce midi 👇 » (voir `ligneDEnvoi`) — pas sur Google. */
+  envoi?: string;
 }): string {
   const mots = p.mots ? motsPourLesReseaux(p.mots) : "";
   if (p.reseau === "googlebusiness") return [p.texte.trim(), mots ? `« ${mots} »` : ""].filter(Boolean).join("\n\n").slice(0, 1500);
   const lignes = [p.texte.trim()];
   if (mots) lignes.push("", `« ${mots} »`);
+  if (p.envoi) lignes.push("", p.envoi);
   // INSTAGRAM NE CLIQUE PAS UN LIEN ÉCRIT : la porte renvoie à sa bio.
   const lien = p.reseau === "instagram" ? (p.porte ? "lien en bio" : "") : p.lien ?? "";
   if (p.porte) lignes.push("", lien ? `${p.porte} 👉 ${lien}` : p.porte);

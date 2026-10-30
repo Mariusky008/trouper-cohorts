@@ -261,7 +261,7 @@ Suite à l'analyse du testeur sur la vidéo elle-même :
    (`OUVERTURE_FAMILLE`, chantier 5) : c'est ce qui fait défiler. Ouvrir sur le meilleur plan du commerçant ;
    l'invitation devient un **bandeau par-dessus**, pas un écran ; la fin « la famille d'hier » passe de 8,4 s à 3–4 s.
    Fait : bandeau de 3 s par-dessus ses images, fin de 4,8 s (un fantôme s'avance au lieu de deux).
-2. **Deux vidéos pour un tournage**, sans rien de plus à faire pour le commerçant :
+2. **FAIT pour l'interview (30 octobre) — Deux vidéos pour un tournage**, sans rien de plus à faire pour le commerçant :
    - **la longue** (l'interview ~1 min, l'épisode, le film photo), comme aujourd'hui : surtout sur sa page ClikMe,
      Facebook, et de temps en temps en publication Instagram ;
    - **le Reel du jour, ~10 s**, monté tout seul des mêmes images, pour Instagram, TikTok et les Reels Facebook :
@@ -270,9 +270,11 @@ Suite à l'analyse du testeur sur la vidéo elle-même :
      du jour** (« 15 surprises ce midi » : jamais un stock inventé). L'épisode fait déjà une bande-annonce (~30 s,
      `genre: "bande"` de `episode-montage.ts`) : le Reel de 10 s la remplace ou s'y ajoute. Au comptoir, les deux,
      « Publier le Reel » en avant. Le montage se fait en temps réel sur son téléphone (une minute pour l'interview).
-3. **L'appel s'adapte** : « Écris FANTÔME en commentaire » seulement si l'envoi automatique du lien est branché sur
+3. **FAIT en partie — L'appel s'adapte** : « Écris FANTÔME en commentaire » seulement si l'envoi automatique du lien est branché sur
    son compte (5 bis, n° 2) ; sinon « Lien dans ma bio ».
-4. **La ligne « Envoie ça à la personne avec qui tu viens ce midi 👇 »** dans le texte de publication que ClikMe
+   Fait : le Reel de l'interview dit « Lien dans ma bio » ; le mot-clé (`motCle` de `monterReel`) attend que l'envoi
+   automatique soit branché. Le Reel du film photo et de l'épisode reste à faire (l'épisode garde sa bande-annonce).
+4. **FAIT — La ligne « Envoie ça à la personne avec qui tu viens ce midi 👇 »** dans le texte de publication que ClikMe
    écrit déjà (les envois en message privé comptent beaucoup pour toucher de nouveaux gens).
 5. **À ne pas faire** : inventer l'accroche ou une offre au nom du commerçant (« On t'offre le dessert si… ») — les
    mots viennent de lui (son plat, sa surprise du jour) ; mettre une musique « tendance » dans nos fichiers (sons

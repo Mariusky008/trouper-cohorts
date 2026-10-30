@@ -39,6 +39,7 @@ import type { FamilleVideo } from "@/lib/direct/famille";
 import type { ImagesFamille } from "@/lib/direct/famille-video";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  motsForts,
   ATTENTE_SANS_PAROLE_S,
   ENTRE_DEUX_S,
   FORMATS,
@@ -75,6 +76,8 @@ import {
   type Montage,
   type PriseAMonter,
 } from "@/lib/direct/interview-montage";
+import { phraseDuReel } from "@/lib/direct/reel-du-jour";
+import { monterReel, type Reel } from "@/lib/direct/reel-montage";
 import { sessionPourLeMicro } from "@/lib/direct/session-audio";
 import { alignerMots, resserrerLaReponse, resumeDesCoupes, sousTitresDesMots, type Coupe, type MotHorodate } from "@/lib/direct/interview-resserrer";
 import { pistesAMontrer, pistesDe } from "@/lib/direct/interview-pistes";
@@ -316,7 +319,17 @@ export type InterviewDuCommerce = {
    * `envoyerInterview`. Rend la phrase à lui dire, réussite ou échec.
    * Absent sur la page d'essai : la vidéo s'y partage ou se télécharge.
    */
-  publier?: (m: { blob: Blob; type: string; duree: number; affiche: string; plat: string; prix: string; mots?: string }) => Promise<{ ok: boolean; message: string }>;
+  publier?: (m: {
+    blob: Blob;
+    type: string;
+    duree: number;
+    affiche: string;
+    plat: string;
+    prix: string;
+    mots?: string;
+    /** 🎞️ Le Reel du jour (une dizaine de secondes) : il part sur ses réseaux à la place de l'interview. */
+    reel?: { blob: Blob; type: string; duree: number } | null;
+  }) => Promise<{ ok: boolean; message: string }>;
   /**
    * 🎬 SA FAMILLE, pour le début « Rejoins ma famille » et la fin « la famille d'hier » (voir
    * `famille-video.ts`). Absente sur la page d'essai : l'interview s'y monte sans.
@@ -378,6 +391,9 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
   const [reste, setReste] = useState({ reponse: 0, max: 1 });
   const [progres, setProgres] = useState(0);
   const [montage, setMontage] = useState<(Montage & { url: string }) | null>(null);
+  /** 🎞️ Le Reel du jour, monté juste après l'interview des mêmes prises (avec sa famille seulement). */
+  const [reel, setReel] = useState<(Reel & { url: string }) | null>(null);
+  const [enReel, setEnReel] = useState(false);
   const [reponses, setReponses] = useState<Reponse[]>([]);
   const [ecoute, setEcoute] = useState(false);
   const [formatPrise, setFormatPrise] = useState("");
@@ -845,6 +861,46 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
         if (ancien) URL.revokeObjectURL(ancien.url);
         return { ...m, url: URL.createObjectURL(m.blob) };
       });
+      /* 🎞️ LE REEL DU JOUR, des mêmes prises, juste après (dix secondes de plus) : son plat, une phrase qu'il a
+         dite, la cage dorée. Seulement avec sa famille (un commerce client, ou la démonstration). */
+      setReel((ancien) => {
+        if (ancien) URL.revokeObjectURL(ancien.url);
+        return null;
+      });
+      if (famille) {
+        setEnReel(true);
+        setProgres(0);
+        try {
+          const platDuJour = reglages.current.plat.trim() || script.quoi;
+          const phrase = phraseDuReel(
+            aMonter.map((p) => ({ sousTitres: p.sousTitres, questionFin: p.reponseDebut ?? p.questionFin, coupe: p.coupe, audio: Boolean(p.audio), coupes: p.coupes })),
+            motsForts(platDuJour, reglages.current.prix),
+          );
+          const prise = phrase ? aMonter[phrase.k] : null;
+          const r = await monterReel({
+            ctx,
+            toile: toile.current!,
+            police: { affiche: el.police.affiche, texte: el.police.bulle, serif: el.police.enseigne },
+            musique: el.musique,
+            photo: reglages.current.photoPlat.url || null,
+            phrase,
+            // S'IL NE SE MONTRE PAS, sa voix passe sur la photo de son plat
+            prise: prise ? { url: reglages.current.mode === "fantome" ? null : prise.url, audio: prise.audio } : null,
+            plat: platDuJour,
+            prix: reglages.current.prix,
+            commerce,
+            famille,
+            ecouter: reglages.current.ecouter,
+            surProgres: setProgres,
+            signal: stop.signal,
+          });
+          setReel({ ...r, url: URL.createObjectURL(r.blob) });
+        } catch {
+          /* le Reel a lâché : l'interview est là, elle part seule */
+        } finally {
+          setEnReel(false);
+        }
+      }
       setEtape("resultat");
     } catch (e) {
       setErreur(
@@ -870,6 +926,10 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
     }
     majReponses(() => []);
     setMontage(null);
+    setReel((ancien) => {
+      if (ancien) URL.revokeObjectURL(ancien.url);
+      return null;
+    });
     setEnvoi(null);
     setErreur("");
     setBulle(null);
@@ -903,6 +963,7 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
         plat: reglages.current.plat.trim() || script.quoi,
         prix: reglages.current.prix.trim(),
         ...(mots ? { mots } : {}),
+        reel: reel ? { blob: reel.blob, type: reel.type, duree: reel.duree } : null,
       });
       setEnvoi({ etat: r.ok ? "fini" : "erreur", message: r.message });
     } catch {
@@ -1238,11 +1299,32 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
         <div className="ei-temps large">
           <i style={{ transform: `scaleX(${progres})` }} />
         </div>
+        {enReel ? <p className="ei-n">Et maintenant ton Reel de 10 secondes, pour Instagram, TikTok et Facebook…</p> : null}
       </div>
 
       {etape === "resultat" ? (
         <>
-          {montage ? <video className="ei-resultat" src={montage.url} poster={affiche} controls playsInline /> : null}
+          {/* 🎞️ LE REEL D'ABORD : c'est lui qui part sur ses réseaux ; l'interview, sur sa page et dans Le Direct */}
+          {reel ? (
+            <div className="ei-deux">
+              <figure>
+                <video className="ei-resultat" src={reel.url} poster={reel.affiche || undefined} controls playsInline />
+                <figcaption>
+                  <b>Ton Reel · {Math.round(reel.duree)} s</b> Instagram, TikTok, Facebook
+                </figcaption>
+              </figure>
+              {montage ? (
+                <figure>
+                  <video className="ei-resultat" src={montage.url} poster={affiche} controls playsInline />
+                  <figcaption>
+                    <b>Ton interview · {Math.round(montage.duree)} s</b> Ta page et Le Direct
+                  </figcaption>
+                </figure>
+              ) : null}
+            </div>
+          ) : montage ? (
+            <video className="ei-resultat" src={montage.url} poster={affiche} controls playsInline />
+          ) : null}
           {erreur ? <p className="ei-erreur">{erreur}</p> : null}
           {/* ═══ PUBLIER PARTOUT — au comptoir seulement ═══ */}
           {montage && du?.publier ? (
@@ -1257,7 +1339,9 @@ export function EssaiInterview({ du }: { du?: InterviewDuCommerce } = {}) {
               </button>
               <p className={`ei-n${envoi?.etat === "erreur" ? " ei-erreur" : ""}`} role="status">
                 {envoi?.message ??
-                  (lisiblePartout(montage.type) && montage.duree <= 90
+                  (reel && lisiblePartout(reel.type)
+                    ? "Ton interview dans Le Direct et sur ta page, ton Reel sur Instagram et Facebook. Google reçoit son image."
+                    : lisiblePartout(montage.type) && montage.duree <= 90
                     ? "Le Direct, ta page, et un Reel sur Instagram et Facebook. Google reçoit son image."
                     : `Le Direct et ta page reçoivent la vidéo. Sur Instagram, Facebook et Google, c’est son image qui part${
                         montage.duree > 90 ? " : un Reel tient en 90 secondes" : " : ce téléphone n’écrit pas de MP4"

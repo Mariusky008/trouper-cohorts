@@ -26,7 +26,7 @@ const charger = (chemin) => {
   new Function("exports", "module", js)(boite.exports, boite);
   return boite.exports;
 };
-const { porteDuPost, legendeReseaux, lienDeLaPorte, lienDeBio, adresseLisible, motsPourLesReseaux, idDePiece } = charger(
+const { porteDuPost, legendeReseaux, ligneDEnvoi, lienDeLaPorte, lienDeBio, adresseLisible, motsPourLesReseaux, idDePiece } = charger(
   "src/lib/reseaux/reseaux-donnees.ts",
 );
 const { debitDuMontage, OCTETS_VISES, DEBIT_SON } = charger("src/lib/direct/interview-fantome.ts");
@@ -86,6 +86,20 @@ console.log("══ la légende, réseau par réseau ══");
   dire(ig.length <= 2000 && gg.length <= 1500, "dans les longueurs des réseaux");
   const sans = legendeReseaux({ ...base, mots: undefined, reseau: "instagram" });
   dire(!sans.includes("«"), "sans vocal : rien d'inventé à sa place");
+}
+
+console.log("══ « Envoie ça à… » ══");
+{
+  const midi = new Date("2026-10-30T10:30:00Z"); // 11 h 30 à Paris
+  const soir = new Date("2026-10-30T18:00:00Z"); // 19 h à Paris
+  dire(ligneDEnvoi("restaurant", midi) === "Envoie ça à la personne avec qui tu viens ce midi 👇", "à table, avant 15 h : « ce midi »");
+  dire(ligneDEnvoi("bar", soir) === "Envoie ça à la personne avec qui tu viens ce soir 👇", "après 15 h : « ce soir »");
+  dire(ligneDEnvoi("artisan", midi) === "Envoie ça à quelqu’un qui va adorer 👇", "ailleurs : quelqu'un qui va adorer");
+  const base = { texte: "Le plat du jour : Magret au miel · 18 €", mots: "Il est cuit doucement.", nom: "Chez Bergine", ville: "Dax", porte: "🍽️ Réserve ta table", lien: "https://www.clikme.fr/b/chez-bergine", envoi: ligneDEnvoi("restaurant", midi) };
+  const ig = legendeReseaux({ ...base, reseau: "instagram" });
+  const gg = legendeReseaux({ ...base, reseau: "googlebusiness" });
+  dire(ig.indexOf(base.envoi) > ig.indexOf("« Il est cuit doucement. »") && ig.indexOf(base.envoi) < ig.indexOf("Réserve ta table"), "Instagram : après ses mots, avant la porte");
+  dire(!gg.includes("Envoie ça"), "Google : pas de « Envoie ça »");
 }
 
 console.log("══ ses mots, coupés proprement ══");

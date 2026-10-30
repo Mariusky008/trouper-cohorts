@@ -1126,7 +1126,16 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
                  l'écran montre où la vidéo arriverait. */
               ...(commerce.reel
                 ? {
-                    publier: async (m: { blob: Blob; type: string; duree: number; affiche: string; plat: string; prix: string; mots?: string }) => {
+                    publier: async (m: {
+                      blob: Blob;
+                      type: string;
+                      duree: number;
+                      affiche: string;
+                      plat: string;
+                      prix: string;
+                      mots?: string;
+                      reel?: { blob: Blob; type: string; duree: number } | null;
+                    }) => {
                       const r = await envoyerInterview(commerce, {
                         nom: m.plat || principal?.nom || scriptDe(commerce.famille).quoi,
                         prix: m.prix,
@@ -1135,6 +1144,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
                         duree: m.duree,
                         affiche: m.affiche,
                         ...(m.mots ? { mots: m.mots } : {}),
+                        // 🎞️ LE REEL DU JOUR PART SUR SES RÉSEAUX ; l'interview reste dans Le Direct et sur sa page
+                        ...(m.reel ? { reel: m.reel } : {}),
                       });
                       if (!r.ok) return { ok: false, message: r.erreur ?? "L’envoi a échoué. Réessaie." };
                       return {

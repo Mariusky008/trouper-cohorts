@@ -33,6 +33,7 @@ import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 import {
   legendeReseaux,
+  ligneDEnvoi,
   lienDeLaPorte,
   PLATEFORMES_PAR_DEFAUT,
   porteDuPost,
@@ -421,8 +422,9 @@ export async function publierSurSesReseaux(
     const metier = site.activite ? resolveMetier(site.activite).entry?.label ?? "" : "";
     const porte = porteDuPost({ branche: brancheDuMetier(site.activite ?? ""), metier: site.activite, piece: Boolean(annonce.piece) });
     const lien = lienDeLaPorte(SITE_URL, site.slug, porte.essai ? annonce.piece : undefined);
+    const envoi = ligneDEnvoi(brancheDuMetier(site.activite ?? ""));
     const legende = (reseau: string) =>
-      legendeReseaux({ texte, mots: annonce.mots, nom: site.nom, ville: site.ville, metier, porte: porte.mot, lien, reseau });
+      legendeReseaux({ texte, mots: annonce.mots, nom: site.nom, ville: site.ville, metier, porte: porte.mot, lien, reseau, envoi });
     const pour = (c: CompteReseau): ParReseau => ({
       content: legende(c.plateforme),
       // LA COUVERTURE DU REEL : l'image que le montage a choisie (son nom en géant), pas la première de la vidéo (un écran noir).

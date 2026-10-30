@@ -334,6 +334,21 @@ s'ouvrent et se ferment pareil, sans rien à choisir (`src/lib/direct/famille-vi
   « Record battu ! ») ; ses fantômes, chacun avec la couleur de son palier ; un qui s'avance avec son petit mot, son
   prénom et son numéro ; puis les trois cages, « Libère ton fantôme », « Lien dans ma bio » et son lien. Hier vide :
   la famille de la semaine. Famille encore vide : son fantôme invite à être le tout premier.
+- **🎞️ Le Reel du jour (~9 s)**, monté tout seul juste après l'interview, des mêmes prises (`reel-du-jour.ts` pour
+  les règles, `reel-dessin.ts` pour l'image, `reel-montage.ts` pour l'enregistrement) : l'accroche (la photo de son
+  plat qui arrive de près, son plat en géant, son prix) ; **une phrase qu'il a dite**, avec sa voix et ses mots qui
+  s'allument (`phraseDuReel` : celle qui nomme son plat ou son prix d'abord, jamais une phrase où il hésite, jamais
+  écrite à sa place ; sans son, le Reel se fait sur sa photo) ; puis **la cage dorée** qui tombe, tremble et se
+  soulève sur un cadeau : « 3 surprises du chef · aujourd'hui · une par personne » — **le vrai stock** du jour
+  (`FamilleVideo.surprises`, ce qu'il reste) ; sans surprise aujourd'hui, pas de cage ni de chiffre : son fantôme
+  et « Rejoins ma famille ». Le chemin : « Lien dans ma bio » (« Écris FANTÔME en commentaire » seulement quand
+  l'envoi automatique du lien en message privé sera branché sur son compte : `motCle`, pas encore utilisé).
+  Seulement avec sa famille (commerce client ou démonstration). « Publier partout » : l'interview dans Le Direct et
+  sur sa page, **le Reel sur ses réseaux** (`videoReseaux`) ; s'il n'a pas pu partir, ses réseaux prennent
+  l'interview, comme avant.
+- **« Envoie ça à… »** dans la légende Instagram et Facebook de toutes ses publications (`ligneDEnvoi`) : « Envoie ça
+  à la personne avec qui tu viens ce midi 👇 » (ce soir après 15 h) au restaurant et au bar, « Envoie ça à
+  quelqu'un qui va adorer 👇 » ailleurs. Jamais sur Google.
 - **Le prénom ne passe jamais sans son accord** : la vidéo part sur ses réseaux, bien plus public que sa page. Le
   fantôme y est toujours (sans rien qui dise qui c'est) ; le prénom, le numéro et le petit mot seulement pour qui a
   coché, sur la fiche de la page, « Mon prénom et mon petit mot peuvent apparaître dans ses vidéos » (une case jamais

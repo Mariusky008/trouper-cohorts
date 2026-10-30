@@ -255,7 +255,9 @@ export function texteDeLInterview(nom: string, prix: string): string {
  *      toujours l'image, avec son bouton.
  *
  * `mots` : ce qu'il a répondu à la première question, transcrit — ses mots,
- * cités dans la légende de ses posts.
+ * cités dans la légende de ses posts. `reel` : 🎞️ le Reel du jour (une dizaine de
+ * secondes, `reel-montage.ts`) — c'est lui que reçoivent ses réseaux ; s'il n'a pas
+ * pu partir, ils prennent l'interview, comme avant.
  */
 /**
  * LA VIDÉO DÉPOSÉE DANS NOTRE STOCKAGE, depuis son téléphone : une adresse signée contre son jeton pro,
@@ -281,13 +283,14 @@ async function deposerVideo(c: CommerceComptoir, blob: Blob, typeBrut: string): 
 
 export async function envoyerInterview(
   c: CommerceComptoir,
-  i: { nom: string; prix: string; blob: Blob; type: string; duree: number; affiche: string; mots?: string },
+  i: { nom: string; prix: string; blob: Blob; type: string; duree: number; affiche: string; mots?: string; reel?: { blob: Blob; type: string; duree: number } | null },
 ): Promise<ResultatEnvoi> {
   if (!c.reel) return { ok: false, ou: [], erreur: "Ce commerce n'a pas de lien pro." };
   const { slug, token } = c.reel;
   const depot = await deposerVideo(c, i.blob, i.type);
   if ("erreur" in depot) return { ok: false, ou: [], erreur: depot.erreur };
   const s = depot;
+  const reel = i.reel ? await deposerVideo(c, i.reel.blob, i.reel.type) : null;
   // SA VIDÉO VIT JUSQU'À CE SOIR, COMME SON PLAT DU JOUR.
   const ceSoir = new Date();
   ceSoir.setHours(23, 59, 0, 0);
@@ -300,6 +303,9 @@ export async function envoyerInterview(
     video: s.url,
     videoSecondes: Math.round(i.duree * 10) / 10,
     videoMp4: enMp4(i.type),
+    ...(i.reel && reel && "url" in reel
+      ? { videoReseaux: reel.url, videoReseauxSecondes: Math.round(i.reel.duree * 10) / 10, videoReseauxMp4: enMp4(i.reel.type) }
+      : {}),
     until: ceSoir.toISOString(),
     famille: c.famille === "table" ? "menu" : "offre",
     ...(i.mots ? { mots: i.mots } : {}),

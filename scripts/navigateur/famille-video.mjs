@@ -100,6 +100,7 @@ ok((await video(PROSPECT.slug)).statut === 404, "un prospect : pas de famille da
 let v = await video();
 ok(v.statut === 200 && v.quand === "hier" && v.hier === 4 && v.record === 4 && v.recordBattuHier === true && v.membres === 5, `la famille d'hier : 4, record battu, 5 membres (${v.quand}/${v.hier}/${v.record}/${v.recordBattuHier}/${v.membres})`);
 ok(v.nom === "Le Fournil des Fantômes" && v.lien === `clikme.fr/f/${SLUG}` && v.branche, `son nom, son lien (${v.lien})`);
+ok(v.surprises === null, `pas de surprise du jour : la cage dorée du Reel ne promet rien (${v.surprises})`);
 // UNE BOULANGERIE EST À TABLE : le fantôme de la table, pas celui du bien-être (il tombait dans les séances).
 ok(v.hote === "/direct/double/pied/salut-1.webp", `une boulangerie : le fantôme de la table (${v.hote})`);
 const fv = v.fantomes ?? [];
@@ -174,6 +175,9 @@ const MODULES = {
   cages: "src/lib/direct/cages.ts",
   look: "src/lib/direct/look.ts",
   "interview-signature": "src/lib/direct/interview-signature.ts",
+  "interview-fantome": "src/lib/direct/interview-fantome.ts",
+  "reel-du-jour": "src/lib/direct/reel-du-jour.ts",
+  "reel-dessin": "src/lib/direct/reel-dessin.ts",
   echanges: "src/lib/echanges/echanges.ts",
 };
 const js = (nom) => {
@@ -276,6 +280,86 @@ ok(suite(d).includes("Ma nouvelle adresse préférée") && !d.ecrits.some((x) =>
 ok(!suite(d).includes("Merci pour l’accueil de samedi"), "une fin resserrée : un seul fantôme s'avance");
 ok(vrai.duree[0] === 0 && vrai.duree[1] === 3 && vrai.duree[2] === 4.8, `le produit d'abord : pas d'écran d'ouverture, un bandeau de ${vrai.duree[1]} s, une fin de ${vrai.duree[2]} s`);
 
+// ═══ 🎞️ LE REEL DU JOUR ═══
+// Le vrai stock de la cage dorée : 5 surprises prévues, 2 prises — il en reste 3.
+await semer("clik_surprise", [{ site_id: SITE, jour: AUJ, libelle: "Une chouquette offerte", stock: 5, pris: 2 }]);
+v = await video();
+ok(v.surprises === 3, `le vrai stock de la cage dorée : il en reste 3 (${v.surprises})`);
+const reel = await p.evaluate(
+  async ({ d }) => {
+    const r = await import("/__essai/reel-du-jour.js");
+    const des = await import("/__essai/reel-dessin.js");
+    const fv = await import("/__essai/famille-video.js");
+    const fa = await import("/__essai/interview-fantome.js");
+    // SA PHRASE : celle qui nomme son plat, pas son bonjour ; jamais une prise sans son, jamais une hésitation dedans
+    const prise = (sousTitres, o = {}) => ({ sousTitres, questionFin: 0.8, coupe: 9, audio: true, ...o });
+    const bonjour = { texte: "Bonjour, je suis Paul et voilà.", debut: 1, fin: 2.8 };
+    const magret = { texte: "Notre magret au miel cuit doucement toute la matinée !", debut: 3.4, fin: 6.6 };
+    const forts = fa.motsForts("Magret au miel", "18 €");
+    const choix = r.phraseDuReel([prise([bonjour, magret])], forts);
+    const sansSon = r.phraseDuReel([prise([bonjour, magret], { audio: false })], forts);
+    const hesite = r.phraseDuReel([prise([magret], { coupes: [{ de: 4.5, a: 5 }] })], forts);
+    const appels = [r.appelDuReel({ surprises: 15 }), r.appelDuReel({ surprises: 1 }), r.appelDuReel({ surprises: 0 }), r.appelDuReel({ surprises: 3, motCle: "fantôme" })];
+    // LES IMAGES, DESSINÉES
+    const P = { affiche: "Impact, sans-serif", texte: getComputedStyle(document.body).fontFamily || "sans-serif", serif: "Georgia, serif" };
+    const charge = (src) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; });
+    const photo = await charge("/direct/table/magret/3.jpg");
+    const famIm = await fv.chargerFamilleVideo(d);
+    const im = { photo, fond: null, cage: await des.chargerCageDoree(), hote: famIm.hote, grain: null };
+    const toile = document.createElement("canvas");
+    toile.width = 720;
+    toile.height = 1280;
+    const g = toile.getContext("2d");
+    const ecrits = new Set();
+    const fillText = CanvasRenderingContext2D.prototype.fillText;
+    g.fillText = function (t, ...x) {
+      ecrits.add(String(t));
+      return fillText.call(this, t, ...x);
+    };
+    const images = {};
+    const dessiner = (scene, t, nom) => {
+      des.dessinerReel(g, P, scene, im, t, des.morceauxDuReel(scene.phrase));
+      if (nom) images[nom] = toile.toDataURL("image/png");
+    };
+    const scene = { plat: "Magret au miel", prix: "18 €", commerce: "Chez Bergine", phrase: choix, appel: r.appelDuReel({ surprises: d.surprises }), lien: d.lien, video: null };
+    const T = des.tempsDuReel(choix);
+    dessiner(scene, 1.4, "accroche");
+    for (const u of [0.5, 1.2, 2.0, 2.8]) dessiner(scene, T.phrase + u, u === 2.0 ? "phrase" : null);
+    for (const u of [0.3, 0.8]) dessiner(scene, T.appel + u, u === 0.3 ? "cage" : null);
+    dessiner(scene, T.appel + 2.6, "appel");
+    const avecCage = [...ecrits];
+    ecrits.clear();
+    dessiner({ ...scene, appel: r.appelDuReel({ surprises: null }) }, T.appel + 2.6, "sans");
+    return {
+      choix: choix && { k: choix.k, de: choix.de, a: choix.a, mots: choix.mots.map((w) => w.m).join(" ") },
+      sansSon,
+      hesite,
+      appels,
+      duree: r.dureeDuReel(choix),
+      dureeSans: r.dureeDuReel(null),
+      avecCage,
+      sansCage: [...ecrits],
+      images,
+      photo: Boolean(photo),
+      cage: Boolean(im.cage),
+    };
+  },
+  { d: demo },
+);
+for (const [k, url] of Object.entries(reel.images)) fs.writeFileSync(path.join(D, `reel-${k}.png`), Buffer.from(url.split(",")[1], "base64"));
+ok(reel.choix?.mots.startsWith("Notre magret au miel") && reel.choix.de < 3.4 && reel.choix.a > 6.4, `sa phrase : celle qui nomme son plat (${reel.choix?.mots})`);
+ok(reel.sansSon === null && reel.hesite === null, "jamais sans son son, jamais une phrase où il hésite");
+ok(reel.duree >= 7 && reel.duree <= 12 && reel.dureeSans >= 6 && reel.dureeSans <= 8, `une dizaine de secondes (${reel.duree.toFixed(1)} s ; ${reel.dureeSans.toFixed(1)} s sans phrase)`);
+const [a15, a1, a0, aMot] = reel.appels;
+ok(a15.cage && a15.haut === "15 surprises du chef" && a15.sous === "aujourd’hui · une par personne" && a1.haut === "1 surprise du chef", `le vrai stock : « ${a15.haut} », « ${a1.haut} »`);
+ok(!a0.cage && a0.haut === "Rejoins ma famille" && a0.bas === "Lien dans ma bio", "plus de surprise : pas de cage dorée, pas de chiffre inventé");
+ok(aMot.bas === "Écris FANTÔME en commentaire" && a15.bas === "Lien dans ma bio", "« Écris FANTÔME » seulement avec l'envoi automatique du lien branché ; sinon sa bio");
+ok(reel.photo && reel.cage, "la photo de son plat et la cage dorée se chargent");
+ok(/MAGRET ?\|? ?AU MIEL/.test(reel.avecCage.join("|")) && ["18 €", "Chez Bergine", "15 surprises du chef", "aujourd’hui · une par personne", "Lien dans ma bio", "clikme.fr/f/ton-commerce"].every((t) => reel.avecCage.includes(t)), `le Reel : son plat, son prix, la cage dorée et son vrai stock, le chemin (${reel.avecCage.join(" | ").slice(0, 240)})`);
+ok(reel.avecCage.some((t) => /magret/i.test(t) && t !== "MAGRET AU MIEL"), "ses mots s'allument pendant sa phrase");
+ok(reel.sansCage.includes("Rejoins ma famille") && !reel.sansCage.some((t) => /surprise/i.test(t)), "sans surprise du jour : son fantôme invite, aucune surprise annoncée");
+ok(![...reel.avecCage, ...reel.sansCage].some((t) => /exemple/i.test(t)), "jamais « exemple » à l'écran");
+
 // 🥖 UNE BOULANGERIE A SES MOTS : sa fournée, pas un plat du jour.
 const prop = await (await fetch(`${BASE}/api/site-internet/pro/proposition`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: SLUG, token: "jeton-test", action: "lire" }) })).json();
 ok(/Ta fournée du jour \?/.test(prop.proposition?.phrase ?? "") && !/plat du jour/.test(prop.proposition?.phrase ?? ""), `sa proposition du matin : « Ta fournée du jour ? » (${prop.proposition?.phrase})`);
@@ -283,7 +367,8 @@ await p.goto(`${BASE}/autour-de-moi/assistante?site=${SLUG}&k=jeton-test`, { wai
 // L'accueil est prêt quand sa carte « Ma famille » est là (avant, un toucher se perd).
 await p.waitForSelector(".fc-carte", { timeout: 60000 });
 await p.getByText("Publier une annonce", { exact: true }).first().click({ timeout: 30000 });
-await p.waitForTimeout(3000);
+// L'écran suivant se compile au premier passage (app de développement à froid) : on attend ses mots, pas un temps fixe.
+await p.waitForFunction(() => /fournée du jour|plat du jour|menu du jour/i.test(document.body.innerText), null, { timeout: 90000 }).catch(() => {});
 await p.screenshot({ path: `${D}/famille-video-3-boulangerie.png` });
 // La proposition du matin (« Ta fournée du jour ? ») ou le titre « Publier la fournée du jour », selon qu'elle est arrivée.
 const publier = (await p.locator("body").innerText()).replace(/\s+/g, " ");

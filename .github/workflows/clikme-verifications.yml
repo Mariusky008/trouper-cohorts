@@ -43,6 +43,7 @@ jobs:
           npx eslint
           src/app/f src/app/api/direct/famille
           src/lib/direct/famille.ts src/lib/direct/famille-serveur.ts src/lib/direct/famille-video.ts src/lib/direct/prenom.ts
+          src/lib/direct/reel-du-jour.ts src/lib/direct/reel-dessin.ts src/lib/direct/reel-montage.ts
           src/app/autour-de-moi/mes-familles.tsx src/app/autour-de-moi/assistante/famille-comptoir.tsx
           src/app/api/site-internet/pro/famille
 
