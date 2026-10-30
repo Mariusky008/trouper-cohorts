@@ -102,7 +102,8 @@ en entier. » Cause : les photos du film sont presque carrées (560 × 619) et l
 flouté d'elle-même, et le zoom la fait grandir jusqu'à sa taille sans jamais la couper (son fond bouge derrière).
 Les deux pages refaites et vérifiées à l'image (`?rendu`, `__rendre(t)`), sans erreur.
 
-**À REFAIRE (demande du propriétaire, après coup)** : dans la démo de 45 s, le film du téléphone ne prend plus
+**FAIT (30 octobre)** — voir `outils/tour-du-fantome/LISEZ-MOI.md` (« Le film du téléphone… »). Pour mémoire, la
+demande : dans la démo de 45 s, le film du téléphone ne prend plus
 tout l'écran (photos entières sur fond flouté), et le propriétaire préfère **la vidéo de l'interview**, « qui a du
 punch et prend tout le téléphone » : `outils/tour-du-fantome/tour/interview.mp4` (celle du tour du restaurant, Chez
 Bergine). Remplacer les quatre photos de `#ecran .ph` (`outils/tour-court2.html`) par cette vidéo en plein écran

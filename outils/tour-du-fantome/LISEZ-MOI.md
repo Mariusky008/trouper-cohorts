@@ -251,9 +251,15 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-court2/index
 (la page, ouverte avec `?rendu`, dessine l'instant demandé et calcule son propre son hors ligne ; ffmpeg assemble). Les
 voix : `recu/court/v2-1…8.mp3` et `demo1-g.mp3`, lues mot pour mot.
 
-**Le film du téléphone montre chaque photo en entière** (`#ecran .ph` : la photo en `contain` sur un fond flouté
-d'elle-même ; son zoom la fait grandir jusqu'à sa taille, jamais au-delà). Les photos sont presque carrées et l'écran
-très haut : en `cover`, on n'en voyait que la moitié. Même chose dans `tour-entrepreneurs2.html`.
+**Le film du téléphone, dans la démo de 45 s, est la vidéo de l'interview** (`tour/interview.mp4`, celle du tour du
+restaurant, en plein écran, muette : la voix de Mike reste le son), à la demande du propriétaire (« elle a du punch et
+prend tout le téléphone »). `tour-court2.py` la copie, et en fait une version WebM (VP8, une image clé toutes les
+demi-secondes) pour les navigateurs sans H.264 — dont le Chromium de l'export. Elle suit la ligne de temps
+(`suivreFilm`, `filmA`) : en direct, elle joue, file en avance rapide sur « ▶▶ » et se recale si elle dérive ; la
+pause l'arrête ; pour l'export (`?rendu`), `__rendre(t)` attend qu'elle soit à la bonne seconde. Pour l'essayer en
+local, un serveur qui sait envoyer un morceau de fichier (Range), comme Vercel : `python3 -m http.server` ne le sait
+pas, et la vidéo WebM ne s'y parcourt pas. Son titre à elle (« Jean-Marie… ») remplace celui de la démo. Dans
+`tour-entrepreneurs2.html`, le film reste fait de photos (entières, sur un fond flouté d'elles-mêmes).
 
 | Voix | Ce qui est dit | À l'écran |
 |---|---|---|

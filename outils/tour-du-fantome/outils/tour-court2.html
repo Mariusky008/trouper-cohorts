@@ -55,10 +55,11 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 #tel{width:620px;height:1250px;border-radius:96px;padding:18px;background:linear-gradient(145deg,#3A2A33,#120A0F 40%,#2A1D24);
   box-shadow:0 0 0 3px rgba(255,255,255,.12),0 60px 120px -30px rgba(0,0,0,.9),inset 0 0 0 2px rgba(255,255,255,.08)}
 #ecran{position:relative;width:100%;height:100%;border-radius:80px;overflow:hidden;background:#000}
-/* LE FILM ENTIER DANS LE TÉLÉPHONE : chaque photo se voit en entier (contain), sur un fond flouté d'elle-même ; le zoom ne la rogne jamais (elle grandit jusqu'à sa taille, son fond bouge derrière). */
+/* LE FILM DU TÉLÉPHONE : la vidéo de l'interview (`tour/interview.mp4`), en plein écran, muette (la voix de Mike reste le son). */
 #ecran .ph{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;opacity:0}
-#ecran .ph .fond{position:absolute;inset:-60px;width:calc(100% + 120px);height:calc(100% + 120px);object-fit:cover;filter:blur(40px) brightness(.55) saturate(1.2)}
-#ecran .ph .vue{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+#ecran .ph video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+/* la vidéo de l'interview a ses titres à elle (son nom, son plat) : pas de second titre par-dessus */
+#ecran .film-titre{display:none}
 #ilot{position:absolute;left:50%;top:22px;width:170px;height:46px;margin-left:-85px;border-radius:30px;background:#000;z-index:9}
 .film-voile{position:absolute;inset:0;z-index:2;background:linear-gradient(rgba(0,0,0,.5),transparent 28%,transparent 58%,rgba(0,0,0,.78))}
 .film-lumiere{position:absolute;inset:-20%;z-index:2;opacity:0;mix-blend-mode:screen;background:radial-gradient(ellipse 40% 30% at 20% 20%,rgba(255,170,90,.55),transparent 70%),radial-gradient(ellipse 35% 25% at 85% 70%,rgba(255,80,170,.4),transparent 70%)}
@@ -272,7 +273,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
     <div class="polar abs"><img src="m4.jpg" alt=""></div><div class="polar abs"><img src="m2.jpg" alt=""></div><div class="polar abs"><img src="m1.jpg" alt=""></div><div class="polar abs"><img src="m3.jpg" alt=""></div>
     <!-- le téléphone : son film, puis les cages -->
     <div id="tel" class="abs"><div id="ecran">
-      <div class="ph"><img class="fond" src="m4.jpg" alt=""><img class="vue" src="m4.jpg" alt=""></div><div class="ph"><img class="fond" src="m2.jpg" alt=""><img class="vue" src="m2.jpg" alt=""></div><div class="ph"><img class="fond" src="m1.jpg" alt=""><img class="vue" src="m1.jpg" alt=""></div><div class="ph"><img class="fond" src="m3.jpg" alt=""><img class="vue" src="m3.jpg" alt=""></div>
+      <div class="ph"><video id="film" muted playsinline preload="auto" aria-hidden="true"><source src="interview.mp4" type='video/mp4; codecs="avc1.64001F"'><source src="interview.webm" type="video/webm"></video></div>
       <div class="film-voile"></div><div class="film-lumiere"></div>
       <span class="film-sig">✨ Monté par Mike</span>
       <div class="film-titre"><small>LE PLAT DU JOUR</small><b class="nom-commerce">Chez Bergine</b></div>
@@ -341,6 +342,7 @@ const TEMPS = /*@TEMPS@*/null;
 const SOUS = /*@SOUS@*/null;
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+let FILM = null;
 const RENDU = /[?&]rendu\b/.test(location.search);
 if (RENDU) document.body.classList.add("rendu");
 const NB = " ";
@@ -604,12 +606,8 @@ function construire() {
     .to(H, { rotation: 0, duration: .6, ease: "elastic.out(1,.4)" }, tF + .85);
   // le film : ses photos qui s'enchaînent, le titre, la lumière
   const ph = $$("#ecran .ph"), tFilm = tF + .9;
-  ph.forEach((p, k) => {
-    const a = tFilm + k * 1.25;
-    tl.fromTo(p, { opacity: 0 }, { opacity: 1, duration: .5, ease: "power2.out", immediateRender: false }, a)
-      .fromTo(p.querySelector(".vue"), { scale: .9 }, { scale: 1, duration: 2.1, ease: "power1.out", immediateRender: false }, a)
-      .fromTo(p.querySelector(".fond"), { scale: 1.05 }, { scale: 1.25, duration: 2.1, ease: "none", immediateRender: false }, a);
-  });
+  // la vidéo de l'interview s'allume ; elle suit la ligne de temps (`suivreFilm`)
+  ph.forEach((p) => tl.fromTo(p, { opacity: 0 }, { opacity: 1, duration: .5, ease: "power2.out", immediateRender: false }, tFilm));
   tl.fromTo(".film-sig", { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: .4 }, tFilm + .3)
     .fromTo(".film-titre", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .6, ease: "expo.out" }, mot("v2", "commerce,") - .25)
     .to(".film-lumiere", { opacity: 1, duration: .5, yoyo: true, repeat: 3 }, tFilm + .2);
@@ -637,7 +635,8 @@ function construire() {
     .fromTo(".film-barre i", { scaleX: .45 }, { scaleX: 1, duration: mot("v3", "après.") - t3 - .3, ease: "power2.in" }, t3 + .3)
     .fromTo(".film-avance", { opacity: 0 }, { opacity: 1, duration: .2, yoyo: true, repeat: 5 }, t3 + .4)
     .to(".film-titre", { opacity: 0, duration: .3 }, t3 + .4);
-  ph.forEach((p, k) => tl.to(p, { opacity: k === 3 ? 1 : 0, duration: .12 }, t3 + .5 + k * .3));
+  // « ▶▶ » : la vidéo file en avance rapide jusqu'à sa fin, sur « C'est juste après. »
+  FILM = { debut: tFilm, avance: t3 + .4, fin: mot("v3", "après.") };
   // « C'est juste après. » : la fin de la vidéo ; Mike la montre du doigt (il bondit)
   tl.to(H, { y: "-=60", duration: .2, yoyo: true, repeat: 1, ease: "power2.out" }, mot("v3", "juste") - .05)
     .to("#ecran .ph", { filter: "brightness(.25) blur(6px)", duration: .4 }, mot("v3", "après.") + .05)
@@ -935,7 +934,7 @@ function composer(ctx, sortie, t0, voix) {
 const bruts = {};
 const charge = Promise.all(Object.keys(VOIX).filter((c) => !TEMPS[c]?.estime).map((c) => fetch(`voix/${c}.mp3`).then((r) => r.ok ? r.arrayBuffer() : null).then((b) => { if (b) bruts[c] = b; }).catch(() => {})));
 const decoder = (ctx, b) => new Promise((ok) => { try { const p = ctx.decodeAudioData(b.slice(0), ok, () => ok(null)); if (p && p.catch) p.catch(() => ok(null)); } catch (e) { ok(null); } });
-function etat(t) { tl.seek(Math.max(0, t), false); poserCamera(t); dessinerFond(t); dessinerFx(t); }
+function etat(t) { tl.seek(Math.max(0, t), false); poserCamera(t); dessinerFond(t); dessinerFx(t); suivreFilm(t); }
 // avant de toucher : la cage se balance, Mike frappe, sa bulle « Libérez-moi ! »
 const attente = gsap.timeline({ repeat: -1 });
 attente.to("#cage", { rotation: 3, transformOrigin: "50% 0", duration: 1.6, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0)
@@ -945,6 +944,30 @@ attente.to("#cage", { rotation: 3, transformOrigin: "50% 0", duration: 1.6, ease
   .to("#appel", { scale: 1.05, duration: .8, yoyo: true, repeat: 1, ease: "sine.inOut" }, 0);
 if (RENDU) attente.pause(0);
 let enRoute = false, AC = null, t0 = 0, depuisPerf = 0, enPause = false, pauseA = 0, pauseTot = 0;
+/* LE FILM DU TÉLÉPHONE, CALÉ SUR LA LIGNE DE TEMPS : en direct, la vidéo joue (vite sur « ▶▶ ») et se recale si elle
+   dérive ; pour l'export (`?rendu`), chaque image attend qu'elle soit à la bonne seconde (`__rendre`). */
+const FILM_V = $("#film");
+function filmA(t) {
+  if (!FILM || !FILM_V || t < FILM.debut) return -1;
+  const fin = (FILM_V.duration || 42.3) - .3, a = Math.min(fin, FILM.avance - FILM.debut);
+  if (t < FILM.avance) return Math.min(fin, t - FILM.debut);
+  if (t < FILM.fin) return a + ((fin - a) * (t - FILM.avance)) / (FILM.fin - FILM.avance);
+  return fin;
+}
+function suivreFilm(t) {
+  if (!FILM_V) return;
+  const x = filmA(t);
+  if (RENDU) return;
+  if (x < 0 || enPause || t >= FILM.fin) {
+    if (!FILM_V.paused) FILM_V.pause();
+    if (x >= 0 && Math.abs(FILM_V.currentTime - x) > .3) FILM_V.currentTime = x;
+    return;
+  }
+  const vite = t >= FILM.avance;
+  FILM_V.playbackRate = vite ? Math.min(16, Math.max(1, ((FILM_V.duration || 42.3) - .3 - (FILM.avance - FILM.debut)) / (FILM.fin - FILM.avance))) : 1;
+  if (Math.abs(FILM_V.currentTime - x) > (vite ? .8 : .25)) FILM_V.currentTime = x;
+  if (FILM_V.paused) FILM_V.play().catch(() => {});
+}
 function boucleAttente(now) { if (enRoute) return; dessinerFond(now / 1000); requestAnimationFrame(boucleAttente); }
 if (!RENDU) requestAnimationFrame(boucleAttente);
 const construit = (document.fonts ? Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]) : Promise.resolve()).then(() => { poserNom(); foule(); construire(); relever(); });
@@ -973,7 +996,16 @@ $("#revoir").addEventListener("click", () => location.reload());
 window.__duree = DUREE;
 // x < 0 : les secondes avant qu'on touche la cage ; on finit sur sa bulle « Libérez-moi ! », bien visible
 window.__attente = (x) => { const D = attente.duration(), u = 2.7 + x; attente.seek(((u % D) + D) % D, false); dessinerFond(x + 10); };
-window.__rendre = (t) => { if (!enRoute) { enRoute = true; attente.pause(0); gsap.set("#cage", { rotation: 0 }); gsap.set("#c-fant", { x: 0, rotation: 0 }); } etat(t); };
+window.__rendre = async (t) => {
+  if (!enRoute) { enRoute = true; attente.pause(0); gsap.set("#cage", { rotation: 0 }); gsap.set("#c-fant", { x: 0, rotation: 0 }); }
+  etat(t);
+  // LE FILM À LA BONNE SECONDE avant que l'image soit prise
+  const x = filmA(t);
+  if (x >= 0 && FILM_V && FILM_V.readyState < 2) await new Promise((ok) => { FILM_V.addEventListener("loadeddata", ok, { once: true }); setTimeout(ok, 8000); });
+  if (x >= 0 && FILM_V && Math.abs(FILM_V.currentTime - x) > .001) {
+    await new Promise((ok) => { const fini = () => ok(); FILM_V.addEventListener("seeked", fini, { once: true }); FILM_V.currentTime = x; setTimeout(fini, 2000); });
+  }
+};
 window.__son = async (avant) => {
   await charge;
   const sr = 44100, oc = new OfflineAudioContext(2, Math.ceil(sr * (DUREE + avant + .5)), sr);

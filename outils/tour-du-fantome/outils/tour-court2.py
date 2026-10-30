@@ -18,7 +18,7 @@
 #
 # La page s'écrit dans `tour-court2/index.html` d'après `outils/tour-court2.html` : on retouche ici ou dans le modèle.
 # GSAP 3.13 (`recu/gsap/`) : gratuit, y compris pour un usage commercial (licence « no charge » de GreenSock).
-import json, os, re, shutil, sys
+import json, os, re, shutil, subprocess, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from voix_courtes import caler, egaliser  # noqa: E402
@@ -108,6 +108,13 @@ for c, (fichier, texte, aide) in SOUS.items():
 for f in ("m1.jpg", "m2.jpg", "m3.jpg", "m4.jpg", "si-interieur.webp"):
     shutil.copyfile(f"{S}/tour/{f}", f"{D}/{f}")
 shutil.copyfile(f"{S}/accueil2/page/g-restaurant-salue.webp", f"{D}/hote.webp")
+# LE FILM DU TÉLÉPHONE : la vidéo de l'interview du tour du restaurant (plus les quatre photos)
+shutil.copyfile(f"{S}/tour/interview.mp4", f"{D}/interview.mp4")
+# …et en WebM (VP8) pour les navigateurs sans H.264 — dont le Chromium de l'export (`rendre-video.mjs`) ; une image
+# clé toutes les demi-secondes, pour que l'export tombe juste à chaque image
+if not os.path.exists(f"{D}/interview.webm") or os.path.getmtime(f"{D}/interview.webm") < os.path.getmtime(f"{S}/tour/interview.mp4"):
+    subprocess.run([FF, "-v", "error", "-y", "-i", f"{S}/tour/interview.mp4", "-an", "-c:v", "libvpx", "-b:v", "1M", "-g", "15",
+                    "-deadline", "good", "-cpu-used", "2", f"{D}/interview.webm"], check=True)
 for l in LOOKS:
     for pose in ("debout", "salue"):
         shutil.copyfile(f"{S}/tour/tf/{l}-{pose}.webp", f"{D}/g/{l}-{pose}.webp")
