@@ -351,10 +351,11 @@ on la pose avant, avec `gsap.set`.
 ## La démo humaine : « Un mois avec ClikMe »
 
 Le propriétaire et Mike racontent un mois chez un commerce inventé (Chez Bergine), en treize répliques (le texte,
-au mot près, et ce qui se voit : `docs/demo-humaine-repliques.md`). Le propriétaire y est **sa figurine à grosse
-tête** : sa tête détourée (ses photos, avec son accord pour l'animer) posée sur le corps d'un fantôme ClikMe, qui
-dodeline au rythme de sa voix, ouvre la bouche sur les syllabes, fait un clin d'œil, louche sur un téléphone, éclate
-de rire. Faite par `outils/tour-humain.py` d'après `outils/tour-humain.html` (le moteur de `tour-court2/`).
+au mot près, et ce qui se voit : `docs/demo-humaine-repliques.md`). Le propriétaire y est **sa figurine sur
+ressort** (depuis le 31 octobre ; avant, sa tête sur un corps de fantôme, que les gens trouvaient « pas terrible ») :
+un jouet à son image — buste, ressort, socle en bois — qui rebondit et penche au rythme de sa voix, ouvre la bouche
+sur les syllabes, fait un clin d'œil, louche sur un téléphone en croisant les bras, salue, éclate de rire les bras
+ouverts. Faite par `outils/tour-humain.py` d'après `outils/tour-humain.html` (le moteur de `tour-court2/`).
 
 ```sh
 /usr/bin/python3 outils/tour-du-fantome/outils/tour-humain.py outils/tour-du-fantome   # (fait aussi son.mp3 et demo.mp4, ~10 min)
@@ -405,18 +406,24 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index
 - **Les voix** : `recu/humain/01-p.mp3` … `13-p.mp3` (« p » le propriétaire — sa voix clonée, depuis le 31 octobre —,
   « m » Mike), égalisées et calées mot à mot sur leurs pauses (`caler`, aidé par `coupures`, `liees` ; « coupe » : un
   bruit après la phrase, la 9). Les « moments » de sa figurine se placent sur la fin de sa voix (`parle`), pas du fichier.
-- **La figurine** (`outils/figurine.py`) : ses sept photos (`recu/humain/photos/` : neutre, parle, o, clin, clino —
-  clin d'œil bouche en « o » —, rire, louche), leurs repères (MediaPipe, `outils/reperes-visage.mjs`) et leur détourage (`outils/detourer.py`, le fond
-  rose uni). Les photos sont réalignées sur la neutre (yeux et nez au même endroit) : les têtes se remplacent sans
-  sauter. Le corps : le fantôme « denim » (`public/direct/ensemble/denim-debout.webp`) sans tête, les bras à part.
-  Pour chacune de ses répliques, des **pistes** à 30 images par seconde (la tête sur un ressort relancé à chaque
-  syllabe, le cou, les bras, l'expression) ; ses **moments** (`MOMENTS`) : un mot de départ, un mot de fin. La page
-  la dessine sur une toile (`dessinerFigurine`) ; la ligne de temps ne fait que la placer (`FIG`). **Son cou** (photo
-  neutre, `cou.webp`, avec le col de sa chemise) rentre dans le corps du fantôme : la page redessine le bord du corps
-  par-dessus (un arc, une ombre douce) ; le corps, coupé en épaules arrondies sous les joues roses du fantôme, penche
-  avec sa tête. Le liseré rose du fond, autour de ses cheveux, est repeint (`_sans_liseré`). **Sa carte de CV**
-  est sa photo **sans sa tête** (`carte-sans-tete.jpg`, le fond refait) : la page y dessine sa tête au pixel près
-  (`surCarte`, `FIG.carte`), qui parle sur la photo puis en sort ; son corps pousse depuis le cou (`FIG.corps`).
+- **La figurine sur ressort** (`outils/ressort.py`) : ses six images (`recu/humain/ressort/` : neutre, parle, clin,
+  rire — bras ouverts —, louche — bras croisés —, salue), faites par lui en modifiant une même image, donc
+  superposées au pixel près. Détourées du fond rose : le fond est une surface lisse ajustée sur les bords (la teinte
+  seule ne suffit pas : la peau à l'ombre, au bord du visage, a presque celle du rose), l'ombre au sol reconnue à sa
+  teinte, les miettes retirées. Coupées en morceaux (`jouet-*.webp`) : sa **tête**, une par expression (`TETES`),
+  posée sur son **corps**, un par geste (`CORPS` : mains jointes, bras ouverts, bras croisés, salut) — la page change
+  l'une sans l'autre, la jointure sous le menton est fondue —, le **ressort**, le **socle**. Il manque la bouche en
+  « o » : la page prend « parle ». La page la dessine sur une toile (`dessinerFigurine`) : le socle au sol, le ressort
+  posé en tranches le long d'une courbe (il se courbe de la moitié de l'angle du buste), le buste au bout. Ses
+  **pistes** (`outils/figurine.py`, une par réplique, 30 images par seconde, relancées à chaque syllabe) étirent le
+  ressort et font pencher le buste ; un changement de geste (rire, louche) le fait rebondir (`depuisGeste`) ; ses
+  **moments** (`MOMENTS`) : un mot de départ, un mot de fin. La ligne de temps ne fait que la placer (`FIG` : ses
+  pieds, sa taille ; `bras` au-delà de 10 : les bras ouverts ; `salut`). Sa taille : `ECH_J`.
+- **Sa carte de CV** : sa vraie photo **sans sa tête** (`carte-sans-tete.jpg`, le fond refait) ; la page y dessine
+  sa vraie tête au pixel près (`surCarte`, `FIG.carte` ; `outils/figurine.py` : ses sept photos de `recu/humain/photos/`,
+  leurs repères MediaPipe, `outils/reperes-visage.mjs`, réalignées sur la neutre ; le liseré rose repeint,
+  `_sans_liseré`), qui parle et rit sur la photo, puis en sort : dans l'éclair, elle devient le jouet (son visage à la
+  même taille, `VIS_J`), le ressort et le socle poussent dessous (`FIG.corps`), et il salue.
 - **La ligne de temps parcourue au chargement** (`relever`, la traînée de Mike) est ensuite remise à zéro et
   « invalidée » (`tl.invalidate()`) : sans ça, des valeurs relevées en route ne revenaient pas (l'étoile « TADAM ! »
   restait invisible). Pour un réglage d'expression, des nombres (`FIG.oh`, `FIG.rit`), pas des textes.

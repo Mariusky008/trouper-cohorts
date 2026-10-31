@@ -50,12 +50,13 @@ propriétaire fait foi.
 `clikme.fr/tours/humain`. Environ 1 min 37 : les voix reçues durent 84 s à elles seules. **Le 31 octobre**, ses six
 répliques sont réenregistrées avec **sa voix clonée** (ElevenLabs, « jean ») : elles remplacent les premières dans
 `recu/humain/` (01, 03, 04, 06, 10, 13 ; l'ancienne voix reste dans l'historique git). Le propriétaire y est sa
-**figurine à grosse tête** (ses photos d'expressions, détourées et réalignées) ; Mike, le fantôme des démos.
+**figurine sur ressort** (depuis la sixième passe ; avant, sa tête sur un corps de fantôme) ; Mike, le fantôme des
+démos.
 
 | # | Ce qui se voit |
 |---|---|
 | 0 | **avant « Bonjour ! »** : sa carte dit « Élu meilleur community manager 2026* », une médaille « N°1 » au coin ; « *par sa mère » tombe dessus comme un tampon ; **le polaroïd de sa mère** arrive (« Maman 💕 ») et elle le dit elle-même : « T'es le meilleur, mon fils ! » (sa voix, mot à mot dans une bulle ; son visage passe du neutre au sourire, au rire) ; lui, sur sa photo, est surpris puis en rit ; des cœurs, elle s'en va |
-| 1 | sa carte de CV : **sa photo se met à parler** ; sur « Mon métier ? » **sa tête sort de la photo** (la carte, sans tête, vacille et tombe), son corps de fantôme pousse dessous, un clin d'œil bouche en « o » ; **un fil façon Instagram** qu'on fait défiler de plus en plus vite (double-tap ♥, elle louche dessus) : « ❤️ 2 304 j'aime »… « 🚪 0 client » ; sur « poussent votre porte » le fil s'arrête, la photo devient une porte qui s'ouvre, deux fantômes y entrent : « 1 client », « 2 clients » ; son grand rire |
+| 1 | sa carte de CV : **sa photo se met à parler** ; sur « Mon métier ? » **sa tête sort de la photo** (la carte, sans tête, vacille et tombe) et devient sa figurine sur ressort, qui salue, un clin d'œil bouche en « o » ; **un fil façon Instagram** qu'on fait défiler de plus en plus vite (double-tap ♥, elle louche dessus) : « ❤️ 2 304 j'aime »… « 🚪 0 client » ; sur « poussent votre porte » le fil s'arrête, la photo devient une porte qui s'ouvre, deux fantômes y entrent : « 1 client », « 2 clients » ; son grand rire |
 | 2 | la cage de Mike tombe à côté d'elle, il s'y agite (elle y jette un œil) ; **comme un diable de sa boîte**, il jaillit tout en haut, hors du cadre, retombe, s'écrase et rebondit — **« TADAM ! »** façon bande dessinée ; elle sursaute (« oh ! ») ; sa toque lui tombe sur la tête (bonk, des étoiles) ; sa carte « Mike · Mon assistant » se retourne |
 | 3 | **une éphéméride** : on en arrache les pages, de plus en plus vite, jusqu'au 30 (entouré) ; des « j'aime » qui deviennent des fantômes sur « en clients » ; ses bras s'ouvrent, un clin d'œil sur « Je vous montre ? » |
 | 4 | une page neuve retombe sur l'éphéméride, le tampon « JOUR 1 » ; la façade de Chez Bergine, quatre éclairs, quatre photos ; le téléphone : « Face au fantôme », question 2 sur 3 ; Mike tombe au pied du téléphone |
@@ -89,6 +90,13 @@ son » au départ ; la façade de Chez Bergine refaite, le soir, accueillante ; 
 vidéo (il restait figé : le rendu ne servait pas la page par morceaux) ; la cage dorée et son cadeau refaits ; « pas de
 blabla, pas de fausses promesses » refait (bulles qui se dégonflent, notifications de « gourous » tamponnées
 « BIDON ») ; plus de QR code à la fin. **La fin avec sa mère** est prête : il reste son enregistrement.
+
+**Sixième passe (31 octobre : « les gens me disent que mon personnage, ma tête sur un corps de fantôme, n'est pas
+terrible ; ce serait mieux un mini corps »)** : sa figurine devient **un jouet sur ressort à son image** (buste en
+gilet, ressort, socle en bois), d'après les six images qu'il a faites (neutre, parle, clin d'œil, rire bras ouverts,
+louche bras croisés, salut). Elle rebondit et penche sur sa voix, change de tête sans changer de geste, rebondit à
+chaque geste ; sur « Mon métier ? », sa vraie tête sort de sa carte et devient le jouet dans l'éclair, et il salue.
+Les deux démos (restaurant, atelier). Il manque la bouche en « o » (la page prend « parle »).
 
 ## À garder en tête
 

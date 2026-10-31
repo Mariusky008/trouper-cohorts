@@ -700,25 +700,45 @@ function construireMots(tl) {
   }
 }
 
-/* ── SA FIGURINE À GROSSE TÊTE (`figurine.py`) : le corps, les bras, le cou, l'ombre du menton, la tête qui dodeline.
-   Ses pistes (une valeur par image, à 30 images par seconde) pendant chacune de ses répliques ; entre deux, elle flotte
-   et respire. La ligne de temps ne fait que la placer (FIG) : où, quelle taille, ce qu'elle regarde. ── */
-// carte : 1 = sa tête posée sur sa photo de CV (elle la remplace), 0 = sur sa figurine ; corps : son corps de fantôme
-// (0 → 1, il pousse depuis le cou) ; anim : le mouvement de sa voix (0 sur la photo : seule la bouche bouge)
+/* ── SA FIGURINE SUR RESSORT (`ressort.py`) : un socle en bois, un ressort, son buste — sa tête (une image par
+   expression) posée sur son corps (une par geste : mains jointes, bras ouverts, bras croisés, salut). Le ressort
+   s'étire et se comprime sur sa voix, se courbe quand le buste penche, et rebondit quand il change de geste. Avant :
+   sa vraie tête (`figurine.py`) sur sa carte de CV ; elle en sort, et dans l'éclair devient la figurine. Ses pistes
+   (une valeur par image, à 30 images par seconde) pendant ses répliques ; entre deux, elle se balance doucement. La
+   ligne de temps ne fait que la placer (FIG) : où (ses pieds), quelle taille, ce qu'elle fait. ── */
+// carte : 1 = sa tête posée sur sa photo de CV (elle la remplace), 0 = sa figurine ; corps : le ressort et le socle
+// (0 → 1, ils poussent sous le buste) ; anim : le mouvement de sa voix (0 sur la photo : seule la bouche bouge) ;
+// bras : il ouvre les bras (au-delà de 10) ; salut : il salue (au-delà de .5)
 // oh, rit : 1 = sa bouche en « o » (surprise), son rire (des nombres : la ligne de temps les remet à 0 en arrière)
 const FIG = { x: 540, y: 1720, s: .82, o: 1, r: 0, pench: 0, salut: 0, bras: 0, ecoute: 0, carte: 1, corps: 0, anim: 0, monte: 0, oh: 0, rit: 0 };
 const IMG = {};
-const EXPR = { n: "neutre", p: "parle", o: "o", c: "clin", w: "clino", r: "rire", l: "louche" };
-const charge_fig = Promise.all([...Object.values(EXPR).map((e) => "tete-" + e), "cou", "corps", "bras-g", "bras-d"].map((n) => new Promise((ok) => {
+const J = FIGURE.jouet;
+const EXPR = { n: "neutre", p: "parle", o: "o", c: "clin", w: "clino", r: "rire", l: "louche" };            // sa vraie tête
+const TETE_J = { n: "neutre", p: "parle", o: "parle", c: "clin", w: "clin", r: "rire", l: "louche" };      // celle du jouet
+const charge_fig = Promise.all([...Object.values(EXPR).map((e) => "tete-" + e), "cou", ...J.tetes.map((e) => "jouet-tete-" + e),
+  ...J.gestes.map((g) => "jouet-corps-" + g), "jouet-ressort", "jouet-socle"].map((n) => new Promise((ok) => {
   const im = new Image(); im.onload = () => ok(); im.onerror = () => ok(); im.src = `f/${n}.webp`; IMG[n] = im;
 })).concat(new Promise((ok) => { const im = new Image(); im.onload = im.onerror = () => ok(); im.src = "f/carte-sans-tete.jpg"; IMG.carte = im; })));
 const LIGNES_P = Object.keys(PISTES);
-function piste(t) {
-  // la dernière de ses répliques commencée (la piste d'une réplique déborde un peu sur la suivante)
+function repliqueP(t) {   // la dernière de ses répliques commencée (sa piste déborde un peu sur la suivante)
   const c = LIGNES_P.filter((x) => VOIX[x] <= t).pop();
   if (!c) return null;
-  const p = PISTES[c], i = Math.floor((t - VOIX[c]) * 30);
-  return i < p.e.length ? { a: p.a[i], s: p.s[i], g: p.g[i], d: p.d[i], e: p.e[i] } : null;
+  const i = Math.floor((t - VOIX[c]) * 30);
+  return i < PISTES[c].e.length ? { p: PISTES[c], i } : null;
+}
+function piste(t) {
+  const r = repliqueP(t);
+  if (!r) return null;
+  const { p, i } = r;
+  return { a: p.a[i], s: p.s[i], g: p.g[i], d: p.d[i], e: p.e[i] };
+}
+// le temps (s) depuis que son geste a changé, d'après sa piste (rire : bras ouverts ; louche : bras croisés), au plus 1 s
+function depuisGeste(t) {
+  const r = repliqueP(t);
+  if (!r) return 1;
+  const { p, i } = r, g = (k) => (p.e[k] === "r" ? 2 : p.e[k] === "l" ? 1 : 0), g0 = g(i);
+  for (let k = i, n = 0; k > 0 && n < 30; k--, n++) if (g(k - 1) !== g0) return n / 30;
+  return 1;
 }
 const fg = $("#fig").getContext("2d");
 const DEG = Math.PI / 180;
@@ -741,62 +761,79 @@ function surCarte() {
   // (sa taille : un pixel de la photo vaut `k × sc` à l'écran ; une image de sa tête en a `h / hauteur du cadre`)
   return { x: cx + sc * (lx * Math.cos(a) - ly * Math.sin(a)), y: cy + sc * (lx * Math.sin(a) + ly * Math.cos(a)), rot, s: (src.cadre[3] - src.cadre[1]) * k * sc / (FIGURE.tete.h * HT / FIGURE.tete.visage) };
 }
-// LA FIGURINE, DE BAS EN HAUT : son ombre, son corps de fantôme et ses bras ; son cou et sa tête ; puis le bord du
-// corps, redessiné par-dessus le bas de son cou — son cou rentre dans le fantôme, comme dans un costume. Le corps suit
-// sa tête : il penche un peu avec elle.
-const HT = 560;   // la hauteur de sa tête seule (sans le cou), à l'échelle 1
+const HT = 560;        // sa vraie tête : la hauteur de son visage (du menton au haut du front), à l'échelle 1
+const VIS_J = 313;     // le jouet : la même hauteur, en pixels de ses images
+const ECH_J = 1.2;     // le jouet : pixels à l'écran pour un pixel de ses images, à l'échelle 1
+const L0 = J.haut_socle - J.coupelle[1];   // le ressort au repos (pixels de ses images)
+const point = (b, u) => { const v = 1 - u; return [v * v * v * b[0][0] + 3 * v * v * u * b[1][0] + 3 * v * u * u * b[2][0] + u * u * u * b[3][0], v * v * v * b[0][1] + 3 * v * v * u * b[1][1] + 3 * v * u * u * b[2][1] + u * u * u * b[3][1]]; };
+// LE RESSORT, courbé : l'image découpée en tranches posées le long d'une courbe (de la coupelle au socle)
+function dessinerRessort(b) {
+  const im = IMG["jouet-ressort"], R = J.ressort, N = 16, h = R.h / N;
+  for (let i = 0; i < N; i++) {
+    // (la ligne de l'image → la courbe : la coupelle à 4 px du haut de l'image, le socle à 4 px du bas)
+    const u0 = (i * h - 4) / L0, u1 = ((i + 1) * h - 4) / L0, p0 = point(b, u0), p1 = point(b, u1);
+    const dx = p1[0] - p0[0], dy = p1[1] - p0[1], l = Math.hypot(dx, dy);
+    fg.save(); fg.translate(p0[0], p0[1]); fg.rotate(Math.atan2(-dx, dy));
+    fg.drawImage(im, 0, i * h, R.w, h, -R.w / 2, 0, R.w, l + .8); fg.restore();
+  }
+}
 function dessinerFigurine(t) {
   fg.clearRect(0, 0, 1080, 1920);
-  if (FIG.o < .01 || !IMG.corps?.naturalWidth) return;
+  if (FIG.o < .01 || !IMG["jouet-socle"]?.naturalWidth) return;
   const p = piste(t) || { a: 0, s: 0, g: 0, d: 0, e: "n" }, A = FIG.anim;
   const e = FIG.oh > .5 ? "o" : FIG.rit > .5 ? "r" : p.e;
-  const C = FIGURE.corps, SC = 740 / C.h, cw = C.w * SC, ch = C.h * SC;
-  const flot = 9 * Math.sin(2 * Math.PI * .55 * t) * A, respire = 3 * Math.sin(2 * Math.PI * .55 * t + 1) * A;
-  const salut = FIG.salut * 18 * Math.sin(2 * Math.PI * 2.6 * t);
-  // quand Mike parle et qu'elle est là : elle écoute (de petits hochements)
-  const hoche = FIG.ecoute * 2.4 * Math.sin(2 * Math.PI * 1.1 * t);
-  const cou = -flot - ch + ch * C.cou - p.s * A;   // le cou, dans le repère de la figurine (ses pieds en 0)
-  let ang = (p.a + 1.4 * Math.sin(2 * Math.PI * .45 * t)) * A + FIG.pench + hoche;
-  // le corps penche avec la tête (un tiers de son angle), autour de ses pieds
-  const beta = -(ang * .3 + FIG.r) * DEG;
-  let nx = FIG.x - FIG.s * cou * Math.sin(beta), ny = FIG.y - FIG.monte + FIG.s * cou * Math.cos(beta), hs = FIG.s;
-  if (FIG.carte > .001) {   // sa tête posée sur sa carte (elle remplace celle de sa photo)
-    const c = surCarte(), u = FIG.carte;
-    nx = c.x * u + nx * (1 - u); ny = c.y * u + ny * (1 - u); hs = c.s * u + hs * (1 - u); ang = -c.rot * u + ang * (1 - u);
+  const borne = (v, a, b) => Math.max(a, Math.min(b, v));
+  // SON GESTE ET SA TÊTE
+  const geste = FIG.salut > .5 ? "salue" : FIG.bras > 10 || e === "r" ? "rire" : e === "l" ? "louche" : "neutre";
+  // LE RESSORT : sa voix l'étire, il respire ; il rebondit quand le geste change (sur sa piste : un rebond amorti ;
+  // sur la ligne de temps : pendant qu'elle ouvre les bras ou salue)
+  const dg = depuisGeste(t), rebond = .32 * Math.exp(-5 * dg) * Math.cos(2 * Math.PI * 3.2 * dg) * A;
+  const pop = .3 * Math.sin(Math.PI * borne(FIG.bras / 22, 0, 1)) + .3 * Math.sin(Math.PI * borne(FIG.salut, 0, 1));
+  const ext = borne((p.s * 2.2 / L0 + .05 * Math.sin(2 * Math.PI * .55 * t) + rebond) * A + pop, -.22, 1.3);
+  const L = L0 * (1 + ext);
+  // LE BUSTE PENCHE (sur le ressort) : sa voix, un balancement, ce que la ligne de temps veut, l'écoute, le salut
+  const hoche = FIG.ecoute * 2.4 * Math.sin(2 * Math.PI * 1.1 * t), agite = FIG.salut * 4 * Math.sin(2 * Math.PI * 2.6 * t);
+  const phi = -((p.a + 1.4 * Math.sin(2 * Math.PI * .45 * t)) * A + FIG.pench + hoche + agite) * DEG;
+  // LE JOUET, dans le repère de ses images : le haut du socle, la coupelle (au bout du ressort, qui se courbe de la
+  // moitié de l'angle du buste), son menton
+  const P0 = [J.coupelle[0], J.haut_socle], ux = Math.sin(phi), uy = -Math.cos(phi);
+  const P3 = [P0[0] + L * Math.sin(phi / 2), P0[1] - L * Math.cos(phi / 2)];
+  const courbe = [P0, [P0[0], P0[1] - L / 3], [P3[0] - ux * L / 3, P3[1] - uy * L / 3], P3].reverse();   // (de la coupelle au socle)
+  const mx = J.menton[0] - J.coupelle[0], my = J.menton[1] - J.coupelle[1];
+  const menton = [P3[0] + mx * Math.cos(phi) - my * Math.sin(phi), P3[1] + mx * Math.sin(phi) + my * Math.cos(phi)];
+  // OÙ, À L'ÉCRAN : ses pieds en (x, y) ; sur sa carte, son menton sur celui de sa photo, à sa taille (et entre les deux)
+  const K = FIG.s * ECH_J, rf = -FIG.r * DEG, ca = Math.cos(rf), sa = Math.sin(rf);
+  const lx = (menton[0] - J.pied[0]) * K, ly = (menton[1] - J.pied[1]) * K;
+  let cx = FIG.x + lx * ca - ly * sa, cy = FIG.y - FIG.monte + lx * sa + ly * ca, rot = rf, ech = K;
+  const u = FIG.carte;
+  if (u > .001) {
+    const c = surCarte();
+    cx = c.x * u + cx * (1 - u); cy = c.y * u + cy * (1 - u); rot = c.rot * DEG * u + rot * (1 - u); ech = c.s * HT / VIS_J * u + ech * (1 - u);
   }
-  fg.globalAlpha = FIG.o;
-  const corps = FIG.corps > .01, k = FIG.s * FIG.corps;
-  const x0 = -cw / 2, y0 = -flot - ch;
-  // le corps, dans son repère : posé sous le cou (il pousse depuis le cou quand corps < 1), penché
-  const repere = () => { fg.translate(nx, ny); fg.rotate(beta); fg.scale(k, k); fg.translate(0, -cou); };
-  if (corps) {
-    fg.save(); repere();
-    ellipseFloue(0, 20, 240 * (1 - flot / 120), 34, "60,6,34", .5);   // l'ombre au sol : plus petite quand elle monte
-    fg.drawImage(IMG.corps, x0, y0, cw, ch);
-    // les bras (tournés autour de l'épaule, dans le sens de PIL : positif = vers la gauche)
-    for (const [kb, an] of [["g", (p.g + respire) * A - FIG.bras], ["d", (p.d - respire) * A - salut + FIG.bras]]) {
-      const b = FIGURE.bras[kb], im = IMG["bras-" + kb];
-      fg.save(); fg.translate(x0 + b.pivot[0] * SC, y0 + b.pivot[1] * SC); fg.rotate(-an * DEG);
-      fg.drawImage(im, (b.boite[0] - b.pivot[0]) * SC, (b.boite[1] - b.pivot[1]) * SC, im.naturalWidth * SC, im.naturalHeight * SC); fg.restore();
+  // le jouet apparaît dans l'éclair (le premier quart de son envol) ; sa vraie tête s'efface
+  const m = borne((1 - u) * 4, 0, 1);
+  if (m < 1) {   // SA VRAIE TÊTE : son menton sur celui du jouet, à la même taille de visage
+    const T_ = FIGURE.tete, hk = HT / T_.visage, tx = T_.menton[0] * hk, ty = T_.menton[1] * hk, hs = ech * VIS_J / HT;
+    fg.globalAlpha = FIG.o * (1 - m);
+    fg.save(); fg.translate(cx, cy + 34 * hs); fg.rotate(rot + phi); fg.scale(hs, hs);
+    if (IMG.cou?.naturalWidth) fg.drawImage(IMG.cou, -tx, -ty - 34, T_.w * hk, T_.h * hk);
+    fg.drawImage(IMG["tete-" + EXPR[e]] || IMG["tete-neutre"], -tx, -ty - 34, T_.w * hk, T_.h * hk); fg.restore();
+  }
+  if (m > 0) {   // LE JOUET : socle, ressort, corps, tête
+    fg.globalAlpha = FIG.o * m;
+    fg.save(); fg.translate(cx, cy); fg.rotate(rot); fg.scale(ech, ech); fg.translate(-menton[0], -menton[1]);
+    const k = Math.max(0, FIG.corps);
+    if (k > .01) {   // (le ressort et le socle poussent sous le buste, depuis la coupelle)
+      fg.save(); fg.translate(P3[0], P3[1]); fg.scale(k, k); fg.translate(-P3[0], -P3[1]);
+      ellipseFloue(J.pied[0], J.pied[1] - 8, 250, 34, "40,10,30", .38);   // son ombre au sol
+      const S_ = J.socle; fg.drawImage(IMG["jouet-socle"], S_.x, S_.y, S_.w, S_.h);
+      dessinerRessort(courbe);
+      fg.restore();
     }
-    fg.restore();
-  }
-  // SON COU ET SA TÊTE : son menton sur le cou du fantôme ; elle tourne autour d'un point un peu plus bas
-  const T_ = FIGURE.tete, hk = HT / T_.visage, mx = T_.menton[0] * hk, my = T_.menton[1] * hk;
-  fg.save(); fg.translate(nx, ny + 34 * hs); fg.rotate(-ang * DEG); fg.scale(hs, hs);
-  if (IMG.cou?.naturalWidth) fg.drawImage(IMG.cou, -mx, -my - 34, T_.w * hk, T_.h * hk);
-  fg.drawImage(IMG["tete-" + EXPR[e]] || IMG["tete-neutre"], -mx, -my - 34, T_.w * hk, T_.h * hk); fg.restore();
-  // LE BORD DU CORPS, par-dessus le bas de son cou : un arc (le haut d'une ellipse), et tout ce qui est dessous ;
-  // juste au-dessus, une ombre douce sur son cou (il rentre dans le fantôme)
-  if (corps) {
-    fg.save(); repere();
-    const yb = cou + 34, rx = 165, ry = 40;
-    ellipseFloue(0, yb - 6, 130, 30, "70,30,40", .45 * Math.min(1, FIG.corps));
-    fg.beginPath(); fg.ellipse(0, yb + ry, rx, ry, 0, Math.PI, 2 * Math.PI); fg.lineTo(rx, yb + 340); fg.lineTo(-rx, yb + 340); fg.closePath(); fg.clip();
-    fg.drawImage(IMG.corps, x0, y0, cw, ch);
-    // le bord lui-même, à peine plus sombre (on voit l'épaisseur du costume)
-    fg.beginPath(); fg.ellipse(0, yb + ry, rx, ry, 0, Math.PI * 1.08, Math.PI * 1.92);
-    fg.strokeStyle = "rgba(120,90,110,.28)"; fg.lineWidth = 5; fg.stroke();
+    fg.translate(P3[0], P3[1]); fg.rotate(phi); fg.translate(-J.coupelle[0], -J.coupelle[1]);
+    const C_ = J.corps, T_ = J.tete;
+    fg.drawImage(IMG["jouet-corps-" + geste], C_.x, C_.y, C_.w, C_.h);
+    fg.drawImage(IMG["jouet-tete-" + (TETE_J[e] || "neutre")], T_.x, T_.y, T_.w, T_.h);
     fg.restore();
   }
   fg.globalAlpha = 1;

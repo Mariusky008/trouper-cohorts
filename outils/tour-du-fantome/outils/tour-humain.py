@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from voix_courtes import caler, egaliser  # noqa: E402
 from alignement import segments  # noqa: E402
 from figurine import energie, preparer, pistes  # noqa: E402
+from ressort import preparer_ressort  # noqa: E402
 from decor import cage_mini, toque  # noqa: E402
 from decor_humain import ardoise, cage_or, facade_decor, sceau  # noqa: E402
 
@@ -264,6 +265,12 @@ if os.path.exists(f"{M_DIR}/fin.mp3"):
 CARTE = (150, 0, 702, 634)
 FIGURE = preparer(f"{R}/photos", f"{RACINE}/public/direct/ensemble/denim-debout.webp", f"{D}/f", carte=(CARTE, (976, 1120)))
 FIGURE["carte"] = CARTE
+# (de `figurine.py`, la page ne garde que sa tête, pour sa carte : sa figurine est le jouet sur ressort)
+for f in ("corps", "bras-g", "bras-d"):
+    os.remove(f"{D}/f/{f}.webp")
+del FIGURE["corps"], FIGURE["bras"]
+# SA FIGURINE SUR RESSORT : sa tête (une par expression), son corps (un par geste), le ressort, le socle
+FIGURE["jouet"] = preparer_ressort(f"{R}/ressort", f"{D}/f")
 PISTES = {}
 for c, moments in MOMENTS.items():
     texte = SOUS[c][1].replace(" | ", " ").split(" ")
