@@ -202,7 +202,12 @@ if os.path.exists(f"{M_DIR}/fin.mp3"):
         else:
             tenu += 1
         x.append(cur)
-    MAMAN_FIN = {"d": a["d"], "m": a["m"], "texte": MAMAN_FIN_TEXTE, "x": "".join(x)}
+    # la fin de sa phrase (le morceau de voix où tombe son dernier mot) : après, elle rit (la photo « rire »)
+    mots = MAMAN_FIN_TEXTE.replace(" | ", " ").split(" ")
+    dernier = a["m"][max(i for i, w in enumerate(mots) if any(c.isalpha() for c in w))]   # (le dernier vrai mot, pas « ! »)
+    fin_parole = next((b for a0, b in segments(FF, f"{M_DIR}/fin.mp3", a["d"], "-38dB") if a0 - .05 <= dernier <= b), a["d"])
+    x = x[:int(fin_parole * 30)] + ["r"] * max(0, len(x) - int(fin_parole * 30))
+    MAMAN_FIN = {"d": a["d"], "m": a["m"], "texte": MAMAN_FIN_TEXTE, "x": "".join(x), "rire": round(fin_parole, 2)}
     for nom in ("parle", "sourire", "rire"):
         im = Image.open(f"{M_DIR}/face-{nom}.jpg").convert("RGB")
         im.crop((110, 0, 742, 760)).resize((360, 432), Image.LANCZOS).save(f"{D}/f/maman-face-{nom}.webp", quality=86)
