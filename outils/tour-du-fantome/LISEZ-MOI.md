@@ -360,17 +360,24 @@ de rire. Faite par `outils/tour-humain.py` d'après `outils/tour-humain.html` (l
 node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index.html sortie.mp4 30 1
 ```
 
-- **Les voix** : `recu/humain/01-p.mp3` … `13-p.mp3` (« p » le propriétaire, « m » Mike), égalisées et calées mot
-  à mot sur leurs pauses (`caler`, aidé par `coupures`, `liees` ; « coupe » : un bruit après la phrase, la 9).
-- **La figurine** (`outils/figurine.py`) : ses six photos (`recu/humain/photos/` : neutre, parle, o, clin, rire,
-  louche), leurs repères (MediaPipe, `outils/reperes-visage.mjs`) et leur détourage (`outils/detourer.py`, le fond
+- **Les voix** : `recu/humain/01-p.mp3` … `13-p.mp3` (« p » le propriétaire — sa voix clonée, depuis le 31 octobre —,
+  « m » Mike), égalisées et calées mot à mot sur leurs pauses (`caler`, aidé par `coupures`, `liees` ; « coupe » : un
+  bruit après la phrase, la 9). Les « moments » de sa figurine se placent sur la fin de sa voix (`parle`), pas du fichier.
+- **La figurine** (`outils/figurine.py`) : ses sept photos (`recu/humain/photos/` : neutre, parle, o, clin, clino —
+  clin d'œil bouche en « o » —, rire, louche), leurs repères (MediaPipe, `outils/reperes-visage.mjs`) et leur détourage (`outils/detourer.py`, le fond
   rose uni). Les photos sont réalignées sur la neutre (yeux et nez au même endroit) : les têtes se remplacent sans
   sauter. Le corps : le fantôme « denim » (`public/direct/ensemble/denim-debout.webp`) sans tête, les bras à part.
   Pour chacune de ses répliques, des **pistes** à 30 images par seconde (la tête sur un ressort relancé à chaque
   syllabe, le cou, les bras, l'expression) ; ses **moments** (`MOMENTS`) : un mot de départ, un mot de fin. La page
-  la dessine sur une toile (`dessinerFigurine`) ; la ligne de temps ne fait que la placer (`FIG`).
-- **Son prénom** (réplique 1, « Moi, c'est … ») : la constante `PRENOM` du script, à confirmer par le propriétaire.
-- Les chiffres à l'écran (vues, 15 surprises, 120 clients « objectif du mois ») sont inventés ; la page le dit
+  la dessine sur une toile (`dessinerFigurine`) ; la ligne de temps ne fait que la placer (`FIG`). **Sa carte de CV**
+  est sa photo **sans sa tête** (`carte-sans-tete.jpg`, le fond refait) : la page y dessine sa tête au pixel près
+  (`surCarte`, `FIG.carte`), qui parle sur la photo puis en sort ; son corps pousse depuis le cou (`FIG.corps`).
+- **La ligne de temps parcourue au chargement** (`relever`, la traînée de Mike) est ensuite remise à zéro et
+  « invalidée » (`tl.invalidate()`) : sans ça, des valeurs relevées en route ne revenaient pas (l'étoile « TADAM ! »
+  restait invisible). Pour un réglage d'expression, des nombres (`FIG.oh`, `FIG.rit`), pas des textes.
+- **Son prénom et son numéro** (la 1, et la fin : on le touche pour l'appeler, un QR code `tel:` fait par le paquet
+  `qrcode`) : `PRENOM`, `TELEPHONE` dans le script.
+- Les chiffres à l'écran (2 304 « j'aime », vues, 15 surprises, 27 clients « objectif du mois ») sont inventés ; la page le dit
   (« Commerce et chiffres imaginaires »).
 
 ## Le tour massage

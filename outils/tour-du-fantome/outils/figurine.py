@@ -13,8 +13,8 @@ import json, math, os, subprocess
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
-EXPRESSIONS = ("neutre", "parle", "o", "clin", "rire", "louche")
-CODE = {"neutre": "n", "parle": "p", "o": "o", "clin": "c", "rire": "r", "louche": "l"}
+EXPRESSIONS = ("neutre", "parle", "o", "clin", "clino", "rire", "louche")
+CODE = {"neutre": "n", "parle": "p", "o": "o", "clin": "c", "clino": "w", "rire": "r", "louche": "l"}
 MACHOIRE = [234, 93, 132, 58, 172, 136, 150, 149, 176, 148, 152, 377, 400, 378, 379, 365, 397, 288, 361, 323, 454]
 POINTS = [33, 133, 362, 263, 168, 6, 1]  # les coins des yeux, le haut du nez : ce qui doit rester en place
 TETE_H = 600  # la hauteur des têtes exportées (la page les réduit)
@@ -49,8 +49,10 @@ def _tete(photos, nom, ref_pts, taille):
     return rgba.transform(taille, Image.AFFINE, (ia, -ib, -(ia * tx - ib * ty), ib, ia, -(ib * tx + ia * ty)), resample=Image.BICUBIC)
 
 
-def preparer(photos, corps_webp, sortie):
-    """Écrit dans `sortie` les têtes (`tete-<expression>.webp`), le corps sans bras et les deux bras ; rend leurs mesures."""
+def preparer(photos, corps_webp, sortie, carte=None):
+    """Écrit dans `sortie` les têtes (`tete-<expression>.webp`), le corps sans bras et les deux bras ; rend leurs mesures.
+    `carte` (recadrage dans la photo neutre, taille) : sa carte de CV, `carte.jpg`, et la même sans sa tête
+    (`carte-sans-tete.jpg`, le fond refait à sa place) — la page y dessine sa tête, qui en sort."""
     os.makedirs(sortie, exist_ok=True)
     ref = Image.open(f"{photos}/neutre.jpg")
     ref_pts = np.array(json.load(open(f"{photos}/neutre.json"))["pts"], np.float32)
@@ -63,6 +65,8 @@ def preparer(photos, corps_webp, sortie):
     for e, t in tetes.items():
         t.crop(bb).resize((w, TETE_H), Image.LANCZOS).save(f"{sortie}/tete-{e}.webp", quality=86, method=6)
     menton = ((ref_pts[152][0] - bb[0]) * k, (ref_pts[152][1] + 7 - bb[1]) * k)
+    if carte:
+        _carte(ref.convert("RGB"), tetes["neutre"].getchannel("A"), *carte, sortie)
 
     # LE CORPS : sans sa tête ni sa casquette (coupé aux épaules, un cou arrondi), puis sans ses bras
     corps = Image.open(corps_webp).convert("RGBA")
@@ -82,7 +86,22 @@ def preparer(photos, corps_webp, sortie):
     sans.save(f"{sortie}/corps.webp", quality=90, method=6)
     blanc = [int(v) for v in np.asarray(corps.convert("RGB").crop((340, 620, 380, 660))).reshape(-1, 3).mean(axis=0)]
     return {"tete": {"w": w, "h": TETE_H, "menton": [round(float(menton[0]), 1), round(float(menton[1]), 1)]}, "corps": {"w": cw, "h": ch, "cou": 0.43},
-            "bras": {c: {"boite": list(b[0][:2]), "pivot": list(b[1])} for c, b in bras.items()}, "blanc": blanc}
+            "bras": {c: {"boite": list(b[0][:2]), "pivot": list(b[1])} for c, b in bras.items()}, "blanc": blanc,
+            # sa tête dans la photo neutre : son cadre et son menton (pour la poser exactement sur sa carte)
+            "photo": {"cadre": [int(v) for v in bb], "menton": [round(float(ref_pts[152][0]), 1), round(float(ref_pts[152][1]) + 7, 1)]}}
+
+
+def _carte(photo, alpha, recadre, taille, sortie):
+    """Sa carte de CV : la photo recadrée, et la même sans sa tête — le fond rose refait ligne par ligne (la couleur des
+    deux bords, d'un côté à l'autre), un peu plus large que sa tête, les bords adoucis."""
+    a = np.asarray(photo).astype(np.float32)
+    gauche, droite = a[:, :30].mean(axis=1), a[:, -30:].mean(axis=1)
+    u = np.linspace(0, 1, a.shape[1])[None, :, None]
+    fond = gauche[:, None, :] * (1 - u) + droite[:, None, :] * u
+    m = np.asarray(alpha.point(lambda v: 255 if v > 8 else 0).filter(ImageFilter.MaxFilter(13)).filter(ImageFilter.GaussianBlur(4))).astype(np.float32)[..., None] / 255
+    sans = Image.fromarray(np.clip(a * (1 - m) + fond * m, 0, 255).astype(np.uint8))
+    photo.crop(recadre).resize(taille, Image.LANCZOS).save(f"{sortie}/carte.jpg", quality=88)
+    sans.crop(recadre).resize(taille, Image.LANCZOS).save(f"{sortie}/carte-sans-tete.jpg", quality=88)
 
 
 def energie(ff, voix, ips=30):

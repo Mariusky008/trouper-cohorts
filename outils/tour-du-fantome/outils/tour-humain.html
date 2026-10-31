@@ -237,11 +237,47 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 #carte-mike b{display:block;font-size:46px;font-weight:900;line-height:1}
 #carte-mike small{display:block;margin-top:6px;font-size:23px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--rose)}
 /* le téléphone qu'on fait défiler, puis la porte qu'on pousse */
-#mtel{width:300px;height:600px;padding:10px;border-radius:46px;background:#120A0F;box-shadow:0 0 0 3px rgba(255,255,255,.14),0 40px 80px -24px rgba(0,0,0,.9);opacity:0}
-#mtel .mt-ecran{height:100%;overflow:hidden;border-radius:38px;background:#FFF}
-#mtel .flux{display:flex;flex-direction:column;gap:12px;padding:12px}
-#mtel .post img{width:100%;height:250px;object-fit:cover;border-radius:16px}
-#mtel .post span{display:block;padding:6px 4px 0;font-size:21px;font-weight:800;color:#3A2A33}
+/* le fil d'un réseau social, en parodie : on le fait défiler sans fin, les « j'aime » s'envolent… et personne ne vient */
+#ig{width:380px;height:760px;padding:12px;border-radius:58px;background:linear-gradient(145deg,#3A2A33,#120A0F 40%,#2A1D24);
+  box-shadow:0 0 0 3px rgba(255,255,255,.14),0 50px 90px -24px rgba(0,0,0,.9);opacity:0}
+#ig .ig-ecran{position:relative;height:100%;overflow:hidden;border-radius:46px;color:#111;background:#fff;font-family:-apple-system,"Segoe UI",Roboto,Poppins,sans-serif}
+#ig .ig-haut{position:absolute;left:0;right:0;top:0;z-index:3;height:92px;padding:40px 20px 0;display:flex;align-items:center;gap:14px;background:#fff;border-bottom:1px solid #EFEFEF}
+#ig .ig-haut b{flex:1;font-size:25px;font-weight:800;letter-spacing:-.01em}
+#ig svg{width:28px;height:28px;flex:none}
+#ig .ig-flux{position:absolute;left:0;right:0;top:92px;will-change:transform}
+#ig .ig-stories{display:flex;gap:12px;height:112px;padding:12px 12px 0;border-bottom:1px solid #EFEFEF}
+#ig .ig-st{flex:none;width:76px;height:76px;padding:3px;border-radius:50%;background:conic-gradient(#FEDA75,#FA7E1E,#D62976,#962FBF,#4F5BD5,#FEDA75)}
+#ig .ig-st i{display:block;width:100%;height:100%;border-radius:50%;border:3px solid #fff;background:#F4E6EC center/cover}
+#ig .ig-post{height:500px}
+#ig .ig-ent{display:flex;align-items:center;gap:10px;height:56px;padding:0 12px;font-size:19px}
+#ig .ig-ent i{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#FF5DB8,#E0167A)}
+#ig .ig-ent b{font-weight:700}
+#ig .ig-ent em{margin-left:auto;font-style:normal;font-weight:900;letter-spacing:2px}
+#ig .ig-img{position:relative;height:320px;overflow:hidden;background:#222}
+#ig .ig-img>img{width:100%;height:100%;object-fit:cover}
+#ig .ig-act{display:flex;align-items:center;gap:16px;height:48px;padding:0 12px}
+#ig .ig-act svg:last-child{margin-left:auto}
+#ig .ig-txt{margin:0;padding:0 12px;font-size:18px;line-height:1.4}
+#ig .ig-txt b{font-weight:700}
+#ig .ig-bas{position:absolute;left:0;right:0;bottom:0;z-index:3;height:70px;display:flex;align-items:center;justify-content:space-around;background:#fff;border-top:1px solid #EFEFEF}
+#ig .ig-gros{position:absolute;left:50%;top:44%;z-index:4;width:150px;height:150px;margin:-75px 0 0 -75px;opacity:0;filter:drop-shadow(0 6px 18px rgba(0,0,0,.35))}
+#ig .ig-gros svg{width:100%;height:100%}
+/* la photo qui devient une porte */
+#ig .ig-porte{position:absolute;inset:0;opacity:0;perspective:700px;background:radial-gradient(ellipse at 50% 62%,#FFF1C9,#FFC46E 40%,#C46A2A 85%)}
+#ig .ig-porte>i{position:absolute;top:0;bottom:0;width:50%;background:url(m3.jpg) no-repeat;background-size:356px auto;box-shadow:inset 0 0 0 4px #C9A45C}
+#ig .ig-porte .pg{left:0;background-position:0 50%;transform-origin:0 50%}
+#ig .ig-porte .pd{right:0;background-position:-178px 50%;transform-origin:100% 50%}
+#ig .ig-porte>span{position:absolute;bottom:-10px;width:110px;opacity:0}
+#ig .ig-porte>span img{width:100%;height:auto;filter:drop-shadow(0 8px 10px rgba(0,0,0,.4))}
+/* les deux compteurs : les « j'aime »… et les clients */
+.cpt{padding:14px 30px;border-radius:40px;white-space:nowrap;font-size:40px;font-weight:900;box-shadow:0 18px 40px -14px rgba(0,0,0,.8);opacity:0}
+#cpt-like{color:#fff;background:linear-gradient(135deg,#FF5DB8,#E0167A)}
+#cpt-porte{color:#2A1A10;background:#FFF4E6}
+/* « TADAM ! » : l'arrivée de Mike, façon bande dessinée */
+#tadam{width:620px;height:620px;opacity:0;pointer-events:none}
+#tadam svg{width:100%;height:100%;overflow:visible}
+#bonk{width:300px;height:300px;opacity:0}
+#bonk i{position:absolute;font-style:normal;font-size:46px;color:#FFE14D;text-shadow:0 0 12px rgba(255,200,80,.9)}
 .pt{width:300px;height:470px;opacity:0}
 .pt .pt-lum{position:absolute;left:-70%;top:-25%;width:240%;height:150%;border-radius:50%;opacity:0;background:radial-gradient(ellipse at 50% 55%,rgba(255,220,150,.85),transparent 62%);mix-blend-mode:screen}
 .pt .pt-cadre{position:absolute;inset:0;border-radius:150px 150px 10px 10px;background:radial-gradient(ellipse at 50% 70%,#FFE2A8,#FFB45E 45%,#B9652B);box-shadow:inset 0 0 0 12px #C9A45C,0 30px 60px -20px rgba(0,0,0,.8)}
@@ -251,15 +287,19 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 .pt .pt-g{position:absolute;bottom:-4px;width:120px;opacity:0}
 .pt .pt-g img{width:100%;height:auto;filter:drop-shadow(0 10px 12px rgba(0,0,0,.5))}
 .pt>b{position:absolute;left:0;right:0;top:-66px;text-align:center;white-space:nowrap;font:italic 700 36px/1.4 "Playfair Display",Georgia,serif;color:#E8C77A}
-/* les 30 jours */
-#cal{position:absolute;z-index:2;left:250px;top:470px;width:580px;padding:22px 26px 26px;border-radius:30px;color:#2A1A10;background:#FFFCF8;box-shadow:0 40px 80px -24px rgba(0,0,0,.85);opacity:0}
-#cal h4{margin:0 0 14px;text-align:center;font-size:50px;font-weight:900;line-height:1.2;letter-spacing:.02em;color:var(--rose)}
-#cal .grille{display:grid;grid-template-columns:repeat(10,1fr);gap:6px}
-#cal .grille span{position:relative;display:grid;place-items:center;height:56px;border-radius:12px;font-size:25px;font-weight:800;background:#F3E6EA;opacity:0}
-#cal .grille span i{position:absolute;inset:0;display:grid;place-items:center;border-radius:12px;font-style:normal;color:#fff;background:linear-gradient(135deg,#FF5DB8,#E0167A);opacity:0}
-#cal .rond{position:absolute;left:-9px;top:-9px;width:calc(100% + 18px);height:calc(100% + 18px);border:5px solid #1BA97A;border-radius:50%;opacity:0}
+/* les 30 jours : une éphéméride, dont on arrache les pages */
+#cal{position:absolute;z-index:2;left:360px;top:470px;width:360px;height:330px;opacity:0}
+#cal .eph,#cal .feuille{position:absolute;inset:0;overflow:hidden;border-radius:26px;text-align:center;color:#2A1A10;background:#FFFCF8;box-shadow:0 30px 60px -20px rgba(0,0,0,.85)}
+#cal .eph::before,#cal .feuille::before{content:"";position:absolute;left:0;right:0;top:0;height:64px;background:linear-gradient(135deg,#FF5DB8,#E0167A)}
+#cal small{position:relative;display:block;height:64px;padding-top:14px;font-size:30px;font-weight:900;letter-spacing:.24em;color:#fff}
+#cal b{display:block;margin-top:4px;font-size:170px;font-weight:900;line-height:1;letter-spacing:-.04em}
+#cal span{display:block;font-size:28px;font-weight:800;color:#8C6E78}
+#cal .feuille{opacity:0;box-shadow:0 10px 30px -10px rgba(0,0,0,.6)}
+#cal .anneau{position:absolute;top:-20px;z-index:3;width:24px;height:50px;border-radius:12px;background:linear-gradient(90deg,#8E8E8E,#F2F2F2 45%,#9A9A9A);box-shadow:0 4px 8px rgba(0,0,0,.4)}
+#cal .rond{position:absolute;left:50%;top:84px;z-index:3;width:240px;height:200px;margin-left:-120px;border:9px solid #1BA97A;border-radius:50%;opacity:0}
+#cal .tampon{position:absolute;left:50%;top:84%;z-index:4;padding:6px 24px;border:7px solid var(--rose);border-radius:16px;white-space:nowrap;font-size:48px;font-weight:900;color:var(--rose);background:rgba(255,252,248,.88);opacity:0}
 /* la communauté (des « j'aime »)… qui devient des clients (des fantômes) */
-#comm{position:absolute;left:0;right:0;top:800px;display:flex;justify-content:center;gap:22px;pointer-events:none}
+#comm{position:absolute;left:0;right:0;top:830px;display:flex;justify-content:center;gap:22px;pointer-events:none}
 #comm span{position:relative;width:96px;height:96px;opacity:0}
 #comm em{position:absolute;inset:0;display:grid;place-items:center;border-radius:50%;font-style:normal;font-size:46px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.22)}
 #comm img{position:absolute;left:6px;bottom:-6px;width:84px;height:auto;opacity:0}
@@ -277,7 +317,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 .dor-g .corps{position:relative;display:block}
 .dor-g img{width:100%;height:auto;filter:drop-shadow(0 12px 14px rgba(0,0,0,.55))}
 .dor-g .patch{width:28%}
-.dor-s{position:absolute;left:50%;top:-74px;padding:10px 20px;border-radius:22px;white-space:nowrap;font-size:28px;font-weight:800;color:#2A1A10;background:var(--creme);box-shadow:0 14px 30px -10px rgba(0,0,0,.7);opacity:0}
+.dor-s{position:absolute;left:50%;top:-70px;padding:8px 16px;border-radius:20px;white-space:nowrap;font-size:24px;font-weight:800;color:#2A1A10;background:var(--creme);box-shadow:0 14px 30px -10px rgba(0,0,0,.7);opacity:0}
 /* le bilan du mois */
 #bilan{position:absolute;inset:0;opacity:0;pointer-events:none;background:radial-gradient(ellipse 90% 60% at 50% 45%,#3D1433,#0C040A 80%)}
 #bi-titre{position:absolute;left:0;right:0;top:478px;margin:0;text-align:center;font-size:34px;font-weight:900;letter-spacing:.22em;color:var(--or);opacity:0}
@@ -310,22 +350,30 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 #appel{top:1330px}
 #fi-titre{top:126px;font-size:124px}
 #fi-sous{position:absolute;left:0;right:0;top:282px;margin:0;text-align:center;font-size:44px;font-weight:800;color:rgba(255,244,230,.82);opacity:0}
-#fi-mike{left:auto;top:770px;right:70px;width:330px;margin-left:0}
-.fi-boutons{top:1440px}
+#fi-mike{left:auto;top:640px;right:60px;width:300px;margin-left:0}
+/* son contact : son prénom, son numéro (on peut toucher pour l'appeler), un QR code pour l'enregistrer */
+#contact{position:absolute;left:80px;right:80px;top:1290px;display:flex;align-items:center;gap:28px;padding:22px 26px;border-radius:32px;color:#2A1A10;background:var(--creme);
+  box-shadow:0 30px 70px -24px rgba(0,0,0,.9);opacity:0}
+#contact div{flex:1;min-width:0}
+#contact b{display:block;font-size:50px;font-weight:900;line-height:1.05}
+#contact a{display:block;margin-top:8px;font-size:44px;font-weight:900;color:var(--rose);text-decoration:none;white-space:nowrap}
+#contact small{display:block;margin-top:8px;font-size:24px;font-weight:700;color:#8C6E78}
+#contact svg{flex:none;width:190px;height:190px;padding:8px;border-radius:14px;background:#fff}
+.fi-boutons{top:1560px;gap:14px}
+.fi-boutons a.go{padding:26px;font-size:42px}
+/* la caméra : un peu de flou quand elle file ; un léger voile sur les bords (l'image fait cinéma) */
+#vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 78% 62% at 50% 48%,transparent 58%,rgba(6,1,5,.5))}
+#monde{visibility:hidden}
 </style>
 <div id="cadre"><div id="scene">
   <canvas id="fond" width="1080" height="1920"></canvas>
   <div id="monde">
     <div id="rayons" class="abs"></div>
     <div id="onde" class="abs"></div>
-    <!-- ① le téléphone qu'on fait défiler, la porte qu'on pousse -->
-    <div id="mtel" class="abs"><div class="mt-ecran"><div class="flux">
-      <div class="post"><img src="m1.jpg" alt=""><span>♡ 214 · 💬 12</span></div><div class="post"><img src="m2.jpg" alt=""><span>♡ 98 · 💬 4</span></div>
-      <div class="post"><img src="m3.jpg" alt=""><span>♡ 356 · 💬 21</span></div><div class="post"><img src="m4.jpg" alt=""><span>♡ 142 · 💬 9</span></div>
-      <div class="post"><img src="m2.jpg" alt=""><span>♡ 77 · 💬 3</span></div><div class="post"><img src="m1.jpg" alt=""><span>♡ 190 · 💬 8</span></div>
-    </div></div></div>
-    <div id="mporte" class="pt abs"><i class="pt-lum"></i><div class="pt-cadre"></div><span class="pt-g" style="left:40px"><img src="g/cosy-debout.webp" alt=""></span>
-      <span class="pt-g" style="left:120px"><img src="g/soleil-debout.webp" alt=""></span><div class="pt-bat"></div><b class="nom-commerce">Chez Bergine</b></div>
+    <!-- ① le fil d'un réseau social, qu'on fait défiler ; ses deux compteurs -->
+    <div id="ig" class="abs">@FIL_SOCIAL@</div>
+    <span id="cpt-like" class="cpt abs">❤️ <span id="nlike">0</span> j’aime</span>
+    <span id="cpt-porte" class="cpt abs">🚪 <span id="nporte">0 client</span></span>
     <!-- ② la cage de Mike -->
     <div id="cage" class="abs" aria-hidden="true">
       <svg viewBox="0 0 520 760" aria-hidden="true">
@@ -353,6 +401,8 @@ img{display:block;-webkit-user-drag:none;user-select:none}
         <rect x="52" y="20" width="8" height="232" fill="url(#orb)"/><rect x="108" y="20" width="8" height="232" fill="url(#orb)"/></svg></div>
     </div>
     <div id="carte-mike" class="abs"><b>Mike</b><small>Mon assistant</small></div>
+    <div id="tadam" class="abs">@TADAM@</div>
+    <div id="bonk" class="abs"><i style="left:6px;top:120px">✦</i><i style="left:230px;top:90px">✦</i><i style="left:126px;top:0">✦</i></div>
     <!-- ④ ses photos (polaroïds), puis le film dans le téléphone -->
     <div class="polar abs"><img src="m4.jpg" alt=""></div><div class="polar abs"><img src="m2.jpg" alt=""></div><div class="polar abs"><img src="m1.jpg" alt=""></div><div class="polar abs"><img src="m3.jpg" alt=""></div>
     <div id="tel" class="abs"><div id="ecran">
@@ -392,9 +442,10 @@ img{display:block;-webkit-user-drag:none;user-select:none}
     <div class="doigt abs" id="doigt0"></div><div class="doigt abs" id="doigt1"></div><div class="doigt abs" id="doigt2"></div><div class="doigt abs" id="doigt3"></div>
   </div>
   <!-- ① sa carte de CV -->
-  <div id="carte"><div class="ca-ph"><img src="f/carte.jpg" alt=""></div><b>Community manager</b><small>nouvelle génération · 2027</small></div>
+  <div id="carte"><div class="ca-ph"><img id="carte-photo" src="f/carte.jpg" alt=""></div><b>Community manager</b><small>nouvelle génération · 2027</small></div>
   <!-- ③ les 30 jours, la communauté qui devient des clients -->
-  <div id="cal"><h4>30 JOURS</h4><div class="grille">@JOURS@</div></div>
+  <div id="cal"><i class="anneau" style="left:84px"></i><i class="anneau" style="right:84px"></i>
+    <div class="eph"><small>JOUR</small><b id="eph-n">1</b><span>sur 30</span></div>@FEUILLES@<i class="rond"></i><em class="tampon">JOUR 1</em></div>
   <div id="comm">@COMM@</div>
   <!-- ⑧ la conversation avec Camille -->
   <div id="chat"><div class="ch-tete"><img src="g/fleuri-debout.webp" alt=""><div><b>Camille</b><small>Ce que Mike sait d’elle</small><div class="tags">
@@ -429,12 +480,14 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   <div id="finale">
     <div id="fi-mike"><img src="hote.webp" alt="">@TOQUE@</div>
     <h1 id="fi-titre"></h1><p id="fi-sous">pour faire mes preuves</p>
+    <div id="contact"><div><b>@PRENOM@</b><a href="tel:@TEL_LIEN@">📞 @TELEPHONE@</a><small>Touchez pour m’appeler, ou scannez</small></div>@QR@</div>
     <div class="fi-boutons"><a class="go" href="/inscription">On commence · 1 mois gratuit</a><button id="revoir" type="button">↺ Revoir</button></div>
     <p class="fi-note" id="fi-note">Commerce et chiffres imaginaires</p>
   </div>
   <!-- la figurine du propriétaire (par-dessus les scènes) -->
   <canvas id="fig" width="1080" height="1920"></canvas>
   <canvas id="fx" width="1080" height="1920"></canvas>
+  <div id="vignette"></div>
   <div id="eclat"></div>
   <div id="eclair-diag"></div>
   <div id="voile"></div>
@@ -472,7 +525,7 @@ function hasard(graine) { let a = graine >>> 0; return () => { a |= 0; a = (a + 
 const d = (c) => TEMPS[c]?.d ?? 3;
 const ORDRE = Object.keys(SOUS);
 // le temps entre deux répliques (ce que la scène a besoin pour passer à la suivante)
-const ECART = { l02: .7, l03: .35, l04: .9, l05: .45, l06: .4, l07: .6, l08: 1.0, l09: 1.3, l10: 1.0, l11: .6, l12: .45, l13: .8 };
+const ECART = { l02: 1.35, l03: .35, l04: .9, l05: .45, l06: .4, l07: .6, l08: 1.0, l09: 1.3, l10: 1.0, l11: .6, l12: .45, l13: .8 };
 const VOIX = {};
 ORDRE.forEach((c, k) => { VOIX[c] = k ? VOIX[ORDRE[k - 1]] + d(ORDRE[k - 1]) + ECART[c] : .55; });
 const fin = (c) => VOIX[c] + d(c);
@@ -499,7 +552,17 @@ function secousse(t) {
   return [sx, sy];
 }
 function versEcran(wx, wy, t) { const [sx, sy] = secousse(t); return [540 + sx + (wx - cam.x) * cam.s, 960 + sy + (wy - cam.y) * cam.s]; }
-function poserCamera(t) { const [sx, sy] = secousse(t); $("#monde").style.transform = `translate(${540 + sx - cam.x * cam.s}px,${960 + sy - cam.y * cam.s}px) scale(${cam.s})`; }
+let camAvant = null, tAvant = -9;
+function poserCamera(t) {
+  const [sx, sy] = secousse(t), m = $("#monde");
+  m.style.transform = `translate(${540 + sx - cam.x * cam.s}px,${960 + sy - cam.y * cam.s}px) scale(${cam.s})`;
+  // le flou de bougé : d'après le chemin fait depuis l'image d'avant (à 30 images par seconde)
+  // (pas après un saut dans le temps : une capture prise à part, la pause)
+  const v = camAvant && Math.abs(t - tAvant) < .1 ? Math.hypot(cam.x - camAvant.x, cam.y - camAvant.y) * cam.s + Math.abs(cam.s - camAvant.s) * 900 : 0;
+  camAvant = { x: cam.x, y: cam.y, s: cam.s }; tAvant = t;
+  const flou = Math.min(9, Math.max(0, v - 12) * .12);
+  m.style.filter = flou > .3 ? `blur(${flou.toFixed(1)}px)` : "";
+}
 
 /* ── LES MOTS DITS, EN GRAND : chaque morceau (« | ») arrive mot à mot, puis cède la place au suivant ── */
 const FORTS = { l01: ["métier" + NB + "?", "regarder", "téléphone…", "poussent", "porte."], l02: ["Mike,", "préféré."], l03: ["30", "jours", "clients."],
@@ -550,12 +613,15 @@ function construireMots(tl) {
 /* ── SA FIGURINE À GROSSE TÊTE (`figurine.py`) : le corps, les bras, le cou, l'ombre du menton, la tête qui dodeline.
    Ses pistes (une valeur par image, à 30 images par seconde) pendant chacune de ses répliques ; entre deux, elle flotte
    et respire. La ligne de temps ne fait que la placer (FIG) : où, quelle taille, ce qu'elle regarde. ── */
-const FIG = { x: 540, y: 1720, s: 0, o: 1, r: 0, pench: 0, salut: 0, bras: 0, e: "", ecoute: 0 };
+// carte : 1 = sa tête posée sur sa photo de CV (elle la remplace), 0 = sur sa figurine ; corps : son corps de fantôme
+// (0 → 1, il pousse depuis le cou) ; anim : le mouvement de sa voix (0 sur la photo : seule la bouche bouge)
+// oh, rit : 1 = sa bouche en « o » (surprise), son rire (des nombres : la ligne de temps les remet à 0 en arrière)
+const FIG = { x: 540, y: 1720, s: .82, o: 1, r: 0, pench: 0, salut: 0, bras: 0, ecoute: 0, carte: 1, corps: 0, anim: 0, monte: 0, oh: 0, rit: 0 };
 const IMG = {};
-const EXPR = { n: "neutre", p: "parle", o: "o", c: "clin", r: "rire", l: "louche" };
+const EXPR = { n: "neutre", p: "parle", o: "o", c: "clin", w: "clino", r: "rire", l: "louche" };
 const charge_fig = Promise.all([...Object.values(EXPR).map((e) => "tete-" + e), "corps", "bras-g", "bras-d"].map((n) => new Promise((ok) => {
   const im = new Image(); im.onload = () => ok(); im.onerror = () => ok(); im.src = `f/${n}.webp`; IMG[n] = im;
-})));
+})).concat(new Promise((ok) => { const im = new Image(); im.onload = im.onerror = () => ok(); im.src = "f/carte-sans-tete.jpg"; IMG.carte = im; })));
 const LIGNES_P = Object.keys(PISTES);
 function piste(t) {
   // la dernière de ses répliques commencée (la piste d'une réplique déborde un peu sur la suivante)
@@ -571,40 +637,66 @@ function ellipseFloue(x, y, rx, ry, rgb, a) {
   const g = fg.createRadialGradient(0, 0, 0, 0, 0, rx); g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(.55, `rgba(${rgb},${a * .7})`); g.addColorStop(1, `rgba(${rgb},0)`);
   fg.fillStyle = g; fg.beginPath(); fg.arc(0, 0, rx, 0, 6.283); fg.fill(); fg.restore();
 }
+// SA TÊTE SUR SA CARTE : où est le menton de sa photo à l'écran, et à quelle taille (la carte bouge : on suit sa
+// transformation — déplacement, rotation, échelle, autour de son centre)
+function surCarte() {
+  const c = $("#carte"), ph = $("#carte .ca-ph"), W = c.offsetWidth, Hc = c.offsetHeight, R = FIGURE.carte, src = FIGURE.photo;
+  const k = Math.max(ph.clientWidth / (R[2] - R[0]), ph.clientHeight / (R[3] - R[1]));   // (object-fit: cover)
+  const dx = (ph.clientWidth - (R[2] - R[0]) * k) / 2, dy = (ph.clientHeight - (R[3] - R[1]) * k) * .18;
+  const lx = ph.offsetLeft + dx + (src.menton[0] - R[0]) * k - W / 2, ly = ph.offsetTop + dy + (src.menton[1] - R[1]) * k - Hc / 2;
+  // (dès que sa tête s'en détache, on garde la carte à sa place de repos : la carte tombe, pas sa tête)
+  const libre = FIG.carte < .999, g = (pr, d) => (libre ? d : gsap.getProperty(c, pr));
+  const rot = g("rotation", 0), sc = g("scale", 1), a = rot * DEG;
+  const cx = c.offsetLeft + W / 2 + g("x", 0), cy = c.offsetTop + Hc / 2 + g("y", 0);
+  return { x: cx + sc * (lx * Math.cos(a) - ly * Math.sin(a)), y: cy + sc * (lx * Math.sin(a) + ly * Math.cos(a)), rot, s: (src.cadre[3] - src.cadre[1]) * k * sc / 640 };
+}
 function dessinerFigurine(t) {
   fg.clearRect(0, 0, 1080, 1920);
-  if (FIG.o < .01 || FIG.s < .01 || !IMG.corps?.naturalWidth) return;
-  const p = piste(t) || { a: 0, s: 0, g: 0, d: 0, e: "n" };
+  if (FIG.o < .01 || !IMG.corps?.naturalWidth) return;
+  const p = piste(t) || { a: 0, s: 0, g: 0, d: 0, e: "n" }, A = FIG.anim;
+  const e = FIG.oh > .5 ? "o" : FIG.rit > .5 ? "r" : p.e;
+  const C = FIGURE.corps, SC = 740 / C.h, cw = C.w * SC, ch = C.h * SC;
+  const flot = 9 * Math.sin(2 * Math.PI * .55 * t) * A, respire = 3 * Math.sin(2 * Math.PI * .55 * t + 1) * A;
+  const salut = FIG.salut * 18 * Math.sin(2 * Math.PI * 2.6 * t);
   // quand Mike parle et qu'elle est là : elle écoute (de petits hochements)
   const hoche = FIG.ecoute * 2.4 * Math.sin(2 * Math.PI * 1.1 * t);
-  const e = FIG.e || p.e;
-  const C = FIGURE.corps, SC = 740 / C.h, cw = C.w * SC, ch = C.h * SC;
-  const flot = 9 * Math.sin(2 * Math.PI * .55 * t), respire = 3 * Math.sin(2 * Math.PI * .55 * t + 1);
-  const salut = FIG.salut * 18 * Math.sin(2 * Math.PI * 2.6 * t);
-  fg.save(); fg.globalAlpha = FIG.o; fg.translate(FIG.x, FIG.y); fg.rotate(FIG.r * DEG); fg.scale(FIG.s, FIG.s);
-  ellipseFloue(0, 20, 240 * (1 - flot / 120), 34, "60,6,34", .5);   // l'ombre au sol : plus petite quand elle monte
-  const x0 = -cw / 2, y0 = -flot - ch;
-  fg.drawImage(IMG.corps, x0, y0, cw, ch);
-  // les bras (tournés autour de l'épaule, dans le sens de PIL : positif = vers la gauche)
-  for (const [k, ang] of [["g", p.g + respire - FIG.bras], ["d", p.d - respire - salut + FIG.bras]]) {
-    const b = FIGURE.bras[k], im = IMG["bras-" + k];
-    fg.save(); fg.translate(x0 + b.pivot[0] * SC, y0 + b.pivot[1] * SC); fg.rotate(-ang * DEG);
-    fg.drawImage(im, (b.boite[0] - b.pivot[0]) * SC, (b.boite[1] - b.pivot[1]) * SC, im.naturalWidth * SC, im.naturalHeight * SC); fg.restore();
+  const cou = -flot - ch + ch * C.cou - p.s * A;   // le cou, dans le repère de la figurine (ses pieds en 0)
+  // sa tête : au-dessus du cou de sa figurine… ou posée sur sa carte
+  let nx = FIG.x, ny = FIG.y + cou * FIG.s - FIG.monte, hs = FIG.s;
+  let ang = (p.a + 1.4 * Math.sin(2 * Math.PI * .45 * t)) * A + FIG.pench + hoche;
+  if (FIG.carte > .001) {
+    const c = surCarte(), u = FIG.carte;
+    nx = c.x * u + nx * (1 - u); ny = c.y * u + ny * (1 - u); hs = c.s * u + hs * (1 - u); ang = -c.rot * u + ang * (1 - u);
   }
-  // le cou : le haut du corps, arrondi (un dégradé de son blanc), puis l'ombre sous le menton, qui suit la tête
-  const ang = p.a + 1.4 * Math.sin(2 * Math.PI * .45 * t) + FIG.pench + hoche;
-  const cx = 0, cy = y0 + ch * C.cou - p.s, [r, g, bl] = FIGURE.blanc;
-  fg.save(); fg.beginPath(); fg.rect(cx - 160, cy - 72, 320, 168); fg.clip();
-  fg.translate(cx, cy + 34); fg.scale(1, 104 / 150);
-  const gr = fg.createRadialGradient(0, 0, 0, 0, 0, 150);
-  gr.addColorStop(0, `rgb(${r},${g},${bl})`); gr.addColorStop(.8, `rgb(${r * .91 | 0},${g * .91 | 0},${bl * .91 | 0})`); gr.addColorStop(.86, `rgba(${r * .9 | 0},${g * .9 | 0},${bl * .9 | 0},1)`); gr.addColorStop(1, `rgba(${r * .9 | 0},${g * .9 | 0},${bl * .9 | 0},0)`);
-  fg.fillStyle = gr; fg.beginPath(); fg.arc(0, 0, 150, 0, 6.283); fg.fill(); fg.restore();
-  ellipseFloue(cx + ang * 3, cy + 4, 175, 46, "150,120,130", .42);
-  // la tête : son menton posé sur le cou, elle tourne autour d'un point un peu plus bas (le menton glisse sans le quitter)
+  fg.globalAlpha = FIG.o;
+  // SON CORPS : il pousse depuis le cou (corps < 1), le cou suit la tête
+  if (FIG.corps > .01) {
+    const k = FIG.s * FIG.corps;
+    fg.save(); fg.translate(nx, ny); fg.rotate(FIG.r * DEG); fg.scale(k, k); fg.translate(0, -cou);
+    ellipseFloue(0, 20, 240 * (1 - flot / 120), 34, "60,6,34", .5);   // l'ombre au sol : plus petite quand elle monte
+    const x0 = -cw / 2, y0 = -flot - ch;
+    fg.drawImage(IMG.corps, x0, y0, cw, ch);
+    // les bras (tournés autour de l'épaule, dans le sens de PIL : positif = vers la gauche)
+    for (const [kb, an] of [["g", (p.g + respire) * A - FIG.bras], ["d", (p.d - respire) * A - salut + FIG.bras]]) {
+      const b = FIGURE.bras[kb], im = IMG["bras-" + kb];
+      fg.save(); fg.translate(x0 + b.pivot[0] * SC, y0 + b.pivot[1] * SC); fg.rotate(-an * DEG);
+      fg.drawImage(im, (b.boite[0] - b.pivot[0]) * SC, (b.boite[1] - b.pivot[1]) * SC, im.naturalWidth * SC, im.naturalHeight * SC); fg.restore();
+    }
+    // le cou : le haut du corps, arrondi (un dégradé de son blanc), puis l'ombre sous le menton, qui suit la tête
+    const [r, g, bl] = FIGURE.blanc;
+    fg.save(); fg.beginPath(); fg.rect(-160, cou - 72, 320, 168); fg.clip();
+    fg.translate(0, cou + 34); fg.scale(1, 104 / 150);
+    const gr = fg.createRadialGradient(0, 0, 0, 0, 0, 150);
+    gr.addColorStop(0, `rgb(${r},${g},${bl})`); gr.addColorStop(.8, `rgb(${r * .91 | 0},${g * .91 | 0},${bl * .91 | 0})`); gr.addColorStop(.86, `rgba(${r * .9 | 0},${g * .9 | 0},${bl * .9 | 0},1)`); gr.addColorStop(1, `rgba(${r * .9 | 0},${g * .9 | 0},${bl * .9 | 0},0)`);
+    fg.fillStyle = gr; fg.beginPath(); fg.arc(0, 0, 150, 0, 6.283); fg.fill(); fg.restore();
+    ellipseFloue(ang * 3, cou + 4, 175, 46, "150,120,130", .42);
+    fg.restore();
+  }
+  // SA TÊTE : son menton sur le cou, elle tourne autour d'un point un peu plus bas (le menton glisse sans le quitter)
   const T_ = FIGURE.tete, TH = 640, hk = TH / T_.h, mx = T_.menton[0] * hk, my = T_.menton[1] * hk;
-  fg.save(); fg.translate(cx, cy + 34); fg.rotate(-ang * DEG);
+  fg.save(); fg.translate(nx, ny + 34 * hs); fg.rotate(-ang * DEG); fg.scale(hs, hs);
   fg.drawImage(IMG["tete-" + EXPR[e]] || IMG["tete-neutre"], -mx, -my - 34, T_.w * hk, TH); fg.restore();
-  fg.restore();
+  fg.globalAlpha = 1;
 }
 
 /* ── LES PARTICULES ET LA LUMIÈRE ── */
@@ -703,8 +795,6 @@ function construire() {
   gsap.set("#onde", { x: CAGE_C[0] - 60, y: CAGE_C[1] - 60 });
   gsap.set("#tel", { x: TEL[0] - 310, y: TEL[1] - 625, opacity: 0 });
   gsap.set(".fac", { x: FAC[0] - 500, y: FAC[1] - 597 });
-  gsap.set("#mtel", { x: 840 - 150, y: 1180 - 300, transformPerspective: 900 });
-  gsap.set("#mporte", { x: 840 - 150, y: 1240 - 235, transformPerspective: 900 });
   gsap.set(".pt-bat", { transformPerspective: 800 });
   gsap.set([".film-vues", "#plus1", "#vu-compteur", "#vu-clients", ".dor-s", "#dor-compte"], { xPercent: -50 });
   gsap.set(".fac .fg", { xPercent: -50, yPercent: -100 });
@@ -717,83 +807,131 @@ function construire() {
   gsap.set("#carte", { rotation: -2 });
   const dans = { x: CAGE_C[0] - HG, y: CAGE_C[1] + 20 - HG }, MP = { x: 790 - HG, y: 1110 - HG };
   gsap.set([H, ...traces], { ...dans, scale: .26, transformOrigin: "50% 50%" });
+  gsap.set(".cpt", { xPercent: -50 });
+  gsap.set("#cal .tampon", { xPercent: -50, yPercent: -50 });
 
-  // ═══ ① « Bonjour ! Moi, c'est … Mon métier ? » : sa carte de CV saute vers nous… et devient sa figurine ═══
-  const tSaut = mot("l01", "Mon") - .08;
+  // ═══ ① « Bonjour ! Moi, c'est … Mon métier ? » : sa photo de CV se met à parler ; sur « Mon métier ? », sa tête en
+  //     sort (la carte, sans tête, tombe), et son corps de fantôme pousse dessous ═══
+  const tSaut = mot("l01", "Mon") - .12;
   T.saut = tSaut;
   tl.to("#depart", { opacity: 0, duration: .3 }, 0)
-    .to("#carte", { y: -10, rotation: -1, duration: .6, ease: "power2.out" }, 0)
-    .to("#carte", { scale: 1.26, rotation: 24, y: -60, duration: .32, ease: "power2.out" }, tSaut)
-    .to("#carte", { opacity: 0, duration: .18 }, tSaut + .14)
-    .fromTo("#eclat", { opacity: 0 }, { opacity: .85, duration: .05, immediateRender: false }, tSaut + .08).to("#eclat", { opacity: 0, duration: .5 }, tSaut + .13)
-    .fromTo(FIG, { s: 0 }, { s: .82, duration: .62, ease: "back.out(2.4)", immediateRender: false }, tSaut + .12)
-    .fromTo(FIG, { salut: 0 }, { salut: 1, duration: .2, immediateRender: false }, tSaut + .55).to(FIG, { salut: 0, duration: .3 }, tSaut + 1.6);
-  GERBES.push(gerbe(12, 90, 540, 980, 400, 1500, ["255,214,140", "242,196,107", "255,255,255"], tSaut + .1, [2.2, 3.6], [.7, 1.4], 500, true));
-  // « …de regarder votre commerce sur leur téléphone… » : un téléphone qu'on fait défiler (elle louche dessus)
-  const tTel = mot("l01", "regarder") - .25, tMais = mot("l01", "mais") - .12;
-  tl.to(FIG, { x: 360, s: .74, duration: .7, ease: "power3.inOut" }, tTel - .35)
-    .fromTo("#mtel", { opacity: 0, x: 840 - 150 + 260, rotation: 12 }, { opacity: 1, x: 840 - 150, rotation: -4, duration: .6, ease: "back.out(1.5)", immediateRender: false }, tTel)
-    .fromTo("#mtel .flux", { y: 0 }, { y: -1250, duration: tMais - tTel, ease: "none", immediateRender: false }, tTel);
-  gsap.set("#doigt1", { x: 840 - 75, y: 1300 - 75 });
-  for (let k = 0; k < 3; k++) {
-    const q = tTel + .5 + k * 1.05;
-    tl.fromTo("#doigt1", { opacity: 0, y: 1300 - 75, scale: .7 }, { opacity: .9, duration: .1, immediateRender: false }, q)
-      .to("#doigt1", { y: 1000 - 75, duration: .45, ease: "power2.inOut" }, q + .1).to("#doigt1", { opacity: 0, duration: .15 }, q + .5);
-  }
-  // « …mais qu'ils poussent votre porte. » : le téléphone se retourne en porte ; elle s'ouvre, deux fantômes entrent
-  const tPousse = mot("l01", "poussent") - .05;
-  tl.to("#mtel", { rotationY: 90, opacity: 0, duration: .3, ease: "power2.in" }, tMais)
-    .fromTo("#mporte", { opacity: 0, rotationY: -90 }, { opacity: 1, rotationY: 0, duration: .4, ease: "back.out(1.6)", immediateRender: false }, tMais + .25)
-    .fromTo("#mporte .pt-g", { opacity: 0, x: -260 }, { opacity: 1, x: 0, duration: .6, stagger: .15, ease: "power2.out", immediateRender: false }, tPousse - .3)
-    .to("#mporte .pt-bat", { rotationY: -100, duration: .6, ease: "power3.out" }, tPousse)
-    .to("#mporte .pt-lum", { opacity: 1, duration: .4 }, tPousse + .05)
-    .to("#mporte .pt-g", { scale: .7, y: -20, opacity: 0, duration: .5, stagger: .15, ease: "power2.in" }, tPousse + .5);
-  T.porte1 = tPousse;
+    .to("#carte", { y: 0, rotation: 0, duration: .6, ease: "power2.out" }, 0)
+    .to("#carte", { scale: 1.04, duration: .18, yoyo: true, repeat: 1, ease: "power2.out" }, tSaut - .25)   // elle frémit
+    // sa tête se détache de la photo, monte en tournant… (la carte, sans tête, tombe en basculant)
+    .to(FIG, { carte: 0, duration: .75, ease: "power2.inOut" }, tSaut)
+    .to(FIG, { monte: 330, duration: .34, ease: "power2.out" }, tSaut).to(FIG, { monte: 0, duration: .55, ease: "bounce.out" }, tSaut + .34)
+    .to(FIG, { pench: 14, duration: .25, ease: "power2.out" }, tSaut).to(FIG, { pench: 0, duration: .6, ease: "elastic.out(1,.4)" }, tSaut + .3)
+    .to("#carte", { rotation: -6, duration: .12, yoyo: true, repeat: 1 }, tSaut + .2)                    // (sans tête : elle vacille)
+    .to("#carte", { y: 1150, rotation: 28, rotationX: 35, transformPerspective: 900, duration: .8, ease: "power2.in" }, tSaut + .45)
+    .to("#carte", { opacity: 0, duration: .2 }, tSaut + 1.05)
+    // …son corps de fantôme pousse dessous, elle prend vie (et salue)
+    .to(FIG, { corps: 1, duration: .75, ease: "elastic.out(1,.45)" }, tSaut + .55)
+    .to(FIG, { anim: 1, duration: .5 }, tSaut + .4)
+    .fromTo("#eclat", { opacity: 0 }, { opacity: .6, duration: .05, immediateRender: false }, tSaut + .04).to("#eclat", { opacity: 0, duration: .45 }, tSaut + .09)
+    .fromTo(FIG, { salut: 0 }, { salut: 1, duration: .2, immediateRender: false }, tSaut + .9).to(FIG, { salut: 0, duration: .3 }, tSaut + 1.9);
+  GERBES.push(gerbe(12, 70, 540, 760, 300, 1200, ["255,214,140", "242,196,107", "255,255,255"], tSaut + .05, [2.2, 3.6], [.6, 1.2], 500, true));
+  // « …de regarder votre commerce sur leur téléphone… » : le fil d'un réseau social, qu'on fait défiler de plus en
+  // plus vite ; les « j'aime » s'envolent… et le compteur des clients reste à 0 (elle louche sur le téléphone)
+  const tTel = mot("l01", "regarder") - .3, tMais = mot("l01", "mais") - .12, IG = [820, 1180], fl = $("#ig .ig-flux");
+  gsap.set("#ig", { x: IG[0] - 190, y: IG[1] - 380, transformPerspective: 1300 });
+  gsap.set("#cpt-like", { x: IG[0], y: 590 }); gsap.set("#cpt-porte", { x: IG[0], y: 680 });
+  gsap.set("#doigt1", { x: IG[0] - 75 });
+  tl.to(FIG, { x: 320, s: .72, duration: .7, ease: "power3.inOut" }, tTel - .4)
+    .fromTo("#ig", { opacity: 0, x: IG[0] - 190 + 360, rotationY: -50, rotation: 10 }, { opacity: 1, x: IG[0] - 190, rotationY: -14, rotation: -3, duration: .7, ease: "expo.out", immediateRender: false }, tTel)
+    .fromTo(".cpt", { opacity: 0, scale: .4 }, { opacity: 1, scale: 1, duration: .4, stagger: .14, ease: "back.out(2.4)", immediateRender: false }, tTel + .35);
+  const PAS = [-260, -620, -900, -1240, -1500, -1790, -2041], ECARTS = [.62, .55, .48, .4, .34, .3];
+  const kEc = (tMais - .25 - (tTel + .65)) / ECARTS.reduce((a, b) => a + b, 0);
+  let q = tTel + .65;
+  PAS.forEach((y, k) => {
+    const dd = Math.max(.16, .4 - k * .04);
+    tl.to(fl, { y, duration: dd, ease: "power3.out" }, q)
+      .to(fl, { filter: "blur(3px)", duration: dd * .35, yoyo: true, repeat: 1 }, q)   // le flou du défilement
+      .fromTo("#doigt1", { opacity: .9, y: IG[1] + 220 - 75, scale: .7 }, { y: IG[1] - 120 - 75, opacity: 0, duration: dd + .05, ease: "power2.out", immediateRender: false }, q - .02);
+    if (k === 1 || k === 4) tl.fromTo("#ig .ig-gros", { opacity: 1, scale: 0 }, { opacity: 1, scale: 1.15, duration: .22, ease: "back.out(3)", immediateRender: false }, q + dd)   // un double-tap : ♥
+      .to("#ig .ig-gros", { opacity: 0, scale: .9, duration: .25 }, q + dd + .4);
+    if (k < PAS.length - 1) q += ECARTS[k] * kEc;
+  });
+  compteur("#nlike", 2304, tMais - tTel - .7, tTel + .65, "power1.in");
+  // personne ne vient : le compteur des clients tremble, à 0
+  [tTel + 1.6, tTel + 2.6].forEach((q2) => tl.to("#cpt-porte", { x: "+=10", duration: .05, yoyo: true, repeat: 5 }, q2));
+  // « …mais qu'ils poussent votre porte. » : le fil s'arrête net ; sa photo devient une porte, elle s'ouvre, deux
+  // fantômes y entrent ; le compteur des clients passe enfin à 1, puis 2
+  const tPousse = mot("l01", "poussent") - .05, nPo = { v: 0 };
+  tl.to("#ig", { rotationY: 0, rotation: 0, scale: 1.06, duration: .5, ease: "back.out(1.6)" }, tMais)
+    .to("#cpt-like", { opacity: .4, scale: .85, duration: .4 }, tMais)
+    .fromTo("#ig .ig-porte", { opacity: 0 }, { opacity: 1, duration: .15, immediateRender: false }, tPousse - .2)
+    .to("#ig .ig-porte .pg", { rotationY: -108, duration: .75, ease: "power3.out" }, tPousse)
+    .to("#ig .ig-porte .pd", { rotationY: 108, duration: .75, ease: "power3.out" }, tPousse)
+    .fromTo("#ig .ig-porte span", { opacity: 0, y: 170, scale: 1.7 }, { opacity: 1, y: 0, scale: .85, duration: .75, stagger: .22, ease: "power2.out", immediateRender: false }, tPousse + .15)
+    .to("#ig .ig-porte span", { opacity: 0, duration: .2, stagger: .22 }, tPousse + .85);
+  [0, 1].forEach((k) => tl.to(nPo, { v: k + 1, duration: .05, onUpdate: () => { const n = Math.round(nPo.v); $("#nporte").textContent = n + (n > 1 ? " clients" : " client"); } }, tPousse + .75 + k * .25)
+    .to("#cpt-porte", { scale: 1.25, duration: .12, yoyo: true, repeat: 1 }, tPousse + .75 + k * .25));
+  tl.to("#cpt-porte", { backgroundColor: "#3DE2A6", color: "#04150E", duration: .3 }, tPousse + .75);
+  T.porte1 = tPousse + .75;
   // son grand rire : la figurine en rit tout entière
   tl.to(FIG, { r: 3, duration: .12, yoyo: true, repeat: 5, ease: "sine.inOut" }, fin("l01") - .2);
 
-  // ═══ ② « Et moi ! Je suis Mike, votre futur fantôme préféré. » : la cage de Mike tombe à côté d'elle, et explose ═══
-  const tCage = fin("l01") - .45, E = VOIX.l02 + .04;
-  T.cage = tCage; T.eclate = E;
-  tl.to("#mporte", { opacity: 0, scale: .8, duration: .35 }, tCage - .2)
+  // ═══ ② « Et moi ! Je suis Mike, votre futur fantôme préféré. » : la cage de Mike tombe à côté d'elle ; il s'y
+  //     agite… et en jaillit comme un diable de sa boîte : tout en haut, hors du cadre ; il retombe, s'écrase,
+  //     rebondit — « TADAM ! » ; sa toque lui tombe sur la tête ═══
+  const tCage = fin("l01") + .1, E = VOIX.l02 + .02, tAt = E + .74;
+  T.cage = tCage; T.eclate = E; T.atterrit = tAt;
+  tl.to("#ig", { x: "+=520", rotation: 18, opacity: 0, duration: .45, ease: "power2.in" }, tCage - .3)
+    .to(".cpt", { opacity: 0, y: "-=40", duration: .3 }, tCage - .3)
     .to(FIG, { x: 300, s: .64, duration: .6, ease: "power3.inOut" }, tCage - .2)
     .fromTo("#cage", { opacity: 1, y: CAGE_C[1] - 380 - 1400 }, { y: CAGE_C[1] - 380, duration: .55, ease: "bounce.out", immediateRender: false }, tCage)
-    .to("#c-fant", { x: 14, rotation: 6, duration: .07, yoyo: true, repeat: 5, ease: "power1.inOut" }, tCage + .55)
-    .to("#cage", { scaleY: .46, scaleX: .53, duration: .16, ease: "power2.in" }, E - .16)
-    .to("#c-lueur", { opacity: 1, duration: .16, ease: "power2.in" }, E - .16)
-    .to("#cage", { scaleY: .54, scaleX: .48, rotation: -4, duration: .16, ease: "power3.out" }, E)
-    .to("#cage", { scaleX: .5, scaleY: .5, rotation: 0, duration: 1, ease: "elastic.out(1,.35)" }, E + .16)
-    .to("#c-porte", { rotationY: -128, duration: .5, ease: "back.out(2.2)" }, E)
+    .to("#c-fant", { x: 14, rotation: 6, duration: .07, yoyo: true, repeat: 7, ease: "power1.inOut" }, tCage + .5)
+    .to(FIG, { pench: -6, duration: .25 }, tCage + .55)                      // elle jette un œil à la cage
+    .to("#cage", { scaleY: .44, scaleX: .55, duration: .14, ease: "power2.in" }, E - .14)
+    .to("#c-lueur", { opacity: 1, duration: .14 }, E - .14)
+    .to("#cage", { scaleY: .56, scaleX: .47, duration: .12, ease: "power3.out" }, E)
+    .to("#cage", { scaleX: .5, scaleY: .5, duration: .8, ease: "elastic.out(1,.3)" }, E + .12)
+    .to("#c-porte", { rotationY: -150, duration: .35, ease: "back.out(3)" }, E)
     .set("#c-fant", { opacity: 0 }, E)
-    .to("#c-lueur", { opacity: 0, duration: .9 }, E + .1)
-    .fromTo("#eclat", { opacity: 0 }, { opacity: .8, duration: .05, immediateRender: false }, E).to("#eclat", { opacity: 0, duration: .5 }, E + .05)
-    .fromTo("#onde", { opacity: 1, scale: .5 }, { opacity: 0, scale: 14, duration: .8, ease: "expo.out", immediateRender: false }, E)
-    .fromTo("#rayons", { opacity: 0, scale: .2, rotation: 0 }, { opacity: 1, scale: .7, rotation: 18, duration: .35, ease: "expo.out", immediateRender: false }, E)
-    .to("#rayons", { opacity: 0, rotation: 40, duration: 1 }, E + .35)
-    .to("#cage", { y: CAGE_C[1] - 380 + 260, scale: .3, opacity: 0, duration: .8, ease: "power3.in" }, E + .8);
-  const chemin = [dans, { x: dans.x + 60, y: dans.y - 380 }, { x: dans.x - 120, y: dans.y - 620 }, { x: dans.x - 160, y: dans.y - 330 }, { x: MP.x + 60, y: MP.y - 120 }, MP];
-  const vol = (cible, retard) => tl.to(cible, { motionPath: { path: chemin, curviness: 1.3 }, duration: 1.05, ease: "power2.inOut" }, E + retard);
-  tl.set(H, { opacity: 1 }, E);
-  vol(H, 0);
-  traces.forEach((tr, k) => { tl.set(tr, { opacity: .3 - k * .06 }, E + .02); vol(tr, .045 * (k + 1)); tl.fromTo(tr, { scale: .26 }, { scale: .7, duration: .5, immediateRender: false }, E + .045 * (k + 1)).to(tr, { opacity: 0, duration: .2 }, E + 1 + k * .04); });
-  tl.fromTo(H, { scale: .26, rotation: -10 }, { scale: .78, rotation: 8, duration: .5, ease: "power2.out", immediateRender: false }, E)
-    .to(H, { scale: .66, rotation: -6, duration: .4, ease: "sine.inOut" }, E + .5)
-    .to(H, { scale: .62, rotation: 0, duration: .3, ease: "back.out(2)" }, E + .9)
-    .to("#heros .corps", { scaleY: .86, scaleX: 1.1, transformOrigin: "50% 100%", duration: .1 }, E + 1.05)
-    .to("#heros .corps", { scaleY: 1, scaleX: 1, duration: .55, ease: "elastic.out(1.2,.4)" }, E + 1.15)
-    .fromTo("#heros .toque", { y: -520, rotation: -25, opacity: 0 }, { y: 0, rotation: 0, opacity: 1, duration: .55, ease: "bounce.out" }, E + 1.15)
-    .to("#heros .corps", { y: -20, duration: .9, yoyo: true, repeat: 3, ease: "sine.inOut" }, E + 1.7)
+    .to("#c-lueur", { opacity: 0, duration: .6 }, E + .05)
+    .fromTo("#rayons", { opacity: 0, scale: .2, rotation: 0 }, { opacity: .8, scale: .6, rotation: 18, duration: .3, ease: "expo.out", immediateRender: false }, E)
+    .to("#rayons", { opacity: 0, rotation: 40, duration: .7 }, E + .3)
+    .to("#cage", { y: CAGE_C[1] - 380 + 320, scale: .3, rotation: 16, opacity: 0, duration: .45, ease: "power3.in" }, E + .25);   // vide, elle s'en va
+  // Mike : jusqu'en haut, étiré… un temps… puis il retombe à côté d'elle
+  tl.set(H, { opacity: 1 }, E)
+    .to(H, { y: -1150, x: MP.x - 30, scale: .5, duration: .3, ease: "power2.out" }, E)
+    .fromTo("#heros .corps", { scaleY: 1, scaleX: 1 }, { scaleY: 1.55, scaleX: .68, transformOrigin: "50% 100%", duration: .12, immediateRender: false }, E)
+    .set(H, { x: MP.x, scale: .62 }, E + .36)
+    .to(H, { y: MP.y, duration: .32, ease: "power2.in" }, tAt - .32)
+    .to("#heros .corps", { scaleY: 1.3, scaleX: .8, duration: .2 }, tAt - .32)
+    .to("#heros .corps", { scaleY: .6, scaleX: 1.38, duration: .08, ease: "power2.out" }, tAt)    // il s'écrase…
+    .to("#heros .corps", { scaleY: 1, scaleX: 1, duration: .75, ease: "elastic.out(1.3,.33)" }, tAt + .08)   // …et rebondit
+    .set("#onde", { x: 790 - 60, y: MP.y + HG + 150 - 60 }, tAt - .01)
+    .fromTo("#onde", { opacity: .9, scaleX: .4, scaleY: .1 }, { opacity: 0, scaleX: 6, scaleY: 1.1, duration: .6, ease: "expo.out", immediateRender: false }, tAt)
+    // « TADAM ! » derrière lui
+    .fromTo("#tadam", { opacity: 1, scale: 0, rotation: -40 }, { opacity: 1, scale: 1, rotation: -8, duration: .45, ease: "back.out(2.6)", immediateRender: false }, tAt + .02)
+    .to("#tadam", { rotation: 4, duration: .9, ease: "sine.inOut" }, tAt + .47)
+    .to("#tadam", { scale: 1.25, opacity: 0, duration: .3, ease: "power2.in" }, tAt + 1.45)
+    // sa toque lui tombe sur la tête : bonk ! (et quelques étoiles)
+    .fromTo("#heros .toque", { y: -520, rotation: -50, opacity: 0 }, { y: 0, rotation: 0, opacity: 1, duration: .3, ease: "power2.in" }, tAt + .5)
+    .to("#heros .corps", { scaleY: .86, scaleX: 1.1, duration: .07, yoyo: true, repeat: 1 }, tAt + .8)
+    .fromTo("#bonk", { opacity: 1, rotation: 0, scale: .6 }, { opacity: 1, rotation: 300, scale: 1, duration: .9, ease: "power1.out", immediateRender: false }, tAt + .8)
+    .to("#bonk", { opacity: 0, duration: .25 }, tAt + 1.5)
+    .to("#heros .corps", { y: -20, duration: .9, yoyo: true, repeat: 3, ease: "sine.inOut" }, tAt + 1.5)
     .to("#heros .corps", { rotation: 8, duration: .14, yoyo: true, repeat: 3, ease: "sine.inOut" }, mot("l02", "préféré.") - .05);
-  // sa carte à lui : « Mike · Mon assistant » ; la figurine le regarde, et l'écoute
-  gsap.set("#carte-mike", { x: 790 - 150, y: 1360 });
-  tl.fromTo("#carte-mike", { opacity: 0, scale: .4, rotation: -14 }, { opacity: 1, scale: 1, rotation: -4, duration: .5, ease: "back.out(2.2)", immediateRender: false }, mot("l02", "Mike,") - .1)
-    .to(FIG, { pench: -5, ecoute: 1, duration: .4 }, E + .3).to(FIG, { pench: 0, ecoute: 0, duration: .4 }, VOIX.l03 - .2);
+  gsap.set("#tadam", { x: 790 - 340, y: MP.y + HG - 330 - 250 });   // au-dessus de lui : on lit le mot
+  gsap.set("#bonk", { x: 790 - 150, y: MP.y + HG - 260 });
+  GERBES.push(gerbe(13, 40, 790, MP.y + HG + 160, 200, 700, ["255,244,230", "255,214,140"], tAt, [4, 6], [.3, .7], 300));
+  // elle sursaute (« oh ! ») quand il atterrit, puis le regarde et l'écoute ; sa carte à lui, qui se retourne
+  gsap.set("#carte-mike", { x: 790 - 150, y: 1360, transformPerspective: 900 });
+  tl.set(FIG, { oh: 1 }, tAt).set(FIG, { oh: 0 }, tAt + .55)
+    .to(FIG, { r: -4, duration: .08, yoyo: true, repeat: 1 }, tAt)
+    .to(FIG, { pench: -5, ecoute: 1, duration: .4 }, tAt + .3).to(FIG, { pench: 0, ecoute: 0, duration: .4 }, VOIX.l03 - .2)
+    .fromTo("#carte-mike", { opacity: 0, rotationY: 100, scale: .8 }, { opacity: 1, rotationY: 0, rotation: -4, scale: 1, duration: .6, ease: "back.out(1.8)", immediateRender: false }, mot("l02", "Mike,") - .1);
 
   // ═══ ③ « On a 30 jours pour transformer votre communauté en clients. Je vous montre ? » ═══
-  const t3 = VOIX.l03, jours = $$("#cal .grille span");
+  // « On a 30 jours » : une éphéméride ; on en arrache les pages, de plus en plus vite, jusqu'au 30
+  const t3 = VOIX.l03;
   tl.to("#carte-mike", { opacity: 0, scale: .7, duration: .3 }, t3 - .15)
-    .fromTo("#cal", { opacity: 0, y: -60, scale: .8, rotation: -6 }, { opacity: 1, y: 0, scale: 1, rotation: -2, duration: .55, ease: "back.out(1.8)", immediateRender: false }, t3 - .05)
-    .fromTo(jours, { opacity: 0, scale: .3 }, { opacity: 1, scale: 1, duration: .25, stagger: .028, ease: "back.out(2.5)", immediateRender: false }, t3 + .2);
+    .fromTo("#cal", { opacity: 0, y: -220, rotation: -8 }, { opacity: 1, y: 0, rotation: -2, duration: .5, ease: "bounce.out", immediateRender: false }, t3 - .2);
+  effeuiller(t3 + .3, 1.35);
+  tl.fromTo("#cal .rond", { opacity: 0, scale: 1.8 }, { opacity: 1, scale: 1, duration: .3, ease: "back.out(2)", immediateRender: false }, t3 + 1.7)
+    .to("#cal .rond", { opacity: 0, duration: .3 }, mot("l03", "montre") - .2);
   const tComm = mot("l03", "communauté") - .15, tCli = mot("l03", "clients.") - .1;
   tl.fromTo("#comm span", { opacity: 0, y: 40, scale: .5 }, { opacity: 1, y: 0, scale: 1, duration: .35, stagger: .06, ease: "back.out(2.4)", immediateRender: false }, tComm)
     .to("#comm em", { scale: 0, opacity: 0, duration: .2, stagger: .07, ease: "power2.in" }, tCli)
@@ -803,10 +941,14 @@ function construire() {
     .to(H, { rotation: 8, duration: .16, yoyo: true, repeat: 3, ease: "sine.inOut" }, mot("l03", "montre"));
 
   // ═══ ④ « Jour 1 : je viens chez vous. Quelques photos, deux ou trois questions… et Mike s'occupe du reste. » ═══
-  const t4 = VOIX.l04, j1 = jours[0];
-  tl.to(j1.querySelector("i"), { opacity: 1, duration: .2 }, t4 - .05)
-    .fromTo(j1.querySelector(".rond"), { opacity: 0, scale: 2 }, { opacity: 1, scale: 1, duration: .35, ease: "back.out(2)", immediateRender: false }, t4)
-    .to(j1, { scale: 1.5, zIndex: 3, duration: .3, yoyo: true, repeat: 1 }, t4)
+  // « Jour 1 : » : une page neuve retombe sur l'éphéméride (le 1), et le tampon « JOUR 1 »
+  const t4 = VOIX.l04, f1 = $$("#cal .feuille")[0];
+  T.jour1 = t4 + .1;
+  tl.to(nJ, { v: 1, duration: .02, onUpdate: () => { $("#eph-n").textContent = Math.floor(nJ.v); } }, t4 - .2)
+    .fromTo(f1, { opacity: 1, x: 0, y: -380, rotation: -10 }, { opacity: 1, x: 0, y: 0, rotation: 0, duration: .25, ease: "power2.in", immediateRender: false }, t4 - .45)
+    .set(f1, { opacity: 0 }, t4 - .19)
+    .fromTo("#cal .tampon", { opacity: 0, scale: 3, rotation: -40 }, { opacity: 1, scale: 1, rotation: -14, duration: .2, ease: "power4.in", immediateRender: false }, T.jour1 - .2)
+    .to("#cal", { scale: .95, duration: .06, yoyo: true, repeat: 1 }, T.jour1)
     .to("#comm", { opacity: 0, duration: .3 }, t4 - .2)
     .to(FIG, { x: 190, y: 1890, s: .45, duration: .7, ease: "power3.inOut" }, t4 - .25)   // elle se pousse en bas à gauche : elle présente
     .to(H, { x: 1250 - HG, opacity: 0, duration: .5, ease: "power2.in" }, t4 - .2);       // Mike file (il revient plus tard)
@@ -1046,10 +1188,11 @@ function construire() {
   tl.to("#bilan", { opacity: 1, duration: .5 }, t10 - .5)
     .set(FIG, { x: 190, s: .45, pench: 0 }, t10 - .6)
     .to(FIG, { y: 1890, duration: .55, ease: "back.out(1.4)" }, t10 - .5)
-    // « À la fin du mois, » : les trente jours se cochent ; le dernier est entouré
-    .fromTo("#cal", { opacity: 0, y: 80, scale: .7, rotation: 4 }, { opacity: 1, y: 0, scale: 1, rotation: -2, duration: .5, ease: "back.out(1.6)", immediateRender: false }, t10 - .25)
-    .to($$("#cal .grille span i"), { opacity: 1, duration: .1, stagger: .03 }, t10)
-    .fromTo(jours[29].querySelector(".rond"), { opacity: 0, scale: 2 }, { opacity: 1, scale: 1, duration: .35, ease: "back.out(2)", immediateRender: false }, t10 + .95);
+    // « À la fin du mois, » : l'éphéméride revient ; le mois passe en quelques pages arrachées ; le 30 est entouré
+    .set("#cal .tampon", { opacity: 0 }, t10 - .3)
+    .fromTo("#cal", { opacity: 0, y: 80, scale: .7, rotation: 4 }, { opacity: 1, y: 0, scale: 1, rotation: -2, duration: .5, ease: "back.out(1.6)", immediateRender: false }, t10 - .3);
+  effeuiller(t10, 1.1);
+  tl.fromTo("#cal .rond", { opacity: 0, scale: 1.8 }, { opacity: 1, scale: 1, duration: .3, ease: "back.out(2)", immediateRender: false }, t10 + 1.15);
   // « on fait le bilan ensemble : »
   const tB = mot("l10", "on") - .2;
   tl.to("#cal", { y: -520, scale: .5, opacity: 0, duration: .45, ease: "power3.in" }, tB)
@@ -1064,7 +1207,7 @@ function construire() {
   tl.fromTo("#plus1", { opacity: 0, y: 40, scale: .5 }, { opacity: 1, y: 0, scale: 1, duration: .45, ease: "back.out(2.4)", immediateRender: false }, tCl)
     .fromTo("#total", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: .5, ease: "expo.out", immediateRender: false }, tCl + .3)
     .fromTo("#total .barre i", { scaleX: 0 }, { scaleX: 1, duration: 1.6, ease: "power2.out", immediateRender: false }, tCl + .4);
-  compteur("#nbt", 120, 1.6, tCl + .4);
+  compteur("#nbt", 27, 1.6, tCl + .4);
 
   // ═══ ⑪ « Et voilà : pas de blabla, pas de fausses promesses. » ═══
   const t11 = VOIX.l11;
@@ -1106,18 +1249,30 @@ function construire() {
   const t13 = VOIX.l13;
   tl.to("#finale", { opacity: 1, duration: .6 }, t13 - .5)
     .set("#finale", { pointerEvents: "auto" }, t13)
-    .to(FIG, { x: 390, y: 1380, s: .6, duration: .7, ease: "power3.inOut" }, t13 - .5)
+    .to(FIG, { x: 330, y: 1250, s: .55, duration: .7, ease: "power3.inOut" }, t13 - .5)
     .fromTo("#fi-mike", { y: -260, scale: .6, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: .9, ease: "elastic.out(1,.55)", immediateRender: false }, t13 - .3)
     .to("#fi-mike", { y: -18, duration: .9, yoyo: true, repeat: 5, ease: "sine.inOut" }, t13 + .7)
     .to(FIG, { bras: 20, duration: .3, ease: "back.out(2)" }, mot("l13", "commence") - .1).to(FIG, { bras: 0, duration: .5 }, fin("l13") + .6)
-    .set(FIG, { e: "r" }, fin("l13") + .9);   // son rire reste, après la réplique
+    .set(FIG, { rit: 1 }, fin("l13") + .9);   // son rire reste, après la réplique
   const tt = $("#fi-titre");
   tt.innerHTML = '<span class="m fort">1' + NB + 'mois</span> <span class="m fort">gratuit</span>';
   $$("#fi-titre .m").forEach((s, i) => tl.fromTo(s, { opacity: 0, y: 70, scale: 1.3, filter: "blur(14px)" }, { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: .4, ease: "expo.out", immediateRender: false }, fin("l13") + .35 + i * .15));
   tl.fromTo("#fi-sous", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .4, immediateRender: false }, fin("l13") + .75)
+    .fromTo("#contact", { opacity: 0, y: 80, rotation: -3 }, { opacity: 1, y: 0, rotation: 0, duration: .55, ease: "back.out(1.8)", immediateRender: false }, fin("l13") + .85)
     .fromTo(".fi-boutons", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .5, ease: "expo.out", immediateRender: false }, fin("l13") + 1.0);
   GERBES.push(gerbe(50, 90, 540, 400, 400, 1400, ["255,214,140", "255,93,184", "61,226,166", "255,255,255"], fin("l13") + .3, [2, 3.5], [.8, 1.6], 600, true));
   construireMots(tl);
+}
+// L'ÉPHÉMÉRIDE : de 1 à 30 en `duree` secondes, de plus en plus vite ; chaque page arrachée s'envole (le chiffre du
+// dessous suit la ligne de temps : il se rejoue à l'identique)
+const nJ = { v: 1 };
+function effeuiller(q, duree) {
+  const feuilles = $$("#cal .feuille");
+  tl.fromTo(nJ, { v: 1 }, { v: 30, duration: duree, ease: "power2.in", immediateRender: false, onUpdate: () => { $("#eph-n").textContent = Math.floor(nJ.v); } }, q);
+  for (let k = 1; k < 30; k++) {
+    const a = q + duree * Math.sqrt(k / 29) - .01, cote = k % 2 ? 1 : -1;
+    tl.fromTo(feuilles[k - 1], { opacity: 1, x: 0, y: 0, rotation: 0 }, { x: cote * (180 + (k % 5) * 40), y: -260 - (k % 3) * 60, rotation: cote * (25 + (k % 4) * 10), opacity: 0, duration: .45, ease: "power2.out", immediateRender: false }, a);
+  }
 }
 // ce que Mike apprend d'elle : une étiquette de plus dans l'en-tête de la conversation
 function etiquette(k, q) {
@@ -1141,7 +1296,10 @@ function relever() {
   // les surprises : des cœurs au-dessus des trois premiers (sur l'écran)
   const tS = mot("l08", "bichonne") - .1;
   for (let k = 0; k < 24; k++) COEURS.push({ ecran: true, t: tS + k * .06, x: 155 + (k % 3) * 200 + (rc() - .5) * 50, y: 1400, v: 200 + rc() * 200, vie: 1.1 + rc() * .6, r: 16 + rc() * 14, ph: rc() * 6.28, c: ["#FF3B5C", "#FF5DB8", "#F2C46B"][k % 3] });
+  // revenue au début, la ligne de temps oublie les valeurs de départ qu'elle a relevées en route (sinon certaines ne
+  // reviennent pas : l'étoile « TADAM ! » restait invisible, sa bouche restait en « o »)
   tl.seek(0, true);
+  tl.invalidate();
 }
 
 /* ── LE SON : les voix, une musique pop (120 BPM, en majeur), les bruits — joués par le navigateur ── */
@@ -1211,21 +1369,28 @@ function composer(ctx, sortie, t0, voix) {
     cloche: (t) => { for (const dt of [0, .22]) { osc("sine", 2093, t + dt, .002, .16, 1.1, busS); osc("sine", 2637, t + dt, .002, .1, .9, busS); osc("sine", 3951, t + dt, .002, .05, .5, busS); } },
     tampon: (t) => { osc("sine", 110, t, .002, .7, .25, busS, 50); bruit(t, .12, "lowpass", 900, .7, .5, busS); },
     boing: (t) => osc("sine", 300, t, .004, .25, .35, busS, 900),
+    sifflet: (t, dd = .32) => osc("sine", 1900, t, .01, .1, dd, busS, 380),
+    boum: (t) => { osc("sine", 95, t, .003, .9, .4, busS, 38); bruit(t, .3, "lowpass", 500, .7, .5, busS); },
+    fanfare: (t) => [523.3, 659.3, 784, 1046.5].forEach((f, i) => { osc("triangle", f, t + i * .06, .01, .1, .35, busS); osc("triangle", f, t + .3, .01, .08, .8, busS); }),
+    dechire: (t) => bruit(t, .08, "highpass", 2400, .6, .2, busS, 7000),
+    swipe: (t) => bruit(t, .16, "bandpass", 1800, 1.2, .14, busS, 600),
   };
   S.tape(t0);
-  // ① la carte devient la figurine ; le téléphone qu'on fait défiler ; la porte
-  S.magie(t0 + T.saut); S.eclate(t0 + T.saut + .08);
-  S.vol(t0 + mot("l01", "regarder") - .25, .6); for (let k = 0; k < 3; k++) S.vol(t0 + mot("l01", "regarder") + .35 + k * 1.05, .35);
-  S.vol(t0 + mot("l01", "mais") - .12, .5); S.cloche(t0 + T.porte1 + .05);
-  // ② la cage tombe, toque, toque… et explose
-  S.vol(t0 + T.cage, .5); S.tampon(t0 + T.cage + .5); for (let k = 0; k < 3; k++) S.tape(t0 + T.cage + .58 + k * .14);
-  S.eclate(t0 + T.eclate); S.vol(t0 + T.eclate + .05, .9); S.pop(t0 + T.eclate + 1.15); S.pop(t0 + mot("l02", "Mike,") - .1);
+  // ① sa tête sort de sa photo ; le fil qu'on fait défiler ; la porte, les deux premiers clients
+  S.magie(t0 + T.saut); S.vol(t0 + T.saut, .5); S.boing(t0 + T.saut + .45);
+  S.vol(t0 + mot("l01", "regarder") - .3, .6);
+  for (let k = 0; k < 7; k++) S.swipe(t0 + mot("l01", "regarder") + .35 + k * .42);
+  S.cloche(t0 + T.porte1); S.petit(t0 + T.porte1 + .25);
+  // ② la cage tombe, il s'agite… il jaillit, retombe : « TADAM ! », la toque
+  S.vol(t0 + T.cage, .5); S.tampon(t0 + T.cage + .5); for (let k = 0; k < 4; k++) S.tape(t0 + T.cage + .55 + k * .13);
+  S.eclate(t0 + T.eclate); S.vol(t0 + T.eclate, .4); S.sifflet(t0 + T.atterrit - .34);
+  S.boum(t0 + T.atterrit); S.fanfare(t0 + T.atterrit + .04); S.boing(t0 + T.atterrit + .8); S.pop(t0 + mot("l02", "Mike,") - .1);
   // ③ les trente jours, la communauté qui devient des clients
-  for (let k = 0; k < 30; k++) S.tic(t0 + VOIX.l03 + .2 + k * .028);
+  for (let k = 1; k < 30; k++) S.dechire(t0 + VOIX.l03 + .3 + 1.35 * Math.sqrt(k / 29));
   for (let k = 0; k < 5; k++) S.pop(t0 + mot("l03", "communauté") - .15 + k * .06);
   S.petit(t0 + mot("l03", "clients.") - .05);
   // ④ le jour 1, le commerce, les photos, le téléphone, Mike
-  S.tampon(t0 + VOIX.l04); S.vol(t0 + mot("l04", "je") - .35, 1);
+  S.tampon(t0 + T.jour1); S.vol(t0 + mot("l04", "je") - .35, 1);
   for (let k = 0; k < 4; k++) S.clic(t0 + mot("l04", "photos,") - .35 + k * .17);
   S.vol(t0 + mot("l04", "deux") - .35, .9); S.boing(t0 + mot("l04", "Mike") + .2);
   // ⑤ la vidéo, les réseaux, les vues
@@ -1254,7 +1419,7 @@ function composer(ctx, sortie, t0, voix) {
   for (let k = 0; k < 11; k++) S.pop(t0 + mot("l09", "Elle") + .1 + k * .07);
   S.petit(t0 + mot("l09", "porte.") + .1);
   // ⑩ le bilan
-  S.vol(t0 + VOIX.l10 - .5, .6); for (let k = 0; k < 30; k++) S.tic(t0 + VOIX.l10 + k * .03);
+  S.vol(t0 + VOIX.l10 - .5, .6); for (let k = 1; k < 30; k++) S.dechire(t0 + VOIX.l10 + 1.1 * Math.sqrt(k / 29));
   S.tampon(t0 + T.servie); S.petit(t0 + T.servie + .05); S.pop(t0 + mot("l10", "c’est") - .1);
   for (let k = 0; k < 14; k++) S.tic(t0 + mot("l10", "c’est") + .3 + k * .11);
   // ⑪ pas de blabla
@@ -1280,6 +1445,7 @@ function etat(t) { tl.seek(Math.max(0, t), false); poserCamera(t); dessinerFond(
 // avant de toucher : sa carte flotte, « Touchez pour commencer » respire
 const attente = gsap.timeline({ repeat: -1 });
 attente.fromTo("#carte", { y: 0, rotation: -2 }, { y: -14, rotation: -1, duration: 1.6, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0)
+  .to("#carte", { scale: 1.015, duration: .8, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0)
   .to("#appel", { scale: 1.05, duration: .8, yoyo: true, repeat: 1, ease: "sine.inOut" }, 0);
 if (RENDU) attente.pause(0);
 let enRoute = false, AC = null, t0 = 0, depuisPerf = 0, enPause = false, pauseA = 0, pauseTot = 0;
@@ -1308,9 +1474,17 @@ function suivreFilm(t) {
   if (Math.abs(FILM_V.currentTime - x) > (v > 2 ? .8 : .25)) FILM_V.currentTime = x;
   if (FILM_V.paused) FILM_V.play().catch(() => {});
 }
-function boucleAttente(now) { if (enRoute) return; dessinerFond(now / 1000); requestAnimationFrame(boucleAttente); }
+function boucleAttente(now) { if (enRoute) return; dessinerFond(now / 1000); if (pret) dessinerFigurine(-1); requestAnimationFrame(boucleAttente); }
 if (!RENDU) requestAnimationFrame(boucleAttente);
-const construit = Promise.all([document.fonts ? Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]) : null, charge_fig]).then(() => { foule(); construire(); relever(); });
+let pret = false;
+const construit = Promise.all([document.fonts ? Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]) : null, charge_fig]).then(() => {
+  foule(); construire(); relever();
+  // le décor, posé à sa place, peut apparaître (avant, la façade s'affichait un instant par-dessus la carte) ; sa
+  // carte, sans tête : la sienne est dessinée par-dessus (et va en sortir)
+  $("#monde").style.visibility = "visible";
+  if (IMG.carte?.naturalWidth) $("#carte-photo").src = IMG.carte.src;
+  pret = true;
+});
 async function lancer() {
   if (enRoute) return; enRoute = true;
   await construit;
@@ -1334,7 +1508,7 @@ $("#revoir").addEventListener("click", () => location.reload());
 /* ── POUR EN FAIRE UNE VIDÉO (`rendre-video.mjs`) ── */
 window.__duree = DUREE;
 // x < 0 : les secondes avant qu'on touche l'écran (sa carte qui flotte)
-window.__attente = (x) => { const D = attente.duration(), u = 1.2 + x; attente.seek(((u % D) + D) % D, false); dessinerFond(x + 10); };
+window.__attente = (x) => { const D = attente.duration(), u = 1.2 + x; attente.seek(((u % D) + D) % D, false); dessinerFond(x + 10); dessinerFigurine(-1); };
 window.__rendre = async (t) => {
   if (!enRoute) { enRoute = true; attente.pause(0); }
   etat(t);
