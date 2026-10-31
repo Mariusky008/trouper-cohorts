@@ -1640,11 +1640,16 @@ function demarrerVideo() {
   enVideo = demarre = true; attente.pause(0);
   document.body.classList.add("joue", "video");
   if (AC) AC.suspend?.().catch(() => {});
-  DEMO.addEventListener("ended", async () => {
-    // la fin : l'animation en direct reprend, posée au même instant (la même image), pour que le numéro se touche
+  // la fin : l'animation en direct reprend, posée au même instant (la même image), pour que le numéro se touche
+  // (« ended », ou la dernière image atteinte : un navigateur qui n'enverrait pas « ended » ne bloque pas la fin)
+  let finie = false;
+  const fin = async () => {
+    if (finie) return; finie = true;
     await construit; etat(DUREE);
     document.body.classList.remove("video"); document.body.classList.add("fini"); window.__fin = true;
-  }, { once: true });
+  };
+  DEMO.addEventListener("ended", fin, { once: true });
+  DEMO.addEventListener("timeupdate", () => { if (DEMO.duration && DEMO.currentTime >= DEMO.duration - .08) fin(); });
 }
 async function enDirect() {
   chargerDirect();
