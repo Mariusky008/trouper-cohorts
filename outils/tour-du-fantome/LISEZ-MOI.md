@@ -356,7 +356,7 @@ dodeline au rythme de sa voix, ouvre la bouche sur les syllabes, fait un clin d'
 de rire. Faite par `outils/tour-humain.py` d'après `outils/tour-humain.html` (le moteur de `tour-court2/`).
 
 ```sh
-/usr/bin/python3 -I outils/tour-du-fantome/outils/tour-humain.py outils/tour-du-fantome
+/usr/bin/python3 -I outils/tour-du-fantome/outils/tour-humain.py outils/tour-du-fantome   # (fait aussi son.mp3)
 node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index.html sortie.mp4 30 1
 ```
 
@@ -369,12 +369,22 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index
   sauter. Le corps : le fantôme « denim » (`public/direct/ensemble/denim-debout.webp`) sans tête, les bras à part.
   Pour chacune de ses répliques, des **pistes** à 30 images par seconde (la tête sur un ressort relancé à chaque
   syllabe, le cou, les bras, l'expression) ; ses **moments** (`MOMENTS`) : un mot de départ, un mot de fin. La page
-  la dessine sur une toile (`dessinerFigurine`) ; la ligne de temps ne fait que la placer (`FIG`). **Sa carte de CV**
+  la dessine sur une toile (`dessinerFigurine`) ; la ligne de temps ne fait que la placer (`FIG`). **Son cou** (photo
+  neutre, `cou.webp`, avec le col de sa chemise) rentre dans le corps du fantôme : la page redessine le bord du corps
+  par-dessus (un arc, une ombre douce) ; le corps, coupé en épaules arrondies sous les joues roses du fantôme, penche
+  avec sa tête. Le liseré rose du fond, autour de ses cheveux, est repeint (`_sans_liseré`). **Sa carte de CV**
   est sa photo **sans sa tête** (`carte-sans-tete.jpg`, le fond refait) : la page y dessine sa tête au pixel près
   (`surCarte`, `FIG.carte`), qui parle sur la photo puis en sort ; son corps pousse depuis le cou (`FIG.corps`).
 - **La ligne de temps parcourue au chargement** (`relever`, la traînée de Mike) est ensuite remise à zéro et
   « invalidée » (`tl.invalidate()`) : sans ça, des valeurs relevées en route ne revenaient pas (l'étoile « TADAM ! »
   restait invisible). Pour un réglage d'expression, des nombres (`FIG.oh`, `FIG.rit`), pas des textes.
+- **Le son, d'un bloc** : `outils/bande-son.mjs` (appelé par le script) enregistre la bande-son que la page compose
+  hors ligne (`__son`) dans `tour-humain/son.mp3` ; en direct, la page ne joue que ce fichier (composée sur un iPhone,
+  avec des milliers de petits sons programmés d'un coup, la musique décrochait). Sans lui, elle compose en direct.
+- **La fluidité sur téléphone** : pas de `will-change` partout (un calque par élément, par mot), pas de flou
+  (ni sur la caméra, ni sur les mots qui arrivent) ; les taches de lumière du fond sont dessinées une fois ; en avance
+  rapide, la vidéo du téléphone avance par bonds (un iPhone ne la lit pas à 15 fois sa vitesse).
+- **Mike bouge sur sa voix** (`MIKE`, `mikeParle`) : il se tasse et rebondit sur chaque syllabe.
 - **Son prénom et son numéro** (la 1, et la fin : on le touche pour l'appeler, un QR code `tel:` fait par le paquet
   `qrcode`) : `PRENOM`, `TELEPHONE` dans le script.
 - Les chiffres à l'écran (2 304 « j'aime », vues, 15 surprises, 27 clients « objectif du mois ») sont inventés ; la page le dit

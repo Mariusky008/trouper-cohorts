@@ -21,7 +21,7 @@ import json, os, re, shutil, subprocess, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from voix_courtes import caler, egaliser  # noqa: E402
 from alignement import segments  # noqa: E402
-from figurine import preparer, pistes  # noqa: E402
+from figurine import energie, preparer, pistes  # noqa: E402
 from decor import cage_mini, toque  # noqa: E402
 
 S = sys.argv[1]
@@ -169,6 +169,9 @@ for c, moments in MOMENTS.items():
     PISTES[c] = pistes(FF, f"{R}/{SOUS[c][0]}.mp3", [(e, quand(a, da), quand(b, db)) for e, a, da, b, db in moments])
     print(c, "figurine :", len(PISTES[c]["e"]), "images")
 
+# MIKE BOUGE SUR SA VOIX : l'énergie de chacune de ses répliques, une valeur par image (0 à 9)
+MIKE = {c: "".join(str(min(9, round(v * 9))) for v in energie(FF, f"{D}/voix/{c}.mp3")) for c, (f, _t, _a) in SOUS.items() if f.endswith("-m")}
+
 # ─── LES IMAGES (celles du tour du restaurant), GSAP ──────────────────────────────────────────
 for f in ("m1.jpg", "m2.jpg", "m3.jpg", "m4.jpg", "si-interieur.webp"):
     shutil.copyfile(f"{S}/tour/{f}", f"{D}/{f}")
@@ -203,6 +206,13 @@ page = page.replace("/*@TEMPS@*/null", json.dumps(TEMPS, ensure_ascii=False))
 page = page.replace("/*@SOUS@*/null", json.dumps({c: t for c, (_, t, _a) in SOUS.items()}, ensure_ascii=False))
 page = page.replace("/*@FIGURE@*/null", json.dumps(FIGURE, ensure_ascii=False))
 page = page.replace("/*@PISTES@*/null", json.dumps(PISTES, ensure_ascii=False, separators=(",", ":")))
+page = page.replace("/*@MIKE@*/null", json.dumps(MIKE, separators=(",", ":")))
 assert not re.search(r"@[A-Z0-9_]+@|/\*@", page), "un repère @…@ n'a pas été remplacé"
 open(f"{D}/index.html", "w", encoding="utf-8").write(page)
 print("tour-humain/index.html :", len(page) // 1024, "Ko")
+
+# ─── LA BANDE-SON, D'UN BLOC (`son.mp3`) : la page la joue en direct (voir `bande-son.mjs`) ───────────────────
+try:
+    subprocess.run(["node", f"{S}/outils/bande-son.mjs", D, f"{D}/son.mp3"], check=True)
+except (OSError, subprocess.CalledProcessError) as e:
+    print("bande-son : pas faite (", e, ") — la page composera son son elle-même")

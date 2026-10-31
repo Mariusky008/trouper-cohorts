@@ -69,7 +69,12 @@ répliques sont réenregistrées avec **sa voix clonée** (ElevenLabs, « jean �
 | 13 | elle et Mike ; « 1 mois gratuit · pour faire mes preuves », son rire ; **son contact** : « Jean-Philippe · 📞 06 22 12 96 75 » (on le touche pour l'appeler) et un QR code qui l'appelle ; « On commence · 1 mois gratuit » (vers `/inscription`), « Revoir » |
 
 Son prénom et son numéro (`PRENOM`, `TELEPHONE` dans le script) : confirmés par le propriétaire le 31 octobre.
-Partout : un léger voile sur les bords de l'image, un peu de flou quand la caméra file.
+Partout : un léger voile sur les bords de l'image.
+
+**Troisième passe (31 octobre, après son essai sur téléphone : « ça saute », « le son se perd », « la tête et le
+corps ne vont pas ensemble »)** : la page joue une bande-son d'un bloc (`son.mp3`) ; elle est allégée (plus de flou,
+plus de calque par élément) ; sa tête est nettoyée de son liseré rose, son cou (et le col de sa chemise) rentre dans
+le corps du fantôme comme dans un costume, et le corps penche avec sa tête ; Mike rebondit sur sa voix.
 
 ## À garder en tête
 

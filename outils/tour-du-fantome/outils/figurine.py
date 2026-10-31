@@ -18,6 +18,7 @@ CODE = {"neutre": "n", "parle": "p", "o": "o", "clin": "c", "clino": "w", "rire"
 MACHOIRE = [234, 93, 132, 58, 172, 136, 150, 149, 176, 148, 152, 377, 400, 378, 379, 365, 397, 288, 361, 323, 454]
 POINTS = [33, 133, 362, 263, 168, 6, 1]  # les coins des yeux, le haut du nez : ce qui doit rester en place
 TETE_H = 600  # la hauteur des têtes exportées (la page les réduit)
+COU = 0.455  # où se pose son cou, dans la hauteur du fantôme « denim » (sous ses joues roses)
 
 
 def similitude(src, dst):
@@ -30,6 +31,20 @@ def similitude(src, dst):
     return a, b, md[0] - (a * ms[0] - b * ms[1]), md[1] - (b * ms[0] + a * ms[1])
 
 
+def _sans_liseré(photo, alpha):
+    """La photo détourée, sans le liseré rose du fond autour des cheveux : le bord un peu resserré, et ses pixels à
+    demi transparents repeints de la couleur de l'intérieur tout proche (les cheveux, la peau), plus celle du fond."""
+    a = np.asarray(photo).astype(np.float32)
+    al = np.asarray(alpha.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(0.7))).astype(np.float32) / 255
+    coeur = (al > 0.97).astype(np.float32)
+    flou = lambda x: np.asarray(Image.fromarray(np.clip(x, 0, 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(6))).astype(np.float32)
+    poids = flou(coeur * 255)[..., None] / 255
+    dedans = np.dstack([flou(a[..., c] * coeur) for c in range(3)]) / np.maximum(poids, 1e-3)
+    m = np.where(poids[..., 0] > 0.02, np.clip((1 - al) * 1.6, 0, 1), 0)[..., None]
+    rgb = a * (1 - m) + dedans * m
+    return Image.fromarray(np.dstack([np.clip(rgb, 0, 255), al * 255]).astype(np.uint8), "RGBA")
+
+
 def _tete(photos, nom, ref_pts, taille):
     """Sa tête dans cette photo (jusqu'au menton), dans le repère de la photo neutre (RGBA, taille de la photo neutre)."""
     ph = Image.open(f"{photos}/{nom}.jpg").convert("RGB")
@@ -39,8 +54,7 @@ def _tete(photos, nom, ref_pts, taille):
     haut = Image.new("L", ph.size, 0)
     ImageDraw.Draw(haut).polygon([(0, 0), (ph.width, 0), (ph.width, ligne[-1][1]), *ligne[::-1], (0, ligne[0][1])], fill=255)
     alpha = Image.fromarray(np.minimum(np.asarray(m2), np.asarray(haut.filter(ImageFilter.GaussianBlur(2))))).filter(ImageFilter.GaussianBlur(0.8))
-    rgba = ph.convert("RGBA")
-    rgba.putalpha(alpha)
+    rgba = _sans_liseré(ph, alpha)
     if nom == "neutre":
         return rgba
     a, b, tx, ty = similitude(np.array([p2[i] for i in POINTS], np.float32), ref_pts[POINTS])
@@ -60,35 +74,61 @@ def preparer(photos, corps_webp, sortie, carte=None):
     # un même cadre pour toutes (le rire ouvre la mâchoire plus bas)
     boites = [t.getbbox() for t in tetes.values()]
     bb = (min(b[0] for b in boites), min(b[1] for b in boites), max(b[2] for b in boites), max(b[3] for b in boites))
+    # SON COU (de la photo neutre) : sous la mâchoire, un peu moins large qu'elle, qui s'efface vers le bas — il rentre
+    # dans le corps du fantôme (la page redessine le bord du corps par-dessus), et sa tête y tient
+    menton_y, cx = float(ref_pts[152][1]) + 7, float(ref_pts[152][0])
+    visage = menton_y - float(ref_pts[10][1])
+    demi = 0.36 * float(ref_pts[397][0] - ref_pts[172][0])
+    haut_cou, bas_cou = menton_y - 0.25 * visage, menton_y + 0.42 * visage
+    zone = Image.new("L", ref.size, 0)
+    ImageDraw.Draw(zone).rounded_rectangle([cx - demi, haut_cou, cx + demi, bas_cou], radius=demi * 0.5, fill=255)
+    fondu = np.clip((bas_cou - np.arange(ref.height, dtype=np.float32)) / (0.18 * visage), 0, 1)[:, None]
+    zone = np.asarray(zone.filter(ImageFilter.GaussianBlur(5))).astype(np.float32) * fondu
+    masque = np.asarray(Image.open(f"{photos}/neutre-masque.png").convert("L")).astype(np.float32)
+    cou = _sans_liseré(ref.convert("RGB"), Image.fromarray(np.minimum(masque, zone).astype(np.uint8)))
+    cadre = (bb[0], bb[1], bb[2], max(bb[3], int(bas_cou) + 2))
     k = TETE_H / (bb[3] - bb[1])
-    w = round((bb[2] - bb[0]) * k)
+    w, h = round((cadre[2] - cadre[0]) * k), round((cadre[3] - cadre[1]) * k)
     for e, t in tetes.items():
-        t.crop(bb).resize((w, TETE_H), Image.LANCZOS).save(f"{sortie}/tete-{e}.webp", quality=86, method=6)
-    menton = ((ref_pts[152][0] - bb[0]) * k, (ref_pts[152][1] + 7 - bb[1]) * k)
+        t.crop(cadre).resize((w, h), Image.LANCZOS).save(f"{sortie}/tete-{e}.webp", quality=86, method=6)
+    cou.crop(cadre).resize((w, h), Image.LANCZOS).save(f"{sortie}/cou.webp", quality=86, method=6)
+    menton = ((ref_pts[152][0] - cadre[0]) * k, (menton_y - cadre[1]) * k)
     if carte:
         _carte(ref.convert("RGB"), tetes["neutre"].getchannel("A"), *carte, sortie)
 
-    # LE CORPS : sans sa tête ni sa casquette (coupé aux épaules, un cou arrondi), puis sans ses bras
+    # LE CORPS : sans sa tête ni sa casquette — coupé sous ses joues roses, en épaules arrondies (plus haut au milieu,
+    # où se pose son cou) —, puis sans ses bras
     corps = Image.open(corps_webp).convert("RGBA")
     cw, ch = corps.size
-    m = Image.new("L", corps.size, 0)
-    d = ImageDraw.Draw(m)
-    d.rectangle([0, ch * 0.43, cw, ch], fill=255)
-    d.ellipse([cw * 0.24, ch * 0.37, cw * 0.76, ch * 0.51], fill=255)
-    corps.putalpha(Image.fromarray(np.minimum(np.asarray(corps.getchannel("A")), np.asarray(m.filter(ImageFilter.GaussianBlur(3))))))
+    origine = corps.copy()
+    xs, ys = np.arange(cw, dtype=np.float32), np.arange(ch, dtype=np.float32)[:, None]
+    epaules = COU * ch + 0.05 * ch * np.clip(((xs - cw / 2) / (0.33 * cw)) ** 2, 0, 4)
+    m = Image.fromarray(((ys >= epaules[None, :]) * 255).astype(np.uint8))
+    a = np.asarray(corps).astype(np.float32)
+    # du relief : juste sous la coupe, le haut du corps s'assombrit un peu (il s'arrondit vers l'arrière)
+    relief = 1 - 0.16 * np.exp(-np.clip(ys - epaules[None, :], 0, None) / 16)
+    a[..., :3] *= relief[..., None]
+    a[..., 3] = np.minimum(a[..., 3], np.asarray(m.filter(ImageFilter.GaussianBlur(1.5))))
+    corps = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
+    # les bras, eux, viennent du corps entier (la coupe en épaules les tranchait), coupés droit sous sa tête
+    # (au-dessus des épaules, rien : le bord de sa tête d'origine y laissait un éclat blanc)
+    bord = np.where(np.abs(xs - cw / 2) < 0.33 * cw, np.maximum(0.45 * ch, epaules), 0.45 * ch)
+    droit = Image.fromarray(((ys >= bord[None, :]) * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.5))
+    origine.putalpha(Image.fromarray(np.minimum(np.asarray(origine.getchannel("A")), np.asarray(droit))))
     bras = {"g": ((0, 330, 178, 525), (165, 435), (0, 330, 150, 525)), "d": ((538, 330, cw, 525), (550, 430), (566, 330, cw, 525))}
     efface = Image.new("L", corps.size, 255)
     for cote, (boite, _pivot, trou) in bras.items():
-        corps.crop(boite).save(f"{sortie}/bras-{cote}.webp", quality=90, method=6)
+        origine.crop(boite).save(f"{sortie}/bras-{cote}.webp", quality=90, method=6)
         ImageDraw.Draw(efface).rectangle(trou, fill=0)
     sans = corps.copy()
     sans.putalpha(Image.fromarray(np.minimum(np.asarray(corps.getchannel("A")), np.asarray(efface.filter(ImageFilter.GaussianBlur(1))))))
     sans.save(f"{sortie}/corps.webp", quality=90, method=6)
     blanc = [int(v) for v in np.asarray(corps.convert("RGB").crop((340, 620, 380, 660))).reshape(-1, 3).mean(axis=0)]
-    return {"tete": {"w": w, "h": TETE_H, "menton": [round(float(menton[0]), 1), round(float(menton[1]), 1)]}, "corps": {"w": cw, "h": ch, "cou": 0.43},
+    # tete : la taille des images (w, h : tête et cou), la hauteur de la tête seule (visage), le menton
+    return {"tete": {"w": w, "h": h, "visage": TETE_H, "menton": [round(float(menton[0]), 1), round(float(menton[1]), 1)]}, "corps": {"w": cw, "h": ch, "cou": COU},
             "bras": {c: {"boite": list(b[0][:2]), "pivot": list(b[1])} for c, b in bras.items()}, "blanc": blanc,
             # sa tête dans la photo neutre : son cadre et son menton (pour la poser exactement sur sa carte)
-            "photo": {"cadre": [int(v) for v in bb], "menton": [round(float(ref_pts[152][0]), 1), round(float(ref_pts[152][1]) + 7, 1)]}}
+            "photo": {"cadre": [int(v) for v in cadre], "menton": [round(float(ref_pts[152][0]), 1), round(menton_y, 1)]}}
 
 
 def _carte(photo, alpha, recadre, taille, sortie):
