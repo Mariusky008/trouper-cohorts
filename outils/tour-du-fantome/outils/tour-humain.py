@@ -28,9 +28,54 @@ from decor_humain import ardoise, cage_or, facade_decor, sceau  # noqa: E402
 S = sys.argv[1]
 RACINE = os.path.abspath(f"{S}/../..")
 FF = f"{S}/ffmpeg" if os.path.exists(f"{S}/ffmpeg") else shutil.which("ffmpeg")
-D = f"{S}/tour-humain"
 R = f"{S}/recu/humain"
 NB = " "
+# ─── LA VARIANTE : la même histoire, habillée pour un métier. « restaurant » (Chez Bergine, la démo d'origine, publiée
+# à /tours/humain) ; « atelier » (L'Atelier de Nina, cours de poterie — fictif ; ses photos sont celles de Nina, la
+# céramiste de la démo des entrepreneurs ; publiée à /tours/atelier) : `--variante=atelier` → tour-humain-atelier/.
+VARIANTE = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--variante=")), "restaurant")
+_N = f"{S}/recu/entrepreneurs/createur"
+VARIANTES = {
+    "restaurant": {
+        "nom": "Chez Bergine", "enseigne": "BISTROT · DAX", "compte": "chezbergine", "fac_style": "",
+        "dore": "Fait maison · depuis 1998", "ardoise": ("Aujourd’hui", "Garbure<br>landaise", "& magret", "19 €"),
+        "images": {"m1.jpg": f"{S}/tour/m1.jpg", "m2.jpg": f"{S}/tour/m2.jpg", "m3.jpg": f"{S}/tour/m3.jpg", "m4.jpg": f"{S}/tour/m4.jpg",
+                   "si-interieur.webp": f"{S}/tour/si-interieur.webp"},
+        "hote": f"{S}/accueil2/page/g-restaurant-salue.webp", "toque": True, "film": f"{S}/tour/interview.mp4",
+        "posts": [("m1.jpg", "1 128", "Le magret du jour 🔥"), ("m2.jpg", "846", "Ce soir, terrasse ouverte ☀️"), ("m4.jpg", "2 019", "Notre chef aux fourneaux 👨‍🍳"),
+                  ("m1.jpg", "603", "Merci pour vos messages ❤️"), ("m3.jpg", "2 304", "Garbure landaise, ce midi 🥘"), ("m2.jpg", "411", "À demain !")],
+        "surprises": ("🍮 Un dessert", "☕ Un café", "🥐 Une douceur"),
+        "page": {"HONNEUR": "⭐ Votre menu du jour, à l’honneur", "TAG1": "📅 En semaine", "TAG2": "🐟 Plutôt poisson", "SURPRISE": "LA SURPRISE DU CHEF",
+                 "BON": "🍮 Le dessert du chef", "SERVIE": "Servie ✓"},
+        "js": {"honneur": "menu", "forts5": ["belle", "vidéo", "menu", "jour,", "partout"],
+               "fil": ["Merci Camille ! Tu passeras un jour, c’est promis 😊 Plutôt en semaine ou le week-end ?", "En semaine",
+                       "Noté ! Et plutôt viande ou poisson ?", "Poisson 🐟", "Mardi · 11 h · c’est calme",
+                       "Il reste une table ce midi, Camille. Je te la garde ?", "J’arrive ! 😍"]},
+    },
+    "atelier": {
+        "nom": "L’Atelier de Nina", "enseigne": "POTERIE · DAX", "compte": "atelierdenina",
+        # (un mur vert sauge, un store terracotta, une enseigne brun foncé)
+        "fac_style": "--f1:#5F7D67;--f2:#3D5646;--s1:#F6EBDA;--s2:#C4623A;--ens:#2A2320;",
+        "dore": "Cours & ateliers · tous niveaux", "ardoise": ("Cette semaine", "Atelier<br>tour", "samedi 10 h", "2 places"),
+        "images": {"m1.jpg": f"{_N}/mains.jpg", "m2.jpg": f"{_N}/table.jpg", "m3.jpg": f"{_N}/bol-bleu.jpg", "m4.jpg": f"{_N}/tour.jpg",
+                   "si-interieur.webp": f"{_N}/atelier.jpg"},
+        "hote": f"{RACINE}/public/direct/double/pied/createur/salut-1.webp", "toque": False, "film": f"{R}/atelier/film.mp4",
+        "posts": [("m1.jpg", "1 128", "Les mains dans la terre 🤲"), ("m2.jpg", "846", "L’atelier vous attend ☀️"), ("m4.jpg", "2 019", "Atelier tour, ce samedi 🏺"),
+                  ("m1.jpg", "603", "Merci pour vos messages ❤️"), ("m3.jpg", "2 304", "Sortie du four ce matin 🔥"), ("m2.jpg", "411", "À samedi !")],
+        "surprises": ("🔥 Une cuisson", "🎨 Un tablier", "🎟️ Une place offerte"),
+        "page": {"HONNEUR": "⭐ Vos ateliers, à l’honneur", "TAG1": "📅 Le week-end", "TAG2": "🏺 Plutôt le tour", "SURPRISE": "LA SURPRISE DE L’ATELIER",
+                 "BON": "🔥 Une cuisson offerte", "SERVIE": "Validé ✓"},
+        "js": {"honneur": "ateliers,", "forts5": ["belle", "vidéo", "ateliers,", "partout"],
+               "fil": ["Merci Camille ! Tu viendras un jour, c’est promis 😊 Plutôt en semaine ou le week-end ?", "Le week-end",
+                       "Noté ! Et plutôt le tour ou le modelage ?", "Le tour 🏺", "Vendredi · 18 h · il reste 2 places",
+                       "Il reste 2 places à l’atelier tour demain matin, Camille. Je t’en garde une ?", "Oui, je viens ! 😍"]},
+        # sa réplique 5 (Mike) : « vos ateliers » au lieu de « votre menu du jour » (réenregistrée, 31 octobre)
+        "l05": ("atelier/05-m", "Avec quelques photos, | je fais une très belle vidéo | où je mets à l’honneur | vos ateliers, | puis je la publie partout | "
+                "pour que tout le monde la voie.", {"coupures": ("quelques", "où", "pour", "monde")}),
+    },
+}
+V = VARIANTES[VARIANTE]
+D = f"{S}/tour-humain" + ("" if VARIANTE == "restaurant" else f"-{VARIANTE}")
 # Son prénom (réplique 1, « Moi, c'est … ») et son numéro, à la fin (confirmés par le propriétaire, 31 octobre)
 PRENOM = "Jean-Philippe"
 TELEPHONE = "06 22 12 96 75"
@@ -59,6 +104,8 @@ SOUS = {
     "l12": ("12-m", "On n’est pas là | pour vous apporter des vues. | On est là | pour vous apporter des clients.", {}),
     "l13": ("13-p", f"1 mois gratuit, | un mois pour faire mes preuves, | alors, | on commence{NB}?", {"liees": ("gratuit,",)}),
 }
+if "l05" in V:
+    SOUS["l05"] = V["l05"]
 
 # Les moments de sa figurine (répliques du propriétaire) : (expression, mot de départ ou « fin », décalage, mot de fin
 # ou « fin » ou None, décalage) ; « fin » : la fin de sa voix (pas celle du fichier). Le clin d'œil, bouche en « o »,
@@ -74,9 +121,9 @@ MOMENTS = {
 }
 
 # ─── LES DÉCORS (ceux de la démo de 45 s) ─────────────────────────────────────────────────────
-FACADE = ('<div class="fac abs"><i class="fac-ciel"></i><i class="fac-f"></i><i class="fac-pil g"></i><i class="fac-pil d"></i><i class="fac-corniche"></i><div class="fac-ens"><b class="nom-commerce">Chez Bergine</b><small>BISTROT · DAX</small></div>'
-          '<i class="fac-store"></i><div class="fac-vit"><img src="si-interieur.webp" alt=""><i class="fac-reflet"></i><span class="fac-neon">Ouvert</span><span class="fac-dore">Fait maison · depuis 1998</span></div><i class="fac-lumiere"></i>'
-          '<div class="fac-porte"><div class="fac-battant"><i></i></div></div><i class="fac-trot"></i>' + facade_decor() + ardoise() +
+FACADE = ('<div class="fac abs" style="' + V["fac_style"] + '"><i class="fac-ciel"></i><i class="fac-f"></i><i class="fac-pil g"></i><i class="fac-pil d"></i><i class="fac-corniche"></i><div class="fac-ens"><b class="nom-commerce">' + V["nom"] + '</b><small>' + V["enseigne"] + '</small></div>'
+          '<i class="fac-store"></i><div class="fac-vit"><img src="si-interieur.webp" alt=""><i class="fac-reflet"></i><span class="fac-neon">Ouvert</span><span class="fac-dore">' + V["dore"] + '</span></div><i class="fac-lumiere"></i>'
+          '<div class="fac-porte"><div class="fac-battant"><i></i></div></div><i class="fac-trot"></i>' + facade_decor() + ardoise(*V["ardoise"]) +
           '<div class="arrivent"><span class="fg" style="left:62%;top:93%;--h:21cqw"><img src="g/fleuri-debout.webp" alt=""><b>Camille</b></span>'
           '<span class="fg" style="left:74%;top:93%;--h:20cqw"><img src="g/cosy-debout.webp" alt=""></span></div>'
           f'<p id="bulle-chef">Camille{NB}! On t’attendait 😊</p>@FAMILLE@</div>')
@@ -103,16 +150,15 @@ _I = {
     "profil": '<svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
 }
 _GROS = '<svg viewBox="0 0 24 24"><path fill="#fff" d="M12 21.2s-8-4.8-10.1-9.6C.3 8 2.6 3.8 6.6 3.8c2.3 0 3.9 1.3 5.4 3.2 1.5-1.9 3.1-3.2 5.4-3.2 4 0 6.3 4.2 4.7 7.8-2.1 4.8-10.1 9.6-10.1 9.6z"/></svg>'
-_POSTS = [("m1.jpg", "1 128", "Le magret du jour 🔥"), ("m2.jpg", "846", "Ce soir, terrasse ouverte ☀️"), ("m4.jpg", "2 019", "Notre chef aux fourneaux 👨‍🍳"),
-          ("m1.jpg", "603", "Merci pour vos messages ❤️"), ("m3.jpg", "2 304", "Garbure landaise, ce midi 🥘"), ("m2.jpg", "411", "À demain !")]
+_POSTS = V["posts"]
 _PORTE = ('<div class="ig-porte"><span style="left:60px"><img src="g/cosy-debout.webp" alt=""></span><span style="left:170px"><img src="g/soleil-debout.webp" alt=""></span>'
           '<i class="pg"></i><i class="pd"></i></div>')
-FIL_SOCIAL = ('<div class="ig-ecran"><div class="ig-haut"><b>chezbergine ⌄</b>' + _I["coeur"] + _I["avion"] + '</div><div class="ig-flux">'
+FIL_SOCIAL = ('<div class="ig-ecran"><div class="ig-haut"><b>' + V["compte"] + ' ⌄</b>' + _I["coeur"] + _I["avion"] + '</div><div class="ig-flux">'
               '<div class="ig-stories">' + "".join(f'<span class="ig-st"><i style="background-image:url({f})"></i></span>' for f in ("m1.jpg", "m4.jpg", "g/soleil-salue.webp", "m2.jpg"))
               + "</div>" + "".join(
-                  f'<div class="ig-post"><div class="ig-ent"><i></i><b>chezbergine</b>· Dax<em>···</em></div><div class="ig-img"><img src="{f}" alt="">'
+                  f'<div class="ig-post"><div class="ig-ent"><i></i><b>{V["compte"]}</b>· Dax<em>···</em></div><div class="ig-img"><img src="{f}" alt="">'
                   + (_PORTE if k == 4 else "") + '</div><div class="ig-act">' + _I["coeur"] + _I["bulle"] + _I["avion"] + _I["signet"] + "</div>"
-                  f'<p class="ig-txt"><b>{j} J’aime</b><br><b>chezbergine</b> {txt}</p></div>' for k, (f, j, txt) in enumerate(_POSTS))
+                  f'<p class="ig-txt"><b>{j} J’aime</b><br><b>{V["compte"]}</b> {txt}</p></div>' for k, (f, j, txt) in enumerate(_POSTS))
               + '</div><span class="ig-gros">' + _GROS + '</span><div class="ig-bas">' + "".join(_I[n] for n in ("maison", "loupe", "plus", "film", "profil")) + "</div></div>")
 # « TADAM ! » : une étoile de bande dessinée, des points de trame, le mot
 def _tadam():
@@ -126,7 +172,7 @@ TADAM = _tadam()
 # la communauté (des « j'aime »)… qui devient des clients
 COMM = "".join(f'<span><em>{e}</em><img src="g/{g}-salue.webp" alt=""></span>' for e, g in (("❤️", "cosy"), ("👍", "soleil"), ("💬", "artiste"), ("❤️", "curieux"), ("👍", "rebelle")))
 # les fidèles devant la cage dorée : les trois premiers gagnent chacun leur surprise
-DOREE = [(70, "soleil", "or", "🍮 Un dessert", -70), (270, "artiste", "or", "☕ Un café", -70), (470, "curieux", "argent", "🥐 Une douceur", -70),
+DOREE = [(70, "soleil", "or", V["surprises"][0], -70), (270, "artiste", "or", V["surprises"][1], -70), (470, "curieux", "argent", V["surprises"][2], -70),
          (670, "cosy", "argent", None, 0), (870, "denim", "bronze", None, 0)]
 DOREE_G = "".join(f'<span class="dor-g" style="left:{x}px"><span class="corps"><img src="g/{g}-debout.webp" alt=""><i class="patch {e}"></i></span>'
                   + (f'<em class="dor-s" style="top:{h}px">{s}</em>' if s else "") + "</span>" for x, g, e, s, h in DOREE)
@@ -237,9 +283,12 @@ for c, moments in MOMENTS.items():
 MIKE = {c: "".join(str(min(9, round(v * 9))) for v in energie(FF, f"{D}/voix/{c}.mp3")) for c, (f, _t, _a) in SOUS.items() if f.endswith("-m")}
 
 # ─── LES IMAGES (celles du tour du restaurant), GSAP ──────────────────────────────────────────
-for f in ("m1.jpg", "m2.jpg", "m3.jpg", "m4.jpg", "si-interieur.webp"):
-    shutil.copyfile(f"{S}/tour/{f}", f"{D}/{f}")
-shutil.copyfile(f"{S}/accueil2/page/g-restaurant-salue.webp", f"{D}/hote.webp")
+for f, src in V["images"].items():
+    if VARIANTE == "restaurant":
+        shutil.copyfile(src, f"{D}/{f}")
+    else:   # (ses photos, ramenées à 1 200 px au plus, au format attendu par la page)
+        subprocess.run([FF, "-v", "error", "-y", "-i", src, "-vf", "scale='min(1200,iw)':-2", *(["-q:v", "3"] if f.endswith(".jpg") else ["-quality", "85"]), f"{D}/{f}"], check=True)
+shutil.copyfile(V["hote"], f"{D}/hote.webp")
 # LE FILM DU TÉLÉPHONE : la vidéo de l'interview du tour du restaurant ; et en WebM (VP8) pour les navigateurs sans
 # H.264 — dont le Chromium de l'export —, une image clé toutes les demi-secondes
 # (en H.264, une image clé toutes les demi-secondes : l'iPhone y saute vite — dans l'original, il y en a une toutes les
@@ -253,12 +302,13 @@ def cles_rapprochees(f):
     return len(t) > 2 and max(b - a for a, b in zip(t, t[1:])) <= .55
 
 
-if not os.path.exists(f"{D}/interview.mp4") or os.path.getmtime(f"{D}/interview.mp4") < os.path.getmtime(f"{S}/tour/interview.mp4") \
+FILM_SRC = V["film"]
+if not os.path.exists(f"{D}/interview.mp4") or os.path.getmtime(f"{D}/interview.mp4") < os.path.getmtime(FILM_SRC) \
         or not cles_rapprochees(f"{D}/interview.mp4"):
-    subprocess.run([FF, "-v", "error", "-y", "-i", f"{S}/tour/interview.mp4", "-an", "-c:v", "libx264", "-profile:v", "high", "-level", "3.1", "-pix_fmt", "yuv420p",
+    subprocess.run([FF, "-v", "error", "-y", "-i", FILM_SRC, "-an", "-c:v", "libx264", "-profile:v", "high", "-level", "3.1", "-pix_fmt", "yuv420p",
                     "-crf", "27", "-preset", "slow", "-g", "15", "-keyint_min", "15", "-sc_threshold", "0", "-movflags", "+faststart", f"{D}/interview.mp4"], check=True)
-if not os.path.exists(f"{D}/interview.webm") or os.path.getmtime(f"{D}/interview.webm") < os.path.getmtime(f"{S}/tour/interview.mp4"):
-    subprocess.run([FF, "-v", "error", "-y", "-i", f"{S}/tour/interview.mp4", "-an", "-c:v", "libvpx", "-b:v", "1M", "-g", "15",
+if not os.path.exists(f"{D}/interview.webm") or os.path.getmtime(f"{D}/interview.webm") < os.path.getmtime(FILM_SRC):
+    subprocess.run([FF, "-v", "error", "-y", "-i", FILM_SRC, "-an", "-c:v", "libvpx", "-b:v", "1M", "-g", "15",
                     "-deadline", "good", "-cpu-used", "2", f"{D}/interview.webm"], check=True)
 for l in LOOKS:
     for pose in ("debout", "salue"):
@@ -269,7 +319,12 @@ for f in ("gsap.min.js", "MotionPathPlugin.min.js"):
 # ─── LA PAGE ─────────────────────────────────────────────────────────────────────────────────
 page = open(f"{S}/outils/tour-humain.html", encoding="utf-8").read()
 page = page.replace("@FACADE@", FACADE.replace("@FAMILLE@", FAMILLE_HTML))
-page = re.sub("@TOQUE@", lambda m: toque(), page)
+page = re.sub("@TOQUE@", lambda m: toque() if V["toque"] else "", page)
+for k, v in V["page"].items():
+    page = page.replace(f"@V_{k}@", v)
+# (la conversation : une espace fine insécable devant « ! », « ? », « : » — jamais seuls en début de ligne)
+_js = dict(V["js"], fil=[re.sub(r" ([!?:;])", "\u202f\\1", x) for x in V["js"]["fil"]])
+page = page.replace("@V_NOM@", V["nom"]).replace("/*@VAR@*/null", json.dumps(_js, ensure_ascii=False))
 page = page.replace("@CAGE_ROSE@", cage_mini("#FF2E9A", True)).replace("@CAGE_ORANGE@", cage_mini("#F5A23A", False)).replace("@CAGE_VERTE@", cage_mini("#3DE2A6", False))
 page = page.replace("@CAGE_OR@", cage_or()).replace("@SCEAU@", sceau())
 page = page.replace("@FEUILLES@", FEUILLES).replace("@COMM@", COMM).replace("@DOREE_G@", DOREE_G).replace("@VU_G@", VU_G)
@@ -286,7 +341,7 @@ page = page.replace("/*@MAMAN@*/null", json.dumps(MAMAN, ensure_ascii=False, sep
 page = page.replace("/*@MAMAN_FIN@*/null", json.dumps(MAMAN_FIN, ensure_ascii=False, separators=(",", ":")))
 assert not re.search(r"@[A-Z0-9_]+@|/\*@", page), "un repère @…@ n'a pas été remplacé"
 open(f"{D}/index.html", "w", encoding="utf-8").write(page)
-print("tour-humain/index.html :", len(page) // 1024, "Ko")
+print(os.path.basename(D) + "/index.html :", len(page) // 1024, "Ko")
 
 # ─── LA BANDE-SON, D'UN BLOC (`son.mp3`) : la page la joue en direct (voir `bande-son.mjs`) ───────────────────
 try:

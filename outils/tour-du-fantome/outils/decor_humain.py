@@ -122,11 +122,11 @@ def facade_decor():
     return "".join(s)
 
 
-def ardoise():
-    """L'ardoise du menu, posée sur le trottoir (écrite à la craie : la police « Caveat »)."""
+def ardoise(petit="Aujourd’hui", titre="Garbure<br>landaise", sous="& magret", prix="19 €"):
+    """L'ardoise du menu (ou de l'atelier), posée sur le trottoir (écrite à la craie : la police « Caveat »)."""
     return ('<div class="fac-ardoise" aria-hidden="true"><svg viewBox="0 0 170 240"><path d="M18 236 40 20h90l22 216" stroke="#5A3A22" stroke-width="9" fill="none" stroke-linecap="round"/>'
             '<rect x="24" y="14" width="122" height="150" rx="8" fill="#5A3A22"/><rect x="31" y="21" width="108" height="136" rx="4" fill="#20262A"/></svg>'
-            '<div><small>Aujourd’hui</small><b>Garbure<br>landaise</b><em>& magret</em><strong>19 €</strong></div></div>')
+            f'<div><small>{petit}</small><b>{titre}</b><em>{sous}</em><strong>{prix}</strong></div></div>')
 
 
 # ─── LA CAGE DORÉE ET SA SURPRISE ────────────────────────────────────────────────────────────────────────────────────

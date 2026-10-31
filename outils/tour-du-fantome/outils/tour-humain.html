@@ -493,7 +493,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
       </div></div>
       <div id="ilot"></div>
     </div></div>
-    <span id="honneur" class="abs">⭐ Votre menu du jour, à l’honneur</span>
+    <span id="honneur" class="abs">@V_HONNEUR@</span>
     <!-- les réseaux -->
     <span class="rs ig abs"><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg><em>✓</em></i><b>Instagram</b><small data-vues="1240">👁 0</small></span>
     <span class="rs fb abs"><i><svg viewBox="0 0 24 24"><path fill="#fff" d="M13.6 21v-7.6h2.6l.4-3h-3V8.5c0-.9.3-1.5 1.6-1.5h1.6V4.3c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.2H8v3h2.6V21z"/></svg><em>✓</em></i><b>Facebook</b><small data-vues="860">👁 0</small></span>
@@ -527,9 +527,9 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   <div id="comm">@COMM@</div>
   <!-- ⑧ la conversation avec Camille -->
   <div id="chat"><div class="ch-tete"><img src="g/fleuri-debout.webp" alt=""><div><b>Camille</b><small>Ce que Mike sait d’elle</small><div class="tags">
-    <em class="on">📌 Passera un jour</em><em id="tag1">📅 En semaine</em><em id="tag2">🐟 Plutôt poisson</em><em id="tag4" class="vert">✓ Est venue</em></div></div></div><div id="fil"></div></div>
+    <em class="on">📌 Passera un jour</em><em id="tag1">@V_TAG1@</em><em id="tag2">@V_TAG2@</em><em id="tag4" class="vert">✓ Est venue</em></div></div></div><div id="fil"></div></div>
   <!-- ⑧ la cage dorée -->
-  <div id="doree"><h3>LA SURPRISE DU CHEF</h3>
+  <div id="doree"><h3>@V_SURPRISE@</h3>
     <div id="dor-cage"><i id="dor-rayons"></i><i id="dor-lueur"></i>@CAGE_OR@</div>
     <span id="dor-compte">🎁 <span id="dor-n">0</span>/15 surprises</span>
     @DOREE_G@
@@ -540,7 +540,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
       <span class="j-gate">Tu m’aides à me faire connaître, je te gâte&#8239;!</span><span class="j-fin">Rejoins la famille à la fin de la vidéo ↓</span><img class="j-chef" src="hote.webp" alt=""><i class="j-barre"></i></div></div></div>
   <!-- ⑩ le bilan du mois -->
   <div id="bilan"><p id="bi-titre">LE BILAN DU MOIS</p>
-    <div id="bon"><small>LA SURPRISE DU CHEF · BON N°12</small><b>Léa · fantôme n°12</b><span>🍮 Le dessert du chef · <span class="nom-commerce" style="display:inline;margin:0">Chez Bergine</span></span><em id="servie">Servie ✓</em></div>
+    <div id="bon"><small>@V_SURPRISE@ · BON N°12</small><b>Léa · fantôme n°12</b><span>@V_BON@ · <span class="nom-commerce" style="display:inline;margin:0">@V_NOM@</span></span><em id="servie">@V_SERVIE@</em></div>
     <span id="plus1">+1 client amené</span>
     <div id="total"><small>OBJECTIF DU MOIS</small><b><span id="nbt">0</span><em>clients amenés</em></b><div class="barre"><i></i></div></div>
   </div>
@@ -558,7 +558,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   </div>
   <!-- ⑫ des vues, non : des clients -->
   <div id="vues"><span id="vu-compteur">👁 <span id="vu-n">0</span> vues<i></i></span>
-    <div id="vu-porte" class="pt"><i class="pt-lum"></i><div class="pt-cadre"></div>@VU_G@<div class="pt-bat"></div><b class="nom-commerce">Chez Bergine</b></div>
+    <div id="vu-porte" class="pt"><i class="pt-lum"></i><div class="pt-cadre"></div>@VU_G@<div class="pt-bat"></div><b class="nom-commerce">@V_NOM@</b></div>
     <span id="vu-clients">👥 Des clients</span>
   </div>
   <!-- ⑬ la fin -->
@@ -597,6 +597,8 @@ const MIKE = /*@MIKE@*/null;   // l'énergie de la voix de Mike, par réplique :
 const MAMAN = /*@MAMAN@*/null;
 // SA MÈRE, À LA FIN (si elle a été enregistrée) : de face, elle envoie les gens vers son numéro
 const MAMAN_FIN = /*@MAMAN_FIN@*/null;
+// LA VARIANTE (restaurant, atelier…) : la conversation avec Camille, le mot de la 5 où s'affiche « à l'honneur », ses mots forts
+const VAR = /*@VAR@*/null;
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 let FILM = null;
@@ -654,7 +656,7 @@ function poserCamera(t) { const [sx, sy] = secousse(t); $("#monde").style.transf
 
 /* ── LES MOTS DITS, EN GRAND : chaque morceau (« | ») arrive mot à mot, puis cède la place au suivant ── */
 const FORTS = { l01: ["métier" + NB + "?", "regarder", "téléphone…", "poussent", "porte."], l02: ["Mike,", "préféré."], l03: ["30", "jours", "clients."],
-  l04: ["Jour", "1" + NB + ":", "photos,", "questions…", "Mike"], l05: ["belle", "vidéo", "menu", "jour,", "partout"], l06: ["plus", "fort.", "après."],
+  l04: ["Jour", "1" + NB + ":", "photos,", "questions…", "Mike"], l05: VAR.forts5, l06: ["plus", "fort.", "après."],
   l07: ["“J’adore", "vidéo”,", "“Je", "passerai", "jour,", "c’est", "sûr”,", "passe", "aujourd’hui”."],
   l08: ["réponds" + NB + "!", "envies,", "habitudes…", "porte.", "fidèles,", "dorée,", "surprises."], l09: ["Chaque", "jour,", "famille", "grandit"],
   l10: ["bilan", "bon", "validé", "client"], l11: ["blabla,", "fausses", "promesses."], l12: ["vues.", "clients."], l13: ["1", "mois", "gratuit,", "preuves,", "commence" + NB + "?"] };
@@ -1036,7 +1038,7 @@ function construire() {
     .to("#tadam", { rotation: 4, duration: .9, ease: "sine.inOut" }, tAt + .47)
     .to("#tadam", { scale: 1.25, opacity: 0, duration: .3, ease: "power2.in" }, tAt + 1.45)
     // sa toque lui tombe sur la tête : bonk ! (et quelques étoiles)
-    .fromTo("#heros .toque", { y: -520, rotation: -50, opacity: 0 }, { y: 0, rotation: 0, opacity: 1, duration: .3, ease: "power2.in" }, tAt + .5)
+    .fromTo($("#heros .toque") ? "#heros .toque" : { y: 0, rotation: 0, opacity: 0 }, { y: -520, rotation: -50, opacity: 0 }, { y: 0, rotation: 0, opacity: 1, duration: .3, ease: "power2.in" }, tAt + .5)
     .to("#heros .corps", { scaleY: .86, scaleX: 1.1, duration: .07, yoyo: true, repeat: 1 }, tAt + .8)
     .fromTo("#bonk", { opacity: 1, rotation: 0, scale: .6 }, { opacity: 1, rotation: 300, scale: 1, duration: .9, ease: "power1.out", immediateRender: false }, tAt + .8)
     .to("#bonk", { opacity: 0, duration: .25 }, tAt + 1.5)
@@ -1120,7 +1122,7 @@ function construire() {
     .to(H, { y: P5.y - 40, duration: .3, yoyo: true, repeat: 1, ease: "power2.out" }, tF);
   // « …votre menu du jour, » : à l'honneur
   gsap.set("#honneur", { x: TEL[0], y: 640, xPercent: -50 });
-  tl.fromTo("#honneur", { opacity: 0, scale: .4 }, { opacity: 1, scale: 1, duration: .5, ease: "back.out(2.4)", immediateRender: false }, mot("l05", "menu") - .25)
+  tl.fromTo("#honneur", { opacity: 0, scale: .4 }, { opacity: 1, scale: 1, duration: .5, ease: "back.out(2.4)", immediateRender: false }, mot("l05", VAR.honneur) - .25)
     .to("#honneur", { opacity: 0, y: 600, duration: .3 }, mot("l05", "publie") - .2);
   // « puis je la publie partout » : les réseaux sortent du téléphone, et se cochent
   const RS = [[TEL[0] - 445, 660], [TEL[0] + 445, 660], [TEL[0] - 445, 1210], [TEL[0] + 445, 1210], [TEL[0], 1820]];
@@ -1227,13 +1229,13 @@ function construire() {
   // la conversation : chaque bulle est déjà dans la page, la ligne de temps l'affiche (rien ne dépend de l'horloge)
   FIL = [
     [mot("l08", "Petit") + .15, '<span class="jour">Le lendemain</span>'],
-    [mot("l08", "Petit") + .25, '<p class="msg mike"><small>👻 Mike, pour Camille</small>Merci Camille' + NB + '! Tu passeras un jour, c’est promis 😊 Plutôt en semaine ou le week-end' + NB + '?</p>'],
-    [mot("l08", "découvre") + .05, '<p class="msg elle">En semaine</p>', 1],
-    [mot("l08", "envies,") + .1, '<p class="msg mike"><small>👻 Mike</small>Noté' + NB + '! Et plutôt viande ou poisson' + NB + '?</p>'],
-    [mot("l08", "habitudes…") + .1, '<p class="msg elle">Poisson 🐟</p>', 2],
-    [mot("l08", "donne") - .25, '<span class="jour calme">Mardi · 11 h · c’est calme</span>'],
-    [mot("l08", "donne") - .15, '<p class="msg wa"><small>Sur le WhatsApp de Camille</small>Il reste une table ce midi, Camille. Je te la garde' + NB + '?</p>'],
-    [mot("l08", "raison") + .1, '<p class="msg elle">J’arrive' + NB + '! 😍</p>'],
+    [mot("l08", "Petit") + .25, '<p class="msg mike"><small>👻 Mike, pour Camille</small>' + VAR.fil[0] + '</p>'],
+    [mot("l08", "découvre") + .05, '<p class="msg elle">' + VAR.fil[1] + '</p>', 1],
+    [mot("l08", "envies,") + .1, '<p class="msg mike"><small>👻 Mike</small>' + VAR.fil[2] + '</p>'],
+    [mot("l08", "habitudes…") + .1, '<p class="msg elle">' + VAR.fil[3] + '</p>', 2],
+    [mot("l08", "donne") - .25, '<span class="jour calme">' + VAR.fil[4] + '</span>'],
+    [mot("l08", "donne") - .15, '<p class="msg wa"><small>Sur le WhatsApp de Camille</small>' + VAR.fil[5] + '</p>'],
+    [mot("l08", "raison") + .1, '<p class="msg elle">' + VAR.fil[6] + '</p>'],
   ];
   $("#fil").innerHTML = FIL.map((x) => x[1]).join("");
   [...$("#fil").children].forEach((el, k) => {
@@ -1562,7 +1564,7 @@ function composer(ctx, sortie, t0, voix) {
   S.vol(t0 + mot("l04", "deux") - .35, .9); S.boing(t0 + mot("l04", "Mike") + .2);
   // ⑤ la vidéo, les réseaux, les vues
   S.vol(t0 + mot("l05", "quelques") - .25, .8); S.magie(t0 + mot("l05", "fais") + .25);
-  S.petit(t0 + mot("l05", "menu") - .25);
+  S.petit(t0 + mot("l05", VAR.honneur) - .25);
   for (let k = 0; k < 5; k++) S.tic(t0 + mot("l05", "publie") + .35 + k * .1);
   for (let k = 0; k < 12; k++) S.tic(t0 + mot("l05", "monde") - .3 + k * .11);
   // ⑥ l'avance rapide

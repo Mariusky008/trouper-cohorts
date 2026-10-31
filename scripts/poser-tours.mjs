@@ -45,6 +45,7 @@ const TOURS = {
   // la démo humaine, « Un mois avec ClikMe » : le propriétaire (sa figurine à grosse tête) et Mike, en treize
   // répliques (`outils/tour-humain.py`)
   "tour-humain": "humain",
+  "tour-humain-atelier": "atelier",
 };
 
 // les étapes intermédiaires de la chaîne (`index.avant-episode2.html`…) ne sont pas la page
