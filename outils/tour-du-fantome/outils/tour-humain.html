@@ -1,7 +1,7 @@
 <meta charset="utf-8">
 <title>Un mois avec ClikMe — la démo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&family=Playfair+Display:ital,wght@1,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&family=Playfair+Display:ital,wght@1,700&family=Caveat:wght@600;700&display=swap">
 <style>
 /* 🎬 LA DÉMO HUMAINE, « Un mois avec ClikMe » (voir `tour-humain.py`) : le propriétaire (sa figurine à grosse tête,
    `figurine.py`) et Mike racontent un mois chez un commerce inventé, en treize répliques. Le moteur de la démo de
@@ -112,30 +112,53 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 .envoi{width:70px;height:70px;border-radius:50%;display:grid;place-items:center;font-size:36px;background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.4);opacity:0}
 
 /* ── la façade du commerce (celle des tours) : la porte qu'elle pousse ── */
-.fac{--f1:#62182B;--f2:#45101F;--s1:#F3E5D0;--s2:#8E1C33;--ens:#2C0912;--vit:#2A0810;width:1000px;aspect-ratio:360/430;container-type:inline-size;overflow:hidden;border-radius:30px;
-  background:linear-gradient(#0B0608,#170C10 40%);box-shadow:0 60px 120px -30px rgba(0,0,0,.9)}
+.fac{--f1:#741C33;--f2:#4A1021;--s1:#F6EBDA;--s2:#9A1E38;--ens:#17302A;--vit:#2A0810;width:1000px;aspect-ratio:360/430;container-type:inline-size;overflow:hidden;border-radius:30px;
+  background:linear-gradient(#0B0608,#170C10 40%);box-shadow:0 0 140px rgba(255,170,90,.22),0 60px 120px -30px rgba(0,0,0,.9)}
 .fac>i{position:absolute;display:block}
-.fac-f{left:0;right:0;top:2%;height:64%;background:linear-gradient(90deg,rgba(0,0,0,.3),transparent 18%,transparent 82%,rgba(0,0,0,.35)),
-  repeating-linear-gradient(90deg,transparent 0 11.6cqw,rgba(0,0,0,.12) 11.6cqw 11.9cqw),linear-gradient(var(--f1),var(--f2))}
-.fac-ens{position:absolute;left:7%;right:7%;top:3.2%;height:12%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6cqw;border-radius:1cqw;background:var(--ens);
-  box-shadow:inset 0 0 0 .55cqw var(--ens),inset 0 0 0 .85cqw rgba(201,164,92,.75),0 1.2cqw 2.4cqw rgba(0,0,0,.45)}
-.fac-ens b{max-width:94%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:italic 700 7cqw/1.1 "Playfair Display",Georgia,serif;color:#E8C77A;text-shadow:0 0 3cqw rgba(232,199,122,.4)}
-.fac-ens small{font-weight:700;font-size:1.9cqw;line-height:1;letter-spacing:.4em;color:rgba(232,199,122,.8)}
+/* le mur : des planches peintes, la lumière des appliques en haut, celle de la vitrine en bas */
+.fac-f{left:0;right:0;top:2%;height:64%;background:radial-gradient(ellipse 34% 26% at 23% 0,rgba(255,214,140,.26),transparent 70%),radial-gradient(ellipse 34% 26% at 77% 0,rgba(255,214,140,.26),transparent 70%),
+  radial-gradient(ellipse 75% 40% at 38% 100%,rgba(255,160,80,.3),transparent 70%),linear-gradient(90deg,rgba(0,0,0,.35),transparent 10%,transparent 90%,rgba(0,0,0,.4)),
+  repeating-linear-gradient(90deg,transparent 0 5.6cqw,rgba(0,0,0,.16) 5.6cqw 5.8cqw,rgba(255,255,255,.05) 5.8cqw 6cqw),linear-gradient(var(--f1),var(--f2))}
+.fac-pil{top:2%;height:64%;width:4.2%;background:linear-gradient(90deg,#3A0C18,#8E2C46 45%,#5A1426);box-shadow:0 0 2cqw rgba(0,0,0,.5)}
+.fac-pil.g{left:0}.fac-pil.d{right:0}
+.fac-corniche{left:0;right:0;top:1%;height:2.4%;background:linear-gradient(#F0D48A,#9A7428);box-shadow:0 .6cqw 1.2cqw rgba(0,0,0,.45)}
+.fac-ens{position:absolute;left:7%;right:7%;top:3.6%;height:11.6%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6cqw;border-radius:1cqw;
+  background:radial-gradient(ellipse 60% 120% at 50% 0,rgba(255,226,160,.18),transparent 70%),linear-gradient(#1D3A33,var(--ens));
+  box-shadow:inset 0 0 0 .55cqw var(--ens),inset 0 0 0 .85cqw rgba(232,199,122,.85),0 1.2cqw 2.4cqw rgba(0,0,0,.45)}
+.fac-ens b{max-width:94%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:italic 700 7.4cqw/1.1 "Playfair Display",Georgia,serif;color:#F2D38A;text-shadow:0 0 2.4cqw rgba(255,214,140,.55),0 .2cqw 0 #7A5A22}
+.fac-ens small{font-weight:700;font-size:1.9cqw;line-height:1;letter-spacing:.4em;color:rgba(242,211,138,.85)}
+/* le store rayé, bombé (plus clair en haut, une ombre en dessous) */
 .fac-store{left:3%;right:3%;top:16.8%;height:8.2%;z-index:2;
-  background:linear-gradient(rgba(0,0,0,.28),transparent 45%),repeating-linear-gradient(90deg,var(--s1) 0 5.4cqw,var(--s2) 5.4cqw 10.8cqw);
+  background:linear-gradient(rgba(255,255,255,.22),transparent 30%,rgba(0,0,0,.3)),repeating-linear-gradient(90deg,var(--s1) 0 5.4cqw,var(--s2) 5.4cqw 10.8cqw);
   -webkit-mask:linear-gradient(#000 0 0) top/100% calc(100% - 2.7cqw) no-repeat,radial-gradient(circle at 50% 0,#000 2.65cqw,transparent 2.75cqw) bottom/5.4cqw 2.7cqw repeat-x;
   mask:linear-gradient(#000 0 0) top/100% calc(100% - 2.7cqw) no-repeat,radial-gradient(circle at 50% 0,#000 2.65cqw,transparent 2.75cqw) bottom/5.4cqw 2.7cqw repeat-x}
+/* la vitrine : la salle allumée, un reflet sur la vitre, le néon « Ouvert », la dorure */
 .fac-vit{position:absolute;left:5%;width:58%;top:29%;height:34%;border-radius:1cqw;overflow:hidden;background:#1A0D08;
-  box-shadow:inset 0 0 0 1.2cqw var(--vit),0 0 0 .55cqw #C9A45C,0 0 9cqw rgba(255,170,90,.38)}
-.fac-vit>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%}
+  box-shadow:inset 0 0 0 1.2cqw var(--vit),0 0 0 .55cqw #C9A45C,0 0 12cqw rgba(255,170,90,.55)}
+.fac-vit>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;filter:saturate(1.15) brightness(1.1)}
+.fac-vit .fac-reflet{position:absolute;inset:0;display:block;background:linear-gradient(115deg,transparent 28%,rgba(255,255,255,.16) 36%,transparent 44%,transparent 62%,rgba(255,255,255,.08) 67%,transparent 72%)}
+.fac-neon{position:absolute;right:6%;top:9%;font:800 5.4cqw/1 Poppins,sans-serif;letter-spacing:.03em;color:#FFE6F4;transform:rotate(-4deg);
+  text-shadow:0 0 .5cqw #FF5DB8,0 0 1.4cqw #FF2E9A,0 0 3.2cqw #FF2E9A}
+.fac-dore{position:absolute;left:0;right:0;bottom:15%;text-align:center;font:italic 700 3.4cqw/1 "Playfair Display",Georgia,serif;color:#F2D49A;text-shadow:0 .2cqw .6cqw rgba(0,0,0,.8)}
 .fac-porte{position:absolute;left:70%;width:24%;top:29%;height:37%;border-radius:1.2cqw 1.2cqw 0 0;overflow:visible;
-  background:radial-gradient(ellipse at 50% 70%,#FFE2A8,#FFB45E 45%,#B9652B);box-shadow:inset 0 0 0 .6cqw #C9A45C}
+  background:radial-gradient(ellipse at 50% 70%,#FFE2A8,#FFB45E 45%,#B9652B);box-shadow:inset 0 0 0 .6cqw #C9A45C,0 0 7cqw rgba(255,180,100,.35)}
 .fac-lumiere{position:absolute;left:58%;width:48%;top:24%;height:80%;border-radius:50%;opacity:0;mix-blend-mode:screen;background:radial-gradient(ellipse at 50% 50%,rgba(255,220,150,.75),transparent 65%)}
 .fac-battant{position:absolute;inset:0;border-radius:1.2cqw 1.2cqw 0 0;background:linear-gradient(#2A1E1A,#1A100C);box-shadow:inset 0 0 0 .6cqw #C9A45C;transform-origin:0 50%}
-.fac-battant i{position:absolute;left:14%;right:14%;top:8%;height:47%;border-radius:.8cqw;background:radial-gradient(ellipse at 50% 85%,#FFC27A,#B9652B 58%,#4A1E10);box-shadow:inset 0 0 2cqw rgba(0,0,0,.55)}
+.fac-battant i{position:absolute;left:14%;right:14%;top:8%;height:47%;border-radius:.8cqw;background:radial-gradient(ellipse at 50% 85%,#FFD08A,#C9733A 58%,#5A2410);box-shadow:inset 0 0 2cqw rgba(0,0,0,.45)}
 .fac-battant::after{content:"";position:absolute;right:12%;top:60%;width:2.2cqw;height:2.2cqw;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFE6A6,#B98A2E)}
-.fac-trot{left:0;right:0;top:66%;bottom:0;background:radial-gradient(ellipse 60% 70% at 34% 0,rgba(255,180,100,.26),transparent 70%),radial-gradient(ellipse 30% 50% at 82% 0,rgba(255,180,100,.2),transparent 70%),
-  repeating-linear-gradient(90deg,transparent 0 9cqw,rgba(0,0,0,.2) 9cqw 9.35cqw),linear-gradient(#3E322D,#262020)}
+/* les pavés, et la lumière chaude de la vitrine et de la porte qui s'y pose */
+.fac-trot{left:0;right:0;top:66%;bottom:0;background:radial-gradient(ellipse 60% 70% at 33% 0,rgba(255,180,100,.42),transparent 70%),radial-gradient(ellipse 28% 55% at 82% 0,rgba(255,190,110,.4),transparent 70%),
+  radial-gradient(ellipse 46% 40% at 50% 50%,rgba(255,226,190,.07) 0 62%,transparent 70%) 0 0/5cqw 2.6cqw,radial-gradient(ellipse 46% 40% at 50% 50%,rgba(255,226,190,.07) 0 62%,transparent 70%) 2.5cqw 1.3cqw/5cqw 2.6cqw,
+  linear-gradient(#5A463C,#2A201D)}
+/* par-dessus : la guirlande, les appliques, la jardinière, les buis, le paillasson (`decor_humain.py`) ; l'ardoise */
+.fac-deco{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;overflow:visible}
+.fac-ardoise{position:absolute;left:31%;top:63.6%;width:17cqw;z-index:4}
+.fac-ardoise svg{display:block;width:100%}
+.fac-ardoise div{position:absolute;left:18%;right:18%;top:9%;height:57%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-family:Caveat,cursive;color:#F4F1EA;line-height:.95}
+.fac-ardoise small{font-size:2.2cqw;font-weight:600;color:#FFB8DC}
+.fac-ardoise b{margin-top:.5cqw;font-size:2.8cqw;font-weight:700}
+.fac-ardoise em{margin-top:.2cqw;font-style:normal;font-size:2.2cqw;font-weight:600}
+.fac-ardoise strong{margin-top:.5cqw;font-size:3.6cqw;font-weight:700;color:#FFE08A}
 .fac .fg{position:absolute;z-index:5}
 .fac .fg img{height:var(--h);width:auto;filter:drop-shadow(0 1cqw 1cqw rgba(0,0,0,.5))}
 .fac .fg b{position:absolute;left:50%;top:92%;transform:translateX(-50%);padding:.4cqw 2.2cqw;border-radius:2cqw;white-space:nowrap;font-size:3.6cqw;font-weight:800;color:#fff;background:var(--orange)}
@@ -245,7 +268,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 #carte small{display:block;margin-top:8px;font-size:27px;font-weight:600;color:#8C6E78}
 /* « *par sa mère » : il tombe d'un coup sur la carte, comme un tampon */
 #carte #ca-mere{margin-top:10px;font-size:34px;font-weight:800;font-style:italic;color:var(--rose);opacity:0}
-#ca-medaille{position:absolute;right:-46px;top:-58px;width:150px;transform:rotate(14deg);filter:drop-shadow(0 12px 14px rgba(0,0,0,.45))}
+#ca-medaille{position:absolute;right:-72px;top:-84px;width:214px;transform:rotate(12deg);filter:drop-shadow(0 14px 16px rgba(0,0,0,.5))}
 #ca-medaille svg{display:block;width:100%}
 /* sa mère : son polaroïd, et ce qu'elle dit dans une bulle */
 #maman{position:absolute;left:36px;top:1300px;width:340px;padding:16px 16px 20px;border-radius:10px;background:#FFFCF8;box-shadow:0 30px 70px -20px rgba(0,0,0,.8);opacity:0;transform-origin:50% 100%}
@@ -257,6 +280,17 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   text-align:center;box-shadow:0 26px 60px -20px rgba(0,0,0,.7);opacity:0;transform-origin:0% 40%}
 #bulle-mere::before{content:"";position:absolute;left:-36px;top:58px;border:24px solid transparent;border-right:40px solid #fff;border-left:0}
 #bulle-mere span{display:inline-block;opacity:0}
+/* sa mère, à la fin : de face, au milieu (entre sa figurine et Mike), sa bulle au-dessus */
+#maman2{position:absolute;left:395px;top:660px;width:290px;padding:14px 14px 18px;border-radius:10px;background:#FFFCF8;box-shadow:0 30px 70px -20px rgba(0,0,0,.8);opacity:0;transform-origin:50% 100%}
+#maman2 .mm-ph{position:relative;height:340px;border-radius:6px;overflow:hidden;background:#C25B78}
+#maman2 .mm-ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0}
+#maman2 .mm-ph img:first-child{opacity:1}
+#maman2 b{display:block;margin-top:8px;text-align:center;font-size:36px;font-weight:800;color:#1E0E16}
+#bulle-mere2{position:absolute;left:130px;right:130px;top:376px;padding:22px 30px 26px;border-radius:44px;background:#fff;color:#1E0E16;font-size:56px;font-weight:900;line-height:1.1;letter-spacing:-.02em;
+  text-align:center;box-shadow:0 26px 60px -20px rgba(0,0,0,.7);opacity:0;transform-origin:50% 100%}
+#bulle-mere2::after{content:"";position:absolute;left:50%;bottom:-36px;margin-left:-24px;border:24px solid transparent;border-top:40px solid #fff;border-bottom:0}
+#bulle-mere2 span{display:inline-block;opacity:0}
+#bulle-mere2 .fort{color:var(--rose)}
 #bulle-mere .fort{color:var(--rose)}
 /* la carte de Mike, sous lui */
 #carte-mike{width:300px;padding:14px 18px 16px;border-radius:22px;text-align:center;color:#1E0E16;background:#FFFCF8;box-shadow:0 24px 50px -16px rgba(0,0,0,.8);opacity:0}
@@ -333,10 +367,11 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 #honneur{padding:12px 30px;border-radius:40px;white-space:nowrap;font-size:34px;font-weight:900;color:#2A1206;background:linear-gradient(135deg,#FFE3A0,#F2C46B 55%,#C8933F);box-shadow:0 18px 40px -14px rgba(242,196,107,.8);opacity:0}
 /* la cage dorée : les premiers qui l'ouvrent gagnent une surprise */
 #doree{position:absolute;inset:0;opacity:0;pointer-events:none;background:radial-gradient(ellipse 80% 55% at 50% 52%,#5A3A12 0%,#2A1606 45%,#0C040A 100%)}
-#doree h3{position:absolute;left:0;right:0;top:478px;margin:0;text-align:center;font-size:38px;font-weight:900;letter-spacing:.22em;color:var(--or)}
+#doree h3{position:absolute;left:0;right:0;top:470px;margin:0;text-align:center;font-size:40px;font-weight:900;letter-spacing:.24em;color:#F7DC8E;text-shadow:0 0 18px rgba(255,214,140,.55),0 2px 0 #7A5A22}
 #dor-cage{position:absolute;left:330px;top:540px;width:420px;height:616px}
 #dor-cage svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-#dor-cadeau{position:absolute;left:0;right:0;top:300px;text-align:center;font-size:120px;line-height:1}
+#dor-rayons{position:absolute;left:50%;top:62%;width:1100px;height:1100px;margin:-550px 0 0 -550px;border-radius:50%;opacity:0;
+  background:repeating-conic-gradient(from 0deg,rgba(255,226,150,.2) 0 7deg,transparent 7deg 18deg);-webkit-mask:radial-gradient(circle,#000 18%,transparent 66%);mask:radial-gradient(circle,#000 18%,transparent 66%)}
 #dor-lueur{position:absolute;left:-40%;top:-20%;width:180%;height:140%;border-radius:50%;opacity:0;background:radial-gradient(ellipse at 50% 55%,rgba(255,230,160,.9),rgba(242,196,107,.35) 40%,transparent 68%);mix-blend-mode:screen}
 #dor-compte{position:absolute;left:50%;top:1175px;padding:12px 34px;border-radius:40px;white-space:nowrap;font-size:40px;font-weight:900;color:#2A1206;background:linear-gradient(135deg,#FFE3A0,#F2C46B 55%,#C8933F);box-shadow:0 18px 40px -14px rgba(242,196,107,.8)}
 .dor-g{position:absolute;top:1400px;width:170px}
@@ -361,11 +396,25 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 #total .barre i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#FF5DB8,#FFB347);transform-origin:0 50%;transform:scaleX(0)}
 /* « pas de blabla, pas de fausses promesses » */
 #franc{position:absolute;inset:0;opacity:0;pointer-events:none;background:radial-gradient(ellipse 90% 60% at 50% 55%,#3D1433,#0C040A 80%)}
-#fr-mike{position:absolute;left:300px;top:830px;width:480px}
+#fr-mike{position:absolute;left:300px;top:1000px;width:480px}
 #fr-mike img{width:100%;height:auto;filter:drop-shadow(0 30px 40px rgba(0,0,0,.55))}
-.bla{position:absolute;padding:16px 30px;border-radius:40px 40px 40px 10px;white-space:nowrap;font-size:40px;font-weight:900;color:#2A1A10;background:var(--creme);box-shadow:0 18px 40px -12px rgba(0,0,0,.7);opacity:0}
-.promesse{position:absolute;padding:16px 28px;border-radius:18px;white-space:nowrap;font-size:38px;font-weight:900;color:#fff;background:linear-gradient(135deg,#7B61FF,#3A2AA8);box-shadow:0 18px 40px -12px rgba(0,0,0,.7);opacity:0}
-.promesse i{position:absolute;left:-6%;right:-6%;top:50%;height:12px;margin-top:-6px;border-radius:6px;background:var(--rose);box-shadow:0 0 18px rgba(255,46,154,.8)}
+.bla{position:absolute;padding:18px 34px 22px;border-radius:46px 46px 46px 12px;white-space:nowrap;font-size:42px;font-weight:900;color:#2A1A10;opacity:0;
+  background:linear-gradient(#FFFFFF,#EFE4FF);box-shadow:inset 0 -7px 0 rgba(120,80,200,.2),inset 0 4px 0 #fff,0 24px 44px -16px rgba(0,0,0,.75)}
+.bla.d{border-radius:46px 46px 12px 46px}
+.bla.v{color:#fff;background:linear-gradient(#B7A3FF,#7B61FF);box-shadow:inset 0 -7px 0 rgba(40,20,120,.35),inset 0 4px 0 rgba(255,255,255,.35),0 24px 44px -16px rgba(0,0,0,.75)}
+.bla.r{color:#fff;background:linear-gradient(#FFB6DB,#FF4FAE);box-shadow:inset 0 -7px 0 rgba(140,10,70,.3),inset 0 4px 0 rgba(255,255,255,.4),0 24px 44px -16px rgba(0,0,0,.75)}
+/* trois notifications de « gourous » (applis inventées), façon téléphone : verre, icône, titre */
+#fr-notifs{position:absolute;left:80px;right:80px;top:470px}
+.notif{position:absolute;left:0;right:0;display:flex;align-items:center;gap:26px;padding:24px 30px;border-radius:38px;color:#fff;opacity:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.2),rgba(255,255,255,.06));border:2px solid rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 30px 60px -24px rgba(0,0,0,.85)}
+.notif i{flex:none;width:96px;height:96px;border-radius:26px;display:grid;place-items:center;font-style:normal;font-size:52px;background:linear-gradient(135deg,var(--c1),var(--c2));box-shadow:inset 0 2px 0 rgba(255,255,255,.4)}
+.notif div{min-width:0}
+.notif small{display:block;font-size:22px;font-weight:800;letter-spacing:.07em;color:rgba(255,255,255,.62)}
+.notif b{display:block;margin-top:6px;font-size:38px;font-weight:800;line-height:1.15}
+/* le tampon : de l'encre rouge, un peu passée (un grain qui la troue) */
+#fr-tampon{position:absolute;left:540px;top:700px;padding:8px 46px 14px;border:14px solid #F0174A;border-radius:30px;font-size:156px;font-weight:900;letter-spacing:.08em;line-height:1;color:#F0174A;opacity:0;
+  -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.9'/></filter><rect width='320' height='320' filter='url(%23n)'/></svg>");
+  mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.9'/></filter><rect width='320' height='320' filter='url(%23n)'/></svg>")}
 /* « …des vues. On est là pour vous apporter des clients. » */
 #vues{position:absolute;inset:0;opacity:0;pointer-events:none}
 #vu-compteur{position:absolute;left:50%;top:560px;padding:26px 50px;border-radius:40px;white-space:nowrap;font-size:104px;font-weight:900;color:#fff;background:rgba(255,255,255,.08);border:3px solid rgba(255,255,255,.2)}
@@ -380,11 +429,10 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 /* son contact : son prénom, son numéro (on peut toucher pour l'appeler), un QR code pour l'enregistrer */
 #contact{position:absolute;left:80px;right:80px;top:1290px;display:flex;align-items:center;gap:28px;padding:22px 26px;border-radius:32px;color:#2A1A10;background:var(--creme);
   box-shadow:0 30px 70px -24px rgba(0,0,0,.9);opacity:0}
-#contact div{flex:1;min-width:0}
+#contact div{flex:1;min-width:0;text-align:center}
 #contact b{display:block;font-size:50px;font-weight:900;line-height:1.05}
-#contact a{display:block;margin-top:8px;font-size:44px;font-weight:900;color:var(--rose);text-decoration:none;white-space:nowrap}
+#contact a{display:block;margin-top:6px;font-size:68px;font-weight:900;letter-spacing:-.01em;color:var(--rose);text-decoration:none;white-space:nowrap}
 #contact small{display:block;margin-top:8px;font-size:24px;font-weight:700;color:#8C6E78}
-#contact svg{flex:none;width:190px;height:190px;padding:8px;border-radius:14px;background:#fff}
 .fi-boutons{top:1560px;gap:14px}
 .fi-boutons a.go{padding:26px;font-size:42px}
 /* un léger voile sur les bords (l'image fait cinéma) */
@@ -469,9 +517,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   </div>
   <!-- ① sa carte de CV -->
   <div id="carte"><div class="ca-ph"><img id="carte-photo" src="f/carte.jpg" alt=""></div><b>Élu meilleur<br><span class="ca-l2">community manager 2026<sup>*</sup></span></b><small id="ca-mere">*par sa mère</small>
-    <span id="ca-medaille" aria-hidden="true"><svg viewBox="0 0 160 200"><path d="M50 96 28 192l30-16 18 22 14-96z" fill="#E0167A"/><path d="M110 96l22 96-30-16-18 22-14-96z" fill="#FF5DB8"/>
-      <circle cx="80" cy="74" r="66" fill="#F2B632"/><circle cx="80" cy="74" r="54" fill="#FFD24D" stroke="#E39A12" stroke-width="5" stroke-dasharray="7 6"/>
-      <text x="80" y="70" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="900" font-size="44" fill="#8A4B00">N°1</text><text x="80" y="102" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="800" font-size="22" fill="#8A4B00">2026</text></svg></span></div>
+    <span id="ca-medaille" aria-hidden="true">@SCEAU@</span></div>
   <!-- sa mère : son polaroïd arrive, elle le dit elle-même -->
   <div id="maman" aria-hidden="true"><div class="mm-ph"><img src="f/maman-neutre.webp" alt=""><img src="f/maman-sourire.webp" alt=""><img src="f/maman-rire.webp" alt=""></div><b>Maman 💕</b></div>
   <div id="bulle-mere" aria-hidden="true"></div>
@@ -484,7 +530,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
     <em class="on">📌 Passera un jour</em><em id="tag1">📅 En semaine</em><em id="tag2">🐟 Plutôt poisson</em><em id="tag4" class="vert">✓ Est venue</em></div></div></div><div id="fil"></div></div>
   <!-- ⑧ la cage dorée -->
   <div id="doree"><h3>LA SURPRISE DU CHEF</h3>
-    <div id="dor-cage"><i id="dor-lueur"></i><span id="dor-cadeau">🎁</span>@CAGE_DOREE@</div>
+    <div id="dor-cage"><i id="dor-rayons"></i><i id="dor-lueur"></i>@CAGE_OR@</div>
     <span id="dor-compte">🎁 <span id="dor-n">0</span>/15 surprises</span>
     @DOREE_G@
   </div>
@@ -500,8 +546,15 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   </div>
   <!-- ⑪ pas de blabla -->
   <div id="franc"><div id="fr-mike"><div class="bouge"><img src="hote.webp" alt="">@TOQUE@</div></div>
-    <span class="bla" style="left:90px;top:690px">bla bla…</span><span class="bla" style="left:640px;top:640px">bla bla bla</span><span class="bla" style="left:60px;top:1060px">bla…</span><span class="bla" style="left:760px;top:1040px">bla bla</span>
-    <span class="promesse" style="left:70px;top:1380px">Viral garanti&#8239;!<i></i></span><span class="promesse" style="left:560px;top:1460px">+10&#8239;000 abonnés&#8239;!<i></i></span><span class="promesse" style="left:200px;top:1620px">Succès en 24 h&#8239;!<i></i></span>
+    <span class="bla" style="left:50px;top:990px">bla bla bla…</span><span class="bla v d" style="left:690px;top:960px">blablabla</span>
+    <span class="bla r" style="left:30px;top:1250px">bla…</span><span class="bla d" style="left:790px;top:1230px">bla bla</span>
+    <span class="bla v" style="left:90px;top:1500px">BLA BLA&#8239;!</span><span class="bla r d" style="left:640px;top:1520px">bla bla bla bla</span><span class="bla" style="left:400px;top:900px">• • •</span>
+    <div id="fr-notifs">
+      <div class="notif" style="top:0"><i style="--c1:#FF8A3D;--c2:#FF2E6E">🚀</i><div><small>VIRAL EXPRESS · maintenant</small><b>Deviens viral en 24&#8239;h, garanti&#8239;!</b></div></div>
+      <div class="notif" style="top:165px"><i style="--c1:#8C6BFF;--c2:#3A8BFF">📈</i><div><small>ABONNÉS+ · il y a 1 min</small><b>+10&#8239;000 abonnés en 7 jours&#8239;🔥</b></div></div>
+      <div class="notif" style="top:330px"><i style="--c1:#2BD9A8;--c2:#0E8F6E">💸</i><div><small>LE GOUROU DU WEB · il y a 2 min</small><b>Ma méthode secrète&#8239;: 997&#8239;€</b></div></div>
+    </div>
+    <span id="fr-tampon">BIDON</span>
   </div>
   <!-- ⑫ des vues, non : des clients -->
   <div id="vues"><span id="vu-compteur">👁 <span id="vu-n">0</span> vues<i></i></span>
@@ -512,7 +565,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   <div id="finale">
     <div id="fi-mike"><div class="bouge"><img src="hote.webp" alt="">@TOQUE@</div></div>
     <h1 id="fi-titre"></h1><p id="fi-sous">pour faire mes preuves</p>
-    <div id="contact"><div><b>@PRENOM@</b><a href="tel:@TEL_LIEN@">📞 @TELEPHONE@</a><small>Touchez pour m’appeler, ou scannez</small></div>@QR@</div>
+    <div id="contact"><div><b>@PRENOM@</b><a href="tel:@TEL_LIEN@">📞 @TELEPHONE@</a><small>Touchez le numéro pour m’appeler</small></div></div>
     <div class="fi-boutons"><a class="go" href="/inscription">On commence · 1 mois gratuit</a><button id="revoir" type="button">↺ Revoir</button></div>
     <p class="fi-note" id="fi-note">Commerce et chiffres imaginaires</p>
   </div>
@@ -527,7 +580,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   <!-- LA DÉMO EN VIDÉO (`demo.mp4`, rendue depuis cette page) : un téléphone la lit sans effort ; l'animation en
        direct ne sert que si elle manque, et reprend la main à la fin (le numéro, les boutons) -->
   <video id="demo" playsinline preload="auto" aria-label="La démo de Jean-Philippe, en vidéo"></video>
-  <div id="depart"><span class="marque">Clik<b>Me</b></span><p id="appel">Touchez pour commencer<small id="charge">1 min 40 · avec le son 🔊</small></p></div>
+  <div id="depart"><span class="marque">Clik<b>Me</b></span><p id="appel">Touchez pour commencer<small id="charge"></small></p></div>
   <button id="pause" type="button" aria-label="Pause">⏸</button>
 </div></div>
 <script src="js/gsap.min.js"></script>
@@ -542,6 +595,8 @@ const PISTES = /*@PISTES@*/null;
 const MIKE = /*@MIKE@*/null;   // l'énergie de la voix de Mike, par réplique : une valeur par image (30 par seconde), de 0 à 9
 // SA MÈRE, AU DÉBUT : sa phrase (ses mots et leurs instants), et son visage image par image (n : neutre, s : sourire, r : rire)
 const MAMAN = /*@MAMAN@*/null;
+// SA MÈRE, À LA FIN (si elle a été enregistrée) : de face, elle envoie les gens vers son numéro
+const MAMAN_FIN = /*@MAMAN_FIN@*/null;
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 let FILM = null;
@@ -579,9 +634,10 @@ function mot(c, w, n = 0) {
   console.warn("mot introuvable", c, w); return VOIX[c];
 }
 const T = {};
-T.duree = fin("l13") + 3.4;
+// (sa mère, à la fin : elle parle une fois son contact affiché ; la démo dure ce qu'il faut pour qu'elle finisse)
+const T_MERE2 = MAMAN_FIN ? fin("l13") + 1.5 : 0;
+T.duree = MAMAN_FIN ? Math.max(fin("l13") + 3.4, T_MERE2 + MAMAN_FIN.d + 2.2) : fin("l13") + 3.4;
 const DUREE = T.duree;
-$("#charge").textContent = `${Math.floor(DUREE / 60)} min ${String(Math.round(DUREE % 60)).padStart(2, "0")} · avec le son 🔊`;
 
 /* ── LA CAMÉRA ── */
 const cam = { x: 540, y: 960, s: 1 };
@@ -854,11 +910,12 @@ function construire() {
   gsap.set(".pt-bat", { transformPerspective: 800 });
   gsap.set([".film-vues", "#plus1", "#vu-compteur", "#vu-clients", ".dor-s", "#dor-compte"], { xPercent: -50 });
   gsap.set(".fac .fg", { xPercent: -50, yPercent: -100 });
+  // la guirlande de la façade scintille doucement, une ampoule après l'autre (tant qu'on la voit)
+  tl.to(".fac-deco .amp", { opacity: .5, duration: .5, ease: "sine.inOut", stagger: { each: .19, repeat: Math.max(1, Math.floor((VOIX.l13 - VOIX.l04) / .5)), yoyo: true } }, VOIX.l04 - 1);
   gsap.set(["#bulle-chef", ".msg-b"], { scale: 0 });
   // Camille et sa sœur n'arrivent que plus tard ; les photos passent devant la façade
   gsap.set(".fac .arrivent .fg", { opacity: 0 });
   gsap.set(".polar", { zIndex: 5 });
-  gsap.set(".promesse i", { rotation: -8, transformOrigin: "0% 50%", scaleX: 0 });
   gsap.set("#vu-compteur i", { scaleX: 0 });
   gsap.set("#carte", { rotation: -2 });
   const dans = { x: CAGE_C[0] - HG, y: CAGE_C[1] + 20 - HG }, MP = { x: 790 - HG, y: 1110 - HG };
@@ -1220,8 +1277,17 @@ function construire() {
   });
   tl.to("#dor-cage .porte-tc", { scaleX: -.35, transformOrigin: "0% 50%", duration: .4, ease: "back.out(2)" }, sauts[0] + .2)
     .to("#dor-lueur", { opacity: 1, duration: .35 }, sauts[0] + .2)
-    .to("#dor-cadeau", { scale: 1.3, y: -30, duration: .3, yoyo: true, repeat: 1 }, sauts[0] + .2);
+    .to("#dor-cadeau", { scale: 1.12, y: -26, duration: .3, yoyo: true, repeat: 1 }, sauts[0] + .2);
   T.doree = sauts[0] + .2;
+  // la lumière qui tourne derrière la cage ; le cadeau flotte un peu… et quand la porte s'ouvre, son couvercle saute
+  gsap.set("#dor-cadeau", { transformOrigin: "50% 100%" }); gsap.set("#dor-couvercle", { transformOrigin: "0% 100%" });
+  const flotte = Math.max(.3, (sauts[0] + .15 - (tD + .8)) / 2);
+  tl.fromTo("#dor-rayons", { opacity: 0, rotation: 0 }, { opacity: 1, rotation: 70, duration: 7, ease: "none", immediateRender: false }, tD + .2)
+    .to("#dor-cadeau", { y: -12, duration: flotte, yoyo: true, repeat: 1, ease: "sine.inOut" }, tD + .8)
+    .to("#dor-couvercle", { y: -78, x: -10, rotation: -26, duration: .4, ease: "back.out(2.4)" }, sauts[0] + .22)
+    .fromTo("#dor-eclat", { opacity: 0 }, { opacity: 1, duration: .25, immediateRender: false }, sauts[0] + .22)
+    .to("#dor-eclat", { opacity: .55, duration: .8, yoyo: true, repeat: 3, ease: "sine.inOut" }, sauts[0] + .5);
+  GERBES.push(gerbe(79, 70, 540, 930, 400, 1300, ["255,240,190", "255,93,184", "255,255,255"], sauts[0] + .24, [2.2, 3.6], [.7, 1.4], 500, true));
   // « je les bichonne avec des petites surprises. » : chacun la sienne
   tl.fromTo(".dor-s", { opacity: 0, scale: .4, y: 20 }, { opacity: 1, scale: 1, y: 0, duration: .45, stagger: .2, ease: "back.out(2.4)", immediateRender: false }, mot("l08", "bichonne") - .15);
 
@@ -1286,18 +1352,25 @@ function construire() {
     .to("#bilan", { opacity: 0, duration: .4 }, t11 - .35)
     .to("#franc", { opacity: 1, duration: .4 }, t11 - .35)
     .fromTo("#fr-mike", { scale: .5, y: 200, opacity: 0 }, { scale: 1, y: 0, opacity: 1, duration: .7, ease: "elastic.out(1,.55)", immediateRender: false }, t11 - .25)
-    .fromTo(".bla", { opacity: 0, scale: .3 }, { opacity: 1, scale: 1, duration: .3, stagger: .09, ease: "back.out(2.6)", immediateRender: false }, mot("l11", "blabla,") - .35)
-    .to(".bla", { scale: 1.4, opacity: 0, duration: .18, stagger: .05, ease: "power2.out" }, mot("l11", "pas", 1) - .15)
-    .fromTo(".promesse", { opacity: 0, y: 40, rotation: -6 }, { opacity: 1, y: 0, rotation: 2, duration: .35, stagger: .1, ease: "back.out(2)", immediateRender: false }, mot("l11", "fausses") - .35)
-    .to(".promesse i", { scaleX: 1, duration: .2, stagger: .08, ease: "power3.out" }, mot("l11", "promesses.") - .05)
-    .to(".promesse", { y: "+=520", rotation: 25, opacity: 0, duration: .6, stagger: .08, ease: "power2.in" }, fin("l11") + .05)
     .to("#fr-mike", { rotation: -6, duration: .14, yoyo: true, repeat: 3 }, mot("l11", "blabla,"));
-  [[250, 740], [800, 690], [200, 1110], [900, 1090]].forEach(([x, y], k) => GERBES.push(gerbe(90 + k, 26, x, y, 200, 700, ["255,244,230", "255,93,184"], mot("l11", "pas", 1) - .1 + k * .05, [3, 5], [.3, .7], 200, true)));
+  // « pas de blabla, » : les bulles arrivent en se bousculant… et se dégonflent d'un coup (elles tournent et filent)
+  const blas = $$(".bla"), rb = hasard(31);
+  tl.fromTo(blas, { opacity: 0, scale: .3, rotation: () => (rb() - .5) * 30 }, { opacity: 1, scale: 1, rotation: () => (rb() - .5) * 10, duration: .32, stagger: .07, ease: "back.out(2.8)", immediateRender: false }, mot("l11", "blabla,") - .45);
+  blas.forEach((b, k) => tl.to(b, { scaleX: .15, scaleY: .5, rotation: (k % 2 ? 1 : -1) * (200 + k * 40), x: (k % 2 ? 1 : -1) * (120 + k * 20), y: -80 - k * 25, opacity: 0, duration: .45, ease: "power2.in" }, mot("l11", "pas", 1) - .2 + k * .035));
+  blas.forEach((b, k) => { const x = parseFloat(b.style.left) + 120, y = parseFloat(b.style.top) + 40; GERBES.push(gerbe(90 + k, 18, x, y, 200, 650, ["255,244,230", "255,93,184", "183,163,255"], mot("l11", "pas", 1) - .05 + k * .035, [3, 5], [.3, .6], 200, true)); });
+  // « pas de fausses promesses. » : trois notifications de « gourous » tombent… le tampon « BIDON » les écrase
+  const tP = mot("l11", "promesses.") - .05;
+  gsap.set("#fr-tampon", { xPercent: -50, yPercent: -50, rotation: -14 });
+  tl.fromTo(".notif", { opacity: 0, y: -120, scale: .92 }, { opacity: 1, y: 0, scale: 1, duration: .38, stagger: .12, ease: "back.out(1.6)", immediateRender: false }, mot("l11", "fausses") - .45)
+    .fromTo("#fr-tampon", { opacity: 0, scale: 2.6 }, { opacity: .95, scale: 1, duration: .16, ease: "power4.in", immediateRender: false }, tP)
+    .to("#franc", { x: 14, duration: .05, yoyo: true, repeat: 5, ease: "none" }, tP + .16)
+    .to(".notif", { scale: .97, filter: "grayscale(1) brightness(.6)", duration: .2, stagger: .04 }, tP + .16)
+    .to([".notif", "#fr-tampon"], { y: "+=640", rotation: (k) => [8, -12, 16, -6][k % 4], opacity: 0, duration: .6, stagger: .06, ease: "power2.in" }, fin("l11") + .05);
 
   // ═══ ⑫ « On n'est pas là pour vous apporter des vues. On est là pour vous apporter des clients. » (elle revient) ═══
   const t12 = VOIX.l12, tOn = mot("l12", "On", 1);
   tl.to("#vues", { opacity: 1, duration: .3 }, t12 - .3)
-    .to("#fr-mike", { x: 280, y: 380, scale: .62, duration: .6, ease: "power3.inOut" }, t12 - .3)   // Mike, en bas à droite
+    .to("#fr-mike", { x: 280, y: 210, scale: .62, duration: .6, ease: "power3.inOut" }, t12 - .3)   // Mike, en bas à droite
     .fromTo("#vu-compteur", { opacity: 0, scale: .6 }, { opacity: 1, scale: 1, duration: .4, ease: "back.out(2)", immediateRender: false }, t12)
     .to("#vu-compteur i", { scaleX: 1, duration: .25, ease: "power3.out" }, mot("l12", "vues.") - .05)
     .to("#vu-compteur", { opacity: .4, scale: .85, filter: "grayscale(1)", duration: .3 }, mot("l12", "vues.") + .25)
@@ -1331,6 +1404,18 @@ function construire() {
   tl.fromTo("#fi-sous", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .4, immediateRender: false }, fin("l13") + .75)
     .fromTo("#contact", { opacity: 0, y: 80, rotation: -3 }, { opacity: 1, y: 0, rotation: 0, duration: .55, ease: "back.out(1.8)", immediateRender: false }, fin("l13") + .85)
     .fromTo(".fi-boutons", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .5, ease: "expo.out", immediateRender: false }, fin("l13") + 1.0);
+  // ═══ SA MÈRE, À LA FIN : son polaroïd de face arrive entre lui et Mike ; sa phrase, mot à mot, dans une bulle ═══
+  if (MAMAN_FIN) {
+    $("#finale").insertAdjacentHTML("beforeend", '<div id="maman2" aria-hidden="true"><div class="mm-ph"><img src="f/maman-face-sourire.webp" alt=""><img src="f/maman-face-parle.webp" alt="">'
+      + '<img src="f/maman-face-rire.webp" alt=""></div><b>Maman 💕</b></div><div id="bulle-mere2" aria-hidden="true"></div>');
+    const b2 = $("#bulle-mere2");
+    b2.innerHTML = MAMAN_FIN.texte.split(" | ").map((l) => l.split(" ").map((w) => `<span${/appel|mère|fils|bon/i.test(w) ? ' class="fort"' : ""}>${w}</span>`).join(" ")).join("<br>");
+    tl.fromTo("#maman2", { opacity: 0, y: 300, rotation: 16, scale: .7 }, { opacity: 1, y: 0, rotation: 4, scale: 1, duration: .55, ease: "back.out(1.6)", immediateRender: false }, T_MERE2 - .45)
+      .fromTo(b2, { opacity: 0, scale: .4 }, { opacity: 1, scale: 1, duration: .3, ease: "back.out(2)", immediateRender: false }, T_MERE2 - .08);
+    $$("span", b2).forEach((sp, i) => tl.fromTo(sp, { opacity: 0, y: 36, scale: 1.3 }, { opacity: 1, y: 0, scale: 1, duration: .3, ease: "expo.out", immediateRender: false }, T_MERE2 + (MAMAN_FIN.m[i] ?? i * .3) - .04));
+    // elle rit de sa blague : son polaroïd sautille
+    tl.to("#maman2", { y: -22, duration: .16, yoyo: true, repeat: 3, ease: "power2.out" }, T_MERE2 + MAMAN_FIN.d + .05);
+  }
   GERBES.push(gerbe(50, 90, 540, 400, 400, 1400, ["255,214,140", "255,93,184", "61,226,166", "255,255,255"], fin("l13") + .3, [2, 3.5], [.8, 1.6], 600, true));
   construireMots(tl);
 }
@@ -1368,6 +1453,7 @@ function relever() {
   const tS = mot("l08", "bichonne") - .1;
   for (let k = 0; k < 24; k++) COEURS.push({ ecran: true, t: tS + k * .06, x: 155 + (k % 3) * 200 + (rc() - .5) * 50, y: 1400, v: 200 + rc() * 200, vie: 1.1 + rc() * .6, r: 16 + rc() * 14, ph: rc() * 6.28, c: ["#FF3B5C", "#FF5DB8", "#F2C46B"][k % 3] });
   // (sa mère : des cœurs qui montent de son polaroïd, à la fin de sa phrase)
+  if (MAMAN_FIN) for (let k = 0; k < 12; k++) COEURS.push({ ecran: true, t: T_MERE2 + MAMAN_FIN.d - .2 + k * .05, x: 540 + (rc() - .5) * 220, y: 620, v: 240 + rc() * 220, vie: .9 + rc() * .5, r: 16 + rc() * 14, ph: rc() * 6.28, c: ["#FF3B5C", "#FF5DB8", "#F2C46B"][k % 3] });
   if (MAMAN) for (let k = 0; k < 12; k++) COEURS.push({ ecran: true, t: T_MERE + MAMAN.d - .25 + k * .05, x: 206 + (rc() - .5) * 200, y: 1330, v: 240 + rc() * 220, vie: .9 + rc() * .5, r: 16 + rc() * 14, ph: rc() * 6.28, c: ["#FF3B5C", "#FF5DB8", "#F2C46B"][k % 3] });
   // revenue au début, la ligne de temps oublie les valeurs de départ qu'elle a relevées en route (sinon certaines ne
   // reviennent pas : l'étoile « TADAM ! » restait invisible, sa bouche restait en « o »)
@@ -1424,6 +1510,7 @@ function composer(ctx, sortie, t0, voix) {
   // sous les voix, la musique se fait plus discrète
   for (const c of Object.keys(VOIX)) { const a = t0 + VOIX[c], b = t0 + fin(c);
     busM.gain.setValueAtTime(1, a - .12); busM.gain.linearRampToValueAtTime(.42, a - .02); busM.gain.setValueAtTime(.42, b); busM.gain.linearRampToValueAtTime(1, b + .25); }
+  if (MAMAN_FIN) { const a = t0 + T_MERE2, b = a + MAMAN_FIN.d; busM.gain.setValueAtTime(1, a - .12); busM.gain.linearRampToValueAtTime(.42, a - .02); busM.gain.setValueAtTime(.42, b); busM.gain.linearRampToValueAtTime(1, b + .25); }
   busM.gain.setValueAtTime(1, finM - 1.6); busM.gain.linearRampToValueAtTime(.0001, finM);
   // ─ les bruits
   const S = {
@@ -1511,15 +1598,17 @@ function composer(ctx, sortie, t0, voix) {
   S.cloche(t0 + T.porte2); S.petit(t0 + mot("l12", "clients.") - .1);
   // ⑬ la fin
   S.vol(t0 + VOIX.l13 - .5, .8); S.eclate(t0 + fin("l13") + .3);
+  if (MAMAN_FIN) { S.vol(t0 + T_MERE2 - .45, .5); S.pop(t0 + T_MERE2 - .1); for (let k = 0; k < 6; k++) S.note(t0 + T_MERE2 + MAMAN_FIN.d - .1 + k * .08, [1568, 2093, 2349, 2637][k % 4]); }
   // ─ les voix
   for (const c of Object.keys(VOIX)) if (voix[c]) { const s = ctx.createBufferSource(); s.buffer = voix[c]; s.connect(busV); s.start(t0 + VOIX[c]); }
   if (voix.maman) { const s = ctx.createBufferSource(); s.buffer = voix.maman; s.connect(busV); s.start(t0 + T_MERE); }
+  if (voix["maman-fin"]) { const s = ctx.createBufferSource(); s.buffer = voix["maman-fin"]; s.connect(busV); s.start(t0 + T_MERE2); }
 }
 
 /* ── LE DÉROULÉ ── */
 const bruts = {};
 let chargeVoix = null;
-const voixChargees = () => (chargeVoix ??= Promise.all([...Object.keys(VOIX).filter((c) => !TEMPS[c]?.estime), ...(MAMAN ? ["maman"] : [])].map((c) => fetch(`voix/${c}.mp3`).then((r) => r.ok ? r.arrayBuffer() : null).then((b) => { if (b) bruts[c] = b; }).catch(() => {}))));
+const voixChargees = () => (chargeVoix ??= Promise.all([...Object.keys(VOIX).filter((c) => !TEMPS[c]?.estime), ...(MAMAN ? ["maman"] : []), ...(MAMAN_FIN ? ["maman-fin"] : [])].map((c) => fetch(`voix/${c}.mp3`).then((r) => r.ok ? r.arrayBuffer() : null).then((b) => { if (b) bruts[c] = b; }).catch(() => {}))));
 // la bande-son de l'animation en direct (si elle manque, on reviendra aux voix et à la musique jouées en direct) : chargée
 // dès l'ouverture seulement si la page n'a pas sa vidéo (sinon, seulement si la vidéo ne vient pas)
 let chargeSon = null;
@@ -1553,7 +1642,13 @@ function cacherInvisibles() {
     if (cache !== (el.dataset.cache === "1")) { el.dataset.cache = cache ? "1" : ""; el.style.visibility = cache ? "hidden" : ""; }
   }
 }
-function etat(t) { tl.seek(Math.max(0, t), false); cacherInvisibles(); poserCamera(t); dessinerFond(t); dessinerFx(t); dessinerFigurine(t); mikeParle(t); mereParle(t); suivreFilm(t); }
+let visageMere2 = -1;
+function mereParle2(t) {
+  if (!MAMAN_FIN) return;
+  const i = Math.floor((t - T_MERE2) * 30), k = "spr".indexOf(i < 0 ? "s" : i < MAMAN_FIN.x.length ? MAMAN_FIN.x[i] : "r");
+  if (k !== visageMere2) { const ims = $$("#maman2 .mm-ph img"); if (!ims.length) return; visageMere2 = k; ims.forEach((im, j) => { im.style.opacity = j === k ? 1 : 0; }); }
+}
+function etat(t) { tl.seek(Math.max(0, t), false); cacherInvisibles(); poserCamera(t); dessinerFond(t); dessinerFx(t); dessinerFigurine(t); mikeParle(t); mereParle(t); mereParle2(t); suivreFilm(t); }
 // avant de toucher : sa carte flotte, « Touchez pour commencer » respire
 const attente = gsap.timeline({ repeat: -1 });
 attente.fromTo("#carte", { y: 0, rotation: -2 }, { y: -14, rotation: -1, duration: 1.6, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0)
@@ -1695,6 +1790,8 @@ window.__rendre = async (t) => {
   if (x >= 0 && FILM_V && FILM_V.readyState < 2) await new Promise((ok) => { FILM_V.addEventListener("loadeddata", ok, { once: true }); setTimeout(ok, 8000); });
   if (x >= 0 && FILM_V && Math.abs(FILM_V.currentTime - x) > .001) {
     await new Promise((ok) => { const fini = () => ok(); FILM_V.addEventListener("seeked", fini, { once: true }); FILM_V.currentTime = x; setTimeout(fini, 2000); });
+    // (un film qui ne se laisse pas avancer — servi sans « Range » — resterait figé dans la vidéo : on le dit)
+    if (Math.abs(FILM_V.currentTime - x) > .2) throw new Error(`le film de l'interview n'a pas pu aller à ${x.toFixed(2)} s (il est à ${FILM_V.currentTime.toFixed(2)} s)`);
   }
 };
 window.__son = async (avant) => {

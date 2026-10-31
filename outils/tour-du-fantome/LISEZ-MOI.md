@@ -369,12 +369,26 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index
   vient pas (10 s, ou une erreur), et reprend la main à la fin, posée sur la même image : le numéro à toucher, les
   boutons. `?direct` force l'animation ; elle ne charge alors son son (`son.mp3`) et le film qu'à ce moment-là.
   **Toute retouche de la page demande donc de refaire `demo.mp4`** (le script le fait, sauf avec `--sans-video`).
+  Pendant le rendu, la page est servie **par morceaux** (« Range ») : sans ça, le navigateur ne peut pas avancer dans
+  le film de l'interview, qui restait figé sur sa première image (31 octobre) ; `__rendre` s'arrête maintenant en
+  erreur si le film n'arrive pas à l'instant demandé.
 - **Sa mère, au début** (`recu/humain/maman/` : `voix.mp3`, un fichier ElevenLabs qu'il a fourni, et ses trois photos
   de profil, neutre, sourire, rire — la « rire » recalée de 5 px) : sa carte dit « Élu meilleur community manager
   2026* », « *par sa mère » tombe dessus comme un tampon, son polaroïd arrive et elle le dit elle-même (« T'es le
   meilleur, mon fils ! », mot à mot dans une bulle) ; son visage suit sa voix (`MAMAN.x`, image par image : sourire,
   rire sur les syllabes fortes) ; lui, sur sa photo, est surpris puis en rit. Sa phrase décale toute la démo (la 1
-  commence après elle : `T_MERE`).
+  commence après elle : `T_MERE`). Le sceau de sa carte (`sceau()`, `outils/decor_humain.py`) est sérieux, pour
+  faire vrai : « Meilleur community manager · édition 2026 », « Lauréat », des lauriers, deux rubans.
+- **Sa mère, à la fin** (si `recu/humain/maman/fin.mp3` existe ; ses trois photos de face : `face-parle`,
+  `face-sourire`, `face-rire`) : son polaroïd arrive entre sa figurine et Mike, une fois son contact affiché, et sa
+  phrase s'écrit dans une bulle (`MAMAN_FIN_TEXTE`, à mettre au mot près sur ce qu'elle dit ; « | » coupe les lignes).
+  Sans l'enregistrement, rien ne change.
+- **Les décors dessinés** (`outils/decor_humain.py`, en SVG) : la façade de Chez Bergine le soir (guirlande d'ampoules
+  qui scintille, appliques sur l'enseigne, néon « Ouvert », jardinière fleurie, buis, paillasson « Bienvenue »,
+  ardoise du menu à la craie — police Caveat —, pavés éclairés par la vitrine) ; la cage dorée ouvragée et son
+  cadeau enrubanné, dont le couvercle saute quand la porte s'ouvre. « Pas de blabla » : des bulles qui se dégonflent ;
+  « pas de fausses promesses » : trois notifications de « gourous » (applis inventées) que le tampon « BIDON » écrase.
+  Plus de QR code à la fin (son numéro se touche).
 
 - **Les voix** : `recu/humain/01-p.mp3` … `13-p.mp3` (« p » le propriétaire — sa voix clonée, depuis le 31 octobre —,
   « m » Mike), égalisées et calées mot à mot sur leurs pauses (`caler`, aidé par `coupures`, `liees` ; « coupe » : un
@@ -404,8 +418,8 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index
   vitesse), dans un film réencodé avec une image clé toutes les demi-secondes. Mesuré dans Chromium, processeur
   ralenti 4 fois : 33 ms par image au lieu de 67.
 - **Mike bouge sur sa voix** (`MIKE`, `mikeParle`) : il se tasse et rebondit sur chaque syllabe.
-- **Son prénom et son numéro** (la 1, et la fin : on le touche pour l'appeler, un QR code `tel:` fait par le paquet
-  `qrcode`) : `PRENOM`, `TELEPHONE` dans le script.
+- **Son prénom et son numéro** (la 1, et la fin : on le touche pour l'appeler ; plus de QR code depuis le 31
+  octobre) : `PRENOM`, `TELEPHONE` dans le script.
 - Les chiffres à l'écran (2 304 « j'aime », vues, 15 surprises, 27 clients « objectif du mois ») sont inventés ; la page le dit
   (« Commerce et chiffres imaginaires »).
 

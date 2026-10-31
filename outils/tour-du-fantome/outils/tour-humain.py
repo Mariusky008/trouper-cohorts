@@ -23,6 +23,7 @@ from voix_courtes import caler, egaliser  # noqa: E402
 from alignement import segments  # noqa: E402
 from figurine import energie, preparer, pistes  # noqa: E402
 from decor import cage_mini, toque  # noqa: E402
+from decor_humain import ardoise, cage_or, facade_decor, sceau  # noqa: E402
 
 S = sys.argv[1]
 RACINE = os.path.abspath(f"{S}/../..")
@@ -73,9 +74,9 @@ MOMENTS = {
 }
 
 # ─── LES DÉCORS (ceux de la démo de 45 s) ─────────────────────────────────────────────────────
-FACADE = ('<div class="fac abs"><i class="fac-f"></i><div class="fac-ens"><b class="nom-commerce">Chez Bergine</b><small>BISTROT · DAX</small></div>'
-          '<i class="fac-store"></i><div class="fac-vit"><img src="si-interieur.webp" alt=""></div><i class="fac-lumiere"></i>'
-          '<div class="fac-porte"><div class="fac-battant"><i></i></div></div><i class="fac-trot"></i>'
+FACADE = ('<div class="fac abs"><i class="fac-ciel"></i><i class="fac-f"></i><i class="fac-pil g"></i><i class="fac-pil d"></i><i class="fac-corniche"></i><div class="fac-ens"><b class="nom-commerce">Chez Bergine</b><small>BISTROT · DAX</small></div>'
+          '<i class="fac-store"></i><div class="fac-vit"><img src="si-interieur.webp" alt=""><i class="fac-reflet"></i><span class="fac-neon">Ouvert</span><span class="fac-dore">Fait maison · depuis 1998</span></div><i class="fac-lumiere"></i>'
+          '<div class="fac-porte"><div class="fac-battant"><i></i></div></div><i class="fac-trot"></i>' + facade_decor() + ardoise() +
           '<div class="arrivent"><span class="fg" style="left:62%;top:93%;--h:21cqw"><img src="g/fleuri-debout.webp" alt=""><b>Camille</b></span>'
           '<span class="fg" style="left:74%;top:93%;--h:20cqw"><img src="g/cosy-debout.webp" alt=""></span></div>'
           f'<p id="bulle-chef">Camille{NB}! On t’attendait 😊</p>@FAMILLE@</div>')
@@ -182,6 +183,31 @@ if os.path.exists(f"{M_DIR}/voix.mp3"):
         im.crop((140 + dx, 0, 660 + dx, 624)).resize((400, 480), Image.LANCZOS).save(f"{D}/f/maman-{nom}.webp", quality=86)
     print("sa mère :", MAMAN["d"], "s ·", MAMAN["x"])
 
+# ─── SA MÈRE, À LA FIN (si son enregistrement est là : `recu/humain/maman/fin.mp3`) : de face, elle applaudit, et
+# envoie les gens vers son numéro. Ses trois photos de face : parle (bouche ouverte), sourire, rire.
+# ⚠ MAMAN_FIN_TEXTE doit être, au mot près, ce qu'elle dit dans l'enregistrement (il s'affiche dans sa bulle).
+MAMAN_FIN_TEXTE = f"Appelez-le{NB}! | Et dites-lui d’appeler | sa mère{NB}!"
+MAMAN_FIN = None
+if os.path.exists(f"{M_DIR}/fin.mp3"):
+    from PIL import Image
+    egaliser(FF, f"{M_DIR}/fin.mp3", f"{D}/voix/maman-fin.mp3")
+    a = caler(FF, f"{M_DIR}/fin.mp3", MAMAN_FIN_TEXTE.replace(" | ", " "), "-38dB", (), ())
+    e = [min(9, round(v * 9)) for v in energie(FF, f"{M_DIR}/fin.mp3")]
+    # son visage : le sourire, la bouche ouverte sur les syllabes fortes (avec un peu d'inertie)
+    x, cur, tenu = [], "s", 0
+    for v in e:
+        voulu = "p" if cur == "s" and v >= 5 else "s" if cur == "p" and v <= 2 else cur
+        if voulu != cur and tenu >= 3:
+            cur, tenu = voulu, 0
+        else:
+            tenu += 1
+        x.append(cur)
+    MAMAN_FIN = {"d": a["d"], "m": a["m"], "texte": MAMAN_FIN_TEXTE, "x": "".join(x)}
+    for nom in ("parle", "sourire", "rire"):
+        im = Image.open(f"{M_DIR}/face-{nom}.jpg").convert("RGB")
+        im.crop((110, 0, 742, 760)).resize((360, 432), Image.LANCZOS).save(f"{D}/f/maman-face-{nom}.webp", quality=86)
+    print("sa mère, à la fin :", MAMAN_FIN["d"], "s ·", MAMAN_FIN["x"])
+
 # ─── SA FIGURINE : les images, puis ses pistes (une par réplique du propriétaire) ───────────────────────
 # sa carte de CV : sa vraie photo, cadrée sur son visage (et la même sans sa tête : la page y pose la sienne, qui en sort)
 CARTE = (150, 0, 702, 634)
@@ -240,14 +266,11 @@ page = open(f"{S}/outils/tour-humain.html", encoding="utf-8").read()
 page = page.replace("@FACADE@", FACADE.replace("@FAMILLE@", FAMILLE_HTML))
 page = re.sub("@TOQUE@", lambda m: toque(), page)
 page = page.replace("@CAGE_ROSE@", cage_mini("#FF2E9A", True)).replace("@CAGE_ORANGE@", cage_mini("#F5A23A", False)).replace("@CAGE_VERTE@", cage_mini("#3DE2A6", False))
-page = page.replace("@CAGE_DOREE@", cage_mini("#FF2E9A", False))
+page = page.replace("@CAGE_OR@", cage_or()).replace("@SCEAU@", sceau())
 page = page.replace("@FEUILLES@", FEUILLES).replace("@COMM@", COMM).replace("@DOREE_G@", DOREE_G).replace("@VU_G@", VU_G)
 page = page.replace("@FIL_SOCIAL@", FIL_SOCIAL).replace("@TADAM@", TADAM)
-# son contact, à la fin : son numéro (on le touche pour l'appeler) et un QR code qui l'appelle
+# son contact, à la fin : son nom et son numéro (on le touche pour l'appeler)
 TEL_LIEN = "+33" + TELEPHONE.replace(" ", "")[1:]
-QR = subprocess.run(["node", "-e", "require(process.argv[1]).toString(process.argv[2],{type:'svg',margin:1,errorCorrectionLevel:'M'},(e,s)=>{if(e)throw e;process.stdout.write(s)})",
-                     f"{RACINE}/node_modules/qrcode", f"tel:{TEL_LIEN}"], capture_output=True, text=True, check=True).stdout
-page = page.replace("@QR@", QR.replace("<svg ", '<svg aria-label="QR code : appeler ' + PRENOM + '" ', 1))
 page = page.replace("@PRENOM@", PRENOM).replace("@TELEPHONE@", TELEPHONE.replace(" ", NB)).replace("@TEL_LIEN@", TEL_LIEN)
 page = page.replace("/*@TEMPS@*/null", json.dumps(TEMPS, ensure_ascii=False))
 page = page.replace("/*@SOUS@*/null", json.dumps({c: t for c, (_, t, _a) in SOUS.items()}, ensure_ascii=False))
@@ -255,6 +278,7 @@ page = page.replace("/*@FIGURE@*/null", json.dumps(FIGURE, ensure_ascii=False))
 page = page.replace("/*@PISTES@*/null", json.dumps(PISTES, ensure_ascii=False, separators=(",", ":")))
 page = page.replace("/*@MIKE@*/null", json.dumps(MIKE, separators=(",", ":")))
 page = page.replace("/*@MAMAN@*/null", json.dumps(MAMAN, ensure_ascii=False, separators=(",", ":")))
+page = page.replace("/*@MAMAN_FIN@*/null", json.dumps(MAMAN_FIN, ensure_ascii=False, separators=(",", ":")))
 assert not re.search(r"@[A-Z0-9_]+@|/\*@", page), "un repère @…@ n'a pas été remplacé"
 open(f"{D}/index.html", "w", encoding="utf-8").write(page)
 print("tour-humain/index.html :", len(page) // 1024, "Ko")
@@ -271,8 +295,43 @@ except (OSError, subprocess.CalledProcessError) as e:
 # (la page reprendra alors l'ancienne `demo.mp4`, si elle existe — décalée si la démo a changé).
 if "--sans-video" not in sys.argv:
     import functools, http.server, threading
-    serveur = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(http.server.SimpleHTTPRequestHandler, directory=D))
-    serveur.RequestHandlerClass.log_message = lambda *a: None
+
+    class ParMorceaux(http.server.SimpleHTTPRequestHandler):
+        # un fichier servi par morceaux (« Range ») : sans ça, le navigateur ne peut pas avancer dans le film de
+        # l'interview, qui restait figé sur sa première image dans la vidéo
+        def log_message(self, *a):
+            pass
+
+        def send_head(self):
+            m = re.match(r"bytes=(\d+)-(\d*)$", self.headers.get("Range", ""))
+            chemin = self.translate_path(self.path)
+            if not m or not os.path.isfile(chemin):
+                return super().send_head()
+            taille = os.path.getsize(chemin)
+            a, b = int(m.group(1)), min(int(m.group(2)) if m.group(2) else taille - 1, taille - 1)
+            f = open(chemin, "rb")
+            f.seek(a)
+            self.send_response(206)
+            self.send_header("Content-Type", self.guess_type(chemin))
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Content-Range", f"bytes {a}-{b}/{taille}")
+            self.send_header("Content-Length", str(b - a + 1))
+            self.end_headers()
+            self._reste = b - a + 1
+            return f
+
+        def copyfile(self, source, sortie):
+            reste = getattr(self, "_reste", None)
+            if reste is None:
+                return super().copyfile(source, sortie)
+            while reste > 0:
+                bloc = source.read(min(65536, reste))
+                if not bloc:
+                    break
+                sortie.write(bloc)
+                reste -= len(bloc)
+
+    serveur = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(ParMorceaux, directory=D))
     threading.Thread(target=serveur.serve_forever, daemon=True).start()
     try:
         subprocess.run(["node", f"{S}/outils/rendre-video.mjs", f"http://127.0.0.1:{serveur.server_address[1]}/index.html?sansdepart",

@@ -21,7 +21,7 @@ de l'ancienne démo n'est repris. Les chiffres à l'écran sont inventés et éc
 | 10 | P | « À la fin du mois, on fait le bilan ensemble : chaque bon validé à votre comptoir, c'est un client que je vous ai amené. » | « Fin du mois » ; le bon, « Servie ✓ » ; le bilan « Objectif du mois » (chiffres inventés) |
 | 11 | M | « Et voilà : pas de blabla, pas de fausses promesses. » | |
 | 12 | M | « On n'est pas là pour vous apporter des vues. On est là pour vous apporter des clients. » | en grand |
-| 13 | P | « 1 mois gratuit, un mois pour faire mes preuves, alors, on commence ? » | son contact, le QR, « Revoir » |
+| 13 | P | « 1 mois gratuit, un mois pour faire mes preuves, alors, on commence ? » | son contact (son numéro à toucher), « Revoir » ; puis, si elle est enregistrée, sa mère |
 
 Durée visée : environ 1 min 05.
 
@@ -65,9 +65,9 @@ répliques sont réenregistrées avec **sa voix clonée** (ElevenLabs, « jean �
 | 8 | un message vers chacun ; la conversation avec Camille (en semaine, poisson) ; « Il reste une table ce midi » sur son WhatsApp ; la porte s'ouvre, « Camille est venue » ; la cage dorée (« La surprise du chef », 0/15 → 3/15), les fidèles et leur pièce cousue, les trois premiers et leur surprise |
 | 9 | la vidéo du jour « Rejoins ma famille de fantômes », la famille devant la porte, « Record battu » |
 | 10 | l'éphéméride revient, le mois passe en quelques pages arrachées, le 30 entouré ; « Le bilan du mois », le bon de Léa tamponné « Servie ✓ », « +1 client amené », « Objectif du mois : 27 clients amenés » (plus sage que 120, à la demande du propriétaire) |
-| 11 | Mike en grand ; des « bla bla » qui éclatent ; « Viral garanti ! », « +10 000 abonnés ! », « Succès en 24 h ! » barrés et qui tombent |
+| 11 | Mike en grand ; des bulles « bla bla » qui se bousculent puis se dégonflent ; trois notifications de « gourous » (applis inventées : « Deviens viral en 24 h, garanti ! », « +10 000 abonnés en 7 jours », « Ma méthode secrète : 997 € ») que le tampon « BIDON » écrase |
 | 12 | « 👁 12 480 vues » barré ; elle revient à côté de Mike ; une porte, des fantômes qui entrent, « Des clients » |
-| 13 | elle et Mike ; « 1 mois gratuit · pour faire mes preuves », son rire ; **son contact** : « Jean-Philippe · 📞 06 22 12 96 75 » (on le touche pour l'appeler) et un QR code qui l'appelle ; « On commence · 1 mois gratuit » (vers `/inscription`), « Revoir » |
+| 13 | elle et Mike ; « 1 mois gratuit · pour faire mes preuves », son rire ; **son contact** : « Jean-Philippe · 📞 06 22 12 96 75 » (on le touche pour l'appeler) ; « On commence · 1 mois gratuit » (vers `/inscription`), « Revoir » |
 
 Son prénom et son numéro (`PRENOM`, `TELEPHONE` dans le script) : confirmés par le propriétaire le 31 octobre.
 Partout : un léger voile sur les bords de l'image.
@@ -83,6 +83,12 @@ fichier ElevenLabs qu'il a fourni, ses trois photos aussi). Les saccades ne vena
 composer une dizaine de calques plein écran à chaque image, et sauter dans un film à images clés espacées. **La page
 joue maintenant une vidéo** (`demo.mp4`, rendue depuis la page, son compris) ; l'animation en direct, allégée, ne
 sert que si la vidéo ne vient pas, et reprend la main à la fin pour que son numéro se touche.
+
+**Cinquième passe (31 octobre)** : le sceau de sa carte, sérieux (pour faire vrai) ; plus de « 1 min 40 · avec le
+son » au départ ; la façade de Chez Bergine refaite, le soir, accueillante ; le film de Mike défile de nouveau dans la
+vidéo (il restait figé : le rendu ne servait pas la page par morceaux) ; la cage dorée et son cadeau refaits ; « pas de
+blabla, pas de fausses promesses » refait (bulles qui se dégonflent, notifications de « gourous » tamponnées
+« BIDON ») ; plus de QR code à la fin. **La fin avec sa mère** est prête : il reste son enregistrement.
 
 ## À garder en tête
 
