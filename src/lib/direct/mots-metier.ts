@@ -174,7 +174,7 @@ export function expressMots(activite: string): MotsExpress {
       sous: "Moins cher entre deux heures que vous choisissez — remplit un creux de service",
       plage: true,
       note:
-        "Vous choisissez le moment : par exemple entre 11 h 30 et 11 h 45, pour remplir le début " +
+        "Vous choisissez le moment, comme entre 11 h 30 et 11 h 45, pour remplir le début " +
         "de service. Le prix réduit ne vaut QUE pendant cette plage, et l'express disparaît tout " +
         "seul à la fin ; vos autres façons restent.",
     };

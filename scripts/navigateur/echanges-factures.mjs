@@ -51,7 +51,7 @@ ok(nom === "Chez Bergine" && /10\s?%.*le plus courant/.test(tauxOn) && natureOn 
 ok(await bergine.locator(".fa-form button[type=submit]").isDisabled(), "« Enregistrer » attend le SIRET et l'accord");
 await bergine.locator(".ec-puces[aria-label='Forme de l’entreprise'] button", { hasText: "SARL" }).click();
 await bergine.locator(".fa-champ input").first().fill("SARL Bergine");
-await bergine.getByPlaceholder("Par exemple : 1 000 €").fill("5 000 €");
+await bergine.getByPlaceholder("1 000 €", { exact: true }).fill("5 000 €");
 await bergine.getByPlaceholder("14 chiffres").fill("123 456 782 00011");
 ok((await texte(bergine, ".fa-champ i.faux")).length > 0, "un SIRET faux se voit tout de suite");
 await bergine.getByPlaceholder("14 chiffres").fill("123 456 782 00010");
@@ -147,7 +147,7 @@ await demo.getByRole("button", { name: /Voir ce que proposent les autres/ }).cli
 await demo.waitForTimeout(3500);
 await demo.locator(".ec-tiroirs button", { hasText: "Mes factures" }).click();
 await demo.waitForTimeout(600);
-ok((await texte(demo, ".fx-exemple")) !== "" && (await texte(demo, ".fx")).includes("Chez Bergine") && (await texte(demo, ".ec-feuille")).includes("la facture d’échange à ton nom"), "démo : une facture d'exemple, marquée « Exemple »");
+ok((await texte(demo, ".fx-exemple")) !== "" && (await texte(demo, ".fx")).includes("Chez Bergine") && (await texte(demo, ".ec-feuille")).includes("la facture d’échange à ton nom"), "démo : une facture de démonstration, marquée « Démonstration »");
 ok((await debordement(demo)) <= 0, "démo : pas de débordement");
 await demo.screenshot({ path: `${D}/68-demo-facture.png` });
 await demo.locator(".ec-feuille .ec-fermer").click();

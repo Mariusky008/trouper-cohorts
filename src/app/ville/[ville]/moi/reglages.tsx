@@ -377,7 +377,7 @@ export function PanneauAdresse({
             type="email"
             inputMode="email"
             autoComplete="email"
-            placeholder="vous@exemple.fr"
+            placeholder="vous@email.fr"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             aria-label="Votre adresse e-mail"

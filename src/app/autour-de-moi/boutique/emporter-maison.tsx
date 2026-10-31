@@ -141,7 +141,7 @@ export function EmporterMaison({ raison }: { raison: string }) {
                     type="email"
                     inputMode="email"
                     autoComplete="email"
-                    placeholder="vous@exemple.fr"
+                    placeholder="vous@email.fr"
                     aria-label="Votre adresse e-mail"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

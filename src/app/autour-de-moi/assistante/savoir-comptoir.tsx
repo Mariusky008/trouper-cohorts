@@ -243,7 +243,7 @@ export function SavoirComptoir({
           value={ouvert.texte}
           rows={3}
           maxLength={600}
-          placeholder={`Par exemple : ${exemple}`}
+          placeholder={exemple}
           aria-label="Ta réponse"
           onChange={(e) => ecrire(e.target.value)}
           autoFocus={!avecQuestion}

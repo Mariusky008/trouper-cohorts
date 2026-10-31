@@ -100,7 +100,7 @@ export function ProActions({
             id="pro-prenom"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Ex. Sophie — ou laissez vide"
+            placeholder="Sophie — ou laissez vide"
             autoComplete="off"
           />
         </div>

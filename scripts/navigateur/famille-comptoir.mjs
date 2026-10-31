@@ -200,7 +200,7 @@ await p.waitForSelector(".fc-foule", { timeout: 20000 });
 const ecran = await texte(".fc");
 ok(ecran.includes("Plus que 3 pour battre ton record") && ecran.includes("Nouveaux aujourd’hui 2"), "la foule du jour et le record");
 ok((await texte(".fc-depart .fc-lien-ligne code")) === `clikme.fr/f/${SLUG}`, "son lien, dans son départ");
-ok((await texte(".fc-tuile.or")).includes("1") && (await texte(".fc-tuile.bronze")).includes("4"), "les écussons : 1 or, 4 bronze");
+ok((await texte(".fc-tuile.or")).includes("1") && (await texte(".fc-tuile.bronze")).includes("4"), "les pièces : 1 or, 4 bronze");
 ok(ecran.includes("Argent : 1 visite ou 7 jours de cage. Or : 5 visites ou 3 amis amenés."), "la règle des paliers, depuis PALIERS");
 ok((await texte(".fc-fideles")).startsWith("Léa n°1 🥇"), `ses fidèles (${await texte(".fc-fideles")})`);
 const parcours = await texte(".fc-parcours");

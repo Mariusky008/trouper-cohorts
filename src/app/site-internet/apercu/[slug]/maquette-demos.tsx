@@ -804,8 +804,8 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
         <>
           <button className="asx-back" onClick={() => setView("home")}>‹ Retour</button>
           <div className="asx-say">Bien sûr. Indiquez-moi le·la {term} à remercier — je lui écrirai pour l’inviter à laisser un avis.</div>
-          <div className="asx-field"><label>Prénom du·de la {term}</label><input value={cli} onChange={(e) => setCli(e.target.value)} placeholder="Ex. Julie" /></div>
-          <div className="asx-field"><label>Son numéro WhatsApp</label><input value={ph} onChange={(e) => setPh(e.target.value)} placeholder="Ex. 06 12 34 56 78" inputMode="tel" /></div>
+          <div className="asx-field"><label>Prénom du·de la {term}</label><input value={cli} onChange={(e) => setCli(e.target.value)} placeholder="Julie" /></div>
+          <div className="asx-field"><label>Son numéro WhatsApp</label><input value={ph} onChange={(e) => setPh(e.target.value)} placeholder="06 12 34 56 78" inputMode="tel" /></div>
           <button className="asx-send" disabled={!ready} onClick={() => setView("avisPrev")}>Préparer le message</button>
         </>
       );
@@ -906,7 +906,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
           );
         if (c.type === "nombre" || c.type === "pourcent")
           return <input type="number" min={1} inputMode="numeric" value={v} onChange={(e) => set(e.target.value)} placeholder={c.exemple} />;
-        return <input type="text" value={v} onChange={(e) => set(e.target.value)} placeholder={c.exemple ? `Ex. ${c.exemple}` : ""} maxLength={90} />;
+        return <input type="text" value={v} onChange={(e) => set(e.target.value)} placeholder={c.exemple ?? ""} maxLength={90} />;
       };
 
       // L'annonce est CONSTRUITE à partir des réponses, pas reformulée depuis une
@@ -942,7 +942,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
             />
             {t.length > 0 && !exploitable && (
               <div className="asx-warn">
-                Je n’ai pas bien compris. Dites-moi par exemple&nbsp;: «&nbsp;Un créneau vient de se libérer samedi à 16 h.&nbsp;»
+                Je n’ai pas bien compris. Dites-moi, comme&nbsp;: «&nbsp;Un créneau vient de se libérer samedi à 16 h.&nbsp;»
               </div>
             )}
             <button
@@ -1111,7 +1111,7 @@ export function MaquetteAssistant({ accent, data, slug }: { accent: string; data
               value={qaInput}
               onChange={(e) => setQaInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") askQa(); }}
-              placeholder="Ex. c’est un engagement&nbsp;? combien ça coûte&nbsp;?"
+              placeholder="C’est un engagement&nbsp;? Combien ça coûte&nbsp;?"
               aria-label="Votre question"
             />
             <button onClick={askQa} disabled={qaBusy || !qaInput.trim()} aria-label="Envoyer">➤</button>

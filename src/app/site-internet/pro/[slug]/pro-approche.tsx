@@ -141,7 +141,7 @@ export function ProApproche({
         )}
 
         <label htmlFor="appr-t">Titre de la section</label>
-        <input id="appr-t" value={titre} onChange={(e) => setTitre(e.target.value)} maxLength={80} placeholder="Ex. Un moment pour vous" />
+        <input id="appr-t" value={titre} onChange={(e) => setTitre(e.target.value)} maxLength={80} placeholder="Un moment pour vous" />
 
         <label htmlFor="appr-c">Votre texte</label>
         <textarea

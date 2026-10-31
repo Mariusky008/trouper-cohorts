@@ -398,7 +398,7 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
 
             {thread.length <= 1 && !busy && (
               <>
-                <div className="sug-lead">Par exemple, écrivez&nbsp;:</div>
+                <div className="sug-lead">Vous pouvez écrire&nbsp;:</div>
                 <div className="sug">
                   {SUGGESTIONS.map((sg) => (
                     <button key={sg} type="button" onClick={() => send(sg)}>« {sg} »</button>
@@ -423,7 +423,7 @@ export function ProAssistantHub({ slug, token, nom }: { slug: string; token: str
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") send(input); }}
-                placeholder={listening ? "J'écoute…" : "Ex. préviens mes clients d'une promo"}
+                placeholder={listening ? "J'écoute…" : "Préviens mes clients d'une promo…"}
                 aria-label="Votre demande"
               />
               <button onClick={() => send(input)} disabled={busy || !input.trim()} aria-label="Envoyer">↑</button>

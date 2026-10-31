@@ -1878,7 +1878,7 @@ function MesInfos({ commerce, dossier, onRetour }: { commerce: Commerce; dossier
           Modifier dans mes réglages <s aria-hidden="true">→</s>
         </a>
       ) : (
-        <p className="ak-note">En démonstration, ce sont les infos d’un commerce d’exemple.</p>
+        <p className="ak-note">En démonstration, ce sont les infos d’un commerce imaginaire.</p>
       )}
     </div>
   );
@@ -2458,7 +2458,7 @@ function EtapeMission({
         ? `${
             etape.consigne ??
             "Enregistre un message pour tes clients : ce qui rend ça spécial, ce qu’il faut savoir. Ils l’entendront de ta voix en ouvrant ton annonce."
-          } Par exemple : ${etape.exemple}`
+          } Tu peux dire : « ${etape.exemple} »`
       : etape.type === "photos"
         ? etape.conseil
         : undefined;

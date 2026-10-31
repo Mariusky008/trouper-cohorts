@@ -125,11 +125,11 @@ export function DemarchageBooking({ target, hostNom, accent }: { target: Demarch
             </div>
             <label className="dbk-field">
               <span>Votre prénom</span>
-              <input value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder="Ex. Camille" autoComplete="given-name" />
+              <input value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder="Camille" autoComplete="given-name" />
             </label>
             <label className="dbk-field">
               <span>Votre téléphone</span>
-              <input value={tel} onChange={(e) => setTel(e.target.value)} placeholder="Ex. 06 12 34 56 78" inputMode="tel" autoComplete="tel" />
+              <input value={tel} onChange={(e) => setTel(e.target.value)} placeholder="06 12 34 56 78" inputMode="tel" autoComplete="tel" />
             </label>
             <div className="dbk-cta">
               <button type="button" className="dbk-btn" disabled={!detailsOk} onClick={confirm}>Confirmer la réservation</button>

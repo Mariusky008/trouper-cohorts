@@ -1211,7 +1211,7 @@ export function ProRelance({
       );
     return (
       <input id={id} type="text" value={v} onChange={(e) => set(e.target.value)}
-        placeholder={c.exemple ? `Ex. ${c.exemple}` : ""} maxLength={90} />
+        placeholder={c.exemple ?? ""} maxLength={90} />
     );
   };
 
@@ -2068,7 +2068,7 @@ export function ProRelance({
                     value={brief}
                     onChange={(e) => setBrief(e.target.value)}
                     rows={2}
-                    placeholder="Ex. il reste 2 places pour le cours de samedi 10h"
+                    placeholder="Il reste 2 places pour le cours de samedi 10h"
                   />
                   <button className="aibtn" onClick={generate} disabled={gening || !brief.trim()}>
                     {gening ? <><span className="spin" /> Rédaction…</> : aiUsed ? "↻ Régénérer" : "✨ Rédiger mon message"}
@@ -2478,7 +2478,7 @@ export function ProRelance({
                         type="text"
                         value={offerText}
                         onChange={(e) => majTexte(e.target.value)}
-                        placeholder="Ex. 2 places dispo samedi · -20% ce week-end"
+                        placeholder="2 places dispo samedi · -20% ce week-end"
                         maxLength={140}
                       />
                       {/* Une offre de deux heures doit s'arrêter au bout de deux

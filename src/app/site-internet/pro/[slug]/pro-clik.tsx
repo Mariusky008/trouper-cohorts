@@ -217,7 +217,7 @@ export function ProClik({ slug, token, ville }: { slug: string; token: string; v
             value={texte}
             onChange={(e) => setTexte(e.target.value)}
             maxLength={140}
-            placeholder="Ex. Garbure landaise, magret grillé"
+            placeholder="Garbure landaise, magret grillé"
           />
 
           <div className="pclik-duo">

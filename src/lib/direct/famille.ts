@@ -41,7 +41,9 @@ export const PALIERS: Record<Exclude<Grade, "bronze">, Partial<Parcours>> = {
 export const GRADES: Grade[] = ["bronze", "argent", "or"];
 export const EMOJI_GRADE: Record<Grade, string> = { bronze: "🥉", argent: "🥈", or: "🥇" };
 export const NOM_GRADE: Record<Grade, string> = { bronze: "Bronze", argent: "Argent", or: "Or" };
-/** Ce que chaque palier lui apporte, dit en trois mots (le chemin de son écusson). */
+/** Sa pièce, dite en entier : « la pièce d’argent » (le palier se montre en fantôme debout sur sa pièce). */
+export const PIECE_GRADE: Record<Grade, string> = { bronze: "la pièce de bronze", argent: "la pièce d’argent", or: "la pièce d’or" };
+/** Ce que chaque palier lui apporte, dit en trois mots (le chemin vers sa pièce). */
 export const AVANTAGE_GRADE: Record<Grade, string> = { bronze: "les bons plans", argent: "plus tôt", or: "en premier" };
 
 const atteint = (p: Parcours, c: Partial<Parcours>) =>

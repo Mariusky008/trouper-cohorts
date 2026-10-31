@@ -990,7 +990,7 @@ function VueCompte({ onRetour }: { onRetour: () => void }) {
               type="email"
               inputMode="email"
               autoComplete="email"
-              placeholder="vous@exemple.fr"
+              placeholder="vous@email.fr"
               aria-label="Adresse e-mail"
               value={email}
               onChange={(ev) => setEmail(ev.target.value)}

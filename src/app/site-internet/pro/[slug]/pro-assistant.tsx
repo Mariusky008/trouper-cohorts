@@ -100,21 +100,21 @@ export function ProAssistant({ slug, token }: { slug: string; token: string }) {
 
         <div className="fld">
           <label>Mes spécialités / ce que je fais</label>
-          <div className="hint">Prestations, produits, ce qui vous distingue. Ex. « Gâteaux personnalisés, décors animaux, sans gluten sur commande (48 h). »</div>
+          <div className="hint">Prestations, produits, ce qui vous distingue. Comme « Gâteaux personnalisés, décors animaux, sans gluten sur commande (48 h). »</div>
           <textarea rows={4} value={specialites} onChange={(e) => setSpecialites(e.target.value)} placeholder="Décrivez ce que vous proposez…" />
         </div>
 
         <div className="fld">
           <label>Ce que je ne fais pas (optionnel)</label>
-          <div className="hint">Pour éviter les fausses attentes. Ex. « Pas de livraison. Pas de pièce montée. »</div>
+          <div className="hint">Pour éviter les fausses attentes. Comme « Pas de livraison. Pas de pièce montée. »</div>
           <textarea rows={2} value={exclusions} onChange={(e) => setExclusions(e.target.value)} placeholder="Ce que vous ne proposez pas…" />
         </div>
 
         <div className="faqh">Questions fréquentes</div>
         {faq.map((f, i) => (
           <div className="qa" key={i}>
-            <input value={f.q} onChange={(e) => setFaqAt(i, { q: e.target.value })} placeholder="Question — ex. « Faites-vous des gâteaux sans gluten ? »" />
-            <input value={f.a} onChange={(e) => setFaqAt(i, { a: e.target.value })} placeholder="Réponse — ex. « Oui, sur commande 48 h à l'avance. »" />
+            <input value={f.q} onChange={(e) => setFaqAt(i, { q: e.target.value })} placeholder="Question — « Faites-vous des gâteaux sans gluten ? »" />
+            <input value={f.a} onChange={(e) => setFaqAt(i, { a: e.target.value })} placeholder="Réponse — « Oui, sur commande 48 h à l'avance. »" />
             <button className="rm" onClick={() => removeFaq(i)}>Retirer</button>
           </div>
         ))}

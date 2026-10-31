@@ -402,7 +402,7 @@ export function FamilleComptoir({
           <SurpriseDuChef commerce={commerce} />
 
           <section className="fc-paliers">
-            <h3>Leurs écussons</h3>
+            <h3>Leurs pièces</h3>
             <div className="fc-tuiles">
               {ORDRE.map((g) => (
                 <div key={g} className={`fc-tuile ${g}`}>
@@ -413,7 +413,7 @@ export function FamilleComptoir({
               ))}
             </div>
             <p className="fc-regle">
-              Argent : {regleEnMots("argent")}. Or : {regleEnMots("or")}. Plus l’écusson monte, plus tôt ils ont tes bons plans.
+              Argent : {regleEnMots("argent")}. Or : {regleEnMots("or")}. Plus leur pièce est précieuse, plus tôt ils ont tes bons plans.
             </p>
             {f.fideles.length > 0 && (
               <ul className="fc-fideles" aria-label="Tes fidèles">

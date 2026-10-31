@@ -231,7 +231,7 @@ export function CollectifSection({ ville, accent, nom, metier, photo, partners, 
               value={custom}
               onChange={(e) => setCustom(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") askCustom(); }}
-              placeholder={`Autre chose ? Ex. plombier, dentiste…`}
+              placeholder={`Autre chose ? Plombier, dentiste…`}
               aria-label="Ce que vous cherchez à cette ville"
             />
             <button type="button" onClick={askCustom} disabled={!custom.trim()} aria-label="Chercher">🔎</button>

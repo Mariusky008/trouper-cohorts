@@ -32,7 +32,7 @@ export function messageMembre(prenom: string, commerce: string, lien: string): s
 const pluriel = (n: number, un: string, plusieurs: string) => (n > 1 ? plusieurs : un);
 /** En démonstration : un lien qui se voit comme un exemple, jamais un vrai jeton. */
 const lienExemple = (prenom: string) =>
-  `https://clikme.fr/e/exemple-${prenom.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "equipe"}`;
+  `https://clikme.fr/e/demo-${prenom.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "equipe"}`;
 
 export function PanneauEquipe({
   membres,

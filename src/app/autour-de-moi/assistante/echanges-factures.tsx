@@ -312,7 +312,7 @@ function FormulaireInfos({
       {societe && (
         <label className="fa-champ">
           <span>Son capital</span>
-          <input value={f.capital} onChange={(e) => maj({ capital: e.target.value })} maxLength={40} placeholder="Par exemple : 1 000 €" />
+          <input value={f.capital} onChange={(e) => maj({ capital: e.target.value })} maxLength={40} placeholder="1 000 €" />
         </label>
       )}
       <label className="fa-champ">

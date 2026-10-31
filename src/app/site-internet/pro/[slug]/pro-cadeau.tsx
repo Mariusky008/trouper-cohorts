@@ -157,7 +157,7 @@ export function ProCadeau({ slug, token, branche, profil }: { slug: string; toke
               <li>☝️ Une chance par personne.</li>
               <li>✅ Le gagnant montre son code ; vous le validez d’un appui.</li>
               <li>
-                Par exemple : « {combienDe(profil, r.nombre)} — {r.quoi} ».
+                Comme : « {combienDe(profil, r.nombre)} — {r.quoi} ».
               </li>
             </ul>
             {profil.alcool && (

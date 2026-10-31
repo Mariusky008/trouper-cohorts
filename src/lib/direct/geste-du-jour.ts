@@ -666,7 +666,7 @@ export function gesteDuJour(
         { heure: "18 h 00", icone: "📊", nombre: "", quoi: "Votre pièce n'attend plus qu'on la cherche. ClikMe va la présenter aux personnes à qui elle pourrait vraiment plaire." },
       ],
       gardeRobe: {
-        dit: "Elle peut même ouvrir son Dressing ClikMe : choisir, par exemple, son jean préféré et voir immédiatement si votre pièce va avec ce qu'elle possède déjà.",
+        dit: "Elle peut même ouvrir son Dressing ClikMe : choisir son jean préféré et voir immédiatement si votre pièce va avec ce qu'elle possède déjà.",
         titre: "Leur jean préféré ? Voilà ce qui irait avec.",
       },
       /* « Elle hésite ? Elle ouvre un salon. Ses amis donnent leur avis, ClikMe
@@ -691,7 +691,7 @@ export function gesteDuJour(
         direct: `D'abord nous avons créé Le Direct de ${villeAff || "votre ville"} : les habitants voient simplement ce qui vient d'arriver aujourd'hui dans les commerces autour d'eux.`,
         dit: [
           "Et puis il y a « Ma Maison ». Là, ClikMe apprend progressivement ce que chacun aime et ce qu'il possède déjà.",
-          "Par exemple, si vous publiez aujourd'hui ce pull et qu'il correspond au style d'une personne ou va particulièrement bien avec les vêtements de son Dressing, votre Fantôme peut le lui rapporter comme une surprise.",
+          "Si vous publiez aujourd'hui ce pull et qu'il correspond au style d'une personne ou va particulièrement bien avec les vêtements de son Dressing, votre Fantôme peut le lui rapporter comme une surprise.",
           "Cette personne ne vous suivait pas. Elle ne cherchait pas votre boutique. Elle ne vous connaissait peut-être même pas. Et pourtant, votre pièce vient d'arriver chez elle.",
           /* « Tu dis "l'essayer sur elle", mais elle le voit déjà sur elle
              puisqu'elle est déjà en photo. » La surprise ARRIVE portée : le

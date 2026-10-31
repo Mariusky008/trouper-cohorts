@@ -276,7 +276,7 @@ export function ProDiffusion({
           </div>
           <ol>
             <li>Ouvrez WhatsApp → <b>Nouvelle discussion</b> → <b>Nouvelle diffusion</b>.</li>
-            <li>Cochez vos clients, nommez la liste (ex.&nbsp;: «&nbsp;Mes client·es&nbsp;»).</li>
+            <li>Cochez vos clients, nommez la liste (comme «&nbsp;Mes client·es&nbsp;»).</li>
             <li>Depuis <b>Faire une annonce</b>, touchez «&nbsp;Copier&nbsp;», collez dans la liste, envoyez.</li>
           </ol>
           <div className="sp" style={{ marginTop: 10 }}>

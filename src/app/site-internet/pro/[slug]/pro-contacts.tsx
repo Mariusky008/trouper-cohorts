@@ -280,7 +280,7 @@ export function ProContacts({ slug, token, reviewLink }: { slug: string; token: 
         <details className="imp">
           <summary>📋 Importer une liste de clients</summary>
           <div className="imp-body">
-            <div className="imp-hint">Collez vos clients, <b>un par ligne</b> (prénom et numéro). Ex. « Julie, 06 12 34 56 78 ».</div>
+            <div className="imp-hint">Collez vos clients, <b>un par ligne</b> (prénom et numéro), comme « Julie, 06 12 34 56 78 ».</div>
             <textarea
               value={imp}
               onChange={(e) => setImp(e.target.value)}

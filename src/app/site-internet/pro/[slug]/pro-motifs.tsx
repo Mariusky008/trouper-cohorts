@@ -154,7 +154,7 @@ export function ProMotifs({
           <textarea
             value={phrase}
             onChange={(e) => setPhrase(e.target.value)}
-            placeholder="Ex. On vient chez moi pour le stress, les douleurs de dos, mieux dormir et se remettre au sport en douceur."
+            placeholder="On vient chez moi pour le stress, les douleurs de dos, mieux dormir et se remettre au sport en douceur."
           />
           <button type="button" className="gen" onClick={generate} disabled={gen || !phrase.trim()}>
             {gen ? "L'assistante prépare…" : "✨ Générer mes 4 cartes"}

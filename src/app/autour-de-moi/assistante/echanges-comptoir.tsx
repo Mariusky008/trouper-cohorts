@@ -461,7 +461,7 @@ function CaisseDuMois({ decouvert, calcul, rendre }: { decouvert: number; calcul
 }
 
 /** Étape 3 : les pièces tombent dans la caisse ; ce qu'il peut s'offrir s'allume quand elle l'atteint. */
-function CaissePleine({ decouvert, pieces, envies, exemple }: { decouvert: number; pieces: number; envies: Envie[]; exemple: boolean }) {
+function CaissePleine({ decouvert, pieces, envies }: { decouvert: number; pieces: number; envies: Envie[] }) {
   const pas = 240;
   const duree = 250 + pieces * pas;
   const vu = useCompteur(decouvert, duree, 200);
@@ -493,7 +493,7 @@ function CaissePleine({ decouvert, pieces, envies, exemple }: { decouvert: numbe
       </div>
       {envies.length > 0 && (
         <div className="ec-envies">
-          <span className="ec-envies-t">{exemple ? "De quoi t’offrir, par exemple" : "De quoi t’offrir dans le réseau"}</span>
+          <span className="ec-envies-t">De quoi t’offrir dans le réseau</span>
           <div className="ec-envies-l">
             {envies.slice(0, 3).map((e) => {
               const ok = vu >= e.prix;
@@ -783,7 +783,7 @@ export function Depart({
             </div>
           </article>
           <p className="ec-astuce">＋ Jusqu’à {MAX_OFFRES - 1} autres offres ensuite, depuis « Mes offres ».</p>
-          <CaissePleine decouvert={decouvert} pieces={Math.min(parMois, 6)} envies={envies} exemple={!reel} />
+          <CaissePleine decouvert={decouvert} pieces={Math.min(parMois, 6)} envies={envies} />
           {reel && (
             <p className="ec-regle">
               ⚖️ <b>En publiant, tu acceptes les règles</b> : tu gagnes quand tu valides le code d’un commerçant venu chez toi ; ce que tu prends, tu le rends en ton produit, jamais en euros ; tant que tu dois, tu ne peux ni mettre ton offre en pause, ni refuser un bon ; un bon non utilisé expire au bout de {JOURS_VALIDITE} jours

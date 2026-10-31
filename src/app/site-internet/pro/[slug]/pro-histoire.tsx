@@ -177,7 +177,7 @@ export function ProHistoire({ slug, token }: { slug: string; token: string }) {
               placeholder="Ce qui vient de se passer, en une phrase…"
             />
             <div className={`cnt${reste <= 20 ? " max" : ""}`}>{reste} caractères restants</div>
-            <div className="ex">Par exemple&nbsp;: «&nbsp;{exemple}&nbsp;»</div>
+            <div className="ex">Comme&nbsp;: «&nbsp;{exemple}&nbsp;»</div>
             {err && <div className="err">{err}</div>}
             <div className="row">
               <button type="button" className="go" onClick={enregistrer} disabled={envoi || texte.trim().length < MIN_HISTOIRE}>

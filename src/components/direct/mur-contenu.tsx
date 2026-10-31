@@ -2395,7 +2395,7 @@ function Annonce({
           maxLength={150}
           value={texte}
           onChange={(e) => setTexte(e.target.value)}
-          placeholder={`Ex. : ${verbeDe(verbe)?.exemple ?? ""}`}
+          placeholder={verbeDe(verbe)?.exemple ?? ""}
         />
         <span className="mu-compte">{texte.length}/150</span>
         <input

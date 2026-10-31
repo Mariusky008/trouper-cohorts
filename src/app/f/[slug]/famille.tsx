@@ -38,6 +38,7 @@ import {
   messagePourMike,
   NOM_GRADE,
   OUVERTURE_BON_PLAN,
+  PIECE_GRADE,
   prochainPalier,
   recordBattu,
   type EtatFamille,
@@ -326,7 +327,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
               ? "Tu le vois en premier : tu es en or 🥇"
               : bp.grade === "argent"
                 ? `Les fantômes d’or l’ont eu ${OUVERTURE_BON_PLAN.argent} minutes avant toi.`
-                : "L’or et l’argent l’ont eu avant toi : monte d’écusson pour l’avoir plus tôt."}
+                : "L’or et l’argent l’ont eu avant toi : gagne la pièce suivante pour l’avoir plus tôt."}
           </span>
         </div>
       );
@@ -337,7 +338,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
         {bp.membre ? (
           <>
             <b>Les fantômes d’or le voient d’abord. Le tien s’ouvre à {heureParis(bp.ouvertA)}.</b>
-            <span>Monte d’écusson pour l’avoir plus tôt.</span>
+            <span>Gagne la pièce suivante pour l’avoir plus tôt.</span>
           </>
         ) : (
           <b>{passe ? "Il est pour sa famille : ouvre une cage pour le voir." : `Il est pour sa famille : ouvre une cage, il s’ouvrira pour toi à ${heureParis(bp.ouvertA)}.`}</b>
@@ -534,7 +535,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
         {motDuJour(etat)}
         {etat && carteFoule(etat, true)}
 
-        <div className="fm-chemin" role="list" aria-label="Ton écusson">
+        <div className="fm-chemin" role="list" aria-label="Ta pièce">
           {GRADES.map((g, k) => (
             <div key={g} role="listitem" className={`fm-etape${k <= rang ? " fait" : ""}${k === rang + 1 ? " prochain" : ""}`}>
               <span className="med">{EMOJI_GRADE[g]}</span>
@@ -547,7 +548,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
           {suivant ? (
             <>
               <b>
-                Prochain : l’écusson {NOM_GRADE[suivant.grade].toLowerCase()} {EMOJI_GRADE[suivant.grade]}
+                Prochain : {PIECE_GRADE[suivant.grade]} {EMOJI_GRADE[suivant.grade]}
               </b>
               {cheminEnMots(suivant.chemins, c.nom)}
               <div className="fm-jauge">
