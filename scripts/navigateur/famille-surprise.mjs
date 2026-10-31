@@ -20,7 +20,10 @@ const ok = (c, m) => {
 const cookies = {};
 for (const qui of ["Olga", "Paul", "Zoé", "Max"]) {
   const r = await fetch(`${BASE}/api/direct/cage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: SLUG, film: "page", cage: "adore", prenom: qui }) });
-  cookies[qui] = (r.headers.get("set-cookie") ?? "").split(";")[0];
+  // son témoin d'habitant, parmi les cookies posés (pas forcément le premier)
+  cookies[qui] = (r.headers.getSetCookie?.() ?? [r.headers.get("set-cookie") ?? ""]).map((c) => c.split(";")[0]).find((c) => c.startsWith("clikme_habitant=")) ?? "";
+  // la mise en place elle-même : si une cage n'est pas posée, on dit pourquoi (sinon tout échoue plus loin, sans raison)
+  if (r.status !== 200 || !cookies[qui]) ok(false, `la cage de ${qui} : ${r.status} ${(await r.text().catch(() => "")).slice(0, 160)} (cookie : ${cookies[qui] || "aucun"})`);
 }
 const pro = async (corps) => {
   const r = await fetch(`${BASE}/api/site-internet/pro/famille`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: SLUG, token: "jeton-test", ...corps }) });
