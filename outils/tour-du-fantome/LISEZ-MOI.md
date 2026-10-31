@@ -414,16 +414,18 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index
   posée sur son **corps**, un par geste (`CORPS` : mains jointes, bras ouverts, bras croisés, salut) — la page change
   l'une sans l'autre, la jointure sous le menton est fondue —, le **ressort**, le **socle**. Il manque la bouche en
   « o » : la page prend « parle ». La page la dessine sur une toile (`dessinerFigurine`) : le socle au sol, le ressort
-  posé en tranches le long d'une courbe (il se courbe de la moitié de l'angle du buste), le buste au bout. Ses
-  **pistes** (`outils/figurine.py`, une par réplique, 30 images par seconde, relancées à chaque syllabe) étirent le
-  ressort et font pencher le buste ; un changement de geste (rire, louche) le fait rebondir (`depuisGeste`) ; ses
-  **moments** (`MOMENTS`) : un mot de départ, un mot de fin. La ligne de temps ne fait que la placer (`FIG` : ses
-  pieds, sa taille ; `bras` au-delà de 10 : les bras ouverts ; `salut`). Sa taille : `ECH_J`.
-- **Sa carte de CV** : sa vraie photo **sans sa tête** (`carte-sans-tete.jpg`, le fond refait) ; la page y dessine
-  sa vraie tête au pixel près (`surCarte`, `FIG.carte` ; `outils/figurine.py` : ses sept photos de `recu/humain/photos/`,
-  leurs repères MediaPipe, `outils/reperes-visage.mjs`, réalignées sur la neutre ; le liseré rose repeint,
-  `_sans_liseré`), qui parle et rit sur la photo, puis en sort : dans l'éclair, elle devient le jouet (son visage à la
-  même taille, `VIS_J`), le ressort et le socle poussent dessous (`FIG.corps`), et il salue.
+  posé en tranches le long d'une courbe (il se courbe de la moitié de l'angle du buste), le buste au bout. **Le ressort
+  est simulé** (`SIM` : deux ressorts amortis, son allongement et l'angle du buste, calculés une fois pour toute la
+  démo, 30 fois par seconde) : ses **pistes** (`outils/figurine.py`, une par réplique, relancées à chaque syllabe) ne
+  font que le pousser — au début, elles le menaient directement, et il était saccadé et penchait trop (31 octobre) ;
+  un changement de geste (rire, louche) le relance. Ses **moments** (`MOMENTS`) : un mot de départ, un mot de fin. La
+  ligne de temps ne fait que la placer (`FIG` : ses pieds, sa taille ; `bras` au-delà de 10 : les bras ouverts ;
+  `salut`). Sa taille : `ECH_J`.
+- **Sa carte de CV** : la **photo du jouet** (l'image neutre recadrée sur son buste, `carte.jpg`), pour que ce soit le
+  même personnage du début à la fin (avant, une vraie photo : « ce n'est pas la même personne »), et la même vide
+  (`carte-sans-tete.jpg` : le fond lisse, avec un grain) : la page y dessine le jouet au pixel près (`surCarte`,
+  `FIG.carte`), découpé à la photo ; il y parle et rit (mains jointes), puis en sort : la découpe s'élargit, le
+  ressort et le socle poussent dessous (`FIG.corps`), et il salue (`preparer_carte`).
 - **La ligne de temps parcourue au chargement** (`relever`, la traînée de Mike) est ensuite remise à zéro et
   « invalidée » (`tl.invalidate()`) : sans ça, des valeurs relevées en route ne revenaient pas (l'étoile « TADAM ! »
   restait invisible). Pour un réglage d'expression, des nombres (`FIG.oh`, `FIG.rit`), pas des textes.

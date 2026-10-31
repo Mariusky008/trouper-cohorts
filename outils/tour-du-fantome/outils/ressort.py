@@ -17,7 +17,7 @@ COUPELLE_Y, SOCLE_Y, RESSORT_X = 737, 893, (392, 462)
 
 
 def _fond_lisse(a, H, W):
-    """Le fond, en couleur, comme une surface lisse (un polynôme de degré 3 en x et y, par canal), ajustée sur les bords
+    """Le fond (rendu : l'image du fond seul), en couleur, comme une surface lisse (un polynôme de degré 3 en x et y, par canal), ajustée sur les bords
     de l'image au-dessus du sol (deux passes : la seconde sans ce qui s'en écarte — le bout des doigts qui dépasse)."""
     yy, xx = np.mgrid[0:H, 0:W]
     X, Y = xx / W, yy / H
@@ -26,7 +26,7 @@ def _fond_lisse(a, H, W):
     for _ in range(2):
         mod = np.stack([F @ np.linalg.lstsq(F[sur], a[..., c][sur], rcond=None)[0] for c in range(3)], -1)
         sur &= np.sqrt(((a - mod) ** 2).sum(-1)) < 20
-    return np.sqrt(((a - mod) ** 2).sum(-1))
+    return mod
 
 
 def _sans_miettes(m, mini=3000):
@@ -59,7 +59,7 @@ def _detourer(im):
     ecart = np.sqrt(((teinte - np.median(coins, axis=0)) ** 2).sum(axis=2))
     lum = a.mean(axis=2)
     # (loin de sa couleur exacte, le fond reste plus bleu que vert ; la peau à l'ombre — ses doigts — non)
-    d = _fond_lisse(a, H, W)
+    d = np.sqrt(((a - _fond_lisse(a, H, W)) ** 2).sum(-1))
     proche = (d < 10) | ((d < 24) & (a[..., 2] > 1.06 * a[..., 1]))
     sol = np.zeros_like(proche); sol[845:, :] = True
     proche |= sol & (((ecart < .045) & (lum > 60)) | ((ecart < .07) & (lum > 55) & (lum < 118)))
@@ -149,6 +149,16 @@ def preparer_ressort(src, sortie):
             "ressort": {"x": x0, "y": COUPELLE_Y - 4, "w": x1 - x0, "h": SOCLE_Y + 8 - COUPELLE_Y},
             "socle": {"x": sx0, "y": sy0, "w": sx1 - sx0, "h": sy1 - sy0}, "coupelle": [(x0 + x1) / 2, COUPELLE_Y],
             "haut_socle": SOCLE_Y, "pied": [(x0 + x1) / 2, int(ys.max())], "menton": list(MENTON), "taille": [W, H]}
+
+
+def preparer_carte(src, sortie, recadre, taille):
+    """Sa carte de CV : la photo du jouet (l'image neutre, recadrée sur son buste), et la même vide — son fond lisse,
+    avec un grain léger comme la photo : la page y dessine le jouet au pixel près (il y parle), qui en sort."""
+    im = Image.open(f"{src}/neutre.jpg").convert("RGB")
+    a = np.asarray(im).astype(np.float32)
+    vide = _fond_lisse(a, *a.shape[:2]) + np.random.default_rng(7).normal(0, 1.4, a.shape)
+    im.crop(recadre).resize(taille, Image.LANCZOS).save(f"{sortie}/carte.jpg", quality=88)
+    Image.fromarray(np.clip(vide, 0, 255).astype(np.uint8)).crop(recadre).resize(taille, Image.LANCZOS).save(f"{sortie}/carte-sans-tete.jpg", quality=88)
 
 
 if __name__ == "__main__":

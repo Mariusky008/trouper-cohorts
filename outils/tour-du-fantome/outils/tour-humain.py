@@ -21,8 +21,8 @@ import json, os, re, shutil, subprocess, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from voix_courtes import caler, egaliser  # noqa: E402
 from alignement import segments  # noqa: E402
-from figurine import energie, preparer, pistes  # noqa: E402
-from ressort import preparer_ressort  # noqa: E402
+from figurine import energie, pistes  # noqa: E402
+from ressort import preparer_carte, preparer_ressort  # noqa: E402
 from decor import cage_mini, toque  # noqa: E402
 from decor_humain import ardoise, cage_or, facade_decor, sceau  # noqa: E402
 
@@ -260,17 +260,15 @@ if os.path.exists(f"{M_DIR}/fin.mp3"):
         im.crop((110, 0, 742, 760)).resize((360, 432), Image.LANCZOS).save(f"{D}/f/maman-face-{nom}.webp", quality=86)
     print("sa mère, à la fin :", MAMAN_FIN["d"], "s ·", MAMAN_FIN["x"])
 
-# ─── SA FIGURINE : les images, puis ses pistes (une par réplique du propriétaire) ───────────────────────
-# sa carte de CV : sa vraie photo, cadrée sur son visage (et la même sans sa tête : la page y pose la sienne, qui en sort)
-CARTE = (150, 0, 702, 634)
-FIGURE = preparer(f"{R}/photos", f"{RACINE}/public/direct/ensemble/denim-debout.webp", f"{D}/f", carte=(CARTE, (976, 1120)))
-FIGURE["carte"] = CARTE
-# (de `figurine.py`, la page ne garde que sa tête, pour sa carte : sa figurine est le jouet sur ressort)
-for f in ("corps", "bras-g", "bras-d"):
-    os.remove(f"{D}/f/{f}.webp")
-del FIGURE["corps"], FIGURE["bras"]
-# SA FIGURINE SUR RESSORT : sa tête (une par expression), son corps (un par geste), le ressort, le socle
-FIGURE["jouet"] = preparer_ressort(f"{R}/ressort", f"{D}/f")
+# ─── SA FIGURINE SUR RESSORT : les images (`ressort.py`), puis ses pistes (une par réplique du propriétaire) ──────────
+# sa tête (une par expression), son corps (un par geste), le ressort, le socle ; et sa carte de CV : la photo du jouet,
+# recadrée sur son buste (au format de la photo de la carte, 492 × 560), et la même vide (la page y pose le jouet)
+for f in os.listdir(f"{D}/f"):   # (les morceaux de l'ancienne figurine, sa tête sur un corps de fantôme)
+    if re.match(r"(tete-.*|cou|corps|bras-[gd])\.webp$", f):
+        os.remove(f"{D}/f/{f}")
+CARTE = (145, 8, 707, 648)
+FIGURE = {"jouet": preparer_ressort(f"{R}/ressort", f"{D}/f"), "carte": CARTE}
+preparer_carte(f"{R}/ressort", f"{D}/f", CARTE, (984, 1120))
 PISTES = {}
 for c, moments in MOMENTS.items():
     texte = SOUS[c][1].replace(" | ", " ").split(" ")

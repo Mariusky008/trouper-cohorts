@@ -56,7 +56,7 @@ démos.
 | # | Ce qui se voit |
 |---|---|
 | 0 | **avant « Bonjour ! »** : sa carte dit « Élu meilleur community manager 2026* », une médaille « N°1 » au coin ; « *par sa mère » tombe dessus comme un tampon ; **le polaroïd de sa mère** arrive (« Maman 💕 ») et elle le dit elle-même : « T'es le meilleur, mon fils ! » (sa voix, mot à mot dans une bulle ; son visage passe du neutre au sourire, au rire) ; lui, sur sa photo, est surpris puis en rit ; des cœurs, elle s'en va |
-| 1 | sa carte de CV : **sa photo se met à parler** ; sur « Mon métier ? » **sa tête sort de la photo** (la carte, sans tête, vacille et tombe) et devient sa figurine sur ressort, qui salue, un clin d'œil bouche en « o » ; **un fil façon Instagram** qu'on fait défiler de plus en plus vite (double-tap ♥, elle louche dessus) : « ❤️ 2 304 j'aime »… « 🚪 0 client » ; sur « poussent votre porte » le fil s'arrête, la photo devient une porte qui s'ouvre, deux fantômes y entrent : « 1 client », « 2 clients » ; son grand rire |
+| 1 | sa carte de CV : **sa photo se met à parler** ; sur « Mon métier ? » **il sort de la photo** (la photo de sa figurine ; la carte, vide, vacille et tombe), le ressort et le socle poussent dessous, il salue, un clin d'œil bouche en « o » ; **un fil façon Instagram** qu'on fait défiler de plus en plus vite (double-tap ♥, elle louche dessus) : « ❤️ 2 304 j'aime »… « 🚪 0 client » ; sur « poussent votre porte » le fil s'arrête, la photo devient une porte qui s'ouvre, deux fantômes y entrent : « 1 client », « 2 clients » ; son grand rire |
 | 2 | la cage de Mike tombe à côté d'elle, il s'y agite (elle y jette un œil) ; **comme un diable de sa boîte**, il jaillit tout en haut, hors du cadre, retombe, s'écrase et rebondit — **« TADAM ! »** façon bande dessinée ; elle sursaute (« oh ! ») ; sa toque lui tombe sur la tête (bonk, des étoiles) ; sa carte « Mike · Mon assistant » se retourne |
 | 3 | **une éphéméride** : on en arrache les pages, de plus en plus vite, jusqu'au 30 (entouré) ; des « j'aime » qui deviennent des fantômes sur « en clients » ; ses bras s'ouvrent, un clin d'œil sur « Je vous montre ? » |
 | 4 | une page neuve retombe sur l'éphéméride, le tampon « JOUR 1 » ; la façade de Chez Bergine, quatre éclairs, quatre photos ; le téléphone : « Face au fantôme », question 2 sur 3 ; Mike tombe au pied du téléphone |
@@ -97,6 +97,11 @@ gilet, ressort, socle en bois), d'après les six images qu'il a faites (neutre, 
 louche bras croisés, salut). Elle rebondit et penche sur sa voix, change de tête sans changer de geste, rebondit à
 chaque geste ; sur « Mon métier ? », sa vraie tête sort de sa carte et devient le jouet dans l'éclair, et il salue.
 Les deux démos (restaurant, atelier). Il manque la bouche en « o » (la page prend « parle »).
+
+**Septième passe (31 octobre : « ce n'est pas la même personne sur le polaroïd et sur le ressort », « le ressort se
+balance un peu trop, ça ne fait pas ressort souple mais saccadé »)** : sa carte de CV montre maintenant **la photo du
+jouet**, qui y parle puis en sort ; le ressort est **simulé** (un vrai ressort amorti, que sa voix pousse) : plus
+d'à-coups, et le buste penche de 2° environ au lieu de 9°.
 
 ## À garder en tête
 
