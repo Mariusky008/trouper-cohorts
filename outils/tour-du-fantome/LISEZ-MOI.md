@@ -16,6 +16,7 @@ bouton « Voir la démo » de la page des commerçants (`public/commercants/`) m
 | **Démo courte, 45 s** (Chez Bergine) | `tour-court2/` (deuxième version) | https://www.clikme.fr/tours/court | — |
 | **Démo des entrepreneurs** (Nina, céramiste · Claire, sophrologue) | `tour-entrepreneurs2/` (deuxième version) | https://www.clikme.fr/tours/entrepreneurs (`?v=local` : Claire) | — |
 | **Démo humaine**, « Un mois avec ClikMe » (le propriétaire et Mike, Chez Bergine) | `tour-humain/` | https://www.clikme.fr/tours/humain (une fois poussée sur `main`) | — |
+| **Démo humaine, version atelier** (cours de poterie : L'Atelier de Nina) | `tour-humain-atelier/` | https://www.clikme.fr/tours/atelier | — |
 
 ## Ce qu'il y a dedans
 
@@ -358,6 +359,7 @@ de rire. Faite par `outils/tour-humain.py` d'après `outils/tour-humain.html` (l
 ```sh
 /usr/bin/python3 outils/tour-du-fantome/outils/tour-humain.py outils/tour-du-fantome   # (fait aussi son.mp3 et demo.mp4, ~10 min)
 /usr/bin/python3 outils/tour-du-fantome/outils/tour-humain.py outils/tour-du-fantome --sans-video   # (pour essayer : sans demo.mp4)
+/usr/bin/python3 outils/tour-du-fantome/outils/tour-humain.py outils/tour-du-fantome --variante=atelier   # (la version atelier)
 node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index.html sortie.mp4 30 1   # (la vidéo à partager)
 ```
 
@@ -372,6 +374,16 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index
   Pendant le rendu, la page est servie **par morceaux** (« Range ») : sans ça, le navigateur ne peut pas avancer dans
   le film de l'interview, qui restait figé sur sa première image (31 octobre) ; `__rendre` s'arrête maintenant en
   erreur si le film n'arrive pas à l'instant demandé.
+- **Les variantes** (`--variante=…`, `VARIANTES` dans le script) : la même histoire, habillée pour un métier.
+  « restaurant » (Chez Bergine, `tour-humain/`, /tours/humain) ; « atelier » (cours de poterie, L'Atelier de Nina —
+  fictif —, `tour-humain-atelier/`, /tours/atelier, 31 octobre). Ce qui change : le nom, l'enseigne et les couleurs
+  de la façade (vert sauge, store terracotta), l'ardoise, les photos (celles de Nina, la céramiste de la démo des
+  entrepreneurs), le film du téléphone (`film-atelier.html` / `.mjs` → `recu/humain/atelier/film.mp4`, découpé comme
+  l'interview du chef : la question sur « deux ou trois questions… »), le fil social, Mike (le créateur, sans toque),
+  la conversation avec Camille, les surprises de la cage, le bon (« Validé ✓ »), la pastille « à l'honneur » ; et la
+  réplique 5 de Mike, réenregistrée (« …à l'honneur vos ateliers… », `recu/humain/atelier/05-m.mp3`). Tout le reste —
+  sa voix, sa mère, les fantômes — est commun. Une variante de plus : une entrée dans `VARIANTES`, une ligne dans
+  `scripts/poser-tours.mjs`.
 - **Sa mère, au début** (`recu/humain/maman/` : `voix.mp3`, un fichier ElevenLabs qu'il a fourni, et ses trois photos
   de profil, neutre, sourire, rire — la « rire » recalée de 5 px) : sa carte dit « Élu meilleur community manager
   2026* », « *par sa mère » tombe dessus comme un tampon, son polaroïd arrive et elle le dit elle-même (« T'es le
