@@ -54,7 +54,8 @@ répliques sont réenregistrées avec **sa voix clonée** (ElevenLabs, « jean �
 
 | # | Ce qui se voit |
 |---|---|
-| 1 | sa carte de CV (« Community manager · nouvelle génération · 2027 ») : **sa photo se met à parler** ; sur « Mon métier ? » **sa tête sort de la photo** (la carte, sans tête, vacille et tombe), son corps de fantôme pousse dessous, un clin d'œil bouche en « o » ; **un fil façon Instagram** qu'on fait défiler de plus en plus vite (double-tap ♥, elle louche dessus) : « ❤️ 2 304 j'aime »… « 🚪 0 client » ; sur « poussent votre porte » le fil s'arrête, la photo devient une porte qui s'ouvre, deux fantômes y entrent : « 1 client », « 2 clients » ; son grand rire |
+| 0 | **avant « Bonjour ! »** : sa carte dit « Élu meilleur community manager 2026* », une médaille « N°1 » au coin ; « *par sa mère » tombe dessus comme un tampon ; **le polaroïd de sa mère** arrive (« Maman 💕 ») et elle le dit elle-même : « T'es le meilleur, mon fils ! » (sa voix, mot à mot dans une bulle ; son visage passe du neutre au sourire, au rire) ; lui, sur sa photo, est surpris puis en rit ; des cœurs, elle s'en va |
+| 1 | sa carte de CV : **sa photo se met à parler** ; sur « Mon métier ? » **sa tête sort de la photo** (la carte, sans tête, vacille et tombe), son corps de fantôme pousse dessous, un clin d'œil bouche en « o » ; **un fil façon Instagram** qu'on fait défiler de plus en plus vite (double-tap ♥, elle louche dessus) : « ❤️ 2 304 j'aime »… « 🚪 0 client » ; sur « poussent votre porte » le fil s'arrête, la photo devient une porte qui s'ouvre, deux fantômes y entrent : « 1 client », « 2 clients » ; son grand rire |
 | 2 | la cage de Mike tombe à côté d'elle, il s'y agite (elle y jette un œil) ; **comme un diable de sa boîte**, il jaillit tout en haut, hors du cadre, retombe, s'écrase et rebondit — **« TADAM ! »** façon bande dessinée ; elle sursaute (« oh ! ») ; sa toque lui tombe sur la tête (bonk, des étoiles) ; sa carte « Mike · Mon assistant » se retourne |
 | 3 | **une éphéméride** : on en arrache les pages, de plus en plus vite, jusqu'au 30 (entouré) ; des « j'aime » qui deviennent des fantômes sur « en clients » ; ses bras s'ouvrent, un clin d'œil sur « Je vous montre ? » |
 | 4 | une page neuve retombe sur l'éphéméride, le tampon « JOUR 1 » ; la façade de Chez Bergine, quatre éclairs, quatre photos ; le téléphone : « Face au fantôme », question 2 sur 3 ; Mike tombe au pied du téléphone |
@@ -75,6 +76,13 @@ Partout : un léger voile sur les bords de l'image.
 corps ne vont pas ensemble »)** : la page joue une bande-son d'un bloc (`son.mp3`) ; elle est allégée (plus de flou,
 plus de calque par élément) ; sa tête est nettoyée de son liseré rose, son cou (et le col de sa chemise) rentre dans
 le corps du fantôme comme dans un costume, et le corps penche avec sa tête ; Mike rebondit sur sa voix.
+
+**Quatrième passe (31 octobre : « au démarrage, ma mère qui dit : t'es le meilleur, mon fils », « la vidéo bug
+beaucoup », alors que sa 4G est au maximum)** : l'ouverture avec sa mère (la ligne 0 ci-dessus ; sa voix est un
+fichier ElevenLabs qu'il a fourni, ses trois photos aussi). Les saccades ne venaient pas du réseau : un iPhone devait
+composer une dizaine de calques plein écran à chaque image, et sauter dans un film à images clés espacées. **La page
+joue maintenant une vidéo** (`demo.mp4`, rendue depuis la page, son compris) ; l'animation en direct, allégée, ne
+sert que si la vidéo ne vient pas, et reprend la main à la fin pour que son numéro se touche.
 
 ## À garder en tête
 

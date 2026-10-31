@@ -14,6 +14,14 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0C040A;color:var(--cr
 #scene{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:0 0;overflow:hidden;
   background:radial-gradient(ellipse 85% 60% at 50% 42%,#3D1433 0%,#1D0819 52%,#0C040A 100%)}
 canvas{position:absolute;left:0;top:0;width:1080px;height:1920px;pointer-events:none}
+/* la démo en vidéo : invisible tant qu'elle ne joue pas ; quand elle joue, les calques en direct se cachent (le
+   téléphone n'a plus qu'une vidéo à afficher) */
+#demo{position:absolute;left:0;top:0;width:1080px;height:1920px;z-index:40;opacity:0;pointer-events:none;background:#0C040A}
+.video #demo{opacity:1}
+.video #scene > :not(#demo):not(#pause){visibility:hidden!important}
+.rendu #demo{display:none}
+/* (la vidéo de la page est rendue sans l'écran « Touchez pour commencer » : on l'a déjà touché quand elle démarre) */
+.sansdepart #depart{display:none}
 /* le décor ne prend aucun toucher (Mike, encore invisible, est posé sur la cage) : seule la cage les prend */
 #monde{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:0 0;will-change:transform;pointer-events:none}
 #cage{pointer-events:auto}
@@ -231,8 +239,25 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 #carte::before{content:"";position:absolute;left:50%;top:-20px;width:150px;height:44px;margin-left:-75px;border-radius:6px;background:rgba(255,93,184,.82);transform:rotate(-4deg)}
 #carte .ca-ph{height:560px;border-radius:18px;overflow:hidden;background:#E07AA6}
 #carte .ca-ph img{width:100%;height:100%;object-fit:cover;object-position:50% 18%}
-#carte b{display:block;margin-top:22px;font-size:42px;font-weight:800;letter-spacing:-.015em;line-height:1.1}
+#carte b{display:block;margin-top:20px;font-size:40px;font-weight:800;letter-spacing:-.02em;line-height:1.12}
+#carte b .ca-l2{white-space:nowrap;font-size:35px}
+#carte b sup{font-size:.7em;color:var(--rose);vertical-align:.5em;margin-left:2px}
 #carte small{display:block;margin-top:8px;font-size:27px;font-weight:600;color:#8C6E78}
+/* « *par sa mère » : il tombe d'un coup sur la carte, comme un tampon */
+#carte #ca-mere{margin-top:10px;font-size:34px;font-weight:800;font-style:italic;color:var(--rose);opacity:0}
+#ca-medaille{position:absolute;right:-46px;top:-58px;width:150px;transform:rotate(14deg);filter:drop-shadow(0 12px 14px rgba(0,0,0,.45))}
+#ca-medaille svg{display:block;width:100%}
+/* sa mère : son polaroïd, et ce qu'elle dit dans une bulle */
+#maman{position:absolute;left:36px;top:1300px;width:340px;padding:16px 16px 20px;border-radius:10px;background:#FFFCF8;box-shadow:0 30px 70px -20px rgba(0,0,0,.8);opacity:0;transform-origin:50% 100%}
+#maman .mm-ph{position:relative;height:370px;border-radius:6px;overflow:hidden;background:#C25B78}
+#maman .mm-ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0}
+#maman .mm-ph img:first-child{opacity:1}
+#maman b{display:block;margin-top:10px;text-align:center;font-size:40px;font-weight:800;color:#1E0E16}
+#bulle-mere{position:absolute;left:412px;top:1360px;width:636px;padding:26px 30px 30px;border-radius:46px;background:#fff;color:#1E0E16;font-size:68px;font-weight:900;line-height:1.1;letter-spacing:-.02em;
+  text-align:center;box-shadow:0 26px 60px -20px rgba(0,0,0,.7);opacity:0;transform-origin:0% 40%}
+#bulle-mere::before{content:"";position:absolute;left:-36px;top:58px;border:24px solid transparent;border-right:40px solid #fff;border-left:0}
+#bulle-mere span{display:inline-block;opacity:0}
+#bulle-mere .fort{color:var(--rose)}
 /* la carte de Mike, sous lui */
 #carte-mike{width:300px;padding:14px 18px 16px;border-radius:22px;text-align:center;color:#1E0E16;background:#FFFCF8;box-shadow:0 24px 50px -16px rgba(0,0,0,.8);opacity:0}
 #carte-mike b{display:block;font-size:46px;font-weight:900;line-height:1}
@@ -367,7 +392,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 #monde{visibility:hidden}
 </style>
 <div id="cadre"><div id="scene">
-  <canvas id="fond" width="1080" height="1920"></canvas>
+  <canvas id="fond" width="540" height="960"></canvas>
   <div id="monde">
     <div id="rayons" class="abs"></div>
     <div id="onde" class="abs"></div>
@@ -407,7 +432,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
     <!-- ④ ses photos (polaroïds), puis le film dans le téléphone -->
     <div class="polar abs"><img src="m4.jpg" alt=""></div><div class="polar abs"><img src="m2.jpg" alt=""></div><div class="polar abs"><img src="m1.jpg" alt=""></div><div class="polar abs"><img src="m3.jpg" alt=""></div>
     <div id="tel" class="abs"><div id="ecran">
-      <div class="ph"><video id="film" muted playsinline preload="auto" aria-hidden="true"><source src="interview.mp4" type='video/mp4; codecs="avc1.64001F"'><source src="interview.webm" type="video/webm"></video></div>
+      <div class="ph"><video id="film" muted playsinline preload="none" aria-hidden="true"><source src="interview.mp4" type='video/mp4; codecs="avc1.64001F"'><source src="interview.webm" type="video/webm"></video></div>
       <div class="film-voile"></div><div class="film-lumiere"></div><i class="film-flash"></i>
       <span class="film-sig">✨ Monté par Mike</span>
       <span class="film-vues">👁 <span id="nvues">0</span> vues</span>
@@ -443,7 +468,13 @@ img{display:block;-webkit-user-drag:none;user-select:none}
     <div class="doigt abs" id="doigt0"></div><div class="doigt abs" id="doigt1"></div><div class="doigt abs" id="doigt2"></div><div class="doigt abs" id="doigt3"></div>
   </div>
   <!-- ① sa carte de CV -->
-  <div id="carte"><div class="ca-ph"><img id="carte-photo" src="f/carte.jpg" alt=""></div><b>Community manager</b><small>nouvelle génération · 2027</small></div>
+  <div id="carte"><div class="ca-ph"><img id="carte-photo" src="f/carte.jpg" alt=""></div><b>Élu meilleur<br><span class="ca-l2">community manager 2026<sup>*</sup></span></b><small id="ca-mere">*par sa mère</small>
+    <span id="ca-medaille" aria-hidden="true"><svg viewBox="0 0 160 200"><path d="M50 96 28 192l30-16 18 22 14-96z" fill="#E0167A"/><path d="M110 96l22 96-30-16-18 22-14-96z" fill="#FF5DB8"/>
+      <circle cx="80" cy="74" r="66" fill="#F2B632"/><circle cx="80" cy="74" r="54" fill="#FFD24D" stroke="#E39A12" stroke-width="5" stroke-dasharray="7 6"/>
+      <text x="80" y="70" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="900" font-size="44" fill="#8A4B00">N°1</text><text x="80" y="102" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="800" font-size="22" fill="#8A4B00">2026</text></svg></span></div>
+  <!-- sa mère : son polaroïd arrive, elle le dit elle-même -->
+  <div id="maman" aria-hidden="true"><div class="mm-ph"><img src="f/maman-neutre.webp" alt=""><img src="f/maman-sourire.webp" alt=""><img src="f/maman-rire.webp" alt=""></div><b>Maman 💕</b></div>
+  <div id="bulle-mere" aria-hidden="true"></div>
   <!-- ③ les 30 jours, la communauté qui devient des clients -->
   <div id="cal"><i class="anneau" style="left:84px"></i><i class="anneau" style="right:84px"></i>
     <div class="eph"><small>JOUR</small><b id="eph-n">1</b><span>sur 30</span></div>@FEUILLES@<i class="rond"></i><em class="tampon">JOUR 1</em></div>
@@ -493,6 +524,9 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   <div id="eclair-diag"></div>
   <div id="voile"></div>
   <div id="mots"></div>
+  <!-- LA DÉMO EN VIDÉO (`demo.mp4`, rendue depuis cette page) : un téléphone la lit sans effort ; l'animation en
+       direct ne sert que si elle manque, et reprend la main à la fin (le numéro, les boutons) -->
+  <video id="demo" playsinline preload="auto" aria-label="La démo de Jean-Philippe, en vidéo"></video>
   <div id="depart"><span class="marque">Clik<b>Me</b></span><p id="appel">Touchez pour commencer<small id="charge">1 min 40 · avec le son 🔊</small></p></div>
   <button id="pause" type="button" aria-label="Pause">⏸</button>
 </div></div>
@@ -506,11 +540,14 @@ const SOUS = /*@SOUS@*/null;
 const FIGURE = /*@FIGURE@*/null;
 const PISTES = /*@PISTES@*/null;
 const MIKE = /*@MIKE@*/null;   // l'énergie de la voix de Mike, par réplique : une valeur par image (30 par seconde), de 0 à 9
+// SA MÈRE, AU DÉBUT : sa phrase (ses mots et leurs instants), et son visage image par image (n : neutre, s : sourire, r : rire)
+const MAMAN = /*@MAMAN@*/null;
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 let FILM = null;
 const RENDU = /[?&]rendu\b/.test(location.search);
 if (RENDU) document.body.classList.add("rendu");
+if (/[?&]sansdepart\b/.test(location.search)) document.body.classList.add("sansdepart");
 const NB = " ";
 
 /* ── LA SCÈNE À L'ÉCHELLE DE L'ÉCRAN ── */
@@ -529,7 +566,9 @@ const ORDRE = Object.keys(SOUS);
 // le temps entre deux répliques (ce que la scène a besoin pour passer à la suivante)
 const ECART = { l02: 1.35, l03: .35, l04: .9, l05: .45, l06: .4, l07: .6, l08: 1.0, l09: 1.3, l10: 1.0, l11: .6, l12: .45, l13: .8 };
 const VOIX = {};
-ORDRE.forEach((c, k) => { VOIX[c] = k ? VOIX[ORDRE[k - 1]] + d(ORDRE[k - 1]) + ECART[c] : .55; });
+// sa mère parle d'abord (« T'es le meilleur, mon fils ! ») ; lui commence juste après
+const T_MERE = 1.0;
+ORDRE.forEach((c, k) => { VOIX[c] = k ? VOIX[ORDRE[k - 1]] + d(ORDRE[k - 1]) + ECART[c] : MAMAN ? T_MERE + MAMAN.d + .42 : .55; });
 const fin = (c) => VOIX[c] + d(c);
 const net = (w) => w.toLowerCase().replace(/[^a-zàâäéèêëîïôöùûüÿœæç’']/g, "");
 const mots = (c) => SOUS[c].replace(/ \| /g, " ").split(" ");
@@ -542,6 +581,7 @@ function mot(c, w, n = 0) {
 const T = {};
 T.duree = fin("l13") + 3.4;
 const DUREE = T.duree;
+$("#charge").textContent = `${Math.floor(DUREE / 60)} min ${String(Math.round(DUREE % 60)).padStart(2, "0")} · avec le son 🔊`;
 
 /* ── LA CAMÉRA ── */
 const cam = { x: 540, y: 960, s: 1 };
@@ -704,7 +744,9 @@ function dessinerFigurine(t) {
   fg.globalAlpha = 1;
 }
 /* ── LES PARTICULES ET LA LUMIÈRE ── */
+// (le fond — des taches floues — est dessiné à mi-résolution : quatre fois moins de pixels, la même image)
 const fond = $("#fond").getContext("2d"), fx = $("#fx").getContext("2d");
+fond.setTransform(.5, 0, 0, .5, 0, 0);
 const BOKEH = (() => { const r = hasard(7); return Array.from({ length: 46 }, () => ({ x: r() * 1400 - 160, y: r() * 2100 - 90, rr: 14 + r() * 70, v: 6 + r() * 22, a: .05 + r() * .13, rose: r() < .5, ph: r() * 6.28 })); })();
 const TACHE = ["255,93,184", "255,200,120"].map((c) => {
   const k = document.createElement("canvas"); k.width = k.height = 128;
@@ -732,7 +774,12 @@ function gerbe(graine, n, x, y, vmin, vmax, couleurs, t0, k = [2.2, 3.8], vie = 
     return { vx: Math.cos(a) * v, vy: Math.sin(a) * v - vmin * .5, k: k[0] + r() * (k[1] - k[0]), vie: vie[0] + r() * (vie[1] - vie[0]), l: 2 + r() * 5, c: couleurs[Math.floor(r() * couleurs.length)] }; }) };
 }
 let GERBES = [], SILLAGE = [], COEURS = [];
+let fxVide = false;
 function dessinerFx(t) {
+  // rien à dessiner à cet instant : la toile se cache (et ne se redessine pas)
+  const actif = GERBES.some((G) => t > G.t0 && t - G.t0 <= 2.2) || SILLAGE.some((x) => t >= x.t && t - x.t <= x.vie) || COEURS.some((c) => t >= c.t && t - c.t <= c.vie);
+  if (!actif) { if (!fxVide) { fx.clearRect(0, 0, 1080, 1920); fx.canvas.style.visibility = "hidden"; fxVide = true; } return; }
+  if (fxVide) { fx.canvas.style.visibility = ""; fxVide = false; }
   fx.clearRect(0, 0, 1080, 1920);
   fx.globalCompositeOperation = "lighter"; fx.lineCap = "round";
   for (const G of GERBES) {
@@ -839,6 +886,22 @@ function construire() {
     .fromTo("#eclat", { opacity: 0 }, { opacity: .6, duration: .05, immediateRender: false }, tSaut + .04).to("#eclat", { opacity: 0, duration: .45 }, tSaut + .09)
     .fromTo(FIG, { salut: 0 }, { salut: 1, duration: .2, immediateRender: false }, tSaut + .9).to(FIG, { salut: 0, duration: .3 }, tSaut + 1.9);
   GERBES.push(gerbe(12, 70, 540, 760, 300, 1200, ["255,214,140", "242,196,107", "255,255,255"], tSaut + .05, [2.2, 3.6], [.6, 1.2], 500, true));
+  // ═══ ⓪ AVANT « BONJOUR ! » : « *par sa mère » tombe sur sa carte ; le polaroïd de sa mère arrive, elle le dit
+  //     elle-même (« T'es le meilleur, mon fils ! ») ; lui, sur sa photo, est surpris… puis il en rit ═══
+  if (MAMAN) {
+    const bm = $("#bulle-mere"), tM = T_MERE, fM = T_MERE + MAMAN.d;
+    bm.innerHTML = MAMAN.mots.map((w) => `<span${/meilleur|fils/.test(w) ? ' class="fort"' : ""}>${w}</span>${w.endsWith(",") ? "<br>" : " "}`).join("");
+    tl.fromTo("#ca-mere", { opacity: 0, scale: 2.4, rotation: -14 }, { opacity: 1, scale: 1, rotation: -4, duration: .26, ease: "back.out(2.2)", immediateRender: false }, .42)
+      .to("#carte", { rotation: -3, duration: .08, yoyo: true, repeat: 1 }, .64)
+      .fromTo("#maman", { opacity: 0, x: -460, rotation: -26, scale: .8 }, { opacity: 1, x: 0, rotation: -5, scale: 1, duration: .5, ease: "back.out(1.5)", immediateRender: false }, tM - .32)
+      .fromTo(bm, { opacity: 0, scale: .4 }, { opacity: 1, scale: 1, duration: .3, ease: "back.out(2)", immediateRender: false }, tM - .06);
+    $$("span", bm).forEach((sp, i) => tl.fromTo(sp, { opacity: 0, y: 40, scale: 1.3 }, { opacity: 1, y: 0, scale: 1, duration: .3, ease: "expo.out", immediateRender: false }, tM + MAMAN.m[i] - .04));
+    tl.fromTo(FIG, { oh: 0 }, { oh: 1, duration: .01, immediateRender: false }, tM + .15).to(FIG, { oh: 0, duration: .01 }, tM + .85)
+      .fromTo(FIG, { rit: 0 }, { rit: 1, duration: .01, immediateRender: false }, tM + MAMAN.m[4] + .08).to(FIG, { rit: 0, duration: .01 }, VOIX.l01 - .08)
+      // elle s'en va (la bulle d'abord), juste avant qu'il dise « Bonjour ! »
+      .to(bm, { opacity: 0, scale: .6, duration: .2, ease: "power2.in" }, fM + .06)
+      .to("#maman", { x: -520, y: 120, rotation: -30, opacity: 0, duration: .4, ease: "power2.in" }, fM + .1);
+  }
   // « …de regarder votre commerce sur leur téléphone… » : le fil d'un réseau social, qu'on fait défiler de plus en
   // plus vite ; les « j'aime » s'envolent… et le compteur des clients reste à 0 (elle louche sur le téléphone)
   const tTel = mot("l01", "regarder") - .3, tMais = mot("l01", "mais") - .12, IG = [820, 1180], fl = $("#ig .ig-flux");
@@ -1304,6 +1367,8 @@ function relever() {
   // les surprises : des cœurs au-dessus des trois premiers (sur l'écran)
   const tS = mot("l08", "bichonne") - .1;
   for (let k = 0; k < 24; k++) COEURS.push({ ecran: true, t: tS + k * .06, x: 155 + (k % 3) * 200 + (rc() - .5) * 50, y: 1400, v: 200 + rc() * 200, vie: 1.1 + rc() * .6, r: 16 + rc() * 14, ph: rc() * 6.28, c: ["#FF3B5C", "#FF5DB8", "#F2C46B"][k % 3] });
+  // (sa mère : des cœurs qui montent de son polaroïd, à la fin de sa phrase)
+  if (MAMAN) for (let k = 0; k < 12; k++) COEURS.push({ ecran: true, t: T_MERE + MAMAN.d - .25 + k * .05, x: 206 + (rc() - .5) * 200, y: 1330, v: 240 + rc() * 220, vie: .9 + rc() * .5, r: 16 + rc() * 14, ph: rc() * 6.28, c: ["#FF3B5C", "#FF5DB8", "#F2C46B"][k % 3] });
   // revenue au début, la ligne de temps oublie les valeurs de départ qu'elle a relevées en route (sinon certaines ne
   // reviennent pas : l'étoile « TADAM ! » restait invisible, sa bouche restait en « o »)
   tl.seek(0, true);
@@ -1384,6 +1449,11 @@ function composer(ctx, sortie, t0, voix) {
     swipe: (t) => bruit(t, .16, "bandpass", 1800, 1.2, .14, busS, 600),
   };
   S.tape(t0);
+  if (MAMAN) {
+    S.tampon(t0 + .42); S.vol(t0 + T_MERE - .34, .5); S.pop(t0 + T_MERE - .08);
+    for (let k = 0; k < 6; k++) S.note(t0 + T_MERE + MAMAN.d - .2 + k * .08, [1568, 2093, 2349, 2637][k % 4]);
+    S.vol(t0 + T_MERE + MAMAN.d + .1, .45);
+  }
   // ① sa tête sort de sa photo ; le fil qu'on fait défiler ; la porte, les deux premiers clients
   S.magie(t0 + T.saut); S.vol(t0 + T.saut, .5); S.boing(t0 + T.saut + .45);
   S.vol(t0 + mot("l01", "regarder") - .3, .6);
@@ -1443,14 +1513,17 @@ function composer(ctx, sortie, t0, voix) {
   S.vol(t0 + VOIX.l13 - .5, .8); S.eclate(t0 + fin("l13") + .3);
   // ─ les voix
   for (const c of Object.keys(VOIX)) if (voix[c]) { const s = ctx.createBufferSource(); s.buffer = voix[c]; s.connect(busV); s.start(t0 + VOIX[c]); }
+  if (voix.maman) { const s = ctx.createBufferSource(); s.buffer = voix.maman; s.connect(busV); s.start(t0 + T_MERE); }
 }
 
 /* ── LE DÉROULÉ ── */
 const bruts = {};
 let chargeVoix = null;
-const voixChargees = () => (chargeVoix ??= Promise.all(Object.keys(VOIX).filter((c) => !TEMPS[c]?.estime).map((c) => fetch(`voix/${c}.mp3`).then((r) => r.ok ? r.arrayBuffer() : null).then((b) => { if (b) bruts[c] = b; }).catch(() => {}))));
-// la bande-son : chargée dès l'ouverture (si elle manque, on reviendra aux voix et à la musique jouées en direct)
-const chargeSon = RENDU ? Promise.resolve(null) : fetch("son.mp3").then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null);
+const voixChargees = () => (chargeVoix ??= Promise.all([...Object.keys(VOIX).filter((c) => !TEMPS[c]?.estime), ...(MAMAN ? ["maman"] : [])].map((c) => fetch(`voix/${c}.mp3`).then((r) => r.ok ? r.arrayBuffer() : null).then((b) => { if (b) bruts[c] = b; }).catch(() => {}))));
+// la bande-son de l'animation en direct (si elle manque, on reviendra aux voix et à la musique jouées en direct) : chargée
+// dès l'ouverture seulement si la page n'a pas sa vidéo (sinon, seulement si la vidéo ne vient pas)
+let chargeSon = null;
+const sonCharge = () => (chargeSon ??= RENDU ? Promise.resolve(null) : fetch("son.mp3").then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null));
 const decoder = (ctx, b) => new Promise((ok) => { try { const p = ctx.decodeAudioData(b.slice(0), ok, () => ok(null)); if (p && p.catch) p.catch(() => ok(null)); } catch (e) { ok(null); } });
 // MIKE BOUGE SUR SA VOIX : il se tasse et rebondit sur chaque syllabe (il penche d'un côté, puis de l'autre)
 const BOUGE = $$(".bouge");
@@ -1460,14 +1533,34 @@ function mikeParle(t) {
   const tr = e > .02 ? `translateY(${(-14 * e).toFixed(1)}px) scale(${(1 - .03 * e).toFixed(3)},${(1 + .06 * e).toFixed(3)}) rotate(${(sens * 3 * e).toFixed(2)}deg)` : "";
   for (const b of BOUGE) b.style.transform = tr;
 }
-function etat(t) { tl.seek(Math.max(0, t), false); poserCamera(t); dessinerFond(t); dessinerFx(t); dessinerFigurine(t); mikeParle(t); suivreFilm(t); }
+// SA MÈRE : son visage, image par image (neutre avant de parler, puis sourire et rire sur sa voix ; elle finit en riant)
+const IM_MERE = $$("#maman .mm-ph img");
+let visageMere = 0;
+function mereParle(t) {
+  if (!MAMAN) return;
+  const i = Math.floor((t - T_MERE) * 30), k = "nsr".indexOf(i < 0 ? "n" : i < MAMAN.x.length ? MAMAN.x[i] : "r");
+  if (k !== visageMere) { visageMere = k; IM_MERE.forEach((im, j) => { im.style.opacity = j === k ? 1 : 0; }); }
+}
+// LES CALQUES INVISIBLES : un élément que la ligne de temps a mis à opacité 0 est caché pour de bon (sinon le navigateur
+// compose quand même ses grands calques transparents, une dizaine de fois l'écran à chaque image)
+let CACHABLES = null;
+function cacherInvisibles() {
+  // (un bloc de mots : caché quand tous ses mots le sont)
+  CACHABLES ??= [...$$("#scene > :not(canvas):not(#monde):not(#depart):not(#pause):not(#demo)"), ...$$("#monde > *")].map((el) => [el, null])
+    .concat($$("#mots .bloc").map((el) => [el, $$(".m", el)]));
+  for (const [el, mots] of CACHABLES) {
+    const cache = mots ? mots.every((m) => m.style.opacity === "0") : el.style.opacity === "0";
+    if (cache !== (el.dataset.cache === "1")) { el.dataset.cache = cache ? "1" : ""; el.style.visibility = cache ? "hidden" : ""; }
+  }
+}
+function etat(t) { tl.seek(Math.max(0, t), false); cacherInvisibles(); poserCamera(t); dessinerFond(t); dessinerFx(t); dessinerFigurine(t); mikeParle(t); mereParle(t); suivreFilm(t); }
 // avant de toucher : sa carte flotte, « Touchez pour commencer » respire
 const attente = gsap.timeline({ repeat: -1 });
 attente.fromTo("#carte", { y: 0, rotation: -2 }, { y: -14, rotation: -1, duration: 1.6, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0)
   .to("#carte", { scale: 1.015, duration: .8, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0)
   .to("#appel", { scale: 1.05, duration: .8, yoyo: true, repeat: 1, ease: "sine.inOut" }, 0);
 if (RENDU) attente.pause(0);
-let enRoute = false, AC = null, t0 = 0, depuisPerf = 0, enPause = false, pauseA = 0, pauseTot = 0;
+let enRoute = false, enVideo = false, AC = null, t0 = 0, depuisPerf = 0, enPause = false, pauseA = 0, pauseTot = 0;
 /* LE FILM DU TÉLÉPHONE, CALÉ SUR LA LIGNE DE TEMPS : des morceaux [début, fin (ligne de temps), début, fin (film)] ; en
    direct, la vidéo joue (au ralenti, normale, ou vite sur « ▶▶ ») et se recale si elle dérive ; pour l'export
    (`?rendu`), chaque image attend qu'elle soit à la bonne seconde (`__rendre`). */
@@ -1480,7 +1573,7 @@ function filmA(t) {
 }
 function vitesse(t) { for (const [a, b, fa, fb] of FILM || []) if (t >= a && t < b) return (fb - fa) / (b - a); return 0; }
 function suivreFilm(t) {
-  if (!FILM_V) return;
+  if (!FILM_V || enVideo) return;   // (en vidéo, le film est dans la vidéo : celui-ci ne sert pas, et ne se charge pas)
   const x = filmA(t);
   if (RENDU) return;
   const v = vitesse(t);
@@ -1500,7 +1593,8 @@ function suivreFilm(t) {
   if (FILM_V.paused) FILM_V.play().catch(() => {});
 }
 let dernierBond = -1;
-function boucleAttente(now) { if (enRoute) return; dessinerFond(now / 1000); if (pret) dessinerFigurine(-1); requestAnimationFrame(boucleAttente); }
+let demarre = false;   // la démo a commencé (en vidéo ou en direct) : l'écran d'attente s'arrête
+function boucleAttente(now) { if (demarre) return; dessinerFond(now / 1000); if (pret) dessinerFigurine(-1); requestAnimationFrame(boucleAttente); }
 if (!RENDU) requestAnimationFrame(boucleAttente);
 let pret = false;
 const construit = Promise.all([document.fonts ? Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]) : null, charge_fig]).then(() => {
@@ -1511,14 +1605,54 @@ const construit = Promise.all([document.fonts ? Promise.race([document.fonts.rea
   if (IMG.carte?.naturalWidth) $("#carte-photo").src = IMG.carte.src;
   pret = true;
 });
-async function lancer() {
+/* LA DÉMO EN VIDÉO (`demo.mp4`, rendue depuis cette page par `rendre-video.mjs`) : un téléphone lit une vidéo sans
+   effort, alors que l'animation en direct lui fait composer une dizaine de calques plein écran à chaque image (d'où
+   les saccades). La vidéo porte aussi le son : rien ne peut se décaler, et l'iPhone la joue même en mode silencieux.
+   L'animation en direct ne sert que si la vidéo ne vient pas (10 s), et elle reprend la main à la fin : le numéro à
+   toucher, les boutons. `?direct` force l'animation. */
+let DEMO = RENDU || /[?&]direct\b/.test(location.search) ? null : $("#demo");
+if (DEMO && DEMO.canPlayType("video/mp4")) DEMO.src = "demo.mp4"; else DEMO = null;
+// (sans vidéo, l'animation en direct a besoin tout de suite de son son et du film de l'interview)
+function chargerDirect() { sonCharge(); if (FILM_V && FILM_V.preload !== "auto") { FILM_V.preload = "auto"; FILM_V.load(); } }
+if (!DEMO) chargerDirect();
+function lancer() {
   if (enRoute) return; enRoute = true;
-  await construit;
-  attente.pause(0);
-  try { AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === "suspended") await AC.resume().catch(() => {}); } catch (e) { AC = null; }
+  // ce qui a besoin du geste de la personne se fait tout de suite : ouvrir le son, lancer la vidéo
+  try { AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === "suspended") AC.resume().catch(() => {}); } catch (e) { AC = null; }
   $("#charge").textContent = "Un instant…";
+  const essai = DEMO && !DEMO.error ? DEMO.play() : null;
+  (async () => {
+    if (essai && (await videoJoue(essai))) demarrerVideo();
+    else { if (DEMO) { DEMO.pause(); DEMO.removeAttribute("src"); DEMO.load(); DEMO = null; } await enDirect(); }
+  })();
+}
+function videoJoue(essai) {
+  return new Promise((r) => {
+    let fini = false;
+    const fin = (v) => { if (!fini) { fini = true; clearTimeout(minuterie); r(v); } };
+    const minuterie = setTimeout(() => fin(DEMO.currentTime > 0 && !DEMO.paused), 10000);
+    DEMO.addEventListener("playing", () => fin(true), { once: true });
+    DEMO.addEventListener("error", () => fin(false), { once: true });
+    if (essai.catch) essai.catch(() => fin(false));
+  });
+}
+function demarrerVideo() {
+  enVideo = demarre = true; attente.pause(0);
+  document.body.classList.add("joue", "video");
+  if (AC) AC.suspend?.().catch(() => {});
+  DEMO.addEventListener("ended", async () => {
+    // la fin : l'animation en direct reprend, posée au même instant (la même image), pour que le numéro se touche
+    await construit; etat(DUREE);
+    document.body.classList.remove("video"); document.body.classList.add("fini"); window.__fin = true;
+  }, { once: true });
+}
+async function enDirect() {
+  chargerDirect();
+  await construit;
+  if (AC && AC.state === "suspended") await AC.resume().catch(() => {});
+  if (AC && AC.state !== "running") { try { AC = new (window.AudioContext || window.webkitAudioContext)(); await AC.resume().catch(() => {}); } catch (e) { AC = null; } }
   // la bande-son d'un bloc (une seule source : rien ne décroche) ; sinon, les voix et la musique composées ici
-  const brut = await Promise.race([chargeSon, new Promise((r) => setTimeout(() => r(null), 8000))]);
+  const brut = await Promise.race([sonCharge(), new Promise((r) => setTimeout(() => r(null), 8000))]);
   const bande = AC && brut ? await decoder(AC, brut) : null;
   window.__bande = !!bande;
   const voix = {};
@@ -1526,6 +1660,7 @@ async function lancer() {
     await Promise.race([voixChargees(), new Promise((r) => setTimeout(r, 6000))]);
     for (const c of Object.keys(bruts)) voix[c] = await decoder(AC, bruts[c]);
   }
+  demarre = true; attente.pause(0);
   document.body.classList.add("joue");
   if (AC && AC.state === "running") {
     t0 = AC.currentTime + .08;
@@ -1538,7 +1673,9 @@ async function lancer() {
 }
 // toucher n'importe où sur l'écran de départ
 $("#scene").addEventListener("click", (e) => { if (!e.target.closest("#finale, #pause")) lancer(); });
-$("#pause").addEventListener("click", () => { enPause = !enPause; $("#pause").textContent = enPause ? "▶" : "⏸"; if (AC && t0) { if (enPause) AC.suspend(); else AC.resume(); } else if (enPause) pauseA = performance.now(); else pauseTot += performance.now() - pauseA; });
+$("#pause").addEventListener("click", () => { enPause = !enPause; $("#pause").textContent = enPause ? "▶" : "⏸";
+  if (enVideo) { if (enPause) DEMO.pause(); else DEMO.play().catch(() => {}); return; }
+  if (AC && t0) { if (enPause) AC.suspend(); else AC.resume(); } else if (enPause) pauseA = performance.now(); else pauseTot += performance.now() - pauseA; });
 $("#revoir").addEventListener("click", () => location.reload());
 
 /* ── POUR EN FAIRE UNE VIDÉO (`rendre-video.mjs`) ── */
@@ -1546,7 +1683,7 @@ window.__duree = DUREE;
 // x < 0 : les secondes avant qu'on touche l'écran (sa carte qui flotte)
 window.__attente = (x) => { const D = attente.duration(), u = 1.2 + x; attente.seek(((u % D) + D) % D, false); dessinerFond(x + 10); dessinerFigurine(-1); };
 window.__rendre = async (t) => {
-  if (!enRoute) { enRoute = true; attente.pause(0); }
+  if (!enRoute) { enRoute = true; demarre = true; attente.pause(0); }
   etat(t);
   // LE FILM À LA BONNE SECONDE avant que l'image soit prise
   const x = filmA(t);

@@ -149,6 +149,39 @@ for c, (fichier, texte, aide) in SOUS.items():
         os.remove(src)
     print(c, a["d"], "s ·", len(a["m"]), "mots")
 
+# ─── SA MÈRE, AU DÉBUT : « T'es le meilleur, mon fils ! » (sa voix : un fichier ElevenLabs qu'il a fourni ; ses trois
+# photos de profil : neutre, sourire, rire). Elle sort sa carte « Élu meilleur community manager 2026 *par sa mère ».
+M_DIR = f"{R}/maman"
+MAMAN = None
+if os.path.exists(f"{M_DIR}/voix.mp3"):
+    from PIL import Image
+    MAMAN_TEXTE = f"T’es le meilleur, mon fils{NB}!"
+    egaliser(FF, f"{M_DIR}/voix.mp3", f"{D}/voix/maman.mp3")
+    a = caler(FF, f"{M_DIR}/voix.mp3", MAMAN_TEXTE, "-38dB", (), ())
+    e = [min(9, round(v * 9)) for v in energie(FF, f"{M_DIR}/voix.mp3")]
+    # son visage, image par image : le sourire dès qu'elle parle, le rire (bouche ouverte) sur les syllabes fortes —
+    # avec un peu d'inertie (pas de clignotement d'une image à l'autre) ; après sa phrase, elle rit
+    x, cur, tenu = [], "n", 0
+    for v in e:
+        voulu = cur
+        if cur == "n" and v >= 1:
+            voulu = "s"
+        elif cur == "s" and v >= 6:
+            voulu = "r"
+        elif cur == "r" and v <= 2:
+            voulu = "s"
+        if voulu != cur and tenu >= 3:
+            cur, tenu = voulu, 0
+        else:
+            tenu += 1
+        x.append(cur)
+    MAMAN = {"d": a["d"], "m": a["m"], "mots": MAMAN_TEXTE.split(" "), "x": "".join(x)}
+    # ses photos : la tête et le col, cadrés pareil (la photo « rire » est recalée de 5 px : sa tête bouge un peu)
+    for nom, dx in (("neutre", 0), ("sourire", 0), ("rire", 5)):
+        im = Image.open(f"{M_DIR}/{nom}.jpg").convert("RGB")
+        im.crop((140 + dx, 0, 660 + dx, 624)).resize((400, 480), Image.LANCZOS).save(f"{D}/f/maman-{nom}.webp", quality=86)
+    print("sa mère :", MAMAN["d"], "s ·", MAMAN["x"])
+
 # ─── SA FIGURINE : les images, puis ses pistes (une par réplique du propriétaire) ───────────────────────
 # sa carte de CV : sa vraie photo, cadrée sur son visage (et la même sans sa tête : la page y pose la sienne, qui en sort)
 CARTE = (150, 0, 702, 634)
@@ -178,7 +211,21 @@ for f in ("m1.jpg", "m2.jpg", "m3.jpg", "m4.jpg", "si-interieur.webp"):
 shutil.copyfile(f"{S}/accueil2/page/g-restaurant-salue.webp", f"{D}/hote.webp")
 # LE FILM DU TÉLÉPHONE : la vidéo de l'interview du tour du restaurant ; et en WebM (VP8) pour les navigateurs sans
 # H.264 — dont le Chromium de l'export —, une image clé toutes les demi-secondes
-shutil.copyfile(f"{S}/tour/interview.mp4", f"{D}/interview.mp4")
+# (en H.264, une image clé toutes les demi-secondes : l'iPhone y saute vite — dans l'original, il y en a une toutes les
+# 2 à 6 s, et chaque bond de l'avance rapide lui faisait décoder jusqu'à 6 s d'images)
+def cles_rapprochees(f):
+    # les images clés des 5 premières secondes : jamais plus d'une demi-seconde entre deux
+    fp = shutil.which("ffprobe") or FF.replace("ffmpeg", "ffprobe")
+    r = subprocess.run([fp, "-v", "error", "-select_streams", "v:0", "-skip_frame", "nokey", "-read_intervals", "%+5", "-show_entries", "frame=pts_time",
+                        "-of", "csv=p=0", f], capture_output=True, text=True)
+    t = [float(x.strip(",")) for x in r.stdout.split() if x.strip(",")]
+    return len(t) > 2 and max(b - a for a, b in zip(t, t[1:])) <= .55
+
+
+if not os.path.exists(f"{D}/interview.mp4") or os.path.getmtime(f"{D}/interview.mp4") < os.path.getmtime(f"{S}/tour/interview.mp4") \
+        or not cles_rapprochees(f"{D}/interview.mp4"):
+    subprocess.run([FF, "-v", "error", "-y", "-i", f"{S}/tour/interview.mp4", "-an", "-c:v", "libx264", "-profile:v", "high", "-level", "3.1", "-pix_fmt", "yuv420p",
+                    "-crf", "27", "-preset", "slow", "-g", "15", "-keyint_min", "15", "-sc_threshold", "0", "-movflags", "+faststart", f"{D}/interview.mp4"], check=True)
 if not os.path.exists(f"{D}/interview.webm") or os.path.getmtime(f"{D}/interview.webm") < os.path.getmtime(f"{S}/tour/interview.mp4"):
     subprocess.run([FF, "-v", "error", "-y", "-i", f"{S}/tour/interview.mp4", "-an", "-c:v", "libvpx", "-b:v", "1M", "-g", "15",
                     "-deadline", "good", "-cpu-used", "2", f"{D}/interview.webm"], check=True)
@@ -207,6 +254,7 @@ page = page.replace("/*@SOUS@*/null", json.dumps({c: t for c, (_, t, _a) in SOUS
 page = page.replace("/*@FIGURE@*/null", json.dumps(FIGURE, ensure_ascii=False))
 page = page.replace("/*@PISTES@*/null", json.dumps(PISTES, ensure_ascii=False, separators=(",", ":")))
 page = page.replace("/*@MIKE@*/null", json.dumps(MIKE, separators=(",", ":")))
+page = page.replace("/*@MAMAN@*/null", json.dumps(MAMAN, ensure_ascii=False, separators=(",", ":")))
 assert not re.search(r"@[A-Z0-9_]+@|/\*@", page), "un repère @…@ n'a pas été remplacé"
 open(f"{D}/index.html", "w", encoding="utf-8").write(page)
 print("tour-humain/index.html :", len(page) // 1024, "Ko")
@@ -216,3 +264,19 @@ try:
     subprocess.run(["node", f"{S}/outils/bande-son.mjs", D, f"{D}/son.mp3"], check=True)
 except (OSError, subprocess.CalledProcessError) as e:
     print("bande-son : pas faite (", e, ") — la page composera son son elle-même")
+
+# ─── LA DÉMO EN VIDÉO (`demo.mp4`) : ce que la page joue (voir « LA DÉMO EN VIDÉO » dans `tour-humain.html`) ───────────
+# rendue image par image depuis la page elle-même, servie le temps du rendu (ses voix se chargent par fetch, que file://
+# refuse) ; sans l'écran « Touchez pour commencer » (on l'a touché quand elle démarre). `--sans-video` : pas de rendu
+# (la page reprendra alors l'ancienne `demo.mp4`, si elle existe — décalée si la démo a changé).
+if "--sans-video" not in sys.argv:
+    import functools, http.server, threading
+    serveur = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(http.server.SimpleHTTPRequestHandler, directory=D))
+    serveur.RequestHandlerClass.log_message = lambda *a: None
+    threading.Thread(target=serveur.serve_forever, daemon=True).start()
+    try:
+        subprocess.run(["node", f"{S}/outils/rendre-video.mjs", f"http://127.0.0.1:{serveur.server_address[1]}/index.html?sansdepart",
+                        f"{D}/demo.mp4", "30", "0", "web"], check=True)
+        print("demo.mp4 :", os.path.getsize(f"{D}/demo.mp4") // 1024, "Ko")
+    finally:
+        serveur.shutdown()

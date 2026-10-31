@@ -356,9 +356,25 @@ dodeline au rythme de sa voix, ouvre la bouche sur les syllabes, fait un clin d'
 de rire. Faite par `outils/tour-humain.py` d'après `outils/tour-humain.html` (le moteur de `tour-court2/`).
 
 ```sh
-/usr/bin/python3 -I outils/tour-du-fantome/outils/tour-humain.py outils/tour-du-fantome   # (fait aussi son.mp3)
-node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index.html sortie.mp4 30 1
+/usr/bin/python3 outils/tour-du-fantome/outils/tour-humain.py outils/tour-du-fantome   # (fait aussi son.mp3 et demo.mp4, ~10 min)
+/usr/bin/python3 outils/tour-du-fantome/outils/tour-humain.py outils/tour-du-fantome --sans-video   # (pour essayer : sans demo.mp4)
+node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index.html sortie.mp4 30 1   # (la vidéo à partager)
 ```
+
+- **La page joue une vidéo** (`tour-humain/demo.mp4`, depuis le 31 octobre) : sur un iPhone, l'animation en direct
+  saccadait (une dizaine de calques plein écran à composer à chaque image, et le film de l'interview, avec une image
+  clé toutes les 2 à 6 s, à décoder à chaque bond de l'avance rapide). Le script la rend image par image depuis la page
+  elle-même (`rendre-video.mjs … 30 0 web`, sans l'écran « Touchez pour commencer » : `?sansdepart`), avec le son :
+  rien ne se décale, et l'iPhone la joue même en mode silencieux. L'animation en direct ne sert que si la vidéo ne
+  vient pas (10 s, ou une erreur), et reprend la main à la fin, posée sur la même image : le numéro à toucher, les
+  boutons. `?direct` force l'animation ; elle ne charge alors son son (`son.mp3`) et le film qu'à ce moment-là.
+  **Toute retouche de la page demande donc de refaire `demo.mp4`** (le script le fait, sauf avec `--sans-video`).
+- **Sa mère, au début** (`recu/humain/maman/` : `voix.mp3`, un fichier ElevenLabs qu'il a fourni, et ses trois photos
+  de profil, neutre, sourire, rire — la « rire » recalée de 5 px) : sa carte dit « Élu meilleur community manager
+  2026* », « *par sa mère » tombe dessus comme un tampon, son polaroïd arrive et elle le dit elle-même (« T'es le
+  meilleur, mon fils ! », mot à mot dans une bulle) ; son visage suit sa voix (`MAMAN.x`, image par image : sourire,
+  rire sur les syllabes fortes) ; lui, sur sa photo, est surpris puis en rit. Sa phrase décale toute la démo (la 1
+  commence après elle : `T_MERE`).
 
 - **Les voix** : `recu/humain/01-p.mp3` … `13-p.mp3` (« p » le propriétaire — sa voix clonée, depuis le 31 octobre —,
   « m » Mike), égalisées et calées mot à mot sur leurs pauses (`caler`, aidé par `coupures`, `liees` ; « coupe » : un
@@ -381,9 +397,12 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index
 - **Le son, d'un bloc** : `outils/bande-son.mjs` (appelé par le script) enregistre la bande-son que la page compose
   hors ligne (`__son`) dans `tour-humain/son.mp3` ; en direct, la page ne joue que ce fichier (composée sur un iPhone,
   avec des milliers de petits sons programmés d'un coup, la musique décrochait). Sans lui, elle compose en direct.
-- **La fluidité sur téléphone** : pas de `will-change` partout (un calque par élément, par mot), pas de flou
-  (ni sur la caméra, ni sur les mots qui arrivent) ; les taches de lumière du fond sont dessinées une fois ; en avance
-  rapide, la vidéo du téléphone avance par bonds (un iPhone ne la lit pas à 15 fois sa vitesse).
+- **La fluidité de l'animation en direct** : pas de `will-change` partout (un calque par élément, par mot), pas de flou
+  (ni sur la caméra, ni sur les mots qui arrivent) ; les taches de lumière du fond sont dessinées une fois, et à
+  mi-résolution ; un élément à opacité 0 est caché pour de bon (`cacherInvisibles`), la toile des étincelles aussi
+  quand elle est vide ; en avance rapide, la vidéo du téléphone avance par bonds (un iPhone ne la lit pas à 15 fois sa
+  vitesse), dans un film réencodé avec une image clé toutes les demi-secondes. Mesuré dans Chromium, processeur
+  ralenti 4 fois : 33 ms par image au lieu de 67.
 - **Mike bouge sur sa voix** (`MIKE`, `mikeParle`) : il se tasse et rebondit sur chaque syllabe.
 - **Son prénom et son numéro** (la 1, et la fin : on le touche pour l'appeler, un QR code `tel:` fait par le paquet
   `qrcode`) : `PRENOM`, `TELEPHONE` dans le script.

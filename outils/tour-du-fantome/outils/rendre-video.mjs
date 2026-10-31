@@ -2,7 +2,10 @@
 // (`tour-court2.html`) : la page, ouverte avec `?rendu`, dessine n'importe quel instant (`__rendre(t)`) et calcule
 // son propre son hors ligne (`__son()`). On photographie chaque image, puis ffmpeg assemble les images et le son.
 //
-//   node outils/tour-du-fantome/outils/rendre-video.mjs <adresse de la page> <sortie.mp4> [images par seconde = 30] [attente avant = 1]
+//   node outils/tour-du-fantome/outils/rendre-video.mjs <adresse de la page> <sortie.mp4> [images par seconde = 30] [attente avant = 1] [web]
+//
+// « web » : la vidéo que la page joue elle-même (`demo.mp4`) — plus légère (elle se charge sur un téléphone en 4G, et
+// commence avant d'être toute arrivée), une image clé toutes les 2 s.
 //
 // « attente avant » : les secondes de la cage qui se balance, avant qu'on la touche (`__attente(x)`, x < 0).
 import pw from "/opt/node22/lib/node_modules/playwright/index.js";
@@ -11,7 +14,7 @@ import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 
-const [adresse, sortie, ipsArg, avantArg] = process.argv.slice(2);
+const [adresse, sortie, ipsArg, avantArg, mode] = process.argv.slice(2);
 if (!adresse || !sortie) { console.error("usage : rendre-video.mjs <adresse> <sortie.mp4> [ips] [attente]"); process.exit(1); }
 const IPS = Number(ipsArg || 30), AVANT = Number(avantArg ?? 1);
 const dossier = fs.mkdtempSync(path.join(os.tmpdir(), "rendu-"));
@@ -42,6 +45,9 @@ fs.writeFileSync(path.join(dossier, "son.wav"), Buffer.concat([tete, donnees]));
 await nav.close();
 const ff = fs.existsSync(path.join(path.dirname(new URL(import.meta.url).pathname), "..", "ffmpeg")) ? path.join(path.dirname(new URL(import.meta.url).pathname), "..", "ffmpeg") : "ffmpeg";
 execFileSync(ff, ["-hide_banner", "-loglevel", "error", "-y", "-framerate", String(IPS), "-i", path.join(dossier, "%05d.jpg"), "-i", path.join(dossier, "son.wav"),
-  "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "19", "-preset", "medium", "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", sortie]);
+  "-c:v", "libx264", "-pix_fmt", "yuv420p",
+  ...(mode === "web" ? ["-crf", "25", "-preset", "slow", "-profile:v", "high", "-level", "4.1", "-g", "60", "-maxrate", "4500k", "-bufsize", "9000k", "-c:a", "aac", "-b:a", "128k"]
+    : ["-crf", "19", "-preset", "medium", "-c:a", "aac", "-b:a", "192k"]),
+  "-shortest", "-movflags", "+faststart", sortie]);
 fs.rmSync(dossier, { recursive: true, force: true });
 console.log(erreurs.length ? "ERREURS : " + erreurs.join(" | ") : "aucune erreur de page", "→", sortie);
