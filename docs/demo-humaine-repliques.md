@@ -23,7 +23,7 @@ de l'ancienne démo n'est repris. Les chiffres à l'écran sont inventés et éc
 | 12 | M | « On n'est pas là pour vous apporter des vues. On est là pour vous apporter des clients. » | en grand |
 | 12b | P | « Cette figurine qui vous parle depuis le début ? C'est moi. Et vous aurez la vôtre. Une table vide ? Un vocal de 10 secondes… et c'est votre figurine qui prévient ceux qui attendaient ce moment, à leur prénom : » | sa figurine au milieu, un clin d'œil ; la photo du chef, « 🪑 Table libre · 12 h 30 », son vocal ; elle se retourne : sa figurine, « Pour Camille 💌 » |
 | chef | le chef | « Camille ! Il me reste une table à 12 h 30 : elle est à toi pendant 5 minutes ! » (voix ElevenLabs « Nicolas ») | sa figurine le dit, la bouche sur ses syllabes ; son vocal se lit |
-| 12c | P | « Et ceux qui viennent gagnent votre figurine : une édition à chaque saison… et des éditions rares, pour ceux qui remplissent vos creux. À collectionner… et à faire parler ! » | ses éditions en cartes dorées ; l'édition rare « Mardi midi » et « Défi de la famille · 3 tables · Complet ✅ » ; « Ma collection · 6 / 24 » ; Léa, en cadeau |
+| 12c | P | « Et pour ceux qui remplissent vos creux, ils gagnent votre figurine, dans son édition du moment : Halloween, Noël, l'été, la rentrée… et des éditions rares. À collectionner absolument ! Les plus fidèles, ils reçoivent leur propre figurine… qui parle avec leur voix : » (sa version, 1er novembre) | ses éditions en cartes dorées, chacune brille sur son mot ; l'édition rare « Mardi midi » et « Défi de la famille · 3 tables · Complet ✅ » ; « Ma collection · 6 / 24 » ; Léa, en cadeau |
 | Léa | une cliente | « Le meilleur magret de Dax ! » (voix ElevenLabs « Emma ») | sa figurine au milieu le dit ; des cœurs |
 | 13 | P | « Des vidéos qui font jouer vos clients, pour mieux les connaître. Des surprises et des figurines, pour les remercier. Et un seul but : remplir vos places vides, au bon moment. 1 mois gratuit pour faire mes preuves… on commence ? » | 🎮 « Ils jouent, vous les connaissez », 🎁 « Vous les remerciez », 🪑 « Vos places vides se remplissent » ; puis son contact, « Revoir », sa mère |
 
@@ -127,11 +127,29 @@ invite Camille à prendre une table vide, à son prénom), la collection est la 
 édition rare « Mardi midi » pour ceux qui remplissent un creux, le défi de la famille), et la 13 dit ce positionnement
 avant l'offre. La démo passe à 2 min 24 (restaurant).
 
+**Onzième passe (1er novembre : « on voit le chef et le vocabulaire cuisine au lieu de poterie ou bien-être » ;
+« c'est la figurine du pro qu'on gagne, ou sa propre figurine ? »)** : la 12c, réécrite et réenregistrée par lui, sépare
+les deux — on GAGNE la figurine du pro (en remplissant ses creux) et on la collectionne d'édition en édition ; les plus
+fidèles REÇOIVENT la leur, qui parle avec leur voix. La scène suit le métier :
+
+| | Atelier (L'Atelier de Nina) | Bien-être (Le Cocon d'Élise) |
+|---|---|---|
+| 12b (lui) | « … Une place libre à l'atelier ? Un vocal de 10 secondes… » | « … Un créneau libre ? Un vocal de 10 secondes… » |
+| le pro (voix « Mélodie ») | Nina : « Camille ! Il me reste une place à l'atelier tour, samedi à 10 h : elle est à toi pendant 5 minutes ! » | Élise : « Camille ! Il me reste un créneau mardi à 18 h : il est à toi pendant 5 minutes ! » |
+| Léa (Emma) | « Le meilleur cours de poterie de Dax ! » | « Le meilleur massage de Dax ! » |
+| à l'écran | « 🏺 Place libre · samedi 10 h », « Édition rare jeudi soir », « 3 places », « Offerte par L'Atelier de Nina » | « 🌿 Créneau libre · mardi 18 h », « Édition rare lundi matin », « 3 créneaux », « Offerte par Le Cocon d'Élise » |
+
+Le recto de la carte du pro : une photo de la démo sans visage (les mains sur le tour ; un massage). Les figurines de
+Nina et d'Élise : faites par le propriétaire ; Nina d'après une personne qui a donné son accord. Les textes de Nina,
+d'Élise et des 12b ne sont pas confirmés mot pour mot (aucune reconnaissance vocale ici : les fichiers ont été reconnus
+à leurs pauses et à leurs voyelles). Et à la fin, une étiquette : « Je prends 5 commerces (ateliers, cabinets) ce
+mois-ci · Puis 149 € / mois · sans engagement ».
+
 ## À garder en tête
 
 - **La 8** (« Et moi, je profite de leurs réponses… ») montre ce que fera la sonnette WhatsApp (chantier 4), pas encore branchée :
   la brancher avant de démarcher en nombre.
-- **Les trois cages** : la démo les dit dans les mots de chaque métier ; l'application dit encore « J'adore la vidéo »,
-  « Je viendrai un jour », « Je réserve / Je passe aujourd'hui » (`src/lib/direct/cages.ts`). À mettre d'accord.
-- **Le prix** (5.5) : la promesse « vous ne payez que si je vous amène des clients » n'est plus dans le texte ; à
-  remettre quand le prix sera fixé.
+- **Les trois cages** : la démo et l'application les disent dans les mots de chaque métier (`src/lib/direct/cages.ts`,
+  1er novembre).
+- **Le prix** : fixé le 1er novembre — un abonnement (pas de paiement au résultat), le 1er mois offert, puis 149 € par
+  mois, sans engagement, 5 commerces par mois au plus (il les suit à la main) ; dit à l'écran de fin.
