@@ -141,3 +141,121 @@ Les voix : `recu/humain/figurines/jp-revelation-a.mp3`, `jp-revelation-b.mp3`, `
 `recu/humain/13-p.mp3`. Les images : `jp-{halloween,noel,ete,rentree}.jpg`, `chef-{neutre,parle}.jpg`,
 `cliente-{neutre,parle}.jpg`. La figurine de la cliente est faite d'après la compagne du propriétaire, avec son accord ;
 la photo d'origine n'est pas dans le dépôt. Le chef de Chez Bergine a donné son accord (1er novembre).
+
+## 9. Le système complet (1er novembre, le soir) — à valider
+
+> Sa demande : « qu'il y ait un avantage à avoir les figurines complètes d'un commerçant (un massage offert, un repas
+> pour 2…), ou que les figurines aient une utilité, une valeur ; un endroit où collectionner, prouver qu'on a la
+> collection entière, débloquer des choses, échanger plus tard ; 10 figurines par an et par commerçant ; la
+> fabrication automatique des figurines des pros et des clients ; ce que le client fait de la sienne ; et le système
+> dans sa globalité, pour que l'effet devienne viral et qu'il y ait de la demande. »
+
+### 9.1 L'idée en une phrase
+
+**C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
+case est une figurine datée, qu'on ne gagne qu'en venant pendant sa période ; la dixième débloque un vrai cadeau ; et
+tout se partage.
+
+On la bâtit sur ce qui existe déjà : la famille du commerce et ses pièces (bronze, argent, or : `lib/direct/famille.ts`),
+la visite validée au comptoir (le bon « Servie ✓ », le mot du jour noté au carnet), Ma Maison et « Mes familles ».
+
+### 9.2 Les éditions : 10 par an et par commerce
+
+| | Combien | Comment on la gagne |
+|---|---|---|
+| Les saisons | 4 (hiver, printemps, été, automne) | une visite validée pendant la saison |
+| Les temps forts | 4, choisis par le pro (Noël, Halloween, la fête des mères, son anniversaire…) | une visite validée pendant la semaine du temps fort |
+| Les éditions rares | 2, numérotées (« n° 7 / 30 ») | seulement en venant sur un **creux** annoncé par sa figurine (« Il me reste une table à 12 h 30 ») |
+
+- **Une figurine = une visite validée au comptoir.** Pas de visite, pas de figurine : c'est la preuve, et c'est ce qui
+  remplit les places.
+- **Une édition manquée est manquée** : pas de rattrapage, pas d'achat. C'est la vraie rareté, et la raison de venir à
+  chaque période.
+- **Le rythme du métier** : 10 par an va à un restaurant ; un cabinet où l'on vient 4 fois par an aurait 6 éditions
+  (le pro choisit, 6 à 12).
+
+### 9.3 Ce que la collection débloque
+
+| Palier | Ce qu'il gagne | Qui paie |
+|---|---|---|
+| 3 figurines | un petit plus (un café, une infusion, une bougie) | le pro, peu de chose |
+| 6 figurines | **prévenu en premier** des places libres, et la pièce d'or de sa famille | rien : c'est l'ordre d'envoi des messages |
+| **10 / 10** (l'année complète) | **le grand cadeau, choisi par le pro dans une liste courte** : un repas pour 2, une séance offerte, un atelier offert… et **la figurine d'or** numérotée (« Collection complète 2027 · n° 7 ») | le pro : un passage offert pour dix payés, comme une carte de fidélité, mais qui fait revenir sur les creux |
+
+- **La preuve est au comptoir** : le carnet du pro montre « Léa · 9 / 10 · il lui manque l'édition rare » ; il valide
+  le cadeau comme un bon (« Servie ✓ »). Pas de capture d'écran à croire sur parole.
+- Plus tard, **la collection de la ville** : une figurine chez 10 commerces différents → un cadeau de la ville (payé
+  par ClikMe ou par les commerces partenaires). C'est elle qui fait découvrir les voisins.
+
+### 9.4 Où l'on collectionne : « Ma vitrine », dans Ma Maison
+
+- **Une étagère par commerce** : les 10 places de l'année ; celles qui manquent en silhouette, avec le temps qui reste
+  pour l'édition en cours (« Édition automne : encore 12 jours »). Et l'étagère de la ville.
+- **Sa vitrine publique**, s'il le veut (`clikme.fr/vitrine/<lien>`) : pour la montrer, la partager.
+- **Les échanges, plus tard** : seulement les doubles (9.6), entre deux personnes qui le veulent, gratuitement.
+
+### 9.5 La figurine du client : ce qu'il en fait
+
+Il la reçoit **en cadeau** de son commerce (par exemple en passant à l'or, ou à 6 / 10). Ensuite :
+
+1. **Elle parle, avec sa voix** : son petit mot (« Le meilleur magret de Dax ! ») passe dans la vidéo du commerce,
+   validé par le pro. Il partage : « je suis dans la vidéo de mon resto ».
+2. **Elle s'habille de ses commerces** : chaque collection complète lui donne l'accessoire du commerce — la toque de
+   Chez Bergine, le tablier de Nina, la serviette du Cocon. Sa figurine raconte sa vie de quartier ; un accessoire ne
+   se gagne qu'avec la collection complète.
+3. **Son socle montre son rang** : bronze, argent, or, selon ses familles.
+4. **La figurine du mois** : la plus fidèle de chaque commerce passe dans la vidéo du jour.
+
+Sans photo s'il préfère : sa figurine part alors de son fantôme (son look, déjà choisi).
+
+### 9.6 La boucle virale
+
+1. **Les doubles deviennent des invitations.** Une deuxième visite pendant la même édition donne un double, qui ne sert
+   qu'à **l'offrir** : « Léa t'offre l'édition automne de Chez Bergine ». L'ami crée son compte, mais la figurine ne
+   rejoint sa vitrine **qu'à sa première visite validée** : on gagne toujours en venant, et le commerce a un nouveau
+   client. Léa compte un ami amené (c'est déjà un chemin vers l'or).
+2. **Chaque figurine gagnée fait une carte à partager** (format story) : « Chez Bergine · 6 / 10 · il me manque
+   l'hiver », avec le lien de la famille.
+3. **La vidéo du jour montre les figurines des clients** (avec leur accord) : ils la partagent.
+4. **Côté commerçants** : chaque carte porte « Figurines ClikMe — vous êtes commerçant ? », vers la démo. Et la
+   collection de la ville emmène les clients chez les voisins inscrits : ceux qui ne le sont pas voient leurs clients
+   partir.
+
+À mesurer : le taux de partage, les invitations devenues visites, la complétion de chaque édition, les creux remplis
+par les éditions rares.
+
+### 9.7 La fabrication automatique
+
+- **Le pro** : 3 photos à l'inscription → un buste neutre (cadrage et fond imposés) → les expressions par retouche de
+  ce même buste (bouche ouverte, sourire, clin d'œil) → le calage automatique (corrélation de phase, puis seule la
+  bouche reprise, comme pour Nina et Élise à la main) → il valide « c'est moi » → ses 10 éditions générées d'avance,
+  par lot (une tenue = une retouche du buste), validées d'un coup. Ressort et socle communs ; la plaque (son nom,
+  l'édition) est composée par-dessus.
+- **Le client** : « Crée ta figurine » dans Ma Maison → un selfie (adulte, accord coché) ou son fantôme → neutre et
+  bouche ouverte → il valide. Son petit mot : un vocal de 10 s enregistré dans l'application.
+- **Le coût** : quelques euros par génération ; à compter dans l'abonnement (le nombre d'éditions de la formule à 49 €
+  est à fixer).
+
+### 9.8 Les garde-fous
+
+- On ne **gagne** une figurine qu'en venant ; on ne l'**achète** jamais ; aucun tirage au sort payant (règles des jeux
+  d'argent et des « loot boxes »).
+- **Pas de revente, pas de place de marché** : la valeur est dans les cadeaux et la fierté, pas dans l'argent (sinon,
+  spéculation et ennuis juridiques). Les échanges : des doubles, gratuitement.
+- La rareté est dite et tenue (les numéros sont vrais).
+- Les visages : l'accord écrit du pro ; pour les clients, une case jamais cochée d'avance, et jamais de mineurs. Les
+  photos et les vocaux sont effacés après la fabrication ; un contrat de traitement avec le fournisseur d'images.
+- Rien ne passe dans la vidéo d'un commerce sans que le pro l'ait validé.
+
+### 9.9 Dans quel ordre le construire
+
+| Étape | Quoi | Dépend de |
+|---|---|---|
+| 1 | Les figurines gagnées au comptoir (la visite validée) et **Ma vitrine** ; les figurines des premiers pros faites à la main | rien de neuf : le carnet et les bons existent |
+| 2 | Les paliers 3 / 6 / 10, réglés par le pro, et le cadeau validé au comptoir | l'étape 1 |
+| 3 | Les cartes à partager et **les doubles qui invitent** | l'étape 1 |
+| 4 | La fabrication automatique des figurines des pros | le choix d'un générateur d'images, et son coût |
+| 5 | La figurine du client (selfie, petit mot, accessoires) | l'étape 4 |
+| 6 | Les échanges et la collection de la ville | les étapes 3 et 5 |
+
+En parallèle, le chantier 4 (le numéro WhatsApp) : le vocal du pro et les messages des places libres.
