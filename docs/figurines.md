@@ -122,3 +122,9 @@ de 10 secondes, et elle annonce vos offres avec votre voix… et elle change à 
 
 À fournir (lui) : son image neutre (`recu/humain/ressort/neutre.jpg`) modifiée en quatre éditions, même cadrage,
 même pose (comme pour les expressions) : Noël, Halloween, l'été, la rentrée.
+
+**Et vous aussi** : la photo du chef de Chez Bergine (celle de la démo, « Notre chef aux fourneaux ») devient sa
+figurine, qui annonce le menu de l'ardoise. Le chef a donné son accord (confirmé par le propriétaire le 1er novembre).
+À fournir : sa figurine, faite comme celle du propriétaire (même style, même cadrage, fond rose), en deux images au
+moins, alignées : neutre et bouche ouverte (et un rire si possible) ; et, s'il le veut, son vocal de 10 secondes
+(« Ce midi, garbure landaise et magret ! ») — sinon, des sous-titres seuls.
