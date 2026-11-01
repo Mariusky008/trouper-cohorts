@@ -173,6 +173,7 @@ const MODULES = {
   "famille-video": "src/lib/direct/famille-video.ts",
   famille: "src/lib/direct/famille.ts",
   cages: "src/lib/direct/cages.ts",
+  "double-metiers": "src/lib/direct/double-metiers.ts",
   look: "src/lib/direct/look.ts",
   "interview-signature": "src/lib/direct/interview-signature.ts",
   "interview-fantome": "src/lib/direct/interview-fantome.ts",
