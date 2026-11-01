@@ -142,8 +142,8 @@ fidèles REÇOIVENT la leur, qui parle avec leur voix. La scène suit le métier
 Le recto de la carte du pro : une photo de la démo sans visage (les mains sur le tour ; un massage). Les figurines de
 Nina et d'Élise : faites par le propriétaire ; Nina d'après une personne qui a donné son accord. Les textes de Nina,
 d'Élise et des 12b ne sont pas confirmés mot pour mot (aucune reconnaissance vocale ici : les fichiers ont été reconnus
-à leurs pauses et à leurs voyelles). Et à la fin, une étiquette : « Je prends 5 commerces (ateliers, cabinets) ce
-mois-ci · ensuite, sans engagement : 149 € / mois, je fais tout, ou 49 € / mois en autonomie ».
+à leurs pauses et à leurs voyelles). Et à la fin, une étiquette : « Je prends 5 commerces (ateliers, cabinets) · gratuitement pendant 1 mois · Puis 149 € / mois · si vous êtes
+satisfait(e) · ou 49 € / mois en autonomie » (sa formulation, 1er novembre).
 
 ## À garder en tête
 
