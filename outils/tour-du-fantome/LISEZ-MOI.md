@@ -392,10 +392,13 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index
   réplique 5 : « …à l'honneur vos séances… » (`recu/humain/bien-etre/05-m.mp3`). Pas de promesse de santé à l'écran (pas de « soigner », « guérir »). Une
   variante de plus : une entrée dans `VARIANTES`, une ligne dans `scripts/poser-tours.mjs`.
 - **La scène des figurines** (1er novembre, `docs/figurines.md`), entre la 12 et la 13, la même dans les trois démos :
-  sa phrase (`recu/humain/figurines/jp-revelation.mp3`), coupée en deux à sa respiration (`l12b` jusqu'à « …avec
-  votre voix… », `l12c` ensuite : les options `debut` et `coupe`) ; entre les deux, le chef de Chez Bergine (`lchef`,
-  `chef.mp3`, ElevenLabs « Nicolas » ; sa photo `tour/m4.jpg` se retourne sur sa figurine) ; à la fin, une cliente
-  (`lcli`, `cliente.mp3`, « Emma »). Leurs bouches s'ouvrent sur leur voix (`PAROLES`, `figsParlent`), une image sur
+  sa révélation en deux répliques (`l12b`, `jp-revelation-a.mp3` : « …Une table vide ? Un vocal de 10 secondes… et
+  c'est votre figurine qui prévient ceux qui attendaient ce moment, à leur prénom » ; `l12c`, `jp-revelation-b.mp3` :
+  la collection) ; entre les deux, la figurine du chef de Chez Bergine qui invite Camille (`lchef`,
+  `chef-camille.mp3`, ElevenLabs « Nicolas » ; sa photo `tour/m4.jpg` se retourne sur sa figurine, « Pour Camille ») ;
+  à la fin, une cliente (`lcli`, `cliente.mp3`, « Emma »). L'édition rare « Mardi midi » (sa figurine de la démo) et
+  le défi de la famille. La 13 dit le positionnement (jouer, remercier, remplir les places vides) avec trois
+  pictogrammes (`#fi-trois`). Les options `debut` et `coupe` prennent un morceau d'un enregistrement. Leurs bouches s'ouvrent sur leur voix (`PAROLES`, `figsParlent`), une image sur
   deux. Ses éditions (`jp-halloween`, `jp-noel` — le sceau du coin effacé —, `jp-ete`, `jp-rentree`) sont des cartes
   dorées ; les images sont recadrées en carte par le script (`f/ed-*.webp`, `f/fig-*.webp`). Le chef et la cliente
   ont donné leur accord (confirmé par le propriétaire). Sa figurine, au milieu, cligne de l'œil sur « C'est moi ».
