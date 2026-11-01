@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     const metier = s(site.activite);
     const branche = brancheDuMetier(metier);
     const hote = `${tenueDu({ branche, metier })?.enPied ?? "/direct/double/pied/"}salut-1.webp`;
-    return NextResponse.json({ ok: true, ...(await familleDeLaVideo(supabase, siteId, { nom: s(site.business_name), slug, branche, hote })) });
+    return NextResponse.json({ ok: true, ...(await familleDeLaVideo(supabase, siteId, { nom: s(site.business_name), slug, branche, metier, hote })) });
   }
 
   // 🎁 LA SURPRISE DU CHEF : « surprises » {liste: [{libelle, stock}]} les écrit (et remplace) ; « surprises-lire » ;

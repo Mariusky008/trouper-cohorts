@@ -201,6 +201,8 @@ export type FamilleVideo = {
   /** « clikme.fr/f/chez-bergine-dax ». */
   lien: string;
   branche: string;
+  /** Son métier (« Céramiste », « Hypnothérapeute ») : les mots des cages en dépendent (`libellesCages`). */
+  metier?: string;
   /** Son fantôme à lui, qui salue (l'ouverture, et la famille encore vide). */
   hote: string;
   hier: number;
@@ -218,12 +220,12 @@ export type FamilleVideo = {
 export const FANTOMES_VIDEO_MAX = 12;
 
 /** La famille d'une vidéo de démonstration : inventée (prénoms d'essai), jamais celle d'un vrai commerçant. */
-export function familleVideoDemo(o: { nom: string; branche: string; hote: string }): FamilleVideo {
+export function familleVideoDemo(o: { nom: string; branche: string; metier?: string; hote: string }): FamilleVideo {
   const looks = ["cosy", "denim", "artiste", "voyageur", "fleuri", "soleil", "lecteur", "melomane", "curieux", "rebelle", "jardinier", "flaneur"];
   const fantomes: FantomeVideo[] = looks.map((look, k) => ({ look, grade: k < 2 ? "or" : k < 5 ? "argent" : "bronze" }));
   fantomes[0] = { ...fantomes[0], prenom: "Léa", numero: 12, mot: "Ma nouvelle adresse préférée 💛" };
   fantomes[2] = { ...fantomes[2], prenom: "Hugo", numero: 31, mot: "Merci pour l’accueil de samedi !" };
-  return { nom: o.nom, lien: "clikme.fr/f/ton-commerce", branche: o.branche, hote: o.hote, hier: 23, record: 29, recordBattuHier: false, membres: 148, quand: "hier", fantomes, surprises: 15 };
+  return { nom: o.nom, lien: "clikme.fr/f/ton-commerce", branche: o.branche, ...(o.metier ? { metier: o.metier } : {}), hote: o.hote, hier: 23, record: 29, recordBattuHier: false, membres: 148, quand: "hier", fantomes, surprises: 15 };
 }
 
 // ═══ 🎁 « JE TE GÂTE » ═════════════════════════════════════════════════════

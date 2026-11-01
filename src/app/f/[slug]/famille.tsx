@@ -168,7 +168,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
   /** 🥈 Son palier vient de monter depuis sa dernière visite : on le fête (une fois). */
   const [monte, setMonte] = useState<Grade | null>(null);
   const liste = motsDeLaListe(familleDuDouble({ branche: c.branche, metier: c.metier }));
-  const libelles = libellesCages(c.branche);
+  const libelles = libellesCages(c.branche, c.metier);
 
   const lire = useCallback(async (): Promise<EtatFamille | null> => {
     try {

@@ -21,7 +21,7 @@
  *
  * FICHIER PARTAGÉ (navigateur et serveur) : aucun accès à la base ici.
  */
-import type { Cage } from "./cages";
+import { gesteDecide, type Cage } from "./cages";
 import type { Ecusson } from "./ecussons";
 import type { Grade } from "./famille";
 
@@ -105,10 +105,10 @@ export function placer(fantomes: FantomeVitrine[]): { places: Place[]; reste: nu
 }
 
 /** Ce que dit sa bulle quand on le touche : « 💗 a adoré la vidéo », « 📌 viendra un jour »… */
-export function geste(cage: Cage, branche: string): string {
+export function geste(cage: Cage, branche: string, metier?: string | null): string {
   if (cage === "adore") return "💗 a adoré la vidéo";
   if (cage === "un-jour") return "📌 viendra un jour";
-  return ["restaurant", "bar", "coiffeur", "ongles"].includes(branche) ? "🍽️ a réservé aujourd’hui" : "🚶 passe aujourd’hui";
+  return gesteDecide(branche, metier);
 }
 
 // ═══ LA FOULE DE LA DÉMONSTRATION ══════════════════════════════════════════

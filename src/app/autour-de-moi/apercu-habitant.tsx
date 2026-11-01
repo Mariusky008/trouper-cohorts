@@ -5000,7 +5000,7 @@ export function ApercuHabitant({
     setPrevenir({
       nom: c.nom,
       telephone: c.telephone || numeroDeFiction(c.id),
-      quoi: quoiAujourdhui(c.branche),
+      quoi: quoiAujourdhui(c.branche, c.metier),
       demande: true,
     });
   };
@@ -10960,6 +10960,7 @@ export function ApercuHabitant({
                                       <CagesFantomes
                                         nom={dessus.nom}
                                         branche={dessus.branche}
+                                        metier={dessus.metier}
                                         choix={cagesFilms[cleFilm(dessus, m)]}
                                         prenom={prenom}
                                         onChoix={(cage) => donnerCage(dessus, m, cage)}

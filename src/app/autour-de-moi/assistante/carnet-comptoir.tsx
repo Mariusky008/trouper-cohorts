@@ -404,9 +404,9 @@ export function CarnetComptoir({
         return (
           <section key={cage} className={`ck-groupe ${cage}`}>
             <h3>
-              {titreDuGroupe(cage, commerce.branche)} <i>{lignes.length}</i>
+              {titreDuGroupe(cage, commerce.branche, commerce.metier)} <i>{lignes.length}</i>
             </h3>
-            <p className="ck-sens">{sensDuGroupe(cage)}</p>
+            <p className="ck-sens">{sensDuGroupe(cage, commerce.branche, commerce.metier)}</p>
             {lignes.map((l) => (
               <LigneDuCarnet
                 key={l.ref}
@@ -474,6 +474,7 @@ function VitrineDuComptoir({
         interieur={commerce.photo}
         hote={`${dossier}salut-1.webp`}
         branche={commerce.branche}
+        metier={commerce.metier}
         vitrine={{ fantomes, ardoise: carnet.ardoise, prenomVisible: true }}
       />
       <div className="ck-ardoise">

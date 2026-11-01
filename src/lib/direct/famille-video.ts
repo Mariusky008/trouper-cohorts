@@ -112,12 +112,12 @@ export async function chargerFamilleVideo(d: FamilleVideo): Promise<ImagesFamill
  * famille inventée pour la démonstration. `null` si elle ne vient pas : la vidéo se tourne sans elle.
  */
 export async function familleDeLaVideoPour(
-  c: { reel?: { slug: string; token: string }; nom: string; branche: string },
+  c: { reel?: { slug: string; token: string }; nom: string; branche: string; metier?: string },
   hote: string,
   signal?: AbortSignal,
 ): Promise<{ d: FamilleVideo; im: ImagesFamille } | null> {
   let d: FamilleVideo | null = null;
-  if (!c.reel) d = familleVideoDemo({ nom: c.nom, branche: c.branche, hote });
+  if (!c.reel) d = familleVideoDemo({ nom: c.nom, branche: c.branche, metier: c.metier, hote });
   else {
     try {
       const r = await fetch("/api/site-internet/pro/famille", {
@@ -429,7 +429,7 @@ function lesCages(g: CanvasRenderingContext2D, P: Polices, d: FamilleVideo, im: 
   const t = sortie(v / 0.4);
   texte(g, "Libère ton fantôme", 360, mix(250, 236, t), `66px ${P.affiche}`, CREME, { align: "center", ombre: 5 });
   texte(g, "Rejoins la famille", 360, 312, `italic 700 44px ${P.serif}`, ROSE, { align: "center" });
-  const libelles = libellesCages(d.branche);
+  const libelles = libellesCages(d.branche, d.metier);
   CAGES.forEach((c, k) => {
     const x = 125 + k * 235;
     const e = rebond((v - 0.15 - k * 0.12) / 0.45);

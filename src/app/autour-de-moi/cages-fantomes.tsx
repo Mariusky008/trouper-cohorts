@@ -31,6 +31,7 @@ const lookServeur = () => lookDe(null);
 export function CagesFantomes({
   nom,
   branche,
+  metier,
   choix,
   prenom,
   onChoix,
@@ -41,6 +42,8 @@ export function CagesFantomes({
   nom: string;
   /** Son métier (`CarteAutour.branche`) : le libellé de la troisième cage en dépend. */
   branche: string;
+  /** Son métier (« Céramiste », « Hypnothérapeute ») : il départage les créateurs & indépendants. */
+  metier?: string;
   choix?: ChoixCage;
   /** Son prénom, s'il le connaît déjà ; sinon « Vous ». */
   prenom: string;
@@ -52,7 +55,7 @@ export function CagesFantomes({
 }) {
   const look = useSyncExternalStore(abonnerLook, monLook, lookServeur);
   const fantome = look.debout ?? look.image;
-  const libelles = libellesCages(branche);
+  const libelles = libellesCages(branche, metier);
   /** Un nouveau choix : l'envol repart. */
   const [envol, setEnvol] = useState(0);
   const [numero, setNumero] = useState("");
@@ -134,7 +137,7 @@ export function CagesFantomes({
           }}
         >
           <b>
-            Vous voulez que {nom} vous prévienne sur WhatsApp {quandPrevenir(branche)}&nbsp;?
+            Vous voulez que {nom} vous prévienne sur WhatsApp {quandPrevenir(branche, metier)}&nbsp;?
           </b>
           <input
             type="tel"
@@ -160,7 +163,7 @@ export function CagesFantomes({
       )}
       {choix?.cage === "un-jour" && choix.whatsapp === "oui" && (
         <p className="cg-ok">
-          C’est noté&nbsp;: {nom} vous écrira sur WhatsApp {quandPrevenir(branche)}. Répondez «&nbsp;stop&nbsp;» quand vous voulez.
+          C’est noté&nbsp;: {nom} vous écrira sur WhatsApp {quandPrevenir(branche, metier)}. Répondez «&nbsp;stop&nbsp;» quand vous voulez.
         </p>
       )}
       {choix?.cage === "un-jour" && choix.whatsapp === "non" && !redemande && (

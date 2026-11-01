@@ -41,6 +41,7 @@ export function VitrineFantomes({
   interieur,
   hote,
   branche,
+  metier,
   vitrine,
   onPrenom,
   mots,
@@ -55,6 +56,8 @@ export function VitrineFantomes({
   /** Son fantôme à lui, qui salue à la porte. */
   hote?: string;
   branche: string;
+  /** Son métier : les mots de la troisième cage en dépendent (`gesteDecide`). */
+  metier?: string;
   vitrine: Vitrine;
   /** Montrer ou cacher son prénom (seulement quand son fantôme est là). */
   onPrenom?: (visible: boolean) => void;
@@ -82,7 +85,7 @@ export function VitrineFantomes({
         type="button"
         className={`vf-fg ${f.cage}${f.moi ? " moi" : ""}`}
         style={style}
-        aria-label={f.moi ? "Ton fantôme" : `${f.prenom || "Un fantôme"}, ${geste(f.cage, branche)}`}
+        aria-label={f.moi ? "Ton fantôme" : `${f.prenom || "Un fantôme"}, ${geste(f.cage, branche, metier)}`}
         onClick={(e) => {
           e.stopPropagation();
           setTouche(touche === f.id ? null : f.id);
@@ -146,7 +149,7 @@ export function VitrineFantomes({
               </i>
             ) : null}
             <span>
-              {geste(choisi.f.cage, branche)} · {quandEnClair(choisi.f.le, maintenant)}
+              {geste(choisi.f.cage, branche, metier)} · {quandEnClair(choisi.f.le, maintenant)}
             </span>
             {choisi.f.mot && <q>{choisi.f.mot}</q>}
             {/* Ses écussons — sans redire le coup de cœur que la maison a eu ici (dit juste dessous). */}
@@ -440,6 +443,7 @@ export function VitrineDuCommerce({
       interieur={carte.photo}
       hote={`${tenueDu(carte)?.enPied ?? "/direct/double/pied/"}salut-1.webp`}
       branche={carte.branche}
+      metier={carte.metier}
       vitrine={vitrine}
       onPrenom={changerPrenom}
       mots={liste}

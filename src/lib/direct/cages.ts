@@ -24,39 +24,88 @@
  * FICHIER PARTAGÉ (navigateur et serveur) : aucun accès à la base ici.
  */
 
+import { familleDuDouble } from "./double-metiers";
+
 export type Cage = "adore" | "un-jour" | "aujourdhui";
 
 export const CAGES: Cage[] = ["adore", "un-jour", "aujourdhui"];
 
 export const estCage = (v: unknown): v is Cage => v === "adore" || v === "un-jour" || v === "aujourdhui";
 
-/** Les métiers où l'on réserve (une table, un rendez-vous) ; ailleurs, on passe. */
-const ON_RESERVE = new Set(["restaurant", "bar", "coiffeur", "ongles"]);
-/** Les métiers où ce qui se libère est une table ; un créneau chez ceux à rendez-vous. */
-const TABLES = new Set(["restaurant", "bar"]);
-const CRENEAUX = new Set(["coiffeur", "ongles"]);
+/**
+ * LES MOTS DU MÉTIER. « Pour chaque corps de métier, il faut que ces trois appellations soient pile-poil dans le
+ * jargon du métier pour faire mouche » (le propriétaire, 1er novembre 2026) — les mêmes que dans les démos
+ * (`outils/tour-du-fantome`, `VARIANTES`). Le sens des trois cages ne change pas : il aime, il viendra, c'est décidé.
+ *
+ * - à table (restaurant, bar) : on réserve ;
+ * - à rendez-vous (coiffure, ongles, séances — hypnose, massage, sophrologie…) : c'est décidé quand on prend
+ *   rendez-vous, pas forcément pour le jour même ;
+ * - en atelier (cours, stages) : on réserve sa place ;
+ * - en boutique (et la boulangerie) : on passe.
+ */
+type Sorte = "table" | "rendez-vous" | "atelier" | "boutique";
 
-/** Les trois libellés, en deux lignes chacun (`\n` = le retour à la ligne). */
-export function libellesCages(branche: string): Record<Cage, string> {
-  return {
-    adore: "J’adore\nla vidéo",
-    "un-jour": "Je viendrai\nun jour",
-    aujourdhui: ON_RESERVE.has(branche) ? "Je réserve\naujourd’hui" : "Je passe\naujourd’hui",
-  };
+function sorte(branche: string, metier?: string | null): Sorte {
+  const m = (metier ?? "").toLowerCase();
+  const f = familleDuDouble({ branche, metier });
+  if (f === "table") return branche === "restaurant" || /restaur|pizz|burger|traiteur/.test(m) ? "table" : "boutique";
+  if (f === "bar") return "table";
+  if (f === "coiffure" || f === "ongles" || f === "seance") return "rendez-vous";
+  if (f === "createur" && /atelier|cours|stage|initiation/.test(m)) return "atelier";
+  return "boutique";
+}
+
+const LIBELLES: Record<Sorte, Record<Cage, string>> = {
+  table: { adore: "Ça donne\nenvie", "un-jour": "Je réserverai\nun jour", aujourdhui: "Je réserve\naujourd’hui" },
+  "rendez-vous": { adore: "Ça me\ntente", "un-jour": "Je prendrai\nrendez-vous", aujourdhui: "Je prends\nrendez-vous" },
+  atelier: { adore: "Ça me\ntente", "un-jour": "Je m’inscrirai\nun jour", aujourdhui: "Je réserve\nma place" },
+  boutique: { adore: "Ça me\nplaît", "un-jour": "Je passerai\nun jour", aujourdhui: "Je passe\naujourd’hui" },
+};
+
+/** Les trois libellés, en deux lignes chacun (`\n` = le retour à la ligne). Le métier départage les
+ *  « créateurs & indépendants » (une céramiste, un hypnothérapeute). */
+export function libellesCages(branche: string, metier?: string | null): Record<Cage, string> {
+  const l = LIBELLES[sorte(branche, metier)];
+  const f = familleDuDouble({ branche, metier });
+  // une séance (hypnose, massage…) fait du bien — pas un tatouage ; la boulangerie, comme la table, donne envie
+  if (f === "seance" && !/tatou|tattoo|pierc/.test((metier ?? "").toLowerCase())) return { ...l, adore: "Ça me ferait\ndu bien" };
+  if (f === "table") return { ...l, adore: "Ça donne\nenvie" };
+  return l;
 }
 
 /** « quand une table se libère » : ce que le commerçant lui annoncera, s'il la prévient. */
-export function quandPrevenir(branche: string): string {
-  if (TABLES.has(branche)) return "quand une table se libère";
-  if (CRENEAUX.has(branche)) return "quand un créneau se libère";
+export function quandPrevenir(branche: string, metier?: string | null): string {
+  const s = sorte(branche, metier);
+  if (s === "table") return "quand une table se libère";
+  if (s === "rendez-vous") return "quand un créneau se libère";
+  if (s === "atelier") return "quand une place se libère";
   return "quand il y a du nouveau";
 }
 
-/** Ce que la demande d'« aujourd'hui » dit au commerçant, dans le message qu'elle lui envoie. */
-export function quoiAujourdhui(branche: string): string {
-  if (TABLES.has(branche)) return "une table pour aujourd’hui";
-  if (CRENEAUX.has(branche)) return "un rendez-vous aujourd’hui";
+/** Ce que la demande de la troisième cage dit au commerçant, dans le message qu'elle lui envoie. */
+export function quoiAujourdhui(branche: string, metier?: string | null): string {
+  const s = sorte(branche, metier);
+  if (s === "table") return "une table pour aujourd’hui";
+  if (s === "rendez-vous") return "un rendez-vous";
+  if (s === "atelier") return "une place à l’atelier";
   return "un passage aujourd’hui";
+}
+
+/** Ce que veut dire la troisième cage, en une ligne (le carnet du commerçant). */
+export function sensDecide(branche: string, metier?: string | null): string {
+  const s = sorte(branche, metier);
+  if (s === "rendez-vous") return "C’est décidé : ils prennent rendez-vous.";
+  if (s === "atelier") return "C’est décidé : ils réservent leur place.";
+  return "C’est décidé : ils ont dit venir le jour même.";
+}
+
+/** Ce que dit la bulle d'un fantôme de la troisième cage, dans la vitrine. */
+export function gesteDecide(branche: string, metier?: string | null): string {
+  const s = sorte(branche, metier);
+  if (s === "table") return "🍽️ a réservé aujourd’hui";
+  if (s === "rendez-vous") return "📅 a pris rendez-vous";
+  if (s === "atelier") return "🎟️ a réservé sa place";
+  return "🚶 passe aujourd’hui";
 }
 
 /**

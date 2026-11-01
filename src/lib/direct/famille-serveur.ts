@@ -454,7 +454,7 @@ export async function enregistrerAccordVideo(supabase: Supabase, siteId: string,
  * qui l'ont accepté — et dont le prénom n'est pas caché —, le mot seulement s'il est déjà public (de
  * la liste, avec son 💛, ou épinglé).
  */
-export async function familleDeLaVideo(supabase: Supabase, siteId: string, o: { nom: string; slug: string; branche: string; hote: string }): Promise<FamilleVideo> {
+export async function familleDeLaVideo(supabase: Supabase, siteId: string, o: { nom: string; slug: string; branche: string; metier?: string; hote: string }): Promise<FamilleVideo> {
   const auj = jourParis();
   const hier = jourAvant(auj, 1);
   const semaine = jourAvant(auj, 7);
@@ -504,6 +504,7 @@ export async function familleDeLaVideo(supabase: Supabase, siteId: string, o: { 
     nom: o.nom,
     lien: `clikme.fr/f/${o.slug}`,
     branche: o.branche,
+    ...(o.metier ? { metier: o.metier } : {}),
     hote: o.hote,
     hier: foule.hier,
     record: foule.record,

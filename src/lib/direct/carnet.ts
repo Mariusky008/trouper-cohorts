@@ -17,7 +17,7 @@
  *
  * FICHIER PARTAGÉ (navigateur et serveur) : aucun accès à la base ici.
  */
-import { libellesCages, type Cage } from "./cages";
+import { libellesCages, sensDecide, type Cage } from "./cages";
 import type { Grade } from "./famille";
 
 export type LigneCarnet = {
@@ -69,13 +69,13 @@ export const REPONDU_WHATSAPP = "(sur WhatsApp)";
 export const ORDRE_CAGES: Cage[] = ["aujourdhui", "un-jour", "adore"];
 
 /** Le titre d'un groupe : le mot de la cage, tel que la personne l'a lu (« Je réserve aujourd'hui »). */
-export function titreDuGroupe(cage: Cage, branche: string): string {
-  return libellesCages(branche)[cage].replace("\n", " ");
+export function titreDuGroupe(cage: Cage, branche: string, metier?: string | null): string {
+  return libellesCages(branche, metier)[cage].replace("\n", " ");
 }
 
 /** Ce que veut dire le groupe, en une ligne, sous son titre. */
-export function sensDuGroupe(cage: Cage): string {
-  if (cage === "aujourdhui") return "C’est décidé : ils ont dit venir le jour même.";
+export function sensDuGroupe(cage: Cage, branche = "", metier?: string | null): string {
+  if (cage === "aujourdhui") return sensDecide(branche, metier);
   if (cage === "un-jour") return "Une promesse de venir, sans date.";
   return "Ce que tu montres leur plaît. Rien n’est promis.";
 }
