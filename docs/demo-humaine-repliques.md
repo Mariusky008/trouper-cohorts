@@ -15,8 +15,8 @@ de l'ancienne démo n'est repris. Les chiffres à l'écran sont inventés et éc
 | 4 | P | « Jour 1 : je viens chez vous. Quelques photos, deux ou trois questions… et Mike s'occupe du reste. » | « Jour 1 » ; l'interview « Face au fantôme » dans le téléphone |
 | 5 | M | « Avec quelques photos, je fais une très belle vidéo où je mets à l'honneur votre menu du jour, puis je la publie partout pour que tout le monde la voie. » | la vidéo en plein téléphone, puis Instagram, Facebook, Google, Le Direct |
 | 6 | P | « Mais ce n'est pas là qu'il est le plus fort. C'est juste après. » | |
-| 7 | M | « À la fin de la vidéo, chaque personne peut libérer son fantôme pour dire ce qu'elle en pense : "J'adore la vidéo", "Je passerai un jour, c'est sûr", ou "Je passe aujourd'hui". » | les trois cages apparaissent |
-| 8 | M | « Et moi, je leur réponds ! Petit à petit, je découvre leurs envies, leurs habitudes… et je leur donne une bonne raison de pousser votre porte. Et pour les plus fidèles, ceux qui ouvrent en premier ma cage dorée, je les bichonne avec des petites surprises. » | les cages s'ouvrent, des fantômes apparaissent ; la cage dorée, les surprises découvertes |
+| 7 | M | « À la fin de la vidéo, chaque personne peut libérer son fantôme pour dire ce qu'elle en pense : "Ça donne envie", "Je réserverai un jour", ou "Je réserve aujourd'hui". » (les trois cages, dans les mots du métier : atelier « Ça me tente », « Je m'inscrirai un jour », « Je réserve ma place » ; bien-être « Ça me ferait du bien », « Je prendrai rendez-vous », « Je prends rendez-vous ») | les trois cages |
+| 8 | M | « Et moi, je profite de leurs réponses pour discuter avec eux et créer du lien. Petit à petit, je découvre leurs envies, leurs habitudes… et je leur donne une bonne raison de pousser votre porte. Et pour les plus rapides, ceux qui ouvrent en premier ma cage dorée, je les bichonne avec des petites surprises. » | les cages s'ouvrent, des fantômes apparaissent ; la cage dorée, les surprises découvertes |
 | 9 | M | « Chaque jour, une nouvelle vidéo invite à rejoindre votre famille de fantômes. Elle grandit devant votre porte. » | la famille devant la porte, qui grandit |
 | 10 | P | « À la fin du mois, on fait le bilan ensemble : chaque bon validé à votre comptoir, c'est un client que je vous ai amené. » | « Fin du mois » ; le bon, « Servie ✓ » ; le bilan « Objectif du mois » (chiffres inventés) |
 | 11 | M | « Et voilà : pas de blabla, pas de fausses promesses. » | |
@@ -103,12 +103,18 @@ balance un peu trop, ça ne fait pas ressort souple mais saccadé »)** : sa car
 jouet**, qui y parle puis en sort ; le ressort est **simulé** (un vrai ressort amorti, que sa voix pousse) : plus
 d'à-coups, et le buste penche de 2° environ au lieu de 9°.
 
+**Huitième passe (1er novembre : « pour un restaurant, ces trois formules ne sont pas adaptées : il faut qu'elles
+soient pile-poil dans le jargon du métier », « Mike dit “les trois cages apparaissent” », « plutôt : je profite de leur
+réponse pour discuter avec eux et créer du lien »)** : la 7 réenregistrée par métier (l'ancienne finissait par
+l'indication de scène, lue par erreur, qui décalait aussi ses sous-titres) ; la 8 réenregistrée, avec « les plus
+rapides » (dans l'application, la cage dorée va au premier qui l'ouvre) ; les cages, les groupes et la fiche de
+Camille dans les mêmes mots ; une troisième démo, **bien-être** (Le Cocon d'Élise : massages, sophrologie, hypnose).
+
 ## À garder en tête
 
-- **La 8** (« Et moi, je leur réponds ! ») montre ce que fera la sonnette WhatsApp (chantier 4), pas encore branchée :
+- **La 8** (« Et moi, je profite de leurs réponses… ») montre ce que fera la sonnette WhatsApp (chantier 4), pas encore branchée :
   la brancher avant de démarcher en nombre.
-- **La 8** dit « les plus fidèles, ceux qui ouvrent en premier ma cage dorée » : aujourd'hui, la cage dorée n'a pas de
-  priorité de palier (le premier qui l'ouvre gagne, nouveau venu compris). À mettre d'accord : « les plus rapides »
-  dans le texte, ou une priorité des fidèles dans l'app.
+- **Les trois cages** : la démo les dit dans les mots de chaque métier ; l'application dit encore « J'adore la vidéo »,
+  « Je viendrai un jour », « Je réserve / Je passe aujourd'hui » (`src/lib/direct/cages.ts`). À mettre d'accord.
 - **Le prix** (5.5) : la promesse « vous ne payez que si je vous amène des clients » n'est plus dans le texte ; à
   remettre quand le prix sera fixé.

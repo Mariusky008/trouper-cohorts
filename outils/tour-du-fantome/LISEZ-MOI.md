@@ -389,11 +389,15 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index
   `tour-humain-bien-etre/`, /tours/bien-etre, 1er novembre) : façade vieux rose, store crème et eucalyptus ; les photos
   du tour du massage (`recu/massage/photos/`) et du cabinet de Claire, la sophrologue (`recu/entrepreneurs/local/`) ;
   son film (`film-bien-etre.html`, `film-atelier.mjs … bien-etre`) ; Mike, le fantôme bien-être de l'application. Sa
-  réplique 5 est celle du restaurant **coupée** de « où je mets à l'honneur votre menu du jour » (« Avec quelques
-  photos, je fais une très belle vidéo, puis je la publie partout… », `recu/humain/bien-etre/05-m.mp3` : un extrait
-  de l'enregistrement fourni, pas une voix fabriquée) ; s'il en enregistre une (« …à l'honneur vos séances… »), la
-  mettre à sa place et rendre le texte. Pas de promesse de santé à l'écran (pas de « soigner », « guérir »). Une
+  réplique 5 : « …à l'honneur vos séances… » (`recu/humain/bien-etre/05-m.mp3`). Pas de promesse de santé à l'écran (pas de « soigner », « guérir »). Une
   variante de plus : une entrée dans `VARIANTES`, une ligne dans `scripts/poser-tours.mjs`.
+- **Les trois cages, dans les mots du métier** (1er novembre) : restaurant « Ça donne envie », « Je réserverai un
+  jour », « Je réserve aujourd'hui » ; atelier « Ça me tente », « Je m'inscrirai un jour », « Je réserve ma place » ;
+  bien-être « Ça me ferait du bien », « Je prendrai rendez-vous », « Je prends rendez-vous ». Mike les dit (la
+  réplique 7, une par métier : `recu/humain/07-m.mp3`, `atelier/07-m.mp3`, `bien-etre/07-m.mp3` — `V["lignes"]`) ;
+  la page les écrit sur les cages, les groupes et la fiche de Camille (`CAGE1-3`, `G1-3`, `TAGJ` dans `V["page"]`).
+  Un métier de plus : ses trois mots, et sa réplique 7 enregistrée (le texte seul : l'ancienne finissait par
+  « les trois cages apparaissent », l'indication de scène lue par erreur).
 - **Sa mère, au début** (`recu/humain/maman/` : `voix.mp3`, un fichier ElevenLabs qu'il a fourni, et ses trois photos
   de profil, neutre, sourire, rire — la « rire » recalée de 5 px) : sa carte dit « Élu meilleur community manager
   2026* », « *par sa mère » tombe dessus comme un tampon, son polaroïd arrive et elle le dit elle-même (« T'es le
