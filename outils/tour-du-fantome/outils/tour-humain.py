@@ -151,6 +151,18 @@ SOUS = {
 }
 for c, ligne in V.get("lignes", {}).items():   # (les répliques propres au métier)
     SOUS[c] = ligne
+# LA SCÈNE DES FIGURINES (1er novembre, `docs/figurines.md`), entre la 12 et la 13 : sa phrase, coupée en deux à la
+# respiration après « …avec votre voix… » (le chef parle entre les deux), le chef de Chez Bergine (sa voix : un fichier
+# ElevenLabs fourni, « Nicolas »), puis une cliente (« Emma ») — les mêmes dans les trois démos.
+FIGS_LIGNES = {
+    "l12b": ("figurines/jp-revelation", f"Cette figurine | qui vous parle depuis le début{NB}? | C’est moi. | Et vous aurez la vôtre{NB}: | "
+             "un vocal de 10 secondes, | et elle annonce vos offres | avec votre voix…", {"coupe": 7.52, "liees": ("secondes,",)}),
+    "lchef": ("figurines/chef", f"Ce midi, | garbure landaise et magret{NB}!", {}),
+    "l12c": ("figurines/jp-revelation", f"et elle change à chaque saison. | Vos clients aussi | auront la leur, en cadeau{NB}: | à collectionner… | "
+             f"et à faire parler, | pour dire tout le bien | qu’ils pensent de vous{NB}!", {"debut": 7.52, "liees": ("leur,",)}),
+    "lcli": ("figurines/cliente", f"Le meilleur magret | de Dax{NB}!", {}),
+}
+SOUS = {**{c: v for c, v in SOUS.items() if c != "l13"}, **FIGS_LIGNES, "l13": SOUS["l13"]}
 
 # Les moments de sa figurine (répliques du propriétaire) : (expression, mot de départ ou « fin », décalage, mot de fin
 # ou « fin » ou None, décalage) ; « fin » : la fin de sa voix (pas celle du fichier). Le clin d'œil, bouche en « o »,
@@ -162,6 +174,8 @@ MOMENTS = {
     "l04": [("louche", "trois", 0, "et", -.3), ("clin", "fin", .05, "fin", .5)],
     "l06": [("clin", "fin", .05, "fin", .5)],
     "l10": [("rire", "fin", .05, "fin", .95)],
+    "l12b": [("clin", "C’est", -.05, "Et", -.15)],
+    "l12c": [("rire", "fin", .05, "fin", .9)],
     "l13": [("rire", "fin", 0, None, 0)],
 }
 
@@ -230,14 +244,15 @@ for sous in ("voix", "g", "js", "f"):
 TEMPS = {}
 for c, (fichier, texte, aide) in SOUS.items():
     src = f"{R}/{fichier}.mp3"
-    if aide.get("coupe"):
-        coupe = f"{D}/voix/{c}-coupe.wav"
-        subprocess.run([FF, "-v", "error", "-y", "-i", src, "-t", str(aide["coupe"]), coupe], check=True)
+    if aide.get("coupe") or aide.get("debut"):   # (un morceau de l'enregistrement : de « debut » à « coupe »)
+        coupe, a0 = f"{D}/voix/{c}-coupe.wav", aide.get("debut", 0)
+        subprocess.run([FF, "-v", "error", "-y", *(["-ss", str(a0)] if a0 else []), "-i", src,
+                        *(["-t", str(aide["coupe"] - a0)] if aide.get("coupe") else []), coupe], check=True)
         src = coupe
     egaliser(FF, src, f"{D}/voix/{c}.mp3")
     a = caler(FF, src, texte.replace(" | ", " "), "-38dB", aide.get("coupures", ()), aide.get("liees", ()))
     TEMPS[c] = {"d": a["d"], "m": a["m"], "parle": round(segments(FF, src, a["d"], "-38dB")[-1][1], 2)}
-    if aide.get("coupe"):
+    if aide.get("coupe") or aide.get("debut"):
         os.remove(src)
     print(c, a["d"], "s ·", len(a["m"]), "mots")
 
@@ -330,6 +345,14 @@ for c, moments in MOMENTS.items():
 
 # MIKE BOUGE SUR SA VOIX : l'énergie de chacune de ses répliques, une valeur par image (0 à 9)
 MIKE = {c: "".join(str(min(9, round(v * 9))) for v in energie(FF, f"{D}/voix/{c}.mp3")) for c, (f, _t, _a) in SOUS.items() if f.endswith("-m")}
+# LE CHEF ET LA CLIENTE PARLENT (scène des figurines) : leur énergie, pour ouvrir leur bouche sur leur carte
+PAROLES = {c: "".join(str(min(9, round(v * 9))) for v in energie(FF, f"{D}/voix/{c}.mp3")) for c in ("lchef", "lcli")}
+# leurs images : la photo du chef (celle du restaurant) ; les figurines, recadrées en carte (le portrait, 0,72)
+FG = f"{R}/figurines"
+shutil.copyfile(f"{S}/tour/m4.jpg", f"{D}/f/chef-photo.jpg")
+for src, dst in (("chef-neutre", "fig-chef-n"), ("chef-parle", "fig-chef-p"), ("cliente-neutre", "fig-cli-n"), ("cliente-parle", "fig-cli-p"),
+                 ("jp-halloween", "ed-halloween"), ("jp-noel", "ed-noel"), ("jp-ete", "ed-ete"), ("jp-rentree", "ed-rentree")):
+    subprocess.run([FF, "-v", "error", "-y", "-i", f"{FG}/{src}.jpg", "-vf", "crop='min(iw,ih*0.72)':ih,scale=-2:760", "-quality", "86", f"{D}/f/{dst}.webp"], check=True)
 
 # ─── LES IMAGES (celles du tour du restaurant), GSAP ──────────────────────────────────────────
 for f, src in V["images"].items():
@@ -386,6 +409,7 @@ page = page.replace("/*@SOUS@*/null", json.dumps({c: t for c, (_, t, _a) in SOUS
 page = page.replace("/*@FIGURE@*/null", json.dumps(FIGURE, ensure_ascii=False))
 page = page.replace("/*@PISTES@*/null", json.dumps(PISTES, ensure_ascii=False, separators=(",", ":")))
 page = page.replace("/*@MIKE@*/null", json.dumps(MIKE, separators=(",", ":")))
+page = page.replace("/*@PAROLES@*/null", json.dumps(PAROLES, separators=(",", ":")))
 page = page.replace("/*@MAMAN@*/null", json.dumps(MAMAN, ensure_ascii=False, separators=(",", ":")))
 page = page.replace("/*@MAMAN_FIN@*/null", json.dumps(MAMAN_FIN, ensure_ascii=False, separators=(",", ":")))
 assert not re.search(r"@[A-Z0-9_]+@|/\*@", page), "un repère @…@ n'a pas été remplacé"
