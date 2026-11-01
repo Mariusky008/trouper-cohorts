@@ -45,9 +45,14 @@ sa ville.
 - **L'effet réseau** : « il me manque la fleuriste en Halloween » fait découvrir des commerces où l'on n'allait pas.
   La collection fait circuler les clients d'un commerce à l'autre — c'est l'argument le plus fort de ClikMe auprès
   d'une ville.
-- **Sa propre figurine** (plus tard) : le client qui le veut a la sienne, qui apparaît dans la vidéo du lendemain,
-  attablée chez le commerçant. Il la partage (« je suis dans la vidéo de mon resto ! »). Accord clair, jamais de
-  mineurs.
+- **Sa propre figurine, en cadeau** : le client qui le veut a la sienne, offerte par le commerce où il est venu, qui
+  apparaît dans la vidéo du lendemain, attablée chez le commerçant. Il la partage (« je suis dans la vidéo de mon
+  resto ! »). Accord clair, jamais de mineurs.
+- **Elle parle, avec sa voix** : son petit mot devient un avis parlé (« Le meilleur magret de Dax ! », dit par sa
+  figurine). C'est la meilleure preuve sociale qui soit, et il la partage. Garde-fous : sa voix à lui, jamais
+  fabriquée ; rien ne passe dans la vidéo du commerce sans que le commerçant l'ait validé ; le vocal sert au rendu
+  puis il est effacé (c'est une donnée personnelle) ; jamais de mineurs. Plus tard : l'envoyer à un ami (un
+  anniversaire), qui découvre ClikMe par là.
 
 ## 4. Les échanges
 
@@ -118,7 +123,8 @@ Ses éditions arrivent, comme des cartes à collectionner (Noël, Halloween, l'�
 édition sur le socle) ; un téléphone montre un vocal de 10 secondes, et la figurine le dit.
 
 À enregistrer (lui) : « Cette figurine qui vous parle depuis le début ? C'est moi. Et vous aurez la vôtre : un vocal
-de 10 secondes, et elle annonce vos offres avec votre voix… et elle change à chaque saison. »
+de 10 secondes, et elle annonce vos offres avec votre voix… et elle change à chaque saison. Vos clients aussi auront
+la leur, en cadeau : à collectionner… et à faire parler, pour dire tout le bien qu'ils pensent de vous ! »
 
 À fournir (lui) : son image neutre (`recu/humain/ressort/neutre.jpg`) modifiée en quatre éditions, même cadrage,
 même pose (comme pour les expressions) : Noël, Halloween, l'été, la rentrée.
