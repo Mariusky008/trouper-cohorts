@@ -147,19 +147,23 @@ SOUS = {
             {"liees": ("mois,", "comptoir,")}),
     "l11": ("11-m", f"Et voilà{NB}: | pas de blabla, | pas de fausses promesses.", {}),
     "l12": ("12-m", "On n’est pas là | pour vous apporter des vues. | On est là | pour vous apporter des clients.", {}),
-    "l13": ("13-p", f"1 mois gratuit, | un mois pour faire mes preuves, | alors, | on commence{NB}?", {"liees": ("gratuit,",)}),
+    # (la 13, réenregistrée le 1er novembre : ce que fait ClikMe, en trois temps, avant l'offre)
+    "l13": ("13-p", f"Des vidéos qui font jouer vos clients, | pour mieux les connaître. | Des surprises et des figurines, | pour les remercier. | "
+            f"Et un seul but{NB}: | remplir vos places vides, | au bon moment. | 1 mois gratuit | pour faire mes preuves… | on commence{NB}?",
+            {"liees": ("figurines,",)}),
 }
 for c, ligne in V.get("lignes", {}).items():   # (les répliques propres au métier)
     SOUS[c] = ligne
-# LA SCÈNE DES FIGURINES (1er novembre, `docs/figurines.md`), entre la 12 et la 13 : sa phrase, coupée en deux à la
-# respiration après « …avec votre voix… » (le chef parle entre les deux), le chef de Chez Bergine (sa voix : un fichier
-# ElevenLabs fourni, « Nicolas »), puis une cliente (« Emma ») — les mêmes dans les trois démos.
+# LA SCÈNE DES FIGURINES (1er novembre, `docs/figurines.md`), entre la 12 et la 13, la même dans les trois démos : sa
+# révélation en deux répliques ; entre les deux, la figurine du chef de Chez Bergine qui invite Camille à prendre une
+# table vide (sa voix : un fichier ElevenLabs fourni, « Nicolas ») ; à la fin, une cliente (« Emma »). Les places
+# vides, remplies au bon moment par la figurine, et la collection pour remercier ceux qui viennent.
 FIGS_LIGNES = {
-    "l12b": ("figurines/jp-revelation", f"Cette figurine | qui vous parle depuis le début{NB}? | C’est moi. | Et vous aurez la vôtre{NB}: | "
-             "un vocal de 10 secondes, | et elle annonce vos offres | avec votre voix…", {"coupe": 7.52, "liees": ("secondes,",)}),
-    "lchef": ("figurines/chef", f"Ce midi, | garbure landaise et magret{NB}!", {}),
-    "l12c": ("figurines/jp-revelation", f"et elle change à chaque saison. | Vos clients aussi | auront la leur, en cadeau{NB}: | à collectionner… | "
-             f"et à faire parler, | pour dire tout le bien | qu’ils pensent de vous{NB}!", {"debut": 7.52, "liees": ("leur,",)}),
+    "l12b": ("figurines/jp-revelation-a", f"Cette figurine | qui vous parle depuis le début{NB}? | C’est moi. | Et vous aurez la vôtre. | Une table vide{NB}? | "
+             f"Un vocal de 10 secondes… | et c’est votre figurine | qui prévient ceux qui attendaient ce moment, | à leur prénom{NB}:", {}),
+    "lchef": ("figurines/chef-camille", f"Camille{NB}! | Il me reste une table à 12 h 30{NB}: | elle est à toi pendant 5 minutes{NB}!", {}),
+    "l12c": ("figurines/jp-revelation-b", f"Et ceux qui viennent | gagnent votre figurine{NB}: | une édition à chaque saison… | et des éditions rares, | "
+             f"pour ceux qui remplissent vos creux. | À collectionner… | et à faire parler{NB}!", {"liees": ("rares,",)}),
     "lcli": ("figurines/cliente", f"Le meilleur magret | de Dax{NB}!", {}),
 }
 SOUS = {**{c: v for c, v in SOUS.items() if c != "l13"}, **FIGS_LIGNES, "l13": SOUS["l13"]}
@@ -351,7 +355,8 @@ PAROLES = {c: "".join(str(min(9, round(v * 9))) for v in energie(FF, f"{D}/voix/
 FG = f"{R}/figurines"
 shutil.copyfile(f"{S}/tour/m4.jpg", f"{D}/f/chef-photo.jpg")
 for src, dst in (("chef-neutre", "fig-chef-n"), ("chef-parle", "fig-chef-p"), ("cliente-neutre", "fig-cli-n"), ("cliente-parle", "fig-cli-p"),
-                 ("jp-halloween", "ed-halloween"), ("jp-noel", "ed-noel"), ("jp-ete", "ed-ete"), ("jp-rentree", "ed-rentree")):
+                 ("jp-halloween", "ed-halloween"), ("jp-noel", "ed-noel"), ("jp-ete", "ed-ete"), ("jp-rentree", "ed-rentree"),
+                 ("../ressort/neutre", "ed-rare")):   # (l'édition rare : sa figurine de la démo)
     subprocess.run([FF, "-v", "error", "-y", "-i", f"{FG}/{src}.jpg", "-vf", "crop='min(iw,ih*0.72)':ih,scale=-2:760", "-quality", "86", f"{D}/f/{dst}.webp"], check=True)
 
 # ─── LES IMAGES (celles du tour du restaurant), GSAP ──────────────────────────────────────────

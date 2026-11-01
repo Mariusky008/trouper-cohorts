@@ -445,7 +445,16 @@ img{display:block;-webkit-user-drag:none;user-select:none}
 .fe b{display:block;padding:8px 2px 12px;text-align:center;font-size:23px;font-weight:900;color:#4A2A06;letter-spacing:.04em;line-height:1.05}
 .fe .brille{position:absolute;inset:0;background:linear-gradient(110deg,transparent 38%,rgba(255,255,255,.7) 50%,transparent 62%);background-size:260% 100%;background-position:130% 0;mix-blend-mode:screen}
 #fs-album{position:absolute;left:0;right:0;top:400px;text-align:center;font-size:46px;font-weight:900;color:#fff;opacity:0}
+.fc .fc-tag{position:absolute;left:50%;top:-30px;z-index:2;padding:8px 22px;border-radius:30px;white-space:nowrap;font-size:30px;font-weight:900;color:#fff;background:var(--rose);transform:translateX(-50%);box-shadow:0 12px 26px -8px rgba(255,46,154,.8);opacity:0}
+.fc .fc-badge{position:absolute;left:-26px;bottom:110px;z-index:2;padding:8px 18px;border-radius:30px;white-space:nowrap;font-size:27px;font-weight:800;color:#2A1A10;background:var(--creme);transform:rotate(-6deg);box-shadow:0 12px 26px -10px rgba(0,0,0,.7);opacity:0}
+.fe.rare{background:linear-gradient(135deg,#C9B6FF,#7B5CFF 30%,#FF7AD9 55%,#7FE7FF 80%,#B79CFF);overflow:visible}
+.fe.rare b{color:#2A0F4A}
+.fe.rare .defi{position:absolute;left:50%;top:100%;margin-top:14px;padding:8px 18px;border-radius:24px;white-space:nowrap;font-size:22px;font-weight:800;color:#04150E;background:linear-gradient(135deg,#9FF5C9,#3DE2A6);transform:translateX(-50%);opacity:0}
 #fs-album b{color:#FFC94D}
+#fi-trois{position:absolute;left:30px;right:30px;top:380px;display:flex;justify-content:space-between;pointer-events:none}
+#fi-trois .ft{width:310px;text-align:center;opacity:0}
+#fi-trois .ft i{display:grid;place-items:center;width:150px;height:150px;margin:0 auto;border-radius:50%;font-size:82px;font-style:normal;background:rgba(255,255,255,.08);border:3px solid rgba(255,93,184,.6);box-shadow:0 0 40px rgba(255,46,154,.35)}
+#fi-trois .ft b{display:block;margin-top:12px;font-size:32px;font-weight:800;line-height:1.1;color:#fff}
 /* le départ, la fin (propres à cette démo) */
 #appel{top:1330px}
 #fi-titre{top:126px;font-size:124px}
@@ -589,12 +598,14 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   <!-- la scène des figurines : la sienne (« C'est moi »), celle du chef, ses éditions, celle d'une cliente -->
   <div id="figs"><i id="fg-halo"></i>
     <div class="fc" id="fc-chef"><div class="fc-in"><div class="fc-face"><img src="f/chef-photo.jpg" alt=""></div>
-      <div class="fc-face fc-dos"><img class="fn" src="f/fig-chef-n.webp" alt=""><img class="fp" src="f/fig-chef-p.webp" alt=""></div></div><b>Jean-Marie<small>le chef de Chez Bergine</small></b></div>
+      <div class="fc-face fc-dos"><img class="fn" src="f/fig-chef-n.webp" alt=""><img class="fp" src="f/fig-chef-p.webp" alt=""></div></div><b>Jean-Marie<small>le chef de Chez Bergine</small></b>
+      <span class="fc-tag">Pour Camille 💌</span><span class="fc-badge">🪑 Table libre · 12 h 30</span></div>
     <div id="fs-vocal"><span>🎤</span><span class="onde"></span><small>0:10</small></div>
     <div class="fe" id="fe1"><img src="f/ed-halloween.webp" alt=""><b>ÉDITION<br>HALLOWEEN</b><i class="brille"></i></div>
     <div class="fe" id="fe2"><img src="f/ed-noel.webp" alt=""><b>ÉDITION<br>NOËL</b><i class="brille"></i></div>
     <div class="fe" id="fe3"><img src="f/ed-ete.webp" alt=""><b>ÉDITION<br>ÉTÉ</b><i class="brille"></i></div>
     <div class="fe" id="fe4"><img src="f/ed-rentree.webp" alt=""><b>ÉDITION<br>RENTRÉE</b><i class="brille"></i></div>
+    <div class="fe rare" id="fe5"><img src="f/ed-rare.webp" alt=""><b>ÉDITION RARE<br>MARDI MIDI</b><i class="brille"></i><span class="defi">🏆 Défi de la famille · 3 tables · Complet ✅</span></div>
     <p id="fs-album">Ma collection · <b>6</b> / 24</p>
     <div class="fc" id="fc-cli"><span class="ruban">🎀</span><div class="fc-in"><div class="fc-face"><img class="fn" src="f/fig-cli-n.webp" alt=""><img class="fp" src="f/fig-cli-p.webp" alt=""></div></div>
       <b>Léa<small>son petit mot</small></b><span class="cadeau">🎁 Offerte par Chez Bergine</span></div>
@@ -603,6 +614,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   <div id="finale">
     <div id="fi-mike"><div class="bouge"><img src="hote.webp" alt="">@TOQUE@</div></div>
     <h1 id="fi-titre"></h1><p id="fi-sous">pour faire mes preuves</p>
+    <div id="fi-trois"><div class="ft"><i>🎮</i><b>Ils jouent,<br>vous les connaissez</b></div><div class="ft"><i>🎁</i><b>Vous les<br>remerciez</b></div><div class="ft"><i>🪑</i><b>Vos places vides<br>se remplissent</b></div></div>
     <div id="contact"><div><b>@PRENOM@</b><a href="tel:@TEL_LIEN@">📞 @TELEPHONE@</a><small>Touchez le numéro pour m’appeler</small></div></div>
     <div class="fi-boutons"><a class="go" href="/inscription">On commence · 1 mois gratuit</a><button id="revoir" type="button">↺ Revoir</button></div>
     <p class="fi-note" id="fi-note">Commerce et chiffres imaginaires</p>
@@ -698,8 +710,8 @@ const FORTS = { l01: ["métier" + NB + "?", "regarder", "téléphone…", "pouss
   l04: ["Jour", "1" + NB + ":", "photos,", "questions…", "Mike"], l05: VAR.forts5, l06: ["plus", "fort.", "après."],
   l07: VAR.forts7,
   l08: ["discuter", "lien.", "envies,", "habitudes…", "porte.", "rapides,", "dorée,", "surprises."], l09: ["Chaque", "jour,", "famille", "grandit"],
-  l10: ["bilan", "bon", "validé", "client"], l11: ["blabla,", "fausses", "promesses."], l12: ["vues.", "clients."], l12b: ["figurine", "moi.", "vôtre", "voix…"], lchef: ["garbure", "magret"],
-  l12c: ["saison.", "cadeau", "collectionner…", "parler,"], lcli: ["meilleur", "magret"], l13: ["1", "mois", "gratuit,", "preuves,", "commence" + NB + "?"] };
+  l10: ["bilan", "bon", "validé", "client"], l11: ["blabla,", "fausses", "promesses."], l12: ["vues.", "clients."], l12b: ["figurine", "moi.", "vide", "prénom"], lchef: ["Camille", "table", "minutes"],
+  l12c: ["figurine", "saison…", "rares,", "creux.", "collectionner…", "parler"], lcli: ["meilleur", "magret"], l13: ["jouer", "remercier.", "places", "vides,", "gratuit", "commence"] };
 const TAILLE = { l01: 100, l02: 120, l03: 108, l04: 108, l05: 104, l06: 112, l07: 104, l08: 104, l09: 104, l10: 100, l11: 118, l12: 108, l12b: 100, lchef: 112, l12c: 96, lcli: 116, l13: 116 };
 const mesure = document.createElement("canvas").getContext("2d");
 function largeur(texte, fs) { mesure.font = `900 ${fs}px Poppins`; return mesure.measureText(texte).width + texte.split(" ").length * .24 * fs; }
@@ -1484,51 +1496,61 @@ function construire() {
   const fgCentre = (sel, x, y, plus = {}) => tl.set(sel, { xPercent: -50, yPercent: -50, x, y, ...plus }, 0);
   fgCentre("#fc-chef", 1500, 860, { rotation: 8 }); fgCentre("#fs-vocal", 640, 1330, { scale: .4 }); fgCentre("#fc-cli", 540, 1250, { scale: 0, rotation: -6 });
   ["#fe1", "#fe2", "#fe3", "#fe4"].forEach((s, k) => fgCentre(s, 540, 2300, { rotation: [-9, -3, 3, 9][k] }));
+  fgCentre("#fe5", 540, 760, { scale: 0, rotation: -12 });
   $("#fs-vocal .onde").innerHTML = Array.from({ length: 22 }, (_, k) => `<i style="height:${12 + Math.round(36 * Math.abs(Math.sin(k * 1.7) * Math.cos(k * .6)))}px"></i>`).join("");
   tl.to(["#vues", "#franc"], { opacity: 0, duration: .4 }, fgB - .45).to("#figs", { opacity: 1, duration: .45 }, fgB - .45)
     .to(FIG, { x: 540, y: 1610, s: .8, pench: 0, duration: .8, ease: "power3.inOut" }, fgB - .55)
     .to("#fg-halo", { opacity: 1, scale: 1.08, duration: .8, ease: "sine.out" }, fgB - .2)
     .to(FIG, { r: 4, duration: .1, yoyo: true, repeat: 3, ease: "sine.inOut" }, mot("l12b", "moi.") - .05);
   GERBES.push(gerbe(43, 28, 540, 860, 260, 900, ["255,214,140", "255,93,184", "255,255,255"], mot("l12b", "moi.") - .02, [2.2, 3.6], [.6, 1.2], 500, true));
-  // « Et vous aurez la vôtre : un vocal de 10 secondes, et elle annonce vos offres avec votre voix… » : la photo du chef,
-  // son vocal ; la photo se retourne, c'est sa figurine
+  // « Et vous aurez la vôtre. Une table vide ? Un vocal de 10 secondes… » : la photo du chef, sa table libre, son vocal
   const fgEt = mot("l12b", "Et");
   tl.to(FIG, { x: 200, y: 1900, s: .42, duration: .7, ease: "power3.inOut" }, fgEt - .15)
     .to("#fg-halo", { opacity: .35, duration: .6 }, fgEt)
     .to("#fc-chef", { opacity: 1, x: 640, rotation: 3, duration: .75, ease: "back.out(1.4)" }, fgEt - .05)
-    .to("#fs-vocal", { opacity: 1, scale: 1, duration: .45, ease: "back.out(2.2)" }, mot("l12b", "vocal") - .15)
-    .to("#fc-chef .fc-in", { rotationY: 180, duration: .65, ease: "power2.inOut" }, mot("l12b", "voix…") - .2)
-    .to("#fc-chef", { scale: 1.06, duration: .2, yoyo: true, repeat: 1, ease: "power2.out" }, mot("l12b", "voix…") + .25);
-  GERBES.push(gerbe(44, 22, 640, 860, 240, 820, ["255,214,140", "255,255,255"], mot("l12b", "voix…") + .3, [2.2, 3.6], [.5, 1.0], 500, true));
-  // le chef parle (sa voix) : son vocal se lit, sa bouche s'ouvre (`figsParlent`)
+    .fromTo("#fc-chef .fc-badge", { opacity: 0, scale: .4 }, { opacity: 1, scale: 1, duration: .4, ease: "back.out(2.4)", immediateRender: false }, mot("l12b", "vide") - .15)
+    .to("#fs-vocal", { opacity: 1, scale: 1, duration: .45, ease: "back.out(2.2)" }, mot("l12b", "vocal") - .15);
+  // « …et c'est votre figurine qui prévient ceux qui attendaient ce moment, à leur prénom : » : la photo se retourne,
+  // c'est sa figurine ; « Pour Camille »
+  const fgFi = mot("l12b", "figurine", 1);
+  tl.to("#fc-chef .fc-in", { rotationY: 180, duration: .65, ease: "power2.inOut" }, fgFi - .2)
+    .to("#fc-chef", { scale: 1.06, duration: .2, yoyo: true, repeat: 1, ease: "power2.out" }, fgFi + .25)
+    .fromTo("#fc-chef .fc-tag", { opacity: 0, y: -30, scale: .5 }, { opacity: 1, y: 0, scale: 1, duration: .45, ease: "back.out(2.4)", immediateRender: false }, mot("l12b", "prénom") - .2);
+  GERBES.push(gerbe(44, 22, 640, 860, 240, 820, ["255,214,140", "255,255,255"], fgFi + .3, [2.2, 3.6], [.5, 1.0], 500, true));
+  // la figurine du chef parle (sa voix) : son vocal se lit, sa bouche s'ouvre (`figsParlent`)
   $$("#fs-vocal .onde i").forEach((b, k, all) => tl.set(b, { backgroundColor: "#1F7A45" }, fgCh + d("lchef") * k / all.length));
-  // « …et elle change à chaque saison. » : ses éditions, comme des cartes à collectionner
+  // « Et ceux qui viennent gagnent votre figurine : une édition à chaque saison… » : ses éditions, en cartes
   tl.to("#fs-vocal", { opacity: 0, scale: .6, duration: .3 }, fgC - .2)
-    .to("#fc-chef", { x: 230, y: 640, scale: .5, rotation: -4, duration: .7, ease: "power3.inOut" }, fgC - .1);
+    .to("#fc-chef", { x: 190, y: 560, scale: .42, rotation: -4, duration: .7, ease: "power3.inOut" }, fgC - .1);
+  const fgEd = mot("l12c", "édition");
   ["#fe1", "#fe2", "#fe3", "#fe4"].forEach((s, k) => {
-    tl.to(s, { opacity: 1, x: [210, 430, 650, 870][k], y: [1030, 980, 980, 1030][k], duration: .6, ease: "back.out(1.6)" }, mot("l12c", "change") - .25 + k * .13)
-      .to(s + " .brille", { backgroundPosition: "-30% 0", duration: .7, ease: "power2.inOut" }, mot("l12c", "saison.") + k * .08);
+    tl.to(s, { opacity: 1, x: [210, 430, 650, 870][k], y: [1030, 980, 980, 1030][k], duration: .6, ease: "back.out(1.6)" }, fgEd - .3 + k * .13)
+      .to(s + " .brille", { backgroundPosition: "-30% 0", duration: .7, ease: "power2.inOut" }, mot("l12c", "saison…") + k * .08);
   });
-  // « Vos clients aussi auront la leur, en cadeau : » : les cartes montent ; la figurine d'une cliente, avec son ruban
-  const fgV = mot("l12c", "Vos");
-  ["#fe1", "#fe2", "#fe3", "#fe4"].forEach((s, k) => tl.to(s, { x: 390 + k * 170, y: 640, scale: .62, rotation: [-5, -2, 2, 5][k], duration: .6, ease: "power3.inOut" }, fgV - .1 + k * .04));
-  tl.to("#fc-chef", { x: 200, scale: .42, duration: .6, ease: "power3.inOut" }, fgV - .1)
-    .to("#fc-cli", { opacity: 1, scale: .82, rotation: -3, duration: .65, ease: "back.out(1.8)" }, mot("l12c", "cadeau") - .35)
-    .fromTo("#fc-cli .ruban", { scale: 0, rotation: -40 }, { scale: 1, rotation: -8, duration: .45, ease: "back.out(3)", immediateRender: false }, mot("l12c", "cadeau") - .05);
-  // « à collectionner… » : toutes, rangées dans sa collection
+  // « …et des éditions rares, pour ceux qui remplissent vos creux. » : l'édition rare « Mardi midi », et le défi de la
+  // famille relevé (3 tables, complet)
+  const fgRa = mot("l12c", "rares,");
+  ["#fe1", "#fe2", "#fe3", "#fe4"].forEach((s, k) => tl.to(s, { y: 1260, scale: .78, duration: .55, ease: "power3.inOut" }, fgRa - .3 + k * .03));
+  tl.to("#fe5", { opacity: 1, scale: 1.05, rotation: 0, duration: .6, ease: "back.out(2)" }, fgRa - .2)
+    .to("#fe5 .brille", { backgroundPosition: "-30% 0", duration: .8, ease: "power2.inOut" }, fgRa + .3)
+    .fromTo("#fe5 .defi", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .4, ease: "back.out(2)", immediateRender: false }, mot("l12c", "creux.") - .2);
+  GERBES.push(gerbe(45, 26, 540, 760, 260, 900, ["201,182,255", "255,122,217", "127,231,255", "255,255,255"], fgRa + .2, [2.2, 3.6], [.6, 1.2], 500, true));
+  // « À collectionner… » : toutes, rangées dans sa collection
   const fgA = mot("l12c", "collectionner…") - .25;
   tl.to("#fs-album", { opacity: 1, y: -10, duration: .45 }, fgA)
+    .to("#fe5 .defi", { opacity: 0, duration: .3 }, fgA)
     .to("#fc-chef", { x: 220, y: 720, scale: .58, rotation: 0, duration: .6, ease: "power3.inOut" }, fgA)
-    .to("#fe1", { x: 540, y: 720, scale: .92, rotation: 0, duration: .6, ease: "power3.inOut" }, fgA + .05)
-    .to("#fe2", { x: 860, y: 720, scale: .92, rotation: 0, duration: .6, ease: "power3.inOut" }, fgA + .1)
-    .to("#fe3", { x: 220, y: 1190, scale: .92, rotation: 0, duration: .6, ease: "power3.inOut" }, fgA + .15)
-    .to("#fe4", { x: 540, y: 1190, scale: .92, rotation: 0, duration: .6, ease: "power3.inOut" }, fgA + .2)
-    .to("#fc-cli", { x: 860, y: 1190, scale: .58, rotation: 0, duration: .6, ease: "power3.inOut" }, fgA + .25);
-  // « …et à faire parler, pour dire tout le bien qu'ils pensent de vous ! » : la cliente, au milieu ; puis elle parle
-  const fgP = mot("l12c", "faire") - .2;
-  tl.to(["#fc-chef", "#fe1", "#fe2", "#fe3", "#fe4", "#fs-album"], { opacity: .25, duration: .4 }, fgP)
+    .to("#fe5", { x: 540, y: 720, scale: .92, rotation: 0, duration: .6, ease: "power3.inOut" }, fgA + .05)
+    .to("#fe1", { x: 860, y: 720, scale: .92, rotation: 0, duration: .6, ease: "power3.inOut" }, fgA + .1)
+    .to("#fe2", { x: 220, y: 1190, scale: .92, rotation: 0, duration: .6, ease: "power3.inOut" }, fgA + .15)
+    .to("#fe3", { x: 540, y: 1190, scale: .92, rotation: 0, duration: .6, ease: "power3.inOut" }, fgA + .2)
+    .to("#fe4", { x: 860, y: 1190, scale: .92, rotation: 0, duration: .6, ease: "power3.inOut" }, fgA + .25);
+  // « …et à faire parler ! » : la figurine d'une cliente, en cadeau, au milieu ; puis elle dit son petit mot
+  const fgP = mot("l12c", "faire") - .25;
+  tl.to(["#fc-chef", "#fe1", "#fe2", "#fe3", "#fe4", "#fe5", "#fs-album"], { opacity: .25, duration: .4 }, fgP)
     .set("#fc-cli", { zIndex: 3 }, fgP)
-    .to("#fc-cli", { x: 540, y: 1000, scale: 1, rotation: 0, duration: .7, ease: "power3.inOut" }, fgP);
+    .to("#fc-cli", { opacity: 1, x: 540, y: 1000, scale: 1, rotation: 0, duration: .7, ease: "back.out(1.6)" }, fgP)
+    .fromTo("#fc-cli .ruban", { scale: 0, rotation: -40 }, { scale: 1, rotation: -8, duration: .45, ease: "back.out(3)", immediateRender: false }, fgP + .3);
   for (let k = 0; k < 18; k++) COEURS.push({ ecran: true, t: fgL + d("lcli") * .55 + k * .05, x: 540 + (fgR() - .5) * 420, y: 1240, v: 200 + fgR() * 220, vie: 1 + fgR() * .6, r: 16 + fgR() * 14, ph: fgR() * 6.28, c: ["#FF3B5C", "#FF5DB8", "#F2C46B"][k % 3] });
   tl.to("#figs", { opacity: 0, duration: .5 }, VOIX.l13 - .5);
 
@@ -1541,6 +1563,11 @@ function construire() {
     .to("#fi-mike", { y: -18, duration: .9, yoyo: true, repeat: 5, ease: "sine.inOut" }, t13 + .7)
     .to(FIG, { bras: 20, duration: .3, ease: "back.out(2)" }, mot("l13", "commence") - .1).to(FIG, { bras: 0, duration: .5 }, fin("l13") + .6)
     .set(FIG, { rit: 1 }, fin("l13") + .9);   // son rire reste, après la réplique
+  // « Des vidéos qui font jouer vos clients… Des surprises et des figurines, pour les remercier. Et un seul but :
+  // remplir vos places vides, au bon moment. » : les trois temps s'allument ; ils s'effacent quand l'offre arrive
+  $$("#fi-trois .ft").forEach((el, k) => tl.fromTo(el, { opacity: 0, y: 40, scale: .7 }, { opacity: 1, y: 0, scale: 1, duration: .45, ease: "back.out(2.2)", immediateRender: false },
+    mot("l13", ["jouer", "remercier.", "places"][k]) - .15));
+  tl.to("#fi-trois", { opacity: 0, y: -30, duration: .4 }, fin("l13") + .1);
   const tt = $("#fi-titre");
   tt.innerHTML = '<span class="m fort">1' + NB + 'mois</span> <span class="m fort">gratuit</span>';
   $$("#fi-titre .m").forEach((s, i) => tl.fromTo(s, { opacity: 0, y: 70, scale: 1.3 }, { opacity: 1, y: 0, scale: 1, duration: .4, ease: "expo.out", immediateRender: false }, fin("l13") + .35 + i * .15));
