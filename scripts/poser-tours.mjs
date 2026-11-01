@@ -46,6 +46,7 @@ const TOURS = {
   // répliques (`outils/tour-humain.py`)
   "tour-humain": "humain",
   "tour-humain-atelier": "atelier",
+  "tour-humain-bien-etre": "bien-etre",
 };
 
 // les étapes intermédiaires de la chaîne (`index.avant-episode2.html`…) ne sont pas la page

@@ -17,6 +17,7 @@ bouton « Voir la démo » de la page des commerçants (`public/commercants/`) m
 | **Démo des entrepreneurs** (Nina, céramiste · Claire, sophrologue) | `tour-entrepreneurs2/` (deuxième version) | https://www.clikme.fr/tours/entrepreneurs (`?v=local` : Claire) | — |
 | **Démo humaine**, « Un mois avec ClikMe » (le propriétaire et Mike, Chez Bergine) | `tour-humain/` | https://www.clikme.fr/tours/humain (une fois poussée sur `main`) | — |
 | **Démo humaine, version atelier** (cours de poterie : L'Atelier de Nina) | `tour-humain-atelier/` | https://www.clikme.fr/tours/atelier | — |
+| **Démo humaine, version bien-être** (massages, sophrologie, hypnose : Le Cocon d'Élise) | `tour-humain-bien-etre/` | https://www.clikme.fr/tours/bien-etre | — |
 
 ## Ce qu'il y a dedans
 
@@ -383,8 +384,16 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index
   l'interview du chef : la question sur « deux ou trois questions… »), le fil social, Mike (le créateur, sans toque),
   la conversation avec Camille, les surprises de la cage, le bon (« Validé ✓ »), la pastille « à l'honneur » ; et la
   réplique 5 de Mike, réenregistrée (« …à l'honneur vos ateliers… », `recu/humain/atelier/05-m.mp3`). Tout le reste —
-  sa voix, sa mère, les fantômes — est commun. Une variante de plus : une entrée dans `VARIANTES`, une ligne dans
-  `scripts/poser-tours.mjs`.
+  sa voix, sa mère, les fantômes — est commun. « bien-etre » (Le Cocon d'Élise — fictif — : massages, sophrologie,
+  hypnose ; pour les hypnothérapeutes, masseurs, sophrologues, praticiens de médecine chinoise ;
+  `tour-humain-bien-etre/`, /tours/bien-etre, 1er novembre) : façade vieux rose, store crème et eucalyptus ; les photos
+  du tour du massage (`recu/massage/photos/`) et du cabinet de Claire, la sophrologue (`recu/entrepreneurs/local/`) ;
+  son film (`film-bien-etre.html`, `film-atelier.mjs … bien-etre`) ; Mike, le fantôme bien-être de l'application. Sa
+  réplique 5 est celle du restaurant **coupée** de « où je mets à l'honneur votre menu du jour » (« Avec quelques
+  photos, je fais une très belle vidéo, puis je la publie partout… », `recu/humain/bien-etre/05-m.mp3` : un extrait
+  de l'enregistrement fourni, pas une voix fabriquée) ; s'il en enregistre une (« …à l'honneur vos séances… »), la
+  mettre à sa place et rendre le texte. Pas de promesse de santé à l'écran (pas de « soigner », « guérir »). Une
+  variante de plus : une entrée dans `VARIANTES`, une ligne dans `scripts/poser-tours.mjs`.
 - **Sa mère, au début** (`recu/humain/maman/` : `voix.mp3`, un fichier ElevenLabs qu'il a fourni, et ses trois photos
   de profil, neutre, sourire, rire — la « rire » recalée de 5 px) : sa carte dit « Élu meilleur community manager
   2026* », « *par sa mère » tombe dessus comme un tampon, son polaroïd arrive et elle le dit elle-même (« T'es le

@@ -33,9 +33,11 @@ R = f"{S}/recu/humain"
 NB = " "
 # ─── LA VARIANTE : la même histoire, habillée pour un métier. « restaurant » (Chez Bergine, la démo d'origine, publiée
 # à /tours/humain) ; « atelier » (L'Atelier de Nina, cours de poterie — fictif ; ses photos sont celles de Nina, la
-# céramiste de la démo des entrepreneurs ; publiée à /tours/atelier) : `--variante=atelier` → tour-humain-atelier/.
+# céramiste de la démo des entrepreneurs ; publiée à /tours/atelier) : `--variante=atelier` → tour-humain-atelier/ ;
+# « bien-etre » (Le Cocon d'Élise, massages, sophrologie, hypnose — fictif ; publiée à /tours/bien-etre).
 VARIANTE = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--variante=")), "restaurant")
 _N = f"{S}/recu/entrepreneurs/createur"
+_L, _M = f"{S}/recu/entrepreneurs/local", f"{S}/recu/massage/photos"   # (bien-être : la sophrologue de la démo des entrepreneurs, le Cocon d’Élise)
 VARIANTES = {
     "restaurant": {
         "nom": "Chez Bergine", "enseigne": "BISTROT · DAX", "compte": "chezbergine", "fac_style": "",
@@ -73,6 +75,28 @@ VARIANTES = {
         # sa réplique 5 (Mike) : « vos ateliers » au lieu de « votre menu du jour » (réenregistrée, 31 octobre)
         "l05": ("atelier/05-m", "Avec quelques photos, | je fais une très belle vidéo | où je mets à l’honneur | vos ateliers, | puis je la publie partout | "
                 "pour que tout le monde la voie.", {"coupures": ("quelques", "où", "pour", "monde")}),
+    },
+    "bien-etre": {
+        "nom": "Le Cocon d’Élise", "enseigne": "BIEN-ÊTRE · DAX", "compte": "lecocondelise",
+        # (un mur vieux rose, un store crème et eucalyptus, une enseigne brun foncé)
+        "fac_style": "--f1:#B8867A;--f2:#8A5C52;--s1:#F7EFE6;--s2:#6F8F80;--ens:#2E2422;",
+        "dore": "Massages · sophrologie · hypnose", "ardoise": ("Cette semaine", "Séance<br>découverte", "mardi 18 h", "2 créneaux"),
+        "images": {"m1.jpg": f"{_M}/m1.jpg", "m2.jpg": f"{_L}/cabinet.jpg", "m3.jpg": f"{_M}/m3.jpg", "m4.jpg": f"{_M}/m4.jpg",
+                   "si-interieur.webp": f"{_M}/boutique.jpg"},
+        "hote": f"{RACINE}/public/direct/double/pied/bien-etre/salut-1.webp", "toque": False, "film": f"{R}/bien-etre/film.mp4",
+        "posts": [("m1.jpg", "1 128", "Une heure rien que pour vous 🌿"), ("m2.jpg", "846", "Le cocon vous attend ☀️"), ("m4.jpg", "2 019", "Kobido, ce mardi ✨"),
+                  ("m1.jpg", "603", "Merci pour vos messages ❤️"), ("m3.jpg", "2 304", "Massage à l’huile chaude 💆"), ("m2.jpg", "411", "À mardi !")],
+        "surprises": ("🕯️ Une bougie", "🍵 Une infusion", "🎟️ Une séance offerte"),
+        "page": {"HONNEUR": "⭐ Vos séances, à l’honneur", "TAG1": "📅 En semaine", "TAG2": "💆 Plutôt massage", "SURPRISE": "LA SURPRISE DU COCON",
+                 "BON": "🕯️ Une bougie offerte", "SERVIE": "Validé ✓"},
+        "js": {"honneur": "vidéo,", "forts5": ["belle", "vidéo,", "partout"],
+               "fil": ["Merci Camille ! Tu viendras un jour, c’est promis 😊 Plutôt en semaine ou le week-end ?", "En semaine",
+                       "Noté ! Et plutôt massage ou sophrologie ?", "Massage 💆", "Mardi · 17 h · un créneau se libère",
+                       "Un créneau vient de se libérer demain à 17 h, Camille. Je te le garde ?", "Oui, je le prends ! 😍"]},
+        # sa réplique 5 (Mike) : celle du restaurant, sans « où je mets à l'honneur votre menu du jour » (coupée dans
+        # l'enregistrement, `recu/humain/bien-etre/05-m.mp3`, 1er novembre ; à remplacer s'il en enregistre une pour le bien-être)
+        "l05": ("bien-etre/05-m", "Avec quelques photos, | je fais une très belle vidéo, | puis je la publie partout | pour que tout le monde la voie.",
+                {"coupures": ("quelques", "pour", "monde")}),
     },
 }
 V = VARIANTES[VARIANTE]
