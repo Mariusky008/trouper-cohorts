@@ -46,6 +46,7 @@ VARIANTES = {
         "dore": "Fait maison · depuis 1998", "ardoise": ("Aujourd’hui", "Garbure<br>landaise", "& magret", "19 €"),
         "images": {"m1.jpg": f"{S}/tour/m1.jpg", "m2.jpg": f"{S}/tour/m2.jpg", "m3.jpg": f"{S}/tour/m3.jpg", "m4.jpg": f"{S}/tour/m4.jpg",
                    "si-interieur.webp": f"{S}/tour/si-interieur.webp"},
+        "pro": (f"{S}/tour/m4.jpg", "chef-neutre", "chef-parle"),
         "hote": f"{S}/accueil2/page/g-restaurant-salue.webp", "toque": True, "film": f"{S}/tour/interview.mp4",
         "posts": [("m1.jpg", "1 128", "Le magret du jour 🔥"), ("m2.jpg", "846", "Ce soir, terrasse ouverte ☀️"), ("m4.jpg", "2 019", "Notre chef aux fourneaux 👨‍🍳"),
                   ("m1.jpg", "603", "Merci pour vos messages ❤️"), ("m3.jpg", "2 304", "Garbure landaise, ce midi 🥘"), ("m2.jpg", "411", "À demain !")],
@@ -53,8 +54,10 @@ VARIANTES = {
         "page": {"HONNEUR": "⭐ Votre menu du jour, à l’honneur", "TAG1": "📅 En semaine", "TAG2": "🐟 Plutôt poisson", "SURPRISE": "LA SURPRISE DU CHEF",
                  "BON": "🍮 Le dessert du chef", "SERVIE": "Servie ✓",
                  "CAGE1": "Ça donne<br>envie", "CAGE2": "Je réserverai<br>un jour", "CAGE3": "Je réserve<br>aujourd’hui", "PLACES": "5 commerces",
-                 "G1": "💗 21 ont envie", "G2": "📌 12 réserveront un jour", "G3": "🍽️ 5 réservent aujourd’hui", "TAGJ": "📌 Réservera un jour"},
-        "js": {"honneur": "menu", "forts5": ["belle", "vidéo", "menu", "jour,", "partout"],
+                 "G1": "💗 21 ont envie", "G2": "📌 12 réserveront un jour", "G3": "🍽️ 5 réservent aujourd’hui", "TAGJ": "📌 Réservera un jour",
+                 "PRO_NOM": "Jean-Marie", "PRO_ROLE": "le chef de Chez Bergine", "PRO_BADGE": "🪑 Table libre · 12 h 30", "RARE": "MARDI MIDI", "DEFI": "3 tables"},
+        "js": {"libre": "vide", "forts12b": ["figurine", "moi.", "vide\u202f?", "prénom\u202f:"], "fortsChef": ["Camille\u202f!", "table", "minutes\u202f!"],
+               "fortsCli": ["meilleur", "magret"], "honneur": "menu", "forts5": ["belle", "vidéo", "menu", "jour,", "partout"],
                "forts7": ["“Ça", "envie”,", "“Je", "réserverai", "jour”,", "réserve", "aujourd’hui”."],
                "fil": ["Merci Camille ! On te garde une table un de ces jours 😊 Plutôt en semaine ou le week-end ?", "En semaine",
                        "Noté ! Et plutôt viande ou poisson ?", "Poisson 🐟", "Mardi · 11 h · c’est calme",
@@ -67,6 +70,7 @@ VARIANTES = {
         "dore": "Cours & ateliers · tous niveaux", "ardoise": ("Cette semaine", "Atelier<br>tour", "samedi 10 h", "2 places"),
         "images": {"m1.jpg": f"{_N}/mains.jpg", "m2.jpg": f"{_N}/table.jpg", "m3.jpg": f"{_N}/bol-bleu.jpg", "m4.jpg": f"{_N}/tour.jpg",
                    "si-interieur.webp": f"{_N}/atelier.jpg"},
+        "pro": (f"{_N}/tour.jpg", "nina-neutre", "nina-parle"),   # (ses mains sur le tour, puis sa figurine)
         "hote": f"{RACINE}/public/direct/double/pied/createur/salut-1.webp", "toque": False, "film": f"{R}/atelier/film.mp4",
         "posts": [("m1.jpg", "1 128", "Les mains dans la terre 🤲"), ("m2.jpg", "846", "L’atelier vous attend ☀️"), ("m4.jpg", "2 019", "Atelier tour, ce samedi 🏺"),
                   ("m1.jpg", "603", "Merci pour vos messages ❤️"), ("m3.jpg", "2 304", "Sortie du four ce matin 🔥"), ("m2.jpg", "411", "À samedi !")],
@@ -74,8 +78,10 @@ VARIANTES = {
         "page": {"HONNEUR": "⭐ Vos ateliers, à l’honneur", "TAG1": "📅 Le week-end", "TAG2": "🏺 Plutôt le tour", "SURPRISE": "LA SURPRISE DE L’ATELIER",
                  "BON": "🔥 Une cuisson offerte", "SERVIE": "Validé ✓",
                  "CAGE1": "Ça me<br>tente", "CAGE2": "Je m’inscrirai<br>un jour", "CAGE3": "Je réserve<br>ma place", "PLACES": "5 ateliers",
-                 "G1": "💗 21 ont envie d’essayer", "G2": "📌 12 s’inscriront un jour", "G3": "🏺 5 réservent leur place", "TAGJ": "📌 S’inscrira un jour"},
-        "js": {"honneur": "ateliers,", "forts5": ["belle", "vidéo", "ateliers,", "partout"],
+                 "G1": "💗 21 ont envie d’essayer", "G2": "📌 12 s’inscriront un jour", "G3": "🏺 5 réservent leur place", "TAGJ": "📌 S’inscrira un jour",
+                 "PRO_NOM": "Nina", "PRO_ROLE": "la potière de l’atelier", "PRO_BADGE": "🏺 Place libre · samedi 10 h", "RARE": "JEUDI SOIR", "DEFI": "3 places"},
+        "js": {"libre": "libre", "forts12b": ["figurine", "moi.", "libre", "prénom\u202f:"], "fortsChef": ["Camille\u202f!", "place", "minutes\u202f!"],
+               "fortsCli": ["meilleur", "poterie"], "honneur": "ateliers,", "forts5": ["belle", "vidéo", "ateliers,", "partout"],
                "forts7": ["“Ça", "tente”,", "“Je", "m’inscrirai", "jour”,", "réserve", "place”."],
                "fil": ["Merci Camille ! Tu viendras un jour, c’est promis 😊 Plutôt en semaine ou le week-end ?", "Le week-end",
                        "Noté ! Et plutôt le tour ou le modelage ?", "Le tour 🏺", "Vendredi · 18 h · il reste 2 places",
@@ -86,6 +92,12 @@ VARIANTES = {
             "l05": ("atelier/05-m", "Avec quelques photos, | je fais une très belle vidéo | où je mets à l’honneur | vos ateliers, | puis je la publie partout | "
                     "pour que tout le monde la voie.", {"coupures": ("quelques", "où", "pour", "monde")}),
             "l07": ("atelier/07-m", f"{L07} | “Ça me tente”, | “Je m’inscrirai un jour”, | ou “Je réserve ma place”.", {"coupures": (":", "“Je")}),
+            # la scène des figurines, dans les mots de l'atelier (1er novembre) : une place libre ; Nina (voix « Mélodie ») ;
+            # la cliente (Emma)
+            "l12b": ("figurines/jp-revelation-a-atelier", f"Cette figurine | qui vous parle depuis le début{NB}? | C’est moi. | Et vous aurez la vôtre. | Une place libre à l’atelier{NB}? | "
+                     f"Un vocal de 10 secondes… | et c’est votre figurine | qui prévient ceux qui attendaient ce moment, | à leur prénom{NB}:", {"liees": ("secondes…",)}),
+            "lchef": ("figurines/melodie-2", f"Camille{NB}! | Il me reste une place | à l’atelier tour, samedi à 10 h{NB}: | elle est à toi pendant 5 minutes{NB}!", {"liees": ("tour,",)}),
+            "lcli": ("figurines/cliente-atelier", f"Le meilleur cours | de poterie de Dax{NB}!", {}),
         },
     },
     "bien-etre": {
@@ -95,6 +107,7 @@ VARIANTES = {
         "dore": "Massages · sophrologie · hypnose", "ardoise": ("Cette semaine", "Séance<br>découverte", "mardi 18 h", "2 créneaux"),
         "images": {"m1.jpg": f"{_M}/m1.jpg", "m2.jpg": f"{_L}/cabinet.jpg", "m3.jpg": f"{_M}/m3.jpg", "m4.jpg": f"{_M}/m4.jpg",
                    "si-interieur.webp": f"{_M}/boutique.jpg"},
+        "pro": (f"{_M}/m1.jpg", "elise-neutre", "elise-parle"),   # (ses mains pendant un massage, puis sa figurine)
         "hote": f"{RACINE}/public/direct/double/pied/bien-etre/salut-1.webp", "toque": False, "film": f"{R}/bien-etre/film.mp4",
         "posts": [("m1.jpg", "1 128", "Une heure rien que pour vous 🌿"), ("m2.jpg", "846", "Le cocon vous attend ☀️"), ("m4.jpg", "2 019", "Kobido, ce mardi ✨"),
                   ("m1.jpg", "603", "Merci pour vos messages ❤️"), ("m3.jpg", "2 304", "Massage à l’huile chaude 💆"), ("m2.jpg", "411", "À mardi !")],
@@ -102,8 +115,10 @@ VARIANTES = {
         "page": {"HONNEUR": "⭐ Vos séances, à l’honneur", "TAG1": "📅 En semaine", "TAG2": "💆 Plutôt massage", "SURPRISE": "LA SURPRISE DU COCON",
                  "BON": "🕯️ Une bougie offerte", "SERVIE": "Validé ✓",
                  "CAGE1": "Ça me ferait<br>du bien", "CAGE2": "Je prendrai<br>rendez-vous", "CAGE3": "Je prends<br>rendez-vous", "PLACES": "5 cabinets",
-                 "G1": "💗 21 : ça leur ferait du bien", "G2": "📌 12 prendront rendez-vous", "G3": "📅 5 prennent rendez-vous", "TAGJ": "📌 Prendra rendez-vous"},
-        "js": {"honneur": "séances,", "forts5": ["belle", "vidéo", "séances,", "partout"],
+                 "G1": "💗 21 : ça leur ferait du bien", "G2": "📌 12 prendront rendez-vous", "G3": "📅 5 prennent rendez-vous", "TAGJ": "📌 Prendra rendez-vous",
+                 "PRO_NOM": "Élise", "PRO_ROLE": "praticienne au Cocon", "PRO_BADGE": "🌿 Créneau libre · mardi 18 h", "RARE": "LUNDI MATIN", "DEFI": "3 créneaux"},
+        "js": {"libre": "libre", "forts12b": ["figurine", "moi.", "libre\u202f?", "prénom\u202f:"], "fortsChef": ["Camille\u202f!", "créneau", "minutes\u202f!"],
+               "fortsCli": ["meilleur", "massage"], "honneur": "séances,", "forts5": ["belle", "vidéo", "séances,", "partout"],
                "forts7": ["“Ça", "bien”,", "“Je", "prendrai", "rendez-vous”,", "prends", "rendez-vous”."],
                "fil": ["Merci Camille ! Tu viendras un jour, c’est promis 😊 Plutôt en semaine ou le week-end ?", "En semaine",
                        "Noté ! Et plutôt massage ou sophrologie ?", "Massage 💆", "Mardi · 17 h · un créneau se libère",
@@ -113,6 +128,12 @@ VARIANTES = {
             "l05": ("bien-etre/05-m", "Avec quelques photos, | je fais une très belle vidéo | où je mets à l’honneur | vos séances, | puis je la publie partout | "
                     "pour que tout le monde la voie.", {"coupures": ("quelques", "pour", "tout", "monde"), "liees": ("photos,",)}),
             "l07": ("bien-etre/07-m", f"{L07} | “Ça me ferait du bien”, | “Je prendrai rendez-vous”, | ou “Je prends rendez-vous”.", {"coupures": ("“Je",)}),
+            # la scène des figurines, dans les mots du cabinet (1er novembre) : un créneau libre ; Élise (voix « Mélodie ») ;
+            # la cliente (Emma)
+            "l12b": ("figurines/jp-revelation-a-bien-etre", f"Cette figurine | qui vous parle depuis le début{NB}? | C’est moi. | Et vous aurez la vôtre. | Un créneau libre{NB}? | "
+                     f"Un vocal de 10 secondes… | et c’est votre figurine | qui prévient ceux qui attendaient ce moment, | à leur prénom{NB}:", {"liees": ("moment,",)}),
+            "lchef": ("figurines/melodie-1", f"Camille{NB}! | Il me reste un créneau | mardi à 18 h{NB}: | il est à toi pendant 5 minutes{NB}!", {}),
+            "lcli": ("figurines/cliente-bien-etre", f"Le meilleur massage | de Dax{NB}!", {}),
         },
     },
 }
@@ -152,8 +173,9 @@ SOUS = {
             f"Et un seul but{NB}: | remplir vos places vides, | au bon moment. | 1 mois gratuit | pour faire mes preuves… | on commence{NB}?",
             {"liees": ("figurines,",)}),
 }
-for c, ligne in V.get("lignes", {}).items():   # (les répliques propres au métier)
-    SOUS[c] = ligne
+for c, ligne in V.get("lignes", {}).items():   # (les répliques propres au métier ; celles de la scène des figurines, plus bas)
+    if c in SOUS:
+        SOUS[c] = ligne
 # LA SCÈNE DES FIGURINES (1er novembre, `docs/figurines.md`), entre la 12 et la 13, la même dans les trois démos : sa
 # révélation en deux répliques ; entre les deux, la figurine du chef de Chez Bergine qui invite Camille à prendre une
 # table vide (sa voix : un fichier ElevenLabs fourni, « Nicolas ») ; à la fin, une cliente (« Emma »). Les places
@@ -162,10 +184,15 @@ FIGS_LIGNES = {
     "l12b": ("figurines/jp-revelation-a", f"Cette figurine | qui vous parle depuis le début{NB}? | C’est moi. | Et vous aurez la vôtre. | Une table vide{NB}? | "
              f"Un vocal de 10 secondes… | et c’est votre figurine | qui prévient ceux qui attendaient ce moment, | à leur prénom{NB}:", {}),
     "lchef": ("figurines/chef-camille", f"Camille{NB}! | Il me reste une table à 12 h 30{NB}: | elle est à toi pendant 5 minutes{NB}!", {}),
-    "l12c": ("figurines/jp-revelation-b", f"Et ceux qui viennent | gagnent votre figurine{NB}: | une édition à chaque saison… | et des éditions rares, | "
-             f"pour ceux qui remplissent vos creux. | À collectionner… | et à faire parler{NB}!", {"liees": ("rares,",)}),
+    # (la 12c, réécrite et réenregistrée par lui le 1er novembre : la figurine du pro se gagne en remplissant ses creux, et
+    # se collectionne d'édition en édition ; les plus fidèles reçoivent LEUR figurine, qui parle avec leur voix. « Les plus
+    # fidèles » : le « Les », absent de son texte, s'entend dans l'enregistrement.)
+    "l12c": ("figurines/jp-revelation-b2", f"Et pour ceux qui remplissent vos creux, | ils gagnent votre figurine, | dans son édition du moment{NB}: | "
+             f"Halloween, Noël, l’été, la rentrée… | et des éditions rares. | À collectionner absolument{NB}! | Les plus fidèles, ils reçoivent | "
+             f"leur propre figurine… | qui parle avec leur voix{NB}:", {"liees": ("Halloween,", "Noël,", "l’été,", "rentrée…", "fidèles,")}),
     "lcli": ("figurines/cliente", f"Le meilleur magret | de Dax{NB}!", {}),
 }
+FIGS_LIGNES.update({c: ligne for c, ligne in V.get("lignes", {}).items() if c in FIGS_LIGNES})   # (dans les mots du métier)
 SOUS = {**{c: v for c, v in SOUS.items() if c != "l13"}, **FIGS_LIGNES, "l13": SOUS["l13"]}
 
 # Les moments de sa figurine (répliques du propriétaire) : (expression, mot de départ ou « fin », décalage, mot de fin
@@ -353,8 +380,8 @@ MIKE = {c: "".join(str(min(9, round(v * 9))) for v in energie(FF, f"{D}/voix/{c}
 PAROLES = {c: "".join(str(min(9, round(v * 9))) for v in energie(FF, f"{D}/voix/{c}.mp3")) for c in ("lchef", "lcli")}
 # leurs images : la photo du chef (celle du restaurant) ; les figurines, recadrées en carte (le portrait, 0,72)
 FG = f"{R}/figurines"
-shutil.copyfile(f"{S}/tour/m4.jpg", f"{D}/f/chef-photo.jpg")
-for src, dst in (("chef-neutre", "fig-chef-n"), ("chef-parle", "fig-chef-p"), ("cliente-neutre", "fig-cli-n"), ("cliente-parle", "fig-cli-p"),
+subprocess.run([FF, "-v", "error", "-y", "-i", V["pro"][0], "-vf", "scale='min(900,iw)':-2", "-q:v", "3", f"{D}/f/chef-photo.jpg"], check=True)
+for src, dst in ((V["pro"][1], "fig-chef-n"), (V["pro"][2], "fig-chef-p"), ("cliente-neutre", "fig-cli-n"), ("cliente-parle", "fig-cli-p"),
                  ("jp-halloween", "ed-halloween"), ("jp-noel", "ed-noel"), ("jp-ete", "ed-ete"), ("jp-rentree", "ed-rentree"),
                  ("../ressort/neutre", "ed-rare")):   # (l'édition rare : sa figurine de la démo)
     subprocess.run([FF, "-v", "error", "-y", "-i", f"{FG}/{src}.jpg", "-vf", "crop='min(iw,ih*0.72)':ih,scale=-2:760", "-quality", "86", f"{D}/f/{dst}.webp"], check=True)
