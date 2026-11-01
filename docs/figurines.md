@@ -97,7 +97,7 @@ vidéo.
 
 | Étape | Quoi | Prêt quand |
 |---|---|---|
-| 0 | La scène de la démo : la révélation (« Cette figurine, c'est moi ») et les éditions | ses images de saison et sa phrase |
+| 0 | La scène de la démo : la révélation (« Cette figurine, c'est moi »), le chef, les éditions, une cliente | faite le 1er novembre (les trois démos) |
 | 1 | Les premiers pros : figurine faite à la main par le propriétaire, vidéos rendues sur demande | tout de suite |
 | 2 | La fabrication automatique (photos → images → validation) et le vocal du matin | chantier 4 pour WhatsApp |
 | 3 | Les éditions au calendrier, et la collection des clients dans leur Maison | après l'étape 2 |

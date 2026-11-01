@@ -21,6 +21,10 @@ de l'ancienne démo n'est repris. Les chiffres à l'écran sont inventés et éc
 | 10 | P | « À la fin du mois, on fait le bilan ensemble : chaque bon validé à votre comptoir, c'est un client que je vous ai amené. » | « Fin du mois » ; le bon, « Servie ✓ » ; le bilan « Objectif du mois » (chiffres inventés) |
 | 11 | M | « Et voilà : pas de blabla, pas de fausses promesses. » | |
 | 12 | M | « On n'est pas là pour vous apporter des vues. On est là pour vous apporter des clients. » | en grand |
+| 12b | P | « Cette figurine qui vous parle depuis le début ? C'est moi. Et vous aurez la vôtre : un vocal de 10 secondes, et elle annonce vos offres avec votre voix… » | sa figurine au milieu, un clin d'œil ; la photo du chef, son vocal ; elle se retourne : sa figurine |
+| chef | le chef | « Ce midi, garbure landaise et magret ! » (voix ElevenLabs « Nicolas ») | sa figurine le dit, la bouche sur ses syllabes ; son vocal se lit |
+| 12c | P | « …et elle change à chaque saison. Vos clients aussi auront la leur, en cadeau : à collectionner… et à faire parler, pour dire tout le bien qu'ils pensent de vous ! » | ses éditions en cartes dorées (Halloween, Noël, Été, Rentrée) ; Léa, en cadeau (« Offerte par Chez Bergine ») ; « Ma collection · 6 / 24 » |
+| Léa | une cliente | « Le meilleur magret de Dax ! » (voix ElevenLabs « Emma ») | sa figurine au milieu le dit ; des cœurs |
 | 13 | P | « 1 mois gratuit, un mois pour faire mes preuves, alors, on commence ? » | son contact (son numéro à toucher), « Revoir » ; puis, si elle est enregistrée, sa mère |
 
 Durée visée : environ 1 min 05.
@@ -109,6 +113,12 @@ réponse pour discuter avec eux et créer du lien »)** : la 7 réenregistrée p
 l'indication de scène, lue par erreur, qui décalait aussi ses sous-titres) ; la 8 réenregistrée, avec « les plus
 rapides » (dans l'application, la cage dorée va au premier qui l'ouvre) ; les cages, les groupes et la fiche de
 Camille dans les mêmes mots ; une troisième démo, **bien-être** (Le Cocon d'Élise : massages, sophrologie, hypnose).
+
+**Neuvième passe (1er novembre : « une feature qui serait vraiment un game changer »)** : **la scène des figurines**
+(`docs/figurines.md`), entre la 12 et la 13 — « Cette figurine qui vous parle depuis le début ? C'est moi. » ; la photo
+du chef de Chez Bergine (avec son accord) devient sa figurine, qui annonce le menu avec sa voix ; ses éditions de
+saison, en cartes à collectionner ; la figurine d'une cliente (la compagne du propriétaire, avec son accord), offerte
+en cadeau, qui dit son petit mot. La démo passe à 2 min 13 (restaurant).
 
 ## À garder en tête
 

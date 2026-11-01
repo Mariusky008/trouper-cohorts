@@ -391,6 +391,14 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index
   son film (`film-bien-etre.html`, `film-atelier.mjs … bien-etre`) ; Mike, le fantôme bien-être de l'application. Sa
   réplique 5 : « …à l'honneur vos séances… » (`recu/humain/bien-etre/05-m.mp3`). Pas de promesse de santé à l'écran (pas de « soigner », « guérir »). Une
   variante de plus : une entrée dans `VARIANTES`, une ligne dans `scripts/poser-tours.mjs`.
+- **La scène des figurines** (1er novembre, `docs/figurines.md`), entre la 12 et la 13, la même dans les trois démos :
+  sa phrase (`recu/humain/figurines/jp-revelation.mp3`), coupée en deux à sa respiration (`l12b` jusqu'à « …avec
+  votre voix… », `l12c` ensuite : les options `debut` et `coupe`) ; entre les deux, le chef de Chez Bergine (`lchef`,
+  `chef.mp3`, ElevenLabs « Nicolas » ; sa photo `tour/m4.jpg` se retourne sur sa figurine) ; à la fin, une cliente
+  (`lcli`, `cliente.mp3`, « Emma »). Leurs bouches s'ouvrent sur leur voix (`PAROLES`, `figsParlent`), une image sur
+  deux. Ses éditions (`jp-halloween`, `jp-noel` — le sceau du coin effacé —, `jp-ete`, `jp-rentree`) sont des cartes
+  dorées ; les images sont recadrées en carte par le script (`f/ed-*.webp`, `f/fig-*.webp`). Le chef et la cliente
+  ont donné leur accord (confirmé par le propriétaire). Sa figurine, au milieu, cligne de l'œil sur « C'est moi ».
 - **Les trois cages, dans les mots du métier** (1er novembre) : restaurant « Ça donne envie », « Je réserverai un
   jour », « Je réserve aujourd'hui » ; atelier « Ça me tente », « Je m'inscrirai un jour », « Je réserve ma place » ;
   bien-être « Ça me ferait du bien », « Je prendrai rendez-vous », « Je prends rendez-vous ». Mike les dit (la
