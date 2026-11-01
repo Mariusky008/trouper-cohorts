@@ -118,7 +118,9 @@ SOUS = {
             "pour que tout le monde la voie.", {"coupures": ("quelques", "où", "pour", "monde")}),
     "l06": ("06-p", "Mais ce n’est pas là | qu’il est le plus fort. | C’est juste après.", {}),
     "l07": ("07-m", f"À la fin de la vidéo, | chaque personne peut libérer son fantôme | pour dire ce qu’elle en pense{NB}: | “J’adore la vidéo”, | "
-            "“Je passerai un jour, c’est sûr”, | ou “Je passe aujourd’hui”.", {"coupures": ("sûr”,",)}),
+            "“Je passerai un jour, c’est sûr”, | ou “Je passe aujourd’hui”.",
+            # (l'enregistrement finit par « les trois cages apparaissent », lu par erreur : coupé à 9,5 s — 1er novembre)
+            {"coupe": 9.5, "coupures": ("“Je",), "liees": ("jour,",)}),
     "l08": ("08-m", f"Et moi, | je leur réponds{NB}! | Petit à petit, | je découvre leurs envies, | leurs habitudes… | et je leur donne une bonne raison | "
             "de pousser votre porte. | Et pour les plus fidèles, | ceux qui ouvrent en premier | ma cage dorée, | je les bichonne | avec des petites surprises.",
             {"liees": ("petit,",)}),
