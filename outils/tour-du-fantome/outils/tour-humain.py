@@ -31,6 +31,8 @@ RACINE = os.path.abspath(f"{S}/../..")
 FF = f"{S}/ffmpeg" if os.path.exists(f"{S}/ffmpeg") else shutil.which("ffmpeg")
 R = f"{S}/recu/humain"
 NB = " "
+# (le début de la réplique 7, commun à tous les métiers ; la fin — les trois cages — est propre à chacun)
+L07 = f"À la fin de la vidéo, | chaque personne peut libérer son fantôme | pour dire ce qu’elle en pense{NB}:"
 # ─── LA VARIANTE : la même histoire, habillée pour un métier. « restaurant » (Chez Bergine, la démo d'origine, publiée
 # à /tours/humain) ; « atelier » (L'Atelier de Nina, cours de poterie — fictif ; ses photos sont celles de Nina, la
 # céramiste de la démo des entrepreneurs ; publiée à /tours/atelier) : `--variante=atelier` → tour-humain-atelier/ ;
@@ -49,9 +51,12 @@ VARIANTES = {
                   ("m1.jpg", "603", "Merci pour vos messages ❤️"), ("m3.jpg", "2 304", "Garbure landaise, ce midi 🥘"), ("m2.jpg", "411", "À demain !")],
         "surprises": ("🍮 Un dessert", "☕ Un café", "🥐 Une douceur"),
         "page": {"HONNEUR": "⭐ Votre menu du jour, à l’honneur", "TAG1": "📅 En semaine", "TAG2": "🐟 Plutôt poisson", "SURPRISE": "LA SURPRISE DU CHEF",
-                 "BON": "🍮 Le dessert du chef", "SERVIE": "Servie ✓"},
+                 "BON": "🍮 Le dessert du chef", "SERVIE": "Servie ✓",
+                 "CAGE1": "Ça donne<br>envie", "CAGE2": "Je réserverai<br>un jour", "CAGE3": "Je réserve<br>aujourd’hui",
+                 "G1": "💗 21 ont envie", "G2": "📌 12 réserveront un jour", "G3": "🍽️ 5 réservent aujourd’hui", "TAGJ": "📌 Réservera un jour"},
         "js": {"honneur": "menu", "forts5": ["belle", "vidéo", "menu", "jour,", "partout"],
-               "fil": ["Merci Camille ! Tu passeras un jour, c’est promis 😊 Plutôt en semaine ou le week-end ?", "En semaine",
+               "forts7": ["“Ça", "envie”,", "“Je", "réserverai", "jour”,", "réserve", "aujourd’hui”."],
+               "fil": ["Merci Camille ! On te garde une table un de ces jours 😊 Plutôt en semaine ou le week-end ?", "En semaine",
                        "Noté ! Et plutôt viande ou poisson ?", "Poisson 🐟", "Mardi · 11 h · c’est calme",
                        "Il reste une table ce midi, Camille. Je te la garde ?", "J’arrive ! 😍"]},
     },
@@ -67,14 +72,21 @@ VARIANTES = {
                   ("m1.jpg", "603", "Merci pour vos messages ❤️"), ("m3.jpg", "2 304", "Sortie du four ce matin 🔥"), ("m2.jpg", "411", "À samedi !")],
         "surprises": ("🔥 Une cuisson", "🎨 Un tablier", "🎟️ Une place offerte"),
         "page": {"HONNEUR": "⭐ Vos ateliers, à l’honneur", "TAG1": "📅 Le week-end", "TAG2": "🏺 Plutôt le tour", "SURPRISE": "LA SURPRISE DE L’ATELIER",
-                 "BON": "🔥 Une cuisson offerte", "SERVIE": "Validé ✓"},
+                 "BON": "🔥 Une cuisson offerte", "SERVIE": "Validé ✓",
+                 "CAGE1": "Ça me<br>tente", "CAGE2": "Je m’inscrirai<br>un jour", "CAGE3": "Je réserve<br>ma place",
+                 "G1": "💗 21 ont envie d’essayer", "G2": "📌 12 s’inscriront un jour", "G3": "🏺 5 réservent leur place", "TAGJ": "📌 S’inscrira un jour"},
         "js": {"honneur": "ateliers,", "forts5": ["belle", "vidéo", "ateliers,", "partout"],
+               "forts7": ["“Ça", "tente”,", "“Je", "m’inscrirai", "jour”,", "réserve", "place”."],
                "fil": ["Merci Camille ! Tu viendras un jour, c’est promis 😊 Plutôt en semaine ou le week-end ?", "Le week-end",
                        "Noté ! Et plutôt le tour ou le modelage ?", "Le tour 🏺", "Vendredi · 18 h · il reste 2 places",
                        "Il reste 2 places à l’atelier tour demain matin, Camille. Je t’en garde une ?", "Oui, je viens ! 😍"]},
-        # sa réplique 5 (Mike) : « vos ateliers » au lieu de « votre menu du jour » (réenregistrée, 31 octobre)
-        "l05": ("atelier/05-m", "Avec quelques photos, | je fais une très belle vidéo | où je mets à l’honneur | vos ateliers, | puis je la publie partout | "
-                "pour que tout le monde la voie.", {"coupures": ("quelques", "où", "pour", "monde")}),
+        # ses répliques (Mike) : la 5, « vos ateliers » au lieu de « votre menu du jour » (31 octobre) ; la 7, les cages de
+        # l'atelier (1er novembre)
+        "lignes": {
+            "l05": ("atelier/05-m", "Avec quelques photos, | je fais une très belle vidéo | où je mets à l’honneur | vos ateliers, | puis je la publie partout | "
+                    "pour que tout le monde la voie.", {"coupures": ("quelques", "où", "pour", "monde")}),
+            "l07": ("atelier/07-m", f"{L07} | “Ça me tente”, | “Je m’inscrirai un jour”, | ou “Je réserve ma place”.", {"coupures": (":", "“Je")}),
+        },
     },
     "bien-etre": {
         "nom": "Le Cocon d’Élise", "enseigne": "BIEN-ÊTRE · DAX", "compte": "lecocondelise",
@@ -88,15 +100,20 @@ VARIANTES = {
                   ("m1.jpg", "603", "Merci pour vos messages ❤️"), ("m3.jpg", "2 304", "Massage à l’huile chaude 💆"), ("m2.jpg", "411", "À mardi !")],
         "surprises": ("🕯️ Une bougie", "🍵 Une infusion", "🎟️ Une séance offerte"),
         "page": {"HONNEUR": "⭐ Vos séances, à l’honneur", "TAG1": "📅 En semaine", "TAG2": "💆 Plutôt massage", "SURPRISE": "LA SURPRISE DU COCON",
-                 "BON": "🕯️ Une bougie offerte", "SERVIE": "Validé ✓"},
-        "js": {"honneur": "vidéo,", "forts5": ["belle", "vidéo,", "partout"],
+                 "BON": "🕯️ Une bougie offerte", "SERVIE": "Validé ✓",
+                 "CAGE1": "Ça me ferait<br>du bien", "CAGE2": "Je prendrai<br>rendez-vous", "CAGE3": "Je prends<br>rendez-vous",
+                 "G1": "💗 21 : ça leur ferait du bien", "G2": "📌 12 prendront rendez-vous", "G3": "📅 5 prennent rendez-vous", "TAGJ": "📌 Prendra rendez-vous"},
+        "js": {"honneur": "séances,", "forts5": ["belle", "vidéo", "séances,", "partout"],
+               "forts7": ["“Ça", "bien”,", "“Je", "prendrai", "rendez-vous”,", "prends", "rendez-vous”."],
                "fil": ["Merci Camille ! Tu viendras un jour, c’est promis 😊 Plutôt en semaine ou le week-end ?", "En semaine",
                        "Noté ! Et plutôt massage ou sophrologie ?", "Massage 💆", "Mardi · 17 h · un créneau se libère",
                        "Un créneau vient de se libérer demain à 17 h, Camille. Je te le garde ?", "Oui, je le prends ! 😍"]},
-        # sa réplique 5 (Mike) : celle du restaurant, sans « où je mets à l'honneur votre menu du jour » (coupée dans
-        # l'enregistrement, `recu/humain/bien-etre/05-m.mp3`, 1er novembre ; à remplacer s'il en enregistre une pour le bien-être)
-        "l05": ("bien-etre/05-m", "Avec quelques photos, | je fais une très belle vidéo, | puis je la publie partout | pour que tout le monde la voie.",
-                {"coupures": ("quelques", "pour", "monde")}),
+        # ses répliques (Mike, 1er novembre) : la 5, « vos séances » ; la 7, les cages du bien-être
+        "lignes": {
+            "l05": ("bien-etre/05-m", "Avec quelques photos, | je fais une très belle vidéo | où je mets à l’honneur | vos séances, | puis je la publie partout | "
+                    "pour que tout le monde la voie.", {"coupures": ("quelques", "pour", "tout", "monde"), "liees": ("photos,",)}),
+            "l07": ("bien-etre/07-m", f"{L07} | “Ça me ferait du bien”, | “Je prendrai rendez-vous”, | ou “Je prends rendez-vous”.", {"coupures": ("“Je",)}),
+        },
     },
 }
 V = VARIANTES[VARIANTE]
@@ -117,13 +134,14 @@ SOUS = {
     "l05": ("05-m", "Avec quelques photos, | je fais une très belle vidéo | où je mets à l’honneur | votre menu du jour, | puis je la publie partout | "
             "pour que tout le monde la voie.", {"coupures": ("quelques", "où", "pour", "monde")}),
     "l06": ("06-p", "Mais ce n’est pas là | qu’il est le plus fort. | C’est juste après.", {}),
-    "l07": ("07-m", f"À la fin de la vidéo, | chaque personne peut libérer son fantôme | pour dire ce qu’elle en pense{NB}: | “J’adore la vidéo”, | "
-            "“Je passerai un jour, c’est sûr”, | ou “Je passe aujourd’hui”.",
-            # (l'enregistrement finit par « les trois cages apparaissent », lu par erreur : coupé à 9,5 s — 1er novembre)
-            {"coupe": 9.5, "coupures": ("“Je",), "liees": ("jour,",)}),
-    "l08": ("08-m", f"Et moi, | je leur réponds{NB}! | Petit à petit, | je découvre leurs envies, | leurs habitudes… | et je leur donne une bonne raison | "
-            "de pousser votre porte. | Et pour les plus fidèles, | ceux qui ouvrent en premier | ma cage dorée, | je les bichonne | avec des petites surprises.",
-            {"liees": ("petit,",)}),
+    # (la 7 : les trois cages dans les mots du métier — réenregistrée par métier le 1er novembre ; l'ancienne finissait par
+    # « les trois cages apparaissent », l'indication de scène lue par erreur)
+    "l07": ("07-m", f"{L07} | “Ça donne envie”, | “Je réserverai un jour”, | ou “Je réserve aujourd’hui”.", {"coupures": ("un", "“Je")}),
+    # (la 8, réenregistrée le 1er novembre : « je profite de leurs réponses… créer du lien » au lieu de « je leur réponds » ;
+    # « les plus rapides » au lieu de « les plus fidèles » — dans l'application, la cage dorée va au premier qui l'ouvre)
+    "l08": ("08-m", "Et moi, | je profite de leurs réponses | pour discuter avec eux | et créer du lien. | Petit à petit, | je découvre leurs envies, | "
+            "leurs habitudes… | et je leur donne une bonne raison | de pousser votre porte. | Et pour les plus rapides, | ceux qui ouvrent en premier | "
+            "ma cage dorée, | je les bichonne | avec des petites surprises.", {"coupures": ("de", "bichonne", "avec", "surprises."), "liees": ("petit,", "envies,")}),
     "l09": ("09-m", "Chaque jour, | une nouvelle vidéo invite | à rejoindre votre famille de fantômes. | Elle grandit devant votre porte.", {"coupe": 6.08}),
     "l10": ("10-p", f"À la fin du mois, | on fait le bilan ensemble{NB}: | chaque bon validé | à votre comptoir, | c’est un client | que je vous ai amené.",
             {"liees": ("mois,", "comptoir,")}),
@@ -131,8 +149,8 @@ SOUS = {
     "l12": ("12-m", "On n’est pas là | pour vous apporter des vues. | On est là | pour vous apporter des clients.", {}),
     "l13": ("13-p", f"1 mois gratuit, | un mois pour faire mes preuves, | alors, | on commence{NB}?", {"liees": ("gratuit,",)}),
 }
-if "l05" in V:
-    SOUS["l05"] = V["l05"]
+for c, ligne in V.get("lignes", {}).items():   # (les répliques propres au métier)
+    SOUS[c] = ligne
 
 # Les moments de sa figurine (répliques du propriétaire) : (expression, mot de départ ou « fin », décalage, mot de fin
 # ou « fin » ou None, décalage) ; « fin » : la fin de sa voix (pas celle du fichier). Le clin d'œil, bouche en « o »,

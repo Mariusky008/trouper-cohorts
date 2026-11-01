@@ -487,9 +487,9 @@ img{display:block;-webkit-user-drag:none;user-select:none}
       <span class="film-avance">▶▶</span>
       <div class="film-barre"><i></i></div>
       <div id="tcages"><h3>Et vous&#8239;?</h3><div class="trang">
-        <div class="tc" id="tc1"><div class="tc-c"><i class="halo" style="background:#FF2E9A"></i><img class="tc-fant" src="g/cosy-debout.webp" alt="">@CAGE_ROSE@</div>J’adore<br>la vidéo</div>
-        <div class="tc" id="tc2"><div class="tc-c"><i class="halo" style="background:#F5A23A"></i><img class="tc-fant" src="g/fleuri-debout.webp" alt="">@CAGE_ORANGE@</div>Je passerai<br>un jour</div>
-        <div class="tc" id="tc3"><div class="tc-c"><i class="halo" style="background:#3DE2A6"></i><img class="tc-fant" src="g/curieux-debout.webp" alt="">@CAGE_VERTE@</div>Je passe<br>aujourd’hui</div>
+        <div class="tc" id="tc1"><div class="tc-c"><i class="halo" style="background:#FF2E9A"></i><img class="tc-fant" src="g/cosy-debout.webp" alt="">@CAGE_ROSE@</div>@V_CAGE1@</div>
+        <div class="tc" id="tc2"><div class="tc-c"><i class="halo" style="background:#F5A23A"></i><img class="tc-fant" src="g/fleuri-debout.webp" alt="">@CAGE_ORANGE@</div>@V_CAGE2@</div>
+        <div class="tc" id="tc3"><div class="tc-c"><i class="halo" style="background:#3DE2A6"></i><img class="tc-fant" src="g/curieux-debout.webp" alt="">@CAGE_VERTE@</div>@V_CAGE3@</div>
       </div></div>
       <div id="ilot"></div>
     </div></div>
@@ -503,9 +503,9 @@ img{display:block;-webkit-user-drag:none;user-select:none}
     <!-- la foule, les messages, les étiquettes des groupes -->
     <div id="foule"></div>
     <div id="envois"></div>
-    <span class="groupe abs" id="g1" style="--c:#E0167A">💗 21 adorent la vidéo</span>
-    <span class="groupe abs" id="g2" style="--c:#E08A1E">📌 12 passeront un jour</span>
-    <span class="groupe abs" id="g3" style="--c:#1BA97A">🍽️ 5 passent aujourd’hui</span>
+    <span class="groupe abs" id="g1" style="--c:#E0167A">@V_G1@</span>
+    <span class="groupe abs" id="g2" style="--c:#E08A1E">@V_G2@</span>
+    <span class="groupe abs" id="g3" style="--c:#1BA97A">@V_G3@</span>
     <!-- la façade : la porte qu'elle pousse, la famille devant -->
     @FACADE@
     <span id="venue" class="abs">✓ Camille est venue, grâce à votre vidéo</span>
@@ -527,7 +527,7 @@ img{display:block;-webkit-user-drag:none;user-select:none}
   <div id="comm">@COMM@</div>
   <!-- ⑧ la conversation avec Camille -->
   <div id="chat"><div class="ch-tete"><img src="g/fleuri-debout.webp" alt=""><div><b>Camille</b><small>Ce que Mike sait d’elle</small><div class="tags">
-    <em class="on">📌 Passera un jour</em><em id="tag1">@V_TAG1@</em><em id="tag2">@V_TAG2@</em><em id="tag4" class="vert">✓ Est venue</em></div></div></div><div id="fil"></div></div>
+    <em class="on">@V_TAGJ@</em><em id="tag1">@V_TAG1@</em><em id="tag2">@V_TAG2@</em><em id="tag4" class="vert">✓ Est venue</em></div></div></div><div id="fil"></div></div>
   <!-- ⑧ la cage dorée -->
   <div id="doree"><h3>@V_SURPRISE@</h3>
     <div id="dor-cage"><i id="dor-rayons"></i><i id="dor-lueur"></i>@CAGE_OR@</div>
@@ -657,8 +657,8 @@ function poserCamera(t) { const [sx, sy] = secousse(t); $("#monde").style.transf
 /* ── LES MOTS DITS, EN GRAND : chaque morceau (« | ») arrive mot à mot, puis cède la place au suivant ── */
 const FORTS = { l01: ["métier" + NB + "?", "regarder", "téléphone…", "poussent", "porte."], l02: ["Mike,", "préféré."], l03: ["30", "jours", "clients."],
   l04: ["Jour", "1" + NB + ":", "photos,", "questions…", "Mike"], l05: VAR.forts5, l06: ["plus", "fort.", "après."],
-  l07: ["“J’adore", "vidéo”,", "“Je", "passerai", "jour,", "c’est", "sûr”,", "passe", "aujourd’hui”."],
-  l08: ["réponds" + NB + "!", "envies,", "habitudes…", "porte.", "fidèles,", "dorée,", "surprises."], l09: ["Chaque", "jour,", "famille", "grandit"],
+  l07: VAR.forts7,
+  l08: ["discuter", "lien.", "envies,", "habitudes…", "porte.", "rapides,", "dorée,", "surprises."], l09: ["Chaque", "jour,", "famille", "grandit"],
   l10: ["bilan", "bon", "validé", "client"], l11: ["blabla,", "fausses", "promesses."], l12: ["vues.", "clients."], l13: ["1", "mois", "gratuit,", "preuves,", "commence" + NB + "?"] };
 const TAILLE = { l01: 100, l02: 120, l03: 108, l04: 108, l05: 104, l06: 112, l07: 104, l08: 104, l09: 104, l10: 100, l11: 118, l12: 108, l13: 116 };
 const mesure = document.createElement("canvas").getContext("2d");
@@ -904,7 +904,7 @@ function dessinerFx(t) {
   }
 }
 
-/* ── LA FOULE : trois groupes (une cage chacun) autour du téléphone ; Camille parmi « Je passerai un jour » ── */
+/* ── LA FOULE : trois groupes (une cage chacun) autour du téléphone ; Camille parmi ceux de la 2ᵉ cage (« un jour ») ── */
 const GROUPES = [
   { n: 21, c: "#E0167A", tag: "💗", cage: 0 },
   { n: 12, c: "#E08A1E", tag: "📌", cage: 1 },
@@ -914,14 +914,14 @@ const PRENOMS = ["Hugo", "Inès", "Nathan", "Manon", "Jules", "Sarah", "Adam", "
 const LOOKS = ["cosy", "fleuri", "curieux", "artiste", "denim", "rebelle", "soleil", "voyageur"];
 const FOULE = (() => {
   const r = hasard(5), f = [];
-  // ① « J'adore » : à gauche, 3 colonnes ; ② « Je passerai un jour » : à droite, 2 colonnes ; ③ « aujourd'hui » : en bas
+  // ① « J'adore » : à gauche, 3 colonnes ; ② « … un jour » : à droite, 2 colonnes ; ③ « aujourd'hui » : en bas
   // (la caméra recule à 0,68 : on voit le monde de x = 826 à 2414)
   for (let k = 0; k < 21; k++) { const col = Math.floor(k / 7), rang = k % 7; f.push({ g: 0, x: [1215, 1080, 945][col] + (r() - .5) * 24, y: 560 + rang * 160 + (col % 2) * 60 + (r() - .5) * 30, s: .72 + r() * .2 }); }
   for (let k = 0; k < 12; k++) { const col = Math.floor(k / 6), rang = k % 6; f.push({ g: 1, x: [2040, 2185][col] + (r() - .5) * 24, y: 580 + rang * 165 + col * 60 + (r() - .5) * 30, s: .76 + r() * .2 }); }
   for (let k = 0; k < 5; k++) f.push({ g: 2, x: 1380 + k * 120, y: 1840 + (k % 2) * 40, s: .8 + r() * .2 });
   let p = 0;
   f.forEach((m, k) => { m.look = LOOKS[(k * 3) % 8]; m.nom = k % 3 === 0 ? PRENOMS[p++ % PRENOMS.length] : ""; });
-  // Camille : la 3e de « Je passerai un jour », plus grande, avec son prénom
+  // Camille : la 3ᵉ de la 2ᵉ cage (« un jour »), plus grande, avec son prénom
   const cam_ = f[21 + 2]; cam_.camille = true; cam_.nom = "Camille"; cam_.look = "fleuri"; cam_.s = .9;
   return f;
 })();
@@ -1194,13 +1194,13 @@ function construire() {
     .to("#ecran .ph", { filter: "brightness(.25) blur(6px)", duration: .4 }, tFinF + .05)
     .to([".film-barre", ".film-sig", ".film-avance"], { opacity: 0, duration: .3 }, tFinF + .15);
 
-  // ═══ ⑦ « À la fin de la vidéo, chaque personne peut libérer son fantôme… : j'adore, je passerai un jour, je passe aujourd'hui » ═══
+  // ═══ ⑦ « À la fin de la vidéo, chaque personne peut libérer son fantôme… : les trois cages, dans les mots du métier (VAR.forts7) » ═══
   const t7 = VOIX.l07;
   // la caméra plonge dans le téléphone : les trois cages, en grand ; Mike se pousse en bas à gauche ; elle s'efface
   tl.to(FIG, { y: 2600, duration: .5, ease: "power2.in" }, t7 - .55)
     .to(cam, { x: TEL[0], s: 1.45, y: 1000, duration: .9, ease: "power3.inOut" }, t7 - .2)
     .to(H, { x: TEL[0] - 250 - HG, y: 1450 - HG, scale: .4, duration: .9, ease: "power3.inOut" }, t7 - .2)
-    .to("#ilot", { opacity: 0, duration: .3 }, t7 - .2).to("#ilot", { opacity: 1, duration: .3 }, mot("l07", "“J’adore") + .4)   // (l'encoche passerait sous les mots)
+    .to("#ilot", { opacity: 0, duration: .3 }, t7 - .2).to("#ilot", { opacity: 1, duration: .3 }, mot("l07", "“Ça") + .4)   // (l'encoche passerait sous les mots)
     .fromTo("#tcages", { opacity: 0, scale: 1.08 }, { opacity: 1, scale: 1, duration: .5, ease: "expo.out", immediateRender: false }, t7)
     .fromTo(".tc", { y: 90, opacity: 0 }, { y: 0, opacity: 1, duration: .6, stagger: .1, ease: "back.out(1.8)", immediateRender: false }, t7 + .1)
     .to(".tc-c", { rotation: 3, transformOrigin: "50% 0", duration: .9, yoyo: true, repeat: 9, ease: "sine.inOut", stagger: .25 }, t7 + .7);
@@ -1215,7 +1215,7 @@ function construire() {
   });
   tl.to(".rs", { opacity: 0, duration: .4 }, t7);   // les réseaux ont fait leur travail
   // chaque choix dit : sa cage s'allume, et son groupe de fantômes en jaillit
-  const dits = [mot("l07", "“J’adore") - .1, mot("l07", "“Je") - .1, mot("l07", "“Je", 1) - .1];
+  const dits = [mot("l07", "“Ça") - .1, mot("l07", "“Je") - .1, mot("l07", "“Je", 1) - .1];
   const minis = $$(".mini");
   GROUPES.forEach((G, g) => {
     const q = dits[g];
@@ -1234,7 +1234,7 @@ function construire() {
         .to(el, { y: ar.y - 14, duration: .7, yoyo: true, repeat: 1, ease: "sine.inOut" }, a + 1);
     });
   });
-  // dès « J'adore », la caméra recule : les fantômes sortent des cages et se rangent autour, chaque groupe avec ce qu'il a dit
+  // dès la 1ʳᵉ cage dite, la caméra recule : les fantômes sortent des cages et se rangent autour, chaque groupe avec ce qu'il a dit
   tl.to(cam, { s: .68, y: TEL[1] + 60, duration: 1.5, ease: "power2.inOut" }, dits[0] - .2)
     .to("#voile", { opacity: 1, duration: .6 }, dits[0])
     .to("#tcages", { opacity: .35, duration: .5 }, fin("l07"));
@@ -1242,12 +1242,12 @@ function construire() {
   ["#g1", "#g2", "#g3"].forEach((g, k) => { gsap.set(g, { x: GP[k][0], y: GP[k][1], xPercent: -50, yPercent: -50 }); tl.fromTo(g, { opacity: 0, scale: .4 }, { opacity: 1, scale: 1, duration: .5, ease: "back.out(2)", immediateRender: false }, dits[k] + .9); });
   tl.to(H, { x: TEL[0] - HG, y: 370 - HG, scale: .5, duration: .9, ease: "power3.inOut" }, fin("l07") + .2);
 
-  // ═══ ⑧ « Et moi, je leur réponds ! Petit à petit, je découvre leurs envies, leurs habitudes… et je leur donne une
-  //     bonne raison de pousser votre porte. Et pour les plus fidèles, ceux qui ouvrent en premier ma cage dorée,
+  // ═══ ⑧ « Et moi, je profite de leurs réponses pour discuter avec eux et créer du lien. Petit à petit, je découvre leurs envies, leurs habitudes… et je leur donne une
+  //     bonne raison de pousser votre porte. Et pour les plus rapides, ceux qui ouvrent en premier ma cage dorée,
   //     je les bichonne avec des petites surprises. » ═══
   const t8 = VOIX.l08, envois = $$(".envoi");
   tl.to(H, { x: TEL[0] - HG, y: TEL[1] - 100 - HG, scale: .7, duration: .6, ease: "power3.inOut" }, t8 - .2);
-  // « je leur réponds ! » : un message part vers chacun
+  // « je profite de leurs réponses… » : un message part vers chacun
   FOULE.forEach((m, k) => {
     const a = t8 + .3 + k * .03, dep = { x: TEL[0] - 35, y: TEL[1] - 160 }, ar = { x: m.x - 35, y: m.y - 110 };
     tl.fromTo(envois[k], { ...dep, opacity: 0, scale: .3 }, { opacity: 1, scale: 1, duration: .1, immediateRender: false }, a)
@@ -1255,6 +1255,16 @@ function construire() {
       .to(envois[k], { opacity: 0, scale: .4, duration: .15 }, a + .55)
       .to(minis[k].querySelector(".msg-b"), { scale: 1, duration: .35, ease: "back.out(3)" }, a + .55);
   });
+  // « …de leurs réponses pour discuter avec eux » : leurs réponses reviennent vers le téléphone ; « …et créer du lien » :
+  // leurs bulles battent
+  const tRep = mot("l08", "discuter") - .15, tLien = mot("l08", "lien.");
+  FOULE.forEach((m, k) => {
+    const a = Math.max(tRep + k * .025, t8 + 1.1 + k * .03), dep = { x: m.x - 35, y: m.y - 110 }, ar = { x: TEL[0] - 35, y: TEL[1] - 160 };
+    tl.fromTo(envois[k], { ...dep, opacity: 0, scale: .3 }, { opacity: 1, scale: .8, duration: .1, immediateRender: false }, a)
+      .to(envois[k], { motionPath: { path: [dep, { x: (dep.x + ar.x) / 2, y: Math.min(dep.y, ar.y) - 160 }, ar], curviness: 1.2 }, duration: .5, ease: "power2.inOut" }, a)
+      .to(envois[k], { opacity: 0, scale: .3, duration: .12 }, a + .5);
+  });
+  tl.to([...minis].map((x) => x.querySelector(".msg-b")), { scale: 1.3, duration: .18, yoyo: true, repeat: 1, stagger: .02, ease: "sine.inOut" }, tLien);
   // « Petit à petit, je découvre leurs envies… » : la caméra s'approche de Camille ; la conversation monte
   // (son centre : la boîte de Camille fait 220 px de large, posée comme celle des autres, 150 px)
   const cm = FOULE[CAMILLE], cc = { x: cm.x + 35, y: cm.y + 31 }, tC = mot("l08", "Petit") - .3;
@@ -1296,16 +1306,16 @@ function construire() {
   etiquette(4, T.porte + .9);
   gsap.set("#venue", { x: FAC[0], y: FAC[1] + 700, xPercent: -50 });
   tl.fromTo("#venue", { opacity: 0, y: FAC[1] + 760 }, { opacity: 1, y: FAC[1] + 700, duration: .5, ease: "back.out(2)", immediateRender: false }, T.porte + .7);
-  // « Et pour les plus fidèles, ceux qui ouvrent en premier ma cage dorée » : la cage dorée de Mike ; les fidèles
+  // « Et pour les plus rapides, ceux qui ouvrent en premier ma cage dorée » : la cage dorée de Mike ; les fidèles
   // (leur pièce cousue) attendent devant ; le premier l'ouvre, puis le 2e, le 3e — le compte des surprises
-  const tD = mot("l08", "Et", 2) - .4, dg = $$(".dor-g");
+  const tD = mot("l08", "Et", 3) - .4, dg = $$(".dor-g");
   tl.to("#doree", { opacity: 1, duration: .5 }, tD)
     .fromTo("#doree h3", { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: .5, ease: "expo.out", immediateRender: false }, tD + .2)
     .fromTo("#dor-cage", { y: -300, scale: .6, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: .7, ease: "back.out(1.6)", immediateRender: false }, tD + .1)
     .fromTo("#dor-compte", { opacity: 0, scale: .5 }, { opacity: 1, scale: 1, duration: .45, ease: "back.out(2.4)", immediateRender: false }, tD + .5)
     .to("#dor-cage", { rotation: 2, transformOrigin: "50% 0", duration: .8, yoyo: true, repeat: 5, ease: "sine.inOut" }, tD + .8)
-    .fromTo(dg, { opacity: 0, y: 220 }, { opacity: 1, y: 0, duration: .5, stagger: .08, ease: "back.out(1.8)", immediateRender: false }, mot("l08", "fidèles,") - .45)
-    .fromTo(".dor-g .patch", { scale: 0, rotation: -60 }, { scale: 1, rotation: -8, duration: .4, stagger: .08, ease: "back.out(2.4)", immediateRender: false }, mot("l08", "fidèles,") - .05);
+    .fromTo(dg, { opacity: 0, y: 220 }, { opacity: 1, y: 0, duration: .5, stagger: .08, ease: "back.out(1.8)", immediateRender: false }, mot("l08", "rapides,") - .45)
+    .fromTo(".dor-g .patch", { scale: 0, rotation: -60 }, { scale: 1, rotation: -8, duration: .4, stagger: .08, ease: "back.out(2.4)", immediateRender: false }, mot("l08", "rapides,") - .05);
   const sauts = [mot("l08", "premier") - .35, mot("l08", "cage") - .05, mot("l08", "dorée,") + .2];
   const nOr = { v: 0 };
   sauts.forEach((q, k) => {
@@ -1609,14 +1619,14 @@ function composer(ctx, sortie, t0, voix) {
   // ⑦ les trois cages
   S.pop(t0 + VOIX.l07 + .05);
   for (const w of ["personne", "libérer", "fantôme"]) { S.tape(t0 + mot("l07", w) - .1); S.petit(t0 + mot("l07", w) - .05); }
-  [mot("l07", "“J’adore"), mot("l07", "“Je"), mot("l07", "“Je", 1)].forEach((q, g) => { S.petit(t0 + q - .05); for (let k = 0; k < (g === 0 ? 10 : 6); k++) S.note(t0 + q + k * .07, [1046.5, 1318.5, 1568, 2093][(k + g) % 4]); });
-  S.vol(t0 + mot("l07", "“J’adore") - .3, 1.4);
+  [mot("l07", "“Ça"), mot("l07", "“Je"), mot("l07", "“Je", 1)].forEach((q, g) => { S.petit(t0 + q - .05); for (let k = 0; k < (g === 0 ? 10 : 6); k++) S.note(t0 + q + k * .07, [1046.5, 1318.5, 1568, 2093][(k + g) % 4]); });
+  S.vol(t0 + mot("l07", "“Ça") - .3, 1.4);
   // ⑧ les messages, Camille, la porte, la cage dorée, les surprises
   for (let k = 0; k < 38; k++) S.message(t0 + VOIX.l08 + .85 + k * .03);
   for (const [q, html] of FIL) if (!html.startsWith('<span class="jour')) (html.startsWith('<p class="msg elle') ? S.pop : S.message)(t0 + q);
   S.vol(t0 + mot("l08", "Petit") - .3, 1);
   S.vol(t0 + mot("l08", "pousser") - .3, 1.1); S.cloche(t0 + T.porte + .05);
-  S.magie(t0 + mot("l08", "Et", 2) - .4);
+  S.magie(t0 + mot("l08", "Et", 3) - .4);
   [mot("l08", "premier") - .35, mot("l08", "cage") - .05, mot("l08", "dorée,") + .2].forEach((q, k) => { S.boing(t0 + q); S.petit(t0 + q + .2); if (!k) S.eclate(t0 + q + .2); });
   for (let k = 0; k < 3; k++) S.pop(t0 + mot("l08", "bichonne") - .15 + k * .2);
   for (let k = 0; k < 8; k++) S.note(t0 + mot("l08", "bichonne") + k * .08, [1568, 2093, 2349, 2637][k % 4]);
