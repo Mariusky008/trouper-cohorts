@@ -117,20 +117,27 @@ vidéo.
 
 ## 8. Dans la démo humaine
 
-Une scène de 10 à 15 secondes après la réplique 12 (« …pour vous apporter des clients ») et avant la 13 (« 1 mois
-gratuit… »). Sa figurine s'arrête, la caméra recule : « Cette figurine qui vous parle depuis le début ? C'est moi. »
-Ses éditions arrivent, comme des cartes à collectionner (Noël, Halloween, l'été, la rentrée, chacune avec son
-édition sur le socle) ; un téléphone montre un vocal de 10 secondes, et la figurine le dit.
+Une scène d'environ 30 secondes après la réplique 12 (« …pour vous apporter des clients ») et avant la 13. Elle dit,
+dans l'ordre, les trois idées qui rendent la direction claire pour un pro :
 
-À enregistrer (lui) : « Cette figurine qui vous parle depuis le début ? C'est moi. Et vous aurez la vôtre : un vocal
-de 10 secondes, et elle annonce vos offres avec votre voix… et elle change à chaque saison. Vos clients aussi auront
-la leur, en cadeau : à collectionner… et à faire parler, pour dire tout le bien qu'ils pensent de vous ! »
+1. **Le messager, c'est la figurine** (12b, lui) : « Cette figurine qui vous parle depuis le début ? C'est moi. Et vous
+   aurez la vôtre. Une table vide ? Un vocal de 10 secondes… et c'est votre figurine qui prévient ceux qui attendaient
+   ce moment, à leur prénom : » — puis la figurine du chef le dit, avec la voix enregistrée par Nicolas : « Camille !
+   Il me reste une table à 12 h 30 : elle est à toi pendant 5 minutes ! » (carte polaroïd « Pour Camille 💌 », badge
+   « 🪑 Table libre · 12 h 30 »).
+2. **La raison de venir, c'est la collection** (12c, lui) : « Et ceux qui viennent gagnent votre figurine : une édition
+   à chaque saison… et des éditions rares, pour ceux qui remplissent vos creux. À collectionner… et à faire parler ! »
+   — les quatre éditions (Halloween, Noël, l'été, la rentrée), puis la carte holographique « Édition rare mardi midi »
+   avec « 🏆 Défi de la famille · 3 tables · Complet ✅ » (la mission de la famille), et l'album « Ma collection · 6 / 24 ».
+3. **Et elle parle** : la figurine de Léa, offerte par Chez Bergine, dit avec la voix enregistrée par Emma « Le meilleur
+   magret de Dax ! ».
 
-À fournir (lui) : son image neutre (`recu/humain/ressort/neutre.jpg`) modifiée en quatre éditions, même cadrage,
-même pose (comme pour les expressions) : Noël, Halloween, l'été, la rentrée.
+Puis la 13 résume le positionnement : « Des vidéos qui font jouer vos clients, pour mieux les connaître. Des surprises
+et des figurines, pour les remercier. Et un seul but : remplir vos places vides, au bon moment. 1 mois gratuit pour
+faire mes preuves… on commence ? », avec trois pictogrammes (🎮 ils jouent, 🎁 vous les remerciez, 🪑 vos places vides
+se remplissent).
 
-**Et vous aussi** : la photo du chef de Chez Bergine (celle de la démo, « Notre chef aux fourneaux ») devient sa
-figurine, qui annonce le menu de l'ardoise. Le chef a donné son accord (confirmé par le propriétaire le 1er novembre).
-À fournir : sa figurine, faite comme celle du propriétaire (même style, même cadrage, fond rose), en deux images au
-moins, alignées : neutre et bouche ouverte (et un rire si possible) ; et, s'il le veut, son vocal de 10 secondes
-(« Ce midi, garbure landaise et magret ! ») — sinon, des sous-titres seuls.
+Les voix : `recu/humain/figurines/jp-revelation-a.mp3`, `jp-revelation-b.mp3`, `chef-camille.mp3`, `cliente.mp3`, et
+`recu/humain/13-p.mp3`. Les images : `jp-{halloween,noel,ete,rentree}.jpg`, `chef-{neutre,parle}.jpg`,
+`cliente-{neutre,parle}.jpg`. La figurine de la cliente est faite d'après la compagne du propriétaire, avec son accord ;
+la photo d'origine n'est pas dans le dépôt. Le chef de Chez Bergine a donné son accord (1er novembre).
