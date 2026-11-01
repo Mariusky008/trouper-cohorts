@@ -143,7 +143,7 @@ Le recto de la carte du pro : une photo de la démo sans visage (les mains sur l
 Nina et d'Élise : faites par le propriétaire ; Nina d'après une personne qui a donné son accord. Les textes de Nina,
 d'Élise et des 12b ne sont pas confirmés mot pour mot (aucune reconnaissance vocale ici : les fichiers ont été reconnus
 à leurs pauses et à leurs voyelles). Et à la fin, une étiquette : « Je prends 5 commerces (ateliers, cabinets) ce
-mois-ci · Puis 149 € / mois · sans engagement ».
+mois-ci · ensuite, sans engagement : 149 € / mois, je fais tout, ou 49 € / mois en autonomie ».
 
 ## À garder en tête
 
@@ -151,5 +151,6 @@ mois-ci · Puis 149 € / mois · sans engagement ».
   la brancher avant de démarcher en nombre.
 - **Les trois cages** : la démo et l'application les disent dans les mots de chaque métier (`src/lib/direct/cages.ts`,
   1er novembre).
-- **Le prix** : fixé le 1er novembre — un abonnement (pas de paiement au résultat), le 1er mois offert, puis 149 € par
-  mois, sans engagement, 5 commerces par mois au plus (il les suit à la main) ; dit à l'écran de fin.
+- **Le prix** : fixé le 1er novembre — un abonnement (pas de paiement au résultat), le 1er mois offert, puis, sans
+  engagement, 149 € par mois s'il fait tout, ou 49 € par mois si le pro utilise la plateforme lui-même ; 5 commerces
+  par mois au plus (il les suit à la main). Dit à l'écran de fin.
