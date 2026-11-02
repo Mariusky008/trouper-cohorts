@@ -388,6 +388,36 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-
 .avis-f{display:flex;gap:10px;align-items:flex-start;width:100%;margin-top:12px;padding:10px 12px;border-radius:14px;border:1px solid #F0C4D8;background:#FFF0F7;color:var(--encre);text-align:left;font-size:13.5px;line-height:1.35;cursor:pointer}
 .avis-f img{flex:none;width:40px;height:40px;border-radius:50%;object-fit:cover;object-position:50% 6%;background:var(--papier-2)}
 .avis-f b{display:block;font-size:12px;color:#A1155E}
+
+/* le salon dans une vraie photo (ses images) */
+.scene-photo{position:absolute;z-index:1;background:center/100% 100% no-repeat;transition:transform .7s cubic-bezier(.2,.8,.25,1)}
+.salon.assis-la .etape.coin.en-photo .scene-photo{transform:translateY(calc(var(--monte,0px) * -1))}
+.etape.coin.en-photo .scene-c{max-width:none}
+.salon.assis-la .etape.coin.en-photo .scene-c{transform:none}
+.accueil-photo{z-index:0}
+.accueil-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25),transparent 22%,transparent 62%,rgba(12,5,3,.85))}
+.scene-photo .assis,.scene-photo .libre{position:absolute;transform:translateX(-50%)}
+.scene-photo .assis .fig img{filter:drop-shadow(0 8px 6px rgba(0,0,0,.5))}
+.scene-photo .libre i{width:var(--d,40px);height:var(--d,40px);font-size:calc(var(--d,40px) * .45)}
+.scene-photo .libre span{font-size:9.5px}
+.scene-photo .adroite .bulle-c{left:auto;right:30%;transform:translate(0,-4px)}
+.scene-photo .agauche .bulle-c{left:30%;transform:translate(0,-4px)}
+.lecteur{position:absolute;z-index:6;right:12px;top:calc(64px + env(safe-area-inset-top,0px));width:74px;aspect-ratio:9/16;padding:0;border:0;border-radius:12px;overflow:hidden;background:#000;box-shadow:0 0 0 2px rgba(255,255,255,.85),0 12px 24px rgba(0,0,0,.6);cursor:pointer}
+.lecteur video{position:static;display:block;width:100%;height:100%;object-fit:cover}
+.lecteur i{position:absolute;left:5px;top:5px;padding:1px 4px;border-radius:3px;background:var(--rouge);font-style:normal;font-size:8px;font-weight:800}
+.lecteur b{position:absolute;left:0;right:0;bottom:0;padding:10px 2px 4px;background:linear-gradient(transparent,rgba(0,0,0,.8));font-size:9.5px;font-weight:800}
+/* le commerçant qui vient : sa figurine à sa vraie largeur */
+.etape.coin .serveur{width:auto;height:auto;right:2%;bottom:31vh}
+.serveur .fig{position:relative;left:auto;bottom:auto;height:auto;transform:none}
+.serveur .fig img{width:auto;max-width:none}
+.bulle-s{right:10%}
+/* la discussion se déplie */
+.discu-salon{display:flex;flex-direction:column}
+.discu-salon.grand{top:calc(70px + env(safe-area-inset-top,0px));background:rgba(18,8,12,.96)}
+.discu-salon.grand .fil{max-height:none;flex:1}
+.poignee{align-self:center;display:flex;flex-direction:column;align-items:center;gap:2px;margin:-4px 0 4px;padding:2px 14px;border:0;background:none;color:var(--doux);font-size:10px;font-weight:700;cursor:pointer}
+.poignee i{width:38px;height:4px;border-radius:2px;background:rgba(255,255,255,.4)}
+.discu-salon.grand .poignee i{background:var(--rose)}
 /* la mini-carte (en bas à droite) et la grande carte, avec la recherche des commerces */
 .mini{position:absolute;z-index:11;right:12px;bottom:calc(78px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:4px;padding:0;border:0;background:none;cursor:pointer}
 .mini .rondcarte{position:relative;display:block;width:76px;height:76px;border-radius:50%;overflow:hidden;background:#EBCB9F;border:3px solid var(--or);box-shadow:0 0 0 2px rgba(60,20,10,.45),0 0 22px rgba(242,196,107,.6),0 10px 22px rgba(0,0,0,.5)}
@@ -487,7 +517,9 @@ const BOUTIQUES = {
     reserver: { quoi: "la table de 12 h 30", bouton: "Réserver" },
     essai: { k: "lea", quoi: "le magret", voix: "lea-magret", dit: "Le meilleur magret de Dax !", note: "😋 12 avis" },
     ici: ["lea", "hugo"], traces: [["ines", "Le meilleur accueil de Dax 💛"]], monde: 9,
-    salon: { tissu: "#7A1E2E", tissu2: "#3E0B15", bois: "#6A3E22", bois2: "#3C2213", surTable: "🍽️ ☕", essaiIcone: "😋", essaiCourt: "Goûter", essaiTitre: "Goûter le magret", occupants: { 0: "lea", 2: "passant", 4: "hugo" } },
+    salon: { tissu: "#7A1E2E", tissu2: "#3E0B15", bois: "#6A3E22", bois2: "#3C2213", surTable: "🍽️ ☕", essaiIcone: "😋", essaiCourt: "Goûter", essaiTitre: "Goûter le magret", photo: "i/salon-restaurant.jpg", photoL: 572, photoH: 1024,
+      places: [{ x: 21, y: 66.5, h: 13 }, { x: 79, y: 66.5, h: 13 }, { x: 30, y: 50.5, h: 9 }, { x: 72, y: 50.5, h: 9 }, { x: 16, y: 89, h: 19 }, { x: 34, y: 43.5, h: 6.5 }, { x: 68, y: 43.5, h: 6.5 }],
+      occupants: { 0: "lea", 3: "hugo", 2: "passant", 6: "passant" } },
     reponse: "Merci Camille ! Le magret revient vendredi, je te garde une table ?" },
   alice: { nom: "La Page d’Alice", metier: "Librairie", patron: "alice", video: "v/alice", int: { img: "i/int-librairie.jpg", iw: 960, ih: 720, cadre: [0.525, 0], tele: [[56.5, 5.5], [65.1, 5.5], [65.1, 25.8], [56.5, 25.8]], ardoise: "g" }, annonce: "Le coup de cœur d’Alice",
     dit: "Camille ! Mon coup de cœur : Le Comte de Monte-Cristo. Je te le mets de côté ?",
@@ -496,9 +528,11 @@ const BOUTIQUES = {
     reserver: { quoi: "ton exemplaire", bouton: "Le mettre de côté" },
     essai: { k: "ines", quoi: "le coup de cœur d’Alice", dit: "Je n’ai pas pu le lâcher, 1 200 pages en 10 jours !", note: "📚 7 avis" },
     ici: ["ines"], traces: [["lea", "Merci pour les conseils, Alice !"]], monde: 4,
-    salon: { tissu: "#1F5A4A", tissu2: "#0C2A22", bois: "#8A5A34", bois2: "#523119", surTable: "📚 ☕", essaiIcone: "📖", essaiCourt: "Feuilleter", essaiTitre: "Feuilleter le coup de cœur", occupants: { 1: "ines", 4: "passant" } },
+    salon: { tissu: "#1F5A4A", tissu2: "#0C2A22", bois: "#8A5A34", bois2: "#523119", surTable: "📚 ☕", essaiIcone: "📖", essaiCourt: "Feuilleter", essaiTitre: "Feuilleter le coup de cœur", photo: "i/salon-librairie.jpg", photoL: 572, photoH: 1024, accueilPhoto: "i/alice-fauteuil.jpg",
+      places: [{ x: 24, y: 72.5, h: 17 }, { x: 76.5, y: 73, h: 16 }, { x: 24, y: 47.5, h: 9 }, { x: 78, y: 48, h: 9 }, { x: 85, y: 56, h: 10.5 }, { x: 38.5, y: 41, h: 6.5 }, { x: 61, y: 38, h: 6 }],
+      occupants: { 2: "ines", 4: "passant", 6: "passant" } },
     reponse: "Avec plaisir ! Il m’en reste deux, je t’en garde un ?" },
-  atelier: { nom: "L’Atelier de Nina", metier: "Atelier de poterie", patron: "nina", video: "v/atelier", int: { img: "i/int-atelier.jpg", iw: 668, ih: 1000, cadre: [0.5, 0.229], tele: [[31.5, 22], [46, 22], [46, 39.2], [31.5, 39.2]], ardoise: "d" }, voix: "nina", annonce: "Atelier tour · samedi 10 h",
+  atelier: { nom: "L’Atelier de Nina", metier: "Atelier de poterie", patron: "nina", video: "v/atelier", sansSon: true, int: { img: "i/int-atelier.jpg", iw: 668, ih: 1000, cadre: [0.5, 0.229], tele: [[31.5, 22], [46, 22], [46, 39.2], [31.5, 39.2]], ardoise: "d" }, voix: "nina", annonce: "Atelier tour · samedi 10 h",
     dit: "Camille ! Il me reste une place à l’atelier tour, samedi à 10 h : elle est à toi pendant 5 minutes !",
     promo: "Atelier tour samedi 10 h · 2 places", famille: "La cuisson de ta pièce offerte",
     question: ["Samedi, on tourne quoi ?", ["Des bols", "Des tasses", "Un vase"], [10, 7, 5]],
@@ -1008,12 +1042,17 @@ function ouvrirAnnonce(cle) {
   const B = BOUTIQUES[cle], e = $("#plein"); Son.niveau(0.4);
   e.innerHTML = `<video id="pVideo" muted playsinline loop autoplay>${sources(B.video)}</video>
     <div class="p-haut"><img src="${GENS[B.patron].n}" alt=""><span><b>${B.nom}</b><small>● l’annonce du jour</small></span>
-      <span class="d"><button class="rond" type="button" id="pSon" aria-label="Le son">🔇</button><button class="rond" type="button" id="pFermer" aria-label="Fermer">✕</button></span></div>
+      <span class="d"><button class="rond" type="button" id="pSon" aria-label="${B.sansSon ? "Vidéo sous-titrée, sans son" : "Le son"}">${B.sansSon ? "💬" : "🔊"}</button><button class="rond" type="button" id="pFermer" aria-label="Fermer">✕</button></span></div>
     <div class="coeurs" id="pCoeurs"></div><div class="p-avis" id="pAvis"></div>
     <div class="p-bas"><button class="gros clair" type="button" id="pInviter">👥 Montrer à un ami</button>${etat.boutique ? "" : `<button class="gros" type="button" id="pEntrer">🚪 Entrer</button>`}</div>`;
-  e.hidden = false; $("#pVideo").play().catch(() => {});
+  e.hidden = false;
+  // on l'ouvre d'un geste : la vidéo part avec le son (sauf si elle n'en a pas : elle est alors sous-titrée)
+  try { etat.audio?.pause(); } catch {}
+  const pv = $("#pVideo");
+  if (!B.sansSon) { pv.muted = false; Son.niveau(0.05); }
+  pv.play().catch(() => { pv.muted = true; $("#pSon").textContent = "🔇"; Son.niveau(0.4); pv.play().catch(() => {}); });
   $("#pFermer").addEventListener("click", fermerAnnonce);
-  $("#pSon").addEventListener("click", () => { const v = $("#pVideo"); v.muted = !v.muted; $("#pSon").textContent = v.muted ? "🔇" : "🔊"; Son.niveau(v.muted ? 0.4 : 0.05); });
+  $("#pSon").addEventListener("click", () => { if (B.sansSon) return toast(B.patron, "Cette vidéo est sous-titrée", "Elle n’a pas de son : les mots sont écrits à l’écran."); const v = $("#pVideo"); v.muted = !v.muted; $("#pSon").textContent = v.muted ? "🔇" : "🔊"; Son.niveau(v.muted ? 0.4 : 0.05); });
   $("#pEntrer")?.addEventListener("click", () => { fermerAnnonce(); entrerParLaPorte(cle); });
   $("#pInviter").addEventListener("click", () => (etat.mode === "spectateur" ? toast("tonFantome", "En spectateur, tu regardes", "Libère ton fantôme pour partager.") : feuilleInviter(cle, "son annonce")));
   const liste = [{ k: B.essai.k, t: B.essai.dit, voix: B.essai.voix, titre: `${GENS[B.essai.k].nom} a essayé ${B.essai.quoi}` }, { k: "hugo", t: "Je confirme 😋", titre: "Hugo" }, { k: "sam", t: "Ça me donne envie !", titre: "Sam" }];
@@ -1035,26 +1074,41 @@ function figure(k, cl, h) {
 // les places : 0, 1, 2 sur le canapé ; 3 et 4, les fauteuils (devant, plus près)
 const PLACES = ["canapé", "canapé", "canapé", "fauteuil", "fauteuil"];
 const VOISINES = { 0: [1, 3], 1: [0, 2], 2: [1, 4], 3: [0, 1], 4: [2, 1] };
+const placesDe = (cle) => BOUTIQUES[cle].salon.places || PLACES;
+// la photo de la salle couvre le téléphone ; sur un écran large, elle tient en hauteur (le reste en fond flou)
+function boiteSalon(S) {
+  const a = $("#app"), vw = a.clientWidth, vh = a.clientHeight, r = S.photoL / S.photoH;
+  let H = vh, W = H * r; if (W < vw && vw / vh <= 0.8) { W = vw; H = W / r; }
+  return { W, H, left: (vw - W) / 2, top: (vh - H) / 2 };
+}
+const styleBoite = (b) => `left:${b.left.toFixed(1)}px;top:${b.top.toFixed(1)}px;width:${b.W.toFixed(1)}px;height:${b.H.toFixed(1)}px`;
 const etListe = (noms) => (noms.length < 2 ? noms.join("") : noms.slice(0, -1).join(", ") + " et " + noms[noms.length - 1]);
 const assis = (cle) => etat.assis[cle] || (etat.assis[cle] = { ...BOUTIQUES[cle].salon.occupants });
 const connus = (cle) => Object.values(assis(cle)).filter((k) => k !== "passant" && k !== moi());
 function siegeHTML(cle, i) {
-  const k = assis(cle)[i], h = i < 3 ? "13.5vh" : "17vh";
-  if (k) return `<div class="assis s${i}${k === moi() ? " moi" : ""}" data-i="${i}">${figure(k, k === "passant" ? "passant" : "", h)}${k === "passant" ? "" : `<span class="nomf">${k === moi() ? "Toi" : GENS[k].nom}</span>`}<div class="bulle-c" hidden></div></div>`;
-  return `<button class="libre s${i}" type="button" data-i="${i}" aria-label="S’asseoir ici"><i>＋</i><span>Place libre</span></button>`;
+  const S = BOUTIQUES[cle].salon, k = assis(cle)[i];
+  let h = i < 3 ? "13.5vh" : "17vh", pos = "", rond = "";
+  if (S.places) { // une place de la photo : sa position et la taille d'une figurine assise là (en px, d'après la photo)
+    const b = boiteSalon(S), q = S.places[i], hp = (q.h / 100) * b.H;
+    h = hp.toFixed(1) + "px"; pos = ` style="left:${((q.x / 100) * b.W).toFixed(1)}px;bottom:${((1 - q.y / 100) * b.H).toFixed(1)}px;z-index:${Math.round(q.y)}"`;
+    rond = ` style="--d:${Math.max(26, Math.min(48, hp * 0.32)).toFixed(0)}px"`;
+  }
+  const cl = S.places ? "" : ` s${i}`;
+  if (k) return `<div class="assis${cl}${k === moi() ? " moi" : ""}${S.places && S.places[i].x > 70 ? " adroite" : S.places && S.places[i].x < 30 ? " agauche" : ""}" data-i="${i}"${pos}>${figure(k, k === "passant" ? "passant" : "", h)}${k === "passant" ? "" : `<span class="nomf">${k === moi() ? "Toi" : GENS[k].nom}</span>`}<div class="bulle-c" hidden></div></div>`;
+  return `<button class="libre${cl}" type="button" data-i="${i}" aria-label="S’asseoir ici"${pos}><i${rond}>＋</i><span>Place libre</span></button>`;
 }
 function salonHTML(cle) {
   const B = BOUTIQUES[cle], S = B.salon, P = GENS[B.patron].nom, spect = etat.mode === "spectateur", vois = connus(cle);
-  const libres = PLACES.filter((_, i) => !assis(cle)[i]).length;
+  const libres = placesDe(cle).filter((_, i) => !assis(cle)[i]).length, boite = S.photo ? boiteSalon(S) : null;
   return `<div class="salon" id="salon" data-etape="${etat.etapeSalon}" style="--tissu:${S.tissu};--tissu2:${S.tissu2};--bois:${S.bois};--bois2:${S.bois2}">
-    <div class="salon-fond" style="background-image:url(${B.int.img})"></div><div class="salon-lumiere"></div>
+    <div class="salon-fond" style="background-image:url(${S.photo || B.int.img})"></div><div class="salon-lumiere"></div>
     <div class="p-haut"><button class="rond" type="button" id="bRetour" aria-label="Ressortir">←</button><span><b>${B.nom}</b><small id="sousTitre"></small></span>
       <span class="d"><button class="rond boiteIci" type="button" aria-label="Ta boîte">✉️<em class="nbBoite"></em></button></span></div>
 
     <div class="etape accueil"><div class="scene-c">
       <div class="bulle-a" id="bulleA">${spect ? `<b>👀 Tu regardes</b><p>En spectateur, personne ne te voit. Libère ton fantôme pour t’installer et parler aux autres.</p>` : `<b>👋 Bienvenue ${PRENOM} !</b><p id="ligneA">${etat.accueillis.has(cle) ? "Content de te revoir ! Installe-toi avec les autres." : "…"}</p>`}</div>
-      ${figure(B.patron, "patron-a", "50vh")}
-      <div class="comptoir"><div class="dessus"></div><div class="face"></div><span class="plaque">${B.nom}</span><span class="clochette" aria-hidden="true"><i></i></span></div>
+      ${S.accueilPhoto ? `<div class="scene-photo accueil-photo" style="${styleBoite(boiteSalon(S))};background-image:url(${S.accueilPhoto})"></div>` : `${figure(B.patron, "patron-a", "50vh")}
+      <div class="comptoir"><div class="dessus"></div><div class="face"></div><span class="plaque">${B.nom}</span><span class="clochette" aria-hidden="true"><i></i></span></div>`}
       <div class="choix-a">
         ${vois.length ? `<p class="ici-l"><span class="av">${vois.map((k) => `<img src="${GENS[k].n}" alt="">`).join("")}</span>${etListe(vois.map((k) => GENS[k].nom))} ${vois.length > 1 ? "sont" : "est"} au salon · ${libres} place${libres > 1 ? "s" : ""} libre${libres > 1 ? "s" : ""}</p>` : ""}
         <button class="gros" type="button" id="bAsseoir">${spect ? "👻 Libérer mon fantôme" : "🛋️ M’installer avec les autres"}</button>
@@ -1062,18 +1116,21 @@ function salonHTML(cle) {
       </div>
     </div></div>
 
-    <div class="etape coin"><div class="scene-c">
+    <div class="etape coin${S.photo ? " en-photo" : ""}"><div class="scene-c">
+      ${S.photo ? `<div class="scene-photo" style="${styleBoite(boite)};background-image:url(${S.photo})"><div id="sieges">${placesDe(cle).map((_, i) => siegeHTML(cle, i)).join("")}</div></div>
+      <button class="lecteur" type="button" id="oEcran" aria-label="L’annonce du jour en grand"><video muted playsinline loop autoplay preload="auto">${sources(B.video)}</video><i>● LIVE</i><b>▶ L’annonce</b></button>` : `
       <button class="ecran-mur" type="button" id="oEcran" aria-label="L’annonce du jour en grand"><i>● LIVE</i><video muted playsinline loop autoplay preload="auto">${sources(B.video)}</video><b>▶ L’annonce du jour</b></button>
       <div class="tapis"></div>
       <div class="canape"><div class="dossier"><i></i><i></i></div><div class="assise"><i></i><i></i></div><span class="acc g"></span><span class="acc d"></span></div>
       <div class="fauteuil g"><div class="dossier"></div><div class="assise"></div><span class="acc g"></span><span class="acc d"></span></div>
       <div class="fauteuil d"><div class="dossier"></div><div class="assise"></div><span class="acc g"></span><span class="acc d"></span></div>
       <div class="basse"><span>${S.surTable}</span></div>
-      <div id="sieges">${PLACES.map((_, i) => siegeHTML(cle, i)).join("")}</div>
-      <div class="serveur" id="serveur" hidden>${figure(B.patron, "patron-t", "40vh")}<div class="bulle-s" id="bulleS"></div></div>
+      <div id="sieges">${PLACES.map((_, i) => siegeHTML(cle, i)).join("")}</div>`}
+      <div class="serveur" id="serveur" hidden>${figure(B.patron, "patron-t", "34vh")}<div class="bulle-s" id="bulleS"></div></div>
     </div>
     <div class="consigne" id="consigne">${spect ? "👀 En spectateur, tu regardes : personne ne te voit." : "👆 Choisis une place libre pour t’asseoir"}</div>
     <div class="discu-salon" id="discu" hidden>
+      <button class="poignee" type="button" id="poignee" aria-expanded="false"><i></i><span>Agrandir la discussion</span></button>
       <div class="outils-salon">
         <button type="button" id="tVideo"><i>▶</i>La vidéo</button>
         <button type="button" id="tEssai"><i>${S.essaiIcone}</i>${S.essaiCourt}</button>
@@ -1108,7 +1165,7 @@ function brancherSalon(cle) {
     if (spect) { etat.mode = "fantome"; toast("tonFantome", "Ton fantôme est libéré 🎉", "On te voit maintenant."); lieu(); etat.boutique = null; entrer(cle); return; }
     versSalle(cle);
   });
-  $(".patron-a").addEventListener("click", () => accueillir(cle, true));
+  $(".patron-a")?.addEventListener("click", () => accueillir(cle, true));
   $("#oEcran").addEventListener("click", () => ouvrirAnnonce(cle));
   brancherSieges(cle);
   $("#tVideo").addEventListener("click", () => ouvrirAnnonce(cle));
@@ -1117,6 +1174,7 @@ function brancherSalon(cle) {
   $("#tAppeler").addEventListener("click", () => appelerAuSalon(cle));
   $("#tMur").addEventListener("click", () => feuilleMur(cle));
   document.querySelectorAll("#rapides button").forEach((b) => b.addEventListener("click", () => direAuSalon(cle, b.textContent)));
+  $("#poignee").addEventListener("click", () => { const d = $("#discu"), g = d.classList.toggle("grand"); $("#poignee").setAttribute("aria-expanded", String(g)); $("#poignee span").textContent = g ? "Réduire la discussion" : "Agrandir la discussion"; const f = $("#fil"); f.scrollTop = f.scrollHeight; });
   $("#saisie").addEventListener("submit", (ev) => { ev.preventDefault(); const m = $("#message"); if (m.value.trim()) { direAuSalon(cle, m.value.trim()); m.value = ""; } });
 }
 function brancherSieges(cle) {
@@ -1134,7 +1192,7 @@ function brancherSieges(cle) {
 // l'accueil : « Bienvenue Camille ! », puis sa vraie voix (ses enregistrements commencent par ton prénom), une seule fois
 function accueillir(cle, encore) {
   if (etat.boutique !== cle || etat.mode === "spectateur") return;
-  const B = BOUTIQUES[cle], l = $("#ligneA"), f = $(".patron-a"); if (!l) return;
+  const B = BOUTIQUES[cle], l = $("#ligneA"), f = $(".patron-a") || null; if (!l) return;
   const premiere = !etat.accueillis.has(cle); etat.accueillis.add(cle);
   if (premiere || encore) {
     l.textContent = B.dit; $("#bulleA").classList.add("parle");
@@ -1152,8 +1210,8 @@ function sAsseoir(cle, i) {
   const A = assis(cle); if (A[i]) return;
   const avant = etat.maPlace[cle]; if (avant !== undefined && A[avant] === moi()) delete A[avant];
   A[i] = moi(); etat.maPlace[cle] = i; Son.pas();
-  $("#sieges").innerHTML = PLACES.map((_, j) => siegeHTML(cle, j)).join(""); brancherSieges(cle);
-  $(`#sieges .assis.s${i}`)?.classList.add("arrive");
+  $("#sieges").innerHTML = placesDe(cle).map((_, j) => siegeHTML(cle, j)).join(""); brancherSieges(cle);
+  $(`#sieges .assis[data-i="${i}"]`)?.classList.add("arrive");
   ouvrirDiscussion(cle);
 }
 // la discussion : ceux qui sont assis près de toi te parlent ; tu réponds en un geste ou tu écris
@@ -1165,6 +1223,12 @@ const PAROLES_SALON = {
 const REPONSES_SALON = { "Salut ! 👋": "Contente de te voir ici 😊", "C’est bon ici ?": "Les yeux fermés, tu vas adorer.", "Vous me conseillez quoi ?": null, "On y retourne ensemble ?": "Avec plaisir ! Samedi, ça te va ?" };
 function ouvrirDiscussion(cle, calme) {
   $("#discu").hidden = false; $("#consigne").hidden = true; $("#salon").classList.add("assis-la");
+  const S = BOUTIQUES[cle].salon, sc = document.querySelector(".etape.coin .scene-photo");
+  if (S.places && sc) {
+    const b = boiteSalon(S), q = S.places[etat.maPlace[cle]] || { y: 70 }, vh = $("#app").clientHeight;
+    const pied = b.top + (q.y / 100) * b.H, haut = vh - $("#discu").offsetHeight - 34, monte = Math.max(0, Math.min(b.H * 0.3, pied - haut));
+    sc.style.setProperty("--monte", monte.toFixed(0) + "px");
+  }
   if (calme) return;
   const fil = $("#fil"); fil.innerHTML = "";
   const qui = connus(cle); let t = 700;
@@ -1188,6 +1252,8 @@ function direAuSalon(cle, texte, a) {
 // la cloche : le commerçant vient au salon, te parle (sa voix), et te propose
 function appelerAuSalon(cle) {
   const B = BOUTIQUES[cle], s = $("#serveur"); if (!s) return;
+  if ($("#discu")?.classList.contains("grand")) $("#poignee").click(); // on replie la discussion pour le voir arriver
+  if (B.salon.photo) { const b = boiteSalon(B.salon), vw = $("#app").clientWidth; s.style.right = Math.max(vw * 0.02, vw - (b.left + b.W) + b.W * 0.02) + "px"; } // sur un grand écran : contre la photo
   s.hidden = false; s.classList.remove("part"); void s.offsetWidth; s.classList.add("vient");
   $("#bulleS").innerHTML = `<small>${GENS[B.patron].nom} vient te voir</small>${B.dit}<span class="choix-s"><button type="button" id="sRes">⏱ ${B.reserver.bouton}</button><button type="button" id="sMerci">🙏 Merci !</button></span>`;
   $("#sRes").addEventListener("click", () => { finService(); feuilleReserver(cle); });
@@ -1213,9 +1279,11 @@ function feuilleEssai(cle) {
 // un ami accepte : il vient s'asseoir à côté de toi
 function amiArrive(cle, k) {
   const A = assis(cle), m = etat.maPlace[cle]; if (Object.values(A).includes(k)) return;
-  const i = [...(VOISINES[m] || []), 0, 1, 2, 3, 4].find((j) => !A[j]); if (i === undefined) return;
+  const S = BOUTIQUES[cle].salon, L0 = placesDe(cle).map((_, j) => j);
+  const ordre = S.places && m !== undefined ? L0.sort((a, b) => Math.hypot(S.places[a].x - S.places[m].x, S.places[a].y - S.places[m].y) - Math.hypot(S.places[b].x - S.places[m].x, S.places[b].y - S.places[m].y)) : [...(VOISINES[m] || []), ...L0];
+  const i = ordre.find((j) => !A[j]); if (i === undefined) return;
   A[i] = k;
-  if (etat.boutique === cle && $("#sieges")) { $("#sieges").innerHTML = PLACES.map((_, j) => siegeHTML(cle, j)).join(""); brancherSieges(cle); $(`#sieges .assis.s${i}`)?.classList.add("arrive"); setTimeout(() => dire(k, "Me voilà ! 🙌"), 700); majSousTitre(cle); }
+  if (etat.boutique === cle && $("#sieges")) { $("#sieges").innerHTML = placesDe(cle).map((_, j) => siegeHTML(cle, j)).join(""); brancherSieges(cle); $(`#sieges .assis[data-i="${i}"]`)?.classList.add("arrive"); setTimeout(() => dire(k, "Me voilà ! 🙌"), 700); majSousTitre(cle); }
 }
 function sortir() {
   try { etat.audio?.pause(); } catch {}
@@ -1339,6 +1407,7 @@ let tRetaille;
 window.addEventListener("resize", () => { clearTimeout(tRetaille); tRetaille = setTimeout(() => {
   if ($("#app").clientWidth === VW && $("#app").clientHeight === VH) return;
   lieu({ toi: toi && { x: toi.x, y: toi.y }, gens: Object.fromEntries(gens.filter((p) => p.la && !p.passant).map((p) => [p.k, { x: p.x, y: p.y }])) });
+  if (etat.boutique) { const g = $("#discu")?.classList.contains("grand"), f = $("#fil")?.innerHTML; entrer(etat.boutique, true); if (f && $("#fil")) $("#fil").innerHTML = f; if (g) $("#poignee")?.click(); }
 }, 150); });
 lieu(); majBoite(); requestAnimationFrame(boucle);
 // les présents parlent de temps en temps, un à la fois

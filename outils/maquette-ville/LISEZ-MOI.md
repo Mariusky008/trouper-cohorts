@@ -117,3 +117,21 @@ Limite honnête : les photos font 1672 × 941 ; au zoom ×2 sur téléphone, ell
   discrets : la vidéo, goûter / feuilleter / essayer (qui l'a essayé, sa voix, réserver), inviter (ton ami vient
   s'asseoir à côté de toi), appeler le commerçant (il vient au salon, sa voix, réserver), le mur des mots.
 - Vérifié dans la vraie visionneuse : figurines assises dessinées, vidéo de l'écran qui tourne, annonce devant.
+
+## v8 (3 novembre) — « quelque chose de cosy et plus accueillant, comme sur ces photos »
+
+- **Ses images** deviennent les salles : `i/salon-librairie.jpg` (la grande salle de lecture), `i/salon-restaurant.jpg`
+  (banquettes et tables rondes), `i/alice-fauteuil.jpg` (Alice dans son fauteuil : l'accueil de la librairie). Les
+  places sont relevées sur les vrais fauteuils, banquettes et tables (`salon.places` : x, y, hauteur d'une figurine
+  assise là, en % de l'image) ; les figurines y sont posées, les places libres s'y allument. La photo couvre le
+  téléphone ; sur ordinateur, elle tient en hauteur au milieu, le reste en fond flou. Quand tu t'assieds, la salle
+  remonte juste ce qu'il faut pour que ta place reste au-dessus de la discussion. L'atelier garde le salon dessiné
+  (pas encore d'image).
+- **La discussion se déplie** (la poignée en haut : « Agrandir / Réduire la discussion ») ; elle se replie d'elle-même
+  quand on appelle le commerçant.
+- **Le son des vidéos** : celle de la librairie avait été coupée sans sa piste son ; refaite depuis
+  `tour-librairie/specialiste.mp4` (de 3 s à 15 s, son normalisé). L'annonce s'ouvre d'un geste : elle part avec le son.
+  Celle de l'atelier n'a jamais eu de son (l'interview de Nina est sous-titrée ; dans la démo, c'est la voix du
+  narrateur par-dessus) : son bouton le dit (« 💬 »).
+- **Le commerçant qui vient au salon** n'est plus écrasé (sa figurine garde sa largeur) ; sur ordinateur, il se tient
+  contre la photo.
