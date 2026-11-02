@@ -52,6 +52,11 @@ export function FigurineQuiParle({ neutre, parle, src, etiquette = "▶ Écouter
   useEffect(() => () => void contexte.current?.close().catch(() => undefined), []);
 
   const bouche = (ouverte: boolean) => boite.current?.classList.toggle("ouverte", ouverte);
+  /** Où en est la lecture (`data-lecture`), et comment la bouche suit (`data-mesure`) : lisible par les essais. */
+  const marquer = (cle: "lecture" | "mesure", v: string) => {
+    const r = boite.current?.parentElement;
+    if (r) r.dataset[cle] = v;
+  };
 
   function animer() {
     const a = audio.current;
@@ -67,7 +72,10 @@ export function FigurineQuiParle({ neutre, parle, src, etiquette = "▶ Écouter
       pic.current = Math.max(pic.current, rms);
       ouverte = rms > 0.045;
       // une mesure muette alors que la voix avance : on passe au rythme
-      if (a.currentTime > 0.5 && pic.current < 0.004) analyse.current = null;
+      if (a.currentTime > 0.5 && pic.current < 0.004) {
+        analyse.current = null;
+        marquer("mesure", "rythme");
+      }
     } else {
       ouverte = !a.paused && Math.floor(a.currentTime * 7) % 2 === 0;
     }
@@ -90,6 +98,7 @@ export function FigurineQuiParle({ neutre, parle, src, etiquette = "▶ Écouter
         const a = new Audio(url);
         a.preload = "auto";
         a.onended = () => {
+          marquer("lecture", `fini ${a.duration.toFixed(1)} s`);
           setJoue(false);
           bouche(false);
           onFin?.();
@@ -112,16 +121,20 @@ export function FigurineQuiParle({ neutre, parle, src, etiquette = "▶ Écouter
         } catch {
           analyse.current = null; // la bouche battra en rythme
         }
+        marquer("mesure", analyse.current ? "volume" : "rythme");
       }
       await contexte.current?.resume().catch(() => undefined);
       const a = audio.current!;
       a.currentTime = 0;
       pic.current = 0;
+      marquer("lecture", "lance");
       await a.play();
+      marquer("lecture", "joue");
       setJoue(true);
       cancelAnimationFrame(raf.current);
       raf.current = requestAnimationFrame(animer);
-    } catch {
+    } catch (e) {
+      marquer("lecture", `erreur ${(e as Error)?.name ?? ""}`.trim());
       setEnnui("Le son n’a pas pu se lancer. Réessaie.");
     } finally {
       setCharge(false);

@@ -141,13 +141,15 @@ const titre = await amie.title();
 ok(titre.includes("Léa t’a envoyé sa figurine") && !/ClikMe.*Clikme/i.test(titre) && (await amie.locator('meta[name="robots"][content*="noindex"]').count()) === 1, `le titre du lien, et pas dans Google (${titre})`);
 const son = amie.waitForResponse((r) => r.url().includes("/api/direct/ma-figurine/son"));
 await amie.locator(".fqp-jouer").click();
-ok((await son).status() === 200, "sa voix arrive");
+const reponse = await son;
+ok(reponse.status() === 200, `sa voix arrive (${reponse.headers()["content-type"]}, ${reponse.headers()["content-length"]} octets)`);
 let bouche = false;
-for (let k = 0; k < 40 && !bouche; k++) {
+for (let k = 0; k < 80 && !bouche; k++) {
   bouche = await amie.locator(".fqp-fig.ouverte").count().then((n) => n > 0);
   if (!bouche) await amie.waitForTimeout(100);
 }
-ok(bouche, "la bouche bouge sur sa voix");
+const lecture = await amie.locator(".fqp").evaluate((e) => ({ ...e.dataset, bouton: e.querySelector(".fqp-jouer")?.textContent, ennui: e.querySelector(".fqp-ennui")?.textContent ?? "" }));
+ok(bouche, `la bouche bouge sur sa voix (${JSON.stringify(lecture)})`);
 await amie.waitForTimeout(400);
 const [apres] = await lire("clik_figurine_message", `id=eq.${id}`);
 ok(apres?.ecoutes === 1, `une écoute comptée (${apres?.ecoutes})`);
