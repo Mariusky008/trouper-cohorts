@@ -150,6 +150,32 @@ la photo d'origine n'est pas dans le dépôt. Le chef de Chez Bergine a donné s
 > fabrication automatique des figurines des pros et des clients ; ce que le client fait de la sienne ; et le système
 > dans sa globalité, pour que l'effet devienne viral et qu'il y ait de la demande. »
 
+### 9.0 Simplifier d'abord (2 novembre) — décidé
+
+« Si on met cette fonctionnalité dans l'application avec déjà tout ce qui s'y trouve, ne risque-t-on pas de perdre la
+simplicité de la démarche initiale ? » — Si. D'où trois règles :
+
+- **La figurine du commerçant remplace les pièces** (bronze, argent, or) comme récompense visible : le client a son
+  fantôme (c'est lui) ; le commerçant a sa figurine (c'est elle qu'on gagne). Deux systèmes de récompense, c'est un de
+  trop. (Le rang, qui décide de l'ordre d'envoi des bons plans, reste en coulisse, compté en figurines.)
+- **Le parcours ne change pas** : la vidéo, la cage, la visite validée au comptoir comme aujourd'hui ; on repart avec
+  la figurine de la saison. Rien de plus à faire pour le pro : les figurines, c'est ClikMe qui les fait.
+- **Le test de la phrase** : « Chaque fois que je vais chez Bergine, je gagne sa figurine de la saison ; à 10, j'ai un
+  repas pour 2. » Ce qui demande une deuxième phrase attend : les doubles, les accessoires, les échanges, la collection
+  de la ville, la figurine que le client fait lui-même — après les 5 premiers commerces, si la version simple marche.
+
+**Où on la voit — à valider** : pas dans l'application de la ville (`/ville/dax`), déjà pleine ; deux pages simples,
+qu'on atteint par un lien :
+
+1. **Chez un commerce : sur sa page de la famille** (`/f/<lien>`), là où le client arrive déjà (le lien de la vidéo,
+   le carton QR au comptoir) et où il voit aujourd'hui sa pièce : à sa place, « Ta collection Chez Bergine · 6 / 10 »,
+   la figurine à gagner en ce moment et le temps qui reste, le cadeau à 10.
+2. **Toutes ses figurines : une seule page « Ma collection »** (`/collection`), une étagère par commerce et rien
+   d'autre ; on y arrive par l'écran qui suit la visite validée (« Tu as gagné l'édition automne ! »), par le message
+   du commerce, et par un bouton sur chaque page de famille. Dans l'application de la ville : au plus une icône.
+
+Un commerce = une page (sa famille) ; un client = une page (sa collection).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
@@ -187,7 +213,7 @@ la visite validée au comptoir (le bon « Servie ✓ », le mot du jour noté au
 - Plus tard, **la collection de la ville** : une figurine chez 10 commerces différents → un cadeau de la ville (payé
   par ClikMe ou par les commerces partenaires). C'est elle qui fait découvrir les voisins.
 
-### 9.4 Où l'on collectionne : « Ma vitrine », dans Ma Maison
+### 9.4 Où l'on collectionne (remplacé par 9.0 : la page de la famille, et « Ma collection »)
 
 - **Une étagère par commerce** : les 10 places de l'année ; celles qui manquent en silhouette, avec le temps qui reste
   pour l'édition en cours (« Édition automne : encore 12 jours »). Et l'étagère de la ville.
