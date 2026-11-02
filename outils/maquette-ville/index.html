@@ -103,6 +103,7 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-
 .porte p{margin:0;font-size:11px;color:#fff;opacity:.85;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.8)}
 .plein{position:absolute;inset:0;z-index:30;background:#000}
 .plein[hidden]{display:none!important}
+#plein{z-index:45}
 .plein video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .plein::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.55),transparent 22%,transparent 52%,rgba(0,0,0,.8))}
 .p-haut{position:absolute;z-index:8;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:8px}
@@ -204,12 +205,12 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-
 /* ── LA BOUTIQUE : l'accueil, puis ta table (chaque fonction est un objet posé dessus) ── */
 .salon{position:absolute;inset:0;overflow:hidden;background:#120806;--grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006 0.32' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 .salon-fond{position:absolute;inset:-8%;background:center/cover no-repeat;filter:blur(14px) brightness(.66) saturate(1.25);transform:scale(1.04);transition:filter 1s,transform 1.4s cubic-bezier(.2,.8,.25,1)}
-.salon[data-etape="table"] .salon-fond{filter:blur(6px) brightness(.68) saturate(1.2);transform:scale(1.2)}
+.salon[data-etape="coin"] .salon-fond{filter:blur(8px) brightness(.64) saturate(1.2);transform:scale(1.14)}
 .salon-lumiere{position:absolute;inset:0;pointer-events:none;background:radial-gradient(60% 42% at 50% 30%,rgba(255,190,110,.38),transparent 72%),radial-gradient(150% 100% at 50% 40%,transparent 48%,rgba(8,3,2,.78))}
 .salon .p-haut{z-index:20}
 .etape{position:absolute;inset:0;transition:opacity .55s,transform .8s cubic-bezier(.2,.8,.25,1)}
-.salon[data-etape="table"] .etape.accueil{opacity:0;transform:scale(.9) translateY(5%);pointer-events:none}
-.salon[data-etape="accueil"] .etape.table{opacity:0;transform:scale(1.1) translateY(8%);pointer-events:none}
+.salon[data-etape="coin"] .etape.accueil{opacity:0;transform:scale(.9) translateY(5%);pointer-events:none}
+.salon[data-etape="accueil"] .etape.coin{opacity:0;transform:scale(1.1) translateY(8%);pointer-events:none}
 .scene-c{position:absolute;inset:0;max-width:980px;margin:0 auto}
 .fig{position:absolute;display:block;padding:0;border:0;background:none;cursor:pointer;transform:translateX(-50%)}
 .fig .corps{position:relative;display:block;height:100%}
@@ -228,7 +229,7 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-
 .comptoir{position:absolute;z-index:3;left:-6%;right:-6%;bottom:0;height:31%}
 .comptoir .dessus{position:absolute;left:0;right:0;top:0;height:17%;clip-path:polygon(3% 0,97% 0,100% 100%,0 100%);background:linear-gradient(180deg,rgba(255,230,190,.28),rgba(0,0,0,.1)),var(--grain),linear-gradient(180deg,var(--bois),var(--bois2));background-size:auto,420px 100%,auto;box-shadow:inset 0 2px 0 rgba(255,255,255,.18)}
 .comptoir .face{position:absolute;left:0;right:0;top:17%;bottom:0;background:linear-gradient(180deg,rgba(0,0,0,.45),rgba(0,0,0,.15) 18%,rgba(0,0,0,.35)),repeating-linear-gradient(90deg,rgba(0,0,0,.28) 0 2px,rgba(255,255,255,.05) 2px 3px,transparent 3px 78px),var(--grain),linear-gradient(180deg,var(--bois2),var(--bois));background-size:auto,auto,420px 100%,auto}
-.comptoir .plaque{position:absolute;left:13%;top:4%;transform:translateY(-100%) rotate(-3deg);padding:5px 11px 7px;border-radius:7px;background:linear-gradient(#22170f,#130c08);border:2px solid #C99A5B;color:#F2D39B;font-family:Playball,cursive;font-size:clamp(14px,3.8vw,19px);white-space:nowrap;box-shadow:0 8px 14px rgba(0,0,0,.5)}
+.comptoir .plaque{font-weight:400;position:absolute;left:13%;top:4%;transform:translateY(-100%) rotate(-3deg);padding:5px 11px 7px;border-radius:7px;background:linear-gradient(#22170f,#130c08);border:2px solid #C99A5B;color:#F2D39B;font-family:Playball,cursive;font-size:clamp(14px,3.8vw,19px);white-space:nowrap;box-shadow:0 8px 14px rgba(0,0,0,.5)}
 .comptoir .clochette{position:absolute;right:15%;top:6%;width:46px;height:30px;transform:translateY(-100%)}
 .comptoir .clochette i,.objet.cloche i{position:absolute;left:50%;bottom:4px;width:78%;height:82%;transform:translateX(-50%);border-radius:50% 50% 8% 8%/90% 90% 10% 10%;background:radial-gradient(60% 55% at 35% 30%,#FFF3C4,#E9B949 40%,#9A6A16 85%)}
 .comptoir .clochette::before,.objet.cloche .chose::before{content:"";position:absolute;left:50%;top:-4px;width:8px;height:8px;border-radius:50%;transform:translateX(-50%);background:#D9A63A;box-shadow:inset 0 1px 1px #FFF3C4}
@@ -318,6 +319,75 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-
 .aide{position:absolute;z-index:12;left:50%;top:38%;transform:translate(-50%,-50%);width:min(84%,360px);padding:14px 16px;border-radius:20px;background:rgba(18,7,15,.82);backdrop-filter:blur(8px);border:1px solid var(--verre-bord);font-size:13px;font-weight:700;line-height:1.5;text-align:center;pointer-events:none;animation:aide 5.5s ease both}
 @keyframes aide{0%{opacity:0;transform:translate(-50%,-44%)}8%,82%{opacity:1;transform:translate(-50%,-50%)}100%{opacity:0}}
 .plein.boutique::after{display:none}
+
+/* le coin salon : un canapé, deux fauteuils, une table basse sur un tapis, l'écran au mur */
+.etape.coin .scene-c{max-width:760px;transition:transform .5s}
+.salon.assis-la .etape.coin .scene-c{transform:translateY(-2.5vh)}
+.ecran-mur{position:absolute;z-index:1;left:50%;top:calc(66px + env(safe-area-inset-top,0px));transform:translateX(-50%);height:17.5vh;aspect-ratio:9/16;padding:0;border:0;border-radius:6px;background:#050505;box-shadow:0 0 0 4px #141414,0 0 0 5px #3c3c3c,0 18px 30px rgba(0,0,0,.6),0 0 46px rgba(255,180,120,.2);cursor:pointer}
+.ecran-mur video{position:static;display:block;width:100%;height:100%;object-fit:cover;border-radius:6px}
+.ecran-mur i{position:absolute;z-index:2;left:6px;top:6px;padding:1px 5px;border-radius:3px;background:var(--rouge);font-style:normal;font-size:8.5px;font-weight:800}
+.ecran-mur b{position:absolute;left:50%;top:100%;transform:translate(-50%,9px);padding:4px 10px;border-radius:999px;background:var(--rose);font-size:10.5px;font-weight:800;white-space:nowrap;box-shadow:0 8px 16px -6px rgba(255,46,154,.9)}
+.tapis{position:absolute;z-index:0;left:50%;bottom:19vh;width:118%;height:27vh;transform:translateX(-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,0) 62%,rgba(0,0,0,.25) 64%,rgba(0,0,0,0) 66%),radial-gradient(closest-side,#8C3B2A,#5E2419 70%,#3B150F);opacity:.8;box-shadow:0 0 60px rgba(0,0,0,.6)}
+.canape,.fauteuil{position:absolute}
+.canape{z-index:2;left:21%;right:21%;bottom:44vh;height:15vh}
+.fauteuil{z-index:4;bottom:30vh;width:27%;height:15.5vh}
+.fauteuil.g{left:-1%;transform:perspective(520px) rotateY(24deg)}
+.fauteuil.d{right:-1%;transform:perspective(520px) rotateY(-24deg)}
+.canape::before,.fauteuil::before{content:"";position:absolute;left:4%;right:4%;bottom:-6%;height:16%;border-radius:50%;background:rgba(0,0,0,.5);filter:blur(5px)}
+.salon .dossier{position:absolute;left:6%;right:6%;top:0;height:62%;border-radius:2.4vh 2.4vh .8vh .8vh;background:linear-gradient(180deg,rgba(255,255,255,.2),transparent 38%,rgba(0,0,0,.28)),var(--tissu);box-shadow:inset 0 -.8vh 1.2vh rgba(0,0,0,.3)}
+.salon .assise{position:absolute;left:3%;right:3%;bottom:7%;height:42%;border-radius:1.5vh;background:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.05) 32%,rgba(0,0,0,.3)),var(--tissu);box-shadow:0 1vh 1.4vh rgba(0,0,0,.4)}
+.canape .dossier i,.canape .assise i{position:absolute;top:10%;bottom:10%;width:1px;background:rgba(0,0,0,.38);box-shadow:1px 0 rgba(255,255,255,.1)}
+.canape i:first-child{left:35%}.canape i:last-child{left:65%}
+.salon .acc{position:absolute;bottom:5%;width:12%;height:68%;border-radius:1.7vh;background:linear-gradient(90deg,rgba(0,0,0,.28),rgba(255,255,255,.14) 45%,rgba(0,0,0,.22)),var(--tissu2)}
+.canape .acc{width:9%}
+.salon .acc.g{left:0}.salon .acc.d{right:0}
+.basse{position:absolute;z-index:3;left:50%;bottom:33vh;width:30%;height:6vh;transform:translateX(-50%);border-radius:50%;background:radial-gradient(60% 50% at 40% 35%,rgba(255,220,170,.35),transparent 70%),linear-gradient(var(--bois),var(--bois2));box-shadow:0 1.6vh 1.6vh rgba(0,0,0,.5)}
+.basse span{position:absolute;left:50%;top:-1.2vh;transform:translateX(-50%);font-size:2.6vh;white-space:nowrap;filter:drop-shadow(0 3px 2px rgba(0,0,0,.5))}
+.assis,.libre{position:absolute;transform:translateX(-50%)}
+.assis .fig{position:relative;left:auto;transform:none;display:block}
+.assis .fig img{width:auto}
+.assis.arrive{animation:arrive2 .55s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes arrive2{from{opacity:0;transform:translate(-50%,-12%) scale(.85)}}
+.s0{left:31.5%;bottom:50.6vh;z-index:3}.s1{left:50%;bottom:50.6vh;z-index:3}.s2{left:68.5%;bottom:50.6vh;z-index:3}
+.s3{left:12%;bottom:37vh;z-index:5}.s4{left:88%;bottom:37vh;z-index:5}
+.assis .nomf{position:absolute;left:50%;top:100%;transform:translate(-50%,2px);padding:1px 8px;border-radius:999px;background:var(--verre);border:1px solid var(--verre-bord);font-size:10px;font-weight:700;white-space:nowrap}
+.assis.moi .nomf{background:var(--rose);border-color:transparent}
+.libre{display:flex;flex-direction:column;align-items:center;gap:3px;padding:0;border:0;background:none;color:#fff;cursor:pointer}
+.libre i{width:5.2vh;height:5.2vh;border-radius:50%;display:grid;place-items:center;border:2px dashed rgba(255,255,255,.85);background:rgba(255,46,154,.38);font-style:normal;font-size:2.4vh;font-weight:800;animation:respire 1.8s ease-in-out infinite}
+@keyframes respire{50%{transform:scale(1.1);background:rgba(255,46,154,.6)}}
+.libre span{padding:2px 8px;border-radius:999px;background:rgba(20,8,4,.6);font-size:10px;font-weight:800;white-space:nowrap}
+.salon.assis-la .libre i{animation:none;opacity:.55}
+.bulle-c{position:absolute;z-index:8;left:50%;bottom:100%;transform:translate(-50%,-4px);width:max-content;max-width:min(190px,48vw);padding:6px 10px 7px;border-radius:13px;background:var(--papier);color:var(--encre);font-family:var(--affiche);font-weight:700;font-size:12px;line-height:1.2;box-shadow:0 10px 20px -8px rgba(0,0,0,.7);pointer-events:none}
+.bulle-c.vue{animation:pop2 .4s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes pop2{from{opacity:0;transform:translate(-50%,4px) scale(.7)}}
+.s3 .bulle-c{left:0;transform:translate(0,-4px)}.s4 .bulle-c{left:auto;right:0;transform:translate(0,-4px)}
+.consigne{position:absolute;z-index:9;left:50%;bottom:calc(19vh + env(safe-area-inset-bottom,0px));transform:translateX(-50%);padding:8px 14px;border-radius:999px;background:rgba(18,7,15,.8);border:1px solid var(--verre-bord);font-size:12.5px;font-weight:700;white-space:nowrap}
+.consigne[hidden]{display:none}
+.discu-salon{position:absolute;z-index:10;left:0;right:0;bottom:0;max-width:620px;margin:0 auto;box-sizing:border-box;padding:8px 10px calc(10px + env(safe-area-inset-bottom,0px));border-radius:22px 22px 0 0;background:rgba(18,8,12,.88);backdrop-filter:blur(10px);border:1px solid var(--verre-bord);border-bottom:0;animation:monte .4s cubic-bezier(.2,.9,.25,1) both}
+.discu-salon[hidden]{display:none}
+.outils-salon{display:flex;justify-content:space-around;gap:2px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.08)}
+.outils-salon button{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;padding:2px 4px;border:0;background:none;color:var(--doux);font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap}
+.outils-salon i{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1);font-style:normal;font-size:15px;color:#fff}
+.fil{max-height:12vh;min-height:5vh;overflow:auto;display:flex;flex-direction:column;gap:5px;padding:8px 2px 6px}
+.msg{display:flex;gap:7px;align-items:flex-start;margin:0;font-size:12.5px;line-height:1.3;animation:apparait2 .3s both}
+.msg img{flex:none;width:24px;height:24px;border-radius:50%;object-fit:cover;object-position:50% 6%;background:#3A1F2E}
+.msg span{padding:6px 10px;border-radius:14px 14px 14px 4px;background:#fff;color:var(--encre)}
+.msg b{display:block;font-size:10px;color:#A1155E}
+.msg.moi{justify-content:flex-end}.msg.moi span{background:var(--rose);color:#fff;border-radius:14px 14px 4px 14px}
+.msg.ecrit span{background:none;color:var(--doux);font-style:italic;padding:4px 0}
+.rapides{display:flex;gap:6px;overflow-x:auto;padding:0 0 7px;scrollbar-width:none}
+.rapides::-webkit-scrollbar{display:none}
+.rapides button{flex:none;padding:7px 11px;border-radius:999px;border:1px solid var(--verre-bord);background:rgba(255,255,255,.08);color:#fff;font-size:12px;font-weight:700;cursor:pointer}
+.saisie{display:flex;gap:6px;margin:0}
+.saisie input{flex:1;min-width:0;height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--verre-bord);background:rgba(255,255,255,.95);color:var(--encre);font-size:16px}
+.saisie button{flex:none;width:38px;height:38px;border-radius:50%;border:0;background:var(--rose);color:#fff;font-size:15px;cursor:pointer}
+.etape.coin .serveur{z-index:7;right:-2%;bottom:30vh;width:30%;height:40vh}
+.choix-s{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+.choix-s button{padding:6px 10px;border-radius:999px;border:0;background:var(--rose);color:#fff;font-family:var(--texte);font-size:11.5px;font-weight:800;cursor:pointer}
+.choix-s button + button{background:var(--papier-2);color:var(--encre)}
+.avis-f{display:flex;gap:10px;align-items:flex-start;width:100%;margin-top:12px;padding:10px 12px;border-radius:14px;border:1px solid #F0C4D8;background:#FFF0F7;color:var(--encre);text-align:left;font-size:13.5px;line-height:1.35;cursor:pointer}
+.avis-f img{flex:none;width:40px;height:40px;border-radius:50%;object-fit:cover;object-position:50% 6%;background:var(--papier-2)}
+.avis-f b{display:block;font-size:12px;color:#A1155E}
 /* la mini-carte (en bas à droite) et la grande carte, avec la recherche des commerces */
 .mini{position:absolute;z-index:11;right:12px;bottom:calc(78px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:4px;padding:0;border:0;background:none;cursor:pointer}
 .mini .rondcarte{position:relative;display:block;width:76px;height:76px;border-radius:50%;overflow:hidden;background:#EBCB9F;border:3px solid var(--or);box-shadow:0 0 0 2px rgba(60,20,10,.45),0 0 22px rgba(242,196,107,.6),0 10px 22px rgba(0,0,0,.5)}
@@ -417,7 +487,7 @@ const BOUTIQUES = {
     reserver: { quoi: "la table de 12 h 30", bouton: "Réserver" },
     essai: { k: "lea", quoi: "le magret", voix: "lea-magret", dit: "Le meilleur magret de Dax !", note: "😋 12 avis" },
     ici: ["lea", "hugo"], traces: [["ines", "Le meilleur accueil de Dax 💛"]], monde: 9,
-    salon: { asseoir: "🍽️ M’installer à une table", ou: "à table", ouCourt: "À ta table", icone: "🍽️", carteTitre: "Aujourd’hui", carteNom: "La carte du jour", carte: ["Garbure landaise", "& magret · 19 €"], place: "Inviter un ami<br>à ta table", bois: "#6A3E22", bois2: "#3C2213" },
+    salon: { tissu: "#7A1E2E", tissu2: "#3E0B15", bois: "#6A3E22", bois2: "#3C2213", surTable: "🍽️ ☕", essaiIcone: "😋", essaiCourt: "Goûter", essaiTitre: "Goûter le magret", occupants: { 0: "lea", 2: "passant", 4: "hugo" } },
     reponse: "Merci Camille ! Le magret revient vendredi, je te garde une table ?" },
   alice: { nom: "La Page d’Alice", metier: "Librairie", patron: "alice", video: "v/alice", int: { img: "i/int-librairie.jpg", iw: 960, ih: 720, cadre: [0.525, 0], tele: [[56.5, 5.5], [65.1, 5.5], [65.1, 25.8], [56.5, 25.8]], ardoise: "g" }, annonce: "Le coup de cœur d’Alice",
     dit: "Camille ! Mon coup de cœur : Le Comte de Monte-Cristo. Je te le mets de côté ?",
@@ -426,7 +496,7 @@ const BOUTIQUES = {
     reserver: { quoi: "ton exemplaire", bouton: "Le mettre de côté" },
     essai: { k: "ines", quoi: "le coup de cœur d’Alice", dit: "Je n’ai pas pu le lâcher, 1 200 pages en 10 jours !", note: "📚 7 avis" },
     ici: ["ines"], traces: [["lea", "Merci pour les conseils, Alice !"]], monde: 4,
-    salon: { asseoir: "📖 M’installer au coin lecture", ou: "au coin lecture", ouCourt: "Au coin lecture", icone: "📖", carteTitre: "Coup de cœur", carteNom: "Le coup de cœur d’Alice", carte: ["Le Comte de", "Monte-Cristo"], place: "Inviter un ami<br>à côté de toi", bois: "#8A5A34", bois2: "#523119" },
+    salon: { tissu: "#1F5A4A", tissu2: "#0C2A22", bois: "#8A5A34", bois2: "#523119", surTable: "📚 ☕", essaiIcone: "📖", essaiCourt: "Feuilleter", essaiTitre: "Feuilleter le coup de cœur", occupants: { 1: "ines", 4: "passant" } },
     reponse: "Avec plaisir ! Il m’en reste deux, je t’en garde un ?" },
   atelier: { nom: "L’Atelier de Nina", metier: "Atelier de poterie", patron: "nina", video: "v/atelier", int: { img: "i/int-atelier.jpg", iw: 668, ih: 1000, cadre: [0.5, 0.229], tele: [[31.5, 22], [46, 22], [46, 39.2], [31.5, 39.2]], ardoise: "d" }, voix: "nina", annonce: "Atelier tour · samedi 10 h",
     dit: "Camille ! Il me reste une place à l’atelier tour, samedi à 10 h : elle est à toi pendant 5 minutes !",
@@ -435,7 +505,7 @@ const BOUTIQUES = {
     reserver: { quoi: "ta place samedi à 10 h", bouton: "Prendre la place" },
     essai: { k: "lea", quoi: "l’atelier tour", voix: "lea-poterie", dit: "Le meilleur cours de poterie de Dax !", note: "🏺 9 avis" },
     ici: ["sam"], traces: [["lea", "Vivement samedi !"]], monde: 5,
-    salon: { asseoir: "🏺 Prendre place à l’établi", ou: "à l’établi", ouCourt: "À l’établi", icone: "🏺", carteTitre: "Samedi 10 h", carteNom: "L’atelier de samedi", carte: ["Atelier tour", "2 places"], place: "Inviter un ami<br>à l’établi", bois: "#B08A5E", bois2: "#6E5232" },
+    salon: { tissu: "#B5832F", tissu2: "#6A4512", bois: "#B08A5E", bois2: "#6E5232", surTable: "🏺 ☕", essaiIcone: "🏺", essaiCourt: "Essayer", essaiTitre: "Essayer l’atelier tour", occupants: { 0: "sam", 2: "lea", 3: "passant" } },
     reponse: "Avec joie ! Samedi 10 h, je te garde la place ?" },
 };
 // LES LIEUX : trois rues photographiées à Dax. Coordonnées en % de la photo. Les enseignes réelles des trois façades
@@ -483,7 +553,7 @@ const PAROLES = {
 
 // ── L'ÉTAT ───────────────────────────────────────────────────────────────────────────────────
 const $ = (s) => document.querySelector(s);
-const etat = { mode: "figurine", lieu: "place", famille: new Set(), mesMots: {}, invites: {}, votes: {}, pris: new Set(), boite: [], audio: null, boutique: null, proche: null, regard: null, zoomPorte: null, accueillis: new Set(), etapeSalon: "accueil", zoom: 1, decal: 0 };
+const etat = { mode: "figurine", lieu: "place", famille: new Set(), mesMots: {}, invites: {}, votes: {}, pris: new Set(), boite: [], audio: null, boutique: null, proche: null, regard: null, zoomPorte: null, accueillis: new Set(), etapeSalon: "accueil", zoom: 1, decal: 0, assis: {}, maPlace: {} };
 etat.boite.push({ k: "lea", titre: "Léa te demande ton avis", texte: "« Tu as déjà goûté le magret de Chez Bergine ? Dis-moi ce que t’en penses ! »", b: "bergine", le: "il y a 5 min", neuf: true });
 const moi = () => (etat.mode === "fantome" ? "tonFantome" : "toi");
 
@@ -956,83 +1026,110 @@ function fermerAnnonce() { clearInterval(mCoeurs); clearInterval(mAvis); $("#ple
 function envoler(z, e) { if (!z) return; const s = document.createElement("span"); s.className = "envole"; s.textContent = e; s.style.left = "50%"; s.style.bottom = "0"; s.style.setProperty("--dx", (Math.random() * 40 - 20).toFixed(0) + "px"); z.appendChild(s); setTimeout(() => s.remove(), 2300); }
 
 // ── DANS LA BOUTIQUE : d'abord l'accueil (le commerçant derrière son comptoir t'accueille par ton prénom),
-//    puis « M'installer » : tu es à ta table, et chaque fonction est un objet posé dessus. ─────────────────────
+//    puis le coin salon : un canapé, deux fauteuils, ceux qui sont déjà assis ; tu choisis une place libre et tout
+//    commence (l'écran au mur, parler avec les autres, essayer, inviter un ami à côté de toi). ─────────────────────
+// Les hauteurs des figurines sont en vh (jamais en % d'un parent sans taille : certains navigateurs ne les dessinent pas).
 function figure(k, cl, h) {
-  return `<button class="fig ${cl}" type="button" data-k="${k}" aria-label="${GENS[k].nom}" style="height:${h}"><span class="corps"><img class="n" src="${GENS[k].n}" alt="">${GENS[k].p ? `<img class="p" src="${GENS[k].p}" alt="">` : ""}</span></button>`;
+  return `<button class="fig ${cl}" type="button" data-k="${k}" aria-label="${GENS[k].nom}"><span class="corps"><img class="n" src="${GENS[k].n}" alt="" style="height:${h}">${GENS[k].p ? `<img class="p" src="${GENS[k].p}" alt="" style="height:${h}">` : ""}</span></button>`;
 }
-const voisinsDe = (cle) => { const B = BOUTIQUES[cle]; return [...B.ici, B.essai.k, ...(etat.invites[cle] ? [] : [])].filter((k, i, a) => a.indexOf(k) === i && k !== etat.invites[cle]).slice(0, 2); };
+// les places : 0, 1, 2 sur le canapé ; 3 et 4, les fauteuils (devant, plus près)
+const PLACES = ["canapé", "canapé", "canapé", "fauteuil", "fauteuil"];
+const VOISINES = { 0: [1, 3], 1: [0, 2], 2: [1, 4], 3: [0, 1], 4: [2, 1] };
 const etListe = (noms) => (noms.length < 2 ? noms.join("") : noms.slice(0, -1).join(", ") + " et " + noms[noms.length - 1]);
+const assis = (cle) => etat.assis[cle] || (etat.assis[cle] = { ...BOUTIQUES[cle].salon.occupants });
+const connus = (cle) => Object.values(assis(cle)).filter((k) => k !== "passant" && k !== moi());
+function siegeHTML(cle, i) {
+  const k = assis(cle)[i], h = i < 3 ? "13.5vh" : "17vh";
+  if (k) return `<div class="assis s${i}${k === moi() ? " moi" : ""}" data-i="${i}">${figure(k, k === "passant" ? "passant" : "", h)}${k === "passant" ? "" : `<span class="nomf">${k === moi() ? "Toi" : GENS[k].nom}</span>`}<div class="bulle-c" hidden></div></div>`;
+  return `<button class="libre s${i}" type="button" data-i="${i}" aria-label="S’asseoir ici"><i>＋</i><span>Place libre</span></button>`;
+}
 function salonHTML(cle) {
-  const B = BOUTIQUES[cle], S = B.salon, P = GENS[B.patron].nom, spect = etat.mode === "spectateur", vois = voisinsDe(cle);
-  const mots = [...B.traces, ...(etat.mesMots[cle] || []).map((t) => [moi(), t])];
-  const avatars = vois.map((k) => `<img src="${GENS[k].n}" alt="">`).join("");
-  const invite = etat.invites[cle];
-  return `<div class="salon" id="salon" data-etape="${etat.etapeSalon}" style="--bois:${S.bois};--bois2:${S.bois2}">
+  const B = BOUTIQUES[cle], S = B.salon, P = GENS[B.patron].nom, spect = etat.mode === "spectateur", vois = connus(cle);
+  const libres = PLACES.filter((_, i) => !assis(cle)[i]).length;
+  return `<div class="salon" id="salon" data-etape="${etat.etapeSalon}" style="--tissu:${S.tissu};--tissu2:${S.tissu2};--bois:${S.bois};--bois2:${S.bois2}">
     <div class="salon-fond" style="background-image:url(${B.int.img})"></div><div class="salon-lumiere"></div>
-    <div class="p-haut"><button class="rond" type="button" id="bRetour" aria-label="Revenir">←</button><span><b>${B.nom}</b><small id="sousTitre"></small></span>
+    <div class="p-haut"><button class="rond" type="button" id="bRetour" aria-label="Ressortir">←</button><span><b>${B.nom}</b><small id="sousTitre"></small></span>
       <span class="d"><button class="rond boiteIci" type="button" aria-label="Ta boîte">✉️<em class="nbBoite"></em></button></span></div>
 
     <div class="etape accueil"><div class="scene-c">
-      <div class="bulle-a" id="bulleA">${spect ? `<b>👀 Tu regardes</b><p>En spectateur, personne ne te voit. Libère ton fantôme pour t’installer et parler à ${P}.</p>` : `<b>👋 Bienvenue ${PRENOM} !</b><p id="ligneA">${etat.accueillis.has(cle) ? `Content de te revoir ! Je t’installe ?` : "…"}</p>`}</div>
-      ${figure(B.patron, "patron-a", "50%")}
+      <div class="bulle-a" id="bulleA">${spect ? `<b>👀 Tu regardes</b><p>En spectateur, personne ne te voit. Libère ton fantôme pour t’installer et parler aux autres.</p>` : `<b>👋 Bienvenue ${PRENOM} !</b><p id="ligneA">${etat.accueillis.has(cle) ? "Content de te revoir ! Installe-toi avec les autres." : "…"}</p>`}</div>
+      ${figure(B.patron, "patron-a", "50vh")}
       <div class="comptoir"><div class="dessus"></div><div class="face"></div><span class="plaque">${B.nom}</span><span class="clochette" aria-hidden="true"><i></i></span></div>
       <div class="choix-a">
-        ${vois.length ? `<p class="ici-l"><span class="av">${avatars}</span>${etListe(vois.map((k) => GENS[k].nom))} ${vois.length > 1 ? "sont" : "est"} déjà ${S.ou} · +${Math.max(0, B.monde - vois.length)} autres</p>` : ""}
-        <button class="gros" type="button" id="bAsseoir">${spect ? "👻 Libérer mon fantôme" : S.asseoir}</button>
+        ${vois.length ? `<p class="ici-l"><span class="av">${vois.map((k) => `<img src="${GENS[k].n}" alt="">`).join("")}</span>${etListe(vois.map((k) => GENS[k].nom))} ${vois.length > 1 ? "sont" : "est"} au salon · ${libres} place${libres > 1 ? "s" : ""} libre${libres > 1 ? "s" : ""}</p>` : ""}
+        <button class="gros" type="button" id="bAsseoir">${spect ? "👻 Libérer mon fantôme" : "🛋️ M’installer avec les autres"}</button>
         <div class="duo"><button class="gros clair" type="button" id="bAnnonceA">▶ L’annonce du jour</button><button class="gros clair" type="button" id="bRessortir">🚪 Ressortir</button></div>
       </div>
     </div></div>
 
-    <div class="etape table"><div class="scene-c">
-      <button class="mur-mots" type="button" id="oMur"><b>📌 Le mur des mots · ${mots.length}</b>${mots.slice(-2).map(([k, t], i) => `<span class="mot m${i}"><img src="${GENS[k].n}" alt="">${t}</span>`).join("")}</button>
-      ${vois.map((k, i) => `<div class="voisin v${i}">${figure(k, "", "100%")}<span class="pied"></span><span class="nomf">${GENS[k].nom}</span>${k === B.essai.k ? `<button class="bulle-v" type="button" data-essai="${k}"><small>${GENS[k].nom} a essayé ${B.essai.quoi}</small>« ${B.essai.dit} »${B.essai.voix ? " 🔊" : ""}</button>` : ""}</div>`).join("")}
-      <div class="serveur" id="serveur" hidden>${figure(B.patron, "patron-t", "100%")}<div class="bulle-s" id="bulleS"></div></div>
-      <div class="plateau"><div class="dessus"></div><div class="chant"></div></div>
-      <div class="actions-s" id="actionsS" hidden><button class="puce-s" type="button" id="sRes">⏱ ${B.reserver.bouton}</button><button class="puce-s" type="button" id="sMot">✉️ Lui laisser un mot</button><button class="puce-s" type="button" id="sMerci">🙏 Merci !</button></div>
-      <div class="objets">
-        <button class="objet fond tablette" type="button" id="oTab"><span class="chose"><i>● LIVE</i><video muted playsinline loop autoplay preload="auto">${sources(B.video)}</video></span><span class="lbl">L’annonce du jour</span></button>
-        <button class="objet fond menu" type="button" id="oCarte"><span class="chose"><b>${S.carteTitre}</b>${S.carte.map((l) => `<span>${l}</span>`).join("")}<em>${etat.famille.has(cle) ? "👻 " + B.famille : "👻 Réservé à la famille"}</em></span><span class="lbl">${S.carteNom}</span></button>
-        <button class="objet fond question" type="button" id="oQuestion"><span class="chose"><b>📊</b><span>${B.question[0]}</span></span><span class="lbl">La question du jour</span></button>
-        <button class="objet cloche" type="button" id="oCloche"><span class="chose"><i></i></span><span class="lbl">Appeler<br>${P}</span></button>
-        <button class="objet carnet" type="button" id="oCarnet"><span class="chose"><i></i></span><span class="lbl">Un mot<br>à ${P}</span></button>
-        <button class="objet place" type="button" id="oPlace"><span class="chose">${invite ? figure(invite, "invite", "150%") : "<i></i>"}</span><span class="lbl">${invite ? `${GENS[invite].nom} est à ta table` : S.place}</span></button>
+    <div class="etape coin"><div class="scene-c">
+      <button class="ecran-mur" type="button" id="oEcran" aria-label="L’annonce du jour en grand"><i>● LIVE</i><video muted playsinline loop autoplay preload="auto">${sources(B.video)}</video><b>▶ L’annonce du jour</b></button>
+      <div class="tapis"></div>
+      <div class="canape"><div class="dossier"><i></i><i></i></div><div class="assise"><i></i><i></i></div><span class="acc g"></span><span class="acc d"></span></div>
+      <div class="fauteuil g"><div class="dossier"></div><div class="assise"></div><span class="acc g"></span><span class="acc d"></span></div>
+      <div class="fauteuil d"><div class="dossier"></div><div class="assise"></div><span class="acc g"></span><span class="acc d"></span></div>
+      <div class="basse"><span>${S.surTable}</span></div>
+      <div id="sieges">${PLACES.map((_, i) => siegeHTML(cle, i)).join("")}</div>
+      <div class="serveur" id="serveur" hidden>${figure(B.patron, "patron-t", "40vh")}<div class="bulle-s" id="bulleS"></div></div>
+    </div>
+    <div class="consigne" id="consigne">${spect ? "👀 En spectateur, tu regardes : personne ne te voit." : "👆 Choisis une place libre pour t’asseoir"}</div>
+    <div class="discu-salon" id="discu" hidden>
+      <div class="outils-salon">
+        <button type="button" id="tVideo"><i>▶</i>La vidéo</button>
+        <button type="button" id="tEssai"><i>${S.essaiIcone}</i>${S.essaiCourt}</button>
+        <button type="button" id="tInviter"><i>👥</i>Inviter</button>
+        <button type="button" id="tAppeler"><i>🛎️</i>${P}</button>
+        <button type="button" id="tMur"><i>📌</i>Le mur</button>
       </div>
+      <div class="fil" id="fil"></div>
+      <div class="rapides" id="rapides">${["Salut ! 👋", "C’est bon ici ?", "Vous me conseillez quoi ?", "On y retourne ensemble ?"].map((q) => `<button type="button">${q}</button>`).join("")}</div>
+      <form class="saisie" id="saisie"><input id="message" type="text" maxlength="140" placeholder="Écrire aux autres…" autocomplete="off" aria-label="Écrire aux autres"><button type="submit" aria-label="Envoyer">➤</button></form>
     </div></div>
   </div>`;
 }
 function entrer(cle, relance) {
   const e = $("#boutique"), deja = etat.boutique === cle; etat.boutique = cle; Son.niveau(0.3);
   if (!relance || !deja) etat.etapeSalon = "accueil";
-  e.innerHTML = salonHTML(cle); e.hidden = false; majBoite(); brancherSalon(cle); majSousTitre(cle);
+  e.innerHTML = salonHTML(cle); e.hidden = false; e.scrollTop = 0; majBoite(); brancherSalon(cle); majSousTitre(cle);
+  if (etat.etapeSalon === "coin" && assis(cle)[etat.maPlace[cle]] === moi()) ouvrirDiscussion(cle, true);
   if (etat.etapeSalon === "accueil" && !relance) setTimeout(() => accueillir(cle), 900);
 }
 function majSousTitre(cle) {
-  const B = BOUTIQUES[cle], vois = voisinsDe(cle).map((k) => GENS[k].nom), z = $("#sousTitre"); if (!z) return;
-  z.textContent = etat.etapeSalon === "table" ? `${B.salon.icone} ${B.salon.ouCourt}${vois.length ? ` · ${etListe(vois)} ${vois.length > 1 ? "sont" : "est"} là` : ""}` : `🛎️ L’accueil · ${B.monde} personnes à l’intérieur`;
+  const B = BOUTIQUES[cle], vois = connus(cle).map((k) => GENS[k].nom), z = $("#sousTitre"); if (!z) return;
+  z.textContent = etat.etapeSalon === "coin" ? `🛋️ Au salon${vois.length ? ` · avec ${etListe(vois)}` : ""} · +${Math.max(0, B.monde - vois.length - 1)} autres` : `🛎️ L’accueil · ${B.monde} personnes à l’intérieur`;
 }
 function brancherSalon(cle) {
   const B = BOUTIQUES[cle], spect = etat.mode === "spectateur";
   const garde = (f) => () => (spect ? toast("tonFantome", "En spectateur, tu regardes", "Libère ton fantôme pour participer.") : f());
-  $("#bRetour").addEventListener("click", () => (etat.etapeSalon === "table" ? versAccueil(cle) : sortir()));
+  $("#bRetour").addEventListener("click", sortir);
   $("#bRessortir").addEventListener("click", sortir);
   $("#bAnnonceA").addEventListener("click", () => ouvrirAnnonce(cle));
   $("#bAsseoir").addEventListener("click", () => {
-    if (spect) { etat.mode = "fantome"; toast("tonFantome", "Ton fantôme est libéré 🎉", `${GENS[B.patron].nom} te voit maintenant.`); lieu(); etat.boutique = null; entrer(cle); return; }
-    sInstaller(cle);
+    if (spect) { etat.mode = "fantome"; toast("tonFantome", "Ton fantôme est libéré 🎉", "On te voit maintenant."); lieu(); etat.boutique = null; entrer(cle); return; }
+    versSalle(cle);
   });
   $(".patron-a").addEventListener("click", () => accueillir(cle, true));
-  $("#oTab").addEventListener("click", () => ouvrirAnnonce(cle));
-  $("#oCarte").addEventListener("click", () => feuilleCarte(cle));
-  $("#oQuestion").addEventListener("click", garde(() => feuilleQuestion(cle)));
-  $("#oCloche").addEventListener("click", garde(() => appelerALaTable(cle)));
-  $("#oCarnet").addEventListener("click", garde(() => feuilleMot(cle)));
-  $("#oPlace").addEventListener("click", garde(() => (etat.invites[cle] ? feuilleDiscussion(etat.invites[cle], null) : feuilleInviter(cle, "ta table"))));
-  $("#oMur").addEventListener("click", () => feuilleMur(cle));
-  $("#sRes").addEventListener("click", () => { finService(); feuilleReserver(cle); });
-  $("#sMot").addEventListener("click", () => { finService(); feuilleMot(cle); });
-  $("#sMerci").addEventListener("click", finService);
-  document.querySelectorAll(".voisin .fig").forEach((f) => f.addEventListener("click", garde(() => feuilleDiscussion(f.dataset.k, null))));
-  document.querySelectorAll(".bulle-v").forEach((b) => b.addEventListener("click", () => { if (B.essai.voix) parler(B.essai.voix, b.parentElement.querySelector(".fig")); else feuilleDiscussion(b.dataset.essai, null); }));
+  $("#oEcran").addEventListener("click", () => ouvrirAnnonce(cle));
+  brancherSieges(cle);
+  $("#tVideo").addEventListener("click", () => ouvrirAnnonce(cle));
+  $("#tEssai").addEventListener("click", () => feuilleEssai(cle));
+  $("#tInviter").addEventListener("click", () => feuilleInviter(cle, "la place à côté de toi"));
+  $("#tAppeler").addEventListener("click", () => appelerAuSalon(cle));
+  $("#tMur").addEventListener("click", () => feuilleMur(cle));
+  document.querySelectorAll("#rapides button").forEach((b) => b.addEventListener("click", () => direAuSalon(cle, b.textContent)));
+  $("#saisie").addEventListener("submit", (ev) => { ev.preventDefault(); const m = $("#message"); if (m.value.trim()) { direAuSalon(cle, m.value.trim()); m.value = ""; } });
+}
+function brancherSieges(cle) {
+  const spect = etat.mode === "spectateur";
+  document.querySelectorAll("#sieges .libre").forEach((b) => b.addEventListener("click", () => (spect ? toast("tonFantome", "En spectateur, tu regardes", "Libère ton fantôme pour t’asseoir.") : sAsseoir(cle, +b.dataset.i))));
+  document.querySelectorAll("#sieges .assis .fig").forEach((f) => f.addEventListener("click", () => {
+    const k = f.dataset.k;
+    if (k === "passant") return toast("passant", "Un fantôme de Dax", "Pas encore sa figurine : il écoute, sans parler. Comme toi, au début.");
+    if (k === moi()) return;
+    if (spect) return toast(k, `${GENS[k].nom} ne te voit pas`, "Libère ton fantôme pour lui parler.");
+    if (!etat.maPlace[cle] && etat.maPlace[cle] !== 0) return toast(k, `${GENS[k].nom} te fait signe`, "Assieds-toi à côté pour discuter.");
+    const B = BOUTIQUES[cle]; if (k === B.essai.k && B.essai.voix) { parler(B.essai.voix, f); dire(k, `« ${B.essai.dit} »`); } else direAuSalon(cle, "Salut ! 👋", k);
+  }));
 }
 // l'accueil : « Bienvenue Camille ! », puis sa vraie voix (ses enregistrements commencent par ton prénom), une seule fois
 function accueillir(cle, encore) {
@@ -1042,42 +1139,93 @@ function accueillir(cle, encore) {
   if (premiere || encore) {
     l.textContent = B.dit; $("#bulleA").classList.add("parle");
     if (B.voix) parler(B.voix, f, () => $("#bulleA")?.classList.remove("parle")); else setTimeout(() => $("#bulleA")?.classList.remove("parle"), 3000);
-  } else l.textContent = "Content de te revoir ! Je t’installe ?";
+  } else l.textContent = "Content de te revoir ! Installe-toi avec les autres.";
 }
-function sInstaller(cle) {
-  etat.etapeSalon = "table"; $("#salon").dataset.etape = "table"; majSousTitre(cle); Son.pas();
+function versSalle(cle) {
+  etat.etapeSalon = "coin"; $("#salon").dataset.etape = "coin"; majSousTitre(cle); Son.pas();
   try { etat.audio?.pause(); } catch {}
-  $(".patron-a")?.classList.remove("ouverte");
-  const v = $("#oTab video"); v?.play().catch(() => {});
-  setTimeout(() => document.querySelectorAll(".bulle-v").forEach((b) => b.classList.add("vue")), 1100);
+  $(".patron-a")?.classList.remove("ouverte"); $("#oEcran video")?.play().catch(() => {});
+  // ceux qui te connaissent te font signe
+  setTimeout(() => { const k = connus(cle)[0]; if (k) dire(k, `${PRENOM} ! Viens t’asseoir 😊`); }, 900);
 }
-function versAccueil(cle) { etat.etapeSalon = "accueil"; $("#salon").dataset.etape = "accueil"; majSousTitre(cle); finService(); }
-// la cloche : le commerçant vient à ta table, te parle (sa voix), et te propose
-function appelerALaTable(cle) {
+function sAsseoir(cle, i) {
+  const A = assis(cle); if (A[i]) return;
+  const avant = etat.maPlace[cle]; if (avant !== undefined && A[avant] === moi()) delete A[avant];
+  A[i] = moi(); etat.maPlace[cle] = i; Son.pas();
+  $("#sieges").innerHTML = PLACES.map((_, j) => siegeHTML(cle, j)).join(""); brancherSieges(cle);
+  $(`#sieges .assis.s${i}`)?.classList.add("arrive");
+  ouvrirDiscussion(cle);
+}
+// la discussion : ceux qui sont assis près de toi te parlent ; tu réponds en un geste ou tu écris
+const PAROLES_SALON = {
+  bergine: { lea: "Salut Camille ! 👋 Tu as goûté le magret ?", hugo: "Je viens de réserver pour vendredi 😄" },
+  alice: { ines: "Coucou Camille ! Le coup de cœur d’Alice, je n’arrive pas à le lâcher 📚" },
+  atelier: { sam: "Salut ! Mon premier bol sort du four 😍", lea: "Samedi je refais l’atelier tour, tu viens ?" },
+};
+const REPONSES_SALON = { "Salut ! 👋": "Contente de te voir ici 😊", "C’est bon ici ?": "Les yeux fermés, tu vas adorer.", "Vous me conseillez quoi ?": null, "On y retourne ensemble ?": "Avec plaisir ! Samedi, ça te va ?" };
+function ouvrirDiscussion(cle, calme) {
+  $("#discu").hidden = false; $("#consigne").hidden = true; $("#salon").classList.add("assis-la");
+  if (calme) return;
+  const fil = $("#fil"); fil.innerHTML = "";
+  const qui = connus(cle); let t = 700;
+  for (const k of qui) { const m = PAROLES_SALON[cle]?.[k]; if (!m) continue; setTimeout(() => dire(k, m), t); t += 1700; }
+}
+function dire(k, texte) {
+  const fil = $("#fil"); if (!fil) return;
+  fil.insertAdjacentHTML("beforeend", `<p class="msg"><img src="${GENS[k].n}" alt=""><span><b>${GENS[k].nom}</b>${texte}</span></p>`); fil.scrollTop = fil.scrollHeight;
+  const z = document.querySelector(`#sieges .assis .fig[data-k="${k}"]`)?.closest(".assis")?.querySelector(".bulle-c");
+  if (z) { z.textContent = texte; z.hidden = false; z.classList.remove("vue"); void z.offsetWidth; z.classList.add("vue"); clearTimeout(z.t); z.t = setTimeout(() => (z.hidden = true), 3000); }
+}
+function direAuSalon(cle, texte, a) {
+  const B = BOUTIQUES[cle], fil = $("#fil"); if (!fil) return;
+  fil.insertAdjacentHTML("beforeend", `<p class="msg moi"><span>${texte}</span></p>`); fil.scrollTop = fil.scrollHeight;
+  const qui = a || connus(cle)[Math.floor(Math.random() * connus(cle).length)]; if (!qui) return;
+  const rep = REPONSES_SALON[texte] ?? (texte === "Vous me conseillez quoi ?" ? `${B.essai.quoi[0].toUpperCase() + B.essai.quoi.slice(1)} ! ${B.essai.dit}` : "Ah oui ! Je te dis ça tout de suite 😉");
+  const ecrit = document.createElement("p"); ecrit.className = "msg ecrit"; ecrit.innerHTML = `<img src="${GENS[qui].n}" alt=""><span>${GENS[qui].nom} écrit…</span>`;
+  setTimeout(() => { fil.appendChild(ecrit); fil.scrollTop = fil.scrollHeight; }, 400);
+  setTimeout(() => { ecrit.remove(); dire(qui, texte === "Vous me conseillez quoi ?" && qui === B.essai.k ? `${B.essai.dit}${B.essai.voix ? " 🔊" : ""}` : rep); if (texte === "Vous me conseillez quoi ?" && qui === B.essai.k && B.essai.voix) parler(B.essai.voix, [...document.querySelectorAll("#sieges .assis .fig")].find((f) => f.dataset.k === qui)); }, 1800);
+}
+// la cloche : le commerçant vient au salon, te parle (sa voix), et te propose
+function appelerAuSalon(cle) {
   const B = BOUTIQUES[cle], s = $("#serveur"); if (!s) return;
   s.hidden = false; s.classList.remove("part"); void s.offsetWidth; s.classList.add("vient");
-  $("#bulleS").innerHTML = `<small>${GENS[B.patron].nom} arrive à ta table</small>${B.dit}`;
-  const fin = () => { const a = $("#actionsS"); if (a) a.hidden = false; };
-  setTimeout(() => { if (B.voix) parler(B.voix, s.querySelector(".fig"), fin); else setTimeout(fin, 1800); }, 600);
+  $("#bulleS").innerHTML = `<small>${GENS[B.patron].nom} vient te voir</small>${B.dit}<span class="choix-s"><button type="button" id="sRes">⏱ ${B.reserver.bouton}</button><button type="button" id="sMerci">🙏 Merci !</button></span>`;
+  $("#sRes").addEventListener("click", () => { finService(); feuilleReserver(cle); });
+  $("#sMerci").addEventListener("click", finService);
+  setTimeout(() => { if (B.voix) parler(B.voix, s.querySelector(".fig")); }, 500);
 }
 function finService() {
-  const s = $("#serveur"), a = $("#actionsS"); if (a) a.hidden = true;
+  const s = $("#serveur"); try { etat.audio?.pause(); } catch {}
   if (s && !s.hidden) { s.classList.add("part"); setTimeout(() => { if (s.classList.contains("part")) s.hidden = true; }, 450); }
 }
 function majSalon(cle) { if (etat.boutique === cle) entrer(cle, true); }
-function feuilleCarte(cle) {
-  const B = BOUTIQUES[cle], fam = etat.famille.has(cle);
-  feuille(`<h3>${B.salon.carteNom}</h3><p class="sous">${B.promo}</p><div class="carte-f"><b>👻 Réservé à sa famille</b><span class="${fam ? "" : "flou"}">${B.famille}</span></div>
-    ${fam ? "" : `<button class="envoyer clair" type="button" id="fFam">Rejoindre la famille de ${B.nom}</button>`}<button class="envoyer" type="button" id="fRes">${B.reserver.bouton}</button>`);
+// essayer : ce qu'on peut essayer ici, qui l'a essayé (sa voix), et le réserver
+function feuilleEssai(cle) {
+  const B = BOUTIQUES[cle], S = B.salon, fam = etat.famille.has(cle), k = B.essai.k;
+  feuille(`<h3>${S.essaiTitre}</h3><p class="sous">${B.promo}</p>
+    <button class="avis-f" type="button" id="fVoix"><img src="${GENS[k].n}" alt=""><span><b>${GENS[k].nom} l’a essayé · ${B.essai.note}</b>« ${B.essai.dit} »${B.essai.voix ? " 🔊" : ""}</span></button>
+    <div class="carte-f"><b>👻 Réservé à sa famille</b><span class="${fam ? "" : "flou"}">${B.famille}</span></div>
+    ${fam ? "" : `<button class="envoyer clair" type="button" id="fFam">Rejoindre la famille de ${B.nom}</button>`}<button class="envoyer" type="button" id="fRes">${B.reserver.bouton} · ${B.reserver.quoi}</button>`);
+  $("#fVoix").addEventListener("click", () => { if (B.essai.voix) parler(B.essai.voix, null); });
   $("#fRes").addEventListener("click", () => (etat.mode === "spectateur" ? toast("tonFantome", "En spectateur, tu regardes", "Libère ton fantôme pour participer.") : feuilleReserver(cle)));
-  $("#fFam")?.addEventListener("click", () => { if (etat.mode === "spectateur") return toast("tonFantome", "Libère d’abord ton fantôme", "Au comptoir : « Libérer mon fantôme »."); etat.famille.add(cle); fermerFeuille(); toast(moi(), "Tu fais partie de la famille 🎉", `${B.nom} te préviendra de ses places libres en premier.`); majSalon(cle); });
+  $("#fFam")?.addEventListener("click", () => { etat.famille.add(cle); fermerFeuille(); toast(moi(), "Tu fais partie de la famille 🎉", `${B.nom} te préviendra de ses places libres en premier.`); });
+}
+// un ami accepte : il vient s'asseoir à côté de toi
+function amiArrive(cle, k) {
+  const A = assis(cle), m = etat.maPlace[cle]; if (Object.values(A).includes(k)) return;
+  const i = [...(VOISINES[m] || []), 0, 1, 2, 3, 4].find((j) => !A[j]); if (i === undefined) return;
+  A[i] = k;
+  if (etat.boutique === cle && $("#sieges")) { $("#sieges").innerHTML = PLACES.map((_, j) => siegeHTML(cle, j)).join(""); brancherSieges(cle); $(`#sieges .assis.s${i}`)?.classList.add("arrive"); setTimeout(() => dire(k, "Me voilà ! 🙌"), 700); majSousTitre(cle); }
 }
 function sortir() {
   try { etat.audio?.pause(); } catch {}
+  const cle = etat.boutique;
   etat.boutique = null; $("#boutique").hidden = true; $("#boutique").innerHTML = ""; Son.niveau(1);
   etat.zoomPorte = null; MONDE().classList.remove("part"); // la caméra recule : on ressort dans la rue
+  if (cle && etat.mode !== "spectateur") toast(BOUTIQUES[cle].patron, `${GENS[BOUTIQUES[cle].patron].nom} : « À bientôt ${PRENOM} ! »`, `Tu ressors ${chez(BOUTIQUES[cle].nom)}.`);
 }
 function poserScene() {}
+
 
 // ── LES FEUILLES ───────────────────────────────────────────────────────────────────────────────
 function feuille(html) {
@@ -1109,7 +1257,7 @@ function feuilleReserver(cle) {
 function feuilleMot(cle) {
   const B = BOUTIQUES[cle];
   feuille(`<h3>Un mot à ${GENS[B.patron].nom}</h3><p class="sous">Il s’affiche sur le mur des mots de ${B.nom} ; ${GENS[B.patron].nom} peut te répondre.</p><textarea id="fTexte" maxlength="140" placeholder="Merci pour l’accueil !"></textarea><button class="envoyer" type="button" id="fEnvoyer" disabled>Laisser mon mot</button>`);
-  const t = $("#fTexte"); t.focus(); t.addEventListener("input", () => ($("#fEnvoyer").disabled = !t.value.trim()));
+  const t = $("#fTexte"); t.focus({ preventScroll: true }); t.addEventListener("input", () => ($("#fEnvoyer").disabled = !t.value.trim()));
   $("#fEnvoyer").addEventListener("click", () => { (etat.mesMots[cle] ||= []).push(t.value.trim()); fermerFeuille(); toast(moi(), "Ton mot est sur le mur", B.nom); plusTard(6000, { k: B.patron, titre: `${GENS[B.patron].nom} t’a répondu`, texte: `« ${B.reponse} »`, b: cle }); });
 }
 function feuilleMur(cle) {
@@ -1126,7 +1274,7 @@ function feuilleInviter(cle, quoi) {
   $("#fEnvoyer").addEventListener("click", () => {
     fermerFeuille(); toast(choisi, `Envoyé à ${GENS[choisi].nom}`, "Tu seras prévenu·e de sa réponse.");
     const reps = { hugo: "Trop bien ! On y va samedi ?", ines: "Ah oui, ça a l’air top 😍 Je viens !", sam: "Je connais, c’est génial. Je t’accompagne !", lea: "Fonce, tu vas adorer 😋" };
-    plusTard(7000, { k: choisi, titre: `${GENS[choisi].nom} t’a répondu`, texte: `« ${reps[choisi]} »`, b: cle, apres: () => { etat.invites[cle] = choisi; majSalon(cle); } });
+    plusTard(7000, { k: choisi, titre: `${GENS[choisi].nom} t’a répondu`, texte: `« ${reps[choisi]} »`, b: cle, apres: () => { etat.invites[cle] = choisi; amiArrive(cle, choisi); } });
   });
 }
 function feuilleAvis(cle) {
@@ -1175,6 +1323,8 @@ function plusTard(ms, m) {
 
 // ── LES GESTES ─────────────────────────────────────────────────────────────────────────────────
 $("#boite").addEventListener("click", feuilleBoite);
+// l'application ne défile jamais (un champ qui prend le focus faisait remonter tout l'écran)
+for (const z of ["#app", "#boutique", "#vue"]) $(z).addEventListener("scroll", (e) => { e.target.scrollTop = 0; e.target.scrollLeft = 0; });
 $("#musique").addEventListener("click", () => { const on = Son.basculer(); $("#musique").textContent = on ? "🎵" : "🔈"; });
 function entrerDansDax(mode) {
   const p = $("#porte"); if (p.classList.contains("ouvre")) return;

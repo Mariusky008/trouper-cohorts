@@ -101,3 +101,19 @@ Limite honnête : les photos font 1672 × 941 ; au zoom ×2 sur téléphone, ell
   sans montrer sa faible définition. La table et le comptoir sont dessinés (bois en dégradés et grain).
 - Les photos HD que refait son designer remplaceront les décors des rues ; pour les intérieurs, il faudrait au même
   style « l'accueil » et « ta table » de chaque commerce (consigne dans la conversation du 3 novembre).
+
+## v7 (3 novembre) — « après l'accueil, des canapés ou des fauteuils en fonction du monde assis, et là tout commence »
+
+- **Corrigé** : « L'annonce du jour » s'ouvrait derrière la boutique (même plan) ; les figurines de la table ne se
+  dessinaient pas chez lui (hauteurs en % d'un parent sans largeur : elles sont maintenant en vh) ; l'écran entier
+  remontait quand un champ prenait le focus (l'application ne défile plus jamais) ; ← ressort directement dans la rue
+  (« À bientôt Camille ! »). Deux conflits de noms avec les anciens styles (« carte », « salle ») : vérifiés tous.
+- **Le coin salon** (après l'accueil) : un canapé à trois places et deux fauteuils autour d'une table basse, sur un
+  tapis, aux couleurs du commerce (bordeaux chez Bergine, vert velours chez Alice, moutarde chez Nina) ; l'écran au
+  mur passe la vidéo du jour. Ceux qui sont déjà assis (les amis, et des fantômes qu'on ne connaît pas) ; les places
+  libres respirent : on touche, on s'assoit.
+- **Puis tout commence** : ceux qui te connaissent te parlent (bulle au-dessus de leur tête et fil de discussion), tu
+  réponds en un geste (« Salut ! », « C'est bon ici ? », « Vous me conseillez quoi ? »…) ou tu écris ; des boutons
+  discrets : la vidéo, goûter / feuilleter / essayer (qui l'a essayé, sa voix, réserver), inviter (ton ami vient
+  s'asseoir à côté de toi), appeler le commerçant (il vient au salon, sa voix, réserver), le mur des mots.
+- Vérifié dans la vraie visionneuse : figurines assises dessinées, vidéo de l'écran qui tourne, annonce devant.
