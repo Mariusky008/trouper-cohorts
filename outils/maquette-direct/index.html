@@ -1,0 +1,511 @@
+<title>Dax en direct</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grandstander:wght@700;800&family=Poppins:wght@500;600;700;800&display=swap">
+<style>
+/* Une ville en direct, comme un live : la rue en haut (les vraies figurines sur leurs ressorts), les vitrines qui jouent
+   leur vidéo du jour en bas, et tout ce qui se passe qui défile. Un seul monde, la nuit autour : le thème du visiteur
+   n'y change rien. */
+:root{
+  --nuit:#12070F;--nuit-2:#1E0C18;--verre:rgba(24,10,20,.72);--verre-bord:rgba(255,255,255,.14);
+  --rose:#FF2E9A;--rose-doux:#FF9FD2;--or:#F2C46B;--vert:#3DE2A6;--rouge:#FF4D5E;--creme:#FFF4E6;--doux:#D9C3CB;--papier:#FFF8EF;--encre:#2A1622;
+  --affiche:"Grandstander",ui-rounded,system-ui,sans-serif;--texte:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+html,body{min-height:100%}
+body{margin:0;background:var(--nuit);color:var(--creme);font-family:var(--texte);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
+.app{max-width:480px;margin:0 auto;min-height:100vh;background:linear-gradient(180deg,var(--nuit-2),var(--nuit) 60%);position:relative;overflow:hidden}
+button{font:inherit;color:inherit}
+button:focus-visible{outline:3px solid var(--or);outline-offset:2px}
+/* ── la barre du direct ── */
+.barre{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;padding:10px 14px;background:linear-gradient(180deg,rgba(18,7,15,.95),rgba(18,7,15,.75));backdrop-filter:blur(8px)}
+.direct{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:6px;background:var(--rouge);font-size:11px;font-weight:800;letter-spacing:.08em}
+.direct i{width:7px;height:7px;border-radius:50%;background:#fff;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+.barre b{font-family:var(--affiche);font-size:20px;letter-spacing:-.01em}
+.barre .heure{font-size:12.5px;color:var(--doux);font-variant-numeric:tabular-nums}
+.foule{margin-left:auto;display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;background:var(--verre);border:1px solid var(--verre-bord);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+.foule.pop{animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{40%{transform:scale(1.18)}}
+/* ── le fil de ce qui se passe ── */
+.fil{position:relative;height:44px;margin:0 12px;overflow:hidden}
+.evt{position:absolute;inset:0;display:flex;align-items:center;gap:9px;padding:0 12px 0 4px;border-radius:999px;background:var(--verre);border:1px solid var(--verre-bord);font-size:12.5px;line-height:1.25;animation:entre .5s cubic-bezier(.2,.9,.3,1) both}
+.evt.part{animation:sort .4s ease-in both}
+.evt img{flex:none;width:36px;height:36px;border-radius:50%;object-fit:cover;object-position:50% 6%;background:#3A1F2E}
+.evt b{color:#fff}
+@keyframes entre{from{transform:translateY(110%);opacity:0}}
+@keyframes sort{to{transform:translateY(-110%);opacity:0}}
+/* ── la rue ── */
+.rue{position:relative;isolation:isolate;height:min(52vh,440px);margin-top:10px;overflow:hidden;background:url(f/place.jpg) center 38%/cover no-repeat}
+.lumiere{position:absolute;inset:0;pointer-events:none;transition:background 1.2s,opacity 1.2s;mix-blend-mode:multiply}
+.lueurs{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 1.2s}
+.lueurs i{position:absolute;width:26%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(rgba(255,206,120,.75),rgba(255,170,70,.25) 35%,transparent 68%);mix-blend-mode:screen;animation:vacille 3s ease-in-out infinite}
+@keyframes vacille{50%{opacity:.8}}
+.nuit .lueurs{opacity:1}
+.soir .lueurs{opacity:.55}
+.neige{position:absolute;inset:0;pointer-events:none;overflow:hidden;display:none}
+.noel .neige{display:block}
+.neige i{position:absolute;top:-10px;width:6px;height:6px;border-radius:50%;background:#fff;opacity:.85;animation:tombe linear infinite}
+@keyframes tombe{to{transform:translate(18px,480px)}}
+.guirlande{position:absolute;left:0;right:0;top:6%;height:22px;display:none;justify-content:space-around;pointer-events:none}
+.noel .guirlande{display:flex}
+.guirlande i{width:9px;height:9px;border-radius:50%;box-shadow:0 0 10px currentColor;animation:pulse 1.4s ease-in-out infinite}
+.gens{position:absolute;inset:0}
+.qui{position:absolute;transform:translate(-50%,-100%);background:none;border:0;padding:0;cursor:pointer}
+.qui .corps{position:relative;display:block;height:100%}
+.qui img{display:block;height:100%;width:auto;filter:drop-shadow(0 10px 8px rgba(0,0,0,.45))}
+.qui .p{position:absolute;inset:0;opacity:0}
+.qui.ouverte .p{opacity:1}.qui.ouverte .n{opacity:0}
+.qui .corps{transform-origin:50% 100%;animation:boing 4.2s cubic-bezier(.3,1.6,.5,1) infinite}
+@keyframes boing{0%,30%,100%{transform:translateY(0) scaleY(1)}6%{transform:translateY(-9%) scaleY(1.04)}12%{transform:translateY(0) scaleY(.95)}17%{transform:translateY(-3%) scaleY(1.01)}22%{transform:translateY(0) scaleY(1)}}
+.qui .nom{position:absolute;left:50%;bottom:-4px;transform:translate(-50%,100%);padding:2px 9px;border-radius:999px;background:var(--verre);border:1px solid var(--verre-bord);font-size:10.5px;font-weight:700;white-space:nowrap}
+.qui.toi .nom{background:var(--rose);border-color:transparent}
+.bulle{position:absolute;z-index:6;max-width:58%;padding:8px 11px 9px;border-radius:15px;background:var(--papier);color:var(--encre);font-family:var(--affiche);font-weight:700;font-size:13px;line-height:1.2;box-shadow:0 10px 24px -8px rgba(0,0,0,.6);transform:translate(-50%,calc(-100% - 10px));animation:bulle .45s cubic-bezier(.2,1.4,.4,1) both;pointer-events:none}
+.bulle::after{content:"";position:absolute;left:50%;bottom:-8px;transform:translateX(-50%);border:9px solid transparent;border-top-color:var(--papier);border-bottom:0}
+.bulle small{display:block;margin-bottom:2px;font-family:var(--texte);font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#A1155E}
+@keyframes bulle{from{opacity:0;transform:translate(-50%,calc(-100% - 2px)) scale(.6)}}
+.envole{position:absolute;z-index:7;font-size:22px;pointer-events:none;animation:envole 2.2s ease-out forwards}
+@keyframes envole{0%{transform:translate(-50%,0) scale(.5);opacity:0}15%{opacity:1;transform:translate(-50%,-14px) scale(1.15)}100%{transform:translate(calc(-50% + var(--dx,10px)),-150px) scale(.9);opacity:0}}
+.etiq{position:absolute;left:12px;bottom:10px;padding:5px 10px;border-radius:999px;background:var(--verre);border:1px solid var(--verre-bord);font-size:11px;font-weight:700}
+/* ── les vitrines en direct ── */
+.vitrines{padding:16px 0 6px}
+.vitrines h2{margin:0 14px 10px;display:flex;align-items:baseline;gap:8px;font-family:var(--affiche);font-size:21px;letter-spacing:-.01em}
+.vitrines h2 small{font-family:var(--texte);font-size:12px;font-weight:500;color:var(--doux)}
+.cartes{display:flex;gap:10px;padding:0 14px 12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+.cartes::-webkit-scrollbar{display:none}
+.carte{position:relative;flex:none;width:44%;max-width:190px;aspect-ratio:9/16;border-radius:18px;overflow:hidden;background:#000;border:0;padding:0;cursor:pointer;scroll-snap-align:start;box-shadow:0 16px 30px -14px rgba(0,0,0,.9)}
+.carte video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.carte::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.45),transparent 30%,transparent 55%,rgba(0,0,0,.8))}
+.carte .live{position:absolute;z-index:2;left:8px;top:8px;display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:5px;background:var(--rouge);font-size:9.5px;font-weight:800;letter-spacing:.06em}
+.carte .live i{width:6px;height:6px;border-radius:50%;background:#fff;animation:pulse 1.2s infinite}
+.carte .vus{position:absolute;z-index:2;right:8px;top:8px;padding:3px 7px;border-radius:5px;background:rgba(0,0,0,.45);font-size:10px;font-weight:700}
+.carte .pied{position:absolute;z-index:2;left:8px;right:8px;bottom:8px;text-align:left}
+.carte .pied span{display:flex;align-items:center;gap:6px}
+.carte .pied img{width:30px;height:30px;border-radius:50%;object-fit:cover;object-position:50% 6%;border:2px solid #fff;background:#3A1F2E}
+.carte .pied b{font-size:12.5px;line-height:1.15}
+.carte .stock{display:inline-block;margin-top:6px;padding:4px 8px;border-radius:999px;background:var(--or);color:var(--encre);font-size:10.5px;font-weight:800}
+.carte .stock.dernier{background:var(--rouge);color:#fff;animation:pop .6s ease-in-out infinite}
+.carte .reacs{position:absolute;z-index:3;right:0;bottom:56px;width:40px;height:60%;pointer-events:none}
+.carte.ferme video{filter:grayscale(.7) brightness(.45)}
+.carte.ferme .live{background:#555}
+/* ── les réglages de la maquette ── */
+.reglages{margin:6px 14px 0;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.18)}
+.reglages p{margin:0 0 8px;font-size:11.5px;color:var(--doux)}
+.reglages div{display:flex;flex-wrap:wrap;gap:6px}
+.reglages button{padding:7px 11px;border-radius:999px;border:1px solid var(--verre-bord);background:rgba(255,255,255,.06);font-size:12px;font-weight:700;cursor:pointer}
+.reglages button[aria-pressed="true"]{background:var(--creme);color:var(--encre)}
+.maquette{margin:12px 14px 22px;font-size:10.5px;color:#8D7580;text-align:center}
+/* ── la salle d'une vitrine (plein écran) ── */
+.salle{position:fixed;inset:0;z-index:50;max-width:480px;margin:0 auto;background:#000;overflow:hidden;touch-action:pan-x}
+.salle[hidden]{display:none!important}
+.salle video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.salle::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.55),transparent 22%,transparent 50%,rgba(0,0,0,.75))}
+.salle-haut{position:absolute;z-index:3;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:8px}
+.salle-haut img{width:40px;height:40px;border-radius:50%;object-fit:cover;object-position:50% 6%;border:2px solid #fff;background:#3A1F2E}
+.salle-haut b{display:block;font-size:14.5px;line-height:1.1}
+.salle-haut small{display:flex;align-items:center;gap:5px;font-size:11px;color:#fff;opacity:.9}
+.salle-haut small i{width:7px;height:7px;border-radius:50%;background:var(--rouge);animation:pulse 1.2s infinite}
+.salle-haut .vus{margin-left:auto;padding:5px 9px;border-radius:999px;background:rgba(0,0,0,.45);font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.rond{width:38px;height:38px;border-radius:50%;border:0;background:rgba(0,0,0,.5);font-size:16px;cursor:pointer}
+.salle .stock{position:absolute;z-index:3;left:12px;top:calc(66px + env(safe-area-inset-top,0px));display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:14px;background:var(--or);color:var(--encre);font-size:13.5px;font-weight:800;box-shadow:0 10px 24px -10px rgba(0,0,0,.8)}
+.salle .stock b{font-size:17px;font-variant-numeric:tabular-nums}
+.salle .stock.dernier{background:var(--rouge);color:#fff;animation:pop .7s ease-in-out infinite}
+.flash{position:absolute;z-index:4;left:12px;top:calc(112px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:7px;padding:5px 11px 5px 5px;border-radius:999px;background:rgba(0,0,0,.6);font-size:12px;font-weight:700;animation:entre .4s both}
+.flash img{width:26px;height:26px;border-radius:50%;object-fit:cover;object-position:50% 6%}
+.chat{position:absolute;z-index:3;left:10px;bottom:calc(96px + env(safe-area-inset-bottom,0px));width:62%;display:flex;flex-direction:column;gap:6px;justify-content:flex-end}
+.msg{display:flex;align-items:flex-start;gap:7px;padding:6px 10px 6px 6px;border-radius:16px;background:rgba(0,0,0,.42);backdrop-filter:blur(4px);font-size:12.5px;line-height:1.3;animation:entre .45s both;border:0;text-align:left;cursor:default}
+.msg.voix{cursor:pointer;background:rgba(255,46,154,.35)}
+.msg img{flex:none;width:28px;height:28px;border-radius:50%;object-fit:cover;object-position:50% 6%;background:#3A1F2E}
+.msg b{display:block;font-size:11px;opacity:.85}
+.coeurs{position:absolute;z-index:3;right:6px;bottom:calc(150px + env(safe-area-inset-bottom,0px));width:60px;height:55%;pointer-events:none}
+.pro{position:absolute;z-index:4;right:4px;bottom:calc(84px + env(safe-area-inset-bottom,0px));width:34%;height:38%;background:none;border:0;padding:0;cursor:pointer}
+.pro .corps{position:relative;height:100%;display:flex;justify-content:center;transform-origin:50% 100%;animation:boing 3.6s cubic-bezier(.3,1.6,.5,1) infinite}
+.pro img{height:100%;width:auto;filter:drop-shadow(0 12px 12px rgba(0,0,0,.6))}
+.pro .p{position:absolute;opacity:0}
+.pro.ouverte .p{opacity:1}.pro.ouverte .n{opacity:0}
+.pro .astuce{position:absolute;left:50%;top:-6px;transform:translate(-50%,-100%);white-space:nowrap;padding:5px 10px;border-radius:999px;background:var(--papier);color:var(--encre);font-size:11px;font-weight:800;animation:respire 2s ease-in-out infinite}
+@keyframes respire{50%{transform:translate(-50%,-110%)}}
+.sous-titre{position:absolute;z-index:6;left:12px;right:38%;bottom:calc(38% + 90px);padding:10px 12px;border-radius:16px;background:var(--papier);color:var(--encre);font-family:var(--affiche);font-weight:700;font-size:15px;line-height:1.25;animation:bulle2 .4s both}
+@keyframes bulle2{from{opacity:0;transform:scale(.7)}}
+.bas{position:absolute;z-index:5;left:10px;right:10px;bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:8px}
+.reac{width:46px;height:46px;border-radius:50%;border:0;background:rgba(0,0,0,.5);font-size:22px;cursor:pointer;transition:transform .15s}
+.reac:active{transform:scale(1.25)}
+.prendre{flex:1;height:48px;border-radius:999px;border:0;background:var(--rose);font-weight:800;font-size:14.5px;cursor:pointer;box-shadow:0 10px 24px -8px rgba(255,46,154,.9)}
+.prendre:disabled{background:var(--vert);color:var(--encre);box-shadow:none}
+.suite{position:absolute;z-index:3;left:50%;top:50%;transform:translateX(-50%);display:none}
+.fleches{position:absolute;z-index:5;right:10px;top:40%;display:flex;flex-direction:column;gap:8px}
+.feuille{position:absolute;z-index:8;left:0;right:0;bottom:0;padding:16px 18px calc(20px + env(safe-area-inset-bottom,0px));border-radius:24px 24px 0 0;background:var(--papier);color:var(--encre);animation:monte .4s cubic-bezier(.2,.9,.25,1) both}
+@keyframes monte{from{transform:translateY(100%)}}
+.feuille h3{margin:0;font-family:var(--affiche);font-size:23px;line-height:1.15}
+.feuille p{margin:6px 0 0;font-size:13.5px;line-height:1.4;color:#5E4752}
+.feuille .chrono{display:inline-block;margin-top:10px;padding:6px 12px;border-radius:999px;background:var(--encre);color:#fff;font-weight:800;font-variant-numeric:tabular-nums}
+.feuille .qui-va{display:flex;align-items:center;gap:6px;margin-top:12px;font-size:12px;font-weight:700;color:#5E4752}
+.feuille .qui-va img{width:30px;height:30px;border-radius:50%;object-fit:cover;object-position:50% 6%;border:2px solid #fff;margin-left:-10px;background:#F3E7DA}
+.feuille .qui-va img:first-child{margin-left:0}
+.feuille .ok{margin-top:14px;width:100%;height:46px;border-radius:999px;border:0;background:var(--rose);color:#fff;font-weight:800;font-size:14px;cursor:pointer}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
+</style>
+
+<div class="app" id="app">
+  <header class="barre">
+    <span class="direct"><i></i>EN DIRECT</span><b>Dax</b><span class="heure" id="heure">12:04</span>
+    <span class="foule" id="foule" title="Les fantômes passés en ville aujourd’hui">👻 <span id="nbFoule">46</span> aujourd’hui</span>
+  </header>
+  <div class="fil" id="fil" aria-live="polite"></div>
+
+  <section class="rue" id="rue" aria-label="La place, en direct">
+    <div class="lumiere" id="lumiere"></div>
+    <div class="lueurs"><i style="left:30%;top:37%"></i><i style="left:40%;top:44%"></i><i style="left:10%;top:52%"></i><i style="left:73%;top:45%"></i><i style="left:88%;top:52%"></i></div>
+    <div class="guirlande" id="guirlande"></div>
+    <div class="neige" id="neige"></div>
+    <div class="gens" id="gens"></div>
+    <span class="etiq" id="etiqRue">Place de la cathédrale · touche quelqu’un</span>
+  </section>
+
+  <section class="vitrines">
+    <h2>Les vitrines en direct <small>leur vidéo du jour</small></h2>
+    <div class="cartes" id="cartes"></div>
+  </section>
+
+  <div class="reglages">
+    <p>Pour la maquette : change l’heure ou la saison, et regarde la ville changer.</p>
+    <div id="heures">
+      <button type="button" data-h="8">☀️ 8 h</button><button type="button" data-h="12">🍽️ 12 h</button><button type="button" data-h="18">🌇 18 h</button><button type="button" data-h="23">🌙 23 h</button><button type="button" id="noel">🎄 Noël</button>
+    </div>
+  </div>
+  <p class="maquette">Maquette · les réactions, les stocks et les passages sont simulés. Les figurines, les voix et les vidéos sont celles des démos.</p>
+
+  <section class="salle" id="salle" hidden aria-label="La vitrine en direct">
+    <video id="video" muted playsinline loop preload="auto"></video>
+    <div class="salle-haut">
+      <img id="sAvatar" alt="">
+      <span><b id="sNom"></b><small><i></i><span id="sDepuis"></span></small></span>
+      <span class="vus" id="sVus">👁 12</span>
+      <button class="rond" type="button" id="son" aria-label="Activer le son">🔇</button>
+      <button class="rond" type="button" id="fermer" aria-label="Fermer">✕</button>
+    </div>
+    <div class="stock" id="sStock"></div>
+    <div id="sFlash"></div>
+    <div class="chat" id="chat"></div>
+    <div class="coeurs" id="coeurs"></div>
+    <button class="pro" type="button" id="pro" aria-label="Faire parler sa figurine"><span class="corps"><img class="n" id="proN" alt=""><img class="p" id="proP" alt=""></span><span class="astuce">🔊 Touche-moi</span></button>
+    <div id="sSous"></div>
+    <div class="fleches"><button class="rond" type="button" id="precedente" aria-label="Vitrine précédente">↑</button><button class="rond" type="button" id="suivante" aria-label="Vitrine suivante">↓</button></div>
+    <div class="bas">
+      <button class="reac" type="button" data-e="😋" aria-label="Ça donne envie">😋</button>
+      <button class="reac" type="button" data-e="❤️" aria-label="J’adore">❤️</button>
+      <button class="reac" type="button" data-e="🙋" aria-label="J’y vais">🙋</button>
+      <button class="prendre" type="button" id="prendre"></button>
+    </div>
+    <div id="sFeuille"></div>
+  </section>
+</div>
+
+<script>
+// ── LES GENS, LES COMMERCES, LEURS VOIX (les figurines, les voix et les vidéos des démos ; le reste est imaginaire) ──
+const GENS = {
+  jm: { nom: "Jean-Marie", n: "f/chef-n.webp", p: "f/chef-p.webp", noel: "f/chef-noel.webp" },
+  nina: { nom: "Nina", n: "f/nina-n.webp", p: "f/nina-p.webp", noel: "f/nina-noel.webp" },
+  elise: { nom: "Élise", n: "f/elise-n.webp", p: "f/elise-p.webp", noel: "f/elise-noel.webp" },
+  lea: { nom: "Léa", n: "f/lea-n.webp", p: "f/lea-p.webp" },
+  toi: { nom: "Toi", n: "f/toi-n.webp", p: "f/toi-p.webp", noel: "f/jp-noel.webp" },
+  hugo: { nom: "Hugo", n: "f/fantome.webp" },
+  ines: { nom: "Inès", n: "f/fantome.webp" },
+};
+// la bouche : ouverte sur la voix (mesurée à l'avance, une case = 1/25 s)
+const BOUCHES = {
+  elise: "0011111111111000000000011111111001111011110111110011111000011100000001111111111100100111100000000000111100110011101111110000111111100000000000",
+  jm: "00111111111110000000111111111100111001111111011111100111110000000001111101100111011111101111101111110000000000",
+  "lea-magret": "00001000001111111111111111111101011011000110000000000000000",
+  "lea-massage": "000000000001111111111101111100001110000000000110000000000000000",
+  "lea-poterie": "000000000011111111111000001110100000001100001110100001111000000000000000",
+  nina: "00111111111110000000000111111111000111101111001111001111100001110000001111110111011100010011110000000000001111011100110011111000111001111100000000000",
+};
+const COMS = [
+  { id: "bergine", nom: "Chez Bergine", qui: "jm", video: "v/bergine", depuis: "7 h 42", vus: 14, voix: "jm",
+    dit: "Camille ! Il me reste une table à 12 h 30 : elle est à toi pendant 5 minutes !",
+    stock: { n: 4, un: "table à 12 h 30", des: "tables à 12 h 30", e: "🍽️" }, prendre: "Je prends la table",
+    client: { voix: "lea-magret", dit: "Le meilleur magret de Dax !" }, heures: [11, 15], ouvre: "7 h 42" },
+  { id: "atelier", nom: "L’Atelier de Nina", qui: "nina", video: "v/atelier", depuis: "9 h 10", vus: 9, voix: "nina",
+    dit: "Camille ! Il me reste une place à l’atelier tour, samedi à 10 h : elle est à toi pendant 5 minutes !",
+    stock: { n: 3, un: "place samedi à 10 h", des: "places samedi à 10 h", e: "🏺" }, prendre: "Je prends la place",
+    client: { voix: "lea-poterie", dit: "Le meilleur cours de poterie de Dax !" }, heures: [7, 11], ouvre: "9 h 10" },
+  { id: "cocon", nom: "Le Cocon d’Élise", qui: "elise", video: "v/cocon", depuis: "10 h 05", vus: 11, voix: "elise",
+    dit: "Camille ! Il me reste un créneau mardi à 18 h : il est à toi pendant 5 minutes !",
+    stock: { n: 2, un: "créneau mardi à 18 h", des: "créneaux mardi à 18 h", e: "🌿" }, prendre: "Je prends le créneau",
+    client: { voix: "lea-massage", dit: "Le meilleur massage de Dax !" }, heures: [15, 21], ouvre: "10 h 05" },
+];
+// ce qui défile en haut, selon l'heure
+const FIL = {
+  matin: [["nina", "<b>L’Atelier de Nina</b> a publié sa vidéo : sortie du four 🔥"], ["jm", "<b>Chez Bergine</b> prépare la garbure du jour"], ["lea", "<b>Léa</b> a réagi 😋 à l’Atelier de Nina"], ["hugo", "<b>Hugo</b> a gagné sa 3e figurine 🏆"], ["elise", "<b>Le Cocon d’Élise</b> : il reste 2 créneaux mardi"]],
+  midi: [["jm", "<b>Chez Bergine</b> : plus que quelques tables à 12 h 30"], ["lea", "<b>Léa</b> a réagi 😋 à Chez Bergine"], ["ines", "<b>Inès</b> y va à midi 🙋"], ["nina", "<b>Nina</b> : encore des places samedi à 10 h"], ["hugo", "<b>Hugo</b> a libéré son fantôme chez Chez Bergine"]],
+  soir: [["elise", "<b>Le Cocon d’Élise</b> : un créneau vient de se libérer"], ["ines", "<b>Inès</b> a réagi ❤️ au Cocon d’Élise"], ["lea", "<b>Léa</b> a envoyé sa figurine à une amie 🔊"], ["jm", "<b>Chez Bergine</b> : la carte du soir est en vidéo"], ["hugo", "<b>Hugo</b> part pour l’Atelier samedi 🙋"]],
+  nuit: [["toi", "Aujourd’hui, <b>58 fantômes</b> sont passés en ville"], ["lea", "<b>Léa</b> a gagné sa 4e figurine Chez Bergine 🏆"], ["jm", "Demain <b>7 h 42</b> : la vidéo du jour de Chez Bergine"], ["nina", "<b>Nina</b> prépare la fournée de samedi"]],
+};
+const PAROLES_RUE = { lea: "Le meilleur magret de Dax !", hugo: "J’y vais à midi, qui vient ?", ines: "La vidéo de l’atelier, trop belle 😍", toi: "Touche une vitrine pour réagir !" };
+
+// ── L'ÉTAT ───────────────────────────────────────────────────────────────────────────────────
+const $ = (s) => document.querySelector(s);
+const etat = { h: new Date().getHours(), noel: false, foule: 46, fil: 0, salle: -1, stock: {}, pris: new Set(), audio: null };
+const moment = () => (etat.h >= 21 || etat.h < 7 ? "nuit" : etat.h < 11 ? "matin" : etat.h < 15 ? "midi" : "soir");
+const img = (k, parle) => { const g = GENS[k]; return parle ? g.p || g.n : etat.noel && g.noel ? g.noel : g.n; };
+const avatar = (k) => (etat.noel && GENS[k].noel ? GENS[k].noel : GENS[k].n);
+COMS.forEach((c) => (etat.stock[c.id] = c.stock.n));
+
+// ── LA VOIX : la bouche s'ouvre sur ses syllabes ───────────────────────────────────────────────
+function parler(cle, el, apres) {
+  try { etat.audio?.pause(); } catch {}
+  const a = new Audio(`s/${cle}.mp3`);
+  etat.audio = a;
+  const env = BOUCHES[cle] || "";
+  let raf = 0;
+  const tic = () => {
+    const k = Math.floor(a.currentTime * 25);
+    el.classList.toggle("ouverte", env[k] === "1" && k % 3 !== 2);
+    if (!a.paused && !a.ended) raf = requestAnimationFrame(tic);
+  };
+  a.addEventListener("playing", () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(tic); });
+  a.addEventListener("ended", () => { el.classList.remove("ouverte"); apres?.(); });
+  a.play().catch(() => apres?.());
+}
+
+// ── LA RUE ─────────────────────────────────────────────────────────────────────────────────────
+const PLACES = [
+  { k: "lea", x: 22, y: 86, h: 31 }, { k: "toi", x: 50, y: 92, h: 35 }, { k: "hugo", x: 82, y: 83, h: 21 }, { k: "ines", x: 67, y: 71, h: 14 },
+];
+function rue() {
+  const g = $("#gens");
+  g.innerHTML = "";
+  const nuit = moment() === "nuit";
+  for (const p of PLACES) {
+    if (nuit && (p.k === "hugo" || p.k === "ines")) continue; // la nuit, la place se vide
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "qui" + (p.k === "toi" ? " toi" : "");
+    Object.assign(b.style, { left: p.x + "%", top: p.y + "%", height: p.h + "%", zIndex: String(p.y) });
+    b.innerHTML = `<span class="corps" style="animation-delay:-${(p.x % 7) * 0.6}s"><img class="n" src="${img(p.k)}" alt="">${GENS[p.k].p ? `<img class="p" src="${img(p.k, true)}" alt="">` : ""}</span><span class="nom">${GENS[p.k].nom}</span>`;
+    b.setAttribute("aria-label", GENS[p.k].nom);
+    b.addEventListener("click", () => toucherQuelquun(p, b));
+    g.appendChild(b);
+  }
+}
+function bulle(parent, x, y, html) {
+  parent.querySelectorAll(".bulle").forEach((e) => e.remove());
+  const d = document.createElement("div");
+  d.className = "bulle"; d.innerHTML = html;
+  d.style.left = Math.min(70, Math.max(30, x)) + "%"; d.style.top = y + "%";
+  parent.appendChild(d);
+  setTimeout(() => d.remove(), 3200);
+}
+function toucherQuelquun(p, el) {
+  const haut = p.y - p.h;
+  if (p.k === "lea") { bulle($("#rue"), p.x, haut, `<small>Léa · 🔊</small>${PAROLES_RUE.lea}`); parler("lea-magret", el); }
+  else bulle($("#rue"), p.x, haut, `<small>${GENS[p.k].nom}</small>${PAROLES_RUE[p.k]}`);
+  envoler($("#rue"), p.x, haut + 6, p.k === "toi" ? "👋" : "❤️");
+}
+function envoler(parent, x, y, e) {
+  const s = document.createElement("span");
+  s.className = "envole"; s.textContent = e;
+  s.style.left = x + "%"; s.style.top = y + "%"; s.style.setProperty("--dx", (Math.random() * 40 - 20).toFixed(0) + "px");
+  parent.appendChild(s);
+  setTimeout(() => s.remove(), 2300);
+}
+
+// la lumière de l'heure
+function lumiere() {
+  const m = moment(), rueEl = $("#rue");
+  rueEl.classList.remove("matin", "midi", "soir", "nuit");
+  rueEl.classList.add(m);
+  rueEl.classList.toggle("noel", etat.noel);
+  $("#lumiere").style.background = {
+    matin: "linear-gradient(180deg,rgba(255,190,120,.55),rgba(255,236,210,.2) 60%,rgba(255,255,255,0))",
+    midi: "linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,0))",
+    soir: "linear-gradient(180deg,rgba(255,120,90,.75),rgba(170,80,140,.55) 55%,rgba(70,30,80,.65))",
+    nuit: "linear-gradient(180deg,rgba(20,30,90,.92),rgba(30,25,70,.85) 60%,rgba(15,10,40,.9))",
+  }[m];
+  $("#etiqRue").textContent = { matin: "Le matin, la place s’éveille", midi: "Midi, la place est pleine", soir: "Le soir, la rue s’allume", nuit: "La nuit, la place dort" }[m] + " · touche quelqu’un";
+  const hh = String(etat.h).padStart(2, "0");
+  $("#heure").textContent = `${hh}:${String(new Date().getMinutes()).padStart(2, "0")}`;
+  $("#noel").setAttribute("aria-pressed", String(etat.noel));
+}
+
+// ── LE FIL ─────────────────────────────────────────────────────────────────────────────────────
+function filSuivant() {
+  const liste = FIL[moment()];
+  const [k, t] = liste[etat.fil++ % liste.length];
+  const f = $("#fil");
+  f.querySelectorAll(".evt").forEach((e) => { e.classList.add("part"); setTimeout(() => e.remove(), 400); });
+  const d = document.createElement("div");
+  d.className = "evt";
+  d.innerHTML = `<img src="${avatar(k)}" alt=""><span>${t}</span>`;
+  f.appendChild(d);
+}
+
+// ── LES VITRINES ───────────────────────────────────────────────────────────────────────────────
+const ordre = () => {
+  const h = etat.h;
+  return [...COMS].sort((a, b) => Number(h >= b.heures[0] && h < b.heures[1]) - Number(h >= a.heures[0] && h < a.heures[1]));
+};
+const texteStock = (c) => { const n = etat.stock[c.id]; return n <= 1 ? `${c.stock.e} Dernière ${c.stock.un.split(" ")[0]} !` : `${c.stock.e} ${n} ${c.stock.des}`; };
+function sources(v) { return `<source src="${v}.mp4" type="video/mp4"><source src="${v}.webm" type="video/webm">`; }
+function vitrines() {
+  const nuit = moment() === "nuit";
+  const c = $("#cartes");
+  c.innerHTML = "";
+  for (const com of ordre()) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "carte" + (nuit ? " ferme" : "");
+    b.dataset.id = com.id;
+    b.innerHTML = `<video muted playsinline loop autoplay preload="auto">${sources(com.video)}</video>
+      <span class="live"><i></i>${nuit ? "FERMÉ" : "EN DIRECT"}</span><span class="vus">👁 ${com.vus}</span>
+      <span class="reacs"></span>
+      <span class="pied"><span><img src="${avatar(com.qui)}" alt=""><b>${com.nom}</b></span>
+      <span class="stock${etat.stock[com.id] <= 1 ? " dernier" : ""}">${nuit ? "Revient demain à " + com.ouvre : texteStock(com)}</span></span>`;
+    b.setAttribute("aria-label", `${com.nom}, en direct`);
+    b.addEventListener("click", () => ouvrirSalle(COMS.indexOf(com)));
+    c.appendChild(b);
+    const v = b.querySelector("video");
+    if (nuit) { v.removeAttribute("autoplay"); v.addEventListener("loadeddata", () => { v.currentTime = 3; }, { once: true }); } // fermé : une image de sa vidéo
+    else v.play().catch(() => {});
+  }
+}
+function reactionsVitrines() {
+  if (moment() === "nuit") return;
+  const cartes = [...document.querySelectorAll(".carte")];
+  const c = cartes[Math.floor(Math.random() * cartes.length)];
+  if (!c) return;
+  envoler(c.querySelector(".reacs"), 50, 100, ["😋", "❤️", "🙋", "🔥", "👏"][Math.floor(Math.random() * 5)]);
+}
+
+// ── LA SALLE D'UNE VITRINE ─────────────────────────────────────────────────────────────────────
+let minuteurSalle, minuteurChat, minuteurCoeurs;
+function ouvrirSalle(i) {
+  etat.salle = (i + COMS.length) % COMS.length;
+  const c = COMS[etat.salle];
+  document.querySelectorAll(".carte video").forEach((v) => v.pause());
+  const s = $("#salle");
+  s.hidden = false;
+  const v = $("#video");
+  v.innerHTML = sources(c.video); v.muted = true; $("#son").textContent = "🔇"; v.load(); v.play().catch(() => {});
+  $("#sAvatar").src = avatar(c.qui);
+  $("#sNom").textContent = c.nom;
+  $("#sDepuis").textContent = moment() === "nuit" ? "vidéo du jour · rediffusion" : `en direct depuis ${c.depuis}`;
+  $("#sVus").textContent = `👁 ${c.vus}`;
+  $("#proN").src = img(c.qui); $("#proP").src = GENS[c.qui].p;
+  $("#chat").innerHTML = ""; $("#coeurs").innerHTML = ""; $("#sFlash").innerHTML = ""; $("#sSous").innerHTML = ""; $("#sFeuille").innerHTML = "";
+  majStock();
+  const pris = etat.pris.has(c.id);
+  $("#prendre").textContent = pris ? "✓ C’est à toi" : c.prendre;
+  $("#prendre").disabled = pris;
+  clearInterval(minuteurSalle); clearInterval(minuteurChat); clearInterval(minuteurCoeurs);
+  let tour = 0;
+  const messages = [
+    { k: "lea", voix: c.client.voix, t: c.client.dit },
+    { k: "hugo", t: c.id === "bergine" ? "J’y vais à midi 🙋" : "Trop envie d’essayer !" },
+    { k: "ines", t: "Ça a l’air trop bon 😋" },
+  ];
+  const ajouterMsg = () => {
+    const m = messages[tour++ % messages.length];
+    const el = document.createElement(m.voix ? "button" : "div");
+    if (m.voix) el.type = "button";
+    el.className = "msg" + (m.voix ? " voix" : "");
+    el.innerHTML = `<img src="${avatar(m.k)}" alt=""><span><b>${GENS[m.k].nom}${m.voix ? " · 🔊 touche pour l’écouter" : ""}</b>${m.t}</span>`;
+    if (m.voix) el.addEventListener("click", () => parler(m.voix, el));
+    const chat = $("#chat");
+    chat.appendChild(el);
+    while (chat.children.length > 3) chat.firstElementChild.remove();
+  };
+  ajouterMsg();
+  minuteurChat = setInterval(ajouterMsg, 3600);
+  minuteurCoeurs = setInterval(() => envoler($("#coeurs"), 50, 100, ["😋", "❤️", "🙋", "🔥", "👏", "❤️"][Math.floor(Math.random() * 6)]), 650);
+  // quelqu'un prend une place, de temps en temps (jamais la dernière : elle est pour toi)
+  minuteurSalle = setInterval(() => {
+    if (etat.stock[c.id] > 1 && !etat.pris.has(c.id) && Math.random() < 0.6) {
+      etat.stock[c.id]--;
+      const k = ["lea", "hugo", "ines"][Math.floor(Math.random() * 3)];
+      $("#sFlash").innerHTML = `<div class="flash"><img src="${avatar(k)}" alt="">${GENS[k].nom} vient d’en prendre une</div>`;
+      majStock();
+      setTimeout(() => ($("#sFlash").innerHTML = ""), 2600);
+    }
+  }, 6500);
+}
+function majStock() {
+  const c = COMS[etat.salle], st = $("#sStock");
+  if (etat.pris.has(c.id)) { st.className = "stock"; st.innerHTML = `✓ Ta ${c.stock.un} t’attend`; return; }
+  const n = etat.stock[c.id];
+  st.className = "stock" + (n <= 1 ? " dernier" : "");
+  st.innerHTML = n <= 1 ? `${c.stock.e} Il reste la dernière ${c.stock.un} !` : `${c.stock.e} Il reste <b>${n}</b> ${c.stock.des}`;
+}
+function fermerSalle() {
+  clearInterval(minuteurSalle); clearInterval(minuteurChat); clearInterval(minuteurCoeurs);
+  try { etat.audio?.pause(); } catch {}
+  $("#video").pause();
+  $("#salle").hidden = true;
+  etat.salle = -1;
+  vitrines();
+}
+$("#fermer").addEventListener("click", fermerSalle);
+$("#suivante").addEventListener("click", () => ouvrirSalle(etat.salle + 1));
+$("#precedente").addEventListener("click", () => ouvrirSalle(etat.salle - 1));
+$("#son").addEventListener("click", () => { const v = $("#video"); v.muted = !v.muted; $("#son").textContent = v.muted ? "🔇" : "🔊"; if (!v.muted) v.play().catch(() => {}); });
+$("#pro").addEventListener("click", () => {
+  const c = COMS[etat.salle];
+  $("#sSous").innerHTML = `<div class="sous-titre">${c.dit}</div>`;
+  const v = $("#video"); const avant = v.muted; v.muted = true;
+  parler(c.voix, $("#pro"), () => { $("#sSous").innerHTML = ""; v.muted = avant; });
+});
+document.querySelectorAll(".reac").forEach((b) => b.addEventListener("click", () => {
+  for (let k = 0; k < 3; k++) setTimeout(() => envoler($("#coeurs"), 50, 100, b.dataset.e), k * 120);
+}));
+$("#prendre").addEventListener("click", () => {
+  const c = COMS[etat.salle];
+  etat.pris.add(c.id);
+  $("#prendre").textContent = "✓ C’est à toi"; $("#prendre").disabled = true;
+  majStock();
+  let reste = 300;
+  const qui = ["lea", "hugo", "toi"].map((k) => `<img src="${avatar(k)}" alt="">`).join("");
+  $("#sFeuille").innerHTML = `<div class="feuille" role="dialog" aria-label="C’est à toi">
+    <h3>${c.stock.e} Ta ${c.stock.un} est à toi !</h3>
+    <p>Elle t’est gardée pendant 5 minutes. Au comptoir, ta visite est notée, et ta figurine de l’édition Automne de ${c.nom} t’attend.</p>
+    <span class="chrono" id="chrono">5:00</span>
+    <div class="qui-va">${qui}<span>Léa, Hugo et toi y allez</span></div>
+    <button class="ok" type="button" id="okFeuille">Super !</button></div>`;
+  const ch = setInterval(() => { reste--; const el = $("#chrono"); if (!el) return clearInterval(ch); el.textContent = `${Math.floor(reste / 60)}:${String(reste % 60).padStart(2, "0")}`; }, 1000);
+  $("#okFeuille").addEventListener("click", () => { clearInterval(ch); $("#sFeuille").innerHTML = ""; });
+  for (let k = 0; k < 8; k++) setTimeout(() => envoler($("#coeurs"), 50, 100, ["🎉", "❤️", "🙋"][k % 3]), k * 90);
+});
+// glisser dans la salle : vitrine suivante
+let y0 = null;
+$("#salle").addEventListener("pointerdown", (e) => (y0 = e.clientY));
+$("#salle").addEventListener("pointerup", (e) => { if (y0 === null) return; const dy = e.clientY - y0; y0 = null; if (Math.abs(dy) > 70 && !$("#sFeuille").innerHTML) ouvrirSalle(etat.salle + (dy < 0 ? 1 : -1)); });
+
+// ── L'HEURE ET LA SAISON ───────────────────────────────────────────────────────────────────────
+function tout() { lumiere(); rue(); vitrines(); filSuivant(); }
+document.querySelectorAll("#heures [data-h]").forEach((b) => b.addEventListener("click", () => {
+  etat.h = +b.dataset.h; etat.hChoisie = etat.h;
+  document.querySelectorAll("#heures [data-h]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  tout();
+}));
+$("#noel").addEventListener("click", () => { etat.noel = !etat.noel; tout(); });
+// la neige et la guirlande (pour Noël)
+$("#neige").innerHTML = Array.from({ length: 34 }, (_, k) => `<i style="left:${(k * 29) % 100}%;width:${3 + (k % 4)}px;height:${3 + (k % 4)}px;animation-duration:${5 + (k % 5)}s;animation-delay:-${(k * 0.7) % 6}s"></i>`).join("");
+$("#guirlande").innerHTML = Array.from({ length: 12 }, (_, k) => `<i style="color:${["#FF4D5E", "#F2C46B", "#3DE2A6", "#8EC5FF"][k % 4]};background:currentColor;animation-delay:-${(k % 4) * 0.35}s"></i>`).join("");
+
+// ── EN DIRECT : ce qui se passe tout seul ─────────────────────────────────────────────────────
+tout();
+setInterval(filSuivant, 3800);
+setInterval(reactionsVitrines, 900);
+setInterval(() => {
+  if (moment() === "nuit") return;
+  etat.foule++;
+  $("#nbFoule").textContent = etat.foule;
+  const f = $("#foule"); f.classList.remove("pop"); void f.offsetWidth; f.classList.add("pop");
+}, 7000);
+setInterval(() => { // quelqu'un dans la rue parle tout seul
+  if (moment() === "nuit") return;
+  const p = [PLACES[0], PLACES[2], PLACES[3]][Math.floor(Math.random() * 3)];
+  const el = [...document.querySelectorAll(".qui")].find((q) => q.getAttribute("aria-label") === GENS[p.k].nom);
+  if (el && !document.querySelector("#rue .bulle")) bulle($("#rue"), p.x, p.y - p.h, `<small>${GENS[p.k].nom}</small>${PAROLES_RUE[p.k]}`);
+}, 5200);
+</script>
