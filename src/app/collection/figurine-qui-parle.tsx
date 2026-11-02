@@ -3,7 +3,8 @@
 /**
  * 🗣️ UNE FIGURINE QUI PARLE — ses deux images (bouche fermée, bouche ouverte) et une voix : la bouche s'ouvre quand
  * la voix est forte, comme dans la démo. Le volume se mesure dans le navigateur (`AnalyserNode`) ; si le navigateur
- * ne sait pas, la bouche bat en rythme tant que la voix joue.
+ * ne sait pas — ou si la mesure ne rend que du silence alors que la voix joue depuis une demi-seconde (certains
+ * navigateurs coupent la mesure sans rien dire) —, la bouche bat en rythme tant que la voix joue.
  *
  * LA VOIX EST CHARGÉE EN ENTIER AVANT DE JOUER (une adresse `blob:`) : l'iPhone ne lit pas un son servi sans
  * « morceaux », et la mesure du volume demande un son de la même origine.
@@ -31,6 +32,8 @@ export function FigurineQuiParle({ neutre, parle, src, etiquette = "▶ Écouter
   const analyse = useRef<AnalyserNode | null>(null);
   const local = useRef<string>("");
   const raf = useRef(0);
+  /** Le plus fort volume mesuré depuis le début de la lecture (pour repérer une mesure muette). */
+  const pic = useRef(0);
   const [joue, setJoue] = useState(false);
   const [charge, setCharge] = useState(false);
   const [ennui, setEnnui] = useState("");
@@ -60,7 +63,11 @@ export function FigurineQuiParle({ neutre, parle, src, etiquette = "▶ Écouter
       n.getByteTimeDomainData(t);
       let somme = 0;
       for (const v of t) somme += ((v - 128) / 128) ** 2;
-      ouverte = Math.sqrt(somme / t.length) > 0.045;
+      const rms = Math.sqrt(somme / t.length);
+      pic.current = Math.max(pic.current, rms);
+      ouverte = rms > 0.045;
+      // une mesure muette alors que la voix avance : on passe au rythme
+      if (a.currentTime > 0.5 && pic.current < 0.004) analyse.current = null;
     } else {
       ouverte = !a.paused && Math.floor(a.currentTime * 7) % 2 === 0;
     }
@@ -109,6 +116,7 @@ export function FigurineQuiParle({ neutre, parle, src, etiquette = "▶ Écouter
       await contexte.current?.resume().catch(() => undefined);
       const a = audio.current!;
       a.currentTime = 0;
+      pic.current = 0;
       await a.play();
       setJoue(true);
       cancelAnimationFrame(raf.current);
