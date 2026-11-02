@@ -208,6 +208,39 @@ Un commerce = une page (sa famille) ; un client = une page (sa collection).
   commencer — ceux de sa ville d'abord, avec leur cadeau à 10 s'ils l'ont écrit (`collection/decouvrir.tsx`). Qui
   collectionne déjà retrouve « Comment ça marche ? » et « D'autres collections à commencer » sous ses étagères.
 
+### 9.0 bis Sa propre figurine, à 10 figurines tous commerces (2 novembre) — décidé, construit
+
+Sa question : « Est-ce que ça ne serait pas mieux qu'ils obtiennent leur figurine après avoir collectionné un minimum
+de 10 figurines, tous commerces compris ? » — Oui : « les plus fidèles » ne disait rien, et 10 chez un seul commerce,
+c'est une année (une figurine par édition). Chaque commerce récompense sa collection (la figurine d'or, son cadeau) ;
+ClikMe récompense le réseau (sa figurine à soi), et pousse à découvrir un deuxième, un troisième commerce.
+
+**La phrase de la vidéo** (à enregistrer par lui, à la place de « Les plus fidèles… ») : « Et ça sert à quoi ? À avoir
+vos bons plans avant les autres. Et à 10 figurines, chez vous ou ailleurs, vos clients ont leur propre figurine : elle
+parle avec leur voix, part chez leurs proches… et cite leurs commerces préférés, dont le vôtre. C'est du
+bouche-à-oreille très puissant… sans payer un euro de pub ! »
+
+**Construit** (`lib/direct/ma-figurine.ts`, `ma-figurine-serveur.ts`, migration `20261106090000_clik_ma_figurine.sql`) :
+
+- dans « Ma collection », en haut : « Ta figurine qui parle · 6 / 10 · encore 4, chez n'importe quel commerce
+  ClikMe » (les collections finies comptent leurs 10) ;
+- à 10 : sa photo, avec « C'est bien moi sur la photo, et j'accepte que ClikMe en fasse ma figurine » ; puis « On
+  fabrique ta figurine » ;
+- **la fabrication, à la main pour l'instant** : `/admin/humain/figurines-clients` montre sa photo ; on y dépose ses
+  deux images (bouche fermée, bouche ouverte, cadrées pareil, comme pour la démo) ; ou « Refuser la photo », avec la
+  raison ;
+- prête : « Fais-la parler ! » — 15 secondes au plus, **sa voix**, la bouche qui bouge dessus ; il choisit les
+  commerces qu'elle cite (4 au plus, parmi ceux où il a des figurines — jamais « vu récemment chez… ») ; il l'envoie :
+  WhatsApp, SMS, le lien, la feuille de partage du téléphone ;
+- celui qui le reçoit (`/figurine/<id>`, sans compte, pas dans Google) : « Léa t'a envoyé sa figurine », « Écouter »,
+  ses commerces préférés (vers leur page), « Et toi ? » vers sa collection, et « Signaler ce message » (il ne
+  s'affiche plus ; l'admin le remet ou le retire) ;
+- photo, images et voix dans un seau privé (`figurines-clients`) : adresses signées, jamais publiques ; 30 messages
+  par jour au plus.
+
+**À faire par lui** : appliquer la migration dans l'éditeur SQL de Supabase (sans elle : le compteur marche, et à 10,
+« ta figurine arrive très bientôt »).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

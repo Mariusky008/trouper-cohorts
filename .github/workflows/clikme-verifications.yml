@@ -46,6 +46,8 @@ jobs:
           src/lib/direct/reel-du-jour.ts src/lib/direct/reel-dessin.ts src/lib/direct/reel-montage.ts
           src/app/autour-de-moi/mes-familles.tsx src/app/autour-de-moi/assistante/famille-comptoir.tsx
           src/app/api/site-internet/pro/famille
+          src/app/collection src/app/figurine src/app/api/direct/ma-figurine src/app/api/admin/direct/figurines-clients
+          src/lib/direct/ma-figurine.ts src/lib/direct/ma-figurine-serveur.ts src/lib/direct/reduire-image.ts
 
   essais-sql:
     name: Essais SQL

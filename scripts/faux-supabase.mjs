@@ -22,7 +22,7 @@ import http from "node:http";
 import { randomBytes, randomUUID } from "node:crypto";
 
 const PORT = Number(process.argv[2] || 54321);
-const SEAUX_PRIVES = new Set(["salons-prives", "maison-privee"]);
+const SEAUX_PRIVES = new Set(["salons-prives", "maison-privee", "figurines-clients"]);
 
 const tables = new Map();
 const fichiers = new Map(); // `${seau}/${chemin}` → { type, octets }
@@ -98,6 +98,9 @@ const DEFAUTS = {
   clik_surprise_tirage: () => ({ pris_le: null, laisse_le: null, code: null, servie_le: null, created_at: maintenant() }),
   // SON ACCORD POUR LES VIDÉOS — `…_clik_accord_video.sql`.
   clik_accord: () => ({ video: false, updated_at: maintenant() }),
+  // SA PROPRE FIGURINE — `…_clik_ma_figurine.sql`.
+  clik_ma_figurine: () => ({ prenom: "", photo: null, accord_le: null, demande_le: maintenant(), refus: null, neutre: null, parle: null, prete_le: null, updated_at: maintenant() }),
+  clik_figurine_message: () => ({ duree: null, commerces: [], ecoutes: 0, signale_le: null, retire_le: null, created_at: maintenant() }),
 };
 const CLES = {
   human_conversations: ["id"],
@@ -123,6 +126,8 @@ const CLES = {
   clik_mot: ["site_id", "habitant_id", "jour"],
   clik_presence: ["site_id", "habitant_id", "jour"],
   clik_bon_plan: ["id"],
+  clik_ma_figurine: ["habitant_id"],
+  clik_figurine_message: ["id"],
   clik_gate: ["site_id", "mois"],
   clik_surprise: ["id"],
   clik_surprise_tirage: ["site_id", "jour", "habitant_id"],

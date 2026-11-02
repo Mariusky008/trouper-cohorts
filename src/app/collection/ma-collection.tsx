@@ -11,6 +11,8 @@ import type { MaFamille } from "@/lib/direct/famille";
 import { deNom } from "@/lib/echanges/echanges";
 import { CollectionDuCommerce, STYLES_COLLECTION } from "@/app/f/[slug]/collection";
 import { Decouvrir, EnSavoirPlus, STYLES_DECOUVRIR, type CommerceACollectionner } from "./decouvrir";
+import { MaFigurine } from "./ma-figurine";
+import { figurinesEnTout } from "@/lib/direct/ma-figurine";
 
 type Etat = { familles: MaFamille[] } | null;
 
@@ -30,7 +32,7 @@ export function MaCollection({ aujourdhui, commerces }: { aujourdhui: string; co
   }, []);
 
   const avec = (etat?.familles ?? []).filter((f) => f.collection).sort((a, b) => (b.collection!.gagnees + b.collection!.trophees.length * 10) - (a.collection!.gagnees + a.collection!.trophees.length * 10));
-  const figurines = avec.reduce((n, f) => n + f.collection!.gagnees, 0);
+  const figurines = figurinesEnTout(avec); // (les collections finies comptent leurs 10, comme pour « Ma figurine »)
   const ors = avec.reduce((n, f) => n + f.collection!.trophees.length, 0);
 
   return (
@@ -68,6 +70,8 @@ export function MaCollection({ aujourdhui, commerces }: { aujourdhui: string; co
       {ennui && <p className="mc-vide">Ta collection n’a pas pu s’afficher. Réessaie dans un instant.</p>}
 
       {(ennui || (etat && avec.length === 0)) && <Decouvrir aujourdhui={aujourdhui} commerces={commerces} />}
+
+      {avec.length > 0 && <MaFigurine />}
 
       {avec.map((f) => (
         <article key={f.slug} className="mc-commerce">

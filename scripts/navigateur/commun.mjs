@@ -16,4 +16,5 @@ fs.mkdirSync(D, { recursive: true });
 
 const pw = await import(process.env.PLAYWRIGHT_MODULE ?? "playwright");
 const { chromium } = pw.default ?? pw;
-export const lancer = () => chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
+/** `options` : ce qu'un essai ajoute au lancement (`args`, un faux micro…). */
+export const lancer = (options = {}) => chromium.launch({ ...(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}), ...options });

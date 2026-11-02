@@ -19,7 +19,7 @@ import type { CommerceACollectionner } from "./decouvrir";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Ma collection de figurines · ClikMe",
+  title: "Ma collection de figurines",
   description: "Toutes tes figurines, commerce par commerce : une visite, une figurine ; à 10, la figurine d’or.",
   robots: { index: false },
 };

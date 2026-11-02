@@ -11,6 +11,7 @@
 import type { CSSProperties } from "react";
 import { EDITIONS_DATEES, PALIERS_COLLECTION, TOTAL_COLLECTION, editionsDuMoment, fenetre, jourEnClair } from "@/lib/direct/collection";
 import { Particules, THEMES, type Theme } from "@/app/f/[slug]/collection";
+import { SEUIL_MA_FIGURINE } from "@/lib/direct/ma-figurine";
 
 export type CommerceACollectionner = { slug: string; nom: string; ville: string; figurine: string; cadeau?: string };
 
@@ -127,6 +128,16 @@ function CeQueCaRapporte() {
       <p className="dc-rares">
         <b>✨ Et 2 éditions rares</b> : elles ne se gagnent qu’en venant le jour où le commerce annonce une place libre.
       </p>
+      <div className="dc-a-toi">
+        <span className="dc-a-toi-fig" aria-hidden="true">
+          🗣️
+        </span>
+        <span>
+          <small>{SEUIL_MA_FIGURINE} figurines, tous commerces confondus</small>
+          <b>Ta propre figurine</b>
+          <span>Elle parle avec ta voix. Tu l’envoies à tes proches, et elle cite tes commerces préférés.</span>
+        </span>
+      </div>
     </section>
   );
 }
@@ -259,6 +270,11 @@ export const STYLES_DECOUVRIR = `
 .dc-rares{margin:12px 0 0;padding:12px 14px;border-radius:18px;font-size:13px;line-height:1.4;color:#D9C3CB;border:2px solid transparent;
   background:linear-gradient(#1E0C18,#1E0C18) padding-box,linear-gradient(120deg,#C9B6FF,#7B5CFF,#FF7AD9,#7FE7FF,#C9B6FF) border-box;background-size:auto,300% 300%;animation:co-holo 5s linear infinite}
 .dc-rares b{color:#FFF4E6}
+.dc-a-toi{display:flex;gap:12px;align-items:center;margin:10px 0 0;padding:12px 14px;border-radius:18px;background:linear-gradient(135deg,rgba(255,46,154,.2),rgba(242,196,107,.16));border:1px solid rgba(242,196,107,.45)}
+.dc-a-toi-fig{flex:none;display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#FF2E9A,#7B1B5E);font-size:26px;animation:co-tourne 3.4s ease-in-out infinite}
+.dc-a-toi small{display:block;font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#F2C46B}
+.dc-a-toi b{display:block;margin-top:1px;font-size:16px}
+.dc-a-toi span span{display:block;margin-top:2px;font-size:13px;line-height:1.4;color:#D9C3CB}
 .dc-etapes{position:relative}
 .dc-etapes::before{content:"";position:absolute;left:23px;top:24px;bottom:24px;width:2px;background:linear-gradient(#FF2E9A,#F2C46B);opacity:.5}
 .dc-etapes li{position:relative;display:flex;gap:14px;align-items:flex-start;animation:mc-entre .6s cubic-bezier(.2,.9,.3,1) var(--d) both}
