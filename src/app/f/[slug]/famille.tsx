@@ -48,6 +48,7 @@ import {
 import { deNom } from "@/lib/echanges/echanges";
 import { prenomRefuse } from "@/lib/direct/prenom";
 import { VitrineDuCommerce } from "@/app/autour-de-moi/vitrine-fantomes";
+import { CollectionDuCommerce, STYLES_COLLECTION } from "./collection";
 
 export type CommerceFamille = {
   slug: string;
@@ -69,6 +70,9 @@ export type CommerceFamille = {
   hote: string;
   /** Le numéro WhatsApp de ClikMe, au format d'un lien wa.me (vide : pas encore ouvert). */
   whatsapp: string;
+  /** 🏆 Sa figurine (son double en attendant la vraie) et le cadeau de sa collection complète, s'il l'a choisi. */
+  figurine: string;
+  cadeau: string;
 };
 
 type Ecran = "accueil" | "fiche" | "famille";
@@ -535,6 +539,19 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
         {motDuJour(etat)}
         {etat && carteFoule(etat, true)}
 
+        {/* 🏆 SA COLLECTION DE FIGURINES : la récompense qu'on voit (elle remplace la pièce) */}
+        {moi.collection ? (
+          <CollectionDuCommerce
+            collection={moi.collection}
+            titre={`Ta collection ${deNom(c.nom)}`}
+            nom={c.nom}
+            de={deNom(c.nom)}
+            figurine={c.figurine}
+            cadeau={c.cadeau || undefined}
+            slug={c.slug}
+          />
+        ) : (
+          <>
         <div className="fm-chemin" role="list" aria-label="Ta pièce">
           {GRADES.map((g, k) => (
             <div key={g} role="listitem" className={`fm-etape${k <= rang ? " fait" : ""}${k === rang + 1 ? " prochain" : ""}`}>
@@ -566,6 +583,8 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
             </>
           )}
         </div>
+          </>
+        )}
 
         <div className="fm-actions">
           {WHATSAPP_SONNETTE && c.whatsapp && (
@@ -614,7 +633,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
         <a className="fm-lien" href={`/b/${encodeURIComponent(c.slug)}`}>
           Voir la page {deNom(c.nom)} ›
         </a>
-        <style>{STYLES}</style>
+        <style>{STYLES + STYLES_COLLECTION}</style>
       </main>
     );
   }
@@ -688,6 +707,22 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
         </p>
       )}
       <p className="fm-sans">Sans compte, sans appli à installer</p>
+      {/* 🏆 L'ENVIE DE COLLECTIONNER, avant même d'entrer (`collection.ts`) */}
+      <div className="fm-teaser">
+        <div className="fm-teaser-cartes" aria-hidden="true">
+          {["❄️", "🌸", "☀️", "🍂"].map((e, k) => (
+            <span key={e} style={{ "--k": k } as CSSProperties}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={c.figurine} alt="" draggable={false} />
+              <em>{e}</em>
+            </span>
+          ))}
+        </div>
+        <p>
+          <b>Collectionne ses figurines 🏆</b>
+          Une visite, la figurine de la saison. À 10, la figurine d’or.
+        </p>
+      </div>
 
       {ecran === "fiche" && cage && (
         <div className="fm-voile" onClick={() => !envoi && setEcran("accueil")}>
@@ -935,6 +970,18 @@ const STYLES = `
 @keyframes fm-porte{to{transform:scaleX(.12)}}
 @keyframes fm-envol{0%{transform:none}40%{transform:translateY(-50px) scale(1.2) rotate(-6deg)}100%{transform:translateY(-110px) scale(1.4);opacity:0}}
 .fm-sans{margin:14px 0 0;text-align:center;font-size:12px;color:var(--pale)}
+.fm-teaser{display:flex;align-items:center;gap:14px;margin:16px 16px 0;padding:12px 14px;border-radius:18px;background:linear-gradient(135deg,rgba(255,46,154,.16),rgba(242,196,107,.12));border:1px solid rgba(242,196,107,.35);text-align:left}
+.fm-teaser-cartes{display:flex;flex:none;padding-left:12px}
+.fm-teaser-cartes span{position:relative;width:38px;height:52px;margin-left:-12px;border-radius:9px;overflow:hidden;border:1.5px solid rgba(255,255,255,.35);box-shadow:0 6px 12px -6px #000;transform:rotate(calc((var(--k) - 1.5) * 9deg));animation:fm-teaser 3s ease-in-out calc(var(--k) * .3s) infinite}
+.fm-teaser-cartes span:nth-child(1){background:linear-gradient(160deg,#A8DBFF,#2B4FA6)}
+.fm-teaser-cartes span:nth-child(2){background:linear-gradient(160deg,#FFB8D6,#2F8F57)}
+.fm-teaser-cartes span:nth-child(3){background:linear-gradient(160deg,#FFD54F,#EF5A2A)}
+.fm-teaser-cartes span:nth-child(4){background:linear-gradient(160deg,#FFA24A,#7C3110)}
+.fm-teaser-cartes img{position:absolute;left:6%;bottom:-1px;width:88%;height:86%;object-fit:contain;object-position:bottom}
+.fm-teaser-cartes em{position:absolute;right:2px;top:1px;font-style:normal;font-size:11px}
+.fm-teaser p{margin:0;font-size:13px;line-height:1.35;color:var(--doux)}
+.fm-teaser b{display:block;font-size:15px;color:var(--creme)}
+@keyframes fm-teaser{0%,100%{translate:0 0}50%{translate:0 -4px}}
 .fm-erreur{margin:10px 16px 0;padding:8px 12px;border-radius:10px;background:rgba(255,176,58,.15);color:#FFD08A;font-size:13px;text-align:center}
 .fm-fiche .fm-erreur{margin:10px 0 0;background:#FFF0D9;color:#8A4B00}
 .fm-voile{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,3,8,.55);animation:fm-fondu .25s ease}

@@ -2,12 +2,21 @@
 
 // 👻 MES FAMILLES — dans Ma Maison : chaque commerce où il a libéré son fantôme.
 //
+// 🏆 Et sa collection de figurines de chaque commerce (« 3 / 10 », celle à gagner), vers « Ma collection ».
 // Pour chacun : son écusson de la famille (la couleur de son palier, cousue à son numéro), « Fantôme
 // n°12 · 🥈 Argent », ce qui le fera monter, et sa page (`/f/<lien>`), pour y revenir ouvrir la cage
 // du jour. Seulement dans une vraie ville (`api/direct/famille?moi=1`) : dans la démonstration, il
 // n'est de la famille de personne, et on ne lui en invente pas. Voir `lib/direct/famille.ts`.
 import { useEffect, useState } from "react";
 import { cheminEnMots, EMOJI_GRADE, NOM_GRADE, prochainPalier, type MaFamille } from "@/lib/direct/famille";
+import type { Collection } from "@/lib/direct/collection";
+
+/** « · à gagner : Automne, encore 12 j » (sa collection, `collection.ts`). */
+function aGagner(c: Collection): string {
+  if (c.complete) return " · complète 🎉";
+  const p = c.cases.find((x) => x.cle === c.prochaine);
+  return p?.etat === "en-cours" ? ` · à gagner : ${p.nom}, encore ${p.reste} j` : "";
+}
 
 export function MesFamilles({ reelle }: { reelle: boolean }) {
   const [familles, setFamilles] = useState<MaFamille[] | null>(null);
@@ -45,11 +54,13 @@ export function MesFamilles({ reelle }: { reelle: boolean }) {
                     Fantôme n°{f.numero} · {EMOJI_GRADE[f.grade]} {NOM_GRADE[f.grade]} · {f.membres} {f.membres > 1 ? "fantômes" : "fantôme"}
                   </small>
                   <em>
-                    {suivant
-                      ? `${NOM_GRADE[suivant.grade]} ${EMOJI_GRADE[suivant.grade]} : ${cheminEnMots(suivant.chemins, f.nom)
-                          .replace(/\.$/, "")
-                          .replace(/^./, (x) => x.toLowerCase())}`
-                      : "Tu as ses bons plans en premier."}
+                    {f.collection
+                      ? `🏆 ${f.collection.gagnees} / ${f.collection.total} figurines${aGagner(f.collection)}`
+                      : suivant
+                        ? `${NOM_GRADE[suivant.grade]} ${EMOJI_GRADE[suivant.grade]} : ${cheminEnMots(suivant.chemins, f.nom)
+                            .replace(/\.$/, "")
+                            .replace(/^./, (x) => x.toLowerCase())}`
+                        : "Tu as ses bons plans en premier."}
                   </em>
                 </span>
                 <s aria-hidden="true">›</s>
@@ -58,6 +69,11 @@ export function MesFamilles({ reelle }: { reelle: boolean }) {
           );
         })}
       </ul>
+      {familles.some((f) => f.collection) && (
+        <a className="mf-collection" href="/collection">
+          🏆 Ma collection de figurines ›
+        </a>
+      )}
       <style>{STYLES}</style>
     </section>
   );
@@ -78,4 +94,5 @@ const STYLES = `
 .mf-texte small{font-size:12.5px;line-height:1.35;color:#C4B9B3;}
 .mf-texte em{font-style:normal;font-size:12px;line-height:1.35;color:#E8C77A;}
 .mf-liste s{text-decoration:none;font-size:20px;color:#8A7D76;}
+.mf-collection{align-self:flex-start;padding:9px 14px;border-radius:999px;background:linear-gradient(135deg,rgba(255,46,154,.22),rgba(242,196,107,.18));border:1px solid rgba(242,196,107,.45);color:#FFF4E6;font-size:13.5px;font-weight:800;text-decoration:none;}
 `;

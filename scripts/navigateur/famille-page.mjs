@@ -74,6 +74,7 @@ await p.goto(`${BASE}/f/${SLUG}`, { waitUntil: "networkidle", timeout: 400000 })
 await p.waitForSelector(".fm-foule .l1", { timeout: 60000 });
 const accueil = await texte(p, ".fm");
 ok(accueil.includes("Rejoins la famille du Comptoir des Fantômes") && accueil.includes("Sans compte"), "l'accueil : l'invitation et « sans compte »");
+ok(accueil.includes("Collectionne ses figurines") && (await p.locator(".fm-teaser-cartes span").count()) === 4, "l'accueil donne envie de collectionner ses figurines");
 ok(/1 fantôme aujourd’hui/.test(accueil) && /Record 4/.test(accueil) && /Plus que 4 pour battre le record/.test(accueil), `la foule du jour et le record (${(await texte(p, ".fm-foule")).slice(0, 80)})`);
 ok((await p.locator(".fm-cage-b").count()) === 3 && (await texte(p, ".fm-cages")).includes("Je réserve aujourd’hui"), "les trois cages d'un restaurant");
 ok(!/exemple/i.test(accueil), "jamais le mot « exemple » à l'écran");
@@ -101,8 +102,13 @@ await p.waitForSelector(".fm-heros h1", { timeout: 20000 });
 const fam = await texte(p, ".fm");
 ok(fam.includes("Bienvenue dans la famille !") && fam.includes("Tu es le fantôme n°4 du Comptoir des Fantômes"), "bienvenue, fantôme n°4");
 ok((await texte(p, ".fm-patch")) === "4" && (await p.locator(".fm-patch.bronze").count()) === 1, "la pièce de bronze, frappée de son numéro");
-ok(fam.includes("Prochain : la pièce d’argent 🥈") && fam.includes("Viens une fois au Comptoir des Fantômes, ou ouvre la cage 7 jours."), "le chemin vers l'argent");
-ok(fam.includes("1 jour de cage sur 7") && fam.includes("aujourd’hui ✓"), "son premier jour de cage, compté");
+// 🏆 SA COLLECTION DE FIGURINES, à la place de la pièce (il y a toujours une saison en cours)
+await p.waitForSelector(".co .co-vedette", { timeout: 20000 });
+ok((await texte(p, ".co-compte")).includes("/ 10") && (await texte(p, ".co-sur")).toLowerCase().includes("ta collection du comptoir des fantômes"), "sa collection : sur 10");
+ok((await texte(p, ".co-vedette")).includes("À GAGNER MAINTENANT") && /Édition (Hiver|Printemps|Été|Automne|Saint-Valentin|Fête de la musique|Halloween|Noël)/.test(await texte(p, ".co-vedette")), `la figurine à gagner maintenant (${(await texte(p, ".co-vedette")).slice(0, 60)})`);
+ok((await p.locator(".co-etagere .co-carte").count()) === 10 && (await p.locator(".co-carte.rare").count()) === 2, "l'étagère des dix, dont deux rares");
+ok((await texte(p, ".co-paliers")).includes("3 figurines · Prévenu plus tôt") && (await texte(p, ".co-paliers")).includes("10 figurines · La figurine d’or"), "les trois paliers");
+ok((await p.locator(".fm-chemin, .fm-prochain").count()) === 0 && (await p.locator('.co-lien[href="/collection"]').count()) === 1, "plus de chemin des pièces ; le lien vers toute sa collection");
 ok(/2 fantômes aujourd’hui/.test(fam) && fam.includes("📣 Il en manque 3 : inviter un ami"), "la foule passe à 2, il en manque 3");
 // LE BOUTON WHATSAPP EST CACHÉ tant que la sonnette n'existe pas (chantier 4) : personne n'y répondrait.
 ok((await p.locator("a.fm-bouton.wa").count()) === 0, "pas de bouton WhatsApp : caché jusqu'à la sonnette");
@@ -143,7 +149,7 @@ const noe = (await lignes("clik_cage")).find((c) => c.prenom === "Noé");
 const pres = await lignes("clik_presence", `&habitant_id=eq.${noe?.habitant_id}`);
 ok(pres.length === 1 && pres[0].amene_par === camille?.habitant_id, "il compte pour Camille (amené par elle)");
 await p.reload({ waitUntil: "networkidle" });
-await p.waitForSelector(".fm-prochain", { timeout: 20000 });
+await p.waitForSelector(".co .co-vedette", { timeout: 20000 });
 ok((await texte(p, ".fm-actions")).includes("Il en manque 2"), "chez Camille : il en manque 2");
 
 // ═══ SON PALIER MONTE : UNE VISITE NOTÉE AU COMPTOIR ═══
@@ -151,12 +157,30 @@ await semer("clik_visite", { site_id: SITE, habitant_id: camille?.habitant_id, j
 await p.reload({ waitUntil: "networkidle" });
 await p.waitForSelector(".fm-monte", { timeout: 20000 });
 ok((await texte(p, ".fm-monte")).includes("🥈 Tu passes Argent ! Tu as les bons plans plus tôt."), "une visite : « Tu passes Argent ! »");
-ok((await p.locator(".fm-patch.argent.coud").count()) === 1 && (await texte(p, ".fm-prochain")).includes("Prochain : la pièce d’or 🥇"), "la pièce d'argent se pose, la prochaine est l'or");
+ok((await p.locator(".fm-patch.argent.coud").count()) === 1, "la pièce d'argent se pose sur son fantôme");
+// 🏆 SA PREMIÈRE FIGURINE : la visite validée la lui donne, et on la fête
+await p.waitForSelector(".co-fete", { timeout: 20000 });
+ok((await texte(p, ".co-fete")).includes("Nouvelle figurine !") && (await texte(p, ".co-fete")).includes("1 / 10"), `sa première figurine, fêtée (${await texte(p, ".co-fete")})`);
+await p.waitForTimeout(1700);
+await p.screenshot({ path: `${D}/famille-6-figurine.png` });
+await p.locator(".co-fete button").click();
+await p.waitForTimeout(1200);
+ok((await texte(p, ".co-compte b")) === "1" && (await p.locator(".co-carte.gagnee").count()) === 1, "1 figurine sur l'étagère");
 await p.waitForTimeout(1500);
 await p.screenshot({ path: `${D}/famille-5-argent.png` });
 await p.reload({ waitUntil: "networkidle" });
-await p.waitForSelector(".fm-prochain", { timeout: 20000 });
-ok((await p.locator(".fm-monte").count()) === 0, "la fois suivante, on ne le refête pas");
+await p.waitForSelector(".co .co-vedette", { timeout: 20000 });
+await p.waitForTimeout(1200);
+ok((await p.locator(".fm-monte").count()) === 0 && (await p.locator(".co-fete").count()) === 0, "la fois suivante, on ne le refête pas");
+await p.screenshot({ path: `${D}/famille-7-collection.png`, fullPage: true });
+
+// ═══ MA COLLECTION (/collection) ═══
+await p.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
+await p.waitForSelector(".mc-commerce .co", { timeout: 30000 });
+const mc = await texte(p, ".mc");
+ok(mc.includes("Ma collection") && mc.includes("Le Comptoir des Fantômes") && (await p.locator(".mc-commerce").count()) === 1, `sa page « Ma collection » (${mc.slice(0, 80)})`);
+ok((await debordement(p)) <= 0 && !/exemple/i.test(mc), "« Ma collection » ne déborde pas, sans le mot interdit");
+await p.screenshot({ path: `${D}/famille-8-ma-collection.png`, fullPage: true });
 
 // ═══ LA FAMILLE VIDE ═══
 const vide = await tel();

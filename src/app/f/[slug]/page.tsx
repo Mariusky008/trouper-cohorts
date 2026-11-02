@@ -25,6 +25,7 @@ import { couvertureAffichee, couvertureDuDiagnostic } from "@/lib/site-internet/
 import { lirePhotosDuLieu } from "@/lib/site-internet/photos-du-lieu";
 import { villeSlug } from "@/lib/direct/ville";
 import { tenueDu } from "@/lib/direct/double-metiers";
+import { cadeauDeCollection, figurineDu } from "@/lib/direct/figurines-commerces";
 import { numeroWhatsApp } from "@/lib/direct/cages";
 import { FILM_PAGE } from "@/lib/direct/famille";
 import { deNom } from "@/lib/echanges/echanges";
@@ -83,6 +84,8 @@ const charger = cache(async (slug: string): Promise<(CommerceFamille & { siteId:
       salle: lieu.interieur?.url || couverture || "",
       hote: `${tenueDu({ branche, metier })?.enPied ?? "/direct/double/pied/"}salut-1.webp`,
       whatsapp: numeroWhatsApp(s(process.env.CLIKME_WHATSAPP)) ?? "",
+      figurine: figurineDu(s(row.slug) || slug, { branche, metier }),
+      cadeau: cadeauDeCollection(row.metadata),
     };
   } catch {
     return null;

@@ -176,6 +176,23 @@ qu'on atteint par un lien :
 
 Un commerce = une page (sa famille) ; un client = une page (sa collection).
 
+**Construit le 2 novembre (étape 1)** :
+
+- le calcul (`src/lib/direct/collection.ts`) : 8 éditions datées (Hiver, Saint-Valentin, Printemps, Fête de la
+  musique, Été, Automne, Halloween, Noël) et 2 rares ; une visite validée (`clik_visite`) = une figurine au plus, la
+  plus rare d'abord (rare si un bon plan « place libre » a été publié ce jour-là, puis le temps fort, puis la
+  saison) ; la collection commence à la première visite et dure le temps de passer par chaque édition, puis une
+  nouvelle commence ; les rares et les figurines d'or numérotées dans toute la famille (`famille-serveur.ts`) ;
+- sur la page de la famille (`/f/<lien>`) : le bloc animé à la place du chemin des pièces (le compteur, la jauge et
+  ses trois paliers, la figurine à gagner maintenant dans les couleurs de son édition, l'étagère des dix, la fête
+  d'une nouvelle figurine), et sur l'accueil « Collectionne ses figurines » ;
+- la page « Ma collection » (`/collection`), et « 🏆 3 / 10 » dans Mes familles (Ma Maison) ;
+- la figurine d'un commerce : la sienne si ClikMe l'a faite (`FIGURINES`, `figurines-commerces.ts`), sinon son double ;
+  le cadeau de la collection complète : seulement s'il l'a choisi (`metadata.collection_cadeau` de sa fiche).
+
+Reste à faire : régler le cadeau depuis le comptoir et le valider au comptoir (« Léa · 10 / 10 ») ; les pièces des
+vitrines et du comptoir, à remplacer à leur tour par la collection.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

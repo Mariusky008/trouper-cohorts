@@ -22,6 +22,8 @@
 import type { Cage } from "@/lib/direct/cages";
 import { deNom } from "@/lib/echanges/echanges";
 
+import type { Collection } from "./collection";
+
 export type Grade = "bronze" | "argent" | "or";
 
 /** Ce qu'un fantôme a fait pour ce commerce : ses passages notés, ses jours de cage, ses amis amenés. */
@@ -128,6 +130,8 @@ export type EtatFamille = {
     parcours: Parcours;
     /** Déjà dans la foule aujourd'hui. */
     present: boolean;
+    /** 🏆 Sa collection de figurines de ce commerce (`collection.ts`). */
+    collection: Collection;
     /** Son code d'invitation (`?de=`) : le même numéro d'écran que dans la vitrine. */
     code: string;
     /** 🎬 Il a dit oui : son prénom et son petit mot peuvent apparaître dans les vidéos de ce commerce. */
@@ -144,7 +148,18 @@ export type EtatFamille = {
 };
 
 /** 🏠 Une de ses familles, dans Ma Maison. */
-export type MaFamille = { slug: string; nom: string; numero: number; membres: number; grade: Grade; parcours: Parcours };
+export type MaFamille = {
+  slug: string;
+  nom: string;
+  numero: number;
+  membres: number;
+  grade: Grade;
+  parcours: Parcours;
+  /** 🏆 Sa collection de figurines de ce commerce, sa figurine (son double en attendant la vraie), son cadeau. */
+  collection?: Collection;
+  figurine?: string;
+  cadeau?: string;
+};
 
 // ═══ 🔔 LE BON PLAN, PAR PALIER ════════════════════════════════════════════
 /**

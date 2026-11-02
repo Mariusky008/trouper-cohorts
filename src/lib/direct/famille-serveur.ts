@@ -41,6 +41,9 @@ import {
   type SurprisePublique,
 } from "@/lib/direct/famille";
 import { lookValide } from "@/lib/direct/look";
+import { collectionDe, parcourirCollections } from "@/lib/direct/collection";
+import { figurineDu, cadeauDeCollection } from "@/lib/direct/figurines-commerces";
+import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 import { plusPermis, plusPropre } from "@/lib/direct/previens-les";
 import { estCage } from "@/lib/direct/cages";
 import { SIGNES_BON, codeBonPropre } from "@/lib/direct/surprise-code";
@@ -155,6 +158,46 @@ export async function lireFamille(supabase: Supabase, siteId: string) {
 
 type Famille = Awaited<ReturnType<typeof lireFamille>>;
 
+// ═══ 🏆 LA COLLECTION DE FIGURINES ══════════════════════════════════════════
+/** Les jours où il a annoncé une place libre (un bon plan publié ce jour-là) : les éditions rares s'y gagnent. */
+async function joursCreux(supabase: Supabase, siteId: string): Promise<Set<string>> {
+  const { data, error } = await supabase.from("clik_bon_plan").select("publie_le").eq("site_id", siteId).order("publie_le", { ascending: false }).limit(3000);
+  if (error || !Array.isArray(data)) return new Set();
+  return new Set((data as Ligne[]).map((r) => s(r.publie_le)).filter(Boolean).map((t) => jourParis(new Date(t))));
+}
+
+/**
+ * LES COLLECTIONS DE TOUTE LA FAMILLE, pour numéroter vrai : la 7e édition rare gagnée chez ce commerce porte le
+ * n° 7, le 3e à finir sa collection a la figurine d'or n° 3 (à égalité de jour, le plus ancien de la famille d'abord).
+ */
+async function collectionsDe(supabase: Supabase, siteId: string, f: Famille): Promise<(h: string) => ReturnType<typeof collectionDe>> {
+  const auj = jourParis();
+  const creux = await joursCreux(supabase, siteId);
+  const jours = new Map<string, string[]>();
+  for (const v of f.venues) {
+    const h = s(v.habitant_id);
+    const j = s(v.jour).slice(0, 10);
+    if (!h || !/^\d{4}-\d{2}-\d{2}$/.test(j)) continue;
+    if (!jours.has(h)) jours.set(h, []);
+    jours.get(h)!.push(j);
+  }
+  const rares: { h: string; le: string }[] = [];
+  const finies: { h: string; le: string }[] = [];
+  for (const [h, js] of jours) {
+    const p = parcourirCollections(js, creux, auj);
+    for (const le of p.rares) rares.push({ h, le });
+    for (const le of p.finies) finies.push({ h, le });
+  }
+  const ordre = (a: { h: string; le: string }, b: { h: string; le: string }) => a.le.localeCompare(b.le) || f.numeroDe(a.h) - f.numeroDe(b.h);
+  rares.sort(ordre);
+  finies.sort(ordre);
+  const rang = (liste: { h: string; le: string }[], h: string) => (le: string) => {
+    const k = liste.findIndex((x) => x.h === h && x.le === le);
+    return k >= 0 ? k + 1 : undefined;
+  };
+  return (h: string) => collectionDe(jours.get(h) ?? [], creux, auj, rang(rares, h), rang(finies, h));
+}
+
 /** La foule d'aujourd'hui, celle d'hier, et le record à battre (les jours d'avant : aujourd'hui, on est en train de le battre). */
 async function fouleDe(supabase: Supabase, siteId: string, f: Famille) {
   const auj = jourParis();
@@ -192,6 +235,7 @@ export async function etatFamille(supabase: Supabase, siteId: string, habitantId
     const derniere = ((Array.isArray(c) ? c : []) as Ligne[])[0] as Ligne | undefined;
     const parcours = f.parcoursDe(habitantId);
     const { data: accord } = await supabase.from("clik_accord").select("video").eq("site_id", siteId).eq("habitant_id", habitantId).maybeSingle();
+    const collection = (await collectionsDe(supabase, siteId, f))(habitantId);
     moi = {
       numero,
       prenom: s(derniere?.prenom),
@@ -201,6 +245,7 @@ export async function etatFamille(supabase: Supabase, siteId: string, habitantId
       present: f.actif ? f.lignes.some((p) => s(p.habitant_id) === habitantId && s(p.jour).slice(0, 10) === auj) : false,
       code: codeFantome(siteId, habitantId),
       video: (accord as Ligne | null)?.video === true,
+      collection,
     };
   }
   return { aujourdhui, hier, record, membres: f.ordre.length, moi };
@@ -211,7 +256,7 @@ export async function famillesDe(supabase: Supabase, habitantId: string): Promis
   const { data } = await supabase.from("clik_cage").select("site_id, updated_at").eq("habitant_id", habitantId).order("updated_at", { ascending: false }).limit(500);
   const ids = [...new Set(((Array.isArray(data) ? data : []) as Ligne[]).map((c) => s(c.site_id)).filter(Boolean))].slice(0, 12);
   if (!ids.length) return [];
-  const { data: sites } = await supabase.from("human_vitrine_sites").select("id, slug, business_name, est_client").in("id", ids);
+  const { data: sites } = await supabase.from("human_vitrine_sites").select("id, slug, business_name, activite, metadata, est_client").in("id", ids);
   const site = new Map(((Array.isArray(sites) ? sites : []) as Ligne[]).filter((x) => x.est_client === true).map((x) => [s(x.id), x]));
   const out = await Promise.all(
     ids
@@ -221,7 +266,19 @@ export async function famillesDe(supabase: Supabase, habitantId: string): Promis
         const numero = f.numeroDe(habitantId);
         if (!numero) return null;
         const x = site.get(id)!;
-        return { slug: s(x.slug), nom: s(x.business_name), numero, membres: f.ordre.length, grade: f.gradeDe(habitantId), parcours: f.parcoursDe(habitantId) };
+        const metier = s(x.activite);
+        const cadeau = cadeauDeCollection(x.metadata);
+        return {
+          slug: s(x.slug),
+          nom: s(x.business_name),
+          numero,
+          membres: f.ordre.length,
+          grade: f.gradeDe(habitantId),
+          parcours: f.parcoursDe(habitantId),
+          collection: (await collectionsDe(supabase, id, f))(habitantId),
+          figurine: figurineDu(s(x.slug), { branche: brancheDuMetier(metier), metier }),
+          ...(cadeau ? { cadeau } : {}),
+        };
       }),
   );
   return out.filter((x): x is MaFamille => Boolean(x));
