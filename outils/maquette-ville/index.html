@@ -1,0 +1,622 @@
+<title>Dax, la ville</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grandstander:wght@700;800&family=Poppins:wght@500;600;700;800&display=swap">
+<style>
+/* On marche dans la rue (un long panorama qu'on fait défiler), les vitrines jouent leur vidéo du jour, incrustées
+   dans les devantures ; on entre dans les boutiques, on y parle aux gens. L'interface flotte en verre fumé par-dessus.
+   Un seul monde : le thème du visiteur n'y change rien. */
+:root{
+  --nuit:#12070F;--verre:rgba(24,10,20,.7);--verre-bord:rgba(255,255,255,.16);
+  --rose:#FF2E9A;--or:#F2C46B;--vert:#3DE2A6;--rouge:#FF4D5E;--creme:#FFF4E6;--doux:#D9C3CB;--papier:#FFF8EF;--papier-2:#F3E7DA;--encre:#2A1622;--gris:#7A6470;
+  --affiche:"Grandstander",ui-rounded,system-ui,sans-serif;--texte:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{margin:0;background:var(--nuit);color:var(--creme);font-family:var(--texte);overflow:hidden;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+button,input,textarea{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-offset:2px}
+.app{position:fixed;inset:0;max-width:520px;margin:0 auto;overflow:hidden;background:#000}
+/* ── la rue qu'on parcourt ── */
+.rue{position:absolute;inset:0;z-index:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.rue::-webkit-scrollbar{display:none}
+.pano{position:relative;height:100%}
+.panneau{position:absolute;top:0;height:100%;background:center/cover no-repeat}
+.vitrine{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden;cursor:pointer;background:#000;border:0;padding:0}
+.vitrine video{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(1.1) brightness(1.05)}
+.vitrine::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 18px rgba(255,214,140,.55);background:linear-gradient(115deg,rgba(255,255,255,.22),transparent 38%,transparent 70%,rgba(255,255,255,.08));pointer-events:none}
+.enseigne{position:absolute;transform:translate(-50%,-50%);padding:.2em .7em;border-radius:12px;background:#3B2618;border:3px solid #C99A5B;color:#FFE7B8;font-family:var(--affiche);font-weight:800;white-space:nowrap;box-shadow:0 6px 14px rgba(0,0,0,.45);pointer-events:none}
+.plaque{position:absolute;transform:translate(-50%,0);padding:.15em .55em;border-radius:6px;background:var(--papier);color:var(--encre);font-family:var(--affiche);font-weight:800;white-space:nowrap;box-shadow:0 4px 10px rgba(0,0,0,.4);pointer-events:none}
+.live{position:absolute;transform:translate(-50%,-100%);display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:5px;background:var(--rouge);font-size:9px;font-weight:800;letter-spacing:.06em;pointer-events:none;white-space:nowrap}
+.live i{width:5px;height:5px;border-radius:50%;background:#fff;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.essai{position:absolute;z-index:3;transform:translate(-50%,-100%);display:flex;align-items:flex-end;gap:4px;pointer-events:none;animation:apparait .5s cubic-bezier(.2,1.4,.4,1) both}
+.essai img{width:34px;height:34px;border-radius:50%;object-fit:cover;object-position:50% 6%;border:2px solid #fff;background:#3A1F2E}
+.essai span{max-width:150px;padding:6px 9px;border-radius:12px 12px 12px 3px;background:var(--papier);color:var(--encre);font-size:11px;font-weight:700;line-height:1.25;box-shadow:0 8px 18px -6px rgba(0,0,0,.6)}
+@keyframes apparait{from{opacity:0;transform:translate(-50%,-80%) scale(.6)}}
+.qui{position:absolute;z-index:2;transform:translate(-50%,-100%);background:none;border:0;padding:0;cursor:pointer}
+.qui .corps{position:relative;display:block;height:100%;transform-origin:50% 100%;animation:boing 4.4s cubic-bezier(.3,1.6,.5,1) infinite}
+.qui img{display:block;height:100%;width:auto;filter:drop-shadow(0 10px 8px rgba(0,0,0,.45))}
+.qui .p{position:absolute;left:0;top:0;opacity:0}
+.qui.ouverte .p{opacity:1}.qui.ouverte .n{opacity:0}
+.qui .nom{position:absolute;left:50%;bottom:-4px;transform:translate(-50%,100%);padding:2px 8px;border-radius:999px;background:var(--verre);border:1px solid var(--verre-bord);font-size:10px;font-weight:700;white-space:nowrap}
+@keyframes boing{0%,30%,100%{transform:translateY(0) scaleY(1)}6%{transform:translateY(-9%) scaleY(1.04)}12%{transform:translateY(0) scaleY(.95)}17%{transform:translateY(-3%) scaleY(1.01)}22%{transform:translateY(0)}}
+.bulle{position:absolute;z-index:6;max-width:200px;padding:8px 11px 9px;border-radius:15px;background:var(--papier);color:var(--encre);font-family:var(--affiche);font-weight:700;font-size:13px;line-height:1.2;box-shadow:0 10px 24px -8px rgba(0,0,0,.6);transform:translate(-50%,calc(-100% - 10px));animation:bulle .45s cubic-bezier(.2,1.4,.4,1) both;pointer-events:none}
+.bulle::after{content:"";position:absolute;left:50%;bottom:-8px;transform:translateX(-50%);border:9px solid transparent;border-top-color:var(--papier);border-bottom:0}
+.bulle small{display:block;margin-bottom:2px;font-family:var(--texte);font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#A1155E}
+@keyframes bulle{from{opacity:0;transform:translate(-50%,calc(-100% - 2px)) scale(.6)}}
+/* ── toi, qui marches ── */
+.toi{position:absolute;z-index:5;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));height:27%;transform:translateX(-50%);pointer-events:none}
+.toi .corps{display:block;height:100%;transform-origin:50% 100%;animation:boing 4s cubic-bezier(.3,1.6,.5,1) infinite}
+.toi img{height:100%;width:auto;filter:drop-shadow(0 12px 10px rgba(0,0,0,.55))}
+.toi.marche .corps{animation:dandine .34s ease-in-out infinite}
+.toi.gauche img{transform:scaleX(-1)}
+@keyframes dandine{0%,100%{transform:rotate(-5deg) translateY(0)}50%{transform:rotate(5deg) translateY(-5%)}}
+.toi .nom{position:absolute;left:50%;bottom:-2px;transform:translate(-50%,100%);padding:2px 9px;border-radius:999px;background:var(--rose);font-size:10.5px;font-weight:800}
+/* ── l'interface en verre ── */
+.haut{position:absolute;z-index:10;left:10px;right:10px;top:calc(10px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:8px}
+.lieu{display:flex;flex-direction:column;padding:6px 12px;border-radius:14px;background:var(--verre);border:1px solid var(--verre-bord);backdrop-filter:blur(8px)}
+.lieu b{font-family:var(--affiche);font-size:15px;line-height:1.1}
+.lieu small{font-size:10.5px;color:var(--doux)}
+.rond{position:relative;width:42px;height:42px;border-radius:50%;border:1px solid var(--verre-bord);background:var(--verre);backdrop-filter:blur(8px);font-size:18px;cursor:pointer;flex:none}
+.rond em{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:9px;background:var(--rose);font-style:normal;font-size:10.5px;font-weight:800;display:grid;place-items:center}
+.rond.sonne{animation:sonne .7s ease-in-out 2}
+@keyframes sonne{25%{transform:rotate(-14deg)}75%{transform:rotate(14deg)}}
+.droite{margin-left:auto;display:flex;gap:8px}
+.astuce{position:absolute;z-index:10;left:50%;bottom:calc(27% + 34px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);padding:6px 12px;border-radius:999px;background:var(--verre);border:1px solid var(--verre-bord);font-size:11.5px;font-weight:700;white-space:nowrap;transition:opacity .6s}
+.toast{position:absolute;z-index:60;left:12px;right:12px;top:calc(62px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:18px;background:rgba(255,248,239,.97);color:var(--encre);box-shadow:0 16px 30px -10px rgba(0,0,0,.7);animation:tombe .45s cubic-bezier(.2,1.2,.4,1) both;cursor:pointer}
+.toast img{width:36px;height:36px;border-radius:50%;object-fit:cover;object-position:50% 6%;background:var(--papier-2)}
+.toast b{display:block;font-size:12.5px}
+.toast span{font-size:12px;color:var(--gris)}
+@keyframes tombe{from{transform:translateY(-140%)}}
+/* ── l'entrée ── */
+.porte{position:absolute;inset:0;z-index:80;background:url(i/porte.jpg) center/cover;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:22% 16px 18%;cursor:pointer;transition:transform 1s cubic-bezier(.6,0,.3,1),opacity .9s ease-in .25s;transform-origin:50% 52%}
+.porte.ouvre{transform:scale(2.6);opacity:0;pointer-events:none}
+.porte h1{margin:0;font-family:var(--affiche);font-weight:800;font-size:clamp(38px,12vw,56px);line-height:.95;text-align:center;color:#fff;text-shadow:0 4px 18px rgba(0,0,0,.7)}
+.porte h1 b{color:#FF9FD2}
+.porte p{margin:0;padding:11px 18px;border-radius:999px;background:var(--verre);border:1px solid var(--verre-bord);font-weight:700;font-size:14px;text-align:center}
+.porte p small{display:block;font-size:11px;font-weight:500;color:var(--doux)}
+/* ── une vitrine en grand ── */
+.ecran{position:absolute;inset:0;z-index:30;background:#000}
+.ecran[hidden]{display:none!important}
+.ecran video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ecran::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.55),transparent 22%,transparent 52%,rgba(0,0,0,.8))}
+.e-haut{position:absolute;z-index:3;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:8px}
+.e-haut img{width:40px;height:40px;border-radius:50%;object-fit:cover;object-position:50% 6%;border:2px solid #fff;background:#3A1F2E}
+.e-haut b{display:block;font-size:14.5px;line-height:1.1}
+.e-haut small{font-size:11px;opacity:.9}
+.e-avis{position:absolute;z-index:3;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px}
+.avis{display:flex;align-items:flex-start;gap:8px;padding:8px 10px 8px 8px;border-radius:16px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);font-size:13px;line-height:1.3;border:0;text-align:left;width:fit-content;max-width:88%;animation:apparait2 .4s both}
+@keyframes apparait2{from{opacity:0;transform:translateY(10px)}}
+.avis img{flex:none;width:32px;height:32px;border-radius:50%;object-fit:cover;object-position:50% 6%;background:#3A1F2E}
+.avis b{display:block;font-size:11px;opacity:.85}
+.avis.voix{background:rgba(255,46,154,.38);cursor:pointer}
+.e-bas{position:absolute;z-index:4;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;gap:8px}
+.gros{flex:1;height:50px;border-radius:999px;border:0;background:var(--rose);font-weight:800;font-size:14.5px;cursor:pointer;box-shadow:0 10px 24px -8px rgba(255,46,154,.9)}
+.gros.clair{background:rgba(255,255,255,.16);box-shadow:none;border:1px solid var(--verre-bord)}
+.coeurs{position:absolute;z-index:3;right:8px;bottom:calc(150px + env(safe-area-inset-bottom,0px));width:56px;height:50%;pointer-events:none}
+.envole{position:absolute;font-size:22px;pointer-events:none;animation:envole 2.2s ease-out forwards}
+@keyframes envole{0%{transform:translate(-50%,0) scale(.5);opacity:0}15%{opacity:1;transform:translate(-50%,-14px) scale(1.15)}100%{transform:translate(calc(-50% + var(--dx,10px)),-160px) scale(.9);opacity:0}}
+/* ── dans la boutique ── */
+.int-fond{position:absolute;inset:0;background:center/cover no-repeat;filter:brightness(.78) saturate(1.05)}
+.ecran.boutique::after{background:linear-gradient(180deg,rgba(0,0,0,.6),transparent 20%,transparent 45%,rgba(18,7,15,.92) 78%)}
+.promos{position:absolute;z-index:3;left:12px;top:calc(66px + env(safe-area-inset-top,0px));width:56%;padding:10px 12px 12px;border-radius:10px;background:#263129;border:5px solid #8A5A34;box-shadow:0 12px 24px rgba(0,0,0,.5);font-family:var(--affiche);color:#F4F1E6}
+.promos h3{margin:0 0 4px;font-size:14px;letter-spacing:.02em}
+.promos p{margin:6px 0 0;font-size:13px;line-height:1.2}
+.promos .famille{position:relative;padding:6px 8px;border-radius:6px;border:1.5px dashed rgba(244,241,230,.5)}
+.promos .famille.ferme span{filter:blur(4px)}
+.promos .famille button{position:absolute;inset:0;border:0;border-radius:6px;background:rgba(38,49,41,.55);font-family:var(--texte);font-size:11px;font-weight:800;color:#fff;cursor:pointer}
+.patron{position:absolute;z-index:4;right:2%;top:calc(80px + env(safe-area-inset-top,0px));height:40%;background:none;border:0;padding:0;cursor:pointer}
+.patron .corps{position:relative;display:block;height:100%;transform-origin:50% 100%;animation:boing 3.8s cubic-bezier(.3,1.6,.5,1) infinite}
+.patron img{height:100%;width:auto;filter:drop-shadow(0 14px 12px rgba(0,0,0,.6))}
+.patron .p{position:absolute;left:0;top:0;opacity:0}
+.patron.ouverte .p{opacity:1}.patron.ouverte .n{opacity:0}
+.patron .tag{position:absolute;left:50%;top:-4px;transform:translate(-50%,-100%);white-space:nowrap;padding:5px 10px;border-radius:999px;background:var(--papier);color:var(--encre);font-size:11px;font-weight:800}
+.sous-titre{position:absolute;z-index:7;left:12px;right:12px;top:calc(44% + env(safe-area-inset-top,0px));padding:10px 13px;border-radius:16px;background:var(--papier);color:var(--encre);font-family:var(--affiche);font-weight:700;font-size:15px;line-height:1.25;box-shadow:0 12px 26px -10px rgba(0,0,0,.7);animation:apparait2 .35s both}
+.ici{position:absolute;z-index:4;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;max-height:40%;overflow-y:auto}
+.ici h4{margin:0;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--or)}
+.gens-ici{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px}
+.carte-pers{flex:none;width:118px;padding:8px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid var(--verre-bord);text-align:left;cursor:pointer}
+.carte-pers .tete{display:block;height:72px;border-radius:12px;background:linear-gradient(160deg,#FFB8D6,#7B1B5E);overflow:hidden}
+.carte-pers .tete img{height:118%;width:100%;object-fit:cover;object-position:50% 4%}
+.carte-pers b{display:block;margin-top:6px;font-size:12.5px}
+.carte-pers small{display:block;font-size:11px;line-height:1.3;color:var(--doux)}
+.mur{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.mot{flex:none;max-width:170px;padding:8px 10px;border-radius:4px;background:#FFF3B0;color:var(--encre);font-family:var(--affiche);font-weight:700;font-size:12.5px;line-height:1.25;transform:rotate(-1.5deg);box-shadow:0 6px 12px rgba(0,0,0,.35)}
+.mot:nth-child(2n){background:#FFD6E8;transform:rotate(1.5deg)}
+.mot small{display:block;margin-top:4px;font-family:var(--texte);font-size:10px;font-weight:700;color:var(--gris)}
+.mot.neuf{animation:pose .5s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes pose{from{opacity:0;transform:scale(1.4) rotate(-8deg)}}
+.actions{position:absolute;z-index:5;left:10px;right:10px;bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;gap:6px}
+.actions button{flex:1;min-width:0;height:48px;border-radius:16px;border:1px solid var(--verre-bord);background:rgba(255,255,255,.12);backdrop-filter:blur(8px);font-size:12px;font-weight:800;cursor:pointer;line-height:1.1}
+.actions button.fort{background:var(--rose);border-color:transparent}
+/* ── les feuilles ── */
+.feuille{position:absolute;z-index:40;left:0;right:0;bottom:0;max-height:80%;overflow:auto;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));border-radius:24px 24px 0 0;background:var(--papier);color:var(--encre);animation:monte .38s cubic-bezier(.2,.9,.25,1) both;box-shadow:0 -20px 50px rgba(0,0,0,.5)}
+@keyframes monte{from{transform:translateY(100%)}}
+.voile{position:absolute;inset:0;z-index:39;background:rgba(10,4,8,.45)}
+.feuille h3{margin:0 40px 0 0;font-family:var(--affiche);font-size:22px;line-height:1.15}
+.feuille .sous{margin:4px 0 0;font-size:12.5px;color:var(--gris)}
+.feuille .x{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;border:0;background:var(--papier-2);cursor:pointer;color:var(--encre)}
+.feuille textarea{display:block;width:100%;box-sizing:border-box;margin-top:12px;min-height:84px;padding:12px;border-radius:14px;border:1.5px solid #E2CFC0;background:#fff;color:var(--encre);font-size:15px;resize:none}
+.feuille .envoyer{margin-top:12px;width:100%;height:48px;border-radius:999px;border:0;background:var(--rose);color:#fff;font-weight:800;font-size:14.5px;cursor:pointer}
+.feuille .envoyer:disabled{opacity:.45}
+.amis{display:flex;gap:10px;margin-top:12px;overflow-x:auto}
+.ami{flex:none;width:72px;padding:6px 4px;border-radius:14px;border:2px solid transparent;background:#fff;text-align:center;cursor:pointer;color:var(--encre)}
+.ami[aria-pressed="true"]{border-color:var(--rose);background:#FFF0F7}
+.ami img{width:52px;height:52px;border-radius:50%;object-fit:cover;object-position:50% 8%;background:var(--papier-2)}
+.ami b{display:block;font-size:12px}
+.puces{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.puce{padding:9px 13px;border-radius:999px;border:1.5px solid #E2CFC0;background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:var(--encre)}
+.fil-discu{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.dit{max-width:82%;padding:9px 12px;border-radius:16px;font-size:13.5px;line-height:1.35;animation:apparait2 .35s both}
+.dit.lui{align-self:flex-start;background:#fff;border:1px solid #EADCCD;border-bottom-left-radius:4px}
+.dit.moi{align-self:flex-end;background:var(--rose);color:#fff;border-bottom-right-radius:4px}
+.dit.ecrit{color:var(--gris);font-style:italic}
+.boite li{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border-radius:14px;background:#fff;border:1px solid #EADCCD;cursor:pointer}
+.boite{display:grid;gap:8px;margin:12px 0 0;padding:0;list-style:none}
+.boite li img{flex:none;width:40px;height:40px;border-radius:50%;object-fit:cover;object-position:50% 8%;background:var(--papier-2)}
+.boite li b{display:block;font-size:13px}
+.boite li span{display:block;font-size:12.5px;line-height:1.35;color:#5E4752}
+.boite li small{display:block;margin-top:3px;font-size:10.5px;color:var(--gris)}
+.boite li.neuf{border-color:var(--rose);box-shadow:0 0 0 2px rgba(255,46,154,.15)}
+.regle{margin:12px 0 0;font-size:11px;line-height:1.4;color:var(--gris)}
+.maquette{position:absolute;z-index:10;left:50%;top:calc(62px + env(safe-area-inset-top,0px));transform:translateX(-50%);font-size:9.5px;color:rgba(255,255,255,.75);text-shadow:0 1px 3px rgba(0,0,0,.9);white-space:nowrap;pointer-events:none}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
+</style>
+
+<div class="app" id="app">
+  <div class="rue" id="rue"><div class="pano" id="pano"></div></div>
+  <div class="toi" id="toi" aria-hidden="true"><span class="corps"><img src="f/toi-n.webp" alt=""></span><span class="nom">Toi</span></div>
+  <div class="haut">
+    <div class="lieu"><b id="nomLieu">Place de la cathédrale</b><small>Dax · glisse pour marcher</small></div>
+    <div class="droite">
+      <button class="rond" type="button" id="musique" aria-label="Couper la musique de la rue">🎵</button>
+      <button class="rond" type="button" id="boite" aria-label="Ta boîte">✉️<em class="nbBoite">1</em></button>
+    </div>
+  </div>
+  <p class="maquette">Maquette · tout est simulé : les gens, les réponses, les promos</p>
+  <div class="astuce" id="astuce">👆 Touche une vitrine · glisse pour marcher</div>
+  <div id="toasts"></div>
+
+  <section class="ecran" id="ecran" hidden aria-label="La vitrine en grand"></section>
+  <section class="ecran boutique" id="boutique" hidden aria-label="Dans la boutique"></section>
+  <div id="feuilles"></div>
+
+  <div class="porte" id="porte" role="button" tabindex="0" aria-label="Entrer dans Dax">
+    <h1>Clik<b>Me</b><br>Dax</h1>
+    <p>Touche la porte pour sortir 👣<small>avec le son : la rue a sa musique</small></p>
+  </div>
+</div>
+
+<script>
+// ── LES GENS, LEURS VOIX, LES BOUTIQUES (figurines, voix et vidéos des démos ; tout le reste est imaginaire) ──────
+const GENS = {
+  jm: { nom: "Jean-Marie", n: "f/chef-n.webp", p: "f/chef-p.webp" },
+  nina: { nom: "Nina", n: "f/nina-n.webp", p: "f/nina-p.webp" },
+  alice: { nom: "Alice", n: "f/alice.webp" },
+  lea: { nom: "Léa", n: "f/lea-n.webp", p: "f/lea-p.webp" },
+  elise: { nom: "Élise", n: "f/elise-n.webp", p: "f/elise-p.webp" },
+  hugo: { nom: "Hugo", n: "f/hugo.webp" },
+  ines: { nom: "Inès", n: "f/ines.webp" },
+  sam: { nom: "Sam", n: "f/sam.webp" },
+  toi: { nom: "Toi", n: "f/toi-n.webp", p: "f/toi-p.webp" },
+};
+const BOUCHES = {
+  jm: "00111111111110000000111111111100111001111111011111100111110000000001111101100111011111101111101111110000000000",
+  nina: "00111111111110000000000111111111000111101111001111001111100001110000001111110111011100010011110000000000001111011100110011111000111001111100000000000",
+  "lea-magret": "00001000001111111111111111111101011011000110000000000000000",
+  "lea-poterie": "000000000011111111111000001110100000001100001110100001111000000000000000",
+};
+const BOUTIQUES = {
+  bergine: { nom: "Chez Bergine", metier: "Restaurant", patron: "jm", video: "v/bergine", interieur: "i/int-bergine.jpg", voix: "jm",
+    dit: "Camille ! Il me reste une table à 12 h 30 : elle est à toi pendant 5 minutes !",
+    promo: "Garbure landaise & magret · 19 €", famille: "Le dessert offert à la famille ce midi",
+    essai: { k: "lea", quoi: "le magret", voix: "lea-magret", dit: "Le meilleur magret de Dax !", note: "😋 12 avis" },
+    mots: [["ines", "Le meilleur accueil de Dax 💛"], ["hugo", "La garbure comme chez ma grand-mère"]],
+    reponse: "Merci Camille ! Le magret revient vendredi, je te garde une table ?" },
+  alice: { nom: "La Page d’Alice", metier: "Librairie", patron: "alice", video: "v/alice", interieur: "i/int-alice.jpg",
+    dit: "Mon coup de cœur : Le Comte de Monte-Cristo. Je te le mets de côté ?",
+    promo: "Le coup de cœur d’Alice : Le Comte de Monte-Cristo", famille: "Un marque-page offert à la famille",
+    essai: { k: "ines", quoi: "le coup de cœur d’Alice", dit: "Je n’ai pas pu le lâcher, 1 200 pages en 10 jours !", note: "📚 7 avis" },
+    mots: [["lea", "Merci pour les conseils, Alice !"]],
+    reponse: "Avec plaisir ! Il m’en reste deux, je t’en garde un ?" },
+  atelier: { nom: "L’Atelier de Nina", metier: "Atelier de poterie", patron: "nina", video: "v/atelier", interieur: "i/int-atelier.jpg", voix: "nina",
+    dit: "Camille ! Il me reste une place à l’atelier tour, samedi à 10 h : elle est à toi pendant 5 minutes !",
+    promo: "Atelier tour samedi 10 h · 2 places", famille: "La cuisson de ta pièce offerte",
+    essai: { k: "lea", quoi: "l’atelier tour", voix: "lea-poterie", dit: "Le meilleur cours de poterie de Dax !", note: "🏺 9 avis" },
+    mots: [["sam", "J’ai fait mon premier bol 😍"], ["lea", "Vivement samedi !"]],
+    reponse: "Avec joie ! Samedi 10 h, je te garde la place ?" },
+};
+// les deux lieux, côte à côte : leur décor, leurs vitrines (les quatre coins, en % du décor), qui y passe
+const LIEUX = [
+  { nom: "Place de la cathédrale", decor: "i/place.jpg", vitrines: [
+      { b: "bergine", q: [[2.2, 47.3], [20.2, 47.6], [20.2, 56.8], [2.2, 56.9]], enseigne: [12.1, 41.6, "Chez Bergine"] },
+      { b: "alice", q: [[81.9, 47.3], [99.1, 45.8], [99.1, 56.4], [81.9, 55.6]], plaque: [90.5, 56.9, "La Page d’Alice"] },
+    ], gens: [{ k: "lea", x: 27, y: 75, h: 21 }, { k: "hugo", x: 60, y: 66, h: 11 }, { k: "elise", x: 74, y: 80, h: 23 }] },
+  { nom: "Rue des Halles", decor: "i/rue.jpg", vitrines: [
+      { b: "atelier", q: [[83.7, 50.2], [98, 49.7], [98, 60.5], [83.7, 60.5]], enseigne: [91, 43.2, "L’Atelier de Nina"] },
+    ], gens: [{ k: "ines", x: 36, y: 70, h: 12 }, { k: "sam", x: 62, y: 76, h: 15 }] },
+];
+const PAROLES = {
+  lea: ["Tu as goûté le magret de Chez Bergine ? 😋", "Samedi je retourne à l’atelier !"],
+  hugo: ["Quelqu’un pour un café ?", "J’ai vu une promo à la librairie 👀"],
+  elise: ["Coucou ! Belle journée à Dax ☀️", "La vitrine d’Alice est magnifique"],
+  ines: ["Le livre d’Alice, je recommande 📚"], sam: ["Mon premier bol sort du four 😍"],
+};
+
+// ── L'ÉTAT ───────────────────────────────────────────────────────────────────────────────────
+const $ = (s) => document.querySelector(s);
+const etat = { famille: new Set(), mesMots: {}, invites: {}, avis: {}, boite: [], lus: 0, audio: null, boutique: null };
+etat.boite.push({ k: "lea", titre: "Léa te demande ton avis", texte: "« Tu as déjà goûté le magret de Chez Bergine ? Dis-moi ce que t’en penses ! »", b: "bergine", le: "il y a 5 min", neuf: true });
+
+// ── LA MUSIQUE DE LA RUE (composée ici, jouée par le navigateur) et ses bruits ─────────────────────────────────
+const Son = (() => {
+  let ac, maitre, musique, ambiance, marche = true, minuteur;
+  const NOTE = (n) => 440 * Math.pow(2, (n - 69) / 12);
+  function demarrer() {
+    if (ac) return;
+    try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch { return; }
+    maitre = ac.createGain(); maitre.gain.value = 0.9; maitre.connect(ac.destination);
+    // une réverbération de rue : un écho court et doux
+    const reverb = ac.createConvolver();
+    const ir = ac.createBuffer(2, ac.sampleRate * 1.8, ac.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3); }
+    reverb.buffer = ir;
+    const humide = ac.createGain(); humide.gain.value = 0.35; reverb.connect(humide); humide.connect(maitre);
+    musique = ac.createGain(); musique.gain.value = 0.16;
+    const doux = ac.createBiquadFilter(); doux.type = "lowpass"; doux.frequency.value = 3200;
+    musique.connect(doux); doux.connect(maitre); doux.connect(reverb);
+    ambiance = ac.createGain(); ambiance.gain.value = 0.5; ambiance.connect(maitre);
+    // la fontaine : un bruit filtré qui ondule
+    const bruit = ac.createBuffer(1, ac.sampleRate * 3, ac.sampleRate), b = bruit.getChannelData(0);
+    for (let i = 0; i < b.length; i++) b[i] = Math.random() * 2 - 1;
+    const f = ac.createBufferSource(); f.buffer = bruit; f.loop = true;
+    const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1400; bp.Q.value = 0.6;
+    const fg = ac.createGain(); fg.gain.value = 0.045; f.connect(bp); bp.connect(fg); fg.connect(ambiance); f.start();
+    // le murmure de la place
+    let brun = 0; const br = ac.createBuffer(1, ac.sampleRate * 4, ac.sampleRate), d = br.getChannelData(0);
+    for (let i = 0; i < d.length; i++) { brun = (brun + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = brun * 3.2; }
+    const m = ac.createBufferSource(); m.buffer = br; m.loop = true;
+    const mf = ac.createBiquadFilter(); mf.type = "bandpass"; mf.frequency.value = 520; mf.Q.value = 1.2;
+    const mg = ac.createGain(); mg.gain.value = 0.22; m.connect(mf); mf.connect(mg); mg.connect(ambiance); m.start();
+    morceau();
+    oiseaux();
+  }
+  // un air léger, guitare et piano électrique, 96 battements : do – la mineur – fa – sol
+  const ACC = [[48, 52, 55, 60], [45, 52, 57, 60], [41, 48, 53, 57], [43, 50, 55, 59]];
+  const MELO = [[72, 0, 74, 76, 0, 76, 74, 72], [72, 0, 69, 67, 0, 69, 72, 0], [69, 0, 72, 74, 0, 72, 69, 67], [71, 0, 74, 72, 71, 0, 67, 0],
+                [76, 0, 74, 72, 0, 74, 76, 79], [76, 0, 72, 69, 0, 72, 74, 0], [77, 0, 76, 74, 0, 72, 74, 0], [74, 0, 71, 72, 0, 0, 0, 0]];
+  function pince(t, f, dur, vol, type = "triangle") {
+    const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+    o.connect(g); g.connect(musique); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function morceau() {
+    const temps = 60 / 96, debut = ac.currentTime + 0.1;
+    let mesure = 0;
+    const jouer = () => {
+      const t0 = debut + mesure * 4 * temps;
+      const acc = ACC[mesure % 4], melo = MELO[mesure % 8];
+      // la basse et l'accord en arpège, comme une guitare
+      pince(t0, NOTE(acc[0] - 12), temps * 1.8, 0.28, "sine");
+      pince(t0 + temps * 2, NOTE(acc[0] - 12), temps * 1.6, 0.22, "sine");
+      [0, 1, 2, 3, 2, 1, 2, 3].forEach((k, i) => pince(t0 + i * temps / 2, NOTE(acc[k] + 12), temps * 1.2, 0.07));
+      // la mélodie, un piano électrique doux
+      melo.forEach((n, i) => { if (n) { pince(t0 + i * temps / 2, NOTE(n), temps * 1.4, 0.09, "sine"); pince(t0 + i * temps / 2, NOTE(n + 12), temps * 0.5, 0.02, "sine"); } });
+      // un petit shaker
+      for (let i = 0; i < 8; i++) {
+        const s = ac.createBufferSource(), buf = ac.createBuffer(1, 1200, ac.sampleRate), x = buf.getChannelData(0);
+        for (let j = 0; j < x.length; j++) x[j] = (Math.random() * 2 - 1) * (1 - j / x.length);
+        s.buffer = buf; const hp = ac.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 6000;
+        const g = ac.createGain(); g.gain.value = i % 2 ? 0.05 : 0.025; s.connect(hp); hp.connect(g); g.connect(musique); s.start(t0 + i * temps / 2);
+      }
+      mesure++;
+    };
+    for (let k = 0; k < 2; k++) jouer();
+    minuteur = setInterval(() => { while (debut + mesure * 4 * temps < ac.currentTime + 2.6) jouer(); }, 500);
+  }
+  function oiseaux() {
+    setTimeout(function chant() {
+      if (ac && marche) {
+        const t = ac.currentTime, base = 2600 + Math.random() * 1600;
+        for (let i = 0; i < 2 + Math.floor(Math.random() * 3); i++) {
+          const o = ac.createOscillator(), g = ac.createGain(); o.type = "sine";
+          o.frequency.setValueAtTime(base, t + i * 0.13); o.frequency.exponentialRampToValueAtTime(base * 1.35, t + i * 0.13 + 0.08);
+          g.gain.setValueAtTime(0, t + i * 0.13); g.gain.linearRampToValueAtTime(0.025, t + i * 0.13 + 0.02); g.gain.exponentialRampToValueAtTime(0.0005, t + i * 0.13 + 0.11);
+          o.connect(g); g.connect(ambiance); o.start(t + i * 0.13); o.stop(t + i * 0.13 + 0.15);
+        }
+      }
+      setTimeout(chant, 3000 + Math.random() * 6000);
+    }, 2000);
+  }
+  return {
+    demarrer,
+    basculer() { if (!ac) return demarrer(); marche = !marche; maitre.gain.setTargetAtTime(marche ? 0.9 : 0, ac.currentTime, 0.2); return marche; },
+    allume: () => marche,
+    // sous une voix ou une vidéo, la rue se fait discrète ; dans une boutique, on l'entend de loin
+    niveau(x) { if (ac && marche) musique.gain.setTargetAtTime(0.16 * x, ac.currentTime, 0.25), ambiance.gain.setTargetAtTime(0.5 * x, ac.currentTime, 0.25); },
+  };
+})();
+
+// ── UNE VOIX : la bouche s'ouvre sur ses syllabes ──────────────────────────────────────────────
+function parler(cle, el, apres) {
+  try { etat.audio?.pause(); } catch {}
+  const a = new Audio(`s/${cle}.mp3`);
+  etat.audio = a;
+  const env = BOUCHES[cle] || "", avant = etat.boutique ? 0.35 : 1;
+  Son.niveau(0.15);
+  let raf = 0;
+  const tic = () => { const k = Math.floor(a.currentTime * 25); el?.classList.toggle("ouverte", env[k] === "1" && k % 3 !== 2); if (!a.paused && !a.ended) raf = requestAnimationFrame(tic); };
+  a.addEventListener("playing", () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(tic); });
+  a.addEventListener("ended", () => { el?.classList.remove("ouverte"); Son.niveau(etat.boutique ? 0.35 : avant); apres?.(); });
+  a.play().catch(() => { Son.niveau(avant); apres?.(); });
+}
+
+// ── LA PERSPECTIVE : un rectangle posé sur les quatre coins d'une vitrine ──────────────────────
+function adj(m) { return [m[4] * m[8] - m[5] * m[7], m[2] * m[7] - m[1] * m[8], m[1] * m[5] - m[2] * m[4], m[5] * m[6] - m[3] * m[8], m[0] * m[8] - m[2] * m[6], m[2] * m[3] - m[0] * m[5], m[3] * m[7] - m[4] * m[6], m[1] * m[6] - m[0] * m[7], m[0] * m[4] - m[1] * m[3]]; }
+function mm(a, b) { const c = Array(9); for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { let s = 0; for (let k = 0; k < 3; k++) s += a[3 * i + k] * b[3 * k + j]; c[3 * i + j] = s; } return c; }
+function mv(m, v) { return [m[0] * v[0] + m[1] * v[1] + m[2] * v[2], m[3] * v[0] + m[4] * v[1] + m[5] * v[2], m[6] * v[0] + m[7] * v[1] + m[8] * v[2]]; }
+function base(p) { const m = [p[0][0], p[1][0], p[2][0], p[0][1], p[1][1], p[2][1], 1, 1, 1]; const v = mv(adj(m), [p[3][0], p[3][1], 1]); return mm(m, [v[0], 0, 0, 0, v[1], 0, 0, 0, v[2]]); }
+function matrice(w, h, tl, tr, br, bl) {
+  const t = mm(base([tl, tr, bl, br]), adj(base([[0, 0], [w, 0], [0, h], [w, h]])));
+  for (let i = 0; i < 9; i++) t[i] /= t[8];
+  return `matrix3d(${[t[0], t[3], 0, t[6], t[1], t[4], 0, t[7], 0, 0, 1, 0, t[2], t[5], 0, t[8]].join(",")})`;
+}
+
+// ── LA RUE ─────────────────────────────────────────────────────────────────────────────────────
+let H = 0, W = 0;
+const sources = (v) => `<source src="${v}.mp4" type="video/mp4"><source src="${v}.webm" type="video/webm">`;
+function rue() {
+  H = $("#app").clientHeight; W = Math.round(H * 572 / 1024);
+  const pano = $("#pano");
+  pano.style.width = W * LIEUX.length + "px";
+  pano.innerHTML = "";
+  LIEUX.forEach((L, i) => {
+    const p = document.createElement("div");
+    p.className = "panneau"; p.style.left = i * W + "px"; p.style.width = W + "px"; p.style.backgroundImage = `url(${L.decor})`;
+    pano.appendChild(p);
+    const px = ([x, y]) => [(x / 100) * W, (y / 100) * H];
+    for (const v of L.vitrines) {
+      const q = v.q.map(px), xs = q.map((c) => c[0]), ys = q.map((c) => c[1]);
+      const w = Math.max(...xs) - Math.min(...xs), h = Math.max(...ys) - Math.min(...ys);
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "vitrine"; b.setAttribute("aria-label", `La vitrine de ${BOUTIQUES[v.b].nom}`);
+      b.style.width = w + "px"; b.style.height = h + "px";
+      b.style.transform = matrice(w, h, ...q);
+      b.innerHTML = `<video muted playsinline loop autoplay preload="auto">${sources(BOUTIQUES[v.b].video)}</video>`;
+      b.addEventListener("click", () => ouvrirVitrine(v.b));
+      p.appendChild(b);
+      b.querySelector("video").play().catch(() => {});
+      const haut = Math.min(...ys), cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+      const live = document.createElement("span"); live.className = "live"; live.innerHTML = "<i></i>EN DIRECT";
+      live.style.left = cx + "px"; live.style.top = haut - 2 + "px"; p.appendChild(live);
+      if (v.enseigne) { const e = document.createElement("span"); e.className = "enseigne"; e.textContent = v.enseigne[2]; Object.assign(e.style, { left: (v.enseigne[0] / 100) * W + "px", top: (v.enseigne[1] / 100) * H + "px", fontSize: Math.max(10, W * 0.026) + "px" }); p.appendChild(e); }
+      if (v.plaque) { const e = document.createElement("span"); e.className = "plaque"; e.textContent = v.plaque[2]; Object.assign(e.style, { left: (v.plaque[0] / 100) * W + "px", top: (v.plaque[1] / 100) * H + "px", fontSize: Math.max(9, W * 0.022) + "px" }); p.appendChild(e); }
+      v.ancre = { p, x: cx, y: haut - 18 };
+    }
+    for (const g of L.gens) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "qui"; b.setAttribute("aria-label", GENS[g.k].nom);
+      Object.assign(b.style, { left: (g.x / 100) * W + "px", top: (g.y / 100) * H + "px", height: (g.h / 100) * H + "px", zIndex: String(2 + g.y) });
+      b.innerHTML = `<span class="corps" style="animation-delay:-${(g.x % 7) * 0.6}s"><img class="n" src="${GENS[g.k].n}" alt="">${GENS[g.k].p ? `<img class="p" src="${GENS[g.k].p}" alt="">` : ""}</span><span class="nom">${GENS[g.k].nom}</span>`;
+      b.addEventListener("click", () => parlerA(g.k));
+      g.el = b; g.p = p;
+      p.appendChild(b);
+    }
+  });
+}
+function bulle(g, html) {
+  g.p.querySelectorAll(".bulle").forEach((e) => e.remove());
+  const d = document.createElement("div"); d.className = "bulle"; d.innerHTML = html;
+  d.style.left = Math.min(W - 90, Math.max(90, (g.x / 100) * W)) + "px"; d.style.top = ((g.y - g.h) / 100) * H + "px";
+  g.p.appendChild(d); setTimeout(() => d.remove(), 3400);
+}
+// « celui qui a essayé apparaît dans la vitrine »
+let tourEssai = 0;
+function essaisDansLesVitrines() {
+  const toutes = LIEUX.flatMap((L) => L.vitrines);
+  const v = toutes[tourEssai++ % toutes.length], B = BOUTIQUES[v.b];
+  v.ancre.p.querySelectorAll(".essai").forEach((e) => e.remove());
+  const d = document.createElement("div"); d.className = "essai";
+  d.style.left = Math.min(W - 95, Math.max(95, v.ancre.x)) + "px"; d.style.top = v.ancre.y + "px";
+  d.innerHTML = `<img src="${GENS[B.essai.k].n}" alt=""><span>${GENS[B.essai.k].nom} a essayé ${B.essai.quoi} · ${B.essai.note}<br>Et toi, t’en penses quoi ?</span>`;
+  v.ancre.p.appendChild(d); setTimeout(() => d.remove(), 4200);
+}
+function parlerA(k) {
+  const g = LIEUX.flatMap((L) => L.gens).find((x) => x.k === k);
+  feuilleDiscussion(k, g);
+}
+// on marche : ta figurine se dandine, le lieu change de nom
+let derniere = 0, arret;
+$("#rue").addEventListener("scroll", () => {
+  const r = $("#rue"), x = r.scrollLeft, t = $("#toi");
+  t.classList.add("marche"); t.classList.toggle("gauche", x < derniere); derniere = x;
+  clearTimeout(arret); arret = setTimeout(() => t.classList.remove("marche"), 160);
+  $("#nomLieu").textContent = LIEUX[Math.min(LIEUX.length - 1, Math.floor((x + r.clientWidth / 2) / W))].nom;
+  $("#astuce").style.opacity = "0";
+}, { passive: true });
+
+// ── UNE VITRINE EN GRAND ───────────────────────────────────────────────────────────────────────
+let mCoeurs, mAvis;
+function ouvrirVitrine(cle) {
+  const B = BOUTIQUES[cle], e = $("#ecran");
+  Son.niveau(0.4);
+  e.innerHTML = `<video id="eVideo" muted playsinline loop autoplay>${sources(B.video)}</video>
+    <div class="e-haut"><img src="${GENS[B.patron].n}" alt=""><span><b>${B.nom}</b><small>● en direct · sa vidéo du jour</small></span>
+      <span style="margin-left:auto;display:flex;gap:8px"><button class="rond" type="button" id="eSon" aria-label="Le son de la vidéo">🔇</button><button class="rond boiteIci" type="button" aria-label="Ta boîte">✉️<em class="nbBoite"></em></button><button class="rond" type="button" id="eFermer" aria-label="Revenir dans la rue">✕</button></span></div>
+    <div class="coeurs" id="eCoeurs"></div>
+    <div class="e-avis" id="eAvis"></div>
+    <div class="e-bas"><button class="gros clair" type="button" id="eInviter">👥 Montrer à un ami</button><button class="gros" type="button" id="eEntrer">🚪 Entrer</button></div>`;
+  e.hidden = false;
+  $("#eVideo").play().catch(() => {});
+  $("#eFermer").addEventListener("click", fermerVitrine);
+  majBoite();
+  $("#eSon").addEventListener("click", () => { const v = $("#eVideo"); v.muted = !v.muted; $("#eSon").textContent = v.muted ? "🔇" : "🔊"; Son.niveau(v.muted ? 0.4 : 0.05); });
+  $("#eEntrer").addEventListener("click", () => { fermerVitrine(); entrer(cle); });
+  $("#eInviter").addEventListener("click", () => feuilleInviter(cle, "la vitrine"));
+  const liste = [
+    { k: B.essai.k, t: `${B.essai.dit}`, voix: B.essai.voix, titre: `${GENS[B.essai.k].nom} a essayé ${B.essai.quoi}` },
+    { k: "hugo", t: "Je confirme 😋", titre: "Hugo" }, { k: "sam", t: "Ça me donne envie d’y aller !", titre: "Sam" },
+  ];
+  let i = 0;
+  const ajouter = () => {
+    const a = liste[i++ % liste.length], z = $("#eAvis"); if (!z) return;
+    const el = document.createElement(a.voix ? "button" : "div"); if (a.voix) el.type = "button";
+    el.className = "avis" + (a.voix ? " voix" : "");
+    el.innerHTML = `<img src="${GENS[a.k].n}" alt=""><span><b>${a.titre}${a.voix ? " · 🔊 touche pour l’écouter" : ""}</b>${a.t}</span>`;
+    if (a.voix) el.addEventListener("click", () => parler(a.voix, null));
+    z.appendChild(el); while (z.children.length > 3) z.firstElementChild.remove();
+  };
+  ajouter(); clearInterval(mAvis); mAvis = setInterval(ajouter, 3200);
+  clearInterval(mCoeurs); mCoeurs = setInterval(() => envoler($("#eCoeurs"), ["😋", "❤️", "🙋", "🔥", "👏"][Math.floor(Math.random() * 5)]), 700);
+}
+function fermerVitrine() { clearInterval(mCoeurs); clearInterval(mAvis); $("#ecran").hidden = true; $("#ecran").innerHTML = ""; Son.niveau(1); }
+function envoler(z, e) { if (!z) return; const s = document.createElement("span"); s.className = "envole"; s.textContent = e; s.style.left = "50%"; s.style.bottom = "0"; s.style.setProperty("--dx", (Math.random() * 40 - 20).toFixed(0) + "px"); z.appendChild(s); setTimeout(() => s.remove(), 2300); }
+
+// ── DANS LA BOUTIQUE ───────────────────────────────────────────────────────────────────────────
+function entrer(cle) {
+  const B = BOUTIQUES[cle], e = $("#boutique");
+  etat.boutique = cle;
+  Son.niveau(0.35);
+  const fam = etat.famille.has(cle);
+  const presents = [B.essai.k, ...(etat.invites[cle] ? [etat.invites[cle]] : []), ...B.mots.map((m) => m[0])].filter((k, i, a) => a.indexOf(k) === i).slice(0, 4);
+  const mots = [...B.mots, ...(etat.mesMots[cle] || []).map((t) => ["toi", t])];
+  e.innerHTML = `<div class="int-fond" style="background-image:url(${B.interieur})"></div>
+    <div class="e-haut"><button class="rond" type="button" id="bSortir" aria-label="Ressortir dans la rue">←</button><span><b>${B.nom}</b><small>${B.metier} · ${presents.length + 1} personnes ici</small></span><button class="rond boiteIci" type="button" aria-label="Ta boîte" style="margin-left:auto">✉️<em class="nbBoite"></em></button></div>
+    <div class="promos"><h3>Aujourd’hui</h3><p>${B.promo}</p>
+      <p class="famille ${fam ? "" : "ferme"}" id="bFam"><span>👻 ${B.famille}</span>${fam ? "" : `<button type="button" id="bLiberer">Réservé à sa famille · libère ton fantôme</button>`}</p></div>
+    <button class="patron" type="button" id="bPatron" aria-label="Parler à ${GENS[B.patron].nom}"><span class="corps"><img class="n" src="${GENS[B.patron].n}" alt="">${GENS[B.patron].p ? `<img class="p" src="${GENS[B.patron].p}" alt="">` : ""}</span><span class="tag">🔊 ${GENS[B.patron].nom}</span></button>
+    <div id="bSous"></div>
+    <div class="ici">
+      <h4>Ils sont là, ils ont essayé</h4>
+      <div class="gens-ici">${presents.map((k) => `<button class="carte-pers" type="button" data-k="${k}"><span class="tete"><img src="${GENS[k].n}" alt=""></span><b>${GENS[k].nom}</b><small>${k === B.essai.k ? `a essayé ${B.essai.quoi} ${B.essai.note.split(" ")[0]}` : k === etat.invites[cle] ? "est venu·e avec toi 🙋" : "a laissé un mot"}</small></button>`).join("")}</div>
+      <h4>Le mur des mots</h4>
+      <div class="mur" id="bMur">${mots.map(([k, t], i) => `<div class="mot${k === "toi" && i === mots.length - 1 && etat.motNeuf ? " neuf" : ""}">${t}<small>— ${GENS[k].nom}</small></div>`).join("")}</div>
+    </div>
+    <div class="actions">
+      <button type="button" id="bMot">✉️ Un mot à ${GENS[B.patron].nom}</button>
+      <button type="button" id="bInviter">👥 Inviter un ami</button>
+      <button type="button" class="fort" id="bAvis">😋 Ton avis</button>
+    </div>`;
+  etat.motNeuf = false;
+  e.hidden = false;
+  majBoite();
+  $("#bSortir").addEventListener("click", sortir);
+  $("#bPatron").addEventListener("click", () => {
+    $("#bSous").innerHTML = `<div class="sous-titre">${GENS[B.patron].nom} : ${B.dit}</div>`;
+    const fini = () => setTimeout(() => ($("#bSous").innerHTML = ""), B.voix ? 300 : 3500);
+    if (B.voix) parler(B.voix, $("#bPatron"), fini); else fini();
+  });
+  $("#bLiberer")?.addEventListener("click", () => { etat.famille.add(cle); toast("toi", "Tu fais partie de la famille 🎉", `${B.nom} te préviendra de ses places libres en premier.`); entrer(cle); });
+  e.querySelectorAll(".carte-pers").forEach((c) => c.addEventListener("click", () => feuilleDiscussion(c.dataset.k, null, cle)));
+  $("#bMot").addEventListener("click", () => feuilleMot(cle));
+  $("#bInviter").addEventListener("click", () => feuilleInviter(cle, "la boutique"));
+  $("#bAvis").addEventListener("click", () => feuilleAvis(cle));
+}
+function sortir() { etat.boutique = null; $("#boutique").hidden = true; $("#boutique").innerHTML = ""; Son.niveau(1); }
+
+// ── LES FEUILLES : un mot, une invitation, une discussion, ton avis, ta boîte ──────────────────
+function feuille(html) {
+  $("#feuilles").innerHTML = `<div class="voile" id="voile"></div><div class="feuille" role="dialog">${html}<button class="x" type="button" id="fx" aria-label="Fermer">✕</button></div>`;
+  $("#voile").addEventListener("click", fermerFeuille); $("#fx").addEventListener("click", fermerFeuille);
+}
+function fermerFeuille() { $("#feuilles").innerHTML = ""; }
+function feuilleMot(cle) {
+  const B = BOUTIQUES[cle];
+  feuille(`<h3>Un mot à ${GENS[B.patron].nom}</h3><p class="sous">Il s’affiche sur le mur des mots de ${B.nom}. ${GENS[B.patron].nom} peut te répondre.</p>
+    <textarea id="fTexte" maxlength="140" placeholder="Merci pour l’accueil !"></textarea><button class="envoyer" type="button" id="fEnvoyer" disabled>Laisser mon mot</button>`);
+  const t = $("#fTexte"); t.focus();
+  t.addEventListener("input", () => ($("#fEnvoyer").disabled = !t.value.trim()));
+  $("#fEnvoyer").addEventListener("click", () => {
+    (etat.mesMots[cle] ||= []).push(t.value.trim()); etat.motNeuf = true;
+    fermerFeuille(); entrer(cle);
+    plusTard(6000, { k: B.patron, titre: `${GENS[B.patron].nom} t’a répondu`, texte: `« ${B.reponse} »`, b: cle });
+  });
+}
+function feuilleInviter(cle, quoi) {
+  const B = BOUTIQUES[cle];
+  feuille(`<h3>Montrer à un ami</h3><p class="sous">Il voit ${quoi} de ${B.nom}, avec ce que les autres en disent, et te répond.</p>
+    <div class="amis">${["hugo", "ines", "sam", "lea"].map((k) => `<button class="ami" type="button" data-k="${k}" aria-pressed="false"><img src="${GENS[k].n}" alt=""><b>${GENS[k].nom}</b></button>`).join("")}</div>
+    <textarea id="fTexte" maxlength="140">Regarde ça ! T’en penses quoi ? On y va ?</textarea><button class="envoyer" type="button" id="fEnvoyer" disabled>Envoyer</button>`);
+  let choisi = null;
+  document.querySelectorAll(".ami").forEach((a) => a.addEventListener("click", () => {
+    choisi = a.dataset.k; document.querySelectorAll(".ami").forEach((x) => x.setAttribute("aria-pressed", String(x === a))); $("#fEnvoyer").disabled = false;
+  }));
+  $("#fEnvoyer").addEventListener("click", () => {
+    fermerFeuille();
+    toast(choisi, `Envoyé à ${GENS[choisi].nom}`, "Tu seras prévenu·e de sa réponse.");
+    const reps = { hugo: "Trop bien ! On y va samedi ?", ines: "Ah oui, ça a l’air top 😍 Je viens !", sam: "Je connais, c’est génial. Je t’accompagne !", lea: "Fonce, tu vas adorer 😋" };
+    plusTard(7000, { k: choisi, titre: `${GENS[choisi].nom} t’a répondu`, texte: `« ${reps[choisi]} »`, b: cle, apres: () => (etat.invites[cle] = choisi) });
+  });
+}
+function feuilleAvis(cle) {
+  const B = BOUTIQUES[cle];
+  feuille(`<h3>Ton avis sur ${B.essai.quoi}</h3><p class="sous">${GENS[B.essai.k].nom} et ${B.essai.note.split(" ")[1]} autres l’ont essayé. Ton avis apparaît dans la vitrine.</p>
+    <div class="puces">${["😋 J’ai adoré", "🙂 Pas mal", "🤔 Pas encore essayé", "😕 Bof"].map((t) => `<button class="puce" type="button">${t}</button>`).join("")}</div>`);
+  document.querySelectorAll(".puce").forEach((p) => p.addEventListener("click", () => {
+    etat.avis[cle] = p.textContent; fermerFeuille();
+    toast("toi", "Ton avis est dans la vitrine", `${p.textContent} · ${B.nom}`);
+    plusTard(5000, { k: B.essai.k, titre: `${GENS[B.essai.k].nom} a aimé ton avis ❤️`, texte: "« Trop contente que ça te plaise ! On y retourne ensemble ? »", b: cle });
+  }));
+}
+function feuilleDiscussion(k, g, cle) {
+  const nom = GENS[k].nom;
+  const questions = ["Tu recommandes ?", "C’était comment ?", "On y va ensemble ?"];
+  feuille(`<h3>${nom}</h3><p class="sous">Sa figurine est visible parce que ${nom} l’a choisi. Vous parlez entre vous.</p>
+    <div class="fil-discu" id="fDiscu"><div class="dit lui">${(PAROLES[k] || ["Coucou !"])[0]}</div></div>
+    <div class="puces">${questions.map((q) => `<button class="puce" type="button">${q}</button>`).join("")}</div>`);
+  const reps = { "Tu recommandes ?": "Carrément, je te le conseille les yeux fermés !", "C’était comment ?": "Génial, l’accueil est adorable 💛", "On y va ensemble ?": "Avec plaisir ! Samedi, ça te va ?" };
+  document.querySelectorAll(".puce").forEach((p) => p.addEventListener("click", () => {
+    const f = $("#fDiscu");
+    f.insertAdjacentHTML("beforeend", `<div class="dit moi">${p.textContent}</div><div class="dit lui ecrit" id="ecrit">${nom} écrit…</div>`);
+    setTimeout(() => { $("#ecrit")?.remove(); f.insertAdjacentHTML("beforeend", `<div class="dit lui">${reps[p.textContent]}</div>`); if (k === "lea" && p.textContent === "Tu recommandes ?") parler("lea-magret", g?.el || null); }, 1400);
+  }));
+  if (g) bulle(g, `<small>${nom}</small>${(PAROLES[k] || ["Coucou !"])[0]}`);
+}
+function feuilleBoite() {
+  etat.lus = etat.boite.length; majBoite();
+  feuille(`<h3>Ta boîte</h3><p class="sous">Ce qui t’attend en ville</p>
+    <ul class="boite">${etat.boite.map((m, i) => `<li data-i="${i}" class="${m.neuf ? "neuf" : ""}"><img src="${GENS[m.k].n}" alt=""><span><b>${m.titre}</b><span>${m.texte}</span><small>${m.le} · ${BOUTIQUES[m.b].nom} ›</small></span></li>`).reverse().join("")}</ul>
+    <p class="regle">Dans le vrai ClikMe : seulement de vraies réponses, de vraies personnes. Personne ne voit ta figurine si tu ne l’as pas choisi.</p>`);
+  etat.boite.forEach((m) => (m.neuf = false));
+  document.querySelectorAll(".boite li").forEach((li) => li.addEventListener("click", () => { const m = etat.boite[+li.dataset.i]; fermerFeuille(); fermerVitrine(); entrer(m.b); }));
+}
+function majBoite() {
+  const n = etat.boite.filter((m) => m.neuf).length;
+  document.querySelectorAll(".nbBoite").forEach((e) => { e.textContent = n; e.hidden = !n; });
+  document.querySelectorAll(".boiteIci").forEach((b) => { if (!b.dataset.lie) { b.dataset.lie = "1"; b.addEventListener("click", feuilleBoite); } });
+}
+function toast(k, titre, texte, auClic) {
+  const d = document.createElement("div"); d.className = "toast";
+  d.innerHTML = `<img src="${GENS[k].n}" alt=""><span><b>${titre}</b><span>${texte}</span></span>`;
+  if (auClic) d.addEventListener("click", () => { d.remove(); auClic(); });
+  $("#toasts").innerHTML = ""; $("#toasts").appendChild(d);
+  setTimeout(() => d.remove(), 4200);
+}
+function plusTard(ms, m) {
+  setTimeout(() => {
+    m.le = "à l’instant"; m.neuf = true; etat.boite.push(m); m.apres?.(); majBoite();
+    document.querySelectorAll("#boite,.boiteIci").forEach((b) => { b.classList.remove("sonne"); void b.offsetWidth; b.classList.add("sonne"); });
+    toast(m.k, "🔔 " + m.titre, m.texte, feuilleBoite);
+  }, ms);
+}
+
+// ── LES GESTES ─────────────────────────────────────────────────────────────────────────────────
+$("#boite").addEventListener("click", feuilleBoite);
+$("#musique").addEventListener("click", () => { const on = Son.basculer(); $("#musique").textContent = on === false ? "🔈" : "🎵"; });
+const entrerDansDax = () => {
+  const p = $("#porte"); if (p.classList.contains("ouvre")) return;
+  p.classList.add("ouvre"); Son.demarrer();
+  setTimeout(() => toast("lea", "🔔 Léa te demande ton avis", "« Tu as déjà goûté le magret de Chez Bergine ? »", feuilleBoite), 2600);
+};
+$("#porte").addEventListener("click", entrerDansDax);
+$("#porte").addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); entrerDansDax(); } });
+window.addEventListener("resize", () => { const x = $("#rue").scrollLeft / (W || 1); rue(); $("#rue").scrollLeft = x * W; });
+rue(); majBoite();
+setInterval(essaisDansLesVitrines, 4600);
+setInterval(() => { // quelqu'un dans la rue parle tout seul
+  if (!$("#porte").classList.contains("ouvre") || !$("#ecran").hidden || !$("#boutique").hidden) return;
+  const tous = LIEUX.flatMap((L) => L.gens), g = tous[Math.floor(Math.random() * tous.length)], d = PAROLES[g.k];
+  bulle(g, `<small>${GENS[g.k].nom}</small>${d[Math.floor(Math.random() * d.length)]}`);
+}, 3900);
+</script>
