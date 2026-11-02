@@ -101,7 +101,7 @@ await p.locator(".fm-fiche button[type=submit]").click();
 await p.waitForSelector(".fm-heros h1", { timeout: 20000 });
 const fam = await texte(p, ".fm");
 ok(fam.includes("Bienvenue dans la famille !") && fam.includes("Tu es le fantôme n°4 du Comptoir des Fantômes"), "bienvenue, fantôme n°4");
-ok((await texte(p, ".fm-patch")) === "4" && (await p.locator(".fm-patch.bronze").count()) === 1, "la pièce de bronze, frappée de son numéro");
+ok((await texte(p, ".fm-patch")) === "4" && (await p.locator(".fm-patch.bronze, .fm-patch.argent, .fm-patch.or").count()) === 0, "son socle de la famille, frappé de son numéro (plus de pièce)");
 // 🏆 SA COLLECTION DE FIGURINES, à la place de la pièce (il y a toujours une saison en cours)
 await p.waitForSelector(".co .co-vedette", { timeout: 20000 });
 ok((await texte(p, ".co-compte")).includes("/ 10") && (await texte(p, ".co-sur")).toLowerCase().includes("ta collection du comptoir des fantômes"), "sa collection : sur 10");
@@ -118,7 +118,7 @@ ok((await p.locator(".vf .vf-fg").count()) >= 3, `la famille devant le commerce 
 await p.waitForSelector(".vf .vf-fg.moi .vf-palier", { timeout: 20000 });
 ok((await p.locator(".vf .vf-palier").count()) >= 4 && (await texte(p, ".vf-fg.moi .vf-palier")) === "4", `chaque fantôme est debout sur sa pièce de la famille (${await p.locator(".vf .vf-palier").count()})`);
 await p.locator('.vf-fg[aria-label^="Léa,"]').click();
-ok((await texte(p, ".vf-bulle")).includes("Fantôme n°1 · 🥉 Bronze"), `la bulle de Léa : son numéro et son palier (${await texte(p, ".vf-bulle")})`);
+ok((await texte(p, ".vf-bulle")).includes("Fantôme n°1") && !/Bronze|Argent|Or\b/.test(await texte(p, ".vf-bulle")), `la bulle de Léa : son numéro, sans pièce (${await texte(p, ".vf-bulle")})`);
 await p.locator(".vf-sc").click({ position: { x: 5, y: 5 } });
 const mots = await lignes("clik_mot");
 ok(mots.some((m) => m.texte === motChoisi && m.liste === true), `son petit mot de la liste est parti (« ${motChoisi} »)`);
@@ -156,8 +156,8 @@ ok((await texte(p, ".fm-actions")).includes("Il en manque 2"), "chez Camille : i
 await semer("clik_visite", { site_id: SITE, habitant_id: camille?.habitant_id, jour: jour(new Date()) });
 await p.reload({ waitUntil: "networkidle" });
 await p.waitForSelector(".fm-monte", { timeout: 20000 });
-ok((await texte(p, ".fm-monte")).includes("🥈 Tu passes Argent ! Tu as les bons plans plus tôt."), "une visite : « Tu passes Argent ! »");
-ok((await p.locator(".fm-patch.argent.coud").count()) === 1, "la pièce d'argent se pose sur son fantôme");
+ok((await texte(p, ".fm-monte")).includes("🔔 Tu as maintenant ses bons plans plus tôt !"), "une visite : ses bons plans plus tôt");
+ok((await p.locator(".fm-patch.coud").count()) === 1, "son socle se pose sous son fantôme");
 // 🏆 SA PREMIÈRE FIGURINE : la visite validée la lui donne, et on la fête
 await p.waitForSelector(".co-fete", { timeout: 20000 });
 ok((await texte(p, ".co-fete")).includes("Nouvelle figurine !") && (await texte(p, ".co-fete")).includes("1 / 10"), `sa première figurine, fêtée (${await texte(p, ".co-fete")})`);

@@ -39,7 +39,6 @@ import { combienDeMessages } from "./messages-de-mike";
 import { VitrineFantomes } from "../vitrine-fantomes";
 import type { FantomeVitrine } from "@/lib/direct/vitrine-fantomes";
 import type { Ecusson } from "@/lib/direct/ecussons";
-import { EMOJI_GRADE, NOM_GRADE } from "@/lib/direct/famille";
 
 /** `ardoise` : l'info du moment sous sa vitrine, si elle est du jour. */
 type Etat = { pret: boolean; actif: boolean; lignes: LigneCarnet[]; aujourdhui: string; ardoise: string | null };
@@ -526,9 +525,10 @@ function LigneDuCarnet({
       <div className="ck-qui">
         <b>
           {qui}
-          {l.numero && l.grade ? (
-            <i className={`ck-palier ${l.grade}`} title={`Fantôme n°${l.numero} · ${NOM_GRADE[l.grade]}`}>
-              n°{l.numero} {EMOJI_GRADE[l.grade]}
+          {l.numero ? (
+            <i className="ck-palier" title={`Fantôme n°${l.numero}${l.figurines ? ` · ${l.figurines} figurine${l.figurines > 1 ? "s" : ""}` : ""}`}>
+              n°{l.numero}
+              {l.figurines ? ` · 🏆 ${l.figurines}` : ""}
             </i>
           ) : null}
         </b>
@@ -627,8 +627,7 @@ export const STYLES_CARNET = `
 .ck-fantome{grid-row:span 2;width:52px;height:60px;object-fit:contain;object-position:50% 100%;}
 .ck-qui{min-width:0;display:flex;flex-direction:column;gap:2px;}
 .ck-qui b{font-family:var(--font-clikme),sans-serif;font-size:16px;font-weight:800;line-height:1.2;}
-.ck-palier{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:999px;font-style:normal;font-size:11.5px;font-weight:800;vertical-align:2px;color:#3A1D08;background:#C98A4B;}
-.ck-palier.argent{background:#D7DBE2;}.ck-palier.or{background:#E9BE5C;}
+.ck-palier{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:999px;font-style:normal;font-size:11.5px;font-weight:800;vertical-align:2px;color:#2A1404;background:#E9BE5C;}
 .ck-qui small{font-size:12.5px;color:var(--gris);}
 .ck-puces{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:4px;}
 .ck-puces em{font-style:normal;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;}

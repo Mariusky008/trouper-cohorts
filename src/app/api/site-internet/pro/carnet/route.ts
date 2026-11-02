@@ -48,7 +48,7 @@ import { estModele, silenceDe } from "@/lib/direct/moteur-messages";
 import { calculerTicket, type Gestes } from "@/lib/direct/ticket-mike";
 import type { PetitMot } from "@/lib/direct/petits-mots";
 import { REPONDU_WHATSAPP, type LigneCarnet, type MessageEnvoye } from "@/lib/direct/carnet";
-import { gateDuMois, lireFamille } from "@/lib/direct/famille-serveur";
+import { compterFigurines, gateDuMois, lireFamille } from "@/lib/direct/famille-serveur";
 import { resteDuGate } from "@/lib/direct/famille";
 
 export const dynamic = "force-dynamic";
@@ -195,9 +195,10 @@ export async function POST(request: Request) {
     }
     // 👻 SA PLACE DANS SA FAMILLE : son numéro d'arrivée et son palier.
     if (famille) {
+      const figurinesDe = await compterFigurines(supabase, siteId, famille).catch(() => null);
       for (const [h, l] of parPersonne) {
         const numero = famille.numeroDe(h);
-        if (numero) Object.assign(l, { numero, grade: famille.gradeDe(h) });
+        if (numero) Object.assign(l, { numero, grade: famille.gradeDe(h), ...(figurinesDe ? { figurines: figurinesDe(h) } : {}) });
       }
     }
     const { data: ard, error: eArd } = await supabase.from("clik_ardoise").select("texte, ecrite_le").eq("site_id", siteId).maybeSingle();

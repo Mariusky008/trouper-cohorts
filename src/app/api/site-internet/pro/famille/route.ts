@@ -12,6 +12,8 @@
 // suite, l'argent puis le bronze après (`OUVERTURE_BON_PLAN`) ; il remplace celui d'avant.
 // « bon-plan-retirer » : c'est complet. Jamais d'alcool (loi Évin).
 // 🎁 « gate » {quoi, combien} : ce qu'il peut offrir à sa famille ce mois-ci.
+// 🏆 « collection-cadeau » {texte} : le cadeau de sa collection complète (vide : aucun ; jamais d'alcool) ;
+// « collection-remis » {numero, le} : le cadeau d'une collection complète est remis, au comptoir (une fois).
 // 🎬 « video » : la famille d'hier pour la fin de ses vidéos — les fantômes, le record ; le prénom, le
 // numéro et le petit mot seulement de ceux qui l'ont accepté (`familleDeLaVideo`). Seulement pour un client
 // (`est_client`) : sans elle, ses vidéos se montent comme avant.
@@ -22,6 +24,8 @@ import {
   familleAuComptoir,
   familleDeLaVideo,
   fixerGate,
+  fixerCadeauCollection,
+  remettreCadeau,
   fixerSurprises,
   publierBonPlan,
   retirerBonPlan,
@@ -88,6 +92,15 @@ export async function POST(request: Request) {
     if (id && !UUID.test(id)) return NextResponse.json({ error: "Ce mot n’existe pas." }, { status: 400 });
     const ennui = await epinglerMot(supabase, siteId, id);
     if (ennui) return NextResponse.json({ error: ennui }, { status: /pas encore activé/.test(ennui) ? 503 : 400 });
+    return NextResponse.json({ ok: true, ...(await familleAuComptoir(supabase, siteId)) });
+  }
+
+  if (action === "collection-cadeau" || action === "collection-remis") {
+    const ennui =
+      action === "collection-cadeau"
+        ? await fixerCadeauCollection(supabase, siteId, s(p?.texte))
+        : await remettreCadeau(supabase, siteId, Math.floor(Number(p?.numero)) || 0, /^\d{4}-\d{2}-\d{2}$/.test(s(p?.le)) ? s(p?.le) : "");
+    if (ennui) return NextResponse.json({ error: ennui }, { status: /Déjà/.test(ennui) ? 409 : 400 });
     return NextResponse.json({ ok: true, ...(await familleAuComptoir(supabase, siteId)) });
   }
 

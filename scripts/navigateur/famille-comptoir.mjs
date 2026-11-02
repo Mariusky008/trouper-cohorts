@@ -200,9 +200,12 @@ await p.waitForSelector(".fc-foule", { timeout: 20000 });
 const ecran = await texte(".fc");
 ok(ecran.includes("Plus que 3 pour battre ton record") && ecran.includes("Nouveaux aujourd’hui 2"), "la foule du jour et le record");
 ok((await texte(".fc-depart .fc-lien-ligne code")) === `clikme.fr/f/${SLUG}`, "son lien, dans son départ");
-ok((await texte(".fc-tuile.or")).includes("1") && (await texte(".fc-tuile.bronze")).includes("4"), "les pièces : 1 or, 4 bronze");
-ok(ecran.includes("Argent : 1 visite ou 7 jours de cage. Or : 5 visites ou 3 amis amenés."), "la règle des paliers, depuis PALIERS");
-ok((await texte(".fc-fideles")).startsWith("Léa n°1 🥇"), `ses fidèles (${await texte(".fc-fideles")})`);
+// 🏆 LEURS FIGURINES, à la place de leurs pièces (leur nombre dépend de la date : on vérifie la forme)
+ok((await p.locator(".fc-collection .fc-tuile").count()) === 3 && (await p.locator(".fc-tuile.complete").count()) === 1 && !ecran.includes("Leurs pièces"), "leurs figurines : 3 et plus, 6 et plus, 10 / 10");
+ok(ecran.includes("À 3 figurines, ils ont tes bons plans plus tôt"), "la règle des figurines");
+ok((await texte(".fc-fideles")).startsWith("Léa n°1 · 🏆"), `ses collectionneurs, Léa d'abord (${await texte(".fc-fideles")})`);
+ok((await p.locator(".fc-cadeau input").count()) === 1 && (await p.locator(".fc-cadeau .fc-puces button").count()) >= 1, "le cadeau de la collection complète, à écrire");
+await p.locator(".fc-collection").screenshot({ path: `${D}/famille-comptoir-6-figurines.png` });
 const parcours = await texte(".fc-parcours");
 ok(parcours.includes("Ont ouvert ta page 12") && parcours.includes("50 % de ceux qui ont ouvert ta page") && parcours.includes("33 % de ceux qui ont libéré leur fantôme"), `le parcours en pourcentages (${parcours.slice(0, 160)})`);
 ok(parcours.includes("Bientôt, avec le numéro de ClikMe"), "WhatsApp : bientôt");
@@ -245,7 +248,8 @@ await p.locator(".ck-retour").click();
 await p.waitForSelector(".ck-carte", { timeout: 20000 });
 await p.locator(".ck-carte").click();
 await p.waitForSelector(".ck-palier", { timeout: 20000 });
-ok((await texte(".ck-palier.or")) === "n°1 🥇", `le carnet : le palier de Léa (${await texte(".ck-palier.or")})`);
+const palierLea = (await p.locator(".ck-palier", { hasText: "n°1" }).first().innerText()).replace(/\s+/g, " ").trim();
+ok(/^n°1 · 🏆 \d+$/.test(palierLea) && (await p.locator(".ck-palier.or, .ck-palier.argent").count()) === 0, `le carnet : le numéro et les figurines de Léa (${palierLea})`);
 
 await p.locator(".ck-retour").click();
 await p.waitForSelector(".fc-carte", { timeout: 20000 });
@@ -268,6 +272,22 @@ await page.screenshot({ path: `${D}/famille-carton-a6.png` });
 await new Promise((r) => setTimeout(r, 1000));
 const comptes = await (await fetch(`${F}/human_compteurs_jour?site_id=eq.${SITE}`)).json();
 ok(comptes.reduce((n, c) => n + (c.famille || 0), 0) === 12, "sa page ouverte depuis son comptoir ne compte pas");
+
+// ═══ 🏆 LE CADEAU DE LA COLLECTION COMPLÈTE ═══
+// Inès passe tous les jours depuis plus d'un an, et deux places libres ont été annoncées au début : sa première
+// collection est complète (les huit éditions et les deux rares).
+await semer("clik_visite", Array.from({ length: 393 }, (_, n) => ({ site_id: SITE, habitant_id: h(3), jour: ilYa(400 - n) })));
+await semer("clik_bon_plan", [395, 394].map((n) => ({ site_id: SITE, texte: "Il me reste une table", publie_le: `${ilYa(n)}T10:00:00.000Z`, fin_le: `${ilYa(n)}T12:00:00.000Z` })));
+const col = await pro({ action: "lire" });
+const ines = col.collection?.aRemettre?.find((m) => m.numero === 3);
+ok(col.statut === 200 && ines?.prenom === "Inès" && col.collection.paliers.complete >= 0, `sa collection complète, à remettre (${JSON.stringify(col.collection?.aRemettre)})`);
+ok((await pro({ action: "collection-cadeau", texte: "Une bouteille de vin" })).statut === 400, "le cadeau : jamais d'alcool");
+const cad = await pro({ action: "collection-cadeau", texte: "Un repas pour 2" });
+ok(cad.statut === 200 && cad.collection.cadeau === "Un repas pour 2", "le cadeau, enregistré");
+const rem = await pro({ action: "collection-remis", numero: 3, le: ines?.le });
+ok(rem.statut === 200 && !rem.collection.aRemettre.some((m) => m.numero === 3) && rem.collection.remis >= 1, "le cadeau d'Inès, remis");
+ok((await pro({ action: "collection-remis", numero: 3, le: ines?.le })).statut === 409, "remis une seule fois");
+ok((await pro({ action: "collection-remis", numero: 1, le: AUJ })).statut === 400, "pas de cadeau sans collection complète");
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` : ${erreurs[0]}` : ""}`);
 await b.close();

@@ -156,7 +156,9 @@ export type Collection = {
   /** La figurine d'or de cette collection : son numéro chez ce commerce (le 3e à finir sa collection : n° 3). */
   or?: number;
   /** Ses figurines d'or : une par collection complète chez ce commerce (celle-ci comprise). */
-  trophees: { le: string; numero?: number }[];
+  trophees: { le: string; numero?: number; remis?: string }[];
+  /** Le cadeau de cette collection complète, remis au comptoir (le jour, ISO) — voir `remettreCadeau`. */
+  remis?: string;
 };
 
 // ─── les jours (« AAAA-MM-JJ », heure de Paris, comme `jourParis`) ─────────────────────────────

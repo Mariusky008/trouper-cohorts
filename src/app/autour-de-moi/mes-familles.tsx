@@ -45,13 +45,13 @@ export function MesFamilles({ reelle }: { reelle: boolean }) {
           return (
             <li key={f.slug}>
               <a href={`/f/${encodeURIComponent(f.slug)}`}>
-                <span className={`mf-palier ${f.grade}`} aria-hidden="true">
+                <span className="mf-palier" aria-hidden="true">
                   <b>{f.numero}</b>
                 </span>
                 <span className="mf-texte">
                   <b>{f.nom}</b>
                   <small>
-                    Fantôme n°{f.numero} · {EMOJI_GRADE[f.grade]} {NOM_GRADE[f.grade]} · {f.membres} {f.membres > 1 ? "fantômes" : "fantôme"}
+                    Fantôme n°{f.numero} · {f.membres} {f.membres > 1 ? "fantômes" : "fantôme"}
                   </small>
                   <em>
                     {f.collection
@@ -88,7 +88,7 @@ const STYLES = `
   background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.45),transparent 58%),var(--e);box-shadow:0 1px 2px rgba(0,0,0,.5);}
 .mf-palier::before{content:"";position:absolute;inset:4px;border-radius:50%;border:2px dashed rgba(255,248,234,.85);}
 .mf-palier b{font-size:15px;font-weight:800;color:#3A1D08;}
-.mf-palier.bronze{--e:#C98A4B;}.mf-palier.argent{--e:#BFC5CF;}.mf-palier.or{--e:#E2B04A;}
+.mf-palier{--e:#B07A4B;}
 .mf-texte{display:flex;flex-direction:column;min-width:0;flex:1;}
 .mf-texte b{font-size:14.5px;font-weight:800;}
 .mf-texte small{font-size:12.5px;line-height:1.35;color:#C4B9B3;}

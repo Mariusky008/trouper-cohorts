@@ -255,6 +255,20 @@ export type MotDuJour = { texte: string; prenom: string; numero: number; grade: 
 /** Une personne de la famille, telle que le comptoir la montre. */
 export type MembreAuComptoir = { prenom: string; numero: number; grade: Grade; look: string };
 
+/** 🏆 SA COLLECTION DE FIGURINES, VUE DU COMPTOIR (`collection.ts`) : le cadeau qu'il a choisi, qui en est où, et les
+ *  cadeaux à remettre (une collection complète = un cadeau, remis une fois). */
+export type CollectionAuComptoir = {
+  /** Le cadeau de la collection complète, tel qu'il l'a écrit (vide : pas de cadeau). */
+  cadeau: string;
+  /** Combien ont au moins 3, au moins 6, et toutes les figurines (leur collection en cours). */
+  paliers: { trois: number; six: number; complete: number };
+  /** Ses collectionneurs, le plus avancé d'abord (douze au plus). */
+  collectionneurs: { prenom: string; numero: number; gagnees: number; total: number; look: string }[];
+  /** Les collections complètes dont le cadeau n'est pas encore remis (`le` : le jour où elle a été complétée). */
+  aRemettre: { prenom: string; numero: number; le: string }[];
+  remis: number;
+};
+
 /** 👻 CE QUE LE COMPTOIR MONTRE DE SA FAMILLE (l'écran « Ma famille »). */
 export type FamilleAuComptoir = {
   aujourdhui: number;
@@ -283,6 +297,8 @@ export type FamilleAuComptoir = {
   /** 🎁 Ce qu'il offre ce mois-ci (`null` : rien de fixé) ; `gateDernier` : son dernier choix, pour le reprendre. */
   gate: Gate | null;
   gateDernier: { quoi: string; combien: number } | null;
+  /** 🏆 Leurs figurines (à la place de leurs pièces). */
+  collection: CollectionAuComptoir;
 };
 
 /** « 42 % » d'une marche à la suivante (`null` quand la marche d'avant est vide, ou pas mesurée). */
@@ -329,6 +345,19 @@ export function familleAuComptoirDemo(cle: string, maintenant: number): FamilleA
     bonsPlansActifs: true,
     gate: null,
     gateDernier: null,
+    collection: {
+      cadeau: "",
+      paliers: { trois: 14 + tirer(6), six: 5 + tirer(3), complete: 1 },
+      collectionneurs: [
+        { prenom: "Léa", numero: 12, gagnees: 10, total: 10, look: "cosy" },
+        { prenom: "Hugo", numero: 7, gagnees: 7, total: 10, look: "denim" },
+        { prenom: "Inès", numero: 31, gagnees: 6, total: 10, look: "artiste" },
+        { prenom: "Karim", numero: 45, gagnees: 4, total: 10, look: "voyageur" },
+        { prenom: "Sonia", numero: 58, gagnees: 3, total: 10, look: "fleuri" },
+      ],
+      aRemettre: [{ prenom: "Léa", numero: 12, le: new Date(maintenant).toISOString().slice(0, 10) }],
+      remis: 2,
+    },
   };
 }
 

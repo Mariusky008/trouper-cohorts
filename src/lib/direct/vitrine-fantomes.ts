@@ -45,6 +45,8 @@ export type FantomeVitrine = {
   /** 👻 Sa place dans la famille de ce commerce : son numéro d'arrivée, et son palier (`lib/direct/famille.ts`). */
   numero?: number;
   grade?: Grade;
+  /** 🏆 Ses figurines de ce commerce (sa collection en cours) : ce que sa bulle montre, à la place de sa pièce. */
+  figurines?: number;
 };
 
 export type Vitrine = {
@@ -142,6 +144,7 @@ export function fouleDemo(cle: string, maintenant: number): FantomeVitrine[] {
         // Leur place dans la famille inventée : un numéro chacun, quelques fidèles en argent et en or.
         numero: 2 + k * 3 + (suivant() % 3),
         grade: ((r) => (r < 2 ? "or" : r < 5 ? "argent" : "bronze"))(suivant() % 10),
+        figurines: suivant() % 8,
       });
     }
   }

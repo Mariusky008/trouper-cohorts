@@ -42,7 +42,7 @@ import {
 } from "@/lib/direct/famille";
 import { lookValide } from "@/lib/direct/look";
 import { collectionDe, parcourirCollections } from "@/lib/direct/collection";
-import { figurineDu, cadeauDeCollection } from "@/lib/direct/figurines-commerces";
+import { CADEAU_MAX, figurineDu, cadeauDeCollection } from "@/lib/direct/figurines-commerces";
 import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 import { plusPermis, plusPropre } from "@/lib/direct/previens-les";
 import { estCage } from "@/lib/direct/cages";
@@ -170,7 +170,7 @@ async function joursCreux(supabase: Supabase, siteId: string): Promise<Set<strin
  * LES COLLECTIONS DE TOUTE LA FAMILLE, pour numéroter vrai : la 7e édition rare gagnée chez ce commerce porte le
  * n° 7, le 3e à finir sa collection a la figurine d'or n° 3 (à égalité de jour, le plus ancien de la famille d'abord).
  */
-async function collectionsDe(supabase: Supabase, siteId: string, f: Famille): Promise<(h: string) => ReturnType<typeof collectionDe>> {
+async function collectionsDe(supabase: Supabase, siteId: string, f: Famille, remis: Record<string, string> = {}): Promise<(h: string) => ReturnType<typeof collectionDe>> {
   const auj = jourParis();
   const creux = await joursCreux(supabase, siteId);
   const jours = new Map<string, string[]>();
@@ -195,7 +195,64 @@ async function collectionsDe(supabase: Supabase, siteId: string, f: Famille): Pr
     const k = liste.findIndex((x) => x.h === h && x.le === le);
     return k >= 0 ? k + 1 : undefined;
   };
-  return (h: string) => collectionDe(jours.get(h) ?? [], creux, auj, rang(rares, h), rang(finies, h));
+  return (h: string) => {
+    const c = collectionDe(jours.get(h) ?? [], creux, auj, rang(rares, h), rang(finies, h));
+    // les cadeaux déjà remis au comptoir (une collection complète = un cadeau, une fois)
+    const trophees = c.trophees.map((t) => (remis[`${h}:${t.le}`] ? { ...t, remis: remis[`${h}:${t.le}`] } : t));
+    const derniere = c.complete ? trophees[trophees.length - 1] : undefined;
+    return { ...c, trophees, ...(derniere?.remis ? { remis: derniere.remis } : {}) };
+  };
+}
+
+/** 🏆 Combien de figurines chacun a dans sa collection en cours, chez ce commerce (les vitrines, le carnet). */
+export async function compterFigurines(supabase: Supabase, siteId: string, f: Famille): Promise<(h: string) => number> {
+  const pour = await collectionsDe(supabase, siteId, f);
+  const cache = new Map<string, number>();
+  return (h: string) => {
+    if (!cache.has(h)) cache.set(h, pour(h).gagnees);
+    return cache.get(h)!;
+  };
+}
+
+/** Sa fiche (`human_vitrine_sites.metadata`) : là où il range ses réglages — le cadeau de la collection, et les cadeaux
+ *  remis (« <habitant>:<jour où la collection a été complétée> » → le jour de la remise). */
+async function lireReglages(supabase: Supabase, siteId: string): Promise<Ligne> {
+  const { data } = await supabase.from("human_vitrine_sites").select("metadata").eq("id", siteId).maybeSingle();
+  const m = (data as Ligne | null)?.metadata;
+  return m && typeof m === "object" ? (m as Ligne) : {};
+}
+const remisDe = (m: Ligne): Record<string, string> => {
+  const r = m.collection_remis;
+  return r && typeof r === "object" ? Object.fromEntries(Object.entries(r as Ligne).map(([k, v]) => [k, s(v)]).filter(([, v]) => v)) : {};
+};
+
+/** 🏆 Il écrit le cadeau de sa collection complète (vide : il n'en propose pas). Rend l'erreur à dire, ou `null`. */
+export async function fixerCadeauCollection(supabase: Supabase, siteId: string, texte: string): Promise<string | null> {
+  const propre = texte.replace(/\s+/g, " ").trim();
+  if (propre.length > CADEAU_MAX) return `${CADEAU_MAX} caractères au plus.`;
+  if (propre && !plusPermis(propre)) return "Pas d’alcool (loi Évin).";
+  const m = await lireReglages(supabase, siteId);
+  const { error } = await supabase.from("human_vitrine_sites").update({ metadata: { ...m, collection_cadeau: propre } }).eq("id", siteId);
+  return error ? s(error.message) : null;
+}
+
+/** 🎁 Le cadeau d'une collection complète est remis, au comptoir (`numero` : son numéro dans la famille ; `le` : le jour
+ *  où il l'a complétée). Une fois. Rend l'erreur à dire, ou `null`. */
+export async function remettreCadeau(supabase: Supabase, siteId: string, numero: number, le: string): Promise<string | null> {
+  const f = await lireFamille(supabase, siteId);
+  const h = f.ordre[numero - 1];
+  if (!h) return "Ce fantôme n’est pas de ta famille.";
+  const m = await lireReglages(supabase, siteId);
+  const remis = remisDe(m);
+  const c = (await collectionsDe(supabase, siteId, f, remis))(h);
+  const t = c.trophees.find((x) => x.le === le);
+  if (!t) return "Cette collection n’est pas complète.";
+  if (t.remis) return "Déjà remis.";
+  const { error } = await supabase
+    .from("human_vitrine_sites")
+    .update({ metadata: { ...m, collection_remis: { ...remis, [`${h}:${le}`]: new Date().toISOString() } } })
+    .eq("id", siteId);
+  return error ? s(error.message) : null;
 }
 
 /** La foule d'aujourd'hui, celle d'hier, et le record à battre (les jours d'avant : aujourd'hui, on est en train de le battre). */
@@ -235,7 +292,7 @@ export async function etatFamille(supabase: Supabase, siteId: string, habitantId
     const derniere = ((Array.isArray(c) ? c : []) as Ligne[])[0] as Ligne | undefined;
     const parcours = f.parcoursDe(habitantId);
     const { data: accord } = await supabase.from("clik_accord").select("video").eq("site_id", siteId).eq("habitant_id", habitantId).maybeSingle();
-    const collection = (await collectionsDe(supabase, siteId, f))(habitantId);
+    const collection = (await collectionsDe(supabase, siteId, f, remisDe(await lireReglages(supabase, siteId))))(habitantId);
     moi = {
       numero,
       prenom: s(derniere?.prenom),
@@ -275,7 +332,7 @@ export async function famillesDe(supabase: Supabase, habitantId: string): Promis
           membres: f.ordre.length,
           grade: f.gradeDe(habitantId),
           parcours: f.parcoursDe(habitantId),
-          collection: (await collectionsDe(supabase, id, f))(habitantId),
+          collection: (await collectionsDe(supabase, id, f, remisDe(x.metadata && typeof x.metadata === "object" ? (x.metadata as Ligne) : {})))(habitantId),
           figurine: figurineDu(s(x.slug), { branche: brancheDuMetier(metier), metier }),
           ...(cadeau ? { cadeau } : {}),
         };
@@ -344,14 +401,34 @@ export async function familleAuComptoir(supabase: Supabase, siteId: string): Pro
   const auj = jourParis();
   const semaine = jourAvant(auj, 6);
   const f = await lireFamille(supabase, siteId);
-  const [foule, recents, compteurs, mdj, bp, gt] = await Promise.all([
+  const [foule, recents, compteurs, mdj, bp, gt, reglages] = await Promise.all([
     fouleDe(supabase, siteId, f),
     motsRecents(supabase, siteId),
     supabase.from("human_compteurs_jour").select("jour, famille").eq("site_id", siteId).gte("jour", semaine).limit(20),
     motDuJour(supabase, siteId, f),
     bonPlanEnCours(supabase, siteId),
     gateDuMois(supabase, siteId),
+    lireReglages(supabase, siteId),
   ]);
+  // 🏆 LEURS FIGURINES : qui en est où, et les cadeaux à remettre
+  const pour = await collectionsDe(supabase, siteId, f, remisDe(reglages));
+  const collection: FamilleAuComptoir["collection"] = { cadeau: cadeauDeCollection(reglages), paliers: { trois: 0, six: 0, complete: 0 }, collectionneurs: [], aRemettre: [], remis: 0 };
+  for (const h of f.ordre) {
+    const c = pour(h);
+    const fiche = f.ficheDe(h);
+    const qui = { prenom: fiche?.prenom ?? "", numero: f.numeroDe(h) };
+    if (c.gagnees >= 3) collection.paliers.trois += 1;
+    if (c.gagnees >= 6) collection.paliers.six += 1;
+    if (c.complete) collection.paliers.complete += 1;
+    if (c.gagnees > 0) collection.collectionneurs.push({ ...qui, gagnees: c.gagnees, total: c.total, look: fiche?.look ?? "" });
+    for (const t of c.trophees) {
+      if (t.remis) collection.remis += 1;
+      else collection.aRemettre.push({ ...qui, le: t.le });
+    }
+  }
+  collection.collectionneurs.sort((a, b) => b.gagnees - a.gagnees || a.numero - b.numero);
+  collection.collectionneurs = collection.collectionneurs.slice(0, 12);
+  collection.aRemettre.sort((a, b) => a.le.localeCompare(b.le));
   const paliers: Record<Grade, number> = { bronze: 0, argent: 0, or: 0 };
   const fideles: MembreAuComptoir[] = [];
   let nouveaux = 0;
@@ -389,6 +466,7 @@ export async function familleAuComptoir(supabase: Supabase, siteId: string): Pro
     bonsPlansActifs: bp.actif,
     gate: gt.gate,
     gateDernier: gt.dernier,
+    collection,
   };
 }
 

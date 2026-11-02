@@ -6,7 +6,8 @@
 // manque pour battre le record. Elle ouvre l'écran, qui dit, dans l'ordre où il en a besoin :
 //   · LA FOULE DU JOUR et le record à battre (on repart de zéro chaque matin) ;
 //   · SON LIEN (`clikme.fr/f/<lien>`), celui de sa bio et de la fin de ses vidéos ;
-//   · SES PALIERS : combien en or, en argent, en bronze, et ses fidèles par leur prénom ;
+//   · 🏆 LEURS FIGURINES (à la place de leurs pièces) : 3 et plus, 6 et plus, 10 / 10 ; les cadeaux à remettre ;
+//     le cadeau de sa collection complète ; ses meilleurs collectionneurs ;
 //   · SON PARCOURS DE LA SEMAINE : sa page ouverte → un fantôme libéré → venus pour de vrai, en
 //     pourcentages. WhatsApp s'y ajoutera avec le numéro de ClikMe ;
 //   · LE MOT DU JOUR : il épingle un des petits mots d'aujourd'hui ou d'hier, qui s'affiche en haut
@@ -28,7 +29,6 @@ import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import {
   BON_PLAN_MAX,
   DUREES_BON_PLAN,
-  EMOJI_GRADE,
   familleAuComptoirDemo,
   GATE_MAX,
   ideesDeBonPlan,
@@ -41,18 +41,17 @@ import {
   type BonPlanComptoir,
   type DureeBonPlan,
   manquePourRecord,
-  NOM_GRADE,
   recordBattu,
-  regleEnMots,
   tauxDe,
   type FamilleAuComptoir,
-  type Grade,
 } from "@/lib/direct/famille";
 import { lookDe } from "@/lib/direct/look";
 import { jourParis } from "@/lib/jour-paris";
 import { STYLES_CARNET } from "./carnet-comptoir";
 import { CLE_ACCES_COMPTOIR } from "@/lib/echanges/echanges";
 import { plusDe, plusPermis, plusPropre } from "@/lib/direct/previens-les";
+import { CADEAU_MAX } from "@/lib/direct/figurines-commerces";
+import type { FamilleDouble } from "@/lib/direct/double-metiers";
 
 const nb = (n: number) => n.toLocaleString("fr-FR").replace(/ /g, " ");
 
@@ -95,13 +94,20 @@ function avecDemo(f: FamilleAuComptoir, c: CommerceComptoir): FamilleAuComptoir 
   const bp = lireLocal<{ texte: string; publieLe: string; finLe: string }>(cleBonPlan(c));
   const g = lireLocal<{ mois: string; quoi: string; combien: number }>(cleGate(c));
   const mois = jourParis().slice(0, 7);
+  const cadeau = lireLocal<string>(cleCadeau(c));
+  const remis = lireLocal<string[]>(cleRemis(c)) ?? [];
+  const aRemettre = f.collection.aRemettre.filter((m) => !remis.includes(`${m.numero}:${m.le}`));
   return {
     ...f,
+    collection: { ...f.collection, cadeau: cadeau ?? f.collection.cadeau, aRemettre, remis: f.collection.remis + (f.collection.aRemettre.length - aRemettre.length) },
     bonPlan: bp && Date.parse(bp.finLe) > Date.now() ? planDemo(bp.texte, bp.publieLe, bp.finLe) : null,
     gate: g && g.mois === mois ? { mois, quoi: g.quoi, combien: g.combien, offerts: 0 } : null,
     gateDernier: g ? { quoi: g.quoi, combien: g.combien } : null,
   };
 }
+
+const cleCadeau = (c: CommerceComptoir) => `clikme:collection-cadeau-demo:${c.id}`;
+const cleRemis = (c: CommerceComptoir) => `clikme:collection-remis-demo:${c.id}`;
 
 /* ═══ 🚀 SON DÉPART, EN TROIS GESTES ═══════════════════════════════════════ */
 const ETAPES_DEPART = [
@@ -260,7 +266,14 @@ export function useFamille(commerce: CommerceComptoir) {
   const gate = (quoi: string, combien: number) =>
     geste("gate", { action: "gate", quoi, combien }, () => garderLocal(cleGate(commerce), { mois: jourParis().slice(0, 7), quoi: plusPropre(quoi), combien }));
 
-  return { f, pret, ennui, occupe, recharger: charger, epingler, bonPlan, retirerBonPlan, gate, demo: !reel };
+  /** 🏆 Le cadeau de sa collection complète (vide : aucun). */
+  const cadeauCollection = (texte: string) =>
+    geste("collection-cadeau", { action: "collection-cadeau", texte }, () => garderLocal(cleCadeau(commerce), plusPropre(texte)));
+  /** 🎁 Le cadeau d'une collection complète est remis, au comptoir. */
+  const remettre = (numero: number, le: string) =>
+    geste(`remis-${numero}-${le}`, { action: "collection-remis", numero, le }, () => garderLocal(cleRemis(commerce), [...(lireLocal<string[]>(cleRemis(commerce)) ?? []), `${numero}:${le}`]));
+
+  return { f, pret, ennui, occupe, recharger: charger, epingler, bonPlan, retirerBonPlan, gate, cadeauCollection, remettre, demo: !reel };
 }
 export type FamilleDuComptoir = ReturnType<typeof useFamille>;
 
@@ -326,7 +339,6 @@ export function FamilleComptoir({
   const f = famille.f;
   const tauxCages = f ? tauxDe(f.parcours.cages, f.parcours.pages) : null;
   const tauxVenues = f ? tauxDe(f.parcours.venues, f.parcours.cages) : null;
-  const ORDRE: Grade[] = ["or", "argent", "bronze"];
 
   return (
     <div className="ck fc">
@@ -401,37 +413,7 @@ export function FamilleComptoir({
           <JeTeGate commerce={commerce} famille={famille} f={f} />
           <SurpriseDuChef commerce={commerce} />
 
-          <section className="fc-paliers">
-            <h3>Leurs pièces</h3>
-            <div className="fc-tuiles">
-              {ORDRE.map((g) => (
-                <div key={g} className={`fc-tuile ${g}`}>
-                  <span aria-hidden="true">{EMOJI_GRADE[g]}</span>
-                  <b>{nb(f.paliers[g])}</b>
-                  <small>{NOM_GRADE[g]}</small>
-                </div>
-              ))}
-            </div>
-            <p className="fc-regle">
-              Argent : {regleEnMots("argent")}. Or : {regleEnMots("or")}. Plus leur pièce est précieuse, plus tôt ils ont tes bons plans.
-            </p>
-            {f.fideles.length > 0 && (
-              <ul className="fc-fideles" aria-label="Tes fidèles">
-                {f.fideles.map((m) => (
-                  <li key={m.numero}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={lookDe(m.look).image} alt="" />
-                    <span>
-                      <b>{m.prenom || "Sans prénom"}</b>
-                      <small>
-                        n°{nb(m.numero)} {EMOJI_GRADE[m.grade]}
-                      </small>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          <LeursFigurines commerce={commerce} famille={famille} f={f} />
 
           <section className="fc-parcours">
             <h3>
@@ -687,6 +669,131 @@ function BonPlanDuComptoir({ commerce, famille, f }: { commerce: CommerceComptoi
 }
 
 /** 🎁 JE TE GÂTE : ce qu'il peut offrir à sa famille ce mois-ci, et combien il en reste. */
+/** Les idées de cadeau de la collection complète, dans les mots du métier (il écrit le sien s'il veut). */
+function ideesDeCadeau(famille: FamilleDouble | undefined): string[] {
+  const p: Partial<Record<FamilleDouble, string[]>> = {
+    table: ["Un repas pour 2", "Un menu offert"],
+    bar: ["Une planche à partager", "Une soirée offerte"],
+    coiffure: ["Une coupe offerte", "Un soin offert"],
+    ongles: ["Une pose offerte", "Un soin des mains"],
+    seance: ["Une séance offerte", "Un soin découverte"],
+    createur: ["Un atelier offert", "Une pièce de l’atelier"],
+    fleurs: ["Un bouquet offert"],
+    mode: ["Un bon de 20 €"],
+    lunettes: ["Un étui et un nettoyage"],
+    librairie: ["Un livre offert"],
+  };
+  return (famille && p[famille]) || ["Un cadeau surprise"];
+}
+
+/**
+ * 🏆 LEURS FIGURINES (à la place de leurs pièces) : qui en est où (3 et plus, 6 et plus, 10 / 10), les cadeaux à
+ * remettre — « Léa · n°12 · Remis ✓ », une fois par collection complète —, le cadeau qu'il choisit (rien n'est promis
+ * sur sa page tant qu'il ne l'a pas écrit), et ses meilleurs collectionneurs.
+ */
+function LeursFigurines({ commerce, famille, f }: { commerce: CommerceComptoir; famille: FamilleDuComptoir; f: FamilleAuComptoir }) {
+  const c = f.collection;
+  const [texte, setTexte] = useState(c.cadeau);
+  const [fait, setFait] = useState(false);
+  const propre = plusPropre(texte);
+  const interdit = Boolean(propre) && !plusPermis(propre);
+  return (
+    <section className="fc-collection">
+      <h3>🏆 Leurs figurines</h3>
+      <p className="fc-regle">
+        Chaque passage noté dans ton carnet leur donne ta figurine de la saison ; quand tu annonces une place libre (🔔), c’est une édition rare. À 3 figurines, ils ont tes
+        bons plans plus tôt ; à 6, en premier.
+      </p>
+      <div className="fc-tuiles">
+        <div className="fc-tuile trois">
+          <span aria-hidden="true">🥈</span>
+          <b>{nb(c.paliers.trois)}</b>
+          <small>3 et plus</small>
+        </div>
+        <div className="fc-tuile six">
+          <span aria-hidden="true">🥇</span>
+          <b>{nb(c.paliers.six)}</b>
+          <small>6 et plus</small>
+        </div>
+        <div className="fc-tuile complete">
+          <span aria-hidden="true">🏆</span>
+          <b>{nb(c.paliers.complete)}</b>
+          <small>10 / 10</small>
+        </div>
+      </div>
+
+      {c.aRemettre.length > 0 && (
+        <ul className="fc-remettre" aria-label="Cadeaux à remettre">
+          {c.aRemettre.map((m) => (
+            <li key={`${m.numero}-${m.le}`}>
+              <span aria-hidden="true">🏆</span>
+              <span className="qui">
+                <b>
+                  {m.prenom || "Sans prénom"} · n°{nb(m.numero)}
+                </b>
+                <small>Collection complète{c.cadeau ? ` · 🎁 ${c.cadeau}` : " · la figurine d’or"}</small>
+              </span>
+              <button type="button" disabled={Boolean(famille.occupe)} onClick={() => void famille.remettre(m.numero, m.le)}>
+                Remis ✓
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {c.remis > 0 && (
+        <p className="fc-regle">
+          🎁 {nb(c.remis)} {c.remis > 1 ? "cadeaux déjà remis" : "cadeau déjà remis"}.
+        </p>
+      )}
+
+      <div className="fc-cadeau">
+        <label htmlFor="fc-cadeau">🎁 Le cadeau de la collection complète</label>
+        <input id="fc-cadeau" value={texte} maxLength={CADEAU_MAX} placeholder={ideesDeCadeau(commerce.famille)[0]} onChange={(e) => setTexte(e.target.value)} />
+        <div className="fc-puces">
+          {ideesDeCadeau(commerce.famille).map((p) => (
+            <button key={p} type="button" className={propre === p ? "on" : ""} onClick={() => setTexte(p)}>
+              {p}
+            </button>
+          ))}
+        </div>
+        {interdit && <p className="ck-ennui">Pas d’alcool : la loi Évin l’interdit.</p>}
+        <p className="fc-regle">Ta page l’annonce : 10 figurines, ce cadeau. Tant que tu n’écris rien, elle ne promet que la figurine d’or.</p>
+        <button
+          type="button"
+          className="fc-envoyer"
+          disabled={interdit || propre === c.cadeau || Boolean(famille.occupe)}
+          onClick={() =>
+            void famille.cadeauCollection(propre).then((ok) => {
+              if (!ok) return;
+              setFait(true);
+              window.setTimeout(() => setFait(false), 2200);
+            })
+          }
+        >
+          {fait ? "✓ Enregistré" : c.cadeau ? (propre ? "Changer" : "Retirer le cadeau") : "Enregistrer"}
+        </button>
+      </div>
+
+      {c.collectionneurs.length > 0 && (
+        <ul className="fc-fideles" aria-label="Tes collectionneurs">
+          {c.collectionneurs.map((m) => (
+            <li key={m.numero}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={lookDe(m.look).image} alt="" />
+              <span>
+                <b>{m.prenom || "Sans prénom"}</b>
+                <small>
+                  n°{nb(m.numero)} · 🏆 {m.gagnees} / {m.total}
+                </small>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function JeTeGate({ commerce, famille, f }: { commerce: CommerceComptoir; famille: FamilleDuComptoir; f: FamilleAuComptoir }) {
   const depart = f.gate ?? f.gateDernier;
   const [quoi, setQuoi] = useState(depart?.quoi ?? "");
@@ -964,13 +1071,24 @@ const STYLES = `
 .fc-carton{font-size:14px;font-weight:700;color:var(--ambre);text-decoration:none;}
 .fc-lien code{flex:1;min-width:0;padding:9px 12px;border-radius:12px;background:var(--fond);border:1px solid var(--trait);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .fc-lien a{font-size:14px;font-weight:700;color:var(--ambre);text-decoration:none;}
-.fc-paliers,.fc-parcours,.fc-mots{display:flex;flex-direction:column;gap:8px;}
+.fc-collection,.fc-parcours,.fc-mots{display:flex;flex-direction:column;gap:8px;}
 .fc-tuiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 .fc-tuile{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 6px;border-radius:16px;background:var(--nappe);border:1px solid var(--trait);}
 .fc-tuile span{font-size:24px;}
 .fc-tuile b{font-family:var(--font-clikme),sans-serif;font-size:22px;font-weight:800;}
 .fc-tuile small{font-size:12px;color:var(--gris);}
-.fc-tuile.or{border-color:rgba(233,190,92,.55);}
+.fc-tuile.six{border-color:rgba(233,190,92,.45);}
+.fc-tuile.complete{border-color:rgba(233,190,92,.8);background:linear-gradient(160deg,rgba(242,196,107,.22),rgba(255,46,154,.1));}
+.fc-remettre{display:flex;flex-direction:column;gap:6px;list-style:none;margin:0;padding:0;}
+.fc-remettre li{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;background:linear-gradient(90deg,rgba(242,196,107,.2),rgba(255,46,154,.12));border:1px solid rgba(242,196,107,.6);}
+.fc-remettre li > span:first-child{font-size:24px;}
+.fc-remettre .qui{display:flex;flex-direction:column;flex:1;min-width:0;}
+.fc-remettre .qui b{font-size:14.5px;}
+.fc-remettre .qui small{font-size:12.5px;color:var(--gris);}
+.fc-remettre button{flex:none;min-height:38px;padding:0 14px;border:0;border-radius:12px;background:#3DE2A6;color:#062A1B;font-weight:800;font-size:14px;}
+.fc-cadeau{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:16px;background:var(--nappe);border:1px solid var(--trait);}
+.fc-cadeau label{font-weight:800;font-size:14.5px;}
+.fc-cadeau input{min-height:42px;padding:0 12px;border-radius:12px;border:1px solid var(--trait);background:var(--fond);color:var(--creme);font:inherit;font-size:15px;}
 .fc-fideles{display:flex;gap:8px;overflow-x:auto;list-style:none;margin:0;padding:2px 0 4px;scrollbar-width:none;}
 .fc-fideles::-webkit-scrollbar{display:none;}
 .fc-fideles li{flex:none;display:flex;align-items:center;gap:6px;padding:6px 10px 6px 6px;border-radius:999px;background:var(--nappe);border:1px solid var(--trait);}

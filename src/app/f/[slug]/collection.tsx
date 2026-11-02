@@ -272,9 +272,11 @@ export function CollectionDuCommerce({
             La figurine d’or{col.or ? ` n° ${col.or}` : ""}
           </b>
           <p className="co-vedette-dit">
-            {cadeau
-              ? `🎁 ${cadeau} : montre cet écran au comptoir.`
-              : `Tu as toutes les figurines ${de}. Bravo !`}
+            {col.remis
+              ? `🎁 Cadeau remis le ${new Date(col.remis).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}. Bravo !`
+              : cadeau
+                ? `🎁 ${cadeau} : montre cet écran au comptoir.`
+                : `Tu as toutes les figurines ${de}. Bravo !`}
           </p>
         </div>
       ) : (

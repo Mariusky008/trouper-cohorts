@@ -22,7 +22,6 @@ import { fouleDemo, geste, placer, type Place, type Vitrine } from "@/lib/direct
 import { MOT_MAX, motPropre, motsDeLaListe } from "@/lib/direct/petits-mots";
 import { ECUSSON, PLACES_ECUSSONS, type Ecusson } from "@/lib/direct/ecussons";
 import { familleDuDouble } from "@/lib/direct/double-metiers";
-import { EMOJI_GRADE, NOM_GRADE } from "@/lib/direct/famille";
 
 /** L'image d'un fantôme selon sa cage : debout bras ouverts, la main levée, assis. */
 function imageDe(look: string, cage: Place["f"]["cage"]): string {
@@ -100,9 +99,10 @@ export function VitrineFantomes({
           </i>
         )}
         {f.ecussons && f.ecussons.length > 0 && <Ecussons liste={f.ecussons} />}
-        {/* 👻 Sa pièce de la famille, sous ses pieds : bronze, argent ou or, frappée de son numéro. */}
-        {f.grade && f.numero ? (
-          <i className={`vf-palier ${f.grade}`} aria-hidden="true">
+        {/* 👻 Son socle de la famille, sous ses pieds : en bois, comme celui des figurines, frappé de son numéro
+            (les pièces de bronze, d'argent et d'or ont laissé la place à la collection de figurines). */}
+        {f.numero ? (
+          <i className="vf-palier" aria-hidden="true">
             <b>{f.numero}</b>
           </i>
         ) : null}
@@ -143,9 +143,10 @@ export function VitrineFantomes({
         {choisi && (
           <div className="vf-bulle" style={{ left: `${Math.min(68, Math.max(32, dansLaScene(choisi).x))}%`, top: `${dansLaScene(choisi).y}%` } as CSSProperties}>
             <b>{choisi.f.moi ? "C’est toi !" : choisi.f.prenom || "Un fantôme"}</b>
-            {choisi.f.grade && choisi.f.numero ? (
+            {choisi.f.numero ? (
               <i className="vf-num">
-                Fantôme n°{choisi.f.numero} · {EMOJI_GRADE[choisi.f.grade]} {NOM_GRADE[choisi.f.grade]}
+                Fantôme n°{choisi.f.numero}
+                {choisi.f.figurines ? ` · 🏆 ${choisi.f.figurines} figurine${choisi.f.figurines > 1 ? "s" : ""}` : ""}
               </i>
             ) : null}
             <span>
@@ -583,12 +584,11 @@ const STYLES = `
 @media (prefers-reduced-motion:reduce){.vf-fg img,.vf-fg .nom,.vf-fg.moi::before{animation:none!important;}}
 .vf-bulle small{font:700 2.6cqw/1.3 system-ui,sans-serif;color:#1E8F69;}
 .vf-bulle .vf-num{font:700 2.6cqw/1.3 system-ui,sans-serif;font-style:normal;color:#8A5A2B;}
-/* SA PIÈCE : le fantôme se tient dessus (son look reste le sien) ; le métal dit son palier, le chiffre son numéro. */
-.vf-palier{position:absolute;left:50%;bottom:-12%;z-index:-1;width:70%;aspect-ratio:2.5;transform:translateX(-50%);border-radius:50%;container-type:inline-size;display:grid;place-items:center;pointer-events:none;
+/* SON SOCLE : le fantôme se tient dessus (son look reste le sien) ; en bois, comme celui des figurines, frappé de son numéro. */
+.vf-palier{--e:#B07A4B;--f:#5E3A1E;position:absolute;left:50%;bottom:-12%;z-index:-1;width:70%;aspect-ratio:2.5;transform:translateX(-50%);border-radius:50%;container-type:inline-size;display:grid;place-items:center;pointer-events:none;
   background:radial-gradient(ellipse 58% 52% at 40% 36%,rgba(255,255,255,.62),transparent 62%),radial-gradient(ellipse at 50% 46%,var(--e) 0 64%,var(--f) 66% 100%);box-shadow:0 .5cqw 0 var(--f),0 1.4cqw 1.8cqw rgba(0,0,0,.45);}
 .vf-palier::before{content:"";position:absolute;inset:14% 9%;border-radius:50%;border:max(.5px,2cqw) solid rgba(255,255,255,.38);}
 .vf-palier b{font:800 17cqw/1 system-ui,sans-serif;color:var(--f);text-shadow:0 1px 0 rgba(255,255,255,.55);transform:translateY(62%);}
-.vf-palier.bronze{--e:#D49B60;--f:#874F1E;}.vf-palier.argent{--e:#DDE2EA;--f:#7C8592;}.vf-palier.or{--e:#F2C762;--f:#946410;}
 .vf-coeur{position:absolute;right:-6%;top:6%;font-style:normal;font-size:4.6cqw;line-height:1;filter:drop-shadow(0 .3cqw .5cqw rgba(0,0,0,.5));pointer-events:none;}
 .vf-salle .vf-coeur{font-size:9cqw;}
 .vf-bulle q{font:italic 600 2.9cqw/1.3 Georgia,serif;color:#2B1D16;}

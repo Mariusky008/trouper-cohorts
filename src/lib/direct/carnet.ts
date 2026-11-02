@@ -45,6 +45,8 @@ export type LigneCarnet = {
   /** 👻 Sa place dans sa famille : son numéro d'arrivée et son palier (`lib/direct/famille.ts`). */
   numero?: number;
   grade?: Grade;
+  /** 🏆 Ses figurines (sa collection en cours chez ce commerce), à la place de sa pièce. */
+  figurines?: number;
 };
 
 export type MessageEnvoye = {

@@ -190,8 +190,17 @@ Un commerce = une page (sa famille) ; un client = une page (sa collection).
 - la figurine d'un commerce : la sienne si ClikMe l'a faite (`FIGURINES`, `figurines-commerces.ts`), sinon son double ;
   le cadeau de la collection complète : seulement s'il l'a choisi (`metadata.collection_cadeau` de sa fiche).
 
-Reste à faire : régler le cadeau depuis le comptoir et le valider au comptoir (« Léa · 10 / 10 ») ; les pièces des
-vitrines et du comptoir, à remplacer à leur tour par la collection.
+**Construit le 2 novembre (suite)** :
+
+- **le cadeau de la collection complète, au comptoir** (« Ma famille » → « 🏆 Leurs figurines ») : il l'écrit (des
+  idées dans les mots de son métier, jamais d'alcool ; tant qu'il n'écrit rien, sa page ne promet que la figurine
+  d'or) ; les collections complètes s'affichent « Inès · n°3 · Remis ✓ », une fois chacune ; sa page dit ensuite
+  « Cadeau remis le … ». Rangé dans sa fiche (`metadata.collection_cadeau`, `metadata.collection_remis`), sans table de
+  plus ;
+- **les pièces visibles remplacées par la collection** : « Leurs figurines » (3 et plus, 6 et plus, 10 / 10, ses
+  meilleurs collectionneurs) à la place de « Leurs pièces » ; dans le carnet, « n°1 · 🏆 2 » ; dans les vitrines, un
+  socle en bois frappé du numéro, et la bulle « Fantôme n°1 · 🏆 2 figurines » ; sur la page de la famille et dans Mes
+  familles, plus de nom de pièce. Le rang reste en coulisse : il décide de l'ordre d'envoi des bons plans.
 
 ### 9.1 L'idée en une phrase
 

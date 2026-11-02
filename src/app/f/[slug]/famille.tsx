@@ -443,7 +443,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
         <small>📌 Le mot du jour</small>
         <blockquote>« {e.motDuJour.texte} »</blockquote>
         <figcaption>
-          {[e.motDuJour.prenom, e.motDuJour.numero ? `fantôme n°${nb(e.motDuJour.numero)}${e.motDuJour.grade ? ` ${EMOJI_GRADE[e.motDuJour.grade]}` : ""}` : ""].filter(Boolean).join(" · ")}
+          {[e.motDuJour.prenom, e.motDuJour.numero ? `fantôme n°${nb(e.motDuJour.numero)}` : ""].filter(Boolean).join(" · ")}
         </figcaption>
       </figure>
     ) : null;
@@ -515,7 +515,8 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
             <span className="flotte">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={salue} alt="Ton fantôme" />
-              <i className={`fm-patch ${moi.grade}${vientDEntrer || monte ? " coud" : ""}`} key={moi.grade}>
+              {/* son socle de la famille, en bois comme celui des figurines, frappé de son numéro */}
+              <i className={`fm-patch${vientDEntrer || monte ? " coud" : ""}`} key={moi.grade}>
                 <b>{moi.numero}</b>
               </i>
             </span>
@@ -526,10 +527,8 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
           </p>
           {monte && (
             <div className="fm-monte" role="status">
-              <b>
-                {EMOJI_GRADE[monte]} Tu passes {NOM_GRADE[monte]} !
-              </b>
-              Tu as les bons plans {AVANTAGE_GRADE[monte]}.
+              <b>🔔 Tu as maintenant ses bons plans {AVANTAGE_GRADE[monte]} !</b>
+              Continue ta collection : ses meilleurs collectionneurs sont prévenus d’abord.
             </div>
           )}
         </section>
@@ -684,7 +683,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
       {gate(etat)}
       {moi && !moi.present && (
         <p className="fm-revient">
-          Re-bonjour, fantôme n°{nb(moi.numero)} {EMOJI_GRADE[moi.grade]} ! Ouvre une cage pour compter aujourd’hui.
+          Re-bonjour, fantôme n°{nb(moi.numero)} ! Ouvre une cage pour compter aujourd’hui.
         </p>
       )}
       <p className="fm-appel">Ouvre une cage pour rejoindre la famille</p>
@@ -1019,7 +1018,7 @@ const STYLES = `
 .fm-patch{position:absolute;z-index:-1;width:84%;aspect-ratio:2.5;left:50%;bottom:-24%;transform:translateX(-50%);border-radius:50%;container-type:inline-size;display:grid;place-items:center;background:radial-gradient(ellipse 58% 52% at 40% 36%,rgba(255,255,255,.62),transparent 62%),radial-gradient(ellipse at 50% 46%,var(--e) 0 64%,var(--f) 66% 100%);box-shadow:0 3px 0 var(--f),0 9px 14px rgba(0,0,0,.45)}
 .fm-patch::before{content:"";position:absolute;inset:14% 9%;border-radius:50%;border:max(.6px,2cqw) solid rgba(255,255,255,.38)}
 .fm-patch b{font-size:17cqw;font-weight:800;color:var(--f);line-height:1;text-shadow:0 1px 0 rgba(255,255,255,.55);transform:translateY(62%)}
-.fm-patch.bronze{--e:#D49B60;--f:#874F1E}.fm-patch.argent{--e:#DDE2EA;--f:#7C8592}.fm-patch.or{--e:#F2C762;--f:#946410}
+.fm-patch{--e:#B07A4B;--f:#5E3A1E}
 .fm-patch.coud{animation:fm-coud .9s cubic-bezier(.2,1.5,.4,1) .4s both}
 .fm-etincelle{position:absolute;font-style:normal;color:var(--or);font-size:16px;opacity:0;animation:fm-scintille 2.4s ease-in-out infinite;animation-delay:var(--d,0s)}
 .fm-monte{display:inline-block;margin:10px auto 0;padding:8px 14px;border-radius:14px;background:linear-gradient(90deg,rgba(242,196,107,.25),rgba(255,46,154,.2));border:1px solid rgba(242,196,107,.5);font-size:13px;color:var(--doux);animation:fm-pop .5s cubic-bezier(.2,1.4,.4,1) .6s both}

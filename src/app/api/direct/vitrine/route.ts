@@ -22,7 +22,7 @@ import { lookValide } from "@/lib/direct/look";
 import { jourParis } from "@/lib/jour-paris";
 import type { FantomeVitrine } from "@/lib/direct/vitrine-fantomes";
 import { ecussonsIci, promessesTenues } from "@/lib/direct/ecussons";
-import { lireFamille } from "@/lib/direct/famille-serveur";
+import { compterFigurines, lireFamille } from "@/lib/direct/famille-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -97,6 +97,8 @@ export async function GET(request: Request) {
     ids.length ? supabase.from("clik_mot").select("habitant_id").in("habitant_id", ids).not("coeur_le", "is", null).limit(3000) : null,
     ids.length ? lireFamille(supabase, siteId).catch(() => null) : null,
   ]);
+  // 🏆 leurs figurines de ce commerce (à la place de leur pièce)
+  const figurinesDe = famille ? await compterFigurines(supabase, siteId, famille).catch(() => null) : null;
   const tenues = promessesTenues(
     ((promis && !promis.error ? promis.data : null) ?? []).map((c: Ligne) => ({ qui: s(c.habitant_id), site: s(c.site_id), cage: s(c.cage), le: s(c.created_at) })),
     ((passes && !passes.error ? passes.data : null) ?? []).map((v: Ligne) => ({ qui: s(v.habitant_id), site: s(v.site_id), jour: s(v.jour) })),
@@ -124,7 +126,7 @@ export async function GET(request: Request) {
       ...(m && m.coeur_le ? { coeur: true } : {}),
       ...(m && s(m.cadeau) ? { cadeau: s(m.cadeau) } : {}),
       ...(ecussons.length ? { ecussons } : {}),
-      ...(numero && famille ? { numero, grade: famille.gradeDe(h) } : {}),
+      ...(numero && famille ? { numero, grade: famille.gradeDe(h), ...(figurinesDe ? { figurines: figurinesDe(h) } : {}) } : {}),
     };
   });
 
