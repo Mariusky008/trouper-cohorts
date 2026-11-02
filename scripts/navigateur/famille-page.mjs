@@ -107,7 +107,7 @@ await p.waitForSelector(".co .co-vedette", { timeout: 20000 });
 ok((await texte(p, ".co-compte")).includes("/ 10") && (await texte(p, ".co-sur")).toLowerCase().includes("ta collection du comptoir des fantômes"), "sa collection : sur 10");
 ok((await texte(p, ".co-vedette")).includes("À GAGNER MAINTENANT") && /Édition (Hiver|Printemps|Été|Automne|Saint-Valentin|Fête de la musique|Halloween|Noël)/.test(await texte(p, ".co-vedette")), `la figurine à gagner maintenant (${(await texte(p, ".co-vedette")).slice(0, 60)})`);
 ok((await p.locator(".co-etagere .co-carte").count()) === 10 && (await p.locator(".co-carte.rare").count()) === 2, "l'étagère des dix, dont deux rares");
-ok((await texte(p, ".co-paliers")).includes("3 figurines · Prévenu plus tôt") && (await texte(p, ".co-paliers")).includes("10 figurines · La figurine d’or"), "les trois paliers");
+ok((await texte(p, ".co-paliers")).includes("3 figurines · Au courant plus tôt") && (await texte(p, ".co-paliers")).includes("10 figurines · La figurine d’or"), "les trois paliers");
 ok((await p.locator(".fm-chemin, .fm-prochain").count()) === 0 && (await p.locator('.co-lien[href="/collection"]').count()) === 1, "plus de chemin des pièces ; le lien vers toute sa collection");
 ok(/2 fantômes aujourd’hui/.test(fam) && fam.includes("📣 Il en manque 3 : inviter un ami"), "la foule passe à 2, il en manque 3");
 // LE BOUTON WHATSAPP EST CACHÉ tant que la sonnette n'existe pas (chantier 4) : personne n'y répondrait.
@@ -180,6 +180,11 @@ await p.waitForSelector(".mc-commerce .co", { timeout: 30000 });
 const mc = await texte(p, ".mc");
 ok(mc.includes("Ma collection") && mc.includes("Le Comptoir des Fantômes") && (await p.locator(".mc-commerce").count()) === 1, `sa page « Ma collection » (${mc.slice(0, 80)})`);
 ok((await debordement(p)) <= 0 && !/exemple/i.test(mc), "« Ma collection » ne déborde pas, sans le mot interdit");
+const autres = await texte(p, ".dc");
+ok(
+  autres.includes("D’autres collections à commencer") && autres.includes("L’Atelier Tout Neuf") && !autres.includes("Le Comptoir des Fantômes") && (await p.locator(".dc-plus summary").count()) === 1,
+  "sous ses étagères : les autres commerces à commencer (pas le sien), et « Comment ça marche ? »",
+);
 await p.screenshot({ path: `${D}/famille-8-ma-collection.png`, fullPage: true });
 
 // ═══ LA FAMILLE VIDE ═══
@@ -189,6 +194,20 @@ await vide.waitForSelector(".fm-premier", { timeout: 60000 });
 ok((await texte(vide, ".fm-premier")).includes("Sois le tout premier fantôme de l’Atelier Tout Neuf !"), "la famille vide : sois le premier");
 ok((await texte(vide, ".fm-cages")).includes("Je passe aujourd’hui"), "chez un artisan, on passe");
 await vide.screenshot({ path: `${D}/famille-4-vide.png` });
+
+// ═══ MA COLLECTION, SANS FIGURINE : la page explique au lieu d'être vide ═══
+await vide.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
+await vide.waitForSelector(".dc-moment", { timeout: 30000 });
+const dc = await texte(vide, ".mc");
+ok((await vide.locator(".mc-commerce").count()) === 0 && (await vide.locator(".dc-vitrine .dc-carte").count()) === 5, "sans figurine : pas d'étagère, la vitrine de cinq cartes");
+ok(/EN CE MOMENT/i.test(dc) && /Édition \S+.*encore \d+ jours?/.test(dc), `l'édition du moment et le temps qui reste (${(await texte(vide, ".dc-moment")).slice(0, 70)})`);
+ok(dc.includes("Ce que ça te rapporte") && dc.includes("La figurine d’or") && dc.includes("Comment on la gagne") && dc.includes("touche une cage"), "à quoi ça sert, et comment on la gagne");
+ok(
+  (await vide.locator(`.dc-commerces a[href="/f/${SLUG}"]`).count()) === 1 && (await vide.locator(`.dc-commerces a[href="/f/${NEUF}"]`).count()) === 1,
+  "où la commencer : les commerces ClikMe, vers leur page",
+);
+ok((await debordement(vide)) <= 0 && !/exemple/i.test(dc), "la page sans figurine ne déborde pas, sans le mot interdit");
+await vide.screenshot({ path: `${D}/famille-9-collection-vide.png`, fullPage: true });
 
 const erreurs = [...p.err, ...ami.err, ...vide.err];
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` : ${erreurs[0]}` : ""}`);

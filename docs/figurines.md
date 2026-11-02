@@ -201,6 +201,12 @@ Un commerce = une page (sa famille) ; un client = une page (sa collection).
   meilleurs collectionneurs) à la place de « Leurs pièces » ; dans le carnet, « n°1 · 🏆 2 » ; dans les vitrines, un
   socle en bois frappé du numéro, et la bulle « Fantôme n°1 · 🏆 2 figurines » ; sur la page de la famille et dans Mes
   familles, plus de nom de pièce. Le rang reste en coulisse : il décide de l'ordre d'envoi des bons plans.
+- **« Ma collection » pour qui n'a encore rien** (2 novembre, sa remarque : « au départ c'est complètement vide et on
+  ne comprend pas vraiment à quoi ça sert ») : la vitrine (l'édition du moment, les deux suivantes, une rare, l'or),
+  « En ce moment : édition Automne, encore 49 jours », ce que ça rapporte (les trois paliers, dits concrètement, et les
+  rares), comment on la gagne (la cage, la visite notée au comptoir, la figurine), et les commerces ClikMe où la
+  commencer — ceux de sa ville d'abord, avec leur cadeau à 10 s'ils l'ont écrit (`collection/decouvrir.tsx`). Qui
+  collectionne déjà retrouve « Comment ça marche ? » et « D'autres collections à commencer » sous ses étagères.
 
 ### 9.1 L'idée en une phrase
 

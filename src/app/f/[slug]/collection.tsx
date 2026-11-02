@@ -21,8 +21,8 @@ import {
   type Collection,
 } from "@/lib/direct/collection";
 
-type Theme = { a: string; b: string; parts: string[] };
-const THEMES: Record<string, Theme> = {
+export type Theme = { a: string; b: string; parts: string[] };
+export const THEMES: Record<string, Theme> = {
   hiver: { a: "#A8DBFF", b: "#2B4FA6", parts: ["❄️", "❅", "❆"] },
   "saint-valentin": { a: "#FF6B9A", b: "#8E1442", parts: ["💘", "💗", "💕"] },
   printemps: { a: "#FFB8D6", b: "#2F8F57", parts: ["🌸", "🌼", "🌷"] },
@@ -67,7 +67,7 @@ function useCompte(n: number) {
   return v;
 }
 
-function Particules({ theme, n = 9 }: { theme: Theme; n?: number }) {
+export function Particules({ theme, n = 9 }: { theme: Theme; n?: number }) {
   return (
     <span className="co-parts" aria-hidden="true">
       {Array.from({ length: n }, (_, k) => (

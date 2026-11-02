@@ -108,13 +108,13 @@ export const PALIERS_COLLECTION = [
   {
     n: 3,
     emoji: "🥈",
-    titre: "Prévenu plus tôt",
+    titre: "Au courant plus tôt",
     dit: "ses bons plans avant les autres",
   },
   {
     n: 6,
     emoji: "🥇",
-    titre: "Prévenu en premier",
+    titre: "Au courant en premier",
     dit: "ses places libres, en premier",
   },
   {
@@ -315,6 +315,45 @@ export function collectionDe(
     complete,
     ...(complete && derniere ? { or: numeroOr(derniere) } : {}),
     trophees: p.finies.map((le) => ({ le, numero: numeroOr(le) })),
+  };
+}
+
+export type EditionDuMoment = {
+  cle: string;
+  nom: string;
+  emoji: string;
+  debut: string;
+  fin: string;
+  /** Les jours qui restent, aujourd'hui compris (en cours) ; ou avant qu'elle commence (à venir). */
+  jours: number;
+};
+
+/**
+ * Pour qui n'a pas encore de collection (`/collection`) : l'édition qu'on gagne en venant aujourd'hui — le temps fort
+ * d'abord, comme dans `remplir` —, et celle qui commence ensuite.
+ */
+export function editionsDuMoment(aujourdhui: string): {
+  maintenant: EditionDuMoment | null;
+  ensuite: EditionDuMoment | null;
+} {
+  const toutes = EDITIONS_DATEES.map((e) => ({ e, f: fenetre(e, aujourdhui) }));
+  const decrire = ({ e, f }: (typeof toutes)[number], jours: number): EditionDuMoment => ({
+    cle: e.cle,
+    nom: e.nom,
+    emoji: e.emoji,
+    debut: f.debut,
+    fin: f.fin,
+    jours,
+  });
+  const enCours = toutes
+    .filter(({ f }) => dans(aujourdhui, f.debut, f.fin))
+    .sort((a, b) => Number(b.e.sorte === "temps-fort") - Number(a.e.sorte === "temps-fort"))[0];
+  const aVenir = toutes
+    .filter(({ f }) => f.debut > aujourdhui)
+    .sort((a, b) => a.f.debut.localeCompare(b.f.debut))[0];
+  return {
+    maintenant: enCours ? decrire(enCours, ecart(aujourdhui, enCours.f.fin) + 1) : null,
+    ensuite: aVenir ? decrire(aVenir, ecart(aujourdhui, aVenir.f.debut)) : null,
   };
 }
 

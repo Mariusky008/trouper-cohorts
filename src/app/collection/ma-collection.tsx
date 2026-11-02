@@ -3,17 +3,18 @@
 /**
  * 🏆 MA COLLECTION — l'écran : le total (figurines, commerces, figurines d'or), puis une étagère par commerce, la plus
  * avancée d'abord. Ses familles et leurs collections viennent de `/api/direct/famille?moi=1` (`famillesDe`) : le
- * même calcul que sur chaque page de famille.
+ * même calcul que sur chaque page de famille. Sans collection, la page explique et dit où commencer (`decouvrir.tsx`).
  */
 import Link from "next/link";
 import { useEffect, useState, type CSSProperties } from "react";
 import type { MaFamille } from "@/lib/direct/famille";
 import { deNom } from "@/lib/echanges/echanges";
 import { CollectionDuCommerce, STYLES_COLLECTION } from "@/app/f/[slug]/collection";
+import { Decouvrir, EnSavoirPlus, STYLES_DECOUVRIR, type CommerceACollectionner } from "./decouvrir";
 
 type Etat = { familles: MaFamille[] } | null;
 
-export function MaCollection() {
+export function MaCollection({ aujourdhui, commerces }: { aujourdhui: string; commerces: CommerceACollectionner[] }) {
   const [etat, setEtat] = useState<Etat>(null);
   const [ennui, setEnnui] = useState(false);
 
@@ -39,7 +40,7 @@ export function MaCollection() {
           Clik<b>Me</b>
         </Link>
         <h1>Ma collection</h1>
-        <p className="mc-dit">Une visite validée, une figurine. À 10, la figurine d’or.</p>
+        <p className="mc-dit">Les figurines de tes commerces préférés. Une visite, une figurine ; à 10, la figurine d’or.</p>
         {etat && avec.length > 0 && (
           <div className="mc-totaux">
             <span>
@@ -66,19 +67,7 @@ export function MaCollection() {
       )}
       {ennui && <p className="mc-vide">Ta collection n’a pas pu s’afficher. Réessaie dans un instant.</p>}
 
-      {etat && avec.length === 0 && (
-        <section className="mc-vide">
-          <div className="mc-silhouettes" aria-hidden="true">
-            {["❄️", "🌸", "☀️", "🍂", "✨"].map((e, k) => (
-              <span key={e} style={{ "--k": k } as CSSProperties}>
-                <em>{e}</em>
-              </span>
-            ))}
-          </div>
-          <b>Ta collection commence ici</b>
-          <p>Libère ton fantôme chez un commerce ClikMe, passe le voir : sa première figurine est pour toi.</p>
-        </section>
-      )}
+      {(ennui || (etat && avec.length === 0)) && <Decouvrir aujourdhui={aujourdhui} commerces={commerces} />}
 
       {avec.map((f) => (
         <article key={f.slug} className="mc-commerce">
@@ -102,11 +91,13 @@ export function MaCollection() {
         </article>
       ))}
 
+      {avec.length > 0 && <EnSavoirPlus aujourdhui={aujourdhui} commerces={commerces.filter((c) => !avec.some((f) => f.slug === c.slug))} />}
+
       <p className="mc-regle">
         On ne gagne une figurine qu’en venant : elles ne s’achètent pas. Une édition manquée est manquée ; les éditions rares se gagnent quand le commerce annonce une
         place libre.
       </p>
-      <style>{STYLES_MC + STYLES_COLLECTION}</style>
+      <style>{STYLES_MC + STYLES_COLLECTION + STYLES_DECOUVRIR}</style>
     </main>
   );
 }
@@ -134,14 +125,10 @@ body{background:#12060F}
 .mc-vide{margin:28px 18px 0;padding:22px 18px;border-radius:22px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);text-align:center;color:#D9C3CB}
 .mc-vide b{display:block;margin-top:14px;font-size:19px;color:#FFF4E6}
 .mc-vide p{margin:6px 0 0}
-.mc-silhouettes{display:flex;justify-content:center;gap:8px}
-.mc-silhouettes span{position:relative;width:52px;height:70px;border-radius:12px;background:linear-gradient(160deg,#2C1526,#1A0B16);border:1.5px dashed rgba(255,255,255,.2);animation:mc-flotte 3s ease-in-out calc(var(--k) * .3s) infinite}
-.mc-silhouettes em{position:absolute;inset:0;display:grid;place-items:center;font-style:normal;font-size:22px;opacity:.75}
 .mc-attente{display:grid;gap:14px;margin:24px 16px 0}
 .mc-attente i{height:150px;border-radius:24px;background:linear-gradient(100deg,rgba(255,255,255,.04) 30%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 70%);background-size:200% 100%;animation:mc-reflet 1.4s linear var(--d) infinite}
 .mc-regle{margin:26px 20px 0;font-size:12px;line-height:1.5;color:#8D7580;text-align:center}
 @keyframes mc-entre{from{opacity:0;transform:translateY(14px)}}
-@keyframes mc-flotte{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes mc-reflet{to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.mc *{animation:none!important}}
 `;
