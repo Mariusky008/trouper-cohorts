@@ -81,3 +81,23 @@ Limite honnête : les photos font 1672 × 941 ; au zoom ×2 sur téléphone, ell
   jamais plus de 1,5 fois la photo ; le reste en fond flou. « ▶ L'annonce du jour » sous la télé.
 - **Plus de vie** : des passants fantômes (ceux qui n'ont pas encore leur figurine) au fond de chaque rue ; **le
   commerçant sort sur le pas de sa porte** quand tu arrives et t'appelle par ton prénom (sa vraie voix, la première fois).
+
+## v6 (3 novembre) — « le son grésille… on est perdu dehors… l'intérieur n'a aucune logique ni atmosphère »
+
+- **Le son** : la musique est refaite (piano électrique doux, basse ronde, filtrée à 2 400 Hz), sans le souffle de la
+  fontaine ni le « shaker » (du bruit blanc dans les aigus : c'était le grésillement), le murmure de la ville bouclé
+  sans couture, et un limiteur en sortie. Vérifié hors ligne (12 s rendues) : aucun échantillon saturé, aucun clic.
+- **Dehors** : la barre « Dans cette rue » (les boutiques de la rue et les rues d'à côté : on touche, on y va), le zoom
+  à la molette ou en pinçant, glisser pour regarder autour (la caméra revient quand on marche), une aide au départ.
+- **Dedans, en deux temps** :
+  1. **L'accueil** : le commerçant derrière son comptoir (sa plaque, sa clochette), « 👋 Bienvenue Camille ! » puis
+     sa vraie voix la première fois ; « Léa et Hugo sont déjà à table » ; « M'installer à une table » (« au coin
+     lecture » chez Alice, « à l'établi » chez Nina), l'annonce du jour, ressortir.
+  2. **Ta table** : chaque fonction est un objet posé dessus — la tablette (la vidéo du jour), la carte du jour (et sa
+     ligne réservée à la famille), la question du jour, la cloche (le commerçant vient à ta table et te parle), le carnet
+     (un mot pour lui), l'assiette vide (inviter un ami : sa figurine vient s'asseoir), le mur des mots au mur. Les
+     amis sont à la table d'à côté, avec ce qu'ils ont essayé (la voix de Léa).
+  Le fond est la photo de la salle, floutée comme une photo prise avec un grand objectif : elle donne l'ambiance
+  sans montrer sa faible définition. La table et le comptoir sont dessinés (bois en dégradés et grain).
+- Les photos HD que refait son designer remplaceront les décors des rues ; pour les intérieurs, il faudrait au même
+  style « l'accueil » et « ta table » de chaque commerce (consigne dans la conversation du 3 novembre).
