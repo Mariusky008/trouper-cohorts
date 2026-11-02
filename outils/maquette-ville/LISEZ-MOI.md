@@ -40,3 +40,31 @@ rendraient la rue plus juste.
   autres ». Jamais les 800 : une douzaine au plus par lieu (amis, familles, ceux qui t'ont parlé, quelques inconnus).
 - **Spectateur → fantôme → figurine** : « Entrer en spectateur » (personne ne te voit, tu regardes), « Libérer mon
   fantôme » (tu te promènes), et à 10 figurines, ta figurine.
+
+## v5 (2 novembre, la nuit) — « quand je me déplace, il faut que la perspective fonctionne… la ville bouge avec nous »
+
+- **Trois rues photographiées à Dax** (ses photos) : `i/dax-place.jpg` (la place de la fontaine), `i/dax-hotel.jpg`
+  (la rue de l'hôtel), `i/dax-pietonne.jpg` (la rue piétonne). Noms provisoires : il nous dira les vrais.
+  Les enseignes réelles des trois façades qui accueillent nos commerces imaginaires sont **effacées** de la photo
+  (`outils/effacer.py`, les zones dans `outils/zones/`) et **repeintes en perspective** (`enseigne` dans `LIEUX`, un
+  SVG posé sur quatre coins) : Chez Bergine, La Page d'Alice, L'Atelier de Nina. Les autres commerces restent du décor,
+  sans écran ni annonce (jamais d'offre inventée pour un vrai commerce).
+- **La caméra avance avec toi** : la marche se fait au sol (`versSol` / `versImage`, la perspective du pavé), la rue
+  grossit quand tu t'approches d'une vitrine (zoom = taille au départ / taille ici, jusqu'à 2,2), ta figurine garde sa
+  taille ; devant une boutique, la caméra cadre ta figurine et la vitrine. Les étiquettes (noms, bulles, pastilles,
+  sorties) gardent leur taille (`--inv`). « Entrer » : la caméra fonce dans la vitrine, puis l'intérieur s'ouvre.
+- **Les écrans** sont posés dans une vraie vitre de chaque façade (`ecran`, quatre coins), le montant de la fenêtre
+  passe devant (`meneau`) ; dans les boutiques, **la télé est accrochée à un vrai mur** de la photo (`int.tele`) : le
+  cadre noir de Chez Bergine, la bibliothèque de la librairie (`i/int-librairie.jpg`, la salle du tour de la librairie),
+  le mur de pierre de l'atelier.
+- **Repères au bord de l'écran** (« ◀ Chez Bergine ») quand une boutique est hors champ ; le spectateur **glisse** pour
+  regarder.
+- **La mini-carte** en bas à droite (où tu es, qui tu connais dans chaque rue), **la grande carte** (toucher une rue ou
+  une boutique pour y aller) et **la recherche** (un commerce, un métier, une rue). Le plan est dessiné pour la maquette :
+  le vrai viendrait d'OpenStreetMap (pas joignable depuis la machine de travail).
+- **Le commerçant t'accueille par ton prénom** : « 👋 Bienvenue Camille ! », puis sa vraie voix (les enregistrements
+  commencent par « Camille ! »). Jamais de voix de synthèse.
+- **Téléphone et ordinateur** : la scène couvre l'écran quelle que soit sa forme (les photos sont en paysage : sur
+  téléphone, la rue défile ; sur ordinateur, elle tient presque entière).
+
+Limite honnête : les photos font 1672 × 941 ; au zoom ×2 sur téléphone, elles s'adoucissent.

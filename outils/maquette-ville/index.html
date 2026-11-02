@@ -1,11 +1,12 @@
 <title>Dax, la ville</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grandstander:wght@700;800&family=Poppins:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grandstander:wght@700;800&family=Playball&family=Playfair+Display:ital,wght@0,600;1,600&family=Poppins:wght@500;600;700;800&display=swap">
 <style>
-/* Un lieu à la fois, plein écran : on y marche (on touche le sol), les gens présents s'y promènent, les absents
-   restent là où on les croise d'habitude, translucides. Les annonces sont des écrans fixés dans les vitrines, qui
-   s'allument quand on s'approche. L'interface flotte en verre fumé. Un seul monde : le thème n'y change rien. */
+/* Un lieu à la fois (trois rues photographiées à Dax) : on y marche, la caméra te suit et avance avec toi (la rue
+   grossit quand tu t'approches d'une vitrine). Les présents se promènent, les absents restent translucides. Les
+   annonces sont des écrans posés dans les vitrines, en perspective. Mini-carte, recherche des commerces.
+   Téléphone (vertical) comme ordinateur (horizontal). Un seul monde : le thème n'y change rien. */
 :root{
   --nuit:#12070F;--verre:rgba(24,10,20,.72);--verre-bord:rgba(255,255,255,.16);
   --rose:#FF2E9A;--or:#F2C46B;--vert:#3DE2A6;--rouge:#FF4D5E;--creme:#FFF4E6;--doux:#D9C3CB;--papier:#FFF8EF;--papier-2:#F3E7DA;--encre:#2A1622;--gris:#7A6470;
@@ -16,22 +17,25 @@ html,body{height:100%}
 body{margin:0;background:var(--nuit);color:var(--creme);font-family:var(--texte);overflow:hidden;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
 button,input,textarea{font:inherit;color:inherit}
 button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-offset:2px}
-.app{position:fixed;inset:0;max-width:520px;margin:0 auto;overflow:hidden;background:#000}
+.app{position:fixed;inset:0;overflow:hidden;background:#000}
 .lieu-vue{position:absolute;inset:0;z-index:0;overflow:hidden}
-.monde{position:absolute;top:0;left:0;height:100%;transition:transform .9s cubic-bezier(.45,0,.3,1),filter .5s,opacity .5s;will-change:transform}
+.monde{position:absolute;top:0;left:0;transform-origin:0 0;transition:filter .45s,opacity .45s;will-change:transform}
 .monde.part{filter:blur(6px);opacity:0}
-.decor{position:absolute;inset:0;background:center/cover no-repeat}
+.decor{position:absolute;inset:0;background:center/100% 100% no-repeat}
 .sol{position:absolute;inset:0;cursor:pointer}
-.ecran-vit{position:absolute;left:0;top:0;transform-origin:0 0;padding:0;border:0;background:#050505;cursor:pointer;box-shadow:0 0 0 2px #111,0 0 0 3px #3a3a3a}
+.ecran-vit{position:absolute;left:0;top:0;transform-origin:0 0;padding:0;border:0;background:#050505;cursor:pointer;box-shadow:0 0 0 1.5px #0b0b0b,0 0 0 2.5px #3a3a3a,0 4px 8px rgba(0,0,0,.45)}
+.ecran-vit .meneau{position:absolute;z-index:3;top:-3%;bottom:-3%;width:9%;transform:translateX(-50%);box-shadow:inset 1px 0 rgba(255,255,255,.18),inset -1px 0 rgba(0,0,0,.35)}
+.enseigne-p{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none}
+.enseigne-p svg{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 1px 1px rgba(0,0,0,.45))}
 .ecran-vit video{display:block;width:100%;height:100%;object-fit:cover;opacity:.25;filter:grayscale(.5) brightness(.6);transition:opacity .8s,filter .8s}
 .ecran-vit.allume video{opacity:1;filter:none}
 .ecran-vit::before{content:"";position:absolute;inset:0;background:linear-gradient(125deg,rgba(255,255,255,.28),transparent 30%,transparent 72%,rgba(255,255,255,.1));pointer-events:none;z-index:2}
-.pastille{position:absolute;z-index:4;transform:translate(-50%,-100%);display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:0;background:var(--rose);color:#fff;font-size:11px;font-weight:800;white-space:nowrap;cursor:pointer;box-shadow:0 8px 18px -6px rgba(255,46,154,.9);animation:flotte 2.4s ease-in-out infinite;transition:opacity .4s}
+.pastille{position:absolute;z-index:120;transform:translate(-50%,-100%);transform-origin:0 0;scale:var(--inv,1);display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:0;background:var(--rose);color:#fff;font-size:11px;font-weight:800;white-space:nowrap;cursor:pointer;box-shadow:0 8px 18px -6px rgba(255,46,154,.9);animation:flotte 2.4s ease-in-out infinite;transition:opacity .4s}
 .pastille.cachee{opacity:0;pointer-events:none}
 @keyframes flotte{50%{transform:translate(-50%,calc(-100% - 5px))}}
 .enseigne{position:absolute;transform:translate(-50%,-50%);padding:.2em .7em;border-radius:12px;background:#3B2618;border:3px solid #C99A5B;color:#FFE7B8;font-family:var(--affiche);font-weight:800;white-space:nowrap;box-shadow:0 6px 14px rgba(0,0,0,.45);pointer-events:none}
 .plaque{position:absolute;transform:translate(-50%,0);padding:.15em .55em;border-radius:6px;background:var(--papier);color:var(--encre);font-family:var(--affiche);font-weight:800;white-space:nowrap;box-shadow:0 4px 10px rgba(0,0,0,.4);pointer-events:none}
-.sortie{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;padding:0;cursor:pointer}
+.sortie{position:absolute;transform:translate(-50%,-100%);transform-origin:0 0;scale:var(--inv,1);display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;padding:0;cursor:pointer}
 .sortie i{font-style:normal;font-size:28px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.6));animation:pousse 1.6s ease-in-out infinite}
 .sortie span{padding:4px 10px;border-radius:999px;background:var(--verre);border:1px solid var(--verre-bord);font-size:11px;font-weight:800;white-space:nowrap}
 @keyframes pousse{50%{transform:translateX(5px)}}
@@ -49,12 +53,12 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-
 @keyframes balanceg{0%,100%{transform:scaleX(-1) rotate(-2.5deg)}50%{transform:scaleX(-1) rotate(2.5deg)}}
 .qui.absent{opacity:.46;filter:grayscale(.7)}
 .qui.absent .nom::after{content:" · pas là";font-weight:500;opacity:.8}
-.qui .nom{position:absolute;left:50%;bottom:-4px;transform:translate(-50%,100%);padding:2px 8px;border-radius:999px;background:var(--verre);border:1px solid var(--verre-bord);font-size:10px;font-weight:700;white-space:nowrap}
+.qui .nom{position:absolute;left:50%;top:100%;margin-top:4px;transform:translateX(-50%);transform-origin:0 0;scale:var(--inv,1);padding:2px 8px;border-radius:999px;background:var(--verre);border:1px solid var(--verre-bord);font-size:10px;font-weight:700;white-space:nowrap}
 .qui.toi .nom{background:var(--rose);border-color:transparent}
 .qui.toi.fantome .nom{background:#6A47F0}
 .cible{position:absolute;z-index:1;width:34px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.85);transform:translate(-50%,-50%);animation:cible .7s ease-out forwards;pointer-events:none}
 @keyframes cible{from{transform:translate(-50%,-50%) scale(.3);opacity:1}to{transform:translate(-50%,-50%) scale(1.3);opacity:0}}
-.bulle{position:absolute;z-index:200;max-width:190px;padding:8px 11px 9px;border-radius:15px;background:var(--papier);color:var(--encre);font-family:var(--affiche);font-weight:700;font-size:13px;line-height:1.2;box-shadow:0 10px 24px -8px rgba(0,0,0,.6);transform:translate(-50%,calc(-100% - 10px));animation:bulle .45s cubic-bezier(.2,1.4,.4,1) both;pointer-events:none}
+.bulle{position:absolute;z-index:200;transform-origin:0 0;scale:var(--inv,1);max-width:190px;padding:8px 11px 9px;border-radius:15px;background:var(--papier);color:var(--encre);font-family:var(--affiche);font-weight:700;font-size:13px;line-height:1.2;box-shadow:0 10px 24px -8px rgba(0,0,0,.6);transform:translate(-50%,calc(-100% - 10px));animation:bulle .45s cubic-bezier(.2,1.4,.4,1) both;pointer-events:none}
 .bulle::after{content:"";position:absolute;left:50%;bottom:-8px;transform:translateX(-50%);border:9px solid transparent;border-top-color:var(--papier);border-bottom:0}
 .bulle small{display:block;margin-bottom:2px;font-family:var(--texte);font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#A1155E}
 @keyframes bulle{from{opacity:0;transform:translate(-50%,calc(-100% - 2px)) scale(.6)}}
@@ -69,7 +73,7 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-
 .droite{margin-left:auto;display:flex;gap:8px}
 .foule{position:absolute;z-index:10;left:10px;top:calc(62px + env(safe-area-inset-top,0px));padding:4px 10px;border-radius:999px;background:var(--verre);border:1px solid var(--verre-bord);font-size:10.5px;font-weight:700}
 .foule small{font-weight:500;color:var(--doux)}
-.bas{position:absolute;z-index:10;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+.bas{position:absolute;z-index:10;left:12px;right:12px;max-width:520px;margin:0 auto;bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
 .bas > *{pointer-events:auto}
 .astuce{padding:6px 12px;border-radius:999px;background:var(--verre);border:1px solid var(--verre-bord);font-size:11.5px;font-weight:700;text-align:center}
 .entrer{width:100%;height:52px;border-radius:999px;border:0;background:var(--rose);font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 12px 26px -8px rgba(255,46,154,.95);animation:apparait2 .35s both}
@@ -77,7 +81,7 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-
 .spect{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:18px;background:rgba(106,71,240,.88);font-size:12.5px;font-weight:700;text-align:center}
 .spect button{margin-top:6px;padding:8px 14px;border-radius:999px;border:0;background:#fff;color:#3A1A8C;font-weight:800;cursor:pointer}
 @keyframes apparait2{from{opacity:0;transform:translateY(10px)}}
-.toast{position:absolute;z-index:70;left:12px;right:12px;top:calc(62px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:18px;background:rgba(255,248,239,.97);color:var(--encre);box-shadow:0 16px 30px -10px rgba(0,0,0,.7);animation:tombe .45s cubic-bezier(.2,1.2,.4,1) both;cursor:pointer}
+.toast{position:absolute;z-index:70;left:12px;right:12px;max-width:440px;margin:0 auto;top:calc(62px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:18px;background:rgba(255,248,239,.97);color:var(--encre);box-shadow:0 16px 30px -10px rgba(0,0,0,.7);animation:tombe .45s cubic-bezier(.2,1.2,.4,1) both;cursor:pointer}
 .toast img{width:36px;height:36px;border-radius:50%;object-fit:cover;object-position:50% 6%;background:var(--papier-2)}
 .toast b{display:block;font-size:12.5px}
 .toast span{font-size:12px;color:var(--gris)}
@@ -113,13 +117,18 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-
 .coeurs{position:absolute;z-index:3;right:8px;bottom:calc(150px + env(safe-area-inset-bottom,0px));width:56px;height:50%;pointer-events:none}
 .envole{position:absolute;font-size:22px;pointer-events:none;animation:envole 2.2s ease-out forwards}
 @keyframes envole{0%{transform:translate(-50%,0) scale(.5);opacity:0}15%{opacity:1;transform:translate(-50%,-14px) scale(1.15)}100%{transform:translate(calc(-50% + var(--dx,10px)),-160px) scale(.9);opacity:0}}
-.int-fond{position:absolute;inset:0;background:center/cover no-repeat;filter:brightness(.8) saturate(1.05)}
+.int-scene{position:absolute;overflow:hidden;transform-origin:50% 35%;animation:dedans .9s cubic-bezier(.2,.8,.25,1) both}
+.int-scene.fondu{-webkit-mask-image:linear-gradient(transparent,#000 44px);mask-image:linear-gradient(transparent,#000 44px)}
+@keyframes dedans{from{transform:scale(1.22);filter:blur(7px);opacity:.15}}
+.int-fond{position:absolute;inset:0;background:center/100% 100% no-repeat;filter:brightness(.82) saturate(1.05)}
 .plein.boutique::after{background:linear-gradient(180deg,rgba(0,0,0,.6),transparent 18%,transparent 40%,rgba(18,7,15,.94) 74%)}
-.tele{position:absolute;z-index:2;right:5%;top:calc(70px + env(safe-area-inset-top,0px));width:38%;aspect-ratio:9/12;padding:0;border:0;border-radius:6px;overflow:hidden;background:#000;box-shadow:0 0 0 4px #161616,0 0 0 5px #444,0 18px 30px rgba(0,0,0,.6);transform:perspective(600px) rotateY(-10deg);cursor:pointer}
+.tele{position:absolute;left:0;top:0;transform-origin:0 0;padding:0;border:0;border-radius:2px;overflow:hidden;background:#000;box-shadow:0 0 0 3px #121212,0 0 0 4px #3c3c3c,0 12px 22px rgba(0,0,0,.6);cursor:pointer}
 .tele video{position:static;width:100%;height:100%;object-fit:cover}
 .tele::after{content:"";position:absolute;inset:0;background:linear-gradient(125deg,rgba(255,255,255,.22),transparent 35%)}
-.tele span{position:absolute;z-index:2;left:6px;top:6px;padding:2px 6px;border-radius:4px;background:var(--rouge);font-size:9px;font-weight:800}
-.promos{position:absolute;z-index:3;left:12px;top:calc(70px + env(safe-area-inset-top,0px));width:46%;padding:10px 11px 12px;border-radius:10px;background:#263129;border:5px solid #8A5A34;box-shadow:0 12px 24px rgba(0,0,0,.5);font-family:var(--affiche);color:#F4F1E6;box-sizing:border-box}
+.tele span{position:absolute;z-index:2;left:5px;top:5px;padding:1px 5px;border-radius:4px;background:var(--rouge);font-size:8.5px;font-weight:800}
+.tele b{position:absolute;z-index:2;left:50%;bottom:6px;transform:translateX(-50%);padding:2px 7px;border-radius:999px;background:rgba(0,0,0,.55);font-size:8.5px;font-weight:800;white-space:nowrap}
+.promos{position:absolute;z-index:3;left:12px;top:calc(70px + env(safe-area-inset-top,0px));width:46%;max-width:260px;padding:10px 11px 12px;border-radius:10px;background:#263129;border:5px solid #8A5A34;box-shadow:0 12px 24px rgba(0,0,0,.5);font-family:var(--affiche);color:#F4F1E6;box-sizing:border-box}
+.promos.d{left:auto;right:12px}
 .promos h3{margin:0 0 2px;font-size:13.5px}
 .promos p{margin:6px 0 0;font-size:12.5px;line-height:1.2}
 .promos .famille{position:relative;padding:6px 8px;border-radius:6px;border:1.5px dashed rgba(244,241,230,.5)}
@@ -132,14 +141,16 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-
 .patron .p{position:absolute;left:0;top:0;opacity:0}
 .patron.ouverte .p{opacity:1}.patron.ouverte .n{opacity:0}
 .patron .tag{position:absolute;left:50%;top:-4px;transform:translate(-50%,-100%);white-space:nowrap;padding:4px 9px;border-radius:999px;background:var(--papier);color:var(--encre);font-size:10.5px;font-weight:800}
-.sous-titre{position:absolute;z-index:7;left:12px;right:12px;top:31%;padding:10px 13px;border-radius:16px;background:var(--papier);color:var(--encre);font-family:var(--affiche);font-weight:700;font-size:15px;line-height:1.25;box-shadow:0 12px 26px -10px rgba(0,0,0,.7);animation:apparait2 .35s both}
-.ici{position:absolute;z-index:5;left:12px;right:12px;bottom:calc(128px + env(safe-area-inset-bottom,0px));font-size:11.5px;font-weight:700;color:var(--doux)}
+.patron .tag.salue{padding:6px 12px;font-family:var(--affiche);font-size:14px;background:var(--rose);color:#fff;animation:salue .6s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes salue{from{transform:translate(-50%,-60%) scale(.4);opacity:0}}
+.sous-titre{position:absolute;z-index:7;left:12px;right:12px;max-width:560px;margin:0 auto;top:31%;padding:10px 13px;border-radius:16px;background:var(--papier);color:var(--encre);font-family:var(--affiche);font-weight:700;font-size:15px;line-height:1.25;box-shadow:0 12px 26px -10px rgba(0,0,0,.7);animation:apparait2 .35s both}
+.ici{position:absolute;z-index:5;left:12px;right:12px;max-width:620px;margin:0 auto;bottom:calc(128px + env(safe-area-inset-bottom,0px));font-size:11.5px;font-weight:700;color:var(--doux)}
 .ici b{color:#fff}
-.faire{position:absolute;z-index:6;left:10px;right:10px;bottom:calc(14px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.faire{position:absolute;z-index:6;left:10px;right:10px;max-width:640px;margin:0 auto;bottom:calc(14px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .faire button{min-width:0;padding:8px 4px;border-radius:16px;border:1px solid var(--verre-bord);background:rgba(255,255,255,.12);backdrop-filter:blur(8px);font-size:11.5px;font-weight:800;cursor:pointer;line-height:1.15}
 .faire button i{display:block;font-style:normal;font-size:19px;margin-bottom:2px}
 .faire button.fort{background:var(--rose);border-color:transparent}
-.feuille{position:absolute;z-index:50;left:0;right:0;bottom:0;max-height:82%;overflow:auto;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));border-radius:24px 24px 0 0;background:var(--papier);color:var(--encre);animation:monte .38s cubic-bezier(.2,.9,.25,1) both;box-shadow:0 -20px 50px rgba(0,0,0,.5)}
+.feuille{position:absolute;z-index:50;left:0;right:0;bottom:0;max-width:540px;margin:0 auto;max-height:82%;overflow:auto;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));border-radius:24px 24px 0 0;background:var(--papier);color:var(--encre);animation:monte .38s cubic-bezier(.2,.9,.25,1) both;box-shadow:0 -20px 50px rgba(0,0,0,.5)}
 @keyframes monte{from{transform:translateY(100%)}}
 .voile{position:absolute;inset:0;z-index:49;background:rgba(10,4,8,.45)}
 .feuille h3{margin:0 40px 0 0;font-family:var(--affiche);font-size:22px;line-height:1.15}
@@ -175,11 +186,53 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-
 .boite li small{display:block;margin-top:3px;font-size:10.5px;color:var(--gris)}
 .boite li.neuf{border-color:var(--rose);box-shadow:0 0 0 2px rgba(255,46,154,.15)}
 .regle{margin:12px 0 0;font-size:11px;line-height:1.4;color:var(--gris)}
+
+/* les repères au bord de l'écran : une boutique hors champ, de quel côté elle est */
+.repere{position:absolute;z-index:9;display:flex;align-items:center;gap:5px;max-width:46%;padding:6px 10px;border-radius:999px;border:0;background:var(--rose);color:#fff;font-size:11px;font-weight:800;white-space:nowrap;cursor:pointer;box-shadow:0 8px 18px -6px rgba(255,46,154,.9);transform:translateY(-50%);transition:opacity .3s}
+.repere span{overflow:hidden;text-overflow:ellipsis}
+.repere.g{left:8px}.repere.d{right:8px;flex-direction:row-reverse}
+.repere[hidden]{display:none}
+/* la mini-carte (en bas à droite) et la grande carte, avec la recherche des commerces */
+.mini{position:absolute;z-index:11;right:12px;bottom:calc(78px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:4px;padding:0;border:0;background:none;cursor:pointer}
+.mini .rondcarte{position:relative;display:block;width:76px;height:76px;border-radius:50%;overflow:hidden;background:#EBCB9F;border:3px solid var(--or);box-shadow:0 0 0 2px rgba(60,20,10,.45),0 0 22px rgba(242,196,107,.6),0 10px 22px rgba(0,0,0,.5)}
+.mini .rondcarte svg{display:block;width:100%;height:100%}
+.mini .rondcarte::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 14px rgba(80,30,10,.45);pointer-events:none}
+.mini > span{max-width:108px;padding:3px 9px;border-radius:999px;background:rgba(255,246,232,.96);color:var(--encre);font-size:10.5px;font-weight:800;line-height:1.15;text-align:center;box-shadow:0 4px 10px rgba(0,0,0,.4)}
+.mini > span small{display:block;font-size:9px;font-weight:600;color:var(--gris)}
+.carte{position:absolute;inset:0;z-index:65;display:flex;flex-direction:column;background:rgba(18,7,15,.72);backdrop-filter:blur(6px);animation:apparait2 .3s both}
+.carte[hidden]{display:none!important}
+.carte .c-haut{display:flex;gap:8px;align-items:center;padding:calc(12px + env(safe-area-inset-top,0px)) 12px 8px;max-width:900px;width:100%;box-sizing:border-box;margin:0 auto}
+.carte .c-haut input{flex:1;min-width:0;height:44px;padding:0 14px 0 38px;border-radius:999px;border:1px solid var(--verre-bord);background:rgba(255,255,255,.95) no-repeat 13px 50%/18px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237A6470' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='M15.5 15.5 21 21'/%3E%3C/svg%3E");color:var(--encre);font-size:15px}
+.carte .c-corps{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;padding:0 12px calc(12px + env(safe-area-inset-bottom,0px));max-width:900px;width:100%;box-sizing:border-box;margin:0 auto}
+.carte .plan{flex:1;min-height:180px;border-radius:22px;overflow:hidden;background:#EBCB9F;border:3px solid var(--or);box-shadow:0 14px 30px rgba(0,0,0,.5)}
+.carte .plan svg{display:block;width:100%;height:100%}
+.carte .plan .rue,.carte .plan .lieu,.carte .plan .epingle{cursor:pointer}
+.carte .liste{max-height:40%;overflow:auto;display:grid;gap:6px}
+.carte .liste h4{margin:4px 2px 0;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--doux)}
+.carte .res{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:16px;border:0;background:rgba(255,248,239,.97);color:var(--encre);text-align:left;cursor:pointer}
+.carte .res img{flex:none;width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:50% 6%;background:var(--papier-2)}
+.carte .res .ic{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#F1DFC5;font-size:18px}
+.carte .res b{display:block;font-size:13.5px}
+.carte .res small{display:block;font-size:11.5px;color:var(--gris)}
+.carte .res em{margin-left:auto;flex:none;font-style:normal;font-size:11px;font-weight:800;color:#A1155E}
+.carte .vide{padding:10px;border-radius:14px;background:rgba(255,255,255,.1);font-size:12.5px;text-align:center}
+.carte .note{margin:0;font-size:10.5px;color:var(--doux);text-align:center}
+@keyframes pouls{0%{r:6;opacity:.7}100%{r:16;opacity:0}}
+.pouls{animation:pouls 1.6s ease-out infinite}
+/* l'ordinateur et le téléphone couché : plus de place, même ville */
+@media (min-aspect-ratio:1/1){
+  .plein video{object-fit:contain}
+  .porte{background-image:linear-gradient(rgba(18,7,15,.35),rgba(18,7,15,.55)),url(i/dax-place.jpg);padding:8% 16px 6%}
+  .mini .rondcarte{width:112px;height:112px}
+  .carte .c-corps{flex-direction:row}
+  .carte .liste{max-height:none;width:320px;flex:none;align-content:start}
+}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
 </style>
 
 <div class="app" id="app">
   <div class="lieu-vue" id="vue"><div class="monde" id="monde"></div></div>
+  <div id="reperes"></div>
   <div class="haut">
     <div class="etiq"><b id="nomLieu">Place de la cathédrale</b><small>Dax · touche le sol pour marcher</small></div>
     <div class="droite">
@@ -190,9 +243,14 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-
   <div class="foule">👥 <b>238</b> à Dax maintenant <small>· tu vois tes amis et ta famille</small></div>
   <p class="maquette">Maquette · tout est simulé</p>
   <div class="bas" id="bas"></div>
+  <button class="mini" id="mini" type="button" aria-label="Ouvrir la carte de Dax"><span class="rondcarte" id="miniPlan"></span><span id="miniNom"></span></button>
   <div id="toasts"></div>
   <section class="plein" id="plein" hidden aria-label="L’annonce en grand"></section>
   <section class="plein boutique" id="boutique" hidden aria-label="Dans la boutique"></section>
+  <section class="carte" id="carte" hidden aria-label="La carte de Dax">
+    <div class="c-haut"><input id="cherche" type="search" placeholder="Un commerce, une rue…" autocomplete="off" aria-label="Chercher un commerce ou une rue"><button class="rond" type="button" id="carteFermer" aria-label="Fermer la carte">✕</button></div>
+    <div class="c-corps"><div class="plan" id="plan"></div><div class="liste" id="liste"></div></div>
+  </section>
   <div id="feuilles"></div>
   <div class="porte" id="porte">
     <h1>Clik<b>Me</b><br>Dax</h1>
@@ -225,7 +283,7 @@ const BOUCHES = {
   "lea-poterie": "000000000011111111111000001110100000001100001110100001111000000000000000",
 };
 const BOUTIQUES = {
-  bergine: { nom: "Chez Bergine", metier: "Restaurant", patron: "jm", video: "v/bergine", interieur: "i/int-bergine.jpg", voix: "jm", annonce: "Garbure & magret · 19 €",
+  bergine: { nom: "Chez Bergine", metier: "Restaurant", patron: "jm", video: "v/bergine", int: { img: "i/int-bergine.jpg", iw: 540, ih: 368, cadre: [1, 0], tele: [[87.6, 3.46], [95, 2.5], [95, 21.8], [87.6, 22.32]], ardoise: "g" }, voix: "jm", annonce: "Garbure & magret · 19 €",
     dit: "Camille ! Il me reste une table à 12 h 30 : elle est à toi pendant 5 minutes !",
     promo: "Garbure landaise & magret · 19 €", famille: "Le dessert offert à la famille ce midi",
     question: ["Demain, je vous fais quoi ?", ["La garbure", "Le magret", "Le poisson du marché"], [14, 21, 6]],
@@ -233,15 +291,15 @@ const BOUTIQUES = {
     essai: { k: "lea", quoi: "le magret", voix: "lea-magret", dit: "Le meilleur magret de Dax !", note: "😋 12 avis" },
     ici: ["lea", "hugo"], traces: [["ines", "Le meilleur accueil de Dax 💛"]], monde: 9,
     reponse: "Merci Camille ! Le magret revient vendredi, je te garde une table ?" },
-  alice: { nom: "La Page d’Alice", metier: "Librairie", patron: "alice", video: "v/alice", interieur: "i/int-alice.jpg", annonce: "Le coup de cœur d’Alice",
-    dit: "Mon coup de cœur : Le Comte de Monte-Cristo. Je te le mets de côté ?",
+  alice: { nom: "La Page d’Alice", metier: "Librairie", patron: "alice", video: "v/alice", int: { img: "i/int-librairie.jpg", iw: 960, ih: 720, cadre: [0.525, 0], tele: [[56.5, 5.5], [65.1, 5.5], [65.1, 25.8], [56.5, 25.8]], ardoise: "g" }, annonce: "Le coup de cœur d’Alice",
+    dit: "Camille ! Mon coup de cœur : Le Comte de Monte-Cristo. Je te le mets de côté ?",
     promo: "Coup de cœur : Le Comte de Monte-Cristo", famille: "Un marque-page offert à la famille",
     question: ["Mon prochain coup de cœur ?", ["Un polar", "Une aventure", "Une BD"], [8, 11, 9]],
     reserver: { quoi: "ton exemplaire", bouton: "Le mettre de côté" },
     essai: { k: "ines", quoi: "le coup de cœur d’Alice", dit: "Je n’ai pas pu le lâcher, 1 200 pages en 10 jours !", note: "📚 7 avis" },
     ici: ["ines"], traces: [["lea", "Merci pour les conseils, Alice !"]], monde: 4,
     reponse: "Avec plaisir ! Il m’en reste deux, je t’en garde un ?" },
-  atelier: { nom: "L’Atelier de Nina", metier: "Atelier de poterie", patron: "nina", video: "v/atelier", interieur: "i/int-atelier.jpg", voix: "nina", annonce: "Atelier tour · samedi 10 h",
+  atelier: { nom: "L’Atelier de Nina", metier: "Atelier de poterie", patron: "nina", video: "v/atelier", int: { img: "i/int-atelier.jpg", iw: 668, ih: 1000, cadre: [0.5, 0.229], tele: [[31.5, 22], [46, 22], [46, 39.2], [31.5, 39.2]], ardoise: "d" }, voix: "nina", annonce: "Atelier tour · samedi 10 h",
     dit: "Camille ! Il me reste une place à l’atelier tour, samedi à 10 h : elle est à toi pendant 5 minutes !",
     promo: "Atelier tour samedi 10 h · 2 places", famille: "La cuisson de ta pièce offerte",
     question: ["Samedi, on tourne quoi ?", ["Des bols", "Des tasses", "Un vase"], [10, 7, 5]],
@@ -250,23 +308,41 @@ const BOUTIQUES = {
     ici: ["sam"], traces: [["lea", "Vivement samedi !"]], monde: 5,
     reponse: "Avec joie ! Samedi 10 h, je te garde la place ?" },
 };
-// LES LIEUX : chacun le sien, plein écran (plus de raccord entre deux photos). Coordonnées en % du décor.
+// LES LIEUX : trois rues photographiées à Dax. Coordonnées en % de la photo. Les enseignes réelles des trois façades
+// qui accueillent nos commerces (imaginaires) sont effacées et remplacées ; les autres commerces restent du décor.
+// sol : le pavé où l'on marche (polygone) ; obstacles : [x0, x1, y0, y1] ; horizon : la ligne des yeux (perspective).
 const LIEUX = {
-  place: { nom: "Place de la cathédrale", decor: "i/place.jpg", horizon: 47,
-    sol: { x: [6, 94], y: [64, 95] }, fontaine: [34, 66, 54, 68],
+  place: { nom: "La place de la fontaine", decor: "i/dax-place.jpg", iw: 1672, ih: 941, horizon: 57.5,
+    sol: [[40, 66], [70, 66], [88, 80], [96, 100], [4, 100], [20, 80]], obstacles: [],
     vitrines: [
-      { b: "bergine", q: [[2.2, 47.3], [20.2, 47.6], [20.2, 56.8], [2.2, 56.9]], porte: [16, 70], enseigne: [12.1, 41.6, "Chez Bergine"] },
-      { b: "alice", q: [[81.9, 47.3], [99.1, 45.8], [99.1, 56.4], [81.9, 55.6]], porte: [86, 69], plaque: [90.5, 56.9, "La Page d’Alice"] },
+      { b: "bergine", ecran: [[14.6, 49.55], [18.4, 49.65], [18.4, 61.45], [14.6, 61.6]], meneau: [0.66, "#2B1A12"], porte: [26, 77],
+        enseigne: { q: [[23.1, 35.56], [34.5, 40.97], [34.5, 45.56], [23.1, 41.18]], texte: "Chez Bergine", police: "Playball", couleur: "#F8EAD0", taille: 0.74, ligne: 0.7 } },
     ],
-    sortie: { vers: "rue", x: 88, y: 94, label: "Rue des Halles", sens: "d" },
-    gens: [{ k: "lea", la: true }, { k: "hugo", la: true }, { k: "elise", la: false, x: 64, y: 80, trace: "La vitrine d’Alice est magnifique" }] },
-  rue: { nom: "Rue des Halles", decor: "i/rue.jpg", horizon: 50,
-    sol: { x: [20, 82], y: [66, 95] }, fontaine: [72, 100, 58, 76],
+    sorties: [{ vers: "hotel", x: 9, y: 97, sens: "g" }, { vers: "pietonne", x: 91, y: 97, sens: "d" }],
+    gens: [{ k: "lea", la: true }, { k: "elise", la: false, x: 62, y: 72, trace: "La terrasse de Chez Bergine, au soleil 😍" }] },
+  hotel: { nom: "La rue de l’hôtel", decor: "i/dax-hotel.jpg", iw: 1672, ih: 941, horizon: 59,
+    sol: [[44, 62], [57, 62], [70, 72], [80, 82], [92, 100], [10, 100], [28, 84], [36, 70]], obstacles: [],
     vitrines: [
-      { b: "atelier", q: [[83.7, 50.2], [98, 49.7], [98, 60.5], [83.7, 60.5]], porte: [80, 76], enseigne: [91, 43.2, "L’Atelier de Nina"] },
+      { b: "alice", ecran: [[24.1, 50.45], [27.3, 50.95], [27.3, 60.7], [24.1, 60.7]], meneau: [0.39, "#2A1A12"], porte: [34, 76],
+        enseigne: { q: [[16.38, 35.33], [33.5, 45.33], [33.5, 47.64], [16.38, 39.78]], texte: "La Page d’Alice", police: "Playball", couleur: "#FFF1D6", taille: 0.8, ligne: 0.72 } },
     ],
-    sortie: { vers: "place", x: 16, y: 94, label: "Place de la cathédrale", sens: "g" },
-    gens: [{ k: "ines", la: true }, { k: "sam", la: false, x: 42, y: 77, trace: "Mon premier bol sort du four 😍" }] },
+    sorties: [{ vers: "place", x: 90, y: 97, sens: "d" }],
+    gens: [{ k: "ines", la: true }] },
+  pietonne: { nom: "La rue piétonne", decor: "i/dax-pietonne.jpg", iw: 1672, ih: 941, horizon: 59,
+    sol: [[42, 63], [60, 63], [80, 75], [92, 88], [92, 100], [8, 100], [14, 88], [28, 74]], obstacles: [[62.5, 71.5, 72, 82]],
+    vitrines: [
+      { b: "atelier", ecran: [[74.0, 54.05], [77.5, 53.75], [77.5, 65.0], [74.0, 64.7]], meneau: [0.405, "#8E1B2A"], porte: [76, 83],
+        enseigne: { q: [[73.43, 41.9], [78.07, 39.61], [78.07, 43.93], [73.43, 46.21]], texte: "L’Atelier de Nina", police: "Playfair Display", couleur: "#FFFFFF", taille: 0.62, ligne: 0.68, italique: true } },
+    ],
+    sorties: [{ vers: "place", x: 10, y: 97, sens: "g" }],
+    gens: [{ k: "hugo", la: true }, { k: "sam", la: false, x: 52, y: 70, trace: "Mon premier bol sort du four 😍" }] },
+};
+// LE PLAN (dessiné pour la maquette ; le vrai viendra d'OpenStreetMap) : où sont les lieux, les rues et les boutiques
+const PLAN = {
+  lieux: { place: [200, 150], hotel: [108, 188], pietonne: [298, 118] },
+  rues: { hotel: "M176 162 Q112 186 28 224", pietonne: "M226 140 Q300 118 376 86" },
+  boutiques: { bergine: [181, 139], alice: [118, 179], atelier: [306, 108] },
+  autres: ["M200 116 Q196 64 214 8", "M210 184 Q206 240 222 296", "M14 92 Q90 104 172 132", "M236 168 Q320 196 392 232", "M64 20 Q80 120 70 296", "M330 14 Q338 150 352 296"],
 };
 const PAROLES = {
   lea: ["Tu as goûté le magret de Chez Bergine ? 😋", "Samedi je retourne à l’atelier !", "Coucou !"],
@@ -277,7 +353,7 @@ const PAROLES = {
 
 // ── L'ÉTAT ───────────────────────────────────────────────────────────────────────────────────
 const $ = (s) => document.querySelector(s);
-const etat = { mode: "figurine", lieu: "place", famille: new Set(), mesMots: {}, invites: {}, votes: {}, pris: new Set(), boite: [], audio: null, boutique: null, proche: null };
+const etat = { mode: "figurine", lieu: "place", famille: new Set(), mesMots: {}, invites: {}, votes: {}, pris: new Set(), boite: [], audio: null, boutique: null, proche: null, regard: null, zoomPorte: null, accueillis: new Set() };
 etat.boite.push({ k: "lea", titre: "Léa te demande ton avis", texte: "« Tu as déjà goûté le magret de Chez Bergine ? Dis-moi ce que t’en penses ! »", b: "bergine", le: "il y a 5 min", neuf: true });
 const moi = () => (etat.mode === "fantome" ? "tonFantome" : "toi");
 
@@ -374,158 +450,316 @@ function mm(a, b) { const c = Array(9); for (let i = 0; i < 3; i++) for (let j =
 function mv(m, v) { return [m[0] * v[0] + m[1] * v[1] + m[2] * v[2], m[3] * v[0] + m[4] * v[1] + m[5] * v[2], m[6] * v[0] + m[7] * v[1] + m[8] * v[2]]; }
 function base(p) { const m = [p[0][0], p[1][0], p[2][0], p[0][1], p[1][1], p[2][1], 1, 1, 1]; const v = mv(adj(m), [p[3][0], p[3][1], 1]); return mm(m, [v[0], 0, 0, 0, v[1], 0, 0, 0, v[2]]); }
 function matrice(w, h, tl, tr, br, bl) { const t = mm(base([tl, tr, bl, br]), adj(base([[0, 0], [w, 0], [0, h], [w, h]]))); for (let i = 0; i < 9; i++) t[i] /= t[8]; return `matrix3d(${[t[0], t[3], 0, t[6], t[1], t[4], 0, t[7], 0, 0, 1, 0, t[2], t[5], 0, t[8]].join(",")})`; }
-// un écran plus petit, au milieu de la vitrine : le point (u, v) du quadrilatère
-const dans = (q, u, v) => { const h = [q[0][0] + (q[1][0] - q[0][0]) * u, q[0][1] + (q[1][1] - q[0][1]) * u], b = [q[3][0] + (q[2][0] - q[3][0]) * u, q[3][1] + (q[2][1] - q[3][1]) * u]; return [h[0] + (b[0] - h[0]) * v, h[1] + (b[1] - h[1]) * v]; };
+const centreQuad = (q) => [(q[0][0] + q[1][0] + q[2][0] + q[3][0]) / 4, (q[0][1] + q[1][1] + q[2][1] + q[3][1]) / 4];
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
 // ── LE LIEU ────────────────────────────────────────────────────────────────────────────────────
-let H = 0, W = 0, VW = 0, gens = [], toi = null, camera = 0;
+let VH = 0, VW = 0, W = 0, Hm = 0, gens = [], toi = null;
+const PRENOM = "Camille";
 const sources = (v) => `<source src="${v}.mp4" type="video/mp4"><source src="${v}.webm" type="video/webm">`;
 const L = () => LIEUX[etat.lieu];
-const taille = (y) => Math.max(6, (y - L().horizon) * 0.6); // en % de la hauteur : plus loin, plus petit
-const px = ([x, y]) => [(x / 100) * W, (y / 100) * H];
-function voirCamera(xPct) { camera = Math.max(0, Math.min(W - VW, (xPct / 100) * W - VW / 2)); $("#monde").style.transform = `translateX(${-camera}px)`; }
-function lieu() {
-  H = $("#app").clientHeight; VW = $("#app").clientWidth; W = Math.max(VW, Math.round(H * 572 / 1024));
-  const M = $("#monde"); M.style.width = W + "px"; M.innerHTML = "";
+const MONDE = () => $("#monde");
+const K_TAILLE = 0.8, Y0 = 92, SMAX = 2.2, FOCALE = 0.87;
+const taille = (y) => Math.max(2, (y - L().horizon) * K_TAILLE); // en % de la hauteur de la photo : plus loin, plus petit
+const px = ([x, y]) => [(x / 100) * W, (y / 100) * Hm];
+// la perspective du pavé : un point de la photo ⇄ sa place au sol (en hauteurs de caméra), pour marcher « pour de vrai »
+function versSol(x, y) { const d = (Math.max(0.35, y - L().horizon) * Hm) / 100; return [(((x - 50) / 100) * W) / d, (FOCALE * W) / d]; }
+function versImage(X, Z) { const d = (FOCALE * W) / Z; return [50 + ((X * d) / W) * 100, L().horizon + (d / Hm) * 100]; }
+
+// un élément « à plat » posé sur quatre coins (en % de la photo) : il prend la perspective de la façade ou du mur
+function surQuad(q, cl, tag = "div") {
+  const c = q.map(px), w = (dist(c[0], c[1]) + dist(c[3], c[2])) / 2, h = (dist(c[0], c[3]) + dist(c[1], c[2])) / 2;
+  const e = document.createElement(tag); e.className = cl; e.style.width = w + "px"; e.style.height = h + "px"; e.style.transform = matrice(w, h, ...c);
+  return { e, w, h };
+}
+
+// ── LA CAMÉRA : elle te suit et avance avec toi. Plus tu approches d'une vitrine, plus la rue grossit autour de toi
+//    (ta figurine garde sa taille, comme si on marchait derrière toi). Le spectateur, lui, regarde où il veut.
+const cam = { s: 1, x: 0, y: 0, ax: 0, ay: 0, tx: 0, ty: 0 }; let camInv = 0;
+function viseeCamera() {
+  if (etat.zoomPorte) { const c = px(centreQuad(etat.zoomPorte.ecran)); return { s: 3.2, x: c[0], y: c[1], ax: VW / 2, ay: VH * 0.5 }; }
+  if (toi) {
+    let [x, y] = px([toi.x, toi.y]), s = Math.min(SMAX, Math.max(1, (Y0 - L().horizon) / Math.max(0.6, toi.y - L().horizon)));
+    if (etat.proche) { // devant une boutique : la caméra cadre ta figurine ET la vitrine
+      const [vx] = px(centreQuad(etat.proche.ecran)), dx = Math.abs(x - vx), gauche = vx < x;
+      s = Math.min(s, Math.max(1, (VW * 0.5) / Math.max(1, dx)));
+      return { s, x: (x + vx) / 2, y, ax: VW * (gauche ? 0.36 : 0.5), ay: VH * 0.9 }; // la mini-carte (en bas à droite) ne cache pas ta figurine
+    }
+    return { s, x, y, ax: VW / 2, ay: VH * 0.9 };
+  }
+  const v = etat.regard || { x: 50, y: 74, s: 1 }, [x, y] = px([v.x, v.y]);
+  return { s: v.s, x, y, ax: VW / 2, ay: VH * 0.58 };
+}
+function camera(dt, net) {
+  const c = viseeCamera(), k = net ? 1 : 1 - Math.exp(-dt * (etat.zoomPorte ? 4.5 : 3));
+  for (const n of ["s", "x", "y", "ax", "ay"]) cam[n] += (c[n] - cam[n]) * k;
+  cam.tx = Math.min(0, Math.max(VW - cam.s * W, cam.ax - cam.s * cam.x));
+  cam.ty = Math.min(0, Math.max(VH - cam.s * Hm, cam.ay - cam.s * cam.y));
+  const pas = toi && toi.cible && !etat.zoomPorte ? Math.sin((performance.now() / 1000) * Math.PI * 3.6) * 1.3 : 0; // le balancement de la marche
+  MONDE().style.transform = `translate3d(${cam.tx.toFixed(1)}px,${(cam.ty + pas).toFixed(1)}px,0) scale(${cam.s.toFixed(4)})`;
+  if (Math.abs(cam.s - camInv) > 0.003) { camInv = cam.s; MONDE().style.setProperty("--inv", (1 / cam.s).toFixed(4)); }
+  for (const v of L().vitrines) { // hors champ : un repère au bord, du bon côté
+    if (!v.repere) continue;
+    const [cx, cy] = px(centreQuad(v.ecran)), sx = cam.tx + cam.s * cx, sy = cam.ty + cam.s * cy, g = sx < 6, d = sx > VW - 6;
+    v.repere.hidden = !(g || d) || !!etat.zoomPorte;
+    if (g || d) { v.repere.className = "repere " + (g ? "g" : "d"); v.repere.firstChild.textContent = g ? "◀" : "▶"; v.repere.style.top = Math.max(120, Math.min(VH - 190, sy)) + "px"; }
+  }
+}
+
+function lieu(garde) {
+  const app = $("#app"); VH = app.clientHeight; VW = app.clientWidth;
+  const sc = Math.max(VW / L().iw, VH / L().ih); W = L().iw * sc; Hm = L().ih * sc;
+  const M = MONDE(); M.style.width = W + "px"; M.style.height = Hm + "px"; M.innerHTML = ""; $("#reperes").innerHTML = "";
   M.insertAdjacentHTML("beforeend", `<div class="decor" style="background-image:url(${L().decor})"></div><div class="sol" id="solTouche"></div>`);
   $("#solTouche").addEventListener("click", toucherSol);
   $("#nomLieu").textContent = L().nom;
   for (const v of L().vitrines) {
     const B = BOUTIQUES[v.b];
-    const q = [dans(v.q, 0.16, 0.1), dans(v.q, 0.84, 0.1), dans(v.q, 0.84, 0.9), dans(v.q, 0.16, 0.9)].map(px);
-    const xs = q.map((c) => c[0]), ys = q.map((c) => c[1]), w = Math.max(...xs) - Math.min(...xs), h = Math.max(...ys) - Math.min(...ys);
-    const e = document.createElement("button"); e.type = "button"; e.className = "ecran-vit"; e.setAttribute("aria-label", `L’écran de ${B.nom}`);
-    e.style.width = w + "px"; e.style.height = h + "px"; e.style.transform = matrice(w, h, ...q);
-    e.innerHTML = `<video muted playsinline loop preload="auto">${sources(B.video)}</video>`;
+    if (v.enseigne) { // la nouvelle enseigne, peinte dans la perspective de la façade (l'ancienne est effacée de la photo)
+      const n = v.enseigne, { e, w, h } = surQuad(n.q, "enseigne-p");
+      e.innerHTML = `<svg viewBox="0 0 ${w.toFixed(1)} ${h.toFixed(1)}" aria-hidden="true"><text x="${(w / 2).toFixed(1)}" y="${(h * n.ligne).toFixed(1)}" text-anchor="middle" font-family="'${n.police}', serif" font-size="${(h * n.taille).toFixed(1)}"${n.italique ? ' font-style="italic"' : ""} font-weight="${n.police === "Playball" ? 400 : 600}" fill="${n.couleur}" textLength="${(w * 0.9).toFixed(1)}" lengthAdjust="spacingAndGlyphs">${n.texte}</text></svg>`;
+      M.appendChild(e);
+    }
+    const { e } = surQuad(v.ecran, "ecran-vit", "button"); e.type = "button"; e.setAttribute("aria-label", `L’écran de ${B.nom}`);
+    e.innerHTML = `<video muted playsinline loop preload="auto">${sources(B.video)}</video>${v.meneau ? `<i class="meneau" style="left:${v.meneau[0] * 100}%;background:${v.meneau[1]}"></i>` : ""}`;
     e.addEventListener("click", (ev) => { ev.stopPropagation(); allerA(v); });
-    M.appendChild(e); v.ecran = e;
+    M.appendChild(e); v.el = e;
     const vid = e.querySelector("video"); vid.addEventListener("loadeddata", () => { if (!e.classList.contains("allume")) vid.currentTime = 2; }, { once: true });
-    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, top = Math.min(...v.q.map((c) => (c[1] / 100) * H));
+    const [hx, hy] = px([(v.ecran[0][0] + v.ecran[1][0]) / 2, Math.min(v.ecran[0][1], v.ecran[1][1])]);
     const pin = document.createElement("button"); pin.type = "button"; pin.className = "pastille"; pin.innerHTML = `▶ ${B.annonce}`;
-    pin.style.left = Math.min(W - 75, Math.max(75, cx)) + "px"; pin.style.top = top - 8 + "px";
+    pin.style.left = hx + "px"; pin.style.top = hy - 6 + "px";
     pin.addEventListener("click", (ev) => { ev.stopPropagation(); allerA(v); });
     M.appendChild(pin); v.pin = pin;
-    if (v.enseigne) M.insertAdjacentHTML("beforeend", `<span class="enseigne" style="left:${(v.enseigne[0] / 100) * W}px;top:${(v.enseigne[1] / 100) * H}px;font-size:${Math.max(10, W * 0.026)}px">${v.enseigne[2]}</span>`);
-    if (v.plaque) M.insertAdjacentHTML("beforeend", `<span class="plaque" style="left:${(v.plaque[0] / 100) * W}px;top:${(v.plaque[1] / 100) * H}px;font-size:${Math.max(9, W * 0.022)}px">${v.plaque[2]}</span>`);
+    const r = document.createElement("button"); r.type = "button"; r.className = "repere"; r.hidden = true;
+    r.innerHTML = `<i></i><span>${B.nom}</span>`; r.addEventListener("click", () => allerA(v));
+    $("#reperes").appendChild(r); v.repere = r;
   }
-  const s = L().sortie;
-  const so = document.createElement("button"); so.type = "button"; so.className = "sortie" + (s.sens === "g" ? " g" : "");
-  so.style.left = (s.x / 100) * W + "px"; so.style.top = (s.y / 100) * H + "px"; so.style.zIndex = "150";
-  so.innerHTML = `<i>${s.sens === "g" ? "⬅️" : "➡️"}</i><span>${s.label}</span>`;
-  so.addEventListener("click", (ev) => { ev.stopPropagation(); changerDeLieu(s); });
-  M.appendChild(so);
+  for (const s of L().sorties) {
+    const so = document.createElement("button"); so.type = "button"; so.className = "sortie" + (s.sens === "g" ? " g" : "");
+    const [x, y] = px([s.x, s.y]); so.style.left = x + "px"; so.style.top = y + "px"; so.style.zIndex = "150";
+    so.innerHTML = `<i>${s.sens === "g" ? "⬅️" : "➡️"}</i><span>${LIEUX[s.vers].nom}</span>`;
+    so.addEventListener("click", (ev) => { ev.stopPropagation(); changerDeLieu(s); });
+    M.appendChild(so);
+  }
   // les gens : les présents se promènent, chacun à son rythme ; les absents restent, translucides
+  const avant = garde?.gens || {};
   gens = L().gens.map((g) => {
-    const p = g.la ? { ...g, ...pointAuHasard() } : { ...g };
+    const p = g.la ? { ...g, ...(avant[g.k] || pointAuHasard()) } : { ...g };
     p.el = perso(g.k, g.la ? "" : " absent");
     p.el.addEventListener("click", (ev) => { ev.stopPropagation(); toucherQuelquun(p); });
-    p.pause = performance.now() + 400 + Math.random() * 3000; p.cible = null; p.v = 4 + Math.random() * 3;
+    p.pause = performance.now() + 400 + Math.random() * 3000; p.cible = null; p.v = 0.55 + Math.random() * 0.4;
     M.appendChild(p.el); poser(p);
     return p;
   });
   toi = null;
   if (etat.mode !== "spectateur") {
-    toi = { k: moi(), x: s.sens === "g" ? 26 : 50, y: 91, cible: null, v: 15 };
+    toi = { k: moi(), x: garde?.toi?.x ?? 50, y: garde?.toi?.y ?? Y0, cible: null, v: 1.9 };
     toi.el = perso(toi.k, " toi" + (etat.mode === "fantome" ? " fantome" : ""));
     toi.el.querySelector(".nom").textContent = etat.mode === "fantome" ? "Ton fantôme" : "Toi";
     toi.el.addEventListener("click", (ev) => ev.stopPropagation());
     M.appendChild(toi.el); poser(toi);
   }
-  etat.proche = null; voirCamera(toi ? toi.x : 50); allumer(); bas();
+  etat.proche = null; if (!garde) etat.regard = null;
+  camera(0, true); allumer(); bas(); majMini();
 }
 function perso(k, cl) {
   const b = document.createElement("button"); b.type = "button"; b.className = "qui" + cl; b.setAttribute("aria-label", GENS[k].nom);
   b.innerHTML = `<span class="corps"><img class="n" src="${GENS[k].n}" alt="">${GENS[k].p ? `<img class="p" src="${GENS[k].p}" alt="">` : ""}</span><span class="nom">${GENS[k].nom}</span>`;
   return b;
 }
-function poser(p) { const [x, y] = px([p.x, p.y]); Object.assign(p.el.style, { left: x + "px", top: y + "px", height: (taille(p.y) / 100) * H + "px", zIndex: String(10 + Math.round(p.y)) }); }
-const dansFontaine = (x, y) => { const f = L().fontaine; return f && x > f[0] && x < f[1] && y > f[2] && y < f[3]; };
-function pointAuHasard() { const s = L().sol; for (let k = 0; k < 20; k++) { const x = s.x[0] + Math.random() * (s.x[1] - s.x[0]), y = s.y[0] + Math.random() * (s.y[1] - s.y[0] - 6); if (!dansFontaine(x, y)) return { x, y }; } return { x: 50, y: 82 }; }
+function poser(p) { const [x, y] = px([p.x, p.y]); Object.assign(p.el.style, { left: x + "px", top: y + "px", height: (taille(p.y) / 100) * Hm + "px", zIndex: String(10 + Math.round(p.y)) }); }
 
-// LE MOUVEMENT : chacun vers son prochain point, à son rythme ; toi vers où tu as touché
+// LE PAVÉ : on ne marche que là où il y a du sol libre (pas dans les terrasses ni les bacs à fleurs)
+function dansPoly(P, x, y) { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, yi] = P[i], [xj, yj] = P[j]; if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c; } return c; }
+const dansObstacle = (x, y) => (L().obstacles || []).find((o) => x > o[0] && x < o[1] && y > o[2] && y < o[3]);
+function surLeSol(x, y) {
+  const P = L().sol, r = W / Hm; let q = [x, y];
+  if (!dansPoly(P, x, y)) {
+    let bd = Infinity;
+    for (let i = 0; i < P.length; i++) {
+      const a = P[i], b = P[(i + 1) % P.length], dx = b[0] - a[0], dy = b[1] - a[1];
+      const t = Math.max(0, Math.min(1, ((x - a[0]) * dx * r * r + (y - a[1]) * dy) / (dx * dx * r * r + dy * dy || 1)));
+      const c = [a[0] + dx * t, a[1] + dy * t], d = ((c[0] - x) * r) ** 2 + (c[1] - y) ** 2;
+      if (d < bd) { bd = d; q = c; }
+    }
+    const g = P.reduce((s, p) => [s[0] + p[0] / P.length, s[1] + p[1] / P.length], [0, 0]);
+    q = [q[0] + (g[0] - q[0]) * 0.04, q[1] + (g[1] - q[1]) * 0.04];
+  }
+  const o = dansObstacle(q[0], q[1]);
+  if (o) q = [[o[0] - 0.6, q[1]], [o[1] + 0.6, q[1]], [q[0], o[3] + 0.6]].sort((a, b) => dist(a, q) - dist(b, q))[0];
+  return { x: q[0], y: q[1] };
+}
+function pointAuHasard() {
+  const P = L().sol, xs = P.map((p) => p[0]), ys = P.map((p) => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys) - 5;
+  for (let k = 0; k < 40; k++) { const x = x0 + Math.random() * (x1 - x0), y = y0 + Math.random() * (y1 - y0); if (dansPoly(P, x, y) && !dansObstacle(x, y)) return { x, y }; }
+  return { x: 50, y: 85 };
+}
+
+// LE MOUVEMENT : chacun marche au sol, à son rythme (au loin, on avance moins vite à l'écran) ; toi vers où tu as touché
 let avant = performance.now(), dernierPas = 0;
 function avancer(p, dt) {
   if (!p.cible) return false;
-  const dx = p.cible.x - p.x, dy = (p.cible.y - p.y) * 1.6, d = Math.hypot(dx, dy), pas = p.v * dt;
+  const [X, Z] = versSol(p.x, p.y), [X2, Z2] = versSol(p.cible.x, p.cible.y), dX = X2 - X, dZ = Z2 - Z, d = Math.hypot(dX, dZ), pas = p.v * dt;
   if (d <= pas) { p.x = p.cible.x; p.y = p.cible.y; p.cible = null; p.el.classList.remove("marche"); poser(p); const f = p.arrive; p.arrive = null; f?.(); return true; }
-  p.x += (dx / d) * pas; p.y += (dy / 1.6 / d) * pas;
-  p.el.classList.add("marche"); p.el.classList.toggle("gauche", dx < 0);
+  [p.x, p.y] = versImage(X + (dX / d) * pas, Z + (dZ / d) * pas);
+  p.el.classList.add("marche"); if (Math.abs(dX) > 0.02) p.el.classList.toggle("gauche", dX < 0);
   poser(p); return true;
 }
 function boucle(t) {
   const dt = Math.min(0.05, (t - avant) / 1000); avant = t;
-  if (!document.hidden) {
+  if (!document.hidden && VW) {
     for (const p of gens) {
       if (!p.la) continue;
       if (!p.cible && t > p.pause) { p.cible = pointAuHasard(); p.arrive = () => (p.pause = performance.now() + 1500 + Math.random() * 4500); }
       avancer(p, dt);
     }
-    if (toi && toi.cible) {
-      avancer(toi, dt);
-      if (t - dernierPas > 280) { Son.pas(); dernierPas = t; }
-      voirCamera(toi.x); proche();
-    }
+    if (toi && toi.cible) { avancer(toi, dt); if (t - dernierPas > 300) { Son.pas(); dernierPas = t; } proche(); }
+    camera(dt);
   }
   requestAnimationFrame(boucle);
 }
+// glisser pour regarder (spectateur) ; toucher le sol pour marcher (avec ta figurine)
+const glisse = { actif: false, bouge: false, x: 0, x0: 0 };
+$("#vue").addEventListener("pointerdown", (e) => { if (toi) return; Object.assign(glisse, { actif: true, bouge: false, x: e.clientX, x0: e.clientX }); });
+window.addEventListener("pointermove", (e) => {
+  if (!glisse.actif || toi) return;
+  const dx = e.clientX - glisse.x; glisse.x = e.clientX; if (Math.abs(e.clientX - glisse.x0) > 8) glisse.bouge = true; if (!glisse.bouge) return;
+  const r = etat.regard || { x: 50, y: 74, s: 1 }, m = (VW / 2 / (W * cam.s)) * 100;
+  etat.regard = { ...r, x: Math.max(m, Math.min(100 - m, r.x - (dx / (W * cam.s)) * 100)) };
+});
+window.addEventListener("pointerup", () => { glisse.actif = false; setTimeout(() => (glisse.bouge = false), 0); });
 function toucherSol(ev) {
-  if (!toi) { toast("tonFantome", "Tu es spectateur", "Libère ton fantôme pour te promener et parler aux gens."); return; }
-  const r = $("#monde").getBoundingClientRect(), x = ((ev.clientX - r.left) / W) * 100, y = ((ev.clientY - r.top) / H) * 100;
-  const s = L().sol; if (y < s.y[0] - 6) return;
-  let c = { x: Math.min(s.x[1], Math.max(s.x[0], x)), y: Math.min(s.y[1], Math.max(s.y[0], y)) };
-  if (dansFontaine(c.x, c.y)) c = { x: c.x, y: L().fontaine[3] + 2 };
-  const m = document.createElement("span"); m.className = "cible"; m.style.left = (c.x / 100) * W + "px"; m.style.top = (c.y / 100) * H + "px"; $("#monde").appendChild(m); setTimeout(() => m.remove(), 800);
+  if (glisse.bouge) return;
+  const r = MONDE().getBoundingClientRect(), x = ((ev.clientX - r.left) / r.width) * 100, y = ((ev.clientY - r.top) / r.height) * 100;
+  if (!toi) { const m = (VW / 2 / (W * cam.s)) * 100; etat.regard = { x: Math.max(m, Math.min(100 - m, x)), y: 74, s: 1 }; if (etat.proche) { etat.proche = null; allumer(); bas(); } return; }
+  if (y < L().horizon + 2) return;
+  const c = surLeSol(x, y);
+  const m = document.createElement("span"); m.className = "cible"; const [cx, cy] = px([c.x, c.y]); m.style.left = cx + "px"; m.style.top = cy + "px"; MONDE().appendChild(m); setTimeout(() => m.remove(), 800);
   toi.cible = c; toi.arrive = null;
 }
 function allerA(v) {
   if (!toi) { focaliser(v); return; }
-  toi.cible = { x: v.porte[0], y: v.porte[1] }; toi.arrive = () => focaliser(v);
+  toi.cible = surLeSol(v.porte[0], v.porte[1]); toi.arrive = () => focaliser(v);
 }
 // tu t'approches d'une boutique : son écran s'allume, sa pastille s'efface, « Entrer » paraît
 function proche() {
   if (!toi) return;
-  let le = null;
-  for (const v of L().vitrines) if (Math.hypot(toi.x - v.porte[0], (toi.y - v.porte[1]) * 1.6) < 17) le = v;
+  let le = null; const a = versSol(toi.x, toi.y);
+  for (const v of L().vitrines) { const b = versSol(v.porte[0], v.porte[1]); if (Math.hypot(a[0] - b[0], a[1] - b[1]) < 1.8) le = v; }
   if (le !== etat.proche) { etat.proche = le; allumer(); bas(); }
 }
-function focaliser(v) { etat.proche = v; allumer(); bas(); if (!toi) voirCamera(v.porte[0]); }
+function focaliser(v) { etat.proche = v; if (!toi) { const c = centreQuad(v.ecran); etat.regard = { x: c[0], y: c[1] + 6, s: 2 }; } allumer(); bas(); }
 function allumer() {
   for (const v of L().vitrines) {
-    const on = v === etat.proche, vid = v.ecran.querySelector("video");
-    v.ecran.classList.toggle("allume", on); v.pin.classList.toggle("cachee", on);
+    const on = v === etat.proche, vid = v.el.querySelector("video");
+    v.el.classList.toggle("allume", on); v.pin.classList.toggle("cachee", on);
     if (on) vid.play().catch(() => {}); else vid.pause();
   }
 }
 function bas() {
   const b = $("#bas"), v = etat.proche;
   if (etat.mode === "spectateur") {
-    b.innerHTML = `${v ? `<button class="entrer" type="button" id="bEntrer">👀 Regarder chez ${BOUTIQUES[v.b].nom}<small>en spectateur</small></button>` : ""}<div class="spect">👀 Tu es spectateur : personne ne te voit.<br><button type="button" id="bLiberer">👻 Libérer mon fantôme</button></div>`;
+    b.innerHTML = `${v ? `<button class="entrer" type="button" id="bEntrer">👀 Regarder ${chez(BOUTIQUES[v.b].nom)}<small>en spectateur</small></button>` : ""}<div class="spect">👀 Tu es spectateur : personne ne te voit. Glisse pour regarder.<br><button type="button" id="bLiberer">👻 Libérer mon fantôme</button></div>`;
     $("#bLiberer").addEventListener("click", () => { etat.mode = "fantome"; toast("tonFantome", "Ton fantôme est libéré 🎉", "Tu te promènes en ville. À 10 figurines, il devient ta figurine."); lieu(); });
   } else if (v) {
     const B = BOUTIQUES[v.b];
-    b.innerHTML = `<button class="entrer" type="button" id="bEntrer">🚪 Entrer chez ${B.nom}<small>${B.monde} personnes à l’intérieur</small></button>`;
+    b.innerHTML = `<button class="entrer" type="button" id="bEntrer">🚪 Entrer ${chez(B.nom)}<small>${B.monde} personnes à l’intérieur</small></button>`;
   } else {
     b.innerHTML = `<div class="astuce">👆 Touche le sol pour marcher · ▶ une annonce pour t’en approcher</div>`;
   }
-  $("#bEntrer")?.addEventListener("click", () => entrer(v.b));
+  $("#bEntrer")?.addEventListener("click", () => entrerParLaPorte(v.b));
+  const hb = b.getBoundingClientRect(), ha = $("#app").getBoundingClientRect(); // la mini-carte se tient au-dessus de la barre du bas
+  $("#mini").style.bottom = Math.round(ha.bottom - hb.top + 10) + "px";
 }
+const chez = (nom) => (nom.startsWith("Chez ") ? "chez " + nom.slice(5) : "chez " + nom); // « chez Bergine », pas « chez Chez Bergine »
 function changerDeLieu(s) {
-  const go = () => { const M = $("#monde"); M.classList.add("part"); setTimeout(() => { etat.lieu = s.vers; lieu(); M.classList.remove("part"); }, 550); };
-  if (toi) { toi.cible = { x: s.x, y: Math.min(L().sol.y[1], s.y) }; toi.arrive = go; } else go();
+  if (toi) { toi.cible = surLeSol(s.x, s.y); toi.arrive = () => voyager(s.vers); } else voyager(s.vers);
+}
+// aller dans une rue (et, si on l'a choisi, jusqu'à la porte d'un commerce)
+function voyager(cle, b) {
+  const suite = () => { if (!b) return; const v = L().vitrines.find((x) => x.b === b); if (v) allerA(v); };
+  if (etat.lieu === cle) return suite();
+  const M = MONDE(); M.classList.add("part");
+  setTimeout(() => { etat.lieu = cle; lieu(); requestAnimationFrame(() => M.classList.remove("part")); setTimeout(suite, 500); }, 460);
+}
+// « Entrer » : la caméra avance jusqu'à la vitrine, puis on est dedans
+function entrerParLaPorte(cle) {
+  const v = L().vitrines.find((x) => x.b === cle);
+  if (!v) return entrer(cle);
+  etat.zoomPorte = v; Son.pas(); setTimeout(() => MONDE().classList.add("part"), 200);
+  setTimeout(() => entrer(cle), 640);
 }
 
 // ── LES GENS : parler à qui est là, laisser un mot à qui n'est pas là ──────────────────────────
 function bulle(p, html) {
   document.querySelectorAll("#monde .bulle").forEach((e) => e.remove());
   const d = document.createElement("div"); d.className = "bulle"; d.innerHTML = html;
-  d.style.left = Math.min(camera + VW - 100, Math.max(camera + 100, (p.x / 100) * W)) + "px"; d.style.top = ((p.y - taille(p.y)) / 100) * H + "px";
-  $("#monde").appendChild(d); setTimeout(() => d.remove(), 3400);
+  const g = -cam.tx / cam.s, dr = (VW - cam.tx) / cam.s, marge = 104 / cam.s;
+  d.style.left = Math.min(dr - marge, Math.max(g + marge, (p.x / 100) * W)) + "px"; d.style.top = ((p.y - taille(p.y)) / 100) * Hm + "px";
+  MONDE().appendChild(d); setTimeout(() => d.remove(), 3400);
 }
+const visible = (p) => { const sx = cam.tx + cam.s * (p.x / 100) * W; return sx > 30 && sx < VW - 30; };
 function toucherQuelquun(p) {
   if (!toi) return toast(p.k, `${GENS[p.k].nom} ne te voit pas`, "Libère ton fantôme pour lui parler.");
   if (!p.la) return feuilleAbsent(p.k, p.trace);
   feuilleDiscussion(p.k, p);
 }
+
+// ── LA CARTE : la mini-carte en bas à droite, la grande carte, la recherche des commerces ─────────────────
+const lieuDe = (b) => Object.keys(LIEUX).find((k) => LIEUX[k].vitrines.some((v) => v.b === b));
+const sansAccent = (t) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+let TOITS = "";
+function toits() { // les toits du centre-ville, dessinés une fois (tirage fixe, toujours le même plan)
+  if (TOITS) return TOITS;
+  let g = 7; const h = () => ((g = (g * 9301 + 49297) % 233280) / 233280), teintes = ["#DDA574", "#E6B686", "#D2935F", "#EBC294", "#D89B69"];
+  for (let y = -30; y < 330; y += 23) for (let x = -50; x < 450; x += 27) TOITS += `<rect x="${(x + h() * 6).toFixed(1)}" y="${(y + h() * 5).toFixed(1)}" width="${(19 + h() * 6).toFixed(1)}" height="${(15 + h() * 5).toFixed(1)}" rx="2.5" fill="${teintes[Math.floor(h() * 5)]}"/>`;
+  return TOITS;
+}
+function dessinPlan(grand) {
+  const ici = PLAN.lieux[etat.lieu], tag = grand ? "g" : "m";
+  const fond = `<rect x="-500" y="-400" width="1400" height="1100" fill="#E9C79C"/>${toits()}`;
+  const trait = (d, large, cl = "") => `<path d="${d}" fill="none" stroke="#B57A4C" stroke-width="${large + 4}" stroke-linecap="round"/><path ${cl} d="${d}" fill="none" stroke="#FFF4E2" stroke-width="${large}" stroke-linecap="round"/>`;
+  const autres = PLAN.autres.map((d) => trait(d, 9)).join("");
+  const rues = Object.entries(PLAN.rues).map(([k, d]) => `<g class="rue" data-lieu="${k}">${trait(d, 15, `id="r-${k}-${tag}"`)}<path d="${d}" fill="none" stroke="#000" stroke-opacity="0" stroke-width="34"/></g>`).join("");
+  const place = `<g class="lieu" data-lieu="place"><circle cx="200" cy="150" r="38" fill="#B57A4C"/><circle cx="200" cy="150" r="35" fill="#FFF4E2"/><circle cx="200" cy="150" r="9" fill="#9AD0E6" stroke="#fff" stroke-width="3"/></g>`;
+  const arbres = [[172, 124], [229, 123], [168, 177], [233, 178], [152, 150], [249, 152], [94, 213], [140, 168], [262, 102], [332, 126], [58, 196], [362, 100]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="6.5" fill="#6E9F4E"/><circle cx="${x - 1.6}" cy="${y - 1.6}" r="3.2" fill="#93C26C"/>`).join("");
+  const noms = grand ? Object.keys(PLAN.rues).map((k) => `<text font-size="9.5" font-weight="800" fill="#6A3A1E" letter-spacing=".3" dy="-11"><textPath href="#r-${k}-g" startOffset="${k === "hotel" ? "34%" : "62%"}" text-anchor="middle">${LIEUX[k].nom}</textPath></text>`).join("") + `<text x="200" y="104" text-anchor="middle" font-size="10" font-weight="800" fill="#6A3A1E" stroke="#FFF4E2" stroke-width="3" paint-order="stroke">${LIEUX.place.nom}</text>` : "";
+  const amis = Object.entries(LIEUX).flatMap(([k, l]) => l.gens.filter((g) => g.la).map((g, i) => { const [x, y] = PLAN.lieux[k]; return `<g transform="translate(${x + (i ? -15 : 15)} ${y + 13})"><circle r="7.5" fill="#fff" stroke="#3DE2A6" stroke-width="2.2"/><clipPath id="ca-${g.k}-${tag}"><circle r="6"/></clipPath><image href="${GENS[g.k].n}" x="-6" y="-6" width="12" height="12" preserveAspectRatio="xMidYMin slice" clip-path="url(#ca-${g.k}-${tag})"/></g>`; })).join("");
+  const epingles = Object.entries(PLAN.boutiques).map(([b, [x, y]]) => { const B = BOUTIQUES[b]; return `<g class="epingle" data-b="${b}" transform="translate(${x} ${y})"><circle r="11.5" fill="#fff" stroke="#FF2E9A" stroke-width="3"/><clipPath id="cb-${b}-${tag}"><circle r="9"/></clipPath><image href="${GENS[B.patron].n}" x="-9" y="-9" width="18" height="18" preserveAspectRatio="xMidYMin slice" clip-path="url(#cb-${b}-${tag})"/>${grand ? `<text y="25" text-anchor="middle" font-size="9" font-weight="800" fill="#2A1622" stroke="#FFF4E2" stroke-width="3" paint-order="stroke">${B.nom}</text>` : ""}</g>`; }).join("");
+  const moi = `<g transform="translate(${ici[0]} ${ici[1] - 4})"><circle class="pouls" r="6" fill="#FF2E9A"/><path d="M0 0 C-9 -10 -9 -22 0 -24 C9 -22 9 -10 0 0Z" transform="translate(0 2) scale(${grand ? 1 : 1.15})" fill="#FF2E9A" stroke="#fff" stroke-width="2"/><circle cy="-13" r="3.6" fill="#fff"/></g>`;
+  const boussole = grand ? `<g transform="translate(372 26)"><circle r="13" fill="#FFF4E2" stroke="#B57A4C" stroke-width="2"/><path d="M0 -9 L4 2 L0 0 L-4 2Z" fill="#FF2E9A"/><text y="11" text-anchor="middle" font-size="7" font-weight="800" fill="#6A3A1E">N</text></g>` : "";
+  const vue = grand ? "0 0 400 300" : `${ici[0] - 62} ${ici[1] - 62} 124 124`;
+  return `<svg viewBox="${vue}" preserveAspectRatio="xMidYMid ${grand ? "meet" : "slice"}" role="img" aria-label="Plan de Dax">${fond}${autres}${rues}${place}${arbres}${noms}${amis}${epingles}${moi}${boussole}</svg>`;
+}
+function majMini() {
+  const n = L().gens.filter((g) => g.la).length;
+  $("#miniPlan").innerHTML = dessinPlan(false);
+  $("#miniNom").innerHTML = `${L().nom}<small>${n ? `${n} que tu connais ici · ` : ""}touche pour la carte</small>`;
+}
+function ouvrirCarte() {
+  $("#carte").hidden = false; $("#plan").innerHTML = dessinPlan(true); $("#cherche").value = ""; listeCarte("");
+  if (matchMedia("(pointer:fine)").matches) $("#cherche").focus();
+}
+function fermerCarte() { $("#carte").hidden = true; }
+function listeCarte(q) {
+  const Q = sansAccent(q.trim());
+  const coms = Object.entries(BOUTIQUES).filter(([b, B]) => !Q || sansAccent(`${B.nom} ${B.metier} ${LIEUX[lieuDe(b)].nom} ${B.annonce} ${GENS[B.patron].nom}`).includes(Q));
+  const rues = Object.entries(LIEUX).filter(([, l]) => !Q || sansAccent(l.nom).includes(Q));
+  $("#liste").innerHTML = `<h4>Les commerces de Dax sur ClikMe · ${coms.length}</h4>${coms.map(([b, B]) => `<button class="res" type="button" data-b="${b}"><img src="${GENS[B.patron].n}" alt=""><span><b>${B.nom}</b><small>${B.metier} · ${LIEUX[lieuDe(b)].nom}</small></span><em>Y aller ›</em></button>`).join("") || `<p class="vide">Ce commerce n’est pas encore sur ClikMe.</p>`}
+    <h4>Les rues</h4>${rues.map(([k, l]) => `<button class="res" type="button" data-lieu="${k}"><span class="ic">${k === etat.lieu ? "📍" : "🧭"}</span><span><b>${l.nom}</b><small>${k === etat.lieu ? "Tu es ici" : l.vitrines.map((v) => BOUTIQUES[v.b].nom).join(", ")}</small></span>${k === etat.lieu ? "" : "<em>Y aller ›</em>"}</button>`).join("") || `<p class="vide">Pas de rue à ce nom dans la maquette.</p>`}
+    <p class="note">Plan dessiné pour la maquette · dans le vrai ClikMe : le plan de Dax et tous les commerces inscrits.</p>`;
+}
+function choisirSurCarte(ev) {
+  const g = ev.target.closest("[data-b],[data-lieu]"); if (!g) return;
+  fermerCarte();
+  if (g.dataset.b) voyager(lieuDe(g.dataset.b), g.dataset.b); else voyager(g.dataset.lieu);
+}
+$("#mini").addEventListener("click", ouvrirCarte);
+$("#carteFermer").addEventListener("click", fermerCarte);
+$("#cherche").addEventListener("input", (e) => listeCarte(e.target.value));
+$("#cherche").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#liste .res")?.click(); if (e.key === "Escape") fermerCarte(); });
+$("#plan").addEventListener("click", choisirSurCarte);
+$("#liste").addEventListener("click", choisirSurCarte);
 
 // ── UNE ANNONCE EN GRAND ───────────────────────────────────────────────────────────────────────
 let mCoeurs, mAvis;
@@ -539,7 +773,7 @@ function ouvrirAnnonce(cle) {
   e.hidden = false; $("#pVideo").play().catch(() => {});
   $("#pFermer").addEventListener("click", fermerAnnonce);
   $("#pSon").addEventListener("click", () => { const v = $("#pVideo"); v.muted = !v.muted; $("#pSon").textContent = v.muted ? "🔇" : "🔊"; Son.niveau(v.muted ? 0.4 : 0.05); });
-  $("#pEntrer")?.addEventListener("click", () => { fermerAnnonce(); entrer(cle); });
+  $("#pEntrer")?.addEventListener("click", () => { fermerAnnonce(); entrerParLaPorte(cle); });
   $("#pInviter").addEventListener("click", () => (etat.mode === "spectateur" ? toast("tonFantome", "En spectateur, tu regardes", "Libère ton fantôme pour partager.") : feuilleInviter(cle, "son annonce")));
   const liste = [{ k: B.essai.k, t: B.essai.dit, voix: B.essai.voix, titre: `${GENS[B.essai.k].nom} a essayé ${B.essai.quoi}` }, { k: "hugo", t: "Je confirme 😋", titre: "Hugo" }, { k: "sam", t: "Ça me donne envie !", titre: "Sam" }];
   let i = 0;
@@ -552,16 +786,16 @@ function envoler(z, e) { if (!z) return; const s = document.createElement("span"
 
 // ── DANS LA BOUTIQUE : qui est là (ils bougent), qui est passé (translucide), l'écran, la question du jour ─────
 let interieur = [], mInt;
-function entrer(cle) {
+function entrer(cle, relance) {
   const B = BOUTIQUES[cle], e = $("#boutique"); etat.boutique = cle; Son.niveau(0.35);
   const spect = etat.mode === "spectateur", fam = etat.famille.has(cle);
   const presents = [...B.ici, ...(etat.invites[cle] ? [etat.invites[cle]] : [])].filter((k, i, a) => a.indexOf(k) === i);
   const traces = [...B.traces, ...(etat.mesMots[cle] || []).map((t) => [moi(), t])];
-  e.innerHTML = `<div class="int-fond" style="background-image:url(${B.interieur})"></div>
+  e.innerHTML = `<div class="int-scene" id="scene"><div class="int-fond" style="background-image:url(${B.int.img})"></div>
+      <button class="tele" type="button" id="bTele" aria-label="L’annonce du jour en grand"><span>● LIVE</span><video muted playsinline loop autoplay>${sources(B.video)}</video></button></div>
     <div class="p-haut"><button class="rond" type="button" id="bSortir" aria-label="Ressortir">←</button><span><b>${B.nom}</b><small>${presents.length + (spect ? 0 : 1)} que tu connais · ${traces.length} mot${traces.length > 1 ? "s" : ""} laissé${traces.length > 1 ? "s" : ""} · +${Math.max(0, B.monde - presents.length - 1)} autres</small></span>
       <span class="d"><button class="rond boiteIci" type="button" aria-label="Ta boîte">✉️<em class="nbBoite"></em></button></span></div>
-    <div class="promos"><h3>Aujourd’hui</h3><p>${B.promo}</p><p class="famille ${fam ? "" : "ferme"}"><span>👻 ${B.famille}</span>${fam ? "" : `<button type="button" id="bLib">Réservé à sa famille</button>`}</p></div>
-    <button class="tele" type="button" id="bTele" aria-label="L’annonce du jour en grand"><span>● LIVE</span><video muted playsinline loop autoplay>${sources(B.video)}</video></button>
+    <div class="promos${B.int.ardoise === "d" ? " d" : ""}"><h3>Aujourd’hui</h3><p>${B.promo}</p><p class="famille ${fam ? "" : "ferme"}"><span>👻 ${B.famille}</span>${fam ? "" : `<button type="button" id="bLib">Réservé à sa famille</button>`}</p></div>
     <div class="salle" id="salle"></div>
     <button class="patron" type="button" id="bPatron" aria-label="Parler à ${GENS[B.patron].nom}"><span class="corps"><img class="n" src="${GENS[B.patron].n}" alt="">${GENS[B.patron].p ? `<img class="p" src="${GENS[B.patron].p}" alt="">` : ""}</span><span class="tag">🔊 ${GENS[B.patron].nom}</span></button>
     <div id="bSous"></div>
@@ -573,7 +807,8 @@ function entrer(cle) {
       <button type="button" id="fInviter"><i>👥</i>Inviter un ami</button>
       <button type="button" id="fMur"><i>📌</i>Le mur des mots</button>
     </div>`;
-  e.hidden = false; majBoite();
+  e.hidden = false; majBoite(); poserScene();
+  if (!spect && !relance) setTimeout(() => accueillir(cle), 1000);
   const salle = $("#salle"); interieur = [];
   const place = (k, x, y, la, trace) => {
     const el = perso(k, la ? "" : " absent"); salle.appendChild(el);
@@ -590,8 +825,8 @@ function entrer(cle) {
   mInt = setInterval(() => { for (const p of interieur) { if (!p.la || p.k === moi() || Math.random() > 0.5) continue; const nx = Math.min(80, Math.max(6, p.x + (Math.random() * 16 - 8))); p.el.classList.toggle("gauche", nx < p.x); p.x = nx; p.el.classList.add("marche"); p.el.style.transition = "left 1.6s ease-in-out"; p.pose(); setTimeout(() => p.el.classList.remove("marche"), 1600); } }, 2400);
   $("#bSortir").addEventListener("click", sortir);
   $("#bTele").addEventListener("click", () => ouvrirAnnonce(cle));
-  $("#bPatron").addEventListener("click", () => { $("#bSous").innerHTML = `<div class="sous-titre">${GENS[B.patron].nom} : ${B.dit}</div>`; const fini = () => setTimeout(() => ($("#bSous").innerHTML = ""), B.voix ? 300 : 3500); if (B.voix) parler(B.voix, $("#bPatron"), fini); else fini(); });
-  $("#bLib")?.addEventListener("click", () => { if (spect) return toast("tonFantome", "Libère d’abord ton fantôme", "Dans la rue : « Libérer mon fantôme »."); etat.famille.add(cle); toast(moi(), "Tu fais partie de la famille 🎉", `${B.nom} te préviendra de ses places libres en premier.`); entrer(cle); });
+  $("#bPatron").addEventListener("click", () => { $("#bSous").innerHTML = `<div class="sous-titre">${GENS[B.patron].nom} : ${B.dit}</div>`; const fini = () => setTimeout(() => { const z = $("#bSous"); if (z) z.innerHTML = ""; }, B.voix ? 300 : 3500); if (B.voix) parler(B.voix, $("#bPatron"), fini); else fini(); });
+  $("#bLib")?.addEventListener("click", () => { if (spect) return toast("tonFantome", "Libère d’abord ton fantôme", "Dans la rue : « Libérer mon fantôme »."); etat.famille.add(cle); toast(moi(), "Tu fais partie de la famille 🎉", `${B.nom} te préviendra de ses places libres en premier.`); entrer(cle, true); });
   const garde = (f) => () => (spect ? toast("tonFantome", "En spectateur, tu regardes", "Libère ton fantôme pour participer.") : f());
   $("#fQuestion").addEventListener("click", garde(() => feuilleQuestion(cle)));
   $("#fReserver").addEventListener("click", garde(() => feuilleReserver(cle)));
@@ -600,7 +835,27 @@ function entrer(cle) {
   $("#fInviter").addEventListener("click", garde(() => feuilleInviter(cle, "sa boutique")));
   $("#fMur").addEventListener("click", () => feuilleMur(cle));
 }
-function sortir() { clearInterval(mInt); etat.boutique = null; $("#boutique").hidden = true; $("#boutique").innerHTML = ""; Son.niveau(1); }
+function sortir() {
+  clearInterval(mInt); etat.boutique = null; $("#boutique").hidden = true; $("#boutique").innerHTML = ""; Son.niveau(1);
+  etat.zoomPorte = null; MONDE().classList.remove("part"); // la caméra recule : on ressort dans la rue
+}
+// la photo de l'intérieur, cadrée sous l'en-tête ; la télé posée sur un vrai mur (ses 4 coins), dans sa perspective
+function poserScene() {
+  const e = $("#boutique"), sc = $("#scene"); if (!sc || !etat.boutique) return;
+  const I = BOUTIQUES[etat.boutique].int, haut = e.querySelector(".p-haut").getBoundingClientRect().bottom - e.getBoundingClientRect().top + 4;
+  const aw = e.clientWidth, ah = e.clientHeight - haut, k = Math.max(aw / I.iw, ah / I.ih), w = I.iw * k, h = I.ih * k, top = haut - (h - ah) * I.cadre[1];
+  Object.assign(sc.style, { width: w + "px", height: h + "px", left: -(w - aw) * I.cadre[0] + "px", top: top + "px" });
+  sc.classList.toggle("fondu", top > 8);
+  const q = I.tele.map(([x, y]) => [(x / 100) * w, (y / 100) * h]), tw = (dist(q[0], q[1]) + dist(q[3], q[2])) / 2, th = (dist(q[0], q[3]) + dist(q[1], q[2])) / 2;
+  const t = $("#bTele"); t.style.width = tw + "px"; t.style.height = th + "px"; t.style.transform = matrice(tw, th, ...q);
+}
+// le commerçant t'accueille par ton prénom (sa vraie voix, enregistrée, la première fois ; ensuite un signe)
+function accueillir(cle) {
+  const tag = $("#bPatron .tag"); if (etat.boutique !== cle || !tag) return;
+  const B = BOUTIQUES[cle]; tag.classList.add("salue"); tag.textContent = `👋 Bienvenue ${PRENOM} !`;
+  const fin = () => { const t = $("#bPatron .tag"); if (t && etat.boutique === cle) { t.classList.remove("salue"); t.textContent = `🔊 ${GENS[B.patron].nom}`; } };
+  if (!etat.accueillis.has(cle)) { etat.accueillis.add(cle); setTimeout(() => { if (etat.boutique !== cle) return; fin(); $("#bPatron")?.click(); }, 1700); } else setTimeout(fin, 3200);
+}
 
 // ── LES FEUILLES ───────────────────────────────────────────────────────────────────────────────
 function feuille(html) {
@@ -624,7 +879,7 @@ function feuilleQuestion(cle) {
 }
 function feuilleReserver(cle) {
   const B = BOUTIQUES[cle];
-  if (etat.pris.has(cle)) return feuille(`<h3>C’est déjà à toi ✓</h3><p class="sous">${B.reserver.quoi}, chez ${B.nom}.</p>`);
+  if (etat.pris.has(cle)) return feuille(`<h3>C’est déjà à toi ✓</h3><p class="sous">${B.reserver.quoi}, ${chez(B.nom)}.</p>`);
   etat.pris.add(cle); let reste = 300;
   feuille(`<h3>${B.reserver.quoi[0].toUpperCase() + B.reserver.quoi.slice(1)} est à toi !</h3><p class="sous">Gardée 5 minutes. Au comptoir, ta visite est notée : ta figurine de l’édition Automne de ${B.nom} t’attend.</p><span class="chrono" id="chrono">5:00</span>`);
   const ch = setInterval(() => { const el = $("#chrono"); if (!el) return clearInterval(ch); reste--; el.textContent = `${Math.floor(reste / 60)}:${String(reste % 60).padStart(2, "0")}`; }, 1000);
@@ -706,12 +961,16 @@ function entrerDansDax(mode) {
 }
 $("#avecFigurine").addEventListener("click", () => entrerDansDax("figurine"));
 $("#spectateur").addEventListener("click", () => entrerDansDax("spectateur"));
-window.addEventListener("resize", () => lieu());
+let tRetaille;
+window.addEventListener("resize", () => { clearTimeout(tRetaille); tRetaille = setTimeout(() => {
+  if ($("#app").clientWidth === VW && $("#app").clientHeight === VH) return;
+  lieu({ toi: toi && { x: toi.x, y: toi.y }, gens: Object.fromEntries(gens.filter((p) => p.la).map((p) => [p.k, { x: p.x, y: p.y }])) }); poserScene();
+}, 150); });
 lieu(); majBoite(); requestAnimationFrame(boucle);
 // les présents parlent de temps en temps, un à la fois
 setInterval(() => {
-  if (!$("#porte").classList.contains("ouvre") || !$("#plein").hidden || !$("#boutique").hidden || $("#feuilles").innerHTML) return;
-  const la = gens.filter((p) => p.la && PAROLES[p.k]); if (!la.length) return;
+  if (!$("#porte").classList.contains("ouvre") || !$("#plein").hidden || !$("#boutique").hidden || !$("#carte").hidden || $("#feuilles").innerHTML) return;
+  const la = gens.filter((p) => p.la && PAROLES[p.k] && visible(p)); if (!la.length) return;
   const p = la[Math.floor(Math.random() * la.length)];
   bulle(p, `<small>${GENS[p.k].nom}</small>${PAROLES[p.k][Math.floor(Math.random() * PAROLES[p.k].length)]}`);
 }, 4300);
