@@ -135,3 +135,19 @@ Limite honnête : les photos font 1672 × 941 ; au zoom ×2 sur téléphone, ell
   narrateur par-dessus) : son bouton le dit (« 💬 »).
 - **Le commerçant qui vient au salon** n'est plus écrasé (sa figurine garde sa largeur) ; sur ordinateur, il se tient
   contre la photo.
+
+## v9 (3 novembre) — « un magasin de vêtements pour faire un essayage comme sur clikme.fr/autour-de-moi/dax, et un salon de coiffure »
+
+- **Maison Lou** (prêt-à-porter) et **Salon Clara** (coiffure), les noms des tours vêtements et coiffure, rue piétonne :
+  l'enseigne d'une boutique de vêtements et celle d'un opticien sont recouvertes d'un bandeau à leur nom (`fond` dans
+  `enseigne`), l'écran est posé dans une vitrine, et chez Clara l'affiche du carré recouvre l'affiche de l'opticien
+  (`affiche`). Leurs figurines : les fantômes de métier du site (`public/commercants/g-mode.webp`, `g-coiffure.webp`).
+  Leurs vidéos (avec le son) : `tour-vetements/specialiste.mp4` (de 4 à 16 s) et `tour-coiffure/specialiste.mp4` (de 4
+  à 18 s). Pas de voix enregistrée pour Lou ni Clara : ils parlent par écrit.
+- **Ses images** : `i/salon-vetements.jpg`, `i/salon-coiffure.jpg`, et `i/salon-atelier.jpg` (l'atelier de Nina quitte le
+  salon dessiné). Places relevées sur les fauteuils, les fauteuils de coiffure, les tours et l'établi.
+- **La cabine d'essayage** (« Essayer » au salon, ou « ✨ L'essayer sur moi » sur l'annonce), le parcours du site en
+  quatre écrans : la pièce et son prix ; « sur toi », avant / après avec une poignée (« Simulation · démonstration ») ;
+  la même pièce portée par trois clientes de Dax, avec leur mot ; puis la garder, la montrer à un ami, ou demander
+  l'avis du salon (les autres répondent dans la discussion). Les photos sont celles du parcours du site
+  (`public/direct/accueil/`, réduites dans `i/essai/`) : la veste blazer rose (59 €) et le carré court (85 €).

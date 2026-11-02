@@ -26,6 +26,7 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-
 .ecran-vit{position:absolute;left:0;top:0;transform-origin:0 0;padding:0;border:0;background:#050505;cursor:pointer;box-shadow:0 0 0 1.5px #0b0b0b,0 0 0 2.5px #3a3a3a,0 4px 8px rgba(0,0,0,.45)}
 .ecran-vit .meneau{position:absolute;z-index:3;top:-3%;bottom:-3%;width:9%;transform:translateX(-50%);box-shadow:inset 1px 0 rgba(255,255,255,.18),inset -1px 0 rgba(0,0,0,.35)}
 .enseigne-p{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none}
+.affiche-p{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none;background:center/cover no-repeat;box-shadow:0 0 0 1px rgba(255,255,255,.7);opacity:.92}
 .enseigne-p svg{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 1px 1px rgba(0,0,0,.45))}
 .ecran-vit video{display:block;width:100%;height:100%;object-fit:cover;opacity:.25;filter:grayscale(.5) brightness(.6);transition:opacity .8s,filter .8s}
 .ecran-vit.allume video{opacity:1;filter:none}
@@ -418,6 +419,53 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-
 .poignee{align-self:center;display:flex;flex-direction:column;align-items:center;gap:2px;margin:-4px 0 4px;padding:2px 14px;border:0;background:none;color:var(--doux);font-size:10px;font-weight:700;cursor:pointer}
 .poignee i{width:38px;height:4px;border-radius:2px;background:rgba(255,255,255,.4)}
 .discu-salon.grand .poignee i{background:var(--rose)}
+
+/* la cabine d'essayage */
+#plein.cab::after{display:none}
+.cabine{position:absolute;inset:0;display:flex;flex-direction:column;background:radial-gradient(80% 60% at 50% 20%,#3A1F2E,#12070F);color:var(--creme)}
+.cabine .p-haut{position:relative;left:auto;right:auto;top:auto;padding:calc(12px + env(safe-area-inset-top,0px)) 12px 6px}
+.c-points{display:flex;gap:6px;justify-content:center;padding:2px 0 8px}
+.c-points i{width:26px;height:4px;border-radius:2px;background:rgba(255,255,255,.18)}
+.c-points i.fait{background:var(--rose)}
+.c-ecran{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;padding:0 12px;width:100%;max-width:560px;margin:0 auto;box-sizing:border-box;animation:apparait2 .35s both}
+.c-bas{display:grid;gap:8px;padding:10px 12px calc(14px + env(safe-area-inset-bottom,0px));width:100%;max-width:560px;margin:0 auto;box-sizing:border-box}
+.c-bas.e2,.c-bas.e3{grid-template-columns:56px 1fr}
+.c-bas .duo{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.c-bas .gros{height:50px}
+.c-piece{flex:1;border-radius:22px;background:center 20%/cover no-repeat;position:relative;overflow:hidden;box-shadow:0 18px 36px rgba(0,0,0,.5)}
+.c-legende{position:absolute;left:0;right:0;bottom:0;padding:40px 16px 16px;background:linear-gradient(transparent,rgba(12,4,8,.92));display:flex;flex-direction:column;gap:3px}
+.c-legende small{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#FF9FD2}
+.c-legende b{font-family:var(--affiche);font-size:26px;line-height:1.05}
+.c-legende span{font-size:12.5px;color:var(--doux)}
+.c-legende em{align-self:flex-start;margin-top:6px;padding:4px 12px;border-radius:999px;background:var(--rose);font-style:normal;font-weight:800;font-size:15px}
+.c-titre b{display:block;font-family:var(--affiche);font-size:22px;line-height:1.1}
+.c-titre small{font-size:12px;color:var(--doux)}
+.c-compare{--p:50%;position:relative;flex:1;min-height:0;border-radius:22px;overflow:hidden;box-shadow:0 18px 36px rgba(0,0,0,.5);background:#000}
+.c-compare img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 25%}
+.c-compare img.apres{clip-path:inset(0 0 0 var(--p))}
+.c-compare .trait{position:absolute;top:0;bottom:0;left:var(--p);width:3px;margin-left:-1.5px;background:#fff;box-shadow:0 0 10px rgba(0,0,0,.5);pointer-events:none}
+.c-compare .trait span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#fff;color:var(--encre);font-style:normal;font-weight:800;box-shadow:0 6px 14px rgba(0,0,0,.5)}
+.c-compare .et{position:absolute;top:12px;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.55);font-size:11.5px;font-weight:800;pointer-events:none}
+.c-compare .et.g{left:12px}.c-compare .et.d{right:12px;background:var(--rose)}
+.c-compare .simu{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);padding:4px 10px;border-radius:999px;background:rgba(255,248,239,.92);color:var(--encre);font-size:10.5px;font-weight:800;white-space:nowrap;pointer-events:none}
+.c-compare input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:ew-resize;touch-action:none}
+.c-facons{flex:1;min-height:0;display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
+.c-facons figure{flex:0 0 74%;max-width:300px;margin:0;scroll-snap-align:center;display:flex;flex-direction:column;border-radius:20px;overflow:hidden;background:var(--papier);color:var(--encre);box-shadow:0 14px 28px rgba(0,0,0,.45)}
+.c-facons img{flex:1;min-height:0;width:100%;object-fit:cover;object-position:50% 20%}
+.c-facons figcaption{padding:10px 12px 12px;display:flex;flex-direction:column;gap:3px}
+.c-facons .ou{font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#A1155E}
+.c-facons b{font-size:14px}.c-facons b i{font-style:normal;font-size:11px}
+.c-facons q{font-size:12.5px;line-height:1.35;color:#4A3540}
+.c-fin{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.patron-c{height:min(30vh,240px);filter:drop-shadow(0 16px 14px rgba(0,0,0,.55));animation:arrive .6s cubic-bezier(.2,1.3,.4,1) both}
+.bulle-cab{max-width:340px;padding:10px 14px 12px;border-radius:18px;background:var(--papier);color:var(--encre);font-family:var(--affiche);font-weight:700;font-size:15px;line-height:1.25;text-align:center}
+.bulle-cab small{display:block;font-family:var(--texte);font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#A1155E}
+.c-resume{display:flex;gap:10px;align-items:center;width:100%;max-width:380px;padding:8px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid var(--verre-bord)}
+.c-resume img{width:56px;height:72px;border-radius:10px;object-fit:cover}
+.c-resume b{display:block;font-size:14px}.c-resume small{display:block;font-size:11.5px;color:var(--doux)}
+.c-resume em{display:inline-block;margin-top:4px;font-style:normal;font-weight:800;color:#FF9FD2}
+#plein .p-bas{flex-wrap:wrap}
+@media (min-aspect-ratio:1/1){.c-facons figure{flex-basis:31%}}
 /* la mini-carte (en bas à droite) et la grande carte, avec la recherche des commerces */
 .mini{position:absolute;z-index:11;right:12px;bottom:calc(78px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:4px;padding:0;border:0;background:none;cursor:pointer}
 .mini .rondcarte{position:relative;display:block;width:76px;height:76px;border-radius:50%;overflow:hidden;background:#EBCB9F;border:3px solid var(--or);box-shadow:0 0 0 2px rgba(60,20,10,.45),0 0 22px rgba(242,196,107,.6),0 10px 22px rgba(0,0,0,.5)}
@@ -502,6 +550,8 @@ const GENS = {
   toi: { nom: "Toi", n: "f/toi-n.webp", p: "f/toi-p.webp" },
   tonFantome: { nom: "Ton fantôme", n: "f/fantome.webp" },
   passant: { nom: "Un fantôme", n: "f/fantome.webp" },
+  lou: { nom: "Lou", n: "f/lou.webp" },
+  clara: { nom: "Clara", n: "f/clara.webp" },
 };
 const BOUCHES = {
   jm: "00111111111110000000111111111100111001111111011111100111110000000001111101100111011111101111101111110000000000",
@@ -539,8 +589,50 @@ const BOUTIQUES = {
     reserver: { quoi: "ta place samedi à 10 h", bouton: "Prendre la place" },
     essai: { k: "lea", quoi: "l’atelier tour", voix: "lea-poterie", dit: "Le meilleur cours de poterie de Dax !", note: "🏺 9 avis" },
     ici: ["sam"], traces: [["lea", "Vivement samedi !"]], monde: 5,
-    salon: { tissu: "#B5832F", tissu2: "#6A4512", bois: "#B08A5E", bois2: "#6E5232", surTable: "🏺 ☕", essaiIcone: "🏺", essaiCourt: "Essayer", essaiTitre: "Essayer l’atelier tour", occupants: { 0: "sam", 2: "lea", 3: "passant" } },
+    salon: { tissu: "#B5832F", tissu2: "#6A4512", bois: "#B08A5E", bois2: "#6E5232", surTable: "🏺 ☕", essaiIcone: "🏺", essaiCourt: "Essayer", essaiTitre: "Essayer l’atelier tour", photo: "i/salon-atelier.jpg", photoL: 572, photoH: 1024,
+      places: [{ x: 30, y: 56, h: 8.5 }, { x: 70, y: 56, h: 8.5 }, { x: 38, y: 46.5, h: 5.5 }, { x: 62, y: 46.5, h: 5.5 }, { x: 12, y: 59, h: 9.5 }, { x: 88, y: 59, h: 9.5 }, { x: 8, y: 85, h: 14 }],
+      occupants: { 0: "sam", 3: "lea", 5: "passant" } },
     reponse: "Avec joie ! Samedi 10 h, je te garde la place ?" },
+  lou: { nom: "Maison Lou", metier: "Prêt-à-porter", patron: "lou", video: "v/lou", int: { img: "i/salon-vetements.jpg" }, annonce: "Manteau long camel · 189 €",
+    dit: "Camille ! Le manteau camel vient d’arriver. Je te garde une cabine pendant 5 minutes ?",
+    promo: "Arrivage : le manteau long camel · 189 €", famille: "La retouche offerte à la famille",
+    question: ["La semaine prochaine, je reçois quoi ?", ["Des pulls en laine", "Des robes d’hiver", "Des écharpes"], [12, 8, 9]],
+    reserver: { quoi: "une cabine d’essayage", bouton: "Réserver une cabine" },
+    essai: { k: "elise", quoi: "la veste blazer rose", dit: "Prise en 38 : elle tombe parfaitement !", note: "👗 14 avis" },
+    ici: ["elise"], traces: [["sam", "Super conseils, merci Lou !"]], monde: 7,
+    reponse: "Merci ! Je te mets la veste de côté en 38 ?",
+    salon: { tissu: "#6B2A3A", tissu2: "#3A121E", bois: "#7A5234", bois2: "#47301C", surTable: "👗 ☕", essaiIcone: "👗", essaiCourt: "Essayer", essaiTitre: "Essayer la veste blazer rose",
+      photo: "i/salon-vetements.jpg", photoL: 572, photoH: 1024,
+      places: [{ x: 23, y: 51.5, h: 7 }, { x: 77, y: 51.5, h: 7 }, { x: 16, y: 57, h: 8 }, { x: 84, y: 57, h: 8 }, { x: 17, y: 68, h: 10.5 }, { x: 82, y: 67.5, h: 10.5 }, { x: 92, y: 77, h: 12 }, { x: 13, y: 89, h: 16 }],
+      occupants: { 1: "elise", 4: "sam", 6: "passant" },
+      essayage: { piece: "La veste blazer rose", detail: "Coupe droite, du 36 au 44 · doublure imprimée", prix: "59 €", photo: "i/essai/mode-apres.jpg",
+        avant: "i/essai/moi-mode-sans.jpg", apres: "i/essai/moi-mode-avec.jpg", sur: "Cette veste, sur toi", autres: "Une veste, plusieurs façons de la porter",
+        garder: "Je la mets de côté", ou: "Elle t’attend chez Maison Lou, rue piétonne",
+        facons: [
+          { photo: "i/essai/mode-porte-bureau.jpg", ou: "Au bureau", avec: "Sur un jean noir", qui: "Léna", note: 5, mot: "Prise pour le bureau, je la mets aussi le week-end." },
+          { photo: "i/essai/mode-porte-terrasse.jpg", ou: "En terrasse", avec: "Sur un tee-shirt blanc", qui: "Awa", note: 4, mot: "Au soleil, le rose tire plus clair qu’en boutique." },
+          { photo: "i/essai/mode-porte-marche.jpg", ou: "Au marché", avec: "Sur une chemise claire", qui: "Martine", note: 5, mot: "Je me méfiais de la couleur. C’est ce que je porte le plus." },
+        ] } } },
+  clara: { nom: "Salon Clara", metier: "Coiffure", patron: "clara", video: "v/clara", int: { img: "i/salon-coiffure.jpg" }, annonce: "Carré court, brun profond · 85 €",
+    dit: "Camille ! Il me reste un créneau à 16 h pour le carré : il est à toi pendant 5 minutes !",
+    promo: "Le carré court, brun profond · 85 €", famille: "Le soin offert à la famille",
+    question: ["Le mois prochain, on ose quoi ?", ["Le carré", "Le blond miel", "La frange"], [15, 9, 7]],
+    reserver: { quoi: "le créneau de 16 h", bouton: "Prendre le créneau" },
+    essai: { k: "lea", quoi: "le carré court", dit: "Dix minutes le matin, pas plus !", note: "💇 11 avis" },
+    ici: ["lea"], traces: [["hugo", "Meilleure coupe de ma vie ✂️"]], monde: 6,
+    reponse: "Merci ! Je te garde 16 h ?",
+    salon: { tissu: "#7A4A2A", tissu2: "#40240F", bois: "#7A5234", bois2: "#47301C", surTable: "✂️ ☕", essaiIcone: "💇", essaiCourt: "Essayer", essaiTitre: "Essayer le carré court",
+      photo: "i/salon-coiffure.jpg", photoL: 572, photoH: 1024,
+      places: [{ x: 22, y: 51, h: 7.5 }, { x: 77, y: 51, h: 7.5 }, { x: 36, y: 46, h: 5.5 }, { x: 63, y: 46, h: 5.5 }, { x: 11, y: 58, h: 9.5 }, { x: 88, y: 58, h: 9.5 }, { x: 7, y: 84, h: 14 }],
+      occupants: { 0: "lea", 3: "passant", 5: "passant" },
+      essayage: { piece: "Le carré court, brun profond", detail: "Shampoing, coupe, brushing", prix: "85 €", photo: "i/essai/coiffure-apres.jpg",
+        avant: "i/essai/moi-coiffure-avant.jpg", apres: "i/essai/moi-coiffure-apres.jpg", sur: "Ce carré, sur toi", autres: "Un carré, plusieurs façons de le porter",
+        garder: "Je prends le créneau", ou: "Il t’attend au Salon Clara, rue piétonne",
+        facons: [
+          { photo: "i/essai/coiffure-visage-marche.jpg", ou: "Au marché", avec: "Avec des lunettes", qui: "Nadia", note: 5, mot: "J’avais peur que ça fasse trop avec les lunettes. Pas du tout." },
+          { photo: "i/essai/coiffure-visage-cuisine.jpg", ou: "En cuisine", avec: "Raie sur le côté", qui: "Sofia", note: 4, mot: "Dix minutes le matin, pas plus. C’est ce que je cherchais." },
+          { photo: "i/essai/coiffure-visage-terrasse.jpg", ou: "En terrasse", avec: "Mèche vers l’avant", qui: "Claire", note: 5, mot: "Trois mois après, elle repousse sans prendre de forme bizarre." },
+        ] } } },
 };
 // LES LIEUX : trois rues photographiées à Dax. Coordonnées en % de la photo. Les enseignes réelles des trois façades
 // qui accueillent nos commerces (imaginaires) sont effacées et remplacées ; les autres commerces restent du décor.
@@ -567,6 +659,10 @@ const LIEUX = {
     vitrines: [
       { b: "atelier", ecran: [[74.0, 54.05], [77.5, 53.75], [77.5, 65.0], [74.0, 64.7]], meneau: [0.405, "#8E1B2A"], porte: [76, 83], accueil: [73.5, 73.5],
         enseigne: { q: [[73.43, 41.9], [78.07, 39.61], [78.07, 43.93], [73.43, 46.21]], texte: "L’Atelier de Nina", police: "Playfair Display", couleur: "#FFFFFF", taille: 0.62, ligne: 0.68, italique: true } },
+      { b: "clara", ecran: [[11.8, 45.0], [17.8, 45.6], [17.8, 66.0], [11.8, 66.0]], affiche: { q: [[6.9, 50.4], [10.3, 50.7], [10.3, 63.6], [6.9, 63.4]], img: "i/essai/coiffure-apres.jpg" }, porte: [20, 87], accueil: [22.5, 77],
+        enseigne: { q: [[8.2, 28.3], [25.6, 33.2], [25.6, 42.1], [8.2, 35.2]], texte: "Salon Clara", police: "Playfair Display", couleur: "#F2D39B", fond: "#2B1B24", taille: 0.6, ligne: 0.7 } },
+      { b: "lou", ecran: [[32.9, 49.8], [36.0, 50.2], [36.0, 62.6], [32.9, 62.4]], porte: [33, 78], accueil: [37, 68],
+        enseigne: { q: [[31.3, 41.3], [40.1, 46.0], [40.1, 48.4], [31.3, 45.3]], texte: "Maison Lou", police: "Playfair Display", couleur: "#FFF4E2", fond: "#232B45", taille: 0.68, ligne: 0.74, italique: true } },
     ],
     sorties: [{ vers: "place", x: 10, y: 97, sens: "g" }],
     gens: [{ k: "hugo", la: true }, { k: "sam", la: false, x: 52, y: 70, trace: "Mon premier bol sort du four 😍" }] },
@@ -575,7 +671,7 @@ const LIEUX = {
 const PLAN = {
   lieux: { place: [200, 150], hotel: [108, 188], pietonne: [298, 118] },
   rues: { hotel: "M176 162 Q112 186 28 224", pietonne: "M226 140 Q300 118 376 86" },
-  boutiques: { bergine: [181, 139], alice: [118, 179], atelier: [306, 108] },
+  boutiques: { bergine: [181, 139], alice: [118, 179], atelier: [306, 108], lou: [266, 122], clara: [334, 102] },
   autres: ["M200 116 Q196 64 214 8", "M210 184 Q206 240 222 296", "M14 92 Q90 104 172 132", "M236 168 Q320 196 392 232", "M64 20 Q80 120 70 296", "M330 14 Q338 150 352 296"],
 };
 const PAROLES = {
@@ -752,9 +848,10 @@ function lieu(garde) {
     const B = BOUTIQUES[v.b];
     if (v.enseigne) { // la nouvelle enseigne, peinte dans la perspective de la façade (l'ancienne est effacée de la photo)
       const n = v.enseigne, { e, w, h } = surQuad(n.q, "enseigne-p");
-      e.innerHTML = `<svg viewBox="0 0 ${w.toFixed(1)} ${h.toFixed(1)}" aria-hidden="true"><text x="${(w / 2).toFixed(1)}" y="${(h * n.ligne).toFixed(1)}" text-anchor="middle" font-family="'${n.police}', serif" font-size="${(h * n.taille).toFixed(1)}"${n.italique ? ' font-style="italic"' : ""} font-weight="${n.police === "Playball" ? 400 : 600}" fill="${n.couleur}" textLength="${(w * 0.9).toFixed(1)}" lengthAdjust="spacingAndGlyphs">${n.texte}</text></svg>`;
+      e.innerHTML = `<svg viewBox="0 0 ${w.toFixed(1)} ${h.toFixed(1)}" aria-hidden="true">${n.fond ? `<rect x="0" y="0" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="${(h * 0.08).toFixed(1)}" fill="${n.fond}"/><rect x="${(h * 0.08).toFixed(1)}" y="${(h * 0.1).toFixed(1)}" width="${(w - h * 0.16).toFixed(1)}" height="${(h * 0.8).toFixed(1)}" rx="${(h * 0.06).toFixed(1)}" fill="none" stroke="${n.couleur}" stroke-opacity=".55" stroke-width="${Math.max(0.6, h * 0.025).toFixed(2)}"/>` : ""}<text x="${(w / 2).toFixed(1)}" y="${(h * n.ligne).toFixed(1)}" text-anchor="middle" font-family="'${n.police}', serif" font-size="${(h * n.taille).toFixed(1)}"${n.italique ? ' font-style="italic"' : ""} font-weight="${n.police === "Playball" ? 400 : 600}" fill="${n.couleur}" textLength="${(w * 0.9).toFixed(1)}" lengthAdjust="spacingAndGlyphs">${n.texte}</text></svg>`;
       M.appendChild(e);
     }
+    if (v.affiche) { const { e } = surQuad(v.affiche.q, "affiche-p"); e.style.backgroundImage = `url(${v.affiche.img})`; M.appendChild(e); }
     const { e } = surQuad(v.ecran, "ecran-vit", "button"); e.type = "button"; e.setAttribute("aria-label", `L’écran de ${B.nom}`);
     e.innerHTML = `<video muted playsinline loop preload="auto">${sources(B.video)}</video>${v.meneau ? `<i class="meneau" style="left:${v.meneau[0] * 100}%;background:${v.meneau[1]}"></i>` : ""}`;
     e.addEventListener("click", (ev) => { ev.stopPropagation(); allerA(v); });
@@ -1039,12 +1136,12 @@ $("#liste").addEventListener("click", choisirSurCarte);
 // ── UNE ANNONCE EN GRAND ───────────────────────────────────────────────────────────────────────
 let mCoeurs, mAvis;
 function ouvrirAnnonce(cle) {
-  const B = BOUTIQUES[cle], e = $("#plein"); Son.niveau(0.4);
+  const B = BOUTIQUES[cle], e = $("#plein"); Son.niveau(0.4); e.classList.remove("cab");
   e.innerHTML = `<video id="pVideo" muted playsinline loop autoplay>${sources(B.video)}</video>
     <div class="p-haut"><img src="${GENS[B.patron].n}" alt=""><span><b>${B.nom}</b><small>● l’annonce du jour</small></span>
       <span class="d"><button class="rond" type="button" id="pSon" aria-label="${B.sansSon ? "Vidéo sous-titrée, sans son" : "Le son"}">${B.sansSon ? "💬" : "🔊"}</button><button class="rond" type="button" id="pFermer" aria-label="Fermer">✕</button></span></div>
     <div class="coeurs" id="pCoeurs"></div><div class="p-avis" id="pAvis"></div>
-    <div class="p-bas"><button class="gros clair" type="button" id="pInviter">👥 Montrer à un ami</button>${etat.boutique ? "" : `<button class="gros" type="button" id="pEntrer">🚪 Entrer</button>`}</div>`;
+    <div class="p-bas">${B.salon.essayage ? `<button class="gros" type="button" id="pEssayer">✨ L’essayer sur moi</button>` : ""}<button class="gros clair" type="button" id="pInviter">👥 Montrer à un ami</button>${etat.boutique ? "" : `<button class="gros" type="button" id="pEntrer">🚪 Entrer</button>`}</div>`;
   e.hidden = false;
   // on l'ouvre d'un geste : la vidéo part avec le son (sauf si elle n'en a pas : elle est alors sous-titrée)
   try { etat.audio?.pause(); } catch {}
@@ -1052,6 +1149,7 @@ function ouvrirAnnonce(cle) {
   if (!B.sansSon) { pv.muted = false; Son.niveau(0.05); }
   pv.play().catch(() => { pv.muted = true; $("#pSon").textContent = "🔇"; Son.niveau(0.4); pv.play().catch(() => {}); });
   $("#pFermer").addEventListener("click", fermerAnnonce);
+  $("#pEssayer")?.addEventListener("click", () => { fermerAnnonce(); ouvrirCabine(cle); });
   $("#pSon").addEventListener("click", () => { if (B.sansSon) return toast(B.patron, "Cette vidéo est sous-titrée", "Elle n’a pas de son : les mots sont écrits à l’écran."); const v = $("#pVideo"); v.muted = !v.muted; $("#pSon").textContent = v.muted ? "🔇" : "🔊"; Son.niveau(v.muted ? 0.4 : 0.05); });
   $("#pEntrer")?.addEventListener("click", () => { fermerAnnonce(); entrerParLaPorte(cle); });
   $("#pInviter").addEventListener("click", () => (etat.mode === "spectateur" ? toast("tonFantome", "En spectateur, tu regardes", "Libère ton fantôme pour partager.") : feuilleInviter(cle, "son annonce")));
@@ -1169,7 +1267,7 @@ function brancherSalon(cle) {
   $("#oEcran").addEventListener("click", () => ouvrirAnnonce(cle));
   brancherSieges(cle);
   $("#tVideo").addEventListener("click", () => ouvrirAnnonce(cle));
-  $("#tEssai").addEventListener("click", () => feuilleEssai(cle));
+  $("#tEssai").addEventListener("click", () => (B.salon.essayage ? ouvrirCabine(cle) : feuilleEssai(cle)));
   $("#tInviter").addEventListener("click", () => feuilleInviter(cle, "la place à côté de toi"));
   $("#tAppeler").addEventListener("click", () => appelerAuSalon(cle));
   $("#tMur").addEventListener("click", () => feuilleMur(cle));
@@ -1219,6 +1317,8 @@ const PAROLES_SALON = {
   bergine: { lea: "Salut Camille ! 👋 Tu as goûté le magret ?", hugo: "Je viens de réserver pour vendredi 😄" },
   alice: { ines: "Coucou Camille ! Le coup de cœur d’Alice, je n’arrive pas à le lâcher 📚" },
   atelier: { sam: "Salut ! Mon premier bol sort du four 😍", lea: "Samedi je refais l’atelier tour, tu viens ?" },
+  lou: { elise: "Coucou Camille ! Essaie la veste rose, elle est sublime 😍", sam: "Je cherche une écharpe, tu me conseilles ?" },
+  clara: { lea: "Camille ! Tu viens pour le carré ? Je l’ai fait la semaine dernière 💇" },
 };
 const REPONSES_SALON = { "Salut ! 👋": "Contente de te voir ici 😊", "C’est bon ici ?": "Les yeux fermés, tu vas adorer.", "Vous me conseillez quoi ?": null, "On y retourne ensemble ?": "Avec plaisir ! Samedi, ça te va ?" };
 function ouvrirDiscussion(cle, calme) {
@@ -1244,7 +1344,7 @@ function direAuSalon(cle, texte, a) {
   const B = BOUTIQUES[cle], fil = $("#fil"); if (!fil) return;
   fil.insertAdjacentHTML("beforeend", `<p class="msg moi"><span>${texte}</span></p>`); fil.scrollTop = fil.scrollHeight;
   const qui = a || connus(cle)[Math.floor(Math.random() * connus(cle).length)]; if (!qui) return;
-  const rep = REPONSES_SALON[texte] ?? (texte === "Vous me conseillez quoi ?" ? `${B.essai.quoi[0].toUpperCase() + B.essai.quoi.slice(1)} ! ${B.essai.dit}` : "Ah oui ! Je te dis ça tout de suite 😉");
+  const rep = /^Je viens d’essayer/.test(texte) ? ["Elle te va trop bien ! 😍", "Fonce, c’est toi !", "La couleur te va à merveille ✨"][Math.floor(Math.random() * 3)] : REPONSES_SALON[texte] ?? (texte === "Vous me conseillez quoi ?" ? `${B.essai.quoi[0].toUpperCase() + B.essai.quoi.slice(1)} ! ${B.essai.dit}` : "Ah oui ! Je te dis ça tout de suite 😉");
   const ecrit = document.createElement("p"); ecrit.className = "msg ecrit"; ecrit.innerHTML = `<img src="${GENS[qui].n}" alt=""><span>${GENS[qui].nom} écrit…</span>`;
   setTimeout(() => { fil.appendChild(ecrit); fil.scrollTop = fil.scrollHeight; }, 400);
   setTimeout(() => { ecrit.remove(); dire(qui, texte === "Vous me conseillez quoi ?" && qui === B.essai.k ? `${B.essai.dit}${B.essai.voix ? " 🔊" : ""}` : rep); if (texte === "Vous me conseillez quoi ?" && qui === B.essai.k && B.essai.voix) parler(B.essai.voix, [...document.querySelectorAll("#sieges .assis .fig")].find((f) => f.dataset.k === qui)); }, 1800);
@@ -1265,6 +1365,59 @@ function finService() {
   if (s && !s.hidden) { s.classList.add("part"); setTimeout(() => { if (s.classList.contains("part")) s.hidden = true; }, 450); }
 }
 function majSalon(cle) { if (etat.boutique === cle) entrer(cle, true); }
+// ── LA CABINE D'ESSAYAGE (vêtements, coiffure) : comme sur clikme.fr/autour-de-moi — la pièce, la pièce sur toi
+//    (avant / après, une poignée à faire glisser), la même pièce sur d'autres, puis la garder. ────────────────────
+function ouvrirCabine(cle, etape = 1) {
+  const B = BOUTIQUES[cle], E = B.salon.essayage, e = $("#plein"); if (!E) return feuilleEssai(cle);
+  try { etat.audio?.pause(); } catch {} Son.niveau(0.3);
+  const fant = (n) => "👻".repeat(n);
+  const ecrans = {
+    1: `<div class="c-piece" style="background-image:url(${E.photo})"><div class="c-legende"><small>La pièce du moment · ${B.nom}</small><b>${E.piece}</b><span>${E.detail}</span><em>${E.prix}</em></div></div>`,
+    2: `<div class="c-titre"><b>${E.sur}</b><small>Fais glisser la poignée</small></div>
+        <div class="c-compare" id="cCompare"><img src="${E.avant}" alt="Toi, sans"><img class="apres" src="${E.apres}" alt="Toi, avec"><i class="trait"><span>⟷</span></i>
+          <span class="et g">Toi, sans</span><span class="et d">Toi, avec</span><span class="simu">Simulation · démonstration</span>
+          <input type="range" min="0" max="100" value="50" id="cCurseur" aria-label="Comparer sans et avec"></div>`,
+    3: `<div class="c-titre"><b>${E.autres}</b><small>La même pièce, sur d’autres clientes de Dax</small></div>
+        <div class="c-facons">${E.facons.map((f) => `<figure><img src="${f.photo}" alt=""><figcaption><span class="ou">${f.ou} · ${f.avec}</span><b>${f.qui} <i>${fant(f.note)}</i></b><q>${f.mot}</q></figcaption></figure>`).join("")}</div>`,
+    4: `<div class="c-fin"><img class="patron-c" src="${GENS[B.patron].n}" alt=""><div class="bulle-cab"><small>${GENS[B.patron].nom}</small>${E.ou}. Je te la garde ?</div>
+        <div class="c-resume"><img src="${E.photo}" alt=""><span><b>${E.piece}</b><small>${E.detail}</small><em>${E.prix}</em></span></div></div>`,
+  };
+  const boutons = {
+    1: `<button class="gros" type="button" data-va="2">✨ L’essayer sur moi</button>`,
+    2: `<button class="gros clair" type="button" data-va="1">←</button><button class="gros" type="button" data-va="3">Et sur les autres ? →</button>`,
+    3: `<button class="gros clair" type="button" data-va="2">←</button><button class="gros" type="button" data-va="4">Je me décide →</button>`,
+    4: `<button class="gros" type="button" id="cGarder">${E.garder}</button><div class="duo"><button class="gros clair" type="button" id="cAmi">👥 Montrer à un ami</button><button class="gros clair" type="button" id="cSalon">💬 L’avis du salon</button></div>`,
+  };
+  e.classList.add("cab");
+  e.innerHTML = `<div class="cabine">
+    <div class="p-haut"><img src="${GENS[B.patron].n}" alt=""><span><b>La cabine de ${B.nom}</b><small>Essayage · ${etape} / 4</small></span>
+      <span class="d"><button class="rond" type="button" id="cFermer" aria-label="Fermer la cabine">✕</button></span></div>
+    <div class="c-points">${[1, 2, 3, 4].map((i) => `<i class="${i <= etape ? "fait" : ""}"></i>`).join("")}</div>
+    <div class="c-ecran e${etape}">${ecrans[etape]}</div>
+    <div class="c-bas e${etape}">${boutons[etape]}</div></div>`;
+  e.hidden = false;
+  $("#cFermer").addEventListener("click", fermerCabine);
+  e.querySelectorAll("[data-va]").forEach((b) => b.addEventListener("click", () => ouvrirCabine(cle, +b.dataset.va)));
+  const c = $("#cCurseur");
+  if (c) { const maj = () => $("#cCompare").style.setProperty("--p", c.value + "%"); c.addEventListener("input", maj); maj();
+    // la poignée part toute seule une fois, pour montrer qu'on peut la faire glisser
+    let t = 0; const anim = setInterval(() => { if (!$("#cCurseur") || c.dataset.touche) return clearInterval(anim); t += 0.06; c.value = String(Math.round(50 + Math.sin(t) * 32)); maj(); if (t > Math.PI * 2) { clearInterval(anim); c.value = "50"; maj(); } }, 30);
+    ["pointerdown", "touchstart"].forEach((ev) => c.addEventListener(ev, () => (c.dataset.touche = "1"), { passive: true })); }
+  $("#cGarder")?.addEventListener("click", () => {
+    if (etat.mode === "spectateur") return toast("tonFantome", "En spectateur, tu regardes", "Libère ton fantôme pour garder une pièce.");
+    fermerCabine(); etat.pris.add(cle);
+    feuille(`<h3>${E.piece} : c’est à toi ✓</h3><p class="sous">${E.prix} · gardée jusqu’à ce soir ${chez(B.nom)}. Au comptoir, ta visite est notée : ta figurine de ${B.nom} t’attend.</p><span class="chrono">Jusqu’à 19 h</span>`);
+    plusTard(6000, { k: B.patron, titre: `${GENS[B.patron].nom} t’a répondu`, texte: `« C’est noté ${PRENOM}, je te la garde ! 😊 »`, b: cle });
+  });
+  $("#cAmi")?.addEventListener("click", () => { fermerCabine(); feuilleInviter(cle, `l’essayage de ${E.piece.toLowerCase()}`); });
+  $("#cSalon")?.addEventListener("click", () => {
+    fermerCabine();
+    if (!$("#fil") || $("#discu")?.hidden) return toast(B.patron, "Installe-toi d’abord", "Assieds-toi au salon pour demander l’avis des autres.");
+    direAuSalon(cle, `Je viens d’essayer ${E.piece.toLowerCase()} : vous en pensez quoi ?`);
+  });
+}
+function fermerCabine() { const e = $("#plein"); e.hidden = true; e.innerHTML = ""; e.classList.remove("cab"); Son.niveau(etat.boutique ? 0.3 : 1); }
+
 // essayer : ce qu'on peut essayer ici, qui l'a essayé (sa voix), et le réserver
 function feuilleEssai(cle) {
   const B = BOUTIQUES[cle], S = B.salon, fam = etat.famille.has(cle), k = B.essai.k;
