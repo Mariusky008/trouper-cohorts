@@ -379,11 +379,13 @@ MIKE = {c: "".join(str(min(9, round(v * 9))) for v in energie(FF, f"{D}/voix/{c}
 # LE CHEF ET LA CLIENTE PARLENT (scène des figurines) : leur énergie, pour ouvrir leur bouche sur leur carte
 PAROLES = {c: "".join(str(min(9, round(v * 9))) for v in energie(FF, f"{D}/voix/{c}.mp3")) for c in ("lchef", "lcli")}
 # leurs images : la photo du chef (celle du restaurant) ; les figurines, recadrées en carte (le portrait, 0,72)
+# LES ÉDITIONS : celles de la figurine du commerçant de la variante (le chef, Nina, Élise — reçues le 2 novembre,
+# `chef-halloween.jpg` … `elise-rare.jpg`) : c'est sa figurine qu'on gagne, pas celle du propriétaire
 FG = f"{R}/figurines"
+QUI = V["pro"][1].rsplit("-", 1)[0]   # (« chef-neutre » → « chef »)
 subprocess.run([FF, "-v", "error", "-y", "-i", V["pro"][0], "-vf", "scale='min(900,iw)':-2", "-q:v", "3", f"{D}/f/chef-photo.jpg"], check=True)
 for src, dst in ((V["pro"][1], "fig-chef-n"), (V["pro"][2], "fig-chef-p"), ("cliente-neutre", "fig-cli-n"), ("cliente-parle", "fig-cli-p"),
-                 ("jp-halloween", "ed-halloween"), ("jp-noel", "ed-noel"), ("jp-ete", "ed-ete"), ("jp-rentree", "ed-rentree"),
-                 ("../ressort/neutre", "ed-rare")):   # (l'édition rare : sa figurine de la démo)
+                 *((f"{QUI}-{e}", f"ed-{e}") for e in ("halloween", "noel", "ete", "rentree", "rare"))):
     subprocess.run([FF, "-v", "error", "-y", "-i", f"{FG}/{src}.jpg", "-vf", "crop='min(iw,ih*0.72)':ih,scale=-2:760", "-quality", "86", f"{D}/f/{dst}.webp"], check=True)
 
 # ─── LES IMAGES (celles du tour du restaurant), GSAP ──────────────────────────────────────────

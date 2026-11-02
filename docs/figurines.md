@@ -128,7 +128,7 @@ dans l'ordre, les trois idées qui rendent la direction claire pour un pro :
 2. **La raison de venir, c'est la collection** (12c, lui) : « Et ceux qui viennent gagnent votre figurine : une édition
    à chaque saison… et des éditions rares, pour ceux qui remplissent vos creux. À collectionner… et à faire parler ! »
    — les quatre éditions (Halloween, Noël, l'été, la rentrée), puis la carte holographique « Édition rare mardi midi »
-   avec « 🏆 Défi de la famille · 3 tables · Complet ✅ » (la mission de la famille), et l'album « Ma collection · 6 / 24 ».
+   avec « 🏆 Défi de la famille · 3 tables · Complet ✅ » (la mission de la famille), et l’album « Ma collection · 6 / 10 » (comme dans l’appli : 10, la 10ᵉ en or).
 3. **Et elle parle** : la figurine de Léa, offerte par Chez Bergine, dit avec la voix enregistrée par Emma « Le meilleur
    magret de Dax ! ».
 
