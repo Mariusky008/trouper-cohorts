@@ -68,3 +68,16 @@ rendraient la rue plus juste.
   téléphone, la rue défile ; sur ordinateur, elle tient presque entière).
 
 Limite honnête : les photos font 1672 × 941 ; au zoom ×2 sur téléphone, elles s'adoucissent.
+
+### v5.1 — « aucune figurine, les télés n'affichent rien, c'est trop près, l'intérieur est immense »
+
+- La cause des figurines et des vidéos absentes : une publication avait créé un second lien sans les dossiers `f/`,
+  `s/`, `v/` (https://claude.ai/artifact/HhswCHMkevwbiF5G1TKZFJ). Il est complété ; le lien de référence reste
+  https://claude.ai/artifact/NoWMNw9NtR9cTG6VrzU21Q. Vérifié dans la vraie visionneuse : figurines chargées, vidéo de
+  la vitrine et télé de la boutique qui tournent.
+- **Caméra plus douce** : elle avance avec toi mais au plus ×1,45 (la moitié du rapetissement de ta figurine), et devant
+  une boutique elle cadre ta figurine, la vitrine et la rue autour.
+- **L'intérieur à taille raisonnable** : la pièce occupe le haut de l'écran (60 % sur téléphone, 74 % sur ordinateur),
+  jamais plus de 1,5 fois la photo ; le reste en fond flou. « ▶ L'annonce du jour » sous la télé.
+- **Plus de vie** : des passants fantômes (ceux qui n'ont pas encore leur figurine) au fond de chaque rue ; **le
+  commerçant sort sur le pas de sa porte** quand tu arrives et t'appelle par ton prénom (sa vraie voix, la première fois).

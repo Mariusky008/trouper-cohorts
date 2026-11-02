@@ -52,6 +52,10 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-
 @keyframes balance{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
 @keyframes balanceg{0%,100%{transform:scaleX(-1) rotate(-2.5deg)}50%{transform:scaleX(-1) rotate(2.5deg)}}
 .qui.absent{opacity:.46;filter:grayscale(.7)}
+.qui.passant .nom{display:none}
+.qui.sort{animation:sort .5s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes sort{from{opacity:0;transform:translate(-50%,-88%) scale(.8)}}
+.qui.rentre{opacity:0;transition:opacity .35s}
 .qui.absent .nom::after{content:" · pas là";font-weight:500;opacity:.8}
 .qui .nom{position:absolute;left:50%;top:100%;margin-top:4px;transform:translateX(-50%);transform-origin:0 0;scale:var(--inv,1);padding:2px 8px;border-radius:999px;background:var(--verre);border:1px solid var(--verre-bord);font-size:10px;font-weight:700;white-space:nowrap}
 .qui.toi .nom{background:var(--rose);border-color:transparent}
@@ -118,9 +122,13 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--or);outline-
 .envole{position:absolute;font-size:22px;pointer-events:none;animation:envole 2.2s ease-out forwards}
 @keyframes envole{0%{transform:translate(-50%,0) scale(.5);opacity:0}15%{opacity:1;transform:translate(-50%,-14px) scale(1.15)}100%{transform:translate(calc(-50% + var(--dx,10px)),-160px) scale(.9);opacity:0}}
 .int-scene{position:absolute;overflow:hidden;transform-origin:50% 35%;animation:dedans .9s cubic-bezier(.2,.8,.25,1) both}
-.int-scene.fondu{-webkit-mask-image:linear-gradient(transparent,#000 44px);mask-image:linear-gradient(transparent,#000 44px)}
+.int-scene.fondu{-webkit-mask-image:linear-gradient(transparent,#000 16px);mask-image:linear-gradient(transparent,#000 16px)}
 @keyframes dedans{from{transform:scale(1.22);filter:blur(7px);opacity:.15}}
-.int-fond{position:absolute;inset:0;background:center/100% 100% no-repeat;filter:brightness(.82) saturate(1.05)}
+.int-fond{position:absolute;inset:0;background:center/100% 100% no-repeat;filter:brightness(.86) saturate(1.05)}
+.int-flou{position:absolute;inset:-40px;background:center/cover no-repeat;filter:blur(22px) brightness(.42) saturate(1.1)}
+.int-scene{border-radius:0 0 18px 18px;box-shadow:0 20px 40px rgba(0,0,0,.55)}
+.regarder{position:absolute;z-index:3;transform:translate(-50%,0);padding:5px 10px;border-radius:999px;border:0;background:var(--rose);color:#fff;font-size:10.5px;font-weight:800;white-space:nowrap;cursor:pointer;box-shadow:0 8px 16px -6px rgba(255,46,154,.9);animation:flotte2 2.4s ease-in-out infinite}
+@keyframes flotte2{50%{transform:translate(-50%,-4px)}}
 .plein.boutique::after{background:linear-gradient(180deg,rgba(0,0,0,.6),transparent 18%,transparent 40%,rgba(18,7,15,.94) 74%)}
 .tele{position:absolute;left:0;top:0;transform-origin:0 0;padding:0;border:0;border-radius:2px;overflow:hidden;background:#000;box-shadow:0 0 0 3px #121212,0 0 0 4px #3c3c3c,0 12px 22px rgba(0,0,0,.6);cursor:pointer}
 .tele video{position:static;width:100%;height:100%;object-fit:cover}
@@ -275,6 +283,7 @@ const GENS = {
   sam: { nom: "Sam", n: "f/sam.webp" },
   toi: { nom: "Toi", n: "f/toi-n.webp", p: "f/toi-p.webp" },
   tonFantome: { nom: "Ton fantôme", n: "f/fantome.webp" },
+  passant: { nom: "Un fantôme", n: "f/fantome.webp" },
 };
 const BOUCHES = {
   jm: "00111111111110000000111111111100111001111111011111100111110000000001111101100111011111101111101111110000000000",
@@ -312,26 +321,26 @@ const BOUTIQUES = {
 // qui accueillent nos commerces (imaginaires) sont effacées et remplacées ; les autres commerces restent du décor.
 // sol : le pavé où l'on marche (polygone) ; obstacles : [x0, x1, y0, y1] ; horizon : la ligne des yeux (perspective).
 const LIEUX = {
-  place: { nom: "La place de la fontaine", decor: "i/dax-place.jpg", iw: 1672, ih: 941, horizon: 57.5,
+  place: { nom: "La place de la fontaine", decor: "i/dax-place.jpg", iw: 1672, ih: 941, horizon: 57.5, passants: 5,
     sol: [[40, 66], [70, 66], [88, 80], [96, 100], [4, 100], [20, 80]], obstacles: [],
     vitrines: [
-      { b: "bergine", ecran: [[14.6, 49.55], [18.4, 49.65], [18.4, 61.45], [14.6, 61.6]], meneau: [0.66, "#2B1A12"], porte: [26, 77],
+      { b: "bergine", ecran: [[14.6, 49.55], [18.4, 49.65], [18.4, 61.45], [14.6, 61.6]], meneau: [0.66, "#2B1A12"], porte: [26, 77], accueil: [23.5, 68.5],
         enseigne: { q: [[23.1, 35.56], [34.5, 40.97], [34.5, 45.56], [23.1, 41.18]], texte: "Chez Bergine", police: "Playball", couleur: "#F8EAD0", taille: 0.74, ligne: 0.7 } },
     ],
     sorties: [{ vers: "hotel", x: 9, y: 97, sens: "g" }, { vers: "pietonne", x: 91, y: 97, sens: "d" }],
     gens: [{ k: "lea", la: true }, { k: "elise", la: false, x: 62, y: 72, trace: "La terrasse de Chez Bergine, au soleil 😍" }] },
-  hotel: { nom: "La rue de l’hôtel", decor: "i/dax-hotel.jpg", iw: 1672, ih: 941, horizon: 59,
+  hotel: { nom: "La rue de l’hôtel", decor: "i/dax-hotel.jpg", iw: 1672, ih: 941, horizon: 59, passants: 4,
     sol: [[44, 62], [57, 62], [70, 72], [80, 82], [92, 100], [10, 100], [28, 84], [36, 70]], obstacles: [],
     vitrines: [
-      { b: "alice", ecran: [[24.1, 50.45], [27.3, 50.95], [27.3, 60.7], [24.1, 60.7]], meneau: [0.39, "#2A1A12"], porte: [34, 76],
+      { b: "alice", ecran: [[24.1, 50.45], [27.3, 50.95], [27.3, 60.7], [24.1, 60.7]], meneau: [0.39, "#2A1A12"], porte: [34, 76], accueil: [28, 64.5],
         enseigne: { q: [[16.38, 35.33], [33.5, 45.33], [33.5, 47.64], [16.38, 39.78]], texte: "La Page d’Alice", police: "Playball", couleur: "#FFF1D6", taille: 0.8, ligne: 0.72 } },
     ],
     sorties: [{ vers: "place", x: 90, y: 97, sens: "d" }],
     gens: [{ k: "ines", la: true }] },
-  pietonne: { nom: "La rue piétonne", decor: "i/dax-pietonne.jpg", iw: 1672, ih: 941, horizon: 59,
+  pietonne: { nom: "La rue piétonne", decor: "i/dax-pietonne.jpg", iw: 1672, ih: 941, horizon: 59, passants: 4,
     sol: [[42, 63], [60, 63], [80, 75], [92, 88], [92, 100], [8, 100], [14, 88], [28, 74]], obstacles: [[62.5, 71.5, 72, 82]],
     vitrines: [
-      { b: "atelier", ecran: [[74.0, 54.05], [77.5, 53.75], [77.5, 65.0], [74.0, 64.7]], meneau: [0.405, "#8E1B2A"], porte: [76, 83],
+      { b: "atelier", ecran: [[74.0, 54.05], [77.5, 53.75], [77.5, 65.0], [74.0, 64.7]], meneau: [0.405, "#8E1B2A"], porte: [76, 83], accueil: [73.5, 73.5],
         enseigne: { q: [[73.43, 41.9], [78.07, 39.61], [78.07, 43.93], [73.43, 46.21]], texte: "L’Atelier de Nina", police: "Playfair Display", couleur: "#FFFFFF", taille: 0.62, ligne: 0.68, italique: true } },
     ],
     sorties: [{ vers: "place", x: 10, y: 97, sens: "g" }],
@@ -459,7 +468,7 @@ const PRENOM = "Camille";
 const sources = (v) => `<source src="${v}.mp4" type="video/mp4"><source src="${v}.webm" type="video/webm">`;
 const L = () => LIEUX[etat.lieu];
 const MONDE = () => $("#monde");
-const K_TAILLE = 0.8, Y0 = 92, SMAX = 2.2, FOCALE = 0.87;
+const K_TAILLE = 0.8, Y0 = 92, SMAX = 1.45, FOCALE = 0.87;
 const taille = (y) => Math.max(2, (y - L().horizon) * K_TAILLE); // en % de la hauteur de la photo : plus loin, plus petit
 const px = ([x, y]) => [(x / 100) * W, (y / 100) * Hm];
 // la perspective du pavé : un point de la photo ⇄ sa place au sol (en hauteurs de caméra), pour marcher « pour de vrai »
@@ -477,12 +486,13 @@ function surQuad(q, cl, tag = "div") {
 //    (ta figurine garde sa taille, comme si on marchait derrière toi). Le spectateur, lui, regarde où il veut.
 const cam = { s: 1, x: 0, y: 0, ax: 0, ay: 0, tx: 0, ty: 0 }; let camInv = 0;
 function viseeCamera() {
-  if (etat.zoomPorte) { const c = px(centreQuad(etat.zoomPorte.ecran)); return { s: 3.2, x: c[0], y: c[1], ax: VW / 2, ay: VH * 0.5 }; }
+  if (etat.zoomPorte) { const c = px(centreQuad(etat.zoomPorte.ecran)); return { s: 2.6, x: c[0], y: c[1], ax: VW / 2, ay: VH * 0.5 }; }
   if (toi) {
-    let [x, y] = px([toi.x, toi.y]), s = Math.min(SMAX, Math.max(1, (Y0 - L().horizon) / Math.max(0.6, toi.y - L().horizon)));
+    const prof = (Y0 - L().horizon) / Math.max(0.6, toi.y - L().horizon); // combien ta figurine a rapetissé en s'éloignant
+    let [x, y] = px([toi.x, toi.y]), s = Math.min(SMAX, Math.max(1, 1 + (prof - 1) * 0.45));
     if (etat.proche) { // devant une boutique : la caméra cadre ta figurine ET la vitrine
       const [vx] = px(centreQuad(etat.proche.ecran)), dx = Math.abs(x - vx), gauche = vx < x;
-      s = Math.min(s, Math.max(1, (VW * 0.5) / Math.max(1, dx)));
+      s = Math.min(s, Math.max(1, (VW * 0.6) / Math.max(1, dx)));
       return { s, x: (x + vx) / 2, y, ax: VW * (gauche ? 0.36 : 0.5), ay: VH * 0.9 }; // la mini-carte (en bas à droite) ne cache pas ta figurine
     }
     return { s, x, y, ax: VW / 2, ay: VH * 0.9 };
@@ -551,7 +561,15 @@ function lieu(garde) {
     M.appendChild(p.el); poser(p);
     return p;
   });
-  toi = null;
+  for (let i = 0; i < (L().passants || 0); i++) {
+    const fond = L().horizon + (100 - L().horizon) * 0.52; // les passants restent au fond : ils animent sans cacher la rue
+    const p = { k: "passant", la: true, passant: true, fond, ...pointAuHasard(fond), echelle: 0.72 + Math.random() * 0.14 };
+    p.el = perso("passant", " passant");
+    p.el.addEventListener("click", (ev) => { ev.stopPropagation(); toast("passant", "Un fantôme de Dax", "Pas encore sa figurine : il se promène et regarde. Comme toi, au début."); });
+    p.pause = performance.now() + Math.random() * 2500; p.cible = null; p.v = 0.45 + Math.random() * 0.4;
+    M.appendChild(p.el); poser(p); gens.push(p);
+  }
+  toi = null; auSeuil = null;
   if (etat.mode !== "spectateur") {
     toi = { k: moi(), x: garde?.toi?.x ?? 50, y: garde?.toi?.y ?? Y0, cible: null, v: 1.9 };
     toi.el = perso(toi.k, " toi" + (etat.mode === "fantome" ? " fantome" : ""));
@@ -567,7 +585,7 @@ function perso(k, cl) {
   b.innerHTML = `<span class="corps"><img class="n" src="${GENS[k].n}" alt="">${GENS[k].p ? `<img class="p" src="${GENS[k].p}" alt="">` : ""}</span><span class="nom">${GENS[k].nom}</span>`;
   return b;
 }
-function poser(p) { const [x, y] = px([p.x, p.y]); Object.assign(p.el.style, { left: x + "px", top: y + "px", height: (taille(p.y) / 100) * Hm + "px", zIndex: String(10 + Math.round(p.y)) }); }
+function poser(p) { const [x, y] = px([p.x, p.y]); Object.assign(p.el.style, { left: x + "px", top: y + "px", height: ((taille(p.y) * (p.echelle || 1)) / 100) * Hm + "px", zIndex: String(10 + Math.round(p.y)) }); }
 
 // LE PAVÉ : on ne marche que là où il y a du sol libre (pas dans les terrasses ni les bacs à fleurs)
 function dansPoly(P, x, y) { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, yi] = P[i], [xj, yj] = P[j]; if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c; } return c; }
@@ -589,8 +607,8 @@ function surLeSol(x, y) {
   if (o) q = [[o[0] - 0.6, q[1]], [o[1] + 0.6, q[1]], [q[0], o[3] + 0.6]].sort((a, b) => dist(a, q) - dist(b, q))[0];
   return { x: q[0], y: q[1] };
 }
-function pointAuHasard() {
-  const P = L().sol, xs = P.map((p) => p[0]), ys = P.map((p) => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys) - 5;
+function pointAuHasard(yMax = 100) {
+  const P = L().sol, xs = P.map((p) => p[0]), ys = P.map((p) => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.min(yMax, Math.max(...ys) - 5);
   for (let k = 0; k < 40; k++) { const x = x0 + Math.random() * (x1 - x0), y = y0 + Math.random() * (y1 - y0); if (dansPoly(P, x, y) && !dansObstacle(x, y)) return { x, y }; }
   return { x: 50, y: 85 };
 }
@@ -610,7 +628,7 @@ function boucle(t) {
   if (!document.hidden && VW) {
     for (const p of gens) {
       if (!p.la) continue;
-      if (!p.cible && t > p.pause) { p.cible = pointAuHasard(); p.arrive = () => (p.pause = performance.now() + 1500 + Math.random() * 4500); }
+      if (!p.cible && t > p.pause) { p.cible = pointAuHasard(p.fond); p.arrive = () => (p.pause = performance.now() + 1500 + Math.random() * 4500); }
       avancer(p, dt);
     }
     if (toi && toi.cible) { avancer(toi, dt); if (t - dernierPas > 300) { Son.pas(); dernierPas = t; } proche(); }
@@ -646,7 +664,23 @@ function proche() {
   if (!toi) return;
   let le = null; const a = versSol(toi.x, toi.y);
   for (const v of L().vitrines) { const b = versSol(v.porte[0], v.porte[1]); if (Math.hypot(a[0] - b[0], a[1] - b[1]) < 1.8) le = v; }
-  if (le !== etat.proche) { etat.proche = le; allumer(); bas(); }
+  if (le !== etat.proche) { etat.proche = le; allumer(); bas(); seuil(le); }
+}
+// tu arrives devant chez lui : le commerçant sort sur le pas de sa porte et t'appelle (sa vraie voix, la première fois)
+let auSeuil = null;
+function seuil(v) {
+  if (auSeuil) { const a = auSeuil; auSeuil = null; a.el.classList.add("rentre"); setTimeout(() => a.el.remove(), 400); }
+  if (!v || !v.accueil || !toi) return;
+  const B = BOUTIQUES[v.b], p = { k: B.patron, x: v.accueil[0], y: v.accueil[1], la: true };
+  p.el = perso(B.patron, " sort"); p.el.addEventListener("click", (ev) => { ev.stopPropagation(); appeler(v, p, true); });
+  MONDE().appendChild(p.el); poser(p); auSeuil = p;
+  setTimeout(() => appeler(v, p), 550);
+}
+function appeler(v, p, encore) {
+  if (auSeuil !== p) return;
+  const B = BOUTIQUES[v.b], premiere = !etat.accueillis.has(v.b); etat.accueillis.add(v.b);
+  bulle(p, `<small>${GENS[B.patron].nom} · sur le pas de sa porte</small>${B.dit}`, 7000);
+  if (B.voix && (encore || premiere)) parler(B.voix, p.el);
 }
 function focaliser(v) { etat.proche = v; if (!toi) { const c = centreQuad(v.ecran); etat.regard = { x: c[0], y: c[1] + 6, s: 2 }; } allumer(); bas(); }
 function allumer() {
@@ -691,12 +725,12 @@ function entrerParLaPorte(cle) {
 }
 
 // ── LES GENS : parler à qui est là, laisser un mot à qui n'est pas là ──────────────────────────
-function bulle(p, html) {
+function bulle(p, html, ms = 3400) {
   document.querySelectorAll("#monde .bulle").forEach((e) => e.remove());
   const d = document.createElement("div"); d.className = "bulle"; d.innerHTML = html;
   const g = -cam.tx / cam.s, dr = (VW - cam.tx) / cam.s, marge = 104 / cam.s;
   d.style.left = Math.min(dr - marge, Math.max(g + marge, (p.x / 100) * W)) + "px"; d.style.top = ((p.y - taille(p.y)) / 100) * Hm + "px";
-  MONDE().appendChild(d); setTimeout(() => d.remove(), 3400);
+  MONDE().appendChild(d); setTimeout(() => d.remove(), ms);
 }
 const visible = (p) => { const sx = cam.tx + cam.s * (p.x / 100) * W; return sx > 30 && sx < VW - 30; };
 function toucherQuelquun(p) {
@@ -791,8 +825,9 @@ function entrer(cle, relance) {
   const spect = etat.mode === "spectateur", fam = etat.famille.has(cle);
   const presents = [...B.ici, ...(etat.invites[cle] ? [etat.invites[cle]] : [])].filter((k, i, a) => a.indexOf(k) === i);
   const traces = [...B.traces, ...(etat.mesMots[cle] || []).map((t) => [moi(), t])];
-  e.innerHTML = `<div class="int-scene" id="scene"><div class="int-fond" style="background-image:url(${B.int.img})"></div>
-      <button class="tele" type="button" id="bTele" aria-label="L’annonce du jour en grand"><span>● LIVE</span><video muted playsinline loop autoplay>${sources(B.video)}</video></button></div>
+  e.innerHTML = `<div class="int-flou" style="background-image:url(${B.int.img})"></div><div class="int-scene" id="scene"><div class="int-fond" style="background-image:url(${B.int.img})"></div>
+      <button class="tele" type="button" id="bTele" aria-label="L’annonce du jour en grand"><span>● LIVE</span><video muted playsinline loop autoplay>${sources(B.video)}</video></button>
+      <button class="regarder" type="button" id="bRegarder">▶ L’annonce du jour</button></div>
     <div class="p-haut"><button class="rond" type="button" id="bSortir" aria-label="Ressortir">←</button><span><b>${B.nom}</b><small>${presents.length + (spect ? 0 : 1)} que tu connais · ${traces.length} mot${traces.length > 1 ? "s" : ""} laissé${traces.length > 1 ? "s" : ""} · +${Math.max(0, B.monde - presents.length - 1)} autres</small></span>
       <span class="d"><button class="rond boiteIci" type="button" aria-label="Ta boîte">✉️<em class="nbBoite"></em></button></span></div>
     <div class="promos${B.int.ardoise === "d" ? " d" : ""}"><h3>Aujourd’hui</h3><p>${B.promo}</p><p class="famille ${fam ? "" : "ferme"}"><span>👻 ${B.famille}</span>${fam ? "" : `<button type="button" id="bLib">Réservé à sa famille</button>`}</p></div>
@@ -825,6 +860,7 @@ function entrer(cle, relance) {
   mInt = setInterval(() => { for (const p of interieur) { if (!p.la || p.k === moi() || Math.random() > 0.5) continue; const nx = Math.min(80, Math.max(6, p.x + (Math.random() * 16 - 8))); p.el.classList.toggle("gauche", nx < p.x); p.x = nx; p.el.classList.add("marche"); p.el.style.transition = "left 1.6s ease-in-out"; p.pose(); setTimeout(() => p.el.classList.remove("marche"), 1600); } }, 2400);
   $("#bSortir").addEventListener("click", sortir);
   $("#bTele").addEventListener("click", () => ouvrirAnnonce(cle));
+  $("#bRegarder").addEventListener("click", () => ouvrirAnnonce(cle));
   $("#bPatron").addEventListener("click", () => { $("#bSous").innerHTML = `<div class="sous-titre">${GENS[B.patron].nom} : ${B.dit}</div>`; const fini = () => setTimeout(() => { const z = $("#bSous"); if (z) z.innerHTML = ""; }, B.voix ? 300 : 3500); if (B.voix) parler(B.voix, $("#bPatron"), fini); else fini(); });
   $("#bLib")?.addEventListener("click", () => { if (spect) return toast("tonFantome", "Libère d’abord ton fantôme", "Dans la rue : « Libérer mon fantôme »."); etat.famille.add(cle); toast(moi(), "Tu fais partie de la famille 🎉", `${B.nom} te préviendra de ses places libres en premier.`); entrer(cle, true); });
   const garde = (f) => () => (spect ? toast("tonFantome", "En spectateur, tu regardes", "Libère ton fantôme pour participer.") : f());
@@ -843,11 +879,20 @@ function sortir() {
 function poserScene() {
   const e = $("#boutique"), sc = $("#scene"); if (!sc || !etat.boutique) return;
   const I = BOUTIQUES[etat.boutique].int, haut = e.querySelector(".p-haut").getBoundingClientRect().bottom - e.getBoundingClientRect().top + 4;
-  const aw = e.clientWidth, ah = e.clientHeight - haut, k = Math.max(aw / I.iw, ah / I.ih), w = I.iw * k, h = I.ih * k, top = haut - (h - ah) * I.cadre[1];
-  Object.assign(sc.style, { width: w + "px", height: h + "px", left: -(w - aw) * I.cadre[0] + "px", top: top + "px" });
-  sc.classList.toggle("fondu", top > 8);
-  const q = I.tele.map(([x, y]) => [(x / 100) * w, (y / 100) * h]), tw = (dist(q[0], q[1]) + dist(q[3], q[2])) / 2, th = (dist(q[0], q[3]) + dist(q[1], q[2])) / 2;
+  // la pièce occupe le haut de l'écran (60 % sur téléphone, 74 % sur ordinateur) ; jamais plus grande que 1,5 fois la photo
+  const AW = e.clientWidth, AH = e.clientHeight, couche = AW > AH;
+  let bh = Math.min(AH - haut, AH * (couche ? 0.74 : 0.6)), bw = Math.min(AW, (bh * I.iw) / I.ih);
+  if (bw > AW * 0.8) bw = AW;
+  let k = Math.max(bw / I.iw, bh / I.ih);
+  if (k > 1.5) { k = 1.5; bw = Math.min(bw, I.iw * k); bh = Math.min(bh, I.ih * k); }
+  const w = I.iw * k, h = I.ih * k;
+  Object.assign(sc.style, { width: bw + "px", height: bh + "px", left: (AW - bw) / 2 + "px", top: haut + "px" });
+  const f = sc.querySelector(".int-fond"); Object.assign(f.style, { inset: "auto", width: w + "px", height: h + "px", left: -(w - bw) * I.cadre[0] + "px", top: -(h - bh) * I.cadre[1] + "px" });
+  sc.classList.add("fondu");
+  const ox = -(w - bw) * I.cadre[0], oy = -(h - bh) * I.cadre[1];
+  const q = I.tele.map(([x, y]) => [ox + (x / 100) * w, oy + (y / 100) * h]), tw = (dist(q[0], q[1]) + dist(q[3], q[2])) / 2, th = (dist(q[0], q[3]) + dist(q[1], q[2])) / 2;
   const t = $("#bTele"); t.style.width = tw + "px"; t.style.height = th + "px"; t.style.transform = matrice(tw, th, ...q);
+  const r = $("#bRegarder"); r.style.left = (q[2][0] + q[3][0]) / 2 + "px"; r.style.top = Math.max(q[2][1], q[3][1]) + 10 + "px";
 }
 // le commerçant t'accueille par ton prénom (sa vraie voix, enregistrée, la première fois ; ensuite un signe)
 function accueillir(cle) {
@@ -964,12 +1009,13 @@ $("#spectateur").addEventListener("click", () => entrerDansDax("spectateur"));
 let tRetaille;
 window.addEventListener("resize", () => { clearTimeout(tRetaille); tRetaille = setTimeout(() => {
   if ($("#app").clientWidth === VW && $("#app").clientHeight === VH) return;
-  lieu({ toi: toi && { x: toi.x, y: toi.y }, gens: Object.fromEntries(gens.filter((p) => p.la).map((p) => [p.k, { x: p.x, y: p.y }])) }); poserScene();
+  lieu({ toi: toi && { x: toi.x, y: toi.y }, gens: Object.fromEntries(gens.filter((p) => p.la && !p.passant).map((p) => [p.k, { x: p.x, y: p.y }])) }); poserScene();
 }, 150); });
 lieu(); majBoite(); requestAnimationFrame(boucle);
 // les présents parlent de temps en temps, un à la fois
 setInterval(() => {
   if (!$("#porte").classList.contains("ouvre") || !$("#plein").hidden || !$("#boutique").hidden || !$("#carte").hidden || $("#feuilles").innerHTML) return;
+  if (auSeuil) return; // un commerçant parle sur le pas de sa porte : on ne lui coupe pas la parole
   const la = gens.filter((p) => p.la && PAROLES[p.k] && visible(p)); if (!la.length) return;
   const p = la[Math.floor(Math.random() * la.length)];
   bulle(p, `<small>${GENS[p.k].nom}</small>${PAROLES[p.k][Math.floor(Math.random() * PAROLES[p.k].length)]}`);
