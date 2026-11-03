@@ -494,6 +494,63 @@ export async function publierSurSesReseaux(
 }
 
 /**
+ * ═══ 📣 LA DÉCOUVERTE D'UN PARTENAIRE, SUR SES RÉSEAUX À LUI ══════════════
+ *
+ * La diffusion croisée (`lib/direct/diffusion.ts`) : la vidéo d'un commerce
+ * partenaire (l'INVITÉ) part sur les comptes de l'HÔTE, en « découverte du
+ * quartier ». La légende est celle de l'invité — son nom, sa ville, son
+ * métier, le lien de SA page (sur Facebook ; Instagram ne clique pas un lien
+ * écrit, et « lien en bio » mènerait chez l'hôte : rien). PAS SUR GOOGLE : un
+ * post sur la fiche Google de l'hôte doit parler de l'hôte. Rien n'est écrit
+ * dans `reseaux.derniere` de l'hôte : sa dernière publication reste la sienne.
+ * Ne lève jamais.
+ */
+export async function publierUneDecouverte(
+  hote: { id: string },
+  d: {
+    /** Le texte de la découverte (`texteDeDecouverte`). */
+    texte: string;
+    photo: string;
+    video?: { url: string; secondes: number; mp4: boolean };
+    invite: { slug: string; nom: string; ville?: string; activite?: string };
+  },
+): Promise<DernierePublication> {
+  const at = new Date().toISOString();
+  try {
+    if (!reseauxConfigures()) return { at, texte: d.texte.slice(0, 300), ok: [], erreurs: [{ plateforme: "*", message: "réseaux non branchés" }] };
+    const { data } = await createAdminClient().from("human_vitrine_sites").select("diagnostic").eq("id", hote.id).maybeSingle();
+    const comptes = reseauxDuDiagnostic((data as Record<string, unknown> | null)?.diagnostic).comptes.filter((c) => c.plateforme !== "googlebusiness");
+    if (!comptes.length) return { at, texte: d.texte.slice(0, 300), ok: [], erreurs: [{ plateforme: "*", message: "aucun réseau connecté" }] };
+    const reel = enReel(d.video) ? d.video : undefined;
+    const [image, couverture] = await Promise.all([imagePourReseaux(d.invite.slug, d.photo), reel ? imagePourReseaux(d.invite.slug, d.photo, REEL) : null]);
+    if ("erreur" in image) return { at, texte: d.texte.slice(0, 300), ok: [], erreurs: comptes.map((c) => ({ plateforme: c.plateforme, message: image.erreur })) };
+    const metier = d.invite.activite ? resolveMetier(d.invite.activite).entry?.label ?? "" : "";
+    const lien = lienDeLaPorte(SITE_URL, d.invite.slug);
+    const legende = (reseau: string) => legendeReseaux({ texte: d.texte, nom: d.invite.nom, ville: d.invite.ville, metier, lien: reseau === "instagram" ? "" : lien, reseau });
+    const pour = (c: CompteReseau): ParReseau => ({
+      content: legende(c.plateforme),
+      ...(reel && couverture && "url" in couverture
+        ? { platformSpecificData: c.plateforme === "instagram" ? { coverUrl: couverture.url } : c.plateforme === "facebook" ? { videoThumbnailUrl: couverture.url } : {} }
+        : {}),
+    });
+    const photo: Media[] = [{ type: "image", url: image.url }];
+    const medias: Media[] = reel ? [{ type: "video", url: reel.url, ...(couverture && "url" in couverture ? { thumbnail: couverture.url } : {}) }] : photo;
+    let r = await publierPartout({ texte: legende("facebook"), medias, comptes, pour });
+    // UN REEL REFUSÉ REPART EN PHOTO, comme pour ses propres annonces
+    if (r.erreurs.length && reel) {
+      const rates = comptes.filter((c) => r.erreurs.some((e) => e.plateforme === c.plateforme));
+      const encore = await publierPartout({ texte: legende("facebook"), medias: photo, comptes: rates, pour: (c) => ({ content: legende(c.plateforme) }) });
+      r = { ok: [...r.ok, ...encore.ok], erreurs: encore.erreurs };
+    }
+    if (r.erreurs.length) console.warn("[diffusion] découverte incomplète :", JSON.stringify(r.erreurs));
+    return { at, texte: d.texte.slice(0, 300), ok: r.ok, erreurs: r.erreurs };
+  } catch (e) {
+    console.error("[diffusion] découverte impossible :", String((e as Error)?.message ?? e));
+    return { at, texte: d.texte.slice(0, 300), ok: [], erreurs: [{ plateforme: "*", message: "erreur" }] };
+  }
+}
+
+/**
  * La même chose, APRÈS la réponse quand on est dans une requête : le
  * commerçant ne doit pas attendre qu'Instagram ait répondu pour voir sa fête.
  * Hors requête (un script), on attend simplement.
