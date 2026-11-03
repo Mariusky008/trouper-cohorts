@@ -16,7 +16,7 @@ import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { FamilleDouble } from "./double-metiers";
 import { editionsDuMoment } from "./collection";
-import { ESSAIS_PAR_JOUR, QUESTION_TRAITS, consigneEdition, consigneFigurine, jourDe, traitsDe, type EtatFigurinePro, type Traits } from "./figurine-pro";
+import { ESSAIS_PAR_JOUR, QUESTION_TRAITS, SUFFIXE_ENTIERE, consigneEdition, consigneFigurine, jourDe, traitsDe, type EtatFigurinePro, type Traits } from "./figurine-pro";
 import { regarderImage } from "./dressing-serveur";
 import { moteurRefuse, moteursDImage, noterRefus } from "./moteur-image";
 
@@ -27,14 +27,16 @@ export const SEAU_FIGURINES_PROS = s(process.env.FIGURINES_PROS_BUCKET) || "figu
 const essaisParJour = () => Math.max(1, Number(s(process.env.FIGURINE_ESSAIS_PAR_JOUR)) || ESSAIS_PAR_JOUR);
 
 /** `traits` : ses traits en mots (`decrireTraits`), gardés avec sa figurine pour l'habiller sans la changer. */
-type Validee = { chemin: string; le: string; traits?: Traits | null };
+type Validee = { chemin: string; le: string; traits?: Traits | null; modele?: string };
 type Proposee = { chemin: string; le: string; modele: string; traits?: Traits | null };
 export type Etat = {
   validee?: Validee | null;
+  /** La première proposition (celles d'avant n'en avaient qu'une) ; `proposees` : toutes celles de l'essai. */
   proposee?: Proposee | null;
+  proposees?: Proposee[] | null;
   essais?: { jour: string; n: number };
   /** Ses figurines du mois, par édition et par année (« automne-2026 »). */
-  editions?: Record<string, { validee?: Validee | null; proposee?: Proposee | null }>;
+  editions?: Record<string, { validee?: Validee | null; proposee?: Proposee | null; proposees?: Proposee[] | null }>;
   /** 🗂 Toutes celles qu'il a validées, dans l'ordre : on n'en retire jamais (`ajouterALaCollection`). */
   collection?: Piece[];
 };
@@ -83,9 +85,10 @@ export async function ecrireEtat(supabase: Supabase, siteId: string, e: Etat): P
   if (error) throw new Error(error.message);
 }
 
+/** Une figurine fabriquée : toujours ENTIÈRE désormais (`-entiere.png` : l'aperçu et le film la montrent telle quelle). */
 export async function deposerImage(supabase: Supabase, siteId: string, png: Buffer): Promise<string> {
   await seauPret(supabase);
-  const chemin = `${siteId}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.png`;
+  const chemin = `${siteId}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}${SUFFIXE_ENTIERE}.png`;
   const { error } = await supabase.storage.from(SEAU_FIGURINES_PROS).upload(chemin, png, { contentType: "image/png", upsert: false });
   if (error) throw new Error(error.message);
   return chemin;
@@ -109,16 +112,39 @@ export function editionDuJour(maintenant = new Date()) {
   return { edition: e ? { ...e, cleAnnee: `${e.cle}-${e.debut.slice(0, 4)}` } : null, ensuite };
 }
 
+/** Les propositions d'un essai : `proposees`, ou la seule `proposee` d'avant. */
+export function propositionsDe(e: { proposee?: Proposee | null; proposees?: Proposee[] | null }): Proposee[] {
+  if (e.proposees?.length) return e.proposees;
+  return e.proposee ? [e.proposee] : [];
+}
+
+/** Celle qu'il a choisie parmi les propositions (`choix` : son rang ; la première par défaut). */
+export function propositionChoisie(e: { proposee?: Proposee | null; proposees?: Proposee[] | null }, choix: unknown): Proposee | null {
+  const l = propositionsDe(e);
+  const k = typeof choix === "number" && Number.isInteger(choix) && choix >= 0 && choix < l.length ? choix : 0;
+  return l[k] ?? null;
+}
+
 export function etatPublic(supabase: Supabase, e: Etat, maintenant = new Date()): EtatFigurinePro {
   const faits = e.essais?.jour === jourDe(maintenant) ? e.essais.n : 0;
   const { edition, ensuite } = editionDuJour(maintenant);
   const sienne = edition ? e.editions?.[edition.cleAnnee] : undefined;
+  const urls = (l: (Proposee | null | undefined)[]) => l.map((p) => urlDe(supabase, p?.chemin)).filter((u): u is string => Boolean(u));
   return {
     validee: urlDe(supabase, e.validee?.chemin),
     proposee: urlDe(supabase, e.proposee?.chemin),
+    proposees: urls(propositionsDe(e)),
     essaisRestants: Math.max(0, essaisParJour() - faits),
     edition: edition
-      ? { cle: edition.cleAnnee, nom: edition.nom, emoji: edition.emoji, jours: edition.jours, validee: urlDe(supabase, sienne?.validee?.chemin), proposee: urlDe(supabase, sienne?.proposee?.chemin) }
+      ? {
+          cle: edition.cleAnnee,
+          nom: edition.nom,
+          emoji: edition.emoji,
+          jours: edition.jours,
+          validee: urlDe(supabase, sienne?.validee?.chemin),
+          proposee: urlDe(supabase, sienne?.proposee?.chemin),
+          proposees: urls(sienne ? propositionsDe(sienne) : []),
+        }
       : null,
     ensuite: ensuite ? { nom: ensuite.nom, emoji: ensuite.emoji, jours: ensuite.jours } : null,
     collection: piecesDe(e)
@@ -280,7 +306,104 @@ export async function rogner(img: Buffer): Promise<Buffer> {
 
 // ─── la fabrication ─────────────────────────────────────────────────────────────────────────────
 
-export type Fabrication = { png: Buffer; modele: string; traits?: Traits | null } | { erreur: string; statut: number };
+/** Ce que rend UNE demande au moteur. */
+type Rendu = { png: Buffer; modele: string } | { erreur: string; statut: number };
+/** Ce que rend une fabrication : une ou deux propositions (une par voie), au choix. */
+export type Fabrication = { images: { png: Buffer; modele: string; voie: string }[]; traits?: Traits | null } | { erreur: string; statut: number };
+
+const cleGemini = () => s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
+
+/**
+ * DEUX PROPOSITIONS PAR ESSAI, par deux voies différentes, parties en même temps (le temps d'une seule) :
+ *   · GEMINI d'abord, s'il a une clé : c'est avec lui que le propriétaire a fait sa figurine d'Halloween, celle qu'il
+ *     montre en exemple ; il garde bien un visage d'une image à l'autre ;
+ *   · OPENAI ensuite, en fidélité « high » (il colle au selfie) — ou, sans Gemini, OpenAI deux fois : « high » et « low »
+ *     (il réinterprète). `FIGURINE_FIDELITES` règle les fidélités d'OpenAI (« high,low » par défaut).
+ * Il choisit celle qui lui ressemble ; ses choix (le `modele` gardé avec sa figurine) diront quelle voie garder.
+ */
+function fidelites(): string[] {
+  const l = (s(process.env.FIGURINE_FIDELITES) || s(process.env.FIGURINE_FIDELITE) || "high,low")
+    .split(",")
+    .map((x) => x.trim())
+    .filter((x) => x === "high" || x === "low");
+  const uniques = [...new Set(l)];
+  return uniques.length ? uniques : ["high", "low"];
+}
+
+type Voie = { nom: "gemini" } | { nom: "openai"; fidelite: string };
+function voies(): Voie[] {
+  const f = fidelites();
+  if (cleGemini() && s(process.env.FIGURINE_SANS_GEMINI) !== "1") return [{ nom: "gemini" }, { nom: "openai", fidelite: f[0] }];
+  return f.slice(0, 2).map((fidelite) => ({ nom: "openai" as const, fidelite }));
+}
+
+async function propositions(o: { image: Buffer; consigne: (fond: "transparent" | "vert") => string; avant: number }): Promise<Fabrication> {
+  const liste = voies();
+  const rendus = await Promise.all(liste.map((v) => (v.nom === "gemini" ? genererParGemini(o) : generer({ ...o, fidelite: v.fidelite }))));
+  const images = rendus.flatMap((r, k) => {
+    if ("erreur" in r) {
+      console.error("[figurine] une voie a échoué :", JSON.stringify({ voie: liste[k], erreur: r.erreur }));
+      return [];
+    }
+    const v = liste[k];
+    return [{ ...r, voie: v.nom === "gemini" ? "gemini" : `openai-${v.fidelite}` }];
+  });
+  if (images.length) return { images };
+  return rendus.find((r) => "erreur" in r) as { erreur: string; statut: number };
+}
+
+/**
+ * PAR GEMINI (le modèle d'image de Google) : il ne rend pas de fond transparent — on lui demande le vert d'incrustation,
+ * retiré ici (`detourerSurFondUni`). Les modèles essayés dans l'ordre (`GEMINI_FIGURINE_MODEL` pour en imposer un) ; le
+ * format portrait 2:3 demandé, et redemandé sans format si le modèle le refuse (comme les couvertures).
+ */
+async function genererParGemini(o: { image: Buffer; consigne: (fond: "transparent" | "vert") => string; avant: number }): Promise<Rendu> {
+  const cle = cleGemini();
+  if (!cle) return { erreur: "Pas de clé Gemini.", statut: 503 };
+  const base = s(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
+  const impose = s(process.env.GEMINI_FIGURINE_MODEL);
+  const modeles = impose ? [impose] : [s(process.env.GEMINI_IMAGE_MODEL), "gemini-3-pro-image-preview", "gemini-2.5-flash-image"].filter(Boolean);
+  const image = (await sharp(o.image).flatten({ background: "#ffffff" }).png().toBuffer()).toString("base64");
+  let derniere = "Gemini n'a pas répondu.";
+  for (const modele of [...new Set(modeles)]) {
+    for (const avecFormat of [true, false]) {
+      const reste = o.avant - Date.now();
+      if (reste < 20_000) return { erreur: "La fabrication a pris trop de temps. Réessayez dans un instant.", statut: 504 };
+      let r: Response;
+      try {
+        r = await fetch(`${base}/v1beta/models/${modele}:generateContent`, {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-goog-api-key": cle },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [{ inlineData: { mimeType: "image/png", data: image } }, { text: o.consigne("vert") }] }],
+            generationConfig: avecFormat ? { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: "2:3" } } : { responseModalities: ["IMAGE", "TEXT"] },
+          }),
+          signal: AbortSignal.timeout(reste - 10_000),
+        });
+      } catch {
+        return { erreur: "La fabrication a pris trop de temps. Réessayez dans un instant.", statut: 504 };
+      }
+      if (r.ok) {
+        const j = (await r.json().catch(() => null)) as { candidates?: { content?: { parts?: { inlineData?: { data?: string } }[] } }[] } | null;
+        const d = (j?.candidates?.[0]?.content?.parts ?? []).find((x) => x.inlineData?.data)?.inlineData?.data;
+        if (!d) {
+          derniere = "Gemini n'a pas rendu d'image.";
+          break;
+        }
+        try {
+          const png = await detourerSurFondUni(Buffer.from(d, "base64"));
+          return { png: await rogner(png), modele };
+        } catch {
+          return { erreur: "L'image rendue n'a pas pu être préparée. Réessayez.", statut: 502 };
+        }
+      }
+      derniere = `Gemini (${modele}) a répondu ${r.status} : ${(await r.text().catch(() => "")).slice(0, 160)}`;
+      // 400 : peut-être le format ; on redemande sans. 404 : ce modèle n'existe pas ici, on passe au suivant.
+      if (r.status !== 400) break;
+    }
+  }
+  return { erreur: derniere, statut: 502 };
+}
 
 /**
  * 🔎 SES TRAITS, VUS SUR LE SELFIE (voir `QUESTION_TRAITS`) : le modèle de vision du dressing (`regarderImage`). Au plus
@@ -316,7 +439,7 @@ export async function fabriquerFigurine(o: { selfie: Buffer; famille: FamilleDou
     return { erreur: "Ce selfie ne s'ouvre pas. Reprenez-le, ou choisissez une photo JPEG.", statut: 400 };
   }
   const traits = await decrireTraits(photo);
-  const f = await generer({ image: photo, consigne: (fond) => consigneFigurine(o.famille, fond, traits), avant: o.avant });
+  const f = await propositions({ image: photo, consigne: (fond) => consigneFigurine(o.famille, fond, traits), avant: o.avant });
   return "erreur" in f ? f : { ...f, traits };
 }
 
@@ -336,11 +459,11 @@ export async function habillerFigurine(o: {
   } catch {
     return { erreur: "Ta figurine ne s'ouvre pas. Refais-la à partir d'un selfie.", statut: 400 };
   }
-  return generer({ image, consigne: (fond) => consigneEdition(o.cleEdition, o.nomEdition, fond, o.traits), avant: o.avant });
+  return propositions({ image, consigne: (fond) => consigneEdition(o.cleEdition, o.nomEdition, fond, o.traits), avant: o.avant });
 }
 
 /** UNE IMAGE DEMANDÉE AU MOTEUR, à partir d'une image : les replis de moteur et de réglages, puis la figurine seule. */
-async function generer(o: { image: Buffer; consigne: (fond: "transparent" | "vert") => string; avant: number }): Promise<Fabrication> {
+async function generer(o: { image: Buffer; consigne: (fond: "transparent" | "vert") => string; avant: number; fidelite: string }): Promise<Rendu> {
   const cle = s(process.env.OPENAI_API_KEY);
   if (!cle) return { erreur: "La fabrication des figurines n'est pas encore branchée ici (moteur d'image absent).", statut: 503 };
   const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
@@ -352,10 +475,10 @@ async function generer(o: { image: Buffer; consigne: (fond: "transparent" | "ver
     const reglages: Record<string, string> = {
       size: "1024x1536",
       quality: s(process.env.FIGURINE_QUALITE) || "high",
-      // FIDÉLITÉ BASSE : en « high », le moteur RECOPIE l'image d'entrée — le visage du selfie collé tel quel (une photo
-      // sur un petit corps, essai réel du 3 novembre), et l'ancienne tenue gardée sous le déguisement (« pas très
-      // automne »). En « low », il la réinterprète : la caricature sculptée, et la tenue vraiment changée.
-      input_fidelity: s(process.env.FIGURINE_FIDELITE) || "low",
+      // LA FIDÉLITÉ : en « high », le moteur RECOPIE l'image d'entrée (le visage du selfie collé tel quel, l'ancienne
+      // tenue gardée sous le déguisement) ; en « low », il la réinterprète (la figurine, mais un visage qui s'éloigne).
+      // Une proposition de chaque (`propositions`).
+      input_fidelity: o.fidelite,
       background: "transparent",
       output_format: "png",
     };

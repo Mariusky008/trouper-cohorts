@@ -3,9 +3,10 @@
  * partir d'un selfie ».
  *
  * C'est l'étape 4 de `docs/figurines.md` (9.7, « La fabrication automatique ») dans sa forme la plus simple : un
- * selfie → sa figurine en caricature 3D (la tête énorme sur un petit corps, jusqu'aux hanches, les accessoires de son
- * métier — `STYLE`) → il valide « C'est moi ». Le ressort et le socle sont COMMUNS, dessinés par l'appli (`studio-montage.ts`) : on ne fait
- * générer que le buste, ce qui rend la découpe simple et la marque reconnaissable.
+ * selfie → sa figurine ENTIÈRE en caricature 3D, comme une photo produit (la tête très grosse sur un petit corps
+ * tronqué à la taille, le ressort apparent, le socle en bois, les accessoires de son métier — `LE STYLE CLIKME`) →
+ * deux propositions → il choisit et valide « C'est moi ». Les bustes d'avant (sans `SUFFIXE_ENTIERE`) restent posés
+ * sur le ressort et le socle communs de l'appli.
  *
  * LES GARDE-FOUS (9.8) : son accord, coché par lui, jamais d'avance ; le selfie n'est pas gardé (il sert à la
  * fabrication et part avec la requête) ; rien ne passe dans une vidéo avant qu'il ait dit « C'est moi » ; trois essais
@@ -35,12 +36,16 @@ export type EditionFigurine = {
   jours: number;
   validee: string | null;
   proposee: string | null;
+  /** Toutes les propositions de l'essai (deux, une par voie) ; `proposee` est la première. */
+  proposees: string[];
 };
 
 /** Où en est sa figurine : celle qu'il a validée, celle qui attend son « C'est moi », ses essais du jour, et son édition. */
 export type EtatFigurinePro = {
   validee: string | null;
   proposee: string | null;
+  /** Les propositions de son dernier essai (deux, une par voie) : il choisit celle qui lui ressemble. */
+  proposees: string[];
   essaisRestants: number;
   /** L'édition du moment (`null` : aucune en cours) ; la suivante, pour la préparer. */
   edition: EditionFigurine | null;
@@ -160,46 +165,44 @@ const METIER: Record<FamilleDouble, { tenue: string; accessoires: string }> = {
 };
 
 /**
- * LE STYLE CLIKME — celui des figurines faites à la main (la figurine d'Halloween du propriétaire) : une caricature
- * tendre et drôle, PAS un buste réaliste. Le premier essai réel (novembre 2026) a rendu un buste réaliste posé sur une
- * coupelle en bois : « on est loin de la figurine cartoony ». D'où : la tête énorme, le petit corps, les traits un peu
- * forcés mais lui, les accessoires, et le corps qui s'arrête aux hanches (le ressort part de sous ses vêtements).
+ * LE STYLE CLIKME — celui des figurines du propriétaire (sa figurine d'Halloween, faite avec Gemini). L'histoire des
+ * essais réels du 3 novembre 2026, pour ne pas la refaire :
+ *   1. un buste réaliste sur une coupelle : « loin de la figurine cartoony » ;
+ *   2. fidélité « high » : le selfie collé sur un petit corps ;
+ *   3. fidélité « low » : une caricature, mais un autre homme (cheveux bruns au lieu de poivre et sel) → ses traits en mots ;
+ *   4. « joli, mais ça fait pas avatar figurine, et je ne souris pas » → la matière dite, son expression à lui ;
+ *   5. « c'est pas moi, ça fait photo / peinture » : le BUSTE SEUL détouré restait un portrait découpé. Ce qui fait la
+ *      figurine de son exemple : UN OBJET ENTIER photographié en studio (le ressort apparent, le socle en bois, les
+ *      chaussures posées dessus, une même lumière partout). D'où la figurine entière (`SUFFIXE_ENTIERE`), la consigne
+ *      écrite EN ANGLAIS sur le modèle du prompt Gemini qu'il nous a donné (photo produit de face, tronquée à la taille,
+ *      ressort apparent, socle rond en bois, objets miniatures autour, netteté partout), et une proposition de Gemini.
+ * Ses traits, sa tenue de métier et les tenues d'édition restent en français dedans : les deux moteurs les lisent.
  */
-/**
- * Quatrième essai réel (3 novembre 2026) : « c'est joli mais ça fait pas avatar figurine et ça me ressemble pas, et en
- * plus sur la photo originale je ne souris pas ». Le moteur rendait une CARICATURE PEINTE (peau photographique, cheveux
- * fins) au lieu d'un OBJET ; et le « grand sourire qui montre les dents » imposé changeait tout le visage d'un homme qui
- * ne souriait pas — de même que les yeux agrandis. D'où : la matière dite noir sur blanc, et son expression à lui.
- */
+export const SUFFIXE_ENTIERE = "-entiere";
+/** Une figurine entière (avec son ressort et son socle) ? Sinon, un buste d'avant, posé sur le ressort commun. */
+export const figurineEntiere = (url: string | null | undefined) => Boolean(url && /-entiere\.png(\?|#|$)/.test(url));
+
+/** La matière : un objet, pas une photo ni une peinture. */
 const MATIERE =
-  "- PAS une photo, PAS une illustration, PAS une peinture numérique : un jouet sculpté. Les cheveux sculptés en mèches pleines (pas de cheveux fins photographiques), la barbe peinte en petites touches, la peau peinte, lisse et légèrement satinée, avec les reflets doux de l'éclairage de studio ; les yeux peints et brillants.";
-const EXPRESSION =
-  "- SON EXPRESSION DE LA PHOTO : s'il ne sourit pas, la figurine ne sourit pas (bouche fermée) ; on ne lui invente pas de sourire.";
-const FINITION = [
-  "- Une résine peinte à la main très haut de gamme, couleurs chaudes, détails fins et nets (coutures, mailles, reflets dans les yeux), peinture impeccable sans aucune bavure.",
-  "- Rendu de photo produit en très haute définition : net partout, éclairage de studio doux, contours nets et propres.",
-];
-const STYLE = [
-  "LE STYLE (obligatoire) :",
-  "- Une figurine de collection à tête dodelinante (« bobblehead ») en caricature 3D : un VRAI OBJET en résine peinte, qu'on pourrait tenir dans la main, photographié de près en studio.",
-  MATIERE,
-  "- Une TÊTE ÉNORME, environ trois fois la taille normale : elle fait à peu près la moitié de la hauteur de la figurine, sur un tout petit corps fin aux épaules étroites — les proportions d'une figurine à ressort, pas d'une personne.",
-  "- La caricature est dans les proportions (la grosse tête) et dans les traits qui le distinguent, un peu accentués (la forme du visage, la mâchoire, le nez, les sourcils). Les yeux gardent leur forme et leur taille.",
-  EXPRESSION,
-  ...FINITION,
+  "- A real hand-painted resin collectible, sculpted in fine detail: hair sculpted in solid locks (not fine photographic hair), stubble or beard painted in tiny strokes, smooth satin painted skin with soft studio reflections, glossy painted eyes. NOT a photo, NOT an illustration, NOT a digital painting.";
+
+/** La photo produit, et le fond (transparent, ou un vert uni que le serveur retire). */
+const photoProduit = (fond: "transparent" | "vert") => [
+  "THE PHOTO:",
+  "- A straight-on product shot: the whole figurine visible, from the top of the head to the bottom of the base, centered, with some margin around it.",
+  "- Warm, soft, directional studio lighting, as in a high-end atelier. Sharp focus across the figure and every item on the base. Very high definition, clean edges.",
+  fond === "transparent"
+    ? "- Transparent background."
+    : "- A perfectly flat, uniform chroma-key green background (#00B140): no gradient, no texture, no shadow on it. Nothing green on the figurine.",
+  "- No text, no logo, no engraved plaque, no scenery, no other person.",
 ];
 
-/** LE CADRAGE : le haut du corps jusqu'aux hanches, et RIEN dessous — le ressort et le socle sont ceux de ClikMe. */
-const cadrage = (fond: "transparent" | "vert") => [
-  "LE CADRAGE :",
-  "- La figurine de face, centrée, les bras croisés, du haut de la tête jusqu'aux hanches.",
-  "- Le corps s'arrête aux hanches : le bas de la tenue (veste, tablier, pull ou jupe), un peu évasé, termine la figurine. Pas de jambes.",
-  "- RIEN sous la figurine : pas de coupelle, pas de ressort, pas de socle, pas de support, pas d'ombre portée. Le ressort sera fixé sous ses vêtements.",
-  "- Toute la figurine visible, avec un peu de marge autour.",
-  fond === "transparent"
-    ? "- Fond transparent."
-    : "- Un fond vert d'incrustation uni et parfaitement plat (#00B140), sans dégradé, sans texture, sans ombre. Rien de vert sur la figurine.",
-  "- Aucun texte, aucun logo, aucune plaque, aucune autre personne.",
+/** Le corps de la figurine : tronquée à la taille, le ressort apparent, le socle en bois. */
+const FIGURINE_ENTIERE = [
+  "- Standing pose, arms crossed over the chest.",
+  "- An oversized head (about three times normal size, roughly a third of the figurine's total height including the base) on a small, slim body with narrow shoulders; the neck visible.",
+  "- Truncated at the waist: the lower torso (the hem of the jacket, apron, sweater or skirt, slightly flared) transitions into a substantial, exposed, metal coiled bobble-spring mechanism supporting the upper body. No legs.",
+  "- The spring stands central on a round varnished wooden display base.",
 ];
 
 /**
@@ -270,7 +273,7 @@ export function traitsEnMots(t: Traits | null | undefined): string[] {
 }
 
 /**
- * LA CONSIGNE, MOT POUR MOT.
+ * LA CONSIGNE, MOT POUR MOT (en anglais : voir `LE STYLE CLIKME`).
  *
  * Deux leçons de l'essayage (`consigne-essai.ts`) sont reprises telles quelles : nommer les traits un par un et
  * interdire de le changer ; et ne JAMAIS affirmer un accessoire du visage (« ses lunettes ») — c'est ce qui en fait
@@ -285,21 +288,24 @@ export function consigneFigurine(famille: FamilleDouble, fond: "transparent" | "
   const m = METIER[famille] ?? METIER.createur;
   const vus = traitsEnMots(traits);
   return [
-    "Crée une figurine de collection à tête dodelinante, en caricature 3D tendre et drôle, d'après la personne de cette photo — photographiée en studio comme un jouet de collection.",
+    "A detailed, full-body collectible bobblehead figurine of the person in this photo, as a straight-on studio product shot.",
     "",
-    ...STYLE,
+    "LIKENESS (the most important):",
+    "- The figurine's face retains the specific features and expression of the person in the photo: the same face shape, eyes, nose, mouth, jaw, eyebrows, skin tone, age, hair colour and hairstyle, facial hair. Anyone who knows them recognises them at first glance.",
+    "- Keep what makes them unique (wrinkles, dimples, eyebrows). Do not beautify, do not make them younger, do not turn them into someone else.",
+    "- Their expression from the photo: if they are not smiling, the figurine does not smile (mouth closed).",
+    "- If they wear glasses, keep them; if not, add none. Nothing on the head or face that is not in the photo.",
+    ...(vus.length ? ["- Their features as seen in the photo (written in French — follow them exactly):", ...vus.map((l) => `  ${l}`)] : []),
     "",
-    "LA RESSEMBLANCE (on doit le reconnaître au premier coup d'œil, en caricature) :",
-    "- Reprends ses traits, transposés en sculpture : la forme du visage, les yeux, le nez, la bouche, la mâchoire, la couleur de peau, l'âge, la coupe et la couleur des cheveux, la barbe ou la moustache s'il y en a.",
-    "- Garde ce qui le rend unique (ses rides, ses fossettes, ses sourcils) : ne le rajeunis pas, ne le change pas en quelqu'un d'autre.",
-    "- S'il porte des lunettes, garde-les ; s'il n'en porte pas, n'en ajoute pas. Rien sur la tête ni sur le visage qui ne soit pas sur la photo.",
-    ...(vus.length ? ["", "SES TRAITS, VUS SUR LA PHOTO (à reprendre fidèlement, même en caricature) :", ...vus] : []),
+    "THE FIGURINE:",
+    ...FIGURINE_ENTIERE,
+    "- The caricature is in the proportions (the big head) and in their distinctive features, slightly accentuated (face shape, jaw, nose, eyebrows). The eyes keep their shape and size.",
+    `- Outfit of their trade (in French): ${m.tenue} — in the colours of the clothes in the photo when visible.`,
+    `- Two or three small, neat, funny accessories of their trade worn on the outfit (in French): ${m.accessoires}.`,
+    "- On the base, around the spring: a small pair of shoes matching the outfit, as if just set down there, and one or two miniature sculpted items of their trade.",
+    MATIERE,
     "",
-    "SA TENUE :",
-    `- Une tenue de son métier, gaie et soignée : ${m.tenue}, dans les couleurs de ses vêtements sur la photo si on les voit.`,
-    `- Deux ou trois petits accessoires de son métier, soignés et drôles, portés ou accrochés à sa tenue : ${m.accessoires}.`,
-    "",
-    ...cadrage(fond),
+    ...photoProduit(fond),
   ].join("\n");
 }
 
@@ -335,27 +341,27 @@ export const TENUES_EDITION: Record<string, string> = {
 
 /**
  * LA CONSIGNE DE L'ÉDITION : la figurine de l'image, la même, déguisée pour l'édition. Le visage, la pose, les
- * proportions et le cadrage ne bougent pas — c'est ce qui fait d'une édition « la même figurine, déguisée ».
+ * proportions, le ressort et le socle ne bougent pas — c'est ce qui fait d'une édition « la même figurine, déguisée ».
  */
 export function consigneEdition(cleEdition: string, nomEdition: string, fond: "transparent" | "vert", traits?: Traits | null): string {
   const tenue = TENUES_EDITION[cleEdition] ?? "une tenue de saison avec deux ou trois accessoires de saison";
   const vus = traitsEnMots(traits);
   return [
-    `Déguise cette figurine pour l'édition « ${nomEdition} » : ${tenue}.`,
+    `Dress up this collectible bobblehead figurine for its « ${nomEdition} » edition, as a straight-on studio product shot.`,
     "",
-    "C'EST LA MÊME FIGURINE :",
-    "- Garde exactement le même visage : les mêmes traits, la même expression, la même couleur de peau, les mêmes cheveux (visibles sous un éventuel chapeau), la même barbe s'il y en a, les mêmes lunettes s'il en porte (et aucune s'il n'en porte pas).",
-    "- La même pose (les bras croisés), les mêmes proportions (la tête énorme sur le petit corps), le même style de caricature 3D en résine peinte.",
-    ...vus,
-    "- REMPLACE ENTIÈREMENT SA TENUE : il ne garde aucun vêtement d'avant ; on voit au premier regard de quelle édition il s'agit.",
-    "- Les accessoires dits plus haut, tous, généreux et pleins de détails, soignés et drôles. Rien sur le visage.",
+    "IT IS THE SAME FIGURINE:",
+    "- Keep exactly the same face: the same features, the same expression, the same skin tone, the same hair (visible under any hat), the same facial hair, the same glasses if any (and none if none).",
+    "- The same pose (arms crossed), the same proportions (the oversized head on the small body), the same painted-resin style.",
+    ...FIGURINE_ENTIERE,
+    ...(vus.length ? ["- Their features (written in French — keep them exactly):", ...vus.map((l) => `  ${l}`)] : []),
     "",
-    "LA FINITION :",
-    // la matière et la finition, mais pas « les traits accentués » : on n'en rajoute pas à chaque édition
+    "THE EDITION OUTFIT:",
+    `- COMPLETELY REPLACE THE OUTFIT — no garment from before; anyone sees at first glance which edition it is (in French): ${tenue}.`,
+    "- Every accessory listed, generous, full of detail, neat and funny. Nothing on the face.",
+    "- On the base, around the spring: a small pair of shoes and one or two miniature items matching the edition.",
     MATIERE,
-    ...FINITION,
     "",
-    ...cadrage(fond),
+    ...photoProduit(fond),
   ].join("\n");
 }
 

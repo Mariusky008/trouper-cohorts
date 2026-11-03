@@ -19,7 +19,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { FamilleDouble } from "@/lib/direct/double-metiers";
 import { jourDe } from "@/lib/direct/figurine-pro";
-import { ajouterALaCollection, deposerImage, ecrireEtat, editionDuJour, etatPublic, fabriquerFigurine, habillerFigurine, lireEtat, lireImage } from "@/lib/direct/figurine-pro-serveur";
+import { ajouterALaCollection, propositionChoisie, propositionsDe, deposerImage, ecrireEtat, editionDuJour, etatPublic, fabriquerFigurine, habillerFigurine, lireEtat, lireImage } from "@/lib/direct/figurine-pro-serveur";
 
 export const dynamic = "force-dynamic";
 /** Une génération d'image prend de trente secondes à deux minutes. */
@@ -55,14 +55,25 @@ export async function POST(request: Request) {
     if (action === "etat") return NextResponse.json({ ok: true, etat: etatPublic(supabase, etat) });
 
     if (action === "valider") {
-      if (!etat.proposee) return NextResponse.json({ error: "Aucune figurine à valider." }, { status: 400 });
+      // CELLE QU'IL A CHOISIE parmi les deux propositions (`choix` : son rang)
+      const prise = propositionChoisie(etat, p?.choix);
+      if (!prise) return NextResponse.json({ error: "Aucune figurine à valider." }, { status: 400 });
       // UN NOUVEAU VISAGE : celle du mois portait l'ancien, elle est à rhabiller (les éditions passées restent)
       const { edition } = editionDuJour();
       const editions = edition && etat.editions?.[edition.cleAnnee] ? { ...etat.editions, [edition.cleAnnee]: {} } : etat.editions;
       const le = new Date().toISOString();
-      const collection = ajouterALaCollection(etat, { chemin: etat.proposee.chemin, le, cle: "selfie", nom: "Ma figurine", emoji: "🪀" });
-      // ses traits en mots suivent sa figurine : on s'en sert pour l'habiller sans la changer
-      const suivant = { ...etat, validee: { chemin: etat.proposee.chemin, le, traits: etat.proposee.traits ?? null }, proposee: null, editions, collection };
+      const collection = ajouterALaCollection(etat, { chemin: prise.chemin, le, cle: "selfie", nom: "Ma figurine", emoji: "🪀" });
+      // ses traits en mots suivent sa figurine : on s'en sert pour l'habiller sans la changer ; et la voie qu'il a
+      // préférée (`modele`) reste notée — ses choix diront laquelle garder
+      console.info("[figurine] choisie :", JSON.stringify({ modele: prise.modele, parmi: propositionsDe(etat).map((x) => x.modele) }));
+      const suivant = {
+        ...etat,
+        validee: { chemin: prise.chemin, le, traits: prise.traits ?? null, modele: prise.modele },
+        proposee: null,
+        proposees: null,
+        editions,
+        collection,
+      };
       await ecrireEtat(supabase, siteId, suivant);
       return NextResponse.json({ ok: true, etat: etatPublic(supabase, suivant) });
     }
@@ -83,8 +94,11 @@ export async function POST(request: Request) {
       if ("erreur" in f) {
         return NextResponse.json({ error: f.erreur, etat: etatPublic(supabase, { ...etat, essais }) }, { status: f.statut });
       }
-      const chemin = await deposerImage(supabase, siteId, f.png);
-      const suivant = { ...etat, essais, proposee: { chemin, le: new Date().toISOString(), modele: f.modele, traits: f.traits ?? null } };
+      // SES PROPOSITIONS (deux, une par voie), déposées l'une après l'autre
+      const le = new Date().toISOString();
+      const proposees = [];
+      for (const im of f.images) proposees.push({ chemin: await deposerImage(supabase, siteId, im.png), le, modele: `${im.voie}:${im.modele}`, traits: f.traits ?? null });
+      const suivant = { ...etat, essais, proposee: proposees[0], proposees };
       await ecrireEtat(supabase, siteId, suivant);
       return NextResponse.json({ ok: true, etat: etatPublic(supabase, suivant) });
     }
@@ -103,9 +117,11 @@ export async function POST(request: Request) {
       await ecrireEtat(supabase, siteId, { ...etat, essais });
       const f = await habillerFigurine({ buste, cleEdition: edition.cle, nomEdition: edition.nom, traits: etat.validee.traits, avant: debut + (maxDuration - 15) * 1000 });
       if ("erreur" in f) return NextResponse.json({ error: f.erreur, etat: etatPublic(supabase, { ...etat, essais }) }, { status: f.statut });
-      const chemin = await deposerImage(supabase, siteId, f.png);
+      const le = new Date().toISOString();
+      const proposees = [];
+      for (const im of f.images) proposees.push({ chemin: await deposerImage(supabase, siteId, im.png), le, modele: `${im.voie}:${im.modele}` });
       const editions = { ...(etat.editions ?? {}) };
-      editions[edition.cleAnnee] = { ...(editions[edition.cleAnnee] ?? {}), proposee: { chemin, le: new Date().toISOString(), modele: f.modele } };
+      editions[edition.cleAnnee] = { ...(editions[edition.cleAnnee] ?? {}), proposee: proposees[0], proposees };
       const suivant = { ...etat, essais, editions };
       await ecrireEtat(supabase, siteId, suivant);
       return NextResponse.json({ ok: true, etat: etatPublic(supabase, suivant) });
@@ -114,12 +130,14 @@ export async function POST(request: Request) {
     if (action === "valider-edition") {
       const { edition } = editionDuJour();
       const sienne = edition ? etat.editions?.[edition.cleAnnee] : undefined;
-      if (!edition || !sienne?.proposee) return NextResponse.json({ error: "Aucune figurine du mois à valider." }, { status: 400 });
+      const prise = sienne ? propositionChoisie(sienne, p?.choix) : null;
+      if (!edition || !prise) return NextResponse.json({ error: "Aucune figurine du mois à valider." }, { status: 400 });
       const le = new Date().toISOString();
-      const editions = { ...(etat.editions ?? {}), [edition.cleAnnee]: { validee: { chemin: sienne.proposee.chemin, le }, proposee: null } };
+      console.info("[figurine] édition choisie :", JSON.stringify({ modele: prise.modele, parmi: propositionsDe(sienne ?? {}).map((x) => x.modele) }));
+      const editions = { ...(etat.editions ?? {}), [edition.cleAnnee]: { validee: { chemin: prise.chemin, le }, proposee: null, proposees: null } };
       // 🗂 ELLE ENTRE DANS SA COLLECTION, avec les dates de son édition : elle y reste quand l'édition passe
       const collection = ajouterALaCollection(etat, {
-        chemin: sienne.proposee.chemin,
+        chemin: prise.chemin,
         le,
         cle: edition.cleAnnee,
         nom: edition.nom,

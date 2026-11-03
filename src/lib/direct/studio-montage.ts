@@ -41,6 +41,7 @@ import {
   type TextesStudio,
 } from "./studio";
 import { fabriquerMusiqueStudio } from "./studio-musique";
+import { figurineEntiere } from "./figurine-pro";
 
 /** Le film se dessine sur 1080 × 1920 (les mesures de l'atelier) ; la toile, elle, fait 720 × 1280. */
 const W = 1080;
@@ -96,7 +97,7 @@ export type ElementsStudio = {
   sans: string;
   fantome: HTMLImageElement | null;
   /** La figurine : son buste détouré, et le socle commun en bois. `null` : le film sans figurine. */
-  figurine: { corps: HTMLImageElement; socle: HTMLImageElement } | null;
+  figurine: { corps: HTMLImageElement; socle: HTMLImageElement; entiere: boolean } | null;
 };
 
 function image(src: string): Promise<HTMLImageElement | null> {
@@ -150,7 +151,9 @@ export async function chargerStudio(figurine: string | null): Promise<ElementsSt
     figurine ? image(figurine) : Promise.resolve(null),
     figurine ? image("/studio/socle.webp") : Promise.resolve(null),
   ]);
-  return { ...p, fantome, figurine: corps && socle ? { corps, socle } : null };
+  // UNE FIGURINE ENTIÈRE (son ressort et son socle fabriqués avec elle) se montre telle quelle ; un buste d'avant se pose
+  // sur le ressort et le socle communs
+  return { ...p, fantome, figurine: corps && socle ? { corps, socle, entiere: figurineEntiere(figurine) } : null };
 }
 
 // ─── sa vidéo : ce qu'elle dure, ses images figées ──────────────────────────────────────────────
@@ -540,7 +543,34 @@ const PASSAGES: [number, number][] = [
  * LA FIGURINE, DANS SON REPÈRE : le socle commun (sa bague à 53 % de la largeur, 29 % de la hauteur), le ressort
  * redessiné (onze spires, comme figurine.js), et son buste, accroché au bout du ressort.
  */
-const FIG = { socleL: 330, longueur: 150, busteH: 640, busteLmax: 560 };
+const FIG = { socleL: 330, longueur: 150, busteH: 640, busteLmax: 560, entiereH: 880, entiereLmax: 640 };
+
+/** La taille d'une figurine entière, dans son repère : la même hauteur qu'un buste monté sur le ressort et le socle. */
+function tailleEntiere(f: { corps: HTMLImageElement }) {
+  let h = FIG.entiereH;
+  let l = (h * f.corps.naturalWidth) / Math.max(1, f.corps.naturalHeight);
+  if (l > FIG.entiereLmax) {
+    l = FIG.entiereLmax;
+    h = (l * f.corps.naturalHeight) / Math.max(1, f.corps.naturalWidth);
+  }
+  return { l, h };
+}
+
+/**
+ * LA FIGURINE ENTIÈRE : posée au sol par son socle, elle se balance autour de lui (l'inclinaison du ressort, adoucie)
+ * et se tasse un peu quand le ressort se comprime — les mêmes mouvements que le buste sur le ressort commun.
+ */
+function dessinerEntiere(g: CanvasRenderingContext2D, f: { corps: HTMLImageElement }, e: EtatFig) {
+  const { l, h } = tailleEntiere(f);
+  const sy = 1 + (e.L - 1) * 0.16;
+  g.save();
+  g.translate(e.X, e.Y);
+  g.scale(e.s, e.s);
+  g.rotate((e.phi * 0.45 * Math.PI) / 180);
+  g.scale(1 / Math.sqrt(Math.max(0.5, sy)), sy);
+  g.drawImage(f.corps, -l / 2, -h, l, h);
+  g.restore();
+}
 
 function dessinerFigurine(g: CanvasRenderingContext2D, S: Scene, e: EtatFig) {
   const f = S.el.figurine;
@@ -566,6 +596,10 @@ function dessinerFigurine(g: CanvasRenderingContext2D, S: Scene, e: EtatFig) {
   g.ellipse(e.X, e.sol, rx, ry, 0, 0, Math.PI * 2);
   g.fill();
   g.restore();
+  if (f.entiere) {
+    dessinerEntiere(g, f, e);
+    return;
+  }
 
   g.save();
   g.translate(e.X, e.Y);
@@ -619,6 +653,7 @@ function dessinerFigurine(g: CanvasRenderingContext2D, S: Scene, e: EtatFig) {
 function teteDe(S: Scene, e: EtatFig): { x: number; y: number } {
   const f = S.el.figurine;
   if (!f) return { x: e.X, y: e.Y };
+  if (f.entiere) return { x: e.X, y: e.Y - e.s * tailleEntiere(f).h };
   const sh = (FIG.socleL * f.socle.naturalHeight) / Math.max(1, f.socle.naturalWidth);
   const bh = Math.min(FIG.busteH, (FIG.busteLmax * f.corps.naturalHeight) / Math.max(1, f.corps.naturalWidth));
   return { x: e.X, y: e.Y - e.s * (sh * 0.71 + FIG.longueur * e.L + bh) };

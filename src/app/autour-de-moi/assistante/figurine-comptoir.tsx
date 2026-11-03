@@ -18,7 +18,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
-import { SELFIE_MAX_PX, figurineDuMoment, histoireDeLaFigurine, moisEnMots, type EtatFigurinePro, type FigurineDeCollection } from "@/lib/direct/figurine-pro";
+import { SELFIE_MAX_PX, figurineDuMoment, figurineEntiere, histoireDeLaFigurine, moisEnMots, type EtatFigurinePro, type FigurineDeCollection } from "@/lib/direct/figurine-pro";
 import { editionsDuMoment } from "@/lib/direct/collection";
 import { jourParis } from "@/lib/jour-paris";
 
@@ -90,8 +90,18 @@ function Ressort() {
 
 /** Sa figurine telle qu'elle sera dans ses vidéos : son buste, le ressort, le socle commun. Elle rebondit doucement. */
 export function ApercuFigurine({ src, petit, mini, geant }: { src: string; petit?: boolean; mini?: boolean; geant?: boolean }) {
+  const classe = `fg-apercu${petit ? " petit" : ""}${mini ? " mini" : ""}${geant ? " geant" : ""}`;
+  // LA FIGURINE ENTIÈRE (son ressort et son socle, fabriqués avec elle) : telle quelle, qui se balance doucement
+  if (figurineEntiere(src))
+    return (
+      <div className={classe}>
+        <style>{STYLES_APERCU}</style>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="fg-entiere" src={src} alt="Ta figurine" />
+      </div>
+    );
   return (
-    <div className={`fg-apercu${petit ? " petit" : ""}${mini ? " mini" : ""}${geant ? " geant" : ""}`}>
+    <div className={classe}>
       {/* SES STYLES AVEC LUI : l'aperçu sert aussi hors de cet écran (le choix « avec ou sans » du Studio) */}
       <style>{STYLES_APERCU}</style>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -141,6 +151,33 @@ const STYLES_GRAND = `
 .fg-grand-b a,.fg-grand-b button{border:0;border-radius:999px;padding:11px 18px;background:#21160F;color:#FFF4E6;font-size:14.5px;font-weight:800;text-decoration:none;}
 `;
 
+/**
+ * LES PROPOSITIONS D'UN ESSAI (deux, une par voie — `propositions` côté serveur) : il touche celle qui lui ressemble,
+ * la regarde en grand, et c'est elle que « C'est moi » valide. Une seule : elle, en grand, comme avant.
+ */
+function ChoixPropositions({ urls, choix, onChoix }: { urls: string[]; choix: number; onChoix: (k: number) => void }) {
+  if (urls.length <= 1)
+    return urls[0] ? (
+      <>
+        <ApercuFigurine src={urls[0]} />
+        <VoirEnGrand src={urls[0]} />
+      </>
+    ) : null;
+  return (
+    <div className="fg-choix" role="radiogroup" aria-label="Les propositions">
+      {urls.map((u, k) => (
+        <div key={u} className={`fg-choix-p${k === choix ? " on" : ""}`}>
+          <button type="button" role="radio" aria-checked={k === choix} onClick={() => onChoix(k)}>
+            <ApercuFigurine src={u} petit />
+            <b>{k === choix ? "✓ Celle-ci" : `Proposition ${k + 1}`}</b>
+          </button>
+          <VoirEnGrand src={u} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function FabriquerFigurine({
   commerce,
   onPrete,
@@ -157,7 +194,9 @@ export function FabriquerFigurine({
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [secondes, setSecondes] = useState(0);
-  const choix = useRef<HTMLInputElement>(null);
+  /** La proposition qu'il a touchée (la première d'office). */
+  const [choix, setChoix] = useState(0);
+  const prendrePhoto = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // sans lien pro (la visite du comptoir), rien à demander : l'écran le dit dès le début (`visite`)
@@ -203,7 +242,7 @@ export function FabriquerFigurine({
 
   const valider = async () => {
     setErreur(null);
-    const r = await demander(commerce, { action: "valider" });
+    const r = await demander(commerce, { action: "valider", choix });
     if (r.etat?.validee) {
       setEtat(r.etat);
       onPrete(r.etat.validee);
@@ -212,6 +251,7 @@ export function FabriquerFigurine({
 
   /** `null` tant qu'on ne sait pas (l'état arrive, ou n'a pas pu arriver) : le serveur compte, on ne bloque pas pour rien. */
   const restants = etat ? etat.essaisRestants : null;
+  const proposees = etat?.proposees?.length ? etat.proposees : etat?.proposee ? [etat.proposee] : [];
   /** LA VISITE DU COMPTOIR (sans lien pro) : rien ne se fabrique, et on le dit AVANT qu'il prenne son selfie. */
   const visite = !commerce.reel;
   const ETAPES_ATTENTE = ["Je regarde ton selfie…", "Je sculpte ta tête…", "Je peins les détails…", "Je choisis ses accessoires…", "Presque fini…"];
@@ -230,15 +270,14 @@ export function FabriquerFigurine({
         </section>
       ) : etat?.proposee ? (
         <section className="fg-proposee">
-          <h2>C’est toi ?</h2>
-          <ApercuFigurine src={etat.proposee} />
-          <VoirEnGrand src={etat.proposee} />
+          <h2>{proposees.length > 1 ? "Laquelle te ressemble ?" : "C’est toi ?"}</h2>
+          <ChoixPropositions urls={proposees} choix={Math.min(choix, proposees.length - 1)} onChoix={setChoix} />
           <p>Elle sera dans tes vidéos : elle présente, elle rebondit, elle dit bonjour par bulles.</p>
           <button type="button" className="cz-go grand" onClick={() => void valider()}>
             ✅ C’est moi !
           </button>
           {restants !== null && restants > 0 ? (
-            <button type="button" className="cz-second" onClick={() => setEtat({ ...etat, proposee: null })}>
+            <button type="button" className="cz-second" onClick={() => setEtat({ ...etat, proposee: null, proposees: [] })}>
               ↺ En refaire une ({restants} {restants > 1 ? "essais" : "essai"} aujourd’hui)
             </button>
           ) : (
@@ -258,12 +297,12 @@ export function FabriquerFigurine({
             <li>🤳 De face, à la lumière du jour, le visage bien net.</li>
             <li>🙂 Toi seul sur la photo, sans lunettes de soleil.</li>
           </ul>
-          <input ref={choix} type="file" accept="image/*" capture="user" hidden onChange={(e) => void prendre(e.target.files?.[0])} />
+          <input ref={prendrePhoto} type="file" accept="image/*" capture="user" hidden onChange={(e) => void prendre(e.target.files?.[0])} />
           {selfie ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="fg-photo" src={selfie} alt="Ton selfie" onClick={() => choix.current?.click()} />
+            <img className="fg-photo" src={selfie} alt="Ton selfie" onClick={() => prendrePhoto.current?.click()} />
           ) : (
-            <button type="button" className="fg-prendre" onClick={() => choix.current?.click()}>
+            <button type="button" className="fg-prendre" onClick={() => prendrePhoto.current?.click()}>
               <span aria-hidden="true">🤳</span> Prendre mon selfie
             </button>
           )}
@@ -350,12 +389,14 @@ export function MaFigurine({
 
   const validerEdition = async () => {
     setErreur(null);
-    const r = await demander(commerce, { action: "valider-edition" });
+    const r = await demander(commerce, { action: "valider-edition", choix: choixEdition });
     if (r.etat) setEtat(r.etat);
     if (r.error) setErreur(r.error);
   };
 
   const ed = etat?.edition ?? null;
+  const [choixEdition, setChoixEdition] = useState(0);
+  const proposeesEdition = ed?.proposees?.length ? ed.proposees : ed?.proposee ? [ed.proposee] : [];
   /** pour la présenter avant même la réponse du serveur (ou sans lien pro) */
   const [duJour] = useState(() => editionsDuMoment(jourParis()).maintenant);
   const [aujourdhui] = useState(() => jourParis());
@@ -429,8 +470,8 @@ export function MaFigurine({
                   </>
                 ) : ed.proposee ? (
                   <>
-                    <ApercuFigurine src={ed.proposee} />
-                    <VoirEnGrand src={ed.proposee} />
+                    {proposeesEdition.length > 1 && <p className="mf-laquelle">Laquelle te plaît ?</p>}
+                    <ChoixPropositions urls={proposeesEdition} choix={Math.min(choixEdition, proposeesEdition.length - 1)} onChoix={setChoixEdition} />
                     <button type="button" className="cz-go grand" onClick={() => void validerEdition()}>
                       ✅ Elle est parfaite
                     </button>
@@ -607,6 +648,12 @@ const STYLES = `
 .fg h2{margin:0;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:22px;text-align:center;}
 .fg p{margin:0;font-size:15px;line-height:1.42;text-align:center;color:var(--gris);}
 .fg-selfie,.fg-proposee,.fg-attente{display:flex;flex-direction:column;align-items:center;gap:12px;}
+.fg-choix{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;}
+.fg-choix-p{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.fg-choix-p>button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 6px 10px;border-radius:20px;border:2px solid var(--trait);background:var(--nappe);color:var(--creme);width:100%;}
+.fg-choix-p.on>button{border-color:var(--rose);background:rgba(255,46,154,.12);}
+.fg-choix-p b{font-size:13.5px;}
+.mf-laquelle{margin:0;font-weight:800;color:var(--creme)!important;}
 .fg-conseils{margin:0;padding:12px 14px;border-radius:18px;background:rgba(255,244,230,.04);border:1px dashed var(--trait);list-style:none;display:grid;gap:7px;font-size:13.5px;line-height:1.4;color:var(--gris);width:100%;}
 .fg-prendre{width:100%;min-height:120px;border-radius:22px;border:2px dashed var(--rose);background:rgba(255,46,154,.08);color:var(--creme);font-size:18px;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;}
 .fg-prendre span{font-size:34px;}
@@ -628,11 +675,13 @@ const STYLES_APERCU = `
 .fg-apercu.petit{width:120px;height:190px;border-radius:16px;}
 .fg-apercu.mini{width:88px;height:138px;border-radius:14px;}
 .fg-apercu.geant{width:min(92vw,calc((100dvh - 120px) * .636));height:auto;aspect-ratio:210/330;border-radius:28px;box-shadow:0 18px 50px rgba(120,40,70,.25);}
-.fg-apercu.mini .fg-buste,.fg-apercu.mini .fg-ressort{animation:none;}
+.fg-apercu.mini .fg-buste,.fg-apercu.mini .fg-ressort,.fg-apercu.mini .fg-entiere{animation:none;}
+.fg-entiere{position:absolute;left:50%;bottom:4%;width:auto;height:92%;max-width:96%;object-fit:contain;object-position:50% 100%;transform:translateX(-50%);transform-origin:50% 100%;animation:fg-balance 3.2s ease-in-out infinite;}
+@keyframes fg-balance{0%,100%{transform:translateX(-50%) rotate(0)}30%{transform:translateX(-50%) rotate(-1.4deg)}62%{transform:translateX(-50%) rotate(1.1deg)}}
 .fg-buste{position:absolute;z-index:1;left:50%;bottom:28.5%;width:auto;height:64%;max-width:94%;object-fit:contain;object-position:50% 100%;transform:translateX(-50%);transform-origin:50% 100%;animation:fg-rebond 2.6s ease-in-out infinite;}
 .fg-ressort{position:absolute;left:50%;bottom:14.5%;width:17%;height:17%;transform:translateX(-50%);transform-origin:50% 100%;animation:fg-ressort 2.6s ease-in-out infinite;}
 .fg-socle{position:absolute;left:50%;bottom:6%;width:62%;transform:translateX(-50%);}
 @keyframes fg-rebond{0%,100%{transform:translateX(-50%) translateY(0) rotate(0)}30%{transform:translateX(-50%) translateY(-4%) rotate(-3deg)}60%{transform:translateX(-50%) translateY(1%) rotate(2deg)}}
 @keyframes fg-ressort{0%,100%{transform:translateX(-50%) scaleY(1)}30%{transform:translateX(-50%) scaleY(1.18)}60%{transform:translateX(-50%) scaleY(.92)}}
-@media (prefers-reduced-motion: reduce){.fg-buste,.fg-ressort{animation:none}}
+@media (prefers-reduced-motion: reduce){.fg-buste,.fg-ressort,.fg-entiere{animation:none}}
 `;
