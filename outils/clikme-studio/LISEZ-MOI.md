@@ -421,12 +421,29 @@ courbes** que `lili-ross/scene.html` et `figurine.js` (21 s, ou 24,5 avec la fig
 - `src/lib/direct/figurine-pro.ts` : la règle et **la consigne envoyée au moteur d'image** (fonction pure, à relire).
 - `src/lib/direct/figurine-pro-serveur.ts` : le moteur (celui de l'essayage, `moteur-image.ts`, avec ses replis), le
   détourage, le stockage.
-- `src/app/api/site-internet/pro/figurine/route.ts` : `etat`, `fabriquer`, `valider`, contre le jeton pro.
+- `src/app/api/site-internet/pro/figurine/route.ts` : `etat`, `fabriquer`, `valider`, `fabriquer-edition`,
+  `valider-edition`, contre le jeton pro.
+- **Où il la fait** : **« 🪀 Ma figurine du mois »**, une carte de l'accueil du comptoir et une ligne de Ma boutique
+  (écran `MaFigurine`) ; et toujours depuis le Studio, au moment de choisir « avec sa figurine ».
 - On ne fait générer **que le buste** (jusqu'à la coupelle en bois), sur **fond transparent** ; un moteur qui ne sait
   pas en rendre reçoit un **fond vert d'incrustation uni**, retiré par `detourerSurFondUni` (remplissage depuis les
   bords sur la teinte — une clé de couleur simple ronge les visages ; le magenta est trop près de la peau).
 - **Son selfie n'est jamais gardé.** Rien ne passe dans une vidéo avant son « C'est moi ». Trois essais par jour.
 - Stockage : le seau public `figurines-pros` (créé au premier dépôt), `<site>/etat.json` et les images.
+
+### Sa figurine du mois (l'édition du moment)
+
+- **L'édition** est celle de la collection (`EDITIONS_DATEES`, `editionsDuMoment` de `collection.ts`) : Automne 🍂
+  jusqu'au 20 décembre, Noël 🎄 du 1er au 24 décembre (un temps fort passe devant une saison), etc.
+- Une fois **sa** figurine validée, il l'**habille pour l'édition** : son buste validé est renvoyé au moteur d'image
+  avec la consigne `consigneEdition` (`figurine-pro.ts`) — même visage, même pose, même cadrage, même coupelle ; **seule
+  la tenue change**, celle de `TENUES_EDITION` (« un pull en grosse maille couleur rouille, une écharpe à carreaux… »
+  pour l'automne). Ces tenues sont à relire.
+- Route : `fabriquer-edition` (compte dans les trois essais du jour), puis `valider-edition` (« Elle est parfaite »).
+  Rangée dans `etat.json` sous `editions["automne-2026"]` : une édition manquée est manquée. S'il refait sa figurine
+  avec un nouveau selfie, celle de l'édition en cours est à rhabiller (elle portait l'ancien visage).
+- **Le Studio prend la figurine du mois** quand elle est validée, sinon sa figurine de tous les jours
+  (`figurineDuMoment`).
 - Réglages (variables d'environnement, toutes facultatives) : `OPENAI_API_KEY` (sans elle, la fabrication répond
   « pas encore branchée »), `OPENAI_IMAGE_MODEL` (impose un moteur), `FIGURINE_QUALITE` (`high` par défaut),
   `FIGURINE_ESSAIS_PAR_JOUR` (3), `FIGURINES_PROS_BUCKET`.
@@ -441,7 +458,7 @@ depuis une session.
 
 ### Pas encore fait
 
-- La figurine fabriquée ne remplace pas encore son double dans **la collection** (`FIGURINES` de
+- La figurine fabriquée (et celle du mois) ne remplace pas encore son double dans **la collection** (`FIGURINES` de
   `figurines-commerces.ts`, faite à la main) ni sur sa page.
 - Une seule pose (bras croisés), pas de bouche ouverte : elle parle par bulles. Les poses multiples et la bouche
   (`docs/figurines.md`, 9.7) viendront avec des retouches du même buste.

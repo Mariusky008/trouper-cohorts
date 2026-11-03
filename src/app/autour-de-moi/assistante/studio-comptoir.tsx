@@ -33,7 +33,7 @@ import {
   type TextesStudio,
 } from "@/lib/direct/studio";
 import { chargerStudio, imagesDe, lireLaVideo, monterStudio, type FilmStudio, type InfosVideo } from "@/lib/direct/studio-montage";
-import type { EtatFigurinePro } from "@/lib/direct/figurine-pro";
+import { figurineDuMoment, type EtatFigurinePro } from "@/lib/direct/figurine-pro";
 import { ApercuFigurine, FabriquerFigurine } from "./figurine-comptoir";
 
 type Etape = "video" | "moments" | "figurine" | "fabriquer" | "montage" | "pret" | "publie";
@@ -101,8 +101,10 @@ export function StudioComptoir({
     })
       .then((r) => r.json())
       .then((j: { etat?: EtatFigurinePro }) => {
-        if (vivant && j.etat?.validee) {
-          setFigurine(j.etat.validee);
+        // 🍂 SA FIGURINE DU MOIS d'abord (habillée pour l'édition), sinon sa figurine de tous les jours
+        const sienne = figurineDuMoment(j.etat);
+        if (vivant && sienne) {
+          setFigurine(sienne);
           setAvecFigurine(true);
         }
       })

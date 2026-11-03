@@ -75,6 +75,7 @@ import {
   verifierDates,
 } from "@/lib/direct/planning-annonces";
 import { jourParis } from "@/lib/jour-paris";
+import { editionsDuMoment } from "@/lib/direct/collection";
 import { jourCourt, PlanningComptoir } from "./planning-comptoir";
 import { CarteComptoir } from "./carte-comptoir";
 import { VitrineComptoir } from "./vitrine-comptoir";
@@ -114,6 +115,15 @@ const Interview = dynamic(() => import("../essai-interview/essai-interview").the
 const Episode = dynamic(() => import("./episode-comptoir").then((m) => m.EpisodeComptoir), { ssr: false });
 /* 🎬 CLIKME STUDIO : sa vidéo montée en petit film, avec ou sans sa figurine — chargé seulement quand on l'ouvre. */
 const Studio = dynamic(() => import("./studio-comptoir").then((m) => m.StudioComptoir), { ssr: false });
+/* 🪀 MA FIGURINE DU MOIS : sa figurine (un selfie), habillée pour l'édition du moment — chargée quand on l'ouvre. */
+const MaFigurine = dynamic(() => import("./figurine-comptoir").then((m) => m.MaFigurine), { ssr: false });
+
+/** « Édition Automne 🍂 · encore 48 jours » (Ma boutique), « Édition Automne 🍂 » en court (l'accueil) : l'édition du moment (`collection.ts`). */
+function editionEnMots(court = false): string {
+  const e = editionsDuMoment(jourParis()).maintenant;
+  if (!e) return "Une édition à chaque saison";
+  return court ? `Édition ${e.nom} ${e.emoji}` : `Édition ${e.nom} ${e.emoji} · encore ${e.jours} ${e.jours > 1 ? "jours" : "jour"}`;
+}
 
 /**
  * LE PLAT DE SON INTERVIEW : celui qu'il a publié aujourd'hui (et sa photo) ;
@@ -385,6 +395,8 @@ type Phase =
   | { ou: "episode" }
   /** 🎬 ClikMe Studio : sa vidéo d'un produit, montée en petit film, avec ou sans figurine — voir `studio-comptoir.tsx`. */
   | { ou: "studio" }
+  /** 🪀 Ma figurine du mois : à partir d'un selfie, habillée pour l'édition — voir `figurine-comptoir.tsx`. */
+  | { ou: "figurine" }
   /** Ma carte : ses rubriques, ses lignes et ses prix — voir `carte-comptoir.tsx`. */
   | { ou: "carte" }
   /** Ce que mon fantôme sait : ses réponses, et les questions de ses clients — voir `savoir-comptoir.tsx`. */
@@ -969,6 +981,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           onVitrine={() => setPhase({ ou: "vitrine" })}
           onPhototheque={() => setPhase({ ou: "phototheque" })}
           onCarte={() => setPhase({ ou: "carte" })}
+          onFigurine={() => setPhase({ ou: "figurine" })}
         />
       )}
 
@@ -991,6 +1004,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           onVitrine={() => setPhase({ ou: "vitrine" })}
           onPhototheque={() => setPhase({ ou: "phototheque" })}
           onCarte={() => setPhase({ ou: "carte" })}
+          onFigurine={() => setPhase({ ou: "figurine" })}
         />
       )}
 
@@ -1204,6 +1218,9 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           }
         />
       )}
+
+      {/* 🪀 MA FIGURINE DU MOIS, PAR-DESSUS LE COMPTOIR */}
+      {phase.ou === "figurine" && <MaFigurine commerce={commerce} onRetour={revenir} onStudio={() => setPhase({ ou: "studio" })} />}
 
       {/* 🎬 CLIKME STUDIO, PAR-DESSUS LE COMPTOIR : son film part comme l'épisode — Le Direct, sa page, ses réseaux. */}
       {phase.ou === "studio" && (
@@ -1557,6 +1574,7 @@ function Accueil({
   onVitrine,
   onPhototheque,
   onCarte,
+  onFigurine,
 }: {
   commerce: Commerce;
   mission: Mission;
@@ -1593,6 +1611,8 @@ function Accueil({
   onVitrine: () => void;
   onPhototheque: () => void;
   onCarte: () => void;
+  /** 🪀 Ma figurine du mois. */
+  onFigurine: () => void;
 }) {
   const pose = useFantome(false, "salut");
   const questions = questionsDuMetier(commerce.famille, commerce.metier);
@@ -1663,6 +1683,18 @@ function Accueil({
         {carnet}
         {mots}
         {ticket}
+        {/* 🪀 SA FIGURINE DU MOIS : celle que ses clients gagnent en venant pendant l'édition */}
+        <button type="button" className="ak-second" onClick={onFigurine}>
+          <span className="ak-second-i" aria-hidden="true">
+            🪀
+          </span>
+          <span className="ak-cta-t">
+            <b>Ma figurine du mois</b>
+            <em>Ta figurine à partir d’un selfie, habillée pour la saison</em>
+            <i className="ak-meta">{editionEnMots(true)}</i>
+          </span>
+          <s aria-hidden="true">›</s>
+        </button>
         <button type="button" className="ak-second" onClick={onDepenses}>
           <span className="ak-second-i" aria-hidden="true">
             🤝
@@ -1712,6 +1744,7 @@ function Boutique({
   onVitrine,
   onPhototheque,
   onCarte,
+  onFigurine,
 }: {
   commerce: Commerce;
   mission: Mission;
@@ -1724,6 +1757,7 @@ function Boutique({
   onVitrine: () => void;
   onPhototheque: () => void;
   onCarte: () => void;
+  onFigurine: () => void;
 }) {
   const clients = etatDesClients(mission, actives, principal, propositionActive);
   const prochaine = programmees[0];
@@ -1753,6 +1787,7 @@ function Boutique({
         />
         <Ligne icone="vitrine" nom="Vitrine" sous="Tes produits, en photo, avec leur nom" onClick={onVitrine} />
         <Ligne icone="photos" nom="Photos" sous="Ta photothèque, où tu pioches à chaque annonce" onClick={onPhototheque} />
+        <Ligne icone="figurine" nom="Ma figurine du mois" sous={editionEnMots()} onClick={onFigurine} />
         <Ligne icone="carte" nom={motDeLaCarte(commerce)} sous={`${motsDeLaCarte(commerce.famille, commerce.metier).titre.replace(/^Ma /, "Ta ").replace(/^Mes /, "Tes ")}, ligne par ligne`} onClick={onCarte} />
       </div>
     </div>
@@ -2139,6 +2174,14 @@ const ICONES = {
     </>
   ),
   stats: <path d="M4 19V11M10 19V5M16 19v-6M22 19H2" />,
+  figurine: (
+    <>
+      <circle cx="12" cy="6.2" r="3.4" />
+      <path d="M8.5 13.5c0-2 1.6-3.4 3.5-3.4s3.5 1.4 3.5 3.4z" />
+      <path d="M10 15.5h4M10.5 17h3M10 18.5h4" />
+      <ellipse cx="12" cy="20.5" rx="5" ry="1.4" />
+    </>
+  ),
 };
 /** Le raccourci « Réseaux » : absent tant que l'intermédiaire n'est pas branché, comme l'ancienne carte. */
 function OutilReseaux({ commerce, reseaux, onOuvrir }: { commerce: Commerce; reseaux: ReseauxDuComptoir; onOuvrir: () => void }) {

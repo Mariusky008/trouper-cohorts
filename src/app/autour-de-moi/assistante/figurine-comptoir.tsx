@@ -1,16 +1,23 @@
 "use client";
 
 /**
- * 🪀 MA FIGURINE, À PARTIR D'UN SELFIE — au comptoir, depuis le Studio (`studio-comptoir.tsx`).
+ * 🪀 MA FIGURINE, À PARTIR D'UN SELFIE — au comptoir : « Ma figurine du mois » (l'accueil et Ma boutique, `MaFigurine`)
+ * et depuis le Studio (`studio-comptoir.tsx`, `FabriquerFigurine`).
  *
  * Un selfie, son accord coché par lui, et le moteur d'image fabrique sa figurine (une minute environ — voir
  * `lib/direct/figurine-pro.ts` et la route `/api/site-internet/pro/figurine`). Il la voit sur son ressort et son socle,
  * comme dans ses vidéos, et dit « C'est moi ! » — ou refait (trois essais par jour). Rien ne passe dans une vidéo avant
  * son « C'est moi ».
+ *
+ * 🍂 SA FIGURINE DU MOIS : la même, habillée pour l'édition du moment (l'Automne, Noël… — `collection.ts`). Ses clients
+ * la gagnent en venant pendant l'édition ; elle est aussi dans ses vidéos. Elle se fait à partir de sa figurine
+ * validée, en un geste : le visage ne change pas, seule la tenue change.
  */
 import { useEffect, useRef, useState } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { SELFIE_MAX_PX, type EtatFigurinePro } from "@/lib/direct/figurine-pro";
+import { editionsDuMoment } from "@/lib/direct/collection";
+import { jourParis } from "@/lib/jour-paris";
 
 type Reponse = { ok?: boolean; etat?: EtatFigurinePro; error?: string };
 
@@ -106,6 +113,8 @@ export function FabriquerFigurine({
   const choix = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // sans lien pro (la démonstration), rien à demander : l'écran de fabrication le dit lui-même
+    if (!commerce.reel) return;
     let vivant = true;
     void demander(commerce, { action: "etat" }).then((r) => {
       if (!vivant) return;
@@ -228,6 +237,194 @@ export function FabriquerFigurine({
     </div>
   );
 }
+
+/** 🍂 MA FIGURINE DU MOIS — l'écran entier, ouvert depuis l'accueil du comptoir ou Ma boutique. */
+export function MaFigurine({ commerce, onRetour, onStudio }: { commerce: CommerceComptoir; onRetour: () => void; onStudio?: () => void }) {
+  const [etat, setEtat] = useState<EtatFigurinePro | null>(null);
+  const [selfie, setSelfie] = useState(false);
+  const [enCours, setEnCours] = useState(false);
+  const [secondes, setSecondes] = useState(0);
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  useEffect(() => {
+    // sans lien pro (la démonstration), rien à demander : l'écran de fabrication le dit lui-même
+    if (!commerce.reel) return;
+    let vivant = true;
+    void demander(commerce, { action: "etat" }).then((r) => {
+      if (!vivant) return;
+      if (r.etat) setEtat(r.etat);
+      else if (r.error) setErreur(r.error);
+    });
+    return () => {
+      vivant = false;
+    };
+  }, [commerce]);
+
+  useEffect(() => {
+    if (!enCours) return;
+    const t = setInterval(() => setSecondes((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [enCours]);
+
+  const habiller = async () => {
+    if (enCours) return;
+    setSecondes(0);
+    setEnCours(true);
+    setErreur(null);
+    const r = await demander(commerce, { action: "fabriquer-edition" });
+    setEnCours(false);
+    if (r.etat) setEtat(r.etat);
+    if (r.error) setErreur(r.error);
+  };
+
+  const validerEdition = async () => {
+    setErreur(null);
+    const r = await demander(commerce, { action: "valider-edition" });
+    if (r.etat) setEtat(r.etat);
+    if (r.error) setErreur(r.error);
+  };
+
+  const ed = etat?.edition ?? null;
+  /** pour la présenter avant même la réponse du serveur (ou sans lien pro) */
+  const [duJour] = useState(() => editionsDuMoment(jourParis()).maintenant);
+  const restants = etat?.essaisRestants ?? 0;
+  const dejaEnGrand = !!ed && !ed.validee && !ed.proposee && !enCours && !!etat?.validee;
+  const ETAPES = ["Je sors ta figurine…", "Je choisis sa tenue…", "Je peins les détails…", "Presque fini…"];
+
+  return (
+    <div className="mf">
+      <style>{STYLES}</style>
+      <style>{STYLES_MF}</style>
+      <div className="mf-haut">
+        <button type="button" className="mf-retour" onClick={onRetour}>
+          ‹ Mon comptoir
+        </button>
+        <span className="mf-titre">🪀 Ma figurine</span>
+      </div>
+      <div className="mf-corps">
+        {selfie || (etat && !etat.validee) || !commerce.reel ? (
+          <>
+            {!commerce.reel || (etat && !etat.validee) ? (
+              <p className="mf-intro">
+                Tes clients gagnent <b>ta figurine</b> en venant chez toi, une édition à chaque saison
+                {ed ?? duJour ? (
+                  <>
+                    {" "}
+                    — en ce moment, <b>l’édition {(ed ?? duJour)?.nom} {(ed ?? duJour)?.emoji}</b>
+                  </>
+                ) : null}
+                . D’abord ta figurine, à partir d’un selfie ; ensuite je l’habille pour l’édition.
+              </p>
+            ) : null}
+            <FabriquerFigurine
+              commerce={commerce}
+              onPrete={(u) => {
+                setSelfie(false);
+                setEtat((e) => (e ? { ...e, validee: u, proposee: null } : e));
+                void demander(commerce, { action: "etat" }).then((r) => r.etat && setEtat(r.etat));
+              }}
+              onRetour={() => (selfie ? setSelfie(false) : onRetour())}
+            />
+          </>
+        ) : !etat ? (
+          <p className="mf-intro">Je regarde où en est ta figurine…</p>
+        ) : (
+          <>
+            {ed ? (
+              <section className="mf-edition">
+                <h2>
+                  Ma figurine du mois <span>{ed.emoji}</span>
+                </h2>
+                <p>
+                  <b>Édition {ed.nom}</b> · encore {ed.jours} {ed.jours > 1 ? "jours" : "jour"}. Tes clients la gagnent en venant pendant l’édition ; elle est
+                  aussi dans tes petits films.
+                </p>
+                {enCours ? (
+                  <div className="fg-attente" aria-live="polite">
+                    <div className="fg-tourne" aria-hidden="true">
+                      {ed.emoji}
+                    </div>
+                    <p>{ETAPES[Math.min(ETAPES.length - 1, Math.floor(secondes / 15))]}</p>
+                    <small>Une minute environ ({secondes} s). Garde cet écran ouvert.</small>
+                  </div>
+                ) : ed.validee ? (
+                  <>
+                    <ApercuFigurine src={ed.validee} />
+                    <p className="mf-prete">✅ Ta figurine de l’édition {ed.nom} est prête.</p>
+                  </>
+                ) : ed.proposee ? (
+                  <>
+                    <ApercuFigurine src={ed.proposee} />
+                    <button type="button" className="cz-go grand" onClick={() => void validerEdition()}>
+                      ✅ Elle est parfaite
+                    </button>
+                    {restants > 0 && (
+                      <button type="button" className="cz-second" onClick={() => void habiller()}>
+                        ↺ Une autre tenue ({restants} {restants > 1 ? "essais" : "essai"} aujourd’hui)
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {etat.validee && <ApercuFigurine src={etat.validee} />}
+                    <button type="button" className="cz-go grand" disabled={restants <= 0} onClick={() => void habiller()}>
+                      {ed.emoji} L’habiller pour l’édition {ed.nom}
+                    </button>
+                    {restants <= 0 && <small className="fg-note">Plus d’essai aujourd’hui : à demain !</small>}
+                  </>
+                )}
+              </section>
+            ) : null}
+            {/* pas deux fois la même : tant qu'elle n'est pas habillée, elle est déjà en grand juste au-dessus */}
+            <section className={`mf-base${dejaEnGrand ? " seule" : ""}`}>
+              {etat.validee && !dejaEnGrand && <ApercuFigurine src={etat.validee} petit />}
+              <div>
+                <b>Ma figurine</b>
+                <em>Celle de ton selfie, sans tenue d’édition.</em>
+                <button type="button" className="cz-second" onClick={() => setSelfie(true)}>
+                  ↺ La refaire avec un selfie
+                </button>
+              </div>
+            </section>
+            {etat.ensuite && (
+              <p className="mf-ensuite">
+                Ensuite : l’édition {etat.ensuite.nom} {etat.ensuite.emoji}, dans {etat.ensuite.jours} {etat.ensuite.jours > 1 ? "jours" : "jour"}.
+              </p>
+            )}
+            {onStudio && (
+              <button type="button" className="cz-second" onClick={onStudio}>
+                🎬 Faire un petit film avec elle
+              </button>
+            )}
+          </>
+        )}
+        {erreur && <p className="fg-erreur">{erreur}</p>}
+      </div>
+    </div>
+  );
+}
+
+const STYLES_MF = `
+.mf{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;background:var(--fond);overflow:hidden;}
+.mf-haut{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px 0;}
+.mf-retour{border:1px solid var(--trait);border-radius:999px;padding:9px 16px;background:var(--nappe);font-weight:700;}
+.mf-titre{font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--rose);}
+.mf-corps{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:14px 16px calc(28px + env(safe-area-inset-bottom,0px));scrollbar-width:none;}
+.mf-corps::-webkit-scrollbar{display:none;}
+.mf-intro{margin:0;padding:14px;border-radius:20px;background:var(--nappe);border:1px solid var(--trait);font-size:15px;line-height:1.42;}
+.mf-intro b{color:var(--ambre);}
+.mf-edition{display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px;border-radius:24px;background:linear-gradient(160deg,rgba(255,46,154,.14),rgba(245,162,58,.08));border:1px solid rgba(255,46,154,.4);text-align:center;}
+.mf-edition h2{margin:0;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:22px;}
+.mf-edition p{margin:0;font-size:14.5px;line-height:1.42;color:var(--gris);}
+.mf-edition p b{color:var(--creme);}
+.mf-prete{font-weight:800;color:#3DE2A6!important;}
+.mf-base{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;padding:12px;border-radius:20px;background:var(--nappe);border:1px solid var(--trait);}
+.mf-base.seule{grid-template-columns:1fr;}
+.mf-base div{display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
+.mf-base b{font-size:16px;}
+.mf-base em{font-style:normal;font-size:13px;color:var(--gris);}
+.mf-ensuite{margin:0;text-align:center;font-size:13.5px;color:var(--gris);}
+`;
 
 const STYLES = `
 .fg{display:flex;flex-direction:column;gap:12px;}

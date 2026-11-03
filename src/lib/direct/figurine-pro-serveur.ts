@@ -7,14 +7,16 @@
  *
  * LE STOCKAGE : un seau public à elle, `figurines-pros` (elle passe dans des vidéos publiques), créé au premier dépôt.
  * Une adresse impossible à deviner par image. Son état (`<site>/etat.json`) : celle qu'il a validée, celle qui attend
- * son « C'est moi », ses essais du jour. SON SELFIE N'Y VA JAMAIS : il sert à la fabrication, puis il est oublié.
+ * son « C'est moi », ses essais du jour, et ses figurines du mois (une par édition). SON SELFIE N'Y VA JAMAIS : il sert à
+ * la fabrication, puis il est oublié.
  *
  * FICHIER SERVEUR.
  */
 import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { FamilleDouble } from "./double-metiers";
-import { ESSAIS_PAR_JOUR, consigneFigurine, jourDe, type EtatFigurinePro } from "./figurine-pro";
+import { editionsDuMoment } from "./collection";
+import { ESSAIS_PAR_JOUR, consigneEdition, consigneFigurine, jourDe, type EtatFigurinePro } from "./figurine-pro";
 import { moteurRefuse, moteursDImage, noterRefus } from "./moteur-image";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -23,10 +25,14 @@ const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 export const SEAU_FIGURINES_PROS = s(process.env.FIGURINES_PROS_BUCKET) || "figurines-pros";
 const essaisParJour = () => Math.max(1, Number(s(process.env.FIGURINE_ESSAIS_PAR_JOUR)) || ESSAIS_PAR_JOUR);
 
-type Etat = {
-  validee?: { chemin: string; le: string } | null;
-  proposee?: { chemin: string; le: string; modele: string } | null;
+type Validee = { chemin: string; le: string };
+type Proposee = { chemin: string; le: string; modele: string };
+export type Etat = {
+  validee?: Validee | null;
+  proposee?: Proposee | null;
   essais?: { jour: string; n: number };
+  /** Ses figurines du mois, par édition et par année (« automne-2026 »). */
+  editions?: Record<string, { validee?: Validee | null; proposee?: Proposee | null }>;
 };
 
 // ─── le stockage ────────────────────────────────────────────────────────────────────────────────
@@ -65,14 +71,36 @@ export async function deposerImage(supabase: Supabase, siteId: string, png: Buff
   return chemin;
 }
 
+/** Une image de son dossier (sa figurine validée, pour l'habiller). */
+export async function lireImage(supabase: Supabase, chemin: string): Promise<Buffer | null> {
+  try {
+    const { data } = await supabase.storage.from(SEAU_FIGURINES_PROS).download(chemin);
+    return data ? Buffer.from(await data.arrayBuffer()) : null;
+  } catch {
+    return null;
+  }
+}
+
 const urlDe = (supabase: Supabase, chemin: string | undefined) => (chemin ? supabase.storage.from(SEAU_FIGURINES_PROS).getPublicUrl(chemin).data.publicUrl : null);
+
+/** L'édition du moment (celle de `collection.ts`), et sa clé avec l'année de son début : « automne-2026 ». */
+export function editionDuJour(maintenant = new Date()) {
+  const { maintenant: e, ensuite } = editionsDuMoment(jourDe(maintenant));
+  return { edition: e ? { ...e, cleAnnee: `${e.cle}-${e.debut.slice(0, 4)}` } : null, ensuite };
+}
 
 export function etatPublic(supabase: Supabase, e: Etat, maintenant = new Date()): EtatFigurinePro {
   const faits = e.essais?.jour === jourDe(maintenant) ? e.essais.n : 0;
+  const { edition, ensuite } = editionDuJour(maintenant);
+  const sienne = edition ? e.editions?.[edition.cleAnnee] : undefined;
   return {
     validee: urlDe(supabase, e.validee?.chemin),
     proposee: urlDe(supabase, e.proposee?.chemin),
     essaisRestants: Math.max(0, essaisParJour() - faits),
+    edition: edition
+      ? { cle: edition.cleAnnee, nom: edition.nom, emoji: edition.emoji, jours: edition.jours, validee: urlDe(supabase, sienne?.validee?.chemin), proposee: urlDe(supabase, sienne?.proposee?.chemin) }
+      : null,
+    ensuite: ensuite ? { nom: ensuite.nom, emoji: ensuite.emoji, jours: ensuite.jours } : null,
   };
 }
 
@@ -225,9 +253,6 @@ export type Fabrication = { png: Buffer; modele: string } | { erreur: string; st
  * raison, plutôt qu'un 504 muet).
  */
 export async function fabriquerFigurine(o: { selfie: Buffer; famille: FamilleDouble; avant: number }): Promise<Fabrication> {
-  const cle = s(process.env.OPENAI_API_KEY);
-  if (!cle) return { erreur: "La fabrication des figurines n'est pas encore branchée ici (moteur d'image absent).", statut: 503 };
-  const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
   let photo: Buffer;
   try {
     // LE SENS DE LA PHOTO : celui du téléphone (EXIF), puis 1 024 pixels au plus
@@ -235,6 +260,27 @@ export async function fabriquerFigurine(o: { selfie: Buffer; famille: FamilleDou
   } catch {
     return { erreur: "Ce selfie ne s'ouvre pas. Reprenez-le, ou choisissez une photo JPEG.", statut: 400 };
   }
+  return generer({ image: photo, consigne: (fond) => consigneFigurine(o.famille, fond), avant: o.avant });
+}
+
+/** 🍂 SA FIGURINE DU MOIS : sa figurine validée, habillée pour l'édition (le visage ne change pas). */
+export async function habillerFigurine(o: { buste: Buffer; cleEdition: string; nomEdition: string; avant: number }): Promise<Fabrication> {
+  let image: Buffer;
+  try {
+    // SUR UN FOND BLANC UNI : le moteur voit la figurine comme une photo de studio, pas un découpage
+    image = await sharp(o.buste).flatten({ background: "#ffffff" }).resize({ width: 1024, height: 1024, fit: "inside", withoutEnlargement: true }).png().toBuffer();
+  } catch {
+    return { erreur: "Ta figurine ne s'ouvre pas. Refais-la à partir d'un selfie.", statut: 400 };
+  }
+  return generer({ image, consigne: (fond) => consigneEdition(o.cleEdition, o.nomEdition, fond), avant: o.avant });
+}
+
+/** UNE IMAGE DEMANDÉE AU MOTEUR, à partir d'une image : les replis de moteur et de réglages, puis la figurine seule. */
+async function generer(o: { image: Buffer; consigne: (fond: "transparent" | "vert") => string; avant: number }): Promise<Fabrication> {
+  const cle = s(process.env.OPENAI_API_KEY);
+  if (!cle) return { erreur: "La fabrication des figurines n'est pas encore branchée ici (moteur d'image absent).", statut: 503 };
+  const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
+  const photo = o.image;
   const { liste } = await moteursDImage(cle, base);
   let derniere = "Le moteur d'image n'a pas répondu.";
   for (let m = 0; m < liste.length; m++) {
@@ -250,10 +296,10 @@ export async function fabriquerFigurine(o: { selfie: Buffer; famille: FamilleDou
       const fond = reglages.background === "transparent" ? "transparent" : "vert";
       const forme = new FormData();
       forme.append("model", modele);
-      forme.append("prompt", consigneFigurine(o.famille, fond));
+      forme.append("prompt", o.consigne(fond));
       forme.append("n", "1");
       for (const [k, v] of Object.entries(reglages)) forme.append(k, v);
-      forme.append("image[]", new File([new Uint8Array(photo)], "selfie.png", { type: "image/png" }));
+      forme.append("image[]", new File([new Uint8Array(photo)], "image.png", { type: "image/png" }));
       const reste = o.avant - Date.now();
       if (reste < 20_000) return { erreur: "La fabrication a pris trop de temps. Réessayez dans un instant.", statut: 504 };
       let r: Response;
