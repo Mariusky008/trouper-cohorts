@@ -50,8 +50,10 @@ import {
   type Publication,
 } from "@/lib/direct/comptoir";
 import { useMicro } from "./use-micro";
+import { SITE_HOST } from "@/lib/site-url";
 import { envoyerALaVille, retirerDeLaVille, type CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import {
+  dansLeReseau,
   envoyerEnLigne,
   envoyerEpisode,
   envoyerInterview,
@@ -117,6 +119,33 @@ const Episode = dynamic(() => import("./episode-comptoir").then((m) => m.Episode
 const Studio = dynamic(() => import("./studio-comptoir").then((m) => m.StudioComptoir), { ssr: false });
 /* 🪀 MA FIGURINE DU MOIS : sa figurine (un selfie), habillée pour l'édition du moment — chargée quand on l'ouvre. */
 const MaFigurine = dynamic(() => import("./figurine-comptoir").then((m) => m.MaFigurine), { ssr: false });
+/**
+ * 📣 L'EXTRAIT DE 8 S POUR SES PARTENAIRES DE DIFFUSION, pour l'interview et l'épisode (le Studio fait le sien) — voir
+ * `lib/direct/studio-extrait.ts`. LE SON S'OUVRE AU TOUCHER, AVANT TOUTE ATTENTE (un iPhone garde muet un son ouvert
+ * plus tard) ; le reste — savoir s'il est dans le réseau, charger le moteur, rejouer huit secondes — vient ensuite.
+ * Hors du réseau, ou raté : `null`, ses partenaires reçoivent le film entier.
+ */
+function preparerExtrait(commerce: CommerceComptoir): (film: { blob: Blob; type: string; duree: number }) => Promise<{ blob: Blob; type: string; duree: number } | null> {
+  let son: AudioContext | null = null;
+  try {
+    son = new AudioContext();
+    void son.resume().catch(() => {});
+  } catch {
+    son = null;
+  }
+  return async (film) => {
+    try {
+      if (!son || !commerce.reel || !(await dansLeReseau(commerce))) return null;
+      const { extraitPourPartenaires } = await import("@/lib/direct/studio-extrait");
+      return await extraitPourPartenaires(film, { ctx: son, commerce: commerce.nom, adresse: `${SITE_HOST}/b/${commerce.reel.slug}` });
+    } catch {
+      return null;
+    } finally {
+      void son?.close().catch(() => {});
+    }
+  };
+}
+
 /* 📣 MON RÉSEAU DE DIFFUSION : ses vidéos chez deux partenaires, les leurs chez lui — chargé quand on l'ouvre. */
 const MonReseau = dynamic(() => import("./diffusion-comptoir").then((m) => m.MonReseau), { ssr: false });
 
@@ -1169,6 +1198,9 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
                       mots?: string;
                       reel?: { blob: Blob; type: string; duree: number } | null;
                     }) => {
+                      // 📣 L'EXTRAIT POUR SES PARTENAIRES (s'il est dans le réseau) : de son Reel du jour, sinon de l'interview
+                      const faireExtrait = preparerExtrait(commerce);
+                      const extrait = await faireExtrait(m.reel ?? m);
                       const r = await envoyerInterview(commerce, {
                         nom: m.plat || principal?.nom || scriptDe(commerce.famille).quoi,
                         prix: m.prix,
@@ -1179,6 +1211,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
                         ...(m.mots ? { mots: m.mots } : {}),
                         // 🎞️ LE REEL DU JOUR PART SUR SES RÉSEAUX ; l'interview reste dans Le Direct et sur sa page
                         ...(m.reel ? { reel: m.reel } : {}),
+                        extrait,
                       });
                       if (!r.ok) return { ok: false, message: r.erreur ?? "L’envoi a échoué. Réessaie." };
                       return {
@@ -1210,7 +1243,10 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           publier={
             commerce.reel
               ? async (e) => {
-                  const r = await envoyerEpisode(commerce, e);
+                  // 📣 L'EXTRAIT POUR SES PARTENAIRES (s'il est dans le réseau) : de sa bande-annonce, sinon de l'épisode
+                  const faireExtrait = preparerExtrait(commerce);
+                  const extrait = await faireExtrait(e.bande ?? e.episode);
+                  const r = await envoyerEpisode(commerce, { ...e, extrait });
                   if (!r.ok) return { ok: false, message: r.erreur ?? "L’envoi a échoué. Réessaie, de préférence en wifi." };
                   return {
                     ok: true,

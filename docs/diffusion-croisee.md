@@ -37,7 +37,16 @@ refait.
    `/api/site-internet/pro/offer`) : après la réponse, `envoyerAuxPartenaires` la dépose dans la boîte de ses deux
    partenaires. Chez celui qui est en automatique, a des réseaux connectés et n'a pas atteint son plafond, elle part
    tout de suite sur ses réseaux ; sinon, elle l'attend.
-3. **Sur les réseaux de l'hôte** (`publierUneDecouverte`, l'intermédiaire PostPeer de `lib/reseaux`) : sa vidéo en
+3. **L'extrait de 8 secondes** (`studio-extrait.ts`) : pour TOUS ses films — le Studio, l'interview, l'épisode —, au
+   moment de publier, s'il est dans le réseau, le téléphone REJOUE le film qu'il vient de monter et en enregistre huit
+   secondes. L'interview : à partir de son Reel du jour (sinon l'interview) ; l'épisode : à partir de sa bande-annonce
+   (sinon l'épisode) ; le Studio — 6,4 s du film
+   (après l'intro de la figurine : l'accroche et ses titres, puis ses premiers moments) avec en haut « 📣 Découverte du
+   quartier » et en bas le nom du commerce, puis la carte de fin (son nom, « Le film entier sur sa page »,
+   « clikme.fr/b/… »). Le son du film suit, et s'éteint sur la dernière seconde. Huit secondes d'attente de plus,
+   seulement pour ceux du réseau. Il part à côté du film (`videoPartenaires`) ; c'est lui que reçoivent les partenaires
+   — sinon la bande-annonce d'un épisode (`videoReseaux`), sinon la vidéo entière. Raté : ils reçoivent le film entier.
+4. **Sur les réseaux de l'hôte** (`publierUneDecouverte`, l'intermédiaire PostPeer de `lib/reseaux`) : sa vidéo en
    Reel (sinon sa photo), la légende de la découverte, le nom, la ville et le métier de l'invité, le lien de SA page
    sur Facebook (Instagram ne clique pas un lien écrit). **Pas sur Google** : un post sur la fiche Google de l'hôte doit
    parler de l'hôte. La « dernière publication » de l'hôte reste la sienne.
@@ -54,6 +63,11 @@ refait.
   `diffuser`, `refuser`, contre le jeton pro.
 - `src/app/api/site-internet/pro/offer/route.ts` — l'accroche : une annonce avec vidéo part chez les partenaires.
 - `src/app/autour-de-moi/assistante/diffusion-comptoir.tsx` — l'écran.
+- `src/lib/direct/studio-extrait.ts` — l'extrait de 8 s : `monterExtrait` (le Studio, sur sa toile), et
+  `extraitPourPartenaires` (l'interview et l'épisode, sur une toile à lui ; `preparerExtrait` dans `comptoir.tsx`
+  ouvre le son AU TOUCHER, avant toute attente). Le son est décodé du fichier, la vidéo se rejoue muette : un iPhone
+  laisse toujours jouer une vidéo muette. `envoyerStudio`, `envoyerInterview` et `envoyerEpisode` le déposent à côté
+  du film (`videoPartenaires`).
 - `scripts/essai-diffusion-route.mjs` — l'essai de la route sur le faux Supabase (dans la CI).
 
 Réglage : `DIFFUSIONS_BUCKET` (le seau, `diffusions-croisees` par défaut). Les réseaux eux-mêmes demandent
@@ -61,9 +75,6 @@ Réglage : `DIFFUSIONS_BUCKET` (le seau, `diffusions-croisees` par défaut). Les
 
 ## Pas encore fait
 
-- **L'extrait de 8 secondes.** C'est la vidéo entière qui part chez les partenaires (le film du Studio fait 21 à
-  25 s). Le serveur ne découpe pas de vidéo ; l'extrait se fera dans le téléphone de celui qui publie, au moment du
-  montage, comme la bande-annonce d'un épisode (`videoReseaux`).
 - **Mesurer les résultats** (vues, clics venus d'un partenaire) : rien n'est compté pour l'instant.
 - **Au-delà de deux partenaires** : « une place dans un réseau local de visibilité », où ClikMe répartit les contenus
   vers les publics les plus pertinents.
