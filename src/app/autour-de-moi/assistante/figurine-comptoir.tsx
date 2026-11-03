@@ -176,7 +176,7 @@ export function FabriquerFigurine({
   const restants = etat ? etat.essaisRestants : null;
   /** LA VISITE DU COMPTOIR (sans lien pro) : rien ne se fabrique, et on le dit AVANT qu'il prenne son selfie. */
   const visite = !commerce.reel;
-  const ETAPES_ATTENTE = ["Je regarde ton selfie…", "Je sculpte ta tête…", "Je peins les détails…", "Je vernis la coupelle…", "Presque fini…"];
+  const ETAPES_ATTENTE = ["Je regarde ton selfie…", "Je sculpte ta tête…", "Je peins les détails…", "Je choisis ses accessoires…", "Presque fini…"];
 
   return (
     <div className="fg">
@@ -586,7 +586,7 @@ const STYLES_APERCU = `
 .fg-apercu.petit{width:120px;height:190px;border-radius:16px;}
 .fg-apercu.mini{width:88px;height:138px;border-radius:14px;}
 .fg-apercu.mini .fg-buste,.fg-apercu.mini .fg-ressort{animation:none;}
-.fg-buste{position:absolute;left:50%;bottom:30%;width:auto;height:62%;max-width:94%;object-fit:contain;transform:translateX(-50%);transform-origin:50% 100%;animation:fg-rebond 2.6s ease-in-out infinite;}
+.fg-buste{position:absolute;z-index:1;left:50%;bottom:28.5%;width:auto;height:64%;max-width:94%;object-fit:contain;object-position:50% 100%;transform:translateX(-50%);transform-origin:50% 100%;animation:fg-rebond 2.6s ease-in-out infinite;}
 .fg-ressort{position:absolute;left:50%;bottom:14.5%;width:17%;height:17%;transform:translateX(-50%);transform-origin:50% 100%;animation:fg-ressort 2.6s ease-in-out infinite;}
 .fg-socle{position:absolute;left:50%;bottom:6%;width:62%;transform:translateX(-50%);}
 @keyframes fg-rebond{0%,100%{transform:translateX(-50%) translateY(0) rotate(0)}30%{transform:translateX(-50%) translateY(-4%) rotate(-3deg)}60%{transform:translateX(-50%) translateY(1%) rotate(2deg)}}

@@ -608,10 +608,10 @@ function dessinerFigurine(g: CanvasRenderingContext2D, S: Scene, e: EtatFig) {
       g.stroke();
     }
   }
-  // le buste, au bout du ressort, penché un peu plus que lui
+  // le buste, au bout du ressort, penché un peu plus que lui — et le haut du ressort SOUS ses vêtements
   g.translate(tx, ty);
   g.rotate(phi * 1.25);
-  g.drawImage(f.corps, -bw / 2, -bh + 6, bw, bh);
+  g.drawImage(f.corps, -bw / 2, -bh + Math.max(6, bh * 0.035), bw, bh);
   g.restore();
 }
 

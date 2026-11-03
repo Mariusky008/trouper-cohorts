@@ -425,7 +425,12 @@ courbes** que `lili-ross/scene.html` et `figurine.js` (21 s, ou 24,5 avec la fig
   `valider-edition`, contre le jeton pro.
 - **Où il la fait** : **« 🪀 Ma figurine du mois »**, une carte de l'accueil du comptoir et une ligne de Ma boutique
   (écran `MaFigurine`) ; et toujours depuis le Studio, au moment de choisir « avec sa figurine ».
-- On ne fait générer **que le buste** (jusqu'à la coupelle en bois), sur **fond transparent** ; un moteur qui ne sait
+- **Le style ClikMe, celui des figurines faites à la main** (`STYLE` de `figurine-pro.ts`) : une caricature 3D tendre
+  et drôle, la **tête énorme** sur un petit corps, un grand sourire, deux ou trois **accessoires de son métier**
+  (`METIER`), une résine peinte très nette. Le premier essai réel rendait un buste réaliste sur une coupelle en bois :
+  « on est loin de la figurine cartoony ».
+- On ne fait générer **que le buste, jusqu'aux hanches** (pas de coupelle : le ressort part de sous ses vêtements, dans
+  l'aperçu comme dans le film), sur **fond transparent** ; un moteur qui ne sait
   pas en rendre reçoit un **fond vert d'incrustation uni**, retiré par `detourerSurFondUni` (remplissage depuis les
   bords sur la teinte — une clé de couleur simple ronge les visages ; le magenta est trop près de la peau).
 - **Son selfie n'est jamais gardé.** Rien ne passe dans une vidéo avant son « C'est moi ». Trois essais par jour.
@@ -439,9 +444,10 @@ courbes** que `lili-ross/scene.html` et `figurine.js` (21 s, ou 24,5 avec la fig
 - **L'édition** est celle de la collection (`EDITIONS_DATEES`, `editionsDuMoment` de `collection.ts`) : Automne 🍂
   jusqu'au 20 décembre, Noël 🎄 du 1er au 24 décembre (un temps fort passe devant une saison), etc.
 - Une fois **sa** figurine validée, il l'**habille pour l'édition** : son buste validé est renvoyé au moteur d'image
-  avec la consigne `consigneEdition` (`figurine-pro.ts`) — même visage, même pose, même cadrage, même coupelle ; **seule
-  la tenue change**, celle de `TENUES_EDITION` (« un pull en grosse maille couleur rouille, une écharpe à carreaux… »
-  pour l'automne). Ces tenues sont à relire.
+  avec la consigne `consigneEdition` (`figurine-pro.ts`) — même visage, même pose, mêmes proportions, même cadrage ;
+  **seuls la tenue et les accessoires changent**, ceux de `TENUES_EDITION`, généreux comme sur la figurine d'Halloween
+  du propriétaire (pour Noël : bonnet de Père Noël, pull de Noël, écharpe rayée, sucre d'orge, paquet cadeau). Ces
+  tenues sont à relire.
 - Route : `fabriquer-edition` (compte dans les trois essais du jour), puis `valider-edition` (« Elle est parfaite »).
   Rangée dans `etat.json` sous `editions["automne-2026"]` : une édition manquée est manquée. S'il refait sa figurine
   avec un nouveau selfie, celle de l'édition en cours est à rhabiller (elle portait l'ancien visage).

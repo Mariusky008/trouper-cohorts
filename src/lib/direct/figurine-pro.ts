@@ -3,8 +3,8 @@
  * partir d'un selfie ».
  *
  * C'est l'étape 4 de `docs/figurines.md` (9.7, « La fabrication automatique ») dans sa forme la plus simple : un
- * selfie → un buste de figurine (la tête un peu plus grosse, le haut du corps jusqu'à la coupelle en bois) → il
- * valide « C'est moi ». Le ressort et le socle sont COMMUNS, dessinés par l'appli (`studio-montage.ts`) : on ne fait
+ * selfie → sa figurine en caricature 3D (la tête énorme sur un petit corps, jusqu'aux hanches, les accessoires de son
+ * métier — `STYLE`) → il valide « C'est moi ». Le ressort et le socle sont COMMUNS, dessinés par l'appli (`studio-montage.ts`) : on ne fait
  * générer que le buste, ce qui rend la découpe simple et la marque reconnaissable.
  *
  * LES GARDE-FOUS (9.8) : son accord, coché par lui, jamais d'avance ; le selfie n'est pas gardé (il sert à la
@@ -111,26 +111,88 @@ export function histoireDeLaFigurine(f: FigurineDeCollection, aujourdhui: string
   };
 }
 
-/** Ce qu'il porte quand le selfie ne montre que son visage : une tenue simple de son métier, rien de plus. */
-const TENUE: Record<FamilleDouble, string> = {
-  table: "un tablier de cuisine foncé sur une chemise",
-  bar: "une chemise simple, manches retroussées",
-  coiffure: "une tenue noire simple de coiffeur ou de coiffeuse",
-  ongles: "une tenue claire et simple d'esthéticienne",
-  fleurs: "un tablier de fleuriste en toile sur un pull",
-  mode: "une tenue soignée et simple, dans l'air du temps",
-  createur: "un tablier d'atelier en toile",
-  lunettes: "une chemise simple et soignée",
-  seance: "une tenue simple et claire",
-  librairie: "un pull simple",
+/**
+ * SA TENUE DE TOUS LES JOURS, quand le selfie ne montre que son visage, et DEUX OU TROIS PETITS ACCESSOIRES DE SON
+ * MÉTIER, portés ou accrochés à sa tenue — c'est ce qui rend la figurine drôle et la sienne. Rien sur la tête ni sur le
+ * visage (ses cheveux font la ressemblance), rien d'alcoolisé (loi Évin).
+ */
+const METIER: Record<FamilleDouble, { tenue: string; accessoires: string }> = {
+  table: {
+    tenue: "un tablier de cuisine foncé sur une chemise, manches retroussées",
+    accessoires: "une cuillère en bois qui dépasse de la poche du tablier, un torchon à carreaux sur l'épaule",
+  },
+  bar: {
+    tenue: "une chemise, manches retroussées, et un tablier de barista",
+    accessoires: "un torchon sur l'épaule, une petite tasse de café fumante accrochée à la ceinture du tablier",
+  },
+  coiffure: {
+    tenue: "une tenue noire soignée de coiffeur ou de coiffeuse",
+    accessoires: "un peigne et une paire de ciseaux qui dépassent d'une poche, un petit séchoir accroché à la ceinture",
+  },
+  ongles: {
+    tenue: "une tenue claire et soignée d'esthéticienne",
+    accessoires: "un petit flacon de vernis rose et une lime à ongles qui dépassent d'une poche",
+  },
+  fleurs: {
+    tenue: "un tablier de fleuriste en toile sur un pull",
+    accessoires: "un sécateur dans la poche du tablier, d'où dépassent aussi quelques fleurs fraîches",
+  },
+  mode: {
+    tenue: "une tenue soignée, dans l'air du temps",
+    accessoires: "un mètre ruban de couturière autour du cou, un petit sac shopping au creux du bras",
+  },
+  createur: {
+    tenue: "un tablier d'atelier en toile",
+    accessoires: "un crayon et un petit outil d'atelier dans la poche du tablier",
+  },
+  lunettes: {
+    tenue: "une chemise simple et soignée",
+    accessoires: "un étui à lunettes et un petit chiffon dans la poche de chemise",
+  },
+  seance: {
+    tenue: "une tenue simple et soignée de son métier",
+    accessoires: "un petit carnet de rendez-vous glissé dans la poche",
+  },
+  librairie: {
+    tenue: "un pull en maille",
+    accessoires: "un livre coincé sous le bras, un marque-page qui dépasse de la poche",
+  },
 };
+
+/**
+ * LE STYLE CLIKME — celui des figurines faites à la main (la figurine d'Halloween du propriétaire) : une caricature
+ * tendre et drôle, PAS un buste réaliste. Le premier essai réel (novembre 2026) a rendu un buste réaliste posé sur une
+ * coupelle en bois : « on est loin de la figurine cartoony ». D'où : la tête énorme, le petit corps, les traits un peu
+ * forcés mais lui, les accessoires, et le corps qui s'arrête aux hanches (le ressort part de sous ses vêtements).
+ */
+const STYLE = [
+  "LE STYLE (le plus important après la ressemblance) :",
+  "- Une figurine de collection à tête dodelinante (« bobblehead »), style caricature 3D tendre et drôle, comme un personnage de film d'animation : PAS un buste réaliste, PAS une statue.",
+  "- Une TÊTE ÉNORME, à peu près aussi haute que tout le reste du corps visible, posée sur un petit corps fin.",
+  "- Les traits caricaturés avec affection : un grand sourire franc qui montre les dents, des yeux pétillants et expressifs. On le reconnaît au premier coup d'œil.",
+  "- Une résine peinte à la main très haut de gamme, finition satinée, couleurs vives et chaleureuses, détails fins et nets (coutures, mailles, reflets dans les yeux), peinture impeccable sans aucune bavure.",
+  "- Rendu de photo produit en très haute définition : net partout, éclairage de studio doux, contours nets et propres.",
+];
+
+/** LE CADRAGE : le haut du corps jusqu'aux hanches, et RIEN dessous — le ressort et le socle sont ceux de ClikMe. */
+const cadrage = (fond: "transparent" | "vert") => [
+  "LE CADRAGE :",
+  "- La figurine de face, centrée, les bras croisés, du haut de la tête jusqu'aux hanches.",
+  "- Le corps s'arrête aux hanches : le bas de la tenue (veste, tablier, pull ou jupe), un peu évasé, termine la figurine. Pas de jambes.",
+  "- RIEN sous la figurine : pas de coupelle, pas de ressort, pas de socle, pas de support, pas d'ombre portée. Le ressort sera fixé sous ses vêtements.",
+  "- Toute la figurine visible, avec un peu de marge autour.",
+  fond === "transparent"
+    ? "- Fond transparent."
+    : "- Un fond vert d'incrustation uni et parfaitement plat (#00B140), sans dégradé, sans texture, sans ombre. Rien de vert sur la figurine.",
+  "- Aucun texte, aucun logo, aucune plaque, aucune autre personne.",
+];
 
 /**
  * LA CONSIGNE, MOT POUR MOT.
  *
  * Deux leçons de l'essayage (`consigne-essai.ts`) sont reprises telles quelles : nommer les traits un par un et
- * interdire d'embellir ; et ne JAMAIS affirmer un accessoire (« ses lunettes ») — c'est ce qui en fait ajouter à
- * quelqu'un qui n'en porte pas. On dit donc : s'il en porte, on les garde ; sinon, on n'en ajoute pas.
+ * interdire de le changer ; et ne JAMAIS affirmer un accessoire du visage (« ses lunettes ») — c'est ce qui en fait
+ * ajouter à quelqu'un qui n'en porte pas. On dit donc : s'il en porte, on les garde ; sinon, on n'en ajoute pas.
  *
  * `fond` : « transparent » quand le moteur sait rendre un fond transparent ; sinon un VERT D'INCRUSTATION uni, que le
  * serveur retire (`detourerSurFondUni`). Vert et pas magenta : le magenta est trop près des tons de la peau (un
@@ -138,65 +200,65 @@ const TENUE: Record<FamilleDouble, string> = {
  * l'utilise.
  */
 export function consigneFigurine(famille: FamilleDouble, fond: "transparent" | "vert"): string {
+  const m = METIER[famille] ?? METIER.createur;
   return [
-    "Transforme la personne de cette photo en figurine de collection à tête dodelinante (« bobblehead »), photographiée en studio.",
+    "Transforme la personne de cette photo en figurine de collection à tête dodelinante, caricature 3D tendre et drôle, photographiée en studio.",
     "",
     "LA RESSEMBLANCE AVANT TOUT :",
-    "- Garde exactement son visage : la forme du visage, les yeux, le nez, la bouche, la mâchoire, la couleur de peau, l'âge, la coupe et la couleur des cheveux, la barbe ou la moustache s'il y en a.",
-    "- N'embellis pas, ne rajeunis pas, ne lisse pas la peau, ne change pas les traits.",
-    "- S'il porte des lunettes, garde-les telles quelles ; s'il n'en porte pas, n'en ajoute pas. N'ajoute aucun bijou, chapeau ou accessoire absent de la photo.",
-    "- Un sourire naturel et chaleureux.",
+    "- Garde son visage : la forme du visage, les yeux, le nez, la bouche, la mâchoire, la couleur de peau, l'âge, la coupe et la couleur des cheveux, la barbe ou la moustache s'il y en a.",
+    "- Garde ce qui le rend unique (ses rides, ses fossettes, ses sourcils) : ne le rajeunis pas, ne le change pas en quelqu'un d'autre.",
+    "- S'il porte des lunettes, garde-les telles quelles ; s'il n'en porte pas, n'en ajoute pas. Rien sur la tête ni sur le visage qui ne soit pas sur la photo.",
     "",
-    "LE STYLE :",
-    "- Une figurine en résine peinte à la main, haut de gamme, très détaillée, éclairage de studio doux.",
-    "- La tête environ 1,6 fois plus grosse que la normale, sur un corps plus petit, comme une figurine de collection.",
+    ...STYLE,
     "",
-    "LE CADRAGE :",
-    "- Seulement la tête et le haut du corps, jusqu'à la taille, les bras croisés.",
-    `- Les vêtements visibles sur la photo ; si la photo ne montre que le visage, ${TENUE[famille] ?? TENUE.createur}.`,
-    "- Le buste se termine à la taille sur une petite coupelle ronde en bois verni, comme le haut d'une figurine à ressort.",
-    "- RIEN sous la coupelle : pas de ressort, pas de socle, pas de support, pas de table, pas d'ombre portée.",
-    "- Vue de face, centrée, la figurine entière visible avec de la marge autour.",
-    fond === "transparent"
-      ? "- Fond transparent."
-      : "- Un fond vert d'incrustation uni et parfaitement plat (#00B140), sans dégradé, sans texture, sans ombre. Rien de vert sur la figurine.",
-    "- Aucun texte, aucun logo, aucune autre personne.",
+    "SA TENUE :",
+    `- Une tenue de son métier, gaie et soignée : ${m.tenue}, dans les couleurs de ses vêtements sur la photo si on les voit.`,
+    `- Deux ou trois petits accessoires de son métier, soignés et drôles, portés ou accrochés à sa tenue : ${m.accessoires}.`,
+    "",
+    ...cadrage(fond),
   ].join("\n");
 }
 
 /**
- * LA TENUE DE CHAQUE ÉDITION — une seule chose qui change, pour que la figurine reste reconnaissable d'un mois à
- * l'autre. Rien d'alcoolisé (loi Évin), rien qui couvre le visage. Clés : celles de `EDITIONS_DATEES`.
+ * LA TENUE DE CHAQUE ÉDITION — la même figurine, déguisée, avec des accessoires généreux (la figurine d'Halloween du
+ * propriétaire en porte une demi-douzaine : chapeau, sac décoré, chat noir, breloques). Les chapeaux et bonnets sont
+ * permis ici, cheveux visibles et visage dégagé. Rien d'alcoolisé (loi Évin). Clés : celles de `EDITIONS_DATEES`.
  */
 export const TENUES_EDITION: Record<string, string> = {
-  hiver: "une écharpe en grosse laine et un bonnet en tricot",
-  "saint-valentin": "un pull rouge orné d'un petit cœur brodé, et un petit cœur rouge posé sur la coupelle",
-  printemps: "une chemise à petites fleurs et une fleur à la boutonnière",
-  musique: "un casque audio autour du cou",
-  ete: "une chemise légère à manches courtes et un chapeau de paille",
-  automne: "un pull en grosse maille couleur rouille, une écharpe à carreaux, et quelques feuilles d'automne posées sur la coupelle",
-  halloween: "un chapeau de sorcière noir et orange, et une petite citrouille posée sur la coupelle",
-  noel: "un bonnet de Père Noël rouge et blanc, et une écharpe rouge",
+  hiver:
+    "un bonnet à pompon en grosse laine, une écharpe tricotée, des moufles, une broche en flocon de neige, et une tasse de chocolat chaud fumante au creux du bras",
+  "saint-valentin":
+    "un pull rouge à petits cœurs, une broche en cœur, un petit bouquet de roses rouges au creux du bras, et un ballon en forme de cœur attaché au poignet",
+  printemps:
+    "une chemise à petites fleurs, une couronne de fleurs fraîches dans les cheveux, un arrosoir miniature accroché à la ceinture, et un papillon posé sur l'épaule",
+  musique:
+    "un t-shirt à notes de musique, un casque audio autour du cou, une petite guitare en bandoulière, et des lunettes de soleil accrochées au col (pas sur le visage)",
+  ete: "une chemise hawaïenne colorée, un chapeau de paille, des lunettes de soleil accrochées à la poche (pas sur le visage), et une glace à l'italienne dans une main",
+  automne:
+    "un pull en grosse maille couleur rouille, une écharpe à carreaux, un panier en osier rempli de pommes et de champignons au bras, et une feuille d'érable dorée épinglée comme une broche",
+  halloween:
+    "une tenue de sorcière ou de sorcier violet foncé à motifs, un chapeau de sorcière à ruban de dentelle avec une petite citrouille épinglée, un sac en paille décoré de chauves-souris et d'une toile d'araignée d'où sort la tête d'un petit chat noir, et un bracelet à breloques (un petit fantôme, un bonbon d'Halloween)",
+  noel: "un bonnet de Père Noël rouge à pompon blanc, un gros pull de Noël tricoté à rennes et flocons, une écharpe rayée rouge et blanche, un sucre d'orge qui dépasse de la poche, et un petit paquet cadeau à nœud doré sous le bras",
 };
 
 /**
- * LA CONSIGNE DE L'ÉDITION : la figurine de l'image, la même, habillée pour l'édition. Le visage, la pose, le cadrage
- * et la coupelle ne bougent pas — c'est ce qui fait d'une édition « la même figurine, déguisée ».
+ * LA CONSIGNE DE L'ÉDITION : la figurine de l'image, la même, déguisée pour l'édition. Le visage, la pose, les
+ * proportions et le cadrage ne bougent pas — c'est ce qui fait d'une édition « la même figurine, déguisée ».
  */
 export function consigneEdition(cleEdition: string, nomEdition: string, fond: "transparent" | "vert"): string {
-  const tenue = TENUES_EDITION[cleEdition] ?? "une tenue de saison simple";
+  const tenue = TENUES_EDITION[cleEdition] ?? "une tenue de saison avec deux ou trois accessoires de saison";
   return [
-    `Habille cette figurine pour l'édition « ${nomEdition} » : ${tenue}.`,
+    `Déguise cette figurine pour l'édition « ${nomEdition} » : ${tenue}.`,
     "",
     "C'EST LA MÊME FIGURINE :",
-    "- Garde exactement le même visage : les mêmes traits, la même expression, la même couleur de peau, les mêmes cheveux, la même barbe s'il y en a, les mêmes lunettes s'il en porte (et aucune s'il n'en porte pas).",
-    "- La même pose (les bras croisés), la même taille, le même cadrage, le même style de résine peinte, le même éclairage.",
-    "- La même petite coupelle ronde en bois verni sous le buste, et RIEN dessous : pas de ressort, pas de socle, pas d'ombre portée.",
-    "- Ne change que la tenue et les accessoires dits plus haut. Rien sur le visage.",
-    fond === "transparent"
-      ? "- Fond transparent."
-      : "- Un fond vert d'incrustation uni et parfaitement plat (#00B140), sans dégradé, sans texture, sans ombre. Rien de vert sur la figurine.",
-    "- Aucun texte, aucun logo, aucune autre personne.",
+    "- Garde exactement le même visage : les mêmes traits, le même grand sourire, la même couleur de peau, les mêmes cheveux (visibles sous un éventuel chapeau), la même barbe s'il y en a, les mêmes lunettes s'il en porte (et aucune s'il n'en porte pas).",
+    "- La même pose (les bras croisés), les mêmes proportions (la tête énorme sur le petit corps), le même style de caricature 3D en résine peinte.",
+    "- Ne change que la tenue et les accessoires dits plus haut, généreux et pleins de détails, soignés et drôles. Rien sur le visage.",
+    "",
+    "LA FINITION :",
+    ...STYLE.slice(4),
+    "",
+    ...cadrage(fond),
   ].join("\n");
 }
 

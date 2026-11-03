@@ -80,7 +80,8 @@ ta fleuriste d'Halloween »).
 1. **Des photos aux images alignées.** Le pro envoie trois photos de lui. Un modèle d'images qui sait modifier une
    image en gardant la personne fait le buste neutre, puis chaque expression et chaque geste **à partir de ce buste**
    (sinon elles ne se superposent pas). On vérifie l'alignement (corrélation de phase, déjà écrite) et on recale.
-2. **Un ressort et un socle communs.** On ne fait générer que le buste, jusqu'à la coupelle en bois. Le ressort et le
+2. **Un ressort et un socle communs.** On ne fait générer que le buste, jusqu'aux hanches (le ressort part de sous ses
+   vêtements ; une première version demandait une coupelle en bois, abandonnée en novembre 2026). Le ressort et le
    socle sont les mêmes pour tous, dessinés une fois, avec la plaque gravée au nom du commerce : la découpe devient
    simple et la marque est reconnaissable.
 3. **Les repères automatiques.** Le menton et la zone de la tête viennent des repères du visage (MediaPipe, déjà dans
