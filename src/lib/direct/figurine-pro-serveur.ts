@@ -250,7 +250,7 @@ async function dejaTransparente(img: Buffer): Promise<boolean> {
   return coins.every((k) => data[k * 4 + 3] < 16);
 }
 
-/** La figurine seule : rognée au plus près (un peu de marge), 1 100 pixels de haut au plus. */
+/** La figurine seule : rognée au plus près (un peu de marge), dans toute la définition rendue (1 536 pixels de haut au plus). */
 export async function rogner(img: Buffer): Promise<Buffer> {
   const { data, info } = await sharp(img).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width: w, height: h } = info;
@@ -271,9 +271,9 @@ export async function rogner(img: Buffer): Promise<Buffer> {
   const left = Math.max(0, x0 - m);
   const top = Math.max(0, y0 - m);
   const width = Math.min(w - left, x1 - x0 + 1 + 2 * m);
-  // LE BAS AU RAS DE LA COUPELLE : c'est là que le ressort s'accroche
+  // LE BAS AU RAS DES HANCHES : c'est sous ses vêtements que le ressort s'accroche
   const height = Math.min(h - top, y1 + 1 - top);
-  return sharp(img).extract({ left, top, width, height }).resize({ height: 1100, withoutEnlargement: true }).png({ compressionLevel: 9 }).toBuffer();
+  return sharp(img).extract({ left, top, width, height }).resize({ height: 1536, withoutEnlargement: true }).png({ compressionLevel: 9 }).toBuffer();
 }
 
 // ─── la fabrication ─────────────────────────────────────────────────────────────────────────────
