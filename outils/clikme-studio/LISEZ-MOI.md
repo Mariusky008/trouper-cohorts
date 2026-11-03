@@ -441,8 +441,9 @@ courbes** que `lili-ross/scene.html` et `figurine.js` (21 s, ou 24,5 avec la fig
 
 ### Sa figurine du mois (l'édition du moment)
 
-- **L'édition** est celle de la collection (`EDITIONS_DATEES`, `editionsDuMoment` de `collection.ts`) : Automne 🍂
-  jusqu'au 20 décembre, Noël 🎄 du 1er au 24 décembre (un temps fort passe devant une saison), etc.
+- **L'édition** est celle de la collection (`EDITIONS_DATEES`, `editionsDuMoment` de `collection.ts`) : **une par
+  mois**, avec son thème — Halloween 🎃 en octobre, Automne 🍂 en novembre, Noël 🎄 en décembre, Galette des rois 👑 en
+  janvier… (`docs/figurines.md`, 9.2).
 - Une fois **sa** figurine validée, il l'**habille pour l'édition** : son buste validé est renvoyé au moteur d'image
   avec la consigne `consigneEdition` (`figurine-pro.ts`) — même visage, même pose, mêmes proportions, même cadrage ;
   **seuls la tenue et les accessoires changent**, ceux de `TENUES_EDITION`, généreux comme sur la figurine d'Halloween

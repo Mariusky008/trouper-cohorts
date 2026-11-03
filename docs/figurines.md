@@ -180,7 +180,7 @@ Un commerce = une page (sa famille) ; un client = une page (sa collection).
 **Construit le 2 novembre (étape 1)** :
 
 - le calcul (`src/lib/direct/collection.ts`) : 8 éditions datées (Hiver, Saint-Valentin, Printemps, Fête de la
-  musique, Été, Automne, Halloween, Noël) et 2 rares ; une visite validée (`clik_visite`) = une figurine au plus, la
+  musique, Été, Automne, Halloween, Noël) et 2 rares — **depuis le 3 novembre, 12 éditions, une par mois (voir 9.2)** ; une visite validée (`clik_visite`) = une figurine au plus, la
   plus rare d'abord (rare si un bon plan « place libre » a été publié ce jour-là, puis le temps fort, puis la
   saison) ; la collection commence à la première visite et dure le temps de passer par chaque édition, puis une
   nouvelle commence ; les rares et les figurines d'or numérotées dans toute la famille (`famille-serveur.ts`) ;
@@ -277,6 +277,13 @@ On la bâtit sur ce qui existe déjà : la famille du commerce et ses pièces (b
 la visite validée au comptoir (le bon « Servie ✓ », le mot du jour noté au carnet), Ma Maison et « Mes familles ».
 
 ### 9.2 Les éditions : 10 par an et par commerce
+
+> **Décidé le 3 novembre 2026 : UNE ÉDITION PAR MOIS**, « plus simple pour se repérer qu'avec des saisons ». Douze
+> figurines du mois, chacune avec son thème — 👑 Galette des rois (janvier), 💘 Saint-Valentin, 🌸 Printemps, 🐣 Pâques,
+> 💐 Fête des mères, 🎶 Fête de la musique, ☀️ Été, 🏖️ Vacances, 🎒 Rentrée, 🎃 Halloween (octobre), 🍂 Automne
+> (novembre), 🎄 Noël (décembre) — et les deux éditions rares : quatorze cases. **La figurine d'or reste à 10** (on peut
+> en manquer quatre) : toutes les pages disent « à 10 ». Le tableau ci-dessous est la version d'avant (saisons et
+> temps forts), gardé pour l'histoire. Le calcul : `EDITIONS_DATEES` et `TOTAL_COLLECTION` de `collection.ts`.
 
 | | Combien | Comment on la gagne |
 |---|---|---|

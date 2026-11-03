@@ -220,20 +220,28 @@ export function consigneFigurine(famille: FamilleDouble, fond: "transparent" | "
 }
 
 /**
- * LA TENUE DE CHAQUE ÉDITION — la même figurine, déguisée, avec des accessoires généreux (la figurine d'Halloween du
+ * LA TENUE DE CHAQUE ÉDITION (une par mois : `EDITIONS_DATEES`) — la même figurine, déguisée, avec des accessoires généreux (la figurine d'Halloween du
  * propriétaire en porte une demi-douzaine : chapeau, sac décoré, chat noir, breloques). Les chapeaux et bonnets sont
  * permis ici, cheveux visibles et visage dégagé. Rien d'alcoolisé (loi Évin). Clés : celles de `EDITIONS_DATEES`.
  */
 export const TENUES_EDITION: Record<string, string> = {
-  hiver:
-    "un bonnet à pompon en grosse laine, une écharpe tricotée, des moufles, une broche en flocon de neige, et une tasse de chocolat chaud fumante au creux du bras",
+  galette:
+    "une couronne dorée de galette des rois posée de travers sur la tête, un pull douillet couleur crème, une écharpe en grosse laine, et une part de galette dorée avec une petite fève en porcelaine au creux du bras",
   "saint-valentin":
     "un pull rouge à petits cœurs, une broche en cœur, un petit bouquet de roses rouges au creux du bras, et un ballon en forme de cœur attaché au poignet",
   printemps:
     "une chemise à petites fleurs, une couronne de fleurs fraîches dans les cheveux, un arrosoir miniature accroché à la ceinture, et un papillon posé sur l'épaule",
+  paques:
+    "un pull pastel, des oreilles de lapin en peluche sur un serre-tête, un petit panier en osier rempli d'œufs en chocolat colorés au bras, et un poussin jaune posé sur l'épaule",
+  "fete-des-meres":
+    "une chemise à fleurs, un grand bouquet de fleurs fraîches enveloppé de papier kraft au creux du bras, une broche en forme de cœur, et une petite boîte cadeau à ruban rose",
   musique:
     "un t-shirt à notes de musique, un casque audio autour du cou, une petite guitare en bandoulière, et des lunettes de soleil accrochées au col (pas sur le visage)",
   ete: "une chemise hawaïenne colorée, un chapeau de paille, des lunettes de soleil accrochées à la poche (pas sur le visage), et une glace à l'italienne dans une main",
+  vacances:
+    "une chemise de plage à rayures, un chapeau de paille à ruban, une bouée canard autour de la taille, et un seau et une pelle de plage accrochés à la main",
+  rentree:
+    "un gilet en maille, un cartable d'écolier rétro sur le dos, un crayon à papier géant coincé sous le bras, et une pomme rouge posée dans la poche",
   automne:
     "un pull en grosse maille couleur rouille, une écharpe à carreaux, un panier en osier rempli de pommes et de champignons au bras, et une feuille d'érable dorée épinglée comme une broche",
   halloween:

@@ -6,10 +6,13 @@
  * commerçant a sa figurine (c'est elle qu'on gagne). Les pièces deviennent des paliers de la collection.
  *
  * LES RÈGLES, ET SEULEMENT ICI :
- *   · 10 FIGURINES PAR COLLECTION : 4 saisons, 4 temps forts, 2 éditions rares ;
+ *   · UNE ÉDITION PAR MOIS (novembre 2026 — « plus simple pour se repérer qu'avec des saisons ») : douze figurines du
+ *     mois, chacune avec son thème (Galette des rois en janvier… Halloween en octobre, Noël en décembre), et deux
+ *     éditions rares ;
+ *   · LA FIGURINE D'OR À 10 (`TOTAL_COLLECTION`) sur ces quatorze : on peut en manquer quatre ;
  *   · UNE FIGURINE = UNE VISITE VALIDÉE AU COMPTOIR (`clik_visite`), un jour = une figurine au plus ; ce jour-là, la
  *     plus rare d'abord : une édition rare si le commerce avait annoncé une place libre (un bon plan publié ce jour),
- *     sinon le temps fort en cours, sinon la saison ;
+ *     sinon la figurine du mois ;
  *   · UNE ÉDITION MANQUÉE EST MANQUÉE : pas de rattrapage, jamais d'achat — c'est la vraie rareté ;
  *   · SA COLLECTION COMMENCE À SA PREMIÈRE VISITE et dure le temps de passer une fois par chaque édition (douze mois) :
  *     on peut la commencer n'importe quel jour et la finir. Après, une nouvelle collection commence.
@@ -21,87 +24,47 @@
  * FICHIER PARTAGÉ (navigateur et serveur) : aucun accès à la base ici.
  */
 
-export type SorteEdition = "saison" | "temps-fort" | "rare";
+export type SorteEdition = "mois" | "rare";
 export type EtatCase = "gagnee" | "en-cours" | "a-venir" | "manquee" | "rare";
 
 type EditionDatee = {
   cle: string;
   nom: string;
   emoji: string;
-  sorte: "saison" | "temps-fort";
+  sorte: "mois";
   debut: string;
+  /** Le dernier jour du mois (« 02-29 » : le 28 les années non bissextiles — voir `finEnAnnee`). */
   fin: string;
 };
 
-/** Les éditions datées (mois-jour ; une fenêtre peut passer le 31 décembre). */
+/** Les éditions datées : une par mois, du premier au dernier jour (mois-jour). */
+const mois = (cle: string, nom: string, emoji: string, mm: string, dernier: string): EditionDatee => ({
+  cle,
+  nom,
+  emoji,
+  sorte: "mois",
+  debut: `${mm}-01`,
+  fin: `${mm}-${dernier}`,
+});
 export const EDITIONS_DATEES: EditionDatee[] = [
-  {
-    cle: "hiver",
-    nom: "Hiver",
-    emoji: "❄️",
-    sorte: "saison",
-    debut: "12-21",
-    fin: "03-19",
-  },
-  {
-    cle: "saint-valentin",
-    nom: "Saint-Valentin",
-    emoji: "💘",
-    sorte: "temps-fort",
-    debut: "02-07",
-    fin: "02-14",
-  },
-  {
-    cle: "printemps",
-    nom: "Printemps",
-    emoji: "🌸",
-    sorte: "saison",
-    debut: "03-20",
-    fin: "06-20",
-  },
-  {
-    cle: "musique",
-    nom: "Fête de la musique",
-    emoji: "🎶",
-    sorte: "temps-fort",
-    debut: "06-14",
-    fin: "06-21",
-  },
-  {
-    cle: "ete",
-    nom: "Été",
-    emoji: "☀️",
-    sorte: "saison",
-    debut: "06-21",
-    fin: "09-22",
-  },
-  {
-    cle: "automne",
-    nom: "Automne",
-    emoji: "🍂",
-    sorte: "saison",
-    debut: "09-23",
-    fin: "12-20",
-  },
-  {
-    cle: "halloween",
-    nom: "Halloween",
-    emoji: "🎃",
-    sorte: "temps-fort",
-    debut: "10-24",
-    fin: "10-31",
-  },
-  {
-    cle: "noel",
-    nom: "Noël",
-    emoji: "🎄",
-    sorte: "temps-fort",
-    debut: "12-01",
-    fin: "12-24",
-  },
+  mois("galette", "Galette des rois", "👑", "01", "31"),
+  mois("saint-valentin", "Saint-Valentin", "💘", "02", "29"),
+  mois("printemps", "Printemps", "🌸", "03", "31"),
+  mois("paques", "Pâques", "🐣", "04", "30"),
+  mois("fete-des-meres", "Fête des mères", "💐", "05", "31"),
+  mois("musique", "Fête de la musique", "🎶", "06", "30"),
+  mois("ete", "Été", "☀️", "07", "31"),
+  mois("vacances", "Vacances", "🏖️", "08", "31"),
+  mois("rentree", "Rentrée", "🎒", "09", "30"),
+  mois("halloween", "Halloween", "🎃", "10", "31"),
+  mois("automne", "Automne", "🍂", "11", "30"),
+  mois("noel", "Noël", "🎄", "12", "31"),
 ];
 export const RARES = 2;
-export const TOTAL_COLLECTION = EDITIONS_DATEES.length + RARES;
+/** Les cases de l'étagère : les douze du mois et les deux rares. */
+export const CASES_COLLECTION = EDITIONS_DATEES.length + RARES;
+/** LA FIGURINE D'OR : à 10 figurines gagnées dans la collection (sur quatorze) — le chiffre que toutes les pages disent. */
+export const TOTAL_COLLECTION: number = 10;
 
 /** Les paliers de la collection (voir l'en-tête : ils disent vrai). */
 export const PALIERS_COLLECTION = [
@@ -168,6 +131,13 @@ const ecart = (a: string, b: string) =>
   Math.round((jourEnMs(b) - jourEnMs(a)) / 86_400_000);
 const dans = (j: string, a: string, b: string) => j >= a && j <= b;
 
+/** Le dernier jour de l'édition, l'année `y` (« AAAA-MM-JJ ») : février finit le 28 les années non bissextiles. */
+export function finEnAnnee(e: EditionDatee, y: number): string {
+  const an = e.fin < e.debut ? y + 1 : y;
+  const bissextile = (an % 4 === 0 && an % 100 !== 0) || an % 400 === 0;
+  return `${an}-${e.fin === "02-29" && !bissextile ? "02-28" : e.fin}`;
+}
+
 /** La première fenêtre de cette édition qui finit le jour `depuis` ou après. */
 export function fenetre(
   e: EditionDatee,
@@ -176,13 +146,10 @@ export function fenetre(
   const an = +depuis.slice(0, 4);
   for (let y = an - 1; y <= an + 1; y++) {
     const debut = `${y}-${e.debut}`;
-    const fin = `${e.fin < e.debut ? y + 1 : y}-${e.fin}`;
+    const fin = finEnAnnee(e, y);
     if (fin >= depuis) return { debut, fin };
   }
-  return {
-    debut: `${an + 1}-${e.debut}`,
-    fin: `${e.fin < e.debut ? an + 2 : an + 1}-${e.fin}`,
-  };
+  return { debut: `${an + 1}-${e.debut}`, fin: finEnAnnee(e, an + 1) };
 }
 
 type Gain = { cle: string; le: string; rare: boolean };
@@ -206,12 +173,8 @@ function remplir(debut: string, jours: string[], creux: Set<string>) {
       gains.push({ cle: `rare-${rares}`, le: j, rare: true });
       continue;
     }
-    // le temps fort en cours d'abord (sa fenêtre est courte), puis la saison
-    const e = [...EDITIONS_DATEES]
-      .sort((a, b) =>
-        a.sorte === b.sorte ? 0 : a.sorte === "temps-fort" ? -1 : 1,
-      )
-      .find(
+    // la figurine du mois (une seule édition par jour : les mois ne se chevauchent pas)
+    const e = EDITIONS_DATEES.find(
         (x) =>
           !pris.has(x.cle) &&
           dans(j, fenetres.get(x.cle)!.debut, fenetres.get(x.cle)!.fin),
@@ -329,8 +292,8 @@ export type EditionDuMoment = {
 };
 
 /**
- * Pour qui n'a pas encore de collection (`/collection`) : l'édition qu'on gagne en venant aujourd'hui — le temps fort
- * d'abord, comme dans `remplir` —, et celle qui commence ensuite.
+ * L'édition qu'on gagne en venant aujourd'hui (celle du mois), et celle qui commence ensuite — pour `/collection`, et
+ * pour la figurine du mois du commerçant (`figurine-pro-serveur.ts`).
  */
 export function editionsDuMoment(aujourdhui: string): {
   maintenant: EditionDuMoment | null;
@@ -345,9 +308,7 @@ export function editionsDuMoment(aujourdhui: string): {
     fin: f.fin,
     jours,
   });
-  const enCours = toutes
-    .filter(({ f }) => dans(aujourdhui, f.debut, f.fin))
-    .sort((a, b) => Number(b.e.sorte === "temps-fort") - Number(a.e.sorte === "temps-fort"))[0];
+  const enCours = toutes.find(({ f }) => dans(aujourdhui, f.debut, f.fin));
   const aVenir = toutes
     .filter(({ f }) => f.debut > aujourdhui)
     .sort((a, b) => a.f.debut.localeCompare(b.f.debut))[0];

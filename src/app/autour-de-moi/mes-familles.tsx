@@ -55,7 +55,7 @@ export function MesFamilles({ reelle }: { reelle: boolean }) {
                   </small>
                   <em>
                     {f.collection
-                      ? `🏆 ${f.collection.gagnees} / ${f.collection.total} figurines${aGagner(f.collection)}`
+                      ? `🏆 ${Math.min(f.collection.gagnees, f.collection.total)} / ${f.collection.total} figurines${aGagner(f.collection)}`
                       : suivant
                         ? `${NOM_GRADE[suivant.grade]} ${EMOJI_GRADE[suivant.grade]} : ${cheminEnMots(suivant.chemins, f.nom)
                             .replace(/\.$/, "")

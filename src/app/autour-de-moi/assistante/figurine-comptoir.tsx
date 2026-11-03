@@ -341,7 +341,7 @@ export function MaFigurine({
           <>
             {!commerce.reel || (etat && !etat.validee) ? (
               <p className="mf-intro">
-                Tes clients gagnent <b>ta figurine</b> en venant chez toi, une édition à chaque saison
+                Tes clients gagnent <b>ta figurine</b> en venant chez toi, une édition chaque mois
                 {ed ?? duJour ? (
                   <>
                     {" "}
