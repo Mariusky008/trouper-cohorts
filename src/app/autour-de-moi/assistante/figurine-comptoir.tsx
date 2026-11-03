@@ -122,7 +122,7 @@ export function FabriquerFigurine({
   const choix = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // sans lien pro (la démonstration), rien à demander : l'écran de fabrication le dit lui-même
+    // sans lien pro (la visite du comptoir), rien à demander : l'écran le dit dès le début (`visite`)
     if (!commerce.reel) return;
     let vivant = true;
     void demander(commerce, { action: "etat" }).then((r) => {
@@ -172,7 +172,10 @@ export function FabriquerFigurine({
     } else setErreur(r.error ?? "La validation n'a pas pu se faire. Réessaie.");
   };
 
-  const restants = etat?.essaisRestants ?? 0;
+  /** `null` tant qu'on ne sait pas (l'état arrive, ou n'a pas pu arriver) : le serveur compte, on ne bloque pas pour rien. */
+  const restants = etat ? etat.essaisRestants : null;
+  /** LA VISITE DU COMPTOIR (sans lien pro) : rien ne se fabrique, et on le dit AVANT qu'il prenne son selfie. */
+  const visite = !commerce.reel;
   const ETAPES_ATTENTE = ["Je regarde ton selfie…", "Je sculpte ta tête…", "Je peins les détails…", "Je vernis la coupelle…", "Presque fini…"];
 
   return (
@@ -195,7 +198,7 @@ export function FabriquerFigurine({
           <button type="button" className="cz-go grand" onClick={() => void valider()}>
             ✅ C’est moi !
           </button>
-          {restants > 0 ? (
+          {restants !== null && restants > 0 ? (
             <button type="button" className="cz-second" onClick={() => setEtat({ ...etat, proposee: null })}>
               ↺ En refaire une ({restants} {restants > 1 ? "essais" : "essai"} aujourd’hui)
             </button>
@@ -207,6 +210,11 @@ export function FabriquerFigurine({
         <section className="fg-selfie">
           <h2>Ta figurine, à partir d’un selfie</h2>
           <p>Une figurine de collection à ton image, sur son ressort : elle présentera tes vidéos.</p>
+          {visite && (
+            <p className="fg-visite">
+              👀 Ici, c’est la visite du comptoir : ta figurine se fabrique dans <b>ton</b> comptoir, celui que tu ouvres avec ton lien pro.
+            </p>
+          )}
           <ul className="fg-conseils">
             <li>🤳 De face, à la lumière du jour, le visage bien net.</li>
             <li>🙂 Toi seul sur la photo, sans lunettes de soleil.</li>
@@ -226,10 +234,14 @@ export function FabriquerFigurine({
               C’est bien moi, et j’accepte que ClikMe fabrique ma figurine à partir de cette photo. La photo n’est pas gardée.
             </span>
           </label>
-          <button type="button" className="cz-go grand" disabled={!selfie || !accord || restants <= 0} onClick={() => void fabriquer()}>
+          <button type="button" className="cz-go grand" disabled={visite || !selfie || !accord || restants === 0} onClick={() => void fabriquer()}>
             🪀 Fabriquer ma figurine
           </button>
-          {etat && restants <= 0 && <small className="fg-note">Trois figurines aujourd’hui, c’est le maximum : à demain !</small>}
+          {/* LE BOUTON GRIS DIT POURQUOI : il ne reste jamais muet */}
+          {!visite && restants === 0 && <small className="fg-note">Trois figurines aujourd’hui, c’est le maximum : à demain !</small>}
+          {!visite && restants !== 0 && (!selfie || !accord) && (
+            <small className="fg-note">{!selfie ? "D’abord ton selfie." : "Coche la case juste au-dessus : c’est ton accord."}</small>
+          )}
           {etat?.validee && (
             <button type="button" className="cz-second" onClick={() => onPrete(etat.validee as string)}>
               Garder ma figurine actuelle
@@ -310,6 +322,8 @@ export function MaFigurine({
   const [aujourdhui] = useState(() => jourParis());
   const restants = etat?.essaisRestants ?? 0;
   const dejaEnGrand = !!ed && !ed.validee && !ed.proposee && !enCours && !!etat?.validee;
+  /** L'écran du selfie. Aussi quand l'état n'a pas pu venir : pas bloqué devant « Je regarde… », il peut essayer. */
+  const fabrication = selfie || (etat && !etat.validee) || !commerce.reel || (!etat && !!erreur);
   const ETAPES = ["Je sors ta figurine…", "Je choisis sa tenue…", "Je peins les détails…", "Presque fini…"];
 
   return (
@@ -323,7 +337,7 @@ export function MaFigurine({
         <span className="mf-titre">🪀 Ma figurine</span>
       </div>
       <div className="mf-corps">
-        {selfie || (etat && !etat.validee) || !commerce.reel ? (
+        {fabrication ? (
           <>
             {!commerce.reel || (etat && !etat.validee) ? (
               <p className="mf-intro">
@@ -452,7 +466,8 @@ export function MaFigurine({
             )}
           </>
         )}
-        {erreur && <p className="fg-erreur">{erreur}</p>}
+        {/* sur l'écran du selfie, c'est lui qui dit les erreurs (une seule fois) */}
+        {erreur && !fabrication && <p className="fg-erreur">{erreur}</p>}
       </div>
       {fiche && <FicheFigurine f={fiche} aujourdhui={aujourdhui} onFermer={() => setFiche(null)} onStudio={onStudio && (() => onStudio(fiche.url))} />}
     </div>
@@ -557,6 +572,7 @@ const STYLES = `
 .fg-accord{display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.4;text-align:left;}
 .fg-accord input{flex:none;width:22px;height:22px;margin-top:1px;accent-color:var(--rose);}
 .fg-note{font-size:13px;color:var(--gris);text-align:center;}
+.fg .fg-visite{padding:12px 14px;border-radius:16px;background:rgba(245,162,58,.12);border:1px solid rgba(245,162,58,.45);color:var(--creme);font-size:14px;}
 .fg-erreur{margin:0;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.4;background:rgba(245,162,58,.16);border:1px solid rgba(245,162,58,.5);color:var(--creme);}
 .fg-attente{padding:30px 0;}
 .fg-tourne{font-size:64px;animation:fg-saute 1.1s ease-in-out infinite;}
