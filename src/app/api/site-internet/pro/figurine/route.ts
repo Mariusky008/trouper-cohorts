@@ -5,7 +5,9 @@
  *   · `etat` : celle qu'il a validée, celle qui attend son « C'est moi », ses essais du jour ;
  *   · `fabriquer` : son selfie (réduit par son téléphone) et son accord → le moteur d'image fabrique le buste
  *     (`fabriquerFigurine`) ; il devient « proposé ». Trois essais par jour au plus ;
- *   · `valider` : « C'est moi » → la proposée devient SA figurine, celle que le Studio met dans ses vidéos.
+ *   · `valider` : « C'est moi » → la proposée devient SA figurine, celle que le Studio met dans ses vidéos ;
+ *   · `fabriquer-edition`, `valider-edition` : 🍂 SA FIGURINE DU MOIS — sa figurine validée, habillée pour l'édition
+ *     du moment (`collection.ts`) ; elle compte dans les mêmes trois essais du jour.
  *
  * LE SELFIE N'EST JAMAIS GARDÉ : il arrive avec la requête, sert à la fabrication, et s'oublie avec elle.
  */
@@ -13,7 +15,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { FamilleDouble } from "@/lib/direct/double-metiers";
 import { jourDe } from "@/lib/direct/figurine-pro";
-import { deposerImage, ecrireEtat, etatPublic, fabriquerFigurine, lireEtat } from "@/lib/direct/figurine-pro-serveur";
+import { deposerImage, ecrireEtat, editionDuJour, etatPublic, fabriquerFigurine, habillerFigurine, lireEtat, lireImage } from "@/lib/direct/figurine-pro-serveur";
 
 export const dynamic = "force-dynamic";
 /** Une génération d'image prend de trente secondes à deux minutes. */
@@ -50,7 +52,10 @@ export async function POST(request: Request) {
 
     if (action === "valider") {
       if (!etat.proposee) return NextResponse.json({ error: "Aucune figurine à valider." }, { status: 400 });
-      const suivant = { ...etat, validee: { chemin: etat.proposee.chemin, le: new Date().toISOString() }, proposee: null };
+      // UN NOUVEAU VISAGE : celle du mois portait l'ancien, elle est à rhabiller (les éditions passées restent)
+      const { edition } = editionDuJour();
+      const editions = edition && etat.editions?.[edition.cleAnnee] ? { ...etat.editions, [edition.cleAnnee]: {} } : etat.editions;
+      const suivant = { ...etat, validee: { chemin: etat.proposee.chemin, le: new Date().toISOString() }, proposee: null, editions };
       await ecrireEtat(supabase, siteId, suivant);
       return NextResponse.json({ ok: true, etat: etatPublic(supabase, suivant) });
     }
@@ -73,6 +78,38 @@ export async function POST(request: Request) {
       }
       const chemin = await deposerImage(supabase, siteId, f.png);
       const suivant = { ...etat, essais, proposee: { chemin, le: new Date().toISOString(), modele: f.modele } };
+      await ecrireEtat(supabase, siteId, suivant);
+      return NextResponse.json({ ok: true, etat: etatPublic(supabase, suivant) });
+    }
+
+    if (action === "fabriquer-edition") {
+      const { edition } = editionDuJour();
+      if (!edition) return NextResponse.json({ error: "Aucune édition en ce moment." }, { status: 400 });
+      if (!etat.validee) return NextResponse.json({ error: "Fabrique d'abord ta figurine, à partir d'un selfie." }, { status: 400 });
+      const maintenant = new Date();
+      if (etatPublic(supabase, etat, maintenant).essaisRestants <= 0)
+        return NextResponse.json({ error: "Trois figurines aujourd'hui, c'est le maximum. Revenez demain !" }, { status: 429 });
+      const buste = await lireImage(supabase, etat.validee.chemin);
+      if (!buste) return NextResponse.json({ error: "Ta figurine est introuvable. Refais-la à partir d'un selfie." }, { status: 404 });
+      const jour = jourDe(maintenant);
+      const essais = { jour, n: (etat.essais?.jour === jour ? etat.essais.n : 0) + 1 };
+      await ecrireEtat(supabase, siteId, { ...etat, essais });
+      const f = await habillerFigurine({ buste, cleEdition: edition.cle, nomEdition: edition.nom, avant: debut + (maxDuration - 15) * 1000 });
+      if ("erreur" in f) return NextResponse.json({ error: f.erreur, etat: etatPublic(supabase, { ...etat, essais }) }, { status: f.statut });
+      const chemin = await deposerImage(supabase, siteId, f.png);
+      const editions = { ...(etat.editions ?? {}) };
+      editions[edition.cleAnnee] = { ...(editions[edition.cleAnnee] ?? {}), proposee: { chemin, le: new Date().toISOString(), modele: f.modele } };
+      const suivant = { ...etat, essais, editions };
+      await ecrireEtat(supabase, siteId, suivant);
+      return NextResponse.json({ ok: true, etat: etatPublic(supabase, suivant) });
+    }
+
+    if (action === "valider-edition") {
+      const { edition } = editionDuJour();
+      const sienne = edition ? etat.editions?.[edition.cleAnnee] : undefined;
+      if (!edition || !sienne?.proposee) return NextResponse.json({ error: "Aucune figurine du mois à valider." }, { status: 400 });
+      const editions = { ...(etat.editions ?? {}), [edition.cleAnnee]: { validee: { chemin: sienne.proposee.chemin, le: new Date().toISOString() }, proposee: null } };
+      const suivant = { ...etat, editions };
       await ecrireEtat(supabase, siteId, suivant);
       return NextResponse.json({ ok: true, etat: etatPublic(supabase, suivant) });
     }

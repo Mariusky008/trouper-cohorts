@@ -343,8 +343,10 @@ par les éditions rares.
 ### 9.7 La fabrication automatique
 
 > **Une première version est faite (novembre 2026)** : au comptoir, depuis le Studio, un selfie et son accord → le
-> buste généré sur fond transparent, posé sur le ressort et le socle communs → il valide « C'est moi ». Une seule pose,
-> pas encore de bouche ouverte ni d'éditions. Voir `outils/clikme-studio/LISEZ-MOI.md`, §14.
+> buste généré sur fond transparent, posé sur le ressort et le socle communs → il valide « C'est moi ». Puis **sa
+> figurine du mois** (carte « Ma figurine du mois » de l'accueil du comptoir, ou Ma boutique) : son buste validé
+> rhabillé pour l'édition du moment, une tenue par édition. Une seule pose, pas encore de bouche ouverte ; les éditions
+> une par une, quand elles arrivent, pas d'avance. Voir `outils/clikme-studio/LISEZ-MOI.md`, §14.
 
 - **Le pro** : 3 photos à l'inscription → un buste neutre (cadrage et fond imposés) → les expressions par retouche de
   ce même buste (bouche ouverte, sourire, clin d'œil) → le calage automatique (corrélation de phase, puis seule la
