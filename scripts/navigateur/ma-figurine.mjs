@@ -147,13 +147,19 @@ ok(mr.includes("Et toi ?") && (await amie.locator('.mr-toi a[href="/collection"]
 ok((await amie.locator(".mr .fqp").getAttribute("data-sentiment")) === "joie" && mr.includes("pleine de joie"), "chez son amie, la figurine est pleine de joie");
 const titre = await amie.title();
 ok(titre.includes("Léa t’a envoyé sa figurine") && !/ClikMe.*Clikme/i.test(titre) && (await amie.locator('meta[name="robots"][content*="noindex"]').count()) === 1, `le titre du lien, et pas dans Google (${titre})`);
+// la bouche s'ouvre sur les sons forts de la voix : des ouvertures brèves (le faux micro du navigateur enregistre des
+// bips). On ne la regarde pas de temps en temps (une machine lente les manque) : la page note chaque ouverture.
+await amie.locator(".fqp-fig").evaluate((fig) => {
+  window.__ouvertures = 0;
+  new MutationObserver(() => fig.classList.contains("ouverte") && (window.__ouvertures += 1)).observe(fig, { attributes: true, attributeFilter: ["class"] });
+});
 const son = amie.waitForResponse((r) => r.url().includes("/api/direct/ma-figurine/son"));
 await amie.locator(".fqp-jouer").click();
 const reponse = await son;
 ok(reponse.status() === 200, `sa voix arrive (${reponse.headers()["content-type"]}, ${reponse.headers()["content-length"]} octets)`);
 let bouche = false;
 for (let k = 0; k < 80 && !bouche; k++) {
-  bouche = await amie.locator(".fqp-fig.ouverte").count().then((n) => n > 0);
+  bouche = await amie.evaluate(() => window.__ouvertures > 0);
   if (!bouche) await amie.waitForTimeout(100);
 }
 const lecture = await amie.locator(".fqp").evaluate((e) => ({ ...e.dataset, bouton: e.querySelector(".fqp-jouer")?.textContent, ennui: e.querySelector(".fqp-ennui")?.textContent ?? "" }));
