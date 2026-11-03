@@ -38,6 +38,8 @@ export type EditionFigurine = {
   proposee: string | null;
   /** Toutes les propositions de l'essai (deux, une par voie) ; `proposee` est la première. */
   proposees: string[];
+  /** Le moteur de chacune (« Gemini », « OpenAI »), dans le même ordre. */
+  voies: string[];
 };
 
 /** Où en est sa figurine : celle qu'il a validée, celle qui attend son « C'est moi », ses essais du jour, et son édition. */
@@ -46,6 +48,8 @@ export type EtatFigurinePro = {
   proposee: string | null;
   /** Les propositions de son dernier essai (deux, une par voie) : il choisit celle qui lui ressemble. */
   proposees: string[];
+  /** Le moteur de chacune (« Gemini », « OpenAI »), dans le même ordre : il dit lequel lui ressemble. */
+  voies: string[];
   essaisRestants: number;
   /** L'édition du moment (`null` : aucune en cours) ; la suivante, pour la préparer. */
   edition: EditionFigurine | null;
@@ -183,14 +187,20 @@ export const SUFFIXE_ENTIERE = "-entiere";
 export const figurineEntiere = (url: string | null | undefined) => Boolean(url && /-entiere\.png(\?|#|$)/.test(url));
 
 /** La matière : un objet, pas une photo ni une peinture. */
+/**
+ * LA MATIÈRE — sixième essai réel : la forme était la bonne (ressort, socle, chaussures), mais « elle me ressemble et
+ * fait pas figurine » : un vrai homme photographié (peau à pores, vrais tissus). Ce qui dit « jouet » : la peau de
+ * résine lisse et un peu brillante, des vêtements SCULPTÉS et peints, et une photo de MINIATURE (objectif macro,
+ * arrière-plan flou) — `photoProduit`.
+ */
 const MATIERE =
-  "- A real hand-painted resin collectible, sculpted in fine detail: hair sculpted in solid locks (not fine photographic hair), stubble or beard painted in tiny strokes, smooth satin painted skin with soft studio reflections, glossy painted eyes. NOT a photo, NOT an illustration, NOT a digital painting.";
+  "- A small hand-painted resin collectible TOY, about 20 cm tall, not a real person: smooth, slightly glossy resin skin with no pores and a soft airbrushed blush; hair sculpted in solid glossy locks (no fine photographic hair); stubble or beard painted as tiny dots; glossy painted eyes; the clothes SCULPTED in resin and painted (stiff folds, painted fabric texture), not real fabric. Features slightly simplified, like a sculpted caricature figurine. NOT a photo of a real person, NOT an illustration, NOT a digital painting.";
 
 /** La photo produit, et le fond (transparent, ou un vert uni que le serveur retire). */
 const photoProduit = (fond: "transparent" | "vert") => [
   "THE PHOTO:",
-  "- A straight-on product shot: the whole figurine visible, from the top of the head to the bottom of the base, centered, with some margin around it.",
-  "- Warm, soft, directional studio lighting, as in a high-end atelier. Sharp focus across the figure and every item on the base. Very high definition, clean edges.",
+  "- A straight-on macro product photo of a miniature collectible: the whole figurine visible, from the top of the head to the bottom of the base, centered, with some margin around it.",
+  "- Warm, soft, directional studio lighting with small specular highlights on the resin, as in a high-end atelier. The figurine sharp from head to base, every item on the base crisp. Very high definition, clean edges.",
   fond === "transparent"
     ? "- Transparent background."
     : "- A perfectly flat, uniform chroma-key green background (#00B140): no gradient, no texture, no shadow on it. Nothing green on the figurine.",

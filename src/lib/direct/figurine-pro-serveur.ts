@@ -130,10 +130,13 @@ export function etatPublic(supabase: Supabase, e: Etat, maintenant = new Date())
   const { edition, ensuite } = editionDuJour(maintenant);
   const sienne = edition ? e.editions?.[edition.cleAnnee] : undefined;
   const urls = (l: (Proposee | null | undefined)[]) => l.map((p) => urlDe(supabase, p?.chemin)).filter((u): u is string => Boolean(u));
+  // LE MOTEUR DE CHACUNE, en clair : il nous dit lequel lui ressemble, lequel fait figurine
+  const voiesDe = (l: Proposee[]) => l.filter((p) => urlDe(supabase, p.chemin)).map((p) => (/^gemini/i.test(p.modele) ? "Gemini" : "OpenAI"));
   return {
     validee: urlDe(supabase, e.validee?.chemin),
     proposee: urlDe(supabase, e.proposee?.chemin),
     proposees: urls(propositionsDe(e)),
+    voies: voiesDe(propositionsDe(e)),
     essaisRestants: Math.max(0, essaisParJour() - faits),
     edition: edition
       ? {
@@ -144,6 +147,7 @@ export function etatPublic(supabase: Supabase, e: Etat, maintenant = new Date())
           validee: urlDe(supabase, sienne?.validee?.chemin),
           proposee: urlDe(supabase, sienne?.proposee?.chemin),
           proposees: urls(sienne ? propositionsDe(sienne) : []),
+          voies: voiesDe(sienne ? propositionsDe(sienne) : []),
         }
       : null,
     ensuite: ensuite ? { nom: ensuite.nom, emoji: ensuite.emoji, jours: ensuite.jours } : null,
@@ -337,9 +341,48 @@ function voies(): Voie[] {
   return f.slice(0, 2).map((fidelite) => ({ nom: "openai" as const, fidelite }));
 }
 
+/**
+ * 🎨 UNE IMAGE DE RÉFÉRENCE DE STYLE, FACULTATIVE (`FIGURINE_REFERENCE_URL`) — le moyen le plus sûr d'obtenir LE rendu
+ * voulu (la figurine d'Halloween du propriétaire) : elle part en seconde image avec chaque fabrication, et la consigne
+ * dit qu'on n'en prend que le style, jamais le visage ni la tenue. Jamais dans le dépôt : une adresse, posée en
+ * production par le propriétaire, pour une image qu'il a le droit d'envoyer aux moteurs (un visage dont la personne
+ * est d'accord, ou une figurine sans vrai visage). Lue une fois, puis gardée en mémoire.
+ */
+let referenceEnMemoire: { url: string; png: Buffer | null } | null = null;
+async function lireReference(): Promise<Buffer | null> {
+  const url = s(process.env.FIGURINE_REFERENCE_URL);
+  if (!/^https:\/\//.test(url)) return null;
+  if (referenceEnMemoire?.url === url) return referenceEnMemoire.png;
+  let png: Buffer | null = null;
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+    if (r.ok) {
+      const brut = Buffer.from(await r.arrayBuffer());
+      if (brut.length <= 12 * 1024 * 1024)
+        png = await sharp(brut).rotate().resize({ width: 1024, height: 1024, fit: "inside", withoutEnlargement: true }).flatten({ background: "#ffffff" }).png().toBuffer();
+    }
+  } catch {
+    png = null;
+  }
+  if (!png) console.error("[figurine] la référence de style ne s'ouvre pas :", url.slice(0, 120));
+  referenceEnMemoire = { url, png };
+  return png;
+}
+
+/** Ce que dit la consigne quand la référence part avec (avant le reste de la consigne). */
+const AVEC_REFERENCE = [
+  "You are given two images.",
+  "IMAGE 1 is the subject: the figurine must be them — their face, features, hair, facial hair and expression (or, for an edition, this very figurine).",
+  "IMAGE 2 is ONLY A STYLE REFERENCE: copy exactly its rendering style — the kind of object (a painted-resin bobblehead figurine on an exposed spring and a round wooden base), its proportions (the big head, the slim body), its materials and skin finish, its lighting and its photo style.",
+  "NEVER copy anything else from image 2: not its face, not its hair, not its body shape, not its outfit, not its accessories, not its background, not its text.",
+  "",
+].join("\n");
+
 async function propositions(o: { image: Buffer; consigne: (fond: "transparent" | "vert") => string; avant: number }): Promise<Fabrication> {
   const liste = voies();
-  const rendus = await Promise.all(liste.map((v) => (v.nom === "gemini" ? genererParGemini(o) : generer({ ...o, fidelite: v.fidelite }))));
+  const reference = await lireReference();
+  const avec = reference ? { ...o, reference, consigne: (fond: "transparent" | "vert") => AVEC_REFERENCE + o.consigne(fond) } : o;
+  const rendus = await Promise.all(liste.map((v) => (v.nom === "gemini" ? genererParGemini(avec) : generer({ ...avec, fidelite: v.fidelite }))));
   const images = rendus.flatMap((r, k) => {
     if ("erreur" in r) {
       console.error("[figurine] une voie a échoué :", JSON.stringify({ voie: liste[k], erreur: r.erreur }));
@@ -357,7 +400,7 @@ async function propositions(o: { image: Buffer; consigne: (fond: "transparent" |
  * retiré ici (`detourerSurFondUni`). Les modèles essayés dans l'ordre (`GEMINI_FIGURINE_MODEL` pour en imposer un) ; le
  * format portrait 2:3 demandé, et redemandé sans format si le modèle le refuse (comme les couvertures).
  */
-async function genererParGemini(o: { image: Buffer; consigne: (fond: "transparent" | "vert") => string; avant: number }): Promise<Rendu> {
+async function genererParGemini(o: { image: Buffer; reference?: Buffer; consigne: (fond: "transparent" | "vert") => string; avant: number }): Promise<Rendu> {
   const cle = cleGemini();
   if (!cle) return { erreur: "Pas de clé Gemini.", statut: 503 };
   const base = s(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
@@ -375,7 +418,16 @@ async function genererParGemini(o: { image: Buffer; consigne: (fond: "transparen
           method: "POST",
           headers: { "content-type": "application/json", "x-goog-api-key": cle },
           body: JSON.stringify({
-            contents: [{ role: "user", parts: [{ inlineData: { mimeType: "image/png", data: image } }, { text: o.consigne("vert") }] }],
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  { inlineData: { mimeType: "image/png", data: image } },
+                  ...(o.reference ? [{ inlineData: { mimeType: "image/png", data: o.reference.toString("base64") } }] : []),
+                  { text: o.consigne("vert") },
+                ],
+              },
+            ],
             generationConfig: avecFormat ? { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: "2:3" } } : { responseModalities: ["IMAGE", "TEXT"] },
           }),
           signal: AbortSignal.timeout(reste - 10_000),
@@ -463,7 +515,7 @@ export async function habillerFigurine(o: {
 }
 
 /** UNE IMAGE DEMANDÉE AU MOTEUR, à partir d'une image : les replis de moteur et de réglages, puis la figurine seule. */
-async function generer(o: { image: Buffer; consigne: (fond: "transparent" | "vert") => string; avant: number; fidelite: string }): Promise<Rendu> {
+async function generer(o: { image: Buffer; reference?: Buffer; consigne: (fond: "transparent" | "vert") => string; avant: number; fidelite: string }): Promise<Rendu> {
   const cle = s(process.env.OPENAI_API_KEY);
   if (!cle) return { erreur: "La fabrication des figurines n'est pas encore branchée ici (moteur d'image absent).", statut: 503 };
   const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
@@ -490,6 +542,7 @@ async function generer(o: { image: Buffer; consigne: (fond: "transparent" | "ver
       forme.append("n", "1");
       for (const [k, v] of Object.entries(reglages)) forme.append(k, v);
       forme.append("image[]", new File([new Uint8Array(photo)], "image.png", { type: "image/png" }));
+      if (o.reference) forme.append("image[]", new File([new Uint8Array(o.reference)], "reference.png", { type: "image/png" }));
       const reste = o.avant - Date.now();
       if (reste < 20_000) return { erreur: "La fabrication a pris trop de temps. Réessayez dans un instant.", statut: 504 };
       let r: Response;

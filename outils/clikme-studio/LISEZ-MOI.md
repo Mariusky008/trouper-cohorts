@@ -454,6 +454,16 @@ courbes** que `lili-ross/scene.html` et `figurine.js` (21 s, ou 24,5 avec la fig
   `gemini-2.5-flash-image`, ou `GEMINI_FIGURINE_MODEL`) et OpenAI en fidélité « high » — sans clé Gemini, OpenAI
   « high » et « low ». Il choisit « Laquelle te ressemble ? » ; la voie choisie est notée (`modele`, et un
   `[figurine] choisie` dans les journaux) : ses choix diront laquelle garder. Une fabrication coûte donc deux images.
+- **Le rendu « jouet miniature »** (sixième essai réel : la forme était la bonne, mais « elle me ressemble et fait pas
+  figurine » — un vrai homme photographié) : `MATIERE` dit un jouet en résine d'une vingtaine de centimètres, la peau
+  lisse et un peu brillante sans pores, les cheveux en mèches brillantes, la barbe en petits points peints, les
+  vêtements SCULPTÉS et peints ; la photo est une photo MACRO de miniature, avec de petits reflets sur la résine.
+- **« par Gemini » / « par OpenAI »** sous chaque proposition (`voies`) : il dit lequel lui ressemble, lequel fait
+  figurine.
+- **🎨 Une image de référence de style, facultative** (`FIGURINE_REFERENCE_URL`, une adresse https) : elle part en
+  seconde image avec chaque fabrication, aux deux moteurs, et la consigne (`AVEC_REFERENCE`) dit qu'on n'en prend que le
+  style — jamais le visage, la tenue ni les accessoires. Jamais dans le dépôt, et seulement une image qu'on a le droit
+  d'envoyer aux moteurs (un visage dont la personne est d'accord, ou une figurine sans vrai visage).
 - **Un objet, et son expression à lui** (quatrième essai réel : « c'est joli mais ça fait pas avatar figurine et ça me
   ressemble pas, et sur la photo je ne souris pas ») : la consigne dit la matière (`MATIERE` — pas une illustration ni
   une peinture numérique, un jouet sculpté : cheveux en mèches pleines, barbe peinte, peau lisse satinée, reflets de
@@ -498,6 +508,7 @@ courbes** que `lili-ross/scene.html` et `figurine.js` (21 s, ou 24,5 avec la fig
   « pas encore branchée »), `OPENAI_IMAGE_MODEL` (impose un moteur), `FIGURINE_QUALITE` (`high` par défaut),
   `FIGURINE_FIDELITES` (les fidélités d'OpenAI, `high,low` par défaut), `GEMINI_API_KEY` (la voie Gemini),
   `GEMINI_FIGURINE_MODEL` (impose un modèle Gemini), `FIGURINE_SANS_GEMINI=1` (sans la voie Gemini),
+  `FIGURINE_REFERENCE_URL` (l'image de référence de style, voir plus haut),
   `FIGURINE_ESSAIS_PAR_JOUR` (3), `FIGURINES_PROS_BUCKET`.
 - **La fidélité à l'image d'entrée : basse (`low`).** En `high` (le premier réglage), le moteur recopie le selfie : un
   visage photographique collé sur un petit corps, et pour l'édition l'ancienne tenue gardée (« pas très automne »,

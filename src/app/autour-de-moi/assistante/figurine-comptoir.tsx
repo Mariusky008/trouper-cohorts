@@ -155,7 +155,7 @@ const STYLES_GRAND = `
  * LES PROPOSITIONS D'UN ESSAI (deux, une par voie — `propositions` côté serveur) : il touche celle qui lui ressemble,
  * la regarde en grand, et c'est elle que « C'est moi » valide. Une seule : elle, en grand, comme avant.
  */
-function ChoixPropositions({ urls, choix, onChoix }: { urls: string[]; choix: number; onChoix: (k: number) => void }) {
+function ChoixPropositions({ urls, voies = [], choix, onChoix }: { urls: string[]; voies?: string[]; choix: number; onChoix: (k: number) => void }) {
   if (urls.length <= 1)
     return urls[0] ? (
       <>
@@ -170,6 +170,7 @@ function ChoixPropositions({ urls, choix, onChoix }: { urls: string[]; choix: nu
           <button type="button" role="radio" aria-checked={k === choix} onClick={() => onChoix(k)}>
             <ApercuFigurine src={u} petit />
             <b>{k === choix ? "✓ Celle-ci" : `Proposition ${k + 1}`}</b>
+            {voies[k] && <small>par {voies[k]}</small>}
           </button>
           <VoirEnGrand src={u} />
         </div>
@@ -271,7 +272,7 @@ export function FabriquerFigurine({
       ) : etat?.proposee ? (
         <section className="fg-proposee">
           <h2>{proposees.length > 1 ? "Laquelle te ressemble ?" : "C’est toi ?"}</h2>
-          <ChoixPropositions urls={proposees} choix={Math.min(choix, proposees.length - 1)} onChoix={setChoix} />
+          <ChoixPropositions urls={proposees} voies={etat.voies} choix={Math.min(choix, proposees.length - 1)} onChoix={setChoix} />
           <p>Elle sera dans tes vidéos : elle présente, elle rebondit, elle dit bonjour par bulles.</p>
           <button type="button" className="cz-go grand" onClick={() => void valider()}>
             ✅ C’est moi !
@@ -471,7 +472,7 @@ export function MaFigurine({
                 ) : ed.proposee ? (
                   <>
                     {proposeesEdition.length > 1 && <p className="mf-laquelle">Laquelle te plaît ?</p>}
-                    <ChoixPropositions urls={proposeesEdition} choix={Math.min(choixEdition, proposeesEdition.length - 1)} onChoix={setChoixEdition} />
+                    <ChoixPropositions urls={proposeesEdition} voies={ed.voies} choix={Math.min(choixEdition, proposeesEdition.length - 1)} onChoix={setChoixEdition} />
                     <button type="button" className="cz-go grand" onClick={() => void validerEdition()}>
                       ✅ Elle est parfaite
                     </button>
@@ -653,6 +654,7 @@ const STYLES = `
 .fg-choix-p>button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 6px 10px;border-radius:20px;border:2px solid var(--trait);background:var(--nappe);color:var(--creme);width:100%;}
 .fg-choix-p.on>button{border-color:var(--rose);background:rgba(255,46,154,.12);}
 .fg-choix-p b{font-size:13.5px;}
+.fg-choix-p small{font-size:11.5px;color:var(--gris);}
 .mf-laquelle{margin:0;font-weight:800;color:var(--creme)!important;}
 .fg-conseils{margin:0;padding:12px 14px;border-radius:18px;background:rgba(255,244,230,.04);border:1px dashed var(--trait);list-style:none;display:grid;gap:7px;font-size:13.5px;line-height:1.4;color:var(--gris);width:100%;}
 .fg-prendre{width:100%;min-height:120px;border-radius:22px;border:2px dashed var(--rose);background:rgba(255,46,154,.08);color:var(--creme);font-size:18px;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;}
