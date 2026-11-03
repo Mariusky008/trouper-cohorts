@@ -55,6 +55,7 @@ import {
   envoyerEnLigne,
   envoyerEpisode,
   envoyerInterview,
+  envoyerStudio,
   publicationDeLaBase,
   retirerDeLaBase,
   retirerEnLigne,
@@ -111,6 +112,8 @@ type Commerce = CommerceComptoir;
 const Interview = dynamic(() => import("../essai-interview/essai-interview").then((m) => m.EssaiInterview), { ssr: false });
 /* 🎬 L'ÉPISODE : le téléphone posé pendant qu'il fabrique — chargé seulement quand on l'ouvre. */
 const Episode = dynamic(() => import("./episode-comptoir").then((m) => m.EpisodeComptoir), { ssr: false });
+/* 🎬 CLIKME STUDIO : sa vidéo montée en petit film, avec ou sans sa figurine — chargé seulement quand on l'ouvre. */
+const Studio = dynamic(() => import("./studio-comptoir").then((m) => m.StudioComptoir), { ssr: false });
 
 /**
  * LE PLAT DE SON INTERVIEW : celui qu'il a publié aujourd'hui (et sa photo) ;
@@ -380,6 +383,8 @@ type Phase =
   | { ou: "interview" }
   /** 🎬 L'épisode : sa session filmée pendant qu'il fabrique, montée en film — voir `episode-comptoir.tsx`. */
   | { ou: "episode" }
+  /** 🎬 ClikMe Studio : sa vidéo d'un produit, montée en petit film, avec ou sans figurine — voir `studio-comptoir.tsx`. */
+  | { ou: "studio" }
   /** Ma carte : ses rubriques, ses lignes et ses prix — voir `carte-comptoir.tsx`. */
   | { ou: "carte" }
   /** Ce que mon fantôme sait : ses réponses, et les questions de ses clients — voir `savoir-comptoir.tsx`. */
@@ -1021,6 +1026,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
              sont validées — voir `INTERVIEW_VALIDEE`. */
           onInterview={interviewOuverte(commerce.famille, Boolean(commerce.reel)) ? () => setPhase({ ou: "interview" }) : undefined}
           onEpisode={() => setPhase({ ou: "episode" })}
+          onStudio={() => setPhase({ ou: "studio" })}
           propositionActive={propositionPrete}
           proposition={
             <CarteProposition
@@ -1185,6 +1191,30 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
             commerce.reel
               ? async (e) => {
                   const r = await envoyerEpisode(commerce, e);
+                  if (!r.ok) return { ok: false, message: r.erreur ?? "L’envoi a échoué. Réessaie, de préférence en wifi." };
+                  return {
+                    ok: true,
+                    message: `C’est en ligne : ${r.ou.join(" et ")}.${r.reseaux?.length ? ` 📣 En route vers ${reseauxEnMots(r.reseaux)}.` : ""}`,
+                  };
+                }
+              : async () => {
+                  await new Promise((ok) => setTimeout(ok, 1400));
+                  return { ok: true, message: `C’est en ligne : Le Direct et ta page. 📣 En route vers ${reseauxEnMots(PLATEFORMES_PAR_DEFAUT)}.` };
+                }
+          }
+        />
+      )}
+
+      {/* 🎬 CLIKME STUDIO, PAR-DESSUS LE COMPTOIR : son film part comme l'épisode — Le Direct, sa page, ses réseaux. */}
+      {phase.ou === "studio" && (
+        <Studio
+          commerce={commerce}
+          dossier={dossier}
+          onRetour={revenir}
+          publier={
+            commerce.reel
+              ? async (s) => {
+                  const r = await envoyerStudio(commerce, s);
                   if (!r.ok) return { ok: false, message: r.erreur ?? "L’envoi a échoué. Réessaie, de préférence en wifi." };
                   return {
                     ok: true,
@@ -1709,7 +1739,7 @@ function Boutique({
         </span>
         <span className="ak-cta-t">
           <b>Plus de clients</b>
-          <em>{clients.vert ? <span className="ak-vert">{clients.mot}</span> : "En photo, en interview ou en épisode"}</em>
+          <em>{clients.vert ? <span className="ak-vert">{clients.mot}</span> : "En photo, en petit film, en interview ou en épisode"}</em>
         </span>
         {clients.chaud ? <i className="ak-badge">{clients.pret ? "✨ Prête" : "⚡ Maintenant"}</i> : <s aria-hidden="true">›</s>}
       </button>
@@ -1901,6 +1931,7 @@ function PlusDeClients({
   propositionActive,
   onInterview,
   onEpisode,
+  onStudio,
 }: {
   commerce: Commerce;
   mission: Mission;
@@ -1918,6 +1949,8 @@ function PlusDeClients({
   onInterview?: () => void;
   /** 🎬 L'épisode : il pose son téléphone AVANT de fabriquer. */
   onEpisode?: () => void;
+  /** 🎬 ClikMe Studio : sa vidéo, montée en petit film. */
+  onStudio?: () => void;
 }) {
   const relance = mission.relance;
   const relanceFaite = actives.some((p) => p.genre === "relance");
@@ -2004,6 +2037,20 @@ function PlusDeClients({
                   En épisode <i className="ac-nouveau">Nouveau</i>
                 </b>
                 <em>Je filme ta fabrication et j’en fais ta série</em>
+              </span>
+              <s aria-hidden="true">→</s>
+            </button>
+          )}
+          {onStudio && (
+            <button type="button" className="ac-option studio" onClick={onStudio}>
+              <span className="ac-option-i" aria-hidden="true">
+                🎬
+              </span>
+              <span className="ac-option-t">
+                <b>
+                  En petit film <i className="ac-nouveau">Nouveau</i>
+                </b>
+                <em>15 secondes filmées, montées comme au cinéma · avec ou sans ta figurine</em>
               </span>
               <s aria-hidden="true">→</s>
             </button>
@@ -4102,6 +4149,7 @@ label.cz-go{cursor:pointer;}
 .ac-option.photo .ac-option-i{background:linear-gradient(140deg,#FF5AB6,#D9157C);box-shadow:0 10px 20px -10px rgba(255,46,154,.8);}
 .ac-option.interview .ac-option-i{background:radial-gradient(120% 100% at 30% 0%,#3B7A66,#15302A);}
 .ac-option.episode .ac-option-i{background:radial-gradient(120% 100% at 30% 0%,#8A3778,#3A1430);}
+.ac-option.studio .ac-option-i{background:radial-gradient(120% 100% at 30% 0%,#F6D9DE,#B4657E);font-size:26px;}
 .ac-option-i img{position:absolute;left:50%;bottom:-8px;width:120%;height:auto;transform:translateX(-50%);}
 .ac-option-t{min-width:0;}
 .ac-option-t b{display:flex;align-items:center;flex-wrap:wrap;gap:7px;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:17.5px;letter-spacing:-.01em;}
