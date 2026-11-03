@@ -429,6 +429,9 @@ courbes** que `lili-ross/scene.html` et `figurine.js` (21 s, ou 24,5 avec la fig
   pas en rendre reçoit un **fond vert d'incrustation uni**, retiré par `detourerSurFondUni` (remplissage depuis les
   bords sur la teinte — une clé de couleur simple ronge les visages ; le magenta est trop près de la peau).
 - **Son selfie n'est jamais gardé.** Rien ne passe dans une vidéo avant son « C'est moi ». Trois essais par jour.
+- **Seulement dans SON comptoir** (ouvert par son lien pro : `commerce.reel`). Dans la visite du comptoir (sans lien
+  pro), rien ne se fabrique : l'écran le dit dès le début, avant qu'il prenne son selfie. Et le bouton gris dit
+  toujours pourquoi (« D'abord ton selfie », « Coche la case… », « Trois figurines aujourd'hui… »).
 - Stockage : le seau public `figurines-pros` (créé au premier dépôt), `<site>/etat.json` et les images.
 
 ### Sa figurine du mois (l'édition du moment)
