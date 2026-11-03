@@ -394,7 +394,7 @@ type Phase =
   /** 🎬 L'épisode : sa session filmée pendant qu'il fabrique, montée en film — voir `episode-comptoir.tsx`. */
   | { ou: "episode" }
   /** 🎬 ClikMe Studio : sa vidéo d'un produit, montée en petit film, avec ou sans figurine — voir `studio-comptoir.tsx`. */
-  | { ou: "studio" }
+  | { ou: "studio"; figurine?: string | null }
   /** 🪀 Ma figurine du mois : à partir d'un selfie, habillée pour l'édition — voir `figurine-comptoir.tsx`. */
   | { ou: "figurine" }
   /** Ma carte : ses rubriques, ses lignes et ses prix — voir `carte-comptoir.tsx`. */
@@ -1220,13 +1220,14 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
       )}
 
       {/* 🪀 MA FIGURINE DU MOIS, PAR-DESSUS LE COMPTOIR */}
-      {phase.ou === "figurine" && <MaFigurine commerce={commerce} onRetour={revenir} onStudio={() => setPhase({ ou: "studio" })} />}
+      {phase.ou === "figurine" && <MaFigurine commerce={commerce} onRetour={revenir} onStudio={(figurine) => setPhase({ ou: "studio", figurine })} />}
 
       {/* 🎬 CLIKME STUDIO, PAR-DESSUS LE COMPTOIR : son film part comme l'épisode — Le Direct, sa page, ses réseaux. */}
       {phase.ou === "studio" && (
         <Studio
           commerce={commerce}
           dossier={dossier}
+          figurineDepart={phase.figurine ?? null}
           onRetour={revenir}
           publier={
             commerce.reel

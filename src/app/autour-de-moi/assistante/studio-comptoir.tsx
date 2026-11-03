@@ -33,8 +33,8 @@ import {
   type TextesStudio,
 } from "@/lib/direct/studio";
 import { chargerStudio, imagesDe, lireLaVideo, monterStudio, type FilmStudio, type InfosVideo } from "@/lib/direct/studio-montage";
-import { figurineDuMoment, type EtatFigurinePro } from "@/lib/direct/figurine-pro";
-import { ApercuFigurine, FabriquerFigurine } from "./figurine-comptoir";
+import { figurineDuMoment, moisEnMots, type FigurineDeCollection } from "@/lib/direct/figurine-pro";
+import { ApercuFigurine, FabriquerFigurine, lireMaFigurine } from "./figurine-comptoir";
 
 type Etape = "video" | "moments" | "figurine" | "fabriquer" | "montage" | "pret" | "publie";
 type Source = { url: string; infos: InfosVideo; nom: string };
@@ -60,8 +60,11 @@ export function StudioComptoir({
   dossier,
   onRetour,
   publier,
+  figurineDepart = null,
 }: {
   commerce: CommerceComptoir;
+  /** Une figurine de sa collection, choisie depuis « Ma figurine » : elle d'office, à la place de celle du moment. */
+  figurineDepart?: string | null;
   /** Les poses de son fantôme (le guide de l'écran). */
   dossier: string;
   onRetour: () => void;
@@ -74,8 +77,10 @@ export function StudioComptoir({
   const [noms, setNoms] = useState<string[]>(Array(NB_MOMENTS).fill(""));
   const [ouvert, setOuvert] = useState<number | null>(null);
   const [textes, setTextes] = useState<TextesStudio>(() => textesParDefaut(commerce.famille, commerce.nom));
-  const [figurine, setFigurine] = useState<string | null>(null);
-  const [avecFigurine, setAvecFigurine] = useState(false);
+  const [figurine, setFigurine] = useState<string | null>(figurineDepart);
+  const [avecFigurine, setAvecFigurine] = useState(!!figurineDepart);
+  /** 🗂 Sa collection : il choisit laquelle met son film (celle du moment d'office). */
+  const [collection, setCollection] = useState<FigurineDeCollection[]>([]);
   const [ecouter, setEcouter] = useState(true);
   const [progres, setProgres] = useState(0);
   const [film, setFilm] = useState<FilmPret | null>(null);
@@ -92,27 +97,22 @@ export function StudioComptoir({
 
   // SA FIGURINE, S'IL EN A UNE : on la propose d'office
   useEffect(() => {
-    if (!commerce.reel) return;
     let vivant = true;
-    void fetch("/api/site-internet/pro/figurine", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ slug: commerce.reel.slug, token: commerce.reel.token, action: "etat" }),
-    })
-      .then((r) => r.json())
-      .then((j: { etat?: EtatFigurinePro }) => {
-        // 🍂 SA FIGURINE DU MOIS d'abord (habillée pour l'édition), sinon sa figurine de tous les jours
-        const sienne = figurineDuMoment(j.etat);
-        if (vivant && sienne) {
-          setFigurine(sienne);
-          setAvecFigurine(true);
-        }
-      })
-      .catch(() => {});
+    void lireMaFigurine(commerce).then((e) => {
+      if (!vivant || !e) return;
+      setCollection(e.collection);
+      // 🍂 SA FIGURINE DU MOIS d'abord (habillée pour l'édition), sinon sa figurine de tous les jours —
+      // sauf s'il en a choisi une dans sa collection
+      const sienne = figurineDepart ?? figurineDuMoment(e);
+      if (sienne) {
+        setFigurine(sienne);
+        setAvecFigurine(true);
+      }
+    });
     return () => {
       vivant = false;
     };
-  }, [commerce.reel]);
+  }, [commerce, figurineDepart]);
 
   useEffect(
     () => () => {
@@ -361,6 +361,23 @@ export function StudioComptoir({
               <em>21 secondes</em>
             </button>
           </div>
+          {/* 🗂 LAQUELLE ? — toute sa collection, celle du moment choisie d'office */}
+          {figurine && avecFigurine && collection.length > 1 && (
+            <div className="st-laquelle">
+              <b>Laquelle ?</b>
+              <div className="st-laquelle-l">
+                {collection.map((f) => (
+                  <button key={f.url} type="button" className={`st-laquelle-p${f.url === figurine ? " on" : ""}`} onClick={() => setFigurine(f.url)}>
+                    <ApercuFigurine src={f.url} mini />
+                    <span>
+                      {f.emoji} {f.nom}
+                    </span>
+                    <small>{moisEnMots(f.le)}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {figurine && (
             <button type="button" className="cz-second" onClick={() => setEtape("fabriquer")}>
               ↺ Refaire ma figurine
@@ -385,6 +402,8 @@ export function StudioComptoir({
               setFigurine(u);
               setAvecFigurine(true);
               setEtape("figurine");
+              // elle vient d'entrer dans sa collection
+              void lireMaFigurine(commerce).then((e) => e && setCollection(e.collection));
             }}
             onRetour={() => setEtape("figurine")}
           />
@@ -479,6 +498,14 @@ const STYLES = `
 .st-champ span{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ambre);}
 .st-champ input{height:50px;padding:0 14px;border-radius:14px;border:1px solid var(--trait);background:var(--nappe2);color:var(--creme);font-size:17px;}
 .st-choix{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.st-laquelle{display:flex;flex-direction:column;gap:8px;}
+.st-laquelle>b{font-size:14px;}
+.st-laquelle-l{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.st-laquelle-l::-webkit-scrollbar{display:none;}
+.st-laquelle-p{flex:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 5px 8px;border-radius:16px;border:2px solid var(--trait);background:var(--nappe);color:var(--creme);}
+.st-laquelle-p.on{border-color:var(--rose);background:rgba(255,46,154,.1);}
+.st-laquelle-p span{font-size:12.5px;font-weight:700;}
+.st-laquelle-p small{font-size:11px;color:var(--gris);}
 .st-carte{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;border-radius:20px;border:2px solid var(--trait);background:var(--nappe);color:var(--creme);text-align:center;}
 .st-carte.on{border-color:var(--rose);background:rgba(255,46,154,.1);}
 .st-carte b{font-size:15.5px;}
