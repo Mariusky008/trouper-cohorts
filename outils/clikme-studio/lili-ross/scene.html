@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Lili Ross · Studio</title>
+<style>
+@font-face{font-family:"PF";font-style:italic;font-weight:400;src:url(f/playfair-display-latin-400-italic.woff2) format("woff2")}
+@font-face{font-family:"PF";font-style:italic;font-weight:600;src:url(f/playfair-display-latin-600-italic.woff2) format("woff2")}
+@font-face{font-family:"PF";font-style:italic;font-weight:700;src:url(f/playfair-display-latin-700-italic.woff2) format("woff2")}
+@font-face{font-family:"PF";font-style:italic;font-weight:800;src:url(f/playfair-display-latin-800-italic.woff2) format("woff2")}
+@font-face{font-family:"PF";font-style:normal;font-weight:400;src:url(f/playfair-display-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"PF";font-style:normal;font-weight:700;src:url(f/playfair-display-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"PO";font-weight:400;src:url(f/poppins-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"PO";font-weight:500;src:url(f/poppins-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"PO";font-weight:600;src:url(f/poppins-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"PO";font-weight:700;src:url(f/poppins-latin-700-normal.woff2) format("woff2")}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#120A0E}
+#cadre{position:relative;width:1080px;height:1920px;overflow:hidden;background:#120A0E;font-family:"PO",sans-serif;color:#fff}
+.couche{position:absolute;inset:0;pointer-events:none}
+#plan{position:absolute;inset:0;overflow:hidden;z-index:0}
+#plan img{position:absolute;display:block;will-change:transform}
+#v{z-index:1}
+.ghost{z-index:2;opacity:0;mix-blend-mode:screen}
+#sombre{background:#0B0508;opacity:0}
+#degrade{background:linear-gradient(180deg,rgba(10,4,8,.55) 0%,rgba(10,4,8,0) 16%,rgba(10,4,8,0) 52%,rgba(10,4,8,.72) 100%);opacity:0}
+#vignette{background:radial-gradient(120% 85% at 50% 45%,rgba(0,0,0,0) 55%,rgba(0,0,0,.42) 100%)}
+#lignes{background:repeating-linear-gradient(0deg,rgba(255,255,255,.07) 0 2px,rgba(0,0,0,0) 2px 6px);opacity:0}
+#bande{left:0;right:0;height:120px;inset:auto 0 auto 0;background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.22),rgba(255,255,255,0));opacity:0}
+#flash{background:#fff;opacity:0;z-index:60}
+#grain{background:url(f/grain.png);opacity:.075;mix-blend-mode:overlay;z-index:70;inset:-256px}
+
+/* en-tête */
+#tete{position:absolute;left:0;right:0;top:150px;z-index:20;display:flex;flex-direction:column;align-items:center;gap:22px;opacity:0}
+#tete .nom{font:600 30px/1 "PO";letter-spacing:.42em;padding-left:.42em;text-transform:uppercase;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.45)}
+#barre{display:flex;gap:10px}
+#barre span{position:relative;width:96px;height:6px;border-radius:6px;background:rgba(255,255,255,.28);overflow:hidden}
+#barre span i{position:absolute;left:0;top:0;bottom:0;width:0;background:#FFB8CC;border-radius:6px}
+
+/* l'accroche */
+#accroche{position:absolute;left:0;right:0;top:640px;z-index:30;text-align:center}
+#accroche .petit{font:600 28px/1 "PO";letter-spacing:.5em;padding-left:.5em;text-transform:uppercase;color:#FFD3DF;margin-bottom:44px}
+#accroche .l{display:block;overflow:hidden;padding:0 40px}
+#accroche .l b{display:inline-block;font:italic 700 200px/1.02 "PF";letter-spacing:-.02em;color:#fff;text-shadow:0 10px 50px rgba(0,0,0,.35)}
+#accroche .sous{margin-top:40px;font:500 34px/1 "PO";letter-spacing:.34em;padding-left:.34em;text-transform:uppercase;color:#FFB8CC}
+#accroche .sous i{display:inline-block;width:70px;height:2px;background:#FFB8CC;vertical-align:middle;margin:0 26px 6px}
+
+/* retour arrière */
+#rembobine{position:absolute;right:80px;top:300px;z-index:40;font:700 64px/1 "PO";color:#fff;opacity:0;text-shadow:3px 0 0 rgba(255,60,120,.8),-3px 0 0 rgba(60,200,255,.8)}
+
+/* les chapitres */
+.chap{position:absolute;left:76px;bottom:420px;z-index:30;opacity:0}
+.chap .num{font:italic 800 150px/0.9 "PF";color:transparent;-webkit-text-stroke:2.5px rgba(255,214,226,.95);letter-spacing:-.02em}
+.chap .l{overflow:hidden;padding-bottom:10px;margin-top:6px}
+.chap .titre{display:inline-block;font:italic 600 96px/1.05 "PF";color:#fff;letter-spacing:-.015em;text-shadow:0 6px 30px rgba(0,0,0,.45)}
+.chap .sous{margin-top:14px;display:flex;align-items:center;gap:20px;font:600 30px/1 "PO";letter-spacing:.3em;text-transform:uppercase;color:#FFB8CC}
+.chap .sous i{display:inline-block;height:2px;width:0;background:#FFB8CC}
+
+/* et voilà */
+#voila{position:absolute;left:0;right:0;bottom:430px;z-index:30;text-align:center;opacity:0}
+#voila .l{overflow:hidden;padding:0 40px 12px}
+#voila b{display:inline-block;font:italic 700 170px/1.05 "PF";color:#fff;text-shadow:0 10px 50px rgba(0,0,0,.4)}
+#voila .sous{margin-top:10px;font:500 32px/1 "PO";letter-spacing:.4em;padding-left:.4em;text-transform:uppercase;color:#FFD3DF}
+
+/* le polaroïd */
+#fond{background:radial-gradient(110% 70% at 30% 20%,#FBE7EB 0%,#F6D9DE 45%,#EFC7CF 100%);opacity:0;z-index:5}
+#fond::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 40% at 85% 85%,rgba(255,255,255,.55),transparent 70%)}
+#carte{position:absolute;z-index:10;transform-origin:50% 50%;box-shadow:0 0 0 rgba(0,0,0,0)}
+#carte .fen{position:absolute;overflow:hidden;background:#000}
+#carte .fen img{position:absolute;display:block}
+#carte .legende{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font:italic 400 46px/1 "PF";color:#3A1F2E;opacity:0}
+#titreFin{position:absolute;left:0;right:0;top:290px;z-index:12;text-align:center;opacity:0}
+#titreFin small{display:block;font:600 26px/1 "PO";letter-spacing:.46em;padding-left:.46em;text-transform:uppercase;color:#B4657E;margin-bottom:20px}
+#titreFin .l{overflow:hidden;padding-bottom:8px}
+#titreFin b{display:inline-block;font:italic 700 112px/1 "PF";color:#3A1F2E;letter-spacing:-.02em}
+#traits{position:absolute;left:0;top:0;width:1080px;height:1920px;z-index:14;overflow:visible}
+.appel{position:absolute;left:744px;z-index:15;opacity:0;white-space:nowrap}
+.appel b{display:block;font:italic 600 50px/1.04 "PF";color:#3A1F2E;letter-spacing:-.01em}
+.appel small{display:block;margin-top:8px;font:600 21px/1 "PO";letter-spacing:.3em;text-transform:uppercase;color:#C7708C}
+.etoile{position:absolute;z-index:16;font:400 40px/1 "PF";color:#fff;opacity:0;text-shadow:0 0 18px rgba(255,255,255,.9)}
+
+/* la fin */
+#fin{z-index:50;opacity:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  background:radial-gradient(90% 60% at 50% 38%,#FBE9ED 0%,#F4D3DA 55%,#EBBFC9 100%)}
+#fin .haut{font:600 26px/1 "PO";letter-spacing:.52em;padding-left:.52em;text-transform:uppercase;color:#B4657E}
+#fin .l{overflow:hidden;padding:10px 40px 30px}
+#fin .marque{display:inline-block;font:italic 700 190px/1.1 "PF";letter-spacing:-.025em;padding:0 12px;color:transparent;-webkit-background-clip:text;background-clip:text;
+  background-image:linear-gradient(100deg,#3A1F2E 0%,#3A1F2E 42%,#D98AA4 50%,#3A1F2E 58%,#3A1F2E 100%);background-size:300% 100%;background-position:100% 0}
+#fin .filet{width:0;height:2px;background:#C7708C;margin:8px auto 46px}
+#fin .phrase{max-width:820px;font:italic 400 52px/1.32 "PF";color:#4A2A3B}
+#fin .signe{position:absolute;left:0;right:0;bottom:215px;display:flex;align-items:center;justify-content:center;gap:16px;font:500 26px/1 "PO";letter-spacing:.08em;color:#8E5A6E}
+#fin .signe img{width:54px;height:auto}
+</style>
+</head>
+<body>
+<div id="cadre">
+  <div id="plan" class="couche">
+    <img id="v" alt="">
+    <img id="g1" class="ghost" alt="">
+    <img id="g2" class="ghost" alt="">
+  </div>
+  <div id="sombre" class="couche"></div>
+  <div id="degrade" class="couche"></div>
+  <div id="vignette" class="couche"></div>
+  <div id="lignes" class="couche"></div>
+  <div id="bande" class="couche"></div>
+
+  <div id="tete">
+    <div class="nom">Lili Ross</div>
+    <div id="barre"><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span></div>
+  </div>
+
+  <div id="accroche">
+    <div class="petit">Lili Ross</div>
+    <span class="l"><b>Le look</b></span>
+    <span class="l"><b>du jour</b></span>
+    <div class="sous"><i></i>pièce par pièce<i></i></div>
+  </div>
+
+  <div id="rembobine">◀◀</div>
+
+  <div id="chapitres"></div>
+
+  <div id="voila">
+    <div class="l"><b>Et voilà.</b></div>
+    <div class="sous">tout ensemble</div>
+  </div>
+
+  <div id="fond" class="couche"></div>
+  <div id="titreFin"><small>Lili Ross</small><div class="l"><b>Le look complet</b></div></div>
+  <div id="carte">
+    <div class="fen"><img id="photo" alt=""></div>
+    <div class="legende">Lili Ross · le look du jour</div>
+  </div>
+  <svg id="traits" viewBox="0 0 1080 1920"></svg>
+  <div id="appels"></div>
+  <div id="etoiles"></div>
+
+  <div id="fin" class="couche">
+    <div class="haut">Le look du jour</div>
+    <div class="l"><span class="marque">Lili Ross</span></div>
+    <div class="filet"></div>
+    <div class="phrase">Une tenue, de jolies associations et un look qu’on adore 🤎</div>
+    <div class="signe"><img src="f/fantome.png" alt="">Réalisé avec ClikMe Studio</div>
+  </div>
+
+  <div id="flash" class="couche"></div>
+  <div id="grain" class="couche"></div>
+</div>
+
+<script>
+// ───────── outils ─────────
+const $ = (s) => document.querySelector(s);
+const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const seg = (t, a, b) => cl((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const oCub = (k) => 1 - Math.pow(1 - k, 3);
+const oQui = (k) => 1 - Math.pow(1 - k, 5);
+const iCub = (k) => k * k * k;
+const ioCub = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+const oBack = (k, s = 1.6) => 1 + (s + 1) * Math.pow(k - 1, 3) + s * Math.pow(k - 1, 2);
+const pts = (t, liste) => { // interpolation linéaire par points [t, v]
+  if (t <= liste[0][0]) return liste[0][1];
+  for (let i = 1; i < liste.length; i++) if (t <= liste[i][0]) {
+    const [a, va] = liste[i - 1], [b, vb] = liste[i];
+    return lerp(va, vb, (t - a) / (b - a));
+  }
+  return liste[liste.length - 1][1];
+};
+const hasard = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+// ───────── la vidéo ─────────
+const NB = 915, FPS_SRC = 60;
+const W0 = 1274, H0 = 2290, L0 = -97, T0 = -11.5, BAS = 0.843; // sous 84,3 % : l'interface d'Instagram
+const nomImage = (s) => `img/f${String(cl(Math.round(s * FPS_SRC), 0, NB - 1)).padStart(4, "0")}.jpg`;
+
+// temps de sortie T → seconde de la source s
+const CARTE_S = [
+  [0, 14.2], [2.0, 15.2],            // accroche : la fin, au ralenti
+  [2.0001, 15.2], [2.5, 1.55],       // retour arrière
+  [2.5001, 1.55], [4.5, 3.05],       // 01 pull + ceinture
+  [4.5001, 3.9], [5.7, 4.9], [6.5, 6.25],   // 02 foulard
+  [6.5001, 6.35], [7.3, 7.6], [8.5, 8.3],   // 03 manteau
+  [8.5001, 8.35], [9.0, 8.75], [10.5, 9.9], // 04 bonnet
+  [10.5001, 10.6], [11.4, 12.4], [12.5, 13.55], // 05 sac
+  [12.5001, 13.6], [14.5, 15.2],     // et voilà
+];
+const sDe = (T) => (T >= 14.5 ? 15.2 : pts(T, CARTE_S));
+
+const CHAPITRES = [
+  { a: 2.5, b: 4.5, n: "01", t: "Le pull rose", s: "& la ceinture", z: [[2.5, 1.0], [4.5, 1.06]], f: [0.48, 0.42] },
+  { a: 4.5, b: 6.5, n: "02", t: "Le foulard fleuri", s: "noué au cou", z: [[4.5, 1.0], [5.7, 1.035], [5.86, 1.16], [6.5, 1.19]], f: [0.5, 0.3] },
+  { a: 6.5, b: 8.5, n: "03", t: "Le manteau écru", s: "par-dessus", z: [[6.5, 1.03], [8.5, 1.1]], f: [0.5, 0.42] },
+  { a: 8.5, b: 10.5, n: "04", t: "Le bonnet rose", s: "assorti au pull", z: [[8.5, 1.0], [9.0, 1.04], [10.5, 1.15]], f: [0.42, 0.18] },
+  { a: 10.5, b: 12.5, n: "05", t: "Le sac à dos noir", s: "et on y va", z: [[10.5, 1.06], [12.5, 1.0]], f: [0.5, 0.45] },
+];
+const COUPES = [2.5, 4.5, 6.5, 8.5, 10.5, 12.5];
+
+function camera(T) {
+  if (T < 2.0) return { z: lerp(1.1, 1.16, oCub(seg(T, 0, 2))), fx: 0.55, fy: 0.3 };
+  if (T < 2.5) return { z: 1.04, fx: 0.5, fy: 0.4 };
+  for (const c of CHAPITRES) if (T < c.b) {
+    let z = pts(T, c.z);
+    if (c.n === "02" && T >= 5.7) z = lerp(1.035, 1.16, oQui(seg(T, 5.7, 5.86))) + 0.03 * seg(T, 5.86, 6.5);
+    return { z, fx: c.f[0], fy: c.f[1] };
+  }
+  return { z: lerp(1.12, 1.0, ioCub(seg(T, 12.5, 14.5))), fx: 0.55, fy: 0.35 };
+}
+function placeVideo(z, fx, fy) {
+  const px = L0 + fx * W0, py = T0 + fy * H0, w = W0 * z, h = H0 * z;
+  let l = px - fx * w, t = py - fy * h;
+  l = Math.min(0, Math.max(1080 - w, l));
+  t = Math.min(0, Math.max(1920 - BAS * h, t));
+  return { l, t, w, h };
+}
+
+// ───────── construction ─────────
+const chapEls = CHAPITRES.map((c) => {
+  const d = document.createElement("div");
+  d.className = "chap";
+  d.innerHTML = `<div class="num">${c.n}</div><div class="l"><span class="titre">${c.t}</span></div><div class="sous"><i></i><span>${c.s}</span></div>`;
+  $("#chapitres").appendChild(d);
+  return d;
+});
+
+// le polaroïd : fenêtre 560×825, l'image fait 560 de large, montée de 20 (on voit 2 % → 84 % de la source)
+const FEN_W = 560, FEN_H = 825, BORD = 22, BAS_CARTE = 110, IMG_H = 560 * 1704 / 948, IMG_TOP = -20;
+const CARTE_W = FEN_W + 2 * BORD, CARTE_H = FEN_H + BORD + BAS_CARTE;
+const CENTRE = { x: 392, y: 1005 };
+const APPELS = [ // position dans l'image source (fraction), libellé, beat d'apparition
+  { x: 0.66, y: 0.15, b: "Bonnet rose", s: "la touche douce", t: 15.5 },
+  { x: 0.78, y: 0.385, b: "Pull rose", s: "le ton sur ton", t: 16.0 },
+  { x: 0.68, y: 0.49, b: "Foulard fleuri", s: "la couleur", t: 16.5 },
+  { x: 0.82, y: 0.62, b: "Manteau écru", s: "la douceur", t: 17.0 },
+  { x: 0.68, y: 0.75, b: "Pantalon noir", s: "la ligne", t: 17.5 },
+];
+const APPEL_Y = [560, 760, 960, 1160, 1360];
+const svgNS = "http://www.w3.org/2000/svg";
+const appelEls = APPELS.map((a, i) => {
+  const d = document.createElement("div");
+  d.className = "appel";
+  d.style.top = APPEL_Y[i] + "px";
+  d.innerHTML = `<b>${a.b}</b><small>${a.s}</small>`;
+  $("#appels").appendChild(d);
+  const ligne = document.createElementNS(svgNS, "path");
+  ligne.setAttribute("fill", "none"); ligne.setAttribute("stroke", "#fff"); ligne.setAttribute("stroke-width", "3");
+  ligne.setAttribute("stroke-linecap", "round");
+  const halo = document.createElementNS(svgNS, "circle"); halo.setAttribute("fill", "rgba(255,255,255,.35)");
+  const point = document.createElementNS(svgNS, "circle"); point.setAttribute("fill", "#fff");
+  point.setAttribute("stroke", "#E46A93"); point.setAttribute("stroke-width", "5");
+  $("#traits").append(ligne, halo, point);
+  return { d, ligne, halo, point };
+});
+const ETOILES = [[120, 470, 16.2], [700, 470, 15.7], [80, 1250, 17.2], [690, 1540, 16.7], [990, 1500, 17.9], [960, 440, 18.1], [200, 1600, 18.3]];
+const etoileEls = ETOILES.map(([x, y]) => {
+  const e = document.createElement("div"); e.className = "etoile"; e.textContent = "✦";
+  e.style.left = x + "px"; e.style.top = y + "px"; $("#etoiles").appendChild(e); return e;
+});
+
+// ───────── images ─────────
+const imgs = { v: $("#v"), g1: $("#g1"), g2: $("#g2"), photo: $("#photo") };
+function poserImage(el, src) {
+  if (el.dataset.src === src) return null;
+  el.dataset.src = src; el.src = src;
+  return el.decode().catch(() => {});
+}
+
+// ───────── une image du film ─────────
+window.poser = async function (T, n) {
+  const attente = [];
+  const s = sDe(T);
+  attente.push(poserImage(imgs.v, nomImage(s)));
+
+  // caméra + coup de fouet aux coupes
+  const cam = camera(T);
+  const p = placeVideo(cam.z, cam.fx, cam.fy);
+  let dx = 0, flou = 0, sc = 1;
+  for (const c of COUPES) {
+    if (c === 2.5) continue; // l'entrée après le retour arrière : un flash suffit
+    if (T >= c - 0.12 && T < c) { const k = iCub(seg(T, c - 0.12, c)); dx = -k * 90; flou = k * 14; sc = 1 + k * 0.28; }
+    if (T >= c && T < c + 0.14) { const k = 1 - oCub(seg(T, c, c + 0.14)); dx = k * 90; flou = k * 14; sc = 1 + k * 0.28; }
+  }
+  // retour arrière : tremblement
+  const enRetour = T >= 2.0 && T < 2.5;
+  if (enRetour) dx += (hasard(n) - 0.5) * 34;
+  const v = imgs.v.style;
+  v.width = p.w + "px"; v.height = p.h + "px"; v.left = p.l + "px"; v.top = p.t + "px";
+  v.transform = `translateX(${dx}px) scale(${sc})`;
+  v.filter = flou > 0.3 ? `blur(${flou.toFixed(1)}px)` : enRetour ? "saturate(.55) contrast(1.15) hue-rotate(-8deg)" : "none";
+
+  // fantômes du retour arrière
+  for (const [k, g] of [[1, imgs.g1], [2, imgs.g2]]) {
+    if (enRetour) {
+      attente.push(poserImage(g, nomImage(s + k * 0.45)));
+      Object.assign(g.style, { width: p.w + "px", height: p.h + "px", left: p.l + "px", top: p.t + "px", opacity: String(0.42 / k), transform: `translateX(${dx + k * 26}px)`, filter: "saturate(.4)" });
+    } else g.style.opacity = "0";
+  }
+  $("#lignes").style.opacity = enRetour ? "1" : "0";
+  const bande = $("#bande").style;
+  bande.opacity = enRetour ? "1" : "0"; bande.top = (((T - 2.0) / 0.5) * 2100 - 120) + "px";
+  const rw = $("#rembobine").style;
+  rw.opacity = enRetour ? (Math.floor(T * 12) % 2 ? "1" : ".35") : "0";
+
+  // assombri pendant l'accroche, dégradé pour les textes
+  $("#sombre").style.opacity = String(T < 2.0 ? 0.48 - 0.18 * seg(T, 1.6, 2.0) : T < 2.5 ? 0.15 : 0);
+  $("#degrade").style.opacity = String(T < 2.5 ? 0.6 : T < 14.5 ? 1 : 0);
+
+  // flash blanc
+  let fl = 0;
+  fl = Math.max(fl, 1 - seg(T, 0, 0.18)); // ouverture
+  if (T >= 2.5) fl = Math.max(fl, 0.85 * (1 - seg(T, 2.5, 2.72)));
+  for (const c of COUPES.slice(1)) if (T >= c && T < c + 0.12) fl = Math.max(fl, 0.25 * (1 - seg(T, c, c + 0.12)));
+  if (T >= 14.5) fl = Math.max(fl, 1 - oCub(seg(T, 14.5, 14.85)));
+  $("#flash").style.opacity = fl.toFixed(3);
+
+  // accroche
+  const ac = $("#accroche");
+  ac.style.opacity = T < 2.0 ? String(1 - seg(T, 1.78, 1.98)) : "0";
+  ac.style.filter = `blur(${(seg(T, 1.72, 1.98) * 18).toFixed(1)}px)`;
+  ac.style.transform = `scale(${1 + 0.08 * iCub(seg(T, 1.72, 2.0))})`;
+  ac.querySelectorAll(".l b").forEach((b, i) => {
+    const k = oQui(seg(T, 0.12 + i * 0.16, 0.62 + i * 0.16));
+    b.style.transform = `translateY(${(1 - k) * 105}%)`;
+  });
+  const pt = ac.querySelector(".petit");
+  pt.style.opacity = String(oCub(seg(T, 0.05, 0.45)));
+  pt.style.letterSpacing = `${lerp(0.9, 0.5, oCub(seg(T, 0.05, 0.6)))}em`;
+  const so = ac.querySelector(".sous");
+  so.style.opacity = String(oCub(seg(T, 0.62, 1.0)));
+  so.style.transform = `translateY(${(1 - oCub(seg(T, 0.62, 1.0))) * 24}px)`;
+  so.querySelectorAll("i").forEach((i) => (i.style.width = 70 * oCub(seg(T, 0.75, 1.2)) + "px"));
+
+  // en-tête + progression
+  const te = $("#tete").style;
+  te.opacity = String(T < 2.5 ? 0 : T < 12.5 ? oCub(seg(T, 2.55, 2.9)) : 1 - seg(T, 12.5, 12.8));
+  $("#barre").querySelectorAll("i").forEach((i, k) => {
+    const c = CHAPITRES[k];
+    i.style.width = (100 * seg(T, c.a, c.b)) + "%";
+  });
+
+  // chapitres
+  CHAPITRES.forEach((c, k) => {
+    const d = chapEls[k];
+    if (T < c.a || T >= c.b) { d.style.opacity = "0"; return; }
+    const u = T - c.a, sortie = seg(T, c.b - 0.16, c.b);
+    d.style.opacity = String(1 - sortie);
+    d.style.transform = `translateX(${-iCub(sortie) * 160}px)`;
+    const num = d.querySelector(".num");
+    const kn = oQui(seg(u, 0.08, 0.5));
+    num.style.opacity = String(kn);
+    num.style.transform = `translateY(${(1 - kn) * 60}px)`;
+    const ti = d.querySelector(".titre");
+    ti.style.transform = `translateY(${(1 - oQui(seg(u, 0.16, 0.62))) * 110}%)`;
+    const ks = oCub(seg(u, 0.36, 0.8));
+    const so2 = d.querySelector(".sous");
+    so2.style.opacity = String(ks);
+    so2.querySelector("i").style.width = 56 * ks + "px";
+    so2.querySelector("span").style.letterSpacing = `${lerp(0.55, 0.3, ks)}em`;
+  });
+
+  // et voilà
+  const vo = $("#voila");
+  if (T >= 12.5 && T < 14.5) {
+    vo.style.opacity = String(1 - seg(T, 14.3, 14.5));
+    vo.querySelector("b").style.transform = `translateY(${(1 - oQui(seg(T, 12.62, 13.1))) * 110}%)`;
+    const k = oCub(seg(T, 13.0, 13.45));
+    vo.querySelector(".sous").style.opacity = String(k);
+    vo.querySelector(".sous").style.letterSpacing = `${lerp(0.7, 0.4, k)}em`;
+  } else vo.style.opacity = "0";
+
+  // ───── le polaroïd ─────
+  const carte = $("#carte");
+  if (T >= 14.5) {
+    attente.push(poserImage(imgs.photo, nomImage(15.2)));
+    const k = ioCub(seg(T, 14.62, 15.17)); // plein écran → carte
+    const kb = oBack(seg(T, 14.62, 15.2), 1.1);
+    const fw = lerp(1080, FEN_W, k), fh = lerp(1920, FEN_H, k);
+    const bord = lerp(0, BORD, k), basC = lerp(0, BAS_CARTE, k);
+    const cw = fw + 2 * bord, ch = fh + bord + basC;
+    const cx = lerp(540, CENTRE.x, k), cy = lerp(960, CENTRE.y, k);
+    const derive = Math.sin((T - 15.2) * 0.9) * 0.6 * seg(T, 15.2, 15.8);
+    let rot = lerp(0, -2.5, kb) + derive;
+    let sortieX = 0, sortieY = 0, sortieR = 0, sortieO = 1;
+    if (T >= 18.42) { const ks = seg(T, 18.42, 18.74) ** 2; sortieY = ks * 1500; sortieR = -ks * 16; sortieO = 1 - seg(T, 18.6, 18.74); }
+    rot += sortieR;
+    Object.assign(carte.style, {
+      display: "block", width: cw + "px", height: ch + "px", left: (cx - cw / 2) + "px", top: (cy - ch / 2) + "px",
+      background: k > 0 ? "#FFFDF9" : "transparent", opacity: String(sortieO),
+      transform: `translate(${sortieX}px,${sortieY}px) rotate(${rot}deg)`,
+      boxShadow: `0 ${30 * k}px ${80 * k}px rgba(90,30,50,${0.35 * k}), 0 ${4 * k}px ${10 * k}px rgba(90,30,50,${0.18 * k})`,
+    });
+    const fen = carte.querySelector(".fen").style;
+    Object.assign(fen, { left: bord + "px", top: bord + "px", width: fw + "px", height: fh + "px" });
+    const iw = lerp(W0, FEN_W, k), ih = lerp(H0, IMG_H, k);
+    Object.assign(imgs.photo.style, { width: iw + "px", height: ih + "px", left: lerp(L0, 0, k) + "px", top: lerp(T0, IMG_TOP, k) + "px" });
+    carte.querySelector(".legende").style.height = basC + "px";
+    carte.querySelector(".legende").style.opacity = String(oCub(seg(T, 15.1, 15.5)));
+    $("#fond").style.opacity = String(seg(T, 14.6, 14.95));
+    // le titre
+    const tf = $("#titreFin");
+    tf.style.opacity = T < 18.42 ? String(oCub(seg(T, 15.0, 15.3))) : String(1 - seg(T, 18.42, 18.62));
+    tf.querySelector("b").style.transform = `translateY(${(1 - oQui(seg(T, 15.0, 15.45))) * 110}%)`;
+    tf.querySelector("small").style.letterSpacing = `${lerp(0.8, 0.46, oCub(seg(T, 15.0, 15.5)))}em`;
+
+    // les appels : point dans la carte (tournée), trait, libellé
+    const rad = (rot * Math.PI) / 180, co = Math.cos(rad), si = Math.sin(rad);
+    const ccx = cx + sortieX, ccy = cy + sortieY;
+    APPELS.forEach((a, i) => {
+      const e = appelEls[i];
+      const lx = bord + a.x * iw + lerp(L0, 0, k) - cw / 2, ly = bord + a.y * ih + lerp(T0, IMG_TOP, k) - ch / 2;
+      const x = ccx + lx * co - ly * si, y = ccy + lx * si + ly * co;
+      const kp = seg(T, a.t, a.t + 0.22), kl = oCub(seg(T, a.t + 0.06, a.t + 0.34)), kt = oQui(seg(T, a.t + 0.12, a.t + 0.5));
+      const fin = 1 - seg(T, 18.4, 18.58);
+      const r = kp <= 0 ? 0 : 11 * oBack(kp, 2.4);
+      e.point.setAttribute("cx", x); e.point.setAttribute("cy", y); e.point.setAttribute("r", (r * fin).toFixed(2));
+      const hr = kp > 0 ? 11 + 30 * seg(T, a.t, a.t + 0.5) : 0;
+      e.halo.setAttribute("cx", x); e.halo.setAttribute("cy", y); e.halo.setAttribute("r", hr.toFixed(1));
+      e.halo.setAttribute("opacity", String((1 - seg(T, a.t, a.t + 0.5)) * fin));
+      const ty = APPEL_Y[i] + 30, tx = 728, mx = Math.max(x + 40, 700);
+      const d = `M ${x} ${y} L ${mx} ${ty} L ${tx} ${ty}`;
+      e.ligne.setAttribute("d", d);
+      const longueur = Math.hypot(mx - x, ty - y) + (tx - mx);
+      e.ligne.setAttribute("stroke-dasharray", `${longueur}`);
+      e.ligne.setAttribute("stroke-dashoffset", `${longueur * (1 - kl)}`);
+      e.ligne.setAttribute("opacity", String(kl > 0 ? fin : 0));
+      e.d.style.opacity = String(kt * fin);
+      e.d.style.transform = `translateX(${(1 - kt) * 60}px)`;
+    });
+    etoileEls.forEach((el, i) => {
+      const t0 = ETOILES[i][2], u = T - t0;
+      const a = u < 0 ? 0 : Math.max(0, Math.sin(Math.min(1, u / 0.7) * Math.PI));
+      el.style.opacity = String(a * (1 - seg(T, 18.5, 18.7)));
+      el.style.transform = `scale(${0.4 + a}) rotate(${u * 90}deg)`;
+    });
+  } else {
+    carte.style.display = "none"; $("#fond").style.opacity = "0"; $("#titreFin").style.opacity = "0";
+    appelEls.forEach((e) => { e.d.style.opacity = "0"; e.point.setAttribute("r", "0"); e.halo.setAttribute("r", "0"); e.ligne.setAttribute("opacity", "0"); });
+    etoileEls.forEach((el) => (el.style.opacity = "0"));
+  }
+  $("#plan").style.opacity = T >= 15.2 ? "0" : "1";
+
+  // ───── la fin ─────
+  const fi = $("#fin");
+  if (T >= 18.66) {
+    fi.style.opacity = String(oCub(seg(T, 18.66, 18.92)));
+    const h = fi.querySelector(".haut");
+    h.style.opacity = String(oCub(seg(T, 18.75, 19.15)));
+    h.style.letterSpacing = `${lerp(0.9, 0.52, oCub(seg(T, 18.75, 19.3)))}em`;
+    const mq = fi.querySelector(".marque");
+    mq.style.transform = `translateY(${(1 - oQui(seg(T, 18.72, 19.25))) * 110}%)`;
+    mq.style.backgroundPosition = `${lerp(100, 0, ioCub(seg(T, 19.3, 20.2)))}% 0`;
+    fi.querySelector(".filet").style.width = 200 * oCub(seg(T, 19.0, 19.5)) + "px";
+    const ph = fi.querySelector(".phrase");
+    const kp = oCub(seg(T, 19.2, 19.75));
+    ph.style.opacity = String(kp); ph.style.transform = `translateY(${(1 - kp) * 30}px)`;
+    const sg = fi.querySelector(".signe");
+    const ks = oCub(seg(T, 19.7, 20.15));
+    sg.style.opacity = String(ks); sg.style.transform = `translateY(${(1 - ks) * 20}px)`;
+    fi.style.transform = `scale(${1 + 0.02 * seg(T, 18.66, 21)})`;
+  } else fi.style.opacity = "0";
+
+  // grain qui vit
+  $("#grain").style.transform = `translate(${Math.floor(hasard(n + 1) * 256)}px,${Math.floor(hasard(n + 7) * 256)}px)`;
+
+  await Promise.all(attente.filter(Boolean));
+};
+
+window.DUREE_TOTALE = 21; // le film seul ; figurine.js ajoute son intro
+window.pret = (async () => {
+  await Promise.all([
+    "italic 400 40px PF", "italic 600 40px PF", "italic 700 40px PF", "italic 800 40px PF",
+    "400 40px PO", "500 40px PO", "600 40px PO", "700 40px PO", "40px 'Noto Color Emoji'",
+  ].map((f) => document.fonts.load(f, "Le look é 🤎")));
+  await document.fonts.ready;
+  await new Promise((r) => { const i = $("#fin .signe img"); i.complete ? r() : (i.onload = r); });
+  return true;
+})();
+</script>
+<script>
+  // ?sans-figurine : le film seul (21 s). Sinon figurine.js ajoute la présentatrice (et 3,5 s d'intro devant).
+  if (!location.search.includes("sans-figurine")) document.write('<script src="figurine.js"><\/script>');
+</script>
+</body>
+</html>
