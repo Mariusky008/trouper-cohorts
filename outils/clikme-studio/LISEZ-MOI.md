@@ -443,6 +443,17 @@ courbes** que `lili-ross/scene.html` et `figurine.js` (21 s, ou 24,5 avec la fig
 - **🔍 Voir en grand** (`VoirEnGrand`) : sous chaque figurine proposée ou validée, la figurine ENTIÈRE (sur son ressort
   et son socle) à la taille de l'écran, et l'image seule à ouvrir pour zoomer avec les doigts — pour la juger avant de
   dire « C'est moi ». Le buste seul, en grand, avait l'air d'une caricature peinte.
+- **La figurine ENTIÈRE, deux propositions, et Gemini** (cinquième essai réel : « c'est pas moi et ça fait plus photo /
+  peinture que figurine », avec sa figurine d'Halloween en exemple, faite avec Gemini). Ce qui fait une figurine : un
+  objet entier photographié en studio. Le moteur fabrique donc la figurine ENTIÈRE — tronquée à la taille, le ressort
+  métallique apparent, le socle rond en bois, des chaussures et un objet de son métier posés dessus — d'après une
+  consigne écrite en anglais sur le modèle du prompt Gemini du propriétaire (`consigneFigurine`). Le fichier finit par
+  `-entiere.png` (`SUFFIXE_ENTIERE`) : l'aperçu le montre tel quel (il se balance), le film aussi (`dessinerEntiere` ;
+  les bustes d'avant gardent le ressort et le socle communs). À chaque essai, DEUX propositions parties en même
+  temps : Gemini (`genererParGemini` : fond vert retiré, format 2:3, `gemini-3-pro-image-preview` puis
+  `gemini-2.5-flash-image`, ou `GEMINI_FIGURINE_MODEL`) et OpenAI en fidélité « high » — sans clé Gemini, OpenAI
+  « high » et « low ». Il choisit « Laquelle te ressemble ? » ; la voie choisie est notée (`modele`, et un
+  `[figurine] choisie` dans les journaux) : ses choix diront laquelle garder. Une fabrication coûte donc deux images.
 - **Un objet, et son expression à lui** (quatrième essai réel : « c'est joli mais ça fait pas avatar figurine et ça me
   ressemble pas, et sur la photo je ne souris pas ») : la consigne dit la matière (`MATIERE` — pas une illustration ni
   une peinture numérique, un jouet sculpté : cheveux en mèches pleines, barbe peinte, peau lisse satinée, reflets de
@@ -485,7 +496,9 @@ courbes** que `lili-ross/scene.html` et `figurine.js` (21 s, ou 24,5 avec la fig
   celle du moment choisie d'office.
 - Réglages (variables d'environnement, toutes facultatives) : `OPENAI_API_KEY` (sans elle, la fabrication répond
   « pas encore branchée »), `OPENAI_IMAGE_MODEL` (impose un moteur), `FIGURINE_QUALITE` (`high` par défaut),
-  `FIGURINE_FIDELITE` (`low` par défaut — voir plus bas), `FIGURINE_ESSAIS_PAR_JOUR` (3), `FIGURINES_PROS_BUCKET`.
+  `FIGURINE_FIDELITES` (les fidélités d'OpenAI, `high,low` par défaut), `GEMINI_API_KEY` (la voie Gemini),
+  `GEMINI_FIGURINE_MODEL` (impose un modèle Gemini), `FIGURINE_SANS_GEMINI=1` (sans la voie Gemini),
+  `FIGURINE_ESSAIS_PAR_JOUR` (3), `FIGURINES_PROS_BUCKET`.
 - **La fidélité à l'image d'entrée : basse (`low`).** En `high` (le premier réglage), le moteur recopie le selfie : un
   visage photographique collé sur un petit corps, et pour l'édition l'ancienne tenue gardée (« pas très automne »,
   3 novembre 2026). En `low`, il réinterprète : la caricature sculptée et peinte, et la tenue vraiment changée. La
