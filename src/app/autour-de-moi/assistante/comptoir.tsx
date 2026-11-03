@@ -121,7 +121,7 @@ const MaFigurine = dynamic(() => import("./figurine-comptoir").then((m) => m.MaF
 /** « Édition Automne 🍂 · encore 48 jours » (Ma boutique), « Édition Automne 🍂 » en court (l'accueil) : l'édition du moment (`collection.ts`). */
 function editionEnMots(court = false): string {
   const e = editionsDuMoment(jourParis()).maintenant;
-  if (!e) return "Une édition à chaque saison";
+  if (!e) return "Une édition chaque mois";
   return court ? `Édition ${e.nom} ${e.emoji}` : `Édition ${e.nom} ${e.emoji} · encore ${e.jours} ${e.jours > 1 ? "jours" : "jour"}`;
 }
 
@@ -1691,7 +1691,7 @@ function Accueil({
           </span>
           <span className="ak-cta-t">
             <b>Ma figurine du mois</b>
-            <em>Ta figurine à partir d’un selfie, habillée pour la saison</em>
+            <em>Ta figurine à partir d’un selfie, déguisée pour le thème du mois</em>
             <i className="ak-meta">{editionEnMots(true)}</i>
           </span>
           <s aria-hidden="true">›</s>

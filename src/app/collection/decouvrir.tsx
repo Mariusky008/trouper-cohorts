@@ -16,7 +16,7 @@
  * SUR ORDINATEUR, la page prend la largeur : rien n'y est une colonne de téléphone posée au milieu d'un écran.
  */
 import { useEffect, useState, type CSSProperties } from "react";
-import { EDITIONS_DATEES, PALIERS_COLLECTION, TOTAL_COLLECTION, editionsDuMoment, fenetre, jourEnClair } from "@/lib/direct/collection";
+import { EDITIONS_DATEES, PALIERS_COLLECTION, TOTAL_COLLECTION, editionsDuMoment, fenetre, finEnAnnee, jourEnClair } from "@/lib/direct/collection";
 import { Particules, THEMES, type Theme } from "@/app/f/[slug]/collection";
 import { ApercuFigurine, STYLES_APERCU } from "./apercu-figurine";
 
@@ -43,7 +43,7 @@ const deux = (n: number) => String(n).padStart(2, "0");
 /** Les éditions autour d'aujourd'hui : celle qui vient de finir, celle-ci, les deux suivantes. */
 function frise(aujourdhui: string) {
   const an = +aujourdhui.slice(0, 4);
-  const passee = EDITIONS_DATEES.flatMap((e) => [an - 1, an].map((y) => ({ e, fin: `${y}-${e.fin}` })))
+  const passee = EDITIONS_DATEES.flatMap((e) => [an - 1, an].map((y) => ({ e, fin: finEnAnnee(e, y) })))
     .filter((x) => x.fin < aujourdhui)
     .sort((a, b) => b.fin.localeCompare(a.fin))[0];
   const suivantes = EDITIONS_DATEES.map((e) => ({ e, f: fenetre(e, aujourdhui) }))

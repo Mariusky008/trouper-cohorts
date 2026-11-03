@@ -719,7 +719,7 @@ export function Famille({ commerce: c, de }: { commerce: CommerceFamille; de: st
         </div>
         <p>
           <b>Collectionne ses figurines 🏆</b>
-          Une visite, la figurine de la saison. À 10, la figurine d’or.
+          Une visite, la figurine du mois. À 10, la figurine d’or.
         </p>
       </div>
 

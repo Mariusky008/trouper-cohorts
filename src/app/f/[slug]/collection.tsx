@@ -4,9 +4,9 @@
  * 🏆 SA COLLECTION DE FIGURINES D'UN COMMERCE — sur sa page de la famille (à la place de la pièce) et dans « Ma
  * collection » (`/collection`). La règle est dans `lib/direct/collection.ts` ; ici, l'envie de la compléter :
  *   · le compteur qui monte et la jauge à 10, avec ses trois paliers (🥈 plus tôt, 🥇 en premier, 🏆 l'or) ;
- *   · LA FIGURINE À GAGNER MAINTENANT, en grand, dans les couleurs de son édition (les feuilles qui tombent en automne,
- *     la neige en hiver…), avec le temps qui reste ;
- *   · l'étagère des dix : gagnées en couleur (et ce reflet qui passe), à gagner en silhouette, manquées en gris, les
+ *   · LA FIGURINE À GAGNER MAINTENANT, en grand, dans les couleurs de son édition (les feuilles qui tombent en
+ *     novembre, les citrouilles en octobre…), avec le temps qui reste ;
+ *   · l'étagère des quatorze (les douze du mois, les deux rares) : gagnées en couleur (et ce reflet qui passe), à gagner en silhouette, manquées en gris, les
  *     rares en holographique ;
  *   · UNE NOUVELLE FIGURINE SE FÊTE : la carte se retourne, les confettis tombent (une fois : on retient ce qu'il a vu).
  * Sans animation pour qui les a coupées (`prefers-reduced-motion`).
@@ -23,11 +23,15 @@ import {
 
 export type Theme = { a: string; b: string; parts: string[] };
 export const THEMES: Record<string, Theme> = {
-  hiver: { a: "#A8DBFF", b: "#2B4FA6", parts: ["❄️", "❅", "❆"] },
+  galette: { a: "#FFD27A", b: "#9A5B12", parts: ["👑", "✨", "⭐"] },
   "saint-valentin": { a: "#FF6B9A", b: "#8E1442", parts: ["💘", "💗", "💕"] },
   printemps: { a: "#FFB8D6", b: "#2F8F57", parts: ["🌸", "🌼", "🌷"] },
+  paques: { a: "#FFE3A3", b: "#7A4A2A", parts: ["🐣", "🥚", "🍫"] },
+  "fete-des-meres": { a: "#FFC2D9", b: "#B0306A", parts: ["💐", "🌷", "💗"] },
   musique: { a: "#B98CFF", b: "#3A1A8C", parts: ["🎶", "🎵", "🎸"] },
   ete: { a: "#FFD54F", b: "#EF5A2A", parts: ["☀️", "🌊", "🍉"] },
+  vacances: { a: "#7FE0F0", b: "#0E6E8C", parts: ["🏖️", "🐚", "🌴"] },
+  rentree: { a: "#FFB067", b: "#3B4A8C", parts: ["🎒", "✏️", "📚"] },
   automne: { a: "#FFA24A", b: "#7C3110", parts: ["🍂", "🍁", "🌰"] },
   halloween: { a: "#FF8A1F", b: "#2B0E30", parts: ["🎃", "🦇", "👻"] },
   noel: { a: "#F04B55", b: "#125E37", parts: ["🎄", "✨", "⭐"] },
@@ -157,7 +161,8 @@ export function CollectionDuCommerce({
   compact?: boolean;
   lienCollection?: boolean;
 }) {
-  const n = useCompte(col.gagnees);
+  // LE COMPTEUR VA JUSQU'À L'OR (10) : celles gagnées au-delà sont sur l'étagère (12 du mois + 2 rares)
+  const n = useCompte(Math.min(col.gagnees, col.total));
   const etagere = useRef<HTMLOListElement>(null);
   const vedetteRef = useRef<HTMLLIElement | null>(null);
   const [fete, setFete] = useState<CaseCollection | null>(null);
@@ -430,7 +435,7 @@ export function CollectionDuCommerce({
             {fete.sorte === "rare"
               ? `Édition rare${fete.numero ? ` n° ${fete.numero}` : ""}`
               : `Édition ${fete.nom}`}{" "}
-            · {col.gagnees} / {col.total}
+            · {Math.min(col.gagnees, col.total)} / {col.total}
           </p>
           <button type="button" onClick={() => setFete(null)}>
             Super !

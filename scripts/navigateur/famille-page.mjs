@@ -102,11 +102,12 @@ await p.waitForSelector(".fm-heros h1", { timeout: 20000 });
 const fam = await texte(p, ".fm");
 ok(fam.includes("Bienvenue dans la famille !") && fam.includes("Tu es le fantôme n°4 du Comptoir des Fantômes"), "bienvenue, fantôme n°4");
 ok((await texte(p, ".fm-patch")) === "4" && (await p.locator(".fm-patch.bronze, .fm-patch.argent, .fm-patch.or").count()) === 0, "son socle de la famille, frappé de son numéro (plus de pièce)");
-// 🏆 SA COLLECTION DE FIGURINES, à la place de la pièce (il y a toujours une saison en cours)
+// 🏆 SA COLLECTION DE FIGURINES, à la place de la pièce (il y a toujours une figurine du mois en cours)
 await p.waitForSelector(".co .co-vedette", { timeout: 20000 });
 ok((await texte(p, ".co-compte")).includes("/ 10") && (await texte(p, ".co-sur")).toLowerCase().includes("ta collection du comptoir des fantômes"), "sa collection : sur 10");
-ok((await texte(p, ".co-vedette")).includes("À GAGNER MAINTENANT") && /Édition (Hiver|Printemps|Été|Automne|Saint-Valentin|Fête de la musique|Halloween|Noël)/.test(await texte(p, ".co-vedette")), `la figurine à gagner maintenant (${(await texte(p, ".co-vedette")).slice(0, 60)})`);
-ok((await p.locator(".co-etagere .co-carte").count()) === 10 && (await p.locator(".co-carte.rare").count()) === 2, "l'étagère des dix, dont deux rares");
+ok((await texte(p, ".co-vedette")).includes("À GAGNER MAINTENANT") && /Édition (Galette des rois|Saint-Valentin|Printemps|Pâques|Fête des mères|Fête de la musique|Été|Vacances|Rentrée|Halloween|Automne|Noël)/.test(await texte(p, ".co-vedette")), `la figurine à gagner maintenant (${(await texte(p, ".co-vedette")).slice(0, 60)})`);
+// UNE ÉDITION PAR MOIS : douze du mois et deux rares sur l'étagère ; l'or reste à 10 (le compteur « / 10 » plus haut)
+ok((await p.locator(".co-etagere .co-carte").count()) === 14 && (await p.locator(".co-carte.rare").count()) === 2, "l'étagère des quatorze (douze mois), dont deux rares");
 ok((await texte(p, ".co-paliers")).includes("3 figurines · Au courant plus tôt") && (await texte(p, ".co-paliers")).includes("10 figurines · La figurine d’or"), "les trois paliers");
 ok((await p.locator(".fm-chemin, .fm-prochain").count()) === 0 && (await p.locator('.co-lien[href="/collection"]').count()) === 1, "plus de chemin des pièces ; le lien vers toute sa collection");
 ok(/2 fantômes aujourd’hui/.test(fam) && fam.includes("📣 Il en manque 3 : inviter un ami"), "la foule passe à 2, il en manque 3");

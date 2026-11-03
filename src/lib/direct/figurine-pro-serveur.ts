@@ -320,7 +320,10 @@ async function generer(o: { image: Buffer; consigne: (fond: "transparent" | "ver
     const reglages: Record<string, string> = {
       size: "1024x1536",
       quality: s(process.env.FIGURINE_QUALITE) || "high",
-      input_fidelity: "high",
+      // FIDÉLITÉ BASSE : en « high », le moteur RECOPIE l'image d'entrée — le visage du selfie collé tel quel (une photo
+      // sur un petit corps, essai réel du 3 novembre), et l'ancienne tenue gardée sous le déguisement (« pas très
+      // automne »). En « low », il la réinterprète : la caricature sculptée, et la tenue vraiment changée.
+      input_fidelity: s(process.env.FIGURINE_FIDELITE) || "low",
       background: "transparent",
       output_format: "png",
     };

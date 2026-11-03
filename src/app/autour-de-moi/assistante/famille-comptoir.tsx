@@ -701,7 +701,7 @@ function LeursFigurines({ commerce, famille, f }: { commerce: CommerceComptoir; 
     <section className="fc-collection">
       <h3>🏆 Leurs figurines</h3>
       <p className="fc-regle">
-        Chaque passage noté dans ton carnet leur donne ta figurine de la saison ; quand tu annonces une place libre (🔔), c’est une édition rare. À 3 figurines, ils ont tes
+        Chaque passage noté dans ton carnet leur donne ta figurine du mois ; quand tu annonces une place libre (🔔), c’est une édition rare. À 3 figurines, ils ont tes
         bons plans plus tôt ; à 6, en premier.
       </p>
       <div className="fc-tuiles">
@@ -783,7 +783,7 @@ function LeursFigurines({ commerce, famille, f }: { commerce: CommerceComptoir; 
               <span>
                 <b>{m.prenom || "Sans prénom"}</b>
                 <small>
-                  n°{nb(m.numero)} · 🏆 {m.gagnees} / {m.total}
+                  n°{nb(m.numero)} · 🏆 {Math.min(m.gagnees, m.total)} / {m.total}
                 </small>
               </span>
             </li>
