@@ -584,12 +584,14 @@ export async function POST(request: Request) {
     // 📣 SA VIDÉO PASSE AUSSI CHEZ SES DEUX PARTENAIRES (la diffusion croisée, s'il l'a acceptée) — après la réponse.
     // Voir `lib/direct/diffusion-serveur.ts`. Pas une annonce « Il en reste ! » (`reseaux: false`) : elle ne dure pas.
     if (video && photo && p?.reseaux !== false) {
+      // L'EXTRAIT DE 8 S fait pour eux (`studio-extrait.ts`) d'abord, sinon la bande-annonce, sinon le film entier
+      const extrait = videoAcceptee(str(p?.videoPartenaires));
       const auxReseaux = videoAcceptee(str(p?.videoReseaux));
-      const secondesPartenaires = Number(auxReseaux ? p?.videoReseauxSecondes : p?.videoSecondes);
+      const secondesPartenaires = Number(extrait ? p?.videoPartenairesSecondes : auxReseaux ? p?.videoReseauxSecondes : p?.videoSecondes);
       const versPartenaires = {
-        url: auxReseaux ?? video,
+        url: extrait ?? auxReseaux ?? video,
         secondes: Number.isFinite(secondesPartenaires) && secondesPartenaires > 0 ? secondesPartenaires : 0,
-        mp4: (auxReseaux ? p?.videoReseauxMp4 : p?.videoMp4) === true,
+        mp4: (extrait ? p?.videoPartenairesMp4 : auxReseaux ? p?.videoReseauxMp4 : p?.videoMp4) === true,
       };
       const travail = envoyerAuxPartenaires(str(site.id), { texte: text, photo, video: versPartenaires });
       try {

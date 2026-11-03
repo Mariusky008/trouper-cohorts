@@ -24,6 +24,7 @@ import {
   NB_MOMENTS,
   SOURCE_MAX_S,
   SOURCE_MIN_S,
+  INTRO_FIGURINE,
   dureeDuFilm,
   momentsProposes,
   numero,
@@ -32,7 +33,9 @@ import {
   textesParDefaut,
   type TextesStudio,
 } from "@/lib/direct/studio";
-import { chargerStudio, imagesDe, lireLaVideo, monterStudio, type FilmStudio, type InfosVideo } from "@/lib/direct/studio-montage";
+import { chargerStudio, imagesDe, lireLaVideo, monterStudio, type ElementsStudio, type FilmStudio, type InfosVideo } from "@/lib/direct/studio-montage";
+import { monterExtrait } from "@/lib/direct/studio-extrait";
+import { SITE_HOST } from "@/lib/site-url";
 import { figurineDuMoment, moisEnMots, type FigurineDeCollection } from "@/lib/direct/figurine-pro";
 import { ApercuFigurine, FabriquerFigurine, lireMaFigurine } from "./figurine-comptoir";
 
@@ -68,7 +71,8 @@ export function StudioComptoir({
   /** Les poses de son fantôme (le guide de l'écran). */
   dossier: string;
   onRetour: () => void;
-  publier: (s: { texte: string; affiche: string; film: FilmStudio }) => Promise<{ ok: boolean; message: string }>;
+  /** `extrait` : les 8 s pour ses partenaires de diffusion, s'il est dans le réseau (`studio-extrait.ts`). */
+  publier: (s: { texte: string; affiche: string; film: FilmStudio; extrait?: FilmStudio | null }) => Promise<{ ok: boolean; message: string }>;
 }) {
   const [etape, setEtape] = useState<Etape>("video");
   const [source, setSource] = useState<Source | null>(null);
@@ -93,9 +97,33 @@ export function StudioComptoir({
   const arret = useRef<AbortController | null>(null);
   const son = useRef<AudioContext | null>(null);
   const veille = useRef<Veille | null>(null);
+  /** Les polices et le fantôme du montage : l'extrait les reprend. */
+  const elements = useRef<ElementsStudio | null>(null);
+  /** 📣 Dans le réseau de diffusion croisée ? Alors, au moment de publier, l'extrait de 8 s pour ses partenaires. */
+  const [enReseau, setEnReseau] = useState(false);
+  const [quoi, setQuoi] = useState<"extrait" | "envoi" | null>(null);
   const urls = useRef<string[]>([]);
 
   // SA FIGURINE, S'IL EN A UNE : on la propose d'office
+  // 📣 DANS LE RÉSEAU DE DIFFUSION CROISÉE ? (sans lien pro : non)
+  useEffect(() => {
+    if (!commerce.reel) return;
+    let vivant = true;
+    void fetch("/api/site-internet/pro/diffusion-croisee", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slug: commerce.reel.slug, token: commerce.reel.token, action: "reglage" }),
+    })
+      .then((r) => r.json())
+      .then((j: { reglage?: { active?: boolean } }) => {
+        if (vivant) setEnReseau(j.reglage?.active === true);
+      })
+      .catch(() => {});
+    return () => {
+      vivant = false;
+    };
+  }, [commerce.reel]);
+
   useEffect(() => {
     let vivant = true;
     void lireMaFigurine(commerce).then((e) => {
@@ -194,6 +222,7 @@ export function StudioComptoir({
     arret.current = a;
     try {
       const el = await chargerStudio(avecFigurine && figurine ? figurine : null);
+      elements.current = el;
       const f = await monterStudio({
         ctx: son.current,
         el,
@@ -217,7 +246,35 @@ export function StudioComptoir({
   const envoyer = async () => {
     if (!film || envoi?.etat === "en-cours") return;
     setEnvoi({ etat: "en-cours" });
-    const r = await publier({ texte: texteDuStudio(textes, noms), affiche: film.affiche, film });
+    // 📣 L'EXTRAIT DE 8 S POUR SES PARTENAIRES, s'il est dans le réseau : le téléphone rejoue le film et en garde huit
+    // secondes (après l'intro de la figurine). Raté : ses partenaires recevront le film entier.
+    let extrait: FilmStudio | null = null;
+    if (enReseau && commerce.reel && toile.current && elements.current) {
+      setQuoi("extrait");
+      void garderAllume();
+      try {
+        if (!son.current || son.current.state === "closed") son.current = new AudioContext();
+        extrait = await monterExtrait({
+          ctx: son.current,
+          film,
+          debut: avecFigurine && figurine ? INTRO_FIGURINE : 0,
+          commerce: commerce.nom,
+          adresse: `${SITE_HOST}/b/${commerce.reel.slug}`,
+          serif: elements.current.serif,
+          sans: elements.current.sans,
+          logo: elements.current.fantome,
+          toile: toile.current,
+        });
+      } catch (e) {
+        console.warn("[studio] extrait pour les partenaires impossible :", String((e as Error)?.message ?? e));
+      } finally {
+        void veille.current?.release().catch(() => {});
+        veille.current = null;
+      }
+    }
+    setQuoi("envoi");
+    const r = await publier({ texte: texteDuStudio(textes, noms), affiche: film.affiche, film, extrait });
+    setQuoi(null);
     setEnvoi({ etat: "fini", ...r });
     if (r.ok) setEtape("publie");
   };
@@ -434,9 +491,11 @@ export function StudioComptoir({
             </figcaption>
           </figure>
           <button type="button" className="cz-go grand" onClick={() => void envoyer()} disabled={envoi?.etat === "en-cours"}>
-            {envoi?.etat === "en-cours" ? "J’envoie ton film…" : "📣 Publier mon film"}
+            {envoi?.etat === "en-cours" ? (quoi === "extrait" ? "Je prépare l’extrait pour tes partenaires…" : "J’envoie ton film…") : "📣 Publier mon film"}
           </button>
-          <p className="st-ou">Dans Le Direct, sur ta page et sur tes réseaux.</p>
+          <p className="st-ou">
+            Dans Le Direct, sur ta page et sur tes réseaux{enReseau ? " ; et 8 secondes chez tes deux partenaires de diffusion" : ""}.
+          </p>
           {envoi?.etat === "fini" && !envoi.ok && <p className="st-erreur">{envoi.message}</p>}
           <div className="st-actions">
             <button type="button" className="cz-second" onClick={() => void garderSurLeTelephone()}>

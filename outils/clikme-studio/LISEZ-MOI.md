@@ -405,6 +405,14 @@ courbes** que `lili-ross/scene.html` et `figurine.js` (21 s, ou 24,5 avec la fig
 | musique en Python, normalisée | la même partition en Web Audio (`studio-musique.ts`), ≈ -14 LUFS mesurés |
 | MP4 1080×1920 | 720×1280 (le format des vidéos de l'appli) ; MP4 H.264 sur iPhone, WebM ailleurs |
 
+### L'extrait de 8 secondes pour ses partenaires de diffusion
+
+S'il est dans le réseau de diffusion croisée (`docs/diffusion-croisee.md`), « Publier mon film » prépare d'abord un
+**extrait de 8 secondes** (`studio-extrait.ts`, `monterExtrait`) : le téléphone rejoue le film qu'il vient de monter
+(après l'intro de la figurine), en garde 6,4 s avec « 📣 Découverte du quartier » et le nom du commerce, puis une carte
+de fin (« Le film entier sur sa page », son adresse). C'est lui qui part chez ses deux partenaires ; ses propres
+réseaux reçoivent le film entier.
+
 ### Les fichiers
 
 - `src/lib/direct/studio.ts` : les temps du film, les moments proposés, les plans, les mots par métier, les bulles,

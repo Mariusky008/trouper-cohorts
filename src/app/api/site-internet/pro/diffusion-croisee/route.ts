@@ -4,6 +4,7 @@
  *
  * Contre son jeton pro :
  *   · `etat` : son réglage, ses deux partenaires, les vidéos reçues de leur part, les siennes chez eux ;
+ *   · `reglage` : son réglage seulement (le Studio : faut-il l'extrait de 8 s ?) ;
  *   · `rejoindre` (avec son `accord` coché) / `quitter` : il entre dans le réseau, ou en sort ;
  *   · `auto` : leurs vidéos partent toutes seules sur ses réseaux (au plus deux par semaine), ou il les valide une à une ;
  *   · `diffuser` / `refuser` : une vidéo reçue, sur ses réseaux maintenant, ou pas celle-ci.
@@ -68,6 +69,8 @@ export async function POST(request: Request) {
     if (!moi) return NextResponse.json({ error: "Commerce introuvable." }, { status: 404 });
 
     if (action === "etat") return NextResponse.json({ ok: true, etat: await etat(supabase, moi) });
+    // LE STUDIO DEMANDE SEULEMENT S'IL EST DANS LE RÉSEAU : faut-il fabriquer l'extrait de 8 s ?
+    if (action === "reglage") return NextResponse.json({ ok: true, reglage: moi.reglage });
 
     if (action === "rejoindre") {
       // SON ACCORD, COCHÉ PAR LUI : accueillir leurs vidéos, et que les siennes passent chez eux

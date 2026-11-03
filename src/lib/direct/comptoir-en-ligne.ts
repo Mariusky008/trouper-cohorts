@@ -370,11 +370,22 @@ export async function envoyerEpisode(
  * Le chemin de l'épisode (`deposerVideo`, puis l'annonce), avec un seul film : 21 à 25 secondes, il part tel quel
  * partout — Le Direct, sa page, et ses réseaux en Reel quand c'est du MP4 (sinon ils prennent l'affiche).
  */
-export async function envoyerStudio(c: CommerceComptoir, s: { texte: string; affiche: string; film: { blob: Blob; type: string; duree: number } }): Promise<ResultatEnvoi> {
+export async function envoyerStudio(
+  c: CommerceComptoir,
+  s: {
+    texte: string;
+    affiche: string;
+    film: { blob: Blob; type: string; duree: number };
+    /** 📣 L'extrait de 8 s pour ses partenaires de diffusion (`studio-extrait.ts`), s'il est dans le réseau. */
+    extrait?: { blob: Blob; type: string; duree: number } | null;
+  },
+): Promise<ResultatEnvoi> {
   if (!c.reel) return { ok: false, ou: [], erreur: "Ce commerce n'a pas de lien pro." };
   const { slug, token } = c.reel;
   const film = await deposerVideo(c, s.film.blob, s.film.type);
   if ("erreur" in film) return { ok: false, ou: [], erreur: film.erreur };
+  // S'IL N'A PAS PU PARTIR, ses partenaires reçoivent le film entier : l'extrait est un plus
+  const extrait = s.extrait ? await deposerVideo(c, s.extrait.blob, s.extrait.type) : null;
   const ceSoir = new Date();
   ceSoir.setHours(23, 59, 0, 0);
   const r = await poster("/api/site-internet/pro/offer", {
@@ -386,6 +397,9 @@ export async function envoyerStudio(c: CommerceComptoir, s: { texte: string; aff
     video: film.url,
     videoSecondes: Math.round(s.film.duree * 10) / 10,
     videoMp4: enMp4(s.film.type),
+    ...(s.extrait && extrait && "url" in extrait
+      ? { videoPartenaires: extrait.url, videoPartenairesSecondes: Math.round(s.extrait.duree * 10) / 10, videoPartenairesMp4: enMp4(s.extrait.type) }
+      : {}),
     until: ceSoir.toISOString(),
     famille: c.famille === "table" ? "menu" : "offre",
   });
