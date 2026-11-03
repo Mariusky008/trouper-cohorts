@@ -33,7 +33,25 @@ export type Etat = {
   essais?: { jour: string; n: number };
   /** Ses figurines du mois, par édition et par année (« automne-2026 »). */
   editions?: Record<string, { validee?: Validee | null; proposee?: Proposee | null }>;
+  /** 🗂 Toutes celles qu'il a validées, dans l'ordre : on n'en retire jamais (`ajouterALaCollection`). */
+  collection?: Piece[];
 };
+/** Une figurine de sa collection : `cle` vaut `selfie` (sa figurine de tous les jours) ou « automne-2026 ». */
+export type Piece = { chemin: string; le: string; cle: string; nom: string; emoji: string; debut?: string; fin?: string };
+
+/** Elle entre dans sa collection (une seule fois par image). */
+export function ajouterALaCollection(e: Etat, p: Piece): Piece[] {
+  const deja = e.collection ?? [];
+  return deja.some((x) => x.chemin === p.chemin) ? deja : [...deja, p];
+}
+
+/** Celles validées avant que la collection existe (sa figurine de tous les jours) : on les y range à la lecture. */
+function piecesDe(e: Etat): Piece[] {
+  const pieces = [...(e.collection ?? [])];
+  if (e.validee && !pieces.some((x) => x.chemin === e.validee?.chemin))
+    pieces.push({ chemin: e.validee.chemin, le: e.validee.le, cle: "selfie", nom: "Ma figurine", emoji: "🪀" });
+  return pieces;
+}
 
 // ─── le stockage ────────────────────────────────────────────────────────────────────────────────
 
@@ -101,6 +119,20 @@ export function etatPublic(supabase: Supabase, e: Etat, maintenant = new Date())
       ? { cle: edition.cleAnnee, nom: edition.nom, emoji: edition.emoji, jours: edition.jours, validee: urlDe(supabase, sienne?.validee?.chemin), proposee: urlDe(supabase, sienne?.proposee?.chemin) }
       : null,
     ensuite: ensuite ? { nom: ensuite.nom, emoji: ensuite.emoji, jours: ensuite.jours } : null,
+    collection: piecesDe(e)
+      .sort((a, b) => b.le.localeCompare(a.le))
+      .map((p) => ({
+        url: urlDe(supabase, p.chemin) ?? "",
+        cle: p.cle,
+        nom: p.nom,
+        emoji: p.emoji,
+        le: jourDe(new Date(p.le)),
+        debut: p.debut ?? null,
+        fin: p.fin ?? null,
+        actuelle: p.chemin === e.validee?.chemin,
+        dansLesFilms: p.chemin === (sienne?.validee?.chemin ?? e.validee?.chemin),
+      }))
+      .filter((f) => f.url),
   };
 }
 

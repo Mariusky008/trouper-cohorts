@@ -444,6 +444,21 @@ courbes** que `lili-ross/scene.html` et `figurine.js` (21 s, ou 24,5 avec la fig
   avec un nouveau selfie, celle de l'édition en cours est à rhabiller (elle portait l'ancien visage).
 - **Le Studio prend la figurine du mois** quand elle est validée, sinon sa figurine de tous les jours
   (`figurineDuMoment`).
+
+### Sa collection de figurines
+
+- **Chaque figurine qu'il valide y entre et n'en sort plus** (`etat.collection`, `ajouterALaCollection`) : sa figurine
+  de tous les jours (`cle: "selfie"`), et chaque figurine du mois avec les dates de son édition. Quand il refait sa
+  figurine ou que l'édition passe, l'ancienne reste. Celles validées avant la collection y sont rangées à la lecture.
+- **Où** : « 🗂 Ma collection », en bas de l'écran « Ma figurine » : une vignette par figurine, son mois de création,
+  et une pastille (« Dans tes films », « En ce moment », « Édition finie »).
+- **Sa fiche** (on touche une vignette) : elle en grand, et son histoire en trois lignes (`histoireDeLaFigurine`,
+  `figurine-pro.ts`) — **sa création** (« Créée en novembre 2026 »), **pendant son édition** (« jusqu'au 20 décembre :
+  tes clients la gagnent en venant chez toi… »), **après** (« elle ne se gagne plus ; elle reste dans ta collection, et
+  tu peux toujours la mettre dans un petit film »). Puis « 🎬 Faire un petit film avec elle » : le Studio s'ouvre avec
+  elle (`figurineDepart`).
+- **Dans le Studio**, au choix « Avec ta figurine ? » : s'il en a plusieurs, « Laquelle ? » — toute sa collection,
+  celle du moment choisie d'office.
 - Réglages (variables d'environnement, toutes facultatives) : `OPENAI_API_KEY` (sans elle, la fabrication répond
   « pas encore branchée »), `OPENAI_IMAGE_MODEL` (impose un moteur), `FIGURINE_QUALITE` (`high` par défaut),
   `FIGURINE_ESSAIS_PAR_JOUR` (3), `FIGURINES_PROS_BUCKET`.
@@ -458,7 +473,7 @@ depuis une session.
 
 ### Pas encore fait
 
-- La figurine fabriquée (et celle du mois) ne remplace pas encore son double dans **la collection** (`FIGURINES` de
+- La figurine fabriquée (et celle du mois) ne remplace pas encore son double dans **la collection des clients** (`FIGURINES` de
   `figurines-commerces.ts`, faite à la main) ni sur sa page.
 - Une seule pose (bras croisés), pas de bouche ouverte : elle parle par bulles. Les poses multiples et la bouche
   (`docs/figurines.md`, 9.7) viendront avec des retouches du même buste.

@@ -9,13 +9,16 @@
  *   · `fabriquer-edition`, `valider-edition` : 🍂 SA FIGURINE DU MOIS — sa figurine validée, habillée pour l'édition
  *     du moment (`collection.ts`) ; elle compte dans les mêmes trois essais du jour.
  *
+ * 🗂 CHAQUE FIGURINE VALIDÉE ENTRE DANS SA COLLECTION (`etat.collection`) et n'en sort plus : quand il en refait une,
+ * ou quand l'édition passe, il la garde, et peut toujours la remettre dans un petit film.
+ *
  * LE SELFIE N'EST JAMAIS GARDÉ : il arrive avec la requête, sert à la fabrication, et s'oublie avec elle.
  */
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { FamilleDouble } from "@/lib/direct/double-metiers";
 import { jourDe } from "@/lib/direct/figurine-pro";
-import { deposerImage, ecrireEtat, editionDuJour, etatPublic, fabriquerFigurine, habillerFigurine, lireEtat, lireImage } from "@/lib/direct/figurine-pro-serveur";
+import { ajouterALaCollection, deposerImage, ecrireEtat, editionDuJour, etatPublic, fabriquerFigurine, habillerFigurine, lireEtat, lireImage } from "@/lib/direct/figurine-pro-serveur";
 
 export const dynamic = "force-dynamic";
 /** Une génération d'image prend de trente secondes à deux minutes. */
@@ -55,7 +58,9 @@ export async function POST(request: Request) {
       // UN NOUVEAU VISAGE : celle du mois portait l'ancien, elle est à rhabiller (les éditions passées restent)
       const { edition } = editionDuJour();
       const editions = edition && etat.editions?.[edition.cleAnnee] ? { ...etat.editions, [edition.cleAnnee]: {} } : etat.editions;
-      const suivant = { ...etat, validee: { chemin: etat.proposee.chemin, le: new Date().toISOString() }, proposee: null, editions };
+      const le = new Date().toISOString();
+      const collection = ajouterALaCollection(etat, { chemin: etat.proposee.chemin, le, cle: "selfie", nom: "Ma figurine", emoji: "🪀" });
+      const suivant = { ...etat, validee: { chemin: etat.proposee.chemin, le }, proposee: null, editions, collection };
       await ecrireEtat(supabase, siteId, suivant);
       return NextResponse.json({ ok: true, etat: etatPublic(supabase, suivant) });
     }
@@ -108,8 +113,19 @@ export async function POST(request: Request) {
       const { edition } = editionDuJour();
       const sienne = edition ? etat.editions?.[edition.cleAnnee] : undefined;
       if (!edition || !sienne?.proposee) return NextResponse.json({ error: "Aucune figurine du mois à valider." }, { status: 400 });
-      const editions = { ...(etat.editions ?? {}), [edition.cleAnnee]: { validee: { chemin: sienne.proposee.chemin, le: new Date().toISOString() }, proposee: null } };
-      const suivant = { ...etat, editions };
+      const le = new Date().toISOString();
+      const editions = { ...(etat.editions ?? {}), [edition.cleAnnee]: { validee: { chemin: sienne.proposee.chemin, le }, proposee: null } };
+      // 🗂 ELLE ENTRE DANS SA COLLECTION, avec les dates de son édition : elle y reste quand l'édition passe
+      const collection = ajouterALaCollection(etat, {
+        chemin: sienne.proposee.chemin,
+        le,
+        cle: edition.cleAnnee,
+        nom: edition.nom,
+        emoji: edition.emoji,
+        debut: edition.debut,
+        fin: edition.fin,
+      });
+      const suivant = { ...etat, editions, collection };
       await ecrireEtat(supabase, siteId, suivant);
       return NextResponse.json({ ok: true, etat: etatPublic(supabase, suivant) });
     }

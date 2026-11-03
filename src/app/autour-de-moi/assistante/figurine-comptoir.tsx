@@ -12,10 +12,13 @@
  * 🍂 SA FIGURINE DU MOIS : la même, habillée pour l'édition du moment (l'Automne, Noël… — `collection.ts`). Ses clients
  * la gagnent en venant pendant l'édition ; elle est aussi dans ses vidéos. Elle se fait à partir de sa figurine
  * validée, en un geste : le visage ne change pas, seule la tenue change.
+ *
+ * 🗂 SA COLLECTION : chaque figurine qu'il valide reste (`etat.collection`), avec son histoire — créée quand, à quoi
+ * elle sert pendant son édition, et après (`histoireDeLaFigurine`). Il la remet dans un petit film quand il veut.
  */
 import { useEffect, useRef, useState } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
-import { SELFIE_MAX_PX, type EtatFigurinePro } from "@/lib/direct/figurine-pro";
+import { SELFIE_MAX_PX, figurineDuMoment, histoireDeLaFigurine, moisEnMots, type EtatFigurinePro, type FigurineDeCollection } from "@/lib/direct/figurine-pro";
 import { editionsDuMoment } from "@/lib/direct/collection";
 import { jourParis } from "@/lib/jour-paris";
 
@@ -34,6 +37,12 @@ async function demander(c: CommerceComptoir, corps: Record<string, unknown>): Pr
   } catch {
     return { error: "Pas de réseau : réessaie dans un instant." };
   }
+}
+
+/** Où en est sa figurine (et sa collection) — pour le Studio aussi. `null` sans lien pro ou sans réseau. */
+export async function lireMaFigurine(c: CommerceComptoir): Promise<EtatFigurinePro | null> {
+  if (!c.reel) return null;
+  return (await demander(c, { action: "etat" })).etat ?? null;
 }
 
 /** Son selfie, réduit par le téléphone (1 024 px au plus) : il part léger, et le sens de la photo est déjà le bon. */
@@ -80,9 +89,9 @@ function Ressort() {
 }
 
 /** Sa figurine telle qu'elle sera dans ses vidéos : son buste, le ressort, le socle commun. Elle rebondit doucement. */
-export function ApercuFigurine({ src, petit }: { src: string; petit?: boolean }) {
+export function ApercuFigurine({ src, petit, mini }: { src: string; petit?: boolean; mini?: boolean }) {
   return (
-    <div className={`fg-apercu${petit ? " petit" : ""}`}>
+    <div className={`fg-apercu${petit ? " petit" : ""}${mini ? " mini" : ""}`}>
       {/* SES STYLES AVEC LUI : l'aperçu sert aussi hors de cet écran (le choix « avec ou sans » du Studio) */}
       <style>{STYLES_APERCU}</style>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -239,8 +248,19 @@ export function FabriquerFigurine({
 }
 
 /** 🍂 MA FIGURINE DU MOIS — l'écran entier, ouvert depuis l'accueil du comptoir ou Ma boutique. */
-export function MaFigurine({ commerce, onRetour, onStudio }: { commerce: CommerceComptoir; onRetour: () => void; onStudio?: () => void }) {
+export function MaFigurine({
+  commerce,
+  onRetour,
+  onStudio,
+}: {
+  commerce: CommerceComptoir;
+  onRetour: () => void;
+  /** Le Studio, avec cette figurine choisie d'office. */
+  onStudio?: (figurine: string | null) => void;
+}) {
   const [etat, setEtat] = useState<EtatFigurinePro | null>(null);
+  /** La figurine de sa collection dont il lit l'histoire. */
+  const [fiche, setFiche] = useState<FigurineDeCollection | null>(null);
   const [selfie, setSelfie] = useState(false);
   const [enCours, setEnCours] = useState(false);
   const [secondes, setSecondes] = useState(0);
@@ -287,6 +307,7 @@ export function MaFigurine({ commerce, onRetour, onStudio }: { commerce: Commerc
   const ed = etat?.edition ?? null;
   /** pour la présenter avant même la réponse du serveur (ou sans lien pro) */
   const [duJour] = useState(() => editionsDuMoment(jourParis()).maintenant);
+  const [aujourdhui] = useState(() => jourParis());
   const restants = etat?.essaisRestants ?? 0;
   const dejaEnGrand = !!ed && !ed.validee && !ed.proposee && !enCours && !!etat?.validee;
   const ETAPES = ["Je sors ta figurine…", "Je choisis sa tenue…", "Je peins les détails…", "Presque fini…"];
@@ -386,19 +407,98 @@ export function MaFigurine({ commerce, onRetour, onStudio }: { commerce: Commerc
                 </button>
               </div>
             </section>
+            {onStudio && (
+              <button type="button" className="cz-second" onClick={() => onStudio(figurineDuMoment(etat))}>
+                🎬 Faire un petit film avec elle
+              </button>
+            )}
+            {/* 🗂 SA COLLECTION : toutes celles qu'il a validées, gardées pour toujours */}
+            {etat.collection.length > 0 && (
+              <section className="mf-collection">
+                <h3>
+                  🗂 Ma collection{" "}
+                  <span>
+                    {etat.collection.length} {etat.collection.length > 1 ? "figurines" : "figurine"}
+                  </span>
+                </h3>
+                <p>Chaque figurine que tu valides reste ici. Touche-en une pour son histoire, ou pour la remettre dans un petit film.</p>
+                <div className="mf-grille">
+                  {etat.collection.map((f) => {
+                    const h = histoireDeLaFigurine(f, aujourdhui);
+                    return (
+                      <button key={f.url} type="button" className="mf-piece" onClick={() => setFiche(f)}>
+                        <ApercuFigurine src={f.url} mini />
+                        <b>
+                          {f.emoji} {f.nom}
+                        </b>
+                        <em>{moisEnMots(f.le)}</em>
+                        {f.dansLesFilms ? (
+                          <i className="mf-pastille films">Dans tes films</i>
+                        ) : h.moment === "en-cours" ? (
+                          <i className="mf-pastille">En ce moment</i>
+                        ) : h.moment === "passee" ? (
+                          <i className="mf-pastille finie">Édition finie</i>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
             {etat.ensuite && (
               <p className="mf-ensuite">
                 Ensuite : l’édition {etat.ensuite.nom} {etat.ensuite.emoji}, dans {etat.ensuite.jours} {etat.ensuite.jours > 1 ? "jours" : "jour"}.
               </p>
             )}
-            {onStudio && (
-              <button type="button" className="cz-second" onClick={onStudio}>
-                🎬 Faire un petit film avec elle
-              </button>
-            )}
           </>
         )}
         {erreur && <p className="fg-erreur">{erreur}</p>}
+      </div>
+      {fiche && <FicheFigurine f={fiche} aujourdhui={aujourdhui} onFermer={() => setFiche(null)} onStudio={onStudio && (() => onStudio(fiche.url))} />}
+    </div>
+  );
+}
+
+/** 🗂 LA FICHE D'UNE FIGURINE DE SA COLLECTION : elle en grand, et son histoire en trois lignes. */
+function FicheFigurine({ f, aujourdhui, onFermer, onStudio }: { f: FigurineDeCollection; aujourdhui: string; onFermer: () => void; onStudio?: () => void }) {
+  const h = histoireDeLaFigurine(f, aujourdhui);
+  return (
+    <div className="mf-fiche" role="dialog" aria-modal="true" aria-label={h.titre}>
+      <div className="mf-fiche-c">
+        <ApercuFigurine src={f.url} />
+        <h2>{h.titre}</h2>
+        {f.dansLesFilms && <i className="mf-pastille films">🎬 C’est elle qui présente tes petits films</i>}
+        <ul className="mf-histoire">
+          <li>
+            <span aria-hidden="true">🗓</span>
+            <div>
+              <b>Sa création</b>
+              <p>{h.creee}</p>
+            </div>
+          </li>
+          <li>
+            <span aria-hidden="true">⏳</span>
+            <div>
+              <b>{h.moment === "toujours" ? "À quoi elle sert" : h.moment === "en-cours" ? "Pendant l’édition" : "Pendant son édition"}</b>
+              <p>{h.pendant}</p>
+            </div>
+          </li>
+          <li>
+            <span aria-hidden="true">🗂</span>
+            <div>
+              <b>{h.moment === "toujours" ? "Et ensuite" : "Après l’édition"}</b>
+              <p>{h.apres}</p>
+            </div>
+          </li>
+        </ul>
+        {onStudio && (
+          <button type="button" className="cz-go grand" onClick={onStudio}>
+            🎬 Faire un petit film avec elle
+          </button>
+        )}
+        <button type="button" className="cz-second" onClick={onFermer}>
+          Fermer
+        </button>
       </div>
     </div>
   );
@@ -424,6 +524,25 @@ const STYLES_MF = `
 .mf-base b{font-size:16px;}
 .mf-base em{font-style:normal;font-size:13px;color:var(--gris);}
 .mf-ensuite{margin:0;text-align:center;font-size:13.5px;color:var(--gris);}
+.mf-collection{display:flex;flex-direction:column;gap:10px;padding:14px 12px;border-radius:22px;background:var(--nappe);border:1px solid var(--trait);}
+.mf-collection h3{margin:0;display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:19px;}
+.mf-collection h3 span{font-family:inherit;font-size:13px;font-weight:700;color:var(--gris);}
+.mf-collection>p{margin:0;font-size:13.5px;line-height:1.4;color:var(--gris);}
+.mf-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:10px;}
+.mf-piece{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px 10px;border-radius:18px;border:1px solid var(--trait);background:var(--nappe2);color:var(--creme);text-align:center;}
+.mf-piece b{font-size:13px;line-height:1.2;}
+.mf-piece em{font-style:normal;font-size:12px;color:var(--gris);}
+.mf-pastille{font-style:normal;font-size:11px;font-weight:800;white-space:nowrap;padding:3px 7px;border-radius:999px;background:rgba(245,162,58,.18);color:var(--ambre);}
+.mf-pastille.films{background:rgba(255,46,154,.16);color:var(--rose);}
+.mf-pastille.finie{background:rgba(255,244,230,.08);color:var(--gris);}
+.mf-fiche{position:absolute;inset:0;z-index:2;background:rgba(10,6,4,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);overflow-y:auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom,0px));}
+.mf-fiche-c{display:flex;flex-direction:column;align-items:center;gap:12px;max-width:440px;margin:0 auto;padding:18px 16px;border-radius:26px;background:var(--fond);border:1px solid var(--trait);}
+.mf-fiche-c h2{margin:0;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:22px;text-align:center;}
+.mf-histoire{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;width:100%;}
+.mf-histoire li{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:10px 12px;border-radius:16px;background:var(--nappe);border:1px solid var(--trait);}
+.mf-histoire span{font-size:20px;line-height:1.2;}
+.mf-histoire b{font-size:14px;}
+.mf-histoire p{margin:2px 0 0;font-size:13.5px;line-height:1.42;color:var(--gris);}
 `;
 
 const STYLES = `
@@ -449,6 +568,8 @@ const STYLES = `
 const STYLES_APERCU = `
 .fg-apercu{position:relative;width:210px;height:330px;border-radius:24px;background:radial-gradient(70% 55% at 50% 60%,#FFF3F5,#F8DCE2 55%,#EEC2CC);overflow:hidden;}
 .fg-apercu.petit{width:120px;height:190px;border-radius:16px;}
+.fg-apercu.mini{width:88px;height:138px;border-radius:14px;}
+.fg-apercu.mini .fg-buste,.fg-apercu.mini .fg-ressort{animation:none;}
 .fg-buste{position:absolute;left:50%;bottom:30%;width:auto;height:62%;max-width:94%;object-fit:contain;transform:translateX(-50%);transform-origin:50% 100%;animation:fg-rebond 2.6s ease-in-out infinite;}
 .fg-ressort{position:absolute;left:50%;bottom:14.5%;width:17%;height:17%;transform:translateX(-50%);transform-origin:50% 100%;animation:fg-ressort 2.6s ease-in-out infinite;}
 .fg-socle{position:absolute;left:50%;bottom:6%;width:62%;transform:translateX(-50%);}

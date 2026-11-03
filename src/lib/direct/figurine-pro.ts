@@ -45,10 +45,71 @@ export type EtatFigurinePro = {
   /** L'édition du moment (`null` : aucune en cours) ; la suivante, pour la préparer. */
   edition: EditionFigurine | null;
   ensuite: { nom: string; emoji: string; jours: number } | null;
+  /** 🗂 Toutes celles qu'il a validées, la plus récente d'abord. */
+  collection: FigurineDeCollection[];
+};
+
+/**
+ * 🗂 SA COLLECTION : chaque figurine qu'il a validée reste, même quand il en refait une ou que l'édition passe. Il la
+ * revoit avec son histoire (créée quand, à quoi elle sert pendant l'édition, et après) et la remet dans un petit film
+ * quand il en a envie.
+ */
+export type FigurineDeCollection = {
+  url: string;
+  /** `selfie` (sa figurine de tous les jours) ou l'édition et son année (« automne-2026 »). */
+  cle: string;
+  /** « Ma figurine », ou le nom de l'édition (« Automne »). */
+  nom: string;
+  emoji: string;
+  /** Le jour où il l'a validée (AAAA-MM-JJ, à Paris). */
+  le: string;
+  /** Les dates de son édition (AAAA-MM-JJ) ; `null` pour sa figurine de tous les jours. */
+  debut: string | null;
+  fin: string | null;
+  /** Sa figurine de tous les jours d'aujourd'hui (pas une qu'il a refaite depuis). */
+  actuelle: boolean;
+  /** Celle que le Studio met dans ses films si on ne choisit pas (`figurineDuMoment`). */
+  dansLesFilms: boolean;
 };
 
 /** La figurine de ses vidéos : celle du mois si elle est prête, sinon sa figurine tout court. */
 export const figurineDuMoment = (e: EtatFigurinePro | null | undefined) => e?.edition?.validee ?? e?.validee ?? null;
+
+const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+/** « 20 décembre » ; « 20 décembre 2026 » avec l'année. */
+const jourEnMots = (j: string, annee = false) => `${+j.slice(8, 10) === 1 ? "1er" : +j.slice(8, 10)} ${MOIS[+j.slice(5, 7) - 1]}${annee ? ` ${j.slice(0, 4)}` : ""}`;
+/** « Novembre 2026 ». */
+export const moisEnMots = (j: string) => `${MOIS[+j.slice(5, 7) - 1].replace(/^./, (c) => c.toUpperCase())} ${j.slice(0, 4)}`;
+
+/**
+ * L'HISTOIRE D'UNE FIGURINE, en trois lignes : quand il l'a créée, à quoi elle sert pendant son édition, et après.
+ * `aujourdhui` : AAAA-MM-JJ (à Paris). Les mots sont pour lui, au comptoir : on le tutoie.
+ */
+export function histoireDeLaFigurine(f: FigurineDeCollection, aujourdhui: string): { titre: string; moment: "toujours" | "en-cours" | "passee"; creee: string; pendant: string; apres: string } {
+  const creee = `Créée en ${moisEnMots(f.le).toLowerCase()}`;
+  const garder = "Elle reste dans ta collection, et tu peux toujours la mettre dans un petit film.";
+  if (!f.debut || !f.fin) {
+    return {
+      titre: `${f.emoji} ${f.nom}`,
+      moment: "toujours",
+      creee,
+      pendant: f.actuelle
+        ? "Ta figurine de tous les jours, faite d’après ton selfie. C’est elle qu’on habille à chaque édition, et elle présente tes petits films tant que l’édition n’a pas la sienne."
+        : "Ta figurine de tous les jours, faite d’après un selfie, avant celle d’aujourd’hui.",
+      apres: f.actuelle ? "Si tu en refais une, celle-ci reste ici, dans ta collection." : `Tu en as refait une depuis. ${garder}`,
+    };
+  }
+  const enCours = aujourdhui <= f.fin;
+  return {
+    titre: `${f.emoji} Édition ${f.nom}`,
+    moment: enCours ? "en-cours" : "passee",
+    creee,
+    pendant: enCours
+      ? `Édition ${f.nom}, jusqu’au ${jourEnMots(f.fin)} : tes clients la gagnent en venant chez toi${f.dansLesFilms ? ", et elle présente tes petits films" : ""}.`
+      : `Édition ${f.nom}, du ${jourEnMots(f.debut)} au ${jourEnMots(f.fin, true)} : tes clients la gagnaient en venant chez toi, et elle présentait tes petits films.`,
+    apres: enCours ? `Après le ${jourEnMots(f.fin)}, elle ne se gagne plus. ${garder}` : `L’édition est finie : elle ne se gagne plus. ${garder}`,
+  };
+}
 
 /** Ce qu'il porte quand le selfie ne montre que son visage : une tenue simple de son métier, rien de plus. */
 const TENUE: Record<FamilleDouble, string> = {
