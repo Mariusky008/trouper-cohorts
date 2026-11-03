@@ -117,6 +117,8 @@ const Episode = dynamic(() => import("./episode-comptoir").then((m) => m.Episode
 const Studio = dynamic(() => import("./studio-comptoir").then((m) => m.StudioComptoir), { ssr: false });
 /* 🪀 MA FIGURINE DU MOIS : sa figurine (un selfie), habillée pour l'édition du moment — chargée quand on l'ouvre. */
 const MaFigurine = dynamic(() => import("./figurine-comptoir").then((m) => m.MaFigurine), { ssr: false });
+/* 📣 MON RÉSEAU DE DIFFUSION : ses vidéos chez deux partenaires, les leurs chez lui — chargé quand on l'ouvre. */
+const MonReseau = dynamic(() => import("./diffusion-comptoir").then((m) => m.MonReseau), { ssr: false });
 
 /** « Édition Automne 🍂 · encore 48 jours » (Ma boutique), « Édition Automne 🍂 » en court (l'accueil) : l'édition du moment (`collection.ts`). */
 function editionEnMots(court = false): string {
@@ -397,6 +399,8 @@ type Phase =
   | { ou: "studio"; figurine?: string | null }
   /** 🪀 Ma figurine du mois : à partir d'un selfie, habillée pour l'édition — voir `figurine-comptoir.tsx`. */
   | { ou: "figurine" }
+  /** 📣 Mon réseau de diffusion : ses vidéos chez deux partenaires — voir `diffusion-comptoir.tsx`. */
+  | { ou: "diffusion" }
   /** Ma carte : ses rubriques, ses lignes et ses prix — voir `carte-comptoir.tsx`. */
   | { ou: "carte" }
   /** Ce que mon fantôme sait : ses réponses, et les questions de ses clients — voir `savoir-comptoir.tsx`. */
@@ -982,6 +986,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           onPhototheque={() => setPhase({ ou: "phototheque" })}
           onCarte={() => setPhase({ ou: "carte" })}
           onFigurine={() => setPhase({ ou: "figurine" })}
+          onDiffusion={() => setPhase({ ou: "diffusion" })}
         />
       )}
 
@@ -1005,6 +1010,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           onPhototheque={() => setPhase({ ou: "phototheque" })}
           onCarte={() => setPhase({ ou: "carte" })}
           onFigurine={() => setPhase({ ou: "figurine" })}
+          onDiffusion={() => setPhase({ ou: "diffusion" })}
         />
       )}
 
@@ -1221,6 +1227,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
 
       {/* 🪀 MA FIGURINE DU MOIS, PAR-DESSUS LE COMPTOIR */}
       {phase.ou === "figurine" && <MaFigurine commerce={commerce} onRetour={revenir} onStudio={(figurine) => setPhase({ ou: "studio", figurine })} />}
+      {phase.ou === "diffusion" && <MonReseau commerce={commerce} onRetour={revenir} />}
 
       {/* 🎬 CLIKME STUDIO, PAR-DESSUS LE COMPTOIR : son film part comme l'épisode — Le Direct, sa page, ses réseaux. */}
       {phase.ou === "studio" && (
@@ -1576,6 +1583,7 @@ function Accueil({
   onPhototheque,
   onCarte,
   onFigurine,
+  onDiffusion,
 }: {
   commerce: Commerce;
   mission: Mission;
@@ -1614,6 +1622,7 @@ function Accueil({
   onCarte: () => void;
   /** 🪀 Ma figurine du mois. */
   onFigurine: () => void;
+  onDiffusion: () => void;
 }) {
   const pose = useFantome(false, "salut");
   const questions = questionsDuMetier(commerce.famille, commerce.metier);
@@ -1696,6 +1705,18 @@ function Accueil({
           </span>
           <s aria-hidden="true">›</s>
         </button>
+        {/* 📣 SON RÉSEAU DE DIFFUSION : ses vidéos chez deux partenaires, les leurs chez lui */}
+        <button type="button" className="ak-second" onClick={onDiffusion}>
+          <span className="ak-second-i" aria-hidden="true">
+            📣
+          </span>
+          <span className="ak-cta-t">
+            <b>Mon réseau de diffusion</b>
+            <em>Tes vidéos passent aussi chez deux voisins, les leurs chez toi</em>
+            <i className="ak-meta">Nouveau</i>
+          </span>
+          <s aria-hidden="true">›</s>
+        </button>
         <button type="button" className="ak-second" onClick={onDepenses}>
           <span className="ak-second-i" aria-hidden="true">
             🤝
@@ -1746,6 +1767,7 @@ function Boutique({
   onPhototheque,
   onCarte,
   onFigurine,
+  onDiffusion,
 }: {
   commerce: Commerce;
   mission: Mission;
@@ -1759,6 +1781,7 @@ function Boutique({
   onPhototheque: () => void;
   onCarte: () => void;
   onFigurine: () => void;
+  onDiffusion: () => void;
 }) {
   const clients = etatDesClients(mission, actives, principal, propositionActive);
   const prochaine = programmees[0];
@@ -1789,6 +1812,7 @@ function Boutique({
         <Ligne icone="vitrine" nom="Vitrine" sous="Tes produits, en photo, avec leur nom" onClick={onVitrine} />
         <Ligne icone="photos" nom="Photos" sous="Ta photothèque, où tu pioches à chaque annonce" onClick={onPhototheque} />
         <Ligne icone="figurine" nom="Ma figurine du mois" sous={editionEnMots()} onClick={onFigurine} />
+        <Ligne icone="diffusion" nom="Mon réseau de diffusion" sous="Mes vidéos chez deux voisins, les leurs chez moi" onClick={onDiffusion} />
         <Ligne icone="carte" nom={motDeLaCarte(commerce)} sous={`${motsDeLaCarte(commerce.famille, commerce.metier).titre.replace(/^Ma /, "Ta ").replace(/^Mes /, "Tes ")}, ligne par ligne`} onClick={onCarte} />
       </div>
     </div>
@@ -2175,6 +2199,12 @@ const ICONES = {
     </>
   ),
   stats: <path d="M4 19V11M10 19V5M16 19v-6M22 19H2" />,
+  diffusion: (
+    <>
+      <path d="M4 10v4h3l6 4V6L7 10z" />
+      <path d="M16.5 9.5a3.5 3.5 0 0 1 0 5M18.8 7.2a6.8 6.8 0 0 1 0 9.6" />
+    </>
+  ),
   figurine: (
     <>
       <circle cx="12" cy="6.2" r="3.4" />

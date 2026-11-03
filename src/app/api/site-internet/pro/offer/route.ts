@@ -33,6 +33,7 @@ import { activerPlanning, oublierEnCours } from "@/lib/direct/planning-activatio
 import { idDePiece, motsPourLesReseaux, plateformesChoisies, reseauxDuDiagnostic } from "@/lib/reseaux/reseaux-donnees";
 import { piecesDuDiagnostic } from "@/lib/site-internet/pieces-comptoir";
 import { publierSurSesReseauxEnFond, reseauxConfigures } from "@/lib/reseaux/intermediaire";
+import { envoyerAuxPartenaires } from "@/lib/direct/diffusion-serveur";
 
 export const dynamic = "force-dynamic";
 // UNE INTERVIEW PART EN REEL APRÈS LA RÉPONSE (`after`) : l'intermédiaire va la
@@ -578,6 +579,24 @@ export async function POST(request: Request) {
           ...(choisis ? { plateformes: versReseaux } : {}),
         },
       );
+    }
+
+    // 📣 SA VIDÉO PASSE AUSSI CHEZ SES DEUX PARTENAIRES (la diffusion croisée, s'il l'a acceptée) — après la réponse.
+    // Voir `lib/direct/diffusion-serveur.ts`. Pas une annonce « Il en reste ! » (`reseaux: false`) : elle ne dure pas.
+    if (video && photo && p?.reseaux !== false) {
+      const auxReseaux = videoAcceptee(str(p?.videoReseaux));
+      const secondesPartenaires = Number(auxReseaux ? p?.videoReseauxSecondes : p?.videoSecondes);
+      const versPartenaires = {
+        url: auxReseaux ?? video,
+        secondes: Number.isFinite(secondesPartenaires) && secondesPartenaires > 0 ? secondesPartenaires : 0,
+        mp4: (auxReseaux ? p?.videoReseauxMp4 : p?.videoMp4) === true,
+      };
+      const travail = envoyerAuxPartenaires(str(site.id), { texte: text, photo, video: versPartenaires });
+      try {
+        after(travail);
+      } catch {
+        await travail;
+      }
     }
 
     return NextResponse.json({
