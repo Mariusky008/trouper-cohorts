@@ -471,7 +471,11 @@ courbes** que `lili-ross/scene.html` et `figurine.js` (21 s, ou 24,5 avec la fig
   celle du moment choisie d'office.
 - Réglages (variables d'environnement, toutes facultatives) : `OPENAI_API_KEY` (sans elle, la fabrication répond
   « pas encore branchée »), `OPENAI_IMAGE_MODEL` (impose un moteur), `FIGURINE_QUALITE` (`high` par défaut),
-  `FIGURINE_ESSAIS_PAR_JOUR` (3), `FIGURINES_PROS_BUCKET`.
+  `FIGURINE_FIDELITE` (`low` par défaut — voir plus bas), `FIGURINE_ESSAIS_PAR_JOUR` (3), `FIGURINES_PROS_BUCKET`.
+- **La fidélité à l'image d'entrée : basse (`low`).** En `high` (le premier réglage), le moteur recopie le selfie : un
+  visage photographique collé sur un petit corps, et pour l'édition l'ancienne tenue gardée (« pas très automne »,
+  3 novembre 2026). En `low`, il réinterprète : la caricature sculptée et peinte, et la tenue vraiment changée. La
+  consigne met le STYLE en premier (« pas une photo : sculpté et peint »), la ressemblance ensuite.
 
 ### Vérifier
 

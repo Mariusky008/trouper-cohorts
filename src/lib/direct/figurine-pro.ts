@@ -166,10 +166,11 @@ const METIER: Record<FamilleDouble, { tenue: string; accessoires: string }> = {
  * forcés mais lui, les accessoires, et le corps qui s'arrête aux hanches (le ressort part de sous ses vêtements).
  */
 const STYLE = [
-  "LE STYLE (le plus important après la ressemblance) :",
-  "- Une figurine de collection à tête dodelinante (« bobblehead »), style caricature 3D tendre et drôle, comme un personnage de film d'animation : PAS un buste réaliste, PAS une statue.",
-  "- Une TÊTE ÉNORME, à peu près aussi haute que tout le reste du corps visible, posée sur un petit corps fin.",
-  "- Les traits caricaturés avec affection : un grand sourire franc qui montre les dents, des yeux pétillants et expressifs. On le reconnaît au premier coup d'œil.",
+  "LE STYLE (obligatoire) :",
+  "- Une figurine de collection à tête dodelinante (« bobblehead »), style caricature 3D tendre et drôle, comme un personnage de film d'animation 3D.",
+  "- PAS UNE PHOTO : aucun morceau de la photo n'est recopié. Le visage, la peau, les cheveux et les yeux sont SCULPTÉS ET PEINTS, comme sur un jouet de collection ; pas un buste réaliste, pas une statue, pas un montage.",
+  "- Une TÊTE ÉNORME : elle fait à peu près la moitié de la hauteur de la figurine, sur un petit corps fin aux épaules étroites.",
+  "- Les traits caricaturés avec affection : les yeux un peu plus grands et pétillants, un grand sourire franc qui montre les dents, les traits qui le distinguent légèrement accentués.",
   "- Une résine peinte à la main très haut de gamme, finition satinée, couleurs vives et chaleureuses, détails fins et nets (coutures, mailles, reflets dans les yeux), peinture impeccable sans aucune bavure.",
   "- Rendu de photo produit en très haute définition : net partout, éclairage de studio doux, contours nets et propres.",
 ];
@@ -202,14 +203,14 @@ const cadrage = (fond: "transparent" | "vert") => [
 export function consigneFigurine(famille: FamilleDouble, fond: "transparent" | "vert"): string {
   const m = METIER[famille] ?? METIER.createur;
   return [
-    "Transforme la personne de cette photo en figurine de collection à tête dodelinante, caricature 3D tendre et drôle, photographiée en studio.",
-    "",
-    "LA RESSEMBLANCE AVANT TOUT :",
-    "- Garde son visage : la forme du visage, les yeux, le nez, la bouche, la mâchoire, la couleur de peau, l'âge, la coupe et la couleur des cheveux, la barbe ou la moustache s'il y en a.",
-    "- Garde ce qui le rend unique (ses rides, ses fossettes, ses sourcils) : ne le rajeunis pas, ne le change pas en quelqu'un d'autre.",
-    "- S'il porte des lunettes, garde-les telles quelles ; s'il n'en porte pas, n'en ajoute pas. Rien sur la tête ni sur le visage qui ne soit pas sur la photo.",
+    "Crée une figurine de collection à tête dodelinante, en caricature 3D tendre et drôle, d'après la personne de cette photo — photographiée en studio comme un jouet de collection.",
     "",
     ...STYLE,
+    "",
+    "LA RESSEMBLANCE (on doit le reconnaître au premier coup d'œil, en caricature) :",
+    "- Reprends ses traits, transposés en sculpture : la forme du visage, les yeux, le nez, la bouche, la mâchoire, la couleur de peau, l'âge, la coupe et la couleur des cheveux, la barbe ou la moustache s'il y en a.",
+    "- Garde ce qui le rend unique (ses rides, ses fossettes, ses sourcils) : ne le rajeunis pas, ne le change pas en quelqu'un d'autre.",
+    "- S'il porte des lunettes, garde-les ; s'il n'en porte pas, n'en ajoute pas. Rien sur la tête ni sur le visage qui ne soit pas sur la photo.",
     "",
     "SA TENUE :",
     `- Une tenue de son métier, gaie et soignée : ${m.tenue}, dans les couleurs de ses vêtements sur la photo si on les voit.`,
@@ -243,7 +244,7 @@ export const TENUES_EDITION: Record<string, string> = {
   rentree:
     "un gilet en maille, un cartable d'écolier rétro sur le dos, un crayon à papier géant coincé sous le bras, et une pomme rouge posée dans la poche",
   automne:
-    "un pull en grosse maille couleur rouille, une écharpe à carreaux, un panier en osier rempli de pommes et de champignons au bras, et une feuille d'érable dorée épinglée comme une broche",
+    "un béret en laine couleur moutarde orné d'une feuille d'érable rousse, un gros pull en grosse maille rouille et moutarde, une écharpe épaisse à carreaux orange et marron, un panier en osier rempli de champignons, de châtaignes et de pommes rouges au bras, et des feuilles mortes rousses et dorées posées sur les épaules et le béret",
   halloween:
     "une tenue de sorcière ou de sorcier violet foncé à motifs, un chapeau de sorcière à ruban de dentelle avec une petite citrouille épinglée, un sac en paille décoré de chauves-souris et d'une toile d'araignée d'où sort la tête d'un petit chat noir, et un bracelet à breloques (un petit fantôme, un bonbon d'Halloween)",
   noel: "un bonnet de Père Noël rouge à pompon blanc, un gros pull de Noël tricoté à rennes et flocons, une écharpe rayée rouge et blanche, un sucre d'orge qui dépasse de la poche, et un petit paquet cadeau à nœud doré sous le bras",
@@ -261,10 +262,13 @@ export function consigneEdition(cleEdition: string, nomEdition: string, fond: "t
     "C'EST LA MÊME FIGURINE :",
     "- Garde exactement le même visage : les mêmes traits, le même grand sourire, la même couleur de peau, les mêmes cheveux (visibles sous un éventuel chapeau), la même barbe s'il y en a, les mêmes lunettes s'il en porte (et aucune s'il n'en porte pas).",
     "- La même pose (les bras croisés), les mêmes proportions (la tête énorme sur le petit corps), le même style de caricature 3D en résine peinte.",
-    "- Ne change que la tenue et les accessoires dits plus haut, généreux et pleins de détails, soignés et drôles. Rien sur le visage.",
+    "- REMPLACE ENTIÈREMENT SA TENUE : il ne garde aucun vêtement d'avant ; on voit au premier regard de quelle édition il s'agit.",
+    "- Les accessoires dits plus haut, tous, généreux et pleins de détails, soignés et drôles. Rien sur le visage.",
     "",
     "LA FINITION :",
-    ...STYLE.slice(4),
+    // « pas une photo » et la résine, mais pas « les traits accentués » : on n'en rajoute pas à chaque édition
+    STYLE[2],
+    ...STYLE.slice(5),
     "",
     ...cadrage(fond),
   ].join("\n");
