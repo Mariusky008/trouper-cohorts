@@ -165,14 +165,28 @@ const METIER: Record<FamilleDouble, { tenue: string; accessoires: string }> = {
  * coupelle en bois : « on est loin de la figurine cartoony ». D'où : la tête énorme, le petit corps, les traits un peu
  * forcés mais lui, les accessoires, et le corps qui s'arrête aux hanches (le ressort part de sous ses vêtements).
  */
+/**
+ * Quatrième essai réel (3 novembre 2026) : « c'est joli mais ça fait pas avatar figurine et ça me ressemble pas, et en
+ * plus sur la photo originale je ne souris pas ». Le moteur rendait une CARICATURE PEINTE (peau photographique, cheveux
+ * fins) au lieu d'un OBJET ; et le « grand sourire qui montre les dents » imposé changeait tout le visage d'un homme qui
+ * ne souriait pas — de même que les yeux agrandis. D'où : la matière dite noir sur blanc, et son expression à lui.
+ */
+const MATIERE =
+  "- PAS une photo, PAS une illustration, PAS une peinture numérique : un jouet sculpté. Les cheveux sculptés en mèches pleines (pas de cheveux fins photographiques), la barbe peinte en petites touches, la peau peinte, lisse et légèrement satinée, avec les reflets doux de l'éclairage de studio ; les yeux peints et brillants.";
+const EXPRESSION =
+  "- SON EXPRESSION DE LA PHOTO : s'il ne sourit pas, la figurine ne sourit pas (bouche fermée) ; on ne lui invente pas de sourire.";
+const FINITION = [
+  "- Une résine peinte à la main très haut de gamme, couleurs chaudes, détails fins et nets (coutures, mailles, reflets dans les yeux), peinture impeccable sans aucune bavure.",
+  "- Rendu de photo produit en très haute définition : net partout, éclairage de studio doux, contours nets et propres.",
+];
 const STYLE = [
   "LE STYLE (obligatoire) :",
-  "- Une figurine de collection à tête dodelinante (« bobblehead »), style caricature 3D tendre et drôle, comme un personnage de film d'animation 3D.",
-  "- PAS UNE PHOTO : aucun morceau de la photo n'est recopié. Le visage, la peau, les cheveux et les yeux sont SCULPTÉS ET PEINTS, comme sur un jouet de collection ; pas un buste réaliste, pas une statue, pas un montage.",
+  "- Une figurine de collection à tête dodelinante (« bobblehead ») en caricature 3D : un VRAI OBJET en résine peinte, qu'on pourrait tenir dans la main, photographié de près en studio.",
+  MATIERE,
   "- Une TÊTE ÉNORME, environ trois fois la taille normale : elle fait à peu près la moitié de la hauteur de la figurine, sur un tout petit corps fin aux épaules étroites — les proportions d'une figurine à ressort, pas d'une personne.",
-  "- Les traits caricaturés avec affection : les yeux un peu plus grands et pétillants, un grand sourire franc qui montre les dents, les traits qui le distinguent légèrement accentués.",
-  "- Une résine peinte à la main très haut de gamme, finition satinée, couleurs vives et chaleureuses, détails fins et nets (coutures, mailles, reflets dans les yeux), peinture impeccable sans aucune bavure.",
-  "- Rendu de photo produit en très haute définition : net partout, éclairage de studio doux, contours nets et propres.",
+  "- La caricature est dans les proportions (la grosse tête) et dans les traits qui le distinguent, un peu accentués (la forme du visage, la mâchoire, le nez, les sourcils). Les yeux gardent leur forme et leur taille.",
+  EXPRESSION,
+  ...FINITION,
 ];
 
 /** LE CADRAGE : le haut du corps jusqu'aux hanches, et RIEN dessous — le ressort et le socle sont ceux de ClikMe. */
@@ -205,6 +219,8 @@ export type Traits = {
   nez?: string;
   age?: string;
   signes?: string;
+  /** Son expression sur le selfie (« sérieux, bouche fermée ») : la figurine la garde. */
+  expression?: string;
   lunettes?: boolean;
 };
 
@@ -217,6 +233,7 @@ export const QUESTION_TRAITS =
   '"visage": face shape, jaw and cheekbones (e.g. "visage allongé, mâchoire carrée, pommettes marquées"), ' +
   '"sourcils": shape and thickness, "yeux": colour and shape, "nez": shape and size, ' +
   '"age": apparent age range (e.g. "la cinquantaine"), ' +
+  '"expression": the facial expression exactly as seen (e.g. "sérieux, sourcils légèrement froncés, bouche fermée, ne sourit pas" or "grand sourire"), ' +
   '"signes": other features that make this person recognizable (forehead wrinkles, dimples, crow\'s feet, a mole, freckles) or "", ' +
   '"lunettes": true if wearing glasses, else false}.';
 
@@ -226,7 +243,7 @@ const propreTrait = (v: unknown) => (typeof v === "string" ? v.replace(/\s+/g, "
 /** La réponse du modèle, nettoyée : des chaînes courtes, rien d'autre. `null` s'il n'y a rien d'utile. */
 export function traitsDe(o: Record<string, unknown>): Traits | null {
   const t: Traits = {};
-  for (const k of ["cheveux", "barbe", "visage", "sourcils", "yeux", "nez", "age", "signes"] as const) {
+  for (const k of ["cheveux", "barbe", "visage", "sourcils", "yeux", "nez", "age", "signes", "expression"] as const) {
     const v = propreTrait(o[k]);
     if (v) t[k] = v;
   }
@@ -246,6 +263,7 @@ export function traitsEnMots(t: Traits | null | undefined): string[] {
   if (t.nez) l.push(`- Son nez : ${t.nez}.`);
   if (t.age) l.push(`- Son âge : ${t.age} — ne le rajeunis pas.`);
   if (t.signes) l.push(`- Ce qui le rend reconnaissable : ${t.signes}.`);
+  if (t.expression) l.push(`- Son expression : ${t.expression}. Garde-la telle quelle.`);
   if (t.lunettes === false) l.push("- Il ne porte pas de lunettes : n'en ajoute pas.");
   if (t.lunettes === true) l.push("- Il porte des lunettes : garde-les, de la même forme.");
   return l;
@@ -326,16 +344,16 @@ export function consigneEdition(cleEdition: string, nomEdition: string, fond: "t
     `Déguise cette figurine pour l'édition « ${nomEdition} » : ${tenue}.`,
     "",
     "C'EST LA MÊME FIGURINE :",
-    "- Garde exactement le même visage : les mêmes traits, le même grand sourire, la même couleur de peau, les mêmes cheveux (visibles sous un éventuel chapeau), la même barbe s'il y en a, les mêmes lunettes s'il en porte (et aucune s'il n'en porte pas).",
+    "- Garde exactement le même visage : les mêmes traits, la même expression, la même couleur de peau, les mêmes cheveux (visibles sous un éventuel chapeau), la même barbe s'il y en a, les mêmes lunettes s'il en porte (et aucune s'il n'en porte pas).",
     "- La même pose (les bras croisés), les mêmes proportions (la tête énorme sur le petit corps), le même style de caricature 3D en résine peinte.",
     ...vus,
     "- REMPLACE ENTIÈREMENT SA TENUE : il ne garde aucun vêtement d'avant ; on voit au premier regard de quelle édition il s'agit.",
     "- Les accessoires dits plus haut, tous, généreux et pleins de détails, soignés et drôles. Rien sur le visage.",
     "",
     "LA FINITION :",
-    // « pas une photo » et la résine, mais pas « les traits accentués » : on n'en rajoute pas à chaque édition
-    STYLE[2],
-    ...STYLE.slice(5),
+    // la matière et la finition, mais pas « les traits accentués » : on n'en rajoute pas à chaque édition
+    MATIERE,
+    ...FINITION,
     "",
     ...cadrage(fond),
   ].join("\n");
