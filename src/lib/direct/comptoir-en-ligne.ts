@@ -289,9 +289,40 @@ async function deposerVideo(c: CommerceComptoir, blob: Blob, typeBrut: string): 
   return { url: s.url };
 }
 
+/**
+ * 📣 DANS LE RÉSEAU DE DIFFUSION CROISÉE ? (voir `lib/direct/diffusion.ts`) Alors ses films ont un extrait de 8 s pour
+ * ses deux partenaires (`studio-extrait.ts`). Sans lien pro, ou sans réponse : non.
+ */
+export async function dansLeReseau(c: CommerceComptoir): Promise<boolean> {
+  if (!c.reel) return false;
+  const r = await poster("/api/site-internet/pro/diffusion-croisee", { slug: c.reel.slug, token: c.reel.token, action: "reglage" });
+  return Boolean((r.json?.reglage as { active?: boolean } | undefined)?.active);
+}
+
+type Film = { blob: Blob; type: string; duree: number };
+
+/** L'extrait déposé à côté du film, et les champs qui le disent à l'annonce. Raté : rien (le film entier part chez eux). */
+async function champsPartenaires(c: CommerceComptoir, extrait: Film | null | undefined): Promise<Record<string, unknown>> {
+  if (!extrait) return {};
+  const depot = await deposerVideo(c, extrait.blob, extrait.type);
+  if (!("url" in depot)) return {};
+  return { videoPartenaires: depot.url, videoPartenairesSecondes: Math.round(extrait.duree * 10) / 10, videoPartenairesMp4: enMp4(extrait.type) };
+}
+
 export async function envoyerInterview(
   c: CommerceComptoir,
-  i: { nom: string; prix: string; blob: Blob; type: string; duree: number; affiche: string; mots?: string; reel?: { blob: Blob; type: string; duree: number } | null },
+  i: {
+    nom: string;
+    prix: string;
+    blob: Blob;
+    type: string;
+    duree: number;
+    affiche: string;
+    mots?: string;
+    reel?: { blob: Blob; type: string; duree: number } | null;
+    /** 📣 L'extrait de 8 s pour ses partenaires de diffusion, s'il est dans le réseau. */
+    extrait?: Film | null;
+  },
 ): Promise<ResultatEnvoi> {
   if (!c.reel) return { ok: false, ou: [], erreur: "Ce commerce n'a pas de lien pro." };
   const { slug, token } = c.reel;
@@ -299,6 +330,7 @@ export async function envoyerInterview(
   if ("erreur" in depot) return { ok: false, ou: [], erreur: depot.erreur };
   const s = depot;
   const reel = i.reel ? await deposerVideo(c, i.reel.blob, i.reel.type) : null;
+  const partenaires = await champsPartenaires(c, i.extrait);
   // SA VIDÉO VIT JUSQU'À CE SOIR, COMME SON PLAT DU JOUR.
   const ceSoir = new Date();
   ceSoir.setHours(23, 59, 0, 0);
@@ -314,6 +346,7 @@ export async function envoyerInterview(
     ...(i.reel && reel && "url" in reel
       ? { videoReseaux: reel.url, videoReseauxSecondes: Math.round(i.reel.duree * 10) / 10, videoReseauxMp4: enMp4(i.reel.type) }
       : {}),
+    ...partenaires,
     until: ceSoir.toISOString(),
     famille: c.famille === "table" ? "menu" : "offre",
     ...(i.mots ? { mots: i.mots } : {}),
@@ -334,13 +367,21 @@ export async function envoyerInterview(
  */
 export async function envoyerEpisode(
   c: CommerceComptoir,
-  e: { texte: string; affiche: string; episode: { blob: Blob; type: string; duree: number }; bande?: { blob: Blob; type: string; duree: number } | null },
+  e: {
+    texte: string;
+    affiche: string;
+    episode: { blob: Blob; type: string; duree: number };
+    bande?: { blob: Blob; type: string; duree: number } | null;
+    /** 📣 L'extrait de 8 s pour ses partenaires de diffusion, s'il est dans le réseau. */
+    extrait?: Film | null;
+  },
 ): Promise<ResultatEnvoi> {
   if (!c.reel) return { ok: false, ou: [], erreur: "Ce commerce n'a pas de lien pro." };
   const { slug, token } = c.reel;
   const film = await deposerVideo(c, e.episode.blob, e.episode.type);
   if ("erreur" in film) return { ok: false, ou: [], erreur: film.erreur };
   const bande = e.bande ? await deposerVideo(c, e.bande.blob, e.bande.type) : null;
+  const partenaires = await champsPartenaires(c, e.extrait);
   const ceSoir = new Date();
   ceSoir.setHours(23, 59, 0, 0);
   const r = await poster("/api/site-internet/pro/offer", {
@@ -356,6 +397,7 @@ export async function envoyerEpisode(
     ...(e.bande && bande && "url" in bande
       ? { videoReseaux: bande.url, videoReseauxSecondes: Math.round(e.bande.duree * 10) / 10, videoReseauxMp4: enMp4(e.bande.type) }
       : {}),
+    ...partenaires,
     until: ceSoir.toISOString(),
     famille: c.famille === "table" ? "menu" : "offre",
   });
@@ -385,7 +427,7 @@ export async function envoyerStudio(
   const film = await deposerVideo(c, s.film.blob, s.film.type);
   if ("erreur" in film) return { ok: false, ou: [], erreur: film.erreur };
   // S'IL N'A PAS PU PARTIR, ses partenaires reçoivent le film entier : l'extrait est un plus
-  const extrait = s.extrait ? await deposerVideo(c, s.extrait.blob, s.extrait.type) : null;
+  const partenaires = await champsPartenaires(c, s.extrait);
   const ceSoir = new Date();
   ceSoir.setHours(23, 59, 0, 0);
   const r = await poster("/api/site-internet/pro/offer", {
@@ -397,9 +439,7 @@ export async function envoyerStudio(
     video: film.url,
     videoSecondes: Math.round(s.film.duree * 10) / 10,
     videoMp4: enMp4(s.film.type),
-    ...(s.extrait && extrait && "url" in extrait
-      ? { videoPartenaires: extrait.url, videoPartenairesSecondes: Math.round(s.extrait.duree * 10) / 10, videoPartenairesMp4: enMp4(s.extrait.type) }
-      : {}),
+    ...partenaires,
     until: ceSoir.toISOString(),
     famille: c.famille === "table" ? "menu" : "offre",
   });

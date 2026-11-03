@@ -11,9 +11,15 @@
  * Le son est celui du film (sa musique), qui s'éteint doucement à la fin.
  *
  * Huit secondes de plus au moment de publier, et seulement s'il est dans le réseau de diffusion.
+ *
+ * POUR TOUS SES FILMS : le Studio (`monterExtrait`, sa toile et ses polices), l'interview et l'épisode
+ * (`extraitPourPartenaires` : sa toile et les polices du Studio, à lui).
+ *
+ * LE SON EST DÉCODÉ DU FICHIER (`decodeAudioData`), la vidéo se rejoue MUETTE : un iPhone laisse toujours jouer une
+ * vidéo muette, pas une vidéo qui parle hors d'un geste. Le contexte du son, lui, naît au toucher (`ouvrirSon`).
  */
 import { formatVideo } from "./interview-montage";
-import { LARGEUR_STUDIO, HAUTEUR_STUDIO, type FilmStudio } from "./studio-montage";
+import { LARGEUR_STUDIO, HAUTEUR_STUDIO, chargerStudio, type FilmStudio } from "./studio-montage";
 
 export const DUREE_EXTRAIT = 8;
 const PART_DU_FILM = 6.4;
@@ -113,7 +119,7 @@ function carteDeFin(g: CanvasRenderingContext2D, o: { commerce: string; adresse:
  */
 export async function monterExtrait(o: {
   ctx: AudioContext;
-  film: FilmStudio;
+  film: { blob: Blob; type: string; duree: number; affiche?: string };
   debut: number;
   commerce: string;
   /** « clikme.fr/b/boulangerie-martin » : où voir le film entier. */
@@ -130,10 +136,11 @@ export async function monterExtrait(o: {
   const g = o.toile.getContext("2d");
   if (!g) throw new Error("Ce téléphone ne sait pas dessiner la vidéo.");
 
-  // LE FILM, REJOUÉ : son image sur la toile, son son vers l'enregistrement (pas vers le haut-parleur)
+  // LE FILM, REJOUÉ MUET : son image sur la toile ; son son, décodé du fichier, vers l'enregistrement
   const url = URL.createObjectURL(o.film.blob);
   const v = document.createElement("video");
   v.playsInline = true;
+  v.muted = true;
   v.preload = "auto";
   v.src = url;
   await new Promise<void>((ok, ko) => {
@@ -147,12 +154,16 @@ export async function monterExtrait(o: {
   });
   const enregistree = o.ctx.createMediaStreamDestination();
   const volume = o.ctx.createGain();
-  try {
-    o.ctx.createMediaElementSource(v).connect(volume);
-  } catch {
-    /* pas de son : l'extrait part muet */
-  }
   volume.connect(enregistree);
+  let musique: AudioBufferSourceNode | null = null;
+  try {
+    const decode = await o.ctx.decodeAudioData(await o.film.blob.arrayBuffer());
+    musique = o.ctx.createBufferSource();
+    musique.buffer = decode;
+    musique.connect(volume);
+  } catch {
+    /* pas de son lisible : l'extrait part muet */
+  }
   if (o.ctx.state !== "running") await o.ctx.resume().catch(() => {});
 
   const format = formatVideo();
@@ -168,6 +179,7 @@ export async function monterExtrait(o: {
   const police = `600 28px ${o.sans}`;
   try {
     await v.play();
+    musique?.start(0, debut);
     rec.start(250);
     const t0 = performance.now();
     await new Promise<void>((ok, ko) => {
@@ -219,11 +231,54 @@ export async function monterExtrait(o: {
     });
   } finally {
     v.pause();
+    try {
+      musique?.stop();
+    } catch {
+      /* déjà fini */
+    }
     if (rec.state !== "inactive") rec.stop();
     URL.revokeObjectURL(url);
     v.removeAttribute("src");
   }
   await arret;
   const type = rec.mimeType || format || "video/webm";
-  return { blob: new Blob(morceaux, { type }), type, duree: DUREE_EXTRAIT, affiche: o.film.affiche };
+  return { blob: new Blob(morceaux, { type }), type, duree: DUREE_EXTRAIT, affiche: o.film.affiche ?? "" };
+}
+
+/** Le contexte du son, ouvert AU TOUCHER (avant toute attente) : sans geste, un iPhone le garde muet. */
+export function ouvrirSon(): AudioContext | null {
+  try {
+    const ctx = new AudioContext();
+    void ctx.resume().catch(() => {});
+    return ctx;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * L'EXTRAIT D'UNE INTERVIEW OU D'UN ÉPISODE : sa propre toile (cachée, mais dans la page : elle s'enregistre comme une
+ * autre), les polices et le fantôme du Studio. `debut` : où commencer (0 : le début de ce qu'on lui donne — le Reel du
+ * jour, la bande-annonce, déjà resserrés). Rend `null` si le téléphone n'y arrive pas : ses partenaires recevront le
+ * film entier.
+ */
+export async function extraitPourPartenaires(
+  film: { blob: Blob; type: string; duree: number },
+  o: { ctx: AudioContext | null; commerce: string; adresse: string; debut?: number },
+): Promise<{ blob: Blob; type: string; duree: number } | null> {
+  if (!o.ctx || typeof document === "undefined") return null;
+  const toile = document.createElement("canvas");
+  toile.setAttribute("aria-hidden", "true");
+  toile.style.cssText = "position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none;";
+  document.body.appendChild(toile);
+  try {
+    const el = await chargerStudio(null);
+    const e = await monterExtrait({ ctx: o.ctx, film, debut: o.debut ?? 0, commerce: o.commerce, adresse: o.adresse, serif: el.serif, sans: el.sans, logo: el.fantome, toile });
+    return { blob: e.blob, type: e.type, duree: e.duree };
+  } catch (e) {
+    console.warn("[extrait] impossible :", String((e as Error)?.message ?? e));
+    return null;
+  } finally {
+    toile.remove();
+  }
 }
