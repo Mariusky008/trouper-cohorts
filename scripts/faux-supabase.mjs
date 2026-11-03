@@ -100,7 +100,7 @@ const DEFAUTS = {
   clik_accord: () => ({ video: false, updated_at: maintenant() }),
   // SA PROPRE FIGURINE — `…_clik_ma_figurine.sql`.
   clik_ma_figurine: () => ({ prenom: "", photo: null, accord_le: null, demande_le: maintenant(), refus: null, neutre: null, parle: null, prete_le: null, updated_at: maintenant() }),
-  clik_figurine_message: () => ({ duree: null, commerces: [], ecoutes: 0, signale_le: null, retire_le: null, created_at: maintenant() }),
+  clik_figurine_message: () => ({ duree: null, commerces: [], sentiment: null, ecoutes: 0, signale_le: null, retire_le: null, created_at: maintenant() }),
 };
 const CLES = {
   human_conversations: ["id"],

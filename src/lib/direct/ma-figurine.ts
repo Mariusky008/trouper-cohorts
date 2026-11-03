@@ -22,6 +22,21 @@ export const SEUIL_MA_FIGURINE = 10;
 export const DUREE_MAX_MESSAGE = 15;
 export const COMMERCES_MAX_MESSAGE = 4;
 
+/**
+ * 🎭 CE QU'ELLE RESSENT — un message peut porter un sentiment : la figurine le joue chez celui qui le reçoit (elle
+ * sautille de joie, tremble de colère, s'affaisse de tristesse, bondit d'euphorie). Ses images ne changent pas : c'est
+ * le mouvement, la couleur et ce qui flotte autour qui le disent (`figurine-qui-parle.tsx`).
+ */
+export const SENTIMENTS = [
+  { cle: "joie", emoji: "😄", nom: "La joie", dit: "pleine de joie" },
+  { cle: "colere", emoji: "😠", nom: "La colère", dit: "en colère" },
+  { cle: "tristesse", emoji: "😢", nom: "La tristesse", dit: "un peu triste" },
+  { cle: "euphorie", emoji: "🤩", nom: "L’euphorie", dit: "euphorique" },
+] as const;
+export type Sentiment = (typeof SENTIMENTS)[number]["cle"];
+export const sentimentValide = (x: unknown): Sentiment | null => (SENTIMENTS.some((v) => v.cle === x) ? (x as Sentiment) : null);
+export const sentimentDe = (x: unknown) => SENTIMENTS.find((v) => v.cle === x) ?? null;
+
 /** Ses figurines, tous commerces confondus : celles de ses collections en cours, plus 10 par collection déjà finie. */
 export function figurinesEnTout(familles: { collection?: Collection | null }[]): number {
   return familles.reduce((n, f) => {
@@ -56,7 +71,7 @@ export type EtatMaFigurine = {
   refus?: string;
   /** Les commerces que sa figurine peut citer : ceux où il a des figurines. */
   commerces: CommerceCite[];
-  messages: { id: string; le: string; ecoutes: number; signale: boolean }[];
+  messages: { id: string; le: string; ecoutes: number; signale: boolean; sentiment?: Sentiment | null }[];
 };
 
 /** Ce que voit celui qui reçoit un message (`/figurine/<id>`). */
@@ -69,6 +84,8 @@ export type MessageFigurine =
       neutre: string;
       parle: string;
       duree: number;
+      /** Ce qu'elle ressent dans ce message (aucun : elle parle, simplement). */
+      sentiment: Sentiment | null;
       commerces: (CommerceCite & { ville: string })[];
     };
 

@@ -1,171 +1,218 @@
+"use client";
+
 /**
- * 🏆 « MA COLLECTION », POUR QUI N'A PAS ENCORE DE FIGURINE — la page ne s'ouvre plus sur du vide : on y comprend en
- * une minute à quoi sert la collection, et où la commencer.
- *   · LA VITRINE : cinq cartes qui se déploient — l'édition du moment, les deux suivantes, une rare, la figurine d'or ;
- *   · EN CE MOMENT : l'édition qu'on gagne en venant aujourd'hui, et le temps qui reste (`editionsDuMoment`) ;
- *   · CE QUE ÇA RAPPORTE : les trois paliers (`PALIERS_COLLECTION`), dits concrètement ;
- *   · COMMENT ON LA GAGNE : la cage, la visite notée au comptoir, la figurine ;
- *   · OÙ LA COMMENCER : les commerces ClikMe (`page.tsx`), avec leur cadeau à 10 s'ils l'ont écrit eux-mêmes.
- * Celui qui collectionne déjà retrouve « Comment ça marche ? » sous ses étagères, et les autres commerces à commencer.
+ * 🏆 « MA COLLECTION », CE QUI DONNE ENVIE — pour qui n'a encore rien (la page entière), et en partie pour qui
+ * collectionne déjà (le compte à rebours, l'aperçu de sa figurine, les autres commerces).
+ *
+ * « Les explications sont épuisantes à lire, personne ne va lire tout ça… il manque une âme et cette sensation de
+ * manquer la prochaine figurine. » D'où :
+ *   · LE COMPTE À REBOURS (`ChronoEdition`) : l'édition du moment, et le temps qui reste à la seconde ; la frise des
+ *     éditions — celle qui vient de finir (« terminée »), celle-ci, les deux suivantes (cadenas), la rare, l'or. Tout est
+ *     vrai : les dates sont celles des éditions (`EDITIONS_DATEES`), aucun chiffre n'est inventé ;
+ *   · COMMENT ÇA MARCHE : trois tuiles, trois mots chacune ;
+ *   · CE QUE ÇA RAPPORTE : une piste de 1 à 10, trois médailles, une ligne chacune ;
+ *   · TA PROPRE FIGURINE : l'aperçu sur celle de Léa (`apercu-figurine.tsx`) ;
+ *   · OÙ COMMENCER : les commerces ClikMe (`page.tsx`).
+ * SUR ORDINATEUR, la page prend la largeur : rien n'y est une colonne de téléphone posée au milieu d'un écran.
  */
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { EDITIONS_DATEES, PALIERS_COLLECTION, TOTAL_COLLECTION, editionsDuMoment, fenetre, jourEnClair } from "@/lib/direct/collection";
 import { Particules, THEMES, type Theme } from "@/app/f/[slug]/collection";
-import { SEUIL_MA_FIGURINE } from "@/lib/direct/ma-figurine";
+import { ApercuFigurine, STYLES_APERCU } from "./apercu-figurine";
 
 export type CommerceACollectionner = { slug: string; nom: string; ville: string; figurine: string; cadeau?: string };
 
 const FIGURINE_PAR_DEFAUT = "/direct/double/pied/salut-1.webp";
 const OR: Theme = { a: "#FFE7A0", b: "#B8801E", parts: ["✨", "⭐", "🏆"] };
 
-/** Les cinq cartes de la vitrine, dans l'ordre du calendrier, jusqu'à l'or. */
-function cartesDeLaVitrine(aujourdhui: string) {
-  const { maintenant } = editionsDuMoment(aujourdhui);
+// ─── le temps qui reste ─────────────────────────────────────────────────────────────────────────
+/** Le décalage de Paris (en minutes) à l'instant `t`. */
+function decalageParis(t: number) {
+  const p = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Paris", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date(t));
+  const g = (k: string) => Number(p.find((x) => x.type === k)?.value ?? 0);
+  return (Date.UTC(g("year"), g("month") - 1, g("day"), g("hour"), g("minute")) - t) / 60000;
+}
+/** Minuit à Paris, à la fin du jour `j` (« 2026-12-20 » → le 21 à 0 h, heure de Paris). */
+function finDuJourParis(j: string) {
+  const [y, m, d] = j.split("-").map(Number);
+  const t = Date.UTC(y, m - 1, d + 1);
+  return t - decalageParis(t) * 60000;
+}
+const deux = (n: number) => String(n).padStart(2, "0");
+
+/** Les éditions autour d'aujourd'hui : celle qui vient de finir, celle-ci, les deux suivantes. */
+function frise(aujourdhui: string) {
+  const an = +aujourdhui.slice(0, 4);
+  const passee = EDITIONS_DATEES.flatMap((e) => [an - 1, an].map((y) => ({ e, fin: `${y}-${e.fin}` })))
+    .filter((x) => x.fin < aujourdhui)
+    .sort((a, b) => b.fin.localeCompare(a.fin))[0];
   const suivantes = EDITIONS_DATEES.map((e) => ({ e, f: fenetre(e, aujourdhui) }))
-    .filter(({ e, f }) => f.debut > aujourdhui && e.cle !== maintenant?.cle)
+    .filter(({ f }) => f.debut > aujourdhui)
     .sort((a, b) => a.f.debut.localeCompare(b.f.debut))
-    .map(({ e }) => ({ cle: e.cle, nom: e.nom, emoji: e.emoji, sorte: e.sorte as string }));
-  const datees = [...(maintenant ? [{ cle: maintenant.cle, nom: maintenant.nom, emoji: maintenant.emoji, sorte: "maintenant" }] : []), ...suivantes].slice(0, 3);
-  return [...datees, { cle: "rare", nom: "Rare", emoji: "✨", sorte: "rare" }, { cle: "or", nom: "D’or", emoji: "🏆", sorte: "or" }];
+    .slice(0, 2);
+  return { passee, suivantes };
 }
+const ecartJours = (a: string, b: string) => Math.round((Date.UTC(+b.slice(0, 4), +b.slice(5, 7) - 1, +b.slice(8, 10)) - Date.UTC(+a.slice(0, 4), +a.slice(5, 7) - 1, +a.slice(8, 10))) / 86_400_000);
 
-function Vitrine({ aujourdhui, figurine }: { aujourdhui: string; figurine: string }) {
-  const cartes = cartesDeLaVitrine(aujourdhui);
-  const milieu = (cartes.length - 1) / 2;
-  return (
-    <div className="dc-vitrine" aria-hidden="true">
-      {cartes.map((c, i) => {
-        const k = i - milieu;
-        const t = c.cle === "or" ? OR : (THEMES[c.cle] ?? THEMES.rare);
-        return (
-          <span
-            key={c.cle}
-            className={`dc-carte ${c.sorte}`}
-            style={
-              {
-                "--a": t.a,
-                "--b": t.b,
-                "--fin": `translateX(${k * 58}px) translateY(${Math.abs(k) * 12}px) rotate(${k * 8}deg)`,
-                "--d": `${0.15 + i * 0.12}s`,
-                zIndex: i + 1,
-              } as CSSProperties
-            }
-          >
-            <span className="dc-carte-in">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={figurine} alt="" draggable={false} />
-              <em title={c.nom}>{c.emoji}</em>
-              {c.sorte === "or" && <i className="dc-eclat" />}
-            </span>
-          </span>
-        );
-      })}
-    </div>
-  );
-}
-
-/** « du 1er au 24 décembre », « du 21 décembre au 19 mars ». */
-const duAu = (a: string, b: string) =>
-  a.slice(5, 7) === b.slice(5, 7) ? `du ${jourEnClair(a).split(" ")[0]} au ${jourEnClair(b)}` : `du ${jourEnClair(a)} au ${jourEnClair(b)}`;
-
-function EnCeMoment({ aujourdhui }: { aujourdhui: string }) {
-  const { maintenant: m, ensuite } = editionsDuMoment(aujourdhui);
+/** L'édition du moment, le temps qui reste à la seconde, et la frise des éditions. */
+export function ChronoEdition({ aujourdhui, figurine }: { aujourdhui: string; figurine?: string }) {
+  const { maintenant: m } = editionsDuMoment(aujourdhui);
+  const jourFin = m?.fin ?? "";
+  const [reste, setReste] = useState<number | null>(null);
+  useEffect(() => {
+    if (!jourFin) return;
+    const fin = finDuJourParis(jourFin);
+    const maj = () => setReste(Math.max(0, fin - Date.now()));
+    maj();
+    const t = window.setInterval(maj, 1000);
+    return () => window.clearInterval(t);
+  }, [jourFin]);
   if (!m) return null;
   const t = THEMES[m.cle] ?? THEMES.rare;
+  const fig = figurine || FIGURINE_PAR_DEFAUT;
+  const { passee, suivantes } = frise(aujourdhui);
+  const s = reste == null ? null : Math.floor(reste / 1000);
+  const cases = [
+    { v: s == null ? m.jours : Math.floor(s / 86400), l: "jours" },
+    { v: s == null ? "--" : deux(Math.floor((s % 86400) / 3600)), l: "heures" },
+    { v: s == null ? "--" : deux(Math.floor((s % 3600) / 60)), l: "min" },
+    { v: s == null ? "--" : deux(s % 60), l: "s" },
+  ];
   return (
-    <section className="dc-moment" style={{ "--a": t.a, "--b": t.b } as CSSProperties} aria-label="L’édition du moment">
-      <Particules theme={t} n={10} />
-      <span className="dc-ruban">EN CE MOMENT</span>
-      <span className="dc-moment-emoji" aria-hidden="true">
-        {m.emoji}
-      </span>
-      <b className="dc-moment-nom">Édition {m.nom}</b>
-      <span className="dc-puce">
-        ⏳ encore {m.jours} jour{m.jours > 1 ? "s" : ""} · jusqu’au {jourEnClair(m.fin)}
-      </span>
-      <p>Une visite dans un commerce ClikMe d’ici là, et elle est à toi. Après, elle ne revient pas : une édition manquée est manquée.</p>
-      {ensuite && (
-        <small>
-          Puis {ensuite.emoji} {ensuite.nom}, {duAu(ensuite.debut, ensuite.fin)}
-        </small>
-      )}
-    </section>
-  );
-}
-
-const CE_QUE_CA_RAPPORTE: Record<number, string> = {
-  3: "Une table qui se libère, un créneau annulé : tu le sais avant les autres.",
-  6: "Quand il lui reste une place, le message part d’abord chez toi.",
-  [TOTAL_COLLECTION]: "Numérotée, rien que pour toi. Et le cadeau du commerce, s’il en a choisi un : c’est écrit sur sa page.",
-};
-
-function CeQueCaRapporte() {
-  return (
-    <section className="dc-bloc" aria-labelledby="dc-rapporte">
-      <h2 id="dc-rapporte">Ce que ça te rapporte</h2>
-      <div className="dc-jauge" aria-hidden="true">
-        <i />
-        {PALIERS_COLLECTION.map((p) => (
-          <span key={p.n} style={{ left: `${(p.n / TOTAL_COLLECTION) * 100}%` }}>
-            {p.emoji}
-          </span>
-        ))}
+    <section className="ce" style={{ "--a": t.a, "--b": t.b } as CSSProperties} aria-label="L’édition du moment">
+      <div className="ce-haut">
+        <span className="ce-carte">
+          <Particules theme={t} n={8} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={fig} alt="" draggable={false} />
+          <em aria-hidden="true">{m.emoji}</em>
+          <i className="ce-reflet" />
+        </span>
+        <div className="ce-texte">
+          <span className="ce-ruban">● À GAGNER MAINTENANT</span>
+          <b className="ce-nom">Édition {m.nom}</b>
+          <span className="ce-part">Elle s’en va dans</span>
+          <div className="ce-chrono" role="timer" aria-label={`Encore ${m.jours} jour${m.jours > 1 ? "s" : ""}`}>
+            {cases.map((c) => (
+              <span key={c.l}>
+                <b>{c.v}</b>
+                <small>{c.l}</small>
+              </span>
+            ))}
+          </div>
+          <p>Une visite d’ici le {jourEnClair(m.fin)}, et elle est à toi. Après, une édition manquée est manquée.</p>
+        </div>
       </div>
-      <ul className="dc-paliers">
-        {PALIERS_COLLECTION.map((p, i) => (
-          <li key={p.n} style={{ "--d": `${0.1 + i * 0.12}s` } as CSSProperties}>
-            <span className="dc-med">{p.emoji}</span>
-            <span>
-              <small>
-                {p.n} figurines{p.n === TOTAL_COLLECTION ? " · la collection complète" : ""}
-              </small>
-              <b>{p.n === TOTAL_COLLECTION ? p.titre : p.dit.charAt(0).toUpperCase() + p.dit.slice(1)}</b>
-              <span>{CE_QUE_CA_RAPPORTE[p.n]}</span>
+      <ol className="ce-frise" aria-label="Les éditions">
+        {passee && (
+          <li className="passee">
+            <span className="ce-mini">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={fig} alt="" />
+              <em aria-hidden="true">{passee.e.emoji}</em>
             </span>
+            <b>{passee.e.nom}</b>
+            <small>terminée</small>
+          </li>
+        )}
+        <li className="maintenant">
+          <span className="ce-mini">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={fig} alt="" />
+            <em aria-hidden="true">{m.emoji}</em>
+          </span>
+          <b>{m.nom}</b>
+          <small>maintenant</small>
+        </li>
+        {suivantes.map(({ e, f }) => (
+          <li key={e.cle} className="bientot" style={{ "--a": (THEMES[e.cle] ?? THEMES.rare).a, "--b": (THEMES[e.cle] ?? THEMES.rare).b } as CSSProperties}>
+            <span className="ce-mini">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={fig} alt="" />
+              <em aria-hidden="true">🔒</em>
+            </span>
+            <b>
+              {e.emoji} {e.nom}
+            </b>
+            <small>dans {ecartJours(aujourdhui, f.debut)} j</small>
           </li>
         ))}
-      </ul>
-      <p className="dc-rares">
-        <b>✨ Et 2 éditions rares</b> : elles ne se gagnent qu’en venant le jour où le commerce annonce une place libre.
-      </p>
-      <div className="dc-a-toi">
-        <span className="dc-a-toi-fig" aria-hidden="true">
-          🗣️
-        </span>
-        <span>
-          <small>{SEUIL_MA_FIGURINE} figurines, tous commerces confondus</small>
-          <b>Ta propre figurine</b>
-          <span>Elle parle avec ta voix. Tu l’envoies à tes proches, et elle cite tes commerces préférés.</span>
-        </span>
-      </div>
+        <li className="rare">
+          <span className="ce-mini">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={fig} alt="" />
+            <em aria-hidden="true">✨</em>
+          </span>
+          <b>Rare</b>
+          <small>jour de place libre</small>
+        </li>
+        <li className="or" style={{ "--a": OR.a, "--b": OR.b } as CSSProperties}>
+          <span className="ce-mini">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={fig} alt="" />
+            <em aria-hidden="true">🏆</em>
+          </span>
+          <b>D’or</b>
+          <small>la 10ᵉ</small>
+        </li>
+      </ol>
     </section>
   );
 }
 
+// ─── comment ça marche, ce que ça rapporte ─────────────────────────────────────────────────────
 const ETAPES = [
-  { emoji: "👻", titre: "Libère ton fantôme", dit: "Sur la page d’un commerce ClikMe (le lien de sa vidéo, ou le QR code de son comptoir), touche une cage : tu entres dans sa famille. Sans compte, sans appli." },
-  { emoji: "🚪", titre: "Passe le voir", dit: "Ta visite est notée au comptoir. Une visite, une figurine : celle de l’édition du moment." },
-  { emoji: "🏆", titre: "Collectionne", dit: "Elle t’attend ici et sur sa page. Reviens à chaque saison, à chaque fête : à 10, la figurine d’or." },
+  { emoji: "👻", titre: "Rejoins un commerce", dit: "une cage sur sa page, sans appli" },
+  { emoji: "🚪", titre: "Passe le voir", dit: "une visite = une figurine" },
+  { emoji: "🏆", titre: "Collectionne", dit: `à ${TOTAL_COLLECTION}, la figurine d’or` },
 ];
 
-function CommentOnGagne() {
+function CommentCaMarche() {
   return (
     <section className="dc-bloc" aria-labelledby="dc-comment">
-      <h2 id="dc-comment">Comment on la gagne</h2>
-      <ol className="dc-etapes">
+      <h2 id="dc-comment">Comment ça marche</h2>
+      <ol className="dc-trois">
         {ETAPES.map((e, i) => (
-          <li key={e.titre} style={{ "--d": `${0.1 + i * 0.12}s` } as CSSProperties}>
-            <span className="dc-num">
+          <li key={e.titre} style={{ "--d": `${0.08 + i * 0.1}s` } as CSSProperties}>
+            <span className="dc-ic" aria-hidden="true">
+              {e.emoji}
               <b>{i + 1}</b>
-              <em aria-hidden="true">{e.emoji}</em>
             </span>
-            <span>
-              <b>{e.titre}</b>
-              <span>{e.dit}</span>
-            </span>
+            <strong>{e.titre}</strong>
+            <small>{e.dit}</small>
           </li>
         ))}
       </ol>
+    </section>
+  );
+}
+
+function CeQueCaRapporte() {
+  const paliers = new Map(PALIERS_COLLECTION.map((p) => [p.n, p]));
+  return (
+    <section className="dc-bloc" aria-labelledby="dc-rapporte">
+      <h2 id="dc-rapporte">Plus tu en as, plus tu gagnes</h2>
+      <div className="dc-piste" aria-hidden="true">
+        {Array.from({ length: TOTAL_COLLECTION }, (_, i) => i + 1).map((n) => {
+          const p = paliers.get(n);
+          return (
+            <span key={n} className={p ? `pal${n === TOTAL_COLLECTION ? " or" : ""}` : ""} style={{ "--d": `${n * 0.06}s` } as CSSProperties}>
+              {p ? p.emoji : n}
+            </span>
+          );
+        })}
+      </div>
+      <ul className="dc-paliers">
+        {PALIERS_COLLECTION.map((p) => (
+          <li key={p.n} className={p.n === TOTAL_COLLECTION ? "or" : ""}>
+            <span aria-hidden="true">{p.emoji}</span>
+            <small>{p.n} figurines</small>
+            <b>{p.titre}</b>
+            <span className="dc-p-dit">{p.n === TOTAL_COLLECTION ? "numérotée, et le cadeau du commerce" : p.dit}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="dc-rares">✨ Et 2 éditions rares, seulement le jour où le commerce annonce une place libre.</p>
     </section>
   );
 }
@@ -202,89 +249,101 @@ function OuCommencer({ commerces, titre, aujourdhui }: { commerces: CommerceACol
 export function Decouvrir({ aujourdhui, commerces }: { aujourdhui: string; commerces: CommerceACollectionner[] }) {
   return (
     <div className="dc">
-      <section className="dc-haut">
-        <Vitrine aujourdhui={aujourdhui} figurine={commerces[0]?.figurine ?? FIGURINE_PAR_DEFAUT} />
-        <b className="dc-accroche">Chaque commerce ClikMe a sa figurine.</b>
-        <p>
-          Tu la gagnes en venant le voir, dans l’édition du moment. {TOTAL_COLLECTION} à collectionner chez chacun : la dixième est en or.
-        </p>
-      </section>
-      <EnCeMoment aujourdhui={aujourdhui} />
+      <ChronoEdition aujourdhui={aujourdhui} figurine={commerces[0]?.figurine} />
+      <CommentCaMarche />
       <CeQueCaRapporte />
-      <CommentOnGagne />
+      <div className="dc-bloc">
+        <ApercuFigurine total={0} />
+      </div>
       <OuCommencer commerces={commerces} titre="Où commencer ta collection" aujourdhui={aujourdhui} />
       <p className="dc-deja">Tu as déjà des figurines ? Ouvre cette page sur le téléphone où tu as libéré ton fantôme.</p>
     </div>
   );
 }
 
-/** Qui collectionne déjà : « Comment ça marche ? », replié, et les commerces où il n'a pas encore de collection. */
+/** Qui collectionne déjà : les autres commerces à commencer, et « Comment ça marche ? », replié. */
 export function EnSavoirPlus({ aujourdhui, commerces }: { aujourdhui: string; commerces: CommerceACollectionner[] }) {
   return (
     <div className="dc">
       <OuCommencer commerces={commerces} titre="D’autres collections à commencer" aujourdhui={aujourdhui} />
       <details className="dc-plus">
         <summary>Comment ça marche ?</summary>
+        <CommentCaMarche />
         <CeQueCaRapporte />
-        <CommentOnGagne />
       </details>
     </div>
   );
 }
 
-export const STYLES_DECOUVRIR = `
+export const STYLES_DECOUVRIR =
+  STYLES_APERCU +
+  `
 .dc{padding:0 16px}
-.dc-haut{margin:6px 0 0;text-align:center}
-.dc-vitrine{position:relative;height:236px;margin:4px auto 0;max-width:360px}
-.dc-carte{position:absolute;left:50%;top:18px;width:104px;height:144px;margin-left:-52px;transform:var(--fin);animation:dc-donne .8s cubic-bezier(.2,1.3,.4,1) var(--d) both}
-.dc-carte-in{position:absolute;inset:0;display:block;border-radius:16px;overflow:hidden;background:linear-gradient(160deg,var(--a),var(--b));border:1.5px solid rgba(255,255,255,.3);box-shadow:0 14px 26px -12px rgba(0,0,0,.9);animation:dc-flotte 3.4s ease-in-out calc(var(--d) + .9s) infinite}
-.dc-carte-in img{position:absolute;left:8%;bottom:-2px;width:84%;height:84%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 6px 6px rgba(0,0,0,.45))}
-.dc-carte-in em{position:absolute;left:7px;top:6px;font-style:normal;font-size:21px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
-.dc-carte.maintenant .dc-carte-in{border-color:#F2C46B;box-shadow:0 0 0 2px rgba(242,196,107,.4),0 14px 30px -10px rgba(242,196,107,.6)}
-.dc-carte.rare .dc-carte-in{border:2px solid transparent;background:linear-gradient(135deg,#E2D6FF,#9C84FF 40%,#FF9BE0 70%,#9AF0FF) padding-box,linear-gradient(120deg,#C9B6FF,#7B5CFF,#FF7AD9,#7FE7FF,#C9B6FF) border-box;background-size:auto,300% 300%;animation:dc-flotte 3.4s ease-in-out calc(var(--d) + .9s) infinite,co-holo 4s linear infinite}
-.dc-carte.or .dc-carte-in{border-color:#FFE7A0;box-shadow:0 0 30px rgba(255,214,120,.7),0 14px 26px -12px rgba(0,0,0,.9)}
-.dc-carte.or img{filter:sepia(1) saturate(3.2) hue-rotate(-12deg) brightness(1.08) drop-shadow(0 0 12px rgba(255,214,120,.9))}
-.dc-eclat{position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.7) 50%,transparent 65%);transform:translateX(-120%);animation:co-reflet 3s ease-in-out 1.6s infinite}
-.dc-accroche{display:block;margin:6px 0 0;font-size:21px;line-height:1.2;font-weight:900;letter-spacing:-.01em}
-.dc-haut p{margin:6px auto 0;max-width:330px;color:#D9C3CB}
-.dc-moment{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;margin:22px 0 0;padding:38px 16px 18px;border-radius:24px;overflow:hidden;text-align:center;
-  background:radial-gradient(90% 70% at 50% 25%,color-mix(in srgb,var(--a) 70%,transparent),transparent 70%),linear-gradient(160deg,var(--b),#1A0814 85%);border:1.5px solid color-mix(in srgb,var(--a) 70%,transparent);
-  animation:co-lueur 2.8s ease-in-out infinite}
-.dc-ruban{position:absolute;top:12px;left:50%;transform:translateX(-50%);padding:4px 12px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.25);font-size:10.5px;font-weight:900;letter-spacing:.16em;white-space:nowrap}
-.dc-moment-emoji{font-size:46px;line-height:1;animation:co-tourne 4s ease-in-out infinite}
-.dc-moment-nom{font-size:24px;font-weight:900;letter-spacing:-.01em;text-shadow:0 2px 12px rgba(0,0,0,.45)}
-.dc-puce{padding:5px 12px;border-radius:999px;background:rgba(0,0,0,.35);font-size:12.5px;font-weight:800}
-.dc-moment p{position:relative;margin:4px 0 0;max-width:300px;font-size:13.5px;line-height:1.4;color:rgba(255,244,230,.92)}
-.dc-moment small{position:relative;font-size:12px;font-weight:700;color:rgba(255,244,230,.75)}
-.dc-bloc{margin:28px 0 0}
-.dc-bloc h2{margin:0 0 12px;font-size:22px;line-height:1.15;font-weight:900;letter-spacing:-.02em}
-.dc-jauge{position:relative;height:12px;margin:22px 14px 22px 6px;border-radius:999px;background:rgba(255,255,255,.1)}
-.dc-jauge i{position:absolute;inset:0;border-radius:999px;background:linear-gradient(90deg,#FF2E9A,#FF8FCB 55%,#F2C46B);box-shadow:0 0 18px rgba(255,46,154,.6);transform-origin:left;animation:dc-remplir 2.4s cubic-bezier(.4,0,.2,1) .3s both}
-.dc-jauge span{position:absolute;top:50%;display:grid;place-items:center;width:32px;height:32px;margin:-16px 0 0 -16px;border-radius:50%;background:#3A1A10;border:2px solid #F2C46B;font-size:16px;box-shadow:0 0 14px rgba(242,196,107,.6)}
-.dc-paliers,.dc-etapes{display:grid;gap:10px;margin:0;padding:0;list-style:none}
-.dc-paliers li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:18px;background:linear-gradient(90deg,rgba(242,196,107,.12),rgba(255,46,154,.06));border:1px solid rgba(242,196,107,.3);animation:mc-entre .6s cubic-bezier(.2,.9,.3,1) var(--d) both}
-.dc-med{flex:none;font-size:30px;line-height:1.1}
-.dc-paliers small{display:block;font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#F2C46B}
-.dc-paliers b{display:block;margin-top:1px;font-size:16px;line-height:1.25}
-.dc-paliers li span span,.dc-etapes li > span:last-child > span{display:block;margin-top:2px;font-size:13px;line-height:1.4;color:#D9C3CB}
-.dc-rares{margin:12px 0 0;padding:12px 14px;border-radius:18px;font-size:13px;line-height:1.4;color:#D9C3CB;border:2px solid transparent;
+.dc-bloc{margin:34px 0 0}
+.dc-bloc h2{margin:0 0 14px;font-size:24px;line-height:1.1;font-weight:900;letter-spacing:-.02em}
+/* le compte à rebours */
+.ce{position:relative;margin:18px 0 0;padding:16px;border-radius:28px;overflow:hidden;
+  background:radial-gradient(90% 70% at 30% 0%,color-mix(in srgb,var(--a) 55%,transparent),transparent 70%),linear-gradient(160deg,color-mix(in srgb,var(--b) 80%,#000),#160611 80%);
+  border:1.5px solid color-mix(in srgb,var(--a) 70%,transparent);box-shadow:0 30px 60px -30px rgba(0,0,0,.95),0 0 50px -10px color-mix(in srgb,var(--a) 45%,transparent)}
+.ce-haut{display:flex;gap:16px;align-items:center}
+.ce-carte{position:relative;flex:none;width:118px;height:160px;border-radius:20px;overflow:hidden;background:linear-gradient(160deg,var(--a),var(--b));border:2px solid #F2C46B;box-shadow:0 0 0 3px rgba(242,196,107,.25),0 18px 30px -12px rgba(0,0,0,.9);animation:dc-flotte 3.4s ease-in-out infinite}
+.ce-carte img{position:absolute;left:8%;bottom:-2px;width:84%;height:86%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 8px 8px rgba(0,0,0,.45))}
+.ce-carte em{position:absolute;left:8px;top:6px;font-style:normal;font-size:26px}
+.ce-reflet{position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%);transform:translateX(-120%);animation:co-reflet 3.2s ease-in-out 1s infinite}
+.ce-texte{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ce-ruban{align-self:flex-start;padding:3px 10px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.25);font-size:10.5px;font-weight:900;letter-spacing:.12em;white-space:nowrap}
+.ce-ruban{animation:ce-clignote 1.6s ease-in-out infinite}
+.ce-nom{font-size:24px;line-height:1.05;font-weight:900;letter-spacing:-.02em;text-shadow:0 2px 12px rgba(0,0,0,.45)}
+.ce-part{font-size:12.5px;font-weight:700;color:rgba(255,244,230,.8)}
+.ce-chrono{display:flex;gap:6px}
+.ce-chrono span{display:flex;flex-direction:column;align-items:center;min-width:46px;padding:6px 4px 5px;border-radius:12px;background:rgba(0,0,0,.42);border:1px solid rgba(255,255,255,.14)}
+.ce-chrono b{font-size:22px;line-height:1;font-weight:900;font-variant-numeric:tabular-nums}
+.ce-chrono small{margin-top:2px;font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,244,230,.7)}
+.ce-texte p{margin:4px 0 0;font-size:12.5px;line-height:1.4;color:rgba(255,244,230,.85)}
+.ce-frise{display:flex;gap:8px;margin:16px -16px -4px;padding:0 16px 6px;list-style:none;overflow-x:auto;scrollbar-width:none}
+.ce-frise::-webkit-scrollbar{display:none}
+.ce-frise li{flex:none;display:flex;flex-direction:column;align-items:center;gap:2px;width:72px;text-align:center}
+.ce-mini{position:relative;display:block;width:60px;height:80px;border-radius:14px;overflow:hidden;background:linear-gradient(160deg,var(--a),var(--b));border:1.5px solid rgba(255,255,255,.25)}
+.ce-mini img{position:absolute;left:10%;bottom:-2px;width:80%;height:86%;object-fit:contain;object-position:bottom}
+.ce-mini em{position:absolute;right:4px;top:3px;font-style:normal;font-size:16px}
+.ce-frise b{font-size:11.5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:72px}
+.ce-frise small{font-size:10px;font-weight:700;color:rgba(255,244,230,.65);white-space:nowrap}
+.ce-frise .passee .ce-mini{filter:grayscale(1) brightness(.55)}
+.ce-frise .passee b{text-decoration:line-through;color:rgba(255,244,230,.55)}
+.ce-frise .maintenant .ce-mini{border:2px solid #F2C46B;box-shadow:0 0 16px rgba(242,196,107,.7)}
+.ce-frise .maintenant small{color:#F2C46B}
+.ce-frise .bientot .ce-mini img{filter:brightness(0);opacity:.55}
+.ce-frise .rare .ce-mini{border:2px solid transparent;background:linear-gradient(135deg,#E2D6FF,#9C84FF 40%,#FF9BE0 70%,#9AF0FF) padding-box,linear-gradient(120deg,#C9B6FF,#7B5CFF,#FF7AD9,#7FE7FF,#C9B6FF) border-box;background-size:auto,300% 300%;animation:co-holo 4s linear infinite}
+.ce-frise .rare .ce-mini img{filter:brightness(0);opacity:.45}
+.ce-frise .or .ce-mini{border-color:#FFE7A0;box-shadow:0 0 16px rgba(255,214,120,.6)}
+.ce-frise .or .ce-mini img{filter:sepia(1) saturate(3.2) hue-rotate(-12deg) brightness(1.05)}
+@keyframes ce-clignote{50%{opacity:.6}}
+/* comment ça marche */
+.dc-trois{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0;padding:0;list-style:none}
+.dc-trois li{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 6px 12px;border-radius:20px;text-align:center;background:linear-gradient(180deg,rgba(255,46,154,.16),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.12);animation:mc-entre .5s cubic-bezier(.2,.9,.3,1) var(--d) both}
+.dc-ic{position:relative;display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#FF2E9A,#7B1B5E);font-size:27px;box-shadow:0 10px 20px -8px rgba(255,46,154,.8)}
+.dc-ic b{position:absolute;left:-4px;top:-4px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#F2C46B;color:#2A1408;font-size:12px;font-weight:900}
+.dc-trois strong{font-size:14px;line-height:1.15}
+.dc-trois small{font-size:11.5px;line-height:1.3;color:#A88E99}
+/* ce que ça rapporte */
+.dc-piste{position:relative;display:grid;grid-template-columns:repeat(10,minmax(0,1fr));align-items:center;gap:4px;margin:6px 0 12px}
+.dc-piste::before{content:"";position:absolute;left:4%;right:4%;top:50%;height:4px;margin-top:-2px;border-radius:2px;background:linear-gradient(90deg,#FF2E9A,#FF8FCB 55%,#F2C46B)}
+.dc-piste span{position:relative;justify-self:center;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#2A1220;border:2px solid rgba(255,143,203,.6);font-size:11px;font-weight:800;color:#D9C3CB;animation:co-pop .5s cubic-bezier(.2,1.5,.4,1) var(--d) both}
+.dc-piste span.pal{width:36px;height:36px;font-size:19px;background:#3A1A10;border-color:#F2C46B;box-shadow:0 0 14px rgba(242,196,107,.6)}
+.dc-piste span.or{width:42px;height:42px;font-size:22px;background:linear-gradient(135deg,#FFE7A0,#B8801E);box-shadow:0 0 22px rgba(255,214,120,.8)}
+.dc-paliers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0;padding:0;list-style:none}
+.dc-paliers li{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:18px;text-align:center;background:linear-gradient(180deg,rgba(242,196,107,.14),rgba(255,46,154,.05));border:1px solid rgba(242,196,107,.3)}
+.dc-paliers li > span:first-child{font-size:28px;line-height:1.1}
+.dc-paliers small{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#F2C46B}
+.dc-paliers b{font-size:13.5px;line-height:1.2}
+.dc-p-dit{font-size:11.5px;line-height:1.3;color:#A88E99}
+.dc-paliers li.or{border-color:rgba(255,214,120,.7);background:linear-gradient(180deg,rgba(255,214,120,.25),rgba(184,128,30,.08))}
+.dc-rares{margin:10px 0 0;padding:10px 14px;border-radius:16px;font-size:12.5px;line-height:1.4;color:#D9C3CB;text-align:center;border:2px solid transparent;
   background:linear-gradient(#1E0C18,#1E0C18) padding-box,linear-gradient(120deg,#C9B6FF,#7B5CFF,#FF7AD9,#7FE7FF,#C9B6FF) border-box;background-size:auto,300% 300%;animation:co-holo 5s linear infinite}
-.dc-rares b{color:#FFF4E6}
-.dc-a-toi{display:flex;gap:12px;align-items:center;margin:10px 0 0;padding:12px 14px;border-radius:18px;background:linear-gradient(135deg,rgba(255,46,154,.2),rgba(242,196,107,.16));border:1px solid rgba(242,196,107,.45)}
-.dc-a-toi-fig{flex:none;display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#FF2E9A,#7B1B5E);font-size:26px;animation:co-tourne 3.4s ease-in-out infinite}
-.dc-a-toi small{display:block;font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#F2C46B}
-.dc-a-toi b{display:block;margin-top:1px;font-size:16px}
-.dc-a-toi span span{display:block;margin-top:2px;font-size:13px;line-height:1.4;color:#D9C3CB}
-.dc-etapes{position:relative}
-.dc-etapes::before{content:"";position:absolute;left:23px;top:24px;bottom:24px;width:2px;background:linear-gradient(#FF2E9A,#F2C46B);opacity:.5}
-.dc-etapes li{position:relative;display:flex;gap:14px;align-items:flex-start;animation:mc-entre .6s cubic-bezier(.2,.9,.3,1) var(--d) both}
-.dc-num{position:relative;flex:none;display:grid;place-items:center;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#FF2E9A,#7B1B5E);box-shadow:0 8px 18px -8px rgba(255,46,154,.8)}
-.dc-num b{font-size:20px;font-weight:900}
-.dc-num em{position:absolute;right:-6px;bottom:-4px;font-style:normal;font-size:20px}
-.dc-etapes li > span:last-child{padding-top:3px}
-.dc-etapes li > span:last-child > b{display:block;font-size:16px}
+/* où commencer */
 .dc-commerces{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0;padding:0;list-style:none}
-.dc-commerces a{position:relative;display:flex;flex-direction:column;height:100%;box-sizing:border-box;padding:10px 10px 12px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#FFF4E6;text-decoration:none;transition:transform .2s}
+.dc-commerces a{position:relative;display:flex;flex-direction:column;height:100%;box-sizing:border-box;padding:10px 10px 12px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#FFF4E6;text-decoration:none;transition:transform .2s,border-color .2s}
+.dc-commerces a:hover{border-color:rgba(255,46,154,.6);transform:translateY(-2px)}
 .dc-commerces a:active{transform:scale(.97)}
 .dc-com-fig{position:relative;display:block;height:118px;border-radius:14px;overflow:hidden;background:linear-gradient(160deg,var(--a),var(--b))}
 .dc-com-fig img{position:absolute;left:10%;bottom:-2px;width:80%;height:92%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 6px 6px rgba(0,0,0,.45))}
@@ -294,14 +353,50 @@ export const STYLES_DECOUVRIR = `
 .dc-com-cadeau{display:block;margin-top:6px;font-size:12px;line-height:1.3;color:#F2C46B;overflow-wrap:anywhere}
 .dc-com-voir{display:block;margin-top:auto;padding-top:8px;font-size:12.5px;font-weight:800;color:#FF7AC0}
 .dc-deja{margin:24px 4px 0;font-size:12.5px;line-height:1.45;color:#A88E99;text-align:center}
-.dc-plus{margin:24px 0 0;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);padding:0 14px}
+.dc-plus{margin:28px 0 0;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);padding:0 14px}
 .dc-plus summary{padding:14px 0;font-weight:800;cursor:pointer;list-style:none}
 .dc-plus summary::-webkit-details-marker{display:none}
 .dc-plus summary::after{content:"＋";float:right;color:#FF7AC0}
 .dc-plus[open] summary::after{content:"－"}
-.dc-plus .dc-bloc{margin:4px 0 16px}
-@keyframes dc-donne{from{transform:translateY(80px) scale(.5) rotate(0);opacity:0}}
+.dc-plus .dc-bloc{margin:4px 0 18px}
 @keyframes dc-flotte{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 @keyframes dc-remplir{from{transform:scaleX(0)}}
+/* l'ordinateur : la page prend la largeur */
+@media (min-width:860px){
+  .dc{padding:0 32px}
+  .dc-bloc{margin-top:48px}
+  .dc-bloc h2{font-size:32px;margin-bottom:18px}
+  .ce{padding:28px 32px}
+  .ce-haut{gap:32px}
+  .ce-carte{width:190px;height:258px;border-radius:26px}
+  .ce-carte em{font-size:36px}
+  .ce-nom{font-size:44px}
+  .ce-part{font-size:15px}
+  .ce-chrono{gap:10px}
+  .ce-chrono span{min-width:78px;padding:12px 6px 10px;border-radius:16px}
+  .ce-chrono b{font-size:40px}
+  .ce-chrono small{font-size:11px}
+  .ce-texte p{font-size:15px;max-width:520px}
+  .ce-frise{justify-content:center;gap:16px;margin:24px 0 0;padding:0}
+  .ce-frise li{width:100px}
+  .ce-mini{width:84px;height:112px}
+  .ce-frise b{font-size:13px;max-width:100px}
+  .ce-frise small{font-size:11.5px}
+  .dc-trois{gap:16px}
+  .dc-trois li{padding:26px 16px 22px;gap:8px}
+  .dc-ic{width:76px;height:76px;font-size:38px}
+  .dc-trois strong{font-size:19px}
+  .dc-trois small{font-size:14px}
+  .dc-piste span{width:34px;height:34px;font-size:14px}
+  .dc-piste span.pal{width:52px;height:52px;font-size:27px}
+  .dc-piste span.or{width:60px;height:60px;font-size:31px}
+  .dc-paliers{gap:16px}
+  .dc-paliers li{padding:18px 12px}
+  .dc-paliers b{font-size:17px}
+  .dc-p-dit{font-size:13.5px}
+  .dc-rares{font-size:14px}
+  .dc-commerces{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+  .dc-com-fig{height:150px}
+}
 @media (prefers-reduced-motion:reduce){.dc *{animation:none!important}}
 `;

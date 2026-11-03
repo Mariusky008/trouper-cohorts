@@ -197,17 +197,28 @@ await vide.screenshot({ path: `${D}/famille-4-vide.png` });
 
 // ═══ MA COLLECTION, SANS FIGURINE : la page explique au lieu d'être vide ═══
 await vide.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
-await vide.waitForSelector(".dc-moment", { timeout: 30000 });
+await vide.waitForSelector(".ce", { timeout: 30000 });
+await vide.waitForTimeout(1500);
 const dc = await texte(vide, ".mc");
-ok((await vide.locator(".mc-commerce").count()) === 0 && (await vide.locator(".dc-vitrine .dc-carte").count()) === 5, "sans figurine : pas d'étagère, la vitrine de cinq cartes");
-ok(/EN CE MOMENT/i.test(dc) && /Édition \S+.*encore \d+ jours?/.test(dc), `l'édition du moment et le temps qui reste (${(await texte(vide, ".dc-moment")).slice(0, 70)})`);
-ok(dc.includes("Ce que ça te rapporte") && dc.includes("La figurine d’or") && dc.includes("Comment on la gagne") && dc.includes("touche une cage"), "à quoi ça sert, et comment on la gagne");
+ok((await vide.locator(".mc-commerce").count()) === 0 && (await vide.locator(".ce-frise li").count()) === 6 && (await vide.locator(".ce-frise li.passee").count()) === 1, "sans figurine : pas d'étagère ; la frise des éditions, dont celle qui vient de finir");
+const chrono = await texte(vide, ".ce-chrono");
+ok(/À GAGNER MAINTENANT/i.test(dc) && /Édition \S+/.test(dc) && /\d+\s*jours?/i.test(chrono) && /\d{2}\s*s/i.test(chrono), `l'édition du moment, et le temps qui reste à la seconde (${chrono.replace(/\s+/g, " ")})`);
+ok(dc.includes("Comment ça marche") && dc.includes("Passe le voir") && dc.includes("Plus tu en as, plus tu gagnes") && dc.includes("La figurine d’or"), "comment ça marche, et ce que ça rapporte : en tuiles");
+ok(dc.includes("Ta propre figurine") && dc.includes("Démonstration · la figurine de Léa") && dc.includes("Elle parle avec ta voix"), "l'aperçu de sa propre figurine, sur celle de Léa, et ses avantages");
+await vide.locator(".af-sentiments button", { hasText: "La colère" }).click();
+ok((await vide.locator(".af .fqp").getAttribute("data-sentiment")) === "colere" && (await vide.locator(".af .fqp-badge").count()) === 1, "un toucher sur « La colère » : la figurine de Léa se met en colère");
 ok(
   (await vide.locator(`.dc-commerces a[href="/f/${SLUG}"]`).count()) === 1 && (await vide.locator(`.dc-commerces a[href="/f/${NEUF}"]`).count()) === 1,
   "où la commencer : les commerces ClikMe, vers leur page",
 );
 ok((await debordement(vide)) <= 0 && !/exemple/i.test(dc), "la page sans figurine ne déborde pas, sans le mot interdit");
 await vide.screenshot({ path: `${D}/famille-9-collection-vide.png`, fullPage: true });
+// sur ordinateur : la page prend la largeur
+await vide.setViewportSize({ width: 1440, height: 900 });
+await vide.waitForTimeout(400);
+const large = await vide.locator(".mc").evaluate((e) => e.getBoundingClientRect().width);
+ok(large > 1000 && (await debordement(vide)) <= 0 && (await vide.locator(".dc-commerces").evaluate((e) => getComputedStyle(e).gridTemplateColumns.split(" ").length)) === 4, `sur ordinateur, la page prend la largeur (${Math.round(large)} px, quatre commerces par ligne)`);
+await vide.screenshot({ path: `${D}/famille-10-collection-ordinateur.png`, fullPage: true });
 
 const erreurs = [...p.err, ...ami.err, ...vide.err];
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` : ${erreurs[0]}` : ""}`);

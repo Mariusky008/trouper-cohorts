@@ -241,6 +241,31 @@ bouche-à-oreille très puissant… sans payer un euro de pub ! »
 **À faire par lui** : appliquer la migration dans l'éditeur SQL de Supabase (sans elle : le compteur marche, et à 10,
 « ta figurine arrive très bientôt »).
 
+### 9.0 ter « Ma collection » qui donne envie, et ce que ressent sa figurine (3 novembre) — construit
+
+Sa remarque : « la page n'est pas responsive sur ordinateur, les explications sont épuisantes à lire… il manque une âme
+et cette sensation de manquer la prochaine figurine… on ne voit rien de notre propre figurine : au moins celle d'un
+ami qui a déjà la sienne, et ce qu'on peut en faire (lui faire dire des choses, lui faire exprimer un sentiment : la
+joie, la colère, la tristesse, l'euphorie) ; c'est ici qu'on explique les avantages ».
+
+- **Le compte à rebours** (`ChronoEdition`, `app/collection/decouvrir.tsx`) : « À gagner maintenant · Édition Automne ·
+  elle s'en va dans 47 j 16 h 59 min 04 s », et la frise : celle qui vient de finir (« terminée »), celle-ci, les deux
+  suivantes (cadenas, « dans 28 j »), la rare, l'or. Les dates sont celles des éditions : rien d'inventé (aucun
+  « 238 personnes l'ont déjà »). Pour qui collectionne déjà, il est au-dessus de ses étagères.
+- **Comment ça marche** : trois tuiles de trois mots ; **ce que ça rapporte** : une piste de 1 à 10 et trois médailles.
+- **Ta propre figurine** (`apercu-figurine.tsx`) : la figurine de Léa (la cliente des démos, voix « Emma » qu'il a
+  faite), marquée « Démonstration » ; on l'écoute, et elle passe d'un sentiment à l'autre (un toucher l'arrête sur le
+  sien) ; les quatre avantages (sa voix, ce qu'on ressent, chez ses proches, ses commerces préférés) ; « Toi : 0 / 10 ».
+  Pour qui collectionne, sous son compteur.
+- **Les sentiments sont vrais** (`SENTIMENTS`) : dans « Ma figurine », avant d'envoyer, « Ce qu'elle ressent » ; chez
+  celui qui reçoit, la figurine le joue (elle sautille, tremble, s'affaisse ou bondit ; le fond et ce qui flotte
+  autour le disent) et la page dit « Sa figurine est pleine de joie ». Ses images ne changent pas.
+- **Sur ordinateur**, la page prend la largeur (1 180 points au plus) : le compte à rebours en grand, les tuiles côte à
+  côte, l'aperçu en deux colonnes, quatre commerces par ligne, deux étagères par ligne.
+
+**À faire par lui** : appliquer `20261108090000_clik_figurine_sentiment.sql` (après celle de « Ma figurine ») ; sans
+elle, les messages partent quand même, sans sentiment.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

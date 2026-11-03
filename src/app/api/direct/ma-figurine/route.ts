@@ -2,7 +2,7 @@
 //
 // GET : où il en est (le compteur jusqu'à 10, sa photo, sa figurine, ses messages). Sans cookie : 0 / 10.
 // POST { action: "photo", photo: data:image…, accord: true } : sa photo, pour que ClikMe fasse sa figurine.
-// POST { action: "message", son: data:audio…, duree, commerces: [liens] } : un message de sa figurine → { id, lien }.
+// POST { action: "message", son: data:audio…, duree, commerces: [liens], sentiment? } : un message de sa figurine → { id, lien }.
 // POST { action: "signaler", id } : celui qui a reçu un message le signale (pas besoin d'être quelqu'un).
 // Jamais d'habitant créé ici.
 import { NextResponse } from "next/server";
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
   }
   if (p?.action === "message") {
-    const r = await enregistrerMessage(supabase, moi, p.son, p.duree, p.commerces);
+    const r = await enregistrerMessage(supabase, moi, p.son, p.duree, p.commerces, p.sentiment);
     if (!r.id) return NextResponse.json({ error: r.error }, { status: 400 });
     return NextResponse.json({ ok: true, id: r.id, lien: lienMessage(r.id) }, { headers: sansCache });
   }

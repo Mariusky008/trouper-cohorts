@@ -6,10 +6,40 @@
  * ne sait pas — ou si la mesure ne rend que du silence alors que la voix joue depuis une demi-seconde (certains
  * navigateurs coupent la mesure sans rien dire) —, la bouche bat en rythme tant que la voix joue.
  *
+ * CE QU'ELLE RESSENT (`sentiment`) : ses images ne changent pas ; elle sautille de joie, tremble de colère, s'affaisse
+ * de tristesse ou bondit d'euphorie, le fond prend la couleur du sentiment et ce qui flotte autour le dit (💢, 💧…).
+ * `decoupe` : des images détourées (fond transparent), posées debout au lieu de remplir le cadre.
+ *
  * LA VOIX EST CHARGÉE EN ENTIER AVANT DE JOUER (une adresse `blob:`) : l'iPhone ne lit pas un son servi sans
  * « morceaux », et la mesure du volume demande un son de la même origine.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { sentimentDe, type Sentiment } from "@/lib/direct/ma-figurine";
+
+/** Ce qui flotte autour d'elle, selon ce qu'elle ressent. */
+const PARTICULES: Record<Sentiment, string[]> = {
+  joie: ["😄", "✨", "💛", "🌟", "😊", "✨"],
+  colere: ["💢", "😠", "💢", "🔥", "💢", "⚡"],
+  tristesse: ["💧", "💧", "😢", "💧", "💧", "💧"],
+  euphorie: ["🎉", "🤩", "⭐", "🥳", "✨", "🎊"],
+};
+
+/** La couche du sentiment : les particules, et l'emoji en badge. `cle` la relance à chaque nouveau choix. */
+export function CoucheSentiment({ sentiment, cle = 0 }: { sentiment: Sentiment | null | undefined; cle?: number }) {
+  const s = sentimentDe(sentiment);
+  if (!s) return null;
+  const parts = PARTICULES[s.cle];
+  return (
+    <span key={`${s.cle}-${cle}`} className="fqp-sent" aria-hidden="true">
+      {[...parts, ...parts].map((e, i) => (
+        <i key={i} style={{ "--x": `${(i * 37 + 11) % 92}%`, "--d": `${(i * 0.23) % 1.6}s`, "--r": `${((i * 53) % 40) - 20}deg` } as CSSProperties}>
+          {e}
+        </i>
+      ))}
+      <b className="fqp-badge">{s.emoji}</b>
+    </span>
+  );
+}
 
 type Props = {
   neutre: string;
@@ -21,11 +51,17 @@ type Props = {
   /** Appelé à la fin de la voix. */
   onFin?: () => void;
   className?: string;
+  /** Ce qu'elle ressent dans ce message (rien : elle parle, simplement). */
+  sentiment?: Sentiment | null;
+  /** Relance l'animation du sentiment (un nouveau choix du même sentiment). */
+  rejoue?: number;
+  /** Images détourées (fond transparent) : posées debout dans le cadre. */
+  decoupe?: boolean;
 };
 
 type Fenetre = Window & { webkitAudioContext?: typeof AudioContext };
 
-export function FigurineQuiParle({ neutre, parle, src, etiquette = "▶ Écouter", onFin, className }: Props) {
+export function FigurineQuiParle({ neutre, parle, src, etiquette = "▶ Écouter", onFin, className, sentiment, rejoue = 0, decoupe }: Props) {
   const boite = useRef<HTMLDivElement>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
   const contexte = useRef<AudioContext | null>(null);
@@ -142,12 +178,15 @@ export function FigurineQuiParle({ neutre, parle, src, etiquette = "▶ Écouter
   }
 
   return (
-    <div className={`fqp${className ? ` ${className}` : ""}`}>
+    <div className={`fqp${className ? ` ${className}` : ""}${decoupe ? " decoupe" : ""}${sentiment ? ` sent-${sentiment}` : ""}`} data-sentiment={sentiment ?? ""}>
       <div className="fqp-fig" ref={boite}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="fqp-n" src={neutre} alt="" draggable={false} />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="fqp-p" src={parle} alt="" draggable={false} />
+        <CoucheSentiment sentiment={sentiment} cle={rejoue} />
+        <span className="fqp-corps" key={`${sentiment ?? ""}-${rejoue}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="fqp-n" src={neutre} alt="" draggable={false} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="fqp-p" src={parle} alt="" draggable={false} />
+        </span>
         {joue && <span className="fqp-ondes" aria-hidden="true" />}
       </div>
       <button type="button" className="fqp-jouer" onClick={() => (joue ? audio.current?.pause() : jouer())} disabled={charge}>
@@ -165,7 +204,10 @@ export function FigurineQuiParle({ neutre, parle, src, etiquette = "▶ Écouter
 export const STYLES_FIGURINE_QUI_PARLE = `
 .fqp{display:flex;flex-direction:column;align-items:center;gap:12px}
 .fqp-fig{position:relative;width:min(260px,70vw);aspect-ratio:3/4;border-radius:24px;overflow:hidden;background:linear-gradient(160deg,#FF8FCB,#7B1B5E);border:2px solid rgba(255,255,255,.3);box-shadow:0 22px 44px -18px rgba(0,0,0,.9),0 0 40px rgba(255,46,154,.25)}
+.fqp-fig{transition:background .6s}
+.fqp-corps{position:absolute;inset:0;transform-origin:50% 100%}
 .fqp-fig img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.fqp.decoupe .fqp-fig img{top:7%;height:93%;object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 14px 12px rgba(0,0,0,.45))}
 .fqp-p{opacity:0}
 .fqp-fig.ouverte .fqp-p{opacity:1}
 .fqp-fig.ouverte .fqp-n{opacity:0}
@@ -174,4 +216,31 @@ export const STYLES_FIGURINE_QUI_PARLE = `
 .fqp-jouer:disabled{opacity:.6}
 .fqp-ennui{margin:0;font-size:13px;color:#FFB4B4}
 @keyframes fqp-ondes{0%{opacity:1}100%{opacity:0;transform:scale(1.04)}}
+/* ce qu'elle ressent */
+.fqp-sent{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+.fqp-sent i{position:absolute;left:var(--x);font-style:normal;font-size:24px;opacity:0;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+.fqp-badge{position:absolute;right:10px;top:10px;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.92);font-size:28px;box-shadow:0 8px 18px rgba(0,0,0,.35);animation:fqp-badge .55s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes fqp-badge{from{transform:scale(0) rotate(-40deg)}}
+.sent-joie .fqp-fig{background:radial-gradient(80% 60% at 50% 30%,#FFE58A,#FF9A3D 60%,#E2543A)}
+.sent-joie .fqp-corps{animation:fqp-joie .5s ease-in-out infinite alternate}
+.sent-joie .fqp-sent i{bottom:-12%;animation:fqp-monte 2.4s ease-out var(--d) infinite}
+@keyframes fqp-joie{from{transform:translateY(0) rotate(-3deg)}to{transform:translateY(-6%) rotate(3deg)}}
+.sent-colere .fqp-fig{background:radial-gradient(80% 60% at 50% 30%,#FF6B4A,#B3121F 60%,#3A0408)}
+.sent-colere .fqp-corps{animation:fqp-colere .11s linear infinite;filter:drop-shadow(0 0 16px rgba(255,40,20,.85)) saturate(1.3)}
+.sent-colere .fqp-sent i{top:6%;left:calc(18% + var(--x) * .64);animation:fqp-gonfle 1.1s ease-out var(--d) infinite}
+@keyframes fqp-colere{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-2.5%) rotate(-1.5deg)}75%{transform:translateX(2.5%) rotate(1.5deg)}}
+.sent-tristesse .fqp-fig{background:radial-gradient(80% 60% at 50% 30%,#9EC9FF,#3C5FA8 60%,#16234A)}
+.sent-tristesse .fqp-corps{animation:fqp-triste 3s ease-in-out infinite;filter:grayscale(.35) brightness(.92)}
+.sent-tristesse .fqp-sent i{top:-10%;font-size:18px;animation:fqp-pluie 1.6s linear var(--d) infinite}
+@keyframes fqp-triste{0%,100%{transform:rotate(-3deg) translateY(2%) scale(.97)}50%{transform:rotate(-6deg) translateY(4%) scale(.95)}}
+.sent-euphorie .fqp-fig{background:linear-gradient(135deg,#FF2E9A,#FFB547,#5CE1E6,#9B5CFF,#FF2E9A);background-size:300% 300%;animation:fqp-arcenciel 3s linear infinite}
+.sent-euphorie .fqp-corps{animation:fqp-bond .7s cubic-bezier(.3,1.6,.5,1) infinite}
+.sent-euphorie .fqp-sent i{top:42%;animation:fqp-eclate 1.4s ease-out var(--d) infinite}
+@keyframes fqp-bond{0%,100%{transform:translateY(0) scale(1.04,.94)}45%{transform:translateY(-16%) scale(.96,1.05) rotate(var(--r,4deg))}}
+@keyframes fqp-arcenciel{to{background-position:300% 0}}
+@keyframes fqp-monte{0%{opacity:0;transform:translateY(0) scale(.6)}15%{opacity:1}100%{opacity:0;transform:translateY(-110%) scale(1.2) rotate(var(--r))}}
+@keyframes fqp-gonfle{0%{opacity:0;transform:scale(.3)}30%{opacity:1;transform:scale(1.25)}100%{opacity:0;transform:scale(.9) translateY(-30px)}}
+@keyframes fqp-pluie{0%{opacity:0;transform:translateY(0)}10%{opacity:.9}100%{opacity:0;transform:translateY(340px)}}
+@keyframes fqp-eclate{0%{opacity:0;transform:translate(0,0) scale(.4)}20%{opacity:1}100%{opacity:0;transform:translate(calc((var(--x) - 46%) * 1.6),-160px) scale(1.3) rotate(var(--r))}}
+@media (prefers-reduced-motion:reduce){.fqp-corps,.fqp-sent i,.fqp-fig{animation:none!important}}
 `;

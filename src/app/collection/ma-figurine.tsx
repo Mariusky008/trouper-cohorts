@@ -4,18 +4,23 @@
  * 🗣️ « MA FIGURINE », EN HAUT DE « MA COLLECTION » — la règle est dans `lib/direct/ma-figurine.ts`.
  *   · moins de 10 : le compteur, tous commerces confondus, et ce qui l'attend ;
  *   · 10 : sa photo (« C'est bien moi sur la photo ») ; puis « on fabrique ta figurine » ;
- *   · prête : il la fait parler (15 secondes, SA voix), choisit les commerces qu'elle cite, et l'envoie (WhatsApp,
- *     SMS, le lien) ; ses messages et leurs écoutes.
+ *   · prête : il la fait parler (15 secondes, SA voix), lui donne un sentiment s'il veut (joie, colère, tristesse,
+ *     euphorie), choisit les commerces qu'elle cite, et l'envoie (WhatsApp, SMS, le lien) ; ses messages et leurs écoutes.
+ * Avant 10, l'aperçu (`apercu-figurine.tsx`) montre ce qui l'attend.
  */
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   COMMERCES_MAX_MESSAGE,
   DUREE_MAX_MESSAGE,
+  SENTIMENTS,
+  sentimentDe,
   texteDuMessage,
   type EtatMaFigurine,
+  type Sentiment,
 } from "@/lib/direct/ma-figurine";
 import { reduireImage } from "@/lib/direct/reduire-image";
 import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE } from "./figurine-qui-parle";
+import { ApercuFigurine } from "./apercu-figurine";
 
 const SILHOUETTE = "/direct/double/pied/salut-1.webp";
 
@@ -39,9 +44,20 @@ export function MaFigurine() {
     };
   }, []);
   if (!etat) return null;
+  if (etat.etape === "a-gagner")
+    return (
+      <>
+        <section className="mf" aria-label="Ma figurine">
+          <AGagner etat={etat} />
+          <style>{STYLES_MA_FIGURINE + STYLES_FIGURINE_QUI_PARLE}</style>
+        </section>
+        <div className="mf-apercu">
+          <ApercuFigurine />
+        </div>
+      </>
+    );
   return (
     <section className="mf" aria-label="Ma figurine">
-      {etat.etape === "a-gagner" && <AGagner etat={etat} />}
       {etat.etape === "bientot" && (
         <Annonce titre="Bravo, 10 figurines ! 🎉" emoji="🛠️">
           Ta propre figurine arrive très bientôt : reviens ici dans quelques jours pour envoyer ta photo.
@@ -90,8 +106,7 @@ function AGagner({ etat }: { etat: EtatMaFigurine }) {
           <i style={{ width: `${Math.min(1, etat.total / etat.seuil) * 100}%` } as CSSProperties} />
         </span>
         <span>
-          Encore <b>{reste}</b>, chez n’importe quel commerce ClikMe : ClikMe fait ta propre figurine. Elle parle avec ta voix,
-          et tu l’envoies à tes proches.
+          Encore <b>{reste}</b>, chez n’importe quel commerce ClikMe, et ClikMe fait ta propre figurine. Regarde ce qu’elle fera 👇
         </span>
       </span>
     </div>
@@ -169,6 +184,8 @@ function Prete({ etat }: { etat: EtatMaFigurine }) {
   const [secondes, setSecondes] = useState(0);
   const [son, setSon] = useState<Enregistrement | null>(null);
   const [choisis, setChoisis] = useState<string[]>(() => etat.commerces.slice(0, COMMERCES_MAX_MESSAGE).map((c) => c.slug));
+  const [sentiment, setSentiment] = useState<Sentiment | null>(null);
+  const [rejoue, setRejoue] = useState(0);
   const [lien, setLien] = useState("");
   const [copie, setCopie] = useState(false);
   const [envoi, setEnvoi] = useState(false);
@@ -246,12 +263,12 @@ function Prete({ etat }: { etat: EtatMaFigurine }) {
     setEnvoi(true);
     setErreur("");
     try {
-      const j = await envoyer({ action: "message", son: son.data, duree: son.duree, commerces: choisis });
+      const j = await envoyer({ action: "message", son: son.data, duree: son.duree, commerces: choisis, ...(sentiment ? { sentiment } : {}) });
       const url = `${window.location.origin}${j.lien}`;
       setLien(url);
       setPhase("envoye");
       const id = String(j.lien).split("/").pop() ?? "";
-      setMessages((m) => [{ id, le: new Date().toISOString(), ecoutes: 0, signale: false }, ...m]);
+      setMessages((m) => [{ id, le: new Date().toISOString(), ecoutes: 0, signale: false, sentiment }, ...m]);
     } catch (e) {
       setErreur((e as Error).message);
     } finally {
@@ -280,7 +297,7 @@ function Prete({ etat }: { etat: EtatMaFigurine }) {
     <div className="mf-prete">
       <small className="mf-sur">MA FIGURINE</small>
       {phase === "ecoute" && son ? (
-        <FigurineQuiParle neutre={etat.neutre!} parle={etat.parle!} src={son.url} etiquette="▶ Écouter mon message" />
+        <FigurineQuiParle neutre={etat.neutre!} parle={etat.parle!} src={son.url} etiquette="▶ Écouter mon message" sentiment={sentiment} rejoue={rejoue} />
       ) : (
         <div className="mf-portrait">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -312,6 +329,24 @@ function Prete({ etat }: { etat: EtatMaFigurine }) {
       )}
       {phase === "ecoute" && son && (
         <>
+          <fieldset className="mf-sentiments">
+            <legend>Ce qu’elle ressent</legend>
+            {SENTIMENTS.map((v) => (
+              <button
+                key={v.cle}
+                type="button"
+                className={sentiment === v.cle ? "pris" : ""}
+                aria-pressed={sentiment === v.cle}
+                onClick={() => {
+                  setSentiment(sentiment === v.cle ? null : v.cle);
+                  setRejoue((n) => n + 1);
+                }}
+              >
+                <span aria-hidden="true">{v.emoji}</span>
+                {v.nom}
+              </button>
+            ))}
+          </fieldset>
           {etat.commerces.length > 0 && (
             <fieldset className="mf-cites">
               <legend>Elle cite tes commerces préférés</legend>
@@ -381,7 +416,10 @@ function Prete({ etat }: { etat: EtatMaFigurine }) {
           <ul>
             {messages.map((m) => (
               <li key={m.id}>
-                <a href={`/figurine/${m.id}`}>{new Date(m.le).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}</a>
+                <a href={`/figurine/${m.id}`}>
+                  {new Date(m.le).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}
+                  {sentimentDe(m.sentiment) ? ` ${sentimentDe(m.sentiment)!.emoji}` : ""}
+                </a>
                 <span>{m.signale ? "signalé" : `👂 ${m.ecoutes} écoute${m.ecoutes > 1 ? "s" : ""}`}</span>
               </li>
             ))}
@@ -395,6 +433,8 @@ function Prete({ etat }: { etat: EtatMaFigurine }) {
 const STYLES_MA_FIGURINE = `
 .mf{margin:18px 16px 0;padding:16px 14px;border-radius:24px;color:#FFF4E6;text-align:left;
   background:radial-gradient(110% 70% at 50% 0%,rgba(242,196,107,.22),transparent 65%),linear-gradient(180deg,#2A1620,#170812);border:1px solid rgba(242,196,107,.35);box-shadow:0 24px 50px -24px rgba(0,0,0,.9)}
+.mf-apercu{margin:14px 16px 0}
+@media (min-width:860px){.mf{margin:22px 32px 0;padding:22px 28px}.mf-apercu{margin:16px 32px 0}.mf-gagner-texte > b{font-size:28px}}
 .mf-gagner{display:flex;gap:14px;align-items:center}
 .mf-silhouette{position:relative;flex:none;width:86px;height:112px;border-radius:16px;background:linear-gradient(160deg,#3A1F2E,#1A0B16);border:1.5px dashed rgba(242,196,107,.5);overflow:hidden}
 .mf-silhouette img{position:absolute;left:6%;bottom:-2px;width:88%;height:90%;object-fit:contain;object-position:bottom;filter:brightness(0);opacity:.55}
@@ -427,6 +467,11 @@ const STYLES_MA_FIGURINE = `
 .mf-temps{position:relative;display:block;width:min(280px,80vw);height:34px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
 .mf-temps i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(227,73,72,.55),rgba(255,46,154,.55))}
 .mf-temps b{position:relative;display:grid;place-items:center;height:100%;font-size:14px}
+.mf-sentiments{width:100%;max-width:360px;margin:4px 0 0;padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.mf-sentiments legend{padding:0 6px;font-size:12.5px;font-weight:800;color:#F2C46B}
+.mf-sentiments button{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 8px;border-radius:999px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.14);color:#FFF4E6;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer}
+.mf-sentiments button span{font-size:19px}
+.mf-sentiments button.pris{background:rgba(255,46,154,.22);border-color:#FF2E9A}
 .mf-cites{width:100%;max-width:340px;margin:6px 0 0;padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:16px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .mf-cites legend{padding:0 6px;font-size:12.5px;font-weight:800;color:#F2C46B}
 .mf-cites label{position:relative;display:flex;align-items:center;gap:6px;padding:5px 10px 5px 5px;border-radius:999px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.14);font-size:13px;font-weight:700;cursor:pointer}

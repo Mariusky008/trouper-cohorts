@@ -23,6 +23,7 @@ import {
   SEUIL_MA_FIGURINE,
   figurinesEnTout,
   idMessageValide,
+  sentimentValide,
   type CommerceCite,
   type EtatMaFigurine,
   type MessageFigurine,
@@ -102,7 +103,7 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
   const [neutre, parle, { data: msgs }] = await Promise.all([
     signer(supabase, s(ligne!.neutre)),
     signer(supabase, s(ligne!.parle)),
-    supabase.from("clik_figurine_message").select("id, created_at, ecoutes, signale_le, retire_le").eq("habitant_id", habitant.id).order("created_at", { ascending: false }).limit(20),
+    supabase.from("clik_figurine_message").select("*").eq("habitant_id", habitant.id).order("created_at", { ascending: false }).limit(20),
   ]);
   return {
     ...base,
@@ -111,7 +112,7 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
     parle,
     messages: ((Array.isArray(msgs) ? msgs : []) as Ligne[])
       .filter((m) => !m.retire_le)
-      .map((m) => ({ id: s(m.id), le: s(m.created_at), ecoutes: Number(m.ecoutes) || 0, signale: Boolean(m.signale_le) })),
+      .map((m) => ({ id: s(m.id), le: s(m.created_at), ecoutes: Number(m.ecoutes) || 0, signale: Boolean(m.signale_le), sentiment: sentimentValide(m.sentiment) })),
   };
 }
 
@@ -153,6 +154,7 @@ export async function enregistrerMessage(
   son: unknown,
   duree: unknown,
   commerces: unknown,
+  sentiment?: unknown,
 ): Promise<{ id?: string; error?: string }> {
   const m = /^data:(audio\/(?:webm|ogg|mp4|mpeg|x-m4a|aac|wav))(?:;[^,]*)?;base64,(.+)$/i.exec(s(son));
   if (!m) return { error: "Ton message n’a pas pu être enregistré. Réessaie." };
@@ -171,7 +173,11 @@ export async function enregistrerMessage(
   const id = nouvelId();
   const chemin = `${habitant.id}/m-${id}.${ext}`;
   if (!(await deposer(supabase, chemin, brut, type))) return { error: "Ton message n’est pas parti. Réessaie dans un instant." };
-  const { error } = await supabase.from("clik_figurine_message").insert({ id, habitant_id: habitant.id, son: chemin, duree: Math.round(d * 10) / 10, commerces: cites });
+  const ligne = { id, habitant_id: habitant.id, son: chemin, duree: Math.round(d * 10) / 10, commerces: cites };
+  const sent = sentimentValide(sentiment);
+  let { error } = await supabase.from("clik_figurine_message").insert(sent ? { ...ligne, sentiment: sent } : ligne);
+  // la colonne « sentiment » arrive avec sa migration : sans elle, le message part quand même (sans sentiment)
+  if (error && sent && /sentiment/i.test(`${error.message ?? ""} ${(error as { details?: string }).details ?? ""}`)) ({ error } = await supabase.from("clik_figurine_message").insert(ligne));
   return error ? { error: "Ton message n’est pas parti. Réessaie dans un instant." } : { id };
 }
 
@@ -203,6 +209,7 @@ export async function lireMessage(supabase: Supabase, id: string): Promise<Messa
     neutre,
     parle,
     duree: Number(r.duree) || 0,
+    sentiment: sentimentValide(r.sentiment),
     commerces: slugs.flatMap((slug) => {
       const x = parSlug.get(slug);
       if (!x) return [];

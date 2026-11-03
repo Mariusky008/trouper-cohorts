@@ -10,7 +10,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import type { MaFamille } from "@/lib/direct/famille";
 import { deNom } from "@/lib/echanges/echanges";
 import { CollectionDuCommerce, STYLES_COLLECTION } from "@/app/f/[slug]/collection";
-import { Decouvrir, EnSavoirPlus, STYLES_DECOUVRIR, type CommerceACollectionner } from "./decouvrir";
+import { ChronoEdition, Decouvrir, EnSavoirPlus, STYLES_DECOUVRIR, type CommerceACollectionner } from "./decouvrir";
 import { MaFigurine } from "./ma-figurine";
 import { figurinesEnTout } from "@/lib/direct/ma-figurine";
 
@@ -42,7 +42,7 @@ export function MaCollection({ aujourdhui, commerces }: { aujourdhui: string; co
           Clik<b>Me</b>
         </Link>
         <h1>Ma collection</h1>
-        <p className="mc-dit">Les figurines de tes commerces préférés. Une visite, une figurine ; à 10, la figurine d’or.</p>
+        <p className="mc-dit">Une visite chez un commerce ClikMe, une figurine. À 10, la figurine d’or.</p>
         {etat && avec.length > 0 && (
           <div className="mc-totaux">
             <span>
@@ -71,8 +71,15 @@ export function MaCollection({ aujourdhui, commerces }: { aujourdhui: string; co
 
       {(ennui || (etat && avec.length === 0)) && <Decouvrir aujourdhui={aujourdhui} commerces={commerces} />}
 
+      {avec.length > 0 && (
+        <div className="mc-chrono">
+          <ChronoEdition aujourdhui={aujourdhui} figurine={avec[0].figurine} />
+        </div>
+      )}
+
       {avec.length > 0 && <MaFigurine />}
 
+      <div className="mc-etageres">
       {avec.map((f) => (
         <article key={f.slug} className="mc-commerce">
           <div className="mc-commerce-tete">
@@ -94,6 +101,7 @@ export function MaCollection({ aujourdhui, commerces }: { aujourdhui: string; co
           />
         </article>
       ))}
+      </div>
 
       {avec.length > 0 && <EnSavoirPlus aujourdhui={aujourdhui} commerces={commerces.filter((c) => !avec.some((f) => f.slug === c.slug))} />}
 
@@ -107,7 +115,7 @@ export function MaCollection({ aujourdhui, commerces }: { aujourdhui: string; co
 }
 
 const STYLES_MC = `
-.mc{min-height:100dvh;box-sizing:border-box;padding:calc(18px + env(safe-area-inset-top)) 0 calc(28px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;
+.mc{min-height:100dvh;box-sizing:border-box;padding:calc(18px + env(safe-area-inset-top)) 0 calc(28px + env(safe-area-inset-bottom));max-width:1180px;margin:0 auto;
   background:radial-gradient(90% 40% at 50% 0%,rgba(255,46,154,.25),transparent 70%),linear-gradient(180deg,#1E0C18,#12060F 50%);color:#FFF4E6;
   font-family:var(--font-clikme),Poppins,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
 body{background:#12060F}
@@ -132,6 +140,16 @@ body{background:#12060F}
 .mc-attente{display:grid;gap:14px;margin:24px 16px 0}
 .mc-attente i{height:150px;border-radius:24px;background:linear-gradient(100deg,rgba(255,255,255,.04) 30%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 70%);background-size:200% 100%;animation:mc-reflet 1.4s linear var(--d) infinite}
 .mc-regle{margin:26px 20px 0;font-size:12px;line-height:1.5;color:#8D7580;text-align:center}
+.mc-etageres{display:grid;grid-template-columns:minmax(0,1fr)}
+.mc-chrono{padding:0 16px}
+@media (min-width:860px){
+  .mc{padding-top:calc(28px + env(safe-area-inset-top))}
+  .mc-tete h1{font-size:64px}
+  .mc-dit{font-size:17px}
+  .mc-etageres{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 8px;padding:0 16px}
+  .mc-chrono{padding:0 32px}
+  .mc-regle{font-size:13px;max-width:640px;margin-left:auto;margin-right:auto}
+}
 @keyframes mc-entre{from{opacity:0;transform:translateY(14px)}}
 @keyframes mc-reflet{to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.mc *{animation:none!important}}

@@ -65,6 +65,9 @@ await hugo.waitForSelector(".mf-gagner", { timeout: 60000 });
 const g = await texte(hugo, ".mf-gagner");
 ok(/1 \/ 10 figurines/.test(g) && g.includes("Encore 9") && g.includes("chez n’importe quel commerce ClikMe"), `Hugo : 1 / 10, encore 9, tous commerces (${g.slice(0, 90)})`);
 ok((await hugo.locator(".mf-photo, .mf-prete").count()) === 0, "Hugo n'a pas encore droit à la sienne");
+ok((await texte(hugo, ".mf-apercu")).includes("Démonstration · la figurine de Léa") && (await hugo.locator(".mf-apercu .af-sentiments button").count()) === 4, "sous son compteur : l'aperçu de ce qu'elle fera, et ses quatre sentiments");
+await hugo.locator(".mf-apercu .af-sentiments button", { hasText: "La tristesse" }).click();
+ok((await hugo.locator(".mf-apercu .fqp").getAttribute("data-sentiment")) === "tristesse", "un toucher : la figurine de Léa est triste");
 
 // ═══ LÉA : SA PHOTO ═══
 const lea = await tel(LEA);
@@ -115,6 +118,9 @@ const cites = await lea.locator(".mf-cites label").allInnerTexts();
 ok(cites.length === 2 && (await lea.locator(".mf-cites label.pris").count()) === 2, `elle peut citer ses deux commerces, choisis d'office (${cites.join(" / ")})`);
 await lea.locator(".mf-cites label", { hasText: "Atelier" }).click();
 ok((await lea.locator(".mf-cites label.pris").count()) === 1, "elle retire l'Atelier");
+ok((await lea.locator(".mf-sentiments button").count()) === 4, "quatre sentiments à donner à sa figurine");
+await lea.locator(".mf-sentiments button", { hasText: "La joie" }).click();
+ok((await lea.locator(".mf-prete .fqp").getAttribute("data-sentiment")) === "joie" && (await lea.locator(".mf-prete .fqp-badge").count()) === 1, "elle choisit la joie : sa figurine la montre");
 await lea.screenshot({ path: `${D}/ma-figurine-1-message.png`, fullPage: true });
 await lea.locator(".mf-actions .mf-bouton").click();
 await lea.waitForSelector(".mf-envoye", { timeout: 30000 });
@@ -126,6 +132,7 @@ ok((await lea.locator(".mf-sms").getAttribute("href"))?.startsWith("sms:"), "SMS
 const id = lien.split("/").pop();
 const [msg] = await lire("clik_figurine_message", `id=eq.${id}`);
 ok(msg && JSON.stringify(msg.commerces) === JSON.stringify([A.slug]) && msg.son.startsWith(`${LEA.id}/m-${id}.`) && msg.duree > 1 && msg.duree <= 16, `le message : sa voix, le Comptoir seulement (${JSON.stringify(msg?.commerces)}, ${msg?.duree} s)`);
+ok(msg?.sentiment === "joie", `le message porte sa joie (${msg?.sentiment})`);
 ok((await debordement(lea)) <= 0 && !/exemple/i.test(await texte(lea, "main")), "« Ma collection » ne déborde pas, sans le mot interdit");
 await lea.screenshot({ path: `${D}/ma-figurine-2-envoye.png`, fullPage: true });
 
@@ -137,6 +144,7 @@ const mr = await texte(amie, ".mr");
 ok((await texte(amie, ".mr h1")) === "Léa t’a envoyé sa figurine", "« Léa t’a envoyé sa figurine »");
 ok(mr.includes(A.nom) && !mr.includes("Atelier Tout Neuf") && (await amie.locator(`.mr-commerces a[href="/f/${A.slug}"]`).count()) === 1, "ses commerces préférés : le Comptoir, pas l'Atelier");
 ok(mr.includes("Et toi ?") && (await amie.locator('.mr-toi a[href="/collection"]').count()) === 1, "« Et toi ? » mène à sa collection");
+ok((await amie.locator(".mr .fqp").getAttribute("data-sentiment")) === "joie" && mr.includes("pleine de joie"), "chez son amie, la figurine est pleine de joie");
 const titre = await amie.title();
 ok(titre.includes("Léa t’a envoyé sa figurine") && !/ClikMe.*Clikme/i.test(titre) && (await amie.locator('meta[name="robots"][content*="noindex"]').count()) === 1, `le titre du lien, et pas dans Google (${titre})`);
 const son = amie.waitForResponse((r) => r.url().includes("/api/direct/ma-figurine/son"));

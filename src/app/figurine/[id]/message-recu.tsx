@@ -7,7 +7,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { MessageFigurine } from "@/lib/direct/ma-figurine";
-import { SEUIL_MA_FIGURINE } from "@/lib/direct/ma-figurine";
+import { SEUIL_MA_FIGURINE, sentimentDe } from "@/lib/direct/ma-figurine";
 import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE } from "@/app/collection/figurine-qui-parle";
 
 export function MessageRecu({ message: m }: { message: MessageFigurine }) {
@@ -38,8 +38,23 @@ export function MessageRecu({ message: m }: { message: MessageFigurine }) {
           <h1>
             <b>{m.prenom || "Quelqu’un"}</b> t’a envoyé sa figurine
           </h1>
-          <p className="mr-dit">Touche « Écouter » : elle te parle avec sa voix.</p>
-          <FigurineQuiParle neutre={m.neutre} parle={m.parle} src={`/api/direct/ma-figurine/son?m=${m.id}`} onFin={() => setEcoute(true)} etiquette={ecoute ? "▶ Réécouter" : "▶ Écouter"} />
+          <p className="mr-dit">
+            {sentimentDe(m.sentiment) ? (
+              <>
+                {sentimentDe(m.sentiment)!.emoji} Sa figurine est {sentimentDe(m.sentiment)!.dit}. Touche « Écouter » : elle te parle avec sa voix.
+              </>
+            ) : (
+              "Touche « Écouter » : elle te parle avec sa voix."
+            )}
+          </p>
+          <FigurineQuiParle
+            neutre={m.neutre}
+            parle={m.parle}
+            src={`/api/direct/ma-figurine/son?m=${m.id}`}
+            onFin={() => setEcoute(true)}
+            etiquette={ecoute ? "▶ Réécouter" : "▶ Écouter"}
+            sentiment={m.sentiment}
+          />
           {m.commerces.length > 0 && (
             <section className="mr-bloc" aria-labelledby="mr-commerces">
               <h2 id="mr-commerces">Ses commerces préférés</h2>
