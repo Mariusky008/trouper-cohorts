@@ -364,6 +364,36 @@ export async function envoyerEpisode(
   return { ok: true, ou: ["Le Direct", "ta page"], ...(reseaux.length ? { reseaux } : {}) };
 }
 
+/**
+ * ═══ SON FILM DU STUDIO PART EN LIGNE ═════════════════════════════════════
+ *
+ * Le chemin de l'épisode (`deposerVideo`, puis l'annonce), avec un seul film : 21 à 25 secondes, il part tel quel
+ * partout — Le Direct, sa page, et ses réseaux en Reel quand c'est du MP4 (sinon ils prennent l'affiche).
+ */
+export async function envoyerStudio(c: CommerceComptoir, s: { texte: string; affiche: string; film: { blob: Blob; type: string; duree: number } }): Promise<ResultatEnvoi> {
+  if (!c.reel) return { ok: false, ou: [], erreur: "Ce commerce n'a pas de lien pro." };
+  const { slug, token } = c.reel;
+  const film = await deposerVideo(c, s.film.blob, s.film.type);
+  if ("erreur" in film) return { ok: false, ou: [], erreur: film.erreur };
+  const ceSoir = new Date();
+  ceSoir.setHours(23, 59, 0, 0);
+  const r = await poster("/api/site-internet/pro/offer", {
+    slug,
+    token,
+    action: "set",
+    text: s.texte,
+    photo: s.affiche,
+    video: film.url,
+    videoSecondes: Math.round(s.film.duree * 10) / 10,
+    videoMp4: enMp4(s.film.type),
+    until: ceSoir.toISOString(),
+    famille: c.famille === "table" ? "menu" : "offre",
+  });
+  if (!r.ok) return { ok: false, ou: [], erreur: r.erreur ?? "L'annonce n'a pas pu partir." };
+  const reseaux = Array.isArray(r.json?.reseaux) ? (r.json.reseaux as unknown[]).map(String) : [];
+  return { ok: true, ou: ["Le Direct", "ta page"], ...(reseaux.length ? { reseaux } : {}) };
+}
+
 /** Retirer en ligne : le plat de sa page, et l'annonce du Direct qui porte ce texte. */
 export async function retirerEnLigne(c: CommerceComptoir, mission: Mission, p: Publication): Promise<void> {
   if (!c.reel) return;

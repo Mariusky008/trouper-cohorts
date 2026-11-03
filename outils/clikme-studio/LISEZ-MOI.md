@@ -9,8 +9,11 @@
 vient (15 s au téléphone). On en sort un MP4 vertical 1080×1920 de 21 à 25 s, monté sur une musique composée pour lui :
 chapitres, mouvements de caméra, polaroïd, carte de fin. En option, la **figurine** du commerçant le présente.
 
-Ce n'est pas encore une fonction de l'appli : c'est un atelier, en scripts, qui tourne dans une session Claude Code.
-Le premier film : **Lili Ross**, vêtements, « Le look du jour » (novembre 2026).
+Deux façons de le faire :
+- **l'atelier**, en scripts, dans une session Claude Code (ce fichier, §1 à §12) : le film fait à la main, image par
+  image, pour un commerçant. Le premier : **Lili Ross**, vêtements, « Le look du jour » (novembre 2026) ;
+- **dans l'appli**, depuis le comptoir du commerçant (« Plus de clients » → « En petit film ») : le même film, monté par
+  son téléphone, avec sa figurine fabriquée à partir d'un selfie. Voir **§14**.
 
 | Version | Durée | Images | Musique |
 |---|---|---|---|
@@ -359,7 +362,7 @@ Le film d'origine est simplement décalé : `poser(T)` pose la figurine puis le 
 
 ---
 
-## 13. Pour aller plus loin (idées, rien n'est fait)
+## 13. Pour aller plus loin (idées)
 
 - **Dans l'appli** : partir du moteur de montage déjà dans le téléphone (`src/lib/direct/interview-montage.ts`) et de
   la transcription (`/api/direct/transcrire`) ; une V1 à 3 gestes (choisir les moments, valider les mots, choisir
@@ -370,3 +373,78 @@ Le film d'origine est simplement décalé : `poser(T)` pose la figurine puis le 
 - **Les modes de présence** (au choix du commerçant) : seulement au début, en interaction avec le produit, seulement à
   la fin en signature, plusieurs apparitions, ou aucune. Règle : la vraie vidéo vend le produit, la figurine lui donne
   une personnalité.
+
+---
+
+## 14. Dans l'appli : le Studio du comptoir (novembre 2026)
+
+Le film de l'atelier, fait par le téléphone du commerçant, sans personne derrière. **Même scène, mêmes temps, mêmes
+courbes** que `lili-ross/scene.html` et `figurine.js` (21 s, ou 24,5 avec la figurine), redessinés sur une toile.
+
+### Ce que fait le commerçant (quatre gestes)
+
+1. **Sa vidéo** : il filme (10 à 20 s conseillées ; 4 s au moins, une minute au plus) ou en choisit une.
+2. **Ses cinq moments** : l'appli coupe sa vidéo en cinq parts égales et propose le début de chacune ; il peut déplacer
+   un moment (il touche l'image, un curseur), et écrit **ce qu'on y voit** (« Le pull rose »). Un moment sans mots n'a
+   que son numéro. Il peut changer le titre (« Le look du jour » par défaut, selon son métier) et ajouter sa phrase pour
+   la carte de fin.
+3. **Avec ou sans sa figurine.** S'il n'en a pas, il la fabrique ici : un selfie, son accord coché, une minute.
+4. **Le montage**, sous ses yeux (le film se joue une fois et s'enregistre), puis il le revoit, le **publie** (Le
+   Direct, sa page, ses réseaux en Reel si c'est du MP4 — `envoyerStudio`) ou le **garde sur son téléphone**.
+
+### Ce qui change par rapport à l'atelier
+
+| L'atelier (à l'œil) | L'appli (sans regarder) |
+|---|---|
+| `CARTE_S` choisie moment par moment | cinq moments répartis (il peut les déplacer) ; chaque chapitre joue 2 s de son moment, ralenti s'il y a moins de 2 s jusqu'au suivant (`plansDuFilm`) |
+| un point de zoom par chapitre, mesuré | le même point pour tous : un peu au-dessus du centre (`POINT`), cinq mouvements de caméra différents |
+| sous-titres des chapitres écrits par Claude | pas de sous-titre : seulement ses mots |
+| points posés sur les pièces du polaroïd | la liste de ses mots à droite du polaroïd, une étoile chacun, un par temps |
+| bulles écrites pour Lili (« Ce foulard ! ») | ses mots repris : « Le foulard fleuri ! 😍 », « Et le bonnet rose ! 💗 » (moments 2 et 4) ; sans mots : « Regardez ! 😍 », « J'adore ! 💗 » |
+| figurine détourée à la main, en deux calques | son buste généré, sur **le ressort et le socle communs** (`public/studio/socle.webp`) |
+| musique en Python, normalisée | la même partition en Web Audio (`studio-musique.ts`), ≈ -14 LUFS mesurés |
+| MP4 1080×1920 | 720×1280 (le format des vidéos de l'appli) ; MP4 H.264 sur iPhone, WebM ailleurs |
+
+### Les fichiers
+
+- `src/lib/direct/studio.ts` : les temps du film, les moments proposés, les plans, les mots par métier, les bulles,
+  le texte de l'annonce (partagé, sans navigateur).
+- `src/lib/direct/studio-musique.ts` : la musique (Web Audio, hors du temps).
+- `src/lib/direct/studio-montage.ts` : le dessin image par image (`dessiner`), les deux lecteurs qui se relaient,
+  les images figées (retour arrière, polaroïd), l'enregistrement. `poserUneImage` pose le film à un instant donné
+  (pour vérifier sans tout monter).
+- `src/app/autour-de-moi/assistante/studio-comptoir.tsx` : l'écran ; `figurine-comptoir.tsx` : la figurine.
+- `public/studio/` : les polices de l'atelier (Playfair Display italique, Poppins ; licences jointes) et le socle.
+
+### La figurine à partir d'un selfie
+
+- `src/lib/direct/figurine-pro.ts` : la règle et **la consigne envoyée au moteur d'image** (fonction pure, à relire).
+- `src/lib/direct/figurine-pro-serveur.ts` : le moteur (celui de l'essayage, `moteur-image.ts`, avec ses replis), le
+  détourage, le stockage.
+- `src/app/api/site-internet/pro/figurine/route.ts` : `etat`, `fabriquer`, `valider`, contre le jeton pro.
+- On ne fait générer **que le buste** (jusqu'à la coupelle en bois), sur **fond transparent** ; un moteur qui ne sait
+  pas en rendre reçoit un **fond vert d'incrustation uni**, retiré par `detourerSurFondUni` (remplissage depuis les
+  bords sur la teinte — une clé de couleur simple ronge les visages ; le magenta est trop près de la peau).
+- **Son selfie n'est jamais gardé.** Rien ne passe dans une vidéo avant son « C'est moi ». Trois essais par jour.
+- Stockage : le seau public `figurines-pros` (créé au premier dépôt), `<site>/etat.json` et les images.
+- Réglages (variables d'environnement, toutes facultatives) : `OPENAI_API_KEY` (sans elle, la fabrication répond
+  « pas encore branchée »), `OPENAI_IMAGE_MODEL` (impose un moteur), `FIGURINE_QUALITE` (`high` par défaut),
+  `FIGURINE_ESSAIS_PAR_JOUR` (3), `FIGURINES_PROS_BUCKET`.
+
+### Vérifier
+
+Une page d'essai temporaire (`src/app/zz-studio/page.tsx`, jamais commitée) qui pose le film à des instants donnés
+(`poserUneImage`) ou le monte en entier, avec une vidéo d'essai faite par ffmpeg (`testsrc2`, 12 s, WebM : le Chromium
+des sessions ne lit pas le H.264) ; puis Playwright : captures, et le film enregistré récupéré pour `ffprobe` et
+`ebur128`. La route de la figurine se simule dans Playwright (`page.route`) : le moteur d'image n'est pas joignable
+depuis une session.
+
+### Pas encore fait
+
+- La figurine fabriquée ne remplace pas encore son double dans **la collection** (`FIGURINES` de
+  `figurines-commerces.ts`, faite à la main) ni sur sa page.
+- Une seule pose (bras croisés), pas de bouche ouverte : elle parle par bulles. Les poses multiples et la bouche
+  (`docs/figurines.md`, 9.7) viendront avec des retouches du même buste.
+- Les modes de présence de la figurine (seulement au début, seulement à la fin…) : un seul pour l'instant, celui de
+  Lili Ross.
+
