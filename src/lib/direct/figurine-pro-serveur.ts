@@ -16,7 +16,8 @@ import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { FamilleDouble } from "./double-metiers";
 import { editionsDuMoment } from "./collection";
-import { ESSAIS_PAR_JOUR, consigneEdition, consigneFigurine, jourDe, type EtatFigurinePro } from "./figurine-pro";
+import { ESSAIS_PAR_JOUR, QUESTION_TRAITS, consigneEdition, consigneFigurine, jourDe, traitsDe, type EtatFigurinePro, type Traits } from "./figurine-pro";
+import { regarderImage } from "./dressing-serveur";
 import { moteurRefuse, moteursDImage, noterRefus } from "./moteur-image";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -25,8 +26,9 @@ const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 export const SEAU_FIGURINES_PROS = s(process.env.FIGURINES_PROS_BUCKET) || "figurines-pros";
 const essaisParJour = () => Math.max(1, Number(s(process.env.FIGURINE_ESSAIS_PAR_JOUR)) || ESSAIS_PAR_JOUR);
 
-type Validee = { chemin: string; le: string };
-type Proposee = { chemin: string; le: string; modele: string };
+/** `traits` : ses traits en mots (`decrireTraits`), gardés avec sa figurine pour l'habiller sans la changer. */
+type Validee = { chemin: string; le: string; traits?: Traits | null };
+type Proposee = { chemin: string; le: string; modele: string; traits?: Traits | null };
 export type Etat = {
   validee?: Validee | null;
   proposee?: Proposee | null;
@@ -278,7 +280,28 @@ export async function rogner(img: Buffer): Promise<Buffer> {
 
 // ─── la fabrication ─────────────────────────────────────────────────────────────────────────────
 
-export type Fabrication = { png: Buffer; modele: string } | { erreur: string; statut: number };
+export type Fabrication = { png: Buffer; modele: string; traits?: Traits | null } | { erreur: string; statut: number };
+
+/**
+ * 🔎 SES TRAITS, VUS SUR LE SELFIE (voir `QUESTION_TRAITS`) : le modèle de vision du dressing (`regarderImage`). Au plus
+ * trente-cinq secondes : sans réponse, on fabrique quand même, sans eux.
+ */
+export async function decrireTraits(photo: Buffer): Promise<Traits | null> {
+  try {
+    const jpeg = await sharp(photo).resize({ width: 768, height: 768, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
+    const vu = await Promise.race([
+      regarderImage({ type: "image/jpeg", donnees: jpeg.toString("base64") }, QUESTION_TRAITS),
+      new Promise<{ erreur: string }>((ok) => setTimeout(() => ok({ erreur: "trop long" }), 35_000)),
+    ]);
+    if ("erreur" in vu) {
+      console.error("[figurine] traits non décrits :", String(vu.erreur).slice(0, 200));
+      return null;
+    }
+    return traitsDe(vu);
+  } catch {
+    return null;
+  }
+}
 
 /**
  * DU SELFIE À LA FIGURINE. `avant` : l'heure limite (la fonction a cinq minutes ; on abandonne avant, avec une
@@ -292,11 +315,20 @@ export async function fabriquerFigurine(o: { selfie: Buffer; famille: FamilleDou
   } catch {
     return { erreur: "Ce selfie ne s'ouvre pas. Reprenez-le, ou choisissez une photo JPEG.", statut: 400 };
   }
-  return generer({ image: photo, consigne: (fond) => consigneFigurine(o.famille, fond), avant: o.avant });
+  const traits = await decrireTraits(photo);
+  const f = await generer({ image: photo, consigne: (fond) => consigneFigurine(o.famille, fond, traits), avant: o.avant });
+  return "erreur" in f ? f : { ...f, traits };
 }
 
 /** 🍂 SA FIGURINE DU MOIS : sa figurine validée, habillée pour l'édition (le visage ne change pas). */
-export async function habillerFigurine(o: { buste: Buffer; cleEdition: string; nomEdition: string; avant: number }): Promise<Fabrication> {
+export async function habillerFigurine(o: {
+  buste: Buffer;
+  cleEdition: string;
+  nomEdition: string;
+  /** Ses traits, gardés avec sa figurine validée (absents pour celles d'avant). */
+  traits?: Traits | null;
+  avant: number;
+}): Promise<Fabrication> {
   let image: Buffer;
   try {
     // SUR UN FOND BLANC UNI : le moteur voit la figurine comme une photo de studio, pas un découpage
@@ -304,7 +336,7 @@ export async function habillerFigurine(o: { buste: Buffer; cleEdition: string; n
   } catch {
     return { erreur: "Ta figurine ne s'ouvre pas. Refais-la à partir d'un selfie.", statut: 400 };
   }
-  return generer({ image, consigne: (fond) => consigneEdition(o.cleEdition, o.nomEdition, fond), avant: o.avant });
+  return generer({ image, consigne: (fond) => consigneEdition(o.cleEdition, o.nomEdition, fond, o.traits), avant: o.avant });
 }
 
 /** UNE IMAGE DEMANDÉE AU MOTEUR, à partir d'une image : les replis de moteur et de réglages, puis la figurine seule. */

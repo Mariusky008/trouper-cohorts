@@ -103,6 +103,45 @@ export function ApercuFigurine({ src, petit, mini }: { src: string; petit?: bool
   );
 }
 
+/**
+ * 🔍 VOIR EN GRAND — « je peux pas agrandir la figurine, donc j'ai fait une capture d'écran et la qualité n'est pas
+ * bonne ». Sa figurine en pleine définition, sur tout l'écran, pour la juger avant de dire « C'est moi » ; et l'image
+ * seule, à ouvrir pour zoomer avec les doigts.
+ */
+export function VoirEnGrand({ src }: { src: string }) {
+  const [ouvert, setOuvert] = useState(false);
+  return (
+    <>
+      <style>{STYLES_GRAND}</style>
+      <button type="button" className="fg-loupe" onClick={() => setOuvert(true)}>
+        🔍 Voir en grand
+      </button>
+      {ouvert && (
+        <div className="fg-grand" role="dialog" aria-modal="true" aria-label="Ta figurine en grand" onClick={() => setOuvert(false)}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt="Ta figurine en grand" />
+          <div className="fg-grand-b" onClick={(e) => e.stopPropagation()}>
+            <a href={src} target="_blank" rel="noopener noreferrer">
+              Ouvrir l’image seule
+            </a>
+            <button type="button" onClick={() => setOuvert(false)}>
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+const STYLES_GRAND = `
+.fg-loupe{border:1px solid var(--trait);border-radius:999px;padding:7px 14px;background:var(--nappe);color:var(--creme);font-size:13.5px;font-weight:700;}
+.fg-grand{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));background:radial-gradient(70% 55% at 50% 50%,#FFF3F5,#F8DCE2 55%,#EEC2CC);}
+.fg-grand img{display:block;max-width:100%;max-height:calc(100% - 70px);object-fit:contain;}
+.fg-grand-b{display:flex;gap:10px;}
+.fg-grand-b a,.fg-grand-b button{border:0;border-radius:999px;padding:11px 18px;background:#21160F;color:#FFF4E6;font-size:14.5px;font-weight:800;text-decoration:none;}
+`;
+
 export function FabriquerFigurine({
   commerce,
   onPrete,
@@ -194,6 +233,7 @@ export function FabriquerFigurine({
         <section className="fg-proposee">
           <h2>C’est toi ?</h2>
           <ApercuFigurine src={etat.proposee} />
+          <VoirEnGrand src={etat.proposee} />
           <p>Elle sera dans tes vidéos : elle présente, elle rebondit, elle dit bonjour par bulles.</p>
           <button type="button" className="cz-go grand" onClick={() => void valider()}>
             ✅ C’est moi !
@@ -385,11 +425,13 @@ export function MaFigurine({
                 ) : ed.validee ? (
                   <>
                     <ApercuFigurine src={ed.validee} />
+                    <VoirEnGrand src={ed.validee} />
                     <p className="mf-prete">✅ Ta figurine de l’édition {ed.nom} est prête.</p>
                   </>
                 ) : ed.proposee ? (
                   <>
                     <ApercuFigurine src={ed.proposee} />
+                    <VoirEnGrand src={ed.proposee} />
                     <button type="button" className="cz-go grand" onClick={() => void validerEdition()}>
                       ✅ Elle est parfaite
                     </button>
@@ -481,6 +523,7 @@ function FicheFigurine({ f, aujourdhui, onFermer, onStudio }: { f: FigurineDeCol
     <div className="mf-fiche" role="dialog" aria-modal="true" aria-label={h.titre}>
       <div className="mf-fiche-c">
         <ApercuFigurine src={f.url} />
+        <VoirEnGrand src={f.url} />
         <h2>{h.titre}</h2>
         {f.dansLesFilms && <i className="mf-pastille films">🎬 C’est elle qui présente tes petits films</i>}
         <ul className="mf-histoire">
