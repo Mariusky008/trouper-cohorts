@@ -12,7 +12,8 @@
  * 🗂 CHAQUE FIGURINE VALIDÉE ENTRE DANS SA COLLECTION (`etat.collection`) et n'en sort plus : quand il en refait une,
  * ou quand l'édition passe, il la garde, et peut toujours la remettre dans un petit film.
  *
- * LE SELFIE N'EST JAMAIS GARDÉ : il arrive avec la requête, sert à la fabrication, et s'oublie avec elle.
+ * LE SELFIE N'EST JAMAIS GARDÉ : il arrive avec la requête, sert à la fabrication, et s'oublie avec elle. Ce qui reste,
+ * avec sa figurine : ses traits EN MOTS (« cheveux gris poivre et sel… », `decrireTraits`), pour l'habiller sans la changer.
  */
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -60,7 +61,8 @@ export async function POST(request: Request) {
       const editions = edition && etat.editions?.[edition.cleAnnee] ? { ...etat.editions, [edition.cleAnnee]: {} } : etat.editions;
       const le = new Date().toISOString();
       const collection = ajouterALaCollection(etat, { chemin: etat.proposee.chemin, le, cle: "selfie", nom: "Ma figurine", emoji: "🪀" });
-      const suivant = { ...etat, validee: { chemin: etat.proposee.chemin, le }, proposee: null, editions, collection };
+      // ses traits en mots suivent sa figurine : on s'en sert pour l'habiller sans la changer
+      const suivant = { ...etat, validee: { chemin: etat.proposee.chemin, le, traits: etat.proposee.traits ?? null }, proposee: null, editions, collection };
       await ecrireEtat(supabase, siteId, suivant);
       return NextResponse.json({ ok: true, etat: etatPublic(supabase, suivant) });
     }
@@ -82,7 +84,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: f.erreur, etat: etatPublic(supabase, { ...etat, essais }) }, { status: f.statut });
       }
       const chemin = await deposerImage(supabase, siteId, f.png);
-      const suivant = { ...etat, essais, proposee: { chemin, le: new Date().toISOString(), modele: f.modele } };
+      const suivant = { ...etat, essais, proposee: { chemin, le: new Date().toISOString(), modele: f.modele, traits: f.traits ?? null } };
       await ecrireEtat(supabase, siteId, suivant);
       return NextResponse.json({ ok: true, etat: etatPublic(supabase, suivant) });
     }
@@ -99,7 +101,7 @@ export async function POST(request: Request) {
       const jour = jourDe(maintenant);
       const essais = { jour, n: (etat.essais?.jour === jour ? etat.essais.n : 0) + 1 };
       await ecrireEtat(supabase, siteId, { ...etat, essais });
-      const f = await habillerFigurine({ buste, cleEdition: edition.cle, nomEdition: edition.nom, avant: debut + (maxDuration - 15) * 1000 });
+      const f = await habillerFigurine({ buste, cleEdition: edition.cle, nomEdition: edition.nom, traits: etat.validee.traits, avant: debut + (maxDuration - 15) * 1000 });
       if ("erreur" in f) return NextResponse.json({ error: f.erreur, etat: etatPublic(supabase, { ...etat, essais }) }, { status: f.statut });
       const chemin = await deposerImage(supabase, siteId, f.png);
       const editions = { ...(etat.editions ?? {}) };

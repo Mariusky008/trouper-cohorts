@@ -434,6 +434,14 @@ courbes** que `lili-ross/scene.html` et `figurine.js` (21 s, ou 24,5 avec la fig
   pas en rendre reçoit un **fond vert d'incrustation uni**, retiré par `detourerSurFondUni` (remplissage depuis les
   bords sur la teinte — une clé de couleur simple ronge les visages ; le magenta est trop près de la peau).
 - **Son selfie n'est jamais gardé.** Rien ne passe dans une vidéo avant son « C'est moi ». Trois essais par jour.
+- **Ses traits en mots** (`decrireTraits`, `QUESTION_TRAITS`, `traitsEnMots`) : avant de fabriquer, le modèle de vision
+  du dressing (`regarderImage`) décrit le selfie — couleur et coiffure des cheveux, barbe, forme du visage, sourcils,
+  yeux, nez, âge, signes distinctifs, lunettes ou non — et la consigne les écrit noir sur blanc (« SES TRAITS, VUS SUR LA
+  PHOTO »). Troisième essai réel : en fidélité basse, sans eux, des cheveux gris poivre et sel devenaient bruns et la
+  barbe de trois jours disparaissait. Ces mots restent avec sa figurine (`validee.traits`) pour l'habiller sans la
+  changer ; le selfie, lui, n'est pas gardé. Sans réponse en 35 s, on fabrique sans eux.
+- **🔍 Voir en grand** (`VoirEnGrand`) : sous chaque figurine proposée ou validée, la figurine en pleine définition sur
+  tout l'écran, et l'image seule à ouvrir pour zoomer avec les doigts — pour la juger avant de dire « C'est moi ».
 - **Seulement dans SON comptoir** (ouvert par son lien pro : `commerce.reel`). Dans la visite du comptoir (sans lien
   pro), rien ne se fabrique : l'écran le dit dès le début, avant qu'il prenne son selfie. Et le bouton gris dit
   toujours pourquoi (« D'abord ton selfie », « Coche la case… », « Trois figurines aujourd'hui… »).

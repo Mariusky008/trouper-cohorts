@@ -169,7 +169,7 @@ const STYLE = [
   "LE STYLE (obligatoire) :",
   "- Une figurine de collection à tête dodelinante (« bobblehead »), style caricature 3D tendre et drôle, comme un personnage de film d'animation 3D.",
   "- PAS UNE PHOTO : aucun morceau de la photo n'est recopié. Le visage, la peau, les cheveux et les yeux sont SCULPTÉS ET PEINTS, comme sur un jouet de collection ; pas un buste réaliste, pas une statue, pas un montage.",
-  "- Une TÊTE ÉNORME : elle fait à peu près la moitié de la hauteur de la figurine, sur un petit corps fin aux épaules étroites.",
+  "- Une TÊTE ÉNORME, environ trois fois la taille normale : elle fait à peu près la moitié de la hauteur de la figurine, sur un tout petit corps fin aux épaules étroites — les proportions d'une figurine à ressort, pas d'une personne.",
   "- Les traits caricaturés avec affection : les yeux un peu plus grands et pétillants, un grand sourire franc qui montre les dents, les traits qui le distinguent légèrement accentués.",
   "- Une résine peinte à la main très haut de gamme, finition satinée, couleurs vives et chaleureuses, détails fins et nets (coutures, mailles, reflets dans les yeux), peinture impeccable sans aucune bavure.",
   "- Rendu de photo produit en très haute définition : net partout, éclairage de studio doux, contours nets et propres.",
@@ -189,6 +189,69 @@ const cadrage = (fond: "transparent" | "vert") => [
 ];
 
 /**
+ * 🔎 SES TRAITS, EN MOTS — troisième essai réel (3 novembre 2026) : « ne me ressemble pas vraiment ». En fidélité basse
+ * (nécessaire pour la caricature), le moteur réinterprète… et perd ce qui le fait reconnaître : des cheveux gris poivre
+ * et sel avec du volume devenus bruns, la barbe de trois jours disparue. D'où, AVANT la fabrication, un regard sur le
+ * selfie (`decrireTraits`, le modèle de vision du dressing) qui écrit ses traits noir sur blanc dans la consigne.
+ * Seulement ce qu'on voit, sans jugement ; le selfie n'est toujours pas gardé — ses traits en mots, oui (avec sa
+ * figurine), pour garder la ressemblance quand on l'habille pour l'édition du mois.
+ */
+export type Traits = {
+  cheveux?: string;
+  barbe?: string;
+  visage?: string;
+  sourcils?: string;
+  yeux?: string;
+  nez?: string;
+  age?: string;
+  signes?: string;
+  lunettes?: boolean;
+};
+
+/** La question posée au modèle de vision (en anglais : c'est là qu'il est le plus précis), la réponse en français. */
+export const QUESTION_TRAITS =
+  "A sculptor will make a caricature figurine of the person in this photo and must get the likeness right. " +
+  "Describe ONLY what is visible, precisely, in short French phrases of a few words, with no judgement and no name. " +
+  'Answer as JSON: {"cheveux": exact colour (e.g. "gris poivre et sel", "châtain clair avec quelques mèches grises"), length, thickness, texture and how they are styled (e.g. "épais, ondulés, coiffés en arrière avec du volume sur le dessus"), ' +
+  '"barbe": facial hair exactly as seen (e.g. "barbe de trois jours grise", "moustache brune") or "aucune", ' +
+  '"visage": face shape, jaw and cheekbones (e.g. "visage allongé, mâchoire carrée, pommettes marquées"), ' +
+  '"sourcils": shape and thickness, "yeux": colour and shape, "nez": shape and size, ' +
+  '"age": apparent age range (e.g. "la cinquantaine"), ' +
+  '"signes": other features that make this person recognizable (forehead wrinkles, dimples, crow\'s feet, a mole, freckles) or "", ' +
+  '"lunettes": true if wearing glasses, else false}.';
+
+const MOTS_MAX = 140;
+const propreTrait = (v: unknown) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, MOTS_MAX) : "");
+
+/** La réponse du modèle, nettoyée : des chaînes courtes, rien d'autre. `null` s'il n'y a rien d'utile. */
+export function traitsDe(o: Record<string, unknown>): Traits | null {
+  const t: Traits = {};
+  for (const k of ["cheveux", "barbe", "visage", "sourcils", "yeux", "nez", "age", "signes"] as const) {
+    const v = propreTrait(o[k]);
+    if (v) t[k] = v;
+  }
+  if (typeof o.lunettes === "boolean") t.lunettes = o.lunettes;
+  return Object.keys(t).length ? t : null;
+}
+
+/** Ses traits, une ligne chacun, pour la consigne. */
+export function traitsEnMots(t: Traits | null | undefined): string[] {
+  if (!t) return [];
+  const l: string[] = [];
+  if (t.cheveux) l.push(`- Ses cheveux : ${t.cheveux}. Exactement cette couleur et cette coiffure.`);
+  if (t.barbe) l.push(/^aucune/i.test(t.barbe) ? "- Pas de barbe ni de moustache." : `- Sa barbe : ${t.barbe}. Exactement comme ça.`);
+  if (t.visage) l.push(`- Son visage : ${t.visage}.`);
+  if (t.sourcils) l.push(`- Ses sourcils : ${t.sourcils}.`);
+  if (t.yeux) l.push(`- Ses yeux : ${t.yeux}.`);
+  if (t.nez) l.push(`- Son nez : ${t.nez}.`);
+  if (t.age) l.push(`- Son âge : ${t.age} — ne le rajeunis pas.`);
+  if (t.signes) l.push(`- Ce qui le rend reconnaissable : ${t.signes}.`);
+  if (t.lunettes === false) l.push("- Il ne porte pas de lunettes : n'en ajoute pas.");
+  if (t.lunettes === true) l.push("- Il porte des lunettes : garde-les, de la même forme.");
+  return l;
+}
+
+/**
  * LA CONSIGNE, MOT POUR MOT.
  *
  * Deux leçons de l'essayage (`consigne-essai.ts`) sont reprises telles quelles : nommer les traits un par un et
@@ -200,8 +263,9 @@ const cadrage = (fond: "transparent" | "vert") => [
  * détourage d'essai a troué un visage dans l'ombre) ; le vert est loin de toute peau — c'est pour ça que le cinéma
  * l'utilise.
  */
-export function consigneFigurine(famille: FamilleDouble, fond: "transparent" | "vert"): string {
+export function consigneFigurine(famille: FamilleDouble, fond: "transparent" | "vert", traits?: Traits | null): string {
   const m = METIER[famille] ?? METIER.createur;
+  const vus = traitsEnMots(traits);
   return [
     "Crée une figurine de collection à tête dodelinante, en caricature 3D tendre et drôle, d'après la personne de cette photo — photographiée en studio comme un jouet de collection.",
     "",
@@ -211,6 +275,7 @@ export function consigneFigurine(famille: FamilleDouble, fond: "transparent" | "
     "- Reprends ses traits, transposés en sculpture : la forme du visage, les yeux, le nez, la bouche, la mâchoire, la couleur de peau, l'âge, la coupe et la couleur des cheveux, la barbe ou la moustache s'il y en a.",
     "- Garde ce qui le rend unique (ses rides, ses fossettes, ses sourcils) : ne le rajeunis pas, ne le change pas en quelqu'un d'autre.",
     "- S'il porte des lunettes, garde-les ; s'il n'en porte pas, n'en ajoute pas. Rien sur la tête ni sur le visage qui ne soit pas sur la photo.",
+    ...(vus.length ? ["", "SES TRAITS, VUS SUR LA PHOTO (à reprendre fidèlement, même en caricature) :", ...vus] : []),
     "",
     "SA TENUE :",
     `- Une tenue de son métier, gaie et soignée : ${m.tenue}, dans les couleurs de ses vêtements sur la photo si on les voit.`,
@@ -254,14 +319,16 @@ export const TENUES_EDITION: Record<string, string> = {
  * LA CONSIGNE DE L'ÉDITION : la figurine de l'image, la même, déguisée pour l'édition. Le visage, la pose, les
  * proportions et le cadrage ne bougent pas — c'est ce qui fait d'une édition « la même figurine, déguisée ».
  */
-export function consigneEdition(cleEdition: string, nomEdition: string, fond: "transparent" | "vert"): string {
+export function consigneEdition(cleEdition: string, nomEdition: string, fond: "transparent" | "vert", traits?: Traits | null): string {
   const tenue = TENUES_EDITION[cleEdition] ?? "une tenue de saison avec deux ou trois accessoires de saison";
+  const vus = traitsEnMots(traits);
   return [
     `Déguise cette figurine pour l'édition « ${nomEdition} » : ${tenue}.`,
     "",
     "C'EST LA MÊME FIGURINE :",
     "- Garde exactement le même visage : les mêmes traits, le même grand sourire, la même couleur de peau, les mêmes cheveux (visibles sous un éventuel chapeau), la même barbe s'il y en a, les mêmes lunettes s'il en porte (et aucune s'il n'en porte pas).",
     "- La même pose (les bras croisés), les mêmes proportions (la tête énorme sur le petit corps), le même style de caricature 3D en résine peinte.",
+    ...vus,
     "- REMPLACE ENTIÈREMENT SA TENUE : il ne garde aucun vêtement d'avant ; on voit au premier regard de quelle édition il s'agit.",
     "- Les accessoires dits plus haut, tous, généreux et pleins de détails, soignés et drôles. Rien sur le visage.",
     "",
