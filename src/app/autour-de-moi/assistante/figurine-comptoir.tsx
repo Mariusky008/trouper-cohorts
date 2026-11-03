@@ -89,9 +89,9 @@ function Ressort() {
 }
 
 /** Sa figurine telle qu'elle sera dans ses vidéos : son buste, le ressort, le socle commun. Elle rebondit doucement. */
-export function ApercuFigurine({ src, petit, mini }: { src: string; petit?: boolean; mini?: boolean }) {
+export function ApercuFigurine({ src, petit, mini, geant }: { src: string; petit?: boolean; mini?: boolean; geant?: boolean }) {
   return (
-    <div className={`fg-apercu${petit ? " petit" : ""}${mini ? " mini" : ""}`}>
+    <div className={`fg-apercu${petit ? " petit" : ""}${mini ? " mini" : ""}${geant ? " geant" : ""}`}>
       {/* SES STYLES AVEC LUI : l'aperçu sert aussi hors de cet écran (le choix « avec ou sans » du Studio) */}
       <style>{STYLES_APERCU}</style>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -105,8 +105,9 @@ export function ApercuFigurine({ src, petit, mini }: { src: string; petit?: bool
 
 /**
  * 🔍 VOIR EN GRAND — « je peux pas agrandir la figurine, donc j'ai fait une capture d'écran et la qualité n'est pas
- * bonne ». Sa figurine en pleine définition, sur tout l'écran, pour la juger avant de dire « C'est moi » ; et l'image
- * seule, à ouvrir pour zoomer avec les doigts.
+ * bonne ». Sa figurine ENTIÈRE (sur son ressort et son socle : c'est ce qui en fait une figurine — le buste seul, en
+ * grand, avait l'air d'une caricature peinte), à la taille de l'écran, pour la juger avant de dire « C'est moi » ; et
+ * l'image seule, à ouvrir pour zoomer avec les doigts.
  */
 export function VoirEnGrand({ src }: { src: string }) {
   const [ouvert, setOuvert] = useState(false);
@@ -118,8 +119,7 @@ export function VoirEnGrand({ src }: { src: string }) {
       </button>
       {ouvert && (
         <div className="fg-grand" role="dialog" aria-modal="true" aria-label="Ta figurine en grand" onClick={() => setOuvert(false)}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt="Ta figurine en grand" />
+          <ApercuFigurine src={src} geant />
           <div className="fg-grand-b" onClick={(e) => e.stopPropagation()}>
             <a href={src} target="_blank" rel="noopener noreferrer">
               Ouvrir l’image seule
@@ -137,7 +137,6 @@ export function VoirEnGrand({ src }: { src: string }) {
 const STYLES_GRAND = `
 .fg-loupe{border:1px solid var(--trait);border-radius:999px;padding:7px 14px;background:var(--nappe);color:var(--creme);font-size:13.5px;font-weight:700;}
 .fg-grand{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));background:radial-gradient(70% 55% at 50% 50%,#FFF3F5,#F8DCE2 55%,#EEC2CC);}
-.fg-grand img{display:block;max-width:100%;max-height:calc(100% - 70px);object-fit:contain;}
 .fg-grand-b{display:flex;gap:10px;}
 .fg-grand-b a,.fg-grand-b button{border:0;border-radius:999px;padding:11px 18px;background:#21160F;color:#FFF4E6;font-size:14.5px;font-weight:800;text-decoration:none;}
 `;
@@ -628,6 +627,7 @@ const STYLES_APERCU = `
 .fg-apercu{position:relative;width:210px;height:330px;border-radius:24px;background:radial-gradient(70% 55% at 50% 60%,#FFF3F5,#F8DCE2 55%,#EEC2CC);overflow:hidden;}
 .fg-apercu.petit{width:120px;height:190px;border-radius:16px;}
 .fg-apercu.mini{width:88px;height:138px;border-radius:14px;}
+.fg-apercu.geant{width:min(92vw,calc((100dvh - 120px) * .636));height:auto;aspect-ratio:210/330;border-radius:28px;box-shadow:0 18px 50px rgba(120,40,70,.25);}
 .fg-apercu.mini .fg-buste,.fg-apercu.mini .fg-ressort{animation:none;}
 .fg-buste{position:absolute;z-index:1;left:50%;bottom:28.5%;width:auto;height:64%;max-width:94%;object-fit:contain;object-position:50% 100%;transform:translateX(-50%);transform-origin:50% 100%;animation:fg-rebond 2.6s ease-in-out infinite;}
 .fg-ressort{position:absolute;left:50%;bottom:14.5%;width:17%;height:17%;transform:translateX(-50%);transform-origin:50% 100%;animation:fg-ressort 2.6s ease-in-out infinite;}

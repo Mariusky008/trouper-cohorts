@@ -440,8 +440,14 @@ courbes** que `lili-ross/scene.html` et `figurine.js` (21 s, ou 24,5 avec la fig
   PHOTO »). Troisième essai réel : en fidélité basse, sans eux, des cheveux gris poivre et sel devenaient bruns et la
   barbe de trois jours disparaissait. Ces mots restent avec sa figurine (`validee.traits`) pour l'habiller sans la
   changer ; le selfie, lui, n'est pas gardé. Sans réponse en 35 s, on fabrique sans eux.
-- **🔍 Voir en grand** (`VoirEnGrand`) : sous chaque figurine proposée ou validée, la figurine en pleine définition sur
-  tout l'écran, et l'image seule à ouvrir pour zoomer avec les doigts — pour la juger avant de dire « C'est moi ».
+- **🔍 Voir en grand** (`VoirEnGrand`) : sous chaque figurine proposée ou validée, la figurine ENTIÈRE (sur son ressort
+  et son socle) à la taille de l'écran, et l'image seule à ouvrir pour zoomer avec les doigts — pour la juger avant de
+  dire « C'est moi ». Le buste seul, en grand, avait l'air d'une caricature peinte.
+- **Un objet, et son expression à lui** (quatrième essai réel : « c'est joli mais ça fait pas avatar figurine et ça me
+  ressemble pas, et sur la photo je ne souris pas ») : la consigne dit la matière (`MATIERE` — pas une illustration ni
+  une peinture numérique, un jouet sculpté : cheveux en mèches pleines, barbe peinte, peau lisse satinée, reflets de
+  studio) ; elle n'impose plus de sourire ni d'yeux agrandis (`EXPRESSION` : s'il ne sourit pas, elle ne sourit pas),
+  et son expression est l'un de ses traits décrits.
 - **Seulement dans SON comptoir** (ouvert par son lien pro : `commerce.reel`). Dans la visite du comptoir (sans lien
   pro), rien ne se fabrique : l'écran le dit dès le début, avant qu'il prenne son selfie. Et le bouton gris dit
   toujours pourquoi (« D'abord ton selfie », « Coche la case… », « Trois figurines aujourd'hui… »).
