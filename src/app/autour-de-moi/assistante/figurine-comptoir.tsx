@@ -119,7 +119,7 @@ export function ApercuFigurine({ src, petit, mini, geant }: { src: string; petit
  * grand, avait l'air d'une caricature peinte), à la taille de l'écran, pour la juger avant de dire « C'est moi » ; et
  * l'image seule, à ouvrir pour zoomer avec les doigts.
  */
-export function VoirEnGrand({ src }: { src: string }) {
+export function VoirEnGrand({ src, voie }: { src: string; voie?: string }) {
   const [ouvert, setOuvert] = useState(false);
   return (
     <>
@@ -130,6 +130,7 @@ export function VoirEnGrand({ src }: { src: string }) {
       {ouvert && (
         <div className="fg-grand" role="dialog" aria-modal="true" aria-label="Ta figurine en grand" onClick={() => setOuvert(false)}>
           <ApercuFigurine src={src} geant />
+          {voie && <small className="fg-grand-voie">par {voie}</small>}
           <div className="fg-grand-b" onClick={(e) => e.stopPropagation()}>
             <a href={src} target="_blank" rel="noopener noreferrer">
               Ouvrir l’image seule
@@ -148,6 +149,7 @@ const STYLES_GRAND = `
 .fg-loupe{border:1px solid var(--trait);border-radius:999px;padding:7px 14px;background:var(--nappe);color:var(--creme);font-size:13.5px;font-weight:700;}
 .fg-grand{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));background:radial-gradient(70% 55% at 50% 50%,#FFF3F5,#F8DCE2 55%,#EEC2CC);}
 .fg-grand-b{display:flex;gap:10px;}
+.fg-grand-voie{font-size:13px;font-weight:700;color:#7A3B55;}
 .fg-grand-b a,.fg-grand-b button{border:0;border-radius:999px;padding:11px 18px;background:#21160F;color:#FFF4E6;font-size:14.5px;font-weight:800;text-decoration:none;}
 `;
 
@@ -172,7 +174,7 @@ function ChoixPropositions({ urls, voies = [], choix, onChoix }: { urls: string[
             <b>{k === choix ? "✓ Celle-ci" : `Proposition ${k + 1}`}</b>
             {voies[k] && <small>par {voies[k]}</small>}
           </button>
-          <VoirEnGrand src={u} />
+          <VoirEnGrand src={u} voie={voies[k]} />
         </div>
       ))}
     </div>

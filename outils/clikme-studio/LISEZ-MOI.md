@@ -458,8 +458,11 @@ courbes** que `lili-ross/scene.html` et `figurine.js` (21 s, ou 24,5 avec la fig
   figurine » — un vrai homme photographié) : `MATIERE` dit un jouet en résine d'une vingtaine de centimètres, la peau
   lisse et un peu brillante sans pores, les cheveux en mèches brillantes, la barbe en petits points peints, les
   vêtements SCULPTÉS et peints ; la photo est une photo MACRO de miniature, avec de petits reflets sur la résine.
-- **« par Gemini » / « par OpenAI »** sous chaque proposition (`voies`) : il dit lequel lui ressemble, lequel fait
-  figurine.
+- **« par Gemini » / « par OpenAI »** sous chaque proposition et dans sa vue en grand (`voies`) : il dit lequel lui
+  ressemble, lequel fait figurine.
+- **Pas de jambes** (septième essai réel : « il y a les jambes en trop » — un pantalon et des chaussures plantées sur le
+  socle) : les chaussures posées sur le socle y faisaient mettre des pieds. La consigne dit maintenant « NO LEGS, NO
+  TROUSERS, NO FEET », le ressort seul entre le corps et le socle, et des chaussures VIDES à côté.
 - **🎨 Une image de référence de style, facultative** (`FIGURINE_REFERENCE_URL`, une adresse https) : elle part en
   seconde image avec chaque fabrication, aux deux moteurs, et la consigne (`AVEC_REFERENCE`) dit qu'on n'en prend que le
   style — jamais le visage, la tenue ni les accessoires. Jamais dans le dépôt, et seulement une image qu'on a le droit

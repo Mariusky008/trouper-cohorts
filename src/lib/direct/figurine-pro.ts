@@ -211,7 +211,10 @@ const photoProduit = (fond: "transparent" | "vert") => [
 const FIGURINE_ENTIERE = [
   "- Standing pose, arms crossed over the chest.",
   "- An oversized head (about three times normal size, roughly a third of the figurine's total height including the base) on a small, slim body with narrow shoulders; the neck visible.",
-  "- Truncated at the waist: the lower torso (the hem of the jacket, apron, sweater or skirt, slightly flared) transitions into a substantial, exposed, metal coiled bobble-spring mechanism supporting the upper body. No legs.",
+  "- Truncated at the waist: the lower torso (the hem of the jacket, apron, sweater or skirt, slightly flared) transitions into a substantial, exposed, metal coiled bobble-spring mechanism supporting the upper body.",
+  // SEPTIÈME ESSAI RÉEL : « il y a les jambes en trop » — un pantalon et des chaussures plantées sur le socle, le
+  // ressort entre les deux. Les chaussures demandées sur le socle y faisaient mettre des pieds : elles sont VIDES.
+  "- NO LEGS, NO TROUSERS, NO FEET: nothing at all below the hem of the top except the spring. The spring is the only thing between the body and the base.",
   "- The spring stands central on a round varnished wooden display base.",
 ];
 
@@ -298,7 +301,7 @@ export function consigneFigurine(famille: FamilleDouble, fond: "transparent" | "
   const m = METIER[famille] ?? METIER.createur;
   const vus = traitsEnMots(traits);
   return [
-    "A detailed, full-body collectible bobblehead figurine of the person in this photo, as a straight-on studio product shot.",
+    "A detailed collectible bobblehead figurine of the person in this photo — the upper body on a spring, with no legs — as a straight-on studio product shot.",
     "",
     "LIKENESS (the most important):",
     "- The figurine's face retains the specific features and expression of the person in the photo: the same face shape, eyes, nose, mouth, jaw, eyebrows, skin tone, age, hair colour and hairstyle, facial hair. Anyone who knows them recognises them at first glance.",
@@ -312,7 +315,7 @@ export function consigneFigurine(famille: FamilleDouble, fond: "transparent" | "
     "- The caricature is in the proportions (the big head) and in their distinctive features, slightly accentuated (face shape, jaw, nose, eyebrows). The eyes keep their shape and size.",
     `- Outfit of their trade (in French): ${m.tenue} — in the colours of the clothes in the photo when visible.`,
     `- Two or three small, neat, funny accessories of their trade worn on the outfit (in French): ${m.accessoires}.`,
-    "- On the base, around the spring: a small pair of shoes matching the outfit, as if just set down there, and one or two miniature sculpted items of their trade.",
+    "- On the base, beside the spring: a small pair of EMPTY shoes matching the outfit, set down side by side with nobody in them (no feet, no legs), and one or two miniature sculpted items of their trade.",
     MATIERE,
     "",
     ...photoProduit(fond),
@@ -357,7 +360,7 @@ export function consigneEdition(cleEdition: string, nomEdition: string, fond: "t
   const tenue = TENUES_EDITION[cleEdition] ?? "une tenue de saison avec deux ou trois accessoires de saison";
   const vus = traitsEnMots(traits);
   return [
-    `Dress up this collectible bobblehead figurine for its « ${nomEdition} » edition, as a straight-on studio product shot.`,
+    `Dress up this collectible bobblehead figurine (the upper body on a spring, with no legs) for its « ${nomEdition} » edition, as a straight-on studio product shot.`,
     "",
     "IT IS THE SAME FIGURINE:",
     "- Keep exactly the same face: the same features, the same expression, the same skin tone, the same hair (visible under any hat), the same facial hair, the same glasses if any (and none if none).",
@@ -368,7 +371,7 @@ export function consigneEdition(cleEdition: string, nomEdition: string, fond: "t
     "THE EDITION OUTFIT:",
     `- COMPLETELY REPLACE THE OUTFIT — no garment from before; anyone sees at first glance which edition it is (in French): ${tenue}.`,
     "- Every accessory listed, generous, full of detail, neat and funny. Nothing on the face.",
-    "- On the base, around the spring: a small pair of shoes and one or two miniature items matching the edition.",
+    "- On the base, beside the spring: a small pair of EMPTY shoes (no feet, no legs) and one or two miniature items matching the edition.",
     MATIERE,
     "",
     ...photoProduit(fond),
