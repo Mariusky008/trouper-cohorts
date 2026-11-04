@@ -204,9 +204,14 @@ export const figurineEntiere = (url: string | null | undefined) => Boolean(url &
  * enfin — mais une jeune fille au visage rond et aux très grands yeux, sans une ride de sourire. Le style « film
  * d'animation » tire vers un visage d'enfant tout fait ; d'où « des formes simplifiées DE SON VISAGE », des yeux de
  * leur vraie taille, et la clé de l'âge (`troisCles`).
+ *
+ * DOUZIÈME ESSAI (une commerçante d'une soixantaine d'années, cheveux gris, rides du sourire marquées) : rendue à
+ * trente-cinq ans en « libre », quarante-cinq en « fidèle » — « elle fait encore très jeune ». La « peau lisse » de la
+ * consigne effaçait ses rides avec les pores. La peau est maintenant MATE ET SANS PORES, mais les lignes de son âge y
+ * sont sculptées, comme sur les personnages âgés des films d'animation (`lignesDeLAge`).
  */
 const STYLE_ANIMATION = [
-  "- A true stylized 3D animated feature-film character, not a photorealistic human: smooth, soft skin; simplified facial shapes that keep THEIR real face shape and proportions; expressive eyes of their real size; the hair as soft, stylized sculpted volumes rather than individual hairs; the facial hair (if any) made of simplified sculpted shapes rather than realistic individual hairs.",
+  "- A true stylized 3D animated feature-film character, not a photorealistic human: a soft matte skin finish without pores (the lines of their age stay, sculpted in); simplified facial shapes that keep THEIR real face shape and proportions; expressive eyes of their real size; the hair as soft, stylized sculpted volumes rather than individual hairs; the facial hair (if any) made of simplified sculpted shapes rather than realistic individual hairs.",
   "- Soft shading, appealing shapes, vibrant colours, polished 3D rendering, a collectible designer-toy aesthetic.",
 ];
 
@@ -215,11 +220,47 @@ const STYLE_ANIMATION = [
  * la forme du visage (« une jeune fille au visage rond » pour une femme de quarante ans au visage fin). La barbe dite
  * selon ce qu'on a vu sur le selfie : on n'en ajoute jamais à quelqu'un qui n'en a pas.
  */
+/** Son âge, à peu près, d'après les mots du modèle de vision (« la soixantaine, environ 60 ans ») ; `null` sans indice. */
+export function ageApproche(age?: string | null): number | null {
+  if (!age) return null;
+  const a = age.toLowerCase();
+  const n = /\b(\d{2})\b/.exec(a);
+  if (n) return Number(n[1]);
+  const mots: [RegExp, number][] = [
+    [/vingtaine/, 25],
+    [/trentaine/, 35],
+    [/quarantaine/, 45],
+    [/cinquantaine/, 55],
+    [/soixante-dix|septuag/, 75],
+    [/soixantaine|sexag/, 65],
+    [/quatre-vingt|octog/, 85],
+  ];
+  for (const [r, v] of mots) if (r.test(a)) return v;
+  return null;
+}
+
+/**
+ * LES LIGNES DE SON ÂGE (douzième essai : « elle fait encore très jeune ») — à partir de quarante ans, on les DESSINE,
+ * comme les personnages d'âge mûr des films d'animation, qui font leur âge : ce sont elles qui le font reconnaître.
+ */
+function lignesDeLAge(traits?: Traits | null): string[] {
+  const ans = ageApproche(traits?.age);
+  const base = `- The age: an adult of their real age${traits?.age ? ` (in French: ${traits.age})` : ""} — never a child or a teenager, never younger. Anyone must guess the same age from the figurine as from the photo.`;
+  if (ans === null || ans < 40)
+    return [base, "- The signs of their age that make them recognizable (smile lines, crow's feet, forehead lines) stay, as soft sculpted lines."];
+  return [
+    base,
+    `- Design them like the ${ans >= 55 ? "older" : "middle-aged"} characters of animated feature films, who clearly look their age: their wrinkles sculpted as visible stylized lines — crow's feet, the smile lines from the nose to the mouth, the forehead lines, the lines under the eyes${
+      ans >= 55 ? ", the softer jawline and the thinner lips of their age" : ""
+    }. These lines are part of the likeness: never smooth them away.`,
+  ];
+}
+
 function troisCles(traits?: Traits | null): string[] {
   const sansBarbe = !!traits?.barbe && /^aucune/i.test(traits.barbe);
   return [
     "THE KEYS TO THE LIKENESS:",
-    `- The age: an adult of their real age${traits?.age ? ` (in French: ${traits.age})` : ""} — never a child or a teenager, never younger. The signs of their age that make them recognizable (smile lines, crow's feet, forehead lines) stay, as soft sculpted lines.`,
+    ...lignesDeLAge(traits),
     `- The face shape: their real proportions${traits?.visage ? ` (in French: ${traits.visage})` : ""} — a slim face stays slim, cheekbones and jaw stay as they are; never a round baby face.`,
     "- The nose: keep its real shape and width — never a generic cartoon nose.",
     "- The eyes: keep their real shape, size, spacing and gaze — never the big round eyes of a cartoon child.",
@@ -245,7 +286,7 @@ const rendu3D = (fond: "transparent" | "vert", edition = false) => [
 const CONTRAINTES = [
   "IMPORTANT CONSTRAINTS:",
   "- Keep the person's identity recognizable. Do not make them younger, do not give them a child's face.",
-  "- Do not make the face photorealistic: no photographic skin pores, no individual beard hairs. The nose, the eyes and the facial hair look deliberately designed and sculpted as part of a stylized animated character.",
+  "- Do not make the face photorealistic: no photographic skin pores, no individual beard hairs (wrinkles are not pores: they stay, sculpted). The nose, the eyes and the facial hair look deliberately designed and sculpted as part of a stylized animated character.",
   "- No change to their expression. No extra limbs, no legs, no text, no logos, no engraved plaque, no scenery, no other person.",
 ];
 
@@ -296,7 +337,7 @@ export const QUESTION_TRAITS =
   '"barbe": facial hair exactly as seen (e.g. "barbe de trois jours grise", "moustache brune") or "aucune", ' +
   '"visage": face shape, jaw and cheekbones (e.g. "visage allongé, mâchoire carrée, pommettes marquées"), ' +
   '"sourcils": shape and thickness, "yeux": colour, shape, spacing and gaze (e.g. "bruns, enfoncés, regard intense"), "nez": shape, width and size, ' +
-  '"age": apparent age range (e.g. "la cinquantaine"), ' +
+  '"age": apparent age, honest and not flattering, in words and in years (e.g. "la soixantaine, environ 60 ans"), ' +
   '"expression": the facial expression exactly as seen (e.g. "sérieux, sourcils légèrement froncés, bouche fermée, ne sourit pas" or "grand sourire"), ' +
   '"signes": other features that make this person recognizable (forehead wrinkles, dimples, crow\'s feet, a mole, freckles) or "", ' +
   '"accentuer": the 3 to 5 features a caricature artist would exaggerate to make THIS person instantly recognizable, most striking first (e.g. "mâchoire carrée et menton marqué, sourcils épais et froncés, cheveux épais en volume, front haut ridé"), ' +

@@ -460,7 +460,8 @@ réseaux reçoivent le film entier.
   les bustes d'avant gardent le ressort et le socle communs). À chaque essai, DEUX propositions parties en même
   temps : Gemini (`genererParGemini` : fond vert retiré, format 2:3, `gemini-3-pro-image-preview` puis
   `gemini-2.5-flash-image`, ou `GEMINI_FIGURINE_MODEL`) et OpenAI en fidélité « high » — sans clé Gemini, OpenAI
-  « high » et « low ». Il choisit « Laquelle te ressemble ? » ; la voie choisie est notée (`modele`, et un
+  « high » deux fois, deux tirages (le 4 novembre, après trois essais où « fidèle » ressemblait plus que « libre » :
+  « mets les deux propositions en fidèle » ; « high » et « low » avant). Il choisit « Laquelle te ressemble ? » ; la voie choisie est notée (`modele`, et un
   `[figurine] choisie` dans les journaux) : ses choix diront laquelle garder. Une fabrication coûte donc deux images.
 - **Le rendu « jouet miniature »** (sixième essai réel : la forme était la bonne, mais « elle me ressemble et fait pas
   figurine » — un vrai homme photographié) : `MATIERE` dit un jouet en résine d'une vingtaine de centimètres, la peau
@@ -491,12 +492,20 @@ réseaux reçoivent le film entier.
   dernier ce qui ne se discute pas (pas de visage photoréaliste, ni pores ni poils un à un). Les chaussures vides ne
   sont plus demandées sur le socle de la figurine de base (la consigne de ChatGPT n'en avait pas). L'édition garde le
   rendu de SA figurine (« EXACTLY the same rendering style ») sans en imposer un autre. Sous chaque proposition :
-  « OpenAI · fidèle » (fidélité haute) ou « OpenAI · libre » (basse) — ses choix diront laquelle garder.
+  « OpenAI · fidèle » (fidélité haute) ou « OpenAI · libre » (basse). Après trois essais, « fidèle » ressemblait
+  chaque fois plus : les deux propositions sont en « fidèle » (deux tirages).
 - **Son âge et la forme de son visage** (onzième essai, 4 novembre : une commerçante d'une quarantaine d'années,
   souriante, au visage fin, devenue une jeune fille au visage rond et aux très grands yeux). Le style « film
   d'animation » tire vers un visage d'enfant tout fait : deux clés de plus (`troisCles`) — l'âge (jamais plus jeune, les
   rides du sourire et les pattes-d'oie en lignes sculptées douces) et la forme du visage (un visage fin reste fin, jamais
   un visage de bébé) —, et des yeux de leur vraie taille.
+- **Les lignes de son âge** (douzième essai : une commerçante d'une soixantaine d'années, cheveux gris, rendue à
+  trente-cinq ans en « libre », quarante-cinq en « fidèle » — « elle fait encore très jeune »). La « peau lisse » de la
+  consigne effaçait les rides avec les pores : la peau est maintenant MATE ET SANS PORES, les rides y restent sculptées
+  (« wrinkles are not pores »). L'âge vu sur le selfie est demandé honnête, en mots et en années (`ageApproche` le lit) ;
+  dès quarante ans, la consigne dit de la dessiner comme les personnages d'âge mûr des films d'animation, qui font leur
+  âge — pattes-d'oie, rides du sourire, du front, sous les yeux (`lignesDeLAge`). Le critère : on doit lui donner le
+  même âge sur la figurine que sur la photo.
 - **🎨 Une image de référence de style, facultative** (`FIGURINE_REFERENCE_URL`, une adresse https) : elle part en
   seconde image avec chaque fabrication, aux deux moteurs, et la consigne (`AVEC_REFERENCE`) dit qu'on n'en prend que le
   style — jamais le visage, la tenue ni les accessoires. Jamais dans le dépôt, et seulement une image qu'on a le droit
@@ -522,9 +531,11 @@ réseaux reçoivent le film entier.
   du propriétaire (pour Noël : bonnet de Père Noël, pull de Noël, écharpe rayée, sucre d'orge, paquet cadeau). Ces
   tenues sont à relire.
 - **Le visage ne bouge pas** (essai du 4 novembre : habillée pour l'automne, une proposition lui ressemblait « un peu »,
-  l'autre « pas du tout ») : pour une édition, les deux propositions viennent de la voie qui recopie l'image d'entrée —
-  OpenAI en fidélité « high », deux tirages (`voiesEdition`) — et la consigne dit « THE FACE IS UNTOUCHABLE » : seuls la
-  tenue, le chapeau et les accessoires changent. `FIGURINE_VOIES_EDITION` (« openai-high,gemini », « openai-low »…)
+  l'autre « pas du tout ») : pour une édition, la proposition vient de la voie qui recopie l'image d'entrée — OpenAI en
+  fidélité « high » (`voiesEdition`) — et la consigne dit « THE FACE IS UNTOUCHABLE » : seuls la tenue, le chapeau et
+  les accessoires changent. **Une seule proposition** (décidé le 4 novembre : « deux pour la base et une pour
+  l'édition ») : le visage est déjà fixé et l'habillage marche bien — une image de moins par commerçant et par mois ;
+  « Une autre tenue » s'il n'aime pas celle-ci. `FIGURINE_VOIES_EDITION` (« openai-high,openai-high », « openai-high,gemini »…)
   pour en essayer d'autres.
 - Route : `fabriquer-edition` (compte dans les trois essais du jour), puis `valider-edition` (« Elle est parfaite »).
   Rangée dans `etat.json` sous `editions["automne-2026"]` : une édition manquée est manquée. S'il refait sa figurine
@@ -548,14 +559,14 @@ réseaux reçoivent le film entier.
   celle du moment choisie d'office.
 - Réglages (variables d'environnement, toutes facultatives) : `OPENAI_API_KEY` (sans elle, la fabrication répond
   « pas encore branchée »), `OPENAI_IMAGE_MODEL` (impose un moteur), `FIGURINE_QUALITE` (`high` par défaut),
-  `FIGURINE_FIDELITES` (les fidélités d'OpenAI, `high,low` par défaut), `FIGURINE_GEMINI_API_KEY` (la voie Gemini, pour les figurines
+  `FIGURINE_FIDELITES` (les fidélités d'OpenAI, `high,high` par défaut), `FIGURINE_GEMINI_API_KEY` (la voie Gemini, pour les figurines
   seules ; sinon `GEMINI_API_KEY`, qui fait aussi passer à Gemini l'essayage, les couvertures, l'essai de vitrine et
   le dressing — le 4 novembre 2026, le serveur n'avait aucune clé Gemini : Gemini n'avait jamais fait une proposition),
   `GEMINI_FIGURINE_MODEL` (impose un modèle Gemini), `FIGURINE_SANS_GEMINI=1` (sans la voie Gemini),
-  `FIGURINE_REFERENCE_URL` (l'image de référence de style, voir plus haut), `FIGURINE_VOIES_EDITION` (les deux voies
-  d'une édition, `openai-high,openai-high` par défaut),
+  `FIGURINE_REFERENCE_URL` (l'image de référence de style, voir plus haut), `FIGURINE_VOIES_EDITION` (les voies
+  d'une édition : une seule par défaut, `openai-high`),
   `FIGURINE_ESSAIS_PAR_JOUR` (3), `FIGURINES_PROS_BUCKET`.
-- **La fidélité à l'image d'entrée** (l'histoire ; aujourd'hui, une proposition de chaque, voir le style d'aujourd'hui). En `high` (le premier réglage), le moteur recopie le selfie : un
+- **La fidélité à l'image d'entrée** (l'histoire ; aujourd'hui, « high » pour les deux propositions, voir le style d'aujourd'hui). En `high` (le premier réglage), le moteur recopie le selfie : un
   visage photographique collé sur un petit corps, et pour l'édition l'ancienne tenue gardée (« pas très automne »,
   3 novembre 2026). En `low`, il réinterprète : la caricature sculptée et peinte, et la tenue vraiment changée. La
   consigne met le STYLE en premier (« pas une photo : sculpté et peint »), la ressemblance ensuite.

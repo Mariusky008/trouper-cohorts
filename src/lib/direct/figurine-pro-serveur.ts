@@ -342,17 +342,18 @@ const cleGemini = () => s(process.env.FIGURINE_GEMINI_API_KEY) || s(process.env.
  * DEUX PROPOSITIONS PAR ESSAI, par deux voies différentes, parties en même temps (le temps d'une seule) :
  *   · GEMINI d'abord, s'il a une clé : c'est avec lui que le propriétaire a fait sa figurine d'Halloween, celle qu'il
  *     montre en exemple ; il garde bien un visage d'une image à l'autre ;
- *   · OPENAI ensuite, en fidélité « high » (il colle au selfie) — ou, sans Gemini, OpenAI deux fois : « high » et « low »
- *     (il réinterprète). `FIGURINE_FIDELITES` règle les fidélités d'OpenAI (« high,low » par défaut).
+ *   · OPENAI ensuite, en fidélité « high » — ou, sans Gemini, OpenAI DEUX FOIS EN « HIGH » (deux tirages).
+ * « HIGH » DEUX FOIS — décidé le 4 novembre par le propriétaire (« mets les deux propositions en fidèle »), après trois
+ * essais dans le style « film d'animation 3D » : « fidèle » lui ressemblait chaque fois plus que « libre » (« libre »
+ * rajeunissait, agrandissait les yeux). `FIGURINE_FIDELITES` (« high,low »…) pour en essayer d'autres.
  * Il choisit celle qui lui ressemble ; ses choix (le `modele` gardé avec sa figurine) diront quelle voie garder.
  */
 function fidelites(): string[] {
-  const l = (s(process.env.FIGURINE_FIDELITES) || s(process.env.FIGURINE_FIDELITE) || "high,low")
+  const l = (s(process.env.FIGURINE_FIDELITES) || s(process.env.FIGURINE_FIDELITE) || "high,high")
     .split(",")
     .map((x) => x.trim())
     .filter((x) => x === "high" || x === "low");
-  const uniques = [...new Set(l)];
-  return uniques.length ? uniques : ["high", "low"];
+  return l.length ? l : ["high", "high"];
 }
 
 type Voie = { nom: "gemini" } | { nom: "openai"; fidelite: string };
@@ -368,22 +369,26 @@ function voieDe(x: string): Voie | null {
 /**
  * LES VOIES D'UNE ÉDITION — essai du 4 novembre : habillée pour l'automne, une proposition lui ressemblait « un peu »,
  * l'autre « pas du tout ». Pour une édition, SEULE LA TENUE CHANGE : le visage doit rester celui de la figurine qu'il a
- * validée. La voie qui recopie l'image d'entrée — OpenAI en fidélité « high » — deux fois (deux tirages différents).
- * `FIGURINE_VOIES_EDITION` (« openai-high,gemini »…) pour en essayer d'autres.
+ * validée. La voie qui recopie l'image d'entrée — OpenAI en fidélité « high ».
+ * UNE SEULE PROPOSITION (décidé le 4 novembre par le propriétaire : « deux pour la base et une pour l'édition ») : le
+ * visage est déjà fixé et l'habillage marche bien — une image de moins par commerçant et par mois. S'il n'aime pas la
+ * tenue, « Une autre tenue » (un essai du jour). `FIGURINE_VOIES_EDITION` (« openai-high,openai-high »,
+ * « openai-high,gemini »…) pour en remettre deux.
  */
 function voiesEdition(): Voie[] {
-  const l = (s(process.env.FIGURINE_VOIES_EDITION) || "openai-high,openai-high")
+  const l = (s(process.env.FIGURINE_VOIES_EDITION) || "openai-high")
     .split(",")
     .map(voieDe)
     .filter((v): v is Voie => Boolean(v))
     .slice(0, 2);
-  return l.length ? l : [{ nom: "openai", fidelite: "high" }, { nom: "openai", fidelite: "high" }];
+  return l.length ? l : [{ nom: "openai", fidelite: "high" }];
 }
 
 function voies(): Voie[] {
   const f = fidelites();
   if (cleGemini() && s(process.env.FIGURINE_SANS_GEMINI) !== "1") return [{ nom: "gemini" }, { nom: "openai", fidelite: f[0] }];
-  return f.slice(0, 2).map((fidelite) => ({ nom: "openai" as const, fidelite }));
+  // DEUX PROPOSITIONS, toujours : une seule fidélité réglée (« high ») → deux tirages de celle-ci
+  return (f.length >= 2 ? f.slice(0, 2) : [f[0], f[0]]).map((fidelite) => ({ nom: "openai" as const, fidelite }));
 }
 
 /**
