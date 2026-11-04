@@ -199,21 +199,30 @@ export const figurineEntiere = (url: string | null | undefined) => Boolean(url &
  * mots de ChatGPT : « demander un visage de personnage d'animation 3D avec une forte ressemblance, et non simplement
  * une photo réaliste avec une grosse tête ». Cette consigne reprend la sienne, partie par partie.
  */
+/*
+ * ONZIÈME ESSAI (4 novembre, une commerçante d'une quarantaine d'années, souriante, visage fin) : l'effet figurine,
+ * enfin — mais une jeune fille au visage rond et aux très grands yeux, sans une ride de sourire. Le style « film
+ * d'animation » tire vers un visage d'enfant tout fait ; d'où « des formes simplifiées DE SON VISAGE », des yeux de
+ * leur vraie taille, et la clé de l'âge (`troisCles`).
+ */
 const STYLE_ANIMATION = [
-  "- A true stylized 3D animated feature-film character, not a photorealistic human: smooth, soft skin; rounded, simplified facial shapes; expressive eyes; the hair as soft, stylized sculpted volumes rather than individual hairs; the facial hair (if any) made of simplified sculpted shapes rather than realistic individual hairs.",
+  "- A true stylized 3D animated feature-film character, not a photorealistic human: smooth, soft skin; simplified facial shapes that keep THEIR real face shape and proportions; expressive eyes of their real size; the hair as soft, stylized sculpted volumes rather than individual hairs; the facial hair (if any) made of simplified sculpted shapes rather than realistic individual hairs.",
   "- Soft shading, appealing shapes, vibrant colours, polished 3D rendering, a collectible designer-toy aesthetic.",
 ];
 
 /**
- * LES TROIS CLÉS DE LA RESSEMBLANCE (l'astuce de ChatGPT) : le nez, les yeux, la barbe. La barbe dite selon ce qu'on a
- * vu sur le selfie : on n'en ajoute jamais à quelqu'un qui n'en a pas.
+ * LES CLÉS DE LA RESSEMBLANCE — les trois de ChatGPT (le nez, les yeux, la barbe), et deux du onzième essai : l'âge et
+ * la forme du visage (« une jeune fille au visage rond » pour une femme de quarante ans au visage fin). La barbe dite
+ * selon ce qu'on a vu sur le selfie : on n'en ajoute jamais à quelqu'un qui n'en a pas.
  */
 function troisCles(traits?: Traits | null): string[] {
   const sansBarbe = !!traits?.barbe && /^aucune/i.test(traits.barbe);
   return [
-    "THE THREE KEYS TO THE LIKENESS:",
+    "THE KEYS TO THE LIKENESS:",
+    `- The age: an adult of their real age${traits?.age ? ` (in French: ${traits.age})` : ""} — never a child or a teenager, never younger. The signs of their age that make them recognizable (smile lines, crow's feet, forehead lines) stay, as soft sculpted lines.`,
+    `- The face shape: their real proportions${traits?.visage ? ` (in French: ${traits.visage})` : ""} — a slim face stays slim, cheekbones and jaw stay as they are; never a round baby face.`,
     "- The nose: keep its real shape and width — never a generic cartoon nose.",
-    "- The eyes: keep their real shape, spacing and gaze.",
+    "- The eyes: keep their real shape, size, spacing and gaze — never the big round eyes of a cartoon child.",
     sansBarbe
       ? "- No beard and no moustache: add none."
       : "- The facial hair, if any: stylized volumes in its real colour with simplified contours, not realistic hairs. If there is none, add none.",
@@ -235,7 +244,7 @@ const rendu3D = (fond: "transparent" | "vert", edition = false) => [
 /** Ce qui ne se discute pas, en dernier (comme dans la consigne de ChatGPT). */
 const CONTRAINTES = [
   "IMPORTANT CONSTRAINTS:",
-  "- Keep the person's identity recognizable.",
+  "- Keep the person's identity recognizable. Do not make them younger, do not give them a child's face.",
   "- Do not make the face photorealistic: no photographic skin pores, no individual beard hairs. The nose, the eyes and the facial hair look deliberately designed and sculpted as part of a stylized animated character.",
   "- No change to their expression. No extra limbs, no legs, no text, no logos, no engraved plaque, no scenery, no other person.",
 ];
