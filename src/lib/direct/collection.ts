@@ -322,6 +322,12 @@ export function editionsDuMoment(aujourdhui: string): {
 export const palierSuivant = (gagnees: number) =>
   PALIERS_COLLECTION.find((p) => gagnees < p.n) ?? null;
 
+/** « 20 déc. », « 1er juil. », « 3 juin » : les abréviations d'usage (juin et juillet ne se confondent pas). */
+export function jourCourt(j: string): string {
+  const mois = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+  return `${+j.slice(8, 10) === 1 ? "1er" : +j.slice(8, 10)} ${mois[+j.slice(5, 7) - 1]}`;
+}
+
 /** « 20 décembre », « 7 février ». */
 export function jourEnClair(j: string): string {
   const mois = [

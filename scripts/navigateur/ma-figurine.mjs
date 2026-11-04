@@ -1,7 +1,9 @@
 // 🗣️ SA PROPRE FIGURINE, DANS UN TÉLÉPHONE — `clikme.fr/collection` puis `clikme.fr/figurine/<id>`, contre le faux
-// Supabase, avec un faux micro (Chromium joue un bip à sa place) et une fausse voix (le faux Supabase rend l'enregistrement de Léa).
+// Supabase, avec un faux micro (Chromium joue un bip à sa place) et une fausse voix (le faux Supabase rend un enregistrement d'essai).
 //
-// Hugo a 1 figurine : « 1 / 10 », encore 9 ; il fait dire une phrase à la figurine de démonstration. Léa passe chez le Comptoir depuis plus d'un an (et à l'Atelier) : plus
+// Hugo a 1 figurine : « 1 / 10 », encore 9 ; il fait parler la démonstration : une insulte est refusée ; son texte,
+// triste, dans la voix « Posée » ; il l'envoie (WhatsApp), et son ami l'ouvre : « Hugo t'a envoyé une figurine qui
+// parle », écrit par Hugo, « À ton tour ». Léa passe chez le Comptoir depuis plus d'un an (et à l'Atelier) : plus
 // de 10 figurines. Elle envoie sa photo (il faut cocher « C'est bien moi ») ; « on fabrique ta figurine ». ClikMe pose
 // ses deux images (ici à la main, dans le faux Supabase : la route admin, elle, refuse qui n'est pas admin). Elle
 // écrit un texte, le fait lire par une voix (la joie sur son visage), ne garde que le Comptoir dans les commerces cités, l'envoie : un lien `/figurine/<id>`, avec
@@ -66,23 +68,52 @@ for (let k = 0; k < 30 && !/1 \/ 10 figurines/.test(await texte(hugo, ".tf-la-ti
 const g = await texte(hugo, ".tf-la-tienne");
 ok(/1 \/ 10 figurines/.test(g) && g.includes("encore 9") && g.includes("chez n’importe quel commerce ClikMe"), `Hugo : 1 / 10, encore 9, tous commerces (${g.slice(0, 120)})`);
 ok((await hugo.locator(".tf-photo, .tf-moi").count()) === 0, "Hugo n'a pas encore droit à la sienne");
-ok((await texte(hugo, ".mc-heros h1")).includes("Ta figurine") && (await texte(hugo, ".tf-demo")).includes("Démonstration · la figurine de Léa"), "en haut de la page : la figurine qui parle, en démonstration");
+ok((await texte(hugo, ".mc-heros h1")).includes("Ta figurine") && (await texte(hugo, ".tf-demo")).includes("Démonstration · fais-la parler"), "en haut de la page : la figurine qui parle, en démonstration");
 ok((await hugo.locator(".tf-demo .tf-expr button").count()) === 5, "cinq visages : normal, joie, colère, tristesse, euphorie");
+// LE CADRE A LES PROPORTIONS DE SON IMAGE (852 × 1024) : la tête ne sort jamais du cadre
+const cadre = await hugo.locator(".tf-demo .fqp-fig").evaluate((e) => e.clientWidth / e.clientHeight);
+ok(Math.abs(cadre - 852 / 1024) < 0.02, `le cadre a les proportions de la figurine (${cadre.toFixed(3)})`);
 await hugo.locator(".tf-demo .tf-expr button", { hasText: "Tristesse" }).click();
-ok((await hugo.locator(".tf-demo .fqp").getAttribute("data-sentiment")) === "tristesse", "un toucher : la figurine de Léa est triste");
-// une phrase toute faite, dans une autre voix (la fausse voix du faux Supabase)
-ok((await hugo.locator(".tf-phrases button").count()) === 4 && (await hugo.locator(".tf-voix button").count()) === 4, "quatre phrases, quatre voix");
-await hugo.locator(".tf-phrases button", { hasText: "resto" }).click();
-await hugo.locator(".tf-voix button", { hasText: "Posée" }).click();
+ok((await hugo.locator(".tf-demo .fqp").getAttribute("data-sentiment")) === "tristesse", "un toucher : la démonstration est triste");
+// SON texte, dans la voix qu'il choisit (la fausse voix du faux Supabase) — plus de phrases toutes faites
+ok((await hugo.locator(".tf-phrases").count()) === 0 && (await hugo.locator(".tf-demo .tf-voix button").count()) === 4, "pas de phrases toutes faites ; quatre voix");
+await hugo.locator(".tf-demo .tf-texte textarea").fill("Espèce de connard");
+const refus = hugo.waitForResponse((r) => r.url().includes("/api/direct/ma-figurine") && r.request().method() === "POST" && (r.request().postData() ?? "").includes("connard"));
+await hugo.locator(".tf-demo .tf-ecouter").click();
+ok((await refus).status() === 422, "une insulte : la figurine ne la dit pas");
+await hugo.waitForSelector(".tf-demo .fqp-ennui", { timeout: 10000 });
+ok((await texte(hugo, ".tf-demo .fqp-ennui")).includes("ne le dit pas"), `on le lui dit (${await texte(hugo, ".tf-demo .fqp-ennui")})`);
+await hugo.locator(".tf-demo .tf-texte textarea").fill("On se fait un resto ce soir ? Je t’invite !");
+await hugo.locator(".tf-demo .tf-voix button", { hasText: "Posée" }).click();
 const voixDemo = hugo.waitForResponse((r) => r.url().includes("/api/direct/ma-figurine") && r.request().method() === "POST" && (r.request().postData() ?? "").includes("\"voix\""));
 await hugo.locator(".tf-demo .tf-ecouter").click();
-ok((await voixDemo).status() === 200, "la phrase de la démonstration est lue par la voix choisie");
+ok((await voixDemo).status() === 200, "son texte est lu par la voix choisie");
 let joue = "";
 for (let k = 0; k < 40 && !/joue|fini/.test(joue); k++) {
   joue = (await hugo.locator(".tf-demo .fqp").getAttribute("data-lecture")) ?? "";
   if (!/joue|fini/.test(joue)) await hugo.waitForTimeout(150);
 }
-ok(/joue|fini/.test(joue), `elle la dit (${joue})`);
+ok(/joue|fini/.test(joue), `elle le dit (${joue})`);
+// IL L'ENVOIE : son prénom, puis WhatsApp
+await hugo.locator(".tf-demo .tf-prenom").fill("Hugo");
+await hugo.locator(".tf-demo .tf-envoyer-wa").click();
+await hugo.waitForSelector(".tf-demo .tf-wa", { timeout: 30000 });
+const lienDemo = await hugo.locator(".tf-demo .tf-adresse").inputValue();
+const waDemo = decodeURIComponent((await hugo.locator(".tf-demo .tf-wa").getAttribute("href")) ?? "");
+ok(/\/figurine\/[a-z0-9]{12}$/.test(lienDemo) && waDemo.startsWith("https://wa.me/?text=") && waDemo.includes("Hugo t’a envoyé une figurine qui parle") && waDemo.includes(lienDemo), `la démonstration part sur WhatsApp (${lienDemo})`);
+// SON AMI L'OUVRE : la figurine triste lui dit le texte de Hugo, écrit par Hugo, et « À ton tour »
+const ami = await tel(null);
+await ami.goto(lienDemo.replace(/^https?:\/\/[^/]+/, BASE), { waitUntil: "networkidle" });
+await ami.waitForSelector(".mr h1", { timeout: 60000 });
+ok((await texte(ami, ".mr h1")) === "Hugo t’a envoyé une figurine qui parle" && (await ami.title()).includes("Hugo t’a envoyé une figurine qui parle"), "« Hugo t’a envoyé une figurine qui parle »");
+ok((await texte(ami, ".mr-bulle")).includes("On se fait un resto ce soir ?") && (await texte(ami, ".mr-auteur")).includes("Message écrit par Hugo, avec la figurine de démonstration"), "ce qu'elle dit, en bulle, et qui l'a écrit");
+ok((await ami.locator(".mr .fqp").getAttribute("data-sentiment")) === "tristesse" && (await texte(ami, ".mr-toi")).includes("À ton tour") && (await ami.locator('.mr-toi a[href="/collection"]').count()) === 1, "elle est triste ; « À ton tour » ramène à la démonstration");
+const sonDemo = ami.waitForResponse((r) => r.url().includes("/api/direct/ma-figurine/son"));
+await ami.locator(".fqp-jouer").click();
+const rDemo = await sonDemo;
+ok(rDemo.status() === 200 && /audio\/mpeg/.test(rDemo.headers()["content-type"] ?? ""), "sa voix arrive");
+ok((await debordement(ami)) <= 0 && !/exemple/i.test(await texte(ami, ".mr")), "la page du message ne déborde pas, sans le mot interdit");
+await ami.screenshot({ path: `${D}/ma-figurine-0-demo-recue.png`, fullPage: true });
 await hugo.screenshot({ path: `${D}/ma-figurine-0-demo.png`, fullPage: true });
 
 // ═══ LÉA : SA PHOTO ═══
@@ -209,7 +240,7 @@ ok((await fetch(`${BASE}/figurine/zzzzzzzzzzzz`)).status === 404, "un lien incon
 const r = await fetch(`${BASE}/api/direct/ma-figurine`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "photo", photo: "data:image/png;base64,AAAA", accord: true }) });
 ok(r.status === 403, "sans être quelqu'un, pas de photo");
 
-const erreurs = [...hugo.err, ...lea.err, ...amie.err];
+const erreurs = [...hugo.err, ...ami.err, ...lea.err, ...amie.err];
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` : ${erreurs[0]}` : ""}`);
 await b.close();
 console.log(echecs ? `${echecs} ÉCHEC(S)` : "TOUT EST BON");

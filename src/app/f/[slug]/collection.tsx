@@ -15,6 +15,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   PALIERS_COLLECTION,
+  jourCourt,
   jourEnClair,
   palierSuivant,
   type CaseCollection,
@@ -40,7 +41,7 @@ export const THEMES: Record<string, Theme> = {
 const themeDe = (c: CaseCollection) =>
   THEMES[c.sorte === "rare" ? "rare" : c.cle] ?? THEMES.rare;
 const CLE_VUES = "clikme-collection-vues-v1";
-const court = (j: string) => jourEnClair(j).replace(/ (\S{3})\S*$/, " $1.");
+const court = jourCourt;
 
 function lireVues(): Record<string, number> {
   try {

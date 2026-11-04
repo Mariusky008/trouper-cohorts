@@ -177,14 +177,23 @@ await p.screenshot({ path: `${D}/famille-7-collection.png`, fullPage: true });
 
 // ═══ MA COLLECTION (/collection) ═══
 await p.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
-await p.waitForSelector(".mc-commerce .co", { timeout: 30000 });
+await p.waitForSelector(".ab-page", { timeout: 30000 });
 const mc = await texte(p, ".mc");
-ok(mc.includes("Ma collection") && mc.includes("Le Comptoir des Fantômes") && (await p.locator(".mc-commerce").count()) === 1, `sa page « Ma collection » (${mc.slice(0, 80)})`);
+ok(mc.includes("Ma collection") && mc.includes("Le Comptoir des Fantômes") && (await p.locator(".ab-page").count()) === 1, `sa page « Ma collection » : une page d'album (${mc.slice(0, 80)})`);
+// L'ALBUM : les quatorze cases et la case d'or, le compteur, ce qui vient ensuite ; une case touchée s'ouvre en grand
+ok((await p.locator(".ab-page .ab-case").count()) === 15 && (await p.locator(".ab-page .ab-case.ab-or").count()) === 1 && (await p.locator(".ab-page .ab-case.rare").count()) === 2, "l'album : quatorze cases (dont deux rares) et la case d'or");
+ok((await p.locator(".ab-page .ab-case.gagnee").count()) === 1 && (await texte(p, ".ab-chiffre")).replace(/\s/g, "").endsWith("/10") && /Encore \d+ →/.test(await texte(p, ".ab-suivant")), `sa figurine dans l'album, et ce qui vient ensuite (${await texte(p, ".ab-suivant")})`);
+await p.locator(".ab-page .ab-case.gagnee").first().click();
+await p.waitForSelector(".ab-fiche", { timeout: 10000 });
+ok((await texte(p, ".ab-fiche")).includes("Gagnée le") && (await texte(p, ".ab-fiche")).includes("pour toujours"), `une case touchée s'ouvre en grand (${(await texte(p, ".ab-fiche")).slice(0, 80)})`);
+await p.keyboard.press("Escape");
+ok((await p.locator(".ab-fiche").count()) === 0, "et se referme");
+ok(!mc.includes("Ce que tu gagnes"), "plus de « Ce que tu gagnes »");
 ok((await debordement(p)) <= 0 && !/exemple/i.test(mc), "« Ma collection » ne déborde pas, sans le mot interdit");
 const autres = await texte(p, "#ou-gagner");
 ok(
-  autres.includes("D’autres commerces où en gagner") && autres.includes("L’Atelier Tout Neuf") && !autres.includes("Le Comptoir des Fantômes") && (await p.locator(".dc-plus summary").count()) === 1,
-  "sous ses étagères : les autres commerces où en gagner (pas le sien), et les paliers, repliés",
+  autres.includes("D’autres commerces où en gagner") && autres.includes("L’Atelier Tout Neuf") && !autres.includes("Le Comptoir des Fantômes"),
+  "sous son album : les autres commerces où en gagner (pas le sien)",
 );
 await p.screenshot({ path: `${D}/famille-8-ma-collection.png`, fullPage: true });
 
@@ -201,13 +210,13 @@ await vide.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
 await vide.waitForSelector(".ce", { timeout: 30000 });
 await vide.waitForTimeout(1500);
 const dc = await texte(vide, ".mc");
-ok((await vide.locator(".mc-commerce").count()) === 0 && (await vide.locator(".ce-frise li").count()) === 6 && (await vide.locator(".ce-frise li.passee").count()) === 1, "sans figurine : pas d'étagère ; la frise des éditions, dont celle qui vient de finir");
+ok((await vide.locator(".ab-page").count()) === 0 && (await vide.locator(".ce-frise li").count()) === 6 && (await vide.locator(".ce-frise li.passee").count()) === 1, "sans figurine : pas d'étagère ; la frise des éditions, dont celle qui vient de finir");
 const chrono = await texte(vide, ".ce-chrono");
 ok(/À GAGNER MAINTENANT/i.test(dc) && /Édition \S+/.test(dc) && /\d+\s*jours?/i.test(chrono) && /\d{2}\s*s/i.test(chrono), `l'édition du moment, et le temps qui reste à la seconde (${chrono.replace(/\s+/g, " ")})`);
-ok(dc.includes("Ce que tu gagnes") && dc.includes("1 visite = 1 figurine") && dc.includes("10 au même commerce") && dc.includes("10 en tout"), "ce que tu gagnes : les deux « 10 », séparés, en tuiles");
-ok(/TA FIGURINE QUI PARLE/i.test(dc) && dc.includes("Démonstration · la figurine de Léa") && dc.includes("écris ce que tu veux"), "en haut : la figurine qui parle, sur celle de Léa");
+ok(!dc.includes("Ce que tu gagnes"), "plus de « Ce que tu gagnes »");
+ok(/TA FIGURINE QUI PARLE/i.test(dc) && dc.includes("Démonstration · fais-la parler") && dc.includes("Choisis son émotion") && dc.includes("Écris ce qu’elle dit"), "en haut : la démonstration qu'on fait parler soi-même");
 await vide.locator(".tf-demo .tf-expr button", { hasText: "Colère" }).click();
-ok((await vide.locator(".tf-demo .fqp").getAttribute("data-sentiment")) === "colere" && (await vide.locator(".tf-demo .fqp-badge").count()) === 1, "un toucher sur « Colère » : la figurine de Léa se met en colère");
+ok((await vide.locator(".tf-demo .fqp").getAttribute("data-sentiment")) === "colere" && (await vide.locator(".tf-demo .fqp-badge").count()) === 1, "un toucher sur « Colère » : la démonstration se met en colère");
 ok(
   (await vide.locator(`.dc-commerces a[href="/f/${SLUG}"]`).count()) === 1 && (await vide.locator(`.dc-commerces a[href="/f/${NEUF}"]`).count()) === 1,
   "où la commencer : les commerces ClikMe, vers leur page",

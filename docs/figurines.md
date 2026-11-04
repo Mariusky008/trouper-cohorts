@@ -299,9 +299,51 @@ téléphone), et les expressions faites par **le moteur d'image**.
   (« douce:<id>,petillante:<id>,chaleureuse:<id>,posee:<id> ») ; 20 lectures par jour et par client.
 - **Celui qui reçoit** (`/figurine/<id>`) : le visage de l'émotion choisie, et ce qu'elle dit en bulle.
 
-**À faire par lui** : poser `ELEVENLABS_API_KEY` dans Vercel (sans elle : sa propre voix seulement, et la seule phrase
-de Léa) ; appliquer la migration `20261109090000_clik_figurine_texte.sql` (sans elle : le texte ne s'affiche pas chez
-celui qui reçoit). `OPENAI_API_KEY` est déjà là pour les expressions.
+**À faire par lui** : poser `ELEVENLABS_API_KEY` dans Vercel (sans elle : sa propre voix seulement, et la
+démonstration ne parle pas) ; appliquer la migration `20261109090000_clik_figurine_texte.sql` (sans elle : le texte ne
+s'affiche pas chez celui qui reçoit). `OPENAI_API_KEY` est déjà là pour les expressions.
+
+### 9.0 quinquies La démonstration qu'on fait parler soi-même, et l'album (4 novembre, le soir) — construit
+
+Sa remarque, après avoir vu la page : « il manque la possibilité de faire parler la figurine de démonstration et de
+l'envoyer à quelqu'un pour lui faire découvrir. “Ce qu'elle dit « Le meilleur magret de Dax ! » ▶ Écouter” : ça ne sert
+à rien, je veux moi-même essayer en lui faisant dire quelque chose que j'aurais décidé, et si c'est bluffant, en ayant
+choisi l'émotion moi-même, alors je voudrais créer ma propre figurine : c'est ça qui motivera. Je choisis l'émotion, je
+tape ce que je veux qu'elle dise et je l'envoie à quelqu'un. » Et : « la position normale est plus grande que les autres,
+la tête sort du cadre » ; « supprimer “Ce que tu gagnes” » ; « “Mes figurines” n'est pas du tout addictive ».
+
+Sa décision : la figurine de démonstration, c'est **la sienne** (le propriétaire, sur ressort ; images
+`public/collection/demo-neutre.webp` et `demo-parle.webp`, tirées de `outils/tour-du-fantome/recu/humain/ressort/`).
+Celle de Léa n'est plus montrée.
+
+- **La démonstration, en trois gestes** (`StudioDemo`, `ma-figurine.tsx`) : ① choisis son émotion (son visage change) ;
+  ② écris ce qu'elle dit (140 caractères, une idée en filigrane qui change toute seule — jamais une phrase toute faite à
+  toucher), sa voix parmi quatre, « Écouter » ; ③ ton prénom (facultatif, il le verra), « L'envoyer » → WhatsApp, SMS,
+  « Partager… », « Copier le lien », « Voir ce qu'on recevra ». Dessous : « Bluffant ? La tienne aura TON visage. »,
+  sa jauge « 6 / 10 » et « Gagner mes figurines ↓ ».
+- **Ce qu'elle ne dit pas** (`mots-interdits.ts`, partagé page/serveur) : insultes, injures racistes ou homophobes,
+  menaces, sexe explicite (minuscules, accents, chiffres « leet » et lettres répétées ramenés) → « Ça, la figurine ne le
+  dit pas. Écris autre chose 🙂 ». Le reste passe par « Signaler » chez celui qui reçoit. Le même filet vaut pour le
+  texte d'un client sur SA figurine.
+- **Ce que ça coûte, compté** (`ma-figurine-serveur.ts`) : un texte déjà lu dans cette voix se reprend sans repayer ;
+  sinon 10 lectures par visiteur et par jour (son habitant, sinon une empreinte de sa connexion), et 300 pour tous
+  (`FIGURINE_DEMO_LECTURES_JOUR`) ; 10 messages par visiteur et par jour. Le serveur relit le texte lui-même : il ne
+  prend jamais un son venu du navigateur.
+- **Où c'est rangé** : dans le seau privé `figurines-clients`, sous `demo-proprio/v1/` — ses expressions (`expr/`), les
+  textes lus (`voix/`), les messages (`messages/<id>.json`), les compteurs (`jour/`). Pas de table, rien à migrer.
+- **Celui qui reçoit** (`/figurine/<id>`) : « Julien t'a envoyé une figurine qui parle », son émotion, sa voix, le texte
+  en bulle, « Message écrit par Julien, avec la figurine de démonstration de ClikMe », puis « À ton tour ! » →
+  « Fais-la parler » (la démonstration). « Signaler » le retire.
+- **Le cadre** (`figurine-qui-parle.tsx`) : il prend les proportions de l'image de tous les jours (lues dans le
+  navigateur) ; rien n'est rogné, la tête ne sort plus, et les expressions (remises au même cadre) tombent dessus.
+- **« Ce que tu gagnes » est parti** (et ses paliers repliés) : l'album les montre là où ils comptent.
+- **« Mes figurines », un album** (`album.tsx`) : une page par commerce — le compteur qui monte (« 5 / 10 »), la jauge
+  et ses paliers (🥈 🥇 🏆), « Encore 1 → 🥇 Au courant en premier » ; la figurine à gagner maintenant, qui brille, avec
+  ses jours et « J'y vais › » ; les quatorze cases (gagnées en couleur avec leur jour, celle du mois qui pulse avec son
+  « ? », à venir en silhouette sous cadenas, manquées en gris, rares en holographique) et au bout la case d'or, fermée
+  jusqu'à 10 ; « Nouvelle ! » sur celles gagnées depuis sa dernière visite de l'album ; une case touchée s'ouvre en
+  grand avec ce qu'elle raconte (gagnée le…, encore 27 jours…, manquée…). Les mois s'abrègent à la française
+  (« juin », « juil. » : plus de « jui. » pour les deux).
 
 ### 9.1 L'idée en une phrase
 

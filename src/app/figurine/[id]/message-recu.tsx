@@ -3,6 +3,9 @@
 /**
  * 🗣️ LE MESSAGE REÇU — la figurine qui parle (`FigurineQuiParle`), ses commerces préférés, « Et toi ? », et
  * « Signaler ce message ». Voir `page.tsx`.
+ *
+ * UN MESSAGE DE LA DÉMONSTRATION (`m.demo`) : écrit par quelqu'un avec la figurine de ClikMe (pas la sienne) — on le
+ * dit, et « À ton tour » renvoie à la démonstration : c'est comme ça qu'elle circule.
  */
 import Link from "next/link";
 import { useState } from "react";
@@ -36,12 +39,12 @@ export function MessageRecu({ message: m }: { message: MessageFigurine }) {
       ) : (
         <>
           <h1>
-            <b>{m.prenom || "Quelqu’un"}</b> t’a envoyé sa figurine
+            <b>{m.prenom || "Quelqu’un"}</b> t’a envoyé {m.demo ? "une figurine qui parle" : "sa figurine"}
           </h1>
           <p className="mr-dit">
             {sentimentDe(m.sentiment) ? (
               <>
-                {sentimentDe(m.sentiment)!.emoji} Sa figurine est {sentimentDe(m.sentiment)!.dit}. Touche « Écouter » : elle te parle.
+                {sentimentDe(m.sentiment)!.emoji} {m.demo ? "Elle" : "Sa figurine"} est {sentimentDe(m.sentiment)!.dit}. Touche « Écouter » : elle te parle.
               </>
             ) : (
               "Touche « Écouter » : elle te parle."
@@ -60,6 +63,11 @@ export function MessageRecu({ message: m }: { message: MessageFigurine }) {
           />
           {/* ✍️ ce qu'elle dit, quand le message vient d'un texte */}
           {m.texte && <p className="mr-bulle">« {m.texte} »</p>}
+          {m.demo && (
+            <p className="mr-auteur">
+              ✍️ Message écrit par {m.prenom || "quelqu’un"}, avec la figurine de démonstration de ClikMe.
+            </p>
+          )}
           {m.commerces.length > 0 && (
             <section className="mr-bloc" aria-labelledby="mr-commerces">
               <h2 id="mr-commerces">Ses commerces préférés</h2>
@@ -84,16 +92,29 @@ export function MessageRecu({ message: m }: { message: MessageFigurine }) {
           )}
         </>
       )}
-      <section className="mr-toi">
-        <b>Et toi ?</b>
-        <p>
-          À chaque visite chez un commerce ClikMe, tu gagnes sa figurine. À {SEUIL_MA_FIGURINE}, tu as la tienne : elle dit ce que
-          tu veux, change de visage avec ce qu’elle ressent, et tu l’envoies à qui tu veux.
-        </p>
-        <Link className="mr-bouton" href="/collection">
-          Commencer ma collection
-        </Link>
-      </section>
+      {!m.signale && m.demo ? (
+        <section className="mr-toi">
+          <b>À ton tour !</b>
+          <p>
+            Choisis son émotion, écris ce qu’elle dit, et envoie-la à qui tu veux. Et à {SEUIL_MA_FIGURINE} figurines gagnées chez les
+            commerces ClikMe, tu as la tienne, avec TON visage.
+          </p>
+          <Link className="mr-bouton" href="/collection">
+            Fais-la parler
+          </Link>
+        </section>
+      ) : (
+        <section className="mr-toi">
+          <b>Et toi ?</b>
+          <p>
+            À chaque visite chez un commerce ClikMe, tu gagnes sa figurine. À {SEUIL_MA_FIGURINE}, tu as la tienne : elle dit ce que
+            tu veux, change de visage avec ce qu’elle ressent, et tu l’envoies à qui tu veux.
+          </p>
+          <Link className="mr-bouton" href="/collection">
+            Commencer ma collection
+          </Link>
+        </section>
+      )}
       {!signale && !m.signale && (
         <button type="button" className="mr-signaler" onClick={signaler} disabled={envoi}>
           Signaler ce message
@@ -117,6 +138,7 @@ body{background:#12060F}
 .mr-fig .fqp-fig{width:min(300px,78vw);border-radius:30px}
 .mr-bulle{position:relative;margin:16px auto 0;max-width:340px;padding:14px 18px;border-radius:22px;background:#FFF4E6;color:#2A0F1F;font-size:17px;font-weight:800;line-height:1.35}
 .mr-bulle::before{content:"";position:absolute;left:50%;top:-9px;width:18px;height:18px;margin-left:-9px;background:#FFF4E6;transform:rotate(45deg)}
+.mr-auteur{margin:12px auto 0;max-width:340px;font-size:12.5px;line-height:1.4;color:#A88E99}
 .mr-bloc{margin:28px 0 0;text-align:left}
 .mr-bloc h2{margin:0 0 10px;font-size:19px;font-weight:900}
 .mr-commerces{display:grid;gap:8px;margin:0;padding:0;list-style:none}

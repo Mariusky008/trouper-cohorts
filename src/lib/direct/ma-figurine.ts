@@ -70,16 +70,21 @@ export const texteValide = (x: unknown): string =>
     .slice(0, TEXTE_MAX);
 
 /**
- * LA DÉMONSTRATION : la figurine de Léa (la cliente des démos, avec son accord). Sans compte, on lui fait dire une de
- * ces phrases, dans la voix qu'on veut : chaque voix se fabrique une fois, puis se garde (jamais un texte libre ici).
+ * 🎤 LA DÉMONSTRATION QU'ON FAIT PARLER SOI-MÊME (4 novembre 2026 : « je choisis l'émotion, je tape ce que je veux
+ * qu'elle dise et je l'envoie à quelqu'un… si c'est bluffant, je voudrais créer ma propre figurine ») : la figurine du
+ * propriétaire de ClikMe (son choix), sans compte. N'importe qui lui fait dire SON texte (`mots-interdits.ts` filtre),
+ * dans une voix au choix, et l'envoie : un lien `/figurine/<id>`, où celui qui le reçoit lit « message écrit par … avec
+ * la figurine de démonstration ». Les lectures sont comptées (par visiteur et pour tous, chaque jour) : chacune coûte.
  */
-export const PHRASES_DEMO = [
-  { cle: "resto", texte: "Coucou ! On se fait un resto ce soir ? Je t’invite !" },
-  { cle: "anniv", texte: "Joyeux anniversaire ! Passe me voir, je t’offre un café." },
-  { cle: "merci", texte: "Merci pour hier soir, c’était génial ! On remet ça quand tu veux." },
-] as const;
-export type ClePhrase = (typeof PHRASES_DEMO)[number]["cle"];
-export const phraseDemo = (x: unknown) => PHRASES_DEMO.find((p) => p.cle === x) ?? null;
+export const IMAGES_DEMO = { neutre: "/collection/demo-neutre.webp", parle: "/collection/demo-parle.webp" } as const;
+export const PRENOM_MAX = 24;
+/** Un prénom propre (facultatif) : des lettres, des espaces, des traits d'union, `PRENOM_MAX` au plus. */
+export const prenomValide = (x: unknown): string =>
+  String(x ?? "")
+    .replace(/[^\p{L}\p{M} '’-]+/gu, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, PRENOM_MAX);
 
 /** Ce que la page sait de la démonstration : ses expressions déjà faites, et si les voix sont branchées. */
 export type DemoFigurine = { expressions: Expressions; complete: boolean; voix: boolean };
@@ -142,11 +147,13 @@ export type MessageFigurine =
       expression?: ImagesExpression | null;
       /** Ce qu'elle dit, quand le message vient d'un texte (il s'affiche en bulle). */
       texte?: string;
+      /** Un message de la démonstration : écrit par `prenom` avec la figurine de ClikMe (pas la sienne). */
+      demo?: boolean;
       commerces: (CommerceCite & { ville: string })[];
     };
 
 export const idMessageValide = (id: string) => /^[a-z0-9]{12}$/.test(id);
 export const lienMessage = (id: string) => `/figurine/${id}`;
 
-/** « Léa t'a envoyé sa figurine 🔊 » : le texte qui part avec le lien. */
-export const texteDuMessage = (prenom: string) => `${prenom || "Quelqu’un"} t’a envoyé sa figurine 🔊`;
+/** « Léa t'a envoyé sa figurine 🔊 » : le texte qui part avec le lien (une démonstration : « une figurine qui parle »). */
+export const texteDuMessage = (prenom: string, demo = false) => `${prenom || "Quelqu’un"} t’a envoyé ${demo ? "une figurine qui parle" : "sa figurine"} 🔊`;
