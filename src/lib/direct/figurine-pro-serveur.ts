@@ -369,16 +369,19 @@ function voieDe(x: string): Voie | null {
 /**
  * LES VOIES D'UNE ÉDITION — essai du 4 novembre : habillée pour l'automne, une proposition lui ressemblait « un peu »,
  * l'autre « pas du tout ». Pour une édition, SEULE LA TENUE CHANGE : le visage doit rester celui de la figurine qu'il a
- * validée. La voie qui recopie l'image d'entrée — OpenAI en fidélité « high » — deux fois (deux tirages différents).
- * `FIGURINE_VOIES_EDITION` (« openai-high,gemini »…) pour en essayer d'autres.
+ * validée. La voie qui recopie l'image d'entrée — OpenAI en fidélité « high ».
+ * UNE SEULE PROPOSITION (décidé le 4 novembre par le propriétaire : « deux pour la base et une pour l'édition ») : le
+ * visage est déjà fixé et l'habillage marche bien — une image de moins par commerçant et par mois. S'il n'aime pas la
+ * tenue, « Une autre tenue » (un essai du jour). `FIGURINE_VOIES_EDITION` (« openai-high,openai-high »,
+ * « openai-high,gemini »…) pour en remettre deux.
  */
 function voiesEdition(): Voie[] {
-  const l = (s(process.env.FIGURINE_VOIES_EDITION) || "openai-high,openai-high")
+  const l = (s(process.env.FIGURINE_VOIES_EDITION) || "openai-high")
     .split(",")
     .map(voieDe)
     .filter((v): v is Voie => Boolean(v))
     .slice(0, 2);
-  return l.length ? l : [{ nom: "openai", fidelite: "high" }, { nom: "openai", fidelite: "high" }];
+  return l.length ? l : [{ nom: "openai", fidelite: "high" }];
 }
 
 function voies(): Voie[] {

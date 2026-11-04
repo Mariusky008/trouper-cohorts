@@ -530,9 +530,11 @@ réseaux reçoivent le film entier.
   du propriétaire (pour Noël : bonnet de Père Noël, pull de Noël, écharpe rayée, sucre d'orge, paquet cadeau). Ces
   tenues sont à relire.
 - **Le visage ne bouge pas** (essai du 4 novembre : habillée pour l'automne, une proposition lui ressemblait « un peu »,
-  l'autre « pas du tout ») : pour une édition, les deux propositions viennent de la voie qui recopie l'image d'entrée —
-  OpenAI en fidélité « high », deux tirages (`voiesEdition`) — et la consigne dit « THE FACE IS UNTOUCHABLE » : seuls la
-  tenue, le chapeau et les accessoires changent. `FIGURINE_VOIES_EDITION` (« openai-high,gemini », « openai-low »…)
+  l'autre « pas du tout ») : pour une édition, la proposition vient de la voie qui recopie l'image d'entrée — OpenAI en
+  fidélité « high » (`voiesEdition`) — et la consigne dit « THE FACE IS UNTOUCHABLE » : seuls la tenue, le chapeau et
+  les accessoires changent. **Une seule proposition** (décidé le 4 novembre : « deux pour la base et une pour
+  l'édition ») : le visage est déjà fixé et l'habillage marche bien — une image de moins par commerçant et par mois ;
+  « Une autre tenue » s'il n'aime pas celle-ci. `FIGURINE_VOIES_EDITION` (« openai-high,openai-high », « openai-high,gemini »…)
   pour en essayer d'autres.
 - Route : `fabriquer-edition` (compte dans les trois essais du jour), puis `valider-edition` (« Elle est parfaite »).
   Rangée dans `etat.json` sous `editions["automne-2026"]` : une édition manquée est manquée. S'il refait sa figurine
@@ -561,7 +563,7 @@ réseaux reçoivent le film entier.
   le dressing — le 4 novembre 2026, le serveur n'avait aucune clé Gemini : Gemini n'avait jamais fait une proposition),
   `GEMINI_FIGURINE_MODEL` (impose un modèle Gemini), `FIGURINE_SANS_GEMINI=1` (sans la voie Gemini),
   `FIGURINE_REFERENCE_URL` (l'image de référence de style, voir plus haut), `FIGURINE_VOIES_EDITION` (les deux voies
-  d'une édition, `openai-high,openai-high` par défaut),
+  d'une édition, une seule par défaut : `openai-high`),
   `FIGURINE_ESSAIS_PAR_JOUR` (3), `FIGURINES_PROS_BUCKET`.
 - **La fidélité à l'image d'entrée** (l'histoire ; aujourd'hui, une proposition de chaque, voir le style d'aujourd'hui). En `high` (le premier réglage), le moteur recopie le selfie : un
   visage photographique collé sur un petit corps, et pour l'édition l'ancienne tenue gardée (« pas très automne »,
