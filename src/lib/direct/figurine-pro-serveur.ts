@@ -313,7 +313,18 @@ export async function rogner(img: Buffer): Promise<Buffer> {
 /** Ce que rend UNE demande au moteur. */
 type Rendu = { png: Buffer; modele: string } | { erreur: string; statut: number };
 /** Ce que rend une fabrication : une ou deux propositions (une par voie), au choix. */
-export type Fabrication = { images: { png: Buffer; modele: string; voie: string }[]; traits?: Traits | null } | { erreur: string; statut: number };
+export type Fabrication =
+  | {
+      images: { png: Buffer; modele: string; voie: string }[];
+      traits?: Traits | null;
+      /**
+       * LES VOIES QUI N'ONT RIEN RENDU, en clair (« Gemini : pas de clé sur le serveur ») — essai du 4 novembre : après
+       * huit essais, aucune proposition ne ressemblait au rendu de Gemini (celui de sa figurine d'Halloween), et une voie
+       * qui échoue disparaissait sans un mot. L'écran le dit maintenant sous les propositions.
+       */
+      manquees?: string[];
+    }
+  | { erreur: string; statut: number };
 
 const cleGemini = () => s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
 
@@ -407,15 +418,20 @@ async function propositions(o: { image: Buffer; consigne: (fond: "transparent" |
   const reference = await lireReference();
   const avec = reference ? { ...o, reference, consigne: (fond: "transparent" | "vert") => AVEC_REFERENCE + o.consigne(fond) } : o;
   const rendus = await Promise.all(liste.map((v) => (v.nom === "gemini" ? genererParGemini(avec) : generer({ ...avec, fidelite: v.fidelite }))));
+  const manquees: string[] = [];
+  // GEMINI PAS BRANCHÉ : les deux propositions viennent d'OpenAI — à savoir, puisque c'est Gemini qui a fait l'exemple
+  if (!o.edition && !liste.some((v) => v.nom === "gemini"))
+    manquees.push(cleGemini() ? "Gemini est mis de côté ici (FIGURINE_SANS_GEMINI)." : "Gemini n'est pas branché sur le serveur (pas de clé GEMINI_API_KEY).");
   const images = rendus.flatMap((r, k) => {
+    const v = liste[k];
     if ("erreur" in r) {
-      console.error("[figurine] une voie a échoué :", JSON.stringify({ voie: liste[k], erreur: r.erreur }));
+      console.error("[figurine] une voie a échoué :", JSON.stringify({ voie: v, erreur: r.erreur }));
+      manquees.push(`${v.nom === "gemini" ? "Gemini" : "OpenAI"} n'a rien rendu : ${r.erreur.slice(0, 140)}`);
       return [];
     }
-    const v = liste[k];
     return [{ ...r, voie: v.nom === "gemini" ? "gemini" : `openai-${v.fidelite}` }];
   });
-  if (images.length) return { images };
+  if (images.length) return { images, manquees };
   return rendus.find((r) => "erreur" in r) as { erreur: string; statut: number };
 }
 

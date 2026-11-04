@@ -467,7 +467,11 @@ réseaux reçoivent le film entier.
   lisse et un peu brillante sans pores, les cheveux en mèches brillantes, la barbe en petits points peints, les
   vêtements SCULPTÉS et peints ; la photo est une photo MACRO de miniature, avec de petits reflets sur la résine.
 - **« par Gemini » / « par OpenAI »** sous chaque proposition et dans sa vue en grand (`voies`) : il dit lequel lui
-  ressemble, lequel fait figurine.
+  ressemble, lequel fait figurine. Aussi sous une proposition seule.
+- **ℹ️ Ce qui a manqué** (`manquees`, neuvième essai réel, 4 novembre : huit essais, et aucune proposition au rendu de
+  Gemini — celui de sa figurine d'Halloween) : une voie qui n'a rien rendu disparaissait sans un mot. L'écran dit
+  maintenant, sous les propositions, « Gemini n'est pas branché sur le serveur » ou « Gemini n'a rien rendu : … »
+  (la raison du moteur). Rien n'est gardé : seulement pour cet essai.
 - **Pas de jambes** (septième essai réel : « il y a les jambes en trop » — un pantalon et des chaussures plantées sur le
   socle) : les chaussures posées sur le socle y faisaient mettre des pieds. La consigne dit maintenant « NO LEGS, NO
   TROUSERS, NO FEET », le ressort seul entre le corps et le socle, et des chaussures VIDES à côté.
