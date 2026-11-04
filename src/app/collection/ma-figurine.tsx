@@ -86,7 +86,6 @@ function ChoixExpression({ valeur, onChoix, total, onFerme }: { valeur: Sentimen
             type="button"
             role="radio"
             aria-checked={valeur === x.cle}
-            aria-disabled={ferme || undefined}
             className={`${valeur === x.cle ? "pris" : ""}${ferme ? " ferme" : ""}`}
             onClick={() => (ferme ? onFerme?.(ouvreA(x.cle!)) : onChoix(x.cle))}
           >
@@ -115,7 +114,6 @@ function ChoixVoix({ valeur, onChoix, desactive, total, onFerme }: { valeur: Cle
             type="button"
             role="radio"
             aria-checked={valeur === v.cle}
-            aria-disabled={ferme || undefined}
             className={`${valeur === v.cle ? "pris" : ""}${ferme ? " ferme" : ""}`}
             disabled={desactive}
             onClick={() => (ferme ? onFerme?.(ouvreA("voix")) : onChoix(v.cle))}
@@ -844,7 +842,10 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
  * figurine, puis sa bouche ouverte —, avec ce qui se passe, et une jauge qui avance (deux minutes environ).
  */
 export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat: (e: EtatMaFigurine) => void }) {
+  const boite = useRef<HTMLDivElement>(null);
   const [erreur, setErreur] = useState("");
+  // elle vient à l'écran (on était plus bas, sur le formulaire de la photo)
+  useEffect(() => boite.current?.scrollIntoView({ behavior: "smooth", block: "center" }), []);
   const [tour, setTour] = useState(0);
   const [secondes, setSecondes] = useState(0);
   useEffect(() => {
@@ -872,7 +873,7 @@ export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat
   const avance = Math.min(0.95, secondes / 150);
   const pas = secondes < 8 ? 0 : secondes < 75 ? 1 : 2;
   return (
-    <div className="tf-fab" aria-live="polite">
+    <div className="tf-fab" aria-live="polite" ref={boite}>
       <span className="tf-fab-fig" aria-hidden="true">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={IMAGES_DEMO.neutre} alt="" />
@@ -931,6 +932,7 @@ export const STYLES_MA_FIGURINE =
   STYLES_FIGURINE_QUI_PARLE +
   `
 .tf{display:grid;gap:18px}
+.tf > *{min-width:0}
 .tf-scene{display:flex;flex-direction:column;align-items:center;gap:14px}
 .tf-tag{padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.1);font-size:11.5px;font-weight:800;letter-spacing:.04em;color:#E8D3DC}
 .tf-fig .fqp-fig{width:min(300px,76vw);border-radius:30px;box-shadow:0 30px 60px -24px rgba(0,0,0,.95),0 0 0 1px rgba(255,255,255,.08)}
@@ -1003,8 +1005,8 @@ export const STYLES_MA_FIGURINE =
 .tf-refaire{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
 .tf-refaire button{padding:9px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#FFF4E6;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
 .tf-fig.tf-or .fqp-fig{box-shadow:0 0 0 4px #F2C46B,0 0 40px rgba(255,214,120,.55),0 30px 60px -24px rgba(0,0,0,.95)}
-.tf-options{display:flex;flex-direction:column;gap:8px;margin-top:6px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}
-.tf-options ol{display:flex;gap:6px;margin:0;padding:0 0 4px;list-style:none;overflow-x:auto;scrollbar-width:none}
+.tf-options{min-width:0;display:flex;flex-direction:column;gap:8px;margin-top:6px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}
+.tf-options ol{display:flex;gap:6px;max-width:100%;margin:0;padding:0 0 4px;list-style:none;overflow-x:auto;scrollbar-width:none}
 .tf-options ol::-webkit-scrollbar{display:none}
 .tf-options li{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;width:86px;padding:9px 4px 8px;border-radius:16px;text-align:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
 .tf-options li > span{font-size:22px;line-height:1.1}
