@@ -7,9 +7,13 @@
  *   1. TA FIGURINE QUI PARLE (le wow) : la démonstration (la figurine du propriétaire), qu'on fait parler soi-même —
  *      son émotion, son texte, sa voix — et qu'on envoie sur WhatsApp ; puis « Crée ta figurine », dès le départ, et la
  *      tienne, avec une option de plus à chaque achat (`ma-figurine.tsx`) ;
- *   2. L'ÉDITION DU MOIS : ce qui se gagne maintenant, et le temps qui reste ;
- *   3. MES FIGURINES : l'album, une page par commerce (`album.tsx`) ;
- *   4. OÙ LES GAGNER : les commerces ClikMe.
+ *   2. MON PERSONNAGE : sa carte (le questionnaire, la fiche écrite par l'IA, ses caractéristiques qui montent à chaque
+ *      achat — `personnage.tsx`) ;
+ *   3. LA RENCONTRE DU JOUR : ce que sa figurine a dit aujourd'hui à un ami invité ou à la figurine d'un commerce, et
+ *      ses réactions (« c'est tout moi ») — `rencontre.tsx` ;
+ *   4. L'ÉDITION DU MOIS : ce qui se gagne maintenant, et le temps qui reste ;
+ *   5. MES FIGURINES : l'album, une page par commerce (`album.tsx`) ;
+ *   6. OÙ LES GAGNER : les commerces ClikMe.
  * (« Ce que tu gagnes » et ses paliers sont partis le 4 novembre 2026 : l'album les montre là où ils comptent.)
  * Ses familles viennent de `/api/direct/famille?moi=1` (`famillesDe`) ; sa figurine et la démonstration, de
  * `/api/direct/ma-figurine`.
@@ -21,6 +25,8 @@ import { STYLES_COLLECTION } from "@/app/f/[slug]/collection";
 import { Album, STYLES_ALBUM } from "./album";
 import { ChronoEdition, OuGagner, STYLES_DECOUVRIR, type CommerceACollectionner } from "./decouvrir";
 import { Annonce, EnvoiPhoto, FabricationAuto, STYLES_MA_FIGURINE, StudioDemo, StudioMoi } from "./ma-figurine";
+import { MonPersonnage, STYLES_PERSONNAGE } from "./personnage";
+import { RencontreDuJour, STYLES_RENCONTRE } from "./rencontre";
 import { figurinesEnTout, type DemoFigurine, type EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
 type Familles = { familles: MaFamille[] } | null;
@@ -31,6 +37,8 @@ export function MaCollection({ aujourdhui, commerces, villes = [] }: { aujourdhu
   const [ennui, setEnnui] = useState(false);
   const [figurine, setFigurine] = useState<Figurine>(null);
   // (stable : la fabrication rappelle le serveur dans un effet qui en dépend)
+  // (sa carte faite ou refaite : la rencontre du jour se recharge)
+  const [versionCarte, setVersionCarte] = useState(0);
   const poserEtat = useCallback((e: EtatMaFigurine) => setFigurine((f) => (f ? { ...f, etat: e } : f)), []);
 
   useEffect(() => {
@@ -134,13 +142,25 @@ export function MaCollection({ aujourdhui, commerces, villes = [] }: { aujourdhu
       </section>
 
       <div className="dc">
-        {/* 2. L'ÉDITION DU MOIS */}
+        {/* 2. MON PERSONNAGE : sa carte (le questionnaire, la fiche de l'IA, ses caractéristiques qui montent) */}
+        <section className="dc-bloc" id="personnage" aria-labelledby="mc-perso">
+          <h2 id="mc-perso">Mon personnage</h2>
+          <MonPersonnage compte={figurine ? Boolean(etat?.compte) : null} onCarte={() => setVersionCarte((v) => v + 1)} />
+        </section>
+
+        {/* 3. LA RENCONTRE DU JOUR : ce que sa figurine a dit aujourd'hui à une autre */}
+        <section className="dc-bloc" id="rencontre" aria-labelledby="mc-rencontre">
+          <h2 id="mc-rencontre">La rencontre du jour</h2>
+          <RencontreDuJour compte={figurine ? Boolean(etat?.compte) : null} version={versionCarte} />
+        </section>
+
+        {/* 4. L'ÉDITION DU MOIS */}
         <section className="dc-bloc" aria-labelledby="mc-edition">
           <h2 id="mc-edition">L’édition du mois</h2>
           <ChronoEdition aujourdhui={aujourdhui} figurine={avec[0]?.figurine ?? commerces[0]?.figurine} />
         </section>
 
-        {/* 3. MES FIGURINES : L'ALBUM */}
+        {/* 5. MES FIGURINES : L'ALBUM */}
         {ennui && <p className="mc-vide">Ta collection n’a pas pu s’afficher. Réessaie dans un instant.</p>}
         {avec.length > 0 && (
           <section className="dc-bloc" aria-labelledby="mc-miennes">
@@ -151,7 +171,7 @@ export function MaCollection({ aujourdhui, commerces, villes = [] }: { aujourdhu
           </section>
         )}
 
-        {/* 4. OÙ LES GAGNER */}
+        {/* 6. OÙ LES GAGNER */}
         <OuGagner
           commerces={commerces.filter((c) => !avec.some((f) => f.slug === c.slug))}
           titre={avec.length ? "D’autres commerces où en gagner" : "Où gagner tes figurines"}
@@ -164,7 +184,7 @@ export function MaCollection({ aujourdhui, commerces, villes = [] }: { aujourdhu
         On ne gagne une figurine qu’en venant : elles ne s’achètent pas. Une édition manquée est manquée ; les éditions rares se gagnent quand le commerce annonce une
         place libre.
       </p>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_COLLECTION + STYLES_DECOUVRIR + STYLES_ALBUM}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_COLLECTION + STYLES_DECOUVRIR + STYLES_ALBUM + STYLES_PERSONNAGE + STYLES_RENCONTRE}</style>
     </main>
   );
 }

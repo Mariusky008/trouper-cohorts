@@ -169,7 +169,7 @@ export function MesOptions({ total }: { total: number }) {
 
 // ─── l'envoi : WhatsApp d'abord ─────────────────────────────────────────────────────────────────
 /** Le lien est prêt : WhatsApp en grand, puis « Partager… », SMS, copier ; et ce que l'autre verra. */
-function PanneauEnvoi({ lien, texte }: { lien: string; texte: string }) {
+export function PanneauEnvoi({ lien, texte, titre = "Ton message est prêt ✓" }: { lien: string; texte: string; titre?: string }) {
   const [copie, setCopie] = useState(false);
   const partager = async () => {
     try {
@@ -188,7 +188,7 @@ function PanneauEnvoi({ lien, texte }: { lien: string; texte: string }) {
   };
   return (
     <div className="tf-pret">
-      <b>Ton message est prêt ✓</b>
+      <b>{titre}</b>
       <a className="tf-wa" href={`https://wa.me/?text=${encodeURIComponent(`${texte} ${lien}`)}`} target="_blank" rel="noopener noreferrer">
         Envoyer sur WhatsApp
       </a>
@@ -205,7 +205,7 @@ function PanneauEnvoi({ lien, texte }: { lien: string; texte: string }) {
           {copie ? "Lien copié ✓" : "Copier le lien"}
         </button>
       </div>
-      <input className="tf-adresse" readOnly value={lien} aria-label="Le lien de ton message" onFocus={(e) => e.target.select()} />
+      <input className="tf-adresse" readOnly value={lien} aria-label="Le lien" onFocus={(e) => e.target.select()} />
       <a className="tf-voir" href={lien} target="_blank" rel="noopener noreferrer">
         Voir ce qu’on recevra ›
       </a>

@@ -48,6 +48,9 @@ jobs:
           src/app/api/site-internet/pro/famille
           src/app/collection src/app/figurine src/app/api/direct/ma-figurine src/app/api/admin/direct/figurines-clients
           src/lib/direct/ma-figurine.ts src/lib/direct/ma-figurine-serveur.ts src/lib/direct/reduire-image.ts
+          src/lib/direct/ma-figurine-fabrique-serveur.ts src/lib/direct/mots-interdits.ts
+          src/lib/direct/personnage.ts src/lib/direct/personnage-serveur.ts src/lib/direct/rencontre.ts src/lib/direct/rencontre-serveur.ts
+          src/app/carte src/app/api/direct/personnage src/app/api/direct/rencontre
 
   essais-sql:
     name: Essais SQL
