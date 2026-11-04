@@ -288,7 +288,7 @@ DOREE_G = "".join(f'<span class="dor-g" style="left:{x}px"><span class="corps"><
 PARTENAIRES_HTML = "".join(
     f'<div class="pa abs" id="pa{k + 1}"><div class="pa-tel"><div class="pa-haut"><i style="background:{coul}">{emb}</i><b>{compte}</b><small>· Dax</small></div>'
     f'<div class="pa-img"><img src="m1.jpg" alt=""><span class="pa-pill">📣 Découverte du quartier</span><span class="pa-play">▶</span></div>'
-    f'<p class="pa-txt"><b>{compte}</b> Découverte du quartier 📣 {ou}, chez {V["nom"]}{NB}: {DECOUVERTE}. Allez voir{NB}!</p></div>'
+    f'<p class="pa-txt"><b>{compte}</b> Découverte du quartier 📣 {ou}, {"" if V["nom"].lower().startswith("chez ") else "chez "}{V["nom"]}{NB}: {DECOUVERTE}. Allez voir{NB}!</p></div>'
     f'<div class="pa-nom">{nom}<small>{metier} · 👥 {abo} abonnés</small></div><span class="pa-vues">👁 +{abo}</span></div>'
     for k, (nom, metier, compte, abo, emb, coul, ou) in enumerate(PARTENAIRES))
 # (sa vidéo qui s'envole chez eux ; et les leurs — leur emblème — qui reviennent chez lui)
