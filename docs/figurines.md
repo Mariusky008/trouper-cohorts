@@ -267,6 +267,42 @@ joie, la colère, la tristesse, l'euphorie) ; c'est ici qu'on explique les avant
 **À faire par lui** : appliquer `20261108090000_clik_figurine_sentiment.sql` (après celle de « Ma figurine ») ; sans
 elle, les messages partent quand même, sans sentiment.
 
+### 9.0 quater « Ma collection » refaite : sa figurine qui parle, en héros (4 novembre) — construit
+
+Sa remarque : « la page n'est vraiment pas bonne en UX ou UI, on s'y perd, on ne sait pas quoi y faire, ça manque de
+clarté et de modernité ; la section qui devrait être le wow de la page, “Ta propre figurine”, n'est pas du tout ce que je
+voulais : les émotions devaient être réelles, avec des expressions du visage de la figurine, et pas un décor ; on devrait
+pouvoir la faire parler avec une voix lambda en mettant un texte, et l'envoyer à quelqu'un via WhatsApp. »
+
+Ses décisions : un texte lu par une voix **ElevenLabs** (la seule voix fabriquée de ClikMe ; jamais la voix du
+téléphone), et les expressions faites par **le moteur d'image**.
+
+- **La page, dans l'ordre** (`src/app/collection/ma-collection.tsx`) : en haut, « Ta figurine qui parle » ; puis
+  « Ce que tu gagnes » (les deux « 10 » enfin séparés : 10 au même commerce = sa figurine d'or ; 10 en tout = la
+  sienne) ; « L'édition du mois » ; « Mes figurines » ; « Où gagner tes figurines ». Une barre « Ma collection · 13 »
+  reste en haut.
+- **Le studio** (`ma-figurine.tsx`) : la figurine en grand ; dessous, cinq visages (normal, joie, colère, tristesse,
+  euphorie) ; « Ce qu'elle dit » : un texte (140 caractères) et sa voix parmi quatre (Douce, Pétillante, Chaleureuse,
+  Posée), ou sa propre voix (15 s) ; « Écouter » ; « L'envoyer à quelqu'un » → un gros bouton WhatsApp, puis SMS,
+  « Partager… », « Copier le lien ».
+- **La démonstration** (qui n'a pas encore la sienne) : la figurine de Léa, sa vraie phrase (« Le meilleur magret de
+  Dax ! ») et trois phrases toutes faites dans la voix qu'on veut (faites une fois, puis gardées : jamais un texte libre
+  sans compte) ; sous elle, « 6 / 10 figurines » et « Gagner mes figurines ↓ ».
+- **Ses expressions** (`figurine-expressions-serveur.ts`) : à partir de sa figurine bouche fermée, le moteur d'OpenAI en
+  fidélité haute fait chaque visage, puis la même bouche ouverte (pour parler) ; huit images, une fois par figurine,
+  en deux tours sous verrou ; l'image est remise dans son cadre d'origine (la figurine ne saute pas d'un visage à
+  l'autre). La première fois, la page le fait toute seule (« Ta figurine apprend ses expressions… ») ; celles de Léa,
+  la première visite. Tant qu'un visage manque, elle le joue en bougeant (un petit badge le dit) — plus de fond coloré
+  ni de pluie d'émojis.
+- **La voix** (`voix-figurine-serveur.ts`) : `ELEVENLABS_API_KEY` ; les quatre voix par défaut sont des voix de base
+  d'ElevenLabs, à remplacer par celles de son compte avec `ELEVENLABS_VOIX_FIGURINE`
+  (« douce:<id>,petillante:<id>,chaleureuse:<id>,posee:<id> ») ; 20 lectures par jour et par client.
+- **Celui qui reçoit** (`/figurine/<id>`) : le visage de l'émotion choisie, et ce qu'elle dit en bulle.
+
+**À faire par lui** : poser `ELEVENLABS_API_KEY` dans Vercel (sans elle : sa propre voix seulement, et la seule phrase
+de Léa) ; appliquer la migration `20261109090000_clik_figurine_texte.sql` (sans elle : le texte ne s'affiche pas chez
+celui qui reçoit). `OPENAI_API_KEY` est déjà là pour les expressions.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

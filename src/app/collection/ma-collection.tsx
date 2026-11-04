@@ -1,153 +1,221 @@
 "use client";
 
 /**
- * 🏆 MA COLLECTION — l'écran : le total (figurines, commerces, figurines d'or), puis une étagère par commerce, la plus
- * avancée d'abord. Ses familles et leurs collections viennent de `/api/direct/famille?moi=1` (`famillesDe`) : le
- * même calcul que sur chaque page de famille. Sans collection, la page explique et dit où commencer (`decouvrir.tsx`).
+ * 🏆 MA COLLECTION — l'écran, refait le 4 novembre 2026 (« on s'y perd, on ne sait pas quoi y faire, ça manque de
+ * clarté et de modernité ; la section qui devrait être le wow de la page, “Ta propre figurine”, n'est pas du tout ce
+ * que je voulais »). UNE HISTOIRE, DANS L'ORDRE :
+ *   1. TA FIGURINE QUI PARLE (le wow) : celle de Léa en démonstration, puis la tienne — son visage change avec ce
+ *      qu'elle ressent, elle dit ce que tu écris (ou ta voix), tu l'envoies sur WhatsApp (`ma-figurine.tsx`) ;
+ *   2. CE QUE TU GAGNES : les deux « 10 », enfin séparés ;
+ *   3. L'ÉDITION DU MOIS : ce qui se gagne maintenant, et le temps qui reste ;
+ *   4. MES FIGURINES : une étagère par commerce (s'il en a) ;
+ *   5. OÙ LES GAGNER : les commerces ClikMe.
+ * Ses familles viennent de `/api/direct/famille?moi=1` (`famillesDe`) ; sa figurine et la démonstration, de
+ * `/api/direct/ma-figurine`.
  */
 import Link from "next/link";
 import { useEffect, useState, type CSSProperties } from "react";
 import type { MaFamille } from "@/lib/direct/famille";
 import { deNom } from "@/lib/echanges/echanges";
 import { CollectionDuCommerce, STYLES_COLLECTION } from "@/app/f/[slug]/collection";
-import { ChronoEdition, Decouvrir, EnSavoirPlus, STYLES_DECOUVRIR, type CommerceACollectionner } from "./decouvrir";
-import { MaFigurine } from "./ma-figurine";
-import { figurinesEnTout } from "@/lib/direct/ma-figurine";
+import { CeQueTuGagnes, ChronoEdition, OuGagner, STYLES_DECOUVRIR, type CommerceACollectionner } from "./decouvrir";
+import { Annonce, EnvoiPhoto, STYLES_MA_FIGURINE, StudioDemo, StudioMoi } from "./ma-figurine";
+import { SEUIL_MA_FIGURINE, figurinesEnTout, type DemoFigurine, type EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
-type Etat = { familles: MaFamille[] } | null;
+type Familles = { familles: MaFamille[] } | null;
+type Figurine = { etat: EtatMaFigurine | null; demo: DemoFigurine | null } | null;
 
 export function MaCollection({ aujourdhui, commerces }: { aujourdhui: string; commerces: CommerceACollectionner[] }) {
-  const [etat, setEtat] = useState<Etat>(null);
+  const [familles, setFamilles] = useState<Familles>(null);
   const [ennui, setEnnui] = useState(false);
+  const [figurine, setFigurine] = useState<Figurine>(null);
 
   useEffect(() => {
     let fini = false;
     fetch("/api/direct/famille?moi=1", { cache: "no-store" })
       .then((r) => r.json())
-      .then((j: { familles?: MaFamille[] }) => !fini && setEtat({ familles: Array.isArray(j.familles) ? j.familles : [] }))
+      .then((j: { familles?: MaFamille[] }) => !fini && setFamilles({ familles: Array.isArray(j.familles) ? j.familles : [] }))
       .catch(() => !fini && setEnnui(true));
+    fetch("/api/direct/ma-figurine", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j: { etat?: EtatMaFigurine; demo?: DemoFigurine }) => {
+        if (fini) return;
+        setFigurine({ etat: j.etat ?? null, demo: j.demo ?? null });
+        // 🎭 la démonstration (montrée à qui n'a pas encore la sienne) n'a pas toutes ses expressions : la première
+        // visite les fait faire — les visages, puis leurs bouches ouvertes —, une fois en tout
+        if (j.demo && !j.demo.complete && j.etat?.etape !== "prete")
+          void (async () => {
+            for (let k = 0; k < 2 && !fini; k++) {
+              const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "demo", quoi: "expressions" }) });
+              const x = (await r.json().catch(() => ({}))) as { demo?: DemoFigurine; error?: string; enCours?: boolean };
+              if (fini) return;
+              if (x.demo) setFigurine((f) => (f ? { ...f, demo: x.demo! } : f));
+              if (!r.ok || x.error || x.enCours || x.demo?.complete) return;
+            }
+          })().catch(() => undefined);
+      })
+      .catch(() => !fini && setFigurine({ etat: null, demo: null }));
     return () => {
       fini = true;
     };
   }, []);
 
-  const avec = (etat?.familles ?? []).filter((f) => f.collection).sort((a, b) => (b.collection!.gagnees + b.collection!.trophees.length * 10) - (a.collection!.gagnees + a.collection!.trophees.length * 10));
-  const figurines = figurinesEnTout(avec); // (les collections finies comptent leurs 10, comme pour « Ma figurine »)
+  const avec = (familles?.familles ?? [])
+    .filter((f) => f.collection)
+    .sort((a, b) => b.collection!.gagnees + b.collection!.trophees.length * 10 - (a.collection!.gagnees + a.collection!.trophees.length * 10));
+  const total = figurinesEnTout(avec); // (les collections finies comptent leurs 10, comme pour « Ma figurine »)
   const ors = avec.reduce((n, f) => n + f.collection!.trophees.length, 0);
+  const etat = figurine?.etat ?? null;
+  const prete = etat?.etape === "prete" && etat.neutre && etat.parle;
 
   return (
     <main className="mc">
-      <header className="mc-tete">
+      <header className="mc-barre">
         <Link className="mc-logo" href="/">
           Clik<b>Me</b>
         </Link>
-        <h1>Ma collection</h1>
-        <p className="mc-dit">Une visite chez un commerce ClikMe, une figurine. À 10, la figurine d’or.</p>
-        {etat && avec.length > 0 && (
-          <div className="mc-totaux">
-            <span>
-              <b>{figurines}</b> figurine{figurines > 1 ? "s" : ""}
-            </span>
-            <span>
-              <b>{avec.length}</b> commerce{avec.length > 1 ? "s" : ""}
-            </span>
-            {ors > 0 && (
-              <span className="or">
-                🏆 <b>{ors}</b> d’or
-              </span>
-            )}
-          </div>
-        )}
+        <span className="mc-moi">
+          Ma collection
+          {familles && avec.length > 0 && (
+            <>
+              {" · "}
+              <b>{total}</b>
+              {ors > 0 && <em> · 🏆 {ors}</em>}
+            </>
+          )}
+        </span>
       </header>
 
-      {!etat && !ennui && (
-        <div className="mc-attente" aria-label="Chargement de ta collection">
-          {[0, 1, 2].map((k) => (
-            <i key={k} style={{ "--d": `${k * 0.15}s` } as CSSProperties} />
-          ))}
-        </div>
-      )}
-      {ennui && <p className="mc-vide">Ta collection n’a pas pu s’afficher. Réessaie dans un instant.</p>}
-
-      {(ennui || (etat && avec.length === 0)) && <Decouvrir aujourdhui={aujourdhui} commerces={commerces} />}
-
-      {avec.length > 0 && (
-        <div className="mc-chrono">
-          <ChronoEdition aujourdhui={aujourdhui} figurine={avec[0].figurine} />
-        </div>
-      )}
-
-      {avec.length > 0 && <MaFigurine />}
-
-      <div className="mc-etageres">
-      {avec.map((f) => (
-        <article key={f.slug} className="mc-commerce">
-          <div className="mc-commerce-tete">
-            <a href={`/f/${encodeURIComponent(f.slug)}`}>
-              <b>{f.nom}</b>
-              <small>Fantôme n°{f.numero} · sa page ›</small>
-            </a>
+      {/* 1. LE WOW : TA FIGURINE QUI PARLE */}
+      <section className="mc-heros" aria-labelledby="mc-titre">
+        <small className="mc-sur">{prete ? "TA FIGURINE" : "TA FIGURINE QUI PARLE"}</small>
+        <h1 id="mc-titre">{prete ? "Fais-la parler." : "Ta figurine. Tes mots. Ses émotions."}</h1>
+        <p className="mc-dit">
+          {prete
+            ? "Choisis ce qu’elle ressent, écris ce qu’elle dit, et envoie-la à qui tu veux."
+            : `Gagne des figurines chez les commerces ClikMe : à ${SEUIL_MA_FIGURINE}, la tienne est faite d’après ta photo.`}
+        </p>
+        {!figurine ? (
+          <div className="mc-attente" aria-label="Chargement">
+            <i style={{ "--d": "0s" } as CSSProperties} />
           </div>
-          <CollectionDuCommerce
-            collection={f.collection!}
-            titre="Ta collection"
-            nom={f.nom}
-            de={deNom(f.nom)}
-            figurine={f.figurine ?? "/direct/double/pied/salut-1.webp"}
-            cadeau={f.cadeau}
-            slug={f.slug}
-            compact
-            lienCollection={false}
-          />
-        </article>
-      ))}
-      </div>
+        ) : prete ? (
+          <StudioMoi etat={etat!} />
+        ) : etat?.etape === "photo" ? (
+          <>
+            <EnvoiPhoto etat={etat} onEnvoye={(e) => setFigurine((f) => (f ? { ...f, etat: e } : f))} />
+            <h2 className="mc-avant">Voici ce qu’elle fera</h2>
+            <StudioDemo demo={figurine.demo} total={null} seuil={SEUIL_MA_FIGURINE} />
+          </>
+        ) : etat?.etape === "fabrication" || etat?.etape === "bientot" ? (
+          <>
+            {etat.etape === "fabrication" ? (
+              <Annonce titre="On fabrique ta figurine 🛠️" emoji="📸">
+                Ta photo est bien arrivée. Ta figurine sera ici dans quelques jours : tu pourras la faire parler et l’envoyer à tes proches.
+              </Annonce>
+            ) : (
+              <Annonce titre="Bravo, 10 figurines ! 🎉" emoji="🛠️">
+                Ta propre figurine arrive très bientôt : reviens ici dans quelques jours pour envoyer ta photo.
+              </Annonce>
+            )}
+            <h2 className="mc-avant">En attendant, regarde ce qu’elle fera</h2>
+            <StudioDemo demo={figurine.demo} total={null} seuil={SEUIL_MA_FIGURINE} />
+          </>
+        ) : (
+          <StudioDemo demo={figurine.demo} total={familles ? total : null} seuil={SEUIL_MA_FIGURINE} />
+        )}
+      </section>
 
-      {avec.length > 0 && <EnSavoirPlus aujourdhui={aujourdhui} commerces={commerces.filter((c) => !avec.some((f) => f.slug === c.slug))} />}
+      <div className="dc">
+        {/* 2. CE QUE TU GAGNES */}
+        <CeQueTuGagnes />
+
+        {/* 3. L'ÉDITION DU MOIS */}
+        <section className="dc-bloc" aria-labelledby="mc-edition">
+          <h2 id="mc-edition">L’édition du mois</h2>
+          <ChronoEdition aujourdhui={aujourdhui} figurine={avec[0]?.figurine ?? commerces[0]?.figurine} />
+        </section>
+
+        {/* 4. MES FIGURINES */}
+        {ennui && <p className="mc-vide">Ta collection n’a pas pu s’afficher. Réessaie dans un instant.</p>}
+        {avec.length > 0 && (
+          <section className="dc-bloc" aria-labelledby="mc-miennes">
+            <h2 id="mc-miennes">Mes figurines</h2>
+            <div className="mc-etageres">
+              {avec.map((f) => (
+                <article key={f.slug} className="mc-commerce">
+                  <a className="mc-commerce-tete" href={`/f/${encodeURIComponent(f.slug)}`}>
+                    <b>{f.nom}</b>
+                    <small>Fantôme n°{f.numero} · sa page ›</small>
+                  </a>
+                  <CollectionDuCommerce
+                    collection={f.collection!}
+                    titre="Ta collection"
+                    nom={f.nom}
+                    de={deNom(f.nom)}
+                    figurine={f.figurine ?? "/direct/double/pied/salut-1.webp"}
+                    cadeau={f.cadeau}
+                    slug={f.slug}
+                    compact
+                    lienCollection={false}
+                  />
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 5. OÙ LES GAGNER */}
+        <OuGagner
+          commerces={commerces.filter((c) => !avec.some((f) => f.slug === c.slug))}
+          titre={avec.length ? "D’autres commerces où en gagner" : "Où gagner tes figurines"}
+          aujourdhui={aujourdhui}
+        />
+        {familles && avec.length === 0 && <p className="dc-deja">Tu as déjà des figurines ? Ouvre cette page sur le téléphone où tu as libéré ton fantôme.</p>}
+      </div>
 
       <p className="mc-regle">
         On ne gagne une figurine qu’en venant : elles ne s’achètent pas. Une édition manquée est manquée ; les éditions rares se gagnent quand le commerce annonce une
         place libre.
       </p>
-      <style>{STYLES_MC + STYLES_COLLECTION + STYLES_DECOUVRIR}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_COLLECTION + STYLES_DECOUVRIR}</style>
     </main>
   );
 }
 
 const STYLES_MC = `
-.mc{min-height:100dvh;box-sizing:border-box;padding:calc(18px + env(safe-area-inset-top)) 0 calc(28px + env(safe-area-inset-bottom));max-width:1180px;margin:0 auto;
-  background:radial-gradient(90% 40% at 50% 0%,rgba(255,46,154,.25),transparent 70%),linear-gradient(180deg,#1E0C18,#12060F 50%);color:#FFF4E6;
+.mc{min-height:100dvh;box-sizing:border-box;padding:calc(10px + env(safe-area-inset-top)) 0 calc(28px + env(safe-area-inset-bottom));max-width:1180px;margin:0 auto;
+  background:radial-gradient(100% 38% at 50% 0%,rgba(255,46,154,.22),transparent 72%),linear-gradient(180deg,#1E0C18,#12060F 40%);color:#FFF4E6;
   font-family:var(--font-clikme),Poppins,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
 body{background:#12060F}
-.mc-tete{padding:0 18px;text-align:center}
-.mc-logo{display:inline-block;font-size:18px;font-weight:900;color:#FFF4E6;text-decoration:none}
+.mc-barre{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;
+  background:rgba(18,6,15,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.mc-logo{font-size:19px;font-weight:900;color:#FFF4E6;text-decoration:none;letter-spacing:-.02em}
 .mc-logo b{color:#FF2E9A}
-.mc-tete h1{margin:14px 0 0;font-size:40px;line-height:1.02;font-weight:900;letter-spacing:-.03em;background:linear-gradient(135deg,#fff,#FFC8E6 45%,#F2C46B);-webkit-background-clip:text;background-clip:text;color:transparent;animation:mc-entre .6s cubic-bezier(.2,.9,.3,1) both}
-.mc-dit{margin:6px 0 0;color:#D9C3CB}
-.mc-totaux{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:16px 0 0}
-.mc-totaux span{padding:7px 14px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);font-size:13px;color:#D9C3CB;animation:mc-entre .5s cubic-bezier(.2,.9,.3,1) both}
-.mc-totaux span:nth-child(2){animation-delay:.08s}.mc-totaux span:nth-child(3){animation-delay:.16s}
-.mc-totaux b{color:#FFF4E6;font-size:15px}
-.mc-totaux .or{background:linear-gradient(135deg,rgba(242,196,107,.3),rgba(184,128,30,.2));border-color:rgba(242,196,107,.6)}
-.mc-commerce{margin:22px 16px 0;animation:mc-entre .6s cubic-bezier(.2,.9,.3,1) both}
-.mc-commerce:nth-of-type(2){animation-delay:.1s}.mc-commerce:nth-of-type(3){animation-delay:.2s}
-.mc-commerce-tete a{display:flex;flex-direction:column;margin:0 4px 8px;color:#FFF4E6;text-decoration:none}
-.mc-commerce-tete b{font-size:19px;font-weight:900}
+.mc-moi{padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.08);font-size:13px;font-weight:700;color:#D9C3CB;white-space:nowrap}
+.mc-moi b{color:#FFF4E6}
+.mc-moi em{font-style:normal;color:#F2C46B}
+.mc-heros{padding:14px 16px 0}
+.mc-sur{display:block;font-size:11.5px;font-weight:900;letter-spacing:.14em;color:#F2C46B}
+.mc-heros h1{margin:6px 0 0;font-size:34px;line-height:1.04;font-weight:900;letter-spacing:-.035em;
+  background:linear-gradient(135deg,#fff,#FFC8E6 50%,#F2C46B);-webkit-background-clip:text;background-clip:text;color:transparent}
+.mc-dit{margin:8px 0 18px;max-width:560px;color:#D9C3CB}
+.mc-avant{margin:26px 0 12px;font-size:20px;font-weight:900;letter-spacing:-.02em}
+.mc-attente{display:grid;margin:8px 0 0}
+.mc-attente i{height:420px;border-radius:30px;background:linear-gradient(100deg,rgba(255,255,255,.04) 30%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 70%);background-size:200% 100%;animation:mc-reflet 1.4s linear var(--d) infinite}
+.mc-vide{margin:28px 0 0;padding:18px;border-radius:20px;background:rgba(255,255,255,.05);text-align:center;color:#D9C3CB}
+.mc-etageres{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+.mc-commerce-tete{display:flex;flex-direction:column;margin:0 4px 8px;color:#FFF4E6;text-decoration:none}
+.mc-commerce-tete b{font-size:18px;font-weight:900}
 .mc-commerce-tete small{font-size:12.5px;color:#A88E99}
-.mc-vide{margin:28px 18px 0;padding:22px 18px;border-radius:22px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);text-align:center;color:#D9C3CB}
-.mc-vide b{display:block;margin-top:14px;font-size:19px;color:#FFF4E6}
-.mc-vide p{margin:6px 0 0}
-.mc-attente{display:grid;gap:14px;margin:24px 16px 0}
-.mc-attente i{height:150px;border-radius:24px;background:linear-gradient(100deg,rgba(255,255,255,.04) 30%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 70%);background-size:200% 100%;animation:mc-reflet 1.4s linear var(--d) infinite}
-.mc-regle{margin:26px 20px 0;font-size:12px;line-height:1.5;color:#8D7580;text-align:center}
-.mc-etageres{display:grid;grid-template-columns:minmax(0,1fr)}
-.mc-chrono{padding:0 16px}
+.mc-regle{margin:34px 20px 0;font-size:12px;line-height:1.5;color:#8D7580;text-align:center}
+.dc-plus{margin-top:12px!important}
 @media (min-width:860px){
-  .mc{padding-top:calc(28px + env(safe-area-inset-top))}
-  .mc-tete h1{font-size:64px}
-  .mc-dit{font-size:17px}
-  .mc-etageres{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 8px;padding:0 16px}
-  .mc-chrono{padding:0 32px}
+  .mc-barre{padding:14px 32px}
+  .mc-heros{padding:30px 32px 0}
+  .mc-heros h1{font-size:60px;max-width:820px}
+  .mc-dit{font-size:18px;margin-bottom:28px}
+  .mc-etageres{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
   .mc-regle{font-size:13px;max-width:640px;margin-left:auto;margin-right:auto}
 }
 @keyframes mc-entre{from{opacity:0;transform:translateY(14px)}}

@@ -1,10 +1,10 @@
 // 🗣️ SA PROPRE FIGURINE, DANS UN TÉLÉPHONE — `clikme.fr/collection` puis `clikme.fr/figurine/<id>`, contre le faux
-// Supabase, avec un faux micro (Chromium joue un bip à sa place).
+// Supabase, avec un faux micro (Chromium joue un bip à sa place) et une fausse voix (le faux Supabase rend l'enregistrement de Léa).
 //
-// Hugo a 1 figurine : « 1 / 10 », encore 9. Léa passe chez le Comptoir depuis plus d'un an (et à l'Atelier) : plus
+// Hugo a 1 figurine : « 1 / 10 », encore 9 ; il fait dire une phrase à la figurine de démonstration. Léa passe chez le Comptoir depuis plus d'un an (et à l'Atelier) : plus
 // de 10 figurines. Elle envoie sa photo (il faut cocher « C'est bien moi ») ; « on fabrique ta figurine ». ClikMe pose
 // ses deux images (ici à la main, dans le faux Supabase : la route admin, elle, refuse qui n'est pas admin). Elle
-// enregistre un message, ne garde que le Comptoir dans les commerces cités, l'envoie : un lien `/figurine/<id>`, avec
+// écrit un texte, le fait lire par une voix (la joie sur son visage), ne garde que le Comptoir dans les commerces cités, l'envoie : un lien `/figurine/<id>`, avec
 // WhatsApp et SMS. Une amie l'ouvre sans compte : « Léa t'a envoyé sa figurine », la voix joue et la bouche bouge,
 // le Comptoir est cité (pas l'Atelier), « Et toi ? » mène à sa collection ; une écoute est comptée. Elle le
 // signale : il ne s'affiche plus, sa voix non plus. Rien ne déborde, jamais le mot interdit.
@@ -58,31 +58,47 @@ const tel = async (qui) => {
 const texte = async (p, sel) => (await p.locator(sel).first().innerText({ timeout: 15000 }).catch(() => "")).replace(/\s+/g, " ").trim();
 const debordement = (p) => p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 
-// ═══ HUGO : 1 / 10 ═══
+// ═══ HUGO : 1 / 10, ET LA DÉMONSTRATION EN HAUT DE LA PAGE ═══
 const hugo = await tel(HUGO);
 await hugo.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
-await hugo.waitForSelector(".mf-gagner", { timeout: 60000 });
-const g = await texte(hugo, ".mf-gagner");
-ok(/1 \/ 10 figurines/.test(g) && g.includes("Encore 9") && g.includes("chez n’importe quel commerce ClikMe"), `Hugo : 1 / 10, encore 9, tous commerces (${g.slice(0, 90)})`);
-ok((await hugo.locator(".mf-photo, .mf-prete").count()) === 0, "Hugo n'a pas encore droit à la sienne");
-ok((await texte(hugo, ".mf-apercu")).includes("Démonstration · la figurine de Léa") && (await hugo.locator(".mf-apercu .af-sentiments button").count()) === 4, "sous son compteur : l'aperçu de ce qu'elle fera, et ses quatre sentiments");
-await hugo.locator(".mf-apercu .af-sentiments button", { hasText: "La tristesse" }).click();
-ok((await hugo.locator(".mf-apercu .fqp").getAttribute("data-sentiment")) === "tristesse", "un toucher : la figurine de Léa est triste");
+await hugo.waitForSelector(".tf-demo .tf-la-tienne b", { timeout: 60000 });
+for (let k = 0; k < 30 && !/1 \/ 10 figurines/.test(await texte(hugo, ".tf-la-tienne")); k++) await hugo.waitForTimeout(300);
+const g = await texte(hugo, ".tf-la-tienne");
+ok(/1 \/ 10 figurines/.test(g) && g.includes("encore 9") && g.includes("chez n’importe quel commerce ClikMe"), `Hugo : 1 / 10, encore 9, tous commerces (${g.slice(0, 120)})`);
+ok((await hugo.locator(".tf-photo, .tf-moi").count()) === 0, "Hugo n'a pas encore droit à la sienne");
+ok((await texte(hugo, ".mc-heros h1")).includes("Ta figurine") && (await texte(hugo, ".tf-demo")).includes("Démonstration · la figurine de Léa"), "en haut de la page : la figurine qui parle, en démonstration");
+ok((await hugo.locator(".tf-demo .tf-expr button").count()) === 5, "cinq visages : normal, joie, colère, tristesse, euphorie");
+await hugo.locator(".tf-demo .tf-expr button", { hasText: "Tristesse" }).click();
+ok((await hugo.locator(".tf-demo .fqp").getAttribute("data-sentiment")) === "tristesse", "un toucher : la figurine de Léa est triste");
+// une phrase toute faite, dans une autre voix (la fausse voix du faux Supabase)
+ok((await hugo.locator(".tf-phrases button").count()) === 4 && (await hugo.locator(".tf-voix button").count()) === 4, "quatre phrases, quatre voix");
+await hugo.locator(".tf-phrases button", { hasText: "resto" }).click();
+await hugo.locator(".tf-voix button", { hasText: "Posée" }).click();
+const voixDemo = hugo.waitForResponse((r) => r.url().includes("/api/direct/ma-figurine") && r.request().method() === "POST" && (r.request().postData() ?? "").includes("\"voix\""));
+await hugo.locator(".tf-demo .tf-ecouter").click();
+ok((await voixDemo).status() === 200, "la phrase de la démonstration est lue par la voix choisie");
+let joue = "";
+for (let k = 0; k < 40 && !/joue|fini/.test(joue); k++) {
+  joue = (await hugo.locator(".tf-demo .fqp").getAttribute("data-lecture")) ?? "";
+  if (!/joue|fini/.test(joue)) await hugo.waitForTimeout(150);
+}
+ok(/joue|fini/.test(joue), `elle la dit (${joue})`);
+await hugo.screenshot({ path: `${D}/ma-figurine-0-demo.png`, fullPage: true });
 
 // ═══ LÉA : SA PHOTO ═══
 const lea = await tel(LEA);
 await lea.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
-await lea.waitForSelector(".mf-photo", { timeout: 60000 });
-const ph = await texte(lea, ".mf-photo");
+await lea.waitForSelector(".tf-photo", { timeout: 60000 });
+const ph = await texte(lea, ".tf-photo");
 ok(/\d+ figurines : ta figurine t’attend/.test(ph), `Léa : ta figurine t'attend (${ph.slice(0, 60)})`);
-ok(await lea.locator(".mf-photo .mf-bouton").isDisabled(), "sans photo, pas d'envoi");
-await lea.locator(".mf-choisir input").setInputFiles(path.resolve("public/direct/double/comptoir.jpg"));
-await lea.waitForSelector(".mf-choisir img", { timeout: 15000 });
-ok(await lea.locator(".mf-photo .mf-bouton").isDisabled(), "sans « C’est bien moi », pas d'envoi");
-await lea.locator(".mf-accord input").check();
-await lea.locator(".mf-photo .mf-bouton").click();
-await lea.waitForSelector(".mf-annonce", { timeout: 30000 });
-ok((await texte(lea, ".mf-annonce")).includes("On fabrique ta figurine"), "photo partie : on fabrique sa figurine");
+ok(await lea.locator(".tf-photo .tf-envoyer").isDisabled(), "sans photo, pas d'envoi");
+await lea.locator(".tf-choisir input").setInputFiles(path.resolve("public/direct/double/comptoir.jpg"));
+await lea.waitForSelector(".tf-choisir img", { timeout: 15000 });
+ok(await lea.locator(".tf-photo .tf-envoyer").isDisabled(), "sans « C’est bien moi », pas d'envoi");
+await lea.locator(".tf-accord input").check();
+await lea.locator(".tf-photo .tf-envoyer").click();
+await lea.waitForSelector(".tf-annonce", { timeout: 30000 });
+ok((await texte(lea, ".tf-annonce")).includes("On fabrique ta figurine"), "photo partie : on fabrique sa figurine");
 const [ligne] = await lire("clik_ma_figurine", `habitant_id=eq.${LEA.id}`);
 ok(ligne?.photo?.startsWith(`${LEA.id}/photo-`) && ligne.accord_le && ligne.prenom === "Léa" && !ligne.prete_le, "sa photo rangée (seau privé), son accord noté");
 ok((await fetch(`${STOCK}/public/figurines-clients/${ligne?.photo}`)).status >= 400, "sa photo n'a pas d'adresse publique");
@@ -104,37 +120,46 @@ await fetch(`${F}/clik_ma_figurine?habitant_id=eq.${LEA.id}`, {
   body: JSON.stringify({ neutre: `${LEA.id}/neutre-essai.webp`, parle: `${LEA.id}/parle-essai.webp`, prete_le: new Date().toISOString() }),
 });
 
-// ═══ LÉA FAIT PARLER SA FIGURINE ═══
+// ═══ LÉA FAIT PARLER SA FIGURINE : UN TEXTE, LU PAR LA VOIX QU'ELLE CHOISIT ═══
 await lea.reload({ waitUntil: "networkidle" });
-await lea.waitForSelector(".mf-prete .mf-micro", { timeout: 30000 });
-ok((await texte(lea, ".mf-prete")).includes("Fais-la parler"), "sa figurine est là : fais-la parler");
-await lea.locator(".mf-micro").click();
-await lea.waitForSelector(".mf-temps", { timeout: 15000 });
-await lea.waitForTimeout(2600);
-ok(/● [12] s \/ 15 s/.test(await texte(lea, ".mf-temps")), `le compteur tourne (${await texte(lea, ".mf-temps")})`);
-await lea.locator(".mf-stop").click();
-await lea.waitForSelector(".mf-prete .fqp-jouer", { timeout: 15000 });
-const cites = await lea.locator(".mf-cites label").allInnerTexts();
-ok(cites.length === 2 && (await lea.locator(".mf-cites label.pris").count()) === 2, `elle peut citer ses deux commerces, choisis d'office (${cites.join(" / ")})`);
-await lea.locator(".mf-cites label", { hasText: "Atelier" }).click();
-ok((await lea.locator(".mf-cites label.pris").count()) === 1, "elle retire l'Atelier");
-ok((await lea.locator(".mf-sentiments button").count()) === 4, "quatre sentiments à donner à sa figurine");
-await lea.locator(".mf-sentiments button", { hasText: "La joie" }).click();
-ok((await lea.locator(".mf-prete .fqp").getAttribute("data-sentiment")) === "joie" && (await lea.locator(".mf-prete .fqp-badge").count()) === 1, "elle choisit la joie : sa figurine la montre");
+await lea.waitForSelector(".tf-moi .tf-texte textarea", { timeout: 30000 });
+ok((await texte(lea, ".mc-heros h1")).includes("Fais-la parler"), "sa figurine est là : fais-la parler");
+ok((await lea.locator(".tf-moi .tf-expr button").count()) === 5, "cinq visages à lui donner");
+await lea.locator(".tf-moi .tf-expr button", { hasText: "Joie" }).click();
+ok((await lea.locator(".tf-moi .fqp").getAttribute("data-sentiment")) === "joie" && (await lea.locator(".tf-moi .fqp-badge").count()) === 1, "elle choisit la joie : sa figurine la montre (son visage de joie n'est pas encore fait : elle bouge)");
+await lea.locator(".tf-texte textarea").fill("Coucou Camille ! On se voit ce soir ?");
+await lea.locator(".tf-moi .tf-voix button", { hasText: "Chaleureuse" }).click();
+await lea.locator(".tf-moi .tf-ecouter").click();
+await lea.waitForSelector(".tf-envoyer", { timeout: 30000 });
+const cites = await lea.locator(".tf-cites label").allInnerTexts();
+ok(cites.length === 2 && (await lea.locator(".tf-cites label.pris").count()) === 2, `elle peut citer ses deux commerces, choisis d'office (${cites.join(" / ")})`);
+await lea.locator(".tf-cites label", { hasText: "Atelier" }).click();
+ok((await lea.locator(".tf-cites label.pris").count()) === 1, "elle retire l'Atelier");
 await lea.screenshot({ path: `${D}/ma-figurine-1-message.png`, fullPage: true });
-await lea.locator(".mf-actions .mf-bouton").click();
-await lea.waitForSelector(".mf-envoye", { timeout: 30000 });
-const lien = await lea.locator(".mf-adresse").inputValue();
+await lea.locator(".tf-envoyer").click();
+await lea.waitForSelector(".tf-wa", { timeout: 30000 });
+const lien = await lea.locator(".tf-adresse").inputValue();
 ok(/\/figurine\/[a-z0-9]{12}$/.test(lien), `son lien (${lien})`);
-const wa = await lea.locator(".mf-wa").getAttribute("href");
-ok(wa?.startsWith("https://wa.me/?text=") && decodeURIComponent(wa).includes("Léa t’a envoyé sa figurine") && decodeURIComponent(wa).includes(lien), "WhatsApp : le texte et le lien");
-ok((await lea.locator(".mf-sms").getAttribute("href"))?.startsWith("sms:"), "SMS");
+const wa = await lea.locator(".tf-wa").getAttribute("href");
+ok(wa?.startsWith("https://wa.me/?text=") && decodeURIComponent(wa).includes("Léa t’a envoyé sa figurine") && decodeURIComponent(wa).includes(lien), "WhatsApp : le texte et le lien, en premier");
+ok((await lea.locator(".tf-sms").getAttribute("href"))?.startsWith("sms:"), "SMS");
 const id = lien.split("/").pop();
 const [msg] = await lire("clik_figurine_message", `id=eq.${id}`);
-ok(msg && JSON.stringify(msg.commerces) === JSON.stringify([A.slug]) && msg.son.startsWith(`${LEA.id}/m-${id}.`) && msg.duree > 1 && msg.duree <= 16, `le message : sa voix, le Comptoir seulement (${JSON.stringify(msg?.commerces)}, ${msg?.duree} s)`);
-ok(msg?.sentiment === "joie", `le message porte sa joie (${msg?.sentiment})`);
+ok(msg && JSON.stringify(msg.commerces) === JSON.stringify([A.slug]) && msg.son.startsWith(`${LEA.id}/m-${id}.`) && msg.duree > 1 && msg.duree <= 16, `le message : sa voix lue, le Comptoir seulement (${JSON.stringify(msg?.commerces)}, ${msg?.duree} s)`);
+ok(msg?.sentiment === "joie" && msg?.texte === "Coucou Camille ! On se voit ce soir ?" && msg?.voix === "chaleureuse", `le message porte sa joie, son texte et sa voix (${msg?.sentiment}, ${msg?.voix})`);
 ok((await debordement(lea)) <= 0 && !/exemple/i.test(await texte(lea, "main")), "« Ma collection » ne déborde pas, sans le mot interdit");
 await lea.screenshot({ path: `${D}/ma-figurine-2-envoye.png`, fullPage: true });
+
+// ═══ ET AVEC SA PROPRE VOIX ═══
+await lea.locator(".tf-modes button", { hasText: "Ma voix" }).click();
+ok((await lea.locator(".tf-envoi").count()) === 0, "sa voix à elle : le message lu ne repart pas tel quel");
+await lea.locator(".tf-micro").click();
+await lea.waitForSelector(".tf-temps", { timeout: 15000 });
+await lea.waitForTimeout(2600);
+ok(/● [12] s \/ 15 s/.test(await texte(lea, ".tf-temps")), `le compteur tourne (${await texte(lea, ".tf-temps")})`);
+await lea.locator(".tf-stop").click();
+await lea.waitForSelector(".tf-envoyer", { timeout: 15000 });
+ok((await lea.locator(".tf-moi .tf-ecouter").count()) === 1, "elle peut s'écouter, puis l'envoyer");
 
 // ═══ UNE AMIE L'OUVRE ═══
 const amie = await tel(null);
@@ -145,6 +170,7 @@ ok((await texte(amie, ".mr h1")) === "Léa t’a envoyé sa figurine", "« Léa 
 ok(mr.includes(A.nom) && !mr.includes("Atelier Tout Neuf") && (await amie.locator(`.mr-commerces a[href="/f/${A.slug}"]`).count()) === 1, "ses commerces préférés : le Comptoir, pas l'Atelier");
 ok(mr.includes("Et toi ?") && (await amie.locator('.mr-toi a[href="/collection"]').count()) === 1, "« Et toi ? » mène à sa collection");
 ok((await amie.locator(".mr .fqp").getAttribute("data-sentiment")) === "joie" && mr.includes("pleine de joie"), "chez son amie, la figurine est pleine de joie");
+ok((await texte(amie, ".mr-bulle")).includes("Coucou Camille ! On se voit ce soir ?"), "ce qu'elle dit s'écrit en bulle");
 const titre = await amie.title();
 ok(titre.includes("Léa t’a envoyé sa figurine") && !/ClikMe.*Clikme/i.test(titre) && (await amie.locator('meta[name="robots"][content*="noindex"]').count()) === 1, `le titre du lien, et pas dans Google (${titre})`);
 // la bouche s'ouvre sur les sons forts de la voix : des ouvertures brèves (le faux micro du navigateur enregistre des

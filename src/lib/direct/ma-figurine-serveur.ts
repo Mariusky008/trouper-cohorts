@@ -23,11 +23,18 @@ import {
   SEUIL_MA_FIGURINE,
   figurinesEnTout,
   idMessageValide,
+  phraseDemo,
   sentimentValide,
+  texteValide,
+  voixValide,
   type CommerceCite,
+  type DemoFigurine,
   type EtatMaFigurine,
+  type Expressions,
   type MessageFigurine,
 } from "./ma-figurine";
+import { expressionsCompletes, expressionsDe, fabriquerUnTour, type Depot } from "./figurine-expressions-serveur";
+import { lireLeTexte, voixBranchee } from "./voix-figurine-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 type Ligne = Record<string, unknown>;
@@ -54,7 +61,43 @@ async function signer(supabase: Supabase, chemin: string, secondes = 3600): Prom
   return s(data?.signedUrl);
 }
 
-const empreinte = (b: Buffer) => createHash("sha1").update(b).digest("hex").slice(0, 16);
+const empreinte = (b: Buffer | string) => createHash("sha1").update(b).digest("hex").slice(0, 16);
+
+async function telecharger(supabase: Supabase, chemin: string): Promise<Buffer | null> {
+  const { data, error } = await supabase.storage.from(SEAU_FIGURINES).download(chemin);
+  return error || !data ? null : Buffer.from(await data.arrayBuffer());
+}
+
+// ─── 🎭 ses expressions : un dossier par figurine (un nouveau visage : un nouveau dossier) ──────────────────
+/** Un dossier du seau, vu comme un `Depot` (`figurine-expressions-serveur.ts`). */
+function depotDans(supabase: Supabase, dossier: string): Depot {
+  return {
+    lister: async () => {
+      const { data } = await supabase.storage.from(SEAU_FIGURINES).list(dossier, { limit: 100 });
+      return ((Array.isArray(data) ? data : []) as { name?: string }[]).map((f) => s(f.name)).filter(Boolean);
+    },
+    lire: (nom) => telecharger(supabase, `${dossier}/${nom}`),
+    ecrire: (nom, octets, type) => deposer(supabase, `${dossier}/${nom}`, octets, type),
+    effacer: async (nom) => void (await supabase.storage.from(SEAU_FIGURINES).remove([`${dossier}/${nom}`])),
+  };
+}
+const dossierExpressions = (habitantId: string, neutre: string) => `${habitantId}/expr-${empreinte(neutre)}`;
+/** La démonstration (Léa) : ses expressions et ses voix, faites une fois, gardées ici. */
+const DOSSIER_DEMO = "demo-lea/v1";
+
+/** Ses expressions faites, en adresses signées. */
+async function expressionsSignees(supabase: Supabase, dossier: string, secondes = 3600): Promise<{ expressions: Expressions; complete: boolean }> {
+  const noms = await depotDans(supabase, dossier).lister();
+  const faites = expressionsDe(noms);
+  const expressions: Expressions = {};
+  await Promise.all(
+    Object.entries(faites).map(async ([cle, im]) => {
+      const [n, p] = await Promise.all([signer(supabase, `${dossier}/${im!.n}`, secondes), signer(supabase, `${dossier}/${im!.p}`, secondes)]);
+      if (n && p) expressions[cle as keyof Expressions] = { n, p };
+    }),
+  );
+  return { expressions, complete: expressionsCompletes(faites) };
+}
 
 function image(dataUrl: unknown): Buffer | null {
   const m = /^data:image\/(?:jpeg|jpg|png|webp|heic|heif);base64,(.+)$/i.exec(s(dataUrl));
@@ -100,20 +143,99 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
   if (!prete && total < SEUIL_MA_FIGURINE) return base;
   if (!prete && (!ligne || !s(ligne.photo) || s(ligne.refus))) return { ...base, etape: "photo", ...(s(ligne?.refus) ? { refus: s(ligne?.refus) } : {}) };
   if (!prete) return { ...base, etape: "fabrication" };
-  const [neutre, parle, { data: msgs }] = await Promise.all([
+  const [neutre, parle, { data: msgs }, expr] = await Promise.all([
     signer(supabase, s(ligne!.neutre)),
     signer(supabase, s(ligne!.parle)),
     supabase.from("clik_figurine_message").select("*").eq("habitant_id", habitant.id).order("created_at", { ascending: false }).limit(20),
+    expressionsSignees(supabase, dossierExpressions(habitant.id, s(ligne!.neutre))),
   ]);
   return {
     ...base,
     etape: "prete",
     neutre,
     parle,
+    expressions: expr.expressions,
+    expressionsAFaire: !expr.complete,
+    voixTexte: voixBranchee(),
     messages: ((Array.isArray(msgs) ? msgs : []) as Ligne[])
       .filter((m) => !m.retire_le)
-      .map((m) => ({ id: s(m.id), le: s(m.created_at), ecoutes: Number(m.ecoutes) || 0, signale: Boolean(m.signale_le), sentiment: sentimentValide(m.sentiment) })),
+      .map((m) => ({
+        id: s(m.id),
+        le: s(m.created_at),
+        ecoutes: Number(m.ecoutes) || 0,
+        signale: Boolean(m.signale_le),
+        sentiment: sentimentValide(m.sentiment),
+        ...(s(m.texte) ? { texte: s(m.texte) } : {}),
+      })),
   };
+}
+
+/** 🎭 Un tour de fabrication de ses expressions (le moteur d'image), à partir de sa figurine bouche fermée. */
+export async function fabriquerSesExpressions(supabase: Supabase, habitant: Habitant, avant: number): Promise<{ error?: string; enCours?: boolean }> {
+  const { ligne } = await lireLigne(supabase, habitant.id);
+  if (!ligne?.prete_le || !s(ligne.neutre)) return { error: "Ta figurine n’est pas encore prête." };
+  const source = await telecharger(supabase, s(ligne.neutre));
+  if (!source) return { error: "Ta figurine est introuvable." };
+  const r = await fabriquerUnTour(depotDans(supabase, dossierExpressions(habitant.id, s(ligne.neutre))), source, avant);
+  return r.erreur ? { error: r.erreur } : r.enCours ? { enCours: true } : {};
+}
+
+/** ✍️ Son texte, lu par la voix choisie : 20 lectures par jour au plus (chacune coûte). */
+const LECTURES_PAR_JOUR = 20;
+export async function lireSonTexte(supabase: Supabase, habitant: Habitant, texte: unknown, voix: unknown): Promise<{ mp3?: Buffer; error?: string; statut?: number }> {
+  const t = texteValide(texte);
+  const v = voixValide(voix);
+  if (!t || !v) return { error: "Écris ce qu’elle doit dire, et choisis sa voix.", statut: 400 };
+  const etat = await etatMaFigurine(supabase, habitant);
+  if (etat.etape !== "prete") return { error: "Ta figurine n’est pas encore prête.", statut: 400 };
+  const jour = new Date().toISOString().slice(0, 10);
+  const compteur = `${habitant.id}/voix-jour.json`;
+  const avant = JSON.parse((await telecharger(supabase, compteur))?.toString() || "{}") as { jour?: string; n?: number };
+  const n = avant.jour === jour ? Number(avant.n) || 0 : 0;
+  if (n >= LECTURES_PAR_JOUR) return { error: "Assez de lectures pour aujourd’hui : reviens demain, ou enregistre ta voix.", statut: 429 };
+  const r = await lireLeTexte(t, v);
+  if ("erreur" in r) return { error: r.erreur, statut: r.statut };
+  await deposer(supabase, compteur, Buffer.from(JSON.stringify({ jour, n: n + 1 })), "application/json");
+  return { mp3: r.mp3 };
+}
+
+// ─── la démonstration (Léa) : sans compte ─────────────────────────────────────────────────────────
+/** Ce que la page sait de la démonstration : ses expressions déjà faites, et si les voix sont branchées. */
+export async function etatDemo(supabase: Supabase): Promise<DemoFigurine> {
+  try {
+    const { expressions, complete } = await expressionsSignees(supabase, `${DOSSIER_DEMO}/expr`, 6 * 3600);
+    return { expressions, complete, voix: voixBranchee() };
+  } catch {
+    return { expressions: {}, complete: false, voix: voixBranchee() };
+  }
+}
+
+/** Un tour de fabrication des expressions de Léa, à partir de son image (`/collection/lea-source.jpg`). */
+export async function fabriquerExpressionsDemo(supabase: Supabase, origine: string, avant: number): Promise<{ error?: string; enCours?: boolean }> {
+  let source: Buffer;
+  try {
+    const r = await fetch(`${origine}/collection/lea-source.jpg`, { signal: AbortSignal.timeout(15_000) });
+    if (!r.ok) return { error: "L’image de la démonstration est introuvable." };
+    source = Buffer.from(await r.arrayBuffer());
+  } catch {
+    return { error: "L’image de la démonstration est introuvable." };
+  }
+  const r = await fabriquerUnTour(depotDans(supabase, `${DOSSIER_DEMO}/expr`), source, avant);
+  return r.erreur ? { error: r.erreur } : r.enCours ? { enCours: true } : {};
+}
+
+/** Une phrase de la démonstration, dans la voix choisie : faite une fois (seulement ces phrases-là), puis gardée. */
+export async function voixDemo(supabase: Supabase, phrase: unknown, voix: unknown): Promise<{ mp3?: Buffer; error?: string; statut?: number }> {
+  const p = phraseDemo(phrase);
+  const v = voixValide(voix);
+  if (!p || !v) return { error: "Choisis une phrase et une voix.", statut: 400 };
+  const chemin = `${DOSSIER_DEMO}/voix/${p.cle}-${v}.mp3`;
+  const garde = await telecharger(supabase, chemin);
+  if (garde?.length) return { mp3: garde };
+  const r = await lireLeTexte(p.texte, v);
+  if ("erreur" in r) return { error: r.erreur, statut: r.statut };
+  await deposer(supabase, chemin, r.mp3, "audio/mpeg");
+  return { mp3: r.mp3 };
 }
 
 // ─── 1. sa photo ───────────────────────────────────────────────────────────────────────────────
@@ -155,6 +277,9 @@ export async function enregistrerMessage(
   duree: unknown,
   commerces: unknown,
   sentiment?: unknown,
+  /** Le texte qu'elle dit (lu par une voix) : il s'affiche en bulle chez celui qui reçoit. */
+  texte?: unknown,
+  voix?: unknown,
 ): Promise<{ id?: string; error?: string }> {
   const m = /^data:(audio\/(?:webm|ogg|mp4|mpeg|x-m4a|aac|wav))(?:;[^,]*)?;base64,(.+)$/i.exec(s(son));
   if (!m) return { error: "Ton message n’a pas pu être enregistré. Réessaie." };
@@ -175,9 +300,14 @@ export async function enregistrerMessage(
   if (!(await deposer(supabase, chemin, brut, type))) return { error: "Ton message n’est pas parti. Réessaie dans un instant." };
   const ligne = { id, habitant_id: habitant.id, son: chemin, duree: Math.round(d * 10) / 10, commerces: cites };
   const sent = sentimentValide(sentiment);
-  let { error } = await supabase.from("clik_figurine_message").insert(sent ? { ...ligne, sentiment: sent } : ligne);
-  // la colonne « sentiment » arrive avec sa migration : sans elle, le message part quand même (sans sentiment)
-  if (error && sent && /sentiment/i.test(`${error.message ?? ""} ${(error as { details?: string }).details ?? ""}`)) ({ error } = await supabase.from("clik_figurine_message").insert(ligne));
+  const t = texteValide(texte);
+  const v = voixValide(voix);
+  const plus = { ...(sent ? { sentiment: sent } : {}), ...(t ? { texte: t } : {}), ...(t && v ? { voix: v } : {}) };
+  let { error } = await supabase.from("clik_figurine_message").insert({ ...ligne, ...plus });
+  // « sentiment », « texte » et « voix » arrivent avec leurs migrations : sans elles, le message part quand même
+  const manque = (e: typeof error) => /sentiment|texte|voix/i.test(`${e?.message ?? ""} ${(e as { details?: string } | null)?.details ?? ""}`);
+  if (error && Object.keys(plus).length && manque(error)) ({ error } = await supabase.from("clik_figurine_message").insert(sent ? { ...ligne, sentiment: sent } : ligne));
+  if (error && sent && manque(error)) ({ error } = await supabase.from("clik_figurine_message").insert(ligne));
   return error ? { error: "Ton message n’est pas parti. Réessaie dans un instant." } : { id };
 }
 
@@ -201,7 +331,12 @@ export async function lireMessage(supabase: Supabase, id: string): Promise<Messa
     ? await supabase.from("human_vitrine_sites").select("slug, business_name, city, activite, est_client").in("slug", slugs)
     : { data: [] };
   const parSlug = new Map(((Array.isArray(sites) ? sites : []) as Ligne[]).filter((x) => x.est_client === true).map((x) => [s(x.slug), x]));
-  const [neutre, parle] = await Promise.all([signer(supabase, s(fig.neutre), 7200), signer(supabase, s(fig.parle), 7200)]);
+  const sentiment = sentimentValide(r.sentiment);
+  const [neutre, parle, expr] = await Promise.all([
+    signer(supabase, s(fig.neutre), 7200),
+    signer(supabase, s(fig.parle), 7200),
+    sentiment ? expressionsSignees(supabase, dossierExpressions(s(r.habitant_id), s(fig.neutre)), 7200).catch(() => null) : Promise.resolve(null),
+  ]);
   return {
     signale: false,
     id,
@@ -209,7 +344,9 @@ export async function lireMessage(supabase: Supabase, id: string): Promise<Messa
     neutre,
     parle,
     duree: Number(r.duree) || 0,
-    sentiment: sentimentValide(r.sentiment),
+    sentiment,
+    expression: sentiment ? (expr?.expressions[sentiment] ?? null) : null,
+    ...(s(r.texte) ? { texte: s(r.texte) } : {}),
     commerces: slugs.flatMap((slug) => {
       const x = parSlug.get(slug);
       if (!x) return [];

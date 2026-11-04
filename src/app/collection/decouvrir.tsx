@@ -1,24 +1,17 @@
 "use client";
 
 /**
- * 🏆 « MA COLLECTION », CE QUI DONNE ENVIE — pour qui n'a encore rien (la page entière), et en partie pour qui
- * collectionne déjà (le compte à rebours, l'aperçu de sa figurine, les autres commerces).
- *
- * « Les explications sont épuisantes à lire, personne ne va lire tout ça… il manque une âme et cette sensation de
- * manquer la prochaine figurine. » D'où :
- *   · LE COMPTE À REBOURS (`ChronoEdition`) : l'édition du moment, et le temps qui reste à la seconde ; la frise des
- *     éditions — celle qui vient de finir (« terminée »), celle-ci, les deux suivantes (cadenas), la rare, l'or. Tout est
- *     vrai : les dates sont celles des éditions (`EDITIONS_DATEES`), aucun chiffre n'est inventé ;
- *   · COMMENT ÇA MARCHE : trois tuiles, trois mots chacune ;
- *   · CE QUE ÇA RAPPORTE : une piste de 1 à 10, trois médailles, une ligne chacune ;
- *   · TA PROPRE FIGURINE : l'aperçu sur celle de Léa (`apercu-figurine.tsx`) ;
- *   · OÙ COMMENCER : les commerces ClikMe (`page.tsx`).
- * SUR ORDINATEUR, la page prend la largeur : rien n'y est une colonne de téléphone posée au milieu d'un écran.
+ * 🏆 « MA COLLECTION », CE QUI L'EXPLIQUE — refait le 4 novembre 2026 (« on s'y perd, on ne sait pas quoi y faire ») :
+ *   · LE COMPTE À REBOURS (`ChronoEdition`) : l'édition du mois, et le temps qui reste à la seconde ; la frise des
+ *     éditions. Tout est vrai : les dates sont celles des éditions (`EDITIONS_DATEES`), aucun chiffre n'est inventé ;
+ *   · CE QUE TU GAGNES (`CeQueTuGagnes`) : les deux « 10 » qu'on confondait — 10 au même commerce : sa figurine d'or ;
+ *     10 en tout : ta propre figurine qui parle ; les paliers d'une collection, repliés ;
+ *   · OÙ LES GAGNER (`OuGagner`) : les commerces ClikMe (`page.tsx`).
+ * La figurine qui parle, le « wow » de la page, est en haut (`ma-figurine.tsx`).
  */
 import { useEffect, useState, type CSSProperties } from "react";
 import { EDITIONS_DATEES, PALIERS_COLLECTION, TOTAL_COLLECTION, editionsDuMoment, fenetre, finEnAnnee, jourEnClair } from "@/lib/direct/collection";
 import { Particules, THEMES, type Theme } from "@/app/f/[slug]/collection";
-import { ApercuFigurine, STYLES_APERCU } from "./apercu-figurine";
 
 export type CommerceACollectionner = { slug: string; nom: string; ville: string; figurine: string; cadeau?: string };
 
@@ -160,29 +153,32 @@ export function ChronoEdition({ aujourdhui, figurine }: { aujourdhui: string; fi
   );
 }
 
-// ─── comment ça marche, ce que ça rapporte ─────────────────────────────────────────────────────
-const ETAPES = [
-  { emoji: "👻", titre: "Rejoins un commerce", dit: "une cage sur sa page, sans appli" },
-  { emoji: "🚪", titre: "Passe le voir", dit: "une visite = une figurine" },
-  { emoji: "🏆", titre: "Collectionne", dit: `à ${TOTAL_COLLECTION}, la figurine d’or` },
+// ─── ce que tu gagnes ────────────────────────────────────────────────────────────────────────────
+const GAINS = [
+  { emoji: "🚪", titre: "1 visite = 1 figurine", dit: "celle du commerce, dans son édition du mois" },
+  { emoji: "🏆", titre: `${TOTAL_COLLECTION} au même commerce`, dit: "sa figurine d’or, numérotée, et son cadeau" },
+  { emoji: "🗣️", titre: `${TOTAL_COLLECTION} en tout`, dit: "ta propre figurine, qui parle et change de visage" },
 ];
 
-function CommentCaMarche() {
+export function CeQueTuGagnes() {
   return (
-    <section className="dc-bloc" aria-labelledby="dc-comment">
-      <h2 id="dc-comment">Comment ça marche</h2>
+    <section className="dc-bloc" aria-labelledby="dc-gagnes">
+      <h2 id="dc-gagnes">Ce que tu gagnes</h2>
       <ol className="dc-trois">
-        {ETAPES.map((e, i) => (
+        {GAINS.map((e, i) => (
           <li key={e.titre} style={{ "--d": `${0.08 + i * 0.1}s` } as CSSProperties}>
             <span className="dc-ic" aria-hidden="true">
               {e.emoji}
-              <b>{i + 1}</b>
             </span>
             <strong>{e.titre}</strong>
             <small>{e.dit}</small>
           </li>
         ))}
       </ol>
+      <details className="dc-plus">
+        <summary>Les paliers d’une collection</summary>
+        <CeQueCaRapporte />
+      </details>
     </section>
   );
 }
@@ -190,8 +186,7 @@ function CommentCaMarche() {
 function CeQueCaRapporte() {
   const paliers = new Map(PALIERS_COLLECTION.map((p) => [p.n, p]));
   return (
-    <section className="dc-bloc" aria-labelledby="dc-rapporte">
-      <h2 id="dc-rapporte">Plus tu en as, plus tu gagnes</h2>
+    <div className="dc-paliers-bloc">
       <div className="dc-piste" aria-hidden="true">
         {Array.from({ length: TOTAL_COLLECTION }, (_, i) => i + 1).map((n) => {
           const p = paliers.get(n);
@@ -213,16 +208,16 @@ function CeQueCaRapporte() {
         ))}
       </ul>
       <p className="dc-rares">✨ Et 2 éditions rares, seulement le jour où le commerce annonce une place libre.</p>
-    </section>
+    </div>
   );
 }
 
-function OuCommencer({ commerces, titre, aujourdhui }: { commerces: CommerceACollectionner[]; titre: string; aujourdhui: string }) {
+export function OuGagner({ commerces, titre, aujourdhui }: { commerces: CommerceACollectionner[]; titre: string; aujourdhui: string }) {
   if (!commerces.length) return null;
   const m = editionsDuMoment(aujourdhui).maintenant;
   const t = (m && THEMES[m.cle]) || THEMES.rare;
   return (
-    <section className="dc-bloc" aria-labelledby="dc-ou">
+    <section className="dc-bloc" id="ou-gagner" aria-labelledby="dc-ou">
       <h2 id="dc-ou">{titre}</h2>
       <ul className="dc-commerces">
         {commerces.map((c) => (
@@ -245,39 +240,7 @@ function OuCommencer({ commerces, titre, aujourdhui }: { commerces: CommerceACol
   );
 }
 
-/** Qui n'a encore rien : la page entière. */
-export function Decouvrir({ aujourdhui, commerces }: { aujourdhui: string; commerces: CommerceACollectionner[] }) {
-  return (
-    <div className="dc">
-      <ChronoEdition aujourdhui={aujourdhui} figurine={commerces[0]?.figurine} />
-      <CommentCaMarche />
-      <CeQueCaRapporte />
-      <div className="dc-bloc">
-        <ApercuFigurine total={0} />
-      </div>
-      <OuCommencer commerces={commerces} titre="Où commencer ta collection" aujourdhui={aujourdhui} />
-      <p className="dc-deja">Tu as déjà des figurines ? Ouvre cette page sur le téléphone où tu as libéré ton fantôme.</p>
-    </div>
-  );
-}
-
-/** Qui collectionne déjà : les autres commerces à commencer, et « Comment ça marche ? », replié. */
-export function EnSavoirPlus({ aujourdhui, commerces }: { aujourdhui: string; commerces: CommerceACollectionner[] }) {
-  return (
-    <div className="dc">
-      <OuCommencer commerces={commerces} titre="D’autres collections à commencer" aujourdhui={aujourdhui} />
-      <details className="dc-plus">
-        <summary>Comment ça marche ?</summary>
-        <CommentCaMarche />
-        <CeQueCaRapporte />
-      </details>
-    </div>
-  );
-}
-
-export const STYLES_DECOUVRIR =
-  STYLES_APERCU +
-  `
+export const STYLES_DECOUVRIR = `
 .dc{padding:0 16px}
 .dc-bloc{margin:34px 0 0}
 .dc-bloc h2{margin:0 0 14px;font-size:24px;line-height:1.1;font-weight:900;letter-spacing:-.02em}

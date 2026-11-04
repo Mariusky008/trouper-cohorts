@@ -12,5 +12,7 @@ Règles communes :
 
 - On travaille en français.
 - Une branche, puis une PR vers `main`.
-- Jamais de voix de synthèse : les voix sont des enregistrements fournis par le propriétaire.
+- Jamais de voix de synthèse : les voix sont des enregistrements fournis par le propriétaire. Une seule exception,
+  décidée par lui le 4 novembre 2026 : le texte qu'un client fait dire à SA figurine (« Ma collection »), lu par une
+  voix ElevenLabs côté serveur (`src/lib/direct/voix-figurine-serveur.ts`). Jamais la voix du téléphone.
 - Jamais le mot « exemple » à l'écran.
