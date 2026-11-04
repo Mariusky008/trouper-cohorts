@@ -345,6 +345,30 @@ Celle de Léa n'est plus montrée.
   grand avec ce qu'elle raconte (gagnée le…, encore 27 jours…, manquée…). Les mois s'abrègent à la française
   (« juin », « juil. » : plus de « jui. » pour les deux).
 
+### 9.0 sexies Sa figurine dès le départ, une option de plus à chaque achat (4 novembre, la nuit) — construit
+
+Sa décision : « le plus simple et le mieux, c'est qu'on ait la possibilité de créer sa figurine dès le départ, mais qu'on
+bénéficie d'options supplémentaires à chaque fois qu'on achète quelque chose chez un commerçant ». Plus de « 10
+figurines » à attendre.
+
+- **« Crée ta figurine »** (`EnvoiPhoto`, sous la démonstration, `#creer`) : sa photo, « C'est bien moi », et — sans
+  compte — son prénom et sa ville (une ville des commerces ClikMe) : la photo lui ouvre son compte (`assurerHabitant`).
+- **Le moteur la fabrique tout de suite** (`ma-figurine-fabrique-serveur.ts`) : ses traits décrits, puis la consigne des
+  figurines des commerçants (le style « film d'animation 3D » qui a marché) avec SES vêtements, le ressort, le socle et un
+  fond rose uni (`consigneFigurineClient`) ; puis la même bouche ouverte, remise dans le même cadre. Deux minutes
+  environ ; la page attend (`FabricationAuto`). « Elle ne te ressemble pas ? La refaire » : 3 fabrications par jour et
+  par personne ; `FIGURINE_CLIENTS_JOUR` (100) nouvelles figurines par jour pour tout ClikMe. Sans `OPENAI_API_KEY`,
+  ClikMe la fait à la main depuis l'admin, comme avant.
+- **Ses options** (`OPTIONS_FIGURINE`, `ma-figurine.ts`), une par achat (une visite validée au comptoir = une figurine
+  gagnée, tous commerces confondus) : au départ, sa figurine qui parle (son texte, la joie, la voix « Douce », l'envoi) ;
+  1ᵉʳ achat : 😠 la colère ; 2ᵉ : 🎙️ toutes les voix, et la sienne ; 3ᵉ : 😢 la tristesse ; 4ᵉ : 🤩 l'euphorie ; 5ᵉ :
+  ✨ le cadre doré (ses messages arrivent dans un cadre en or). Les options fermées se voient sous cadenas ; un toucher
+  dit quel achat les ouvre. Le serveur les tient aussi (une voix ou un visage fermé est refusé). Ses visages ne se
+  fabriquent qu'une fois ouverts (une image de moins à payer pour qui ne revient pas).
+- **Celui qui reçoit** : « Et toi ? » mène à « Crée ta figurine ».
+
+**Coût à surveiller** : une figurine, c'est 2 images du moteur (plus 2 par visage ouvert) ; le plafond du jour le tient.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Ma collection de figurines",
-  description: "Toutes tes figurines, commerce par commerce : une visite, une figurine ; à 10, la figurine d’or.",
+  description: "Ta figurine qui parle, dès le départ ; et toutes tes figurines, commerce par commerce.",
   robots: { index: false },
 };
 
@@ -30,8 +30,11 @@ type Ligne = Record<string, unknown>;
 const s = (v: unknown) => (v == null ? "" : String(v));
 const MAX_COMMERCES = 12;
 
-/** Les commerces ClikMe dont la page de la famille est ouverte : ceux de sa ville d'abord, puis les villes les plus fournies. */
-async function commercesACollectionner(): Promise<CommerceACollectionner[]> {
+/**
+ * Les commerces ClikMe dont la page de la famille est ouverte : ceux de sa ville d'abord, puis les villes les plus
+ * fournies. Et leurs villes : « Crée ta figurine » en demande une à qui n'a pas encore de compte.
+ */
+async function commercesACollectionner(): Promise<{ commerces: CommerceACollectionner[]; villes: { slug: string; nom: string }[] }> {
   try {
     const supabase = createAdminClient();
     const [{ data }, moi] = await Promise.all([
@@ -43,7 +46,11 @@ async function commercesACollectionner(): Promise<CommerceACollectionner[]> {
     const parVille = new Map<string, number>();
     for (const x of lignes) parVille.set(villeSlug(ville(x)), (parVille.get(villeSlug(ville(x))) ?? 0) + 1);
     const chezMoi = moi?.villeSlug || "";
-    return lignes
+    const villes = [...new Map(lignes.map((x) => [villeSlug(ville(x)), ville(x)])).entries()]
+      .filter(([slug, nom]) => slug && nom)
+      .sort((a, b) => (parVille.get(b[0]) ?? 0) - (parVille.get(a[0]) ?? 0) || a[1].localeCompare(b[1], "fr"))
+      .map(([slug, nom]) => ({ slug, nom }));
+    const commerces = lignes
       .map((x) => ({ x, v: villeSlug(ville(x)) }))
       .sort(
         (a, b) =>
@@ -64,11 +71,13 @@ async function commercesACollectionner(): Promise<CommerceACollectionner[]> {
           ...(cadeau ? { cadeau } : {}),
         };
       });
+    return { commerces, villes };
   } catch {
-    return []; // base indisponible : la page explique quand même, sans la liste
+    return { commerces: [], villes: [] }; // base indisponible : la page explique quand même, sans la liste
   }
 }
 
 export default async function PageCollection() {
-  return <MaCollection aujourdhui={jourParis()} commerces={await commercesACollectionner()} />;
+  const { commerces, villes } = await commercesACollectionner();
+  return <MaCollection aujourdhui={jourParis()} commerces={commerces} villes={villes} />;
 }

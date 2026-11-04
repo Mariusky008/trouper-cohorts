@@ -64,10 +64,12 @@ const debordement = (p) => p.evaluate(() => document.documentElement.scrollWidth
 const hugo = await tel(HUGO);
 await hugo.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
 await hugo.waitForSelector(".tf-demo .tf-la-tienne b", { timeout: 60000 });
-for (let k = 0; k < 30 && !/1 \/ 10 figurines/.test(await texte(hugo, ".tf-la-tienne")); k++) await hugo.waitForTimeout(300);
+for (let k = 0; k < 30 && !(await texte(hugo, ".tf-la-tienne")).includes("Crée la tienne"); k++) await hugo.waitForTimeout(300);
 const g = await texte(hugo, ".tf-la-tienne");
-ok(/1 \/ 10 figurines/.test(g) && g.includes("encore 9") && g.includes("chez n’importe quel commerce ClikMe"), `Hugo : 1 / 10, encore 9, tous commerces (${g.slice(0, 120)})`);
-ok((await hugo.locator(".tf-photo, .tf-moi").count()) === 0, "Hugo n'a pas encore droit à la sienne");
+ok(g.includes("Crée la tienne") && g.includes("gratuit"), `sous la démonstration : crée la tienne, c'est gratuit (${g.slice(0, 120)})`);
+// DÈS LE DÉPART (plus de « 10 figurines » à attendre) : « Crée ta figurine », avec 1 figurine
+ok((await hugo.locator("#creer.tf-photo").count()) === 1 && (await texte(hugo, "#creer")).includes("Crée ta figurine") && (await hugo.locator('.tf-la-tienne a[href="#creer"]').count()) === 1, "Hugo peut créer la sienne dès maintenant");
+ok((await hugo.locator("#creer .tf-prenom-photo, #creer .tf-ville").count()) === 0, "il a un compte et un prénom : on ne les lui redemande pas");
 ok((await texte(hugo, ".mc-heros h1")).includes("Ta figurine") && (await texte(hugo, ".tf-demo")).includes("Démonstration · fais-la parler"), "en haut de la page : la figurine qui parle, en démonstration");
 ok((await hugo.locator(".tf-demo .tf-expr button").count()) === 5, "cinq visages : normal, joie, colère, tristesse, euphorie");
 // LE CADRE A LES PROPORTIONS DE SON IMAGE (852 × 1024) : la tête ne sort jamais du cadre
@@ -116,12 +118,66 @@ ok((await debordement(ami)) <= 0 && !/exemple/i.test(await texte(ami, ".mr")), "
 await ami.screenshot({ path: `${D}/ma-figurine-0-demo-recue.png`, fullPage: true });
 await hugo.screenshot({ path: `${D}/ma-figurine-0-demo.png`, fullPage: true });
 
+// ═══ HUGO CRÉE LA SIENNE (1 achat) : SES OPTIONS, UNE PAR ACHAT ═══
+await hugo.locator("#creer .tf-choisir input").setInputFiles(path.resolve("public/direct/double/comptoir.jpg"));
+await hugo.waitForSelector("#creer .tf-choisir img", { timeout: 15000 });
+await hugo.locator("#creer .tf-accord input").check();
+await hugo.locator("#creer .tf-envoyer").click();
+// (ici, pas de moteur d'image : ClikMe la fait à la main, comme l'admin — ses deux images posées dans le faux Supabase)
+await hugo.waitForSelector(".tf-annonce", { timeout: 30000 });
+ok((await texte(hugo, ".tf-annonce")).includes("On fabrique ta figurine"), "sans moteur d'image : ClikMe la fabrique");
+for (const [nom, src] of [
+  ["neutre", "public/direct/double/pied/salut-1.webp"],
+  ["parle", "public/direct/double/parle-1.webp"],
+])
+  await fetch(`${STOCK}/figurines-clients/${HUGO.id}/${nom}-essai.webp`, { method: "POST", headers: { "content-type": "image/webp" }, body: fs.readFileSync(src) });
+await fetch(`${F}/clik_ma_figurine?habitant_id=eq.${HUGO.id}`, {
+  method: "PATCH",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ neutre: `${HUGO.id}/neutre-essai.webp`, parle: `${HUGO.id}/parle-essai.webp`, prete_le: new Date().toISOString() }),
+});
+await hugo.reload({ waitUntil: "networkidle" });
+await hugo.waitForSelector(".tf-moi .tf-options", { timeout: 30000 });
+const opts = await texte(hugo, ".tf-options");
+ok(/La colère ouverte ✓/.test(opts) && /La tristesse 3ᵉ achat/.test(opts) && opts.includes("Encore 1 achat"), `ses options : la colère ouverte (1 achat), la suite sous cadenas (${opts.slice(0, 160)})`);
+ok((await hugo.locator(".tf-moi .tf-expr button.ferme").count()) === 2 && (await hugo.locator(".tf-moi .tf-voix button.ferme").count()) === 3, "deux visages et trois voix sous cadenas");
+await hugo.locator(".tf-moi .tf-expr button", { hasText: "Tristesse" }).click();
+ok((await hugo.locator(".tf-moi .fqp").getAttribute("data-sentiment")) !== "tristesse" && (await texte(hugo, ".tf-nudge")).includes("s’ouvre à ton 3ᵉ achat"), `un visage fermé dit quel achat l'ouvre (${await texte(hugo, ".tf-nudge")})`);
+await hugo.locator(".tf-moi .tf-expr button", { hasText: "Colère" }).click();
+ok((await hugo.locator(".tf-moi .fqp").getAttribute("data-sentiment")) === "colere", "la colère, ouverte, se choisit");
+// LE SERVEUR TIENT LES OPTIONS, lui aussi
+const voixFermee = await hugo.evaluate(async () => (await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "voix", texte: "Coucou", voix: "posee" }) })).status);
+ok(voixFermee === 403, `une voix fermée : le serveur refuse (${voixFermee})`);
+const tristeFerme = await hugo.evaluate(async () => (await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "message", son: "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQxAADB8AhSmxhIIEVCSiJrDCQBTcu3UrAIwUdkRgQbFAZC1CQEwTJ9mjRvBA4UOLD8nKVOWfh+UlK3z/177OXrfOdKl7pyn3Xf//WreyTRUoAWgBgkOAGbZHBgG1OF6zM82DWbZaUmMBptgQhGjsyYqc9ae9XFz280948NMBWInljyzsNRFLPWdnZGWrddDsjK1unuSrVN9jJsK8KuQtQCtMBjCEtImISdNKJOopIpBFpNSMbIHCSRpRR5iakjTiyzLhchUUBwCgyKiweBv/7UsQbg8isVNoMPMjAAAA0gAAABEVFGmgqK////9bP/6XCykxBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq", duree: 1.2, commerces: [], sentiment: "tristesse" }) })).status);
+ok(tristeFerme === 400, `un visage fermé : le message est refusé (${tristeFerme})`);
+ok((await debordement(hugo)) <= 0, "sa figurine et ses options ne débordent pas");
+await hugo.screenshot({ path: `${D}/ma-figurine-0b-options.png`, fullPage: true });
+
+// ═══ UN VISITEUR SANS COMPTE : SA PHOTO LUI OUVRE SON COMPTE (son prénom, sa ville) ═══
+const neuf = await tel(null);
+await neuf.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
+await neuf.waitForSelector("#creer", { timeout: 60000 });
+ok((await neuf.locator("#creer .tf-prenom-photo").count()) === 1, "sans compte : son prénom est demandé");
+await neuf.locator("#creer .tf-choisir input").setInputFiles(path.resolve("public/direct/double/comptoir.jpg"));
+await neuf.waitForSelector("#creer .tf-choisir img", { timeout: 15000 });
+await neuf.locator("#creer .tf-prenom-photo").fill("Zoé");
+if (await neuf.locator("#creer .tf-ville").count()) await neuf.locator("#creer .tf-ville").selectOption("dax");
+await neuf.locator("#creer .tf-accord input").check();
+await neuf.locator("#creer .tf-envoyer").click();
+await neuf.waitForSelector(".tf-annonce", { timeout: 30000 });
+const zoe = (await lire("human_habitants", "prenom=eq.Zoé"))[0];
+ok(zoe?.ville_slug === "dax" && (await neuf.context().cookies()).some((c) => c.name === "clikme_habitant"), `son compte est ouvert, à Dax, avec son prénom (${zoe?.ville_slug})`);
+const [figZoe] = await lire("clik_ma_figurine", `habitant_id=eq.${zoe?.id}`);
+ok(figZoe?.photo?.startsWith(`${zoe?.id}/photo-`) && figZoe?.accord_le, "sa photo est rangée, son accord noté");
+const sansVille = await fetch(`${BASE}/api/direct/ma-figurine`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "photo", photo: "data:image/png;base64,AAAA", accord: true, ville: "atlantide" }) });
+ok(sansVille.status === 400, "une ville sans commerce ClikMe : pas de compte");
+
 // ═══ LÉA : SA PHOTO ═══
 const lea = await tel(LEA);
 await lea.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
 await lea.waitForSelector(".tf-photo", { timeout: 60000 });
 const ph = await texte(lea, ".tf-photo");
-ok(/\d+ figurines : ta figurine t’attend/.test(ph), `Léa : ta figurine t'attend (${ph.slice(0, 60)})`);
+ok(ph.includes("Crée ta figurine") && ph.includes("gratuit"), `Léa : crée ta figurine (${ph.slice(0, 60)})`);
 ok(await lea.locator(".tf-photo .tf-envoyer").isDisabled(), "sans photo, pas d'envoi");
 await lea.locator(".tf-choisir input").setInputFiles(path.resolve("public/direct/double/comptoir.jpg"));
 await lea.waitForSelector(".tf-choisir img", { timeout: 15000 });
@@ -199,7 +255,8 @@ await amie.waitForSelector(".mr h1", { timeout: 60000 });
 const mr = await texte(amie, ".mr");
 ok((await texte(amie, ".mr h1")) === "Léa t’a envoyé sa figurine", "« Léa t’a envoyé sa figurine »");
 ok(mr.includes(A.nom) && !mr.includes("Atelier Tout Neuf") && (await amie.locator(`.mr-commerces a[href="/f/${A.slug}"]`).count()) === 1, "ses commerces préférés : le Comptoir, pas l'Atelier");
-ok(mr.includes("Et toi ?") && (await amie.locator('.mr-toi a[href="/collection"]').count()) === 1, "« Et toi ? » mène à sa collection");
+ok(mr.includes("Et toi ?") && (await amie.locator('.mr-toi a[href="/collection#creer"]').count()) === 1, "« Et toi ? » mène à « Crée ta figurine »");
+ok((await amie.locator(".mr-fig.mr-or").count()) === 1, "Léa a plus de 5 achats : son message arrive dans le cadre doré");
 ok((await amie.locator(".mr .fqp").getAttribute("data-sentiment")) === "joie" && mr.includes("pleine de joie"), "chez son amie, la figurine est pleine de joie");
 ok((await texte(amie, ".mr-bulle")).includes("Coucou Camille ! On se voit ce soir ?"), "ce qu'elle dit s'écrit en bulle");
 const titre = await amie.title();
@@ -236,11 +293,11 @@ ok((await texte(amie, ".mr")).includes("Ce message a été signalé") && (await 
 ok((await fetch(`${BASE}/api/direct/ma-figurine/son?m=${id}`)).status === 404, "sa voix non plus");
 ok((await fetch(`${BASE}/figurine/zzzzzzzzzzzz`)).status === 404, "un lien inconnu : 404");
 
-// sans cookie, on ne peut rien envoyer
-const r = await fetch(`${BASE}/api/direct/ma-figurine`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "photo", photo: "data:image/png;base64,AAAA", accord: true }) });
-ok(r.status === 403, "sans être quelqu'un, pas de photo");
+// sans cookie, on ne peut rien envoyer d'autre qu'une photo (qui ouvre un compte)
+const r = await fetch(`${BASE}/api/direct/ma-figurine`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "message", son: "data:audio/mpeg;base64,AAAA", duree: 1 }) });
+ok(r.status === 403, "sans être quelqu'un, pas de message");
 
-const erreurs = [...hugo.err, ...ami.err, ...lea.err, ...amie.err];
+const erreurs = [...hugo.err, ...ami.err, ...neuf.err, ...lea.err, ...amie.err];
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` : ${erreurs[0]}` : ""}`);
 await b.close();
 console.log(echecs ? `${echecs} ÉCHEC(S)` : "TOUT EST BON");

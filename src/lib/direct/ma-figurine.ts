@@ -1,15 +1,17 @@
 /**
- * 🗣️ SA PROPRE FIGURINE — « à 10 figurines, chez vous ou ailleurs, vos clients ont leur propre figurine : elle parle
- * avec leur voix, part chez leurs proches… et cite leurs commerces préférés, dont le vôtre. »
- * (`docs/figurines.md`, 9.7.)
+ * 🗣️ SA PROPRE FIGURINE — DÈS LE DÉPART (4 novembre 2026, le propriétaire : « le plus simple et le mieux, c'est qu'on
+ * ait la possibilité de créer sa figurine dès le départ, mais qu'on bénéficie d'options supplémentaires à chaque fois
+ * qu'on achète quelque chose chez un commerçant »). Avant, il fallait 10 figurines gagnées.
  *
- * LA RÈGLE : 10 FIGURINES GAGNÉES, TOUS COMMERCES CONFONDUS (`figurinesEnTout`). Chaque commerce récompense sa
- * collection (la figurine d'or, son cadeau) ; ClikMe récompense le réseau (sa figurine à soi). Ensuite :
- *   1. il envoie une photo de lui (« C'est bien moi sur la photo ») ;
- *   2. ClikMe fabrique sa figurine — à la main pour l'instant — et pose ses deux images (bouche fermée, ouverte) ;
- *   3. il lui fait dire un message — un texte lu par une voix au choix (ElevenLabs : la seule voix fabriquée de ClikMe,
- *      décidée par le propriétaire le 4 novembre 2026), ou SA voix enregistrée —, choisit son visage (ses expressions),
- *      les commerces qu'elle cite, et l'envoie : un lien `/figurine/<id>`.
+ * LA RÈGLE :
+ *   1. il envoie une photo de lui (« C'est bien moi sur la photo ») — sans compte, on lui en ouvre un (sa ville) ;
+ *   2. le moteur d'image fabrique sa figurine tout de suite (`ma-figurine-fabrique-serveur.ts`) : bouche fermée, puis
+ *      bouche ouverte. Sans moteur branché, ClikMe la fait à la main (l'admin), comme avant ;
+ *   3. il lui fait dire un message — un texte lu par une voix (ElevenLabs : la seule voix fabriquée de ClikMe, décidée
+ *      par le propriétaire le 4 novembre 2026), ou SA voix enregistrée —, choisit son visage, les commerces qu'elle
+ *      cite, et l'envoie : un lien `/figurine/<id>` ;
+ *   4. CHAQUE ACHAT CHEZ UN COMMERÇANT (une visite validée au comptoir = une figurine gagnée, `figurinesEnTout`) LUI
+ *      OUVRE UNE OPTION DE PLUS (`OPTIONS_FIGURINE`) : un visage, des voix, le cadre doré…
  * CE QU'ELLE CITE, C'EST LUI QUI LE CHOISIT, parmi les commerces où il a des figurines : jamais « vu récemment chez… »
  * (on ne dit pas à ses proches où il est allé et quand).
  *
@@ -18,7 +20,28 @@
 import type { Collection } from "./collection";
 import { TOTAL_COLLECTION } from "./collection";
 
-export const SEUIL_MA_FIGURINE = 10;
+/**
+ * 🎁 SES OPTIONS, UNE DE PLUS À CHAQUE ACHAT — `n` : le nombre de figurines gagnées (tous commerces confondus) qui
+ * l'ouvre. Au départ (0) : sa figurine qui parle, avec son texte, la joie, la voix « Douce », l'envoi. Changer cette
+ * liste change la page, la route et les essais à la fois.
+ */
+export const OPTIONS_FIGURINE = [
+  { n: 1, cle: "colere", emoji: "😠", titre: "La colère", dit: "son visage en colère" },
+  { n: 2, cle: "voix", emoji: "🎙️", titre: "Toutes les voix, et la tienne", dit: "Pétillante, Chaleureuse, Posée… ou ta propre voix" },
+  { n: 3, cle: "tristesse", emoji: "😢", titre: "La tristesse", dit: "son visage triste" },
+  { n: 4, cle: "euphorie", emoji: "🤩", titre: "L’euphorie", dit: "son visage euphorique" },
+  { n: 5, cle: "or", emoji: "✨", titre: "Le cadre doré", dit: "tes messages arrivent dans un cadre en or" },
+] as const;
+export type CleOption = (typeof OPTIONS_FIGURINE)[number]["cle"];
+/** Ses options ouvertes, d'après ses figurines gagnées. */
+export const optionsOuvertes = (total: number): Set<CleOption> => new Set(OPTIONS_FIGURINE.filter((o) => total >= o.n).map((o) => o.cle));
+/** La prochaine option à ouvrir (`null` : toutes ouvertes). */
+export const optionSuivante = (total: number) => OPTIONS_FIGURINE.find((o) => total < o.n) ?? null;
+/** Ce sentiment est-il ouvert ? (la joie l'est dès le départ ; « aucun » aussi). */
+export const sentimentOuvert = (s: Sentiment | null, total: number) => !s || s === "joie" || optionsOuvertes(total).has(s as CleOption);
+/** Cette voix est-elle ouverte ? (« Douce » dès le départ ; les autres, et la sienne, avec l'option « voix »). */
+export const voixOuverte = (v: CleVoix | "micro", total: number) => v === "douce" || optionsOuvertes(total).has("voix");
+
 /** Un message : 15 secondes au plus ; il cite 4 commerces au plus. */
 export const DUREE_MAX_MESSAGE = 15;
 export const COMMERCES_MAX_MESSAGE = 4;
@@ -101,21 +124,26 @@ export function figurinesEnTout(familles: { collection?: Collection | null }[]):
 
 /**
  * Où il en est :
- *   · « a-gagner » : moins de 10 ;
- *   · « photo » : 10 atteint, sa photo à envoyer (ou à renvoyer : `refus`) ;
- *   · « fabrication » : photo reçue, ClikMe fabrique sa figurine ;
+ *   · « photo » : sa photo à envoyer (ou à renvoyer : `refus`) — dès le départ ;
+ *   · « fabrication » : photo reçue, sa figurine se fabrique (le moteur : `auto` ; sinon ClikMe, à la main) ;
  *   · « prete » : sa figurine est là, il peut la faire parler ;
- *   · « bientot » : 10 atteint, mais la suite n'est pas encore activée (migration pas appliquée).
+ *   · « bientot » : la suite n'est pas encore activée (migration pas appliquée).
  */
-export type EtapeMaFigurine = "a-gagner" | "photo" | "fabrication" | "prete" | "bientot";
+export type EtapeMaFigurine = "photo" | "fabrication" | "prete" | "bientot";
 
 export type CommerceCite = { slug: string; nom: string; figurine: string };
 
 export type EtatMaFigurine = {
+  /** Ses figurines gagnées, tous commerces confondus : ce qui ouvre ses options (`OPTIONS_FIGURINE`). */
   total: number;
-  seuil: number;
   etape: EtapeMaFigurine;
   prenom: string;
+  /** Il a un compte (le cookie de l'appareil) ; sans lui, sa photo ouvre son compte dans la ville choisie. */
+  compte: boolean;
+  /** Sa figurine se fabrique par le moteur d'image (sinon : à la main, par ClikMe). */
+  auto?: boolean;
+  /** Il peut la refaire aujourd'hui (le moteur), encore tant de fois. */
+  refaire?: number;
   /** Ses deux images (adresses signées, une heure). */
   neutre?: string;
   parle?: string;
@@ -149,6 +177,8 @@ export type MessageFigurine =
       texte?: string;
       /** Un message de la démonstration : écrit par `prenom` avec la figurine de ClikMe (pas la sienne). */
       demo?: boolean;
+      /** ✨ Le cadre doré (une option de l'expéditeur). */
+      or?: boolean;
       commerces: (CommerceCite & { ville: string })[];
     };
 
