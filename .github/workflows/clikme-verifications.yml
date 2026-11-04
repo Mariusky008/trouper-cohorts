@@ -86,7 +86,7 @@ jobs:
       CLIKME_WHATSAPP: "+33 6 39 98 00 00"
       # `src/lib/stripe.ts` refuse de se charger sans clé : une fausse suffit, rien ne part chez Stripe.
       STRIPE_SECRET_KEY: sk_test_faux
-      # « Ma figurine » : un texte lu par une voix. La fausse voix est dans le faux Supabase (l'enregistrement de Léa) ;
+      # « Ma figurine » : un texte lu par une voix. La fausse voix est dans le faux Supabase (un enregistrement d’essai) ;
       # rien ne part chez ElevenLabs.
       ELEVENLABS_API_KEY: faux
       ELEVENLABS_BASE_URL: http://127.0.0.1:54321/elevenlabs

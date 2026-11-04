@@ -4,13 +4,11 @@
  * 🏆 « MA COLLECTION », CE QUI L'EXPLIQUE — refait le 4 novembre 2026 (« on s'y perd, on ne sait pas quoi y faire ») :
  *   · LE COMPTE À REBOURS (`ChronoEdition`) : l'édition du mois, et le temps qui reste à la seconde ; la frise des
  *     éditions. Tout est vrai : les dates sont celles des éditions (`EDITIONS_DATEES`), aucun chiffre n'est inventé ;
- *   · CE QUE TU GAGNES (`CeQueTuGagnes`) : les deux « 10 » qu'on confondait — 10 au même commerce : sa figurine d'or ;
- *     10 en tout : ta propre figurine qui parle ; les paliers d'une collection, repliés ;
  *   · OÙ LES GAGNER (`OuGagner`) : les commerces ClikMe (`page.tsx`).
  * La figurine qui parle, le « wow » de la page, est en haut (`ma-figurine.tsx`).
  */
 import { useEffect, useState, type CSSProperties } from "react";
-import { EDITIONS_DATEES, PALIERS_COLLECTION, TOTAL_COLLECTION, editionsDuMoment, fenetre, finEnAnnee, jourEnClair } from "@/lib/direct/collection";
+import { EDITIONS_DATEES, editionsDuMoment, fenetre, finEnAnnee, jourEnClair } from "@/lib/direct/collection";
 import { Particules, THEMES, type Theme } from "@/app/f/[slug]/collection";
 
 export type CommerceACollectionner = { slug: string; nom: string; ville: string; figurine: string; cadeau?: string };
@@ -153,65 +151,6 @@ export function ChronoEdition({ aujourdhui, figurine }: { aujourdhui: string; fi
   );
 }
 
-// ─── ce que tu gagnes ────────────────────────────────────────────────────────────────────────────
-const GAINS = [
-  { emoji: "🚪", titre: "1 visite = 1 figurine", dit: "celle du commerce, dans son édition du mois" },
-  { emoji: "🏆", titre: `${TOTAL_COLLECTION} au même commerce`, dit: "sa figurine d’or, numérotée, et son cadeau" },
-  { emoji: "🗣️", titre: `${TOTAL_COLLECTION} en tout`, dit: "ta propre figurine, qui parle et change de visage" },
-];
-
-export function CeQueTuGagnes() {
-  return (
-    <section className="dc-bloc" aria-labelledby="dc-gagnes">
-      <h2 id="dc-gagnes">Ce que tu gagnes</h2>
-      <ol className="dc-trois">
-        {GAINS.map((e, i) => (
-          <li key={e.titre} style={{ "--d": `${0.08 + i * 0.1}s` } as CSSProperties}>
-            <span className="dc-ic" aria-hidden="true">
-              {e.emoji}
-            </span>
-            <strong>{e.titre}</strong>
-            <small>{e.dit}</small>
-          </li>
-        ))}
-      </ol>
-      <details className="dc-plus">
-        <summary>Les paliers d’une collection</summary>
-        <CeQueCaRapporte />
-      </details>
-    </section>
-  );
-}
-
-function CeQueCaRapporte() {
-  const paliers = new Map(PALIERS_COLLECTION.map((p) => [p.n, p]));
-  return (
-    <div className="dc-paliers-bloc">
-      <div className="dc-piste" aria-hidden="true">
-        {Array.from({ length: TOTAL_COLLECTION }, (_, i) => i + 1).map((n) => {
-          const p = paliers.get(n);
-          return (
-            <span key={n} className={p ? `pal${n === TOTAL_COLLECTION ? " or" : ""}` : ""} style={{ "--d": `${n * 0.06}s` } as CSSProperties}>
-              {p ? p.emoji : n}
-            </span>
-          );
-        })}
-      </div>
-      <ul className="dc-paliers">
-        {PALIERS_COLLECTION.map((p) => (
-          <li key={p.n} className={p.n === TOTAL_COLLECTION ? "or" : ""}>
-            <span aria-hidden="true">{p.emoji}</span>
-            <small>{p.n} figurines</small>
-            <b>{p.titre}</b>
-            <span className="dc-p-dit">{p.n === TOTAL_COLLECTION ? "numérotée, et le cadeau du commerce" : p.dit}</span>
-          </li>
-        ))}
-      </ul>
-      <p className="dc-rares">✨ Et 2 éditions rares, seulement le jour où le commerce annonce une place libre.</p>
-    </div>
-  );
-}
-
 export function OuGagner({ commerces, titre, aujourdhui }: { commerces: CommerceACollectionner[]; titre: string; aujourdhui: string }) {
   if (!commerces.length) return null;
   const m = editionsDuMoment(aujourdhui).maintenant;
@@ -281,28 +220,6 @@ export const STYLES_DECOUVRIR = `
 .ce-frise .or .ce-mini{border-color:#FFE7A0;box-shadow:0 0 16px rgba(255,214,120,.6)}
 .ce-frise .or .ce-mini img{filter:sepia(1) saturate(3.2) hue-rotate(-12deg) brightness(1.05)}
 @keyframes ce-clignote{50%{opacity:.6}}
-/* comment ça marche */
-.dc-trois{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0;padding:0;list-style:none}
-.dc-trois li{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 6px 12px;border-radius:20px;text-align:center;background:linear-gradient(180deg,rgba(255,46,154,.16),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.12);animation:mc-entre .5s cubic-bezier(.2,.9,.3,1) var(--d) both}
-.dc-ic{position:relative;display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#FF2E9A,#7B1B5E);font-size:27px;box-shadow:0 10px 20px -8px rgba(255,46,154,.8)}
-.dc-ic b{position:absolute;left:-4px;top:-4px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#F2C46B;color:#2A1408;font-size:12px;font-weight:900}
-.dc-trois strong{font-size:14px;line-height:1.15}
-.dc-trois small{font-size:11.5px;line-height:1.3;color:#A88E99}
-/* ce que ça rapporte */
-.dc-piste{position:relative;display:grid;grid-template-columns:repeat(10,minmax(0,1fr));align-items:center;gap:4px;margin:6px 0 12px}
-.dc-piste::before{content:"";position:absolute;left:4%;right:4%;top:50%;height:4px;margin-top:-2px;border-radius:2px;background:linear-gradient(90deg,#FF2E9A,#FF8FCB 55%,#F2C46B)}
-.dc-piste span{position:relative;justify-self:center;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#2A1220;border:2px solid rgba(255,143,203,.6);font-size:11px;font-weight:800;color:#D9C3CB;animation:co-pop .5s cubic-bezier(.2,1.5,.4,1) var(--d) both}
-.dc-piste span.pal{width:36px;height:36px;font-size:19px;background:#3A1A10;border-color:#F2C46B;box-shadow:0 0 14px rgba(242,196,107,.6)}
-.dc-piste span.or{width:42px;height:42px;font-size:22px;background:linear-gradient(135deg,#FFE7A0,#B8801E);box-shadow:0 0 22px rgba(255,214,120,.8)}
-.dc-paliers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0;padding:0;list-style:none}
-.dc-paliers li{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:18px;text-align:center;background:linear-gradient(180deg,rgba(242,196,107,.14),rgba(255,46,154,.05));border:1px solid rgba(242,196,107,.3)}
-.dc-paliers li > span:first-child{font-size:28px;line-height:1.1}
-.dc-paliers small{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#F2C46B}
-.dc-paliers b{font-size:13.5px;line-height:1.2}
-.dc-p-dit{font-size:11.5px;line-height:1.3;color:#A88E99}
-.dc-paliers li.or{border-color:rgba(255,214,120,.7);background:linear-gradient(180deg,rgba(255,214,120,.25),rgba(184,128,30,.08))}
-.dc-rares{margin:10px 0 0;padding:10px 14px;border-radius:16px;font-size:12.5px;line-height:1.4;color:#D9C3CB;text-align:center;border:2px solid transparent;
-  background:linear-gradient(#1E0C18,#1E0C18) padding-box,linear-gradient(120deg,#C9B6FF,#7B5CFF,#FF7AD9,#7FE7FF,#C9B6FF) border-box;background-size:auto,300% 300%;animation:co-holo 5s linear infinite}
 /* où commencer */
 .dc-commerces{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0;padding:0;list-style:none}
 .dc-commerces a{position:relative;display:flex;flex-direction:column;height:100%;box-sizing:border-box;padding:10px 10px 12px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#FFF4E6;text-decoration:none;transition:transform .2s,border-color .2s}
@@ -316,14 +233,7 @@ export const STYLES_DECOUVRIR = `
 .dc-com-cadeau{display:block;margin-top:6px;font-size:12px;line-height:1.3;color:#F2C46B;overflow-wrap:anywhere}
 .dc-com-voir{display:block;margin-top:auto;padding-top:8px;font-size:12.5px;font-weight:800;color:#FF7AC0}
 .dc-deja{margin:24px 4px 0;font-size:12.5px;line-height:1.45;color:#A88E99;text-align:center}
-.dc-plus{margin:28px 0 0;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);padding:0 14px}
-.dc-plus summary{padding:14px 0;font-weight:800;cursor:pointer;list-style:none}
-.dc-plus summary::-webkit-details-marker{display:none}
-.dc-plus summary::after{content:"＋";float:right;color:#FF7AC0}
-.dc-plus[open] summary::after{content:"－"}
-.dc-plus .dc-bloc{margin:4px 0 18px}
 @keyframes dc-flotte{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-@keyframes dc-remplir{from{transform:scaleX(0)}}
 /* l'ordinateur : la page prend la largeur */
 @media (min-width:860px){
   .dc{padding:0 32px}
@@ -345,19 +255,6 @@ export const STYLES_DECOUVRIR = `
   .ce-mini{width:84px;height:112px}
   .ce-frise b{font-size:13px;max-width:100px}
   .ce-frise small{font-size:11.5px}
-  .dc-trois{gap:16px}
-  .dc-trois li{padding:26px 16px 22px;gap:8px}
-  .dc-ic{width:76px;height:76px;font-size:38px}
-  .dc-trois strong{font-size:19px}
-  .dc-trois small{font-size:14px}
-  .dc-piste span{width:34px;height:34px;font-size:14px}
-  .dc-piste span.pal{width:52px;height:52px;font-size:27px}
-  .dc-piste span.or{width:60px;height:60px;font-size:31px}
-  .dc-paliers{gap:16px}
-  .dc-paliers li{padding:18px 12px}
-  .dc-paliers b{font-size:17px}
-  .dc-p-dit{font-size:13.5px}
-  .dc-rares{font-size:14px}
   .dc-commerces{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
   .dc-com-fig{height:150px}
 }

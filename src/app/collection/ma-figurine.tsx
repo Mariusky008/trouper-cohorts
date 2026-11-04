@@ -8,7 +8,9 @@
  *
  * UN SEUL ÉCRAN, UN SEUL GESTE : la figurine en grand ; dessous, ce qu'elle ressent (SON visage change) ; puis ce
  * qu'elle dit — un texte lu par une voix au choix, ou sa propre voix — ; « Écouter » ; « Envoyer » (WhatsApp d'abord).
- *   · `StudioDemo` : la figurine de Léa, pour qui n'a pas encore la sienne (des phrases toutes faites, rien à envoyer) ;
+ *   · `StudioDemo` : la figurine du propriétaire de ClikMe, pour qui n'a pas encore la sienne — 4 novembre 2026 : « je
+ *     choisis l'émotion, je tape ce que je veux qu'elle dise et je l'envoie à quelqu'un ; si c'est bluffant, je voudrais
+ *     créer ma propre figurine, et c'est ça qui motivera » : SON texte, SA voix au choix, et un vrai lien à envoyer ;
  *   · `StudioMoi` : la sienne, quand elle est prête (ses expressions se fabriquent toutes seules la première fois) ;
  *   · `EnvoiPhoto`, `Annonce` : à 10 figurines, sa photo ; puis « on fabrique ta figurine ».
  * La règle est dans `lib/direct/ma-figurine.ts`.
@@ -17,7 +19,8 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   COMMERCES_MAX_MESSAGE,
   DUREE_MAX_MESSAGE,
-  PHRASES_DEMO,
+  IMAGES_DEMO,
+  PRENOM_MAX,
   SENTIMENTS,
   TEXTE_MAX,
   VOIX_FIGURINE,
@@ -80,60 +83,138 @@ function ChoixVoix({ valeur, onChoix, desactive }: { valeur: CleVoix; onChoix: (
   );
 }
 
-// ─── la démonstration : la figurine de Léa ──────────────────────────────────────────────────────
-/** La phrase enregistrée par Léa elle-même (sa vraie voix) ; les autres sont lues par une voix au choix. */
-const PHRASE_LEA = { cle: "lea", texte: "Le meilleur magret de Dax !", src: "/collection/lea.mp3" } as const;
+// ─── l'envoi : WhatsApp d'abord ─────────────────────────────────────────────────────────────────
+/** Le lien est prêt : WhatsApp en grand, puis « Partager… », SMS, copier ; et ce que l'autre verra. */
+function PanneauEnvoi({ lien, texte }: { lien: string; texte: string }) {
+  const [copie, setCopie] = useState(false);
+  const partager = async () => {
+    try {
+      await navigator.share({ title: texte, text: texte, url: lien });
+    } catch {
+      /* il a fermé la feuille de partage */
+    }
+  };
+  const copier = async () => {
+    try {
+      await navigator.clipboard.writeText(lien);
+      setCopie(true);
+    } catch {
+      setCopie(false);
+    }
+  };
+  return (
+    <div className="tf-pret">
+      <b>Ton message est prêt ✓</b>
+      <a className="tf-wa" href={`https://wa.me/?text=${encodeURIComponent(`${texte} ${lien}`)}`} target="_blank" rel="noopener noreferrer">
+        Envoyer sur WhatsApp
+      </a>
+      <div className="tf-autres">
+        {typeof navigator !== "undefined" && "share" in navigator && (
+          <button type="button" onClick={partager}>
+            Partager…
+          </button>
+        )}
+        <a className="tf-sms" href={`sms:?&body=${encodeURIComponent(`${texte} ${lien}`)}`}>
+          SMS
+        </a>
+        <button type="button" onClick={copier}>
+          {copie ? "Lien copié ✓" : "Copier le lien"}
+        </button>
+      </div>
+      <input className="tf-adresse" readOnly value={lien} aria-label="Le lien de ton message" onFocus={(e) => e.target.select()} />
+      <a className="tf-voir" href={lien} target="_blank" rel="noopener noreferrer">
+        Voir ce qu’on recevra ›
+      </a>
+    </div>
+  );
+}
+
+const Etape = ({ n, children }: { n: number; children: React.ReactNode }) => (
+  <b className="tf-etape">
+    <i aria-hidden="true">{n}</i>
+    {children}
+  </b>
+);
+
+// ─── la démonstration : la figurine du propriétaire, qu'on fait parler soi-même ────────────────────────
+const IDEES = ["Joyeux anniversaire ! Je t’embrasse fort.", "On se fait un resto ce soir ?", "Tu me manques, passe à la maison !", "Bravo pour ton examen !"];
 
 export function StudioDemo({ demo, total, seuil }: { demo: DemoFigurine | null; total: number | null; seuil: number }) {
   const fig = useRef<FigurineHandle>(null);
   const [sentiment, setSentiment] = useState<Sentiment | null>("joie");
   const [touche, setTouche] = useState(false);
   const [rejoue, setRejoue] = useState(0);
-  const phrases = demo?.voix ? [PHRASE_LEA, ...PHRASES_DEMO] : [PHRASE_LEA];
-  const [phrase, setPhrase] = useState<string>(PHRASE_LEA.cle);
-  const [voix, setVoix] = useState<CleVoix>("douce");
+  const [texte, setTexte] = useState("");
+  const [voix, setVoix] = useState<CleVoix>("chaleureuse");
+  const [prenom, setPrenom] = useState("");
   const [parle, setParle] = useState(false);
+  const [entendu, setEntendu] = useState("");
+  const [envoi, setEnvoi] = useState(false);
+  const [envoye, setEnvoye] = useState<{ lien: string; cle: string } | null>(null);
+  const [erreur, setErreur] = useState("");
+  const [idee, setIdee] = useState(0);
+  const branchee = Boolean(demo?.voix);
 
-  // tant qu'on n'a rien touché, son visage passe d'une émotion à l'autre
+  // tant qu'on n'a rien touché, son visage passe d'une émotion à l'autre (et l'idée de texte change)
   useEffect(() => {
     if (touche) return;
     const t = window.setInterval(() => {
       setSentiment((s) => SENTIMENTS[(SENTIMENTS.findIndex((v) => v.cle === s) + 1) % SENTIMENTS.length].cle);
       setRejoue((n) => n + 1);
+      setIdee((i) => (i + 1) % IDEES.length);
     }, 2600);
     return () => window.clearInterval(t);
   }, [touche]);
 
-  const p = phrases.find((x) => x.cle === phrase) ?? PHRASE_LEA;
-  const ecouter = () => {
+  const t = texte.trim();
+  const cleSon = `${voix}|${t}`;
+  const cleEnvoi = `${cleSon}|${sentiment ?? ""}|${prenom.trim()}`;
+
+  function ecouter() {
     setTouche(true);
-    void fig.current?.jouer(
-      "src" in p
-        ? p.src
-        : async () => {
-            const j = await demander({ action: "demo", quoi: "voix", phrase: p.cle, voix });
-            if (!j.son) throw new Error("La voix n’a pas pu lire ce texte.");
-            return j.son;
-          },
-    );
-  };
+    setErreur("");
+    if (!t) return setErreur("Écris d’abord ce qu’elle doit dire.");
+    void fig.current
+      ?.jouer(async () => {
+        const j = await demander({ action: "demo", quoi: "voix", texte: t, voix });
+        if (!j.son) throw new Error("La voix n’a pas pu lire ce texte.");
+        return j.son;
+      })
+      .then((ok) => ok && setEntendu(cleSon));
+  }
+
+  async function envoyer() {
+    setTouche(true);
+    setErreur("");
+    if (!t) return setErreur("Écris d’abord ce qu’elle doit dire.");
+    if (envoye?.cle === cleEnvoi) return;
+    setEnvoi(true);
+    try {
+      const j = await demander({ action: "demo", quoi: "message", texte: t, voix, prenom: prenom.trim(), ...(sentiment ? { sentiment } : {}) });
+      setEnvoye({ lien: `${window.location.origin}${j.lien}`, cle: cleEnvoi });
+    } catch (e) {
+      setErreur((e as Error).message);
+    } finally {
+      setEnvoi(false);
+    }
+  }
   const reste = total == null ? null : Math.max(0, seuil - total);
 
   return (
     <div className="tf tf-demo">
       <div className="tf-scene">
-        <span className="tf-tag">Démonstration · la figurine de Léa</span>
+        <span className="tf-tag">✨ Démonstration · fais-la parler</span>
         <FigurineQuiParle
           ref={fig}
-          neutre="/collection/lea-neutre.webp"
-          parle="/collection/lea-parle.webp"
+          neutre={IMAGES_DEMO.neutre}
+          parle={IMAGES_DEMO.parle}
           expressions={demo?.expressions}
           sentiment={sentiment}
           rejoue={rejoue}
           onJoue={setParle}
-          decoupe={!demo?.expressions || !Object.keys(demo.expressions).length}
           className="tf-fig"
         />
+        <Etape n={1}>Choisis son émotion</Etape>
         <ChoixExpression
           valeur={sentiment}
           onChoix={(s) => {
@@ -143,26 +224,63 @@ export function StudioDemo({ demo, total, seuil }: { demo: DemoFigurine | null; 
           }}
         />
       </div>
+
       <div className="tf-panneau">
-        <b className="tf-q">Ce qu’elle dit</b>
-        <div className="tf-phrases" role="radiogroup" aria-label="Ce qu’elle dit">
-          {phrases.map((x) => (
-            <button key={x.cle} type="button" role="radio" aria-checked={phrase === x.cle} className={phrase === x.cle ? "pris" : ""} onClick={() => setPhrase(x.cle)}>
-              « {x.texte} »
-            </button>
-          ))}
-        </div>
-        {demo?.voix && (
+        <Etape n={2}>Écris ce qu’elle dit</Etape>
+        <label className="tf-texte">
+          <textarea
+            value={texte}
+            maxLength={TEXTE_MAX}
+            rows={3}
+            placeholder={IDEES[idee]}
+            onFocus={() => setTouche(true)}
+            onChange={(e) => setTexte(e.target.value)}
+            aria-label="Ce qu’elle doit dire"
+            disabled={!branchee}
+          />
+          <small>
+            {texte.length} / {TEXTE_MAX}
+          </small>
+        </label>
+        {branchee ? (
           <>
-            <b className="tf-q">Sa voix {"src" in p && <small>(celle-ci est sa vraie voix)</small>}</b>
-            <ChoixVoix valeur={voix} onChoix={setVoix} desactive={"src" in p} />
+            <b className="tf-q">Sa voix</b>
+            <ChoixVoix valeur={voix} onChoix={setVoix} />
+            <button type="button" className="tf-ecouter" onClick={ecouter} disabled={parle || !t}>
+              {parle ? "🔊 Elle parle…" : entendu === cleSon ? "▶ Réécouter" : "▶ Écouter"}
+            </button>
+
+            <Etape n={3}>Envoie-la à quelqu’un</Etape>
+            {envoye?.cle === cleEnvoi ? (
+              <PanneauEnvoi lien={envoye.lien} texte={texteDuMessage(prenom.trim(), true)} />
+            ) : (
+              <>
+                <input
+                  className="tf-prenom"
+                  value={prenom}
+                  maxLength={PRENOM_MAX}
+                  onChange={(e) => setPrenom(e.target.value)}
+                  placeholder="Ton prénom (il le verra)"
+                  aria-label="Ton prénom"
+                  autoComplete="given-name"
+                />
+                <button type="button" className="tf-envoyer tf-envoyer-wa" onClick={envoyer} disabled={envoi || !t}>
+                  {envoi ? "Un instant…" : "📲 L’envoyer"}
+                </button>
+              </>
+            )}
           </>
+        ) : (
+          <p className="tf-note">🔊 Sa voix arrive très bientôt : tu pourras lui faire dire ce que tu veux, et l’envoyer.</p>
         )}
-        <button type="button" className="tf-ecouter" onClick={ecouter} disabled={parle}>
-          {parle ? "🔊 Elle parle…" : "▶ Écouter"}
-        </button>
-        <div className="tf-la-tienne">
-          <b>La tienne : écris ce que tu veux, et envoie-la sur WhatsApp.</b>
+        {erreur && (
+          <p className="tf-erreur" role="alert">
+            {erreur}
+          </p>
+        )}
+
+        <div className={`tf-la-tienne${envoye || entendu ? " vu" : ""}`}>
+          <b>Bluffant ? La tienne aura TON visage.</b>
           {reste != null && (
             <>
               <span className="tf-jauge" role="progressbar" aria-valuemin={0} aria-valuemax={seuil} aria-valuenow={Math.min(total!, seuil)}>
@@ -205,7 +323,6 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine }) {
   const [choisis, setChoisis] = useState<string[]>(() => etat0.commerces.slice(0, COMMERCES_MAX_MESSAGE).map((c) => c.slug));
   const [envoi, setEnvoi] = useState(false);
   const [envoye, setEnvoye] = useState<{ lien: string; cle: string } | null>(null);
-  const [copie, setCopie] = useState(false);
   const [erreur, setErreur] = useState("");
   const [expressionsEnCours, setExpressionsEnCours] = useState(Boolean(etat0.expressionsAFaire));
   const micro = useRef<{ rec: MediaRecorder; flux: MediaStream; t0: number; minuteur: number } | null>(null);
@@ -335,22 +452,6 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine }) {
     }
   }
 
-  const texteLien = texteDuMessage(etat.prenom);
-  const partager = async () => {
-    try {
-      await navigator.share({ title: texteLien, text: texteLien, url: envoye!.lien });
-    } catch {
-      /* il a fermé la feuille de partage */
-    }
-  };
-  const copier = async () => {
-    try {
-      await navigator.clipboard.writeText(envoye!.lien);
-      setCopie(true);
-    } catch {
-      setCopie(false);
-    }
-  };
   const pret = envoye && envoye.cle === cleEnvoi(son);
 
   return (
@@ -462,26 +563,7 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine }) {
               </fieldset>
             )}
             {pret ? (
-              <div className="tf-pret">
-                <b>Ton message est prêt ✓</b>
-                <a className="tf-wa" href={`https://wa.me/?text=${encodeURIComponent(`${texteLien} ${envoye.lien}`)}`} target="_blank" rel="noopener noreferrer">
-                  Envoyer sur WhatsApp
-                </a>
-                <div className="tf-autres">
-                  {typeof navigator !== "undefined" && "share" in navigator && (
-                    <button type="button" onClick={partager}>
-                      Partager…
-                    </button>
-                  )}
-                  <a className="tf-sms" href={`sms:?&body=${encodeURIComponent(`${texteLien} ${envoye.lien}`)}`}>
-                    SMS
-                  </a>
-                  <button type="button" onClick={copier}>
-                    {copie ? "Lien copié ✓" : "Copier le lien"}
-                  </button>
-                </div>
-                <input className="tf-adresse" readOnly value={envoye.lien} aria-label="Le lien de ton message" onFocus={(e) => e.target.select()} />
-              </div>
+              <PanneauEnvoi lien={envoye.lien} texte={texteDuMessage(etat.prenom)} />
             ) : (
               <button type="button" className="tf-envoyer" onClick={envoyer} disabled={envoi}>
                 {envoi ? "Un instant…" : "📲 L’envoyer à quelqu’un"}
@@ -607,9 +689,15 @@ export const STYLES_MA_FIGURINE =
 .tf-panneau{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:24px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
 .tf-q{font-size:13px;font-weight:900;letter-spacing:.02em;color:#F2C46B}
 .tf-q small{font-weight:700;color:#A88E99}
-.tf-phrases{display:flex;flex-direction:column;gap:6px}
-.tf-phrases button{padding:11px 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.12);background:rgba(0,0,0,.18);color:#FFF4E6;font:inherit;font-size:14px;font-weight:700;text-align:left;cursor:pointer}
-.tf-phrases button.pris{border-color:#FF2E9A;background:rgba(255,46,154,.16)}
+.tf-etape{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:900;letter-spacing:-.01em;color:#FFF4E6}
+.tf-etape i{display:grid;place-items:center;flex:none;width:24px;height:24px;border-radius:50%;background:#FF2E9A;color:#fff;font-style:normal;font-size:13px;font-weight:900;box-shadow:0 0 0 4px rgba(255,46,154,.18)}
+.tf-scene .tf-etape{align-self:center;margin-bottom:-4px}
+.tf-panneau .tf-etape:not(:first-child){margin-top:10px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1)}
+.tf-prenom{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.15);background:rgba(0,0,0,.25);color:#FFF4E6;font:inherit;font-size:16px}
+.tf-prenom:focus{outline:none;border-color:#FF2E9A}
+.tf-envoyer-wa{background:#1FA855;box-shadow:0 12px 26px -12px rgba(31,168,85,.9)}
+.tf-voir{align-self:center;font-size:13px;font-weight:800;color:#FF9FD2;text-decoration:none}
+.tf-texte textarea:disabled{opacity:.6}
 .tf-voix{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .tf-voix button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 2px;border-radius:14px;border:1.5px solid rgba(255,255,255,.12);background:rgba(0,0,0,.18);color:#FFF4E6;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
 .tf-voix button span{font-size:20px}
@@ -652,6 +740,8 @@ export const STYLES_MA_FIGURINE =
 .tf-messages a{color:#FFF4E6;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tf-la-tienne{display:flex;flex-direction:column;gap:6px;margin-top:6px;padding:14px;border-radius:18px;background:linear-gradient(135deg,rgba(242,196,107,.16),rgba(255,46,154,.1));border:1px dashed rgba(242,196,107,.55);font-size:13.5px;color:#E8D3DC}
 .tf-la-tienne > b{font-size:15px;color:#FFF4E6}
+.tf-la-tienne.vu{border-style:solid;border-color:#F2C46B;box-shadow:0 0 30px -8px rgba(242,196,107,.55);animation:tf-vu .6s cubic-bezier(.2,1.5,.4,1)}
+@keyframes tf-vu{from{transform:scale(.96)}}
 .tf-jauge{position:relative;display:block;height:10px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
 .tf-jauge i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#FF2E9A,#F2C46B)}
 .tf-gagner{align-self:flex-start;margin-top:2px;color:#FF9FD2;font-weight:900;text-decoration:none}

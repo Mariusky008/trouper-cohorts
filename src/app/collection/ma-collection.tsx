@@ -4,21 +4,21 @@
  * 🏆 MA COLLECTION — l'écran, refait le 4 novembre 2026 (« on s'y perd, on ne sait pas quoi y faire, ça manque de
  * clarté et de modernité ; la section qui devrait être le wow de la page, “Ta propre figurine”, n'est pas du tout ce
  * que je voulais »). UNE HISTOIRE, DANS L'ORDRE :
- *   1. TA FIGURINE QUI PARLE (le wow) : celle de Léa en démonstration, puis la tienne — son visage change avec ce
- *      qu'elle ressent, elle dit ce que tu écris (ou ta voix), tu l'envoies sur WhatsApp (`ma-figurine.tsx`) ;
- *   2. CE QUE TU GAGNES : les deux « 10 », enfin séparés ;
- *   3. L'ÉDITION DU MOIS : ce qui se gagne maintenant, et le temps qui reste ;
- *   4. MES FIGURINES : une étagère par commerce (s'il en a) ;
- *   5. OÙ LES GAGNER : les commerces ClikMe.
+ *   1. TA FIGURINE QUI PARLE (le wow) : la démonstration (la figurine du propriétaire), qu'on fait parler soi-même —
+ *      son émotion, son texte, sa voix — et qu'on envoie sur WhatsApp ; puis la tienne (`ma-figurine.tsx`) ;
+ *   2. L'ÉDITION DU MOIS : ce qui se gagne maintenant, et le temps qui reste ;
+ *   3. MES FIGURINES : l'album, une page par commerce (`album.tsx`) ;
+ *   4. OÙ LES GAGNER : les commerces ClikMe.
+ * (« Ce que tu gagnes » et ses paliers sont partis le 4 novembre 2026 : l'album les montre là où ils comptent.)
  * Ses familles viennent de `/api/direct/famille?moi=1` (`famillesDe`) ; sa figurine et la démonstration, de
  * `/api/direct/ma-figurine`.
  */
 import Link from "next/link";
 import { useEffect, useState, type CSSProperties } from "react";
 import type { MaFamille } from "@/lib/direct/famille";
-import { deNom } from "@/lib/echanges/echanges";
-import { CollectionDuCommerce, STYLES_COLLECTION } from "@/app/f/[slug]/collection";
-import { CeQueTuGagnes, ChronoEdition, OuGagner, STYLES_DECOUVRIR, type CommerceACollectionner } from "./decouvrir";
+import { STYLES_COLLECTION } from "@/app/f/[slug]/collection";
+import { Album, STYLES_ALBUM } from "./album";
+import { ChronoEdition, OuGagner, STYLES_DECOUVRIR, type CommerceACollectionner } from "./decouvrir";
 import { Annonce, EnvoiPhoto, STYLES_MA_FIGURINE, StudioDemo, StudioMoi } from "./ma-figurine";
 import { SEUIL_MA_FIGURINE, figurinesEnTout, type DemoFigurine, type EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
@@ -93,7 +93,7 @@ export function MaCollection({ aujourdhui, commerces }: { aujourdhui: string; co
         <p className="mc-dit">
           {prete
             ? "Choisis ce qu’elle ressent, écris ce qu’elle dit, et envoie-la à qui tu veux."
-            : `Gagne des figurines chez les commerces ClikMe : à ${SEUIL_MA_FIGURINE}, la tienne est faite d’après ta photo.`}
+            : `Essaie-la : choisis son émotion, écris ce qu’elle dit, envoie-la. À ${SEUIL_MA_FIGURINE} figurines gagnées chez les commerces ClikMe, la tienne aura ton visage.`}
         </p>
         {!figurine ? (
           <div className="mc-attente" aria-label="Chargement">
@@ -127,45 +127,24 @@ export function MaCollection({ aujourdhui, commerces }: { aujourdhui: string; co
       </section>
 
       <div className="dc">
-        {/* 2. CE QUE TU GAGNES */}
-        <CeQueTuGagnes />
-
-        {/* 3. L'ÉDITION DU MOIS */}
+        {/* 2. L'ÉDITION DU MOIS */}
         <section className="dc-bloc" aria-labelledby="mc-edition">
           <h2 id="mc-edition">L’édition du mois</h2>
           <ChronoEdition aujourdhui={aujourdhui} figurine={avec[0]?.figurine ?? commerces[0]?.figurine} />
         </section>
 
-        {/* 4. MES FIGURINES */}
+        {/* 3. MES FIGURINES : L'ALBUM */}
         {ennui && <p className="mc-vide">Ta collection n’a pas pu s’afficher. Réessaie dans un instant.</p>}
         {avec.length > 0 && (
           <section className="dc-bloc" aria-labelledby="mc-miennes">
-            <h2 id="mc-miennes">Mes figurines</h2>
-            <div className="mc-etageres">
-              {avec.map((f) => (
-                <article key={f.slug} className="mc-commerce">
-                  <a className="mc-commerce-tete" href={`/f/${encodeURIComponent(f.slug)}`}>
-                    <b>{f.nom}</b>
-                    <small>Fantôme n°{f.numero} · sa page ›</small>
-                  </a>
-                  <CollectionDuCommerce
-                    collection={f.collection!}
-                    titre="Ta collection"
-                    nom={f.nom}
-                    de={deNom(f.nom)}
-                    figurine={f.figurine ?? "/direct/double/pied/salut-1.webp"}
-                    cadeau={f.cadeau}
-                    slug={f.slug}
-                    compact
-                    lienCollection={false}
-                  />
-                </article>
-              ))}
-            </div>
+            <h2 id="mc-miennes">
+              Mes figurines <span className="mc-total">{total}</span>
+            </h2>
+            <Album familles={avec} />
           </section>
         )}
 
-        {/* 5. OÙ LES GAGNER */}
+        {/* 4. OÙ LES GAGNER */}
         <OuGagner
           commerces={commerces.filter((c) => !avec.some((f) => f.slug === c.slug))}
           titre={avec.length ? "D’autres commerces où en gagner" : "Où gagner tes figurines"}
@@ -178,7 +157,7 @@ export function MaCollection({ aujourdhui, commerces }: { aujourdhui: string; co
         On ne gagne une figurine qu’en venant : elles ne s’achètent pas. Une édition manquée est manquée ; les éditions rares se gagnent quand le commerce annonce une
         place libre.
       </p>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_COLLECTION + STYLES_DECOUVRIR}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_COLLECTION + STYLES_DECOUVRIR + STYLES_ALBUM}</style>
     </main>
   );
 }
@@ -204,18 +183,13 @@ body{background:#12060F}
 .mc-attente{display:grid;margin:8px 0 0}
 .mc-attente i{height:420px;border-radius:30px;background:linear-gradient(100deg,rgba(255,255,255,.04) 30%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 70%);background-size:200% 100%;animation:mc-reflet 1.4s linear var(--d) infinite}
 .mc-vide{margin:28px 0 0;padding:18px;border-radius:20px;background:rgba(255,255,255,.05);text-align:center;color:#D9C3CB}
-.mc-etageres{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
-.mc-commerce-tete{display:flex;flex-direction:column;margin:0 4px 8px;color:#FFF4E6;text-decoration:none}
-.mc-commerce-tete b{font-size:18px;font-weight:900}
-.mc-commerce-tete small{font-size:12.5px;color:#A88E99}
+.mc-total{display:inline-grid;place-items:center;min-width:34px;height:34px;margin-left:6px;padding:0 9px;box-sizing:border-box;border-radius:999px;background:#FF2E9A;color:#fff;font-size:17px;vertical-align:4px;box-shadow:0 8px 18px -8px rgba(255,46,154,.9)}
 .mc-regle{margin:34px 20px 0;font-size:12px;line-height:1.5;color:#8D7580;text-align:center}
-.dc-plus{margin-top:12px!important}
 @media (min-width:860px){
   .mc-barre{padding:14px 32px}
   .mc-heros{padding:30px 32px 0}
   .mc-heros h1{font-size:60px;max-width:820px}
   .mc-dit{font-size:18px;margin-bottom:28px}
-  .mc-etageres{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
   .mc-regle{font-size:13px;max-width:640px;margin-left:auto;margin-right:auto}
 }
 @keyframes mc-entre{from{opacity:0;transform:translateY(14px)}}

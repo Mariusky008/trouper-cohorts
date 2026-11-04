@@ -11,12 +11,16 @@
  * à l'autre est immédiat. Tant qu'une expression n'est pas faite, elle la joue seulement en bougeant (un petit badge
  * le dit) — plus de fond coloré ni de pluie d'émojis.
  *
+ * LE CADRE A LES PROPORTIONS DE SES IMAGES (4 novembre 2026 : « la position normale est plus grande que les autres,
+ * et la tête sort du cadre ») : lues sur son image de tous les jours, elles donnent le cadre — rien n'est rogné, et
+ * ses expressions (remises au même cadre par le moteur d'image) tombent exactement dessus.
+ *
  * `jouer(son)` (par `ref`) : la voix peut arriver APRÈS le toucher (un texte lu par une voix, fabriqué en une ou deux
  * secondes) — le son est préparé au toucher même (un iPhone ne laisse jouer qu'un son lancé par un geste), puis joué
  * dès qu'il arrive. LA VOIX EST CHARGÉE EN ENTIER (une adresse `blob:` ou `data:`) : l'iPhone ne lit pas un son servi
  * sans « morceaux », et la mesure du volume demande un son de la même origine.
  */
-import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
+import { useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type Ref } from "react";
 import { SENTIMENTS, sentimentDe, type Expressions, type Sentiment } from "@/lib/direct/ma-figurine";
 
 export type FigurineHandle = {
@@ -64,6 +68,11 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
   const [joue, setJoue] = useState(false);
   const [charge, setCharge] = useState(false);
   const [ennui, setEnnui] = useState("");
+  const [ratio, setRatio] = useState<number | null>(null);
+  /** Les proportions de son image de tous les jours (déjà chargée, ou à son chargement). */
+  const mesurer = (img: HTMLImageElement | null) => {
+    if (img?.naturalWidth && img.naturalHeight) setRatio(img.naturalWidth / img.naturalHeight);
+  };
 
   useEffect(
     () => () => {
@@ -204,12 +213,18 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
       data-sentiment={sentiment ?? ""}
       data-visage={active || (sentiment ? "mouvement" : "")}
     >
-      <div className="fqp-fig" ref={boite}>
+      <div className="fqp-fig" ref={boite} style={ratio && !decoupe ? ({ "--fqp-ratio": ratio.toFixed(4) } as CSSProperties) : undefined}>
         <span className="fqp-corps" key={`${sentiment ?? ""}-${rejoue}`}>
           {poses.map((x) => (
             <span key={x.cle || "base"} className={`fqp-pose${x.cle === active ? " vu" : ""}`} aria-hidden={x.cle !== active}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="fqp-n" src={x.n} alt="" draggable={false} />
+              <img
+                className="fqp-n"
+                src={x.n}
+                alt=""
+                draggable={false}
+                {...(x.cle ? {} : { ref: (el: HTMLImageElement | null) => void (el?.complete && mesurer(el)), onLoad: (e: React.SyntheticEvent<HTMLImageElement>) => mesurer(e.currentTarget) })}
+              />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="fqp-p" src={x.p} alt="" draggable={false} />
             </span>
@@ -238,7 +253,7 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
 
 export const STYLES_FIGURINE_QUI_PARLE = `
 .fqp{display:flex;flex-direction:column;align-items:center;gap:12px}
-.fqp-fig{position:relative;width:min(260px,70vw);aspect-ratio:3/4;border-radius:24px;overflow:hidden;
+.fqp-fig{position:relative;width:min(260px,70vw);aspect-ratio:var(--fqp-ratio,3/4);border-radius:24px;overflow:hidden;
   background:radial-gradient(70% 55% at 50% 38%,#FF9AD0,#C2367F 62%,#5E1240);box-shadow:0 22px 44px -18px rgba(0,0,0,.9)}
 .fqp-corps{position:absolute;inset:0;transform-origin:50% 100%;animation:fqp-change .35s cubic-bezier(.2,1.5,.4,1)}
 .fqp-pose{position:absolute;inset:0;opacity:0;transition:opacity .22s}

@@ -1,5 +1,5 @@
 // 🗣️ UN MESSAGE DE FIGURINE — ce que voit celui qui le reçoit (`clikme.fr/figurine/<id>`) : la figurine de son
-// proche, qui lui parle avec sa voix ; les commerces qu'elle cite (choisis par celui qui l'envoie) ; et « Et toi ? » :
+// proche, qui lui parle avec sa voix (ou celle de la démonstration, avec le texte d'un proche) ; les commerces qu'elle cite (choisis par celui qui l'envoie) ; et « Et toi ? » :
 // à 10 figurines chez les commerces ClikMe, la sienne. C'est le bouche-à-oreille des commerces.
 //
 // Jamais dans les moteurs de recherche. Un message signalé ne s'affiche plus (l'admin le remet ou le retire).
@@ -24,7 +24,7 @@ const charger = cache(async (id: string) => {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const m = await charger((await params).id);
-  const titre = m ? texteDuMessage(m.prenom) : "Un message de figurine";
+  const titre = m ? texteDuMessage(m.prenom, !m.signale && Boolean(m.demo)) : "Un message de figurine";
   return {
     title: titre,
     description: "Touche « Écouter » : sa figurine te parle avec sa voix.",

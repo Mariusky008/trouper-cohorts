@@ -1,7 +1,8 @@
 // 🗣️ SA PROPRE FIGURINE (`lib/direct/ma-figurine.ts`).
 //
 // GET : où il en est (le compteur jusqu'à 10, sa photo, sa figurine, ses expressions, ses messages), et la
-//   démonstration (la figurine de Léa : ses expressions déjà faites, et si un texte peut être lu). Sans cookie : 0 / 10.
+//   démonstration (la figurine du propriétaire : ses expressions déjà faites, et si un texte peut être lu). Sans
+//   cookie : 0 / 10.
 // POST { action: "photo", photo: data:image…, accord: true } : sa photo, pour que ClikMe fasse sa figurine.
 // POST { action: "expressions" } : un tour de fabrication de ses expressions (le moteur d'image) → l'état.
 // POST { action: "voix", texte, voix } : son texte lu par la voix choisie (ElevenLabs) → { son: data:audio/mpeg… }.
@@ -9,7 +10,8 @@
 //   sa figurine → { id, lien }.
 // POST { action: "signaler", id } : celui qui a reçu un message le signale (pas besoin d'être quelqu'un).
 // POST { action: "demo", quoi: "expressions" } : un tour pour la démonstration (une seule fois en tout, puis gardé).
-// POST { action: "demo", quoi: "voix", phrase, voix } : une phrase de la démonstration, dans cette voix (gardée).
+// POST { action: "demo", quoi: "voix", texte, voix } : SON texte, dit par la démonstration (sans compte, compté).
+// POST { action: "demo", quoi: "message", texte, voix, sentiment?, prenom? } : il l'envoie → { id, lien }.
 // Jamais d'habitant créé ici.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -17,6 +19,7 @@ import { habitantCourant } from "@/lib/direct/habitant";
 import { lienMessage } from "@/lib/direct/ma-figurine";
 import {
   enregistrerMessage,
+  envoyerMessageDemo,
   envoyerPhoto,
   etatDemo,
   etatMaFigurine,
@@ -24,6 +27,7 @@ import {
   fabriquerSesExpressions,
   lireSonTexte,
   signalerMessage,
+  visiteurDe,
   voixDemo,
 } from "@/lib/direct/ma-figurine-serveur";
 
@@ -55,10 +59,18 @@ export async function POST(request: Request) {
       const r = await fabriquerExpressionsDemo(supabase, new URL(request.url).origin, avant);
       return NextResponse.json({ ok: !r.error, ...(r.error ? { error: r.error } : {}), ...(r.enCours ? { enCours: true } : {}), demo: await etatDemo(supabase) }, { headers: sansCache });
     }
+    // (qui fait parler la démonstration, pour compter : son habitant, sinon une empreinte de sa connexion)
+    const ip = (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || (request.headers.get("x-real-ip") ?? "");
+    const visiteur = visiteurDe((await habitantCourant(supabase))?.id ?? null, ip, request.headers.get("user-agent") ?? "");
     if (p.quoi === "voix") {
-      const r = await voixDemo(supabase, p.phrase, p.voix);
+      const r = await voixDemo(supabase, visiteur, p.texte, p.voix);
       if (!r.mp3) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
-      return NextResponse.json({ ok: true, son: enSon(r.mp3) }, { headers: { "cache-control": "public, max-age=3600" } });
+      return NextResponse.json({ ok: true, son: enSon(r.mp3) }, { headers: sansCache });
+    }
+    if (p.quoi === "message") {
+      const r = await envoyerMessageDemo(supabase, visiteur, { texte: p.texte, voix: p.voix, sentiment: p.sentiment, prenom: p.prenom });
+      if (!r.id) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
+      return NextResponse.json({ ok: true, id: r.id, lien: lienMessage(r.id) }, { headers: sansCache });
     }
     return NextResponse.json({ error: "Demande incomplète." }, { status: 400 });
   }
