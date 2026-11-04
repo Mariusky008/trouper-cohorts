@@ -237,6 +237,12 @@ export type Traits = {
   signes?: string;
   /** Son expression sur le selfie (« sérieux, bouche fermée ») : la figurine la garde. */
   expression?: string;
+  /**
+   * CE QU'UN CARICATURISTE ACCENTUERAIT chez lui (essai du 4 novembre : « les traits ne sont pas accentués comme une
+   * figurine de cartoon ») — SES traits à lui (« mâchoire carrée, sourcils épais et froncés, cheveux en volume »), pas
+   * des traits de dessin animé (le grand sourire, les grands yeux) qui en font quelqu'un d'autre.
+   */
+  accentuer?: string;
   lunettes?: boolean;
 };
 
@@ -251,6 +257,7 @@ export const QUESTION_TRAITS =
   '"age": apparent age range (e.g. "la cinquantaine"), ' +
   '"expression": the facial expression exactly as seen (e.g. "sérieux, sourcils légèrement froncés, bouche fermée, ne sourit pas" or "grand sourire"), ' +
   '"signes": other features that make this person recognizable (forehead wrinkles, dimples, crow\'s feet, a mole, freckles) or "", ' +
+  '"accentuer": the 3 to 5 features a caricature artist would exaggerate to make THIS person instantly recognizable, most striking first (e.g. "mâchoire carrée et menton marqué, sourcils épais et froncés, cheveux épais en volume, front haut ridé"), ' +
   '"lunettes": true if wearing glasses, else false}.';
 
 const MOTS_MAX = 140;
@@ -259,7 +266,7 @@ const propreTrait = (v: unknown) => (typeof v === "string" ? v.replace(/\s+/g, "
 /** La réponse du modèle, nettoyée : des chaînes courtes, rien d'autre. `null` s'il n'y a rien d'utile. */
 export function traitsDe(o: Record<string, unknown>): Traits | null {
   const t: Traits = {};
-  for (const k of ["cheveux", "barbe", "visage", "sourcils", "yeux", "nez", "age", "signes", "expression"] as const) {
+  for (const k of ["cheveux", "barbe", "visage", "sourcils", "yeux", "nez", "age", "signes", "expression", "accentuer"] as const) {
     const v = propreTrait(o[k]);
     if (v) t[k] = v;
   }
@@ -312,7 +319,10 @@ export function consigneFigurine(famille: FamilleDouble, fond: "transparent" | "
     "",
     "THE FIGURINE:",
     ...FIGURINE_ENTIERE,
-    "- The caricature is in the proportions (the big head) and in their distinctive features, slightly accentuated (face shape, jaw, nose, eyebrows). The eyes keep their shape and size.",
+    // UNE VRAIE CARICATURE, MAIS DE LUI : ses traits à lui, accentués comme un caricaturiste (le trait « accentuer »)
+    `- A REAL CARICATURE, like a caricature artist's sculpture: exaggerate THEIR OWN most distinctive features by about 30 to 40% — ${
+      traits?.accentuer ? `in French: ${traits.accentuer}` : "the face shape, the jaw, the nose, the eyebrows, the hair volume"
+    } — so that they are funnier AND even more recognizable. Do not add generic cartoon features that are not theirs (no forced smile, no enlarged eyes).`,
     `- Outfit of their trade (in French): ${m.tenue} — in the colours of the clothes in the photo when visible.`,
     `- Two or three small, neat, funny accessories of their trade worn on the outfit (in French): ${m.accessoires}.`,
     "- On the base, beside the spring: a small pair of EMPTY shoes matching the outfit, set down side by side with nobody in them (no feet, no legs), and one or two miniature sculpted items of their trade.",
@@ -363,7 +373,7 @@ export function consigneEdition(cleEdition: string, nomEdition: string, fond: "t
     `Dress up this collectible bobblehead figurine (the upper body on a spring, with no legs) for its « ${nomEdition} » edition, as a straight-on studio product shot.`,
     "",
     "IT IS THE SAME FIGURINE:",
-    "- Keep exactly the same face: the same features, the same expression, the same skin tone, the same hair (visible under any hat), the same facial hair, the same glasses if any (and none if none).",
+    "- THE FACE IS UNTOUCHABLE: copy the face of this figurine exactly as it is — the same features, the same caricature, the same expression, the same skin tone, the same hair (visible under any hat), the same facial hair, the same glasses if any (and none if none). Only the outfit, the hat and the accessories change.",
     "- The same pose (arms crossed), the same proportions (the oversized head on the small body), the same painted-resin style.",
     ...FIGURINE_ENTIERE,
     ...(vus.length ? ["- Their features (written in French — keep them exactly):", ...vus.map((l) => `  ${l}`)] : []),

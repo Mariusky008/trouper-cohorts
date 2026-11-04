@@ -471,6 +471,11 @@ réseaux reçoivent le film entier.
 - **Pas de jambes** (septième essai réel : « il y a les jambes en trop » — un pantalon et des chaussures plantées sur le
   socle) : les chaussures posées sur le socle y faisaient mettre des pieds. La consigne dit maintenant « NO LEGS, NO
   TROUSERS, NO FEET », le ressort seul entre le corps et le socle, et des chaussures VIDES à côté.
+- **Une vraie caricature, de SES traits** (huitième essai réel, 4 novembre : « les traits ne sont pas accentués comme
+  une figurine de cartoon ») : le modèle qui regarde le selfie dit aussi ce qu'un caricaturiste accentuerait chez lui
+  (le trait `accentuer` : « mâchoire carrée, sourcils épais et froncés, cheveux en volume… », les plus frappants
+  d'abord), et la consigne les fait exagérer d'environ 30 à 40 % — plus drôle ET plus reconnaissable. Jamais des traits
+  de dessin animé qui ne sont pas les siens (un sourire forcé, de grands yeux) : ils en font quelqu'un d'autre.
 - **🎨 Une image de référence de style, facultative** (`FIGURINE_REFERENCE_URL`, une adresse https) : elle part en
   seconde image avec chaque fabrication, aux deux moteurs, et la consigne (`AVEC_REFERENCE`) dit qu'on n'en prend que le
   style — jamais le visage, la tenue ni les accessoires. Jamais dans le dépôt, et seulement une image qu'on a le droit
@@ -495,6 +500,11 @@ réseaux reçoivent le film entier.
   **seuls la tenue et les accessoires changent**, ceux de `TENUES_EDITION`, généreux comme sur la figurine d'Halloween
   du propriétaire (pour Noël : bonnet de Père Noël, pull de Noël, écharpe rayée, sucre d'orge, paquet cadeau). Ces
   tenues sont à relire.
+- **Le visage ne bouge pas** (essai du 4 novembre : habillée pour l'automne, une proposition lui ressemblait « un peu »,
+  l'autre « pas du tout ») : pour une édition, les deux propositions viennent de la voie qui recopie l'image d'entrée —
+  OpenAI en fidélité « high », deux tirages (`voiesEdition`) — et la consigne dit « THE FACE IS UNTOUCHABLE » : seuls la
+  tenue, le chapeau et les accessoires changent. `FIGURINE_VOIES_EDITION` (« openai-high,gemini », « openai-low »…)
+  pour en essayer d'autres.
 - Route : `fabriquer-edition` (compte dans les trois essais du jour), puis `valider-edition` (« Elle est parfaite »).
   Rangée dans `etat.json` sous `editions["automne-2026"]` : une édition manquée est manquée. S'il refait sa figurine
   avec un nouveau selfie, celle de l'édition en cours est à rhabiller (elle portait l'ancien visage).
@@ -519,7 +529,8 @@ réseaux reçoivent le film entier.
   « pas encore branchée »), `OPENAI_IMAGE_MODEL` (impose un moteur), `FIGURINE_QUALITE` (`high` par défaut),
   `FIGURINE_FIDELITES` (les fidélités d'OpenAI, `high,low` par défaut), `GEMINI_API_KEY` (la voie Gemini),
   `GEMINI_FIGURINE_MODEL` (impose un modèle Gemini), `FIGURINE_SANS_GEMINI=1` (sans la voie Gemini),
-  `FIGURINE_REFERENCE_URL` (l'image de référence de style, voir plus haut),
+  `FIGURINE_REFERENCE_URL` (l'image de référence de style, voir plus haut), `FIGURINE_VOIES_EDITION` (les deux voies
+  d'une édition, `openai-high,openai-high` par défaut),
   `FIGURINE_ESSAIS_PAR_JOUR` (3), `FIGURINES_PROS_BUCKET`.
 - **La fidélité à l'image d'entrée : basse (`low`).** En `high` (le premier réglage), le moteur recopie le selfie : un
   visage photographique collé sur un petit corps, et pour l'édition l'ancienne tenue gardée (« pas très automne »,
