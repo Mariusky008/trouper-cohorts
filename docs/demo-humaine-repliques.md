@@ -14,6 +14,7 @@ de l'ancienne démo n'est repris. Les chiffres à l'écran sont inventés et éc
 | 3 | P | « On a 30 jours pour transformer votre communauté en clients. Je vous montre ? » | « 30 jours », un calendrier |
 | 4 | P | « Jour 1 : je viens chez vous. Quelques photos, deux ou trois questions… et Mike s'occupe du reste. » | « Jour 1 » ; l'interview « Face au fantôme » dans le téléphone |
 | 5 | M | « Avec quelques photos, je fais une très belle vidéo où je mets à l'honneur votre menu du jour, puis je la publie partout pour que tout le monde la voie. » | la vidéo en plein téléphone, puis Instagram, Facebook, Google, Le Direct |
+| 5b | M | « Et ce n'est pas tout : je l'envoie aussi chez deux commerçants partenaires de votre ville, jamais des concurrents. Ils la publient sur leurs réseaux, et vous publiez les leurs. Votre vidéo est vue bien au-delà de votre communauté ! » (4 novembre, **à enregistrer** : `recu/humain/05b-m.mp3`, la même pour les trois démos ; sans elle, la démo reste celle d'avant) | le téléphone recule en haut ; sa vidéo s'envole chez ses deux partenaires de Dax (restaurant et bien-être : Maison Lou, vêtements, et La Page d'Alice, librairie ; atelier : La Page d'Alice et Chez Bergine — des commerces fictifs des autres tours), leur téléphone la publie en « 📣 Découverte du quartier » (le texte de l'application) ; « 📍 Même ville », « 🚫 Jamais un concurrent », « 🔁 Ils publient la vôtre », « 🔁 Vous publiez les leurs » ; leurs abonnés en plus (👁 +2 310, +1 870) et la bannière d'or « Vue bien au-delà de votre communauté » |
 | 6 | P | « Mais ce n'est pas là qu'il est le plus fort. C'est juste après. » | |
 | 7 | M | « À la fin de la vidéo, chaque personne peut libérer son fantôme pour dire ce qu'elle en pense : "Ça donne envie", "Je réserverai un jour", ou "Je réserve aujourd'hui". » (les trois cages, dans les mots du métier : atelier « Ça me tente », « Je m'inscrirai un jour », « Je réserve ma place » ; bien-être « Ça me ferait du bien », « Je prendrai rendez-vous », « Je prends rendez-vous ») | les trois cages |
 | 8 | M | « Et moi, je profite de leurs réponses pour discuter avec eux et créer du lien. Petit à petit, je découvre leurs envies, leurs habitudes… et je leur donne une bonne raison de pousser votre porte. Et pour les plus rapides, ceux qui ouvrent en premier ma cage dorée, je les bichonne avec des petites surprises. » | les cages s'ouvrent, des fantômes apparaissent ; la cage dorée, les surprises découvertes |
@@ -144,6 +145,19 @@ Nina et d'Élise : faites par le propriétaire ; Nina d'après une personne qui 
 d'Élise et des 12b ne sont pas confirmés mot pour mot (aucune reconnaissance vocale ici : les fichiers ont été reconnus
 à leurs pauses et à leurs voyelles). Et à la fin, une étiquette : « Je prends 5 commerces (ateliers, cabinets) · gratuitement pendant 1 mois · Puis 149 € / mois · si vous êtes
 satisfait(e) · ou 49 € / mois en autonomie » (sa formulation, 1er novembre).
+
+**Douzième passe (4 novembre : « il manque le fait que c'est envoyé aussi sur les réseaux sociaux de deux autres
+partenaires, non concurrents, de la même ville, pour que la vidéo soit vue par davantage de personnes en dehors de sa
+propre communauté… et bien insister dessus » ; « et pour les figurines, dire qu'il y en a une par mois »)** :
+- **La 5b** (le tableau plus haut), la diffusion croisée de l'application (`docs/diffusion-croisee.md`) : la scène est
+  prête dans les trois démos, elle n'attend que son enregistrement (Mike, `recu/humain/05b-m.mp3`). Sans lui, rien ne
+  change ; avec lui, il suffit de relancer `tour-humain.py` pour chaque démo.
+- **La 5 avec « ou une vidéo »** (proposée, à enregistrer par métier, au mot près) : « Avec quelques photos ou une
+  vidéo, je fais un très beau film où je mets à l'honneur votre menu du jour (vos ateliers · vos séances), puis je le
+  publie partout pour que tout le monde le voie. » — avec ses fichiers, on remplacera son texte dans `SOUS` et
+  `VARIANTES[…]["lignes"]`, et ses mots forts (`forts5`).
+- **Une figurine par mois** : les cartes des éditions disent leur mois (Halloween · octobre, Noël · décembre, Été ·
+  juillet, Rentrée · septembre), et « 🗓️ Une nouvelle figurine chaque mois » s'écrit dessous pendant qu'il les nomme.
 
 ## À garder en tête
 

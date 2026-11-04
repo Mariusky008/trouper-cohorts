@@ -120,7 +120,9 @@ export function texteDeDecouverte(p: { nom: string; metier?: string; texte: stri
   // « Boulangerie Martin (boulangerie) » : le métier ne se répète pas quand le nom le dit déjà
   const chez = p.metier && !simple(p.nom).includes(simple(p.metier)) ? `${p.nom} (${p.metier.toLowerCase()})` : p.nom;
   const texte = p.texte.replace(/\s+/g, " ").trim().slice(0, 220);
-  return `Découverte du quartier 📣 ${ou}, chez ${chez}${texte ? ` : ${texte}` : ""}${/[.!?…]$/.test(texte) ? "" : "."} Allez voir !`;
+  // « chez Chez Bergine » : quand son nom commence par « Chez », il le dit déjà
+  const devant = /^chez\s/i.test(p.nom.trim()) ? "" : "chez ";
+  return `Découverte du quartier 📣 ${ou}, ${devant}${chez}${texte ? ` : ${texte}` : ""}${/[.!?…]$/.test(texte) ? "" : "."} Allez voir !`;
 }
 
 /** Combien de vidéos de partenaires sont parties sur ses réseaux ces sept derniers jours. */

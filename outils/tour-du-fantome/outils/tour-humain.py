@@ -139,6 +139,13 @@ VARIANTES = {
 }
 V = VARIANTES[VARIANTE]
 D = f"{S}/tour-humain" + ("" if VARIANTE == "restaurant" else f"-{VARIANTE}")
+# LES DEUX PARTENAIRES DE LA 5b : des commerces des autres tours (fictifs, comme lui), de Dax, jamais du même métier ;
+# (nom, métier, compte, abonnés, emblème, couleur, à combien d'ici) — et ce que dit la découverte, dans ses mots à lui
+_LOU = ("Maison Lou", "vêtements", "maisonlou", "2 310", "🧥", "#C9A27E", "À 2 min à pied d’ici")
+_ALICE = ("La Page d’Alice", "librairie", "lapagedalice", "1 870", "📚", "#7FA7C9", "À 4 min à pied d’ici")
+_BERGINE = ("Chez Bergine", "bistrot", "chezbergine", "2 640", "🍽️", "#C96F5A", "À 3 min à pied d’ici")
+PARTENAIRES = {"restaurant": (_LOU, _ALICE), "atelier": (_ALICE, _BERGINE), "bien-etre": (_LOU, _ALICE)}[VARIANTE]
+DECOUVERTE = {"restaurant": "le menu du jour", "atelier": "l’atelier tour du samedi", "bien-etre": "une séance découverte"}[VARIANTE]
 # Son prénom (réplique 1, « Moi, c'est … ») et son numéro, à la fin (confirmés par le propriétaire, 31 octobre)
 PRENOM = "Jean-Philippe"
 TELEPHONE = "06 22 12 96 75"
@@ -176,6 +183,16 @@ SOUS = {
 for c, ligne in V.get("lignes", {}).items():   # (les répliques propres au métier ; celles de la scène des figurines, plus bas)
     if c in SOUS:
         SOUS[c] = ligne
+# 📣 LA 5b : SA VIDÉO PASSE AUSSI CHEZ DEUX COMMERÇANTS PARTENAIRES (4 novembre : « il manque le fait que c'est envoyé
+# aussi sur les réseaux sociaux de deux autres partenaires, non concurrents, de la même ville… et bien insister dessus » ;
+# `docs/diffusion-croisee.md`). Dite par Mike juste après la 5, la même dans les trois démos. Elle n'entre dans la démo
+# qu'avec SON ENREGISTREMENT (`recu/humain/05b-m.mp3`) : sans lui, rien ne change. `--essai-05b` : sans
+# l'enregistrement, au rythme estimé et SANS SON — seulement pour régler la scène, jamais publié.
+L05B = ("05b-m", f"Et ce n’est pas tout{NB}: | je l’envoie aussi | chez deux commerçants partenaires | de votre ville, | jamais des concurrents. | "
+        f"Ils la publient sur leurs réseaux, | et vous publiez les leurs. | Votre vidéo est vue | bien au-delà de votre communauté{NB}!", {})
+ESSAI_05B = "--essai-05b" in sys.argv and not os.path.exists(f"{R}/05b-m.mp3")
+if os.path.exists(f"{R}/05b-m.mp3") or ESSAI_05B:
+    SOUS = {k2: v2 for k, v in SOUS.items() for k2, v2 in ([(k, v), ("l05b", L05B)] if k == "l05" else [(k, v)])}
 # LA SCÈNE DES FIGURINES (1er novembre, `docs/figurines.md`), entre la 12 et la 13, la même dans les trois démos : sa
 # révélation en deux répliques ; entre les deux, la figurine du chef de Chez Bergine qui invite Camille à prendre une
 # table vide (sa voix : un fichier ElevenLabs fourni, « Nicolas ») ; à la fin, une cliente (« Emma »). Les places
@@ -266,6 +283,17 @@ DOREE = [(70, "soleil", "or", V["surprises"][0], -70), (270, "artiste", "or", V[
          (670, "cosy", "argent", None, 0), (870, "denim", "bronze", None, 0)]
 DOREE_G = "".join(f'<span class="dor-g" style="left:{x}px"><span class="corps"><img src="g/{g}-debout.webp" alt=""><i class="patch {e}"></i></span>'
                   + (f'<em class="dor-s" style="top:{h}px">{s}</em>' if s else "") + "</span>" for x, g, e, s, h in DOREE)
+# 📣 LA 5b : ses deux partenaires, chacun son téléphone qui publie sa vidéo en « Découverte du quartier » (le texte que
+# l'application écrit, `texteDeDecouverte` de `src/lib/direct/diffusion.ts`), son nom, ses abonnés, ses vues en plus
+PARTENAIRES_HTML = "".join(
+    f'<div class="pa abs" id="pa{k + 1}"><div class="pa-tel"><div class="pa-haut"><i style="background:{coul}">{emb}</i><b>{compte}</b><small>· Dax</small></div>'
+    f'<div class="pa-img"><img src="m1.jpg" alt=""><span class="pa-pill">📣 Découverte du quartier</span><span class="pa-play">▶</span></div>'
+    f'<p class="pa-txt"><b>{compte}</b> Découverte du quartier 📣 {ou}, {"" if V["nom"].lower().startswith("chez ") else "chez "}{V["nom"]}{NB}: {DECOUVERTE}. Allez voir{NB}!</p></div>'
+    f'<div class="pa-nom">{nom}<small>{metier} · 👥 {abo} abonnés</small></div><span class="pa-vues">👁 +{abo}</span></div>'
+    for k, (nom, metier, compte, abo, emb, coul, ou) in enumerate(PARTENAIRES))
+# (sa vidéo qui s'envole chez eux ; et les leurs — leur emblème — qui reviennent chez lui)
+PARTENAIRES_HTML += '<img class="pa-vol abs" src="m1.jpg" alt=""><img class="pa-vol abs" src="m1.jpg" alt="">' + "".join(
+    f'<span class="pa-ret abs" style="background:{p[5]}">{p[4]}</span>' for p in PARTENAIRES)
 VU_G = "".join(f'<span class="pt-g" style="left:{x}px"><img src="g/{g}-debout.webp" alt=""></span>' for g, x in (("fleuri", 10), ("rebelle", 90), ("voyageur", 170)))
 LOOKS = ["cosy", "fleuri", "curieux", "artiste", "denim", "rebelle", "soleil", "voyageur"]
 
@@ -275,6 +303,16 @@ for sous in ("voix", "g", "js", "f"):
 TEMPS = {}
 for c, (fichier, texte, aide) in SOUS.items():
     src = f"{R}/{fichier}.mp3"
+    if c == "l05b" and ESSAI_05B:   # (l'essai sans l'enregistrement : les mots au rythme estimé, un silence pour voix)
+        ws = texte.replace(" | ", " ").split(" ")
+        m = [.2]
+        for w in ws[:-1]:
+            m.append(round(m[-1] + .062 * (len(w) + 1) + (.28 if w[-1] in ",.:!?" else 0), 3))
+        dd = round(m[-1] + .062 * len(ws[-1]) + .35, 2)
+        subprocess.run([FF, "-v", "error", "-y", "-f", "lavfi", "-i", "anullsrc=r=44100:cl=mono", "-t", str(dd), "-q:a", "9", f"{D}/voix/{c}.mp3"], check=True)
+        TEMPS[c] = {"d": dd, "m": m, "parle": round(dd - .3, 2)}
+        print(c, dd, "s (ESSAI, sans son ni enregistrement)")
+        continue
     if aide.get("coupe") or aide.get("debut"):   # (un morceau de l'enregistrement : de « debut » à « coupe »)
         coupe, a0 = f"{D}/voix/{c}-coupe.wav", aide.get("debut", 0)
         subprocess.run([FF, "-v", "error", "-y", *(["-ss", str(a0)] if a0 else []), "-i", src,
@@ -286,6 +324,8 @@ for c, (fichier, texte, aide) in SOUS.items():
     if aide.get("coupe") or aide.get("debut"):
         os.remove(src)
     print(c, a["d"], "s ·", len(a["m"]), "mots")
+if "l05b" not in SOUS and os.path.exists(f"{D}/voix/l05b.mp3"):
+    os.remove(f"{D}/voix/l05b.mp3")   # (le silence d'un essai : jamais publié)
 
 # ─── SA MÈRE, AU DÉBUT : « T'es le meilleur, mon fils ! » (sa voix : un fichier ElevenLabs qu'il a fourni ; ses trois
 # photos de profil : neutre, sourire, rire). Elle sort sa carte « Élu meilleur community manager 2026 *par sa mère ».
@@ -434,7 +474,9 @@ page = page.replace("@V_NOM@", V["nom"]).replace("/*@VAR@*/null", json.dumps(_js
 page = page.replace("@CAGE_ROSE@", cage_mini("#FF2E9A", True)).replace("@CAGE_ORANGE@", cage_mini("#F5A23A", False)).replace("@CAGE_VERTE@", cage_mini("#3DE2A6", False))
 page = page.replace("@CAGE_OR@", cage_or()).replace("@SCEAU@", sceau())
 page = page.replace("@FEUILLES@", FEUILLES).replace("@COMM@", COMM).replace("@DOREE_G@", DOREE_G).replace("@VU_G@", VU_G)
-page = page.replace("@FIL_SOCIAL@", FIL_SOCIAL).replace("@TADAM@", TADAM)
+page = page.replace("@FIL_SOCIAL@", FIL_SOCIAL).replace("@TADAM@", TADAM).replace("@PARTENAIRES@", PARTENAIRES_HTML)
+# (les vues en plus chez ses deux partenaires : le compteur de sa vidéo y monte, à la fin de la 5b)
+page = page.replace("/*@PA_VUES@*/0", str(sum(int(p[3].replace(" ", "")) for p in PARTENAIRES)))
 # son contact, à la fin : son nom et son numéro (on le touche pour l'appeler)
 TEL_LIEN = "+33" + TELEPHONE.replace(" ", "")[1:]
 page = page.replace("@PRENOM@", PRENOM).replace("@TELEPHONE@", TELEPHONE.replace(" ", NB)).replace("@TEL_LIEN@", TEL_LIEN)

@@ -402,6 +402,18 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index
   deux. Ses éditions (`jp-halloween`, `jp-noel` — le sceau du coin effacé —, `jp-ete`, `jp-rentree`) sont des cartes
   dorées ; les images sont recadrées en carte par le script (`f/ed-*.webp`, `f/fig-*.webp`). Le chef et la cliente
   ont donné leur accord (confirmé par le propriétaire). Sa figurine, au milieu, cligne de l'œil sur « C'est moi ».
+- **📣 La 5b : sa vidéo chez deux commerçants partenaires** (4 novembre, la diffusion croisée de l'application,
+  `docs/diffusion-croisee.md`) : juste après la 5, Mike : « Et ce n'est pas tout : je l'envoie aussi chez deux
+  commerçants partenaires de votre ville, jamais des concurrents… bien au-delà de votre communauté ! » (`L05B`). Le
+  téléphone recule en haut, sa vidéo s'envole chez ses deux partenaires (`PARTENAIRES` : des commerces fictifs des
+  autres tours, de Dax, jamais de son métier), qui la publient en « 📣 Découverte du quartier » (le texte de
+  l'application) ; « Même ville », « Jamais un concurrent », « Ils publient la vôtre / Vous publiez les leurs », leurs
+  abonnés en plus, la bannière d'or. **Elle n'entre dans la démo qu'avec son enregistrement**
+  (`recu/humain/05b-m.mp3`, commun aux trois démos) : sans lui, rien ne change. `--essai-05b` la joue au rythme estimé,
+  sans son, pour la régler — jamais à publier (un silence en guise de voix : relancer sans l'option avant de pousser,
+  le script retire alors ce silence).
+- **Une figurine par mois** (4 novembre) : les cartes des éditions disent leur mois (« OCTOBRE · HALLOWEEN »…), et
+  « 🗓️ Une nouvelle figurine chaque mois » s'écrit sous les cartes pendant la 12c.
 - **Les trois cages, dans les mots du métier** (1er novembre) : restaurant « Ça donne envie », « Je réserverai un
   jour », « Je réserve aujourd'hui » ; atelier « Ça me tente », « Je m'inscrirai un jour », « Je réserve ma place » ;
   bien-être « Ça me ferait du bien », « Je prendrai rendez-vous », « Je prends rendez-vous ». Mike les dit (la
