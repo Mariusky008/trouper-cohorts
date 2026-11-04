@@ -326,7 +326,13 @@ export type Fabrication =
     }
   | { erreur: string; statut: number };
 
-const cleGemini = () => s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
+/**
+ * LA CLÉ GEMINI DES FIGURINES — `FIGURINE_GEMINI_API_KEY` d'abord : 4 novembre, le serveur n'avait AUCUNE clé Gemini
+ * (seulement OpenAI), et Gemini n'avait donc jamais fait une seule proposition. Poser `GEMINI_API_KEY` ferait aussi
+ * passer à Gemini tout ce qui dit « Gemini d'abord » (l'essayage, les couvertures, l'essai de vitrine, le dressing) ;
+ * cette clé-ci ne branche QUE les figurines. Sinon, la clé commune.
+ */
+const cleGemini = () => s(process.env.FIGURINE_GEMINI_API_KEY) || s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
 
 /**
  * DEUX PROPOSITIONS PAR ESSAI, par deux voies différentes, parties en même temps (le temps d'une seule) :
@@ -421,7 +427,7 @@ async function propositions(o: { image: Buffer; consigne: (fond: "transparent" |
   const manquees: string[] = [];
   // GEMINI PAS BRANCHÉ : les deux propositions viennent d'OpenAI — à savoir, puisque c'est Gemini qui a fait l'exemple
   if (!o.edition && !liste.some((v) => v.nom === "gemini"))
-    manquees.push(cleGemini() ? "Gemini est mis de côté ici (FIGURINE_SANS_GEMINI)." : "Gemini n'est pas branché sur le serveur (pas de clé GEMINI_API_KEY).");
+    manquees.push(cleGemini() ? "Gemini est mis de côté ici (FIGURINE_SANS_GEMINI)." : "Gemini n'est pas branché sur le serveur (ni FIGURINE_GEMINI_API_KEY, ni GEMINI_API_KEY) : les propositions viennent d'OpenAI.");
   const images = rendus.flatMap((r, k) => {
     const v = liste[k];
     if ("erreur" in r) {
