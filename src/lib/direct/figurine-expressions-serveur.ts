@@ -46,6 +46,9 @@ const GARDER =
 
 const consigneVisage = (x: Sentiment) =>
   `This is a collectible bobblehead figurine. Change ONLY its facial expression to ${VISAGES[x]}. The expression must be strong and readable at a glance, on THIS face (it must still be clearly the same person). ${GARDER}`;
+/** Sa bouche ouverte, son visage de tous les jours (la figurine d'un client, juste fabriquée). */
+export const consigneBoucheNeutre = () =>
+  `This is a collectible bobblehead figurine with a calm expression. Change ONLY its mouth: open it naturally as if the figurine is in the middle of saying a word (a relaxed open mouth, teeth slightly visible), keeping the rest of the face exactly the same (eyes, eyebrows, cheeks). ${GARDER}`;
 const consigneBouche = (x: Sentiment) =>
   `This is a collectible bobblehead figurine with a ${x === "colere" ? "angry" : x === "tristesse" ? "sad" : x === "euphorie" ? "euphoric" : "joyful"} expression. ` +
   `Change ONLY its mouth: open it as if the figurine is in the middle of saying a word, keeping the same expression on the rest of the face (eyes, eyebrows, cheeks). ${GARDER}`;
@@ -83,7 +86,7 @@ export async function poserAuFormat(src: Buffer): Promise<{ png: Buffer; cadre: 
 }
 
 /** L'image rendue, remise dans le cadre d'origine, en WebP (900 px de large au plus). */
-async function reprendre(rendu: Buffer, cadre: Cadre): Promise<Buffer> {
+export async function reprendre(rendu: Buffer, cadre: Cadre): Promise<Buffer> {
   const plein = await sharp(rendu).resize(L, H, { fit: "fill" }).png().toBuffer();
   return sharp(plein)
     .extract({ left: cadre.left, top: cadre.top, width: cadre.width, height: cadre.height })
@@ -94,7 +97,7 @@ async function reprendre(rendu: Buffer, cadre: Cadre): Promise<Buffer> {
 
 // ─── le moteur ──────────────────────────────────────────────────────────────────────────────────
 /** Une image demandée au moteur, à partir d'une image (fidélité haute, format 2:3). */
-async function editer(image: Buffer, consigne: string, avant: number): Promise<Buffer | { erreur: string }> {
+export async function editer(image: Buffer, consigne: string, avant: number): Promise<Buffer | { erreur: string }> {
   const cle = s(process.env.OPENAI_API_KEY);
   if (!cle) return { erreur: "Le moteur d'image n'est pas branché ici." };
   const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
@@ -152,15 +155,21 @@ export function expressionsDe(noms: string[]): Expressions {
   for (const { cle } of SENTIMENTS) if (noms.includes(`${cle}-n.webp`) && noms.includes(`${cle}-p.webp`)) e[cle] = { n: `${cle}-n.webp`, p: `${cle}-p.webp` };
   return e;
 }
-export const expressionsCompletes = (e: Expressions) => SENTIMENTS.every(({ cle }) => Boolean(e[cle]));
+export const expressionsCompletes = (e: Expressions, quels: readonly Sentiment[] = SENTIMENTS.map((x) => x.cle)) => quels.every((cle) => Boolean(e[cle]));
 
 /**
  * UN TOUR DE FABRICATION : les visages qui manquent (bouche fermée), sinon leurs bouches ouvertes. Un verrou (quatre
  * minutes) empêche deux tours en même temps — deux pages ouvertes ne paient pas deux fois. Rend où l'on en est.
  */
-export async function fabriquerUnTour(depot: Depot, source: Buffer, avant: number): Promise<{ complete: boolean; enCours?: boolean; erreur?: string }> {
+export async function fabriquerUnTour(
+  depot: Depot,
+  source: Buffer,
+  avant: number,
+  /** Les visages à faire (ses options ouvertes) ; tous par défaut (la démonstration). */
+  quels: readonly Sentiment[] = SENTIMENTS.map((x) => x.cle),
+): Promise<{ complete: boolean; enCours?: boolean; erreur?: string }> {
   let noms = await depot.lister();
-  if (expressionsCompletes(expressionsDe(noms))) return { complete: true };
+  if (expressionsCompletes(expressionsDe(noms), quels)) return { complete: true };
   const lireVerrou = async () => JSON.parse((await depot.lire(VERROU))?.toString() || "{}") as { le?: number; qui?: string };
   if (noms.includes(VERROU) && Date.now() - (Number((await lireVerrou()).le) || 0) < DUREE_VERROU) return { complete: false, enCours: true };
   // LE VERROU EST À NOUS ? Deux demandes arrivées ensemble l'écrivent toutes les deux : la dernière gagne, l'autre le
@@ -170,7 +179,7 @@ export async function fabriquerUnTour(depot: Depot, source: Buffer, avant: numbe
   await new Promise((ok) => setTimeout(ok, 400));
   if ((await lireVerrou()).qui !== qui) return { complete: false, enCours: true };
   try {
-    const visages = SENTIMENTS.map((x) => x.cle).filter((x) => !noms.includes(`${x}-n.webp`));
+    const visages = quels.filter((x) => !noms.includes(`${x}-n.webp`));
     const erreurs: string[] = [];
     if (visages.length) {
       const { png, cadre } = await poserAuFormat(source);
@@ -182,7 +191,7 @@ export async function fabriquerUnTour(depot: Depot, source: Buffer, avant: numbe
         }),
       );
     } else {
-      const bouches = SENTIMENTS.map((x) => x.cle).filter((x) => !noms.includes(`${x}-p.webp`));
+      const bouches = quels.filter((x) => !noms.includes(`${x}-p.webp`));
       await Promise.all(
         bouches.map(async (x) => {
           const visage = await depot.lire(`${x}-n.webp`);
@@ -195,7 +204,7 @@ export async function fabriquerUnTour(depot: Depot, source: Buffer, avant: numbe
       );
     }
     noms = await depot.lister();
-    return { complete: expressionsCompletes(expressionsDe(noms)), ...(erreurs.length ? { erreur: erreurs[0] } : {}) };
+    return { complete: expressionsCompletes(expressionsDe(noms), quels), ...(erreurs.length ? { erreur: erreurs[0] } : {}) };
   } finally {
     if ((await lireVerrou()).qui === qui) await depot.effacer(VERROU);
   }

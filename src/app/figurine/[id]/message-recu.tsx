@@ -10,7 +10,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { MessageFigurine } from "@/lib/direct/ma-figurine";
-import { SEUIL_MA_FIGURINE, sentimentDe } from "@/lib/direct/ma-figurine";
+import { sentimentDe } from "@/lib/direct/ma-figurine";
 import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE } from "@/app/collection/figurine-qui-parle";
 
 export function MessageRecu({ message: m }: { message: MessageFigurine }) {
@@ -59,7 +59,7 @@ export function MessageRecu({ message: m }: { message: MessageFigurine }) {
             onFin={() => setEcoute(true)}
             etiquette={ecoute ? "▶ Réécouter" : "▶ Écouter"}
             sentiment={m.sentiment}
-            className="mr-fig"
+            className={`mr-fig${!m.signale && m.or ? " mr-or" : ""}`}
           />
           {/* ✍️ ce qu'elle dit, quand le message vient d'un texte */}
           {m.texte && <p className="mr-bulle">« {m.texte} »</p>}
@@ -96,8 +96,8 @@ export function MessageRecu({ message: m }: { message: MessageFigurine }) {
         <section className="mr-toi">
           <b>À ton tour !</b>
           <p>
-            Choisis son émotion, écris ce qu’elle dit, et envoie-la à qui tu veux. Et à {SEUIL_MA_FIGURINE} figurines gagnées chez les
-            commerces ClikMe, tu as la tienne, avec TON visage.
+            Choisis son émotion, écris ce qu’elle dit, et envoie-la à qui tu veux. Puis crée la tienne, avec TON visage : c’est
+            gratuit.
           </p>
           <Link className="mr-bouton" href="/collection">
             Fais-la parler
@@ -107,11 +107,11 @@ export function MessageRecu({ message: m }: { message: MessageFigurine }) {
         <section className="mr-toi">
           <b>Et toi ?</b>
           <p>
-            À chaque visite chez un commerce ClikMe, tu gagnes sa figurine. À {SEUIL_MA_FIGURINE}, tu as la tienne : elle dit ce que
-            tu veux, change de visage avec ce qu’elle ressent, et tu l’envoies à qui tu veux.
+            Crée la tienne avec ta photo, c’est gratuit : elle dit ce que tu veux, change de visage avec ce qu’elle ressent, et tu
+            l’envoies à qui tu veux. Chaque achat chez un commerce ClikMe lui ajoute une option.
           </p>
-          <Link className="mr-bouton" href="/collection">
-            Commencer ma collection
+          <Link className="mr-bouton" href="/collection#creer">
+            Créer ma figurine
           </Link>
         </section>
       )}
@@ -136,6 +136,7 @@ body{background:#12060F}
 .mr h1 b{background:linear-gradient(135deg,#fff,#FFC8E6 45%,#F2C46B);-webkit-background-clip:text;background-clip:text;color:transparent}
 .mr-dit{margin:6px 0 18px;color:#D9C3CB}
 .mr-fig .fqp-fig{width:min(300px,78vw);border-radius:30px}
+.mr-or .fqp-fig{box-shadow:0 0 0 4px #F2C46B,0 0 44px rgba(255,214,120,.6),0 22px 44px -18px rgba(0,0,0,.9)}
 .mr-bulle{position:relative;margin:16px auto 0;max-width:340px;padding:14px 18px;border-radius:22px;background:#FFF4E6;color:#2A0F1F;font-size:17px;font-weight:800;line-height:1.35}
 .mr-bulle::before{content:"";position:absolute;left:50%;top:-9px;width:18px;height:18px;margin-left:-9px;background:#FFF4E6;transform:rotate(45deg)}
 .mr-auteur{margin:12px auto 0;max-width:340px;font-size:12.5px;line-height:1.4;color:#A88E99}

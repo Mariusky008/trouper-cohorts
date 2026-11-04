@@ -419,6 +419,45 @@ export function consigneFigurine(famille: FamilleDouble, fond: "transparent" | "
 }
 
 /**
+ * 🗣️ LA FIGURINE D'UN CLIENT (« Ma collection », dès le départ — `ma-figurine-fabrique-serveur.ts`) : la même
+ * consigne que celle des commerçants (le style « film d'animation 3D », les clés de la ressemblance, le ressort et le
+ * socle), mais SES vêtements à lui (ceux de la photo), les mains jointes devant lui, et un FOND ROSE UNI (comme la
+ * figurine de démonstration du propriétaire) : elle se montre telle quelle, et ses expressions gardent le même cadre.
+ */
+export function consigneFigurineClient(traits?: Traits | null): string {
+  const vus = traitsEnMots(traits);
+  return [
+    "Create a high-quality 3D animated movie character bobblehead based on the reference photo. Preserve the person's recognizable identity and facial features.",
+    "",
+    "FACE AND LIKENESS:",
+    "- Carefully reproduce the original shape of their nose, eyes, eyebrows, jawline and facial proportions, their age, their skin tone, their hair colour and hairstyle, their facial hair. Keep the face recognizable.",
+    "- A calm, natural expression with closed lips (it will be animated later).",
+    "- If they wear glasses, keep them; if not, add none. Nothing on the head or face that is not in the photo.",
+    ...(vus.filter((l) => !l.startsWith("- Son expression")).length
+      ? ["- Their features as seen in the photo (written in French — follow them exactly):", ...vus.filter((l) => !l.startsWith("- Son expression")).map((l) => `  ${l}`)]
+      : []),
+    ...(traits?.accentuer ? [`- The stylization gently plays up THEIR OWN most distinctive features (in French: ${traits.accentuer}) — never generic cartoon features that are not theirs.`] : []),
+    "",
+    "3D ANIMATION STYLE:",
+    ...STYLE_ANIMATION,
+    "",
+    "BODY AND CLOTHING:",
+    "- Hands joined in front of the chest, relaxed.",
+    ...FIGURINE_ENTIERE.filter((l) => !l.startsWith("- Standing pose")),
+    "- Their own clothes from the photo (same colours and style), simplified, with visible stitching and details. Nothing written on them.",
+    "",
+    ...troisCles(traits),
+    "",
+    "COMPOSITION:",
+    "- Straight-on frontal view, centred and symmetrical: the entire figurine and its wooden base visible, from the top of the head to the bottom of the base, with a generous margin all around (the head never touches the top edge).",
+    "- Professional soft studio lighting, clean soft shadow under the base, crisp details: a high-quality 3D animation render, like a product photo of a collectible.",
+    "- A plain, uniform soft pink studio background (#D87093), seamless, with nothing else in the image.",
+    "",
+    ...CONTRAINTES.map((l) => l.replace("No change to their expression. ", "")),
+  ].join("\n");
+}
+
+/**
  * LA TENUE DE CHAQUE ÉDITION (une par mois : `EDITIONS_DATEES`) — la même figurine, déguisée, avec des accessoires généreux (la figurine d'Halloween du
  * propriétaire en porte une demi-douzaine : chapeau, sac décoré, chat noir, breloques). Les chapeaux et bonnets sont
  * permis ici, cheveux visibles et visage dégagé. Rien d'alcoolisé (loi Évin). Clés : celles de `EDITIONS_DATEES`.

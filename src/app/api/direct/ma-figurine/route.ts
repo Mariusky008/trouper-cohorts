@@ -3,7 +3,10 @@
 // GET : où il en est (le compteur jusqu'à 10, sa photo, sa figurine, ses expressions, ses messages), et la
 //   démonstration (la figurine du propriétaire : ses expressions déjà faites, et si un texte peut être lu). Sans
 //   cookie : 0 / 10.
-// POST { action: "photo", photo: data:image…, accord: true } : sa photo, pour que ClikMe fasse sa figurine.
+// POST { action: "photo", photo: data:image…, accord: true, prenom?, ville? } : sa photo — dès le départ (sans compte,
+//   on lui en ouvre un dans `ville`, une ville des commerces ClikMe) ; le moteur fabrique ensuite sa figurine.
+// POST { action: "fabriquer" } : un pas de fabrication de sa figurine (le moteur) → l'état (`enCours` : rappeler).
+// POST { action: "refaire", autrePhoto? } : une nouvelle figurine (même photo), ou retour à la photo.
 // POST { action: "expressions" } : un tour de fabrication de ses expressions (le moteur d'image) → l'état.
 // POST { action: "voix", texte, voix } : son texte lu par la voix choisie (ElevenLabs) → { son: data:audio/mpeg… }.
 // POST { action: "message", son: data:audio…, duree, commerces: [liens], sentiment?, texte?, voix? } : un message de
@@ -12,10 +15,11 @@
 // POST { action: "demo", quoi: "expressions" } : un tour pour la démonstration (une seule fois en tout, puis gardé).
 // POST { action: "demo", quoi: "voix", texte, voix } : SON texte, dit par la démonstration (sans compte, compté).
 // POST { action: "demo", quoi: "message", texte, voix, sentiment?, prenom? } : il l'envoie → { id, lien }.
-// Jamais d'habitant créé ici.
+// Un habitant n'est créé ici que par « photo » (son geste : « Créer ma figurine »).
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { habitantCourant } from "@/lib/direct/habitant";
+import { assurerHabitant, habitantCourant } from "@/lib/direct/habitant";
+import { villeSlug } from "@/lib/direct/ville";
 import { lienMessage } from "@/lib/direct/ma-figurine";
 import {
   enregistrerMessage,
@@ -24,6 +28,8 @@ import {
   etatDemo,
   etatMaFigurine,
   fabriquerExpressionsDemo,
+  fabriquerMaFigurine,
+  refaireMaFigurine,
   fabriquerSesExpressions,
   lireSonTexte,
   signalerMessage,
@@ -37,6 +43,12 @@ export const maxDuration = 300;
 
 const sansCache = { "cache-control": "private, no-store" };
 const enSon = (mp3: Buffer) => `data:audio/mpeg;base64,${mp3.toString("base64")}`;
+
+/** Une ville où ClikMe a au moins un commerce client (on n'ouvre pas de compte ailleurs). */
+async function villeOuverte(supabase: ReturnType<typeof createAdminClient>, ville: string): Promise<boolean> {
+  const { data } = await supabase.from("human_vitrine_sites").select("city").eq("est_client", true).limit(500);
+  return ((Array.isArray(data) ? data : []) as { city?: string }[]).some((x) => villeSlug(String(x.city ?? "").replace(/\b\d{5}\b/g, " ").replace(/\s+/g, " ").trim()) === ville);
+}
 
 export async function GET() {
   const supabase = createAdminClient();
@@ -74,11 +86,31 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ error: "Demande incomplète." }, { status: 400 });
   }
-  const moi = await habitantCourant(supabase);
-  if (!moi) return NextResponse.json({ error: "Ouvre d’abord ta collection depuis ton téléphone." }, { status: 403 });
   if (p?.action === "photo") {
-    const r = await envoyerPhoto(supabase, moi, p.photo, p.accord);
+    // DÈS LE DÉPART : sans compte, sa photo lui en ouvre un — dans une ville où ClikMe a des commerces
+    let moi = await habitantCourant(supabase);
+    if (!moi) {
+      if (p.accord !== true) return NextResponse.json({ error: "Coche « C’est bien moi sur la photo »." }, { status: 400 });
+      const ville = villeSlug(String(p.ville ?? ""));
+      if (!ville || !(await villeOuverte(supabase, ville))) return NextResponse.json({ error: "Choisis ta ville." }, { status: 400 });
+      moi = await assurerHabitant(supabase, ville);
+      if (!moi) return NextResponse.json({ error: "Ton compte n’a pas pu s’ouvrir. Réessaie dans un instant." }, { status: 502 });
+    }
+    const r = await envoyerPhoto(supabase, moi, p.photo, p.accord, p.prenom);
     if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
+    return NextResponse.json({ ok: true, etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
+  }
+  const moi = await habitantCourant(supabase);
+  if (!moi) return NextResponse.json({ error: "Envoie d’abord ta photo pour créer ta figurine." }, { status: 403 });
+  if (p?.action === "fabriquer") {
+    const r = await fabriquerMaFigurine(supabase, moi, avant);
+    const etat = await etatMaFigurine(supabase, moi);
+    if (r.error) return NextResponse.json({ error: r.error, etat }, { status: r.statut ?? 400, headers: sansCache });
+    return NextResponse.json({ ok: true, ...(r.enCours ? { enCours: true } : {}), etat }, { headers: sansCache });
+  }
+  if (p?.action === "refaire") {
+    const r = await refaireMaFigurine(supabase, moi, p.autrePhoto === true);
+    if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
     return NextResponse.json({ ok: true, etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
   }
   if (p?.action === "expressions") {

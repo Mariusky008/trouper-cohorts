@@ -5,7 +5,8 @@
  * clarté et de modernité ; la section qui devrait être le wow de la page, “Ta propre figurine”, n'est pas du tout ce
  * que je voulais »). UNE HISTOIRE, DANS L'ORDRE :
  *   1. TA FIGURINE QUI PARLE (le wow) : la démonstration (la figurine du propriétaire), qu'on fait parler soi-même —
- *      son émotion, son texte, sa voix — et qu'on envoie sur WhatsApp ; puis la tienne (`ma-figurine.tsx`) ;
+ *      son émotion, son texte, sa voix — et qu'on envoie sur WhatsApp ; puis « Crée ta figurine », dès le départ, et la
+ *      tienne, avec une option de plus à chaque achat (`ma-figurine.tsx`) ;
  *   2. L'ÉDITION DU MOIS : ce qui se gagne maintenant, et le temps qui reste ;
  *   3. MES FIGURINES : l'album, une page par commerce (`album.tsx`) ;
  *   4. OÙ LES GAGNER : les commerces ClikMe.
@@ -14,21 +15,23 @@
  * `/api/direct/ma-figurine`.
  */
 import Link from "next/link";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import type { MaFamille } from "@/lib/direct/famille";
 import { STYLES_COLLECTION } from "@/app/f/[slug]/collection";
 import { Album, STYLES_ALBUM } from "./album";
 import { ChronoEdition, OuGagner, STYLES_DECOUVRIR, type CommerceACollectionner } from "./decouvrir";
-import { Annonce, EnvoiPhoto, STYLES_MA_FIGURINE, StudioDemo, StudioMoi } from "./ma-figurine";
-import { SEUIL_MA_FIGURINE, figurinesEnTout, type DemoFigurine, type EtatMaFigurine } from "@/lib/direct/ma-figurine";
+import { Annonce, EnvoiPhoto, FabricationAuto, STYLES_MA_FIGURINE, StudioDemo, StudioMoi } from "./ma-figurine";
+import { figurinesEnTout, type DemoFigurine, type EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
 type Familles = { familles: MaFamille[] } | null;
 type Figurine = { etat: EtatMaFigurine | null; demo: DemoFigurine | null } | null;
 
-export function MaCollection({ aujourdhui, commerces }: { aujourdhui: string; commerces: CommerceACollectionner[] }) {
+export function MaCollection({ aujourdhui, commerces, villes = [] }: { aujourdhui: string; commerces: CommerceACollectionner[]; villes?: { slug: string; nom: string }[] }) {
   const [familles, setFamilles] = useState<Familles>(null);
   const [ennui, setEnnui] = useState(false);
   const [figurine, setFigurine] = useState<Figurine>(null);
+  // (stable : la fabrication rappelle le serveur dans un effet qui en dépend)
+  const poserEtat = useCallback((e: EtatMaFigurine) => setFigurine((f) => (f ? { ...f, etat: e } : f)), []);
 
   useEffect(() => {
     let fini = false;
@@ -93,36 +96,40 @@ export function MaCollection({ aujourdhui, commerces }: { aujourdhui: string; co
         <p className="mc-dit">
           {prete
             ? "Choisis ce qu’elle ressent, écris ce qu’elle dit, et envoie-la à qui tu veux."
-            : `Essaie-la : choisis son émotion, écris ce qu’elle dit, envoie-la. À ${SEUIL_MA_FIGURINE} figurines gagnées chez les commerces ClikMe, la tienne aura ton visage.`}
+            : "Essaie-la : choisis son émotion, écris ce qu’elle dit, envoie-la. Puis crée la tienne avec ta photo : c’est gratuit, et chaque achat chez un commerce ClikMe lui ajoute une option."}
         </p>
         {!figurine ? (
           <div className="mc-attente" aria-label="Chargement">
             <i style={{ "--d": "0s" } as CSSProperties} />
           </div>
         ) : prete ? (
-          <StudioMoi etat={etat!} />
-        ) : etat?.etape === "photo" ? (
+          <StudioMoi key={etat!.neutre} etat={etat!} onEtat={poserEtat} />
+        ) : etat?.etape === "fabrication" ? (
           <>
-            <EnvoiPhoto etat={etat} onEnvoye={(e) => setFigurine((f) => (f ? { ...f, etat: e } : f))} />
-            <h2 className="mc-avant">Voici ce qu’elle fera</h2>
-            <StudioDemo demo={figurine.demo} total={null} seuil={SEUIL_MA_FIGURINE} />
-          </>
-        ) : etat?.etape === "fabrication" || etat?.etape === "bientot" ? (
-          <>
-            {etat.etape === "fabrication" ? (
+            {etat.auto ? (
+              <FabricationAuto etat={etat} onEtat={poserEtat} />
+            ) : (
               <Annonce titre="On fabrique ta figurine 🛠️" emoji="📸">
                 Ta photo est bien arrivée. Ta figurine sera ici dans quelques jours : tu pourras la faire parler et l’envoyer à tes proches.
               </Annonce>
-            ) : (
-              <Annonce titre="Bravo, 10 figurines ! 🎉" emoji="🛠️">
-                Ta propre figurine arrive très bientôt : reviens ici dans quelques jours pour envoyer ta photo.
-              </Annonce>
             )}
-            <h2 className="mc-avant">En attendant, regarde ce qu’elle fera</h2>
-            <StudioDemo demo={figurine.demo} total={null} seuil={SEUIL_MA_FIGURINE} />
+            <h2 className="mc-avant">En attendant, fais parler la démonstration</h2>
+            <StudioDemo demo={figurine.demo} />
+          </>
+        ) : etat?.etape === "bientot" ? (
+          <>
+            <Annonce titre="Ta figurine arrive très bientôt 🛠️" emoji="📸">
+              Reviens ici dans quelques jours pour envoyer ta photo.
+            </Annonce>
+            <h2 className="mc-avant">En attendant, fais parler la démonstration</h2>
+            <StudioDemo demo={figurine.demo} />
           </>
         ) : (
-          <StudioDemo demo={figurine.demo} total={familles ? total : null} seuil={SEUIL_MA_FIGURINE} />
+          // DÈS LE DÉPART : la démonstration (le wow), puis « Crée ta figurine »
+          <>
+            <StudioDemo demo={figurine.demo} creer={Boolean(etat)} />
+            {etat && <EnvoiPhoto etat={etat} villes={villes} onEnvoye={poserEtat} />}
+          </>
         )}
       </section>
 
@@ -180,6 +187,7 @@ body{background:#12060F}
   background:linear-gradient(135deg,#fff,#FFC8E6 50%,#F2C46B);-webkit-background-clip:text;background-clip:text;color:transparent}
 .mc-dit{margin:8px 0 18px;max-width:560px;color:#D9C3CB}
 .mc-avant{margin:26px 0 12px;font-size:20px;font-weight:900;letter-spacing:-.02em}
+.mc-heros .tf-photo{margin-top:22px}
 .mc-attente{display:grid;margin:8px 0 0}
 .mc-attente i{height:420px;border-radius:30px;background:linear-gradient(100deg,rgba(255,255,255,.04) 30%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 70%);background-size:200% 100%;animation:mc-reflet 1.4s linear var(--d) infinite}
 .mc-vide{margin:28px 0 0;padding:18px;border-radius:20px;background:rgba(255,255,255,.05);text-align:center;color:#D9C3CB}

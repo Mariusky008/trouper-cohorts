@@ -12,7 +12,11 @@
  *     choisis l'émotion, je tape ce que je veux qu'elle dise et je l'envoie à quelqu'un ; si c'est bluffant, je voudrais
  *     créer ma propre figurine, et c'est ça qui motivera » : SON texte, SA voix au choix, et un vrai lien à envoyer ;
  *   · `StudioMoi` : la sienne, quand elle est prête (ses expressions se fabriquent toutes seules la première fois) ;
- *   · `EnvoiPhoto`, `Annonce` : à 10 figurines, sa photo ; puis « on fabrique ta figurine ».
+ *     ses options (`OPTIONS_FIGURINE`) : celles pas encore ouvertes se voient, sous cadenas, avec l'achat qui les ouvre
+ *     (`MesOptions`) — 4 novembre 2026 : « créer sa figurine dès le départ, et des options supplémentaires à chaque fois
+ *     qu'on achète quelque chose chez un commerçant » ;
+ *   · `EnvoiPhoto` (« Crée ta figurine », dès le départ, sans compte), `FabricationAuto` (le moteur la fabrique, la page
+ *     attend), `Annonce` (sans moteur : ClikMe la fait à la main).
  * La règle est dans `lib/direct/ma-figurine.ts`.
  */
 import { useEffect, useRef, useState, type CSSProperties } from "react";
@@ -20,12 +24,17 @@ import {
   COMMERCES_MAX_MESSAGE,
   DUREE_MAX_MESSAGE,
   IMAGES_DEMO,
+  OPTIONS_FIGURINE,
   PRENOM_MAX,
   SENTIMENTS,
   TEXTE_MAX,
   VOIX_FIGURINE,
+  optionSuivante,
+  optionsOuvertes,
   sentimentDe,
+  sentimentOuvert,
   texteDuMessage,
+  voixOuverte,
   type CleVoix,
   type DemoFigurine,
   type EtatMaFigurine,
@@ -57,29 +66,106 @@ function dureeDe(url: string): Promise<number> {
 }
 
 // ─── ce qu'elle ressent : son visage ────────────────────────────────────────────────────────────
-function ChoixExpression({ valeur, onChoix }: { valeur: Sentiment | null; onChoix: (s: Sentiment | null) => void }) {
+/** « 1ᵉʳ », « 3ᵉ ». */
+const ordinal = (n: number) => (n === 1 ? "1ᵉʳ" : `${n}ᵉ`);
+/** Ce qu'on dit quand il touche une option encore fermée. */
+const ouvreA = (cle: string) => {
+  const o = OPTIONS_FIGURINE.find((x) => x.cle === cle);
+  return o ? `${o.emoji} ${o.titre} s’ouvre à ton ${ordinal(o.n)} achat chez un commerce ClikMe.` : "";
+};
+
+/** `total` (sa figurine) : les visages pas encore ouverts sont sous cadenas ; un toucher dit quel achat les ouvre. */
+function ChoixExpression({ valeur, onChoix, total, onFerme }: { valeur: Sentiment | null; onChoix: (s: Sentiment | null) => void; total?: number; onFerme?: (dit: string) => void }) {
   return (
     <div className="tf-expr" role="radiogroup" aria-label="Ce qu’elle ressent">
-      {[{ cle: null, emoji: "🙂", court: "Normal" }, ...SENTIMENTS].map((x) => (
-        <button key={x.cle ?? "normal"} type="button" role="radio" aria-checked={valeur === x.cle} className={valeur === x.cle ? "pris" : ""} onClick={() => onChoix(x.cle)}>
-          <span aria-hidden="true">{x.emoji}</span>
-          {x.court}
-        </button>
-      ))}
+      {[{ cle: null, emoji: "🙂", court: "Normal" }, ...SENTIMENTS].map((x) => {
+        const ferme = total != null && !sentimentOuvert(x.cle, total);
+        return (
+          <button
+            key={x.cle ?? "normal"}
+            type="button"
+            role="radio"
+            aria-checked={valeur === x.cle}
+            aria-disabled={ferme || undefined}
+            className={`${valeur === x.cle ? "pris" : ""}${ferme ? " ferme" : ""}`}
+            onClick={() => (ferme ? onFerme?.(ouvreA(x.cle!)) : onChoix(x.cle))}
+          >
+            <span aria-hidden="true">{x.emoji}</span>
+            {x.court}
+            {ferme && (
+              <i className="tf-cadenas" aria-label="fermé">
+                🔒
+              </i>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-function ChoixVoix({ valeur, onChoix, desactive }: { valeur: CleVoix; onChoix: (v: CleVoix) => void; desactive?: boolean }) {
+function ChoixVoix({ valeur, onChoix, desactive, total, onFerme }: { valeur: CleVoix; onChoix: (v: CleVoix) => void; desactive?: boolean; total?: number; onFerme?: (dit: string) => void }) {
   return (
     <div className="tf-voix" role="radiogroup" aria-label="Sa voix">
-      {VOIX_FIGURINE.map((v) => (
-        <button key={v.cle} type="button" role="radio" aria-checked={valeur === v.cle} className={valeur === v.cle ? "pris" : ""} disabled={desactive} onClick={() => onChoix(v.cle)}>
-          <span aria-hidden="true">{v.emoji}</span>
-          {v.nom}
-        </button>
-      ))}
+      {VOIX_FIGURINE.map((v) => {
+        const ferme = total != null && !voixOuverte(v.cle, total);
+        return (
+          <button
+            key={v.cle}
+            type="button"
+            role="radio"
+            aria-checked={valeur === v.cle}
+            aria-disabled={ferme || undefined}
+            className={`${valeur === v.cle ? "pris" : ""}${ferme ? " ferme" : ""}`}
+            disabled={desactive}
+            onClick={() => (ferme ? onFerme?.(ouvreA("voix")) : onChoix(v.cle))}
+          >
+            <span aria-hidden="true">{v.emoji}</span>
+            {v.nom}
+            {ferme && (
+              <i className="tf-cadenas" aria-label="fermée">
+                🔒
+              </i>
+            )}
+          </button>
+        );
+      })}
     </div>
+  );
+}
+
+/** 🎁 SES OPTIONS : ouvertes, la prochaine, et les autres sous cadenas — une de plus à chaque achat. */
+export function MesOptions({ total }: { total: number }) {
+  const ouvertes = optionsOuvertes(total);
+  const suivante = optionSuivante(total);
+  return (
+    <section className="tf-options" aria-label="Tes options">
+      <b className="tf-q">🎁 Une option de plus à chaque achat chez un commerce ClikMe</b>
+      <ol>
+        <li className="ouverte">
+          <span aria-hidden="true">🗣️</span>
+          <b>Ta figurine qui parle</b>
+          <small>dès le départ ✓</small>
+        </li>
+        {OPTIONS_FIGURINE.map((o) => (
+          <li key={o.cle} className={ouvertes.has(o.cle) ? "ouverte" : suivante?.cle === o.cle ? "suivante" : "fermee"}>
+            <span aria-hidden="true">{ouvertes.has(o.cle) ? o.emoji : suivante?.cle === o.cle ? o.emoji : "🔒"}</span>
+            <b>{o.titre}</b>
+            <small>{ouvertes.has(o.cle) ? "ouverte ✓" : `${ordinal(o.n)} achat`}</small>
+          </li>
+        ))}
+      </ol>
+      <p className="tf-options-dit">
+        {suivante ? (
+          <>
+            Encore <b>{suivante.n - total}</b> achat{suivante.n - total > 1 ? "s" : ""} : {suivante.emoji} {suivante.titre.toLowerCase()} — {suivante.dit}.{" "}
+            <a href="#ou-gagner">Où ?</a>
+          </>
+        ) : (
+          "Toutes tes options sont ouvertes. Bravo !"
+        )}
+      </p>
+    </section>
   );
 }
 
@@ -139,7 +225,7 @@ const Etape = ({ n, children }: { n: number; children: React.ReactNode }) => (
 // ─── la démonstration : la figurine du propriétaire, qu'on fait parler soi-même ────────────────────────
 const IDEES = ["Joyeux anniversaire ! Je t’embrasse fort.", "On se fait un resto ce soir ?", "Tu me manques, passe à la maison !", "Bravo pour ton examen !"];
 
-export function StudioDemo({ demo, total, seuil }: { demo: DemoFigurine | null; total: number | null; seuil: number }) {
+export function StudioDemo({ demo, creer = false }: { demo: DemoFigurine | null; creer?: boolean }) {
   const fig = useRef<FigurineHandle>(null);
   const [sentiment, setSentiment] = useState<Sentiment | null>("joie");
   const [touche, setTouche] = useState(false);
@@ -198,7 +284,6 @@ export function StudioDemo({ demo, total, seuil }: { demo: DemoFigurine | null; 
       setEnvoi(false);
     }
   }
-  const reste = total == null ? null : Math.max(0, seuil - total);
 
   return (
     <div className="tf tf-demo">
@@ -280,23 +365,13 @@ export function StudioDemo({ demo, total, seuil }: { demo: DemoFigurine | null; 
         )}
 
         <div className={`tf-la-tienne${envoye || entendu ? " vu" : ""}`}>
-          <b>Bluffant ? La tienne aura TON visage.</b>
-          {reste != null && (
-            <>
-              <span className="tf-jauge" role="progressbar" aria-valuemin={0} aria-valuemax={seuil} aria-valuenow={Math.min(total!, seuil)}>
-                <i style={{ width: `${Math.min(1, total! / seuil) * 100}%` } as CSSProperties} />
-              </span>
-              <span>
-                <b>
-                  {Math.min(total!, seuil)} / {seuil} figurines
-                </b>{" "}
-                · {reste ? `encore ${reste}, chez n’importe quel commerce ClikMe` : "ta figurine t’attend !"}
-              </span>
-            </>
+          <b>Bluffant ? Crée la tienne, avec TON visage.</b>
+          <span>C’est gratuit. Et chaque achat chez un commerce ClikMe lui ajoute une option : un visage, des voix, le cadre doré…</span>
+          {creer && (
+            <a className="tf-creer" href="#creer">
+              📸 Créer ma figurine ↓
+            </a>
           )}
-          <a className="tf-gagner" href="#ou-gagner">
-            Gagner mes figurines ↓
-          </a>
         </div>
       </div>
     </div>
@@ -308,10 +383,16 @@ const TYPES_SON = ["audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/webm;codecs
 /** Le son prêt à partir : l'adresse à jouer, ce qui part au serveur, sa durée, et d'où il vient (pour ne pas le refaire). */
 type Son = { url: string; data: string; duree: number; cle: string; texte?: string; voix?: CleVoix };
 
-export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine }) {
+export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEtat?: (e: EtatMaFigurine) => void }) {
   const fig = useRef<FigurineHandle>(null);
   const [etat, setEtat] = useState(etat0);
   const [mode, setMode] = useState<"ecrire" | "voix">(etat0.voixTexte ? "ecrire" : "voix");
+  const [nudge, setNudge] = useState("");
+  const [refaire, setRefaire] = useState(false);
+  const total = etat.total;
+  // SA PROPRE VOIX : une option (la 2ᵉ) — sauf sans voix lue (sans elle, il n'aurait rien pour parler)
+  const microOuvert = voixOuverte("micro", total) || !etat.voixTexte;
+  const or = optionsOuvertes(total).has("or");
   const [texte, setTexte] = useState("");
   const [voix, setVoix] = useState<CleVoix>("douce");
   const [sentiment, setSentiment] = useState<Sentiment | null>(null);
@@ -465,16 +546,59 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine }) {
           sentiment={sentiment}
           rejoue={rejoue}
           onJoue={setParle}
-          className="tf-fig"
+          className={`tf-fig${or ? " tf-or" : ""}`}
         />
         <ChoixExpression
           valeur={sentiment}
+          total={total}
+          onFerme={setNudge}
           onChoix={(s) => {
+            setNudge("");
             setSentiment(s);
             setRejoue((n) => n + 1);
           }}
         />
+        {nudge && (
+          <p className="tf-nudge" role="status">
+            {nudge} <a href="#ou-gagner">Où ?</a>
+          </p>
+        )}
         {expressionsEnCours && etat.expressionsAFaire && <p className="tf-note">🎭 Ta figurine apprend ses expressions… (2 à 3 minutes, la première fois)</p>}
+        {(etat.refaire ?? 0) > 0 &&
+          (refaire ? (
+            <div className="tf-refaire">
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const j = await demander({ action: "refaire" });
+                    if (j.etat) onEtat?.(j.etat);
+                  } catch (e) {
+                    setErreur((e as Error).message);
+                  }
+                }}
+              >
+                🔁 Une nouvelle, avec la même photo ({etat.refaire} aujourd’hui)
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const j = await demander({ action: "refaire", autrePhoto: true });
+                    if (j.etat) onEtat?.(j.etat);
+                  } catch (e) {
+                    setErreur((e as Error).message);
+                  }
+                }}
+              >
+                📸 Avec une autre photo
+              </button>
+            </div>
+          ) : (
+            <button type="button" className="tf-refaire-lien" onClick={() => setRefaire(true)}>
+              Elle ne te ressemble pas ? La refaire
+            </button>
+          ))}
       </div>
 
       <div className="tf-panneau">
@@ -484,8 +608,14 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine }) {
             <button type="button" role="tab" aria-selected={mode === "ecrire"} className={mode === "ecrire" ? "pris" : ""} onClick={() => setMode("ecrire")}>
               ✍️ J’écris
             </button>
-            <button type="button" role="tab" aria-selected={mode === "voix"} className={mode === "voix" ? "pris" : ""} onClick={() => setMode("voix")}>
-              🎙️ Ma voix
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "voix"}
+              className={`${mode === "voix" ? "pris" : ""}${microOuvert ? "" : " ferme"}`}
+              onClick={() => (microOuvert ? setMode("voix") : setNudge(ouvreA("voix")))}
+            >
+              🎙️ Ma voix{microOuvert ? "" : " 🔒"}
             </button>
           </div>
         )}
@@ -506,7 +636,7 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine }) {
               </small>
             </label>
             <b className="tf-q">Sa voix</b>
-            <ChoixVoix valeur={voix} onChoix={setVoix} />
+            <ChoixVoix valeur={voix} onChoix={setVoix} total={total} onFerme={setNudge} />
             <button type="button" className="tf-ecouter" onClick={ecouterTexte} disabled={parle || !texte.trim()}>
               {parle ? "🔊 Elle parle…" : "▶ Écouter"}
             </button>
@@ -577,6 +707,8 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine }) {
           </p>
         )}
 
+        <MesOptions total={total} />
+
         {etat.messages.length > 0 && (
           <details className="tf-messages">
             <summary>Mes messages ({etat.messages.length})</summary>
@@ -612,11 +744,18 @@ export function Annonce({ titre, emoji, children }: { titre: string; emoji: stri
   );
 }
 
-export function EnvoiPhoto({ etat, onEnvoye }: { etat: EtatMaFigurine; onEnvoye: (e: EtatMaFigurine) => void }) {
+/**
+ * 📸 « CRÉE TA FIGURINE », DÈS LE DÉPART — sa photo (et, sans compte, son prénom et sa ville : la photo lui ouvre son
+ * compte). Le moteur d'image la fabrique ensuite (`FabricationAuto`) ; sans moteur, ClikMe la fait à la main.
+ */
+export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFigurine; villes?: { slug: string; nom: string }[]; onEnvoye: (e: EtatMaFigurine) => void }) {
   const [photo, setPhoto] = useState("");
   const [accord, setAccord] = useState(false);
+  const [prenom, setPrenom] = useState("");
+  const [ville, setVille] = useState(villes.length === 1 ? villes[0].slug : "");
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState("");
+  const sansVille = !etat.compte && villes.length > 0 && !ville;
   async function choisir(f: File | undefined) {
     setErreur("");
     if (!f) return;
@@ -630,7 +769,7 @@ export function EnvoiPhoto({ etat, onEnvoye }: { etat: EtatMaFigurine; onEnvoye:
     setEnvoi(true);
     setErreur("");
     try {
-      const j = await demander({ action: "photo", photo, accord });
+      const j = await demander({ action: "photo", photo, accord, ...(prenom.trim() ? { prenom: prenom.trim() } : {}), ...(etat.compte ? {} : { ville }) });
       if (j.etat) onEnvoye(j.etat);
     } catch (e) {
       setErreur((e as Error).message);
@@ -639,12 +778,16 @@ export function EnvoiPhoto({ etat, onEnvoye }: { etat: EtatMaFigurine; onEnvoye:
     }
   }
   return (
-    <div className="tf-photo">
+    <div className="tf-photo" id="creer">
       <span className="tf-annonce-emoji" aria-hidden="true">
-        🎉
+        📸
       </span>
-      <b className="tf-titre">{etat.total} figurines : ta figurine t’attend !</b>
-      <p>Envoie une photo de toi, de face et bien éclairée : on en fait ta figurine, qui parlera et changera de visage.</p>
+      <b className="tf-titre">Crée ta figurine</b>
+      <p>
+        Une photo de toi, de face, bien éclairée, seul{"(e)"} :{" "}
+        {etat.auto === false ? "ClikMe en fait ta figurine, prête dans quelques jours." : "en deux minutes environ, elle devient ta figurine."} Elle parlera, changera de visage, et
+        chaque achat chez un commerce ClikMe lui ajoutera une option. C’est gratuit.
+      </p>
       {etat.refus && (
         <p className="tf-refus" role="alert">
           Ta photo précédente n’a pas pu servir : {etat.refus}
@@ -659,17 +802,126 @@ export function EnvoiPhoto({ etat, onEnvoye }: { etat: EtatMaFigurine; onEnvoye:
           <span>📷 Choisir ma photo</span>
         )}
       </label>
+      {!etat.prenom && (
+        <input
+          className="tf-prenom-photo"
+          value={prenom}
+          maxLength={PRENOM_MAX}
+          onChange={(e) => setPrenom(e.target.value)}
+          placeholder="Ton prénom (tes proches le verront)"
+          aria-label="Ton prénom"
+          autoComplete="given-name"
+        />
+      )}
+      {!etat.compte && villes.length > 1 && (
+        <select className="tf-ville" value={ville} onChange={(e) => setVille(e.target.value)} aria-label="Ta ville">
+          <option value="">Ta ville…</option>
+          {villes.map((v) => (
+            <option key={v.slug} value={v.slug}>
+              {v.nom}
+            </option>
+          ))}
+        </select>
+      )}
       <label className="tf-accord">
         <input type="checkbox" checked={accord} onChange={(e) => setAccord(e.target.checked)} />
         <span>C’est bien moi sur la photo, et j’accepte que ClikMe en fasse ma figurine.</span>
       </label>
-      <button type="button" className="tf-envoyer" disabled={!photo || !accord || envoi} onClick={partir}>
-        {envoi ? "Envoi…" : "Envoyer ma photo"}
+      <button type="button" className="tf-envoyer" disabled={!photo || !accord || sansVille || envoi} onClick={partir}>
+        {envoi ? "Envoi…" : "Créer ma figurine"}
       </button>
       {erreur && (
         <p className="tf-erreur" role="alert">
           {erreur}
         </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * 🛠️ SA FIGURINE SE FABRIQUE (le moteur d'image) : la page rappelle le serveur tant que ce n'est pas fini — sa
+ * figurine, puis sa bouche ouverte —, avec ce qui se passe, et une jauge qui avance (deux minutes environ).
+ */
+export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat: (e: EtatMaFigurine) => void }) {
+  const [erreur, setErreur] = useState("");
+  const [tour, setTour] = useState(0);
+  const [secondes, setSecondes] = useState(0);
+  useEffect(() => {
+    let fini = false;
+    const t0 = Date.now();
+    const minuteur = window.setInterval(() => setSecondes((Date.now() - t0) / 1000), 1000);
+    (async () => {
+      for (let k = 0; k < 10 && !fini; k++) {
+        try {
+          const j = await demander({ action: "fabriquer" });
+          if (fini) return;
+          if (j.etat && j.etat.etape !== "fabrication") return onEtat(j.etat);
+          if (j.enCours) await new Promise((ok) => window.setTimeout(ok, 15_000));
+        } catch (e) {
+          if (!fini) setErreur((e as Error).message);
+          return;
+        }
+      }
+    })();
+    return () => {
+      fini = true;
+      window.clearInterval(minuteur);
+    };
+  }, [tour, onEtat]);
+  const avance = Math.min(0.95, secondes / 150);
+  const pas = secondes < 8 ? 0 : secondes < 75 ? 1 : 2;
+  return (
+    <div className="tf-fab" aria-live="polite">
+      <span className="tf-fab-fig" aria-hidden="true">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={IMAGES_DEMO.neutre} alt="" />
+        <i />
+      </span>
+      <b className="tf-titre">{erreur ? "Ta figurine n’a pas pu être faite" : "On fabrique ta figurine…"}</b>
+      {erreur ? (
+        <>
+          <p className="tf-erreur" role="alert">
+            {erreur}
+          </p>
+          <div className="tf-refaire">
+            <button
+              type="button"
+              onClick={() => {
+                setErreur("");
+                setSecondes(0);
+                setTour((n) => n + 1);
+              }}
+            >
+              🔁 Réessayer
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const j = await demander({ action: "refaire", autrePhoto: true });
+                  if (j.etat) onEtat(j.etat);
+                } catch (e) {
+                  setErreur((e as Error).message);
+                }
+              }}
+            >
+              📸 Une autre photo
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <span className="tf-fab-jauge" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(avance * 100)}>
+            <i style={{ width: `${avance * 100}%` } as CSSProperties} />
+          </span>
+          <ol>
+            <li className="fait">✓ Ta photo est arrivée</li>
+            <li className={pas > 1 ? "fait" : pas === 1 ? "maintenant" : ""}>{pas > 1 ? "✓" : "🎨"} On sculpte ta figurine{etat.prenom ? `, ${etat.prenom}` : ""}</li>
+            <li className={pas === 2 ? "maintenant" : ""}>🗣️ On lui apprend à parler</li>
+          </ol>
+          <p className="tf-note">Deux minutes environ. Tu peux rester ici : elle apparaît toute seule.</p>
+        </>
       )}
     </div>
   );
@@ -740,11 +992,47 @@ export const STYLES_MA_FIGURINE =
 .tf-messages a{color:#FFF4E6;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tf-la-tienne{display:flex;flex-direction:column;gap:6px;margin-top:6px;padding:14px;border-radius:18px;background:linear-gradient(135deg,rgba(242,196,107,.16),rgba(255,46,154,.1));border:1px dashed rgba(242,196,107,.55);font-size:13.5px;color:#E8D3DC}
 .tf-la-tienne > b{font-size:15px;color:#FFF4E6}
+.tf-creer{align-self:stretch;margin-top:4px;padding:13px 18px;border-radius:999px;background:linear-gradient(135deg,#F2C46B,#FF8FCB);color:#2A0F1F;font-size:15.5px;font-weight:900;text-align:center;text-decoration:none;box-shadow:0 12px 26px -12px rgba(242,196,107,.9)}
+.tf-expr button,.tf-voix button{position:relative}
+.tf-expr button.ferme,.tf-voix button.ferme{opacity:.55;filter:grayscale(.6)}
+.tf-modes button.ferme{opacity:.6}
+.tf-cadenas{position:absolute;right:3px;top:2px;font-style:normal;font-size:11px}
+.tf-nudge{margin:0;padding:9px 14px;border-radius:14px;background:rgba(242,196,107,.14);border:1px solid rgba(242,196,107,.45);font-size:13px;line-height:1.4;text-align:center;color:#FFE7B8;animation:tf-vu .4s cubic-bezier(.2,1.5,.4,1)}
+.tf-nudge a{color:#FF9FD2;font-weight:900}
+.tf-refaire-lien{border:0;background:none;color:#A88E99;font:inherit;font-size:12.5px;text-decoration:underline;cursor:pointer}
+.tf-refaire{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.tf-refaire button{padding:9px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#FFF4E6;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+.tf-fig.tf-or .fqp-fig{box-shadow:0 0 0 4px #F2C46B,0 0 40px rgba(255,214,120,.55),0 30px 60px -24px rgba(0,0,0,.95)}
+.tf-options{display:flex;flex-direction:column;gap:8px;margin-top:6px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}
+.tf-options ol{display:flex;gap:6px;margin:0;padding:0 0 4px;list-style:none;overflow-x:auto;scrollbar-width:none}
+.tf-options ol::-webkit-scrollbar{display:none}
+.tf-options li{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;width:86px;padding:9px 4px 8px;border-radius:16px;text-align:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.tf-options li > span{font-size:22px;line-height:1.1}
+.tf-options li b{font-size:11.5px;line-height:1.15}
+.tf-options li small{font-size:10.5px;font-weight:800;color:#A88E99}
+.tf-options li.ouverte{background:rgba(61,226,166,.1);border-color:rgba(61,226,166,.45)}
+.tf-options li.ouverte small{color:#7FF0C4}
+.tf-options li.suivante{border:1.5px solid #F2C46B;box-shadow:0 0 18px -4px rgba(242,196,107,.7);animation:ab-pouls 2s ease-in-out infinite}
+.tf-options li.suivante small{color:#F2C46B}
+.tf-options li.fermee{opacity:.55}
+.tf-options-dit{margin:0;font-size:13px;line-height:1.4;color:#D9C3CB}
+.tf-options-dit a{color:#FF9FD2;font-weight:900}
+.tf-fab{display:flex;flex-direction:column;align-items:center;gap:12px;padding:22px 18px;border-radius:24px;text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(242,196,107,.35)}
+.tf-fab-fig{position:relative;width:170px;height:204px;border-radius:24px;overflow:hidden;background:radial-gradient(70% 55% at 50% 38%,#FF9AD0,#C2367F 62%,#5E1240)}
+.tf-fab-fig img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(6px) saturate(1.2);opacity:.75}
+.tf-fab-fig i{position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);background-size:200% 100%;animation:mc-reflet 1.4s linear infinite}
+.tf-fab ol{display:grid;gap:6px;margin:0;padding:0;list-style:none;text-align:left}
+.tf-fab li{font-size:14px;color:#A88E99}
+.tf-fab li.fait{color:#7FF0C4}
+.tf-fab li.maintenant{color:#FFF4E6;font-weight:800}
+.tf-fab-jauge{position:relative;display:block;width:100%;max-width:300px;height:8px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
+.tf-fab-jauge i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#FF2E9A,#F2C46B);transition:width 1s linear}
+.tf-prenom-photo,.tf-ville{width:100%;max-width:340px;box-sizing:border-box;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.15);background:rgba(0,0,0,.25);color:#FFF4E6;font:inherit;font-size:16px}
+.tf-ville option{color:#2A0F1F}
 .tf-la-tienne.vu{border-style:solid;border-color:#F2C46B;box-shadow:0 0 30px -8px rgba(242,196,107,.55);animation:tf-vu .6s cubic-bezier(.2,1.5,.4,1)}
 @keyframes tf-vu{from{transform:scale(.96)}}
 .tf-jauge{position:relative;display:block;height:10px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
 .tf-jauge i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#FF2E9A,#F2C46B)}
-.tf-gagner{align-self:flex-start;margin-top:2px;color:#FF9FD2;font-weight:900;text-decoration:none}
 .tf-annonce,.tf-photo{display:flex;flex-direction:column;align-items:center;gap:8px;padding:22px 18px;border-radius:24px;text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(242,196,107,.35)}
 .tf-annonce-emoji{font-size:42px;line-height:1}
 .tf-annonce b,.tf-titre{font-size:20px;line-height:1.2;font-weight:900}
