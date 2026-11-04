@@ -161,12 +161,14 @@ export const expressionsCompletes = (e: Expressions) => SENTIMENTS.every(({ cle 
 export async function fabriquerUnTour(depot: Depot, source: Buffer, avant: number): Promise<{ complete: boolean; enCours?: boolean; erreur?: string }> {
   let noms = await depot.lister();
   if (expressionsCompletes(expressionsDe(noms))) return { complete: true };
-  if (noms.includes(VERROU)) {
-    const v = await depot.lire(VERROU);
-    const le = Number((JSON.parse(v?.toString() || "{}") as { le?: number }).le) || 0;
-    if (Date.now() - le < DUREE_VERROU) return { complete: false, enCours: true };
-  }
-  await depot.ecrire(VERROU, Buffer.from(JSON.stringify({ le: Date.now() })), "application/json");
+  const lireVerrou = async () => JSON.parse((await depot.lire(VERROU))?.toString() || "{}") as { le?: number; qui?: string };
+  if (noms.includes(VERROU) && Date.now() - (Number((await lireVerrou()).le) || 0) < DUREE_VERROU) return { complete: false, enCours: true };
+  // LE VERROU EST À NOUS ? Deux demandes arrivées ensemble l'écrivent toutes les deux : la dernière gagne, l'autre le
+  // voit en le relisant et s'arrête (sinon, chaque image serait payée deux fois)
+  const qui = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  await depot.ecrire(VERROU, Buffer.from(JSON.stringify({ le: Date.now(), qui })), "application/json");
+  await new Promise((ok) => setTimeout(ok, 400));
+  if ((await lireVerrou()).qui !== qui) return { complete: false, enCours: true };
   try {
     const visages = SENTIMENTS.map((x) => x.cle).filter((x) => !noms.includes(`${x}-n.webp`));
     const erreurs: string[] = [];
@@ -195,6 +197,6 @@ export async function fabriquerUnTour(depot: Depot, source: Buffer, avant: numbe
     noms = await depot.lister();
     return { complete: expressionsCompletes(expressionsDe(noms)), ...(erreurs.length ? { erreur: erreurs[0] } : {}) };
   } finally {
-    await depot.effacer(VERROU);
+    if ((await lireVerrou()).qui === qui) await depot.effacer(VERROU);
   }
 }

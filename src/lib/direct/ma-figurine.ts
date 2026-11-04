@@ -7,8 +7,9 @@
  * collection (la figurine d'or, son cadeau) ; ClikMe récompense le réseau (sa figurine à soi). Ensuite :
  *   1. il envoie une photo de lui (« C'est bien moi sur la photo ») ;
  *   2. ClikMe fabrique sa figurine — à la main pour l'instant — et pose ses deux images (bouche fermée, ouverte) ;
- *   3. il enregistre un message avec SA voix (jamais une voix fabriquée), choisit les commerces qu'elle cite, et
- *      l'envoie : un lien `/figurine/<id>`.
+ *   3. il lui fait dire un message — un texte lu par une voix au choix (ElevenLabs : la seule voix fabriquée de ClikMe,
+ *      décidée par le propriétaire le 4 novembre 2026), ou SA voix enregistrée —, choisit son visage (ses expressions),
+ *      les commerces qu'elle cite, et l'envoie : un lien `/figurine/<id>`.
  * CE QU'ELLE CITE, C'EST LUI QUI LE CHOISIT, parmi les commerces où il a des figurines : jamais « vu récemment chez… »
  * (on ne dit pas à ses proches où il est allé et quand).
  *
@@ -63,7 +64,6 @@ export const voixValide = (x: unknown): CleVoix | null => (VOIX_FIGURINE.some((v
 /** Un texte propre : une ligne, sans caractères de contrôle, `TEXTE_MAX` au plus. */
 export const texteValide = (x: unknown): string =>
   String(x ?? "")
-    // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u001f\u007f]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()

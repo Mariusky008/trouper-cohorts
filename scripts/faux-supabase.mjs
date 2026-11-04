@@ -18,6 +18,7 @@
  * puis lancer l'application avec
  *   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=faux NEXT_PUBLIC_SUPABASE_ANON_KEY=faux
  */
+import fs from "node:fs";
 import http from "node:http";
 import { randomBytes, randomUUID } from "node:crypto";
 
@@ -602,6 +603,13 @@ http
       if (req.method === "OPTIONS") {
         res.writeHead(204);
         return res.end();
+      }
+      // UNE FAUSSE VOIX ELEVENLABS (`ELEVENLABS_BASE_URL=…/elevenlabs`) : un texte « lu » rend l'enregistrement de Léa,
+      // de quoi essayer « Ma figurine » sans voix fabriquée ni clé
+      if (url.pathname.startsWith("/elevenlabs/v1/text-to-speech/") && req.method === "POST") {
+        await corps(req);
+        res.writeHead(200, { "content-type": "audio/mpeg" });
+        return res.end(fs.readFileSync(new URL("../public/collection/lea.mp3", import.meta.url)));
       }
       if (url.pathname === "/__etat") return repondre(res, 200, Object.fromEntries([...tables].map(([t, r]) => [t, r.length])));
       if (url.pathname === "/__tables") return repondre(res, 200, Object.fromEntries(tables));

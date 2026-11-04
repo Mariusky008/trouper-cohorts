@@ -181,10 +181,10 @@ await p.waitForSelector(".mc-commerce .co", { timeout: 30000 });
 const mc = await texte(p, ".mc");
 ok(mc.includes("Ma collection") && mc.includes("Le Comptoir des Fantômes") && (await p.locator(".mc-commerce").count()) === 1, `sa page « Ma collection » (${mc.slice(0, 80)})`);
 ok((await debordement(p)) <= 0 && !/exemple/i.test(mc), "« Ma collection » ne déborde pas, sans le mot interdit");
-const autres = await texte(p, ".dc");
+const autres = await texte(p, "#ou-gagner");
 ok(
-  autres.includes("D’autres collections à commencer") && autres.includes("L’Atelier Tout Neuf") && !autres.includes("Le Comptoir des Fantômes") && (await p.locator(".dc-plus summary").count()) === 1,
-  "sous ses étagères : les autres commerces à commencer (pas le sien), et « Comment ça marche ? »",
+  autres.includes("D’autres commerces où en gagner") && autres.includes("L’Atelier Tout Neuf") && !autres.includes("Le Comptoir des Fantômes") && (await p.locator(".dc-plus summary").count()) === 1,
+  "sous ses étagères : les autres commerces où en gagner (pas le sien), et les paliers, repliés",
 );
 await p.screenshot({ path: `${D}/famille-8-ma-collection.png`, fullPage: true });
 
@@ -204,10 +204,10 @@ const dc = await texte(vide, ".mc");
 ok((await vide.locator(".mc-commerce").count()) === 0 && (await vide.locator(".ce-frise li").count()) === 6 && (await vide.locator(".ce-frise li.passee").count()) === 1, "sans figurine : pas d'étagère ; la frise des éditions, dont celle qui vient de finir");
 const chrono = await texte(vide, ".ce-chrono");
 ok(/À GAGNER MAINTENANT/i.test(dc) && /Édition \S+/.test(dc) && /\d+\s*jours?/i.test(chrono) && /\d{2}\s*s/i.test(chrono), `l'édition du moment, et le temps qui reste à la seconde (${chrono.replace(/\s+/g, " ")})`);
-ok(dc.includes("Comment ça marche") && dc.includes("Passe le voir") && dc.includes("Plus tu en as, plus tu gagnes") && dc.includes("La figurine d’or"), "comment ça marche, et ce que ça rapporte : en tuiles");
-ok(dc.includes("Ta propre figurine") && dc.includes("Démonstration · la figurine de Léa") && dc.includes("Elle parle avec ta voix"), "l'aperçu de sa propre figurine, sur celle de Léa, et ses avantages");
-await vide.locator(".af-sentiments button", { hasText: "La colère" }).click();
-ok((await vide.locator(".af .fqp").getAttribute("data-sentiment")) === "colere" && (await vide.locator(".af .fqp-badge").count()) === 1, "un toucher sur « La colère » : la figurine de Léa se met en colère");
+ok(dc.includes("Ce que tu gagnes") && dc.includes("1 visite = 1 figurine") && dc.includes("10 au même commerce") && dc.includes("10 en tout"), "ce que tu gagnes : les deux « 10 », séparés, en tuiles");
+ok(/TA FIGURINE QUI PARLE/i.test(dc) && dc.includes("Démonstration · la figurine de Léa") && dc.includes("écris ce que tu veux"), "en haut : la figurine qui parle, sur celle de Léa");
+await vide.locator(".tf-demo .tf-expr button", { hasText: "Colère" }).click();
+ok((await vide.locator(".tf-demo .fqp").getAttribute("data-sentiment")) === "colere" && (await vide.locator(".tf-demo .fqp-badge").count()) === 1, "un toucher sur « Colère » : la figurine de Léa se met en colère");
 ok(
   (await vide.locator(`.dc-commerces a[href="/f/${SLUG}"]`).count()) === 1 && (await vide.locator(`.dc-commerces a[href="/f/${NEUF}"]`).count()) === 1,
   "où la commencer : les commerces ClikMe, vers leur page",
