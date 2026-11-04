@@ -369,6 +369,36 @@ figurines » à attendre.
 
 **Coût à surveiller** : une figurine, c'est 2 images du moteur (plus 2 par visage ouvert) ; le plafond du jour le tient.
 
+### 9.0 septies Sa carte de personnage, et la rencontre du jour (4 novembre, la nuit) — construit
+
+Ses décisions : la carte de personnage d'abord (« le questionnaire, la fiche écrite par l'IA et des caractéristiques qui
+montent avec les visites ») ; puis la rencontre du jour (son idée : « chaque jour sa figurine est présentée à une autre,
+et les deux ont une discussion selon leurs personnalités… on commente les phrases, si on aurait dit ça ou pas »), avec
+la figurine d'un commerce ou un ami invité par WhatsApp (« dès qu'il a créé son compte, la prochaine conversation sera
+entre eux deux ») ; à lire seulement pour le moment ; se rencontrer : une option pour plus tard.
+
+- **La carte** (`personnage.ts`, `personnage-serveur.ts`, `personnage.tsx`, section « Mon personnage ») : sept questions
+  (fonceur ou prudent, clown ou sérieux…), une à la fois ; trois goûts au plus (une liste de loisirs) ; une phrase
+  fétiche (filtrée). L'IA écrit la fiche — un titre, un portrait, un super-pouvoir, un point faible, sa façon de parler
+  — drôle et tendre, sans rien de sensible, sans deviner le genre ; relue (longueurs, mots interdits) ; sans IA, une
+  fiche composée par le serveur. Ses SIX CARACTÉRISTIQUES (audace, humour, mauvaise foi, chance, curiosité, fidélité) ne
+  sont pas écrites par l'IA : ses réponses donnent la base, ses achats les font monter (la fidélité à chaque figurine,
+  la curiosité à chaque nouveau commerce, la chance avec les rares et l'or). Son niveau : un de plus par achat ; son
+  cadre : bronze, argent (3 achats), or (6, holographique). « Partager ma carte » : un lien `/carte/<id>` (hors
+  Google), qu'il peut reprendre. 5 cartes par jour au plus. Rangée dans le seau privé, sans table.
+- **La rencontre du jour** (`rencontre.ts`, `rencontre-serveur.ts`, `rencontre.tsx`) : faite à sa première visite du
+  jour. Avec qui : un ami invité qui vient de faire sa carte (tout de suite, la même chez les deux), sinon ses amis et
+  les commerces chacun son tour (un ami au plus un jour sur deux) ; les commerces : ceux où il a des figurines, puis
+  ceux de sa ville. L'IA écrit 4 à 8 répliques d'après les deux cartes et ce qu'il a appris de lui ; la figurine d'un
+  commerce ne promet rien (ni prix, ni offre, ni horaire) — « ce n'est pas le commerçant qui parle ». Les répliques
+  arrivent une à une. Sous chaque phrase de SA figurine : « ✅ C'est tout moi » / « 🙅 Jamais de la vie » (ce qui
+  affine les suivantes : les phrases reconnues et rejetées passent dans la consigne) ; une émotion sur n'importe quelle
+  phrase ; sa ressemblance en pourcentage (dès trois réponses). « Inviter un ami » : `/collection?ami=<code>`, gardé
+  sur l'appareil et accepté dès qu'il a un compte. « Signaler » la retire pour les deux. Ses rencontres d'avant, avec
+  qui. Rangé dans le seau privé (`rencontres/`, `<habitant>/rencontres.json`, `invitations/`), sans table.
+- **Pas encore construit** : la voix des conversations (décision : à lire), et les rencontres entre clients qui ne se
+  connaissent pas, avec l'accord des deux pour se rencontrer (l'option gardée pour plus tard).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

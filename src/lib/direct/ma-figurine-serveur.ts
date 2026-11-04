@@ -256,6 +256,12 @@ export async function refaireMaFigurine(supabase: Supabase, habitant: Habitant, 
   return {};
 }
 
+/** Sa figurine (bouche fermée), en adresse signée — pour sa carte de personnage ; « » s'il ne l'a pas encore. */
+export async function saFigurineSignee(supabase: Supabase, habitantId: string, secondes = 3600): Promise<string> {
+  const { ligne } = await lireLigne(supabase, habitantId);
+  return ligne?.prete_le && s(ligne.neutre) ? signer(supabase, s(ligne.neutre), secondes) : "";
+}
+
 /** 🎭 Un tour de fabrication de ses expressions (le moteur d'image), à partir de sa figurine bouche fermée. */
 export async function fabriquerSesExpressions(supabase: Supabase, habitant: Habitant, avant: number): Promise<{ error?: string; enCours?: boolean }> {
   const { ligne } = await lireLigne(supabase, habitant.id);
