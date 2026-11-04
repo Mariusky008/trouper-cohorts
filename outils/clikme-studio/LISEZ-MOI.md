@@ -497,6 +497,13 @@ réseaux reçoivent le film entier.
   d'animation » tire vers un visage d'enfant tout fait : deux clés de plus (`troisCles`) — l'âge (jamais plus jeune, les
   rides du sourire et les pattes-d'oie en lignes sculptées douces) et la forme du visage (un visage fin reste fin, jamais
   un visage de bébé) —, et des yeux de leur vraie taille.
+- **Les lignes de son âge** (douzième essai : une commerçante d'une soixantaine d'années, cheveux gris, rendue à
+  trente-cinq ans en « libre », quarante-cinq en « fidèle » — « elle fait encore très jeune »). La « peau lisse » de la
+  consigne effaçait les rides avec les pores : la peau est maintenant MATE ET SANS PORES, les rides y restent sculptées
+  (« wrinkles are not pores »). L'âge vu sur le selfie est demandé honnête, en mots et en années (`ageApproche` le lit) ;
+  dès quarante ans, la consigne dit de la dessiner comme les personnages d'âge mûr des films d'animation, qui font leur
+  âge — pattes-d'oie, rides du sourire, du front, sous les yeux (`lignesDeLAge`). Le critère : on doit lui donner le
+  même âge sur la figurine que sur la photo.
 - **🎨 Une image de référence de style, facultative** (`FIGURINE_REFERENCE_URL`, une adresse https) : elle part en
   seconde image avec chaque fabrication, aux deux moteurs, et la consigne (`AVEC_REFERENCE`) dit qu'on n'en prend que le
   style — jamais le visage, la tenue ni les accessoires. Jamais dans le dépôt, et seulement une image qu'on a le droit
