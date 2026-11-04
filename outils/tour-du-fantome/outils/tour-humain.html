@@ -776,6 +776,7 @@ function couper(ws, fs) {
 function construireMots(tl) {
   const boite = $("#mots");
   for (const c of Object.keys(TAILLE)) {
+    if (!SOUS[c]) continue;   // (la 5b, tant que son enregistrement n'est pas là)
     const morceaux = SOUS[c].split(" | ");
     let i = 0;
     const blocs = morceaux.map((p) => { const ws = p.split(" "); const b = { de: i, ws }; i += ws.length; return b; });
