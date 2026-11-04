@@ -480,6 +480,18 @@ réseaux reçoivent le film entier.
   (le trait `accentuer` : « mâchoire carrée, sourcils épais et froncés, cheveux en volume… », les plus frappants
   d'abord), et la consigne les fait exagérer d'environ 30 à 40 % — plus drôle ET plus reconnaissable. Jamais des traits
   de dessin animé qui ne sont pas les siens (un sourire forcé, de grands yeux) : ils en font quelqu'un d'autre.
+- **🎬 LE STYLE D'AUJOURD'HUI : un personnage de film d'animation 3D** (dixième essai, 4 novembre 2026 — le premier
+  réussi). Les huit essais d'avant en « jouet de résine réaliste » donnaient toujours la même chose : le serveur n'avait
+  aucune clé Gemini, les deux propositions venaient d'OpenAI — en fidélité haute, sa photo collée sur une figurine ; en
+  basse, une figurine, mais un autre homme. Le propriétaire a demandé à ChatGPT (le même moteur) « un personnage de film
+  d'animation 3D » : c'était lui, ET une figurine. `consigneFigurine` reprend sa consigne partie par partie : le style
+  d'abord (« A true stylized 3D animated feature-film character, not a photorealistic human », `STYLE_ANIMATION`), la
+  ressemblance par **trois clés** (`troisCles` : le nez, sa vraie forme et sa largeur ; les yeux, leur forme, leur
+  écartement et leur regard ; la barbe en volumes stylisés de sa couleur — jamais ajoutée à qui n'en a pas), et en
+  dernier ce qui ne se discute pas (pas de visage photoréaliste, ni pores ni poils un à un). Les chaussures vides ne
+  sont plus demandées sur le socle de la figurine de base (la consigne de ChatGPT n'en avait pas). L'édition garde le
+  rendu de SA figurine (« EXACTLY the same rendering style ») sans en imposer un autre. Sous chaque proposition :
+  « OpenAI · fidèle » (fidélité haute) ou « OpenAI · libre » (basse) — ses choix diront laquelle garder.
 - **🎨 Une image de référence de style, facultative** (`FIGURINE_REFERENCE_URL`, une adresse https) : elle part en
   seconde image avec chaque fabrication, aux deux moteurs, et la consigne (`AVEC_REFERENCE`) dit qu'on n'en prend que le
   style — jamais le visage, la tenue ni les accessoires. Jamais dans le dépôt, et seulement une image qu'on a le droit
@@ -538,7 +550,7 @@ réseaux reçoivent le film entier.
   `FIGURINE_REFERENCE_URL` (l'image de référence de style, voir plus haut), `FIGURINE_VOIES_EDITION` (les deux voies
   d'une édition, `openai-high,openai-high` par défaut),
   `FIGURINE_ESSAIS_PAR_JOUR` (3), `FIGURINES_PROS_BUCKET`.
-- **La fidélité à l'image d'entrée : basse (`low`).** En `high` (le premier réglage), le moteur recopie le selfie : un
+- **La fidélité à l'image d'entrée** (l'histoire ; aujourd'hui, une proposition de chaque, voir le style d'aujourd'hui). En `high` (le premier réglage), le moteur recopie le selfie : un
   visage photographique collé sur un petit corps, et pour l'édition l'ancienne tenue gardée (« pas très automne »,
   3 novembre 2026). En `low`, il réinterprète : la caricature sculptée et peinte, et la tenue vraiment changée. La
   consigne met le STYLE en premier (« pas une photo : sculpté et peint »), la ressemblance ensuite.

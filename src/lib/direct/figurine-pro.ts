@@ -179,32 +179,65 @@ const METIER: Record<FamilleDouble, { tenue: string; accessoires: string }> = {
  *      figurine de son exemple : UN OBJET ENTIER photographié en studio (le ressort apparent, le socle en bois, les
  *      chaussures posées dessus, une même lumière partout). D'où la figurine entière (`SUFFIXE_ENTIERE`), la consigne
  *      écrite EN ANGLAIS sur le modèle du prompt Gemini qu'il nous a donné (photo produit de face, tronquée à la taille,
- *      ressort apparent, socle rond en bois, objets miniatures autour, netteté partout), et une proposition de Gemini.
+ *      ressort apparent, socle rond en bois, objets miniatures autour, netteté partout), et une proposition de Gemini ;
+ *   6–9. « jouet de résine », « jambes en trop », « traits pas accentués »… huit essais, toujours le même résultat : le
+ *      serveur n'avait AUCUNE clé Gemini, les deux propositions venaient d'OpenAI (fidélité haute : sa photo collée ;
+ *      basse : un autre homme) ;
+ *   10. LE STYLE « PERSONNAGE DE FILM D'ANIMATION 3D » (`STYLE_ANIMATION`), essayé par le propriétaire dans ChatGPT :
+ *      lui, et une figurine. C'est le style d'aujourd'hui.
  * Ses traits, sa tenue de métier et les tenues d'édition restent en français dedans : les deux moteurs les lisent.
  */
 export const SUFFIXE_ENTIERE = "-entiere";
 /** Une figurine entière (avec son ressort et son socle) ? Sinon, un buste d'avant, posé sur le ressort commun. */
 export const figurineEntiere = (url: string | null | undefined) => Boolean(url && /-entiere\.png(\?|#|$)/.test(url));
 
-/** La matière : un objet, pas une photo ni une peinture. */
 /**
- * LA MATIÈRE — sixième essai réel : la forme était la bonne (ressort, socle, chaussures), mais « elle me ressemble et
- * fait pas figurine » : un vrai homme photographié (peau à pores, vrais tissus). Ce qui dit « jouet » : la peau de
- * résine lisse et un peu brillante, des vêtements SCULPTÉS et peints, et une photo de MINIATURE (objectif macro,
- * arrière-plan flou) — `photoProduit`.
+ * LE STYLE « PERSONNAGE DE FILM D'ANIMATION 3D » — dixième essai, le 4 novembre 2026, et le premier réussi. Huit
+ * essais en « jouet de résine réaliste » avaient tous donné la même chose : en fidélité haute, SON visage photographié
+ * collé sur une figurine ; en fidélité basse, une figurine, mais un autre homme. Le propriétaire a demandé à ChatGPT
+ * (le même moteur, OpenAI) un « personnage de film d'animation 3D » — et c'était lui, en figurine. La leçon, dans les
+ * mots de ChatGPT : « demander un visage de personnage d'animation 3D avec une forte ressemblance, et non simplement
+ * une photo réaliste avec une grosse tête ». Cette consigne reprend la sienne, partie par partie.
  */
-const MATIERE =
-  "- A small hand-painted resin collectible TOY, about 20 cm tall, not a real person: smooth, slightly glossy resin skin with no pores and a soft airbrushed blush; hair sculpted in solid glossy locks (no fine photographic hair); stubble or beard painted as tiny dots; glossy painted eyes; the clothes SCULPTED in resin and painted (stiff folds, painted fabric texture), not real fabric. Features slightly simplified, like a sculpted caricature figurine. NOT a photo of a real person, NOT an illustration, NOT a digital painting.";
+const STYLE_ANIMATION = [
+  "- A true stylized 3D animated feature-film character, not a photorealistic human: smooth, soft skin; rounded, simplified facial shapes; expressive eyes; the hair as soft, stylized sculpted volumes rather than individual hairs; the facial hair (if any) made of simplified sculpted shapes rather than realistic individual hairs.",
+  "- Soft shading, appealing shapes, vibrant colours, polished 3D rendering, a collectible designer-toy aesthetic.",
+];
 
-/** La photo produit, et le fond (transparent, ou un vert uni que le serveur retire). */
-const photoProduit = (fond: "transparent" | "vert") => [
-  "THE PHOTO:",
-  "- A straight-on macro product photo of a miniature collectible: the whole figurine visible, from the top of the head to the bottom of the base, centered, with some margin around it.",
-  "- Warm, soft, directional studio lighting with small specular highlights on the resin, as in a high-end atelier. The figurine sharp from head to base, every item on the base crisp. Very high definition, clean edges.",
+/**
+ * LES TROIS CLÉS DE LA RESSEMBLANCE (l'astuce de ChatGPT) : le nez, les yeux, la barbe. La barbe dite selon ce qu'on a
+ * vu sur le selfie : on n'en ajoute jamais à quelqu'un qui n'en a pas.
+ */
+function troisCles(traits?: Traits | null): string[] {
+  const sansBarbe = !!traits?.barbe && /^aucune/i.test(traits.barbe);
+  return [
+    "THE THREE KEYS TO THE LIKENESS:",
+    "- The nose: keep its real shape and width — never a generic cartoon nose.",
+    "- The eyes: keep their real shape, spacing and gaze.",
+    sansBarbe
+      ? "- No beard and no moustache: add none."
+      : "- The facial hair, if any: stylized volumes in its real colour with simplified contours, not realistic hairs. If there is none, add none.",
+  ];
+}
+
+/** Le rendu, et le fond (transparent, ou un vert uni que le serveur retire). */
+const rendu3D = (fond: "transparent" | "vert", edition = false) => [
+  "COMPOSITION:",
+  "- Straight-on frontal view, centred and symmetrical: the entire figurine and its wooden base visible, from the top of the head to the bottom of the base, with some margin around it.",
+  edition
+    ? "- The same soft studio lighting and the same render quality as this image, clean shadows, crisp details. Very high definition, clean edges."
+    : "- Professional soft studio lighting, clean shadows, crisp details: a high-quality 3D animation render. Very high definition, clean edges.",
   fond === "transparent"
     ? "- Transparent background."
     : "- A perfectly flat, uniform chroma-key green background (#00B140): no gradient, no texture, no shadow on it. Nothing green on the figurine.",
-  "- No text, no logo, no engraved plaque, no scenery, no other person.",
+];
+
+/** Ce qui ne se discute pas, en dernier (comme dans la consigne de ChatGPT). */
+const CONTRAINTES = [
+  "IMPORTANT CONSTRAINTS:",
+  "- Keep the person's identity recognizable.",
+  "- Do not make the face photorealistic: no photographic skin pores, no individual beard hairs. The nose, the eyes and the facial hair look deliberately designed and sculpted as part of a stylized animated character.",
+  "- No change to their expression. No extra limbs, no legs, no text, no logos, no engraved plaque, no scenery, no other person.",
 ];
 
 /** Le corps de la figurine : tronquée à la taille, le ressort apparent, le socle en bois. */
@@ -248,12 +281,12 @@ export type Traits = {
 
 /** La question posée au modèle de vision (en anglais : c'est là qu'il est le plus précis), la réponse en français. */
 export const QUESTION_TRAITS =
-  "A sculptor will make a caricature figurine of the person in this photo and must get the likeness right. " +
+  "An artist will make a stylized 3D animated-film character figurine of the person in this photo and must get the likeness right. " +
   "Describe ONLY what is visible, precisely, in short French phrases of a few words, with no judgement and no name. " +
   'Answer as JSON: {"cheveux": exact colour (e.g. "gris poivre et sel", "châtain clair avec quelques mèches grises"), length, thickness, texture and how they are styled (e.g. "épais, ondulés, coiffés en arrière avec du volume sur le dessus"), ' +
   '"barbe": facial hair exactly as seen (e.g. "barbe de trois jours grise", "moustache brune") or "aucune", ' +
   '"visage": face shape, jaw and cheekbones (e.g. "visage allongé, mâchoire carrée, pommettes marquées"), ' +
-  '"sourcils": shape and thickness, "yeux": colour and shape, "nez": shape and size, ' +
+  '"sourcils": shape and thickness, "yeux": colour, shape, spacing and gaze (e.g. "bruns, enfoncés, regard intense"), "nez": shape, width and size, ' +
   '"age": apparent age range (e.g. "la cinquantaine"), ' +
   '"expression": the facial expression exactly as seen (e.g. "sérieux, sourcils légèrement froncés, bouche fermée, ne sourit pas" or "grand sourire"), ' +
   '"signes": other features that make this person recognizable (forehead wrinkles, dimples, crow\'s feet, a mole, freckles) or "", ' +
@@ -308,27 +341,30 @@ export function consigneFigurine(famille: FamilleDouble, fond: "transparent" | "
   const m = METIER[famille] ?? METIER.createur;
   const vus = traitsEnMots(traits);
   return [
-    "A detailed collectible bobblehead figurine of the person in this photo — the upper body on a spring, with no legs — as a straight-on studio product shot.",
+    "Create a high-quality 3D animated movie character bobblehead based on the reference photo. Preserve the person's recognizable identity and facial features.",
     "",
-    "LIKENESS (the most important):",
-    "- The figurine's face retains the specific features and expression of the person in the photo: the same face shape, eyes, nose, mouth, jaw, eyebrows, skin tone, age, hair colour and hairstyle, facial hair. Anyone who knows them recognises them at first glance.",
-    "- Keep what makes them unique (wrinkles, dimples, eyebrows). Do not beautify, do not make them younger, do not turn them into someone else.",
-    "- Their expression from the photo: if they are not smiling, the figurine does not smile (mouth closed).",
+    "FACE AND LIKENESS:",
+    "- Carefully reproduce the original shape of their nose, eyes, eyebrows, jawline and facial proportions, their age, their skin tone, their hair colour and hairstyle, their facial hair. Keep the face recognizable.",
+    "- Their expression from the photo, unchanged: if they are not smiling, the figurine does not smile (closed lips).",
     "- If they wear glasses, keep them; if not, add none. Nothing on the head or face that is not in the photo.",
     ...(vus.length ? ["- Their features as seen in the photo (written in French — follow them exactly):", ...vus.map((l) => `  ${l}`)] : []),
+    // SES TRAITS À LUI, un peu accentués par le style (le trait « accentuer ») — jamais des traits qui ne sont pas les siens
+    ...(traits?.accentuer ? [`- The stylization gently plays up THEIR OWN most distinctive features (in French: ${traits.accentuer}) — never generic cartoon features that are not theirs.`] : []),
     "",
-    "THE FIGURINE:",
+    "3D ANIMATION STYLE:",
+    ...STYLE_ANIMATION,
+    "",
+    "BODY AND CLOTHING:",
     ...FIGURINE_ENTIERE,
-    // UNE VRAIE CARICATURE, MAIS DE LUI : ses traits à lui, accentués comme un caricaturiste (le trait « accentuer »)
-    `- A REAL CARICATURE, like a caricature artist's sculpture: exaggerate THEIR OWN most distinctive features by about 30 to 40% — ${
-      traits?.accentuer ? `in French: ${traits.accentuer}` : "the face shape, the jaw, the nose, the eyebrows, the hair volume"
-    } — so that they are funnier AND even more recognizable. Do not add generic cartoon features that are not theirs (no forced smile, no enlarged eyes).`,
-    `- Outfit of their trade (in French): ${m.tenue} — in the colours of the clothes in the photo when visible.`,
+    `- Outfit of their trade (in French): ${m.tenue} — in the colours of the clothes in the photo when visible, with visible stitching and details.`,
     `- Two or three small, neat, funny accessories of their trade worn on the outfit (in French): ${m.accessoires}.`,
-    "- On the base, beside the spring: a small pair of EMPTY shoes matching the outfit, set down side by side with nobody in them (no feet, no legs), and one or two miniature sculpted items of their trade.",
-    MATIERE,
+    "- On the base, beside the spring: one or two miniature items of their trade.",
     "",
-    ...photoProduit(fond),
+    ...troisCles(traits),
+    "",
+    ...rendu3D(fond),
+    "",
+    ...CONTRAINTES,
   ].join("\n");
 }
 
@@ -374,17 +410,20 @@ export function consigneEdition(cleEdition: string, nomEdition: string, fond: "t
     "",
     "IT IS THE SAME FIGURINE:",
     "- THE FACE IS UNTOUCHABLE: copy the face of this figurine exactly as it is — the same features, the same caricature, the same expression, the same skin tone, the same hair (visible under any hat), the same facial hair, the same glasses if any (and none if none). Only the outfit, the hat and the accessories change.",
-    "- The same pose (arms crossed), the same proportions (the oversized head on the small body), the same painted-resin style.",
+    // LE MÊME RENDU QUE SA FIGURINE (le personnage d'animation 3D, ou le style de celles d'avant) : on ne le refait pas
+    "- The same pose (arms crossed), the same proportions (the oversized head on the small body), EXACTLY the same rendering style and finish as this figurine: do not make it more realistic, do not change its material.",
     ...FIGURINE_ENTIERE,
     ...(vus.length ? ["- Their features (written in French — keep them exactly):", ...vus.map((l) => `  ${l}`)] : []),
     "",
     "THE EDITION OUTFIT:",
     `- COMPLETELY REPLACE THE OUTFIT — no garment from before; anyone sees at first glance which edition it is (in French): ${tenue}.`,
-    "- Every accessory listed, generous, full of detail, neat and funny. Nothing on the face.",
+    "- Every accessory listed, generous, full of detail, neat and funny, in the same style as the figurine. Nothing on the face.",
     "- On the base, beside the spring: a small pair of EMPTY shoes (no feet, no legs) and one or two miniature items matching the edition.",
-    MATIERE,
     "",
-    ...photoProduit(fond),
+    ...rendu3D(fond, true),
+    "",
+    "IMPORTANT CONSTRAINTS:",
+    "- The face is the face of this figurine, unchanged. No extra limbs, no legs, no text, no logos, no engraved plaque, no scenery, no other person.",
   ].join("\n");
 }
 
