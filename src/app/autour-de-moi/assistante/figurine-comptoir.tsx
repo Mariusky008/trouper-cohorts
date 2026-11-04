@@ -22,7 +22,20 @@ import { SELFIE_MAX_PX, figurineDuMoment, figurineEntiere, histoireDeLaFigurine,
 import { editionsDuMoment } from "@/lib/direct/collection";
 import { jourParis } from "@/lib/jour-paris";
 
-type Reponse = { ok?: boolean; etat?: EtatFigurinePro; error?: string };
+/** `manquees` : les voies qui n'ont rien rendu à cet essai, en clair (« Gemini n'est pas branché… »). */
+type Reponse = { ok?: boolean; etat?: EtatFigurinePro; error?: string; manquees?: string[] };
+
+/** Sous les propositions : ce qui a manqué à cet essai (une voie sans clé, ou qui n'a rien rendu). */
+function Manquees({ l }: { l: string[] }) {
+  if (!l.length) return null;
+  return (
+    <small className="fg-note fg-manquees">
+      {l.map((m) => (
+        <span key={m}>ℹ️ {m}</span>
+      ))}
+    </small>
+  );
+}
 
 async function demander(c: CommerceComptoir, corps: Record<string, unknown>): Promise<Reponse> {
   if (!c.reel) return { error: "Ta figurine se fabrique avec ton lien pro." };
@@ -162,7 +175,8 @@ function ChoixPropositions({ urls, voies = [], choix, onChoix }: { urls: string[
     return urls[0] ? (
       <>
         <ApercuFigurine src={urls[0]} />
-        <VoirEnGrand src={urls[0]} />
+        {voies[0] && <small className="fg-par">par {voies[0]}</small>}
+        <VoirEnGrand src={urls[0]} voie={voies[0]} />
       </>
     ) : null;
   return (
@@ -199,6 +213,7 @@ export function FabriquerFigurine({
   const [secondes, setSecondes] = useState(0);
   /** La proposition qu'il a touchée (la première d'office). */
   const [choix, setChoix] = useState(0);
+  const [manquees, setManquees] = useState<string[]>([]);
   const prendrePhoto = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -239,6 +254,7 @@ export function FabriquerFigurine({
     setErreur(null);
     const r = await demander(commerce, { action: "fabriquer", selfie, accord: true, famille: commerce.famille });
     setEnCours(false);
+    setManquees(r.manquees ?? []);
     if (r.etat) setEtat(r.etat);
     if (r.error) setErreur(r.error);
   };
@@ -275,6 +291,7 @@ export function FabriquerFigurine({
         <section className="fg-proposee">
           <h2>{proposees.length > 1 ? "Laquelle te ressemble ?" : "C’est toi ?"}</h2>
           <ChoixPropositions urls={proposees} voies={etat.voies} choix={Math.min(choix, proposees.length - 1)} onChoix={setChoix} />
+          <Manquees l={manquees} />
           <p>Elle sera dans tes vidéos : elle présente, elle rebondit, elle dit bonjour par bulles.</p>
           <button type="button" className="cz-go grand" onClick={() => void valider()}>
             ✅ C’est moi !
@@ -358,6 +375,7 @@ export function MaFigurine({
   const [enCours, setEnCours] = useState(false);
   const [secondes, setSecondes] = useState(0);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [manquees, setManquees] = useState<string[]>([]);
 
   useEffect(() => {
     // sans lien pro (la démonstration), rien à demander : l'écran de fabrication le dit lui-même
@@ -386,6 +404,7 @@ export function MaFigurine({
     setErreur(null);
     const r = await demander(commerce, { action: "fabriquer-edition" });
     setEnCours(false);
+    setManquees(r.manquees ?? []);
     if (r.etat) setEtat(r.etat);
     if (r.error) setErreur(r.error);
   };
@@ -475,6 +494,7 @@ export function MaFigurine({
                   <>
                     {proposeesEdition.length > 1 && <p className="mf-laquelle">Laquelle te plaît ?</p>}
                     <ChoixPropositions urls={proposeesEdition} voies={ed.voies} choix={Math.min(choixEdition, proposeesEdition.length - 1)} onChoix={setChoixEdition} />
+                    <Manquees l={manquees} />
                     <button type="button" className="cz-go grand" onClick={() => void validerEdition()}>
                       ✅ Elle est parfaite
                     </button>
@@ -665,6 +685,8 @@ const STYLES = `
 .fg-accord{display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.4;text-align:left;}
 .fg-accord input{flex:none;width:22px;height:22px;margin-top:1px;accent-color:var(--rose);}
 .fg-note{font-size:13px;color:var(--gris);text-align:center;}
+.fg-manquees{display:flex;flex-direction:column;gap:4px;font-size:12px;overflow-wrap:anywhere;}
+.fg-par{display:block;font-size:11.5px;color:var(--gris);text-align:center;}
 .fg .fg-visite{padding:12px 14px;border-radius:16px;background:rgba(245,162,58,.12);border:1px solid rgba(245,162,58,.45);color:var(--creme);font-size:14px;}
 .fg-erreur{margin:0;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.4;background:rgba(245,162,58,.16);border:1px solid rgba(245,162,58,.5);color:var(--creme);}
 .fg-attente{padding:30px 0;}

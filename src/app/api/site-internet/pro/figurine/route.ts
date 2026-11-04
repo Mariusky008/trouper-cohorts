@@ -100,7 +100,8 @@ export async function POST(request: Request) {
       for (const im of f.images) proposees.push({ chemin: await deposerImage(supabase, siteId, im.png), le, modele: `${im.voie}:${im.modele}`, traits: f.traits ?? null });
       const suivant = { ...etat, essais, proposee: proposees[0], proposees };
       await ecrireEtat(supabase, siteId, suivant);
-      return NextResponse.json({ ok: true, etat: etatPublic(supabase, suivant) });
+      // LES VOIES QUI N'ONT RIEN RENDU, dites à l'écran (pas gardées : elles ne valent que pour cet essai)
+      return NextResponse.json({ ok: true, etat: etatPublic(supabase, suivant), manquees: f.manquees ?? [] });
     }
 
     if (action === "fabriquer-edition") {
@@ -124,7 +125,7 @@ export async function POST(request: Request) {
       editions[edition.cleAnnee] = { ...(editions[edition.cleAnnee] ?? {}), proposee: proposees[0], proposees };
       const suivant = { ...etat, essais, editions };
       await ecrireEtat(supabase, siteId, suivant);
-      return NextResponse.json({ ok: true, etat: etatPublic(supabase, suivant) });
+      return NextResponse.json({ ok: true, etat: etatPublic(supabase, suivant), manquees: f.manquees ?? [] });
     }
 
     if (action === "valider-edition") {
