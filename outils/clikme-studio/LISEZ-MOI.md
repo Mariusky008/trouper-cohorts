@@ -460,7 +460,8 @@ réseaux reçoivent le film entier.
   les bustes d'avant gardent le ressort et le socle communs). À chaque essai, DEUX propositions parties en même
   temps : Gemini (`genererParGemini` : fond vert retiré, format 2:3, `gemini-3-pro-image-preview` puis
   `gemini-2.5-flash-image`, ou `GEMINI_FIGURINE_MODEL`) et OpenAI en fidélité « high » — sans clé Gemini, OpenAI
-  « high » et « low ». Il choisit « Laquelle te ressemble ? » ; la voie choisie est notée (`modele`, et un
+  « high » deux fois, deux tirages (le 4 novembre, après trois essais où « fidèle » ressemblait plus que « libre » :
+  « mets les deux propositions en fidèle » ; « high » et « low » avant). Il choisit « Laquelle te ressemble ? » ; la voie choisie est notée (`modele`, et un
   `[figurine] choisie` dans les journaux) : ses choix diront laquelle garder. Une fabrication coûte donc deux images.
 - **Le rendu « jouet miniature »** (sixième essai réel : la forme était la bonne, mais « elle me ressemble et fait pas
   figurine » — un vrai homme photographié) : `MATIERE` dit un jouet en résine d'une vingtaine de centimètres, la peau
@@ -555,7 +556,7 @@ réseaux reçoivent le film entier.
   celle du moment choisie d'office.
 - Réglages (variables d'environnement, toutes facultatives) : `OPENAI_API_KEY` (sans elle, la fabrication répond
   « pas encore branchée »), `OPENAI_IMAGE_MODEL` (impose un moteur), `FIGURINE_QUALITE` (`high` par défaut),
-  `FIGURINE_FIDELITES` (les fidélités d'OpenAI, `high,low` par défaut), `FIGURINE_GEMINI_API_KEY` (la voie Gemini, pour les figurines
+  `FIGURINE_FIDELITES` (les fidélités d'OpenAI, `high,high` par défaut), `FIGURINE_GEMINI_API_KEY` (la voie Gemini, pour les figurines
   seules ; sinon `GEMINI_API_KEY`, qui fait aussi passer à Gemini l'essayage, les couvertures, l'essai de vitrine et
   le dressing — le 4 novembre 2026, le serveur n'avait aucune clé Gemini : Gemini n'avait jamais fait une proposition),
   `GEMINI_FIGURINE_MODEL` (impose un modèle Gemini), `FIGURINE_SANS_GEMINI=1` (sans la voie Gemini),
