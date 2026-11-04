@@ -131,7 +131,11 @@ export function etatPublic(supabase: Supabase, e: Etat, maintenant = new Date())
   const sienne = edition ? e.editions?.[edition.cleAnnee] : undefined;
   const urls = (l: (Proposee | null | undefined)[]) => l.map((p) => urlDe(supabase, p?.chemin)).filter((u): u is string => Boolean(u));
   // LE MOTEUR DE CHACUNE, en clair : il nous dit lequel lui ressemble, lequel fait figurine
-  const voiesDe = (l: Proposee[]) => l.filter((p) => urlDe(supabase, p.chemin)).map((p) => (/^gemini/i.test(p.modele) ? "Gemini" : "OpenAI"));
+  // (et pour OpenAI, sa fidélité : « fidèle » recopie la photo, « libre » la redessine — ses choix diront laquelle garder)
+  const voiesDe = (l: Proposee[]) =>
+    l
+      .filter((p) => urlDe(supabase, p.chemin))
+      .map((p) => (/^gemini/i.test(p.modele) ? "Gemini" : /^openai-high/i.test(p.modele) ? "OpenAI · fidèle" : /^openai-low/i.test(p.modele) ? "OpenAI · libre" : "OpenAI"));
   return {
     validee: urlDe(supabase, e.validee?.chemin),
     proposee: urlDe(supabase, e.proposee?.chemin),
