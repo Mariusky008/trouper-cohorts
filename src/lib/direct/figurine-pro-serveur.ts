@@ -335,6 +335,30 @@ function fidelites(): string[] {
 }
 
 type Voie = { nom: "gemini" } | { nom: "openai"; fidelite: string };
+
+/** « gemini », « openai-high », « openai-low » → une voie (`null` : inconnue, ou Gemini sans clé). */
+function voieDe(x: string): Voie | null {
+  const m = x.trim().toLowerCase();
+  if (m === "gemini") return cleGemini() ? { nom: "gemini" } : null;
+  const f = /^openai-(high|low)$/.exec(m);
+  return f ? { nom: "openai", fidelite: f[1] } : null;
+}
+
+/**
+ * LES VOIES D'UNE ÉDITION — essai du 4 novembre : habillée pour l'automne, une proposition lui ressemblait « un peu »,
+ * l'autre « pas du tout ». Pour une édition, SEULE LA TENUE CHANGE : le visage doit rester celui de la figurine qu'il a
+ * validée. La voie qui recopie l'image d'entrée — OpenAI en fidélité « high » — deux fois (deux tirages différents).
+ * `FIGURINE_VOIES_EDITION` (« openai-high,gemini »…) pour en essayer d'autres.
+ */
+function voiesEdition(): Voie[] {
+  const l = (s(process.env.FIGURINE_VOIES_EDITION) || "openai-high,openai-high")
+    .split(",")
+    .map(voieDe)
+    .filter((v): v is Voie => Boolean(v))
+    .slice(0, 2);
+  return l.length ? l : [{ nom: "openai", fidelite: "high" }, { nom: "openai", fidelite: "high" }];
+}
+
 function voies(): Voie[] {
   const f = fidelites();
   if (cleGemini() && s(process.env.FIGURINE_SANS_GEMINI) !== "1") return [{ nom: "gemini" }, { nom: "openai", fidelite: f[0] }];
@@ -378,8 +402,8 @@ const AVEC_REFERENCE = [
   "",
 ].join("\n");
 
-async function propositions(o: { image: Buffer; consigne: (fond: "transparent" | "vert") => string; avant: number }): Promise<Fabrication> {
-  const liste = voies();
+async function propositions(o: { image: Buffer; consigne: (fond: "transparent" | "vert") => string; avant: number; edition?: boolean }): Promise<Fabrication> {
+  const liste = o.edition ? voiesEdition() : voies();
   const reference = await lireReference();
   const avec = reference ? { ...o, reference, consigne: (fond: "transparent" | "vert") => AVEC_REFERENCE + o.consigne(fond) } : o;
   const rendus = await Promise.all(liste.map((v) => (v.nom === "gemini" ? genererParGemini(avec) : generer({ ...avec, fidelite: v.fidelite }))));
@@ -511,7 +535,7 @@ export async function habillerFigurine(o: {
   } catch {
     return { erreur: "Ta figurine ne s'ouvre pas. Refais-la à partir d'un selfie.", statut: 400 };
   }
-  return propositions({ image, consigne: (fond) => consigneEdition(o.cleEdition, o.nomEdition, fond, o.traits), avant: o.avant });
+  return propositions({ image, consigne: (fond) => consigneEdition(o.cleEdition, o.nomEdition, fond, o.traits), avant: o.avant, edition: true });
 }
 
 /** UNE IMAGE DEMANDÉE AU MOTEUR, à partir d'une image : les replis de moteur et de réglages, puis la figurine seule. */
