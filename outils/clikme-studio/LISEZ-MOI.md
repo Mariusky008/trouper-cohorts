@@ -492,7 +492,8 @@ réseaux reçoivent le film entier.
   dernier ce qui ne se discute pas (pas de visage photoréaliste, ni pores ni poils un à un). Les chaussures vides ne
   sont plus demandées sur le socle de la figurine de base (la consigne de ChatGPT n'en avait pas). L'édition garde le
   rendu de SA figurine (« EXACTLY the same rendering style ») sans en imposer un autre. Sous chaque proposition :
-  « OpenAI · fidèle » (fidélité haute) ou « OpenAI · libre » (basse) — ses choix diront laquelle garder.
+  « OpenAI · fidèle » (fidélité haute) ou « OpenAI · libre » (basse). Après trois essais, « fidèle » ressemblait
+  chaque fois plus : les deux propositions sont en « fidèle » (deux tirages).
 - **Son âge et la forme de son visage** (onzième essai, 4 novembre : une commerçante d'une quarantaine d'années,
   souriante, au visage fin, devenue une jeune fille au visage rond et aux très grands yeux). Le style « film
   d'animation » tire vers un visage d'enfant tout fait : deux clés de plus (`troisCles`) — l'âge (jamais plus jeune, les
@@ -562,10 +563,10 @@ réseaux reçoivent le film entier.
   seules ; sinon `GEMINI_API_KEY`, qui fait aussi passer à Gemini l'essayage, les couvertures, l'essai de vitrine et
   le dressing — le 4 novembre 2026, le serveur n'avait aucune clé Gemini : Gemini n'avait jamais fait une proposition),
   `GEMINI_FIGURINE_MODEL` (impose un modèle Gemini), `FIGURINE_SANS_GEMINI=1` (sans la voie Gemini),
-  `FIGURINE_REFERENCE_URL` (l'image de référence de style, voir plus haut), `FIGURINE_VOIES_EDITION` (les deux voies
-  d'une édition, une seule par défaut : `openai-high`),
+  `FIGURINE_REFERENCE_URL` (l'image de référence de style, voir plus haut), `FIGURINE_VOIES_EDITION` (les voies
+  d'une édition : une seule par défaut, `openai-high`),
   `FIGURINE_ESSAIS_PAR_JOUR` (3), `FIGURINES_PROS_BUCKET`.
-- **La fidélité à l'image d'entrée** (l'histoire ; aujourd'hui, une proposition de chaque, voir le style d'aujourd'hui). En `high` (le premier réglage), le moteur recopie le selfie : un
+- **La fidélité à l'image d'entrée** (l'histoire ; aujourd'hui, « high » pour les deux propositions, voir le style d'aujourd'hui). En `high` (le premier réglage), le moteur recopie le selfie : un
   visage photographique collé sur un petit corps, et pour l'édition l'ancienne tenue gardée (« pas très automne »,
   3 novembre 2026). En `low`, il réinterprète : la caricature sculptée et peinte, et la tenue vraiment changée. La
   consigne met le STYLE en premier (« pas une photo : sculpté et peint »), la ressemblance ensuite.
