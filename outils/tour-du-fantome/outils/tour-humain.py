@@ -57,7 +57,7 @@ VARIANTES = {
                  "G1": "💗 21 ont envie", "G2": "📌 12 réserveront un jour", "G3": "🍽️ 5 réservent aujourd’hui", "TAGJ": "📌 Réservera un jour",
                  "PRO_NOM": "Jean-Marie", "PRO_ROLE": "le chef de Chez Bergine", "PRO_BADGE": "🪑 Table libre · 12 h 30", "RARE": "MARDI MIDI", "DEFI": "3 tables"},
         "js": {"libre": "vide", "forts12b": ["figurine", "moi.", "vide\u202f?", "prénom\u202f:"], "fortsChef": ["Camille\u202f!", "table", "minutes\u202f!"],
-               "fortsCli": ["meilleur", "magret"], "honneur": "menu", "forts5": ["belle", "vidéo", "menu", "jour,", "partout"],
+               "fortsCli": ["meilleur", "magret"], "honneur": "menu", "forts5": ["vidéo,", "beau", "film", "menu", "jour,", "partout"],
                "forts7": ["“Ça", "envie”,", "“Je", "réserverai", "jour”,", "réserve", "aujourd’hui”."],
                "fil": ["Merci Camille ! On te garde une table un de ces jours 😊 Plutôt en semaine ou le week-end ?", "En semaine",
                        "Noté ! Et plutôt viande ou poisson ?", "Poisson 🐟", "Mardi · 11 h · c’est calme",
@@ -81,16 +81,16 @@ VARIANTES = {
                  "G1": "💗 21 ont envie d’essayer", "G2": "📌 12 s’inscriront un jour", "G3": "🏺 5 réservent leur place", "TAGJ": "📌 S’inscrira un jour",
                  "PRO_NOM": "Nina", "PRO_ROLE": "la potière de l’atelier", "PRO_BADGE": "🏺 Place libre · samedi 10 h", "RARE": "JEUDI SOIR", "DEFI": "3 places"},
         "js": {"libre": "libre", "forts12b": ["figurine", "moi.", "libre", "prénom\u202f:"], "fortsChef": ["Camille\u202f!", "place", "minutes\u202f!"],
-               "fortsCli": ["meilleur", "poterie"], "honneur": "ateliers,", "forts5": ["belle", "vidéo", "ateliers,", "partout"],
+               "fortsCli": ["meilleur", "poterie"], "honneur": "ateliers,", "forts5": ["vidéo,", "beau", "film", "ateliers,", "partout"],
                "forts7": ["“Ça", "tente”,", "“Je", "m’inscrirai", "jour”,", "réserve", "place”."],
                "fil": ["Merci Camille ! Tu viendras un jour, c’est promis 😊 Plutôt en semaine ou le week-end ?", "Le week-end",
                        "Noté ! Et plutôt le tour ou le modelage ?", "Le tour 🏺", "Vendredi · 18 h · il reste 2 places",
                        "Il reste 2 places à l’atelier tour demain matin, Camille. Je t’en garde une ?", "Oui, je viens ! 😍"]},
-        # ses répliques (Mike) : la 5, « vos ateliers » au lieu de « votre menu du jour » (31 octobre) ; la 7, les cages de
-        # l'atelier (1er novembre)
+        # ses répliques (Mike) : la 5, « vos ateliers » au lieu de « votre menu du jour » (31 octobre ; « ou une vidéo », le 4
+        # novembre) ; la 7, les cages de l'atelier (1er novembre)
         "lignes": {
-            "l05": ("atelier/05-m", "Avec quelques photos, | je fais une très belle vidéo | où je mets à l’honneur | vos ateliers, | puis je la publie partout | "
-                    "pour que tout le monde la voie.", {"coupures": ("quelques", "où", "pour", "monde")}),
+            "l05": ("atelier/05-m", "Avec quelques photos ou une vidéo, | je fais un très beau film | où je mets à l’honneur | vos ateliers, | puis je le publie partout | "
+                    "pour que tout le monde le voie.", {}),
             "l07": ("atelier/07-m", f"{L07} | “Ça me tente”, | “Je m’inscrirai un jour”, | ou “Je réserve ma place”.", {"coupures": (":", "“Je")}),
             # la scène des figurines, dans les mots de l'atelier (1er novembre) : une place libre ; Nina (voix « Mélodie ») ;
             # la cliente (Emma)
@@ -118,15 +118,15 @@ VARIANTES = {
                  "G1": "💗 21 : ça leur ferait du bien", "G2": "📌 12 prendront rendez-vous", "G3": "📅 5 prennent rendez-vous", "TAGJ": "📌 Prendra rendez-vous",
                  "PRO_NOM": "Élise", "PRO_ROLE": "praticienne au Cocon", "PRO_BADGE": "🌿 Créneau libre · mardi 18 h", "RARE": "LUNDI MATIN", "DEFI": "3 créneaux"},
         "js": {"libre": "libre", "forts12b": ["figurine", "moi.", "libre\u202f?", "prénom\u202f:"], "fortsChef": ["Camille\u202f!", "créneau", "minutes\u202f!"],
-               "fortsCli": ["meilleur", "massage"], "honneur": "séances,", "forts5": ["belle", "vidéo", "séances,", "partout"],
+               "fortsCli": ["meilleur", "massage"], "honneur": "séances,", "forts5": ["vidéo,", "beau", "film", "séances,", "partout"],
                "forts7": ["“Ça", "bien”,", "“Je", "prendrai", "rendez-vous”,", "prends", "rendez-vous”."],
                "fil": ["Merci Camille ! Tu viendras un jour, c’est promis 😊 Plutôt en semaine ou le week-end ?", "En semaine",
                        "Noté ! Et plutôt massage ou sophrologie ?", "Massage 💆", "Mardi · 17 h · un créneau se libère",
                        "Un créneau vient de se libérer demain à 17 h, Camille. Je te le garde ?", "Oui, je le prends ! 😍"]},
-        # ses répliques (Mike, 1er novembre) : la 5, « vos séances » ; la 7, les cages du bien-être
+        # ses répliques (Mike, 1er novembre) : la 5, « vos séances » (« ou une vidéo », le 4 novembre) ; la 7, les cages du bien-être
         "lignes": {
-            "l05": ("bien-etre/05-m", "Avec quelques photos, | je fais une très belle vidéo | où je mets à l’honneur | vos séances, | puis je la publie partout | "
-                    "pour que tout le monde la voie.", {"coupures": ("quelques", "pour", "tout", "monde"), "liees": ("photos,",)}),
+            "l05": ("bien-etre/05-m", "Avec quelques photos ou une vidéo, | je fais un très beau film | où je mets à l’honneur | vos séances, | puis je le publie partout | "
+                    "pour que tout le monde le voie.", {}),
             "l07": ("bien-etre/07-m", f"{L07} | “Ça me ferait du bien”, | “Je prendrai rendez-vous”, | ou “Je prends rendez-vous”.", {"coupures": ("“Je",)}),
             # la scène des figurines, dans les mots du cabinet (1er novembre) : un créneau libre ; Élise (voix « Mélodie ») ;
             # la cliente (Emma)
@@ -159,8 +159,9 @@ SOUS = {
     "l02": ("02-m", f"Et moi{NB}! | Je suis Mike, | votre futur fantôme préféré.", {}),
     "l03": ("03-p", f"On a 30 jours | pour transformer votre communauté | en clients. | Je vous montre{NB}?", {}),
     "l04": ("04-p", f"Jour 1{NB}: | je viens chez vous. | Quelques photos, | deux ou trois questions… | et Mike s’occupe du reste.", {"liees": ("photos,",)}),
-    "l05": ("05-m", "Avec quelques photos, | je fais une très belle vidéo | où je mets à l’honneur | votre menu du jour, | puis je la publie partout | "
-            "pour que tout le monde la voie.", {"coupures": ("quelques", "où", "pour", "monde")}),
+    # (la 5, réenregistrée le 4 novembre : « ou une vidéo », et « un très beau film »)
+    "l05": ("05-m", "Avec quelques photos ou une vidéo, | je fais un très beau film | où je mets à l’honneur | votre menu du jour, | puis je le publie partout | "
+            "pour que tout le monde le voie.", {}),
     "l06": ("06-p", "Mais ce n’est pas là | qu’il est le plus fort. | C’est juste après.", {}),
     # (la 7 : les trois cages dans les mots du métier — réenregistrée par métier le 1er novembre ; l'ancienne finissait par
     # « les trois cages apparaissent », l'indication de scène lue par erreur)

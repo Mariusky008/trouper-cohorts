@@ -408,8 +408,9 @@ node outils/tour-du-fantome/outils/rendre-video.mjs http://…/tour-humain/index
   téléphone recule en haut, sa vidéo s'envole chez ses deux partenaires (`PARTENAIRES` : des commerces fictifs des
   autres tours, de Dax, jamais de son métier), qui la publient en « 📣 Découverte du quartier » (le texte de
   l'application) ; « Même ville », « Jamais un concurrent », « Ils publient la vôtre / Vous publiez les leurs », leurs
-  abonnés en plus, la bannière d'or. **Elle n'entre dans la démo qu'avec son enregistrement**
-  (`recu/humain/05b-m.mp3`, commun aux trois démos) : sans lui, rien ne change. `--essai-05b` la joue au rythme estimé,
+  abonnés en plus, la bannière d'or. Son enregistrement : `recu/humain/05b-m.mp3` (reçu le 4 novembre, commun aux
+  trois démos) ; sans lui, la démo se joue sans la 5b. La 5, réenregistrée le même jour : « Avec quelques photos ou une
+  vidéo, je fais un très beau film… ». `--essai-05b` la joue au rythme estimé,
   sans son, pour la régler — jamais à publier (un silence en guise de voix : relancer sans l'option avant de pousser,
   le script retire alors ce silence).
 - **Une figurine par mois** (4 novembre) : les cartes des éditions disent leur mois (« OCTOBRE · HALLOWEEN »…), et
