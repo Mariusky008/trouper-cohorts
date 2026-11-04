@@ -492,6 +492,11 @@ réseaux reçoivent le film entier.
   sont plus demandées sur le socle de la figurine de base (la consigne de ChatGPT n'en avait pas). L'édition garde le
   rendu de SA figurine (« EXACTLY the same rendering style ») sans en imposer un autre. Sous chaque proposition :
   « OpenAI · fidèle » (fidélité haute) ou « OpenAI · libre » (basse) — ses choix diront laquelle garder.
+- **Son âge et la forme de son visage** (onzième essai, 4 novembre : une commerçante d'une quarantaine d'années,
+  souriante, au visage fin, devenue une jeune fille au visage rond et aux très grands yeux). Le style « film
+  d'animation » tire vers un visage d'enfant tout fait : deux clés de plus (`troisCles`) — l'âge (jamais plus jeune, les
+  rides du sourire et les pattes-d'oie en lignes sculptées douces) et la forme du visage (un visage fin reste fin, jamais
+  un visage de bébé) —, et des yeux de leur vraie taille.
 - **🎨 Une image de référence de style, facultative** (`FIGURINE_REFERENCE_URL`, une adresse https) : elle part en
   seconde image avec chaque fabrication, aux deux moteurs, et la consigne (`AVEC_REFERENCE`) dit qu'on n'en prend que le
   style — jamais le visage, la tenue ni les accessoires. Jamais dans le dépôt, et seulement une image qu'on a le droit
