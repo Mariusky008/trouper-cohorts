@@ -531,7 +531,9 @@ réseaux reçoivent le film entier.
   celle du moment choisie d'office.
 - Réglages (variables d'environnement, toutes facultatives) : `OPENAI_API_KEY` (sans elle, la fabrication répond
   « pas encore branchée »), `OPENAI_IMAGE_MODEL` (impose un moteur), `FIGURINE_QUALITE` (`high` par défaut),
-  `FIGURINE_FIDELITES` (les fidélités d'OpenAI, `high,low` par défaut), `GEMINI_API_KEY` (la voie Gemini),
+  `FIGURINE_FIDELITES` (les fidélités d'OpenAI, `high,low` par défaut), `FIGURINE_GEMINI_API_KEY` (la voie Gemini, pour les figurines
+  seules ; sinon `GEMINI_API_KEY`, qui fait aussi passer à Gemini l'essayage, les couvertures, l'essai de vitrine et
+  le dressing — le 4 novembre 2026, le serveur n'avait aucune clé Gemini : Gemini n'avait jamais fait une proposition),
   `GEMINI_FIGURINE_MODEL` (impose un modèle Gemini), `FIGURINE_SANS_GEMINI=1` (sans la voie Gemini),
   `FIGURINE_REFERENCE_URL` (l'image de référence de style, voir plus haut), `FIGURINE_VOIES_EDITION` (les deux voies
   d'une édition, `openai-high,openai-high` par défaut),
