@@ -33,6 +33,7 @@ import { GOUTS, PROGRES_VIDE, caracteristiques, reponsesEnMots, reponsesValides 
 import { AMIS_PAR_JOUR, PERSONNAGES, REPONSE_MAX, choisirFormat, choisirPersonnage, formatDe, personnageDe, type FORMATS } from "./reseau";
 import { imageFigurineGuide } from "./guide";
 import { cheminCarte, ecrire, imageDe, lire, prenomDe, type Gardee } from "./personnage-serveur";
+import { noterAuJournal } from "./journal-serveur";
 import {
   GESTES,
   IMPRESSIONS_MAX,
@@ -91,9 +92,11 @@ type Fichier = {
   reponses?: Record<string, { texte: string; le: string }>;
   /** « ami » : une discussion avec un ami ou un proche ; sinon, la rencontre du jour. */
   quoi?: "jour" | "ami";
+  /** 🪞 Ce que la rencontre a révélé de chacun des deux propriétaires (`b` : seulement entre deux clients). */
+  revele?: { a?: string; b?: string };
 };
-/** Ce que l'IA (ou la page sans IA) écrit : la conversation, son titre, ce qui a été partagé, la question de fin. */
-type Ecrite = { repliques: Fichier["repliques"]; titre: string; partage: string[]; question: string };
+/** Ce que l'IA (ou la page sans IA) écrit : la conversation, son titre, ce qui a été partagé, la question de fin, ce qu'elle révèle. */
+type Ecrite = { repliques: Fichier["repliques"]; titre: string; partage: string[]; question: string; revele: { a: string; b: string } };
 type Index = {
   liste: { id: string; jour: string; avec: string; quoi?: "ami" }[];
   amis: string[];
@@ -198,28 +201,54 @@ function portraitPersonnage(p: Personnage): string[] {
   ];
 }
 
-function consigneConversation(a: string[], b: string[], o: { inconnus?: boolean; format?: Format } = {}): string {
+/**
+ * 🪞 LA CONSIGNE D'UN ÉPISODE — réécrite le 5 novembre 2026 (lot 1 de la stratégie validée : « les rencontres, des
+ * mini-épisodes avec un enjeu » ; « les gens viennent ici pour se découvrir grâce à leur figurine »), après la première
+ * discussion du patron avec Pablito : « c'est pas terrible comme discussion » — des phrases creuses (« j'aime les idées
+ * nettes », « les projets qui bougent »), un « grand rêve » jamais nommé, sa figurine qui parlait en rafale de mots.
+ * D'où : du concret, une histoire en trois temps, l'écoute, l'humour, des phrases naturelles, le ton donné par un court
+ * passage, et à la fin « ce que ta figurine a révélé de toi ». `premiere` : la toute première (Pablito l'accueille).
+ */
+function consigneConversation(a: string[], b: string[], o: { inconnus?: boolean; format?: Format; premiere?: boolean; deuxClients?: boolean } = {}): string {
   const inconnus = Boolean(o.inconnus);
   return [
-    "Tu écris la conversation de deux figurines de collection (des personnages miniatures) qui se rencontrent aujourd'hui, pour ClikMe, l'application des commerces de quartier. Elle se joue en direct, sous les yeux de leurs propriétaires : les figurines discutent, réagissent et s'amusent ensemble.",
+    "Tu écris un mini-épisode pour ClikMe : la rencontre de deux figurines de collection (des personnages miniatures, montés sur leur ressort). Leurs propriétaires la regardent en direct, comme une petite série. Le but : que le propriétaire de la figurine A SE DÉCOUVRE en la regardant vivre — elle parle et réagit comme lui, et la rencontre lui montre quelque chose de lui.",
     ...(inconnus ? ["Elles ne se connaissent pas encore : elles font connaissance, avec curiosité et bonne humeur (sans jamais proposer de se voir en vrai)."] : []),
-    "Le ton : drôle, chaleureux, bienveillant — jamais méchant, jamais gênant. Elles se tutoient, parlent de ce qu'elles aiment, se taquinent gentiment, se lancent un petit défi.",
-    "Chacune parle EXACTEMENT comme décrit (sa façon de parler) : c'est le jeu, que chacun puisse dire « c'est tout moi ».",
-    "Ne devine jamais le genre d'une personne d'après son prénom (des tournures qui vont à tout le monde).",
-    "INTERDIT : la santé, le corps et le physique, l'âge, la religion, la politique, la sexualité, l'argent, l'alcool, les marques ; tout lieu ou moment où une personne serait allée ; tout vrai rendez-vous ; toute donnée personnelle.",
     "",
     ...a,
     "",
     ...b,
     "",
-    `Écris entre ${REPLIQUES_MIN} et ${REPLIQUES_MAX} répliques, en alternance, A commence. Chaque réplique fait au plus ${REPLIQUE_MAX - 20} caractères.`,
-    "Une vraie petite histoire : elles font connaissance, découvrent un point commun, se lancent un défi ou un jeu, rient, et se quittent bons amis.",
-    ...(o.format ? [`LE FORMAT DU JOUR — « ${o.format.nom} » : ${o.format.consigne}. C'est le fil de toute la conversation (chaque jour en a un autre : elle doit être différente des autres).`] : []),
+    "COMMENT ÉCRIRE — LE PLUS IMPORTANT :",
+    "1. DU CONCRET, JAMAIS DU VAGUE. Chaque réplique contient quelque chose de précis et d'imagé : un plat, une chanson, un objet, un endroit du quotidien, une habitude, un chiffre, une petite anecdote, une comparaison drôle. INTERDIT : les phrases creuses (« j'aime les idées nettes », « les projets qui bougent », « du concret », « simple, clair, efficace », « on ne traîne pas », « c'est parti »), les slogans, les onomatopées.",
+    "2. UNE VRAIE HISTOIRE, EN TROIS TEMPS : une accroche qui fait sourire ; le sujet du jour, développé avec des détails, une surprise ou un petit désaccord amusant ; une chute drôle ou touchante.",
+    "3. ELLES S'ÉCOUTENT : chaque réplique répond à la précédente (une question, une relance, une taquinerie, un « attends, quoi ? ») ; aucune ne parle dans le vide.",
+    "4. DES PHRASES NATURELLES, comme à l'oral, de longueur variée : une courte qui fait mouche, une plus longue qui raconte. Même une figurine « directe » parle normalement : jamais des mots en rafale séparés par des points.",
+    "5. DE L'HUMOUR : au moins deux vrais moments drôles (une chute, une exagération, une comparaison inattendue, de l'autodérision). Drôle, chaleureux, bienveillant — jamais méchant, jamais gênant. Elles se tutoient.",
+    "6. LA FIGURINE A, C'EST SON PROPRIÉTAIRE : elle parle de ce qu'il aime avec des détails plausibles (au moins deux fois), reprend sa phrase fétiche s'il en a une, réagit comme son caractère le dit, et s'appuie sur ce qu'il a dit de lui. C'est là qu'il se reconnaît (« c'est tout moi ») — ou pas (« jamais de la vie »).",
+    "",
+    "Le ton, en trois répliques (ne reprends ni ces mots ni ces idées) :",
+    "A : « Mon grand rêve ? Une crêperie où chaque crêpe porte le nom d'un voisin. La Madame Ruiz : beurre-sucre, évidemment. »",
+    "B : « Et le voisin qui râle tout le temps, il a droit à quoi ? Citron sans sucre ? »",
+    "A : « Exactement. Et s'il sourit en la mangeant, je lui offre la suivante. Premier essai samedi, sur mon palier. »",
+    "",
+    "Ne devine jamais le genre d'une personne d'après son prénom (des tournures qui vont à tout le monde).",
+    "INTERDIT : la santé, le corps et le physique, l'âge, la religion, la politique, la sexualité, l'argent, l'alcool, les marques ; tout lieu ou moment où une personne serait allée ; tout vrai rendez-vous ; toute donnée personnelle.",
+    "",
+    `Écris entre ${REPLIQUES_MIN} et ${REPLIQUES_MAX} répliques, en alternance, A commence. Chaque réplique fait au plus ${REPLIQUE_MAX - 10} caractères.`,
+    ...(o.format ? [`LE FORMAT DU JOUR — « ${o.format.nom} » : ${o.format.consigne}. C'est le fil de l'épisode, avec un contenu précis (un défi nommé, un rêve nommé, une découverte vraie…) — chaque jour en a un autre.`] : []),
     "Le sujet suit la figurine B (son métier, son sujet, ce qu'elle aime) : la figurine A y apprend quelque chose, ou voit les choses autrement.",
+    ...(o.premiere
+      ? [
+          "C'EST LA TOUTE PREMIÈRE RENCONTRE DE LA FIGURINE A : Pablito (la figurine B) l'accueille dans le monde des figurines. Au fil de la conversation — vivant, jamais une liste — il lui fait comprendre que : chaque jour, elle rencontrera quelqu'un (un voisin de sa ville, un personnage comme Rosa la cheffe ou Capitaine Lou l'exploratrice, et ses amis quand elle veut) ; son propriétaire la regarde, et lui dit « c'est tout moi » ou « jamais de la vie » pour qu'elle lui ressemble de plus en plus ; et chaque rencontre finit par une carte souvenir. Surtout, il s'intéresse vraiment à elle : il lui demande ce qu'elle aime, et rebondit avec humour sur ses réponses.",
+        ]
+      : []),
     `Chaque réplique a son GESTE, ce que la figurine fait en la disant, parmi : ${GESTES.map((g) => `« ${g.cle} » (${g.dit})`).join(", ")}. Varie-les.`,
-    `Donne aussi à la rencontre un TITRE drôle, de ${TITRE_MAX} caractères au plus (« Le duel des desserts »), et ce qui a été PARTAGÉ : ${PARTAGE_MAX} points au plus, de ${PARTAGE_LONGUEUR - 20} caractères au plus chacun (un point commun, le défi lancé, une découverte), écrits pour les deux propriétaires.`,
+    `Donne aussi à l'épisode un TITRE drôle, de ${TITRE_MAX} caractères au plus (« Le duel des desserts »), et ce qui a été PARTAGÉ : ${PARTAGE_MAX} points au plus, de ${PARTAGE_LONGUEUR - 20} caractères au plus chacun (un point commun, le défi lancé, une découverte), écrits pour les deux propriétaires.`,
+    "CE QUE SA FIGURINE A RÉVÉLÉ DE LUI (« revele_a ») : une ou deux phrases, 200 caractères au plus, adressées au propriétaire de A (tutoiement), drôles et bienveillantes, qui lui disent ce que cet épisode montre de lui, d'après un moment précis (« Tu as défendu tes crêpes comme un lion : quand tu crois à une idée, tu la portes jusqu'au bout. »). Rien de sensible, rien de blessant.",
+    ...(o.deuxClients ? ["La même chose pour le propriétaire de la figurine B (« revele_b »)."] : []),
     "Pour finir, une QUESTION pour le propriétaire de la figurine A (120 caractères au plus, tutoiement) : sur ce qui s'est dit, pour qu'il réagisse et dise ce qu'il en pense vraiment (« Et toi, tu aurais choisi quoi ? »).",
-    'Réponds en JSON, exactement : {"titre": "…", "partage": ["…", "…"], "question": "…", "repliques": [{"qui": "A", "texte": "…", "geste": "rit"}, {"qui": "B", "texte": "…", "geste": "clin"}]}',
+    `Réponds en JSON, exactement : {"titre": "…", "partage": ["…", "…"], "revele_a": "…",${o.deuxClients ? ' "revele_b": "…",' : ""} "question": "…", "repliques": [{"qui": "A", "texte": "…", "geste": "rit"}, {"qui": "B", "texte": "…", "geste": "clin"}]}`,
   ].join("\n");
 }
 
@@ -228,7 +257,7 @@ function consigneConversation(a: string[], b: string[], o: { inconnus?: boolean;
  * inconnu est retiré ; un titre ou un point partagé de travers est retiré (la conversation reste).
  */
 export function conversationRelue(x: unknown): Ecrite | null {
-  const o = (x as { repliques?: unknown; titre?: unknown; partage?: unknown; question?: unknown } | null) ?? {};
+  const o = (x as { repliques?: unknown; titre?: unknown; partage?: unknown; question?: unknown; revele_a?: unknown; revele_b?: unknown } | null) ?? {};
   const l = o.repliques;
   if (!Array.isArray(l) || l.length < REPLIQUES_MIN || l.length > REPLIQUES_MAX + 2) return null;
   const r: Fichier["repliques"] = [];
@@ -245,7 +274,7 @@ export function conversationRelue(x: unknown): Ecrite | null {
   };
   const titre = propre(o.titre, TITRE_MAX);
   const partage = (Array.isArray(o.partage) ? o.partage : []).map((p) => propre(p, PARTAGE_LONGUEUR)).filter(Boolean).slice(0, PARTAGE_MAX);
-  return { repliques: r.slice(0, REPLIQUES_MAX), titre, partage, question: propre(o.question, 140) };
+  return { repliques: r.slice(0, REPLIQUES_MAX), titre, partage, question: propre(o.question, 140), revele: { a: propre(o.revele_a, 220), b: propre(o.revele_b, 220) } };
 }
 
 async function ecrireConversation(consigne: string): Promise<Ecrite | null> {
@@ -257,7 +286,8 @@ async function ecrireConversation(consigne: string): Promise<Ecrite | null> {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${cle}` },
       body: JSON.stringify({
-        model: s(process.env.OPENAI_PERSONNAGE_MODEL) || s(process.env.OPENAI_DOUBLE_MODEL) || "gpt-5.4-mini",
+        // (`OPENAI_RENCONTRE_MODEL` : un modèle à part pour les épisodes, s'il en faut un plus fort)
+        model: s(process.env.OPENAI_RENCONTRE_MODEL) || s(process.env.OPENAI_PERSONNAGE_MODEL) || s(process.env.OPENAI_DOUBLE_MODEL) || "gpt-5.4-mini",
         response_format: { type: "json_object" },
         max_completion_tokens: 2600,
         messages: [{ role: "user", content: consigne }],
@@ -272,6 +302,12 @@ async function ecrireConversation(consigne: string): Promise<Ecrite | null> {
   }
 }
 
+/** Sans IA, ce que l'épisode révèle de lui : son super-pouvoir (sa fiche), à confirmer. */
+const reveleLocal = (g: Gardee) => {
+  const p = s(g.fiche?.pouvoir);
+  return p ? `Ta figurine a sorti ton super-pouvoir : ${p.charAt(0).toLowerCase()}${p.slice(1)}. C’est bien toi ?` : "Ta figurine a été elle-même, du début à la fin. C’est bien toi ?";
+};
+
 /** Sans IA : une conversation composée d'après les deux cartes (toujours juste), avec ses gestes, son titre, son partage. */
 function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; carte: Gardee } | CommerceInfo | Personnage, format?: Format): Ecrite {
   const goutA = GOUTS.find((x) => x.cle === a.gouts[0])?.nom.toLowerCase();
@@ -284,6 +320,7 @@ function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; car
       titre: titreAvec("avec", b.nom, `Rencontre avec ${b.nom}`),
       partage: [`Ta figurine a rencontré ${b.nom}, ${b.role}.`, `Le sujet : ${b.sujet.split(" — ")[0]}.`, format?.partage ?? (goutA ? `Elle lui a parlé de ce qu’elle aime : ${goutA}.` : "Elle lui a parlé de ce qu’elle aime.")],
       question,
+      revele: { a: reveleLocal(a), b: "" },
       repliques: [
         { qui: "a", texte: `Salut ! Moi c’est ${prenomA || "une nouvelle figurine"}. Tu es ${b.nom}, c’est ça ?`, geste: "surprise" },
         { qui: "b", texte: `${b.nom} en personne ! ${b.accroche}`.slice(0, REPLIQUE_MAX), geste: "applaudit" },
@@ -299,6 +336,7 @@ function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; car
   if ("slug" in b)
     return {
       question,
+      revele: { a: reveleLocal(a), b: "" },
       titre: titreAvec("chez", b.nom, `Rencontre chez ${b.nom}`.length <= TITRE_MAX ? `Rencontre chez ${b.nom}` : "Rencontre chez un commerce ClikMe"),
       partage: [
         `Ta figurine a découvert la figurine de ${b.nom}${b.metier ? ` (${b.metier.toLowerCase()})` : ""}.`,
@@ -322,6 +360,7 @@ function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; car
   const nomCommun = commun ? GOUTS.find((x) => x.cle === commun)?.nom.toLowerCase() : "";
   return {
     question,
+    revele: { a: reveleLocal(a), b: reveleLocal(b.carte) },
     // (jamais coupé au milieu d'un mot : trop long, « Rencontre avec … »)
     titre: [
       format ? `${format.nom} avec ${b.prenom || "un ami"}` : "",
@@ -384,6 +423,8 @@ async function vueDe(supabase: Supabase, f: Fichier, moiId: string): Promise<Ren
     ...(formatDe(f.format) ? { format: { cle: formatDe(f.format)!.cle, nom: formatDe(f.format)!.nom } } : {}),
     ...(f.question ? { question: f.question } : {}),
     ...(f.reponses?.[moiId] ? { reponse: f.reponses[moiId].texte } : {}),
+    // 🪞 ce que la rencontre a révélé de LUI (son côté)
+    ...((cote === "a" ? f.revele?.a : f.revele?.b) ? { revele: (cote === "a" ? f.revele?.a : f.revele?.b)! } : {}),
     quoi: f.quoi === "ami" ? "ami" : "jour",
   };
 }
@@ -509,7 +550,8 @@ export async function rencontreDuJour(supabase: Supabase, habitant: Habitant): P
   let b: Cote;
   let commerce: CommerceInfo | null = null;
   let membre = false;
-  if (!duJour.length) b = { personnage: "pablito" };
+  const premiere = !duJour.length;
+  if (premiere) b = { personnage: "pablito" };
   else {
     const membreDispo = idx.ouvert && idx.membreJour !== jour ? await trouverMembre(supabase, habitant, idx, jour) : null;
     const possibles = await commercesPossibles(supabase, habitant);
@@ -532,7 +574,7 @@ export async function rencontreDuJour(supabase: Supabase, habitant: Habitant): P
     if (membre || (idx.ouvert && idx.membreJour !== jour)) await mettreAJourLaFile(supabase, habitant, membre ? membreDispo : null);
   }
 
-  const { f, idxApres } = await creerConversation(supabase, habitant, carte, idx, b, commerce, { membre, quoi: "jour" });
+  const { f, idxApres } = await creerConversation(supabase, habitant, carte, idx, b, commerce, { membre, quoi: "jour", premiere });
   return { ...(await base(idxApres)), avant: await rencontresDavant(supabase, idxApres, f.id), rencontre: await vueDe(supabase, f, habitant.id), ...(nouvelle ? { nouvelle } : {}) };
 }
 
@@ -574,6 +616,8 @@ export async function repondre(supabase: Supabase, habitant: Habitant, id: unkno
   const idx = await indexDe(supabase, habitant.id);
   const q = f.question || "Et toi, qu’en penses-tu ?";
   await ecrire(supabase, cheminIndex(habitant.id), { ...idx, dit: [...(idx.dit ?? []).filter((x) => x.q !== q), { q, r: t }].slice(-8) });
+  // 📓 tout est gardé, daté (les 8 dernières ci-dessus servent aux conversations ; le journal, à sa phrase du mois)
+  await noterAuJournal(supabase, habitant.id, { type: "reponse", le: new Date().toISOString(), rencontre: rid, question: q, texte: t });
   return { rencontre: await vueDe(supabase, apres, habitant.id) };
 }
 
@@ -585,7 +629,7 @@ async function creerConversation(
   idx: Index,
   b: Cote,
   commerce: CommerceInfo | null,
-  o: { membre?: boolean; quoi?: "jour" | "ami" } = {},
+  o: { membre?: boolean; quoi?: "jour" | "ami"; premiere?: boolean } = {},
 ): Promise<{ f: Fichier; idxApres: Index }> {
   const membre = Boolean(o.membre);
   const jour = jourParis();
@@ -611,7 +655,7 @@ async function creerConversation(
       "- Elle ne promet RIEN et n'invente RIEN sur le commerce : aucun prix, aucune offre, aucune réduction, aucun horaire, aucun produit précis. Ce n'est pas le commerçant qui parle.",
     ];
   }
-  const ia = await ecrireConversation(consigneConversation(portraitA, portraitB, { inconnus: membre || "personnage" in b, format }));
+  const ia = await ecrireConversation(consigneConversation(portraitA, portraitB, { inconnus: membre || "personnage" in b, format, premiere: o.premiere, deuxClients: "habitant" in b }));
   const locale = conversationLocale(prenomA, carte, autre, format);
   const ecrite = ia ?? locale;
   const f: Fichier = {
@@ -628,10 +672,16 @@ async function creerConversation(
     titre: ecrite.titre || locale.titre,
     partage: ecrite.partage.length ? ecrite.partage : locale.partage,
     question: ecrite.question || locale.question,
+    // 🪞 ce qu'il a révélé de chacun (l'IA l'a oublié : celui de la page)
+    revele: { a: ecrite.revele.a || locale.revele.a, ...("habitant" in b ? { b: ecrite.revele.b || locale.revele.b } : {}) },
     format: format.cle,
     ...(o.quoi === "ami" ? { quoi: "ami" as const } : {}),
   };
   await ecrire(supabase, cheminRencontre(f.id), f);
+  // 📓 SON JOURNAL : ce que l'épisode a révélé de lui (et de l'autre, entre deux clients)
+  const nomB = "personnage" in b ? (personnageDe(b.personnage)?.nom ?? "un personnage") : "habitant" in b ? (autre as { prenom: string }).prenom || "un ami" : commerce?.nom || "un commerce";
+  await noterAuJournal(supabase, habitant.id, { type: "revele", le: f.le, rencontre: f.id, avec: nomB, texte: f.revele!.a! });
+  if ("habitant" in b && f.revele?.b) await noterAuJournal(supabase, b.habitant, { type: "revele", le: f.le, rencontre: f.id, avec: prenomA || "un ami", texte: f.revele.b });
   const entree = { id: f.id, jour, avec: cleAvec(b), ...(o.quoi === "ami" ? { quoi: "ami" as const } : {}) };
   const idxApres: Index = { ...idx, liste: [...idx.liste, entree].slice(-120), formats: [...(idx.formats ?? []), format.cle].slice(-10), ...(membre ? { membreJour: jour } : {}) };
   await ecrire(supabase, cheminIndex(habitant.id), idxApres);
@@ -754,6 +804,7 @@ export async function reagir(supabase: Supabase, habitant: Habitant, id: unknown
     if (apres.v === "moi") Object.assign(n2, { oui: [...n2.oui, texte].slice(-12), moi: n2.moi + 1 });
     if (apres.v === "pas") Object.assign(n2, { non: [...n2.non, texte].slice(-12), pas: n2.pas + 1 });
     await ecrire(supabase, cheminIndex(habitant.id), n2);
+    await noterAuJournal(supabase, habitant.id, { type: "verdict", le: new Date().toISOString(), rencontre: rid, phrase: texte, verdict: apres.v ?? null });
     return { ressemblance: ressemblance(n2.moi, n2.pas) };
   }
   return { ressemblance: ressemblance(idx.moi, idx.pas) };

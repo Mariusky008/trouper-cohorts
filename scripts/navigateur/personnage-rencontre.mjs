@@ -120,6 +120,8 @@ const qui1 = await texte(lea, "#o-rencontre .rd-qui");
 ok(qui1.includes("UN PERSONNAGE") && qui1.includes("Ta figurine a rencontré Pablito") && qui1.includes("🎲"), `la toute première : Pablito l'accueille, avec le format du jour (${qui1})`);
 const j1 = await api(lea, "/api/direct/rencontre");
 ok(j1.rencontre?.autre?.type === "personnage" && j1.rencontre.autre.cle === "pablito" && j1.rencontre.format?.nom && j1.rencontre.question && j1.rencontre.quoi === "jour", `Pablito, un format (« ${j1.rencontre?.format?.nom} »), une question pour elle (« ${j1.rencontre?.question} »)`);
+ok(j1.rencontre?.revele?.length > 10, `🪞 ce que sa figurine a révélé d'elle (« ${j1.rencontre?.revele} »)`);
+ok((await lea.locator("#o-rencontre .rd-fil .rd-reac").count()) === 0, "en direct, elle regarde : aucun bouton sous les phrases");
 await unJourPasse(LEA.id);
 await lea.goto(`${BASE}/collection?v=${Date.now()}#rencontre`, { waitUntil: "networkidle" });
 await lea.waitForSelector("#o-rencontre .rd-fil li", { timeout: 60000 });
@@ -136,6 +138,7 @@ ok((await texte(lea, "#o-rencontre .rd-ia")).includes("Ce personnage est imagina
 ok(new Set([j1.rencontre.format.cle, j2.rencontre?.format?.cle, j3.rencontre?.format?.cle]).size === 3, `chaque jour, une conversation différente (${[j1, j2, j3].map((x) => x.rencontre?.format?.nom).join(" · ")})`);
 await lea.locator("#o-rencontre .rs-passer").click();
 await lea.waitForSelector("#o-rencontre .ra-ettoi", { timeout: 10000 });
+ok((await texte(lea, "#o-rencontre .ra-revele")).includes("Ce que ta figurine a révélé de toi") && (await texte(lea, "#o-rencontre .ra-revele p")) === j3.rencontre.revele, "à la fin : « ce que ta figurine a révélé de toi »");
 ok((await texte(lea, "#o-rencontre .ra-question")) === j3.rencontre.question, "à la fin : « Et toi ? », sa question");
 await lea.screenshot({ path: `${D}/personnage-3a-personnage.png`, fullPage: true });
 
@@ -182,7 +185,9 @@ ok((await texte(lea, "#o-rencontre .cs.nouvelle")).includes("Nouvelle carte souv
 await lea.screenshot({ path: `${D}/personnage-3b-fin.png`, fullPage: true });
 
 // SES RÉACTIONS
+ok((await lea.locator("#o-rencontre .rd-fil li.autre .rd-emo").count()) === 0 && (await lea.locator("#o-rencontre .rd-fil li.moi .rd-verdict").count()) > 0, "à la fin : « c'est moi / pas moi » sous ses phrases, pas de rangée d'émotions partout");
 await lea.locator("#o-rencontre .rd-fil li.moi .rd-verdict", { hasText: "C’est tout moi" }).first().click();
+await lea.locator("#o-rencontre .rd-fil li.autre .rd-bulle").first().click();
 await lea.locator("#o-rencontre .rd-fil li.autre .rd-emo").first().click();
 await lea.waitForTimeout(800);
 const apres = await api(lea, `/api/direct/rencontre?id=${rL.rencontre.id}`);
@@ -226,6 +231,11 @@ const carnet = await lireSeau(`${LEA.id}/rencontres.json`);
 ok(carnet?.dit?.some((x) => x.r.includes("je cuisine pour mes amis")), "sa réponse rejoint ce qu'elle a dit d'elle (pour les prochaines conversations)");
 const repNum = await api(lea, "/api/direct/rencontre", { action: "repondre", id: rL.rencontre.id, texte: "Écris-moi au 06 12 34 56 78" });
 ok(repNum.statut === 400, "pas de numéro dans sa réponse");
+// 📓 TOUT EST GARDÉ, DATÉ, MOIS PAR MOIS (Supabase) : ses réponses, ses « c'est moi », ce que ses rencontres ont révélé
+const mois = jour(new Date()).slice(0, 7);
+const journal = (await lireSeau(`${LEA.id}/journal/${mois}.json`))?.entrees ?? [];
+const types = new Set(journal.map((x) => x.type));
+ok(types.has("reponse") && types.has("verdict") && types.has("revele") && journal.some((x) => x.type === "reponse" && x.texte.includes("je cuisine")), `son journal du mois garde tout (${journal.length} entrées : ${[...types].join(", ")})`);
 
 // 👯 SES AMIS : une discussion quand elle veut, trois par jour
 await lea.goto(`${BASE}/collection?v=${Date.now()}#rencontre`, { waitUntil: "networkidle" });

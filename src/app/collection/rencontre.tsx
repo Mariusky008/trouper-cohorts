@@ -125,6 +125,8 @@ function Spectacle({ r, peutDirect, onRessemblance, onFin }: { r: RencontreVue; 
   const [montrees, setMontrees] = useState(direct ? 0 : total);
   const [pause, setPause] = useState(false);
   const [reactions, setReactions] = useState<Record<number, Reaction>>(r.reactions);
+  // (une émotion : en touchant la phrase — 5 novembre 2026 : six boutons sous chaque ligne, c'était illisible)
+  const [ouverte, setOuverte] = useState<number | null>(null);
   const [erreur, setErreur] = useState("");
   const fil = useRef<HTMLOListElement>(null);
   const fini = montrees >= total;
@@ -224,14 +226,15 @@ function Spectacle({ r, peutDirect, onRessemblance, onFin }: { r: RencontreVue; 
           )
         )}
       </div>
+      {fini && <p className="rd-aide">🪞 C’est toi ? Dis-le sous ses phrases. Touche une phrase pour réagir.</p>}
       <ol className={`rd-fil${direct ? " direct" : ""}`} ref={fil}>
         {r.repliques.slice(0, montrees).map((x, n) => {
           const re = reactions[n] ?? {};
           const g = x.geste ? gesteDe(x.geste) : null;
           return (
-            <li key={n} className={x.moi ? "moi" : "autre"}>
+            <li key={n} className={`${x.moi ? "moi" : "autre"}${fini ? " reagir" : ""}`}>
               <Avatar p={x.moi ? r.moi : r.autre} />
-              <div className="rd-bulle">
+              <div className="rd-bulle" onClick={() => fini && setOuverte((o) => (o === n ? null : n))}>
                 <small>
                   {x.moi ? "Ta figurine" : nomDe(r.autre)}
                   {g && (
@@ -241,20 +244,28 @@ function Spectacle({ r, peutDirect, onRessemblance, onFin }: { r: RencontreVue; 
                     </span>
                   )}
                 </small>
-                <p>{x.texte}</p>
-                <div className="rd-reac">
-                  {x.moi &&
-                    VERDICTS.map((v) => (
-                      <button key={v.cle} type="button" className={`rd-verdict${re.v === v.cle ? " pris" : ""}`} aria-pressed={re.v === v.cle} onClick={() => reagir(n, { v: re.v === v.cle ? null : v.cle })}>
-                        {v.emoji} {v.dit}
-                      </button>
-                    ))}
-                  {EMOTIONS.map((e) => (
-                    <button key={e} type="button" className={`rd-emo${re.e === e ? " pris" : ""}`} aria-pressed={re.e === e} aria-label={`Réagir ${e}`} onClick={() => reagir(n, { e: re.e === e ? null : e })}>
-                      {e}
-                    </button>
-                  ))}
-                </div>
+                <p>
+                  {x.texte}
+                  {re.e && ouverte !== n && <span className="rd-emo-pose">{re.e}</span>}
+                </p>
+                {/* SES RÉACTIONS, À LA FIN SEULEMENT (en direct, il regarde) : « c'est moi / pas moi » sur les phrases de sa
+                    figurine ; une émotion en touchant la phrase */}
+                {fini && (x.moi || ouverte === n) && (
+                  <div className="rd-reac" onClick={(e) => e.stopPropagation()}>
+                    {x.moi &&
+                      VERDICTS.map((v) => (
+                        <button key={v.cle} type="button" className={`rd-verdict${re.v === v.cle ? " pris" : ""}`} aria-pressed={re.v === v.cle} onClick={() => reagir(n, { v: re.v === v.cle ? null : v.cle })}>
+                          {v.emoji} {v.dit}
+                        </button>
+                      ))}
+                    {ouverte === n &&
+                      EMOTIONS.map((e) => (
+                        <button key={e} type="button" className={`rd-emo${re.e === e ? " pris" : ""}`} aria-pressed={re.e === e} aria-label={`Réagir ${e}`} onClick={() => reagir(n, { e: re.e === e ? null : e })}>
+                          {e}
+                        </button>
+                      ))}
+                  </div>
+                )}
               </div>
             </li>
           );
@@ -459,6 +470,12 @@ function EtToi({ r, onRencontre }: { r: RencontreVue; onRencontre: (x: Rencontre
 function ApresRencontre({ r, nouvelle, onRencontre }: { r: RencontreVue; nouvelle: boolean; onRencontre: (x: RencontreVue) => void }) {
   return (
     <div className="ra">
+      {r.revele && (
+        <section className="ra-revele">
+          <b>🪞 Ce que ta figurine a révélé de toi</b>
+          <p>{r.revele}</p>
+        </section>
+      )}
       {r.partage && r.partage.length > 0 && (
         <section className="ra-partage">
           <b>✨ Ce qui a été partagé</b>
@@ -1042,7 +1059,7 @@ export const STYLES_RENCONTRE = `
 .rd-fil li.moi .rd-bulle{border-radius:18px 18px 6px 18px;background:linear-gradient(135deg,rgba(255,46,154,.32),rgba(123,27,94,.4))}
 .rd-bulle small{display:block;font-size:10.5px;font-weight:900;letter-spacing:.04em;color:#F2C46B}
 .rd-bulle p{margin:2px 0 6px;font-size:15px;line-height:1.38;color:#FFF4E6}
-.rd-reac{display:flex;flex-wrap:wrap;gap:4px}
+.rd-reac{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
 .rd-reac button{padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.2);color:#E8D3DC;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
 .rd-reac button.pris{border-color:#F2C46B;background:rgba(242,196,107,.2);color:#FFF4E6}
 .rd-reac .rd-emo{padding:3px 6px;font-size:14px}
@@ -1132,6 +1149,12 @@ export const STYLES_RENCONTRE = `
 .ra-fil p{margin:2px 0 0;font-size:14px;line-height:1.4}
 .ra-echange textarea{width:100%;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:#FFF4E6;font:inherit;font-size:15px;resize:vertical}
 .ra-actions{display:flex;align-items:center;gap:12px}
+.ra-revele{padding:14px 16px;border-radius:18px;background:linear-gradient(135deg,rgba(255,46,154,.2),rgba(242,196,107,.14));border:1.5px solid rgba(255,46,154,.55)}
+.ra-revele b{font-size:15px;font-weight:900}
+.ra-revele p{margin:6px 0 0;font-size:16px;line-height:1.4;font-weight:700;color:#FFF4E6}
+.rd-aide{margin:0;font-size:12.5px;color:#A88E99;text-align:center}
+.rd-fil li.reagir .rd-bulle{cursor:pointer}
+.rd-emo-pose{margin-left:6px;font-size:15px}
 .ra-ettoi{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:18px;background:rgba(242,196,107,.08);border:1px solid rgba(242,196,107,.45)}
 .ra-ettoi > b{font-size:15px;font-weight:900;color:#F2C46B}
 .ra-question{margin:0;font-size:16px;line-height:1.35;font-weight:800;color:#FFF4E6}
