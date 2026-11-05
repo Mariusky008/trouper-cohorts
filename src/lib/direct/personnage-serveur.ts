@@ -16,6 +16,7 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "./habitant";
 import type { MaFamille } from "./famille";
 import { famillesDe } from "./famille-serveur";
+import { cadeauxDe } from "./etapes-serveur";
 import { lookDe, lookParDefautDe, lookValide } from "./look";
 import { figurinesEnTout } from "./ma-figurine";
 import { SEAU_FIGURINES, saFigurineSignee } from "./ma-figurine-serveur";
@@ -35,6 +36,7 @@ import {
   type CartePersonnage,
   type CleGout,
   type Fiche,
+  PROGRES_VIDE,
   type Progres,
   type Reponses,
 } from "./personnage";
@@ -69,15 +71,10 @@ export async function ecrire(supabase: Supabase, chemin: string, x: unknown): Pr
 export const cheminCarte = (habitantId: string) => `${habitantId}/personnage.json`;
 const cheminLien = (id: string) => `cartes/${id}.json`;
 
-// ─── ce que ses achats lui ont rapporté ───────────────────────────────────────────────────────────
-export function progresDe(familles: MaFamille[]): Progres {
-  const avec = familles.filter((f) => f.collection);
-  return {
-    figurines: figurinesEnTout(avec),
-    commerces: avec.filter((f) => f.collection!.gagnees > 0 || f.collection!.trophees.length > 0).length,
-    rares: avec.reduce((n, f) => n + f.collection!.cases.filter((c) => c.sorte === "rare" && c.etat === "gagnee").length, 0),
-    ors: avec.reduce((n, f) => n + f.collection!.trophees.length, 0),
-  };
+// ─── ce qui la fait progresser : ses cadeaux de ClikMe ──────────────────────────────────────────────
+/** Ses cadeaux (`etapes-serveur.ts`) ; `noterPresence` : c'est lui qui est sur la page (pas un lien partagé). */
+export async function progresDe(supabase: Supabase, habitantId: string, familles: MaFamille[], noterPresence = true): Promise<Progres> {
+  return cadeauxDe(supabase, habitantId, figurinesEnTout(familles.filter((f) => f.collection)), noterPresence).catch(() => PROGRES_VIDE);
 }
 
 /** Son image : sa figurine s'il l'a, sinon son fantôme (le look de sa famille la plus récente). */
@@ -121,7 +118,7 @@ export async function carteDe(supabase: Supabase, habitant: Habitant): Promise<C
   const g = await lire<Gardee>(supabase, cheminCarte(habitant.id));
   if (!g || !reponsesValides(g.reponses)) return null;
   const [familles, prenom, image] = await Promise.all([famillesDe(supabase, habitant.id), prenomDe(supabase, habitant), imageDe(supabase, habitant.id, 3600)]);
-  return carteDepuis(g, prenom, image, progresDe(familles));
+  return carteDepuis(g, prenom, image, await progresDe(supabase, habitant.id, familles));
 }
 
 // ─── la fiche, par l'IA ──────────────────────────────────────────────────────────────────────────
@@ -223,7 +220,7 @@ export async function creerCarte(
   };
   if (!(await ecrire(supabase, cheminCarte(habitant.id), g))) return { error: "Ta carte n’a pas pu être rangée. Réessaie.", statut: 502 };
   const [familles, image] = await Promise.all([famillesDe(supabase, habitant.id), imageDe(supabase, habitant.id, 3600)]);
-  return { carte: carteDepuis(g, prenom, image, progresDe(familles)) };
+  return { carte: carteDepuis(g, prenom, image, await progresDe(supabase, habitant.id, familles)) };
 }
 
 /** Son lien de partage (le même à chaque fois), ou `arreter` : le lien ne marche plus. */
@@ -256,5 +253,5 @@ export async function carteParLien(supabase: Supabase, id: string): Promise<Cart
   const { data } = await supabase.from("human_habitants").select("id, prenom").eq("id", habitantId).maybeSingle();
   const prenom = s((data as { prenom?: string } | null)?.prenom) || (await prenomDe(supabase, { id: habitantId, prenom: "" }));
   const [familles, image] = await Promise.all([famillesDe(supabase, habitantId), imageDe(supabase, habitantId, 7200)]);
-  return carteDepuis(g, prenom, image, progresDe(familles));
+  return carteDepuis(g, prenom, image, await progresDe(supabase, habitantId, familles, false));
 }

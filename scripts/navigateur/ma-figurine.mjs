@@ -59,7 +59,7 @@ const tel = async (qui) => {
 const texte = async (p, sel) => (await p.locator(sel).first().innerText({ timeout: 15000 }).catch(() => "")).replace(/\s+/g, " ").trim();
 const debordement = (p) => p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 
-// ═══ HUGO (1 achat) : L'ACCUEIL DE CLIK, LE MENU EN BAS, « CRÉE TA FIGURINE » ═══
+// ═══ HUGO (une figurine du mois) : L’ACCUEIL DE PABLITO, LE MENU EN BAS, « CRÉE TA FIGURINE » ═══
 const hugo = await tel(HUGO);
 await hugo.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
 await hugo.waitForSelector("#o-figurine .pb-voile .mqd", { timeout: 60000 });
@@ -73,11 +73,11 @@ ok((await hugo.locator(".tf-demo, .tf-la-tienne").count()) === 0, "plus de démo
 // DÈS LE DÉPART : la quête « Crée ta figurine »
 ok((await hugo.locator("#creer.tf-quete").count()) === 1 && (await texte(hugo, "#creer")).includes("Crée ta figurine") && (await hugo.locator("#o-figurine .mqd-revoir").count()) === 1, "Hugo peut créer la sienne dès maintenant (Pablito rangé dans son petit bouton)");
 ok((await hugo.locator("#creer .tf-prenom-photo, #creer .tf-ville").count()) === 0 && (await hugo.locator("#creer .tf-etapes li").count()) === 2, "il a un compte et un prénom : deux étapes, on ne les lui redemande pas");
-ok((await texte(hugo, "#o-figurine .og-pouvoirs")).includes("Ce que tu vas débloquer"), "ce qu'il va débloquer, achat après achat");
+ok((await texte(hugo, "#o-figurine .og-pouvoirs")).includes("Ce que tu vas débloquer") && (await texte(hugo, "#o-figurine .og-pouvoirs")).includes("Un cadeau de ClikMe à chaque étape") && !/achat/i.test(await texte(hugo, "#o-figurine .og-pouvoirs")), "ce qu'il va débloquer, cadeau après cadeau (plus aucun achat)");
 ok((await debordement(hugo)) <= 0, "l'accueil ne déborde pas");
 await hugo.screenshot({ path: `${D}/ma-figurine-0-accueil.png`, fullPage: true });
 
-// ═══ HUGO CRÉE LA SIENNE (1 achat) : SES OPTIONS, UNE PAR ACHAT ═══
+// ═══ HUGO CRÉE LA SIENNE : SES OPTIONS, UNE PAR CADEAU DE CLIKME (une étape franchie, un cadeau) ═══
 await hugo.locator("#creer .tf-choisir input").setInputFiles(path.resolve("public/direct/double/comptoir.jpg"));
 await hugo.waitForSelector("#creer .tf-choisir img", { timeout: 15000 });
 await hugo.locator("#creer .tf-accord input").check();
@@ -98,16 +98,15 @@ await fetch(`${F}/clik_ma_figurine?habitant_id=eq.${HUGO.id}`, {
 await hugo.reload({ waitUntil: "networkidle" });
 await hugo.waitForSelector(".tf-moi .tf-options", { timeout: 30000 });
 const opts = await texte(hugo, ".tf-options");
-ok(/La colère ouverte ✓/.test(opts) && /La tristesse 3ᵉ achat/.test(opts) && opts.includes("Encore 1 achat"), `ses options : la colère ouverte (1 achat), la suite sous cadenas (${opts.slice(0, 160)})`);
-ok((await hugo.locator(".tf-moi .tf-expr button.ferme").count()) === 4 && (await hugo.locator(".tf-moi .tf-voix button.ferme").count()) === 3, "quatre visages (dont le fou rire et la grimace) et trois voix sous cadenas");
+ok(/La colère ouverte ✓/.test(opts) && /La tristesse 3ᵉ cadeau/.test(opts) && opts.includes("Encore 1 cadeau") && !/achat/i.test(opts), `ses options : deux cadeaux (la colère, les voix), la suite sous cadenas (${opts.slice(0, 160)})`);
+ok((await hugo.locator(".tf-moi .tf-kdo li.faite").count()) === 2 && (await texte(hugo, ".tf-kdo li.faite")).includes("Créer ta figurine"), "deux étapes franchies : sa figurine, sa première figurine du mois");
+ok((await hugo.locator(".tf-moi .tf-expr button.ferme").count()) === 4 && (await hugo.locator(".tf-moi .tf-voix button.ferme").count()) === 0, "quatre visages sous cadenas (dont le fou rire et la grimace), toutes les voix ouvertes (2ᵉ cadeau)");
 ok((await texte(hugo, ".tf-options")).includes("Elle danse") && (await hugo.locator(".tf-moi .tf-danse").count()) === 1, "elle danse dès le départ");
 await hugo.locator(".tf-moi .tf-expr button", { hasText: "Tristesse" }).click();
-ok((await hugo.locator(".tf-moi .fqp").getAttribute("data-sentiment")) !== "tristesse" && (await texte(hugo, ".tf-nudge")).includes("s’ouvre à ton 3ᵉ achat"), `un visage fermé dit quel achat l'ouvre (${await texte(hugo, ".tf-nudge")})`);
+ok((await hugo.locator(".tf-moi .fqp").getAttribute("data-sentiment")) !== "tristesse" && (await texte(hugo, ".tf-nudge")).includes("s’ouvre avec ton 3ᵉ cadeau ClikMe"), `un visage fermé dit quel cadeau l'ouvre (${await texte(hugo, ".tf-nudge")})`);
 await hugo.locator(".tf-moi .tf-expr button", { hasText: "Colère" }).click();
 ok((await hugo.locator(".tf-moi .fqp").getAttribute("data-sentiment")) === "colere", "la colère, ouverte, se choisit");
 // LE SERVEUR TIENT LES OPTIONS, lui aussi
-const voixFermee = await hugo.evaluate(async () => (await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "voix", texte: "Coucou", voix: "posee" }) })).status);
-ok(voixFermee === 403, `une voix fermée : le serveur refuse (${voixFermee})`);
 const tristeFerme = await hugo.evaluate(async () => (await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "message", son: "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQxAADB8AhSmxhIIEVCSiJrDCQBTcu3UrAIwUdkRgQbFAZC1CQEwTJ9mjRvBA4UOLD8nKVOWfh+UlK3z/177OXrfOdKl7pyn3Xf//WreyTRUoAWgBgkOAGbZHBgG1OF6zM82DWbZaUmMBptgQhGjsyYqc9ae9XFz280948NMBWInljyzsNRFLPWdnZGWrddDsjK1unuSrVN9jJsK8KuQtQCtMBjCEtImISdNKJOopIpBFpNSMbIHCSRpRR5iakjTiyzLhchUUBwCgyKiweBv/7UsQbg8isVNoMPMjAAAA0gAAABEVFGmgqK////9bP/6XCykxBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq", duree: 1.2, commerces: [], sentiment: "tristesse" }) })).status);
 ok(tristeFerme === 400, `un visage fermé : le message est refusé (${tristeFerme})`);
 ok((await debordement(hugo)) <= 0, "sa figurine et ses options ne débordent pas");

@@ -111,7 +111,7 @@ export function MessageRecu({ message: m }: { message: MessageFigurine }) {
           <b>Et toi ?</b>
           <p>
             Crée la tienne avec ta photo, c’est gratuit : elle dit ce que tu veux, change de visage avec ce qu’elle ressent, et tu
-            l’envoies à qui tu veux. Chaque achat chez un commerce ClikMe lui ajoute une option.
+            l’envoies à qui tu veux. Et à chaque étape franchie, ClikMe lui offre une option en cadeau.
           </p>
           <Link className="mr-bouton" href="/collection#creer">
             Créer ma figurine

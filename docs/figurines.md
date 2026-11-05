@@ -517,6 +517,31 @@ Sa décision, sur ce que promettent les mots de Pablito : « oui, toutes ces fon
 - **Sans migration** : la table des messages ne connaît que quatre visages ; le fou rire, la grimace et la danse sont
   rangés à côté du message, dans le seau (`<habitant>/m-<id>.json`).
 
+### 9.0 duodecies Les cadeaux de ClikMe, un à chaque étape — plus de progression par les achats (5 novembre) — construit
+
+Sa remarque : « chaque achat chez un commerce fait monter tes caractéristiques… je ne suis pas certain que ce soit la
+bonne manière de les faire progresser, ça ressemble trop à de l'achat forcé ; je préférerais que ce soit des cadeaux,
+et plus tard peut-être pourront-ils même acheter ces options ». Ses choix : « ClikMe offre à chaque étape » ; l'album,
+lui, se remplit toujours « en passant chez le commerçant ».
+
+- **Les étapes** (`lib/direct/etapes.ts`) : créer sa figurine, faire sa carte, envoyer son premier message, sa première
+  rencontre, dire 3 fois si c'est bien soi, un ami qui rejoint, rencontrer un membre, revenir 3 jours différents, 5
+  cartes souvenirs, sa première figurine du mois (en passant chez un commerçant). Une étape franchie, un cadeau.
+- **Ce que les cadeaux ouvrent** : les options de sa figurine (la n-ième au n-ième cadeau : la colère, les voix, la
+  tristesse, l'euphorie, le cadre doré, le fou rire, les grimaces), le niveau de sa carte (un par cadeau), son cadre
+  (argent à 3, or à 6), et ses caractéristiques (chaque étape fait monter la sienne : `BONUS_ETAPE`).
+- **Lues là où elles sont** (`etapes-serveur.ts`, `cadeauxDe`) : sa figurine, sa carte, ses messages, ses rencontres,
+  ses jours de présence (`<habitant>/presence.json`, notés quand il ouvre la page — pas quand quelqu'un ouvre son
+  message), ses figurines du mois. Rien à migrer.
+- **Ce qui était déjà ouvert le reste** : à la première lecture, ce que ses figurines lui ouvraient (une option par
+  figurine) est noté une fois (`<habitant>/cadeaux.json`) ; ses cadeaux comptent au moins cela.
+- **À l'écran** : « 🎁 Un cadeau de ClikMe à chaque étape : il ouvre une option », ses étapes cochées, la prochaine en
+  lien ; sur sa carte, « Ta prochaine étape » (ce qu'elle fera monter) et « J'y vais ». Plus aucun « achat » : ni dans
+  les options, ni sur la carte, ni dans les mots de Pablito (« je t'offre un cadeau »), ni sur la page d'un message reçu.
+- **L'album** : « Tu passes chez l'un d'eux, et elle rejoint ton album » (Pablito, Ce mois-ci et l'album vide). Les
+  voix de ces deux bulles et de la 3ᵉ de Personnage, qui parlaient d'achat, attendent leur nouvel enregistrement.
+- **Plus tard** : acheter des options (son idée), et les cadeaux des commerçants (non retenu pour l'instant).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
