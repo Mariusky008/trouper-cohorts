@@ -27,13 +27,16 @@ export const VERSION_GUIDE = 1;
 export const NOM_GUIDE = "Pablito";
 
 /**
- * 🎙️ SA VOIX : des enregistrements du patron (jamais une voix de synthèse — `CLAUDE.md`), un par bulle, rangés dans
+ * 🎙️ SA VOIX : des enregistrements fournis par le patron (`CLAUDE.md` : la page n'en fabrique jamais), un par bulle, rangés dans
  * `public/collection/pablito/` ; la clé est la `cle` de `GuideDit` puis le numéro de la bulle :
  *   "pablito-accueil-1": "/collection/pablito/accueil-1.mp3"   (« Salut ! Moi, c'est Pablito ! »)
  * Une bulle sans enregistrement s'écrit sans le son. Pendant qu'il joue, la bouche bouge ; s'il finit sur une grimace
  * (`apres`), elle vient quand il se tait.
  */
-export const SONS_PABLITO: Record<string, string> = {};
+export const SONS_PABLITO: Record<string, string> = Object.fromEntries(
+  // L'ACCUEIL, SES HUIT BULLES (reçues du patron le 5 novembre 2026)
+  [1, 2, 3, 4, 5, 6, 7, 8].map((k) => [`pablito-accueil-${k}`, `/collection/pablito/accueil-${k}.mp3`]),
+);
 
 /** Ses visages : celui de tous les jours, ses quatre sentiments, et sa grimace (il louche, la bouche fermée). */
 export type Visage = "neutre" | Sentiment | "louche";

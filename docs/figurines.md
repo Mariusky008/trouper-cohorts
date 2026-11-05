@@ -476,8 +476,10 @@ quelque chose de fixe en haut » ; « il faut donc que je t'enregistre les voix 
   fenêtre (`OngletVisible`).
 - **Sa voix** : des enregistrements du patron, un par bulle (`SONS_PABLITO` dans `lib/direct/guide.ts`, fichiers dans
   `public/collection/pablito/`). Sa bouche bouge tant que sa voix joue ; si le téléphone refuse de la jouer avant un
-  premier toucher, la bulle propose « 🔊 Touche pour l'entendre ». Aucun enregistrement pour l'instant : il parle en
-  silence.
+  premier toucher, la bulle propose « 🔊 Touche pour l'entendre ». **Reçus le 5 novembre** : les huit bulles de
+  l'accueil (`public/collection/pablito/accueil-1.mp3` à `-8`, dans l'ordre du texte, sans leurs métadonnées). Un seul
+  lecteur pour toutes ses bulles (débloqué une fois, l'iPhone le laisse jouer les suivantes) ; la bulle s'écrit au
+  rythme de sa voix ; quand il se tait, la suivante vient toute seule (l'accueil entier : une minute environ).
 - **Ce que ses mots promettent et qui n'existe pas encore** : danser et faire des grimaces (la figurine du client : ses
   quatre sentiments seulement), une rencontre de « quelques minutes » (une conversation de quelques répliques, à lire),
   échanger ses impressions après une rencontre, la carte souvenir de chaque rencontre.

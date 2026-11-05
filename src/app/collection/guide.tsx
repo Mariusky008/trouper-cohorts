@@ -151,18 +151,35 @@ export function GuideDit({
   const actif = popup ? montre : visible;
 
   // SA VOIX, s'il a enregistré cette bulle : elle part avec la bulle (si le téléphone refuse de la jouer avant un
-  // premier toucher, la bulle propose de l'entendre)
+  // premier toucher, la bulle propose de l'entendre). La bulle s'écrit au rythme de sa voix ; quand elle se tait, la
+  // bulle suivante vient toute seule.
   const son = bulle.son ?? (cle ? SONS_PABLITO[`${cle}-${i + 1}`] : undefined);
   const audio = useRef<HTMLAudioElement | null>(null);
   const [joue, setJoue] = useState(false);
   const [bloque, setBloque] = useState(false);
+  const [pas, setPas] = useState(24);
+  const derniere = bulles.length - 1;
   useEffect(() => {
     if (!son || !actif) return;
-    const a = new Audio(son);
+    // UN SEUL LECTEUR pour toutes ses bulles : débloqué une fois par un toucher (l'iPhone), il joue ensuite les suivantes
+    const a = (audio.current ??= new Audio());
     let fini = false;
-    audio.current = a;
+    let ensuite = 0;
     a.onplaying = () => setJoue(true);
-    a.onpause = a.onended = () => setJoue(false);
+    a.onpause = () => setJoue(false);
+    // (deux lettres à la fois : la bulle finit de s'écrire un peu avant sa voix)
+    a.onloadedmetadata = () => {
+      if (Number.isFinite(a.duration) && a.duration > 0) setPas(Math.max(24, Math.min(140, (a.duration * 850) / Math.max(1, texte.length / 2))));
+    };
+    a.onended = () => {
+      setJoue(false);
+      if (fini || i >= derniere) return;
+      ensuite = window.setTimeout(() => {
+        setI(i + 1);
+        setN(0);
+      }, 700);
+    };
+    a.src = son;
     // refusée par le téléphone (pas encore touché la page) : on propose de l'entendre ; interrompue (on est passé à la
     // suite, la fenêtre s'est fermée) : rien
     a.play().catch((e: unknown) => {
@@ -170,10 +187,11 @@ export function GuideDit({
     });
     return () => {
       fini = true;
+      window.clearTimeout(ensuite);
       a.pause();
-      audio.current = null;
     };
-  }, [son, i, actif]);
+  }, [son, i, actif, texte.length, derniere]);
+  const rythme = son ? pas : 24;
   const parle = tape || joue;
   const visage = !parle && bulle.apres ? bulle.apres : bulle.v;
 
@@ -188,12 +206,12 @@ export function GuideDit({
       }
   }, [visages, edition, actif]);
 
-  // la bulle se tape, lettre après lettre
+  // la bulle se tape, lettre après lettre (au rythme de sa voix, s'il l'a enregistrée)
   useEffect(() => {
     if (!actif || reduit || n >= texte.length) return;
-    const t = window.setTimeout(() => setN((x) => Math.min(texte.length, x + 2)), 24);
+    const t = window.setTimeout(() => setN((x) => Math.min(texte.length, x + 2)), rythme);
     return () => window.clearTimeout(t);
-  }, [n, texte.length, reduit, actif]);
+  }, [n, texte.length, reduit, actif, rythme]);
   const fin = i === bulles.length - 1 && !tape;
   useEffect(() => {
     if (fin && !popup) retenir(cle);
@@ -235,8 +253,7 @@ export function GuideDit({
       return;
     }
     if (tape) return setN(texte.length);
-    if (i < bulles.length - 1) {
-      audio.current?.pause();
+    if (i < derniere) {
       setBloque(false);
       setI(i + 1);
       setN(0);
