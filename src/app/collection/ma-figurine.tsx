@@ -39,7 +39,8 @@ import {
 } from "@/lib/direct/ma-figurine";
 import { reduireImage } from "@/lib/direct/reduire-image";
 import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE, type FigurineHandle } from "./figurine-qui-parle";
-import { Guide, GuideDit, STYLES_GUIDE } from "./guide";
+import { Guide, GuideDit, STYLES_GUIDE, useVoixPablito } from "./guide";
+import { SONS_PABLITO } from "@/lib/direct/guide";
 
 type Reponse = { error?: string; etat?: EtatMaFigurine; lien?: string; son?: string; enCours?: boolean };
 
@@ -754,12 +755,16 @@ export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat
   }, [tour, onEtat]);
   const avance = Math.min(0.95, secondes / 150);
   const pas = secondes < 8 ? 0 : secondes < 75 ? 1 : 2;
-  const dit = [...PENDANT].reverse().find((x) => secondes >= x.s)?.dit ?? PENDANT[0].dit;
+  const k = Math.max(0, PENDANT.findLastIndex((x) => secondes >= x.s));
+  const dit = PENDANT[k].dit;
+  // 🎙️ PABLITO LE DIT À VOIX HAUTE (ses enregistrements), étape après étape ; « Oups… » si ça n'a pas marché
+  const sonFab = SONS_PABLITO[erreur ? "pablito-fabrication-oups" : `pablito-fabrication-${k + 1}`];
+  const parleFab = useVoixPablito(sonFab);
   return (
     <div className="tf-fab" aria-live="polite" ref={boite}>
       <div className="tf-fab-scene">
         <span className="tf-fab-clik" aria-hidden="true">
-          <Guide key={erreur || dit} parle={!erreur} bref visage={erreur ? "tristesse" : "joie"} />
+          <Guide key={erreur || dit} parle={sonFab ? parleFab : !erreur} bref={!sonFab} visage={erreur ? "tristesse" : "joie"} />
         </span>
         <p className="tf-fab-bulle">{erreur ? "Oups… ça n’a pas marché cette fois." : dit}</p>
       </div>

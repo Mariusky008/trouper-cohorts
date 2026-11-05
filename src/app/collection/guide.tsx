@@ -77,6 +77,32 @@ export function FigurineOuGuide({ src, ...p }: { src?: string | null; edition?: 
 }
 
 /**
+ * 🎙️ SON LECTEUR, UN SEUL POUR TOUTE LA PAGE : débloqué une fois par un toucher (l'iPhone ne laisse jouer un son
+ * qu'après un geste), il joue ensuite toutes ses voix — ses bulles, les questions du test, la fabrication.
+ */
+let lecteurPartage: HTMLAudioElement | null = null;
+const lecteurPablito = () => (lecteurPartage ??= new Audio());
+const lacher = (a: HTMLAudioElement) => {
+  a.onplaying = a.onpause = a.onended = a.onloadedmetadata = null;
+  a.pause();
+};
+
+/** Il dit ce son (un de ses enregistrements) quand il change ; rend « il parle ». Sans son : rien. */
+export function useVoixPablito(son: string | undefined, actif = true): boolean {
+  const [joue, setJoue] = useState(false);
+  useEffect(() => {
+    if (!son || !actif) return;
+    const a = lecteurPablito();
+    a.onplaying = () => setJoue(true);
+    a.onpause = a.onended = () => setJoue(false);
+    a.src = son;
+    a.play().catch(() => setJoue(false));
+    return () => lacher(a);
+  }, [son, actif]);
+  return Boolean(son && actif && joue);
+}
+
+/**
  * Une bulle : son texte, le visage qu'il fait en la disant (`v`, `neutre` si rien n'est dit), celui qu'il fait une fois
  * dite (`apres` : « il sourit… puis louche »), et son enregistrement (`son` ; sinon `SONS_PABLITO`, s'il y en a un).
  */
@@ -157,15 +183,14 @@ export function GuideDit({
   // premier toucher, la bulle propose de l'entendre). La bulle s'écrit au rythme de sa voix ; quand elle se tait, la
   // bulle suivante vient toute seule.
   const son = bulle.son ?? ((voix ?? cle) ? SONS_PABLITO[`${voix ?? cle}-${i + 1}`] : undefined);
-  const audio = useRef<HTMLAudioElement | null>(null);
   const [joue, setJoue] = useState(false);
   const [bloque, setBloque] = useState(false);
   const [pas, setPas] = useState(24);
   const derniere = bulles.length - 1;
   useEffect(() => {
     if (!son || !actif) return;
-    // UN SEUL LECTEUR pour toutes ses bulles : débloqué une fois par un toucher (l'iPhone), il joue ensuite les suivantes
-    const a = (audio.current ??= new Audio());
+    // SON LECTEUR (le même pour toute la page : débloqué une fois, il joue ensuite les suivantes)
+    const a = lecteurPablito();
     let fini = false;
     let ensuite = 0;
     a.onplaying = () => setJoue(true);
@@ -191,7 +216,7 @@ export function GuideDit({
     return () => {
       fini = true;
       window.clearTimeout(ensuite);
-      a.pause();
+      lacher(a);
     };
   }, [son, i, actif, texte.length, derniere]);
   const rythme = son ? pas : 24;
@@ -250,9 +275,9 @@ export function GuideDit({
   }, [montre, cle]);
 
   const suite = () => {
-    if (bloque && audio.current) {
+    if (bloque && son) {
       setBloque(false);
-      void audio.current.play().catch(() => undefined);
+      void lecteurPablito().play().catch(() => undefined);
       return;
     }
     if (tape) return setN(texte.length);
