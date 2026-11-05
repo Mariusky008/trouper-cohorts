@@ -38,19 +38,20 @@ const voix = (cle: string, fichier: string) => [cle, `/collection/pablito/${fich
 export const SONS_PABLITO: Record<string, string> = Object.fromEntries([
   // L'ACCUEIL, SES HUIT BULLES (reçues du patron le 5 novembre 2026)
   ...[1, 2, 3, 4, 5, 6, 7, 8].map((k) => voix(`pablito-accueil-${k}`, `accueil-${k}`)),
-  // LES AUTRES ONGLETS (reçus le même jour ; « Personnage » 3 attend son enregistrement : son texte a changé)
+  // LES AUTRES ONGLETS (reçus le même jour ; « Personnage » 3, « Ce mois-ci » 2 et « Album vide » 2 réenregistrés :
+  // ils parlaient d'achat)
   voix("perso-sans-compte-1", "perso-sans-compte-1"),
   voix("perso-sans-compte-2", "perso-sans-compte-2"),
-  voix("perso-intro-1", "perso-intro-1"),
-  voix("perso-intro-2", "perso-intro-2"),
+  ...[1, 2, 3].map((k) => voix(`perso-intro-${k}`, `perso-intro-${k}`)),
   ...[1, 2, 3, 4, 5].map((k) => voix(`pablito-rencontres-${k}`, `rencontres-${k}`)),
-  // (« Ce mois-ci » 2 et « Album vide » 2 parlaient d'achat : leur nouveau texte attend sa voix — 5 novembre 2026)
-  ...[1, 3, 4].map((k) => voix(`pablito-mois-${k}`, `mois-${k}`)),
+  ...[1, 2, 3, 4].map((k) => voix(`pablito-mois-${k}`, `mois-${k}`)),
   voix("album-vide-1", "album-vide-1"),
+  voix("album-vide-2", "album-vide-2"),
   // LE TEST DE PERSONNAGE : il pose chaque question (sa clé), puis « ce que tu aimes », puis il écrit la fiche
   ...["elan", "ton", "jeu", "sort", "tete", "gout", "rythme", "gouts", "etoiles"].map((q) => voix(`pablito-quiz-${q}`, `quiz-${q}`)),
   // PENDANT QUE SA FIGURINE SE FABRIQUE : ce qu'il raconte (dans l'ordre), et « Oups… »
-  ...[1, 2, 3, 4].map((k) => voix(`pablito-fabrication-${k}`, `fabrication-${k}`)),
+  // (la 1ʳᵉ disait « joli sourire » — sur la photo, on ne sourit pas toujours : son nouveau texte attend sa voix)
+  ...[2, 3, 4].map((k) => voix(`pablito-fabrication-${k}`, `fabrication-${k}`)),
   voix("pablito-fabrication-oups", "fabrication-oups"),
 ]);
 

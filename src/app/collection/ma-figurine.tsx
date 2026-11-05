@@ -739,7 +739,7 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
 
 /** Ce que dit le guide pendant que le moteur fabrique (selon le temps passé). */
 const PENDANT = [
-  { s: 0, dit: "Je regarde ta photo… joli sourire ! 😍" },
+  { s: 0, dit: "Je regarde ta photo… je vois déjà ta figurine ! 👀" },
   { s: 15, dit: "Je sculpte ta tête. Et ta coiffure, avec soin 💇" },
   { s: 55, dit: "Je peins tes yeux, tes joues… presque fini !" },
   { s: 90, dit: "Je lui apprends à parler 🗣️ Encore un instant…" },
