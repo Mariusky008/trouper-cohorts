@@ -542,6 +542,47 @@ lui, se remplit toujours « en passant chez le commerçant ».
   voix de ces deux bulles et de la 3ᵉ de Personnage, qui parlaient d'achat, attendent leur nouvel enregistrement.
 - **Plus tard** : acheter des options (son idée), et les cadeaux des commerçants (non retenu pour l'instant).
 
+### 9.0 terdecies Le réseau des figurines : sa figurine fait sa vie, il est spectateur (5 novembre) — construit
+
+Sa demande : « que cette figurine crée une sorte de réseau social indépendant, où ma figurine va faire sa vie,
+rencontrer des gens, discuter, s'amuser, et je suis spectateur de la façon dont elle a interagi avec des amis, des
+proches, des inconnus — ce qui me permet de voir les choses différemment, de me réinventer, d'apprendre, de faire de
+nouvelles rencontres, de m'améliorer ». Et : « chaque jour, une nouvelle rencontre avec quelqu'un qui ne fait pas
+partie de notre entourage », des discussions avec les amis et les proches (« à définir combien maximum »), des
+conversations « différentes et intéressantes, sinon on va se lasser », qui font réagir, « pertinentes par rapport à ce
+qu'on dit de soi dans la carte de personnalité », et qui finissent toujours par une carte.
+
+- **La rencontre du jour, hors de son entourage** (`rencontreDuJour`) : la toute première, Pablito l'accueille ; ensuite,
+  à tour de rôle, le genre qu'il a vu il y a le plus longtemps — un membre de sa ville (s'il a accepté d'en rencontrer :
+  il reste alors dans la file, et on peut le lui présenter), un commerçant, un personnage de ClikMe. Le sujet suit
+  l'interlocuteur (son métier, son sujet).
+- **Les personnages de ClikMe** (`lib/direct/reseau.ts`, `PERSONNAGES`) : Pablito, et neuf personnages **imaginaires**
+  — Mado (élue de quartier), Léo (influenceur), Suzie (coach sportive), Gaston (grand-père conteur), Nina (artiste de
+  rue), Professeur Pistache (scientifique farfelu), Capitaine Lou (exploratrice), Rosa (cheffe cuisinière), Max (joueur
+  passionné). **Jamais de vraie personne** : faire parler un vrai élu ou un vrai influenceur, ce serait lui prêter des
+  mots qu'il n'a pas dits. Ils sont dits imaginaires à l'écran (« Ce personnage est imaginaire : il n'existe pas en
+  vrai ») ; Mado ne parle jamais de partis, d'élections ni de vote. Le prochain : celui qu'il n'a pas vu depuis le plus
+  longtemps, de préférence un qui partage ses goûts (`choisirPersonnage` : Rosa pour la cuisine, Suzie pour le sport…).
+  Leur portrait est leur emoji (Pablito : sa figurine).
+- **Ses amis et proches** (`discuterAvecUnAmi`) : il lance une discussion quand il veut, **3 par jour**
+  (`AMIS_PAR_JOUR`) ; un ami qui vient de faire sa carte : leur discussion arrive aussitôt (« 🎉 Hugo vient d'arriver :
+  vos figurines ont discuté ! ▶ Regarder »), sans compter dans les trois. Ces discussions ne remplacent pas la
+  rencontre du jour.
+- **Chaque jour, une conversation différente** (`FORMATS`, `choisirFormat`) : le défi, plutôt ceci ou cela, et si… ?,
+  le conseil, la découverte, le grand rêve, le quiz, la mission secrète, le compliment, le petit pas. Jamais un de ses
+  six derniers ; de préférence un qui lui ressemble (un audacieux reçoit plus souvent un défi, un curieux une
+  découverte), avec une part de hasard. Sans l'IA, la conversation composée suit quand même le format.
+- **« Et toi ? »** : chaque conversation finit par une question pour lui ; sa réponse (300 caractères, ni numéro, ni
+  lien, ni mot interdit) est gardée dans ce qu'il a dit de lui (`<habitant>/rencontres.json`, `dit`, les 8 dernières) :
+  les conversations suivantes s'appuient dessus, sans jamais le contredire.
+- **Toujours une carte souvenir**, et ses réactions (« c'est tout moi » / « jamais de la vie ») comme avant.
+- **À l'écran** : « AUJOURD'HUI · UN PERSONNAGE / UN COMMERCE / UN MEMBRE / AVEC UN AMI », le format du jour
+  (« 🎲 Le grand rêve »), « 👯 Tes amis et proches » avec « 💬 Discuter » et ce qu'il en reste aujourd'hui, « Et toi ? »
+  après la carte souvenir.
+- **À enregistrer plus tard** : la 5ᵉ bulle de Pablito sur « Rencontres » pourrait devenir « Avec qui ? Un commerçant,
+  un membre de ta ville, un personnage… et tes amis, quand tu veux 👯 » (elle reste telle quelle tant que sa voix n'est
+  pas réenregistrée).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

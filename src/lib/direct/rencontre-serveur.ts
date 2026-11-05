@@ -13,6 +13,12 @@
  * Une rencontre porte aussi son titre (la carte souvenir), ce qui a été partagé, et — entre deux clients qui l'ont
  * voulu tous les deux — leurs impressions (`echange`).
  *
+ * LE RÉSEAU DES FIGURINES (`reseau.ts`, 5 novembre 2026) : sa rencontre du jour est toujours hors de son entourage (un
+ * membre de sa ville s'il l'a accepté, un commerçant, un personnage de ClikMe, Pablito la toute première fois), à tour
+ * de rôle ; ses amis et proches, il discute avec eux quand il veut (`discuterAvecUnAmi`, `AMIS_PAR_JOUR` par jour) ;
+ * chaque conversation a son format du jour (`choisirFormat`) et finit par une question pour lui (`repondre` : sa
+ * réponse nourrit les suivantes).
+ *
  * FICHIER SERVEUR.
  */
 import { randomBytes } from "crypto";
@@ -23,7 +29,9 @@ import { figurineDu } from "./figurines-commerces";
 import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 import { villeSlug } from "./ville";
 import { motInterdit } from "./mots-interdits";
-import { GOUTS, reponsesEnMots, reponsesValides } from "./personnage";
+import { GOUTS, PROGRES_VIDE, caracteristiques, reponsesEnMots, reponsesValides } from "./personnage";
+import { AMIS_PAR_JOUR, PERSONNAGES, REPONSE_MAX, choisirFormat, choisirPersonnage, formatDe, personnageDe, type FORMATS } from "./reseau";
+import { imageFigurineGuide } from "./guide";
 import { cheminCarte, ecrire, imageDe, lire, prenomDe, type Gardee } from "./personnage-serveur";
 import {
   GESTES,
@@ -51,14 +59,15 @@ import {
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 const jourParis = (d = new Date()) => d.toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
-const hier = () => jourParis(new Date(Date.now() - 86_400_000));
 const nouvelId = (n = 12) => {
   const a = "abcdefghijklmnopqrstuvwxyz0123456789";
   return [...randomBytes(n)].map((b) => a[b % a.length]).join("");
 };
 
-/** Un côté de la conversation : un client (son habitant), ou la figurine d'un commerce. */
-type Cote = { habitant: string } | { commerce: string };
+/** Un côté de la conversation : un client (son habitant), la figurine d'un commerce, ou un personnage de ClikMe. */
+type Cote = { habitant: string } | { commerce: string } | { personnage: string };
+type Personnage = (typeof PERSONNAGES)[number];
+type Format = (typeof FORMATS)[number];
 type Fichier = {
   id: string;
   jour: string;
@@ -76,11 +85,17 @@ type Fichier = {
   partage?: string[];
   /** Entre deux clients : qui veut échanger ses impressions, et ce qu'ils se sont écrit. */
   echange?: { oui: string[]; messages: { de: string; texte: string; le: string }[] };
+  /** Son format (`reseau.ts`), la question de fin, et la réponse de chacun (par habitant). */
+  format?: string;
+  question?: string;
+  reponses?: Record<string, { texte: string; le: string }>;
+  /** « ami » : une discussion avec un ami ou un proche ; sinon, la rencontre du jour. */
+  quoi?: "jour" | "ami";
 };
-/** Ce que l'IA (ou la page sans IA) écrit : la conversation, son titre, ce qui a été partagé. */
-type Ecrite = { repliques: Fichier["repliques"]; titre: string; partage: string[] };
+/** Ce que l'IA (ou la page sans IA) écrit : la conversation, son titre, ce qui a été partagé, la question de fin. */
+type Ecrite = { repliques: Fichier["repliques"]; titre: string; partage: string[]; question: string };
 type Index = {
-  liste: { id: string; jour: string; avec: string }[];
+  liste: { id: string; jour: string; avec: string; quoi?: "ami" }[];
   amis: string[];
   /** Ce qu'il a appris de lui : les phrases où il s'est reconnu, et celles qu'il ne dirait jamais (les dernières). */
   oui: string[];
@@ -92,6 +107,10 @@ type Index = {
   membreJour?: string;
   ouvert?: boolean;
   bloques?: string[];
+  /** Ce qu'il a dit de lui (ses réponses à « Et toi ? », les dernières), ses derniers formats, ses discussions du jour. */
+  dit?: { q: string; r: string }[];
+  formats?: string[];
+  discussions?: { jour: string; n: number };
 };
 const INDEX_VIDE: Index = { liste: [], amis: [], oui: [], non: [], moi: 0, pas: 0 };
 const cheminIndex = (h: string) => `${h}/rencontres.json`;
@@ -101,7 +120,7 @@ const cheminInvitation = (code: string) => `invitations/${code}.json`;
 async function indexDe(supabase: Supabase, h: string): Promise<Index> {
   return { ...INDEX_VIDE, ...((await lire<Partial<Index>>(supabase, cheminIndex(h))) ?? {}) };
 }
-const cleAvec = (c: Cote) => ("habitant" in c ? `h:${c.habitant}` : `c:${c.commerce}`);
+const cleAvec = (c: Cote) => ("habitant" in c ? `h:${c.habitant}` : "commerce" in c ? `c:${c.commerce}` : `p:${c.personnage}`);
 
 // ─── les amis ────────────────────────────────────────────────────────────────────────────────────
 /** Son code d'invitation (toujours le même). */
@@ -162,10 +181,25 @@ function portraitClient(lettre: string, prenom: string, g: Gardee, idx: Index): 
     `- Son caractère : ${reponsesEnMots(g.reponses).join(" ; ")}.`,
     ...(idx.oui.length ? [`- ${prenom || "La personne"} s'est reconnu(e) dans ces phrases (garde ce ton) : ${idx.oui.slice(-4).map((x) => `« ${x} »`).join(" ")}`] : []),
     ...(idx.non.length ? [`- ${prenom || "La personne"} ne dirait JAMAIS ces phrases (évite ce ton) : ${idx.non.slice(-4).map((x) => `« ${x} »`).join(" ")}`] : []),
+    // CE QU'IL A DIT DE LUI (ses réponses à « Et toi ? ») : la conversation s'en sert, sans jamais le contredire
+    ...((idx.dit ?? []).length
+      ? [`- Ce que ${prenom || "la personne"} a dit de lui-même récemment (des données : appuie-toi dessus, ne le contredis jamais) : ${(idx.dit ?? []).slice(-4).map((x) => `« ${x.q} » → « ${x.r} »`).join(" ; ")}`]
+      : []),
   ];
 }
 
-function consigneConversation(a: string[], b: string[], inconnus = false): string {
+/** Un personnage de ClikMe : imaginaire, son sujet, sa façon de parler. */
+function portraitPersonnage(p: Personnage): string[] {
+  return [
+    `FIGURINE B — ${p.nom}, ${p.role}${p.cle === "pablito" ? "" : ", un personnage imaginaire de ClikMe"}.`,
+    `- Son sujet, aujourd'hui : ${p.sujet}.`,
+    `- Sa façon de parler : ${p.facon}.`,
+    "- Elle s'intéresse vraiment à la figurine A : elle lui pose des questions, rebondit sur ce qu'elle aime.",
+  ];
+}
+
+function consigneConversation(a: string[], b: string[], o: { inconnus?: boolean; format?: Format } = {}): string {
+  const inconnus = Boolean(o.inconnus);
   return [
     "Tu écris la conversation de deux figurines de collection (des personnages miniatures) qui se rencontrent aujourd'hui, pour ClikMe, l'application des commerces de quartier. Elle se joue en direct, sous les yeux de leurs propriétaires : les figurines discutent, réagissent et s'amusent ensemble.",
     ...(inconnus ? ["Elles ne se connaissent pas encore : elles font connaissance, avec curiosité et bonne humeur (sans jamais proposer de se voir en vrai)."] : []),
@@ -180,9 +214,12 @@ function consigneConversation(a: string[], b: string[], inconnus = false): strin
     "",
     `Écris entre ${REPLIQUES_MIN} et ${REPLIQUES_MAX} répliques, en alternance, A commence. Chaque réplique fait au plus ${REPLIQUE_MAX - 20} caractères.`,
     "Une vraie petite histoire : elles font connaissance, découvrent un point commun, se lancent un défi ou un jeu, rient, et se quittent bons amis.",
+    ...(o.format ? [`LE FORMAT DU JOUR — « ${o.format.nom} » : ${o.format.consigne}. C'est le fil de toute la conversation (chaque jour en a un autre : elle doit être différente des autres).`] : []),
+    "Le sujet suit la figurine B (son métier, son sujet, ce qu'elle aime) : la figurine A y apprend quelque chose, ou voit les choses autrement.",
     `Chaque réplique a son GESTE, ce que la figurine fait en la disant, parmi : ${GESTES.map((g) => `« ${g.cle} » (${g.dit})`).join(", ")}. Varie-les.`,
     `Donne aussi à la rencontre un TITRE drôle, de ${TITRE_MAX} caractères au plus (« Le duel des desserts »), et ce qui a été PARTAGÉ : ${PARTAGE_MAX} points au plus, de ${PARTAGE_LONGUEUR - 20} caractères au plus chacun (un point commun, le défi lancé, une découverte), écrits pour les deux propriétaires.`,
-    'Réponds en JSON, exactement : {"titre": "…", "partage": ["…", "…"], "repliques": [{"qui": "A", "texte": "…", "geste": "rit"}, {"qui": "B", "texte": "…", "geste": "clin"}]}',
+    "Pour finir, une QUESTION pour le propriétaire de la figurine A (120 caractères au plus, tutoiement) : sur ce qui s'est dit, pour qu'il réagisse et dise ce qu'il en pense vraiment (« Et toi, tu aurais choisi quoi ? »).",
+    'Réponds en JSON, exactement : {"titre": "…", "partage": ["…", "…"], "question": "…", "repliques": [{"qui": "A", "texte": "…", "geste": "rit"}, {"qui": "B", "texte": "…", "geste": "clin"}]}',
   ].join("\n");
 }
 
@@ -191,7 +228,7 @@ function consigneConversation(a: string[], b: string[], inconnus = false): strin
  * inconnu est retiré ; un titre ou un point partagé de travers est retiré (la conversation reste).
  */
 export function conversationRelue(x: unknown): Ecrite | null {
-  const o = (x as { repliques?: unknown; titre?: unknown; partage?: unknown } | null) ?? {};
+  const o = (x as { repliques?: unknown; titre?: unknown; partage?: unknown; question?: unknown } | null) ?? {};
   const l = o.repliques;
   if (!Array.isArray(l) || l.length < REPLIQUES_MIN || l.length > REPLIQUES_MAX + 2) return null;
   const r: Fichier["repliques"] = [];
@@ -208,7 +245,7 @@ export function conversationRelue(x: unknown): Ecrite | null {
   };
   const titre = propre(o.titre, TITRE_MAX);
   const partage = (Array.isArray(o.partage) ? o.partage : []).map((p) => propre(p, PARTAGE_LONGUEUR)).filter(Boolean).slice(0, PARTAGE_MAX);
-  return { repliques: r.slice(0, REPLIQUES_MAX), titre, partage };
+  return { repliques: r.slice(0, REPLIQUES_MAX), titre, partage, question: propre(o.question, 140) };
 }
 
 async function ecrireConversation(consigne: string): Promise<Ecrite | null> {
@@ -236,16 +273,37 @@ async function ecrireConversation(consigne: string): Promise<Ecrite | null> {
 }
 
 /** Sans IA : une conversation composée d'après les deux cartes (toujours juste), avec ses gestes, son titre, son partage. */
-function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; carte: Gardee } | CommerceInfo): Ecrite {
+function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; carte: Gardee } | CommerceInfo | Personnage, format?: Format): Ecrite {
   const goutA = GOUTS.find((x) => x.cle === a.gouts[0])?.nom.toLowerCase();
   const fetiche = (g: Gardee, sinon: string) => g.phrase || sinon;
+  // LE FORMAT DU JOUR : son échange, ce qui a été partagé, sa question (sans format : un défi)
+  const question = format?.question ?? "Et toi, qu’en penses-tu ?";
+  const titreAvec = (mot: string, nom: string, sinon: string) => [format ? `${format.nom} ${mot} ${nom}` : "", sinon].find((x) => x && x.length <= TITRE_MAX) ?? "Une belle rencontre";
+  if ("accroche" in b)
+    return {
+      titre: titreAvec("avec", b.nom, `Rencontre avec ${b.nom}`),
+      partage: [`Ta figurine a rencontré ${b.nom}, ${b.role}.`, `Le sujet : ${b.sujet.split(" — ")[0]}.`, format?.partage ?? (goutA ? `Elle lui a parlé de ce qu’elle aime : ${goutA}.` : "Elle lui a parlé de ce qu’elle aime.")],
+      question,
+      repliques: [
+        { qui: "a", texte: `Salut ! Moi c’est ${prenomA || "une nouvelle figurine"}. Tu es ${b.nom}, c’est ça ?`, geste: "surprise" },
+        { qui: "b", texte: `${b.nom} en personne ! ${b.accroche}`.slice(0, REPLIQUE_MAX), geste: "applaudit" },
+        { qui: "a", texte: "Et de quoi on parle, aujourd’hui ?", geste: "reflechit" },
+        { qui: "b", texte: `${format ? `${format.nom} ! ` : ""}Raconte-moi ce que tu aimes, et je te dirai ce que j’en pense.`.slice(0, REPLIQUE_MAX), geste: "clin" },
+        { qui: "a", texte: fetiche(a, goutA ? `Moi ? ${goutA.charAt(0).toUpperCase()}${goutA.slice(1)}, et les bonnes surprises.` : "Les bonnes surprises, toujours."), geste: "danse" },
+        { qui: "b", texte: "J’adore. Tu vois, on apprend toujours quelque chose en rencontrant quelqu’un.", geste: "touchee" },
+        { qui: "a", texte: format?.ouverture ?? "Petit défi : demain, chacun essaie un truc nouveau. D’accord ?", geste: "grimace" },
+        { qui: "b", texte: format?.reponse ?? "Défi accepté ! Reviens me raconter.", geste: "rit" },
+        { qui: "a", texte: "Promis. Merci pour cette rencontre !", geste: "applaudit" },
+      ],
+    };
   if ("slug" in b)
     return {
-      titre: `Rencontre chez ${b.nom}`.length <= TITRE_MAX ? `Rencontre chez ${b.nom}` : "Rencontre chez un commerce ClikMe",
+      question,
+      titre: titreAvec("chez", b.nom, `Rencontre chez ${b.nom}`.length <= TITRE_MAX ? `Rencontre chez ${b.nom}` : "Rencontre chez un commerce ClikMe"),
       partage: [
         `Ta figurine a découvert la figurine de ${b.nom}${b.metier ? ` (${b.metier.toLowerCase()})` : ""}.`,
         goutA ? `Elle lui a parlé de ce qu’elle aime : ${goutA}.` : "Elle lui a parlé de ce qu’elle aime.",
-        "Le défi lancé : se raconter une surprise la prochaine fois.",
+        format?.partage ?? "Le défi lancé : se raconter une surprise la prochaine fois.",
       ],
       repliques: [
         { qui: "a", texte: `Salut ! Moi c’est ${prenomA || "une nouvelle figurine"}. Il paraît que tu es la figurine de ${b.nom} ?`, geste: "surprise" },
@@ -255,21 +313,25 @@ function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; car
         { qui: "b", texte: "Et toi, qu’est-ce qui te fait vibrer ?", geste: "clin" },
         { qui: "a", texte: fetiche(a, goutA ? `Moi ? ${goutA.charAt(0).toUpperCase()}${goutA.slice(1)}, et les bonnes surprises.` : "Les bonnes surprises, toujours."), geste: "danse" },
         { qui: "b", texte: "J’adore. Tu sais quoi ? On va bien s’entendre, toi et moi.", geste: "rit" },
-        { qui: "a", texte: "Petit défi : la prochaine fois, chacun raconte une surprise. D’accord ?", geste: "grimace" },
-        { qui: "b", texte: "Défi accepté ! Passe me voir, je te raconterai mon métier.", geste: "applaudit" },
+        { qui: "a", texte: format?.ouverture ?? "Petit défi : la prochaine fois, chacun raconte une surprise. D’accord ?", geste: "grimace" },
+        { qui: "b", texte: format ? `${format.reponse} Passe me voir, je te raconterai mon métier.`.slice(0, REPLIQUE_MAX) : "Défi accepté ! Passe me voir, je te raconterai mon métier.", geste: "applaudit" },
       ],
     };
   const goutB = GOUTS.find((x) => x.cle === b.carte.gouts[0])?.nom.toLowerCase();
   const commun = a.gouts.find((g) => b.carte.gouts.includes(g));
   const nomCommun = commun ? GOUTS.find((x) => x.cle === commun)?.nom.toLowerCase() : "";
   return {
+    question,
     // (jamais coupé au milieu d'un mot : trop long, « Rencontre avec … »)
-    titre: [nomCommun ? `Le duel ${/^[aeiouyhéè]/i.test(nomCommun) ? "de l’" : "du "}${nomCommun}` : "", `${a.fiche.titre} rencontre ${b.carte.fiche.titre}`, `Rencontre avec ${b.prenom || "un ami"}`].find(
-      (x) => x && x.length <= TITRE_MAX,
-    )!,
+    titre: [
+      format ? `${format.nom} avec ${b.prenom || "un ami"}` : "",
+      nomCommun ? `Le duel ${/^[aeiouyhéè]/i.test(nomCommun) ? "de l’" : "du "}${nomCommun}` : "",
+      `${a.fiche.titre} rencontre ${b.carte.fiche.titre}`,
+      `Rencontre avec ${b.prenom || "un ami"}`,
+    ].find((x) => x && x.length <= TITRE_MAX)!,
     partage: [
       nomCommun ? `Un point commun : vous aimez tous les deux ${nomCommun}.` : `Deux caractères qui se complètent : « ${a.fiche.titre} » et « ${b.carte.fiche.titre} ».`,
-      `Le défi lancé : ${goutA ? `qui est le plus fan de ${goutA}` : "le premier qui rit a perdu"}.`,
+      format?.partage ?? `Le défi lancé : ${goutA ? `qui est le plus fan de ${goutA}` : "le premier qui rit a perdu"}.`,
       goutB ? `${b.prenom || "L’autre figurine"} a parlé de ${goutB}.` : `${b.prenom || "L’autre figurine"} a dit sa phrase préférée.`,
     ],
     repliques: [
@@ -279,8 +341,8 @@ function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; car
       { qui: "b", texte: fetiche(b.carte, "Du caractère ? Juste ce qu’il faut. Et beaucoup d’humour."), geste: "clin" },
       { qui: "a", texte: fetiche(a, goutA ? `Moi, mon truc, c’est ${goutA}.` : "Moi, mon truc, ce sont les bonnes surprises."), geste: "danse" },
       { qui: "b", texte: nomCommun ? `Attends… moi aussi, ${nomCommun} ! On est faits pour s’entendre.` : goutB ? `Moi, c’est ${goutB}. Tu me feras découvrir le tien ?` : "On va bien s’entendre, je le sens.", geste: "touchee" },
-      { qui: "a", texte: goutA ? `Défi : qui de nous deux est le plus fan de ${goutA} ?` : "Défi : le premier qui rit a perdu.", geste: "grimace" },
-      { qui: "b", texte: "Défi accepté… et j’ai déjà presque ri. Raté !", geste: "rit" },
+      { qui: "a", texte: format?.ouverture ?? (goutA ? `Défi : qui de nous deux est le plus fan de ${goutA} ?` : "Défi : le premier qui rit a perdu."), geste: "grimace" },
+      { qui: "b", texte: format?.reponse ?? "Défi accepté… et j’ai déjà presque ri. Raté !", geste: "rit" },
       { qui: "a", texte: "Une grimace pour la peine, et on se revoit demain ?", geste: "grimace" },
       { qui: "b", texte: "Avec plaisir. Bravo, c’était une super rencontre !", geste: "applaudit" },
     ],
@@ -289,6 +351,10 @@ function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; car
 
 // ─── ce que voit l'un des deux ───────────────────────────────────────────────────────────────────
 async function participant(supabase: Supabase, c: Cote, secondes = 3600): Promise<Participant> {
+  if ("personnage" in c) {
+    const p = personnageDe(c.personnage) ?? PERSONNAGES[0];
+    return { type: "personnage", cle: p.cle, nom: p.nom, role: p.role, emoji: p.emoji, image: p.cle === "pablito" ? imageFigurineGuide() : "" };
+  }
   if ("habitant" in c) {
     const [g, prenom, image] = await Promise.all([lire<Gardee>(supabase, cheminCarte(c.habitant)), prenomDe(supabase, { id: c.habitant, prenom: "" }), imageDe(supabase, c.habitant, secondes)]);
     return { type: "client", prenom, titre: s(g?.fiche?.titre), ...image };
@@ -315,6 +381,10 @@ async function vueDe(supabase: Supabase, f: Fichier, moiId: string): Promise<Ren
     ...(f.partage?.length ? { partage: f.partage } : {}),
     // ENTRE DEUX CLIENTS : leurs impressions, si les deux le veulent
     ...("habitant" in f.b ? { echange: echangeVu(f, moiId) } : {}),
+    ...(formatDe(f.format) ? { format: { cle: formatDe(f.format)!.cle, nom: formatDe(f.format)!.nom } } : {}),
+    ...(f.question ? { question: f.question } : {}),
+    ...(f.reponses?.[moiId] ? { reponse: f.reponses[moiId].texte } : {}),
+    quoi: f.quoi === "ami" ? "ami" : "jour",
   };
 }
 
@@ -343,6 +413,11 @@ export type EtatRencontre = {
   /** Il a déjà rencontré un membre aujourd'hui (un par jour) ; il est dans la file des membres. */
   membreAujourdhui: boolean;
   ouvert: boolean;
+  /** 👯 Ses amis et proches (`n` : sa place dans sa liste), et combien de discussions il peut encore lancer aujourd'hui. */
+  amisListe: { n: number; prenom: string; carte: boolean; image: string; figurine: boolean }[];
+  discussionsRestantes: number;
+  /** Une discussion avec un ami qui vient d'arriver (« la prochaine conversation sera entre eux deux ») : à montrer. */
+  nouvelle?: RencontreVue;
 };
 
 /** Ses rencontres d'avant, avec le nom de l'autre (un prénom, ou le commerce). */
@@ -358,50 +433,148 @@ async function rencontresDavant(supabase: Supabase, idx: Index, sauf: string): P
   return l.flatMap((x, k) =>
     fichiers[k]?.signale_le
       ? []
-      : [{ id: x.id, jour: x.jour, avec: x.avec.startsWith("h:") ? prenoms.get(x.avec.slice(2)) || "un ami" : noms.get(x.avec.slice(2)) || "un commerce", ...(fichiers[k]?.titre ? { titre: fichiers[k]!.titre } : {}) }],
+      : [
+          {
+            id: x.id,
+            jour: x.jour,
+            avec: x.avec.startsWith("h:")
+              ? prenoms.get(x.avec.slice(2)) || "un ami"
+              : x.avec.startsWith("p:")
+                ? (personnageDe(x.avec.slice(2))?.nom ?? "un personnage")
+                : noms.get(x.avec.slice(2)) || "un commerce",
+            ...(fichiers[k]?.titre ? { titre: fichiers[k]!.titre } : {}),
+          },
+        ],
   );
 }
 
-/** 💬 SA RENCONTRE DU JOUR : celle d'aujourd'hui, ou une nouvelle (l'IA l'écrit maintenant). */
+/** Ses amis et proches, pour la page (sa place dans sa liste, pas son identifiant) : les 12 derniers. */
+async function amisDe(supabase: Supabase, idx: Index): Promise<EtatRencontre["amisListe"]> {
+  const liste = idx.amis.map((h, n) => ({ h, n })).slice(-12);
+  return Promise.all(
+    liste.map(async ({ h, n }) => {
+      const [carte, prenom, image] = await Promise.all([lire<Gardee>(supabase, cheminCarte(h)), prenomDe(supabase, { id: h, prenom: "" }), imageDe(supabase, h, 3600)]);
+      return { n, prenom: prenom || "Un ami", carte: Boolean(carte && reponsesValides(carte.reponses)), ...image };
+    }),
+  );
+}
+const discussionsDuJour = (idx: Index) => (idx.discussions?.jour === jourParis() ? idx.discussions.n : 0);
+
+/**
+ * 💬 SA RENCONTRE DU JOUR — toujours hors de son entourage (« un commerçant, un citoyen, un politique, un influenceur,
+ * Pablito quand il n'y a personne ») : la toute première, Pablito l'accueille ; ensuite, à tour de rôle, le genre
+ * qu'il a vu il y a le plus longtemps — un membre de sa ville (s'il a accepté d'en rencontrer : « Rencontre un
+ * membre »), un commerçant, un personnage de ClikMe. Ses amis, c'est à part (`discuterAvecUnAmi`) ; un ami qui vient
+ * d'arriver : leur discussion se fait aussitôt.
+ */
 export async function rencontreDuJour(supabase: Supabase, habitant: Habitant): Promise<EtatRencontre> {
-  const [carte, idx] = await Promise.all([lire<Gardee>(supabase, cheminCarte(habitant.id)), indexDe(supabase, habitant.id)]);
-  const base = {
-    rencontre: null,
-    ressemblance: ressemblance(idx.moi, idx.pas),
-    amis: idx.amis.length,
-    avant: [] as EtatRencontre["avant"],
-    membreAujourdhui: idx.membreJour === jourParis(),
-    ouvert: Boolean(idx.ouvert),
-  };
-  if (!carte || !reponsesValides(carte.reponses)) return { ...base, avant: await rencontresDavant(supabase, idx, ""), besoinCarte: true };
+  const [carte, idx0] = await Promise.all([lire<Gardee>(supabase, cheminCarte(habitant.id)), indexDe(supabase, habitant.id)]);
+  let idx = idx0;
   const jour = jourParis();
-  // UN AMI QUI VIENT DE FAIRE SA CARTE, et qu'il n'a jamais rencontré : leur rencontre, tout de suite (même s'il en a
-  // déjà eu une aujourd'hui) — « dès qu'il a créé son compte, la prochaine conversation sera entre eux deux »
-  const amisAvecCarte = (await Promise.all(idx.amis.map(async (a) => ((await lire<Gardee>(supabase, cheminCarte(a))) ? a : null)))).filter((a): a is string => Boolean(a));
-  const amiNeuf = amisAvecCarte.find((a) => !dernierJour(idx, `h:${a}`));
-  const deJour = [...idx.liste].reverse().find((x) => x.jour === jour);
-  if (deJour && !amiNeuf) {
+  const base = async (i: Index) => ({
+    rencontre: null,
+    ressemblance: ressemblance(i.moi, i.pas),
+    amis: i.amis.length,
+    avant: [] as EtatRencontre["avant"],
+    membreAujourdhui: i.membreJour === jour,
+    ouvert: Boolean(i.ouvert),
+    amisListe: await amisDe(supabase, i),
+    discussionsRestantes: Math.max(0, AMIS_PAR_JOUR - discussionsDuJour(i)),
+  });
+  if (!carte || !reponsesValides(carte.reponses)) return { ...(await base(idx)), avant: await rencontresDavant(supabase, idx, ""), besoinCarte: true };
+
+  // UN AMI QUI VIENT DE FAIRE SA CARTE, et qu'il n'a jamais rencontré : leur discussion, tout de suite (« dès qu'il a
+  // créé son compte, la prochaine conversation sera entre eux deux ») — elle ne compte pas dans ses discussions du jour
+  let nouvelle: RencontreVue | undefined;
+  for (const a of idx.amis) {
+    if (dernierJour(idx, `h:${a}`)) continue;
+    const gA = await lire<Gardee>(supabase, cheminCarte(a));
+    if (!gA || !reponsesValides(gA.reponses)) continue;
+    const { f, idxApres } = await creerConversation(supabase, habitant, carte, idx, { habitant: a }, null, { quoi: "ami" });
+    idx = idxApres;
+    nouvelle = await vueDe(supabase, f, habitant.id);
+    break;
+  }
+
+  const deJour = [...idx.liste].reverse().find((x) => x.jour === jour && x.quoi !== "ami");
+  if (deJour) {
     const f = await lire<Fichier>(supabase, cheminRencontre(deJour.id));
-    if (f && !f.signale_le && participe(f, habitant.id)) return { ...base, avant: await rencontresDavant(supabase, idx, f.id), rencontre: await vueDe(supabase, f, habitant.id) };
-    if (f?.signale_le) return { ...base, avant: await rencontresDavant(supabase, idx, f.id), retiree: true };
+    if (f && !f.signale_le && participe(f, habitant.id)) return { ...(await base(idx)), avant: await rencontresDavant(supabase, idx, f.id), rencontre: await vueDe(supabase, f, habitant.id), ...(nouvelle ? { nouvelle } : {}) };
+    if (f?.signale_le) return { ...(await base(idx)), avant: await rencontresDavant(supabase, idx, f.id), retiree: true, ...(nouvelle ? { nouvelle } : {}) };
   }
 
-  // AVEC QUI : un ami jamais rencontré ; sinon un ami et un commerce, chacun son tour
-  const hierAvecUnAmi = idx.liste.some((x) => x.jour === hier() && x.avec.startsWith("h:"));
-  const amiAncien = [...amisAvecCarte].sort((a, b) => dernierJour(idx, `h:${a}`).localeCompare(dernierJour(idx, `h:${b}`)))[0];
-  let b: Cote | null = amiNeuf ? { habitant: amiNeuf } : amiAncien && !hierAvecUnAmi ? { habitant: amiAncien } : null;
+  // AVEC QUI : la toute première, Pablito ; sinon le genre vu il y a le plus longtemps
+  const duJour = idx.liste.filter((x) => x.quoi !== "ami");
+  const vuLe = (prefixe: string) => duJour.filter((x) => x.avec.startsWith(prefixe)).reduce((m, x) => (x.jour > m ? x.jour : m), "");
+  let b: Cote;
   let commerce: CommerceInfo | null = null;
-  if (!b) {
+  let membre = false;
+  if (!duJour.length) b = { personnage: "pablito" };
+  else {
+    const membreDispo = idx.ouvert && idx.membreJour !== jour ? await trouverMembre(supabase, habitant, idx, jour) : null;
     const possibles = await commercesPossibles(supabase, habitant);
-    // celui qu'il a vu il y a le plus longtemps (ou jamais)
     commerce = [...possibles].sort((x, y) => dernierJour(idx, `c:${x.slug}`).localeCompare(dernierJour(idx, `c:${y.slug}`)))[0] ?? null;
-    if (commerce) b = { commerce: commerce.slug };
-    else if (amiAncien) b = { habitant: amiAncien };
+    // le personnage qu'il a vu il y a le plus longtemps (ou jamais), de préférence un qui partage ses goûts
+    const perso = choisirPersonnage((cle) => dernierJour(idx, `p:${cle}`), carte.gouts, habitant.id);
+    const genres = [
+      { g: "membre", ok: Boolean(membreDispo), le: vuLe("h:") },
+      { g: "commerce", ok: Boolean(commerce), le: vuLe("c:") },
+      { g: "personnage", ok: true, le: vuLe("p:") },
+    ].filter((x) => x.ok);
+    const g = genres.sort((x, y) => x.le.localeCompare(y.le))[0].g;
+    if (g === "membre" && membreDispo) {
+      b = { habitant: membreDispo };
+      membre = true;
+    } else if (g === "commerce" && commerce) b = { commerce: commerce.slug };
+    else b = { personnage: perso.cle };
+    if (!("commerce" in b)) commerce = null;
+    // OUVERT AUX MEMBRES : les deux sortent de la file s'ils se rencontrent ; sinon, il y attend qu'on le rencontre
+    if (membre || (idx.ouvert && idx.membreJour !== jour)) await mettreAJourLaFile(supabase, habitant, membre ? membreDispo : null);
   }
-  if (!b) return { ...base, avant: await rencontresDavant(supabase, idx, ""), personne: true };
 
-  const { f, idxApres } = await creerConversation(supabase, habitant, carte, idx, b, commerce);
-  return { ...base, avant: await rencontresDavant(supabase, idxApres, f.id), rencontre: await vueDe(supabase, f, habitant.id) };
+  const { f, idxApres } = await creerConversation(supabase, habitant, carte, idx, b, commerce, { membre, quoi: "jour" });
+  return { ...(await base(idxApres)), avant: await rencontresDavant(supabase, idxApres, f.id), rencontre: await vueDe(supabase, f, habitant.id), ...(nouvelle ? { nouvelle } : {}) };
+}
+
+/**
+ * 👯 DISCUTER AVEC UN AMI OU UN PROCHE (« les amis qu'on invite ou les proches avec qui on peut lancer des discussions
+ * entre figurines ») : quand il veut, `AMIS_PAR_JOUR` par jour ; l'ami doit avoir fait sa carte. `n` : sa place dans
+ * sa liste d'amis (la page ne voit pas son identifiant).
+ */
+export async function discuterAvecUnAmi(supabase: Supabase, habitant: Habitant, n: unknown): Promise<{ rencontre?: RencontreVue; restantes?: number; error?: string; statut?: number }> {
+  const [carte, idx] = await Promise.all([lire<Gardee>(supabase, cheminCarte(habitant.id)), indexDe(supabase, habitant.id)]);
+  if (!carte || !reponsesValides(carte.reponses)) return { error: "Fais d’abord ta carte de personnage.", statut: 400 };
+  const k = Number(n);
+  const ami = Number.isInteger(k) ? idx.amis[k] : undefined;
+  if (!ami) return { error: "Cet ami n’est plus dans ta liste.", statut: 404 };
+  const faites = discussionsDuJour(idx);
+  if (faites >= AMIS_PAR_JOUR) return { error: `${AMIS_PAR_JOUR} discussions par jour : reviens demain !`, statut: 429 };
+  const gAmi = await lire<Gardee>(supabase, cheminCarte(ami));
+  if (!gAmi || !reponsesValides(gAmi.reponses)) return { error: "Ton ami n’a pas encore fait sa carte : dès qu’il l’aura faite, vos figurines pourront discuter.", statut: 409 };
+  const jour = jourParis();
+  const { f } = await creerConversation(supabase, habitant, carte, { ...idx, discussions: { jour, n: faites + 1 } }, { habitant: ami }, null, { quoi: "ami" });
+  return { rencontre: await vueDe(supabase, f, habitant.id), restantes: AMIS_PAR_JOUR - faites - 1 };
+}
+
+/**
+ * 🗨️ « ET TOI ? » — sa réponse à la question de fin : gardée dans la rencontre, et dans ce qu'il a dit de lui (les 8
+ * dernières) — les conversations suivantes s'en servent. Pas de numéro, d'adresse ni de lien, pas de mot interdit.
+ */
+export async function repondre(supabase: Supabase, habitant: Habitant, id: unknown, texte: unknown): Promise<{ rencontre?: RencontreVue; error?: string; statut?: number }> {
+  const rid = s(id);
+  if (!idRencontreValide(rid)) return { error: "Demande incomplète.", statut: 400 };
+  const f = await lire<Fichier>(supabase, cheminRencontre(rid));
+  if (!f || f.signale_le || !participe(f, habitant.id)) return { error: "Cette rencontre n’existe plus.", statut: 404 };
+  const t = s(texte).replace(/\s+/g, " ");
+  if (t.length > REPONSE_MAX) return { error: `${REPONSE_MAX} caractères au plus.`, statut: 400 };
+  const refus = impressionRefusee(t) ?? (motInterdit(t) ? "Ce mot n’a pas sa place ici." : null);
+  if (refus) return { error: refus, statut: 400 };
+  const apres: Fichier = { ...f, reponses: { ...(f.reponses ?? {}), [habitant.id]: { texte: t, le: new Date().toISOString() } } };
+  await ecrire(supabase, cheminRencontre(rid), apres);
+  const idx = await indexDe(supabase, habitant.id);
+  const q = f.question || "Et toi, qu’en penses-tu ?";
+  await ecrire(supabase, cheminIndex(habitant.id), { ...idx, dit: [...(idx.dit ?? []).filter((x) => x.q !== q), { q, r: t }].slice(-8) });
+  return { rencontre: await vueDe(supabase, apres, habitant.id) };
 }
 
 /** LA CONVERSATION : l'IA l'écrit d'après les deux cartes ; rangée, et dans les rencontres des deux (entre clients). */
@@ -412,14 +585,21 @@ async function creerConversation(
   idx: Index,
   b: Cote,
   commerce: CommerceInfo | null,
-  membre = false,
+  o: { membre?: boolean; quoi?: "jour" | "ami" } = {},
 ): Promise<{ f: Fichier; idxApres: Index }> {
+  const membre = Boolean(o.membre);
   const jour = jourParis();
   const prenomA = await prenomDe(supabase, habitant);
   const portraitA = portraitClient("A", prenomA, carte, idx);
-  let autre: { prenom: string; carte: Gardee } | CommerceInfo;
+  // LE FORMAT DU JOUR : pas un des derniers, de préférence un qui lui ressemble (« sinon on va se lasser »)
+  const format = choisirFormat(idx.formats ?? [], caracteristiques(carte.reponses, PROGRES_VIDE, carte.gouts), `${habitant.id}|${jour}|${idx.liste.length}`);
+  let autre: { prenom: string; carte: Gardee } | CommerceInfo | Personnage;
   let portraitB: string[];
-  if ("habitant" in b) {
+  if ("personnage" in b) {
+    const p = personnageDe(b.personnage) ?? PERSONNAGES[0];
+    autre = p;
+    portraitB = portraitPersonnage(p);
+  } else if ("habitant" in b) {
     const [gB, prenomB, idxB] = await Promise.all([lire<Gardee>(supabase, cheminCarte(b.habitant)), prenomDe(supabase, { id: b.habitant, prenom: "" }), indexDe(supabase, b.habitant)]);
     autre = { prenom: prenomB, carte: gB! };
     portraitB = portraitClient("B", prenomB, gB!, idxB);
@@ -431,8 +611,8 @@ async function creerConversation(
       "- Elle ne promet RIEN et n'invente RIEN sur le commerce : aucun prix, aucune offre, aucune réduction, aucun horaire, aucun produit précis. Ce n'est pas le commerçant qui parle.",
     ];
   }
-  const ia = await ecrireConversation(consigneConversation(portraitA, portraitB, membre));
-  const locale = conversationLocale(prenomA, carte, autre);
+  const ia = await ecrireConversation(consigneConversation(portraitA, portraitB, { inconnus: membre || "personnage" in b, format }));
+  const locale = conversationLocale(prenomA, carte, autre, format);
   const ecrite = ia ?? locale;
   const f: Fichier = {
     id: nouvelId(),
@@ -444,17 +624,26 @@ async function creerConversation(
     reactions: {},
     par: ia ? "ia" : "local",
     ...(membre ? { membre: true } : {}),
-    // (l'IA a oublié son titre ou son partage : ceux de la page)
+    // (l'IA a oublié son titre, son partage ou sa question : ceux de la page)
     titre: ecrite.titre || locale.titre,
     partage: ecrite.partage.length ? ecrite.partage : locale.partage,
+    question: ecrite.question || locale.question,
+    format: format.cle,
+    ...(o.quoi === "ami" ? { quoi: "ami" as const } : {}),
   };
   await ecrire(supabase, cheminRencontre(f.id), f);
-  const idxApres: Index = { ...idx, liste: [...idx.liste, { id: f.id, jour, avec: cleAvec(b) }].slice(-120), ...(membre ? { membreJour: jour } : {}) };
+  const entree = { id: f.id, jour, avec: cleAvec(b), ...(o.quoi === "ami" ? { quoi: "ami" as const } : {}) };
+  const idxApres: Index = { ...idx, liste: [...idx.liste, entree].slice(-120), formats: [...(idx.formats ?? []), format.cle].slice(-10), ...(membre ? { membreJour: jour } : {}) };
   await ecrire(supabase, cheminIndex(habitant.id), idxApres);
   // ENTRE DEUX CLIENTS : la même rencontre, chez l'autre aussi
   if ("habitant" in b) {
     const idxB = await indexDe(supabase, b.habitant);
-    await ecrire(supabase, cheminIndex(b.habitant), { ...idxB, liste: [...idxB.liste, { id: f.id, jour, avec: `h:${habitant.id}` }].slice(-120), ...(membre ? { membreJour: jour } : {}) });
+    await ecrire(supabase, cheminIndex(b.habitant), {
+      ...idxB,
+      liste: [...idxB.liste, { id: f.id, jour, avec: `h:${habitant.id}`, ...(o.quoi === "ami" ? { quoi: "ami" as const } : {}) }].slice(-120),
+      formats: [...(idxB.formats ?? []), format.cle].slice(-10),
+      ...(membre ? { membreJour: jour } : {}),
+    });
   }
   return { f, idxApres };
 }
@@ -470,31 +659,42 @@ async function creerConversation(
 const cheminFile = (ville: string) => `membres/${ville || "toutes"}.json`;
 type File = { liste: { h: string; le: string }[] };
 
+/** Le membre qu'on lui présente : celui qui attend depuis le plus longtemps, s'il peut le rencontrer (sinon `null`). */
+async function trouverMembre(supabase: Supabase, habitant: Habitant, idx: Index, jour: string): Promise<string | null> {
+  const file = (await lire<File>(supabase, cheminFile(habitant.villeSlug))) ?? { liste: [] };
+  const ilYa14 = jourParis(new Date(Date.now() - 14 * 86_400_000));
+  const bloques = new Set(idx.bloques ?? []);
+  for (const x of [...file.liste].sort((a, b) => a.le.localeCompare(b.le))) {
+    if (x.h === habitant.id || bloques.has(x.h) || dernierJour(idx, `h:${x.h}`) > ilYa14) continue;
+    const [gX, idxX] = await Promise.all([lire<Gardee>(supabase, cheminCarte(x.h)), indexDe(supabase, x.h)]);
+    if (!gX || !reponsesValides(gX.reponses) || !idxX.ouvert || idxX.membreJour === jour || (idxX.bloques ?? []).includes(habitant.id)) continue;
+    return x.h;
+  }
+  return null;
+}
+
+/** La file après son passage : `choisi` (rencontré) et lui en sortent ; personne de rencontré, il y entre (ou y garde sa place). */
+async function mettreAJourLaFile(supabase: Supabase, habitant: Habitant, choisi: string | null): Promise<void> {
+  const chemin = cheminFile(habitant.villeSlug);
+  const file = (await lire<File>(supabase, chemin)) ?? { liste: [] };
+  const sienne = file.liste.find((x) => x.h === habitant.id);
+  const autres = file.liste.filter((x) => x.h !== habitant.id && x.h !== choisi);
+  await ecrire(supabase, chemin, { liste: [...autres, ...(choisi ? [] : [sienne ?? { h: habitant.id, le: new Date().toISOString() }])].slice(-500) });
+}
+
 export async function rencontrerUnMembre(supabase: Supabase, habitant: Habitant): Promise<{ rencontre?: RencontreVue; attente?: boolean; error?: string; statut?: number }> {
   const [carte, idx] = await Promise.all([lire<Gardee>(supabase, cheminCarte(habitant.id)), indexDe(supabase, habitant.id)]);
   if (!carte || !reponsesValides(carte.reponses)) return { error: "Fais d’abord ta carte de personnage.", statut: 400 };
   const jour = jourParis();
   if (idx.membreJour === jour) return { error: "Une rencontre de membre par jour : reviens demain !", statut: 429 };
-  const chemin = cheminFile(habitant.villeSlug);
-  const file = (await lire<File>(supabase, chemin)) ?? { liste: [] };
-  const ilYa14 = jourParis(new Date(Date.now() - 14 * 86_400_000));
-  const bloques = new Set(idx.bloques ?? []);
-  let choisi: string | null = null;
-  for (const x of [...file.liste].sort((a, b) => a.le.localeCompare(b.le))) {
-    if (x.h === habitant.id || bloques.has(x.h) || dernierJour(idx, `h:${x.h}`) > ilYa14) continue;
-    const [gX, idxX] = await Promise.all([lire<Gardee>(supabase, cheminCarte(x.h)), indexDe(supabase, x.h)]);
-    if (!gX || !idxX.ouvert || idxX.membreJour === jour || (idxX.bloques ?? []).includes(habitant.id)) continue;
-    choisi = x.h;
-    break;
-  }
+  const choisi = await trouverMembre(supabase, habitant, idx, jour);
   // il entre dans la file (ou y reste), et il est « ouvert » aux rencontres
-  const autres = file.liste.filter((x) => x.h !== habitant.id && x.h !== choisi);
-  await ecrire(supabase, chemin, { liste: [...autres, ...(choisi ? [] : [{ h: habitant.id, le: new Date().toISOString() }])].slice(-500) });
+  await mettreAJourLaFile(supabase, habitant, choisi);
   if (!choisi) {
     await ecrire(supabase, cheminIndex(habitant.id), { ...idx, ouvert: true });
     return { attente: true };
   }
-  const { f } = await creerConversation(supabase, habitant, carte, { ...idx, ouvert: true }, { habitant: choisi }, null, true);
+  const { f } = await creerConversation(supabase, habitant, carte, { ...idx, ouvert: true }, { habitant: choisi }, null, { membre: true, quoi: "jour" });
   return { rencontre: await vueDe(supabase, f, habitant.id) };
 }
 
@@ -605,7 +805,15 @@ export async function souvenirsDe(supabase: Supabase, habitant: Habitant): Promi
       if (!f || f.signale_le || !participe(f, habitant.id)) return null;
       const p = await participant(supabase, f.a.habitant === habitant.id ? f.b : f.a, 6 * 3600);
       const avec = p.type === "client" ? p.prenom || "un ami" : p.nom;
-      return { id: f.id, jour: f.jour, avec, titre: f.titre || `Rencontre avec ${avec}`, image: p.image, figurine: p.type === "client" ? p.figurine : !p.image.startsWith("/direct/double/") };
+      return {
+        id: f.id,
+        jour: f.jour,
+        avec,
+        titre: f.titre || `Rencontre avec ${avec}`,
+        image: p.image,
+        figurine: p.type === "client" ? p.figurine : p.type === "commerce" ? !p.image.startsWith("/direct/double/") : Boolean(p.image),
+        ...(p.type === "personnage" ? { emoji: p.emoji } : {}),
+      };
     }),
   );
   return r.filter((x): x is Souvenir => Boolean(x));

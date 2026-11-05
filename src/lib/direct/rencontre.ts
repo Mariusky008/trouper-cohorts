@@ -80,7 +80,9 @@ export type Emotion = (typeof EMOTIONS)[number];
 
 export type Participant =
   | { type: "client"; prenom: string; titre: string; image: string; figurine: boolean }
-  | { type: "commerce"; nom: string; slug: string; ville: string; image: string };
+  | { type: "commerce"; nom: string; slug: string; ville: string; image: string }
+  /** Un personnage de ClikMe (`reseau.ts`) : imaginaire, et dit tel. */
+  | { type: "personnage"; cle: string; nom: string; role: string; emoji: string; image: string };
 
 export type Reaction = { v?: Verdict; e?: Emotion };
 
@@ -101,6 +103,13 @@ export type RencontreVue = {
   partage?: string[];
   /** Entre deux clients : échanger leurs impressions, s'ils le veulent tous les deux. */
   echange?: EchangeVue;
+  /** Le format de la conversation (« Le défi », « Plutôt ceci ou cela ? »…) : chaque jour, un autre. */
+  format?: { cle: string; nom: string };
+  /** La question pour lui, à la fin (« Et toi ? »), et sa réponse (elle nourrit les conversations suivantes). */
+  question?: string;
+  reponse?: string;
+  /** « jour » : sa rencontre du jour (hors de son entourage) ; « ami » : une discussion avec un ami ou un proche. */
+  quoi?: "jour" | "ami";
   /** Ses réactions, par numéro de phrase. */
   reactions: Record<number, Reaction>;
   /** Écrite par l'IA, ou composée ici (sans IA). */
@@ -110,7 +119,8 @@ export type RencontreVue = {
 };
 
 /** 🎞️ UNE CARTE SOUVENIR (une rencontre) : la date, avec qui, son titre, la figurine de l'autre. */
-export type Souvenir = { id: string; jour: string; avec: string; titre: string; image: string; figurine: boolean };
+/** `emoji` : un personnage de ClikMe sans figurine (son emoji à la place). */
+export type Souvenir = { id: string; jour: string; avec: string; titre: string; image: string; figurine: boolean; emoji?: string };
 
 export const verdictValide = (x: unknown): Verdict | null => (VERDICTS.some((v) => v.cle === x) ? (x as Verdict) : null);
 export const emotionValide = (x: unknown): Emotion | null => (EMOTIONS.includes(x as Emotion) ? (x as Emotion) : null);
