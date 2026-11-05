@@ -30,7 +30,8 @@ import {
   type Reponses,
 } from "@/lib/direct/personnage";
 import { PanneauEnvoi } from "./ma-figurine";
-import { FigurineGuide, Guide, GuideDit, type Visage } from "./guide";
+import { FigurineGuide, Guide, GuideDit, useVoixPablito, type Visage } from "./guide";
+import { SONS_PABLITO } from "@/lib/direct/guide";
 
 /** Le guide pose les questions : un visage différent à chaque fois (ses vraies expressions). */
 const VISAGES_QUIZ: Visage[] = ["joie", "neutre", "euphorie"];
@@ -259,6 +260,10 @@ export function MonPersonnage({
   const [carte, setCarte] = useState<CartePersonnage | null | undefined>(undefined);
   const [progres, setProgres] = useState<Progres>(PROGRES_VIDE);
   const [etape, setEtape] = useState<Etape>(null);
+  // 🎙️ PABLITO POSE LES QUESTIONS, à voix haute (ses enregistrements) : chaque question, « ce que tu aimes », puis
+  // « je consulte les étoiles » ; sans enregistrement, sa bouche bouge un instant
+  const sonQuiz = !etape ? undefined : "q" in etape ? SONS_PABLITO[`pablito-quiz-${QUESTIONS[etape.q].cle}`] : "attente" in etape ? SONS_PABLITO["pablito-quiz-etoiles"] : SONS_PABLITO["pablito-quiz-gouts"];
+  const parleQuiz = useVoixPablito(sonQuiz);
   const [reponses, setReponses] = useState<Partial<Record<CleQuestion, "a" | "b">>>({});
   const [gouts, setGouts] = useState<CleGout[]>([]);
   const [phrase, setPhrase] = useState("");
@@ -386,7 +391,7 @@ export function MonPersonnage({
         </div>
         <div className="mp-pose">
           <span className="mp-clik" aria-hidden="true">
-            <Guide key={q.cle} parle bref visage={VISAGES_QUIZ[etape.q % VISAGES_QUIZ.length]} />
+            <Guide key={q.cle} parle={sonQuiz ? parleQuiz : true} bref={!sonQuiz} visage={VISAGES_QUIZ[etape.q % VISAGES_QUIZ.length]} />
           </span>
           <b className="mp-question" key={q.cle}>
             {q.q}
@@ -426,7 +431,7 @@ export function MonPersonnage({
             </span>
             <div className="mp-pose">
               <span className="mp-clik" aria-hidden="true">
-                <Guide parle visage="euphorie" />
+                <Guide parle={sonQuiz ? parleQuiz : true} visage="euphorie" />
               </span>
               <b className="mp-question">Je consulte les étoiles… ✨ et j’écris ta fiche.</b>
             </div>
@@ -435,7 +440,7 @@ export function MonPersonnage({
           <>
             <div className="mp-pose">
               <span className="mp-clik" aria-hidden="true">
-                <Guide parle bref visage="joie" />
+                <Guide parle={sonQuiz ? parleQuiz : true} bref={!sonQuiz} visage="joie" />
               </span>
               <b className="mp-question">Dernière étape : ce que tu aimes ({GOUTS_MAX} au plus)</b>
             </div>
