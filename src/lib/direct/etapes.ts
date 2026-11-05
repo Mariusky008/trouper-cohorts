@@ -24,7 +24,7 @@ export const ETAPES = [
   { cle: "membre", emoji: "🎲", titre: "Rencontrer un membre", onglet: "rencontre" },
   { cle: "fidele", emoji: "📅", titre: "Revenir 3 jours différents", onglet: "figurine" },
   { cle: "souvenirs", emoji: "🎞️", titre: "5 cartes souvenirs", onglet: "rencontre" },
-  { cle: "commerce", emoji: "🏪", titre: "Ta première figurine du mois, en passant chez un commerçant", onglet: "mois" },
+  { cle: "commerce", emoji: "🏪", titre: "Passer chez un commerçant partenaire", onglet: "mois" },
 ] as const;
 export type CleEtape = (typeof ETAPES)[number]["cle"];
 export const etapeValide = (x: unknown): x is CleEtape => ETAPES.some((e) => e.cle === x);

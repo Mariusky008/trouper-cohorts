@@ -77,7 +77,11 @@ ok(
   (await hugo.locator("#creer .tf-prenom-photo, #creer .tf-ville").count()) === 0 && (await hugo.locator("#creer .tf-etapes li").count()) === 3 && (await hugo.locator("#creer .tf-univers").count()) === 1,
   "il a un compte et un prénom : on ne les lui redemande pas (sa photo, ce qui lui ressemble — facultatif —, son accord)",
 );
-ok((await texte(hugo, "#o-figurine .og-pouvoirs")).includes("Ce que tu vas débloquer") && (await texte(hugo, "#o-figurine .og-pouvoirs")).includes("Un cadeau de ClikMe à chaque étape") && !/achat/i.test(await texte(hugo, "#o-figurine .og-pouvoirs")), "ce qu'il va débloquer, cadeau après cadeau (plus aucun achat)");
+const comment = await texte(hugo, "#o-figurine .fm-comment");
+ok(
+  comment.includes("Comment ça marche") && comment.includes("Chaque mois vécu") && !/achat|débloquer/i.test(await texte(hugo, "#o-figurine .og-pouvoirs")),
+  `« Comment ça marche », en trois temps — plus rien « à débloquer », plus aucun achat (${comment.slice(0, 120)})`,
+);
 ok((await debordement(hugo)) <= 0, "l'accueil ne déborde pas");
 await hugo.screenshot({ path: `${D}/ma-figurine-0-accueil.png`, fullPage: true });
 
@@ -102,19 +106,79 @@ await fetch(`${F}/clik_ma_figurine?habitant_id=eq.${HUGO.id}`, {
 await hugo.reload({ waitUntil: "networkidle" });
 await hugo.waitForSelector(".tf-moi .tf-options", { timeout: 30000 });
 const opts = await texte(hugo, ".tf-options");
-ok(/La colère ouverte ✓/.test(opts) && /La tristesse 3ᵉ cadeau/.test(opts) && opts.includes("Encore 1 cadeau") && !/achat/i.test(opts), `ses options : deux cadeaux (la colère, les voix), la suite sous cadenas (${opts.slice(0, 160)})`);
-ok((await hugo.locator(".tf-moi .tf-kdo li.faite").count()) === 2 && (await texte(hugo, ".tf-kdo li.faite")).includes("Créer ta figurine"), "deux étapes franchies : sa figurine, sa première figurine du mois");
-ok((await hugo.locator(".tf-moi .tf-expr button.ferme").count()) === 4 && (await hugo.locator(".tf-moi .tf-voix button.ferme").count()) === 0, "quatre visages sous cadenas (dont le fou rire et la grimace), toutes les voix ouvertes (2ᵉ cadeau)");
-ok((await texte(hugo, ".tf-options")).includes("Elle danse") && (await hugo.locator(".tf-moi .tf-danse").count()) === 1, "elle danse dès le départ");
+ok(/Tes premiers pas · 2\/10/.test(opts) && !/cadeau|cadenas|achat|Encore/i.test(opts), `ses premiers pas : une simple liste, sans cadenas (${opts.slice(0, 160)})`);
+ok((await hugo.locator(".tf-moi .tf-kdo li.faite").count()) === 2 && (await texte(hugo, ".tf-kdo li.faite")).includes("Créer ta figurine"), "deux étapes franchies : sa figurine, un commerçant partenaire");
+ok(
+  (await hugo.locator(".tf-moi .tf-expr button").count()) === 7 && (await hugo.locator(".tf-moi .tf-expr button.ferme, .tf-moi .tf-voix button.ferme").count()) === 0 && (await hugo.locator(".tf-moi .tf-danse").count()) === 1,
+  "tout est ouvert dès le départ : sept visages, toutes les voix, la danse",
+);
 await hugo.locator(".tf-moi .tf-expr button", { hasText: "Tristesse" }).click();
-ok((await hugo.locator(".tf-moi .fqp").getAttribute("data-sentiment")) !== "tristesse" && (await texte(hugo, ".tf-nudge")).includes("s’ouvre avec ton 3ᵉ cadeau ClikMe"), `un visage fermé dit quel cadeau l'ouvre (${await texte(hugo, ".tf-nudge")})`);
-await hugo.locator(".tf-moi .tf-expr button", { hasText: "Colère" }).click();
-ok((await hugo.locator(".tf-moi .fqp").getAttribute("data-sentiment")) === "colere", "la colère, ouverte, se choisit");
-// LE SERVEUR TIENT LES OPTIONS, lui aussi
-const tristeFerme = await hugo.evaluate(async () => (await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "message", son: "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQxAADB8AhSmxhIIEVCSiJrDCQBTcu3UrAIwUdkRgQbFAZC1CQEwTJ9mjRvBA4UOLD8nKVOWfh+UlK3z/177OXrfOdKl7pyn3Xf//WreyTRUoAWgBgkOAGbZHBgG1OF6zM82DWbZaUmMBptgQhGjsyYqc9ae9XFz280948NMBWInljyzsNRFLPWdnZGWrddDsjK1unuSrVN9jJsK8KuQtQCtMBjCEtImISdNKJOopIpBFpNSMbIHCSRpRR5iakjTiyzLhchUUBwCgyKiweBv/7UsQbg8isVNoMPMjAAAA0gAAABEVFGmgqK////9bP/6XCykxBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq", duree: 1.2, commerces: [], sentiment: "tristesse" }) })).status);
-ok(tristeFerme === 400, `un visage fermé : le message est refusé (${tristeFerme})`);
+ok((await hugo.locator(".tf-moi .fqp").getAttribute("data-sentiment")) === "tristesse" && (await hugo.locator(".tf-nudge").count()) === 0, "la tristesse se choisit tout de suite (plus de cadeau à attendre)");
+// 🗓️ SA FIGURINE DU MOIS, EN UNE LIGNE (lot 3) : ses jours de rencontres ce mois-ci
+const apercu = await texte(hugo, "#o-figurine .fm-apercu");
+ok(/Ta figurine de \p{L}+/u.test(apercu) && apercu.includes("0/10 jours de rencontres") && (await hugo.locator("#o-figurine .fm-apercu .fm-jours i").count()) === 10, `où en est sa figurine du mois (${apercu})`);
+ok((await hugo.locator("#o-figurine .fm-comment").count()) === 1, "« Comment ça marche » reste là, sa figurine faite");
 ok((await debordement(hugo)) <= 0, "sa figurine et ses options ne débordent pas");
 await hugo.screenshot({ path: `${D}/ma-figurine-0b-options.png`, fullPage: true });
+
+// ═══ 🗓️ SA FIGURINE DU MOIS, MÉRITÉE : DIX JOURS DE RENCONTRES CE MOIS-CI (lot 3) ═══
+const mois = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date()).slice(0, 7);
+const sesRencontres = (n) =>
+  fetch(`${STOCK}/figurines-clients/${HUGO.id}/rencontres.json`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ liste: Array.from({ length: n }, (_, k) => ({ id: `essai-${k}`, jour: `${mois}-${String(k + 1).padStart(2, "0")}`, avec: "p:pablito" })), amis: [], oui: [], non: [], moi: 0, pas: 0 }),
+  });
+// ce qu'il a dit ce mois-ci (son journal) : sa phrase du mois s'en sert
+await fetch(`${STOCK}/figurines-clients/${HUGO.id}/journal/${mois}.json`, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ entrees: [{ type: "question", le: new Date().toISOString(), cle: "essai", question: "Ton petit plaisir du dimanche ?", texte: "un croissant au lit" }] }),
+});
+await sesRencontres(9);
+const demanderMois = () =>
+  hugo.evaluate(async () => {
+    const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "mois" }) });
+    return { s: r.status, j: await r.json() };
+  });
+const neuf9 = await demanderMois();
+ok(neuf9.s === 400 && neuf9.j.error === "Encore 1 jour de rencontres ce mois-ci." && neuf9.j.mois?.courante?.etat === "a-gagner" && neuf9.j.mois.courante.jours === 9, `à neuf jours, pas encore : elle se mérite (${neuf9.s}, ${neuf9.j.error})`);
+await hugo.goto(`${BASE}/collection?v=${Date.now()}#mois`, { waitUntil: "networkidle" });
+await hugo.waitForSelector("#o-mois .fm .fm-gagner", { timeout: 30000 });
+const gagner = await texte(hugo, "#o-mois .fm");
+ok(
+  gagner.includes("TA FIGURINE DU MOIS") && gagner.includes("9/10 jours de rencontres ce mois-ci") && gagner.includes("Encore 1 jour :") && (await hugo.locator("#o-mois .fm .fm-jours i.vecu").count()) === 9,
+  `« Ce mois-ci » commence par SA figurine du mois : neuf jours sur dix (${gagner.slice(0, 160)})`,
+);
+const avant = await hugo.evaluate(() => [...document.querySelectorAll("#o-mois > *")].findIndex((x) => x.classList.contains("fm")));
+ok(avant === 1, `elle passe avant les commerçants (juste sous le titre : ${avant})`);
+await fermerPablito(hugo, "#o-mois");
+await hugo.screenshot({ path: `${D}/ma-figurine-0c-mois-a-gagner.png` });
+// LE DIXIÈME JOUR : elle se fabrique toute seule (ici sans moteur d'image : sa figurine, avec le thème et sa phrase)
+await sesRencontres(10);
+await hugo.reload({ waitUntil: "networkidle" });
+await hugo.waitForSelector("#o-mois .fm .fm-carte img", { timeout: 60000 });
+const fiche = await (await fetch(`${STOCK}/figurines-clients/${HUGO.id}/mois/${mois}.json`)).json().catch(() => null);
+ok(fiche?.mois === mois && fiche.image === `${HUGO.id}/mois/${mois}.webp` && fiche.expression && fiche.cle && fiche.parMoteur === false, `elle est rangée dans son seau privé (${JSON.stringify(fiche)?.slice(0, 160)})`);
+ok(/croissant au lit/.test(fiche?.phrase ?? ""), `sa phrase du mois reprend ce qu'il a dit ce mois-ci (${fiche?.phrase})`);
+const prete = await texte(hugo, "#o-mois .fm");
+ok(prete.includes("TA PHRASE DU MOIS") && prete.includes("croissant au lit") && prete.includes(`Son visage du mois : ${fiche?.expression}`), `la révélation : sa figurine du mois, son visage du mois, sa phrase (${prete.slice(0, 200)})`);
+ok(await hugo.locator("#o-mois .fm .fm-carte img").evaluate((i) => i.complete && i.naturalWidth > 0), "son image s'affiche");
+const encore = await demanderMois();
+const fiche2 = await (await fetch(`${STOCK}/figurines-clients/${HUGO.id}/mois/${mois}.json`)).json().catch(() => null);
+ok(encore.s === 200 && encore.j.mois?.courante?.etat === "prete" && fiche2?.le === fiche?.le, "une seule par mois : la redemander ne la refait pas");
+ok((await debordement(hugo)) <= 0, "« Ce mois-ci » ne déborde pas");
+await hugo.screenshot({ path: `${D}/ma-figurine-0d-mois-prete.png`, fullPage: true });
+// DANS L'ALBUM : les siennes d'abord ; les commerçants partenaires, en plus
+await hugo.locator(".mc-nav button", { hasText: "Album" }).click();
+await hugo.waitForSelector("#o-album .fm-album .fm-carte img", { timeout: 30000 });
+const album = await texte(hugo, "#o-album");
+ok(album.indexOf("Mes figurines du mois") >= 0 && album.indexOf("Mes figurines du mois") < album.indexOf("Mes commerçants partenaires"), "l'album : ses figurines du mois d'abord, ses commerçants partenaires ensuite");
+await hugo.screenshot({ path: `${D}/ma-figurine-0e-album.png`, fullPage: true });
+// (en développement, le petit « N » de Next se pose sur ce bouton : on le touche directement)
+await hugo.locator(".mc-nav button", { hasText: "Ma figurine" }).dispatchEvent("click");
+await hugo.waitForSelector("#o-figurine .fm-apercu", { timeout: 30000 });
+ok((await texte(hugo, "#o-figurine .fm-apercu")).includes("est arrivée"), "dans « Ma figurine » : sa figurine du mois est arrivée");
 
 // ═══ UN VISITEUR SANS COMPTE : SA PHOTO LUI OUVRE SON COMPTE (son prénom, sa ville) ═══
 const neuf = await tel(null);

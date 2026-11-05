@@ -616,7 +616,7 @@ qu'on dit de soi dans la carte de personnalité », et qui finissent toujours pa
   version vue était celle d'avant sa mise en ligne.
 - **Les voix** : « Je regarde ta photo… je vois déjà ta figurine ! » (la fabrication) et la 5ᵉ bulle de « Rencontres ».
 
-### 9.0 quindecies LA STRATÉGIE DE « MA COLLECTION » (5 novembre 2026, validée avec le patron) — lot 1 construit
+### 9.0 quindecies LA STRATÉGIE DE « MA COLLECTION » (5 novembre 2026, validée avec le patron) — lots 1 à 3 construits
 
 **La phrase : « Ta figurine, c'est toi. Chaque jour, elle rencontre quelqu'un. Chaque mois, elle change avec toi. Et en
 la regardant vivre, tu te découvres. »** Les gens viennent pour SE DÉCOUVRIR grâce à leur figurine ; les commerçants
@@ -666,6 +666,31 @@ sont des PARTENAIRES, un plus, pas le centre (« quand on parle des commerçants
   Retrouve-la »). Le bon code : ce téléphone devient le sien (le cookie), et ce qu'il savait ici rejoint son compte —
   sauf si la figurine est sur CE téléphone et pas sur l'ancien compte : c'est alors l'ancien qui rejoint celui-ci (on
   ne perd jamais une figurine). Les essais passent par un faux Resend (le faux Supabase, `RESEND_BASE_URL`).
+
+**Le lot 3, construit (sa figurine du mois, méritée ; tout ouvert dès le départ) :**
+- **🗓️ Sa figurine du mois** (`figurine-du-mois.ts`, `figurine-du-mois-serveur.ts`) : MÉRITÉE — dix jours de
+  rencontres dans le mois (`JOURS_POUR_LA_FIGURINE`, « 10 jours, ça va ») ; au dixième, elle se fabrique toute seule,
+  une fois : sa figurine habillée du thème du mois (les tenues des éditions, `TENUES_EDITION`), avec l'expression du
+  mois (`EXPRESSIONS_DU_MOIS` : la galette « fier comme un roi », Noël « émerveillé », l'automne « rêveur »…), le cadre
+  et le ressort gardés (`poserAuFormat` / `reprendre`). Sans moteur d'image : sa figurine de tous les jours, avec le
+  thème et sa phrase. Deux pages ouvertes ne paient pas deux fois (un verrou de quatre minutes).
+- **🔮 Sa phrase du mois** : « drôle et bienveillante, comme un horoscope qui le connaît », pour les semaines à venir,
+  écrite d'après son journal du mois (ses réponses, ce que ses rencontres ont révélé) — rien de sensible, jamais le
+  genre deviné ; sans IA, composée d'après ce qu'il a dit (« toi qui as dit « … », tu vas oser… »).
+- **Rangée** dans le seau privé : `<habitant>/mois/<AAAA-MM>.json` (le thème, l'expression, la phrase, l'image) et
+  `<habitant>/mois/<AAAA-MM>.webp`. Route : `GET /api/direct/ma-figurine?mois=1`, `POST { action: "mois" }`.
+- **Les écrans** (`figurine-du-mois.tsx`) : « Ce mois-ci » commence par SA figurine du mois (les dix jours en points,
+  puis la révélation : la figurine, son visage du mois, sa phrase) — les commerçants viennent après ; l'album commence
+  par « Mes figurines du mois » (une par mois vécu), puis « Mes commerçants partenaires » ; dans « Ma figurine », une
+  ligne « Ta figurine de novembre · 3/10 jours » et « Comment ça marche ? » (les trois temps de la phrase, les
+  commerçants en plus) à la place de « Ce que tu vas débloquer ».
+- **Tout est ouvert dès le départ** : les sept visages, toutes les voix, la danse, le cadre doré ; les visages se
+  fabriquent à la demande (la joie d'office, chacun des autres la première fois qu'il le choisit :
+  `<habitant>/visages.json`), pour ne pas payer sept visages que personne ne regarde. Les étapes ne sont plus qu'une
+  liste « 👣 Tes premiers pas » (sans cadenas), qui disparaît une fois tout fait.
+
+**Le lot 4, à faire : les commerçants partenaires** — collectionner leur figurine en passant chez eux donne leurs
+avantages en premier (les promos avant tout le monde, les bons plans).
 
 ### 9.1 L'idée en une phrase
 
