@@ -125,9 +125,19 @@ ok((await texte(lea, "#o-rencontre .rd-qui")).includes("Ta figurine a rencontré
 const rL = await api(lea, "/api/direct/rencontre");
 const rH = await api(hugo, "/api/direct/rencontre");
 ok(rL.rencontre?.id && rL.rencontre.id === rH.rencontre?.id && rH.rencontre?.autre?.prenom === "Léa", "la même rencontre chez Hugo");
-ok(rL.avant?.some((x) => x.avec === A.nom), "la rencontre du Comptoir reste dans « tes rencontres d'avant »");
-for (let k = 0; k < 20 && (await lea.locator("#o-rencontre .rd-tape").count()); k++) await lea.waitForTimeout(500);
-ok((await lea.locator("#o-rencontre .rd-fil li").count()) === rL.rencontre.repliques.length, "les répliques arrivent une à une, toutes");
+ok(rL.avant?.some((x) => x.avec === A.nom && x.titre), "la rencontre du Comptoir devient une carte souvenir (son titre)");
+// 🎬 EN DIRECT : une conversation plus longue, chaque réplique avec son geste ; un titre ; ce qui a été partagé
+ok(rL.rencontre.repliques.length >= 8 && rL.rencontre.repliques.every((x) => x.geste), `une vraie conversation, chaque réplique avec son geste (${rL.rencontre.repliques.length})`);
+ok(rL.rencontre.titre && rL.rencontre.partage?.length >= 1, `son titre (« ${rL.rencontre.titre} ») et ce qui a été partagé`);
+ok((await texte(lea, "#o-rencontre .rs-direct")).includes("EN DIRECT") && (await lea.locator("#o-rencontre .rs-scene .rs-fig").count()) === 2, "en direct : les deux figurines sur scène");
+ok((await lea.locator("#o-rencontre .rd-fil li.moi, #o-rencontre .rd-fil li.autre").count()) < rL.rencontre.repliques.length, "les répliques arrivent à leur rythme (deux minutes environ)");
+ok((await texte(lea, "#o-rencontre .rs-barre")).includes("tu es spectateur"), "« tu es spectateur »");
+await lea.locator("#o-rencontre .rs-passer").click();
+await lea.waitForSelector("#o-rencontre .ra .cs", { timeout: 10000 });
+ok((await lea.locator("#o-rencontre .rd-fil li.moi, #o-rencontre .rd-fil li.autre").count()) === rL.rencontre.repliques.length, "« Passer à la fin » : toutes les répliques");
+ok((await texte(lea, "#o-rencontre .ra-partage")).includes("Ce qui a été partagé"), "à la fin : ce qui a été partagé");
+ok((await texte(lea, "#o-rencontre .cs.nouvelle")).includes("Nouvelle carte souvenir") && (await texte(lea, "#o-rencontre .cs-titre")) === rL.rencontre.titre, "à la fin : sa nouvelle carte souvenir");
+await lea.screenshot({ path: `${D}/personnage-3b-fin.png`, fullPage: true });
 
 // SES RÉACTIONS
 await lea.locator("#o-rencontre .rd-fil li.moi .rd-verdict", { hasText: "C’est tout moi" }).first().click();
@@ -141,6 +151,39 @@ const juger = await api(lea, "/api/direct/rencontre", { action: "reagir", id: rL
 ok(juger.statut === 400, "on ne juge que les phrases de sa propre figurine");
 ok((await debordement(lea)) <= 0 && !/exemple/i.test(await texte(lea, "main")), "« Ma collection » ne déborde pas, sans le mot interdit");
 await lea.screenshot({ path: `${D}/personnage-3-rencontre.png`, fullPage: true });
+
+// 💬 LEURS IMPRESSIONS, SI LES DEUX LE VEULENT
+ok(rL.rencontre.echange && !rL.rencontre.echange.moi, "entre deux clients : on peut échanger ses impressions");
+const tropTot = await api(hugo, "/api/direct/rencontre", { action: "impression", id: rL.rencontre.id, texte: "Coucou !" });
+ok(tropTot.statut === 403, "personne n'écrit tant que les deux n'ont pas dit oui");
+await lea.locator("#o-rencontre .ra-oui").click();
+await lea.waitForSelector("#o-rencontre .ra-note", { timeout: 10000 });
+ok((await texte(lea, "#o-rencontre .ra-note")).includes("Si Hugo est d’accord aussi"), "Léa dit oui : on attend Hugo");
+const ouiH = await api(hugo, "/api/direct/rencontre", { action: "echanger", id: rL.rencontre.id, oui: true });
+ok(ouiH.statut === 200 && ouiH.rencontre?.echange?.autre === true, "Hugo dit oui aussi");
+await lea.reload({ waitUntil: "networkidle" });
+await lea.waitForSelector("#o-rencontre .ra-echange textarea", { timeout: 30000 });
+ok((await lea.locator("#o-rencontre .rs-direct", { hasText: "TERMINÉE" }).count()) === 1, "déjà regardée : elle ne repasse pas en direct");
+await lea.locator("#o-rencontre .ra-echange textarea").fill("Ta figurine m’a fait rire, défi accepté !");
+await lea.locator("#o-rencontre .ra-envoyer").click();
+await lea.waitForSelector("#o-rencontre .ra-fil li.moi", { timeout: 10000 });
+const numero = await api(hugo, "/api/direct/rencontre", { action: "impression", id: rL.rencontre.id, texte: "Appelle-moi au 06 12 34 56 78" });
+ok(numero.statut === 400 && /numéro/.test(numero.error ?? ""), `pas de numéro (${numero.error})`);
+const lienX = await api(hugo, "/api/direct/rencontre", { action: "impression", id: rL.rencontre.id, texte: "Viens sur insta" });
+ok(lienX.statut === 400, "on se parle ici, pas ailleurs");
+const motH = await api(hugo, "/api/direct/rencontre", { action: "impression", id: rL.rencontre.id, texte: "Pareil, trop drôle !" });
+ok(motH.statut === 200 && motH.rencontre?.echange?.messages?.length === 2 && motH.rencontre.echange.messages[1].moi, "Hugo répond : leurs deux impressions");
+
+// 🎞️ SES CARTES SOUVENIRS, DANS L'ALBUM
+const souv = await api(lea, "/api/direct/rencontre?souvenirs=1");
+ok(souv.souvenirs?.length >= 2 && souv.souvenirs.every((x) => x.titre && x.avec), `ses cartes souvenirs (${souv.souvenirs?.map((x) => x.titre).join(" · ")})`);
+await lea.locator(".mc-nav button", { hasText: "Album" }).click({ force: true });
+await lea.waitForSelector("#o-album .ms .cs.petite", { timeout: 30000 });
+ok((await lea.locator("#o-album .ms .cs.petite").count()) === souv.souvenirs.length, "dans l'album : « Mes cartes souvenirs »");
+await lea.locator("#o-album .ms .cs.petite", { hasText: A.nom }).first().click();
+await lea.waitForFunction((nom) => document.querySelector("#o-rencontre:not([hidden]) .rd-qui")?.textContent?.includes(nom), A.nom, { timeout: 15000 });
+ok(true, "une carte souvenir touchée rouvre sa rencontre");
+await lea.locator("#o-rencontre .rd-ia button", { hasText: "Celle d’aujourd’hui" }).click();
 
 // SIGNALER
 lea.on("dialog", (d) => d.accept());

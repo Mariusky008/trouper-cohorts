@@ -7,7 +7,7 @@
 // POST { action: "refaire", autrePhoto? } : une nouvelle figurine (même photo), ou retour à la photo.
 // POST { action: "expressions" } : un tour de fabrication de ses expressions (le moteur d'image) → l'état.
 // POST { action: "voix", texte, voix } : son texte lu par la voix choisie (ElevenLabs) → { son: data:audio/mpeg… }.
-// POST { action: "message", son: data:audio…, duree, commerces: [liens], sentiment?, texte?, voix? } : un message de
+// POST { action: "message", son: data:audio…, duree, commerces: [liens], sentiment?, texte?, voix?, danse? } : un message de
 //   sa figurine → { id, lien }.
 // POST { action: "signaler", id } : celui qui a reçu un message le signale (pas besoin d'être quelqu'un).
 // (La démonstration qu'on faisait parler sans compte a quitté la page le 5 novembre 2026 : chacun crée la sienne dès le
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, son: enSon(r.mp3) }, { headers: sansCache });
   }
   if (p?.action === "message") {
-    const r = await enregistrerMessage(supabase, moi, p.son, p.duree, p.commerces, p.sentiment, p.texte, p.voix);
+    const r = await enregistrerMessage(supabase, moi, p.son, p.duree, p.commerces, p.sentiment, p.texte, p.voix, p.danse);
     if (!r.id) return NextResponse.json({ error: r.error }, { status: 400 });
     return NextResponse.json({ ok: true, id: r.id, lien: lienMessage(r.id) }, { headers: sansCache });
   }

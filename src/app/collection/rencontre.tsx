@@ -2,7 +2,9 @@
 
 /**
  * 💬 LA RENCONTRE DU JOUR, sur « Ma collection » (`lib/direct/rencontre.ts`) : ce que sa figurine a dit aujourd'hui à
- * une autre figurine (un ami invité, ou un commerce), réplique après réplique, comme un fil de messages. Sous chaque
+ * une autre figurine (un ami invité, ou un commerce), EN DIRECT la première fois (`Spectacle` : les deux figurines sur
+ * scène, chaque réplique à son rythme, avec son geste) ; à la fin, ce qui a été partagé, la carte souvenir et, entre
+ * deux clients d'accord, leurs impressions (`ApresRencontre`). Sous chaque
  * phrase de SA figurine : « ✅ C'est tout moi » / « 🙅 Jamais de la vie » — c'est ce qui la fait lui ressembler —, et
  * une émotion sur n'importe quelle phrase. Sa ressemblance en pourcentage ; « Invite un ami : demain, vos figurines
  * discutent » (WhatsApp) ; ses rencontres d'avant. À lire seulement (pas de voix, décidé le 4 novembre 2026).
@@ -15,8 +17,22 @@
  * et le temps qui reste avant la suivante ; deux grands choix — « Invite un ami » et le bouton rond « Rencontre un
  * membre » (3… 2… 1…).
  */
-import { useCallback, useEffect, useState } from "react";
-import { EMOTIONS, VERDICTS, texteInvitation, type Emotion, type Participant, type Reaction, type RencontreVue, type Verdict } from "@/lib/direct/rencontre";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  EMOTIONS,
+  IMPRESSION_MAX,
+  VERDICTS,
+  dureeReplique,
+  gesteDe,
+  impressionRefusee,
+  texteInvitation,
+  type Emotion,
+  type Participant,
+  type Reaction,
+  type RencontreVue,
+  type Souvenir,
+  type Verdict,
+} from "@/lib/direct/rencontre";
 import { PanneauEnvoi } from "./ma-figurine";
 import { FigurineGuide, GuideDit } from "./guide";
 
@@ -27,7 +43,7 @@ type Etat = {
   retiree?: boolean;
   ressemblance: number | null;
   amis: number;
-  avant: { id: string; jour: string; avec: string }[];
+  avant: { id: string; jour: string; avec: string; titre?: string }[];
   membreAujourdhui: boolean;
   ouvert: boolean;
 };
@@ -44,10 +60,10 @@ const nomDe = (p: Participant) => (p.type === "client" ? p.prenom || "Quelqu’u
 const jourCourt = (j: string) => new Date(`${j}T12:00:00`).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
 /** Sa figurine s'il l'a ; sinon (un fantôme, un commerce sans figurine) une silhouette de figurine, et « ? ». */
-function Avatar({ p, grand = false }: { p: Participant; grand?: boolean }) {
+function Avatar({ p, grand = false, scene = false }: { p: Participant; grand?: boolean; scene?: boolean }) {
   const vraie = p.type === "client" ? p.figurine : !p.image.startsWith("/direct/double/");
   return (
-    <span className={`rd-av${grand ? " grand" : ""}${vraie ? " figurine" : ""}`} aria-hidden="true">
+    <span className={`rd-av${grand ? " grand" : ""}${scene ? " scene" : ""}${vraie ? " figurine" : ""}`} aria-hidden="true">
       {vraie ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={p.image} alt="" draggable={false} />
@@ -61,17 +77,63 @@ function Avatar({ p, grand = false }: { p: Participant; grand?: boolean }) {
   );
 }
 
-/** Le fil d'une rencontre, avec ses réactions. */
-function Fil({ r, onRessemblance, anime }: { r: RencontreVue; onRessemblance: (n: number | null) => void; anime: boolean }) {
+const cleDirect = (id: string) => `clikme-rencontre-direct-${id}`;
+/** A-t-il déjà regardé cette rencontre en direct (sur cet appareil) ? */
+export const dejaVueEnDirect = (id: string) => {
+  try {
+    return Boolean(window.localStorage.getItem(cleDirect(id)));
+  } catch {
+    return false;
+  }
+};
+const noterVue = (id: string) => {
+  try {
+    window.localStorage.setItem(cleDirect(id), "1");
+  } catch {
+    /* rien */
+  }
+};
+
+/**
+ * 🎬 LA RENCONTRE, EN DIRECT (« pendant quelques minutes, vos deux figurines discuteront, réagiront et s'amuseront
+ * ensemble : tu seras juste spectateur ») — les deux figurines sur scène, face à face ; chaque réplique arrive à son
+ * rythme (`dureeReplique` : deux minutes environ pour toutes), celle qui parle bouge et fait son geste (elle rit,
+ * danse, fait une grimace…). Pause, « Passer à la fin », « Revoir en direct ». Ses réactions, sous chaque phrase.
+ */
+function Spectacle({ r, peutDirect, onRessemblance, onFin }: { r: RencontreVue; peutDirect: boolean; onRessemblance: (n: number | null) => void; onFin: (enDirect: boolean) => void }) {
+  const total = r.repliques.length;
+  // EN DIRECT la première fois (pas encore regardée sur cet appareil, aucune réaction) ; sinon, toute la conversation
+  const [direct] = useState(() => peutDirect && !dejaVueEnDirect(r.id));
+  const [montrees, setMontrees] = useState(direct ? 0 : total);
+  const [pause, setPause] = useState(false);
   const [reactions, setReactions] = useState<Record<number, Reaction>>(r.reactions);
-  const [montrees, setMontrees] = useState(anime ? 1 : r.repliques.length);
   const [erreur, setErreur] = useState("");
-  // les répliques arrivent une à une (comme une vraie conversation), la première fois
+  const fil = useRef<HTMLOListElement>(null);
+  const fini = montrees >= total;
+
+  // la réplique suivante, à son heure (la première après « elle écrit… »)
   useEffect(() => {
-    if (montrees >= r.repliques.length) return;
-    const t = window.setTimeout(() => setMontrees((n) => n + 1), 1100);
+    if (fini || pause) return;
+    const t = window.setTimeout(() => setMontrees((n) => n + 1), montrees === 0 ? 1200 : dureeReplique(r.repliques[montrees - 1].texte));
     return () => window.clearTimeout(t);
-  }, [montrees, r.repliques.length]);
+  }, [montrees, pause, fini, r.repliques]);
+  // la dernière réplique arrive dans le fil (il défile tout seul, la scène reste en haut)
+  useEffect(() => {
+    const f = fil.current;
+    if (f && montrees > 0) f.scrollTo({ top: f.scrollHeight, behavior: "smooth" });
+  }, [montrees]);
+  // la fin : prévenue une fois (et retenue sur l'appareil)
+  const prevenu = useRef(false);
+  useEffect(() => {
+    if (!fini) {
+      prevenu.current = false;
+      return;
+    }
+    if (prevenu.current) return;
+    prevenu.current = true;
+    noterVue(r.id);
+    onFin(direct);
+  }, [fini, r.id, onFin, direct]);
 
   async function reagir(n: number, x: { v?: Verdict | null; e?: Emotion | null }) {
     setErreur("");
@@ -95,16 +157,72 @@ function Fil({ r, onRessemblance, anime }: { r: RencontreVue; onRessemblance: (n
     }
   }
 
+  // sur scène : celle qui vient de parler, et son geste
+  const derniere = montrees > 0 && !fini ? r.repliques[montrees - 1] : null;
+  const geste = derniere?.geste ? gesteDe(derniere.geste) : null;
+  const sur = (moi: boolean) => (derniere && derniere.moi === moi ? ` parle${derniere.geste ? ` g-${derniere.geste}` : ""}` : "");
+  const pct = Math.round((100 * montrees) / Math.max(1, total));
+  const minutes = Math.max(1, Math.round(r.repliques.reduce((n, x) => n + dureeReplique(x.texte), 1200) / 60_000));
   return (
     <>
-      <ol className="rd-fil">
+      <div className={`rs-scene${fini ? " fini" : ""}`} aria-hidden="true">
+        <span className={`rs-fig gauche${sur(true)}`} key={`g-${derniere?.moi ? montrees : "x"}`}>
+          <Avatar p={r.moi} scene />
+          <small>Ta figurine</small>
+        </span>
+        <span className="rs-centre">{fini ? "🤝" : "💬"}</span>
+        <span className={`rs-fig droite${sur(false)}`} key={`d-${derniere && !derniere.moi ? montrees : "x"}`}>
+          <Avatar p={r.autre} scene />
+          <small>{nomDe(r.autre)}</small>
+        </span>
+        {geste && (
+          <span className={`rs-emoji ${derniere?.moi ? "gauche" : "droite"}`} key={montrees}>
+            {geste.emoji}
+          </span>
+        )}
+      </div>
+      <div className="rs-barre">
+        <span className={`rs-direct${fini ? " fini" : pause ? " pause" : ""}`}>{fini ? "✓ TERMINÉE" : pause ? "⏸ EN PAUSE" : "● EN DIRECT"}</span>
+        <span className="rs-progres" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={montrees}>
+          <i style={{ width: `${pct}%` }} />
+        </span>
+        <small>{fini ? `${total} répliques` : `~${minutes} min · 🍿 tu es spectateur`}</small>
+      </div>
+      <div className="rs-controles">
+        {!fini ? (
+          <>
+            <button type="button" onClick={() => setPause((x) => !x)}>
+              {pause ? "▶ Reprendre" : "⏸ Pause"}
+            </button>
+            <button type="button" className="rs-passer" onClick={() => setMontrees(total)}>
+              ⏭ Passer à la fin
+            </button>
+          </>
+        ) : (
+          direct && (
+            <button type="button" onClick={() => setMontrees(0)}>
+              ↺ Revoir en direct
+            </button>
+          )
+        )}
+      </div>
+      <ol className={`rd-fil${direct ? " direct" : ""}`} ref={fil}>
         {r.repliques.slice(0, montrees).map((x, n) => {
           const re = reactions[n] ?? {};
+          const g = x.geste ? gesteDe(x.geste) : null;
           return (
             <li key={n} className={x.moi ? "moi" : "autre"}>
               <Avatar p={x.moi ? r.moi : r.autre} />
               <div className="rd-bulle">
-                <small>{x.moi ? "Ta figurine" : nomDe(r.autre)}</small>
+                <small>
+                  {x.moi ? "Ta figurine" : nomDe(r.autre)}
+                  {g && (
+                    <span className="rd-geste">
+                      {" "}
+                      · {g.emoji} {g.dit}
+                    </span>
+                  )}
+                </small>
                 <p>{x.texte}</p>
                 <div className="rd-reac">
                   {x.moi &&
@@ -123,14 +241,16 @@ function Fil({ r, onRessemblance, anime }: { r: RencontreVue; onRessemblance: (n
             </li>
           );
         })}
+        {!fini && !pause && (
+          <li className="rd-tape-li" aria-label="Elle écrit">
+            <p className="rd-tape">
+              <i />
+              <i />
+              <i />
+            </p>
+          </li>
+        )}
       </ol>
-      {montrees < r.repliques.length && (
-        <p className="rd-tape" aria-label="Elle écrit">
-          <i />
-          <i />
-          <i />
-        </p>
-      )}
       {erreur && (
         <p className="tf-erreur" role="alert">
           {erreur}
@@ -139,6 +259,171 @@ function Fil({ r, onRessemblance, anime }: { r: RencontreVue; onRessemblance: (n
     </>
   );
 }
+
+/** 🎞️ LA CARTE SOUVENIR d'une rencontre : les deux figurines, son titre, le jour. */
+export function CarteSouvenir({ titre, jour, moi, autre, avec, nouvelle = false, petite = false, onClick }: { titre: string; jour: string; moi?: Participant; autre: Participant | { image: string; figurine: boolean }; avec: string; nouvelle?: boolean; petite?: boolean; onClick?: () => void }) {
+  const contenu = (
+    <>
+      {nouvelle && <span className="cs-ruban">🎉 Nouvelle carte souvenir !</span>}
+      <small className="cs-etiquette">🎞️ CARTE SOUVENIR</small>
+      <span className="cs-duo">
+        {moi && <Avatar p={moi} grand />}
+        <Avatar p={"type" in autre ? autre : { type: "client", prenom: avec, titre: "", image: autre.image, figurine: autre.figurine }} grand />
+      </span>
+      <b className="cs-titre">{titre}</b>
+      <span className="cs-qui">
+        avec {avec} · {jourCourt(jour)}
+      </span>
+    </>
+  );
+  return onClick ? (
+    <button type="button" className={`cs${petite ? " petite" : ""}`} onClick={onClick}>
+      {contenu}
+    </button>
+  ) : (
+    <div className={`cs${nouvelle ? " nouvelle" : ""}${petite ? " petite" : ""}`}>{contenu}</div>
+  );
+}
+
+/**
+ * 💬 « SI VOUS ÊTES D'ACCORD, ÉCHANGER VOS IMPRESSIONS » — entre deux clients : chacun dit oui ; tant que l'autre n'a
+ * pas dit oui, rien ne s'écrit (et on ne sait pas s'il a refusé). Ensuite, leurs impressions ici, sur ClikMe : pas de
+ * numéro, d'adresse ni de lien.
+ */
+function Echange({ r, onRencontre }: { r: RencontreVue; onRencontre: (x: RencontreVue) => void }) {
+  const e = r.echange!;
+  const autre = nomDe(r.autre);
+  const [texte, setTexte] = useState("");
+  const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState("");
+  async function vouloir(oui: boolean) {
+    setErreur("");
+    try {
+      const j = await poster({ action: "echanger", id: r.id, oui });
+      onRencontre(j.rencontre as RencontreVue);
+    } catch (x) {
+      setErreur((x as Error).message);
+    }
+  }
+  async function envoyer() {
+    const t = texte.trim().replace(/\s+/g, " ");
+    const refus = impressionRefusee(t);
+    if (refus) return setErreur(refus);
+    setEnvoi(true);
+    setErreur("");
+    try {
+      const j = await poster({ action: "impression", id: r.id, texte: t });
+      setTexte("");
+      onRencontre(j.rencontre as RencontreVue);
+    } catch (x) {
+      setErreur((x as Error).message);
+    } finally {
+      setEnvoi(false);
+    }
+  }
+  return (
+    <section className="ra-echange" aria-label="Vos impressions">
+      <b>💬 Vos impressions</b>
+      {!e.moi ? (
+        <>
+          <small>Envie d’échanger tes impressions avec {autre} sur cette rencontre ? Seulement si vous êtes d’accord tous les deux.</small>
+          <button type="button" className="mp-bouton ra-oui" onClick={() => vouloir(true)}>
+            🙋 Oui, je veux bien
+          </button>
+        </>
+      ) : !e.autre ? (
+        <>
+          <small className="ra-note">✓ C’est noté ! Si {autre} est d’accord aussi, vous pourrez vous écrire ici.</small>
+          <button type="button" className="ra-retirer" onClick={() => vouloir(false)}>
+            Retirer mon accord
+          </button>
+        </>
+      ) : (
+        <>
+          <small>Vous êtes d’accord tous les deux 🎉 Pas de numéro, d’adresse ni de lien : on se parle ici.</small>
+          {e.messages.length > 0 && (
+            <ol className="ra-fil">
+              {e.messages.map((m, k) => (
+                <li key={k} className={m.moi ? "moi" : "autre"}>
+                  <small>{m.moi ? "Toi" : autre}</small>
+                  <p>{m.texte}</p>
+                </li>
+              ))}
+            </ol>
+          )}
+          <textarea value={texte} maxLength={IMPRESSION_MAX} rows={2} onChange={(x) => setTexte(x.target.value)} placeholder={`Ton impression, pour ${autre}…`} aria-label="Ton impression" />
+          <span className="ra-actions">
+            <button type="button" className="mp-bouton ra-envoyer" onClick={envoyer} disabled={envoi || !texte.trim()}>
+              {envoi ? "…" : "Envoyer"}
+            </button>
+            <button type="button" className="ra-retirer" onClick={() => vouloir(false)}>
+              Ne plus échanger
+            </button>
+          </span>
+        </>
+      )}
+      {erreur && (
+        <p className="tf-erreur" role="alert">
+          {erreur}
+        </p>
+      )}
+    </section>
+  );
+}
+
+/** 🏁 APRÈS LA RENCONTRE : ce qui a été partagé, la carte souvenir, et (entre deux clients) leurs impressions. */
+function ApresRencontre({ r, nouvelle, onRencontre }: { r: RencontreVue; nouvelle: boolean; onRencontre: (x: RencontreVue) => void }) {
+  return (
+    <div className="ra">
+      {r.partage && r.partage.length > 0 && (
+        <section className="ra-partage">
+          <b>✨ Ce qui a été partagé</b>
+          <ul>
+            {r.partage.map((x, k) => (
+              <li key={k}>{x}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+      <CarteSouvenir titre={r.titre || `Rencontre avec ${nomDe(r.autre)}`} jour={r.jour} moi={r.moi} autre={r.autre} avec={nomDe(r.autre)} nouvelle={nouvelle} />
+      {r.echange && <Echange r={r} onRencontre={onRencontre} />}
+    </div>
+  );
+}
+
+/**
+ * 🎞️ SES CARTES SOUVENIRS, DANS L'ALBUM (« de quoi enrichir ta collection ») : une par rencontre ; la toucher ouvre
+ * la rencontre (onglet « Rencontres »).
+ */
+export function MesSouvenirs({ onVoir }: { onVoir: (id: string) => void }) {
+  const [liste, setListe] = useState<Souvenir[] | null>(null);
+  useEffect(() => {
+    let fini = false;
+    fetch("/api/direct/rencontre?souvenirs=1", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j: { souvenirs?: Souvenir[] }) => !fini && setListe(j.souvenirs ?? []))
+      .catch(() => !fini && setListe([]));
+    return () => {
+      fini = true;
+    };
+  }, []);
+  if (!liste?.length) return null;
+  return (
+    <section className="ms" aria-label="Mes cartes souvenirs">
+      <h3>
+        🎞️ Mes cartes souvenirs <span className="mc-total">{liste.length}</span>
+      </h3>
+      <div className="ms-grille">
+        {liste.map((x) => (
+          <CarteSouvenir key={x.id} titre={x.titre} jour={x.jour} autre={{ image: x.image, figurine: x.figurine }} avec={x.avec} petite onClick={() => onVoir(x.id)} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** Ouvrir une rencontre depuis l'album : retenue le temps d'aller sur l'onglet « Rencontres ». */
+export const CLE_VOIR_RENCONTRE = "clikme-voir-rencontre";
 
 /** Le temps qui reste jusqu'à minuit, heure de Paris (la prochaine rencontre du jour). */
 function useJusquaMinuit(): string {
@@ -187,7 +472,7 @@ function BoutonMembre({ fait, onRencontre, onAttente, desactive }: { fait: boole
   return (
     <div className="rd-choix rd-membre">
       <b>🎲 Rencontre un membre</b>
-      <small>Une figurine de ta ville, au hasard. Vous découvrez vos personnages en lisant leur conversation.</small>
+      <small>Une figurine de ta ville, au hasard. Vous découvrez vos personnages en regardant leur conversation, en direct.</small>
       {fait ? (
         <span className="rd-rebours" aria-label="Prochaine rencontre de membre">
           <i>⏳</i>
@@ -217,6 +502,7 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
   const [ancienne, setAncienne] = useState<RencontreVue | null>(null);
   const [attente, setAttente] = useState(false);
   const [erreur, setErreur] = useState("");
+  const [fin, setFin] = useState<{ id: string; nouvelle: boolean } | null>(null);
   const minuit = useJusquaMinuit();
 
   const charger = useCallback(async () => {
@@ -309,14 +595,37 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
       setErreur((e as Error).message);
     }
   }
-  async function voir(id: string) {
+  const voir = useCallback(async (id: string) => {
     try {
       const j = (await (await fetch(`/api/direct/rencontre?id=${id}`, { cache: "no-store" })).json()) as { rencontre?: RencontreVue };
       setAncienne(j.rencontre ?? null);
+      if (j.rencontre) window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
       setAncienne(null);
     }
-  }
+  }, []);
+  // UNE CARTE SOUVENIR TOUCHÉE DANS L'ALBUM : sa rencontre, ici
+  useEffect(() => {
+    const ouvrir = () => {
+      let id = "";
+      try {
+        id = window.sessionStorage.getItem(CLE_VOIR_RENCONTRE) ?? "";
+        window.sessionStorage.removeItem(CLE_VOIR_RENCONTRE);
+      } catch {
+        id = "";
+      }
+      if (id) void voir(id);
+    };
+    ouvrir();
+    window.addEventListener(CLE_VOIR_RENCONTRE, ouvrir);
+    return () => window.removeEventListener(CLE_VOIR_RENCONTRE, ouvrir);
+  }, [voir]);
+  /** La rencontre a changé (leurs impressions) : celle d'aujourd'hui, ou celle d'avant qu'il regarde. */
+  const majRencontre = useCallback((x: RencontreVue) => {
+    setAncienne((a) => (a && a.id === x.id ? x : a));
+    setEtat((e) => (e && e.rencontre?.id === x.id ? { ...e, rencontre: x } : e));
+  }, []);
+  const quandFini = useCallback((id: string, nouvelle: boolean) => setFin((f) => (f?.id === id ? f : { id, nouvelle })), []);
 
   const tete = (
     <header className="og-tete">
@@ -326,13 +635,14 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
   );
   const explique = (
     <GuideDit
-      cle="rencontres"
+      cle="pablito-rencontres"
       popup
       repliques={[
         { t: "Chaque jour, ta figurine rencontre une autre figurine 💬", v: "joie" },
-        { t: "Elles discutent selon vos personnalités : ta carte, ta façon de parler, ce que tu aimes.", v: "neutre" },
-        { t: "Toi, tu lis… et tu me dis si c’est bien toi ! ✅ ou 🙅 : plus tu réagis, plus elle te ressemble 🪞", v: "euphorie" },
-        { t: "Avec qui ? La figurine d’un commerce, un ami que tu invites (le mieux 😉)… ou un membre de ta ville, au hasard 🎲", v: "joie" },
+        { t: "Pendant deux minutes, elles discutent, rient et s’amusent en direct, selon vos personnalités. Toi, tu es spectateur 🍿", v: "rire" },
+        { t: "Dis-moi si c’est bien toi ! ✅ ou 🙅 : plus tu réagis, plus elle te ressemble 🪞", v: "euphorie" },
+        { t: "À la fin : ce qui a été partagé, une carte souvenir pour ta collection… et, si vous êtes d’accord tous les deux, vos impressions 💬", v: "joie" },
+        { t: "Avec qui ? La figurine d’un commerce, un ami que tu invites (le mieux 😉)… ou un membre de ta ville, au hasard 🎲", v: "neutre", apres: "grimace" },
       ]}
     />
   );
@@ -385,18 +695,13 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
         ) : (
           <>
             <header className="rd-tete">
-              <span className="rd-duo">
-                <Avatar p={r.moi} grand />
-                <em aria-hidden="true">⚡</em>
-                <Avatar p={r.autre} grand />
-              </span>
               <span className="rd-qui">
                 <small>{ancienne ? jourCourt(r.jour).toUpperCase() : r.membre ? "AUJOURD’HUI · UN MEMBRE" : "AUJOURD’HUI"}</small>
                 <b>Ta figurine a rencontré {r.autre.type === "client" ? nomDe(r.autre) : `la figurine de ${r.autre.nom}`}</b>
                 {r.autre.type === "client" && r.autre.titre && <span>« {r.autre.titre} »</span>}
               </span>
             </header>
-            <Fil key={r.id} r={r} onRessemblance={setRessemblance} anime={!ancienne && !Object.keys(r.reactions).length} />
+            <Spectacle key={r.id} r={r} peutDirect={!ancienne && !Object.keys(r.reactions).length} onRessemblance={setRessemblance} onFin={(nouvelle) => quandFini(r.id, nouvelle)} />
             <p className="rd-ressemblance">
               {ressemblance == null ? (
                 <>🪞 Dis-lui si c’est bien toi : elle apprend à te ressembler.</>
@@ -409,6 +714,7 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
                 </>
               )}
             </p>
+            {fin?.id === r.id && <ApresRencontre r={r} nouvelle={fin.nouvelle} onRencontre={majRencontre} />}
             <p className="rd-ia">
               Écrit par l’IA, pour jouer.{r.autre.type === "commerce" ? " Ce n’est pas le commerçant qui parle." : ""}{" "}
               <button type="button" onClick={() => signaler(r.id)}>
@@ -471,19 +777,21 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
         </p>
       )}
 
+      {/* SES CARTES SOUVENIRS : une par rencontre (la toucher la rouvre) */}
       {etat.avant.length > 0 && (
-        <details className="rd-avant">
-          <summary>Tes rencontres d’avant ({etat.avant.length})</summary>
-          <ul>
+        <section className="rd-souvenirs" aria-label="Tes cartes souvenirs">
+          <b>🎞️ Tes cartes souvenirs ({etat.avant.length})</b>
+          <div className="rd-souvenirs-liste">
             {etat.avant.map((x) => (
-              <li key={x.id}>
-                <button type="button" onClick={() => voir(x.id)}>
-                  {jourCourt(x.jour)} · {x.avec}
-                </button>
-              </li>
+              <button key={x.id} type="button" className="rd-souv" onClick={() => voir(x.id)}>
+                <b>{x.titre || `Rencontre avec ${x.avec}`}</b>
+                <small>
+                  avec {x.avec} · {jourCourt(x.jour)}
+                </small>
+              </button>
             ))}
-          </ul>
-        </details>
+          </div>
+        </section>
       )}
       {erreur && (
         <p className="tf-erreur" role="alert">
@@ -533,8 +841,6 @@ export const STYLES_RENCONTRE = `
 .rd-teaser p,.rd-note{margin:0;font-size:14px;line-height:1.45;color:#D9C3CB}
 .rd-ami{margin:0;padding:10px 14px;border-radius:14px;background:rgba(61,226,166,.12);border:1px solid rgba(61,226,166,.45);font-size:14px;font-weight:800;color:#BFF7E2}
 .rd-tete{display:flex;align-items:center;gap:12px}
-.rd-duo{flex:none;display:flex;align-items:center}
-.rd-duo em{font-style:normal;font-size:18px;margin:0 -4px;z-index:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
 .rd-qui{display:flex;flex-direction:column;min-width:0}
 .rd-qui small{font-size:10.5px;font-weight:900;letter-spacing:.12em;color:#F2C46B}
 .rd-qui b{font-size:17px;line-height:1.15;font-weight:900}
@@ -564,9 +870,93 @@ export const STYLES_RENCONTRE = `
 .rd-ia button{margin-left:8px;border:0;background:none;color:#A88E99;font:inherit;font-size:12px;text-decoration:underline;cursor:pointer}
 .rd-inviter{display:flex;flex-direction:column;gap:10px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}
 .rd-inviter > b{font-size:15px;line-height:1.3}
-.rd-avant summary{font-size:13.5px;font-weight:800;color:#D9C3CB;cursor:pointer}
-.rd-avant ul{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0;padding:0;list-style:none}
-.rd-avant button{padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#FFF4E6;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+/* 🎬 en direct : la scène, la barre, les gestes */
+.rs-scene{position:relative;display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:6px;padding:16px 10px 10px;border-radius:22px;background:radial-gradient(60% 80% at 25% 100%,rgba(255,46,154,.28),transparent 70%),radial-gradient(60% 80% at 75% 100%,rgba(242,196,107,.22),transparent 70%),linear-gradient(180deg,#2A0D22,#170612);border:1px solid rgba(255,255,255,.1);overflow:hidden}
+.rs-scene::after{content:"";position:absolute;left:8%;right:8%;bottom:20px;height:10px;border-radius:50%;background:rgba(0,0,0,.45);filter:blur(4px)}
+.rs-fig{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:4px;transform-origin:50% 100%}
+.rs-fig small{font-size:11px;font-weight:900;color:#D9C3CB;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rs-fig.droite .rd-av{transform:scaleX(-1)}
+.rs-fig.droite .rd-q{transform:scaleX(-1)}
+.rs-centre{z-index:1;align-self:center;font-size:26px;animation:rs-flotte 2s ease-in-out infinite}
+.rs-fig.parle{animation:rs-parle .45s ease-in-out 4}
+.rs-fig.parle small{color:#F2C46B}
+.rs-fig.g-rit{animation:rs-rit .18s linear 10}
+.rs-fig.g-danse{animation:rs-danse .6s ease-in-out 5}
+.rs-fig.g-grimace{animation:rs-grimace .5s ease-in-out 3}
+.rs-fig.g-surprise{animation:rs-saute .5s cubic-bezier(.3,1.7,.5,1) 2}
+.rs-fig.g-clin{animation:rs-clin .8s ease-in-out 2}
+.rs-fig.g-touchee{animation:rs-coeur .6s ease-in-out 3}
+.rs-fig.g-applaudit{animation:rs-saute .35s ease-in-out 5}
+.rs-fig.g-reflechit{animation:rs-clin 1.6s ease-in-out 2}
+.rs-emoji{position:absolute;z-index:2;top:8px;font-size:34px;animation:rs-emoji 1.8s ease-out forwards;pointer-events:none}
+.rs-emoji.gauche{left:18%}
+.rs-emoji.droite{right:18%}
+.rs-scene.fini .rs-fig{animation:rs-flotte 2.4s ease-in-out infinite}
+.rd-av.scene{width:92px;height:92px;border-width:3px}
+.rd-av.scene .rd-q{font-size:34px}
+.rs-barre{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:4px 10px}
+.rs-barre small{grid-column:1/-1;font-size:12px;color:#A88E99}
+.rs-direct{padding:4px 9px;border-radius:999px;background:#E5323B;color:#fff;font-size:10.5px;font-weight:900;letter-spacing:.08em;animation:rs-clignote 1.4s ease-in-out infinite}
+.rs-direct.pause{background:#6B5A63;animation:none}
+.rs-direct.fini{background:#2E9E6B;animation:none}
+.rs-progres{display:block;height:6px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}
+.rs-progres i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#FF2E9A,#F2C46B);transition:width .8s ease}
+.rs-controles{display:flex;gap:8px;flex-wrap:wrap}
+.rs-controles button{padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);color:#FFF4E6;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer}
+.rd-fil.direct{max-height:min(52vh,430px);overflow-y:auto;overscroll-behavior:contain;padding-right:2px}
+.rd-geste{font-weight:700;letter-spacing:0;color:#D9C3CB}
+.rd-tape-li{display:block!important}
+@keyframes rs-parle{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes rs-rit{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+@keyframes rs-danse{0%,100%{transform:rotate(-10deg) translateY(0)}50%{transform:rotate(10deg) translateY(-8px)}}
+@keyframes rs-grimace{0%,100%{transform:scale(1,1)}50%{transform:scale(1.15,.82)}}
+@keyframes rs-saute{0%,100%{transform:translateY(0)}40%{transform:translateY(-18px)}}
+@keyframes rs-clin{0%,100%{transform:rotate(0)}50%{transform:rotate(-9deg)}}
+@keyframes rs-coeur{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+@keyframes rs-emoji{0%{opacity:0;transform:translateY(20px) scale(.5)}20%{opacity:1;transform:translateY(0) scale(1.15)}100%{opacity:0;transform:translateY(-34px) scale(1)}}
+@keyframes rs-flotte{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes rs-clignote{50%{opacity:.55}}
+/* 🏁 après : ce qui a été partagé, la carte souvenir, leurs impressions */
+.ra{display:flex;flex-direction:column;gap:12px;animation:rd-arrive .5s cubic-bezier(.2,1.3,.4,1) both}
+.ra-partage{padding:14px 16px;border-radius:18px;background:rgba(142,197,255,.08);border:1px solid rgba(142,197,255,.35)}
+.ra-partage b{font-size:15px;font-weight:900}
+.ra-partage ul{display:flex;flex-direction:column;gap:6px;margin:8px 0 0;padding:0 0 0 18px;font-size:14px;line-height:1.4;color:#E4EEFF}
+.cs{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;max-width:320px;margin:0 auto;padding:18px 16px 16px;border-radius:22px;border:2px solid rgba(242,196,107,.65);background:radial-gradient(90% 70% at 50% 0%,rgba(242,196,107,.25),transparent 70%),linear-gradient(160deg,#4A1838,#1E0918);color:#FFF4E6;font:inherit;text-align:center;box-shadow:0 22px 40px -22px rgba(242,196,107,.7)}
+.cs.nouvelle{animation:cs-arrive .9s cubic-bezier(.2,1.4,.4,1) both}
+.cs-ruban{position:absolute;top:-12px;left:50%;transform:translateX(-50%);padding:4px 12px;border-radius:999px;background:linear-gradient(90deg,#FF2E9A,#F2C46B);color:#fff;font-size:12px;font-weight:900;white-space:nowrap}
+.cs-etiquette{font-size:10.5px;font-weight:900;letter-spacing:.14em;color:#F2C46B}
+.cs-duo{display:flex;align-items:center;justify-content:center}
+.cs-duo .rd-av + .rd-av{margin-left:-12px}
+.cs-titre{font-size:19px;line-height:1.15;font-weight:900}
+.cs-qui{font-size:12.5px;color:#D9C3CB}
+.cs.petite{max-width:none;margin:0;padding:12px 10px;gap:4px;cursor:pointer;border-width:1.5px}
+.cs.petite .cs-titre{font-size:14px}
+.cs.petite .cs-qui{font-size:11px}
+.cs.petite .cs-etiquette{font-size:9px}
+@keyframes cs-arrive{from{opacity:0;transform:rotateY(80deg) scale(.8)}}
+.ra-echange{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14)}
+.ra-echange > b{font-size:15px;font-weight:900}
+.ra-echange > small{font-size:13px;line-height:1.4;color:#D9C3CB}
+.ra-note{color:#BFF7E2!important}
+.ra-retirer{align-self:flex-start;border:0;background:none;color:#A88E99;font:inherit;font-size:12.5px;text-decoration:underline;cursor:pointer}
+.ra-fil{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.ra-fil li{max-width:85%;padding:8px 11px;border-radius:14px;background:rgba(255,255,255,.09)}
+.ra-fil li.moi{align-self:flex-end;background:rgba(255,46,154,.25)}
+.ra-fil small{font-size:10.5px;font-weight:900;color:#F2C46B}
+.ra-fil p{margin:2px 0 0;font-size:14px;line-height:1.4}
+.ra-echange textarea{width:100%;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:#FFF4E6;font:inherit;font-size:15px;resize:vertical}
+.ra-actions{display:flex;align-items:center;gap:12px}
+/* 🎞️ ses cartes souvenirs */
+.rd-souvenirs{display:flex;flex-direction:column;gap:8px}
+.rd-souvenirs > b{font-size:14px;font-weight:900;color:#D9C3CB}
+.rd-souvenirs-liste{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory}
+.rd-souv{flex:none;display:flex;flex-direction:column;gap:2px;width:170px;padding:10px 12px;border-radius:16px;border:1.5px solid rgba(242,196,107,.45);background:linear-gradient(160deg,rgba(74,24,56,.9),rgba(30,9,24,.9));color:#FFF4E6;font:inherit;text-align:left;cursor:pointer;scroll-snap-align:start}
+.rd-souv b{font-size:13.5px;line-height:1.2;font-weight:900}
+.rd-souv small{font-size:11.5px;color:#A88E99}
+.ms{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.ms h3{margin:0;font-size:18px;font-weight:900}
+.ms-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:860px){.ms-grille{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @keyframes rd-arrive{from{opacity:0;transform:translateY(10px) scale(.97)}}
 @keyframes rd-tape{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
 @media (min-width:860px){.rd{padding:22px 26px}.rd-bulle{max-width:68%}}

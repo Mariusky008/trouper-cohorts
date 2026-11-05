@@ -15,6 +15,9 @@
  * et la tête sort du cadre ») : lues sur son image de tous les jours, elles donnent le cadre — rien n'est rogné, et
  * ses expressions (remises au même cadre par le moteur d'image) tombent exactement dessus.
  *
+ * 🕺 ELLE DANSE (`danse`, 5 novembre 2026) : elle se balance sur son ressort, des notes de musique autour — avec
+ * n'importe quel visage.
+ *
  * `jouer(son)` (par `ref`) : la voix peut arriver APRÈS le toucher (un texte lu par une voix, fabriqué en une ou deux
  * secondes) — le son est préparé au toucher même (un iPhone ne laisse jouer qu'un son lancé par un geste), puis joué
  * dès qu'il arrive. LA VOIX EST CHARGÉE EN ENTIER (une adresse `blob:` ou `data:`) : l'iPhone ne lit pas un son servi
@@ -49,6 +52,8 @@ type Props = {
   rejoue?: number;
   /** Images détourées (fond transparent) : posées debout dans le cadre. */
   decoupe?: boolean;
+  /** 🕺 Elle danse. */
+  danse?: boolean;
   ref?: Ref<FigurineHandle>;
 };
 
@@ -56,7 +61,7 @@ type Fenetre = Window & { webkitAudioContext?: typeof AudioContext };
 /** Un silence d'un instant : joué au toucher, il ouvre le son pour la suite (iPhone). */
 const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
 
-export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = "▶ Écouter", onFin, onJoue, className, sentiment, rejoue = 0, decoupe, ref }: Props) {
+export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = "▶ Écouter", onFin, onJoue, className, sentiment, rejoue = 0, decoupe, danse = false, ref }: Props) {
   const boite = useRef<HTMLDivElement>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
   const contexte = useRef<AudioContext | null>(null);
@@ -209,8 +214,9 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
 
   return (
     <div
-      className={`fqp${className ? ` ${className}` : ""}${decoupe ? " decoupe" : ""}${sentiment ? ` sent-${sentiment}` : ""}${sansVisage ? " bouge" : ""}`}
+      className={`fqp${className ? ` ${className}` : ""}${decoupe ? " decoupe" : ""}${sentiment ? ` sent-${sentiment}` : ""}${sansVisage ? " bouge" : ""}${danse ? " danse" : ""}`}
       data-sentiment={sentiment ?? ""}
+      data-danse={danse ? "oui" : ""}
       data-visage={active || (sentiment ? "mouvement" : "")}
     >
       <div className="fqp-fig" ref={boite} style={ratio && !decoupe ? ({ "--fqp-ratio": ratio.toFixed(4) } as CSSProperties) : undefined}>
@@ -236,6 +242,13 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
           </b>
         )}
         {joue && <span className="fqp-ondes" aria-hidden="true" />}
+        {danse && (
+          <span className="fqp-notes" aria-hidden="true">
+            <i>🎵</i>
+            <i>🎶</i>
+            <i>🎵</i>
+          </span>
+        )}
       </div>
       {src !== undefined && (
         <button type="button" className="fqp-jouer" onClick={() => (joue ? arreter() : void jouer(src))} disabled={charge}>
@@ -276,9 +289,22 @@ export const STYLES_FIGURINE_QUI_PARLE = `
 .bouge.sent-colere .fqp-corps{animation:fqp-colere .11s linear infinite}
 .bouge.sent-tristesse .fqp-corps{animation:fqp-triste 3s ease-in-out infinite;filter:grayscale(.3) brightness(.94)}
 .bouge.sent-euphorie .fqp-corps{animation:fqp-bond .7s cubic-bezier(.3,1.6,.5,1) infinite}
+.bouge.sent-rire .fqp-corps{animation:fqp-rire .16s linear infinite}
+.bouge.sent-grimace .fqp-corps{animation:fqp-grimace .9s ease-in-out infinite}
+/* 🕺 elle danse (avec n'importe quel visage) */
+.fqp.danse .fqp-corps{animation:fqp-danse .9s ease-in-out infinite}
+.fqp-notes{position:absolute;inset:0;pointer-events:none}
+.fqp-notes i{position:absolute;bottom:18%;font-style:normal;font-size:24px;animation:fqp-note 2.4s ease-out infinite;opacity:0}
+.fqp-notes i:nth-child(1){left:10%}
+.fqp-notes i:nth-child(2){right:12%;animation-delay:.8s}
+.fqp-notes i:nth-child(3){left:46%;animation-delay:1.6s}
+@keyframes fqp-rire{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-2%) rotate(1deg)}}
+@keyframes fqp-grimace{0%,100%{transform:scale(1,1)}40%{transform:scale(1.06,.93)}70%{transform:scale(.96,1.05) rotate(2deg)}}
+@keyframes fqp-danse{0%,100%{transform:rotate(-7deg) translateY(0)}25%{transform:rotate(0) translateY(-6%)}50%{transform:rotate(7deg) translateY(0)}75%{transform:rotate(0) translateY(-6%)}}
+@keyframes fqp-note{0%{opacity:0;transform:translateY(0) scale(.7)}20%{opacity:1}100%{opacity:0;transform:translateY(-150px) rotate(20deg) scale(1.1)}}
 @keyframes fqp-joie{from{transform:translateY(0) rotate(-3deg)}to{transform:translateY(-5%) rotate(3deg)}}
 @keyframes fqp-colere{0%,100%{transform:translateX(0)}25%{transform:translateX(-2%) rotate(-1deg)}75%{transform:translateX(2%) rotate(1deg)}}
 @keyframes fqp-triste{0%,100%{transform:rotate(-2deg) translateY(2%) scale(.98)}50%{transform:rotate(-4deg) translateY(3%) scale(.97)}}
 @keyframes fqp-bond{0%,100%{transform:translateY(0) scale(1.03,.95)}45%{transform:translateY(-12%) scale(.97,1.04)}}
-@media (prefers-reduced-motion:reduce){.fqp-corps,.fqp-badge,.fqp-ondes{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.fqp-corps,.fqp-badge,.fqp-ondes,.fqp-notes i{animation:none!important}}
 `;

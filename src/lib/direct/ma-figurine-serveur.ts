@@ -37,6 +37,8 @@ import {
   idMessageValide,
   prenomValide,
   sentimentValide,
+  SENTIMENTS_EN_BASE,
+  danseValide,
   texteValide,
   voixValide,
   type CommerceCite,
@@ -402,6 +404,8 @@ export async function enregistrerMessage(
   /** Le texte qu'elle dit (lu par une voix) : il s'affiche en bulle chez celui qui reçoit. */
   texte?: unknown,
   voix?: unknown,
+  /** 🕺 Elle danse (dès le départ). */
+  danse?: unknown,
 ): Promise<{ id?: string; error?: string }> {
   const m = /^data:(audio\/(?:webm|ogg|mp4|mpeg|x-m4a|aac|wav))(?:;[^,]*)?;base64,(.+)$/i.exec(s(son));
   if (!m) return { error: "Ton message n’a pas pu être enregistré. Réessaie." };
@@ -426,7 +430,12 @@ export async function enregistrerMessage(
   const chemin = `${habitant.id}/m-${id}.${ext}`;
   if (!(await deposer(supabase, chemin, brut, type))) return { error: "Ton message n’est pas parti. Réessaie dans un instant." };
   const ligne = { id, habitant_id: habitant.id, son: chemin, duree: Math.round(d * 10) / 10, commerces: cites };
-  const sent = sentimentValide(sentiment);
+  const humeur = sentimentValide(sentiment);
+  // LE FOU RIRE, LA GRIMACE ET LA DANSE : rangés à côté du message, dans le seau (la table ne connaît que les quatre
+  // premiers visages : pas de migration pour eux)
+  const sent = humeur && SENTIMENTS_EN_BASE.includes(humeur) ? humeur : null;
+  const aCote = { ...(humeur && !sent ? { sentiment: humeur } : {}), ...(danseValide(danse) ? { danse: true } : {}) };
+  if (Object.keys(aCote).length && !(await ecrireJson(supabase, `${habitant.id}/m-${id}.json`, aCote))) return { error: "Ton message n’est pas parti. Réessaie dans un instant." };
   const t = texteValide(texte);
   const v = voixValide(voix);
   const plus = { ...(sent ? { sentiment: sent } : {}), ...(t ? { texte: t } : {}), ...(t && v ? { voix: v } : {}) };
@@ -458,7 +467,9 @@ export async function lireMessage(supabase: Supabase, id: string): Promise<Messa
     ? await supabase.from("human_vitrine_sites").select("slug, business_name, city, activite, est_client").in("slug", slugs)
     : { data: [] };
   const parSlug = new Map(((Array.isArray(sites) ? sites : []) as Ligne[]).filter((x) => x.est_client === true).map((x) => [s(x.slug), x]));
-  const sentiment = sentimentValide(r.sentiment);
+  // (le fou rire, la grimace, la danse : à côté du message)
+  const aCote = await lireJson<{ sentiment: string; danse: boolean }>(supabase, `${s(r.habitant_id)}/m-${id}.json`);
+  const sentiment = sentimentValide(r.sentiment) ?? sentimentValide(aCote.sentiment);
   const [neutre, parle, expr, siennes] = await Promise.all([
     signer(supabase, s(fig.neutre), 7200),
     signer(supabase, s(fig.parle), 7200),
@@ -476,6 +487,7 @@ export async function lireMessage(supabase: Supabase, id: string): Promise<Messa
     sentiment,
     expression: sentiment ? (expr?.expressions[sentiment] ?? null) : null,
     ...(s(r.texte) ? { texte: s(r.texte) } : {}),
+    ...(aCote.danse === true ? { danse: true } : {}),
     ...(optionsOuvertes(siennes.total).has("or") ? { or: true } : {}),
     commerces: slugs.flatMap((slug) => {
       const x = parSlug.get(slug);

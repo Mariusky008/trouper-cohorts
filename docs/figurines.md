@@ -482,6 +482,33 @@ quelque chose de fixe en haut » ; « il faut donc que je t'enregistre les voix 
   quatre sentiments seulement), une rencontre de « quelques minutes » (une conversation de quelques répliques, à lire),
   échanger ses impressions après une rencontre, la carte souvenir de chaque rencontre.
 
+### 9.0 undecies La rencontre en direct, la carte souvenir, les impressions ; sa figurine danse, rit, fait des grimaces (5 novembre) — construit
+
+Sa décision, sur ce que promettent les mots de Pablito : « oui, toutes ces fonctionnalités sont à créer ».
+
+- **En direct** (`Spectacle`, `rencontre.tsx`) : l'IA écrit une conversation plus longue (8 à 14 répliques), chaque
+  réplique avec son geste (rit, danse, grimace, sursaute, clin d'œil, touchée, applaudit, réfléchit). La première fois,
+  elle se joue sur scène : les deux figurines face à face, celle qui parle bouge et fait son geste (un émoji s'envole),
+  chaque réplique à son rythme (`dureeReplique` : deux minutes environ), « ● EN DIRECT », « 🍿 tu es spectateur »,
+  pause, « Passer à la fin », « Revoir en direct ». Regardée une fois (retenu sur l'appareil) : toute la conversation.
+- **À la fin** (`ApresRencontre`) : « ✨ Ce qui a été partagé » (trois points au plus, écrits par l'IA : un point
+  commun, le défi lancé, une découverte) ; **la carte souvenir** (son titre, « Le duel des desserts », les deux
+  figurines, le jour) — « 🎉 Nouvelle carte souvenir ! » après le direct ; dans « Rencontres », « Tes cartes
+  souvenirs » ; dans l'album, « 🎞️ Mes cartes souvenirs » (`MesSouvenirs`, `GET ?souvenirs=1`), une carte touchée
+  rouvre sa rencontre. Sans IA, la page compose la conversation, son titre et son partage d'après les deux cartes.
+- **Leurs impressions** (`Echange`) : entre deux clients seulement (un ami, un membre), si les DEUX disent oui ; tant
+  que l'autre n'a pas dit oui, rien ne s'écrit (et on ne sait pas s'il a refusé). 20 impressions de 280 caractères au
+  plus chacun ; ni numéro, ni adresse e-mail, ni lien, ni autre messagerie (« on se parle ici, pas ailleurs, pour le
+  moment ») ; les mots interdits ; « Retirer mon accord » / « Ne plus échanger » ; « Signaler » et « Ne plus rencontrer
+  ce membre » restent. Rangé dans la rencontre (`echange`), dans le seau privé.
+- **Sa figurine danse** (dès le départ, avec n'importe quel visage) : « 🕺 La faire danser » dans le studio ; chez
+  celui qui reçoit, elle se balance sur son ressort, des notes de musique autour.
+- **Le fou rire et la grimace** : deux visages de plus (faits par le moteur, comme les autres), options 6 et 7 — après
+  les cinq déjà ouvertes, qui ne bougent pas. Pablito les a aussi (il rit, puis fait une grimace, en disant « rire et
+  faire des grimaces »).
+- **Sans migration** : la table des messages ne connaît que quatre visages ; le fou rire, la grimace et la danse sont
+  rangés à côté du message, dans le seau (`<habitant>/m-<id>.json`).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
