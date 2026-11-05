@@ -143,6 +143,11 @@ export function MesOptions({ total }: { total: number }) {
           <b>Ta figurine qui parle</b>
           <small>dès le départ ✓</small>
         </li>
+        <li className="ouverte">
+          <span aria-hidden="true">🕺</span>
+          <b>Elle danse</b>
+          <small>dès le départ ✓</small>
+        </li>
         {OPTIONS_FIGURINE.map((o) => (
           <li key={o.cle} className={ouvertes.has(o.cle) ? "ouverte" : suivante?.cle === o.cle ? "suivante" : "fermee"}>
             <span aria-hidden="true">{ouvertes.has(o.cle) ? o.emoji : suivante?.cle === o.cle ? o.emoji : "🔒"}</span>
@@ -230,6 +235,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const [texte, setTexte] = useState("");
   const [voix, setVoix] = useState<CleVoix>("douce");
   const [sentiment, setSentiment] = useState<Sentiment | null>(null);
+  const [danse, setDanse] = useState(false);
   const [rejoue, setRejoue] = useState(0);
   const [son, setSon] = useState<Son | null>(null);
   const [parle, setParle] = useState(false);
@@ -276,7 +282,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
     [],
   );
 
-  const cleEnvoi = (s: Son | null) => (s ? `${s.cle}|${sentiment ?? ""}|${choisis.join(",")}` : "");
+  const cleEnvoi = (s: Son | null) => (s ? `${s.cle}|${sentiment ?? ""}|${danse ? "danse" : ""}|${choisis.join(",")}` : "");
 
   // ✍️ son texte, lu par la voix choisie : fabriqué au toucher, joué dès qu'il arrive
   function ecouterTexte() {
@@ -354,6 +360,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
         duree: son.duree,
         commerces: choisis,
         ...(sentiment ? { sentiment } : {}),
+        ...(danse ? { danse: true } : {}),
         ...(son.texte ? { texte: son.texte, voix: son.voix } : {}),
       });
       const lien = `${window.location.origin}${j.lien}`;
@@ -378,6 +385,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
           parle={etat.parle!}
           expressions={etat.expressions}
           sentiment={sentiment}
+          danse={danse}
           rejoue={rejoue}
           onJoue={setParle}
           className={`tf-fig${or ? " tf-or" : ""}`}
@@ -392,6 +400,10 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
             setRejoue((n) => n + 1);
           }}
         />
+        {/* 🕺 ELLE DANSE : dès le départ, avec n'importe quel visage */}
+        <button type="button" className={`tf-danse${danse ? " pris" : ""}`} aria-pressed={danse} onClick={() => setDanse((d) => !d)}>
+          🕺 {danse ? "Elle danse ! (toucher pour l’arrêter)" : "La faire danser"}
+        </button>
         {nudge && (
           <p className="tf-nudge" role="status">
             {nudge} <a href="#ou-gagner">Où ?</a>
@@ -840,7 +852,7 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
         repliques={[
           { t: "Salut ! Moi, c’est Pablito !", v: "joie", apres: "louche" },
           { t: "Ici, tu vas créer TA figurine, à partir de ton visage. C’est gratuit et ça prend 1 minute !", v: "neutre" },
-          { t: "Elle pourra parler à ta place, changer d’expression, danser, rire et faire des grimaces. Bref, elle te ressemble… en plus drôle !", v: "euphorie" },
+          { t: "Elle pourra parler à ta place, changer d’expression, danser, rire et faire des grimaces. Bref, elle te ressemble… en plus drôle !", v: "rire", apres: "grimace" },
           { t: "Et après ? Tu peux lui faire dire et faire faire ce que tu veux, et l’envoyer à tes amis.", v: "joie" },
           {
             t: "Et 1 fois par jour, elle pourra rencontrer la figurine d’un ami ou d’une nouvelle personne près de chez toi. Pendant quelques minutes, vos 2 figurines discuteront, réagiront et s’amuseront ensemble : tu seras juste spectateur.",
@@ -872,7 +884,9 @@ export const STYLES_MA_FIGURINE =
 .tf > *{min-width:0}
 .tf-scene{display:flex;flex-direction:column;align-items:center;gap:14px}
 .tf-fig .fqp-fig{width:min(300px,76vw);border-radius:30px;box-shadow:0 30px 60px -24px rgba(0,0,0,.95),0 0 0 1px rgba(255,255,255,.08)}
-.tf-expr{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;width:100%;max-width:420px}
+.tf-expr{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;width:100%;max-width:420px}
+.tf-danse{padding:9px 16px;border-radius:999px;border:1.5px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);color:#FFF4E6;font:inherit;font-size:14px;font-weight:900;cursor:pointer}
+.tf-danse.pris{border-color:#F2C46B;background:rgba(242,196,107,.2)}
 .tf-expr button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px 7px;border-radius:16px;border:0;background:rgba(255,255,255,.07);color:#E8D3DC;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;transition:transform .15s,background .2s,color .2s}
 .tf-expr button span{font-size:26px;line-height:1.1}
 .tf-expr button.pris{background:#FFF4E6;color:#2A0F1F;transform:translateY(-2px)}

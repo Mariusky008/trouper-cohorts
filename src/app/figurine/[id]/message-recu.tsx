@@ -44,8 +44,11 @@ export function MessageRecu({ message: m }: { message: MessageFigurine }) {
           <p className="mr-dit">
             {sentimentDe(m.sentiment) ? (
               <>
-                {sentimentDe(m.sentiment)!.emoji} {m.demo ? "Elle" : "Sa figurine"} est {sentimentDe(m.sentiment)!.dit}. Touche « Écouter » : elle te parle.
+                {sentimentDe(m.sentiment)!.emoji} {m.demo ? "Elle" : "Sa figurine"} est {sentimentDe(m.sentiment)!.dit}
+                {m.danse ? " et elle danse 🕺" : ""}. Touche « Écouter » : elle te parle.
               </>
+            ) : m.danse ? (
+              "🕺 Sa figurine danse ! Touche « Écouter » : elle te parle."
             ) : (
               "Touche « Écouter » : elle te parle."
             )}
@@ -59,6 +62,7 @@ export function MessageRecu({ message: m }: { message: MessageFigurine }) {
             onFin={() => setEcoute(true)}
             etiquette={ecoute ? "▶ Réécouter" : "▶ Écouter"}
             sentiment={m.sentiment}
+            danse={Boolean(m.danse)}
             className={`mr-fig${!m.signale && m.or ? " mr-or" : ""}`}
           />
           {/* ✍️ ce qu'elle dit, quand le message vient d'un texte */}

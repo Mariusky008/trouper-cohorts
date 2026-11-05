@@ -24,7 +24,7 @@ import { OngletMois, STYLES_DECOUVRIR, type CommerceACollectionner } from "./dec
 import { OngletFigurine, STYLES_MA_FIGURINE } from "./ma-figurine";
 import { GuideDit, OngletVisible } from "./guide";
 import { MonPersonnage, STYLES_PERSONNAGE } from "./personnage";
-import { RencontreDuJour, STYLES_RENCONTRE } from "./rencontre";
+import { CLE_VOIR_RENCONTRE, MesSouvenirs, RencontreDuJour, STYLES_RENCONTRE } from "./rencontre";
 import { figurinesEnTout, type EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
 type Familles = { familles: MaFamille[] } | null;
@@ -239,6 +239,20 @@ export function MaCollection({ aujourdhui, commerces, villes = [] }: { aujourdhu
                     <p className="dc-deja">Tu as déjà des figurines ? Ouvre cette page sur le téléphone où tu as libéré ton fantôme.</p>
                   </GuideDit>
                 )
+              )}
+              {/* 🎞️ SES CARTES SOUVENIRS (une par rencontre) : la toucher rouvre la rencontre */}
+              {compte && (
+                <MesSouvenirs
+                  onVoir={(id) => {
+                    try {
+                      window.sessionStorage.setItem(CLE_VOIR_RENCONTRE, id);
+                    } catch {
+                      /* rien */
+                    }
+                    window.dispatchEvent(new Event(CLE_VOIR_RENCONTRE));
+                    aller("rencontre");
+                  }}
+                />
               )}
               <p className="mc-regle">
                 On ne gagne une figurine qu’en venant : elles ne s’achètent pas. Une édition manquée est manquée ; les éditions rares se gagnent quand le commerce annonce une

@@ -22,8 +22,10 @@ import { TOTAL_COLLECTION } from "./collection";
 
 /**
  * 🎁 SES OPTIONS, UNE DE PLUS À CHAQUE ACHAT — `n` : le nombre de figurines gagnées (tous commerces confondus) qui
- * l'ouvre. Au départ (0) : sa figurine qui parle, avec son texte, la joie, la voix « Douce », l'envoi. Changer cette
- * liste change la page, la route et les essais à la fois.
+ * l'ouvre. Au départ (0) : sa figurine qui parle, avec son texte, la joie, la danse, la voix « Douce », l'envoi.
+ * Changer cette liste change la page, la route et les essais à la fois. Le fou rire et les grimaces (5 novembre 2026,
+ * les mots de Pablito : « elle pourra danser, rire et faire des grimaces ») viennent après les autres : celles déjà
+ * ouvertes ne bougent pas.
  */
 export const OPTIONS_FIGURINE = [
   { n: 1, cle: "colere", emoji: "😠", titre: "La colère", dit: "son visage en colère" },
@@ -31,6 +33,8 @@ export const OPTIONS_FIGURINE = [
   { n: 3, cle: "tristesse", emoji: "😢", titre: "La tristesse", dit: "son visage triste" },
   { n: 4, cle: "euphorie", emoji: "🤩", titre: "L’euphorie", dit: "son visage euphorique" },
   { n: 5, cle: "or", emoji: "✨", titre: "Le cadre doré", dit: "tes messages arrivent dans un cadre en or" },
+  { n: 6, cle: "rire", emoji: "😂", titre: "Le fou rire", dit: "son visage mort de rire" },
+  { n: 7, cle: "grimace", emoji: "😜", titre: "Les grimaces", dit: "son visage qui fait des grimaces" },
 ] as const;
 export type CleOption = (typeof OPTIONS_FIGURINE)[number]["cle"];
 /** Ses options ouvertes, d'après ses figurines gagnées. */
@@ -56,7 +60,17 @@ export const SENTIMENTS = [
   { cle: "colere", emoji: "😠", nom: "La colère", court: "Colère", dit: "en colère" },
   { cle: "tristesse", emoji: "😢", nom: "La tristesse", court: "Tristesse", dit: "un peu triste" },
   { cle: "euphorie", emoji: "🤩", nom: "L’euphorie", court: "Euphorie", dit: "euphorique" },
+  { cle: "rire", emoji: "😂", nom: "Le fou rire", court: "Fou rire", dit: "pliée de rire" },
+  { cle: "grimace", emoji: "😜", nom: "La grimace", court: "Grimace", dit: "en pleine grimace" },
 ] as const;
+/** Ceux que la table des messages connaît (sa colonne `sentiment`) : les autres sont rangés à côté du message, dans le seau. */
+export const SENTIMENTS_EN_BASE: readonly string[] = ["joie", "colere", "tristesse", "euphorie"];
+
+/**
+ * 🕺 ELLE DANSE (5 novembre 2026) — dès le départ, avec n'importe quel visage : chez celui qui reçoit le message, elle
+ * se balance sur son ressort, des notes de musique autour. Un mouvement, pas une image : rien à fabriquer.
+ */
+export const danseValide = (x: unknown) => x === true;
 export type Sentiment = (typeof SENTIMENTS)[number]["cle"];
 export const sentimentValide = (x: unknown): Sentiment | null => (SENTIMENTS.some((v) => v.cle === x) ? (x as Sentiment) : null);
 export const sentimentDe = (x: unknown) => SENTIMENTS.find((v) => v.cle === x) ?? null;
@@ -173,6 +187,8 @@ export type MessageFigurine =
       expression?: ImagesExpression | null;
       /** Ce qu'elle dit, quand le message vient d'un texte (il s'affiche en bulle). */
       texte?: string;
+      /** 🕺 Elle danse. */
+      danse?: boolean;
       /** Un message de la démonstration : écrit par `prenom` avec la figurine de ClikMe (pas la sienne). */
       demo?: boolean;
       /** ✨ Le cadre doré (une option de l'expéditeur). */

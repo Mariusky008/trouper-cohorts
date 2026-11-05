@@ -10,6 +10,8 @@
  *   · `<habitant>/rencontres.json` : ses rencontres (id, jour, avec qui), ses amis, ce qu'il a appris de lui
  *     (« c'est tout moi » / « jamais de la vie ») et ses compteurs (sa ressemblance) ;
  *   · `invitations/<code>.json` : qui a invité (le lien `/collection?ami=<code>`).
+ * Une rencontre porte aussi son titre (la carte souvenir), ce qui a été partagé, et — entre deux clients qui l'ont
+ * voulu tous les deux — leurs impressions (`echange`).
  *
  * FICHIER SERVEUR.
  */
@@ -24,17 +26,26 @@ import { motInterdit } from "./mots-interdits";
 import { GOUTS, reponsesEnMots, reponsesValides } from "./personnage";
 import { cheminCarte, ecrire, imageDe, lire, prenomDe, type Gardee } from "./personnage-serveur";
 import {
+  GESTES,
+  IMPRESSIONS_MAX,
+  PARTAGE_LONGUEUR,
+  PARTAGE_MAX,
   REPLIQUES_MAX,
   REPLIQUES_MIN,
   REPLIQUE_MAX,
+  TITRE_MAX,
   codeInvitationValide,
   emotionValide,
+  gesteValide,
   idRencontreValide,
+  impressionRefusee,
   ressemblance,
   verdictValide,
+  type Geste,
   type Participant,
   type Reaction,
   type RencontreVue,
+  type Souvenir,
 } from "./rencontre";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -54,13 +65,20 @@ type Fichier = {
   le: string;
   a: { habitant: string };
   b: Cote;
-  repliques: { qui: "a" | "b"; texte: string }[];
+  repliques: { qui: "a" | "b"; texte: string; geste?: Geste }[];
   reactions: Record<string, Record<number, Reaction>>;
   par: "ia" | "local";
   signale_le?: string;
   /** Une rencontre avec un membre de sa ville (« Rencontrer un membre »), qu'il ne connaissait pas. */
   membre?: boolean;
+  /** La carte souvenir : son titre ; ce qui a été partagé (celles d'avant le 5 novembre n'en ont pas). */
+  titre?: string;
+  partage?: string[];
+  /** Entre deux clients : qui veut échanger ses impressions, et ce qu'ils se sont écrit. */
+  echange?: { oui: string[]; messages: { de: string; texte: string; le: string }[] };
 };
+/** Ce que l'IA (ou la page sans IA) écrit : la conversation, son titre, ce qui a été partagé. */
+type Ecrite = { repliques: Fichier["repliques"]; titre: string; partage: string[] };
 type Index = {
   liste: { id: string; jour: string; avec: string }[];
   amis: string[];
@@ -149,7 +167,7 @@ function portraitClient(lettre: string, prenom: string, g: Gardee, idx: Index): 
 
 function consigneConversation(a: string[], b: string[], inconnus = false): string {
   return [
-    "Tu écris une petite conversation entre deux figurines de collection (des personnages miniatures) qui se rencontrent aujourd'hui, pour ClikMe, l'application des commerces de quartier.",
+    "Tu écris la conversation de deux figurines de collection (des personnages miniatures) qui se rencontrent aujourd'hui, pour ClikMe, l'application des commerces de quartier. Elle se joue en direct, sous les yeux de leurs propriétaires : les figurines discutent, réagissent et s'amusent ensemble.",
     ...(inconnus ? ["Elles ne se connaissent pas encore : elles font connaissance, avec curiosité et bonne humeur (sans jamais proposer de se voir en vrai)."] : []),
     "Le ton : drôle, chaleureux, bienveillant — jamais méchant, jamais gênant. Elles se tutoient, parlent de ce qu'elles aiment, se taquinent gentiment, se lancent un petit défi.",
     "Chacune parle EXACTEMENT comme décrit (sa façon de parler) : c'est le jeu, que chacun puisse dire « c'est tout moi ».",
@@ -161,25 +179,39 @@ function consigneConversation(a: string[], b: string[], inconnus = false): strin
     ...b,
     "",
     `Écris entre ${REPLIQUES_MIN} et ${REPLIQUES_MAX} répliques, en alternance, A commence. Chaque réplique fait au plus ${REPLIQUE_MAX - 20} caractères.`,
-    'Réponds en JSON, exactement : {"repliques": [{"qui": "A", "texte": "…"}, {"qui": "B", "texte": "…"}]}',
+    "Une vraie petite histoire : elles font connaissance, découvrent un point commun, se lancent un défi ou un jeu, rient, et se quittent bons amis.",
+    `Chaque réplique a son GESTE, ce que la figurine fait en la disant, parmi : ${GESTES.map((g) => `« ${g.cle} » (${g.dit})`).join(", ")}. Varie-les.`,
+    `Donne aussi à la rencontre un TITRE drôle, de ${TITRE_MAX} caractères au plus (« Le duel des desserts »), et ce qui a été PARTAGÉ : ${PARTAGE_MAX} points au plus, de ${PARTAGE_LONGUEUR - 20} caractères au plus chacun (un point commun, le défi lancé, une découverte), écrits pour les deux propriétaires.`,
+    'Réponds en JSON, exactement : {"titre": "…", "partage": ["…", "…"], "repliques": [{"qui": "A", "texte": "…", "geste": "rit"}, {"qui": "B", "texte": "…", "geste": "clin"}]}',
   ].join("\n");
 }
 
-/** La réponse de l'IA, relue : le bon nombre de répliques, alternées, pas trop longues, sans mot interdit. */
-export function repliquesRelues(x: unknown): Fichier["repliques"] | null {
-  const l = (x as { repliques?: unknown } | null)?.repliques;
+/**
+ * La réponse de l'IA, relue : le bon nombre de répliques, alternées, pas trop longues, sans mot interdit ; un geste
+ * inconnu est retiré ; un titre ou un point partagé de travers est retiré (la conversation reste).
+ */
+export function conversationRelue(x: unknown): Ecrite | null {
+  const o = (x as { repliques?: unknown; titre?: unknown; partage?: unknown } | null) ?? {};
+  const l = o.repliques;
   if (!Array.isArray(l) || l.length < REPLIQUES_MIN || l.length > REPLIQUES_MAX + 2) return null;
   const r: Fichier["repliques"] = [];
   for (const e of l) {
     const qui = s((e as { qui?: unknown })?.qui).toUpperCase();
     const texte = s((e as { texte?: unknown })?.texte).replace(/\s+/g, " ");
     if ((qui !== "A" && qui !== "B") || !texte || texte.length > REPLIQUE_MAX || motInterdit(texte)) return null;
-    r.push({ qui: qui === "A" ? "a" : "b", texte });
+    const geste = gesteValide(s((e as { geste?: unknown })?.geste).toLowerCase());
+    r.push({ qui: qui === "A" ? "a" : "b", texte, ...(geste ? { geste } : {}) });
   }
-  return r.slice(0, REPLIQUES_MAX);
+  const propre = (v: unknown, max: number) => {
+    const z = s(v).replace(/\s+/g, " ").replace(/^[«"“\s]+|[»"”\s]+$/g, "");
+    return z && z.length <= max && !motInterdit(z) ? z : "";
+  };
+  const titre = propre(o.titre, TITRE_MAX);
+  const partage = (Array.isArray(o.partage) ? o.partage : []).map((p) => propre(p, PARTAGE_LONGUEUR)).filter(Boolean).slice(0, PARTAGE_MAX);
+  return { repliques: r.slice(0, REPLIQUES_MAX), titre, partage };
 }
 
-async function ecrireConversation(consigne: string): Promise<Fichier["repliques"] | null> {
+async function ecrireConversation(consigne: string): Promise<Ecrite | null> {
   const cle = s(process.env.OPENAI_API_KEY);
   if (!cle) return null;
   const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
@@ -190,36 +222,69 @@ async function ecrireConversation(consigne: string): Promise<Fichier["repliques"
       body: JSON.stringify({
         model: s(process.env.OPENAI_PERSONNAGE_MODEL) || s(process.env.OPENAI_DOUBLE_MODEL) || "gpt-5.4-mini",
         response_format: { type: "json_object" },
-        max_completion_tokens: 1400,
+        max_completion_tokens: 2600,
         messages: [{ role: "user", content: consigne }],
       }),
       signal: AbortSignal.timeout(30_000),
     });
     if (!r.ok) return null;
     const j = (await r.json()) as { choices?: { message?: { content?: string } }[] };
-    return repliquesRelues(JSON.parse(j.choices?.[0]?.message?.content ?? "null"));
+    return conversationRelue(JSON.parse(j.choices?.[0]?.message?.content ?? "null"));
   } catch {
     return null;
   }
 }
 
-/** Sans IA : une conversation composée d'après les deux cartes (courte, toujours juste). */
-function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; carte: Gardee } | CommerceInfo): Fichier["repliques"] {
+/** Sans IA : une conversation composée d'après les deux cartes (toujours juste), avec ses gestes, son titre, son partage. */
+function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; carte: Gardee } | CommerceInfo): Ecrite {
   const goutA = GOUTS.find((x) => x.cle === a.gouts[0])?.nom.toLowerCase();
+  const fetiche = (g: Gardee, sinon: string) => g.phrase || sinon;
   if ("slug" in b)
-    return [
-      { qui: "a", texte: `Salut ! Moi c’est ${prenomA || "une nouvelle figurine"}. Il paraît que tu es la figurine de ${b.nom} ?` },
-      { qui: "b", texte: `En personne ! Ici, on aime ce qu’on fait. Et toi, qu’est-ce qui te fait vibrer ?` },
-      { qui: "a", texte: a.phrase || (goutA ? `Moi ? ${goutA.charAt(0).toUpperCase()}${goutA.slice(1)}, et les bonnes surprises.` : "Les bonnes surprises, toujours.") },
-      { qui: "b", texte: "Alors on va bien s’entendre. Passe me voir, je te raconterai mon métier !" },
-    ];
+    return {
+      titre: `Rencontre chez ${b.nom}`.length <= TITRE_MAX ? `Rencontre chez ${b.nom}` : "Rencontre chez un commerce ClikMe",
+      partage: [
+        `Ta figurine a découvert la figurine de ${b.nom}${b.metier ? ` (${b.metier.toLowerCase()})` : ""}.`,
+        goutA ? `Elle lui a parlé de ce qu’elle aime : ${goutA}.` : "Elle lui a parlé de ce qu’elle aime.",
+        "Le défi lancé : se raconter une surprise la prochaine fois.",
+      ],
+      repliques: [
+        { qui: "a", texte: `Salut ! Moi c’est ${prenomA || "une nouvelle figurine"}. Il paraît que tu es la figurine de ${b.nom} ?`, geste: "surprise" },
+        { qui: "b", texte: "En personne ! Bienvenue. Ici, on aime ce qu’on fait, et ça se voit.", geste: "applaudit" },
+        { qui: "a", texte: "Et qu’est-ce qui te plaît le plus, dans ton métier ?", geste: "reflechit" },
+        { qui: "b", texte: "Les sourires des gens qui passent la porte. Ça n’a pas de prix !", geste: "touchee" },
+        { qui: "b", texte: "Et toi, qu’est-ce qui te fait vibrer ?", geste: "clin" },
+        { qui: "a", texte: fetiche(a, goutA ? `Moi ? ${goutA.charAt(0).toUpperCase()}${goutA.slice(1)}, et les bonnes surprises.` : "Les bonnes surprises, toujours."), geste: "danse" },
+        { qui: "b", texte: "J’adore. Tu sais quoi ? On va bien s’entendre, toi et moi.", geste: "rit" },
+        { qui: "a", texte: "Petit défi : la prochaine fois, chacun raconte une surprise. D’accord ?", geste: "grimace" },
+        { qui: "b", texte: "Défi accepté ! Passe me voir, je te raconterai mon métier.", geste: "applaudit" },
+      ],
+    };
   const goutB = GOUTS.find((x) => x.cle === b.carte.gouts[0])?.nom.toLowerCase();
-  return [
-    { qui: "a", texte: `Salut ${b.prenom || "toi"} ! Alors, c’est toi, « ${b.carte.fiche.titre} » ?` },
-    { qui: "b", texte: `Pris sur le fait ! Et toi, « ${a.fiche.titre} »… ça promet !` },
-    { qui: "a", texte: a.phrase || (goutA ? `Défi : qui de nous deux est le plus fan de ${goutA} ?` : "Défi : le premier qui rit a perdu.") },
-    { qui: "b", texte: b.carte.phrase || (goutB ? `Défi accepté. Mais d’abord, on parle de ${goutB}.` : "Défi accepté !") },
-  ];
+  const commun = a.gouts.find((g) => b.carte.gouts.includes(g));
+  const nomCommun = commun ? GOUTS.find((x) => x.cle === commun)?.nom.toLowerCase() : "";
+  return {
+    // (jamais coupé au milieu d'un mot : trop long, « Rencontre avec … »)
+    titre: [nomCommun ? `Le duel ${/^[aeiouyhéè]/i.test(nomCommun) ? "de l’" : "du "}${nomCommun}` : "", `${a.fiche.titre} rencontre ${b.carte.fiche.titre}`, `Rencontre avec ${b.prenom || "un ami"}`].find(
+      (x) => x && x.length <= TITRE_MAX,
+    )!,
+    partage: [
+      nomCommun ? `Un point commun : vous aimez tous les deux ${nomCommun}.` : `Deux caractères qui se complètent : « ${a.fiche.titre} » et « ${b.carte.fiche.titre} ».`,
+      `Le défi lancé : ${goutA ? `qui est le plus fan de ${goutA}` : "le premier qui rit a perdu"}.`,
+      goutB ? `${b.prenom || "L’autre figurine"} a parlé de ${goutB}.` : `${b.prenom || "L’autre figurine"} a dit sa phrase préférée.`,
+    ],
+    repliques: [
+      { qui: "a", texte: `Salut ${b.prenom || "toi"} ! Alors, c’est toi, « ${b.carte.fiche.titre} » ?`, geste: "surprise" },
+      { qui: "b", texte: `Pris sur le fait ! Et toi, « ${a.fiche.titre} »… ça promet !`, geste: "rit" },
+      { qui: "a", texte: "On m’a dit que tu avais du caractère. Je vérifie.", geste: "reflechit" },
+      { qui: "b", texte: fetiche(b.carte, "Du caractère ? Juste ce qu’il faut. Et beaucoup d’humour."), geste: "clin" },
+      { qui: "a", texte: fetiche(a, goutA ? `Moi, mon truc, c’est ${goutA}.` : "Moi, mon truc, ce sont les bonnes surprises."), geste: "danse" },
+      { qui: "b", texte: nomCommun ? `Attends… moi aussi, ${nomCommun} ! On est faits pour s’entendre.` : goutB ? `Moi, c’est ${goutB}. Tu me feras découvrir le tien ?` : "On va bien s’entendre, je le sens.", geste: "touchee" },
+      { qui: "a", texte: goutA ? `Défi : qui de nous deux est le plus fan de ${goutA} ?` : "Défi : le premier qui rit a perdu.", geste: "grimace" },
+      { qui: "b", texte: "Défi accepté… et j’ai déjà presque ri. Raté !", geste: "rit" },
+      { qui: "a", texte: "Une grimace pour la peine, et on se revoit demain ?", geste: "grimace" },
+      { qui: "b", texte: "Avec plaisir. Bravo, c’était une super rencontre !", geste: "applaudit" },
+    ],
+  };
 }
 
 // ─── ce que voit l'un des deux ───────────────────────────────────────────────────────────────────
@@ -242,12 +307,24 @@ async function vueDe(supabase: Supabase, f: Fichier, moiId: string): Promise<Ren
     jour: f.jour,
     moi: cote === "a" ? pa : pb,
     autre: cote === "a" ? pb : pa,
-    repliques: f.repliques.map((r) => ({ moi: r.qui === cote, texte: r.texte })),
+    repliques: f.repliques.map((r) => ({ moi: r.qui === cote, texte: r.texte, ...(r.geste ? { geste: r.geste } : {}) })),
     reactions: f.reactions[moiId] ?? {},
     par: f.par,
     ...(f.membre ? { membre: true } : {}),
+    ...(f.titre ? { titre: f.titre } : {}),
+    ...(f.partage?.length ? { partage: f.partage } : {}),
+    // ENTRE DEUX CLIENTS : leurs impressions, si les deux le veulent
+    ...("habitant" in f.b ? { echange: echangeVu(f, moiId) } : {}),
   };
 }
+
+function echangeVu(f: Fichier, moiId: string): NonNullable<RencontreVue["echange"]> {
+  const autreId = autreDe(f, moiId);
+  const oui = f.echange?.oui ?? [];
+  const tous = oui.includes(moiId) && oui.includes(autreId);
+  return { moi: oui.includes(moiId), autre: tous, messages: tous ? (f.echange?.messages ?? []).map((m) => ({ moi: m.de === moiId, texte: m.texte, le: m.le })) : [] };
+}
+const autreDe = (f: Fichier, moiId: string) => (f.a.habitant === moiId ? ("habitant" in f.b ? f.b.habitant : "") : f.a.habitant);
 
 const participe = (f: Fichier, h: string) => f.a.habitant === h || ("habitant" in f.b && f.b.habitant === h);
 
@@ -261,8 +338,8 @@ export type EtatRencontre = {
   retiree?: boolean;
   ressemblance: number | null;
   amis: number;
-  /** Ses rencontres d'avant (les plus récentes d'abord), et avec qui. */
-  avant: { id: string; jour: string; avec: string }[];
+  /** Ses rencontres d'avant (les plus récentes d'abord), avec qui, et leur titre (la carte souvenir). */
+  avant: { id: string; jour: string; avec: string; titre?: string }[];
   /** Il a déjà rencontré un membre aujourd'hui (un par jour) ; il est dans la file des membres. */
   membreAujourdhui: boolean;
   ouvert: boolean;
@@ -277,7 +354,12 @@ async function rencontresDavant(supabase: Supabase, idx: Index, sauf: string): P
   const prenoms = new Map(
     await Promise.all([...new Set(l.filter((x) => x.avec.startsWith("h:")).map((x) => x.avec.slice(2)))].map(async (h) => [h, await prenomDe(supabase, { id: h, prenom: "" })] as const)),
   );
-  return l.map((x) => ({ id: x.id, jour: x.jour, avec: x.avec.startsWith("h:") ? prenoms.get(x.avec.slice(2)) || "un ami" : noms.get(x.avec.slice(2)) || "un commerce" }));
+  const fichiers = await Promise.all(l.map((x) => lire<Fichier>(supabase, cheminRencontre(x.id)).catch(() => null)));
+  return l.flatMap((x, k) =>
+    fichiers[k]?.signale_le
+      ? []
+      : [{ id: x.id, jour: x.jour, avec: x.avec.startsWith("h:") ? prenoms.get(x.avec.slice(2)) || "un ami" : noms.get(x.avec.slice(2)) || "un commerce", ...(fichiers[k]?.titre ? { titre: fichiers[k]!.titre } : {}) }],
+  );
 }
 
 /** 💬 SA RENCONTRE DU JOUR : celle d'aujourd'hui, ou une nouvelle (l'IA l'écrit maintenant). */
@@ -350,16 +432,21 @@ async function creerConversation(
     ];
   }
   const ia = await ecrireConversation(consigneConversation(portraitA, portraitB, membre));
+  const locale = conversationLocale(prenomA, carte, autre);
+  const ecrite = ia ?? locale;
   const f: Fichier = {
     id: nouvelId(),
     jour,
     le: new Date().toISOString(),
     a: { habitant: habitant.id },
     b,
-    repliques: ia ?? conversationLocale(prenomA, carte, autre),
+    repliques: ecrite.repliques,
     reactions: {},
     par: ia ? "ia" : "local",
     ...(membre ? { membre: true } : {}),
+    // (l'IA a oublié son titre ou son partage : ceux de la page)
+    titre: ecrite.titre || locale.titre,
+    partage: ecrite.partage.length ? ecrite.partage : locale.partage,
   };
   await ecrire(supabase, cheminRencontre(f.id), f);
   const idxApres: Index = { ...idx, liste: [...idx.liste, { id: f.id, jour, avec: cleAvec(b) }].slice(-120), ...(membre ? { membreJour: jour } : {}) };
@@ -470,6 +557,58 @@ export async function reagir(supabase: Supabase, habitant: Habitant, id: unknown
     return { ressemblance: ressemblance(n2.moi, n2.pas) };
   }
   return { ressemblance: ressemblance(idx.moi, idx.pas) };
+}
+
+/**
+ * 💬 ÉCHANGER SES IMPRESSIONS (« si vous êtes d'accord ») : chacun dit oui (ou retire son oui) ; tant que les deux
+ * n'ont pas dit oui, rien ne s'écrit. Entre deux clients seulement.
+ */
+export async function vouloirEchanger(supabase: Supabase, habitant: Habitant, id: unknown, oui: boolean): Promise<{ rencontre?: RencontreVue; error?: string }> {
+  const rid = s(id);
+  if (!idRencontreValide(rid)) return { error: "Demande incomplète." };
+  const f = await lire<Fichier>(supabase, cheminRencontre(rid));
+  if (!f || f.signale_le || !participe(f, habitant.id) || !("habitant" in f.b)) return { error: "Cette rencontre n’existe plus." };
+  const avant = f.echange ?? { oui: [], messages: [] };
+  const liste = oui ? [...new Set([...avant.oui, habitant.id])] : avant.oui.filter((x) => x !== habitant.id);
+  const apres: Fichier = { ...f, echange: { ...avant, oui: liste } };
+  await ecrire(supabase, cheminRencontre(rid), apres);
+  return { rencontre: await vueDe(supabase, apres, habitant.id) };
+}
+
+/** Une impression (les deux ont dit oui) : relue (pas de numéro, d'adresse, de lien, de mot interdit), 20 au plus chacun. */
+export async function ecrireImpression(supabase: Supabase, habitant: Habitant, id: unknown, texte: unknown): Promise<{ rencontre?: RencontreVue; error?: string; statut?: number }> {
+  const rid = s(id);
+  if (!idRencontreValide(rid)) return { error: "Demande incomplète.", statut: 400 };
+  const f = await lire<Fichier>(supabase, cheminRencontre(rid));
+  if (!f || f.signale_le || !participe(f, habitant.id) || !("habitant" in f.b)) return { error: "Cette rencontre n’existe plus.", statut: 404 };
+  const e = f.echange ?? { oui: [], messages: [] };
+  if (!e.oui.includes(habitant.id) || !e.oui.includes(autreDe(f, habitant.id))) return { error: "Vous devez être d’accord tous les deux pour échanger.", statut: 403 };
+  const t = s(texte).replace(/\s+/g, " ");
+  const refus = impressionRefusee(t) ?? (motInterdit(t) ? "Ce mot n’a pas sa place ici." : null);
+  if (refus) return { error: refus, statut: 400 };
+  if (e.messages.filter((m) => m.de === habitant.id).length >= IMPRESSIONS_MAX) return { error: "Vous vous êtes déjà beaucoup écrit sur cette rencontre !", statut: 429 };
+  const apres: Fichier = { ...f, echange: { ...e, messages: [...e.messages, { de: habitant.id, texte: t, le: new Date().toISOString() }] } };
+  await ecrire(supabase, cheminRencontre(rid), apres);
+  return { rencontre: await vueDe(supabase, apres, habitant.id) };
+}
+
+/**
+ * 🎞️ SES CARTES SOUVENIRS — une par rencontre (celles d'avant le 5 novembre aussi : leur titre est alors « Rencontre
+ * avec … »), les plus récentes d'abord ; sans les rencontres signalées. Pour l'album.
+ */
+export async function souvenirsDe(supabase: Supabase, habitant: Habitant): Promise<Souvenir[]> {
+  const idx = await indexDe(supabase, habitant.id);
+  const l = idx.liste.slice(-24).reverse();
+  const r = await Promise.all(
+    l.map(async (x): Promise<Souvenir | null> => {
+      const f = await lire<Fichier>(supabase, cheminRencontre(x.id)).catch(() => null);
+      if (!f || f.signale_le || !participe(f, habitant.id)) return null;
+      const p = await participant(supabase, f.a.habitant === habitant.id ? f.b : f.a, 6 * 3600);
+      const avec = p.type === "client" ? p.prenom || "un ami" : p.nom;
+      return { id: f.id, jour: f.jour, avec, titre: f.titre || `Rencontre avec ${avec}`, image: p.image, figurine: p.type === "client" ? p.figurine : !p.image.startsWith("/direct/double/") };
+    }),
+  );
+  return r.filter((x): x is Souvenir => Boolean(x));
 }
 
 /** « Signaler » : la rencontre ne s'affiche plus, pour les deux. */
