@@ -483,8 +483,9 @@ quelque chose de fixe en haut » ; « il faut donc que je t'enregistre les voix 
   **Reçus ensuite le même jour** : les autres onglets (Personnage, Rencontres, Ce mois-ci, Album vide), les questions
   du test de personnage (`pablito-quiz-<question>`, `useVoixPablito`) et ce qu'il raconte pendant la fabrication
   (`pablito-fabrication-1` à `-4`, `-oups`). Un seul lecteur pour toute la page (`lecteurPablito`). Rangés d'après
-  l'heure d'enregistrement, la durée et les pauses ; pas encore reçus : « Ensuite, chaque achat… » (Personnage, 3ᵉ
-  bulle) et « Dis-moi si c'est bien toi… » (Rencontres, 3ᵉ bulle) — ces deux bulles s'écrivent sans le son.
+  l'heure d'enregistrement, la durée et les pauses ; « Dis-moi si c'est bien toi… » (Rencontres, 3ᵉ bulle) reçu à
+  part. « Ensuite, chaque achat… » (Personnage, 3ᵉ bulle) : pas enregistré — le patron ne veut pas d'une progression
+  par les achats (« ça ressemble trop à de l'achat forcé »), la phrase changera avec la façon de progresser.
 - **Ce que ses mots promettent et qui n'existe pas encore** : danser et faire des grimaces (la figurine du client : ses
   quatre sentiments seulement), une rencontre de « quelques minutes » (une conversation de quelques répliques, à lire),
   échanger ses impressions après une rencontre, la carte souvenir de chaque rencontre.
