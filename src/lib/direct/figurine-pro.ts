@@ -421,37 +421,48 @@ export function consigneFigurine(famille: FamilleDouble, fond: "transparent" | "
 /**
  * 🗣️ LA FIGURINE D'UN CLIENT (« Ma collection », dès le départ — `ma-figurine-fabrique-serveur.ts`) : la même
  * consigne que celle des commerçants (le style « film d'animation 3D », les clés de la ressemblance, le ressort et le
- * socle), mais SES vêtements à lui (ceux de la photo), les mains jointes devant lui, et un FOND ROSE UNI (comme la
- * figurine de démonstration du propriétaire) : elle se montre telle quelle, et ses expressions gardent le même cadre.
+ * socle), avec un FOND ROSE (comme la figurine de démonstration du propriétaire) : elle se montre telle quelle, ses
+ * expressions gardent le même cadre, et elle danse sur son ressort (`ressort.ts` : le fond rose se reconnaît).
+ *
+ * PERSONNALISÉE COMME CELLE DE CHATGPT (5 novembre 2026, le patron, ses deux images côte à côte : « celle de ChatGPT
+ * est beaucoup plus personnalisée ») — ce qui faisait la différence : une tenue qui dit qui il est (le tablier
+ * d'artisan, des outils dans la poche, une montre), de l'attitude (les bras croisés, un regard qui a du caractère), des
+ * cheveux texturés, un rendu détaillé et un rose vif ; chez nous : « ses vêtements, simplifiés », les mains jointes,
+ * une expression calme, des cheveux lisses. D'où `univers` (facultatif, demandé avec sa photo : son métier ou sa
+ * passion) et cette consigne.
  */
-export function consigneFigurineClient(traits?: Traits | null): string {
+export function consigneFigurineClient(traits?: Traits | null, univers = ""): string {
   const vus = traitsEnMots(traits);
   return [
-    "Create a high-quality 3D animated movie character bobblehead based on the reference photo. Preserve the person's recognizable identity and facial features.",
+    "Create a high-quality, highly personalized 3D animated movie character bobblehead based on the reference photo — a collectible that instantly says who this person is. Preserve the person's recognizable identity and facial features.",
     "",
     "FACE AND LIKENESS:",
     "- Carefully reproduce the original shape of their nose, eyes, eyebrows, jawline and facial proportions, their age, their skin tone, their hair colour and hairstyle, their facial hair. Keep the face recognizable.",
-    "- A calm, natural expression with closed lips (it will be animated later).",
+    "- A characterful expression full of personality: an intense, confident look in the eyes, expressive eyebrows, a hint of attitude — with the lips closed (it will be animated later).",
     "- If they wear glasses, keep them; if not, add none. Nothing on the head or face that is not in the photo.",
     ...(vus.filter((l) => !l.startsWith("- Son expression")).length
       ? ["- Their features as seen in the photo (written in French — follow them exactly):", ...vus.filter((l) => !l.startsWith("- Son expression")).map((l) => `  ${l}`)]
       : []),
-    ...(traits?.accentuer ? [`- The stylization gently plays up THEIR OWN most distinctive features (in French: ${traits.accentuer}) — never generic cartoon features that are not theirs.`] : []),
+    ...(traits?.accentuer ? [`- The caricature plays up THEIR OWN most distinctive features (in French: ${traits.accentuer}) — never generic cartoon features that are not theirs.`] : []),
     "",
     "3D ANIMATION STYLE:",
-    ...STYLE_ANIMATION,
+    "- A true stylized 3D animated feature-film character, not a photorealistic human: a matte skin finish without pores (the lines of their age stay, sculpted in, with warm natural skin tones); simplified facial shapes that keep THEIR real face shape and proportions; expressive eyes of their real size.",
+    "- The hair richly sculpted, with visible strands, texture and natural volume, in their real colour (salt-and-pepper stays salt-and-pepper); the facial hair (if any) sculpted with fine texture in its real colour.",
+    "- Polished, ultra-detailed 3D rendering, appealing shapes, rich colours: a premium collectible designer-toy aesthetic.",
     "",
-    "BODY AND CLOTHING:",
-    "- Hands joined in front of the chest, relaxed.",
+    "BODY, POSE AND OUTFIT:",
+    "- Arms crossed over the chest, a confident stance with attitude.",
     ...FIGURINE_ENTIERE.filter((l) => !l.startsWith("- Standing pose")),
-    "- Their own clothes from the photo (same colours and style), simplified, with visible stitching and details. Nothing written on them.",
+    univers
+      ? `- Their outfit tells who they are — their job or passion, in French: « ${univers} ». Dress them as a flattering, instantly recognizable version of it (for a craftsman: a sturdy canvas work apron with tools in the front pocket), with one or two small fitting accessories on the body or in the hands (a wristwatch, a tool, an object of their passion). Nothing written, no logo.`
+      : "- Their own clothes from the photo (same colours and style), enriched with realistic details — fabric texture, visible stitching, buttons, pockets — and one or two small personal accessories that suit them (a wristwatch, a pen in a pocket). Nothing written, no logo.",
     "",
     ...troisCles(traits),
     "",
     "COMPOSITION:",
     "- Straight-on frontal view, centred and symmetrical: the entire figurine and its wooden base visible, from the top of the head to the bottom of the base, with a generous margin all around (the head never touches the top edge).",
-    "- Professional soft studio lighting, clean soft shadow under the base, crisp details: a high-quality 3D animation render, like a product photo of a collectible.",
-    "- A plain, uniform soft pink studio background (#D87093), seamless, with nothing else in the image.",
+    "- Warm soft studio key light with a gentle rim light, a clean soft shadow under the base, crisp textures (fabric, metal spring, varnished wood grain): a high-end product photo of a collectible.",
+    "- A plain, vivid magenta-pink studio background (#C8467F), seamless and evenly lit, with nothing else in the image.",
     "",
     ...CONTRAINTES.map((l) => l.replace("No change to their expression. ", "")),
   ].join("\n");

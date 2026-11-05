@@ -5,8 +5,8 @@
  *
  * DEUX PAS, comme ses expressions (`figurine-expressions-serveur.ts`), pour tenir dans le temps d'une requête :
  *   1. SA FIGURINE, bouche fermée : sa photo, ses traits décrits (`decrireTraits`), et la consigne des figurines des
- *      commerçants — le style « film d'animation 3D » qui a marché — avec SES vêtements et un fond rose uni
- *      (`consigneFigurineClient`) ;
+ *      commerçants — le style « film d'animation 3D » qui a marché — avec SES vêtements (ou ceux de son univers : son
+ *      métier, sa passion), de l'attitude, et un fond rose vif (`consigneFigurineClient`) ;
  *   2. LA MÊME, BOUCHE OUVERTE (pour qu'elle parle), remise exactement dans le même cadre.
  * La page rappelle tant que ce n'est pas fini. Un verrou (quatre minutes) empêche deux fabrications en même temps.
  *
@@ -38,7 +38,7 @@ export type PasFabrique = { fini: boolean; enCours?: boolean; erreur?: string; n
  * UN PAS DE FABRICATION : sa figurine si elle manque, puis sa bouche ouverte (dans la même requête s'il reste le
  * temps). `nouvelle` : on vient de commencer une figurine (l'appelant la compte pour le plafond du jour).
  */
-export async function fabriquerUnPas(depot: Depot, photo: Buffer, avant: number): Promise<PasFabrique> {
+export async function fabriquerUnPas(depot: Depot, photo: Buffer, avant: number, univers = ""): Promise<PasFabrique> {
   let noms = await depot.lister();
   if (noms.includes(NOM_NEUTRE) && noms.includes(NOM_PARLE)) return { fini: true };
   if (!moteurBranche()) return { fini: false, erreur: "Le moteur d'image n'est pas branché ici." };
@@ -67,7 +67,7 @@ export async function fabriquerUnPas(depot: Depot, photo: Buffer, avant: number)
         return { fini: false, erreur: "Ta photo ne s'ouvre pas. Essaie une autre photo." };
       }
       const traits = await decrireTraits(png);
-      const r = await editer(png, consigneFigurineClient(traits), avant);
+      const r = await editer(png, consigneFigurineClient(traits, univers), avant);
       if (!Buffer.isBuffer(r)) return { fini: false, erreur: r.erreur, nouvelle };
       const webp = await sharp(r).resize({ width: 900, withoutEnlargement: true }).webp({ quality: 88 }).toBuffer();
       if (!(await depot.ecrire(NOM_NEUTRE, webp, "image/webp"))) return { fini: false, erreur: "Ta figurine n'a pas pu être rangée.", nouvelle };

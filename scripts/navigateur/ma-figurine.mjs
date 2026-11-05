@@ -11,6 +11,7 @@
 // signale : il ne s'affiche plus, sa voix non plus. Rien ne déborde, jamais le mot interdit.
 import fs from "node:fs";
 import path from "node:path";
+import sharp from "sharp";
 import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
@@ -72,7 +73,10 @@ ok((await hugo.locator(".pb-voile").count()) === 0, "« Je crée ma figurine » 
 ok((await hugo.locator(".tf-demo, .tf-la-tienne").count()) === 0, "plus de démonstration à faire parler");
 // DÈS LE DÉPART : la quête « Crée ta figurine »
 ok((await hugo.locator("#creer.tf-quete").count()) === 1 && (await texte(hugo, "#creer")).includes("Crée ta figurine") && (await hugo.locator("#o-figurine .mqd-revoir").count()) === 1, "Hugo peut créer la sienne dès maintenant (Pablito rangé dans son petit bouton)");
-ok((await hugo.locator("#creer .tf-prenom-photo, #creer .tf-ville").count()) === 0 && (await hugo.locator("#creer .tf-etapes li").count()) === 2, "il a un compte et un prénom : deux étapes, on ne les lui redemande pas");
+ok(
+  (await hugo.locator("#creer .tf-prenom-photo, #creer .tf-ville").count()) === 0 && (await hugo.locator("#creer .tf-etapes li").count()) === 3 && (await hugo.locator("#creer .tf-univers").count()) === 1,
+  "il a un compte et un prénom : on ne les lui redemande pas (sa photo, ce qui lui ressemble — facultatif —, son accord)",
+);
 ok((await texte(hugo, "#o-figurine .og-pouvoirs")).includes("Ce que tu vas débloquer") && (await texte(hugo, "#o-figurine .og-pouvoirs")).includes("Un cadeau de ClikMe à chaque étape") && !/achat/i.test(await texte(hugo, "#o-figurine .og-pouvoirs")), "ce qu'il va débloquer, cadeau après cadeau (plus aucun achat)");
 ok((await debordement(hugo)) <= 0, "l'accueil ne déborde pas");
 await hugo.screenshot({ path: `${D}/ma-figurine-0-accueil.png`, fullPage: true });
@@ -144,8 +148,11 @@ await lea.locator(".tf-choisir input").setInputFiles(path.resolve("public/direct
 await lea.waitForSelector(".tf-choisir img", { timeout: 15000 });
 ok(await lea.locator(".tf-photo .tf-envoyer").isDisabled(), "sans « C’est bien moi », pas d'envoi");
 await lea.locator(".tf-accord input").check();
+await lea.locator(".tf-univers").fill("Boulangère");
 await lea.locator(".tf-photo .tf-envoyer").click();
 await lea.waitForSelector(".tf-annonce", { timeout: 30000 });
+const univers = await (await fetch(`${STOCK}/figurines-clients/${LEA.id}/univers.json`)).json().catch(() => null);
+ok(univers?.univers === "Boulangère", `ce qui lui ressemble (son métier) est gardé pour sa figurine (${JSON.stringify(univers)})`);
 ok((await texte(lea, ".tf-annonce")).includes("On fabrique ta figurine"), "photo partie : on fabrique sa figurine");
 const [ligne] = await lire("clik_ma_figurine", `habitant_id=eq.${LEA.id}`);
 ok(ligne?.photo?.startsWith(`${LEA.id}/photo-`) && ligne.accord_le && ligne.prenom === "Léa" && !ligne.prete_le, "sa photo rangée (seau privé), son accord noté");
@@ -180,7 +187,13 @@ ok((await lea.locator(".tf-moi .fqp.danse .fqp-notes").count()) === 1, "🕺 ell
 await lea.locator(".tf-moi .tf-expr button", { hasText: "Joie" }).click();
 ok((await lea.locator(".tf-moi .fqp").getAttribute("data-sentiment")) === "joie" && (await lea.locator(".tf-moi .fqp-badge").count()) === 1, "elle choisit la joie : sa figurine la montre (son visage de joie n'est pas encore fait : elle bouge)");
 await lea.locator(".tf-texte textarea").fill("Coucou Camille ! On se voit ce soir ?");
+// SA VOIX : demandée une fois (« une voix d'homme ou de femme ? »), jamais devinée ; gardée
+ok((await lea.locator(".tf-moi .tf-quelle-voix").count()) === 1 && (await lea.locator(".tf-moi .tf-ecouter").isDisabled()), "sa voix : on lui demande (homme ou femme ?) avant d'écouter");
+await lea.locator(".tf-moi .tf-quelle-voix button", { hasText: "voix de femme" }).click();
+ok((await lea.locator(".tf-moi .tf-voix button.pris").innerText()).includes("Douce"), "une voix de femme : « Douce »");
 await lea.locator(".tf-moi .tf-voix button", { hasText: "Chaleureuse" }).click();
+await lea.waitForTimeout(600);
+ok((await lea.evaluate(async () => (await (await fetch("/api/direct/ma-figurine", { cache: "no-store" })).json()).etat?.maVoix)) === "chaleureuse", "sa voix est gardée (ce sera la sienne la prochaine fois)");
 await lea.locator(".tf-moi .tf-ecouter").click();
 await lea.waitForSelector(".tf-envoyer", { timeout: 30000 });
 const cites = await lea.locator(".tf-cites label").allInnerTexts();
@@ -258,6 +271,31 @@ await amie.reload({ waitUntil: "networkidle" });
 ok((await texte(amie, ".mr")).includes("Ce message a été signalé") && (await amie.locator(".fqp").count()) === 0, "signalé : il ne s'affiche plus");
 ok((await fetch(`${BASE}/api/direct/ma-figurine/son?m=${id}`)).status === 404, "sa voix non plus");
 ok((await fetch(`${BASE}/figurine/zzzzzzzzzzzz`)).status === 404, "un lien inconnu : 404");
+
+// ═══ 🕺 ELLE DANSE SUR SON RESSORT : une figurine dessinée (fond rose, tête, corps, ressort, socle) ═══
+// le fond reste, le socle ne bouge pas : seuls le ressort et le corps bougent (« au lieu d'utiliser les ressorts pour la
+// faire bouger, c'est la photo en entier qui bouge »)
+const dessin = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450"><defs><radialGradient id="f" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#F7B9D6"/><stop offset="1" stop-color="#E0579A"/></radialGradient></defs>
+<rect width="300" height="450" fill="url(#f)"/><ellipse cx="150" cy="405" rx="105" ry="22" fill="#6B3A1E"/><rect x="45" y="385" width="210" height="20" fill="#7A4424"/>
+${[0, 1, 2, 3, 4, 5, 6].map((k) => `<rect x="132" y="${318 + k * 10}" width="36" height="11" rx="5" fill="${k % 2 ? "#8E8E94" : "#B4B4BA"}"/>`).join("")}
+<rect x="62" y="215" width="176" height="108" rx="26" fill="#1F2647"/><circle cx="150" cy="140" r="78" fill="#E9B48F"/><ellipse cx="150" cy="78" rx="80" ry="34" fill="#6E6E72"/></svg>`;
+const fig = await sharp(Buffer.from(dessin)).webp().toBuffer();
+for (const nom of ["neutre", "parle"]) await fetch(`${STOCK}/figurines-clients/${LEA.id}/${nom}-essai.webp`, { method: "POST", headers: { "content-type": "image/webp" }, body: fig });
+await lea.goto(`${BASE}/collection?v=${Date.now()}#figurine`, { waitUntil: "networkidle" });
+await lea.waitForSelector(".tf-moi .tf-danse", { timeout: 30000 });
+await lea.locator(".tf-moi .tf-danse").click();
+await lea.waitForFunction(() => document.querySelector(".tf-moi .fqp")?.getAttribute("data-danse") === "ressort", null, { timeout: 15000 }).catch(() => null);
+const bandes = await lea.evaluate(() => {
+  const st = getComputedStyle(document.querySelector(".tf-moi .fqp-fig"));
+  const anim = (b) => getComputedStyle(document.querySelector(`.tf-moi .fqp-bande.${b}`) ?? document.body).animationName;
+  return { danse: document.querySelector(".tf-moi .fqp")?.getAttribute("data-danse"), haut: st.getPropertyValue("--haut"), bas: st.getPropertyValue("--bas"), socle: anim("socle"), ressort: anim("ressort"), corps: anim("haut"), plaque: Boolean(document.querySelector(".tf-moi .fqp-plaque")) };
+});
+const enPct = (x) => parseFloat(x);
+ok(
+  bandes.danse === "ressort" && bandes.plaque && bandes.socle === "none" && bandes.ressort === "fqp-ressort" && bandes.corps === "fqp-saute" && enPct(bandes.haut) > 66 && enPct(bandes.haut) < 76 && enPct(bandes.bas) > 82 && enPct(bandes.bas) < 90,
+  `🕺 elle danse sur son ressort : le fond et le socle immobiles, le ressort et le corps bougent (${JSON.stringify(bandes)})`,
+);
+await lea.locator(".tf-moi .fqp-fig").screenshot({ path: `${D}/ma-figurine-4-danse.png` });
 
 // sans cookie, on ne peut rien envoyer d'autre qu'une photo (qui ouvre un compte)
 const r = await fetch(`${BASE}/api/direct/ma-figurine`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "message", son: "data:audio/mpeg;base64,AAAA", duree: 1 }) });

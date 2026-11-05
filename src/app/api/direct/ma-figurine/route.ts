@@ -1,12 +1,13 @@
 // 🗣️ SA PROPRE FIGURINE (`lib/direct/ma-figurine.ts`).
 //
 // GET : où il en est (sa photo, sa figurine, ses expressions, ses options, ses messages). Sans cookie : « photo ».
-// POST { action: "photo", photo: data:image…, accord: true, prenom?, ville? } : sa photo — dès le départ (sans compte,
+// POST { action: "photo", photo: data:image…, accord: true, prenom?, ville?, univers? } : sa photo — dès le départ (sans compte,
 //   on lui en ouvre un dans `ville`, une ville des commerces ClikMe) ; le moteur fabrique ensuite sa figurine.
 // POST { action: "fabriquer" } : un pas de fabrication de sa figurine (le moteur) → l'état (`enCours` : rappeler).
 // POST { action: "refaire", autrePhoto? } : une nouvelle figurine (même photo), ou retour à la photo.
 // POST { action: "expressions" } : un tour de fabrication de ses expressions (le moteur d'image) → l'état.
 // POST { action: "voix", texte, voix } : son texte lu par la voix choisie (ElevenLabs) → { son: data:audio/mpeg… }.
+// POST { action: "ma-voix", voix } : la voix de sa figurine, choisie par lui (« une voix d'homme ou de femme ? »).
 // POST { action: "message", son: data:audio…, duree, commerces: [liens], sentiment?, texte?, voix?, danse? } : un message de
 //   sa figurine → { id, lien }.
 // POST { action: "signaler", id } : celui qui a reçu un message le signale (pas besoin d'être quelqu'un).
@@ -19,6 +20,7 @@ import { assurerHabitant, habitantCourant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
 import { lienMessage } from "@/lib/direct/ma-figurine";
 import {
+  choisirSaVoix,
   enregistrerMessage,
   envoyerPhoto,
   etatMaFigurine,
@@ -67,7 +69,7 @@ export async function POST(request: Request) {
       moi = await assurerHabitant(supabase, ville);
       if (!moi) return NextResponse.json({ error: "Ton compte n’a pas pu s’ouvrir. Réessaie dans un instant." }, { status: 502 });
     }
-    const r = await envoyerPhoto(supabase, moi, p.photo, p.accord, p.prenom);
+    const r = await envoyerPhoto(supabase, moi, p.photo, p.accord, p.prenom, p.univers);
     if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
     return NextResponse.json({ ok: true, etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
   }
@@ -87,6 +89,11 @@ export async function POST(request: Request) {
   if (p?.action === "expressions") {
     const r = await fabriquerSesExpressions(supabase, moi, avant);
     return NextResponse.json({ ok: !r.error, ...(r.error ? { error: r.error } : {}), ...(r.enCours ? { enCours: true } : {}), etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
+  }
+  if (p?.action === "ma-voix") {
+    const r = await choisirSaVoix(supabase, moi, p.voix);
+    if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
+    return NextResponse.json({ ok: true }, { headers: sansCache });
   }
   if (p?.action === "voix") {
     const r = await lireSonTexte(supabase, moi, p.texte, p.voix);

@@ -26,6 +26,8 @@ import {
   PRENOM_MAX,
   SENTIMENTS,
   TEXTE_MAX,
+  UNIVERS_MAX,
+  VOIX_DE_BASE,
   VOIX_FIGURINE,
   optionSuivante,
   optionsOuvertes,
@@ -259,7 +261,13 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const microOuvert = voixOuverte("micro", total) || !etat.voixTexte;
   const or = optionsOuvertes(total).has("or");
   const [texte, setTexte] = useState("");
-  const [voix, setVoix] = useState<CleVoix>("douce");
+  // SA VOIX : celle qu'il a choisie (« une voix d'homme ou de femme ? », demandé une fois ; jamais devinée)
+  const [voix, setVoix] = useState<CleVoix | null>(etat0.maVoix ?? null);
+  function choisirVoix(v: CleVoix) {
+    setVoix(v);
+    // (gardée : ce sera sa voix la prochaine fois)
+    void demander({ action: "ma-voix", voix: v }).catch(() => undefined);
+  }
   const [sentiment, setSentiment] = useState<Sentiment | null>(null);
   const [danse, setDanse] = useState(false);
   const [rejoue, setRejoue] = useState(0);
@@ -315,6 +323,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
     setErreur("");
     const t = texte.trim();
     if (!t) return setErreur("Écris d’abord ce qu’elle doit dire.");
+    if (!voix) return setErreur("Choisis d’abord sa voix.");
     const cle = `${voix}|${t}`;
     if (son?.cle === cle) return void fig.current?.jouer(son.url);
     void fig.current?.jouer(async () => {
@@ -507,9 +516,25 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
                 {texte.length} / {TEXTE_MAX}
               </small>
             </label>
-            <b className="tf-q">Sa voix</b>
-            <ChoixVoix valeur={voix} onChoix={setVoix} total={total} onFerme={setNudge} />
-            <button type="button" className="tf-ecouter" onClick={ecouterTexte} disabled={parle || !texte.trim()}>
+            {voix ? (
+              <>
+                <b className="tf-q">Sa voix</b>
+                <ChoixVoix valeur={voix} onChoix={choisirVoix} total={total} onFerme={setNudge} />
+              </>
+            ) : (
+              <div className="tf-quelle-voix" role="group" aria-label="Sa voix">
+                <b>Ta figurine parle avec…</b>
+                <span>
+                  <button type="button" onClick={() => choisirVoix(VOIX_DE_BASE.homme)}>
+                    👨 Une voix d’homme
+                  </button>
+                  <button type="button" onClick={() => choisirVoix(VOIX_DE_BASE.femme)}>
+                    👩 Une voix de femme
+                  </button>
+                </span>
+              </div>
+            )}
+            <button type="button" className="tf-ecouter" onClick={ecouterTexte} disabled={parle || !texte.trim() || !voix}>
               {parle ? "🔊 Elle parle…" : "▶ Écouter"}
             </button>
           </>
@@ -628,6 +653,8 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
   const [accord, setAccord] = useState(false);
   const [prenom, setPrenom] = useState("");
   const [ville, setVille] = useState(villes.length === 1 ? villes[0].slug : "");
+  // SON UNIVERS (facultatif) : son métier ou sa passion — sa figurine s'habille en conséquence
+  const [univers, setUnivers] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState("");
   const demandePrenom = !etat.prenom;
@@ -648,7 +675,14 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
     setEnvoi(true);
     setErreur("");
     try {
-      const j = await demander({ action: "photo", photo, accord, ...(prenom.trim() ? { prenom: prenom.trim() } : {}), ...(etat.compte ? {} : { ville }) });
+      const j = await demander({
+        action: "photo",
+        photo,
+        accord,
+        ...(prenom.trim() ? { prenom: prenom.trim() } : {}),
+        ...(etat.compte ? {} : { ville }),
+        ...(univers.trim() ? { univers: univers.trim() } : {}),
+      });
       if (j.etat) onEnvoye(j.etat);
     } catch (e) {
       setErreur((e as Error).message);
@@ -717,6 +751,21 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
             </div>
           </li>
         )}
+        <li className={univers.trim() ? "fait" : ""}>
+          <span className="tf-num">{univers.trim() ? "✓" : "✨"}</span>
+          <div>
+            <b>Ce qui te ressemble</b>
+            <small>Ton métier ou ta passion : ta figurine s’habille en conséquence. Facultatif.</small>
+            <input
+              className="tf-univers"
+              value={univers}
+              maxLength={UNIVERS_MAX}
+              onChange={(e) => setUnivers(e.target.value)}
+              placeholder="Artisan, boulangère, fan de vélo, musicien…"
+              aria-label="Ton métier ou ta passion"
+            />
+          </div>
+        </li>
         <li className={accord ? "fait" : ""}>
           <span className="tf-num">{accord ? "✓" : ++n}</span>
           <label className="tf-accord">
@@ -752,26 +801,50 @@ const PENDANT = [
 export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat: (e: EtatMaFigurine) => void }) {
   const boite = useRef<HTMLDivElement>(null);
   const [erreur, setErreur] = useState("");
-  // elle vient à l'écran (on était plus bas, sur le formulaire de la photo)
-  useEffect(() => boite.current?.scrollIntoView({ behavior: "smooth", block: "center" }), []);
+  // elle vient à l'écran (on était plus bas, sur le formulaire de la photo) — entre accolades : les navigateurs récents
+  // rendent une promesse de `scrollIntoView`, que React prenait pour son nettoyage (« destroy is not a function » : la
+  // page plantait, 5 novembre 2026)
+  useEffect(() => {
+    void boite.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, []);
   const [tour, setTour] = useState(0);
   const [secondes, setSecondes] = useState(0);
+  // 5 novembre 2026 (« une fois que la figurine est faite, le site bug ») : la page n'abandonne plus au bout de dix
+  // appels (elle restait figée à 95 %) ; elle attend tant que le serveur fabrique, et une coupure (réseau, serveur
+  // trop long) ne l'arrête pas : elle rappelle. Seule une vraie erreur du serveur s'affiche.
   useEffect(() => {
     let fini = false;
     const t0 = Date.now();
     const minuteur = window.setInterval(() => setSecondes((Date.now() - t0) / 1000), 1000);
+    const pause = (ms: number) => new Promise((ok) => window.setTimeout(ok, ms));
     (async () => {
-      for (let k = 0; k < 10 && !fini; k++) {
+      let coupures = 0;
+      while (!fini && Date.now() - t0 < 15 * 60_000) {
+        let r: Response;
+        let j: Reponse;
         try {
-          const j = await demander({ action: "fabriquer" });
-          if (fini) return;
-          if (j.etat && j.etat.etape !== "fabrication") return onEtat(j.etat);
-          if (j.enCours) await new Promise((ok) => window.setTimeout(ok, 15_000));
-        } catch (e) {
-          if (!fini) setErreur((e as Error).message);
-          return;
+          r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "fabriquer" }) });
+          j = (await r.json().catch(() => ({}))) as Reponse;
+        } catch {
+          // (le réseau a coupé : on rappelle)
+          if (++coupures > 6) break;
+          await pause(10_000);
+          continue;
         }
+        if (fini) return;
+        if (j.etat && j.etat.etape !== "fabrication") return onEtat(j.etat);
+        if (!r.ok) {
+          // UNE VRAIE ERREUR DU SERVEUR (photo refusée, plus d'essais…) : elle s'affiche ; une coupure (pas de message) : on rappelle
+          if (j.error && r.status < 500) return setErreur(j.error);
+          if (j.error && r.status === 502) return setErreur(j.error);
+          if (++coupures > 6) break;
+          await pause(10_000);
+          continue;
+        }
+        coupures = 0;
+        await pause(j.enCours ? 12_000 : 3_000);
       }
+      if (!fini) setErreur("Ta figurine prend plus de temps que prévu. Touche « Réessayer » : elle est peut-être déjà prête.");
     })();
     return () => {
       fini = true;
@@ -780,7 +853,7 @@ export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat
   }, [tour, onEtat]);
   const avance = Math.min(0.95, secondes / 150);
   const pas = secondes < 8 ? 0 : secondes < 75 ? 1 : 2;
-  const k = Math.max(0, PENDANT.findLastIndex((x) => secondes >= x.s));
+  const k = Math.max(0, PENDANT.filter((x) => secondes >= x.s).length - 1);
   const dit = PENDANT[k].dit;
   // 🎙️ PABLITO LE DIT À VOIX HAUTE (ses enregistrements), étape après étape ; « Oups… » si ça n'a pas marché
   const sonFab = SONS_PABLITO[erreur ? "pablito-fabrication-oups" : `pablito-fabrication-${k + 1}`];
@@ -926,6 +999,10 @@ export const STYLES_MA_FIGURINE =
 .tf-scene .tf-panneau .tf-voir{align-self:center;font-size:13px;font-weight:800;color:#FF9FD2;text-decoration:none}
 .tf-texte textarea:disabled{opacity:.6}
 .tf-voix{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.tf-quelle-voix{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:16px;background:rgba(255,46,154,.1);border:1.5px solid rgba(255,46,154,.45)}
+.tf-quelle-voix b{font-size:15px;font-weight:900}
+.tf-quelle-voix span{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tf-quelle-voix button{padding:12px 6px;border-radius:14px;border:1.5px solid rgba(255,255,255,.18);background:rgba(0,0,0,.2);color:#FFF4E6;font:inherit;font-size:14px;font-weight:900;cursor:pointer}
 .tf-voix button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 2px;border-radius:14px;border:1.5px solid rgba(255,255,255,.12);background:rgba(0,0,0,.18);color:#FFF4E6;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
 .tf-voix button span{font-size:20px}
 .tf-voix button.pris{border-color:#FF2E9A;background:rgba(255,46,154,.16)}
@@ -1001,7 +1078,7 @@ export const STYLES_MA_FIGURINE =
 .tf-fab li.maintenant{color:#FFF4E6;font-weight:800}
 .tf-fab-jauge{position:relative;display:block;width:100%;max-width:300px;height:8px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
 .tf-fab-jauge i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#FF2E9A,#F2C46B);transition:width 1s linear}
-.tf-prenom-photo,.tf-ville{width:100%;max-width:340px;box-sizing:border-box;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.15);background:rgba(0,0,0,.25);color:#FFF4E6;font:inherit;font-size:16px}
+.tf-prenom-photo,.tf-ville,.tf-univers{width:100%;max-width:340px;box-sizing:border-box;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.15);background:rgba(0,0,0,.25);color:#FFF4E6;font:inherit;font-size:16px}
 .tf-ville option{color:#2A0F1F}
 .tf-jauge{position:relative;display:block;height:10px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
 .tf-jauge i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#FF2E9A,#F2C46B)}

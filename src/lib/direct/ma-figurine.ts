@@ -30,7 +30,7 @@ import { TOTAL_COLLECTION } from "./collection";
  */
 export const OPTIONS_FIGURINE = [
   { n: 1, cle: "colere", emoji: "😠", titre: "La colère", dit: "son visage en colère" },
-  { n: 2, cle: "voix", emoji: "🎙️", titre: "Toutes les voix, et la tienne", dit: "Pétillante, Chaleureuse, Posée… ou ta propre voix" },
+  { n: 2, cle: "voix", emoji: "🎙️", titre: "Toutes les voix, et la tienne", dit: "Pétillante, Posée… ou ta propre voix" },
   { n: 3, cle: "tristesse", emoji: "😢", titre: "La tristesse", dit: "son visage triste" },
   { n: 4, cle: "euphorie", emoji: "🤩", titre: "L’euphorie", dit: "son visage euphorique" },
   { n: 5, cle: "or", emoji: "✨", titre: "Le cadre doré", dit: "tes messages arrivent dans un cadre en or" },
@@ -44,8 +44,13 @@ export const optionsOuvertes = (total: number): Set<CleOption> => new Set(OPTION
 export const optionSuivante = (total: number) => OPTIONS_FIGURINE.find((o) => total < o.n) ?? null;
 /** Ce sentiment est-il ouvert ? (la joie l'est dès le départ ; « aucun » aussi). */
 export const sentimentOuvert = (s: Sentiment | null, total: number) => !s || s === "joie" || optionsOuvertes(total).has(s as CleOption);
-/** Cette voix est-elle ouverte ? (« Douce » dès le départ ; les autres, et la sienne, avec l'option « voix »). */
-export const voixOuverte = (v: CleVoix | "micro", total: number) => v === "douce" || optionsOuvertes(total).has("voix");
+/**
+ * Cette voix est-elle ouverte ? Une voix de femme (« Douce ») et une voix d'homme (« Chaleureuse ») dès le départ — 5
+ * novembre 2026, le patron : « c'est la voix d'une femme alors que je suis un homme : la voix doit dépendre de chaque
+ * personne » ; les autres, et la sienne, avec l'option « voix ».
+ */
+export const VOIX_DE_BASE = { homme: "chaleureuse", femme: "douce" } as const;
+export const voixOuverte = (v: CleVoix | "micro", total: number) => v === VOIX_DE_BASE.homme || v === VOIX_DE_BASE.femme || optionsOuvertes(total).has("voix");
 
 /** Un message : 15 secondes au plus ; il cite 4 commerces au plus. */
 export const DUREE_MAX_MESSAGE = 15;
@@ -117,6 +122,18 @@ export const texteValide = (x: unknown): string =>
 export const IMAGES_DEMO = { neutre: "/collection/demo-neutre.webp", parle: "/collection/demo-parle.webp" } as const;
 export const PRENOM_MAX = 24;
 /** Un prénom propre (facultatif) : des lettres, des espaces, des traits d'union, `PRENOM_MAX` au plus. */
+/**
+ * 🎨 SON UNIVERS (facultatif) : son métier ou sa passion, en quelques mots (« artisan », « boulangère », « fan de vélo »)
+ * — sa figurine s'habille en conséquence (5 novembre 2026 : « celle de ChatGPT est beaucoup plus personnalisée »).
+ */
+export const UNIVERS_MAX = 40;
+export const universValide = (x: unknown): string =>
+  String(x ?? "")
+    .replace(/[^\p{L}\p{M}\p{N} '’,&-]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, UNIVERS_MAX);
+
 export const prenomValide = (x: unknown): string =>
   String(x ?? "")
     .replace(/[^\p{L}\p{M} '’-]+/gu, "")
@@ -173,6 +190,8 @@ export type EtatMaFigurine = {
   expressionsAFaire?: boolean;
   /** Un texte peut être lu par une voix (ElevenLabs branché). */
   voixTexte?: boolean;
+  /** La voix qu'il a choisie pour sa figurine (« une voix d'homme ou de femme ? », demandé une fois ; jamais deviné). */
+  maVoix?: CleVoix;
 };
 
 /** Ce que voit celui qui reçoit un message (`/figurine/<id>`). */

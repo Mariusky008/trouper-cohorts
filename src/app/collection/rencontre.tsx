@@ -750,7 +750,7 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
         { t: "Pendant deux minutes, elles discutent, rient et s’amusent en direct, selon vos personnalités. Toi, tu es spectateur 🍿", v: "rire" },
         { t: "Dis-moi si c’est bien toi ! ✅ ou 🙅 : plus tu réagis, plus elle te ressemble 🪞", v: "euphorie" },
         { t: "À la fin : ce qui a été partagé, une carte souvenir pour ta collection… et, si vous êtes d’accord tous les deux, vos impressions 💬", v: "joie" },
-        { t: "Avec qui ? La figurine d’un commerce, un ami que tu invites (le mieux 😉)… ou un membre de ta ville, au hasard 🎲", v: "neutre", apres: "grimace" },
+        { t: "Avec qui ? Un commerçant, un membre de ta ville, un personnage… et tes amis, quand tu veux 👯", v: "neutre", apres: "grimace" },
       ]}
     />
   );
