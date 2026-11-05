@@ -6,12 +6,14 @@
 // POST { action: "inviter" } → { code, lien } : le lien à envoyer à un ami (WhatsApp).
 // POST { action: "accepter", code } : il a ouvert le lien d'un ami → ils sont amis.
 // POST { action: "signaler", id } : la rencontre ne s'affiche plus.
+// POST { action: "membre" } : « Rencontrer un membre » (une fois par jour) → { rencontre } ou { attente: true }.
+// POST { action: "arreter-membres" } : il sort de la file ; { action: "bloquer", id } : ne plus rencontrer ce membre.
 // Jamais d'habitant créé ici.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { lienInvitation } from "@/lib/direct/rencontre";
-import { accepter, inviter, reagir, rencontreDuJour, rencontreParId, signalerRencontre } from "@/lib/direct/rencontre-serveur";
+import { accepter, arreterMembres, bloquerMembre, inviter, reagir, rencontreDuJour, rencontreParId, rencontrerUnMembre, signalerRencontre } from "@/lib/direct/rencontre-serveur";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -50,6 +52,19 @@ export async function POST(request: Request) {
   }
   if (p?.action === "signaler") {
     const ok = await signalerRencontre(supabase, moi, p.id);
+    return NextResponse.json(ok ? { ok: true } : { error: "Cette rencontre n’existe plus." }, { status: ok ? 200 : 404 });
+  }
+  if (p?.action === "membre") {
+    const r = await rencontrerUnMembre(supabase, moi);
+    if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
+    return NextResponse.json({ ok: true, ...(r.rencontre ? { rencontre: r.rencontre } : { attente: true }) }, { headers: sansCache });
+  }
+  if (p?.action === "arreter-membres") {
+    await arreterMembres(supabase, moi);
+    return NextResponse.json({ ok: true }, { headers: sansCache });
+  }
+  if (p?.action === "bloquer") {
+    const ok = await bloquerMembre(supabase, moi, p.id);
     return NextResponse.json(ok ? { ok: true } : { error: "Cette rencontre n’existe plus." }, { status: ok ? 200 : 404 });
   }
   return NextResponse.json({ error: "Demande incomplète." }, { status: 400 });

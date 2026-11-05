@@ -399,6 +399,68 @@ entre eux deux ») ; à lire seulement pour le moment ; se rencontrer : une opti
 - **Pas encore construit** : la voix des conversations (décision : à lire), et les rencontres entre clients qui ne se
   connaissent pas, avec l'accord des deux pour se rencontrer (l'option gardée pour plus tard).
 
+### 9.0 octies « Ma collection » en onglets, avec Clik la mascotte (5 novembre) — construit
+
+Ses remarques : la démonstration « ne sert plus à rien maintenant » (chacun crée la sienne dès le départ) ; « inciter
+directement à créer sa figurine, en encore plus gamifié, accueillant et chaleureux — une figurine marrante peut
+accueillir et expliquer vite fait ce qu'il faut faire et ce que ça permettra ensuite » ; « Mon personnage : tu peux
+vraiment mieux faire, plus interactif et gamifié » ; la rencontre du jour « beaucoup mieux mise en valeur, que ça donne
+envie d'inviter quelqu'un, ou de comprendre que si on ne le fait pas, on peut appuyer sur un compte à rebours pour être
+mis en contact avec un membre » ; « L'édition du mois : on ne saisit pas ce que c'est… au lieu de mettre des fantômes
+partout, mettre des figurines d'exemple comme la figurine marrante » ; « un menu en bas avec les différentes sections ».
+
+- **Clik, la mascotte** (`mascotte.tsx`) : une figurine dessinée (une grosse tête sur un ressort et un socle en bois,
+  comme les vraies), qui rebondit, cligne des yeux, salue et parle. Elle porte la tenue de chaque édition (la couronne
+  de la galette, les oreilles de Pâques, le casque de la fête de la musique, le chapeau de sorcière d'Halloween, le
+  bonnet de l'automne, le bonnet de Noël…), dorée pour l'or, holographique pour les rares. `MascotteDit` : ses bulles,
+  tapées comme un message ; un toucher passe à la suite ; revenu, on ne réécoute pas tout. C'est la figurine d'exemple
+  partout où il y avait un fantôme (l'édition du mois, la frise, l'album, les commerces où gagner, les avatars).
+- **Le menu en bas** (`ma-collection.tsx`) : 🗣️ Ma figurine · 🃏 Personnage · 💬 Rencontres · 📅 Ce mois-ci · 📒 Album,
+  avec une pastille quand quelque chose attend ; chaque onglet a son adresse (`#personnage`…), les anciens liens
+  retombent sur le bon (`#creer`, `#ou-gagner`), le lien d'un ami ouvre « Rencontres ». Un onglet ne se charge qu'à sa
+  première ouverture (la rencontre du jour n'est écrite que si on va la lire).
+- **Ma figurine** : Clik accueille (qui il est, ce qu'on fait ici, ce que la figurine fera, les super-pouvoirs à chaque
+  achat) ; la quête « Crée ta figurine » (des étapes qui se cochent, une jauge, « Donner vie à ma figurine ») ; « Ce que
+  tu vas débloquer » ; pendant la fabrication, Clik raconte ce qu'il fait. La démonstration (`StudioDemo`) et ses
+  routes sont parties ; ses messages déjà envoyés s'ouvrent toujours.
+- **Personnage** : Clik lance le test, la carte mystère attend ; chaque question est posée par Clik, deux grosses cartes
+  à toucher, une jauge d'XP ; la carte se construit en direct (le gain s'envole : « +25 ») ; la révélation (la carte
+  tourne, les confettis, « Nouvelle carte ! ») ; la carte se retourne d'un toucher (sa fiche au dos) et s'incline sous
+  le doigt ; dessous, le prochain niveau, le prochain cadre et « Où acheter ce mois-ci ? ».
+- **Rencontres** : Clik explique le jeu ; la rencontre du jour en vedette, et « Prochaine rencontre dans 07:12:44 » ;
+  deux grands choix — « Invite un ami » et le bouton rond « Rencontre un membre » (3… 2… 1…) : son geste l'inscrit dans
+  la file des membres de sa ville (il accepte que sa figurine, son prénom et sa carte soient présentés) ; on lui présente
+  celui qui attend depuis le plus longtemps (pas quelqu'un bloqué, pas quelqu'un vu ces quatorze jours) ; personne ? il
+  attend, le prochain qui appuie le rencontrera. Une rencontre de membre par jour ; « Ne plus rencontrer ce membre » ;
+  « Ne plus me faire rencontrer ». Rangé dans le seau privé (`membres/<ville>.json`). Se voir en vrai : toujours pas.
+- **Ce mois-ci** : Clik, dans la tenue du mois, explique ce qu'est l'édition (chaque commerce a sa figurine du mois, elle
+  rejoint l'album à l'achat, elle s'en va à la fin du mois, l'or à dix) ; le temps qui reste, la frise, où la gagner.
+- **Album** : Clik dans la tenue de chaque mois sur les cases (tant qu'un commerce n'a pas sa vraie figurine) ; vide,
+  Clik dit comment le remplir.
+
+### 9.0 nonies Le guide : la figurine du patron de ClikMe, à la place de Clik (5 novembre) — construit
+
+Sa remarque, en voyant Clik : « pourquoi ne reprends-tu pas cette figurine qui est moi ? En plus elle a déjà plein
+d'expressions que tu peux utiliser : ça permettra de voir à quoi ça ressemble dès le départ, au lieu d'avoir un
+personnage cartoon. »
+
+- **Le guide qui parle** (`app/collection/guide.tsx`, `Guide` et `GuideDit`) : son portrait (la figurine de la
+  démonstration), la bouche qui s'ouvre et se ferme pendant qu'il parle (ses deux images), et le visage de ce qu'il dit
+  — joie, euphorie, tristesse (`{ t, v }` dans les bulles) : ses vraies expressions, celles que le moteur avait faites
+  pour la démonstration. En grand sur l'accueil, en petit ailleurs ; il pose les questions du test de personnage.
+- **Sa figurine seule, l'exemple** (`FigurineGuide`) : là où il n'y a pas encore la vraie (l'édition du mois, la frise,
+  l'album, les commerces où gagner), sa figurine sans fond, dans la tenue de chaque édition. Le moteur les fait une fois
+  chacune (`lib/direct/guide-serveur.ts` : sa figurine recopiée sans son fond rose, puis ses douze tenues, celle du mois
+  d'abord), à la première demande et après la réponse, une image par passage, sous verrou ; refusée trois fois, une image
+  n'est plus redemandée. En attendant : son image de tous les jours. Une quinzaine d'images, pour toujours.
+- **Servies par** `/api/direct/guide/<nom>` (`joie-n`, `joie-p`… ; `seule` ; `edition-noel`…), gardées par le réseau ;
+  rangées dans le seau privé (`demo-proprio/v1/expr/` pour ses visages, `demo-proprio/v1/guide/` pour le reste).
+- **Une autre image de lui** (« plus jeune, peut-être ? ») : remplacer `public/collection/demo-neutre.webp` et
+  `demo-parle.webp`, puis monter `VERSION_GUIDE` (`lib/direct/guide.ts`) — tout se refait de soi-même dans un nouveau
+  dossier.
+- **Pas son visage à la place de quelqu'un** : sur la carte de personnage d'un client sans figurine, et dans les
+  rencontres (un commerce ou un membre sans figurine), une silhouette de figurine et « ? » — pas sa tête.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

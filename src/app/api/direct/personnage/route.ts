@@ -1,13 +1,15 @@
 // 🃏 SA CARTE DE PERSONNAGE (`lib/direct/personnage.ts`).
 //
-// GET : sa carte (`null` : pas encore faite), et s'il a un compte (sans compte : « Crée ta figurine » d'abord).
+// GET : sa carte (`null` : pas encore faite), ce que ses achats lui ont rapporté (`progres` : la carte se construit en
+//   direct pendant le questionnaire), et s'il a un compte (sans compte : « Crée ta figurine » d'abord).
 // POST { action: "creer", reponses, gouts?, phrase? } : le questionnaire → la fiche (l'IA, ou composée ici) → { carte }.
 // POST { action: "partager" } → { lien } ; { action: "arreter" } : le lien ne marche plus.
 // Jamais d'habitant créé ici.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { carteDe, creerCarte, partagerCarte } from "@/lib/direct/personnage-serveur";
+import { famillesDe } from "@/lib/direct/famille-serveur";
+import { carteDe, creerCarte, partagerCarte, progresDe } from "@/lib/direct/personnage-serveur";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -17,7 +19,8 @@ export async function GET() {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json({ ok: true, compte: false, carte: null }, { headers: sansCache });
-  return NextResponse.json({ ok: true, compte: true, carte: await carteDe(supabase, moi) }, { headers: sansCache });
+  const [carte, familles] = await Promise.all([carteDe(supabase, moi), famillesDe(supabase, moi.id).catch(() => [])]);
+  return NextResponse.json({ ok: true, compte: true, carte, progres: progresDe(familles) }, { headers: sansCache });
 }
 
 export async function POST(request: Request) {

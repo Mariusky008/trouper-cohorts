@@ -109,8 +109,6 @@ export const prenomValide = (x: unknown): string =>
     .trim()
     .slice(0, PRENOM_MAX);
 
-/** Ce que la page sait de la démonstration : ses expressions déjà faites, et si les voix sont branchées. */
-export type DemoFigurine = { expressions: Expressions; complete: boolean; voix: boolean };
 
 /** Ses figurines, tous commerces confondus : celles de ses collections en cours, plus 10 par collection déjà finie. */
 export function figurinesEnTout(familles: { collection?: Collection | null }[]): number {

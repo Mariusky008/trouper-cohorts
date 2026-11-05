@@ -16,7 +16,18 @@ import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { FamilleDouble } from "./double-metiers";
 import { editionsDuMoment } from "./collection";
-import { ESSAIS_PAR_JOUR, QUESTION_TRAITS, SUFFIXE_ENTIERE, consigneEdition, consigneFigurine, jourDe, traitsDe, type EtatFigurinePro, type Traits } from "./figurine-pro";
+import {
+  ESSAIS_PAR_JOUR,
+  QUESTION_TRAITS,
+  SUFFIXE_ENTIERE,
+  consigneEdition,
+  consigneFigurine,
+  consigneTelleQuelle,
+  jourDe,
+  traitsDe,
+  type EtatFigurinePro,
+  type Traits,
+} from "./figurine-pro";
 import { regarderImage } from "./dressing-serveur";
 import { moteurRefuse, moteursDImage, noterRefus } from "./moteur-image";
 
@@ -567,6 +578,17 @@ export async function habillerFigurine(o: {
     return { erreur: "Ta figurine ne s'ouvre pas. Refais-la à partir d'un selfie.", statut: 400 };
   }
   return propositions({ image, consigne: (fond) => consigneEdition(o.cleEdition, o.nomEdition, fond, o.traits), avant: o.avant, edition: true });
+}
+
+/** 🧑 LA FIGURINE TELLE QUELLE, SANS SON FOND (le guide de « Ma collection ») : le moteur la recopie, fond transparent. */
+export async function recopierSansFond(o: { image: Buffer; avant: number }): Promise<Fabrication> {
+  let image: Buffer;
+  try {
+    image = await sharp(o.image).flatten({ background: "#ffffff" }).resize({ width: 1024, height: 1024, fit: "inside", withoutEnlargement: true }).png().toBuffer();
+  } catch {
+    return { erreur: "L'image ne s'ouvre pas.", statut: 400 };
+  }
+  return propositions({ image, consigne: consigneTelleQuelle, avant: o.avant, edition: true });
 }
 
 /** UNE IMAGE DEMANDÉE AU MOTEUR, à partir d'une image : les replis de moteur et de réglages, puis la figurine seule. */

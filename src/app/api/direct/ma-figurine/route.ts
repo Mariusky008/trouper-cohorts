@@ -1,8 +1,6 @@
 // 🗣️ SA PROPRE FIGURINE (`lib/direct/ma-figurine.ts`).
 //
-// GET : où il en est (le compteur jusqu'à 10, sa photo, sa figurine, ses expressions, ses messages), et la
-//   démonstration (la figurine du propriétaire : ses expressions déjà faites, et si un texte peut être lu). Sans
-//   cookie : 0 / 10.
+// GET : où il en est (sa photo, sa figurine, ses expressions, ses options, ses messages). Sans cookie : « photo ».
 // POST { action: "photo", photo: data:image…, accord: true, prenom?, ville? } : sa photo — dès le départ (sans compte,
 //   on lui en ouvre un dans `ville`, une ville des commerces ClikMe) ; le moteur fabrique ensuite sa figurine.
 // POST { action: "fabriquer" } : un pas de fabrication de sa figurine (le moteur) → l'état (`enCours` : rappeler).
@@ -12,9 +10,8 @@
 // POST { action: "message", son: data:audio…, duree, commerces: [liens], sentiment?, texte?, voix? } : un message de
 //   sa figurine → { id, lien }.
 // POST { action: "signaler", id } : celui qui a reçu un message le signale (pas besoin d'être quelqu'un).
-// POST { action: "demo", quoi: "expressions" } : un tour pour la démonstration (une seule fois en tout, puis gardé).
-// POST { action: "demo", quoi: "voix", texte, voix } : SON texte, dit par la démonstration (sans compte, compté).
-// POST { action: "demo", quoi: "message", texte, voix, sentiment?, prenom? } : il l'envoie → { id, lien }.
+// (La démonstration qu'on faisait parler sans compte a quitté la page le 5 novembre 2026 : chacun crée la sienne dès le
+// départ. Ses messages déjà envoyés s'ouvrent toujours, par `/figurine/<id>`.)
 // Un habitant n'est créé ici que par « photo » (son geste : « Créer ma figurine »).
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -23,18 +20,13 @@ import { villeSlug } from "@/lib/direct/ville";
 import { lienMessage } from "@/lib/direct/ma-figurine";
 import {
   enregistrerMessage,
-  envoyerMessageDemo,
   envoyerPhoto,
-  etatDemo,
   etatMaFigurine,
-  fabriquerExpressionsDemo,
   fabriquerMaFigurine,
   refaireMaFigurine,
   fabriquerSesExpressions,
   lireSonTexte,
   signalerMessage,
-  visiteurDe,
-  voixDemo,
 } from "@/lib/direct/ma-figurine-serveur";
 
 export const dynamic = "force-dynamic";
@@ -53,8 +45,7 @@ async function villeOuverte(supabase: ReturnType<typeof createAdminClient>, vill
 export async function GET() {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
-  const [etat, demo] = await Promise.all([etatMaFigurine(supabase, moi), etatDemo(supabase)]);
-  return NextResponse.json({ ok: true, etat, demo }, { headers: sansCache });
+  return NextResponse.json({ ok: true, etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
 }
 
 export async function POST(request: Request) {
@@ -65,26 +56,6 @@ export async function POST(request: Request) {
   if (p?.action === "signaler") {
     const ok = await signalerMessage(supabase, String(p.id ?? ""));
     return NextResponse.json(ok ? { ok: true } : { error: "Ce message n’existe plus." }, { status: ok ? 200 : 404 });
-  }
-  if (p?.action === "demo") {
-    if (p.quoi === "expressions") {
-      const r = await fabriquerExpressionsDemo(supabase, new URL(request.url).origin, avant);
-      return NextResponse.json({ ok: !r.error, ...(r.error ? { error: r.error } : {}), ...(r.enCours ? { enCours: true } : {}), demo: await etatDemo(supabase) }, { headers: sansCache });
-    }
-    // (qui fait parler la démonstration, pour compter : son habitant, sinon une empreinte de sa connexion)
-    const ip = (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || (request.headers.get("x-real-ip") ?? "");
-    const visiteur = visiteurDe((await habitantCourant(supabase))?.id ?? null, ip, request.headers.get("user-agent") ?? "");
-    if (p.quoi === "voix") {
-      const r = await voixDemo(supabase, visiteur, p.texte, p.voix);
-      if (!r.mp3) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
-      return NextResponse.json({ ok: true, son: enSon(r.mp3) }, { headers: sansCache });
-    }
-    if (p.quoi === "message") {
-      const r = await envoyerMessageDemo(supabase, visiteur, { texte: p.texte, voix: p.voix, sentiment: p.sentiment, prenom: p.prenom });
-      if (!r.id) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
-      return NextResponse.json({ ok: true, id: r.id, lien: lienMessage(r.id) }, { headers: sansCache });
-    }
-    return NextResponse.json({ error: "Demande incomplète." }, { status: 400 });
   }
   if (p?.action === "photo") {
     // DÈS LE DÉPART : sans compte, sa photo lui en ouvre un — dans une ville où ClikMe a des commerces

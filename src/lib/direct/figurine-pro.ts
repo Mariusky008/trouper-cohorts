@@ -516,5 +516,27 @@ export function consigneEdition(cleEdition: string, nomEdition: string, fond: "t
   ].join("\n");
 }
 
+/**
+ * LA FIGURINE TELLE QUELLE, SANS SON FOND — le guide de « Ma collection » (`guide.ts`) : sa figurine est une photo de
+ * studio sur un fond rose ; là où les figurines se posent sans fond (l'album, la frise des éditions), le moteur la
+ * recopie sur un fond transparent. Le détourage à la main ronge sa joue (rose sur rose) : essayé le 5 novembre.
+ */
+export function consigneTelleQuelle(fond: "transparent" | "vert"): string {
+  return [
+    "Reproduce this collectible bobblehead figurine EXACTLY as it is, as a straight-on studio product shot.",
+    "",
+    "CHANGE NOTHING ON THE FIGURINE:",
+    "- The same face (the same features, the same expression, the same skin tone, the same wrinkles), the same hair, the same facial hair.",
+    "- The same outfit, the same hands and pose, the same spring and the same round wooden base.",
+    "- EXACTLY the same proportions, rendering style, materials and finish: do not make it more realistic, do not make it younger.",
+    "- Only the background changes.",
+    "",
+    ...rendu3D(fond, true),
+    "",
+    "IMPORTANT CONSTRAINTS:",
+    "- No extra limbs, no legs, no text, no logos, no engraved plaque, no scenery, no other person.",
+  ].join("\n");
+}
+
 /** Le jour (Paris) d'un essai : les trois essais se comptent par jour. */
 export const jourDe = (d: Date) => d.toLocaleDateString("fr-CA", { timeZone: "Europe/Paris" });

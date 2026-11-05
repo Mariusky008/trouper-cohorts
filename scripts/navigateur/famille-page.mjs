@@ -175,11 +175,16 @@ await p.waitForTimeout(1200);
 ok((await p.locator(".fm-monte").count()) === 0 && (await p.locator(".co-fete").count()) === 0, "la fois suivante, on ne le refête pas");
 await p.screenshot({ path: `${D}/famille-7-collection.png`, fullPage: true });
 
-// ═══ MA COLLECTION (/collection) ═══
-await p.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
-await p.waitForSelector(".ab-page", { timeout: 30000 });
+// ═══ MA COLLECTION (/collection) : EN ONGLETS, LE MENU EN BAS ═══
+await p.goto(`${BASE}/collection#album`, { waitUntil: "networkidle" });
+await p.waitForSelector("#o-album .ab-page", { timeout: 30000 });
 const mc = await texte(p, ".mc");
-ok(mc.includes("Ma collection") && mc.includes("Le Comptoir des Fantômes") && (await p.locator(".ab-page").count()) === 1, `sa page « Ma collection » : une page d'album (${mc.slice(0, 80)})`);
+ok(mc.includes("Ma collection") && mc.includes("Le Comptoir des Fantômes") && (await p.locator(".ab-page").count()) === 1, `l'onglet « Album » : une page d'album (${mc.slice(0, 80)})`);
+ok((await p.locator(".mc-nav button.pris").innerText()).includes("Album") && (await p.locator(".mc-nav button").count()) === 5, "le menu en bas : l'onglet « Album » est ouvert");
+ok(
+  (await p.locator(".ab-page .ab-case img.mqf[src*='/api/direct/guide/edition-']").count()) >= 12 && (await p.locator(".ab-page img[src*='/direct/double/']").count()) === 0,
+  "dans l'album, la figurine du guide dans la tenue de chaque mois : plus de fantômes",
+);
 // L'ALBUM : les quatorze cases et la case d'or, le compteur, ce qui vient ensuite ; une case touchée s'ouvre en grand
 ok((await p.locator(".ab-page .ab-case").count()) === 15 && (await p.locator(".ab-page .ab-case.ab-or").count()) === 1 && (await p.locator(".ab-page .ab-case.rare").count()) === 2, "l'album : quatorze cases (dont deux rares) et la case d'or");
 ok((await p.locator(".ab-page .ab-case.gagnee").count()) === 1 && (await texte(p, ".ab-chiffre")).replace(/\s/g, "").endsWith("/10") && /Encore \d+ →/.test(await texte(p, ".ab-suivant")), `sa figurine dans l'album, et ce qui vient ensuite (${await texte(p, ".ab-suivant")})`);
@@ -190,11 +195,14 @@ await p.keyboard.press("Escape");
 ok((await p.locator(".ab-fiche").count()) === 0, "et se referme");
 ok(!mc.includes("Ce que tu gagnes"), "plus de « Ce que tu gagnes »");
 ok((await debordement(p)) <= 0 && !/exemple/i.test(mc), "« Ma collection » ne déborde pas, sans le mot interdit");
+await p.locator(".mc-nav button", { hasText: "Ce mois-ci" }).click();
+await p.waitForSelector("#o-mois #ou-gagner", { timeout: 15000 });
 const autres = await texte(p, "#ou-gagner");
 ok(
-  autres.includes("D’autres commerces où en gagner") && autres.includes("L’Atelier Tout Neuf") && !autres.includes("Le Comptoir des Fantômes"),
-  "sous son album : les autres commerces où en gagner (pas le sien)",
+  autres.includes("D’autres commerces où la gagner") && autres.includes("L’Atelier Tout Neuf") && !autres.includes("Le Comptoir des Fantômes"),
+  "l'onglet « Ce mois-ci » : les autres commerces où gagner la figurine du mois (pas le sien)",
 );
+ok(/#mois$/.test(p.url()), "l'adresse suit l'onglet (#mois)");
 await p.screenshot({ path: `${D}/famille-8-ma-collection.png`, fullPage: true });
 
 // ═══ LA FAMILLE VIDE ═══
@@ -205,18 +213,29 @@ ok((await texte(vide, ".fm-premier")).includes("Sois le tout premier fantôme de
 ok((await texte(vide, ".fm-cages")).includes("Je passe aujourd’hui"), "chez un artisan, on passe");
 await vide.screenshot({ path: `${D}/famille-4-vide.png` });
 
-// ═══ MA COLLECTION, SANS FIGURINE : la page explique au lieu d'être vide ═══
+// ═══ MA COLLECTION, SANS FIGURINE : le guide (la figurine du patron de ClikMe) accueille, explique ; « Ce mois-ci » dit à quoi sert l'édition du mois ═══
 await vide.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
-await vide.waitForSelector(".ce", { timeout: 30000 });
+await vide.waitForSelector("#o-figurine .mqd", { timeout: 30000 });
+const accueilVide = await texte(vide, "#o-figurine");
+ok(
+  /patron de ClikMe/i.test(accueilVide) && accueilVide.includes("Crée ta figurine") && (await vide.locator("#creer .tf-prenom-photo").count()) === 1,
+  "sans compte : le guide accueille, et la quête « Crée ta figurine » (son prénom demandé)",
+);
+ok((await vide.locator("#o-figurine .mqd .mq img.mq-i").count()) === 2 && (await vide.locator(".mqd svg").count()) === 0, "le guide est sa figurine (bouche fermée, bouche ouverte), plus un personnage dessiné");
+ok((await vide.locator(".tf-demo").count()) === 0, "plus de démonstration");
+await vide.goto(`${BASE}/collection#ou-gagner`, { waitUntil: "networkidle" });
+await vide.waitForSelector("#o-mois .ce", { timeout: 30000 });
 await vide.waitForTimeout(1500);
-const dc = await texte(vide, ".mc");
+const dc = await texte(vide, "#o-mois");
+ok(
+  (await texte(vide, "#o-mois .mqd-bulle")).includes("Ce mois-ci, c’est l’édition") && (await vide.locator("#o-mois .mqd img.mqf[src*='/api/direct/guide/edition-']").count()) === 1,
+  "« Ce mois-ci » : le guide, dans la tenue du mois, explique l'édition",
+);
+ok((await vide.locator(".ce-frise img.mqf").count()) === 6 && (await vide.locator(".ce-carte img.mqf").count()) === 1, "la frise et l'édition du moment : sa figurine dans chaque tenue, plus de fantômes");
 ok((await vide.locator(".ab-page").count()) === 0 && (await vide.locator(".ce-frise li").count()) === 6 && (await vide.locator(".ce-frise li.passee").count()) === 1, "sans figurine : pas d'étagère ; la frise des éditions, dont celle qui vient de finir");
 const chrono = await texte(vide, ".ce-chrono");
 ok(/À GAGNER MAINTENANT/i.test(dc) && /Édition \S+/.test(dc) && /\d+\s*jours?/i.test(chrono) && /\d{2}\s*s/i.test(chrono), `l'édition du moment, et le temps qui reste à la seconde (${chrono.replace(/\s+/g, " ")})`);
 ok(!dc.includes("Ce que tu gagnes"), "plus de « Ce que tu gagnes »");
-ok(/TA FIGURINE QUI PARLE/i.test(dc) && dc.includes("Démonstration · fais-la parler") && dc.includes("Choisis son émotion") && dc.includes("Écris ce qu’elle dit"), "en haut : la démonstration qu'on fait parler soi-même");
-await vide.locator(".tf-demo .tf-expr button", { hasText: "Colère" }).click();
-ok((await vide.locator(".tf-demo .fqp").getAttribute("data-sentiment")) === "colere" && (await vide.locator(".tf-demo .fqp-badge").count()) === 1, "un toucher sur « Colère » : la démonstration se met en colère");
 ok(
   (await vide.locator(`.dc-commerces a[href="/f/${SLUG}"]`).count()) === 1 && (await vide.locator(`.dc-commerces a[href="/f/${NEUF}"]`).count()) === 1,
   "où la commencer : les commerces ClikMe, vers leur page",

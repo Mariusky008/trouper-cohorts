@@ -90,8 +90,12 @@ export async function imageDe(supabase: Supabase, habitantId: string, secondes: 
   return { image: l.debout ?? l.image, figurine: false };
 }
 
+/** Son prénom : celui de son compte (donné en créant sa figurine), sinon celui de sa famille la plus récente. */
 export async function prenomDe(supabase: Supabase, habitant: Pick<Habitant, "id" | "prenom">): Promise<string> {
   if (habitant.prenom) return habitant.prenom;
+  const { data: h } = await supabase.from("human_habitants").select("prenom").eq("id", habitant.id).maybeSingle();
+  const duCompte = s((h as { prenom?: string } | null)?.prenom);
+  if (duCompte) return duCompte;
   const { data } = await supabase.from("clik_cage").select("prenom, updated_at").eq("habitant_id", habitant.id).order("updated_at", { ascending: false }).limit(1);
   return s((Array.isArray(data) ? (data[0] as { prenom?: string } | undefined) : undefined)?.prenom);
 }
