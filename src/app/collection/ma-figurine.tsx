@@ -8,10 +8,9 @@
  *
  * UN SEUL ÉCRAN, UN SEUL GESTE : la figurine en grand ; dessous, ce qu'elle ressent (SON visage change) ; puis ce
  * qu'elle dit — un texte lu par une voix au choix, ou sa propre voix — ; « Écouter » ; « Envoyer » (WhatsApp d'abord).
- *   · `StudioMoi` : la sienne, quand elle est prête (ses expressions se fabriquent toutes seules la première fois) ;
- *     ses options (`OPTIONS_FIGURINE`) : celles pas encore ouvertes se voient, sous cadenas, avec le cadeau qui les
- *     ouvre (`MesOptions`) — un cadeau de ClikMe à chaque étape franchie dans l'app (5 novembre 2026 : plus d'options
- *     « à chaque achat », « ça ressemble trop à de l'achat forcé ») ;
+ *   · `StudioMoi` : la sienne, quand elle est prête (son visage de joie se fabrique tout seul ; les autres, à la
+ *     demande) ; tout y est ouvert dès le départ (5 novembre 2026, le lot 3) — `MesOptions` n'est plus qu'une liste de
+ *     « premiers pas », sans cadenas : la progression, c'est sa figurine du mois (`figurine-du-mois.tsx`) ;
  *   · `OngletFigurine` : l'onglet entier — l'accueil du guide, la figurine du patron de ClikMe (`guide.tsx`), la quête
  *     `EnvoiPhoto` (« Crée ta figurine », dès le départ, sans compte), `FabricationAuto` (le moteur la fabrique, le guide raconte),
  *     `Annonce` (sans moteur : ClikMe la fait à la main). La démonstration qu'on faisait parler (`StudioDemo`) est
@@ -22,19 +21,14 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import {
   COMMERCES_MAX_MESSAGE,
   DUREE_MAX_MESSAGE,
-  OPTIONS_FIGURINE,
   PRENOM_MAX,
   SENTIMENTS,
   TEXTE_MAX,
   UNIVERS_MAX,
   VOIX_DE_BASE,
   VOIX_FIGURINE,
-  optionSuivante,
-  optionsOuvertes,
   sentimentDe,
-  sentimentOuvert,
   texteDuMessage,
-  voixOuverte,
   type CleVoix,
   type EtatMaFigurine,
   type Sentiment,
@@ -45,6 +39,7 @@ import { Guide, GuideDit, STYLES_GUIDE, useVoixPablito } from "./guide";
 import { SONS_PABLITO } from "@/lib/direct/guide";
 import { ETAPES, prochaineEtape } from "@/lib/direct/etapes";
 import { ProtegerFigurine } from "./connaitre";
+import { ApercuDuMois, CommentCaMarche } from "./figurine-du-mois";
 
 type Reponse = { error?: string; etat?: EtatMaFigurine; lien?: string; son?: string; enCours?: boolean };
 
@@ -69,68 +64,31 @@ function dureeDe(url: string): Promise<number> {
 }
 
 // ─── ce qu'elle ressent : son visage ────────────────────────────────────────────────────────────
-/** « 1ᵉʳ », « 3ᵉ ». */
-const ordinal = (n: number) => (n === 1 ? "1ᵉʳ" : `${n}ᵉ`);
-/** Ce qu'on dit quand il touche une option encore fermée. */
-const ouvreA = (cle: string) => {
-  const o = OPTIONS_FIGURINE.find((x) => x.cle === cle);
-  return o ? `${o.emoji} ${o.titre} s’ouvre avec ton ${ordinal(o.n)} cadeau ClikMe : franchis une étape de plus 🎁` : "";
-};
 
-/** `total` (ses cadeaux de ClikMe) : les visages pas encore ouverts sont sous cadenas ; un toucher dit quel cadeau les ouvre. */
-function ChoixExpression({ valeur, onChoix, total, onFerme }: { valeur: Sentiment | null; onChoix: (s: Sentiment | null) => void; total?: number; onFerme?: (dit: string) => void }) {
+/** Ce qu'elle ressent : tous ses visages, ouverts dès le départ (le lot 3 — plus de cadenas). */
+function ChoixExpression({ valeur, onChoix }: { valeur: Sentiment | null; onChoix: (s: Sentiment | null) => void }) {
   return (
     <div className="tf-expr" role="radiogroup" aria-label="Ce qu’elle ressent">
-      {[{ cle: null, emoji: "🙂", court: "Normal" }, ...SENTIMENTS].map((x) => {
-        const ferme = total != null && !sentimentOuvert(x.cle, total);
-        return (
-          <button
-            key={x.cle ?? "normal"}
-            type="button"
-            role="radio"
-            aria-checked={valeur === x.cle}
-            className={`${valeur === x.cle ? "pris" : ""}${ferme ? " ferme" : ""}`}
-            onClick={() => (ferme ? onFerme?.(ouvreA(x.cle!)) : onChoix(x.cle))}
-          >
-            <span aria-hidden="true">{x.emoji}</span>
-            {x.court}
-            {ferme && (
-              <i className="tf-cadenas" aria-label="fermé">
-                🔒
-              </i>
-            )}
-          </button>
-        );
-      })}
+      {[{ cle: null, emoji: "🙂", court: "Normal" }, ...SENTIMENTS].map((x) => (
+        <button key={x.cle ?? "normal"} type="button" role="radio" aria-checked={valeur === x.cle} className={valeur === x.cle ? "pris" : ""} onClick={() => onChoix(x.cle)}>
+          <span aria-hidden="true">{x.emoji}</span>
+          {x.court}
+        </button>
+      ))}
     </div>
   );
 }
 
-function ChoixVoix({ valeur, onChoix, desactive, total, onFerme }: { valeur: CleVoix; onChoix: (v: CleVoix) => void; desactive?: boolean; total?: number; onFerme?: (dit: string) => void }) {
+/** Sa voix : toutes ouvertes dès le départ. */
+function ChoixVoix({ valeur, onChoix, desactive }: { valeur: CleVoix; onChoix: (v: CleVoix) => void; desactive?: boolean }) {
   return (
     <div className="tf-voix" role="radiogroup" aria-label="Sa voix">
-      {VOIX_FIGURINE.map((v) => {
-        const ferme = total != null && !voixOuverte(v.cle, total);
-        return (
-          <button
-            key={v.cle}
-            type="button"
-            role="radio"
-            aria-checked={valeur === v.cle}
-            className={`${valeur === v.cle ? "pris" : ""}${ferme ? " ferme" : ""}`}
-            disabled={desactive}
-            onClick={() => (ferme ? onFerme?.(ouvreA("voix")) : onChoix(v.cle))}
-          >
-            <span aria-hidden="true">{v.emoji}</span>
-            {v.nom}
-            {ferme && (
-              <i className="tf-cadenas" aria-label="fermée">
-                🔒
-              </i>
-            )}
-          </button>
-        );
-      })}
+      {VOIX_FIGURINE.map((v) => (
+        <button key={v.cle} type="button" role="radio" aria-checked={valeur === v.cle} className={valeur === v.cle ? "pris" : ""} disabled={desactive} onClick={() => onChoix(v.cle)}>
+          <span aria-hidden="true">{v.emoji}</span>
+          {v.nom}
+        </button>
+      ))}
     </div>
   );
 }
@@ -140,59 +98,32 @@ function ChoixVoix({ valeur, onChoix, desactive, total, onFerme }: { valeur: Cle
  * s'ouvre au n-ième cadeau ; la prochaine brille. Plus aucun achat (5 novembre 2026 : « ça ressemble trop à de
  * l'achat forcé »).
  */
-export function MesOptions({ cadeaux, etapes }: { cadeaux: number; etapes: readonly string[] }) {
-  const ouvertes = optionsOuvertes(cadeaux);
-  const suivante = optionSuivante(cadeaux);
+export function MesOptions({ etapes }: { cadeaux?: number; etapes: readonly string[] }) {
+  // 👣 TES PREMIERS PAS (5 novembre 2026, le lot 3 : « tout ouvrir dès le départ ») — plus aucun cadenas : les étapes
+  // guident le nouveau venu, sans rien bloquer ; la progression, c'est sa figurine du mois
   const prochaine = prochaineEtape(etapes);
+  if (!prochaine) return null;
+  const faites = ETAPES.filter((e) => etapes.includes(e.cle)).length;
   return (
-    <section className="tf-options" aria-label="Tes cadeaux">
-      <b className="tf-q">🎁 Un cadeau de ClikMe à chaque étape : il ouvre une option</b>
+    <section className="tf-options" aria-label="Tes premiers pas">
+      <b className="tf-q">
+        👣 Tes premiers pas · {faites}/{ETAPES.length}
+      </b>
       <ul className="tf-kdo" aria-label="Tes étapes">
         {ETAPES.map((e) => {
           const faite = etapes.includes(e.cle);
           return (
-            <li key={e.cle} className={faite ? "faite" : e.cle === prochaine?.cle ? "suivante" : ""}>
+            <li key={e.cle} className={faite ? "faite" : e.cle === prochaine.cle ? "suivante" : ""}>
               <span aria-hidden="true">{faite ? "✅" : e.emoji}</span> {e.titre}
             </li>
           );
         })}
       </ul>
-      <ol>
-        <li className="ouverte">
-          <span aria-hidden="true">🗣️</span>
-          <b>Ta figurine qui parle</b>
-          <small>dès le départ ✓</small>
-        </li>
-        <li className="ouverte">
-          <span aria-hidden="true">🕺</span>
-          <b>Elle danse</b>
-          <small>dès le départ ✓</small>
-        </li>
-        {OPTIONS_FIGURINE.map((o) => (
-          <li key={o.cle} className={ouvertes.has(o.cle) ? "ouverte" : suivante?.cle === o.cle ? "suivante" : "fermee"}>
-            <span aria-hidden="true">{ouvertes.has(o.cle) ? o.emoji : suivante?.cle === o.cle ? o.emoji : "🔒"}</span>
-            <b>{o.titre}</b>
-            <small>{ouvertes.has(o.cle) ? "ouverte ✓" : `${ordinal(o.n)} cadeau`}</small>
-          </li>
-        ))}
-      </ol>
       <p className="tf-options-dit">
-        {suivante ? (
-          <>
-            Encore <b>{suivante.n - cadeaux}</b> cadeau{suivante.n - cadeaux > 1 ? "x" : ""} : {suivante.emoji} {suivante.titre.toLowerCase()} — {suivante.dit}.
-            {prochaine && (
-              <>
-                {" "}
-                Prochaine étape :{" "}
-                <a href={`#${prochaine.onglet}`}>
-                  {prochaine.emoji} {prochaine.titre}
-                </a>
-              </>
-            )}
-          </>
-        ) : (
-          "Toutes tes options sont ouvertes. Bravo !"
-        )}
+        Ton prochain pas :{" "}
+        <a href={`#${prochaine.onglet}`}>
+          {prochaine.emoji} {prochaine.titre}
+        </a>
       </p>
     </section>
   );
@@ -254,14 +185,10 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const fig = useRef<FigurineHandle>(null);
   const [etat, setEtat] = useState(etat0);
   const [mode, setMode] = useState<"ecrire" | "voix">(etat0.voixTexte ? "ecrire" : "voix");
-  const [nudge, setNudge] = useState("");
   const [refaire, setRefaire] = useState(false);
   const [univers, setUnivers] = useState(etat0.univers ?? "");
-  // ce qui ouvre ses options : ses cadeaux de ClikMe (plus ses achats)
-  const total = etat.cadeaux;
-  // SA PROPRE VOIX : une option (la 2ᵉ) — sauf sans voix lue (sans elle, il n'aurait rien pour parler)
-  const microOuvert = voixOuverte("micro", total) || !etat.voixTexte;
-  const or = optionsOuvertes(total).has("or");
+  // (tout est ouvert dès le départ, le lot 3 : ses visages, ses voix, sa propre voix, le cadre doré)
+  const or = true;
   const [texte, setTexte] = useState("");
   // SA VOIX : celle qu'il a choisie (« une voix d'homme ou de femme ? », demandé une fois ; jamais devinée)
   const [voix, setVoix] = useState<CleVoix | null>(etat0.maVoix ?? null);
@@ -282,16 +209,19 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const [envoye, setEnvoye] = useState<{ lien: string; cle: string } | null>(null);
   const [erreur, setErreur] = useState("");
   const [expressionsEnCours, setExpressionsEnCours] = useState(Boolean(etat0.expressionsAFaire));
+  // (le visage qu'il vient de choisir et qui n'est pas encore fait : le moteur le fait à la demande)
+  const [veut, setVeut] = useState<{ s: Sentiment | null; n: number }>({ s: null, n: 0 });
   const micro = useRef<{ rec: MediaRecorder; flux: MediaStream; t0: number; minuteur: number } | null>(null);
 
-  // 🎭 SES EXPRESSIONS : la première fois, le moteur d'image les fait (deux tours ; la page attend en arrière-plan)
+  // 🎭 SES EXPRESSIONS : le moteur d'image les fait (deux tours ; la page attend en arrière-plan) — la joie d'office,
+  // et chaque autre visage la première fois qu'il le choisit (`veut`)
   useEffect(() => {
-    if (!etat0.expressionsAFaire) return;
+    if (!etat0.expressionsAFaire && !veut.s) return;
     let fini = false;
     (async () => {
       for (let k = 0; k < 4 && !fini; k++) {
         try {
-          const j = await demander({ action: "expressions" });
+          const j = await demander({ action: "expressions", ...(veut.s ? { veut: veut.s } : {}) });
           if (fini) return;
           if (j.etat) setEtat(j.etat);
           if (!j.etat?.expressionsAFaire || (j.error && !j.enCours)) break;
@@ -305,7 +235,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
     return () => {
       fini = true;
     };
-  }, [etat0.expressionsAFaire]);
+  }, [etat0.expressionsAFaire, veut]);
 
   useEffect(
     () => () => {
@@ -429,24 +359,21 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
         />
         <ChoixExpression
           valeur={sentiment}
-          total={total}
-          onFerme={setNudge}
           onChoix={(s) => {
-            setNudge("");
             setSentiment(s);
             setRejoue((n) => n + 1);
+            // un visage pas encore fait : sa figurine l'apprend (une minute environ ; elle le joue en bougeant d'ici là)
+            if (s && !etat.expressions?.[s] && etat.auto !== false) {
+              setExpressionsEnCours(true);
+              setVeut((v) => ({ s, n: v.n + 1 }));
+            }
           }}
         />
         {/* 🕺 ELLE DANSE : dès le départ, avec n'importe quel visage */}
         <button type="button" className={`tf-danse${danse ? " pris" : ""}`} aria-pressed={danse} onClick={() => setDanse((d) => !d)}>
           🕺 {danse ? "Elle danse ! (toucher pour l’arrêter)" : "La faire danser"}
         </button>
-        {nudge && (
-          <p className="tf-nudge" role="status">
-            {nudge}
-          </p>
-        )}
-        {expressionsEnCours && etat.expressionsAFaire && <p className="tf-note">🎭 Ta figurine apprend ses expressions… (2 à 3 minutes, la première fois)</p>}
+        {expressionsEnCours && <p className="tf-note">🎭 Ta figurine apprend ce visage… (une minute environ, la première fois)</p>}
         {(etat.refaire ?? 0) > 0 &&
           (refaire ? (
             <div className="tf-refaire">
@@ -499,10 +426,10 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
               type="button"
               role="tab"
               aria-selected={mode === "voix"}
-              className={`${mode === "voix" ? "pris" : ""}${microOuvert ? "" : " ferme"}`}
-              onClick={() => (microOuvert ? setMode("voix") : setNudge(ouvreA("voix")))}
+              className={mode === "voix" ? "pris" : ""}
+              onClick={() => setMode("voix")}
             >
-              🎙️ Ma voix{microOuvert ? "" : " 🔒"}
+              🎙️ Ma voix
             </button>
           </div>
         )}
@@ -525,7 +452,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
             {voix ? (
               <>
                 <b className="tf-q">Sa voix</b>
-                <ChoixVoix valeur={voix} onChoix={choisirVoix} total={total} onFerme={setNudge} />
+                <ChoixVoix valeur={voix} onChoix={choisirVoix} />
               </>
             ) : (
               <div className="tf-quelle-voix" role="group" aria-label="Sa voix">
@@ -922,9 +849,9 @@ export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat
 }
 
 /**
- * 🗣️ L'ONGLET « MA FIGURINE » — sa figurine prête : la faire parler (`StudioMoi`) ; sinon, l'accueil du guide (ce qu'il
- * faut faire, et ce que ça permettra ensuite), la quête « Crée ta figurine », et ce qu'elle débloquera, cadeau après
- * cadeau (5 novembre 2026 : la démonstration a quitté la page, « elle ne sert plus à rien maintenant »).
+ * 🗣️ L'ONGLET « MA FIGURINE » — sa figurine prête : où en est sa figurine du mois, la faire parler (`StudioMoi`) ;
+ * sinon, l'accueil du guide (ce qu'il faut faire, et ce que ça permettra ensuite), la quête « Crée ta figurine » ; et,
+ * partout, « Comment ça marche » (5 novembre 2026 : la démonstration a quitté la page, « elle ne sert plus à rien »).
  */
 export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine | null; villes: { slug: string; nom: string }[]; onEtat: (e: EtatMaFigurine) => void }) {
   if (!etat)
@@ -941,9 +868,14 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
           <h1>Fais-la parler.</h1>
           <p>Choisis ce qu’elle ressent, écris ce qu’elle dit, et envoie-la à qui tu veux.</p>
         </header>
+        {/* 🗓️ sa figurine du mois (lot 3) : où il en est, en une ligne */}
+        <ApercuDuMois />
         <StudioMoi key={etat.neutre} etat={etat} onEtat={onEtat} />
         {/* 🔐 son adresse protège sa figurine (lot 2) : un autre téléphone la retrouve avec un code */}
         <ProtegerFigurine mode="proteger" protegee={etat.protegee} />
+        <div className="og-pouvoirs">
+          <CommentCaMarche />
+        </div>
       </>
     );
   if (etat.etape === "fabrication")
@@ -981,10 +913,10 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
       <EnvoiPhoto etat={etat} villes={villes} onEnvoye={onEtat} />
       {/* 🔎 elle existe déjà sur un autre téléphone : un code à six chiffres la retrouve (lot 2) */}
       {!etat.compte && <ProtegerFigurine mode="retrouver" />}
-      <section className="og-pouvoirs" aria-label="Ce que tu vas débloquer">
-        <h2>Ce que tu vas débloquer</h2>
-        <MesOptions cadeaux={etat.cadeaux} etapes={etat.etapes} />
-      </section>
+      {/* 🧭 le parcours compris en dix secondes (lot 3 : « on ne comprend pas du tout à quoi ça sert ») */}
+      <div className="og-pouvoirs">
+        <CommentCaMarche />
+      </div>
     </>
   );
 }

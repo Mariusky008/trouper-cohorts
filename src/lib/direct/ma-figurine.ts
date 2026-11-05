@@ -38,19 +38,16 @@ export const OPTIONS_FIGURINE = [
   { n: 7, cle: "grimace", emoji: "😜", titre: "Les grimaces", dit: "son visage qui fait des grimaces" },
 ] as const;
 export type CleOption = (typeof OPTIONS_FIGURINE)[number]["cle"];
-/** Ses options ouvertes, d'après ses figurines gagnées. */
-export const optionsOuvertes = (total: number): Set<CleOption> => new Set(OPTIONS_FIGURINE.filter((o) => total >= o.n).map((o) => o.cle));
-/** La prochaine option à ouvrir (`null` : toutes ouvertes). */
-export const optionSuivante = (total: number) => OPTIONS_FIGURINE.find((o) => total < o.n) ?? null;
-/** Ce sentiment est-il ouvert ? (la joie l'est dès le départ ; « aucun » aussi). */
-export const sentimentOuvert = (s: Sentiment | null, total: number) => !s || s === "joie" || optionsOuvertes(total).has(s as CleOption);
 /**
- * Cette voix est-elle ouverte ? Une voix de femme (« Douce ») et une voix d'homme (« Chaleureuse ») dès le départ — 5
- * novembre 2026, le patron : « c'est la voix d'une femme alors que je suis un homme : la voix doit dépendre de chaque
- * personne » ; les autres, et la sienne, avec l'option « voix ».
+ * 🔓 TOUT EST OUVERT DÈS LE DÉPART (5 novembre 2026, le lot 3 de la stratégie : « une seule progression, la figurine du
+ * mois ») : plus de cadenas sur ses visages, ses voix, le cadre doré — `OPTIONS_FIGURINE` ne dit plus que ce qu'elle
+ * sait faire. Ses visages se fabriquent à la demande (`ma-figurine-serveur.ts`).
+ */
+/**
+ * Ses deux voix de base — 5 novembre 2026, le patron : « c'est la voix d'une femme alors que je suis un homme : la voix
+ * doit dépendre de chaque personne » ; on lui demande laquelle (jamais devinée). Toutes les voix sont ouvertes.
  */
 export const VOIX_DE_BASE = { homme: "chaleureuse", femme: "douce" } as const;
-export const voixOuverte = (v: CleVoix | "micro", total: number) => v === VOIX_DE_BASE.homme || v === VOIX_DE_BASE.femme || optionsOuvertes(total).has("voix");
 
 /** Un message : 15 secondes au plus ; il cite 4 commerces au plus. */
 export const DUREE_MAX_MESSAGE = 15;

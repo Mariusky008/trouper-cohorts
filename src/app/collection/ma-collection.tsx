@@ -9,8 +9,9 @@
  *      qui parle (`ma-figurine.tsx`) ;
  *   🃏 PERSONNAGE — sa carte (`personnage.tsx`) ;
  *   💬 RENCONTRES — la rencontre du jour, un ami à inviter, un membre à rencontrer (`rencontre.tsx`) ;
- *   📅 CE MOIS-CI — l'édition du mois, expliquée par le guide dans sa tenue, et où la gagner (`decouvrir.tsx`) ;
- *   📒 ALBUM — ses figurines, une page par commerce (`album.tsx`).
+ *   📅 CE MOIS-CI — SA figurine du mois, méritée en dix jours de rencontres (`figurine-du-mois.tsx`, le lot 3) ; puis
+ *      l'édition du mois des commerçants, expliquée par le guide dans sa tenue, et où la gagner (`decouvrir.tsx`) ;
+ *   📒 ALBUM — ses figurines du mois (lui, mois après mois), puis celles des commerçants, une page par commerce (`album.tsx`).
  * Un onglet ne se charge qu'à sa première ouverture (la rencontre du jour n'est écrite que si on va la lire), puis il
  * reste là (on n'y perd rien en changeant d'onglet).
  * Ses familles viennent de `/api/direct/famille?moi=1` (`famillesDe`) ; sa figurine, de `/api/direct/ma-figurine`.
@@ -26,6 +27,7 @@ import { GuideDit, OngletVisible } from "./guide";
 import { MonPersonnage, STYLES_PERSONNAGE } from "./personnage";
 import { CLE_VOIR_RENCONTRE, MesSouvenirs, RencontreDuJour, STYLES_RENCONTRE } from "./rencontre";
 import { STYLES_CONNAITRE } from "./connaitre";
+import { MesFigurinesDuMois, STYLES_FIGURINE_DU_MOIS } from "./figurine-du-mois";
 import { figurinesEnTout, type EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
 type Familles = { familles: MaFamille[] } | null;
@@ -221,6 +223,9 @@ export function MaCollection({ aujourdhui, commerces, villes = [] }: { aujourdhu
                   Mes figurines <span className="mc-total">{total}</span>
                 </h2>
               </header>
+              {/* 🗓️ D'ABORD, LES SIENNES (lot 3) : une figurine de lui par mois vécu ; les commerçants, en plus */}
+              <MesFigurinesDuMois />
+              <h3 className="mc-sous-titre">🏪 Mes commerçants partenaires</h3>
               {ennui && <p className="mc-vide">Ta collection n’a pas pu s’afficher. Réessaie dans un instant.</p>}
               {avec.length > 0 ? (
                 <Album familles={avec} />
@@ -276,7 +281,7 @@ export function MaCollection({ aujourdhui, commerces, villes = [] }: { aujourdhu
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_COLLECTION + STYLES_DECOUVRIR + STYLES_ALBUM + STYLES_PERSONNAGE + STYLES_RENCONTRE + STYLES_CONNAITRE}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_COLLECTION + STYLES_DECOUVRIR + STYLES_ALBUM + STYLES_PERSONNAGE + STYLES_RENCONTRE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS}</style>
     </main>
   );
 }
@@ -300,6 +305,7 @@ body{background:#12060F}
 .mc-attente i{height:420px;border-radius:30px;background:linear-gradient(100deg,rgba(255,255,255,.04) 30%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 70%);background-size:200% 100%;animation:mc-reflet 1.4s linear infinite}
 .mc-vide{margin:28px 0 0;padding:18px;border-radius:20px;background:rgba(255,255,255,.05);text-align:center;color:#D9C3CB}
 .mc-total{display:inline-grid;place-items:center;min-width:34px;height:34px;margin-left:6px;padding:0 9px;box-sizing:border-box;border-radius:999px;background:#FF2E9A;color:#fff;font-size:17px;vertical-align:4px;-webkit-text-fill-color:#fff;box-shadow:0 8px 18px -8px rgba(255,46,154,.9)}
+.mc-sous-titre{margin:28px 0 12px;font-size:18px;font-weight:900}
 .mc-regle{margin:34px 4px 0;font-size:12px;line-height:1.5;color:#8D7580;text-align:center}
 /* le menu, en bas */
 .mc-nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;max-width:640px;margin:0 auto;padding:6px 8px calc(6px + env(safe-area-inset-bottom));

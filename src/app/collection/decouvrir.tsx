@@ -11,6 +11,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { EDITIONS_DATEES, editionsDuMoment, fenetre, finEnAnnee, jourEnClair } from "@/lib/direct/collection";
 import { Particules, THEMES, type Theme } from "@/app/f/[slug]/collection";
 import { FigurineGuide, GuideDit } from "./guide";
+import { MaFigurineDuMois } from "./figurine-du-mois";
 
 export type CommerceACollectionner = { slug: string; nom: string; ville: string; figurine: string; cadeau?: string };
 
@@ -174,7 +175,8 @@ export function OuGagner({ commerces, titre, aujourdhui }: { commerces: Commerce
 /**
  * 📅 L'ONGLET « CE MOIS-CI » — 5 novembre 2026 (« on ne saisit pas ce que c'est, cette section, et à quoi elle sert ») :
  * Le guide, dans la tenue du mois, explique en quatre bulles ; puis le temps qui reste, la frise des éditions (sa figurine dans
- * chaque tenue, plus de fantômes), et les commerces où la gagner.
+ * chaque tenue, plus de fantômes), et les commerces où la gagner. Depuis le lot 3, tout en haut : SA figurine du mois
+ * (`figurine-du-mois.tsx`) — les commerçants sont un plus, pas le centre.
  */
 export function OngletMois({ aujourdhui, commerces, dejaChez }: { aujourdhui: string; commerces: CommerceACollectionner[]; dejaChez: boolean }) {
   const m = editionsDuMoment(aujourdhui).maintenant;
@@ -184,6 +186,8 @@ export function OngletMois({ aujourdhui, commerces, dejaChez }: { aujourdhui: st
         <small>CE MOIS-CI</small>
         <h2>{m ? `L’édition ${m.nom} ${m.emoji}` : "L’édition du mois"}</h2>
       </header>
+      {/* 🗓️ D'ABORD LA SIENNE (lot 3) : sa figurine du mois, méritée en dix jours de rencontres ; les commerces, en plus */}
+      <MaFigurineDuMois />
       {m && (
         <GuideDit
           edition={m.cle}

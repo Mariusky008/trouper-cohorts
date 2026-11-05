@@ -30,11 +30,7 @@ import {
   COMMERCES_MAX_MESSAGE,
   DUREE_MAX_MESSAGE,
   IMAGES_DEMO,
-  SENTIMENTS,
   figurinesEnTout,
-  optionsOuvertes,
-  sentimentOuvert,
-  voixOuverte,
   idMessageValide,
   prenomValide,
   sentimentValide,
@@ -44,6 +40,7 @@ import {
   voixValide,
   universValide,
   type CommerceCite,
+  type Sentiment,
   type EtatMaFigurine,
   type Expressions,
   type MessageFigurine,
@@ -62,7 +59,7 @@ export const SEAU_FIGURINES = s(process.env.FIGURINES_CLIENTS_BUCKET) || "figuri
 const MESSAGES_PAR_JOUR = 30;
 
 // ─── le stockage privé ────────────────────────────────────────────────────────────────────────
-async function deposer(supabase: Supabase, chemin: string, octets: Buffer, type: string): Promise<boolean> {
+export async function deposer(supabase: Supabase, chemin: string, octets: Buffer, type: string): Promise<boolean> {
   const envoyer = () => supabase.storage.from(SEAU_FIGURINES).upload(chemin, octets, { contentType: type, upsert: true });
   let { error } = await envoyer();
   if (error && /bucket/i.test(error.message)) {
@@ -73,7 +70,7 @@ async function deposer(supabase: Supabase, chemin: string, octets: Buffer, type:
   return !error;
 }
 
-async function signer(supabase: Supabase, chemin: string, secondes = 3600): Promise<string> {
+export async function signer(supabase: Supabase, chemin: string, secondes = 3600): Promise<string> {
   if (!chemin) return "";
   const { data } = await supabase.storage.from(SEAU_FIGURINES).createSignedUrl(chemin, secondes);
   return s(data?.signedUrl);
@@ -81,7 +78,7 @@ async function signer(supabase: Supabase, chemin: string, secondes = 3600): Prom
 
 const empreinte = (b: Buffer | string) => createHash("sha1").update(b).digest("hex").slice(0, 16);
 
-async function telecharger(supabase: Supabase, chemin: string): Promise<Buffer | null> {
+export async function telecharger(supabase: Supabase, chemin: string): Promise<Buffer | null> {
   const { data, error } = await supabase.storage.from(SEAU_FIGURINES).download(chemin);
   return error || !data ? null : Buffer.from(await data.arrayBuffer());
 }
@@ -131,7 +128,7 @@ async function prenomDe(supabase: Supabase, habitant: Habitant): Promise<string>
   return s((Array.isArray(data) ? (data[0] as Ligne | undefined) : undefined)?.prenom);
 }
 
-async function lireLigne(supabase: Supabase, habitantId: string): Promise<{ ok: boolean; ligne: Ligne | null }> {
+export async function lireLigne(supabase: Supabase, habitantId: string): Promise<{ ok: boolean; ligne: Ligne | null }> {
   const { data, error } = await supabase.from("clik_ma_figurine").select("*").eq("habitant_id", habitantId).maybeSingle();
   return { ok: !error, ligne: (data as Ligne | null) ?? null };
 }
@@ -158,8 +155,17 @@ const dossierFabrique = (habitantId: string, jeton: string) => `${habitantId}/fa
 const nouveauJeton = () => randomBytes(6).toString("hex");
 const essaisRestants = (f: Partial<Fabrique>) => Math.max(0, FABRICATIONS_PAR_JOUR - (f.jour === jourParis() ? Number(f.essais) || 0 : 0));
 
-/** Les visages qu'il a ouverts (la joie dès le départ ; les autres, une visite après l'autre). */
-const visagesOuverts = (total: number) => SENTIMENTS.map((x) => x.cle).filter((c) => sentimentOuvert(c, total));
+/**
+ * 🎭 SES VISAGES, FAITS À LA DEMANDE (le lot 3 : tout est ouvert dès le départ) — chaque visage coûte deux images au
+ * moteur : on fabrique la joie d'office, et chacun des autres la première fois qu'il le choisit
+ * (`<habitant>/visages.json`).
+ */
+const cheminVisages = (habitantId: string) => `${habitantId}/visages.json`;
+async function visagesVoulus(supabase: Supabase, habitantId: string): Promise<Sentiment[]> {
+  const v = await lireJson<{ voulus?: unknown[] }>(supabase, cheminVisages(habitantId));
+  const l = (Array.isArray(v.voulus) ? v.voulus : []).map((x) => sentimentValide(x)).filter((x): x is Sentiment => Boolean(x));
+  return [...new Set<Sentiment>(["joie", ...l])];
+}
 
 export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | null): Promise<EtatMaFigurine> {
   const vide: EtatMaFigurine = { total: 0, cadeaux: 0, etapes: [], etape: "photo", prenom: "", compte: false, auto: moteurBranche(), commerces: [], messages: [] };
@@ -188,7 +194,7 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
   ]);
   const verifiee = adresse as { email?: string | null; email_verifie_le?: string | null } | null;
   const maVoix = voixValide(saVoix.voix);
-  const ouverts = visagesOuverts(cadeaux);
+  const ouverts = await visagesVoulus(supabase, habitant.id);
   return {
     ...base,
     etape: "prete",
@@ -285,15 +291,19 @@ export async function saFigurineSignee(supabase: Supabase, habitantId: string, s
 }
 
 /** 🎭 Un tour de fabrication de ses expressions (le moteur d'image), à partir de sa figurine bouche fermée. */
-export async function fabriquerSesExpressions(supabase: Supabase, habitant: Habitant, avant: number): Promise<{ error?: string; enCours?: boolean }> {
+export async function fabriquerSesExpressions(supabase: Supabase, habitant: Habitant, avant: number, veut?: unknown): Promise<{ error?: string; enCours?: boolean }> {
   const { ligne } = await lireLigne(supabase, habitant.id);
   if (!ligne?.prete_le || !s(ligne.neutre)) return { error: "Ta figurine n’est pas encore prête." };
   const source = await telecharger(supabase, s(ligne.neutre));
   if (!source) return { error: "Ta figurine est introuvable." };
-  // seulement les visages qu'il a ouverts : les autres se feront quand il les aura gagnés
-  const { total } = await sesFigurines(supabase, habitant.id);
-  const { cadeaux } = await cadeauxDe(supabase, habitant.id, total);
-  const r = await fabriquerUnTour(depotDans(supabase, dossierExpressions(habitant.id, s(ligne.neutre))), source, avant, visagesOuverts(cadeaux));
+  // seulement les visages qu'il a voulus (la joie, et ceux qu'il a choisis une fois) ; `veut` : celui qu'il vient de choisir
+  let voulus = await visagesVoulus(supabase, habitant.id);
+  const nouveau = sentimentValide(veut);
+  if (nouveau && !voulus.includes(nouveau)) {
+    voulus = [...voulus, nouveau];
+    await ecrireJson(supabase, cheminVisages(habitant.id), { voulus });
+  }
+  const r = await fabriquerUnTour(depotDans(supabase, dossierExpressions(habitant.id, s(ligne.neutre))), source, avant, voulus);
   return r.erreur ? { error: r.erreur } : r.enCours ? { enCours: true } : {};
 }
 
@@ -303,8 +313,6 @@ const LECTURES_PAR_JOUR = 20;
 export async function choisirSaVoix(supabase: Supabase, habitant: Habitant, voix: unknown): Promise<{ error?: string; statut?: number }> {
   const v = voixValide(voix);
   if (!v) return { error: "Choisis une voix.", statut: 400 };
-  // (une voix de base est ouverte à tous ; les autres, selon ses cadeaux)
-  if (!voixOuverte(v, 0) && !voixOuverte(v, (await etatMaFigurine(supabase, habitant)).cadeaux)) return { error: "Cette voix s’ouvre avec ton 2ᵉ cadeau ClikMe.", statut: 403 };
   await ecrireJson(supabase, cheminSaVoix(habitant.id), { voix: v, le: new Date().toISOString() });
   return {};
 }
@@ -316,7 +324,6 @@ export async function lireSonTexte(supabase: Supabase, habitant: Habitant, texte
   if (motInterdit(t)) return { error: MOT_REFUSE, statut: 422 };
   const etat = await etatMaFigurine(supabase, habitant);
   if (etat.etape !== "prete") return { error: "Ta figurine n’est pas encore prête.", statut: 400 };
-  if (!voixOuverte(v, etat.cadeaux)) return { error: "Cette voix s’ouvre avec ton 2ᵉ cadeau ClikMe.", statut: 403 };
   const jour = new Date().toISOString().slice(0, 10);
   const compteur = `${habitant.id}/voix-jour.json`;
   const avant = JSON.parse((await telecharger(supabase, compteur))?.toString() || "{}") as { jour?: string; n?: number };
@@ -334,14 +341,14 @@ export async function lireSonTexte(supabase: Supabase, habitant: Habitant, texte
 const MOT_REFUSE = "Ça, la figurine ne le dit pas. Écris autre chose 🙂";
 const jourParis = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
 
-async function lireJson<T extends object>(supabase: Supabase, chemin: string): Promise<Partial<T>> {
+export async function lireJson<T extends object>(supabase: Supabase, chemin: string): Promise<Partial<T>> {
   try {
     return JSON.parse((await telecharger(supabase, chemin))?.toString() || "{}") as Partial<T>;
   } catch {
     return {};
   }
 }
-const ecrireJson = (supabase: Supabase, chemin: string, x: unknown) => deposer(supabase, chemin, Buffer.from(JSON.stringify(x)), "application/json");
+export const ecrireJson = (supabase: Supabase, chemin: string, x: unknown) => deposer(supabase, chemin, Buffer.from(JSON.stringify(x)), "application/json");
 
 /** Un message de la démonstration, gardé dans le seau (pas de compte, pas de table). */
 type FicheDemo = {
@@ -450,11 +457,7 @@ export async function enregistrerMessage(
   if (!brut.length || brut.length > 2 * 1024 * 1024 || !(d > 0.3) || d > DUREE_MAX_MESSAGE + 1) return { error: `Un message dure ${DUREE_MAX_MESSAGE} secondes au plus.` };
   const etat = await etatMaFigurine(supabase, habitant);
   if (etat.etape !== "prete") return { error: "Ta figurine n’est pas encore prête." };
-  // SES OPTIONS, tenues ici aussi (pas seulement sur la page)
-  if (!sentimentOuvert(sentimentValide(sentiment), etat.cadeaux)) return { error: "Ce visage s’ouvre avec tes prochains cadeaux ClikMe." };
-  const vOk = voixValide(voix);
-  // (sa propre voix : la 2ᵉ option — ou dès le départ quand aucune voix ne lit les textes)
-  if (texteValide(texte) ? vOk && !voixOuverte(vOk, etat.cadeaux) : !voixOuverte("micro", etat.cadeaux) && voixBranchee()) return { error: "Cette voix s’ouvre avec ton 2ᵉ cadeau ClikMe." };
+  // (ses visages et ses voix sont tous ouverts dès le départ : le lot 3)
   const depuis = new Date(Date.now() - 86_400_000).toISOString();
   const { data: recents } = await supabase.from("clik_figurine_message").select("id").eq("habitant_id", habitant.id).gte("created_at", depuis).limit(MESSAGES_PAR_JOUR);
   if (Array.isArray(recents) && recents.length >= MESSAGES_PAR_JOUR) return { error: "Assez de messages pour aujourd’hui : reviens demain." };
@@ -506,14 +509,10 @@ export async function lireMessage(supabase: Supabase, id: string): Promise<Messa
   // (le fou rire, la grimace, la danse : à côté du message)
   const aCote = await lireJson<{ sentiment: string; danse: boolean }>(supabase, `${s(r.habitant_id)}/m-${id}.json`);
   const sentiment = sentimentValide(r.sentiment) ?? sentimentValide(aCote.sentiment);
-  const [neutre, parle, expr, siennes] = await Promise.all([
+  const [neutre, parle, expr] = await Promise.all([
     signer(supabase, s(fig.neutre), 7200),
     signer(supabase, s(fig.parle), 7200),
     sentiment ? expressionsSignees(supabase, dossierExpressions(s(r.habitant_id), s(fig.neutre)), 7200).catch(() => null) : Promise.resolve(null),
-    // ✨ le cadre doré : une option de l'expéditeur (ses cadeaux de ClikMe, aujourd'hui — sans noter sa présence)
-    sesFigurines(supabase, s(r.habitant_id))
-      .then((f) => cadeauxDe(supabase, s(r.habitant_id), f.total, false))
-      .catch(() => ({ cadeaux: 0 })),
   ]);
   return {
     signale: false,
@@ -526,7 +525,8 @@ export async function lireMessage(supabase: Supabase, id: string): Promise<Messa
     expression: sentiment ? (expr?.expressions[sentiment] ?? null) : null,
     ...(s(r.texte) ? { texte: s(r.texte) } : {}),
     ...(aCote.danse === true ? { danse: true } : {}),
-    ...(optionsOuvertes(siennes.cadeaux).has("or") ? { or: true } : {}),
+    // (le cadre doré : ouvert à tous dès le départ, le lot 3)
+    or: true,
     commerces: slugs.flatMap((slug) => {
       const x = parSlug.get(slug);
       if (!x) return [];

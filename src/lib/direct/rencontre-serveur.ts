@@ -924,3 +924,9 @@ export async function rencontreDuJourEnBref(supabase: Supabase, habitantId: stri
   const qui = p.type === "personnage" ? `${p.nom}, ${p.role}` : p.type === "commerce" ? `la figurine de ${p.nom}, un commerce` : `${avec}, un membre de sa ville`;
   return { avec, qui, format: formatDe(f.format)?.nom ?? "", titre: f.titre ?? "" };
 }
+
+/** 🗓️ Ses jours de rencontres d'un mois (« 2026-11 ») : sa figurine du mois se mérite à 10 (`figurine-du-mois.ts`). */
+export async function joursDeRencontres(supabase: Supabase, habitantId: string, mois: string): Promise<string[]> {
+  const idx = await indexDe(supabase, habitantId);
+  return [...new Set(idx.liste.filter((x) => x.jour.startsWith(`${mois}-`)).map((x) => x.jour))].sort();
+}

@@ -6,9 +6,12 @@
 // POST { action: "fabriquer" } : un pas de fabrication de sa figurine (le moteur) → l'état (`enCours` : rappeler).
 // POST { action: "refaire", autrePhoto?, univers? } : une nouvelle figurine (même photo), ou retour à la photo ; `univers` :
 //       ce qui lui ressemble (son métier, sa passion), revu en la refaisant.
-// POST { action: "expressions" } : un tour de fabrication de ses expressions (le moteur d'image) → l'état.
+// POST { action: "expressions", veut? } : un tour de fabrication de ses expressions (le moteur d'image) → l'état ;
+//       `veut` : le visage qu'il vient de choisir (ils se font à la demande).
 // POST { action: "voix", texte, voix } : son texte lu par la voix choisie (ElevenLabs) → { son: data:audio/mpeg… }.
 // POST { action: "ma-voix", voix } : la voix de sa figurine, choisie par lui (« une voix d'homme ou de femme ? »).
+// GET ?mois=1 : sa figurine du mois (où il en est : ses jours de rencontres) et celles d'avant (l'album de soi).
+// POST { action: "mois" } : sa figurine du mois, méritée (10 jours), fabriquée une fois → { mois } (`enCours` : rappeler).
 // POST { action: "message", son: data:audio…, duree, commerces: [liens], sentiment?, texte?, voix?, danse? } : un message de
 //   sa figurine → { id, lien }.
 // POST { action: "signaler", id } : celui qui a reçu un message le signale (pas besoin d'être quelqu'un).
@@ -31,6 +34,7 @@ import {
   lireSonTexte,
   signalerMessage,
 } from "@/lib/direct/ma-figurine-serveur";
+import { fabriquerFigurineDuMois, mesFigurinesDuMois } from "@/lib/direct/figurine-du-mois-serveur";
 
 export const dynamic = "force-dynamic";
 // (un tour d'expressions : quatre images du moteur, en même temps)
@@ -45,9 +49,13 @@ async function villeOuverte(supabase: ReturnType<typeof createAdminClient>, vill
   return ((Array.isArray(data) ? data : []) as { city?: string }[]).some((x) => villeSlug(String(x.city ?? "").replace(/\b\d{5}\b/g, " ").replace(/\s+/g, " ").trim()) === ville);
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
+  // 🗓️ sa figurine du mois (où il en est) et celles d'avant
+  if (new URL(request.url).searchParams.get("mois")) {
+    return NextResponse.json({ ok: true, mois: await mesFigurinesDuMois(supabase, moi) }, { headers: sansCache });
+  }
   return NextResponse.json({ ok: true, etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
 }
 
@@ -88,8 +96,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
   }
   if (p?.action === "expressions") {
-    const r = await fabriquerSesExpressions(supabase, moi, avant);
+    const r = await fabriquerSesExpressions(supabase, moi, avant, p.veut);
     return NextResponse.json({ ok: !r.error, ...(r.error ? { error: r.error } : {}), ...(r.enCours ? { enCours: true } : {}), etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
+  }
+  if (p?.action === "mois") {
+    const r = await fabriquerFigurineDuMois(supabase, moi, avant);
+    const mois = await mesFigurinesDuMois(supabase, moi);
+    if (r.error) return NextResponse.json({ error: r.error, mois }, { status: r.statut ?? 400, headers: sansCache });
+    return NextResponse.json({ ok: true, ...(r.enCours ? { enCours: true } : {}), mois }, { headers: sansCache });
   }
   if (p?.action === "ma-voix") {
     const r = await choisirSaVoix(supabase, moi, p.voix);
