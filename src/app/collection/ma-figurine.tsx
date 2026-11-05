@@ -255,6 +255,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const [mode, setMode] = useState<"ecrire" | "voix">(etat0.voixTexte ? "ecrire" : "voix");
   const [nudge, setNudge] = useState("");
   const [refaire, setRefaire] = useState(false);
+  const [univers, setUnivers] = useState(etat0.univers ?? "");
   // ce qui ouvre ses options : ses cadeaux de ClikMe (plus ses achats)
   const total = etat.cadeaux;
   // SA PROPRE VOIX : une option (la 2ᵉ) — sauf sans voix lue (sans elle, il n'aurait rien pour parler)
@@ -448,11 +449,15 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
         {(etat.refaire ?? 0) > 0 &&
           (refaire ? (
             <div className="tf-refaire">
+              <label className="tf-refaire-univers">
+                <span>Ce qui te ressemble : ton métier ou ta passion (facultatif)</span>
+                <input className="tf-univers" value={univers} maxLength={UNIVERS_MAX} onChange={(e) => setUnivers(e.target.value)} placeholder="Artisan, boulangère, fan de vélo…" />
+              </label>
               <button
                 type="button"
                 onClick={async () => {
                   try {
-                    const j = await demander({ action: "refaire" });
+                    const j = await demander({ action: "refaire", univers: univers.trim() });
                     if (j.etat) onEtat?.(j.etat);
                   } catch (e) {
                     setErreur((e as Error).message);
@@ -465,7 +470,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
                 type="button"
                 onClick={async () => {
                   try {
-                    const j = await demander({ action: "refaire", autrePhoto: true });
+                    const j = await demander({ action: "refaire", autrePhoto: true, univers: univers.trim() });
                     if (j.etat) onEtat?.(j.etat);
                   } catch (e) {
                     setErreur((e as Error).message);
@@ -999,6 +1004,7 @@ export const STYLES_MA_FIGURINE =
 .tf-scene .tf-panneau .tf-voir{align-self:center;font-size:13px;font-weight:800;color:#FF9FD2;text-decoration:none}
 .tf-texte textarea:disabled{opacity:.6}
 .tf-voix{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.tf-refaire-univers{display:flex;flex-direction:column;gap:6px;width:100%;font-size:13px;color:#D9C3CB;text-align:left}
 .tf-quelle-voix{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:16px;background:rgba(255,46,154,.1);border:1.5px solid rgba(255,46,154,.45)}
 .tf-quelle-voix b{font-size:15px;font-weight:900}
 .tf-quelle-voix span{display:grid;grid-template-columns:1fr 1fr;gap:8px}

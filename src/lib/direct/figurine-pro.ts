@@ -327,6 +327,12 @@ export type Traits = {
    */
   accentuer?: string;
   lunettes?: boolean;
+  /**
+   * SON PORTRAIT, EN UNE PHRASE ANGLAISE, à la manière de ChatGPT (5 novembre 2026, le prompt qu'il a donné au
+   * propriétaire : « A middle-aged man with voluminous, tousled salt-and-pepper hair, short gray stubble and mustache,
+   * thick dark eyebrows with a natural frown, deep-set brown eyes, and a serious expression with closed lips »).
+   */
+  portrait?: string;
 };
 
 /** La question posée au modèle de vision (en anglais : c'est là qu'il est le plus précis), la réponse en français. */
@@ -341,7 +347,8 @@ export const QUESTION_TRAITS =
   '"expression": the facial expression exactly as seen (e.g. "sérieux, sourcils légèrement froncés, bouche fermée, ne sourit pas" or "grand sourire"), ' +
   '"signes": other features that make this person recognizable (forehead wrinkles, dimples, crow\'s feet, a mole, freckles) or "", ' +
   '"accentuer": the 3 to 5 features a caricature artist would exaggerate to make THIS person instantly recognizable, most striking first (e.g. "mâchoire carrée et menton marqué, sourcils épais et froncés, cheveux épais en volume, front haut ridé"), ' +
-  '"lunettes": true if wearing glasses, else false}.';
+  '"lunettes": true if wearing glasses, else false, ' +
+  '"portrait": ONE sentence IN ENGLISH describing the person for a 3D artist, in this exact manner (no name): "A middle-aged man with voluminous, tousled salt-and-pepper hair, short gray stubble and mustache, thick dark eyebrows with a natural frown, deep-set brown eyes, and a serious expression with closed lips." — apparent age group, hair, facial hair (or none), eyebrows, eyes, and expression, exactly as seen}.';
 
 const MOTS_MAX = 140;
 const propreTrait = (v: unknown) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, MOTS_MAX) : "");
@@ -354,6 +361,8 @@ export function traitsDe(o: Record<string, unknown>): Traits | null {
     if (v) t[k] = v;
   }
   if (typeof o.lunettes === "boolean") t.lunettes = o.lunettes;
+  const portrait = typeof o.portrait === "string" ? o.portrait.replace(/\s+/g, " ").trim().slice(0, 320) : "";
+  if (portrait) t.portrait = portrait;
   return Object.keys(t).length ? t : null;
 }
 
@@ -419,52 +428,47 @@ export function consigneFigurine(famille: FamilleDouble, fond: "transparent" | "
 }
 
 /**
- * 🗣️ LA FIGURINE D'UN CLIENT (« Ma collection », dès le départ — `ma-figurine-fabrique-serveur.ts`) : la même
- * consigne que celle des commerçants (le style « film d'animation 3D », les clés de la ressemblance, le ressort et le
- * socle), avec un FOND ROSE (comme la figurine de démonstration du propriétaire) : elle se montre telle quelle, ses
- * expressions gardent le même cadre, et elle danse sur son ressort (`ressort.ts` : le fond rose se reconnaît).
+ * 🗣️ LA FIGURINE D'UN CLIENT (« Ma collection », dès le départ — `ma-figurine-fabrique-serveur.ts`) : LE PROMPT DE
+ * CHATGPT, PARTIE PAR PARTIE (5 novembre 2026 : le propriétaire lui a demandé le prompt qui avait fait sa figurine —
+ * le tablier d'artisan, les bras croisés, le visage de personnage d'animation —, et la nôtre, à côté, « est encore plus
+ * réaliste qu'avant ; on est très loin »). Ce qui la rendait réaliste : nos ajouts (les lignes de l'âge sculptées, des
+ * yeux « de leur vraie taille », « jamais un visage rond », des cheveux « aux mèches visibles », un rendu
+ * « ultra-détaillé ») et la fidélité haute, qui recopie la photo. Celle de ChatGPT DÉCRIT le visage en une phrase
+ * (`Traits.portrait`) et demande une peau lisse, des formes arrondies et simplifiées, des yeux un peu agrandis, une
+ * barbe de dessin animé ; le moteur la fabrique en fidélité basse (`ma-figurine-fabrique-serveur.ts`).
  *
- * PERSONNALISÉE COMME CELLE DE CHATGPT (5 novembre 2026, le patron, ses deux images côte à côte : « celle de ChatGPT
- * est beaucoup plus personnalisée ») — ce qui faisait la différence : une tenue qui dit qui il est (le tablier
- * d'artisan, des outils dans la poche, une montre), de l'attitude (les bras croisés, un regard qui a du caractère), des
- * cheveux texturés, un rendu détaillé et un rose vif ; chez nous : « ses vêtements, simplifiés », les mains jointes,
- * une expression calme, des cheveux lisses. D'où `univers` (facultatif, demandé avec sa photo : son métier ou sa
- * passion) et cette consigne.
+ * Ce qu'on y ajoute : SA tenue (son univers, facultatif : son métier ou sa passion — sinon ses vêtements de la photo),
+ * les lèvres fermées (sa bouche sera animée), pas de lunettes ajoutées, pas de jambes (le ressort, seul, sous la
+ * taille), et le fond magenta uni (elle danse sur son ressort : `ressort.ts`).
  */
 export function consigneFigurineClient(traits?: Traits | null, univers = ""): string {
-  const vus = traitsEnMots(traits);
+  const sansBarbe = !!traits?.barbe && /^aucune/i.test(traits.barbe);
+  // SON PORTRAIT : la phrase du modèle de vision ; sinon, ses traits en mots (en français : le moteur les lit)
+  const portrait = traits?.portrait || "";
+  const traitsFr = traitsEnMots(traits).filter((l) => !l.startsWith("- Son âge") && !l.includes("lunettes"));
   return [
-    "Create a high-quality, highly personalized 3D animated movie character bobblehead based on the reference photo — a collectible that instantly says who this person is. Preserve the person's recognizable identity and facial features.",
+    "Create a high-quality 3D animated movie character bobblehead based on the reference photo. Preserve the person's recognizable identity and facial features.",
     "",
-    "FACE AND LIKENESS:",
-    "- Carefully reproduce the original shape of their nose, eyes, eyebrows, jawline and facial proportions, their age, their skin tone, their hair colour and hairstyle, their facial hair. Keep the face recognizable.",
-    "- A characterful expression full of personality: an intense, confident look in the eyes, expressive eyebrows, a hint of attitude — with the lips closed (it will be animated later).",
-    "- If they wear glasses, keep them; if not, add none. Nothing on the head or face that is not in the photo.",
-    ...(vus.filter((l) => !l.startsWith("- Son expression")).length
-      ? ["- Their features as seen in the photo (written in French — follow them exactly):", ...vus.filter((l) => !l.startsWith("- Son expression")).map((l) => `  ${l}`)]
-      : []),
-    ...(traits?.accentuer ? [`- The caricature plays up THEIR OWN most distinctive features (in French: ${traits.accentuer}) — never generic cartoon features that are not theirs.`] : []),
+    `**Face and likeness:** ${portrait ? `${portrait.replace(/\.?$/, ".")} ` : ""}Carefully reproduce the original shape of their nose, eyes, eyebrows, jawline, and facial proportions. Keep their face recognizable. Lips closed.${traits?.lunettes === true ? " Keep their glasses, same shape." : " No glasses unless they wear some in the photo."}`,
+    ...(!portrait && traitsFr.length ? ["Their features as seen in the photo (in French):", ...traitsFr] : []),
     "",
-    "3D ANIMATION STYLE:",
-    "- A true stylized 3D animated feature-film character, not a photorealistic human: a matte skin finish without pores (the lines of their age stay, sculpted in, with warm natural skin tones); simplified facial shapes that keep THEIR real face shape and proportions; expressive eyes of their real size.",
-    "- The hair richly sculpted, with visible strands, texture and natural volume, in their real colour (salt-and-pepper stays salt-and-pepper); the facial hair (if any) sculpted with fine texture in its real colour.",
-    "- Polished, ultra-detailed 3D rendering, appealing shapes, rich colours: a premium collectible designer-toy aesthetic.",
+    `**3D animation style:** A true stylized 3D animated feature-film character, not a photorealistic human. Smooth, soft skin, rounded simplified facial shapes, slightly exaggerated expressive eyes, a carefully stylized nose matching the reference${sansBarbe ? "" : ", and fully cartoon-like facial hair (if any) made of simplified sculpted shapes rather than realistic individual hairs"}. Soft shading, appealing shapes, vibrant colors, polished 3D rendering, and a collectible designer-toy aesthetic.`,
     "",
-    "BODY, POSE AND OUTFIT:",
-    "- Arms crossed over the chest, a confident stance with attitude.",
-    ...FIGURINE_ENTIERE.filter((l) => !l.startsWith("- Standing pose")),
-    univers
-      ? `- Their outfit tells who they are — their job or passion, in French: « ${univers} ». Dress them as a flattering, instantly recognizable version of it (for a craftsman: a sturdy canvas work apron with tools in the front pocket), with one or two small fitting accessories on the body or in the hands (a wristwatch, a tool, an object of their passion). Nothing written, no logo.`
-      : "- Their own clothes from the photo (same colours and style), enriched with realistic details — fabric texture, visible stitching, buttons, pockets — and one or two small personal accessories that suit them (a wristwatch, a pen in a pocket). Nothing written, no logo.",
+    `**Body and clothing:** An oversized head attached to a small, compact torso cut off at the waist. Arms firmly crossed over the chest. ${
+      univers
+        ? `Wearing a detailed outfit that shows who they are — their job or passion, in French: « ${univers} »${
+            /artisan|bricol|menuis|[ée]b[ée]nist|charpent|atelier|cordonn|maroquin|forgeron/i.test(univers)
+              ? " (a dark navy long-sleeved work shirt and a detailed brown leather craftsman's apron with shoulder straps, metal buckles, visible stitching, practical pockets, and a few tools)"
+              : ": a flattering, instantly recognizable outfit for it, with visible stitching, practical pockets and a few fitting objects"
+          }`
+        : "Wearing their own clothes from the photo (same colours and style), detailed, with visible stitching"
+    }. A chunky wristwatch is visible.`,
     "",
-    ...troisCles(traits),
+    "**Bobblehead construction:** The truncated torso is mounted on a clearly visible shiny metal coil spring, attached to a round, polished wooden display base. No legs, no trousers, no feet: nothing below the waist but the spring.",
     "",
-    "COMPOSITION:",
-    "- Straight-on frontal view, centred and symmetrical: the entire figurine and its wooden base visible, from the top of the head to the bottom of the base, with a generous margin all around (the head never touches the top edge).",
-    "- Warm soft studio key light with a gentle rim light, a clean soft shadow under the base, crisp textures (fabric, metal spring, varnished wood grain): a high-end product photo of a collectible.",
-    "- A plain, vivid magenta-pink studio background (#C8467F), seamless and evenly lit, with nothing else in the image.",
+    "**Composition:** Straight-on frontal view, centered symmetrical composition, entire figurine and wooden base visible, plain solid bright magenta background, professional soft studio lighting, clean shadows, crisp details, high-quality 3D animation render.",
     "",
-    ...CONTRAINTES.map((l) => l.replace("No change to their expression. ", "")),
+    `**Important constraints:** Keep the original person's identity recognizable. Do not make the face photorealistic. Do not create realistic photographic skin pores or individual beard hairs. The nose, eyes, and ${sansBarbe ? "hair" : "beard"} must look deliberately designed and sculpted as part of a stylized animated character. No change to their expression, no extra limbs, no text, no logos.${sansBarbe ? " No beard and no moustache: add none." : ""}`,
   ].join("\n");
 }
 

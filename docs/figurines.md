@@ -601,6 +601,17 @@ qu'on dit de soi dans la carte de personnalité », et qui finissent toujours pa
   qui dit qui il est et de petits accessoires, les bras croisés et de l'attitude, un regard qui a du caractère (lèvres
   fermées), des cheveux texturés, un rendu détaillé et un rose vif ; et sa photo s'accompagne d'une question facultative,
   « Ce qui te ressemble : ton métier ou ta passion » (`<habitant>/univers.json`) — sa figurine s'habille en conséquence.
+- **Le même jour, plus tard : « encore plus réaliste qu'avant ; on est très loin »** (sa figurine faite, et celle de
+  ChatGPT, avec le prompt que ChatGPT lui a donné). Ce qui la rendait réaliste : nos ajouts (les lignes de l'âge, des
+  yeux « de leur vraie taille », « jamais un visage rond », des cheveux « aux mèches visibles », « ultra-détaillé ») et
+  la fidélité haute, qui recopie la photo. La figurine d'un client suit maintenant LE PROMPT DE CHATGPT, partie par
+  partie (`consigneFigurineClient`) : son visage décrit en une phrase anglaise (`Traits.portrait`, écrite par le modèle
+  de vision : « A middle-aged man with voluminous, tousled salt-and-pepper hair… »), une peau lisse, des formes
+  arrondies et simplifiées, des yeux un peu agrandis, une barbe de dessin animé, les bras croisés, sa tenue (son univers ;
+  le tablier de cuir et les outils pour un artisan), une montre, un fond magenta. Le moteur la fait en FIDÉLITÉ BASSE (il
+  redessine, comme ChatGPT) ; `FIGURINE_CLIENT_FIDELITE=high` pour revenir à l'autre. Sa bouche ouverte et ses
+  expressions restent en fidélité haute (elles recopient sa figurine). « Ce qui te ressemble » se revoit aussi en la
+  refaisant. Les figurines des commerçants ne changent pas.
 - **« Une option de plus à chaque achat », « Encore 1 achat »** : ces mots avaient déjà quitté la page (PR #74) ; la
   version vue était celle d'avant sa mise en ligne.
 - **Les voix** : « Je regarde ta photo… je vois déjà ta figurine ! » (la fabrication) et la 5ᵉ bulle de « Rencontres ».

@@ -101,15 +101,18 @@ export async function reprendre(rendu: Buffer, cadre: Cadre): Promise<Buffer> {
 }
 
 // ─── le moteur ──────────────────────────────────────────────────────────────────────────────────
-/** Une image demandée au moteur, à partir d'une image (fidélité haute, format 2:3). */
-export async function editer(image: Buffer, consigne: string, avant: number): Promise<Buffer | { erreur: string }> {
+/**
+ * Une image demandée au moteur, à partir d'une image (format 2:3). Fidélité haute par défaut (elle recopie l'image :
+ * ses expressions, sa bouche ouverte) ; basse pour la figurine d'un client (le moteur la redessine, comme ChatGPT).
+ */
+export async function editer(image: Buffer, consigne: string, avant: number, fidelite: "high" | "low" = "high"): Promise<Buffer | { erreur: string }> {
   const cle = s(process.env.OPENAI_API_KEY);
   if (!cle) return { erreur: "Le moteur d'image n'est pas branché ici." };
   const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
   const { liste } = await moteursDImage(cle, base);
   let derniere = "Le moteur d'image n'a pas répondu.";
   for (let m = 0; m < liste.length; m++) {
-    const reglages: Record<string, string> = { size: `${L}x${H}`, quality: s(process.env.FIGURINE_QUALITE) || "high", input_fidelity: "high", output_format: "png" };
+    const reglages: Record<string, string> = { size: `${L}x${H}`, quality: s(process.env.FIGURINE_QUALITE) || "high", input_fidelity: fidelite, output_format: "png" };
     for (let essai = 0; essai < 4; essai++) {
       const reste = avant - Date.now();
       if (reste < 15_000) return { erreur: "Le temps de la requête est passé." };
