@@ -118,6 +118,7 @@ export function GuideDit({
   grand = false,
   popup = false,
   actionDehors = true,
+  voix,
   children,
   className,
 }: {
@@ -131,6 +132,8 @@ export function GuideDit({
   popup?: boolean;
   /** Ce qu'il propose reste dans la page une fois la fenêtre fermée (`popup`). */
   actionDehors?: boolean;
+  /** Le nom de ses enregistrements (`SONS_PABLITO`), quand ce n'est pas `cle` (« Ce mois-ci » : un par mois, une voix). */
+  voix?: string;
   children?: ReactNode;
   className?: string;
 }) {
@@ -153,7 +156,7 @@ export function GuideDit({
   // SA VOIX, s'il a enregistré cette bulle : elle part avec la bulle (si le téléphone refuse de la jouer avant un
   // premier toucher, la bulle propose de l'entendre). La bulle s'écrit au rythme de sa voix ; quand elle se tait, la
   // bulle suivante vient toute seule.
-  const son = bulle.son ?? (cle ? SONS_PABLITO[`${cle}-${i + 1}`] : undefined);
+  const son = bulle.son ?? ((voix ?? cle) ? SONS_PABLITO[`${voix ?? cle}-${i + 1}`] : undefined);
   const audio = useRef<HTMLAudioElement | null>(null);
   const [joue, setJoue] = useState(false);
   const [bloque, setBloque] = useState(false);

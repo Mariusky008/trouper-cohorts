@@ -238,7 +238,7 @@ await vide.waitForSelector("#o-mois .ce", { timeout: 30000 });
 await vide.waitForTimeout(1500);
 const dc = await texte(vide, "#o-mois");
 ok(
-  (await texte(vide, "#o-mois .pb-voile .mqd-bulle")).includes("Ce mois-ci, c’est l’édition") && (await vide.locator("#o-mois .pb-voile .mqd img.mqf[src*='/api/direct/guide/edition-']").count()) === 1,
+  (await texte(vide, "#o-mois .pb-voile .mqd-bulle")).includes("Tu as vu ma tenue") && (await vide.locator("#o-mois .pb-voile .mqd img.mqf[src*='/api/direct/guide/edition-']").count()) === 1,
   "« Ce mois-ci » : le guide, dans la tenue du mois, explique l'édition",
 );
 ok((await vide.locator(".ce-frise img.mqf").count()) === 6 && (await vide.locator(".ce-carte img.mqf").count()) === 1, "la frise et l'édition du moment : sa figurine dans chaque tenue, plus de fantômes");

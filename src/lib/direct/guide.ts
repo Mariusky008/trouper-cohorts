@@ -30,6 +30,7 @@ export const NOM_GUIDE = "Pablito";
  * 🎙️ SA VOIX : des enregistrements fournis par le patron (`CLAUDE.md` : la page n'en fabrique jamais), un par bulle, rangés dans
  * `public/collection/pablito/` ; la clé est la `cle` de `GuideDit` puis le numéro de la bulle :
  *   "pablito-accueil-1": "/collection/pablito/accueil-1.mp3"   (« Salut ! Moi, c'est Pablito ! »)
+ * (« Ce mois-ci » : `voix="pablito-mois"`, la même voix tous les mois.)
  * Une bulle sans enregistrement s'écrit sans le son. Pendant qu'il joue, la bouche bouge ; s'il finit sur une grimace
  * (`apres`), elle vient quand il se tait.
  */
