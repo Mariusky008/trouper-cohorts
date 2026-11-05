@@ -58,6 +58,8 @@ type Fichier = {
   reactions: Record<string, Record<number, Reaction>>;
   par: "ia" | "local";
   signale_le?: string;
+  /** Une rencontre avec un membre de sa ville (« Rencontrer un membre »), qu'il ne connaissait pas. */
+  membre?: boolean;
 };
 type Index = {
   liste: { id: string; jour: string; avec: string }[];
@@ -68,6 +70,10 @@ type Index = {
   moi: number;
   pas: number;
   invitation?: string;
+  /** Le jour de sa dernière rencontre avec un membre (une par jour), s'il est dans la file, et qui il ne veut plus voir. */
+  membreJour?: string;
+  ouvert?: boolean;
+  bloques?: string[];
 };
 const INDEX_VIDE: Index = { liste: [], amis: [], oui: [], non: [], moi: 0, pas: 0 };
 const cheminIndex = (h: string) => `${h}/rencontres.json`;
@@ -141,9 +147,10 @@ function portraitClient(lettre: string, prenom: string, g: Gardee, idx: Index): 
   ];
 }
 
-function consigneConversation(a: string[], b: string[]): string {
+function consigneConversation(a: string[], b: string[], inconnus = false): string {
   return [
     "Tu écris une petite conversation entre deux figurines de collection (des personnages miniatures) qui se rencontrent aujourd'hui, pour ClikMe, l'application des commerces de quartier.",
+    ...(inconnus ? ["Elles ne se connaissent pas encore : elles font connaissance, avec curiosité et bonne humeur (sans jamais proposer de se voir en vrai)."] : []),
     "Le ton : drôle, chaleureux, bienveillant — jamais méchant, jamais gênant. Elles se tutoient, parlent de ce qu'elles aiment, se taquinent gentiment, se lancent un petit défi.",
     "Chacune parle EXACTEMENT comme décrit (sa façon de parler) : c'est le jeu, que chacun puisse dire « c'est tout moi ».",
     "Ne devine jamais le genre d'une personne d'après son prénom (des tournures qui vont à tout le monde).",
@@ -238,6 +245,7 @@ async function vueDe(supabase: Supabase, f: Fichier, moiId: string): Promise<Ren
     repliques: f.repliques.map((r) => ({ moi: r.qui === cote, texte: r.texte })),
     reactions: f.reactions[moiId] ?? {},
     par: f.par,
+    ...(f.membre ? { membre: true } : {}),
   };
 }
 
@@ -255,6 +263,9 @@ export type EtatRencontre = {
   amis: number;
   /** Ses rencontres d'avant (les plus récentes d'abord), et avec qui. */
   avant: { id: string; jour: string; avec: string }[];
+  /** Il a déjà rencontré un membre aujourd'hui (un par jour) ; il est dans la file des membres. */
+  membreAujourdhui: boolean;
+  ouvert: boolean;
 };
 
 /** Ses rencontres d'avant, avec le nom de l'autre (un prénom, ou le commerce). */
@@ -272,7 +283,14 @@ async function rencontresDavant(supabase: Supabase, idx: Index, sauf: string): P
 /** 💬 SA RENCONTRE DU JOUR : celle d'aujourd'hui, ou une nouvelle (l'IA l'écrit maintenant). */
 export async function rencontreDuJour(supabase: Supabase, habitant: Habitant): Promise<EtatRencontre> {
   const [carte, idx] = await Promise.all([lire<Gardee>(supabase, cheminCarte(habitant.id)), indexDe(supabase, habitant.id)]);
-  const base = { rencontre: null, ressemblance: ressemblance(idx.moi, idx.pas), amis: idx.amis.length, avant: [] as EtatRencontre["avant"] };
+  const base = {
+    rencontre: null,
+    ressemblance: ressemblance(idx.moi, idx.pas),
+    amis: idx.amis.length,
+    avant: [] as EtatRencontre["avant"],
+    membreAujourdhui: idx.membreJour === jourParis(),
+    ouvert: Boolean(idx.ouvert),
+  };
   if (!carte || !reponsesValides(carte.reponses)) return { ...base, avant: await rencontresDavant(supabase, idx, ""), besoinCarte: true };
   const jour = jourParis();
   // UN AMI QUI VIENT DE FAIRE SA CARTE, et qu'il n'a jamais rencontré : leur rencontre, tout de suite (même s'il en a
@@ -300,7 +318,21 @@ export async function rencontreDuJour(supabase: Supabase, habitant: Habitant): P
   }
   if (!b) return { ...base, avant: await rencontresDavant(supabase, idx, ""), personne: true };
 
-  // LA CONVERSATION
+  const { f, idxApres } = await creerConversation(supabase, habitant, carte, idx, b, commerce);
+  return { ...base, avant: await rencontresDavant(supabase, idxApres, f.id), rencontre: await vueDe(supabase, f, habitant.id) };
+}
+
+/** LA CONVERSATION : l'IA l'écrit d'après les deux cartes ; rangée, et dans les rencontres des deux (entre clients). */
+async function creerConversation(
+  supabase: Supabase,
+  habitant: Habitant,
+  carte: Gardee,
+  idx: Index,
+  b: Cote,
+  commerce: CommerceInfo | null,
+  membre = false,
+): Promise<{ f: Fichier; idxApres: Index }> {
+  const jour = jourParis();
   const prenomA = await prenomDe(supabase, habitant);
   const portraitA = portraitClient("A", prenomA, carte, idx);
   let autre: { prenom: string; carte: Gardee } | CommerceInfo;
@@ -317,7 +349,7 @@ export async function rencontreDuJour(supabase: Supabase, habitant: Habitant): P
       "- Elle ne promet RIEN et n'invente RIEN sur le commerce : aucun prix, aucune offre, aucune réduction, aucun horaire, aucun produit précis. Ce n'est pas le commerçant qui parle.",
     ];
   }
-  const ia = await ecrireConversation(consigneConversation(portraitA, portraitB));
+  const ia = await ecrireConversation(consigneConversation(portraitA, portraitB, membre));
   const f: Fichier = {
     id: nouvelId(),
     jour,
@@ -327,16 +359,78 @@ export async function rencontreDuJour(supabase: Supabase, habitant: Habitant): P
     repliques: ia ?? conversationLocale(prenomA, carte, autre),
     reactions: {},
     par: ia ? "ia" : "local",
+    ...(membre ? { membre: true } : {}),
   };
   await ecrire(supabase, cheminRencontre(f.id), f);
-  const idxApres = { ...idx, liste: [...idx.liste, { id: f.id, jour, avec: cleAvec(b) }].slice(-120) };
+  const idxApres: Index = { ...idx, liste: [...idx.liste, { id: f.id, jour, avec: cleAvec(b) }].slice(-120), ...(membre ? { membreJour: jour } : {}) };
   await ecrire(supabase, cheminIndex(habitant.id), idxApres);
-  // ENTRE DEUX AMIS : la même rencontre, chez l'autre aussi
+  // ENTRE DEUX CLIENTS : la même rencontre, chez l'autre aussi
   if ("habitant" in b) {
     const idxB = await indexDe(supabase, b.habitant);
-    await ecrire(supabase, cheminIndex(b.habitant), { ...idxB, liste: [...idxB.liste, { id: f.id, jour, avec: `h:${habitant.id}` }].slice(-120) });
+    await ecrire(supabase, cheminIndex(b.habitant), { ...idxB, liste: [...idxB.liste, { id: f.id, jour, avec: `h:${habitant.id}` }].slice(-120), ...(membre ? { membreJour: jour } : {}) });
   }
-  return { ...base, avant: await rencontresDavant(supabase, idxApres, f.id), rencontre: await vueDe(supabase, f, habitant.id) };
+  return { f, idxApres };
+}
+
+// ─── 🎲 rencontrer un membre ─────────────────────────────────────────────────────────────────────
+/**
+ * « RENCONTRER UN MEMBRE » (5 novembre 2026 : « si on n'invite personne, on peut appuyer sur un compte à rebours pour
+ * être mis en contact avec un membre ») : son geste l'inscrit dans la file des membres de sa ville (il accepte que sa
+ * figurine, son prénom et sa carte soient présentés) ; on lui présente celui qui attend depuis le plus longtemps — pas
+ * quelqu'un qu'il a bloqué ou qui l'a bloqué, pas quelqu'un vu ces quatorze derniers jours, chacun une fois par jour.
+ * Personne ? Il attend dans la file : le prochain qui appuie le rencontrera.
+ */
+const cheminFile = (ville: string) => `membres/${ville || "toutes"}.json`;
+type File = { liste: { h: string; le: string }[] };
+
+export async function rencontrerUnMembre(supabase: Supabase, habitant: Habitant): Promise<{ rencontre?: RencontreVue; attente?: boolean; error?: string; statut?: number }> {
+  const [carte, idx] = await Promise.all([lire<Gardee>(supabase, cheminCarte(habitant.id)), indexDe(supabase, habitant.id)]);
+  if (!carte || !reponsesValides(carte.reponses)) return { error: "Fais d’abord ta carte de personnage.", statut: 400 };
+  const jour = jourParis();
+  if (idx.membreJour === jour) return { error: "Une rencontre de membre par jour : reviens demain !", statut: 429 };
+  const chemin = cheminFile(habitant.villeSlug);
+  const file = (await lire<File>(supabase, chemin)) ?? { liste: [] };
+  const ilYa14 = jourParis(new Date(Date.now() - 14 * 86_400_000));
+  const bloques = new Set(idx.bloques ?? []);
+  let choisi: string | null = null;
+  for (const x of [...file.liste].sort((a, b) => a.le.localeCompare(b.le))) {
+    if (x.h === habitant.id || bloques.has(x.h) || dernierJour(idx, `h:${x.h}`) > ilYa14) continue;
+    const [gX, idxX] = await Promise.all([lire<Gardee>(supabase, cheminCarte(x.h)), indexDe(supabase, x.h)]);
+    if (!gX || !idxX.ouvert || idxX.membreJour === jour || (idxX.bloques ?? []).includes(habitant.id)) continue;
+    choisi = x.h;
+    break;
+  }
+  // il entre dans la file (ou y reste), et il est « ouvert » aux rencontres
+  const autres = file.liste.filter((x) => x.h !== habitant.id && x.h !== choisi);
+  await ecrire(supabase, chemin, { liste: [...autres, ...(choisi ? [] : [{ h: habitant.id, le: new Date().toISOString() }])].slice(-500) });
+  if (!choisi) {
+    await ecrire(supabase, cheminIndex(habitant.id), { ...idx, ouvert: true });
+    return { attente: true };
+  }
+  const { f } = await creerConversation(supabase, habitant, carte, { ...idx, ouvert: true }, { habitant: choisi }, null, true);
+  return { rencontre: await vueDe(supabase, f, habitant.id) };
+}
+
+/** Il ne veut plus rencontrer de membres : il sort de la file. */
+export async function arreterMembres(supabase: Supabase, habitant: Habitant): Promise<void> {
+  const idx = await indexDe(supabase, habitant.id);
+  const chemin = cheminFile(habitant.villeSlug);
+  const file = (await lire<File>(supabase, chemin)) ?? { liste: [] };
+  await ecrire(supabase, chemin, { liste: file.liste.filter((x) => x.h !== habitant.id) });
+  await ecrire(supabase, cheminIndex(habitant.id), { ...idx, ouvert: false });
+}
+
+/** Il ne veut plus rencontrer CE membre (une rencontre de membre) : on ne les présentera plus. */
+export async function bloquerMembre(supabase: Supabase, habitant: Habitant, id: unknown): Promise<boolean> {
+  const rid = s(id);
+  if (!idRencontreValide(rid)) return false;
+  const f = await lire<Fichier>(supabase, cheminRencontre(rid));
+  if (!f || !f.membre || !participe(f, habitant.id)) return false;
+  const autre = f.a.habitant === habitant.id ? ("habitant" in f.b ? f.b.habitant : "") : f.a.habitant;
+  if (!autre) return false;
+  const idx = await indexDe(supabase, habitant.id);
+  await ecrire(supabase, cheminIndex(habitant.id), { ...idx, bloques: [...new Set([...(idx.bloques ?? []), autre])].slice(-200) });
+  return true;
 }
 
 /** Une rencontre d'avant (il y participait). */

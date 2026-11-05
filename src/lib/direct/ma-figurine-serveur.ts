@@ -40,7 +40,6 @@ import {
   texteValide,
   voixValide,
   type CommerceCite,
-  type DemoFigurine,
   type EtatMaFigurine,
   type Expressions,
   type MessageFigurine,
@@ -295,16 +294,11 @@ export async function lireSonTexte(supabase: Supabase, habitant: Habitant, texte
   return { mp3: r.mp3 };
 }
 
-// ─── 🎤 la démonstration : la figurine du propriétaire, qu'on fait parler soi-même, sans compte ─────────────
+// ─── 🎤 les messages de l'ancienne démonstration (on la faisait parler sans compte, jusqu'au 5 novembre 2026) ─────
+// Elle a quitté la page (« elle ne sert plus à rien maintenant » : chacun crée la sienne dès le départ) ; les liens
+// déjà envoyés s'ouvrent toujours.
 const MOT_REFUSE = "Ça, la figurine ne le dit pas. Écris autre chose 🙂";
-/** Par visiteur et par jour : ses textes lus (chacun coûte) et ses messages envoyés. Pour tous : un plafond par jour. */
-const LECTURES_DEMO_VISITEUR = 10;
-const MESSAGES_DEMO_VISITEUR = 10;
-const lecturesDemoParJour = () => Math.max(0, Math.floor(Number(process.env.FIGURINE_DEMO_LECTURES_JOUR) || 300));
 const jourParis = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
-
-/** Qui fait parler la démonstration (pour compter) : son habitant s'il en a un, sinon une empreinte de sa connexion. */
-export const visiteurDe = (habitantId: string | null, ip: string, agent: string) => (habitantId ? `h-${habitantId}` : `v-${empreinte(`${ip}|${agent}`)}`);
 
 async function lireJson<T extends object>(supabase: Supabase, chemin: string): Promise<Partial<T>> {
   try {
@@ -314,59 +308,6 @@ async function lireJson<T extends object>(supabase: Supabase, chemin: string): P
   }
 }
 const ecrireJson = (supabase: Supabase, chemin: string, x: unknown) => deposer(supabase, chemin, Buffer.from(JSON.stringify(x)), "application/json");
-type Compte = { lectures: number; messages: number };
-const comptes = (jour: string, visiteur: string) => ({ moi: `${DOSSIER_DEMO}/jour/${jour}/${visiteur}.json`, tous: `${DOSSIER_DEMO}/jour/${jour}/tous.json` });
-
-/** Ce que la page sait de la démonstration : ses expressions déjà faites, et si les voix sont branchées. */
-export async function etatDemo(supabase: Supabase): Promise<DemoFigurine> {
-  try {
-    const { expressions, complete } = await expressionsSignees(supabase, `${DOSSIER_DEMO}/expr`, 6 * 3600);
-    return { expressions, complete, voix: voixBranchee() };
-  } catch {
-    return { expressions: {}, complete: false, voix: voixBranchee() };
-  }
-}
-
-/** Un tour de fabrication de ses expressions, à partir de son image de tous les jours (`IMAGES_DEMO.neutre`). */
-export async function fabriquerExpressionsDemo(supabase: Supabase, origine: string, avant: number): Promise<{ error?: string; enCours?: boolean }> {
-  let source: Buffer;
-  try {
-    const r = await fetch(`${origine}${IMAGES_DEMO.neutre}`, { signal: AbortSignal.timeout(15_000) });
-    if (!r.ok) return { error: "L’image de la démonstration est introuvable." };
-    source = Buffer.from(await r.arrayBuffer());
-  } catch {
-    return { error: "L’image de la démonstration est introuvable." };
-  }
-  const r = await fabriquerUnTour(depotDans(supabase, `${DOSSIER_DEMO}/expr`), source, avant);
-  return r.erreur ? { error: r.erreur } : r.enCours ? { enCours: true } : {};
-}
-
-/**
- * ✍️ CE QU'IL LUI FAIT DIRE, dans la voix choisie : un texte déjà lu se reprend (rien à payer) ; sinon il compte —
- * `LECTURES_DEMO_VISITEUR` par visiteur et par jour, `FIGURINE_DEMO_LECTURES_JOUR` (300) pour tous.
- */
-export async function voixDemo(supabase: Supabase, visiteur: string, texte: unknown, voix: unknown): Promise<{ mp3?: Buffer; chemin?: string; error?: string; statut?: number }> {
-  const t = texteValide(texte);
-  const v = voixValide(voix);
-  if (!t || !v) return { error: "Écris ce qu’elle doit dire, et choisis sa voix.", statut: 400 };
-  if (motInterdit(t)) return { error: MOT_REFUSE, statut: 422 };
-  const chemin = `${DOSSIER_DEMO}/voix/${v}-${empreinte(t)}.mp3`;
-  const garde = await telecharger(supabase, chemin);
-  if (garde?.length) return { mp3: garde, chemin };
-  if (!voixBranchee()) return { error: "Sa voix arrive très bientôt : reviens dans quelques jours !", statut: 503 };
-  const c = comptes(jourParis(), visiteur);
-  const [moi, tous] = await Promise.all([lireJson<Compte>(supabase, c.moi), lireJson<Compte>(supabase, c.tous)]);
-  if ((moi.lectures ?? 0) >= LECTURES_DEMO_VISITEUR) return { error: "Tu l’as beaucoup fait parler aujourd’hui ! Reviens demain… ou gagne la tienne 😉", statut: 429 };
-  if ((tous.lectures ?? 0) >= lecturesDemoParJour()) return { error: "Elle a beaucoup parlé aujourd’hui : reviens demain !", statut: 429 };
-  const r = await lireLeTexte(t, v);
-  if ("erreur" in r) return { error: r.erreur, statut: r.statut };
-  await Promise.all([
-    deposer(supabase, chemin, r.mp3, "audio/mpeg"),
-    ecrireJson(supabase, c.moi, { ...moi, lectures: (moi.lectures ?? 0) + 1 }),
-    ecrireJson(supabase, c.tous, { ...tous, lectures: (tous.lectures ?? 0) + 1 }),
-  ]);
-  return { mp3: r.mp3, chemin };
-}
 
 /** Un message de la démonstration, gardé dans le seau (pas de compte, pas de table). */
 type FicheDemo = {
@@ -387,38 +328,6 @@ async function ficheDemo(supabase: Supabase, id: string): Promise<FicheDemo | nu
   if (!idMessageValide(id)) return null;
   const f = await lireJson<FicheDemo>(supabase, cheminFiche(id));
   return f.id === id && f.son ? (f as FicheDemo) : null;
-}
-
-/** 📲 Il l'envoie : le texte est relu par le serveur (jamais un son venu du navigateur), puis un lien. */
-export async function envoyerMessageDemo(
-  supabase: Supabase,
-  visiteur: string,
-  p: { texte: unknown; voix: unknown; sentiment?: unknown; prenom?: unknown },
-): Promise<{ id?: string; error?: string; statut?: number }> {
-  const prenom = prenomValide(p.prenom);
-  if (prenom && motInterdit(prenom)) return { error: "Ce prénom ne passe pas : écris le tien 🙂", statut: 422 };
-  const c = comptes(jourParis(), visiteur);
-  if (((await lireJson<Compte>(supabase, c.moi)).messages ?? 0) >= MESSAGES_DEMO_VISITEUR) return { error: "Assez de messages pour aujourd’hui : reviens demain !", statut: 429 };
-  const son = await voixDemo(supabase, visiteur, p.texte, p.voix);
-  if (!son.mp3 || !son.chemin) return { error: son.error, statut: son.statut };
-  const id = nouvelId();
-  const fiche: FicheDemo = {
-    id,
-    le: new Date().toISOString(),
-    prenom,
-    texte: texteValide(p.texte),
-    voix: voixValide(p.voix) ?? "",
-    sentiment: sentimentValide(p.sentiment),
-    son: son.chemin,
-    // (une voix lue est un MP3 à 128 kbit/s)
-    duree: Math.round(((son.mp3.length * 8) / 128_000) * 10) / 10,
-    visiteur,
-    ecoutes: 0,
-  };
-  if (!(await ecrireJson(supabase, cheminFiche(id), fiche))) return { error: "Ton message n’est pas parti. Réessaie dans un instant.", statut: 502 };
-  const moi = await lireJson<Compte>(supabase, c.moi);
-  await ecrireJson(supabase, c.moi, { ...moi, messages: (moi.messages ?? 0) + 1 });
-  return { id };
 }
 
 async function lireMessageDemo(supabase: Supabase, id: string): Promise<MessageFigurine | null> {

@@ -8,22 +8,20 @@
  *
  * UN SEUL ÉCRAN, UN SEUL GESTE : la figurine en grand ; dessous, ce qu'elle ressent (SON visage change) ; puis ce
  * qu'elle dit — un texte lu par une voix au choix, ou sa propre voix — ; « Écouter » ; « Envoyer » (WhatsApp d'abord).
- *   · `StudioDemo` : la figurine du propriétaire de ClikMe, pour qui n'a pas encore la sienne — 4 novembre 2026 : « je
- *     choisis l'émotion, je tape ce que je veux qu'elle dise et je l'envoie à quelqu'un ; si c'est bluffant, je voudrais
- *     créer ma propre figurine, et c'est ça qui motivera » : SON texte, SA voix au choix, et un vrai lien à envoyer ;
  *   · `StudioMoi` : la sienne, quand elle est prête (ses expressions se fabriquent toutes seules la première fois) ;
  *     ses options (`OPTIONS_FIGURINE`) : celles pas encore ouvertes se voient, sous cadenas, avec l'achat qui les ouvre
  *     (`MesOptions`) — 4 novembre 2026 : « créer sa figurine dès le départ, et des options supplémentaires à chaque fois
  *     qu'on achète quelque chose chez un commerçant » ;
- *   · `EnvoiPhoto` (« Crée ta figurine », dès le départ, sans compte), `FabricationAuto` (le moteur la fabrique, la page
- *     attend), `Annonce` (sans moteur : ClikMe la fait à la main).
+ *   · `OngletFigurine` : l'onglet entier — l'accueil de Clik, la mascotte (`mascotte.tsx`), la quête `EnvoiPhoto`
+ *     (« Crée ta figurine », dès le départ, sans compte), `FabricationAuto` (le moteur la fabrique, Clik raconte),
+ *     `Annonce` (sans moteur : ClikMe la fait à la main). La démonstration qu'on faisait parler (`StudioDemo`) est
+ *     partie le 5 novembre 2026 : « elle ne sert plus à rien maintenant ».
  * La règle est dans `lib/direct/ma-figurine.ts`.
  */
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   COMMERCES_MAX_MESSAGE,
   DUREE_MAX_MESSAGE,
-  IMAGES_DEMO,
   OPTIONS_FIGURINE,
   PRENOM_MAX,
   SENTIMENTS,
@@ -36,14 +34,14 @@ import {
   texteDuMessage,
   voixOuverte,
   type CleVoix,
-  type DemoFigurine,
   type EtatMaFigurine,
   type Sentiment,
 } from "@/lib/direct/ma-figurine";
 import { reduireImage } from "@/lib/direct/reduire-image";
 import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE, type FigurineHandle } from "./figurine-qui-parle";
+import { Mascotte, MascotteDit, STYLES_MASCOTTE } from "./mascotte";
 
-type Reponse = { error?: string; etat?: EtatMaFigurine; demo?: DemoFigurine; lien?: string; son?: string; enCours?: boolean };
+type Reponse = { error?: string; etat?: EtatMaFigurine; lien?: string; son?: string; enCours?: boolean };
 
 async function demander(corps: Record<string, unknown>): Promise<Reponse> {
   const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
@@ -213,168 +211,6 @@ export function PanneauEnvoi({ lien, texte, titre = "Ton message est prêt ✓" 
   );
 }
 
-const Etape = ({ n, children }: { n: number; children: React.ReactNode }) => (
-  <b className="tf-etape">
-    <i aria-hidden="true">{n}</i>
-    {children}
-  </b>
-);
-
-// ─── la démonstration : la figurine du propriétaire, qu'on fait parler soi-même ────────────────────────
-const IDEES = ["Joyeux anniversaire ! Je t’embrasse fort.", "On se fait un resto ce soir ?", "Tu me manques, passe à la maison !", "Bravo pour ton examen !"];
-
-export function StudioDemo({ demo, creer = false }: { demo: DemoFigurine | null; creer?: boolean }) {
-  const fig = useRef<FigurineHandle>(null);
-  const [sentiment, setSentiment] = useState<Sentiment | null>("joie");
-  const [touche, setTouche] = useState(false);
-  const [rejoue, setRejoue] = useState(0);
-  const [texte, setTexte] = useState("");
-  const [voix, setVoix] = useState<CleVoix>("chaleureuse");
-  const [prenom, setPrenom] = useState("");
-  const [parle, setParle] = useState(false);
-  const [entendu, setEntendu] = useState("");
-  const [envoi, setEnvoi] = useState(false);
-  const [envoye, setEnvoye] = useState<{ lien: string; cle: string } | null>(null);
-  const [erreur, setErreur] = useState("");
-  const [idee, setIdee] = useState(0);
-  const branchee = Boolean(demo?.voix);
-
-  // tant qu'on n'a rien touché, son visage passe d'une émotion à l'autre (et l'idée de texte change)
-  useEffect(() => {
-    if (touche) return;
-    const t = window.setInterval(() => {
-      setSentiment((s) => SENTIMENTS[(SENTIMENTS.findIndex((v) => v.cle === s) + 1) % SENTIMENTS.length].cle);
-      setRejoue((n) => n + 1);
-      setIdee((i) => (i + 1) % IDEES.length);
-    }, 2600);
-    return () => window.clearInterval(t);
-  }, [touche]);
-
-  const t = texte.trim();
-  const cleSon = `${voix}|${t}`;
-  const cleEnvoi = `${cleSon}|${sentiment ?? ""}|${prenom.trim()}`;
-
-  function ecouter() {
-    setTouche(true);
-    setErreur("");
-    if (!t) return setErreur("Écris d’abord ce qu’elle doit dire.");
-    void fig.current
-      ?.jouer(async () => {
-        const j = await demander({ action: "demo", quoi: "voix", texte: t, voix });
-        if (!j.son) throw new Error("La voix n’a pas pu lire ce texte.");
-        return j.son;
-      })
-      .then((ok) => ok && setEntendu(cleSon));
-  }
-
-  async function envoyer() {
-    setTouche(true);
-    setErreur("");
-    if (!t) return setErreur("Écris d’abord ce qu’elle doit dire.");
-    if (envoye?.cle === cleEnvoi) return;
-    setEnvoi(true);
-    try {
-      const j = await demander({ action: "demo", quoi: "message", texte: t, voix, prenom: prenom.trim(), ...(sentiment ? { sentiment } : {}) });
-      setEnvoye({ lien: `${window.location.origin}${j.lien}`, cle: cleEnvoi });
-    } catch (e) {
-      setErreur((e as Error).message);
-    } finally {
-      setEnvoi(false);
-    }
-  }
-
-  return (
-    <div className="tf tf-demo">
-      <div className="tf-scene">
-        <span className="tf-tag">✨ Démonstration · fais-la parler</span>
-        <FigurineQuiParle
-          ref={fig}
-          neutre={IMAGES_DEMO.neutre}
-          parle={IMAGES_DEMO.parle}
-          expressions={demo?.expressions}
-          sentiment={sentiment}
-          rejoue={rejoue}
-          onJoue={setParle}
-          className="tf-fig"
-        />
-        <Etape n={1}>Choisis son émotion</Etape>
-        <ChoixExpression
-          valeur={sentiment}
-          onChoix={(s) => {
-            setTouche(true);
-            setSentiment(s);
-            setRejoue((n) => n + 1);
-          }}
-        />
-      </div>
-
-      <div className="tf-panneau">
-        <Etape n={2}>Écris ce qu’elle dit</Etape>
-        <label className="tf-texte">
-          <textarea
-            value={texte}
-            maxLength={TEXTE_MAX}
-            rows={3}
-            placeholder={IDEES[idee]}
-            onFocus={() => setTouche(true)}
-            onChange={(e) => setTexte(e.target.value)}
-            aria-label="Ce qu’elle doit dire"
-            disabled={!branchee}
-          />
-          <small>
-            {texte.length} / {TEXTE_MAX}
-          </small>
-        </label>
-        {branchee ? (
-          <>
-            <b className="tf-q">Sa voix</b>
-            <ChoixVoix valeur={voix} onChoix={setVoix} />
-            <button type="button" className="tf-ecouter" onClick={ecouter} disabled={parle || !t}>
-              {parle ? "🔊 Elle parle…" : entendu === cleSon ? "▶ Réécouter" : "▶ Écouter"}
-            </button>
-
-            <Etape n={3}>Envoie-la à quelqu’un</Etape>
-            {envoye?.cle === cleEnvoi ? (
-              <PanneauEnvoi lien={envoye.lien} texte={texteDuMessage(prenom.trim(), true)} />
-            ) : (
-              <>
-                <input
-                  className="tf-prenom"
-                  value={prenom}
-                  maxLength={PRENOM_MAX}
-                  onChange={(e) => setPrenom(e.target.value)}
-                  placeholder="Ton prénom (il le verra)"
-                  aria-label="Ton prénom"
-                  autoComplete="given-name"
-                />
-                <button type="button" className="tf-envoyer tf-envoyer-wa" onClick={envoyer} disabled={envoi || !t}>
-                  {envoi ? "Un instant…" : "📲 L’envoyer"}
-                </button>
-              </>
-            )}
-          </>
-        ) : (
-          <p className="tf-note">🔊 Sa voix arrive très bientôt : tu pourras lui faire dire ce que tu veux, et l’envoyer.</p>
-        )}
-        {erreur && (
-          <p className="tf-erreur" role="alert">
-            {erreur}
-          </p>
-        )}
-
-        <div className={`tf-la-tienne${envoye || entendu ? " vu" : ""}`}>
-          <b>Bluffant ? Crée la tienne, avec TON visage.</b>
-          <span>C’est gratuit. Et chaque achat chez un commerce ClikMe lui ajoute une option : un visage, des voix, le cadre doré…</span>
-          {creer && (
-            <a className="tf-creer" href="#creer">
-              📸 Créer ma figurine ↓
-            </a>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── la sienne ──────────────────────────────────────────────────────────────────────────────────
 const TYPES_SON = ["audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"];
@@ -729,12 +565,13 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   );
 }
 
-// ─── à 10 : sa photo, puis l'attente ─────────────────────────────────────────────────────────────
-export function Annonce({ titre, emoji, children }: { titre: string; emoji: string; children: React.ReactNode }) {
+// ─── sa figurine à créer : l'accueil de Clik, la quête, puis l'attente ──────────────────────────────────────
+/** Ce que Clik annonce quand il n'y a rien à faire tout de suite (sans moteur : ClikMe la fait à la main). */
+export function Annonce({ titre, children }: { titre: string; emoji?: string; children: ReactNode }) {
   return (
     <div className="tf-annonce">
-      <span className="tf-annonce-emoji" aria-hidden="true">
-        {emoji}
+      <span className="tf-annonce-clik" aria-hidden="true">
+        <Mascotte salue />
       </span>
       <b>{titre}</b>
       <p>{children}</p>
@@ -743,8 +580,10 @@ export function Annonce({ titre, emoji, children }: { titre: string; emoji: stri
 }
 
 /**
- * 📸 « CRÉE TA FIGURINE », DÈS LE DÉPART — sa photo (et, sans compte, son prénom et sa ville : la photo lui ouvre son
- * compte). Le moteur d'image la fabrique ensuite (`FabricationAuto`) ; sans moteur, ClikMe la fait à la main.
+ * 📸 « CRÉE TA FIGURINE », UNE PETITE QUÊTE — 5 novembre 2026 (« inciter directement à créer sa figurine, en encore plus
+ * gamifié, accueillant et chaleureux ») : trois étapes qui se cochent (sa photo ; son prénom et sa ville, s'il n'a pas
+ * encore de compte : la photo le lui ouvre ; « c'est bien moi »), une jauge qui se remplit, et « Donner vie à ma
+ * figurine ». Le moteur d'image la fabrique ensuite (`FabricationAuto`) ; sans moteur, ClikMe la fait à la main.
  */
 export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFigurine; villes?: { slug: string; nom: string }[]; onEnvoye: (e: EtatMaFigurine) => void }) {
   const [photo, setPhoto] = useState("");
@@ -753,7 +592,11 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
   const [ville, setVille] = useState(villes.length === 1 ? villes[0].slug : "");
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState("");
+  const demandePrenom = !etat.prenom;
+  const demandeVille = !etat.compte && villes.length > 1;
   const sansVille = !etat.compte && villes.length > 0 && !ville;
+  const etapes = [Boolean(photo), ...(demandePrenom || demandeVille ? [Boolean((!demandePrenom || prenom.trim()) && !sansVille)] : []), accord];
+  const faites = etapes.filter(Boolean).length;
   async function choisir(f: File | undefined) {
     setErreur("");
     if (!f) return;
@@ -775,58 +618,77 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
       setEnvoi(false);
     }
   }
+  let n = 0;
   return (
-    <div className="tf-photo" id="creer">
-      <span className="tf-annonce-emoji" aria-hidden="true">
-        📸
-      </span>
-      <b className="tf-titre">Crée ta figurine</b>
-      <p>
-        Une photo de toi, de face, bien éclairée, seul{"(e)"} :{" "}
-        {etat.auto === false ? "ClikMe en fait ta figurine, prête dans quelques jours." : "en deux minutes environ, elle devient ta figurine."} Elle parlera, changera de visage, et
-        chaque achat chez un commerce ClikMe lui ajoutera une option. C’est gratuit.
-      </p>
+    <div className="tf-photo tf-quete" id="creer">
+      <header className="tf-quete-tete">
+        <small>TA QUÊTE · {etat.auto === false ? "QUELQUES JOURS" : "2 MINUTES"} · GRATUIT</small>
+        <b className="tf-titre">Crée ta figurine</b>
+        <span className="tf-quete-jauge" role="progressbar" aria-valuemin={0} aria-valuemax={etapes.length} aria-valuenow={faites}>
+          <i style={{ width: `${(faites / etapes.length) * 100}%` } as CSSProperties} />
+        </span>
+      </header>
       {etat.refus && (
         <p className="tf-refus" role="alert">
           Ta photo précédente n’a pas pu servir : {etat.refus}
         </p>
       )}
-      <label className="tf-choisir">
-        <input type="file" accept="image/*" onChange={(e) => choisir(e.target.files?.[0])} />
-        {photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo} alt="Ta photo" />
-        ) : (
-          <span>📷 Choisir ma photo</span>
+      <ol className="tf-etapes">
+        <li className={photo ? "fait" : "maintenant"}>
+          <span className="tf-num">{photo ? "✓" : ++n}</span>
+          <div>
+            <b>Ta photo</b>
+            <small>De face, bien éclairée, seul{"(e)"} sur la photo. Un sourire ? Encore mieux.</small>
+            <label className="tf-choisir">
+              <input type="file" accept="image/*" onChange={(e) => choisir(e.target.files?.[0])} />
+              {photo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photo} alt="Ta photo" />
+              ) : (
+                <span>📷 Choisir ma photo</span>
+              )}
+            </label>
+          </div>
+        </li>
+        {(demandePrenom || demandeVille) && (
+          <li className={etapes[1] ? "fait" : photo ? "maintenant" : ""}>
+            <span className="tf-num">{etapes[1] ? "✓" : ++n}</span>
+            <div>
+              <b>Toi</b>
+              {demandePrenom && (
+                <input
+                  className="tf-prenom-photo"
+                  value={prenom}
+                  maxLength={PRENOM_MAX}
+                  onChange={(e) => setPrenom(e.target.value)}
+                  placeholder="Ton prénom (tes proches le verront)"
+                  aria-label="Ton prénom"
+                  autoComplete="given-name"
+                />
+              )}
+              {demandeVille && (
+                <select className="tf-ville" value={ville} onChange={(e) => setVille(e.target.value)} aria-label="Ta ville">
+                  <option value="">Ta ville…</option>
+                  {villes.map((v) => (
+                    <option key={v.slug} value={v.slug}>
+                      {v.nom}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          </li>
         )}
-      </label>
-      {!etat.prenom && (
-        <input
-          className="tf-prenom-photo"
-          value={prenom}
-          maxLength={PRENOM_MAX}
-          onChange={(e) => setPrenom(e.target.value)}
-          placeholder="Ton prénom (tes proches le verront)"
-          aria-label="Ton prénom"
-          autoComplete="given-name"
-        />
-      )}
-      {!etat.compte && villes.length > 1 && (
-        <select className="tf-ville" value={ville} onChange={(e) => setVille(e.target.value)} aria-label="Ta ville">
-          <option value="">Ta ville…</option>
-          {villes.map((v) => (
-            <option key={v.slug} value={v.slug}>
-              {v.nom}
-            </option>
-          ))}
-        </select>
-      )}
-      <label className="tf-accord">
-        <input type="checkbox" checked={accord} onChange={(e) => setAccord(e.target.checked)} />
-        <span>C’est bien moi sur la photo, et j’accepte que ClikMe en fasse ma figurine.</span>
-      </label>
-      <button type="button" className="tf-envoyer" disabled={!photo || !accord || sansVille || envoi} onClick={partir}>
-        {envoi ? "Envoi…" : "Créer ma figurine"}
+        <li className={accord ? "fait" : ""}>
+          <span className="tf-num">{accord ? "✓" : ++n}</span>
+          <label className="tf-accord">
+            <input type="checkbox" checked={accord} onChange={(e) => setAccord(e.target.checked)} />
+            <span>C’est bien moi sur la photo, et j’accepte que ClikMe en fasse ma figurine.</span>
+          </label>
+        </li>
+      </ol>
+      <button type="button" className={`tf-envoyer tf-go${faites === etapes.length ? " pret" : ""}`} disabled={!photo || !accord || sansVille || envoi} onClick={partir}>
+        {envoi ? "Envoi…" : "✨ Donner vie à ma figurine"}
       </button>
       {erreur && (
         <p className="tf-erreur" role="alert">
@@ -837,9 +699,17 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
   );
 }
 
+/** Ce que dit Clik pendant qu'il fabrique (selon le temps passé). */
+const PENDANT = [
+  { s: 0, dit: "Je regarde ta photo… joli sourire ! 😍" },
+  { s: 15, dit: "Je sculpte ta tête. Et ta coiffure, avec soin 💇" },
+  { s: 55, dit: "Je peins tes yeux, tes joues… presque fini !" },
+  { s: 90, dit: "Je lui apprends à parler 🗣️ Encore un instant…" },
+];
+
 /**
- * 🛠️ SA FIGURINE SE FABRIQUE (le moteur d'image) : la page rappelle le serveur tant que ce n'est pas fini — sa
- * figurine, puis sa bouche ouverte —, avec ce qui se passe, et une jauge qui avance (deux minutes environ).
+ * 🛠️ SA FIGURINE SE FABRIQUE (le moteur d'image) : Clik raconte ce qu'il fait ; la page rappelle le serveur tant que ce
+ * n'est pas fini — sa figurine, puis sa bouche ouverte —, avec une jauge qui avance (deux minutes environ).
  */
 export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat: (e: EtatMaFigurine) => void }) {
   const boite = useRef<HTMLDivElement>(null);
@@ -872,13 +742,15 @@ export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat
   }, [tour, onEtat]);
   const avance = Math.min(0.95, secondes / 150);
   const pas = secondes < 8 ? 0 : secondes < 75 ? 1 : 2;
+  const dit = [...PENDANT].reverse().find((x) => secondes >= x.s)?.dit ?? PENDANT[0].dit;
   return (
     <div className="tf-fab" aria-live="polite" ref={boite}>
-      <span className="tf-fab-fig" aria-hidden="true">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={IMAGES_DEMO.neutre} alt="" />
-        <i />
-      </span>
+      <div className="tf-fab-scene">
+        <span className="tf-fab-clik" aria-hidden="true">
+          <Mascotte parle={!erreur} humeur={erreur ? "surpris" : "content"} />
+        </span>
+        <p className="tf-fab-bulle">{erreur ? "Oups… ça n’a pas marché cette fois." : dit}</p>
+      </div>
       <b className="tf-titre">{erreur ? "Ta figurine n’a pas pu être faite" : "On fabrique ta figurine…"}</b>
       {erreur ? (
         <>
@@ -891,7 +763,7 @@ export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat
               onClick={() => {
                 setErreur("");
                 setSecondes(0);
-                setTour((n) => n + 1);
+                setTour((x) => x + 1);
               }}
             >
               🔁 Réessayer
@@ -928,13 +800,67 @@ export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat
   );
 }
 
+/**
+ * 🗣️ L'ONGLET « MA FIGURINE » — sa figurine prête : la faire parler (`StudioMoi`) ; sinon, l'accueil de Clik (ce qu'il
+ * faut faire, et ce que ça permettra ensuite), la quête « Crée ta figurine », et ce qu'elle débloquera, achat après
+ * achat (5 novembre 2026 : la démonstration a quitté la page, « elle ne sert plus à rien maintenant »).
+ */
+export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine | null; villes: { slug: string; nom: string }[]; onEtat: (e: EtatMaFigurine) => void }) {
+  if (!etat)
+    return (
+      <div className="mc-attente" aria-label="Chargement">
+        <i />
+      </div>
+    );
+  if (etat.etape === "prete" && etat.neutre && etat.parle)
+    return (
+      <>
+        <header className="og-tete">
+          <small>TA FIGURINE</small>
+          <h1>Fais-la parler.</h1>
+          <p>Choisis ce qu’elle ressent, écris ce qu’elle dit, et envoie-la à qui tu veux.</p>
+        </header>
+        <StudioMoi key={etat.neutre} etat={etat} onEtat={onEtat} />
+      </>
+    );
+  if (etat.etape === "fabrication")
+    return etat.auto ? (
+      <FabricationAuto etat={etat} onEtat={onEtat} />
+    ) : (
+      <Annonce titre="On fabrique ta figurine 🛠️">Ta photo est bien arrivée. Ta figurine sera ici dans quelques jours : tu pourras la faire parler et l’envoyer à tes proches.</Annonce>
+    );
+  if (etat.etape === "bientot") return <Annonce titre="Ta figurine arrive très bientôt 🛠️">Reviens ici dans quelques jours pour envoyer ta photo.</Annonce>;
+  return (
+    <>
+      <MascotteDit
+        cle="accueil"
+        repliques={[
+          "Salut ! Moi, c’est Clik 👋 la mascotte de ClikMe.",
+          "Ici, tu crées TA figurine, avec ton visage. C’est gratuit, et ça prend deux minutes.",
+          "Ensuite, elle dit ce que tu écris, change de tête selon son humeur… et part chez tes proches sur WhatsApp 📲",
+          "Et à chaque achat chez un commerce ClikMe, je lui débloque un super-pouvoir 🎁 On y va ?",
+        ]}
+      >
+        <a className="og-go" href="#creer">
+          📸 Je crée ma figurine
+        </a>
+      </MascotteDit>
+      <EnvoiPhoto etat={etat} villes={villes} onEnvoye={onEtat} />
+      <section className="og-pouvoirs" aria-label="Ce que tu vas débloquer">
+        <h2>Ce que tu vas débloquer</h2>
+        <MesOptions total={etat.total} />
+      </section>
+    </>
+  );
+}
+
 export const STYLES_MA_FIGURINE =
   STYLES_FIGURINE_QUI_PARLE +
+  STYLES_MASCOTTE +
   `
 .tf{display:grid;gap:18px}
 .tf > *{min-width:0}
 .tf-scene{display:flex;flex-direction:column;align-items:center;gap:14px}
-.tf-tag{padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.1);font-size:11.5px;font-weight:800;letter-spacing:.04em;color:#E8D3DC}
 .tf-fig .fqp-fig{width:min(300px,76vw);border-radius:30px;box-shadow:0 30px 60px -24px rgba(0,0,0,.95),0 0 0 1px rgba(255,255,255,.08)}
 .tf-expr{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;width:100%;max-width:420px}
 .tf-expr button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px 7px;border-radius:16px;border:0;background:rgba(255,255,255,.07);color:#E8D3DC;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;transition:transform .15s,background .2s,color .2s}
@@ -943,14 +869,7 @@ export const STYLES_MA_FIGURINE =
 .tf-panneau{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:24px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
 .tf-q{font-size:13px;font-weight:900;letter-spacing:.02em;color:#F2C46B}
 .tf-q small{font-weight:700;color:#A88E99}
-.tf-etape{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:900;letter-spacing:-.01em;color:#FFF4E6}
-.tf-etape i{display:grid;place-items:center;flex:none;width:24px;height:24px;border-radius:50%;background:#FF2E9A;color:#fff;font-style:normal;font-size:13px;font-weight:900;box-shadow:0 0 0 4px rgba(255,46,154,.18)}
-.tf-scene .tf-etape{align-self:center;margin-bottom:-4px}
-.tf-panneau .tf-etape:not(:first-child){margin-top:10px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1)}
-.tf-prenom{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.15);background:rgba(0,0,0,.25);color:#FFF4E6;font:inherit;font-size:16px}
-.tf-prenom:focus{outline:none;border-color:#FF2E9A}
-.tf-envoyer-wa{background:#1FA855;box-shadow:0 12px 26px -12px rgba(31,168,85,.9)}
-.tf-voir{align-self:center;font-size:13px;font-weight:800;color:#FF9FD2;text-decoration:none}
+.tf-scene .tf-panneau .tf-voir{align-self:center;font-size:13px;font-weight:800;color:#FF9FD2;text-decoration:none}
 .tf-texte textarea:disabled{opacity:.6}
 .tf-voix{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .tf-voix button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 2px;border-radius:14px;border:1.5px solid rgba(255,255,255,.12);background:rgba(0,0,0,.18);color:#FFF4E6;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
@@ -992,9 +911,6 @@ export const STYLES_MA_FIGURINE =
 .tf-messages ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:6px}
 .tf-messages li{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:#A88E99}
 .tf-messages a{color:#FFF4E6;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tf-la-tienne{display:flex;flex-direction:column;gap:6px;margin-top:6px;padding:14px;border-radius:18px;background:linear-gradient(135deg,rgba(242,196,107,.16),rgba(255,46,154,.1));border:1px dashed rgba(242,196,107,.55);font-size:13.5px;color:#E8D3DC}
-.tf-la-tienne > b{font-size:15px;color:#FFF4E6}
-.tf-creer{align-self:stretch;margin-top:4px;padding:13px 18px;border-radius:999px;background:linear-gradient(135deg,#F2C46B,#FF8FCB);color:#2A0F1F;font-size:15.5px;font-weight:900;text-align:center;text-decoration:none;box-shadow:0 12px 26px -12px rgba(242,196,107,.9)}
 .tf-expr button,.tf-voix button{position:relative}
 .tf-expr button.ferme,.tf-voix button.ferme{opacity:.55;filter:grayscale(.6)}
 .tf-modes button.ferme{opacity:.6}
@@ -1020,9 +936,6 @@ export const STYLES_MA_FIGURINE =
 .tf-options-dit{margin:0;font-size:13px;line-height:1.4;color:#D9C3CB}
 .tf-options-dit a{color:#FF9FD2;font-weight:900}
 .tf-fab{display:flex;flex-direction:column;align-items:center;gap:12px;padding:22px 18px;border-radius:24px;text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(242,196,107,.35)}
-.tf-fab-fig{position:relative;width:170px;height:204px;border-radius:24px;overflow:hidden;background:radial-gradient(70% 55% at 50% 38%,#FF9AD0,#C2367F 62%,#5E1240)}
-.tf-fab-fig img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(6px) saturate(1.2);opacity:.75}
-.tf-fab-fig i{position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);background-size:200% 100%;animation:mc-reflet 1.4s linear infinite}
 .tf-fab ol{display:grid;gap:6px;margin:0;padding:0;list-style:none;text-align:left}
 .tf-fab li{font-size:14px;color:#A88E99}
 .tf-fab li.fait{color:#7FF0C4}
@@ -1031,10 +944,45 @@ export const STYLES_MA_FIGURINE =
 .tf-fab-jauge i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#FF2E9A,#F2C46B);transition:width 1s linear}
 .tf-prenom-photo,.tf-ville{width:100%;max-width:340px;box-sizing:border-box;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.15);background:rgba(0,0,0,.25);color:#FFF4E6;font:inherit;font-size:16px}
 .tf-ville option{color:#2A0F1F}
-.tf-la-tienne.vu{border-style:solid;border-color:#F2C46B;box-shadow:0 0 30px -8px rgba(242,196,107,.55);animation:tf-vu .6s cubic-bezier(.2,1.5,.4,1)}
-@keyframes tf-vu{from{transform:scale(.96)}}
 .tf-jauge{position:relative;display:block;height:10px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
 .tf-jauge i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#FF2E9A,#F2C46B)}
+.tf-annonce-clik{display:block;width:120px;filter:drop-shadow(0 12px 14px rgba(0,0,0,.45))}
+.tf-photo.tf-quete{align-items:stretch;text-align:left;gap:14px;background:linear-gradient(180deg,rgba(255,46,154,.12),rgba(255,255,255,.04));border:1.5px solid rgba(255,46,154,.45);box-shadow:0 24px 50px -30px rgba(255,46,154,.8)}
+.tf-quete-tete{display:flex;flex-direction:column;gap:4px}
+.tf-quete-tete small{font-size:11px;font-weight:900;letter-spacing:.12em;color:#F2C46B}
+.tf-quete .tf-titre{font-size:26px;letter-spacing:-.02em}
+.tf-quete-jauge{position:relative;display:block;height:10px;margin-top:4px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
+.tf-quete-jauge i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#FF2E9A,#F2C46B);transition:width .5s cubic-bezier(.2,1.2,.4,1)}
+.tf-etapes{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.tf-etapes li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;padding:12px;border-radius:18px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.08);transition:border-color .3s,background .3s}
+.tf-etapes li.maintenant{border-color:rgba(242,196,107,.7);background:rgba(242,196,107,.08)}
+.tf-etapes li.fait{border-color:rgba(61,226,166,.45)}
+.tf-etapes li > div{display:flex;flex-direction:column;gap:8px;min-width:0}
+.tf-etapes li b{font-size:16px;font-weight:900}
+.tf-etapes li small{font-size:12.5px;line-height:1.35;color:#D9C3CB}
+.tf-num{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);font-weight:900;font-size:15px}
+.tf-etapes li.maintenant .tf-num{background:#F2C46B;color:#2A1408;animation:tf-pouls 1.6s ease-in-out infinite}
+.tf-etapes li.fait .tf-num{background:#3DE2A6;color:#08301F;animation:tf-coche .45s cubic-bezier(.2,1.6,.4,1)}
+.tf-etapes .tf-choisir{margin-top:0;width:100%;max-width:220px;height:180px}
+.tf-etapes .tf-accord{max-width:none;align-items:center}
+.tf-go{font-size:18px;padding:17px 22px}
+.tf-go.pret{animation:tf-brille 1.8s ease-in-out infinite}
+.tf-fab-scene{display:grid;grid-template-columns:110px minmax(0,1fr);align-items:center;gap:8px;width:100%;max-width:380px}
+.tf-fab-clik{display:block;filter:drop-shadow(0 12px 14px rgba(0,0,0,.45))}
+.tf-fab-bulle{position:relative;margin:0;padding:12px 14px;border-radius:18px 18px 18px 6px;background:#FFF4E6;color:#2A0F1F;font-size:15px;font-weight:800;line-height:1.35;text-align:left}
+.og-tete{display:flex;flex-direction:column;gap:4px;margin:0 0 16px}
+.og-tete small{font-size:11.5px;font-weight:900;letter-spacing:.14em;color:#F2C46B}
+.og-tete h1,.og-tete h2{margin:0;font-size:32px;line-height:1.04;font-weight:900;letter-spacing:-.035em;background:linear-gradient(135deg,#fff,#FFC8E6 50%,#F2C46B);-webkit-background-clip:text;background-clip:text;color:transparent}
+.og-tete p{margin:2px 0 0;color:#D9C3CB}
+.og-go{display:block;padding:15px 20px;border-radius:999px;background:#FF2E9A;color:#fff;font-size:16px;font-weight:900;text-align:center;text-decoration:none;box-shadow:0 12px 26px -12px rgba(255,46,154,.95)}
+.og-pouvoirs{margin-top:22px}
+.og-pouvoirs h2{margin:0 0 6px;font-size:20px;font-weight:900}
+.og-pouvoirs .tf-options{margin-top:0;padding-top:0;border-top:0}
+.mqd + .tf-quete{margin-top:20px}
+@keyframes tf-vu{from{transform:scale(.96)}}
+@keyframes tf-pouls{0%,100%{box-shadow:0 0 0 0 rgba(242,196,107,.6)}50%{box-shadow:0 0 0 7px rgba(242,196,107,0)}}
+@keyframes tf-coche{from{transform:scale(.3) rotate(-30deg)}}
+@keyframes tf-brille{0%,100%{box-shadow:0 12px 26px -12px rgba(255,46,154,.95)}50%{box-shadow:0 0 0 6px rgba(255,46,154,.25),0 16px 34px -10px rgba(255,46,154,1)}}
 .tf-annonce,.tf-photo{display:flex;flex-direction:column;align-items:center;gap:8px;padding:22px 18px;border-radius:24px;text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(242,196,107,.35)}
 .tf-annonce-emoji{font-size:42px;line-height:1}
 .tf-annonce b,.tf-titre{font-size:20px;line-height:1.2;font-weight:900}

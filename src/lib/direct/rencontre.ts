@@ -6,8 +6,8 @@
  *   · AVEC QUI : un ami qu'il a invité par WhatsApp, dès qu'il a fait sa carte (« la prochaine conversation sera entre
  *     eux deux ») ; sinon la figurine d'un commerce ClikMe de sa ville ;
  *   · À LIRE seulement, pour le moment (pas de voix) ;
- *   · SE RENCONTRER : une option possible plus tard (entre clients qui ne se connaissent pas, avec l'accord des deux) —
- *     pas encore construite.
+ *   · « RENCONTRER UN MEMBRE » (5 novembre 2026) : s'il n'invite personne, un bouton à compte à rebours le présente à un
+ *     membre de sa ville qui a fait le même geste (une fois par jour) ; se voir en vrai reste pour plus tard.
  *
  * LA CONVERSATION est écrite par l'IA d'après les deux cartes (sa façon de parler, ce qu'il aime, sa phrase fétiche),
  * et d'après SES RÉACTIONS aux conversations d'avant : « c'est tout moi » / « jamais de la vie » sur les phrases de sa
@@ -51,6 +51,8 @@ export type RencontreVue = {
   reactions: Record<number, Reaction>;
   /** Écrite par l'IA, ou composée ici (sans IA). */
   par: "ia" | "local";
+  /** Une rencontre avec un membre de sa ville, qu'il ne connaissait pas (« Rencontrer un membre »). */
+  membre?: boolean;
 };
 
 export const verdictValide = (x: unknown): Verdict | null => (VERDICTS.some((v) => v.cle === x) ? (x as Verdict) : null);

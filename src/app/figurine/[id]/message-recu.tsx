@@ -4,8 +4,8 @@
  * 🗣️ LE MESSAGE REÇU — la figurine qui parle (`FigurineQuiParle`), ses commerces préférés, « Et toi ? », et
  * « Signaler ce message ». Voir `page.tsx`.
  *
- * UN MESSAGE DE LA DÉMONSTRATION (`m.demo`) : écrit par quelqu'un avec la figurine de ClikMe (pas la sienne) — on le
- * dit, et « À ton tour » renvoie à la démonstration : c'est comme ça qu'elle circule.
+ * UN MESSAGE DE L'ANCIENNE DÉMONSTRATION (`m.demo`, jusqu'au 5 novembre 2026) : écrit par quelqu'un avec la figurine
+ * de ClikMe (pas la sienne) — on le dit, et « À ton tour » mène à « Crée ta figurine ».
  */
 import Link from "next/link";
 import { useState } from "react";
@@ -96,11 +96,10 @@ export function MessageRecu({ message: m }: { message: MessageFigurine }) {
         <section className="mr-toi">
           <b>À ton tour !</b>
           <p>
-            Choisis son émotion, écris ce qu’elle dit, et envoie-la à qui tu veux. Puis crée la tienne, avec TON visage : c’est
-            gratuit.
+            Crée ta figurine avec ta photo, c’est gratuit : choisis son émotion, écris ce qu’elle dit, et envoie-la à qui tu veux.
           </p>
-          <Link className="mr-bouton" href="/collection">
-            Fais-la parler
+          <Link className="mr-bouton" href="/collection#creer">
+            Créer ma figurine
           </Link>
         </section>
       ) : (
