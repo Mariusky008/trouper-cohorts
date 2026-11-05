@@ -52,7 +52,7 @@ jobs:
           src/lib/direct/personnage.ts src/lib/direct/personnage-serveur.ts src/lib/direct/rencontre.ts src/lib/direct/rencontre-serveur.ts
           src/app/carte src/app/api/direct/personnage src/app/api/direct/rencontre
           src/lib/direct/guide.ts src/lib/direct/guide-serveur.ts src/app/api/direct/guide
-          src/lib/direct/etapes.ts src/lib/direct/etapes-serveur.ts src/lib/direct/reseau.ts
+          src/lib/direct/etapes.ts src/lib/direct/etapes-serveur.ts src/lib/direct/reseau.ts src/lib/direct/ressort.ts
 
   essais-sql:
     name: Essais SQL

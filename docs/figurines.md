@@ -579,9 +579,31 @@ qu'on dit de soi dans la carte de personnalité », et qui finissent toujours pa
 - **À l'écran** : « AUJOURD'HUI · UN PERSONNAGE / UN COMMERCE / UN MEMBRE / AVEC UN AMI », le format du jour
   (« 🎲 Le grand rêve »), « 👯 Tes amis et proches » avec « 💬 Discuter » et ce qu'il en reste aujourd'hui, « Et toi ? »
   après la carte souvenir.
-- **À enregistrer plus tard** : la 5ᵉ bulle de Pablito sur « Rencontres » pourrait devenir « Avec qui ? Un commerçant,
-  un membre de ta ville, un personnage… et tes amis, quand tu veux 👯 » (elle reste telle quelle tant que sa voix n'est
-  pas réenregistrée).
+- **La 5ᵉ bulle de Pablito sur « Rencontres »** : « Avec qui ? Un commerçant, un membre de ta ville, un personnage… et
+  tes amis, quand tu veux 👯 » (enregistrée le 5 novembre).
+
+### 9.0 quaterdecies Ses retours du 5 novembre, l'après-midi — construit
+
+- **« Une fois la figurine faite, le site bug ; je rafraîchis et ça m'amène sur l'accueil »** : la page plantait au
+  moment où la figurine arrivait (`destroy is not a function` : un effet de React rendait la promesse que les
+  navigateurs récents renvoient de `scrollIntoView`) ; l'écran d'erreur général de ClikMe renvoie à l'accueil. Corrigé,
+  et « Ma collection » a son propre écran d'erreur (`collection/error.tsx`, « Recharger » reste sur la page). La
+  fabrication n'abandonne plus au bout de dix appels (la page restait figée à 95 %) : elle attend, et une coupure ne
+  l'arrête pas.
+- **« La faire danser : c'est la photo en entier qui bouge »** : elle danse SUR SON RESSORT (`lib/direct/ressort.ts`).
+  La page trouve le fond (sa teinte rose, de proche en proche depuis les bords), le ressort (étroit, entre le socle large
+  et le corps large), reconstitue le fond derrière elle ; le socle ne bouge pas, le ressort se tasse et s'étire, le corps
+  saute et se balance au-dessus. Pas de ressort trouvé : elle sautille.
+- **« C'est la voix d'une femme alors que je suis un homme »** : une voix d'homme (« Chaleureuse ») et une voix de
+  femme (« Douce ») ouvertes dès le départ ; la première fois, on lui demande « Ta figurine parle avec… une voix
+  d'homme / une voix de femme » — jamais devinée d'après son prénom ; son choix est gardé (`<habitant>/voix.json`).
+- **« Celle de ChatGPT est beaucoup plus personnalisée »** : la consigne (`consigneFigurineClient`) demande une tenue
+  qui dit qui il est et de petits accessoires, les bras croisés et de l'attitude, un regard qui a du caractère (lèvres
+  fermées), des cheveux texturés, un rendu détaillé et un rose vif ; et sa photo s'accompagne d'une question facultative,
+  « Ce qui te ressemble : ton métier ou ta passion » (`<habitant>/univers.json`) — sa figurine s'habille en conséquence.
+- **« Une option de plus à chaque achat », « Encore 1 achat »** : ces mots avaient déjà quitté la page (PR #74) ; la
+  version vue était celle d'avant sa mise en ligne.
+- **Les voix** : « Je regarde ta photo… je vois déjà ta figurine ! » (la fabrication) et la 5ᵉ bulle de « Rencontres ».
 
 ### 9.1 L'idée en une phrase
 

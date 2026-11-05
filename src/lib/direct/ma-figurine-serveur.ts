@@ -42,6 +42,7 @@ import {
   danseValide,
   texteValide,
   voixValide,
+  universValide,
   type CommerceCite,
   type EtatMaFigurine,
   type Expressions,
@@ -148,6 +149,10 @@ async function sesFigurines(supabase: Supabase, habitantId: string): Promise<{ t
 /** Sa fabrication en cours (le moteur) : son dossier (`jeton`), et ses essais du jour. */
 type Fabrique = { jeton?: string; jour?: string; essais?: number };
 const cheminFabrique = (habitantId: string) => `${habitantId}/fabrique.json`;
+/** La voix qu'il a choisie pour sa figurine (« une voix d'homme ou de femme ? ») : `{ voix }`. */
+const cheminSaVoix = (habitantId: string) => `${habitantId}/voix.json`;
+/** Son univers (son métier ou sa passion, facultatif) : sa figurine s'habille en conséquence. */
+const cheminUnivers = (habitantId: string) => `${habitantId}/univers.json`;
 const dossierFabrique = (habitantId: string, jeton: string) => `${habitantId}/fab-${jeton}`;
 const nouveauJeton = () => randomBytes(6).toString("hex");
 const essaisRestants = (f: Partial<Fabrique>) => Math.max(0, FABRICATIONS_PAR_JOUR - (f.jour === jourParis() ? Number(f.essais) || 0 : 0));
@@ -170,13 +175,15 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
   if (!ok) return { ...base, etape: "bientot" };
   if (!prete && (!ligne || !s(ligne.photo) || s(ligne.refus))) return { ...base, etape: "photo", ...(s(ligne?.refus) ? { refus: s(ligne?.refus) } : {}) };
   if (!prete) return { ...base, etape: "fabrication" };
-  const [neutre, parle, { data: msgs }, expr, fab] = await Promise.all([
+  const [neutre, parle, { data: msgs }, expr, fab, saVoix] = await Promise.all([
     signer(supabase, s(ligne!.neutre)),
     signer(supabase, s(ligne!.parle)),
     supabase.from("clik_figurine_message").select("*").eq("habitant_id", habitant.id).order("created_at", { ascending: false }).limit(20),
     expressionsSignees(supabase, dossierExpressions(habitant.id, s(ligne!.neutre))),
     lireJson<Fabrique>(supabase, cheminFabrique(habitant.id)),
+    lireJson<{ voix?: string }>(supabase, cheminSaVoix(habitant.id)),
   ]);
+  const maVoix = voixValide(saVoix.voix);
   const ouverts = visagesOuverts(cadeaux);
   return {
     ...base,
@@ -186,6 +193,7 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
     expressions: expr.expressions,
     expressionsAFaire: ouverts.some((c) => !expr.expressions[c]),
     voixTexte: voixBranchee(),
+    ...(maVoix ? { maVoix } : {}),
     ...(moteurBranche() ? { refaire: essaisRestants(fab) } : {}),
     messages: ((Array.isArray(msgs) ? msgs : []) as Ligne[])
       .filter((m) => !m.retire_le)
@@ -221,9 +229,9 @@ export async function fabriquerMaFigurine(supabase: Supabase, habitant: Habitant
     jeton = nouveauJeton();
     await ecrireJson(supabase, cheminFabrique(habitant.id), { jeton, jour, essais: (fab.jour === jour ? Number(fab.essais) || 0 : 0) + 1 });
   }
-  const photo = await telecharger(supabase, s(ligne.photo));
+  const [photo, univers] = await Promise.all([telecharger(supabase, s(ligne.photo)), lireJson<{ univers?: string }>(supabase, cheminUnivers(habitant.id))]);
   if (!photo) return { error: "Ta photo est introuvable : envoie-la de nouveau.", statut: 400 };
-  const r = await fabriquerUnPas(depotDans(supabase, dossier()), photo, avant);
+  const r = await fabriquerUnPas(depotDans(supabase, dossier()), photo, avant, universValide(univers.univers));
   if (r.nouvelle) {
     const tous = `fabrication/jour/${jourParis()}.json`;
     const compte = await lireJson<{ n: number }>(supabase, tous);
@@ -281,6 +289,16 @@ export async function fabriquerSesExpressions(supabase: Supabase, habitant: Habi
 
 /** ✍️ Son texte, lu par la voix choisie : 20 lectures par jour au plus (chacune coûte). */
 const LECTURES_PAR_JOUR = 20;
+/** 🗣️ SA VOIX, CHOISIE PAR LUI (« une voix d'homme ou de femme ? ») : gardée, elle devient celle de sa figurine. */
+export async function choisirSaVoix(supabase: Supabase, habitant: Habitant, voix: unknown): Promise<{ error?: string; statut?: number }> {
+  const v = voixValide(voix);
+  if (!v) return { error: "Choisis une voix.", statut: 400 };
+  // (une voix de base est ouverte à tous ; les autres, selon ses cadeaux)
+  if (!voixOuverte(v, 0) && !voixOuverte(v, (await etatMaFigurine(supabase, habitant)).cadeaux)) return { error: "Cette voix s’ouvre avec ton 2ᵉ cadeau ClikMe.", statut: 403 };
+  await ecrireJson(supabase, cheminSaVoix(habitant.id), { voix: v, le: new Date().toISOString() });
+  return {};
+}
+
 export async function lireSonTexte(supabase: Supabase, habitant: Habitant, texte: unknown, voix: unknown): Promise<{ mp3?: Buffer; error?: string; statut?: number }> {
   const t = texteValide(texte);
   const v = voixValide(voix);
@@ -358,8 +376,11 @@ async function lireMessageDemo(supabase: Supabase, id: string): Promise<MessageF
 }
 
 // ─── 1. sa photo ───────────────────────────────────────────────────────────────────────────────
-export async function envoyerPhoto(supabase: Supabase, habitant: Habitant, photo: unknown, accord: unknown, prenom?: unknown): Promise<{ error?: string }> {
+export async function envoyerPhoto(supabase: Supabase, habitant: Habitant, photo: unknown, accord: unknown, prenom?: unknown, univers?: unknown): Promise<{ error?: string }> {
   if (accord !== true) return { error: "Coche « C’est bien moi sur la photo »." };
+  // SON UNIVERS (facultatif) : son métier ou sa passion — sa figurine s'habille en conséquence
+  const u = universValide(univers);
+  if (u && motInterdit(u)) return { error: "Ces mots ne passent pas : écris ton métier ou ta passion 🙂" };
   const brut = image(photo);
   if (!brut) return { error: "Cette photo n’a pas pu être lue. Essaie une autre photo." };
   // SON PRÉNOM (un nouveau compte n'en a pas) : c'est lui qu'on lit dans « Léa t'a envoyé sa figurine »
@@ -386,6 +407,7 @@ export async function envoyerPhoto(supabase: Supabase, habitant: Habitant, photo
     { onConflict: "habitant_id" },
   );
   if (error) return { error: "La photo n’est pas partie. Réessaie dans un instant." };
+  await ecrireJson(supabase, cheminUnivers(habitant.id), { univers: u, le: maintenant });
   // une nouvelle photo : une nouvelle figurine (le dossier d'avant ne sert plus ; les essais du jour restent comptés)
   const fab = await lireJson<Fabrique>(supabase, cheminFabrique(habitant.id));
   await ecrireJson(supabase, cheminFabrique(habitant.id), { jour: fab.jour, essais: fab.essais });

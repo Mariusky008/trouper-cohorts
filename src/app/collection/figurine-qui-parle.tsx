@@ -15,8 +15,10 @@
  * et la tête sort du cadre ») : lues sur son image de tous les jours, elles donnent le cadre — rien n'est rogné, et
  * ses expressions (remises au même cadre par le moteur d'image) tombent exactement dessus.
  *
- * 🕺 ELLE DANSE (`danse`, 5 novembre 2026) : elle se balance sur son ressort, des notes de musique autour — avec
- * n'importe quel visage.
+ * 🕺 ELLE DANSE (`danse`, 5 novembre 2026) : SUR SON RESSORT (« au lieu d'utiliser les ressorts pour la faire bouger
+ * et danser, c'est la photo en entier qui bouge » — `lib/direct/ressort.ts`) : le fond reste, le socle ne bouge pas, le
+ * ressort se tasse et s'étire, le corps saute et se balance au-dessus ; des notes de musique autour — avec n'importe
+ * quel visage. Si son image ne se laisse pas découper (pas de ressort trouvé), elle sautille tout entière.
  *
  * `jouer(son)` (par `ref`) : la voix peut arriver APRÈS le toucher (un texte lu par une voix, fabriqué en une ou deux
  * secondes) — le son est préparé au toucher même (un iPhone ne laisse jouer qu'un son lancé par un geste), puis joué
@@ -25,6 +27,7 @@
  */
 import { useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type Ref } from "react";
 import { SENTIMENTS, sentimentDe, type Expressions, type Sentiment } from "@/lib/direct/ma-figurine";
+import { ressortDe, type RessortVu } from "@/lib/direct/ressort";
 
 export type FigurineHandle = {
   /** Joue ce son (une adresse, ou de quoi l'obtenir : il est préparé au toucher, joué dès qu'il arrive). */
@@ -74,6 +77,17 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
   const [charge, setCharge] = useState(false);
   const [ennui, setEnnui] = useState("");
   const [ratio, setRatio] = useState<number | null>(null);
+  // 🕺 SON RESSORT (cherché la première fois qu'elle danse ; `null` : pas trouvé)
+  const [ressort, setRessort] = useState<{ de: string; vu: RessortVu | null } | null>(null);
+  useEffect(() => {
+    if (!danse || decoupe || ressort?.de === neutre) return;
+    let fini = false;
+    void ressortDe(neutre).then((vu) => !fini && setRessort({ de: neutre, vu }));
+    return () => {
+      fini = true;
+    };
+  }, [danse, decoupe, neutre, ressort?.de]);
+  const surRessort = danse && !decoupe && ressort?.de === neutre ? ressort.vu : undefined;
   /** Les proportions de son image de tous les jours (déjà chargée, ou à son chargement). */
   const mesurer = (img: HTMLImageElement | null) => {
     if (img?.naturalWidth && img.naturalHeight) setRatio(img.naturalWidth / img.naturalHeight);
@@ -88,7 +102,9 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
     },
     [],
   );
-  useEffect(() => onJoue?.(joue), [joue, onJoue]);
+  useEffect(() => {
+    onJoue?.(joue);
+  }, [joue, onJoue]);
 
   const bouche = (ouverte: boolean) => boite.current?.classList.toggle("ouverte", ouverte);
   /** Où en est la lecture (`data-lecture`), et comment la bouche suit (`data-mesure`) : lisible par les essais. */
@@ -211,30 +227,61 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
   const active = sentiment && expressions?.[sentiment] ? sentiment : "";
   const sansVisage = Boolean(sentiment && !active);
   const s = sentimentDe(sentiment);
+  // (posées une fois — ou trois, sur son ressort : le socle, le ressort, le corps)
+  const lesPoses = poses.map((x) => (
+    <span key={x.cle || "base"} className={`fqp-pose${x.cle === active ? " vu" : ""}`} aria-hidden={x.cle !== active}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        className="fqp-n"
+        src={x.n}
+        alt=""
+        draggable={false}
+        {...(x.cle ? {} : { ref: (el: HTMLImageElement | null) => void (el?.complete && mesurer(el)), onLoad: (e: React.SyntheticEvent<HTMLImageElement>) => mesurer(e.currentTarget) })}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="fqp-p" src={x.p} alt="" draggable={false} />
+    </span>
+  ));
 
   return (
     <div
-      className={`fqp${className ? ` ${className}` : ""}${decoupe ? " decoupe" : ""}${sentiment ? ` sent-${sentiment}` : ""}${sansVisage ? " bouge" : ""}${danse ? " danse" : ""}`}
+      className={`fqp${className ? ` ${className}` : ""}${decoupe ? " decoupe" : ""}${sentiment ? ` sent-${sentiment}` : ""}${sansVisage ? " bouge" : ""}${danse ? " danse" : ""}${surRessort ? " ressort" : surRessort === null ? " sans-ressort" : ""}`}
       data-sentiment={sentiment ?? ""}
-      data-danse={danse ? "oui" : ""}
+      data-danse={danse ? (surRessort ? "ressort" : "oui") : ""}
       data-visage={active || (sentiment ? "mouvement" : "")}
     >
-      <div className="fqp-fig" ref={boite} style={ratio && !decoupe ? ({ "--fqp-ratio": ratio.toFixed(4) } as CSSProperties) : undefined}>
+      <div
+        className="fqp-fig"
+        ref={boite}
+        style={
+          {
+            ...(ratio && !decoupe ? { "--fqp-ratio": ratio.toFixed(4) } : {}),
+            ...(surRessort
+              ? {
+                  "--haut": `${surRessort.haut.toFixed(2)}%`,
+                  "--bas": `${surRessort.bas.toFixed(2)}%`,
+                  // (le corps s'enfonce du tiers du ressort, le ressort se tasse d'autant)
+                  "--enf": `${(0.35 * (surRessort.bas - surRessort.haut)).toFixed(2)}%`,
+                  "--masque": `url("${surRessort.masque}")`,
+                }
+              : {}),
+          } as CSSProperties
+        }
+      >
         <span className="fqp-corps" key={`${sentiment ?? ""}-${rejoue}`}>
-          {poses.map((x) => (
-            <span key={x.cle || "base"} className={`fqp-pose${x.cle === active ? " vu" : ""}`} aria-hidden={x.cle !== active}>
+          {surRessort ? (
+            <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                className="fqp-n"
-                src={x.n}
-                alt=""
-                draggable={false}
-                {...(x.cle ? {} : { ref: (el: HTMLImageElement | null) => void (el?.complete && mesurer(el)), onLoad: (e: React.SyntheticEvent<HTMLImageElement>) => mesurer(e.currentTarget) })}
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="fqp-p" src={x.p} alt="" draggable={false} />
-            </span>
-          ))}
+              <img className="fqp-plaque" src={surRessort.fond} alt="" draggable={false} />
+              {(["socle", "ressort", "haut"] as const).map((b) => (
+                <span key={b} className={`fqp-bande ${b}`}>
+                  {lesPoses}
+                </span>
+              ))}
+            </>
+          ) : (
+            lesPoses
+          )}
         </span>
         {sansVisage && s && (
           <b className="fqp-badge" aria-hidden="true">
@@ -291,8 +338,19 @@ export const STYLES_FIGURINE_QUI_PARLE = `
 .bouge.sent-euphorie .fqp-corps{animation:fqp-bond .7s cubic-bezier(.3,1.6,.5,1) infinite}
 .bouge.sent-rire .fqp-corps{animation:fqp-rire .16s linear infinite}
 .bouge.sent-grimace .fqp-corps{animation:fqp-grimace .9s ease-in-out infinite}
-/* 🕺 elle danse (avec n'importe quel visage) */
-.fqp.danse .fqp-corps{animation:fqp-danse .9s ease-in-out infinite}
+/* 🕺 elle danse SUR SON RESSORT (avec n'importe quel visage) : le fond seul derrière ; le socle immobile ; le ressort
+   se tasse et s'étire ; le corps s'enfonce, saute et se balance au-dessus (les deux au même rythme) */
+.fqp.ressort .fqp-corps{animation:none!important}
+.fqp-plaque{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.fqp-bande{position:absolute;inset:0;-webkit-mask-image:var(--masque);mask-image:var(--masque);-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+.fqp-bande.socle{clip-path:inset(var(--bas) 0 0 0)}
+.fqp-bande.ressort{clip-path:inset(calc(var(--haut) - .5%) 0 calc(100% - var(--bas) - .5%) 0);transform-origin:50% var(--bas);animation:fqp-ressort 1.2s ease-in-out infinite}
+.fqp-bande.haut{clip-path:inset(0 0 calc(100% - var(--haut) - 1%) 0);transform-origin:50% var(--haut);animation:fqp-saute 1.2s ease-in-out infinite}
+@keyframes fqp-ressort{0%,50%,100%{transform:scaleY(1)}15%,65%{transform:scaleY(.65)}35%,85%{transform:scaleY(1.28)}}
+@keyframes fqp-saute{0%,50%,100%{transform:translateY(0) rotate(0)}15%{transform:translateY(var(--enf)) rotate(-3deg)}35%{transform:translateY(calc(var(--enf) * -.8)) rotate(-8deg)}65%{transform:translateY(var(--enf)) rotate(3deg)}85%{transform:translateY(calc(var(--enf) * -.8)) rotate(8deg)}}
+/* pas de ressort trouvé : elle sautille, sans tourner */
+.fqp.danse.sans-ressort .fqp-corps{animation:fqp-sautille .6s ease-in-out infinite}
+@keyframes fqp-sautille{0%,100%{transform:translateY(0)}50%{transform:translateY(-3%)}}
 .fqp-notes{position:absolute;inset:0;pointer-events:none}
 .fqp-notes i{position:absolute;bottom:18%;font-style:normal;font-size:24px;animation:fqp-note 2.4s ease-out infinite;opacity:0}
 .fqp-notes i:nth-child(1){left:10%}
@@ -300,11 +358,10 @@ export const STYLES_FIGURINE_QUI_PARLE = `
 .fqp-notes i:nth-child(3){left:46%;animation-delay:1.6s}
 @keyframes fqp-rire{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-2%) rotate(1deg)}}
 @keyframes fqp-grimace{0%,100%{transform:scale(1,1)}40%{transform:scale(1.06,.93)}70%{transform:scale(.96,1.05) rotate(2deg)}}
-@keyframes fqp-danse{0%,100%{transform:rotate(-7deg) translateY(0)}25%{transform:rotate(0) translateY(-6%)}50%{transform:rotate(7deg) translateY(0)}75%{transform:rotate(0) translateY(-6%)}}
 @keyframes fqp-note{0%{opacity:0;transform:translateY(0) scale(.7)}20%{opacity:1}100%{opacity:0;transform:translateY(-150px) rotate(20deg) scale(1.1)}}
 @keyframes fqp-joie{from{transform:translateY(0) rotate(-3deg)}to{transform:translateY(-5%) rotate(3deg)}}
 @keyframes fqp-colere{0%,100%{transform:translateX(0)}25%{transform:translateX(-2%) rotate(-1deg)}75%{transform:translateX(2%) rotate(1deg)}}
 @keyframes fqp-triste{0%,100%{transform:rotate(-2deg) translateY(2%) scale(.98)}50%{transform:rotate(-4deg) translateY(3%) scale(.97)}}
 @keyframes fqp-bond{0%,100%{transform:translateY(0) scale(1.03,.95)}45%{transform:translateY(-12%) scale(.97,1.04)}}
-@media (prefers-reduced-motion:reduce){.fqp-corps,.fqp-badge,.fqp-ondes,.fqp-notes i{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.fqp-corps,.fqp-badge,.fqp-ondes,.fqp-notes i,.fqp-bande{animation:none!important}}
 `;
