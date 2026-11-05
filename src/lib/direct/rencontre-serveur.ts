@@ -879,3 +879,48 @@ export async function signalerRencontre(supabase: Supabase, habitant: Habitant, 
   if (!f.signale_le) await ecrire(supabase, cheminRencontre(rid), { ...f, signale_le: new Date().toISOString() });
   return true;
 }
+
+// ─── 🧠 mieux le connaître (lot 2 : `connaitre-serveur.ts`) ────────────────────────────────────────
+/** Ce qu'il a dit de lui (la question du jour) rejoint ce que les conversations lisent (les 8 dernières). */
+export async function retenirCeQuIlDit(supabase: Supabase, habitantId: string, q: string, r: string): Promise<void> {
+  const idx = await indexDe(supabase, habitantId);
+  await ecrire(supabase, cheminIndex(habitantId), { ...idx, dit: [...(idx.dit ?? []).filter((x) => x.q !== q), { q, r }].slice(-8) });
+}
+
+/** 🗑️ Il a effacé une chose de son journal : les conversations l'oublient aussi. */
+export async function oublierDansLIndex(supabase: Supabase, habitantId: string, e: { type: string; texte?: string; phrase?: string; verdict?: string | null }): Promise<void> {
+  const idx = await indexDe(supabase, habitantId);
+  if ((e.type === "reponse" || e.type === "question") && e.texte) {
+    await ecrire(supabase, cheminIndex(habitantId), { ...idx, dit: (idx.dit ?? []).filter((x) => x.r !== e.texte) });
+  } else if (e.type === "verdict" && e.phrase) {
+    const dansOui = idx.oui.includes(e.phrase),
+      dansNon = idx.non.includes(e.phrase);
+    await ecrire(supabase, cheminIndex(habitantId), {
+      ...idx,
+      oui: idx.oui.filter((x) => x !== e.phrase),
+      non: idx.non.filter((x) => x !== e.phrase),
+      moi: Math.max(0, idx.moi - (dansOui ? 1 : 0)),
+      pas: Math.max(0, idx.pas - (dansNon ? 1 : 0)),
+    });
+  }
+}
+
+/** 🗑️ Il a tout effacé : les conversations repartent de sa carte seule (ses rencontres et ses amis restent). */
+export async function toutOublierDansLIndex(supabase: Supabase, habitantId: string): Promise<void> {
+  const idx = await indexDe(supabase, habitantId);
+  await ecrire(supabase, cheminIndex(habitantId), { ...idx, dit: [], oui: [], non: [], moi: 0, pas: 0 });
+}
+
+/** Sa rencontre du jour, en bref (avec qui, le format, le titre) — sans la créer ; `null` s'il n'en a pas encore. */
+export async function rencontreDuJourEnBref(supabase: Supabase, habitantId: string): Promise<{ avec: string; qui: string; format: string; titre: string } | null> {
+  const idx = await indexDe(supabase, habitantId);
+  const jour = jourParis();
+  const x = [...idx.liste].reverse().find((e) => e.jour === jour && e.quoi !== "ami");
+  if (!x) return null;
+  const f = await lire<Fichier>(supabase, cheminRencontre(x.id));
+  if (!f || f.signale_le) return null;
+  const p = await participant(supabase, f.a.habitant === habitantId ? f.b : f.a);
+  const avec = p.type === "client" ? p.prenom || "un membre" : p.nom;
+  const qui = p.type === "personnage" ? `${p.nom}, ${p.role}` : p.type === "commerce" ? `la figurine de ${p.nom}, un commerce` : `${avec}, un membre de sa ville`;
+  return { avec, qui, format: formatDe(f.format)?.nom ?? "", titre: f.titre ?? "" };
+}

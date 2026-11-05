@@ -40,6 +40,7 @@ import {
 } from "@/lib/direct/rencontre";
 import { AMIS_PAR_JOUR, REPONSE_MAX } from "@/lib/direct/reseau";
 import { PanneauEnvoi } from "./ma-figurine";
+import { MotDuJour, QuestionDuJour } from "./connaitre";
 import { FigurineGuide, GuideDit } from "./guide";
 
 type Etat = {
@@ -801,6 +802,8 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
     <div className="rd-onglet">
       {tete}
       {explique}
+      {/* 🔮 LE MOT DU JOUR (lot 2) : il annonce la rencontre du jour, avec un clin d'œil à ce qu'il a dit */}
+      {!etat.besoinCarte && <MotDuJour version={version} />}
       {ami && !etat.nouvelle && (
         <p className="rd-ami" role="status">
           🎉 Toi et {ami}, c’est fait : dès que {ami} aura fait sa carte, vos figurines discuteront !
@@ -895,6 +898,9 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
           </p>
         )}
       </div>
+
+      {/* ❓ LA QUESTION DU JOUR (lot 2) : un toucher ou trois mots ; sa figurine s'en souviendra */}
+      <QuestionDuJour />
 
       {/* 👯 SES AMIS ET PROCHES : une discussion quand il veut (AMIS_PAR_JOUR par jour) */}
       {!etat.besoinCarte && amisListe.length > 0 && (

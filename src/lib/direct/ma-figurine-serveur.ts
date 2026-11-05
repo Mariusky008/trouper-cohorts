@@ -49,6 +49,7 @@ import {
   type MessageFigurine,
 } from "./ma-figurine";
 import { expressionsCompletes, expressionsDe, fabriquerUnTour, type Depot } from "./figurine-expressions-serveur";
+import { adresseMasquee } from "./connaitre";
 import { lireLeTexte, voixBranchee } from "./voix-figurine-serveur";
 import { motInterdit } from "./mots-interdits";
 import { FABRICATIONS_PAR_JOUR, NOM_NEUTRE, NOM_PARLE, fabricationsParJourPourTous, fabriquerUnPas, moteurBranche } from "./ma-figurine-fabrique-serveur";
@@ -175,7 +176,7 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
   if (!ok) return { ...base, etape: "bientot" };
   if (!prete && (!ligne || !s(ligne.photo) || s(ligne.refus))) return { ...base, etape: "photo", ...(s(ligne?.refus) ? { refus: s(ligne?.refus) } : {}) };
   if (!prete) return { ...base, etape: "fabrication" };
-  const [neutre, parle, { data: msgs }, expr, fab, saVoix, sonUnivers] = await Promise.all([
+  const [neutre, parle, { data: msgs }, expr, fab, saVoix, sonUnivers, { data: adresse }] = await Promise.all([
     signer(supabase, s(ligne!.neutre)),
     signer(supabase, s(ligne!.parle)),
     supabase.from("clik_figurine_message").select("*").eq("habitant_id", habitant.id).order("created_at", { ascending: false }).limit(20),
@@ -183,7 +184,9 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
     lireJson<Fabrique>(supabase, cheminFabrique(habitant.id)),
     lireJson<{ voix?: string }>(supabase, cheminSaVoix(habitant.id)),
     lireJson<{ univers?: string }>(supabase, cheminUnivers(habitant.id)),
+    Promise.resolve(supabase.from("human_habitants").select("email, email_verifie_le").eq("id", habitant.id).maybeSingle()).catch(() => ({ data: null })),
   ]);
+  const verifiee = adresse as { email?: string | null; email_verifie_le?: string | null } | null;
   const maVoix = voixValide(saVoix.voix);
   const ouverts = visagesOuverts(cadeaux);
   return {
@@ -195,6 +198,7 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
     expressionsAFaire: ouverts.some((c) => !expr.expressions[c]),
     voixTexte: voixBranchee(),
     ...(maVoix ? { maVoix } : {}),
+    ...(verifiee?.email && verifiee.email_verifie_le ? { protegee: adresseMasquee(verifiee.email) } : {}),
     ...(universValide(sonUnivers.univers) ? { univers: universValide(sonUnivers.univers) } : {}),
     ...(moteurBranche() ? { refaire: essaisRestants(fab) } : {}),
     messages: ((Array.isArray(msgs) ? msgs : []) as Ligne[])

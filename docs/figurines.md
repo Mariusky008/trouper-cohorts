@@ -650,6 +650,23 @@ sont des PARTENAIRES, un plus, pas le centre (« quand on parle des commerçants
 - **Tout est gardé** (`journal-serveur.ts`) : ses réponses, ses « c'est moi / pas moi », ce que chaque épisode a révélé,
   datés, mois par mois (`<habitant>/journal/<AAAA-MM>.json`) — pour sa phrase du mois et « ce que ta figurine sait de toi ».
 
+**Le lot 2, construit (mieux le connaître : `connaitre.ts`, `connaitre-serveur.ts`, `/api/direct/connaitre`) :**
+- **❓ La question du jour** (« Rencontres », sous la rencontre du jour) : 35 questions drôles et rapides
+  (`QUESTIONS_DU_JOUR` : un toucher, ou trois mots ; rien de sensible), une par jour, jamais une déjà répondue ; sa
+  réponse va dans son journal et dans ce que les conversations lisent.
+- **🔮 Le petit mot du jour** (en haut de « Rencontres ») : « drôle et bienveillant, comme un horoscope qui le
+  connaît » — il annonce la rencontre du jour, avec un clin d'œil à ce qu'il a dit ; écrit une fois par jour (gardé,
+  `<habitant>/mot-du-jour.json`) ; sans IA, composé.
+- **🧠 « Ce que ta figurine sait de toi »** (« Personnage », sous sa carte) : sa carte en mots, et tout son journal
+  (questions du jour, « Et toi ? », ses « c'est moi / pas moi », ce que ses rencontres ont révélé) ; il efface une
+  chose, ou tout (sa carte, sa figurine et ses rencontres restent).
+- **🔐 Protéger / retrouver sa figurine** : son adresse e-mail et le code à six chiffres de « Ma Maison »
+  (`nouveauCode`, `verifierCode` : trois codes par adresse en quinze minutes, un e-mail « Ma figurine ») ; dans
+  « Ma figurine » (protéger) et sous « Crée ta figurine » (« Tu as déjà une figurine sur un autre téléphone ?
+  Retrouve-la »). Le bon code : ce téléphone devient le sien (le cookie), et ce qu'il savait ici rejoint son compte —
+  sauf si la figurine est sur CE téléphone et pas sur l'ancien compte : c'est alors l'ancien qui rejoint celui-ci (on
+  ne perd jamais une figurine). Les essais passent par un faux Resend (le faux Supabase, `RESEND_BASE_URL`).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

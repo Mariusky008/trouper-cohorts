@@ -592,6 +592,9 @@ async function stockage(req, res, url) {
   return repondre(res, 404, { message: "inconnu" });
 }
 
+/** Les e-mails « envoyés » par le faux Resend (les plus récents à la fin). */
+const courriels = [];
+
 http
   .createServer(async (req, res) => {
     try {
@@ -611,6 +614,14 @@ http
         res.writeHead(200, { "content-type": "audio/mpeg" });
         return res.end(fs.readFileSync(new URL("./fixtures/voix-essai.mp3", import.meta.url)));
       }
+      // UN FAUX RESEND (`RESEND_BASE_URL=…/resend`) : un e-mail « envoyé » est gardé ici (le code de « Ma figurine »,
+      // que l'essai lit dans `/__courriels`) — rien ne part
+      if (url.pathname === "/resend/emails" && req.method === "POST") {
+        const m = JSON.parse((await corps(req)).toString() || "{}");
+        courriels.push({ to: m.to, subject: m.subject, html: m.html, le: maintenant() });
+        return repondre(res, 200, { id: randomUUID() });
+      }
+      if (url.pathname === "/__courriels") return repondre(res, 200, courriels);
       if (url.pathname === "/__etat") return repondre(res, 200, Object.fromEntries([...tables].map(([t, r]) => [t, r.length])));
       if (url.pathname === "/__tables") return repondre(res, 200, Object.fromEntries(tables));
       const m = /^\/rest\/v1\/([a-z_]+)$/.exec(url.pathname);

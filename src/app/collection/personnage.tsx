@@ -32,6 +32,7 @@ import {
 import { PanneauEnvoi } from "./ma-figurine";
 import { FigurineGuide, Guide, GuideDit, useVoixPablito, type Visage } from "./guide";
 import { SONS_PABLITO } from "@/lib/direct/guide";
+import { CeQueTaFigurineSait } from "./connaitre";
 
 /** Le guide pose les questions : un visage différent à chaque fois (ses vraies expressions). */
 const VISAGES_QUIZ: Visage[] = ["joie", "neutre", "euphorie"];
@@ -548,6 +549,8 @@ export function MonPersonnage({
           )}
         </div>
       </div>
+      {/* 🧠 CE QUE TA FIGURINE SAIT DE TOI (lot 2) : il voit tout, il efface */}
+      <CeQueTaFigurineSait />
     </div>
   );
 }
