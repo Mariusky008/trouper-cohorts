@@ -438,6 +438,29 @@ partout, mettre des figurines d'exemple comme la figurine marrante » ; « un me
 - **Album** : Clik dans la tenue de chaque mois sur les cases (tant qu'un commerce n'a pas sa vraie figurine) ; vide,
   Clik dit comment le remplir.
 
+### 9.0 nonies Le guide : la figurine du patron de ClikMe, à la place de Clik (5 novembre) — construit
+
+Sa remarque, en voyant Clik : « pourquoi ne reprends-tu pas cette figurine qui est moi ? En plus elle a déjà plein
+d'expressions que tu peux utiliser : ça permettra de voir à quoi ça ressemble dès le départ, au lieu d'avoir un
+personnage cartoon. »
+
+- **Le guide qui parle** (`app/collection/guide.tsx`, `Guide` et `GuideDit`) : son portrait (la figurine de la
+  démonstration), la bouche qui s'ouvre et se ferme pendant qu'il parle (ses deux images), et le visage de ce qu'il dit
+  — joie, euphorie, tristesse (`{ t, v }` dans les bulles) : ses vraies expressions, celles que le moteur avait faites
+  pour la démonstration. En grand sur l'accueil, en petit ailleurs ; il pose les questions du test de personnage.
+- **Sa figurine seule, l'exemple** (`FigurineGuide`) : là où il n'y a pas encore la vraie (l'édition du mois, la frise,
+  l'album, les commerces où gagner), sa figurine sans fond, dans la tenue de chaque édition. Le moteur les fait une fois
+  chacune (`lib/direct/guide-serveur.ts` : sa figurine recopiée sans son fond rose, puis ses douze tenues, celle du mois
+  d'abord), à la première demande et après la réponse, une image par passage, sous verrou ; refusée trois fois, une image
+  n'est plus redemandée. En attendant : son image de tous les jours. Une quinzaine d'images, pour toujours.
+- **Servies par** `/api/direct/guide/<nom>` (`joie-n`, `joie-p`… ; `seule` ; `edition-noel`…), gardées par le réseau ;
+  rangées dans le seau privé (`demo-proprio/v1/expr/` pour ses visages, `demo-proprio/v1/guide/` pour le reste).
+- **Une autre image de lui** (« plus jeune, peut-être ? ») : remplacer `public/collection/demo-neutre.webp` et
+  `demo-parle.webp`, puis monter `VERSION_GUIDE` (`lib/direct/guide.ts`) — tout se refait de soi-même dans un nouveau
+  dossier.
+- **Pas son visage à la place de quelqu'un** : sur la carte de personnage d'un client sans figurine, et dans les
+  rencontres (un commerce ou un membre sans figurine), une silhouette de figurine et « ? » — pas sa tête.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

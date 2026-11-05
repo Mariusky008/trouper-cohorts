@@ -181,7 +181,10 @@ await p.waitForSelector("#o-album .ab-page", { timeout: 30000 });
 const mc = await texte(p, ".mc");
 ok(mc.includes("Ma collection") && mc.includes("Le Comptoir des Fantômes") && (await p.locator(".ab-page").count()) === 1, `l'onglet « Album » : une page d'album (${mc.slice(0, 80)})`);
 ok((await p.locator(".mc-nav button.pris").innerText()).includes("Album") && (await p.locator(".mc-nav button").count()) === 5, "le menu en bas : l'onglet « Album » est ouvert");
-ok((await p.locator(".ab-page .ab-case .mq").count()) >= 14 && (await p.locator(".ab-page img[src*='/direct/double/']").count()) === 0, "dans l'album, Clik dans la tenue de chaque mois : plus de fantômes");
+ok(
+  (await p.locator(".ab-page .ab-case img.mqf[src*='/api/direct/guide/edition-']").count()) >= 12 && (await p.locator(".ab-page img[src*='/direct/double/']").count()) === 0,
+  "dans l'album, la figurine du guide dans la tenue de chaque mois : plus de fantômes",
+);
 // L'ALBUM : les quatorze cases et la case d'or, le compteur, ce qui vient ensuite ; une case touchée s'ouvre en grand
 ok((await p.locator(".ab-page .ab-case").count()) === 15 && (await p.locator(".ab-page .ab-case.ab-or").count()) === 1 && (await p.locator(".ab-page .ab-case.rare").count()) === 2, "l'album : quatorze cases (dont deux rares) et la case d'or");
 ok((await p.locator(".ab-page .ab-case.gagnee").count()) === 1 && (await texte(p, ".ab-chiffre")).replace(/\s/g, "").endsWith("/10") && /Encore \d+ →/.test(await texte(p, ".ab-suivant")), `sa figurine dans l'album, et ce qui vient ensuite (${await texte(p, ".ab-suivant")})`);
@@ -210,18 +213,25 @@ ok((await texte(vide, ".fm-premier")).includes("Sois le tout premier fantôme de
 ok((await texte(vide, ".fm-cages")).includes("Je passe aujourd’hui"), "chez un artisan, on passe");
 await vide.screenshot({ path: `${D}/famille-4-vide.png` });
 
-// ═══ MA COLLECTION, SANS FIGURINE : Clik accueille, explique ; « Ce mois-ci » dit à quoi sert l'édition du mois ═══
+// ═══ MA COLLECTION, SANS FIGURINE : le guide (la figurine du patron de ClikMe) accueille, explique ; « Ce mois-ci » dit à quoi sert l'édition du mois ═══
 await vide.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
 await vide.waitForSelector("#o-figurine .mqd", { timeout: 30000 });
 const accueilVide = await texte(vide, "#o-figurine");
-ok(accueilVide.includes("Clik") && accueilVide.includes("Crée ta figurine") && (await vide.locator("#creer .tf-prenom-photo").count()) === 1, "sans compte : Clik accueille, et la quête « Crée ta figurine » (son prénom demandé)");
+ok(
+  /patron de ClikMe/i.test(accueilVide) && accueilVide.includes("Crée ta figurine") && (await vide.locator("#creer .tf-prenom-photo").count()) === 1,
+  "sans compte : le guide accueille, et la quête « Crée ta figurine » (son prénom demandé)",
+);
+ok((await vide.locator("#o-figurine .mqd .mq img.mq-i").count()) === 2 && (await vide.locator(".mqd svg").count()) === 0, "le guide est sa figurine (bouche fermée, bouche ouverte), plus un personnage dessiné");
 ok((await vide.locator(".tf-demo").count()) === 0, "plus de démonstration");
 await vide.goto(`${BASE}/collection#ou-gagner`, { waitUntil: "networkidle" });
 await vide.waitForSelector("#o-mois .ce", { timeout: 30000 });
 await vide.waitForTimeout(1500);
 const dc = await texte(vide, "#o-mois");
-ok((await texte(vide, "#o-mois .mqd-bulle")).includes("Ce mois-ci, c’est l’édition") && (await vide.locator("#o-mois .mqd .mq").count()) === 1, "« Ce mois-ci » : Clik, dans la tenue du mois, explique l'édition");
-ok((await vide.locator(".ce-frise .mq").count()) === 6 && (await vide.locator(".ce-carte .mq").count()) === 1, "la frise et l'édition du moment : Clik dans chaque tenue, plus de fantômes");
+ok(
+  (await texte(vide, "#o-mois .mqd-bulle")).includes("Ce mois-ci, c’est l’édition") && (await vide.locator("#o-mois .mqd img.mqf[src*='/api/direct/guide/edition-']").count()) === 1,
+  "« Ce mois-ci » : le guide, dans la tenue du mois, explique l'édition",
+);
+ok((await vide.locator(".ce-frise img.mqf").count()) === 6 && (await vide.locator(".ce-carte img.mqf").count()) === 1, "la frise et l'édition du moment : sa figurine dans chaque tenue, plus de fantômes");
 ok((await vide.locator(".ab-page").count()) === 0 && (await vide.locator(".ce-frise li").count()) === 6 && (await vide.locator(".ce-frise li.passee").count()) === 1, "sans figurine : pas d'étagère ; la frise des éditions, dont celle qui vient de finir");
 const chrono = await texte(vide, ".ce-chrono");
 ok(/À GAGNER MAINTENANT/i.test(dc) && /Édition \S+/.test(dc) && /\d+\s*jours?/i.test(chrono) && /\d{2}\s*s/i.test(chrono), `l'édition du moment, et le temps qui reste à la seconde (${chrono.replace(/\s+/g, " ")})`);

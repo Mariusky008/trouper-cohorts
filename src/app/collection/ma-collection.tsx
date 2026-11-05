@@ -5,11 +5,11 @@
  * très difficile à comprendre le fonctionnement, il faut mettre un menu en bas avec les différentes sections »). Un
  * menu en bas, toujours là, comme une application ; chaque onglet a son adresse (`#figurine`, `#personnage`…), et les
  * anciens liens retombent sur le bon (`#creer` → « Ma figurine », `#ou-gagner` → « Ce mois-ci ») :
- *   🗣️ MA FIGURINE — l'accueil de Clik (la mascotte, `mascotte.tsx`), la quête « Crée ta figurine », puis la sienne
+ *   🗣️ MA FIGURINE — l'accueil du guide (la figurine du patron de ClikMe, `guide.tsx`), la quête « Crée ta figurine », puis la sienne
  *      qui parle (`ma-figurine.tsx`) ;
  *   🃏 PERSONNAGE — sa carte (`personnage.tsx`) ;
  *   💬 RENCONTRES — la rencontre du jour, un ami à inviter, un membre à rencontrer (`rencontre.tsx`) ;
- *   📅 CE MOIS-CI — l'édition du mois, expliquée par Clik dans sa tenue, et où la gagner (`decouvrir.tsx`) ;
+ *   📅 CE MOIS-CI — l'édition du mois, expliquée par le guide dans sa tenue, et où la gagner (`decouvrir.tsx`) ;
  *   📒 ALBUM — ses figurines, une page par commerce (`album.tsx`).
  * Un onglet ne se charge qu'à sa première ouverture (la rencontre du jour n'est écrite que si on va la lire), puis il
  * reste là (on n'y perd rien en changeant d'onglet).
@@ -22,7 +22,7 @@ import { STYLES_COLLECTION } from "@/app/f/[slug]/collection";
 import { Album, STYLES_ALBUM } from "./album";
 import { OngletMois, STYLES_DECOUVRIR, type CommerceACollectionner } from "./decouvrir";
 import { OngletFigurine, STYLES_MA_FIGURINE } from "./ma-figurine";
-import { MascotteDit } from "./mascotte";
+import { GuideDit } from "./guide";
 import { MonPersonnage, STYLES_PERSONNAGE } from "./personnage";
 import { RencontreDuJour, STYLES_RENCONTRE } from "./rencontre";
 import { figurinesEnTout, type EtatMaFigurine } from "@/lib/direct/ma-figurine";
@@ -216,15 +216,18 @@ export function MaCollection({ aujourdhui, commerces, villes = [] }: { aujourdhu
               <Album familles={avec} />
             ) : (
               familles && (
-                <MascotteDit
+                <GuideDit
                   cle="album-vide"
-                  repliques={["Ton album est vide… pour l’instant ! 📒", "À chaque achat chez un commerce ClikMe, je colle sa figurine du mois ici. Dix chez le même commerce, et c’est la figurine d’or 🏆"]}
+                  repliques={[
+                    { t: "Ton album est vide… pour l’instant ! 📒", v: "tristesse" },
+                    { t: "À chaque achat chez un commerce ClikMe, je colle sa figurine du mois ici. Dix chez le même commerce, et c’est la figurine d’or 🏆", v: "euphorie" },
+                  ]}
                 >
                   <button type="button" className="og-go" onClick={() => aller("mois")}>
                     📅 Voir la figurine de ce mois-ci
                   </button>
                   <p className="dc-deja">Tu as déjà des figurines ? Ouvre cette page sur le téléphone où tu as libéré ton fantôme.</p>
-                </MascotteDit>
+                </GuideDit>
               )
             )}
             <p className="mc-regle">

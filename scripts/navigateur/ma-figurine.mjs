@@ -1,7 +1,7 @@
 // 🗣️ SA PROPRE FIGURINE, DANS UN TÉLÉPHONE — `clikme.fr/collection` puis `clikme.fr/figurine/<id>`, contre le faux
 // Supabase, avec un faux micro (Chromium joue un bip à sa place) et une fausse voix (le faux Supabase rend un enregistrement d'essai).
 //
-// Hugo a 1 figurine : Clik l'accueille (le menu en bas, cinq onglets), la quête « Crée ta figurine » (la démonstration
+// Hugo a 1 figurine : le guide (la figurine du patron de ClikMe) l'accueille (le menu en bas, cinq onglets), la quête « Crée ta figurine » (la démonstration
 // qu'on faisait parler est partie le 5 novembre 2026). Léa passe chez le Comptoir depuis plus d'un an (et à l'Atelier) : plus
 // de 10 figurines. Elle envoie sa photo (il faut cocher « C'est bien moi ») ; « on fabrique ta figurine ». ClikMe pose
 // ses deux images (ici à la main, dans le faux Supabase : la route admin, elle, refuse qui n'est pas admin). Elle
@@ -64,7 +64,7 @@ const hugo = await tel(HUGO);
 await hugo.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
 await hugo.waitForSelector("#o-figurine .mqd", { timeout: 60000 });
 ok((await hugo.locator(".mc-nav button").count()) === 5 && (await texte(hugo, ".mc-nav")).includes("Rencontres") && (await texte(hugo, ".mc-nav")).includes("Ce mois-ci"), "le menu en bas : cinq onglets");
-ok((await hugo.locator("#o-figurine .mqd .mq").count()) === 1 && (await texte(hugo, "#o-figurine .mqd-bulle")).includes("Clik"), "Clik, la mascotte, l'accueille");
+ok((await hugo.locator("#o-figurine .mqd .mq").count()) === 1 && /patron de ClikMe/i.test(await texte(hugo, "#o-figurine .mqd-bulle")), "le guide, la figurine du patron de ClikMe, l'accueille");
 ok((await hugo.locator(".tf-demo, .tf-la-tienne").count()) === 0, "plus de démonstration à faire parler");
 // DÈS LE DÉPART : la quête « Crée ta figurine »
 ok((await hugo.locator("#creer.tf-quete").count()) === 1 && (await texte(hugo, "#creer")).includes("Crée ta figurine") && (await hugo.locator('#o-figurine a.og-go[href="#creer"]').count()) === 1, "Hugo peut créer la sienne dès maintenant");

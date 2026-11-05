@@ -51,6 +51,7 @@ jobs:
           src/lib/direct/ma-figurine-fabrique-serveur.ts src/lib/direct/mots-interdits.ts
           src/lib/direct/personnage.ts src/lib/direct/personnage-serveur.ts src/lib/direct/rencontre.ts src/lib/direct/rencontre-serveur.ts
           src/app/carte src/app/api/direct/personnage src/app/api/direct/rencontre
+          src/lib/direct/guide.ts src/lib/direct/guide-serveur.ts src/app/api/direct/guide
 
   essais-sql:
     name: Essais SQL

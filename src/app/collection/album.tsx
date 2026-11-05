@@ -16,7 +16,7 @@ import type { MaFamille } from "@/lib/direct/famille";
 import { PALIERS_COLLECTION, jourCourt, jourEnClair, palierSuivant, type CaseCollection, type Collection } from "@/lib/direct/collection";
 import { deNom } from "@/lib/echanges/echanges";
 import { Particules, THEMES } from "@/app/f/[slug]/collection";
-import { FigurineOuClik } from "./mascotte";
+import { FigurineOuGuide } from "./guide";
 
 const FIGURINE_PAR_DEFAUT = "/direct/double/pied/salut-1.webp";
 const CLE_VUES = "clikme-album-vues-v1";
@@ -96,7 +96,7 @@ function PageAlbum({ f, ordre, onOuvre }: { f: MaFamille; ordre: number; onOuvre
       <header className="ab-tete">
         <a className="ab-nom" href={`/f/${encodeURIComponent(f.slug)}`}>
           <span className="ab-avatar" aria-hidden="true">
-            <FigurineOuClik className="ab-img" src={fig} fixe />
+            <FigurineOuGuide className="ab-img" src={fig} fixe />
           </span>
           <span>
             <b>{f.nom}</b>
@@ -143,7 +143,7 @@ function PageAlbum({ f, ordre, onOuvre }: { f: MaFamille; ordre: number; onOuvre
         <a className="ab-maintenant" href={`/f/${encodeURIComponent(f.slug)}`} style={{ "--a": t.a, "--b": t.b } as CSSProperties}>
           <Particules theme={t} n={6} />
           <span className="ab-m-fig">
-            <FigurineOuClik className="ab-img" src={fig} edition={enCours.cle} />
+            <FigurineOuGuide className="ab-img" src={fig} edition={enCours.cle} />
             <em aria-hidden="true">{enCours.emoji}</em>
           </span>
           <span className="ab-m-texte">
@@ -170,7 +170,7 @@ function PageAlbum({ f, ordre, onOuvre }: { f: MaFamille; ordre: number; onOuvre
                 aria-label={`${c.sorte === "rare" ? "Édition rare" : `Édition ${c.nom}`} : ${legende(c)}`}
               >
                 <span className="ab-fond">
-                  <FigurineOuClik className="ab-img" src={fig} edition={c.sorte === "rare" ? null : c.cle} rare={c.sorte === "rare"} fixe />
+                  <FigurineOuGuide className="ab-img" src={fig} edition={c.sorte === "rare" ? null : c.cle} rare={c.sorte === "rare"} fixe />
                   <em aria-hidden="true">{c.etat === "a-venir" ? "🔒" : c.emoji}</em>
                   {c.etat === "en-cours" && (
                     <b className="ab-q" aria-hidden="true">
@@ -188,7 +188,7 @@ function PageAlbum({ f, ordre, onOuvre }: { f: MaFamille; ordre: number; onOuvre
         <li className="ab-or-li" style={{ "--d": `calc(var(--d0) + ${col.cases.length * 0.035}s)` } as CSSProperties}>
           <button type="button" className={`ab-case ab-or${col.complete ? " gagnee" : ""}`} onClick={() => onOuvre({ f, c: "or" })} aria-label="La figurine d’or">
             <span className="ab-fond">
-              <FigurineOuClik className="ab-img" src={fig} fixe />
+              <FigurineOuGuide className="ab-img" src={fig} fixe />
               <em aria-hidden="true">🏆</em>
               {col.complete && <i className="ab-reflet" aria-hidden="true" />}
               <span className="ab-or-texte">
@@ -253,7 +253,7 @@ function Fiche({ o, onFerme }: { o: NonNullable<Ouverte>; onFerme: () => void })
       <div className="ab-fiche" onClick={(e) => e.stopPropagation()} style={{ "--a": th.a, "--b": th.b } as CSSProperties}>
         <span className={`ab-grande ${etat}${!or && c.sorte === "rare" ? " rare" : ""}${or ? " ab-or" : ""}`}>
           {etat === "gagnee" && <Particules theme={th} n={8} />}
-          <FigurineOuClik className="ab-img" src={fig} edition={or || c.sorte === "rare" ? null : c.cle} rare={!or && c.sorte === "rare"} />
+          <FigurineOuGuide className="ab-img" src={fig} edition={or || c.sorte === "rare" ? null : c.cle} rare={!or && c.sorte === "rare"} />
           <em aria-hidden="true">{or ? "🏆" : c.etat === "a-venir" ? "🔒" : c.emoji}</em>
           {etat === "gagnee" && <i className="ab-reflet" aria-hidden="true" />}
         </span>

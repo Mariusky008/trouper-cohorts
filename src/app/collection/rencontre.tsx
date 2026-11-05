@@ -11,14 +11,14 @@
  *
  * MISE EN VALEUR LE 5 NOVEMBRE 2026 (« une partie importante… que ça donne vraiment envie d'inviter quelqu'un, ou de
  * comprendre que si on ne le fait pas, on peut appuyer sur un compte à rebours pour être mis en contact avec un
- * membre ; et la figurine marrante explique le fonctionnement ») : Clik explique ; la rencontre du jour en vedette,
+ * membre ; et la figurine marrante explique le fonctionnement ») : le guide explique (`guide.tsx`) ; la rencontre du jour en vedette,
  * et le temps qui reste avant la suivante ; deux grands choix — « Invite un ami » et le bouton rond « Rencontre un
  * membre » (3… 2… 1…).
  */
 import { useCallback, useEffect, useState } from "react";
 import { EMOTIONS, VERDICTS, texteInvitation, type Emotion, type Participant, type Reaction, type RencontreVue, type Verdict } from "@/lib/direct/rencontre";
 import { PanneauEnvoi } from "./ma-figurine";
-import { Mascotte, MascotteDit } from "./mascotte";
+import { FigurineGuide, GuideDit } from "./guide";
 
 type Etat = {
   rencontre: RencontreVue | null;
@@ -43,7 +43,7 @@ async function poster(corps: Record<string, unknown>) {
 const nomDe = (p: Participant) => (p.type === "client" ? p.prenom || "Quelqu’un" : p.nom);
 const jourCourt = (j: string) => new Date(`${j}T12:00:00`).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
-/** Sa figurine s'il l'a ; sinon (un fantôme, un commerce sans figurine) Clik, la figurine d'exemple. */
+/** Sa figurine s'il l'a ; sinon (un fantôme, un commerce sans figurine) une silhouette de figurine, et « ? ». */
 function Avatar({ p, grand = false }: { p: Participant; grand?: boolean }) {
   const vraie = p.type === "client" ? p.figurine : !p.image.startsWith("/direct/double/");
   return (
@@ -52,7 +52,10 @@ function Avatar({ p, grand = false }: { p: Participant; grand?: boolean }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={p.image} alt="" draggable={false} />
       ) : (
-        <Mascotte className="rd-clik" fixe />
+        <>
+          <FigurineGuide className="rd-clik" ombre fixe />
+          <b className="rd-q">?</b>
+        </>
       )}
     </span>
   );
@@ -156,7 +159,7 @@ function useJusquaMinuit(): string {
 }
 
 /**
- * 🎲 « RENCONTRER UN MEMBRE » : un gros bouton rond ; on appuie, le compte à rebours tourne (3… 2… 1…), et Clik présente
+ * 🎲 « RENCONTRER UN MEMBRE » : un gros bouton rond ; on appuie, le compte à rebours tourne (3… 2… 1…), et le guide présente
  * un membre de sa ville. Déjà fait aujourd'hui : le temps qui reste jusqu'à demain.
  */
 function BoutonMembre({ fait, onRencontre, onAttente, desactive }: { fait: boolean; onRencontre: (r: RencontreVue) => void; onAttente: () => void; desactive?: boolean }) {
@@ -322,13 +325,13 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
     </header>
   );
   const explique = (
-    <MascotteDit
+    <GuideDit
       cle="rencontres"
       repliques={[
-        "Chaque jour, ta figurine rencontre une autre figurine 💬",
-        "Elles discutent selon vos personnalités : ta carte, ta façon de parler, ce que tu aimes.",
-        "Toi, tu lis… et tu me dis si c’est bien toi ! ✅ ou 🙅 : plus tu réagis, plus elle te ressemble 🪞",
-        "Avec qui ? Un ami que tu invites, la figurine d’un commerce… ou un membre de ta ville, au hasard 🎲",
+        { t: "Chaque jour, ta figurine rencontre une autre figurine 💬", v: "joie" },
+        { t: "Elles discutent selon vos personnalités : ta carte, ta façon de parler, ce que tu aimes.", v: "neutre" },
+        { t: "Toi, tu lis… et tu me dis si c’est bien toi ! ✅ ou 🙅 : plus tu réagis, plus elle te ressemble 🪞", v: "euphorie" },
+        { t: "Avec qui ? La figurine d’un commerce, un ami que tu invites (le mieux 😉)… ou un membre de ta ville, au hasard 🎲", v: "joie" },
       ]}
     />
   );
@@ -493,7 +496,9 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
 export const STYLES_RENCONTRE = `
 .rd-onglet{display:flex;flex-direction:column;gap:16px}
 .rd-vedette{border:1.5px solid rgba(255,46,154,.5);background:linear-gradient(180deg,rgba(255,46,154,.14),rgba(255,255,255,.03));box-shadow:0 26px 50px -30px rgba(255,46,154,.8)}
-.rd-clik{position:absolute;left:4%;bottom:0;width:92%;height:auto}
+.rd-av .rd-clik{position:absolute;left:8%;bottom:0;width:84%;height:94%;opacity:.45}
+.rd-q{position:absolute;inset:0;display:grid;place-items:center;color:#FFF4E6;font-size:16px;font-weight:900;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.rd-av.grand .rd-q{font-size:24px}
 .rd-prochaine{margin:0;padding-top:10px;border-top:1px solid rgba(255,255,255,.1);font-size:13.5px;color:#D9C3CB;text-align:center}
 .rd-prochaine b{font-variant-numeric:tabular-nums;color:#F2C46B;font-size:15px}
 .rd-jauge{display:block;height:8px;margin-top:6px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}

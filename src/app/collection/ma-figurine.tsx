@@ -12,8 +12,8 @@
  *     ses options (`OPTIONS_FIGURINE`) : celles pas encore ouvertes se voient, sous cadenas, avec l'achat qui les ouvre
  *     (`MesOptions`) — 4 novembre 2026 : « créer sa figurine dès le départ, et des options supplémentaires à chaque fois
  *     qu'on achète quelque chose chez un commerçant » ;
- *   · `OngletFigurine` : l'onglet entier — l'accueil de Clik, la mascotte (`mascotte.tsx`), la quête `EnvoiPhoto`
- *     (« Crée ta figurine », dès le départ, sans compte), `FabricationAuto` (le moteur la fabrique, Clik raconte),
+ *   · `OngletFigurine` : l'onglet entier — l'accueil du guide, la figurine du patron de ClikMe (`guide.tsx`), la quête
+ *     `EnvoiPhoto` (« Crée ta figurine », dès le départ, sans compte), `FabricationAuto` (le moteur la fabrique, le guide raconte),
  *     `Annonce` (sans moteur : ClikMe la fait à la main). La démonstration qu'on faisait parler (`StudioDemo`) est
  *     partie le 5 novembre 2026 : « elle ne sert plus à rien maintenant ».
  * La règle est dans `lib/direct/ma-figurine.ts`.
@@ -39,7 +39,7 @@ import {
 } from "@/lib/direct/ma-figurine";
 import { reduireImage } from "@/lib/direct/reduire-image";
 import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE, type FigurineHandle } from "./figurine-qui-parle";
-import { Mascotte, MascotteDit, STYLES_MASCOTTE } from "./mascotte";
+import { Guide, GuideDit, STYLES_GUIDE } from "./guide";
 
 type Reponse = { error?: string; etat?: EtatMaFigurine; lien?: string; son?: string; enCours?: boolean };
 
@@ -565,13 +565,13 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   );
 }
 
-// ─── sa figurine à créer : l'accueil de Clik, la quête, puis l'attente ──────────────────────────────────────
-/** Ce que Clik annonce quand il n'y a rien à faire tout de suite (sans moteur : ClikMe la fait à la main). */
+// ─── sa figurine à créer : l'accueil du guide, la quête, puis l'attente ──────────────────────────────────────
+/** Ce que le guide annonce quand il n'y a rien à faire tout de suite (sans moteur : ClikMe la fait à la main). */
 export function Annonce({ titre, children }: { titre: string; emoji?: string; children: ReactNode }) {
   return (
     <div className="tf-annonce">
       <span className="tf-annonce-clik" aria-hidden="true">
-        <Mascotte salue />
+        <Guide salue />
       </span>
       <b>{titre}</b>
       <p>{children}</p>
@@ -699,7 +699,7 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
   );
 }
 
-/** Ce que dit Clik pendant qu'il fabrique (selon le temps passé). */
+/** Ce que dit le guide pendant que le moteur fabrique (selon le temps passé). */
 const PENDANT = [
   { s: 0, dit: "Je regarde ta photo… joli sourire ! 😍" },
   { s: 15, dit: "Je sculpte ta tête. Et ta coiffure, avec soin 💇" },
@@ -708,7 +708,7 @@ const PENDANT = [
 ];
 
 /**
- * 🛠️ SA FIGURINE SE FABRIQUE (le moteur d'image) : Clik raconte ce qu'il fait ; la page rappelle le serveur tant que ce
+ * 🛠️ SA FIGURINE SE FABRIQUE (le moteur d'image) : le guide raconte ce qui se passe ; la page rappelle le serveur tant que ce
  * n'est pas fini — sa figurine, puis sa bouche ouverte —, avec une jauge qui avance (deux minutes environ).
  */
 export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat: (e: EtatMaFigurine) => void }) {
@@ -747,7 +747,7 @@ export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat
     <div className="tf-fab" aria-live="polite" ref={boite}>
       <div className="tf-fab-scene">
         <span className="tf-fab-clik" aria-hidden="true">
-          <Mascotte parle={!erreur} humeur={erreur ? "surpris" : "content"} />
+          <Guide key={erreur || dit} parle={!erreur} bref visage={erreur ? "tristesse" : "joie"} />
         </span>
         <p className="tf-fab-bulle">{erreur ? "Oups… ça n’a pas marché cette fois." : dit}</p>
       </div>
@@ -801,7 +801,7 @@ export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat
 }
 
 /**
- * 🗣️ L'ONGLET « MA FIGURINE » — sa figurine prête : la faire parler (`StudioMoi`) ; sinon, l'accueil de Clik (ce qu'il
+ * 🗣️ L'ONGLET « MA FIGURINE » — sa figurine prête : la faire parler (`StudioMoi`) ; sinon, l'accueil du guide (ce qu'il
  * faut faire, et ce que ça permettra ensuite), la quête « Crée ta figurine », et ce qu'elle débloquera, achat après
  * achat (5 novembre 2026 : la démonstration a quitté la page, « elle ne sert plus à rien maintenant »).
  */
@@ -832,19 +832,20 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
   if (etat.etape === "bientot") return <Annonce titre="Ta figurine arrive très bientôt 🛠️">Reviens ici dans quelques jours pour envoyer ta photo.</Annonce>;
   return (
     <>
-      <MascotteDit
+      <GuideDit
         cle="accueil"
+        grand
         repliques={[
-          "Salut ! Moi, c’est Clik 👋 la mascotte de ClikMe.",
-          "Ici, tu crées TA figurine, avec ton visage. C’est gratuit, et ça prend deux minutes.",
-          "Ensuite, elle dit ce que tu écris, change de tête selon son humeur… et part chez tes proches sur WhatsApp 📲",
-          "Et à chaque achat chez un commerce ClikMe, je lui débloque un super-pouvoir 🎁 On y va ?",
+          { t: "Salut ! 👋 Moi, je suis la figurine du patron de ClikMe. Oui, c’est sa vraie tête !", v: "joie" },
+          { t: "Ici, tu crées TA figurine, avec ton visage. C’est gratuit, et ça prend deux minutes.", v: "neutre" },
+          { t: "Ensuite, elle dit ce que tu écris et change de tête selon son humeur… comme moi ! 🤩 Puis elle part chez tes proches sur WhatsApp 📲", v: "euphorie" },
+          { t: "Et à chaque achat chez un commerce ClikMe, elle débloque un super-pouvoir 🎁 On y va ?", v: "joie" },
         ]}
       >
         <a className="og-go" href="#creer">
           📸 Je crée ma figurine
         </a>
-      </MascotteDit>
+      </GuideDit>
       <EnvoiPhoto etat={etat} villes={villes} onEnvoye={onEtat} />
       <section className="og-pouvoirs" aria-label="Ce que tu vas débloquer">
         <h2>Ce que tu vas débloquer</h2>
@@ -856,7 +857,7 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
 
 export const STYLES_MA_FIGURINE =
   STYLES_FIGURINE_QUI_PARLE +
-  STYLES_MASCOTTE +
+  STYLES_GUIDE +
   `
 .tf{display:grid;gap:18px}
 .tf > *{min-width:0}

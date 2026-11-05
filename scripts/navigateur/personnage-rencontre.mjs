@@ -53,7 +53,7 @@ const lea = await tel(LEA);
 // (l'onglet « Rencontres » d'abord : sans carte, il attend)
 await lea.goto(`${BASE}/collection?v=${Date.now()}#rencontre`, { waitUntil: "networkidle" });
 await lea.waitForSelector("#o-rencontre .rd-teaser", { timeout: 60000 });
-ok((await texte(lea, "#o-rencontre")).includes("D’abord, ton personnage") && (await lea.locator("#o-rencontre .mqd .mq").count()) === 1, "« Rencontres » : Clik explique, et la rencontre attend sa carte");
+ok((await texte(lea, "#o-rencontre")).includes("D’abord, ton personnage") && (await lea.locator("#o-rencontre .mqd .mq").count()) === 1, "« Rencontres » : le guide explique, et la rencontre attend sa carte");
 await lea.locator("#o-rencontre .rd-teaser .og-go").click();
 await lea.waitForSelector("#o-personnage .mp-lancer", { timeout: 60000 });
 ok((await texte(lea, "#o-personnage")).includes("Quel personnage es-tu") && (await lea.locator("#o-personnage .pc.silhouette").count()) === 1 && /#personnage$/.test(lea.url()), "l'onglet « Personnage » : la carte mystère, et « Lancer le test »");

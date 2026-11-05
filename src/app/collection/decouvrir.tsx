@@ -10,7 +10,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { EDITIONS_DATEES, editionsDuMoment, fenetre, finEnAnnee, jourEnClair } from "@/lib/direct/collection";
 import { Particules, THEMES, type Theme } from "@/app/f/[slug]/collection";
-import { Mascotte, MascotteDit } from "./mascotte";
+import { FigurineGuide, GuideDit } from "./guide";
 
 export type CommerceACollectionner = { slug: string; nom: string; ville: string; figurine: string; cadeau?: string };
 
@@ -73,7 +73,7 @@ export function ChronoEdition({ aujourdhui }: { aujourdhui: string }) {
       <div className="ce-haut">
         <span className="ce-carte">
           <Particules theme={t} n={8} />
-          <Mascotte className="ce-img" edition={m.cle} />
+          <FigurineGuide className="ce-img" edition={m.cle} />
           <em aria-hidden="true">{m.emoji}</em>
           <i className="ce-reflet" />
         </span>
@@ -96,7 +96,7 @@ export function ChronoEdition({ aujourdhui }: { aujourdhui: string }) {
         {passee && (
           <li className="passee">
             <span className="ce-mini">
-              <Mascotte className="ce-img" edition={passee.e.cle} fixe />
+              <FigurineGuide className="ce-img" edition={passee.e.cle} fixe />
               <em aria-hidden="true">{passee.e.emoji}</em>
             </span>
             <b>{passee.e.nom}</b>
@@ -105,7 +105,7 @@ export function ChronoEdition({ aujourdhui }: { aujourdhui: string }) {
         )}
         <li className="maintenant">
           <span className="ce-mini">
-            <Mascotte className="ce-img" edition={m.cle} fixe />
+            <FigurineGuide className="ce-img" edition={m.cle} fixe />
             <em aria-hidden="true">{m.emoji}</em>
           </span>
           <b>{m.nom}</b>
@@ -114,7 +114,7 @@ export function ChronoEdition({ aujourdhui }: { aujourdhui: string }) {
         {suivantes.map(({ e, f }) => (
           <li key={e.cle} className="bientot" style={{ "--a": (THEMES[e.cle] ?? THEMES.rare).a, "--b": (THEMES[e.cle] ?? THEMES.rare).b } as CSSProperties}>
             <span className="ce-mini">
-              <Mascotte className="ce-img" edition={e.cle} fixe ombre />
+              <FigurineGuide className="ce-img" edition={e.cle} fixe ombre />
               <em aria-hidden="true">🔒</em>
             </span>
             <b>
@@ -125,7 +125,7 @@ export function ChronoEdition({ aujourdhui }: { aujourdhui: string }) {
         ))}
         <li className="rare">
           <span className="ce-mini">
-            <Mascotte className="ce-img" rare fixe />
+            <FigurineGuide className="ce-img" rare fixe />
             <em aria-hidden="true">✨</em>
           </span>
           <b>Rare</b>
@@ -133,7 +133,7 @@ export function ChronoEdition({ aujourdhui }: { aujourdhui: string }) {
         </li>
         <li className="or" style={{ "--a": OR.a, "--b": OR.b } as CSSProperties}>
           <span className="ce-mini">
-            <Mascotte className="ce-img" or fixe />
+            <FigurineGuide className="ce-img" or fixe />
             <em aria-hidden="true">🏆</em>
           </span>
           <b>D’or</b>
@@ -156,7 +156,7 @@ export function OuGagner({ commerces, titre, aujourdhui }: { commerces: Commerce
           <li key={c.slug}>
             <a href={`/f/${encodeURIComponent(c.slug)}`} style={{ "--a": t.a, "--b": t.b } as CSSProperties}>
               <span className="dc-com-fig">
-                <Mascotte className="ce-img" edition={m?.cle} fixe />
+                <FigurineGuide className="ce-img" edition={m?.cle} fixe />
                 {m && <em aria-hidden="true">{m.emoji}</em>}
               </span>
               <b>{c.nom}</b>
@@ -173,7 +173,7 @@ export function OuGagner({ commerces, titre, aujourdhui }: { commerces: Commerce
 
 /**
  * 📅 L'ONGLET « CE MOIS-CI » — 5 novembre 2026 (« on ne saisit pas ce que c'est, cette section, et à quoi elle sert ») :
- * Clik, dans la tenue du mois, explique en quatre bulles ; puis le temps qui reste, la frise des éditions (Clik dans
+ * Le guide, dans la tenue du mois, explique en quatre bulles ; puis le temps qui reste, la frise des éditions (sa figurine dans
  * chaque tenue, plus de fantômes), et les commerces où la gagner.
  */
 export function OngletMois({ aujourdhui, commerces, dejaChez }: { aujourdhui: string; commerces: CommerceACollectionner[]; dejaChez: boolean }) {
@@ -185,7 +185,7 @@ export function OngletMois({ aujourdhui, commerces, dejaChez }: { aujourdhui: st
         <h2>{m ? `L’édition ${m.nom} ${m.emoji}` : "L’édition du mois"}</h2>
       </header>
       {m && (
-        <MascotteDit
+        <GuideDit
           edition={m.cle}
           cle={`mois-${m.cle}`}
           repliques={[
@@ -198,7 +198,7 @@ export function OngletMois({ aujourdhui, commerces, dejaChez }: { aujourdhui: st
           <a className="og-go" href="#ou-gagner">
             📍 Où la gagner ?
           </a>
-        </MascotteDit>
+        </GuideDit>
       )}
       <ChronoEdition aujourdhui={aujourdhui} />
       <OuGagner commerces={commerces} titre={dejaChez ? "D’autres commerces où la gagner" : "Où la gagner"} aujourdhui={aujourdhui} />

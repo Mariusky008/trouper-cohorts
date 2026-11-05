@@ -83,7 +83,7 @@ async function telecharger(supabase: Supabase, chemin: string): Promise<Buffer |
 
 // ─── 🎭 ses expressions : un dossier par figurine (un nouveau visage : un nouveau dossier) ──────────────────
 /** Un dossier du seau, vu comme un `Depot` (`figurine-expressions-serveur.ts`). */
-function depotDans(supabase: Supabase, dossier: string): Depot {
+export function depotDans(supabase: Supabase, dossier: string): Depot {
   return {
     lister: async () => {
       const { data } = await supabase.storage.from(SEAU_FIGURINES).list(dossier, { limit: 100 });

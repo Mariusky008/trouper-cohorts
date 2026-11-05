@@ -3,8 +3,8 @@
 /**
  * 🃏 MON PERSONNAGE — sa carte de personnage (`lib/direct/personnage.ts`), refaite le 5 novembre 2026 (« c'est pas mal,
  * mais tu peux vraiment mieux faire, plus interactif et plus gamifié, pour rendre cette section wow ») :
- *   · CLIK LANCE LE TEST (« Quel personnage es-tu ? ») — la carte mystère attend, en silhouette ;
- *   · LE QUESTIONNAIRE EST UN JEU : Clik pose chaque question, deux grosses cartes à toucher, une jauge d'XP ; SA CARTE
+ *   · LE GUIDE LANCE LE TEST (« Quel personnage es-tu ? ») — la carte mystère attend, en silhouette ;
+ *   · LE QUESTIONNAIRE EST UN JEU : le guide pose chaque question, deux grosses cartes à toucher, une jauge d'XP ; SA CARTE
  *     SE CONSTRUIT EN DIRECT à côté — chaque réponse fait monter ses caractéristiques, et le gain s'envole (« +25 🚀 ») ;
  *   · LA RÉVÉLATION : la carte tourne, les confettis tombent, « Nouvelle carte ! » ;
  *   · SA CARTE se retourne d'un toucher (sa fiche au dos) et s'incline sous le doigt (un reflet la suit) ; dessous, ce
@@ -30,7 +30,10 @@ import {
   type Reponses,
 } from "@/lib/direct/personnage";
 import { PanneauEnvoi } from "./ma-figurine";
-import { Mascotte, MascotteDit } from "./mascotte";
+import { FigurineGuide, Guide, GuideDit, type Visage } from "./guide";
+
+/** Le guide pose les questions : un visage différent à chaque fois (ses vraies expressions). */
+const VISAGES_QUIZ: Visage[] = ["joie", "neutre", "euphorie"];
 
 const CADRES = { bronze: { a: "#F2B27A", b: "#7A3E16", nom: "Bronze" }, argent: { a: "#EEF3F8", b: "#7F8EA3", nom: "Argent" }, or: { a: "#FFE7A0", b: "#B8801E", nom: "Or" } };
 const RANGS = [
@@ -89,7 +92,10 @@ export function CartePerso({ carte, silhouette = false, retournable = true }: { 
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={c.image} alt="" draggable={false} />
               ) : (
-                <Mascotte className="pc-clik" ombre={silhouette} />
+                <>
+                  <FigurineGuide className="pc-clik" ombre fixe />
+                  {!silhouette && <span className="pc-ici">Ta figurine ici</span>}
+                </>
               )}
               <span className="pc-titre">{c?.fiche.titre ?? "Personnage mystère"}</span>
             </div>
@@ -342,14 +348,17 @@ export function MonPersonnage({
     return (
       <div className="mp">
         {tete}
-        <MascotteDit
+        <GuideDit
           cle="perso-sans-compte"
-          repliques={["Ta carte de personnage t’attend 🃏", "Sept questions, et je devine qui tu es. Mais d’abord : crée ta figurine, c’est elle qui sera sur ta carte !"]}
+          repliques={[
+            { t: "Ta carte de personnage t’attend 🃏", v: "joie" },
+            { t: "Sept questions, et je devine qui tu es. Mais d’abord : crée ta figurine, c’est elle qui sera sur ta carte !", v: "neutre" },
+          ]}
         >
           <button type="button" className="og-go" onClick={() => allerA?.("figurine")}>
             📸 Créer ma figurine
           </button>
-        </MascotteDit>
+        </GuideDit>
         <CartePerso silhouette retournable={false} />
       </div>
     );
@@ -376,7 +385,7 @@ export function MonPersonnage({
         </div>
         <div className="mp-pose">
           <span className="mp-clik" aria-hidden="true">
-            <Mascotte parle humeur={etape.q % 3 === 2 ? "clin" : "content"} />
+            <Guide key={q.cle} parle bref visage={VISAGES_QUIZ[etape.q % VISAGES_QUIZ.length]} />
           </span>
           <b className="mp-question" key={q.cle}>
             {q.q}
@@ -416,7 +425,7 @@ export function MonPersonnage({
             </span>
             <div className="mp-pose">
               <span className="mp-clik" aria-hidden="true">
-                <Mascotte parle />
+                <Guide parle visage="euphorie" />
               </span>
               <b className="mp-question">Je consulte les étoiles… ✨ et j’écris ta fiche.</b>
             </div>
@@ -425,7 +434,7 @@ export function MonPersonnage({
           <>
             <div className="mp-pose">
               <span className="mp-clik" aria-hidden="true">
-                <Mascotte parle />
+                <Guide parle bref visage="joie" />
               </span>
               <b className="mp-question">Dernière étape : ce que tu aimes ({GOUTS_MAX} au plus)</b>
             </div>
@@ -466,23 +475,23 @@ export function MonPersonnage({
     );
   }
 
-  // PAS ENCORE DE CARTE : Clik lance le test, la carte mystère attend
+  // PAS ENCORE DE CARTE : le guide lance le test, la carte mystère attend
   if (!carte)
     return (
       <div className="mp">
         {tete}
-        <MascotteDit
+        <GuideDit
           cle="perso-intro"
           repliques={[
-            "Et toi, quel personnage es-tu ? 🔮",
-            "Réponds vite, sans réfléchir : sept questions, et je devine. Ta carte se construit sous tes yeux.",
-            "Ensuite, chaque achat chez un commerce ClikMe fait monter tes caractéristiques et ton niveau 📈",
+            { t: "Et toi, quel personnage es-tu ? 🔮", v: "euphorie" },
+            { t: "Réponds vite, sans réfléchir : sept questions, et je devine. Ta carte se construit sous tes yeux.", v: "neutre" },
+            { t: "Ensuite, chaque achat chez un commerce ClikMe fait monter tes caractéristiques et ton niveau 📈", v: "joie" },
           ]}
         >
           <button type="button" className="og-go mp-lancer" onClick={() => setEtape({ q: 0 })}>
             🎲 Lancer le test · 30 secondes
           </button>
-        </MascotteDit>
+        </GuideDit>
         <CartePerso silhouette retournable={false} />
       </div>
     );
@@ -545,7 +554,8 @@ export const STYLES_PERSONNAGE = `
 .pc-tete b{font-size:20px;font-weight:900;letter-spacing:-.02em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pc-niv{flex:none;padding:3px 10px;border-radius:999px;background:linear-gradient(135deg,var(--a),var(--b));color:#1A0913;font-size:12.5px;font-weight:900}
 .pc-image{position:relative;flex:1;min-height:150px;border-radius:14px;overflow:hidden;background:radial-gradient(70% 60% at 50% 40%,#FF9AD0,#C2367F 62%,#5E1240)}
-.pc-image .pc-clik{position:absolute;left:50%;bottom:4px;height:92%;width:auto;transform:translateX(-50%)}
+.pc-image .pc-clik{position:absolute;left:50%;bottom:4px;height:92%;width:auto;max-width:96%;transform:translateX(-50%);opacity:.42}
+.pc-ici{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);padding:6px 12px;border-radius:999px;background:rgba(255,244,230,.92);color:#2A0F1F;font-size:12.5px;font-weight:900;white-space:nowrap}
 .pc-image.figurine img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;object-position:50% 20%}
 .pc-titre{position:absolute;left:8px;right:8px;bottom:8px;padding:6px 10px;border-radius:12px;background:rgba(18,6,15,.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);font-size:14px;font-weight:900;text-align:center;line-height:1.2}
 .pc-carac{display:grid;gap:5px;margin:0;padding:0;list-style:none}
