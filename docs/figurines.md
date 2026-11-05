@@ -461,6 +461,27 @@ personnage cartoon. »
 - **Pas son visage à la place de quelqu'un** : sur la carte de personnage d'un client sans figurine, et dans les
   rencontres (un commerce ou un membre sans figurine), une silhouette de figurine et « ? » — pas sa tête.
 
+### 9.0 decies Pablito : ses mots, sa grimace, en fenêtre la première fois, prêt pour sa voix (5 novembre) — construit
+
+Ses remarques : « l'introduction est trop approximative : orienter directement les avantages, comme ceci : Salut ! Moi,
+c'est Pablito ! (Il sourit… puis louche.) … » ; « ça doit arriver la première fois comme une pop-up, et pas comme
+quelque chose de fixe en haut » ; « il faut donc que je t'enregistre les voix pour mettre sur la figurine ».
+
+- **Son nom, Pablito** (`NOM_GUIDE`), et **ses mots** : les huit bulles du patron, telles quelles (`OngletFigurine`).
+- **Il sourit… puis louche** : une bulle peut finir sur une grimace (`apres`) ; « il louche » est une image de plus que
+  le moteur fait une fois (`louche-n`, `guide-serveur.ts`), à la même place que ses autres visages.
+- **En fenêtre, la première fois** (`GuideDit popup`) : sur chaque onglet où il explique (l'accueil, le personnage, les
+  rencontres, ce mois-ci, l'album vide) ; ✕, « Passer », Échap, ou ce qu'il propose la ferment (« Je crée ma figurine »,
+  « Lancer le test »…). Ensuite, un petit bouton « Pablito t'explique » la rouvre. Un onglet caché ne montre pas sa
+  fenêtre (`OngletVisible`).
+- **Sa voix** : des enregistrements du patron, un par bulle (`SONS_PABLITO` dans `lib/direct/guide.ts`, fichiers dans
+  `public/collection/pablito/`). Sa bouche bouge tant que sa voix joue ; si le téléphone refuse de la jouer avant un
+  premier toucher, la bulle propose « 🔊 Touche pour l'entendre ». Aucun enregistrement pour l'instant : il parle en
+  silence.
+- **Ce que ses mots promettent et qui n'existe pas encore** : danser et faire des grimaces (la figurine du client : ses
+  quatre sentiments seulement), une rencontre de « quelques minutes » (une conversation de quelques répliques, à lire),
+  échanger ses impressions après une rencontre, la carte souvenir de chaque rencontre.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

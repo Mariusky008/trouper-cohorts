@@ -17,4 +17,19 @@ fs.mkdirSync(D, { recursive: true });
 const pw = await import(process.env.PLAYWRIGHT_MODULE ?? "playwright");
 const { chromium } = pw.default ?? pw;
 /** `options` : ce qu'un essai ajoute au lancement (`args`, un faux micro…). */
+/**
+ * PABLITO ARRIVE EN FENÊTRE, LA PREMIÈRE FOIS (`app/collection/guide.tsx`) : on la ferme avant de toucher la page.
+ * Rend `true` s'il y en avait une.
+ */
+export async function fermerPablito(p, ici = "") {
+  const croix = p.locator(`${ici} .pb-voile .pb-fermer`.trim()).first();
+  try {
+    await croix.waitFor({ state: "visible", timeout: 8000 });
+  } catch {
+    return false;
+  }
+  await croix.click();
+  await p.waitForTimeout(250);
+  return true;
+}
 export const lancer = (options = {}) => chromium.launch({ ...(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}), ...options });

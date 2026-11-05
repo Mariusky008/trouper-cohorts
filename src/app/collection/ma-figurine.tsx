@@ -622,7 +622,7 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
   return (
     <div className="tf-photo tf-quete" id="creer">
       <header className="tf-quete-tete">
-        <small>TA QUÊTE · {etat.auto === false ? "QUELQUES JOURS" : "2 MINUTES"} · GRATUIT</small>
+        <small>TA QUÊTE · {etat.auto === false ? "QUELQUES JOURS" : "1 MINUTE"} · GRATUIT</small>
         <b className="tf-titre">Crée ta figurine</b>
         <span className="tf-quete-jauge" role="progressbar" aria-valuemin={0} aria-valuemax={etapes.length} aria-valuenow={faites}>
           <i style={{ width: `${(faites / etapes.length) * 100}%` } as CSSProperties} />
@@ -832,14 +832,23 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
   if (etat.etape === "bientot") return <Annonce titre="Ta figurine arrive très bientôt 🛠️">Reviens ici dans quelques jours pour envoyer ta photo.</Annonce>;
   return (
     <>
+      {/* SES MOTS (5 novembre 2026, du patron : « orienter directement les avantages, comme ceci ») */}
       <GuideDit
-        cle="accueil"
-        grand
+        cle="pablito-accueil"
+        popup
+        actionDehors={false}
         repliques={[
-          { t: "Salut ! 👋 Moi, je suis la figurine du patron de ClikMe. Oui, c’est sa vraie tête !", v: "joie" },
-          { t: "Ici, tu crées TA figurine, avec ton visage. C’est gratuit, et ça prend deux minutes.", v: "neutre" },
-          { t: "Ensuite, elle dit ce que tu écris et change de tête selon son humeur… comme moi ! 🤩 Puis elle part chez tes proches sur WhatsApp 📲", v: "euphorie" },
-          { t: "Et à chaque achat chez un commerce ClikMe, elle débloque un super-pouvoir 🎁 On y va ?", v: "joie" },
+          { t: "Salut ! Moi, c’est Pablito !", v: "joie", apres: "louche" },
+          { t: "Ici, tu vas créer TA figurine, à partir de ton visage. C’est gratuit et ça prend 1 minute !", v: "neutre" },
+          { t: "Elle pourra parler à ta place, changer d’expression, danser, rire et faire des grimaces. Bref, elle te ressemble… en plus drôle !", v: "euphorie" },
+          { t: "Et après ? Tu peux lui faire dire et faire faire ce que tu veux, et l’envoyer à tes amis.", v: "joie" },
+          {
+            t: "Et 1 fois par jour, elle pourra rencontrer la figurine d’un ami ou d’une nouvelle personne près de chez toi. Pendant quelques minutes, vos 2 figurines discuteront, réagiront et s’amuseront ensemble : tu seras juste spectateur.",
+            v: "neutre",
+          },
+          { t: "Et à la fin, tu pourras découvrir ce qui a été partagé et, si vous êtes d’accord, échanger vos impressions.", v: "joie" },
+          { t: "À chaque rencontre, une carte souvenir est créée. De quoi enrichir ta collection et faire évoluer ton univers !", v: "euphorie" },
+          { t: "Allez, à toi de jouer !", v: "joie", apres: "louche" },
         ]}
       >
         <a className="og-go" href="#creer">

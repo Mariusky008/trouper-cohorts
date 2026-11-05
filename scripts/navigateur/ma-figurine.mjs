@@ -11,7 +11,7 @@
 // signale : il ne s'affiche plus, sa voix non plus. Rien ne déborde, jamais le mot interdit.
 import fs from "node:fs";
 import path from "node:path";
-import { BASE, D, F, lancer } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const A = { id: "ffffffff-0000-4000-8000-000000000041", slug: "comptoir-des-fantomes-dax", nom: "Le Comptoir des Fantômes" };
@@ -62,12 +62,16 @@ const debordement = (p) => p.evaluate(() => document.documentElement.scrollWidth
 // ═══ HUGO (1 achat) : L'ACCUEIL DE CLIK, LE MENU EN BAS, « CRÉE TA FIGURINE » ═══
 const hugo = await tel(HUGO);
 await hugo.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
-await hugo.waitForSelector("#o-figurine .mqd", { timeout: 60000 });
+await hugo.waitForSelector("#o-figurine .pb-voile .mqd", { timeout: 60000 });
 ok((await hugo.locator(".mc-nav button").count()) === 5 && (await texte(hugo, ".mc-nav")).includes("Rencontres") && (await texte(hugo, ".mc-nav")).includes("Ce mois-ci"), "le menu en bas : cinq onglets");
-ok((await hugo.locator("#o-figurine .mqd .mq").count()) === 1 && /patron de ClikMe/i.test(await texte(hugo, "#o-figurine .mqd-bulle")), "le guide, la figurine du patron de ClikMe, l'accueille");
+ok((await hugo.locator("#o-figurine .mqd .mq").count()) === 1 && /Pablito/i.test(await texte(hugo, "#o-figurine .mqd-bulle")), "Pablito, la figurine du patron de ClikMe, l'accueille en fenêtre");
+ok((await texte(hugo, "#o-figurine .pb-voile")).includes("Je crée ma figurine"), "dans la fenêtre : « Je crée ma figurine »");
+await hugo.screenshot({ path: `${D}/ma-figurine-0-pablito.png` });
+await hugo.locator('#o-figurine .pb-voile a.og-go[href="#creer"]').click();
+ok((await hugo.locator(".pb-voile").count()) === 0, "« Je crée ma figurine » ferme la fenêtre");
 ok((await hugo.locator(".tf-demo, .tf-la-tienne").count()) === 0, "plus de démonstration à faire parler");
 // DÈS LE DÉPART : la quête « Crée ta figurine »
-ok((await hugo.locator("#creer.tf-quete").count()) === 1 && (await texte(hugo, "#creer")).includes("Crée ta figurine") && (await hugo.locator('#o-figurine a.og-go[href="#creer"]').count()) === 1, "Hugo peut créer la sienne dès maintenant");
+ok((await hugo.locator("#creer.tf-quete").count()) === 1 && (await texte(hugo, "#creer")).includes("Crée ta figurine") && (await hugo.locator("#o-figurine .mqd-revoir").count()) === 1, "Hugo peut créer la sienne dès maintenant (Pablito rangé dans son petit bouton)");
 ok((await hugo.locator("#creer .tf-prenom-photo, #creer .tf-ville").count()) === 0 && (await hugo.locator("#creer .tf-etapes li").count()) === 2, "il a un compte et un prénom : deux étapes, on ne les lui redemande pas");
 ok((await texte(hugo, "#o-figurine .og-pouvoirs")).includes("Ce que tu vas débloquer"), "ce qu'il va débloquer, achat après achat");
 ok((await debordement(hugo)) <= 0, "l'accueil ne déborde pas");
@@ -111,6 +115,7 @@ await hugo.screenshot({ path: `${D}/ma-figurine-0b-options.png`, fullPage: true 
 // ═══ UN VISITEUR SANS COMPTE : SA PHOTO LUI OUVRE SON COMPTE (son prénom, sa ville) ═══
 const neuf = await tel(null);
 await neuf.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
+await fermerPablito(neuf);
 await neuf.waitForSelector("#creer", { timeout: 60000 });
 ok((await neuf.locator("#creer .tf-prenom-photo").count()) === 1, "sans compte : son prénom est demandé");
 await neuf.locator("#creer .tf-choisir input").setInputFiles(path.resolve("public/direct/double/comptoir.jpg"));
@@ -130,6 +135,7 @@ ok(sansVille.status === 400, "une ville sans commerce ClikMe : pas de compte");
 // ═══ LÉA : SA PHOTO ═══
 const lea = await tel(LEA);
 await lea.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
+await fermerPablito(lea);
 await lea.waitForSelector(".tf-photo", { timeout: 60000 });
 const ph = await texte(lea, ".tf-photo");
 ok(ph.includes("Crée ta figurine") && /gratuit/i.test(ph), `Léa : crée ta figurine (${ph.slice(0, 60)})`);

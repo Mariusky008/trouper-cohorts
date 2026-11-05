@@ -3,7 +3,7 @@
  * `demo-proprio/v<VERSION_GUIDE>/expr/`), sa figurine seule et ses tenues d'édition (`demo-proprio/v…/guide/`).
  *
  * CE QUI MANQUE SE FAIT UNE FOIS, à la première demande, après la réponse (`/api/direct/guide/<nom>`) : ses visages
- * d'abord (s'ils manquent), puis sa figurine seule, puis ses tenues — celle du mois en premier, puis les suivantes.
+ * d'abord (s'ils manquent), puis sa grimace (il louche), sa figurine seule, ses tenues — celle du mois en premier.
  * Une image par passage, sous un verrou (deux visites ensemble ne la paient pas deux fois) ; une image que le moteur
  * refuse trois fois n'est plus redemandée (elle reste à son image de tous les jours). Une quinzaine d'images en tout,
  * pour toujours.
@@ -12,7 +12,7 @@ import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { EDITIONS_DATEES, editionsDuMoment } from "./collection";
-import { expressionsCompletes, expressionsDe, fabriquerUnTour } from "./figurine-expressions-serveur";
+import { consigneGrimace, editer, expressionsCompletes, expressionsDe, fabriquerUnTour, poserAuFormat, reprendre } from "./figurine-expressions-serveur";
 import { jourDe } from "./figurine-pro";
 import { habillerFigurine, recopierSansFond } from "./figurine-pro-serveur";
 import { VERSION_GUIDE, nomGuideValide } from "./guide";
@@ -31,9 +31,14 @@ const ESSAIS_MAX = 3;
 /** Une de ses images, si elle est faite. */
 export async function imageDuGuide(supabase: Supabase, nom: string): Promise<Buffer | null> {
   if (!nomGuideValide(nom)) return null;
-  const visage = /^[a-z]+-[np]$/.test(nom);
-  return depotDans(supabase, visage ? VISAGES : FIGURINES).lire(`${nom}.webp`);
+  // ses quatre sentiments (ceux de la démonstration) ; le reste — sa grimace, sa figurine seule, ses tenues — à côté
+  const sentiment = /^[a-z]+-[np]$/.test(nom) && nom !== "louche-n";
+  return depotDans(supabase, sentiment ? VISAGES : FIGURINES).lire(`${nom}.webp`);
 }
+
+/** Sa grimace : il louche (après « Moi, c'est Pablito ! »). */
+const LOUCHE =
+  "a goofy CROSS-EYED clown face: both eyes turned inward, looking at the tip of his own nose, eyebrows raised high, a cheeky closed-mouth smile";
 
 /** Ses tenues, dans l'ordre où on les fait : celle du mois, puis les suivantes (l'année qui vient). */
 function ordreDesTenues(maintenant = new Date()): string[] {
@@ -75,7 +80,7 @@ export async function fabriquerLeGuide(supabase: Supabase, origine: string, avan
   const depot = depotDans(supabase, FIGURINES);
   const noms = await depot.lister();
   const echecs = json(await depot.lire("echecs.json").catch(() => null)) as Record<string, number>;
-  const nom = ["seule", ...ordreDesTenues().map((c) => `edition-${c}`)].find((n) => !noms.includes(`${n}.webp`) && (Number(echecs[n]) || 0) < ESSAIS_MAX);
+  const nom = ["louche-n", "seule", ...ordreDesTenues().map((c) => `edition-${c}`)].find((n) => !noms.includes(`${n}.webp`) && (Number(echecs[n]) || 0) < ESSAIS_MAX);
   if (!nom) return {};
   if (noms.includes(VERROU) && Date.now() - (Number(json(await depot.lire(VERROU)).le) || 0) < DUREE_VERROU) return {};
   // LE VERROU EST À NOUS ? Écrit, puis relu : de deux passages arrivés ensemble, seul le dernier écrit continue
@@ -84,6 +89,17 @@ export async function fabriquerLeGuide(supabase: Supabase, origine: string, avan
   await new Promise((ok) => setTimeout(ok, 400));
   if (json(await depot.lire(VERROU)).qui !== qui) return {};
   try {
+    // SA GRIMACE : son visage seul change, à la même place (comme ses sentiments)
+    if (nom === "louche-n") {
+      const { png, cadre } = await poserAuFormat(source);
+      const r = await editer(png, consigneGrimace(LOUCHE), avant);
+      if (!Buffer.isBuffer(r)) {
+        await depot.ecrire("echecs.json", Buffer.from(JSON.stringify({ ...echecs, [nom]: (Number(echecs[nom]) || 0) + 1 })), "application/json");
+        return { erreur: r.erreur };
+      }
+      await depot.ecrire(`${nom}.webp`, await reprendre(r, cadre), "image/webp");
+      return { fait: nom };
+    }
     const cle = nom.replace(/^edition-/, "");
     const edition = EDITIONS_DATEES.find((e) => e.cle === cle);
     const f = edition ? await habillerFigurine({ buste: source, cleEdition: edition.cle, nomEdition: edition.nom, avant }) : await recopierSansFond({ image: source, avant });

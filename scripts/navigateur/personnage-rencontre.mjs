@@ -6,7 +6,7 @@
 // figurine rencontre celle du Comptoir. Elle invite Hugo ; Hugo ouvre le lien, fait sa carte : leur rencontre arrive,
 // la même chez les deux. Léa dit « c'est tout moi » à une phrase de sa figurine, et réagit d'une émotion à une phrase
 // de Hugo ; elle ne peut pas juger une phrase de Hugo. Elle signale : la rencontre ne s'affiche plus. Rien ne déborde.
-import { BASE, D, F, lancer } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 
 const A = { id: "ffffffff-0000-4000-8000-000000000041", slug: "comptoir-des-fantomes-dax", nom: "Le Comptoir des Fantômes" };
 const LEA = { id: "dddddddd-0000-4000-8000-000000000051", jeton: "jeton-lea-0000000000000001" };
@@ -53,7 +53,8 @@ const lea = await tel(LEA);
 // (l'onglet « Rencontres » d'abord : sans carte, il attend)
 await lea.goto(`${BASE}/collection?v=${Date.now()}#rencontre`, { waitUntil: "networkidle" });
 await lea.waitForSelector("#o-rencontre .rd-teaser", { timeout: 60000 });
-ok((await texte(lea, "#o-rencontre")).includes("D’abord, ton personnage") && (await lea.locator("#o-rencontre .mqd .mq").count()) === 1, "« Rencontres » : le guide explique, et la rencontre attend sa carte");
+ok((await texte(lea, "#o-rencontre")).includes("D’abord, ton personnage") && (await lea.locator("#o-rencontre .pb-voile .mqd .mq").count()) === 1, "« Rencontres » : Pablito explique (en fenêtre la première fois), et la rencontre attend sa carte");
+await fermerPablito(lea, "#o-rencontre");
 await lea.locator("#o-rencontre .rd-teaser .og-go").click();
 await lea.waitForSelector("#o-personnage .mp-lancer", { timeout: 60000 });
 ok((await texte(lea, "#o-personnage")).includes("Quel personnage es-tu") && (await lea.locator("#o-personnage .pc.silhouette").count()) === 1 && /#personnage$/.test(lea.url()), "l'onglet « Personnage » : la carte mystère, et « Lancer le test »");
@@ -110,6 +111,7 @@ const lienAmi = await lea.locator("#o-rencontre .rd-inviter .tf-adresse").inputV
 ok(/\/collection\?ami=[a-z0-9]{10}$/.test(lienAmi) && decodeURIComponent((await lea.locator("#o-rencontre .tf-wa").getAttribute("href")) ?? "").includes("nos deux figurines discutent"), `son invitation (${lienAmi})`);
 const hugo = await tel(HUGO);
 await hugo.goto(lienAmi.replace(/^https?:\/\/[^/]+/, BASE), { waitUntil: "networkidle" });
+await fermerPablito(hugo, "#o-rencontre");
 ok(await hugo.locator("#o-rencontre").isVisible().catch(() => false), "le lien d'un ami ouvre l'onglet « Rencontres »");
 await hugo.waitForSelector("#o-rencontre .rd-ami", { timeout: 60000 });
 ok((await texte(hugo, "#o-rencontre .rd-ami")).includes("Toi et Léa"), "Hugo ouvre le lien : ils sont amis");

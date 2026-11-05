@@ -12,10 +12,16 @@
  *     silhouette (`ombre`).
  *   · `GuideDit` : il explique, une bulle après l'autre, tapées comme un message.
  */
-import { useEffect, useState, type ReactNode } from "react";
-import { NOM_GUIDE, imageFigurineGuide, imageVisage, type Visage } from "@/lib/direct/guide";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { NOM_GUIDE, SONS_PABLITO, imageFigurineGuide, imageVisage, type Visage } from "@/lib/direct/guide";
 
 export type { Visage };
+
+/**
+ * L'ONGLET OÙ IL SE TROUVE EST-IL À L'ÉCRAN ? (`ma-collection.tsx`) — un onglet caché ne montre pas sa fenêtre (et ne
+ * bloque pas le défilement de la page) : elle attend qu'on l'ouvre. Hors des onglets : toujours.
+ */
+export const OngletVisible = createContext(true);
 
 /** Son portrait qui parle : la bouche bouge (`parle`), dans le visage de ce qu'il dit. */
 export function Guide({
@@ -70,15 +76,39 @@ export function FigurineOuGuide({ src, ...p }: { src?: string | null; edition?: 
   return <FigurineGuide {...p} />;
 }
 
-/** Une bulle : son texte, et le visage qu'il fait en la disant (`neutre` si rien n'est dit). */
-export type Replique = string | { t: string; v: Visage };
-const enBulle = (x: Replique) => (typeof x === "string" ? { t: x, v: "neutre" as Visage } : x);
+/**
+ * Une bulle : son texte, le visage qu'il fait en la disant (`v`, `neutre` si rien n'est dit), celui qu'il fait une fois
+ * dite (`apres` : « il sourit… puis louche »), et son enregistrement (`son` ; sinon `SONS_PABLITO`, s'il y en a un).
+ */
+export type Replique = string | { t: string; v?: Visage; apres?: Visage; son?: string };
+type Bulle = { t: string; v: Visage; apres?: Visage; son?: string };
+const enBulle = (x: Replique): Bulle => (typeof x === "string" ? { t: x, v: "neutre" } : { ...x, v: x.v ?? "neutre" });
+
+const retenu = (cle?: string) => {
+  try {
+    return Boolean(cle && typeof window !== "undefined" && window.localStorage.getItem(`clikme-clik-${cle}`));
+  } catch {
+    return false;
+  }
+};
+const retenir = (cle?: string) => {
+  try {
+    if (cle) window.localStorage.setItem(`clikme-clik-${cle}`, "1");
+  } catch {
+    /* rien */
+  }
+};
 
 /**
  * 💬 IL EXPLIQUE — une bulle après l'autre, tapées comme un message (sa bouche bouge pendant qu'il « parle », son visage
- * suit ce qu'il dit) ; un toucher passe à la suite. Dessous, ce qu'il propose de faire (`children`), tout de suite.
- * Revenu sur la page, on ne réécoute pas tout : la dernière bulle, et « ↺ Réécouter » (`cle` : ce qu'on retient sur
- * l'appareil). Avec `edition` : sa figurine dans la tenue du mois (« Tu as vu ma tenue ? »).
+ * suit ce qu'il dit, et sa voix s'il l'a enregistrée) ; un toucher passe à la suite. Avec `edition` : sa figurine dans
+ * la tenue du mois (« Tu as vu ma tenue ? »).
+ *
+ * EN FENÊTRE, LA PREMIÈRE FOIS (`popup`, 5 novembre 2026 : « ça doit arriver la première fois comme une pop-up, et pas
+ * comme quelque chose de fixe en haut ») : il arrive par-dessus la page ; ce qu'il propose (`children`) ferme la
+ * fenêtre et le fait. Ensuite (`cle` : ce qu'on retient sur l'appareil), il n'en reste qu'un petit bouton
+ * « Pablito t'explique », et ce qu'il propose (sauf `actionDehors={false}` : l'accueil, où la quête est juste dessous).
+ * Sans `popup` : à sa place dans la page ; revenu, on ne réécoute pas tout (la dernière bulle, et « ↺ Réécouter »).
  */
 export function GuideDit({
   repliques,
@@ -86,6 +116,8 @@ export function GuideDit({
   cle,
   salue = true,
   grand = false,
+  popup = false,
+  actionDehors = true,
   children,
   className,
 }: {
@@ -93,64 +125,143 @@ export function GuideDit({
   edition?: string | null;
   cle?: string;
   salue?: boolean;
-  /** En grand, au-dessus de sa bulle (l'accueil : on voit tout de suite à quoi ressemble une figurine). */
+  /** En grand, au-dessus de sa bulle (comme dans la fenêtre). */
   grand?: boolean;
+  /** En fenêtre la première fois, puis un petit bouton pour le revoir. */
+  popup?: boolean;
+  /** Ce qu'il propose reste dans la page une fois la fenêtre fermée (`popup`). */
+  actionDehors?: boolean;
   children?: ReactNode;
   className?: string;
 }) {
   const bulles = repliques.map(enBulle);
-  // DÉJÀ ÉCOUTÉ ? la dernière bulle, tout de suite. (Il n'apparaît qu'une fois la page chargée dans le navigateur : on
-  // lit ce qu'on a retenu dès le départ.)
-  const [deja] = useState(() => {
-    try {
-      return Boolean(cle && typeof window !== "undefined" && window.localStorage.getItem(`clikme-clik-${cle}`));
-    } catch {
-      return false;
-    }
-  });
+  const visible = useContext(OngletVisible);
+  // DÉJÀ ÉCOUTÉ ? (Il n'apparaît qu'une fois la page chargée dans le navigateur : on lit ce qu'on a retenu dès le départ.)
+  const [deja] = useState(() => retenu(cle));
+  const [ouvert, setOuvert] = useState(() => popup && !deja);
   const [reduit] = useState(() => typeof window !== "undefined" && Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches));
-  const [i, setI] = useState(deja ? bulles.length - 1 : 0);
-  const [n, setN] = useState(deja ? Number.MAX_SAFE_INTEGER : 0);
-  const { t: texte, v: visage } = bulles[i] ?? { t: "", v: "neutre" as Visage };
+  const [i, setI] = useState(deja && !popup ? bulles.length - 1 : 0);
+  const [n, setN] = useState(deja && !popup ? Number.MAX_SAFE_INTEGER : 0);
+  const bulle = bulles[i] ?? { t: "", v: "neutre" as Visage };
+  const texte = bulle.t;
   const vu = reduit ? texte.length : n;
-  const parle = vu < texte.length;
+  const tape = vu < texte.length;
+  // la fenêtre se montre (ouverte, et son onglet à l'écran) ; il parle quand on le voit
+  const montre = popup && ouvert && visible;
+  const actif = popup ? montre : visible;
+
+  // SA VOIX, s'il a enregistré cette bulle : elle part avec la bulle (si le téléphone refuse de la jouer avant un
+  // premier toucher, la bulle propose de l'entendre)
+  const son = bulle.son ?? (cle ? SONS_PABLITO[`${cle}-${i + 1}`] : undefined);
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const [joue, setJoue] = useState(false);
+  const [bloque, setBloque] = useState(false);
+  useEffect(() => {
+    if (!son || !actif) return;
+    const a = new Audio(son);
+    let fini = false;
+    audio.current = a;
+    a.onplaying = () => setJoue(true);
+    a.onpause = a.onended = () => setJoue(false);
+    // refusée par le téléphone (pas encore touché la page) : on propose de l'entendre ; interrompue (on est passé à la
+    // suite, la fenêtre s'est fermée) : rien
+    a.play().catch((e: unknown) => {
+      if (!fini && (e as { name?: string })?.name === "NotAllowedError") setBloque(true);
+    });
+    return () => {
+      fini = true;
+      a.pause();
+      audio.current = null;
+    };
+  }, [son, i, actif]);
+  const parle = tape || joue;
+  const visage = !parle && bulle.apres ? bulle.apres : bulle.v;
 
   // ses visages de la conversation, chargés d'avance (pas de blanc quand il change de tête)
-  const visages = [...new Set(bulles.map((b) => b.v))].join(",");
+  const visages = [...new Set(bulles.flatMap((b) => (b.apres ? [b.v, b.apres] : [b.v])))].join(",");
   useEffect(() => {
-    if (edition) return;
+    if (edition || !actif) return;
     for (const v of visages.split(",") as Visage[])
       for (const b of ["n", "p"] as const) {
         const im = new Image();
         im.src = imageVisage(v, b);
       }
-  }, [visages, edition]);
+  }, [visages, edition, actif]);
 
   // la bulle se tape, lettre après lettre
   useEffect(() => {
-    if (reduit || n >= texte.length) return;
+    if (!actif || reduit || n >= texte.length) return;
     const t = window.setTimeout(() => setN((x) => Math.min(texte.length, x + 2)), 24);
     return () => window.clearTimeout(t);
-  }, [n, texte.length, reduit]);
-  const fin = i === bulles.length - 1 && !parle;
+  }, [n, texte.length, reduit, actif]);
+  const fin = i === bulles.length - 1 && !tape;
   useEffect(() => {
-    if (!fin || !cle) return;
-    try {
-      window.localStorage.setItem(`clikme-clik-${cle}`, "1");
-    } catch {
-      /* rien */
-    }
-  }, [fin, cle]);
+    if (fin && !popup) retenir(cle);
+  }, [fin, cle, popup]);
+
+  const fermer = () => {
+    retenir(cle);
+    setOuvert(false);
+  };
+  const rouvrir = () => {
+    setI(0);
+    setN(0);
+    setBloque(false);
+    setOuvert(true);
+  };
+  // la fenêtre : Échap la ferme ; la page dessous ne défile pas
+  const croix = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!montre) return;
+    const avant = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    croix.current?.focus({ preventScroll: true });
+    const touche = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      retenir(cle);
+      setOuvert(false);
+    };
+    window.addEventListener("keydown", touche);
+    return () => {
+      document.documentElement.style.overflow = avant;
+      window.removeEventListener("keydown", touche);
+    };
+  }, [montre, cle]);
 
   const suite = () => {
-    if (parle) return setN(texte.length);
+    if (bloque && audio.current) {
+      setBloque(false);
+      void audio.current.play().catch(() => undefined);
+      return;
+    }
+    if (tape) return setN(texte.length);
     if (i < bulles.length - 1) {
+      audio.current?.pause();
+      setBloque(false);
       setI(i + 1);
       setN(0);
     }
   };
-  return (
-    <div className={`mqd${edition ? " tenue" : ""}${grand ? " grand" : ""}${className ? ` ${className}` : ""}`}>
+
+  // FENÊTRE FERMÉE : un petit bouton pour le revoir, et ce qu'il propose
+  if (popup && !ouvert)
+    return (
+      <div className={`mqd-mini${className ? ` ${className}` : ""}`}>
+        <button type="button" className="mqd-revoir" onClick={rouvrir}>
+          <span className="mqd-revoir-tete">
+            <Guide fixe />
+          </span>
+          <span>
+            <b>{NOM_GUIDE}</b> t’explique ›
+          </span>
+        </button>
+        {actionDehors && children && <div className="mqd-fin">{children}</div>}
+      </div>
+    );
+
+  const enGrand = grand || popup;
+  const dedans = (
+    <div className={`mqd${edition ? " tenue" : ""}${enGrand ? " grand" : ""}${!popup && className ? ` ${className}` : ""}`}>
       <button type="button" className={`mqd-clik${parle ? " parle" : ""}`} onClick={suite} aria-label={`${NOM_GUIDE} : la suite`}>
         {edition ? <FigurineGuide edition={edition} /> : <Guide visage={visage} parle={parle} salue={salue && i === 0} />}
       </button>
@@ -159,22 +270,29 @@ export function GuideDit({
           <span className="mqd-nom">{NOM_GUIDE}</span>
           <span className="mqd-texte">
             {texte.slice(0, vu)}
-            {parle && <i className="mqd-curseur" aria-hidden="true" />}
+            {tape && <i className="mqd-curseur" aria-hidden="true" />}
           </span>
+          {bloque && <span className="mqd-ecouter">🔊 Touche pour l’entendre</span>}
           {!fin && (
             <span className="mqd-suite">
               {bulles.map((_, k) => (
                 <i key={k} className={k <= i ? "vu" : ""} />
               ))}
-              <b>{parle ? "…" : "Suite ›"}</b>
+              <b>{tape ? "…" : "Suite ›"}</b>
             </span>
           )}
         </button>
-        {/* ce qu'il propose de faire : tout de suite (on n'attend pas la fin de ses bulles pour agir) */}
-        {(children || (fin && bulles.length > 1)) && (
-          <div className="mqd-fin">
+        {/* ce qu'il propose de faire : tout de suite (on n'attend pas la fin de ses bulles pour agir) ; dans la fenêtre,
+            le faire la ferme — APRÈS l'action du bouton (fermée avant, la fenêtre emporterait le bouton et son action) */}
+        {(children || (fin && (popup || bulles.length > 1))) && (
+          <div className="mqd-fin" onClick={popup ? () => fermer() : undefined}>
             {children}
-            {fin && bulles.length > 1 && (
+            {popup && fin && !children && (
+              <button type="button" className="og-go">
+                C’est compris 👍
+              </button>
+            )}
+            {!popup && fin && bulles.length > 1 && (
               <button
                 type="button"
                 className="mqd-rejouer"
@@ -187,6 +305,23 @@ export function GuideDit({
               </button>
             )}
           </div>
+        )}
+      </div>
+    </div>
+  );
+  if (!popup) return dedans;
+  if (!visible) return null;
+  return (
+    <div className="pb-voile" role="dialog" aria-modal="true" aria-label={`${NOM_GUIDE} t’explique`}>
+      <div className="pb-boite">
+        <button type="button" className="pb-fermer" ref={croix} onClick={fermer} aria-label="Fermer">
+          ✕
+        </button>
+        {dedans}
+        {!fin && (
+          <button type="button" className="pb-passer" onClick={fermer}>
+            Passer
+          </button>
         )}
       </div>
     </div>
@@ -241,6 +376,23 @@ export const STYLES_GUIDE = `
 .mqd.grand .mqd-droite{width:100%}
 .mqd.grand .mqd-bulle{border-radius:20px}
 .mqd.grand .mqd-bulle::before{left:50%;top:-7px;bottom:auto;margin-left:-8px}
+.mqd-ecouter{align-self:flex-start;padding:4px 10px;border-radius:999px;background:#FF2E9A;color:#fff;font-size:12.5px;font-weight:900}
+/* la fenêtre, la première fois */
+.pb-voile{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:16px;background:rgba(10,3,8,.74);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:pb-voile .25s ease-out}
+.pb-boite{position:relative;width:100%;max-width:440px;max-height:calc(100dvh - 32px);overflow:auto;padding:26px 16px 14px;border-radius:28px;background:linear-gradient(180deg,#3A1230,#1E0918);border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 80px -20px rgba(0,0,0,.9);animation:pb-entre .5s cubic-bezier(.2,1.3,.4,1)}
+.pb-fermer{position:absolute;right:10px;top:10px;z-index:2;width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.1);color:#FFF4E6;font:inherit;font-size:17px;cursor:pointer}
+.pb-fermer:focus-visible{outline:2px solid rgba(255,255,255,.35);outline-offset:1px}
+.pb-passer{display:block;margin:10px auto 0;border:0;background:none;color:#A88E99;font:inherit;font-size:13px;text-decoration:underline;cursor:pointer}
+.pb-boite .mqd.grand .mqd-clik{width:min(190px,48vw)}
+/* la fenêtre fermée : le revoir */
+.mqd-mini{display:flex;flex-direction:column;gap:10px}
+.mqd-revoir{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;padding:4px 14px 4px 4px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:#E8D3DC;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+.mqd-revoir b{color:#FFF4E6;font-weight:900}
+.mqd-revoir-tete{display:block;width:40px;flex:none}
+.mqd-revoir-tete .mq-cadre{aspect-ratio:1;border-radius:50%;box-shadow:0 0 0 2px rgba(255,46,154,.6)}
+.mqd-revoir-tete .mq-i{object-position:50% 10%;transform:scale(1.7);transform-origin:50% 18%}
+@keyframes pb-voile{from{opacity:0}}
+@keyframes pb-entre{from{opacity:0;transform:translateY(34px) scale(.94)}}
 @keyframes mqd-entre{from{opacity:0;transform:translateY(8px) scale(.97)}}
 @keyframes mqd-curseur{50%{opacity:0}}
 @media (min-width:860px){.mqd{grid-template-columns:150px minmax(0,1fr);gap:14px}.mqd-texte{font-size:17px}}

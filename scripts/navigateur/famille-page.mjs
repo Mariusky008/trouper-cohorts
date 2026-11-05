@@ -8,7 +8,7 @@
 // un ami venu par son lien compte pour elle ; une visite notée la fait passer argent (fêté une fois) ; chaque
 // fantôme de la vitrine porte son écusson de la famille, et sa bulle son numéro ; un gros mot en prénom est
 // refusé ; la famille vide invite à être le premier. Rien ne déborde.
-import { BASE, D, F, lancer } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 
 const SITE = "ffffffff-0000-4000-8000-000000000021";
 const SLUG = "comptoir-des-fantomes-dax";
@@ -213,22 +213,32 @@ ok((await texte(vide, ".fm-premier")).includes("Sois le tout premier fantôme de
 ok((await texte(vide, ".fm-cages")).includes("Je passe aujourd’hui"), "chez un artisan, on passe");
 await vide.screenshot({ path: `${D}/famille-4-vide.png` });
 
-// ═══ MA COLLECTION, SANS FIGURINE : le guide (la figurine du patron de ClikMe) accueille, explique ; « Ce mois-ci » dit à quoi sert l'édition du mois ═══
+// ═══ MA COLLECTION, SANS FIGURINE : Pablito (la figurine du patron de ClikMe) arrive en fenêtre la première fois, puis se
+// range dans un petit bouton ; « Ce mois-ci » dit à quoi sert l'édition du mois ═══
 await vide.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
-await vide.waitForSelector("#o-figurine .mqd", { timeout: 30000 });
+await vide.waitForSelector("#o-figurine .pb-voile .mqd", { timeout: 30000 });
 const accueilVide = await texte(vide, "#o-figurine");
 ok(
-  /patron de ClikMe/i.test(accueilVide) && accueilVide.includes("Crée ta figurine") && (await vide.locator("#creer .tf-prenom-photo").count()) === 1,
-  "sans compte : le guide accueille, et la quête « Crée ta figurine » (son prénom demandé)",
+  /Pablito/i.test(await texte(vide, "#o-figurine .pb-voile .mqd-bulle")) && (await vide.locator('#o-figurine .pb-voile[role="dialog"]').count()) === 1,
+  "la première fois : Pablito arrive en fenêtre (« Salut ! Moi, c’est Pablito ! »)",
 );
+ok(accueilVide.includes("Crée ta figurine") && (await vide.locator("#creer .tf-prenom-photo").count()) === 1, "sans compte : la quête « Crée ta figurine » (son prénom demandé)");
 ok((await vide.locator("#o-figurine .mqd .mq img.mq-i").count()) === 2 && (await vide.locator(".mqd svg").count()) === 0, "le guide est sa figurine (bouche fermée, bouche ouverte), plus un personnage dessiné");
+await fermerPablito(vide, "#o-figurine");
+ok((await vide.locator(".pb-voile").count()) === 0 && (await texte(vide, "#o-figurine .mqd-revoir")).includes("Pablito"), "fermée : un petit bouton « Pablito t’explique »");
+await vide.locator("#o-figurine .mqd-revoir").click();
+ok((await vide.locator("#o-figurine .pb-voile").count()) === 1, "qui la rouvre");
+await fermerPablito(vide, "#o-figurine");
+await vide.reload({ waitUntil: "networkidle" });
+await vide.waitForSelector("#o-figurine .mqd-revoir", { timeout: 30000 });
+ok((await vide.locator(".pb-voile").count()) === 0, "revenu : plus de fenêtre, le petit bouton");
 ok((await vide.locator(".tf-demo").count()) === 0, "plus de démonstration");
 await vide.goto(`${BASE}/collection#ou-gagner`, { waitUntil: "networkidle" });
 await vide.waitForSelector("#o-mois .ce", { timeout: 30000 });
 await vide.waitForTimeout(1500);
 const dc = await texte(vide, "#o-mois");
 ok(
-  (await texte(vide, "#o-mois .mqd-bulle")).includes("Ce mois-ci, c’est l’édition") && (await vide.locator("#o-mois .mqd img.mqf[src*='/api/direct/guide/edition-']").count()) === 1,
+  (await texte(vide, "#o-mois .pb-voile .mqd-bulle")).includes("Ce mois-ci, c’est l’édition") && (await vide.locator("#o-mois .pb-voile .mqd img.mqf[src*='/api/direct/guide/edition-']").count()) === 1,
   "« Ce mois-ci » : le guide, dans la tenue du mois, explique l'édition",
 );
 ok((await vide.locator(".ce-frise img.mqf").count()) === 6 && (await vide.locator(".ce-carte img.mqf").count()) === 1, "la frise et l'édition du moment : sa figurine dans chaque tenue, plus de fantômes");
