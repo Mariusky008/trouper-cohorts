@@ -2,10 +2,13 @@
 // Supabase, sans IA (la fiche et la conversation sont alors composées par le serveur : c'est ce chemin qu'on essaie).
 //
 // Léa (deux figurines au Comptoir) fait le questionnaire : sept questions, ses goûts, sa phrase fétiche ; sa carte se
-// révèle (niveau, six caractéristiques). Elle la partage : un lien `/carte/<id>` qu'un inconnu ouvre. Sans ami, sa
-// figurine rencontre celle du Comptoir. Elle invite Hugo ; Hugo ouvre le lien, fait sa carte : leur rencontre arrive,
-// la même chez les deux. Léa dit « c'est tout moi » à une phrase de sa figurine, et réagit d'une émotion à une phrase
-// de Hugo ; elle ne peut pas juger une phrase de Hugo. Elle signale : la rencontre ne s'affiche plus. Rien ne déborde.
+// révèle (niveau, six caractéristiques). Elle la partage : un lien `/carte/<id>` qu'un inconnu ouvre.
+// LE RÉSEAU DES FIGURINES : sa première rencontre du jour, Pablito ; le lendemain, la figurine du Comptoir ; le
+// surlendemain, un personnage imaginaire qui partage ses goûts (les jours passent : on vieillit son carnet). Chaque
+// conversation a son format et finit par « Et toi ? ». Elle invite Hugo ; Hugo ouvre le lien, fait sa carte : leur
+// discussion arrive aussitôt, la même chez les deux. Léa dit « c'est tout moi » à une phrase de sa figurine, et réagit
+// d'une émotion à une phrase de Hugo ; elle ne peut pas juger une phrase de Hugo. Elle répond à « Et toi ? ». Elle
+// lance des discussions avec Hugo (trois par jour). Elle signale : la rencontre ne s'affiche plus. Rien ne déborde.
 import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 
 const A = { id: "ffffffff-0000-4000-8000-000000000041", slug: "comptoir-des-fantomes-dax", nom: "Le Comptoir des Fantômes" };
@@ -15,6 +18,15 @@ const INES = { id: "dddddddd-0000-4000-8000-000000000053", jeton: "jeton-ines-00
 const jour = (d) => new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(d);
 const ilYa = (n) => jour(new Date(Date.now() - n * 86_400_000));
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
+// LE SEAU PRIVÉ DU FAUX SUPABASE : son carnet de rencontres, qu'on fait vieillir d'un jour (« le lendemain »)
+const SEAU = `${F.replace(/\/rest\/v1$/, "/storage/v1/object")}/figurines-clients`;
+const lireSeau = async (cle) => (await fetch(`${SEAU}/${cle}`)).json().catch(() => null);
+const unJourPasse = async (h) => {
+  const idx = await lireSeau(`${h}/rencontres.json`);
+  const veille = (j) => jour(new Date(new Date(`${j}T12:00:00Z`).getTime() - 86_400_000));
+  idx.liste = idx.liste.map((x) => ({ ...x, jour: veille(x.jour) }));
+  await fetch(`${SEAU}/${h}/rencontres.json`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(idx) });
+};
 
 await semer("human_vitrine_sites", [{ id: A.id, slug: A.slug, channel: "letter", business_name: A.nom, city: "40100 Dax", activite: "Restaurant", published: true, est_client: true }]);
 await semer("human_habitants", [
@@ -100,12 +112,32 @@ ok((await texte(inconnu, ".cp h1")).includes("Léa") && (await inconnu.locator('
 ok((await debordement(inconnu)) <= 0, "la carte partagée ne déborde pas");
 await inconnu.screenshot({ path: `${D}/personnage-2-partagee.png`, fullPage: true });
 
-// ═══ LA RENCONTRE DU JOUR : SANS AMI, LA FIGURINE DU COMPTOIR ═══
+// ═══ 🌍 LA RENCONTRE DU JOUR, HORS DE SON ENTOURAGE : PABLITO, PUIS LE COMPTOIR, PUIS UN PERSONNAGE ═══
 await lea.goto(`${BASE}/collection?v=${Date.now()}#rencontre`, { waitUntil: "networkidle" });
 await lea.waitForSelector("#o-rencontre .rd-fil li", { timeout: 60000 });
 ok((await texte(lea, "#o-rencontre .rd-prochaine")).match(/Prochaine rencontre dans \d{2}:\d{2}:\d{2}/), "le temps qui reste avant la prochaine rencontre");
-ok((await texte(lea, "#o-rencontre .rd-qui")).includes(`la figurine de ${A.nom}`), "sans ami : sa figurine rencontre celle du Comptoir");
+const qui1 = await texte(lea, "#o-rencontre .rd-qui");
+ok(qui1.includes("UN PERSONNAGE") && qui1.includes("Ta figurine a rencontré Pablito") && qui1.includes("🎲"), `la toute première : Pablito l'accueille, avec le format du jour (${qui1})`);
+const j1 = await api(lea, "/api/direct/rencontre");
+ok(j1.rencontre?.autre?.type === "personnage" && j1.rencontre.autre.cle === "pablito" && j1.rencontre.format?.nom && j1.rencontre.question && j1.rencontre.quoi === "jour", `Pablito, un format (« ${j1.rencontre?.format?.nom} »), une question pour elle (« ${j1.rencontre?.question} »)`);
+await unJourPasse(LEA.id);
+await lea.goto(`${BASE}/collection?v=${Date.now()}#rencontre`, { waitUntil: "networkidle" });
+await lea.waitForSelector("#o-rencontre .rd-fil li", { timeout: 60000 });
+ok((await texte(lea, "#o-rencontre .rd-qui")).includes(`la figurine de ${A.nom}`), "le lendemain : la figurine du Comptoir (un commerçant)");
 ok((await texte(lea, "#o-rencontre .rd-ia")).includes("Ce n’est pas le commerçant qui parle"), "« écrit par l'IA, pour jouer », et ce n'est pas le commerçant");
+const j2 = await api(lea, "/api/direct/rencontre");
+await unJourPasse(LEA.id);
+await lea.goto(`${BASE}/collection?v=${Date.now()}#rencontre`, { waitUntil: "networkidle" });
+await lea.waitForSelector("#o-rencontre .rd-fil li", { timeout: 60000 });
+const j3 = await api(lea, "/api/direct/rencontre");
+const perso = j3.rencontre?.autre;
+ok(perso?.type === "personnage" && perso.cle !== "pablito" && /imaginaire/.test(perso.role) && ["rosa", "leo", "nina", "lou", "max"].includes(perso.cle), `le surlendemain : un personnage imaginaire qui partage ses goûts (${perso?.nom}, ${perso?.role})`);
+ok((await texte(lea, "#o-rencontre .rd-ia")).includes("Ce personnage est imaginaire") && (await texte(lea, "#o-rencontre .rd-qui")).includes("(imaginaire)"), "un personnage imaginaire est dit tel");
+ok(new Set([j1.rencontre.format.cle, j2.rencontre?.format?.cle, j3.rencontre?.format?.cle]).size === 3, `chaque jour, une conversation différente (${[j1, j2, j3].map((x) => x.rencontre?.format?.nom).join(" · ")})`);
+await lea.locator("#o-rencontre .rs-passer").click();
+await lea.waitForSelector("#o-rencontre .ra-ettoi", { timeout: 10000 });
+ok((await texte(lea, "#o-rencontre .ra-question")) === j3.rencontre.question, "à la fin : « Et toi ? », sa question");
+await lea.screenshot({ path: `${D}/personnage-3a-personnage.png`, fullPage: true });
 
 // ═══ ELLE INVITE HUGO ═══
 await lea.locator("#o-rencontre .rd-choix.rd-inviter .mp-bouton").click();
@@ -121,14 +153,21 @@ ok((await texte(hugo, "#o-rencontre .rd-ami")).includes("Toi et Léa"), "Hugo ou
 const carteHugo = await api(hugo, "/api/direct/personnage", { action: "creer", reponses: { elan: "b", ton: "b", jeu: "a", sort: "b", tete: "a", gout: "b", rythme: "a" }, gouts: ["sport"] });
 ok(carteHugo.statut === 200 && carteHugo.carte?.fiche?.titre, "Hugo fait sa carte");
 
-// LEUR RENCONTRE, TOUT DE SUITE, CHEZ LES DEUX
+// LEUR DISCUSSION, TOUT DE SUITE, CHEZ LES DEUX (« dès qu'il a fait sa carte »)
 await lea.goto(`${BASE}/collection?v=${Date.now()}#rencontre`, { waitUntil: "networkidle" });
-await lea.waitForSelector("#o-rencontre .rd-fil li", { timeout: 60000 });
-ok((await texte(lea, "#o-rencontre .rd-qui")).includes("Ta figurine a rencontré Hugo"), "Hugo a fait sa carte : leur rencontre arrive aussitôt");
-const rL = await api(lea, "/api/direct/rencontre");
-const rH = await api(hugo, "/api/direct/rencontre");
-ok(rL.rencontre?.id && rL.rencontre.id === rH.rencontre?.id && rH.rencontre?.autre?.prenom === "Léa", "la même rencontre chez Hugo");
-ok(rL.avant?.some((x) => x.avec === A.nom && x.titre), "la rencontre du Comptoir devient une carte souvenir (son titre)");
+await lea.waitForSelector("#o-rencontre .rd-nouvelle", { timeout: 60000 });
+ok((await texte(lea, "#o-rencontre .rd-nouvelle")).includes("Hugo vient d’arriver"), "Hugo a fait sa carte : leur discussion arrive aussitôt");
+await lea.locator("#o-rencontre .rd-nouvelle .mp-bouton").click();
+await lea.waitForFunction(() => document.querySelector("#o-rencontre .rd-qui")?.textContent?.includes("Hugo"), null, { timeout: 15000 });
+const quiH = await texte(lea, "#o-rencontre .rd-qui");
+ok(quiH.includes("AVEC UN AMI") && quiH.includes("Ta figurine a discuté avec Hugo"), `elle la regarde (${quiH})`);
+const etatL = await api(lea, "/api/direct/rencontre");
+const idH = etatL.avant?.find((x) => x.avec === "Hugo")?.id;
+const rL = await api(lea, `/api/direct/rencontre?id=${idH}`);
+const rH = await api(hugo, `/api/direct/rencontre?id=${idH}`);
+ok(rL.rencontre?.id && rL.rencontre.quoi === "ami" && rL.rencontre.id === rH.rencontre?.id && rH.rencontre?.autre?.prenom === "Léa", "la même discussion chez Hugo (une discussion d'amis)");
+ok(etatL.rencontre?.id === j3.rencontre.id, "sa rencontre du jour reste celle du personnage");
+ok(etatL.avant?.some((x) => x.avec === A.nom && x.titre) && etatL.avant?.some((x) => x.avec === "Pablito"), "Pablito et le Comptoir deviennent des cartes souvenirs (leur titre)");
 // 🎬 EN DIRECT : une conversation plus longue, chaque réplique avec son geste ; un titre ; ce qui a été partagé
 ok(rL.rencontre.repliques.length >= 8 && rL.rencontre.repliques.every((x) => x.geste), `une vraie conversation, chaque réplique avec son geste (${rL.rencontre.repliques.length})`);
 ok(rL.rencontre.titre && rL.rencontre.partage?.length >= 1, `son titre (« ${rL.rencontre.titre} ») et ce qui a été partagé`);
@@ -146,7 +185,7 @@ await lea.screenshot({ path: `${D}/personnage-3b-fin.png`, fullPage: true });
 await lea.locator("#o-rencontre .rd-fil li.moi .rd-verdict", { hasText: "C’est tout moi" }).first().click();
 await lea.locator("#o-rencontre .rd-fil li.autre .rd-emo").first().click();
 await lea.waitForTimeout(800);
-const apres = await api(lea, "/api/direct/rencontre");
+const apres = await api(lea, `/api/direct/rencontre?id=${rL.rencontre.id}`);
 const vues = Object.values(apres.rencontre?.reactions ?? {});
 ok(vues.some((x) => x.v === "moi") && vues.some((x) => x.e === "😂"), `ses réactions sont gardées (${JSON.stringify(apres.rencontre?.reactions)})`);
 const nAutre = rL.rencontre.repliques.findIndex((x) => !x.moi);
@@ -165,10 +204,11 @@ ok((await texte(lea, "#o-rencontre .ra-note")).includes("Si Hugo est d’accord 
 const ouiH = await api(hugo, "/api/direct/rencontre", { action: "echanger", id: rL.rencontre.id, oui: true });
 ok(ouiH.statut === 200 && ouiH.rencontre?.echange?.autre === true, "Hugo dit oui aussi");
 await lea.reload({ waitUntil: "networkidle" });
+await lea.locator("#o-rencontre .rd-souv", { hasText: "Hugo" }).first().click();
 await lea.waitForSelector("#o-rencontre .ra-echange textarea", { timeout: 30000 });
 ok((await lea.locator("#o-rencontre .rs-direct", { hasText: "TERMINÉE" }).count()) === 1, "déjà regardée : elle ne repasse pas en direct");
 await lea.locator("#o-rencontre .ra-echange textarea").fill("Ta figurine m’a fait rire, défi accepté !");
-await lea.locator("#o-rencontre .ra-envoyer").click();
+await lea.locator("#o-rencontre .ra-echange .ra-envoyer").click();
 await lea.waitForSelector("#o-rencontre .ra-fil li.moi", { timeout: 10000 });
 const numero = await api(hugo, "/api/direct/rencontre", { action: "impression", id: rL.rencontre.id, texte: "Appelle-moi au 06 12 34 56 78" });
 ok(numero.statut === 400 && /numéro/.test(numero.error ?? ""), `pas de numéro (${numero.error})`);
@@ -177,7 +217,34 @@ ok(lienX.statut === 400, "on se parle ici, pas ailleurs");
 const motH = await api(hugo, "/api/direct/rencontre", { action: "impression", id: rL.rencontre.id, texte: "Pareil, trop drôle !" });
 ok(motH.statut === 200 && motH.rencontre?.echange?.messages?.length === 2 && motH.rencontre.echange.messages[1].moi, "Hugo répond : leurs deux impressions");
 
+// 🗨️ « ET TOI ? » : sa réponse est gardée, et nourrira les conversations suivantes
+await lea.locator("#o-rencontre .ra-ettoi textarea").fill("Moi, je cuisine pour mes amis le dimanche !");
+await lea.locator("#o-rencontre .ra-ettoi .ra-envoyer").click();
+await lea.waitForSelector("#o-rencontre .ra-reponse", { timeout: 10000 });
+ok((await texte(lea, "#o-rencontre .ra-reponse")).includes("je cuisine pour mes amis"), "« Et toi ? » : elle répond");
+const carnet = await lireSeau(`${LEA.id}/rencontres.json`);
+ok(carnet?.dit?.some((x) => x.r.includes("je cuisine pour mes amis")), "sa réponse rejoint ce qu'elle a dit d'elle (pour les prochaines conversations)");
+const repNum = await api(lea, "/api/direct/rencontre", { action: "repondre", id: rL.rencontre.id, texte: "Écris-moi au 06 12 34 56 78" });
+ok(repNum.statut === 400, "pas de numéro dans sa réponse");
+
+// 👯 SES AMIS : une discussion quand elle veut, trois par jour
+await lea.goto(`${BASE}/collection?v=${Date.now()}#rencontre`, { waitUntil: "networkidle" });
+await lea.waitForSelector("#o-rencontre .rd-amis li", { timeout: 60000 });
+ok((await texte(lea, "#o-rencontre .rd-amis")).includes("Hugo") && (await texte(lea, "#o-rencontre .rd-amis")).includes("encore 3 aujourd’hui"), "ses amis et proches : Hugo, encore trois discussions aujourd'hui");
+await lea.locator("#o-rencontre .rd-amis .mp-bouton").first().click();
+await lea.waitForFunction(() => document.querySelector("#o-rencontre .rd-qui")?.textContent?.includes("AVEC UN AMI"), null, { timeout: 30000 });
+ok((await texte(lea, "#o-rencontre .rs-direct")).includes("EN DIRECT") && (await texte(lea, "#o-rencontre .rd-amis")).includes("encore 2 aujourd’hui"), "« Discuter » : leur discussion, en direct ; encore deux");
+const d2 = await api(lea, "/api/direct/rencontre", { action: "discuter", n: 0 });
+const d3 = await api(lea, "/api/direct/rencontre", { action: "discuter", n: 0 });
+const d4 = await api(lea, "/api/direct/rencontre", { action: "discuter", n: 0 });
+ok(d2.statut === 200 && d3.statut === 200 && d3.restantes === 0 && d4.statut === 429, `trois discussions par jour (${d2.statut}, ${d3.statut}, ${d4.statut})`);
+ok((await api(lea, "/api/direct/rencontre", { action: "discuter", n: 7 })).statut === 404, "un ami qui n'est pas dans sa liste : non");
+ok(new Set([rL.rencontre.format?.cle, d2.rencontre?.format?.cle, d3.rencontre?.format?.cle]).size >= 2, "des discussions variées (leurs formats)");
+await lea.screenshot({ path: `${D}/personnage-3c-amis.png`, fullPage: true });
+
 // 🎞️ SES CARTES SOUVENIRS, DANS L'ALBUM
+await lea.goto(`${BASE}/collection?v=${Date.now()}#rencontre`, { waitUntil: "networkidle" });
+await lea.waitForSelector("#o-rencontre .rd-fil li", { timeout: 60000 });
 const souv = await api(lea, "/api/direct/rencontre?souvenirs=1");
 ok(souv.souvenirs?.length >= 2 && souv.souvenirs.every((x) => x.titre && x.avec), `ses cartes souvenirs (${souv.souvenirs?.map((x) => x.titre).join(" · ")})`);
 await lea.locator(".mc-nav button", { hasText: "Album" }).click({ force: true });
@@ -186,14 +253,14 @@ ok((await lea.locator("#o-album .ms .cs.petite").count()) === souv.souvenirs.len
 await lea.locator("#o-album .ms .cs.petite", { hasText: A.nom }).first().click();
 await lea.waitForFunction((nom) => document.querySelector("#o-rencontre:not([hidden]) .rd-qui")?.textContent?.includes(nom), A.nom, { timeout: 15000 });
 ok(true, "une carte souvenir touchée rouvre sa rencontre");
-await lea.locator("#o-rencontre .rd-ia button", { hasText: "Celle d’aujourd’hui" }).click();
+await lea.locator("#o-rencontre .rd-ia button", { hasText: "Ma rencontre du jour" }).click();
 
 // SIGNALER
 lea.on("dialog", (d) => d.accept());
 await lea.locator("#o-rencontre .rd-ia button", { hasText: "Signaler" }).click();
 await lea.waitForSelector("#o-rencontre .rd-note", { timeout: 15000 });
 ok((await texte(lea, "#o-rencontre .rd-note")).includes("retirée"), "signalée : elle ne s'affiche plus");
-ok((await api(hugo, `/api/direct/rencontre?id=${rL.rencontre.id}`)).statut === 404, "chez Hugo non plus");
+ok((await api(lea, "/api/direct/rencontre", { action: "signaler", id: rL.rencontre.id })).statut === 200 && (await api(hugo, `/api/direct/rencontre?id=${rL.rencontre.id}`)).statut === 404, "une discussion d'amis signalée : chez Hugo non plus");
 
 // ═══ 🎲 RENCONTRER UN MEMBRE : Léa appuie (personne n'attend : elle entre dans la file) ; Inès appuie : elles se rencontrent ═══
 await lea.locator("#o-rencontre .rd-rond").click({ force: true });

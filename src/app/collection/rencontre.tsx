@@ -11,6 +11,11 @@
  *
  * L'INVITATION : `/collection?ami=<code>` — le code est gardé sur l'appareil, et accepté dès qu'il a un compte.
  *
+ * LE RÉSEAU DES FIGURINES (5 novembre 2026, `lib/direct/reseau.ts`) : la rencontre du jour est toujours hors de son
+ * entourage (un commerçant, un membre, un personnage imaginaire de ClikMe, Pablito) ; ses amis et proches, il lance une
+ * discussion quand il veut (`AMIS_PAR_JOUR` par jour) ; chaque conversation a son format (« Le défi »…) et finit par une
+ * question pour lui (« Et toi ? ») — sa réponse nourrit les suivantes.
+ *
  * MISE EN VALEUR LE 5 NOVEMBRE 2026 (« une partie importante… que ça donne vraiment envie d'inviter quelqu'un, ou de
  * comprendre que si on ne le fait pas, on peut appuyer sur un compte à rebours pour être mis en contact avec un
  * membre ; et la figurine marrante explique le fonctionnement ») : le guide explique (`guide.tsx`) ; la rencontre du jour en vedette,
@@ -33,6 +38,7 @@ import {
   type Souvenir,
   type Verdict,
 } from "@/lib/direct/rencontre";
+import { AMIS_PAR_JOUR, REPONSE_MAX } from "@/lib/direct/reseau";
 import { PanneauEnvoi } from "./ma-figurine";
 import { FigurineGuide, GuideDit } from "./guide";
 
@@ -46,6 +52,9 @@ type Etat = {
   avant: { id: string; jour: string; avec: string; titre?: string }[];
   membreAujourdhui: boolean;
   ouvert: boolean;
+  amisListe?: { n: number; prenom: string; carte: boolean; image: string; figurine: boolean }[];
+  discussionsRestantes?: number;
+  nouvelle?: RencontreVue;
 };
 const CLE_AMI = "clikme-ami-v1";
 
@@ -59,9 +68,18 @@ async function poster(corps: Record<string, unknown>) {
 const nomDe = (p: Participant) => (p.type === "client" ? p.prenom || "Quelqu’un" : p.nom);
 const jourCourt = (j: string) => new Date(`${j}T12:00:00`).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
-/** Sa figurine s'il l'a ; sinon (un fantôme, un commerce sans figurine) une silhouette de figurine, et « ? ». */
+/**
+ * Sa figurine s'il l'a ; sinon (un fantôme, un commerce sans figurine) une silhouette de figurine, et « ? ». Un
+ * personnage de ClikMe : Pablito (sa figurine), les autres leur emoji.
+ */
 function Avatar({ p, grand = false, scene = false }: { p: Participant; grand?: boolean; scene?: boolean }) {
-  const vraie = p.type === "client" ? p.figurine : !p.image.startsWith("/direct/double/");
+  if (p.type === "personnage" && !p.image)
+    return (
+      <span className={`rd-av perso${grand ? " grand" : ""}${scene ? " scene" : ""}`} aria-hidden="true">
+        <b className="rd-perso">{p.emoji}</b>
+      </span>
+    );
+  const vraie = p.type === "client" ? p.figurine : p.type === "personnage" || !p.image.startsWith("/direct/double/");
   return (
     <span className={`rd-av${grand ? " grand" : ""}${scene ? " scene" : ""}${vraie ? " figurine" : ""}`} aria-hidden="true">
       {vraie ? (
@@ -261,14 +279,23 @@ function Spectacle({ r, peutDirect, onRessemblance, onFin }: { r: RencontreVue; 
 }
 
 /** 🎞️ LA CARTE SOUVENIR d'une rencontre : les deux figurines, son titre, le jour. */
-export function CarteSouvenir({ titre, jour, moi, autre, avec, nouvelle = false, petite = false, onClick }: { titre: string; jour: string; moi?: Participant; autre: Participant | { image: string; figurine: boolean }; avec: string; nouvelle?: boolean; petite?: boolean; onClick?: () => void }) {
+export function CarteSouvenir({ titre, jour, moi, autre, avec, nouvelle = false, petite = false, onClick }: { titre: string; jour: string; moi?: Participant; autre: Participant | { image: string; figurine: boolean; emoji?: string }; avec: string; nouvelle?: boolean; petite?: boolean; onClick?: () => void }) {
   const contenu = (
     <>
       {nouvelle && <span className="cs-ruban">🎉 Nouvelle carte souvenir !</span>}
       <small className="cs-etiquette">🎞️ CARTE SOUVENIR</small>
       <span className="cs-duo">
         {moi && <Avatar p={moi} grand />}
-        <Avatar p={"type" in autre ? autre : { type: "client", prenom: avec, titre: "", image: autre.image, figurine: autre.figurine }} grand />
+        <Avatar
+          p={
+            "type" in autre
+              ? autre
+              : autre.emoji
+                ? { type: "personnage", cle: "", nom: avec, role: "", emoji: autre.emoji, image: autre.image }
+                : { type: "client", prenom: avec, titre: "", image: autre.image, figurine: autre.figurine }
+          }
+          grand
+        />
       </span>
       <b className="cs-titre">{titre}</b>
       <span className="cs-qui">
@@ -371,7 +398,64 @@ function Echange({ r, onRencontre }: { r: RencontreVue; onRencontre: (x: Rencont
   );
 }
 
-/** 🏁 APRÈS LA RENCONTRE : ce qui a été partagé, la carte souvenir, et (entre deux clients) leurs impressions. */
+/**
+ * 🗨️ « ET TOI ? » — la question de fin, pour lui (« l'idée, c'est de faire réagir et commenter… pertinent par rapport
+ * à ce qu'on dit de soi ») : sa réponse est gardée, et ses prochaines conversations s'en servent.
+ */
+function EtToi({ r, onRencontre }: { r: RencontreVue; onRencontre: (x: RencontreVue) => void }) {
+  const [texte, setTexte] = useState(r.reponse ?? "");
+  const [ouvert, setOuvert] = useState(!r.reponse);
+  const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState("");
+  async function envoyer() {
+    const t = texte.trim().replace(/\s+/g, " ");
+    const refus = impressionRefusee(t);
+    if (refus) return setErreur(refus);
+    setEnvoi(true);
+    setErreur("");
+    try {
+      const j = await poster({ action: "repondre", id: r.id, texte: t });
+      onRencontre(j.rencontre as RencontreVue);
+      setOuvert(false);
+    } catch (x) {
+      setErreur((x as Error).message);
+    } finally {
+      setEnvoi(false);
+    }
+  }
+  return (
+    <section className="ra-ettoi" aria-label="Et toi ?">
+      <b>🗨️ Et toi ?</b>
+      <p className="ra-question">{r.question}</p>
+      {!ouvert && r.reponse ? (
+        <>
+          <p className="ra-reponse">
+            <small>Ta réponse</small>
+            {r.reponse}
+          </p>
+          <button type="button" className="ra-retirer" onClick={() => setOuvert(true)}>
+            Changer ma réponse
+          </button>
+        </>
+      ) : (
+        <>
+          <textarea value={texte} maxLength={REPONSE_MAX} rows={2} onChange={(x) => setTexte(x.target.value)} placeholder="Ta réponse, en quelques mots…" aria-label="Ta réponse" />
+          <small>Ta figurine s’en souviendra dans ses prochaines conversations.</small>
+          <button type="button" className="mp-bouton ra-envoyer" onClick={envoyer} disabled={envoi || !texte.trim()}>
+            {envoi ? "…" : "Répondre"}
+          </button>
+        </>
+      )}
+      {erreur && (
+        <p className="tf-erreur" role="alert">
+          {erreur}
+        </p>
+      )}
+    </section>
+  );
+}
+
+/** 🏁 APRÈS LA RENCONTRE : ce qui a été partagé, la carte souvenir, « Et toi ? » et (entre deux clients) leurs impressions. */
 function ApresRencontre({ r, nouvelle, onRencontre }: { r: RencontreVue; nouvelle: boolean; onRencontre: (x: RencontreVue) => void }) {
   return (
     <div className="ra">
@@ -386,6 +470,7 @@ function ApresRencontre({ r, nouvelle, onRencontre }: { r: RencontreVue; nouvell
         </section>
       )}
       <CarteSouvenir titre={r.titre || `Rencontre avec ${nomDe(r.autre)}`} jour={r.jour} moi={r.moi} autre={r.autre} avec={nomDe(r.autre)} nouvelle={nouvelle} />
+      {r.question && <EtToi key={r.id} r={r} onRencontre={onRencontre} />}
       {r.echange && <Echange r={r} onRencontre={onRencontre} />}
     </div>
   );
@@ -415,7 +500,7 @@ export function MesSouvenirs({ onVoir }: { onVoir: (id: string) => void }) {
       </h3>
       <div className="ms-grille">
         {liste.map((x) => (
-          <CarteSouvenir key={x.id} titre={x.titre} jour={x.jour} autre={{ image: x.image, figurine: x.figurine }} avec={x.avec} petite onClick={() => onVoir(x.id)} />
+          <CarteSouvenir key={x.id} titre={x.titre} jour={x.jour} autre={{ image: x.image, figurine: x.figurine, ...(x.emoji ? { emoji: x.emoji } : {}) }} avec={x.avec} petite onClick={() => onVoir(x.id)} />
         ))}
       </div>
     </section>
@@ -500,6 +585,9 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
   const [invitation, setInvitation] = useState("");
   const [ami, setAmi] = useState("");
   const [ancienne, setAncienne] = useState<RencontreVue | null>(null);
+  /** Celle qu'il regarde à la place de la rencontre du jour est toute neuve (une discussion d'ami) : en direct. */
+  const [neuve, setNeuve] = useState(false);
+  const [discute, setDiscute] = useState<number | null>(null);
   const [attente, setAttente] = useState(false);
   const [erreur, setErreur] = useState("");
   const [fin, setFin] = useState<{ id: string; nouvelle: boolean } | null>(null);
@@ -599,6 +687,7 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
     try {
       const j = (await (await fetch(`/api/direct/rencontre?id=${id}`, { cache: "no-store" })).json()) as { rencontre?: RencontreVue };
       setAncienne(j.rencontre ?? null);
+      setNeuve(false);
       if (j.rencontre) window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
       setAncienne(null);
@@ -620,11 +709,30 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
     window.addEventListener(CLE_VOIR_RENCONTRE, ouvrir);
     return () => window.removeEventListener(CLE_VOIR_RENCONTRE, ouvrir);
   }, [voir]);
-  /** La rencontre a changé (leurs impressions) : celle d'aujourd'hui, ou celle d'avant qu'il regarde. */
+  /** La rencontre a changé (leurs impressions, sa réponse) : celle d'aujourd'hui, ou celle d'avant qu'il regarde. */
   const majRencontre = useCallback((x: RencontreVue) => {
     setAncienne((a) => (a && a.id === x.id ? x : a));
     setEtat((e) => (e && e.rencontre?.id === x.id ? { ...e, rencontre: x } : e));
   }, []);
+  /** Une discussion toute neuve (avec un ami) : il la regarde en direct, à la place de celle du jour. */
+  const regarder = useCallback((x: RencontreVue) => {
+    setAncienne(x);
+    setNeuve(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+  async function discuter(n: number) {
+    setErreur("");
+    setDiscute(n);
+    try {
+      const j = await poster({ action: "discuter", n });
+      setEtat((e) => (e ? { ...e, discussionsRestantes: Number(j.restantes) || 0 } : e));
+      regarder(j.rencontre as RencontreVue);
+    } catch (e) {
+      setErreur((e as Error).message);
+    } finally {
+      setDiscute(null);
+    }
+  }
   const quandFini = useCallback((id: string, nouvelle: boolean) => setFin((f) => (f?.id === id ? f : { id, nouvelle })), []);
 
   const tete = (
@@ -668,13 +776,25 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
     );
 
   const r = ancienne ?? etat.rencontre;
+  const amisListe = etat.amisListe ?? [];
+  const restantes = etat.discussionsRestantes ?? AMIS_PAR_JOUR;
+  // avec qui : un ami, un membre, un personnage de ClikMe (imaginaire), un commerce
+  const genre = r ? (r.quoi === "ami" ? "AVEC UN AMI" : r.membre ? "UN MEMBRE" : r.autre.type === "personnage" ? "UN PERSONNAGE" : r.autre.type === "commerce" ? "UN COMMERCE" : "") : "";
   return (
     <div className="rd-onglet">
       {tete}
       {explique}
-      {ami && (
+      {ami && !etat.nouvelle && (
         <p className="rd-ami" role="status">
-          🎉 Toi et {ami}, c’est fait : votre prochaine rencontre, c’est ensemble !
+          🎉 Toi et {ami}, c’est fait : dès que {ami} aura fait sa carte, vos figurines discuteront !
+        </p>
+      )}
+      {etat.nouvelle && ancienne?.id !== etat.nouvelle.id && (
+        <p className="rd-ami rd-nouvelle" role="status">
+          🎉 {nomDe(etat.nouvelle.autre)} vient d’arriver : vos figurines ont discuté !{" "}
+          <button type="button" className="mp-bouton" onClick={() => regarder(etat.nouvelle!)}>
+            ▶ Regarder
+          </button>
         </p>
       )}
 
@@ -696,12 +816,24 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
           <>
             <header className="rd-tete">
               <span className="rd-qui">
-                <small>{ancienne ? jourCourt(r.jour).toUpperCase() : r.membre ? "AUJOURD’HUI · UN MEMBRE" : "AUJOURD’HUI"}</small>
-                <b>Ta figurine a rencontré {r.autre.type === "client" ? nomDe(r.autre) : `la figurine de ${r.autre.nom}`}</b>
+                <small>
+                  {ancienne && !neuve ? jourCourt(r.jour).toUpperCase() : "AUJOURD’HUI"}
+                  {genre ? ` · ${genre}` : ""}
+                </small>
+                <b>
+                  {r.quoi === "ami" ? "Ta figurine a discuté avec " : "Ta figurine a rencontré "}
+                  {r.autre.type === "commerce" ? `la figurine de ${r.autre.nom}` : nomDe(r.autre)}
+                </b>
                 {r.autre.type === "client" && r.autre.titre && <span>« {r.autre.titre} »</span>}
+                {r.autre.type === "personnage" && (
+                  <span>
+                    {r.autre.emoji} {r.autre.role}
+                  </span>
+                )}
+                {r.format && <span className="rd-format">🎲 {r.format.nom}</span>}
               </span>
             </header>
-            <Spectacle key={r.id} r={r} peutDirect={!ancienne && !Object.keys(r.reactions).length} onRessemblance={setRessemblance} onFin={(nouvelle) => quandFini(r.id, nouvelle)} />
+            <Spectacle key={r.id} r={r} peutDirect={(!ancienne || neuve) && !Object.keys(r.reactions).length} onRessemblance={setRessemblance} onFin={(nouvelle) => quandFini(r.id, nouvelle)} />
             <p className="rd-ressemblance">
               {ressemblance == null ? (
                 <>🪞 Dis-lui si c’est bien toi : elle apprend à te ressembler.</>
@@ -716,7 +848,8 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
             </p>
             {fin?.id === r.id && <ApresRencontre r={r} nouvelle={fin.nouvelle} onRencontre={majRencontre} />}
             <p className="rd-ia">
-              Écrit par l’IA, pour jouer.{r.autre.type === "commerce" ? " Ce n’est pas le commerçant qui parle." : ""}{" "}
+              Écrit par l’IA, pour jouer.
+              {r.autre.type === "commerce" ? " Ce n’est pas le commerçant qui parle." : r.autre.type === "personnage" && r.autre.cle !== "pablito" ? " Ce personnage est imaginaire : il n’existe pas en vrai." : ""}{" "}
               <button type="button" onClick={() => signaler(r.id)}>
                 Signaler
               </button>
@@ -726,8 +859,14 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
                 </button>
               )}
               {ancienne && (
-                <button type="button" onClick={() => setAncienne(null)}>
-                  ← Celle d’aujourd’hui
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAncienne(null);
+                    setNeuve(false);
+                  }}
+                >
+                  ← Ma rencontre du jour
                 </button>
               )}
             </p>
@@ -740,12 +879,42 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
         )}
       </div>
 
+      {/* 👯 SES AMIS ET PROCHES : une discussion quand il veut (AMIS_PAR_JOUR par jour) */}
+      {!etat.besoinCarte && amisListe.length > 0 && (
+        <section className="rd-amis" aria-label="Tes amis et proches">
+          <b>👯 Tes amis et proches</b>
+          <small>
+            {restantes > 0
+              ? `Lance une discussion entre vos figurines : encore ${restantes} aujourd’hui.`
+              : "Tu as lancé tes discussions du jour : reviens demain pour les suivantes !"}
+          </small>
+          <ul>
+            {amisListe.map((x) => (
+              <li key={x.n}>
+                <Avatar p={{ type: "client", prenom: x.prenom, titre: "", image: x.image, figurine: x.figurine }} />
+                <span className="rd-ami-nom">{x.prenom}</span>
+                {x.carte ? (
+                  <button type="button" className="mp-bouton" onClick={() => discuter(x.n)} disabled={discute != null || restantes <= 0}>
+                    {discute === x.n ? "💬 …" : "💬 Discuter"}
+                  </button>
+                ) : (
+                  <small>pas encore sa carte</small>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* LES DEUX FAÇONS D'EN AVOIR PLUS */}
       {!etat.besoinCarte && (
         <div className="rd-choix-grille">
           <div className="rd-choix rd-inviter">
             <b>👯 Invite un ami</b>
-            <small>Dès qu’il a fait sa carte, vos deux figurines discutent. {etat.amis ? `Déjà ${etat.amis} ami${etat.amis > 1 ? "s" : ""} relié${etat.amis > 1 ? "s" : ""} !` : ""}</small>
+            <small>
+              Dès qu’il a fait sa carte, vos deux figurines discutent ; ensuite, lance une discussion quand tu veux ({AMIS_PAR_JOUR} par jour).{" "}
+              {etat.amis ? `Déjà ${etat.amis} ami${etat.amis > 1 ? "s" : ""} relié${etat.amis > 1 ? "s" : ""} !` : ""}
+            </small>
             {invitation ? (
               <PanneauEnvoi lien={invitation} texte={texteInvitation("")} titre="Ton invitation est prête ✓" />
             ) : (
@@ -758,6 +927,7 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
             fait={etat.membreAujourdhui}
             onRencontre={(x) => {
               setAncienne(null);
+              setNeuve(false);
               setEtat((e) => (e ? { ...e, rencontre: x, membreAujourdhui: true, personne: false, retiree: false } : e));
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
@@ -808,6 +978,22 @@ export const STYLES_RENCONTRE = `
 .rd-av .rd-clik{position:absolute;left:8%;bottom:0;width:84%;height:94%;opacity:.45}
 .rd-q{position:absolute;inset:0;display:grid;place-items:center;color:#FFF4E6;font-size:16px;font-weight:900;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .rd-av.grand .rd-q{font-size:24px}
+.rd-av.perso{display:grid;place-items:center;background:radial-gradient(70% 60% at 50% 40%,#FFE2A8,#F2A93B 62%,#8A4B12)}
+.rd-perso{font-size:19px;line-height:1}
+.rd-av.grand .rd-perso{font-size:30px}
+.rd-av.scene .rd-perso{font-size:52px}
+.rs-fig.droite .rd-perso{transform:scaleX(-1)}
+.rd-format{align-self:flex-start;margin-top:4px;padding:3px 9px;border-radius:999px;background:rgba(142,197,255,.14);border:1px solid rgba(142,197,255,.4);color:#D8E9FF!important;font-size:11.5px!important;font-weight:800}
+.rd-nouvelle{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.rd-nouvelle .mp-bouton{padding:6px 12px;font-size:13px}
+.rd-amis{display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:24px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.rd-amis > b{font-size:17px;font-weight:900}
+.rd-amis > small{font-size:13px;line-height:1.4;color:#D9C3CB}
+.rd-amis ul{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.rd-amis li{display:flex;align-items:center;gap:10px;min-width:0}
+.rd-amis .rd-ami-nom{flex:1;min-width:0;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rd-amis li .mp-bouton{flex:none;padding:7px 12px;font-size:13px}
+.rd-amis li > small{flex:none;font-size:12px;color:#A88E99}
 .rd-prochaine{margin:0;padding-top:10px;border-top:1px solid rgba(255,255,255,.1);font-size:13.5px;color:#D9C3CB;text-align:center}
 .rd-prochaine b{font-variant-numeric:tabular-nums;color:#F2C46B;font-size:15px}
 .rd-jauge{display:block;height:8px;margin-top:6px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}
@@ -946,6 +1132,14 @@ export const STYLES_RENCONTRE = `
 .ra-fil p{margin:2px 0 0;font-size:14px;line-height:1.4}
 .ra-echange textarea{width:100%;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:#FFF4E6;font:inherit;font-size:15px;resize:vertical}
 .ra-actions{display:flex;align-items:center;gap:12px}
+.ra-ettoi{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:18px;background:rgba(242,196,107,.08);border:1px solid rgba(242,196,107,.45)}
+.ra-ettoi > b{font-size:15px;font-weight:900;color:#F2C46B}
+.ra-question{margin:0;font-size:16px;line-height:1.35;font-weight:800;color:#FFF4E6}
+.ra-ettoi > small{font-size:12.5px;color:#D9C3CB}
+.ra-ettoi textarea{width:100%;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:#FFF4E6;font:inherit;font-size:15px;resize:vertical}
+.ra-ettoi .ra-envoyer{align-self:flex-start}
+.ra-reponse{margin:0;padding:8px 11px;border-radius:14px;background:rgba(255,46,154,.2);font-size:14px;line-height:1.4}
+.ra-reponse small{display:block;font-size:10.5px;font-weight:900;color:#F2C46B}
 /* 🎞️ ses cartes souvenirs */
 .rd-souvenirs{display:flex;flex-direction:column;gap:8px}
 .rd-souvenirs > b{font-size:14px;font-weight:900;color:#D9C3CB}

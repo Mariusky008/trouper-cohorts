@@ -1,6 +1,7 @@
 // 💬 LA RENCONTRE DU JOUR (`lib/direct/rencontre.ts`).
 //
-// GET : sa rencontre du jour (faite à la première visite du jour : l'IA l'écrit), sa ressemblance, ses amis.
+// GET : sa rencontre du jour (faite à la première visite du jour, hors de son entourage : l'IA l'écrit), sa
+//       ressemblance, ses amis (et combien de discussions il peut encore lancer), une discussion d'ami toute neuve.
 // GET ?id=<id> : une rencontre d'avant.
 // GET ?souvenirs=1 : ses cartes souvenirs (une par rencontre) — sans faire celle du jour.
 // POST { action: "reagir", id, n, v?: "moi"|"pas"|null, e?: émotion|null } : sa réaction à une phrase → sa ressemblance.
@@ -11,6 +12,8 @@
 // POST { action: "arreter-membres" } : il sort de la file ; { action: "bloquer", id } : ne plus rencontrer ce membre.
 // POST { action: "echanger", id, oui: true|false } : il veut (ou ne veut plus) échanger ses impressions → { rencontre }.
 // POST { action: "impression", id, texte } : une impression (les deux ont dit oui) → { rencontre }.
+// POST { action: "discuter", n } : une discussion avec son ami n° n (`AMIS_PAR_JOUR` par jour) → { rencontre, restantes }.
+// POST { action: "repondre", id, texte } : sa réponse à la question de fin (« Et toi ? ») → { rencontre }.
 // Jamais d'habitant créé ici.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -20,12 +23,14 @@ import {
   accepter,
   arreterMembres,
   bloquerMembre,
+  discuterAvecUnAmi,
   ecrireImpression,
   inviter,
   reagir,
   rencontreDuJour,
   rencontreParId,
   rencontrerUnMembre,
+  repondre,
   signalerRencontre,
   souvenirsDe,
   vouloirEchanger,
@@ -92,6 +97,16 @@ export async function POST(request: Request) {
   }
   if (p?.action === "impression") {
     const r = await ecrireImpression(supabase, moi, p.id, p.texte);
+    if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
+    return NextResponse.json({ ok: true, rencontre: r.rencontre }, { headers: sansCache });
+  }
+  if (p?.action === "discuter") {
+    const r = await discuterAvecUnAmi(supabase, moi, p.n);
+    if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
+    return NextResponse.json({ ok: true, rencontre: r.rencontre, restantes: r.restantes ?? 0 }, { headers: sansCache });
+  }
+  if (p?.action === "repondre") {
+    const r = await repondre(supabase, moi, p.id, p.texte);
     if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
     return NextResponse.json({ ok: true, rencontre: r.rencontre }, { headers: sansCache });
   }
