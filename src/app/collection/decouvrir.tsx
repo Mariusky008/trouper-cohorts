@@ -193,7 +193,7 @@ export function OngletMois({ aujourdhui, commerces, dejaChez }: { aujourdhui: st
           popup
           repliques={[
             "Tu as vu ma tenue ? C’est celle de l’édition du mois 😎",
-            "Chaque commerce ClikMe a sa figurine du mois. Tu passes chez l’un d’eux, tu achètes quelque chose, et elle rejoint ton album.",
+            "Chaque commerce ClikMe a sa figurine du mois. Tu passes chez l’un d’eux, et elle rejoint ton album.",
             "Mais attention : elle s’en va à la fin du mois. Une édition manquée est manquée, pour toujours !",
             "Le mois prochain, une autre tenue. Et dix figurines chez le même commerce, c’est la figurine d’or 🏆",
           ]}

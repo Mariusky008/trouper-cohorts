@@ -8,7 +8,7 @@
  *     SE CONSTRUIT EN DIRECT à côté — chaque réponse fait monter ses caractéristiques, et le gain s'envole (« +25 🚀 ») ;
  *   · LA RÉVÉLATION : la carte tourne, les confettis tombent, « Nouvelle carte ! » ;
  *   · SA CARTE se retourne d'un toucher (sa fiche au dos) et s'incline sous le doigt (un reflet la suit) ; dessous, ce
- *     qui la fait monter : le prochain niveau, le prochain cadre, ce que rapporte le prochain achat.
+ *     qui la fait monter : le prochain niveau, le prochain cadre, ce que rapporte la prochaine étape (un cadeau de ClikMe).
  * La carte elle-même (`CartePerso`) sert aussi à la page d'une carte partagée (`/carte/<id>`).
  */
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react";
@@ -20,7 +20,7 @@ import {
   PROGRES_VIDE,
   QUESTIONS,
   caracteristiques,
-  prochainAchat,
+  prochainCadeau,
   texteDeLaCarte,
   type CartePersonnage,
   type CleCaracteristique,
@@ -38,8 +38,8 @@ const VISAGES_QUIZ: Visage[] = ["joie", "neutre", "euphorie"];
 
 const CADRES = { bronze: { a: "#F2B27A", b: "#7A3E16", nom: "Bronze" }, argent: { a: "#EEF3F8", b: "#7F8EA3", nom: "Argent" }, or: { a: "#FFE7A0", b: "#B8801E", nom: "Or" } };
 const RANGS = [
-  { rang: "argent", achats: 3, nom: "Argent" },
-  { rang: "or", achats: 6, nom: "Or" },
+  { rang: "argent", cadeaux: 3, nom: "Argent" },
+  { rang: "or", cadeaux: 6, nom: "Or" },
 ] as const;
 
 async function demander(corps: Record<string, unknown>): Promise<{ carte?: CartePersonnage; lien?: string; error?: string }> {
@@ -54,7 +54,7 @@ const valeursPartielles = (r: Partial<Reponses>, p: Progres, gouts: readonly str
 
 // ─── la carte ────────────────────────────────────────────────────────────────────────────────────
 /**
- * LA CARTE : son cadre (bronze, argent, or : ses achats), son image, son titre, ses six caractéristiques ; au dos, sa
+ * LA CARTE : son cadre (bronze, argent, or : ses cadeaux de ClikMe), son image, son titre, ses six caractéristiques ; au dos, sa
  * fiche. Un toucher la retourne (`retournable`) ; le doigt (ou la souris) l'incline, un reflet le suit.
  */
 export function CartePerso({ carte, silhouette = false, retournable = true }: { carte?: CartePersonnage | null; silhouette?: boolean; retournable?: boolean }) {
@@ -209,9 +209,10 @@ function CarteEnDirect({ valeurs, gains }: { valeurs: Record<CleCaracteristique,
   );
 }
 
-/** Ce qui fait monter sa carte : le prochain niveau, le prochain cadre, le prochain achat. */
+/** Ce qui fait monter sa carte : le prochain niveau, le prochain cadre — un cadeau de ClikMe à chaque étape franchie. */
 function CeQuiMonte({ carte, progres, allerA }: { carte: CartePersonnage; progres: Progres; allerA?: (o: string) => void }) {
-  const prochain = RANGS.find((r) => progres.figurines < r.achats);
+  const prochain = RANGS.find((r) => progres.cadeaux < r.cadeaux);
+  const suite = prochainCadeau(progres);
   return (
     <div className="mp-monte">
       <div className="mp-niveau">
@@ -221,21 +222,22 @@ function CeQuiMonte({ carte, progres, allerA }: { carte: CartePersonnage; progre
         </span>
         <span className="mp-badge suivant">Niv. {carte.niveau + 1}</span>
       </div>
-      <p>
-        <b>Encore 1 achat</b> chez un commerce ClikMe pour passer niveau {carte.niveau + 1} :{" "}
-        {prochainAchat()
-          .map((g) => `${g.emoji} ${g.nom} +${g.plus}${g.si ? ` (${g.si})` : ""}`)
-          .join(", ")}
-        .
-      </p>
+      {suite ? (
+        <p>
+          🎁 <b>Ta prochaine étape</b> pour passer niveau {carte.niveau + 1} : {suite.etape.emoji} {suite.etape.titre}
+          {suite.monte.length > 0 && <> — {suite.monte.map((g) => `${g.emoji} ${g.nom} +${g.plus}`).join(", ")}</>}.
+        </p>
+      ) : (
+        <p>🎁 Toutes les étapes sont franchies : bravo !</p>
+      )}
       {prochain && (
         <p className="mp-cadre">
-          🖼️ Le cadre <b>{prochain.nom}</b> à {prochain.achats} achats : encore {prochain.achats - progres.figurines}.
+          🖼️ Le cadre <b>{prochain.nom}</b> à {prochain.cadeaux} cadeaux : encore {prochain.cadeaux - progres.cadeaux}.
         </p>
       )}
-      {allerA && (
-        <button type="button" className="mp-ou" onClick={() => allerA("mois")}>
-          📍 Où acheter ce mois-ci ?
+      {allerA && suite && (
+        <button type="button" className="mp-ou" onClick={() => allerA(suite.etape.onglet)}>
+          {suite.etape.emoji} J’y vais
         </button>
       )}
     </div>
@@ -492,7 +494,7 @@ export function MonPersonnage({
           repliques={[
             { t: "Et toi, quel personnage es-tu ? 🔮", v: "euphorie" },
             { t: "Réponds vite, sans réfléchir : sept questions, et je devine. Ta carte se construit sous tes yeux.", v: "neutre" },
-            { t: "Ensuite, chaque achat chez un commerce ClikMe fait monter tes caractéristiques et ton niveau 📈", v: "joie" },
+            { t: "Ensuite, à chaque étape que tu franchis dans ClikMe, je t’offre un cadeau : ton niveau et tes caractéristiques montent 🎁", v: "joie" },
           ]}
         >
           <button type="button" className="og-go mp-lancer" onClick={() => setEtape({ q: 0 })}>

@@ -3,7 +3,8 @@
  * des caractéristiques qui montent avec les visites »). Sept questions amusantes, ce qu'il aime, sa phrase fétiche :
  * l'IA en écrit une fiche drôle et bienveillante (son titre, son portrait, son super-pouvoir, son point faible, sa
  * façon de parler). Ses six caractéristiques, elles, ne sont PAS écrites par l'IA : elles se calculent ici, d'après ses
- * réponses ET ses achats chez les commerces ClikMe — c'est ce qui les fait monter, et ce qui fait revenir.
+ * réponses ET ses cadeaux de ClikMe (une étape franchie dans l'app, un cadeau — plus ses achats depuis le 5 novembre
+ * 2026) — c'est ce qui les fait monter, et ce qui fait revenir.
  *
  * C'est aussi la base de la rencontre du jour (sa façon de parler, ce qu'il aime) : `docs/figurines.md`.
  *
@@ -12,6 +13,7 @@
  *
  * FICHIER PARTAGÉ (navigateur et serveur) : aucun accès à la base ici.
  */
+import { CADEAUX_VIDES, prochaineEtape, type Cadeaux, type CleEtape } from "./etapes";
 
 export const QUESTIONS = [
   { cle: "elan", q: "Face à une nouvelle idée, tu…", a: { emoji: "🚀", dit: "Fonces" }, b: { emoji: "🧐", dit: "Prends ton temps" } },
@@ -53,36 +55,56 @@ export const CARACTERISTIQUES = [
 ] as const;
 export type CleCaracteristique = (typeof CARACTERISTIQUES)[number]["cle"];
 
-/** Ce que ses achats chez les commerces ClikMe lui ont rapporté (lu dans ses collections). */
-export type Progres = { figurines: number; commerces: number; rares: number; ors: number };
-export const PROGRES_VIDE: Progres = { figurines: 0, commerces: 0, rares: 0, ors: 0 };
+/**
+ * 🎁 CE QUI LA FAIT PROGRESSER : SES CADEAUX DE CLIKME (`etapes.ts`) — un à chaque étape franchie dans l'app ; plus ses
+ * achats (5 novembre 2026, le patron : « ça ressemble trop à de l'achat forcé »).
+ */
+export type Progres = Cadeaux;
+export const PROGRES_VIDE: Progres = CADEAUX_VIDES;
 
 const borne = (n: number) => Math.max(1, Math.min(99, Math.round(n)));
 
+/** CE QUE CHAQUE ÉTAPE FAIT MONTER : la sienne (un message fait rire, un ami rend fidèle, un inconnu demande de l'audace…). */
+export const BONUS_ETAPE: Record<CleEtape, Partial<Record<CleCaracteristique, number>>> = {
+  figurine: { audace: 8 },
+  carte: { curiosite: 6 },
+  message: { humour: 10 },
+  rencontre: { curiosite: 8 },
+  reagir: { mauvaiseFoi: 10 },
+  ami: { fidelite: 12 },
+  membre: { audace: 12 },
+  fidele: { fidelite: 10 },
+  souvenirs: { chance: 12 },
+  commerce: { chance: 6, curiosite: 4 },
+};
+
 /**
- * SES SIX CARACTÉRISTIQUES : ses réponses donnent la base ; ses achats les font monter (la fidélité à chaque figurine,
- * la curiosité à chaque nouveau commerce, la chance avec les éditions rares et les figurines d'or).
+ * SES SIX CARACTÉRISTIQUES : ses réponses donnent la base ; ses étapes les font monter (`BONUS_ETAPE`). Ses cadeaux
+ * d'avant (ce que ses figurines lui avaient ouvert) comptent pour sa fidélité.
  */
 export function caracteristiques(r: Reponses, p: Progres, gouts: readonly string[] = []): Record<CleCaracteristique, number> {
+  const plus = (c: CleCaracteristique) => p.etapes.reduce((n, e) => n + (BONUS_ETAPE[e]?.[c] ?? 0), 0);
+  const avant = Math.max(0, p.cadeaux - p.etapes.length);
   return {
-    audace: borne(30 + (r.elan === "a" ? 25 : 0) + (r.tete === "b" ? 15 : 0) + p.commerces * 3),
-    humour: borne((r.ton === "a" ? 62 : 30) + (r.jeu === "b" ? 8 : 0)),
-    mauvaiseFoi: borne((r.jeu === "a" ? 58 : 22) + (r.sort === "b" ? 8 : 0)),
-    chance: borne((r.sort === "a" ? 50 : 25) + p.rares * 12 + p.ors * 6),
-    curiosite: borne(25 + p.commerces * 10 + gouts.length * 4),
-    fidelite: borne(15 + p.figurines * 4 + p.ors * 8),
+    audace: borne(30 + (r.elan === "a" ? 25 : 0) + (r.tete === "b" ? 15 : 0) + plus("audace")),
+    humour: borne((r.ton === "a" ? 62 : 30) + (r.jeu === "b" ? 8 : 0) + plus("humour")),
+    mauvaiseFoi: borne((r.jeu === "a" ? 58 : 22) + (r.sort === "b" ? 8 : 0) + plus("mauvaiseFoi")),
+    chance: borne((r.sort === "a" ? 50 : 25) + plus("chance")),
+    curiosite: borne(25 + gouts.length * 4 + plus("curiosite")),
+    fidelite: borne(15 + plus("fidelite") + avant * 4),
   };
 }
 
-/** Son niveau : un de plus à chaque figurine gagnée (chaque achat). */
-export const niveauDe = (p: Progres) => Math.min(99, 1 + p.figurines);
-/** Le cadre de sa carte : bronze, argent (3 achats), or (6). */
-export const rangDe = (p: Progres): "bronze" | "argent" | "or" => (p.figurines >= 6 ? "or" : p.figurines >= 3 ? "argent" : "bronze");
-/** Ce que son prochain achat lui rapportera (pour donner envie d'y aller). */
-export const prochainAchat = () => [
-  { emoji: "💖", nom: "Fidélité", plus: 4 },
-  { emoji: "🧭", nom: "Curiosité", plus: 10, si: "dans un nouveau commerce" },
-];
+/** Son niveau : un de plus à chaque cadeau de ClikMe. */
+export const niveauDe = (p: Progres) => Math.min(99, 1 + p.cadeaux);
+/** Le cadre de sa carte : bronze, argent (3 cadeaux), or (6). */
+export const rangDe = (p: Progres): "bronze" | "argent" | "or" => (p.cadeaux >= 6 ? "or" : p.cadeaux >= 3 ? "argent" : "bronze");
+/** Ce que sa prochaine étape lui rapportera (pour donner envie de la franchir). */
+export function prochainCadeau(p: Progres) {
+  const e = prochaineEtape(p.etapes);
+  if (!e) return null;
+  return { etape: e, monte: Object.entries(BONUS_ETAPE[e.cle]).map(([c, plus]) => ({ ...CARACTERISTIQUES.find((x) => x.cle === c)!, plus: plus as number })) };
+}
 
 /** La fiche, écrite par l'IA (ou, sans elle, composée ici). */
 export type Fiche = { titre: string; portrait: string; pouvoir: string; faiblesse: string; facon: string };

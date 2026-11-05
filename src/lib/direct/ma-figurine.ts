@@ -18,11 +18,12 @@
  * FICHIER PARTAGÉ (navigateur et serveur) : aucun accès à la base ici.
  */
 import type { Collection } from "./collection";
+import type { CleEtape } from "./etapes";
 import { TOTAL_COLLECTION } from "./collection";
 
 /**
- * 🎁 SES OPTIONS, UNE DE PLUS À CHAQUE ACHAT — `n` : le nombre de figurines gagnées (tous commerces confondus) qui
- * l'ouvre. Au départ (0) : sa figurine qui parle, avec son texte, la joie, la danse, la voix « Douce », l'envoi.
+ * 🎁 SES OPTIONS, UNE DE PLUS À CHAQUE CADEAU DE CLIKME — `n` : le cadeau qui l'ouvre (`etapes.ts` : un cadeau à
+ * chaque étape franchie dans l'app ; avant le 5 novembre 2026, c'était une figurine gagnée, « à chaque achat »). Au départ (0) : sa figurine qui parle, avec son texte, la joie, la danse, la voix « Douce », l'envoi.
  * Changer cette liste change la page, la route et les essais à la fois. Le fou rire et les grimaces (5 novembre 2026,
  * les mots de Pablito : « elle pourra danser, rire et faire des grimaces ») viennent après les autres : celles déjà
  * ouvertes ne bougent pas.
@@ -146,8 +147,11 @@ export type EtapeMaFigurine = "photo" | "fabrication" | "prete" | "bientot";
 export type CommerceCite = { slug: string; nom: string; figurine: string };
 
 export type EtatMaFigurine = {
-  /** Ses figurines gagnées, tous commerces confondus : ce qui ouvre ses options (`OPTIONS_FIGURINE`). */
+  /** Ses figurines du mois gagnées, tous commerces confondus (en passant chez les commerçants). */
   total: number;
+  /** 🎁 Ses cadeaux de ClikMe (`etapes.ts`) : ce qui ouvre ses options (`OPTIONS_FIGURINE`), et les étapes franchies. */
+  cadeaux: number;
+  etapes: CleEtape[];
   etape: EtapeMaFigurine;
   prenom: string;
   /** Il a un compte (le cookie de l'appareil) ; sans lui, sa photo ouvre son compte dans la ville choisie. */

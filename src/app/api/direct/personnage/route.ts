@@ -20,7 +20,7 @@ export async function GET() {
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json({ ok: true, compte: false, carte: null }, { headers: sansCache });
   const [carte, familles] = await Promise.all([carteDe(supabase, moi), famillesDe(supabase, moi.id).catch(() => [])]);
-  return NextResponse.json({ ok: true, compte: true, carte, progres: progresDe(familles) }, { headers: sansCache });
+  return NextResponse.json({ ok: true, compte: true, carte, progres: await progresDe(supabase, moi.id, familles) }, { headers: sansCache });
 }
 
 export async function POST(request: Request) {

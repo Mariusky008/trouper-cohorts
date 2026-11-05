@@ -171,7 +171,7 @@ export function MaCollection({ aujourdhui, commerces, villes = [] }: { aujourdhu
         {/* 🗣️ MA FIGURINE */}
         <section className="mc-onglet" id="o-figurine" hidden={onglet !== "figurine"} aria-label="Ma figurine">
           <OngletVisible.Provider value={onglet === "figurine"}>
-            <OngletFigurine etat={charge ? (etat ?? { total: 0, etape: "photo", prenom: "", compte: false, commerces: [], messages: [] }) : null} villes={villes} onEtat={poserEtat} />
+            <OngletFigurine etat={charge ? (etat ?? { total: 0, cadeaux: 0, etapes: [], etape: "photo", prenom: "", compte: false, commerces: [], messages: [] }) : null} villes={villes} onEtat={poserEtat} />
           </OngletVisible.Provider>
         </section>
 
@@ -230,7 +230,7 @@ export function MaCollection({ aujourdhui, commerces, villes = [] }: { aujourdhu
                     popup
                     repliques={[
                       { t: "Ton album est vide… pour l’instant ! 📒", v: "tristesse" },
-                      { t: "À chaque achat chez un commerce ClikMe, je colle sa figurine du mois ici. Dix chez le même commerce, et c’est la figurine d’or 🏆", v: "euphorie" },
+                      { t: "Quand tu passes chez un commerce ClikMe, je colle sa figurine du mois ici. Dix chez le même commerce, et c’est la figurine d’or 🏆", v: "euphorie" },
                     ]}
                   >
                     <button type="button" className="og-go" onClick={() => aller("mois")}>

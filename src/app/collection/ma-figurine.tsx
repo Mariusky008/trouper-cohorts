@@ -9,9 +9,9 @@
  * UN SEUL ÉCRAN, UN SEUL GESTE : la figurine en grand ; dessous, ce qu'elle ressent (SON visage change) ; puis ce
  * qu'elle dit — un texte lu par une voix au choix, ou sa propre voix — ; « Écouter » ; « Envoyer » (WhatsApp d'abord).
  *   · `StudioMoi` : la sienne, quand elle est prête (ses expressions se fabriquent toutes seules la première fois) ;
- *     ses options (`OPTIONS_FIGURINE`) : celles pas encore ouvertes se voient, sous cadenas, avec l'achat qui les ouvre
- *     (`MesOptions`) — 4 novembre 2026 : « créer sa figurine dès le départ, et des options supplémentaires à chaque fois
- *     qu'on achète quelque chose chez un commerçant » ;
+ *     ses options (`OPTIONS_FIGURINE`) : celles pas encore ouvertes se voient, sous cadenas, avec le cadeau qui les
+ *     ouvre (`MesOptions`) — un cadeau de ClikMe à chaque étape franchie dans l'app (5 novembre 2026 : plus d'options
+ *     « à chaque achat », « ça ressemble trop à de l'achat forcé ») ;
  *   · `OngletFigurine` : l'onglet entier — l'accueil du guide, la figurine du patron de ClikMe (`guide.tsx`), la quête
  *     `EnvoiPhoto` (« Crée ta figurine », dès le départ, sans compte), `FabricationAuto` (le moteur la fabrique, le guide raconte),
  *     `Annonce` (sans moteur : ClikMe la fait à la main). La démonstration qu'on faisait parler (`StudioDemo`) est
@@ -41,6 +41,7 @@ import { reduireImage } from "@/lib/direct/reduire-image";
 import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE, type FigurineHandle } from "./figurine-qui-parle";
 import { Guide, GuideDit, STYLES_GUIDE, useVoixPablito } from "./guide";
 import { SONS_PABLITO } from "@/lib/direct/guide";
+import { ETAPES, prochaineEtape } from "@/lib/direct/etapes";
 
 type Reponse = { error?: string; etat?: EtatMaFigurine; lien?: string; son?: string; enCours?: boolean };
 
@@ -70,10 +71,10 @@ const ordinal = (n: number) => (n === 1 ? "1ᵉʳ" : `${n}ᵉ`);
 /** Ce qu'on dit quand il touche une option encore fermée. */
 const ouvreA = (cle: string) => {
   const o = OPTIONS_FIGURINE.find((x) => x.cle === cle);
-  return o ? `${o.emoji} ${o.titre} s’ouvre à ton ${ordinal(o.n)} achat chez un commerce ClikMe.` : "";
+  return o ? `${o.emoji} ${o.titre} s’ouvre avec ton ${ordinal(o.n)} cadeau ClikMe : franchis une étape de plus 🎁` : "";
 };
 
-/** `total` (sa figurine) : les visages pas encore ouverts sont sous cadenas ; un toucher dit quel achat les ouvre. */
+/** `total` (ses cadeaux de ClikMe) : les visages pas encore ouverts sont sous cadenas ; un toucher dit quel cadeau les ouvre. */
 function ChoixExpression({ valeur, onChoix, total, onFerme }: { valeur: Sentiment | null; onChoix: (s: Sentiment | null) => void; total?: number; onFerme?: (dit: string) => void }) {
   return (
     <div className="tf-expr" role="radiogroup" aria-label="Ce qu’elle ressent">
@@ -131,13 +132,28 @@ function ChoixVoix({ valeur, onChoix, desactive, total, onFerme }: { valeur: Cle
   );
 }
 
-/** 🎁 SES OPTIONS : ouvertes, la prochaine, et les autres sous cadenas — une de plus à chaque achat. */
-export function MesOptions({ total }: { total: number }) {
-  const ouvertes = optionsOuvertes(total);
-  const suivante = optionSuivante(total);
+/**
+ * 🎁 SES CADEAUX DE CLIKME (`etapes.ts`) : les étapes à franchir dans l'app (cochées), et ses options — la n-ième
+ * s'ouvre au n-ième cadeau ; la prochaine brille. Plus aucun achat (5 novembre 2026 : « ça ressemble trop à de
+ * l'achat forcé »).
+ */
+export function MesOptions({ cadeaux, etapes }: { cadeaux: number; etapes: readonly string[] }) {
+  const ouvertes = optionsOuvertes(cadeaux);
+  const suivante = optionSuivante(cadeaux);
+  const prochaine = prochaineEtape(etapes);
   return (
-    <section className="tf-options" aria-label="Tes options">
-      <b className="tf-q">🎁 Une option de plus à chaque achat chez un commerce ClikMe</b>
+    <section className="tf-options" aria-label="Tes cadeaux">
+      <b className="tf-q">🎁 Un cadeau de ClikMe à chaque étape : il ouvre une option</b>
+      <ul className="tf-kdo" aria-label="Tes étapes">
+        {ETAPES.map((e) => {
+          const faite = etapes.includes(e.cle);
+          return (
+            <li key={e.cle} className={faite ? "faite" : e.cle === prochaine?.cle ? "suivante" : ""}>
+              <span aria-hidden="true">{faite ? "✅" : e.emoji}</span> {e.titre}
+            </li>
+          );
+        })}
+      </ul>
       <ol>
         <li className="ouverte">
           <span aria-hidden="true">🗣️</span>
@@ -153,15 +169,23 @@ export function MesOptions({ total }: { total: number }) {
           <li key={o.cle} className={ouvertes.has(o.cle) ? "ouverte" : suivante?.cle === o.cle ? "suivante" : "fermee"}>
             <span aria-hidden="true">{ouvertes.has(o.cle) ? o.emoji : suivante?.cle === o.cle ? o.emoji : "🔒"}</span>
             <b>{o.titre}</b>
-            <small>{ouvertes.has(o.cle) ? "ouverte ✓" : `${ordinal(o.n)} achat`}</small>
+            <small>{ouvertes.has(o.cle) ? "ouverte ✓" : `${ordinal(o.n)} cadeau`}</small>
           </li>
         ))}
       </ol>
       <p className="tf-options-dit">
         {suivante ? (
           <>
-            Encore <b>{suivante.n - total}</b> achat{suivante.n - total > 1 ? "s" : ""} : {suivante.emoji} {suivante.titre.toLowerCase()} — {suivante.dit}.{" "}
-            <a href="#ou-gagner">Où ?</a>
+            Encore <b>{suivante.n - cadeaux}</b> cadeau{suivante.n - cadeaux > 1 ? "x" : ""} : {suivante.emoji} {suivante.titre.toLowerCase()} — {suivante.dit}.
+            {prochaine && (
+              <>
+                {" "}
+                Prochaine étape :{" "}
+                <a href={`#${prochaine.onglet}`}>
+                  {prochaine.emoji} {prochaine.titre}
+                </a>
+              </>
+            )}
           </>
         ) : (
           "Toutes tes options sont ouvertes. Bravo !"
@@ -229,7 +253,8 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const [mode, setMode] = useState<"ecrire" | "voix">(etat0.voixTexte ? "ecrire" : "voix");
   const [nudge, setNudge] = useState("");
   const [refaire, setRefaire] = useState(false);
-  const total = etat.total;
+  // ce qui ouvre ses options : ses cadeaux de ClikMe (plus ses achats)
+  const total = etat.cadeaux;
   // SA PROPRE VOIX : une option (la 2ᵉ) — sauf sans voix lue (sans elle, il n'aurait rien pour parler)
   const microOuvert = voixOuverte("micro", total) || !etat.voixTexte;
   const or = optionsOuvertes(total).has("or");
@@ -407,7 +432,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
         </button>
         {nudge && (
           <p className="tf-nudge" role="status">
-            {nudge} <a href="#ou-gagner">Où ?</a>
+            {nudge}
           </p>
         )}
         {expressionsEnCours && etat.expressionsAFaire && <p className="tf-note">🎭 Ta figurine apprend ses expressions… (2 à 3 minutes, la première fois)</p>}
@@ -554,7 +579,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
           </p>
         )}
 
-        <MesOptions total={total} />
+        <MesOptions cadeaux={etat.cadeaux} etapes={etat.etapes} />
 
         {etat.messages.length > 0 && (
           <details className="tf-messages">
@@ -714,7 +739,7 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
 
 /** Ce que dit le guide pendant que le moteur fabrique (selon le temps passé). */
 const PENDANT = [
-  { s: 0, dit: "Je regarde ta photo… joli sourire ! 😍" },
+  { s: 0, dit: "Je regarde ta photo… je vois déjà ta figurine ! 👀" },
   { s: 15, dit: "Je sculpte ta tête. Et ta coiffure, avec soin 💇" },
   { s: 55, dit: "Je peins tes yeux, tes joues… presque fini !" },
   { s: 90, dit: "Je lui apprends à parler 🗣️ Encore un instant…" },
@@ -819,8 +844,8 @@ export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat
 
 /**
  * 🗣️ L'ONGLET « MA FIGURINE » — sa figurine prête : la faire parler (`StudioMoi`) ; sinon, l'accueil du guide (ce qu'il
- * faut faire, et ce que ça permettra ensuite), la quête « Crée ta figurine », et ce qu'elle débloquera, achat après
- * achat (5 novembre 2026 : la démonstration a quitté la page, « elle ne sert plus à rien maintenant »).
+ * faut faire, et ce que ça permettra ensuite), la quête « Crée ta figurine », et ce qu'elle débloquera, cadeau après
+ * cadeau (5 novembre 2026 : la démonstration a quitté la page, « elle ne sert plus à rien maintenant »).
  */
 export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine | null; villes: { slug: string; nom: string }[]; onEtat: (e: EtatMaFigurine) => void }) {
   if (!etat)
@@ -875,7 +900,7 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
       <EnvoiPhoto etat={etat} villes={villes} onEnvoye={onEtat} />
       <section className="og-pouvoirs" aria-label="Ce que tu vas débloquer">
         <h2>Ce que tu vas débloquer</h2>
-        <MesOptions total={etat.total} />
+        <MesOptions cadeaux={etat.cadeaux} etapes={etat.etapes} />
       </section>
     </>
   );
@@ -963,6 +988,11 @@ export const STYLES_MA_FIGURINE =
 .tf-options li.suivante small{color:#F2C46B}
 .tf-options li.fermee{opacity:.55}
 .tf-options-dit{margin:0;font-size:13px;line-height:1.4;color:#D9C3CB}
+.tf-kdo{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.tf-options .tf-kdo li{flex:0 1 auto;max-width:100%;min-width:0;display:inline-flex;flex-direction:row;align-items:center;gap:5px;width:auto;padding:5px 11px 5px 8px;border-radius:999px;text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:12px;font-weight:800;line-height:1.25;color:#D9C3CB;opacity:1;animation:none;box-shadow:none}
+.tf-options .tf-kdo li span{font-size:14px}
+.tf-options .tf-kdo li.faite{background:rgba(61,226,166,.1);border-color:rgba(61,226,166,.45);color:#BFF7E2}
+.tf-options .tf-kdo li.suivante{border-color:#F2C46B;color:#FFF4E6;box-shadow:0 0 14px -4px rgba(242,196,107,.7)}
 .tf-options-dit a{color:#FF9FD2;font-weight:900}
 .tf-fab{display:flex;flex-direction:column;align-items:center;gap:12px;padding:22px 18px;border-radius:24px;text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(242,196,107,.35)}
 .tf-fab ol{display:grid;gap:6px;margin:0;padding:0;list-style:none;text-align:left}

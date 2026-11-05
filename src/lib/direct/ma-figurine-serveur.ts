@@ -22,6 +22,7 @@ import { createHash, randomBytes } from "crypto";
 import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "./habitant";
+import { cadeauxDe } from "./etapes-serveur";
 import { famillesDe } from "./famille-serveur";
 import { figurineDu } from "./figurines-commerces";
 import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
@@ -155,14 +156,16 @@ const essaisRestants = (f: Partial<Fabrique>) => Math.max(0, FABRICATIONS_PAR_JO
 const visagesOuverts = (total: number) => SENTIMENTS.map((x) => x.cle).filter((c) => sentimentOuvert(c, total));
 
 export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | null): Promise<EtatMaFigurine> {
-  const vide: EtatMaFigurine = { total: 0, etape: "photo", prenom: "", compte: false, auto: moteurBranche(), commerces: [], messages: [] };
+  const vide: EtatMaFigurine = { total: 0, cadeaux: 0, etapes: [], etape: "photo", prenom: "", compte: false, auto: moteurBranche(), commerces: [], messages: [] };
   if (!habitant) return vide;
   const [{ total, commerces }, prenom, { ok, ligne }] = await Promise.all([
     sesFigurines(supabase, habitant.id),
     prenomDe(supabase, habitant),
     lireLigne(supabase, habitant.id),
   ]);
-  const base: EtatMaFigurine = { ...vide, total, prenom, commerces, compte: true };
+  // 🎁 SES CADEAUX DE CLIKME : ce qui ouvre ses options (plus ses achats)
+  const { cadeaux, etapes } = await cadeauxDe(supabase, habitant.id, total);
+  const base: EtatMaFigurine = { ...vide, total, cadeaux, etapes, prenom, commerces, compte: true };
   const prete = Boolean(ligne?.prete_le && s(ligne?.neutre) && s(ligne?.parle));
   if (!ok) return { ...base, etape: "bientot" };
   if (!prete && (!ligne || !s(ligne.photo) || s(ligne.refus))) return { ...base, etape: "photo", ...(s(ligne?.refus) ? { refus: s(ligne?.refus) } : {}) };
@@ -174,7 +177,7 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
     expressionsSignees(supabase, dossierExpressions(habitant.id, s(ligne!.neutre))),
     lireJson<Fabrique>(supabase, cheminFabrique(habitant.id)),
   ]);
-  const ouverts = visagesOuverts(total);
+  const ouverts = visagesOuverts(cadeaux);
   return {
     ...base,
     etape: "prete",
@@ -271,7 +274,8 @@ export async function fabriquerSesExpressions(supabase: Supabase, habitant: Habi
   if (!source) return { error: "Ta figurine est introuvable." };
   // seulement les visages qu'il a ouverts : les autres se feront quand il les aura gagnés
   const { total } = await sesFigurines(supabase, habitant.id);
-  const r = await fabriquerUnTour(depotDans(supabase, dossierExpressions(habitant.id, s(ligne.neutre))), source, avant, visagesOuverts(total));
+  const { cadeaux } = await cadeauxDe(supabase, habitant.id, total);
+  const r = await fabriquerUnTour(depotDans(supabase, dossierExpressions(habitant.id, s(ligne.neutre))), source, avant, visagesOuverts(cadeaux));
   return r.erreur ? { error: r.erreur } : r.enCours ? { enCours: true } : {};
 }
 
@@ -284,7 +288,7 @@ export async function lireSonTexte(supabase: Supabase, habitant: Habitant, texte
   if (motInterdit(t)) return { error: MOT_REFUSE, statut: 422 };
   const etat = await etatMaFigurine(supabase, habitant);
   if (etat.etape !== "prete") return { error: "Ta figurine n’est pas encore prête.", statut: 400 };
-  if (!voixOuverte(v, etat.total)) return { error: "Cette voix s’ouvre à ta 2ᵉ visite chez un commerce ClikMe.", statut: 403 };
+  if (!voixOuverte(v, etat.cadeaux)) return { error: "Cette voix s’ouvre avec ton 2ᵉ cadeau ClikMe.", statut: 403 };
   const jour = new Date().toISOString().slice(0, 10);
   const compteur = `${habitant.id}/voix-jour.json`;
   const avant = JSON.parse((await telecharger(supabase, compteur))?.toString() || "{}") as { jour?: string; n?: number };
@@ -415,10 +419,10 @@ export async function enregistrerMessage(
   const etat = await etatMaFigurine(supabase, habitant);
   if (etat.etape !== "prete") return { error: "Ta figurine n’est pas encore prête." };
   // SES OPTIONS, tenues ici aussi (pas seulement sur la page)
-  if (!sentimentOuvert(sentimentValide(sentiment), etat.total)) return { error: "Ce visage s’ouvre avec tes prochaines visites chez les commerces ClikMe." };
+  if (!sentimentOuvert(sentimentValide(sentiment), etat.cadeaux)) return { error: "Ce visage s’ouvre avec tes prochains cadeaux ClikMe." };
   const vOk = voixValide(voix);
   // (sa propre voix : la 2ᵉ option — ou dès le départ quand aucune voix ne lit les textes)
-  if (texteValide(texte) ? vOk && !voixOuverte(vOk, etat.total) : !voixOuverte("micro", etat.total) && voixBranchee()) return { error: "Cette voix s’ouvre à ta 2ᵉ visite chez un commerce ClikMe." };
+  if (texteValide(texte) ? vOk && !voixOuverte(vOk, etat.cadeaux) : !voixOuverte("micro", etat.cadeaux) && voixBranchee()) return { error: "Cette voix s’ouvre avec ton 2ᵉ cadeau ClikMe." };
   const depuis = new Date(Date.now() - 86_400_000).toISOString();
   const { data: recents } = await supabase.from("clik_figurine_message").select("id").eq("habitant_id", habitant.id).gte("created_at", depuis).limit(MESSAGES_PAR_JOUR);
   if (Array.isArray(recents) && recents.length >= MESSAGES_PAR_JOUR) return { error: "Assez de messages pour aujourd’hui : reviens demain." };
@@ -474,8 +478,10 @@ export async function lireMessage(supabase: Supabase, id: string): Promise<Messa
     signer(supabase, s(fig.neutre), 7200),
     signer(supabase, s(fig.parle), 7200),
     sentiment ? expressionsSignees(supabase, dossierExpressions(s(r.habitant_id), s(fig.neutre)), 7200).catch(() => null) : Promise.resolve(null),
-    // ✨ le cadre doré : une option de l'expéditeur (ses figurines gagnées, aujourd'hui)
-    sesFigurines(supabase, s(r.habitant_id)).catch(() => ({ total: 0 })),
+    // ✨ le cadre doré : une option de l'expéditeur (ses cadeaux de ClikMe, aujourd'hui — sans noter sa présence)
+    sesFigurines(supabase, s(r.habitant_id))
+      .then((f) => cadeauxDe(supabase, s(r.habitant_id), f.total, false))
+      .catch(() => ({ cadeaux: 0 })),
   ]);
   return {
     signale: false,
@@ -488,7 +494,7 @@ export async function lireMessage(supabase: Supabase, id: string): Promise<Messa
     expression: sentiment ? (expr?.expressions[sentiment] ?? null) : null,
     ...(s(r.texte) ? { texte: s(r.texte) } : {}),
     ...(aCote.danse === true ? { danse: true } : {}),
-    ...(optionsOuvertes(siennes.total).has("or") ? { or: true } : {}),
+    ...(optionsOuvertes(siennes.cadeaux).has("or") ? { or: true } : {}),
     commerces: slugs.flatMap((slug) => {
       const x = parSlug.get(slug);
       if (!x) return [];

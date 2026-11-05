@@ -74,13 +74,16 @@ await lea.locator("#o-personnage .mp-reveler").click();
 await lea.waitForSelector("#o-personnage .mp-sienne .pc", { timeout: 30000 });
 ok((await texte(lea, "#o-personnage .mp-nouvelle")).includes("Nouvelle carte") && (await lea.locator(".pc-confettis i").count()) > 10, "la révélation : « Nouvelle carte ! », les confettis");
 const carte = await texte(lea, "#o-personnage .pc");
-ok(/Niv\. 3/.test(carte) && carte.includes("Léa") && /Fidélité \d+/.test(carte) && carte.includes("Super-pouvoir") && carte.includes("« Allez, on y va ! »"), `sa carte : niveau 3 (deux achats), six caractéristiques, sa fiche (${carte.slice(0, 140)})`);
+ok(/Niv\. 3/.test(carte) && carte.includes("Léa") && /Fidélité \d+/.test(carte) && carte.includes("Super-pouvoir") && carte.includes("« Allez, on y va ! »"), `sa carte : niveau 3 (deux cadeaux : sa carte, sa première figurine du mois), six caractéristiques, sa fiche (${carte.slice(0, 140)})`);
 ok((await lea.locator("#o-personnage .pc-carac li").count()) === 6, "six caractéristiques");
 await lea.locator("#o-personnage .pc").click();
 ok((await lea.locator("#o-personnage .pc-scene.dos").count()) === 1, "un toucher la retourne : sa fiche au dos");
-ok((await texte(lea, "#o-personnage .mp-monte")).includes("Encore 1 achat") && (await texte(lea, "#o-personnage .mp-monte")).includes("Argent"), "ce qui la fait monter : le prochain niveau, le cadre Argent");
+ok((await texte(lea, "#o-personnage .mp-monte")).includes("Ta prochaine étape") && (await texte(lea, "#o-personnage .mp-monte")).includes("Argent") && !/achat/i.test(await texte(lea, "#o-personnage .mp-monte")), "ce qui la fait monter : sa prochaine étape (un cadeau de ClikMe), le cadre Argent — plus aucun achat");
 const g1 = await api(lea, "/api/direct/personnage");
-ok(g1.carte?.valeurs?.fidelite === 23 && g1.carte?.niveau === 3 && g1.carte?.par === "local", `ses caractéristiques montent avec ses achats (fidélité ${g1.carte?.valeurs?.fidelite}), fiche sans IA ici`);
+ok(
+  g1.progres?.etapes?.includes("carte") && g1.progres?.etapes?.includes("commerce") && g1.carte?.niveau === 1 + g1.progres.cadeaux && g1.carte?.par === "local",
+  `ses étapes font monter sa carte, un niveau par cadeau (${JSON.stringify(g1.progres)}, niveau ${g1.carte?.niveau}), fiche sans IA ici`,
+);
 const insulte = await api(lea, "/api/direct/personnage", { action: "creer", reponses: g1.carte.reponses, phrase: "espèce de connard" });
 ok(insulte.statut === 422, "une phrase fétiche insultante : refusée");
 await lea.screenshot({ path: `${D}/personnage-1-carte.png`, fullPage: true });
