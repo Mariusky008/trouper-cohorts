@@ -327,6 +327,7 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
   const explique = (
     <GuideDit
       cle="rencontres"
+      popup
       repliques={[
         { t: "Chaque jour, ta figurine rencontre une autre figurine 💬", v: "joie" },
         { t: "Elles discutent selon vos personnalités : ta carte, ta façon de parler, ce que tu aimes.", v: "neutre" },

@@ -46,6 +46,9 @@ const GARDER =
 
 const consigneVisage = (x: Sentiment) =>
   `This is a collectible bobblehead figurine. Change ONLY its facial expression to ${VISAGES[x]}. The expression must be strong and readable at a glance, on THIS face (it must still be clearly the same person). ${GARDER}`;
+/** Une grimace de Pablito, le guide de « Ma collection » (`guide-serveur.ts`) : il louche… */
+export const consigneGrimace = (visage: string) =>
+  `This is a collectible bobblehead figurine. Change ONLY its facial expression to ${visage}. It must be funny and readable at a glance, on THIS face (it must still be clearly the same person). ${GARDER}`;
 /** Sa bouche ouverte, son visage de tous les jours (la figurine d'un client, juste fabriquée). */
 export const consigneBoucheNeutre = () =>
   `This is a collectible bobblehead figurine with a calm expression. Change ONLY its mouth: open it naturally as if the figurine is in the middle of saying a word (a relaxed open mouth, teeth slightly visible), keeping the rest of the face exactly the same (eyes, eyebrows, cheeks). ${GARDER}`;

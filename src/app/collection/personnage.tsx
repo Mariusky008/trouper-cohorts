@@ -350,6 +350,7 @@ export function MonPersonnage({
         {tete}
         <GuideDit
           cle="perso-sans-compte"
+          popup
           repliques={[
             { t: "Ta carte de personnage t’attend 🃏", v: "joie" },
             { t: "Sept questions, et je devine qui tu es. Mais d’abord : crée ta figurine, c’est elle qui sera sur ta carte !", v: "neutre" },
@@ -482,6 +483,7 @@ export function MonPersonnage({
         {tete}
         <GuideDit
           cle="perso-intro"
+          popup
           repliques={[
             { t: "Et toi, quel personnage es-tu ? 🔮", v: "euphorie" },
             { t: "Réponds vite, sans réfléchir : sept questions, et je devine. Ta carte se construit sous tes yeux.", v: "neutre" },

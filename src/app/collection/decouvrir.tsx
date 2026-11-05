@@ -188,6 +188,7 @@ export function OngletMois({ aujourdhui, commerces, dejaChez }: { aujourdhui: st
         <GuideDit
           edition={m.cle}
           cle={`mois-${m.cle}`}
+          popup
           repliques={[
             `Ce mois-ci, c’est l’édition ${m.nom} ${m.emoji} Tu as vu ma tenue ? 😎`,
             "Chaque commerce ClikMe a sa figurine du mois. Tu passes chez l’un d’eux, tu achètes quelque chose, et elle rejoint ton album.",

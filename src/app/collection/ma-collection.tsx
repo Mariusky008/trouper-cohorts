@@ -22,7 +22,7 @@ import { STYLES_COLLECTION } from "@/app/f/[slug]/collection";
 import { Album, STYLES_ALBUM } from "./album";
 import { OngletMois, STYLES_DECOUVRIR, type CommerceACollectionner } from "./decouvrir";
 import { OngletFigurine, STYLES_MA_FIGURINE } from "./ma-figurine";
-import { GuideDit } from "./guide";
+import { GuideDit, OngletVisible } from "./guide";
 import { MonPersonnage, STYLES_PERSONNAGE } from "./personnage";
 import { RencontreDuJour, STYLES_RENCONTRE } from "./rencontre";
 import { figurinesEnTout, type EtatMaFigurine } from "@/lib/direct/ma-figurine";
@@ -170,70 +170,81 @@ export function MaCollection({ aujourdhui, commerces, villes = [] }: { aujourdhu
       <div className="mc-onglets">
         {/* 🗣️ MA FIGURINE */}
         <section className="mc-onglet" id="o-figurine" hidden={onglet !== "figurine"} aria-label="Ma figurine">
-          <OngletFigurine etat={charge ? (etat ?? { total: 0, etape: "photo", prenom: "", compte: false, commerces: [], messages: [] }) : null} villes={villes} onEtat={poserEtat} />
+          <OngletVisible.Provider value={onglet === "figurine"}>
+            <OngletFigurine etat={charge ? (etat ?? { total: 0, etape: "photo", prenom: "", compte: false, commerces: [], messages: [] }) : null} villes={villes} onEtat={poserEtat} />
+          </OngletVisible.Provider>
         </section>
 
         {/* 🃏 PERSONNAGE */}
         {ouverts.has("personnage") && (
           <section className="mc-onglet" id="o-personnage" hidden={onglet !== "personnage"} aria-label="Mon personnage">
-            <MonPersonnage
-              compte={compte}
-              onCarte={() => {
-                setACarte(true);
-                setVersionCarte((v) => v + 1);
-              }}
-              onSait={setACarte}
-              allerA={(o) => aller(o as Onglet)}
-            />
+            <OngletVisible.Provider value={onglet === "personnage"}>
+              <MonPersonnage
+                compte={compte}
+                onCarte={() => {
+                  setACarte(true);
+                  setVersionCarte((v) => v + 1);
+                }}
+                onSait={setACarte}
+                allerA={(o) => aller(o as Onglet)}
+              />
+            </OngletVisible.Provider>
           </section>
         )}
 
         {/* 💬 RENCONTRES */}
         {ouverts.has("rencontre") && (
           <section className="mc-onglet" id="o-rencontre" hidden={onglet !== "rencontre"} aria-label="Rencontres">
-            <RencontreDuJour compte={compte} version={versionCarte} allerA={(o) => aller(o as Onglet)} />
+            <OngletVisible.Provider value={onglet === "rencontre"}>
+              <RencontreDuJour compte={compte} version={versionCarte} allerA={(o) => aller(o as Onglet)} />
+            </OngletVisible.Provider>
           </section>
         )}
 
         {/* 📅 CE MOIS-CI */}
         {ouverts.has("mois") && (
           <section className="mc-onglet" id="o-mois" hidden={onglet !== "mois"} aria-label="Ce mois-ci">
-            <OngletMois aujourdhui={aujourdhui} commerces={commerces.filter((c) => !avec.some((f) => f.slug === c.slug))} dejaChez={avec.length > 0} />
+            <OngletVisible.Provider value={onglet === "mois"}>
+              <OngletMois aujourdhui={aujourdhui} commerces={commerces.filter((c) => !avec.some((f) => f.slug === c.slug))} dejaChez={avec.length > 0} />
+            </OngletVisible.Provider>
           </section>
         )}
 
         {/* 📒 ALBUM */}
         {ouverts.has("album") && (
           <section className="mc-onglet" id="o-album" hidden={onglet !== "album"} aria-label="Mes figurines">
-            <header className="og-tete">
-              <small>MON ALBUM</small>
-              <h2>
-                Mes figurines <span className="mc-total">{total}</span>
-              </h2>
-            </header>
-            {ennui && <p className="mc-vide">Ta collection n’a pas pu s’afficher. Réessaie dans un instant.</p>}
-            {avec.length > 0 ? (
-              <Album familles={avec} />
-            ) : (
-              familles && (
-                <GuideDit
-                  cle="album-vide"
-                  repliques={[
-                    { t: "Ton album est vide… pour l’instant ! 📒", v: "tristesse" },
-                    { t: "À chaque achat chez un commerce ClikMe, je colle sa figurine du mois ici. Dix chez le même commerce, et c’est la figurine d’or 🏆", v: "euphorie" },
-                  ]}
-                >
-                  <button type="button" className="og-go" onClick={() => aller("mois")}>
-                    📅 Voir la figurine de ce mois-ci
-                  </button>
-                  <p className="dc-deja">Tu as déjà des figurines ? Ouvre cette page sur le téléphone où tu as libéré ton fantôme.</p>
-                </GuideDit>
-              )
-            )}
-            <p className="mc-regle">
-              On ne gagne une figurine qu’en venant : elles ne s’achètent pas. Une édition manquée est manquée ; les éditions rares se gagnent quand le commerce annonce une
-              place libre.
-            </p>
+            <OngletVisible.Provider value={onglet === "album"}>
+              <header className="og-tete">
+                <small>MON ALBUM</small>
+                <h2>
+                  Mes figurines <span className="mc-total">{total}</span>
+                </h2>
+              </header>
+              {ennui && <p className="mc-vide">Ta collection n’a pas pu s’afficher. Réessaie dans un instant.</p>}
+              {avec.length > 0 ? (
+                <Album familles={avec} />
+              ) : (
+                familles && (
+                  <GuideDit
+                    cle="album-vide"
+                    popup
+                    repliques={[
+                      { t: "Ton album est vide… pour l’instant ! 📒", v: "tristesse" },
+                      { t: "À chaque achat chez un commerce ClikMe, je colle sa figurine du mois ici. Dix chez le même commerce, et c’est la figurine d’or 🏆", v: "euphorie" },
+                    ]}
+                  >
+                    <button type="button" className="og-go" onClick={() => aller("mois")}>
+                      📅 Voir la figurine de ce mois-ci
+                    </button>
+                    <p className="dc-deja">Tu as déjà des figurines ? Ouvre cette page sur le téléphone où tu as libéré ton fantôme.</p>
+                  </GuideDit>
+                )
+              )}
+              <p className="mc-regle">
+                On ne gagne une figurine qu’en venant : elles ne s’achètent pas. Une édition manquée est manquée ; les éditions rares se gagnent quand le commerce annonce une
+                place libre.
+              </p>
+            </OngletVisible.Provider>
           </section>
         )}
       </div>
