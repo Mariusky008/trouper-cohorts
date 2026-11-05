@@ -175,13 +175,14 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
   if (!ok) return { ...base, etape: "bientot" };
   if (!prete && (!ligne || !s(ligne.photo) || s(ligne.refus))) return { ...base, etape: "photo", ...(s(ligne?.refus) ? { refus: s(ligne?.refus) } : {}) };
   if (!prete) return { ...base, etape: "fabrication" };
-  const [neutre, parle, { data: msgs }, expr, fab, saVoix] = await Promise.all([
+  const [neutre, parle, { data: msgs }, expr, fab, saVoix, sonUnivers] = await Promise.all([
     signer(supabase, s(ligne!.neutre)),
     signer(supabase, s(ligne!.parle)),
     supabase.from("clik_figurine_message").select("*").eq("habitant_id", habitant.id).order("created_at", { ascending: false }).limit(20),
     expressionsSignees(supabase, dossierExpressions(habitant.id, s(ligne!.neutre))),
     lireJson<Fabrique>(supabase, cheminFabrique(habitant.id)),
     lireJson<{ voix?: string }>(supabase, cheminSaVoix(habitant.id)),
+    lireJson<{ univers?: string }>(supabase, cheminUnivers(habitant.id)),
   ]);
   const maVoix = voixValide(saVoix.voix);
   const ouverts = visagesOuverts(cadeaux);
@@ -194,6 +195,7 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
     expressionsAFaire: ouverts.some((c) => !expr.expressions[c]),
     voixTexte: voixBranchee(),
     ...(maVoix ? { maVoix } : {}),
+    ...(universValide(sonUnivers.univers) ? { univers: universValide(sonUnivers.univers) } : {}),
     ...(moteurBranche() ? { refaire: essaisRestants(fab) } : {}),
     messages: ((Array.isArray(msgs) ? msgs : []) as Ligne[])
       .filter((m) => !m.retire_le)
@@ -251,13 +253,17 @@ export async function fabriquerMaFigurine(supabase: Supabase, habitant: Habitant
  * 🔁 « REFAIRE MA FIGURINE » (elle ne lui ressemble pas) : une nouvelle, à partir de la même photo — ou, avec
  * `autrePhoto`, retour à la photo. 3 fabrications par jour.
  */
-export async function refaireMaFigurine(supabase: Supabase, habitant: Habitant, autrePhoto: boolean): Promise<{ error?: string; statut?: number }> {
+export async function refaireMaFigurine(supabase: Supabase, habitant: Habitant, autrePhoto: boolean, univers?: unknown): Promise<{ error?: string; statut?: number }> {
   const { ok, ligne } = await lireLigne(supabase, habitant.id);
   if (!ok || !ligne) return { error: "Envoie d’abord ta photo.", statut: 400 };
+  // CE QUI LUI RESSEMBLE, revu en la refaisant (son métier, sa passion) : la nouvelle s'habille en conséquence
+  const u = universValide(univers);
+  if (u && motInterdit(u)) return { error: "Ces mots ne passent pas : écris ton métier ou ta passion 🙂", statut: 400 };
   const fab = await lireJson<Fabrique>(supabase, cheminFabrique(habitant.id));
   if (!autrePhoto && !moteurBranche()) return { error: "Ta figurine ne peut pas être refaite ici.", statut: 400 };
   if (!autrePhoto && essaisRestants(fab) <= 0) return { error: "Assez d’essais pour aujourd’hui : reviens demain.", statut: 429 };
   const maintenant = new Date().toISOString();
+  if (univers !== undefined) await ecrireJson(supabase, cheminUnivers(habitant.id), { univers: u, le: maintenant });
   const { error } = await supabase
     .from("clik_ma_figurine")
     .update({ neutre: null, parle: null, prete_le: null, ...(autrePhoto ? { photo: null } : {}), refus: null, updated_at: maintenant })

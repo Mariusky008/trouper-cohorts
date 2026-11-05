@@ -192,6 +192,8 @@ export type EtatMaFigurine = {
   voixTexte?: boolean;
   /** La voix qu'il a choisie pour sa figurine (« une voix d'homme ou de femme ? », demandé une fois ; jamais deviné). */
   maVoix?: CleVoix;
+  /** Ce qui lui ressemble (son métier ou sa passion) : sa figurine s'habille en conséquence ; à revoir en la refaisant. */
+  univers?: string;
 };
 
 /** Ce que voit celui qui reçoit un message (`/figurine/<id>`). */

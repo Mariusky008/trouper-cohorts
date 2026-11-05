@@ -297,6 +297,11 @@ ok(
 );
 await lea.locator(".tf-moi .fqp-fig").screenshot({ path: `${D}/ma-figurine-4-danse.png` });
 
+// 🎨 CE QUI LUI RESSEMBLE, REVU EN LA REFAISANT (son métier) : gardé pour la nouvelle (ici, une autre photo : sans moteur d'image)
+const refaite = await lea.evaluate(async () => (await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "refaire", autrePhoto: true, univers: "Artisan" }) })).status);
+const univers2 = await (await fetch(`${STOCK}/figurines-clients/${LEA.id}/univers.json`)).json().catch(() => null);
+ok(refaite === 200 && univers2?.univers === "Artisan", `la refaire : ce qui lui ressemble, revu (${refaite}, ${JSON.stringify(univers2)})`);
+
 // sans cookie, on ne peut rien envoyer d'autre qu'une photo (qui ouvre un compte)
 const r = await fetch(`${BASE}/api/direct/ma-figurine`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "message", son: "data:audio/mpeg;base64,AAAA", duree: 1 }) });
 ok(r.status === 403, "sans être quelqu'un, pas de message");
