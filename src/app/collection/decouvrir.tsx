@@ -188,11 +188,13 @@ export function OngletMois({ aujourdhui, commerces, dejaChez }: { aujourdhui: st
         <GuideDit
           edition={m.cle}
           cle={`mois-${m.cle}`}
+          // (les mêmes mots chaque mois : une seule voix enregistrée ; le nom de l'édition et sa date sont juste dessous)
+          voix="pablito-mois"
           popup
           repliques={[
-            `Ce mois-ci, c’est l’édition ${m.nom} ${m.emoji} Tu as vu ma tenue ? 😎`,
+            "Tu as vu ma tenue ? C’est celle de l’édition du mois 😎",
             "Chaque commerce ClikMe a sa figurine du mois. Tu passes chez l’un d’eux, tu achètes quelque chose, et elle rejoint ton album.",
-            `Mais attention : elle s’en va le ${jourEnClair(m.fin)}. Une édition manquée est manquée, pour toujours !`,
+            "Mais attention : elle s’en va à la fin du mois. Une édition manquée est manquée, pour toujours !",
             "Le mois prochain, une autre tenue. Et dix figurines chez le même commerce, c’est la figurine d’or 🏆",
           ]}
         >
