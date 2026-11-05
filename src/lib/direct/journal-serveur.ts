@@ -12,6 +12,7 @@
  * FICHIER SERVEUR.
  */
 import type { createAdminClient } from "@/lib/supabase/admin";
+import { SEAU_FIGURINES } from "./ma-figurine-serveur";
 import { ecrire, lire } from "./personnage-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -22,7 +23,9 @@ export type EntreeJournal =
   /** Il s'est reconnu (« moi ») ou pas (« pas ») dans une phrase de sa figurine ; `null` : il a retiré son avis. */
   | { type: "verdict"; le: string; rencontre: string; phrase: string; verdict: "moi" | "pas" | null }
   /** Ce que la rencontre a révélé de lui (écrit par l'IA, ou composé sans elle), et avec qui. */
-  | { type: "revele"; le: string; rencontre: string; avec: string; texte: string };
+  | { type: "revele"; le: string; rencontre: string; avec: string; texte: string }
+  /** Sa réponse à la question du jour (`connaitre.ts`). */
+  | { type: "question"; le: string; cle: string; question: string; texte: string };
 
 /** (au plus, par mois : de quoi tenir des années d'un usage quotidien sans qu'un fichier enfle sans fin) */
 const ENTREES_PAR_MOIS = 2000;
@@ -45,4 +48,41 @@ export async function noterAuJournal(supabase: Supabase, habitantId: string, e: 
 /** Son journal d'un mois (le mois en cours par défaut). */
 export async function journalDuMois(supabase: Supabase, habitantId: string, mois = moisParis()): Promise<EntreeJournal[]> {
   return (await lire<{ entrees?: EntreeJournal[] }>(supabase, cheminJournal(habitantId, mois)))?.entrees ?? [];
+}
+
+/** Les mois de son journal (« 2026-11 »…), les plus récents d'abord. */
+export async function moisDuJournal(supabase: Supabase, habitantId: string): Promise<string[]> {
+  try {
+    const { data } = await supabase.storage.from(SEAU_FIGURINES).list(`${habitantId}/journal`, { limit: 240 });
+    return ((Array.isArray(data) ? data : []) as { name?: string }[])
+      .map((x) => String(x.name ?? "").replace(/\.json$/, ""))
+      .filter((m) => /^\d{4}-\d{2}$/.test(m))
+      .sort()
+      .reverse();
+  } catch {
+    return [];
+  }
+}
+
+/** Tout son journal (tous les mois), les plus récentes d'abord. */
+export async function toutLeJournal(supabase: Supabase, habitantId: string): Promise<EntreeJournal[]> {
+  const mois = await moisDuJournal(supabase, habitantId);
+  const parMois = await Promise.all(mois.map((m) => journalDuMois(supabase, habitantId, m)));
+  return parMois.flat().sort((a, b) => b.le.localeCompare(a.le));
+}
+
+/** 🗑️ Il efface UNE chose (son heure `le`) : rendue, pour qu'on l'oublie aussi ailleurs. */
+export async function effacerDuJournal(supabase: Supabase, habitantId: string, le: string): Promise<EntreeJournal | null> {
+  const mois = moisParis(new Date(le));
+  if (!/^\d{4}-\d{2}$/.test(mois)) return null;
+  const entrees = await journalDuMois(supabase, habitantId, mois);
+  const ote = entrees.find((e) => e.le === le) ?? null;
+  if (ote) await ecrire(supabase, cheminJournal(habitantId, mois), { entrees: entrees.filter((e) => e.le !== le) });
+  return ote;
+}
+
+/** 🗑️ Il efface TOUT son journal. */
+export async function effacerToutLeJournal(supabase: Supabase, habitantId: string): Promise<void> {
+  const mois = await moisDuJournal(supabase, habitantId);
+  if (mois.length) await supabase.storage.from(SEAU_FIGURINES).remove(mois.map((m) => cheminJournal(habitantId, m)));
 }

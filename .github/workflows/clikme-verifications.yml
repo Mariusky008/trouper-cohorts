@@ -53,6 +53,7 @@ jobs:
           src/app/carte src/app/api/direct/personnage src/app/api/direct/rencontre
           src/lib/direct/guide.ts src/lib/direct/guide-serveur.ts src/app/api/direct/guide
           src/lib/direct/etapes.ts src/lib/direct/etapes-serveur.ts src/lib/direct/reseau.ts src/lib/direct/ressort.ts src/lib/direct/journal-serveur.ts
+          src/lib/direct/connaitre.ts src/lib/direct/connaitre-serveur.ts src/app/api/direct/connaitre
 
   essais-sql:
     name: Essais SQL
@@ -95,6 +96,9 @@ jobs:
       # rien ne part chez ElevenLabs.
       ELEVENLABS_API_KEY: faux
       ELEVENLABS_BASE_URL: http://127.0.0.1:54321/elevenlabs
+      # « Retrouver ma figurine » : le code part par e-mail ; le faux Resend est dans le faux Supabase (rien ne part).
+      RESEND_API_KEY: faux
+      RESEND_BASE_URL: http://127.0.0.1:54321/resend
       NEXT_TELEMETRY_DISABLED: "1"
       ESSAI_CAPTURES: ${{ github.workspace }}/captures
     steps:

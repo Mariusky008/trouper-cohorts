@@ -25,6 +25,7 @@ import { OngletFigurine, STYLES_MA_FIGURINE } from "./ma-figurine";
 import { GuideDit, OngletVisible } from "./guide";
 import { MonPersonnage, STYLES_PERSONNAGE } from "./personnage";
 import { CLE_VOIR_RENCONTRE, MesSouvenirs, RencontreDuJour, STYLES_RENCONTRE } from "./rencontre";
+import { STYLES_CONNAITRE } from "./connaitre";
 import { figurinesEnTout, type EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
 type Familles = { familles: MaFamille[] } | null;
@@ -275,7 +276,7 @@ export function MaCollection({ aujourdhui, commerces, villes = [] }: { aujourdhu
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_COLLECTION + STYLES_DECOUVRIR + STYLES_ALBUM + STYLES_PERSONNAGE + STYLES_RENCONTRE}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_COLLECTION + STYLES_DECOUVRIR + STYLES_ALBUM + STYLES_PERSONNAGE + STYLES_RENCONTRE + STYLES_CONNAITRE}</style>
     </main>
   );
 }

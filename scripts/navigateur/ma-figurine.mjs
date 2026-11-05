@@ -179,6 +179,7 @@ await fetch(`${F}/clik_ma_figurine?habitant_id=eq.${LEA.id}`, {
 await lea.reload({ waitUntil: "networkidle" });
 await lea.waitForSelector(".tf-moi .tf-texte textarea", { timeout: 30000 });
 ok((await texte(lea, "#o-figurine .og-tete h1")).includes("Fais-la parler"), "sa figurine est là : fais-la parler");
+ok((await texte(lea, "#o-figurine .cn-proteger")).includes("Ne perds jamais ta figurine"), "🔐 son adresse peut protéger sa figurine (un code pour la retrouver)");
 ok((await lea.locator(".tf-moi .tf-expr button").count()) === 7 && (await lea.locator(".tf-moi .tf-expr button.ferme").count()) === 0, "sept visages à lui donner, tous ouverts (dont le fou rire et la grimace)");
 await lea.locator(".tf-moi .tf-expr button", { hasText: "Fou rire" }).click();
 ok((await lea.locator(".tf-moi .fqp").getAttribute("data-sentiment")) === "rire", "le fou rire");

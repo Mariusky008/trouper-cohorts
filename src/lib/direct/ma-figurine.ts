@@ -194,6 +194,8 @@ export type EtatMaFigurine = {
   maVoix?: CleVoix;
   /** Ce qui lui ressemble (son métier ou sa passion) : sa figurine s'habille en conséquence ; à revoir en la refaisant. */
   univers?: string;
+  /** 🔐 Son adresse (à moitié cachée) protège sa figurine : un autre téléphone la retrouve avec un code (lot 2). */
+  protegee?: string;
 };
 
 /** Ce que voit celui qui reçoit un message (`/figurine/<id>`). */

@@ -126,6 +126,36 @@ export async function sendCodeMaison(email: string, code: string): Promise<boole
   }
 }
 
+/**
+ * 🔐 LE CODE DE « MA FIGURINE » (5 novembre 2026, « Retrouver ma figurine » : son compte tenait à un cookie du
+ * téléphone) — le même code que celui de la Maison (`nouveauCode`), en tutoiement, comme toute la page des figurines.
+ */
+export async function envoyerCodeFigurine(email: string, code: string): Promise<boolean> {
+  const html = SHELL(
+    `<div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#FF2E9A;font-weight:700">Ma figurine</div>
+     <div style="font-family:Georgia,serif;font-size:25px;line-height:1.15;margin-top:10px;color:#fff">
+       Ton code
+     </div>
+     <div style="margin-top:18px;text-align:center;font-size:34px;letter-spacing:.32em;font-weight:700;color:#fff;
+        background:#2A0F1F;border:1.5px solid rgba(255,46,154,.6);border-radius:14px;padding:14px 0 14px .32em">
+       ${esc(code)}
+     </div>
+     <p style="font-size:14px;line-height:1.6;color:#A8AEBC;margin:16px 0 0">
+       Tape-le dans ${MARQUE} pour retrouver ta figurine, sur n'importe quel téléphone. Il est valable <b style="color:#fff">dix minutes</b>.
+     </p>
+     <p style="font-size:12px;line-height:1.55;color:#6F7684;margin:16px 0 0">
+       Ce n'était pas toi&nbsp;? Ignore cet e-mail : sans ce code, personne n'accède à ta figurine.
+     </p>`,
+    `Ce code a été demandé avec cette adresse. Il ne t'abonne à rien.`
+  );
+  try {
+    const r = await getResend().emails.send({ from: MAIL_FROM, to: email, subject: `${code} — ton code ${MARQUE}`, html });
+    return !(r as { error?: unknown } | undefined)?.error;
+  } catch {
+    return false;
+  }
+}
+
 /** Le digest du jour. `offers` est déjà filtré : rien de vide n'arrive ici. */
 export async function sendDigest(
   email: string,

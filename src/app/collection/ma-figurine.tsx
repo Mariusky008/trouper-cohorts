@@ -44,6 +44,7 @@ import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE, type FigurineHandle } from
 import { Guide, GuideDit, STYLES_GUIDE, useVoixPablito } from "./guide";
 import { SONS_PABLITO } from "@/lib/direct/guide";
 import { ETAPES, prochaineEtape } from "@/lib/direct/etapes";
+import { ProtegerFigurine } from "./connaitre";
 
 type Reponse = { error?: string; etat?: EtatMaFigurine; lien?: string; son?: string; enCours?: boolean };
 
@@ -941,6 +942,8 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
           <p>Choisis ce qu’elle ressent, écris ce qu’elle dit, et envoie-la à qui tu veux.</p>
         </header>
         <StudioMoi key={etat.neutre} etat={etat} onEtat={onEtat} />
+        {/* 🔐 son adresse protège sa figurine (lot 2) : un autre téléphone la retrouve avec un code */}
+        <ProtegerFigurine mode="proteger" protegee={etat.protegee} />
       </>
     );
   if (etat.etape === "fabrication")
@@ -976,6 +979,8 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
         </a>
       </GuideDit>
       <EnvoiPhoto etat={etat} villes={villes} onEnvoye={onEtat} />
+      {/* 🔎 elle existe déjà sur un autre téléphone : un code à six chiffres la retrouve (lot 2) */}
+      {!etat.compte && <ProtegerFigurine mode="retrouver" />}
       <section className="og-pouvoirs" aria-label="Ce que tu vas débloquer">
         <h2>Ce que tu vas débloquer</h2>
         <MesOptions cadeaux={etat.cadeaux} etapes={etat.etapes} />

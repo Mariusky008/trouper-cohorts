@@ -117,6 +117,21 @@ await lea.goto(`${BASE}/collection?v=${Date.now()}#rencontre`, { waitUntil: "net
 await lea.waitForSelector("#o-rencontre .rd-fil li", { timeout: 60000 });
 ok((await texte(lea, "#o-rencontre .rd-prochaine")).match(/Prochaine rencontre dans \d{2}:\d{2}:\d{2}/), "le temps qui reste avant la prochaine rencontre");
 const qui1 = await texte(lea, "#o-rencontre .rd-qui");
+// 🔮 LE MOT DU JOUR (lot 2) : il annonce la rencontre du jour
+await lea.waitForSelector("#o-rencontre .cn-mot", { timeout: 30000 });
+ok((await texte(lea, "#o-rencontre .cn-mot")).includes("Pablito"), `le mot du jour annonce sa rencontre (${await texte(lea, "#o-rencontre .cn-mot p")})`);
+// ❓ LA QUESTION DU JOUR (lot 2) : un toucher ou trois mots
+await lea.waitForSelector("#o-rencontre .cn-question", { timeout: 30000 });
+const q0 = await api(lea, "/api/direct/connaitre");
+if (q0.question?.choix) await lea.locator("#o-rencontre .cn-choix button").first().click();
+else {
+  await lea.locator("#o-rencontre .cn-libre input").fill("Les crêpes du dimanche");
+  await lea.locator("#o-rencontre .cn-libre .mp-bouton").click();
+}
+await lea.waitForSelector("#o-rencontre .cn-reponse", { timeout: 15000 });
+const q1 = await api(lea, "/api/direct/connaitre");
+ok(q1.question?.cle === q0.question?.cle && q1.question?.reponse, `la question du jour (« ${q0.question?.q} ») : sa réponse est gardée (« ${q1.question?.reponse} »)`);
+ok((await api(lea, "/api/direct/connaitre", { action: "question", cle: "zzz", texte: "x" })).statut === 409, "une autre question que celle du jour : non");
 ok(qui1.includes("UN PERSONNAGE") && qui1.includes("Ta figurine a rencontré Pablito") && qui1.includes("🎲"), `la toute première : Pablito l'accueille, avec le format du jour (${qui1})`);
 const j1 = await api(lea, "/api/direct/rencontre");
 ok(j1.rencontre?.autre?.type === "personnage" && j1.rencontre.autre.cle === "pablito" && j1.rencontre.format?.nom && j1.rencontre.question && j1.rencontre.quoi === "jour", `Pablito, un format (« ${j1.rencontre?.format?.nom} »), une question pour elle (« ${j1.rencontre?.question} »)`);
@@ -292,11 +307,58 @@ await lea.waitForTimeout(800);
 ok((await api(lea, "/api/direct/rencontre", { action: "bloquer", id: mI.rencontre.id })).statut === 200, "elle peut ne plus rencontrer ce membre");
 await lea.screenshot({ path: `${D}/personnage-4-membre.png`, fullPage: true });
 
+// ═══ 🧠 CE QUE TA FIGURINE SAIT DE TOI (lot 2) : elle voit tout, elle efface ═══
+await lea.locator(".mc-nav button", { hasText: "Personnage" }).click({ force: true });
+await lea.waitForSelector("#o-personnage .cn-savoir-tete", { timeout: 30000 });
+await lea.locator("#o-personnage .cn-savoir-tete").click();
+await lea.waitForSelector("#o-personnage .cn-choses li", { timeout: 15000 });
+const nAvant = await lea.locator("#o-personnage .cn-choses li").count();
+const savoirTxt = await texte(lea, "#o-personnage .cn-savoir");
+ok(nAvant >= 4 && savoirTxt.includes("Ta carte") && savoirTxt.includes("je cuisine pour mes amis") && savoirTxt.includes("Question du jour"), `ce que sa figurine sait d'elle : sa carte, ses réponses, ce que ses rencontres ont révélé (${nAvant})`);
+await lea.locator("#o-personnage .cn-choses li button").first().click();
+await lea.waitForFunction((n) => document.querySelectorAll("#o-personnage .cn-choses li").length === n - 1, nAvant, { timeout: 15000 });
+ok(true, "elle efface une chose : elle disparaît");
+await lea.locator("#o-personnage .cn-tout").click();
+await lea.waitForFunction(() => document.querySelectorAll("#o-personnage .cn-choses li").length === 0, null, { timeout: 15000 });
+const apresTout = await api(lea, "/api/direct/connaitre?savoir=1");
+const carnetVide = await lireSeau(`${LEA.id}/rencontres.json`);
+ok(apresTout.savoir?.choses?.length === 0 && apresTout.savoir?.carte && (carnetVide?.dit ?? []).length === 0, "« tout effacer » : elle oublie tout ce qu'elle a appris (sa carte reste)");
+await lea.screenshot({ path: `${D}/personnage-5-savoir.png`, fullPage: true });
+
+// ═══ 🔐 SA FIGURINE PROTÉGÉE PAR SON ADRESSE, PUIS RETROUVÉE SUR UN AUTRE TÉLÉPHONE (lot 2 : un code à six chiffres) ═══
+const COURRIELS = F.replace(/\/rest\/v1$/, "/__courriels");
+const dernierCode = async (a) => {
+  const l = await (await fetch(COURRIELS)).json();
+  const m = [...l].reverse().find((x) => [].concat(x.to).includes(a));
+  return /^(\d{6})/.exec(m?.subject ?? "")?.[1] ?? "";
+};
+const ADRESSE = "lea.essai@clikme-essai.test";
+ok((await api(lea, "/api/direct/connaitre", { action: "code", email: ADRESSE })).statut === 200, "elle demande son code");
+const code1 = await dernierCode(ADRESSE);
+ok(/^\d{6}$/.test(code1), "le code part par e-mail (« Ma figurine »)");
+ok((await api(lea, "/api/direct/connaitre", { action: "verifier", email: ADRESSE, code: "000000" === code1 ? "111111" : "000000" })).statut === 400, "un faux code : non");
+const prot = await api(lea, "/api/direct/connaitre", { action: "verifier", email: ADRESSE, code: code1 });
+ok(prot.statut === 200 && prot.protegee && prot.a === "l•••@clikme-essai.test", `son adresse protège sa figurine (${prot.a})`);
+const neuf = await tel(null);
+await neuf.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
+await fermerPablito(neuf, "#o-figurine");
+await neuf.locator(".cn-retrouver-lien").click();
+await neuf.locator(".cn-proteger input[type=email]").fill(ADRESSE);
+await neuf.locator(".cn-proteger .mp-bouton").click();
+await neuf.waitForSelector(".cn-proteger input[autocomplete=one-time-code]", { timeout: 15000 });
+const code2 = await dernierCode(ADRESSE);
+await neuf.locator(".cn-proteger input[autocomplete=one-time-code]").fill(code2);
+await neuf.locator(".cn-proteger .mp-bouton").click();
+await neuf.waitForURL(/retrouvee=1/, { timeout: 30000 });
+await neuf.waitForLoadState("networkidle");
+const perso2 = await api(neuf, "/api/direct/personnage");
+ok(perso2.carte?.prenom === "Léa", `un autre téléphone retrouve sa figurine avec le code (${perso2.carte?.prenom})`);
+
 // SANS COMPTE : rien à faire ici
 const sans = await fetch(`${BASE}/api/direct/rencontre`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "inviter" }) });
 ok(sans.status === 403, "sans compte : pas d'invitation");
 
-const erreurs = [...lea.err, ...inconnu.err, ...hugo.err, ...ines.err];
+const erreurs = [...lea.err, ...inconnu.err, ...hugo.err, ...ines.err, ...neuf.err];
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` : ${erreurs[0]}` : ""}`);
 await b.close();
 console.log(echecs ? `${echecs} ÉCHEC(S)` : "TOUT EST BON");
