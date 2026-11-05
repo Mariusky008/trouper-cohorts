@@ -616,6 +616,40 @@ qu'on dit de soi dans la carte de personnalité », et qui finissent toujours pa
   version vue était celle d'avant sa mise en ligne.
 - **Les voix** : « Je regarde ta photo… je vois déjà ta figurine ! » (la fabrication) et la 5ᵉ bulle de « Rencontres ».
 
+### 9.0 quindecies LA STRATÉGIE DE « MA COLLECTION » (5 novembre 2026, validée avec le patron) — lot 1 construit
+
+**La phrase : « Ta figurine, c'est toi. Chaque jour, elle rencontre quelqu'un. Chaque mois, elle change avec toi. Et en
+la regardant vivre, tu te découvres. »** Les gens viennent pour SE DÉCOUVRIR grâce à leur figurine ; les commerçants
+sont des PARTENAIRES, un plus, pas le centre (« quand on parle des commerçants, c'est étrange »).
+
+- **Pilier 1 — sa figurine du mois** (lot 3) : chaque mois, MÉRITÉE (avoir vécu le mois), une nouvelle figurine de
+  lui : le thème du mois, sa tenue, une nouvelle expression, et SA PHRASE DU MOIS, « drôle et bienveillante, comme un
+  horoscope qui le connaît », écrite d'après ce qu'il a dit et fait pendant le mois. L'album devient « Mes figurines ».
+  Tous les jours, un PETIT MOT du jour (lot 2), qui annonce la rencontre du jour d'après ce qu'il a dit la veille.
+- **Pilier 2 — les rencontres-miroirs** (lot 1, ci-dessous) : on se découvre en regardant sa figurine avec un ami, un
+  inconnu, un personnage.
+- **Pilier 3 — les commerçants partenaires** (lot 4) : on collectionne leur figurine en passant chez eux, pour leurs
+  avantages en avant-première (promos avant tout le monde, bons plans).
+- **Le connaître mieux** (lot 2) : apprendre en continu (la question du jour, « Et toi ? », « c'est moi / pas moi »,
+  sa figurine qui vérifie), tout garder (Supabase), une page « Ce que ta figurine sait de toi » (voir, corriger,
+  effacer) ; « Retrouver ma figurine » par e-mail (le compte tient aujourd'hui à un cookie du téléphone).
+- **Une seule progression** (lot 3) : tout s'ouvre dès le départ (expressions, voix) ; les étapes deviennent une
+  simple liste « Tes premiers pas » ; la figurine du mois est la progression.
+
+**Le lot 1, construit :**
+- **La consigne d'un épisode** (`consigneConversation`), après « c'est pas terrible comme discussion » (des phrases
+  creuses, un « grand rêve » jamais nommé, sa figurine qui parlait en rafale) : du concret dans chaque réplique (les
+  phrases creuses interdites, nommément), une histoire en trois temps, elles s'écoutent, des phrases naturelles, au
+  moins deux vrais moments drôles, la figurine A qui parle de ce qu'il aime ; le ton donné par trois répliques. La toute
+  première : Pablito l'accueille et lui fait comprendre, en conversation, ce qui va se passer. `OPENAI_RENCONTRE_MODEL`
+  pour un modèle plus fort.
+- **« 🪞 Ce que ta figurine a révélé de toi »** : une ou deux phrases à la fin de chaque épisode, pour chacun des deux
+  (entre deux clients) ; sans IA, son super-pouvoir, à confirmer.
+- **Moins de boutons** : rien sous les phrases pendant le direct (il regarde) ; à la fin, « c'est tout moi / jamais de
+  la vie » sous les phrases de SA figurine, et une émotion en touchant une phrase.
+- **Tout est gardé** (`journal-serveur.ts`) : ses réponses, ses « c'est moi / pas moi », ce que chaque épisode a révélé,
+  datés, mois par mois (`<habitant>/journal/<AAAA-MM>.json`) — pour sa phrase du mois et « ce que ta figurine sait de toi ».
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

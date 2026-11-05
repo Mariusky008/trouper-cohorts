@@ -110,6 +110,8 @@ export type RencontreVue = {
   reponse?: string;
   /** « jour » : sa rencontre du jour (hors de son entourage) ; « ami » : une discussion avec un ami ou un proche. */
   quoi?: "jour" | "ami";
+  /** 🪞 Ce que la rencontre a révélé de lui (une ou deux phrases, drôles et bienveillantes). */
+  revele?: string;
   /** Ses réactions, par numéro de phrase. */
   reactions: Record<number, Reaction>;
   /** Écrite par l'IA, ou composée ici (sans IA). */
