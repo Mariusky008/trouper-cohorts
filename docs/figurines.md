@@ -715,6 +715,45 @@ avantages en premier (les promos avant tout le monde, les bons plans).
 - **« Dire 3 fois si c'est bien toi »** quittait les premiers pas (on croyait devoir refaire sa figurine) : à sa place,
   « ❓ Répondre à 3 questions du jour ».
 
+### 9.0 septdecies « Rencontres » : un épisode par jour, en BD, et le métier du commerçant (6 novembre) — construit
+
+Ses mots : « ça manque de personnalité et de vie, alors que ça devrait être l'essentiel » ; « l'organisation est
+chaotique… il faut que ça raconte une histoire » ; « que les deux figurines se parlent face à face, ou comme dans une
+BD » ; « pas d'effet wow… on a du mal à scroller la conversation jusqu'en bas » ; « en fonction de la personne, c'est
+nous qui devons orienter la conversation : avec un ami, on choisit la thématique (dispute, amour, sortie…) ; avec un
+coiffeur, « sur vous je verrais bien ce style », et appuyer ici pour l'essayer ; pour un restaurant, le menu du jour ;
+à chaque métier un comportement ».
+
+- **Une histoire, dans l'ordre** (`rencontre.tsx`) : « L'épisode du jour » — son AFFICHE (les deux figurines face à
+  face, avec qui, le thème, le titre, « ▶ Regarder l'épisode ») ; puis, une fois vu, ce qu'il en reste ; puis « 🎬 Envie
+  d'un autre épisode ? » (un ami et un thème, inviter, rencontrer un membre) ; puis ses épisodes d'avant. Le mot du jour
+  quitte la page (c'était lui, « défi lancé sans préchauffage… », pris pour le thème) ; la question du jour va dans
+  « Personnage », avec « Ce que ta figurine sait de toi ».
+- **Le théâtre, en BD** (`Theatre`) : tout l'écran, rien à faire défiler. Les deux figurines face à face, dans des cases
+  de BD ; la bulle de celle qui parle, au-dessus d'elle, le texte qui arrive lettre après lettre ; l'onomatopée de son
+  geste (« HA HA ! », « CLAP CLAP ! », « QUOI ?! ») ; celle qui écoute s'efface un peu ; le récitatif jaune (le titre) ;
+  une barre par réplique, comme une story ; toucher : la suivante (à gauche : la précédente). « FIN » : ce que le
+  commerçant propose, sa figurine relookée, la carte souvenir, « 🪞 Ce que ça dit de moi ».
+- **Après l'épisode, sur la page** : ce qu'il a proposé (et le lien), ce que sa figurine a révélé de lui, « Et toi ? »,
+  leurs impressions (entre deux clients), « 📖 Relire la conversation » (la BD, et « c'est tout moi / jamais de la
+  vie »), ce qui a été partagé, la carte souvenir.
+- **Les scénarios** (`scenarios.ts`) :
+  · avec un AMI, il choisit le thème (`THEMES_AMIS`) : 💥 la dispute (pour rire), 💘 l'amour (version comédie
+    romantique, jamais intime), 🎉 la sortie, ✈️ le voyage, 🍕 la bouffe, 🤫 les petits secrets, 🔮 dans 10 ans, 🏆 le
+    défi ; un membre de sa ville : un thème au hasard (jamais l'amour) ;
+  · chez un COMMERÇANT, son métier donne l'épisode (`scenarioMetier`) : ✂️ le coiffeur propose UN style, 👗 la
+    boutique un look, 👓 l'opticien une monture, 🖋️ le tatoueur un petit motif, 💍 le bijoutier un bijou — avec
+    « L'essayer sur moi » (`/site-internet/apercu/<slug>?onglet=experience`, l'essai de sa page) ; 🍽️ le restaurant
+    compose LE menu de la figurine avec SES vrais plats (ceux qu'il a saisis, sinon sa carte lue sur ses photos : des
+    noms, jamais un prix, rien d'inventé) et « Voir sa carte » ; le fleuriste un bouquet, le libraire un livre, la
+    boulangerie une gourmandise… ; sa figurine ne promet toujours rien (ni prix, ni offre, ni horaire) ;
+  · un personnage de ClikMe garde son sujet et le format du jour.
+- **✨ Sa figurine relookée** (`relookerSaFigurine`, l'effet « c'est incroyable ce qu'ils ont fait ») : chez le
+  coiffeur, la boutique, l'opticien, le tatoueur, le bijoutier, le moteur d'image redessine SA figurine d'après la
+  proposition (la coupe, la tenue…), le reste intact (le cadre, le ressort). Demandée quand il lance l'épisode, prête à
+  « FIN » : « AVANT / APRÈS ✨ ». Une seule fois par épisode, un verrou contre deux pages ; sans moteur, la proposition
+  seule. Rangée dans `<habitant>/rencontres/<id>.webp`.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

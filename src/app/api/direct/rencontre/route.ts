@@ -12,7 +12,9 @@
 // POST { action: "arreter-membres" } : il sort de la file ; { action: "bloquer", id } : ne plus rencontrer ce membre.
 // POST { action: "echanger", id, oui: true|false } : il veut (ou ne veut plus) échanger ses impressions → { rencontre }.
 // POST { action: "impression", id, texte } : une impression (les deux ont dit oui) → { rencontre }.
-// POST { action: "discuter", n } : une discussion avec son ami n° n (`AMIS_PAR_JOUR` par jour) → { rencontre, restantes }.
+// POST { action: "discuter", n, theme? } : une discussion avec son ami n° n, sur le thème choisi (`scenarios.ts` ;
+//       `AMIS_PAR_JOUR` par jour) → { rencontre, restantes }.
+// POST { action: "relooker", id } : ✨ sa figurine relookée d'après la proposition du commerçant → { image } (`enCours` : rappeler).
 // POST { action: "repondre", id, texte } : sa réponse à la question de fin (« Et toi ? ») → { rencontre }.
 // Jamais d'habitant créé ici.
 import { NextResponse } from "next/server";
@@ -27,6 +29,7 @@ import {
   ecrireImpression,
   inviter,
   reagir,
+  relookerSaFigurine,
   rencontreDuJour,
   rencontreParId,
   rencontrerUnMembre,
@@ -37,7 +40,8 @@ import {
 } from "@/lib/direct/rencontre-serveur";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+// (le relooking passe par le moteur d'image : jusqu'à quatre minutes)
+export const maxDuration = 300;
 const sansCache = { "cache-control": "private, no-store" };
 
 export async function GET(request: Request) {
@@ -55,6 +59,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const debut = Date.now();
   const p = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
@@ -101,9 +106,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, rencontre: r.rencontre }, { headers: sansCache });
   }
   if (p?.action === "discuter") {
-    const r = await discuterAvecUnAmi(supabase, moi, p.n);
+    const r = await discuterAvecUnAmi(supabase, moi, p.n, p.theme);
     if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
     return NextResponse.json({ ok: true, rencontre: r.rencontre, restantes: r.restantes ?? 0 }, { headers: sansCache });
+  }
+  if (p?.action === "relooker") {
+    const r = await relookerSaFigurine(supabase, moi, p.id, debut + (maxDuration - 20) * 1000);
+    if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
+    return NextResponse.json({ ok: true, ...(r.image ? { image: r.image } : {}), ...(r.enCours ? { enCours: true } : {}) }, { headers: sansCache });
   }
   if (p?.action === "repondre") {
     const r = await repondre(supabase, moi, p.id, p.texte);
