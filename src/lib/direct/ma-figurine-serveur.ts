@@ -205,7 +205,11 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
   const prete = Boolean(ligne?.prete_le && s(ligne?.neutre) && s(ligne?.parle));
   if (!ok) return { ...base, etape: "bientot" };
   if (!prete && (!ligne || !s(ligne.photo) || s(ligne.refus))) return { ...base, etape: "photo", ...(s(ligne?.refus) ? { refus: s(ligne?.refus) } : {}) };
-  if (!prete) return { ...base, etape: "fabrication" };
+  if (!prete) {
+    // (pendant la fabrication, il prépare déjà son premier mème : la voix qui lit son texte, et celle qu'il a choisie)
+    const maVoix = voixValide((await lireJson<{ voix?: string }>(supabase, cheminSaVoix(habitant.id))).voix);
+    return { ...base, etape: "fabrication", voixTexte: voixBranchee(), ...(maVoix ? { maVoix } : {}) };
+  }
   const [neutre, parle, { data: msgs }, expr, fab, saVoix, sonUnivers, { data: adresse }] = await Promise.all([
     signer(supabase, s(ligne!.neutre)),
     signer(supabase, s(ligne!.parle)),
@@ -349,7 +353,8 @@ export async function lireSonTexte(supabase: Supabase, habitant: Habitant, texte
   if (!t || !v) return { error: "Écris ce qu’elle doit dire, et choisis sa voix.", statut: 400 };
   if (motInterdit(t)) return { error: MOT_REFUSE, statut: 422 };
   const etat = await etatMaFigurine(supabase, habitant);
-  if (etat.etape !== "prete") return { error: "Ta figurine n’est pas encore prête.", statut: 400 };
+  // (pendant la fabrication aussi : il prépare son premier mème, sa voix est lue, et il part dès qu'elle apparaît)
+  if (etat.etape !== "prete" && etat.etape !== "fabrication") return { error: "Ta figurine n’est pas encore prête.", statut: 400 };
   const jour = new Date().toISOString().slice(0, 10);
   const compteur = `${habitant.id}/voix-jour.json`;
   const avant = JSON.parse((await telecharger(supabase, compteur))?.toString() || "{}") as { jour?: string; n?: number };
@@ -594,6 +599,50 @@ export async function statsMemes(supabase: Supabase): Promise<StatsMemes> {
   }
   res.jours = [...parJour].map(([j, n]) => ({ jour: j, n }));
   return res;
+}
+
+// ─── 📈 le parcours jusqu'au premier mème (7 novembre 2026 : « mesure combien de gens vont jusqu'au premier envoi ») ───
+/**
+ * Ceux qui ont envoyé leur photo ces `jours` derniers jours : combien ont leur figurine, combien ont fait un premier
+ * mème, combien l'ont envoyé (partagé, ou ouvert par quelqu'un) ; et le temps entre la figurine prête et le premier
+ * mème (l'objectif : moins d'une minute). Sans table de plus : `clik_ma_figurine`, `clik_figurine_message` et la mesure.
+ */
+export type ParcoursPremierMeme = { ok: boolean; photos: number; pretes: number; premiers: number; envoyes: number; delais: number[] };
+export async function parcoursPremierMeme(supabase: Supabase, jours = 30): Promise<ParcoursPremierMeme> {
+  const vide: ParcoursPremierMeme = { ok: false, photos: 0, pretes: 0, premiers: 0, envoyes: 0, delais: [] };
+  const depuis = new Date(Date.now() - jours * 86_400_000).toISOString();
+  const { data, error } = await supabase.from("clik_ma_figurine").select("habitant_id, accord_le, prete_le").gte("accord_le", depuis).limit(5000);
+  if (error) return vide;
+  const figs = ((Array.isArray(data) ? data : []) as Ligne[]).filter((f) => s(f.accord_le));
+  const prete = new Map(figs.filter((f) => s(f.prete_le)).map((f) => [s(f.habitant_id), new Date(s(f.prete_le)).getTime()]));
+  const ids = figs.map((f) => s(f.habitant_id));
+  const paquets = <T,>(l: T[], n: number) => Array.from({ length: Math.ceil(l.length / n) }, (_, k) => l.slice(k * n, k * n + n));
+  // leurs mèmes (le premier de chacun), puis ceux qui sont partis
+  const premier = new Map<string, number>();
+  const deQui = new Map<string, string>();
+  for (const p of paquets(ids, 200)) {
+    const { data: m } = await supabase.from("clik_figurine_message").select("id, habitant_id, created_at").in("habitant_id", p).limit(20_000);
+    for (const x of (Array.isArray(m) ? m : []) as Ligne[]) {
+      const h = s(x.habitant_id);
+      const quand = new Date(s(x.created_at)).getTime();
+      deQui.set(s(x.id), h);
+      if (!premier.has(h) || quand < premier.get(h)!) premier.set(h, quand);
+    }
+  }
+  const partis = new Set<string>();
+  for (const p of paquets([...deQui.keys()], 300)) {
+    const { data: e } = await supabase.from("clik_meme_evenement").select("message_id, type").in("message_id", p).limit(50_000);
+    for (const x of (Array.isArray(e) ? e : []) as Ligne[]) if (x.type === "partage" || x.type === "vu") partis.add(deQui.get(s(x.message_id)) ?? "");
+  }
+  partis.delete("");
+  const delais = [...premier]
+    .filter(([h]) => prete.has(h))
+    .map(([h, quand]) => Math.round((quand - prete.get(h)!) / 1000))
+    .filter((d) => d >= 0)
+    .sort((a, b) => a - b);
+  // (une figurine refaite perd sa date « prête » le temps d'être refaite : un mème déjà fait dit qu'elle l'a été)
+  const pretes = new Set([...prete.keys(), ...premier.keys()]).size;
+  return { ok: true, photos: figs.length, pretes, premiers: premier.size, envoyes: partis.size, delais };
 }
 
 // ─── 📥 « mes mèmes » ──────────────────────────────────────────────────────────────────────────

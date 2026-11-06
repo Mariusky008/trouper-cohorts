@@ -935,6 +935,32 @@ figurine d'un autre.
   une autre ; avec sa carte, l'IA écrit d'après lui (la consigne porte ses goûts et sa phrase, jamais son prénom) ;
   « C'est moi ✓ » : le texte est à lui, une seule voix ; une réponse qui parle d'alcool est écartée ; le plafond du jour.
 
+### 9.0 quatervicies Le premier mème pendant la fabrication, et la mesure du parcours (7 novembre) — lot 1
+
+Ce qui ferait qu'elle soit très utilisée, en quatre lots (le patron : « ok ») : 1. le premier mème en moins d'une
+minute après la révélation, et la mesure ; 2. le mème du jour au centre, les réactions, les amis d'abord, la carte sobre
+des commerçants ; 3. l'installation sur l'écran d'accueil, puis les notifications (sur iPhone, l'une ne va pas sans
+l'autre) ; 4. les commerçants qui jouent le jeu, puis leurs tendances. Ses trois décisions : poster sa réponse au mème
+du jour la rend visible par sa ville (l'accord écrit sur le bouton) ; le bandeau « LE MENU DU JOUR » quitte les vidéos
+des commerçants (leur nom reste à la fin) ; la notification du mème du jour à 11 h 30, que chacun peut couper.
+
+**Le lot 1** : « les deux minutes de fabrication sont le moment le plus fragile ».
+
+- **⏱️ En attendant : ton premier mème** (`PremierMemePendant`, `ma-figurine.tsx`), sous « On fabrique ta figurine »
+  (la fabrication automatique comme l'annonce « dans quelques jours ») : son premier mème déjà écrit, des idées d'un
+  toucher (« 🎲 Surprends-moi ! », le mème du jour…), ses mots, sa voix (homme ou femme, puis les quatre). « ▶ L'écouter » :
+  sa voix le lit tout de suite — la route lit un texte dès la fabrication (`lireSonTexte`) — et il est gardé sur ce
+  téléphone (`clikme-premier-meme-v1`), avec sa voix choisie pour le studio.
+- **🎉 À la révélation**, juste sous sa figurine : « La voilà ! Ton premier mème est prêt », son texte, et
+  « 🎭 Créer mon premier mème » : un toucher, la vidéo se fabrique (le son s'ouvre dans ce toucher, comme l'iPhone
+  l'exige), puis il la partage. Parti, ce qu'il avait préparé est effacé.
+- **📈 La mesure** (`parcoursPremierMeme`, la page `/admin/humain/memes`) : ceux qui ont envoyé leur photo ces 30 jours
+  — figurine prête, premier mème, mème envoyé (partagé, ou ouvert par quelqu'un) — et le temps entre la figurine prête
+  et le premier mème (la médiane, et la part en moins d'une minute). Sans table de plus.
+- **Les essais** (`ma-figurine.mjs`) : Zoé prépare son premier mème pendant la fabrication (son texte, une voix de
+  femme, « ▶ L'écouter »), sa figurine apparaît, un toucher : le mème est fait avec son texte et sa voix, en moins
+  d'une minute après la révélation (13 s ici).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
