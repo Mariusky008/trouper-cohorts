@@ -19,6 +19,7 @@
  */
 import { useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
+  ACCORD_PUBLIC,
   DUREE_MAX_MESSAGE,
   PRENOM_MAX,
   SENTIMENTS,
@@ -309,7 +310,8 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const [envoi, setEnvoi] = useState(false);
   const [envoye, setEnvoye] = useState<{ lien: string; cle: string; id: string } | null>(null);
   // 🎭 SON MÈME (6 novembre 2026) : la vidéo, fabriquée ici, puis partagée telle quelle
-  const [meme, setMeme] = useState<{ cle: string; etat: "fabrication" | "pret" | "sans"; p?: number; url?: string; fichier?: File } | null>(null);
+  // (`duo` : une réponse en duo — elle reste entre eux, jamais dans « Découvrir » ; `public` : il l'y a montré)
+  const [meme, setMeme] = useState<{ cle: string; etat: "fabrication" | "pret" | "sans"; p?: number; url?: string; fichier?: File; duo?: boolean; public?: boolean } | null>(null);
   const toile = useRef<HTMLCanvasElement>(null);
   const [erreur, setErreur] = useState("");
   const [expressionsEnCours, setExpressionsEnCours] = useState(Boolean(etat0.expressionsAFaire));
@@ -619,7 +621,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
       const { error } = await createClient().storage.from(envoi.seau).uploadToSignedUrl(envoi.chemin, envoi.jeton, m.blob, { contentType: m.type });
       if (error) throw new Error("Ton mème n’a pas pu partir. Réessaie.");
       await demander({ action: "meme-pose", id, type: m.type });
-      setMeme({ cle, etat: "pret", url: URL.createObjectURL(m.blob), fichier: new File([m.blob], `mon-meme-clikme.${ext}`, { type: m.type }) });
+      setMeme({ cle, etat: "pret", url: URL.createObjectURL(m.blob), fichier: new File([m.blob], `mon-meme-clikme.${ext}`, { type: m.type }), duo: Boolean(reponse) });
       // (sa réponse est partie : la suivante sera un mème à lui)
       if (reponse) {
         oublierLaReponse();
@@ -642,6 +644,18 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
       await navigator.share({ files: [meme.fichier] });
     } catch {
       /* il a fermé la feuille de partage */
+    }
+  }
+  /** 🌍 Le montrer dans « Découvrir », pour les gens de sa ville (son accord, demandé) — ou le retirer. */
+  async function basculerPublic() {
+    if (!envoye || !meme) return;
+    setErreur("");
+    if (!meme.public && !window.confirm(ACCORD_PUBLIC)) return;
+    try {
+      const j = (await demander({ action: "public", id: envoye.id, public: !meme.public })) as Reponse & { public?: boolean };
+      setMeme((x) => (x ? { ...x, public: Boolean(j.public) } : x));
+    } catch (e) {
+      setErreur((e as Error).message);
     }
   }
   const partageFichier = typeof navigator !== "undefined" && Boolean(meme?.fichier) && typeof navigator.canShare === "function" && navigator.canShare({ files: [meme!.fichier!] });
@@ -930,6 +944,12 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
                   </a>
                 </div>
                 {envoye && <input className="tf-adresse" readOnly value={envoye.lien} aria-label="Le lien" onFocus={(e) => e.target.select()} />}
+                {/* 🌍 S'IL LE VEUT : les gens de sa ville le verront dans « Découvrir » (jamais un duo) */}
+                {envoye && !meme.duo && (
+                  <button type="button" className={`tf-public${meme.public ? " pris" : ""}`} aria-pressed={Boolean(meme.public)} onClick={basculerPublic}>
+                    {meme.public ? "✓ Dans « Découvrir » · le retirer" : "🌍 Le montrer aussi dans « Découvrir »"}
+                  </button>
+                )}
               </div>
             ) : meme?.cle === cleEnvoi(son) && meme.etat === "sans" && envoye ? (
               <PanneauEnvoi lien={envoye.lien} texte="" titre="Ton mème est prêt ✓" />
@@ -1548,6 +1568,8 @@ export const STYLES_MA_FIGURINE =
 .tf-meme-pret .tf-wa{width:100%;box-sizing:border-box;border:0;font:inherit;font-size:16px;font-weight:900;cursor:pointer}
 .tf-meme-pret .tf-autres{justify-content:center}
 .tf-meme-pret .tf-adresse{width:100%;box-sizing:border-box}
+.tf-public{padding:9px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#E8D3DC;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer}
+.tf-public.pris{border-color:rgba(61,226,166,.6);background:rgba(61,226,166,.12);color:#9BF2CF}
 .tf-reponse{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:18px;background:linear-gradient(135deg,rgba(255,46,154,.2),rgba(242,196,107,.14));border:1.5px solid rgba(242,196,107,.5)}
 .tf-reponse img{flex:none;width:48px;height:64px;border-radius:12px;object-fit:cover;background:#2A0F1F}
 .tf-reponse span{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}

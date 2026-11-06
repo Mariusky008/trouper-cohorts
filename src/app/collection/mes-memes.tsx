@@ -10,7 +10,7 @@
  * Une raison de revenir : voir ce que ses mèmes sont devenus. La liste se recharge à chaque fois qu'il ouvre l'onglet.
  */
 import { useContext, useEffect, useState, type ReactNode } from "react";
-import { CLE_MEMES_RECUS, MEMES_VUS, type ApercuMeme, type MesMemes } from "@/lib/direct/ma-figurine";
+import { ACCORD_PUBLIC, CLE_MEMES_RECUS, MEMES_VUS, type ApercuMeme, type MesMemes, type MonMeme } from "@/lib/direct/ma-figurine";
 import { GuideDit, OngletVisible } from "./guide";
 
 function idsRecus(): string[] {
@@ -79,6 +79,17 @@ export function MesMemes({ compte, allerA }: { compte: boolean | null; allerA: (
       fini = true;
     };
   }, [visible, compte]);
+
+  const [erreur, setErreur] = useState("");
+  /** 🌍 Le montrer dans « Découvrir » (son accord, demandé à chaque fois) — ou le retirer. */
+  async function basculerPublic(m: MonMeme) {
+    setErreur("");
+    if (!m.public && !window.confirm(ACCORD_PUBLIC)) return;
+    const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "public", id: m.id, public: !m.public }) }).catch(() => null);
+    const j = (await r?.json().catch(() => ({}))) as { public?: boolean; error?: string } | undefined;
+    if (!r?.ok) return setErreur(j?.error || "Ça n’a pas marché. Réessaie.");
+    setMemes((x) => (x ? { ...x, envoyes: x.envoyes.map((e) => (e.id === m.id ? { ...e, public: Boolean(j?.public) } : e)) } : x));
+  }
 
   const vide = memes && !memes.envoyes.length && !memes.reponses.length && !memes.recus.length;
   return (
@@ -152,9 +163,20 @@ export function MesMemes({ compte, allerA }: { compte: boolean | null; allerA: (
                   {m.reponses > 0 && <span className="fort">↩️ {pluriel(m.reponses, "réponse")}</span>}
                 </span>
                 <small className="mm-quand">{quand(m.le)}</small>
+                {/* 🌍 DANS « DÉCOUVRIR », S'IL LE VEUT (jamais un duo : il montre aussi la figurine de quelqu'un d'autre) */}
+                {m.video && !m.duo && (
+                  <button type="button" className={`mm-public${m.public ? " pris" : ""}`} aria-pressed={Boolean(m.public)} onClick={() => basculerPublic(m)}>
+                    {m.public ? "🌍 Dans Découvrir · retirer" : "🌍 Montrer dans Découvrir"}
+                  </button>
+                )}
               </Vignette>
             ))}
           </ul>
+          {erreur && (
+            <p className="tf-erreur" role="alert">
+              {erreur}
+            </p>
+          )}
           <button type="button" className="mp-bouton mm-encore" onClick={() => allerA("figurine")}>
             🎭 Créer un autre mème
           </button>
@@ -205,6 +227,8 @@ export const STYLES_MES_MEMES = `
 .mm-repondre{align-self:flex-start;padding:7px 12px;border-radius:999px;background:linear-gradient(135deg,#FF2E9A,#FF7A59);color:#fff;font-size:12.5px;font-weight:900;text-decoration:none}
 .mm-reponses .mm-image{border-color:rgba(242,196,107,.75);box-shadow:0 0 0 3px rgba(242,196,107,.18),0 18px 30px -18px rgba(0,0,0,.95)}
 .mm-encore{margin-top:14px}
+.mm-public{align-self:flex-start;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#E8D3DC;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.mm-public.pris{border-color:rgba(61,226,166,.6);background:rgba(61,226,166,.12);color:#9BF2CF}
 .mm-vide{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:22px;padding:26px 18px;border-radius:26px;background:radial-gradient(80% 60% at 50% 0%,rgba(255,46,154,.2),transparent 70%),rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);text-align:center}
 .mm-vide > span{font-size:46px}
 .mm-vide b{font-size:19px}
