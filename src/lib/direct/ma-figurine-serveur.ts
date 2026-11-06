@@ -451,6 +451,8 @@ export async function enregistrerMessage(
   voix?: unknown,
   /** 🕺 Elle danse (dès le départ). */
   danse?: unknown,
+  /** 💬 Le mème auquel il répond (en duo). */
+  repondA?: unknown,
 ): Promise<{ id?: string; error?: string }> {
   const m = /^data:(audio\/(?:webm|ogg|mp4|mpeg|x-m4a|aac|wav))(?:;[^,]*)?;base64,(.+)$/i.exec(s(son));
   if (!m) return { error: "Ton message n’a pas pu être enregistré. Réessaie." };
@@ -475,7 +477,10 @@ export async function enregistrerMessage(
   // LE FOU RIRE, LA GRIMACE ET LA DANSE : rangés à côté du message, dans le seau (la table ne connaît que les quatre
   // premiers visages : pas de migration pour eux)
   const sent = humeur && SENTIMENTS_EN_BASE.includes(humeur) ? humeur : null;
-  const aCote = { ...(humeur && !sent ? { sentiment: humeur } : {}), ...(danseValide(danse) ? { danse: true } : {}) };
+  // 💬 une réponse : le mème d'origine (un vrai, pas signalé)
+  const origine = idMessageValide(s(repondA)) ? await ligneMessage(supabase, s(repondA)) : null;
+  const repond = origine && !origine.signale_le ? s(origine.id) : "";
+  const aCote = { ...(humeur && !sent ? { sentiment: humeur } : {}), ...(danseValide(danse) ? { danse: true } : {}), ...(repond ? { repondA: repond } : {}) };
   if (Object.keys(aCote).length && !(await ecrireJson(supabase, `${habitant.id}/m-${id}.json`, aCote))) return { error: "Ton message n’est pas parti. Réessaie dans un instant." };
   const t = texteValide(texte);
   const v = voixValide(voix);
@@ -485,7 +490,76 @@ export async function enregistrerMessage(
   const manque = (e: typeof error) => /sentiment|texte|voix/i.test(`${e?.message ?? ""} ${(e as { details?: string } | null)?.details ?? ""}`);
   if (error && Object.keys(plus).length && manque(error)) ({ error } = await supabase.from("clik_figurine_message").insert(sent ? { ...ligne, sentiment: sent } : ligne));
   if (error && sent && manque(error)) ({ error } = await supabase.from("clik_figurine_message").insert(ligne));
-  return error ? { error: "Ton message n’est pas parti. Réessaie dans un instant." } : { id };
+  if (error) return { error: "Ton message n’est pas parti. Réessaie dans un instant." };
+  // 📈 la mesure : un mème de plus (et une réponse en duo)
+  await noterEvenementMeme(supabase, "cree", id);
+  if (repond) await noterEvenementMeme(supabase, "reponse", repond);
+  return { id };
+}
+
+// ─── 📈 la mesure du mème ──────────────────────────────────────────────────────────────────────
+export const TYPES_EVENEMENT_MEME = ["cree", "reponse", "vu", "clic", "partage", "nouveau"] as const;
+export type EvenementMeme = (typeof TYPES_EVENEMENT_MEME)[number];
+/**
+ * 📈 UN GESTE AUTOUR D'UN MÈME (`clik_meme_evenement`, la migration `20261110090000`) : jamais bloquant — sans la
+ * migration, rien ne se compte et les mèmes partent quand même.
+ */
+export async function noterEvenementMeme(supabase: Supabase, type: EvenementMeme, messageId: string): Promise<void> {
+  if (!idMessageValide(messageId)) return;
+  try {
+    await supabase.from("clik_meme_evenement").insert({ message_id: messageId, type });
+  } catch {
+    /* pas encore de table : tant pis */
+  }
+}
+/** Un geste venu de la page (un partage ; une figurine créée par quelqu'un arrivé par un mème) : pour un vrai mème. */
+export async function noterGesteMeme(supabase: Supabase, type: unknown, id: unknown): Promise<boolean> {
+  if (type !== "partage" && type !== "nouveau") return false;
+  const r = await ligneMessage(supabase, s(id));
+  if (!r || r.signale_le) return false;
+  await noterEvenementMeme(supabase, type, s(r.id));
+  return true;
+}
+
+export type StatsMemes = {
+  ok: boolean;
+  /** Les gestes des 7 et des 30 derniers jours. */
+  sept: Record<EvenementMeme, number>;
+  trente: Record<EvenementMeme, number>;
+  /** Jour par jour (les 14 derniers, le plus récent d'abord). */
+  jours: { jour: string; n: Record<EvenementMeme, number> }[];
+};
+/** 📈 Pour la page de l'admin : les gestes des 30 derniers jours. */
+export async function statsMemes(supabase: Supabase): Promise<StatsMemes> {
+  const vide = () => Object.fromEntries(TYPES_EVENEMENT_MEME.map((x) => [x, 0])) as Record<EvenementMeme, number>;
+  const jour = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
+  const depuis = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  const { data, error } = await supabase.from("clik_meme_evenement").select("type, created_at").gte("created_at", depuis).order("created_at", { ascending: false }).limit(50_000);
+  const res: StatsMemes = { ok: !error, sept: vide(), trente: vide(), jours: [] };
+  if (error) return res;
+  const il7 = Date.now() - 7 * 86_400_000;
+  const parJour = new Map<string, Record<EvenementMeme, number>>();
+  for (let k = 0; k < 14; k++) parJour.set(jour(new Date(Date.now() - k * 86_400_000)), vide());
+  for (const e of (Array.isArray(data) ? data : []) as { type?: string; created_at?: string }[]) {
+    const type = TYPES_EVENEMENT_MEME.find((x) => x === e.type);
+    if (!type) continue;
+    const quand = new Date(s(e.created_at));
+    res.trente[type] += 1;
+    if (quand.getTime() >= il7) res.sept[type] += 1;
+    const j = parJour.get(jour(quand));
+    if (j) j[type] += 1;
+  }
+  res.jours = [...parJour].map(([j, n]) => ({ jour: j, n }));
+  return res;
+}
+
+/** 💬 LE MÈME AUQUEL IL RÉPOND (en duo) : ses images (son visage du moment), sa voix, ses mots, son prénom. */
+export type MemeARepondre = { id: string; prenom: string; images: { n: string; p: string }; son: string; texte?: string };
+export async function memeARepondre(supabase: Supabase, id: unknown): Promise<MemeARepondre | null> {
+  const m = idMessageValide(s(id)) ? await lireMessage(supabase, s(id)) : null;
+  if (!m || m.signale || m.demo) return null;
+  const images = m.expression ? { n: m.expression.n, p: m.expression.p } : { n: m.neutre, p: m.parle };
+  return { id: m.id, prenom: m.prenom, images, son: `/api/direct/ma-figurine/son?m=${m.id}&r=1`, ...(m.texte ? { texte: m.texte } : {}) };
 }
 
 // ─── 🎭 son mème (la vidéo de son message) ─────────────────────────────────────────────────────
@@ -585,7 +659,7 @@ export async function lireMessage(supabase: Supabase, id: string): Promise<Messa
 }
 
 /** Sa voix, pour la page du message (et une écoute de plus). */
-export async function sonDuMessage(supabase: Supabase, id: string): Promise<{ octets: Buffer; type: string } | null> {
+export async function sonDuMessage(supabase: Supabase, id: string, compter = true): Promise<{ octets: Buffer; type: string } | null> {
   const r = await ligneMessage(supabase, id);
   if (!r) {
     const f = await ficheDemo(supabase, id);
@@ -598,7 +672,7 @@ export async function sonDuMessage(supabase: Supabase, id: string): Promise<{ oc
   if (r.signale_le) return null;
   const { data, error } = await supabase.storage.from(SEAU_FIGURINES).download(s(r.son));
   if (error || !data) return null;
-  await supabase.from("clik_figurine_message").update({ ecoutes: (Number(r.ecoutes) || 0) + 1 }).eq("id", id);
+  if (compter) await supabase.from("clik_figurine_message").update({ ecoutes: (Number(r.ecoutes) || 0) + 1 }).eq("id", id);
   return { octets: Buffer.from(await data.arrayBuffer()), type: data.type || "audio/webm" };
 }
 

@@ -36,6 +36,7 @@ import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE, type FigurineHandle } from
 import { Guide, GuideDit, OngletVisible, STYLES_GUIDE, useVoixPablito } from "./guide";
 import { lancerMusiqueDanse } from "@/lib/direct/musique-danse";
 import { fabriquerMeme, memePossible } from "@/lib/direct/meme";
+import { PREMIER_MEME, memesDuMoment, type MemePret } from "@/lib/direct/memes-prets";
 import { createClient } from "@/lib/supabase/client";
 import { SONS_PABLITO } from "@/lib/direct/guide";
 import { ETAPES, prochaineEtape } from "@/lib/direct/etapes";
@@ -43,6 +44,34 @@ import { ProtegerFigurine } from "./connaitre";
 import { ApercuDuMois } from "./figurine-du-mois";
 
 type Reponse = { error?: string; etat?: EtatMaFigurine; lien?: string; son?: string; enCours?: boolean };
+
+/** 💬 Le mème auquel il répond (en duo), venu de `?repondre=<id>` : gardé sur l'appareil (il crée d'abord sa figurine). */
+const CLE_REPONDRE = "clikme-repondre-v1";
+type MemeARepondre = { id: string; prenom: string; images: { n: string; p: string }; son: string; texte?: string };
+function idARepondre(): string {
+  try {
+    const u = new URL(window.location.href).searchParams.get("repondre");
+    if (u && /^[a-z0-9]{12}$/.test(u)) return u;
+    return window.localStorage.getItem(CLE_REPONDRE) ?? "";
+  } catch {
+    return "";
+  }
+}
+function oublierLaReponse() {
+  try {
+    window.localStorage.removeItem(CLE_REPONDRE);
+    const u = new URL(window.location.href);
+    if (u.searchParams.has("repondre")) {
+      u.searchParams.delete("repondre");
+      window.history.replaceState(window.history.state, "", u.toString());
+    }
+  } catch {
+    /* rien */
+  }
+}
+/** 📈 Un geste autour d'un mème (la mesure) : jamais bloquant. */
+const noterGeste = (type: "partage" | "nouveau", id: string) =>
+  void fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "meme-evenement", type, id }) }).catch(() => undefined);
 
 async function demander(corps: Record<string, unknown>): Promise<Reponse> {
   const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
@@ -220,7 +249,27 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const [univers, setUnivers] = useState(etat0.univers ?? "");
   // (tout est ouvert dès le départ, le lot 3 : ses visages, ses voix, sa propre voix, le cadre doré)
   const or = true;
-  const [texte, setTexte] = useState("");
+  // 🎁 SON PREMIER MÈME, DÉJÀ ÉCRIT (« le premier mème en moins de deux minutes ») : il n'a plus qu'à l'écouter
+  const [texte, setTexte] = useState(() => (etat0.messages.length ? "" : PREMIER_MEME));
+  // 💬 LE MÈME AUQUEL IL RÉPOND (en duo) ; et les mèmes prêts du moment
+  const [reponse, setReponse] = useState<MemeARepondre | null>(null);
+  const [prets] = useState<MemePret[]>(() => memesDuMoment());
+  useEffect(() => {
+    const id = idARepondre();
+    if (!id) return;
+    let fini = false;
+    void fetch(`/api/direct/ma-figurine?repondre=${id}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { meme?: MemeARepondre } | null) => {
+        if (fini) return;
+        if (j?.meme) setReponse(j.meme);
+        else oublierLaReponse();
+      })
+      .catch(() => undefined);
+    return () => {
+      fini = true;
+    };
+  }, []);
   // SA VOIX : celle qu'il a choisie (« une voix d'homme ou de femme ? », demandé une fois ; jamais devinée)
   const [voix, setVoix] = useState<CleVoix | null>(etat0.maVoix ?? null);
   function choisirVoix(v: CleVoix) {
@@ -345,9 +394,9 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const cleEnvoi = (s: Son | null) => (s ? `${s.cle}|${sentiment ?? ""}|${danse ? "danse" : ""}` : "");
 
   // ✍️ son texte, lu par la voix choisie : fabriqué au toucher, joué dès qu'il arrive
-  function ecouterTexte() {
+  function ecouterTexte(dit?: string) {
     setErreur("");
-    const t = texte.trim();
+    const t = (dit ?? texte).trim();
     if (!t) return setErreur("Écris d’abord ce qu’elle doit dire.");
     if (!voix) return setErreur("Choisis d’abord sa voix.");
     const cle = `${voix}|${t}`;
@@ -408,6 +457,15 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
     if (m && m.rec.state !== "inactive") m.rec.stop();
   }
 
+  /** ✨ UN MÈME PRÊT : son texte, son visage (et la danse) — et sa figurine le dit aussitôt (sa voix est choisie). */
+  function choisirPret(m: MemePret) {
+    setMode("ecrire");
+    setTexte(m.texte);
+    if (m.sentiment) choisirVisage(m.sentiment);
+    if (Boolean(m.danse) !== danse) basculerDanse();
+    if (voix) ecouterTexte(m.texte);
+  }
+
   /** Le message (sa voix) : son lien. Déjà parti avec les mêmes réglages : le même. */
   async function leMessage(s: Son): Promise<{ lien: string; id: string }> {
     const cle = cleEnvoi(s);
@@ -420,6 +478,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
       ...(sentiment ? { sentiment } : {}),
       ...(danse ? { danse: true } : {}),
       ...(s.texte ? { texte: s.texte, voix: s.voix } : {}),
+      ...(reponse ? { repondA: reponse.id } : {}),
     });
     const lien = `${window.location.origin}${j.lien}`;
     const id = String(j.lien).split("/").pop() ?? "";
@@ -460,6 +519,8 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
         danse,
         ecouter: true,
         surProgres: (p) => setMeme((x) => (x && x.etat === "fabrication" ? { ...x, p } : x)),
+        // 💬 EN DUO : sa figurine à lui en haut, qui parle d'abord ; la sienne en bas, qui répond
+        ...(reponse ? { duo: { images: reponse.images, son: reponse.son, texte: reponse.texte, prenom: reponse.prenom, moi: etat.prenom } } : {}),
       });
       // la vidéo part au seau (directement), puis elle est rangée avec le message
       const a = await demander({ action: "meme-envoi", id, type: m.type });
@@ -469,6 +530,11 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
       if (error) throw new Error("Ton mème n’a pas pu partir. Réessaie.");
       await demander({ action: "meme-pose", id, type: m.type });
       setMeme({ cle, etat: "pret", url: URL.createObjectURL(m.blob), fichier: new File([m.blob], `mon-meme-clikme.${ext}`, { type: m.type }) });
+      // (sa réponse est partie : la suivante sera un mème à lui)
+      if (reponse) {
+        oublierLaReponse();
+        setReponse(null);
+      }
     } catch (e) {
       setErreur((e as Error).message);
       setMeme((x) => (x?.cle === cle && x.etat === "fabrication" ? { cle, etat: "sans" } : x));
@@ -481,6 +547,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   /** 📲 Le mème part TEL QUEL (sans texte) : la feuille de partage du téléphone, avec la vidéo. */
   async function partagerMeme() {
     if (!meme?.fichier) return;
+    if (envoye) noterGeste("partage", envoye.id);
     try {
       await navigator.share({ files: [meme.fichier] });
     } catch {
@@ -584,8 +651,39 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
           )}
         </div>
 
+        {/* 💬 IL RÉPOND À UN MÈME : son mème sera un duo */}
+        {reponse && (
+          <div className="tf-reponse" role="status">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={reponse.images.n} alt="" />
+            <span>
+              <b>↩️ Tu réponds à {reponse.prenom || "ce mème"}</b>
+              {reponse.texte && <small>« {reponse.texte} »</small>}
+              <em>Ton mème sera un duo : sa figurine parle, puis la tienne lui répond.</em>
+            </span>
+            <button
+              type="button"
+              aria-label="Ne pas répondre à ce mème"
+              onClick={() => {
+                oublierLaReponse();
+                setReponse(null);
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
         {mode === "ecrire" && etat.voixTexte ? (
           <>
+            {/* ✨ LES MÈMES PRÊTS : un toucher, et elle le dit */}
+            <div className="tf-prets" role="group" aria-label="Des mèmes prêts à partir">
+              {prets.map((m) => (
+                <button key={m.cle} type="button" className={texte === m.texte ? "pris" : ""} onClick={() => choisirPret(m)}>
+                  <span aria-hidden="true">{m.emoji}</span> {m.nom}
+                </button>
+              ))}
+            </div>
+            {texte === PREMIER_MEME && !reponse && <p className="tf-premier">🎁 Ton premier mème est déjà écrit : {voix ? "écoute-le, et partage-le !" : "choisis sa voix, écoute, partage !"}</p>}
             <label className="tf-texte">
               <textarea
                 value={texte}
@@ -625,7 +723,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
                 </span>
               </div>
             )}
-            <button type="button" className="tf-ecouter" onClick={ecouterTexte} disabled={parle || !texte.trim() || !voix}>
+            <button type="button" className="tf-ecouter" onClick={() => ecouterTexte()} disabled={parle || !texte.trim() || !voix}>
               {parle ? "🔊 Elle parle…" : "▶ Écouter"}
             </button>
           </>
@@ -791,6 +889,9 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
         ...(etat.compte ? {} : { ville }),
         ...(univers.trim() ? { univers: univers.trim() } : {}),
       });
+      // 📈 la mesure : quelqu'un arrivé par un mème crée sa figurine
+      const origine = !etat.compte ? idARepondre() : "";
+      if (origine) noterGeste("nouveau", origine);
       if (j.etat) onEnvoye(j.etat);
     } catch (e) {
       setErreur((e as Error).message);
@@ -1029,6 +1130,15 @@ export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat
  * 2026 : la démonstration a quitté la page ; 6 novembre : « Comment ça marche » aussi, le guide l'explique déjà).
  */
 export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine | null; villes: { slug: string; nom: string }[]; onEtat: (e: EtatMaFigurine) => void }) {
+  // 💬 `?repondre=<id>` : gardé sur l'appareil — sans figurine, il la crée d'abord, et sa réponse l'attend
+  useEffect(() => {
+    try {
+      const u = new URL(window.location.href).searchParams.get("repondre");
+      if (u && /^[a-z0-9]{12}$/.test(u)) window.localStorage.setItem(CLE_REPONDRE, u);
+    } catch {
+      /* rien */
+    }
+  }, []);
   if (!etat)
     return (
       <div className="mc-attente" aria-label="Chargement">
@@ -1307,6 +1417,19 @@ export const STYLES_MA_FIGURINE =
 .tf-meme-pret .tf-wa{width:100%;box-sizing:border-box;border:0;font:inherit;font-size:16px;font-weight:900;cursor:pointer}
 .tf-meme-pret .tf-autres{justify-content:center}
 .tf-meme-pret .tf-adresse{width:100%;box-sizing:border-box}
+.tf-reponse{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:18px;background:linear-gradient(135deg,rgba(255,46,154,.2),rgba(242,196,107,.14));border:1.5px solid rgba(242,196,107,.5)}
+.tf-reponse img{flex:none;width:48px;height:64px;border-radius:12px;object-fit:cover;background:#2A0F1F}
+.tf-reponse span{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.tf-reponse b{font-size:15px;font-weight:900}
+.tf-reponse small{font-size:12.5px;color:#FFE7B8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tf-reponse em{font-style:normal;font-size:12px;color:#D9C3CB}
+.tf-reponse button{flex:none;width:32px;height:32px;border:0;border-radius:50%;background:rgba(0,0,0,.3);color:#fff;font-size:14px;cursor:pointer}
+.tf-prets{display:flex;gap:6px;margin:0 -16px;padding:2px 16px 6px;overflow-x:auto;scrollbar-width:none}
+.tf-prets::-webkit-scrollbar{display:none}
+.tf-prets button{flex:none;display:inline-flex;align-items:center;gap:5px;padding:8px 13px;border-radius:999px;border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#FFF4E6;font:inherit;font-size:13px;font-weight:800;white-space:nowrap;cursor:pointer}
+.tf-prets button:first-child{border-color:rgba(242,196,107,.7);background:rgba(242,196,107,.14)}
+.tf-prets button.pris{border-color:#FF2E9A;background:rgba(255,46,154,.22)}
+.tf-premier{margin:0;padding:8px 12px;border-radius:14px;background:rgba(127,240,196,.1);border:1px solid rgba(127,240,196,.35);font-size:13px;font-weight:700;color:#BFF7E2}
 @keyframes tf-tourne{to{transform:rotate(360deg)}}
 @keyframes tf-bat{0%,100%{transform:scale(1)}15%{transform:scale(1.07)}}
 @media (min-width:860px){

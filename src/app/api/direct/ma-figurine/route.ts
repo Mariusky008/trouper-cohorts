@@ -12,10 +12,12 @@
 // POST { action: "ma-voix", voix } : la voix de sa figurine, choisie par lui (« une voix d'homme ou de femme ? »).
 // GET ?mois=1 : sa figurine du mois (où il en est : ses jours de rencontres) et celles d'avant (l'album de soi).
 // POST { action: "mois" } : sa figurine du mois, méritée (10 jours), fabriquée une fois → { mois } (`enCours` : rappeler).
-// POST { action: "message", son: data:audio…, duree, commerces: [liens], sentiment?, texte?, voix?, danse? } : un message de
+// POST { action: "message", son: data:audio…, duree, commerces: [liens], sentiment?, texte?, voix?, danse?, repondA? } : un message de
 //   sa figurine → { id, lien }.
 // POST { action: "meme-envoi", id, type } → { seau, chemin, jeton } : où envoyer la vidéo de son mème (`meme.ts`) ;
 //      { action: "meme-pose", id, type } : elle est arrivée → rangée à côté du message.
+// GET ?repondre=<id> : le mème auquel il répond, en duo (ses images, sa voix, ses mots, son prénom).
+// POST { action: "meme-evenement", type: "partage"|"nouveau", id } : un geste autour d'un mème (la mesure).
 // POST { action: "signaler", id } : celui qui a reçu un message le signale (pas besoin d'être quelqu'un).
 // (La démonstration qu'on faisait parler sans compte a quitté la page le 5 novembre 2026 : chacun crée la sienne dès le
 // départ. Ses messages déjà envoyés s'ouvrent toujours, par `/figurine/<id>`.)
@@ -35,6 +37,8 @@ import {
   refaireMaFigurine,
   fabriquerSesExpressions,
   lireSonTexte,
+  memeARepondre,
+  noterGesteMeme,
   poserMeme,
   signalerMessage,
 } from "@/lib/direct/ma-figurine-serveur";
@@ -56,6 +60,12 @@ async function villeOuverte(supabase: ReturnType<typeof createAdminClient>, vill
 export async function GET(request: Request) {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
+  // 💬 le mème auquel il répond (en duo)
+  const repondre = new URL(request.url).searchParams.get("repondre");
+  if (repondre) {
+    const m = await memeARepondre(supabase, repondre);
+    return m ? NextResponse.json({ ok: true, meme: m }, { headers: sansCache }) : NextResponse.json({ error: "Ce mème n’existe plus." }, { status: 404 });
+  }
   // 🗓️ sa figurine du mois (où il en est) et celles d'avant
   if (new URL(request.url).searchParams.get("mois")) {
     return NextResponse.json({ ok: true, mois: await mesFigurinesDuMois(supabase, moi) }, { headers: sansCache });
@@ -71,6 +81,11 @@ export async function POST(request: Request) {
   if (p?.action === "signaler") {
     const ok = await signalerMessage(supabase, String(p.id ?? ""));
     return NextResponse.json(ok ? { ok: true } : { error: "Ce message n’existe plus." }, { status: ok ? 200 : 404 });
+  }
+  // 📈 un geste autour d'un mème (sans compte : celui qui le reçoit le partage) — « partage », « nouveau »
+  if (p?.action === "meme-evenement") {
+    const ok = await noterGesteMeme(supabase, p.type, p.id);
+    return NextResponse.json(ok ? { ok: true } : { error: "Demande incomplète." }, { status: ok ? 200 : 400 });
   }
   if (p?.action === "photo") {
     // DÈS LE DÉPART : sans compte, sa photo lui en ouvre un — dans une ville où ClikMe a des commerces
@@ -131,7 +146,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true }, { headers: sansCache });
   }
   if (p?.action === "message") {
-    const r = await enregistrerMessage(supabase, moi, p.son, p.duree, p.commerces, p.sentiment, p.texte, p.voix, p.danse);
+    const r = await enregistrerMessage(supabase, moi, p.son, p.duree, p.commerces, p.sentiment, p.texte, p.voix, p.danse, p.repondA);
     if (!r.id) return NextResponse.json({ error: r.error }, { status: 400 });
     return NextResponse.json({ ok: true, id: r.id, lien: lienMessage(r.id) }, { headers: sansCache });
   }

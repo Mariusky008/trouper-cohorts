@@ -54,7 +54,7 @@ jobs:
           src/lib/direct/guide.ts src/lib/direct/guide-serveur.ts src/app/api/direct/guide
           src/lib/direct/etapes.ts src/lib/direct/etapes-serveur.ts src/lib/direct/reseau.ts src/lib/direct/ressort.ts src/lib/direct/journal-serveur.ts
           src/lib/direct/connaitre.ts src/lib/direct/connaitre-serveur.ts src/app/api/direct/connaitre
-          src/lib/direct/figurine-du-mois.ts src/lib/direct/figurine-du-mois-serveur.ts src/lib/direct/musique-danse.ts src/lib/direct/scenarios.ts src/lib/direct/meme.ts
+          src/lib/direct/figurine-du-mois.ts src/lib/direct/figurine-du-mois-serveur.ts src/lib/direct/musique-danse.ts src/lib/direct/scenarios.ts src/lib/direct/meme.ts src/lib/direct/memes-prets.ts
 
   essais-sql:
     name: Essais SQL
