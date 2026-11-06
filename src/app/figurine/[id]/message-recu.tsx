@@ -17,7 +17,7 @@
  */
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import type { MessageFigurine } from "@/lib/direct/ma-figurine";
+import { CLE_MEMES_RECUS, type MessageFigurine } from "@/lib/direct/ma-figurine";
 import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE, type FigurineHandle } from "@/app/collection/figurine-qui-parle";
 
 /** La vidéo du mème : tout de suite, en boucle ; le son dès qu'on peut (au premier toucher, sinon). */
@@ -157,6 +157,18 @@ function PartagerCeMeme({ id, video, type }: { id: string; video?: string; type?
 export function MessageRecu({ message: m }: { message: MessageFigurine }) {
   const [signale, setSignale] = useState(m.signale);
   const [envoi, setEnvoi] = useState(false);
+  // 📥 GARDÉ SUR CE TÉLÉPHONE : il le retrouve dans « Mes mèmes » (« Reçus »), pour y répondre quand il veut
+  const id = m.signale ? "" : m.id;
+  useEffect(() => {
+    if (!id) return;
+    try {
+      const l = JSON.parse(window.localStorage.getItem(CLE_MEMES_RECUS) || "[]") as unknown;
+      const avant = Array.isArray(l) ? l.filter((x): x is string => typeof x === "string" && x !== id) : [];
+      window.localStorage.setItem(CLE_MEMES_RECUS, JSON.stringify([id, ...avant].slice(0, 30)));
+    } catch {
+      /* navigation privée : tant pis */
+    }
+  }, [id]);
 
   async function signaler() {
     if (m.signale || !window.confirm("Signaler ce mème ? Il ne s’affichera plus.")) return;

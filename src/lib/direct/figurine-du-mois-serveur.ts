@@ -10,22 +10,24 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "./habitant";
 import { motInterdit } from "./mots-interdits";
 import { TENUES_EDITION } from "./figurine-pro";
-import { editer, poserAuFormat, reprendre } from "./figurine-expressions-serveur";
+import { consigneBoucheLook, editer, poserAuFormat, reprendre } from "./figurine-expressions-serveur";
 import { moteurBranche } from "./ma-figurine-fabrique-serveur";
-import { SEAU_FIGURINES, deposer, ecrireJson, lireJson, lireLigne, signer, telecharger } from "./ma-figurine-serveur";
+import { SEAU_FIGURINES, cheminImageDuLook, cheminParleDuLook, deposer, ecrireJson, lireJson, lireLigne, signer, telecharger } from "./ma-figurine-serveur";
 import { joursDeRencontres } from "./rencontre-serveur";
 import { journalDuMois } from "./journal-serveur";
-import { EXPRESSIONS_DU_MOIS, JOURS_POUR_LA_FIGURINE, editionDuMois, moisEnClair, type FigurineDuMois, type MesFigurinesDuMois } from "./figurine-du-mois";
+import { EXPRESSIONS_DU_MOIS, JOURS_POUR_LA_FIGURINE, editionDuMois, lookValide, moisEnClair, type FigurineDuMois, type MesFigurinesDuMois } from "./figurine-du-mois";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 const moisParis = (d = new Date()) => d.toLocaleDateString("en-CA", { timeZone: "Europe/Paris" }).slice(0, 7);
 const cheminFiche = (h: string, mois: string) => `${h}/mois/${mois}.json`;
-const cheminImage = (h: string, mois: string) => `${h}/mois/${mois}.webp`;
+const cheminImage = cheminImageDuLook;
 const cheminVerrou = (h: string, mois: string) => `${h}/mois/${mois}-verrou.json`;
+const cheminVerrouParle = (h: string, mois: string) => `${h}/mois/${mois}-p-verrou.json`;
 type Fiche = { mois: string; cle: string; expression: string; phrase: string; image: string; le: string; parMoteur: boolean };
 
-async function vue(supabase: Supabase, f: Fiche, jours: number): Promise<FigurineDuMois> {
+async function vue(supabase: Supabase, f: Fiche, jours: number, parle = ""): Promise<FigurineDuMois> {
+  const [image, p] = await Promise.all([signer(supabase, f.image, 3600), parle ? signer(supabase, parle, 3600) : Promise.resolve("")]);
   return {
     mois: f.mois,
     edition: editionDuMois(f.mois),
@@ -33,9 +35,10 @@ async function vue(supabase: Supabase, f: Fiche, jours: number): Promise<Figurin
     etat: "prete",
     jours,
     objectif: JOURS_POUR_LA_FIGURINE,
-    image: await signer(supabase, f.image, 3600),
+    image,
     phrase: f.phrase,
     le: f.le,
+    ...(p ? { parle: p } : {}),
   };
 }
 
@@ -53,16 +56,20 @@ export async function mesFigurinesDuMois(supabase: Supabase, habitant: Habitant 
     joursDeRencontres(supabase, habitant.id, mois),
     Promise.resolve(supabase.storage.from(SEAU_FIGURINES).list(`${habitant.id}/mois`, { limit: 240 })).catch(() => ({ data: null })),
   ]);
-  const noms = ((Array.isArray(liste.data) ? liste.data : []) as { name?: string }[]).map((x) => s(x.name)).filter((n) => /^\d{4}-\d{2}\.json$/.test(n));
+  const tous = ((Array.isArray(liste.data) ? liste.data : []) as { name?: string }[]).map((x) => s(x.name));
+  const noms = tous.filter((n) => /^\d{4}-\d{2}\.json$/.test(n));
+  // (ses looks qui parlent déjà : leur bouche ouverte est là)
+  const parlent = new Set(tous.filter((n) => /^\d{4}-\d{2}-p\.webp$/.test(n)).map((n) => n.slice(0, 7)));
+  const parleDe = (f: Fiche) => (parlent.has(f.mois) ? cheminParleDuLook(habitant.id, f.mois) : "");
   const fiches = (await Promise.all(noms.map((n) => lireJson<Fiche>(supabase, `${habitant.id}/mois/${n}`)))).filter((f): f is Fiche => Boolean(f.mois && f.image));
   const deCeMois = fiches.find((f) => f.mois === mois);
   const passees = await Promise.all(
     fiches
       .filter((f) => f.mois !== mois)
       .sort((a, b) => b.mois.localeCompare(a.mois))
-      .map((f) => vue(supabase, f, 0)),
+      .map((f) => vue(supabase, f, 0, parleDe(f))),
   );
-  if (deCeMois) return { courante: await vue(supabase, deCeMois, jours.length), passees };
+  if (deCeMois) return { courante: await vue(supabase, deCeMois, jours.length, parleDe(deCeMois)), passees };
   const aSaFigurine = Boolean(ligne?.prete_le && s(ligne?.neutre));
   const edition = editionDuMois(mois);
   return {
@@ -177,8 +184,50 @@ export async function fabriquerFigurineDuMois(supabase: Supabase, habitant: Habi
     const phrase = await phraseDuMois(supabase, habitant, mois);
     const fiche: Fiche = { mois, cle: edition.cle, expression: expression.dit, phrase, image: cheminImage(habitant.id, mois), le: new Date().toISOString(), parMoteur };
     await ecrireJson(supabase, cheminFiche(habitant.id, mois), fiche);
+    // 🎭 sa bouche ouverte, tout de suite s'il reste le temps (sinon : la première fois qu'il choisit ce look)
+    if (avant - Date.now() > 120_000) await boucheDuLook(supabase, habitant.id, mois, image, edition.cle, avant).catch(() => undefined);
     return {};
   } finally {
     await ecrireJson(supabase, cheminVerrou(habitant.id, mois), {});
+  }
+}
+
+// ─── 🎭 un look qui parle ────────────────────────────────────────────────────────────────────────
+/** Sa bouche ouverte (le moteur ; sans moteur : la même image — il bouge, sans ouvrir la bouche). */
+async function boucheDuLook(supabase: Supabase, h: string, mois: string, image: Buffer, cle: string, avant: number): Promise<{ error?: string; statut?: number }> {
+  let parle: Buffer;
+  if (moteurBranche()) {
+    const { png, cadre } = await poserAuFormat(image);
+    const r = await editer(png, consigneBoucheLook(EXPRESSIONS_DU_MOIS[cle]?.en ?? ""), avant);
+    if (!Buffer.isBuffer(r)) return { error: r.erreur, statut: 502 };
+    parle = await reprendre(r, cadre);
+  } else {
+    parle = await sharp(image).webp({ quality: 88 }).toBuffer();
+  }
+  if (!(await deposer(supabase, cheminParleDuLook(h, mois), parle, "image/webp"))) return { error: "Ce look n’a pas pu être rangé.", statut: 502 };
+  return {};
+}
+
+/**
+ * 🎭 SA FIGURINE DU MOIS, EN LOOK QUI PARLE (7 novembre 2026) : la première fois qu'il la choisit dans le studio, le
+ * moteur lui ouvre la bouche (une image) ; ensuite, elle parle dans ses mèmes. `enCours` : une autre page la fait déjà.
+ */
+export async function fabriquerParleDuLook(supabase: Supabase, habitant: Habitant, look: unknown, avant: number): Promise<{ error?: string; enCours?: boolean; statut?: number }> {
+  const mois = lookValide(look);
+  if (!mois) return { error: "Ce look n’existe pas.", statut: 400 };
+  const fiche = await lireJson<Fiche>(supabase, cheminFiche(habitant.id, mois));
+  if (!fiche.image) return { error: "Ce look n’existe pas.", statut: 404 };
+  const { data } = await supabase.storage.from(SEAU_FIGURINES).list(`${habitant.id}/mois`, { limit: 100, search: `${mois}-p.webp` });
+  if (((Array.isArray(data) ? data : []) as { name?: string }[]).some((x) => x.name === `${mois}-p.webp`)) return {};
+  // UN SEUL À LA FOIS (deux pages ouvertes ne paient pas deux fois)
+  const verrou = await lireJson<{ le?: number }>(supabase, cheminVerrouParle(habitant.id, mois));
+  if (Date.now() - (Number(verrou.le) || 0) < 4 * 60_000) return { enCours: true };
+  await ecrireJson(supabase, cheminVerrouParle(habitant.id, mois), { le: Date.now() });
+  try {
+    const image = await telecharger(supabase, fiche.image);
+    if (!image) return { error: "Ce look est introuvable.", statut: 404 };
+    return await boucheDuLook(supabase, habitant.id, mois, image, s(fiche.cle), avant);
+  } finally {
+    await ecrireJson(supabase, cheminVerrouParle(habitant.id, mois), {});
   }
 }

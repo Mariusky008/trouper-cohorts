@@ -10,10 +10,12 @@
 //       `veut` : le visage qu'il vient de choisir (ils se font à la demande).
 // POST { action: "voix", texte, voix } : son texte lu par la voix choisie (ElevenLabs) → { son: data:audio/mpeg… }.
 // POST { action: "ma-voix", voix } : la voix de sa figurine, choisie par lui (« une voix d'homme ou de femme ? »).
-// GET ?mois=1 : sa figurine du mois (où il en est : ses jours de rencontres) et celles d'avant (l'album de soi).
+// GET ?mois=1 : sa figurine du mois (où il en est : ses jours de rencontres) et celles d'avant — ses looks.
 // POST { action: "mois" } : sa figurine du mois, méritée (10 jours), fabriquée une fois → { mois } (`enCours` : rappeler).
-// POST { action: "message", son: data:audio…, duree, commerces: [liens], sentiment?, texte?, voix?, danse?, repondA? } : un message de
-//   sa figurine → { id, lien }.
+// POST { action: "look-parle", look: "AAAA-MM" } : ce look (une figurine du mois) apprend à parler (sa bouche ouverte) → { mois }.
+// GET ?memes=1&recus=<id,id…> : « Mes mèmes » — les siens, les réponses en duo qu'on lui a faites, ceux qu'il a reçus.
+// POST { action: "message", son: data:audio…, duree, commerces: [liens], sentiment?, texte?, voix?, danse?, repondA?, look? } : un
+//   message de sa figurine (ou d'un de ses looks) → { id, lien }.
 // POST { action: "meme-envoi", id, type } → { seau, chemin, jeton } : où envoyer la vidéo de son mème (`meme.ts`) ;
 //      { action: "meme-pose", id, type } : elle est arrivée → rangée à côté du message.
 // GET ?repondre=<id> : le mème auquel il répond, en duo (ses images, sa voix, ses mots, son prénom).
@@ -38,11 +40,12 @@ import {
   fabriquerSesExpressions,
   lireSonTexte,
   memeARepondre,
+  mesMemes,
   noterGesteMeme,
   poserMeme,
   signalerMessage,
 } from "@/lib/direct/ma-figurine-serveur";
-import { fabriquerFigurineDuMois, mesFigurinesDuMois } from "@/lib/direct/figurine-du-mois-serveur";
+import { fabriquerFigurineDuMois, fabriquerParleDuLook, mesFigurinesDuMois } from "@/lib/direct/figurine-du-mois-serveur";
 
 export const dynamic = "force-dynamic";
 // (un tour d'expressions : quatre images du moteur, en même temps)
@@ -69,6 +72,10 @@ export async function GET(request: Request) {
   // 🗓️ sa figurine du mois (où il en est) et celles d'avant
   if (new URL(request.url).searchParams.get("mois")) {
     return NextResponse.json({ ok: true, mois: await mesFigurinesDuMois(supabase, moi) }, { headers: sansCache });
+  }
+  // 📥 « mes mèmes » : les siens, les réponses qu'on lui a faites, ceux qu'il a reçus (`recus` : gardés sur son téléphone)
+  if (new URL(request.url).searchParams.get("memes")) {
+    return NextResponse.json({ ok: true, memes: await mesMemes(supabase, moi, new URL(request.url).searchParams.get("recus")) }, { headers: sansCache });
   }
   return NextResponse.json({ ok: true, etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
 }
@@ -124,6 +131,13 @@ export async function POST(request: Request) {
     if (r.error) return NextResponse.json({ error: r.error, mois }, { status: r.statut ?? 400, headers: sansCache });
     return NextResponse.json({ ok: true, ...(r.enCours ? { enCours: true } : {}), mois }, { headers: sansCache });
   }
+  // 🎭 un look (une figurine du mois) qui parle : sa bouche ouverte, faite la première fois → { mois } (`enCours` : rappeler)
+  if (p?.action === "look-parle") {
+    const r = await fabriquerParleDuLook(supabase, moi, p.look, avant);
+    const mois = await mesFigurinesDuMois(supabase, moi);
+    if (r.error) return NextResponse.json({ error: r.error, mois }, { status: r.statut ?? 400, headers: sansCache });
+    return NextResponse.json({ ok: true, ...(r.enCours ? { enCours: true } : {}), mois }, { headers: sansCache });
+  }
   if (p?.action === "ma-voix") {
     const r = await choisirSaVoix(supabase, moi, p.voix);
     if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
@@ -146,7 +160,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true }, { headers: sansCache });
   }
   if (p?.action === "message") {
-    const r = await enregistrerMessage(supabase, moi, p.son, p.duree, p.commerces, p.sentiment, p.texte, p.voix, p.danse, p.repondA);
+    const r = await enregistrerMessage(supabase, moi, p.son, p.duree, p.commerces, p.sentiment, p.texte, p.voix, p.danse, p.repondA, p.look);
     if (!r.id) return NextResponse.json({ error: r.error }, { status: 400 });
     return NextResponse.json({ ok: true, id: r.id, lien: lienMessage(r.id) }, { headers: sansCache });
   }

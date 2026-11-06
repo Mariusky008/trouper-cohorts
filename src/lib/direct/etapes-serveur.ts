@@ -44,13 +44,15 @@ type Rencontres = { liste?: unknown[]; amis?: unknown[]; moi?: number; pas?: num
  */
 export async function cadeauxDe(supabase: Supabase, habitantId: string, figurines: number, noterPresence = true): Promise<Cadeaux> {
   if (!habitantId) return { cadeaux: 0, etapes: [] };
-  const [fig, carte, msg, rencontres, presence, notes] = await Promise.all([
+  const [fig, carte, msg, rencontres, presence, notes, duo] = await Promise.all([
     Promise.resolve(supabase.from("clik_ma_figurine").select("prete_le").eq("habitant_id", habitantId).maybeSingle()).catch(() => ({ data: null })),
     lire<object>(supabase, `${habitantId}/personnage.json`),
     Promise.resolve(supabase.from("clik_figurine_message").select("id").eq("habitant_id", habitantId).limit(1)).catch(() => ({ data: null })),
     lire<Rencontres>(supabase, `${habitantId}/rencontres.json`),
     lire<{ jours?: string[] }>(supabase, `${habitantId}/presence.json`),
     lire<{ acquis?: number }>(supabase, `${habitantId}/cadeaux.json`),
+    // (sa première réponse en duo : `ma-figurine-serveur.ts`, `cheminDuo`)
+    lire<{ le?: string }>(supabase, `${habitantId}/duo.json`),
   ]);
 
   // SA PRÉSENCE : aujourd'hui compte (les 30 derniers jours suffisent)
@@ -79,7 +81,7 @@ export async function cadeauxDe(supabase: Supabase, habitantId: string, figurine
     membre: Boolean(s(rencontres?.membreJour)),
     fidele: new Set(jours).size >= 3,
     souvenirs: liste.length >= 5,
-    commerce: figurines >= 1,
+    duo: Boolean(duo?.le),
   };
   const etapes = ETAPES.map((e) => e.cle).filter((c) => faites[c]);
   return { cadeaux: Math.max(etapes.length, acquis), etapes };

@@ -1,8 +1,9 @@
 // 🗣️ SA PROPRE FIGURINE, DANS UN TÉLÉPHONE — `clikme.fr/collection` puis `clikme.fr/figurine/<id>`, contre le faux
 // Supabase, avec un faux micro (Chromium joue un bip à sa place) et une fausse voix (le faux Supabase rend un enregistrement d'essai).
 //
-// Hugo a 1 figurine : le guide (la figurine du patron de ClikMe) l'accueille (le menu en bas, cinq onglets), la quête « Crée ta figurine » (la démonstration
-// qu'on faisait parler est partie le 5 novembre 2026). Léa passe chez le Comptoir depuis plus d'un an (et à l'Atelier) : plus
+// Hugo a 1 figurine : le guide (la figurine du patron de ClikMe) l'accueille (le menu en bas, trois onglets — « Créer » au milieu,
+// depuis qu'on a resserré sur le mème le 7 novembre 2026), la quête « Crée ta figurine » ; sa figurine du mois, méritée dans
+// « Rencontres », devient un LOOK qui parle dans ses mèmes. Léa passe chez le Comptoir depuis plus d'un an (et à l'Atelier) : plus
 // de 10 figurines. Elle envoie sa photo (il faut cocher « C'est bien moi ») ; « on fabrique ta figurine ». ClikMe pose
 // ses deux images (ici à la main, dans le faux Supabase : la route admin, elle, refuse qui n'est pas admin). Elle
 // écrit un texte, le fait lire par une voix (la joie sur son visage), et en fait SON MÈME : une vidéo fabriquée dans
@@ -70,7 +71,8 @@ const api = (p, corps) =>
 const hugo = await tel(HUGO);
 await hugo.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
 await hugo.waitForSelector("#o-figurine .pb-voile .mqd", { timeout: 60000 });
-ok((await hugo.locator(".mc-nav button").count()) === 5 && (await texte(hugo, ".mc-nav")).includes("Rencontres") && (await texte(hugo, ".mc-nav")).includes("Ce mois-ci"), "le menu en bas : cinq onglets");
+const menu = await texte(hugo, ".mc-nav");
+ok((await hugo.locator(".mc-nav button").count()) === 3 && /Rencontres.*Créer.*Mes mèmes/.test(menu) && !/Ce mois-ci|Album|Personnage/.test(menu), `le menu en bas, resserré : Rencontres · Créer · Mes mèmes (${menu})`);
 ok((await hugo.locator("#o-figurine .mqd .mq").count()) === 1 && /Pablito/i.test(await texte(hugo, "#o-figurine .mqd-bulle")), "Pablito, la figurine du patron de ClikMe, l'accueille en fenêtre");
 ok((await texte(hugo, "#o-figurine .pb-voile")).includes("Je crée ma figurine"), "dans la fenêtre : « Je crée ma figurine »");
 await hugo.screenshot({ path: `${D}/ma-figurine-0-pablito.png` });
@@ -87,12 +89,15 @@ ok(
   (await hugo.locator("#o-figurine .fm-comment, #o-figurine .og-pouvoirs").count()) === 0 && !/Comment ça marche|débloquer|achat/i.test(await texte(hugo, "#o-figurine")),
   "plus de « Comment ça marche » (le guide l'explique déjà), plus rien « à débloquer », plus aucun achat",
 );
-// 🧭 LE MENU, EN BAS : un dock ; « Rencontres » en gros bouton rond au milieu ; des icônes dessinées
+// 🧭 LE MENU, EN BAS : un dock ; « Créer » en gros bouton rond au milieu ; des icônes dessinées
 const dock = await hugo.evaluate(() => {
   const r = (s) => document.querySelector(s)?.getBoundingClientRect();
-  return { rond: r(".mc-nav-rencontre .mc-nav-ico"), autre: r(".mc-nav-album .mc-nav-ico"), nav: r(".mc-nav"), svg: document.querySelectorAll(".mc-nav svg").length };
+  return { rond: r(".mc-nav-figurine .mc-nav-ico"), g: r(".mc-nav-rencontre .mc-nav-ico"), d: r(".mc-nav-memes .mc-nav-ico"), nav: r(".mc-nav"), svg: document.querySelectorAll(".mc-nav svg").length };
 });
-ok(dock.rond && dock.autre && dock.rond.width >= 56 && dock.rond.top < dock.nav.top && dock.svg >= 4 && dock.nav.left >= 8, `le menu : un dock qui flotte, « Rencontres » en gros bouton rond au milieu (${JSON.stringify({ l: dock.rond?.width, t: dock.rond?.top, n: dock.nav?.top })})`);
+ok(
+  dock.rond && dock.g && dock.d && dock.rond.width >= 60 && dock.rond.top < dock.nav.top && dock.g.right < dock.rond.left && dock.d.left > dock.rond.right && dock.svg === 3 && dock.nav.left >= 8,
+  `le menu : un dock qui flotte, « Créer » en gros bouton rond au milieu (${JSON.stringify({ l: dock.rond?.width, t: dock.rond?.top, n: dock.nav?.top })})`,
+);
 ok((await debordement(hugo)) <= 0, "l'accueil ne déborde pas");
 await hugo.screenshot({ path: `${D}/ma-figurine-0-accueil.png`, fullPage: true });
 
@@ -116,11 +121,12 @@ await fetch(`${F}/clik_ma_figurine?habitant_id=eq.${HUGO.id}`, {
 });
 await hugo.reload({ waitUntil: "networkidle" });
 await hugo.waitForSelector(".tf-moi .tf-options", { timeout: 30000 });
-ok((await hugo.locator(".mc-nav-figurine .mc-nav-ico img").count()) === 1, "« Ma figurine », dans le menu : SA figurine, en médaillon");
+ok((await hugo.locator(".mc-nav-figurine .mc-nav-ico img").count()) === 1, "« Créer », dans le menu : SA figurine, dans le gros bouton rond");
 const opts = await texte(hugo, ".tf-options");
-ok(/Tes premiers pas 2\/10/.test(opts) && opts.includes("Prochain :") && !/cadeau|cadenas|achat|Encore/i.test(opts), `ses premiers pas, repliés : une ligne et son prochain pas (${opts.slice(0, 160)})`);
+ok(/Tes premiers pas 1\/10/.test(opts) && opts.includes("Prochain :") && !/cadeau|cadenas|achat|Encore/i.test(opts), `ses premiers pas, repliés : une ligne et son prochain pas (${opts.slice(0, 160)})`);
 await hugo.locator(".tf-options summary").click();
-ok((await hugo.locator(".tf-moi .tf-kdo li.faite").count()) === 2 && (await texte(hugo, ".tf-kdo li.faite")).includes("Créer ta figurine"), "deux étapes franchies : sa figurine, un commerçant partenaire");
+const kdo = await texte(hugo, ".tf-kdo");
+ok((await hugo.locator(".tf-moi .tf-kdo li.faite").count()) === 1 && (await texte(hugo, ".tf-kdo li.faite")).includes("Créer ta figurine") && kdo.includes("Répondre en duo à un mème") && !/commerçant/i.test(kdo), "une étape franchie (sa figurine) ; plus d'étape « commerçant » : « Répondre en duo à un mème »");
 ok(
   (await hugo.locator(".tf-moi .tf-expr button").count()) === 7 && (await hugo.locator(".tf-moi .tf-expr button.ferme, .tf-moi .tf-voix button.ferme").count()) === 0 && (await hugo.locator(".tf-moi .tf-danse").count()) === 1,
   "tout est ouvert dès le départ : sept visages, toutes les voix, la danse",
@@ -156,41 +162,54 @@ const demanderMois = () =>
 const neuf9 = await demanderMois();
 ok(neuf9.s === 400 && neuf9.j.error === "Encore 1 jour de rencontres ce mois-ci." && neuf9.j.mois?.courante?.etat === "a-gagner" && neuf9.j.mois.courante.jours === 9, `à neuf jours, pas encore : elle se mérite (${neuf9.s}, ${neuf9.j.error})`);
 await hugo.goto(`${BASE}/collection?v=${Date.now()}#mois`, { waitUntil: "networkidle" });
-await hugo.waitForSelector("#o-mois .fm .fm-gagner", { timeout: 30000 });
-const gagner = await texte(hugo, "#o-mois .fm");
+await hugo.waitForSelector("#o-rencontre .fm .fm-gagner", { timeout: 30000 });
+const gagner = await texte(hugo, "#o-rencontre .fm");
 ok(
-  gagner.includes("TA FIGURINE DU MOIS") && gagner.includes("9/10 jours de rencontres ce mois-ci") && gagner.includes("Encore 1 jour :") && (await hugo.locator("#o-mois .fm .fm-jours i.vecu").count()) === 9,
-  `« Ce mois-ci » commence par SA figurine du mois : neuf jours sur dix (${gagner.slice(0, 160)})`,
+  gagner.includes("TA FIGURINE DU MOIS") && gagner.includes("9/10 jours de rencontres ce mois-ci") && gagner.includes("Encore 1 jour :") && (await hugo.locator("#o-rencontre .fm .fm-jours i.vecu").count()) === 9,
+  `#mois mène à « Rencontres », où elle se mérite : neuf jours sur dix (${gagner.slice(0, 160)})`,
 );
-const avant = await hugo.evaluate(() => [...document.querySelectorAll("#o-mois > *")].findIndex((x) => x.classList.contains("fm")));
-ok(avant === 1, `elle passe avant les commerçants (juste sous le titre : ${avant})`);
-await fermerPablito(hugo, "#o-mois");
+ok(
+  await hugo.evaluate(() => {
+    const rd = document.querySelector("#o-rencontre .rd");
+    const fm = document.querySelector("#o-rencontre .fm");
+    return Boolean(rd && fm && rd.compareDocumentPosition(fm) & Node.DOCUMENT_POSITION_FOLLOWING);
+  }),
+  "elle est juste sous l'épisode du jour",
+);
+ok((await hugo.locator(".mc-nav button.pris").innerText()).includes("Rencontres") && (await hugo.locator(".mc-seg button").count()) === 2, "l'onglet « Rencontres » (Mes épisodes · Mon personnage)");
+await fermerPablito(hugo, "#o-rencontre");
 await hugo.screenshot({ path: `${D}/ma-figurine-0c-mois-a-gagner.png` });
 // LE DIXIÈME JOUR : elle se fabrique toute seule (ici sans moteur d'image : sa figurine, avec le thème et sa phrase)
 await sesRencontres(10);
 await hugo.reload({ waitUntil: "networkidle" });
-await hugo.waitForSelector("#o-mois .fm .fm-carte img", { timeout: 60000 });
+await hugo.waitForSelector("#o-rencontre .fm .fm-carte img", { timeout: 60000 });
 const fiche = await (await fetch(`${STOCK}/figurines-clients/${HUGO.id}/mois/${mois}.json`)).json().catch(() => null);
 ok(fiche?.mois === mois && fiche.image === `${HUGO.id}/mois/${mois}.webp` && fiche.expression && fiche.cle && fiche.parMoteur === false, `elle est rangée dans son seau privé (${JSON.stringify(fiche)?.slice(0, 160)})`);
 ok(/croissant au lit/.test(fiche?.phrase ?? ""), `sa phrase du mois reprend ce qu'il a dit ce mois-ci (${fiche?.phrase})`);
-const prete = await texte(hugo, "#o-mois .fm");
+ok((await fetch(`${STOCK}/figurines-clients/${HUGO.id}/mois/${mois}-p.webp`)).status === 200, "🎭 elle sait déjà parler (sa bouche ouverte, faite avec elle)");
+const prete = await texte(hugo, "#o-rencontre .fm");
 ok(prete.includes("TA PHRASE DU MOIS") && prete.includes("croissant au lit") && prete.includes(`Son visage du mois : ${fiche?.expression}`), `la révélation : sa figurine du mois, son visage du mois, sa phrase (${prete.slice(0, 200)})`);
-ok(await hugo.locator("#o-mois .fm .fm-carte img").evaluate((i) => i.complete && i.naturalWidth > 0), "son image s'affiche");
+ok(await hugo.locator("#o-rencontre .fm .fm-carte img").evaluate((i) => i.complete && i.naturalWidth > 0), "son image s'affiche");
 const encore = await demanderMois();
 const fiche2 = await (await fetch(`${STOCK}/figurines-clients/${HUGO.id}/mois/${mois}.json`)).json().catch(() => null);
 ok(encore.s === 200 && encore.j.mois?.courante?.etat === "prete" && fiche2?.le === fiche?.le, "une seule par mois : la redemander ne la refait pas");
-ok((await debordement(hugo)) <= 0, "« Ce mois-ci » ne déborde pas");
+ok((await debordement(hugo)) <= 0, "« Rencontres » ne déborde pas");
 await hugo.screenshot({ path: `${D}/ma-figurine-0d-mois-prete.png`, fullPage: true });
-// DANS L'ALBUM : les siennes d'abord ; les commerçants partenaires, en plus
-await hugo.locator(".mc-nav button", { hasText: "Album" }).click();
-await hugo.waitForSelector("#o-album .fm-album .fm-carte img", { timeout: 30000 });
-const album = await texte(hugo, "#o-album");
-ok(album.indexOf("Mes figurines du mois") >= 0 && album.indexOf("Mes figurines du mois") < album.indexOf("Mes commerçants partenaires"), "l'album : ses figurines du mois d'abord, ses commerçants partenaires ensuite");
-await hugo.screenshot({ path: `${D}/ma-figurine-0e-album.png`, fullPage: true });
-// (en développement, le petit « N » de Next se pose sur ce bouton : on le touche directement)
-await hugo.locator(".mc-nav button", { hasText: "Ma figurine" }).dispatchEvent("click");
-await hugo.waitForSelector("#o-figurine .fm-apercu", { timeout: 30000 });
-ok((await texte(hugo, "#o-figurine .fm-apercu")).includes("est arrivée"), "dans « Ma figurine » : sa figurine du mois est arrivée");
+// 🎭 « FAIS-LA PARLER » : elle devient un LOOK du studio (plus d'album : ses figurines du mois servent à faire des mèmes)
+await hugo.locator("#o-rencontre .fm .fm-parler").click();
+await hugo.waitForFunction(() => document.querySelector(".tf-looks button.pris")?.textContent?.match(/[A-Z]/) && !document.querySelector(".tf-looks button.pris img")?.src.includes("neutre-essai"), null, { timeout: 30000 });
+const hero = await hugo.locator(".tf-moi .tf-hero img").first().getAttribute("src");
+ok(/#figurine$/.test(hugo.url()) && (await hugo.locator(".mc-nav button.pris").innerText()).includes("Créer"), "« Fais-la parler » ouvre « Créer »");
+ok(
+  (await hugo.locator(".tf-looks button").count()) === 2 && (await texte(hugo, ".tf-looks button.pris")).includes("Novembre") === mois.endsWith("-11") && hero?.includes(`/mois/${mois}`),
+  `son look du mois est pris : c'est elle qui parle (${await texte(hugo, ".tf-looks button.pris")}, ${hero?.slice(-60)})`,
+);
+ok((await hugo.locator(".tf-moi .tf-expr").count()) === 0 && (await texte(hugo, ".tf-scene .tf-note")).includes("Son visage du mois"), "avec un look : son visage du mois (plus de choix d'expression)");
+await hugo.screenshot({ path: `${D}/ma-figurine-0e-look.png`, fullPage: true });
+// le look de tous les jours revient d'un toucher
+await hugo.locator(".tf-looks button").first().click();
+ok((await hugo.locator(".tf-moi .tf-expr").count()) === 1, "« De tous les jours » : ses expressions reviennent");
+ok((await texte(hugo, "#o-figurine .fm-apercu")).includes("est arrivée"), "dans « Créer » : sa figurine du mois est arrivée (un toucher la prend)");
 
 // ═══ UN VISITEUR SANS COMPTE : SA PHOTO LUI OUVRE SON COMPTE (son prénom, sa ville) ═══
 const neuf = await tel(null);
@@ -357,6 +376,38 @@ const idDuo = (await hugo.locator(".tf-adresse").inputValue()).split("/").pop();
 const coteDuo = await (await fetch(`${STOCK}/figurines-clients/${HUGO.id}/m-${idDuo}.json`)).json().catch(() => ({}));
 ok(coteDuo.repondA === id && coteDuo.meme, `sa réponse est un mème en duo, rattachée à celui de Léa (${JSON.stringify(coteDuo)})`);
 ok((await hugo.locator(".tf-reponse").count()) === 0, "sa réponse partie : son prochain mème sera à lui");
+ok((await api(hugo, { action: "rien" })).statut === 400 && (await hugo.evaluate(async () => (await (await fetch("/api/direct/ma-figurine")).json()).etat.etapes)).includes("duo"), "👣 une étape franchie : « Répondre en duo à un mème »");
+// 📥 « MES MÈMES » (à la place de l'album) : Léa voit qui lui a répondu, et ses mèmes vus
+await lea.goto(`${BASE}/collection?v=${Date.now()}#album`, { waitUntil: "networkidle" });
+await lea.waitForSelector("#o-memes .mm-reponses .mm-carte", { timeout: 30000 });
+await fermerPablito(lea, "#o-memes");
+const mmLea = await texte(lea, "#o-memes");
+ok(/#album$/.test(lea.url()) && (await lea.locator(".mc-nav button.pris").innerText()).includes("Mes mèmes"), "l'ancien lien de l'album ouvre « Mes mèmes »");
+ok(
+  mmLea.includes("On t’a répondu") && (await texte(lea, ".mm-reponses .mm-qui")).includes("Hugo t’a répondu") && (await lea.locator(`.mm-reponses a.mm-repondre[href="/figurine/${idDuo}/repondre"]`).count()) === 1,
+  `« On t'a répondu » : la réponse en duo de Hugo, et « Lui répondre » (${mmLea.slice(0, 120)})`,
+);
+ok(
+  (await lea.locator(`#o-memes .mm-bloc:not(.mm-reponses) a.mm-image[href="/figurine/${id}"]`).count()) === 1 && /👀 \d+ vues?/.test(mmLea) && mmLea.includes("↩️ 1 réponse"),
+  "ses mèmes : vus combien de fois, et la réponse",
+);
+ok((await debordement(lea)) <= 0 && !/exemple/i.test(mmLea), "« Mes mèmes » ne déborde pas, sans le mot interdit");
+await lea.screenshot({ path: `${D}/ma-figurine-3c-mes-memes.png`, fullPage: true });
+// l'amie (sans compte) a ouvert le mème de Léa : il l'attend dans « Reçus » (même téléphone, un autre onglet)
+const amieMemes = await amie.context().newPage();
+await amieMemes.goto(`${BASE}/collection#memes`, { waitUntil: "networkidle" });
+await amieMemes.waitForSelector("#o-memes .mm-bloc .mm-carte", { timeout: 30000 });
+ok((await texte(amieMemes, "#o-memes")).includes("Reçus") && (await amieMemes.locator(`#o-memes a.mm-repondre[href="/figurine/${id}/repondre"]`).count()) === 1, "sans compte : le mème reçu l'attend dans « Reçus », avec « Répondre »");
+await amieMemes.close();
+// UN MESSAGE AVEC SON LOOK : c'est elle qui parle chez celui qui le reçoit
+const voixH = await api(hugo, { action: "voix", texte: "Mon look du mois, ça te plaît ?", voix: "chaleureuse" });
+const avecLook = await api(hugo, { action: "message", son: voixH.son, duree: 1.5, commerces: [], texte: "Mon look du mois, ça te plaît ?", voix: "chaleureuse", look: mois });
+const coteLook = await (await fetch(`${STOCK}/figurines-clients/${HUGO.id}/m-${avecLook.id}.json`)).json().catch(() => ({}));
+const vuLook = await hugo.evaluate(async (i) => (await (await fetch(`/api/direct/ma-figurine?repondre=${i}`)).json()).meme, avecLook.id);
+ok(coteLook.look === mois && vuLook?.images?.n?.includes(`/mois/${mois}.webp`) && vuLook.images.p.includes(`/mois/${mois}-p.webp`), `le message part avec son look (${coteLook.look}, ${vuLook?.images?.n?.slice(-40)})`);
+const fauxLook = await api(hugo, { action: "message", son: voixH.son, duree: 1.5, commerces: [], look: "2001-01" });
+ok(!(await (await fetch(`${STOCK}/figurines-clients/${HUGO.id}/m-${fauxLook.id}.json`)).json().catch(() => ({}))).look, "un look qu'il n'a pas : ignoré");
+
 // 📈 LA MESURE : un nouveau venu arrive par le mème de Léa et crée sa figurine
 const curieux = await tel(null);
 await curieux.goto(`${BASE}/figurine/${id}/repondre`, { waitUntil: "networkidle" });

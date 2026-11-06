@@ -224,6 +224,19 @@ export type MessageFigurine =
       commerces: (CommerceCite & { ville: string })[];
     };
 
+/**
+ * 📥 « MES MÈMES » (7 novembre 2026, le patron : « l'album, on a du mal à voir à quoi il sert ») — ce qui remplace
+ * l'album : les mèmes qu'il a faits (vus combien de fois, combien de réponses), les réponses en duo qu'on lui a faites,
+ * et ceux qu'il a reçus (ouverts sur ce téléphone), à qui il peut répondre.
+ */
+export type ApercuMeme = { id: string; prenom: string; image: string; le: string; texte?: string; video?: string };
+export type MonMeme = ApercuMeme & { vues: number; reponses: number };
+export type ReponseAMonMeme = ApercuMeme & { a: string; aTexte?: string };
+export type MesMemes = { envoyes: MonMeme[]; reponses: ReponseAMonMeme[]; recus: ApercuMeme[] };
+/** Ce qu'on garde, sur le téléphone, des mèmes qu'il a reçus (ouverts) : leur numéro, les plus récents d'abord. */
+export const CLE_MEMES_RECUS = "clikme-memes-recus-v1";
+export const MEMES_VUS = 12;
+
 export const idMessageValide = (id: string) => /^[a-z0-9]{12}$/.test(id);
 export const lienMessage = (id: string) => `/figurine/${id}`;
 

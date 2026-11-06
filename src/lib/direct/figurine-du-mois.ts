@@ -60,5 +60,14 @@ export type FigurineDuMois = {
   image?: string;
   phrase?: string;
   le?: string;
+  /**
+   * 🎭 SA BOUCHE OUVERTE (adresse signée) : la figurine du mois devient un LOOK qu'il fait parler dans ses mèmes
+   * (7 novembre 2026, le patron : « on devrait pouvoir utiliser celle qu'on veut pour l'envoyer en faisant dire quelque
+   * chose ou la transformer en mème »). Faite à la demande, la première fois qu'il la choisit.
+   */
+  parle?: string;
 };
+
+/** Un look : « 2026-11 » (le mois de sa figurine du mois). */
+export const lookValide = (x: unknown): string => (typeof x === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(x) ? x : "");
 export type MesFigurinesDuMois = { courante: FigurineDuMois; passees: FigurineDuMois[] };

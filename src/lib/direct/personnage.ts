@@ -75,7 +75,7 @@ export const BONUS_ETAPE: Record<CleEtape, Partial<Record<CleCaracteristique, nu
   membre: { audace: 12 },
   fidele: { fidelite: 10 },
   souvenirs: { chance: 12 },
-  commerce: { chance: 6, curiosite: 4 },
+  duo: { humour: 6, audace: 4 },
 };
 
 /**

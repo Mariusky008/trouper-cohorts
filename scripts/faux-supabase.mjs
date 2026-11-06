@@ -571,10 +571,12 @@ async function stockage(req, res, url) {
   // LA LISTE D'UN DOSSIER (`list`) : ses fichiers directs, les plus récents d'abord si on le demande.
   if (p.startsWith("list/") && req.method === "POST") {
     const seau = p.slice(5);
-    const { prefix = "", limit = 100, offset = 0, sortBy } = JSON.parse((await corps(req)).toString() || "{}");
+    const { prefix = "", limit = 100, offset = 0, sortBy, search = "" } = JSON.parse((await corps(req)).toString() || "{}");
     const debut = `${seau}/${prefix ? `${String(prefix).replace(/\/+$/, "")}/` : ""}`;
+    // (`search` : comme la vraie, les noms qui le contiennent)
+    const cherche = String(search).toLowerCase();
     let liste = [...fichiers]
-      .filter(([cle]) => cle.startsWith(debut) && !cle.slice(debut.length).includes("/"))
+      .filter(([cle]) => cle.startsWith(debut) && !cle.slice(debut.length).includes("/") && (!cherche || cle.slice(debut.length).toLowerCase().includes(cherche)))
       .map(([cle, f]) => ({ name: cle.slice(debut.length), id: cle, created_at: f.cree ?? null, updated_at: f.cree ?? null, metadata: { size: f.octets.length, mimetype: f.type } }));
     if (sortBy?.column === "created_at") liste.sort((x, y) => String(x.created_at).localeCompare(String(y.created_at)) * (sortBy.order === "desc" ? -1 : 1));
     else liste.sort((x, y) => x.name.localeCompare(y.name));

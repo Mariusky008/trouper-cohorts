@@ -109,7 +109,7 @@ ok((await texte(p, ".co-vedette")).includes("À GAGNER MAINTENANT") && /Édition
 // UNE ÉDITION PAR MOIS : douze du mois et deux rares sur l'étagère ; l'or reste à 10 (le compteur « / 10 » plus haut)
 ok((await p.locator(".co-etagere .co-carte").count()) === 14 && (await p.locator(".co-carte.rare").count()) === 2, "l'étagère des quatorze (douze mois), dont deux rares");
 ok((await texte(p, ".co-paliers")).includes("3 figurines · Au courant plus tôt") && (await texte(p, ".co-paliers")).includes("10 figurines · La figurine d’or"), "les trois paliers");
-ok((await p.locator(".fm-chemin, .fm-prochain").count()) === 0 && (await p.locator('.co-lien[href="/collection"]').count()) === 1, "plus de chemin des pièces ; le lien vers toute sa collection");
+ok((await p.locator(".fm-chemin, .fm-prochain").count()) === 0 && (await p.locator('.co-lien[href="/collection#figurine"]').count()) === 1, "plus de chemin des pièces ; sa carte reste ici, et le lien mène à sa figurine qui parle");
 ok(/2 fantômes aujourd’hui/.test(fam) && fam.includes("📣 Il en manque 3 : inviter un ami"), "la foule passe à 2, il en manque 3");
 // LE BOUTON WHATSAPP EST CACHÉ tant que la sonnette n'existe pas (chantier 4) : personne n'y répondrait.
 ok((await p.locator("a.fm-bouton.wa").count()) === 0, "pas de bouton WhatsApp : caché jusqu'à la sonnette");
@@ -175,34 +175,16 @@ await p.waitForTimeout(1200);
 ok((await p.locator(".fm-monte").count()) === 0 && (await p.locator(".co-fete").count()) === 0, "la fois suivante, on ne le refête pas");
 await p.screenshot({ path: `${D}/famille-7-collection.png`, fullPage: true });
 
-// ═══ MA COLLECTION (/collection) : EN ONGLETS, LE MENU EN BAS ═══
+// ═══ /collection, RESSERRÉ SUR LE MÈME (7 novembre 2026) : plus d'album ni de « Ce mois-ci » ; sa carte de fidélité reste sur la page du commerçant ═══
 await p.goto(`${BASE}/collection#album`, { waitUntil: "networkidle" });
-await p.waitForSelector("#o-album .ab-page", { timeout: 30000 });
+await p.waitForSelector("#o-memes .mm", { timeout: 30000 });
 const mc = await texte(p, ".mc");
-ok(mc.includes("Ma collection") && mc.includes("Le Comptoir des Fantômes") && (await p.locator(".ab-page").count()) === 1, `l'onglet « Album » : une page d'album (${mc.slice(0, 80)})`);
-ok((await p.locator(".mc-nav button.pris").innerText()).includes("Album") && (await p.locator(".mc-nav button").count()) === 5, "le menu en bas : l'onglet « Album » est ouvert");
-ok(
-  (await p.locator(".ab-page .ab-case img.mqf[src*='/api/direct/guide/edition-']").count()) >= 12 && (await p.locator(".ab-page img[src*='/direct/double/']").count()) === 0,
-  "dans l'album, la figurine du guide dans la tenue de chaque mois : plus de fantômes",
-);
-// L'ALBUM : les quatorze cases et la case d'or, le compteur, ce qui vient ensuite ; une case touchée s'ouvre en grand
-ok((await p.locator(".ab-page .ab-case").count()) === 15 && (await p.locator(".ab-page .ab-case.ab-or").count()) === 1 && (await p.locator(".ab-page .ab-case.rare").count()) === 2, "l'album : quatorze cases (dont deux rares) et la case d'or");
-ok((await p.locator(".ab-page .ab-case.gagnee").count()) === 1 && (await texte(p, ".ab-chiffre")).replace(/\s/g, "").endsWith("/10") && /Encore \d+ →/.test(await texte(p, ".ab-suivant")), `sa figurine dans l'album, et ce qui vient ensuite (${await texte(p, ".ab-suivant")})`);
-await p.locator(".ab-page .ab-case.gagnee").first().click();
-await p.waitForSelector(".ab-fiche", { timeout: 10000 });
-ok((await texte(p, ".ab-fiche")).includes("Gagnée le") && (await texte(p, ".ab-fiche")).includes("pour toujours"), `une case touchée s'ouvre en grand (${(await texte(p, ".ab-fiche")).slice(0, 80)})`);
-await p.keyboard.press("Escape");
-ok((await p.locator(".ab-fiche").count()) === 0, "et se referme");
-ok(!mc.includes("Ce que tu gagnes"), "plus de « Ce que tu gagnes »");
-ok((await debordement(p)) <= 0 && !/exemple/i.test(mc), "« Ma collection » ne déborde pas, sans le mot interdit");
-await p.locator(".mc-nav button", { hasText: "Ce mois-ci" }).click();
-await p.waitForSelector("#o-mois #ou-gagner", { timeout: 15000 });
-const autres = await texte(p, "#ou-gagner");
-ok(
-  autres.includes("D’autres commerces où la gagner") && autres.includes("L’Atelier Tout Neuf") && !autres.includes("Le Comptoir des Fantômes"),
-  "l'onglet « Ce mois-ci » : les autres commerces où gagner la figurine du mois (pas le sien)",
-);
-ok(/#mois$/.test(p.url()), "l'adresse suit l'onglet (#mois)");
+ok((await p.locator(".mc-nav button.pris").innerText()).includes("Mes mèmes") && (await p.locator(".mc-nav button").count()) === 3, "l'ancien lien de l'album ouvre « Mes mèmes » ; le menu en bas : trois onglets");
+ok((await p.locator(".ab-page, .ce, .dc-commerces, #ou-gagner").count()) === 0 && !/Où la gagner|Ma collection|Album/.test(mc), "plus d'album, plus de « Où la gagner »");
+ok((await debordement(p)) <= 0 && !/exemple/i.test(mc), "la page ne déborde pas, sans le mot interdit");
+await p.goto(`${BASE}/collection#ou-gagner`, { waitUntil: "networkidle" });
+await p.waitForSelector("#o-rencontre", { timeout: 30000 });
+ok((await p.locator(".mc-nav button.pris").innerText()).includes("Rencontres") && (await p.locator("#o-mois, #ou-gagner").count()) === 0, "les anciens liens de « Ce mois-ci » mènent à « Rencontres » (où se mérite sa figurine du mois)");
 await p.screenshot({ path: `${D}/famille-8-ma-collection.png`, fullPage: true });
 
 // ═══ LA FAMILLE VIDE ═══
@@ -214,7 +196,7 @@ ok((await texte(vide, ".fm-cages")).includes("Je passe aujourd’hui"), "chez un
 await vide.screenshot({ path: `${D}/famille-4-vide.png` });
 
 // ═══ MA COLLECTION, SANS FIGURINE : Pablito (la figurine du patron de ClikMe) arrive en fenêtre la première fois, puis se
-// range dans un petit bouton ; « Ce mois-ci » dit à quoi sert l'édition du mois ═══
+// range dans un petit bouton ═══
 await vide.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
 await vide.waitForSelector("#o-figurine .pb-voile .mqd", { timeout: 30000 });
 const accueilVide = await texte(vide, "#o-figurine");
@@ -233,30 +215,13 @@ await vide.reload({ waitUntil: "networkidle" });
 await vide.waitForSelector("#o-figurine .mqd-revoir", { timeout: 30000 });
 ok((await vide.locator(".pb-voile").count()) === 0, "revenu : plus de fenêtre, le petit bouton");
 ok((await vide.locator(".tf-demo").count()) === 0, "plus de démonstration");
-await vide.goto(`${BASE}/collection#ou-gagner`, { waitUntil: "networkidle" });
-await vide.waitForSelector("#o-mois .ce", { timeout: 30000 });
-await vide.waitForTimeout(1500);
-const dc = await texte(vide, "#o-mois");
-ok(
-  (await texte(vide, "#o-mois .pb-voile .mqd-bulle")).includes("Tu as vu ma tenue") && (await vide.locator("#o-mois .pb-voile .mqd img.mqf[src*='/api/direct/guide/edition-']").count()) === 1,
-  "« Ce mois-ci » : le guide, dans la tenue du mois, explique l'édition",
-);
-ok((await vide.locator(".ce-frise img.mqf").count()) === 6 && (await vide.locator(".ce-carte img.mqf").count()) === 1, "la frise et l'édition du moment : sa figurine dans chaque tenue, plus de fantômes");
-ok((await vide.locator(".ab-page").count()) === 0 && (await vide.locator(".ce-frise li").count()) === 6 && (await vide.locator(".ce-frise li.passee").count()) === 1, "sans figurine : pas d'étagère ; la frise des éditions, dont celle qui vient de finir");
-const chrono = await texte(vide, ".ce-chrono");
-ok(/À GAGNER MAINTENANT/i.test(dc) && /Édition \S+/.test(dc) && /\d+\s*jours?/i.test(chrono) && /\d{2}\s*s/i.test(chrono), `l'édition du moment, et le temps qui reste à la seconde (${chrono.replace(/\s+/g, " ")})`);
-ok(!dc.includes("Ce que tu gagnes"), "plus de « Ce que tu gagnes »");
-ok(
-  (await vide.locator(`.dc-commerces a[href="/f/${SLUG}"]`).count()) === 1 && (await vide.locator(`.dc-commerces a[href="/f/${NEUF}"]`).count()) === 1,
-  "où la commencer : les commerces ClikMe, vers leur page",
-);
-ok((await debordement(vide)) <= 0 && !/exemple/i.test(dc), "la page sans figurine ne déborde pas, sans le mot interdit");
+ok((await debordement(vide)) <= 0 && !/exemple/i.test(accueilVide), "la page sans figurine ne déborde pas, sans le mot interdit");
 await vide.screenshot({ path: `${D}/famille-9-collection-vide.png`, fullPage: true });
 // sur ordinateur : la page prend la largeur
 await vide.setViewportSize({ width: 1440, height: 900 });
 await vide.waitForTimeout(400);
 const large = await vide.locator(".mc").evaluate((e) => e.getBoundingClientRect().width);
-ok(large > 1000 && (await debordement(vide)) <= 0 && (await vide.locator(".dc-commerces").evaluate((e) => getComputedStyle(e).gridTemplateColumns.split(" ").length)) === 4, `sur ordinateur, la page prend la largeur (${Math.round(large)} px, quatre commerces par ligne)`);
+ok(large > 1000 && (await debordement(vide)) <= 0, `sur ordinateur, la page prend la largeur (${Math.round(large)} px)`);
 await vide.screenshot({ path: `${D}/famille-10-collection-ordinateur.png`, fullPage: true });
 
 const erreurs = [...p.err, ...ami.err, ...vide.err];
