@@ -30,7 +30,12 @@ import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 import { villeSlug } from "./ville";
 import { motInterdit } from "./mots-interdits";
 import { GOUTS, PROGRES_VIDE, caracteristiques, reponsesEnMots, reponsesValides } from "./personnage";
-import { AMIS_PAR_JOUR, PERSONNAGES, REPONSE_MAX, choisirFormat, choisirPersonnage, formatDe, personnageDe, type FORMATS } from "./reseau";
+import { AMIS_PAR_JOUR, PERSONNAGES, REPONSE_MAX, choisirFormat, choisirPersonnage, formatDe, hasard, personnageDe, type FORMATS } from "./reseau";
+import { POURQUOI_MAX, PROPOSITION_MAX, THEMES_AMIS, scenarioMetier, themeAmiDe, type ScenarioMetier, type ThemeAmi } from "./scenarios";
+import { carteLueDuDiagnostic } from "@/lib/site-internet/carte-lue";
+import { moteurBranche } from "./ma-figurine-fabrique-serveur";
+import { deposer, lireLigne, signer, telecharger } from "./ma-figurine-serveur";
+import { editer, poserAuFormat, reprendre } from "./figurine-expressions-serveur";
 import { imageFigurineGuide } from "./guide";
 import { cheminCarte, ecrire, imageDe, lire, prenomDe, type Gardee } from "./personnage-serveur";
 import { noterAuJournal } from "./journal-serveur";
@@ -44,6 +49,7 @@ import {
   REPLIQUE_MAX,
   TITRE_MAX,
   codeInvitationValide,
+  deNom,
   emotionValide,
   gesteValide,
   idRencontreValide,
@@ -94,9 +100,15 @@ type Fichier = {
   quoi?: "jour" | "ami";
   /** 🪞 Ce que la rencontre a révélé de chacun des deux propriétaires (`b` : seulement entre deux clients). */
   revele?: { a?: string; b?: string };
+  /** 🎬 Son scénario (`scenarios.ts`) : le thème choisi avec un ami, ou l'épisode du métier d'un commerçant. */
+  scenario?: { type: "ami" | "metier"; cle: string; visuel?: ScenarioMetier["visuel"] };
+  /** Chez un commerçant : ce que sa figurine a proposé (`en` : pour le moteur d'image, en anglais). */
+  proposition?: { titre: string; pourquoi: string; en?: string };
+  /** ✨ Sa figurine relookée d'après la proposition (le moteur d'image) : où elle est rangée. */
+  transformation?: { image: string; le: string };
 };
 /** Ce que l'IA (ou la page sans IA) écrit : la conversation, son titre, ce qui a été partagé, la question de fin, ce qu'elle révèle. */
-type Ecrite = { repliques: Fichier["repliques"]; titre: string; partage: string[]; question: string; revele: { a: string; b: string } };
+type Ecrite = { repliques: Fichier["repliques"]; titre: string; partage: string[]; question: string; revele: { a: string; b: string }; proposition?: Fichier["proposition"] };
 type Index = {
   liste: { id: string; jour: string; avec: string; quoi?: "ami" }[];
   amis: string[];
@@ -151,7 +163,7 @@ export async function accepter(supabase: Supabase, habitant: Habitant, code: unk
 }
 
 // ─── avec qui, aujourd'hui ───────────────────────────────────────────────────────────────────────
-type CommerceInfo = { slug: string; nom: string; ville: string; metier: string };
+type CommerceInfo = { slug: string; nom: string; ville: string; metier: string; plats?: string[] };
 const nettoyerVille = (c: unknown) => s(c).replace(/\b\d{5}\b/g, " ").replace(/\s+/g, " ").trim();
 
 /** Les commerces avec qui sa figurine peut discuter : ceux où il a des figurines, puis ceux de sa ville. */
@@ -209,7 +221,12 @@ function portraitPersonnage(p: Personnage): string[] {
  * D'où : du concret, une histoire en trois temps, l'écoute, l'humour, des phrases naturelles, le ton donné par un court
  * passage, et à la fin « ce que ta figurine a révélé de toi ». `premiere` : la toute première (Pablito l'accueille).
  */
-function consigneConversation(a: string[], b: string[], o: { inconnus?: boolean; format?: Format; premiere?: boolean; deuxClients?: boolean } = {}): string {
+type ScenarioConsigne = { nom: string; consigne: string; propose?: string; visuel?: string; plats?: string[]; restaurant?: boolean };
+function consigneConversation(
+  a: string[],
+  b: string[],
+  o: { inconnus?: boolean; format?: Format; premiere?: boolean; deuxClients?: boolean; scenario?: ScenarioConsigne } = {},
+): string {
   const inconnus = Boolean(o.inconnus);
   return [
     "Tu écris un mini-épisode pour ClikMe : la rencontre de deux figurines de collection (des personnages miniatures, montés sur leur ressort). Leurs propriétaires la regardent en direct, comme une petite série. Le but : que le propriétaire de la figurine A SE DÉCOUVRE en la regardant vivre — elle parle et réagit comme lui, et la rencontre lui montre quelque chose de lui.",
@@ -233,11 +250,27 @@ function consigneConversation(a: string[], b: string[], o: { inconnus?: boolean;
     "A : « Exactement. Et s'il sourit en la mangeant, je lui offre la suivante. Premier essai samedi, sur mon palier. »",
     "",
     "Ne devine jamais le genre d'une personne d'après son prénom (des tournures qui vont à tout le monde).",
-    "INTERDIT : la santé, le corps et le physique, l'âge, la religion, la politique, la sexualité, l'argent, l'alcool, les marques ; tout lieu ou moment où une personne serait allée ; tout vrai rendez-vous ; toute donnée personnelle.",
+    `INTERDIT : la santé, le corps et le physique${o.scenario?.visuel ? " (seule exception : ce que le thème demande — un style, une tenue, des lunettes, un petit tatouage sur l'avant-bras, un bijou — sans jamais commenter le corps, le visage ni l'âge)" : ""}, l'âge, la religion, la politique, la sexualité, l'argent, l'alcool, les marques ; tout lieu ou moment où une personne serait allée ; tout vrai rendez-vous ; toute donnée personnelle.`,
     "",
     `Écris entre ${REPLIQUES_MIN} et ${REPLIQUES_MAX} répliques, en alternance, A commence. Chaque réplique fait au plus ${REPLIQUE_MAX - 10} caractères.`,
-    ...(o.format ? [`LE FORMAT DU JOUR — « ${o.format.nom} » : ${o.format.consigne}. C'est le fil de l'épisode, avec un contenu précis (un défi nommé, un rêve nommé, une découverte vraie…) — chaque jour en a un autre.`] : []),
-    "Le sujet suit la figurine B (son métier, son sujet, ce qu'elle aime) : la figurine A y apprend quelque chose, ou voit les choses autrement.",
+    ...(o.scenario
+      ? [
+          `LE THÈME DE L'ÉPISODE — « ${o.scenario.nom} » : ${o.scenario.consigne}. C'est le fil de tout l'épisode, avec des détails précis.`,
+          ...(o.scenario.plats?.length
+            ? [`SA CARTE (des données réelles : on choisit UNIQUEMENT parmi ces plats, on n'en invente aucun, on ne cite aucun prix) : ${o.scenario.plats.map((x) => `« ${x} »`).join(", ")}.`]
+            : o.scenario.restaurant
+              ? ["Sa carte n'est pas connue : on parle de plats typiques de ce genre de cuisine, sans jamais prétendre qu'ils sont à sa carte."]
+              : []),
+        ]
+      : o.format
+        ? [`LE FORMAT DU JOUR — « ${o.format.nom} » : ${o.format.consigne}. C'est le fil de l'épisode, avec un contenu précis (un défi nommé, un rêve nommé, une découverte vraie…) — chaque jour en a un autre.`]
+        : []),
+    o.scenario ? "La figurine A y apprend quelque chose sur elle, ou voit les choses autrement." : "Le sujet suit la figurine B (son métier, son sujet, ce qu'elle aime) : la figurine A y apprend quelque chose, ou voit les choses autrement.",
+    ...(o.scenario?.propose
+      ? [
+          `CE QUE LA FIGURINE B PROPOSE (« proposition ») : ${o.scenario.propose}, en un titre court et précis (${PROPOSITION_MAX - 10} caractères au plus : « Un dégradé court, plus long dessus ») et pourquoi il lui va (« pourquoi », ${POURQUOI_MAX - 20} caractères au plus, tutoiement, d'après sa personnalité : « Toi qui… »).${o.scenario.visuel ? " Et la même chose, en ANGLAIS, pour un illustrateur (« en », 25 mots au plus) : uniquement ce qui change sur la figurine A (la coupe, la tenue, les lunettes, le tatouage ou le bijou), sans marque." : ""}`,
+        ]
+      : []),
     ...(o.premiere
       ? [
           "C'EST LA TOUTE PREMIÈRE RENCONTRE DE LA FIGURINE A : Pablito (la figurine B) l'accueille dans le monde des figurines. Au fil de la conversation — vivant, jamais une liste — il lui fait comprendre que : chaque jour, elle rencontrera quelqu'un (un voisin de sa ville, un personnage comme Rosa la cheffe ou Capitaine Lou l'exploratrice, et ses amis quand elle veut) ; son propriétaire la regarde, et lui dit « c'est tout moi » ou « jamais de la vie » pour qu'elle lui ressemble de plus en plus ; et chaque rencontre finit par une carte souvenir. Surtout, il s'intéresse vraiment à elle : il lui demande ce qu'elle aime, et rebondit avec humour sur ses réponses.",
@@ -248,7 +281,7 @@ function consigneConversation(a: string[], b: string[], o: { inconnus?: boolean;
     "CE QUE SA FIGURINE A RÉVÉLÉ DE LUI (« revele_a ») : une ou deux phrases, 200 caractères au plus, adressées au propriétaire de A (tutoiement), drôles et bienveillantes, qui lui disent ce que cet épisode montre de lui, d'après un moment précis (« Tu as défendu tes crêpes comme un lion : quand tu crois à une idée, tu la portes jusqu'au bout. »). Rien de sensible, rien de blessant.",
     ...(o.deuxClients ? ["La même chose pour le propriétaire de la figurine B (« revele_b »)."] : []),
     "Pour finir, une QUESTION pour le propriétaire de la figurine A (120 caractères au plus, tutoiement) : sur ce qui s'est dit, pour qu'il réagisse et dise ce qu'il en pense vraiment (« Et toi, tu aurais choisi quoi ? »).",
-    `Réponds en JSON, exactement : {"titre": "…", "partage": ["…", "…"], "revele_a": "…",${o.deuxClients ? ' "revele_b": "…",' : ""} "question": "…", "repliques": [{"qui": "A", "texte": "…", "geste": "rit"}, {"qui": "B", "texte": "…", "geste": "clin"}]}`,
+    `Réponds en JSON, exactement : {"titre": "…", "partage": ["…", "…"], "revele_a": "…",${o.deuxClients ? ' "revele_b": "…",' : ""}${o.scenario?.propose ? ` "proposition": {"titre": "…", "pourquoi": "…"${o.scenario.visuel ? ', "en": "…"' : ""}},` : ""} "question": "…", "repliques": [{"qui": "A", "texte": "…", "geste": "rit"}, {"qui": "B", "texte": "…", "geste": "clin"}]}`,
   ].join("\n");
 }
 
@@ -257,7 +290,7 @@ function consigneConversation(a: string[], b: string[], o: { inconnus?: boolean;
  * inconnu est retiré ; un titre ou un point partagé de travers est retiré (la conversation reste).
  */
 export function conversationRelue(x: unknown): Ecrite | null {
-  const o = (x as { repliques?: unknown; titre?: unknown; partage?: unknown; question?: unknown; revele_a?: unknown; revele_b?: unknown } | null) ?? {};
+  const o = (x as { repliques?: unknown; titre?: unknown; partage?: unknown; question?: unknown; revele_a?: unknown; revele_b?: unknown; proposition?: unknown } | null) ?? {};
   const l = o.repliques;
   if (!Array.isArray(l) || l.length < REPLIQUES_MIN || l.length > REPLIQUES_MAX + 2) return null;
   const r: Fichier["repliques"] = [];
@@ -274,7 +307,12 @@ export function conversationRelue(x: unknown): Ecrite | null {
   };
   const titre = propre(o.titre, TITRE_MAX);
   const partage = (Array.isArray(o.partage) ? o.partage : []).map((p) => propre(p, PARTAGE_LONGUEUR)).filter(Boolean).slice(0, PARTAGE_MAX);
-  return { repliques: r.slice(0, REPLIQUES_MAX), titre, partage, question: propre(o.question, 140), revele: { a: propre(o.revele_a, 220), b: propre(o.revele_b, 220) } };
+  const pr = (o.proposition && typeof o.proposition === "object" ? o.proposition : {}) as { titre?: unknown; pourquoi?: unknown; en?: unknown };
+  const titreP = propre(pr.titre, PROPOSITION_MAX);
+  // (la description pour le moteur d'image : de l'anglais simple, sans guillemets ni balises)
+  const en = s(pr.en).replace(/\s+/g, " ").replace(/[<>{}"]/g, "").slice(0, 240);
+  const proposition = titreP ? { titre: titreP, pourquoi: propre(pr.pourquoi, POURQUOI_MAX), ...(en ? { en } : {}) } : undefined;
+  return { repliques: r.slice(0, REPLIQUES_MAX), titre, partage, question: propre(o.question, 140), revele: { a: propre(o.revele_a, 220), b: propre(o.revele_b, 220) }, ...(proposition ? { proposition } : {}) };
 }
 
 async function ecrireConversation(consigne: string): Promise<Ecrite | null> {
@@ -308,8 +346,24 @@ const reveleLocal = (g: Gardee) => {
   return p ? `Ta figurine a sorti ton super-pouvoir : ${p.charAt(0).toLowerCase()}${p.slice(1)}. C’est bien toi ?` : "Ta figurine a été elle-même, du début à la fin. C’est bien toi ?";
 };
 
+/** Sans IA, ce que la figurine du commerçant propose, scénario par scénario (`en` : pour le moteur d'image). */
+const PROPOSITIONS_LOCALES: Record<string, { titre: string; en?: string }> = {
+  coiffure: { titre: "Un dégradé doux, un peu plus long sur le dessus", en: "a soft fade haircut, slightly longer and textured on top" },
+  look: { titre: "Une veste colorée sur un t-shirt blanc", en: "a colorful casual jacket over a plain white t-shirt" },
+  lunettes: { titre: "Une monture ronde, couleur écaille", en: "round tortoiseshell glasses" },
+  menu: { titre: "Une entrée fraîche, un plat qui réchauffe, un dessert à partager" },
+  ambiance: { titre: "Une table près de la musique, et un jus maison" },
+  bouquet: { titre: "Des fleurs jaunes et blanches, un peu sauvages" },
+  ongles: { titre: "Un vernis corail, avec un petit motif doré" },
+  livre: { titre: "Une aventure drôle, pleine de rebondissements" },
+  tatouage: { titre: "Une petite boussole au trait fin, sur l'avant-bras", en: "a small fine-line compass tattoo on the forearm" },
+  bijou: { titre: "Un bracelet fin, avec une petite médaille", en: "a thin silver bracelet with a small round medal" },
+  gourmandise: { titre: "Un pain au chocolat encore tiède" },
+  metier: { titre: "Un geste du métier, à essayer en vrai" },
+};
+
 /** Sans IA : une conversation composée d'après les deux cartes (toujours juste), avec ses gestes, son titre, son partage. */
-function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; carte: Gardee } | CommerceInfo | Personnage, format?: Format): Ecrite {
+function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; carte: Gardee } | CommerceInfo | Personnage, format?: Format, theme?: ThemeAmi | null): Ecrite {
   const goutA = GOUTS.find((x) => x.cle === a.gouts[0])?.nom.toLowerCase();
   const fetiche = (g: Gardee, sinon: string) => g.phrase || sinon;
   // LE FORMAT DU JOUR : son échange, ce qui a été partagé, sa question (sans format : un défi)
@@ -333,28 +387,34 @@ function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; car
         { qui: "a", texte: "Promis. Merci pour cette rencontre !", geste: "applaudit" },
       ],
     };
-  if ("slug" in b)
+  if ("slug" in b) {
+    // 🎬 LE MÉTIER DONNE L'ÉPISODE (`scenarios.ts`) : sa figurine propose quelque chose à la sienne
+    const sc = scenarioMetier(b.metier);
+    const local = PROPOSITIONS_LOCALES[sc.cle] ?? PROPOSITIONS_LOCALES.metier;
+    const titreP = sc.cle === "menu" && b.plats?.length ? b.plats.slice(0, 3).join(" · ").slice(0, PROPOSITION_MAX) : local.titre;
+    const pourquoi = `Pour toi, « ${a.fiche.titre} » : ça te ressemble, et ça se voit.`.slice(0, POURQUOI_MAX);
     return {
-      question,
+      question: sc.cle === "menu" ? "Et toi, tu aurais choisi quoi ?" : "Et toi, tu oserais ?",
       revele: { a: reveleLocal(a), b: "" },
-      titre: titreAvec("chez", b.nom, `Rencontre chez ${b.nom}`.length <= TITRE_MAX ? `Rencontre chez ${b.nom}` : "Rencontre chez un commerce ClikMe"),
+      titre: [`${sc.nom} chez ${b.nom}`, sc.nom].find((x) => x.length <= TITRE_MAX) ?? "Une rencontre chez un commerçant",
       partage: [
-        `Ta figurine a découvert la figurine de ${b.nom}${b.metier ? ` (${b.metier.toLowerCase()})` : ""}.`,
+        `Ta figurine a rencontré la figurine ${deNom(b.nom)}${b.metier ? ` (${b.metier.toLowerCase()})` : ""}.`,
+        `${sc.emoji} Elle lui a proposé : ${titreP.charAt(0).toLowerCase()}${titreP.slice(1)}.`,
         goutA ? `Elle lui a parlé de ce qu’elle aime : ${goutA}.` : "Elle lui a parlé de ce qu’elle aime.",
-        format?.partage ?? "Le défi lancé : se raconter une surprise la prochaine fois.",
-      ],
+      ].map((x) => x.slice(0, PARTAGE_LONGUEUR)),
+      proposition: { titre: titreP, pourquoi, ...(local.en && sc.visuel ? { en: local.en } : {}) },
       repliques: [
-        { qui: "a", texte: `Salut ! Moi c’est ${prenomA || "une nouvelle figurine"}. Il paraît que tu es la figurine de ${b.nom} ?`, geste: "surprise" },
-        { qui: "b", texte: "En personne ! Bienvenue. Ici, on aime ce qu’on fait, et ça se voit.", geste: "applaudit" },
-        { qui: "a", texte: "Et qu’est-ce qui te plaît le plus, dans ton métier ?", geste: "reflechit" },
-        { qui: "b", texte: "Les sourires des gens qui passent la porte. Ça n’a pas de prix !", geste: "touchee" },
-        { qui: "b", texte: "Et toi, qu’est-ce qui te fait vibrer ?", geste: "clin" },
-        { qui: "a", texte: fetiche(a, goutA ? `Moi ? ${goutA.charAt(0).toUpperCase()}${goutA.slice(1)}, et les bonnes surprises.` : "Les bonnes surprises, toujours."), geste: "danse" },
-        { qui: "b", texte: "J’adore. Tu sais quoi ? On va bien s’entendre, toi et moi.", geste: "rit" },
-        { qui: "a", texte: format?.ouverture ?? "Petit défi : la prochaine fois, chacun raconte une surprise. D’accord ?", geste: "grimace" },
-        { qui: "b", texte: format ? `${format.reponse} Passe me voir, je te raconterai mon métier.`.slice(0, REPLIQUE_MAX) : "Défi accepté ! Passe me voir, je te raconterai mon métier.", geste: "applaudit" },
+        { qui: "a", texte: `Salut ! Moi c’est ${prenomA || "une nouvelle figurine"}. Il paraît que tu es la figurine ${deNom(b.nom)} ?`.slice(0, REPLIQUE_MAX), geste: "surprise" },
+        { qui: "b", texte: `En personne ! Aujourd’hui, c’est « ${sc.nom} ». Attends, je te regarde…`.slice(0, REPLIQUE_MAX), geste: "reflechit" },
+        { qui: "b", texte: `J’ai une idée pour toi : ${titreP.charAt(0).toLowerCase()}${titreP.slice(1)}.`.slice(0, REPLIQUE_MAX), geste: "clin" },
+        { qui: "a", texte: "Moi ? Vraiment ? Tu en mettrais ta main au feu ?", geste: "surprise" },
+        { qui: "b", texte: `Certain. ${pourquoi}`.slice(0, REPLIQUE_MAX), geste: "touchee" },
+        { qui: "a", texte: (goutA ? `Bon. Tant que ça va avec ${goutA}, je dis oui !` : "Bon… tu as gagné, je dis oui !").slice(0, REPLIQUE_MAX), geste: "rit" },
+        { qui: "b", texte: "Tu vois ? Ça te va déjà. Et en vrai, ce sera encore mieux.", geste: "applaudit" },
+        { qui: "a", texte: "Je crois que tu viens de me découvrir un nouveau style. Merci !", geste: "danse" },
       ],
     };
+  }
   const goutB = GOUTS.find((x) => x.cle === b.carte.gouts[0])?.nom.toLowerCase();
   const commun = a.gouts.find((g) => b.carte.gouts.includes(g));
   const nomCommun = commun ? GOUTS.find((x) => x.cle === commun)?.nom.toLowerCase() : "";
@@ -363,6 +423,8 @@ function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; car
     revele: { a: reveleLocal(a), b: reveleLocal(b.carte) },
     // (jamais coupé au milieu d'un mot : trop long, « Rencontre avec … »)
     titre: [
+      theme ? `${theme.nom} avec ${b.prenom || "un ami"}` : "",
+      theme ? theme.nom : "",
       format ? `${format.nom} avec ${b.prenom || "un ami"}` : "",
       nomCommun ? `Le duel ${/^[aeiouyhéè]/i.test(nomCommun) ? "de l’" : "du "}${nomCommun}` : "",
       `${a.fiche.titre} rencontre ${b.carte.fiche.titre}`,
@@ -374,6 +436,7 @@ function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; car
       goutB ? `${b.prenom || "L’autre figurine"} a parlé de ${goutB}.` : `${b.prenom || "L’autre figurine"} a dit sa phrase préférée.`,
     ],
     repliques: [
+      ...(theme ? [{ qui: "a" as const, texte: `Thème du jour : ${theme.nom.toLowerCase()} ${theme.emoji}. On y va ?`.slice(0, REPLIQUE_MAX), geste: "applaudit" as const }] : []),
       { qui: "a", texte: `Salut ${b.prenom || "toi"} ! Alors, c’est toi, « ${b.carte.fiche.titre} » ?`, geste: "surprise" },
       { qui: "b", texte: `Pris sur le fait ! Et toi, « ${a.fiche.titre} »… ça promet !`, geste: "rit" },
       { qui: "a", texte: "On m’a dit que tu avais du caractère. Je vérifie.", geste: "reflechit" },
@@ -386,6 +449,25 @@ function conversationLocale(prenomA: string, a: Gardee, b: { prenom: string; car
       { qui: "b", texte: "Avec plaisir. Bravo, c’était une super rencontre !", geste: "applaudit" },
     ],
   };
+}
+
+/** Un thème au hasard (le même pour la même graine) ; `membre` : un qui va avec quelqu'un qu'on ne connaît pas. */
+function themeAuHasard(graine: string, membre: boolean): ThemeAmi {
+  const l = THEMES_AMIS.filter((x) => !membre || x.membre);
+  return l[Math.floor(hasard(graine) * l.length) % l.length];
+}
+
+/** Les plats d'un restaurant (des noms) : ceux qu'il a saisis, sinon ceux lus sur les photos de sa carte. */
+async function platsDe(supabase: Supabase, slug: string): Promise<string[]> {
+  try {
+    const { data } = await supabase.from("human_vitrine_sites").select("services, diagnostic").eq("slug", slug).maybeSingle();
+    const x = (data as { services?: unknown; diagnostic?: unknown } | null) ?? {};
+    const saisis = (Array.isArray(x.services) ? x.services : []).map((v) => s((v as { nom?: unknown; name?: unknown })?.nom ?? (v as { name?: unknown })?.name)).filter(Boolean);
+    const noms = saisis.length ? saisis : carteLueDuDiagnostic(x.diagnostic).map((p) => p.nom);
+    return [...new Set(noms.map((n) => n.slice(0, 60)).filter((n) => !motInterdit(n)))].slice(0, 14);
+  } catch {
+    return [];
+  }
 }
 
 // ─── ce que voit l'un des deux ───────────────────────────────────────────────────────────────────
@@ -426,8 +508,33 @@ async function vueDe(supabase: Supabase, f: Fichier, moiId: string): Promise<Ren
     // 🪞 ce que la rencontre a révélé de LUI (son côté)
     ...((cote === "a" ? f.revele?.a : f.revele?.b) ? { revele: (cote === "a" ? f.revele?.a : f.revele?.b)! } : {}),
     quoi: f.quoi === "ami" ? "ami" : "jour",
+    ...scenarioVu(f, cote),
+    ...(cote === "a" && f.transformation?.image ? { transformation: await signer(supabase, f.transformation.image, 3600) } : {}),
   };
 }
+
+/** 🎬 Ce que la page montre du scénario : son nom ; chez un commerçant, sa proposition et le lien vers SA page. */
+function scenarioVu(f: Fichier, cote: "a" | "b"): Pick<RencontreVue, "scenario" | "proposition" | "action" | "transformable"> {
+  const sc = f.scenario;
+  if (!sc) return {};
+  if (sc.type === "ami") {
+    const th = themeAmiDe(sc.cle);
+    return th ? { scenario: { emoji: th.emoji, nom: th.nom } } : {};
+  }
+  if (!("commerce" in f.b)) return {};
+  const slug = f.b.commerce;
+  const m = scenarioMetierDeCle(sc.cle);
+  return {
+    scenario: { emoji: m.emoji, nom: m.nom },
+    ...(f.proposition ? { proposition: { titre: f.proposition.titre, pourquoi: f.proposition.pourquoi } } : {}),
+    action: { texte: m.action?.texte ?? "🏪 Voir sa page", lien: `/site-internet/apercu/${encodeURIComponent(slug)}${m.action?.onglet ? `?onglet=${m.action.onglet}` : ""}` },
+    // ✨ sa figurine relookée : seulement la sienne, s'il y a de quoi la dessiner et un moteur d'image
+    ...(cote === "a" && sc.visuel && f.proposition?.en && moteurBranche() ? { transformable: true } : {}),
+  };
+}
+/** (le scénario d'un métier, retrouvé d'après sa clé : un métier qui le donne) */
+const METIER_DE_CLE: Record<string, string> = { coiffure: "coiffeur", look: "boutique de vêtements", lunettes: "opticien", menu: "restaurant", ambiance: "bar", bouquet: "fleuriste", ongles: "onglerie", livre: "librairie", tatouage: "tatoueur", bijou: "bijouterie", gourmandise: "boulangerie" };
+const scenarioMetierDeCle = (cle: string) => scenarioMetier(METIER_DE_CLE[cle] ?? "");
 
 function echangeVu(f: Fichier, moiId: string): NonNullable<RencontreVue["echange"]> {
   const autreId = autreDe(f, moiId);
@@ -531,7 +638,7 @@ export async function rencontreDuJour(supabase: Supabase, habitant: Habitant): P
     if (dernierJour(idx, `h:${a}`)) continue;
     const gA = await lire<Gardee>(supabase, cheminCarte(a));
     if (!gA || !reponsesValides(gA.reponses)) continue;
-    const { f, idxApres } = await creerConversation(supabase, habitant, carte, idx, { habitant: a }, null, { quoi: "ami" });
+    const { f, idxApres } = await creerConversation(supabase, habitant, carte, idx, { habitant: a }, null, { quoi: "ami", theme: themeAuHasard(`${habitant.id}|${a}`, false) });
     idx = idxApres;
     nouvelle = await vueDe(supabase, f, habitant.id);
     break;
@@ -574,7 +681,7 @@ export async function rencontreDuJour(supabase: Supabase, habitant: Habitant): P
     if (membre || (idx.ouvert && idx.membreJour !== jour)) await mettreAJourLaFile(supabase, habitant, membre ? membreDispo : null);
   }
 
-  const { f, idxApres } = await creerConversation(supabase, habitant, carte, idx, b, commerce, { membre, quoi: "jour", premiere });
+  const { f, idxApres } = await creerConversation(supabase, habitant, carte, idx, b, commerce, { membre, quoi: "jour", premiere, ...(membre ? { theme: themeAuHasard(`${habitant.id}|${jour}`, true) } : {}) });
   return { ...(await base(idxApres)), avant: await rencontresDavant(supabase, idxApres, f.id), rencontre: await vueDe(supabase, f, habitant.id), ...(nouvelle ? { nouvelle } : {}) };
 }
 
@@ -583,7 +690,7 @@ export async function rencontreDuJour(supabase: Supabase, habitant: Habitant): P
  * entre figurines ») : quand il veut, `AMIS_PAR_JOUR` par jour ; l'ami doit avoir fait sa carte. `n` : sa place dans
  * sa liste d'amis (la page ne voit pas son identifiant).
  */
-export async function discuterAvecUnAmi(supabase: Supabase, habitant: Habitant, n: unknown): Promise<{ rencontre?: RencontreVue; restantes?: number; error?: string; statut?: number }> {
+export async function discuterAvecUnAmi(supabase: Supabase, habitant: Habitant, n: unknown, theme?: unknown): Promise<{ rencontre?: RencontreVue; restantes?: number; error?: string; statut?: number }> {
   const [carte, idx] = await Promise.all([lire<Gardee>(supabase, cheminCarte(habitant.id)), indexDe(supabase, habitant.id)]);
   if (!carte || !reponsesValides(carte.reponses)) return { error: "Fais d’abord ta carte de personnage.", statut: 400 };
   const k = Number(n);
@@ -594,7 +701,9 @@ export async function discuterAvecUnAmi(supabase: Supabase, habitant: Habitant, 
   const gAmi = await lire<Gardee>(supabase, cheminCarte(ami));
   if (!gAmi || !reponsesValides(gAmi.reponses)) return { error: "Ton ami n’a pas encore fait sa carte : dès qu’il l’aura faite, vos figurines pourront discuter.", statut: 409 };
   const jour = jourParis();
-  const { f } = await creerConversation(supabase, habitant, carte, { ...idx, discussions: { jour, n: faites + 1 } }, { habitant: ami }, null, { quoi: "ami" });
+  // 🎬 LE THÈME QU'IL A CHOISI (« la dispute, l'amour, la sortie… ») ; sinon, un au hasard
+  const th = themeAmiDe(theme) ?? themeAuHasard(`${habitant.id}|${ami}|${jour}|${faites}`, false);
+  const { f } = await creerConversation(supabase, habitant, carte, { ...idx, discussions: { jour, n: faites + 1 } }, { habitant: ami }, null, { quoi: "ami", theme: th });
   return { rencontre: await vueDe(supabase, f, habitant.id), restantes: AMIS_PAR_JOUR - faites - 1 };
 }
 
@@ -629,7 +738,7 @@ async function creerConversation(
   idx: Index,
   b: Cote,
   commerce: CommerceInfo | null,
-  o: { membre?: boolean; quoi?: "jour" | "ami"; premiere?: boolean } = {},
+  o: { membre?: boolean; quoi?: "jour" | "ami"; premiere?: boolean; theme?: ThemeAmi | null } = {},
 ): Promise<{ f: Fichier; idxApres: Index }> {
   const membre = Boolean(o.membre);
   const jour = jourParis();
@@ -648,6 +757,8 @@ async function creerConversation(
     autre = { prenom: prenomB, carte: gB! };
     portraitB = portraitClient("B", prenomB, gB!, idxB);
   } else {
+    // 🍽️ SES VRAIS PLATS (un restaurant) : ce qu'il a saisi, sinon sa carte lue sur ses photos — des noms, jamais un prix
+    if (brancheDuMetier(commerce!.metier) === "restaurant") commerce = { ...commerce!, plats: await platsDe(supabase, commerce!.slug) };
     autre = commerce!;
     portraitB = [
       `FIGURINE B — la figurine de « ${commerce!.nom} », un commerce${commerce!.metier ? ` (${commerce!.metier})` : ""}${commerce!.ville ? ` de ${commerce!.ville}` : ""}.`,
@@ -655,8 +766,17 @@ async function creerConversation(
       "- Elle ne promet RIEN et n'invente RIEN sur le commerce : aucun prix, aucune offre, aucune réduction, aucun horaire, aucun produit précis. Ce n'est pas le commerçant qui parle.",
     ];
   }
-  const ia = await ecrireConversation(consigneConversation(portraitA, portraitB, { inconnus: membre || "personnage" in b, format, premiere: o.premiere, deuxClients: "habitant" in b }));
-  const locale = conversationLocale(prenomA, carte, autre, format);
+  // 🎬 LE SCÉNARIO (`scenarios.ts`) : chez un commerçant, son métier ; avec un ami ou un membre, le thème ; un
+  // personnage garde son sujet et le format du jour
+  const metier = commerce && "commerce" in b ? scenarioMetier(commerce.metier) : null;
+  const theme = "habitant" in b ? (o.theme ?? null) : null;
+  const scenario: ScenarioConsigne | undefined = metier
+    ? { nom: metier.nom, consigne: metier.consigne, propose: metier.propose, visuel: metier.visuel, plats: commerce?.plats, restaurant: metier.cle === "menu" }
+    : theme
+      ? { nom: theme.nom, consigne: theme.consigne }
+      : undefined;
+  const ia = await ecrireConversation(consigneConversation(portraitA, portraitB, { inconnus: membre || "personnage" in b, format, premiere: o.premiere, deuxClients: "habitant" in b, scenario }));
+  const locale = conversationLocale(prenomA, carte, autre, format, theme);
   const ecrite = ia ?? locale;
   const f: Fichier = {
     id: nouvelId(),
@@ -676,6 +796,9 @@ async function creerConversation(
     revele: { a: ecrite.revele.a || locale.revele.a, ...("habitant" in b ? { b: ecrite.revele.b || locale.revele.b } : {}) },
     format: format.cle,
     ...(o.quoi === "ami" ? { quoi: "ami" as const } : {}),
+    ...(metier ? { scenario: { type: "metier" as const, cle: metier.cle, ...(metier.visuel ? { visuel: metier.visuel } : {}) } } : theme ? { scenario: { type: "ami" as const, cle: theme.cle } } : {}),
+    // (l'IA a oublié sa proposition : celle de la page — ou, avec une proposition sans description, rien à dessiner)
+    ...(metier ? { proposition: ecrite.proposition ?? locale.proposition } : {}),
   };
   await ecrire(supabase, cheminRencontre(f.id), f);
   // 📓 SON JOURNAL : ce que l'épisode a révélé de lui (et de l'autre, entre deux clients)
@@ -696,6 +819,57 @@ async function creerConversation(
     });
   }
   return { f, idxApres };
+}
+
+// ─── ✨ sa figurine relookée par le commerçant ───────────────────────────────────────────────────
+const CHANGE: Record<NonNullable<ScenarioMetier["visuel"]>, string> = {
+  coiffure: "Change ONLY the hairstyle, to this new haircut",
+  tenue: "Change ONLY the clothes, to this new outfit",
+  lunettes: "Add these glasses",
+  tatouage: "Add this small tattoo on the forearm",
+  bijou: "Add this piece of jewelry",
+};
+/**
+ * ✨ « C'EST INCROYABLE CE QU'ILS ONT FAIT » (6 novembre 2026) — à la fin de l'épisode chez le coiffeur (la boutique, le
+ * tatoueur…), sa figurine revient relookée d'après ce que la figurine du commerçant lui a proposé. Une seule fois par
+ * épisode (le moteur d'image coûte) ; la page la demande quand l'épisode commence, elle est prête à la fin.
+ * `enCours` : une autre page la fabrique déjà.
+ */
+export async function relookerSaFigurine(supabase: Supabase, habitant: Habitant, id: unknown, avant: number): Promise<{ image?: string; enCours?: boolean; error?: string; statut?: number }> {
+  const rid = s(id);
+  if (!idRencontreValide(rid)) return { error: "Demande incomplète.", statut: 400 };
+  const f = await lire<Fichier>(supabase, cheminRencontre(rid));
+  if (!f || f.signale_le || f.a.habitant !== habitant.id) return { error: "Cette rencontre n’existe plus.", statut: 404 };
+  if (f.transformation?.image) return { image: await signer(supabase, f.transformation.image, 3600) };
+  const visuel = f.scenario?.visuel;
+  const en = s(f.proposition?.en);
+  if (!visuel || !en || !moteurBranche()) return { error: "Rien à essayer sur ta figurine ici.", statut: 400 };
+  // UN SEUL À LA FOIS (deux pages ouvertes ne paient pas deux fois)
+  const verrou = `${habitant.id}/rencontres/${rid}-verrou.json`;
+  const v = await lire<{ le?: number }>(supabase, verrou);
+  if (Date.now() - (Number(v?.le) || 0) < 4 * 60_000) return { enCours: true };
+  await ecrire(supabase, verrou, { le: Date.now() });
+  try {
+    const { ligne } = await lireLigne(supabase, habitant.id);
+    const neutre = ligne?.neutre ? await telecharger(supabase, s(ligne.neutre)) : null;
+    if (!neutre) return { error: "Ta figurine est introuvable.", statut: 400 };
+    const { png, cadre } = await poserAuFormat(neutre);
+    const consigne = [
+      `This is a collectible bobblehead figurine. ${CHANGE[visuel]}: ${en}.`,
+      "Keep EXACTLY: the same person and identity, the same face and expression, the same 3D animation rendering style and materials, the same metal spring and round wooden base, the same lighting, the same background colour, the same camera framing: the figurine stays at exactly the same place and size in the image. No text, no logo, no brand.",
+    ].join(" ");
+    const r = await editer(png, consigne, avant);
+    if (!Buffer.isBuffer(r)) return { error: r.erreur, statut: 502 };
+    const image = await reprendre(r, cadre);
+    const chemin = `${habitant.id}/rencontres/${rid}.webp`;
+    if (!(await deposer(supabase, chemin, image, "image/webp"))) return { error: "Elle n’a pas pu être rangée.", statut: 502 };
+    // (relue juste avant d'écrire : ses réactions ont pu arriver entre-temps)
+    const apres = (await lire<Fichier>(supabase, cheminRencontre(rid))) ?? f;
+    await ecrire(supabase, cheminRencontre(rid), { ...apres, transformation: { image: chemin, le: new Date().toISOString() } });
+    return { image: await signer(supabase, chemin, 3600) };
+  } finally {
+    await ecrire(supabase, verrou, {});
+  }
 }
 
 // ─── 🎲 rencontrer un membre ─────────────────────────────────────────────────────────────────────
@@ -744,7 +918,7 @@ export async function rencontrerUnMembre(supabase: Supabase, habitant: Habitant)
     await ecrire(supabase, cheminIndex(habitant.id), { ...idx, ouvert: true });
     return { attente: true };
   }
-  const { f } = await creerConversation(supabase, habitant, carte, { ...idx, ouvert: true }, { habitant: choisi }, null, { membre: true, quoi: "jour" });
+  const { f } = await creerConversation(supabase, habitant, carte, { ...idx, ouvert: true }, { habitant: choisi }, null, { membre: true, quoi: "jour", theme: themeAuHasard(`${habitant.id}|${choisi}|${jourParis()}`, true) });
   return { rencontre: await vueDe(supabase, f, habitant.id) };
 }
 
@@ -921,7 +1095,7 @@ export async function rencontreDuJourEnBref(supabase: Supabase, habitantId: stri
   if (!f || f.signale_le) return null;
   const p = await participant(supabase, f.a.habitant === habitantId ? f.b : f.a);
   const avec = p.type === "client" ? p.prenom || "un membre" : p.nom;
-  const qui = p.type === "personnage" ? `${p.nom}, ${p.role}` : p.type === "commerce" ? `la figurine de ${p.nom}, un commerce` : `${avec}, un membre de sa ville`;
+  const qui = p.type === "personnage" ? `${p.nom}, ${p.role}` : p.type === "commerce" ? `la figurine ${deNom(p.nom)}, un commerce` : `${avec}, un membre de sa ville`;
   return { avec, qui, format: formatDe(f.format)?.nom ?? "", titre: f.titre ?? "" };
 }
 

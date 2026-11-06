@@ -23,10 +23,12 @@
  * membre » (3… 2… 1…).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   EMOTIONS,
   IMPRESSION_MAX,
   VERDICTS,
+  deNom,
   dureeReplique,
   gesteDe,
   impressionRefusee,
@@ -39,8 +41,8 @@ import {
   type Verdict,
 } from "@/lib/direct/rencontre";
 import { AMIS_PAR_JOUR, REPONSE_MAX } from "@/lib/direct/reseau";
+import { THEMES_AMIS } from "@/lib/direct/scenarios";
 import { PanneauEnvoi } from "./ma-figurine";
-import { MotDuJour, QuestionDuJour } from "./connaitre";
 import { FigurineGuide, GuideDit } from "./guide";
 
 type Etat = {
@@ -113,49 +115,29 @@ const noterVue = (id: string) => {
   }
 };
 
+/** Les onomatopées de la BD, geste par geste. */
+const ONOMATOPEES: Record<string, string> = {
+  rit: "HA HA !",
+  danse: "♪ ♫",
+  grimace: "BLEH !",
+  surprise: "QUOI ?!",
+  clin: "CLIN !",
+  touchee: "♥",
+  applaudit: "CLAP CLAP !",
+  reflechit: "HMMM…",
+};
+const minutesDe = (r: RencontreVue) => Math.max(1, Math.round(r.repliques.reduce((n, x) => n + dureeReplique(x.texte), 1200) / 60_000));
+
 /**
- * 🎬 LA RENCONTRE, EN DIRECT (« pendant quelques minutes, vos deux figurines discuteront, réagiront et s'amuseront
- * ensemble : tu seras juste spectateur ») — les deux figurines sur scène, face à face ; chaque réplique arrive à son
- * rythme (`dureeReplique` : deux minutes environ pour toutes), celle qui parle bouge et fait son geste (elle rit,
- * danse, fait une grimace…). Pause, « Passer à la fin », « Revoir en direct ». Ses réactions, sous chaque phrase.
+ * 📖 LA CONVERSATION, EN BD, À RELIRE — une case par réplique, les deux figurines face à face (la sienne à gauche).
+ * « ✅ C'est tout moi » / « 🙅 Jamais de la vie » sous les phrases de SA figurine (c'est ce qui la fait lui ressembler) ;
+ * une émotion en touchant une phrase.
  */
-function Spectacle({ r, peutDirect, onRessemblance, onFin }: { r: RencontreVue; peutDirect: boolean; onRessemblance: (n: number | null) => void; onFin: (enDirect: boolean) => void }) {
-  const total = r.repliques.length;
-  // EN DIRECT la première fois (pas encore regardée sur cet appareil, aucune réaction) ; sinon, toute la conversation
-  const [direct] = useState(() => peutDirect && !dejaVueEnDirect(r.id));
-  const [montrees, setMontrees] = useState(direct ? 0 : total);
-  const [pause, setPause] = useState(false);
+function Fil({ r, onRessemblance, ressemblance }: { r: RencontreVue; onRessemblance: (n: number | null) => void; ressemblance: number | null }) {
   const [reactions, setReactions] = useState<Record<number, Reaction>>(r.reactions);
   // (une émotion : en touchant la phrase — 5 novembre 2026 : six boutons sous chaque ligne, c'était illisible)
   const [ouverte, setOuverte] = useState<number | null>(null);
   const [erreur, setErreur] = useState("");
-  const fil = useRef<HTMLOListElement>(null);
-  const fini = montrees >= total;
-
-  // la réplique suivante, à son heure (la première après « elle écrit… »)
-  useEffect(() => {
-    if (fini || pause) return;
-    const t = window.setTimeout(() => setMontrees((n) => n + 1), montrees === 0 ? 1200 : dureeReplique(r.repliques[montrees - 1].texte));
-    return () => window.clearTimeout(t);
-  }, [montrees, pause, fini, r.repliques]);
-  // la dernière réplique arrive dans le fil (il défile tout seul, la scène reste en haut)
-  useEffect(() => {
-    const f = fil.current;
-    if (f && montrees > 0) f.scrollTo({ top: f.scrollHeight, behavior: "smooth" });
-  }, [montrees]);
-  // la fin : prévenue une fois (et retenue sur l'appareil)
-  const prevenu = useRef(false);
-  useEffect(() => {
-    if (!fini) {
-      prevenu.current = false;
-      return;
-    }
-    if (prevenu.current) return;
-    prevenu.current = true;
-    noterVue(r.id);
-    onFin(direct);
-  }, [fini, r.id, onFin, direct]);
-
   async function reagir(n: number, x: { v?: Verdict | null; e?: Emotion | null }) {
     setErreur("");
     const avant = reactions[n] ?? {};
@@ -177,65 +159,17 @@ function Spectacle({ r, peutDirect, onRessemblance, onFin }: { r: RencontreVue; 
       setErreur((e as Error).message);
     }
   }
-
-  // sur scène : celle qui vient de parler, et son geste
-  const derniere = montrees > 0 && !fini ? r.repliques[montrees - 1] : null;
-  const geste = derniere?.geste ? gesteDe(derniere.geste) : null;
-  const sur = (moi: boolean) => (derniere && derniere.moi === moi ? ` parle${derniere.geste ? ` g-${derniere.geste}` : ""}` : "");
-  const pct = Math.round((100 * montrees) / Math.max(1, total));
-  const minutes = Math.max(1, Math.round(r.repliques.reduce((n, x) => n + dureeReplique(x.texte), 1200) / 60_000));
   return (
     <>
-      <div className={`rs-scene${fini ? " fini" : ""}`} aria-hidden="true">
-        <span className={`rs-fig gauche${sur(true)}`} key={`g-${derniere?.moi ? montrees : "x"}`}>
-          <Avatar p={r.moi} scene />
-          <small>Ta figurine</small>
-        </span>
-        <span className="rs-centre">{fini ? "🤝" : "💬"}</span>
-        <span className={`rs-fig droite${sur(false)}`} key={`d-${derniere && !derniere.moi ? montrees : "x"}`}>
-          <Avatar p={r.autre} scene />
-          <small>{nomDe(r.autre)}</small>
-        </span>
-        {geste && (
-          <span className={`rs-emoji ${derniere?.moi ? "gauche" : "droite"}`} key={montrees}>
-            {geste.emoji}
-          </span>
-        )}
-      </div>
-      <div className="rs-barre">
-        <span className={`rs-direct${fini ? " fini" : pause ? " pause" : ""}`}>{fini ? "✓ TERMINÉE" : pause ? "⏸ EN PAUSE" : "● EN DIRECT"}</span>
-        <span className="rs-progres" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={montrees}>
-          <i style={{ width: `${pct}%` }} />
-        </span>
-        <small>{fini ? `${total} répliques` : `~${minutes} min · 🍿 tu es spectateur`}</small>
-      </div>
-      <div className="rs-controles">
-        {!fini ? (
-          <>
-            <button type="button" onClick={() => setPause((x) => !x)}>
-              {pause ? "▶ Reprendre" : "⏸ Pause"}
-            </button>
-            <button type="button" className="rs-passer" onClick={() => setMontrees(total)}>
-              ⏭ Passer à la fin
-            </button>
-          </>
-        ) : (
-          direct && (
-            <button type="button" onClick={() => setMontrees(0)}>
-              ↺ Revoir en direct
-            </button>
-          )
-        )}
-      </div>
-      {fini && <p className="rd-aide">🪞 C’est toi ? Dis-le sous ses phrases. Touche une phrase pour réagir.</p>}
-      <ol className={`rd-fil${direct ? " direct" : ""}`} ref={fil}>
-        {r.repliques.slice(0, montrees).map((x, n) => {
+      <p className="rd-aide">🪞 C’est toi ? Dis-le sous les phrases de ta figurine : elle apprend à te ressembler.</p>
+      <ol className="rd-fil bd">
+        {r.repliques.map((x, n) => {
           const re = reactions[n] ?? {};
           const g = x.geste ? gesteDe(x.geste) : null;
           return (
-            <li key={n} className={`${x.moi ? "moi" : "autre"}${fini ? " reagir" : ""}`}>
+            <li key={n} className={`${x.moi ? "moi" : "autre"} reagir`}>
               <Avatar p={x.moi ? r.moi : r.autre} />
-              <div className="rd-bulle" onClick={() => fini && setOuverte((o) => (o === n ? null : n))}>
+              <div className="rd-bulle" onClick={() => setOuverte((o) => (o === n ? null : n))}>
                 <small>
                   {x.moi ? "Ta figurine" : nomDe(r.autre)}
                   {g && (
@@ -249,9 +183,7 @@ function Spectacle({ r, peutDirect, onRessemblance, onFin }: { r: RencontreVue; 
                   {x.texte}
                   {re.e && ouverte !== n && <span className="rd-emo-pose">{re.e}</span>}
                 </p>
-                {/* SES RÉACTIONS, À LA FIN SEULEMENT (en direct, il regarde) : « c'est moi / pas moi » sur les phrases de sa
-                    figurine ; une émotion en touchant la phrase */}
-                {fini && (x.moi || ouverte === n) && (
+                {(x.moi || ouverte === n) && (
                   <div className="rd-reac" onClick={(e) => e.stopPropagation()}>
                     {x.moi &&
                       VERDICTS.map((v) => (
@@ -271,22 +203,272 @@ function Spectacle({ r, peutDirect, onRessemblance, onFin }: { r: RencontreVue; 
             </li>
           );
         })}
-        {!fini && !pause && (
-          <li className="rd-tape-li" aria-label="Elle écrit">
-            <p className="rd-tape">
-              <i />
-              <i />
-              <i />
-            </p>
-          </li>
-        )}
       </ol>
+      <p className="rd-ressemblance">
+        {ressemblance == null ? (
+          <>🪞 Dis-lui si c’est bien toi : elle apprend à te ressembler.</>
+        ) : (
+          <>
+            🪞 Ta figurine te ressemble à <b>{ressemblance} %</b>
+            <span className="rd-jauge">
+              <i style={{ width: `${ressemblance}%` }} />
+            </span>
+          </>
+        )}
+      </p>
       {erreur && (
         <p className="tf-erreur" role="alert">
           {erreur}
         </p>
       )}
     </>
+  );
+}
+
+/** Une figurine sur la scène du théâtre (ou de l'affiche) : sa figurine, ou l'emoji d'un personnage sans figurine. */
+function FigScene({ p }: { p: Participant }) {
+  if (p.type === "personnage" && !p.image)
+    return (
+      <span className="rs-perso" aria-hidden="true">
+        {p.emoji}
+      </span>
+    );
+  const vraie = p.type === "client" ? p.figurine : p.type === "personnage" || !p.image.startsWith("/direct/double/");
+  return vraie ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={p.image} alt="" draggable={false} />
+  ) : (
+    // (pas encore de figurine : sa silhouette, et « ? » — jamais celle d'un autre)
+    <span className="rs-silhouette" aria-hidden="true">
+      <b>?</b>
+    </span>
+  );
+}
+
+/** La bulle de BD de celui qui parle : le texte arrive lettre après lettre. */
+function Bulle({ texte, moi, nom, geste }: { texte: string; moi: boolean; nom: string; geste?: string }) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (n >= texte.length) return;
+    const t = window.setTimeout(() => setN((x) => Math.min(texte.length, x + 2)), 22);
+    return () => window.clearTimeout(t);
+  }, [n, texte.length]);
+  const g = geste ? gesteDe(geste) : null;
+  return (
+    <div className={`rs-bulle ${moi ? "gauche" : "droite"}`} aria-live="polite">
+      <small>
+        {nom}
+        {g && <span> · {g.emoji}</span>}
+      </small>
+      <p>
+        {texte.slice(0, n)}
+        <span className="rs-reste" aria-hidden="true">
+          {texte.slice(n)}
+        </span>
+      </p>
+    </div>
+  );
+}
+
+type Relook = { image: string; etat: "" | "cours" | "erreur" };
+
+/** ✨ Ce que la figurine du commerçant propose, et sa figurine relookée (avant / après), et le lien vers SA page. */
+function Proposition({ r, relook, grand = false }: { r: RencontreVue; relook: Relook; grand?: boolean }) {
+  if (!r.proposition) return null;
+  return (
+    <section className={`ra-proposition${grand ? " grand" : ""}`}>
+      <small>
+        {r.scenario?.emoji ?? "✨"} {nomDe(r.autre).toUpperCase()} TE PROPOSE
+      </small>
+      <b>{r.proposition.titre}</b>
+      {r.proposition.pourquoi && <p>{r.proposition.pourquoi}</p>}
+      {r.transformable &&
+        (relook.image ? (
+          <span className="ra-avap">
+            <span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={r.moi.image} alt="Ta figurine, avant" />
+              <i>AVANT</i>
+            </span>
+            <span className="apres">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={relook.image} alt="Ta figurine, relookée" />
+              <i>APRÈS ✨</i>
+            </span>
+          </span>
+        ) : relook.etat === "cours" ? (
+          <span className="ra-relook-cours" role="status">
+            <i />✨ Ta figurine passe entre les mains de {nomDe(r.autre)}…
+          </span>
+        ) : null)}
+      {r.action && (
+        <a className="og-go ra-action" href={r.action.lien}>
+          {r.action.texte}
+        </a>
+      )}
+    </section>
+  );
+}
+
+/**
+ * 🎬 L'ÉPISODE, AU THÉÂTRE — 6 novembre 2026, le patron : « il faudrait que les deux figurines se parlent face à face, ou
+ * comme dans une BD, qui donne vraiment l'effet visuel qu'elles discutent » ; « pas d'effet wow… on a du mal à scroller
+ * la conversation jusqu'en bas ». Tout l'écran : les deux figurines face à face, la bulle de celle qui parle (le texte
+ * arrive lettre après lettre), l'onomatopée de son geste ; une réplique après l'autre, à son rythme, sans rien à faire
+ * défiler. Toucher : la suivante (à gauche : la précédente). À la fin : « FIN », la proposition du commerçant et sa
+ * figurine relookée, la carte souvenir.
+ */
+function Theatre({ r, relook, onFin, onFermer }: { r: RencontreVue; relook: Relook; onFin: () => void; onFermer: () => void }) {
+  const total = r.repliques.length;
+  const [montrees, setMontrees] = useState(0);
+  const [pause, setPause] = useState(false);
+  const fini = montrees >= total + 1;
+  const parle = montrees >= 1 && montrees <= total ? r.repliques[montrees - 1] : null;
+  // la réplique suivante, à son heure (la première après un instant ; « FIN » après la dernière)
+  useEffect(() => {
+    if (fini || pause) return;
+    const t = window.setTimeout(() => setMontrees((n) => n + 1), montrees === 0 ? 900 : dureeReplique(r.repliques[montrees - 1]?.texte ?? ""));
+    return () => window.clearTimeout(t);
+  }, [montrees, pause, fini, r.repliques]);
+  const prevenu = useRef(false);
+  useEffect(() => {
+    if (!fini || prevenu.current) return;
+    prevenu.current = true;
+    noterVue(r.id);
+    onFin();
+  }, [fini, r.id, onFin]);
+  // (la page derrière ne défile plus ; Échap ferme)
+  useEffect(() => {
+    const avant = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const touche = (e: KeyboardEvent) => e.key === "Escape" && onFermer();
+    window.addEventListener("keydown", touche);
+    return () => {
+      document.body.style.overflow = avant;
+      window.removeEventListener("keydown", touche);
+    };
+  }, [onFermer]);
+  function toucher(e: React.MouseEvent<HTMLDivElement>) {
+    if (fini) return;
+    const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
+    if (x < e.currentTarget.clientWidth * 0.28) setMontrees((n) => Math.max(1, n - 1));
+    else setMontrees((n) => Math.min(total + 1, n + 1));
+  }
+  const ono = parle?.geste ? ONOMATOPEES[parle.geste] : "";
+  return createPortal(
+    <div className={`rs-theatre${fini ? " fini" : ""}${pause ? " pause" : ""}`} role="dialog" aria-modal="true" aria-label={`L’épisode : ${r.titre || nomDe(r.autre)}`}>
+      <div className="rs-segments" aria-hidden="true">
+        {r.repliques.map((_, k) => (
+          <i key={k} className={k < montrees - 1 || fini ? "fait" : k === montrees - 1 ? "en-cours" : ""} style={k === montrees - 1 && !fini ? { animationDuration: `${dureeReplique(r.repliques[k].texte)}ms` } : undefined} />
+        ))}
+      </div>
+      <header className="rs-haut">
+        <span className={`rs-direct${fini ? " fini" : pause ? " pause" : ""}`}>{fini ? "✓ TERMINÉE" : pause ? "⏸ EN PAUSE" : "● EN DIRECT"}</span>
+        <b>{r.scenario ? `${r.scenario.emoji} ${r.scenario.nom}` : r.titre}</b>
+        <button type="button" className="rs-fermer" aria-label="Fermer" onClick={onFermer}>
+          ✕
+        </button>
+      </header>
+      {!fini ? (
+        <>
+          <div className="rs-scene" onClick={toucher}>
+            <span className="rs-decor" aria-hidden="true" />
+            {/* le récitatif de la BD : le titre de l'épisode */}
+            {r.titre && (
+              <span className="rs-recit" aria-hidden="true">
+                <small>ÉPISODE</small>« {r.titre} »
+              </span>
+            )}
+            {parle && <Bulle key={montrees} texte={parle.texte} moi={parle.moi} nom={parle.moi ? "Ta figurine" : nomDe(r.autre)} geste={parle.geste} />}
+            {ono && (
+              <b className={`rs-ono ${parle?.moi ? "gauche" : "droite"}`} key={`o-${montrees}`} aria-hidden="true">
+                {ono}
+              </b>
+            )}
+            {montrees === 0 && (
+              <b className="rs-claquette" aria-hidden="true">
+                🎬 ACTION !
+              </b>
+            )}
+            <span className={`rs-fig gauche${parle?.moi ? ` parle g-${parle.geste ?? ""}` : parle ? " ecoute" : ""}`}>
+              <FigScene p={r.moi} />
+              <small>Ta figurine</small>
+            </span>
+            <span className={`rs-fig droite${parle && !parle.moi ? ` parle g-${parle.geste ?? ""}` : parle ? " ecoute" : ""}`}>
+              <FigScene p={r.autre} />
+              <small>{nomDe(r.autre)}</small>
+            </span>
+          </div>
+          <div className="rs-barre">
+            <small>
+              {Math.min(montrees, total)} / {total} · ~{minutesDe(r)} min · 🍿 tu es spectateur
+            </small>
+          </div>
+          <div className="rs-controles">
+            <button type="button" onClick={() => setPause((x) => !x)}>
+              {pause ? "▶ Reprendre" : "⏸ Pause"}
+            </button>
+            <button type="button" className="rs-passer" onClick={() => setMontrees(total + 1)}>
+              ⏭ Passer à la fin
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="rs-fin">
+          <b className="rs-fin-mot">FIN</b>
+          <Proposition r={r} relook={relook} grand />
+          <CarteSouvenir titre={r.titre || `Rencontre avec ${nomDe(r.autre)}`} jour={r.jour} moi={r.moi} autre={r.autre} avec={nomDe(r.autre)} nouvelle />
+          <span className="rs-fin-actions">
+            <button type="button" className="og-go rs-suite" onClick={onFermer}>
+              🪞 Ce que ça dit de moi ›
+            </button>
+            <button type="button" className="rs-revoir" onClick={() => setMontrees(0)}>
+              ↺ Revoir
+            </button>
+          </span>
+        </div>
+      )}
+    </div>,
+    document.body,
+  );
+}
+
+/** 🎟️ L'AFFICHE DE L'ÉPISODE : les deux figurines face à face, avec qui, le thème, le titre, et « ▶ Regarder ». */
+function Affiche({ r, vue, jourEnTete, genre, onRegarder }: { r: RencontreVue; vue: boolean; jourEnTete: string; genre: string; onRegarder: () => void }) {
+  return (
+    <section className={`ep-affiche${vue ? " vue" : ""}`}>
+      <div className="ep-duo" aria-hidden="true">
+        <span className="ep-fig gauche">
+          <FigScene p={r.moi} />
+        </span>
+        <b className="ep-vs">&amp;</b>
+        <span className="ep-fig droite">
+          <FigScene p={r.autre} />
+        </span>
+      </div>
+      <span className="rd-qui">
+        <small>
+          {jourEnTete}
+          {genre ? ` · ${genre}` : ""}
+        </small>
+        <b>
+          {r.quoi === "ami" ? "Ta figurine a discuté avec " : "Ta figurine a rencontré "}
+          {r.autre.type === "commerce" ? `la figurine ${deNom(r.autre.nom)}` : nomDe(r.autre)}
+        </b>
+        {r.autre.type === "client" && r.autre.titre && <span>« {r.autre.titre} »</span>}
+        {r.autre.type === "personnage" && (
+          <span>
+            {r.autre.emoji} {r.autre.role}
+          </span>
+        )}
+      </span>
+      {(r.scenario || r.format) && <span className="ep-theme">{r.scenario ? `${r.scenario.emoji} ${r.scenario.nom}` : `🎲 ${r.format!.nom}`}</span>}
+      {r.titre && <b className="ep-titre">« {r.titre} »</b>}
+      <button type="button" className={`ep-play${vue ? " revoir" : ""}`} onClick={onRegarder}>
+        {vue ? "↺ Revoir l’épisode" : "▶ Regarder l’épisode"}
+        <small>~{minutesDe(r)} min</small>
+      </button>
+    </section>
   );
 }
 
@@ -467,16 +649,41 @@ function EtToi({ r, onRencontre }: { r: RencontreVue; onRencontre: (x: Rencontre
   );
 }
 
-/** 🏁 APRÈS LA RENCONTRE : ce qui a été partagé, la carte souvenir, « Et toi ? » et (entre deux clients) leurs impressions. */
-function ApresRencontre({ r, nouvelle, onRencontre }: { r: RencontreVue; nouvelle: boolean; onRencontre: (x: RencontreVue) => void }) {
+/**
+ * 🏁 APRÈS L'ÉPISODE, SUR LA PAGE — une histoire qui se lit dans l'ordre : ce qu'il a proposé (chez un commerçant, et
+ * le lien pour l'essayer), ce que sa figurine a révélé de lui, « Et toi ? », leurs impressions (entre deux clients), la
+ * BD à relire (« c'est tout moi » / « jamais de la vie »), ce qui a été partagé, la carte souvenir.
+ */
+function ApresRencontre({
+  r,
+  relook,
+  onRencontre,
+  onRessemblance,
+  ressemblance,
+}: {
+  r: RencontreVue;
+  relook: Relook;
+  onRencontre: (x: RencontreVue) => void;
+  onRessemblance: (n: number | null) => void;
+  ressemblance: number | null;
+}) {
   return (
     <div className="ra">
+      <Proposition r={r} relook={relook} />
       {r.revele && (
         <section className="ra-revele">
           <b>🪞 Ce que ta figurine a révélé de toi</b>
           <p>{r.revele}</p>
         </section>
       )}
+      {r.question && <EtToi key={r.id} r={r} onRencontre={onRencontre} />}
+      {r.echange && <Echange r={r} onRencontre={onRencontre} />}
+      <details className="ra-bd">
+        <summary>
+          <span aria-hidden="true">📖</span> Relire la conversation <small>et dire si c’est bien toi</small>
+        </summary>
+        <Fil key={r.id} r={r} onRessemblance={onRessemblance} ressemblance={ressemblance} />
+      </details>
       {r.partage && r.partage.length > 0 && (
         <section className="ra-partage">
           <b>✨ Ce qui a été partagé</b>
@@ -487,10 +694,76 @@ function ApresRencontre({ r, nouvelle, onRencontre }: { r: RencontreVue; nouvell
           </ul>
         </section>
       )}
-      <CarteSouvenir titre={r.titre || `Rencontre avec ${nomDe(r.autre)}`} jour={r.jour} moi={r.moi} autre={r.autre} avec={nomDe(r.autre)} nouvelle={nouvelle} />
-      {r.question && <EtToi key={r.id} r={r} onRencontre={onRencontre} />}
-      {r.echange && <Echange r={r} onRencontre={onRencontre} />}
+      <CarteSouvenir titre={r.titre || `Rencontre avec ${nomDe(r.autre)}`} jour={r.jour} moi={r.moi} autre={r.autre} avec={nomDe(r.autre)} />
     </div>
+  );
+}
+
+/**
+ * 🎬 UN ÉPISODE : son affiche (« ▶ Regarder »), le théâtre, puis ce qu'il en reste sur la page. Chez un commerçant
+ * qui relooke (le coiffeur, la boutique…), sa figurine relookée est demandée dès qu'il lance l'épisode : elle est prête
+ * à la fin. `direct` : un épisode tout neuf (une discussion d'ami qu'il vient de lancer) s'ouvre aussitôt.
+ */
+function Episode({
+  r,
+  direct,
+  jourEnTete,
+  genre,
+  ressemblance,
+  onRessemblance,
+  onRencontre,
+}: {
+  r: RencontreVue;
+  direct: boolean;
+  jourEnTete: string;
+  genre: string;
+  ressemblance: number | null;
+  onRessemblance: (n: number | null) => void;
+  onRencontre: (x: RencontreVue) => void;
+}) {
+  const [vue, setVue] = useState(() => !direct && (dejaVueEnDirect(r.id) || Object.keys(r.reactions).length > 0));
+  const [theatre, setTheatre] = useState(direct);
+  const [relook, setRelook] = useState<Relook>({ image: r.transformation ?? "", etat: "" });
+  const demande = useRef(false);
+  const relooker = useCallback(() => {
+    if (!r.transformable || r.transformation || demande.current) return;
+    demande.current = true;
+    setRelook((x) => ({ ...x, etat: "cours" }));
+    void (async () => {
+      for (let k = 0; k < 10; k++) {
+        try {
+          const j = await poster({ action: "relooker", id: r.id });
+          if (j.image) return setRelook({ image: String(j.image), etat: "" });
+          if (!j.enCours) break;
+        } catch {
+          break;
+        }
+        await new Promise((ok) => window.setTimeout(ok, 15_000));
+      }
+      setRelook((x) => ({ ...x, etat: x.image ? "" : "erreur" }));
+    })();
+  }, [r.id, r.transformable, r.transformation]);
+  // (un épisode qui s'ouvre tout seul : son relooking part aussitôt)
+  useEffect(() => {
+    if (direct) void Promise.resolve().then(relooker);
+  }, [direct, relooker]);
+  const fin = useCallback(() => setVue(true), []);
+  const fermer = useCallback(() => setTheatre(false), []);
+  return (
+    <>
+      <Affiche
+        r={r}
+        vue={vue}
+        jourEnTete={jourEnTete}
+        genre={genre}
+        onRegarder={() => {
+          setTheatre(true);
+          relooker();
+        }}
+      />
+      {theatre && <Theatre r={r} relook={relook} onFin={fin} onFermer={fermer} />}
+      {vue && <ApresRencontre r={r} relook={relook} onRencontre={onRencontre} onRessemblance={onRessemblance} ressemblance={ressemblance} />}
+    </>
   );
 }
 
@@ -608,7 +881,9 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
   const [discute, setDiscute] = useState<number | null>(null);
   const [attente, setAttente] = useState(false);
   const [erreur, setErreur] = useState("");
-  const [fin, setFin] = useState<{ id: string; nouvelle: boolean } | null>(null);
+  // 🎬 AVEC UN AMI, ON CHOISIT LE THÈME (6 novembre 2026) : l'ami touché, puis le thème
+  const [choixAmi, setChoixAmi] = useState<number | null>(null);
+  const [theme, setTheme] = useState<string>(THEMES_AMIS[0].cle);
   const minuit = useJusquaMinuit();
 
   const charger = useCallback(async () => {
@@ -742,7 +1017,8 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
     setErreur("");
     setDiscute(n);
     try {
-      const j = await poster({ action: "discuter", n });
+      const j = await poster({ action: "discuter", n, theme });
+      setChoixAmi(null);
       setEtat((e) => (e ? { ...e, discussionsRestantes: Number(j.restantes) || 0 } : e));
       regarder(j.rencontre as RencontreVue);
     } catch (e) {
@@ -751,12 +1027,10 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
       setDiscute(null);
     }
   }
-  const quandFini = useCallback((id: string, nouvelle: boolean) => setFin((f) => (f?.id === id ? f : { id, nouvelle })), []);
-
   const tete = (
     <header className="og-tete">
       <small>RENCONTRES</small>
-      <h2>La rencontre du jour</h2>
+      <h2>L’épisode du jour</h2>
     </header>
   );
   const explique = (
@@ -764,11 +1038,11 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
       cle="pablito-rencontres"
       popup
       repliques={[
-        { t: "Chaque jour, ta figurine rencontre une autre figurine 💬", v: "joie" },
-        { t: "Pendant deux minutes, elles discutent, rient et s’amusent en direct, selon vos personnalités. Toi, tu es spectateur 🍿", v: "rire" },
-        { t: "Dis-moi si c’est bien toi ! ✅ ou 🙅 : plus tu réagis, plus elle te ressemble 🪞", v: "euphorie" },
-        { t: "À la fin : ce qui a été partagé, une carte souvenir pour ta collection… et, si vous êtes d’accord tous les deux, vos impressions 💬", v: "joie" },
-        { t: "Avec qui ? Un commerçant, un membre de ta ville, un personnage… et tes amis, quand tu veux 👯", v: "neutre", apres: "grimace" },
+        { t: "Chaque jour, ta figurine tourne un épisode avec une autre figurine 🎬", v: "joie" },
+        { t: "Toi, tu regardes : elles se parlent face à face, rient, font des grimaces. Deux minutes, en direct 🍿", v: "rire" },
+        { t: "Chez un commerçant, sa figurine te propose quelque chose : un style, un look, un menu… et tu peux l’essayer en vrai ✨", v: "euphorie" },
+        { t: "Avec tes amis, c’est toi qui choisis le thème : la dispute, l’amour, la sortie… 👯", v: "joie" },
+        { t: "À la fin, ce que ta figurine a révélé de toi, et une carte souvenir pour ta collection 🪞", v: "neutre", apres: "grimace" },
       ]}
     />
   );
@@ -798,75 +1072,54 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
   const restantes = etat.discussionsRestantes ?? AMIS_PAR_JOUR;
   // avec qui : un ami, un membre, un personnage de ClikMe (imaginaire), un commerce
   const genre = r ? (r.quoi === "ami" ? "AVEC UN AMI" : r.membre ? "UN MEMBRE" : r.autre.type === "personnage" ? "UN PERSONNAGE" : r.autre.type === "commerce" ? "UN COMMERCE" : "") : "";
+  const ami0 = amisListe.find((x) => x.n === choixAmi);
+  // UNE HISTOIRE QUI SE LIT DANS L'ORDRE (6 novembre 2026 : « il y a énormément de choses partout, on ne sait pas ce
+  // qu'il faut regarder ») : l'épisode du jour ; puis « envie d'un autre épisode ? » (un ami et un thème, un membre,
+  // inviter) ; puis ses épisodes d'avant
   return (
     <div className="rd-onglet">
       {tete}
       {explique}
-      {/* 🔮 LE MOT DU JOUR (lot 2) : il annonce la rencontre du jour, avec un clin d'œil à ce qu'il a dit */}
-      {!etat.besoinCarte && <MotDuJour version={version} />}
       {ami && !etat.nouvelle && (
         <p className="rd-ami" role="status">
-          🎉 Toi et {ami}, c’est fait : dès que {ami} aura fait sa carte, vos figurines discuteront !
+          🎉 Toi et {ami}, c’est fait : dès que {ami} aura fait sa carte, vos figurines tourneront leur premier épisode !
         </p>
       )}
       {etat.nouvelle && ancienne?.id !== etat.nouvelle.id && (
         <p className="rd-ami rd-nouvelle" role="status">
-          🎉 {nomDe(etat.nouvelle.autre)} vient d’arriver : vos figurines ont discuté !{" "}
+          🎉 {nomDe(etat.nouvelle.autre)} vient d’arriver : vos figurines ont tourné un épisode !{" "}
           <button type="button" className="mp-bouton" onClick={() => regarder(etat.nouvelle!)}>
             ▶ Regarder
           </button>
         </p>
       )}
 
-      {/* LA RENCONTRE DU JOUR, EN VEDETTE */}
+      {/* 🎬 L'ÉPISODE DU JOUR */}
       <div className={`rd${r ? " rd-vedette" : ""}`}>
         {etat.besoinCarte ? (
           <div className="rd-teaser">
             <b>D’abord, ton personnage 🃏</b>
-            <p>Ta figurine parle comme toi : fais ta carte (sept questions), et elle part à la rencontre des autres.</p>
+            <p>Ta figurine parle comme toi : fais ta carte (sept questions), et elle part tourner ses épisodes.</p>
             <button type="button" className="og-go" onClick={() => allerA?.("personnage")}>
               🃏 Faire ma carte
             </button>
           </div>
         ) : etat.retiree ? (
-          <p className="rd-note">Cette conversation a été retirée. Rendez-vous demain pour la suivante.</p>
+          <p className="rd-note">Cette conversation a été retirée. Rendez-vous demain pour le prochain épisode.</p>
         ) : etat.personne || !r ? (
           <p className="rd-note">Personne à rencontrer aujourd’hui : invite un ami, ou appuie sur « Rencontre un membre » 👇</p>
         ) : (
           <>
-            <header className="rd-tete">
-              <span className="rd-qui">
-                <small>
-                  {ancienne && !neuve ? jourCourt(r.jour).toUpperCase() : "AUJOURD’HUI"}
-                  {genre ? ` · ${genre}` : ""}
-                </small>
-                <b>
-                  {r.quoi === "ami" ? "Ta figurine a discuté avec " : "Ta figurine a rencontré "}
-                  {r.autre.type === "commerce" ? `la figurine de ${r.autre.nom}` : nomDe(r.autre)}
-                </b>
-                {r.autre.type === "client" && r.autre.titre && <span>« {r.autre.titre} »</span>}
-                {r.autre.type === "personnage" && (
-                  <span>
-                    {r.autre.emoji} {r.autre.role}
-                  </span>
-                )}
-                {r.format && <span className="rd-format">🎲 {r.format.nom}</span>}
-              </span>
-            </header>
-            <Spectacle key={r.id} r={r} peutDirect={(!ancienne || neuve) && !Object.keys(r.reactions).length} onRessemblance={setRessemblance} onFin={(nouvelle) => quandFini(r.id, nouvelle)} />
-            <p className="rd-ressemblance">
-              {ressemblance == null ? (
-                <>🪞 Dis-lui si c’est bien toi : elle apprend à te ressembler.</>
-              ) : (
-                <>
-                  🪞 Ta figurine te ressemble à <b>{ressemblance} %</b>
-                  <span className="rd-jauge">
-                    <i style={{ width: `${ressemblance}%` }} />
-                  </span>
-                </>
-              )}
-            </p>
-            {fin?.id === r.id && <ApresRencontre r={r} nouvelle={fin.nouvelle} onRencontre={majRencontre} />}
+            <Episode
+              key={r.id}
+              r={r}
+              direct={Boolean(ancienne && neuve)}
+              jourEnTete={ancienne && !neuve ? jourCourt(r.jour).toUpperCase() : "AUJOURD’HUI"}
+              genre={genre}
+              ressemblance={ressemblance}
+              onRessemblance={setRessemblance}
+              onRencontre={majRencontre}
+            />
             <p className="rd-ia">
               Écrit par l’IA, pour jouer.
               {r.autre.type === "commerce" ? " Ce n’est pas le commerçant qui parle." : r.autre.type === "personnage" && r.autre.cle !== "pablito" ? " Ce personnage est imaginaire : il n’existe pas en vrai." : ""}{" "}
@@ -899,81 +1152,92 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
         )}
       </div>
 
-      {/* ❓ LA QUESTION DU JOUR (lot 2) : un toucher ou trois mots ; sa figurine s'en souviendra */}
-      <QuestionDuJour />
-
-      {/* 👯 SES AMIS ET PROCHES : une discussion quand il veut (AMIS_PAR_JOUR par jour) */}
-      {!etat.besoinCarte && amisListe.length > 0 && (
-        <section className="rd-amis" aria-label="Tes amis et proches">
-          <b>👯 Tes amis et proches</b>
-          <small>
-            {restantes > 0
-              ? `Lance une discussion entre vos figurines : encore ${restantes} aujourd’hui.`
-              : "Tu as lancé tes discussions du jour : reviens demain pour les suivantes !"}
-          </small>
-          <ul>
-            {amisListe.map((x) => (
-              <li key={x.n}>
-                <Avatar p={{ type: "client", prenom: x.prenom, titre: "", image: x.image, figurine: x.figurine }} />
-                <span className="rd-ami-nom">{x.prenom}</span>
-                {x.carte ? (
-                  <button type="button" className="mp-bouton" onClick={() => discuter(x.n)} disabled={discute != null || restantes <= 0}>
-                    {discute === x.n ? "💬 …" : "💬 Discuter"}
+      {/* 🎬 ENVIE D'UN AUTRE ÉPISODE ? */}
+      {!etat.besoinCarte && (
+        <section className="rd-autres" aria-label="D’autres épisodes">
+          <h3>🎬 Envie d’un autre épisode ?</h3>
+          {amisListe.length > 0 && (
+            <div className="rd-amis">
+              <b>👯 Avec un ami, sur le thème de ton choix</b>
+              <small>
+                {restantes > 0 ? `Choisis un ami, puis le thème : encore ${restantes} aujourd’hui.` : "Tu as lancé tes épisodes du jour avec tes amis : reviens demain !"}
+              </small>
+              <ul>
+                {amisListe.map((x) => (
+                  <li key={x.n} className={choixAmi === x.n ? "pris" : ""}>
+                    <Avatar p={{ type: "client", prenom: x.prenom, titre: "", image: x.image, figurine: x.figurine }} />
+                    <span className="rd-ami-nom">{x.prenom}</span>
+                    {x.carte ? (
+                      <button type="button" className="mp-bouton" onClick={() => setChoixAmi((c) => (c === x.n ? null : x.n))} disabled={discute != null || restantes <= 0} aria-expanded={choixAmi === x.n}>
+                        💬 Discuter
+                      </button>
+                    ) : (
+                      <small>pas encore sa carte</small>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              {ami0 && (
+                <div className="rd-themes" role="group" aria-label={`Le thème, avec ${ami0.prenom}`}>
+                  <b>Le thème, avec {ami0.prenom} ?</b>
+                  <div className="rd-themes-liste">
+                    {THEMES_AMIS.map((x) => (
+                      <button key={x.cle} type="button" className={theme === x.cle ? "pris" : ""} aria-pressed={theme === x.cle} onClick={() => setTheme(x.cle)}>
+                        <span aria-hidden="true">{x.emoji}</span> {x.nom}
+                      </button>
+                    ))}
+                  </div>
+                  <button type="button" className="og-go rd-lancer" onClick={() => discuter(ami0.n)} disabled={discute != null}>
+                    {discute != null ? "🎬 Elles tournent…" : "▶ Lancer l’épisode"}
                   </button>
-                ) : (
-                  <small>pas encore sa carte</small>
-                )}
-              </li>
-            ))}
-          </ul>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="rd-choix-grille">
+            <div className="rd-choix rd-inviter">
+              <b>📲 Invite un ami</b>
+              <small>
+                Dès qu’il a fait sa carte, vos figurines tournent leur premier épisode ; ensuite, c’est toi qui choisis le thème ({AMIS_PAR_JOUR} par jour).{" "}
+                {etat.amis ? `Déjà ${etat.amis} ami${etat.amis > 1 ? "s" : ""} relié${etat.amis > 1 ? "s" : ""} !` : ""}
+              </small>
+              {invitation ? (
+                <PanneauEnvoi lien={invitation} texte={texteInvitation("")} titre="Ton invitation est prête ✓" />
+              ) : (
+                <button type="button" className="mp-bouton" onClick={inviter}>
+                  📲 Inviter un ami
+                </button>
+              )}
+            </div>
+            <BoutonMembre
+              fait={etat.membreAujourdhui}
+              onRencontre={(x) => {
+                setAncienne(null);
+                setNeuve(false);
+                setEtat((e) => (e ? { ...e, rencontre: x, membreAujourdhui: true, personne: false, retiree: false } : e));
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              onAttente={() => {
+                setAttente(true);
+                setEtat((e) => (e ? { ...e, ouvert: true } : e));
+              }}
+            />
+          </div>
+          {(attente || etat.ouvert) && !etat.membreAujourdhui && (
+            <p className="rd-file" role="status">
+              🕐 Tu es dans la file : le prochain membre de ta ville qui appuie rencontrera ta figurine. Tu la verras ici.{" "}
+              <button type="button" onClick={arreter}>
+                Ne plus me faire rencontrer
+              </button>
+            </p>
+          )}
         </section>
       )}
 
-      {/* LES DEUX FAÇONS D'EN AVOIR PLUS */}
-      {!etat.besoinCarte && (
-        <div className="rd-choix-grille">
-          <div className="rd-choix rd-inviter">
-            <b>👯 Invite un ami</b>
-            <small>
-              Dès qu’il a fait sa carte, vos deux figurines discutent ; ensuite, lance une discussion quand tu veux ({AMIS_PAR_JOUR} par jour).{" "}
-              {etat.amis ? `Déjà ${etat.amis} ami${etat.amis > 1 ? "s" : ""} relié${etat.amis > 1 ? "s" : ""} !` : ""}
-            </small>
-            {invitation ? (
-              <PanneauEnvoi lien={invitation} texte={texteInvitation("")} titre="Ton invitation est prête ✓" />
-            ) : (
-              <button type="button" className="mp-bouton" onClick={inviter}>
-                📲 Inviter un ami
-              </button>
-            )}
-          </div>
-          <BoutonMembre
-            fait={etat.membreAujourdhui}
-            onRencontre={(x) => {
-              setAncienne(null);
-              setNeuve(false);
-              setEtat((e) => (e ? { ...e, rencontre: x, membreAujourdhui: true, personne: false, retiree: false } : e));
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            onAttente={() => {
-              setAttente(true);
-              setEtat((e) => (e ? { ...e, ouvert: true } : e));
-            }}
-          />
-        </div>
-      )}
-      {(attente || etat.ouvert) && !etat.membreAujourdhui && (
-        <p className="rd-file" role="status">
-          🕐 Tu es dans la file : le prochain membre de ta ville qui appuie rencontrera ta figurine. Tu la verras ici.{" "}
-          <button type="button" onClick={arreter}>
-            Ne plus me faire rencontrer
-          </button>
-        </p>
-      )}
-
-      {/* SES CARTES SOUVENIRS : une par rencontre (la toucher la rouvre) */}
+      {/* 🎞️ SES ÉPISODES D'AVANT (leurs cartes souvenirs) : les toucher les rouvre */}
       {etat.avant.length > 0 && (
-        <section className="rd-souvenirs" aria-label="Tes cartes souvenirs">
-          <b>🎞️ Tes cartes souvenirs ({etat.avant.length})</b>
+        <section className="rd-souvenirs" aria-label="Tes épisodes">
+          <b>🎞️ Tes épisodes ({etat.avant.length})</b>
           <div className="rd-souvenirs-liste">
             {etat.avant.map((x) => (
               <button key={x.id} type="button" className="rd-souv" onClick={() => voir(x.id)}>
@@ -1183,5 +1447,130 @@ export const STYLES_RENCONTRE = `
 @keyframes rd-arrive{from{opacity:0;transform:translateY(10px) scale(.97)}}
 @keyframes rd-tape{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
 @media (min-width:860px){.rd{padding:22px 26px}.rd-bulle{max-width:68%}}
-@media (prefers-reduced-motion:reduce){.rd *,.rd-onglet *{animation:none!important}}
+/* ═══ 6 novembre 2026 : L'ÉPISODE — l'affiche, le théâtre en BD, la fin ═══ */
+.rd-vedette{gap:12px}
+.ep-affiche{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;margin:-4px -4px 0;padding:14px 12px 16px;border-radius:24px;text-align:center;overflow:hidden;
+  background:radial-gradient(circle at 50% 38%,rgba(255,214,120,.28),transparent 46%),radial-gradient(rgba(255,255,255,.07) 1.2px,transparent 1.3px) 0 0/9px 9px,linear-gradient(160deg,#3A0E2C,#1A0714)}
+.ep-affiche::before{content:"";position:absolute;inset:0;background:repeating-conic-gradient(from 0deg at 50% 40%,rgba(255,46,154,.09) 0 8deg,transparent 8deg 18deg);pointer-events:none}
+.ep-duo{position:relative;display:flex;align-items:flex-end;justify-content:center;gap:0;width:100%;height:190px;perspective:700px}
+.ep-fig{position:relative;display:block;width:44%;max-width:170px;height:100%}
+.ep-fig > img,.ep-fig > .rs-silhouette{position:absolute;left:50%;bottom:0;box-sizing:border-box;width:auto;height:100%;aspect-ratio:2/3;max-width:100%;translate:-50% 0;object-fit:cover;border-radius:18px;border:3px solid #1D0A17;box-shadow:4px 5px 0 #1D0A17}
+.ep-fig > .rs-silhouette b{font-size:40px}
+.ep-fig.gauche{transform:rotateY(16deg) translateX(8px);animation:ep-souffle 3.2s ease-in-out infinite}
+.ep-fig.droite{transform:rotateY(-16deg) translateX(-8px);animation:ep-souffle 3.2s ease-in-out -1.6s infinite}
+.ep-fig .rs-perso{position:absolute;inset:auto 0 10px;font-size:84px;line-height:1;text-align:center}
+.ep-vs{position:absolute;left:50%;top:44%;z-index:2;transform:translate(-50%,-50%) rotate(-8deg);display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:#F2C46B;color:#2A0F1F;font-size:24px;font-weight:900;box-shadow:0 0 0 4px #2A0F1F,0 10px 22px rgba(0,0,0,.6)}
+.ep-affiche .rd-qui{position:relative;align-items:center}
+.ep-theme{position:relative;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);font-size:13px;font-weight:900;color:#FFF4E6}
+.ep-titre{position:relative;font-size:21px;line-height:1.15;font-weight:900;letter-spacing:-.02em;background:linear-gradient(135deg,#fff,#FFC8E6 55%,#F2C46B);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ep-play{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;margin-top:4px;padding:14px 30px;border:0;border-radius:999px;background:linear-gradient(135deg,#FF2E9A,#FF7A59);color:#fff;font:inherit;font-size:17px;font-weight:900;cursor:pointer;box-shadow:0 14px 30px -10px rgba(255,46,154,1);animation:ep-appel 2.2s ease-in-out infinite}
+.ep-play small{font-size:11px;font-weight:800;opacity:.85}
+.ep-play.revoir{background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.22);animation:none;font-size:15px;padding:11px 22px}
+/* le théâtre : tout l'écran */
+.rs-theatre{--fig:min(43vw,190px);position:fixed;inset:0;z-index:80;display:flex;flex-direction:column;padding:calc(10px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom));box-sizing:border-box;color:#FFF4E6;
+  font-family:var(--font-clikme),Poppins,system-ui,-apple-system,"Segoe UI",sans-serif;
+  background:radial-gradient(60% 40% at 25% 70%,rgba(255,46,154,.22),transparent 70%),radial-gradient(60% 40% at 75% 70%,rgba(242,196,107,.18),transparent 70%),radial-gradient(rgba(255,255,255,.06) 1.3px,transparent 1.4px) 0 0/10px 10px,linear-gradient(180deg,#24091C,#0F040C);
+  animation:rs-ouvre .35s ease-out both}
+.rs-segments{display:flex;gap:3px}
+.rs-segments i{flex:1;height:3px;border-radius:999px;background:rgba(255,255,255,.2)}
+.rs-segments i.fait{background:#FFF4E6}
+.rs-theatre.pause .rs-segments i.en-cours{animation-play-state:paused}
+.rs-segments i.en-cours{background:linear-gradient(90deg,#FFF4E6 50%,rgba(255,255,255,.25) 50%);background-size:200% 100%;animation:rs-remplit 3s linear forwards}
+.rs-haut{display:flex;align-items:center;gap:10px;margin-top:10px}
+.rs-haut b{flex:1;min-width:0;font-size:14px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rs-fermer{flex:none;display:grid;place-items:center;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:16px;cursor:pointer}
+.rs-theatre .rs-scene{position:relative;flex:1;display:block;min-height:0;margin:8px 0 0;padding:0;border:0;border-radius:0;background:none;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
+.rs-theatre .rs-scene::after{display:none}
+.rs-decor{position:absolute;left:4%;right:4%;bottom:6px;height:22px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.6),transparent)}
+.rs-theatre .rs-fig{position:absolute;bottom:14px;z-index:1;display:flex;flex-direction:column;align-items:center;gap:6px;width:var(--fig);transition:transform .35s cubic-bezier(.2,1.4,.4,1),filter .35s,opacity .35s;animation:none}
+.rs-theatre .rs-fig > img,.rs-theatre .rs-fig > .rs-silhouette,.rs-theatre .rs-fig > .rd-clik{display:block;box-sizing:border-box;width:100%;height:calc(var(--fig) * 1.5);object-fit:cover;border-radius:22px;border:3px solid #1D0A17;box-shadow:4px 5px 0 #1D0A17,0 0 0 2px rgba(255,255,255,.12)}
+.rs-theatre .rs-fig .rs-perso{display:grid;place-items:center;box-sizing:border-box;width:100%;height:calc(var(--fig) * 1.5);border-radius:22px;border:3px solid #1D0A17;box-shadow:4px 5px 0 #1D0A17;background:radial-gradient(70% 60% at 50% 40%,#FFE2A8,#F2A93B 62%,#8A4B12);font-size:96px;line-height:1}
+.rs-silhouette{position:relative;display:block;overflow:hidden;background:radial-gradient(70% 60% at 50% 35%,#5A2148,#2A0F1F)}
+.rs-silhouette b{position:absolute;inset:0;display:grid;place-items:center;font-size:56px;font-weight:900;color:#FFC8E6}
+.rs-theatre .rs-fig small{font-size:12px;font-weight:900;color:#D9C3CB}
+.rs-theatre .rs-fig.gauche{left:1%;transform:perspective(700px) rotateY(14deg)}
+.rs-theatre .rs-fig.droite{right:1%;transform:perspective(700px) rotateY(-14deg)}
+.rs-theatre .rs-fig.ecoute{filter:brightness(.62) saturate(.8)}
+.rs-theatre .rs-fig.parle small{color:#F2C46B}
+.rs-theatre .rs-fig.gauche.parle{transform:perspective(700px) rotateY(14deg) scale(1.08);animation:rs-parle-g .5s ease-in-out infinite}
+.rs-theatre .rs-fig.droite.parle{transform:perspective(700px) rotateY(-14deg) scale(1.08);animation:rs-parle-d .5s ease-in-out infinite}
+.rs-theatre .rs-fig.parle.g-rit{animation:rs-rit .16s linear infinite}
+.rs-theatre .rs-fig.parle.g-danse{animation:rs-danse .6s ease-in-out infinite}
+.rs-theatre .rs-fig.parle.g-grimace{animation:rs-grimace .5s ease-in-out infinite}
+.rs-theatre .rs-fig.parle.g-surprise{animation:rs-saute .5s cubic-bezier(.3,1.7,.5,1) 2}
+.rs-theatre .rs-fig.parle.g-applaudit{animation:rs-saute .35s ease-in-out infinite}
+/* la bulle de BD */
+.rs-bulle{position:absolute;bottom:calc(var(--fig) * 1.5 + 64px);z-index:3;max-width:78%;padding:12px 16px 14px;border-radius:24px;background:#FFFDF7;color:#1D0A17;border:3px solid #1D0A17;box-shadow:5px 6px 0 #1D0A17;animation:rs-pop .35s cubic-bezier(.2,1.6,.4,1) both}
+.rs-bulle.gauche{left:3%}
+.rs-bulle.droite{right:3%}
+.rs-bulle::after{content:"";position:absolute;bottom:-21px;width:26px;height:22px;background:#FFFDF7;border:3px solid #1D0A17;border-top:0;clip-path:polygon(0 0,100% 0,30% 100%)}
+.rs-bulle.gauche::after{left:30px;border-right:0}
+.rs-bulle.droite::after{right:30px;border-left:0;clip-path:polygon(0 0,100% 0,70% 100%)}
+.rs-bulle small{display:block;margin-bottom:3px;font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#C2187A}
+.rs-bulle p{margin:0;font-size:18px;line-height:1.32;font-weight:800}
+.rs-reste{visibility:hidden}
+.rs-recit{position:absolute;left:3%;top:4%;z-index:2;max-width:70%;padding:8px 12px;background:#F2C46B;color:#1D0A17;border:3px solid #1D0A17;box-shadow:4px 4px 0 #1D0A17;font-size:16px;line-height:1.2;font-weight:900;transform:rotate(-1.5deg)}
+.rs-recit small{display:block;font-size:10px;letter-spacing:.14em;color:#7A2E55}
+.rs-ono{position:absolute;z-index:4;bottom:calc(var(--fig) * 1.1);font-size:34px;font-weight:900;letter-spacing:.02em;color:#F2C46B;-webkit-text-stroke:2px #1D0A17;paint-order:stroke fill;text-shadow:4px 4px 0 #FF2E9A;animation:rs-ono 1.4s cubic-bezier(.2,1.6,.4,1) both;pointer-events:none}
+.rs-ono.gauche{left:6%;transform:rotate(-12deg)}
+.rs-ono.droite{right:6%;transform:rotate(10deg)}
+.rs-claquette{position:absolute;left:50%;top:36%;z-index:4;transform:translate(-50%,-50%) rotate(-6deg);padding:10px 18px;border-radius:14px;background:#1D0A17;color:#FFF4E6;font-size:26px;font-weight:900;box-shadow:0 0 0 3px #F2C46B;animation:rs-pop .5s cubic-bezier(.2,1.6,.4,1) both}
+.rs-theatre .rs-barre{display:block;margin-top:6px;text-align:center}
+.rs-theatre .rs-barre small{font-size:12px;color:#A88E99}
+.rs-theatre .rs-controles{justify-content:center;margin-top:8px}
+.rs-theatre .rs-controles button{padding:10px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#FFF4E6;font:inherit;font-size:14px;font-weight:900;cursor:pointer}
+/* la fin */
+.rs-fin{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:10px;padding-bottom:8px;overflow-y:auto;overscroll-behavior:contain}
+.rs-fin-mot{font-size:56px;line-height:1;font-weight:900;letter-spacing:.06em;color:#F2C46B;-webkit-text-stroke:2px #1D0A17;paint-order:stroke fill;text-shadow:5px 5px 0 #FF2E9A;animation:rs-pop .6s cubic-bezier(.2,1.6,.4,1) both}
+.rs-fin .cs{flex:none}
+.rs-fin-actions{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;max-width:360px}
+.rs-fin-actions .og-go{width:100%;box-sizing:border-box;border:0;font:inherit;font-size:16px;font-weight:900;cursor:pointer}
+.rs-revoir{border:0;background:none;color:#D9C3CB;font:inherit;font-size:13.5px;font-weight:800;text-decoration:underline;cursor:pointer}
+/* ce qu'il propose (chez un commerçant), avant / après */
+.ra-proposition{display:flex;flex-direction:column;gap:6px;width:100%;max-width:420px;box-sizing:border-box;padding:14px 16px;border-radius:20px;background:linear-gradient(160deg,rgba(242,196,107,.18),rgba(255,46,154,.1));border:1.5px solid rgba(242,196,107,.55)}
+.ra-proposition > small{font-size:10.5px;font-weight:900;letter-spacing:.12em;color:#F2C46B}
+.ra-proposition > b{font-size:19px;line-height:1.2;font-weight:900}
+.ra-proposition > p{margin:0;font-size:14px;line-height:1.45;color:#E8D3DC}
+.ra-proposition.grand{animation:rs-pop .6s .15s cubic-bezier(.2,1.4,.4,1) both}
+.ra-avap{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.ra-avap span{position:relative;display:block;border-radius:16px;overflow:hidden;background:#2A0F1F}
+.ra-avap img{display:block;width:100%;aspect-ratio:2/3;object-fit:cover}
+.ra-avap i{position:absolute;left:8px;bottom:8px;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.6);font-style:normal;font-size:11px;font-weight:900}
+.ra-avap .apres{box-shadow:0 0 0 2.5px #F2C46B,0 0 26px rgba(242,196,107,.55);animation:rs-pop .7s cubic-bezier(.2,1.4,.4,1) both}
+.ra-avap .apres i{background:#F2C46B;color:#2A0F1F}
+.ra-relook-cours{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.25);font-size:13.5px;font-weight:800;color:#FFE7B8}
+.ra-relook-cours i{flex:none;width:16px;height:16px;border-radius:50%;border:2.5px solid rgba(242,196,107,.3);border-top-color:#F2C46B;animation:rs-tourne .9s linear infinite}
+.ra-action{margin-top:4px;text-align:center}
+.ra-bd{border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);padding:0 12px}
+.ra-bd summary{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:13px 2px;list-style:none;cursor:pointer;font-size:15px;font-weight:900}
+.ra-bd summary::-webkit-details-marker{display:none}
+.ra-bd summary small{font-size:12.5px;font-weight:700;color:#A88E99}
+.ra-bd[open]{padding-bottom:12px}
+.rd-fil.bd .rd-bulle{background:#FFFDF7;color:#1D0A17;border:2.5px solid #1D0A17;box-shadow:3px 4px 0 #1D0A17}
+.rd-fil.bd li.moi .rd-bulle{background:#FFE3F1}
+.rd-fil.bd .rd-bulle small{color:#C2187A}
+.rd-fil.bd .rd-bulle p{color:#1D0A17;font-weight:700}
+.rd-fil.bd .rd-geste{color:#7A4D63}
+/* d'autres épisodes */
+.rd-autres{display:flex;flex-direction:column;gap:12px}
+.rd-autres > h3{margin:6px 0 0;font-size:20px;font-weight:900}
+.rd-amis li.pris{padding:4px;margin:-4px;border-radius:14px;background:rgba(255,46,154,.12)}
+.rd-themes{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:18px;background:rgba(0,0,0,.22);animation:rd-arrive .35s cubic-bezier(.2,1.3,.4,1) both}
+.rd-themes > b{font-size:15px;font-weight:900}
+.rd-themes-liste{display:flex;flex-wrap:wrap;gap:6px}
+.rd-themes-liste button{padding:8px 12px;border-radius:999px;border:1.5px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#FFF4E6;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+.rd-themes-liste button.pris{border-color:#FF2E9A;background:rgba(255,46,154,.22)}
+.rd-lancer{border:0;font:inherit;font-size:16px;font-weight:900;cursor:pointer}
+.rd-lancer:disabled{opacity:.7}
+@keyframes ep-souffle{0%,100%{translate:0 0}50%{translate:0 -5px}}
+@keyframes ep-appel{0%,100%{box-shadow:0 14px 30px -10px rgba(255,46,154,1)}50%{box-shadow:0 0 0 8px rgba(255,46,154,.22),0 14px 30px -10px rgba(255,46,154,1)}}
+@keyframes rs-ouvre{from{opacity:0;transform:scale(1.04)}}
+@keyframes rs-remplit{from{background-position:100% 0}to{background-position:0 0}}
+@keyframes rs-pop{from{opacity:0;transform:scale(.6)}}
+@keyframes rs-ono{0%{opacity:0;scale:.3}20%{opacity:1;scale:1.15}35%{scale:1}80%{opacity:1}100%{opacity:0;scale:1.05}}
+@keyframes rs-parle-g{0%,100%{translate:0 0}50%{translate:0 -10px}}
+@keyframes rs-parle-d{0%,100%{translate:0 0}50%{translate:0 -10px}}
+@keyframes rs-tourne{to{transform:rotate(360deg)}}
+@media (min-width:860px){.rs-theatre{padding-left:max(24px,calc(50vw - 420px));padding-right:max(24px,calc(50vw - 420px))}.rs-bulle p{font-size:20px}}
+@media (prefers-reduced-motion:reduce){.rd *,.rd-onglet *,.rs-theatre *{animation:none!important}}
 `;

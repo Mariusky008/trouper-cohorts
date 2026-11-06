@@ -118,11 +118,29 @@ export type RencontreVue = {
   par: "ia" | "local";
   /** Une rencontre avec un membre de sa ville, qu'il ne connaissait pas (« Rencontrer un membre »). */
   membre?: boolean;
+  /** 🎬 Son scénario (`scenarios.ts`) : le thème choisi avec un ami (« 💥 La dispute »), l'épisode d'un métier (« ✂️ Le style qu'il te faut »). */
+  scenario?: { emoji: string; nom: string };
+  /** Chez un commerçant : ce que sa figurine a proposé, et pourquoi ; le lien vers SA page (l'essai, la carte). */
+  proposition?: { titre: string; pourquoi: string };
+  action?: { texte: string; lien: string };
+  /** ✨ Sa figurine peut être relookée d'après la proposition (le moteur d'image) ; et la voici, relookée. */
+  transformable?: boolean;
+  transformation?: string;
 };
 
 /** 🎞️ UNE CARTE SOUVENIR (une rencontre) : la date, avec qui, son titre, la figurine de l'autre. */
 /** `emoji` : un personnage de ClikMe sans figurine (son emoji à la place). */
 export type Souvenir = { id: string; jour: string; avec: string; titre: string; image: string; figurine: boolean; emoji?: string };
+
+/** « de » devant un nom de commerce : « du Salon des Boucles », « des Halles », « de la Table », « de l'Atelier », « de Chez Lili ». */
+export function deNom(nom: string): string {
+  const n = nom.trim();
+  if (/^le\s/i.test(n)) return `du ${n.slice(3)}`;
+  if (/^les\s/i.test(n)) return `des ${n.slice(4)}`;
+  if (/^la\s/i.test(n)) return `de la ${n.slice(3)}`;
+  if (/^l[’']/i.test(n)) return `de l’${n.slice(2)}`;
+  return /^[aeiouyhâéèêîôû]/i.test(n) ? `d’${n}` : `de ${n}`;
+}
 
 export const verdictValide = (x: unknown): Verdict | null => (VERDICTS.some((v) => v.cle === x) ? (x as Verdict) : null);
 export const emotionValide = (x: unknown): Emotion | null => (EMOTIONS.includes(x as Emotion) ? (x as Emotion) : null);

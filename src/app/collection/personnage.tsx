@@ -32,7 +32,7 @@ import {
 import { PanneauEnvoi } from "./ma-figurine";
 import { FigurineGuide, Guide, GuideDit, useVoixPablito, type Visage } from "./guide";
 import { SONS_PABLITO } from "@/lib/direct/guide";
-import { CeQueTaFigurineSait } from "./connaitre";
+import { CeQueTaFigurineSait, QuestionDuJour } from "./connaitre";
 
 /** Le guide pose les questions : un visage différent à chaque fois (ses vraies expressions). */
 const VISAGES_QUIZ: Visage[] = ["joie", "neutre", "euphorie"];
@@ -549,6 +549,9 @@ export function MonPersonnage({
           )}
         </div>
       </div>
+      {/* ❓ LA QUESTION DU JOUR (lot 2 ; ici depuis le 6 novembre 2026 : « Rencontres » ne raconte plus que l'épisode) :
+          un toucher ou trois mots ; sa figurine s'en souviendra */}
+      <QuestionDuJour />
       {/* 🧠 CE QUE TA FIGURINE SAIT DE TOI (lot 2) : il voit tout, il efface */}
       <CeQueTaFigurineSait />
     </div>
