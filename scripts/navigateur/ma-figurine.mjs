@@ -3,7 +3,8 @@
 //
 // Hugo a 1 figurine : le guide (la figurine du patron de ClikMe) l'accueille (le menu en bas, cinq onglets — « Créer » au milieu,
 // depuis qu'on a resserré sur le mème le 7 novembre 2026), la quête « Crée ta figurine » ; sa figurine du mois, méritée dans
-// « Rencontres », devient un LOOK qui parle dans ses mèmes. Léa passe chez le Comptoir depuis plus d'un an (et à l'Atelier) : plus
+// « Rencontres », devient un LOOK qui parle dans ses mèmes ; 🎲 « Surprends-moi ! » : ClikMe écrit son mème d'après sa carte de
+// personnage (une fausse IA, dans le faux Supabase), rien n'est dit avant « C'est moi ✓ ». Léa passe chez le Comptoir depuis plus d'un an (et à l'Atelier) : plus
 // de 10 figurines. Elle envoie sa photo (il faut cocher « C'est bien moi ») ; « on fabrique ta figurine ». ClikMe pose
 // ses deux images (ici à la main, dans le faux Supabase : la route admin, elle, refuse qui n'est pas admin). Elle
 // écrit un texte, le fait lire par une voix (la joie sur son visage), et en fait SON MÈME : une vidéo fabriquée dans
@@ -365,9 +366,60 @@ await hugo.waitForSelector(".tf-moi .tf-reponse", { timeout: 30000 });
 ok((await texte(hugo, ".tf-reponse")).includes("Tu réponds à Léa") && (await texte(hugo, ".tf-reponse")).includes("Coucou Camille"), "« ↩️ Tu réponds à Léa » : son mème, et ses mots");
 // 🎁 SON PREMIER MÈME, DÉJÀ ÉCRIT ; ✨ LES MÈMES PRÊTS
 ok((await hugo.locator(".tf-texte textarea").inputValue()).startsWith("Salut ! C’est moi… en figurine") && (await hugo.locator(".tf-premier").count()) === 0, "son premier mème est déjà écrit (le conseil se tait quand il répond)");
-const prets = await hugo.locator(".tf-prets button").allInnerTexts();
+const prets = await hugo.locator(".tf-prets button:not(.tf-surprends)").allInnerTexts();
 ok(prets.length >= 8 && prets[0].includes("Le mème du jour") && prets.some((x) => x.includes("Joyeux anniversaire")) && prets.some((x) => x.includes("Bravo")), `les mèmes prêts : le mème du jour d'abord, puis les occasions (${prets.slice(0, 4).join(" · ")}…)`);
 await hugo.locator(".tf-quelle-voix button", { hasText: "voix d’homme" }).click();
+
+// ═══ 🎲 « SURPRENDS-MOI ! » : CLIKME ÉCRIT SON MÈME (d'après sa carte de personnage) ; rien n'est dit sans lui ═══
+ok((await hugo.locator(".tf-prets button").first().innerText()).includes("Surprends-moi"), "« 🎲 Surprends-moi ! » en tête des mèmes prêts");
+const avantSurprise = await hugo.locator(".tf-texte textarea").inputValue();
+const voixDites = [];
+hugo.on("request", (r) => r.method() === "POST" && r.url().endsWith("/api/direct/ma-figurine") && /"action":"voix"/.test(r.postData() ?? "") && voixDites.push(r.postData()));
+await hugo.locator(".tf-surprends").click();
+await hugo.waitForSelector(".tf-surprise .tf-surprise-texte", { timeout: 20000 });
+const surprise1 = (await texte(hugo, ".tf-surprise-texte")).replace(/^« | »$/g, "");
+ok(surprise1.length > 10 && (await hugo.locator(".tf-surprise-carte").count()) === 1 && (await hugo.locator('.tf-surprise-carte[href="#personnage"]').count()) === 1, `sans carte : une surprise pour tous, et « 🃏 Fais ta carte de personnage » (${surprise1})`);
+await hugo.waitForTimeout(400);
+ok((await hugo.locator(".tf-texte textarea").inputValue()) === avantSurprise && voixDites.length === 0, "il la lit d'abord : rien n'est écrit ni dit tant qu'il ne l'a pas choisie");
+await hugo.locator(".tf-surprise-encore").click();
+await hugo.waitForFunction((t) => (document.querySelector(".tf-surprise-texte")?.textContent ?? "").replace(/^« | »$/g, "") !== t && !document.querySelector(".tf-surprise-encore")?.disabled, surprise1, { timeout: 20000 });
+const surprise2 = (await texte(hugo, ".tf-surprise-texte")).replace(/^« | »$/g, "");
+ok(surprise2 && surprise2 !== surprise1, `« 🎲 Encore » : une autre (${surprise2})`);
+await hugo.screenshot({ path: `${D}/ma-figurine-3a-surprise.png` });
+// sa carte de personnage : ce qu'il aime (les animaux), sa façon de parler — l'IA écrit d'après elle
+await fetch(`${STOCK}/figurines-clients/${HUGO.id}/personnage.json`, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    reponses: { elan: "a", ton: "a", jeu: "a", sort: "b", tete: "b", gout: "b", rythme: "b" },
+    gouts: ["animaux", "musique"],
+    phrase: "On n’est jamais trop curieux",
+    fiche: { titre: "La Tornade qui fait rire", portrait: "Fonce d’abord.", pouvoir: "Ne jamais lâcher", faiblesse: "Le fromage", facon: "Des phrases courtes et directes, en forme le soir." },
+    par: "local",
+    le: new Date().toISOString(),
+  }),
+});
+await hugo.locator(".tf-surprise-encore").click();
+await hugo.waitForFunction(() => (document.querySelector(".tf-surprise small")?.textContent ?? "").includes("d’après ta carte"), null, { timeout: 20000 });
+const surprise3 = (await texte(hugo, ".tf-surprise-texte")).replace(/^« | »$/g, "");
+const consignes = await (await fetch(F.replace("/rest/v1", "/__ia"))).json();
+const consigne = consignes.at(-1) ?? "";
+ok(surprise3.includes("Les chiens du quartier") && (await hugo.locator(".tf-surprise-carte").count()) === 0, `avec sa carte : l'IA l'écrit d'après lui (les animaux) — « ${surprise3} »`);
+ok(/animaux/.test(consigne) && /Agis tout de suite|agis tout de suite/.test(consigne) && /On n’est jamais trop curieux/.test(consigne) && !/Hugo/.test(consigne) && /Ne devine JAMAIS le genre/.test(consigne) && /l'alcool/.test(consigne), "la consigne : sa carte (ses goûts, ses réponses, sa phrase), jamais son prénom ; ni genre deviné, ni alcool");
+// « C'est moi ✓ » : le texte est écrit, son visage choisi, et sa figurine le dit
+await hugo.locator(".tf-surprise-oui").click();
+await hugo.waitForSelector(".tf-envoyer", { timeout: 30000 });
+ok((await hugo.locator(".tf-texte textarea").inputValue()) === surprise3 && (await hugo.locator(".tf-surprise").count()) === 0 && voixDites.length === 1, "« C’est moi ✓ » : le texte est à lui, et sa figurine le dit (sa voix, une seule fois)");
+// l'IA dérape (de l'alcool) : écartée, une réplique de la réserve à la place ; et un plafond par jour
+const derape = await api(hugo, { action: "surprise", sauf: ["Essai : propose un apéro"] });
+ok(derape.statut === 200 && derape.par === "local" && derape.carte === true && !/ap[ée]ro/i.test(derape.texte), `l'IA parle d'alcool : écartée, la réserve à la place (« ${derape.texte} »)`);
+const jourS = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(new Date());
+const compteS = await (await fetch(`${STOCK}/figurines-clients/${HUGO.id}/surprises.json`)).json().catch(() => ({}));
+ok(compteS.jour === jourS && compteS.n === 4 && compteS.ia === 2, `ses tirages du jour sont comptés (${JSON.stringify(compteS)})`);
+await fetch(`${STOCK}/figurines-clients/${HUGO.id}/surprises.json`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jour: jourS, n: 40, ia: 10 }) });
+ok((await api(hugo, { action: "surprise" })).statut === 429, "assez pour aujourd'hui : 40 surprises par jour au plus");
+await fetch(`${STOCK}/figurines-clients/${HUGO.id}/surprises.json`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jour: jourS, n: 0, ia: 0 }) });
+ok((await debordement(hugo)) <= 0 && !/exemple/i.test(await texte(hugo, "#o-figurine")), "le studio ne déborde pas, sans le mot interdit");
 await hugo.locator(".tf-prets button", { hasText: "Bravo" }).click();
 ok((await hugo.locator(".tf-texte textarea").inputValue()).startsWith("Bravo ! Quelle classe."), "un toucher sur « Bravo » : le texte est écrit, et elle le dit");
 await hugo.waitForSelector(".tf-envoyer", { timeout: 30000 });

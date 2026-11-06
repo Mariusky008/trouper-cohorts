@@ -602,6 +602,14 @@ async function stockage(req, res, url) {
 
 /** Les e-mails « envoyés » par le faux Resend (les plus récents à la fin). */
 const courriels = [];
+const consignesIA = [];
+// 🎲 LES MÈMES « SURPRENDS-MOI ! » DE LA FAUSSE IA : le premier pas encore dans la consigne (« déjà proposés ») ; un goût
+// pour les animaux, le sien ; et un qui parle d'alcool quand on le lui souffle (l'essai vérifie qu'il est écarté)
+const MEMES_IA = [
+  { texte: "Les chiens du quartier me saluent tous. Les gens, beaucoup moins.", sentiment: "rire", danse: false, si: "animaux" },
+  { texte: "J’ai demandé un conseil à ma figurine. Elle a ri. Je le prends bien.", sentiment: "grimace", danse: false },
+  { texte: "Aujourd’hui, mon énergie est à cent pour cent. Demain, on verra.", sentiment: "euphorie", danse: true },
+];
 
 http
   .createServer(async (req, res) => {
@@ -622,6 +630,18 @@ http
         res.writeHead(200, { "content-type": "audio/mpeg" });
         return res.end(fs.readFileSync(new URL("./fixtures/voix-essai.mp3", import.meta.url)));
       }
+      // UNE FAUSSE IA DE TEXTE (`OPENAI_MEME_BASE_URL=…/openai`) : « Surprends-moi ! » — la consigne est gardée (que l'essai
+      // la lise dans `/__ia`), et le mème rendu suit ce qu'elle contient
+      if (url.pathname === "/openai/v1/chat/completions" && req.method === "POST") {
+        const q = JSON.parse((await corps(req)).toString() || "{}");
+        const consigne = String(q.messages?.[0]?.content ?? "");
+        consignesIA.push(consigne);
+        const m = /propose un apéro/.test(consigne)
+          ? { texte: "Ce soir, apéro chez moi : tout le monde est invité !", sentiment: "euphorie", danse: true }
+          : MEMES_IA.find((x) => !consigne.includes(x.texte) && (!x.si || consigne.includes(x.si))) ?? MEMES_IA[1];
+        return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ texte: m.texte, sentiment: m.sentiment, danse: m.danse }) } }] });
+      }
+      if (url.pathname === "/__ia") return repondre(res, 200, consignesIA);
       // UN FAUX RESEND (`RESEND_BASE_URL=…/resend`) : un e-mail « envoyé » est gardé ici (le code de « Ma figurine »,
       // que l'essai lit dans `/__courriels`) — rien ne part
       if (url.pathname === "/resend/emails" && req.method === "POST") {

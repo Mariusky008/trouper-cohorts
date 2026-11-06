@@ -54,7 +54,7 @@ jobs:
           src/lib/direct/guide.ts src/lib/direct/guide-serveur.ts src/app/api/direct/guide
           src/lib/direct/etapes.ts src/lib/direct/etapes-serveur.ts src/lib/direct/reseau.ts src/lib/direct/ressort.ts src/lib/direct/journal-serveur.ts
           src/lib/direct/connaitre.ts src/lib/direct/connaitre-serveur.ts src/app/api/direct/connaitre
-          src/lib/direct/figurine-du-mois.ts src/lib/direct/figurine-du-mois-serveur.ts src/lib/direct/musique-danse.ts src/lib/direct/scenarios.ts src/lib/direct/meme.ts src/lib/direct/memes-prets.ts
+          src/lib/direct/figurine-du-mois.ts src/lib/direct/figurine-du-mois-serveur.ts src/lib/direct/musique-danse.ts src/lib/direct/scenarios.ts src/lib/direct/meme.ts src/lib/direct/memes-prets.ts src/lib/direct/meme-surprise.ts src/lib/direct/meme-surprise-serveur.ts
           src/lib/direct/memes-commerces.ts src/lib/direct/memes-commerces-serveur.ts src/app/meme src/app/api/direct/memes-commerces src/app/api/site-internet/pro/meme src/app/autour-de-moi/assistante/meme-comptoir.tsx
 
   essais-sql:
@@ -101,6 +101,9 @@ jobs:
       # « Retrouver ma figurine » : le code part par e-mail ; le faux Resend est dans le faux Supabase (rien ne part).
       RESEND_API_KEY: faux
       RESEND_BASE_URL: http://127.0.0.1:54321/resend
+      # « 🎲 Surprends-moi ! » : le mème écrit par l'IA. La fausse IA est dans le faux Supabase ; rien ne part chez OpenAI.
+      OPENAI_MEME_API_KEY: faux
+      OPENAI_MEME_BASE_URL: http://127.0.0.1:54321/openai
       NEXT_TELEMETRY_DISABLED: "1"
       ESSAI_CAPTURES: ${{ github.workspace }}/captures
     steps:

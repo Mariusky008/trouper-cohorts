@@ -38,6 +38,7 @@ import { Guide, GuideDit, OngletVisible, STYLES_GUIDE, useVoixPablito } from "./
 import { lancerMusiqueDanse } from "@/lib/direct/musique-danse";
 import { fabriquerMeme, memePossible } from "@/lib/direct/meme";
 import { PREMIER_MEME, memesDuMoment, type MemePret } from "@/lib/direct/memes-prets";
+import type { Surprise } from "@/lib/direct/meme-surprise";
 import { createClient } from "@/lib/supabase/client";
 import { SONS_PABLITO } from "@/lib/direct/guide";
 import { ETAPES, prochaineEtape } from "@/lib/direct/etapes";
@@ -257,6 +258,10 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   // 💬 LE MÈME AUQUEL IL RÉPOND (en duo) ; et les mèmes prêts du moment
   const [reponse, setReponse] = useState<MemeARepondre | null>(null);
   const [prets] = useState<MemePret[]>(() => memesDuMoment());
+  // 🎲 « SURPRENDS-MOI ! » : ClikMe écrit son mème d'après sa carte de personnage ; il le lit, puis le choisit (ou un autre)
+  const [surprise, setSurprise] = useState<Surprise | null>(null);
+  const [surpriseCharge, setSurpriseCharge] = useState(false);
+  const surprisesVues = useRef<string[]>([]);
   useEffect(() => {
     const id = idARepondre();
     if (!id) return;
@@ -551,6 +556,28 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
     if (voix) ecouterTexte(m.texte);
   }
 
+  /** 🎲 Un mème écrit par ClikMe : rien n'est dit tant qu'il ne l'a pas choisi (« C'est moi ✓ »). */
+  async function surprendreMoi() {
+    if (surpriseCharge) return;
+    setSurpriseCharge(true);
+    setErreur("");
+    try {
+      const j = (await demander({ action: "surprise", sauf: surprisesVues.current })) as Reponse & Partial<Surprise>;
+      if (!j.texte) throw new Error("Pas de surprise cette fois. Réessaie.");
+      surprisesVues.current = [...surprisesVues.current, j.texte].slice(-20);
+      setSurprise({ texte: j.texte, sentiment: j.sentiment ?? "joie", danse: Boolean(j.danse), par: j.par ?? "local", carte: Boolean(j.carte) });
+    } catch (e) {
+      setErreur((e as Error).message);
+    } finally {
+      setSurpriseCharge(false);
+    }
+  }
+  function cEstMoi() {
+    if (!surprise) return;
+    choisirPret({ cle: "surprise", emoji: "🎲", nom: "Surprends-moi", texte: surprise.texte, sentiment: surprise.sentiment, danse: surprise.danse });
+    setSurprise(null);
+  }
+
   /** Le message (sa voix) : son lien. Déjà parti avec les mêmes réglages : le même. */
   async function leMessage(s: Son): Promise<{ lien: string; id: string }> {
     const cle = cleEnvoi(s);
@@ -831,12 +858,50 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
           <>
             {/* ✨ LES MÈMES PRÊTS : un toucher, et elle le dit */}
             <div className="tf-prets" role="group" aria-label="Des mèmes prêts à partir">
+              <button type="button" className={`tf-surprends${surpriseCharge ? " tourne" : ""}`} onClick={surprendreMoi} aria-busy={surpriseCharge}>
+                <span aria-hidden="true">🎲</span> Surprends-moi !
+              </button>
               {prets.map((m) => (
-                <button key={m.cle} type="button" className={texte === m.texte ? "pris" : ""} onClick={() => choisirPret(m)}>
+                <button key={m.cle} type="button" className={`${m.cle === "du-jour" ? "du-jour" : ""}${texte === m.texte ? " pris" : ""}`.trim() || undefined} onClick={() => choisirPret(m)}>
                   <span aria-hidden="true">{m.emoji}</span> {m.nom}
                 </button>
               ))}
             </div>
+            {/* 🎲 CE QUE CLIKME A ÉCRIT POUR LUI : il le lit ; sa figurine ne le dit que s'il le choisit */}
+            {(surprise || surpriseCharge) && (
+              <div className="tf-surprise" role="status" aria-live="polite">
+                {!surprise ? (
+                  <p className="tf-surprise-attente">
+                    <span aria-hidden="true">🎲</span> ClikMe t’écrit un mème…
+                  </p>
+                ) : (
+                  <>
+                    <small>🎲 ClikMe l’a écrit pour toi{surprise.carte ? ", d’après ta carte" : ""}</small>
+                    <p className="tf-surprise-texte">« {surprise.texte} »</p>
+                    <span className="tf-surprise-humeur">
+                      {sentimentDe(surprise.sentiment)?.emoji} {sentimentDe(surprise.sentiment)?.court}
+                      {surprise.danse ? " · 🕺 elle danse" : ""}
+                    </span>
+                    <span className="tf-surprise-boutons">
+                      <button type="button" className="tf-surprise-encore" disabled={surpriseCharge} onClick={surprendreMoi}>
+                        {surpriseCharge ? "🎲 …" : "🎲 Encore"}
+                      </button>
+                      <button type="button" className="tf-surprise-oui" disabled={surpriseCharge} onClick={cEstMoi}>
+                        C’est moi ✓
+                      </button>
+                    </span>
+                    {!surprise.carte && (
+                      <a className="tf-surprise-carte" href="#personnage">
+                        🃏 Fais ta carte de personnage : tes surprises te ressembleront
+                      </a>
+                    )}
+                    <button type="button" className="tf-surprise-fermer" aria-label="Fermer" onClick={() => setSurprise(null)}>
+                      ✕
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
             {texte === PREMIER_MEME && !reponse && <p className="tf-premier">🎁 Ton premier mème est déjà écrit : {voix ? "écoute-le, et partage-le !" : "choisis sa voix, écoute, partage !"}</p>}
             <label className="tf-texte">
               <textarea
@@ -1580,7 +1645,24 @@ export const STYLES_MA_FIGURINE =
 .tf-prets{display:flex;gap:6px;margin:0 -16px;padding:2px 16px 6px;overflow-x:auto;scrollbar-width:none}
 .tf-prets::-webkit-scrollbar{display:none}
 .tf-prets button{flex:none;display:inline-flex;align-items:center;gap:5px;padding:8px 13px;border-radius:999px;border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#FFF4E6;font:inherit;font-size:13px;font-weight:800;white-space:nowrap;cursor:pointer}
-.tf-prets button:first-child{border-color:rgba(242,196,107,.7);background:rgba(242,196,107,.14)}
+.tf-prets button.du-jour{border-color:rgba(242,196,107,.7);background:rgba(242,196,107,.14)}
+.tf-prets .tf-surprends{border-color:transparent;background:linear-gradient(135deg,#FF2E9A,#FF7A59);color:#fff;font-weight:900;box-shadow:0 8px 18px -10px rgba(255,46,154,.9)}
+.tf-prets .tf-surprends.tourne span{display:inline-block;animation:tf-de .6s linear infinite}
+@keyframes tf-de{to{transform:rotate(360deg)}}
+.tf-surprise{position:relative;display:flex;flex-direction:column;gap:8px;padding:14px 16px 14px;border-radius:20px;background:radial-gradient(90% 70% at 50% 0%,rgba(255,46,154,.22),transparent 70%),rgba(255,255,255,.06);border:1.5px solid rgba(255,46,154,.45)}
+.tf-surprise small{padding-right:28px;font-size:12px;font-weight:800;letter-spacing:.02em;color:#F7B9D6}
+.tf-surprise-texte{margin:0;font-size:18px;font-weight:900;line-height:1.3;color:#FFF4E6}
+.tf-surprise-humeur{font-size:12.5px;color:#D9C3CB}
+.tf-surprise-attente{margin:0;font-size:14.5px;font-weight:800;color:#F7B9D6}
+.tf-surprise-attente span{display:inline-block;animation:tf-de .6s linear infinite}
+.tf-surprise-boutons{display:flex;gap:8px}
+.tf-surprise-boutons button{flex:1;padding:11px 12px;border-radius:999px;font:inherit;font-size:14.5px;font-weight:900;cursor:pointer}
+.tf-surprise-encore{border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#FFF4E6}
+.tf-surprise-oui{border:0;background:linear-gradient(135deg,#3DE2A6,#21B98A);color:#0B2A20}
+.tf-surprise-boutons button:disabled{opacity:.6;cursor:default}
+.tf-surprise-carte{font-size:12.5px;font-weight:800;color:#F2C46B;text-decoration:none}
+.tf-surprise-fermer{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:0;background:rgba(0,0,0,.25);color:#FFF4E6;font:inherit;font-size:13px;cursor:pointer}
+@media (prefers-reduced-motion:reduce){.tf-prets .tf-surprends.tourne span,.tf-surprise-attente span{animation:none}}
 .tf-prets button.pris{border-color:#FF2E9A;background:rgba(255,46,154,.22)}
 .tf-premier{margin:0;padding:8px 12px;border-radius:14px;background:rgba(127,240,196,.1);border:1px solid rgba(127,240,196,.35);font-size:13px;font-weight:700;color:#BFF7E2}
 @keyframes tf-tourne{to{transform:rotate(360deg)}}
