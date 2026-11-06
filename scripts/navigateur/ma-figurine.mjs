@@ -198,6 +198,8 @@ await hugo.screenshot({ path: `${D}/ma-figurine-0d-mois-prete.png`, fullPage: tr
 // 🎭 « FAIS-LA PARLER » : elle devient un LOOK du studio (plus d'album : ses figurines du mois servent à faire des mèmes)
 await hugo.locator("#o-rencontre .fm .fm-parler").click();
 await hugo.waitForFunction(() => document.querySelector(".tf-looks button.pris")?.textContent?.match(/[A-Z]/) && !document.querySelector(".tf-looks button.pris img")?.src.includes("neutre-essai"), null, { timeout: 30000 });
+// (l'onglet suit l'adresse : un instant après)
+await hugo.waitForFunction(() => location.hash === "#figurine" && document.querySelector(".mc-nav button.pris")?.textContent?.includes("Créer"), null, { timeout: 15000 }).catch(() => null);
 const hero = await hugo.locator(".tf-moi .tf-hero img").first().getAttribute("src");
 ok(/#figurine$/.test(hugo.url()) && (await hugo.locator(".mc-nav button.pris").innerText()).includes("Créer"), "« Fais-la parler » ouvre « Créer »");
 ok(
