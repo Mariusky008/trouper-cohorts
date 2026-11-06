@@ -4,15 +4,17 @@
  * 🎭 L'ÉCRAN DE CLIKME (`/collection`) — en ONGLETS depuis le 5 novembre 2026 ; RESSERRÉ SUR LE MÈME le 7 novembre 2026
  * (le patron : « le concept part un peu dans tous les sens » ; « la page album, on a du mal à voir à quoi elle sert » ;
  * « “où les gagner”, ce n'est pas clair du tout »). Une seule question pour chaque écran : est-ce qu'il aide à faire un
- * mème, ou donne une raison d'en envoyer un ? Trois onglets, un menu en bas :
- *   💬 RENCONTRES — l'épisode du jour (`rencontre.tsx`), sa figurine du mois qui s'y mérite (`figurine-du-mois.tsx`), et,
- *      à côté, « Mon personnage » (sa carte : c'est elle qui fait parler ses épisodes, `personnage.tsx`) ;
+ * mème, ou donne une raison d'en envoyer un ? Le menu en bas, comme les applis de vidéos que tout le monde connaît
+ * (l'étape 2, le même jour : « Découvrir » est arrivé) :
+ *   🔥 DÉCOUVRIR — les mèmes du jour des commerçants de sa ville (`decouvrir.tsx`) ;
+ *   💬 RENCONTRES — l'épisode du jour (`rencontre.tsx`), et sa figurine du mois qui s'y mérite (`figurine-du-mois.tsx`) ;
  *   🎭 CRÉER, au milieu, en gros — sa figurine qui parle (`ma-figurine.tsx`) : ses looks, ses mèmes prêts, le duo ;
- *   📥 MES MÈMES — ce que ses mèmes deviennent : vus, les réponses en duo, ceux qu'il a reçus (`mes-memes.tsx`).
+ *   📥 MES MÈMES — ce que ses mèmes deviennent : vus, les réponses en duo, ceux qu'il a reçus (`mes-memes.tsx`) ;
+ *   🃏 MOI — sa carte de personnage (c'est elle qui fait parler ses épisodes), la question du jour (`personnage.tsx`).
  * « Ce mois-ci » et l'album des commerçants sont partis de l'appli (les cartes de fidélité commencées restent sur la page
  * de chaque commerçant, `/f/<slug>`) ; ses figurines du mois sont devenues des LOOKS de son studio.
- * Chaque onglet a son adresse (`#figurine`, `#rencontre`, `#personnage`, `#memes`), et les anciens liens retombent sur
- * le bon (`#creer` → « Créer », `#mois` → sa figurine du mois, dans « Rencontres », `#album` → « Mes mèmes »).
+ * Chaque onglet a son adresse (`#decouvrir`, `#rencontre`, `#figurine`, `#memes`, `#personnage`), et les anciens liens
+ * retombent sur le bon (`#creer` → « Créer », `#mois` → sa figurine du mois, dans « Rencontres », `#album` → « Mes mèmes »).
  * Un onglet ne se charge qu'à sa première ouverture, puis il reste là.
  */
 import Link from "next/link";
@@ -24,20 +26,23 @@ import { RencontreDuJour, STYLES_RENCONTRE } from "./rencontre";
 import { STYLES_CONNAITRE } from "./connaitre";
 import { MaFigurineDuMois, STYLES_FIGURINE_DU_MOIS } from "./figurine-du-mois";
 import { MesMemes, STYLES_MES_MEMES } from "./mes-memes";
+import { Decouvrir, STYLES_DECOUVRIR } from "./decouvrir";
 import type { EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
-/** Les vues : « personnage » vit dans l'onglet « Rencontres » (à côté de l'épisode du jour). */
-type Vue = "figurine" | "rencontre" | "personnage" | "memes";
-/** Le menu du bas : trois boutons, « Créer » au milieu. */
+/** Le menu du bas : cinq boutons, « Créer » au milieu. */
 const MENU = [
+  { cle: "decouvrir", nom: "Découvrir" },
   { cle: "rencontre", nom: "Rencontres" },
   { cle: "figurine", nom: "Créer" },
   { cle: "memes", nom: "Mes mèmes" },
+  { cle: "personnage", nom: "Moi" },
 ] as const;
 type Onglet = (typeof MENU)[number]["cle"];
-const ongletDe = (v: Vue): Onglet => (v === "personnage" ? "rencontre" : v);
+type Vue = Onglet;
 /** Les adresses qui mènent à une vue (et, pour certaines, à un endroit dedans). */
 const ALIAS: Record<string, Vue> = {
+  decouvrir: "decouvrir",
+  moi: "personnage",
   figurine: "figurine",
   creer: "figurine",
   personnage: "personnage",
@@ -137,15 +142,15 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
     return () => window.removeEventListener("hashchange", lire);
   }, [aller]);
 
-  const onglet = ongletDe(vue);
+  const onglet = vue;
   const compte = charge ? Boolean(etat?.compte) : null;
   const prete = etat?.etape === "prete";
   // ce qui attend dans chaque onglet (un point qui pulse)
   const pastilles: Partial<Record<Onglet, string>> = {
     ...(charge && !prete && etat?.etape !== "fabrication" ? { figurine: "!" } : {}),
-    ...(compte && !rencontreVue ? { rencontre: "1" } : compte && aCarte === false ? { rencontre: "!" } : {}),
+    ...(compte && !rencontreVue ? { rencontre: "1" } : {}),
+    ...(compte && aCarte === false ? { personnage: "!" } : {}),
   };
-  const dansRencontres = onglet === "rencontre";
 
   return (
     <main className="mc">
@@ -164,18 +169,16 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
           </OngletVisible.Provider>
         </section>
 
-        {/* 💬 RENCONTRES : l'épisode du jour, et « Mon personnage » à côté */}
-        {dansRencontres && (
-          <div className="mc-seg" role="tablist" aria-label="Rencontres">
-            <button type="button" role="tab" aria-selected={vue === "rencontre"} className={vue === "rencontre" ? "pris" : ""} onClick={() => aller("rencontre")}>
-              🎬 Mes épisodes
-            </button>
-            <button type="button" role="tab" aria-selected={vue === "personnage"} className={vue === "personnage" ? "pris" : ""} onClick={() => aller("personnage")}>
-              🃏 Mon personnage
-              {compte && aCarte === false && <i aria-hidden="true">!</i>}
-            </button>
-          </div>
+        {/* 🔥 DÉCOUVRIR */}
+        {ouverts.has("decouvrir") && (
+          <section className="mc-onglet" id="o-decouvrir" hidden={vue !== "decouvrir"} aria-label="Découvrir">
+            <OngletVisible.Provider value={vue === "decouvrir"}>
+              <Decouvrir allerA={allerA} />
+            </OngletVisible.Provider>
+          </section>
         )}
+
+        {/* 💬 RENCONTRES */}
         {ouverts.has("rencontre") && (
           <section className="mc-onglet" id="o-rencontre" hidden={vue !== "rencontre"} aria-label="Rencontres">
             <OngletVisible.Provider value={vue === "rencontre"}>
@@ -233,12 +236,12 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_PERSONNAGE + STYLES_RENCONTRE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_PERSONNAGE + STYLES_RENCONTRE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR}</style>
     </main>
   );
 }
 
-/** Les icônes du menu, dessinées pour ClikMe (deux bulles, un « + » sur son ressort, une pile de mèmes). */
+/** Les icônes du menu, dessinées pour ClikMe (une flamme, deux bulles, un « + » sur son ressort, une pile de mèmes, une carte). */
 function IconeOnglet({ cle }: { cle: Onglet }) {
   const trait = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" } as const;
   return (
@@ -247,6 +250,16 @@ function IconeOnglet({ cle }: { cle: Onglet }) {
         <>
           <path d="M12 4.5v9M7.5 9h9" {...trait} />
           <path d="M8.5 16.6h7M10 16.6l-1 1.3 6 1.2-6 1.2" {...trait} />
+        </>
+      ) : cle === "decouvrir" ? (
+        <>
+          <path d="M12 21c-4 0-6.5-2.7-6.5-6.2 0-3.6 2.6-5.4 3.6-8.8.4 1.9 1.4 3 2.6 3.6.3-2.6 1.4-5 3.3-6.6-.2 2.9 1.2 4.6 2.3 6.2 1 1.4 1.7 2.8 1.7 4.8C19 18.2 16.2 21 12 21z" {...trait} />
+          <path d="M12 21c-1.7 0-2.8-1.1-2.8-2.7 0-1.8 1.6-2.6 2.1-4.3 1 .8 3.5 2.2 3.5 4.3 0 1.6-1.1 2.7-2.8 2.7z" {...trait} />
+        </>
+      ) : cle === "personnage" ? (
+        <>
+          <rect x="4.5" y="3" width="15" height="18" rx="3" {...trait} />
+          <path d="M12 7.6l1.3 2.7 2.9.4-2.1 2 .5 2.9-2.6-1.4-2.6 1.4.5-2.9-2.1-2 2.9-.4z" {...trait} />
         </>
       ) : cle === "rencontre" ? (
         <>
@@ -281,13 +294,8 @@ body{background:#12060F}
 .mc-attente i{height:420px;border-radius:30px;background:linear-gradient(100deg,rgba(255,255,255,.04) 30%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 70%);background-size:200% 100%;animation:mc-reflet 1.4s linear infinite}
 .mc-vide{margin:28px 0 0;padding:18px;border-radius:20px;background:rgba(255,255,255,.05);text-align:center;color:#D9C3CB}
 .mc-total{display:inline-grid;place-items:center;min-width:30px;height:30px;margin-left:6px;padding:0 8px;box-sizing:border-box;border-radius:999px;background:#FF2E9A;color:#fff;font-size:15px;vertical-align:2px;-webkit-text-fill-color:#fff;box-shadow:0 8px 18px -8px rgba(255,46,154,.9)}
-/* « Mes épisodes » · « Mon personnage » : deux vues dans « Rencontres » */
-.mc-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;max-width:420px;margin:0 0 16px;padding:4px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08)}
-.mc-seg button{position:relative;padding:9px 8px;border:0;border-radius:999px;background:none;color:#C9B2BE;font:inherit;font-size:13.5px;font-weight:900;cursor:pointer;white-space:nowrap}
-.mc-seg button.pris{background:#FFF4E6;color:#2A0F1F;box-shadow:0 6px 16px -8px rgba(0,0,0,.8)}
-.mc-seg i{position:absolute;right:10px;top:4px;display:grid;place-items:center;width:16px;height:16px;border-radius:50%;background:#FF2E9A;color:#fff;font-style:normal;font-size:10px;animation:mc-pastille 1.6s ease-in-out infinite}
 /* le menu, en bas : un dock qui flotte, « Créer » en gros bouton rond au milieu */
-.mc-nav{position:fixed;left:16px;right:16px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:20;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;max-width:400px;margin:0 auto;padding:7px 6px 6px;
+.mc-nav{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:20;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:end;max-width:540px;margin:0 auto;padding:7px 6px 6px;
   border-radius:28px;background:linear-gradient(180deg,rgba(46,16,36,.9),rgba(22,7,17,.94));-webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);
   box-shadow:0 18px 40px -14px rgba(0,0,0,.95),inset 0 0 0 1px rgba(255,255,255,.09),inset 0 1px 0 rgba(255,200,230,.14)}
 .mc-nav::before{content:"";position:absolute;left:18%;right:18%;top:-1px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,46,154,.85),rgba(242,196,107,.85),transparent)}

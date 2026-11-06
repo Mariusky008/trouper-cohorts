@@ -155,9 +155,9 @@ ok(true, "un toucher : la réplique suivante");
 await lea.locator(".rs-theatre .rs-fermer").click();
 ok((await lea.locator(".rs-theatre").count()) === 0, "✕ : le théâtre se ferme");
 
-// ❓ LA QUESTION DU JOUR (lot 2) : dans « Mon personnage » (à côté de ses épisodes, dans « Rencontres »), avec ce que sa figurine sait d'elle
-ok((await lea.locator(".mc-nav button").count()) === 3 && (await lea.locator(".mc-nav button.pris").innerText()).includes("Rencontres"), "le menu resserré : « Rencontres » est ouvert");
-await lea.locator(".mc-seg button", { hasText: "Mon personnage" }).dispatchEvent("click");
+// ❓ LA QUESTION DU JOUR (lot 2) : dans « Moi » (sa carte de personnage), avec ce que sa figurine sait d'elle
+ok((await lea.locator(".mc-nav button").count()) === 5 && (await lea.locator(".mc-nav button.pris").innerText()).includes("Rencontres"), "le menu en bas : « Rencontres » est ouvert");
+await lea.locator(".mc-nav button", { hasText: "Moi" }).dispatchEvent("click");
 await lea.waitForSelector("#o-personnage .cn-question", { timeout: 30000 });
 const q0 = await api(lea, "/api/direct/connaitre");
 if (q0.question?.choix) await lea.locator("#o-personnage .cn-choix button").first().click();
@@ -371,7 +371,7 @@ ok((await api(lea, "/api/direct/rencontre", { action: "bloquer", id: mI.rencontr
 await lea.screenshot({ path: `${D}/personnage-4-membre.png`, fullPage: true });
 
 // ═══ 🧠 CE QUE TA FIGURINE SAIT DE TOI (lot 2) : elle voit tout, elle efface ═══
-await lea.locator(".mc-seg button", { hasText: "Mon personnage" }).click({ force: true });
+await lea.locator(".mc-nav button", { hasText: "Moi" }).click({ force: true });
 await lea.waitForSelector("#o-personnage .cn-savoir-tete", { timeout: 30000 });
 await lea.locator("#o-personnage .cn-savoir-tete").click();
 await lea.waitForSelector("#o-personnage .cn-choses li", { timeout: 15000 });

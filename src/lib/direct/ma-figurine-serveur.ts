@@ -573,13 +573,15 @@ export async function statsMemes(supabase: Supabase): Promise<StatsMemes> {
   const vide = () => Object.fromEntries(TYPES_EVENEMENT_MEME.map((x) => [x, 0])) as Record<EvenementMeme, number>;
   const jour = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
   const depuis = new Date(Date.now() - 30 * 86_400_000).toISOString();
-  const { data, error } = await supabase.from("clik_meme_evenement").select("type, created_at").gte("created_at", depuis).order("created_at", { ascending: false }).limit(50_000);
+  const { data, error } = await supabase.from("clik_meme_evenement").select("message_id, type, created_at").gte("created_at", depuis).order("created_at", { ascending: false }).limit(50_000);
   const res: StatsMemes = { ok: !error, sept: vide(), trente: vide(), jours: [] };
   if (error) return res;
   const il7 = Date.now() - 7 * 86_400_000;
   const parJour = new Map<string, Record<EvenementMeme, number>>();
   for (let k = 0; k < 14; k++) parJour.set(jour(new Date(Date.now() - k * 86_400_000)), vide());
-  for (const e of (Array.isArray(data) ? data : []) as { type?: string; created_at?: string }[]) {
+  for (const e of (Array.isArray(data) ? data : []) as { message_id?: string; type?: string; created_at?: string }[]) {
+    // (les mèmes des commerçants, `c-<id>`, ont leurs propres chiffres : `memes-commerces-serveur.ts`)
+    if (s(e.message_id).startsWith("c-")) continue;
     const type = TYPES_EVENEMENT_MEME.find((x) => x === e.type);
     if (!type) continue;
     const quand = new Date(s(e.created_at));

@@ -588,3 +588,12 @@ depuis une session.
 - Les modes de présence de la figurine (seulement au début, seulement à la fin…) : un seul pour l'instant, celui de
   Lili Ross.
 
+
+## 15. Dans l'appli : le mème du jour du commerçant (7 novembre 2026)
+
+Plus court que le Studio : une vidéo verticale de quelques secondes où **sa figurine annonce une chose précise** (le
+menu du jour, une nouveauté, la coupe du jour, une promo, un bon plan, une place libre). Au comptoir, « 🎭 Mon mème du
+jour » (`src/app/autour-de-moi/assistante/meme-comptoir.tsx`) ; la règle dans `src/lib/direct/memes-commerces.ts` ; le
+dessin dans `src/lib/direct/meme.ts` (le même moteur que le mème des clients : `annonce`, `fin`, et sans voix la
+musique). Les mêmes règles qu'ici : **jamais de voix fabriquée** (sa voix enregistrée, ou la musique), **rien
+d'inventé** (ses mots et ses prix, écrits par lui). Voir `docs/figurines.md`, 9.0 unvicies.

@@ -179,7 +179,7 @@ await p.screenshot({ path: `${D}/famille-7-collection.png`, fullPage: true });
 await p.goto(`${BASE}/collection#album`, { waitUntil: "networkidle" });
 await p.waitForSelector("#o-memes .mm", { timeout: 30000 });
 const mc = await texte(p, ".mc");
-ok((await p.locator(".mc-nav button.pris").innerText()).includes("Mes mèmes") && (await p.locator(".mc-nav button").count()) === 3, "l'ancien lien de l'album ouvre « Mes mèmes » ; le menu en bas : trois onglets");
+ok((await p.locator(".mc-nav button.pris").innerText()).includes("Mes mèmes") && (await p.locator(".mc-nav button").count()) === 5, "l'ancien lien de l'album ouvre « Mes mèmes » ; le menu en bas : cinq onglets");
 ok((await p.locator(".ab-page, .ce, .dc-commerces, #ou-gagner").count()) === 0 && !/Où la gagner|Ma collection|Album/.test(mc), "plus d'album, plus de « Où la gagner »");
 ok((await debordement(p)) <= 0 && !/exemple/i.test(mc), "la page ne déborde pas, sans le mot interdit");
 await p.goto(`${BASE}/collection#ou-gagner`, { waitUntil: "networkidle" });

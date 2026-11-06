@@ -22,7 +22,7 @@ neuf() {
 }
 
 echec=0
-for essai in scripts/essai-echanges-reseau.mjs scripts/essai-cages-route.mjs scripts/essai-carnet-route.mjs scripts/essai-vitrine-route.mjs scripts/essai-sans-fiche-route.mjs scripts/essai-inscription-route.mjs scripts/essai-famille-route.mjs scripts/essai-diffusion-route.mjs scripts/navigateur/echanges-moitie.mjs scripts/navigateur/echanges-equipe.mjs scripts/navigateur/echanges-factures.mjs scripts/navigateur/famille-page.mjs scripts/navigateur/famille-comptoir.mjs scripts/navigateur/famille-video.mjs scripts/navigateur/famille-surprise.mjs scripts/navigateur/ma-figurine.mjs scripts/navigateur/personnage-rencontre.mjs; do
+for essai in scripts/essai-echanges-reseau.mjs scripts/essai-cages-route.mjs scripts/essai-carnet-route.mjs scripts/essai-vitrine-route.mjs scripts/essai-sans-fiche-route.mjs scripts/essai-inscription-route.mjs scripts/essai-famille-route.mjs scripts/essai-diffusion-route.mjs scripts/navigateur/echanges-moitie.mjs scripts/navigateur/echanges-equipe.mjs scripts/navigateur/echanges-factures.mjs scripts/navigateur/famille-page.mjs scripts/navigateur/famille-comptoir.mjs scripts/navigateur/famille-video.mjs scripts/navigateur/famille-surprise.mjs scripts/navigateur/ma-figurine.mjs scripts/navigateur/personnage-rencontre.mjs scripts/navigateur/meme-commerce.mjs; do
   neuf
   if node "$essai" > /tmp/essai.log 2>&1; then
     echo "  ok   $essai ($(grep -c '^  ok' /tmp/essai.log) vérifications)"

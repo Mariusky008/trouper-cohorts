@@ -1,7 +1,7 @@
 // 🗣️ SA PROPRE FIGURINE, DANS UN TÉLÉPHONE — `clikme.fr/collection` puis `clikme.fr/figurine/<id>`, contre le faux
 // Supabase, avec un faux micro (Chromium joue un bip à sa place) et une fausse voix (le faux Supabase rend un enregistrement d'essai).
 //
-// Hugo a 1 figurine : le guide (la figurine du patron de ClikMe) l'accueille (le menu en bas, trois onglets — « Créer » au milieu,
+// Hugo a 1 figurine : le guide (la figurine du patron de ClikMe) l'accueille (le menu en bas, cinq onglets — « Créer » au milieu,
 // depuis qu'on a resserré sur le mème le 7 novembre 2026), la quête « Crée ta figurine » ; sa figurine du mois, méritée dans
 // « Rencontres », devient un LOOK qui parle dans ses mèmes. Léa passe chez le Comptoir depuis plus d'un an (et à l'Atelier) : plus
 // de 10 figurines. Elle envoie sa photo (il faut cocher « C'est bien moi ») ; « on fabrique ta figurine ». ClikMe pose
@@ -72,7 +72,7 @@ const hugo = await tel(HUGO);
 await hugo.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
 await hugo.waitForSelector("#o-figurine .pb-voile .mqd", { timeout: 60000 });
 const menu = await texte(hugo, ".mc-nav");
-ok((await hugo.locator(".mc-nav button").count()) === 3 && /Rencontres.*Créer.*Mes mèmes/.test(menu) && !/Ce mois-ci|Album|Personnage/.test(menu), `le menu en bas, resserré : Rencontres · Créer · Mes mèmes (${menu})`);
+ok((await hugo.locator(".mc-nav button").count()) === 5 && /Découvrir.*Rencontres.*Créer.*Mes mèmes.*Moi/.test(menu) && !/Ce mois-ci|Album/.test(menu), `le menu en bas : Découvrir · Rencontres · Créer · Mes mèmes · Moi (${menu})`);
 ok((await hugo.locator("#o-figurine .mqd .mq").count()) === 1 && /Pablito/i.test(await texte(hugo, "#o-figurine .mqd-bulle")), "Pablito, la figurine du patron de ClikMe, l'accueille en fenêtre");
 ok((await texte(hugo, "#o-figurine .pb-voile")).includes("Je crée ma figurine"), "dans la fenêtre : « Je crée ma figurine »");
 await hugo.screenshot({ path: `${D}/ma-figurine-0-pablito.png` });
@@ -95,7 +95,7 @@ const dock = await hugo.evaluate(() => {
   return { rond: r(".mc-nav-figurine .mc-nav-ico"), g: r(".mc-nav-rencontre .mc-nav-ico"), d: r(".mc-nav-memes .mc-nav-ico"), nav: r(".mc-nav"), svg: document.querySelectorAll(".mc-nav svg").length };
 });
 ok(
-  dock.rond && dock.g && dock.d && dock.rond.width >= 60 && dock.rond.top < dock.nav.top && dock.g.right < dock.rond.left && dock.d.left > dock.rond.right && dock.svg === 3 && dock.nav.left >= 8,
+  dock.rond && dock.g && dock.d && dock.rond.width >= 60 && dock.rond.top < dock.nav.top && dock.g.right < dock.rond.left && dock.d.left > dock.rond.right && dock.svg === 5 && dock.nav.left >= 8,
   `le menu : un dock qui flotte, « Créer » en gros bouton rond au milieu (${JSON.stringify({ l: dock.rond?.width, t: dock.rond?.top, n: dock.nav?.top })})`,
 );
 ok((await debordement(hugo)) <= 0, "l'accueil ne déborde pas");
@@ -176,7 +176,7 @@ ok(
   }),
   "elle est juste sous l'épisode du jour",
 );
-ok((await hugo.locator(".mc-nav button.pris").innerText()).includes("Rencontres") && (await hugo.locator(".mc-seg button").count()) === 2, "l'onglet « Rencontres » (Mes épisodes · Mon personnage)");
+ok((await hugo.locator(".mc-nav button.pris").innerText()).includes("Rencontres"), "l'onglet « Rencontres »");
 await fermerPablito(hugo, "#o-rencontre");
 await hugo.screenshot({ path: `${D}/ma-figurine-0c-mois-a-gagner.png` });
 // LE DIXIÈME JOUR : elle se fabrique toute seule (ici sans moteur d'image : sa figurine, avec le thème et sa phrase)

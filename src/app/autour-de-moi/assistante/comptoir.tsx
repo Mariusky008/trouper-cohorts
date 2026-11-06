@@ -119,6 +119,7 @@ const Episode = dynamic(() => import("./episode-comptoir").then((m) => m.Episode
 const Studio = dynamic(() => import("./studio-comptoir").then((m) => m.StudioComptoir), { ssr: false });
 /* 🪀 MA FIGURINE DU MOIS : sa figurine (un selfie), habillée pour l'édition du moment — chargée quand on l'ouvre. */
 const MaFigurine = dynamic(() => import("./figurine-comptoir").then((m) => m.MaFigurine), { ssr: false });
+const MemeDuJour = dynamic(() => import("./meme-comptoir").then((m) => m.MemeDuJour), { ssr: false });
 /**
  * 📣 L'EXTRAIT DE 8 S POUR SES PARTENAIRES DE DIFFUSION, pour l'interview et l'épisode (le Studio fait le sien) — voir
  * `lib/direct/studio-extrait.ts`. LE SON S'OUVRE AU TOUCHER, AVANT TOUTE ATTENTE (un iPhone garde muet un son ouvert
@@ -428,6 +429,8 @@ type Phase =
   | { ou: "studio"; figurine?: string | null }
   /** 🪀 Ma figurine du mois : à partir d'un selfie, habillée pour l'édition — voir `figurine-comptoir.tsx`. */
   | { ou: "figurine" }
+  /** 🎭 Mon mème du jour : sa figurine annonce une chose précise (menu, nouveauté, promo…) — voir `meme-comptoir.tsx`. */
+  | { ou: "meme" }
   /** 📣 Mon réseau de diffusion : ses vidéos chez deux partenaires — voir `diffusion-comptoir.tsx`. */
   | { ou: "diffusion" }
   /** Ma carte : ses rubriques, ses lignes et ses prix — voir `carte-comptoir.tsx`. */
@@ -469,7 +472,14 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
      journée pour me motiver ». Ce que sa page a fait est la première chose
      qu'il voit — et le bouton de la prochaine annonce est juste dessous.
      `phase` « accueil » : l'un des quatre onglets du menu du bas (`onglet`). */
-  const [phase, setPhase] = useState<Phase>({ ou: "accueil" });
+  /* `?ouvrir=meme` : droit à « Mon mème du jour » (le lien d'un rappel, chaque matin). */
+  const [phase, setPhase] = useState<Phase>(() => {
+    try {
+      return new URLSearchParams(window.location.search).get("ouvrir") === "meme" ? { ou: "meme" } : { ou: "accueil" };
+    } catch {
+      return { ou: "accueil" };
+    }
+  });
   /* `?ouvrir=echanges` : on arrive directement sur le catalogue des échanges — c'est là que
      mène « Essaie avec des commerçants d'exemple » depuis une ville pas encore ouverte. */
   const [onglet, setOnglet] = useState<Onglet>(() => {
@@ -1016,6 +1026,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           onCarte={() => setPhase({ ou: "carte" })}
           onFigurine={() => setPhase({ ou: "figurine" })}
           onDiffusion={() => setPhase({ ou: "diffusion" })}
+          onMeme={() => setPhase({ ou: "meme" })}
         />
       )}
 
@@ -1091,6 +1102,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
       )}
 
       {phase.ou === "infos" && <MesInfos commerce={commerce} dossier={dossier} onRetour={() => allerA("profil")} />}
+
+      {phase.ou === "meme" && <MemeDuJour commerce={commerce} dossier={dossier} onRetour={revenir} onFigurine={() => setPhase({ ou: "figurine" })} />}
 
       {phase.ou === "reseaux" && (
         <ReseauxComptoir commerce={commerce} dossier={dossier} reseaux={reseaux} onRetour={revenir} />
@@ -1620,6 +1633,7 @@ function Accueil({
   onCarte,
   onFigurine,
   onDiffusion,
+  onMeme,
 }: {
   commerce: Commerce;
   mission: Mission;
@@ -1659,6 +1673,8 @@ function Accueil({
   /** 🪀 Ma figurine du mois. */
   onFigurine: () => void;
   onDiffusion: () => void;
+  /** 🎭 Mon mème du jour. */
+  onMeme: () => void;
 }) {
   const pose = useFantome(false, "salut");
   const questions = questionsDuMetier(commerce.famille, commerce.metier);
@@ -1725,6 +1741,18 @@ function Accueil({
             <em>{clients.vert ? <span className="ak-vert">{clients.mot}</span> : "Montre ce que tu fais aujourd’hui"}</em>
           </span>
           {clients.chaud ? <i className="ak-badge">{clients.pret ? "✨ Prête" : "⚡ Maintenant"}</i> : <s aria-hidden="true">›</s>}
+        </button>
+        {/* 🎭 SON MÈME DU JOUR (7 novembre 2026) : sa figurine annonce une chose précise, chaque jour */}
+        <button type="button" className="ak-second ak-meme" onClick={onMeme}>
+          <span className="ak-second-i" aria-hidden="true">
+            🎭
+          </span>
+          <span className="ak-cta-t">
+            <b>Mon mème du jour</b>
+            <em>Ta figurine annonce ton menu, ta nouveauté, ta promo…</em>
+            <i className="ak-meta chaud">Nouveau</i>
+          </span>
+          <s aria-hidden="true">›</s>
         </button>
         {carnet}
         {mots}
