@@ -905,6 +905,36 @@ commerçants. La règle tient : **un mème de client n'est jamais public sans so
   Dax qui voit le mème de Léa et peut lui répondre, le duo refusé, le mème d'un autre refusé, rien sans compte, le
   retrait immédiat, et le mème signalé qui quitte le fil.
 
+### 9.0 tervicies « 🎲 Surprends-moi ! » : ClikMe écrit son mème (7 novembre)
+
+Le patron : « laisser la possibilité de créer un mème automatiquement en fonction de ses traits de personnalité :
+c'est ClikMe qui le crée en appuyant sur “Surprends-moi !” ». Et seulement ça : un ami ne fait jamais parler la
+figurine d'un autre.
+
+- **Un toucher** (« 🎲 Surprends-moi ! », en tête des mèmes prêts du studio) : ClikMe écrit SON mème, le visage qui
+  va avec et s'il danse. Il le lit dans une carte : « 🎲 Encore » (un autre, jamais deux fois le même) ou
+  « C'est moi ✓ ». **Rien n'est dit tant qu'il ne l'a pas choisi** : la voix n'est fabriquée qu'au « C'est moi ✓ ».
+  C'est bien lui qui fait dire ce texte à SA figurine, ce qui reste dans l'exception des voix (`CLAUDE.md`), et on ne
+  paie pas une voix pour un texte qu'il jette. Ensuite, c'est un mème comme les autres (il peut le retoucher).
+- **D'après sa carte de personnage**, et rien d'autre : ses réponses au questionnaire, ce qu'il aime, sa façon de
+  parler, son super-pouvoir, son point faible, sa phrase fétiche. Jamais son prénom, jamais ce qu'il a confié à sa
+  figurine (« ce que ta figurine sait de toi ») : un mème part chez d'autres. Sans carte, des répliques pour tous, et
+  « 🃏 Fais ta carte de personnage : tes surprises te ressembleront ».
+- **L'IA l'écrit** (`meme-surprise-serveur.ts`, la même que la carte de personnage ; `OPENAI_MEME_API_KEY`,
+  `OPENAI_MEME_BASE_URL` et `OPENAI_MEME_MODEL` si l'on veut les séparer), sous un angle tiré au sort à chaque fois (sa
+  façon de parler, un de ses goûts, sa phrase fétiche…). La consigne : drôle, tendre, de l'autodérision, jamais
+  blessant, à la première personne ; jamais un accord au masculin ou au féminin pour celui qui parle ; rien sur
+  l'alcool, la santé, le corps, l'âge, la religion, la politique, l'argent, les marques, les personnes réelles, les
+  commerces et les prix. **Relu** : 120 signes au plus, aucun mot interdit, rien d'alcoolisé (loi Évin), aucun lien ;
+  sinon, une réplique de la réserve.
+- **La réserve** (`meme-surprise.ts`, 48 répliques relues une à une) : choisie d'après ses réponses, ses goûts et sa
+  phrase fétiche. Elle prend le relais sans clé, quand l'IA dérape, et après ses 10 tirages par l'IA du jour.
+  40 surprises par jour au plus, tout compris (`<habitant>/surprises.json`).
+- **Les essais** (`scripts/navigateur/ma-figurine.mjs`, avec une fausse IA dans le faux Supabase) : sans carte, une
+  surprise pour tous et l'invitation à faire sa carte ; rien n'est écrit ni dit avant son choix ; « Encore » en donne
+  une autre ; avec sa carte, l'IA écrit d'après lui (la consigne porte ses goûts et sa phrase, jamais son prénom) ;
+  « C'est moi ✓ » : le texte est à lui, une seule voix ; une réponse qui parle d'alcool est écartée ; le plafond du jour.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
