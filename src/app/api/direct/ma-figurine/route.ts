@@ -20,6 +20,8 @@
 //      { action: "meme-pose", id, type } : elle est arrivée → rangée à côté du message.
 // GET ?repondre=<id> : le mème auquel il répond, en duo (ses images, sa voix, ses mots, son prénom).
 // POST { action: "meme-evenement", type: "partage"|"nouveau", id } : un geste autour d'un mème (la mesure).
+// POST { action: "public", id, public: true|false } : son mème dans « Découvrir », pour les gens de sa ville (son accord),
+//      ou retiré. Jamais un duo, jamais un mème signalé.
 // POST { action: "signaler", id } : celui qui a reçu un message le signale (pas besoin d'être quelqu'un).
 // (La démonstration qu'on faisait parler sans compte a quitté la page le 5 novembre 2026 : chacun crée la sienne dès le
 // départ. Ses messages déjà envoyés s'ouvrent toujours, par `/figurine/<id>`.)
@@ -43,6 +45,7 @@ import {
   mesMemes,
   noterGesteMeme,
   poserMeme,
+  rendreMemePublic,
   signalerMessage,
 } from "@/lib/direct/ma-figurine-serveur";
 import { fabriquerFigurineDuMois, fabriquerParleDuLook, mesFigurinesDuMois } from "@/lib/direct/figurine-du-mois-serveur";
@@ -153,6 +156,12 @@ export async function POST(request: Request) {
     const r = await adresseEnvoiMeme(supabase, moi, p.id, p.type);
     if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
     return NextResponse.json({ ok: true, seau: r.seau, chemin: r.chemin, jeton: r.jeton }, { headers: sansCache });
+  }
+  // 🌍 son mème dans « Découvrir » (son accord), ou retiré
+  if (p?.action === "public") {
+    const r = await rendreMemePublic(supabase, moi, p.id, p.public);
+    if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
+    return NextResponse.json({ ok: true, public: r.public }, { headers: sansCache });
   }
   if (p?.action === "meme-pose") {
     const r = await poserMeme(supabase, moi, p.id, p.type);

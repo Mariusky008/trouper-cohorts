@@ -230,7 +230,12 @@ export type MessageFigurine =
  * et ceux qu'il a reçus (ouverts sur ce téléphone), à qui il peut répondre.
  */
 export type ApercuMeme = { id: string; prenom: string; image: string; le: string; texte?: string; video?: string };
-export type MonMeme = ApercuMeme & { vues: number; reponses: number };
+/** `public` : il l'a montré dans « Découvrir » (son accord) ; `duo` : une réponse en duo (elle reste entre eux). */
+export type MonMeme = ApercuMeme & { vues: number; reponses: number; public?: boolean; duo?: boolean };
+/** 🌍 Un mème qu'un client a choisi de montrer dans « Découvrir » (pour les gens de sa ville). */
+export type MemePublic = ApercuMeme & { villeSlug: string };
+/** Ce qu'on lui dit avant qu'il le montre : qui le verra, quoi, et qu'il peut le retirer. */
+export const ACCORD_PUBLIC = "Ton mème — ta figurine, ta voix, tes mots et ton prénom — sera visible par les gens de ta ville dans « Découvrir ». Tu pourras le retirer quand tu veux. D’accord ?";
 export type ReponseAMonMeme = ApercuMeme & { a: string; aTexte?: string };
 export type MesMemes = { envoyes: MonMeme[]; reponses: ReponseAMonMeme[]; recus: ApercuMeme[] };
 /** Ce qu'on garde, sur le téléphone, des mèmes qu'il a reçus (ouverts) : leur numéro, les plus récents d'abord. */

@@ -9,8 +9,9 @@
 // écrit un texte, le fait lire par une voix (la joie sur son visage), et en fait SON MÈME : une vidéo fabriquée dans
 // le téléphone, rangée au seau, partagée telle quelle. Une amie ouvre le lien sans compte : le mème joue tout de
 // suite, sans blabla, avec un seul bouton (« Crée ou réponds avec ton mème »). Un message sans vidéo : sa figurine
-// parle au premier toucher, la bouche bouge, une écoute est comptée. Elle le signale : il ne s'affiche plus, sa voix
-// non plus. Rien ne déborde, jamais le mot interdit.
+// parle au premier toucher, la bouche bouge, une écoute est comptée. 🌍 Léa montre son mème dans « Découvrir » (son
+// accord, demandé) : Hugo, de Dax, le voit et peut lui répondre ; jamais un duo ; elle le retire quand elle veut.
+// L'amie le signale : il ne s'affiche plus, sa voix non plus, ni dans « Découvrir ». Rien ne déborde, jamais le mot interdit.
 import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
@@ -309,6 +310,7 @@ const partage = await lea.locator(".tf-meme-pret .tf-partager-meme").count();
 const wa = partage ? "" : await lea.locator(".tf-meme-pret .tf-wa").getAttribute("href");
 ok(partage === 1 || wa === `https://wa.me/?text=${encodeURIComponent(lien)}`, "sans texte ni blabla : le mème lui-même (la feuille de partage), sinon son lien seul");
 ok((await lea.locator(".tf-meme-pret a[download]").count()) === 1, "« ⬇️ La vidéo » : elle peut l'enregistrer");
+ok((await texte(lea, ".tf-meme-pret .tf-public")).includes("Le montrer aussi dans « Découvrir »") && (await lea.locator(".tf-meme-pret .tf-public.pris").count()) === 0, "« 🌍 Le montrer aussi dans « Découvrir » » : proposé, jamais fait sans elle");
 const id = lien.split("/").pop();
 const [msg] = await lire("clik_figurine_message", `id=eq.${id}`);
 ok(msg && JSON.stringify(msg.commerces) === "[]" && msg.son.startsWith(`${LEA.id}/m-${id}.`) && msg.duree > 1 && msg.duree <= 16, `le message : sa voix lue (${msg?.duree} s)`);
@@ -378,6 +380,7 @@ const idDuo = (await hugo.locator(".tf-adresse").inputValue()).split("/").pop();
 const coteDuo = await (await fetch(`${STOCK}/figurines-clients/${HUGO.id}/m-${idDuo}.json`)).json().catch(() => ({}));
 ok(coteDuo.repondA === id && coteDuo.meme, `sa réponse est un mème en duo, rattachée à celui de Léa (${JSON.stringify(coteDuo)})`);
 ok((await hugo.locator(".tf-reponse").count()) === 0, "sa réponse partie : son prochain mème sera à lui");
+ok((await hugo.locator(".tf-meme-pret .tf-public").count()) === 0, "un duo : pas de « Découvrir » (il montre aussi la figurine de Léa)");
 ok((await api(hugo, { action: "rien" })).statut === 400 && (await hugo.evaluate(async () => (await (await fetch("/api/direct/ma-figurine")).json()).etat.etapes)).includes("duo"), "👣 une étape franchie : « Répondre en duo à un mème »");
 // 📥 « MES MÈMES » (à la place de l'album) : Léa voit qui lui a répondu, et ses mèmes vus
 await lea.goto(`${BASE}/collection?v=${Date.now()}#album`, { waitUntil: "networkidle" });
@@ -401,6 +404,44 @@ await amieMemes.goto(`${BASE}/collection#memes`, { waitUntil: "networkidle" });
 await amieMemes.waitForSelector("#o-memes .mm-bloc .mm-carte", { timeout: 30000 });
 ok((await texte(amieMemes, "#o-memes")).includes("Reçus") && (await amieMemes.locator(`#o-memes a.mm-repondre[href="/figurine/${id}/repondre"]`).count()) === 1, "sans compte : le mème reçu l'attend dans « Reçus », avec « Répondre »");
 await amieMemes.close();
+
+// ═══ 🌍 SON MÈME DANS « DÉCOUVRIR », SUR SON ACCORD (l'étape 3) ═══
+const publicsDe = (p) => p.evaluate(async () => (await (await fetch("/api/direct/memes-commerces", { cache: "no-store" })).json()).publics ?? []);
+ok((await publicsDe(hugo)).every((m) => m.id !== id), "par défaut, son mème reste entre elle et ceux à qui elle l'envoie");
+const bascule = lea.locator(`#o-memes .mm-bloc:not(.mm-reponses) .mm-public`);
+ok((await bascule.count()) === 1 && (await bascule.innerText()).includes("Montrer dans Découvrir"), "« 🌍 Montrer dans Découvrir » : un geste à elle");
+let accord = "";
+lea.once("dialog", (d) => {
+  accord = d.message();
+  void d.dismiss();
+});
+await bascule.click();
+await lea.waitForTimeout(500);
+ok(/visible par les gens de ta ville/.test(accord) && /retirer quand tu veux/.test(accord) && !(await fetch(`${STOCK}/figurines-clients/${LEA.id}/m-${id}.json`).then((r) => r.json())).public, "on lui demande d'abord son accord ; « Annuler » : rien ne bouge");
+lea.once("dialog", (d) => void d.accept());
+await bascule.click();
+await lea.waitForSelector("#o-memes .mm-public.pris", { timeout: 15000 });
+const coteP = await (await fetch(`${STOCK}/figurines-clients/${LEA.id}/m-${id}.json`)).json().catch(() => ({}));
+ok(coteP.public?.ville === "dax" && (await fetch(`${STOCK}/figurines-clients/publics/dax/${coteP.public.jour}/${id}.json`)).status === 200, `« D'accord » : son mème va dans « Découvrir », pour les gens de Dax (${JSON.stringify(coteP.public)})`);
+ok((await texte(lea, "#o-memes .mm-public.pris")).includes("retirer"), "« 🌍 Dans Découvrir · retirer » : elle le retire quand elle veut");
+await lea.screenshot({ path: `${D}/ma-figurine-3d-public.png`, fullPage: true });
+// Hugo, de Dax, le voit dans « Découvrir » ; « Lui répondre » : en duo
+await hugo.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "networkidle" });
+await hugo.waitForSelector("#o-decouvrir .dv-carte.client", { timeout: 60000 });
+await fermerPablito(hugo, "#o-decouvrir");
+const carteLea = await texte(hugo, "#o-decouvrir .dv-carte.client");
+ok(carteLea.includes("Léa") && carteLea.includes("De ta ville") && (await hugo.locator(`#o-decouvrir .dv-carte.client a.dv-voir[href="/figurine/${id}/repondre"]`).count()) === 1, `Hugo, de Dax, le voit dans « Découvrir » : « ↩️ Lui répondre » (${carteLea.slice(0, 80)})`);
+ok((await hugo.locator("#o-decouvrir .dv-carte.client .dv-signaler").count()) === 1, "et « Signaler », s'il le faut");
+ok((await debordement(hugo)) <= 0 && !/exemple/i.test(await texte(hugo, "#o-decouvrir")), "« Découvrir » ne déborde pas, sans le mot interdit");
+await hugo.screenshot({ path: `${D}/ma-figurine-3e-decouvrir.png` });
+// jamais un duo (il montre aussi la figurine de Léa) ; jamais le mème d'un autre ; sans compte, rien des gens
+const duoPublic = await api(hugo, { action: "public", id: idDuo, public: true });
+ok(duoPublic.statut === 400 && /duo/.test(duoPublic.error ?? ""), `un duo ne va pas dans « Découvrir » (${duoPublic.error})`);
+ok((await api(hugo, { action: "public", id, public: true })).statut === 404, "le mème d'un autre : non");
+ok((await publicsDe(amie)).length === 0, "sans compte (sans ville) : pas de mèmes des gens");
+// elle le retire : il quitte « Découvrir » tout de suite ; puis le remet
+ok((await api(lea, { action: "public", id, public: false })).public === false && (await fetch(`${STOCK}/figurines-clients/publics/dax/${coteP.public.jour}/${id}.json`)).status === 404 && (await publicsDe(hugo)).every((m) => m.id !== id), "elle le retire : il quitte « Découvrir » tout de suite");
+ok((await api(lea, { action: "public", id, public: true })).public === true && (await publicsDe(hugo)).some((m) => m.id === id), "elle le remet");
 // UN MESSAGE AVEC SON LOOK : c'est elle qui parle chez celui qui le reçoit
 const voixH = await api(hugo, { action: "voix", texte: "Mon look du mois, ça te plaît ?", voix: "chaleureuse" });
 const avecLook = await api(hugo, { action: "message", son: voixH.son, duree: 1.5, commerces: [], texte: "Mon look du mois, ça te plaît ?", voix: "chaleureuse", look: mois });
@@ -461,6 +502,7 @@ await amie.waitForSelector(".mr-signale", { timeout: 15000 });
 await amie.reload({ waitUntil: "networkidle" });
 ok((await texte(amie, ".mr")).includes("Ce mème a été signalé") && (await amie.locator(".mr-meme video, .fqp").count()) === 0, "signalé : il ne s'affiche plus");
 ok((await fetch(`${BASE}/api/direct/ma-figurine/son?m=${id}`)).status === 404, "sa voix non plus");
+ok((await publicsDe(hugo)).every((m) => m.id !== id) && (await api(lea, { action: "public", id, public: true })).statut === 400, "ni dans « Découvrir » (et il ne peut plus y revenir)");
 ok((await fetch(`${BASE}/figurine/zzzzzzzzzzzz`)).status === 404, "un lien inconnu : 404");
 
 // ═══ 🕺 ELLE DANSE SUR SON RESSORT : une figurine dessinée (fond rose, tête, corps, ressort, socle) ═══

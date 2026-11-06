@@ -1,20 +1,22 @@
 // 🔥 « DÉCOUVRIR » (`lib/direct/memes-commerces.ts`) : les mèmes du jour des commerçants.
 //
-// GET : ceux de sa ville (son compte), puis des autres villes ClikMe s'il y en a peu → { memes, ville }.
+// GET : ceux de sa ville (son compte), puis des autres villes ClikMe s'il y en a peu → { memes, ville } ; et `publics` :
+//      les mèmes que les gens de SA ville ont choisi de montrer (l'étape 3, sur leur accord).
 // POST { action: "geste", type: "partage", id } : un partage (ce que son mème rapporte au commerçant). Sans compte.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { idMemeCommerceValide } from "@/lib/direct/memes-commerces";
 import { memeCommerce, memesDecouvrir, noterGesteCommerce } from "@/lib/direct/memes-commerces-serveur";
+import { memesPublics } from "@/lib/direct/ma-figurine-serveur";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase).catch(() => null);
-  const r = await memesDecouvrir(supabase, moi?.villeSlug ?? "");
-  return NextResponse.json({ ok: true, ...r }, { headers: { "cache-control": "private, no-store" } });
+  const [r, publics] = await Promise.all([memesDecouvrir(supabase, moi?.villeSlug ?? ""), memesPublics(supabase, moi?.villeSlug ?? "").catch(() => [])]);
+  return NextResponse.json({ ok: true, ...r, publics }, { headers: { "cache-control": "private, no-store" } });
 }
 
 export async function POST(request: Request) {

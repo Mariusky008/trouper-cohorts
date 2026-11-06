@@ -32,6 +32,7 @@ import {
   IMAGES_DEMO,
   MEMES_VUS,
   type ApercuMeme,
+  type MemePublic,
   type MesMemes,
   type MonMeme,
   type ReponseAMonMeme,
@@ -54,6 +55,7 @@ import { expressionsCompletes, expressionsDe, fabriquerUnTour, type Depot } from
 import { adresseMasquee } from "./connaitre";
 import { lireLeTexte, voixBranchee } from "./voix-figurine-serveur";
 import { lookValide } from "./figurine-du-mois";
+import { jourAvant } from "@/lib/jour-paris";
 import { motInterdit } from "./mots-interdits";
 import { FABRICATIONS_PAR_JOUR, NOM_NEUTRE, NOM_PARLE, fabricationsParJourPourTous, fabriquerUnPas, moteurBranche } from "./ma-figurine-fabrique-serveur";
 
@@ -597,17 +599,22 @@ export async function statsMemes(supabase: Supabase): Promise<StatsMemes> {
 // ─── 📥 « mes mèmes » ──────────────────────────────────────────────────────────────────────────
 type Cache = Map<string, Promise<Ligne | null>>;
 /** Un mème en vignette : qui, son image (son look, s'il en avait un), ses mots, sa vidéo. `h` : de qui il est. */
-async function apercuMeme(supabase: Supabase, id: string, cache: Cache, ligne?: Ligne): Promise<{ ap: ApercuMeme; h: string } | null> {
+async function apercuMeme(supabase: Supabase, id: string, cache: Cache, ligne?: Ligne): Promise<{ ap: ApercuMeme; h: string; public: boolean; duo: boolean } | null> {
   const r = ligne ?? (await ligneMessage(supabase, id));
   if (!r || r.signale_le) return null;
   const h = s(r.habitant_id);
   if (!cache.has(h)) cache.set(h, lireLigne(supabase, h).then((x) => x.ligne));
-  const [f, aCote] = await Promise.all([cache.get(h)!, lireJson<{ look: string; meme: string }>(supabase, `${h}/m-${s(r.id)}.json`)]);
+  const [f, aCote] = await Promise.all([cache.get(h)!, lireJson<{ look: string; meme: string; repondA: string; public: Partial<Public> }>(supabase, `${h}/m-${s(r.id)}.json`)]);
   if (!f || !s(f.neutre)) return null;
   const look = lookValide(aCote.look);
   const [image, video] = await Promise.all([signer(supabase, look ? cheminImageDuLook(h, look) : s(f.neutre)), s(aCote.meme) ? signer(supabase, s(aCote.meme)) : Promise.resolve("")]);
   if (!image) return null;
-  return { h, ap: { id: s(r.id), prenom: s(f.prenom), image, le: s(r.created_at), ...(s(r.texte) ? { texte: s(r.texte) } : {}), ...(video ? { video } : {}) } };
+  return {
+    h,
+    public: Boolean(aCote.public?.ville),
+    duo: Boolean(s(aCote.repondA)),
+    ap: { id: s(r.id), prenom: s(f.prenom), image, le: s(r.created_at), ...(s(r.texte) ? { texte: s(r.texte) } : {}), ...(video ? { video } : {}) },
+  };
 }
 
 /**
@@ -620,7 +627,7 @@ export async function mesMemes(supabase: Supabase, habitant: Habitant | null, re
   const idsRecus = [...new Set(String(recus ?? "").split(",").map(s).filter(idMessageValide))].slice(0, MEMES_VUS);
   const lesRecus = async (sauf: Set<string>) =>
     (await Promise.all(idsRecus.filter((id) => !sauf.has(id)).map((id) => apercuMeme(supabase, id, cache))))
-      .filter((x): x is { ap: ApercuMeme; h: string } => Boolean(x) && x!.h !== habitant?.id)
+      .filter((x): x is NonNullable<typeof x> => Boolean(x) && x!.h !== habitant?.id)
       .map((x) => x.ap);
   if (!habitant) return { envoyes: [], reponses: [], recus: await lesRecus(new Set()) };
 
@@ -641,7 +648,13 @@ export async function mesMemes(supabase: Supabase, habitant: Habitant | null, re
         const x = await apercuMeme(supabase, s(m.id), cache, m);
         if (!x) return null;
         const id = s(m.id);
-        return { ...x.ap, vues: error ? Number(m.ecoutes) || 0 : Math.max(compte(id, "vu"), Number(m.ecoutes) || 0), reponses: error ? 0 : compte(id, "reponse") } as MonMeme;
+        return {
+          ...x.ap,
+          vues: error ? Number(m.ecoutes) || 0 : Math.max(compte(id, "vu"), Number(m.ecoutes) || 0),
+          reponses: error ? 0 : compte(id, "reponse"),
+          ...(x.public ? { public: true } : {}),
+          ...(x.duo ? { duo: true } : {}),
+        } as MonMeme;
       }),
     )
   ).filter((x): x is MonMeme => Boolean(x));
@@ -660,6 +673,54 @@ export async function mesMemes(supabase: Supabase, habitant: Habitant | null, re
     )
   ).filter((x): x is ReponseAMonMeme => Boolean(x));
   return { envoyes, reponses, recus: await lesRecus(new Set(reponses.map((x) => x.id))) };
+}
+
+// ─── 🌍 ses mèmes dans « Découvrir », sur son accord (l'étape 3, 7 novembre 2026) ─────────────────────
+/**
+ * UN MÈME PUBLIC, SEULEMENT S'IL LE VEUT : un geste à lui (« Montrer dans Découvrir »), pour les gens de SA ville, et
+ * il le retire quand il veut. Jamais un duo (il montre aussi la figurine de quelqu'un d'autre), jamais un mème signalé,
+ * seulement une vidéo. Une fiche par mème, `publics/<ville>/<jour>/<id>.json` ; et `public` à côté du message.
+ */
+type Public = { ville: string; jour: string; le: string };
+const cheminPublic = (ville: string, jour: string, id: string) => `publics/${ville}/${jour}/${id}.json`;
+
+export async function rendreMemePublic(supabase: Supabase, habitant: Habitant, id: unknown, oui: unknown): Promise<{ public?: boolean; error?: string; statut?: number }> {
+  const r = await ligneMessage(supabase, s(id));
+  if (!r || s(r.habitant_id) !== habitant.id) return { error: "Ce mème n’est pas le tien.", statut: 404 };
+  const chemin = `${habitant.id}/m-${s(r.id)}.json`;
+  const aCote = await lireJson<Record<string, unknown>>(supabase, chemin);
+  const avant = aCote.public as Partial<Public> | undefined;
+  if (oui !== true) {
+    // RETIRÉ : sa fiche quitte « Découvrir » tout de suite
+    if (avant?.ville && avant.jour) await supabase.storage.from(SEAU_FIGURINES).remove([cheminPublic(avant.ville, avant.jour, s(r.id))]);
+    const reste = { ...aCote };
+    delete reste.public;
+    if (!(await ecrireJson(supabase, chemin, reste))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+    return { public: false };
+  }
+  if (r.signale_le) return { error: "Ce mème a été signalé : il ne peut pas aller dans « Découvrir ».", statut: 400 };
+  if (!s(aCote.meme)) return { error: "Seul un mème en vidéo peut aller dans « Découvrir ».", statut: 400 };
+  if (s(aCote.repondA)) return { error: "Un duo montre aussi la figurine de quelqu’un d’autre : il reste entre vous.", statut: 400 };
+  if (!habitant.villeSlug) return { error: "Il faut d’abord ta ville.", statut: 400 };
+  if (avant?.ville) return { public: true };
+  const p: Public = { ville: habitant.villeSlug, jour: jourParis(), le: new Date().toISOString() };
+  const ok = (await ecrireJson(supabase, cheminPublic(p.ville, p.jour, s(r.id)), { id: s(r.id), h: habitant.id, le: p.le })) && (await ecrireJson(supabase, chemin, { ...aCote, public: p }));
+  return ok ? { public: true } : { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+}
+
+/** 🌍 Les mèmes que les gens de SA ville ont choisi de montrer, ces trois derniers jours (pas les signalés). */
+export async function memesPublics(supabase: Supabase, ville: string, max = 20): Promise<MemePublic[]> {
+  if (!ville) return [];
+  const cache: Cache = new Map();
+  const l: MemePublic[] = [];
+  for (let k = 0; k < 3 && l.length < max; k++) {
+    const jour = jourAvant(jourParis(), k);
+    const { data } = await supabase.storage.from(SEAU_FIGURINES).list(`publics/${ville}/${jour}`, { limit: 100, sortBy: { column: "created_at", order: "desc" } });
+    const ids = ((Array.isArray(data) ? data : []) as { name?: string }[]).map((x) => /^([a-z0-9]{12})\.json$/.exec(s(x.name))?.[1] ?? "").filter(Boolean);
+    const vus = await Promise.all(ids.slice(0, max - l.length).map((id) => apercuMeme(supabase, id, cache)));
+    l.push(...vus.filter((x): x is NonNullable<typeof x> => Boolean(x?.public && x.ap.video)).map((x) => ({ ...x.ap, villeSlug: ville })));
+  }
+  return l;
 }
 
 /** 💬 LE MÈME AUQUEL IL RÉPOND (en duo) : ses images (son visage du moment), sa voix, ses mots, son prénom. */

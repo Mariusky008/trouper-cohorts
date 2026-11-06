@@ -844,7 +844,7 @@ de neuf, on resserre) :
 Ce qui vient ensuite (proposé, à décider avec le patron) : l'étape 2 — **le mème du jour du commerçant** (sa figurine
 annonce une chose précise chaque jour : le menu du jour, un nouveau vêtement, une coiffure, une promo, un bon plan, une
 place libre ; ses mots et ses prix à lui, jamais inventés) et l'onglet **Découvrir** avec les mèmes des commerçants du
-coin ; l'étape 3 — les mèmes que les gens choisissent de rendre publics (jamais sans leur accord). La voix du
+coin ; l'étape 3 (construite, 9.0 duovicies) — les mèmes que les gens choisissent de rendre publics (jamais sans leur accord). La voix du
 commerçant : un enregistrement de sa voix (la règle d'aujourd'hui), à moins que le patron n'étende l'exception.
 
 ### 9.0 unvicies Le mème du jour des commerçants, et « Découvrir » (7 novembre) — étape 2 construite
@@ -877,8 +877,33 @@ sont publics (ceux des clients, jamais sans leur accord) ; les cartes de fidéli
   fiche `memes/<id>.json`, une fiche par mème dans `memes-du-jour/<ville>/<jour>/` (deux commerçants qui publient en
   même temps ne s'écrasent pas), et ses mèmes à lui `<site>/memes/index.json`.
 
-Reste à venir (l'étape 3) : les mèmes que les clients choisissent de rendre publics, avec leur accord, dans
-« Découvrir ».
+L'étape 3 (les mèmes des clients dans « Découvrir », avec leur accord) : voir 9.0 duovicies.
+
+### 9.0 duovicies Les mèmes des gens dans « Découvrir », sur leur accord (7 novembre) — étape 3 construite
+
+Le patron a dit « oui » à l'étape 3 : « découvrir les figurines et les mèmes des autres », pas seulement ceux des
+commerçants. La règle tient : **un mème de client n'est jamais public sans son accord.**
+
+- **Un geste à lui, à chaque fois** : « 🌍 Le montrer aussi dans « Découvrir » » sous son mème tout juste fait (le
+  studio), ou « 🌍 Montrer dans Découvrir » sous chacun de ses mèmes (« Mes mèmes »). On lui demande d'abord son accord
+  (`ACCORD_PUBLIC` : « Ton mème — ta figurine, ta voix, tes mots et ton prénom — sera visible par les gens de ta ville
+  dans « Découvrir ». Tu pourras le retirer quand tu veux. D'accord ? ») ; « Annuler » : rien ne bouge. Le bouton
+  devient « 🌍 Dans Découvrir · retirer » : un toucher, et il quitte « Découvrir » tout de suite.
+- **Pour les gens de SA ville seulement** (celle de son compte), ces trois derniers jours. Sans compte, on ne voit que
+  les commerçants.
+- **Jamais un duo** (il montre aussi la figurine de quelqu'un d'autre : il reste entre eux ; ni bouton, ni route),
+  **jamais un mème signalé** (il disparaît du fil, et ne peut plus y revenir), seulement une vidéo.
+- **Dans le fil** (`decouvrir.tsx`) : ceux de sa ville d'abord — commerçants et habitants mêlés, les plus récents en
+  premier — puis les commerçants d'ailleurs. La carte d'un habitant : « 🎭 Léa », « De ta ville · aujourd'hui ·
+  Signaler », « ↩️ Lui répondre » (en duo, `/figurine/<id>/repondre`), « 📲 ». Un liseré doré la distingue de celle
+  d'un commerçant.
+- **Le stockage, sans table** : `public` (sa ville, le jour, l'heure) dans la fiche à côté du message
+  (`<h>/m-<id>.json`, seau privé `figurines-clients`), et une fiche par mème dans `publics/<ville>/<jour>/<id>.json`
+  (retirée quand il le retire). La vidéo reste au seau privé : le fil la sert par des adresses signées
+  (`memesPublics`, `lib/direct/ma-figurine-serveur.ts` ; `POST /api/direct/ma-figurine { action: "public" }`).
+- **Les essais** (`scripts/navigateur/ma-figurine.mjs`) : l'accord demandé (et « Annuler » qui ne fait rien), Hugo de
+  Dax qui voit le mème de Léa et peut lui répondre, le duo refusé, le mème d'un autre refusé, rien sans compte, le
+  retrait immédiat, et le mème signalé qui quitte le fil.
 
 ### 9.1 L'idée en une phrase
 
