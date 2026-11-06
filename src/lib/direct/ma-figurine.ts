@@ -215,6 +215,8 @@ export type MessageFigurine =
       texte?: string;
       /** 🕺 Elle danse. */
       danse?: boolean;
+      /** 🎭 Son mème : la vidéo (adresse signée), jouée toute seule chez celui qui la reçoit. */
+      meme?: { video: string; type: string };
       /** Un message de la démonstration : écrit par `prenom` avec la figurine de ClikMe (pas la sienne). */
       demo?: boolean;
       /** ✨ Le cadre doré (une option de l'expéditeur). */

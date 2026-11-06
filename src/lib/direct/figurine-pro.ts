@@ -445,14 +445,20 @@ export function consigneFigurineClient(traits?: Traits | null, univers = ""): st
   const sansBarbe = !!traits?.barbe && /^aucune/i.test(traits.barbe);
   // SON PORTRAIT : la phrase du modèle de vision ; sinon, ses traits en mots (en français : le moteur les lit)
   const portrait = traits?.portrait || "";
-  const traitsFr = traitsEnMots(traits).filter((l) => !l.startsWith("- Son âge") && !l.includes("lunettes"));
+  // (6 novembre 2026 : « c'est joli mais ça ne me ressemble plus du tout ; il faut qu'on me reconnaisse, avec les
+  // traits exagérés mais reconnaissables » — ses traits vus, ligne par ligne, TOUJOURS, et ce qu'un caricaturiste
+  // accentuerait chez lui)
+  const traitsFr = traitsEnMots(traits).filter((l) => !l.startsWith("- Son âge") && !l.includes("lunettes") && !l.startsWith("- Son expression"));
   return [
-    "Create a high-quality 3D animated movie character bobblehead based on the reference photo. Preserve the person's recognizable identity and facial features.",
+    "Create a high-quality 3D animated movie character bobblehead based on the reference photo. The person must be INSTANTLY RECOGNIZABLE by their friends: likeness comes first, style second.",
     "",
-    `**Face and likeness:** ${portrait ? `${portrait.replace(/\.?$/, ".")} ` : ""}Carefully reproduce the original shape of their nose, eyes, eyebrows, jawline, and facial proportions. Keep their face recognizable. Lips closed.${traits?.lunettes === true ? " Keep their glasses, same shape." : " No glasses unless they wear some in the photo."}`,
-    ...(!portrait && traitsFr.length ? ["Their features as seen in the photo (in French):", ...traitsFr] : []),
+    `**Face and likeness (most important):** ${portrait ? `${portrait.replace(/\.?$/, ".")} ` : ""}Keep THEIR face structure exactly: the same face shape and proportions, the same jawline and chin, the same nose shape and size, the same eye shape and spacing, the same eyebrows, the same hairline, hair colour and hairstyle, the same facial hair, the same skin tone. Lips closed.${traits?.lunettes === true ? " Keep their glasses, same shape." : " No glasses unless they wear some in the photo."}`,
+    ...(traitsFr.length ? ["Their features as seen in the photo (in French — follow them exactly):", ...traitsFr] : []),
+    ...(traits?.accentuer
+      ? [`**Caricature, like a good caricature artist:** gently EXAGGERATE their own most distinctive features (about 20 %), so they are recognized at first glance (in French, most striking first): ${traits.accentuer}. Never add generic cartoon features that are not theirs.`]
+      : []),
     "",
-    `**3D animation style:** A true stylized 3D animated feature-film character, not a photorealistic human. Smooth, soft skin, rounded simplified facial shapes, slightly exaggerated expressive eyes, a carefully stylized nose matching the reference${sansBarbe ? "" : ", and fully cartoon-like facial hair (if any) made of simplified sculpted shapes rather than realistic individual hairs"}. Soft shading, appealing shapes, vibrant colors, polished 3D rendering, and a collectible designer-toy aesthetic.`,
+    `**3D animation style:** A stylized 3D animated feature-film character, not a photorealistic human — but with THEIR face, not a generic one. Smooth, soft skin, simplified sculpted shapes that follow their real features, their own eyes (very slightly enlarged at most), their own nose stylized but recognizable${sansBarbe ? "" : ", and cartoon-like facial hair (if any) made of simplified sculpted shapes rather than realistic individual hairs"}. Soft shading, vibrant colors, polished 3D rendering, a collectible designer-toy aesthetic.`,
     "",
     `**Body and clothing:** An oversized head attached to a small, compact torso cut off at the waist. Arms firmly crossed over the chest. ${
       univers
@@ -468,7 +474,7 @@ export function consigneFigurineClient(traits?: Traits | null, univers = ""): st
     "",
     "**Composition:** Straight-on frontal view, centered symmetrical composition, entire figurine and wooden base visible, plain solid bright magenta background, professional soft studio lighting, clean shadows, crisp details, high-quality 3D animation render.",
     "",
-    `**Important constraints:** Keep the original person's identity recognizable. Do not make the face photorealistic. Do not create realistic photographic skin pores or individual beard hairs. The nose, eyes, and ${sansBarbe ? "hair" : "beard"} must look deliberately designed and sculpted as part of a stylized animated character. No change to their expression, no extra limbs, no text, no logos.${sansBarbe ? " No beard and no moustache: add none." : ""}`,
+    `**Important constraints:** Keep the original person's identity recognizable — if style and likeness ever conflict, choose likeness. Do not make the face photorealistic. Do not create realistic photographic skin pores or individual beard hairs. The nose, eyes, and ${sansBarbe ? "hair" : "beard"} must look deliberately designed and sculpted as part of a stylized animated character. No change to their expression, no extra limbs, no text, no logos.${sansBarbe ? " No beard and no moustache: add none." : ""}`,
   ].join("\n");
 }
 

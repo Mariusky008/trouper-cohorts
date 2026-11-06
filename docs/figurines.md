@@ -754,6 +754,33 @@ coiffeur, « sur vous je verrais bien ce style », et appuyer ici pour l'essayer
   « FIN » : « AVANT / APRÈS ✨ ». Une seule fois par épisode, un verrou contre deux pages ; sans moteur, la proposition
   seule. Rangée dans `<habitant>/rencontres/<id>.webp`.
 
+### 9.0 octodecies Le mème, et la figurine qui lui ressemble (6 novembre, le soir) — construit
+
+- **🎭 Le mème** (`meme.ts` ; « faire comme un mème ultra moderne : quand quelqu'un reçoit ma figurine, il va vouloir
+  la partager ; très facile, sans texte ni blabla ; on le voit directement en action, il parle directement ; et juste un
+  bouton « crée ou réponds toi aussi avec ton mème » ») :
+  · « 🎭 Créer mon mème » fabrique, DANS LE TÉLÉPHONE (comme les films du Studio), une vidéo verticale de 720 × 1280 :
+    sa figurine plein cadre qui arrive d'un coup (zoom, flash), la bouche qui s'ouvre sur sa voix, la tête qui dodeline,
+    son visage du moment, l'emoji de ce qu'elle ressent, la danse et sa musique si elle danse ; ses mots en
+    sous-titres façon TikTok (quelques mots à la fois, le mot dit en jaune) ; un petit « ClikMe » ; une seconde
+    « Crée ton mème · clikme.fr » à la fin. On la voit se fabriquer.
+  · Elle part tout droit au seau privé (une adresse d'envoi signée, `<habitant>/meme-<id>.mp4` ; rangée à côté du
+    message), puis « 📲 Partager mon mème » : la feuille de partage du téléphone, avec LA VIDÉO (WhatsApp la montre et
+    la rejoue) — sans texte ; sinon son lien seul ; « ⬇️ La vidéo » pour l'enregistrer. Le MP4 d'abord (iPhone,
+    WhatsApp), le WebM sinon.
+  · La page du lien (`/figurine/<id>`) : le mème joue tout de suite, en boucle — avec le son si le navigateur le
+    permet, sinon en silence avec ses sous-titres (les navigateurs interdisent le son avant le premier toucher) et le
+    son au premier toucher, n'importe où. Un seul bouton, « 🎭 Crée ou réponds avec ton mème » ; « Signaler », tout
+    petit. L'aperçu du lien : « 🎭 Le mème de Léa » et sa figurine. Un message sans vidéo (d'avant) : sa figurine, ses
+    mots en sous-titre, qui parle au premier toucher.
+  · Les commerces cités dans un message ne se cochent plus (le mème, rien d'autre).
+- **La figurine qui lui ressemble** (« c'est joli mais ça ne me ressemble plus du tout ; il faut qu'on me reconnaisse,
+  avec les traits exagérés mais reconnaissables ») : le moteur repasse en FIDÉLITÉ HAUTE au visage
+  (`FIGURINE_CLIENT_FIDELITE=low` pour revenir à la basse) ; la consigne met la ressemblance d'abord (« si le style et
+  la ressemblance s'opposent, la ressemblance ») : la structure de SON visage gardée trait par trait, ses traits vus
+  sur la photo toujours écrits, et ce qu'un caricaturiste accentuerait chez lui exagéré d'environ 20 % — le dessin
+  animé, oui, mais avec SON visage.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
