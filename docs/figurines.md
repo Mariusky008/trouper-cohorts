@@ -808,6 +808,78 @@ qui AMÈNE des gens (chaque mème envoyé est une publicité), il plaît en une 
   coefficient (nouveaux créateurs par mème envoyé — au-dessus de 1, l'app grandit toute seule), le chemin sur 7 et 30
   jours (ouvert ? touché ? créé ?), jour par jour.
 
+### 9.0 vicies On resserre sur le mème (7 novembre) — étape 1 construite
+
+Ses mots : « le concept part un peu dans tous les sens » ; « collectionner les figurines des commerçants, ça paraît
+hors sujet avec la direction qu'on vient de prendre » ; la page du mois « on devrait pouvoir utiliser celle qu'on veut
+pour l'envoyer en faisant dire quelque chose ou la transformer en mème » ; « “où les gagner”, gagner quoi ? » ;
+« l'album, on a du mal à voir à quoi il sert ». La règle, pour chaque écran : **est-ce qu'il aide à faire un mème, ou
+donne une raison d'en envoyer un ?** Sinon, on le transforme ou on le retire. Ce qui est construit (l'étape 1 : rien
+de neuf, on resserre) :
+
+- **Trois onglets au lieu de cinq** (`ma-collection.tsx`) : 💬 **Rencontres** (l'épisode du jour, sa figurine du mois
+  qui s'y mérite juste dessous, et « 🃏 Mon personnage » à côté, dans une bascule), 🎭 **Créer** au milieu, en gros, avec
+  SA figurine dans le bouton, 📥 **Mes mèmes**. Les anciens liens retombent sur le bon (`#album` → « Mes mèmes »,
+  `#mois`, `#ou-gagner` → sa figurine du mois dans « Rencontres », `#personnage` → « Mon personnage »).
+- **Ce mois-ci et l'album des commerçants quittent l'appli** (`decouvrir.tsx`, `album.tsx` supprimés). Les cartes de
+  fidélité commencées restent valables, sur la page de chaque commerçant (`/f/<slug>`) ; son lien mène maintenant à
+  « 🎭 Ma figurine qui parle ». Les épisodes d'avant sont listés dans « Rencontres » (plus de cartes souvenirs dans un
+  album).
+- **🗓️ Ses figurines du mois deviennent des LOOKS** : dans « Créer », « Son look » (de tous les jours, ou une figurine
+  du mois). La première fois qu'il en prend une, le moteur lui ouvre la bouche (`fabriquerParleDuLook`, une image,
+  `<h>/mois/<AAAA-MM>-p.webp` ; dès sa fabrication s'il reste le temps) ; ensuite elle parle dans ses mèmes, avec son
+  visage du mois. Le message garde son look (`look`, à côté du message) : c'est elle que voit celui qui le reçoit, et
+  elle encore qui parle en haut d'un duo. « 🎭 Fais-la parler » sous sa figurine du mois, et la pastille « est arrivée »
+  de « Créer », la prennent d'un toucher (`vers-le-studio.ts`).
+- **📥 Mes mèmes** (`mes-memes.tsx`, `GET ?memes=1`) : « ↩️ On t'a répondu » (les réponses en duo à ses mèmes — une
+  marque par réponse dans son dossier, `rep-<son mème>-<la réponse>.json` — avec « Lui répondre »), « 🎭 Mes mèmes »
+  (vus combien de fois — `clik_meme_evenement`, sinon ses écoutes — et combien de réponses), « 📥 Reçus » (ceux qu'il a
+  ouverts sur ce téléphone, gardés par la page du mème, avec « Répondre »). Ses messages ne sont plus repliés dans
+  « Créer ».
+- **🎭 « Fais-en un mème »** à la fin d'un épisode : les meilleures répliques de SA figurine ; un toucher, et « Créer »
+  s'ouvre avec la réplique écrite.
+- **👣 Ses premiers pas** : « Passer chez un commerçant partenaire » devient « ↩️ Répondre en duo à un mème »
+  (`<h>/duo.json`, noté à sa première réponse) ; « Envoyer ton premier message » devient « Créer ton premier mème ».
+
+Ce qui vient ensuite (proposé, à décider avec le patron) : l'étape 2 — **le mème du jour du commerçant** (sa figurine
+annonce une chose précise chaque jour : le menu du jour, un nouveau vêtement, une coiffure, une promo, un bon plan, une
+place libre ; ses mots et ses prix à lui, jamais inventés) et l'onglet **Découvrir** avec les mèmes des commerçants du
+coin ; l'étape 3 — les mèmes que les gens choisissent de rendre publics (jamais sans leur accord). La voix du
+commerçant : un enregistrement de sa voix (la règle d'aujourd'hui), à moins que le patron n'étende l'exception.
+
+### 9.0 unvicies Le mème du jour des commerçants, et « Découvrir » (7 novembre) — étape 2 construite
+
+Ses mots : « pour un commerçant, il pourrait faire de sa figurine une action par jour précise : présenter le menu du
+jour, un nouveau vêtement, une coiffure, une promo, des bons plans » ; pour les clients, « découvrir les figurines et
+les mèmes des autres ». Ses trois décisions, laissées à ClikMe (« fais le mieux ») : la voix du commerçant est la
+sienne, enregistrée (ou la musique) — l'exception ElevenLabs reste celle des clients ; seuls les mèmes des commerçants
+sont publics (ceux des clients, jamais sans leur accord) ; les cartes de fidélité commencées restent valables.
+
+- **Au comptoir, « 🎭 Mon mème du jour »** (une carte de l'accueil, `meme-comptoir.tsx` ; `?ouvrir=meme` y mène droit,
+  pour un rappel chaque matin) : ce qu'elle annonce (`TYPES_MEME_COMMERCE`, ceux de son métier d'abord — 🍽️ le menu du
+  jour, ✂️ la coupe du jour, ✨ nouveau en boutique… puis la promo, le bon plan, une place libre, le mot du jour) ; ses
+  mots et ses prix (ClikMe n'invente rien, 160 signes, un gros mot refusé) ; sa voix enregistrée, ou la musique (elle
+  danse, ses mots défilent) ; sa figurine du mois, sinon sa figurine, sinon son fantôme (qui ouvre la bouche aussi).
+  La vidéo se fabrique sous ses yeux (`meme.ts` : le bandeau « 🍽️ LE MENU DU JOUR » et son nom en haut, son nom à la
+  fin), part au seau public, et il la partage telle quelle (statut WhatsApp, story). Cinq par jour au plus. Dans la
+  démonstration, elle se fabrique sans rien publier.
+- **Sa page publique `clikme.fr/meme/<id>`** (`/m/` était déjà pris par les villes) : la vidéo joue tout de suite,
+  « 📍 Voir sa page » (par `/meme/<id>/voir`, compté), « 🎭 Crée ton mème, toi aussi », « 📲 Partager ce mème ».
+- **Ce qu'il rapporte**, à son comptoir : vu combien de fois, combien sont allés voir sa page, combien l'ont partagé
+  (la table de la mesure, `clik_meme_evenement`, sous `c-<id>` ; la page `/admin/humain/memes` ne les mélange pas aux
+  mèmes des clients).
+- **🔥 « Découvrir »**, dans l'appli des clients (`decouvrir.tsx`, `GET /api/direct/memes-commerces`) : le fil des mèmes
+  du jour des commerçants de sa ville (les trois derniers jours), puis ceux d'ailleurs s'il y en a peu ; chaque vidéo
+  joue en silence quand on la voit, un toucher pour le son ; « Voir sa page », « Partager ».
+- **Le menu en bas, comme les applis de vidéos** : 🔥 Découvrir · 💬 Rencontres · 🎭 Créer (au milieu) · 📥 Mes mèmes ·
+  🃏 Moi (sa carte de personnage, la question du jour).
+- **Le stockage, sans table** (rien à migrer) : le seau public `figurines-pros` — la vidéo `<site>/memes/<id>.<ext>`, sa
+  fiche `memes/<id>.json`, une fiche par mème dans `memes-du-jour/<ville>/<jour>/` (deux commerçants qui publient en
+  même temps ne s'écrasent pas), et ses mèmes à lui `<site>/memes/index.json`.
+
+Reste à venir (l'étape 3) : les mèmes que les clients choisissent de rendre publics, avec leur accord, dans
+« Découvrir ».
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

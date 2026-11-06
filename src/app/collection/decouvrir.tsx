@@ -1,293 +1,187 @@
 "use client";
 
 /**
- * 🏆 « MA COLLECTION », CE QUI L'EXPLIQUE — refait le 4 novembre 2026 (« on s'y perd, on ne sait pas quoi y faire ») :
- *   · LE COMPTE À REBOURS (`ChronoEdition`) : l'édition du mois, et le temps qui reste à la seconde ; la frise des
- *     éditions. Tout est vrai : les dates sont celles des éditions (`EDITIONS_DATEES`), aucun chiffre n'est inventé ;
- *   · OÙ LES GAGNER (`OuGagner`) : les commerces ClikMe (`page.tsx`).
- * La figurine qui parle, le « wow » de la page, est en haut (`ma-figurine.tsx`).
+ * 🔥 « DÉCOUVRIR » — 7 novembre 2026 (le patron : « pour les commerçants, ça devrait être plutôt découvrir les figurines
+ * et les mèmes des autres »). Le fil des mèmes du jour des commerçants ClikMe de sa ville (puis d'ailleurs, s'il y en a
+ * peu) : leur menu, leur nouveauté, leur bon plan, annoncés par leur figurine (`lib/direct/memes-commerces.ts`).
+ *   · chaque vidéo joue toute seule, en silence, quand on la voit (un toucher : le son) ;
+ *   · « 📍 Voir sa page » (compté : c'est ce que son mème rapporte au commerçant), « 📲 Partager » ;
+ *   · seulement les mèmes des commerçants — ceux des clients ne sont jamais publics sans leur accord.
+ * La liste se recharge à chaque fois qu'il ouvre l'onglet.
  */
-import { useEffect, useState, type CSSProperties } from "react";
-import { EDITIONS_DATEES, editionsDuMoment, fenetre, finEnAnnee, jourEnClair } from "@/lib/direct/collection";
-import { Particules, THEMES, type Theme } from "@/app/f/[slug]/collection";
-import { FigurineGuide, GuideDit } from "./guide";
-import { MaFigurineDuMois } from "./figurine-du-mois";
+import { useContext, useEffect, useRef, useState } from "react";
+import type { MemeCommerce } from "@/lib/direct/memes-commerces";
+import { GuideDit, OngletVisible } from "./guide";
 
-export type CommerceACollectionner = { slug: string; nom: string; ville: string; figurine: string; cadeau?: string };
-
-const OR: Theme = { a: "#FFE7A0", b: "#B8801E", parts: ["✨", "⭐", "🏆"] };
-
-// ─── le temps qui reste ─────────────────────────────────────────────────────────────────────────
-/** Le décalage de Paris (en minutes) à l'instant `t`. */
-function decalageParis(t: number) {
-  const p = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Paris", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date(t));
-  const g = (k: string) => Number(p.find((x) => x.type === k)?.value ?? 0);
-  return (Date.UTC(g("year"), g("month") - 1, g("day"), g("hour"), g("minute")) - t) / 60000;
+/** « aujourd'hui », « hier », « 6 nov. » (heure de Paris). */
+function quand(le: string): string {
+  const jour = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
+  const d = new Date(le);
+  if (Number.isNaN(d.getTime())) return "";
+  if (jour(d) === jour(new Date())) return "aujourd’hui";
+  if (jour(d) === jour(new Date(Date.now() - 86_400_000))) return "hier";
+  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" });
 }
-/** Minuit à Paris, à la fin du jour `j` (« 2026-12-20 » → le 21 à 0 h, heure de Paris). */
-function finDuJourParis(j: string) {
-  const [y, m, d] = j.split("-").map(Number);
-  const t = Date.UTC(y, m - 1, d + 1);
-  return t - decalageParis(t) * 60000;
-}
-const deux = (n: number) => String(n).padStart(2, "0");
 
-/** Les éditions autour d'aujourd'hui : celle qui vient de finir, celle-ci, les deux suivantes. */
-function frise(aujourdhui: string) {
-  const an = +aujourdhui.slice(0, 4);
-  const passee = EDITIONS_DATEES.flatMap((e) => [an - 1, an].map((y) => ({ e, fin: finEnAnnee(e, y) })))
-    .filter((x) => x.fin < aujourdhui)
-    .sort((a, b) => b.fin.localeCompare(a.fin))[0];
-  const suivantes = EDITIONS_DATEES.map((e) => ({ e, f: fenetre(e, aujourdhui) }))
-    .filter(({ f }) => f.debut > aujourdhui)
-    .sort((a, b) => a.f.debut.localeCompare(b.f.debut))
-    .slice(0, 2);
-  return { passee, suivantes };
-}
-const ecartJours = (a: string, b: string) => Math.round((Date.UTC(+b.slice(0, 4), +b.slice(5, 7) - 1, +b.slice(8, 10)) - Date.UTC(+a.slice(0, 4), +a.slice(5, 7) - 1, +a.slice(8, 10))) / 86_400_000);
-
-/** L'édition du moment, le temps qui reste à la seconde, et la frise des éditions. */
-export function ChronoEdition({ aujourdhui }: { aujourdhui: string }) {
-  const { maintenant: m } = editionsDuMoment(aujourdhui);
-  const jourFin = m?.fin ?? "";
-  const [reste, setReste] = useState<number | null>(null);
+/** Un mème du fil : il joue quand on le voit (en silence), s'arrête quand on passe ; un toucher : le son. */
+function MemeDuFil({ m, actif }: { m: MemeCommerce; actif: boolean }) {
+  const video = useRef<HTMLVideoElement>(null);
+  const [muet, setMuet] = useState(true);
+  const [partage, setPartage] = useState("");
   useEffect(() => {
-    if (!jourFin) return;
-    const fin = finDuJourParis(jourFin);
-    const maj = () => setReste(Math.max(0, fin - Date.now()));
-    maj();
-    const t = window.setInterval(maj, 1000);
-    return () => window.clearInterval(t);
-  }, [jourFin]);
-  if (!m) return null;
-  const t = THEMES[m.cle] ?? THEMES.rare;
-  const { passee, suivantes } = frise(aujourdhui);
-  const s = reste == null ? null : Math.floor(reste / 1000);
-  const cases = [
-    { v: s == null ? m.jours : Math.floor(s / 86400), l: "jours" },
-    { v: s == null ? "--" : deux(Math.floor((s % 86400) / 3600)), l: "heures" },
-    { v: s == null ? "--" : deux(Math.floor((s % 3600) / 60)), l: "min" },
-    { v: s == null ? "--" : deux(s % 60), l: "s" },
-  ];
+    const v = video.current;
+    if (!v) return;
+    if (!actif) {
+      v.pause();
+      return;
+    }
+    const o = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting && e.intersectionRatio >= 0.6) void v.play().catch(() => undefined);
+        else v.pause();
+      },
+      { threshold: [0, 0.6, 1] },
+    );
+    o.observe(v);
+    return () => o.disconnect();
+  }, [actif]);
+  async function partager() {
+    const lien = `${window.location.origin}/meme/${m.id}`;
+    void fetch("/api/direct/memes-commerces", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "geste", type: "partage", id: m.id }) }).catch(() => undefined);
+    try {
+      if (typeof navigator.share === "function") return await navigator.share({ url: lien, title: `${m.emoji} ${m.titre} · ${m.nom}` });
+    } catch {
+      return; /* il a fermé la feuille de partage */
+    }
+    try {
+      await navigator.clipboard.writeText(lien);
+      setPartage("Lien copié ✓");
+    } catch {
+      setPartage("");
+    }
+  }
   return (
-    <section className="ce" style={{ "--a": t.a, "--b": t.b } as CSSProperties} aria-label="L’édition du moment">
-      <div className="ce-haut">
-        <span className="ce-carte">
-          <Particules theme={t} n={8} />
-          <FigurineGuide className="ce-img" edition={m.cle} />
-          <em aria-hidden="true">{m.emoji}</em>
-          <i className="ce-reflet" />
+    <li className="dv-carte">
+      <div className="dv-video">
+        <video
+          ref={video}
+          src={m.video}
+          {...(m.image ? { poster: m.image } : {})}
+          muted={muet}
+          loop
+          playsInline
+          preload="metadata"
+          onClick={() => {
+            const v = video.current;
+            if (!v) return;
+            v.muted = !muet;
+            setMuet(!muet);
+            void v.play().catch(() => undefined);
+          }}
+        />
+        <span className="dv-son" aria-hidden="true">
+          {muet ? "🔇" : "🔊"}
         </span>
-        <div className="ce-texte">
-          <span className="ce-ruban">● À GAGNER MAINTENANT</span>
-          <b className="ce-nom">Édition {m.nom}</b>
-          <span className="ce-part">Elle s’en va dans</span>
-          <div className="ce-chrono" role="timer" aria-label={`Encore ${m.jours} jour${m.jours > 1 ? "s" : ""}`}>
-            {cases.map((c) => (
-              <span key={c.l}>
-                <b>{c.v}</b>
-                <small>{c.l}</small>
-              </span>
-            ))}
-          </div>
-          <p>Une visite d’ici le {jourEnClair(m.fin)}, et elle est à toi. Après, une édition manquée est manquée.</p>
-        </div>
       </div>
-      <ol className="ce-frise" aria-label="Les éditions">
-        {passee && (
-          <li className="passee">
-            <span className="ce-mini">
-              <FigurineGuide className="ce-img" edition={passee.e.cle} fixe />
-              <em aria-hidden="true">{passee.e.emoji}</em>
-            </span>
-            <b>{passee.e.nom}</b>
-            <small>terminée</small>
-          </li>
-        )}
-        <li className="maintenant">
-          <span className="ce-mini">
-            <FigurineGuide className="ce-img" edition={m.cle} fixe />
-            <em aria-hidden="true">{m.emoji}</em>
-          </span>
+      <div className="dv-bas">
+        <span className="dv-qui">
           <b>{m.nom}</b>
-          <small>maintenant</small>
-        </li>
-        {suivantes.map(({ e, f }) => (
-          <li key={e.cle} className="bientot" style={{ "--a": (THEMES[e.cle] ?? THEMES.rare).a, "--b": (THEMES[e.cle] ?? THEMES.rare).b } as CSSProperties}>
-            <span className="ce-mini">
-              <FigurineGuide className="ce-img" edition={e.cle} fixe ombre />
-              <em aria-hidden="true">🔒</em>
-            </span>
-            <b>
-              {e.emoji} {e.nom}
-            </b>
-            <small>dans {ecartJours(aujourdhui, f.debut)} j</small>
-          </li>
-        ))}
-        <li className="rare">
-          <span className="ce-mini">
-            <FigurineGuide className="ce-img" rare fixe />
-            <em aria-hidden="true">✨</em>
-          </span>
-          <b>Rare</b>
-          <small>jour de place libre</small>
-        </li>
-        <li className="or" style={{ "--a": OR.a, "--b": OR.b } as CSSProperties}>
-          <span className="ce-mini">
-            <FigurineGuide className="ce-img" or fixe />
-            <em aria-hidden="true">🏆</em>
-          </span>
-          <b>D’or</b>
-          <small>la 10ᵉ</small>
-        </li>
-      </ol>
-    </section>
-  );
-}
-
-export function OuGagner({ commerces, titre, aujourdhui }: { commerces: CommerceACollectionner[]; titre: string; aujourdhui: string }) {
-  if (!commerces.length) return null;
-  const m = editionsDuMoment(aujourdhui).maintenant;
-  const t = (m && THEMES[m.cle]) || THEMES.rare;
-  return (
-    <section className="dc-bloc" id="ou-gagner" aria-labelledby="dc-ou">
-      <h2 id="dc-ou">{titre}</h2>
-      <ul className="dc-commerces">
-        {commerces.map((c) => (
-          <li key={c.slug}>
-            <a href={`/f/${encodeURIComponent(c.slug)}`} style={{ "--a": t.a, "--b": t.b } as CSSProperties}>
-              <span className="dc-com-fig">
-                <FigurineGuide className="ce-img" edition={m?.cle} fixe />
-                {m && <em aria-hidden="true">{m.emoji}</em>}
-              </span>
-              <b>{c.nom}</b>
-              {c.ville && <small>{c.ville}</small>}
-              {c.cadeau && <span className="dc-com-cadeau">🎁 à 10 : {c.cadeau}</span>}
-              <span className="dc-com-voir">Sa page ›</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-/**
- * 📅 L'ONGLET « CE MOIS-CI » — 5 novembre 2026 (« on ne saisit pas ce que c'est, cette section, et à quoi elle sert ») :
- * Le guide, dans la tenue du mois, explique en quatre bulles ; puis le temps qui reste, la frise des éditions (sa figurine dans
- * chaque tenue, plus de fantômes), et les commerces où la gagner. Depuis le lot 3, tout en haut : SA figurine du mois
- * (`figurine-du-mois.tsx`) — les commerçants sont un plus, pas le centre.
- */
-export function OngletMois({ aujourdhui, commerces, dejaChez }: { aujourdhui: string; commerces: CommerceACollectionner[]; dejaChez: boolean }) {
-  const m = editionsDuMoment(aujourdhui).maintenant;
-  return (
-    <>
-      <header className="og-tete">
-        <small>CE MOIS-CI</small>
-        <h2>{m ? `L’édition ${m.nom} ${m.emoji}` : "L’édition du mois"}</h2>
-      </header>
-      {/* 🗓️ D'ABORD LA SIENNE (lot 3) : sa figurine du mois, méritée en dix jours de rencontres ; les commerces, en plus */}
-      <MaFigurineDuMois />
-      {m && (
-        <GuideDit
-          edition={m.cle}
-          cle={`mois-${m.cle}`}
-          // (les mêmes mots chaque mois : une seule voix enregistrée ; le nom de l'édition et sa date sont juste dessous)
-          voix="pablito-mois"
-          popup
-          repliques={[
-            "Tu as vu ma tenue ? C’est celle de l’édition du mois 😎",
-            "Chaque commerce ClikMe a sa figurine du mois. Tu passes chez l’un d’eux, et elle rejoint ton album.",
-            "Mais attention : elle s’en va à la fin du mois. Une édition manquée est manquée, pour toujours !",
-            "Le mois prochain, une autre tenue. Et dix figurines chez le même commerce, c’est la figurine d’or 🏆",
-          ]}
-        >
-          <a className="og-go" href="#ou-gagner">
-            📍 Où la gagner ?
+          <small>
+            {m.emoji} {m.titre}
+            {m.ville ? ` · ${m.ville}` : ""} · {quand(m.le)}
+          </small>
+        </span>
+        <span className="dv-actions">
+          <a className="dv-voir" href={`/meme/${m.id}/voir`}>
+            📍 Voir sa page
           </a>
-        </GuideDit>
+          <button type="button" className="dv-partager" onClick={partager} aria-label="Partager ce mème">
+            {partage || "📲"}
+          </button>
+        </span>
+      </div>
+    </li>
+  );
+}
+
+export function Decouvrir({ allerA }: { allerA: (o: string) => void }) {
+  const visible = useContext(OngletVisible);
+  const [fil, setFil] = useState<{ memes: MemeCommerce[]; ville: string } | null>(null);
+  const [panne, setPanne] = useState(false);
+  useEffect(() => {
+    if (!visible) return;
+    let fini = false;
+    fetch("/api/direct/memes-commerces", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j: { memes?: MemeCommerce[]; ville?: string }) => {
+        if (fini) return;
+        setFil({ memes: Array.isArray(j.memes) ? j.memes : [], ville: j.ville ?? "" });
+        setPanne(false);
+      })
+      .catch(() => !fini && setPanne(true));
+    return () => {
+      fini = true;
+    };
+  }, [visible]);
+  const ailleurs = fil ? fil.memes.filter((m) => fil.ville && m.villeSlug !== fil.ville).length : 0;
+  return (
+    <div className="dv">
+      <header className="og-tete">
+        <small>DÉCOUVRIR</small>
+        <h2>Les mèmes du jour près de chez toi</h2>
+      </header>
+      <GuideDit
+        cle="pablito-decouvrir"
+        popup
+        repliques={[
+          { t: "Ici, les mèmes du jour des commerçants ClikMe 🔥", v: "euphorie" },
+          { t: "Leur menu, leurs nouveautés, leurs bons plans… c’est leur figurine qui te l’annonce.", v: "joie" },
+          { t: "Un mème te plaît ? Va voir leur page, ou envoie-le à un ami 📲", v: "joie", apres: "louche" },
+        ]}
+      />
+      {panne && <p className="mc-vide">Le fil n’a pas pu s’afficher. Réessaie dans un instant.</p>}
+      {!fil && !panne && (
+        <div className="mc-attente" aria-label="Chargement">
+          <i />
+        </div>
       )}
-      <ChronoEdition aujourdhui={aujourdhui} />
-      <OuGagner commerces={commerces} titre={dejaChez ? "D’autres commerces où la gagner" : "Où la gagner"} aujourdhui={aujourdhui} />
-    </>
+      {fil && !fil.memes.length && (
+        <section className="mm-vide">
+          <span aria-hidden="true">🔥</span>
+          <b>Pas encore de mème du jour par ici</b>
+          <p>Les commerçants ClikMe annoncent ici leur menu, leurs nouveautés, leurs bons plans. En attendant, fais le tien !</p>
+          <button type="button" className="og-go" onClick={() => allerA("figurine")}>
+            🎭 Créer mon mème
+          </button>
+        </section>
+      )}
+      {fil && fil.memes.length > 0 && (
+        <>
+          {fil.ville && ailleurs > 0 && ailleurs === fil.memes.length && <p className="dv-note">Rien encore dans ta ville aujourd’hui : voici ceux d’ailleurs.</p>}
+          <ul className="dv-fil">
+            {fil.memes.map((m) => (
+              <MemeDuFil key={m.id} m={m} actif={visible} />
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
   );
 }
 
 export const STYLES_DECOUVRIR = `
-.dc{padding:0 16px}
-.dc-bloc{margin:34px 0 0}
-.dc-bloc h2{margin:0 0 14px;font-size:24px;line-height:1.1;font-weight:900;letter-spacing:-.02em}
-/* le compte à rebours */
-.ce{position:relative;margin:18px 0 0;padding:16px;border-radius:28px;overflow:hidden;
-  background:radial-gradient(90% 70% at 30% 0%,color-mix(in srgb,var(--a) 55%,transparent),transparent 70%),linear-gradient(160deg,color-mix(in srgb,var(--b) 80%,#000),#160611 80%);
-  border:1.5px solid color-mix(in srgb,var(--a) 70%,transparent);box-shadow:0 30px 60px -30px rgba(0,0,0,.95),0 0 50px -10px color-mix(in srgb,var(--a) 45%,transparent)}
-.ce-haut{display:flex;gap:16px;align-items:center}
-.ce-carte{position:relative;flex:none;width:118px;height:160px;border-radius:20px;overflow:hidden;background:linear-gradient(160deg,var(--a),var(--b));border:2px solid #F2C46B;box-shadow:0 0 0 3px rgba(242,196,107,.25),0 18px 30px -12px rgba(0,0,0,.9);animation:dc-flotte 3.4s ease-in-out infinite}
-.ce-carte .ce-img{position:absolute;left:6%;bottom:2px;width:88%;height:92%;filter:drop-shadow(0 8px 8px rgba(0,0,0,.45))}
-.ce-carte em{position:absolute;left:8px;top:6px;font-style:normal;font-size:26px}
-.ce-reflet{position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%);transform:translateX(-120%);animation:co-reflet 3.2s ease-in-out 1s infinite}
-.ce-texte{display:flex;flex-direction:column;gap:4px;min-width:0}
-.ce-ruban{align-self:flex-start;padding:3px 10px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.25);font-size:10.5px;font-weight:900;letter-spacing:.12em;white-space:nowrap}
-.ce-ruban{animation:ce-clignote 1.6s ease-in-out infinite}
-.ce-nom{font-size:24px;line-height:1.05;font-weight:900;letter-spacing:-.02em;text-shadow:0 2px 12px rgba(0,0,0,.45)}
-.ce-part{font-size:12.5px;font-weight:700;color:rgba(255,244,230,.8)}
-.ce-chrono{display:flex;gap:6px}
-.ce-chrono span{display:flex;flex-direction:column;align-items:center;min-width:46px;padding:6px 4px 5px;border-radius:12px;background:rgba(0,0,0,.42);border:1px solid rgba(255,255,255,.14)}
-.ce-chrono b{font-size:22px;line-height:1;font-weight:900;font-variant-numeric:tabular-nums}
-.ce-chrono small{margin-top:2px;font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,244,230,.7)}
-.ce-texte p{margin:4px 0 0;font-size:12.5px;line-height:1.4;color:rgba(255,244,230,.85)}
-.ce-frise{display:flex;gap:8px;margin:16px -16px -4px;padding:0 16px 6px;list-style:none;overflow-x:auto;scrollbar-width:none}
-.ce-frise::-webkit-scrollbar{display:none}
-.ce-frise li{flex:none;display:flex;flex-direction:column;align-items:center;gap:2px;width:72px;text-align:center}
-.ce-mini{position:relative;display:block;width:60px;height:80px;border-radius:14px;overflow:hidden;background:linear-gradient(160deg,var(--a),var(--b));border:1.5px solid rgba(255,255,255,.25)}
-.ce-mini .ce-img{position:absolute;left:6%;bottom:1px;width:88%;height:92%}
-.ce-mini em{position:absolute;right:4px;top:3px;font-style:normal;font-size:16px}
-.ce-frise b{font-size:11.5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:72px}
-.ce-frise small{font-size:10px;font-weight:700;color:rgba(255,244,230,.65);white-space:nowrap}
-.ce-frise .passee .ce-mini{filter:grayscale(1) brightness(.55)}
-.ce-frise .passee b{text-decoration:line-through;color:rgba(255,244,230,.55)}
-.ce-frise .maintenant .ce-mini{border:2px solid #F2C46B;box-shadow:0 0 16px rgba(242,196,107,.7)}
-.ce-frise .maintenant small{color:#F2C46B}
-.ce-frise .rare .ce-mini{border:2px solid transparent;background:linear-gradient(135deg,#E2D6FF,#9C84FF 40%,#FF9BE0 70%,#9AF0FF) padding-box,linear-gradient(120deg,#C9B6FF,#7B5CFF,#FF7AD9,#7FE7FF,#C9B6FF) border-box;background-size:auto,300% 300%;animation:co-holo 4s linear infinite}
-.ce-frise .or .ce-mini{border-color:#FFE7A0;box-shadow:0 0 16px rgba(255,214,120,.6)}
-@keyframes ce-clignote{50%{opacity:.6}}
-/* où commencer */
-.dc-commerces{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0;padding:0;list-style:none}
-.dc-commerces a{position:relative;display:flex;flex-direction:column;height:100%;box-sizing:border-box;padding:10px 10px 12px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#FFF4E6;text-decoration:none;transition:transform .2s,border-color .2s}
-.dc-commerces a:hover{border-color:rgba(255,46,154,.6);transform:translateY(-2px)}
-.dc-commerces a:active{transform:scale(.97)}
-.dc-com-fig{position:relative;display:block;height:118px;border-radius:14px;overflow:hidden;background:linear-gradient(160deg,var(--a),var(--b))}
-.dc-com-fig .ce-img{position:absolute;left:14%;bottom:2px;width:72%;height:94%;filter:drop-shadow(0 6px 6px rgba(0,0,0,.45))}
-.dc-com-fig em{position:absolute;right:6px;top:5px;font-style:normal;font-size:18px}
-.dc-commerces b{display:block;margin-top:8px;font-size:14px;line-height:1.2;overflow-wrap:anywhere}
-.dc-commerces small{display:block;font-size:12px;color:#A88E99}
-.dc-com-cadeau{display:block;margin-top:6px;font-size:12px;line-height:1.3;color:#F2C46B;overflow-wrap:anywhere}
-.dc-com-voir{display:block;margin-top:auto;padding-top:8px;font-size:12.5px;font-weight:800;color:#FF7AC0}
-.dc-deja{margin:24px 4px 0;font-size:12.5px;line-height:1.45;color:#A88E99;text-align:center}
-@keyframes dc-flotte{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-/* l'ordinateur : la page prend la largeur */
-@media (min-width:860px){
-  .dc{padding:0 32px}
-  .dc-bloc{margin-top:48px}
-  .dc-bloc h2{font-size:32px;margin-bottom:18px}
-  .ce{padding:28px 32px}
-  .ce-haut{gap:32px}
-  .ce-carte{width:190px;height:258px;border-radius:26px}
-  .ce-carte em{font-size:36px}
-  .ce-nom{font-size:44px}
-  .ce-part{font-size:15px}
-  .ce-chrono{gap:10px}
-  .ce-chrono span{min-width:78px;padding:12px 6px 10px;border-radius:16px}
-  .ce-chrono b{font-size:40px}
-  .ce-chrono small{font-size:11px}
-  .ce-texte p{font-size:15px;max-width:520px}
-  .ce-frise{justify-content:center;gap:16px;margin:24px 0 0;padding:0}
-  .ce-frise li{width:100px}
-  .ce-mini{width:84px;height:112px}
-  .ce-frise b{font-size:13px;max-width:100px}
-  .ce-frise small{font-size:11.5px}
-  .dc-commerces{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
-  .dc-com-fig{height:150px}
-}
-@media (prefers-reduced-motion:reduce){.dc *{animation:none!important}}
+.dv{display:flex;flex-direction:column;gap:6px}
+.dv-note{margin:6px 0 0;font-size:13px;color:#D9C3CB}
+.dv-fil{display:flex;flex-direction:column;gap:22px;margin:14px 0 0;padding:0;list-style:none}
+.dv-carte{display:flex;flex-direction:column;gap:10px}
+.dv-video{position:relative;width:100%;max-width:440px;margin:0 auto;aspect-ratio:9/16;max-height:72dvh;border-radius:26px;overflow:hidden;background:#1E0918;box-shadow:0 26px 50px -24px rgba(0,0,0,.95)}
+.dv-video video{display:block;width:100%;height:100%;object-fit:cover;cursor:pointer}
+.dv-son{position:absolute;right:12px;bottom:12px;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.55);font-size:17px;pointer-events:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.dv-bas{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;max-width:440px;margin:0 auto}
+.dv-qui{display:flex;flex-direction:column;gap:1px;min-width:0}
+.dv-qui b{font-size:16.5px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dv-qui small{font-size:12.5px;color:#D9C3CB}
+.dv-actions{display:flex;align-items:center;gap:8px;flex:none}
+.dv-voir{padding:10px 14px;border-radius:999px;background:linear-gradient(135deg,#FF2E9A,#FF7A59);color:#fff;font-size:13.5px;font-weight:900;text-decoration:none;white-space:nowrap}
+.dv-partager{min-width:42px;height:42px;padding:0 10px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#FFF4E6;font:inherit;font-size:16px;font-weight:800;cursor:pointer}
 `;

@@ -22,7 +22,7 @@
  * et le temps qui reste avant la suivante ; deux grands choix — « Invite un ami » et le bouton rond « Rencontre un
  * membre » (3… 2… 1…).
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
   EMOTIONS,
@@ -37,13 +37,14 @@ import {
   type Participant,
   type Reaction,
   type RencontreVue,
-  type Souvenir,
   type Verdict,
 } from "@/lib/direct/rencontre";
 import { AMIS_PAR_JOUR, REPONSE_MAX } from "@/lib/direct/reseau";
 import { THEMES_AMIS } from "@/lib/direct/scenarios";
 import { PanneauEnvoi } from "./ma-figurine";
 import { FigurineGuide, GuideDit } from "./guide";
+import { versLeStudio } from "./vers-le-studio";
+import { TEXTE_MAX } from "@/lib/direct/ma-figurine";
 
 type Etat = {
   rencontre: RencontreVue | null;
@@ -654,6 +655,32 @@ function EtToi({ r, onRencontre }: { r: RencontreVue; onRencontre: (x: Rencontre
  * le lien pour l'essayer), ce que sa figurine a révélé de lui, « Et toi ? », leurs impressions (entre deux clients), la
  * BD à relire (« c'est tout moi » / « jamais de la vie »), ce qui a été partagé, la carte souvenir.
  */
+/**
+ * 🎭 « FAIS-EN UN MÈME » (7 novembre 2026, on resserre sur le mème) : les meilleures répliques de SA figurine dans
+ * l'épisode ; un toucher, et le studio s'ouvre avec la réplique écrite — il n'a plus qu'à l'écouter et la partager.
+ */
+function FaisEnUnMeme({ r }: { r: RencontreVue }) {
+  if (r.moi.type !== "client" || !r.moi.figurine) return null;
+  const siennes = [...new Set(r.repliques.filter((x) => x.moi).map((x) => x.texte.replace(/\s+/g, " ").trim()))]
+    .filter((x) => x.length >= 12 && x.length <= TEXTE_MAX)
+    .sort((a, b) => b.length - a.length)
+    .slice(0, 3);
+  if (!siennes.length) return null;
+  return (
+    <section className="ra-meme" aria-label="Fais-en un mème">
+      <b>🎭 Fais-en un mème</b>
+      <small>Une réplique de ta figurine, à envoyer telle quelle :</small>
+      <div className="ra-meme-liste">
+        {siennes.map((x) => (
+          <button key={x} type="button" onClick={() => versLeStudio({ texte: x })}>
+            « {x} »<em>Créer ce mème ›</em>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function ApresRencontre({
   r,
   relook,
@@ -670,6 +697,7 @@ function ApresRencontre({
   return (
     <div className="ra">
       <Proposition r={r} relook={relook} />
+      <FaisEnUnMeme r={r} />
       {r.revele && (
         <section className="ra-revele">
           <b>🪞 Ce que ta figurine a révélé de toi</b>
@@ -767,40 +795,6 @@ function Episode({
   );
 }
 
-/**
- * 🎞️ SES CARTES SOUVENIRS, DANS L'ALBUM (« de quoi enrichir ta collection ») : une par rencontre ; la toucher ouvre
- * la rencontre (onglet « Rencontres »).
- */
-export function MesSouvenirs({ onVoir }: { onVoir: (id: string) => void }) {
-  const [liste, setListe] = useState<Souvenir[] | null>(null);
-  useEffect(() => {
-    let fini = false;
-    fetch("/api/direct/rencontre?souvenirs=1", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((j: { souvenirs?: Souvenir[] }) => !fini && setListe(j.souvenirs ?? []))
-      .catch(() => !fini && setListe([]));
-    return () => {
-      fini = true;
-    };
-  }, []);
-  if (!liste?.length) return null;
-  return (
-    <section className="ms" aria-label="Mes cartes souvenirs">
-      <h3>
-        🎞️ Mes cartes souvenirs <span className="mc-total">{liste.length}</span>
-      </h3>
-      <div className="ms-grille">
-        {liste.map((x) => (
-          <CarteSouvenir key={x.id} titre={x.titre} jour={x.jour} autre={{ image: x.image, figurine: x.figurine, ...(x.emoji ? { emoji: x.emoji } : {}) }} avec={x.avec} petite onClick={() => onVoir(x.id)} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/** Ouvrir une rencontre depuis l'album : retenue le temps d'aller sur l'onglet « Rencontres ». */
-export const CLE_VOIR_RENCONTRE = "clikme-voir-rencontre";
-
 /** Le temps qui reste jusqu'à minuit, heure de Paris (la prochaine rencontre du jour). */
 function useJusquaMinuit(): string {
   const [reste, setReste] = useState("");
@@ -869,7 +863,18 @@ function BoutonMembre({ fait, onRencontre, onAttente, desactive }: { fait: boole
   );
 }
 
-export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boolean | null; version?: number; allerA?: (o: string) => void }) {
+export function RencontreDuJour({
+  compte,
+  version = 0,
+  allerA,
+  sousLEpisode,
+}: {
+  compte: boolean | null;
+  version?: number;
+  allerA?: (o: string) => void;
+  /** Sous l'épisode du jour : sa figurine du mois, qui se mérite en dix jours de rencontres (`ma-collection.tsx`). */
+  sousLEpisode?: ReactNode;
+}) {
   const [etat, setEtat] = useState<Etat | null>(null);
   const [chargement, setChargement] = useState(false);
   const [ressemblance, setRessemblance] = useState<number | null>(null);
@@ -986,22 +991,6 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
       setAncienne(null);
     }
   }, []);
-  // UNE CARTE SOUVENIR TOUCHÉE DANS L'ALBUM : sa rencontre, ici
-  useEffect(() => {
-    const ouvrir = () => {
-      let id = "";
-      try {
-        id = window.sessionStorage.getItem(CLE_VOIR_RENCONTRE) ?? "";
-        window.sessionStorage.removeItem(CLE_VOIR_RENCONTRE);
-      } catch {
-        id = "";
-      }
-      if (id) void voir(id);
-    };
-    ouvrir();
-    window.addEventListener(CLE_VOIR_RENCONTRE, ouvrir);
-    return () => window.removeEventListener(CLE_VOIR_RENCONTRE, ouvrir);
-  }, [voir]);
   /** La rencontre a changé (leurs impressions, sa réponse) : celle d'aujourd'hui, ou celle d'avant qu'il regarde. */
   const majRencontre = useCallback((x: RencontreVue) => {
     setAncienne((a) => (a && a.id === x.id ? x : a));
@@ -1151,6 +1140,7 @@ export function RencontreDuJour({ compte, version = 0, allerA }: { compte: boole
           </p>
         )}
       </div>
+      {sousLEpisode}
 
       {/* 🎬 ENVIE D'UN AUTRE ÉPISODE ? */}
       {!etat.besoinCarte && (
@@ -1440,10 +1430,6 @@ export const STYLES_RENCONTRE = `
 .rd-souv{flex:none;display:flex;flex-direction:column;gap:2px;width:170px;padding:10px 12px;border-radius:16px;border:1.5px solid rgba(242,196,107,.45);background:linear-gradient(160deg,rgba(74,24,56,.9),rgba(30,9,24,.9));color:#FFF4E6;font:inherit;text-align:left;cursor:pointer;scroll-snap-align:start}
 .rd-souv b{font-size:13.5px;line-height:1.2;font-weight:900}
 .rd-souv small{font-size:11.5px;color:#A88E99}
-.ms{display:flex;flex-direction:column;gap:10px;margin-top:6px}
-.ms h3{margin:0;font-size:18px;font-weight:900}
-.ms-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-@media (min-width:860px){.ms-grille{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @keyframes rd-arrive{from{opacity:0;transform:translateY(10px) scale(.97)}}
 @keyframes rd-tape{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
 @media (min-width:860px){.rd{padding:22px 26px}.rd-bulle{max-width:68%}}
@@ -1527,6 +1513,12 @@ export const STYLES_RENCONTRE = `
 .rs-fin-actions .og-go{width:100%;box-sizing:border-box;border:0;font:inherit;font-size:16px;font-weight:900;cursor:pointer}
 .rs-revoir{border:0;background:none;color:#D9C3CB;font:inherit;font-size:13.5px;font-weight:800;text-decoration:underline;cursor:pointer}
 /* ce qu'il propose (chez un commerçant), avant / après */
+.ra-meme{display:flex;flex-direction:column;gap:6px;width:100%;max-width:420px;box-sizing:border-box;padding:14px 16px;border-radius:20px;background:linear-gradient(160deg,rgba(255,46,154,.2),rgba(255,122,89,.1));border:1.5px solid rgba(255,46,154,.55)}
+.ra-meme > b{font-size:18px;font-weight:900}
+.ra-meme > small{font-size:12.5px;color:#E8D3DC}
+.ra-meme-liste{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.ra-meme-liste button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:11px 13px;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.25);color:#FFF4E6;font:inherit;font-size:14px;font-weight:700;line-height:1.35;text-align:left;cursor:pointer}
+.ra-meme-liste em{font-style:normal;font-size:12px;font-weight:900;color:#FF9FD2}
 .ra-proposition{display:flex;flex-direction:column;gap:6px;width:100%;max-width:420px;box-sizing:border-box;padding:14px 16px;border-radius:20px;background:linear-gradient(160deg,rgba(242,196,107,.18),rgba(255,46,154,.1));border:1.5px solid rgba(242,196,107,.55)}
 .ra-proposition > small{font-size:10.5px;font-weight:900;letter-spacing:.12em;color:#F2C46B}
 .ra-proposition > b{font-size:19px;line-height:1.2;font-weight:900}

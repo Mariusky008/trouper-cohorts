@@ -30,6 +30,11 @@ import {
   COMMERCES_MAX_MESSAGE,
   DUREE_MAX_MESSAGE,
   IMAGES_DEMO,
+  MEMES_VUS,
+  type ApercuMeme,
+  type MesMemes,
+  type MonMeme,
+  type ReponseAMonMeme,
   figurinesEnTout,
   idMessageValide,
   prenomValide,
@@ -48,6 +53,7 @@ import {
 import { expressionsCompletes, expressionsDe, fabriquerUnTour, type Depot } from "./figurine-expressions-serveur";
 import { adresseMasquee } from "./connaitre";
 import { lireLeTexte, voixBranchee } from "./voix-figurine-serveur";
+import { lookValide } from "./figurine-du-mois";
 import { motInterdit } from "./mots-interdits";
 import { FABRICATIONS_PAR_JOUR, NOM_NEUTRE, NOM_PARLE, fabricationsParJourPourTous, fabriquerUnPas, moteurBranche } from "./ma-figurine-fabrique-serveur";
 
@@ -83,6 +89,12 @@ export async function telecharger(supabase: Supabase, chemin: string): Promise<B
   return error || !data ? null : Buffer.from(await data.arrayBuffer());
 }
 
+/** Ce fichier est-il dans ce dossier du seau ? (sans le télécharger) */
+async function existe(supabase: Supabase, dossier: string, nom: string): Promise<boolean> {
+  const { data } = await supabase.storage.from(SEAU_FIGURINES).list(dossier, { limit: 100, search: nom });
+  return ((Array.isArray(data) ? data : []) as { name?: string }[]).some((x) => x.name === nom);
+}
+
 // ─── 🎭 ses expressions : un dossier par figurine (un nouveau visage : un nouveau dossier) ──────────────────
 /** Un dossier du seau, vu comme un `Depot` (`figurine-expressions-serveur.ts`). */
 export function depotDans(supabase: Supabase, dossier: string): Depot {
@@ -97,6 +109,16 @@ export function depotDans(supabase: Supabase, dossier: string): Depot {
   };
 }
 const dossierExpressions = (habitantId: string, neutre: string) => `${habitantId}/expr-${empreinte(neutre)}`;
+/** 🗓️ Ses looks (ses figurines du mois, `figurine-du-mois-serveur.ts`) : l'image, et sa bouche ouverte. */
+export const cheminImageDuLook = (h: string, mois: string) => `${h}/mois/${mois}.webp`;
+export const cheminParleDuLook = (h: string, mois: string) => `${h}/mois/${mois}-p.webp`;
+/**
+ * ↩️ LES RÉPONSES À SES MÈMES : une marque par réponse, dans SON dossier (`rep-<son mème>-<la réponse>.json`) — une
+ * par fichier, pour qu'aucune ne se perde quand deux arrivent en même temps. « Mes mèmes » les liste.
+ */
+const cheminReponse = (h: string, a: string, id: string) => `${h}/rep-${a}-${id}.json`;
+/** 👣 Il a répondu en duo à un mème (une étape de ses premiers pas). */
+export const cheminDuo = (h: string) => `${h}/duo.json`;
 /** La démonstration (la figurine du propriétaire) : ses expressions, les textes lus, les messages envoyés. */
 const DOSSIER_DEMO = "demo-proprio/v1";
 
@@ -453,6 +475,8 @@ export async function enregistrerMessage(
   danse?: unknown,
   /** 💬 Le mème auquel il répond (en duo). */
   repondA?: unknown,
+  /** 🗓️ Son look (une figurine du mois qui parle déjà) : c'est elle qui parle dans ce message. */
+  look?: unknown,
 ): Promise<{ id?: string; error?: string }> {
   const m = /^data:(audio\/(?:webm|ogg|mp4|mpeg|x-m4a|aac|wav))(?:;[^,]*)?;base64,(.+)$/i.exec(s(son));
   if (!m) return { error: "Ton message n’a pas pu être enregistré. Réessaie." };
@@ -480,7 +504,15 @@ export async function enregistrerMessage(
   // 💬 une réponse : le mème d'origine (un vrai, pas signalé)
   const origine = idMessageValide(s(repondA)) ? await ligneMessage(supabase, s(repondA)) : null;
   const repond = origine && !origine.signale_le ? s(origine.id) : "";
-  const aCote = { ...(humeur && !sent ? { sentiment: humeur } : {}), ...(danseValide(danse) ? { danse: true } : {}), ...(repond ? { repondA: repond } : {}) };
+  // 🗓️ son look : une figurine du mois à lui, qui parle (sa bouche ouverte est faite)
+  const l = lookValide(look);
+  const sonLook = l && (await existe(supabase, `${habitant.id}/mois`, `${l}-p.webp`)) ? l : "";
+  const aCote = {
+    ...(humeur && !sent ? { sentiment: humeur } : {}),
+    ...(danseValide(danse) ? { danse: true } : {}),
+    ...(repond ? { repondA: repond } : {}),
+    ...(sonLook ? { look: sonLook } : {}),
+  };
   if (Object.keys(aCote).length && !(await ecrireJson(supabase, `${habitant.id}/m-${id}.json`, aCote))) return { error: "Ton message n’est pas parti. Réessaie dans un instant." };
   const t = texteValide(texte);
   const v = voixValide(voix);
@@ -493,7 +525,14 @@ export async function enregistrerMessage(
   if (error) return { error: "Ton message n’est pas parti. Réessaie dans un instant." };
   // 📈 la mesure : un mème de plus (et une réponse en duo)
   await noterEvenementMeme(supabase, "cree", id);
-  if (repond) await noterEvenementMeme(supabase, "reponse", repond);
+  if (repond) {
+    await noterEvenementMeme(supabase, "reponse", repond);
+    // ↩️ l'auteur du mème la verra dans « Mes mèmes » ; et lui a franchi une étape (« Répondre en duo »)
+    await Promise.all([
+      ecrireJson(supabase, cheminReponse(s(origine!.habitant_id), repond, id), { le: new Date().toISOString() }),
+      ecrireJson(supabase, cheminDuo(habitant.id), { le: new Date().toISOString() }),
+    ]);
+  }
   return { id };
 }
 
@@ -534,13 +573,15 @@ export async function statsMemes(supabase: Supabase): Promise<StatsMemes> {
   const vide = () => Object.fromEntries(TYPES_EVENEMENT_MEME.map((x) => [x, 0])) as Record<EvenementMeme, number>;
   const jour = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
   const depuis = new Date(Date.now() - 30 * 86_400_000).toISOString();
-  const { data, error } = await supabase.from("clik_meme_evenement").select("type, created_at").gte("created_at", depuis).order("created_at", { ascending: false }).limit(50_000);
+  const { data, error } = await supabase.from("clik_meme_evenement").select("message_id, type, created_at").gte("created_at", depuis).order("created_at", { ascending: false }).limit(50_000);
   const res: StatsMemes = { ok: !error, sept: vide(), trente: vide(), jours: [] };
   if (error) return res;
   const il7 = Date.now() - 7 * 86_400_000;
   const parJour = new Map<string, Record<EvenementMeme, number>>();
   for (let k = 0; k < 14; k++) parJour.set(jour(new Date(Date.now() - k * 86_400_000)), vide());
-  for (const e of (Array.isArray(data) ? data : []) as { type?: string; created_at?: string }[]) {
+  for (const e of (Array.isArray(data) ? data : []) as { message_id?: string; type?: string; created_at?: string }[]) {
+    // (les mèmes des commerçants, `c-<id>`, ont leurs propres chiffres : `memes-commerces-serveur.ts`)
+    if (s(e.message_id).startsWith("c-")) continue;
     const type = TYPES_EVENEMENT_MEME.find((x) => x === e.type);
     if (!type) continue;
     const quand = new Date(s(e.created_at));
@@ -551,6 +592,74 @@ export async function statsMemes(supabase: Supabase): Promise<StatsMemes> {
   }
   res.jours = [...parJour].map(([j, n]) => ({ jour: j, n }));
   return res;
+}
+
+// ─── 📥 « mes mèmes » ──────────────────────────────────────────────────────────────────────────
+type Cache = Map<string, Promise<Ligne | null>>;
+/** Un mème en vignette : qui, son image (son look, s'il en avait un), ses mots, sa vidéo. `h` : de qui il est. */
+async function apercuMeme(supabase: Supabase, id: string, cache: Cache, ligne?: Ligne): Promise<{ ap: ApercuMeme; h: string } | null> {
+  const r = ligne ?? (await ligneMessage(supabase, id));
+  if (!r || r.signale_le) return null;
+  const h = s(r.habitant_id);
+  if (!cache.has(h)) cache.set(h, lireLigne(supabase, h).then((x) => x.ligne));
+  const [f, aCote] = await Promise.all([cache.get(h)!, lireJson<{ look: string; meme: string }>(supabase, `${h}/m-${s(r.id)}.json`)]);
+  if (!f || !s(f.neutre)) return null;
+  const look = lookValide(aCote.look);
+  const [image, video] = await Promise.all([signer(supabase, look ? cheminImageDuLook(h, look) : s(f.neutre)), s(aCote.meme) ? signer(supabase, s(aCote.meme)) : Promise.resolve("")]);
+  if (!image) return null;
+  return { h, ap: { id: s(r.id), prenom: s(f.prenom), image, le: s(r.created_at), ...(s(r.texte) ? { texte: s(r.texte) } : {}), ...(video ? { video } : {}) } };
+}
+
+/**
+ * 📥 « MES MÈMES » : les siens (les plus récents), avec leurs vues (`clik_meme_evenement` ; sans la table, ses écoutes)
+ * et leurs réponses ; les réponses en duo qu'on lui a faites ; et ceux qu'il a reçus (`recus` : les numéros gardés sur
+ * son téléphone — pas les siens).
+ */
+export async function mesMemes(supabase: Supabase, habitant: Habitant | null, recus: unknown): Promise<MesMemes> {
+  const cache: Cache = new Map();
+  const idsRecus = [...new Set(String(recus ?? "").split(",").map(s).filter(idMessageValide))].slice(0, MEMES_VUS);
+  const lesRecus = async (sauf: Set<string>) =>
+    (await Promise.all(idsRecus.filter((id) => !sauf.has(id)).map((id) => apercuMeme(supabase, id, cache))))
+      .filter((x): x is { ap: ApercuMeme; h: string } => Boolean(x) && x!.h !== habitant?.id)
+      .map((x) => x.ap);
+  if (!habitant) return { envoyes: [], reponses: [], recus: await lesRecus(new Set()) };
+
+  const [{ data }, { data: marques }] = await Promise.all([
+    supabase.from("clik_figurine_message").select("*").eq("habitant_id", habitant.id).order("created_at", { ascending: false }).limit(MEMES_VUS),
+    supabase.storage.from(SEAU_FIGURINES).list(habitant.id, { limit: 100, search: "rep-", sortBy: { column: "created_at", order: "desc" } }),
+  ]);
+  const miens = ((Array.isArray(data) ? data : []) as Ligne[]).filter((m) => !m.retire_le);
+  const ids = miens.map((m) => s(m.id));
+  // SES VUES ET SES RÉPONSES (la mesure) ; sans la table : ses écoutes
+  const { data: ev, error } = ids.length
+    ? await supabase.from("clik_meme_evenement").select("message_id, type").in("message_id", ids).in("type", ["vu", "reponse"]).limit(5000)
+    : { data: [], error: null };
+  const compte = (id: string, type: string) => ((Array.isArray(ev) ? ev : []) as { message_id?: string; type?: string }[]).filter((e) => e.message_id === id && e.type === type).length;
+  const envoyes = (
+    await Promise.all(
+      miens.map(async (m) => {
+        const x = await apercuMeme(supabase, s(m.id), cache, m);
+        if (!x) return null;
+        const id = s(m.id);
+        return { ...x.ap, vues: error ? Number(m.ecoutes) || 0 : Math.max(compte(id, "vu"), Number(m.ecoutes) || 0), reponses: error ? 0 : compte(id, "reponse") } as MonMeme;
+      }),
+    )
+  ).filter((x): x is MonMeme => Boolean(x));
+  // LES RÉPONSES EN DUO QU'ON LUI A FAITES (une marque par réponse)
+  const textes = new Map(miens.map((m) => [s(m.id), s(m.texte)]));
+  const reps = ((Array.isArray(marques) ? marques : []) as { name?: string }[])
+    .map((x) => /^rep-([a-z0-9]{12})-([a-z0-9]{12})\.json$/.exec(s(x.name)))
+    .filter((x): x is RegExpExecArray => Boolean(x))
+    .slice(0, MEMES_VUS);
+  const reponses = (
+    await Promise.all(
+      reps.map(async ([, a, id]) => {
+        const x = await apercuMeme(supabase, id, cache);
+        return x ? ({ ...x.ap, a, ...(textes.get(a) ? { aTexte: textes.get(a) } : {}) } as ReponseAMonMeme) : null;
+      }),
+    )
+  ).filter((x): x is ReponseAMonMeme => Boolean(x));
+  return { envoyes, reponses, recus: await lesRecus(new Set(reponses.map((x) => x.id))) };
 }
 
 /** 💬 LE MÈME AUQUEL IL RÉPOND (en duo) : ses images (son visage du moment), sa voix, ses mots, son prénom. */
@@ -626,12 +735,14 @@ export async function lireMessage(supabase: Supabase, id: string): Promise<Messa
     : { data: [] };
   const parSlug = new Map(((Array.isArray(sites) ? sites : []) as Ligne[]).filter((x) => x.est_client === true).map((x) => [s(x.slug), x]));
   // (le fou rire, la grimace, la danse : à côté du message)
-  const aCote = await lireJson<{ sentiment: string; danse: boolean; meme: string; memeType: string }>(supabase, `${s(r.habitant_id)}/m-${id}.json`);
+  const aCote = await lireJson<{ sentiment: string; danse: boolean; meme: string; memeType: string; look: string }>(supabase, `${s(r.habitant_id)}/m-${id}.json`);
   const sentiment = sentimentValide(r.sentiment) ?? sentimentValide(aCote.sentiment);
+  // 🗓️ son look (une figurine du mois) : c'est elle qui parle, avec son visage du mois
+  const look = lookValide(aCote.look);
   const [neutre, parle, expr, meme] = await Promise.all([
-    signer(supabase, s(fig.neutre), 7200),
-    signer(supabase, s(fig.parle), 7200),
-    sentiment ? expressionsSignees(supabase, dossierExpressions(s(r.habitant_id), s(fig.neutre)), 7200).catch(() => null) : Promise.resolve(null),
+    signer(supabase, look ? cheminImageDuLook(s(r.habitant_id), look) : s(fig.neutre), 7200),
+    signer(supabase, look ? cheminParleDuLook(s(r.habitant_id), look) : s(fig.parle), 7200),
+    sentiment && !look ? expressionsSignees(supabase, dossierExpressions(s(r.habitant_id), s(fig.neutre)), 7200).catch(() => null) : Promise.resolve(null),
     // 🎭 son mème (la vidéo), s'il en a un
     s(aCote.meme) ? signer(supabase, s(aCote.meme), 7200) : Promise.resolve(""),
   ]);

@@ -41,7 +41,9 @@ import { createClient } from "@/lib/supabase/client";
 import { SONS_PABLITO } from "@/lib/direct/guide";
 import { ETAPES, prochaineEtape } from "@/lib/direct/etapes";
 import { ProtegerFigurine } from "./connaitre";
-import { ApercuDuMois } from "./figurine-du-mois";
+import { ApercuDuMois, useMois } from "./figurine-du-mois";
+import { EVT_VERS_LE_STUDIO, prendreVersLeStudio, type VersLeStudio } from "./vers-le-studio";
+import { moisEnClair, type FigurineDuMois } from "@/lib/direct/figurine-du-mois";
 
 type Reponse = { error?: string; etat?: EtatMaFigurine; lien?: string; son?: string; enCours?: boolean };
 
@@ -280,6 +282,16 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   }
   const [sentiment, setSentiment] = useState<Sentiment | null>(null);
   const [danse, setDanse] = useState(false);
+  // 🗓️ SES LOOKS (7 novembre 2026 : « on devrait pouvoir utiliser celle qu'on veut pour l'envoyer en faisant dire quelque
+  // chose ») : ses figurines du mois, qui parlent dans ses mèmes. `look` : celui qu'il a pris ("" : sa figurine de tous
+  // les jours) ; `lookCours` : celui qui apprend à parler (le moteur lui ouvre la bouche, une fois) ; `lookVoulu` : celui
+  // qu'on lui a demandé d'un autre onglet, en attendant que ses looks soient là
+  const [mois, annoncerMois] = useMois();
+  const looks: FigurineDuMois[] = mois ? [mois.courante, ...mois.passees].filter((f) => f.etat === "prete" && f.image) : [];
+  const [look, setLook] = useState("");
+  const [lookCours, setLookCours] = useState("");
+  const [lookVoulu, setLookVoulu] = useState("");
+  const sonLook = look ? (looks.find((f) => f.mois === look) ?? null) : null;
   // 🎵 SA MUSIQUE (6 novembre 2026 : « il faut y associer une musique qu'on entend, autrement c'est plat ») : lancée au
   // toucher ; `rythme`, son premier temps (le ressort s'écrase sur la grosse caisse)
   const musique = useRef<ReturnType<typeof lancerMusiqueDanse> | null>(null);
@@ -391,7 +403,78 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
     setRejoue((n) => n + 1);
   }
 
-  const cleEnvoi = (s: Son | null) => (s ? `${s.cle}|${sentiment ?? ""}|${danse ? "danse" : ""}` : "");
+  // 🗓️ UN LOOK : il parle tout de suite s'il sait déjà parler ; sinon, il apprend (une minute environ), puis il s'affiche
+  function choisirLook(m: string) {
+    if (!m) {
+      setLook("");
+      setRejoue((n) => n + 1);
+      return;
+    }
+    const l = looks.find((f) => f.mois === m);
+    if (!l) return;
+    if (l.parle) {
+      setLook(m);
+      // (son visage, c'est celui du mois)
+      setSentiment(null);
+      setRejoue((n) => n + 1);
+      return;
+    }
+    if (!lookCours) setLookCours(m);
+  }
+  useEffect(() => {
+    if (!lookCours) return;
+    let fini = false;
+    (async () => {
+      for (let k = 0; k < 8 && !fini; k++) {
+        const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "look-parle", look: lookCours }) }).catch(() => null);
+        const j = (await r?.json().catch(() => ({}))) as { mois?: typeof mois; enCours?: boolean; error?: string } | undefined;
+        if (fini) return;
+        if (j?.mois) annoncerMois(j.mois);
+        const pret = j?.mois && [j.mois.courante, ...j.mois.passees].some((f) => f.mois === lookCours && f.parle);
+        if (pret) {
+          setLook(lookCours);
+          setSentiment(null);
+          setRejoue((n) => n + 1);
+          break;
+        }
+        if (j?.error || !j?.enCours) {
+          if (j?.error) setErreur(j.error);
+          break;
+        }
+        await new Promise((ok) => window.setTimeout(ok, 15_000));
+      }
+      if (!fini) setLookCours("");
+    })();
+    return () => {
+      fini = true;
+    };
+  }, [lookCours, annoncerMois]);
+  // un look demandé d'un autre onglet (« Fais-la parler ») : dès que ses looks sont là
+  if (lookVoulu && looks.some((f) => f.mois === lookVoulu)) {
+    const m = lookVoulu;
+    setLookVoulu("");
+    choisirLook(m);
+  }
+  // 🎭 VERS LE STUDIO : un texte (une réplique de sa figurine dans un épisode) ou un look, demandé d'un autre onglet
+  useEffect(() => {
+    const appliquer = (x: VersLeStudio | null) => {
+      if (!x) return;
+      if (typeof x.texte === "string" && x.texte.trim()) {
+        setMode("ecrire");
+        setTexte(x.texte.trim().slice(0, TEXTE_MAX));
+      }
+      if (typeof x.look === "string") setLookVoulu(x.look);
+    };
+    void Promise.resolve().then(() => appliquer(prendreVersLeStudio()));
+    const ecoute = (e: Event) => {
+      prendreVersLeStudio();
+      appliquer((e as CustomEvent<VersLeStudio>).detail);
+    };
+    window.addEventListener(EVT_VERS_LE_STUDIO, ecoute);
+    return () => window.removeEventListener(EVT_VERS_LE_STUDIO, ecoute);
+  }, []);
+
+  const cleEnvoi = (s: Son | null) => (s ? `${s.cle}|${sentiment ?? ""}|${danse ? "danse" : ""}|${look}` : "");
 
   // ✍️ son texte, lu par la voix choisie : fabriqué au toucher, joué dès qu'il arrive
   function ecouterTexte(dit?: string) {
@@ -479,6 +562,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
       ...(danse ? { danse: true } : {}),
       ...(s.texte ? { texte: s.texte, voix: s.voix } : {}),
       ...(reponse ? { repondA: reponse.id } : {}),
+      ...(sonLook ? { look: sonLook.mois } : {}),
     });
     const lien = `${window.location.origin}${j.lien}`;
     const id = String(j.lien).split("/").pop() ?? "";
@@ -508,7 +592,13 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
         return;
       }
       setMeme({ cle, etat: "fabrication", p: 0 });
-      const visage = sentiment && etat.expressions?.[sentiment] ? etat.expressions[sentiment]! : { n: etat.neutre!, p: etat.parle! };
+      // (son look, s'il en a pris un : sa figurine du mois, qui parle)
+      const visage =
+        sonLook?.image && sonLook.parle
+          ? { n: sonLook.image, p: sonLook.parle }
+          : sentiment && etat.expressions?.[sentiment]
+            ? etat.expressions[sentiment]!
+            : { n: etat.neutre!, p: etat.parle! };
       const m = await fabriquerMeme({
         ctx,
         toile: toile.current,
@@ -567,11 +657,12 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
       <div className="tf-scene">
         <div className="tf-hero">
           <FigurineQuiParle
+            key={sonLook ? `look-${sonLook.mois}` : "moi"}
             ref={fig}
-            neutre={etat.neutre!}
-            parle={etat.parle!}
-            expressions={etat.expressions}
-            sentiment={sentiment}
+            neutre={sonLook?.image && sonLook.parle ? sonLook.image : etat.neutre!}
+            parle={sonLook?.image && sonLook.parle ? sonLook.parle : etat.parle!}
+            expressions={sonLook ? undefined : etat.expressions}
+            sentiment={sonLook ? null : sentiment}
             danse={danse}
             rythme={rythme}
             rejoue={rejoue}
@@ -627,11 +718,60 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
             </button>
           </div>
         )}
-        <b className="tf-q tf-q-visage">Son visage</b>
-        <ChoixExpression valeur={sentiment} onChoix={choisirVisage} etats={etatsVisages} />
-        {enCreation.size > 0 && (
+        {/* 🗓️ SES LOOKS : ses figurines du mois, qui parlent dans ses mèmes */}
+        {looks.length > 0 && (
+          <>
+            <b className="tf-q tf-q-visage">Son look</b>
+            <div className="tf-looks" role="radiogroup" aria-label="Son look">
+              <button type="button" role="radio" aria-checked={!sonLook} className={!sonLook ? "pris" : ""} onClick={() => choisirLook("")}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={etat.neutre} alt="" />
+                <span>De tous les jours</span>
+              </button>
+              {looks.map((l) => {
+                const cours = lookCours === l.mois;
+                const nom = moisEnClair(l.mois).replace(/\s\d{4}$/, "");
+                return (
+                  <button
+                    key={l.mois}
+                    type="button"
+                    role="radio"
+                    aria-checked={sonLook?.mois === l.mois}
+                    className={`${sonLook?.mois === l.mois ? "pris" : ""}${cours ? " cours" : ""}`}
+                    disabled={cours}
+                    aria-label={cours ? `${nom} : il apprend à parler` : `${nom}, ${l.edition.nom}`}
+                    onClick={() => choisirLook(l.mois)}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={l.image} alt="" />
+                    <span>
+                      {l.edition.emoji} {nom.charAt(0).toUpperCase() + nom.slice(1)}
+                    </span>
+                    {cours && <em>il apprend à parler…</em>}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+        {sonLook ? (
+          <p className="tf-note">
+            🗓️ Son visage du mois : <b>{sonLook.expression}</b>. Pour changer d’expression, reprends ta figurine de tous les jours.
+          </p>
+        ) : (
+          <>
+            <b className="tf-q tf-q-visage">Son visage</b>
+            <ChoixExpression valeur={sentiment} onChoix={choisirVisage} etats={etatsVisages} />
+            {enCreation.size > 0 && (
+              <p className="tf-note" role="status">
+                🎭 Ta figurine apprend {enCreation.size > 1 ? "ces visages" : "ce visage"}… une minute environ : {enCreation.size > 1 ? "ils s’afficheront" : "il s’affichera"} tout seul.
+              </p>
+            )}
+          </>
+        )}
+        {lookCours && (
           <p className="tf-note" role="status">
-            🎭 Ta figurine apprend {enCreation.size > 1 ? "ces visages" : "ce visage"}… une minute environ : {enCreation.size > 1 ? "ils s’afficheront" : "il s’affichera"} tout seul.
+            🗓️ Ton look apprend à parler… une minute environ : il s’affichera tout seul.
           </p>
         )}
       </div>
@@ -807,28 +947,9 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
         )}
       </div>
 
-      {/* REPLIÉS : ses premiers pas, ses messages */}
+      {/* REPLIÉS : ses premiers pas (ses mèmes sont dans « Mes mèmes ») */}
       <div className="tf-replis">
         <MesOptions cadeaux={etat.cadeaux} etapes={etat.etapes} />
-        {etat.messages.length > 0 && (
-          <details className="tf-messages">
-            <summary>
-              <span aria-hidden="true">💌</span> Mes messages <em>{etat.messages.length}</em>
-            </summary>
-            <ul>
-              {etat.messages.map((m) => (
-                <li key={m.id}>
-                  <a href={`/figurine/${m.id}`}>
-                    {new Date(m.le).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}
-                    {sentimentDe(m.sentiment) ? ` ${sentimentDe(m.sentiment)!.emoji}` : ""}
-                    {m.texte ? ` · « ${m.texte.slice(0, 40)}${m.texte.length > 40 ? "…" : ""} »` : ""}
-                  </a>
-                  <span>{m.signale ? "signalé" : `👂 ${m.ecoutes} écoute${m.ecoutes > 1 ? "s" : ""}`}</span>
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
       </div>
     </div>
   );
@@ -1382,6 +1503,16 @@ export const STYLES_MA_FIGURINE =
 .tf-expr-cours{font-style:normal;font-size:9.5px;font-weight:800;line-height:1.1}
 .tf-expr-neuf{position:absolute;top:4px;right:6px;font-style:normal;font-size:12px}
 .tf-scene .tf-note{margin:0;padding:8px 12px;border-radius:14px;background:rgba(242,196,107,.1);font-size:12.5px;color:#FFE7B8}
+/* 🗓️ ses looks : ses figurines du mois, en vignettes */
+.tf-looks{display:flex;gap:8px;max-width:100%;padding:6px 2px 10px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none}
+.tf-looks::-webkit-scrollbar{display:none}
+.tf-looks button{position:relative;flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;width:86px;padding:6px 6px 8px;border-radius:20px;border:2px solid transparent;background:rgba(255,255,255,.07);color:#E8D3DC;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;scroll-snap-align:start;transition:transform .15s,border-color .2s}
+.tf-looks img{width:70px;height:84px;object-fit:cover;object-position:50% 20%;border-radius:14px;background:#2a0f1f}
+.tf-looks button.pris{border-color:#FF2E9A;background:rgba(255,46,154,.16);color:#FFF4E6;transform:translateY(-2px);box-shadow:0 10px 20px -10px rgba(255,46,154,.9)}
+.tf-looks button.cours{cursor:default;color:#F2C46B}
+.tf-looks button.cours img{opacity:.5;filter:grayscale(.4)}
+.tf-looks button.cours::after{content:"";position:absolute;left:50%;top:34px;width:26px;height:26px;margin-left:-13px;border-radius:50%;border:3px solid transparent;border-top-color:#F2C46B;animation:tf-tourne 1s linear infinite}
+.tf-looks em{font-style:normal;font-size:9.5px;line-height:1.1;text-align:center}
 .tf-parle-tete{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .tf-parle-tete .tf-q{font-size:17px;letter-spacing:0;color:#FFF4E6}
 .tf-parle-tete .tf-modes{display:inline-grid;grid-template-columns:auto auto}

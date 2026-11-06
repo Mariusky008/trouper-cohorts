@@ -54,6 +54,9 @@ export const consigneGrimace = (visage: string) =>
 /** Sa bouche ouverte, son visage de tous les jours (la figurine d'un client, juste fabriquée). */
 export const consigneBoucheNeutre = () =>
   `This is a collectible bobblehead figurine with a calm expression. Change ONLY its mouth: open it naturally as if the figurine is in the middle of saying a word (a relaxed open mouth, teeth slightly visible), keeping the rest of the face exactly the same (eyes, eyebrows, cheeks). ${GARDER}`;
+/** 🗓️ La bouche ouverte d'un look (sa figurine du mois, dans sa tenue et son expression du mois) : pour qu'il parle. */
+export const consigneBoucheLook = (expression: string) =>
+  `This is a collectible bobblehead figurine, dressed up, with ${expression || "a warm, happy expression"}. Change ONLY its mouth: open it as if the figurine is in the middle of saying a word, keeping the same expression on the rest of the face (eyes, eyebrows, cheeks). ${GARDER}`;
 const consigneBouche = (x: Sentiment) =>
   `This is a collectible bobblehead figurine with a ${({ colere: "angry", tristesse: "sad", euphorie: "euphoric", rire: "laughing", grimace: "funny grimacing", joie: "joyful" } as Record<Sentiment, string>)[x]} expression. ` +
   `Change ONLY its mouth: open it as if the figurine is in the middle of saying a word, keeping the same expression on the rest of the face (eyes, eyebrows, cheeks). ${GARDER}`;

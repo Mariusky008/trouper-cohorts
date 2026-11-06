@@ -16,6 +16,11 @@
  * 💬 EN DUO (`duo`, « répondre en duo », le même jour) : la réponse à un mème garde le mème d'origine — sa figurine en
  * haut, qui parle d'abord (sa voix, ses mots), puis la sienne en bas, qui répond ; celle qui écoute s'assombrit un peu.
  *
+ * 🏪 LE MÈME DU JOUR D'UN COMMERÇANT (7 novembre 2026, `memes-commerces.ts`) : sa figurine annonce une chose précise
+ * (« 🍽️ LE MENU DU JOUR », son nom dessous : `annonce`) ; sans sa voix (`son` absent), elle danse sur la musique et
+ * ses mots défilent ; à la fin, son nom (`fin`) au lieu de « Crée ton mème ». Jamais de voix fabriquée : sa voix à
+ * lui, enregistrée, ou la musique.
+ *
  * FICHIER NAVIGATEUR.
  */
 import { musiqueDanse } from "./musique-danse";
@@ -123,6 +128,9 @@ type Scene = {
   emoji: string;
   danse: boolean;
   police: string;
+  /** 🏪 Ce qu'annonce un commerçant (en haut), et la fin à son nom. */
+  annonce?: AnnonceMeme;
+  fin?: FinMeme;
   /** 💬 En duo : celui à qui il répond (en haut, il parle d'abord), et leurs deux prénoms. */
   duo?: { n: HTMLImageElement; p: HTMLImageElement; fond: string; env: number[]; duree: number; sous: Mot[][]; prenom: string; moi: string };
 };
@@ -140,6 +148,8 @@ function couleurDuFond(i: HTMLImageElement): string {
   if (!g) return "#E0218A";
   g.drawImage(i, 0, 0, i.naturalWidth * 0.06, i.naturalHeight * 0.06, 0, 0, 4, 4);
   const d = g.getImageData(1, 1, 1, 1).data;
+  // (une figurine détourée, sur fond transparent : le rose ClikMe)
+  if (d[3] < 128) return "#E0218A";
   return `rgb(${d[0]},${d[1]},${d[2]})`;
 }
 
@@ -209,8 +219,60 @@ function etiquette(g: CanvasRenderingContext2D, police: string, x: number, y: nu
   g.restore();
 }
 
-/** La fin : « Crée ton mème · clikme.fr ». */
-function laFin(g: CanvasRenderingContext2D, police: string, fin: number): void {
+/** 🏪 Ce qu'annonce un commerçant : « 🍽️ LE MENU DU JOUR », et son nom. */
+export type AnnonceMeme = { emoji: string; titre: string; nom: string };
+/** La fin, autrement que « Crée ton mème » (un commerçant : son nom, sa ville). */
+export type FinMeme = { emoji: string; titre: string; sous: string };
+
+/** L'annonce, en haut : un grand bandeau qui arrive en rebond, et le nom du commerce dessous. */
+function lAnnonce(g: CanvasRenderingContext2D, police: string, a: AnnonceMeme, T: number): void {
+  if (T < INTRO * 0.5) return;
+  const W = MEME_L;
+  const e = rebond((T - INTRO * 0.5) / 0.4);
+  g.save();
+  g.translate(W / 2, 190);
+  g.rotate((-2.5 * Math.PI) / 180);
+  g.scale(e, e);
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  const titre = `${a.emoji} ${a.titre.toUpperCase()}`;
+  let taille = 54;
+  g.font = `900 ${taille}px ${police}`;
+  while (g.measureText(titre).width > W - 110 && taille > 30) {
+    taille -= 2;
+    g.font = `900 ${taille}px ${police}`;
+  }
+  const l = g.measureText(titre).width + 56;
+  const h = taille + 34;
+  g.fillStyle = "#FFE14D";
+  g.beginPath();
+  if (typeof g.roundRect === "function") g.roundRect(-l / 2, -h / 2, l, h, 18);
+  else g.rect(-l / 2, -h / 2, l, h);
+  g.fill();
+  g.lineWidth = 6;
+  g.strokeStyle = "#12060F";
+  g.stroke();
+  g.fillStyle = "#12060F";
+  g.fillText(titre, 0, 3);
+  // son nom, dessous
+  g.rotate((2.5 * Math.PI) / 180);
+  let tn = 38;
+  g.font = `900 ${tn}px ${police}`;
+  while (g.measureText(a.nom).width > W - 120 && tn > 22) {
+    tn -= 2;
+    g.font = `900 ${tn}px ${police}`;
+  }
+  g.lineJoin = "round";
+  g.lineWidth = tn * 0.24;
+  g.strokeStyle = "#12060F";
+  g.strokeText(a.nom, 0, h / 2 + tn * 0.95);
+  g.fillStyle = "#FFFFFF";
+  g.fillText(a.nom, 0, h / 2 + tn * 0.95);
+  g.restore();
+}
+
+/** La fin : « Crée ton mème · clikme.fr » (ou celle d'un commerçant : son nom). */
+function laFin(g: CanvasRenderingContext2D, police: string, fin: number, f?: FinMeme): void {
   if (fin <= 0) return;
   const W = MEME_L;
   const H = MEME_H;
@@ -225,13 +287,19 @@ function laFin(g: CanvasRenderingContext2D, police: string, fin: number): void {
   g.textAlign = "center";
   g.textBaseline = "middle";
   g.font = `110px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
-  g.fillText("🎭", 0, -140);
-  g.font = `900 66px ${police}`;
+  g.fillText(f?.emoji ?? "🎭", 0, -140);
+  let taille = 66;
+  g.font = `900 ${taille}px ${police}`;
+  const titre = f?.titre ?? "Crée ton mème";
+  while (g.measureText(titre).width > W - 80 && taille > 34) {
+    taille -= 2;
+    g.font = `900 ${taille}px ${police}`;
+  }
   g.fillStyle = "#FFF4E6";
-  g.fillText("Crée ton mème", 0, 0);
+  g.fillText(titre, 0, 0);
   g.font = `900 46px ${police}`;
   g.fillStyle = "#FF2E9A";
-  g.fillText("clikme.fr", 0, 80);
+  g.fillText(f?.sous ?? "clikme.fr", 0, 80);
   g.restore();
 }
 
@@ -375,24 +443,32 @@ function dessiner(g: CanvasRenderingContext2D, S: Scene, T: number): void {
     { t: "Clik", c: "#FFF4E6" },
     { t: "Me", c: "#FF2E9A" },
   ]);
+  // ─── 🏪 ce qu'annonce un commerçant ───
+  if (S.annonce) lAnnonce(g, S.police, S.annonce, T);
   // ─── ses mots, façon TikTok ───
   sousTitres(g, S.police, S.sous, t, S.duree, H * 0.78);
-  // ─── la fin : « Crée ton mème » ───
-  laFin(g, S.police, T - (INTRO + S.duree + 0.15));
+  // ─── la fin : « Crée ton mème » (ou son nom) ───
+  laFin(g, S.police, T - (INTRO + S.duree + 0.15), S.fin);
 }
 
 export type Meme = { blob: Blob; type: string; duree: number };
 
+/** Sans voix (un commerçant qui n'a pas enregistré la sienne) : le temps de lire ses mots, entre 4 et 12 secondes. */
+export const dureeSansVoix = (texte: string) => Math.min(12, Math.max(4, 1.6 + texte.replace(/\s+/g, " ").trim().split(" ").filter(Boolean).length * 0.42));
+
 /**
  * 🎬 FABRIQUE LE MÈME (il se joue en vrai pendant qu'il s'enregistre, sur `toile` : on le voit naître).
- * `images` : bouche fermée / bouche ouverte (son visage du moment) ; `son` : sa voix (une adresse `data:` ou `blob:`) ;
- * `ecouter` : on l'entend pendant qu'il se fabrique.
+ * `images` : bouche fermée / bouche ouverte (son visage du moment) ; `son` : sa voix (une adresse `data:` ou `blob:`) —
+ * sans voix, la figurine danse sur la musique le temps de lire ses mots ; `ecouter` : on l'entend pendant qu'il se fabrique.
  */
 export async function fabriquerMeme(o: {
   ctx: AudioContext;
   toile: HTMLCanvasElement;
   images: { n: string; p: string };
-  son: string;
+  son?: string;
+  /** 🏪 Un commerçant : ce qu'il annonce (en haut), et la fin à son nom. */
+  annonce?: AnnonceMeme;
+  fin?: FinMeme;
   texte?: string;
   emoji?: string;
   danse?: boolean;
@@ -411,11 +487,14 @@ export async function fabriquerMeme(o: {
     fetch(u)
       .then((r) => r.arrayBuffer())
       .then((a) => ctx.decodeAudioData(a));
+  // (sans voix : un silence, le temps de lire ses mots — et la musique, qu'elle danse)
+  const sansVoix = !o.son;
+  const silence = () => Promise.resolve(ctx.createBuffer(1, Math.max(1, Math.round(ctx.sampleRate * dureeSansVoix(o.texte ?? ""))), ctx.sampleRate));
   const [n, p, voix, musique, duo] = await Promise.all([
     image(o.images.n),
     image(o.images.p),
-    voixDe(o.son),
-    o.danse ? musiqueDanse(ctx.sampleRate).catch(() => null) : Promise.resolve(null),
+    o.son ? voixDe(o.son) : silence(),
+    o.danse || sansVoix ? musiqueDanse(ctx.sampleRate).catch(() => null) : Promise.resolve(null),
     o.duo ? Promise.all([image(o.duo.images.n), image(o.duo.images.p), voixDe(o.duo.son)]) : Promise.resolve(null),
   ]);
   const duree = voix.duration;
@@ -428,8 +507,10 @@ export async function fabriquerMeme(o: {
     duree,
     sous: paquets(motsDuTexte(o.texte ?? "", duree)),
     emoji: o.emoji ?? "",
-    danse: Boolean(o.danse),
+    danse: Boolean(o.danse) || sansVoix,
     police,
+    ...(o.annonce ? { annonce: o.annonce } : {}),
+    ...(o.fin ? { fin: o.fin } : {}),
     ...(duo && o.duo
       ? {
           duo: {
@@ -468,7 +549,8 @@ export async function fabriquerMeme(o: {
     fond.buffer = musique;
     fond.loop = true;
     const v = ctx.createGain();
-    v.gain.value = 0.28;
+    // (sans voix, la musique est seule : plus fort)
+    v.gain.value = sansVoix ? 0.7 : 0.28;
     fond.connect(v);
     v.connect(sortieSon);
   }

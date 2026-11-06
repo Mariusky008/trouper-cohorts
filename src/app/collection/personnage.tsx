@@ -257,7 +257,7 @@ export function MonPersonnage({
   onCarte?: () => void;
   /** Il a une carte, ou pas (le menu le dit). */
   onSait?: (aCarte: boolean) => void;
-  /** Mener à un autre onglet (« mois », « figurine »). */
+  /** Mener à un autre onglet (« figurine », « rencontre », « memes »). */
   allerA?: (o: string) => void;
 }) {
   const [carte, setCarte] = useState<CartePersonnage | null | undefined>(undefined);

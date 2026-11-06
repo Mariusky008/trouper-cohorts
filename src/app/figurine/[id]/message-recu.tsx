@@ -17,11 +17,11 @@
  */
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import type { MessageFigurine } from "@/lib/direct/ma-figurine";
+import { CLE_MEMES_RECUS, type MessageFigurine } from "@/lib/direct/ma-figurine";
 import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE, type FigurineHandle } from "@/app/collection/figurine-qui-parle";
 
-/** La vidéo du mème : tout de suite, en boucle ; le son dès qu'on peut (au premier toucher, sinon). */
-function MemeVideo({ src }: { src: string }) {
+/** La vidéo du mème : tout de suite, en boucle ; le son dès qu'on peut (au premier toucher, sinon). Aussi celle d'un commerçant (`/m/<id>`). */
+export function MemeVideo({ src, affiche }: { src: string; affiche?: string }) {
   const video = useRef<HTMLVideoElement>(null);
   const [muet, setMuet] = useState(true);
   useEffect(() => {
@@ -57,6 +57,7 @@ function MemeVideo({ src }: { src: string }) {
         autoPlay
         muted
         preload="auto"
+        {...(affiche ? { poster: affiche } : {})}
         onClick={(e) => {
           const v = e.currentTarget;
           if (v.muted) return;
@@ -108,8 +109,8 @@ function MemeVivant({ m }: { m: Extract<MessageFigurine, { signale: false }> }) 
   );
 }
 
-/** 📲 « Partager ce mème » : la vidéo elle-même (prête d'avance), sinon le lien de la page. */
-function PartagerCeMeme({ id, video, type }: { id: string; video?: string; type?: string }) {
+/** 📲 « Partager ce mème » : la vidéo elle-même (prête d'avance), sinon le lien de la page. `noter` : la mesure (sinon, celle des mèmes des clients). */
+export function PartagerCeMeme({ id, video, type, noter }: { id: string; video?: string; type?: string; noter?: () => void }) {
   const [fichier, setFichier] = useState<File | null>(null);
   const [copie, setCopie] = useState(false);
   useEffect(() => {
@@ -133,7 +134,8 @@ function PartagerCeMeme({ id, video, type }: { id: string; video?: string; type?
   }, [video, type]);
   async function partager() {
     // (📈 la mesure : un partage)
-    void fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "meme-evenement", type: "partage", id }) }).catch(() => undefined);
+    if (noter) noter();
+    else void fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "meme-evenement", type: "partage", id }) }).catch(() => undefined);
     try {
       if (fichier) return await navigator.share({ files: [fichier] });
       if (typeof navigator.share === "function") return await navigator.share({ url: window.location.href });
@@ -157,6 +159,18 @@ function PartagerCeMeme({ id, video, type }: { id: string; video?: string; type?
 export function MessageRecu({ message: m }: { message: MessageFigurine }) {
   const [signale, setSignale] = useState(m.signale);
   const [envoi, setEnvoi] = useState(false);
+  // 📥 GARDÉ SUR CE TÉLÉPHONE : il le retrouve dans « Mes mèmes » (« Reçus »), pour y répondre quand il veut
+  const id = m.signale ? "" : m.id;
+  useEffect(() => {
+    if (!id) return;
+    try {
+      const l = JSON.parse(window.localStorage.getItem(CLE_MEMES_RECUS) || "[]") as unknown;
+      const avant = Array.isArray(l) ? l.filter((x): x is string => typeof x === "string" && x !== id) : [];
+      window.localStorage.setItem(CLE_MEMES_RECUS, JSON.stringify([id, ...avant].slice(0, 30)));
+    } catch {
+      /* navigation privée : tant pis */
+    }
+  }, [id]);
 
   async function signaler() {
     if (m.signale || !window.confirm("Signaler ce mème ? Il ne s’affichera plus.")) return;
@@ -193,7 +207,7 @@ export function MessageRecu({ message: m }: { message: MessageFigurine }) {
   );
 }
 
-const STYLES_MR = `
+export const STYLES_MR = `
 .mr{min-height:100dvh;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:14px;max-width:520px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 12px calc(18px + env(safe-area-inset-bottom));text-align:center;
   background:#0B0309;color:#FFF4E6;font-family:var(--font-clikme),Poppins,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
 body{background:#0B0309}

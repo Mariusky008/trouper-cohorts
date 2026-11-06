@@ -2,13 +2,16 @@
 
 /**
  * 🗓️ SA FIGURINE DU MOIS, À L'ÉCRAN (`lib/direct/figurine-du-mois.ts`, le lot 3) :
- *   · `ApercuDuMois` : dans « Ma figurine », où il en est (3/10 jours), un lien vers « Ce mois-ci » ;
- *   · `MaFigurineDuMois` : dans « Ce mois-ci », la progression (10 jours de rencontres), la fabrication quand elle est
- *     méritée, puis la révélation — sa tenue du mois, son visage du mois, sa phrase du mois ;
- *   · `MesFigurinesDuMois` : dans l'album, la collection de soi, mois après mois.
+ *   · `ApercuDuMois` : dans « Créer », où il en est (3/10 jours), un lien vers sa progression (dans « Rencontres ») ;
+ *     arrivée, un toucher la prend comme look ;
+ *   · `MaFigurineDuMois` : dans « Rencontres » (c'est là qu'elle se mérite : 10 jours de rencontres), la progression, la
+ *     fabrication quand elle est méritée, puis la révélation — sa tenue du mois, son visage du mois, sa phrase du mois —
+ *     et « Fais-la parler » : elle devient un LOOK du studio (7 novembre 2026 : l'album de soi est parti, ses figurines
+ *     du mois servent à faire des mèmes).
  */
 import { useCallback, useEffect, useState } from "react";
 import { moisEnClair, type FigurineDuMois, type MesFigurinesDuMois } from "@/lib/direct/figurine-du-mois";
+import { versLeStudio } from "./vers-le-studio";
 
 async function chargerMois(): Promise<MesFigurinesDuMois | null> {
   try {
@@ -20,7 +23,8 @@ async function chargerMois(): Promise<MesFigurinesDuMois | null> {
 }
 /** (une figurine du mois qui arrive, sur un onglet : les autres onglets la voient aussitôt) */
 const EVT_MOIS = "clikme-figurine-du-mois";
-function useMois(): [MesFigurinesDuMois | null, (m: MesFigurinesDuMois) => void] {
+/** Ses figurines du mois (ses looks), partagées entre les onglets. */
+export function useMois(): [MesFigurinesDuMois | null, (m: MesFigurinesDuMois) => void] {
   const [m, setM] = useState<MesFigurinesDuMois | null>(null);
   useEffect(() => {
     let fini = false;
@@ -54,13 +58,26 @@ export function ApercuDuMois() {
   const [m] = useMois();
   if (!m) return null;
   const f = m.courante;
+  const nom = moisEnClair(f.mois).replace(/\s\d{4}$/, "");
+  // ARRIVÉE : un toucher, et c'est elle qui parle dans son prochain mème (son look du mois)
+  if (f.etat === "prete")
+    return (
+      <button type="button" className="fm-apercu" onClick={() => versLeStudio({ look: f.mois })}>
+        <span aria-hidden="true">{f.edition.emoji}</span>
+        <span>
+          <b>Ta figurine de {nom} est arrivée !</b>
+          <small>Touche-la : c’est elle qui parlera dans ton prochain mème</small>
+        </span>
+        <em>Prendre ›</em>
+      </button>
+    );
   return (
     <a className="fm-apercu" href="#mois">
       <span aria-hidden="true">{f.edition.emoji}</span>
       <span>
-        <b>{f.etat === "prete" ? `Ta figurine de ${moisEnClair(f.mois).replace(/\s\d{4}$/, "")} est arrivée !` : `Ta figurine de ${moisEnClair(f.mois).replace(/\s\d{4}$/, "")}`}</b>
-        {f.etat !== "prete" && <Jours f={f} />}
-        <small>{f.etat === "prete" ? "Sa tenue, son visage et ta phrase du mois" : `${Math.min(f.jours, f.objectif)}/${f.objectif} jours de rencontres`}</small>
+        <b>Ta figurine de {nom}</b>
+        <Jours f={f} />
+        <small>{`${Math.min(f.jours, f.objectif)}/${f.objectif} jours de rencontres : un nouveau look pour tes mèmes`}</small>
       </span>
       <em>Voir ›</em>
     </a>
@@ -114,7 +131,7 @@ export function MaFigurineDuMois() {
   const f = m.courante;
   const nom = moisEnClair(f.mois).replace(/\s\d{4}$/, "");
   return (
-    <section className="fm" aria-label="Ta figurine du mois">
+    <section className="fm" id="mois" aria-label="Ta figurine du mois">
       <header className="fm-tete">
         <small>🗓️ TA FIGURINE DU MOIS</small>
         <b>
@@ -129,6 +146,10 @@ export function MaFigurineDuMois() {
               <small>🔮 TA PHRASE DU MOIS</small>« {f.phrase} »
             </p>
           )}
+          {/* 🎭 ELLE DEVIENT UN LOOK : c'est elle qui parle dans son prochain mème */}
+          <button type="button" className="og-go fm-parler" onClick={() => versLeStudio({ look: f.mois })}>
+            🎭 Fais-la parler
+          </button>
         </>
       ) : f.etat === "a-fabriquer" ? (
         <div className="fm-fab" aria-live="polite">
@@ -181,37 +202,9 @@ export function MaFigurineDuMois() {
   );
 }
 
-/** 📒 Dans l'album : la collection de soi, mois après mois. */
-export function MesFigurinesDuMois() {
-  const [m] = useMois();
-  if (!m || m.courante.sansFigurine) return null;
-  const toutes = [m.courante, ...m.passees];
-  return (
-    <section className="fm-album" aria-label="Mes figurines du mois">
-      <h3>🗓️ Mes figurines du mois</h3>
-      <small>Une par mois vécu : tu vois ton année, et comment tu changes.</small>
-      <div className="fm-grille">
-        {toutes.map((f) =>
-          f.etat === "prete" ? (
-            <CarteDuMois key={f.mois} f={f} />
-          ) : (
-            <a key={f.mois} className="fm-case" href="#mois">
-              <span aria-hidden="true">{f.edition.emoji}</span>
-              <b>{moisEnClair(f.mois)}</b>
-              <small>
-                {Math.min(f.jours, f.objectif)}/{f.objectif} jours
-              </small>
-            </a>
-          ),
-        )}
-      </div>
-    </section>
-  );
-}
-
 export const STYLES_FIGURINE_DU_MOIS = `
-.fm,.fm-album{margin-top:14px}
-.fm-apercu{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;background:rgba(242,196,107,.1);border:1.5px solid rgba(242,196,107,.45);color:#FFF4E6;text-decoration:none}
+.fm{margin-top:14px}
+.fm-apercu{display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;padding:12px 14px;border-radius:20px;background:rgba(242,196,107,.1);border:1.5px solid rgba(242,196,107,.45);color:#FFF4E6;font:inherit;text-align:left;text-decoration:none;cursor:pointer}
 .fm-apercu > span:first-child{font-size:28px}
 .fm-apercu > span:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .fm-apercu b{font-size:14.5px;font-weight:900}
@@ -240,16 +233,8 @@ export const STYLES_FIGURINE_DU_MOIS = `
 .fm-carte-bas b{font-size:13.5px;color:#FFF4E6}
 .fm-carte.nouvelle{animation:fm-arrive .9s cubic-bezier(.2,1.4,.4,1) both;max-width:340px;margin:0 auto;width:100%}
 .fm-phrase{margin:0;padding:14px 16px;border-radius:18px;background:rgba(142,197,255,.1);border:1px solid rgba(142,197,255,.4);font-size:16px;line-height:1.45;font-weight:700;color:#FFF4E6}
+.fm-parler{align-self:center}
 .fm-phrase small{display:block;margin-bottom:4px;font-size:10.5px;font-weight:900;letter-spacing:.12em;color:#A8C8F0}
-.fm-album{display:flex;flex-direction:column;gap:8px}
-.fm-album h3{margin:0;font-size:18px;font-weight:900}
-.fm-album > small{font-size:13px;color:#D9C3CB}
-.fm-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.fm-case{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;aspect-ratio:2/3.4;border-radius:22px;border:2px dashed rgba(255,255,255,.2);background:rgba(255,255,255,.04);color:#FFF4E6;text-decoration:none;text-align:center;padding:10px}
-.fm-case span{font-size:34px;filter:grayscale(.4)}
-.fm-case b{font-size:13.5px}
-.fm-case small{font-size:12px;color:#A88E99}
-@media (min-width:860px){.fm-grille{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @keyframes fm-va{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
 @keyframes fm-arrive{from{opacity:0;transform:rotateY(80deg) scale(.8)}}
 @media (prefers-reduced-motion:reduce){.fm-fab-jauge i,.fm-carte.nouvelle{animation:none}}

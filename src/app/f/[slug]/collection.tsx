@@ -377,8 +377,8 @@ export function CollectionDuCommerce({
             une place libre · une édition manquée est manquée
           </p>
           {lienCollection && (
-            <Link className="co-lien" href="/collection">
-              Toutes mes figurines →
+            <Link className="co-lien" href="/collection#figurine">
+              🎭 Ma figurine qui parle →
             </Link>
           )}
         </>

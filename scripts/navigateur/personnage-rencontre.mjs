@@ -11,6 +11,8 @@
 // même chez les deux ; ensuite, elle choisit le thème (« La sortie »…). Léa dit « c'est tout moi » à une phrase de sa figurine, et réagit
 // d'une émotion à une phrase de Hugo ; elle ne peut pas juger une phrase de Hugo. Elle répond à « Et toi ? ». Elle
 // lance des discussions avec Hugo (trois par jour). Elle signale : la rencontre ne s'affiche plus. Rien ne déborde.
+import fs from "node:fs";
+import path from "node:path";
 import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 
 const A = { id: "ffffffff-0000-4000-8000-000000000041", slug: "comptoir-des-fantomes-dax", nom: "Le Comptoir des Fantômes" };
@@ -101,7 +103,7 @@ ok((await lea.locator("#o-personnage .pc-scene.dos").count()) === 1, "un toucher
 ok((await texte(lea, "#o-personnage .mp-monte")).includes("Ta prochaine étape") && (await texte(lea, "#o-personnage .mp-monte")).includes("Argent") && !/achat/i.test(await texte(lea, "#o-personnage .mp-monte")), "ce qui la fait monter : sa prochaine étape (un cadeau de ClikMe), le cadre Argent — plus aucun achat");
 const g1 = await api(lea, "/api/direct/personnage");
 ok(
-  g1.progres?.etapes?.includes("carte") && g1.progres?.etapes?.includes("commerce") && g1.carte?.niveau === 1 + g1.progres.cadeaux && g1.carte?.par === "local",
+  g1.progres?.etapes?.includes("carte") && !g1.progres?.etapes?.includes("commerce") && g1.carte?.niveau === 1 + g1.progres.cadeaux && g1.carte?.par === "local",
   `ses étapes font monter sa carte, un niveau par cadeau (${JSON.stringify(g1.progres)}, niveau ${g1.carte?.niveau}), fiche sans IA ici`,
 );
 const insulte = await api(lea, "/api/direct/personnage", { action: "creer", reponses: g1.carte.reponses, phrase: "espèce de connard" });
@@ -153,8 +155,9 @@ ok(true, "un toucher : la réplique suivante");
 await lea.locator(".rs-theatre .rs-fermer").click();
 ok((await lea.locator(".rs-theatre").count()) === 0, "✕ : le théâtre se ferme");
 
-// ❓ LA QUESTION DU JOUR (lot 2) : maintenant dans « Personnage », avec ce que sa figurine sait d'elle
-await lea.locator(".mc-nav button", { hasText: "Personnage" }).dispatchEvent("click");
+// ❓ LA QUESTION DU JOUR (lot 2) : dans « Moi » (sa carte de personnage), avec ce que sa figurine sait d'elle
+ok((await lea.locator(".mc-nav button").count()) === 5 && (await lea.locator(".mc-nav button.pris").innerText()).includes("Rencontres"), "le menu en bas : « Rencontres » est ouvert");
+await lea.locator(".mc-nav button", { hasText: "Moi" }).dispatchEvent("click");
 await lea.waitForSelector("#o-personnage .cn-question", { timeout: 30000 });
 const q0 = await api(lea, "/api/direct/connaitre");
 if (q0.question?.choix) await lea.locator("#o-personnage .cn-choix button").first().click();
@@ -329,15 +332,13 @@ ok(d2.rencontre?.scenario?.nom === "Le voyage" && d3.rencontre?.scenario?.nom, `
 ok((await api(lea, "/api/direct/rencontre", { action: "discuter", n: 7 })).statut === 404, "un ami qui n'est pas dans sa liste : non");
 ok((await api(lea, "/api/direct/rencontre", { action: "relooker", id: d2.rencontre.id })).statut === 400, "rien à relooker entre amis");
 
-// 🎞️ SES CARTES SOUVENIRS, DANS L'ALBUM
+// 🎞️ SES ÉPISODES D'AVANT, DANS « RENCONTRES » (l'album est parti, 7 novembre 2026) : un toucher les rouvre
 await lea.goto(`${BASE}/collection?v=${Date.now()}#rencontre`, { waitUntil: "networkidle" });
 await lea.waitForSelector("#o-rencontre .ep-affiche", { timeout: 60000 });
 const souv = await api(lea, "/api/direct/rencontre?souvenirs=1");
-ok(souv.souvenirs?.length >= 2 && souv.souvenirs.every((x) => x.titre && x.avec), `ses cartes souvenirs (${souv.souvenirs?.map((x) => x.titre).join(" · ")})`);
-await lea.locator(".mc-nav button", { hasText: "Album" }).click({ force: true });
-await lea.waitForSelector("#o-album .ms .cs.petite", { timeout: 30000 });
-ok((await lea.locator("#o-album .ms .cs.petite").count()) === souv.souvenirs.length, "dans l'album : « Mes cartes souvenirs »");
-await lea.locator("#o-album .ms .cs.petite", { hasText: A.nom }).first().click();
+ok(souv.souvenirs?.length >= 2 && souv.souvenirs.every((x) => x.titre && x.avec), `ses épisodes, avec leur titre (${souv.souvenirs?.map((x) => x.titre).join(" · ")})`);
+ok((await lea.locator("#o-rencontre .rd-souv").count()) >= 2, "« Tes épisodes » : ses épisodes d'avant, dans « Rencontres »");
+await lea.locator("#o-rencontre .rd-souv", { hasText: A.nom }).first().click();
 await lea.waitForFunction(() => document.querySelector("#o-rencontre:not([hidden]) .rd-qui")?.textContent?.includes("du Comptoir des Fantômes"), null, { timeout: 15000 });
 ok(true, "une carte souvenir touchée rouvre son épisode");
 await lea.locator("#o-rencontre .rd-ia button", { hasText: "Ma rencontre du jour" }).click();
@@ -370,7 +371,7 @@ ok((await api(lea, "/api/direct/rencontre", { action: "bloquer", id: mI.rencontr
 await lea.screenshot({ path: `${D}/personnage-4-membre.png`, fullPage: true });
 
 // ═══ 🧠 CE QUE TA FIGURINE SAIT DE TOI (lot 2) : elle voit tout, elle efface ═══
-await lea.locator(".mc-nav button", { hasText: "Personnage" }).click({ force: true });
+await lea.locator(".mc-nav button", { hasText: "Moi" }).click({ force: true });
 await lea.waitForSelector("#o-personnage .cn-savoir-tete", { timeout: 30000 });
 await lea.locator("#o-personnage .cn-savoir-tete").click();
 await lea.waitForSelector("#o-personnage .cn-choses li", { timeout: 15000 });
@@ -415,6 +416,27 @@ await neuf.waitForURL(/retrouvee=1/, { timeout: 30000 });
 await neuf.waitForLoadState("networkidle");
 const perso2 = await api(neuf, "/api/direct/personnage");
 ok(perso2.carte?.prenom === "Léa", `un autre téléphone retrouve sa figurine avec le code (${perso2.carte?.prenom})`);
+
+// ═══ 🎭 « FAIS-EN UN MÈME » : sa figurine est faite ; à la fin d'un épisode, ses répliques partent au studio ═══
+for (const nom of ["neutre", "parle"])
+  await fetch(`${SEAU}/${LEA.id}/${nom}-essai.webp`, { method: "POST", headers: { "content-type": "image/webp" }, body: fs.readFileSync(path.resolve(nom === "neutre" ? "public/direct/double/pied/salut-1.webp" : "public/direct/double/parle-1.webp")) });
+await semer("clik_ma_figurine", [{ habitant_id: LEA.id, photo: `${LEA.id}/photo.jpg`, neutre: `${LEA.id}/neutre-essai.webp`, parle: `${LEA.id}/parle-essai.webp`, prete_le: new Date().toISOString() }]);
+await lea.goto(`${BASE}/collection?v=${Date.now()}#rencontre`, { waitUntil: "networkidle" });
+await lea.waitForSelector("#o-rencontre .ep-affiche", { timeout: 60000 });
+if (!(await lea.locator("#o-rencontre .ra").count())) {
+  await lea.locator("#o-rencontre .ep-play").click();
+  await theatre(lea);
+  await lea.locator(".rs-theatre .rs-passer").click();
+  await lea.waitForSelector(".rs-theatre .rs-suite", { timeout: 10000 });
+  await lea.locator(".rs-theatre .rs-suite").click();
+}
+await lea.waitForSelector("#o-rencontre .ra-meme button", { timeout: 30000 });
+const replique = (await lea.locator("#o-rencontre .ra-meme button").first().innerText()).replace(/Créer ce mème ›/, "").replace(/\s+/g, " ").trim().replace(/^« | »$/g, "");
+ok(replique.length >= 12 && (await texte(lea, "#o-rencontre .ra-meme")).includes("Fais-en un mème"), `« Fais-en un mème » : ses répliques de l'épisode (« ${replique.slice(0, 60)} »)`);
+await lea.locator("#o-rencontre .ra-meme button").first().click();
+await lea.waitForFunction(() => location.hash === "#figurine" && document.querySelector("#o-figurine:not([hidden]) .tf-moi"), null, { timeout: 30000 });
+await lea.waitForFunction((r) => document.querySelector(".tf-moi .tf-texte textarea")?.value === r, replique, { timeout: 15000 }).catch(() => null);
+ok((await lea.locator(".tf-moi .tf-texte textarea").inputValue()) === replique, "un toucher : « Créer » s'ouvre, la réplique déjà écrite");
 
 // SANS COMPTE : rien à faire ici
 const sans = await fetch(`${BASE}/api/direct/rencontre`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "inviter" }) });
