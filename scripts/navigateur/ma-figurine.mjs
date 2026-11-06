@@ -322,7 +322,7 @@ await amie.waitForFunction(() => {
 ok(true, "le mème joue tout de suite, sans rien toucher");
 const mr = await texte(amie, ".mr");
 ok(
-  (await amie.locator(".mr h1, .mr-commerces, .mr-toi, .mr-dit, .mr-bulle").count()) === 0 && (await amie.locator(".mr-bouton").count()) === 1 && (await amie.locator('.mr-bouton[href="/collection#figurine"]').count()) === 1 && (await texte(amie, ".mr-bouton")).includes("Crée ou réponds avec ton mème"),
+  (await amie.locator(".mr h1, .mr-commerces, .mr-toi, .mr-dit, .mr-bulle").count()) === 0 && (await amie.locator(".mr-bouton").count()) === 1 && (await amie.locator(`.mr-bouton[href="/figurine/${id}/repondre"]`).count()) === 1 && (await texte(amie, ".mr-bouton")).includes("Crée ou réponds avec ton mème"),
   "sans texte ni blabla : le mème, et un seul bouton « Crée ou réponds avec ton mème »",
 );
 ok((await amie.locator(".mr-partager").count()) === 1 && (await texte(amie, ".mr-partager")).includes("Partager ce mème"), "dessous, discret : « 📲 Partager ce mème » (la vidéo elle-même, ou son lien)");
@@ -333,6 +333,46 @@ ok(titre.startsWith("🎭 Le mème de Léa") && (await amie.locator('meta[proper
 ok((await debordement(amie)) <= 0 && !/exemple/i.test(mr), "la page du mème ne déborde pas, sans le mot interdit");
 await amie.waitForTimeout(600);
 await amie.screenshot({ path: `${D}/ma-figurine-3-recu.png` });
+
+// ═══ 💬 HUGO LUI RÉPOND EN DUO (« Crée ou réponds avec ton mème ») ═══
+await hugo.goto(`${BASE}/figurine/${id}/repondre`, { waitUntil: "networkidle" });
+ok(/\/collection\?repondre=[a-z0-9]{12}#figurine$/.test(hugo.url()), `« Crée ou réponds » : sa figurine, prête à répondre (${hugo.url()})`);
+await fermerPablito(hugo, "#o-figurine");
+await hugo.waitForSelector(".tf-moi .tf-reponse", { timeout: 30000 });
+ok((await texte(hugo, ".tf-reponse")).includes("Tu réponds à Léa") && (await texte(hugo, ".tf-reponse")).includes("Coucou Camille"), "« ↩️ Tu réponds à Léa » : son mème, et ses mots");
+// 🎁 SON PREMIER MÈME, DÉJÀ ÉCRIT ; ✨ LES MÈMES PRÊTS
+ok((await hugo.locator(".tf-texte textarea").inputValue()).startsWith("Salut ! C’est moi… en figurine") && (await hugo.locator(".tf-premier").count()) === 0, "son premier mème est déjà écrit (le conseil se tait quand il répond)");
+const prets = await hugo.locator(".tf-prets button").allInnerTexts();
+ok(prets.length >= 8 && prets[0].includes("Le mème du jour") && prets.some((x) => x.includes("Joyeux anniversaire")) && prets.some((x) => x.includes("Bravo")), `les mèmes prêts : le mème du jour d'abord, puis les occasions (${prets.slice(0, 4).join(" · ")}…)`);
+await hugo.locator(".tf-quelle-voix button", { hasText: "voix d’homme" }).click();
+await hugo.locator(".tf-prets button", { hasText: "Bravo" }).click();
+ok((await hugo.locator(".tf-texte textarea").inputValue()).startsWith("Bravo ! Quelle classe."), "un toucher sur « Bravo » : le texte est écrit, et elle le dit");
+await hugo.waitForSelector(".tf-envoyer", { timeout: 30000 });
+await hugo.locator(".tf-envoyer").click();
+await hugo.waitForSelector(".tf-meme-toile.visible", { timeout: 20000 });
+await hugo.waitForTimeout(1500);
+await hugo.locator(".tf-meme-toile").screenshot({ path: `${D}/ma-figurine-3b-duo.png` });
+await hugo.waitForSelector(".tf-meme-pret video", { timeout: 90000 });
+const idDuo = (await hugo.locator(".tf-adresse").inputValue()).split("/").pop();
+const coteDuo = await (await fetch(`${STOCK}/figurines-clients/${HUGO.id}/m-${idDuo}.json`)).json().catch(() => ({}));
+ok(coteDuo.repondA === id && coteDuo.meme, `sa réponse est un mème en duo, rattachée à celui de Léa (${JSON.stringify(coteDuo)})`);
+ok((await hugo.locator(".tf-reponse").count()) === 0, "sa réponse partie : son prochain mème sera à lui");
+// 📈 LA MESURE : un nouveau venu arrive par le mème de Léa et crée sa figurine
+const curieux = await tel(null);
+await curieux.goto(`${BASE}/figurine/${id}/repondre`, { waitUntil: "networkidle" });
+await fermerPablito(curieux);
+await curieux.waitForSelector("#creer .tf-choisir input", { timeout: 60000 });
+await curieux.locator("#creer .tf-choisir input").setInputFiles(path.resolve("public/direct/double/comptoir.jpg"));
+await curieux.waitForSelector("#creer .tf-choisir img", { timeout: 15000 });
+await curieux.locator("#creer .tf-prenom-photo").fill("Noé");
+if (await curieux.locator("#creer .tf-ville").count()) await curieux.locator("#creer .tf-ville").selectOption("dax");
+await curieux.locator("#creer .tf-accord input").check();
+await curieux.locator("#creer .tf-envoyer").click();
+await curieux.waitForSelector(".tf-annonce", { timeout: 30000 });
+await curieux.waitForTimeout(500);
+const gestes = (await lire("clik_meme_evenement", `message_id=eq.${id}`)).map((x) => x.type);
+const compte = (t) => gestes.filter((x) => x === t).length;
+ok(compte("cree") === 1 && compte("vu") >= 1 && compte("clic") === 2 && compte("reponse") === 1 && compte("nouveau") === 1, `la mesure : créé, ouvert, « Crée ou réponds » touché, une réponse, un nouveau créateur (${gestes.join(", ")})`);
 
 // ═══ UN MESSAGE SANS MÈME (d'avant, ou d'un téléphone qui ne fait pas de vidéo) : sa figurine, qui parle au premier toucher ═══
 const voixL = await api(lea, { action: "voix", texte: "Toi aussi, fais le tien !", voix: "chaleureuse" });
@@ -404,7 +444,7 @@ ok(refaite === 200 && univers2?.univers === "Artisan", `la refaire : ce qui lui 
 const r = await fetch(`${BASE}/api/direct/ma-figurine`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "message", son: "data:audio/mpeg;base64,AAAA", duree: 1 }) });
 ok(r.status === 403, "sans être quelqu'un, pas de message");
 
-const erreurs = [...hugo.err, ...neuf.err, ...lea.err, ...amie.err, ...amie2.err];
+const erreurs = [...hugo.err, ...neuf.err, ...lea.err, ...amie.err, ...amie2.err, ...curieux.err];
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` : ${erreurs[0]}` : ""}`);
 await b.close();
 console.log(echecs ? `${echecs} ÉCHEC(S)` : "TOUT EST BON");

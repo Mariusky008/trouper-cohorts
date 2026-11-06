@@ -8,7 +8,8 @@ import type { Metadata, Viewport } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { lireMessage } from "@/lib/direct/ma-figurine-serveur";
+import { headers } from "next/headers";
+import { lireMessage, noterEvenementMeme } from "@/lib/direct/ma-figurine-serveur";
 import { MessageRecu } from "./message-recu";
 
 export const dynamic = "force-dynamic";
@@ -39,5 +40,8 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 export default async function PageMessageFigurine({ params }: { params: Promise<{ id: string }> }) {
   const m = await charger((await params).id);
   if (!m) notFound();
+  // 📈 la mesure : une page de mème ouverte (pas les robots qui fabriquent l'aperçu du lien)
+  const ua = (await headers()).get("user-agent") ?? "";
+  if (!m.signale && !/bot|crawl|spider|facebookexternalhit|whatsapp|telegram|slack|discord|preview|embedly/i.test(ua)) await noterEvenementMeme(createAdminClient(), "vu", m.id);
   return <MessageRecu message={m} />;
 }

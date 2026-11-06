@@ -109,7 +109,7 @@ function MemeVivant({ m }: { m: Extract<MessageFigurine, { signale: false }> }) 
 }
 
 /** 📲 « Partager ce mème » : la vidéo elle-même (prête d'avance), sinon le lien de la page. */
-function PartagerCeMeme({ video, type }: { video?: string; type?: string }) {
+function PartagerCeMeme({ id, video, type }: { id: string; video?: string; type?: string }) {
   const [fichier, setFichier] = useState<File | null>(null);
   const [copie, setCopie] = useState(false);
   useEffect(() => {
@@ -132,6 +132,8 @@ function PartagerCeMeme({ video, type }: { video?: string; type?: string }) {
     };
   }, [video, type]);
   async function partager() {
+    // (📈 la mesure : un partage)
+    void fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "meme-evenement", type: "partage", id }) }).catch(() => undefined);
     try {
       if (fichier) return await navigator.share({ files: [fichier] });
       if (typeof navigator.share === "function") return await navigator.share({ url: window.location.href });
@@ -176,10 +178,11 @@ export function MessageRecu({ message: m }: { message: MessageFigurine }) {
       ) : (
         <MemeVivant m={m} />
       )}
-      <Link className="mr-bouton" href="/collection#figurine">
+      {/* (par `/figurine/<id>/repondre` : le geste est compté, puis sa figurine répond en duo) */}
+      <Link className="mr-bouton" href={m.signale ? "/collection#figurine" : `/figurine/${m.id}/repondre`} prefetch={false}>
         🎭 Crée ou réponds avec ton mème
       </Link>
-      {!signale && !m.signale && <PartagerCeMeme video={m.meme?.video} type={m.meme?.type} />}
+      {!signale && !m.signale && <PartagerCeMeme id={m.id} video={m.meme?.video} type={m.meme?.type} />}
       {!signale && !m.signale && (
         <button type="button" className="mr-signaler" onClick={signaler} disabled={envoi}>
           Signaler

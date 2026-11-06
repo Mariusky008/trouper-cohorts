@@ -1,0 +1,106 @@
+// 📈 LES MÈMES : ÇA MARCHE ? — 6 novembre 2026, le patron : « mesurer pour savoir si ça marche vraiment ». Les gestes
+// autour des mèmes (`clik_meme_evenement`, la migration `20261110090000_clik_meme_evenement.sql`), sur 7 et 30 jours,
+// et jour par jour ; et le coefficient qui compte : les nouveaux créateurs par mème envoyé (au-dessus de 1, chaque mème
+// en amène plus d'un : l'app grandit toute seule).
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import type { CSSProperties } from "react";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isCurrentUserAdmin } from "@/lib/admin-guard";
+import { statsMemes, type EvenementMeme } from "@/lib/direct/ma-figurine-serveur";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const NOMS: Record<EvenementMeme, string> = {
+  cree: "Mèmes créés",
+  reponse: "Réponses en duo",
+  vu: "Mèmes ouverts",
+  clic: "« Crée ou réponds » touché",
+  partage: "Partages",
+  nouveau: "Nouveaux créateurs",
+};
+const ORDRE: EvenementMeme[] = ["cree", "vu", "clic", "nouveau", "reponse", "partage"];
+const taux = (a: number, b: number) => (b ? `${(a / b).toFixed(2).replace(".", ",")}` : "—");
+const pct = (a: number, b: number) => (b ? `${Math.round((100 * a) / b)} %` : "—");
+const jourCourt = (j: string) => new Date(`${j}T12:00:00`).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+
+const carte: CSSProperties = { padding: 14, borderRadius: 12, background: "#f6f6f8", display: "flex", flexDirection: "column", gap: 4 };
+
+export default async function PageMemes() {
+  if (!(await isCurrentUserAdmin())) redirect("/admin");
+  const s = await statsMemes(createAdminClient());
+  const k7 = s.sept.cree ? s.sept.nouveau / s.sept.cree : 0;
+  return (
+    <main style={{ maxWidth: 980, margin: "0 auto", padding: "24px 16px 60px", fontFamily: "system-ui, sans-serif", color: "#1d1d1f" }}>
+      <p>
+        <Link href="/admin/humain">← Admin</Link>
+      </p>
+      <h1 style={{ margin: "8px 0 4px" }}>Les mèmes : ça marche ?</h1>
+      <p style={{ margin: 0, color: "#555" }}>
+        Ce qui compte : les nouveaux créateurs par mème envoyé. Au-dessus de 1, chaque mème en amène plus d’un — l’app grandit toute seule. En dessous, on regarde où ça casse :
+        ouvert ? touché ? créé ?
+      </p>
+      {!s.ok ? (
+        <p style={{ marginTop: 20, padding: 14, borderRadius: 10, background: "#fff4e5" }}>
+          La migration n’est pas encore appliquée : <code>supabase/migrations/20261110090000_clik_meme_evenement.sql</code>, dans l’éditeur SQL de Supabase. Rien ne se compte
+          avant (les mèmes partent quand même).
+        </p>
+      ) : (
+        <>
+          <section style={{ marginTop: 20, padding: 18, borderRadius: 14, background: k7 >= 1 ? "#e9f9ef" : "#fff4e5" }}>
+            <b style={{ fontSize: 15 }}>Le coefficient, sur 7 jours</b>
+            <div style={{ fontSize: 40, fontWeight: 800 }}>{taux(s.sept.nouveau, s.sept.cree)}</div>
+            <span style={{ color: "#555" }}>
+              nouveau{s.sept.nouveau > 1 ? "x" : ""} créateur{s.sept.nouveau > 1 ? "s" : ""} par mème envoyé ({s.sept.nouveau} pour {s.sept.cree}) · sur 30 jours :{" "}
+              {taux(s.trente.nouveau, s.trente.cree)}
+            </span>
+          </section>
+          <h2 style={{ margin: "26px 0 10px", fontSize: 18 }}>Le chemin, sur 7 jours</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
+            {ORDRE.map((t) => (
+              <div key={t} style={carte}>
+                <small style={{ color: "#666" }}>{NOMS[t]}</small>
+                <b style={{ fontSize: 26 }}>{s.sept[t]}</b>
+                <small style={{ color: "#888" }}>30 jours : {s.trente[t]}</small>
+              </div>
+            ))}
+          </div>
+          <ul style={{ margin: "14px 0 0", paddingLeft: 18, color: "#444", lineHeight: 1.7 }}>
+            <li>Ouverts par mème créé : {taux(s.sept.vu, s.sept.cree)}</li>
+            <li>« Crée ou réponds » touché, sur les mèmes ouverts : {pct(s.sept.clic, s.sept.vu)}</li>
+            <li>Nouveaux créateurs, sur « Crée ou réponds » touché : {pct(s.sept.nouveau, s.sept.clic)}</li>
+            <li>Réponses en duo, sur les mèmes créés : {pct(s.sept.reponse, s.sept.cree)}</li>
+          </ul>
+          <h2 style={{ margin: "26px 0 10px", fontSize: 18 }}>Jour par jour</h2>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 14 }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: "left", padding: "6px 8px", borderBottom: "1px solid #ddd" }}>Jour</th>
+                  {ORDRE.map((t) => (
+                    <th key={t} style={{ textAlign: "right", padding: "6px 8px", borderBottom: "1px solid #ddd", whiteSpace: "nowrap" }}>
+                      {NOMS[t]}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {s.jours.map((j) => (
+                  <tr key={j.jour}>
+                    <td style={{ padding: "6px 8px", borderBottom: "1px solid #eee", whiteSpace: "nowrap" }}>{jourCourt(j.jour)}</td>
+                    {ORDRE.map((t) => (
+                      <td key={t} style={{ textAlign: "right", padding: "6px 8px", borderBottom: "1px solid #eee" }}>
+                        {j.n[t] || ""}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </main>
+  );
+}

@@ -784,6 +784,30 @@ coiffeur, « sur vous je verrais bien ce style », et appuyer ici pour l'essayer
   sur la photo toujours écrits, et ce qu'un caricaturiste accentuerait chez lui exagéré d'environ 20 % — le dessin
   animé, oui, mais avec SON visage.
 
+### 9.0 novodecies Le mème, contagieux : le duo, les mèmes prêts, le premier mème, la mesure (6 novembre) — construit
+
+Sa question : « parmi les cinq pages, laquelle a le plus de chance de marcher fort ? » — le mème : c'est la seule page
+qui AMÈNE des gens (chaque mème envoyé est une publicité), il plaît en une minute, il colle à une habitude qui existe
+(WhatsApp). Ses deux risques : la ressemblance, et la page blanche. Ce qui le rend vital (« d'accord sur tout ») :
+
+- **💬 Répondre en duo** : « 🎭 Crée ou réponds avec ton mème » passe par `/figurine/<id>/repondre` (le geste est
+  compté), puis « Ma collection » s'ouvre sur sa figurine avec « ↩️ Tu réponds à Léa ». Son mème devient un DUO : la
+  figurine de Léa en haut, qui parle d'abord (sa voix, ses mots), la sienne en bas, qui répond (« ↩ RÉPONSE »), celle
+  qui écoute un peu assombrie. Sans figurine, il la crée d'abord : sa réponse l'attend (gardée sur l'appareil). La
+  réponse est rattachée au mème d'origine (`repondA`, à côté du message).
+- **✨ Les mèmes prêts** (`memes-prets.ts`) : une rangée au-dessus du texte — le mème du jour (une phrase qui change
+  chaque matin, la même pour tous), la fête qui approche (la semaine d'avant : Noël, la Saint-Valentin, la fête des
+  mères…), le lundi et le vendredi, puis les occasions de toujours (anniversaire, « j'arrive en retard », pardon, bravo,
+  merci, bonne nuit, « tu me manques », fou rire). Un toucher : le texte, le visage, la danse — et elle le dit
+  aussitôt. Des phrases qui vont à tout le monde (jamais un accord au masculin ou au féminin pour celui qui parle).
+- **🎁 Le premier mème, déjà écrit** : tant qu'il n'a rien envoyé, son texte est là (« Salut ! C'est moi… en figurine.
+  Avoue, je suis encore mieux en vrai. ») : la voix, écouter, partager.
+- **📈 La mesure** (`clik_meme_evenement`, la migration `20261110090000_clik_meme_evenement.sql`, à appliquer à la
+  main) : un mème créé, une réponse en duo, une page ouverte (pas les robots des aperçus de lien), « Crée ou réponds »
+  touché, un partage, une figurine créée par quelqu'un arrivé par un mème. La page `/admin/humain/memes` : le
+  coefficient (nouveaux créateurs par mème envoyé — au-dessus de 1, l'app grandit toute seule), le chemin sur 7 et 30
+  jours (ouvert ? touché ? créé ?), jour par jour.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
