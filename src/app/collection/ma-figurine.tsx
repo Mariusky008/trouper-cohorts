@@ -28,6 +28,7 @@ import {
   VOIX_DE_BASE,
   VOIX_FIGURINE,
   sentimentDe,
+  voixValide,
   type CleVoix,
   type EtatMaFigurine,
   type Sentiment,
@@ -82,6 +83,32 @@ async function demander(corps: Record<string, unknown>): Promise<Reponse> {
   const j = (await r.json().catch(() => ({}))) as Reponse;
   if (!r.ok) throw new Error(j.error || "Ça n’est pas parti. Réessaie dans un instant.");
   return j;
+}
+
+/**
+ * 🎁 SON PREMIER MÈME, PRÉPARÉ PENDANT LA FABRICATION (7 novembre 2026 : « le premier mème en moins d'une minute après
+ * la révélation ; les 2 minutes de fabrication sont le moment le plus fragile ») : son texte, sa voix, et ce texte déjà
+ * lu par sa voix — gardés sur ce téléphone jusqu'à son premier mème. À la révélation : « 🎭 Créer mon premier mème ».
+ */
+const CLE_PREMIER_MEME = "clikme-premier-meme-v1";
+type PremierMeme = { texte: string; voix: CleVoix; son: string; duree: number };
+function lirePremierMeme(): PremierMeme | null {
+  try {
+    const x = JSON.parse(window.localStorage.getItem(CLE_PREMIER_MEME) ?? "null") as Partial<PremierMeme> | null;
+    if (!x || typeof x.texte !== "string" || !x.texte.trim() || typeof x.son !== "string" || !x.son.startsWith("data:audio")) return null;
+    const voix = voixValide(x.voix);
+    return voix ? { texte: x.texte, voix, son: x.son, duree: Number(x.duree) || 3 } : null;
+  } catch {
+    return null;
+  }
+}
+function garderPremierMeme(p: PremierMeme | null) {
+  try {
+    if (p) window.localStorage.setItem(CLE_PREMIER_MEME, JSON.stringify(p));
+    else window.localStorage.removeItem(CLE_PREMIER_MEME);
+  } catch {
+    /* (un navigateur privé : il le refera en un toucher) */
+  }
 }
 
 /** La durée d'un son (une adresse `data:` ou `blob:`), lue par le navigateur. */
@@ -253,8 +280,10 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const [univers, setUnivers] = useState(etat0.univers ?? "");
   // (tout est ouvert dès le départ, le lot 3 : ses visages, ses voix, sa propre voix, le cadre doré)
   const or = true;
-  // 🎁 SON PREMIER MÈME, DÉJÀ ÉCRIT (« le premier mème en moins de deux minutes ») : il n'a plus qu'à l'écouter
-  const [texte, setTexte] = useState(() => (etat0.messages.length ? "" : PREMIER_MEME));
+  // 🎁 SON PREMIER MÈME : préparé pendant la fabrication (son texte, lu par sa voix), sinon déjà écrit (« le premier
+  // mème en moins de deux minutes ») — il n'a plus qu'à l'écouter
+  const [premier] = useState<PremierMeme | null>(() => (etat0.messages.length ? null : lirePremierMeme()));
+  const [texte, setTexte] = useState(() => premier?.texte ?? (etat0.messages.length ? "" : PREMIER_MEME));
   // 💬 LE MÈME AUQUEL IL RÉPOND (en duo) ; et les mèmes prêts du moment
   const [reponse, setReponse] = useState<MemeARepondre | null>(null);
   const [prets] = useState<MemePret[]>(() => memesDuMoment());
@@ -279,7 +308,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
     };
   }, []);
   // SA VOIX : celle qu'il a choisie (« une voix d'homme ou de femme ? », demandé une fois ; jamais devinée)
-  const [voix, setVoix] = useState<CleVoix | null>(etat0.maVoix ?? null);
+  const [voix, setVoix] = useState<CleVoix | null>(premier?.voix ?? etat0.maVoix ?? null);
   function choisirVoix(v: CleVoix) {
     if (!voix) setVoixOuvertes(true);
     setVoix(v);
@@ -308,7 +337,9 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   // (un visage demandé, pas encore fait : il s'affichera tout seul dès qu'il sera prêt)
   const [attendu, setAttendu] = useState<Sentiment | null>(null);
   const [rejoue, setRejoue] = useState(0);
-  const [son, setSon] = useState<Son | null>(null);
+  const [son, setSon] = useState<Son | null>(() =>
+    premier ? { url: premier.son, data: premier.son, duree: premier.duree, cle: `${premier.voix}|${premier.texte}`, texte: premier.texte, voix: premier.voix } : null,
+  );
   const [parle, setParle] = useState(false);
   const [enreg, setEnreg] = useState(false);
   const [secondes, setSecondes] = useState(0);
@@ -596,6 +627,8 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
     const lien = `${window.location.origin}${j.lien}`;
     const id = String(j.lien).split("/").pop() ?? "";
     setEnvoye({ lien, cle, id });
+    // (son premier mème est parti : celui qu'il avait préparé n'attend plus)
+    garderPremierMeme(null);
     setEtat((e) => ({ ...e, messages: [{ id, le: new Date().toISOString(), ecoutes: 0, signale: false, sentiment, ...(s.texte ? { texte: s.texte } : {}) }, ...e.messages] }));
     return { lien, id };
   }
@@ -685,6 +718,12 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
       setErreur((e as Error).message);
     }
   }
+  // 🎉 LA RÉVÉLATION : son premier mème est prêt (préparé pendant la fabrication) — un toucher, et il se fabrique
+  const premierPret = Boolean(premier && !envoye && !meme && son && son.texte === premier.texte && son.voix === premier.voix && texte.trim() === premier.texte && voix === premier.voix);
+  function creerPremierMeme() {
+    void creerMeme();
+    window.setTimeout(() => void toile.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
+  }
   const partageFichier = typeof navigator !== "undefined" && Boolean(meme?.fichier) && typeof navigator.canShare === "function" && navigator.canShare({ files: [meme!.fichier!] });
 
   const saVoix = voix ? VOIX_FIGURINE.find((v) => v.cle === voix) : null;
@@ -724,6 +763,15 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
             )}
           </div>
         </div>
+        {premierPret && premier && (
+          <div className="tf-revele" role="status">
+            <b>🎉 La voilà ! Ton premier mème est prêt.</b>
+            <span>« {premier.texte} »</span>
+            <button type="button" className="tf-go tf-revele-go" onClick={creerPremierMeme}>
+              🎭 Créer mon premier mème
+            </button>
+          </div>
+        )}
         {refaireOuvert && (
           <div className="tf-refaire">
             <b>Elle ne te ressemble pas ?</b>
@@ -1213,6 +1261,118 @@ const PENDANT = [
  * 🛠️ SA FIGURINE SE FABRIQUE (le moteur d'image) : le guide raconte ce qui se passe ; la page rappelle le serveur tant que ce
  * n'est pas fini — sa figurine, puis sa bouche ouverte —, avec une jauge qui avance (deux minutes environ).
  */
+/**
+ * ⏱️ EN ATTENDANT : SON PREMIER MÈME (7 novembre 2026) — pendant que sa figurine se fabrique, il choisit ce qu'elle dira
+ * en premier (une idée, « 🎲 Surprends-moi ! », ou ses mots) et sa voix ; « ▶ L'écouter » : sa voix le lit, et c'est
+ * gardé. Dès qu'elle apparaît : « 🎭 Créer mon premier mème ». Rien n'est envoyé ici.
+ */
+export function PremierMemePendant({ etat }: { etat: EtatMaFigurine }) {
+  const [deja] = useState<PremierMeme | null>(() => lirePremierMeme());
+  const [texte, setTexte] = useState(deja?.texte ?? PREMIER_MEME);
+  const [voix, setVoix] = useState<CleVoix | null>(deja?.voix ?? etat.maVoix ?? null);
+  const [pret, setPret] = useState<PremierMeme | null>(deja);
+  const [charge, setCharge] = useState(false);
+  const [erreur, setErreur] = useState("");
+  const [idees] = useState<MemePret[]>(() => memesDuMoment().slice(0, 4));
+  const lecteur = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => () => lecteur.current?.pause(), []);
+  const aJour = Boolean(pret && pret.texte === texte.trim() && pret.voix === voix);
+  if (!etat.voixTexte) return null;
+  function choisirVoix(v: CleVoix) {
+    setVoix(v);
+    // (gardée : ce sera sa voix dans le studio)
+    void demander({ action: "ma-voix", voix: v }).catch(() => undefined);
+  }
+  function jouer(url: string) {
+    lecteur.current?.pause();
+    const a = new Audio(url);
+    lecteur.current = a;
+    void a.play().catch(() => undefined);
+  }
+  async function surprendreMoi() {
+    setErreur("");
+    setCharge(true);
+    try {
+      const j = (await demander({ action: "surprise" })) as Reponse & { texte?: string };
+      if (j.texte) setTexte(j.texte);
+    } catch (e) {
+      setErreur((e as Error).message);
+    } finally {
+      setCharge(false);
+    }
+  }
+  async function ecouter() {
+    const t = texte.trim();
+    if (!t) return setErreur("Écris d’abord ce qu’elle dira.");
+    if (!voix) return setErreur("Choisis d’abord sa voix.");
+    setErreur("");
+    if (aJour && pret) return jouer(pret.son);
+    setCharge(true);
+    try {
+      const j = await demander({ action: "voix", texte: t, voix });
+      if (!j.son) throw new Error("La voix n’a pas pu lire ce texte.");
+      const p: PremierMeme = { texte: t, voix, son: j.son, duree: await dureeDe(j.son) };
+      garderPremierMeme(p);
+      setPret(p);
+      jouer(j.son);
+    } catch (e) {
+      setErreur((e as Error).message);
+    } finally {
+      setCharge(false);
+    }
+  }
+  return (
+    <section className="tf-pendant" aria-label="Ton premier mème">
+      <b className="tf-pendant-titre">⏱️ En attendant : ton premier mème</b>
+      <p className="tf-note">Choisis ce qu’elle dira en premier, et sa voix. Dès qu’elle apparaît, tu l’envoies.</p>
+      <div className="tf-prets" role="group" aria-label="Des idées">
+        <button type="button" className={`tf-surprends${charge ? " tourne" : ""}`} onClick={surprendreMoi} disabled={charge}>
+          <span aria-hidden="true">🎲</span> Surprends-moi !
+        </button>
+        {idees.map((m) => (
+          <button key={m.cle} type="button" className={texte === m.texte ? "pris" : undefined} onClick={() => setTexte(m.texte)}>
+            <span aria-hidden="true">{m.emoji}</span> {m.nom}
+          </button>
+        ))}
+      </div>
+      <label className="tf-texte">
+        <textarea value={texte} maxLength={TEXTE_MAX} rows={3} onChange={(e) => setTexte(e.target.value)} aria-label="Ce qu’elle dira en premier" />
+        <small>
+          {texte.length} / {TEXTE_MAX}
+        </small>
+      </label>
+      {voix ? (
+        <ChoixVoix valeur={voix} onChoix={choisirVoix} />
+      ) : (
+        <div className="tf-quelle-voix" role="group" aria-label="Sa voix">
+          <b>Ta figurine parle avec…</b>
+          <span>
+            <button type="button" onClick={() => choisirVoix(VOIX_DE_BASE.homme)}>
+              👨 Une voix d’homme
+            </button>
+            <button type="button" onClick={() => choisirVoix(VOIX_DE_BASE.femme)}>
+              👩 Une voix de femme
+            </button>
+          </span>
+        </div>
+      )}
+      <button type="button" className="tf-ecouter" onClick={ecouter} disabled={charge || !texte.trim() || !voix}>
+        {charge ? "🔊 Un instant…" : aJour ? "▶ Réécouter" : "▶ L’écouter"}
+      </button>
+      {aJour && (
+        <p className="tf-pendant-pret" role="status">
+          ✓ Ton premier mème est prêt : il partira dès qu’elle apparaît.
+        </p>
+      )}
+      {erreur && (
+        <p className="tf-erreur" role="alert">
+          {erreur}
+        </p>
+      )}
+    </section>
+  );
+}
+
 export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat: (e: EtatMaFigurine) => void }) {
   const boite = useRef<HTMLDivElement>(null);
   const [erreur, setErreur] = useState("");
@@ -1324,6 +1484,7 @@ export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat
             <li className={pas === 2 ? "maintenant" : ""}>🗣️ On lui apprend à parler</li>
           </ol>
           <p className="tf-note">Deux minutes environ. Tu peux rester ici : elle apparaît toute seule.</p>
+          <PremierMemePendant etat={etat} />
         </>
       )}
     </div>
@@ -1371,7 +1532,10 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
     return etat.auto ? (
       <FabricationAuto etat={etat} onEtat={onEtat} />
     ) : (
-      <Annonce titre="On fabrique ta figurine 🛠️">Ta photo est bien arrivée. Ta figurine sera ici dans quelques jours : tu pourras la faire parler et l’envoyer à tes proches.</Annonce>
+      <>
+        <Annonce titre="On fabrique ta figurine 🛠️">Ta photo est bien arrivée. Ta figurine sera ici dans quelques jours : tu pourras la faire parler et l’envoyer à tes proches.</Annonce>
+        <PremierMemePendant etat={etat} />
+      </>
     );
   if (etat.etape === "bientot") return <Annonce titre="Ta figurine arrive très bientôt 🛠️">Reviens ici dans quelques jours pour envoyer ta photo.</Annonce>;
   return (
@@ -1642,6 +1806,16 @@ export const STYLES_MA_FIGURINE =
 .tf-reponse small{font-size:12.5px;color:#FFE7B8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tf-reponse em{font-style:normal;font-size:12px;color:#D9C3CB}
 .tf-reponse button{flex:none;width:32px;height:32px;border:0;border-radius:50%;background:rgba(0,0,0,.3);color:#fff;font-size:14px;cursor:pointer}
+.tf-pendant{display:flex;flex-direction:column;gap:10px;width:100%;box-sizing:border-box;margin-top:6px;padding:16px;border-radius:22px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,46,154,.4);text-align:left}
+.tf-pendant-titre{font-size:17px;font-weight:900}
+.tf-pendant .tf-note{margin:0}
+.tf-pendant .tf-prets{margin:0;padding:2px 0 6px}
+.tf-pendant-pret{margin:0;font-size:14px;font-weight:900;color:#7FF0C4}
+.tf-revele{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;box-sizing:border-box;padding:16px;border-radius:22px;background:radial-gradient(90% 70% at 50% 0%,rgba(61,226,166,.22),transparent 70%),rgba(255,255,255,.05);border:1.5px solid rgba(61,226,166,.55);text-align:center}
+.tf-revele b{font-size:18px;font-weight:900}
+.tf-revele span{font-size:14.5px;color:#E8D3DC}
+.tf-revele-go{width:100%;border:0;border-radius:999px;background:linear-gradient(135deg,#FF2E9A,#FF7A59);color:#fff;font:inherit;font-weight:900;cursor:pointer;box-shadow:0 12px 26px -12px rgba(255,46,154,.95);animation:tf-brille 1.8s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.tf-revele-go{animation:none}}
 .tf-prets{display:flex;gap:6px;margin:0 -16px;padding:2px 16px 6px;overflow-x:auto;scrollbar-width:none}
 .tf-prets::-webkit-scrollbar{display:none}
 .tf-prets button{flex:none;display:inline-flex;align-items:center;gap:5px;padding:8px 13px;border-radius:999px;border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#FFF4E6;font:inherit;font-size:13px;font-weight:800;white-space:nowrap;cursor:pointer}

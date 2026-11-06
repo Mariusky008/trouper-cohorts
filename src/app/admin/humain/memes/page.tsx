@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import type { CSSProperties } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
-import { statsMemes, type EvenementMeme } from "@/lib/direct/ma-figurine-serveur";
+import { parcoursPremierMeme, statsMemes, type EvenementMeme } from "@/lib/direct/ma-figurine-serveur";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -25,11 +25,17 @@ const taux = (a: number, b: number) => (b ? `${(a / b).toFixed(2).replace(".", "
 const pct = (a: number, b: number) => (b ? `${Math.round((100 * a) / b)} %` : "—");
 const jourCourt = (j: string) => new Date(`${j}T12:00:00`).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
 
+/** « 42 s », « 3 min », « 2 h », « 3 j ». */
+const duree = (sec: number) => (sec < 60 ? `${sec} s` : sec < 3600 ? `${Math.round(sec / 60)} min` : sec < 86_400 ? `${Math.round(sec / 3600)} h` : `${Math.round(sec / 86_400)} j`);
+const mediane = (l: number[]) => (l.length ? l[Math.floor((l.length - 1) / 2)] : 0);
+
 const carte: CSSProperties = { padding: 14, borderRadius: 12, background: "#f6f6f8", display: "flex", flexDirection: "column", gap: 4 };
 
 export default async function PageMemes() {
   if (!(await isCurrentUserAdmin())) redirect("/admin");
-  const s = await statsMemes(createAdminClient());
+  const supabase = createAdminClient();
+  const [s, p] = await Promise.all([statsMemes(supabase), parcoursPremierMeme(supabase)]);
+  const enMoinsDUneMinute = p.delais.filter((d) => d <= 60).length;
   const k7 = s.sept.cree ? s.sept.nouveau / s.sept.cree : 0;
   return (
     <main style={{ maxWidth: 980, margin: "0 auto", padding: "24px 16px 60px", fontFamily: "system-ui, sans-serif", color: "#1d1d1f" }}>
@@ -56,6 +62,37 @@ export default async function PageMemes() {
               {taux(s.trente.nouveau, s.trente.cree)}
             </span>
           </section>
+          {/* 🎁 LE PARCOURS JUSQU'AU PREMIER MÈME (7 novembre 2026 : « mesure combien de gens vont jusqu'au premier envoi ») */}
+          {p.ok && (
+            <>
+              <h2 style={{ margin: "26px 0 4px", fontSize: 18 }}>Le premier mème, sur 30 jours</h2>
+              <p style={{ margin: "0 0 10px", color: "#555" }}>Ceux qui ont envoyé leur photo : jusqu’où vont-ils ?</p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }} data-parcours="">
+                {[
+                  { nom: "Photo envoyée", n: p.photos, de: 0 },
+                  { nom: "Figurine prête", n: p.pretes, de: p.photos },
+                  { nom: "Premier mème", n: p.premiers, de: p.pretes },
+                  { nom: "Mème envoyé (partagé ou ouvert)", n: p.envoyes, de: p.premiers },
+                ].map((x) => (
+                  <div key={x.nom} style={carte}>
+                    <small style={{ color: "#666" }}>{x.nom}</small>
+                    <b style={{ fontSize: 26 }}>{x.n}</b>
+                    <small style={{ color: "#888" }}>{x.de ? `${pct(x.n, x.de)} de l’étape d’avant` : "\u00a0"}</small>
+                  </div>
+                ))}
+              </div>
+              <p style={{ margin: "12px 0 0", color: "#444" }}>
+                Entre la figurine prête et le premier mème :{" "}
+                {p.delais.length ? (
+                  <>
+                    <b>{duree(mediane(p.delais))}</b> (la moitié des gens) · en moins d’une minute : <b>{pct(enMoinsDUneMinute, p.delais.length)}</b> ({enMoinsDUneMinute} sur {p.delais.length})
+                  </>
+                ) : (
+                  "pas encore de premier mème."
+                )}
+              </p>
+            </>
+          )}
           <h2 style={{ margin: "26px 0 10px", fontSize: 18 }}>Le chemin, sur 7 jours</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
             {ORDRE.map((t) => (
