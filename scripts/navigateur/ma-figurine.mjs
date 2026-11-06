@@ -5,10 +5,11 @@
 // qu'on faisait parler est partie le 5 novembre 2026). Léa passe chez le Comptoir depuis plus d'un an (et à l'Atelier) : plus
 // de 10 figurines. Elle envoie sa photo (il faut cocher « C'est bien moi ») ; « on fabrique ta figurine ». ClikMe pose
 // ses deux images (ici à la main, dans le faux Supabase : la route admin, elle, refuse qui n'est pas admin). Elle
-// écrit un texte, le fait lire par une voix (la joie sur son visage), ne garde que le Comptoir dans les commerces cités, l'envoie : un lien `/figurine/<id>`, avec
-// WhatsApp et SMS. Une amie l'ouvre sans compte : « Léa t'a envoyé sa figurine », la voix joue et la bouche bouge,
-// le Comptoir est cité (pas l'Atelier), « Et toi ? » mène à sa collection ; une écoute est comptée. Elle le
-// signale : il ne s'affiche plus, sa voix non plus. Rien ne déborde, jamais le mot interdit.
+// écrit un texte, le fait lire par une voix (la joie sur son visage), et en fait SON MÈME : une vidéo fabriquée dans
+// le téléphone, rangée au seau, partagée telle quelle. Une amie ouvre le lien sans compte : le mème joue tout de
+// suite, sans blabla, avec un seul bouton (« Crée ou réponds avec ton mème »). Un message sans vidéo : sa figurine
+// parle au premier toucher, la bouche bouge, une écoute est comptée. Elle le signale : il ne s'affiche plus, sa voix
+// non plus. Rien ne déborde, jamais le mot interdit.
 import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
@@ -59,6 +60,11 @@ const tel = async (qui) => {
 };
 const texte = async (p, sel) => (await p.locator(sel).first().innerText({ timeout: 15000 }).catch(() => "")).replace(/\s+/g, " ").trim();
 const debordement = (p) => p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+const api = (p, corps) =>
+  p.evaluate(async (c) => {
+    const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(c) });
+    return { statut: r.status, ...(await r.json().catch(() => ({}))) };
+  }, corps);
 
 // ═══ HUGO (une figurine du mois) : L’ACCUEIL DE PABLITO, LE MENU EN BAS, « CRÉE TA FIGURINE » ═══
 const hugo = await tel(HUGO);
@@ -267,22 +273,30 @@ await lea.waitForTimeout(600);
 ok((await lea.evaluate(async () => (await (await fetch("/api/direct/ma-figurine", { cache: "no-store" })).json()).etat?.maVoix)) === "chaleureuse", "sa voix est gardée (ce sera la sienne la prochaine fois)");
 await lea.locator(".tf-moi .tf-ecouter").click();
 await lea.waitForSelector(".tf-envoyer", { timeout: 30000 });
-const cites = await lea.locator(".tf-cites label").allInnerTexts();
-ok(cites.length === 2 && (await lea.locator(".tf-cites label.pris").count()) === 2, `elle peut citer ses deux commerces, choisis d'office (${cites.join(" / ")})`);
-await lea.locator(".tf-cites label", { hasText: "Atelier" }).click();
-ok((await lea.locator(".tf-cites label.pris").count()) === 1, "elle retire l'Atelier");
+ok((await lea.locator(".tf-cites").count()) === 0 && (await texte(lea, ".tf-envoyer")).includes("Créer mon mème"), "« 🎭 Créer mon mème » (plus de commerces à cocher : le mème, rien d'autre)");
 await lea.screenshot({ path: `${D}/ma-figurine-1-message.png`, fullPage: true });
+// 🎭 SON MÈME : la vidéo se fabrique sous ses yeux, puis part au seau
 await lea.locator(".tf-envoyer").click();
-await lea.waitForSelector(".tf-wa", { timeout: 30000 });
+await lea.waitForSelector(".tf-meme-toile.visible", { timeout: 20000 });
+ok(true, "son mème se fabrique sous ses yeux");
+await lea.waitForTimeout(1800);
+await lea.locator(".tf-meme-toile").screenshot({ path: `${D}/ma-figurine-1b-meme.png` });
+await lea.waitForSelector(".tf-meme-pret video", { timeout: 90000 });
 const lien = await lea.locator(".tf-adresse").inputValue();
 ok(/\/figurine\/[a-z0-9]{12}$/.test(lien), `son lien (${lien})`);
-const wa = await lea.locator(".tf-wa").getAttribute("href");
-ok(wa?.startsWith("https://wa.me/?text=") && decodeURIComponent(wa).includes("Léa t’a envoyé sa figurine") && decodeURIComponent(wa).includes(lien), "WhatsApp : le texte et le lien, en premier");
-ok((await lea.locator(".tf-sms").getAttribute("href"))?.startsWith("sms:"), "SMS");
+const partage = await lea.locator(".tf-meme-pret .tf-partager-meme").count();
+const wa = partage ? "" : await lea.locator(".tf-meme-pret .tf-wa").getAttribute("href");
+ok(partage === 1 || wa === `https://wa.me/?text=${encodeURIComponent(lien)}`, "sans texte ni blabla : le mème lui-même (la feuille de partage), sinon son lien seul");
+ok((await lea.locator(".tf-meme-pret a[download]").count()) === 1, "« ⬇️ La vidéo » : elle peut l'enregistrer");
 const id = lien.split("/").pop();
 const [msg] = await lire("clik_figurine_message", `id=eq.${id}`);
-ok(msg && JSON.stringify(msg.commerces) === JSON.stringify([A.slug]) && msg.son.startsWith(`${LEA.id}/m-${id}.`) && msg.duree > 1 && msg.duree <= 16, `le message : sa voix lue, le Comptoir seulement (${JSON.stringify(msg?.commerces)}, ${msg?.duree} s)`);
+ok(msg && JSON.stringify(msg.commerces) === "[]" && msg.son.startsWith(`${LEA.id}/m-${id}.`) && msg.duree > 1 && msg.duree <= 16, `le message : sa voix lue (${msg?.duree} s)`);
 ok(msg?.sentiment === "joie" && msg?.texte === "Coucou Camille ! On se voit ce soir ?" && msg?.voix === "chaleureuse", `le message porte sa joie, son texte et sa voix (${msg?.sentiment}, ${msg?.voix})`);
+const cote = await (await fetch(`${STOCK}/figurines-clients/${LEA.id}/m-${id}.json`)).json().catch(() => ({}));
+ok(cote.meme?.startsWith(`${LEA.id}/meme-${id}.`) && /^video\/(mp4|webm)$/.test(cote.memeType) && cote.danse === true, `son mème est rangé à côté du message (${cote.meme}, ${cote.memeType})`);
+const octets = (await (await fetch(`${STOCK}/figurines-clients/${cote.meme}`)).arrayBuffer()).byteLength;
+ok(octets > 20_000, `la vidéo de son mème (${Math.round(octets / 1024)} Ko)`);
+ok((await api(lea, { action: "meme-pose", id: "zzzzzzzzzzzz", type: "video/mp4" })).statut === 404, "un mème pour le message d'un autre : non");
 ok((await debordement(lea)) <= 0 && !/exemple/i.test(await texte(lea, "main")), "« Ma collection » ne déborde pas, sans le mot interdit");
 await lea.screenshot({ path: `${D}/ma-figurine-2-envoye.png`, fullPage: true });
 
@@ -295,51 +309,63 @@ await lea.waitForTimeout(2600);
 ok(/● [12] s \/ 15 s/.test(await texte(lea, ".tf-temps")), `le compteur tourne (${await texte(lea, ".tf-temps")})`);
 await lea.locator(".tf-stop").click();
 await lea.waitForSelector(".tf-envoyer", { timeout: 15000 });
-ok((await lea.locator(".tf-moi .tf-ecouter").count()) === 1, "elle peut s'écouter, puis l'envoyer");
+ok((await lea.locator(".tf-moi .tf-ecouter").count()) === 1, "elle peut s'écouter, puis en faire un mème");
 
-// ═══ UNE AMIE L'OUVRE ═══
+// ═══ UNE AMIE L'OUVRE : LE MÈME JOUE TOUT DE SUITE ═══
 const amie = await tel(null);
 await amie.goto(lien.replace(/^https?:\/\/[^/]+/, BASE), { waitUntil: "networkidle" });
-await amie.waitForSelector(".mr h1", { timeout: 60000 });
+await amie.waitForSelector(".mr-meme video", { timeout: 60000 });
+await amie.waitForFunction(() => {
+  const v = document.querySelector(".mr-meme video");
+  return v && v.readyState >= 2 && !v.paused && v.currentTime > 0.3;
+}, null, { timeout: 20000 });
+ok(true, "le mème joue tout de suite, sans rien toucher");
 const mr = await texte(amie, ".mr");
-ok((await texte(amie, ".mr h1")) === "Léa t’a envoyé sa figurine", "« Léa t’a envoyé sa figurine »");
-ok(mr.includes(A.nom) && !mr.includes("Atelier Tout Neuf") && (await amie.locator(`.mr-commerces a[href="/f/${A.slug}"]`).count()) === 1, "ses commerces préférés : le Comptoir, pas l'Atelier");
-ok(mr.includes("Et toi ?") && (await amie.locator('.mr-toi a[href="/collection#creer"]').count()) === 1, "« Et toi ? » mène à « Crée ta figurine »");
-ok((await amie.locator(".mr-fig.mr-or").count()) === 1, "Léa a plus de 5 achats : son message arrive dans le cadre doré");
-ok((await amie.locator(".mr .fqp").getAttribute("data-sentiment")) === "joie" && mr.includes("pleine de joie"), "chez son amie, la figurine est pleine de joie");
-ok((await amie.locator(".mr .fqp.danse").count()) === 1 && mr.includes("elle danse"), "et elle danse (rangé à côté du message, sans migration)");
-ok((await texte(amie, ".mr-bulle")).includes("Coucou Camille ! On se voit ce soir ?"), "ce qu'elle dit s'écrit en bulle");
+ok(
+  (await amie.locator(".mr h1, .mr-commerces, .mr-toi, .mr-dit, .mr-bulle").count()) === 0 && (await amie.locator(".mr-bouton").count()) === 1 && (await amie.locator('.mr-bouton[href="/collection#figurine"]').count()) === 1 && (await texte(amie, ".mr-bouton")).includes("Crée ou réponds avec ton mème"),
+  "sans texte ni blabla : le mème, et un seul bouton « Crée ou réponds avec ton mème »",
+);
+const muet = await amie.evaluate(() => document.querySelector(".mr-meme video").muted);
+ok(!muet || (await amie.locator(".mr-son").count()) === 1, `le son : tout de suite si le navigateur le permet, sinon « Touche pour le son » (${muet ? "muet" : "avec le son"})`);
 const titre = await amie.title();
-ok(titre.includes("Léa t’a envoyé sa figurine") && !/ClikMe.*Clikme/i.test(titre) && (await amie.locator('meta[name="robots"][content*="noindex"]').count()) === 1, `le titre du lien, et pas dans Google (${titre})`);
-// la bouche s'ouvre sur les sons forts de la voix : des ouvertures brèves (le faux micro du navigateur enregistre des
-// bips). On ne la regarde pas de temps en temps (une machine lente les manque) : la page note chaque ouverture.
-await amie.locator(".fqp-fig").evaluate((fig) => {
+ok(titre.startsWith("🎭 Le mème de Léa") && (await amie.locator('meta[property="og:image"]').count()) === 1 && (await amie.locator('meta[name="robots"][content*="noindex"]').count()) === 1, `le titre du lien, sa figurine en aperçu, et pas dans Google (${titre})`);
+ok((await debordement(amie)) <= 0 && !/exemple/i.test(mr), "la page du mème ne déborde pas, sans le mot interdit");
+await amie.waitForTimeout(600);
+await amie.screenshot({ path: `${D}/ma-figurine-3-recu.png` });
+
+// ═══ UN MESSAGE SANS MÈME (d'avant, ou d'un téléphone qui ne fait pas de vidéo) : sa figurine, qui parle au premier toucher ═══
+const voixL = await api(lea, { action: "voix", texte: "Toi aussi, fais le tien !", voix: "chaleureuse" });
+const sansMeme = await api(lea, { action: "message", son: voixL.son, duree: 1.5, commerces: [], sentiment: "joie", texte: "Toi aussi, fais le tien !", voix: "chaleureuse" });
+ok(sansMeme.statut === 200 && sansMeme.id, "un message sans vidéo");
+const amie2 = await tel(null);
+await amie2.goto(`${BASE}/figurine/${sansMeme.id}`, { waitUntil: "networkidle" });
+await amie2.waitForSelector(".mr-meme.vivant .fqp", { timeout: 60000 });
+ok(/toi aussi, fais le tien/i.test(await texte(amie2, ".mr-sous-titre")) && (await amie2.locator(".mr-son").count()) === 1, "sa figurine, ses mots en sous-titre, « Touche pour l'entendre »");
+// la bouche s'ouvre sur les sons forts de la voix : la page note chaque ouverture (une machine lente les manque sinon)
+await amie2.locator(".fqp-fig").evaluate((fig) => {
   window.__ouvertures = 0;
   new MutationObserver(() => fig.classList.contains("ouverte") && (window.__ouvertures += 1)).observe(fig, { attributes: true, attributeFilter: ["class"] });
 });
-const son = amie.waitForResponse((r) => r.url().includes("/api/direct/ma-figurine/son"));
-await amie.locator(".fqp-jouer").click();
+const son = amie2.waitForResponse((r) => r.url().includes("/api/direct/ma-figurine/son"));
+await amie2.mouse.click(195, 300);
 const reponse = await son;
-ok(reponse.status() === 200, `sa voix arrive (${reponse.headers()["content-type"]}, ${reponse.headers()["content-length"]} octets)`);
+ok(reponse.status() === 200, `au premier toucher, sa voix arrive (${reponse.headers()["content-type"]})`);
 let bouche = false;
 for (let k = 0; k < 80 && !bouche; k++) {
-  bouche = await amie.evaluate(() => window.__ouvertures > 0);
-  if (!bouche) await amie.waitForTimeout(100);
+  bouche = await amie2.evaluate(() => window.__ouvertures > 0);
+  if (!bouche) await amie2.waitForTimeout(100);
 }
-const lecture = await amie.locator(".fqp").evaluate((e) => ({ ...e.dataset, bouton: e.querySelector(".fqp-jouer")?.textContent, ennui: e.querySelector(".fqp-ennui")?.textContent ?? "" }));
-ok(bouche, `la bouche bouge sur sa voix (${JSON.stringify(lecture)})`);
-await amie.waitForTimeout(400);
-const [apres] = await lire("clik_figurine_message", `id=eq.${id}`);
+ok(bouche, "la bouche bouge sur sa voix");
+await amie2.waitForTimeout(400);
+const [apres] = await lire("clik_figurine_message", `id=eq.${sansMeme.id}`);
 ok(apres?.ecoutes === 1, `une écoute comptée (${apres?.ecoutes})`);
-ok((await debordement(amie)) <= 0 && !/exemple/i.test(mr), "la page du message ne déborde pas, sans le mot interdit");
-await amie.screenshot({ path: `${D}/ma-figurine-3-recu.png`, fullPage: true });
 
 // ═══ ELLE LE SIGNALE ═══
 amie.on("dialog", (d) => d.accept());
 await amie.locator(".mr-signaler").click();
 await amie.waitForSelector(".mr-signale", { timeout: 15000 });
 await amie.reload({ waitUntil: "networkidle" });
-ok((await texte(amie, ".mr")).includes("Ce message a été signalé") && (await amie.locator(".fqp").count()) === 0, "signalé : il ne s'affiche plus");
+ok((await texte(amie, ".mr")).includes("Ce mème a été signalé") && (await amie.locator(".mr-meme video, .fqp").count()) === 0, "signalé : il ne s'affiche plus");
 ok((await fetch(`${BASE}/api/direct/ma-figurine/son?m=${id}`)).status === 404, "sa voix non plus");
 ok((await fetch(`${BASE}/figurine/zzzzzzzzzzzz`)).status === 404, "un lien inconnu : 404");
 
@@ -377,7 +403,7 @@ ok(refaite === 200 && univers2?.univers === "Artisan", `la refaire : ce qui lui 
 const r = await fetch(`${BASE}/api/direct/ma-figurine`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "message", son: "data:audio/mpeg;base64,AAAA", duree: 1 }) });
 ok(r.status === 403, "sans être quelqu'un, pas de message");
 
-const erreurs = [...hugo.err, ...neuf.err, ...lea.err, ...amie.err];
+const erreurs = [...hugo.err, ...neuf.err, ...lea.err, ...amie.err, ...amie2.err];
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` : ${erreurs[0]}` : ""}`);
 await b.close();
 console.log(echecs ? `${echecs} ÉCHEC(S)` : "TOUT EST BON");

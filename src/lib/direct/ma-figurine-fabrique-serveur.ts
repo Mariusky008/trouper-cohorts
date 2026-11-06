@@ -67,10 +67,10 @@ export async function fabriquerUnPas(depot: Depot, photo: Buffer, avant: number,
         return { fini: false, erreur: "Ta photo ne s'ouvre pas. Essaie une autre photo." };
       }
       const traits = await decrireTraits(png);
-      // EN FIDÉLITÉ BASSE, comme ChatGPT : le moteur redessine son visage d'après sa photo et son portrait en mots
-      // (en haute, il recopiait la photo : « encore plus réaliste qu'avant », 5 novembre 2026) ;
-      // `FIGURINE_CLIENT_FIDELITE=high` pour revenir à l'autre
-      const r = await editer(png, consigneFigurineClient(traits, univers), avant, s(process.env.FIGURINE_CLIENT_FIDELITE) === "high" ? "high" : "low");
+      // EN FIDÉLITÉ HAUTE AU VISAGE (6 novembre 2026 : en basse, « c'est joli mais ça ne me ressemble plus du tout ») ;
+      // c'est la consigne qui la rend dessin animé, et caricature SES traits (`consigneFigurineClient`) —
+      // `FIGURINE_CLIENT_FIDELITE=low` pour revenir à la basse (le 5 novembre : « encore plus réaliste qu'avant »)
+      const r = await editer(png, consigneFigurineClient(traits, univers), avant, s(process.env.FIGURINE_CLIENT_FIDELITE) === "low" ? "low" : "high");
       if (!Buffer.isBuffer(r)) return { fini: false, erreur: r.erreur, nouvelle };
       const webp = await sharp(r).resize({ width: 900, withoutEnlargement: true }).webp({ quality: 88 }).toBuffer();
       if (!(await depot.ecrire(NOM_NEUTRE, webp, "image/webp"))) return { fini: false, erreur: "Ta figurine n'a pas pu être rangée.", nouvelle };

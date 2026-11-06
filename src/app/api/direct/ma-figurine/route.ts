@@ -14,6 +14,8 @@
 // POST { action: "mois" } : sa figurine du mois, méritée (10 jours), fabriquée une fois → { mois } (`enCours` : rappeler).
 // POST { action: "message", son: data:audio…, duree, commerces: [liens], sentiment?, texte?, voix?, danse? } : un message de
 //   sa figurine → { id, lien }.
+// POST { action: "meme-envoi", id, type } → { seau, chemin, jeton } : où envoyer la vidéo de son mème (`meme.ts`) ;
+//      { action: "meme-pose", id, type } : elle est arrivée → rangée à côté du message.
 // POST { action: "signaler", id } : celui qui a reçu un message le signale (pas besoin d'être quelqu'un).
 // (La démonstration qu'on faisait parler sans compte a quitté la page le 5 novembre 2026 : chacun crée la sienne dès le
 // départ. Ses messages déjà envoyés s'ouvrent toujours, par `/figurine/<id>`.)
@@ -24,6 +26,7 @@ import { assurerHabitant, habitantCourant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
 import { lienMessage } from "@/lib/direct/ma-figurine";
 import {
+  adresseEnvoiMeme,
   choisirSaVoix,
   enregistrerMessage,
   envoyerPhoto,
@@ -32,6 +35,7 @@ import {
   refaireMaFigurine,
   fabriquerSesExpressions,
   lireSonTexte,
+  poserMeme,
   signalerMessage,
 } from "@/lib/direct/ma-figurine-serveur";
 import { fabriquerFigurineDuMois, mesFigurinesDuMois } from "@/lib/direct/figurine-du-mois-serveur";
@@ -114,6 +118,17 @@ export async function POST(request: Request) {
     const r = await lireSonTexte(supabase, moi, p.texte, p.voix);
     if (!r.mp3) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
     return NextResponse.json({ ok: true, son: enSon(r.mp3) }, { headers: sansCache });
+  }
+  // 🎭 SON MÈME : l'adresse où envoyer la vidéo, puis « elle est arrivée »
+  if (p?.action === "meme-envoi") {
+    const r = await adresseEnvoiMeme(supabase, moi, p.id, p.type);
+    if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
+    return NextResponse.json({ ok: true, seau: r.seau, chemin: r.chemin, jeton: r.jeton }, { headers: sansCache });
+  }
+  if (p?.action === "meme-pose") {
+    const r = await poserMeme(supabase, moi, p.id, p.type);
+    if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
+    return NextResponse.json({ ok: true }, { headers: sansCache });
   }
   if (p?.action === "message") {
     const r = await enregistrerMessage(supabase, moi, p.son, p.duree, p.commerces, p.sentiment, p.texte, p.voix, p.danse);

@@ -1,6 +1,6 @@
-// 🗣️ UN MESSAGE DE FIGURINE — ce que voit celui qui le reçoit (`clikme.fr/figurine/<id>`) : la figurine de son
-// proche, qui lui parle avec sa voix (ou celle de la démonstration, avec le texte d'un proche) ; les commerces qu'elle cite (choisis par celui qui l'envoie) ; et « Et toi ? » :
-// à 10 figurines chez les commerces ClikMe, la sienne. C'est le bouche-à-oreille des commerces.
+// 🎭 UN MÈME DE FIGURINE — ce que voit celui qui le reçoit (`clikme.fr/figurine/<id>`) : le mème de son proche (la
+// vidéo de sa figurine qui parle), qui joue tout de suite ; et un seul bouton, « Crée ou réponds avec ton mème »
+// (6 novembre 2026). Les messages d'avant, sans vidéo : sa figurine, qui parle au premier toucher.
 //
 // Jamais dans les moteurs de recherche. Un message signalé ne s'affiche plus (l'admin le remet ou le retire).
 // Voir `lib/direct/ma-figurine.ts`.
@@ -9,7 +9,6 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { lireMessage } from "@/lib/direct/ma-figurine-serveur";
-import { texteDuMessage } from "@/lib/direct/ma-figurine";
 import { MessageRecu } from "./message-recu";
 
 export const dynamic = "force-dynamic";
@@ -24,12 +23,14 @@ const charger = cache(async (id: string) => {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const m = await charger((await params).id);
-  const titre = m ? texteDuMessage(m.prenom, !m.signale && Boolean(m.demo)) : "Un message de figurine";
+  // 🎭 UN MÈME (6 novembre 2026) : pas de blabla — son titre, et sa figurine en aperçu
+  const titre = m ? `🎭 ${m.prenom ? `Le mème de ${m.prenom}` : "Un mème"}` : "Un mème ClikMe";
+  const image = m && !m.signale ? m.neutre : "";
   return {
     title: titre,
-    description: "Touche « Écouter » : sa figurine te parle avec sa voix.",
+    description: "🔊",
     robots: { index: false, follow: false },
-    openGraph: { title: titre, description: "Touche « Écouter » : sa figurine te parle avec sa voix.", type: "website" },
+    openGraph: { title: titre, description: "🔊", type: "website", ...(image ? { images: [{ url: image }] } : {}) },
   };
 }
 

@@ -488,6 +488,49 @@ export async function enregistrerMessage(
   return error ? { error: "Ton message n’est pas parti. Réessaie dans un instant." } : { id };
 }
 
+// ─── 🎭 son mème (la vidéo de son message) ─────────────────────────────────────────────────────
+/** Un mème : 15 Mo au plus (une vingtaine de secondes en 720 × 1280). */
+const MEME_MAX = 15 * 1024 * 1024;
+const extMeme = (type: unknown) => (/^video\/mp4/i.test(s(type)) ? "mp4" : /^video\/webm/i.test(s(type)) ? "webm" : "");
+const cheminMeme = (h: string, id: string, ext: string) => `${h}/meme-${id}.${ext}`;
+
+/**
+ * 🎭 OÙ ENVOYER LA VIDÉO DE SON MÈME (6 novembre 2026, `meme.ts`) : fabriquée dans son téléphone, elle part tout droit
+ * au seau privé (trop lourde pour passer par ici) — une adresse signée, pour SON message seulement.
+ */
+export async function adresseEnvoiMeme(supabase: Supabase, habitant: Habitant, id: unknown, type: unknown): Promise<{ seau?: string; chemin?: string; jeton?: string; error?: string; statut?: number }> {
+  const r = await ligneMessage(supabase, s(id));
+  if (!r || s(r.habitant_id) !== habitant.id) return { error: "Ce message n’est pas le tien.", statut: 404 };
+  const ext = extMeme(type);
+  if (!ext) return { error: "Ce format de vidéo n’est pas pris.", statut: 400 };
+  const chemin = cheminMeme(habitant.id, s(r.id), ext);
+  const { data, error } = await supabase.storage.from(SEAU_FIGURINES).createSignedUploadUrl(chemin, { upsert: true });
+  if (error || !data?.token) return { error: "Ton mème n’a pas pu partir. Réessaie.", statut: 502 };
+  return { seau: SEAU_FIGURINES, chemin: data.path ?? chemin, jeton: data.token };
+}
+
+/** Le mème est arrivé (sa vidéo est dans le seau, pas trop lourde) : il est rangé à côté du message. */
+export async function poserMeme(supabase: Supabase, habitant: Habitant, id: unknown, type: unknown): Promise<{ ok?: boolean; error?: string; statut?: number }> {
+  const r = await ligneMessage(supabase, s(id));
+  if (!r || s(r.habitant_id) !== habitant.id) return { error: "Ce message n’est pas le tien.", statut: 404 };
+  const ext = extMeme(type);
+  if (!ext) return { error: "Ce format de vidéo n’est pas pris.", statut: 400 };
+  const nom = `meme-${s(r.id)}.${ext}`;
+  const { data } = await supabase.storage.from(SEAU_FIGURINES).list(habitant.id, { limit: 100, search: `meme-${s(r.id)}` });
+  const f = ((Array.isArray(data) ? data : []) as { name?: string; metadata?: { size?: number } }[]).find((x) => x.name === nom);
+  const taille = Number(f?.metadata?.size) || 0;
+  if (!f || taille <= 0) return { error: "La vidéo de ton mème n’est pas arrivée.", statut: 400 };
+  if (taille > MEME_MAX) {
+    await supabase.storage.from(SEAU_FIGURINES).remove([cheminMeme(habitant.id, s(r.id), ext)]);
+    return { error: "Ton mème est trop long.", statut: 413 };
+  }
+  const chemin = `${s(r.habitant_id)}/m-${s(r.id)}.json`;
+  const aCote = await lireJson<Record<string, unknown>>(supabase, chemin);
+  if (!(await ecrireJson(supabase, chemin, { ...aCote, meme: cheminMeme(habitant.id, s(r.id), ext), memeType: ext === "mp4" ? "video/mp4" : "video/webm" })))
+    return { error: "Ton mème n’a pas pu être rangé.", statut: 502 };
+  return { ok: true };
+}
+
 // ─── 3. celui qui le reçoit ────────────────────────────────────────────────────────────────────
 async function ligneMessage(supabase: Supabase, id: string): Promise<Ligne | null> {
   if (!idMessageValide(id)) return null;
@@ -509,12 +552,14 @@ export async function lireMessage(supabase: Supabase, id: string): Promise<Messa
     : { data: [] };
   const parSlug = new Map(((Array.isArray(sites) ? sites : []) as Ligne[]).filter((x) => x.est_client === true).map((x) => [s(x.slug), x]));
   // (le fou rire, la grimace, la danse : à côté du message)
-  const aCote = await lireJson<{ sentiment: string; danse: boolean }>(supabase, `${s(r.habitant_id)}/m-${id}.json`);
+  const aCote = await lireJson<{ sentiment: string; danse: boolean; meme: string; memeType: string }>(supabase, `${s(r.habitant_id)}/m-${id}.json`);
   const sentiment = sentimentValide(r.sentiment) ?? sentimentValide(aCote.sentiment);
-  const [neutre, parle, expr] = await Promise.all([
+  const [neutre, parle, expr, meme] = await Promise.all([
     signer(supabase, s(fig.neutre), 7200),
     signer(supabase, s(fig.parle), 7200),
     sentiment ? expressionsSignees(supabase, dossierExpressions(s(r.habitant_id), s(fig.neutre)), 7200).catch(() => null) : Promise.resolve(null),
+    // 🎭 son mème (la vidéo), s'il en a un
+    s(aCote.meme) ? signer(supabase, s(aCote.meme), 7200) : Promise.resolve(""),
   ]);
   return {
     signale: false,
@@ -527,6 +572,7 @@ export async function lireMessage(supabase: Supabase, id: string): Promise<Messa
     expression: sentiment ? (expr?.expressions[sentiment] ?? null) : null,
     ...(s(r.texte) ? { texte: s(r.texte) } : {}),
     ...(aCote.danse === true ? { danse: true } : {}),
+    ...(meme ? { meme: { video: meme, type: s(aCote.memeType) || "video/mp4" } } : {}),
     // (le cadre doré : ouvert à tous dès le départ, le lot 3)
     or: true,
     commerces: slugs.flatMap((slug) => {

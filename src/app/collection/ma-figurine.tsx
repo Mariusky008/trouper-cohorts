@@ -19,7 +19,6 @@
  */
 import { useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
-  COMMERCES_MAX_MESSAGE,
   DUREE_MAX_MESSAGE,
   PRENOM_MAX,
   SENTIMENTS,
@@ -28,7 +27,6 @@ import {
   VOIX_DE_BASE,
   VOIX_FIGURINE,
   sentimentDe,
-  texteDuMessage,
   type CleVoix,
   type EtatMaFigurine,
   type Sentiment,
@@ -37,6 +35,8 @@ import { reduireImage } from "@/lib/direct/reduire-image";
 import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE, type FigurineHandle } from "./figurine-qui-parle";
 import { Guide, GuideDit, OngletVisible, STYLES_GUIDE, useVoixPablito } from "./guide";
 import { lancerMusiqueDanse } from "@/lib/direct/musique-danse";
+import { fabriquerMeme, memePossible } from "@/lib/direct/meme";
+import { createClient } from "@/lib/supabase/client";
 import { SONS_PABLITO } from "@/lib/direct/guide";
 import { ETAPES, prochaineEtape } from "@/lib/direct/etapes";
 import { ProtegerFigurine } from "./connaitre";
@@ -245,9 +245,11 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const [parle, setParle] = useState(false);
   const [enreg, setEnreg] = useState(false);
   const [secondes, setSecondes] = useState(0);
-  const [choisis, setChoisis] = useState<string[]>(() => etat0.commerces.slice(0, COMMERCES_MAX_MESSAGE).map((c) => c.slug));
   const [envoi, setEnvoi] = useState(false);
-  const [envoye, setEnvoye] = useState<{ lien: string; cle: string } | null>(null);
+  const [envoye, setEnvoye] = useState<{ lien: string; cle: string; id: string } | null>(null);
+  // 🎭 SON MÈME (6 novembre 2026) : la vidéo, fabriquée ici, puis partagée telle quelle
+  const [meme, setMeme] = useState<{ cle: string; etat: "fabrication" | "pret" | "sans"; p?: number; url?: string; fichier?: File } | null>(null);
+  const toile = useRef<HTMLCanvasElement>(null);
   const [erreur, setErreur] = useState("");
   const [expressionsEnCours, setExpressionsEnCours] = useState(Boolean(etat0.expressionsAFaire));
   // (le visage qu'il vient de choisir et qui n'est pas encore fait : le moteur le fait à la demande)
@@ -340,7 +342,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
     setRejoue((n) => n + 1);
   }
 
-  const cleEnvoi = (s: Son | null) => (s ? `${s.cle}|${sentiment ?? ""}|${danse ? "danse" : ""}|${choisis.join(",")}` : "");
+  const cleEnvoi = (s: Son | null) => (s ? `${s.cle}|${sentiment ?? ""}|${danse ? "danse" : ""}` : "");
 
   // ✍️ son texte, lu par la voix choisie : fabriqué au toucher, joué dès qu'il arrive
   function ecouterTexte() {
@@ -406,34 +408,87 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
     if (m && m.rec.state !== "inactive") m.rec.stop();
   }
 
-  async function envoyer() {
+  /** Le message (sa voix) : son lien. Déjà parti avec les mêmes réglages : le même. */
+  async function leMessage(s: Son): Promise<{ lien: string; id: string }> {
+    const cle = cleEnvoi(s);
+    if (envoye?.cle === cle) return envoye;
+    const j = await demander({
+      action: "message",
+      son: s.data,
+      duree: s.duree,
+      commerces: [],
+      ...(sentiment ? { sentiment } : {}),
+      ...(danse ? { danse: true } : {}),
+      ...(s.texte ? { texte: s.texte, voix: s.voix } : {}),
+    });
+    const lien = `${window.location.origin}${j.lien}`;
+    const id = String(j.lien).split("/").pop() ?? "";
+    setEnvoye({ lien, cle, id });
+    setEtat((e) => ({ ...e, messages: [{ id, le: new Date().toISOString(), ecoutes: 0, signale: false, sentiment, ...(s.texte ? { texte: s.texte } : {}) }, ...e.messages] }));
+    return { lien, id };
+  }
+
+  /**
+   * 🎭 SON MÈME — la vidéo de sa figurine qui parle (`meme.ts`) : elle se fabrique sous ses yeux (et ses oreilles), part
+   * au seau, et il la partage TELLE QUELLE (la feuille de partage du téléphone : WhatsApp la montre et la rejoue). Un
+   * téléphone qui ne sait pas faire de vidéo : le lien seul (la page joue sa figurine).
+   */
+  async function creerMeme() {
     if (!son) return;
     const cle = cleEnvoi(son);
-    if (envoye?.cle === cle) return;
+    // (le son s'ouvre DANS le toucher : sur iPhone, c'est maintenant ou jamais)
+    const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    const ctx = memePossible() && AC ? new AC() : null;
+    void ctx?.resume().catch(() => undefined);
     setEnvoi(true);
     setErreur("");
     try {
-      const j = await demander({
-        action: "message",
-        son: son.data,
-        duree: son.duree,
-        commerces: choisis,
-        ...(sentiment ? { sentiment } : {}),
-        ...(danse ? { danse: true } : {}),
-        ...(son.texte ? { texte: son.texte, voix: son.voix } : {}),
+      const { id } = await leMessage(son);
+      if (!ctx || !toile.current) {
+        setMeme({ cle, etat: "sans" });
+        return;
+      }
+      setMeme({ cle, etat: "fabrication", p: 0 });
+      const visage = sentiment && etat.expressions?.[sentiment] ? etat.expressions[sentiment]! : { n: etat.neutre!, p: etat.parle! };
+      const m = await fabriquerMeme({
+        ctx,
+        toile: toile.current,
+        images: visage,
+        son: son.url,
+        texte: son.texte,
+        emoji: sentiment ? (sentimentDe(sentiment)?.emoji ?? "") : "",
+        danse,
+        ecouter: true,
+        surProgres: (p) => setMeme((x) => (x && x.etat === "fabrication" ? { ...x, p } : x)),
       });
-      const lien = `${window.location.origin}${j.lien}`;
-      setEnvoye({ lien, cle });
-      const id = String(j.lien).split("/").pop() ?? "";
-      setEtat((e) => ({ ...e, messages: [{ id, le: new Date().toISOString(), ecoutes: 0, signale: false, sentiment, ...(son.texte ? { texte: son.texte } : {}) }, ...e.messages] }));
+      // la vidéo part au seau (directement), puis elle est rangée avec le message
+      const a = await demander({ action: "meme-envoi", id, type: m.type });
+      const ext = m.type.includes("mp4") ? "mp4" : "webm";
+      const envoi = a as unknown as { seau: string; chemin: string; jeton: string };
+      const { error } = await createClient().storage.from(envoi.seau).uploadToSignedUrl(envoi.chemin, envoi.jeton, m.blob, { contentType: m.type });
+      if (error) throw new Error("Ton mème n’a pas pu partir. Réessaie.");
+      await demander({ action: "meme-pose", id, type: m.type });
+      setMeme({ cle, etat: "pret", url: URL.createObjectURL(m.blob), fichier: new File([m.blob], `mon-meme-clikme.${ext}`, { type: m.type }) });
     } catch (e) {
       setErreur((e as Error).message);
+      setMeme((x) => (x?.cle === cle && x.etat === "fabrication" ? { cle, etat: "sans" } : x));
     } finally {
       setEnvoi(false);
+      void ctx?.close().catch(() => undefined);
     }
   }
 
-  const pret = envoye && envoye.cle === cleEnvoi(son);
+  /** 📲 Le mème part TEL QUEL (sans texte) : la feuille de partage du téléphone, avec la vidéo. */
+  async function partagerMeme() {
+    if (!meme?.fichier) return;
+    try {
+      await navigator.share({ files: [meme.fichier] });
+    } catch {
+      /* il a fermé la feuille de partage */
+    }
+  }
+  const partageFichier = typeof navigator !== "undefined" && Boolean(meme?.fichier) && typeof navigator.canShare === "function" && navigator.canShare({ files: [meme!.fichier!] });
+
   const saVoix = voix ? VOIX_FIGURINE.find((v) => v.cle === voix) : null;
   const refaireOuvert = refaire && (etat.refaire ?? 0) > 0;
 
@@ -602,34 +657,47 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
           </>
         )}
 
+        {/* 🎭 SON MÈME : il se fabrique sous ses yeux, puis part tel quel (la vidéo, sans texte) */}
+        <canvas ref={toile} className={`tf-meme-toile${meme?.etat === "fabrication" && meme.cle === cleEnvoi(son) ? " visible" : ""}`} aria-hidden="true" />
         {son && (mode === "voix" ? !son.texte : son.texte === texte.trim() && son.voix === voix) && (
           <div className="tf-envoi">
-            {etat.commerces.length > 0 && (
-              <fieldset className="tf-cites">
-                <legend>Elle cite tes commerces préférés</legend>
-                {etat.commerces.map((c) => {
-                  const pris = choisis.includes(c.slug);
-                  return (
-                    <label key={c.slug} className={pris ? "pris" : ""}>
-                      <input
-                        type="checkbox"
-                        checked={pris}
-                        disabled={!pris && choisis.length >= COMMERCES_MAX_MESSAGE}
-                        onChange={() => setChoisis((x) => (pris ? x.filter((y) => y !== c.slug) : [...x, c.slug]))}
-                      />
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={c.figurine} alt="" />
-                      <span>{c.nom}</span>
-                    </label>
-                  );
-                })}
-              </fieldset>
-            )}
-            {pret ? (
-              <PanneauEnvoi lien={envoye.lien} texte={texteDuMessage(etat.prenom)} />
+            {meme?.cle === cleEnvoi(son) && meme.etat === "fabrication" ? (
+              <div className="tf-meme-cours" role="status">
+                <b>🎬 Ton mème se fabrique…</b>
+                <span className="tf-meme-jauge">
+                  <i style={{ width: `${Math.round((meme.p ?? 0) * 100)}%` }} />
+                </span>
+              </div>
+            ) : meme?.cle === cleEnvoi(son) && meme.etat === "pret" && meme.url ? (
+              <div className="tf-meme-pret">
+                <b>Ton mème est prêt ✓</b>
+                <video className="tf-meme-video" src={meme.url} autoPlay loop muted playsInline onClick={(e) => (e.currentTarget.muted = !e.currentTarget.muted)} />
+                {partageFichier ? (
+                  <button type="button" className="tf-wa tf-partager-meme" onClick={partagerMeme}>
+                    📲 Partager mon mème
+                  </button>
+                ) : (
+                  <a className="tf-wa" href={`https://wa.me/?text=${encodeURIComponent(envoye?.lien ?? "")}`} target="_blank" rel="noopener noreferrer">
+                    Envoyer sur WhatsApp
+                  </a>
+                )}
+                <div className="tf-autres">
+                  {partageFichier && (
+                    <a className="tf-sms" href={`https://wa.me/?text=${encodeURIComponent(envoye?.lien ?? "")}`} target="_blank" rel="noopener noreferrer">
+                      Le lien
+                    </a>
+                  )}
+                  <a className="tf-sms" href={meme.url} download={meme.fichier?.name ?? "mon-meme-clikme.mp4"}>
+                    ⬇️ La vidéo
+                  </a>
+                </div>
+                {envoye && <input className="tf-adresse" readOnly value={envoye.lien} aria-label="Le lien" onFocus={(e) => e.target.select()} />}
+              </div>
+            ) : meme?.cle === cleEnvoi(son) && meme.etat === "sans" && envoye ? (
+              <PanneauEnvoi lien={envoye.lien} texte="" titre="Ton mème est prêt ✓" />
             ) : (
-              <button type="button" className="tf-envoyer" onClick={envoyer} disabled={envoi}>
-                {envoi ? "Un instant…" : "📲 L’envoyer à quelqu’un"}
+              <button type="button" className="tf-envoyer" onClick={creerMeme} disabled={envoi}>
+                {envoi ? "Un instant…" : "🎭 Créer mon mème"}
               </button>
             )}
           </div>
@@ -1225,6 +1293,20 @@ export const STYLES_MA_FIGURINE =
 .tf-replis .tf-messages{padding:0 14px}
 .tf-replis .tf-messages summary{padding:13px 0;font-size:14.5px;color:#FFF4E6}
 .tf-replis .tf-messages ul{padding-bottom:12px}
+.tf-meme-toile{display:none;width:min(260px,70vw);aspect-ratio:9/16;height:auto;margin:4px auto 0;border-radius:22px;background:#1E0918;box-shadow:0 0 0 3px #F2C46B,0 24px 44px -18px rgba(0,0,0,.95)}
+.tf-meme-toile.visible{display:block;animation:tf-vu .4s cubic-bezier(.2,1.5,.4,1)}
+.tf-meme-cours{display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0}
+.tf-meme-cours b{font-size:15px}
+.tf-meme-jauge{display:block;width:100%;max-width:260px;height:8px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}
+.tf-meme-jauge i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#FF2E9A,#F2C46B);transition:width .2s linear}
+.tf-meme-pret{display:flex;flex-direction:column;align-items:center;gap:10px}
+.tf-meme-pret > b{font-size:16px;font-weight:900;color:#7FF0C4}
+.tf-meme-video{display:block;width:min(240px,64vw);aspect-ratio:9/16;border-radius:20px;object-fit:cover;background:#1E0918;box-shadow:0 0 0 3px #F2C46B,0 24px 44px -18px rgba(0,0,0,.95);cursor:pointer}
+.tf-partager-meme{background:linear-gradient(135deg,#FF2E9A,#FF7A59)!important}
+.tf-partager-meme::before{content:none!important}
+.tf-meme-pret .tf-wa{width:100%;box-sizing:border-box;border:0;font:inherit;font-size:16px;font-weight:900;cursor:pointer}
+.tf-meme-pret .tf-autres{justify-content:center}
+.tf-meme-pret .tf-adresse{width:100%;box-sizing:border-box}
 @keyframes tf-tourne{to{transform:rotate(360deg)}}
 @keyframes tf-bat{0%,100%{transform:scale(1)}15%{transform:scale(1.07)}}
 @media (min-width:860px){
