@@ -185,6 +185,8 @@ export type EtatMaFigurine = {
   /** Ses expressions déjà faites (adresses signées), et s'il en manque encore (le moteur d'image les fait). */
   expressions?: Expressions;
   expressionsAFaire?: boolean;
+  /** Les visages que le moteur est en train de lui faire (on ne les choisit pas tant qu'ils ne sont pas prêts). */
+  visagesEnCours?: Sentiment[];
   /** Un texte peut être lu par une voix (ElevenLabs branché). */
   voixTexte?: boolean;
   /** La voix qu'il a choisie pour sa figurine (« une voix d'homme ou de femme ? », demandé une fois ; jamais deviné). */

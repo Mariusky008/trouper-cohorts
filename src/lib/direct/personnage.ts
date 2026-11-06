@@ -70,7 +70,7 @@ export const BONUS_ETAPE: Record<CleEtape, Partial<Record<CleCaracteristique, nu
   carte: { curiosite: 6 },
   message: { humour: 10 },
   rencontre: { curiosite: 8 },
-  reagir: { mauvaiseFoi: 10 },
+  questions: { curiosite: 6, mauvaiseFoi: 4 },
   ami: { fidelite: 12 },
   membre: { audace: 12 },
   fidele: { fidelite: 10 },

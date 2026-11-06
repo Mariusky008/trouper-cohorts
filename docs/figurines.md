@@ -692,6 +692,29 @@ sont des PARTENAIRES, un plus, pas le centre (« quand on parle des commerçants
 **Le lot 4, à faire : les commerçants partenaires** — collectionner leur figurine en passant chez eux donne leurs
 avantages en premier (les promos avant tout le monde, les bons plans).
 
+### 9.0 sexdecies Ses retours du 6 novembre — le menu, « Ma figurine », la danse, les visages — construit
+
+- **Le menu du bas** (« très peu moderne, il manque de personnalité ; il faut qu'on voie en un coup d'œil qu'on est
+  différent ») : un dock qui flotte ; SA figurine en médaillon pour « Ma figurine » ; « Rencontres », le cœur de
+  l'app, en gros bouton rond au milieu (il appelle quand une rencontre attend) ; des icônes dessinées pour ClikMe (une
+  figurine sur son ressort, une carte, deux bulles, le mois, l'album).
+- **« Ma figurine », en trois temps** (« très compact, ça en devient confus ») : sa figurine en grand, avec ses deux
+  gestes posés dessous (🕺 Danser, 🔁 La refaire) ; « Son visage », sur une ligne qui défile ; « 💬 Fais-la parler »,
+  une seule carte (sa voix choisie tient sur une ligne : « Voix : Posée · changer ») ; puis, repliés, « 👣 Tes premiers
+  pas » (une ligne et le prochain pas) et ses messages. La figurine du mois : une pastille sous le titre.
+  « Comment ça marche » est retiré (le guide l'explique déjà, à l'arrivée sur chaque onglet).
+- **🕺 La danse en musique** (`musique-danse.ts`, « il faut y associer une musique qu'on entend, autrement c'est
+  plat ») : une boucle de quatre mesures composée dans le téléphone (aucune voix, aucun échantillon), à 100 battements
+  par minute — la grosse caisse tombe quand le ressort s'écrase (`rythme` cale l'animation sur la musique) ; un
+  « boing » de ressort à chaque mesure ; elle se fait discrète quand la figurine parle, et s'arrête quand on change
+  d'onglet ou qu'on range le téléphone.
+- **Les visages en création** (« toute la carte bouge parce que l'expression n'est pas prête : prévenir qu'elle est en
+  cours de création, et ne pas laisser cliquer ») : un visage que le moteur fabrique dit « en création… » et ne se
+  choisit pas ; un visage pas encore fait porte une étincelle — le toucher le fait fabriquer, et il s'affiche tout seul
+  quand il est prêt (`visagesEnCours`). La figurine ne bouge plus « pour rien ».
+- **« Dire 3 fois si c'est bien toi »** quittait les premiers pas (on croyait devoir refaire sa figurine) : à sa place,
+  « ❓ Répondre à 3 questions du jour ».
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

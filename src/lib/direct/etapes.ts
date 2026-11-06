@@ -19,7 +19,8 @@ export const ETAPES = [
   { cle: "carte", emoji: "🃏", titre: "Faire ta carte de personnage", onglet: "personnage" },
   { cle: "message", emoji: "💌", titre: "Envoyer ton premier message", onglet: "figurine" },
   { cle: "rencontre", emoji: "💬", titre: "Ta première rencontre", onglet: "rencontre" },
-  { cle: "reagir", emoji: "🪞", titre: "Dire 3 fois si c’est bien toi", onglet: "rencontre" },
+  // (6 novembre 2026 : « Dire 3 fois si c'est bien toi » laissait croire qu'il fallait refaire sa figurine)
+  { cle: "questions", emoji: "❓", titre: "Répondre à 3 questions du jour", onglet: "personnage" },
   { cle: "ami", emoji: "👯", titre: "Un ami qui te rejoint", onglet: "rencontre" },
   { cle: "membre", emoji: "🎲", titre: "Rencontrer un membre", onglet: "rencontre" },
   { cle: "fidele", emoji: "📅", titre: "Revenir 3 jours différents", onglet: "figurine" },
