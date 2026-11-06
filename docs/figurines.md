@@ -770,8 +770,11 @@ coiffeur, « sur vous je verrais bien ce style », et appuyer ici pour l'essayer
     WhatsApp), le WebM sinon.
   · La page du lien (`/figurine/<id>`) : le mème joue tout de suite, en boucle — avec le son si le navigateur le
     permet, sinon en silence avec ses sous-titres (les navigateurs interdisent le son avant le premier toucher) et le
-    son au premier toucher, n'importe où. Un seul bouton, « 🎭 Crée ou réponds avec ton mème » ; « Signaler », tout
-    petit. L'aperçu du lien : « 🎭 Le mème de Léa » et sa figurine. Un message sans vidéo (d'avant) : sa figurine, ses
+    son au premier toucher, n'importe où. Un seul bouton, « 🎭 Crée ou réponds avec ton mème » ; dessous, discret,
+    « 📲 Partager ce mème » (« il ne peut pas le partager directement dans une conversation WhatsApp ? ») : LA VIDÉO
+    elle-même, préparée dès l'ouverture de la page (sur iPhone, la feuille de partage ne s'ouvre que dans le toucher),
+    sinon le lien ; « Signaler », tout petit. Reçu comme vidéo dans WhatsApp, il se transfère comme n'importe quelle
+    vidéo (appui long, « Transférer »). L'aperçu du lien : « 🎭 Le mème de Léa » et sa figurine. Un message sans vidéo (d'avant) : sa figurine, ses
     mots en sous-titre, qui parle au premier toucher.
   · Les commerces cités dans un message ne se cochent plus (le mème, rien d'autre).
 - **La figurine qui lui ressemble** (« c'est joli mais ça ne me ressemble plus du tout ; il faut qu'on me reconnaisse,

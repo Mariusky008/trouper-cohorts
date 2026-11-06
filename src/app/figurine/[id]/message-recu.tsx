@@ -9,7 +9,11 @@
  *     tant qu'on n'a pas touché la page) en silence, avec ses sous-titres — et le son au premier toucher, n'importe où.
  *   · Un message sans mème (d'avant, ou d'un téléphone qui ne sait pas faire de vidéo) : sa figurine, déjà là (elle danse
  *     si elle danse, ses mots en sous-titre), qui parle au premier toucher.
- *   · Un seul bouton : « 🎭 Crée ou réponds avec ton mème ». « Signaler », tout petit.
+ *   · Un seul bouton : « 🎭 Crée ou réponds avec ton mème ». Dessous, discret, « 📲 Partager ce mème » (le patron, le
+ *     même jour : « il ne peut pas le partager directement dans une conversation WhatsApp, au lieu d'un lien ? ») — LA
+ *     VIDÉO elle-même, par la feuille de partage du téléphone ; préparée dès l'ouverture de la page (sur iPhone, la
+ *     feuille ne s'ouvre que dans le toucher : pas le temps de la télécharger à ce moment-là). Un téléphone qui ne sait
+ *     pas partager une vidéo : le lien. « Signaler », tout petit.
  */
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -104,6 +108,50 @@ function MemeVivant({ m }: { m: Extract<MessageFigurine, { signale: false }> }) 
   );
 }
 
+/** 📲 « Partager ce mème » : la vidéo elle-même (prête d'avance), sinon le lien de la page. */
+function PartagerCeMeme({ video, type }: { video?: string; type?: string }) {
+  const [fichier, setFichier] = useState<File | null>(null);
+  const [copie, setCopie] = useState(false);
+  useEffect(() => {
+    if (!video || typeof navigator === "undefined" || typeof navigator.canShare !== "function") return;
+    let fini = false;
+    // (un instant après : la vidéo qui joue passe d'abord)
+    const t = window.setTimeout(async () => {
+      try {
+        const b = await (await fetch(video, { mode: "cors" })).blob();
+        const ext = /mp4/.test(type ?? b.type) ? "mp4" : "webm";
+        const f = new File([b], `meme-clikme.${ext}`, { type: type || b.type || "video/mp4" });
+        if (!fini && navigator.canShare({ files: [f] })) setFichier(f);
+      } catch {
+        /* pas de vidéo à partager : le lien */
+      }
+    }, 1200);
+    return () => {
+      fini = true;
+      window.clearTimeout(t);
+    };
+  }, [video, type]);
+  async function partager() {
+    try {
+      if (fichier) return await navigator.share({ files: [fichier] });
+      if (typeof navigator.share === "function") return await navigator.share({ url: window.location.href });
+    } catch {
+      return; /* il a fermé la feuille de partage */
+    }
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopie(true);
+    } catch {
+      setCopie(false);
+    }
+  }
+  return (
+    <button type="button" className="mr-partager" onClick={partager}>
+      {copie ? "Lien copié ✓" : "📲 Partager ce mème"}
+    </button>
+  );
+}
+
 export function MessageRecu({ message: m }: { message: MessageFigurine }) {
   const [signale, setSignale] = useState(m.signale);
   const [envoi, setEnvoi] = useState(false);
@@ -131,6 +179,7 @@ export function MessageRecu({ message: m }: { message: MessageFigurine }) {
       <Link className="mr-bouton" href="/collection#figurine">
         🎭 Crée ou réponds avec ton mème
       </Link>
+      {!signale && !m.signale && <PartagerCeMeme video={m.meme?.video} type={m.meme?.type} />}
       {!signale && !m.signale && (
         <button type="button" className="mr-signaler" onClick={signaler} disabled={envoi}>
           Signaler
@@ -152,6 +201,7 @@ body{background:#0B0309}
 .mr-sous-titre{margin:0;max-width:92%;font-size:24px;line-height:1.15;font-weight:900;text-transform:uppercase;color:#fff;-webkit-text-stroke:1.5px #12060F;paint-order:stroke fill;text-shadow:0 3px 0 #12060F}
 .mr-son{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);padding:10px 16px;border-radius:999px;background:rgba(0,0,0,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font-size:14px;font-weight:900;white-space:nowrap;pointer-events:none;animation:mr-pouls 1.6s ease-in-out infinite}
 .mr-bouton{display:block;width:100%;box-sizing:border-box;padding:16px 20px;border-radius:999px;background:linear-gradient(135deg,#FF2E9A,#FF7A59);color:#fff;font-size:17px;font-weight:900;text-decoration:none;box-shadow:0 14px 30px -12px rgba(255,46,154,1)}
+.mr-partager{margin-top:-4px;padding:9px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#FFF4E6;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
 .mr-signale{margin:30px 0 0;padding:22px 16px;border-radius:22px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
 .mr-signale b{font-size:18px}
 .mr-signale p{margin:6px 0 0;color:#D9C3CB}

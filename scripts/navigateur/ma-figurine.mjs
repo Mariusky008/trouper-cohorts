@@ -325,6 +325,7 @@ ok(
   (await amie.locator(".mr h1, .mr-commerces, .mr-toi, .mr-dit, .mr-bulle").count()) === 0 && (await amie.locator(".mr-bouton").count()) === 1 && (await amie.locator('.mr-bouton[href="/collection#figurine"]').count()) === 1 && (await texte(amie, ".mr-bouton")).includes("Crée ou réponds avec ton mème"),
   "sans texte ni blabla : le mème, et un seul bouton « Crée ou réponds avec ton mème »",
 );
+ok((await amie.locator(".mr-partager").count()) === 1 && (await texte(amie, ".mr-partager")).includes("Partager ce mème"), "dessous, discret : « 📲 Partager ce mème » (la vidéo elle-même, ou son lien)");
 const muet = await amie.evaluate(() => document.querySelector(".mr-meme video").muted);
 ok(!muet || (await amie.locator(".mr-son").count()) === 1, `le son : tout de suite si le navigateur le permet, sinon « Touche pour le son » (${muet ? "muet" : "avec le son"})`);
 const titre = await amie.title();
