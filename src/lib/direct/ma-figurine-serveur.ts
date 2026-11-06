@@ -202,6 +202,8 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
     parle,
     expressions: expr.expressions,
     expressionsAFaire: ouverts.some((c) => !expr.expressions[c]),
+    // (6 novembre 2026 : « il faut juste prévenir que l'expression est en cours de création, et ne pas laisser cliquer dessus »)
+    ...(moteurBranche() ? { visagesEnCours: ouverts.filter((c) => !expr.expressions[c]) } : {}),
     voixTexte: voixBranchee(),
     ...(maVoix ? { maVoix } : {}),
     ...(verifiee?.email && verifiee.email_verifie_le ? { protegee: adresseMasquee(verifiee.email) } : {}),

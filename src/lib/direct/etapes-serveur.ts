@@ -1,7 +1,7 @@
 /**
  * 🎁 SES CADEAUX, CÔTÉ SERVEUR (`etapes.ts`) — les étapes qu'il a franchies, lues là où elles se trouvent déjà : sa
  * figurine (`clik_ma_figurine`), sa carte (`<habitant>/personnage.json`), ses messages (`clik_figurine_message`), ses
- * rencontres (`<habitant>/rencontres.json` : rencontres, réactions, amis, membres), ses jours de présence
+ * rencontres (`<habitant>/rencontres.json` : rencontres, ce qu'il a dit de lui, amis, membres), ses jours de présence
  * (`<habitant>/presence.json`, noté ici : un jour par visite de la page) et ses figurines du mois (les familles).
  *
  * CE QUI ÉTAIT DÉJÀ OUVERT LE RESTE : à la première lecture, ce que ses figurines lui ouvraient avant (une option par
@@ -36,7 +36,7 @@ const ecrire = async (supabase: Supabase, chemin: string, x: unknown) =>
     .upload(chemin, Buffer.from(JSON.stringify(x)), { contentType: "application/json", upsert: true })
     .catch(() => null));
 
-type Rencontres = { liste?: unknown[]; amis?: unknown[]; moi?: number; pas?: number; membreJour?: string };
+type Rencontres = { liste?: unknown[]; amis?: unknown[]; moi?: number; pas?: number; membreJour?: string; dit?: unknown[] };
 
 /**
  * Ses cadeaux (`figurines` : ses figurines du mois gagnées, tous commerces confondus). `noterPresence` : c'est bien
@@ -73,7 +73,8 @@ export async function cadeauxDe(supabase: Supabase, habitantId: string, figurine
     carte: Boolean(carte),
     message: Array.isArray(msg.data) && msg.data.length > 0,
     rencontre: liste.length > 0,
-    reagir: (Number(rencontres?.moi) || 0) + (Number(rencontres?.pas) || 0) >= 3,
+    // (ce qu'il a dit de lui : la question du jour, « Et toi ? »)
+    questions: (Array.isArray(rencontres?.dit) ? rencontres.dit.length : 0) >= 3,
     ami: Array.isArray(rencontres?.amis) && rencontres.amis.length > 0,
     membre: Boolean(s(rencontres?.membreJour)),
     fidele: new Set(jours).size >= 3,

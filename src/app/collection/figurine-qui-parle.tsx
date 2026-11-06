@@ -57,6 +57,8 @@ type Props = {
   decoupe?: boolean;
   /** 🕺 Elle danse. */
   danse?: boolean;
+  /** 🎵 Le premier temps de sa musique (`performance.now()`) : le ressort s'écrase sur la grosse caisse. */
+  rythme?: number;
   ref?: Ref<FigurineHandle>;
 };
 
@@ -64,7 +66,7 @@ type Fenetre = Window & { webkitAudioContext?: typeof AudioContext };
 /** Un silence d'un instant : joué au toucher, il ouvre le son pour la suite (iPhone). */
 const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
 
-export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = "▶ Écouter", onFin, onJoue, className, sentiment, rejoue = 0, decoupe, danse = false, ref }: Props) {
+export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = "▶ Écouter", onFin, onJoue, className, sentiment, rejoue = 0, decoupe, danse = false, rythme = 0, ref }: Props) {
   const boite = useRef<HTMLDivElement>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
   const contexte = useRef<AudioContext | null>(null);
@@ -88,6 +90,14 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
     };
   }, [danse, decoupe, neutre, ressort?.de]);
   const surRessort = danse && !decoupe && ressort?.de === neutre ? ressort.vu : undefined;
+  // 🎵 EN RYTHME (6 novembre 2026 : la danse a sa musique) : le ressort s'écrase (15 % de son tour de 1,2 s) sur chaque
+  // grosse caisse (tous les 0,6 s) — on cale ses animations sur la musique, quel que soit le moment où elles ont commencé
+  useEffect(() => {
+    const el = boite.current;
+    if (!surRessort || !rythme || !el?.getAnimations) return;
+    const t = (((performance.now() - rythme + 180) % 1200) + 1200) % 1200;
+    for (const a of el.getAnimations({ subtree: true })) if (/^fqp-(ressort|saute)$/.test(String((a as CSSAnimation).animationName))) a.currentTime = t;
+  }, [surRessort, rythme, sentiment, rejoue]);
   /** Les proportions de son image de tous les jours (déjà chargée, ou à son chargement). */
   const mesurer = (img: HTMLImageElement | null) => {
     if (img?.naturalWidth && img.naturalHeight) setRatio(img.naturalWidth / img.naturalHeight);

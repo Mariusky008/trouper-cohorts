@@ -77,11 +77,16 @@ ok(
   (await hugo.locator("#creer .tf-prenom-photo, #creer .tf-ville").count()) === 0 && (await hugo.locator("#creer .tf-etapes li").count()) === 3 && (await hugo.locator("#creer .tf-univers").count()) === 1,
   "il a un compte et un prénom : on ne les lui redemande pas (sa photo, ce qui lui ressemble — facultatif —, son accord)",
 );
-const comment = await texte(hugo, "#o-figurine .fm-comment");
 ok(
-  comment.includes("Comment ça marche") && comment.includes("Chaque mois vécu") && !/achat|débloquer/i.test(await texte(hugo, "#o-figurine .og-pouvoirs")),
-  `« Comment ça marche », en trois temps — plus rien « à débloquer », plus aucun achat (${comment.slice(0, 120)})`,
+  (await hugo.locator("#o-figurine .fm-comment, #o-figurine .og-pouvoirs").count()) === 0 && !/Comment ça marche|débloquer|achat/i.test(await texte(hugo, "#o-figurine")),
+  "plus de « Comment ça marche » (le guide l'explique déjà), plus rien « à débloquer », plus aucun achat",
 );
+// 🧭 LE MENU, EN BAS : un dock ; « Rencontres » en gros bouton rond au milieu ; des icônes dessinées
+const dock = await hugo.evaluate(() => {
+  const r = (s) => document.querySelector(s)?.getBoundingClientRect();
+  return { rond: r(".mc-nav-rencontre .mc-nav-ico"), autre: r(".mc-nav-album .mc-nav-ico"), nav: r(".mc-nav"), svg: document.querySelectorAll(".mc-nav svg").length };
+});
+ok(dock.rond && dock.autre && dock.rond.width >= 56 && dock.rond.top < dock.nav.top && dock.svg >= 4 && dock.nav.left >= 8, `le menu : un dock qui flotte, « Rencontres » en gros bouton rond au milieu (${JSON.stringify({ l: dock.rond?.width, t: dock.rond?.top, n: dock.nav?.top })})`);
 ok((await debordement(hugo)) <= 0, "l'accueil ne déborde pas");
 await hugo.screenshot({ path: `${D}/ma-figurine-0-accueil.png`, fullPage: true });
 
@@ -105,8 +110,10 @@ await fetch(`${F}/clik_ma_figurine?habitant_id=eq.${HUGO.id}`, {
 });
 await hugo.reload({ waitUntil: "networkidle" });
 await hugo.waitForSelector(".tf-moi .tf-options", { timeout: 30000 });
+ok((await hugo.locator(".mc-nav-figurine .mc-nav-ico img").count()) === 1, "« Ma figurine », dans le menu : SA figurine, en médaillon");
 const opts = await texte(hugo, ".tf-options");
-ok(/Tes premiers pas · 2\/10/.test(opts) && !/cadeau|cadenas|achat|Encore/i.test(opts), `ses premiers pas : une simple liste, sans cadenas (${opts.slice(0, 160)})`);
+ok(/Tes premiers pas 2\/10/.test(opts) && opts.includes("Prochain :") && !/cadeau|cadenas|achat|Encore/i.test(opts), `ses premiers pas, repliés : une ligne et son prochain pas (${opts.slice(0, 160)})`);
+await hugo.locator(".tf-options summary").click();
 ok((await hugo.locator(".tf-moi .tf-kdo li.faite").count()) === 2 && (await texte(hugo, ".tf-kdo li.faite")).includes("Créer ta figurine"), "deux étapes franchies : sa figurine, un commerçant partenaire");
 ok(
   (await hugo.locator(".tf-moi .tf-expr button").count()) === 7 && (await hugo.locator(".tf-moi .tf-expr button.ferme, .tf-moi .tf-voix button.ferme").count()) === 0 && (await hugo.locator(".tf-moi .tf-danse").count()) === 1,
@@ -117,7 +124,6 @@ ok((await hugo.locator(".tf-moi .fqp").getAttribute("data-sentiment")) === "tris
 // 🗓️ SA FIGURINE DU MOIS, EN UNE LIGNE (lot 3) : ses jours de rencontres ce mois-ci
 const apercu = await texte(hugo, "#o-figurine .fm-apercu");
 ok(/Ta figurine de \p{L}+/u.test(apercu) && apercu.includes("0/10 jours de rencontres") && (await hugo.locator("#o-figurine .fm-apercu .fm-jours i").count()) === 10, `où en est sa figurine du mois (${apercu})`);
-ok((await hugo.locator("#o-figurine .fm-comment").count()) === 1, "« Comment ça marche » reste là, sa figurine faite");
 ok((await debordement(hugo)) <= 0, "sa figurine et ses options ne débordent pas");
 await hugo.screenshot({ path: `${D}/ma-figurine-0b-options.png`, fullPage: true });
 

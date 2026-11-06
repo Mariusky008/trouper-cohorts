@@ -17,7 +17,7 @@
  *     partie le 5 novembre 2026 : « elle ne sert plus à rien maintenant ».
  * La règle est dans `lib/direct/ma-figurine.ts`.
  */
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   COMMERCES_MAX_MESSAGE,
   DUREE_MAX_MESSAGE,
@@ -35,11 +35,12 @@ import {
 } from "@/lib/direct/ma-figurine";
 import { reduireImage } from "@/lib/direct/reduire-image";
 import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE, type FigurineHandle } from "./figurine-qui-parle";
-import { Guide, GuideDit, STYLES_GUIDE, useVoixPablito } from "./guide";
+import { Guide, GuideDit, OngletVisible, STYLES_GUIDE, useVoixPablito } from "./guide";
+import { lancerMusiqueDanse } from "@/lib/direct/musique-danse";
 import { SONS_PABLITO } from "@/lib/direct/guide";
 import { ETAPES, prochaineEtape } from "@/lib/direct/etapes";
 import { ProtegerFigurine } from "./connaitre";
-import { ApercuDuMois, CommentCaMarche } from "./figurine-du-mois";
+import { ApercuDuMois } from "./figurine-du-mois";
 
 type Reponse = { error?: string; etat?: EtatMaFigurine; lien?: string; son?: string; enCours?: boolean };
 
@@ -65,16 +66,39 @@ function dureeDe(url: string): Promise<number> {
 
 // ─── ce qu'elle ressent : son visage ────────────────────────────────────────────────────────────
 
-/** Ce qu'elle ressent : tous ses visages, ouverts dès le départ (le lot 3 — plus de cadenas). */
-function ChoixExpression({ valeur, onChoix }: { valeur: Sentiment | null; onChoix: (s: Sentiment | null) => void }) {
+/**
+ * Ce qu'elle ressent : tous ses visages, ouverts dès le départ (le lot 3 — plus de cadenas). Un visage que le moteur
+ * est en train de faire (« cours ») ne se choisit pas encore : il le dit (6 novembre 2026 : « toute la carte bouge
+ * parce que l'expression n'est pas prête : prévenir qu'elle est en cours de création, et ne pas laisser cliquer ») ;
+ * un visage pas encore fait (« creer ») porte une étincelle : le toucher le fait fabriquer.
+ */
+function ChoixExpression({ valeur, onChoix, etats = {} }: { valeur: Sentiment | null; onChoix: (s: Sentiment | null) => void; etats?: Partial<Record<Sentiment, "cours" | "creer">> }) {
   return (
     <div className="tf-expr" role="radiogroup" aria-label="Ce qu’elle ressent">
-      {[{ cle: null, emoji: "🙂", court: "Normal" }, ...SENTIMENTS].map((x) => (
-        <button key={x.cle ?? "normal"} type="button" role="radio" aria-checked={valeur === x.cle} className={valeur === x.cle ? "pris" : ""} onClick={() => onChoix(x.cle)}>
-          <span aria-hidden="true">{x.emoji}</span>
-          {x.court}
-        </button>
-      ))}
+      {[{ cle: null, emoji: "🙂", court: "Normal" }, ...SENTIMENTS].map((x) => {
+        const e = x.cle ? etats[x.cle] : undefined;
+        return (
+          <button
+            key={x.cle ?? "normal"}
+            type="button"
+            role="radio"
+            aria-checked={valeur === x.cle}
+            className={`${valeur === x.cle ? "pris" : ""}${e ? ` ${e}` : ""}`}
+            disabled={e === "cours"}
+            aria-label={e === "cours" ? `${x.court} : en création` : e === "creer" ? `${x.court} : à créer` : x.court}
+            onClick={() => onChoix(x.cle)}
+          >
+            <span aria-hidden="true">{x.emoji}</span>
+            {x.court}
+            {e === "cours" && <em className="tf-expr-cours">en création…</em>}
+            {e === "creer" && (
+              <i className="tf-expr-neuf" aria-hidden="true">
+                ✨
+              </i>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -100,15 +124,22 @@ function ChoixVoix({ valeur, onChoix, desactive }: { valeur: CleVoix; onChoix: (
  */
 export function MesOptions({ etapes }: { cadeaux?: number; etapes: readonly string[] }) {
   // 👣 TES PREMIERS PAS (5 novembre 2026, le lot 3 : « tout ouvrir dès le départ ») — plus aucun cadenas : les étapes
-  // guident le nouveau venu, sans rien bloquer ; la progression, c'est sa figurine du mois
+  // guident le nouveau venu, sans rien bloquer ; la progression, c'est sa figurine du mois. Repliés (6 novembre 2026 :
+  // « c'est très compact, ça en devient confus ») : une ligne, et son prochain pas.
   const prochaine = prochaineEtape(etapes);
   if (!prochaine) return null;
   const faites = ETAPES.filter((e) => etapes.includes(e.cle)).length;
   return (
-    <section className="tf-options" aria-label="Tes premiers pas">
-      <b className="tf-q">
-        👣 Tes premiers pas · {faites}/{ETAPES.length}
-      </b>
+    <details className="tf-options" aria-label="Tes premiers pas">
+      <summary>
+        <span aria-hidden="true">👣</span> Tes premiers pas{" "}
+        <em>
+          {faites}/{ETAPES.length}
+        </em>
+        <small>
+          Prochain : {prochaine.emoji} {prochaine.titre}
+        </small>
+      </summary>
       <ul className="tf-kdo" aria-label="Tes étapes">
         {ETAPES.map((e) => {
           const faite = etapes.includes(e.cle);
@@ -125,7 +156,7 @@ export function MesOptions({ etapes }: { cadeaux?: number; etapes: readonly stri
           {prochaine.emoji} {prochaine.titre}
         </a>
       </p>
-    </section>
+    </details>
   );
 }
 
@@ -193,12 +224,22 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   // SA VOIX : celle qu'il a choisie (« une voix d'homme ou de femme ? », demandé une fois ; jamais devinée)
   const [voix, setVoix] = useState<CleVoix | null>(etat0.maVoix ?? null);
   function choisirVoix(v: CleVoix) {
+    if (!voix) setVoixOuvertes(true);
     setVoix(v);
     // (gardée : ce sera sa voix la prochaine fois)
     void demander({ action: "ma-voix", voix: v }).catch(() => undefined);
   }
   const [sentiment, setSentiment] = useState<Sentiment | null>(null);
   const [danse, setDanse] = useState(false);
+  // 🎵 SA MUSIQUE (6 novembre 2026 : « il faut y associer une musique qu'on entend, autrement c'est plat ») : lancée au
+  // toucher ; `rythme`, son premier temps (le ressort s'écrase sur la grosse caisse)
+  const musique = useRef<ReturnType<typeof lancerMusiqueDanse> | null>(null);
+  const [rythme, setRythme] = useState(0);
+  const visible = useContext(OngletVisible);
+  // (ses voix : la liste se replie une fois choisie — « Voix : Posée · changer »)
+  const [voixOuvertes, setVoixOuvertes] = useState(false);
+  // (un visage demandé, pas encore fait : il s'affichera tout seul dès qu'il sera prêt)
+  const [attendu, setAttendu] = useState<Sentiment | null>(null);
   const [rejoue, setRejoue] = useState(0);
   const [son, setSon] = useState<Son | null>(null);
   const [parle, setParle] = useState(false);
@@ -244,9 +285,60 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
         window.clearInterval(m.minuteur);
         m.flux.getTracks().forEach((t) => t.stop());
       }
+      musique.current?.arreter();
     },
     [],
   );
+
+  // 🕺 LA DANSE ET SA MUSIQUE : au toucher (le son ne démarre que dans le geste, sur iPhone)
+  function basculerDanse() {
+    if (danse) {
+      musique.current?.arreter();
+      musique.current = null;
+      setDanse(false);
+      return;
+    }
+    musique.current = lancerMusiqueDanse(setRythme);
+    musique.current.baisser(parle);
+    setDanse(true);
+  }
+  // (elle parle : la musique se fait discrète ; il change d'onglet ou range son téléphone : elle s'arrête)
+  useEffect(() => {
+    musique.current?.baisser(parle);
+  }, [parle]);
+  useEffect(() => {
+    const couper = () => {
+      if (!musique.current) return;
+      musique.current.arreter();
+      musique.current = null;
+      void Promise.resolve().then(() => setDanse(false));
+    };
+    if (!visible) couper();
+    const cache = () => document.visibilityState === "hidden" && couper();
+    document.addEventListener("visibilitychange", cache);
+    return () => document.removeEventListener("visibilitychange", cache);
+  }, [visible]);
+
+  // 🎭 SES VISAGES : prêt, en création (le moteur le fait), ou à créer (le toucher le fait faire)
+  const enCreation = new Set<Sentiment>(expressionsEnCours ? [...(etat.visagesEnCours ?? []), ...(veut.s ? [veut.s] : [])] : []);
+  const etatsVisages: Partial<Record<Sentiment, "cours" | "creer">> =
+    etat.auto === false || !etat.visagesEnCours ? {} : Object.fromEntries(SENTIMENTS.filter((x) => !etat.expressions?.[x.cle]).map((x) => [x.cle, enCreation.has(x.cle) ? "cours" : "creer"]));
+  // le visage demandé est prêt : il s'affiche
+  if (attendu && etat.expressions?.[attendu]) {
+    setAttendu(null);
+    setSentiment(attendu);
+    setRejoue((n) => n + 1);
+  }
+  function choisirVisage(s: Sentiment | null) {
+    if (s && etatsVisages[s] === "creer") {
+      setExpressionsEnCours(true);
+      setVeut((v) => ({ s, n: v.n + 1 }));
+      setAttendu(s);
+      return;
+    }
+    setSentiment(s);
+    setRejoue((n) => n + 1);
+  }
 
   const cleEnvoi = (s: Son | null) => (s ? `${s.cle}|${sentiment ?? ""}|${danse ? "danse" : ""}|${choisis.join(",")}` : "");
 
@@ -342,97 +434,100 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   }
 
   const pret = envoye && envoye.cle === cleEnvoi(son);
+  const saVoix = voix ? VOIX_FIGURINE.find((v) => v.cle === voix) : null;
+  const refaireOuvert = refaire && (etat.refaire ?? 0) > 0;
 
+  // UNE PAGE EN TROIS TEMPS (6 novembre 2026 : « c'est très compact, ça en devient confus ») : sa figurine en grand,
+  // avec ses deux gestes (danser, la refaire) ; ses visages, sur une ligne ; « Fais-la parler », une seule carte ; puis,
+  // repliés, ses premiers pas et ses messages
   return (
     <div className="tf tf-moi">
       <div className="tf-scene">
-        <FigurineQuiParle
-          ref={fig}
-          neutre={etat.neutre!}
-          parle={etat.parle!}
-          expressions={etat.expressions}
-          sentiment={sentiment}
-          danse={danse}
-          rejoue={rejoue}
-          onJoue={setParle}
-          className={`tf-fig${or ? " tf-or" : ""}`}
-        />
-        <ChoixExpression
-          valeur={sentiment}
-          onChoix={(s) => {
-            setSentiment(s);
-            setRejoue((n) => n + 1);
-            // un visage pas encore fait : sa figurine l'apprend (une minute environ ; elle le joue en bougeant d'ici là)
-            if (s && !etat.expressions?.[s] && etat.auto !== false) {
-              setExpressionsEnCours(true);
-              setVeut((v) => ({ s, n: v.n + 1 }));
-            }
-          }}
-        />
-        {/* 🕺 ELLE DANSE : dès le départ, avec n'importe quel visage */}
-        <button type="button" className={`tf-danse${danse ? " pris" : ""}`} aria-pressed={danse} onClick={() => setDanse((d) => !d)}>
-          🕺 {danse ? "Elle danse ! (toucher pour l’arrêter)" : "La faire danser"}
-        </button>
-        {expressionsEnCours && <p className="tf-note">🎭 Ta figurine apprend ce visage… (une minute environ, la première fois)</p>}
-        {(etat.refaire ?? 0) > 0 &&
-          (refaire ? (
-            <div className="tf-refaire">
-              <label className="tf-refaire-univers">
-                <span>Ce qui te ressemble : ton métier ou ta passion (facultatif)</span>
-                <input className="tf-univers" value={univers} maxLength={UNIVERS_MAX} onChange={(e) => setUnivers(e.target.value)} placeholder="Artisan, boulangère, fan de vélo…" />
-              </label>
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    const j = await demander({ action: "refaire", univers: univers.trim() });
-                    if (j.etat) onEtat?.(j.etat);
-                  } catch (e) {
-                    setErreur((e as Error).message);
-                  }
-                }}
-              >
-                🔁 Une nouvelle, avec la même photo ({etat.refaire} aujourd’hui)
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    const j = await demander({ action: "refaire", autrePhoto: true, univers: univers.trim() });
-                    if (j.etat) onEtat?.(j.etat);
-                  } catch (e) {
-                    setErreur((e as Error).message);
-                  }
-                }}
-              >
-                📸 Avec une autre photo
-              </button>
-            </div>
-          ) : (
-            <button type="button" className="tf-refaire-lien" onClick={() => setRefaire(true)}>
-              Elle ne te ressemble pas ? La refaire
+        <div className="tf-hero">
+          <FigurineQuiParle
+            ref={fig}
+            neutre={etat.neutre!}
+            parle={etat.parle!}
+            expressions={etat.expressions}
+            sentiment={sentiment}
+            danse={danse}
+            rythme={rythme}
+            rejoue={rejoue}
+            onJoue={setParle}
+            className={`tf-fig${or ? " tf-or" : ""}`}
+          />
+          <div className="tf-gestes">
+            {/* 🕺 ELLE DANSE, EN MUSIQUE : dès le départ, avec n'importe quel visage */}
+            <button type="button" className={`tf-danse${danse ? " pris" : ""}`} aria-pressed={danse} onClick={basculerDanse}>
+              <span aria-hidden="true">{danse ? "⏹" : "🕺"}</span>
+              {danse ? "Stop" : "Danser"}
             </button>
-          ))}
-      </div>
-
-      <div className="tf-panneau">
-        <b className="tf-q">Ce qu’elle dit</b>
-        {etat.voixTexte && (
-          <div className="tf-modes" role="tablist" aria-label="Comment elle parle">
-            <button type="button" role="tab" aria-selected={mode === "ecrire"} className={mode === "ecrire" ? "pris" : ""} onClick={() => setMode("ecrire")}>
-              ✍️ J’écris
+            {(etat.refaire ?? 0) > 0 && (
+              <button type="button" className={`tf-refaire-lien${refaireOuvert ? " pris" : ""}`} aria-expanded={refaireOuvert} onClick={() => setRefaire((x) => !x)}>
+                <span aria-hidden="true">🔁</span>
+                La refaire
+              </button>
+            )}
+          </div>
+        </div>
+        {refaireOuvert && (
+          <div className="tf-refaire">
+            <b>Elle ne te ressemble pas ?</b>
+            <label className="tf-refaire-univers">
+              <span>Ce qui te ressemble : ton métier ou ta passion (facultatif)</span>
+              <input className="tf-univers" value={univers} maxLength={UNIVERS_MAX} onChange={(e) => setUnivers(e.target.value)} placeholder="Artisan, boulangère, fan de vélo…" />
+            </label>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const j = await demander({ action: "refaire", univers: univers.trim() });
+                  if (j.etat) onEtat?.(j.etat);
+                } catch (e) {
+                  setErreur((e as Error).message);
+                }
+              }}
+            >
+              🔁 Une nouvelle, avec la même photo ({etat.refaire} aujourd’hui)
             </button>
             <button
               type="button"
-              role="tab"
-              aria-selected={mode === "voix"}
-              className={mode === "voix" ? "pris" : ""}
-              onClick={() => setMode("voix")}
+              onClick={async () => {
+                try {
+                  const j = await demander({ action: "refaire", autrePhoto: true, univers: univers.trim() });
+                  if (j.etat) onEtat?.(j.etat);
+                } catch (e) {
+                  setErreur((e as Error).message);
+                }
+              }}
             >
-              🎙️ Ma voix
+              📸 Avec une autre photo
             </button>
           </div>
         )}
+        <b className="tf-q tf-q-visage">Son visage</b>
+        <ChoixExpression valeur={sentiment} onChoix={choisirVisage} etats={etatsVisages} />
+        {enCreation.size > 0 && (
+          <p className="tf-note" role="status">
+            🎭 Ta figurine apprend {enCreation.size > 1 ? "ces visages" : "ce visage"}… une minute environ : {enCreation.size > 1 ? "ils s’afficheront" : "il s’affichera"} tout seul.
+          </p>
+        )}
+      </div>
+
+      <div className="tf-panneau">
+        <div className="tf-parle-tete">
+          <b className="tf-q">💬 Fais-la parler</b>
+          {etat.voixTexte && (
+            <div className="tf-modes" role="tablist" aria-label="Comment elle parle">
+              <button type="button" role="tab" aria-selected={mode === "ecrire"} className={mode === "ecrire" ? "pris" : ""} onClick={() => setMode("ecrire")}>
+                ✍️ J’écris
+              </button>
+              <button type="button" role="tab" aria-selected={mode === "voix"} className={mode === "voix" ? "pris" : ""} onClick={() => setMode("voix")}>
+                🎙️ Ma voix
+              </button>
+            </div>
+          )}
+        </div>
 
         {mode === "ecrire" && etat.voixTexte ? (
           <>
@@ -449,11 +544,19 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
                 {texte.length} / {TEXTE_MAX}
               </small>
             </label>
-            {voix ? (
-              <>
-                <b className="tf-q">Sa voix</b>
-                <ChoixVoix valeur={voix} onChoix={choisirVoix} />
-              </>
+            {voix && saVoix ? (
+              voixOuvertes ? (
+                <ChoixVoix
+                  valeur={voix}
+                  onChoix={(v) => {
+                    choisirVoix(v);
+                  }}
+                />
+              ) : (
+                <button type="button" className="tf-voix-choisie" onClick={() => setVoixOuvertes(true)}>
+                  <span aria-hidden="true">{saVoix.emoji}</span> Voix : <b>{saVoix.nom}</b> <em>changer</em>
+                </button>
+              )
             ) : (
               <div className="tf-quelle-voix" role="group" aria-label="Sa voix">
                 <b>Ta figurine parle avec…</b>
@@ -536,12 +639,16 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
             {erreur}
           </p>
         )}
+      </div>
 
+      {/* REPLIÉS : ses premiers pas, ses messages */}
+      <div className="tf-replis">
         <MesOptions cadeaux={etat.cadeaux} etapes={etat.etapes} />
-
         {etat.messages.length > 0 && (
           <details className="tf-messages">
-            <summary>Mes messages ({etat.messages.length})</summary>
+            <summary>
+              <span aria-hidden="true">💌</span> Mes messages <em>{etat.messages.length}</em>
+            </summary>
             <ul>
               {etat.messages.map((m) => (
                 <li key={m.id}>
@@ -850,8 +957,8 @@ export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat
 
 /**
  * 🗣️ L'ONGLET « MA FIGURINE » — sa figurine prête : où en est sa figurine du mois, la faire parler (`StudioMoi`) ;
- * sinon, l'accueil du guide (ce qu'il faut faire, et ce que ça permettra ensuite), la quête « Crée ta figurine » ; et,
- * partout, « Comment ça marche » (5 novembre 2026 : la démonstration a quitté la page, « elle ne sert plus à rien »).
+ * sinon, l'accueil du guide (ce qu'il faut faire, et ce que ça permettra ensuite), la quête « Crée ta figurine » (5 novembre
+ * 2026 : la démonstration a quitté la page ; 6 novembre : « Comment ça marche » aussi, le guide l'explique déjà).
  */
 export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine | null; villes: { slug: string; nom: string }[]; onEtat: (e: EtatMaFigurine) => void }) {
   if (!etat)
@@ -863,19 +970,17 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
   if (etat.etape === "prete" && etat.neutre && etat.parle)
     return (
       <>
-        <header className="og-tete">
-          <small>TA FIGURINE</small>
-          <h1>Fais-la parler.</h1>
-          <p>Choisis ce qu’elle ressent, écris ce qu’elle dit, et envoie-la à qui tu veux.</p>
+        <header className="og-tete og-tete-fig">
+          <span>
+            <small>TA FIGURINE</small>
+            <h1>Fais-la parler.</h1>
+          </span>
+          {/* 🗓️ sa figurine du mois (lot 3) : où il en est, en une pastille */}
+          <ApercuDuMois />
         </header>
-        {/* 🗓️ sa figurine du mois (lot 3) : où il en est, en une ligne */}
-        <ApercuDuMois />
         <StudioMoi key={etat.neutre} etat={etat} onEtat={onEtat} />
         {/* 🔐 son adresse protège sa figurine (lot 2) : un autre téléphone la retrouve avec un code */}
         <ProtegerFigurine mode="proteger" protegee={etat.protegee} />
-        <div className="og-pouvoirs">
-          <CommentCaMarche />
-        </div>
       </>
     );
   if (etat.etape === "fabrication")
@@ -913,10 +1018,6 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
       <EnvoiPhoto etat={etat} villes={villes} onEnvoye={onEtat} />
       {/* 🔎 elle existe déjà sur un autre téléphone : un code à six chiffres la retrouve (lot 2) */}
       {!etat.compte && <ProtegerFigurine mode="retrouver" />}
-      {/* 🧭 le parcours compris en dix secondes (lot 3 : « on ne comprend pas du tout à quoi ça sert ») */}
-      <div className="og-pouvoirs">
-        <CommentCaMarche />
-      </div>
     </>
   );
 }
@@ -1071,9 +1172,65 @@ export const STYLES_MA_FIGURINE =
 .tf-choisir img{width:100%;height:100%;object-fit:cover}
 .tf-accord{display:flex;gap:10px;align-items:flex-start;max-width:340px;text-align:left;font-size:13px;line-height:1.4;color:#D9C3CB}
 .tf-accord input{flex:none;width:20px;height:20px;margin:0;accent-color:#FF2E9A}
+/* ─── 6 novembre 2026 : la page en trois temps (sa figurine, son visage, « Fais-la parler »), le reste replié ─── */
+.og-tete-fig{gap:10px}
+.og-tete-fig .fm-apercu{align-self:flex-start;max-width:100%;box-sizing:border-box;gap:10px;padding:7px 12px 7px 9px;border-radius:999px}
+.og-tete-fig .fm-apercu > span:first-child{font-size:20px}
+.og-tete-fig .fm-apercu > span:nth-child(2){flex-direction:row;flex-wrap:wrap;align-items:center;column-gap:8px;row-gap:2px}
+.og-tete-fig .fm-apercu b{font-size:13px}
+.og-tete-fig .fm-apercu .fm-jours{order:3;flex-basis:100%;gap:3px}
+.og-tete-fig .fm-apercu .fm-jours i{height:5px;max-width:14px}
+.og-tete-fig .fm-apercu small{font-size:11.5px;font-weight:700;letter-spacing:0;color:#D9C3CB}
+.og-tete-fig .fm-apercu em{font-size:12px}
+.tf-hero{position:relative;display:flex;flex-direction:column;align-items:center}
+.tf-gestes{position:relative;z-index:2;display:flex;justify-content:center;gap:10px;margin-top:-24px}
+.tf-gestes button{display:inline-flex;align-items:center;gap:7px;padding:11px 18px;border:0;border-radius:999px;font:inherit;font-size:14.5px;font-weight:900;cursor:pointer;-webkit-tap-highlight-color:transparent;text-decoration:none;transition:transform .2s cubic-bezier(.2,1.6,.4,1)}
+.tf-gestes button:active{transform:scale(.94)}
+.tf-gestes button span{font-size:18px;line-height:1}
+.tf-gestes .tf-danse{background:#FFF4E6;color:#2A0F1F;box-shadow:0 12px 26px -10px rgba(0,0,0,.9)}
+.tf-gestes .tf-danse.pris{border:0;background:linear-gradient(135deg,#FF2E9A,#F2C46B);color:#fff;animation:tf-bat .6s ease-in-out infinite}
+.tf-gestes .tf-refaire-lien{background:rgba(30,10,24,.82);color:#FFF4E6;text-decoration:none;font-size:13.5px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 12px 26px -10px rgba(0,0,0,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.tf-gestes .tf-refaire-lien.pris{box-shadow:inset 0 0 0 1.5px #F2C46B}
+.tf-refaire{flex-direction:column;align-items:stretch;width:100%;max-width:420px;box-sizing:border-box;padding:14px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.tf-refaire > b{font-size:15px}
+.tf-q-visage{align-self:flex-start;margin:4px 0 -6px}
+.tf-scene .tf-expr{display:flex;gap:8px;max-width:100%;padding:6px 2px 10px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
+.tf-scene .tf-expr::-webkit-scrollbar{display:none}
+.tf-scene .tf-expr button{flex:none;width:74px;min-height:72px;scroll-snap-align:start;justify-content:center;border-radius:20px}
+.tf-scene .tf-expr button span{font-size:28px}
+.tf-expr button.cours{cursor:default;color:#F2C46B;background:rgba(242,196,107,.08)}
+.tf-expr button.cours span{opacity:.45;filter:grayscale(.5)}
+.tf-expr button.cours::after{content:"";position:absolute;inset:4px;border-radius:16px;border:2px solid transparent;border-top-color:#F2C46B;border-right-color:rgba(242,196,107,.35);animation:tf-tourne 1s linear infinite}
+.tf-expr-cours{font-style:normal;font-size:9.5px;font-weight:800;line-height:1.1}
+.tf-expr-neuf{position:absolute;top:4px;right:6px;font-style:normal;font-size:12px}
+.tf-scene .tf-note{margin:0;padding:8px 12px;border-radius:14px;background:rgba(242,196,107,.1);font-size:12.5px;color:#FFE7B8}
+.tf-parle-tete{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tf-parle-tete .tf-q{font-size:17px;letter-spacing:0;color:#FFF4E6}
+.tf-parle-tete .tf-modes{display:inline-grid;grid-template-columns:auto auto}
+.tf-parle-tete .tf-modes button{padding:8px 12px;font-size:13px}
+.tf-voix-choisie{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.22);color:#D9C3CB;font:inherit;font-size:13.5px;cursor:pointer}
+.tf-voix-choisie b{color:#FFF4E6}
+.tf-voix-choisie em{font-style:normal;font-weight:800;color:#FF9FD2;margin-left:4px}
+.tf-replis{display:flex;flex-direction:column;gap:8px}
+.tf-replis details{border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.tf-replis .tf-options{display:block;margin:0;padding:0 14px;border-top:0}
+.tf-replis summary{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:13px 0;list-style:none;cursor:pointer;font-size:14.5px;font-weight:900;color:#FFF4E6}
+.tf-replis summary::-webkit-details-marker{display:none}
+.tf-replis summary::after{content:"›";margin-left:auto;font-size:20px;line-height:1;color:#A88E99;transition:transform .2s}
+.tf-replis details[open] summary::after{transform:rotate(90deg)}
+.tf-replis summary em{font-style:normal;padding:1px 8px;border-radius:999px;background:rgba(255,46,154,.2);color:#FFC8E6;font-size:12px}
+.tf-replis summary small{order:3;flex-basis:100%;font-size:12.5px;font-weight:700;color:#A88E99}
+.tf-replis .tf-kdo{padding-bottom:10px}
+.tf-replis .tf-options-dit{padding-bottom:14px}
+.tf-replis .tf-messages{padding:0 14px}
+.tf-replis .tf-messages summary{padding:13px 0;font-size:14.5px;color:#FFF4E6}
+.tf-replis .tf-messages ul{padding-bottom:12px}
+@keyframes tf-tourne{to{transform:rotate(360deg)}}
+@keyframes tf-bat{0%,100%{transform:scale(1)}15%{transform:scale(1.07)}}
 @media (min-width:860px){
   .tf{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:40px}
   .tf-fig .fqp-fig{width:340px}
   .tf-panneau{padding:22px}
+  .tf-replis{grid-column:1/-1}
 }
 `;

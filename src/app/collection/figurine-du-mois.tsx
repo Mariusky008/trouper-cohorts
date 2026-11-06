@@ -2,7 +2,6 @@
 
 /**
  * 🗓️ SA FIGURINE DU MOIS, À L'ÉCRAN (`lib/direct/figurine-du-mois.ts`, le lot 3) :
- *   · `CommentCaMarche` : le parcours compris en dix secondes (« on ne comprend pas du tout à quoi ça sert ») ;
  *   · `ApercuDuMois` : dans « Ma figurine », où il en est (3/10 jours), un lien vers « Ce mois-ci » ;
  *   · `MaFigurineDuMois` : dans « Ce mois-ci », la progression (10 jours de rencontres), la fabrication quand elle est
  *     méritée, puis la révélation — sa tenue du mois, son visage du mois, sa phrase du mois ;
@@ -37,36 +36,6 @@ function useMois(): [MesFigurinesDuMois | null, (m: MesFigurinesDuMois) => void]
   }, []);
   const annoncer = useCallback((x: MesFigurinesDuMois) => window.dispatchEvent(new CustomEvent(EVT_MOIS, { detail: x })), []);
   return [m, annoncer];
-}
-
-/** 🧭 Le parcours, en trois temps (et les commerçants, en plus). */
-export function CommentCaMarche() {
-  return (
-    <section className="fm-comment" aria-label="Comment ça marche">
-      <b className="fm-comment-titre">Comment ça marche ?</b>
-      <ol>
-        <li>
-          <span aria-hidden="true">📸</span>
-          <p>
-            <b>Ta figurine, c’est toi.</b> Elle parle, change d’expression, danse.
-          </p>
-        </li>
-        <li>
-          <span aria-hidden="true">💬</span>
-          <p>
-            <b>Chaque jour, elle rencontre quelqu’un.</b> Tu regardes, tu réagis : tu te découvres.
-          </p>
-        </li>
-        <li>
-          <span aria-hidden="true">🗓️</span>
-          <p>
-            <b>Chaque mois vécu, une nouvelle figurine de toi</b> : la tenue du mois, un nouveau visage, et ta phrase du mois.
-          </p>
-        </li>
-      </ol>
-      <small>🏪 En plus : les commerçants partenaires t’offrent leur figurine, et leurs bons plans avant tout le monde.</small>
-    </section>
-  );
 }
 
 /** Les dix jours, en points : ceux qu'il a vécus ce mois-ci. */
@@ -241,15 +210,7 @@ export function MesFigurinesDuMois() {
 }
 
 export const STYLES_FIGURINE_DU_MOIS = `
-.fm,.fm-album,.fm-apercu{margin-top:14px}
-.fm-comment{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:24px;background:linear-gradient(160deg,rgba(255,46,154,.14),rgba(142,197,255,.08));border:1px solid rgba(255,255,255,.14)}
-.fm-comment-titre{font-size:16px;font-weight:900}
-.fm-comment ol{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
-.fm-comment li{display:flex;gap:10px;align-items:flex-start}
-.fm-comment li > span{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:12px;background:rgba(0,0,0,.25);font-size:18px}
-.fm-comment li p{margin:0;font-size:14px;line-height:1.4;color:#E8D3DC}
-.fm-comment li p b{color:#FFF4E6}
-.fm-comment > small{font-size:12.5px;line-height:1.4;color:#A88E99}
+.fm,.fm-album{margin-top:14px}
 .fm-apercu{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;background:rgba(242,196,107,.1);border:1.5px solid rgba(242,196,107,.45);color:#FFF4E6;text-decoration:none}
 .fm-apercu > span:first-child{font-size:28px}
 .fm-apercu > span:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}

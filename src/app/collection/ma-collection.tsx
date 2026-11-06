@@ -270,11 +270,19 @@ export function MaCollection({ aujourdhui, commerces, villes = [] }: { aujourdhu
       </div>
 
       {/* LE MENU, EN BAS */}
+      {/* LE MENU, EN BAS (6 novembre 2026 : « il faut qu'on voie en un coup d'œil qu'on est différent, et ça doit se voir
+          aussi avec le menu du bas ») : un dock qui flotte ; SA figurine en icône de « Ma figurine » ; « Rencontres », le
+          cœur de l'app, en gros bouton rond au milieu ; des icônes dessinées pour ClikMe */}
       <nav className="mc-nav" aria-label="Ma collection">
         {ONGLETS.map((o) => (
-          <button key={o.cle} type="button" className={onglet === o.cle ? "pris" : ""} aria-current={onglet === o.cle ? "page" : undefined} onClick={() => aller(o.cle)}>
-            <span className="mc-nav-emoji" aria-hidden="true">
-              {o.emoji}
+          <button key={o.cle} type="button" className={`mc-nav-${o.cle}${onglet === o.cle ? " pris" : ""}`} aria-current={onglet === o.cle ? "page" : undefined} onClick={() => aller(o.cle)}>
+            <span className="mc-nav-ico" aria-hidden="true">
+              {o.cle === "figurine" && prete && etat?.neutre ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={etat.neutre} alt="" draggable={false} />
+              ) : (
+                <IconeOnglet cle={o.cle} />
+              )}
               {pastilles[o.cle] && <i className={pastilles[o.cle] === "!" || pastilles[o.cle] === "1" ? "pulse" : ""}>{pastilles[o.cle]}</i>}
             </span>
             <small>{o.nom}</small>
@@ -286,8 +294,46 @@ export function MaCollection({ aujourdhui, commerces, villes = [] }: { aujourdhu
   );
 }
 
+/** Les icônes du menu, dessinées pour ClikMe (une figurine sur son ressort, une carte, deux bulles, le mois, l'album). */
+function IconeOnglet({ cle }: { cle: Onglet }) {
+  const trait = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" } as const;
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24">
+      {cle === "figurine" ? (
+        <>
+          <circle cx="12" cy="7" r="4.2" {...trait} />
+          <path d="M8.5 13.2h7M10 13.2l-1.2 1.6 6.4 1.4-6.4 1.4 6.4 1.4L14 20.6" {...trait} />
+          <path d="M7 21.5h10" {...trait} />
+        </>
+      ) : cle === "personnage" ? (
+        <>
+          <rect x="4.5" y="3" width="15" height="18" rx="3" {...trait} />
+          <path d="M12 7.6l1.3 2.7 2.9.4-2.1 2 .5 2.9-2.6-1.4-2.6 1.4.5-2.9-2.1-2 2.9-.4z" {...trait} />
+        </>
+      ) : cle === "rencontre" ? (
+        <>
+          <path d="M3.5 10.5a6 5 0 0 1 6-5h1a6 5 0 0 1 0 10H8l-3.2 2.4.7-3.2a5 5 0 0 1-2-4.2z" {...trait} />
+          <path d="M14.8 8.6h.7a5 4.3 0 0 1 3.1 7.7l.6 2.7-2.8-1.9h-1.6a5.2 4.4 0 0 1-3.9-1.6" {...trait} />
+        </>
+      ) : cle === "mois" ? (
+        <>
+          <rect x="3.5" y="5" width="17" height="15.5" rx="3" {...trait} />
+          <path d="M3.5 9.5h17M8 3v4M16 3v4" {...trait} />
+          <path d="M12 12.2l.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z" {...trait} />
+        </>
+      ) : (
+        <>
+          <rect x="6.5" y="3.5" width="13" height="16" rx="2.5" {...trait} />
+          <path d="M4.5 6.5v12a2.5 2.5 0 0 0 2.5 2.5h9" {...trait} />
+          <path d="M10 8.5h6M10 12h4" {...trait} />
+        </>
+      )}
+    </svg>
+  );
+}
+
 const STYLES_MC = `
-.mc{min-height:100dvh;box-sizing:border-box;padding:calc(10px + env(safe-area-inset-top)) 0 calc(96px + env(safe-area-inset-bottom));max-width:1180px;margin:0 auto;
+.mc{min-height:100dvh;box-sizing:border-box;padding:calc(10px + env(safe-area-inset-top)) 0 calc(118px + env(safe-area-inset-bottom));max-width:1180px;margin:0 auto;
   background:radial-gradient(100% 38% at 50% 0%,rgba(255,46,154,.22),transparent 72%),linear-gradient(180deg,#1E0C18,#12060F 40%);color:#FFF4E6;
   font-family:var(--font-clikme),Poppins,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
 body{background:#12060F}
@@ -307,25 +353,41 @@ body{background:#12060F}
 .mc-total{display:inline-grid;place-items:center;min-width:34px;height:34px;margin-left:6px;padding:0 9px;box-sizing:border-box;border-radius:999px;background:#FF2E9A;color:#fff;font-size:17px;vertical-align:4px;-webkit-text-fill-color:#fff;box-shadow:0 8px 18px -8px rgba(255,46,154,.9)}
 .mc-sous-titre{margin:28px 0 12px;font-size:18px;font-weight:900}
 .mc-regle{margin:34px 4px 0;font-size:12px;line-height:1.5;color:#8D7580;text-align:center}
-/* le menu, en bas */
-.mc-nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;max-width:640px;margin:0 auto;padding:6px 8px calc(6px + env(safe-area-inset-bottom));
-  background:rgba(24,8,19,.86);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-top:1px solid rgba(255,255,255,.1);border-radius:22px 22px 0 0;box-shadow:0 -14px 30px -12px rgba(0,0,0,.8)}
-.mc-nav button{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 2px 6px;border:0;border-radius:16px;background:none;color:#A88E99;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .2s,color .2s}
-.mc-nav button.pris{background:rgba(255,46,154,.16);color:#FFF4E6}
-.mc-nav-emoji{position:relative;font-size:23px;line-height:1.1;transition:transform .25s cubic-bezier(.2,1.6,.4,1)}
-.mc-nav button.pris .mc-nav-emoji{transform:translateY(-2px) scale(1.15)}
-.mc-nav small{font-size:10.5px;font-weight:800;white-space:nowrap}
-.mc-nav-emoji i{position:absolute;right:-12px;top:-4px;display:grid;place-items:center;min-width:17px;height:17px;padding:0 4px;box-sizing:border-box;border-radius:999px;background:#FF2E9A;color:#fff;font-style:normal;font-size:10.5px;font-weight:900;box-shadow:0 0 0 2px #180813}
-.mc-nav-emoji i.pulse{animation:mc-pastille 1.6s ease-in-out infinite}
+/* le menu, en bas : un dock qui flotte, « Rencontres » en gros bouton rond au milieu */
+.mc-nav{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:20;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:end;max-width:560px;margin:0 auto;padding:7px 6px 6px;
+  border-radius:28px;background:linear-gradient(180deg,rgba(46,16,36,.9),rgba(22,7,17,.94));-webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);
+  box-shadow:0 18px 40px -14px rgba(0,0,0,.95),inset 0 0 0 1px rgba(255,255,255,.09),inset 0 1px 0 rgba(255,200,230,.14)}
+.mc-nav::before{content:"";position:absolute;left:18%;right:18%;top:-1px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,46,154,.85),rgba(242,196,107,.85),transparent)}
+.mc-nav button{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;padding:4px 0 2px;border:0;background:none;color:#9C8290;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:color .2s}
+.mc-nav button.pris{color:#FFF4E6}
+.mc-nav-ico{position:relative;display:grid;place-items:center;width:44px;height:34px;border-radius:14px;transition:transform .3s cubic-bezier(.2,1.6,.4,1),background .25s}
+.mc-nav-ico svg{display:block;opacity:.9}
+.mc-nav button.pris .mc-nav-ico{transform:translateY(-3px);background:linear-gradient(135deg,rgba(255,46,154,.32),rgba(242,196,107,.22));box-shadow:0 8px 18px -8px rgba(255,46,154,.9)}
+.mc-nav button.pris .mc-nav-ico svg{color:#FFF4E6;opacity:1}
+.mc-nav small{font-size:10.5px;font-weight:800;letter-spacing:-.01em;white-space:nowrap}
+.mc-nav button.pris small{background:linear-gradient(90deg,#FFC8E6,#F2C46B);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* « Ma figurine » : SA figurine, sa tête en médaillon */
+.mc-nav-figurine .mc-nav-ico img{width:32px;height:32px;border-radius:50%;object-fit:cover;object-position:50% 16%;background:#3a1530;box-shadow:0 0 0 2px rgba(255,255,255,.18)}
+.mc-nav-figurine.pris .mc-nav-ico{background:none;box-shadow:none}
+.mc-nav-figurine.pris .mc-nav-ico img{box-shadow:0 0 0 2.5px #FF2E9A,0 0 16px rgba(255,46,154,.75)}
+/* « Rencontres » : le gros bouton rond, au milieu */
+.mc-nav-rencontre .mc-nav-ico{width:58px;height:58px;margin-top:-30px;border-radius:50%;color:#fff;background:conic-gradient(from 210deg,#FF2E9A,#FF7A59,#F2C46B,#FF2E9A);box-shadow:0 0 0 5px #1d0a17,0 14px 26px -8px rgba(255,46,154,.95)}
+.mc-nav-rencontre .mc-nav-ico svg{width:28px;height:28px;color:#fff;opacity:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.25))}
+.mc-nav-rencontre.pris .mc-nav-ico{transform:translateY(-4px) scale(1.06);background:conic-gradient(from 210deg,#FF2E9A,#FF7A59,#F2C46B,#FF2E9A);box-shadow:0 0 0 5px #1d0a17,0 0 28px rgba(255,46,154,.85)}
+.mc-nav-rencontre:has(i.pulse) .mc-nav-ico{animation:mc-appel 2.2s ease-in-out infinite}
+.mc-nav-ico i{position:absolute;right:-4px;top:-5px;display:grid;place-items:center;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:999px;background:#FF2E9A;color:#fff;font-style:normal;font-size:10.5px;font-weight:900;box-shadow:0 0 0 2px #1d0a17}
+.mc-nav-rencontre .mc-nav-ico i{right:-2px;top:-2px;background:#F2C46B;color:#2A0F1F}
+.mc-nav-ico i.pulse{animation:mc-pastille 1.6s ease-in-out infinite}
 @media (min-width:860px){
   .mc-barre{padding:14px 32px}
   .mc-onglets{padding:28px 32px 0}
   .og-tete h1,.og-tete h2{font-size:48px}
   .mc-regle{font-size:13px;max-width:640px;margin-left:auto;margin-right:auto}
-  .mc-nav{bottom:14px;border-radius:22px;border:1px solid rgba(255,255,255,.12)}
+  .mc-nav{bottom:16px}
 }
 @keyframes mc-entre{from{opacity:0;transform:translateY(10px)}}
 @keyframes mc-reflet{to{background-position:-200% 0}}
 @keyframes mc-pastille{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+@keyframes mc-appel{0%,100%{box-shadow:0 0 0 5px #1d0a17,0 14px 26px -8px rgba(255,46,154,.95)}50%{box-shadow:0 0 0 5px #1d0a17,0 0 0 11px rgba(255,46,154,.28),0 14px 30px -6px rgba(255,46,154,1)}}
 @media (prefers-reduced-motion:reduce){.mc *{animation:none!important}}
 `;
