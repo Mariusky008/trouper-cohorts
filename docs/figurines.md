@@ -1129,7 +1129,49 @@ serveur :
   liés.
 - **Le profil** se demande par une clé publique, jamais par l'identifiant de l'habitant. Il ne montre que les mèmes
   « tout le monde » et leurs lieux, jamais une position.
-- Les essais : `scripts/essai-autour-route.mjs` (26 vérifications).
+- Les essais : `scripts/essai-autour-route.mjs` (29 vérifications, avec la réponse dans une zone ci-dessous).
+- **Répondre dans une zone « Ailleurs »** (ajouté avec le lot B) : on peut déposer dans une zone **qui a déjà des
+  mèmes**, par son identifiant, sans donner sa position. Une zone vide se crée seulement depuis sa position.
+- **Le petit nom d'une zone** : celui de son **premier** mème (le plus ancien) **que l'on peut voir**. Y répondre ne la
+  renomme pas, et celui qui ne voit pas une soirée « pour les proches » ne voit pas non plus son petit nom.
+
+### 9.0 untricies 📍 Autour de moi : l'écran (lot B, 7 novembre)
+
+**« Autour » prend la place de « Rencontres » dans le menu du bas** ; le titre de l'écran est « Autour de moi »
+(`src/app/collection/autour.tsx`, `autour-carte.tsx` ; l'adresse `#autour`).
+
+« Rencontres » quitte le menu mais **reste à son adresse** (`#rencontre`). Le lien d'invitation d'un ami (`?ami=`) y
+mène toujours, et sa figurine du mois s'y mérite encore. À décider plus tard : l'effacer, ou lui donner une entrée.
+
+- **La carte** :
+  - MapLibre GL (`maplibre-gl` 6.14.0, version exacte), chargé seulement à l'ouverture de l'onglet ;
+  - les tuiles OpenFreeMap (style « liberty »), repeintes en sombre aux couleurs de ClikMe une fois chargées ;
+  - les commerces : une goutte avec le visage d'une figurine et le nombre de mèmes ;
+  - les zones « Ailleurs » : un cercle jaune en pointillés, son petit nom ;
+  - « ◎ Ma position » : un point blanc, vu de lui seul, jamais envoyé tel quel ;
+  - la recherche d'un lieu, « ＋ Déposer mon mème », et en bas « Les derniers mèmes autour de toi ».
+- **Sans carte** (pas de réseau, pas de WebGL, style refusé ou trop lent, 12 s) : la liste des lieux à la place.
+- **Sans figurine** (donc sans ville) : on l'invite à créer sa figurine.
+- **Le lieu** : son nom, « n mèmes déposés ici », l'éventail des trois derniers, « ▶ Découvrir », « La conversation du
+  moment », « ＋ Déposer mon mème ici ». Ni étoiles, ni avis, ni horaires.
+- **Le swipe** :
+  - une grande carte (la vidéo du mème, muette, en boucle) et la suivante dessous ;
+  - glisser à droite (100 px) = J'aime, la réaction ❤️ de toujours ; à gauche = passer ;
+  - les boutons ✕ Passer, ❤ J'aime, « Répondre avec ma figurine », Partager ;
+  - le prénom mène au profil ; « ↳ Réponse à … » quand c'en est une ; ⋯ pour signaler (deux touchers).
+- **Déposer, ou répondre** (un seul écran) :
+  - 1 · Où ? : le lieu, les commerces les plus proches, ou « ✨ Ailleurs » et un petit nom ;
+  - 2 · Quel mème ? : un des siens en vidéo (pas un duo), ou « ＋ Nouveau mème », qui ouvre « Créer » ;
+  - 3 · Un petit mot, si on veut ; 4 · Qui le voit ? ;
+  - puis « C'est publié ! », « Voir mon mème », « Partager hors de ClikMe ».
+- **Le profil** : sa figurine sur le rose, ses lieux, ses mèmes « tout le monde » ; jamais sa position.
+- **Le « worker » de MapLibre** : la bibliothèque le cherche à côté d'elle, ce que le paquetage de l'appli (webpack) ne
+  sait pas faire. On lui donne l'adresse du fichier, que webpack sert tel quel :
+  `setWorkerUrl(new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).href)`.
+- Les essais : `scripts/navigateur/autour.mjs` (35 vérifications).
+  - L'essai sert lui-même un style sans tuiles : le réseau de la CI ne sort pas.
+  - Il refuse les tuiles pour vérifier la liste de secours.
+  - Il lance Chromium avec `--enable-unsafe-swiftshader` (WebGL sans carte graphique).
 
 ### 9.1 L'idée en une phrase
 

@@ -156,7 +156,7 @@ await lea.locator(".rs-theatre .rs-fermer").click();
 ok((await lea.locator(".rs-theatre").count()) === 0, "✕ : le théâtre se ferme");
 
 // ❓ LA QUESTION DU JOUR (lot 2) : dans « Moi » (sa carte de personnage), avec ce que sa figurine sait d'elle
-ok((await lea.locator(".mc-nav button").count()) === 5 && (await lea.locator(".mc-nav button.pris").innerText()).includes("Rencontres"), "le menu en bas : « Rencontres » est ouvert");
+ok((await lea.locator(".mc-nav button").count()) === 5 && (await lea.locator("#o-rencontre").isVisible()) && (await lea.locator(".mc-nav button", { hasText: "Autour" }).count()) === 1, "le menu en bas (« Autour » y a pris sa place) ; « Rencontres » est ouvert, à son adresse");
 await lea.locator(".mc-nav button", { hasText: "Moi" }).dispatchEvent("click");
 await lea.waitForSelector("#o-personnage .cn-question", { timeout: 30000 });
 const q0 = await api(lea, "/api/direct/connaitre");

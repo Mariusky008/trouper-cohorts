@@ -7,16 +7,20 @@
  * mème, ou donne une raison d'en envoyer un ? Le menu en bas, comme les applis de vidéos que tout le monde connaît
  * (l'étape 2, le même jour : « Découvrir » est arrivé) :
  *   🔥 DÉCOUVRIR — les mèmes du jour des commerçants de sa ville (`decouvrir.tsx`) ;
- *   💬 RENCONTRES — l'épisode du jour (`rencontre.tsx`), et sa figurine du mois qui s'y mérite (`figurine-du-mois.tsx`) ;
+ *   📍 AUTOUR — les mèmes laissés dans la ville, sur une carte (`autour.tsx`) ; il a pris la place de 💬 RENCONTRES,
+ *      l'épisode du jour (`rencontre.tsx`) et sa figurine du mois qui s'y mérite (`figurine-du-mois.tsx`) ;
  *   🎭 CRÉER, au milieu, en gros — sa figurine qui parle (`ma-figurine.tsx`) : ses looks, ses mèmes prêts, le duo ;
  *   📥 MES MÈMES — ce que ses mèmes deviennent : vus, les réponses en duo, ceux qu'il a reçus (`mes-memes.tsx`) ;
  *   🃏 MOI — sa carte de personnage (c'est elle qui fait parler ses épisodes), la question du jour (`personnage.tsx`).
  * « Ce mois-ci » et l'album des commerçants sont partis de l'appli (les cartes de fidélité commencées restent sur la page
  * de chaque commerçant, `/f/<slug>`) ; ses figurines du mois sont devenues des LOOKS de son studio.
- * Chaque onglet a son adresse (`#decouvrir`, `#rencontre`, `#figurine`, `#memes`, `#personnage`), et les anciens liens
+ * Chaque onglet a son adresse (`#decouvrir`, `#autour`, `#rencontre`, `#figurine`, `#memes`, `#personnage`), et les anciens liens
  * retombent sur le bon (`#creer` → « Créer », `#mois` → sa figurine du mois, dans « Rencontres », `#album` → « Mes mèmes »).
  * 📲 LE LOT 3 : l'appli sur l'écran d'accueil et le mème du jour à 11 h 30 (`mon-telephone.tsx`) — `#jour` mène au mème
  * du jour (la notification), `#installer` ouvre le geste à faire (iPhone, après le rechargement avec son jeton).
+ * 📍 « AUTOUR » REMPLACE « RENCONTRES » DANS LE MENU (7 novembre 2026, à la demande du propriétaire) : les mèmes laissés
+ * dans la ville, sur une carte (`autour.tsx`, `#autour`). « Rencontres » n'est plus dans le menu mais reste à son
+ * adresse (`#rencontre`) : le lien d'invitation d'un ami y mène, et sa figurine du mois s'y mérite encore.
  * Un onglet ne se charge qu'à sa première ouverture, puis il reste là.
  */
 import Link from "next/link";
@@ -32,22 +36,26 @@ import { Decouvrir, STYLES_DECOUVRIR } from "./decouvrir";
 import { STYLES_MES_REACTIONS } from "./mes-reactions";
 import { STYLES_THEME_DU_JOUR } from "./theme-du-jour";
 import { FeuilleInstaller, MonTelephone, STYLES_MON_TELEPHONE } from "./mon-telephone";
+import { Autour, STYLES_AUTOUR } from "./autour";
 import { capterLaProposition, lierSiBesoin, ouvrirInstallation } from "@/lib/direct/appli-collection";
 import type { EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
 /** Le menu du bas : cinq boutons, « Créer » au milieu. */
 const MENU = [
   { cle: "decouvrir", nom: "Découvrir" },
-  { cle: "rencontre", nom: "Rencontres" },
+  { cle: "autour", nom: "Autour" },
   { cle: "figurine", nom: "Créer" },
   { cle: "memes", nom: "Mes mèmes" },
   { cle: "personnage", nom: "Moi" },
 ] as const;
 type Onglet = (typeof MENU)[number]["cle"];
-type Vue = Onglet;
+/** Les vues : les onglets du menu, et « Rencontres », qui n'y est plus mais reste à son adresse. */
+type Vue = Onglet | "rencontre";
 /** Les adresses qui mènent à une vue (et, pour certaines, à un endroit dedans). */
 const ALIAS: Record<string, Vue> = {
   decouvrir: "decouvrir",
+  autour: "autour",
+  "autour-de-moi": "autour",
   moi: "personnage",
   figurine: "figurine",
   creer: "figurine",
@@ -58,15 +66,13 @@ const ALIAS: Record<string, Vue> = {
   personnage: "personnage",
   rencontre: "rencontre",
   rencontres: "rencontre",
-  // (sa figurine du mois se mérite dans « Rencontres » : elle y est)
+  // (sa figurine du mois se mérite dans « Rencontres », hors du menu mais toujours là : elle y est)
   mois: "rencontre",
   edition: "rencontre",
   "ou-gagner": "rencontre",
   memes: "memes",
   album: "memes",
 };
-const CLE_VUE = "clikme-rencontre-vue";
-const aujourdhuiParis = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
 
 export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: string }[] }) {
   const [etat, setEtat] = useState<EtatMaFigurine | null>(null);
@@ -76,7 +82,6 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
   // (sa carte faite ou refaite : la rencontre du jour se recharge ; et le menu sait s'il en a une)
   const [versionCarte, setVersionCarte] = useState(0);
   const [aCarte, setACarte] = useState<boolean | null>(null);
-  const [rencontreVue, setRencontreVue] = useState(true);
   // (stable : la fabrication rappelle le serveur dans un effet qui en dépend)
   const poserEtat = useCallback((e: EtatMaFigurine) => setEtat(e), []);
 
@@ -97,14 +102,6 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
         if (fini) return;
         setCharge(true);
       });
-    // (après le premier rendu : la page est aussi rendue sur le serveur, qui ne sait rien de l'appareil)
-    void Promise.resolve().then(() => {
-      try {
-        if (!fini) setRencontreVue(window.localStorage.getItem(CLE_VUE) === aujourdhuiParis());
-      } catch {
-        /* rien de gardé */
-      }
-    });
     return () => {
       fini = true;
     };
@@ -118,14 +115,6 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
       window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${ancre ?? v}`);
     } catch {
       /* rien */
-    }
-    if (v === "rencontre") {
-      setRencontreVue(true);
-      try {
-        window.localStorage.setItem(CLE_VUE, aujourdhuiParis());
-      } catch {
-        /* rien */
-      }
     }
     // (un endroit dedans : il peut arriver un peu après, le temps que l'onglet se charge)
     let essais = 0;
@@ -164,7 +153,6 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
   // ce qui attend dans chaque onglet (un point qui pulse)
   const pastilles: Partial<Record<Onglet, string>> = {
     ...(charge && !prete && etat?.etape !== "fabrication" ? { figurine: "!" } : {}),
-    ...(compte && !rencontreVue ? { rencontre: "1" } : {}),
     ...(compte && aCarte === false ? { personnage: "!" } : {}),
   };
 
@@ -194,7 +182,16 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
           </section>
         )}
 
-        {/* 💬 RENCONTRES */}
+        {/* 📍 AUTOUR DE MOI : la carte des mèmes de la ville (plein écran, sous la barre du haut et le menu) */}
+        {ouverts.has("autour") && (
+          <section className="mc-onglet mc-autour" id="o-autour" hidden={vue !== "autour"} aria-label="Autour de moi">
+            <OngletVisible.Provider value={vue === "autour"}>
+              <Autour allerA={allerA} />
+            </OngletVisible.Provider>
+          </section>
+        )}
+
+        {/* 💬 RENCONTRES (hors du menu depuis « Autour », toujours à son adresse `#rencontre`) */}
         {ouverts.has("rencontre") && (
           <section className="mc-onglet" id="o-rencontre" hidden={vue !== "rencontre"} aria-label="Rencontres">
             <OngletVisible.Provider value={vue === "rencontre"}>
@@ -257,12 +254,12 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_PERSONNAGE + STYLES_RENCONTRE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_PERSONNAGE + STYLES_RENCONTRE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR}</style>
     </main>
   );
 }
 
-/** Les icônes du menu, dessinées pour ClikMe (une flamme, deux bulles, un « + » sur son ressort, une pile de mèmes, une carte). */
+/** Les icônes du menu, dessinées pour ClikMe (une flamme, une épingle, un « + » sur son ressort, une pile de mèmes, une carte). */
 function IconeOnglet({ cle }: { cle: Onglet }) {
   const trait = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" } as const;
   return (
@@ -282,10 +279,12 @@ function IconeOnglet({ cle }: { cle: Onglet }) {
           <rect x="4.5" y="3" width="15" height="18" rx="3" {...trait} />
           <path d="M12 7.6l1.3 2.7 2.9.4-2.1 2 .5 2.9-2.6-1.4-2.6 1.4.5-2.9-2.1-2 2.9-.4z" {...trait} />
         </>
-      ) : cle === "rencontre" ? (
+      ) : cle === "autour" ? (
         <>
-          <path d="M3.5 10.5a6 5 0 0 1 6-5h1a6 5 0 0 1 0 10H8l-3.2 2.4.7-3.2a5 5 0 0 1-2-4.2z" {...trait} />
-          <path d="M14.8 8.6h.7a5 4.3 0 0 1 3.1 7.7l.6 2.7-2.8-1.9h-1.6a5.2 4.4 0 0 1-3.9-1.6" {...trait} />
+          {/* une épingle de carte, et la zone floue autour */}
+          <path d="M12 21.2s-5.6-5.5-5.6-10.1a5.6 5.6 0 0 1 11.2 0c0 4.6-5.6 10.1-5.6 10.1z" {...trait} />
+          <circle cx="12" cy="11" r="2.1" {...trait} />
+          <path d="M5 18.6c-1.3.5-2 1-2 1.6 0 1.4 4 2.3 9 2.3s9-.9 9-2.3c0-.6-.7-1.1-2-1.6" {...trait} strokeDasharray="2 2.4" />
         </>
       ) : (
         <>
@@ -311,6 +310,8 @@ body{background:#12060F}
 .mc-onglets{padding:14px 16px 0}
 .mc-onglet{animation:mc-entre .35s cubic-bezier(.2,.9,.3,1)}
 .mc-onglet[hidden]{display:none}
+/* (« Autour » est en plein écran, en position fixe : pas d'entrée animée, qui ferait bouger la carte) */
+.mc-onglet.mc-autour{animation:none}
 .mc-attente{display:grid;margin:8px 0 0}
 .mc-attente i{height:420px;border-radius:30px;background:linear-gradient(100deg,rgba(255,255,255,.04) 30%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 70%);background-size:200% 100%;animation:mc-reflet 1.4s linear infinite}
 .mc-vide{margin:28px 0 0;padding:18px;border-radius:20px;background:rgba(255,255,255,.05);text-align:center;color:#D9C3CB}

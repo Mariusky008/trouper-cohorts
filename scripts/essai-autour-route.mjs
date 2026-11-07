@@ -143,6 +143,15 @@ await appel(LEA, { action: "retirer", meme: L[3] });
 l = await voir(LEA, `?lieu=${BISTROT}`);
 ok(!l.memes.some((m) => m.id === L[3]) && !(await lire(`${LEA.id}/autour/${L[3]}.json`)), "retiré : il disparaît");
 
+// ═══ RÉPONDRE DANS UNE ZONE « AILLEURS » (par son identifiant, sans sa position) ═══
+r = await appel(HUGO, { action: "deposer", meme: "autourhugo01", lieu: ZONE, qui: "tous", reponseA: L[1], nomLieu: "Chez moi" });
+const zH = lieuDe(await voir(HUGO), ZONE);
+const zS = lieuDe(await voir(SAM), ZONE);
+ok(r.statut === 200 && r.lieu === ZONE && zH?.n === 3 && zH.nom === "Soirée chez Max", `Hugo répond dans la soirée de Léa : la zone garde le petit nom de son premier mème (${zH?.nom})`);
+ok(zS?.n === 2 && zS.nom === "Au bord de l’Adour", `Sam ne voit pas la soirée (pour ses proches) : ni elle, ni son petit nom (${zS?.nom})`);
+r = await appel(HUGO, { action: "deposer", meme: "autourhugo01", lieu: "z-9999_-9999" });
+ok(r.statut === 400, "une zone où personne n’a rien déposé : refusée par son identifiant (il faut sa position)");
+
 // ═══ SANS COMPTE ═══
 const anonyme = await voir(null, "?ville=dax");
 r = await appel(null, { action: "deposer", meme: L[5], lieu: BISTROT });

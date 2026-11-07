@@ -99,12 +99,19 @@ export async function deposer(supabase: Supabase, habitant: Habitant, d: Demande
   const peut = await memeDeposable(supabase, habitant, d.meme);
   if (!peut.ok) return { error: peut.error, statut: 400 };
   const id = s(d.meme);
-  // LE LIEU : un commerce de sa ville, ou sa zone
+  // LE LIEU : un commerce de sa ville, une zone « Ailleurs » qui a déjà des mèmes (pour y répondre), ou sa zone
   let lieu = "";
+  let zoneExistante = false;
   if (d.lieu) {
     const l = s(d.lieu);
-    if (!lieuIdValide(l) || estZone(l) || !(await commercesDe(supabase, ville)).some((c) => c.id === l)) return { error: "Ce lieu n’est pas à " + ville + ".", statut: 400 };
+    const existe = !lieuIdValide(l)
+      ? false
+      : estZone(l)
+        ? (await lister(supabase, `autour/${ville}/${l}`)).some((x) => lireNom(x.name))
+        : (await commercesDe(supabase, ville)).some((c) => c.id === l);
+    if (!existe) return { error: "Ce lieu n’est pas à " + ville + ".", statut: 400 };
     lieu = l;
+    zoneExistante = estZone(l);
   } else {
     const p = (d.ici && typeof d.ici === "object" ? d.ici : {}) as { lat?: unknown; lng?: unknown };
     const z = zoneDe(Number(p.lat), Number(p.lng));
@@ -114,7 +121,8 @@ export async function deposer(supabase: Supabase, habitant: Habitant, d: Demande
   // LE PETIT MOT, LE PETIT NOM (zone) : courts, sans gros mot, rien d'alcoolisé, pas d'adresse
   const mot = s(d.mot).replace(/\s+/g, " ").trim().slice(0, MOT_MAX);
   if (mot && (motInterdit(mot) || parleDAlcool(mot))) return { error: "Ça, ta figurine ne le dit pas. Écris autre chose 🙂", statut: 400 };
-  const nl = estZone(lieu) ? nomLieuPropre(d.nomLieu) : {};
+  // (une zone garde le petit nom que lui a donné son premier mème : y répondre ne la renomme pas)
+  const nl = estZone(lieu) && !zoneExistante ? nomLieuPropre(d.nomLieu) : {};
   if (nl.refus) return { error: nl.refus, statut: 400 };
   if (nl.nom && (motInterdit(nl.nom) || parleDAlcool(nl.nom))) return { error: "Ce petit nom ne passe pas. Écris autre chose 🙂", statut: 400 };
   // UNE RÉPONSE : à un mème du même lieu, qu'il peut voir
@@ -217,7 +225,9 @@ export async function carteDe(supabase: Supabase, ville: string, moi: Habitant |
     const centre = c ? { lat: c.lat, lng: c.lng } : centreDeZone(id);
     if (!centre || (!c && !p.length)) continue;
     const auteurs = [...new Set(p.map((x) => x.h))].slice(0, 3);
-    const nomZone = !c && p.length ? s((await lireJson<Depot>(supabase, `autour/${ville}/${id}/${nomFichier(p[0].id, p[0].qui, p[0].h)}`)).nomLieu) : "";
+    // (le petit nom d'une zone : celui de son premier mème, le plus ancien)
+    const premier = p[p.length - 1];
+    const nomZone = !c && premier ? s((await lireJson<Depot>(supabase, `autour/${ville}/${id}/${nomFichier(premier.id, premier.qui, premier.h)}`)).nomLieu) : "";
     lieux.push({
       id,
       type: c ? "commerce" : "zone",
@@ -252,7 +262,7 @@ export async function memesDuLieu(supabase: Supabase, ville: string, lieu: strin
     lieu: {
       id: lieu,
       type: c ? "commerce" : "zone",
-      nom: c ? c.nom : memes.find((m) => m.nomLieu)?.nomLieu || "Quelque part par ici",
+      nom: c ? c.nom : [...memes].reverse().find((m) => m.nomLieu)?.nomLieu || "Quelque part par ici",
       emoji: c ? emojiDuCommerce(c.activite) : "✨",
       lat: centre.lat,
       lng: centre.lng,
