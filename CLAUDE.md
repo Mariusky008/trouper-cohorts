@@ -8,6 +8,9 @@ Ce dépôt contient l'application ClikMe (Next.js, `src/`) et des outils à côt
 **Si vous montez une vidéo de commerçant (ClikMe Studio : l'atelier ou le Studio du comptoir, avec ou sans sa
 figurine, faite à partir d'un selfie)**, lisez d'abord `outils/clikme-studio/LISEZ-MOI.md`.
 
+**Si vous reprenez le travail d'une autre session** (l'appli `/collection` : mèmes, mème du jour, notifications, et
+le chantier « Autour de moi »), lisez d'abord `docs/reprise.md` : où on en est, et ce qu'il reste à faire.
+
 Règles communes :
 
 - On travaille en français.
