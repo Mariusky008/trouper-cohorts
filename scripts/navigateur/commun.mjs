@@ -5,6 +5,7 @@
 // avec ECHANGES_SEUIL_VILLE=3. Chacun veut un faux Supabase neuf (il sème ses commerçants).
 // Sur le poste, Playwright n'est pas forcément dans node_modules : PLAYWRIGHT_MODULE dit où le
 // prendre, PW_CHROMIUM quel Chromium lancer. Sur GitHub : `.github/workflows/clikme-verifications.yml`.
+import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -33,3 +34,33 @@ export async function fermerPablito(p, ici = "") {
   return true;
 }
 export const lancer = (options = {}) => chromium.launch({ ...(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}), ...options });
+
+/**
+ * 🔔 UN FAUX TÉLÉPHONE ABONNÉ AUX NOTIFICATIONS, au faux service du faux Supabase (`PUSH_ESSAI_ORIGINE`) : sa clé, son
+ * secret, son adresse ; `recus(t)` : ce qu'il a reçu, déchiffré comme le ferait le téléphone (RFC 8291, `aes128gcm`).
+ */
+export function telephone(nom) {
+  const ecdh = crypto.createECDH("prime256v1");
+  ecdh.generateKeys();
+  const auth = crypto.randomBytes(16);
+  const endpoint = `${F.replace("/rest/v1", "")}/push/${nom}-${crypto.randomBytes(4).toString("hex")}`;
+  return { ecdh, auth, endpoint, abonnement: { endpoint, expirationTime: null, keys: { p256dh: ecdh.getPublicKey().toString("base64url"), auth: auth.toString("base64url") } } };
+}
+function dechiffrer(t, b64) {
+  const buf = Buffer.from(b64, "base64");
+  const sel = buf.subarray(0, 16);
+  const sa = buf.subarray(21, 21 + buf[20]);
+  const chiffre = buf.subarray(21 + buf[20]);
+  const h = (k, d) => crypto.createHmac("sha256", k).update(d).digest();
+  const ikm = h(h(t.auth, t.ecdh.computeSecret(sa)), Buffer.concat([Buffer.from("WebPush: info\0"), t.ecdh.getPublicKey(), sa, Buffer.from([1])]));
+  const prk = h(sel, ikm);
+  const cle = h(prk, Buffer.concat([Buffer.from("Content-Encoding: aes128gcm\0"), Buffer.from([1])])).subarray(0, 16);
+  const nonce = h(prk, Buffer.concat([Buffer.from("Content-Encoding: nonce\0"), Buffer.from([1])])).subarray(0, 12);
+  const d = crypto.createDecipheriv("aes-128-gcm", cle, nonce);
+  d.setAuthTag(chiffre.subarray(chiffre.length - 16));
+  const clair = Buffer.concat([d.update(chiffre.subarray(0, chiffre.length - 16)), d.final()]);
+  let fin = clair.length - 1;
+  while (fin >= 0 && clair[fin] === 0) fin--;
+  return JSON.parse(clair.subarray(0, fin).toString("utf8"));
+}
+export const recus = async (t) => ((await (await fetch(`${F.replace("/rest/v1", "")}/__push`)).json()) ?? []).filter((x) => x.adresse === new URL(t.endpoint).pathname && !x.mort).map((x) => dechiffrer(t, x.corps));

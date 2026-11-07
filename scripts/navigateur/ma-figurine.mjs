@@ -16,7 +16,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
-import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer, recus, telephone } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const A = { id: "ffffffff-0000-4000-8000-000000000041", slug: "comptoir-des-fantomes-dax", nom: "Le Comptoir des Fantômes" };
@@ -473,6 +473,9 @@ await fetch(`${STOCK}/figurines-clients/${HUGO.id}/surprises.json`, { method: "P
 ok((await api(hugo, { action: "surprise" })).statut === 429, "assez pour aujourd'hui : 40 surprises par jour au plus");
 await fetch(`${STOCK}/figurines-clients/${HUGO.id}/surprises.json`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jour: jourS, n: 0, ia: 0 }) });
 ok((await debordement(hugo)) <= 0 && !/exemple/i.test(await texte(hugo, "#o-figurine")), "le studio ne déborde pas, sans le mot interdit");
+// 🔔 Léa a les notifications (un faux téléphone) : elle saura qu'on lui a répondu
+const telLea = telephone("lea-figurine");
+ok((await api(lea, { action: "notif", abonnement: telLea.abonnement })).statut === 200, "Léa allume les notifications (un faux téléphone)");
 await hugo.locator(".tf-prets button", { hasText: "Bravo" }).click();
 ok((await hugo.locator(".tf-texte textarea").inputValue()).startsWith("Bravo ! Quelle classe."), "un toucher sur « Bravo » : le texte est écrit, et elle le dit");
 await hugo.waitForSelector(".tf-envoyer", { timeout: 30000 });
@@ -484,6 +487,9 @@ await hugo.waitForSelector(".tf-meme-pret video", { timeout: 90000 });
 const idDuo = (await hugo.locator(".tf-adresse").inputValue()).split("/").pop();
 const coteDuo = await (await fetch(`${STOCK}/figurines-clients/${HUGO.id}/m-${idDuo}.json`)).json().catch(() => ({}));
 ok(coteDuo.repondA === id && coteDuo.meme, `sa réponse est un mème en duo, rattachée à celui de Léa (${JSON.stringify(coteDuo)})`);
+await hugo.waitForTimeout(800);
+const duoNotif = (await recus(telLea)).find((n) => /t’a répondu/.test(n.title));
+ok(duoNotif?.title === "↩️ Hugo t’a répondu en duo !" && duoNotif.url === "/collection#memes", `↩️ Léa est prévenue : « ${duoNotif?.title} » (le toucher ouvre « Mes mèmes »)`);
 ok((await hugo.locator(".tf-reponse").count()) === 0, "sa réponse partie : son prochain mème sera à lui");
 ok((await hugo.locator(".tf-meme-pret .tf-public").count()) === 0, "un duo : pas de « Découvrir » (il montre aussi la figurine de Léa)");
 ok((await api(hugo, { action: "rien" })).statut === 400 && (await hugo.evaluate(async () => (await (await fetch("/api/direct/ma-figurine")).json()).etat.etapes)).includes("duo"), "👣 une étape franchie : « Répondre en duo à un mème »");

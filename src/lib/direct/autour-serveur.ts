@@ -56,8 +56,8 @@ export const cleProfil = (h: string) => createHash("sha256").update(`clikme-prof
  * L'AUTEUR a dans SES proches (ses duos, ceux qu'il a ajoutés) — jamais quelqu'un qui l'aurait ajouté, lui, de son côté
  * (le 7 novembre 2026, avec « 👯 Ajouter en proche » : s'ajouter ne donne rien à voir).
  */
-type Regard = { moi: Habitant | null; prochesDe: (h: string) => Promise<Set<string>> };
-function regardDe(supabase: Supabase, moi: Habitant | null): Regard {
+type Regard = { moi: string | null; prochesDe: (h: string) => Promise<Set<string>> };
+function regardDe(supabase: Supabase, moi: string | null): Regard {
   const lus = new Map<string, Promise<Set<string>>>();
   return {
     moi,
@@ -70,8 +70,8 @@ function regardDe(supabase: Supabase, moi: Habitant | null): Regard {
 async function visible(d: { qui: Qui; h: string }, r: Regard): Promise<boolean> {
   if (d.qui === "tous") return true;
   if (!r.moi) return false;
-  if (d.h === r.moi.id) return true;
-  return d.qui === "proches" && (await r.prochesDe(d.h)).has(r.moi.id);
+  if (d.h === r.moi) return true;
+  return d.qui === "proches" && (await r.prochesDe(d.h)).has(r.moi);
 }
 
 async function lister(supabase: Supabase, dossier: string): Promise<{ name: string; created_at?: string }[]> {
@@ -133,7 +133,9 @@ export type Demande = { meme: unknown; lieu?: unknown; ici?: unknown; qui?: unkn
  * 📍 DÉPOSER SON MÈME : dans un commerce de sa ville (`lieu`), ou « Ailleurs » (`ici` : sa position, ARRONDIE ici en une
  * zone d'environ 500 m — elle n'est gardée nulle part telle quelle). `reponseA` : le mème du même lieu auquel il répond.
  */
-export async function deposer(supabase: Supabase, habitant: Habitant, d: Demande): Promise<{ ok?: true; lieu?: string; error?: string; statut?: number; age?: true }> {
+// (`aPrevenir` : l'auteur du mème auquel il répond — à prévenir s'il peut voir la réponse : `appli-collection-serveur.ts`)
+export type APrevenir = { auteur: string; meme: string; ou: string; url: string };
+export async function deposer(supabase: Supabase, habitant: Habitant, d: Demande): Promise<{ ok?: true; lieu?: string; error?: string; statut?: number; age?: true; aPrevenir?: APrevenir }> {
   // 🔞 un mème dans la ville : réservé aux 15 ans et plus (son âge déclaré : `ma-figurine.ts`, `AGE_MINIMUM`)
   if (!(await aConfirmeSonAge(supabase, habitant.id))) return SANS_AGE;
   const ville = habitant.villeSlug;
@@ -171,10 +173,12 @@ export async function deposer(supabase: Supabase, habitant: Habitant, d: Demande
   if (nl.nom && (motInterdit(nl.nom) || parleDAlcool(nl.nom))) return { error: "Ce petit nom ne passe pas. Écris autre chose 🙂", statut: 400 };
   // UNE RÉPONSE : à un mème du même lieu, qu'il peut voir
   const reponseA = s(d.reponseA);
+  let origine: { id: string; qui: Qui; h: string } | null = null;
   if (reponseA) {
     if (!/^[a-z0-9]{12}$/.test(reponseA) || reponseA === id) return { error: "Ce mème n’existe plus.", statut: 400 };
     const la = (await lister(supabase, `autour/${ville}/${lieu}`)).map((x) => lireNom(x.name)).find((x) => x?.id === reponseA);
-    if (!la || !(await visible(la, regardDe(supabase, habitant)))) return { error: "Ce mème n’est plus à cet endroit.", statut: 400 };
+    if (!la || !(await visible(la, regardDe(supabase, habitant.id)))) return { error: "Ce mème n’est plus à cet endroit.", statut: 400 };
+    origine = la;
   }
   // TROIS PAR LIEU ET PAR JOUR
   const jour = jourParis();
@@ -191,7 +195,15 @@ export async function deposer(supabase: Supabase, habitant: Habitant, d: Demande
     (await ecrireJson(supabase, `${habitant.id}/autour/${id}.json`, { ville, lieu, qui, le: depot.le })) &&
     (await ecrireJson(supabase, `profils/${cleProfil(habitant.id)}.json`, { h: habitant.id })) &&
     (memeLieu || (await ecrireJson(supabase, cheminJour, { ...parLieu, [lieu]: (Number(parLieu[lieu]) || 0) + 1 })));
-  return ok ? { ok: true, lieu } : { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  if (!ok) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  // ↩️ L'AUTEUR DU MÈME AUQUEL IL RÉPOND, s'il peut voir cette réponse (pas « moi seul » ; « mes proches » : s'il en est)
+  if (origine && origine.h !== habitant.id && (await visible({ qui, h: habitant.id }, regardDe(supabase, origine.h)))) {
+    const c = estZone(lieu) ? null : (await commercesDe(supabase, ville)).find((x) => x.id === lieu);
+    // (une zone : le petit nom de la soirée, celui du mème auquel il répond)
+    const ou = c ? `${emojiDuCommerce(c.activite)} ${c.nom}` : `✨ ${s((await lireJson<Depot>(supabase, `autour/${ville}/${lieu}/${nomFichier(origine.id, origine.qui, origine.h)}`)).nomLieu) || "Quelque part par ici"}`;
+    return { ok: true, lieu, aPrevenir: { auteur: origine.h, meme: id, ou, url: `/collection?autour=${encodeURIComponent(lieu)}&meme=${id}#autour` } };
+  }
+  return { ok: true, lieu };
 }
 
 /** Il retire son mème de l'endroit où il l'avait posé. */
@@ -270,7 +282,7 @@ export async function carteDe(supabase: Supabase, ville: string, moi: Habitant |
   const [commerces, dossiers] = await Promise.all([commercesDe(supabase, ville), lister(supabase, `autour/${ville}`)]);
   const ids = new Set([...commerces.map((c) => c.id), ...dossiers.map((d) => d.name).filter((n) => lieuIdValide(n))]);
   const poses = new Map<string, Pose[]>();
-  const regard = regardDe(supabase, moi);
+  const regard = regardDe(supabase, moi?.id ?? null);
   await Promise.all([...ids].map(async (l) => poses.set(l, await posesVisibles(supabase, ville, l, regard))));
   // (un mème signalé, ou retiré par la modération, ne compte plus sur la carte)
   const caches = await memesCaches(supabase, [...poses.values()].flat().map((p) => p.id));
@@ -314,7 +326,7 @@ export async function carteDe(supabase: Supabase, ville: string, moi: Habitant |
 /** 📍 Les mèmes d'un lieu, pour le swipe : ce qu'il peut voir, les plus récents d'abord (ses proches devant). */
 export async function memesDuLieu(supabase: Supabase, ville: string, lieu: string, moi: Habitant | null): Promise<{ lieu: Lieu | null; memes: MemeAutour[] }> {
   if (!ville || !lieuIdValide(lieu)) return { lieu: null, memes: [] };
-  const [poses, commerces] = await Promise.all([posesVisibles(supabase, ville, lieu, regardDe(supabase, moi)), estZone(lieu) ? Promise.resolve([]) : commercesDe(supabase, ville)]);
+  const [poses, commerces] = await Promise.all([posesVisibles(supabase, ville, lieu, regardDe(supabase, moi?.id ?? null)), estZone(lieu) ? Promise.resolve([]) : commercesDe(supabase, ville)]);
   const c = commerces.find((x) => x.id === lieu);
   const centre = c ? { lat: c.lat, lng: c.lng } : centreDeZone(lieu);
   if (!centre || (!c && !poses.length)) return { lieu: null, memes: [] };

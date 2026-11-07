@@ -1309,6 +1309,30 @@ dans `admins`) — le croissant de Hugo, signalé : la boulangerie compte 0 ; la
 Boulangerie du Marché (pour tout le monde) ») ; retiré pour de bon, son dépôt quitte la carte ; un mème de Léa signalé à
 tort, remis, revient au Petit Bistrot.
 
+### 9.0 octotricies ↩️ « Hugo t'a répondu ! » : la notification des réponses (7 novembre)
+
+La suite du point 5 d'« Autour ». Quand quelqu'un répond à un de ses mèmes — dans « Autour » (un dépôt avec
+`reponseA`) ou en duo —, l'auteur reçoit une notification, s'il a les notifications de ClikMe :
+
+- **« ↩️ Hugo t'a répondu ! »** — « 🍽️ Le Petit Bistrot · avec sa figurine. Viens voir 👀 » (ou « ✨ Soirée chez
+  Max ») ; le toucher ouvre « Autour » **sur sa réponse** (`/collection?autour=<lieu>&meme=<id>#autour` : le swipe du
+  lieu, à cette carte ; l'adresse redevient propre).
+- **« ↩️ Hugo t'a répondu en duo ! »** — « Avec sa figurine, à côté de la tienne » ; le toucher ouvre « Mes mèmes ».
+- **Un interrupteur à part dans « Moi »** : « Quand on répond à tes mèmes », sous « Le mème du jour, vers 11 h 30 ».
+  **Allumé d'office pour tous ceux qui ont les notifications, anciens abonnés compris** (la décision du propriétaire,
+  le 7 novembre) ; chacun le coupe (`reponses: false` dans sa fiche `notif/abonnes/<habitant>.json`), et le mème du jour
+  reste allumé.
+- Jamais à soi-même ; **jamais pour une réponse qu'il ne pourrait pas voir** (« Moi seul » ; « Mes proches » s'il n'en
+  est pas) ; **dix par jour au plus** (`notif/reponses/<habitant>/<jour>.json`).
+- L'envoi part après la réponse (`after`), jamais bloquant : `prevenirDUneReponse`, `appli-collection-serveur.ts`
+  (le même envoi chiffré que le mème du jour ; un téléphone abandonné est effacé).
+
+Les essais : `essai-autour-route.mjs` (Léa abonnée, avec un faux téléphone : Hugo lui répond au Petit Bistrot, puis
+dans sa soirée — deux notifications, déchiffrées ; coupé : plus rien ; une réponse « Moi seul » : rien) ;
+`ma-figurine.mjs` (la réponse en duo) ; `autour.mjs` (le toucher sur la notification ouvre la réponse) ;
+`appli-notif.mjs` (l'interrupteur dans « Moi » : allumé d'office, coupé, rallumé). Les outils du faux téléphone
+(`telephone`, `recus`) sont dans `scripts/navigateur/commun.mjs`.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

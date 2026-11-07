@@ -348,6 +348,13 @@ await inconnu.locator(".atr-actions .atr-poser").click();
 await inconnu.waitForSelector("section.atr-deposer .atr-vide", { timeout: 10000 });
 ok((await texte(inconnu, ".atr-deposer")).includes("il te faut ta figurine"), "« Déposer » : il lui faut sa figurine");
 
+// ═══ ↩️ LE TOUCHER SUR « HUGO T'A RÉPONDU ! » : `?autour=<lieu>&meme=<id>` OUVRE LE SWIPE, SUR SA RÉPONSE ═══
+const notifiee = await tel(LEA);
+await notifiee.goto(`${BASE}/collection?autour=${BISTROT}&meme=ecranhugo001#autour`, { waitUntil: "networkidle" });
+await notifiee.waitForSelector(".atr-swipe .atr-mcarte:not(.dessous) .atr-qui b", { timeout: 60000 });
+ok((await texte(notifiee, ".atr-mcarte:not(.dessous) .atr-qui b")).startsWith("Hugo") && !notifiee.url().includes("autour="), "le toucher sur la notification : le swipe du Petit Bistrot, sur la réponse de Hugo (l'adresse redevient propre)");
+await notifiee.context().close();
+
 // ═══ 🛡️ LA MODÉRATION : LE MÈME SIGNALÉ (le croissant de Hugo), TEL QUE LES GENS L'ONT VU ; PUIS RETIRÉ POUR DE BON ═══
 ok(lieuDe(await voir(SAM), BOULANGERIE)?.n === 0, "signalé : il ne compte plus sur la carte (la boulangerie : 0)");
 // une session d'administration (le jeton « faux-admin » du faux Supabase ; l'administrateur dans `admins`)

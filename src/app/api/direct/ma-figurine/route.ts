@@ -38,14 +38,15 @@
 //      le jeton pose le cookie de SA figurine (`appli-collection-serveur.ts`).
 // 🔔 POST { action: "notif", abonnement } : le mème du jour à 11 h 30 sur ce téléphone (« C'est réglé ! » part tout de
 //      suite) ; { action: "notif-couper", endpoint? } : il coupe (sans adresse : partout) ; { action: "notif-etat",
-//      endpoint } → { abonne } : ce téléphone le recevra-t-il ?
+//      endpoint } → { abonne, reponses? } : ce téléphone le recevra-t-il ? ↩️ { action: "notif-reponses", oui } : « Quand on
+//      répond à tes mèmes » (allumé par défaut), ou coupé.
 // (La démonstration qu'on faisait parler sans compte a quitté la page le 5 novembre 2026 : chacun crée la sienne dès le
 // départ. Ses messages déjà envoyés s'ouvrent toujours, par `/figurine/<id>`.)
 // Un habitant n'est créé ici que par « photo » (son geste : « Créer ma figurine »).
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant, habitantCourant, poserCookie } from "@/lib/direct/habitant";
-import { abonner, couper, estAbonne, jetonAppli, lierAppli } from "@/lib/direct/appli-collection-serveur";
+import { abonner, choisirLesReponses, couper, estAbonne, jetonAppli, lierAppli, prevenirDUneReponse, prevenuDesReponses } from "@/lib/direct/appli-collection-serveur";
 import { villeSlug } from "@/lib/direct/ville";
 import { ERREUR_AGE, lienMessage } from "@/lib/direct/ma-figurine";
 import {
@@ -163,7 +164,15 @@ export async function POST(request: Request) {
     return NextResponse.json(r.ok ? { ok: true } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400) });
   }
   if (p?.action === "notif-couper") return NextResponse.json(await couper(supabase, moi, p.endpoint));
-  if (p?.action === "notif-etat") return NextResponse.json({ ok: true, abonne: await estAbonne(supabase, moi, p.endpoint) }, { headers: sansCache });
+  if (p?.action === "notif-etat") {
+    const [abonne, reponses] = await Promise.all([estAbonne(supabase, moi, p.endpoint), prevenuDesReponses(supabase, moi)]);
+    return NextResponse.json({ ok: true, abonne, ...(reponses !== null ? { reponses } : {}) }, { headers: sansCache });
+  }
+  // ↩️ « Quand on répond à tes mèmes » : allumé (par défaut) ou coupé
+  if (p?.action === "notif-reponses") {
+    const r = await choisirLesReponses(supabase, moi, p.oui);
+    return NextResponse.json(r.ok ? { ok: true, reponses: r.reponses } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400), headers: sansCache });
+  }
   if (p?.action === "fabriquer") {
     const r = await fabriquerMaFigurine(supabase, moi, avant);
     const etat = await etatMaFigurine(supabase, moi);
@@ -250,6 +259,10 @@ export async function POST(request: Request) {
   if (p?.action === "message") {
     const r = await enregistrerMessage(supabase, moi, p.son, p.duree, p.commerces, p.sentiment, p.texte, p.voix, p.danse, p.repondA, p.look);
     if (!r.id) return NextResponse.json({ error: r.error }, { status: 400 });
+    // ↩️ « Sam t'a répondu en duo ! » : à l'auteur du mème, après la réponse (jamais bloquant)
+    const auteur = r.auteurDeLOrigine;
+    const id = r.id;
+    if (auteur) after(() => prevenirDUneReponse(supabase, auteur, moi.id, { meme: id, url: "/collection#memes", duo: true }).then(() => undefined, () => undefined));
     return NextResponse.json({ ok: true, id: r.id, lien: lienMessage(r.id) }, { headers: sansCache });
   }
   return NextResponse.json({ error: "Demande incomplète." }, { status: 400 });

@@ -230,6 +230,17 @@ ok(bilan2.personnes === 1 && bilan2.envoyes === 0 && (await recus(telNina)).leng
 await toucher(appli, interrupteur);
 await appli.waitForFunction(() => document.querySelector("#o-personnage .ct-notif .ct-interrupteur")?.getAttribute("aria-checked") === "true", null, { timeout: 15000 });
 ok((await lireStock(`notif/abonnes/${NINA.id}.json`))?.abonnements?.length === 1, "et elle le rallume d'un toucher");
+// ↩️ « QUAND ON RÉPOND À TES MÈMES » : un second interrupteur, allumé d'office ; elle le coupe, puis le rallume
+await appli.waitForSelector("#o-personnage .ct-reponses .ct-interrupteur", { timeout: 15000 });
+const reponses = appli.locator("#o-personnage .ct-reponses .ct-interrupteur");
+ok((await reponses.getAttribute("aria-checked")) === "true" && (await texte(appli, "#o-personnage .ct-reponses")).includes("Quand on répond à tes mèmes"), "« Quand on répond à tes mèmes » : allumé d'office, à part du mème du jour");
+await toucher(appli, reponses);
+await appli.waitForFunction(() => document.querySelector("#o-personnage .ct-reponses .ct-interrupteur")?.getAttribute("aria-checked") === "false", null, { timeout: 15000 });
+const ficheCoupee = await lireStock(`notif/abonnes/${NINA.id}.json`);
+ok(ficheCoupee?.reponses === false && ficheCoupee.abonnements?.length === 1 && (await texte(appli, "#o-personnage .ct-reponses")).includes("Coupé"), "elle le coupe : plus de « … t'a répondu ! » (le mème du jour, lui, reste allumé)");
+await toucher(appli, reponses);
+await appli.waitForFunction(() => document.querySelector("#o-personnage .ct-reponses .ct-interrupteur")?.getAttribute("aria-checked") === "true", null, { timeout: 15000 });
+ok((await lireStock(`notif/abonnes/${NINA.id}.json`))?.reponses !== false, "et le rallume");
 ok((await debordement(appli)) <= 0 && !/exemple/i.test(await texte(appli, "#o-personnage")), "« Moi » ne déborde pas, sans le mot interdit");
 
 // ═══ ANDROID : LA VRAIE PROPOSITION D'INSTALLER ═══

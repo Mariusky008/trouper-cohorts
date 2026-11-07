@@ -20,7 +20,7 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { OngletVisible } from "./guide";
 import { CarteAutour, STYLES_CARTE_AUTOUR } from "./autour-carte";
-import { QUIS, distance, enMetres, estZone, type Lieu, type MemeAutour, type ProfilAutour, type Qui } from "@/lib/direct/autour";
+import { QUIS, distance, enMetres, estZone, lieuIdValide, type Lieu, type MemeAutour, type ProfilAutour, type Qui } from "@/lib/direct/autour";
 import { REFUS_AGE, type MonMeme } from "@/lib/direct/ma-figurine";
 import { demanderSonAge } from "./age";
 import { EVT_VERS_AUTOUR, garderLeDepot, oublierLeDepot, reprendreLeDepot, type DepotEnCours } from "./depot-autour";
@@ -111,6 +111,20 @@ export function Autour({ allerA }: { allerA: (o: string) => void }) {
     if (visible) void Promise.resolve().then(() => {
       const d = reprendreLeDepot();
       if (d) setVue({ t: "deposer", lieu: d.lieuDonne, reponseA: d.reponseA, reprise: d });
+    });
+  }, [visible]);
+  // ↩️ LA NOTIFICATION « SAM T'A RÉPONDU ! » : `?autour=<lieu>&meme=<id>` ouvre le swipe du lieu, sur sa réponse
+  useEffect(() => {
+    if (!visible) return;
+    void Promise.resolve().then(() => {
+      const u = new URL(window.location.href);
+      const lieu = u.searchParams.get("autour") ?? "";
+      const meme = u.searchParams.get("meme") ?? "";
+      if (!lieu) return;
+      u.searchParams.delete("autour");
+      u.searchParams.delete("meme");
+      window.history.replaceState(window.history.state, "", u.toString());
+      if (lieuIdValide(lieu)) setVue({ t: "swipe", id: lieu, ...(/^[a-z0-9]{12}$/.test(meme) ? { depart: meme } : {}) });
     });
   }, [visible]);
 
