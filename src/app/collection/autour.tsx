@@ -23,12 +23,14 @@ import { CarteAutour, STYLES_CARTE_AUTOUR } from "./autour-carte";
 import { QUIS, distance, enMetres, estZone, type Lieu, type MemeAutour, type ProfilAutour, type Qui } from "@/lib/direct/autour";
 import { REFUS_AGE, type MonMeme } from "@/lib/direct/ma-figurine";
 import { demanderSonAge } from "./age";
+import { EVT_VERS_AUTOUR, garderLeDepot, oublierLeDepot, reprendreLeDepot, type DepotEnCours } from "./depot-autour";
+import { versLeStudio } from "./vers-le-studio";
 
 type Vue =
   | { t: "carte" }
   | { t: "lieu"; id: string }
   | { t: "swipe"; id: string; depart?: string }
-  | { t: "deposer"; lieu?: string; reponseA?: string }
+  | { t: "deposer"; lieu?: string; reponseA?: string; reprise?: DepotEnCours }
   | { t: "publie"; lieu: string; meme: string }
   | { t: "profil"; cle: string };
 type Carte = { ville: string; lieux: Lieu[]; derniers: MemeAutour[]; compte: boolean };
@@ -37,7 +39,7 @@ type Pos = { lat: number; lng: number };
 const ROUTE = "/api/direct/autour";
 const poster = async (url: string, corps: unknown) => {
   const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
-  return { ok: r.ok, ...((await r.json().catch(() => ({}))) as { error?: string; lieu?: string; age?: boolean }) };
+  return { ok: r.ok, ...((await r.json().catch(() => ({}))) as { error?: string; lieu?: string; age?: boolean; proche?: boolean }) };
 };
 /** « il y a 2 h », « hier », « il y a 4 j ». */
 function quand(le: string): string {
@@ -91,6 +93,26 @@ export function Autour({ allerA }: { allerA: (o: string) => void }) {
       fini = true;
     };
   }, [visible, version]);
+
+  // 🎭 SON MÈME EST PRÊT, fait au studio pour ce dépôt (« ＋ Nouveau mème ») : le dépôt se rouvre, le mème déjà choisi
+  useEffect(() => {
+    const rouvrir = (d: DepotEnCours | null) => {
+      if (d?.meme) setVue({ t: "deposer", lieu: d.lieuDonne, reponseA: d.reponseA, reprise: d });
+    };
+    const ecoute = (e: Event) => {
+      oublierLeDepot();
+      rouvrir((e as CustomEvent<DepotEnCours>).detail);
+    };
+    window.addEventListener(EVT_VERS_AUTOUR, ecoute);
+    return () => window.removeEventListener(EVT_VERS_AUTOUR, ecoute);
+  }, []);
+  useEffect(() => {
+    // (« Autour » n'était pas encore ouvert : le dépôt l'attendait le temps de la visite)
+    if (visible) void Promise.resolve().then(() => {
+      const d = reprendreLeDepot();
+      if (d) setVue({ t: "deposer", lieu: d.lieuDonne, reponseA: d.reponseA, reprise: d });
+    });
+  }, [visible]);
 
   const ouvrirLieu = useCallback((id: string) => setVue({ t: "lieu", id }), []);
   const tomber = useCallback(() => setPanne(true), []);
@@ -211,8 +233,10 @@ export function Autour({ allerA }: { allerA: (o: string) => void }) {
       )}
       {vue.t === "deposer" && (
         <Deposer
+          key={vue.reprise?.meme ?? "depot"}
           lieuDonne={vue.lieu}
           reponseA={vue.reponseA}
+          reprise={vue.reprise}
           lieux={lieux}
           compte={Boolean(carte?.compte)}
           onFermer={() => (vue.lieu ? setVue({ t: "lieu", id: vue.lieu }) : retour())}
@@ -224,7 +248,7 @@ export function Autour({ allerA }: { allerA: (o: string) => void }) {
         />
       )}
       {vue.t === "publie" && <Publie lieu={vue.lieu} meme={vue.meme} onVoir={() => setVue({ t: "swipe", id: vue.lieu, depart: vue.meme })} onCarte={retour} />}
-      {vue.t === "profil" && <Profil cle={vue.cle} onFermer={retour} onLieu={(id) => setVue({ t: "lieu", id })} />}
+      {vue.t === "profil" && <Profil cle={vue.cle} compte={Boolean(carte?.compte)} onFermer={retour} onLieu={(id) => setVue({ t: "lieu", id })} onRepondre={(lieu, meme) => setVue({ t: "deposer", lieu, reponseA: meme })} />}
     </div>
   );
 }
@@ -251,22 +275,37 @@ function VueLieu({ id, ville, moi, onFermer, onSwipe, onDeposer }: { id: string;
   const memes = r?.memes ?? [];
   const conv = memes.find((m) => m.reponses > 0);
   const coeurs = memes.reduce((a, m) => a + (m.reac?.n.coeur ?? 0), 0);
+  // 🖼️ LA PHOTO DU LIEU, en haut (celle du commerce) ; sans photo, ou si elle ne se charge pas : le fond, et son emoji
+  const [photoKo, setPhotoKo] = useState(false);
+  const photo = l?.photo && !photoKo ? l.photo : "";
   return (
     <section className="atr-plein atr-lieu" aria-label={l?.nom ?? "Un lieu"}>
       <button type="button" className="atr-fermer" aria-label="Retour à la carte" onClick={onFermer}>
         ‹
       </button>
-      <header>
-        <span className="atr-type">{l ? `${l.emoji} ${l.type === "zone" ? "Ailleurs, quelque part par ici" : l.activite || "Commerce"}` : "…"}</span>
-        <h2>{l?.nom ?? "…"}</h2>
-        {l && moi && l.type === "commerce" && <span className="atr-dist">📍 {enMetres(distance(moi, l))}</span>}
-        <b className="atr-compte">
-          <em>
-            {memes.length} mème{memes.length > 1 ? "s" : ""}
-          </em>{" "}
-          déposé{memes.length > 1 ? "s" : ""} ici{coeurs ? ` · ${coeurs} ❤️` : ""}
-        </b>
-      </header>
+      <div className={`atr-lieu-tete${photo ? " photo" : ""}`}>
+        {photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photo} alt={`${l?.nom ?? "Le lieu"}, en photo`} referrerPolicy="no-referrer" onError={() => setPhotoKo(true)} />
+        ) : (
+          l && (
+            <span className="atr-lieu-emoji" aria-hidden="true">
+              {l.emoji}
+            </span>
+          )
+        )}
+        <header>
+          <span className="atr-type">{l ? `${l.emoji} ${l.type === "zone" ? "Ailleurs, quelque part par ici" : l.activite || "Commerce"}` : "…"}</span>
+          <h2>{l?.nom ?? "…"}</h2>
+          {l && moi && l.type === "commerce" && <span className="atr-dist">📍 {enMetres(distance(moi, l))}</span>}
+          <b className="atr-compte">
+            <em>
+              {memes.length} mème{memes.length > 1 ? "s" : ""}
+            </em>{" "}
+            déposé{memes.length > 1 ? "s" : ""} ici{coeurs ? ` · ${coeurs} ❤️` : ""}
+          </b>
+        </header>
+      </div>
       {memes.length > 0 ? (
         <>
           <button type="button" className="atr-eventail" onClick={() => onSwipe()} aria-label="Découvrir les mèmes de ce lieu">
@@ -500,14 +539,15 @@ function Swipe({ id, depart, ville, compte, onFermer, onRepondre, onProfil }: { 
 }
 
 // ─── ＋ DÉPOSER ────────────────────────────────────────────────────────────────────────────────────────────────────
-function Deposer({ lieuDonne, reponseA, lieux, compte, onFermer, onPublie, allerA }: { lieuDonne?: string; reponseA?: string; lieux: Lieu[]; compte: boolean; onFermer: () => void; onPublie: (lieu: string, meme: string) => void; allerA: (o: string) => void }) {
+// (`reprise` : son dépôt d'avant le studio, avec le mème qu'il vient d'y faire — `depot-autour.ts`)
+function Deposer({ lieuDonne, reponseA, reprise, lieux, compte, onFermer, onPublie, allerA }: { lieuDonne?: string; reponseA?: string; reprise?: DepotEnCours; lieux: Lieu[]; compte: boolean; onFermer: () => void; onPublie: (lieu: string, meme: string) => void; allerA: (o: string) => void }) {
   const [miens, setMiens] = useState<MonMeme[] | null>(null);
-  const [lieu, setLieu] = useState<string>(lieuDonne ?? "");
-  const [ailleurs, setAilleurs] = useState(false);
-  const [nomLieu, setNomLieu] = useState("");
-  const [meme, setMeme] = useState("");
-  const [mot, setMot] = useState("");
-  const [qui, setQui] = useState<Qui>("tous");
+  const [lieu, setLieu] = useState<string>(lieuDonne ?? reprise?.lieu ?? "");
+  const [ailleurs, setAilleurs] = useState(Boolean(reprise?.ailleurs) && !reponseA);
+  const [nomLieu, setNomLieu] = useState(reprise?.nomLieu ?? "");
+  const [meme, setMeme] = useState(reprise?.meme ?? "");
+  const [mot, setMot] = useState(reprise?.mot ?? "");
+  const [qui, setQui] = useState<Qui>(reprise?.qui ?? "tous");
   const [ici, setIci] = useState<Pos | null>(null);
   const [erreur, setErreur] = useState("");
   const [occupe, setOccupe] = useState(false);
@@ -537,6 +577,13 @@ function Deposer({ lieuDonne, reponseA, lieux, compte, onFermer, onPublie, aller
     [lieux, ici],
   );
   const donne = lieuDonne ? lieux.find((l) => l.id === lieuDonne) : null;
+  /** ＋ NOUVEAU MÈME, « avec sa tête » : le studio s'ouvre pour ce lieu ; son dépôt l'attend, et il y revient son mème prêt. */
+  const nouveauMeme = () => {
+    const choisi = ailleurs ? null : lieux.find((l) => l.id === lieu);
+    const ou = ailleurs ? { nom: nomLieu.trim() || "Ailleurs", emoji: "✨" } : choisi ? { nom: choisi.nom, emoji: choisi.emoji } : {};
+    garderLeDepot({ lieuDonne, lieu: lieu || undefined, reponseA, ailleurs, nomLieu, mot, qui });
+    versLeStudio({ autour: { ...ou, reponse: Boolean(reponseA) } });
+  };
   const publier = async () => {
     setErreur("");
     if (!meme) return setErreur("Choisis un de tes mèmes (ou fais-en un nouveau).");
@@ -616,8 +663,9 @@ function Deposer({ lieuDonne, reponseA, lieux, compte, onFermer, onPublie, aller
 
       <h3>2 · Quel mème ?</h3>
       <div className="atr-miens">
-        <button type="button" className="atr-nouveau" onClick={() => allerA("figurine")}>
+        <button type="button" className="atr-nouveau" onClick={nouveauMeme}>
           ＋ Nouveau mème
+          <small>avec ma tête</small>
         </button>
         {(miens ?? []).map((m) => (
           <button key={m.id} type="button" className={`atr-vignette petit${meme === m.id ? " pris" : ""}`} aria-pressed={meme === m.id} aria-label={m.texte ?? "Mon mème"} onClick={() => setMeme(m.id)}>
@@ -691,8 +739,23 @@ function Publie({ meme, onVoir, onCarte }: { lieu: string; meme: string; onVoir:
 }
 
 // ─── 👤 LE PROFIL ──────────────────────────────────────────────────────────────────────────────────────────────────
-function Profil({ cle, onFermer, onLieu }: { cle: string; onFermer: () => void; onLieu: (id: string) => void }) {
+// (`onRepondre` : « ↩️ Lui répondre », à son dernier mème, là où il l'a déposé)
+function Profil({ cle, compte, onFermer, onLieu, onRepondre }: { cle: string; compte: boolean; onFermer: () => void; onLieu: (id: string) => void; onRepondre: (lieu: string, meme: string) => void }) {
   const [p, setP] = useState<ProfilAutour | null | false>(null);
+  const [occupe, setOccupe] = useState(false);
+  const [erreur, setErreur] = useState("");
+  /** 👯 Dans ses proches (sa liste à lui), ou retiré. */
+  const basculerProche = async () => {
+    if (!p) return;
+    setOccupe(true);
+    setErreur("");
+    const r = await poster(ROUTE, { action: "proche", profil: p.cle, oui: !p.proche });
+    setOccupe(false);
+    if (!r.ok) return setErreur(r.error || "Ça n’a pas marché. Réessaie.");
+    setP({ ...p, proche: r.proche === true });
+  };
+  const dernier = p ? p.memes[0] : undefined;
+  const qui = p && p.prenom ? p.prenom : "Cette personne";
   useEffect(() => {
     let fini = false;
     void fetch(`${ROUTE}?profil=${encodeURIComponent(cle)}`, { cache: "no-store" })
@@ -719,6 +782,27 @@ function Profil({ cle, onFermer, onLieu }: { cle: string; onFermer: () => void; 
               {p.memes.length} mème{p.memes.length > 1 ? "s" : ""} · {p.lieux.length} lieu{p.lieux.length > 1 ? "x" : ""}
             </span>
           </div>
+          {/* 👯 SES GESTES : l'ajouter à ses proches ; lui répondre (à son dernier mème) */}
+          {compte && !p.moi && (
+            <>
+              <div className="atr-profil-gestes">
+                <button type="button" className={`atr-proche${p.proche ? " pris" : ""}`} aria-pressed={Boolean(p.proche)} disabled={occupe} onClick={() => void basculerProche()}>
+                  {p.proche ? "✓ Dans tes proches" : "👯 Ajouter en proche"}
+                </button>
+                {dernier && (
+                  <button type="button" className="atr-lui-repondre" onClick={() => onRepondre(dernier.lieu, dernier.id)}>
+                    ↩️ Lui répondre
+                  </button>
+                )}
+              </div>
+              <p className="atr-note">{p.proche ? `${qui} voit ce que tu déposes pour « Mes proches ». Un toucher sur « ✓ Dans tes proches » pour l’en retirer.` : "Tes proches voient ce que tu déposes pour « Mes proches », et leurs mèmes passent devant pour toi."}</p>
+              {erreur && (
+                <p className="atr-erreur" role="alert">
+                  {erreur}
+                </p>
+              )}
+            </>
+          )}
           {p.lieux.length > 0 && (
             <>
               <h3>Ses lieux</h3>
@@ -788,6 +872,13 @@ export const STYLES_AUTOUR =
 .atr-plein{position:fixed;inset:0;z-index:40;overflow-y:auto;box-sizing:border-box;padding:calc(56px + env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom));background:radial-gradient(90% 40% at 50% 45%,rgba(255,46,154,.18),transparent 70%),#0E0A10;color:#fff;animation:atr-entre .25s cubic-bezier(.2,.9,.3,1)}
 .atr-fermer{display:grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.1);color:#fff;font-size:22px;line-height:1;cursor:pointer}
 .atr-plein>.atr-fermer{position:absolute;z-index:3;left:16px;top:calc(12px + env(safe-area-inset-top))}
+.atr-lieu-tete{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-height:236px;box-sizing:border-box;margin:calc(-56px - env(safe-area-inset-top)) -16px 0;padding:calc(64px + env(safe-area-inset-top)) 16px 12px;overflow:hidden;background:radial-gradient(90% 80% at 80% 15%,rgba(255,46,154,.5),transparent 65%),#1A121C}
+.atr-lieu-tete>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.atr-lieu-tete::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,10,16,.35),rgba(14,10,16,0) 30%,rgba(14,10,16,.7) 72%,#0E0A10)}
+.atr-lieu-tete.photo{min-height:300px}
+.atr-lieu-emoji{position:absolute;right:14px;top:calc(34px + env(safe-area-inset-top));font-size:104px;line-height:1;opacity:.85;transform:rotate(-8deg)}
+.atr-lieu-tete header{position:relative;z-index:1}
+.atr-lieu>.atr-fermer{background:rgba(14,10,16,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .atr-lieu header{display:flex;flex-direction:column;gap:4px}
 .atr-type{align-self:flex-start;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.12);font-size:12px;font-weight:600}
 .atr-lieu h2{margin:0;font:800 30px/1.05 Poppins,system-ui,sans-serif;letter-spacing:-.03em}
@@ -854,7 +945,8 @@ export const STYLES_AUTOUR =
 .atr-champ{width:100%;box-sizing:border-box;height:48px;margin-top:8px;padding:0 14px;border:0;border-radius:14px;background:#1D1520;color:#fff;font:inherit;font-size:15px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);outline:none}
 .atr-note{margin:8px 0 0;font-size:12.5px;line-height:1.4;color:#9C8795}
 .atr-miens{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
-.atr-nouveau{flex:none;width:98px;height:132px;border:2px dashed rgba(255,46,154,.7);border-radius:14px;background:rgba(255,46,154,.08);color:#FF7AC0;font:800 12.5px Poppins,system-ui,sans-serif;cursor:pointer}
+.atr-nouveau{flex:none;width:98px;height:132px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:2px dashed rgba(255,46,154,.7);border-radius:14px;background:rgba(255,46,154,.08);color:#FF7AC0;font:800 12.5px Poppins,system-ui,sans-serif;cursor:pointer}
+.atr-nouveau small{font-size:11px;font-weight:600;opacity:.85}
 .atr-qui-voit{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;border-radius:14px;background:#1D1520}
 .atr-qui-voit button{height:40px;border:0;border-radius:11px;background:none;color:#CBB9C3;font:800 13px Poppins,system-ui,sans-serif;cursor:pointer}
 .atr-qui-voit button.pris{background:#fff;color:#16101A}
@@ -868,6 +960,12 @@ export const STYLES_AUTOUR =
 .atr-heros h2{position:relative;margin:0;font:800 34px Poppins,system-ui,sans-serif;text-shadow:0 2px 12px rgba(0,0,0,.4)}
 .atr-heros span{position:relative;font-size:14px;font-weight:600}
 .atr-profil h3{margin:18px 0 8px;font:800 15px Poppins,system-ui,sans-serif}
+.atr-profil-gestes{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.atr-proche,.atr-lui-repondre{flex:1 1 150px;height:46px;padding:0 14px;border:0;border-radius:999px;font:800 14.5px Poppins,system-ui,sans-serif;cursor:pointer}
+.atr-proche{background:#FF2E9A;color:#fff;box-shadow:0 10px 24px -10px rgba(255,46,154,.9)}
+.atr-proche.pris{background:rgba(255,46,154,.14);color:#FF9ACF;box-shadow:inset 0 0 0 1.5px rgba(255,46,154,.6)}
+.atr-proche:disabled{opacity:.6}
+.atr-lui-repondre{background:#fff;color:#16101A}
 .atr-puces{display:flex;flex-wrap:wrap;gap:8px}
 .atr-puces button{height:36px;padding:0 12px;border:0;border-radius:999px;background:#1D1520;color:#fff;font:600 13px inherit;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);cursor:pointer}
 .atr-grille{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}

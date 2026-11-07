@@ -817,13 +817,27 @@ export async function etatDuJour(supabase: Supabase, habitant: Habitant | null):
   return { jour, theme: themeDuJour(jour), ville, n: ids.length, repondu, ...(repondu ? { moi } : {}) };
 }
 
-/** 👯 Ses proches : ceux avec qui il a fait un duo, et ses amis des Rencontres. */
+/**
+ * 👯 Ses proches : ceux avec qui il a fait un duo, ceux qu'il a ajoutés (le profil d'« Autour »), et ses amis des
+ * Rencontres d'avant. C'est SA liste : ceux qui y sont voient ce qu'il dépose pour « Mes proches » (`autour-serveur.ts`),
+ * et leurs mèmes passent devant pour lui.
+ */
 const cheminProches = (h: string) => `${h}/proches.json`;
-async function ajouterProche(supabase: Supabase, h: string, autre: string): Promise<void> {
-  if (!h || !autre || h === autre) return;
+export async function ajouterProche(supabase: Supabase, h: string, autre: string): Promise<boolean> {
+  if (!h || !autre || h === autre) return false;
   const p = await lireJson<{ ids?: string[] }>(supabase, cheminProches(h));
   const ids = Array.isArray(p.ids) ? p.ids : [];
-  if (!ids.includes(autre)) await ecrireJson(supabase, cheminProches(h), { ids: [...ids, autre].slice(-100) });
+  return ids.includes(autre) || ecrireJson(supabase, cheminProches(h), { ids: [...ids, autre].slice(-100) });
+}
+/** Il le retire de ses proches (et de ses amis des Rencontres d'avant, qui comptaient aussi). */
+export async function retirerProche(supabase: Supabase, h: string, autre: string): Promise<boolean> {
+  if (!h || !autre) return false;
+  const [p, r] = await Promise.all([lireJson<{ ids?: string[] }>(supabase, cheminProches(h)), lireJson<Record<string, unknown>>(supabase, `${h}/rencontres.json`)]);
+  const ids = Array.isArray(p.ids) ? p.ids : [];
+  let ok = !ids.includes(autre) || (await ecrireJson(supabase, cheminProches(h), { ids: ids.filter((x) => x !== autre) }));
+  const amis = Array.isArray(r.amis) ? (r.amis as unknown[]).map(s) : [];
+  if (amis.includes(autre)) ok = (await ecrireJson(supabase, `${h}/rencontres.json`, { ...r, amis: amis.filter((x) => x !== autre) })) && ok;
+  return ok;
 }
 export async function prochesDe(supabase: Supabase, h: string): Promise<Set<string>> {
   const [p, r] = await Promise.all([lireJson<{ ids?: string[] }>(supabase, cheminProches(h)), lireJson<{ amis?: string[] }>(supabase, `${h}/rencontres.json`)]);

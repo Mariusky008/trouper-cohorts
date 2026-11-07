@@ -6,7 +6,7 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 ## 1. Lire d'abord
 
 1. `CLAUDE.md` (racine) : les règles communes.
-2. `docs/figurines.md`, section 9.0 (de « duovicies » à « tertricies ») : tout ce qui a été fait sur « Ma figurine »,
+2. `docs/figurines.md`, section 9.0 (de « duovicies » à « sextricies ») : tout ce qui a été fait sur « Ma figurine »,
    les mèmes, « Découvrir », le mème du jour, l'appli et la notification de 11 h 30, « Autour de moi », « Rencontres »
    effacé, la figurine réservée aux 15 ans et plus.
 3. Ce fichier, en entier.
@@ -69,6 +69,7 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 | #95 | Ce fichier ; l'essai de 11 h 30 qui passe à toute heure ; « Autour de moi », lot A (le serveur) |
 | #96 | « Autour de moi », lots B et C : l'écran (la carte, le lieu, le swipe, le dépôt, le profil), ses essais, la doc |
 | #97 | Ce fichier : #96 fusionnée, et la décision d'effacer « Rencontres » |
+| #98 | « Rencontres » effacé (la figurine du mois en 10 jours sur ClikMe) ; la figurine réservée aux 15 ans et plus |
 
 Après #94, l'essai `appli-notif.mjs` a échoué sur `main` : la CI tournait entre 11 h et midi (heure de Paris), et
 l'appel « sans forcer » de l'essai avait vraiment fait l'envoi. Ce n'est pas un défaut de l'appli. L'essai le fait
@@ -173,12 +174,15 @@ Les lieux publics nommés viendront plus tard, avec des positions vérifiées (p
   - L'essai : `scripts/navigateur/autour.mjs` (35 vérifications), dans `lancer-essais.sh`. Les essais qui vérifiaient
     « Rencontres » dans le menu (`ma-figurine.mjs`, `famille-page.mjs`, `personnage-rencontre.mjs` — devenu
     `personnage.mjs` depuis, voir la section 5 bis) ont été ajustés.
-- **Ce que le lot B ne fait pas encore** (à proposer au propriétaire, dans cet ordre) :
-  1. la réponse « avec sa tête » dans le studio (choisir sa tête, sa phrase, « 🎲 Surprends-moi ») : aujourd'hui, on
-     répond avec un de ses mèmes déjà faits, ou « ＋ Nouveau mème » ouvre « Créer » ;
-  2. les regroupements sur la carte (« +9 ») quand il y aura beaucoup de lieux ;
-  3. « 👯 Ajouter en proche » et « Lui répondre » depuis le profil ;
-  4. une photo du lieu en haut de sa page (la maquette en montrait une) ;
+- **La suite d'« Autour »** (le propriétaire, le 7 novembre : « dans l'ordre prévu ») :
+  1. **fait** — la réponse « avec sa tête » : « ＋ Nouveau mème » ouvre le studio pour ce lieu, et le mème prêt revient
+     au dépôt, déjà choisi (`docs/figurines.md`, section 9.0 quatertricies) ;
+  2. **plus tard** (le propriétaire, le 7 novembre) — les regroupements sur la carte (« +9 »), quand il y aura beaucoup
+     de lieux ;
+  3. **fait** — « 👯 Ajouter en proche » et « ↩️ Lui répondre » depuis le profil ; « Mes proches » suit désormais la
+     liste de l'AUTEUR (s'ajouter ne donne rien à voir) : `docs/figurines.md`, section 9.0 quintricies ;
+  4. **fait** — la photo du lieu en haut de sa page (sa couverture ClikMe, sa devanture, sa salle ou Google) :
+     `docs/figurines.md`, section 9.0 sextricies ;
   5. prévenir « on a répondu à ton mème », la réponse du commerçant depuis son comptoir, la page admin de modération ;
   6. les lieux publics nommés (les Arènes, les Halles…), avec des positions vérifiées.
 
@@ -248,7 +252,7 @@ Ce que le lot A fournit :
 Plus tard : prévenir « on a répondu à ton mème », la réponse du commerçant depuis son comptoir, une page admin de
 modération des dépôts.
 
-## 5 bis. « Rencontres » effacé (décidé par le propriétaire le 7 novembre 2026) — fait, dans la PR qui suit #97
+## 5 bis. « Rencontres » effacé (décidé par le propriétaire le 7 novembre 2026) — fait, fusionné (#98)
 
 Sa réponse à « l'effacer, ou lui garder une entrée ailleurs ? » : **effacer**. Le détail : `docs/figurines.md`,
 section 9.0 duotricies. En bref :
@@ -267,7 +271,7 @@ section 9.0 duotricies. En bref :
   `famille-page.mjs`, `autour.mjs` ajustés ; la liste du lint de la CI mise à jour.
 - Les données déjà rangées dans le seau (rencontres, cartes souvenirs) ne sont pas effacées.
 
-## 5 ter. L'âge : la figurine réservée aux 15 ans et plus (décidé par le propriétaire le 7 novembre 2026) — fait, dans la même PR
+## 5 ter. L'âge : la figurine réservée aux 15 ans et plus (décidé par le propriétaire le 7 novembre 2026) — fait, fusionné (#98)
 
 Rien ne demandait l'âge, alors qu'« Autour » montre des visages rattachés à des lieux de la ville. Sa décision : **15 ans
 pour tout** (création, « Autour », « Découvrir »), en sachant que des jeunes de 15 ans poseront leur visage sur la carte

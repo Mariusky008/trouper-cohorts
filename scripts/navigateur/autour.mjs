@@ -12,7 +12,7 @@
 // des lieux. Sans figurine : on l'invite à la créer. `#rencontre` ouvre « Créer » (« Rencontres » est effacé). Rien ne déborde, jamais
 // le mot interdit, aucune erreur dans la page.
 import fs from "node:fs";
-import { BASE, D, F, lancer } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
@@ -32,7 +32,8 @@ const ICI = { latitude: 43.70313, longitude: -1.06087 };
 
 // ─── Dax : deux commerces clients, trois habitants avec leur figurine ───
 await semer("human_vitrine_sites", [
-  { id: "ffffffff-0000-4000-8000-000000000301", slug: "petit-bistrot-ecran", channel: "letter", business_name: "Le Petit Bistrot", city: "40100 Dax", activite: "Restaurant", published: true, est_client: true, latitude: 43.7102, longitude: -1.0538 },
+  // (sa devanture : une photo servie par l'essai, à une adresse https qui n'existe pas ailleurs)
+  { id: "ffffffff-0000-4000-8000-000000000301", slug: "petit-bistrot-ecran", channel: "letter", business_name: "Le Petit Bistrot", city: "40100 Dax", activite: "Restaurant", published: true, est_client: true, latitude: 43.7102, longitude: -1.0538, metadata: { photos_du_lieu: { devanture: { url: "https://photos.clikme-essai.test/bistrot.jpg", at: "" } } } },
   { id: "ffffffff-0000-4000-8000-000000000302", slug: "boulangerie-ecran", channel: "letter", business_name: "Boulangerie du Marché", city: "Dax", activite: "Boulangerie", published: true, est_client: true, latitude: 43.7079, longitude: -1.0571 },
 ]);
 const GENS = [LEA, HUGO, SAM];
@@ -76,7 +77,7 @@ const avant = [
 ];
 const ZONE_MAX = avant[2].lieu;
 
-const b = await lancer({ args: ["--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+const b = await lancer({ args: ["--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--autoplay-policy=no-user-gesture-required"] });
 let echecs = 0;
 const ok = (c, m) => {
   if (!c) echecs++;
@@ -90,6 +91,7 @@ async function tel(qui, { panne = false } = {}) {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, userAgent: IPHONE, isMobile: true, hasTouch: true, geolocation: ICI, permissions: ["geolocation"] });
   if (qui) await ctx.addCookies([{ name: "clikme_habitant", value: qui.jeton, url: BASE }]);
   await ctx.route("https://tiles.openfreemap.org/**", (r) => (!panne && r.request().url().includes("/styles/") ? r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(STYLE) }) : r.abort()));
+  await ctx.route("https://photos.clikme-essai.test/**", (r) => r.fulfill({ status: 200, contentType: "image/jpeg", body: fs.readFileSync("public/direct/double/comptoir.jpg") }));
   const p = await ctx.newPage();
   p.on("pageerror", (e) => erreurs.push(String(e)));
   p.on("dialog", (d) => void d.accept());
@@ -147,6 +149,14 @@ await ouvrirBistrot();
 await sam.waitForSelector(".atr-lieu .atr-eventail img", { timeout: 15000 });
 const lieuTexte = await texte(sam, ".atr-lieu");
 ok(lieuTexte.includes("3 mèmes déposés ici") && lieuTexte.includes("Découvrir les 3 mèmes") && lieuTexte.includes("La conversation du moment"), "le lieu : « 3 mèmes déposés ici », l'éventail, « ▶ Découvrir », la conversation du moment");
+await sam.waitForFunction(() => document.querySelector(".atr-lieu-tete.photo img")?.complete, null, { timeout: 10000 }).catch(() => null);
+await sam.waitForTimeout(400); // (son entrée animée)
+const tete = await sam.evaluate(() => {
+  const i = document.querySelector(".atr-lieu-tete.photo img");
+  const r = document.querySelector(".atr-lieu-tete")?.getBoundingClientRect();
+  return { photo: i ? i.naturalWidth : 0, l: r?.width, t: r?.top };
+});
+ok(tete.photo > 0 && tete.l === 390 && Math.round(tete.t) === 0, `🖼️ en haut de sa page : la photo du Petit Bistrot, sur toute la largeur (${JSON.stringify(tete)})`);
 ok(!/★|étoile|avis|horaire|ouvert/i.test(lieuTexte), "ni étoiles, ni avis, ni horaires : pas une fiche de plan");
 await sam.screenshot({ path: `${D}/autour-2-lieu.png` });
 
@@ -176,7 +186,23 @@ const profil = await texte(sam, ".atr-profil");
 ok(profil.includes(troisieme.prenom) && profil.includes("Le Petit Bistrot") && (await sam.locator(".atr-profil .atr-grille .atr-vignette").count()) >= 1, `le profil de ${troisieme.prenom} : sa figurine, ses lieux, ses mèmes`);
 ok(profil.includes("Jamais sa position") && !/43\.7|-1\.05/.test(profil), "jamais sa position");
 await sam.screenshot({ path: `${D}/autour-4-profil.png` });
-await sam.locator(".atr-profil > .atr-fermer").click();
+// 👯 SES GESTES : l'ajouter à ses proches (sa liste à lui), l'en retirer ; puis « ↩️ Lui répondre »
+const auteur = GENS.find((x) => x.prenom === troisieme.prenom);
+const prochesDeSam = async () => (await (await fetch(`${STOCK}/figurines-clients/${SAM.id}/proches.json`)).json().catch(() => ({}))).ids ?? [];
+ok((await texte(sam, ".atr-profil .atr-proche")) === "👯 Ajouter en proche" && (await sam.locator(".atr-profil .atr-lui-repondre").count()) === 1, "sur son profil : « 👯 Ajouter en proche » et « ↩️ Lui répondre »");
+await sam.locator(".atr-profil .atr-proche").click();
+await sam.waitForSelector(".atr-profil .atr-proche.pris", { timeout: 10000 });
+ok((await texte(sam, ".atr-profil .atr-proche")).includes("Dans tes proches") && (await prochesDeSam()).includes(auteur?.id) && (await texte(sam, ".atr-profil")).includes(`${troisieme.prenom} voit ce que tu déposes pour « Mes proches »`), `${troisieme.prenom} entre dans ses proches : « ✓ Dans tes proches »`);
+await sam.screenshot({ path: `${D}/autour-4b-proche.png`, fullPage: true });
+await sam.locator(".atr-profil .atr-proche").click();
+await sam.waitForSelector(".atr-profil .atr-proche:not(.pris)", { timeout: 10000 });
+ok(!(await prochesDeSam()).includes(auteur?.id), "un toucher de plus : il l'en retire");
+await sam.locator(".atr-profil .atr-lui-repondre").click();
+await sam.waitForSelector("section.atr-deposer h2", { timeout: 15000 });
+ok((await texte(sam, "section.atr-deposer h2")) === "Répondre avec ma figurine" && (await sam.locator("section.atr-deposer .atr-choix.pris").count()) === 1, "« ↩️ Lui répondre » : à son dernier mème, là où il l'a déposé");
+await sam.locator("section.atr-deposer .atr-titre .atr-fermer").click();
+await sam.waitForSelector(".atr-lieu > .atr-fermer", { timeout: 10000 });
+await sam.locator(".atr-lieu > .atr-fermer").click();
 
 // ═══ SAM RÉPOND AVEC SA FIGURINE ═══
 await ouvrirBistrot();
@@ -236,6 +262,7 @@ await sam.waitForSelector(".atr-trouves button", { timeout: 5000 });
 ok((await sam.locator(".atr-trouves button").count()) === 1 && (await texte(sam, ".atr-trouves")).includes("Boulangerie du Marché"), "la recherche : « boulang » trouve la Boulangerie du Marché");
 await sam.locator(".atr-trouves button").click();
 await sam.waitForSelector(".atr-lieu .atr-decouvrir", { timeout: 15000 });
+ok((await sam.locator(".atr-lieu-tete.photo").count()) === 0 && (await texte(sam, ".atr-lieu-emoji")).length > 0, "la Boulangerie du Marché, sans photo : son fond, et son emoji");
 await sam.locator(".atr-decouvrir").click();
 await sam.waitForSelector(".atr-swipe .atr-mcarte:not(.dessous)", { timeout: 15000 });
 await sam.locator(".atr-swipe-haut .atr-fermer[aria-label='Signaler ce mème']").click();
@@ -244,6 +271,58 @@ const boulangerie = await voir(SAM, `?lieu=${BOULANGERIE}`);
 ok((await texte(sam, ".atr-toast")).includes("signalé") && !(boulangerie.memes ?? []).some((m) => m.id === "ecranhugo002"), "⋯ Signaler (deux touchers) : le mème disparaît");
 await sam.locator(".atr-swipe-haut .atr-fermer[aria-label='Fermer']").click();
 await sam.locator(".atr-lieu > .atr-fermer").click();
+
+// ═══ LÉA RÉPOND « AVEC SA TÊTE » : UN NOUVEAU MÈME, FAIT AU STUDIO POUR CE LIEU, PUIS DÉPOSÉ LÀ-BAS ═══
+const lea = await tel(LEA);
+await lea.goto(`${BASE}/collection?v=${Date.now()}#autour`, { waitUntil: "networkidle" });
+await lea.waitForSelector(".auc-goutte, .atr-ligne", { timeout: 60000 });
+if (await lea.locator(`.auc-goutte[data-lieu="${BISTROT}"]`).count()) await lea.locator(`.auc-goutte[data-lieu="${BISTROT}"]`).click();
+else await lea.locator(".atr-ligne", { hasText: "Le Petit Bistrot" }).click();
+await lea.waitForSelector(".atr-lieu .atr-decouvrir", { timeout: 15000 });
+const aQui = (await voir(LEA, `?lieu=${BISTROT}`)).memes[0];
+await lea.locator(".atr-decouvrir").click();
+await lea.waitForSelector(".atr-swipe .atr-mcarte:not(.dessous)", { timeout: 15000 });
+await lea.locator(".atr-rond.repondre").click();
+await lea.waitForSelector("section.atr-deposer .atr-nouveau", { timeout: 15000 });
+ok((await texte(lea, "section.atr-deposer .atr-nouveau")).includes("avec ma tête"), "« ＋ Nouveau mème · avec ma tête » à côté de ses mèmes déjà faits");
+await lea.locator("section.atr-deposer input[aria-label='Un petit mot']").fill("À demain au comptoir !");
+await lea.locator(".atr-qui-voit [role=radio]", { hasText: "Mes proches" }).click();
+await lea.locator("section.atr-deposer .atr-nouveau").click();
+// le studio s'ouvre pour ce lieu
+await lea.waitForSelector("#o-figurine:not([hidden]) #pour-autour", { timeout: 30000 });
+await fermerPablito(lea, "#o-figurine");
+const bandeau = await texte(lea, "#pour-autour");
+ok(bandeau.includes("↩️ Ta réponse pour") && bandeau.includes("Le Petit Bistrot") && bandeau.includes("Surprends-moi"), `le studio s'ouvre pour ce lieu : « ${bandeau.slice(0, 60)} »`);
+ok((await lea.locator(".tf-moi .tf-surprends").count()) === 1, "sa tête, sa phrase, ou « 🎲 Surprends-moi ! »");
+await lea.locator(".tf-moi .tf-texte textarea").fill("Même pas peur du chef !");
+await lea.locator(".tf-moi .tf-quelle-voix button", { hasText: "voix de femme" }).click();
+await lea.locator(".tf-moi .tf-ecouter").click();
+await lea.waitForSelector(".tf-envoyer", { timeout: 30000 });
+await lea.locator(".tf-envoyer").click();
+await lea.waitForSelector(".tf-meme-pret .tf-vers-autour", { timeout: 90000 });
+const versAutour = await texte(lea, ".tf-vers-autour");
+ok(versAutour.includes("Répondre avec ce mème") && versAutour.includes("Le Petit Bistrot") && (await lea.locator(".tf-meme-pret .tf-public").count()) === 0, `son mème prêt : « ${versAutour} »`);
+const idNouveau = (await lea.locator(".tf-adresse").inputValue()).split("/").pop();
+await lea.screenshot({ path: `${D}/autour-8-sa-tete.png`, fullPage: true });
+await lea.locator(".tf-vers-autour").click();
+// retour au dépôt : le nouveau mème choisi, son petit mot et « Mes proches » gardés
+await lea.waitForSelector(`#o-autour:not([hidden]) section.atr-deposer .atr-vignette.pris`, { timeout: 30000 });
+const retour = {
+  titre: await texte(lea, "section.atr-deposer h2"),
+  lieu: await texte(lea, "section.atr-deposer .atr-choix.pris"),
+  mot: await lea.locator("section.atr-deposer input[aria-label='Un petit mot']").inputValue(),
+  qui: await texte(lea, ".atr-qui-voit [aria-checked=true]"),
+  meme: await lea.locator("section.atr-deposer .atr-vignette.pris").getAttribute("aria-label"),
+};
+ok(
+  retour.titre === "Répondre avec ma figurine" && retour.lieu.includes("Le Petit Bistrot") && retour.mot === "À demain au comptoir !" && retour.qui === "Mes proches" && retour.meme === "Même pas peur du chef !",
+  `de retour sur « Autour » : le dépôt l'attendait, son nouveau mème déjà choisi, son petit mot et « Mes proches » gardés (${JSON.stringify(retour)})`,
+);
+await lea.locator("section.atr-deposer .atr-bas .atr-rose").click();
+await lea.waitForSelector(".atr-publie h2", { timeout: 15000 });
+const saReponse = (await voir(LEA, `?lieu=${BISTROT}`)).memes.find((m) => m.id === idNouveau);
+ok(saReponse?.reponseA === aQui.id && saReponse.mot === "À demain au comptoir !" && saReponse.qui === "proches", `publiée au Petit Bistrot : sa réponse à ${aQui.prenom}, avec sa tête (${JSON.stringify({ a: saReponse?.reponseA, qui: saReponse?.qui })})`);
+ok((await debordement(lea)) <= 0, "le studio et le dépôt ne débordent pas");
 
 // ═══ « RENCONTRES » EST EFFACÉ : SON ANCIENNE ADRESSE OUVRE « CRÉER » ═══
 await sam.goto(`${BASE}/collection?v=${Date.now()}#rencontre`, { waitUntil: "networkidle" });

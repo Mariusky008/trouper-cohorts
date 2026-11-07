@@ -17,8 +17,9 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
 import { motInterdit } from "@/lib/direct/mots-interdits";
+import { lirePhotosDuLieu } from "@/lib/site-internet/photos-du-lieu";
 import { parleDAlcool } from "@/lib/direct/meme-surprise";
-import { SANS_AGE, SEAU_FIGURINES, aConfirmeSonAge, cartesDeMemes, ecrireJson, lireJson, memeDeposable, prochesDe, saFigurineSignee } from "@/lib/direct/ma-figurine-serveur";
+import { SANS_AGE, SEAU_FIGURINES, aConfirmeSonAge, ajouterProche, cartesDeMemes, ecrireJson, lireJson, memeDeposable, prochesDe, retirerProche, saFigurineSignee } from "@/lib/direct/ma-figurine-serveur";
 import {
   MOT_MAX,
   PAR_LIEU_PAR_JOUR,
@@ -48,9 +49,30 @@ const lireNom = (n: string): { id: string; qui: Qui; h: string } | null => {
 };
 export const cleProfil = (h: string) => createHash("sha256").update(`clikme-profil:${h}`).digest("hex").slice(0, 16);
 
-/** Peut-il voir ce dépôt ? Tout le monde ; ses proches (et lui) ; lui seul. */
-const visible = (d: { qui: Qui; h: string }, moi: Habitant | null, proches: Set<string>) =>
-  d.qui === "tous" || (moi !== null && (d.h === moi.id || (d.qui === "proches" && proches.has(d.h))));
+/**
+ * 👀 QUI REGARDE : lui (ou personne), et les proches de chaque AUTEUR (lus une fois par auteur).
+ *
+ * Peut-il voir ce dépôt ? « Tout le monde » : oui. « Moi seul » : son auteur. « Mes proches » : son auteur, et ceux que
+ * L'AUTEUR a dans SES proches (ses duos, ceux qu'il a ajoutés) — jamais quelqu'un qui l'aurait ajouté, lui, de son côté
+ * (le 7 novembre 2026, avec « 👯 Ajouter en proche » : s'ajouter ne donne rien à voir).
+ */
+type Regard = { moi: Habitant | null; prochesDe: (h: string) => Promise<Set<string>> };
+function regardDe(supabase: Supabase, moi: Habitant | null): Regard {
+  const lus = new Map<string, Promise<Set<string>>>();
+  return {
+    moi,
+    prochesDe: (h) => {
+      if (!lus.has(h)) lus.set(h, prochesDe(supabase, h));
+      return lus.get(h)!;
+    },
+  };
+}
+async function visible(d: { qui: Qui; h: string }, r: Regard): Promise<boolean> {
+  if (d.qui === "tous") return true;
+  if (!r.moi) return false;
+  if (d.h === r.moi.id) return true;
+  return d.qui === "proches" && (await r.prochesDe(d.h)).has(r.moi.id);
+}
 
 async function lister(supabase: Supabase, dossier: string): Promise<{ name: string; created_at?: string }[]> {
   const tout: { name: string; created_at?: string }[] = [];
@@ -81,6 +103,26 @@ export async function commercesDe(supabase: Supabase, ville: string): Promise<Co
       .map((x) => ({ id: `c-${s(x.slug)}`, nom: s(x.business_name), activite: s(x.activite), lat: Number(x.latitude), lng: Number(x.longitude) }));
   } catch {
     return [];
+  }
+}
+
+/**
+ * 🖼️ LA PHOTO D'UN COMMERCE, en haut de la page de son lieu : comme sa page de famille (`app/f/[slug]`) — sa
+ * couverture ClikMe (si elle est faite, et qu'il n'est pas revenu à l'originale : `couvertureAffichee`), sinon sa
+ * devanture, sa salle, ou la première photo de sa fiche Google. Une adresse https seulement : jamais une photo à lui en
+ * `data:` (bien trop lourde ici). Rien : la page garde son fond, et son emoji.
+ */
+async function photoDuCommerce(supabase: Supabase, slug: string): Promise<string> {
+  try {
+    const { data } = await supabase.from("human_vitrine_sites").select("diagnostic, metadata").eq("slug", slug).maybeSingle();
+    const row = (data ?? {}) as Ligne;
+    const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Ligne;
+    const c = (diag.couverture && typeof diag.couverture === "object" ? diag.couverture : {}) as Ligne;
+    const lieu = lirePhotosDuLieu(row.metadata);
+    const google = Array.isArray(diag.photos) ? diag.photos.map(s) : [];
+    return [c.etat !== "originale" ? s(c.url) : "", lieu.devanture?.url, lieu.interieur?.url, ...google].map(s).find((u) => /^https:\/\//i.test(u)) ?? "";
+  } catch {
+    return "";
   }
 }
 
@@ -131,9 +173,8 @@ export async function deposer(supabase: Supabase, habitant: Habitant, d: Demande
   const reponseA = s(d.reponseA);
   if (reponseA) {
     if (!/^[a-z0-9]{12}$/.test(reponseA) || reponseA === id) return { error: "Ce mème n’existe plus.", statut: 400 };
-    const proches = await prochesDe(supabase, habitant.id);
     const la = (await lister(supabase, `autour/${ville}/${lieu}`)).map((x) => lireNom(x.name)).find((x) => x?.id === reponseA);
-    if (!la || !visible(la, habitant, proches)) return { error: "Ce mème n’est plus à cet endroit.", statut: 400 };
+    if (!la || !(await visible(la, regardDe(supabase, habitant)))) return { error: "Ce mème n’est plus à cet endroit.", statut: 400 };
   }
   // TROIS PAR LIEU ET PAR JOUR
   const jour = jourParis();
@@ -167,13 +208,15 @@ export async function retirer(supabase: Supabase, habitant: Habitant, meme: unkn
 // ─── lire : la carte, un lieu, un profil ───────────────────────────────────────────────────────────────────────────
 type Pose = { id: string; qui: Qui; h: string; le: string };
 /** Ce qu'il peut voir dans un lieu, les plus récents d'abord. */
-async function posesVisibles(supabase: Supabase, ville: string, lieu: string, moi: Habitant | null, proches: Set<string>): Promise<Pose[]> {
-  return (await lister(supabase, `autour/${ville}/${lieu}`))
+async function posesVisibles(supabase: Supabase, ville: string, lieu: string, regard: Regard): Promise<Pose[]> {
+  const poses = (await lister(supabase, `autour/${ville}/${lieu}`))
     .map((x) => {
       const n = lireNom(x.name);
       return n ? { ...n, le: s(x.created_at) } : null;
     })
-    .filter((x): x is Pose => Boolean(x) && visible(x!, moi, proches));
+    .filter((x): x is Pose => Boolean(x));
+  const vues = await Promise.all(poses.map((p) => visible(p, regard)));
+  return poses.filter((_, k) => vues[k]);
 }
 
 /** Des poses en cartes : la vidéo, le prénom, les réactions ; et ce que dit le dépôt (mot, petit nom, réponse). */
@@ -211,10 +254,11 @@ async function enCartes(supabase: Supabase, ville: string, lieu: string, poses: 
  */
 export async function carteDe(supabase: Supabase, ville: string, moi: Habitant | null): Promise<{ ville: string; lieux: Lieu[]; derniers: MemeAutour[] }> {
   if (!ville) return { ville, lieux: [], derniers: [] };
-  const [commerces, dossiers, proches] = await Promise.all([commercesDe(supabase, ville), lister(supabase, `autour/${ville}`), moi ? prochesDe(supabase, moi.id) : Promise.resolve(new Set<string>())]);
+  const [commerces, dossiers] = await Promise.all([commercesDe(supabase, ville), lister(supabase, `autour/${ville}`)]);
   const ids = new Set([...commerces.map((c) => c.id), ...dossiers.map((d) => d.name).filter((n) => lieuIdValide(n))]);
   const poses = new Map<string, Pose[]>();
-  await Promise.all([...ids].map(async (l) => poses.set(l, await posesVisibles(supabase, ville, l, moi, proches))));
+  const regard = regardDe(supabase, moi);
+  await Promise.all([...ids].map(async (l) => poses.set(l, await posesVisibles(supabase, ville, l, regard))));
   const visages = new Map<string, Promise<string>>();
   const visage = (h: string) => {
     if (!visages.has(h)) visages.set(h, saFigurineSignee(supabase, h).catch(() => ""));
@@ -254,12 +298,11 @@ export async function carteDe(supabase: Supabase, ville: string, moi: Habitant |
 /** 📍 Les mèmes d'un lieu, pour le swipe : ce qu'il peut voir, les plus récents d'abord (ses proches devant). */
 export async function memesDuLieu(supabase: Supabase, ville: string, lieu: string, moi: Habitant | null): Promise<{ lieu: Lieu | null; memes: MemeAutour[] }> {
   if (!ville || !lieuIdValide(lieu)) return { lieu: null, memes: [] };
-  const proches = moi ? await prochesDe(supabase, moi.id) : new Set<string>();
-  const [poses, commerces] = await Promise.all([posesVisibles(supabase, ville, lieu, moi, proches), estZone(lieu) ? Promise.resolve([]) : commercesDe(supabase, ville)]);
+  const [poses, commerces] = await Promise.all([posesVisibles(supabase, ville, lieu, regardDe(supabase, moi)), estZone(lieu) ? Promise.resolve([]) : commercesDe(supabase, ville)]);
   const c = commerces.find((x) => x.id === lieu);
   const centre = c ? { lat: c.lat, lng: c.lng } : centreDeZone(lieu);
   if (!centre || (!c && !poses.length)) return { lieu: null, memes: [] };
-  const memes = await enCartes(supabase, ville, lieu, poses, moi);
+  const [memes, photo] = await Promise.all([enCartes(supabase, ville, lieu, poses, moi), c ? photoDuCommerce(supabase, lieu.slice(2)) : Promise.resolve("")]);
   return {
     lieu: {
       id: lieu,
@@ -271,6 +314,7 @@ export async function memesDuLieu(supabase: Supabase, ville: string, lieu: strin
       n: memes.length,
       visages: [],
       ...(c?.activite ? { activite: c.activite } : {}),
+      ...(photo ? { photo } : {}),
     },
     memes,
   };
@@ -302,5 +346,21 @@ export async function profilDe(supabase: Supabase, cle: unknown, moi: Habitant |
     l.n++;
     lieux.set(m.lieu, l);
   }
-  return { cle: s(cle), prenom, image, memes, lieux: [...lieux.values()].sort((a, b) => b.n - a.n) };
+  // (son profil à lui ; sinon, est-il dans ses proches ?)
+  const lui = moi?.id === h;
+  const proche = moi && !lui ? (await prochesDe(supabase, moi.id)).has(h) : false;
+  return { cle: s(cle), prenom, image, memes, lieux: [...lieux.values()].sort((a, b) => b.n - a.n), ...(lui ? { moi: true } : {}), ...(proche ? { proche: true } : {}) };
+}
+
+/**
+ * 👯 « AJOUTER EN PROCHE », depuis son profil (ou l'en retirer) : il entre dans SA liste — il verra ce que celui-ci dépose
+ * pour « Mes proches », et ses mèmes passeront devant pour lui. Par la clé du profil, jamais par l'identifiant.
+ */
+export async function devenirProche(supabase: Supabase, moi: Habitant, cle: unknown, oui: unknown): Promise<{ proche?: boolean; error?: string; statut?: number }> {
+  if (!/^[a-f0-9]{16}$/.test(s(cle))) return { error: "Ce profil n’existe pas.", statut: 404 };
+  const h = s((await lireJson<{ h: string }>(supabase, `profils/${s(cle)}.json`)).h);
+  if (!h) return { error: "Ce profil n’existe pas.", statut: 404 };
+  if (h === moi.id) return { error: "C’est toi 🙂", statut: 400 };
+  const ok = oui === true ? await ajouterProche(supabase, moi.id, h) : await retirerProche(supabase, moi.id, h);
+  return ok ? { proche: oui === true } : { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
 }

@@ -32,10 +32,12 @@ export const NOM_LIEU_MAX = 40;
 
 export type TypeLieu = "commerce" | "zone";
 /** Un lieu de la carte : `n` mèmes qu'il peut voir, `visages` (au plus trois figurines), le dernier petit nom (zone). */
-export type Lieu = { id: string; type: TypeLieu; nom: string; emoji: string; lat: number; lng: number; n: number; visages: string[]; activite?: string };
+// (`photo` : en haut de sa page, celle du commerce — seulement pour la page d'un lieu, pas sur la carte)
+export type Lieu = { id: string; type: TypeLieu; nom: string; emoji: string; lat: number; lng: number; n: number; visages: string[]; activite?: string; photo?: string };
 /** Un mème posé dans un lieu : la carte du fil, et ce que le dépôt dit (qui le voit, le petit mot, à qui il répond). */
 export type MemeAutour = MemePublic & { lieu: string; qui: Qui; mot?: string; nomLieu?: string; reponseA?: string; reponses: number; profil: string };
-export type ProfilAutour = { cle: string; prenom: string; image: string; memes: MemeAutour[]; lieux: { id: string; nom: string; n: number }[] };
+// (`moi` : son propre profil ; `proche` : il l'a dans ses proches)
+export type ProfilAutour = { cle: string; prenom: string; image: string; memes: MemeAutour[]; lieux: { id: string; nom: string; n: number }[]; moi?: boolean; proche?: boolean };
 
 export const lieuIdValide = (id: unknown): boolean => /^(c-[a-z0-9-]{2,120}|z--?\d{1,7}_-?\d{1,7})$/.test(String(id ?? ""));
 export const estZone = (id: string) => id.startsWith("z-");

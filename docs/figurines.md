@@ -1232,6 +1232,64 @@ nombre, `AGE_MINIMUM` (`lib/direct/ma-figurine.ts`), et tous les textes en déco
   « Découvrir ») ; `autour.mjs` (la question au premier dépôt de Sam) ; `meme-du-jour.mjs` (la question quand Léa poste
   sa réponse).
 
+### 9.0 quatertricies 📍 Répondre « avec sa tête », depuis « Autour » (7 novembre)
+
+Le premier point de la suite d'« Autour ». Avant, on ne répondait (ou ne déposait) qu'avec un mème déjà fait ;
+« ＋ Nouveau mème » ouvrait « Créer », et on perdait son dépôt en route.
+
+- Dans le dépôt, **« ＋ Nouveau mème · avec ma tête »** garde son dépôt de côté (le lieu, le mème auquel il répond, son
+  petit mot, qui le voit : `app/collection/depot-autour.ts`) et ouvre le studio **pour ce lieu** (`versLeStudio`, son
+  champ `autour`).
+- Le studio le dit en haut : « ↩️ Ta réponse pour 🍽️ Le Petit Bistrot » (ou « 📍 Ton mème pour … »), avec « Choisis ta
+  tête, écris ta phrase ou « 🎲 Surprends-moi ! » ». Il fait son mème comme d'habitude (sa tête, sa voix, sa phrase).
+  « ✕ » le libère (son dépôt est oublié). Un duo en cours est laissé : un duo ne va pas sur la carte.
+- Son mème prêt, **« 📍 Répondre avec ce mème · Le Petit Bistrot › »** (ou « 📍 Le déposer ») remplace « 🌍 Le montrer
+  aussi dans Découvrir » : un toucher, et « Autour » rouvre son dépôt, **le nouveau mème déjà choisi**, son petit mot et
+  « qui le voit » gardés. Il n'a plus qu'à publier (l'âge, les trois par lieu et par jour : comme avant).
+- Si « Autour » n'était pas encore ouvert (une page rechargée), le dépôt attend le temps de la visite
+  (`sessionStorage`).
+- L'essai : `scripts/navigateur/autour.mjs` — Léa répond au Petit Bistrot avec un mème qu'elle fait au studio, son
+  petit mot et « Mes proches » gardés, puis publié (43 vérifications).
+
+### 9.0 quintricies 👯 Le profil d'« Autour » : « Ajouter en proche » et « Lui répondre » (7 novembre)
+
+Le troisième point de la suite d'« Autour » (le deuxième, les regroupements « +9 » sur la carte, attend qu'il y ait
+beaucoup de lieux : le propriétaire, le 7 novembre). Sous la figurine de quelqu'un, sur son profil :
+
+- **« 👯 Ajouter en proche »** : il entre dans SES proches (`<habitant>/proches.json`, par la clé du profil, jamais
+  l'identifiant : `devenirProche`, `autour-serveur.ts`). Le bouton devient « ✓ Dans tes proches » ; un toucher de plus
+  l'en retire (de ses proches, et de ses amis des Rencontres d'avant s'il y était). La note dit ce que ça fait : « Léa
+  voit ce que tu déposes pour « Mes proches » ».
+- **« ↩️ Lui répondre »** : le dépôt s'ouvre en réponse à son dernier mème (« pour tout le monde »), là où il l'a
+  déposé ; avec « ＋ Nouveau mème · avec ma tête » (9.0 quatertricies) s'il veut le faire exprès.
+- Sans compte, ou sur son propre profil, ni l'un ni l'autre.
+
+**La règle de « Mes proches » change, pour que s'ajouter ne donne rien à voir.** Avant, un mème déposé pour « Mes
+proches » se montrait à quiconque avait son auteur dans SES proches à lui : avec un bouton « Ajouter en proche » sur
+chaque profil, n'importe qui aurait vu les soirées de n'importe qui. Désormais, c'est **la liste de l'auteur** qui
+compte : un mème « Mes proches » se montre à son auteur et à ceux que L'AUTEUR a dans ses proches (ses duos, ceux qu'il
+a ajoutés, ses amis des Rencontres d'avant). Pour les duos, rien ne change (ils sont proches l'un de l'autre). « Ses
+proches d'abord », dans « Découvrir » et le swipe, reste sa liste à lui (un ordre, pas un accès).
+
+Les essais : `essai-autour-route.mjs` (Sam ajoute Léa : il ne voit pas sa soirée ; Léa ajoute Sam : il la voit ; pas
+soi-même, pas un profil inconnu, pas sans compte ; retirés, plus rien) ; `autour.mjs` (le profil : ajouter, retirer,
+« Lui répondre »).
+
+### 9.0 sextricies 🖼️ La photo du lieu, en haut de sa page (7 novembre)
+
+Le quatrième point de la suite d'« Autour » (la maquette en montrait une). En haut de la page d'un commerce, sur toute la
+largeur, sa photo — choisie comme pour sa page de famille (`app/f/[slug]`) : **sa couverture ClikMe** (faite, et s'il
+n'est pas revenu à l'originale), sinon **sa devanture**, **sa salle**, ou **la première photo de sa fiche Google**
+(`photoDuCommerce`, `autour-serveur.ts`). Une adresse https seulement : jamais une photo à lui en `data:`, bien trop
+lourde ici. Le nom, l'activité et le nombre de mèmes passent dessus, sur un dégradé.
+
+- Seulement sur la page du lieu (`memesDuLieu`), pas sur la carte : la carte reste légère.
+- Sans photo (une zone « Ailleurs », un commerce sans photo), ou si elle ne se charge pas : la page garde son fond, avec
+  son emoji en grand (🍽️, 🥖, ✨…).
+- Les essais : `essai-autour-route.mjs` (la couverture d'abord ; revenu à l'originale : la devanture ; puis Google ;
+  sinon rien ; pas de photo pour une zone ni sur la carte) ; `autour.mjs` (la photo du Petit Bistrot sur toute la
+  largeur ; la boulangerie, sans photo : son emoji).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

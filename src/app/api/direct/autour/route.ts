@@ -7,12 +7,13 @@
 // POST { action: "deposer", meme, lieu? | ici?: { lat, lng }, qui, mot?, nomLieu?, reponseA? } → { lieu }
 //      (« ici » : sa position, arrondie en une zone d'environ 500 m ; elle n'est gardée nulle part telle quelle)
 // POST { action: "retirer", meme }
+// POST { action: "proche", profil: <clé>, oui: true|false } → { proche } : 👯 l'ajouter à ses proches (ou l'en retirer)
 // Signaler un mème : la route de toujours (`/api/direct/ma-figurine`, `signaler`).
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
-import { carteDe, deposer, memesDuLieu, profilDe, retirer } from "@/lib/direct/autour-serveur";
+import { carteDe, deposer, devenirProche, memesDuLieu, profilDe, retirer } from "@/lib/direct/autour-serveur";
 
 export const dynamic = "force-dynamic";
 const sansCache = { "cache-control": "no-store" };
@@ -46,5 +47,10 @@ export async function POST(request: Request) {
     return NextResponse.json(r.ok ? { ok: true, lieu: r.lieu } : { error: r.error, ...(r.age ? { age: true } : {}) }, { status: r.ok ? 200 : (r.statut ?? 400) });
   }
   if (p?.action === "retirer") return NextResponse.json(await retirer(supabase, moi, p.meme));
+  // 👯 l'ajouter à ses proches (ou l'en retirer), depuis son profil
+  if (p?.action === "proche") {
+    const r = await devenirProche(supabase, moi, p.profil, p.oui);
+    return NextResponse.json(r.error ? { error: r.error } : { ok: true, proche: r.proche }, { status: r.error ? (r.statut ?? 400) : 200 });
+  }
   return NextResponse.json({ error: "Action inconnue." }, { status: 400 });
 }
