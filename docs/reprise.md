@@ -1,4 +1,4 @@
-# Reprise — où on en est, et ce qu'il reste à faire (7 novembre 2026, après le lot B d'« Autour de moi » et l'effacement de « Rencontres »)
+# Reprise — où on en est, et ce qu'il reste à faire (7 novembre 2026, après le lot B d'« Autour de moi », l'effacement de « Rencontres » et l'âge de 15 ans)
 
 Pour la session qui reprend si celle-ci s'arrête. **Mettre ce fichier à jour à chaque étape terminée** (et le dire au
 propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'un autre chantier (la démo humaine).
@@ -6,9 +6,9 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 ## 1. Lire d'abord
 
 1. `CLAUDE.md` (racine) : les règles communes.
-2. `docs/figurines.md`, section 9.0 (de « duovicies » à « duotricies ») : tout ce qui a été fait sur « Ma figurine »,
+2. `docs/figurines.md`, section 9.0 (de « duovicies » à « tertricies ») : tout ce qui a été fait sur « Ma figurine »,
    les mèmes, « Découvrir », le mème du jour, l'appli et la notification de 11 h 30, « Autour de moi », « Rencontres »
-   effacé.
+   effacé, la figurine réservée aux 15 ans et plus.
 3. Ce fichier, en entier.
 
 ## 2. La façon de travailler (celle de cette session)
@@ -266,6 +266,21 @@ section 9.0 duotricies. En bref :
 - **Les essais** : `scripts/navigateur/personnage.mjs` remplace `personnage-rencontre.mjs` ; `ma-figurine.mjs`,
   `famille-page.mjs`, `autour.mjs` ajustés ; la liste du lint de la CI mise à jour.
 - Les données déjà rangées dans le seau (rencontres, cartes souvenirs) ne sont pas effacées.
+
+## 5 ter. L'âge : la figurine réservée aux 15 ans et plus (décidé par le propriétaire le 7 novembre 2026) — fait, dans la même PR
+
+Rien ne demandait l'âge, alors qu'« Autour » montre des visages rattachés à des lieux de la ville. Sa décision : **15 ans
+pour tout** (création, « Autour », « Découvrir »), en sachant que des jeunes de 15 ans poseront leur visage sur la carte
+de la ville. Le détail : `docs/figurines.md`, section 9.0 tertricies. En bref :
+- un seul nombre, `AGE_MINIMUM` (`lib/direct/ma-figurine.ts`) ;
+- à la création, la case « J'ai 15 ans ou plus. » (jamais cochée d'avance ; la route refuse sans elle), notée dans
+  `<habitant>/majeur.json` ;
+- ceux qui avaient déjà leur figurine : la question leur est posée une fois, au premier geste qui montre un de leurs
+  mèmes dans la ville (déposer dans « Autour », montrer dans « Découvrir », poster sa réponse au mème du jour) — le
+  serveur répond 403 `age: true`, l'écran demande (`app/collection/age.ts`), puis le geste repart.
+
+Le propriétaire a demandé **l'âge seulement** (« pas le reste ») : la mention « fabriquée par IA » sur les mèmes et
+l'effacement de sa photo d'origine après la fabrication ne sont pas faits ; ne pas les lancer sans lui.
 
 ## 5. Les autres sujets en attente
 

@@ -45,6 +45,8 @@ await semer(
 );
 // Hugo a Léa dans ses Rencontres : une proche
 await json(`${HUGO.id}/rencontres.json`, { amis: [LEA.id] });
+// Léa et Hugo ont déclaré leur âge (15 ans et plus) ; Sam, pas encore : on le lui demandera à son premier dépôt
+for (const x of [LEA, HUGO]) await json(`${x.id}/majeur.json`, { le: new Date().toISOString(), age: 15 });
 /** Un mème en vidéo (comme le fait la route), avec ses mots. */
 async function meme(h, id, texte) {
   await semer("clik_figurine_message", [{ id, habitant_id: h, son: `${h}/m-${id}.mp3`, duree: 2, commerces: [], texte, created_at: new Date().toISOString() }]);
@@ -190,9 +192,13 @@ ok(ecran && Math.round(ecran.y) === 0 && Math.round(ecran.height) === 844 && ecr
 await sam.locator("section.atr-deposer .atr-miens .atr-vignette", { hasText: "Je passais par là" }).click();
 await sam.locator("section.atr-deposer input[aria-label='Un petit mot']").fill("Moi aussi, il m’a reconnu !");
 await sam.screenshot({ path: `${D}/autour-5-repondre.png`, fullPage: false });
+// 🔞 Sam n'a pas encore déclaré son âge : à son premier dépôt, on le lui demande, une fois (puis le geste repart)
+let questionAge = "";
+sam.once("dialog", (d) => (questionAge = d.message())); // (ses boîtes de dialogue sont acceptées : `tel`)
 await sam.locator("section.atr-deposer .atr-bas .atr-rose").click();
 await sam.waitForSelector(".atr-publie h2", { timeout: 15000 });
 ok((await texte(sam, ".atr-publie")).includes("C’est publié !"), "« C'est publié ! »");
+ok(/« Autour »/.test(questionAge) && /15 ans ou plus \?/.test(questionAge) && (await (await fetch(`${STOCK}/figurines-clients/${SAM.id}/majeur.json`)).json().catch(() => null))?.age === 15, `son âge lui a été demandé, une fois, puis noté (${questionAge.slice(0, 50)})`);
 const repondu = (await voir(SAM, `?lieu=${BISTROT}`)).memes.find((m) => m.id === "ecransam0001");
 ok(repondu?.reponseA === lieuAvant.memes[0].id && repondu.mot === "Moi aussi, il m’a reconnu !", "les deux mèmes sont liés (sa réponse, son petit mot)");
 await sam.locator(".atr-publie .atr-rose").click();

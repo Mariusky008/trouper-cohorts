@@ -10,7 +10,8 @@
  * Une raison de revenir : voir ce que ses mèmes sont devenus. La liste se recharge à chaque fois qu'il ouvre l'onglet.
  */
 import { useContext, useEffect, useState, type ReactNode } from "react";
-import { ACCORD_PUBLIC, CLE_MEMES_RECUS, MEMES_VUS, type ApercuMeme, type MesMemes, type MonMeme } from "@/lib/direct/ma-figurine";
+import { ACCORD_PUBLIC, CLE_MEMES_RECUS, MEMES_VUS, REFUS_AGE, type ApercuMeme, type MesMemes, type MonMeme } from "@/lib/direct/ma-figurine";
+import { demanderSonAge } from "./age";
 import { GuideDit, OngletVisible } from "./guide";
 
 function idsRecus(): string[] {
@@ -85,10 +86,18 @@ export function MesMemes({ compte, allerA }: { compte: boolean | null; allerA: (
   async function basculerPublic(m: MonMeme) {
     setErreur("");
     if (!m.public && !window.confirm(ACCORD_PUBLIC)) return;
-    const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "public", id: m.id, public: !m.public }) }).catch(() => null);
-    const j = (await r?.json().catch(() => ({}))) as { public?: boolean; error?: string } | undefined;
-    if (!r?.ok) return setErreur(j?.error || "Ça n’a pas marché. Réessaie.");
-    setMemes((x) => (x ? { ...x, envoyes: x.envoyes.map((e) => (e.id === m.id ? { ...e, public: Boolean(j?.public) } : e)) } : x));
+    const basculer = async () => {
+      const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "public", id: m.id, public: !m.public }) }).catch(() => null);
+      return { ok: Boolean(r?.ok), ...((await r?.json().catch(() => ({}))) as { public?: boolean; error?: string; age?: boolean } | undefined) };
+    };
+    let j = await basculer();
+    // 🔞 il n'a pas encore déclaré son âge : une fois, puis le geste repart
+    if (!j.ok && j.age) {
+      if (!(await demanderSonAge())) return setErreur(REFUS_AGE);
+      j = await basculer();
+    }
+    if (!j.ok) return setErreur(j.error || "Ça n’a pas marché. Réessaie.");
+    setMemes((x) => (x ? { ...x, envoyes: x.envoyes.map((e) => (e.id === m.id ? { ...e, public: Boolean(j.public) } : e)) } : x));
   }
 
   const vide = memes && !memes.envoyes.length && !memes.reponses.length && !memes.recus.length;

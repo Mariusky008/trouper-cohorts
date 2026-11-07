@@ -18,7 +18,7 @@ import type { Habitant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
 import { motInterdit } from "@/lib/direct/mots-interdits";
 import { parleDAlcool } from "@/lib/direct/meme-surprise";
-import { SEAU_FIGURINES, cartesDeMemes, ecrireJson, lireJson, memeDeposable, prochesDe, saFigurineSignee } from "@/lib/direct/ma-figurine-serveur";
+import { SANS_AGE, SEAU_FIGURINES, aConfirmeSonAge, cartesDeMemes, ecrireJson, lireJson, memeDeposable, prochesDe, saFigurineSignee } from "@/lib/direct/ma-figurine-serveur";
 import {
   MOT_MAX,
   PAR_LIEU_PAR_JOUR,
@@ -91,7 +91,9 @@ export type Demande = { meme: unknown; lieu?: unknown; ici?: unknown; qui?: unkn
  * 📍 DÉPOSER SON MÈME : dans un commerce de sa ville (`lieu`), ou « Ailleurs » (`ici` : sa position, ARRONDIE ici en une
  * zone d'environ 500 m — elle n'est gardée nulle part telle quelle). `reponseA` : le mème du même lieu auquel il répond.
  */
-export async function deposer(supabase: Supabase, habitant: Habitant, d: Demande): Promise<{ ok?: true; lieu?: string; error?: string; statut?: number }> {
+export async function deposer(supabase: Supabase, habitant: Habitant, d: Demande): Promise<{ ok?: true; lieu?: string; error?: string; statut?: number; age?: true }> {
+  // 🔞 un mème dans la ville : réservé aux 15 ans et plus (son âge déclaré : `ma-figurine.ts`, `AGE_MINIMUM`)
+  if (!(await aConfirmeSonAge(supabase, habitant.id))) return SANS_AGE;
   const ville = habitant.villeSlug;
   if (!ville) return { error: "Il faut d’abord ta ville.", statut: 400 };
   const qui = quiValide(d.qui ?? "tous");

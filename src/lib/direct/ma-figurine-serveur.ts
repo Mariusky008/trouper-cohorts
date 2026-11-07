@@ -27,6 +27,9 @@ import { famillesDe } from "./famille-serveur";
 import { figurineDu } from "./figurines-commerces";
 import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 import {
+  AGE_MINIMUM,
+  ERREUR_AGE,
+  SANS_AGE_TEXTE,
   COMMERCES_MAX_MESSAGE,
   DUREE_MAX_MESSAGE,
   IMAGES_DEMO,
@@ -177,6 +180,16 @@ const cheminFabrique = (habitantId: string) => `${habitantId}/fabrique.json`;
 const cheminSaVoix = (habitantId: string) => `${habitantId}/voix.json`;
 /** Son univers (son métier ou sa passion, facultatif) : sa figurine s'habille en conséquence. */
 const cheminUnivers = (habitantId: string) => `${habitantId}/univers.json`;
+/** 🔞 Son âge, déclaré (`ma-figurine.ts`, `AGE_MINIMUM`) : le jour où il a dit avoir l'âge (15 ans ou plus). */
+const cheminMajeur = (habitantId: string) => `${habitantId}/majeur.json`;
+export async function aConfirmeSonAge(supabase: Supabase, habitantId: string): Promise<boolean> {
+  return Boolean(s((await lireJson<{ le?: string }>(supabase, cheminMajeur(habitantId))).le));
+}
+export async function confirmerSonAge(supabase: Supabase, habitantId: string): Promise<void> {
+  await ecrireJson(supabase, cheminMajeur(habitantId), { le: new Date().toISOString(), age: AGE_MINIMUM });
+}
+/** Ce que le serveur répond à qui n'a pas dit son âge, quand il veut montrer un mème dans la ville (« Autour », « Découvrir »). */
+export const SANS_AGE = { error: SANS_AGE_TEXTE, statut: 403, age: true } as const;
 const dossierFabrique = (habitantId: string, jeton: string) => `${habitantId}/fab-${jeton}`;
 const nouveauJeton = () => randomBytes(6).toString("hex");
 const essaisRestants = (f: Partial<Fabrique>) => Math.max(0, FABRICATIONS_PAR_JOUR - (f.jour === jourParis() ? Number(f.essais) || 0 : 0));
@@ -426,8 +439,10 @@ async function lireMessageDemo(supabase: Supabase, id: string): Promise<MessageF
 }
 
 // ─── 1. sa photo ───────────────────────────────────────────────────────────────────────────────
-export async function envoyerPhoto(supabase: Supabase, habitant: Habitant, photo: unknown, accord: unknown, prenom?: unknown, univers?: unknown): Promise<{ error?: string }> {
+export async function envoyerPhoto(supabase: Supabase, habitant: Habitant, photo: unknown, accord: unknown, prenom?: unknown, univers?: unknown, majeur?: unknown): Promise<{ error?: string }> {
   if (accord !== true) return { error: "Coche « C’est bien moi sur la photo »." };
+  // 🔞 réservée aux 15 ans et plus (`AGE_MINIMUM`) : il le déclare (une case, jamais cochée d'avance)
+  if (majeur !== true) return { error: ERREUR_AGE };
   // SON UNIVERS (facultatif) : son métier ou sa passion — sa figurine s'habille en conséquence
   const u = universValide(univers);
   if (u && motInterdit(u)) return { error: "Ces mots ne passent pas : écris ton métier ou ta passion 🙂" };
@@ -458,6 +473,7 @@ export async function envoyerPhoto(supabase: Supabase, habitant: Habitant, photo
   );
   if (error) return { error: "La photo n’est pas partie. Réessaie dans un instant." };
   await ecrireJson(supabase, cheminUnivers(habitant.id), { univers: u, le: maintenant });
+  await confirmerSonAge(supabase, habitant.id);
   // une nouvelle photo : une nouvelle figurine (le dossier d'avant ne sert plus ; les essais du jour restent comptés)
   const fab = await lireJson<Fabrique>(supabase, cheminFabrique(habitant.id));
   await ecrireJson(supabase, cheminFabrique(habitant.id), { jour: fab.jour, essais: fab.essais });
@@ -750,6 +766,7 @@ export async function rendreMemePublic(supabase: Supabase, habitant: Habitant, i
   const aCote = await lireJson<Record<string, unknown>>(supabase, chemin);
   const avant = aCote.public as Partial<Public> | undefined;
   const sonJour = s(aCote.duJour);
+  if (oui === true && !(await aConfirmeSonAge(supabase, habitant.id))) return SANS_AGE;
   if (oui !== true) {
     // RETIRÉ : sa fiche quitte « Découvrir » tout de suite (et les réponses au mème du jour)
     if (avant?.ville && avant.jour) await supabase.storage.from(SEAU_FIGURINES).remove([cheminPublic(avant.ville, avant.jour, s(r.id))]);

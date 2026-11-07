@@ -238,6 +238,21 @@ export type MonMeme = ApercuMeme & { vues: number; reponses: number; public?: bo
 /** 🌍 Un mème qu'un client a choisi de montrer dans « Découvrir » (pour les gens de sa ville). */
 // (`ami` : un de ses proches — un duo, un ami des Rencontres — il passe d'abord ; `moi` : le sien ; `reac` : 😂 ❤️ 🔥)
 export type MemePublic = ApercuMeme & { villeSlug: string; ami?: boolean; moi?: boolean; reac?: { n: Record<"rire" | "coeur" | "feu", number>; moi?: "rire" | "coeur" | "feu" } };
+/**
+ * 🔞 L'ÂGE (7 novembre 2026, le propriétaire : la sécurité d'abord, « juste l'âge » ; puis, entre 18 ans pour tout, 15 ans
+ * pour tout, ou 15 ans pour créer et 18 ans pour la ville : « 15 ans pour tout ») : la figurine d'un client est réservée
+ * aux 15 ans et plus — le minimum légal en France pour consentir seul au traitement de ses données (avant, il faut
+ * l'accord des parents). Choisi en connaissance de cause : des jeunes de 15 ans pourront montrer leur visage dans la
+ * ville (« Autour », « Découvrir »). Il le déclare en créant sa figurine (une case, jamais cochée d'avance) ; celui qui l'a
+ * déjà, sans l'avoir déclaré, le confirme une fois avant de montrer un mème dans la ville. Le serveur le tient
+ * (`<habitant>/majeur.json`). Le seuil se change ici seulement.
+ */
+export const AGE_MINIMUM = 15;
+export const ATTESTATION_AGE = `J’ai ${AGE_MINIMUM} ans ou plus.`;
+export const ERREUR_AGE = `La figurine est réservée aux ${AGE_MINIMUM} ans et plus : coche « J’ai ${AGE_MINIMUM} ans ou plus ».`;
+export const QUESTION_AGE = `Les mèmes montrés dans la ville (« Autour », « Découvrir ») sont réservés aux ${AGE_MINIMUM} ans et plus. Tu as ${AGE_MINIMUM} ans ou plus ?`;
+export const REFUS_AGE = `Réservé aux ${AGE_MINIMUM} ans et plus.`;
+export const SANS_AGE_TEXTE = `Les mèmes montrés dans la ville sont réservés aux ${AGE_MINIMUM} ans et plus : confirme ton âge.`;
 /** Ce qu'on lui dit avant qu'il le montre : qui le verra, quoi, et qu'il peut le retirer. */
 export const ACCORD_PUBLIC = "Ton mème — ta figurine, ta voix, tes mots et ton prénom — sera visible par les gens de ta ville dans « Découvrir ». Tu pourras le retirer quand tu veux. D’accord ?";
 export type ReponseAMonMeme = ApercuMeme & { a: string; aTexte?: string };
