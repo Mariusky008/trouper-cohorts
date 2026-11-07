@@ -2,9 +2,10 @@
 
 /**
  * 🗓️ SA FIGURINE DU MOIS, À L'ÉCRAN (`lib/direct/figurine-du-mois.ts`, le lot 3) :
- *   · `ApercuDuMois` : dans « Créer », où il en est (3/10 jours), un lien vers sa progression (dans « Rencontres ») ;
+ *   · `ApercuDuMois` : dans « Créer », où il en est (3/10 jours), un lien vers sa progression (dans « Moi ») ;
  *     arrivée, un toucher la prend comme look ;
- *   · `MaFigurineDuMois` : dans « Rencontres » (c'est là qu'elle se mérite : 10 jours de rencontres), la progression, la
+ *   · `MaFigurineDuMois` : dans « Moi », sous sa carte (elle se mérite en 10 jours sur ClikMe dans le mois ; c'étaient 10
+ *     jours de rencontres, dans « Rencontres », jusqu'à ce qu'il parte le 7 novembre 2026), la progression, la
  *     fabrication quand elle est méritée, puis la révélation — sa tenue du mois, son visage du mois, sa phrase du mois —
  *     et « Fais-la parler » : elle devient un LOOK du studio (7 novembre 2026 : l'album de soi est parti, ses figurines
  *     du mois servent à faire des mèmes).
@@ -45,7 +46,7 @@ export function useMois(): [MesFigurinesDuMois | null, (m: MesFigurinesDuMois) =
 /** Les dix jours, en points : ceux qu'il a vécus ce mois-ci. */
 function Jours({ f }: { f: FigurineDuMois }) {
   return (
-    <span className="fm-jours" role="progressbar" aria-valuemin={0} aria-valuemax={f.objectif} aria-valuenow={Math.min(f.jours, f.objectif)} aria-label="Tes jours de rencontres ce mois-ci">
+    <span className="fm-jours" role="progressbar" aria-valuemin={0} aria-valuemax={f.objectif} aria-valuenow={Math.min(f.jours, f.objectif)} aria-label="Tes jours sur ClikMe ce mois-ci">
       {Array.from({ length: f.objectif }, (_, k) => (
         <i key={k} className={k < f.jours ? "vecu" : ""} />
       ))}
@@ -77,7 +78,7 @@ export function ApercuDuMois() {
       <span>
         <b>Ta figurine de {nom}</b>
         <Jours f={f} />
-        <small>{`${Math.min(f.jours, f.objectif)}/${f.objectif} jours de rencontres : un nouveau look pour tes mèmes`}</small>
+        <small>{`${Math.min(f.jours, f.objectif)}/${f.objectif} jours sur ClikMe : un nouveau look pour tes mèmes`}</small>
       </span>
       <em>Voir ›</em>
     </a>
@@ -187,14 +188,15 @@ export function MaFigurineDuMois() {
         <div className="fm-gagner">
           <Jours f={f} />
           <b>
-            {Math.min(f.jours, f.objectif)}/{f.objectif} jours de rencontres ce mois-ci
+            {Math.min(f.jours, f.objectif)}/{f.objectif} jours sur ClikMe ce mois-ci
           </b>
           <p>
             Encore {f.objectif - f.jours} jour{f.objectif - f.jours > 1 ? "s" : ""} : ta figurine de {nom} arrive, habillée « {f.edition.nom} » {f.edition.emoji}, avec un nouveau visage ({f.expression}) et ta
             phrase du mois.
           </p>
-          <a className="fm-lien" href="#rencontre">
-            💬 Ma rencontre du jour ›
+          {/* (un jour compte dès qu'il ouvre ClikMe : le mème du jour, l'occasion de revenir) */}
+          <a className="fm-lien" href="#jour">
+            🔥 Le mème du jour ›
           </a>
         </div>
       )}

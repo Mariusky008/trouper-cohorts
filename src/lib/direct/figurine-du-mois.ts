@@ -4,7 +4,8 @@
  * du mois, une nouvelle expression, et un nouveau slogan qui résume notre mois à venir, en fonction des infos qu'on a
  * récupérées pendant le mois » ; « méritée » ; « 10 jours, ça va »).
  *
- *   · ELLE SE MÉRITE : 10 jours de rencontres dans le mois (`JOURS_POUR_LA_FIGURINE`) ; au 10ᵉ, elle se fabrique ;
+ *   · ELLE SE MÉRITE : 10 jours sur ClikMe dans le mois (`JOURS_POUR_LA_FIGURINE` ; des jours de rencontres jusqu'au 7
+ *     novembre 2026, quand « Rencontres » est parti) ; au 10ᵉ, elle se fabrique ;
  *   · ELLE CHANGE AVEC LUI : sa figurine, habillée du thème du mois (les tenues des éditions : `TENUES_EDITION`), avec
  *     l'expression du mois (`EXPRESSIONS_DU_MOIS`) ;
  *   · SA PHRASE DU MOIS : « drôle et bienveillante, comme un horoscope qui le connaît », écrite d'après ce qu'il a dit
@@ -51,7 +52,7 @@ export type FigurineDuMois = {
   expression: string;
   /** « a-gagner » : il lui manque des jours (ou sa figurine) ; « a-fabriquer » : méritée, à faire ; « prete ». */
   etat: "a-gagner" | "a-fabriquer" | "prete";
-  /** Ses jours de rencontres ce mois-là, et l'objectif. */
+  /** Ses jours sur ClikMe ce mois-là, et l'objectif. */
   jours: number;
   objectif: number;
   /** Il n'a pas encore sa figurine (il faut d'abord la créer). */

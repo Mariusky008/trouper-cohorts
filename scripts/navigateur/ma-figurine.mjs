@@ -2,8 +2,8 @@
 // Supabase, avec un faux micro (Chromium joue un bip à sa place) et une fausse voix (le faux Supabase rend un enregistrement d'essai).
 //
 // Hugo a 1 figurine : le guide (la figurine du patron de ClikMe) l'accueille (le menu en bas, cinq onglets — « Créer » au milieu,
-// depuis qu'on a resserré sur le mème le 7 novembre 2026), la quête « Crée ta figurine » ; sa figurine du mois, méritée dans
-// « Rencontres », devient un LOOK qui parle dans ses mèmes ; 🎲 « Surprends-moi ! » : ClikMe écrit son mème d'après sa carte de
+// depuis qu'on a resserré sur le mème le 7 novembre 2026), la quête « Crée ta figurine » ; sa figurine du mois, méritée en dix
+// jours sur ClikMe (dans « Moi » ; « Rencontres » est effacé), devient un LOOK qui parle dans ses mèmes ; 🎲 « Surprends-moi ! » : ClikMe écrit son mème d'après sa carte de
 // personnage (une fausse IA, dans le faux Supabase), rien n'est dit avant « C'est moi ✓ ». Léa passe chez le Comptoir depuis plus d'un an (et à l'Atelier) : plus
 // de 10 figurines. Elle envoie sa photo (il faut cocher « C'est bien moi ») ; « on fabrique ta figurine ». ClikMe pose
 // ses deux images (ici à la main, dans le faux Supabase : la route admin, elle, refuse qui n'est pas admin). Elle
@@ -135,70 +135,68 @@ ok(
 );
 await hugo.locator(".tf-moi .tf-expr button", { hasText: "Tristesse" }).click();
 ok((await hugo.locator(".tf-moi .fqp").getAttribute("data-sentiment")) === "tristesse" && (await hugo.locator(".tf-nudge").count()) === 0, "la tristesse se choisit tout de suite (plus de cadeau à attendre)");
-// 🗓️ SA FIGURINE DU MOIS, EN UNE LIGNE (lot 3) : ses jours de rencontres ce mois-ci
+// 🗓️ SA FIGURINE DU MOIS, EN UNE LIGNE (lot 3) : ses jours sur ClikMe ce mois-ci (aujourd'hui compte déjà, ou presque)
 const apercu = await texte(hugo, "#o-figurine .fm-apercu");
-ok(/Ta figurine de \p{L}+/u.test(apercu) && apercu.includes("0/10 jours de rencontres") && (await hugo.locator("#o-figurine .fm-apercu .fm-jours i").count()) === 10, `où en est sa figurine du mois (${apercu})`);
+ok(/Ta figurine de \p{L}+/u.test(apercu) && /[01]\/10 jours sur ClikMe/.test(apercu) && (await hugo.locator("#o-figurine .fm-apercu .fm-jours i").count()) === 10, `où en est sa figurine du mois (${apercu})`);
 ok((await debordement(hugo)) <= 0, "sa figurine et ses options ne débordent pas");
 await hugo.screenshot({ path: `${D}/ma-figurine-0b-options.png`, fullPage: true });
 
-// ═══ 🗓️ SA FIGURINE DU MOIS, MÉRITÉE : DIX JOURS DE RENCONTRES CE MOIS-CI (lot 3) ═══
+// ═══ 🗓️ SA FIGURINE DU MOIS, MÉRITÉE : DIX JOURS SUR CLIKME CE MOIS-CI (lot 3 ; des jours de rencontres jusqu'à ce que
+// « Rencontres » parte, le 7 novembre 2026) ═══
 const mois = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date()).slice(0, 7);
-const sesRencontres = (n) =>
-  fetch(`${STOCK}/figurines-clients/${HUGO.id}/rencontres.json`, {
+// (ses jours de présence : aujourd'hui en premier — la page le noterait sinon —, puis d'autres jours du mois)
+const sesJours = (n) => {
+  const auj = jour(new Date());
+  const autres = Array.from({ length: 28 }, (_, k) => `${mois}-${String(k + 1).padStart(2, "0")}`).filter((j) => j !== auj);
+  return fetch(`${STOCK}/figurines-clients/${HUGO.id}/presence.json`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ liste: Array.from({ length: n }, (_, k) => ({ id: `essai-${k}`, jour: `${mois}-${String(k + 1).padStart(2, "0")}`, avec: "p:pablito" })), amis: [], oui: [], non: [], moi: 0, pas: 0 }),
+    body: JSON.stringify({ jours: [auj, ...autres].slice(0, n) }),
   });
+};
 // ce qu'il a dit ce mois-ci (son journal) : sa phrase du mois s'en sert
 await fetch(`${STOCK}/figurines-clients/${HUGO.id}/journal/${mois}.json`, {
   method: "POST",
   headers: { "content-type": "application/json" },
   body: JSON.stringify({ entrees: [{ type: "question", le: new Date().toISOString(), cle: "essai", question: "Ton petit plaisir du dimanche ?", texte: "un croissant au lit" }] }),
 });
-await sesRencontres(9);
+await sesJours(9);
 const demanderMois = () =>
   hugo.evaluate(async () => {
     const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "mois" }) });
     return { s: r.status, j: await r.json() };
   });
 const neuf9 = await demanderMois();
-ok(neuf9.s === 400 && neuf9.j.error === "Encore 1 jour de rencontres ce mois-ci." && neuf9.j.mois?.courante?.etat === "a-gagner" && neuf9.j.mois.courante.jours === 9, `à neuf jours, pas encore : elle se mérite (${neuf9.s}, ${neuf9.j.error})`);
+ok(neuf9.s === 400 && neuf9.j.error === "Encore 1 jour sur ClikMe ce mois-ci." && neuf9.j.mois?.courante?.etat === "a-gagner" && neuf9.j.mois.courante.jours === 9, `à neuf jours, pas encore : elle se mérite (${neuf9.s}, ${neuf9.j.error})`);
 await hugo.goto(`${BASE}/collection?v=${Date.now()}#mois`, { waitUntil: "networkidle" });
-await hugo.waitForSelector("#o-rencontre .fm .fm-gagner", { timeout: 30000 });
-const gagner = await texte(hugo, "#o-rencontre .fm");
+await hugo.waitForSelector("#o-personnage .fm .fm-gagner", { timeout: 30000 });
+const gagner = await texte(hugo, "#o-personnage .fm");
 ok(
-  gagner.includes("TA FIGURINE DU MOIS") && gagner.includes("9/10 jours de rencontres ce mois-ci") && gagner.includes("Encore 1 jour :") && (await hugo.locator("#o-rencontre .fm .fm-jours i.vecu").count()) === 9,
-  `#mois mène à « Rencontres », où elle se mérite : neuf jours sur dix (${gagner.slice(0, 160)})`,
+  gagner.includes("TA FIGURINE DU MOIS") && gagner.includes("9/10 jours sur ClikMe ce mois-ci") && gagner.includes("Encore 1 jour :") && (await hugo.locator("#o-personnage .fm .fm-jours i.vecu").count()) === 9,
+  `#mois mène à « Moi », où elle se mérite : neuf jours sur dix (${gagner.slice(0, 160)})`,
 );
-ok(
-  await hugo.evaluate(() => {
-    const rd = document.querySelector("#o-rencontre .rd");
-    const fm = document.querySelector("#o-rencontre .fm");
-    return Boolean(rd && fm && rd.compareDocumentPosition(fm) & Node.DOCUMENT_POSITION_FOLLOWING);
-  }),
-  "elle est juste sous l'épisode du jour",
-);
-ok((await hugo.locator("#o-rencontre").isVisible()) && (await hugo.locator(".mc-nav button.pris").count()) === 0, "« Rencontres », à son adresse (hors du menu depuis « Autour »)");
-await fermerPablito(hugo, "#o-rencontre");
+ok((await hugo.locator("#o-personnage").isVisible()) && (await texte(hugo, ".mc-nav button.pris")).includes("Moi") && (await hugo.locator("#o-rencontre").count()) === 0, "elle est dans « Moi » (« Rencontres » est effacé)");
+ok((await texte(hugo, "#o-personnage .fm a.fm-lien")).includes("Le mème du jour") && (await hugo.locator('#o-personnage .fm a.fm-lien[href="#jour"]').count()) === 1, "« 🔥 Le mème du jour › » : la raison de revenir aujourd'hui");
+await fermerPablito(hugo, "#o-personnage");
 await hugo.screenshot({ path: `${D}/ma-figurine-0c-mois-a-gagner.png` });
 // LE DIXIÈME JOUR : elle se fabrique toute seule (ici sans moteur d'image : sa figurine, avec le thème et sa phrase)
-await sesRencontres(10);
+await sesJours(10);
 await hugo.reload({ waitUntil: "networkidle" });
-await hugo.waitForSelector("#o-rencontre .fm .fm-carte img", { timeout: 60000 });
+await hugo.waitForSelector("#o-personnage .fm .fm-carte img", { timeout: 60000 });
 const fiche = await (await fetch(`${STOCK}/figurines-clients/${HUGO.id}/mois/${mois}.json`)).json().catch(() => null);
 ok(fiche?.mois === mois && fiche.image === `${HUGO.id}/mois/${mois}.webp` && fiche.expression && fiche.cle && fiche.parMoteur === false, `elle est rangée dans son seau privé (${JSON.stringify(fiche)?.slice(0, 160)})`);
 ok(/croissant au lit/.test(fiche?.phrase ?? ""), `sa phrase du mois reprend ce qu'il a dit ce mois-ci (${fiche?.phrase})`);
 ok((await fetch(`${STOCK}/figurines-clients/${HUGO.id}/mois/${mois}-p.webp`)).status === 200, "🎭 elle sait déjà parler (sa bouche ouverte, faite avec elle)");
-const prete = await texte(hugo, "#o-rencontre .fm");
+const prete = await texte(hugo, "#o-personnage .fm");
 ok(prete.includes("TA PHRASE DU MOIS") && prete.includes("croissant au lit") && prete.includes(`Son visage du mois : ${fiche?.expression}`), `la révélation : sa figurine du mois, son visage du mois, sa phrase (${prete.slice(0, 200)})`);
-ok(await hugo.locator("#o-rencontre .fm .fm-carte img").evaluate((i) => i.complete && i.naturalWidth > 0), "son image s'affiche");
+ok(await hugo.locator("#o-personnage .fm .fm-carte img").evaluate((i) => i.complete && i.naturalWidth > 0), "son image s'affiche");
 const encore = await demanderMois();
 const fiche2 = await (await fetch(`${STOCK}/figurines-clients/${HUGO.id}/mois/${mois}.json`)).json().catch(() => null);
 ok(encore.s === 200 && encore.j.mois?.courante?.etat === "prete" && fiche2?.le === fiche?.le, "une seule par mois : la redemander ne la refait pas");
-ok((await debordement(hugo)) <= 0, "« Rencontres » ne déborde pas");
+ok((await debordement(hugo)) <= 0, "« Moi » ne déborde pas");
 await hugo.screenshot({ path: `${D}/ma-figurine-0d-mois-prete.png`, fullPage: true });
 // 🎭 « FAIS-LA PARLER » : elle devient un LOOK du studio (plus d'album : ses figurines du mois servent à faire des mèmes)
-await hugo.locator("#o-rencontre .fm .fm-parler").click();
+await hugo.locator("#o-personnage .fm .fm-parler").click();
 await hugo.waitForFunction(() => document.querySelector(".tf-looks button.pris")?.textContent?.match(/[A-Z]/) && !document.querySelector(".tf-looks button.pris img")?.src.includes("neutre-essai"), null, { timeout: 30000 });
 // (l'onglet suit l'adresse : un instant après)
 await hugo.waitForFunction(() => location.hash === "#figurine" && document.querySelector(".mc-nav button.pris")?.textContent?.includes("Créer"), null, { timeout: 15000 }).catch(() => null);

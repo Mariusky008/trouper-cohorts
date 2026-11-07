@@ -1615,13 +1615,8 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
           { t: "Ici, tu vas créer TA figurine, à partir de ton visage. C’est gratuit et ça prend 1 minute !", v: "neutre" },
           { t: "Elle pourra parler à ta place, changer d’expression, danser, rire et faire des grimaces. Bref, elle te ressemble… en plus drôle !", v: "rire", apres: "grimace" },
           { t: "Et après ? Tu peux lui faire dire et faire faire ce que tu veux, et l’envoyer à tes amis.", v: "joie" },
-          {
-            t: "Et 1 fois par jour, elle pourra rencontrer la figurine d’un ami ou d’une nouvelle personne près de chez toi. Pendant quelques minutes, vos 2 figurines discuteront, réagiront et s’amuseront ensemble : tu seras juste spectateur.",
-            v: "neutre",
-          },
-          { t: "Et à la fin, tu pourras découvrir ce qui a été partagé et, si vous êtes d’accord, échanger vos impressions.", v: "joie" },
-          { t: "À chaque rencontre, une carte souvenir est créée. De quoi enrichir ta collection et faire évoluer ton univers !", v: "euphorie" },
-          { t: "Allez, à toi de jouer !", v: "joie", apres: "louche" },
+          // (les bulles 5 à 7 parlaient de « Rencontres », effacé le 7 novembre 2026 : la dernière garde SON enregistrement)
+          { t: "Allez, à toi de jouer !", v: "joie", apres: "louche", son: "/collection/pablito/accueil-8.mp3" },
         ]}
       >
         <a className="og-go" href="#creer">

@@ -1,4 +1,4 @@
-# Reprise — où on en est, et ce qu'il reste à faire (7 novembre 2026, après le lot B d'« Autour de moi » ; « Rencontres » à effacer)
+# Reprise — où on en est, et ce qu'il reste à faire (7 novembre 2026, après le lot B d'« Autour de moi » et l'effacement de « Rencontres »)
 
 Pour la session qui reprend si celle-ci s'arrête. **Mettre ce fichier à jour à chaque étape terminée** (et le dire au
 propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'un autre chantier (la démo humaine).
@@ -6,8 +6,9 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 ## 1. Lire d'abord
 
 1. `CLAUDE.md` (racine) : les règles communes.
-2. `docs/figurines.md`, section 9.0 (de « duovicies » à « untricies ») : tout ce qui a été fait sur « Ma figurine »,
-   les mèmes, « Découvrir », le mème du jour, l'appli et la notification de 11 h 30, « Autour de moi ».
+2. `docs/figurines.md`, section 9.0 (de « duovicies » à « duotricies ») : tout ce qui a été fait sur « Ma figurine »,
+   les mèmes, « Découvrir », le mème du jour, l'appli et la notification de 11 h 30, « Autour de moi », « Rencontres »
+   effacé.
 3. Ce fichier, en entier.
 
 ## 2. La façon de travailler (celle de cette session)
@@ -67,6 +68,7 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 | #94 | Lot 3 : l'appli sur l'écran d'accueil (jeton d'installation iPhone) et la notification du mème du jour à 11 h 30 |
 | #95 | Ce fichier ; l'essai de 11 h 30 qui passe à toute heure ; « Autour de moi », lot A (le serveur) |
 | #96 | « Autour de moi », lots B et C : l'écran (la carte, le lieu, le swipe, le dépôt, le profil), ses essais, la doc |
+| #97 | Ce fichier : #96 fusionnée, et la décision d'effacer « Rencontres » |
 
 Après #94, l'essai `appli-notif.mjs` a échoué sur `main` : la CI tournait entre 11 h et midi (heure de Paris), et
 l'appel « sans forcer » de l'essai avait vraiment fait l'envoi. Ce n'est pas un défaut de l'appli. L'essai le fait
@@ -169,7 +171,8 @@ Les lieux publics nommés viendront plus tard, avec des positions vérifiées (p
   - « Rencontres » n'est plus dans le menu mais reste à son adresse `#rencontre` (le lien d'un ami, sa figurine du
     mois). **Le propriétaire a décidé de l'EFFACER (7 novembre)** : voir la section 5 bis.
   - L'essai : `scripts/navigateur/autour.mjs` (35 vérifications), dans `lancer-essais.sh`. Les essais qui vérifiaient
-    « Rencontres » dans le menu (`ma-figurine.mjs`, `famille-page.mjs`, `personnage-rencontre.mjs`) ont été ajustés.
+    « Rencontres » dans le menu (`ma-figurine.mjs`, `famille-page.mjs`, `personnage-rencontre.mjs` — devenu
+    `personnage.mjs` depuis, voir la section 5 bis) ont été ajustés.
 - **Ce que le lot B ne fait pas encore** (à proposer au propriétaire, dans cet ordre) :
   1. la réponse « avec sa tête » dans le studio (choisir sa tête, sa phrase, « 🎲 Surprends-moi ») : aujourd'hui, on
      répond avec un de ses mèmes déjà faits, ou « ＋ Nouveau mème » ouvre « Créer » ;
@@ -245,31 +248,23 @@ Ce que le lot A fournit :
 Plus tard : prévenir « on a répondu à ton mème », la réponse du commerçant depuis son comptoir, une page admin de
 modération des dépôts.
 
-## 5 bis. Effacer « Rencontres » (décidé par le propriétaire le 7 novembre 2026) — en cours
+## 5 bis. « Rencontres » effacé (décidé par le propriétaire le 7 novembre 2026) — fait, dans la PR qui suit #97
 
-Sa réponse à « l'effacer, ou lui garder une entrée ailleurs ? » : **effacer**. Ce qui part : l'onglet et son adresse
-`#rencontre`, l'épisode du jour (personnages, commerçants, amis, membres de la ville), les impressions entre inconnus,
-les cartes souvenirs, la figurine relookée d'un épisode, « Fais-en un mème » d'un épisode, le petit mot du jour qui
-annonçait la rencontre. **« Moi » (sa carte de personnage, la question du jour, « Ce que ta figurine sait de toi »)
-reste**, comme « Autour », « Découvrir », « Créer » et « Mes mèmes ».
-
-Ce qui dépend de « Rencontres » (inventaire du 7 novembre) et ce qu'on en fait :
-- **Sa figurine du mois** se méritait par 10 jours de rencontres (`joursDeRencontres`, `figurine-du-mois-serveur.ts`).
-  Choix par défaut, à confirmer au propriétaire : **10 jours passés sur ClikMe dans le mois** (sa présence, déjà notée
-  dans `<habitant>/presence.json` par `cadeauxDe`, `etapes-serveur.ts` : à garder sur 31 jours au moins). Sa jauge et
-  sa révélation (`figurine-du-mois.tsx`) quittent « Rencontres » pour « Créer » ; les adresses `#mois`, `#edition`,
-  `#ou-gagner` y mènent.
-- **Ses premiers pas** (`etapes.ts`) : « Ta première rencontre », « Un ami qui te rejoint », « Rencontrer un membre »,
-  « 5 épisodes » partent. Ce que ces étapes avaient déjà ouvert le reste (`cadeaux.json`).
-- **Ses proches** (`prochesDe`, `ma-figurine-serveur.ts`) lisent aussi les amis des Rencontres
-  (`<habitant>/rencontres.json`, `amis`) : on garde cette lecture (des données qui existent), sans plus rien y écrire.
-- **Le lien d'un ami** (`/collection?ami=<code>`) menait à « Rencontres » : il ouvre désormais « Créer ».
-- `connaitre-serveur.ts` importe de `rencontre-serveur.ts` (le petit mot du jour, `retenirCeQuIlDit`, l'oubli) : à
-  détacher ; la question du jour et « Ce que ta figurine sait de toi » restent.
-- À retirer : `src/app/collection/rencontre.tsx`, `src/app/api/direct/rencontre/`, `src/lib/direct/rencontre*.ts`,
-  `scenarios.ts`, `reseau.ts` (vérifier qu'ils ne servent plus ailleurs), les voix de Pablito des Rencontres, l'essai
-  `scripts/navigateur/personnage-rencontre.mjs` réduit à « Moi » ; les essais qui passent par `#rencontre`
-  (`ma-figurine.mjs`, `famille-page.mjs`) ajustés ; `docs/figurines.md` et ce fichier mis à jour.
+Sa réponse à « l'effacer, ou lui garder une entrée ailleurs ? » : **effacer**. Le détail : `docs/figurines.md`,
+section 9.0 duotricies. En bref :
+- **Parti** : l'onglet, l'épisode du jour (personnages, commerçants, amis, membres de la ville), les impressions entre
+  inconnus, les cartes souvenirs, la figurine relookée d'un épisode, « Fais-en un mème » d'un épisode, le petit mot du
+  jour ; `rencontre.tsx`, `api/direct/rencontre/`, `rencontre.ts`, `rencontre-serveur.ts`, `scenarios.ts`, `reseau.ts` ;
+  les voix de Pablito sur « Rencontres » et les bulles 5 à 7 de son accueil.
+- **Ses anciennes adresses** (`#rencontre`, le lien d'un ami `?ami=`) ouvrent « Créer ».
+- **Sa figurine du mois** se mérite en **10 jours sur ClikMe dans le mois** (sa présence, `joursDePresence`,
+  `etapes-serveur.ts`), et s'affiche dans **« Moi »**, sous sa carte (`#mois` y mène). Choix par défaut, accepté par le
+  propriétaire.
+- **Ses premiers pas** : les quatre étapes des Rencontres partent ; celles déjà franchies comptent encore (`anciennes`).
+- **« Moi »** garde sa carte, la question du jour et « Ce que ta figurine sait de toi » ; ce qu'il dit de lui passe par
+  `ce-qu-il-a-dit-serveur.ts` (toujours rangé dans `<habitant>/rencontres.json`, pour ne rien perdre).
+- **Les essais** : `scripts/navigateur/personnage.mjs` remplace `personnage-rencontre.mjs` ; `ma-figurine.mjs`,
+  `famille-page.mjs`, `autour.mjs` ajustés ; la liste du lint de la CI mise à jour.
 - Les données déjà rangées dans le seau (rencontres, cartes souvenirs) ne sont pas effacées.
 
 ## 5. Les autres sujets en attente

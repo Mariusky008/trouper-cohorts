@@ -1,7 +1,9 @@
 /**
  * 🗓️ SA FIGURINE DU MOIS, CÔTÉ SERVEUR — voir `figurine-du-mois.ts`. Rangée dans le seau privé des figurines :
  * `<habitant>/mois/<AAAA-MM>.json` (le thème, l'expression, sa phrase, l'image) et `<habitant>/mois/<AAAA-MM>.webp`.
- * Fabriquée une fois, quand elle est méritée (10 jours de rencontres dans le mois), à la demande de la page.
+ * Fabriquée une fois, quand elle est méritée (10 jours sur ClikMe dans le mois : sa présence, `joursDePresence`,
+ * `etapes-serveur.ts` — c'étaient 10 jours de rencontres jusqu'à ce que « Rencontres » parte, le 7 novembre 2026), à la
+ * demande de la page.
  *
  * FICHIER SERVEUR.
  */
@@ -13,7 +15,7 @@ import { TENUES_EDITION } from "./figurine-pro";
 import { consigneBoucheLook, editer, poserAuFormat, reprendre } from "./figurine-expressions-serveur";
 import { moteurBranche } from "./ma-figurine-fabrique-serveur";
 import { SEAU_FIGURINES, cheminImageDuLook, cheminParleDuLook, deposer, ecrireJson, lireJson, lireLigne, signer, telecharger } from "./ma-figurine-serveur";
-import { joursDeRencontres } from "./rencontre-serveur";
+import { joursDePresence } from "./etapes-serveur";
 import { journalDuMois } from "./journal-serveur";
 import { EXPRESSIONS_DU_MOIS, JOURS_POUR_LA_FIGURINE, editionDuMois, lookValide, moisEnClair, type FigurineDuMois, type MesFigurinesDuMois } from "./figurine-du-mois";
 
@@ -53,7 +55,7 @@ export async function mesFigurinesDuMois(supabase: Supabase, habitant: Habitant 
   }
   const [{ ligne }, jours, liste] = await Promise.all([
     lireLigne(supabase, habitant.id),
-    joursDeRencontres(supabase, habitant.id, mois),
+    joursDePresence(supabase, habitant.id, mois),
     Promise.resolve(supabase.storage.from(SEAU_FIGURINES).list(`${habitant.id}/mois`, { limit: 240 })).catch(() => ({ data: null })),
   ]);
   const tous = ((Array.isArray(liste.data) ? liste.data : []) as { name?: string }[]).map((x) => s(x.name));
@@ -155,10 +157,10 @@ export async function fabriquerFigurineDuMois(supabase: Supabase, habitant: Habi
   const mois = moisParis();
   const deja = await lireJson<Fiche>(supabase, cheminFiche(habitant.id, mois));
   if (deja.image) return {};
-  const [{ ligne }, jours] = await Promise.all([lireLigne(supabase, habitant.id), joursDeRencontres(supabase, habitant.id, mois)]);
+  const [{ ligne }, jours] = await Promise.all([lireLigne(supabase, habitant.id), joursDePresence(supabase, habitant.id, mois)]);
   if (!ligne?.prete_le || !s(ligne.neutre)) return { error: "Crée d’abord ta figurine.", statut: 400 };
   const reste = JOURS_POUR_LA_FIGURINE - jours.length;
-  if (reste > 0) return { error: `Encore ${reste} jour${reste > 1 ? "s" : ""} de rencontres ce mois-ci.`, statut: 400 };
+  if (reste > 0) return { error: `Encore ${reste} jour${reste > 1 ? "s" : ""} sur ClikMe ce mois-ci.`, statut: 400 };
   // UN SEUL À LA FOIS (deux pages ouvertes ne paient pas deux fois)
   const verrou = await lireJson<{ le?: number }>(supabase, cheminVerrou(habitant.id, mois));
   if (Date.now() - (Number(verrou.le) || 0) < 4 * 60_000) return { enCours: true };

@@ -1173,6 +1173,40 @@ mène toujours, et sa figurine du mois s'y mérite encore. À décider plus tard
   - Il refuse les tuiles pour vérifier la liste de secours.
   - Il lance Chromium avec `--enable-unsafe-swiftshader` (WebGL sans carte graphique).
 
+### 9.0 duotricies « Rencontres » effacé (7 novembre)
+
+Sa réponse à « l'effacer, ou lui garder une entrée ailleurs ? » (après qu'« Autour » a pris sa place dans le menu) :
+**effacer**. Ce qui est parti :
+
+- l'onglet et ses adresses : `#rencontre` et `#rencontres` ouvrent « Créer », comme le lien d'un ami (`?ami=<code>`) ;
+- l'épisode du jour (Pablito, les commerçants et leur métier, les personnages imaginaires, les amis et leurs thèmes, les
+  membres de la ville et la file des membres), le théâtre en BD, les impressions entre clients, les cartes souvenirs,
+  la figurine relookée d'un épisode, « Fais-en un mème » d'un épisode, « Et toi ? » ;
+- le petit mot du jour (il annonçait la rencontre du jour ; il n'était plus affiché depuis le 6 novembre) ;
+- les fichiers : `app/collection/rencontre.tsx`, `app/api/direct/rencontre/`, `lib/direct/rencontre.ts`,
+  `rencontre-serveur.ts`, `scenarios.ts`, `reseau.ts` ;
+- les voix de Pablito sur « Rencontres » (`rencontres-1` à `-5`), et les bulles 5 à 7 de son accueil (`accueil-5` à
+  `-7`), qui en parlaient ; la dernière bulle (« Allez, à toi de jouer ! ») garde son enregistrement (`accueil-8`,
+  donné par la bulle elle-même).
+
+Ce qui en dépendait, et ce qu'il devient :
+
+- **Sa figurine du mois** se mérite en **10 jours sur ClikMe dans le mois** (sa présence, notée à chaque visite de la
+  page, `presence.json`, gardée sur 62 jours : `joursDePresence`, `etapes-serveur.ts`) — c'étaient 10 jours de
+  rencontres. Sa progression et sa révélation (`MaFigurineDuMois`) sont dans **« Moi »**, sous sa carte ; `#mois`,
+  `#edition`, `#ou-gagner` y mènent ; « 🔥 Le mème du jour › » remplace « 💬 Ma rencontre du jour › ». L'écran dit
+  « 3/10 jours sur ClikMe ».
+- **Ses premiers pas** : « Ta première rencontre », « Un ami qui te rejoint », « Rencontrer un membre », « 5 épisodes »
+  ne sont plus proposés ; ceux qu'il avait franchis comptent encore dans ses cadeaux (`anciennes`) : il ne perd rien.
+- **La question du jour** et **« Ce que ta figurine sait de toi »** restent, dans « Moi ». Ce qu'il dit de lui est
+  rangé par `ce-qu-il-a-dit-serveur.ts`, toujours dans `<habitant>/rencontres.json` (`dit`), pour ne rien perdre.
+- **Ses proches** (`prochesDe`) lisent toujours ses amis d'alors (`rencontres.json`, `amis`) : rien n'y est plus écrit.
+- Les données déjà rangées (rencontres, cartes souvenirs, invitations, file des membres) ne sont pas effacées.
+- Les essais : `scripts/navigateur/personnage.mjs` remplace `personnage-rencontre.mjs` (la carte, la question du jour,
+  ce qu'elle sait, retrouver sa figurine ; et « Rencontres » n'existe plus : ni menu, ni adresse, ni route) ;
+  `ma-figurine.mjs` (sa figurine du mois dans « Moi », sur des jours de présence), `famille-page.mjs` et `autour.mjs`
+  ajustés.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

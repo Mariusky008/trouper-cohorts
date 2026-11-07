@@ -183,8 +183,8 @@ ok((await p.locator(".mc-nav button.pris").innerText()).includes("Mes mèmes") &
 ok((await p.locator(".ab-page, .ce, .dc-commerces, #ou-gagner").count()) === 0 && !/Où la gagner|Ma collection|Album/.test(mc), "plus d'album, plus de « Où la gagner »");
 ok((await debordement(p)) <= 0 && !/exemple/i.test(mc), "la page ne déborde pas, sans le mot interdit");
 await p.goto(`${BASE}/collection#ou-gagner`, { waitUntil: "networkidle" });
-await p.waitForSelector("#o-rencontre", { timeout: 30000 });
-ok((await p.locator("#o-rencontre").isVisible()) && (await p.locator("#o-mois, #ou-gagner").count()) === 0, "les anciens liens de « Ce mois-ci » mènent à « Rencontres » (où se mérite sa figurine du mois)");
+await p.waitForSelector("#o-personnage:not([hidden])", { timeout: 30000 });
+ok((await p.locator("#o-personnage").isVisible()) && (await p.locator("#o-rencontre, #o-mois, #ou-gagner").count()) === 0, "les anciens liens de « Ce mois-ci » mènent à « Moi » (où se mérite sa figurine du mois ; « Rencontres » est effacé)");
 await p.screenshot({ path: `${D}/famille-8-ma-collection.png`, fullPage: true });
 
 // ═══ LA FAMILLE VIDE ═══

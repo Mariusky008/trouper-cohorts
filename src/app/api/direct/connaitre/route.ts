@@ -1,7 +1,6 @@
 // 🧠 MIEUX LE CONNAÎTRE (`lib/direct/connaitre.ts`, le lot 2 de la stratégie de « Ma collection »).
 //
 // GET : sa question du jour (et sa réponse s'il l'a donnée).
-// GET ?mot=1 : le petit mot du jour (écrit une fois par jour ; `null` sans rencontre aujourd'hui).
 // GET ?savoir=1 : « ce que ta figurine sait de toi » (sa carte en mots, et tout son journal).
 // POST { action: "question", cle, texte } : sa réponse à la question du jour → { question }.
 // POST { action: "oublier", le } : il efface une chose ; { action: "tout-oublier" } : il efface tout.
@@ -16,7 +15,7 @@ import { villeSlug } from "@/lib/direct/ville";
 import { EMAIL_VALIDE, normaliserEmail, nouveauCode, verifierCode } from "@/lib/direct/maison-serveur";
 import { envoyerCodeFigurine } from "@/lib/site-internet/ville-mail";
 import { adresseMasquee } from "@/lib/direct/connaitre";
-import { motDuJour, oublierUneChose, questionDuJourDe, repondreALaQuestion, savoirDe, toutOublier } from "@/lib/direct/connaitre-serveur";
+import { oublierUneChose, questionDuJourDe, repondreALaQuestion, savoirDe, toutOublier } from "@/lib/direct/connaitre-serveur";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -28,7 +27,6 @@ export async function GET(request: Request) {
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json({ ok: true, compte: false }, { headers: sansCache });
   const q = new URL(request.url).searchParams;
-  if (q.get("mot")) return NextResponse.json({ ok: true, mot: await motDuJour(supabase, moi) }, { headers: sansCache });
   if (q.get("savoir")) return NextResponse.json({ ok: true, savoir: await savoirDe(supabase, moi) }, { headers: sansCache });
   return NextResponse.json({ ok: true, compte: true, question: await questionDuJourDe(supabase, moi) }, { headers: sansCache });
 }

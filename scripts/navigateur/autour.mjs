@@ -9,7 +9,7 @@
 // glisser à droite = J'aime (la réaction ❤️ est gardée), « Passer », le profil du créateur (jamais sa position). Sam
 // répond avec sa figurine : les deux mèmes sont liés. Puis il dépose « Ailleurs » (« Les Arènes ») : sa position devient
 // une zone, gardée nulle part telle quelle. Il signale un mème : il disparaît. Sans carte (tuiles refusées) : la liste
-// des lieux. Sans figurine : on l'invite à la créer. `#rencontre` mène toujours à « Rencontres ». Rien ne déborde, jamais
+// des lieux. Sans figurine : on l'invite à la créer. `#rencontre` ouvre « Créer » (« Rencontres » est effacé). Rien ne déborde, jamais
 // le mot interdit, aucune erreur dans la page.
 import fs from "node:fs";
 import { BASE, D, F, lancer } from "./commun.mjs";
@@ -239,10 +239,10 @@ ok((await texte(sam, ".atr-toast")).includes("signalé") && !(boulangerie.memes 
 await sam.locator(".atr-swipe-haut .atr-fermer[aria-label='Fermer']").click();
 await sam.locator(".atr-lieu > .atr-fermer").click();
 
-// ═══ « RENCONTRES » RESTE À SON ADRESSE ═══
+// ═══ « RENCONTRES » EST EFFACÉ : SON ANCIENNE ADRESSE OUVRE « CRÉER » ═══
 await sam.goto(`${BASE}/collection?v=${Date.now()}#rencontre`, { waitUntil: "networkidle" });
-await sam.waitForSelector("#o-rencontre", { state: "visible", timeout: 30000 });
-ok((await sam.locator(".mc-nav button.pris").count()) === 0 && (await sam.locator("#o-autour").count()) === 0, "`#rencontre` mène toujours à « Rencontres » (hors du menu)");
+await sam.waitForSelector("#o-figurine:not([hidden])", { timeout: 30000 });
+ok((await sam.locator("#o-rencontre").count()) === 0 && (await sam.locator(".mc-nav button.pris").innerText()).includes("Créer"), "`#rencontre` ouvre « Créer » (« Rencontres » est effacé)");
 
 // ═══ SANS CARTE : LA LISTE ═══
 const sansCarte = await tel(SAM, { panne: true });
