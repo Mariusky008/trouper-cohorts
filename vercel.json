@@ -72,6 +72,14 @@
     {
       "path": "/api/cron/proposition-matin",
       "schedule": "10 6 * * *"
+    },
+    {
+      "path": "/api/cron/meme-du-jour",
+      "schedule": "30 10 * * *"
+    },
+    {
+      "path": "/api/cron/meme-du-jour-ete",
+      "schedule": "30 9 * * *"
     }
   ]
 }

@@ -7,15 +7,27 @@ import type { Metadata, Viewport } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { villeSlug } from "@/lib/direct/ville";
 import { habitantCourant } from "@/lib/direct/habitant";
+import { jetonValide } from "@/lib/direct/appli-collection-serveur";
 import { MaCollection } from "./ma-collection";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Ta figurine qui parle",
-  description: "Crée ta figurine, fais-la parler, envoie ton mème ; regarde ce qu’il devient.",
-  robots: { index: false },
-};
+/**
+ * 📲 SON PROPRE MANIFESTE (le lot 3) : posée sur l'écran d'accueil, l'appli s'ouvre ici, pas sur clikme.fr. Avec
+ * `?appli=<jeton>` (juste avant d'installer, sur iPhone), le manifeste ouvrira cette adresse : à la première ouverture,
+ * le jeton y pose le cookie de SA figurine (`lib/direct/appli-collection-serveur.ts`). `appleWebApp` : le nom sous
+ * l'icône, et l'appli sans la barre de Safari.
+ */
+export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
+  const jeton = (await searchParams).appli;
+  return {
+    title: "Ta figurine qui parle",
+    description: "Crée ta figurine, fais-la parler, envoie ton mème ; regarde ce qu’il devient.",
+    robots: { index: false },
+    manifest: typeof jeton === "string" && jetonValide(jeton) ? `/collection/manifest.webmanifest?appli=${jeton}` : "/collection/manifest.webmanifest",
+    appleWebApp: { capable: true, title: "ClikMe", statusBarStyle: "black-translucent" },
+  };
+}
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#12060F" };
 

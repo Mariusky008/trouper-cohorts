@@ -15,6 +15,8 @@
  * de chaque commerçant, `/f/<slug>`) ; ses figurines du mois sont devenues des LOOKS de son studio.
  * Chaque onglet a son adresse (`#decouvrir`, `#rencontre`, `#figurine`, `#memes`, `#personnage`), et les anciens liens
  * retombent sur le bon (`#creer` → « Créer », `#mois` → sa figurine du mois, dans « Rencontres », `#album` → « Mes mèmes »).
+ * 📲 LE LOT 3 : l'appli sur l'écran d'accueil et le mème du jour à 11 h 30 (`mon-telephone.tsx`) — `#jour` mène au mème
+ * du jour (la notification), `#installer` ouvre le geste à faire (iPhone, après le rechargement avec son jeton).
  * Un onglet ne se charge qu'à sa première ouverture, puis il reste là.
  */
 import Link from "next/link";
@@ -29,6 +31,8 @@ import { MesMemes, STYLES_MES_MEMES } from "./mes-memes";
 import { Decouvrir, STYLES_DECOUVRIR } from "./decouvrir";
 import { STYLES_MES_REACTIONS } from "./mes-reactions";
 import { STYLES_THEME_DU_JOUR } from "./theme-du-jour";
+import { FeuilleInstaller, MonTelephone, STYLES_MON_TELEPHONE } from "./mon-telephone";
+import { capterLaProposition, lierSiBesoin, ouvrirInstallation } from "@/lib/direct/appli-collection";
 import type { EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
 /** Le menu du bas : cinq boutons, « Créer » au milieu. */
@@ -47,6 +51,8 @@ const ALIAS: Record<string, Vue> = {
   moi: "personnage",
   figurine: "figurine",
   creer: "figurine",
+  // (🔥 le mème du jour, en haut de « Créer » : là où mène la notification de 11 h 30)
+  jour: "figurine",
   // (⚡ ses réactions, en haut de « Créer » : là où l'app installée pourra s'ouvrir)
   reactions: "figurine",
   personnage: "personnage",
@@ -76,6 +82,10 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
 
   useEffect(() => {
     let fini = false;
+    // 📲 (Android : la proposition d'installer arrive quand le téléphone le décide ; on la garde pour le bon moment.
+    // iPhone : l'appli posée s'ouvre pour la première fois avec son jeton, qui lui rend SA figurine.)
+    capterLaProposition();
+    void lierSiBesoin();
     fetch("/api/direct/ma-figurine", { cache: "no-store" })
       .then((r) => r.json())
       .then((j: { etat?: EtatMaFigurine }) => {
@@ -138,6 +148,8 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
       const h = decodeURIComponent(window.location.hash.slice(1));
       const v = ALIAS[h];
       if (v) aller(v, h, false);
+      // 📲 la page s'est rechargée avec son jeton, juste avant d'installer (iPhone) : le geste à faire
+      else if (h === "installer") ouvrirInstallation();
       // le lien d'un ami (`?ami=<code>`) : droit aux rencontres
       else if (new URLSearchParams(window.location.search).get("ami")) aller("rencontre");
     };
@@ -208,6 +220,8 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
                 onSait={setACarte}
                 allerA={allerA}
               />
+              {/* 📱 l'appli sur son écran d'accueil, et le mème du jour à 11 h 30 (il le coupe ici) — le lot 3 */}
+              {compte && <MonTelephone />}
             </OngletVisible.Provider>
           </section>
         )}
@@ -221,6 +235,9 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
           </section>
         )}
       </div>
+
+      {/* 📲 « Comment la mettre sur ton écran d'accueil » (ouverte par « Installer ») */}
+      <FeuilleInstaller />
 
       {/* LE MENU, EN BAS (6 novembre 2026 : « il faut qu'on voie en un coup d'œil qu'on est différent ») : un dock qui flotte ;
           « Créer », le cœur de l'app, en gros bouton rond au milieu, avec SA figurine dedans (7 novembre 2026) */}
@@ -240,7 +257,7 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_PERSONNAGE + STYLES_RENCONTRE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_PERSONNAGE + STYLES_RENCONTRE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE}</style>
     </main>
   );
 }

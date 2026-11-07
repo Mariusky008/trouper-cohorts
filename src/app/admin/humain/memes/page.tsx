@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { parcoursPremierMeme, statsMemes, type EvenementMeme } from "@/lib/direct/ma-figurine-serveur";
 import { statsReactions } from "@/lib/direct/mes-reactions-serveur";
+import { etatNotifications } from "@/lib/direct/appli-collection-serveur";
 import { GAGS, REACTIONS } from "@/lib/direct/mes-reactions";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +37,7 @@ const carte: CSSProperties = { padding: 14, borderRadius: 12, background: "#f6f6
 export default async function PageMemes() {
   if (!(await isCurrentUserAdmin())) redirect("/admin");
   const supabase = createAdminClient();
-  const [s, p, rx] = await Promise.all([statsMemes(supabase), parcoursPremierMeme(supabase), statsReactions(supabase)]);
+  const [s, p, rx, nf] = await Promise.all([statsMemes(supabase), parcoursPremierMeme(supabase), statsReactions(supabase), etatNotifications(supabase)]);
   const totalRx = (o: Record<string, number>) => Object.values(o).reduce((a, b) => a + b, 0);
   const enMoinsDUneMinute = p.delais.filter((d) => d <= 60).length;
   const k7 = s.sept.cree ? s.sept.nouveau / s.sept.cree : 0;
@@ -115,6 +116,26 @@ export default async function PageMemes() {
                 ))}
               </div>
             </>
+          )}
+          {/* 🔔 LE MÈME DU JOUR À 11 H 30 (le lot 3) : combien l'ont demandé, et ce qu'a donné le dernier envoi */}
+          <h2 style={{ margin: "26px 0 4px", fontSize: 18 }}>🔔 Le mème du jour à 11 h 30</h2>
+          {nf.cles ? (
+            <p style={{ margin: "0 0 10px", color: "#444" }} data-notif="">
+              <b>{nf.abonnes}</b> personne{nf.abonnes > 1 ? "s l’ont demandé" : " l’a demandé"} ·{" "}
+              {nf.dernier ? (
+                <>
+                  dernier envoi le {nf.dernier.jour} : <b>{nf.dernier.envoyes}</b> notification{nf.dernier.envoyes > 1 ? "s parties" : " partie"}, {nf.dernier.dejaRepondu} déjà répondu, {nf.dernier.morts} téléphone
+                  {nf.dernier.morts > 1 ? "s" : ""} abandonné{nf.dernier.morts > 1 ? "s" : ""} (effacé{nf.dernier.morts > 1 ? "s" : ""})
+                </>
+              ) : (
+                "pas encore d’envoi."
+              )}
+            </p>
+          ) : (
+            <p style={{ margin: "0 0 10px", padding: 12, borderRadius: 10, background: "#fff4e5" }}>
+              Les clés de notification manquent : rien ne part. Il faut <code>NEXT_PUBLIC_VAPID_PUBLIC_KEY</code>, <code>VAPID_PRIVATE_KEY</code> et <code>NEXT_PUBLIC_APP_EMAIL</code> sur Vercel
+              (les mêmes que pour les salons).
+            </p>
           )}
           <h2 style={{ margin: "26px 0 10px", fontSize: 18 }}>Le chemin, sur 7 jours</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
