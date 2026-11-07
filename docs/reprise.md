@@ -1,4 +1,4 @@
-# Reprise — où on en est, et ce qu'il reste à faire (7 novembre 2026, après le lot B d'« Autour de moi »)
+# Reprise — où on en est, et ce qu'il reste à faire (7 novembre 2026, après le lot B d'« Autour de moi » ; « Rencontres » à effacer)
 
 Pour la session qui reprend si celle-ci s'arrête. **Mettre ce fichier à jour à chaque étape terminée** (et le dire au
 propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'un autre chantier (la démo humaine).
@@ -65,8 +65,8 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 | #92 | ⚡ Mes réactions (stickers et gags avec sa tête) |
 | #93 | Lot 2 : le mème du jour au centre, 😂 ❤️ 🔥, les proches d'abord, la carte sobre des commerçants |
 | #94 | Lot 3 : l'appli sur l'écran d'accueil (jeton d'installation iPhone) et la notification du mème du jour à 11 h 30 |
-
 | #95 | Ce fichier ; l'essai de 11 h 30 qui passe à toute heure ; « Autour de moi », lot A (le serveur) |
+| #96 | « Autour de moi », lots B et C : l'écran (la carte, le lieu, le swipe, le dépôt, le profil), ses essais, la doc |
 
 Après #94, l'essai `appli-notif.mjs` a échoué sur `main` : la CI tournait entre 11 h et midi (heure de Paris), et
 l'appel « sans forcer » de l'essai avait vraiment fait l'envoi. Ce n'est pas un défaut de l'appli. L'essai le fait
@@ -162,12 +162,12 @@ Les lieux publics nommés viendront plus tard, avec des positions vérifiées (p
 **Où on en est** :
 - **Lot A (le serveur) : fusionné** (#95). Complété avec le lot B : on peut répondre dans une zone « Ailleurs » qui a
   déjà des mèmes, par son identifiant (`scripts/essai-autour-route.mjs`, 29 vérifications).
-- **Lots B et C (l'écran, ses essais, la doc) : écrits et essayés**, dans la PR qui suit #95 (à fusionner quand la CI
-  est verte). Le détail : `docs/figurines.md`, section 9.0 untricies.
+- **Lots B et C (l'écran, ses essais, la doc) : fusionnés** (#96, le 7 novembre, CI verte). Le détail :
+  `docs/figurines.md`, section 9.0 untricies.
   - `src/app/collection/autour.tsx` (la carte, le lieu, le swipe, le dépôt, « C'est publié ! », le profil) et
     `autour-carte.tsx` (MapLibre) ; branchés dans `ma-collection.tsx` (« Autour » dans le menu, `#autour`).
-  - « Rencontres » n'est plus dans le menu mais **reste à son adresse** `#rencontre` (le lien d'un ami, sa figurine du
-    mois). **À demander au propriétaire** : l'effacer, ou lui garder une entrée ailleurs.
+  - « Rencontres » n'est plus dans le menu mais reste à son adresse `#rencontre` (le lien d'un ami, sa figurine du
+    mois). **Le propriétaire a décidé de l'EFFACER (7 novembre)** : voir la section 5 bis.
   - L'essai : `scripts/navigateur/autour.mjs` (35 vérifications), dans `lancer-essais.sh`. Les essais qui vérifiaient
     « Rencontres » dans le menu (`ma-figurine.mjs`, `famille-page.mjs`, `personnage-rencontre.mjs`) ont été ajustés.
 - **Ce que le lot B ne fait pas encore** (à proposer au propriétaire, dans cet ordre) :
@@ -244,6 +244,33 @@ Ce que le lot A fournit :
 
 Plus tard : prévenir « on a répondu à ton mème », la réponse du commerçant depuis son comptoir, une page admin de
 modération des dépôts.
+
+## 5 bis. Effacer « Rencontres » (décidé par le propriétaire le 7 novembre 2026) — en cours
+
+Sa réponse à « l'effacer, ou lui garder une entrée ailleurs ? » : **effacer**. Ce qui part : l'onglet et son adresse
+`#rencontre`, l'épisode du jour (personnages, commerçants, amis, membres de la ville), les impressions entre inconnus,
+les cartes souvenirs, la figurine relookée d'un épisode, « Fais-en un mème » d'un épisode, le petit mot du jour qui
+annonçait la rencontre. **« Moi » (sa carte de personnage, la question du jour, « Ce que ta figurine sait de toi »)
+reste**, comme « Autour », « Découvrir », « Créer » et « Mes mèmes ».
+
+Ce qui dépend de « Rencontres » (inventaire du 7 novembre) et ce qu'on en fait :
+- **Sa figurine du mois** se méritait par 10 jours de rencontres (`joursDeRencontres`, `figurine-du-mois-serveur.ts`).
+  Choix par défaut, à confirmer au propriétaire : **10 jours passés sur ClikMe dans le mois** (sa présence, déjà notée
+  dans `<habitant>/presence.json` par `cadeauxDe`, `etapes-serveur.ts` : à garder sur 31 jours au moins). Sa jauge et
+  sa révélation (`figurine-du-mois.tsx`) quittent « Rencontres » pour « Créer » ; les adresses `#mois`, `#edition`,
+  `#ou-gagner` y mènent.
+- **Ses premiers pas** (`etapes.ts`) : « Ta première rencontre », « Un ami qui te rejoint », « Rencontrer un membre »,
+  « 5 épisodes » partent. Ce que ces étapes avaient déjà ouvert le reste (`cadeaux.json`).
+- **Ses proches** (`prochesDe`, `ma-figurine-serveur.ts`) lisent aussi les amis des Rencontres
+  (`<habitant>/rencontres.json`, `amis`) : on garde cette lecture (des données qui existent), sans plus rien y écrire.
+- **Le lien d'un ami** (`/collection?ami=<code>`) menait à « Rencontres » : il ouvre désormais « Créer ».
+- `connaitre-serveur.ts` importe de `rencontre-serveur.ts` (le petit mot du jour, `retenirCeQuIlDit`, l'oubli) : à
+  détacher ; la question du jour et « Ce que ta figurine sait de toi » restent.
+- À retirer : `src/app/collection/rencontre.tsx`, `src/app/api/direct/rencontre/`, `src/lib/direct/rencontre*.ts`,
+  `scenarios.ts`, `reseau.ts` (vérifier qu'ils ne servent plus ailleurs), les voix de Pablito des Rencontres, l'essai
+  `scripts/navigateur/personnage-rencontre.mjs` réduit à « Moi » ; les essais qui passent par `#rencontre`
+  (`ma-figurine.mjs`, `famille-page.mjs`) ajustés ; `docs/figurines.md` et ce fichier mis à jour.
+- Les données déjà rangées dans le seau (rencontres, cartes souvenirs) ne sont pas effacées.
 
 ## 5. Les autres sujets en attente
 
