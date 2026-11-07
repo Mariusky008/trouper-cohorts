@@ -3,12 +3,14 @@
 /**
  * 🔥 LE MÈME DU JOUR, EN HAUT DE « CRÉER » (le lot 2, 7 novembre 2026) — voir `lib/direct/theme-du-jour.ts`. Le thème
  * d'aujourd'hui (le même pour tout le monde), combien de réponses dans sa ville (vraies), et « 🔥 Je réponds » : le
- * studio s'ouvre sur ce thème (ses trois idées, « Surprends-moi ! »). Déjà répondu : « Voir les réponses ».
+ * studio s'ouvre sur ce thème (ses trois idées, « Surprends-moi ! »). Déjà répondu : « Voir les réponses », et (le lot 3)
+ * « Demain, un nouveau thème : je te préviens vers 11 h 30 ? ». `#jour` : là où mène la notification.
  */
 import { useContext, useEffect, useState } from "react";
 import { SEUIL_REPONSES, nomVille, type EtatDuJour } from "@/lib/direct/theme-du-jour";
 import { OngletVisible } from "./guide";
 import { versLeStudio } from "./vers-le-studio";
+import { InviterAppli } from "./mon-telephone";
 
 /** « 12 réponses à Dax » — seulement de vrais chiffres ; en dessous du seuil, « Sois parmi les premiers à répondre ». */
 export function chiffresDuJour(e: Pick<EtatDuJour, "n" | "ville">): string {
@@ -38,7 +40,7 @@ export function CarteMemeDuJour() {
   }, [visible]);
   if (!e) return null;
   return (
-    <section className="tj" aria-label="Le mème du jour">
+    <section className="tj" id="jour" aria-label="Le mème du jour">
       <small className="tj-label">🔥 LE MÈME DU JOUR</small>
       <b className="tj-titre">
         <span aria-hidden="true">{e.theme.emoji}</span> {e.theme.titre}
@@ -53,6 +55,8 @@ export function CarteMemeDuJour() {
           🔥 Je réponds avec ma figurine
         </button>
       )}
+      {/* 🔔 le lot 3 : sa réponse postée (ou l'appli tout juste posée sur son iPhone), « je te préviens demain ? » */}
+      <InviterAppli apres="jour" repondu={e.repondu} />
     </section>
   );
 }

@@ -31,12 +31,19 @@
 // POST { action: "surprise", sauf?: [textes] } : 🎲 « Surprends-moi ! » — un mème écrit par ClikMe d'après sa carte de
 //      personnage (`meme-surprise.ts`) ; rien n'est dit ni envoyé : il le choisit d'abord.
 // POST { action: "signaler", id } : celui qui a reçu un message le signale (pas besoin d'être quelqu'un).
+// 📲 POST { action: "appli-jeton" } → { jeton } : il va poser ClikMe sur son écran d'accueil (iPhone) ; la page se recharge
+//      sur `?appli=<jeton>`. POST { action: "appli-lier", jeton } (sans compte) : l'appli s'ouvre pour la première fois,
+//      le jeton pose le cookie de SA figurine (`appli-collection-serveur.ts`).
+// 🔔 POST { action: "notif", abonnement } : le mème du jour à 11 h 30 sur ce téléphone (« C'est réglé ! » part tout de
+//      suite) ; { action: "notif-couper", endpoint? } : il coupe (sans adresse : partout) ; { action: "notif-etat",
+//      endpoint } → { abonne } : ce téléphone le recevra-t-il ?
 // (La démonstration qu'on faisait parler sans compte a quitté la page le 5 novembre 2026 : chacun crée la sienne dès le
 // départ. Ses messages déjà envoyés s'ouvrent toujours, par `/figurine/<id>`.)
 // Un habitant n'est créé ici que par « photo » (son geste : « Créer ma figurine »).
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { assurerHabitant, habitantCourant } from "@/lib/direct/habitant";
+import { assurerHabitant, habitantCourant, poserCookie } from "@/lib/direct/habitant";
+import { abonner, couper, estAbonne, jetonAppli, lierAppli } from "@/lib/direct/appli-collection-serveur";
 import { villeSlug } from "@/lib/direct/ville";
 import { lienMessage } from "@/lib/direct/ma-figurine";
 import {
@@ -132,8 +139,26 @@ export async function POST(request: Request) {
     if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
     return NextResponse.json({ ok: true, etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
   }
+  // 📲 l'appli s'ouvre pour la première fois sur son écran d'accueil, avec son jeton : le cookie de SA figurine
+  if (p?.action === "appli-lier") {
+    const r = await lierAppli(supabase, p.jeton);
+    if (!r.deviceToken) return NextResponse.json({ error: r.error }, { status: 400 });
+    await poserCookie(r.deviceToken);
+    return NextResponse.json({ ok: true });
+  }
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json({ error: "Envoie d’abord ta photo pour créer ta figurine." }, { status: 403 });
+  if (p?.action === "appli-jeton") {
+    const jeton = await jetonAppli(supabase, moi);
+    return NextResponse.json(jeton ? { ok: true, jeton } : { error: "Ça n’a pas marché. Réessaie." }, { status: jeton ? 200 : 502 });
+  }
+  // 🔔 le mème du jour à 11 h 30
+  if (p?.action === "notif") {
+    const r = await abonner(supabase, moi, p.abonnement);
+    return NextResponse.json(r.ok ? { ok: true } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400) });
+  }
+  if (p?.action === "notif-couper") return NextResponse.json(await couper(supabase, moi, p.endpoint));
+  if (p?.action === "notif-etat") return NextResponse.json({ ok: true, abonne: await estAbonne(supabase, moi, p.endpoint) }, { headers: sansCache });
   if (p?.action === "fabriquer") {
     const r = await fabriquerMaFigurine(supabase, moi, avant);
     const etat = await etatMaFigurine(supabase, moi);

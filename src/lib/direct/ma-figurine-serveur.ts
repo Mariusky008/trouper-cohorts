@@ -784,7 +784,7 @@ export async function rendreMemePublic(supabase: Supabase, habitant: Habitant, i
 /** Une fiche par réponse, `du-jour/<ville>/<jour>/<id>.json` ; et la sienne, `<habitant>/du-jour/<jour>.json`. */
 const cheminDuJour = (ville: string, jour: string, id: string) => `du-jour/${ville}/${jour}/${id}.json`;
 const cheminMaReponse = (h: string, jour: string) => `${h}/du-jour/${jour}.json`;
-async function idsDuJour(supabase: Supabase, ville: string, jour: string): Promise<string[]> {
+export async function idsDuJour(supabase: Supabase, ville: string, jour: string): Promise<string[]> {
   if (!ville) return [];
   const { data } = await supabase.storage.from(SEAU_FIGURINES).list(`du-jour/${ville}/${jour}`, { limit: 1000, sortBy: { column: "created_at", order: "desc" } });
   return ((Array.isArray(data) ? data : []) as { name?: string }[]).map((x) => /^([a-z0-9]{12})\.json$/.exec(s(x.name))?.[1] ?? "").filter(Boolean);

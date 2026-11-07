@@ -49,6 +49,7 @@ import { EVT_VERS_LE_STUDIO, prendreVersLeStudio, type VersLeStudio } from "./ve
 import { moisEnClair, type FigurineDuMois } from "@/lib/direct/figurine-du-mois";
 import { MesReactions } from "./mes-reactions";
 import { CarteMemeDuJour } from "./theme-du-jour";
+import { InviterAppli } from "./mon-telephone";
 import { nomVille, themeDuJour, type Theme } from "@/lib/direct/theme-du-jour";
 
 type Reponse = { error?: string; etat?: EtatMaFigurine; lien?: string; son?: string; enCours?: boolean };
@@ -1103,9 +1104,13 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
                 {envoye && <input className="tf-adresse" readOnly value={envoye.lien} aria-label="Le lien" onFocus={(e) => e.target.select()} />}
                 {/* 🔥 SA RÉPONSE AU MÈME DU JOUR : « Poster ma réponse (visible par les gens de Dax) » — puis voir les leurs */}
                 {envoye && !meme.duo && themeJour && themeJour.postee === envoye.id ? (
-                  <a className="tf-postee" href="#decouvrir">
-                    ✓ Ta réponse est postée ! Voir celles de {nomVille(themeJour.ville) || "ta ville"} →
-                  </a>
+                  <>
+                    <a className="tf-postee" href="#decouvrir">
+                      ✓ Ta réponse est postée ! Voir celles de {nomVille(themeJour.ville) || "ta ville"} →
+                    </a>
+                    {/* 🔔 le bon moment (le lot 3) : « Demain, un nouveau thème. Je te préviens vers 11 h 30 ? » */}
+                    <InviterAppli apres="postee" />
+                  </>
                 ) : envoye && !meme.duo && themeJour ? (
                   <button type="button" className="tf-poster-jour" onClick={posterAuJour}>
                     🔥 Poster ma réponse (visible par les gens de {nomVille(themeJour.ville) || "ta ville"})

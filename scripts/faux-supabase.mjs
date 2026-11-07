@@ -602,6 +602,8 @@ async function stockage(req, res, url) {
 
 /** Les e-mails « envoyés » par le faux Resend (les plus récents à la fin). */
 const courriels = [];
+/** Les notifications « envoyées » au faux service (les plus récentes à la fin). */
+const pushs = [];
 const consignesIA = [];
 // 🎲 LES MÈMES « SURPRENDS-MOI ! » DE LA FAUSSE IA : le premier pas encore dans la consigne (« déjà proposés ») ; un goût
 // pour les animaux, le sien ; et un qui parle d'alcool quand on le lui souffle (l'essai vérifie qu'il est écarté)
@@ -650,6 +652,17 @@ http
         return repondre(res, 200, { id: randomUUID() });
       }
       if (url.pathname === "/__courriels") return repondre(res, 200, courriels);
+      // UN FAUX SERVICE DE NOTIFICATIONS (`PUSH_ESSAI_ORIGINE=http://127.0.0.1:54321`) : ce que ClikMe envoie à un
+      // téléphone abonné est gardé ici, chiffré comme le vrai (l'essai le déchiffre avec la clé du faux téléphone) ;
+      // `/push/mort/…` répond 410, comme un abonnement que le téléphone a abandonné.
+      if (url.pathname.startsWith("/push/") && req.method === "POST") {
+        const octets = await corps(req);
+        const mort = url.pathname.startsWith("/push/mort/");
+        pushs.push({ adresse: url.pathname, mort, ttl: req.headers.ttl, topic: req.headers.topic, encodage: req.headers["content-encoding"], vapid: String(req.headers.authorization || "").startsWith("vapid "), corps: octets.toString("base64"), le: maintenant() });
+        res.writeHead(mort ? 410 : 201);
+        return res.end();
+      }
+      if (url.pathname === "/__push") return repondre(res, 200, pushs);
       if (url.pathname === "/__etat") return repondre(res, 200, Object.fromEntries([...tables].map(([t, r]) => [t, r.length])));
       if (url.pathname === "/__tables") return repondre(res, 200, Object.fromEntries(tables));
       const m = /^\/rest\/v1\/([a-z_]+)$/.exec(url.pathname);

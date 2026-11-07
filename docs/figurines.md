@@ -1066,6 +1066,51 @@ stickers. Le clavier, lui, demande une app native : on le fera si les envois sui
   thème, ses idées, sa voix, « Poster ma réponse (visible par les gens de Dax) »), « 5 réponses à Dax », la sienne
   d'abord, puis Léa la proche, 😂 puis ❤️ (une seule), 🔥 au commerçant, ❤️ 1 dans « Mes mèmes », sans compte, le retrait.
 
+### 9.0 novovicies Le lot 3 : ClikMe sur l'écran d'accueil, et le mème du jour à 11 h 30 (7 novembre)
+
+- **L'appli** (`app/collection/manifest.webmanifest`) : posée sur l'écran d'accueil depuis `/collection`, elle s'ouvre
+  sur `/collection` (et plus sur clikme.fr), sous le nom « ClikMe », sans la barre du navigateur, avec le signe ClikMe.
+- **L'installer** (`lib/direct/appli-collection.ts`, `app/collection/mon-telephone.tsx`) :
+  - **iPhone** : Safari n'a pas de bouton « Installer ». « 📲 Installer » montre les trois gestes (Partager, « Sur
+    l'écran d'accueil », Ajouter).
+  - **Android** : c'est la vraie proposition du téléphone, gardée pour le moment où il touche « Installer ».
+  - **Dans Instagram, TikTok…** : rien ne s'installe ; on lui dit d'ouvrir ClikMe dans son navigateur.
+- **SA figurine dans l'appli posée, même sans les cookies de Safari** : sur iPhone, l'appli de l'écran d'accueil a ses
+  propres cookies, et rien ne garantit qu'elle reçoive ceux de Safari. Avant d'installer, la page se recharge donc sur
+  `/collection?appli=<jeton>`, et le manifeste ouvrira cette adresse. À la première ouverture, le jeton pose le cookie
+  de sa figurine (`appli-collection-serveur.ts`). Il sert une seule fois et vaut 24 h ; il est rangé dans le seau,
+  `appli/<jeton>.json`. Il n'agit que dans l'appli posée, jamais dans un onglet.
+- **🔔 Le mème du jour, vers 11 h 30** (`/api/cron/meme-du-jour`) :
+  - Le thème est en titre (« 🐶 Si tu étais un animal »), suivi de « Le mème du jour : réponds avec ta figurine 🎭 ».
+    Le chiffre de sa ville n'apparaît que s'il est vrai (au moins cinq réponses).
+  - Rien n'est envoyé à qui a déjà répondu.
+  - L'envoi a lieu une fois par jour (`notif/envois/<jour>.json`).
+  - Deux tâches planifiées, car Vercel compte en UTC : 10 h 30 UTC (l'hiver) et 9 h 30 UTC (l'été,
+    `meme-du-jour-ete`). Celle qui ne tombe pas entre 11 h et midi à Paris ne fait rien.
+  - Un téléphone qui a abandonné son abonnement (404, 410) est effacé.
+- **Demandée au bon moment, une fois** :
+  - juste après sa réponse au mème du jour : « 🔔 Demain, un nouveau thème. Je te préviens vers 11 h 30 ? » ;
+  - à la première ouverture de l'appli posée sur l'iPhone : « 🔔 Dernière étape : le mème du jour ».
+
+  « Plus tard » est retenu une semaine. Un « C'est réglé ! » arrive tout de suite : la preuve que ça marche.
+- **Il la coupe dans « Moi »** (« 📱 ClikMe sur ton téléphone ») : l'appli posée ou pas (« Installer »), et
+  l'interrupteur du mème du jour. Sur iPhone, une notification n'existe que dans l'appli posée, et l'écran le dit.
+- **Rangé sans table** : `notif/abonnes/<habitant>.json` (sa ville, cinq téléphones au plus). Ce sont les clés VAPID des
+  salons (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `NEXT_PUBLIC_APP_EMAIL`) ; sans elles, rien ne part et
+  rien ne casse. Le service worker (`public/collection-sw.js`) n'affiche que les notifications, sans aucun cache. Il est
+  à la racine pour que sa portée couvre `/collection` elle-même.
+- **Les essais** (`scripts/navigateur/appli-notif.mjs`, 29 vérifications) passent par un faux service de notifications
+  (`PUSH_ESSAI_ORIGINE`), et chaque notification est déchiffrée comme le ferait le téléphone. Ils couvrent :
+  - Nina sur iPhone : rien avant sa réponse, puis « Installer », le rechargement avec son jeton, les trois gestes, et
+    le manifeste qui ouvre l'appli sur son jeton ;
+  - l'appli posée, avec ses cookies vides : sa figurine retrouvée, le jeton usé ;
+  - « Dernière étape », puis « C'est réglé ! » reçu chiffré et signé ;
+  - l'envoi de 11 h 30 : le thème en titre, rien pour Tom (qui a déjà répondu), le téléphone abandonné effacé ;
+  - la coupure et le rallumage dans « Moi » ;
+  - Android (la vraie proposition) et Instagram.
+
+  En CI, les clés VAPID sont fabriquées à chaque passage ; aucune n'est écrite dans le dépôt.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
