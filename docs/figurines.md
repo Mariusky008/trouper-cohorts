@@ -961,6 +961,35 @@ des commerçants (leur nom reste à la fin) ; la notification du mème du jour �
   femme, « ▶ L'écouter »), sa figurine apparaît, un toucher : le mème est fait avec son texte et sa voix, en moins
   d'une minute après la révélation (13 s ici).
 
+### 9.0 quinvicies Le concours de regard : le prototype du duel du jour (7 novembre)
+
+Le patron sur « Rencontres » : « trop compliqué, long et pas compréhensible » ; puis « l'idée de faire discuter deux
+figurines est peut-être bonne, mais la forme n'est pas bonne, c'est ennuyant : il faudrait quelque chose d'amusant à
+regarder » ; « est-ce que je peux influencer le résultat ? » ; « à la fin, une carte à collectionner avec les deux
+figurines et une phrase, comme un polaroïd qu'on pourrait envoyer ». La piste : **le duel du jour** — des têtes sur
+ressort, un mini-jeu de 10 à 20 secondes, un gagnant, un polaroïd. Avant de refaire la page, un prototype à essayer :
+`clikme.fr/duel` (pas dans Google, aucun lien dans l'app).
+
+- **La règle** (`lib/direct/duel-regard.ts`) : il garde le doigt posé, sa figurine garde son sérieux ; 🪰 une mouche se
+  pose sur elle : il glisse son doigt pour la chasser ; 😜 Pablito louche : il ne bouge surtout pas. La jauge de fou rire
+  monte (une mouche pas chassée, un geste pendant la grimace, et la tension qui monte avec le temps) ; à 100, sa
+  figurine éclate de rire. Il lève le doigt : il a ri. Il tient plus longtemps que Pablito (10 à 16 s, le même temps
+  pour tout le monde ce jour-là) : c'est Pablito qui craque.
+- **Sa carte de personnage compte un peu** : son humour au-dessus de 50 lui épargne jusqu'à 15 % du fou rire —
+  l'adresse compte bien plus. (La suite : chaque caractéristique, une force en duel.)
+- **Le dosage, simulé** : sans réagir, on perd presque 8 fois sur 10 ; en ratant une mouche sur quatre, on gagne
+  7 fois sur 10 ; sans rien rater, toujours.
+- **Le polaroïd** : les deux figurines au moment de la chute (👑 et 😂), la phrase écrite d'après le duel — à la main
+  (Caveat), sans accord de genre, qu'il peut changer —, le score entre eux, « 😐 Concours de regard · le jour ·
+  ClikMe ». Une image (JPEG, ~180 Ko) : « 📲 Envoyer le polaroïd » (la feuille de partage du téléphone), sinon
+  enregistrée. « 🔁 Revanche ! ».
+- **Les sons sont des bruits fabriqués dans le téléphone** (un bourdon qui monte, un cœur, le bzz de la mouche, un
+  boing, un « pfff ») : jamais une voix. Pablito présentateur attendrait des enregistrements du patron.
+- Sans compte : il joue avec Clik, et on l'invite à créer sa figurine.
+- **Les essais** (`scripts/navigateur/duel.mjs`, 19 vérifications) : l'accueil, le doigt levé pendant le décompte, une
+  partie sans réagir (elle craque, le polaroïd, la phrase changée, le score), la revanche en chassant chaque mouche
+  (Pablito craque), sans compte.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
