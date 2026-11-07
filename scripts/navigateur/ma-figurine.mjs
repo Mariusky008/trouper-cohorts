@@ -94,7 +94,7 @@ ok(
 // 🧭 LE MENU, EN BAS : un dock ; « Créer » en gros bouton rond au milieu ; des icônes dessinées
 const dock = await hugo.evaluate(() => {
   const r = (s) => document.querySelector(s)?.getBoundingClientRect();
-  return { rond: r(".mc-nav-figurine .mc-nav-ico"), g: r(".mc-nav-rencontre .mc-nav-ico"), d: r(".mc-nav-memes .mc-nav-ico"), nav: r(".mc-nav"), svg: document.querySelectorAll(".mc-nav svg").length };
+  return { rond: r(".mc-nav-figurine .mc-nav-ico"), g: r(".mc-nav-autour .mc-nav-ico"), d: r(".mc-nav-memes .mc-nav-ico"), nav: r(".mc-nav"), svg: document.querySelectorAll(".mc-nav svg").length };
 });
 ok(
   dock.rond && dock.g && dock.d && dock.rond.width >= 60 && dock.rond.top < dock.nav.top && dock.g.right < dock.rond.left && dock.d.left > dock.rond.right && dock.svg === 5 && dock.nav.left >= 8,
@@ -178,7 +178,7 @@ ok(
   }),
   "elle est juste sous l'épisode du jour",
 );
-ok((await hugo.locator(".mc-nav button.pris").innerText()).includes("Rencontres"), "l'onglet « Rencontres »");
+ok((await hugo.locator("#o-rencontre").isVisible()) && (await hugo.locator(".mc-nav button.pris").count()) === 0, "« Rencontres », à son adresse (hors du menu depuis « Autour »)");
 await fermerPablito(hugo, "#o-rencontre");
 await hugo.screenshot({ path: `${D}/ma-figurine-0c-mois-a-gagner.png` });
 // LE DIXIÈME JOUR : elle se fabrique toute seule (ici sans moteur d'image : sa figurine, avec le thème et sa phrase)

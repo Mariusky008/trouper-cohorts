@@ -1,4 +1,4 @@
-# Reprise — où on en est, et ce qu'il reste à faire (7 novembre 2026)
+# Reprise — où on en est, et ce qu'il reste à faire (7 novembre 2026, après le lot B d'« Autour de moi »)
 
 Pour la session qui reprend si celle-ci s'arrête. **Mettre ce fichier à jour à chaque étape terminée** (et le dire au
 propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'un autre chantier (la démo humaine).
@@ -6,8 +6,8 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 ## 1. Lire d'abord
 
 1. `CLAUDE.md` (racine) : les règles communes.
-2. `docs/figurines.md`, section 9.0 (de « duovicies » à « novovicies ») : tout ce qui a été fait sur « Ma figurine »,
-   les mèmes, « Découvrir », le mème du jour, l'appli et la notification de 11 h 30.
+2. `docs/figurines.md`, section 9.0 (de « duovicies » à « untricies ») : tout ce qui a été fait sur « Ma figurine »,
+   les mèmes, « Découvrir », le mème du jour, l'appli et la notification de 11 h 30, « Autour de moi ».
 3. Ce fichier, en entier.
 
 ## 2. La façon de travailler (celle de cette session)
@@ -39,6 +39,9 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
   - Pablito ouvre une fenêtre la première fois sur chaque onglet : `fermerPablito(page, "#o-…")` avant de toucher.
   - Le site défile en douceur (`scroll-behavior: smooth`) et le menu du bas est fixe : centrer un bouton avant de le
     toucher (`toucher()` dans `appli-notif.mjs`).
+  - Playwright n'est pas dans `node_modules` sur le poste : `PLAYWRIGHT_MODULE=/opt/node22/lib/node_modules/playwright/index.js`.
+  - La carte d'« Autour » a besoin de WebGL : Chromium est lancé avec `--enable-unsafe-swiftshader` (voir
+    `scripts/navigateur/autour.mjs`), et l'essai sert lui-même le style de la carte (le réseau ne sort pas).
   - Avant d'écrire un nouveau fichier, **vérifier que le nom est libre** : deux fichiers ont déjà été écrasés par
     erreur.
 - **Règles produit** :
@@ -63,9 +66,11 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 | #93 | Lot 2 : le mème du jour au centre, 😂 ❤️ 🔥, les proches d'abord, la carte sobre des commerçants |
 | #94 | Lot 3 : l'appli sur l'écran d'accueil (jeton d'installation iPhone) et la notification du mème du jour à 11 h 30 |
 
+| #95 | Ce fichier ; l'essai de 11 h 30 qui passe à toute heure ; « Autour de moi », lot A (le serveur) |
+
 Après #94, l'essai `appli-notif.mjs` a échoué sur `main` : la CI tournait entre 11 h et midi (heure de Paris), et
 l'appel « sans forcer » de l'essai avait vraiment fait l'envoi. Ce n'est pas un défaut de l'appli. L'essai le fait
-maintenant en dernier, et vérifie qu'il ne part jamais deux fois le même jour (PR de ce fichier).
+maintenant en dernier, et vérifie qu'il ne part jamais deux fois le même jour (#95).
 
 ## 4. Le chantier en cours : « Autour de moi » (les mèmes laissés dans la ville)
 
@@ -155,9 +160,24 @@ Les lieux publics nommés viendront plus tard, avec des positions vérifiées (p
 ### 4.3 Le plan de réalisation
 
 **Où on en est** :
-- **Lot A (le serveur) : écrit et essayé** (`scripts/essai-autour-route.mjs`, 26 vérifications), dans la PR qui suit
-  #95.
-- **Lot B (l'écran) : à faire**, puis le lot C.
+- **Lot A (le serveur) : fusionné** (#95). Complété avec le lot B : on peut répondre dans une zone « Ailleurs » qui a
+  déjà des mèmes, par son identifiant (`scripts/essai-autour-route.mjs`, 29 vérifications).
+- **Lots B et C (l'écran, ses essais, la doc) : écrits et essayés**, dans la PR qui suit #95 (à fusionner quand la CI
+  est verte). Le détail : `docs/figurines.md`, section 9.0 untricies.
+  - `src/app/collection/autour.tsx` (la carte, le lieu, le swipe, le dépôt, « C'est publié ! », le profil) et
+    `autour-carte.tsx` (MapLibre) ; branchés dans `ma-collection.tsx` (« Autour » dans le menu, `#autour`).
+  - « Rencontres » n'est plus dans le menu mais **reste à son adresse** `#rencontre` (le lien d'un ami, sa figurine du
+    mois). **À demander au propriétaire** : l'effacer, ou lui garder une entrée ailleurs.
+  - L'essai : `scripts/navigateur/autour.mjs` (35 vérifications), dans `lancer-essais.sh`. Les essais qui vérifiaient
+    « Rencontres » dans le menu (`ma-figurine.mjs`, `famille-page.mjs`, `personnage-rencontre.mjs`) ont été ajustés.
+- **Ce que le lot B ne fait pas encore** (à proposer au propriétaire, dans cet ordre) :
+  1. la réponse « avec sa tête » dans le studio (choisir sa tête, sa phrase, « 🎲 Surprends-moi ») : aujourd'hui, on
+     répond avec un de ses mèmes déjà faits, ou « ＋ Nouveau mème » ouvre « Créer » ;
+  2. les regroupements sur la carte (« +9 ») quand il y aura beaucoup de lieux ;
+  3. « 👯 Ajouter en proche » et « Lui répondre » depuis le profil ;
+  4. une photo du lieu en haut de sa page (la maquette en montrait une) ;
+  5. prévenir « on a répondu à ton mème », la réponse du commerçant depuis son comptoir, la page admin de modération ;
+  6. les lieux publics nommés (les Arènes, les Halles…), avec des positions vérifiées.
 
 Ce que le lot A fournit :
 - `src/lib/direct/autour.ts` : les types (`Lieu`, `MemeAutour`, `ProfilAutour`), la zone floue (`zoneDe`, une maille
