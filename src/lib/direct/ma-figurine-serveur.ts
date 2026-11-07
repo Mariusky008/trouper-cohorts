@@ -110,7 +110,7 @@ export function depotDans(supabase: Supabase, dossier: string): Depot {
     effacer: async (nom) => void (await supabase.storage.from(SEAU_FIGURINES).remove([`${dossier}/${nom}`])),
   };
 }
-const dossierExpressions = (habitantId: string, neutre: string) => `${habitantId}/expr-${empreinte(neutre)}`;
+export const dossierExpressions = (habitantId: string, neutre: string) => `${habitantId}/expr-${empreinte(neutre)}`;
 /** 🗓️ Ses looks (ses figurines du mois, `figurine-du-mois-serveur.ts`) : l'image, et sa bouche ouverte. */
 export const cheminImageDuLook = (h: string, mois: string) => `${h}/mois/${mois}.webp`;
 export const cheminParleDuLook = (h: string, mois: string) => `${h}/mois/${mois}-p.webp`;
@@ -589,6 +589,8 @@ export async function statsMemes(supabase: Supabase): Promise<StatsMemes> {
   for (const e of (Array.isArray(data) ? data : []) as { message_id?: string; type?: string; created_at?: string }[]) {
     // (les mèmes des commerçants, `c-<id>`, ont leurs propres chiffres : `memes-commerces-serveur.ts`)
     if (s(e.message_id).startsWith("c-")) continue;
+    // (ses réactions et ses gags, `r-<clé>` : comptés à part, `statsReactions`)
+    if (s(e.message_id).startsWith("r-")) continue;
     const type = TYPES_EVENEMENT_MEME.find((x) => x === e.type);
     if (!type) continue;
     const quand = new Date(s(e.created_at));

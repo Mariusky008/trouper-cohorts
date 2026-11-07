@@ -22,6 +22,9 @@
 // POST { action: "meme-evenement", type: "partage"|"nouveau", id } : un geste autour d'un mème (la mesure).
 // POST { action: "public", id, public: true|false } : son mème dans « Découvrir », pour les gens de sa ville (son accord),
 //      ou retiré. Jamais un duo, jamais un mème signalé.
+// GET ?reactions=1 : ⚡ ses réactions (`mes-reactions.ts`) — ses poses faites, sa figurine, si le moteur peut en faire.
+// POST { action: "pose", cle } : une pose faite par le moteur (la première fois qu'il la touche, ~1 min) → { url }.
+// POST { action: "reaction-envoi", cle } : une réaction ou un gag envoyé (la mesure).
 // POST { action: "surprise", sauf?: [textes] } : 🎲 « Surprends-moi ! » — un mème écrit par ClikMe d'après sa carte de
 //      personnage (`meme-surprise.ts`) ; rien n'est dit ni envoyé : il le choisit d'abord.
 // POST { action: "signaler", id } : celui qui a reçu un message le signale (pas besoin d'être quelqu'un).
@@ -51,6 +54,7 @@ import {
   signalerMessage,
 } from "@/lib/direct/ma-figurine-serveur";
 import { surprendre } from "@/lib/direct/meme-surprise-serveur";
+import { fabriquerPose, mesReactions, noterEnvoiReaction } from "@/lib/direct/mes-reactions-serveur";
 import { fabriquerFigurineDuMois, fabriquerParleDuLook, mesFigurinesDuMois } from "@/lib/direct/figurine-du-mois-serveur";
 
 export const dynamic = "force-dynamic";
@@ -78,6 +82,11 @@ export async function GET(request: Request) {
   // 🗓️ sa figurine du mois (où il en est) et celles d'avant
   if (new URL(request.url).searchParams.get("mois")) {
     return NextResponse.json({ ok: true, mois: await mesFigurinesDuMois(supabase, moi) }, { headers: sansCache });
+  }
+  // ⚡ ses réactions
+  if (new URL(request.url).searchParams.get("reactions")) {
+    const r = await mesReactions(supabase, moi);
+    return r ? NextResponse.json({ ok: true, ...r }, { headers: sansCache }) : NextResponse.json({ error: "Ta figurine n’est pas encore prête." }, { status: 400 });
   }
   // 📥 « mes mèmes » : les siens, les réponses qu'on lui a faites, ceux qu'il a reçus (`recus` : gardés sur son téléphone)
   if (new URL(request.url).searchParams.get("memes")) {
@@ -165,6 +174,16 @@ export async function POST(request: Request) {
     const r = await rendreMemePublic(supabase, moi, p.id, p.public);
     if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
     return NextResponse.json({ ok: true, public: r.public }, { headers: sansCache });
+  }
+  // ⚡ une pose de ses réactions, faite par le moteur ; un envoi (la mesure)
+  if (p?.action === "pose") {
+    const r = await fabriquerPose(supabase, moi, p.cle, avant);
+    if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
+    return NextResponse.json({ ok: true, ...(r.url ? { url: r.url } : {}), ...(r.enCours ? { enCours: true } : {}) }, { headers: sansCache });
+  }
+  if (p?.action === "reaction-envoi") {
+    const ok = await noterEnvoiReaction(supabase, p.cle);
+    return NextResponse.json(ok ? { ok: true } : { error: "Cette réaction n’existe pas." }, { status: ok ? 200 : 400 });
   }
   // 🎲 « Surprends-moi ! » : ClikMe écrit son mème (il le lit, puis le choisit — ou en demande un autre)
   if (p?.action === "surprise") {

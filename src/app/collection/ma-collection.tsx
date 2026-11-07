@@ -27,6 +27,7 @@ import { STYLES_CONNAITRE } from "./connaitre";
 import { MaFigurineDuMois, STYLES_FIGURINE_DU_MOIS } from "./figurine-du-mois";
 import { MesMemes, STYLES_MES_MEMES } from "./mes-memes";
 import { Decouvrir, STYLES_DECOUVRIR } from "./decouvrir";
+import { STYLES_MES_REACTIONS } from "./mes-reactions";
 import type { EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
 /** Le menu du bas : cinq boutons, « Créer » au milieu. */
@@ -45,6 +46,8 @@ const ALIAS: Record<string, Vue> = {
   moi: "personnage",
   figurine: "figurine",
   creer: "figurine",
+  // (⚡ ses réactions, en haut de « Créer » : là où l'app installée pourra s'ouvrir)
+  reactions: "figurine",
   personnage: "personnage",
   rencontre: "rencontre",
   rencontres: "rencontre",
@@ -236,7 +239,7 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_PERSONNAGE + STYLES_RENCONTRE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_PERSONNAGE + STYLES_RENCONTRE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_MES_REACTIONS}</style>
     </main>
   );
 }
