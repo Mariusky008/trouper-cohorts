@@ -990,6 +990,20 @@ ressort, un mini-jeu de 10 à 20 secondes, un gagnant, un polaroïd. Avant de re
   partie sans réagir (elle craque, le polaroïd, la phrase changée, le score), la revanche en chassant chaque mouche
   (Pablito craque), sans compte.
 
+### 9.0 sexvicies Une expression de plus : l'amour 😍 (7 novembre)
+
+Le patron : « on n'a pas l'expression amoureux, qui est assez utile ». Le huitième visage du studio, **😍 Amour**
+(`SENTIMENTS`, `ma-figurine.ts`) — un nom, jamais « amoureux » ni « amoureuse » : on ne devine pas le genre.
+
+- **Son visage**, fait par le moteur d'image à la demande, comme les autres (`figurine-expressions-serveur.ts` : des
+  yeux rêveurs qui brillent de petits reflets en cœur, les joues qui rosissent, un sourire tendre ; et sa bouche
+  ouverte pour parler). Rien n'est fabriqué tant qu'on ne le choisit pas. Pablito aussi l'aura à la première demande.
+- **Des cœurs montent autour d'elle** (💗 ❤️ 💕), avec son visage amoureux ou en attendant qu'il soit fait (elle se
+  balance alors, le cœur battant) ; et dans la vidéo du mème, 😍 et ses cœurs.
+- **Les mèmes prêts** : « 😍 Je t'aime » (« Je t'aime. Voilà, c'est dit. Et ma figurine est tout à fait d'accord. »)
+  et la Saint-Valentin prennent ce visage.
+- Le sentiment est rangé à côté du message (pas dans la colonne de la table) : rien à migrer.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

@@ -130,8 +130,8 @@ await hugo.locator(".tf-options summary").click();
 const kdo = await texte(hugo, ".tf-kdo");
 ok((await hugo.locator(".tf-moi .tf-kdo li.faite").count()) === 1 && (await texte(hugo, ".tf-kdo li.faite")).includes("Créer ta figurine") && kdo.includes("Répondre en duo à un mème") && !/commerçant/i.test(kdo), "une étape franchie (sa figurine) ; plus d'étape « commerçant » : « Répondre en duo à un mème »");
 ok(
-  (await hugo.locator(".tf-moi .tf-expr button").count()) === 7 && (await hugo.locator(".tf-moi .tf-expr button.ferme, .tf-moi .tf-voix button.ferme").count()) === 0 && (await hugo.locator(".tf-moi .tf-danse").count()) === 1,
-  "tout est ouvert dès le départ : sept visages, toutes les voix, la danse",
+  (await hugo.locator(".tf-moi .tf-expr button").count()) === 8 && (await hugo.locator(".tf-moi .tf-expr button.ferme, .tf-moi .tf-voix button.ferme").count()) === 0 && (await hugo.locator(".tf-moi .tf-danse").count()) === 1,
+  "tout est ouvert dès le départ : huit visages, toutes les voix, la danse",
 );
 await hugo.locator(".tf-moi .tf-expr button", { hasText: "Tristesse" }).click();
 ok((await hugo.locator(".tf-moi .fqp").getAttribute("data-sentiment")) === "tristesse" && (await hugo.locator(".tf-nudge").count()) === 0, "la tristesse se choisit tout de suite (plus de cadeau à attendre)");
@@ -321,7 +321,11 @@ await lea.reload({ waitUntil: "networkidle" });
 await lea.waitForSelector(".tf-moi .tf-texte textarea", { timeout: 30000 });
 ok((await texte(lea, "#o-figurine .og-tete h1")).includes("Fais-la parler"), "sa figurine est là : fais-la parler");
 ok((await texte(lea, "#o-figurine .cn-proteger")).includes("Ne perds jamais ta figurine"), "🔐 son adresse peut protéger sa figurine (un code pour la retrouver)");
-ok((await lea.locator(".tf-moi .tf-expr button").count()) === 7 && (await lea.locator(".tf-moi .tf-expr button.ferme").count()) === 0, "sept visages à lui donner, tous ouverts (dont le fou rire et la grimace)");
+ok((await lea.locator(".tf-moi .tf-expr button").count()) === 8 && (await lea.locator(".tf-moi .tf-expr button.ferme").count()) === 0, "huit visages à lui donner, tous ouverts (dont le fou rire, la grimace et l'amour)");
+// 😍 L'AMOUR (7 novembre 2026) : son visage amoureux est demandé, et des cœurs montent autour d'elle en attendant
+await lea.locator(".tf-moi .tf-expr button", { hasText: "Amour" }).click();
+ok((await lea.locator(".tf-moi .fqp").getAttribute("data-sentiment")) === "amour" && (await lea.locator(".tf-moi .fqp-coeurs i").count()) === 3, "😍 l'amour : des cœurs montent autour d'elle");
+await lea.screenshot({ path: `${D}/ma-figurine-1a-amour.png` });
 await lea.locator(".tf-moi .tf-expr button", { hasText: "Fou rire" }).click();
 ok((await lea.locator(".tf-moi .fqp").getAttribute("data-sentiment")) === "rire", "le fou rire");
 await lea.locator(".tf-moi .tf-danse").click();

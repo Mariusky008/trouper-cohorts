@@ -306,6 +306,14 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
             <i>🎵</i>
           </span>
         )}
+        {/* 😍 L'AMOUR : des cœurs montent autour d'elle (avec son visage amoureux, ou en attendant qu'il soit fait) */}
+        {sentiment === "amour" && (
+          <span className="fqp-notes fqp-coeurs" aria-hidden="true">
+            <i>💗</i>
+            <i>❤️</i>
+            <i>💕</i>
+          </span>
+        )}
       </div>
       {src !== undefined && (
         <button type="button" className="fqp-jouer" onClick={() => (joue ? arreter() : void jouer(src))} disabled={charge}>
@@ -348,6 +356,8 @@ export const STYLES_FIGURINE_QUI_PARLE = `
 .bouge.sent-euphorie .fqp-corps{animation:fqp-bond .7s cubic-bezier(.3,1.6,.5,1) infinite}
 .bouge.sent-rire .fqp-corps{animation:fqp-rire .16s linear infinite}
 .bouge.sent-grimace .fqp-corps{animation:fqp-grimace .9s ease-in-out infinite}
+.bouge.sent-amour .fqp-corps{animation:fqp-amour 1.1s ease-in-out infinite}
+.fqp-coeurs i{animation-duration:2.8s}
 /* 🕺 elle danse SUR SON RESSORT (avec n'importe quel visage) : le fond seul derrière ; le socle immobile ; le ressort
    se tasse et s'étire ; le corps s'enfonce, saute et se balance au-dessus (les deux au même rythme) */
 .fqp.ressort .fqp-corps{animation:none!important}
@@ -372,6 +382,7 @@ export const STYLES_FIGURINE_QUI_PARLE = `
 @keyframes fqp-joie{from{transform:translateY(0) rotate(-3deg)}to{transform:translateY(-5%) rotate(3deg)}}
 @keyframes fqp-colere{0%,100%{transform:translateX(0)}25%{transform:translateX(-2%) rotate(-1deg)}75%{transform:translateX(2%) rotate(1deg)}}
 @keyframes fqp-triste{0%,100%{transform:rotate(-2deg) translateY(2%) scale(.98)}50%{transform:rotate(-4deg) translateY(3%) scale(.97)}}
+@keyframes fqp-amour{0%,100%{transform:scale(1) rotate(-2deg)}15%{transform:scale(1.05) rotate(-2deg)}30%{transform:scale(1) rotate(2deg)}45%{transform:scale(1.05) rotate(2deg)}}
 @keyframes fqp-bond{0%,100%{transform:translateY(0) scale(1.03,.95)}45%{transform:translateY(-12%) scale(.97,1.04)}}
 @media (prefers-reduced-motion:reduce){.fqp-corps,.fqp-badge,.fqp-ondes,.fqp-notes i,.fqp-bande{animation:none!important}}
 `;
