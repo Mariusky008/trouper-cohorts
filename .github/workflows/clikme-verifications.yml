@@ -83,7 +83,9 @@ jobs:
 
   essais-app:
     name: Route et navigateur
-    runs-on: ubuntu-latest
+    # (Ubuntu 24.04 fixé : le 7 novembre 2026, « ubuntu-latest » est passé à 26.04, où Playwright 1.56 ne sait pas installer
+    # Chromium — « Playwright does not support chromium on ubuntu26.04-x64 »)
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
