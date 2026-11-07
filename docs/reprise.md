@@ -6,7 +6,7 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 ## 1. Lire d'abord
 
 1. `CLAUDE.md` (racine) : les règles communes.
-2. `docs/figurines.md`, section 9.0 (de « duovicies » à « octotricies ») : tout ce qui a été fait sur « Ma figurine »,
+2. `docs/figurines.md`, section 9.0 (de « duovicies » à « novotricies ») : tout ce qui a été fait sur « Ma figurine »,
    les mèmes, « Découvrir », le mème du jour, l'appli et la notification de 11 h 30, « Autour de moi », « Rencontres »
    effacé, la figurine réservée aux 15 ans et plus.
 3. Ce fichier, en entier.
@@ -71,6 +71,8 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 | #97 | Ce fichier : #96 fusionnée, et la décision d'effacer « Rencontres » |
 | #98 | « Rencontres » effacé (la figurine du mois en 10 jours sur ClikMe) ; la figurine réservée aux 15 ans et plus |
 | #99 | « Autour » : répondre avec sa tête ; le profil (ajouter en proche, lui répondre ; « Mes proches » suit la liste de l'auteur) ; la photo du lieu |
+| #100 | La modération des mèmes signalés (vus comme les gens les ont vus ; retirés de la carte aussi) |
+| #101 | « Hugo t'a répondu ! » : la notification des réponses, et son interrupteur dans « Moi » |
 
 Après #94, l'essai `appli-notif.mjs` a échoué sur `main` : la CI tournait entre 11 h et midi (heure de Paris), et
 l'appel « sans forcer » de l'essai avait vraiment fait l'envoi. Ce n'est pas un défaut de l'appli. L'essai le fait
@@ -186,7 +188,8 @@ Les lieux publics nommés viendront plus tard, avec des positions vérifiées (p
      `docs/figurines.md`, section 9.0 sextricies ;
   5. **la modération : faite** (9.0 septtricies) ; **« Hugo t'a répondu ! » : fait** (9.0 octotricies : la notification,
      son interrupteur à part dans « Moi », allumé d'office) ; **à faire** : la réponse du commerçant depuis son comptoir ;
-  6. les lieux publics nommés (les Arènes, les Halles…), avec des positions vérifiées.
+  6. **fait** — les lieux publics nommés (9.0 novotricies) : **le propriétaire doit les placer lui-même** sur
+     `/admin/humain/lieux-publics` (noms suggérés pour Dax, aucune position écrite d'avance).
 
 Ce que le lot A fournit :
 - `src/lib/direct/autour.ts` : les types (`Lieu`, `MemeAutour`, `ProfilAutour`), la zone floue (`zoneDe`, une maille
@@ -290,6 +293,13 @@ l'effacement de sa photo d'origine après la fabrication ne sont pas faits ; ne 
 
 ## 5. Les autres sujets en attente
 
+- **⚠️ Une faille repérée le 7 novembre, pas encore corrigée (à faire sur l'accord du propriétaire)** :
+  `getServerUserIdWithProxyFallback` (`src/lib/supabase/server.ts`), qui sert à `isCurrentUserAdmin`, se rabat, quand
+  Supabase ne vérifie pas la session, sur `getSession()` puis sur le `sub` du cookie — sans en vérifier la signature.
+  Les routes `/api/admin/*` (que le middleware ne garde pas) accepteraient donc un cookie fabriqué portant l'identifiant
+  d'un administrateur. Correction proposée : ne croire que `getUser()` (vérifié) ; le prix : « accès refusé » le temps
+  d'une panne de Supabase.
+- **Le point 5 d'« Autour », fin** : la réponse du commerçant depuis son comptoir (pas commencée).
 - **La page personnalité « double numérique »** (la figurine répond aux questions des visiteurs) : le propriétaire a dit
   « on verra plus tard ». Avis donné : commencer par des questions toutes faites, puis une boîte à questions validées
   par l'utilisateur. La voix est réservée aux réponses qu'il valide (à confirmer avec lui).

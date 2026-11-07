@@ -21,16 +21,20 @@ import { lirePhotosDuLieu } from "@/lib/site-internet/photos-du-lieu";
 import { parleDAlcool } from "@/lib/direct/meme-surprise";
 import { SANS_AGE, SEAU_FIGURINES, aConfirmeSonAge, ajouterProche, cartesDeMemes, ecrireJson, lireJson, memeDeposable, memesCaches, prochesDe, retirerProche, saFigurineSignee } from "@/lib/direct/ma-figurine-serveur";
 import {
+  EMOJIS_LIEUX_PUBLICS,
   MOT_MAX,
+  NOM_LIEU_PUBLIC_MAX,
   PAR_LIEU_PAR_JOUR,
   centreDeZone,
   emojiDuCommerce,
   estZone,
+  idLieuPublic,
   lieuIdValide,
   nomLieuPropre,
   quiValide,
   zoneDe,
   type Lieu,
+  type LieuPublic,
   type MemeAutour,
   type ProfilAutour,
   type Qui,
@@ -85,8 +89,9 @@ async function lister(supabase: Supabase, dossier: string): Promise<{ name: stri
   return tout;
 }
 
-// ─── les commerces de la ville, avec leurs coordonnées ────────────────────────────────────────────────────────────
-type Commerce = { id: string; nom: string; activite: string; lat: number; lng: number };
+// ─── les commerces de la ville, avec leurs coordonnées ; et ses lieux publics ──────────────────────────────────────
+// (`public` : un lieu public nommé, avec son emoji — `lieuxFixesDe`)
+type Commerce = { id: string; nom: string; activite: string; lat: number; lng: number; public?: true; emoji?: string };
 const villeDe = (city: unknown) => villeSlug(s(city).replace(/\b\d{5}\b/g, " ").replace(/\s+/g, " ").trim());
 export async function commercesDe(supabase: Supabase, ville: string): Promise<Commerce[]> {
   if (!ville) return [];
@@ -126,6 +131,50 @@ async function photoDuCommerce(supabase: Supabase, slug: string): Promise<string
   }
 }
 
+/** 🏛️ Les lieux publics nommés d'une ville (`lieux-publics/<ville>.json`), placés par l'admin. */
+const cheminLieuxPublics = (ville: string) => `lieux-publics/${ville}.json`;
+export async function lieuxPublicsDe(supabase: Supabase, ville: string): Promise<LieuPublic[]> {
+  if (!ville) return [];
+  const f = await lireJson<{ lieux?: unknown[] }>(supabase, cheminLieuxPublics(ville));
+  return (Array.isArray(f.lieux) ? f.lieux : [])
+    .map((x) => (x && typeof x === "object" ? (x as Ligne) : {}))
+    .map((x) => ({ id: s(x.id), nom: s(x.nom), emoji: s(x.emoji) || "📍", lat: Number(x.lat), lng: Number(x.lng) }))
+    .filter((x) => /^p-[a-z0-9-]{2,60}$/.test(x.id) && x.nom && Number.isFinite(x.lat) && Number.isFinite(x.lng));
+}
+/** Les lieux où l'on dépose par leur nom : les commerces clients, et les lieux publics. */
+export async function lieuxFixesDe(supabase: Supabase, ville: string): Promise<Commerce[]> {
+  const [commerces, publics] = await Promise.all([commercesDe(supabase, ville), lieuxPublicsDe(supabase, ville)]);
+  return [...commerces, ...publics.map((p) => ({ id: p.id, nom: p.nom, activite: "", lat: p.lat, lng: p.lng, public: true as const, emoji: p.emoji }))];
+}
+const emojiDe = (c: Commerce) => c.emoji || emojiDuCommerce(c.activite);
+
+/**
+ * 🏛️ L'ADMIN PLACE UN LIEU PUBLIC (son nom, son emoji, sa position : touchée sur la vraie carte), ou le retire. Un lieu
+ * retiré quitte la carte ; les mèmes qui y étaient ne se montrent plus.
+ */
+export async function placerLieuPublic(supabase: Supabase, ville: unknown, x: { nom?: unknown; emoji?: unknown; lat?: unknown; lng?: unknown }): Promise<{ lieu?: LieuPublic; error?: string }> {
+  const v = villeSlug(s(ville));
+  if (!v) return { error: "Quelle ville ?" };
+  const nom = s(x.nom).replace(/\s+/g, " ").trim().slice(0, NOM_LIEU_PUBLIC_MAX);
+  const id = idLieuPublic(nom);
+  if (!id || motInterdit(nom)) return { error: "Donne-lui un nom (2 lettres au moins)." };
+  const emoji = (EMOJIS_LIEUX_PUBLICS as readonly string[]).includes(s(x.emoji)) ? s(x.emoji) : "📍";
+  const lat = Number(x.lat);
+  const lng = Number(x.lng);
+  // (la France métropolitaine, à peu près : une position touchée sur la carte, pas un zéro oublié)
+  if (!(lat > 41 && lat < 51.5 && lng > -5.5 && lng < 10)) return { error: "Touche la carte, là où il est." };
+  const avant = await lieuxPublicsDe(supabase, v);
+  const lieu: LieuPublic = { id, nom, emoji, lat: Math.round(lat * 1e6) / 1e6, lng: Math.round(lng * 1e6) / 1e6 };
+  const ok = await ecrireJson(supabase, cheminLieuxPublics(v), { lieux: [...avant.filter((l) => l.id !== id), lieu] });
+  return ok ? { lieu } : { error: "Pas enregistré." };
+}
+export async function retirerLieuPublic(supabase: Supabase, ville: unknown, id: unknown): Promise<{ error?: string }> {
+  const v = villeSlug(s(ville));
+  const avant = await lieuxPublicsDe(supabase, v);
+  if (!avant.some((l) => l.id === s(id))) return { error: "Ce lieu n’existe pas." };
+  return (await ecrireJson(supabase, cheminLieuxPublics(v), { lieux: avant.filter((l) => l.id !== s(id)) })) ? {} : { error: "Pas enregistré." };
+}
+
 // ─── déposer, retirer ──────────────────────────────────────────────────────────────────────────────────────────────
 export type Demande = { meme: unknown; lieu?: unknown; ici?: unknown; qui?: unknown; mot?: unknown; nomLieu?: unknown; reponseA?: unknown };
 
@@ -154,7 +203,7 @@ export async function deposer(supabase: Supabase, habitant: Habitant, d: Demande
       ? false
       : estZone(l)
         ? (await lister(supabase, `autour/${ville}/${l}`)).some((x) => lireNom(x.name))
-        : (await commercesDe(supabase, ville)).some((c) => c.id === l);
+        : (await lieuxFixesDe(supabase, ville)).some((c) => c.id === l);
     if (!existe) return { error: "Ce lieu n’est pas à " + ville + ".", statut: 400 };
     lieu = l;
     zoneExistante = estZone(l);
@@ -198,9 +247,9 @@ export async function deposer(supabase: Supabase, habitant: Habitant, d: Demande
   if (!ok) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   // ↩️ L'AUTEUR DU MÈME AUQUEL IL RÉPOND, s'il peut voir cette réponse (pas « moi seul » ; « mes proches » : s'il en est)
   if (origine && origine.h !== habitant.id && (await visible({ qui, h: habitant.id }, regardDe(supabase, origine.h)))) {
-    const c = estZone(lieu) ? null : (await commercesDe(supabase, ville)).find((x) => x.id === lieu);
+    const c = estZone(lieu) ? null : (await lieuxFixesDe(supabase, ville)).find((x) => x.id === lieu);
     // (une zone : le petit nom de la soirée, celui du mème auquel il répond)
-    const ou = c ? `${emojiDuCommerce(c.activite)} ${c.nom}` : `✨ ${s((await lireJson<Depot>(supabase, `autour/${ville}/${lieu}/${nomFichier(origine.id, origine.qui, origine.h)}`)).nomLieu) || "Quelque part par ici"}`;
+    const ou = c ? `${emojiDe(c)} ${c.nom}` : `✨ ${s((await lireJson<Depot>(supabase, `autour/${ville}/${lieu}/${nomFichier(origine.id, origine.qui, origine.h)}`)).nomLieu) || "Quelque part par ici"}`;
     return { ok: true, lieu, aPrevenir: { auteur: origine.h, meme: id, ou, url: `/collection?autour=${encodeURIComponent(lieu)}&meme=${id}#autour` } };
   }
   return { ok: true, lieu };
@@ -226,7 +275,7 @@ export async function depotPourModeration(supabase: Supabase, h: string, id: str
   if (!avant.ville || !avant.lieu) return null;
   const qui = quiValide(avant.qui) ?? "tous";
   const d = await lireJson<Depot>(supabase, `autour/${avant.ville}/${avant.lieu}/${nomFichier(id, qui, h)}`);
-  const commerce = estZone(avant.lieu) ? null : (await commercesDe(supabase, avant.ville)).find((c) => c.id === avant.lieu);
+  const commerce = estZone(avant.lieu) ? null : (await lieuxFixesDe(supabase, avant.ville)).find((c) => c.id === avant.lieu);
   return { lieu: avant.lieu, nom: commerce?.nom || s(d.nomLieu) || "Ailleurs, quelque part par ici", qui, ...(s(d.mot) ? { mot: s(d.mot) } : {}) };
 }
 
@@ -279,7 +328,7 @@ async function enCartes(supabase: Supabase, ville: string, lieu: string, poses: 
  */
 export async function carteDe(supabase: Supabase, ville: string, moi: Habitant | null): Promise<{ ville: string; lieux: Lieu[]; derniers: MemeAutour[] }> {
   if (!ville) return { ville, lieux: [], derniers: [] };
-  const [commerces, dossiers] = await Promise.all([commercesDe(supabase, ville), lister(supabase, `autour/${ville}`)]);
+  const [commerces, dossiers] = await Promise.all([lieuxFixesDe(supabase, ville), lister(supabase, `autour/${ville}`)]);
   const ids = new Set([...commerces.map((c) => c.id), ...dossiers.map((d) => d.name).filter((n) => lieuIdValide(n))]);
   const poses = new Map<string, Pose[]>();
   const regard = regardDe(supabase, moi?.id ?? null);
@@ -304,9 +353,9 @@ export async function carteDe(supabase: Supabase, ville: string, moi: Habitant |
     const nomZone = !c && premier ? s((await lireJson<Depot>(supabase, `autour/${ville}/${id}/${nomFichier(premier.id, premier.qui, premier.h)}`)).nomLieu) : "";
     lieux.push({
       id,
-      type: c ? "commerce" : "zone",
+      type: c ? (c.public ? "public" : "commerce") : "zone",
       nom: c ? c.nom : nomZone || "Quelque part par ici",
-      emoji: c ? emojiDuCommerce(c.activite) : "✨",
+      emoji: c ? emojiDe(c) : "✨",
       lat: centre.lat,
       lng: centre.lng,
       n: p.length,
@@ -326,17 +375,17 @@ export async function carteDe(supabase: Supabase, ville: string, moi: Habitant |
 /** 📍 Les mèmes d'un lieu, pour le swipe : ce qu'il peut voir, les plus récents d'abord (ses proches devant). */
 export async function memesDuLieu(supabase: Supabase, ville: string, lieu: string, moi: Habitant | null): Promise<{ lieu: Lieu | null; memes: MemeAutour[] }> {
   if (!ville || !lieuIdValide(lieu)) return { lieu: null, memes: [] };
-  const [poses, commerces] = await Promise.all([posesVisibles(supabase, ville, lieu, regardDe(supabase, moi?.id ?? null)), estZone(lieu) ? Promise.resolve([]) : commercesDe(supabase, ville)]);
+  const [poses, commerces] = await Promise.all([posesVisibles(supabase, ville, lieu, regardDe(supabase, moi?.id ?? null)), estZone(lieu) ? Promise.resolve([]) : lieuxFixesDe(supabase, ville)]);
   const c = commerces.find((x) => x.id === lieu);
   const centre = c ? { lat: c.lat, lng: c.lng } : centreDeZone(lieu);
   if (!centre || (!c && !poses.length)) return { lieu: null, memes: [] };
-  const [memes, photo] = await Promise.all([enCartes(supabase, ville, lieu, poses, moi), c ? photoDuCommerce(supabase, lieu.slice(2)) : Promise.resolve("")]);
+  const [memes, photo] = await Promise.all([enCartes(supabase, ville, lieu, poses, moi), c && !c.public ? photoDuCommerce(supabase, lieu.slice(2)) : Promise.resolve("")]);
   return {
     lieu: {
       id: lieu,
-      type: c ? "commerce" : "zone",
+      type: c ? (c.public ? "public" : "commerce") : "zone",
       nom: c ? c.nom : [...memes].reverse().find((m) => m.nomLieu)?.nomLieu || "Quelque part par ici",
-      emoji: c ? emojiDuCommerce(c.activite) : "✨",
+      emoji: c ? emojiDe(c) : "✨",
       lat: centre.lat,
       lng: centre.lng,
       n: memes.length,
@@ -366,7 +415,7 @@ export async function profilDe(supabase: Supabase, cle: unknown, moi: Habitant |
   const publics = fiches.filter((x) => x.f.qui === "tous" && s(x.f.ville) && s(x.f.lieu)).map((x) => ({ id: x.id, ville: s(x.f.ville), lieu: s(x.f.lieu), le: s(x.f.le) }));
   const memes = (await Promise.all(publics.map((x) => enCartes(supabase, x.ville, x.lieu, [{ id: x.id, qui: "tous", h, le: x.le }], moi, 1)))).flat();
   const commerces = new Map<string, string>();
-  for (const v of [...new Set(publics.map((x) => x.ville))]) for (const c of await commercesDe(supabase, v)) commerces.set(c.id, c.nom);
+  for (const v of [...new Set(publics.map((x) => x.ville))]) for (const c of await lieuxFixesDe(supabase, v)) commerces.set(c.id, c.nom);
   const lieux = new Map<string, { id: string; nom: string; n: number }>();
   for (const m of memes) {
     const nom = commerces.get(m.lieu) ?? m.nomLieu ?? "Quelque part par ici";

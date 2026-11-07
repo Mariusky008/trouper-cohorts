@@ -269,6 +269,28 @@ ok(!(await voir(HUGO, `?lieu=${ZONE}`)).lieu?.photo, "une zone « Ailleurs » : 
 r = await appel(HUGO, { action: "deposer", meme: "autourhugo01", lieu: "z-9999_-9999" });
 ok(r.statut === 400, "une zone où personne n’a rien déposé : refusée par son identifiant (il faut sa position)");
 
+// ═══ 🏛️ LES LIEUX PUBLICS : PLACÉS PAR L'ADMIN SUR LA VRAIE CARTE, PUIS COMME CHEZ UN COMMERÇANT ═══
+const ADMIN = "00000000-0000-4000-8000-0000000ad001";
+await semer("admins", [{ user_id: ADMIN }]);
+const sessionAdmin = { access_token: "faux-admin", token_type: "bearer", expires_in: 86400, expires_at: Math.floor(Date.now() / 1000) + 86400, refresh_token: "faux", user: { id: ADMIN, aud: "authenticated", role: "authenticated", email: "admin@example.invalid", app_metadata: {}, user_metadata: {} } };
+const cookieAdmin = `sb-127-auth-token=base64-${Buffer.from(JSON.stringify(sessionAdmin)).toString("base64url")}`;
+const admin = async (corps, cookie = cookieAdmin) => {
+  const x = await fetch(`${BASE}/api/admin/direct/lieux-publics`, { method: "POST", headers: { "content-type": "application/json", cookie }, body: JSON.stringify(corps) });
+  return { statut: x.status, ...(await x.json().catch(() => ({}))) };
+};
+ok((await admin({ action: "placer", ville: "dax", nom: "Les Arènes", emoji: "🐂", lat: 43.70851, lng: -1.05664 }, `clikme_habitant=${LEA.jeton}`)).statut === 403, "placer un lieu public : l'admin seulement");
+r = await admin({ action: "placer", ville: "dax", nom: "Les Arènes", emoji: "🐂", lat: 43.70851, lng: -1.05664 });
+ok(r.statut === 200 && r.lieu?.id === "p-les-arenes" && (await lire("lieux-publics/dax.json"))?.lieux?.length === 1, `l'admin place « Les Arènes » (${r.lieu?.id})`);
+ok((await admin({ action: "placer", ville: "dax", nom: "Nulle part", emoji: "📍", lat: 0, lng: 0 })).statut === 400, "sans position touchée sur la carte : refusé");
+const avecArenes = lieuDe(await voir(SAM), "p-les-arenes");
+ok(avecArenes?.type === "public" && avecArenes.emoji === "🐂" && avecArenes.nom === "Les Arènes" && avecArenes.n === 0, "sur la carte de Dax : un lieu public, avec son emoji");
+r = await appel(LEA, { action: "deposer", meme: L[4], lieu: "p-les-arenes", qui: "tous", mot: "Quelle ambiance !" });
+const auxArenes = await voir(SAM, "?lieu=p-les-arenes");
+ok(r.statut === 200 && auxArenes.lieu?.type === "public" && !auxArenes.lieu.photo && auxArenes.memes.some((m) => m.id === L[4] && m.mot === "Quelle ambiance !"), "Léa y dépose son mème, comme chez un commerçant");
+ok((await appel(LEA, { action: "deposer", meme: L[4], lieu: "p-nulle-part" })).statut === 400, "un lieu public qui n'existe pas : refusé");
+r = await admin({ action: "retirer", ville: "dax", id: "p-les-arenes" });
+ok(r.statut === 200 && !lieuDe(await voir(SAM), "p-les-arenes"), "retiré par l'admin : il quitte la carte");
+
 // ═══ SANS COMPTE ═══
 const anonyme = await voir(null, "?ville=dax");
 r = await appel(null, { action: "deposer", meme: L[5], lieu: BISTROT });
