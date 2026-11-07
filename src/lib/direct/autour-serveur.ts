@@ -19,7 +19,7 @@ import { villeSlug } from "@/lib/direct/ville";
 import { motInterdit } from "@/lib/direct/mots-interdits";
 import { lirePhotosDuLieu } from "@/lib/site-internet/photos-du-lieu";
 import { parleDAlcool } from "@/lib/direct/meme-surprise";
-import { SANS_AGE, SEAU_FIGURINES, aConfirmeSonAge, ajouterProche, cartesDeMemes, ecrireJson, lireJson, memeDeposable, prochesDe, retirerProche, saFigurineSignee } from "@/lib/direct/ma-figurine-serveur";
+import { SANS_AGE, SEAU_FIGURINES, aConfirmeSonAge, ajouterProche, cartesDeMemes, ecrireJson, lireJson, memeDeposable, memesCaches, prochesDe, retirerProche, saFigurineSignee } from "@/lib/direct/ma-figurine-serveur";
 import {
   MOT_MAX,
   PAR_LIEU_PAR_JOUR,
@@ -196,13 +196,26 @@ export async function deposer(supabase: Supabase, habitant: Habitant, d: Demande
 
 /** Il retire son mème de l'endroit où il l'avait posé. */
 export async function retirer(supabase: Supabase, habitant: Habitant, meme: unknown): Promise<{ ok: true }> {
-  const id = s(meme);
-  if (!/^[a-z0-9]{12}$/.test(id)) return { ok: true };
-  const avant = await lireJson<{ ville: string; lieu: string; qui: Qui }>(supabase, `${habitant.id}/autour/${id}.json`);
-  if (avant.ville && avant.lieu) {
-    await supabase.storage.from(SEAU_FIGURINES).remove([`autour/${avant.ville}/${avant.lieu}/${nomFichier(id, quiValide(avant.qui) ?? "tous", habitant.id)}`, `${habitant.id}/autour/${id}.json`]);
-  }
+  await retirerDepot(supabase, habitant.id, s(meme));
   return { ok: true };
+}
+/** Son dépôt quitte la carte (lui, ou la modération : `moderation-serveur.ts`). */
+export async function retirerDepot(supabase: Supabase, h: string, id: string): Promise<void> {
+  if (!/^[a-z0-9]{12}$/.test(id) || !h) return;
+  const avant = await lireJson<{ ville: string; lieu: string; qui: Qui }>(supabase, `${h}/autour/${id}.json`);
+  if (avant.ville && avant.lieu) {
+    await supabase.storage.from(SEAU_FIGURINES).remove([`autour/${avant.ville}/${avant.lieu}/${nomFichier(id, quiValide(avant.qui) ?? "tous", h)}`, `${h}/autour/${id}.json`]);
+  }
+}
+/** 🛡️ Où il est déposé, pour la modération : le lieu (son nom), qui le voit, son petit mot. */
+export async function depotPourModeration(supabase: Supabase, h: string, id: string): Promise<{ lieu: string; nom: string; qui: Qui; mot?: string } | null> {
+  if (!/^[a-z0-9]{12}$/.test(id) || !h) return null;
+  const avant = await lireJson<{ ville: string; lieu: string; qui: Qui }>(supabase, `${h}/autour/${id}.json`);
+  if (!avant.ville || !avant.lieu) return null;
+  const qui = quiValide(avant.qui) ?? "tous";
+  const d = await lireJson<Depot>(supabase, `autour/${avant.ville}/${avant.lieu}/${nomFichier(id, qui, h)}`);
+  const commerce = estZone(avant.lieu) ? null : (await commercesDe(supabase, avant.ville)).find((c) => c.id === avant.lieu);
+  return { lieu: avant.lieu, nom: commerce?.nom || s(d.nomLieu) || "Ailleurs, quelque part par ici", qui, ...(s(d.mot) ? { mot: s(d.mot) } : {}) };
 }
 
 // ─── lire : la carte, un lieu, un profil ───────────────────────────────────────────────────────────────────────────
@@ -259,6 +272,9 @@ export async function carteDe(supabase: Supabase, ville: string, moi: Habitant |
   const poses = new Map<string, Pose[]>();
   const regard = regardDe(supabase, moi);
   await Promise.all([...ids].map(async (l) => poses.set(l, await posesVisibles(supabase, ville, l, regard))));
+  // (un mème signalé, ou retiré par la modération, ne compte plus sur la carte)
+  const caches = await memesCaches(supabase, [...poses.values()].flat().map((p) => p.id));
+  if (caches.size) for (const [l, p] of poses) poses.set(l, p.filter((x) => !caches.has(x.id)));
   const visages = new Map<string, Promise<string>>();
   const visage = (h: string) => {
     if (!visages.has(h)) visages.set(h, saFigurineSignee(supabase, h).catch(() => ""));

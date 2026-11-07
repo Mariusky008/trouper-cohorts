@@ -68,6 +68,7 @@ const route = async (qui, corps) => {
   return { statut: r.status, ...(await r.json().catch(() => ({}))) };
 };
 const voir = async (qui, q = "") => (await fetch(`${BASE}/api/direct/autour${q}`, { headers: { cookie: qui ? `clikme_habitant=${qui.jeton}` : "" } })).json();
+const lieuDe = (carte, id) => (carte.lieux ?? []).find((l) => l.id === id);
 const avant = [
   await route(LEA, { action: "deposer", meme: "ecranlea0001", lieu: BISTROT, qui: "tous", mot: "Le chef m’a reconnu." }),
   await route(LEA, { action: "deposer", meme: "ecranlea0002", lieu: BISTROT, qui: "tous" }),
@@ -346,6 +347,36 @@ ok((await texte(inconnu, ".atr-invite")).includes("Crée ta figurine") && (await
 await inconnu.locator(".atr-actions .atr-poser").click();
 await inconnu.waitForSelector("section.atr-deposer .atr-vide", { timeout: 10000 });
 ok((await texte(inconnu, ".atr-deposer")).includes("il te faut ta figurine"), "« Déposer » : il lui faut sa figurine");
+
+// ═══ 🛡️ LA MODÉRATION : LE MÈME SIGNALÉ (le croissant de Hugo), TEL QUE LES GENS L'ONT VU ; PUIS RETIRÉ POUR DE BON ═══
+ok(lieuDe(await voir(SAM), BOULANGERIE)?.n === 0, "signalé : il ne compte plus sur la carte (la boulangerie : 0)");
+// une session d'administration (le jeton « faux-admin » du faux Supabase ; l'administrateur dans `admins`)
+const ADMIN = "00000000-0000-4000-8000-0000000ad001";
+await semer("admins", [{ user_id: ADMIN }]);
+const session = { access_token: "faux-admin", token_type: "bearer", expires_in: 86400, expires_at: Math.floor(Date.now() / 1000) + 86400, refresh_token: "faux", user: { id: ADMIN, aud: "authenticated", role: "authenticated", email: "admin@example.invalid", app_metadata: {}, user_metadata: {} } };
+const ctxAdmin = await b.newContext({ viewport: { width: 1100, height: 900 } });
+await ctxAdmin.addCookies([{ name: "sb-127-auth-token", value: `base64-${Buffer.from(JSON.stringify(session)).toString("base64url")}`, url: BASE }]);
+const admin = await ctxAdmin.newPage();
+admin.on("pageerror", (e) => erreurs.push(String(e)));
+admin.on("dialog", (d) => void d.accept());
+// et un autre, signalé à tort : un mème de Léa au Petit Bistrot
+await fetch(`${BASE}/api/direct/ma-figurine`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "signaler", id: "ecranlea0002" }) });
+ok(!(await voir(SAM, `?lieu=${BISTROT}`)).memes.some((m) => m.id === "ecranlea0002"), "le mème de Léa, signalé : il disparaît du Petit Bistrot");
+await admin.goto(`${BASE}/admin/humain/figurines-clients#signales`, { waitUntil: "networkidle" });
+await admin.waitForSelector(`.signale[data-meme="ecranhugo002"]`, { timeout: 30000 });
+const fiche = await texte(admin, `.signale[data-meme="ecranhugo002"]`);
+ok(
+  fiche.includes("Hugo") && fiche.includes("« Le croissant du matin »") && fiche.includes("Autour : Boulangerie du Marché (pour tout le monde)") && (await admin.locator(`.signale[data-meme="ecranhugo002"] video`).count()) === 1,
+  `la modération le voit comme les gens l'ont vu : sa vidéo, ses mots, où (${fiche.slice(0, 120)})`,
+);
+await admin.screenshot({ path: `${D}/autour-9-moderation.png`, fullPage: true });
+await admin.locator(`.signale[data-meme="ecranhugo002"] .retirer`).click();
+await admin.waitForSelector(`.signale[data-meme="ecranhugo002"]`, { state: "detached", timeout: 15000 });
+ok((await liste(`autour/dax/${BOULANGERIE}`)).length === 0 && !(await (await fetch(`${STOCK}/figurines-clients/${HUGO.id}/autour/ecranhugo002.json`)).text()).includes("lieu"), "« Retirer pour de bon » : son dépôt quitte la carte");
+await admin.locator(`.signale[data-meme="ecranlea0002"] .remettre`).click();
+await admin.waitForSelector(`.signale[data-meme="ecranlea0002"]`, { state: "detached", timeout: 15000 });
+ok((await voir(SAM, `?lieu=${BISTROT}`)).memes.some((m) => m.id === "ecranlea0002"), "« Remettre » (signalé à tort) : il revient au Petit Bistrot");
+await ctxAdmin.close();
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.slice(0, 3).join(" | ")})` : ""}`);
 await b.close();
