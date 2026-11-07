@@ -123,10 +123,12 @@ ok((await api(lea, "/api/direct/connaitre?mot=1")).mot === undefined, "plus de p
 // ═══ 🧠 CE QUE TA FIGURINE SAIT DE TOI : elle voit tout, elle efface ═══
 await lea.waitForSelector("#o-personnage .cn-savoir-tete", { timeout: 30000 });
 await lea.locator("#o-personnage .cn-savoir-tete").click();
+// (la liste se recharge à l'ouverture : sa réponse du jour y est, avec les deux d'avant)
+await lea.waitForFunction(() => /Elle a retenu 3 choses/.test(document.querySelector("#o-personnage .cn-savoir-tete")?.textContent ?? ""), null, { timeout: 15000 }).catch(() => null);
 await lea.waitForSelector("#o-personnage .cn-choses li", { timeout: 15000 });
 const nAvant = await lea.locator("#o-personnage .cn-choses li").count();
 const savoirTxt = await texte(lea, "#o-personnage .cn-savoir");
-ok(nAvant >= 3 && savoirTxt.includes("Ta carte") && savoirTxt.includes("je cuisine pour mes amis") && savoirTxt.includes("Question du jour"), `ce que sa figurine sait d'elle : sa carte, ses réponses d'aujourd'hui et d'avant (${nAvant})`);
+ok(nAvant >= 3 && savoirTxt.includes("Ta carte") && savoirTxt.includes("je cuisine pour mes amis") && savoirTxt.includes("Question du jour"), `ce que sa figurine sait d'elle : sa carte, ses réponses d'aujourd'hui et d'avant (${nAvant} : ${savoirTxt.slice(0, 260)})`);
 await lea.locator("#o-personnage .cn-choses li button").first().click();
 await lea.waitForFunction((n) => document.querySelectorAll("#o-personnage .cn-choses li").length === n - 1, nAvant, { timeout: 15000 });
 ok(true, "elle efface une chose : elle disparaît");

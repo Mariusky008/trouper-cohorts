@@ -100,6 +100,8 @@ export function CeQueTaFigurineSait() {
   const [ouvert, setOuvert] = useState(false);
   const [savoir, setSavoir] = useState<Savoir | null>(null);
   const [erreur, setErreur] = useState("");
+  // (rechargé à chaque ouverture : ce qu'il vient de dire, la question du jour, y est aussitôt)
+  const [ouvertures, setOuvertures] = useState(0);
   useEffect(() => {
     let fini = false;
     fetch("/api/direct/connaitre?savoir=1", { cache: "no-store" })
@@ -109,7 +111,7 @@ export function CeQueTaFigurineSait() {
     return () => {
       fini = true;
     };
-  }, []);
+  }, [ouvertures]);
   if (!savoir) return null;
   async function oublier(corps: Record<string, unknown>, question: string) {
     if (!window.confirm(question)) return;
@@ -124,7 +126,15 @@ export function CeQueTaFigurineSait() {
   const n = savoir.choses.length;
   return (
     <section className="cn-savoir" aria-label="Ce que ta figurine sait de toi">
-      <button type="button" className="cn-savoir-tete" aria-expanded={ouvert} onClick={() => setOuvert((o) => !o)}>
+      <button
+        type="button"
+        className="cn-savoir-tete"
+        aria-expanded={ouvert}
+        onClick={() => {
+          if (!ouvert) setOuvertures((n) => n + 1);
+          setOuvert(!ouvert);
+        }}
+      >
         <b>🧠 Ce que ta figurine sait de toi</b>
         <small>{n ? `Elle a retenu ${n} chose${n > 1 ? "s" : ""} sur toi` : "Ta carte, pour l’instant"} · {ouvert ? "Fermer" : "Voir"}</small>
       </button>
