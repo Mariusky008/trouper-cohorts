@@ -12,7 +12,7 @@
 // des lieux. Sans figurine : on l'invite à la créer. `#rencontre` ouvre « Créer » (« Rencontres » est effacé). Rien ne déborde, jamais
 // le mot interdit, aucune erreur dans la page.
 import fs from "node:fs";
-import { BASE, D, F, lancer } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
@@ -76,7 +76,7 @@ const avant = [
 ];
 const ZONE_MAX = avant[2].lieu;
 
-const b = await lancer({ args: ["--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+const b = await lancer({ args: ["--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--autoplay-policy=no-user-gesture-required"] });
 let echecs = 0;
 const ok = (c, m) => {
   if (!c) echecs++;
@@ -244,6 +244,58 @@ const boulangerie = await voir(SAM, `?lieu=${BOULANGERIE}`);
 ok((await texte(sam, ".atr-toast")).includes("signalé") && !(boulangerie.memes ?? []).some((m) => m.id === "ecranhugo002"), "⋯ Signaler (deux touchers) : le mème disparaît");
 await sam.locator(".atr-swipe-haut .atr-fermer[aria-label='Fermer']").click();
 await sam.locator(".atr-lieu > .atr-fermer").click();
+
+// ═══ LÉA RÉPOND « AVEC SA TÊTE » : UN NOUVEAU MÈME, FAIT AU STUDIO POUR CE LIEU, PUIS DÉPOSÉ LÀ-BAS ═══
+const lea = await tel(LEA);
+await lea.goto(`${BASE}/collection?v=${Date.now()}#autour`, { waitUntil: "networkidle" });
+await lea.waitForSelector(".auc-goutte, .atr-ligne", { timeout: 60000 });
+if (await lea.locator(`.auc-goutte[data-lieu="${BISTROT}"]`).count()) await lea.locator(`.auc-goutte[data-lieu="${BISTROT}"]`).click();
+else await lea.locator(".atr-ligne", { hasText: "Le Petit Bistrot" }).click();
+await lea.waitForSelector(".atr-lieu .atr-decouvrir", { timeout: 15000 });
+const aQui = (await voir(LEA, `?lieu=${BISTROT}`)).memes[0];
+await lea.locator(".atr-decouvrir").click();
+await lea.waitForSelector(".atr-swipe .atr-mcarte:not(.dessous)", { timeout: 15000 });
+await lea.locator(".atr-rond.repondre").click();
+await lea.waitForSelector("section.atr-deposer .atr-nouveau", { timeout: 15000 });
+ok((await texte(lea, "section.atr-deposer .atr-nouveau")).includes("avec ma tête"), "« ＋ Nouveau mème · avec ma tête » à côté de ses mèmes déjà faits");
+await lea.locator("section.atr-deposer input[aria-label='Un petit mot']").fill("À demain au comptoir !");
+await lea.locator(".atr-qui-voit [role=radio]", { hasText: "Mes proches" }).click();
+await lea.locator("section.atr-deposer .atr-nouveau").click();
+// le studio s'ouvre pour ce lieu
+await lea.waitForSelector("#o-figurine:not([hidden]) #pour-autour", { timeout: 30000 });
+await fermerPablito(lea, "#o-figurine");
+const bandeau = await texte(lea, "#pour-autour");
+ok(bandeau.includes("↩️ Ta réponse pour") && bandeau.includes("Le Petit Bistrot") && bandeau.includes("Surprends-moi"), `le studio s'ouvre pour ce lieu : « ${bandeau.slice(0, 60)} »`);
+ok((await lea.locator(".tf-moi .tf-surprends").count()) === 1, "sa tête, sa phrase, ou « 🎲 Surprends-moi ! »");
+await lea.locator(".tf-moi .tf-texte textarea").fill("Même pas peur du chef !");
+await lea.locator(".tf-moi .tf-quelle-voix button", { hasText: "voix de femme" }).click();
+await lea.locator(".tf-moi .tf-ecouter").click();
+await lea.waitForSelector(".tf-envoyer", { timeout: 30000 });
+await lea.locator(".tf-envoyer").click();
+await lea.waitForSelector(".tf-meme-pret .tf-vers-autour", { timeout: 90000 });
+const versAutour = await texte(lea, ".tf-vers-autour");
+ok(versAutour.includes("Répondre avec ce mème") && versAutour.includes("Le Petit Bistrot") && (await lea.locator(".tf-meme-pret .tf-public").count()) === 0, `son mème prêt : « ${versAutour} »`);
+const idNouveau = (await lea.locator(".tf-adresse").inputValue()).split("/").pop();
+await lea.screenshot({ path: `${D}/autour-8-sa-tete.png`, fullPage: true });
+await lea.locator(".tf-vers-autour").click();
+// retour au dépôt : le nouveau mème choisi, son petit mot et « Mes proches » gardés
+await lea.waitForSelector(`#o-autour:not([hidden]) section.atr-deposer .atr-vignette.pris`, { timeout: 30000 });
+const retour = {
+  titre: await texte(lea, "section.atr-deposer h2"),
+  lieu: await texte(lea, "section.atr-deposer .atr-choix.pris"),
+  mot: await lea.locator("section.atr-deposer input[aria-label='Un petit mot']").inputValue(),
+  qui: await texte(lea, ".atr-qui-voit [aria-checked=true]"),
+  meme: await lea.locator("section.atr-deposer .atr-vignette.pris").getAttribute("aria-label"),
+};
+ok(
+  retour.titre === "Répondre avec ma figurine" && retour.lieu.includes("Le Petit Bistrot") && retour.mot === "À demain au comptoir !" && retour.qui === "Mes proches" && retour.meme === "Même pas peur du chef !",
+  `de retour sur « Autour » : le dépôt l'attendait, son nouveau mème déjà choisi, son petit mot et « Mes proches » gardés (${JSON.stringify(retour)})`,
+);
+await lea.locator("section.atr-deposer .atr-bas .atr-rose").click();
+await lea.waitForSelector(".atr-publie h2", { timeout: 15000 });
+const saReponse = (await voir(LEA, `?lieu=${BISTROT}`)).memes.find((m) => m.id === idNouveau);
+ok(saReponse?.reponseA === aQui.id && saReponse.mot === "À demain au comptoir !" && saReponse.qui === "proches", `publiée au Petit Bistrot : sa réponse à ${aQui.prenom}, avec sa tête (${JSON.stringify({ a: saReponse?.reponseA, qui: saReponse?.qui })})`);
+ok((await debordement(lea)) <= 0, "le studio et le dépôt ne débordent pas");
 
 // ═══ « RENCONTRES » EST EFFACÉ : SON ANCIENNE ADRESSE OUVRE « CRÉER » ═══
 await sam.goto(`${BASE}/collection?v=${Date.now()}#rencontre`, { waitUntil: "networkidle" });

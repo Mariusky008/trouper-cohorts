@@ -23,12 +23,14 @@ import { CarteAutour, STYLES_CARTE_AUTOUR } from "./autour-carte";
 import { QUIS, distance, enMetres, estZone, type Lieu, type MemeAutour, type ProfilAutour, type Qui } from "@/lib/direct/autour";
 import { REFUS_AGE, type MonMeme } from "@/lib/direct/ma-figurine";
 import { demanderSonAge } from "./age";
+import { EVT_VERS_AUTOUR, garderLeDepot, oublierLeDepot, reprendreLeDepot, type DepotEnCours } from "./depot-autour";
+import { versLeStudio } from "./vers-le-studio";
 
 type Vue =
   | { t: "carte" }
   | { t: "lieu"; id: string }
   | { t: "swipe"; id: string; depart?: string }
-  | { t: "deposer"; lieu?: string; reponseA?: string }
+  | { t: "deposer"; lieu?: string; reponseA?: string; reprise?: DepotEnCours }
   | { t: "publie"; lieu: string; meme: string }
   | { t: "profil"; cle: string };
 type Carte = { ville: string; lieux: Lieu[]; derniers: MemeAutour[]; compte: boolean };
@@ -91,6 +93,26 @@ export function Autour({ allerA }: { allerA: (o: string) => void }) {
       fini = true;
     };
   }, [visible, version]);
+
+  // 🎭 SON MÈME EST PRÊT, fait au studio pour ce dépôt (« ＋ Nouveau mème ») : le dépôt se rouvre, le mème déjà choisi
+  useEffect(() => {
+    const rouvrir = (d: DepotEnCours | null) => {
+      if (d?.meme) setVue({ t: "deposer", lieu: d.lieuDonne, reponseA: d.reponseA, reprise: d });
+    };
+    const ecoute = (e: Event) => {
+      oublierLeDepot();
+      rouvrir((e as CustomEvent<DepotEnCours>).detail);
+    };
+    window.addEventListener(EVT_VERS_AUTOUR, ecoute);
+    return () => window.removeEventListener(EVT_VERS_AUTOUR, ecoute);
+  }, []);
+  useEffect(() => {
+    // (« Autour » n'était pas encore ouvert : le dépôt l'attendait le temps de la visite)
+    if (visible) void Promise.resolve().then(() => {
+      const d = reprendreLeDepot();
+      if (d) setVue({ t: "deposer", lieu: d.lieuDonne, reponseA: d.reponseA, reprise: d });
+    });
+  }, [visible]);
 
   const ouvrirLieu = useCallback((id: string) => setVue({ t: "lieu", id }), []);
   const tomber = useCallback(() => setPanne(true), []);
@@ -211,8 +233,10 @@ export function Autour({ allerA }: { allerA: (o: string) => void }) {
       )}
       {vue.t === "deposer" && (
         <Deposer
+          key={vue.reprise?.meme ?? "depot"}
           lieuDonne={vue.lieu}
           reponseA={vue.reponseA}
+          reprise={vue.reprise}
           lieux={lieux}
           compte={Boolean(carte?.compte)}
           onFermer={() => (vue.lieu ? setVue({ t: "lieu", id: vue.lieu }) : retour())}
@@ -500,14 +524,15 @@ function Swipe({ id, depart, ville, compte, onFermer, onRepondre, onProfil }: { 
 }
 
 // ─── ＋ DÉPOSER ────────────────────────────────────────────────────────────────────────────────────────────────────
-function Deposer({ lieuDonne, reponseA, lieux, compte, onFermer, onPublie, allerA }: { lieuDonne?: string; reponseA?: string; lieux: Lieu[]; compte: boolean; onFermer: () => void; onPublie: (lieu: string, meme: string) => void; allerA: (o: string) => void }) {
+// (`reprise` : son dépôt d'avant le studio, avec le mème qu'il vient d'y faire — `depot-autour.ts`)
+function Deposer({ lieuDonne, reponseA, reprise, lieux, compte, onFermer, onPublie, allerA }: { lieuDonne?: string; reponseA?: string; reprise?: DepotEnCours; lieux: Lieu[]; compte: boolean; onFermer: () => void; onPublie: (lieu: string, meme: string) => void; allerA: (o: string) => void }) {
   const [miens, setMiens] = useState<MonMeme[] | null>(null);
-  const [lieu, setLieu] = useState<string>(lieuDonne ?? "");
-  const [ailleurs, setAilleurs] = useState(false);
-  const [nomLieu, setNomLieu] = useState("");
-  const [meme, setMeme] = useState("");
-  const [mot, setMot] = useState("");
-  const [qui, setQui] = useState<Qui>("tous");
+  const [lieu, setLieu] = useState<string>(lieuDonne ?? reprise?.lieu ?? "");
+  const [ailleurs, setAilleurs] = useState(Boolean(reprise?.ailleurs) && !reponseA);
+  const [nomLieu, setNomLieu] = useState(reprise?.nomLieu ?? "");
+  const [meme, setMeme] = useState(reprise?.meme ?? "");
+  const [mot, setMot] = useState(reprise?.mot ?? "");
+  const [qui, setQui] = useState<Qui>(reprise?.qui ?? "tous");
   const [ici, setIci] = useState<Pos | null>(null);
   const [erreur, setErreur] = useState("");
   const [occupe, setOccupe] = useState(false);
@@ -537,6 +562,13 @@ function Deposer({ lieuDonne, reponseA, lieux, compte, onFermer, onPublie, aller
     [lieux, ici],
   );
   const donne = lieuDonne ? lieux.find((l) => l.id === lieuDonne) : null;
+  /** ＋ NOUVEAU MÈME, « avec sa tête » : le studio s'ouvre pour ce lieu ; son dépôt l'attend, et il y revient son mème prêt. */
+  const nouveauMeme = () => {
+    const choisi = ailleurs ? null : lieux.find((l) => l.id === lieu);
+    const ou = ailleurs ? { nom: nomLieu.trim() || "Ailleurs", emoji: "✨" } : choisi ? { nom: choisi.nom, emoji: choisi.emoji } : {};
+    garderLeDepot({ lieuDonne, lieu: lieu || undefined, reponseA, ailleurs, nomLieu, mot, qui });
+    versLeStudio({ autour: { ...ou, reponse: Boolean(reponseA) } });
+  };
   const publier = async () => {
     setErreur("");
     if (!meme) return setErreur("Choisis un de tes mèmes (ou fais-en un nouveau).");
@@ -616,8 +648,9 @@ function Deposer({ lieuDonne, reponseA, lieux, compte, onFermer, onPublie, aller
 
       <h3>2 · Quel mème ?</h3>
       <div className="atr-miens">
-        <button type="button" className="atr-nouveau" onClick={() => allerA("figurine")}>
+        <button type="button" className="atr-nouveau" onClick={nouveauMeme}>
           ＋ Nouveau mème
+          <small>avec ma tête</small>
         </button>
         {(miens ?? []).map((m) => (
           <button key={m.id} type="button" className={`atr-vignette petit${meme === m.id ? " pris" : ""}`} aria-pressed={meme === m.id} aria-label={m.texte ?? "Mon mème"} onClick={() => setMeme(m.id)}>
@@ -854,7 +887,8 @@ export const STYLES_AUTOUR =
 .atr-champ{width:100%;box-sizing:border-box;height:48px;margin-top:8px;padding:0 14px;border:0;border-radius:14px;background:#1D1520;color:#fff;font:inherit;font-size:15px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);outline:none}
 .atr-note{margin:8px 0 0;font-size:12.5px;line-height:1.4;color:#9C8795}
 .atr-miens{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
-.atr-nouveau{flex:none;width:98px;height:132px;border:2px dashed rgba(255,46,154,.7);border-radius:14px;background:rgba(255,46,154,.08);color:#FF7AC0;font:800 12.5px Poppins,system-ui,sans-serif;cursor:pointer}
+.atr-nouveau{flex:none;width:98px;height:132px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:2px dashed rgba(255,46,154,.7);border-radius:14px;background:rgba(255,46,154,.08);color:#FF7AC0;font:800 12.5px Poppins,system-ui,sans-serif;cursor:pointer}
+.atr-nouveau small{font-size:11px;font-weight:600;opacity:.85}
 .atr-qui-voit{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;border-radius:14px;background:#1D1520}
 .atr-qui-voit button{height:40px;border:0;border-radius:11px;background:none;color:#CBB9C3;font:800 13px Poppins,system-ui,sans-serif;cursor:pointer}
 .atr-qui-voit button.pris{background:#fff;color:#16101A}

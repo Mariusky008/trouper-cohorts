@@ -48,7 +48,8 @@ import { ETAPES, prochaineEtape } from "@/lib/direct/etapes";
 import { ProtegerFigurine } from "./connaitre";
 import { demanderSonAge } from "./age";
 import { ApercuDuMois, useMois } from "./figurine-du-mois";
-import { EVT_VERS_LE_STUDIO, prendreVersLeStudio, type VersLeStudio } from "./vers-le-studio";
+import { EVT_VERS_LE_STUDIO, prendreVersLeStudio, type PourAutour, type VersLeStudio } from "./vers-le-studio";
+import { oublierLeDepot, revenirAuDepot } from "./depot-autour";
 import { moisEnClair, type FigurineDuMois } from "@/lib/direct/figurine-du-mois";
 import { MesReactions } from "./mes-reactions";
 import { CarteMemeDuJour } from "./theme-du-jour";
@@ -301,6 +302,8 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const surprisesVues = useRef<string[]>([]);
   // 🔥 LE MÈME DU JOUR (le lot 2) : il y répond — le thème, ses idées ; `postee` : le mème posté (visible par sa ville)
   const [themeJour, setThemeJour] = useState<{ theme: Theme; ville: string; postee: string } | null>(null);
+  // 📍 SON MÈME POUR UN LIEU D'« AUTOUR » : il y répond « avec sa tête » ; son dépôt l'attend (`depot-autour.ts`)
+  const [pourAutour, setPourAutour] = useState<PourAutour | null>(null);
   useEffect(() => {
     const id = idARepondre();
     if (!id) return;
@@ -515,7 +518,17 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
       if (typeof x.theme === "string" && x.theme === themeDuJour().cle) {
         setMode("ecrire");
         setTexte("");
+        setPourAutour(null);
         setThemeJour({ theme: themeDuJour(), ville: typeof x.ville === "string" ? x.ville : "", postee: "" });
+      }
+      if (x.autour && typeof x.autour === "object") {
+        const a = x.autour;
+        setMode("ecrire");
+        setThemeJour(null);
+        // (un mème pour la ville, pas un duo : le duo en cours, s'il y en avait un, est laissé)
+        oublierLaReponse();
+        setReponse(null);
+        setPourAutour({ nom: typeof a.nom === "string" ? a.nom.slice(0, 60) : "", emoji: typeof a.emoji === "string" ? a.emoji.slice(0, 8) : "", reponse: a.reponse === true });
       }
     };
     void Promise.resolve().then(() => appliquer(prendreVersLeStudio()));
@@ -968,6 +981,27 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
             )}
           </div>
         )}
+        {/* 📍 SON MÈME POUR UN LIEU D'« AUTOUR » : sa tête, sa phrase (ou « 🎲 Surprends-moi ! »), puis il le dépose là-bas */}
+        {pourAutour && (
+          <div className="tf-theme tf-pour-autour" id="pour-autour" role="group" aria-label="Ton mème pour « Autour »">
+            <span className="tf-theme-tete">
+              <b>
+                {pourAutour.reponse ? "↩️ Ta réponse" : "📍 Ton mème"} {pourAutour.nom ? `pour ${pourAutour.emoji || "📍"} ${pourAutour.nom}` : "pour « Autour »"}
+              </b>
+              <button
+                type="button"
+                aria-label="Ne plus le faire pour « Autour »"
+                onClick={() => {
+                  setPourAutour(null);
+                  oublierLeDepot();
+                }}
+              >
+                ✕
+              </button>
+            </span>
+            <small>Choisis ta tête, écris ta phrase ou « 🎲 Surprends-moi ! » : ton mème prêt, tu le déposes là-bas.</small>
+          </div>
+        )}
         {mode === "ecrire" && etat.voixTexte ? (
           <>
             {/* ✨ LES MÈMES PRÊTS : un toucher, et elle le dit */}
@@ -1123,8 +1157,21 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
                   </a>
                 </div>
                 {envoye && <input className="tf-adresse" readOnly value={envoye.lien} aria-label="Le lien" onFocus={(e) => e.target.select()} />}
+                {/* 📍 POUR « AUTOUR » : il le dépose là-bas (son dépôt l'attend, le mème déjà choisi) */}
                 {/* 🔥 SA RÉPONSE AU MÈME DU JOUR : « Poster ma réponse (visible par les gens de Dax) » — puis voir les leurs */}
-                {envoye && !meme.duo && themeJour && themeJour.postee === envoye.id ? (
+                {envoye && !meme.duo && pourAutour ? (
+                  <button
+                    type="button"
+                    className="tf-vers-autour"
+                    onClick={() => {
+                      revenirAuDepot(envoye.id);
+                      setPourAutour(null);
+                    }}
+                  >
+                    📍 {pourAutour.reponse ? "Répondre avec ce mème" : "Le déposer"}
+                    {pourAutour.nom ? ` · ${pourAutour.nom}` : ""} ›
+                  </button>
+                ) : envoye && !meme.duo && themeJour && themeJour.postee === envoye.id ? (
                   <>
                     <a className="tf-postee" href="#decouvrir">
                       ✓ Ta réponse est postée ! Voir celles de {nomVille(themeJour.ville) || "ta ville"} →
@@ -1784,6 +1831,9 @@ export const STYLES_MA_FIGURINE =
 .tf-etapes .tf-choisir{margin-top:0;width:100%;max-width:220px;height:180px}
 .tf-etapes .tf-accord{max-width:none;align-items:center}
 .tf-accords{display:flex;flex-direction:column;gap:8px;min-width:0}
+.tf-pour-autour{background:rgba(255,46,154,.1);border-color:rgba(255,46,154,.6)}
+.tf-pour-autour small{font-size:13px;line-height:1.35;color:#E8D3DC}
+.tf-vers-autour{width:100%;padding:14px 16px;border:0;border-radius:999px;background:#FF2E9A;color:#fff;font:inherit;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 12px 26px -12px rgba(255,46,154,.95)}
 .tf-go{font-size:18px;padding:17px 22px}
 .tf-go.pret{animation:tf-brille 1.8s ease-in-out infinite}
 .tf-fab-scene{display:grid;grid-template-columns:110px minmax(0,1fr);align-items:center;gap:8px;width:100%;max-width:380px}

@@ -1232,6 +1232,25 @@ nombre, `AGE_MINIMUM` (`lib/direct/ma-figurine.ts`), et tous les textes en déco
   « Découvrir ») ; `autour.mjs` (la question au premier dépôt de Sam) ; `meme-du-jour.mjs` (la question quand Léa poste
   sa réponse).
 
+### 9.0 quatertricies 📍 Répondre « avec sa tête », depuis « Autour » (7 novembre)
+
+Le premier point de la suite d'« Autour ». Avant, on ne répondait (ou ne déposait) qu'avec un mème déjà fait ;
+« ＋ Nouveau mème » ouvrait « Créer », et on perdait son dépôt en route.
+
+- Dans le dépôt, **« ＋ Nouveau mème · avec ma tête »** garde son dépôt de côté (le lieu, le mème auquel il répond, son
+  petit mot, qui le voit : `app/collection/depot-autour.ts`) et ouvre le studio **pour ce lieu** (`versLeStudio`, son
+  champ `autour`).
+- Le studio le dit en haut : « ↩️ Ta réponse pour 🍽️ Le Petit Bistrot » (ou « 📍 Ton mème pour … »), avec « Choisis ta
+  tête, écris ta phrase ou « 🎲 Surprends-moi ! » ». Il fait son mème comme d'habitude (sa tête, sa voix, sa phrase).
+  « ✕ » le libère (son dépôt est oublié). Un duo en cours est laissé : un duo ne va pas sur la carte.
+- Son mème prêt, **« 📍 Répondre avec ce mème · Le Petit Bistrot › »** (ou « 📍 Le déposer ») remplace « 🌍 Le montrer
+  aussi dans Découvrir » : un toucher, et « Autour » rouvre son dépôt, **le nouveau mème déjà choisi**, son petit mot et
+  « qui le voit » gardés. Il n'a plus qu'à publier (l'âge, les trois par lieu et par jour : comme avant).
+- Si « Autour » n'était pas encore ouvert (une page rechargée), le dépôt attend le temps de la visite
+  (`sessionStorage`).
+- L'essai : `scripts/navigateur/autour.mjs` — Léa répond au Petit Bistrot avec un mème qu'elle fait au studio, son
+  petit mot et « Mes proches » gardés, puis publié (43 vérifications).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

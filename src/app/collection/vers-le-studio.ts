@@ -1,7 +1,7 @@
 /**
  * 🎭 VERS LE STUDIO — 7 novembre 2026 (on resserre sur le mème : « tout ce qu'on gagne sert à faire des mèmes »). Depuis
- * n'importe quel onglet : une réplique de sa figurine dans un épisode (« Fais-en un mème »), sa figurine du mois (« Fais-la
- * parler »)… le studio (« Créer ») s'ouvre, avec le texte écrit ou le look choisi.
+ * n'importe quel onglet : sa figurine du mois (« Fais-la parler »), le mème du jour, un lieu d'« Autour » (« ＋ Nouveau
+ * mème », pour y répondre avec sa tête)… le studio (« Créer ») s'ouvre, avec le texte écrit, le look ou le lieu choisi.
  *
  * Le studio écoute l'événement ; s'il n'est pas encore là (sa figurine se fabrique), la demande l'attend le temps de la
  * visite (`sessionStorage`).
@@ -9,7 +9,10 @@
  * FICHIER DU NAVIGATEUR.
  */
 // (`theme` : 🔥 il répond au mème du jour — sa clé ; `ville` : la sienne, pour le bouton « visible par les gens de … »)
-export type VersLeStudio = { texte?: string; look?: string; theme?: string; ville?: string };
+// (`autour` : 📍 son mème pour un lieu d'« Autour » — son nom, son emoji, et s'il répond à quelqu'un ; son dépôt l'attend :
+// `depot-autour.ts`)
+export type PourAutour = { nom?: string; emoji?: string; reponse?: boolean };
+export type VersLeStudio = { texte?: string; look?: string; theme?: string; ville?: string; autour?: PourAutour };
 
 export const EVT_VERS_LE_STUDIO = "clikme-vers-le-studio";
 const CLE = "clikme-vers-le-studio-v1";
@@ -32,7 +35,7 @@ export function prendreVersLeStudio(): VersLeStudio | null {
     const brut = window.sessionStorage.getItem(CLE);
     window.sessionStorage.removeItem(CLE);
     const x = brut ? (JSON.parse(brut) as VersLeStudio) : null;
-    return x && (typeof x.texte === "string" || typeof x.look === "string" || typeof x.theme === "string") ? x : null;
+    return x && (typeof x.texte === "string" || typeof x.look === "string" || typeof x.theme === "string" || (typeof x.autour === "object" && x.autour !== null)) ? x : null;
   } catch {
     return null;
   }
