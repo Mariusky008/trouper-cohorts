@@ -1,0 +1,49 @@
+// 📍 AUTOUR DE MOI — les mèmes laissés dans la ville (`lib/direct/autour.ts`, `autour-serveur.ts` ; le plan :
+// `docs/reprise.md`, section 4).
+//
+// GET ?ville=<slug>                 → { ville, lieux, derniers } : la carte (sans ville : la sienne)
+// GET ?lieu=<id>&ville=<slug>        → { lieu, memes } : les mèmes d'un lieu, pour le swipe
+// GET ?profil=<clé>                  → { profil } : un créateur (ses mèmes déposés pour tout le monde)
+// POST { action: "deposer", meme, lieu? | ici?: { lat, lng }, qui, mot?, nomLieu?, reponseA? } → { lieu }
+//      (« ici » : sa position, arrondie en une zone d'environ 500 m ; elle n'est gardée nulle part telle quelle)
+// POST { action: "retirer", meme }
+// Signaler un mème : la route de toujours (`/api/direct/ma-figurine`, `signaler`).
+import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { habitantCourant } from "@/lib/direct/habitant";
+import { villeSlug } from "@/lib/direct/ville";
+import { carteDe, deposer, memesDuLieu, profilDe, retirer } from "@/lib/direct/autour-serveur";
+
+export const dynamic = "force-dynamic";
+const sansCache = { "cache-control": "no-store" };
+
+export async function GET(request: Request) {
+  const supabase = createAdminClient();
+  const moi = await habitantCourant(supabase);
+  const q = new URL(request.url).searchParams;
+  const profil = q.get("profil");
+  if (profil) {
+    const p = await profilDe(supabase, profil, moi);
+    return NextResponse.json(p ? { ok: true, profil: p } : { error: "Ce profil n’existe pas." }, { status: p ? 200 : 404, headers: sansCache });
+  }
+  const ville = villeSlug(q.get("ville") ?? "") || moi?.villeSlug || "";
+  const lieu = q.get("lieu");
+  if (lieu) {
+    const r = await memesDuLieu(supabase, ville, lieu, moi);
+    return NextResponse.json(r.lieu ? { ok: true, ...r } : { error: "Ce lieu n’a pas encore de mème." }, { status: r.lieu ? 200 : 404, headers: sansCache });
+  }
+  return NextResponse.json({ ok: true, compte: Boolean(moi), ...(await carteDe(supabase, ville, moi)) }, { headers: sansCache });
+}
+
+export async function POST(request: Request) {
+  const p = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+  const supabase = createAdminClient();
+  const moi = await habitantCourant(supabase);
+  if (!moi) return NextResponse.json({ error: "Crée d’abord ta figurine." }, { status: 403 });
+  if (p?.action === "deposer") {
+    const r = await deposer(supabase, moi, { meme: p.meme, lieu: p.lieu, ici: p.ici, qui: p.qui, mot: p.mot, nomLieu: p.nomLieu, reponseA: p.reponseA });
+    return NextResponse.json(r.ok ? { ok: true, lieu: r.lieu } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400) });
+  }
+  if (p?.action === "retirer") return NextResponse.json(await retirer(supabase, moi, p.meme));
+  return NextResponse.json({ error: "Action inconnue." }, { status: 400 });
+}

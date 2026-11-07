@@ -1111,6 +1111,26 @@ stickers. Le clavier, lui, demande une app native : on le fera si les envois sui
 
   En CI, les clés VAPID sont fabriquées à chaque passage ; aucune n'est écrite dans le dépôt.
 
+### 9.0 tricies 📍 Autour de moi : le serveur (lot A, 7 novembre)
+
+La maquette validée par le propriétaire, les règles et le plan complet sont dans `docs/reprise.md`, section 4. Le
+serveur :
+- **Deux sortes de lieux** :
+  - les commerces clients, avec leurs coordonnées (`human_vitrine_sites.latitude/longitude`) ;
+  - les zones « Ailleurs » : la position de celui qui dépose est arrondie à une maille d'environ 500 m, et seule la
+    zone est gardée, avec un petit nom libre. Une adresse est refusée.
+- **Qui le voit** : tout le monde, ses proches, ou lui seul. C'est écrit dans le nom du fichier, si bien qu'une liste
+  du dossier suffit pour compter ce que chacun peut voir.
+- **Au plus trois mèmes** par personne, par lieu et par jour. Un mème n'est posé qu'à un endroit : le reposer
+  ailleurs le déplace.
+- **Le petit mot** : ni gros mot, ni alcool.
+- **Les dépôts refusés** : un duo, un mème signalé, le mème d'un autre.
+- **Les réponses** : une réponse (`reponseA`) vise un mème du même lieu, visible par celui qui répond ; les deux sont
+  liés.
+- **Le profil** se demande par une clé publique, jamais par l'identifiant de l'habitant. Il ne montre que les mèmes
+  « tout le monde » et leurs lieux, jamais une position.
+- Les essais : `scripts/essai-autour-route.mjs` (26 vérifications).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

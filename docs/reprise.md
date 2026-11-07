@@ -131,20 +131,51 @@ Le parcours : **carte → lieu → swipe des mèmes → J'aime ou réponse avec 
 - Trois mèmes par personne, par lieu et par jour, au plus.
 - Le commerçant répond avec sa figurine ; il ne supprime rien.
 
-### 4.2 Les décisions à confirmer avec le propriétaire avant de coder la carte
+### 4.2 Les décisions (confirmées par le propriétaire le 7 novembre 2026)
 
-1. **Le fond de carte.** Je recommande MapLibre GL JS (npm `maplibre-gl`) avec les tuiles **OpenFreeMap**
+1. **Le fond de carte : MapLibre et OpenFreeMap, oui.** Le détail : MapLibre GL JS (npm `maplibre-gl`) avec les tuiles **OpenFreeMap**
    (`https://tiles.openfreemap.org/styles/liberty`) : gratuit, sans clé, sans compte, sans limite affichée.
    - L'attribution est obligatoire (MapLibre l'affiche).
    - Le service est fourni « tel quel » : on peut l'héberger soi-même plus tard.
    - Un style sombre n'est pas confirmé : il faudrait repeindre les couches aux couleurs ClikMe, en JS.
    - Les autres choix ont une clé et un coût : Google Maps (la clé Places existe déjà côté serveur), Mapbox.
-2. **Le nom.** « Autour de moi » est **déjà** le nom de l'appli des fantômes (`/autour-de-moi`). Dans le menu du bas, la
-   maquette écrit « Autour » ; la route de l'onglet doit être autre (`#autour`).
+2. **Le nom : « Autour » dans le menu du bas, « Autour de moi » en titre de l'écran, oui.** « Autour de moi » est déjà
+   le nom de l'appli des fantômes (`/autour-de-moi`) : l'onglet a une autre adresse (`#autour`).
 3. **Les mèmes réels sont des vidéos** (la figurine qui parle). La maquette montrait des images : dans l'appli, la
    carte du swipe joue la vidéo (muette, en boucle, comme « Découvrir »).
 
-### 4.3 Le plan de réalisation (aucune ligne n'est encore écrite)
+**Les lieux de la première version** : la session ne peut pas joindre OpenStreetMap, donc pas de lieux publics aux
+coordonnées devinées. On a :
+- les **commerces clients** qui ont leurs coordonnées en base ;
+- les **zones « Ailleurs »**, avec le petit nom libre de celui qui dépose (« Les Arènes », « Soirée chez Max ») ; une
+  adresse est refusée.
+
+Les lieux publics nommés viendront plus tard, avec des positions vérifiées (par le propriétaire, ou une page admin).
+
+### 4.3 Le plan de réalisation
+
+**Où on en est** :
+- **Lot A (le serveur) : écrit et essayé** (`scripts/essai-autour-route.mjs`, 26 vérifications), dans la PR qui suit
+  #95.
+- **Lot B (l'écran) : à faire**, puis le lot C.
+
+Ce que le lot A fournit :
+- `src/lib/direct/autour.ts` : les types (`Lieu`, `MemeAutour`, `ProfilAutour`), la zone floue (`zoneDe`, une maille
+  d'environ 500 m), la distance, `emojiDuCommerce`, `nomLieuPropre` (pas d'adresse).
+- `src/lib/direct/autour-serveur.ts` :
+  - `commercesDe`, `deposer`, `retirer` ;
+  - `carteDe` : les lieux avec ce qu'il peut voir, et les derniers mèmes ;
+  - `memesDuLieu` : pour le swipe ;
+  - `profilDe` : par une clé publique, `cleProfil`.
+  - Rangement : `autour/<ville>/<lieu>/<mème>.<qui>.<habitant>.json` (qui le voit est dans le nom),
+    `<h>/autour/<mème>.json`, `<h>/autour-jour/<jour>.json`, `profils/<clé>.json`.
+- La route `src/app/api/direct/autour/route.ts` :
+  - `GET ?ville=` (la carte), `GET ?lieu=&ville=`, `GET ?profil=` ;
+  - `POST deposer` (`meme`, `lieu` ou `ici:{lat,lng}`, `qui`, `mot`, `nomLieu`, `reponseA`), `POST retirer`.
+- Dans `ma-figurine-serveur.ts` : `cartesDeMemes` (le fil sans exiger « Découvrir ») et `memeDeposable`.
+- J'aime = la réaction `coeur` de la route `ma-figurine` (`action: "reagir"`) ; signaler = `action: "signaler"`.
+
+**Le plan d'origine, gardé pour mémoire :**
 
 **Ce qui existe déjà et qu'on réutilise :**
 - les mèmes vidéo des clients et leur fiche (`<h>/m-<id>.json`, `apercuMeme`, `memesPublics` dans

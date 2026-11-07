@@ -814,8 +814,8 @@ export async function prochesDe(supabase: Supabase, h: string): Promise<Set<stri
 }
 
 /** Les mèmes de ces fiches, prêts pour le fil : ses proches d'abord, puis les plus récents ; les réactions ; le sien. */
-async function enFil(supabase: Supabase, ids: string[], ville: string, moi: Habitant | null, proches: Set<string>, cache: Cache): Promise<MemePublic[]> {
-  const vus = (await Promise.all(ids.map((id) => apercuMeme(supabase, id, cache)))).filter((x): x is NonNullable<typeof x> => Boolean(x?.public && x.ap.video));
+async function enFil(supabase: Supabase, ids: string[], ville: string, moi: Habitant | null, proches: Set<string>, cache: Cache, exigerPublic = true): Promise<MemePublic[]> {
+  const vus = (await Promise.all(ids.map((id) => apercuMeme(supabase, id, cache)))).filter((x): x is NonNullable<typeof x> => Boolean(x && (!exigerPublic || x.public) && x.ap.video && !x.duo));
   const reacs = await reactionsDe(supabase, vus.map((x) => x.ap.id), moi?.id).catch(() => ({}) as Awaited<ReturnType<typeof reactionsDe>>);
   return vus
     .map((x) => ({
@@ -826,6 +826,27 @@ async function enFil(supabase: Supabase, ids: string[], ville: string, moi: Habi
       ...(reacs[x.ap.id] ? { reac: reacs[x.ap.id] } : {}),
     }))
     .sort((a, b) => Number(Boolean(b.moi)) - Number(Boolean(a.moi)) || Number(Boolean(b.ami)) - Number(Boolean(a.ami)) || b.le.localeCompare(a.le));
+}
+
+/**
+ * 📍 « AUTOUR DE MOI » (`autour-serveur.ts`) : des mèmes déposés dans un lieu, en cartes comme le fil (ses proches
+ * d'abord, les réactions, le sien). Le dépôt vaut accord pour ceux qui peuvent le voir : pas besoin de « Découvrir ».
+ */
+export async function cartesDeMemes(supabase: Supabase, ids: string[], ville: string, moi: Habitant | null): Promise<MemePublic[]> {
+  return enFil(supabase, ids, ville, moi, moi ? await prochesDe(supabase, moi.id) : new Set(), new Map(), false);
+}
+
+/** 📍 Ce mème peut-il être déposé quelque part ? Le sien, en vidéo, pas un duo, pas signalé, pas retiré. */
+export async function memeDeposable(supabase: Supabase, habitant: Habitant, id: unknown): Promise<{ ok?: true; error?: string }> {
+  const i = s(id);
+  if (!idMessageValide(i)) return { error: "Ce mème n’existe pas." };
+  const r = await ligneMessage(supabase, i);
+  if (!r || s(r.habitant_id) !== habitant.id || r.retire_le) return { error: "Ce mème n’est pas le tien." };
+  if (r.signale_le) return { error: "Ce mème a été signalé : il ne peut pas être déposé." };
+  const aCote = await lireJson<{ meme: string; repondA: string }>(supabase, `${habitant.id}/m-${i}.json`);
+  if (!s(aCote.meme)) return { error: "Seul un mème en vidéo peut être déposé." };
+  if (s(aCote.repondA)) return { error: "Un duo montre aussi la figurine de quelqu’un d’autre : il reste entre vous." };
+  return { ok: true };
 }
 
 /** 🔥 Les réponses de sa ville au mème du jour — seulement s'il a posté la sienne (« tu postes, puis tu vois »). */
