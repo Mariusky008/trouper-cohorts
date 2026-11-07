@@ -39,6 +39,7 @@ const VISAGES: Record<Sentiment, string> = {
   euphorie: "EUPHORIA: eyes wide open and sparkling, eyebrows very high, a huge open-mouthed grin of pure excitement",
   rire: "a big burst of LAUGHTER: eyes squeezed shut into happy crescents, cheeks pushed up, head slightly tilted back, a wide laughing mouth",
   grimace: "a funny GRIMACE: tongue sticking out, one eye squeezed shut, nose wrinkled, eyebrows going in opposite directions — a playful clown face",
+  amour: "being head over heels IN LOVE: dreamy, adoring eyes sparkling with little heart-shaped highlights, rosy blushing cheeks, eyebrows softly raised, a tender, sweet smile — lovestruck and adorable",
 };
 
 const GARDER =
@@ -58,7 +59,7 @@ export const consigneBoucheNeutre = () =>
 export const consigneBoucheLook = (expression: string) =>
   `This is a collectible bobblehead figurine, dressed up, with ${expression || "a warm, happy expression"}. Change ONLY its mouth: open it as if the figurine is in the middle of saying a word, keeping the same expression on the rest of the face (eyes, eyebrows, cheeks). ${GARDER}`;
 const consigneBouche = (x: Sentiment) =>
-  `This is a collectible bobblehead figurine with a ${({ colere: "angry", tristesse: "sad", euphorie: "euphoric", rire: "laughing", grimace: "funny grimacing", joie: "joyful" } as Record<Sentiment, string>)[x]} expression. ` +
+  `This is a collectible bobblehead figurine with a ${({ colere: "angry", tristesse: "sad", euphorie: "euphoric", rire: "laughing", grimace: "funny grimacing", joie: "joyful", amour: "lovestruck" } as Record<Sentiment, string>)[x]} expression. ` +
   `Change ONLY its mouth: open it as if the figurine is in the middle of saying a word, keeping the same expression on the rest of the face (eyes, eyebrows, cheeks). ${GARDER}`;
 
 // ─── le cadre ───────────────────────────────────────────────────────────────────────────────────

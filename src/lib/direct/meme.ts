@@ -438,6 +438,8 @@ function dessiner(g: CanvasRenderingContext2D, S: Scene, T: number): void {
     g.fillText(S.emoji, 0, 0);
     g.restore();
   }
+  // ─── 😍 l'amour : des cœurs montent autour d'elle ───
+  if (S.emoji === "😍" && T > INTRO * 0.6) coeurs(g, T, W, H);
   // ─── le petit « ClikMe » ───
   etiquette(g, S.police, 28, 52, [
     { t: "Clik", c: "#FFF4E6" },
@@ -449,6 +451,23 @@ function dessiner(g: CanvasRenderingContext2D, S: Scene, T: number): void {
   sousTitres(g, S.police, S.sous, t, S.duree, H * 0.78);
   // ─── la fin : « Crée ton mème » (ou son nom) ───
   laFin(g, S.police, T - (INTRO + S.duree + 0.15), S.fin);
+}
+
+/** 😍 Des cœurs qui montent, en boucle (trois à la fois, chacun sur 2,4 s), de part et d'autre de la figurine. */
+function coeurs(g: CanvasRenderingContext2D, T: number, W: number, H: number): void {
+  const formes = ["💗", "❤️", "💕", "💖"];
+  g.save();
+  g.font = `84px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  for (let k = 0; k < 4; k++) {
+    const p = ((T + k * 0.6) % 2.4) / 2.4;
+    const x = (k % 2 ? W * 0.82 : W * 0.18) + Math.sin(T * 2 + k) * 26;
+    const y = H * 0.7 - p * H * 0.45;
+    g.globalAlpha = p < 0.15 ? p / 0.15 : 1 - Math.max(0, p - 0.6) / 0.4;
+    g.fillText(formes[k % formes.length], x, y);
+  }
+  g.restore();
 }
 
 export type Meme = { blob: Blob; type: string; duree: number };

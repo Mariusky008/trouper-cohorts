@@ -22,6 +22,7 @@ const TOUJOURS: MemePret[] = [
   { cle: "merci", emoji: "💛", nom: "Merci", texte: "Merci ! Sérieusement, tu es une personne en or.", sentiment: "joie" },
   { cle: "bonne-nuit", emoji: "🌙", nom: "Bonne nuit", texte: "Bonne nuit ! Dors bien, et ne rêve pas trop de moi.", sentiment: "joie" },
   { cle: "manque", emoji: "🥺", nom: "Tu me manques", texte: "Tu me manques. Voilà, c’est dit. On se voit quand ?", sentiment: "tristesse" },
+  { cle: "je-t-aime", emoji: "😍", nom: "Je t’aime", texte: "Je t’aime. Voilà, c’est dit. Et ma figurine est tout à fait d’accord.", sentiment: "amour" },
   { cle: "fou-rire", emoji: "😂", nom: "Fou rire", texte: "Non mais attends… j’en peux plus. Arrête, j’ai mal aux joues.", sentiment: "rire" },
 ];
 
@@ -35,7 +36,7 @@ const SEMAINE: Record<number, MemePret> = {
 /** Les fêtes : leur jour (MM-JJ), à partir de la semaine d'avant. */
 const FETES: { jour: string; meme: MemePret }[] = [
   { jour: "01-01", meme: { cle: "bonne-annee", emoji: "🎆", nom: "Bonne année", texte: "Bonne année ! Cette année, c’est décidé : je deviens une meilleure version de moi. Dès demain.", sentiment: "euphorie", danse: true } },
-  { jour: "02-14", meme: { cle: "saint-valentin", emoji: "💘", nom: "Saint-Valentin", texte: "Joyeuse Saint-Valentin ! Je t’aurais bien offert des fleurs, mais je t’offre ma figurine. C’est mieux.", sentiment: "joie" } },
+  { jour: "02-14", meme: { cle: "saint-valentin", emoji: "💘", nom: "Saint-Valentin", texte: "Joyeuse Saint-Valentin ! Je t’aurais bien offert des fleurs, mais je t’offre ma figurine. C’est mieux.", sentiment: "amour" } },
   { jour: "05-31", meme: { cle: "fete-des-meres", emoji: "💐", nom: "Fête des mères", texte: "Bonne fête maman ! Merci pour tout. Surtout pour moi.", sentiment: "joie" } },
   { jour: "06-21", meme: { cle: "musique", emoji: "🎶", nom: "Fête de la musique", texte: "C’est la fête de la musique ! Écoute bien… voilà. C’était mon plus beau concert.", sentiment: "euphorie", danse: true } },
   { jour: "10-31", meme: { cle: "halloween", emoji: "🎃", nom: "Halloween", texte: "Bouh ! Je t’ai fait peur ? Non ? Bon. Donne-moi quand même des bonbons.", sentiment: "grimace" } },

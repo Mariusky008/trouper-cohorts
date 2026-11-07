@@ -65,6 +65,9 @@ export const SENTIMENTS = [
   { cle: "euphorie", emoji: "🤩", nom: "L’euphorie", court: "Euphorie", dit: "euphorique" },
   { cle: "rire", emoji: "😂", nom: "Le fou rire", court: "Fou rire", dit: "pliée de rire" },
   { cle: "grimace", emoji: "😜", nom: "La grimace", court: "Grimace", dit: "en pleine grimace" },
+  // (7 novembre 2026, le patron : « on n'a pas l'expression amoureux, qui est assez utile » — un nom, jamais « amoureux »
+  // ou « amoureuse » : on ne devine pas le genre)
+  { cle: "amour", emoji: "😍", nom: "L’amour", court: "Amour", dit: "les yeux en cœur" },
 ] as const;
 /** Ceux que la table des messages connaît (sa colonne `sentiment`) : les autres sont rangés à côté du message, dans le seau. */
 export const SENTIMENTS_EN_BASE: readonly string[] = ["joie", "colere", "tristesse", "euphorie"];
