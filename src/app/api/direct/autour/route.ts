@@ -42,7 +42,8 @@ export async function POST(request: Request) {
   if (!moi) return NextResponse.json({ error: "Crée d’abord ta figurine." }, { status: 403 });
   if (p?.action === "deposer") {
     const r = await deposer(supabase, moi, { meme: p.meme, lieu: p.lieu, ici: p.ici, qui: p.qui, mot: p.mot, nomLieu: p.nomLieu, reponseA: p.reponseA });
-    return NextResponse.json(r.ok ? { ok: true, lieu: r.lieu } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400) });
+    // (sans son âge déclaré : `age`, l'écran le lui demande, une fois)
+    return NextResponse.json(r.ok ? { ok: true, lieu: r.lieu } : { error: r.error, ...(r.age ? { age: true } : {}) }, { status: r.ok ? 200 : (r.statut ?? 400) });
   }
   if (p?.action === "retirer") return NextResponse.json(await retirer(supabase, moi, p.meme));
   return NextResponse.json({ error: "Action inconnue." }, { status: 400 });

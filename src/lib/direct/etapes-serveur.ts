@@ -1,8 +1,10 @@
 /**
  * 🎁 SES CADEAUX, CÔTÉ SERVEUR (`etapes.ts`) — les étapes qu'il a franchies, lues là où elles se trouvent déjà : sa
- * figurine (`clik_ma_figurine`), sa carte (`<habitant>/personnage.json`), ses messages (`clik_figurine_message`), ses
- * rencontres (`<habitant>/rencontres.json` : rencontres, ce qu'il a dit de lui, amis, membres), ses jours de présence
+ * figurine (`clik_ma_figurine`), sa carte (`<habitant>/personnage.json`), ses messages (`clik_figurine_message`), ce
+ * qu'il a dit de lui (`<habitant>/rencontres.json`, `dit` : la question du jour), ses jours de présence
  * (`<habitant>/presence.json`, noté ici : un jour par visite de la page) et ses figurines du mois (les familles).
+ *
+ * SES JOURS DE PRÉSENCE font aussi sa figurine du mois (10 jours sur ClikMe dans le mois : `joursDePresence`).
  *
  * CE QUI ÉTAIT DÉJÀ OUVERT LE RESTE : à la première lecture, ce que ses figurines lui ouvraient avant (une option par
  * figurine gagnée, jusqu'au 5 novembre 2026) est noté une fois pour toutes (`<habitant>/cadeaux.json`, `acquis`) ; ses
@@ -55,12 +57,12 @@ export async function cadeauxDe(supabase: Supabase, habitantId: string, figurine
     lire<{ le?: string }>(supabase, `${habitantId}/duo.json`),
   ]);
 
-  // SA PRÉSENCE : aujourd'hui compte (les 30 derniers jours suffisent)
+  // SA PRÉSENCE : aujourd'hui compte (62 jours gardés : un mois entier, pour sa figurine du mois)
   const jour = jourParis();
   const jours = Array.isArray(presence?.jours) ? presence.jours.map(s) : [];
   if (noterPresence && !jours.includes(jour)) {
     jours.push(jour);
-    await ecrire(supabase, `${habitantId}/presence.json`, { jours: jours.slice(-30) });
+    await ecrire(supabase, `${habitantId}/presence.json`, { jours: jours.slice(-62) });
   }
   // CE QUE SES FIGURINES LUI AVAIENT OUVERT : noté une fois
   let acquis = notes && typeof notes.acquis === "number" ? notes.acquis : null;
@@ -74,15 +76,20 @@ export async function cadeauxDe(supabase: Supabase, habitantId: string, figurine
     figurine: Boolean(s((fig.data as { prete_le?: string } | null)?.prete_le)),
     carte: Boolean(carte),
     message: Array.isArray(msg.data) && msg.data.length > 0,
-    rencontre: liste.length > 0,
     // (ce qu'il a dit de lui : la question du jour, « Et toi ? »)
     questions: (Array.isArray(rencontres?.dit) ? rencontres.dit.length : 0) >= 3,
-    ami: Array.isArray(rencontres?.amis) && rencontres.amis.length > 0,
-    membre: Boolean(s(rencontres?.membreJour)),
     fidele: new Set(jours).size >= 3,
-    souvenirs: liste.length >= 5,
     duo: Boolean(duo?.le),
   };
   const etapes = ETAPES.map((e) => e.cle).filter((c) => faites[c]);
-  return { cadeaux: Math.max(etapes.length, acquis), etapes };
+  // (« Rencontres » est parti le 7 novembre 2026 : ses étapes déjà franchies comptent encore, il ne perd rien)
+  const anciennes = [liste.length > 0, liste.length >= 5, Array.isArray(rencontres?.amis) && rencontres.amis.length > 0, Boolean(s(rencontres?.membreJour))].filter(Boolean).length;
+  return { cadeaux: Math.max(etapes.length + anciennes, acquis), etapes };
+}
+
+/** 🗓️ Ses jours sur ClikMe d'un mois (« 2026-11 ») : sa figurine du mois se mérite à 10 (`figurine-du-mois.ts`). */
+export async function joursDePresence(supabase: Supabase, habitantId: string, mois: string): Promise<string[]> {
+  const p = await lire<{ jours?: string[] }>(supabase, `${habitantId}/presence.json`);
+  const jours = Array.isArray(p?.jours) ? p.jours.map(s) : [];
+  return [...new Set(jours.filter((j) => j.startsWith(`${mois}-`)))].sort();
 }

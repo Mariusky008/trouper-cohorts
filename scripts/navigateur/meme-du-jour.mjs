@@ -114,9 +114,16 @@ await lea.locator(".tf-envoyer").click();
 await lea.waitForSelector(".tf-meme-pret video", { timeout: 90000 });
 const poster = await texte(lea, ".tf-poster-jour");
 ok(poster === "🔥 Poster ma réponse (visible par les gens de Dax)" && (await lea.locator(".tf-meme-pret .tf-public").count()) === 0, `son mème est prêt : « ${poster} » (l'accord est sur le bouton)`);
+// 🔞 sa figurine date d'avant la question de l'âge : la première fois, on le lui demande (puis le geste repart)
+let questionAge = "";
+lea.once("dialog", (d) => {
+  questionAge = d.message();
+  void d.accept();
+});
 await lea.locator(".tf-poster-jour").click();
 await lea.waitForSelector(".tf-postee", { timeout: 15000 });
 const idLea = (await lea.locator(".tf-adresse").inputValue()).split("/").pop();
+ok(/15 ans ou plus \?/.test(questionAge) && (await existe("figurines-clients", `${LEA.id}/majeur.json`)), `son âge, demandé une fois, puis noté (${questionAge.slice(0, 50)})`);
 ok((await texte(lea, ".tf-postee")).includes("Ta réponse est postée") && (await existe("figurines-clients", `du-jour/dax/${jour}/${idLea}.json`)) && (await existe("figurines-clients", `${LEA.id}/du-jour/${jour}.json`)), "postée : sa fiche du jour, à Dax");
 await lea.screenshot({ path: `${D}/meme-du-jour-2-lea-postee.png`, fullPage: true });
 // elle voit les réponses : la sienne d'abord, et le vrai chiffre

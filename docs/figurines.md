@@ -47,11 +47,11 @@ sa ville.
   d'une ville.
 - **Sa propre figurine, en cadeau** : le client qui le veut a la sienne, offerte par le commerce où il est venu, qui
   apparaît dans la vidéo du lendemain, attablée chez le commerçant. Il la partage (« je suis dans la vidéo de mon
-  resto ! »). Accord clair, jamais de mineurs.
+  resto ! »). Accord clair, réservée aux 15 ans et plus (§ 9.0 tertricies).
 - **Elle parle, avec sa voix** : son petit mot devient un avis parlé (« Le meilleur magret de Dax ! », dit par sa
   figurine). C'est la meilleure preuve sociale qui soit, et il la partage. Garde-fous : sa voix à lui, jamais
   fabriquée ; rien ne passe dans la vidéo du commerce sans que le commerçant l'ait validé ; le vocal sert au rendu
-  puis il est effacé (c'est une donnée personnelle) ; jamais de mineurs. Plus tard : l'envoyer à un ami (un
+  puis il est effacé (c'est une donnée personnelle) ; réservée aux 15 ans et plus. Plus tard : l'envoyer à un ami (un
   anniversaire), qui découvre ClikMe par là.
 
 ## 4. Les échanges
@@ -111,8 +111,8 @@ vidéo.
   clients.
 - **Une bouche qui sonne faux** → des bouches dessinées (ouverte, fermée, « o »), pas une imitation réaliste : on
   reste dans le jouet.
-- **Le droit à l'image** → pour le pro, son visage, avec son accord écrit ; pour les clients, un accord clair, jamais
-  de mineurs.
+- **Le droit à l'image** → pour le pro, son visage, avec son accord écrit ; pour les clients, un accord clair, et
+  15 ans ou plus (§ 9.0 tertricies).
 - **Les règles des jeux d'argent** → les figurines se gagnent en venant, jamais en payant ; les échanges sont gratuits.
 - **La rareté** → le nombre d'une édition rare est dit et tenu, jamais inventé.
 
@@ -1173,6 +1173,65 @@ mène toujours, et sa figurine du mois s'y mérite encore. À décider plus tard
   - Il refuse les tuiles pour vérifier la liste de secours.
   - Il lance Chromium avec `--enable-unsafe-swiftshader` (WebGL sans carte graphique).
 
+### 9.0 duotricies « Rencontres » effacé (7 novembre)
+
+Sa réponse à « l'effacer, ou lui garder une entrée ailleurs ? » (après qu'« Autour » a pris sa place dans le menu) :
+**effacer**. Ce qui est parti :
+
+- l'onglet et ses adresses : `#rencontre` et `#rencontres` ouvrent « Créer », comme le lien d'un ami (`?ami=<code>`) ;
+- l'épisode du jour (Pablito, les commerçants et leur métier, les personnages imaginaires, les amis et leurs thèmes, les
+  membres de la ville et la file des membres), le théâtre en BD, les impressions entre clients, les cartes souvenirs,
+  la figurine relookée d'un épisode, « Fais-en un mème » d'un épisode, « Et toi ? » ;
+- le petit mot du jour (il annonçait la rencontre du jour ; il n'était plus affiché depuis le 6 novembre) ;
+- les fichiers : `app/collection/rencontre.tsx`, `app/api/direct/rencontre/`, `lib/direct/rencontre.ts`,
+  `rencontre-serveur.ts`, `scenarios.ts`, `reseau.ts` ;
+- les voix de Pablito sur « Rencontres » (`rencontres-1` à `-5`), et les bulles 5 à 7 de son accueil (`accueil-5` à
+  `-7`), qui en parlaient ; la dernière bulle (« Allez, à toi de jouer ! ») garde son enregistrement (`accueil-8`,
+  donné par la bulle elle-même).
+
+Ce qui en dépendait, et ce qu'il devient :
+
+- **Sa figurine du mois** se mérite en **10 jours sur ClikMe dans le mois** (sa présence, notée à chaque visite de la
+  page, `presence.json`, gardée sur 62 jours : `joursDePresence`, `etapes-serveur.ts`) — c'étaient 10 jours de
+  rencontres. Sa progression et sa révélation (`MaFigurineDuMois`) sont dans **« Moi »**, sous sa carte ; `#mois`,
+  `#edition`, `#ou-gagner` y mènent ; « 🔥 Le mème du jour › » remplace « 💬 Ma rencontre du jour › ». L'écran dit
+  « 3/10 jours sur ClikMe ».
+- **Ses premiers pas** : « Ta première rencontre », « Un ami qui te rejoint », « Rencontrer un membre », « 5 épisodes »
+  ne sont plus proposés ; ceux qu'il avait franchis comptent encore dans ses cadeaux (`anciennes`) : il ne perd rien.
+- **La question du jour** et **« Ce que ta figurine sait de toi »** restent, dans « Moi ». Ce qu'il dit de lui est
+  rangé par `ce-qu-il-a-dit-serveur.ts`, toujours dans `<habitant>/rencontres.json` (`dit`), pour ne rien perdre.
+- **Ses proches** (`prochesDe`) lisent toujours ses amis d'alors (`rencontres.json`, `amis`) : rien n'y est plus écrit.
+- Les données déjà rangées (rencontres, cartes souvenirs, invitations, file des membres) ne sont pas effacées.
+- Les essais : `scripts/navigateur/personnage.mjs` remplace `personnage-rencontre.mjs` (la carte, la question du jour,
+  ce qu'elle sait, retrouver sa figurine ; et « Rencontres » n'existe plus : ni menu, ni adresse, ni route) ;
+  `ma-figurine.mjs` (sa figurine du mois dans « Moi », sur des jours de présence), `famille-page.mjs` et `autour.mjs`
+  ajustés.
+
+### 9.0 tertricies 🔞 La figurine, réservée aux 15 ans et plus (7 novembre)
+
+Rien ne demandait l'âge, alors qu'« Autour » montre des mèmes avec un visage, rattachés à des lieux de la ville. Sa
+décision, après qu'on lui a présenté trois seuils (18 ans pour tout ; 15 ans pour la figurine et 18 ans pour la ville ;
+15 ans pour tout) : **15 ans pour tout** — le minimum légal pour consentir seul à l'usage de ses données (la majorité
+numérique, en France), en sachant que des jeunes de 15 ans poseront alors leur visage sur la carte de la ville. Un seul
+nombre, `AGE_MINIMUM` (`lib/direct/ma-figurine.ts`), et tous les textes en découlent.
+
+- **À la création** : une seconde case, jamais cochée d'avance, sous « C'est bien moi sur la photo » : « J'ai 15 ans
+  ou plus. » Sans elle, le bouton reste gris, et la route refuse la photo (`ERREUR_AGE`) — sans compte, aucun compte
+  n'est ouvert. Ce qu'il a déclaré est noté dans `<habitant>/majeur.json` (`{ le, age: 15 }`).
+- **Ceux qui avaient déjà leur figurine** : le serveur refuse de montrer un de leurs mèmes dans la ville tant qu'ils
+  n'ont pas déclaré leur âge — déposer dans « Autour » (`deposer`, `autour-serveur.ts`), le montrer dans « Découvrir »
+  ou poster sa réponse au mème du jour (`rendreMemePublic`) : réponse 403 avec `age: true` (`SANS_AGE`). L'écran pose
+  alors la question, une fois (`demanderSonAge`, `app/collection/age.ts`) : « Tu as 15 ans ou plus ? » ; s'il dit oui,
+  c'est noté (`{ action: "majeur" }`, route `ma-figurine`) et son geste repart tout seul ; sinon, « Réservé aux 15 ans
+  et plus. » Retirer un mème de la ville reste toujours possible.
+- **Ce qui ne change pas** : ses mèmes envoyés à ceux qu'il choisit (un lien, un duo) ne demandent rien de plus.
+- **C'est une déclaration**, pas une vérification : personne ne vérifie un âge sur une simple case. Elle engage celui qui
+  coche, et elle prouve qu'on a posé la question.
+- Les essais : `essai-autour-route.mjs` (sans son âge, refusé ; déclaré, noté ; sans compte, rien à noter) ;
+  `ma-figurine.mjs` (la case, la route qui refuse sans elle, son âge noté, et la question à une ancienne figurine avant
+  « Découvrir ») ; `autour.mjs` (la question au premier dépôt de Sam) ; `meme-du-jour.mjs` (la question quand Léa poste
+  sa réponse).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
@@ -1281,7 +1340,7 @@ par les éditions rares.
 - **Pas de revente, pas de place de marché** : la valeur est dans les cadeaux et la fierté, pas dans l'argent (sinon,
   spéculation et ennuis juridiques). Les échanges : des doubles, gratuitement.
 - La rareté est dite et tenue (les numéros sont vrais).
-- Les visages : l'accord écrit du pro ; pour les clients, une case jamais cochée d'avance, et jamais de mineurs. Les
+- Les visages : l'accord écrit du pro ; pour les clients, une case jamais cochée d'avance, et 15 ans ou plus (§ 9.0 tertricies). Les
   photos et les vocaux sont effacés après la fabrication ; un contrat de traitement avec le fournisseur d'images.
 - Rien ne passe dans la vidéo d'un commerce sans que le pro l'ait validé.
 

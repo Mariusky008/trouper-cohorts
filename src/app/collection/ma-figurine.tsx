@@ -20,6 +20,8 @@
 import { useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   ACCORD_PUBLIC,
+  ATTESTATION_AGE,
+  REFUS_AGE,
   DUREE_MAX_MESSAGE,
   PRENOM_MAX,
   SENTIMENTS,
@@ -44,6 +46,7 @@ import { createClient } from "@/lib/supabase/client";
 import { SONS_PABLITO } from "@/lib/direct/guide";
 import { ETAPES, prochaineEtape } from "@/lib/direct/etapes";
 import { ProtegerFigurine } from "./connaitre";
+import { demanderSonAge } from "./age";
 import { ApercuDuMois, useMois } from "./figurine-du-mois";
 import { EVT_VERS_LE_STUDIO, prendreVersLeStudio, type VersLeStudio } from "./vers-le-studio";
 import { moisEnClair, type FigurineDuMois } from "@/lib/direct/figurine-du-mois";
@@ -84,8 +87,9 @@ const noterGeste = (type: "partage" | "nouveau", id: string) =>
 
 async function demander(corps: Record<string, unknown>): Promise<Reponse> {
   const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
-  const j = (await r.json().catch(() => ({}))) as Reponse;
-  if (!r.ok) throw new Error(j.error || "Ça n’est pas parti. Réessaie dans un instant.");
+  const j = (await r.json().catch(() => ({}))) as Reponse & { age?: boolean };
+  // (🔞 `age` : il n'a pas encore déclaré son âge — `age.ts` le lui demande)
+  if (!r.ok) throw Object.assign(new Error(j.error || "Ça n’est pas parti. Réessaie dans un instant."), { age: Boolean(j.age) });
   return j;
 }
 
@@ -721,8 +725,16 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   async function posterAuJour() {
     if (!envoye || !meme || !themeJour) return;
     setErreur("");
+    const poster = () => demander({ action: "public", id: envoye.id, public: true, duJour: true });
     try {
-      await demander({ action: "public", id: envoye.id, public: true, duJour: true });
+      try {
+        await poster();
+      } catch (e) {
+        // 🔞 il n'a pas encore déclaré son âge : une fois, puis le geste repart
+        if (!(e as { age?: boolean }).age) throw e;
+        if (!(await demanderSonAge())) return setErreur(REFUS_AGE);
+        await poster();
+      }
       setMeme((x) => (x ? { ...x, public: true } : x));
       setThemeJour((t) => (t ? { ...t, postee: envoye.id } : t));
     } catch (e) {
@@ -734,8 +746,17 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
     if (!envoye || !meme) return;
     setErreur("");
     if (!meme.public && !window.confirm(ACCORD_PUBLIC)) return;
+    const basculer = () => demander({ action: "public", id: envoye.id, public: !meme.public }) as Promise<Reponse & { public?: boolean }>;
     try {
-      const j = (await demander({ action: "public", id: envoye.id, public: !meme.public })) as Reponse & { public?: boolean };
+      let j: Reponse & { public?: boolean };
+      try {
+        j = await basculer();
+      } catch (e) {
+        // 🔞 il n'a pas encore déclaré son âge : une fois, puis le geste repart
+        if (!(e as { age?: boolean }).age) throw e;
+        if (!(await demanderSonAge())) return setErreur(REFUS_AGE);
+        j = await basculer();
+      }
       setMeme((x) => (x ? { ...x, public: Boolean(j.public) } : x));
     } catch (e) {
       setErreur((e as Error).message);
@@ -1172,6 +1193,8 @@ export function Annonce({ titre, children }: { titre: string; emoji?: string; ch
 export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFigurine; villes?: { slug: string; nom: string }[]; onEnvoye: (e: EtatMaFigurine) => void }) {
   const [photo, setPhoto] = useState("");
   const [accord, setAccord] = useState(false);
+  // 🔞 réservée aux 15 ans et plus (`AGE_MINIMUM`) : une case de plus, jamais cochée d'avance
+  const [majeur, setMajeur] = useState(false);
   const [prenom, setPrenom] = useState("");
   const [ville, setVille] = useState(villes.length === 1 ? villes[0].slug : "");
   // SON UNIVERS (facultatif) : son métier ou sa passion — sa figurine s'habille en conséquence
@@ -1181,7 +1204,7 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
   const demandePrenom = !etat.prenom;
   const demandeVille = !etat.compte && villes.length > 1;
   const sansVille = !etat.compte && villes.length > 0 && !ville;
-  const etapes = [Boolean(photo), ...(demandePrenom || demandeVille ? [Boolean((!demandePrenom || prenom.trim()) && !sansVille)] : []), accord];
+  const etapes = [Boolean(photo), ...(demandePrenom || demandeVille ? [Boolean((!demandePrenom || prenom.trim()) && !sansVille)] : []), accord && majeur];
   const faites = etapes.filter(Boolean).length;
   async function choisir(f: File | undefined) {
     setErreur("");
@@ -1200,6 +1223,7 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
         action: "photo",
         photo,
         accord,
+        majeur,
         ...(prenom.trim() ? { prenom: prenom.trim() } : {}),
         ...(etat.compte ? {} : { ville }),
         ...(univers.trim() ? { univers: univers.trim() } : {}),
@@ -1290,15 +1314,21 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
             />
           </div>
         </li>
-        <li className={accord ? "fait" : ""}>
-          <span className="tf-num">{accord ? "✓" : ++n}</span>
-          <label className="tf-accord">
-            <input type="checkbox" checked={accord} onChange={(e) => setAccord(e.target.checked)} />
-            <span>C’est bien moi sur la photo, et j’accepte que ClikMe en fasse ma figurine.</span>
-          </label>
+        <li className={accord && majeur ? "fait" : ""}>
+          <span className="tf-num">{accord && majeur ? "✓" : ++n}</span>
+          <span className="tf-accords">
+            <label className="tf-accord">
+              <input type="checkbox" checked={accord} onChange={(e) => setAccord(e.target.checked)} />
+              <span>C’est bien moi sur la photo, et j’accepte que ClikMe en fasse ma figurine.</span>
+            </label>
+            <label className="tf-accord tf-majeur">
+              <input type="checkbox" checked={majeur} onChange={(e) => setMajeur(e.target.checked)} />
+              <span>{ATTESTATION_AGE}</span>
+            </label>
+          </span>
         </li>
       </ol>
-      <button type="button" className={`tf-envoyer tf-go${faites === etapes.length ? " pret" : ""}`} disabled={!photo || !accord || sansVille || envoi} onClick={partir}>
+      <button type="button" className={`tf-envoyer tf-go${faites === etapes.length ? " pret" : ""}`} disabled={!photo || !accord || !majeur || sansVille || envoi} onClick={partir}>
         {envoi ? "Envoi…" : "✨ Donner vie à ma figurine"}
       </button>
       {erreur && (
@@ -1615,13 +1645,8 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
           { t: "Ici, tu vas créer TA figurine, à partir de ton visage. C’est gratuit et ça prend 1 minute !", v: "neutre" },
           { t: "Elle pourra parler à ta place, changer d’expression, danser, rire et faire des grimaces. Bref, elle te ressemble… en plus drôle !", v: "rire", apres: "grimace" },
           { t: "Et après ? Tu peux lui faire dire et faire faire ce que tu veux, et l’envoyer à tes amis.", v: "joie" },
-          {
-            t: "Et 1 fois par jour, elle pourra rencontrer la figurine d’un ami ou d’une nouvelle personne près de chez toi. Pendant quelques minutes, vos 2 figurines discuteront, réagiront et s’amuseront ensemble : tu seras juste spectateur.",
-            v: "neutre",
-          },
-          { t: "Et à la fin, tu pourras découvrir ce qui a été partagé et, si vous êtes d’accord, échanger vos impressions.", v: "joie" },
-          { t: "À chaque rencontre, une carte souvenir est créée. De quoi enrichir ta collection et faire évoluer ton univers !", v: "euphorie" },
-          { t: "Allez, à toi de jouer !", v: "joie", apres: "louche" },
+          // (les bulles 5 à 7 parlaient de « Rencontres », effacé le 7 novembre 2026 : la dernière garde SON enregistrement)
+          { t: "Allez, à toi de jouer !", v: "joie", apres: "louche", son: "/collection/pablito/accueil-8.mp3" },
         ]}
       >
         <a className="og-go" href="#creer">
@@ -1758,6 +1783,7 @@ export const STYLES_MA_FIGURINE =
 .tf-etapes li.fait .tf-num{background:#3DE2A6;color:#08301F;animation:tf-coche .45s cubic-bezier(.2,1.6,.4,1)}
 .tf-etapes .tf-choisir{margin-top:0;width:100%;max-width:220px;height:180px}
 .tf-etapes .tf-accord{max-width:none;align-items:center}
+.tf-accords{display:flex;flex-direction:column;gap:8px;min-width:0}
 .tf-go{font-size:18px;padding:17px 22px}
 .tf-go.pret{animation:tf-brille 1.8s ease-in-out infinite}
 .tf-fab-scene{display:grid;grid-template-columns:110px minmax(0,1fr);align-items:center;gap:8px;width:100%;max-width:380px}

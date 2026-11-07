@@ -7,20 +7,21 @@
  * mème, ou donne une raison d'en envoyer un ? Le menu en bas, comme les applis de vidéos que tout le monde connaît
  * (l'étape 2, le même jour : « Découvrir » est arrivé) :
  *   🔥 DÉCOUVRIR — les mèmes du jour des commerçants de sa ville (`decouvrir.tsx`) ;
- *   📍 AUTOUR — les mèmes laissés dans la ville, sur une carte (`autour.tsx`) ; il a pris la place de 💬 RENCONTRES,
- *      l'épisode du jour (`rencontre.tsx`) et sa figurine du mois qui s'y mérite (`figurine-du-mois.tsx`) ;
+ *   📍 AUTOUR — les mèmes laissés dans la ville, sur une carte (`autour.tsx`) ; il a pris la place de 💬 RENCONTRES ;
  *   🎭 CRÉER, au milieu, en gros — sa figurine qui parle (`ma-figurine.tsx`) : ses looks, ses mèmes prêts, le duo ;
  *   📥 MES MÈMES — ce que ses mèmes deviennent : vus, les réponses en duo, ceux qu'il a reçus (`mes-memes.tsx`) ;
- *   🃏 MOI — sa carte de personnage (c'est elle qui fait parler ses épisodes), la question du jour (`personnage.tsx`).
+ *   🃏 MOI — sa carte de personnage, la question du jour (`personnage.tsx`), et sa figurine du mois, qui se mérite en 10
+ *      jours sur ClikMe (`figurine-du-mois.tsx`).
  * « Ce mois-ci » et l'album des commerçants sont partis de l'appli (les cartes de fidélité commencées restent sur la page
  * de chaque commerçant, `/f/<slug>`) ; ses figurines du mois sont devenues des LOOKS de son studio.
- * Chaque onglet a son adresse (`#decouvrir`, `#autour`, `#rencontre`, `#figurine`, `#memes`, `#personnage`), et les anciens liens
- * retombent sur le bon (`#creer` → « Créer », `#mois` → sa figurine du mois, dans « Rencontres », `#album` → « Mes mèmes »).
+ * Chaque onglet a son adresse (`#decouvrir`, `#autour`, `#figurine`, `#memes`, `#personnage`), et les anciens liens
+ * retombent sur le bon (`#creer` → « Créer », `#mois` → sa figurine du mois, dans « Moi », `#album` → « Mes mèmes »).
  * 📲 LE LOT 3 : l'appli sur l'écran d'accueil et le mème du jour à 11 h 30 (`mon-telephone.tsx`) — `#jour` mène au mème
  * du jour (la notification), `#installer` ouvre le geste à faire (iPhone, après le rechargement avec son jeton).
  * 📍 « AUTOUR » REMPLACE « RENCONTRES » DANS LE MENU (7 novembre 2026, à la demande du propriétaire) : les mèmes laissés
- * dans la ville, sur une carte (`autour.tsx`, `#autour`). « Rencontres » n'est plus dans le menu mais reste à son
- * adresse (`#rencontre`) : le lien d'invitation d'un ami y mène, et sa figurine du mois s'y mérite encore.
+ * dans la ville, sur une carte (`autour.tsx`, `#autour`). PUIS « RENCONTRES » EST EFFACÉ (le même jour, sa réponse :
+ * « effacer ») : l'épisode du jour, les personnages, les membres, les impressions, les cartes souvenirs. Ses anciennes
+ * adresses (`#rencontre`, le lien d'un ami `?ami=`) ouvrent « Créer » ; sa figurine du mois est dans « Moi ».
  * Un onglet ne se charge qu'à sa première ouverture, puis il reste là.
  */
 import Link from "next/link";
@@ -28,7 +29,6 @@ import { useCallback, useEffect, useState } from "react";
 import { OngletFigurine, STYLES_MA_FIGURINE } from "./ma-figurine";
 import { OngletVisible } from "./guide";
 import { MonPersonnage, STYLES_PERSONNAGE } from "./personnage";
-import { RencontreDuJour, STYLES_RENCONTRE } from "./rencontre";
 import { STYLES_CONNAITRE } from "./connaitre";
 import { MaFigurineDuMois, STYLES_FIGURINE_DU_MOIS } from "./figurine-du-mois";
 import { MesMemes, STYLES_MES_MEMES } from "./mes-memes";
@@ -49,8 +49,8 @@ const MENU = [
   { cle: "personnage", nom: "Moi" },
 ] as const;
 type Onglet = (typeof MENU)[number]["cle"];
-/** Les vues : les onglets du menu, et « Rencontres », qui n'y est plus mais reste à son adresse. */
-type Vue = Onglet | "rencontre";
+/** Les vues : les onglets du menu. */
+type Vue = Onglet;
 /** Les adresses qui mènent à une vue (et, pour certaines, à un endroit dedans). */
 const ALIAS: Record<string, Vue> = {
   decouvrir: "decouvrir",
@@ -64,12 +64,13 @@ const ALIAS: Record<string, Vue> = {
   // (⚡ ses réactions, en haut de « Créer » : là où l'app installée pourra s'ouvrir)
   reactions: "figurine",
   personnage: "personnage",
-  rencontre: "rencontre",
-  rencontres: "rencontre",
-  // (sa figurine du mois se mérite dans « Rencontres », hors du menu mais toujours là : elle y est)
-  mois: "rencontre",
-  edition: "rencontre",
-  "ou-gagner": "rencontre",
+  // (« Rencontres » est effacé : ses anciens liens ouvrent « Créer »)
+  rencontre: "figurine",
+  rencontres: "figurine",
+  // (sa figurine du mois : dans « Moi », sous sa carte)
+  mois: "personnage",
+  edition: "personnage",
+  "ou-gagner": "personnage",
   memes: "memes",
   album: "memes",
 };
@@ -79,8 +80,7 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
   const [charge, setCharge] = useState(false);
   const [vue, setVue] = useState<Vue>("figurine");
   const [ouverts, setOuverts] = useState<Set<Vue>>(() => new Set(["figurine"]));
-  // (sa carte faite ou refaite : la rencontre du jour se recharge ; et le menu sait s'il en a une)
-  const [versionCarte, setVersionCarte] = useState(0);
+  // (sa carte faite ou refaite : le menu sait s'il en a une)
   const [aCarte, setACarte] = useState<boolean | null>(null);
   // (stable : la fabrication rappelle le serveur dans un effet qui en dépend)
   const poserEtat = useCallback((e: EtatMaFigurine) => setEtat(e), []);
@@ -139,8 +139,8 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
       if (v) aller(v, h, false);
       // 📲 la page s'est rechargée avec son jeton, juste avant d'installer (iPhone) : le geste à faire
       else if (h === "installer") ouvrirInstallation();
-      // le lien d'un ami (`?ami=<code>`) : droit aux rencontres
-      else if (new URLSearchParams(window.location.search).get("ami")) aller("rencontre");
+      // le lien d'un ami (`?ami=<code>`, du temps de « Rencontres ») : « Créer »
+      else if (new URLSearchParams(window.location.search).get("ami")) aller("figurine");
     };
     lire();
     window.addEventListener("hashchange", lire);
@@ -191,32 +191,17 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
           </section>
         )}
 
-        {/* 💬 RENCONTRES (hors du menu depuis « Autour », toujours à son adresse `#rencontre`) */}
-        {ouverts.has("rencontre") && (
-          <section className="mc-onglet" id="o-rencontre" hidden={vue !== "rencontre"} aria-label="Rencontres">
-            <OngletVisible.Provider value={vue === "rencontre"}>
-              <RencontreDuJour
-                compte={compte}
-                version={versionCarte}
-                allerA={allerA}
-                // 🗓️ sa figurine du mois se mérite ici (10 jours de rencontres), juste sous l'épisode du jour
-                sousLEpisode={<MaFigurineDuMois />}
-              />
-            </OngletVisible.Provider>
-          </section>
-        )}
         {ouverts.has("personnage") && (
           <section className="mc-onglet" id="o-personnage" hidden={vue !== "personnage"} aria-label="Mon personnage">
             <OngletVisible.Provider value={vue === "personnage"}>
               <MonPersonnage
                 compte={compte}
-                onCarte={() => {
-                  setACarte(true);
-                  setVersionCarte((v) => v + 1);
-                }}
+                onCarte={() => setACarte(true)}
                 onSait={setACarte}
                 allerA={allerA}
               />
+              {/* 🗓️ sa figurine du mois : elle se mérite en 10 jours sur ClikMe (`#mois` mène ici) */}
+              {compte && <MaFigurineDuMois />}
               {/* 📱 l'appli sur son écran d'accueil, et le mème du jour à 11 h 30 (il le coupe ici) — le lot 3 */}
               {compte && <MonTelephone />}
             </OngletVisible.Provider>
@@ -254,7 +239,7 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_PERSONNAGE + STYLES_RENCONTRE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR}</style>
     </main>
   );
 }

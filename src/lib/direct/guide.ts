@@ -36,14 +36,14 @@ export const NOM_GUIDE = "Pablito";
  */
 const voix = (cle: string, fichier: string) => [cle, `/collection/pablito/${fichier}.mp3`] as const;
 export const SONS_PABLITO: Record<string, string> = Object.fromEntries([
-  // L'ACCUEIL, SES HUIT BULLES (reçues du patron le 5 novembre 2026)
-  ...[1, 2, 3, 4, 5, 6, 7, 8].map((k) => voix(`pablito-accueil-${k}`, `accueil-${k}`)),
+  // L'ACCUEIL (reçues du patron le 5 novembre 2026) : ses quatre premières bulles ; les 5 à 7 parlaient de « Rencontres »,
+  // effacé le 7 novembre 2026 ; la dernière (« Allez, à toi de jouer ! », `accueil-8`) porte son enregistrement elle-même
+  ...[1, 2, 3, 4].map((k) => voix(`pablito-accueil-${k}`, `accueil-${k}`)),
   // LES AUTRES ONGLETS (reçus le même jour ; « Personnage » 3, « Ce mois-ci » 2 et « Album vide » 2 réenregistrés :
-  // ils parlaient d'achat ; « Rencontres » 5 aussi : le réseau des figurines, avec ses personnages et ses amis)
+  // ils parlaient d'achat ; ceux de « Rencontres » sont partis avec lui, le 7 novembre 2026)
   voix("perso-sans-compte-1", "perso-sans-compte-1"),
   voix("perso-sans-compte-2", "perso-sans-compte-2"),
   ...[1, 2, 3].map((k) => voix(`perso-intro-${k}`, `perso-intro-${k}`)),
-  ...[1, 2, 3, 4, 5].map((k) => voix(`pablito-rencontres-${k}`, `rencontres-${k}`)),
   ...[1, 2, 3, 4].map((k) => voix(`pablito-mois-${k}`, `mois-${k}`)),
   voix("album-vide-1", "album-vide-1"),
   voix("album-vide-2", "album-vide-2"),

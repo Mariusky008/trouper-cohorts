@@ -2,8 +2,8 @@
 
 /**
  * 🧠 MIEUX LE CONNAÎTRE, À L'ÉCRAN (`lib/direct/connaitre.ts`, le lot 2) :
- *   · `MotDuJour` : en haut de « Rencontres », le petit mot du jour (il annonce la rencontre du jour) ;
- *   · `QuestionDuJour` : sous la rencontre du jour, une question drôle, un toucher ou trois mots ;
+ *   · `QuestionDuJour` : dans « Moi », une question drôle, un toucher ou trois mots (le petit mot du jour, qui annonçait
+ *     la rencontre du jour, est parti avec « Rencontres » le 7 novembre 2026) ;
  *   · `CeQueTaFigurineSait` : dans « Personnage », tout ce qu'elle a retenu de lui — il voit, il efface ;
  *   · `ProtegerFigurine` : dans « Ma figurine », son adresse protège sa figurine (un code à six chiffres) ; sur un autre
  *     téléphone, le même code la retrouve.
@@ -18,28 +18,6 @@ async function poster(corps: Record<string, unknown>) {
   return j;
 }
 const quand = (le: string) => new Date(le).toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
-
-/** 🔮 Le petit mot du jour (rien tant qu'il n'a pas de rencontre aujourd'hui). `version` : à recharger. */
-export function MotDuJour({ version = 0 }: { version?: number }) {
-  const [mot, setMot] = useState<string | null>(null);
-  useEffect(() => {
-    let fini = false;
-    fetch("/api/direct/connaitre?mot=1", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((j: { mot?: string | null }) => !fini && setMot(j.mot ?? null))
-      .catch(() => undefined);
-    return () => {
-      fini = true;
-    };
-  }, [version]);
-  if (!mot) return null;
-  return (
-    <section className="cn-mot" aria-label="Le mot du jour">
-      <small>🔮 LE MOT DU JOUR</small>
-      <p>{mot}</p>
-    </section>
-  );
-}
 
 /** ❓ La question du jour : un toucher (à choix) ou trois mots ; sa figurine s'en souviendra. */
 export function QuestionDuJour() {
@@ -82,7 +60,7 @@ export function QuestionDuJour() {
       {repondue ? (
         <>
           <p className="cn-reponse">« {q.reponse} »</p>
-          <small className="cn-merci">✓ Ta figurine s’en souviendra dans ses prochaines rencontres.</small>
+          <small className="cn-merci">✓ Ta figurine s’en souviendra.</small>
           <button type="button" className="cn-lien" onClick={() => setChanger(true)}>
             Changer ma réponse
           </button>
@@ -115,13 +93,15 @@ export function QuestionDuJour() {
 const ETIQUETTES: Record<ChoseSue["type"], string> = { question: "❓ Question du jour", reponse: "🗨️ Et toi ?", verdict: "🪞 Sa phrase", revele: "✨ Ce qu’une rencontre a révélé" };
 
 /**
- * 🧠 « CE QUE TA FIGURINE SAIT DE TOI » : tout, daté ; il efface une chose, ou tout (sa carte, sa figurine et ses
- * rencontres restent). Fermé au départ : « Elle a retenu N choses ».
+ * 🧠 « CE QUE TA FIGURINE SAIT DE TOI » : tout, daté ; il efface une chose, ou tout (sa carte et sa figurine
+ * restent). Fermé au départ : « Elle a retenu N choses ».
  */
 export function CeQueTaFigurineSait() {
   const [ouvert, setOuvert] = useState(false);
   const [savoir, setSavoir] = useState<Savoir | null>(null);
   const [erreur, setErreur] = useState("");
+  // (rechargé à chaque ouverture : ce qu'il vient de dire, la question du jour, y est aussitôt)
+  const [ouvertures, setOuvertures] = useState(0);
   useEffect(() => {
     let fini = false;
     fetch("/api/direct/connaitre?savoir=1", { cache: "no-store" })
@@ -131,7 +111,7 @@ export function CeQueTaFigurineSait() {
     return () => {
       fini = true;
     };
-  }, []);
+  }, [ouvertures]);
   if (!savoir) return null;
   async function oublier(corps: Record<string, unknown>, question: string) {
     if (!window.confirm(question)) return;
@@ -146,7 +126,15 @@ export function CeQueTaFigurineSait() {
   const n = savoir.choses.length;
   return (
     <section className="cn-savoir" aria-label="Ce que ta figurine sait de toi">
-      <button type="button" className="cn-savoir-tete" aria-expanded={ouvert} onClick={() => setOuvert((o) => !o)}>
+      <button
+        type="button"
+        className="cn-savoir-tete"
+        aria-expanded={ouvert}
+        onClick={() => {
+          if (!ouvert) setOuvertures((n) => n + 1);
+          setOuvert(!ouvert);
+        }}
+      >
         <b>🧠 Ce que ta figurine sait de toi</b>
         <small>{n ? `Elle a retenu ${n} chose${n > 1 ? "s" : ""} sur toi` : "Ta carte, pour l’instant"} · {ouvert ? "Fermer" : "Voir"}</small>
       </button>
@@ -185,7 +173,7 @@ export function CeQueTaFigurineSait() {
             </ul>
           )}
           {n > 0 && (
-            <button type="button" className="cn-tout" onClick={() => oublier({ action: "tout-oublier" }, "Tout effacer ? Ta figurine oubliera tout ce qu’elle a appris de toi (ta carte, ta figurine et tes rencontres restent).")}>
+            <button type="button" className="cn-tout" onClick={() => oublier({ action: "tout-oublier" }, "Tout effacer ? Ta figurine oubliera tout ce qu’elle a appris de toi (ta carte et ta figurine restent).")}>
               Tout effacer
             </button>
           )}
@@ -290,9 +278,7 @@ export function ProtegerFigurine({ mode, protegee }: { mode: "proteger" | "retro
 }
 
 export const STYLES_CONNAITRE = `
-.cn-mot{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:20px;background:linear-gradient(135deg,rgba(142,197,255,.16),rgba(255,46,154,.12));border:1.5px solid rgba(142,197,255,.45)}
-.cn-mot small,.cn-question > small{font-size:10.5px;font-weight:900;letter-spacing:.12em;color:#F2C46B}
-.cn-mot p{margin:0;font-size:16px;line-height:1.42;font-weight:700;color:#FFF4E6}
+.cn-question > small{font-size:10.5px;font-weight:900;letter-spacing:.12em;color:#F2C46B}
 .cn-question{display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:24px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
 .cn-question > b{font-size:18px;line-height:1.25;font-weight:900}
 .cn-choix{display:grid;grid-template-columns:1fr 1fr;gap:8px}

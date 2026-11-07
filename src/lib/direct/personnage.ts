@@ -6,7 +6,7 @@
  * réponses ET ses cadeaux de ClikMe (une étape franchie dans l'app, un cadeau — plus ses achats depuis le 5 novembre
  * 2026) — c'est ce qui les fait monter, et ce qui fait revenir.
  *
- * C'est aussi la base de la rencontre du jour (sa façon de parler, ce qu'il aime) : `docs/figurines.md`.
+ * C'est aussi la base de « 🎲 Surprends-moi ! », un mème écrit d'après sa carte (`meme-surprise.ts`) : `docs/figurines.md`.
  *
  * RIEN DE SENSIBLE : ni santé, ni religion, ni orientation, ni opinions, ni où il est allé et quand ; ses goûts sont
  * pris dans une liste de loisirs.
@@ -69,12 +69,8 @@ export const BONUS_ETAPE: Record<CleEtape, Partial<Record<CleCaracteristique, nu
   figurine: { audace: 8 },
   carte: { curiosite: 6 },
   message: { humour: 10 },
-  rencontre: { curiosite: 8 },
   questions: { curiosite: 6, mauvaiseFoi: 4 },
-  ami: { fidelite: 12 },
-  membre: { audace: 12 },
   fidele: { fidelite: 10 },
-  souvenirs: { chance: 12 },
   duo: { humour: 6, audace: 4 },
 };
 

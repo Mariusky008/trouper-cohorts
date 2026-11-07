@@ -1,8 +1,9 @@
 // 🗣️ SA PROPRE FIGURINE (`lib/direct/ma-figurine.ts`).
 //
 // GET : où il en est (sa photo, sa figurine, ses expressions, ses options, ses messages). Sans cookie : « photo ».
-// POST { action: "photo", photo: data:image…, accord: true, prenom?, ville?, univers? } : sa photo — dès le départ (sans compte,
-//   on lui en ouvre un dans `ville`, une ville des commerces ClikMe) ; le moteur fabrique ensuite sa figurine.
+// POST { action: "photo", photo: data:image…, accord: true, majeur: true, prenom?, ville?, univers? } : sa photo — dès le
+//   départ (sans compte, on lui en ouvre un dans `ville`, une ville des commerces ClikMe) ; le moteur fabrique ensuite sa
+//   figurine. `majeur` : 🔞 « J'ai 15 ans ou plus » (`AGE_MINIMUM`), sans quoi rien ne part.
 // POST { action: "fabriquer" } : un pas de fabrication de sa figurine (le moteur) → l'état (`enCours` : rappeler).
 // POST { action: "refaire", autrePhoto?, univers? } : une nouvelle figurine (même photo), ou retour à la photo ; `univers` :
 //       ce qui lui ressemble (son métier, sa passion), revu en la refaisant.
@@ -21,7 +22,8 @@
 // GET ?repondre=<id> : le mème auquel il répond, en duo (ses images, sa voix, ses mots, son prénom).
 // POST { action: "meme-evenement", type: "partage"|"nouveau", id } : un geste autour d'un mème (la mesure).
 // POST { action: "public", id, public: true|false } : son mème dans « Découvrir », pour les gens de sa ville (son accord),
-//      ou retiré. Jamais un duo, jamais un mème signalé.
+//      ou retiré. Jamais un duo, jamais un mème signalé. Sans son âge déclaré : 403 avec `age` (l'écran le lui demande).
+// POST { action: "majeur" } : 🔞 il déclare avoir 15 ans ou plus (celui qui avait sa figurine avant qu'on le demande).
 // GET ?jour=1 : 🔥 le mème du jour (le thème, combien de réponses dans sa ville, s'il a répondu).
 // POST { action: "public", id, public, duJour: true } : sa réponse au mème du jour (visible par sa ville : c'est écrit sur
 //      le bouton). POST { action: "reagir", id, reac } : 😂 ❤️ 🔥 sur un mème (`c-<id>` : un commerçant ; `reac: null` : retirée).
@@ -45,8 +47,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant, habitantCourant, poserCookie } from "@/lib/direct/habitant";
 import { abonner, couper, estAbonne, jetonAppli, lierAppli } from "@/lib/direct/appli-collection-serveur";
 import { villeSlug } from "@/lib/direct/ville";
-import { lienMessage } from "@/lib/direct/ma-figurine";
+import { ERREUR_AGE, lienMessage } from "@/lib/direct/ma-figurine";
 import {
+  confirmerSonAge,
   adresseEnvoiMeme,
   choisirSaVoix,
   enregistrerMessage,
@@ -130,12 +133,14 @@ export async function POST(request: Request) {
     let moi = await habitantCourant(supabase);
     if (!moi) {
       if (p.accord !== true) return NextResponse.json({ error: "Coche « C’est bien moi sur la photo »." }, { status: 400 });
+      // 🔞 réservée aux 15 ans et plus (`AGE_MINIMUM`) : pas de compte ouvert sans cette case
+      if (p.majeur !== true) return NextResponse.json({ error: ERREUR_AGE }, { status: 400 });
       const ville = villeSlug(String(p.ville ?? ""));
       if (!ville || !(await villeOuverte(supabase, ville))) return NextResponse.json({ error: "Choisis ta ville." }, { status: 400 });
       moi = await assurerHabitant(supabase, ville);
       if (!moi) return NextResponse.json({ error: "Ton compte n’a pas pu s’ouvrir. Réessaie dans un instant." }, { status: 502 });
     }
-    const r = await envoyerPhoto(supabase, moi, p.photo, p.accord, p.prenom, p.univers);
+    const r = await envoyerPhoto(supabase, moi, p.photo, p.accord, p.prenom, p.univers, p.majeur);
     if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
     return NextResponse.json({ ok: true, etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
   }
@@ -203,10 +208,16 @@ export async function POST(request: Request) {
     if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
     return NextResponse.json({ ok: true, seau: r.seau, chemin: r.chemin, jeton: r.jeton }, { headers: sansCache });
   }
+  // 🔞 il déclare avoir l'âge, 15 ans ou plus (celui qui avait déjà sa figurine avant qu'on le demande) : une fois
+  if (p?.action === "majeur") {
+    await confirmerSonAge(supabase, moi.id);
+    return NextResponse.json({ ok: true }, { headers: sansCache });
+  }
   // 🌍 son mème dans « Découvrir » (son accord), ou retiré
   if (p?.action === "public") {
     const r = await rendreMemePublic(supabase, moi, p.id, p.public, p.duJour === true);
-    if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
+    // (sans son âge déclaré : `age`, l'écran le lui demande, une fois)
+    if (r.error) return NextResponse.json({ error: r.error, ...("age" in r && r.age ? { age: true } : {}) }, { status: r.statut ?? 400 });
     return NextResponse.json({ ok: true, public: r.public, ...(r.duJour ? { duJour: true } : {}) }, { headers: sansCache });
   }
   // 😂 ❤️ 🔥 il réagit à un mème (une réaction par personne)

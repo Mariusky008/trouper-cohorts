@@ -1,7 +1,7 @@
 // 📍 AUTOUR DE MOI, PAR LES ROUTES — contre le faux Supabase, jamais la vraie base (`lib/direct/autour-serveur.ts`).
 //
 // À Dax, un commerce client avec ses coordonnées (Le Petit Bistrot), un prospect, et un commerce d'une autre ville.
-// Léa dépose ses mèmes : au Petit Bistrot (pour tout le monde, avec un petit mot), « Ailleurs » (une soirée, pour ses
+// Sans son âge déclaré (15 ans et plus), Léa ne dépose rien ; elle le déclare. Léa dépose ses mèmes : au Petit Bistrot (pour tout le monde, avec un petit mot), « Ailleurs » (une soirée, pour ses
 // proches : sa position devient une zone, gardée nulle part telle quelle), et un pour elle seule. Ce que chacun voit :
 // Sam (un inconnu) seulement « tout le monde » ; Hugo (un proche) aussi la soirée ; Léa tout. Trois par lieu et par
 // jour ; pas d'adresse dans un petit nom ; ni gros mot ni alcool ; pas un duo ; pas le mème d'un autre. Hugo répond au
@@ -42,6 +42,8 @@ await semer(
 for (const x of [LEA, HUGO, SAM]) await deposer(`${x.id}/neutre.webp`, Buffer.alloc(64, 7), "image/webp");
 // Hugo a Léa dans ses Rencontres : une proche
 await json(`${HUGO.id}/rencontres.json`, { amis: [LEA.id] });
+// Hugo et Sam ont déclaré leur âge (15 ans et plus) ; Léa, pas encore (sa figurine date d'avant la question)
+for (const x of [HUGO, SAM]) await json(`${x.id}/majeur.json`, { le: new Date().toISOString(), age: 15 });
 /** Un mème en vidéo (comme le fait la route) ; `duo` : une réponse en duo (la figurine d'un autre). */
 async function meme(h, id, duo = false) {
   await semer("clik_figurine_message", [{ id, habitant_id: h, son: `${h}/m-${id}.mp3`, duree: 2, commerces: [], created_at: new Date().toISOString() }]);
@@ -73,8 +75,16 @@ const lieuDe = (carte, id) => (carte.lieux ?? []).find((l) => l.id === id);
 let c = await voir(LEA);
 ok(c.statut === 200 && c.ville === "dax" && lieuDe(c, BISTROT)?.n === 0 && lieuDe(c, BISTROT)?.emoji === "🍽️" && c.lieux.length === 1 && c.derniers.length === 0, "la carte de Dax : le commerce client avec ses coordonnées (pas le prospect, pas Bayonne), sans mème");
 
+// ═══ 🔞 SANS SON ÂGE DÉCLARÉ, RIEN DANS LA VILLE ═══
+let r = await appel(LEA, { action: "deposer", meme: L[0], lieu: BISTROT, qui: "tous" });
+ok(r.statut === 403 && r.age === true && /15 ans et plus/.test(r.error ?? "") && (await liste(`autour/dax/${BISTROT}`)).length === 0, `sans son âge déclaré : refusé, l'écran le lui demandera (${r.statut}, ${r.error})`);
+const age = await fetch(`${BASE}/api/direct/ma-figurine`, { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${LEA.jeton}` }, body: JSON.stringify({ action: "majeur" }) });
+ok(age.status === 200 && (await lire(`${LEA.id}/majeur.json`))?.age === 15, "elle déclare avoir 15 ans ou plus : c'est noté");
+const sansCompteAge = await fetch(`${BASE}/api/direct/ma-figurine`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "majeur" }) });
+ok(sansCompteAge.status === 403, "sans compte, rien à noter");
+
 // ═══ LÉA DÉPOSE ═══
-let r = await appel(LEA, { action: "deposer", meme: L[0], lieu: BISTROT, qui: "tous", mot: "Le chef m’a reconnu." });
+r = await appel(LEA, { action: "deposer", meme: L[0], lieu: BISTROT, qui: "tous", mot: "Le chef m’a reconnu." });
 ok(r.statut === 200 && r.lieu === BISTROT, "au Petit Bistrot, pour tout le monde, avec un petit mot");
 const ICI = { lat: 43.71021, lng: -1.05383 };
 r = await appel(LEA, { action: "deposer", meme: L[1], ici: ICI, qui: "proches", nomLieu: "Soirée chez Max" });

@@ -558,7 +558,7 @@ export function Duel() {
   return (
     <main className="dl">
       <header className="dl-tete">
-        <a href="/collection#rencontre" className="dl-retour" aria-label="Retour">
+        <a href="/collection#figurine" className="dl-retour" aria-label="Retour">
           ←
         </a>
         <span>

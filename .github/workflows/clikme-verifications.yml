@@ -49,12 +49,12 @@ jobs:
           src/app/collection src/app/figurine src/app/api/direct/ma-figurine src/app/api/admin/direct/figurines-clients
           src/lib/direct/ma-figurine.ts src/lib/direct/ma-figurine-serveur.ts src/lib/direct/reduire-image.ts
           src/lib/direct/ma-figurine-fabrique-serveur.ts src/lib/direct/mots-interdits.ts
-          src/lib/direct/personnage.ts src/lib/direct/personnage-serveur.ts src/lib/direct/rencontre.ts src/lib/direct/rencontre-serveur.ts
-          src/app/carte src/app/api/direct/personnage src/app/api/direct/rencontre
+          src/lib/direct/personnage.ts src/lib/direct/personnage-serveur.ts src/lib/direct/ce-qu-il-a-dit-serveur.ts
+          src/app/carte src/app/api/direct/personnage
           src/lib/direct/guide.ts src/lib/direct/guide-serveur.ts src/app/api/direct/guide
-          src/lib/direct/etapes.ts src/lib/direct/etapes-serveur.ts src/lib/direct/reseau.ts src/lib/direct/ressort.ts src/lib/direct/journal-serveur.ts
+          src/lib/direct/etapes.ts src/lib/direct/etapes-serveur.ts src/lib/direct/ressort.ts src/lib/direct/journal-serveur.ts
           src/lib/direct/connaitre.ts src/lib/direct/connaitre-serveur.ts src/app/api/direct/connaitre
-          src/lib/direct/figurine-du-mois.ts src/lib/direct/figurine-du-mois-serveur.ts src/lib/direct/musique-danse.ts src/lib/direct/scenarios.ts src/lib/direct/meme.ts src/lib/direct/memes-prets.ts src/lib/direct/meme-surprise.ts src/lib/direct/meme-surprise-serveur.ts src/lib/direct/duel-regard.ts src/app/duel src/lib/direct/mes-reactions.ts src/lib/direct/mes-reactions-serveur.ts src/lib/direct/sticker.ts src/lib/direct/gag.ts src/lib/direct/theme-du-jour.ts src/lib/direct/reactions-memes.ts src/lib/direct/reactions-memes-serveur.ts
+          src/lib/direct/figurine-du-mois.ts src/lib/direct/figurine-du-mois-serveur.ts src/lib/direct/musique-danse.ts src/lib/direct/meme.ts src/lib/direct/memes-prets.ts src/lib/direct/meme-surprise.ts src/lib/direct/meme-surprise-serveur.ts src/lib/direct/duel-regard.ts src/app/duel src/lib/direct/mes-reactions.ts src/lib/direct/mes-reactions-serveur.ts src/lib/direct/sticker.ts src/lib/direct/gag.ts src/lib/direct/theme-du-jour.ts src/lib/direct/reactions-memes.ts src/lib/direct/reactions-memes-serveur.ts
           src/lib/direct/appli-collection.ts src/lib/direct/appli-collection-serveur.ts src/app/api/cron/meme-du-jour src/app/api/cron/meme-du-jour-ete src/lib/direct/autour.ts src/lib/direct/autour-serveur.ts src/app/api/direct/autour
           src/lib/direct/memes-commerces.ts src/lib/direct/memes-commerces-serveur.ts src/app/meme src/app/api/direct/memes-commerces src/app/api/site-internet/pro/meme src/app/autour-de-moi/assistante/meme-comptoir.tsx
 

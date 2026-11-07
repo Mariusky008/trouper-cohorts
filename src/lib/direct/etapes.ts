@@ -5,8 +5,11 @@
  *
  * CE QUI PROGRESSE AVEC LES CADEAUX : les options de sa figurine (`OPTIONS_FIGURINE` : la n-ième s'ouvre au n-ième
  * cadeau), le niveau et le cadre de sa carte de personnage, et ses caractéristiques (chaque étape fait monter la
- * sienne). Aucun achat : les étapes se franchissent dans l'app (sa figurine, sa carte, un mème, une rencontre, une
- * réponse en duo…).
+ * sienne). Aucun achat : les étapes se franchissent dans l'app (sa figurine, sa carte, un mème, une réponse en duo…).
+ *
+ * « RENCONTRES » EST PARTI (7 novembre 2026, le propriétaire : « effacer ») : ses quatre étapes (la première rencontre,
+ * un ami qui rejoint, rencontrer un membre, 5 épisodes) ne sont plus proposées ; celles qu'il avait déjà franchies
+ * comptent encore dans ses cadeaux (`anciennes`, `etapes-serveur.ts`).
  *
  * CE QUI ÉTAIT DÉJÀ OUVERT LE RESTE : ses cadeaux comptent au moins ce que ses figurines lui avaient ouvert avant
  * (`acquis`, noté une fois — `etapes-serveur.ts`).
@@ -18,13 +21,9 @@ export const ETAPES = [
   { cle: "figurine", emoji: "📸", titre: "Créer ta figurine", onglet: "figurine" },
   { cle: "carte", emoji: "🃏", titre: "Faire ta carte de personnage", onglet: "personnage" },
   { cle: "message", emoji: "🎭", titre: "Créer ton premier mème", onglet: "figurine" },
-  { cle: "rencontre", emoji: "💬", titre: "Ta première rencontre", onglet: "rencontre" },
   // (6 novembre 2026 : « Dire 3 fois si c'est bien toi » laissait croire qu'il fallait refaire sa figurine)
   { cle: "questions", emoji: "❓", titre: "Répondre à 3 questions du jour", onglet: "personnage" },
-  { cle: "ami", emoji: "👯", titre: "Un ami qui te rejoint", onglet: "rencontre" },
-  { cle: "membre", emoji: "🎲", titre: "Rencontrer un membre", onglet: "rencontre" },
   { cle: "fidele", emoji: "📅", titre: "Revenir 3 jours différents", onglet: "figurine" },
-  { cle: "souvenirs", emoji: "🎞️", titre: "5 épisodes", onglet: "rencontre" },
   // (7 novembre 2026, on resserre sur le mème : « Passer chez un commerçant partenaire » n'est plus une étape)
   { cle: "duo", emoji: "↩️", titre: "Répondre en duo à un mème", onglet: "memes" },
 ] as const;

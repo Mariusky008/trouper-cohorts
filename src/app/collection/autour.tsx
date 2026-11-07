@@ -21,7 +21,8 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "r
 import { OngletVisible } from "./guide";
 import { CarteAutour, STYLES_CARTE_AUTOUR } from "./autour-carte";
 import { QUIS, distance, enMetres, estZone, type Lieu, type MemeAutour, type ProfilAutour, type Qui } from "@/lib/direct/autour";
-import type { MonMeme } from "@/lib/direct/ma-figurine";
+import { REFUS_AGE, type MonMeme } from "@/lib/direct/ma-figurine";
+import { demanderSonAge } from "./age";
 
 type Vue =
   | { t: "carte" }
@@ -36,7 +37,7 @@ type Pos = { lat: number; lng: number };
 const ROUTE = "/api/direct/autour";
 const poster = async (url: string, corps: unknown) => {
   const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
-  return { ok: r.ok, ...((await r.json().catch(() => ({}))) as { error?: string; lieu?: string }) };
+  return { ok: r.ok, ...((await r.json().catch(() => ({}))) as { error?: string; lieu?: string; age?: boolean }) };
 };
 /** « il y a 2 h », « hier », « il y a 4 j ». */
 function quand(le: string): string {
@@ -542,7 +543,7 @@ function Deposer({ lieuDonne, reponseA, lieux, compte, onFermer, onPublie, aller
     if (!ailleurs && !lieu) return setErreur("Où le déposer ?");
     if (ailleurs && !ici) return setErreur("Pour « Ailleurs », ton téléphone doit dire où tu es (ta position n’est jamais montrée).");
     setOccupe(true);
-    const r = await poster(ROUTE, {
+    const deposer = () => poster(ROUTE, {
       action: "deposer",
       meme,
       qui,
@@ -551,6 +552,15 @@ function Deposer({ lieuDonne, reponseA, lieux, compte, onFermer, onPublie, aller
       // « Ailleurs » : sa position (arrondie au serveur en une zone) ; sinon le lieu choisi, commerce ou zone qui a déjà des mèmes
       ...(ailleurs ? { ici, nomLieu } : { lieu }),
     });
+    let r = await deposer();
+    // 🔞 il n'a pas encore déclaré son âge : une fois, puis le dépôt repart
+    if (!r.ok && r.age) {
+      if (!(await demanderSonAge())) {
+        setOccupe(false);
+        return setErreur(REFUS_AGE);
+      }
+      r = await deposer();
+    }
     setOccupe(false);
     if (!r.ok || !r.lieu) return setErreur(r.error || "Ça n’a pas marché. Réessaie.");
     onPublie(r.lieu, meme);
