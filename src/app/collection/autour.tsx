@@ -275,22 +275,37 @@ function VueLieu({ id, ville, moi, onFermer, onSwipe, onDeposer }: { id: string;
   const memes = r?.memes ?? [];
   const conv = memes.find((m) => m.reponses > 0);
   const coeurs = memes.reduce((a, m) => a + (m.reac?.n.coeur ?? 0), 0);
+  // 🖼️ LA PHOTO DU LIEU, en haut (celle du commerce) ; sans photo, ou si elle ne se charge pas : le fond, et son emoji
+  const [photoKo, setPhotoKo] = useState(false);
+  const photo = l?.photo && !photoKo ? l.photo : "";
   return (
     <section className="atr-plein atr-lieu" aria-label={l?.nom ?? "Un lieu"}>
       <button type="button" className="atr-fermer" aria-label="Retour à la carte" onClick={onFermer}>
         ‹
       </button>
-      <header>
-        <span className="atr-type">{l ? `${l.emoji} ${l.type === "zone" ? "Ailleurs, quelque part par ici" : l.activite || "Commerce"}` : "…"}</span>
-        <h2>{l?.nom ?? "…"}</h2>
-        {l && moi && l.type === "commerce" && <span className="atr-dist">📍 {enMetres(distance(moi, l))}</span>}
-        <b className="atr-compte">
-          <em>
-            {memes.length} mème{memes.length > 1 ? "s" : ""}
-          </em>{" "}
-          déposé{memes.length > 1 ? "s" : ""} ici{coeurs ? ` · ${coeurs} ❤️` : ""}
-        </b>
-      </header>
+      <div className={`atr-lieu-tete${photo ? " photo" : ""}`}>
+        {photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photo} alt={`${l?.nom ?? "Le lieu"}, en photo`} referrerPolicy="no-referrer" onError={() => setPhotoKo(true)} />
+        ) : (
+          l && (
+            <span className="atr-lieu-emoji" aria-hidden="true">
+              {l.emoji}
+            </span>
+          )
+        )}
+        <header>
+          <span className="atr-type">{l ? `${l.emoji} ${l.type === "zone" ? "Ailleurs, quelque part par ici" : l.activite || "Commerce"}` : "…"}</span>
+          <h2>{l?.nom ?? "…"}</h2>
+          {l && moi && l.type === "commerce" && <span className="atr-dist">📍 {enMetres(distance(moi, l))}</span>}
+          <b className="atr-compte">
+            <em>
+              {memes.length} mème{memes.length > 1 ? "s" : ""}
+            </em>{" "}
+            déposé{memes.length > 1 ? "s" : ""} ici{coeurs ? ` · ${coeurs} ❤️` : ""}
+          </b>
+        </header>
+      </div>
       {memes.length > 0 ? (
         <>
           <button type="button" className="atr-eventail" onClick={() => onSwipe()} aria-label="Découvrir les mèmes de ce lieu">
@@ -857,6 +872,13 @@ export const STYLES_AUTOUR =
 .atr-plein{position:fixed;inset:0;z-index:40;overflow-y:auto;box-sizing:border-box;padding:calc(56px + env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom));background:radial-gradient(90% 40% at 50% 45%,rgba(255,46,154,.18),transparent 70%),#0E0A10;color:#fff;animation:atr-entre .25s cubic-bezier(.2,.9,.3,1)}
 .atr-fermer{display:grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.1);color:#fff;font-size:22px;line-height:1;cursor:pointer}
 .atr-plein>.atr-fermer{position:absolute;z-index:3;left:16px;top:calc(12px + env(safe-area-inset-top))}
+.atr-lieu-tete{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-height:236px;box-sizing:border-box;margin:calc(-56px - env(safe-area-inset-top)) -16px 0;padding:calc(64px + env(safe-area-inset-top)) 16px 12px;overflow:hidden;background:radial-gradient(90% 80% at 80% 15%,rgba(255,46,154,.5),transparent 65%),#1A121C}
+.atr-lieu-tete>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.atr-lieu-tete::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,10,16,.35),rgba(14,10,16,0) 30%,rgba(14,10,16,.7) 72%,#0E0A10)}
+.atr-lieu-tete.photo{min-height:300px}
+.atr-lieu-emoji{position:absolute;right:14px;top:calc(34px + env(safe-area-inset-top));font-size:104px;line-height:1;opacity:.85;transform:rotate(-8deg)}
+.atr-lieu-tete header{position:relative;z-index:1}
+.atr-lieu>.atr-fermer{background:rgba(14,10,16,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .atr-lieu header{display:flex;flex-direction:column;gap:4px}
 .atr-type{align-self:flex-start;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.12);font-size:12px;font-weight:600}
 .atr-lieu h2{margin:0;font:800 30px/1.05 Poppins,system-ui,sans-serif;letter-spacing:-.03em}

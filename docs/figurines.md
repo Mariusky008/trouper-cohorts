@@ -1275,6 +1275,21 @@ Les essais : `essai-autour-route.mjs` (Sam ajoute Léa : il ne voit pas sa soir�
 soi-même, pas un profil inconnu, pas sans compte ; retirés, plus rien) ; `autour.mjs` (le profil : ajouter, retirer,
 « Lui répondre »).
 
+### 9.0 sextricies 🖼️ La photo du lieu, en haut de sa page (7 novembre)
+
+Le quatrième point de la suite d'« Autour » (la maquette en montrait une). En haut de la page d'un commerce, sur toute la
+largeur, sa photo — choisie comme pour sa page de famille (`app/f/[slug]`) : **sa couverture ClikMe** (faite, et s'il
+n'est pas revenu à l'originale), sinon **sa devanture**, **sa salle**, ou **la première photo de sa fiche Google**
+(`photoDuCommerce`, `autour-serveur.ts`). Une adresse https seulement : jamais une photo à lui en `data:`, bien trop
+lourde ici. Le nom, l'activité et le nombre de mèmes passent dessus, sur un dégradé.
+
+- Seulement sur la page du lieu (`memesDuLieu`), pas sur la carte : la carte reste légère.
+- Sans photo (une zone « Ailleurs », un commerce sans photo), ou si elle ne se charge pas : la page garde son fond, avec
+  son emoji en grand (🍽️, 🥖, ✨…).
+- Les essais : `essai-autour-route.mjs` (la couverture d'abord ; revenu à l'originale : la devanture ; puis Google ;
+  sinon rien ; pas de photo pour une zone ni sur la carte) ; `autour.mjs` (la photo du Petit Bistrot sur toute la
+  largeur ; la boulangerie, sans photo : son emoji).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

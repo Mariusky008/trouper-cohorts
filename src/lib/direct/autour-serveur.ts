@@ -17,6 +17,7 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
 import { motInterdit } from "@/lib/direct/mots-interdits";
+import { lirePhotosDuLieu } from "@/lib/site-internet/photos-du-lieu";
 import { parleDAlcool } from "@/lib/direct/meme-surprise";
 import { SANS_AGE, SEAU_FIGURINES, aConfirmeSonAge, ajouterProche, cartesDeMemes, ecrireJson, lireJson, memeDeposable, prochesDe, retirerProche, saFigurineSignee } from "@/lib/direct/ma-figurine-serveur";
 import {
@@ -102,6 +103,26 @@ export async function commercesDe(supabase: Supabase, ville: string): Promise<Co
       .map((x) => ({ id: `c-${s(x.slug)}`, nom: s(x.business_name), activite: s(x.activite), lat: Number(x.latitude), lng: Number(x.longitude) }));
   } catch {
     return [];
+  }
+}
+
+/**
+ * 🖼️ LA PHOTO D'UN COMMERCE, en haut de la page de son lieu : comme sa page de famille (`app/f/[slug]`) — sa
+ * couverture ClikMe (si elle est faite, et qu'il n'est pas revenu à l'originale : `couvertureAffichee`), sinon sa
+ * devanture, sa salle, ou la première photo de sa fiche Google. Une adresse https seulement : jamais une photo à lui en
+ * `data:` (bien trop lourde ici). Rien : la page garde son fond, et son emoji.
+ */
+async function photoDuCommerce(supabase: Supabase, slug: string): Promise<string> {
+  try {
+    const { data } = await supabase.from("human_vitrine_sites").select("diagnostic, metadata").eq("slug", slug).maybeSingle();
+    const row = (data ?? {}) as Ligne;
+    const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Ligne;
+    const c = (diag.couverture && typeof diag.couverture === "object" ? diag.couverture : {}) as Ligne;
+    const lieu = lirePhotosDuLieu(row.metadata);
+    const google = Array.isArray(diag.photos) ? diag.photos.map(s) : [];
+    return [c.etat !== "originale" ? s(c.url) : "", lieu.devanture?.url, lieu.interieur?.url, ...google].map(s).find((u) => /^https:\/\//i.test(u)) ?? "";
+  } catch {
+    return "";
   }
 }
 
@@ -281,7 +302,7 @@ export async function memesDuLieu(supabase: Supabase, ville: string, lieu: strin
   const c = commerces.find((x) => x.id === lieu);
   const centre = c ? { lat: c.lat, lng: c.lng } : centreDeZone(lieu);
   if (!centre || (!c && !poses.length)) return { lieu: null, memes: [] };
-  const memes = await enCartes(supabase, ville, lieu, poses, moi);
+  const [memes, photo] = await Promise.all([enCartes(supabase, ville, lieu, poses, moi), c ? photoDuCommerce(supabase, lieu.slice(2)) : Promise.resolve("")]);
   return {
     lieu: {
       id: lieu,
@@ -293,6 +314,7 @@ export async function memesDuLieu(supabase: Supabase, ville: string, lieu: strin
       n: memes.length,
       visages: [],
       ...(c?.activite ? { activite: c.activite } : {}),
+      ...(photo ? { photo } : {}),
     },
     memes,
   };

@@ -34,7 +34,22 @@ const SAM = { id: "abababab-0000-4000-8000-000000000203", jeton: "jeton-sam-auto
 const BISTROT = "c-petit-bistrot-autour";
 
 await semer("human_vitrine_sites", [
-  { id: "ffffffff-0000-4000-8000-000000000201", slug: "petit-bistrot-autour", channel: "letter", business_name: "Le Petit Bistrot", city: "40100 Dax", activite: "Restaurant", published: true, est_client: true, latitude: 43.7102, longitude: -1.0538 },
+  {
+    id: "ffffffff-0000-4000-8000-000000000201",
+    slug: "petit-bistrot-autour",
+    channel: "letter",
+    business_name: "Le Petit Bistrot",
+    city: "40100 Dax",
+    activite: "Restaurant",
+    published: true,
+    est_client: true,
+    latitude: 43.7102,
+    longitude: -1.0538,
+    // ses photos : sa couverture ClikMe (faite), sa devanture, une photo de sa fiche Google ; et une à lui, en `data:`
+    diagnostic: { couverture: { etat: "prete", url: "https://photos.clikme-essai.test/couverture-bistrot.webp", at: "" }, photos: ["https://photos.clikme-essai.test/google-bistrot.jpg"] },
+    metadata: { photos_du_lieu: { devanture: { url: "https://photos.clikme-essai.test/devanture-bistrot.jpg", at: "" } } },
+    gallery_photos: ["data:image/jpeg;base64,AAAA"],
+  },
   { id: "ffffffff-0000-4000-8000-000000000202", slug: "prospect-autour", channel: "letter", business_name: "Un prospect", city: "Dax", activite: "Bistrot", published: false, est_client: false, latitude: 43.711, longitude: -1.052 },
   { id: "ffffffff-0000-4000-8000-000000000203", slug: "ailleurs-autour", channel: "letter", business_name: "Ailleurs", city: "64100 Bayonne", activite: "Café", published: true, est_client: true, latitude: 43.49, longitude: -1.47 },
 ]);
@@ -136,6 +151,18 @@ ok(sam.derniers.length === 2 && sam.derniers.every((m) => m.video && m.prenom ==
 // ═══ LES MÈMES DU LIEU, ET UNE RÉPONSE ═══
 let l = await voir(SAM, `?lieu=${BISTROT}`);
 ok(l.statut === 200 && l.lieu?.nom === "Le Petit Bistrot" && l.memes.length === 2 && l.memes.some((m) => m.mot === "Le chef m’a reconnu.") && l.memes.every((m) => /^[a-f0-9]{16}$/.test(m.profil)), "le lieu : ses mèmes pour le swipe, le petit mot, une clé de profil (pas un identifiant)");
+ok(l.lieu?.photo === "https://photos.clikme-essai.test/couverture-bistrot.webp" && !lieuDe(await voir(SAM), BISTROT)?.photo, `🖼️ en haut de sa page : la photo du commerce — sa couverture ClikMe d'abord (pas sur la carte) (${l.lieu?.photo})`);
+const changer = (x) => fetch(`${F}/human_vitrine_sites?slug=eq.petit-bistrot-autour`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(x) });
+await changer({ diagnostic: { couverture: { etat: "originale", url: "https://photos.clikme-essai.test/couverture-bistrot.webp", at: "" }, photos: ["https://photos.clikme-essai.test/google-bistrot.jpg"] } });
+const sansCouverture = (await voir(SAM, `?lieu=${BISTROT}`)).lieu?.photo;
+await changer({ metadata: {} });
+const sansDevanture = (await voir(SAM, `?lieu=${BISTROT}`)).lieu?.photo;
+await changer({ diagnostic: {} });
+const sansRien = (await voir(SAM, `?lieu=${BISTROT}`)).lieu;
+ok(
+  sansCouverture === "https://photos.clikme-essai.test/devanture-bistrot.jpg" && sansDevanture === "https://photos.clikme-essai.test/google-bistrot.jpg" && sansRien?.nom === "Le Petit Bistrot" && !sansRien.photo,
+  "revenu à l'originale : sa devanture ; sans elle : sa fiche Google ; sinon rien (jamais sa photo en data:)",
+);
 r = await appel(HUGO, { action: "deposer", meme: "autourhugo01", lieu: BISTROT, qui: "tous", reponseA: L[2] });
 ok(r.statut === 400, "répondre à un mème qu’il ne peut pas voir : refusé");
 r = await appel(HUGO, { action: "deposer", meme: "autourhugo01", lieu: BISTROT, qui: "tous", reponseA: L[0] });
@@ -183,6 +210,7 @@ const zH = lieuDe(await voir(HUGO), ZONE);
 const zS = lieuDe(await voir(SAM), ZONE);
 ok(r.statut === 200 && r.lieu === ZONE && zH?.n === 3 && zH.nom === "Soirée chez Max", `Hugo répond dans la soirée de Léa : la zone garde le petit nom de son premier mème (${zH?.nom})`);
 ok(zS?.n === 2 && zS.nom === "Au bord de l’Adour", `Sam ne voit pas la soirée (pour ses proches) : ni elle, ni son petit nom (${zS?.nom})`);
+ok(!(await voir(HUGO, `?lieu=${ZONE}`)).lieu?.photo, "une zone « Ailleurs » : pas de photo (sa page garde son fond)");
 r = await appel(HUGO, { action: "deposer", meme: "autourhugo01", lieu: "z-9999_-9999" });
 ok(r.statut === 400, "une zone où personne n’a rien déposé : refusée par son identifiant (il faut sa position)");
 

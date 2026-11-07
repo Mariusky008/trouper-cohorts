@@ -32,7 +32,8 @@ const ICI = { latitude: 43.70313, longitude: -1.06087 };
 
 // ─── Dax : deux commerces clients, trois habitants avec leur figurine ───
 await semer("human_vitrine_sites", [
-  { id: "ffffffff-0000-4000-8000-000000000301", slug: "petit-bistrot-ecran", channel: "letter", business_name: "Le Petit Bistrot", city: "40100 Dax", activite: "Restaurant", published: true, est_client: true, latitude: 43.7102, longitude: -1.0538 },
+  // (sa devanture : une photo servie par l'essai, à une adresse https qui n'existe pas ailleurs)
+  { id: "ffffffff-0000-4000-8000-000000000301", slug: "petit-bistrot-ecran", channel: "letter", business_name: "Le Petit Bistrot", city: "40100 Dax", activite: "Restaurant", published: true, est_client: true, latitude: 43.7102, longitude: -1.0538, metadata: { photos_du_lieu: { devanture: { url: "https://photos.clikme-essai.test/bistrot.jpg", at: "" } } } },
   { id: "ffffffff-0000-4000-8000-000000000302", slug: "boulangerie-ecran", channel: "letter", business_name: "Boulangerie du Marché", city: "Dax", activite: "Boulangerie", published: true, est_client: true, latitude: 43.7079, longitude: -1.0571 },
 ]);
 const GENS = [LEA, HUGO, SAM];
@@ -90,6 +91,7 @@ async function tel(qui, { panne = false } = {}) {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, userAgent: IPHONE, isMobile: true, hasTouch: true, geolocation: ICI, permissions: ["geolocation"] });
   if (qui) await ctx.addCookies([{ name: "clikme_habitant", value: qui.jeton, url: BASE }]);
   await ctx.route("https://tiles.openfreemap.org/**", (r) => (!panne && r.request().url().includes("/styles/") ? r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(STYLE) }) : r.abort()));
+  await ctx.route("https://photos.clikme-essai.test/**", (r) => r.fulfill({ status: 200, contentType: "image/jpeg", body: fs.readFileSync("public/direct/double/comptoir.jpg") }));
   const p = await ctx.newPage();
   p.on("pageerror", (e) => erreurs.push(String(e)));
   p.on("dialog", (d) => void d.accept());
@@ -147,6 +149,14 @@ await ouvrirBistrot();
 await sam.waitForSelector(".atr-lieu .atr-eventail img", { timeout: 15000 });
 const lieuTexte = await texte(sam, ".atr-lieu");
 ok(lieuTexte.includes("3 mèmes déposés ici") && lieuTexte.includes("Découvrir les 3 mèmes") && lieuTexte.includes("La conversation du moment"), "le lieu : « 3 mèmes déposés ici », l'éventail, « ▶ Découvrir », la conversation du moment");
+await sam.waitForFunction(() => document.querySelector(".atr-lieu-tete.photo img")?.complete, null, { timeout: 10000 }).catch(() => null);
+await sam.waitForTimeout(400); // (son entrée animée)
+const tete = await sam.evaluate(() => {
+  const i = document.querySelector(".atr-lieu-tete.photo img");
+  const r = document.querySelector(".atr-lieu-tete")?.getBoundingClientRect();
+  return { photo: i ? i.naturalWidth : 0, l: r?.width, t: r?.top };
+});
+ok(tete.photo > 0 && tete.l === 390 && Math.round(tete.t) === 0, `🖼️ en haut de sa page : la photo du Petit Bistrot, sur toute la largeur (${JSON.stringify(tete)})`);
 ok(!/★|étoile|avis|horaire|ouvert/i.test(lieuTexte), "ni étoiles, ni avis, ni horaires : pas une fiche de plan");
 await sam.screenshot({ path: `${D}/autour-2-lieu.png` });
 
@@ -252,6 +262,7 @@ await sam.waitForSelector(".atr-trouves button", { timeout: 5000 });
 ok((await sam.locator(".atr-trouves button").count()) === 1 && (await texte(sam, ".atr-trouves")).includes("Boulangerie du Marché"), "la recherche : « boulang » trouve la Boulangerie du Marché");
 await sam.locator(".atr-trouves button").click();
 await sam.waitForSelector(".atr-lieu .atr-decouvrir", { timeout: 15000 });
+ok((await sam.locator(".atr-lieu-tete.photo").count()) === 0 && (await texte(sam, ".atr-lieu-emoji")).length > 0, "la Boulangerie du Marché, sans photo : son fond, et son emoji");
 await sam.locator(".atr-decouvrir").click();
 await sam.waitForSelector(".atr-swipe .atr-mcarte:not(.dessous)", { timeout: 15000 });
 await sam.locator(".atr-swipe-haut .atr-fermer[aria-label='Signaler ce mème']").click();
