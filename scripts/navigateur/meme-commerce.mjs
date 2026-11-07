@@ -92,6 +92,8 @@ const carte = await texte(nina, "#o-decouvrir .dv-carte");
 // (le lot 2 : la même carte que les gens — son nom, un toucher : sa page ; ni bandeau, ni gros bouton rose)
 ok(carte.includes("Chez Bergine") && carte.includes("aujourd’hui") && !carte.includes("Voir sa page") && (await nina.locator(`#o-decouvrir a.dv-nom[href="/meme/${id}/voir"]`).count()) === 1 && (await nina.locator("#o-decouvrir .dv-voir").count()) === 0, `son mème, dans « Découvrir » : la même carte que les gens, son nom mène à sa page (${carte.slice(0, 90)})`);
 ok((await nina.locator("#o-decouvrir .dv-carte.commerce .dv-reac").count()) === 3, "😂 ❤️ 🔥 sous son mème aussi");
+// (le mème du jour est au-dessus, maintenant : sa carte vient à l'écran, puis elle joue)
+await nina.locator("#o-decouvrir .dv-carte video").first().scrollIntoViewIfNeeded();
 await nina.waitForFunction(() => {
   const v = document.querySelector("#o-decouvrir .dv-carte video");
   return v && !v.paused && v.currentTime > 0.2;
