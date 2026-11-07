@@ -1290,6 +1290,25 @@ lourde ici. Le nom, l'activité et le nombre de mèmes passent dessus, sur un d�
   sinon rien ; pas de photo pour une zone ni sur la carte) ; `autour.mjs` (la photo du Petit Bistrot sur toute la
   largeur ; la boulangerie, sans photo : son emoji).
 
+### 9.0 septtricies 🛡️ La modération des mèmes signalés (7 novembre)
+
+Le cinquième point de la suite d'« Autour » commence par la modération (avant « on a répondu à ton mème » et la
+réponse du commerçant depuis son comptoir). Un mème signalé (« ⋯ Signaler ») disparaît aussitôt, partout ; il attend sur
+la page admin **`/admin/humain/figurines-clients`**, section « Mèmes signalés » (`lib/direct/moderation-serveur.ts`) :
+
+- on le voit **tel que les gens l'ont vu** : sa vidéo, ses mots, sa voix, son auteur, et **où il était montré** — un lieu
+  d'« Autour » (son nom, et qui pouvait le voir), avec **le petit mot du dépôt** (« Son petit mot : … »), « Découvrir »
+  (sa ville), les réponses au mème du jour ; ou « envoyé à quelqu'un (un lien) » ;
+- **« Remettre »** (signalé à tort) : il revient là où il était ;
+- **« Retirer pour de bon »** : il quitte aussi la carte (son dépôt effacé : `retirerDepot`), « Découvrir » et le mème du
+  jour (ses fiches effacées : `retirerDeLaVille`) — avant, il restait caché, mais compté.
+- **La carte ne compte plus un mème signalé** (`memesCaches`) : avant, un lieu affichait « 3 » pour deux mèmes visibles.
+
+L'essai : `autour.mjs`, avec une vraie session d'administration (le jeton « faux-admin » du faux Supabase, l'administrateur
+dans `admins`) — le croissant de Hugo, signalé : la boulangerie compte 0 ; la page le montre (vidéo, mots, « Autour :
+Boulangerie du Marché (pour tout le monde) ») ; retiré pour de bon, son dépôt quitte la carte ; un mème de Léa signalé à
+tort, remis, revient au Petit Bistrot.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

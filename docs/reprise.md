@@ -6,7 +6,7 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 ## 1. Lire d'abord
 
 1. `CLAUDE.md` (racine) : les règles communes.
-2. `docs/figurines.md`, section 9.0 (de « duovicies » à « sextricies ») : tout ce qui a été fait sur « Ma figurine »,
+2. `docs/figurines.md`, section 9.0 (de « duovicies » à « septtricies ») : tout ce qui a été fait sur « Ma figurine »,
    les mèmes, « Découvrir », le mème du jour, l'appli et la notification de 11 h 30, « Autour de moi », « Rencontres »
    effacé, la figurine réservée aux 15 ans et plus.
 3. Ce fichier, en entier.
@@ -70,6 +70,7 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 | #96 | « Autour de moi », lots B et C : l'écran (la carte, le lieu, le swipe, le dépôt, le profil), ses essais, la doc |
 | #97 | Ce fichier : #96 fusionnée, et la décision d'effacer « Rencontres » |
 | #98 | « Rencontres » effacé (la figurine du mois en 10 jours sur ClikMe) ; la figurine réservée aux 15 ans et plus |
+| #99 | « Autour » : répondre avec sa tête ; le profil (ajouter en proche, lui répondre ; « Mes proches » suit la liste de l'auteur) ; la photo du lieu |
 
 Après #94, l'essai `appli-notif.mjs` a échoué sur `main` : la CI tournait entre 11 h et midi (heure de Paris), et
 l'appel « sans forcer » de l'essai avait vraiment fait l'envoi. Ce n'est pas un défaut de l'appli. L'essai le fait
@@ -183,7 +184,8 @@ Les lieux publics nommés viendront plus tard, avec des positions vérifiées (p
      liste de l'AUTEUR (s'ajouter ne donne rien à voir) : `docs/figurines.md`, section 9.0 quintricies ;
   4. **fait** — la photo du lieu en haut de sa page (sa couverture ClikMe, sa devanture, sa salle ou Google) :
      `docs/figurines.md`, section 9.0 sextricies ;
-  5. prévenir « on a répondu à ton mème », la réponse du commerçant depuis son comptoir, la page admin de modération ;
+  5. **la modération : faite** (`docs/figurines.md`, section 9.0 septtricies) ; **à faire** : prévenir « on a répondu à
+     ton mème », la réponse du commerçant depuis son comptoir ;
   6. les lieux publics nommés (les Arènes, les Halles…), avec des positions vérifiées.
 
 Ce que le lot A fournit :

@@ -797,6 +797,52 @@ export async function rendreMemePublic(supabase: Supabase, habitant: Habitant, i
   return ok ? { public: true, ...(duJour || sonJour ? { duJour: true } : {}) } : { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
 }
 
+// ─── 🛡️ pour la modération (`moderation-serveur.ts`) ─────────────────────────────────────────────────
+/** Un mème tel que la modération le voit (même signalé) : son auteur, ses mots, sa vidéo, s'il est dans la ville. */
+export type MemeAModerer = { id: string; h: string; texte: string; son: string; video: string; signaleLe: string; public?: { ville: string; jour: string }; duJour?: string };
+export async function memeAModerer(supabase: Supabase, id: string): Promise<MemeAModerer | null> {
+  if (!idMessageValide(id)) return null;
+  const { data } = await supabase.from("clik_figurine_message").select("*").eq("id", id).maybeSingle();
+  const r = (data as Ligne | null) ?? null;
+  if (!r) return null;
+  const h = s(r.habitant_id);
+  const aCote = await lireJson<Record<string, unknown>>(supabase, `${h}/m-${id}.json`);
+  const p = aCote.public as Partial<Public> | undefined;
+  const [son, video] = await Promise.all([signer(supabase, s(r.son)), s(aCote.meme) ? signer(supabase, s(aCote.meme)) : Promise.resolve("")]);
+  return {
+    id,
+    h,
+    texte: s(r.texte),
+    son,
+    video,
+    signaleLe: s(r.signale_le),
+    ...(p?.ville && p.jour ? { public: { ville: s(p.ville), jour: s(p.jour) } } : {}),
+    ...(s(aCote.duJour) ? { duJour: s(aCote.duJour) } : {}),
+  };
+}
+/** 🗑️ Retiré pour de bon : il quitte « Découvrir » et les réponses au mème du jour (ses fiches effacées). */
+export async function retirerDeLaVille(supabase: Supabase, m: MemeAModerer): Promise<void> {
+  const fiches = [
+    ...(m.public ? [cheminPublic(m.public.ville, m.public.jour, m.id)] : []),
+    ...(m.public && m.duJour ? [cheminDuJour(m.public.ville, m.duJour, m.id), cheminMaReponse(m.h, m.duJour)] : []),
+  ];
+  if (fiches.length) await supabase.storage.from(SEAU_FIGURINES).remove(fiches);
+  if (m.public || m.duJour) {
+    const chemin = `${m.h}/m-${m.id}.json`;
+    const reste = { ...(await lireJson<Record<string, unknown>>(supabase, chemin)) };
+    delete reste.public;
+    delete reste.duJour;
+    await ecrireJson(supabase, chemin, reste);
+  }
+}
+/** Lesquels de ces mèmes sont cachés (signalés, ou retirés) : la carte d'« Autour » ne les compte pas. */
+export async function memesCaches(supabase: Supabase, ids: string[]): Promise<Set<string>> {
+  const valides = [...new Set(ids)].filter(idMessageValide);
+  if (!valides.length) return new Set();
+  const { data } = await supabase.from("clik_figurine_message").select("id, signale_le, retire_le").in("id", valides);
+  return new Set(((Array.isArray(data) ? data : []) as Ligne[]).filter((r) => r.signale_le || r.retire_le).map((r) => s(r.id)));
+}
+
 // ─── 🔥 le mème du jour (le lot 2, 7 novembre 2026) : ses réponses, ses chiffres, ses proches d'abord ─────────────
 /** Une fiche par réponse, `du-jour/<ville>/<jour>/<id>.json` ; et la sienne, `<habitant>/du-jour/<jour>.json`. */
 const cheminDuJour = (ville: string, jour: string, id: string) => `du-jour/${ville}/${jour}/${id}.json`;
@@ -1050,11 +1096,10 @@ export type FigurineAFaire = {
   prete: boolean;
   refus: string;
 };
-export type MessageSignale = { id: string; prenom: string; le: string; son: string };
-
-export async function figurinesClients(supabase: Supabase): Promise<{ ok: boolean; figurines: FigurineAFaire[]; signales: MessageSignale[] }> {
+// (les mèmes signalés : `moderation-serveur.ts`)
+export async function figurinesClients(supabase: Supabase): Promise<{ ok: boolean; figurines: FigurineAFaire[] }> {
   const { data, error } = await supabase.from("clik_ma_figurine").select("*").order("demande_le", { ascending: false }).limit(200);
-  if (error) return { ok: false, figurines: [], signales: [] };
+  if (error) return { ok: false, figurines: [] };
   const lignes = (Array.isArray(data) ? data : []) as Ligne[];
   const figurines = await Promise.all(
     lignes.map(async (l) => ({
@@ -1068,12 +1113,7 @@ export async function figurinesClients(supabase: Supabase): Promise<{ ok: boolea
       refus: s(l.refus),
     })),
   );
-  const { data: sig } = await supabase.from("clik_figurine_message").select("*").not("signale_le", "is", null).is("retire_le", null).limit(100);
-  const prenoms = new Map(lignes.map((l) => [s(l.habitant_id), s(l.prenom)]));
-  const signales = await Promise.all(
-    ((Array.isArray(sig) ? sig : []) as Ligne[]).map(async (m) => ({ id: s(m.id), prenom: prenoms.get(s(m.habitant_id)) ?? "", le: s(m.signale_le), son: await signer(supabase, s(m.son)) })),
-  );
-  return { ok: true, figurines, signales };
+  return { ok: true, figurines };
 }
 
 /** Les deux images de sa figurine (bouche fermée, bouche ouverte), faites par ClikMe : elle est prête. */
@@ -1107,15 +1147,5 @@ export async function poserImagesFigurine(supabase: Supabase, habitantId: string
 export async function refuserPhoto(supabase: Supabase, habitantId: string, raison: unknown): Promise<{ error?: string }> {
   const r = s(raison).slice(0, 140) || "Cette photo ne permet pas de faire ta figurine.";
   const { error } = await supabase.from("clik_ma_figurine").update({ refus: r, updated_at: new Date().toISOString() }).eq("habitant_id", habitantId);
-  return error ? { error: "Pas enregistré." } : {};
-}
-
-/** Un message signalé : le remettre, ou le retirer pour de bon. */
-export async function modererMessage(supabase: Supabase, id: string, geste: unknown): Promise<{ error?: string }> {
-  if (!idMessageValide(id) || (geste !== "remettre" && geste !== "retirer")) return { error: "Demande incomplète." };
-  const { error } = await supabase
-    .from("clik_figurine_message")
-    .update(geste === "remettre" ? { signale_le: null } : { retire_le: new Date().toISOString() })
-    .eq("id", id);
   return error ? { error: "Pas enregistré." } : {};
 }
