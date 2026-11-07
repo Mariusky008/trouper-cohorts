@@ -8,7 +8,8 @@
  *
  * FICHIER DU NAVIGATEUR.
  */
-export type VersLeStudio = { texte?: string; look?: string };
+// (`theme` : 🔥 il répond au mème du jour — sa clé ; `ville` : la sienne, pour le bouton « visible par les gens de … »)
+export type VersLeStudio = { texte?: string; look?: string; theme?: string; ville?: string };
 
 export const EVT_VERS_LE_STUDIO = "clikme-vers-le-studio";
 const CLE = "clikme-vers-le-studio-v1";
@@ -31,7 +32,7 @@ export function prendreVersLeStudio(): VersLeStudio | null {
     const brut = window.sessionStorage.getItem(CLE);
     window.sessionStorage.removeItem(CLE);
     const x = brut ? (JSON.parse(brut) as VersLeStudio) : null;
-    return x && (typeof x.texte === "string" || typeof x.look === "string") ? x : null;
+    return x && (typeof x.texte === "string" || typeof x.look === "string" || typeof x.theme === "string") ? x : null;
   } catch {
     return null;
   }

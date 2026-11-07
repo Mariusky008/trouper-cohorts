@@ -161,6 +161,14 @@ export function MesMemes({ compte, allerA }: { compte: boolean | null; allerA: (
                 <span className="mm-chiffres">
                   <span>👀 {pluriel(m.vues, "vue")}</span>
                   {m.reponses > 0 && <span className="fort">↩️ {pluriel(m.reponses, "réponse")}</span>}
+                  {/* 😂 ❤️ 🔥 ce que les gens en ont pensé, dans « Découvrir » (de vrais chiffres) */}
+                  {m.reac && (
+                    <span className="mm-reac">
+                      {m.reac.rire > 0 && <>😂 {m.reac.rire} </>}
+                      {m.reac.coeur > 0 && <>❤️ {m.reac.coeur} </>}
+                      {m.reac.feu > 0 && <>🔥 {m.reac.feu}</>}
+                    </span>
+                  )}
                 </span>
                 <small className="mm-quand">{quand(m.le)}</small>
                 {/* 🌍 DANS « DÉCOUVRIR », S'IL LE VEUT (jamais un duo : il montre aussi la figurine de quelqu'un d'autre) */}

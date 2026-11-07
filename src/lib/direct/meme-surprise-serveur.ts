@@ -18,6 +18,7 @@ import { motInterdit } from "./mots-interdits";
 import { GOUTS, reponsesEnMots, reponsesValides, type CleGout, type Fiche, type Reponses } from "./personnage";
 import { cheminCarte, ecrire, lire, type Gardee } from "./personnage-serveur";
 import { SURPRISES_IA_PAR_JOUR, SURPRISES_PAR_JOUR, SURPRISE_MAX, parleDAlcool, repliqueLocale, type Surprise } from "./meme-surprise";
+import { themeDuJour, type Theme } from "./theme-du-jour";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -51,9 +52,10 @@ function unAngle(c: Carte): string {
   return angles[Math.floor(Math.random() * angles.length)];
 }
 
-function consigne(c: Carte, sauf: readonly string[]): string {
+function consigne(c: Carte, sauf: readonly string[], theme: Theme | null): string {
   return [
     "Tu écris UN mème pour ClikMe : une ou deux phrases que la figurine d'une personne dira À SA PLACE, à la première personne (« je »), dans une petite vidéo qu'elle enverra à ses amis.",
+    theme ? `C'est sa réponse au MÈME DU JOUR, le même thème pour tout le monde aujourd'hui : « ${theme.titre} ». Réponds à ce thème, à sa manière.` : "",
     "Le mème doit lui ressembler : appuie-toi sur son personnage ci-dessous, et cette fois surtout sur " + unAngle(c) + ".",
     "DRÔLE, tendre, de l'autodérision ; jamais moqueur envers les autres, jamais blessant. En français, avec le tutoiement si elle s'adresse à quelqu'un.",
     `Au plus ${SURPRISE_MAX - 10} caractères. Pas de hashtag, pas d'emoji, pas de guillemets.`,
@@ -78,7 +80,7 @@ function consigne(c: Carte, sauf: readonly string[]): string {
 
 const iaBranchee = () => Boolean(s(process.env.OPENAI_MEME_API_KEY) || s(process.env.OPENAI_API_KEY));
 
-async function ecrireParIA(c: Carte, sauf: readonly string[]): Promise<Omit<Surprise, "par" | "carte"> | null> {
+async function ecrireParIA(c: Carte, sauf: readonly string[], theme: Theme | null): Promise<Omit<Surprise, "par" | "carte"> | null> {
   const cle = s(process.env.OPENAI_MEME_API_KEY) || s(process.env.OPENAI_API_KEY);
   if (!cle) return null;
   const base = s(process.env.OPENAI_MEME_BASE_URL) || s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
@@ -90,7 +92,7 @@ async function ecrireParIA(c: Carte, sauf: readonly string[]): Promise<Omit<Surp
         model: s(process.env.OPENAI_MEME_MODEL) || s(process.env.OPENAI_PERSONNAGE_MODEL) || s(process.env.OPENAI_DOUBLE_MODEL) || "gpt-5.4-mini",
         response_format: { type: "json_object" },
         max_completion_tokens: 700,
-        messages: [{ role: "user", content: consigne(c, sauf) }],
+        messages: [{ role: "user", content: consigne(c, sauf, theme) }],
       }),
       signal: AbortSignal.timeout(15_000),
     });
@@ -106,7 +108,10 @@ async function ecrireParIA(c: Carte, sauf: readonly string[]): Promise<Omit<Surp
 }
 
 /** 🎲 SON MÈME, ÉCRIT PAR CLIKME. `sauf` : ceux qu'on lui a déjà proposés (pour ne pas les redonner). */
-export async function surprendre(supabase: Supabase, habitant: Habitant, sauf: unknown): Promise<{ surprise?: Surprise; error?: string; statut?: number }> {
+export async function surprendre(supabase: Supabase, habitant: Habitant, sauf: unknown, theme?: unknown): Promise<{ surprise?: Surprise; error?: string; statut?: number }> {
+  // 🔥 sa réponse au mème du jour (le thème d'aujourd'hui seulement) : l'IA y répond ; sinon, ses trois idées
+  const t = themeDuJour();
+  const leTheme = theme === t.cle ? t : null;
   const deja = (Array.isArray(sauf) ? sauf : []).map(texteValide).filter(Boolean).slice(-20);
   const jour = jourParis();
   const [g, avant] = await Promise.all([lire<Gardee>(supabase, cheminCarte(habitant.id)), lire<Partial<Compte>>(supabase, cheminCompte(habitant.id))]);
@@ -116,8 +121,9 @@ export async function surprendre(supabase: Supabase, habitant: Habitant, sauf: u
   const carte: Carte | null = g && reponses ? { reponses, gouts: Array.isArray(g.gouts) ? g.gouts : [], phrase: s(g.phrase), fiche: g.fiche ?? {} } : null;
   // (un appel à l'IA compte, même quand sa réponse est écartée : il a coûté)
   const tente = Boolean(carte && compte.ia < SURPRISES_IA_PAR_JOUR && iaBranchee());
-  const ia = tente && carte ? await ecrireParIA(carte, deja) : null;
-  const r = ia ?? repliqueLocale(carte, deja);
+  const ia = tente && carte ? await ecrireParIA(carte, deja, leTheme) : null;
+  const idee = leTheme?.idees.find((x) => !deja.includes(x));
+  const r = ia ?? (idee ? { texte: idee, sentiment: "joie" as const, danse: false } : repliqueLocale(carte, deja));
   await ecrire(supabase, cheminCompte(habitant.id), { jour, n: compte.n + 1, ia: compte.ia + (tente ? 1 : 0) });
   return { surprise: { texte: r.texte, sentiment: r.sentiment, danse: Boolean(r.danse), par: ia ? "ia" : "local", carte: Boolean(carte) } };
 }

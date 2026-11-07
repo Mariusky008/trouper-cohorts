@@ -56,6 +56,8 @@ import { adresseMasquee } from "./connaitre";
 import { lireLeTexte, voixBranchee } from "./voix-figurine-serveur";
 import { lookValide } from "./figurine-du-mois";
 import { jourAvant } from "@/lib/jour-paris";
+import { reactionsDe } from "./reactions-memes-serveur";
+import { themeDuJour, type EtatDuJour } from "./theme-du-jour";
 import { motInterdit } from "./mots-interdits";
 import { FABRICATIONS_PAR_JOUR, NOM_NEUTRE, NOM_PARLE, fabricationsParJourPourTous, fabriquerUnPas, moteurBranche } from "./ma-figurine-fabrique-serveur";
 
@@ -538,6 +540,9 @@ export async function enregistrerMessage(
     await Promise.all([
       ecrireJson(supabase, cheminReponse(s(origine!.habitant_id), repond, id), { le: new Date().toISOString() }),
       ecrireJson(supabase, cheminDuo(habitant.id), { le: new Date().toISOString() }),
+      // 👯 ils sont « proches » l'un de l'autre : leurs mèmes passent d'abord dans « Découvrir »
+      ajouterProche(supabase, habitant.id, s(origine!.habitant_id)),
+      ajouterProche(supabase, s(origine!.habitant_id), habitant.id),
     ]);
   }
   return { id };
@@ -693,6 +698,8 @@ export async function mesMemes(supabase: Supabase, habitant: Habitant | null, re
     ? await supabase.from("clik_meme_evenement").select("message_id, type").in("message_id", ids).in("type", ["vu", "reponse"]).limit(5000)
     : { data: [], error: null };
   const compte = (id: string, type: string) => ((Array.isArray(ev) ? ev : []) as { message_id?: string; type?: string }[]).filter((e) => e.message_id === id && e.type === type).length;
+  // 😂 ❤️ 🔥 ce que les gens en ont pensé (dans « Découvrir »)
+  const reacs = await reactionsDe(supabase, ids).catch(() => ({}) as Awaited<ReturnType<typeof reactionsDe>>);
   const envoyes = (
     await Promise.all(
       miens.map(async (m) => {
@@ -705,6 +712,7 @@ export async function mesMemes(supabase: Supabase, habitant: Habitant | null, re
           reponses: error ? 0 : compte(id, "reponse"),
           ...(x.public ? { public: true } : {}),
           ...(x.duo ? { duo: true } : {}),
+          ...(reacs[id] && Object.values(reacs[id].n).some((n) => n > 0) ? { reac: reacs[id].n } : {}),
         } as MonMeme;
       }),
     )
@@ -735,17 +743,20 @@ export async function mesMemes(supabase: Supabase, habitant: Habitant | null, re
 type Public = { ville: string; jour: string; le: string };
 const cheminPublic = (ville: string, jour: string, id: string) => `publics/${ville}/${jour}/${id}.json`;
 
-export async function rendreMemePublic(supabase: Supabase, habitant: Habitant, id: unknown, oui: unknown): Promise<{ public?: boolean; error?: string; statut?: number }> {
+export async function rendreMemePublic(supabase: Supabase, habitant: Habitant, id: unknown, oui: unknown, duJour = false): Promise<{ public?: boolean; duJour?: boolean; error?: string; statut?: number }> {
   const r = await ligneMessage(supabase, s(id));
   if (!r || s(r.habitant_id) !== habitant.id) return { error: "Ce mème n’est pas le tien.", statut: 404 };
   const chemin = `${habitant.id}/m-${s(r.id)}.json`;
   const aCote = await lireJson<Record<string, unknown>>(supabase, chemin);
   const avant = aCote.public as Partial<Public> | undefined;
+  const sonJour = s(aCote.duJour);
   if (oui !== true) {
-    // RETIRÉ : sa fiche quitte « Découvrir » tout de suite
+    // RETIRÉ : sa fiche quitte « Découvrir » tout de suite (et les réponses au mème du jour)
     if (avant?.ville && avant.jour) await supabase.storage.from(SEAU_FIGURINES).remove([cheminPublic(avant.ville, avant.jour, s(r.id))]);
+    if (avant?.ville && sonJour) await supabase.storage.from(SEAU_FIGURINES).remove([cheminDuJour(avant.ville, sonJour, s(r.id)), cheminMaReponse(habitant.id, sonJour)]);
     const reste = { ...aCote };
     delete reste.public;
+    delete reste.duJour;
     if (!(await ecrireJson(supabase, chemin, reste))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
     return { public: false };
   }
@@ -753,25 +764,90 @@ export async function rendreMemePublic(supabase: Supabase, habitant: Habitant, i
   if (!s(aCote.meme)) return { error: "Seul un mème en vidéo peut aller dans « Découvrir ».", statut: 400 };
   if (s(aCote.repondA)) return { error: "Un duo montre aussi la figurine de quelqu’un d’autre : il reste entre vous.", statut: 400 };
   if (!habitant.villeSlug) return { error: "Il faut d’abord ta ville.", statut: 400 };
-  if (avant?.ville) return { public: true };
-  const p: Public = { ville: habitant.villeSlug, jour: jourParis(), le: new Date().toISOString() };
-  const ok = (await ecrireJson(supabase, cheminPublic(p.ville, p.jour, s(r.id)), { id: s(r.id), h: habitant.id, le: p.le })) && (await ecrireJson(supabase, chemin, { ...aCote, public: p }));
-  return ok ? { public: true } : { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  const p: Public = avant?.ville && avant.jour ? (avant as Public) : { ville: habitant.villeSlug, jour: jourParis(), le: new Date().toISOString() };
+  let ok = avant?.ville ? true : await ecrireJson(supabase, cheminPublic(p.ville, p.jour, s(r.id)), { id: s(r.id), h: habitant.id, le: p.le });
+  // 🔥 SA RÉPONSE AU MÈME DU JOUR : une par personne et par jour (la nouvelle remplace l'ancienne)
+  const jour = jourParis();
+  if (duJour && sonJour !== jour) {
+    const ancienne = s((await lireJson<{ id?: string }>(supabase, cheminMaReponse(habitant.id, jour))).id);
+    if (ancienne && ancienne !== s(r.id)) await supabase.storage.from(SEAU_FIGURINES).remove([cheminDuJour(habitant.villeSlug, jour, ancienne)]);
+    ok =
+      ok &&
+      (await ecrireJson(supabase, cheminDuJour(habitant.villeSlug, jour, s(r.id)), { id: s(r.id), h: habitant.id, le: new Date().toISOString() })) &&
+      (await ecrireJson(supabase, cheminMaReponse(habitant.id, jour), { id: s(r.id) }));
+  }
+  ok = ok && (await ecrireJson(supabase, chemin, { ...aCote, public: p, ...(duJour ? { duJour: jour } : sonJour ? { duJour: sonJour } : {}) }));
+  return ok ? { public: true, ...(duJour || sonJour ? { duJour: true } : {}) } : { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+}
+
+// ─── 🔥 le mème du jour (le lot 2, 7 novembre 2026) : ses réponses, ses chiffres, ses proches d'abord ─────────────
+/** Une fiche par réponse, `du-jour/<ville>/<jour>/<id>.json` ; et la sienne, `<habitant>/du-jour/<jour>.json`. */
+const cheminDuJour = (ville: string, jour: string, id: string) => `du-jour/${ville}/${jour}/${id}.json`;
+const cheminMaReponse = (h: string, jour: string) => `${h}/du-jour/${jour}.json`;
+async function idsDuJour(supabase: Supabase, ville: string, jour: string): Promise<string[]> {
+  if (!ville) return [];
+  const { data } = await supabase.storage.from(SEAU_FIGURINES).list(`du-jour/${ville}/${jour}`, { limit: 1000, sortBy: { column: "created_at", order: "desc" } });
+  return ((Array.isArray(data) ? data : []) as { name?: string }[]).map((x) => /^([a-z0-9]{12})\.json$/.exec(s(x.name))?.[1] ?? "").filter(Boolean);
+}
+
+/** 🔥 Le mème du jour : le thème, combien de réponses dans sa ville (vraies), et s'il a répondu. */
+export async function etatDuJour(supabase: Supabase, habitant: Habitant | null): Promise<EtatDuJour> {
+  const jour = jourParis();
+  const ville = habitant?.villeSlug ?? "";
+  const [ids, mienne] = await Promise.all([idsDuJour(supabase, ville, jour), habitant ? lireJson<{ id?: string }>(supabase, cheminMaReponse(habitant.id, jour)) : Promise.resolve({} as { id?: string })]);
+  const moi = s(mienne.id);
+  const repondu = Boolean(moi && ids.includes(moi));
+  return { jour, theme: themeDuJour(jour), ville, n: ids.length, repondu, ...(repondu ? { moi } : {}) };
+}
+
+/** 👯 Ses proches : ceux avec qui il a fait un duo, et ses amis des Rencontres. */
+const cheminProches = (h: string) => `${h}/proches.json`;
+async function ajouterProche(supabase: Supabase, h: string, autre: string): Promise<void> {
+  if (!h || !autre || h === autre) return;
+  const p = await lireJson<{ ids?: string[] }>(supabase, cheminProches(h));
+  const ids = Array.isArray(p.ids) ? p.ids : [];
+  if (!ids.includes(autre)) await ecrireJson(supabase, cheminProches(h), { ids: [...ids, autre].slice(-100) });
+}
+export async function prochesDe(supabase: Supabase, h: string): Promise<Set<string>> {
+  const [p, r] = await Promise.all([lireJson<{ ids?: string[] }>(supabase, cheminProches(h)), lireJson<{ amis?: string[] }>(supabase, `${h}/rencontres.json`)]);
+  return new Set([...(Array.isArray(p.ids) ? p.ids : []), ...(Array.isArray(r.amis) ? r.amis : [])].map(s).filter(Boolean));
+}
+
+/** Les mèmes de ces fiches, prêts pour le fil : ses proches d'abord, puis les plus récents ; les réactions ; le sien. */
+async function enFil(supabase: Supabase, ids: string[], ville: string, moi: Habitant | null, proches: Set<string>, cache: Cache): Promise<MemePublic[]> {
+  const vus = (await Promise.all(ids.map((id) => apercuMeme(supabase, id, cache)))).filter((x): x is NonNullable<typeof x> => Boolean(x?.public && x.ap.video));
+  const reacs = await reactionsDe(supabase, vus.map((x) => x.ap.id), moi?.id).catch(() => ({}) as Awaited<ReturnType<typeof reactionsDe>>);
+  return vus
+    .map((x) => ({
+      ...x.ap,
+      villeSlug: ville,
+      ...(proches.has(x.h) ? { ami: true } : {}),
+      ...(moi && x.h === moi.id ? { moi: true } : {}),
+      ...(reacs[x.ap.id] ? { reac: reacs[x.ap.id] } : {}),
+    }))
+    .sort((a, b) => Number(Boolean(b.moi)) - Number(Boolean(a.moi)) || Number(Boolean(b.ami)) - Number(Boolean(a.ami)) || b.le.localeCompare(a.le));
+}
+
+/** 🔥 Les réponses de sa ville au mème du jour — seulement s'il a posté la sienne (« tu postes, puis tu vois »). */
+export async function reponsesDuJour(supabase: Supabase, habitant: Habitant | null, etat: EtatDuJour, max = 40): Promise<MemePublic[]> {
+  if (!habitant || !etat.repondu || !etat.ville) return [];
+  const ids = (await idsDuJour(supabase, etat.ville, etat.jour)).slice(0, max);
+  return enFil(supabase, ids, etat.ville, habitant, await prochesDe(supabase, habitant.id), new Map());
 }
 
 /** 🌍 Les mèmes que les gens de SA ville ont choisi de montrer, ces trois derniers jours (pas les signalés). */
-export async function memesPublics(supabase: Supabase, ville: string, max = 20): Promise<MemePublic[]> {
+export async function memesPublics(supabase: Supabase, ville: string, max = 20, moi: Habitant | null = null): Promise<MemePublic[]> {
   if (!ville) return [];
   const cache: Cache = new Map();
-  const l: MemePublic[] = [];
-  for (let k = 0; k < 3 && l.length < max; k++) {
+  // (les réponses au mème du jour ont leur place à elles, en haut : pas deux fois)
+  const duJour = new Set(await idsDuJour(supabase, ville, jourParis()));
+  const ids: string[] = [];
+  for (let k = 0; k < 3 && ids.length < max; k++) {
     const jour = jourAvant(jourParis(), k);
     const { data } = await supabase.storage.from(SEAU_FIGURINES).list(`publics/${ville}/${jour}`, { limit: 100, sortBy: { column: "created_at", order: "desc" } });
-    const ids = ((Array.isArray(data) ? data : []) as { name?: string }[]).map((x) => /^([a-z0-9]{12})\.json$/.exec(s(x.name))?.[1] ?? "").filter(Boolean);
-    const vus = await Promise.all(ids.slice(0, max - l.length).map((id) => apercuMeme(supabase, id, cache)));
-    l.push(...vus.filter((x): x is NonNullable<typeof x> => Boolean(x?.public && x.ap.video)).map((x) => ({ ...x.ap, villeSlug: ville })));
+    ids.push(...((Array.isArray(data) ? data : []) as { name?: string }[]).map((x) => /^([a-z0-9]{12})\.json$/.exec(s(x.name))?.[1] ?? "").filter((id) => id && !duJour.has(id)).slice(0, max - ids.length));
   }
-  return l;
+  return enFil(supabase, ids, ville, moi, moi ? await prochesDe(supabase, moi.id) : new Set(), cache);
 }
 
 /** 💬 LE MÈME AUQUEL IL RÉPOND (en duo) : ses images (son visage du moment), sa voix, ses mots, son prénom. */

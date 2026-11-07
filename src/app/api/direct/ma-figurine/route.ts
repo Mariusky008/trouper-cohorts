@@ -22,6 +22,9 @@
 // POST { action: "meme-evenement", type: "partage"|"nouveau", id } : un geste autour d'un mème (la mesure).
 // POST { action: "public", id, public: true|false } : son mème dans « Découvrir », pour les gens de sa ville (son accord),
 //      ou retiré. Jamais un duo, jamais un mème signalé.
+// GET ?jour=1 : 🔥 le mème du jour (le thème, combien de réponses dans sa ville, s'il a répondu).
+// POST { action: "public", id, public, duJour: true } : sa réponse au mème du jour (visible par sa ville : c'est écrit sur
+//      le bouton). POST { action: "reagir", id, reac } : 😂 ❤️ 🔥 sur un mème (`c-<id>` : un commerçant ; `reac: null` : retirée).
 // GET ?reactions=1 : ⚡ ses réactions (`mes-reactions.ts`) — ses poses faites, sa figurine, si le moteur peut en faire.
 // POST { action: "pose", cle } : une pose faite par le moteur (la première fois qu'il la touche, ~1 min) → { url }.
 // POST { action: "reaction-envoi", cle } : une réaction ou un gag envoyé (la mesure).
@@ -50,11 +53,13 @@ import {
   mesMemes,
   noterGesteMeme,
   poserMeme,
+  etatDuJour,
   rendreMemePublic,
   signalerMessage,
 } from "@/lib/direct/ma-figurine-serveur";
 import { surprendre } from "@/lib/direct/meme-surprise-serveur";
 import { fabriquerPose, mesReactions, noterEnvoiReaction } from "@/lib/direct/mes-reactions-serveur";
+import { reagir } from "@/lib/direct/reactions-memes-serveur";
 import { fabriquerFigurineDuMois, fabriquerParleDuLook, mesFigurinesDuMois } from "@/lib/direct/figurine-du-mois-serveur";
 
 export const dynamic = "force-dynamic";
@@ -82,6 +87,10 @@ export async function GET(request: Request) {
   // 🗓️ sa figurine du mois (où il en est) et celles d'avant
   if (new URL(request.url).searchParams.get("mois")) {
     return NextResponse.json({ ok: true, mois: await mesFigurinesDuMois(supabase, moi) }, { headers: sansCache });
+  }
+  // 🔥 le mème du jour
+  if (new URL(request.url).searchParams.get("jour")) {
+    return NextResponse.json({ ok: true, jour: await etatDuJour(supabase, moi) }, { headers: sansCache });
   }
   // ⚡ ses réactions
   if (new URL(request.url).searchParams.get("reactions")) {
@@ -171,9 +180,15 @@ export async function POST(request: Request) {
   }
   // 🌍 son mème dans « Découvrir » (son accord), ou retiré
   if (p?.action === "public") {
-    const r = await rendreMemePublic(supabase, moi, p.id, p.public);
+    const r = await rendreMemePublic(supabase, moi, p.id, p.public, p.duJour === true);
     if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
-    return NextResponse.json({ ok: true, public: r.public }, { headers: sansCache });
+    return NextResponse.json({ ok: true, public: r.public, ...(r.duJour ? { duJour: true } : {}) }, { headers: sansCache });
+  }
+  // 😂 ❤️ 🔥 il réagit à un mème (une réaction par personne)
+  if (p?.action === "reagir") {
+    const r = await reagir(supabase, moi, p.id, p.reac);
+    if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
+    return NextResponse.json({ ok: true, reac: r.reac }, { headers: sansCache });
   }
   // ⚡ une pose de ses réactions, faite par le moteur ; un envoi (la mesure)
   if (p?.action === "pose") {
@@ -187,7 +202,7 @@ export async function POST(request: Request) {
   }
   // 🎲 « Surprends-moi ! » : ClikMe écrit son mème (il le lit, puis le choisit — ou en demande un autre)
   if (p?.action === "surprise") {
-    const r = await surprendre(supabase, moi, p.sauf);
+    const r = await surprendre(supabase, moi, p.sauf, p.theme);
     if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
     return NextResponse.json({ ok: true, ...r.surprise }, { headers: sansCache });
   }

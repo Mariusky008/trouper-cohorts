@@ -89,7 +89,9 @@ await fermerPablito(nina, "#o-decouvrir");
 const menu = await texte(nina, ".mc-nav");
 ok((await nina.locator(".mc-nav button").count()) === 5 && /Découvrir.*Rencontres.*Créer.*Mes mèmes.*Moi/.test(menu) && (await nina.locator(".mc-nav button.pris").innerText()).includes("Découvrir"), `le menu en bas : cinq onglets, « Créer » au milieu (${menu})`);
 const carte = await texte(nina, "#o-decouvrir .dv-carte");
-ok(carte.includes("Chez Bergine") && carte.includes("Le menu du jour") && carte.includes("aujourd’hui") && (await nina.locator(`#o-decouvrir a.dv-voir[href="/meme/${id}/voir"]`).count()) === 1, `son mème du jour, dans « Découvrir » (${carte.slice(0, 90)})`);
+// (le lot 2 : la même carte que les gens — son nom, un toucher : sa page ; ni bandeau, ni gros bouton rose)
+ok(carte.includes("Chez Bergine") && carte.includes("aujourd’hui") && !carte.includes("Voir sa page") && (await nina.locator(`#o-decouvrir a.dv-nom[href="/meme/${id}/voir"]`).count()) === 1 && (await nina.locator("#o-decouvrir .dv-voir").count()) === 0, `son mème, dans « Découvrir » : la même carte que les gens, son nom mène à sa page (${carte.slice(0, 90)})`);
+ok((await nina.locator("#o-decouvrir .dv-carte.commerce .dv-reac").count()) === 3, "😂 ❤️ 🔥 sous son mème aussi");
 await nina.waitForFunction(() => {
   const v = document.querySelector("#o-decouvrir .dv-carte video");
   return v && !v.paused && v.currentTime > 0.2;

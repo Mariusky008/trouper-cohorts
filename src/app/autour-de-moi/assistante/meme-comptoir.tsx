@@ -97,7 +97,8 @@ export function MemeDuJour({ commerce, dossier, onRetour, onFigurine }: { commer
         ...(avecVoix && voix ? { son: voix.url } : {}),
         texte: t,
         ecouter: true,
-        annonce: { emoji: quoi.emoji, titre: quoi.titre, nom: commerce.nom },
+        // (plus de bandeau « LE MENU DU JOUR » dans la vidéo — le lot 2 : « c'est exactement ce qui fait pub » ; son nom
+        // reste à la fin)
         fin: { emoji: "📍", titre: commerce.nom, sous: "clikme.fr" },
         surProgres: setProgres,
       });
