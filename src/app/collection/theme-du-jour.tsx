@@ -24,7 +24,11 @@ export function repondreAuJour(e: Pick<EtatDuJour, "theme" | "ville">) {
   window.setTimeout(() => document.getElementById("theme-du-jour")?.scrollIntoView({ behavior: "smooth", block: "center" }), 350);
 }
 
-export function CarteMemeDuJour() {
+/**
+ * `compacte` (le studio de « Créer », 7 novembre 2026) : la carte tient en une ligne, « 🔥 Je réponds » à droite.
+ * `onJour` : le studio apprend sa ville (« Poster sur le fil de Dax »).
+ */
+export function CarteMemeDuJour({ compacte = false, onJour }: { compacte?: boolean; onJour?: (e: EtatDuJour) => void }) {
   const visible = useContext(OngletVisible);
   const [e, setE] = useState<EtatDuJour | null>(null);
   useEffect(() => {
@@ -32,15 +36,21 @@ export function CarteMemeDuJour() {
     let fini = false;
     void fetch("/api/direct/ma-figurine?jour=1", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((j: { jour?: EtatDuJour } | null) => !fini && j?.jour && setE(j.jour))
+      .then((j: { jour?: EtatDuJour } | null) => {
+        if (fini || !j?.jour) return;
+        setE(j.jour);
+        onJour?.(j.jour);
+      })
       .catch(() => undefined);
     return () => {
       fini = true;
     };
+    // (`onJour` n'est appelé qu'à l'arrivée du thème : il ne relance rien)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
   if (!e) return null;
   return (
-    <section className="tj" id="jour" aria-label="Le mème du jour">
+    <section className={`tj${compacte ? " tj-compacte" : ""}`} id="jour" aria-label="Le mème du jour">
       <small className="tj-label">🔥 LE MÈME DU JOUR</small>
       <b className="tj-titre">
         <span aria-hidden="true">{e.theme.emoji}</span> {e.theme.titre}
@@ -52,7 +62,7 @@ export function CarteMemeDuJour() {
         </a>
       ) : (
         <button type="button" className="tj-go" onClick={() => repondreAuJour(e)}>
-          🔥 Je réponds avec ma figurine
+          {compacte ? "🔥 Je réponds" : "🔥 Je réponds avec ma figurine"}
         </button>
       )}
       {/* 🔔 le lot 3 : sa réponse postée (ou l'appli tout juste posée sur son iPhone), « je te préviens demain ? » */}
@@ -68,6 +78,15 @@ export const STYLES_THEME_DU_JOUR = `
 .tj-chiffres{font-size:13px;color:#E8D3DC}
 .tj-go{margin-top:6px;width:100%;padding:14px 16px;border:0;border-radius:999px;background:linear-gradient(135deg,#FF7A59,#FF2E9A);color:#fff;font:inherit;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 12px 26px -12px rgba(255,46,154,.95)}
 .tj-voir{margin-top:4px;font-size:14px;font-weight:900;color:#7FF0C4;text-decoration:none}
+/* (dans le studio : en une ligne, « 🔥 Je réponds » à droite) */
+.tj.tj-compacte{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;row-gap:1px;align-items:center;padding:11px 12px 11px 14px;border-radius:20px}
+.tj-compacte > *{grid-column:1;min-width:0}
+.tj-compacte .tj-label{font-size:10.5px}
+.tj-compacte .tj-titre{font-size:15.5px;line-height:1.25}
+.tj-compacte .tj-chiffres{font-size:12px}
+.tj-compacte .tj-go,.tj-compacte .tj-voir{grid-column:2;grid-row:1/span 3;width:auto;margin:0;padding:11px 14px;font-size:14px;white-space:nowrap}
+.tj-compacte .tj-voir{max-width:132px;padding:0;white-space:normal;text-align:right;font-size:13px}
+.tj-compacte .ct-invite,.tj-compacte .ct-fait{grid-column:1/-1;margin-top:8px}
 .tf-theme{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:18px;background:rgba(255,122,89,.12);border:1.5px solid rgba(255,122,89,.55)}
 .tf-theme-tete{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
 .tf-theme-tete b{font-size:15px;font-weight:900;line-height:1.25}

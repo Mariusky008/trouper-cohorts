@@ -5,8 +5,9 @@
  *   · `QuestionDuJour` : dans « Moi », une question drôle, un toucher ou trois mots (le petit mot du jour, qui annonçait
  *     la rencontre du jour, est parti avec « Rencontres » le 7 novembre 2026) ;
  *   · `CeQueTaFigurineSait` : dans « Personnage », tout ce qu'elle a retenu de lui — il voit, il efface ;
- *   · `ProtegerFigurine` : dans « Ma figurine », son adresse protège sa figurine (un code à six chiffres) ; sur un autre
- *     téléphone, le même code la retrouve.
+ *   · `ProtegerFigurine` : son adresse protège sa figurine (un code à six chiffres) — depuis le 7 novembre 2026, dans
+ *     la feuille du cadenas doré, en haut à côté de son prénom (`ma-collection.tsx`) ; sur un autre téléphone, le même
+ *     code la retrouve (« Créer », avant sa figurine).
  */
 import { useEffect, useState } from "react";
 import { REPONSE_JOUR_MAX, type ChoseSue, type QuestionVue, type Savoir } from "@/lib/direct/connaitre";
@@ -192,7 +193,7 @@ export function CeQueTaFigurineSait() {
  * 🔐 SA FIGURINE, PROTÉGÉE PAR SON ADRESSE (`proteger`) — ou RETROUVÉE sur un autre téléphone (`retrouver`) : son adresse,
  * puis le code à six chiffres reçu par e-mail. Retrouvée : la page se recharge, sa figurine est là.
  */
-export function ProtegerFigurine({ mode, protegee }: { mode: "proteger" | "retrouver"; protegee?: string }) {
+export function ProtegerFigurine({ mode, protegee, onFait }: { mode: "proteger" | "retrouver"; protegee?: string; onFait?: (adresse: string) => void }) {
   const [ouvert, setOuvert] = useState(mode === "proteger");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -220,6 +221,8 @@ export function ProtegerFigurine({ mode, protegee }: { mode: "proteger" | "retro
       // RETROUVÉE : ce téléphone est le sien maintenant — la page se rouvre, sa figurine est là
       if (j.retrouvee) return window.location.replace("/collection?retrouvee=1#figurine");
       setFait(String(j.a || email));
+      // (le cadenas doré, en haut, n'a plus lieu d'être)
+      onFait?.(String(j.a || email));
     } catch (e) {
       setErreur((e as Error).message);
     } finally {

@@ -1357,6 +1357,41 @@ Les essais : `essai-autour-route.mjs` (l'admin seulement ; « Les Arènes » pla
 dépose ; un lieu public inconnu : refusé ; retiré : il quitte la carte) ; `autour.mjs` (la page admin : les noms
 suggérés, un toucher sur la carte donne la position, placé, puis retiré).
 
+### 9.0 decitricies 🗂️ « Créer » refait : le studio et ses tiroirs (7 novembre)
+
+Un ami du propriétaire a essayé l'appli : « l'onglet Créer est très mal architecturé ». Il faisait 2 200 px de haut sur
+un téléphone : le titre, la figurine du mois, le mème du jour, les huit réactions et les gags, PUIS la figurine, ses
+visages, « Fais-la parler », les premiers pas et « Ne perds jamais ta figurine ». Son idée, « Studio & Tiroirs » :
+réduire la charge cognitive, supprimer le défilement. Ce qui a changé (`StudioMoi`, `ma-figurine.tsx`) :
+
+- **Sa figurine reste en vue** (collée sous la barre du haut quand la page descend ; elle rapetisse pendant qu'il écrit),
+  avec **trois gestes** dessous, qui ouvrent chacun leur **tiroir** par-dessus la page (un toucher ailleurs ou « Échap »
+  le referme) :
+  - **Visage** : ses looks (ses figurines du mois) et ses huit visages, en une ligne qui défile ; le bouton montre son
+    visage du moment, et un point qui tourne quand un visage ou un look se prépare ;
+  - **Animer** : « 🕺 Danser » (en musique, et dans son mème) et **les gags** (le prout, l'éternuement, elle s'endort, le
+    hoquet) — un gag ouvre l'onglet « Réactions & gags », déjà choisi (`EVT_GAG`, `mes-reactions.tsx`) ;
+  - **La refaire** (s'il lui en reste aujourd'hui).
+- **Deux onglets** : **« 💬 Fais-la parler »** (le mème du jour en une ligne, « 🔥 Je réponds » à droite — caché quand son
+  mème est déjà pour quelque chose : un duo, le thème, un lieu d'« Autour » ; puis son texte, « 🎲 Surprends-moi ! », sa
+  voix, « Écouter », « Créer mon mème ») et **« ⚡ Réactions & gags »** (`MesReactions`). L'adresse choisit l'onglet :
+  `#reactions` ouvre le second, `#jour` le premier (`EVT_ANCRE`, envoyé par `ma-collection.tsx`).
+- **Son mème monte dans une feuille**, en bas de l'écran (`Feuille`) : il s'y fabrique sous ses yeux, puis « **Ton mème
+  est prêt ✅** » — la vidéo, « 📲 Partager », « 🔗 Le lien » (copié), « ⬇️ La vidéo », et le geste qui compte :
+  **« 🌍 Poster sur le fil de Dax »** (c'est « Découvrir », dit dessous ; l'accord est toujours demandé), ou sa réponse
+  au mème du jour, ou « 📍 Le déposer » pour « Autour ». Fermée, « ✅ Ton mème est prêt · le revoir » la rouvre.
+- **En bas, repliés** : sa figurine du mois (une ligne) et « 👣 Tes premiers pas ».
+- **« Ne perds jamais ta figurine »** est devenu **un cadenas doré, « 🔒 Sauvegarder »**, en haut à côté de son prénom,
+  tant que son adresse ne la protège pas : il ouvre la même feuille, avec l'adresse et le code (`ProtegerFigurine`).
+- Plus de grand titre « Fais-la parler. » : l'onglet le dit. Sur un ordinateur, sa figurine est à gauche (collée), le
+  reste à droite.
+
+Les essais : `ma-figurine.mjs` (les gestes, les tiroirs fermés puis ouverts — huit visages, la danse et quatre gags —,
+un toucher ailleurs les ferme ; deux onglets ; la page descend, sa figurine reste juste sous la barre ; le cadenas doré
+ouvre « Ne perds jamais ta figurine » ; son mème monte dans la feuille, « Poster sur le fil de Dax » ; fermée, « le
+revoir » la rouvre ; « Échap » la ferme) ; `mes-reactions.mjs` (`#reactions` ouvre l'onglet ; « Animer » → « Le prout »
+ouvre l'onglet, le prout choisi).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

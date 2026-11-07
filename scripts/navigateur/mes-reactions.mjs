@@ -58,7 +58,7 @@ const telecharge = async (action) => {
 await ines.goto(`${BASE}/collection#reactions`, { waitUntil: "networkidle" });
 await fermerPablito(ines, "#o-figurine");
 await ines.waitForFunction(() => document.querySelectorAll("#reactions .rx-tuile img").length === 8, null, { timeout: 60000 });
-ok((await ines.locator(".mc-nav button.pris").innerText()).includes("Créer"), "« #reactions » ouvre « Créer »");
+ok((await ines.locator(".mc-nav button.pris").innerText()).includes("Créer") && (await ines.locator("#tf-o-reactions[aria-selected=true]").count()) === 1, "« #reactions » ouvre « Créer », sur l'onglet « ⚡ Réactions & gags »");
 ok((await texte("#reactions .rx-tete")).includes("Ta tête à la place des emojis"), "⚡ Mes réactions : sa tête à la place des emojis");
 const noms = await ines.locator("#reactions .rx-tuile .rx-nom").allInnerTexts();
 ok(noms.join("|") === "Mort de rire|Sérieusement ?|Bravo|Choqué|Bisou|Grimace|Amour|Top", `ses huit réactions, dessinées d'avance (${noms.join(" · ")})`);
@@ -86,8 +86,14 @@ const api = (corps) =>
   }, corps);
 ok((await api({ action: "pose", cle: "serieux" })).statut === 400 && (await api({ action: "pose", cle: "nimporte" })).statut === 400 && (await api({ action: "reaction-envoi", cle: "nimporte" })).statut === 400, "sans moteur, pas de pose ; une réaction inconnue : non");
 
-// ═══ 💥 LE PROUT, « INTERMINABLE », AVEC SA VRAIE TÊTE (seule, puis gênée) ═══
-await ines.locator(".rx-gag", { hasText: "Le prout" }).click();
+// ═══ 💥 LE PROUT, « INTERMINABLE », AVEC SA VRAIE TÊTE (seule, puis gênée) — choisi dans le tiroir « Animer », sous sa
+// figurine (le studio et ses tiroirs, 7 novembre 2026) : l'onglet « Réactions & gags » s'ouvre dessus ═══
+await ines.locator("#tf-o-parler").click();
+ok((await ines.locator("#tf-reactions[hidden]").count()) === 1, "« 💬 Fais-la parler » : ses réactions se rangent");
+await ines.locator(".tf-moi .tf-g-animer").click();
+await ines.locator(".tf-tiroir-gags button", { hasText: "Le prout" }).click();
+await ines.waitForSelector("#tf-reactions:not([hidden]) .rx-gag.pris", { timeout: 5000 });
+ok((await texte(".rx-gag.pris")).includes("Le prout") && (await ines.locator(".tf-moi .tf-tiroir").count()) === 0, "« Animer » → « Le prout » : l'onglet « Réactions & gags » s'ouvre, le prout déjà choisi");
 await ines.locator(".rx-intensite input").fill("5");
 await ines.waitForFunction(() => document.querySelector(".rx-intensite b")?.textContent === "Interminable");
 ok((await texte(".rx-lancer")).includes("Le prout (5 s)"), `la jauge d'intensité : « Interminable », plus long (${await texte(".rx-lancer")})`);
