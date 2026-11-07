@@ -129,6 +129,8 @@ await lea.waitForSelector("#o-personnage .cn-choses li", { timeout: 15000 });
 const nAvant = await lea.locator("#o-personnage .cn-choses li").count();
 const savoirTxt = await texte(lea, "#o-personnage .cn-savoir");
 ok(nAvant >= 3 && savoirTxt.includes("Ta carte") && savoirTxt.includes("je cuisine pour mes amis") && savoirTxt.includes("Question du jour"), `ce que sa figurine sait d'elle : sa carte, ses réponses d'aujourd'hui et d'avant (${nAvant} : ${savoirTxt.slice(0, 260)})`);
+// (effacer demande confirmation : « Effacer ceci ? », « Tout effacer ? » — elle dit oui)
+lea.on("dialog", (d) => void d.accept());
 await lea.locator("#o-personnage .cn-choses li button").first().click();
 await lea.waitForFunction((n) => document.querySelectorAll("#o-personnage .cn-choses li").length === n - 1, nAvant, { timeout: 15000 });
 ok(true, "elle efface une chose : elle disparaît");
