@@ -74,7 +74,7 @@ const hugo = await tel(HUGO);
 await hugo.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
 await hugo.waitForSelector("#o-figurine .pb-voile .mqd", { timeout: 60000 });
 const menu = await texte(hugo, ".mc-nav");
-ok((await hugo.locator(".mc-nav button").count()) === 5 && /Découvrir.*Rencontres.*Créer.*Mes mèmes.*Moi/.test(menu) && !/Ce mois-ci|Album/.test(menu), `le menu en bas : Découvrir · Rencontres · Créer · Mes mèmes · Moi (${menu})`);
+ok((await hugo.locator(".mc-nav button").count()) === 5 && /Découvrir.*Autour.*Créer.*Mes mèmes.*Moi/.test(menu) && !/Ce mois-ci|Album|Rencontres/.test(menu), `le menu en bas : Découvrir · Autour · Créer · Mes mèmes · Moi (${menu})`);
 ok((await hugo.locator("#o-figurine .mqd .mq").count()) === 1 && /Pablito/i.test(await texte(hugo, "#o-figurine .mqd-bulle")), "Pablito, la figurine du patron de ClikMe, l'accueille en fenêtre");
 ok((await texte(hugo, "#o-figurine .pb-voile")).includes("Je crée ma figurine"), "dans la fenêtre : « Je crée ma figurine »");
 await hugo.screenshot({ path: `${D}/ma-figurine-0-pablito.png` });
