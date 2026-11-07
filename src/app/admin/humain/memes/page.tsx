@@ -8,6 +8,8 @@ import type { CSSProperties } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { parcoursPremierMeme, statsMemes, type EvenementMeme } from "@/lib/direct/ma-figurine-serveur";
+import { statsReactions } from "@/lib/direct/mes-reactions-serveur";
+import { GAGS, REACTIONS } from "@/lib/direct/mes-reactions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -34,7 +36,8 @@ const carte: CSSProperties = { padding: 14, borderRadius: 12, background: "#f6f6
 export default async function PageMemes() {
   if (!(await isCurrentUserAdmin())) redirect("/admin");
   const supabase = createAdminClient();
-  const [s, p] = await Promise.all([statsMemes(supabase), parcoursPremierMeme(supabase)]);
+  const [s, p, rx] = await Promise.all([statsMemes(supabase), parcoursPremierMeme(supabase), statsReactions(supabase)]);
+  const totalRx = (o: Record<string, number>) => Object.values(o).reduce((a, b) => a + b, 0);
   const enMoinsDUneMinute = p.delais.filter((d) => d <= 60).length;
   const k7 = s.sept.cree ? s.sept.nouveau / s.sept.cree : 0;
   return (
@@ -91,6 +94,26 @@ export default async function PageMemes() {
                   "pas encore de premier mème."
                 )}
               </p>
+            </>
+          )}
+          {/* ⚡ SES RÉACTIONS ET SES GAGS ENVOYÉS (7 novembre 2026 : « la figurine pourrait remplacer les emojis et les GIF ») */}
+          {rx.ok && (
+            <>
+              <h2 style={{ margin: "26px 0 4px", fontSize: 18 }}>⚡ Réactions et gags envoyés</h2>
+              <p style={{ margin: "0 0 10px", color: "#555" }}>
+                Sur 7 jours : <b>{totalRx(rx.sept)}</b> · sur 30 jours : {totalRx(rx.trente)}
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 8 }}>
+                {[...REACTIONS, ...GAGS].map((x) => (
+                  <div key={x.cle} style={carte}>
+                    <small style={{ color: "#666" }}>
+                      {x.emoji} {x.nom}
+                    </small>
+                    <b style={{ fontSize: 22 }}>{rx.sept[x.cle] ?? 0}</b>
+                    <small style={{ color: "#888" }}>30 jours : {rx.trente[x.cle] ?? 0}</small>
+                  </div>
+                ))}
+              </div>
             </>
           )}
           <h2 style={{ margin: "26px 0 10px", fontSize: 18 }}>Le chemin, sur 7 jours</h2>

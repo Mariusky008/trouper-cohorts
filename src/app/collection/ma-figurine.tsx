@@ -47,6 +47,7 @@ import { ProtegerFigurine } from "./connaitre";
 import { ApercuDuMois, useMois } from "./figurine-du-mois";
 import { EVT_VERS_LE_STUDIO, prendreVersLeStudio, type VersLeStudio } from "./vers-le-studio";
 import { moisEnClair, type FigurineDuMois } from "@/lib/direct/figurine-du-mois";
+import { MesReactions } from "./mes-reactions";
 
 type Reponse = { error?: string; etat?: EtatMaFigurine; lien?: string; son?: string; enCours?: boolean };
 
@@ -1523,6 +1524,8 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
           {/* 🗓️ sa figurine du mois (lot 3) : où il en est, en une pastille */}
           <ApercuDuMois />
         </header>
+        {/* ⚡ SES RÉACTIONS : sa tête à la place des emojis, un toucher (7 novembre 2026) */}
+        <MesReactions />
         <StudioMoi key={etat.neutre} etat={etat} onEtat={onEtat} />
         {/* 🔐 son adresse protège sa figurine (lot 2) : un autre téléphone la retrouve avec un code */}
         <ProtegerFigurine mode="proteger" protegee={etat.protegee} />

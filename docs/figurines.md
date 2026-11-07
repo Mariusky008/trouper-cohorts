@@ -1004,6 +1004,39 @@ Le patron : « on n'a pas l'expression amoureux, qui est assez utile ». Le huit
   et la Saint-Valentin prennent ce visage.
 - Le sentiment est rangé à côté du message (pas dans la colonne de la table) : rien à migrer.
 
+### 9.0 septvicies ⚡ Mes réactions : sa tête à la place des emojis et des GIF (7 novembre)
+
+Le patron : « la figurine pourrait remplacer les emojis et les GIF classiques : sa propre bibliothèque de réactions —
+sa figurine qui explose de rire, qui dit “Sérieusement ?”, qui applaudit, qui est choquée, qui envoie un bisou, qui
+fait une grimace ; une rangée “💥 Gags” : le prout avec une barre d'intensité, l'éternuement, elle s'endort, le hoquet.
+Au lieu de chercher un GIF générique, il utilise sa propre tête » ; « un clavier de stickers, ou un partage très
+rapide ». Ses décisions : avant le lot 2 (le mème du jour) ; une marque ClikMe discrète sur les gags, rien sur les
+stickers. Le clavier, lui, demande une app native : on le fera si les envois suivent (le troisième temps).
+
+- **En haut de « Créer »** (`mes-reactions.tsx`, l'ancre `#reactions` — là où l'app installée pourra s'ouvrir) :
+  huit réactions (😂 MDR, 🤨 « Sérieusement ? », 👏 Bravo, 😱 « Quoi ?! », 😘 Bisous, 😜, 😍, 👍 « Top ! ») et
+  quatre gags.
+- **Les réactions sont des stickers** (`sticker.ts`, 512 px, PNG) : sa pose détourée (fond transparent), un liseré
+  blanc et une ombre, le mot façon BD. Dessinés d'avance : **un toucher, et la feuille de partage s'ouvre** (le
+  téléphone n'aime pas qu'on le fasse attendre). Sans sa pose : sa figurine de tous les jours dans une vignette, et
+  l'emoji.
+- **Chaque pose, une fois, par le moteur d'image** (`mes-reactions-serveur.ts`) : la première fois qu'il la touche
+  (environ une minute ; « ✨ Tout préparer » les fait toutes), à partir de sa figurine — même visage, même cadre, fond
+  transparent (`background: transparent`). Rangées avec ses expressions (`r-<pose>.webp`). Un verrou par pose, 12 par
+  jour au plus.
+- **Les gags sont de petites vidéos carrées** (`gag.ts`, 720 px, 3 à 5 s) qui se fabriquent sous ses yeux, comme les
+  mèmes : 💨 le prout (sa jauge d'intensité, de « Pfft » à « Interminable », fait sa durée, son nuage et le bruit ;
+  puis le visage gêné et une goutte de sueur), 🤧 l'éternuement, 😴 elle s'endort (des « Z », un ronflement, le
+  réveil en sursaut), 🫢 le hoquet (trois « hic ! »). Les bruits sont fabriqués dans le téléphone : jamais une voix.
+  « clikme.fr », discret, dans un coin. Sa vraie tête (sa figurine seule et le visage du gag) se prépare pendant qu'il
+  choisit ; en attendant, sa figurine de tous les jours et l'emoji.
+- **Osé, jamais vulgaire** : le prout est suggéré (un bruit, un nuage, la gêne) — rien de sexuel, rien de dégoûtant.
+- **La mesure** : chaque envoi est noté (`clik_meme_evenement`, `r-<clé>`) ; la page `/admin/humain/memes` montre les
+  réactions et les gags envoyés, sur 7 et 30 jours.
+- **Les essais** (`scripts/navigateur/mes-reactions.mjs`, 15 vérifications) : la grille, le sticker MDR détouré
+  (512 px, fond transparent), « Sérieusement ? » en attendant sa pose, les envois comptés, le prout « Interminable »
+  avec sa vraie tête, le hoquet avec l'emoji.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
