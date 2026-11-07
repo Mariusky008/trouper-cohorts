@@ -30,7 +30,8 @@ export const PAR_LIEU_PAR_JOUR = 3;
 export const MOT_MAX = 80;
 export const NOM_LIEU_MAX = 40;
 
-export type TypeLieu = "commerce" | "zone";
+// (`public` : un lieu public nommé — les Arènes, les Halles —, placé par l'admin sur la vraie carte)
+export type TypeLieu = "commerce" | "zone" | "public";
 /** Un lieu de la carte : `n` mèmes qu'il peut voir, `visages` (au plus trois figurines), le dernier petit nom (zone). */
 // (`photo` : en haut de sa page, celle du commerce — seulement pour la page d'un lieu, pas sur la carte)
 export type Lieu = { id: string; type: TypeLieu; nom: string; emoji: string; lat: number; lng: number; n: number; visages: string[]; activite?: string; photo?: string };
@@ -39,8 +40,41 @@ export type MemeAutour = MemePublic & { lieu: string; qui: Qui; mot?: string; no
 // (`moi` : son propre profil ; `proche` : il l'a dans ses proches)
 export type ProfilAutour = { cle: string; prenom: string; image: string; memes: MemeAutour[]; lieux: { id: string; nom: string; n: number }[]; moi?: boolean; proche?: boolean };
 
-export const lieuIdValide = (id: unknown): boolean => /^(c-[a-z0-9-]{2,120}|z--?\d{1,7}_-?\d{1,7})$/.test(String(id ?? ""));
+export const lieuIdValide = (id: unknown): boolean => /^(c-[a-z0-9-]{2,120}|p-[a-z0-9-]{2,60}|z--?\d{1,7}_-?\d{1,7})$/.test(String(id ?? ""));
 export const estZone = (id: string) => id.startsWith("z-");
+
+// ─── 🏛️ LES LIEUX PUBLICS NOMMÉS (7 novembre 2026, le point 6 d'« Autour ») ─────────────────────────────────────────
+/**
+ * Les Arènes, les Halles, la Fontaine Chaude… : des lieux de la ville où déposer un mème, comme chez un commerçant. Leur
+ * position n'est JAMAIS écrite de mémoire : l'admin les place lui-même sur la vraie carte (`/admin/humain/lieux-publics`).
+ * Rangés dans le seau, `lieux-publics/<ville>.json` ; leur identifiant, `p-<le-nom>`.
+ */
+export type LieuPublic = { id: string; nom: string; emoji: string; lat: number; lng: number };
+export const EMOJIS_LIEUX_PUBLICS = ["📍", "🏛️", "🐂", "⛲", "🌳", "🌊", "⛪", "🛒", "🎭", "⚽", "🎡", "🌉", "🏖️", "🎪"] as const;
+export const NOM_LIEU_PUBLIC_MAX = 40;
+/** « Les berges de l'Adour » → `p-les-berges-de-l-adour`. */
+export function idLieuPublic(nom: string): string {
+  const slug = nom
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60)
+    .replace(/-+$/g, "");
+  return slug.length >= 2 ? `p-${slug}` : "";
+}
+/** Des NOMS à proposer à l'admin, par ville (jamais de position : il les place lui-même). */
+export const LIEUX_PUBLICS_SUGGERES: Record<string, { nom: string; emoji: string }[]> = {
+  dax: [
+    { nom: "Les Arènes", emoji: "🐂" },
+    { nom: "Les Halles", emoji: "🛒" },
+    { nom: "La Fontaine Chaude", emoji: "⛲" },
+    { nom: "Les berges de l’Adour", emoji: "🌊" },
+    { nom: "Le parc Théodore-Denis", emoji: "🌳" },
+    { nom: "La cathédrale", emoji: "⛪" },
+  ],
+};
 export const cleProfilValide = (c: unknown) => /^[a-f0-9]{16}$/.test(String(c ?? ""));
 
 // ─── la zone floue : une maille d'environ 500 m ─────────────────────────────────────────────────────────────────

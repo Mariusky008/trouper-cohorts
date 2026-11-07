@@ -309,9 +309,9 @@ function VueLieu({ id, ville, moi, onFermer, onSwipe, onDeposer }: { id: string;
           )
         )}
         <header>
-          <span className="atr-type">{l ? `${l.emoji} ${l.type === "zone" ? "Ailleurs, quelque part par ici" : l.activite || "Commerce"}` : "…"}</span>
+          <span className="atr-type">{l ? `${l.emoji} ${l.type === "zone" ? "Ailleurs, quelque part par ici" : l.type === "public" ? "Un lieu de la ville" : l.activite || "Commerce"}` : "…"}</span>
           <h2>{l?.nom ?? "…"}</h2>
-          {l && moi && l.type === "commerce" && <span className="atr-dist">📍 {enMetres(distance(moi, l))}</span>}
+          {l && moi && l.type !== "zone" && <span className="atr-dist">📍 {enMetres(distance(moi, l))}</span>}
           <b className="atr-compte">
             <em>
               {memes.length} mème{memes.length > 1 ? "s" : ""}
@@ -584,7 +584,8 @@ function Deposer({ lieuDonne, reponseA, reprise, lieux, compte, onFermer, onPubl
   const commerces = useMemo(
     () =>
       lieux
-        .filter((l) => l.type === "commerce")
+        // (les commerces et les lieux publics : on y dépose par leur nom)
+        .filter((l) => l.type === "commerce" || l.type === "public")
         .map((l) => ({ ...l, d: ici ? distance(ici, l) : null }))
         .sort((a, b) => (a.d ?? 1e9) - (b.d ?? 1e9) || b.n - a.n)
         .slice(0, 4),

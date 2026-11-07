@@ -363,6 +363,7 @@ await semer("admins", [{ user_id: ADMIN }]);
 const session = { access_token: "faux-admin", token_type: "bearer", expires_in: 86400, expires_at: Math.floor(Date.now() / 1000) + 86400, refresh_token: "faux", user: { id: ADMIN, aud: "authenticated", role: "authenticated", email: "admin@example.invalid", app_metadata: {}, user_metadata: {} } };
 const ctxAdmin = await b.newContext({ viewport: { width: 1100, height: 900 } });
 await ctxAdmin.addCookies([{ name: "sb-127-auth-token", value: `base64-${Buffer.from(JSON.stringify(session)).toString("base64url")}`, url: BASE }]);
+await ctxAdmin.route("https://tiles.openfreemap.org/**", (r) => (r.request().url().includes("/styles/") ? r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(STYLE) }) : r.abort()));
 const admin = await ctxAdmin.newPage();
 admin.on("pageerror", (e) => erreurs.push(String(e)));
 admin.on("dialog", (d) => void d.accept());
@@ -383,6 +384,27 @@ ok((await liste(`autour/dax/${BOULANGERIE}`)).length === 0 && !(await (await fet
 await admin.locator(`.signale[data-meme="ecranlea0002"] .remettre`).click();
 await admin.waitForSelector(`.signale[data-meme="ecranlea0002"]`, { state: "detached", timeout: 15000 });
 ok((await voir(SAM, `?lieu=${BISTROT}`)).memes.some((m) => m.id === "ecranlea0002"), "« Remettre » (signalé à tort) : il revient au Petit Bistrot");
+
+// ═══ 🏛️ LES LIEUX PUBLICS : L'ADMIN PLACE « LES ARÈNES » EN TOUCHANT LA CARTE ; ILS APPARAISSENT DANS « AUTOUR » ═══
+await admin.goto(`${BASE}/admin/humain/lieux-publics?ville=dax`, { waitUntil: "networkidle" });
+await admin.waitForSelector(".lp-formulaire .lp-suggestion", { timeout: 30000 });
+const suggerees = await admin.locator(".lp-suggestion").allInnerTexts();
+ok(suggerees.some((x) => x.includes("Les Arènes")) && suggerees.some((x) => x.includes("Les Halles")), `des noms suggérés pour Dax, sans position (${suggerees.length})`);
+await admin.locator(".lp-suggestion", { hasText: "Les Arènes" }).click();
+await admin.waitForSelector(".lp-carte canvas", { timeout: 20000 }).catch(() => null);
+await admin.waitForTimeout(800);
+await admin.locator(".lp-carte").click({ position: { x: 520, y: 230 } });
+await admin.waitForTimeout(300);
+const touchee = { lat: await admin.locator(".lp-lat").inputValue(), lng: await admin.locator(".lp-lng").inputValue() };
+ok((await admin.locator(".lp-nom").inputValue()) === "Les Arènes" && Number(touchee.lat) > 43 && Number(touchee.lat) < 44.5 && Number(touchee.lng) < 0, `un toucher sur la carte : sa position (${touchee.lat}, ${touchee.lng})`);
+await admin.screenshot({ path: `${D}/autour-10-lieux-publics.png`, fullPage: true });
+await admin.locator(".lp-placer").click();
+await admin.waitForSelector(`.lp-lieu[data-lieu="p-les-arenes"]`, { timeout: 15000 });
+const arenesSam = (await voir(SAM)).lieux.find((l) => l.id === "p-les-arenes");
+ok(arenesSam?.type === "public" && arenesSam.emoji === "🐂" && Math.abs(arenesSam.lat - Number(touchee.lat)) < 1e-5, "placé : « Les Arènes » est sur la carte d'« Autour », là où on a touché");
+await admin.locator(`.lp-lieu[data-lieu="p-les-arenes"] .lp-retirer`).click();
+await admin.waitForSelector(`.lp-lieu[data-lieu="p-les-arenes"]`, { state: "detached", timeout: 15000 });
+ok(!(await voir(SAM)).lieux.some((l) => l.id === "p-les-arenes"), "« Retirer » : il quitte la carte");
 await ctxAdmin.close();
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.slice(0, 3).join(" | ")})` : ""}`);

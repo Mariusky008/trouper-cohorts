@@ -1333,6 +1333,30 @@ dans sa soirée — deux notifications, déchiffrées ; coupé : plus rien ; une
 `appli-notif.mjs` (l'interrupteur dans « Moi » : allumé d'office, coupé, rallumé). Les outils du faux téléphone
 (`telephone`, `recus`) sont dans `scripts/navigateur/commun.mjs`.
 
+### 9.0 novotricies 🏛️ Les lieux publics nommés (7 novembre)
+
+Le point 6 d'« Autour ». Les Arènes, les Halles, la Fontaine Chaude… : des lieux de la ville où l'on dépose son mème
+**comme chez un commerçant** (sur la carte, une goutte avec son emoji ; sa page ; le swipe ; les réponses ; les trois
+par lieu et par jour). Type `public`, identifiant `p-<le-nom>` (`idLieuPublic`, `lib/direct/autour.ts`).
+
+- **Leur position n'est jamais écrite de mémoire** : une position fausse mettrait les mèmes au mauvais endroit. L'admin
+  les place lui-même, sur la vraie carte : **`/admin/humain/lieux-publics`** (un lien depuis l'admin) — un nom (des noms
+  sont suggérés pour Dax : les Arènes, les Halles, la Fontaine Chaude, les berges de l'Adour, le parc Théodore-Denis, la
+  cathédrale ; `LIEUX_PUBLICS_SUGGERES`), un emoji, **un toucher sur la carte** (zoomer bien), « 📍 Placer ce lieu ». Les
+  commerces sont des points gris, pour se repérer ; le même nom le déplace ; « Retirer » le fait quitter la carte (les
+  mèmes qui y étaient ne se montrent plus). Sans carte, on tape la latitude et la longitude.
+- Rangés dans le seau, `lieux-publics/<ville>.json` (`placerLieuPublic`, `retirerLieuPublic`, `lieuxPublicsDe`,
+  `autour-serveur.ts`) ; la route `/api/admin/direct/lieux-publics`, réservée à l'admin.
+- Côté « Autour » : `lieuxFixesDe` = les commerces + les lieux publics, partout où l'on cherchait un commerce (la carte,
+  le dépôt, la page du lieu, le profil, la modération, la notification de réponse). Sa page dit « Un lieu de la ville »,
+  sans photo (son emoji en grand) ; « Où ? » le propose parmi les lieux tout près.
+
+**À faire par le propriétaire** : placer les lieux de Dax sur `/admin/humain/lieux-publics` (rien n'est placé d'avance).
+
+Les essais : `essai-autour-route.mjs` (l'admin seulement ; « Les Arènes » placé, sur la carte avec son emoji ; Léa y
+dépose ; un lieu public inconnu : refusé ; retiré : il quitte la carte) ; `autour.mjs` (la page admin : les noms
+suggérés, un toucher sur la carte donne la position, placé, puis retiré).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

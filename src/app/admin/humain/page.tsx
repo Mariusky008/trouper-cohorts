@@ -86,6 +86,7 @@ export default async function AdminHumainPage() {
         { href: "/admin/humain/surprises", label: "Les surprises du Fantôme" },
         { href: "/admin/humain/figurines-clients", label: "Les figurines des clients" },
         { href: "/admin/humain/memes", label: "Les mèmes : ça marche ?" },
+        { href: "/admin/humain/lieux-publics", label: "Les lieux publics d’« Autour »" },
         { href: "/admin/humain/ville", label: "La ville · signalements" },
         { href: "/admin/humain/signalements", label: "L’échange · signalements" },
         { href: "/admin/humain/scenes", label: "La ville · zones d'affiche" },
