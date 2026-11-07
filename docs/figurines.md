@@ -1251,6 +1251,30 @@ Le premier point de la suite d'« Autour ». Avant, on ne répondait (ou ne dép
 - L'essai : `scripts/navigateur/autour.mjs` — Léa répond au Petit Bistrot avec un mème qu'elle fait au studio, son
   petit mot et « Mes proches » gardés, puis publié (43 vérifications).
 
+### 9.0 quintricies 👯 Le profil d'« Autour » : « Ajouter en proche » et « Lui répondre » (7 novembre)
+
+Le troisième point de la suite d'« Autour » (le deuxième, les regroupements « +9 » sur la carte, attend qu'il y ait
+beaucoup de lieux : le propriétaire, le 7 novembre). Sous la figurine de quelqu'un, sur son profil :
+
+- **« 👯 Ajouter en proche »** : il entre dans SES proches (`<habitant>/proches.json`, par la clé du profil, jamais
+  l'identifiant : `devenirProche`, `autour-serveur.ts`). Le bouton devient « ✓ Dans tes proches » ; un toucher de plus
+  l'en retire (de ses proches, et de ses amis des Rencontres d'avant s'il y était). La note dit ce que ça fait : « Léa
+  voit ce que tu déposes pour « Mes proches » ».
+- **« ↩️ Lui répondre »** : le dépôt s'ouvre en réponse à son dernier mème (« pour tout le monde »), là où il l'a
+  déposé ; avec « ＋ Nouveau mème · avec ma tête » (9.0 quatertricies) s'il veut le faire exprès.
+- Sans compte, ou sur son propre profil, ni l'un ni l'autre.
+
+**La règle de « Mes proches » change, pour que s'ajouter ne donne rien à voir.** Avant, un mème déposé pour « Mes
+proches » se montrait à quiconque avait son auteur dans SES proches à lui : avec un bouton « Ajouter en proche » sur
+chaque profil, n'importe qui aurait vu les soirées de n'importe qui. Désormais, c'est **la liste de l'auteur** qui
+compte : un mème « Mes proches » se montre à son auteur et à ceux que L'AUTEUR a dans ses proches (ses duos, ceux qu'il
+a ajoutés, ses amis des Rencontres d'avant). Pour les duos, rien ne change (ils sont proches l'un de l'autre). « Ses
+proches d'abord », dans « Découvrir » et le swipe, reste sa liste à lui (un ordre, pas un accès).
+
+Les essais : `essai-autour-route.mjs` (Sam ajoute Léa : il ne voit pas sa soirée ; Léa ajoute Sam : il la voit ; pas
+soi-même, pas un profil inconnu, pas sans compte ; retirés, plus rien) ; `autour.mjs` (le profil : ajouter, retirer,
+« Lui répondre »).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

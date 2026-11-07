@@ -1,16 +1,20 @@
 // 📍 AUTOUR DE MOI, PAR LES ROUTES — contre le faux Supabase, jamais la vraie base (`lib/direct/autour-serveur.ts`).
 //
 // À Dax, un commerce client avec ses coordonnées (Le Petit Bistrot), un prospect, et un commerce d'une autre ville.
-// Sans son âge déclaré (15 ans et plus), Léa ne dépose rien ; elle le déclare. Léa dépose ses mèmes : au Petit Bistrot (pour tout le monde, avec un petit mot), « Ailleurs » (une soirée, pour ses
-// proches : sa position devient une zone, gardée nulle part telle quelle), et un pour elle seule. Ce que chacun voit :
-// Sam (un inconnu) seulement « tout le monde » ; Hugo (un proche) aussi la soirée ; Léa tout. Trois par lieu et par
-// jour ; pas d'adresse dans un petit nom ; ni gros mot ni alcool ; pas un duo ; pas le mème d'un autre. Hugo répond au
-// mème de Léa : les deux sont liés. Le profil de Léa : ses mèmes « tout le monde », jamais son identifiant ni sa
-// position. Un mème déplacé quitte l'ancien lieu ; un mème retiré disparaît. Sans compte : on regarde, on ne dépose pas.
+// Sans son âge déclaré (15 ans et plus), Léa ne dépose rien ; elle le déclare. Léa dépose ses mèmes : au Petit Bistrot
+// (pour tout le monde, avec un petit mot), « Ailleurs » (une soirée, pour ses proches : sa position devient une zone,
+// gardée nulle part telle quelle), et un pour elle seule. Ce que chacun voit : Sam (un inconnu) seulement « tout le
+// monde » ; Hugo (un proche de Léa) aussi la soirée ; Léa tout. Trois par lieu et par jour ; pas d'adresse dans un petit
+// nom ; ni gros mot ni alcool ; pas un duo ; pas le mème d'un autre. Hugo répond au mème de Léa : les deux sont liés. Le
+// profil de Léa : ses mèmes « tout le monde », jamais son identifiant ni sa position. 👯 Sam l'ajoute à ses proches : il
+// ne voit pas pour autant sa soirée (c'est Léa qui choisit les siens) ; elle l'ajoute : il la voit. Un mème déplacé
+// quitte l'ancien lieu ; un mème retiré disparaît. Sans compte : on regarde, on ne dépose pas.
 //
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI)
 //   node scripts/essai-autour-route.mjs          (sur un faux Supabase tout neuf)
+import { createHash } from "node:crypto";
+
 const F = "http://127.0.0.1:54321/rest/v1";
 const BASE = process.env.ESSAI_BASE || "http://localhost:3821";
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
@@ -40,8 +44,10 @@ await semer(
   [LEA, HUGO, SAM].map((x) => ({ habitant_id: x.id, prenom: x.prenom, photo: `${x.id}/photo.jpg`, accord_le: new Date().toISOString(), neutre: `${x.id}/neutre.webp`, parle: `${x.id}/parle.webp`, prete_le: new Date().toISOString() })),
 );
 for (const x of [LEA, HUGO, SAM]) await deposer(`${x.id}/neutre.webp`, Buffer.alloc(64, 7), "image/webp");
-// Hugo a Léa dans ses Rencontres : une proche
+// Léa et Hugo sont proches l'un de l'autre (Hugo l'a dans ses amis des Rencontres d'avant ; Léa, dans ses proches) :
+// ce que Léa dépose pour « Mes proches », Hugo le voit — c'est la liste de Léa qui compte
 await json(`${HUGO.id}/rencontres.json`, { amis: [LEA.id] });
+await json(`${LEA.id}/proches.json`, { ids: [HUGO.id] });
 // Hugo et Sam ont déclaré leur âge (15 ans et plus) ; Léa, pas encore (sa figurine date d'avant la question)
 for (const x of [HUGO, SAM]) await json(`${x.id}/majeur.json`, { le: new Date().toISOString(), age: 15 });
 /** Un mème en vidéo (comme le fait la route) ; `duo` : une réponse en duo (la figurine d'un autre). */
@@ -144,6 +150,24 @@ const p = await voir(SAM, `?profil=${cle}`);
 ok(p.statut === 200 && p.profil?.prenom === "Léa" && p.profil.memes.length === 2 && p.profil.memes.every((m) => m.qui === "tous") && p.profil.lieux[0]?.nom === "Le Petit Bistrot" && p.profil.lieux[0]?.n === 2, "son profil : ses mèmes « tout le monde » et leurs lieux (ni la soirée, ni celui pour elle seule)");
 ok(sansIdentifiant(p) && !p.texte.includes("43.71021") && !p.texte.includes('"lat"'), "ni son identifiant, ni une position");
 ok((await voir(SAM, "?profil=0000000000000000")).statut === 404, "un profil inconnu : 404");
+
+// ═══ 👯 AJOUTER EN PROCHE, DEPUIS SON PROFIL : SA LISTE À LUI — S'AJOUTER NE DONNE RIEN À VOIR ═══
+ok(!p.profil?.proche && !p.profil?.moi && (await voir(LEA, `?profil=${cle}`)).profil?.moi === true, "son profil dit si on l'a dans ses proches, et si c'est le sien");
+r = await appel(SAM, { action: "proche", profil: cle, oui: true });
+ok(r.statut === 200 && r.proche === true && ((await lire(`${SAM.id}/proches.json`))?.ids ?? []).includes(LEA.id) && (await voir(SAM, `?profil=${cle}`)).profil?.proche === true, "Sam ajoute Léa à ses proches (par la clé de son profil, jamais son identifiant)");
+ok(!lieuDe(await voir(SAM), ZONE), "mais il ne voit pas pour autant sa soirée « Mes proches » : c'est Léa qui choisit les siens");
+ok(
+  (await appel(LEA, { action: "proche", profil: cle, oui: true })).statut === 400 && (await appel(SAM, { action: "proche", profil: "0000000000000000", oui: true })).statut === 404 && (await appel(null, { action: "proche", profil: cle, oui: true })).statut === 403,
+  "pas soi-même ; pas un profil inconnu ; pas sans compte",
+);
+// Léa, elle, ajoute Sam : il voit sa soirée ; puis elle le retire, et il ne la voit plus
+const cleSam = createHash("sha256").update(`clikme-profil:${SAM.id}`).digest("hex").slice(0, 16);
+await json(`profils/${cleSam}.json`, { h: SAM.id });
+r = await appel(LEA, { action: "proche", profil: cleSam, oui: true });
+ok(r.statut === 200 && lieuDe(await voir(SAM), ZONE)?.n === 1, "Léa ajoute Sam à ses proches : il voit sa soirée « Mes proches »");
+r = await appel(LEA, { action: "proche", profil: cleSam, oui: false });
+const r2 = await appel(SAM, { action: "proche", profil: cle, oui: false });
+ok(r.statut === 200 && r.proche === false && !lieuDe(await voir(SAM), ZONE) && r2.proche === false && !((await lire(`${SAM.id}/proches.json`))?.ids ?? []).includes(LEA.id), "retirés de part et d'autre : la soirée redevient invisible pour Sam");
 
 // ═══ DÉPLACER, RETIRER ═══
 r = await appel(LEA, { action: "deposer", meme: L[0], ici: ICI, qui: "tous", nomLieu: "Au bord de l’Adour" });

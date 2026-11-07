@@ -6,7 +6,7 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 ## 1. Lire d'abord
 
 1. `CLAUDE.md` (racine) : les règles communes.
-2. `docs/figurines.md`, section 9.0 (de « duovicies » à « quatertricies ») : tout ce qui a été fait sur « Ma figurine »,
+2. `docs/figurines.md`, section 9.0 (de « duovicies » à « quintricies ») : tout ce qui a été fait sur « Ma figurine »,
    les mèmes, « Découvrir », le mème du jour, l'appli et la notification de 11 h 30, « Autour de moi », « Rencontres »
    effacé, la figurine réservée aux 15 ans et plus.
 3. Ce fichier, en entier.
@@ -177,8 +177,10 @@ Les lieux publics nommés viendront plus tard, avec des positions vérifiées (p
 - **La suite d'« Autour »** (le propriétaire, le 7 novembre : « dans l'ordre prévu ») :
   1. **fait** — la réponse « avec sa tête » : « ＋ Nouveau mème » ouvre le studio pour ce lieu, et le mème prêt revient
      au dépôt, déjà choisi (`docs/figurines.md`, section 9.0 quatertricies) ;
-  2. les regroupements sur la carte (« +9 ») quand il y aura beaucoup de lieux ;
-  3. « 👯 Ajouter en proche » et « Lui répondre » depuis le profil ;
+  2. **plus tard** (le propriétaire, le 7 novembre) — les regroupements sur la carte (« +9 »), quand il y aura beaucoup
+     de lieux ;
+  3. **fait** — « 👯 Ajouter en proche » et « ↩️ Lui répondre » depuis le profil ; « Mes proches » suit désormais la
+     liste de l'AUTEUR (s'ajouter ne donne rien à voir) : `docs/figurines.md`, section 9.0 quintricies ;
   4. une photo du lieu en haut de sa page (la maquette en montrait une) ;
   5. prévenir « on a répondu à ton mème », la réponse du commerçant depuis son comptoir, la page admin de modération ;
   6. les lieux publics nommés (les Arènes, les Halles…), avec des positions vérifiées.

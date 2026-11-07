@@ -35,7 +35,8 @@ export type TypeLieu = "commerce" | "zone";
 export type Lieu = { id: string; type: TypeLieu; nom: string; emoji: string; lat: number; lng: number; n: number; visages: string[]; activite?: string };
 /** Un mème posé dans un lieu : la carte du fil, et ce que le dépôt dit (qui le voit, le petit mot, à qui il répond). */
 export type MemeAutour = MemePublic & { lieu: string; qui: Qui; mot?: string; nomLieu?: string; reponseA?: string; reponses: number; profil: string };
-export type ProfilAutour = { cle: string; prenom: string; image: string; memes: MemeAutour[]; lieux: { id: string; nom: string; n: number }[] };
+// (`moi` : son propre profil ; `proche` : il l'a dans ses proches)
+export type ProfilAutour = { cle: string; prenom: string; image: string; memes: MemeAutour[]; lieux: { id: string; nom: string; n: number }[]; moi?: boolean; proche?: boolean };
 
 export const lieuIdValide = (id: unknown): boolean => /^(c-[a-z0-9-]{2,120}|z--?\d{1,7}_-?\d{1,7})$/.test(String(id ?? ""));
 export const estZone = (id: string) => id.startsWith("z-");

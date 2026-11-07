@@ -176,7 +176,23 @@ const profil = await texte(sam, ".atr-profil");
 ok(profil.includes(troisieme.prenom) && profil.includes("Le Petit Bistrot") && (await sam.locator(".atr-profil .atr-grille .atr-vignette").count()) >= 1, `le profil de ${troisieme.prenom} : sa figurine, ses lieux, ses mèmes`);
 ok(profil.includes("Jamais sa position") && !/43\.7|-1\.05/.test(profil), "jamais sa position");
 await sam.screenshot({ path: `${D}/autour-4-profil.png` });
-await sam.locator(".atr-profil > .atr-fermer").click();
+// 👯 SES GESTES : l'ajouter à ses proches (sa liste à lui), l'en retirer ; puis « ↩️ Lui répondre »
+const auteur = GENS.find((x) => x.prenom === troisieme.prenom);
+const prochesDeSam = async () => (await (await fetch(`${STOCK}/figurines-clients/${SAM.id}/proches.json`)).json().catch(() => ({}))).ids ?? [];
+ok((await texte(sam, ".atr-profil .atr-proche")) === "👯 Ajouter en proche" && (await sam.locator(".atr-profil .atr-lui-repondre").count()) === 1, "sur son profil : « 👯 Ajouter en proche » et « ↩️ Lui répondre »");
+await sam.locator(".atr-profil .atr-proche").click();
+await sam.waitForSelector(".atr-profil .atr-proche.pris", { timeout: 10000 });
+ok((await texte(sam, ".atr-profil .atr-proche")).includes("Dans tes proches") && (await prochesDeSam()).includes(auteur?.id) && (await texte(sam, ".atr-profil")).includes(`${troisieme.prenom} voit ce que tu déposes pour « Mes proches »`), `${troisieme.prenom} entre dans ses proches : « ✓ Dans tes proches »`);
+await sam.screenshot({ path: `${D}/autour-4b-proche.png`, fullPage: true });
+await sam.locator(".atr-profil .atr-proche").click();
+await sam.waitForSelector(".atr-profil .atr-proche:not(.pris)", { timeout: 10000 });
+ok(!(await prochesDeSam()).includes(auteur?.id), "un toucher de plus : il l'en retire");
+await sam.locator(".atr-profil .atr-lui-repondre").click();
+await sam.waitForSelector("section.atr-deposer h2", { timeout: 15000 });
+ok((await texte(sam, "section.atr-deposer h2")) === "Répondre avec ma figurine" && (await sam.locator("section.atr-deposer .atr-choix.pris").count()) === 1, "« ↩️ Lui répondre » : à son dernier mème, là où il l'a déposé");
+await sam.locator("section.atr-deposer .atr-titre .atr-fermer").click();
+await sam.waitForSelector(".atr-lieu > .atr-fermer", { timeout: 10000 });
+await sam.locator(".atr-lieu > .atr-fermer").click();
 
 // ═══ SAM RÉPOND AVEC SA FIGURINE ═══
 await ouvrirBistrot();
