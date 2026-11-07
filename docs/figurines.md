@@ -1037,6 +1037,35 @@ stickers. Le clavier, lui, demande une app native : on le fera si les envois sui
   (512 px, fond transparent), « Sérieusement ? » en attendant sa pose, les envois comptés, le prout « Interminable »
   avec sa vraie tête, le hoquet avec l'emoji.
 
+### 9.0 octovicies Le lot 2 : le mème du jour au centre, 😂 ❤️ 🔥, les proches d'abord, la carte sobre des commerçants (7 novembre)
+
+- **🔥 Le mème du jour** (`theme-du-jour.ts`) : chaque jour, le même thème pour tout le monde (« Ton excuse pour être
+  en retard », « Si tu étais un animal »… 42 thèmes, tous différents pendant six semaines), chacun avec **trois idées
+  de réponse** (première personne, sans accord de genre, rien d'alcoolisé). En haut de **« Créer »** (« 🔥 Je réponds
+  avec ma figurine » : le studio s'ouvre sur le thème et ses idées ; « 🎲 Surprends-moi ! » y répond aussi, d'après sa
+  carte) et de **« Découvrir »**.
+- **Poster sa réponse la rend visible par les gens de sa ville** : c'est écrit sur le bouton (« 🔥 Poster ma réponse
+  (visible par les gens de Dax) ») — sa décision : l'accord, c'est ce geste. Une réponse par personne et par jour (la
+  nouvelle remplace l'ancienne) ; il la retire quand il veut. Rangé sans table : `du-jour/<ville>/<jour>/<id>.json`, et
+  la sienne `<habitant>/du-jour/<jour>.json`.
+- **Tu postes, puis tu vois** : les réponses des autres n'apparaissent qu'après la sienne (« 👀 Réponds, et tu verras
+  les réponses de Dax »). **De vrais chiffres seulement** : « 6 réponses à Dax » ; moins de cinq, « Sois parmi les
+  premiers à répondre ».
+- **😂 ❤️ 🔥** (`reactions-memes.ts`) sous chaque mème de « Découvrir » (les gens et les commerçants) : une par personne
+  (il la change, ou la retire), avec un compte seulement ; il faut un compte. Dans **« Mes mèmes »**, il voit celles
+  qu'ont reçues les siens. Rangé sans table : `reac/<mème>/<habitant>.<réaction>.json`.
+- **Les proches d'abord** : ceux avec qui il a fait un duo (`<habitant>/proches.json`, noté à chaque duo, des deux
+  côtés) et ses amis des Rencontres — leurs mèmes passent en premier (« 👯 Proche », un liseré vert), dans le fil comme
+  dans les réponses du jour (la sienne en tête).
+- **La carte sobre des commerçants** : la même carte que les gens — « 🍽️ Chez Bergine » (un toucher : sa page, compté),
+  sans bandeau ni gros bouton rose. **Le dosage** : un commerçant après chaque groupe de cinq mèmes des gens, jamais
+  deux à la suite (un seul tant que les gens sont moins de cinq). Le bandeau « LE MENU DU JOUR » quitte aussi les
+  nouvelles vidéos des commerçants (leur nom reste à la fin).
+- **Les essais** (`scripts/navigateur/meme-du-jour.mjs`, 20 vérifications) : le thème dans « Créer » et « Découvrir »,
+  « Sois parmi les premiers », les réponses cachées avant la sienne, un seul commerçant sur deux, Léa qui répond (le
+  thème, ses idées, sa voix, « Poster ma réponse (visible par les gens de Dax) »), « 5 réponses à Dax », la sienne
+  d'abord, puis Léa la proche, 😂 puis ❤️ (une seule), 🔥 au commerçant, ❤️ 1 dans « Mes mèmes », sans compte, le retrait.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

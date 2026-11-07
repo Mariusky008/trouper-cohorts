@@ -234,9 +234,10 @@ export type MessageFigurine =
  */
 export type ApercuMeme = { id: string; prenom: string; image: string; le: string; texte?: string; video?: string };
 /** `public` : il l'a montré dans « Découvrir » (son accord) ; `duo` : une réponse en duo (elle reste entre eux). */
-export type MonMeme = ApercuMeme & { vues: number; reponses: number; public?: boolean; duo?: boolean };
+export type MonMeme = ApercuMeme & { vues: number; reponses: number; public?: boolean; duo?: boolean; reac?: Record<"rire" | "coeur" | "feu", number> };
 /** 🌍 Un mème qu'un client a choisi de montrer dans « Découvrir » (pour les gens de sa ville). */
-export type MemePublic = ApercuMeme & { villeSlug: string };
+// (`ami` : un de ses proches — un duo, un ami des Rencontres — il passe d'abord ; `moi` : le sien ; `reac` : 😂 ❤️ 🔥)
+export type MemePublic = ApercuMeme & { villeSlug: string; ami?: boolean; moi?: boolean; reac?: { n: Record<"rire" | "coeur" | "feu", number>; moi?: "rire" | "coeur" | "feu" } };
 /** Ce qu'on lui dit avant qu'il le montre : qui le verra, quoi, et qu'il peut le retirer. */
 export const ACCORD_PUBLIC = "Ton mème — ta figurine, ta voix, tes mots et ton prénom — sera visible par les gens de ta ville dans « Découvrir ». Tu pourras le retirer quand tu veux. D’accord ?";
 export type ReponseAMonMeme = ApercuMeme & { a: string; aTexte?: string };

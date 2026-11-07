@@ -528,7 +528,8 @@ await hugo.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "ne
 await hugo.waitForSelector("#o-decouvrir .dv-carte.client", { timeout: 60000 });
 await fermerPablito(hugo, "#o-decouvrir");
 const carteLea = await texte(hugo, "#o-decouvrir .dv-carte.client");
-ok(carteLea.includes("Léa") && carteLea.includes("De ta ville") && (await hugo.locator(`#o-decouvrir .dv-carte.client a.dv-voir[href="/figurine/${id}/repondre"]`).count()) === 1, `Hugo, de Dax, le voit dans « Découvrir » : « ↩️ Lui répondre » (${carteLea.slice(0, 80)})`);
+// (le lot 2 : ils ont fait un duo, ils sont « proches » — leurs mèmes passent d'abord)
+ok(carteLea.includes("Léa") && carteLea.includes("👯 Proche") && (await hugo.locator(`#o-decouvrir .dv-carte.client.ami a.dv-repondre[href="/figurine/${id}/repondre"]`).count()) === 1, `Hugo, de Dax, le voit dans « Découvrir », en proche (leur duo) : « ↩️ Répondre » (${carteLea.slice(0, 80)})`);
 ok((await hugo.locator("#o-decouvrir .dv-carte.client .dv-signaler").count()) === 1, "et « Signaler », s'il le faut");
 ok((await debordement(hugo)) <= 0 && !/exemple/i.test(await texte(hugo, "#o-decouvrir")), "« Découvrir » ne déborde pas, sans le mot interdit");
 await hugo.screenshot({ path: `${D}/ma-figurine-3e-decouvrir.png` });

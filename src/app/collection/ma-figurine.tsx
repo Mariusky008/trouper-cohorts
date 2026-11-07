@@ -48,6 +48,8 @@ import { ApercuDuMois, useMois } from "./figurine-du-mois";
 import { EVT_VERS_LE_STUDIO, prendreVersLeStudio, type VersLeStudio } from "./vers-le-studio";
 import { moisEnClair, type FigurineDuMois } from "@/lib/direct/figurine-du-mois";
 import { MesReactions } from "./mes-reactions";
+import { CarteMemeDuJour } from "./theme-du-jour";
+import { nomVille, themeDuJour, type Theme } from "@/lib/direct/theme-du-jour";
 
 type Reponse = { error?: string; etat?: EtatMaFigurine; lien?: string; son?: string; enCours?: boolean };
 
@@ -292,6 +294,8 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const [surprise, setSurprise] = useState<Surprise | null>(null);
   const [surpriseCharge, setSurpriseCharge] = useState(false);
   const surprisesVues = useRef<string[]>([]);
+  // 🔥 LE MÈME DU JOUR (le lot 2) : il y répond — le thème, ses idées ; `postee` : le mème posté (visible par sa ville)
+  const [themeJour, setThemeJour] = useState<{ theme: Theme; ville: string; postee: string } | null>(null);
   useEffect(() => {
     const id = idARepondre();
     if (!id) return;
@@ -503,6 +507,11 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
         setTexte(x.texte.trim().slice(0, TEXTE_MAX));
       }
       if (typeof x.look === "string") setLookVoulu(x.look);
+      if (typeof x.theme === "string" && x.theme === themeDuJour().cle) {
+        setMode("ecrire");
+        setTexte("");
+        setThemeJour({ theme: themeDuJour(), ville: typeof x.ville === "string" ? x.ville : "", postee: "" });
+      }
     };
     void Promise.resolve().then(() => appliquer(prendreVersLeStudio()));
     const ecoute = (e: Event) => {
@@ -594,7 +603,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
     setSurpriseCharge(true);
     setErreur("");
     try {
-      const j = (await demander({ action: "surprise", sauf: surprisesVues.current })) as Reponse & Partial<Surprise>;
+      const j = (await demander({ action: "surprise", sauf: surprisesVues.current, ...(themeJour ? { theme: themeJour.theme.cle } : {}) })) as Reponse & Partial<Surprise>;
       if (!j.texte) throw new Error("Pas de surprise cette fois. Réessaie.");
       surprisesVues.current = [...surprisesVues.current, j.texte].slice(-20);
       setSurprise({ texte: j.texte, sentiment: j.sentiment ?? "joie", danse: Boolean(j.danse), par: j.par ?? "local", carte: Boolean(j.carte) });
@@ -705,6 +714,18 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
       await navigator.share({ files: [meme.fichier] });
     } catch {
       /* il a fermé la feuille de partage */
+    }
+  }
+  /** 🔥 Sa réponse au mème du jour : postée, visible par les gens de sa ville (c'est écrit sur le bouton : son accord). */
+  async function posterAuJour() {
+    if (!envoye || !meme || !themeJour) return;
+    setErreur("");
+    try {
+      await demander({ action: "public", id: envoye.id, public: true, duJour: true });
+      setMeme((x) => (x ? { ...x, public: true } : x));
+      setThemeJour((t) => (t ? { ...t, postee: envoye.id } : t));
+    } catch (e) {
+      setErreur((e as Error).message);
     }
   }
   /** 🌍 Le montrer dans « Découvrir », pour les gens de sa ville (son accord, demandé) — ou le retirer. */
@@ -903,6 +924,28 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
             </button>
           </div>
         )}
+        {/* 🔥 IL RÉPOND AU MÈME DU JOUR : le thème, et trois idées (un toucher : elle le dit) */}
+        {themeJour && (
+          <div className="tf-theme" id="theme-du-jour" role="group" aria-label="Le mème du jour">
+            <span className="tf-theme-tete">
+              <b>
+                🔥 Le mème du jour : {themeJour.theme.emoji} {themeJour.theme.titre}
+              </b>
+              <button type="button" aria-label="Ne pas répondre au mème du jour" onClick={() => setThemeJour(null)}>
+                ✕
+              </button>
+            </span>
+            {mode === "ecrire" && etat.voixTexte && (
+              <span className="tf-theme-idees">
+                {themeJour.theme.idees.map((t, k) => (
+                  <button key={k} type="button" className={texte === t ? "pris" : undefined} onClick={() => choisirPret({ cle: `idee-${k}`, emoji: "💡", nom: "", texte: t, sentiment: "joie" })}>
+                    💡 {t}
+                  </button>
+                ))}
+              </span>
+            )}
+          </div>
+        )}
         {mode === "ecrire" && etat.voixTexte ? (
           <>
             {/* ✨ LES MÈMES PRÊTS : un toucher, et elle le dit */}
@@ -1058,11 +1101,23 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
                   </a>
                 </div>
                 {envoye && <input className="tf-adresse" readOnly value={envoye.lien} aria-label="Le lien" onFocus={(e) => e.target.select()} />}
-                {/* 🌍 S'IL LE VEUT : les gens de sa ville le verront dans « Découvrir » (jamais un duo) */}
-                {envoye && !meme.duo && (
-                  <button type="button" className={`tf-public${meme.public ? " pris" : ""}`} aria-pressed={Boolean(meme.public)} onClick={basculerPublic}>
-                    {meme.public ? "✓ Dans « Découvrir » · le retirer" : "🌍 Le montrer aussi dans « Découvrir »"}
+                {/* 🔥 SA RÉPONSE AU MÈME DU JOUR : « Poster ma réponse (visible par les gens de Dax) » — puis voir les leurs */}
+                {envoye && !meme.duo && themeJour && themeJour.postee === envoye.id ? (
+                  <a className="tf-postee" href="#decouvrir">
+                    ✓ Ta réponse est postée ! Voir celles de {nomVille(themeJour.ville) || "ta ville"} →
+                  </a>
+                ) : envoye && !meme.duo && themeJour ? (
+                  <button type="button" className="tf-poster-jour" onClick={posterAuJour}>
+                    🔥 Poster ma réponse (visible par les gens de {nomVille(themeJour.ville) || "ta ville"})
                   </button>
+                ) : (
+                  /* 🌍 S'IL LE VEUT : les gens de sa ville le verront dans « Découvrir » (jamais un duo) */
+                  envoye &&
+                  !meme.duo && (
+                    <button type="button" className={`tf-public${meme.public ? " pris" : ""}`} aria-pressed={Boolean(meme.public)} onClick={basculerPublic}>
+                      {meme.public ? "✓ Dans « Découvrir » · le retirer" : "🌍 Le montrer aussi dans « Découvrir »"}
+                    </button>
+                  )
                 )}
               </div>
             ) : meme?.cle === cleEnvoi(son) && meme.etat === "sans" && envoye ? (
@@ -1524,6 +1579,8 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
           {/* 🗓️ sa figurine du mois (lot 3) : où il en est, en une pastille */}
           <ApercuDuMois />
         </header>
+        {/* 🔥 LE MÈME DU JOUR (le lot 2) : le thème d'aujourd'hui, « Je réponds » */}
+        <CarteMemeDuJour />
         {/* ⚡ SES RÉACTIONS : sa tête à la place des emojis, un toucher (7 novembre 2026) */}
         <MesReactions />
         <StudioMoi key={etat.neutre} etat={etat} onEtat={onEtat} />
