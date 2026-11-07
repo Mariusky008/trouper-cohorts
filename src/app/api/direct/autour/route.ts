@@ -9,11 +9,12 @@
 // POST { action: "retirer", meme }
 // POST { action: "proche", profil: <clé>, oui: true|false } → { proche } : 👯 l'ajouter à ses proches (ou l'en retirer)
 // Signaler un mème : la route de toujours (`/api/direct/ma-figurine`, `signaler`).
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
 import { carteDe, deposer, devenirProche, memesDuLieu, profilDe, retirer } from "@/lib/direct/autour-serveur";
+import { prevenirDUneReponse } from "@/lib/direct/appli-collection-serveur";
 
 export const dynamic = "force-dynamic";
 const sansCache = { "cache-control": "no-store" };
@@ -43,6 +44,9 @@ export async function POST(request: Request) {
   if (!moi) return NextResponse.json({ error: "Crée d’abord ta figurine." }, { status: 403 });
   if (p?.action === "deposer") {
     const r = await deposer(supabase, moi, { meme: p.meme, lieu: p.lieu, ici: p.ici, qui: p.qui, mot: p.mot, nomLieu: p.nomLieu, reponseA: p.reponseA });
+    // ↩️ « Sam t'a répondu ! » : à l'auteur du mème, après la réponse (jamais bloquant)
+    const a = r.aPrevenir;
+    if (a) after(() => prevenirDUneReponse(supabase, a.auteur, moi.id, { meme: a.meme, ou: a.ou, url: a.url }).then(() => undefined, () => undefined));
     // (sans son âge déclaré : `age`, l'écran le lui demande, une fois)
     return NextResponse.json(r.ok ? { ok: true, lieu: r.lieu } : { error: r.error, ...(r.age ? { age: true } : {}) }, { status: r.ok ? 200 : (r.statut ?? 400) });
   }

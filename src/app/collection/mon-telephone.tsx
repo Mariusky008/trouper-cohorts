@@ -190,16 +190,41 @@ export function InviterAppli({ apres, repondu = true }: { apres: "jour" | "poste
   );
 }
 
-/** 📱 DANS « MOI », POUR TOUJOURS : l'appli sur son écran d'accueil, et le mème du jour à 11 h 30 (il le coupe ici). */
+/**
+ * 📱 DANS « MOI », POUR TOUJOURS : l'appli sur son écran d'accueil, le mème du jour à 11 h 30 (il le coupe ici) ; et, les
+ * notifications allumées, ↩️ « Quand on répond à tes mèmes » (allumé par défaut, gardé sur le serveur).
+ */
 export function MonTelephone() {
   const i = useAppli();
   const [occupe, setOccupe] = useState(false);
   const [erreur, setErreur] = useState("");
+  const allumee = i.notif === "allumee";
+  const [reponses, setReponses] = useState<boolean | null>(null);
   useEffect(() => {
     void verifierNotif();
   }, []);
+  useEffect(() => {
+    if (!allumee) return;
+    let fini = false;
+    void fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "notif-etat" }) })
+      .then((r) => r.json())
+      .then((j: { reponses?: boolean }) => {
+        if (!fini && typeof j.reponses === "boolean") setReponses(j.reponses);
+      })
+      .catch(() => undefined);
+    return () => {
+      fini = true;
+    };
+  }, [allumee]);
   if (i.serveur) return null;
-  const allumee = i.notif === "allumee";
+  const basculerReponses = async () => {
+    if (reponses === null) return;
+    setOccupe(true);
+    const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "notif-reponses", oui: !reponses }) }).catch(() => null);
+    const j = (await r?.json().catch(() => ({}))) as { reponses?: boolean } | undefined;
+    if (r?.ok && typeof j?.reponses === "boolean") setReponses(j.reponses);
+    setOccupe(false);
+  };
   const basculer = async () => {
     setOccupe(true);
     setErreur("");
@@ -258,6 +283,21 @@ export function MonTelephone() {
           </button>
         ) : null}
       </div>
+      {/* ↩️ LES RÉPONSES À SES MÈMES (« Sam t'a répondu ! ») : un interrupteur à part, allumé par défaut */}
+      {allumee && reponses !== null && (
+        <div className="ct-ligne ct-reponses">
+          <span className="ct-emoji" aria-hidden="true">
+            ↩️
+          </span>
+          <span className="ct-quoi">
+            <b>Quand on répond à tes mèmes</b>
+            <small>{reponses ? "Je te préviens (dix fois par jour au plus)." : "Coupé. Tu les verras dans l’appli."}</small>
+          </span>
+          <button type="button" role="switch" aria-checked={reponses} aria-label="Quand on répond à tes mèmes" className={`ct-interrupteur${reponses ? " pris" : ""}`} disabled={occupe} onClick={() => void basculerReponses()}>
+            <i />
+          </button>
+        </div>
+      )}
     </section>
   );
 }

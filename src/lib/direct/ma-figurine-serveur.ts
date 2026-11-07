@@ -502,7 +502,8 @@ export async function enregistrerMessage(
   repondA?: unknown,
   /** 🗓️ Son look (une figurine du mois qui parle déjà) : c'est elle qui parle dans ce message. */
   look?: unknown,
-): Promise<{ id?: string; error?: string }> {
+  // (`auteurDeLOrigine` : en duo, l'auteur du mème auquel il répond — à prévenir : `appli-collection-serveur.ts`)
+): Promise<{ id?: string; error?: string; auteurDeLOrigine?: string }> {
   const m = /^data:(audio\/(?:webm|ogg|mp4|mpeg|x-m4a|aac|wav))(?:;[^,]*)?;base64,(.+)$/i.exec(s(son));
   if (!m) return { error: "Ton message n’a pas pu être enregistré. Réessaie." };
   const brut = Buffer.from(m[2], "base64");
@@ -560,6 +561,7 @@ export async function enregistrerMessage(
       ajouterProche(supabase, habitant.id, s(origine!.habitant_id)),
       ajouterProche(supabase, s(origine!.habitant_id), habitant.id),
     ]);
+    return { id, auteurDeLOrigine: s(origine!.habitant_id) };
   }
   return { id };
 }

@@ -13,6 +13,12 @@
  *    `notif/abonnes/<habitant>.json` = { ville, abonnements } (cinq téléphones au plus) ; `notif/envois/<jour>.json` :
  *    la journée est faite, on ne recommence pas. Un téléphone qui a abandonné son abonnement (404, 410) est effacé.
  *
+ * 3. « ↩️ SAM T'A RÉPONDU ! » (7 novembre 2026) : quand on répond à un de ses mèmes (dans « Autour », ou en duo), à
+ *    ceux qui ont les notifications — un second interrupteur dans « Moi », « Quand on répond à tes mèmes », allumé par
+ *    défaut (anciens abonnés compris : la décision du propriétaire), que chacun coupe (`reponses: false` dans sa fiche).
+ *    Jamais à soi-même, jamais pour une réponse qu'il ne pourrait pas voir ; dix par jour au plus
+ *    (`notif/reponses/<habitant>/<jour>.json`).
+ *
  * SANS CLÉS VAPID, RIEN NE PART ET RIEN NE CASSE. Ce sont les mêmes que pour les salons : `NEXT_PUBLIC_VAPID_PUBLIC_KEY`,
  * `VAPID_PRIVATE_KEY`, `NEXT_PUBLIC_APP_EMAIL`. L'envoi passe par `fetch` (la bibliothèque `web-push` ne fait que
  * chiffrer et signer) : c'est ce qui permet aux essais de joindre un faux service de notifications
@@ -60,7 +66,8 @@ export async function lierAppli(supabase: Supabase, jeton: unknown): Promise<{ d
 
 // ─── 2. 🔔 les abonnements ─────────────────────────────────────────────────────────────────────────────────────────
 export type Abonnement = { endpoint: string; keys: { p256dh: string; auth: string } };
-type FicheAbonne = { h: string; ville: string; abonnements: Abonnement[]; le: string };
+// (`reponses` : « Quand on répond à tes mèmes » — absent : allumé)
+type FicheAbonne = { h: string; ville: string; abonnements: Abonnement[]; le: string; reponses?: boolean };
 const DOSSIER_ABONNES = "notif/abonnes";
 const cheminAbonne = (h: string) => `${DOSSIER_ABONNES}/${h}.json`;
 /** Un habitant n'a pas vingt téléphones : au-delà, les plus anciens s'effacent. */
@@ -92,6 +99,7 @@ export async function abonner(supabase: Supabase, habitant: Habitant, a: unknown
     ville: habitant.villeSlug,
     abonnements: [ab, ...sesAbonnements(avant).filter((x) => x.endpoint !== ab.endpoint)].slice(0, PAR_HABITANT),
     le: new Date().toISOString(),
+    ...(avant.reponses === false ? { reponses: false } : {}),
   };
   if (!(await ecrireJson(supabase, cheminAbonne(habitant.id), fiche))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   // (la preuve, tout de suite, que ça arrive bien jusqu'à son téléphone)
@@ -112,6 +120,20 @@ export async function couper(supabase: Supabase, habitant: Habitant, endpoint: u
 export async function estAbonne(supabase: Supabase, habitant: Habitant, endpoint: unknown): Promise<boolean> {
   if (!s(endpoint)) return false;
   return sesAbonnements(await lireJson<FicheAbonne>(supabase, cheminAbonne(habitant.id))).some((x) => x.endpoint === s(endpoint));
+}
+
+/** ↩️ « Quand on répond à tes mèmes » : allumé (par défaut), ou coupé. `null` : il n'a pas les notifications. */
+export async function prevenuDesReponses(supabase: Supabase, habitant: Habitant): Promise<boolean | null> {
+  const f = await lireJson<FicheAbonne>(supabase, cheminAbonne(habitant.id));
+  return sesAbonnements(f).length ? f.reponses !== false : null;
+}
+export async function choisirLesReponses(supabase: Supabase, habitant: Habitant, oui: unknown): Promise<{ ok?: boolean; reponses?: boolean; error?: string; statut?: number }> {
+  const f = await lireJson<FicheAbonne>(supabase, cheminAbonne(habitant.id));
+  if (!sesAbonnements(f).length) return { error: "Allume d’abord les notifications.", statut: 400 };
+  const reste = { ...f };
+  delete reste.reponses;
+  const ok = await ecrireJson(supabase, cheminAbonne(habitant.id), oui === false ? { ...reste, reponses: false } : reste);
+  return ok ? { ok: true, reponses: oui !== false } : { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
 }
 
 // ─── 3. 🔥 l'envoi de 11 h 30 ──────────────────────────────────────────────────────────────────────────────────────
@@ -176,6 +198,43 @@ async function envoyer(ab: Abonnement, n: Notif): Promise<"ok" | "mort" | "echec
   } catch {
     return "echec";
   }
+}
+
+/** ↩️ Le texte : qui, où ; le toucher l'ouvre sur la réponse. `tag` : une par mème qui répond (pas deux fois la même). */
+export function notifReponse(prenom: string, r: { meme: string; ou?: string; url: string; duo?: boolean }): Notif {
+  const qui = prenom.trim() || "Quelqu’un";
+  return {
+    titre: `↩️ ${qui} t’a répondu${r.duo ? " en duo" : ""} !`,
+    corps: r.duo ? "Avec sa figurine, à côté de la tienne. Viens voir 👀" : `${r.ou ? `${r.ou} · ` : ""}avec sa figurine. Viens voir 👀`,
+    url: r.url,
+    tag: `reponse-${r.meme}`,
+  };
+}
+const REPONSES_PAR_JOUR = 10;
+
+/**
+ * ↩️ PRÉVENIR L'AUTEUR D'UN MÈME QU'ON LUI A RÉPONDU — s'il a les notifications, et « Quand on répond à tes mèmes »
+ * allumé ; jamais à soi-même ; dix par jour au plus. Appelé après la réponse (`after`), jamais bloquant.
+ */
+export async function prevenirDUneReponse(supabase: Supabase, auteur: string, deQui: string, r: { meme: string; ou?: string; url: string; duo?: boolean }): Promise<"envoye" | "rien"> {
+  if (!auteur || !deQui || auteur === deQui || !vapid()) return "rien";
+  const f = await lireJson<FicheAbonne>(supabase, cheminAbonne(auteur));
+  const abs = sesAbonnements(f);
+  if (!abs.length || f.reponses === false) return "rien";
+  const compte = `notif/reponses/${auteur}/${jourParis()}.json`;
+  const n = Number((await lireJson<{ n?: number }>(supabase, compte)).n) || 0;
+  if (n >= REPONSES_PAR_JOUR) return "rien";
+  await ecrireJson(supabase, compte, { n: n + 1 });
+  const { data } = await supabase.from("clik_ma_figurine").select("prenom").eq("habitant_id", deQui).maybeSingle();
+  const notif = notifReponse(s((data as { prenom?: unknown } | null)?.prenom), r);
+  const issues = await Promise.all(abs.map((ab) => envoyer(ab, notif)));
+  const morts = abs.filter((_, i) => issues[i] === "mort");
+  if (morts.length) {
+    const reste = abs.filter((_, i) => issues[i] !== "mort");
+    if (reste.length) await ecrireJson(supabase, cheminAbonne(auteur), { ...f, abonnements: reste });
+    else await supabase.storage.from(SEAU_FIGURINES).remove([cheminAbonne(auteur)]);
+  }
+  return issues.includes("ok") ? "envoye" : "rien";
 }
 
 export type BilanDuJour = { jour: string; personnes: number; envoyes: number; morts: number; dejaRepondu: number; deja?: boolean; sansCles?: boolean };

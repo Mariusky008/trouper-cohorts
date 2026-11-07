@@ -13,7 +13,7 @@
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI)
 //   node scripts/essai-autour-route.mjs          (sur un faux Supabase tout neuf)
-import { createHash } from "node:crypto";
+import crypto, { createHash } from "node:crypto";
 
 const F = "http://127.0.0.1:54321/rest/v1";
 const BASE = process.env.ESSAI_BASE || "http://localhost:3821";
@@ -148,6 +148,42 @@ const sansIdentifiant = (o) => !champs(o).some((c) => ["h", "habitant", "habitan
 ok(sansIdentifiant(sam) && sansIdentifiant(hugo), "aucun champ « habitant » dans la carte : une clé de profil seulement");
 ok(sam.derniers.length === 2 && sam.derniers.every((m) => m.video && m.prenom === "Léa"), "les derniers mèmes autour de lui : en vidéo, avec le prénom");
 
+// ═══ ↩️ LÉA A LES NOTIFICATIONS (un faux téléphone, au faux service du faux Supabase) ═══
+const FAUX = F.replace("/rest/v1", "");
+function telephone(nom) {
+  const ecdh = crypto.createECDH("prime256v1");
+  ecdh.generateKeys();
+  const auth = crypto.randomBytes(16);
+  const endpoint = `${FAUX}/push/${nom}-${crypto.randomBytes(4).toString("hex")}`;
+  return { ecdh, auth, endpoint, abonnement: { endpoint, expirationTime: null, keys: { p256dh: ecdh.getPublicKey().toString("base64url"), auth: auth.toString("base64url") } } };
+}
+/** Déchiffrer comme le téléphone (RFC 8291, `aes128gcm`). */
+function dechiffrer(t, b64) {
+  const buf = Buffer.from(b64, "base64");
+  const sel = buf.subarray(0, 16);
+  const sa = buf.subarray(21, 21 + buf[20]);
+  const chiffre = buf.subarray(21 + buf[20]);
+  const h = (k, d) => crypto.createHmac("sha256", k).update(d).digest();
+  const ikm = h(h(t.auth, t.ecdh.computeSecret(sa)), Buffer.concat([Buffer.from("WebPush: info\0"), t.ecdh.getPublicKey(), sa, Buffer.from([1])]));
+  const prk = h(sel, ikm);
+  const cle = h(prk, Buffer.concat([Buffer.from("Content-Encoding: aes128gcm\0"), Buffer.from([1])])).subarray(0, 16);
+  const nonce = h(prk, Buffer.concat([Buffer.from("Content-Encoding: nonce\0"), Buffer.from([1])])).subarray(0, 12);
+  const d = crypto.createDecipheriv("aes-128-gcm", cle, nonce);
+  d.setAuthTag(chiffre.subarray(chiffre.length - 16));
+  const clair = Buffer.concat([d.update(chiffre.subarray(0, chiffre.length - 16)), d.final()]);
+  let fin = clair.length - 1;
+  while (fin >= 0 && clair[fin] === 0) fin--;
+  return JSON.parse(clair.subarray(0, fin).toString("utf8"));
+}
+const recus = async (t) => ((await (await fetch(`${FAUX}/__push`)).json()) ?? []).filter((x) => x.adresse === new URL(t.endpoint).pathname).map((x) => dechiffrer(t, x.corps));
+const reponsesRecues = async (t) => (await recus(t)).filter((n) => /t’a répondu/.test(n.title));
+const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
+const telLea = telephone("lea-autour");
+const figurine = (qui, corps) => fetch(`${BASE}/api/direct/ma-figurine`, { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${qui.jeton}` }, body: JSON.stringify(corps) }).then(async (x) => ({ statut: x.status, ...(await x.json().catch(() => ({}))) }));
+const abo = await figurine(LEA, { action: "notif", abonnement: telLea.abonnement });
+const etatNotif = await figurine(LEA, { action: "notif-etat" });
+ok(abo.statut === 200 && etatNotif.reponses === true && (await figurine(HUGO, { action: "notif-etat" })).reponses === undefined, "Léa a les notifications : « Quand on répond à tes mèmes » est allumé d'office (Hugo, sans notifications : rien à choisir)");
+
 // ═══ LES MÈMES DU LIEU, ET UNE RÉPONSE ═══
 let l = await voir(SAM, `?lieu=${BISTROT}`);
 ok(l.statut === 200 && l.lieu?.nom === "Le Petit Bistrot" && l.memes.length === 2 && l.memes.some((m) => m.mot === "Le chef m’a reconnu.") && l.memes.every((m) => /^[a-f0-9]{16}$/.test(m.profil)), "le lieu : ses mèmes pour le swipe, le petit mot, une clé de profil (pas un identifiant)");
@@ -170,6 +206,12 @@ l = await voir(SAM, `?lieu=${BISTROT}`);
 const origine = l.memes.find((m) => m.id === L[0]);
 const reponse = l.memes.find((m) => m.id === "autourhugo01");
 ok(r.statut === 200 && origine?.reponses === 1 && reponse?.reponseA === L[0] && reponse.prenom === "Hugo", "Hugo répond à Léa avec sa figurine : les deux mèmes sont liés");
+await attendre(800);
+let notifs = await reponsesRecues(telLea);
+ok(
+  notifs.length === 1 && notifs[0].title === "↩️ Hugo t’a répondu !" && notifs[0].body.startsWith("🍽️ Le Petit Bistrot · avec sa figurine") && notifs[0].url === `/collection?autour=${BISTROT}&meme=autourhugo01#autour`,
+  `↩️ Léa est prévenue : « ${notifs[0]?.title} » — ${notifs[0]?.body} (le toucher ouvre sa réponse)`,
+);
 
 // ═══ LE PROFIL DE LÉA ═══
 const cle = origine?.profil;
@@ -209,6 +251,19 @@ r = await appel(HUGO, { action: "deposer", meme: "autourhugo01", lieu: ZONE, qui
 const zH = lieuDe(await voir(HUGO), ZONE);
 const zS = lieuDe(await voir(SAM), ZONE);
 ok(r.statut === 200 && r.lieu === ZONE && zH?.n === 3 && zH.nom === "Soirée chez Max", `Hugo répond dans la soirée de Léa : la zone garde le petit nom de son premier mème (${zH?.nom})`);
+await attendre(800);
+notifs = await reponsesRecues(telLea);
+ok(notifs.length === 2 && notifs[1].body.startsWith("✨ Soirée chez Max"), `et Léa est prévenue de nouveau : « ${notifs[1]?.body} »`);
+// elle coupe « Quand on répond à tes mèmes » : plus rien (le mème du jour, lui, reste allumé)
+const coupe = await figurine(LEA, { action: "notif-reponses", oui: false });
+r = await appel(HUGO, { action: "deposer", meme: "autourhugo01", lieu: ZONE, qui: "tous", reponseA: L[1] });
+await attendre(800);
+ok(coupe.reponses === false && (await figurine(LEA, { action: "notif-etat" })).reponses === false && r.statut === 200 && (await reponsesRecues(telLea)).length === 2, "elle coupe « Quand on répond à tes mèmes » : plus de notification de réponse");
+await figurine(LEA, { action: "notif-reponses", oui: true });
+// une réponse « pour lui seul » (qu'elle ne pourrait pas voir) : rien
+r = await appel(HUGO, { action: "deposer", meme: "autourhugo01", lieu: ZONE, qui: "moi", reponseA: L[1] });
+await attendre(800);
+ok(r.statut === 200 && (await reponsesRecues(telLea)).length === 2, "une réponse qu'elle ne pourrait pas voir (« Moi seul ») : pas de notification");
 ok(zS?.n === 2 && zS.nom === "Au bord de l’Adour", `Sam ne voit pas la soirée (pour ses proches) : ni elle, ni son petit nom (${zS?.nom})`);
 ok(!(await voir(HUGO, `?lieu=${ZONE}`)).lieu?.photo, "une zone « Ailleurs » : pas de photo (sa page garde son fond)");
 r = await appel(HUGO, { action: "deposer", meme: "autourhugo01", lieu: "z-9999_-9999" });
