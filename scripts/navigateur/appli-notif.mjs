@@ -201,8 +201,6 @@ await api(mort, { action: "notif", abonnement: telMort.abonnement });
 ok((await api(tom, { action: "notif", abonnement: { endpoint: "http://ailleurs.invalid/x", keys: telTom.abonnement.keys } })).statut === 400, "une adresse qui n'est pas un service de notifications : refusée");
 
 // ═══ L'ENVOI DE 11 H 30 ═══
-const sansForcer = await cron(false);
-ok(sansForcer.rien || sansForcer.personnes >= 0, `sans forcer, l'heure de Paris décide (${sansForcer.rien ?? "il est 11 h"})`);
 const avant = (await recus(telNina)).length;
 const bilan = await cron(true);
 const etatJour = await appli.evaluate(async () => (await (await fetch("/api/direct/ma-figurine?jour=1", { cache: "no-store" })).json()).jour);
@@ -257,6 +255,15 @@ await insta.waitForSelector("#o-personnage .ct-installee .ct-installer", { timeo
 await toucher(insta, "#o-personnage .ct-installee .ct-installer");
 await insta.waitForSelector(".ct-feuille", { timeout: 15000 });
 ok((await texte(insta, ".ct-feuille h2")) === "Ouvre ClikMe dans ton navigateur" && (await texte(insta, "#o-personnage .ct-notif")).includes("Ouvre d’abord ClikMe dans ton navigateur"), "dans Instagram : « Ouvre ClikMe dans ton navigateur »");
+
+// ═══ SANS FORCER : L'HEURE DE PARIS DÉCIDE, ET JAMAIS DEUX FOIS LE MÊME JOUR ═══
+// (en dernier : entre 11 h et midi à Paris, cet appel envoie vraiment — la CI passe parfois à cette heure-là)
+const sansForcer = await cron(false);
+const encore = await cron(false);
+ok(
+  sansForcer.rien ? Boolean(encore.rien) : sansForcer.personnes >= 1 && encore.deja === true,
+  sansForcer.rien ? `sans forcer, l'heure de Paris décide (${sansForcer.rien})` : `à 11 h, l'envoi part (${sansForcer.envoyes} notification), et pas une deuxième fois le même jour`,
+);
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.join(" | ").slice(0, 300)})` : ""}`);
 await b.close();
