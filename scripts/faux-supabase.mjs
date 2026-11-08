@@ -644,6 +644,13 @@ http
         return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ texte: m.texte, sentiment: m.sentiment, danse: m.danse }) } }] });
       }
       if (url.pathname === "/__ia") return repondre(res, 200, consignesIA);
+      // UN FAUX GÉOCODEUR (`GEOCODEUR_URL=…/geocodeur/api`, comme Photon) : « gare » trouve la gare de Dax (et, trop loin pour
+      // la ville, celle de Bordeaux) ; le reste, rien — rien ne part chez komoot
+      if (url.pathname === "/geocodeur/api") {
+        const q = (url.searchParams.get("q") || "").toLowerCase();
+        const point = (nom, rue, ville, lat, lng) => ({ type: "Feature", geometry: { type: "Point", coordinates: [lng, lat] }, properties: { name: nom, street: rue, city: ville, osm_value: "station" } });
+        return repondre(res, 200, { type: "FeatureCollection", features: /gare/.test(q) ? [point("Gare de Dax", "Avenue de la Gare", "Dax", 43.72085, -1.04861), point("Gare Saint-Jean", "Rue Charles Domercq", "Bordeaux", 44.82578, -0.55644)] : [] });
+      }
       // UN FAUX RESEND (`RESEND_BASE_URL=…/resend`) : un e-mail « envoyé » est gardé ici (le code de « Ma figurine »,
       // que l'essai lit dans `/__courriels`) — rien ne part
       if (url.pathname === "/resend/emails" && req.method === "POST") {

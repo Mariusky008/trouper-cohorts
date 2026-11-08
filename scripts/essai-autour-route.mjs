@@ -8,7 +8,8 @@
 // nom ; ni gros mot ni alcool ; pas un duo ; pas le mème d'un autre. Hugo répond au mème de Léa : les deux sont liés. Le
 // profil de Léa : ses mèmes « tout le monde », jamais son identifiant ni sa position. 👯 Sam l'ajoute à ses proches : il
 // ne voit pas pour autant sa soirée (c'est Léa qui choisit les siens) ; elle l'ajoute : il la voit. Un mème déplacé
-// quitte l'ancien lieu ; un mème retiré disparaît. Sans compte : on regarde, on ne dépose pas.
+// quitte l'ancien lieu ; un mème retiré disparaît. Sans compte : on regarde, on ne dépose pas. 🔎 Chercher « la gare »
+// (le faux géocodeur, jamais komoot) : celle de Dax, pas celle de Bordeaux (trop loin du centre de la carte).
 //
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI)
@@ -290,6 +291,15 @@ ok(r.statut === 200 && auxArenes.lieu?.type === "public" && !auxArenes.lieu.phot
 ok((await appel(LEA, { action: "deposer", meme: L[4], lieu: "p-nulle-part" })).statut === 400, "un lieu public qui n'existe pas : refusé");
 r = await admin({ action: "retirer", ville: "dax", id: "p-les-arenes" });
 ok(r.statut === 200 && !lieuDe(await voir(SAM), "p-les-arenes"), "retiré par l'admin : il quitte la carte");
+
+// ═══ 🔎 CHERCHER UN ENDROIT DE LA VILLE (le faux géocodeur : rien ne part chez komoot) ═══
+const pres = await voir(SAM, `?chercher=${encodeURIComponent("la gare")}&lat=43.7102&lng=-1.0538`);
+ok(pres.statut === 200 && pres.endroits?.length === 1 && pres.endroits[0].nom === "Gare de Dax" && pres.endroits[0].detail.includes("Avenue de la Gare") && pres.endroits[0].lat === 43.72085, `« la gare », près de Dax : la gare de Dax, pas celle de Bordeaux (${JSON.stringify(pres.endroits)})`);
+const partout = await voir(SAM, `?chercher=${encodeURIComponent("la gare")}`);
+ok(partout.endroits?.length === 2, "sans centre de carte : les deux gares");
+ok((await voir(SAM, "?chercher=a&lat=43.7&lng=-1.05")).endroits?.length === 0 && (await voir(SAM, "?chercher=boulangerie&lat=43.7&lng=-1.05")).endroits?.length === 0, "trop court, ou rien de tel : rien");
+const garee = await voir(null, `?chercher=gare&lat=43.7102&lng=-1.0538`);
+ok(garee.statut === 200 && garee.endroits?.length === 1, "sans compte aussi (on regarde la carte)");
 
 // ═══ SANS COMPTE ═══
 const anonyme = await voir(null, "?ville=dax");

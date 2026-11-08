@@ -40,6 +40,9 @@ export type MemeAutour = MemePublic & { lieu: string; qui: Qui; mot?: string; no
 // (`moi` : son propre profil ; `proche` : il l'a dans ses proches)
 export type ProfilAutour = { cle: string; prenom: string; image: string; memes: MemeAutour[]; lieux: { id: string; nom: string; n: number }[]; moi?: boolean; proche?: boolean };
 
+/** 🔎 Un endroit de la ville trouvé par la recherche (la gare, une rue) : `geocodeur-serveur.ts`. */
+export type Endroit = { nom: string; detail: string; lat: number; lng: number };
+
 export const lieuIdValide = (id: unknown): boolean => /^(c-[a-z0-9-]{2,120}|p-[a-z0-9-]{2,60}|z--?\d{1,7}_-?\d{1,7})$/.test(String(id ?? ""));
 export const estZone = (id: string) => id.startsWith("z-");
 

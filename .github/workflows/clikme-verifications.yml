@@ -55,7 +55,7 @@ jobs:
           src/lib/direct/etapes.ts src/lib/direct/etapes-serveur.ts src/lib/direct/ressort.ts src/lib/direct/journal-serveur.ts
           src/lib/direct/connaitre.ts src/lib/direct/connaitre-serveur.ts src/app/api/direct/connaitre
           src/lib/direct/figurine-du-mois.ts src/lib/direct/figurine-du-mois-serveur.ts src/lib/direct/musique-danse.ts src/lib/direct/meme.ts src/lib/direct/memes-prets.ts src/lib/direct/meme-surprise.ts src/lib/direct/meme-surprise-serveur.ts src/lib/direct/duel-regard.ts src/app/duel src/lib/direct/mes-reactions.ts src/lib/direct/mes-reactions-serveur.ts src/lib/direct/sticker.ts src/lib/direct/gag.ts src/lib/direct/theme-du-jour.ts src/lib/direct/reactions-memes.ts src/lib/direct/reactions-memes-serveur.ts
-          src/lib/direct/appli-collection.ts src/lib/direct/appli-collection-serveur.ts src/app/api/cron/meme-du-jour src/app/api/cron/meme-du-jour-ete src/lib/direct/autour.ts src/lib/direct/autour-serveur.ts src/app/api/direct/autour src/lib/direct/moderation-serveur.ts src/app/admin/humain/figurines-clients src/app/admin/humain/lieux-publics src/app/api/admin/direct/lieux-publics
+          src/lib/direct/appli-collection.ts src/lib/direct/appli-collection-serveur.ts src/app/api/cron/meme-du-jour src/app/api/cron/meme-du-jour-ete src/lib/direct/autour.ts src/lib/direct/autour-serveur.ts src/lib/direct/geocodeur-serveur.ts src/app/api/direct/autour src/lib/direct/moderation-serveur.ts src/app/admin/humain/figurines-clients src/app/admin/humain/lieux-publics src/app/api/admin/direct/lieux-publics
           src/lib/direct/memes-commerces.ts src/lib/direct/memes-commerces-serveur.ts src/app/meme src/app/api/direct/memes-commerces src/app/api/site-internet/pro/meme src/app/autour-de-moi/assistante/meme-comptoir.tsx
 
   essais-sql:
@@ -110,6 +110,8 @@ jobs:
       # 🔔 Le mème du jour à 11 h 30 : les notifications partent vers le faux service du faux Supabase (rien ne part chez
       # Apple ni Google). Les clés VAPID sont fabriquées à chaque passage, juste avant la construction (aucune n'est écrite ici).
       PUSH_ESSAI_ORIGINE: http://127.0.0.1:54321
+      # 🔎 « Autour » : chercher un endroit (la gare…). Le faux géocodeur est dans le faux Supabase ; rien ne part chez komoot.
+      GEOCODEUR_URL: http://127.0.0.1:54321/geocodeur/api
       NEXT_PUBLIC_APP_EMAIL: essais@clikme.invalid
       NEXT_TELEMETRY_DISABLED: "1"
       ESSAI_CAPTURES: ${{ github.workspace }}/captures

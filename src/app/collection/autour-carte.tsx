@@ -8,6 +8,9 @@
  * prune. Les lieux sont des marqueurs HTML : un commerce = le visage d'une figurine dans une goutte, avec le nombre de
  * mèmes ; une zone « Ailleurs » = un cercle en pointillés, « quelque part par ici », jamais une épingle.
  *
+ * 🔎 UN ENDROIT CHERCHÉ (8 novembre 2026 : « j'ai tapé “la gare”, la carte n'a pas bougé ») : `cible` — la carte y vole,
+ * une épingle et son nom. `ApercuOu` : la petite carte du dépôt, « ton mème apparaîtra ici ».
+ *
  * SI LA CARTE NE SE CHARGE PAS (pas de WebGL, pas de réseau, tuiles refusées), `onPanne` : l'écran montre la liste des
  * lieux à la place. MapLibre n'est chargé qu'à l'ouverture de l'onglet (`import()`), pas avec le reste de l'appli.
  */
@@ -23,6 +26,8 @@ type Props = {
   moi: { lat: number; lng: number } | null;
   /** Un nombre qui change : recentrer sur `moi`. */
   recentrer: number;
+  /** 🔎 Un endroit cherché (la gare, une rue) : la carte y vole, une épingle à son nom. `n` change : on y retourne. */
+  cible?: { lat: number; lng: number; nom: string; n: number } | null;
   onLieu: (id: string) => void;
   onPanne: () => void;
 };
@@ -73,11 +78,12 @@ function marqueur(l: Lieu, onLieu: (id: string) => void): HTMLElement {
   return b;
 }
 
-export function CarteAutour({ lieux, moi, recentrer, onLieu, onPanne }: Props) {
+export function CarteAutour({ lieux, moi, recentrer, cible = null, onLieu, onPanne }: Props) {
   const boite = useRef<HTMLDivElement>(null);
   const carte = useRef<import("maplibre-gl").Map | null>(null);
   const marques = useRef<import("maplibre-gl").Marker[]>([]);
   const marqueMoi = useRef<import("maplibre-gl").Marker | null>(null);
+  const marqueCible = useRef<import("maplibre-gl").Marker | null>(null);
   const rappels = useRef({ onLieu, onPanne });
   // (la carte arrive après coup, MapLibre chargé à la demande : les lieux et « Toi » attendent qu'elle soit là)
   const [prete, setPrete] = useState(false);
@@ -170,20 +176,111 @@ export function CarteAutour({ lieux, moi, recentrer, onLieu, onPanne }: Props) {
     };
   }, [moi, recentrer, prete]);
 
+  // 🔎 L'ENDROIT CHERCHÉ : la carte y vole, une épingle à son nom
+  useEffect(() => {
+    let fini = false;
+    (async () => {
+      const c = carte.current;
+      if (!c) return;
+      marqueCible.current?.remove();
+      marqueCible.current = null;
+      if (!cible) return;
+      const ml = await import("maplibre-gl");
+      if (fini) return;
+      const e = document.createElement("span");
+      e.className = "auc-cible";
+      // (l'animation, sur l'intérieur : MapLibre place l'épingle par son `transform`)
+      e.innerHTML = '<span class="auc-cible-in"><b></b><i></i></span>';
+      (e.querySelector("b") as HTMLElement).textContent = cible.nom;
+      marqueCible.current = new ml.Marker({ element: e, anchor: "bottom" }).setLngLat([cible.lng, cible.lat]).addTo(c);
+      // (au milieu de ce qu'on voit de la carte : entre la recherche, en haut, et la feuille des mèmes, en bas)
+      const h = c.getContainer().clientHeight || 700;
+      c.flyTo({ center: [cible.lng, cible.lat], zoom: 16, offset: [0, (Math.min(230, h * 0.3) - Math.min(420, h * 0.48)) / 2] });
+    })();
+    return () => {
+      fini = true;
+    };
+  }, [cible, prete]);
+
   return <div ref={boite} className="auc-carte" aria-label="La carte des mèmes" />;
+}
+
+/**
+ * 📍 « TON MÈME APPARAÎTRA ICI » — la petite carte du dépôt (8 novembre 2026 : « ça n'indique aucun lieu, je pense ») :
+ * le lieu choisi (une épingle), ou la zone « quelque part par ici » (un cercle) pour « Ailleurs » et un endroit cherché.
+ * Elle ne bouge pas sous le doigt. Sans carte (pas de WebGL, pas de réseau) : rien — le texte dit déjà où.
+ */
+export function ApercuOu({ point, zone }: { point: { lat: number; lng: number }; zone: boolean }) {
+  const boite = useRef<HTMLDivElement>(null);
+  const carte = useRef<import("maplibre-gl").Map | null>(null);
+  const marque = useRef<import("maplibre-gl").Marker | null>(null);
+  const [prete, setPrete] = useState(false);
+  const [panne, setPanne] = useState(false);
+  const depart = useRef(point);
+  useEffect(() => {
+    let fini = false;
+    (async () => {
+      try {
+        const ml = await import("maplibre-gl");
+        if (fini || !boite.current) return;
+        ml.setWorkerUrl(new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).href);
+        const p = depart.current;
+        const c = new ml.Map({ container: boite.current, style: STYLE_CARTE, center: [p.lng, p.lat], zoom: 15, interactive: false, attributionControl: false });
+        carte.current = c;
+        c.on("load", () => repeindre(c as unknown as Parameters<typeof repeindre>[0]));
+        c.on("error", () => !c.isStyleLoaded() && setPanne(true));
+        setPrete(true);
+      } catch {
+        setPanne(true);
+      }
+    })();
+    return () => {
+      fini = true;
+      carte.current?.remove();
+      carte.current = null;
+    };
+  }, []);
+  useEffect(() => {
+    let fini = false;
+    (async () => {
+      const c = carte.current;
+      if (!c) return;
+      const ml = await import("maplibre-gl");
+      if (fini) return;
+      marque.current?.remove();
+      const e = document.createElement("span");
+      e.className = zone ? "auc-apercu-zone" : "auc-apercu-pin";
+      e.textContent = zone ? "" : "📍";
+      marque.current = new ml.Marker({ element: e, anchor: zone ? "center" : "bottom" }).setLngLat([point.lng, point.lat]).addTo(c);
+      c.jumpTo({ center: [point.lng, point.lat], zoom: zone ? 14.6 : 15.5 });
+    })();
+    return () => {
+      fini = true;
+    };
+  }, [point.lat, point.lng, zone, prete]);
+  if (panne) return null;
+  return <div ref={boite} className="auc-apercu" aria-hidden="true" />;
 }
 
 export const STYLES_CARTE_AUTOUR = `
 .auc-carte{position:absolute;inset:0;background:#0E0A10}
 .auc-carte .maplibregl-ctrl-attrib{background:rgba(14,10,16,.7)!important;color:#9C8795}
 .auc-carte .maplibregl-ctrl-attrib a{color:#CBB9C3}
-.auc-goutte{position:relative;width:56px;height:56px;padding:0;border:0;background:none;cursor:pointer}
+.auc-goutte{position:relative;z-index:2;width:56px;height:56px;padding:0;border:0;background:none;cursor:pointer}
 .auc-goutte .auc-forme{position:absolute;inset:0;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#FFFFFF;box-shadow:0 10px 20px -8px rgba(0,0,0,.9)}
 .auc-goutte img,.auc-goutte .auc-emoji{position:absolute;left:4px;top:4px;width:48px;height:48px;border-radius:50%;object-fit:cover;object-position:50% 18%;background:#FF2E9A;display:grid;place-items:center;font-size:24px}
 .auc-goutte i{position:absolute;right:-8px;top:-6px;min-width:22px;height:22px;padding:0 6px;box-sizing:border-box;border-radius:999px;background:#FF2E9A;color:#fff;font:800 12px/22px Poppins,system-ui,sans-serif;font-style:normal;text-align:center;box-shadow:0 0 0 2px #0E0A10}
-.auc-goutte.vide{opacity:.55;transform:scale(.8)}
+.auc-goutte.vide{z-index:1;opacity:.55;transform:scale(.8)}
 .auc-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;width:96px;height:96px;border-radius:50%;border:1.5px dashed rgba(255,225,77,.6);background:rgba(255,225,77,.08);color:#FFE14D;cursor:pointer;font:inherit}
 .auc-zone b{font:800 15px Poppins,system-ui,sans-serif}
 .auc-zone small{max-width:80px;font-size:10.5px;line-height:1.15;color:#E9DCA0;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .auc-moi{display:block;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 0 0 5px rgba(255,255,255,.18),0 0 0 10px rgba(255,255,255,.07)}
+.auc-cible{z-index:3;pointer-events:none}
+.auc-cible-in{display:flex;flex-direction:column;align-items:center;animation:auc-tombe .45s cubic-bezier(.2,1.5,.4,1)}
+.auc-cible b{max-width:180px;padding:6px 12px;border-radius:999px;background:#fff;color:#16101A;font:800 13px Poppins,system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 10px 24px -8px rgba(0,0,0,.9)}
+.auc-cible i{width:0;height:0;border:8px solid transparent;border-top:12px solid #fff;margin-top:-1px}
+.auc-apercu{position:relative;width:100%;height:150px;border-radius:18px;overflow:hidden;background:#16111A;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.auc-apercu-pin{font-size:34px;line-height:1;filter:drop-shadow(0 6px 8px rgba(0,0,0,.7))}
+.auc-apercu-zone{display:block;width:110px;height:110px;border-radius:50%;border:2px dashed rgba(255,225,77,.8);background:rgba(255,225,77,.14)}
+@keyframes auc-tombe{from{transform:translateY(-24px);opacity:0}}
 `;

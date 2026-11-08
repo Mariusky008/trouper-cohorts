@@ -8,10 +8,11 @@
  *
  * FICHIER DU NAVIGATEUR.
  */
-import type { Qui } from "@/lib/direct/autour";
+import type { Endroit, Qui } from "@/lib/direct/autour";
 
-// (`lieuDonne` : le lieu d'où il est venu, qu'on ne change pas ; `lieu` : celui qu'il avait choisi dans la liste)
-export type DepotEnCours = { lieuDonne?: string; lieu?: string; reponseA?: string; ailleurs?: boolean; nomLieu?: string; mot?: string; qui?: Qui; meme?: string };
+// (`lieuDonne` : le lieu d'où il est venu, qu'on ne change pas ; `lieu` : celui qu'il avait choisi dans la liste ;
+// `endroit` : un endroit de la ville qu'il avait cherché — la gare, une rue —, où son mème ira « quelque part par ici »)
+export type DepotEnCours = { lieuDonne?: string; lieu?: string; endroit?: Endroit; reponseA?: string; ailleurs?: boolean; nomLieu?: string; mot?: string; qui?: Qui; meme?: string };
 
 export const EVT_VERS_AUTOUR = "clikme-vers-autour";
 const CLE = "clikme-depot-autour-v1";

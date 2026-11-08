@@ -1418,6 +1418,37 @@ la vidéo effacée, le lien en 404 — et Léa ne peut pas effacer celui d'un au
 `meme-du-jour.mjs` (« Créer » ne répète plus le mème du jour ; `#jour` ouvre « Découvrir »), `appli-notif.mjs`,
 `autour.mjs`, `personnage.mjs`.
 
+### 9.0 duodecitricies 📍 Le retour du 8 novembre, lot B : « Autour »
+
+Ses mots : « j'ai tapé “la gare”, la carte n'a pas bougé » ; « quand je clique sur un de mes mèmes, il faut que ce
+soit beaucoup plus clair qu'on a choisi ce mème » ; « je mets “chez moi” et ça marche, mais ça n'indique aucun lieu » ;
+et la page du lieu, « vraiment très mauvais UX : il faut qu'elle soit complètement wow et addictive, qu'on veuille y
+revenir et découvrir plus de mèmes du lieu ».
+
+- **🔎 Chercher n'importe quel endroit** : la recherche trouve toujours les lieux de ClikMe (« Sur ClikMe »), et
+  maintenant les endroits de la ville (« Sur la carte » : la gare, une rue, un parc). Un toucher : la carte y vole, une
+  épingle à son nom, et en bas « 📍 Gare de Dax · ＋ Déposer ici ». Le géocodeur : Photon (OpenStreetMap, komoot),
+  gratuit et sans clé, appelé par le serveur (`lib/direct/geocodeur-serveur.ts`, `GET /api/direct/autour?chercher=`),
+  penché vers le centre de la carte et gardé à 25 km ; `GEOCODEUR_URL` le remplace (les essais : un faux, dans le faux
+  Supabase — rien ne part chez komoot). Y déposer en fait une **zone** « quelque part par ici » (environ 500 m), au nom
+  de l'endroit (jamais un numéro de rue) : jamais l'endroit exact.
+- **📍 Le lieu refait** : en haut, sa photo, son nom, ses chiffres (les mèmes, les ❤️, la distance) et les visages de
+  ceux qui y ont déposé ; **« à la une »** : son mème le plus aimé (sinon le dernier), qui joue tout de suite, en grand ;
+  « ▶ Découvrir les N mèmes » ; la conversation du moment ; **le mur** de tous ses mèmes (un toucher : le swipe part de
+  celui-là ; « NOUVEAU » sur ceux du jour) ; **« 📍 Juste à côté »** : les lieux voisins qui ont des mèmes, du plus près
+  au plus loin. À la fin du swipe, « Tu as tout vu ici 🎉 » propose **« 📍 Continuer »** vers le plus proche : la boucle.
+  Sans mème : « ✨ Personne n'a encore déposé de mème ici — le premier, ce sera le tien ? ».
+- **＋ Le dépôt, clair** : « Où ? » se cherche aussi (les lieux de ClikMe et les endroits de la ville). Dès qu'il a
+  choisi — un lieu, un endroit, ou « Ailleurs, là où je suis » —, une petite carte montre **« 📍 Ton mème apparaîtra
+  ici »** (une épingle pour un lieu, le cercle « quelque part par ici » pour une zone), et le bouton dit « Publier · Gare
+  de Dax ». **Le mème choisi se voit en grand**, qui joue, « ✓ Ton mème » ; dans la rangée, il est coché et les autres
+  pâlissent. « Publier » sans lieu : « Choisis d'abord où le déposer… », et l'écran remonte à « Où ? ».
+- Sur la carte, un lieu qui a des mèmes n'est plus jamais caché sous un lieu vide.
+
+Les essais : `essai-autour-route.mjs` (« la gare » : celle de Dax, pas celle de Bordeaux, trop loin ; sans centre de
+carte : les deux ; trop court : rien) et `autour.mjs` (le lieu refait, « à la une » qui passe au plus aimé, le mur, « Juste
+à côté », « Continuer », le dépôt clair, « la gare » de bout en bout : la carte, l'épingle, le dépôt, la zone).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
