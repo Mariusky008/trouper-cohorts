@@ -90,7 +90,7 @@ export function FeuilleInstaller() {
                 Choisis <b>« Ouvrir dans le navigateur »</b> (Safari ou Chrome).
               </li>
               <li>
-                Là, touche <b>📲 Installer</b>, dans « Moi ».
+                Là, touche <b>📲 Installer</b>, dans « Moi » (ton prénom, en haut).
               </li>
             </ol>
             <button type="button" className="ct-secondaire" onClick={copier}>
@@ -115,7 +115,7 @@ export function FeuilleInstaller() {
         ) : (
           <>
             <h2>📲 ClikMe dans ta poche</h2>
-            <p>Sur ordinateur, ClikMe s’ouvre dans ton navigateur : rien à installer. Pour l’avoir sur ton téléphone, ouvre clikme.fr/collection dessus, puis « Moi », « Installer ».</p>
+            <p>Sur ordinateur, ClikMe s’ouvre dans ton navigateur : rien à installer. Pour l’avoir sur ton téléphone, ouvre clikme.fr/collection dessus, touche ton prénom en haut (« Moi »), puis « Installer ».</p>
           </>
         )}
         <button type="button" className="ct-principal" onClick={fermer}>

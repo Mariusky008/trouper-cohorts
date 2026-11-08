@@ -75,7 +75,8 @@ const hugo = await tel(HUGO);
 await hugo.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
 await hugo.waitForSelector("#o-figurine .pb-voile .mqd", { timeout: 60000 });
 const menu = await texte(hugo, ".mc-nav");
-ok((await hugo.locator(".mc-nav button").count()) === 5 && /Découvrir.*Autour.*Créer.*Mes mèmes.*Moi/.test(menu) && !/Ce mois-ci|Album|Rencontres/.test(menu), `le menu en bas : Découvrir · Autour · Créer · Mes mèmes · Moi (${menu})`);
+ok((await hugo.locator(".mc-nav button").count()) === 5 && /Découvrir.*Autour.*Créer.*Mes mèmes.*Proches/.test(menu) && !/Ce mois-ci|Album|Rencontres|Moi/.test(menu), `le menu en bas : Découvrir · Autour · Créer · Mes mèmes · Proches (${menu})`);
+ok((await hugo.locator(".mc-barre button.mc-moi").count()) === 1, "« Moi » est en haut, sous son prénom");
 ok((await hugo.locator("#o-figurine .mqd .mq").count()) === 1 && /Pablito/i.test(await texte(hugo, "#o-figurine .mqd-bulle")), "Pablito, la figurine du patron de ClikMe, l'accueille en fenêtre");
 ok((await texte(hugo, "#o-figurine .pb-voile")).includes("Je crée ma figurine"), "dans la fenêtre : « Je crée ma figurine »");
 await hugo.screenshot({ path: `${D}/ma-figurine-0-pablito.png` });
@@ -145,8 +146,8 @@ const apercu = await texte(hugo, "#o-figurine .fm-apercu");
 ok(/Ta figurine de \p{L}+/u.test(apercu) && /[01]\/10 jours sur ClikMe/.test(apercu) && (await hugo.locator("#o-figurine .fm-apercu .fm-jours i").count()) === 10, `où en est sa figurine du mois (${apercu})`);
 ok((await debordement(hugo)) <= 0, "sa figurine et ses options ne débordent pas");
 await hugo.screenshot({ path: `${D}/ma-figurine-0b-options.png`, fullPage: true });
-// un toucher ailleurs : le tiroir se referme
-await hugo.locator(".mc-barre .mc-moi").click();
+// un toucher ailleurs (un coin vide de la barre du haut ; son prénom, lui, ouvre « Moi ») : le tiroir se referme
+await hugo.locator(".mc-barre").click({ position: { x: 4, y: 4 } });
 ok((await hugo.locator(".tf-moi .tf-tiroir").count()) === 0, "un toucher ailleurs : le tiroir se referme");
 ok((await hugo.locator("#o-figurine .og-tete").count()) === 0 && (await hugo.locator(".tf-onglets [role=tab]").allInnerTexts()).join("|") === "💬 Fais-la parler|⚡ Réactions & gags" && (await hugo.locator(".tf-onglets [aria-selected=true]").innerText()).includes("Fais-la parler"), "deux onglets : « 💬 Fais-la parler » (ouvert) et « ⚡ Réactions & gags »");
 ok((await hugo.locator("#tf-reactions[hidden] #reactions").count()) === 1 && (await hugo.locator("#tf-parler:not([hidden]) .tf-texte textarea").count()) === 1, "ses réactions attendent dans leur onglet ; « Fais-la parler » : son texte");
@@ -200,7 +201,7 @@ ok(
   gagner.includes("TA FIGURINE DU MOIS") && gagner.includes("9/10 jours sur ClikMe ce mois-ci") && gagner.includes("Encore 1 jour :") && (await hugo.locator("#o-personnage .fm .fm-jours i.vecu").count()) === 9,
   `#mois mène à « Moi », où elle se mérite : neuf jours sur dix (${gagner.slice(0, 160)})`,
 );
-ok((await hugo.locator("#o-personnage").isVisible()) && (await texte(hugo, ".mc-nav button.pris")).includes("Moi") && (await hugo.locator("#o-rencontre").count()) === 0, "elle est dans « Moi » (« Rencontres » est effacé)");
+ok((await hugo.locator("#o-personnage").isVisible()) && (await hugo.locator(".mc-barre button.mc-moi.pris").count()) === 1 && (await hugo.locator(".mc-nav button.pris").count()) === 0 && (await hugo.locator("#o-rencontre").count()) === 0, "elle est dans « Moi », sous son prénom (« Rencontres » est effacé)");
 ok((await texte(hugo, "#o-personnage .fm a.fm-lien")).includes("Le mème du jour") && (await hugo.locator('#o-personnage .fm a.fm-lien[href="#jour"]').count()) === 1, "« 🔥 Le mème du jour › » : la raison de revenir aujourd'hui");
 await fermerPablito(hugo, "#o-personnage");
 await hugo.screenshot({ path: `${D}/ma-figurine-0c-mois-a-gagner.png` });

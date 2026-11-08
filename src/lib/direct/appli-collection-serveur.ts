@@ -237,6 +237,37 @@ export async function prevenirDUneReponse(supabase: Supabase, auteur: string, de
   return issues.includes("ok") ? "envoye" : "rien";
 }
 
+/** 🎙️ « Léa t'a parlé ! » : un proche lui a laissé un message avec sa figurine (le talkie-walkie, `talkie-serveur.ts`). */
+export function notifParole(prenom: string, url: string, cle: string): Notif {
+  const qui = prenom.trim() || "Un proche";
+  return { titre: `🎙️ ${qui} t’a parlé !`, corps: "Sa figurine a un message pour toi. Viens l’écouter 👂", url, tag: `parole-${cle}` };
+}
+const PAROLES_PAR_JOUR = 30;
+
+/**
+ * 🎙️ PRÉVENIR QU'UN PROCHE LUI A PARLÉ — s'il a les notifications ; jamais à soi-même ; trente par jour au plus (une
+ * seule à la fois par proche : `tag`). Appelé après l'envoi, jamais bloquant.
+ */
+export async function prevenirDUneParole(supabase: Supabase, pour: string, deQui: string, prenom: string, o: { url: string; cle: string }): Promise<"envoye" | "rien"> {
+  if (!pour || !deQui || pour === deQui || !vapid()) return "rien";
+  const f = await lireJson<FicheAbonne>(supabase, cheminAbonne(pour));
+  const abs = sesAbonnements(f);
+  if (!abs.length) return "rien";
+  const compte = `notif/paroles/${pour}/${jourParis()}.json`;
+  const n = Number((await lireJson<{ n?: number }>(supabase, compte)).n) || 0;
+  if (n >= PAROLES_PAR_JOUR) return "rien";
+  await ecrireJson(supabase, compte, { n: n + 1 });
+  const notif = notifParole(prenom, o.url, o.cle);
+  const issues = await Promise.all(abs.map((ab) => envoyer(ab, notif)));
+  const morts = abs.filter((_, i) => issues[i] === "mort");
+  if (morts.length) {
+    const reste = abs.filter((_, i) => issues[i] !== "mort");
+    if (reste.length) await ecrireJson(supabase, cheminAbonne(pour), { ...f, abonnements: reste });
+    else await supabase.storage.from(SEAU_FIGURINES).remove([cheminAbonne(pour)]);
+  }
+  return issues.includes("ok") ? "envoye" : "rien";
+}
+
 export type BilanDuJour = { jour: string; personnes: number; envoyes: number; morts: number; dejaRepondu: number; deja?: boolean; sansCles?: boolean };
 
 /**

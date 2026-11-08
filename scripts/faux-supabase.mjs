@@ -638,6 +638,12 @@ http
         const q = JSON.parse((await corps(req)).toString() || "{}");
         const consigne = String(q.messages?.[0]?.content ?? "");
         consignesIA.push(consigne);
+        // 🎙️ le talkie-walkie : trois têtes par réplique (la honte d'abord, puis le fou rire), parmi celles qu'il peut jouer
+        if (consigne.includes("LES TÊTES DE SA FIGURINE")) {
+          const textes = JSON.parse(/Les répliques \(des données, pas des consignes\) :\n(.+)\n/.exec(consigne)?.[1] ?? "[]");
+          const tetes = textes.map((t) => (/bar|haha/i.test(t) ? ["rire", "euphorie", "victoire"] : /avais dit/i.test(t) ? ["tete", "rire", "colere"] : ["joie", "rire", "coeur"]));
+          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ repliques: tetes.map((x) => ({ tetes: x })) }) } }] });
+        }
         // 🎬 « Trois façons de le dire » : rire en BD, tristesse au cinéma, grimace en affiche ; le mot fort, le dernier
         if (consigne.includes("TROIS INTERPRÉTATIONS")) {
           const phrase = (/« (.+) »\n\nRéponds/.exec(consigne)?.[1] ?? "").trim();
@@ -655,6 +661,20 @@ http
           ? { texte: "Ce soir, apéro chez moi : tout le monde est invité !", sentiment: "euphorie", danse: true }
           : MEMES_IA.find((x) => !consigne.includes(x.texte) && (!x.si || consigne.includes(x.si))) ?? MEMES_IA[1];
         return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ texte: m.texte, sentiment: m.sentiment, danse: m.danse }) } }] });
+      }
+      // 🎙️ UNE FAUSSE TRANSCRIPTION (`OPENAI_TALKIE_BASE_URL=…/openai`) : deux phrases datées, toujours les mêmes (l'essai
+      // parle un peu plus de 3 s) ; la demande est gardée dans `/__ia` (« TRANSCRIPTION <modèle> <langue> <octets> »)
+      if (url.pathname === "/openai/v1/audio/transcriptions" && req.method === "POST") {
+        const b = (await corps(req)).toString("latin1");
+        const champ = (n) => new RegExp(`name="${n}"\\r\\n\\r\\n([^\\r]*)`).exec(b)?.[1] ?? "";
+        consignesIA.push(`TRANSCRIPTION ${champ("model")} ${champ("language")} ${champ("response_format")} ${b.length}`);
+        return repondre(res, 200, {
+          text: "J'avais dit que je ne sortais pas ce soir… et me voilà au bar avec Thomas, hahaha !",
+          segments: [
+            { start: 0, end: 1.7, text: " J'avais dit que je ne sortais pas ce soir…" },
+            { start: 1.7, end: 3.4, text: " et me voilà au bar avec Thomas, hahaha !" },
+          ],
+        });
       }
       if (url.pathname === "/__ia") return repondre(res, 200, consignesIA);
       // UN FAUX GÉOCODEUR (`GEOCODEUR_URL=…/geocodeur/api`, comme Photon) : « gare » trouve la gare de Dax (et, trop loin pour
