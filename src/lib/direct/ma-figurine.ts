@@ -58,7 +58,7 @@ export const COMMERCES_MAX_MESSAGE = 4;
  * sautille de joie, tremble de colère, s'affaisse de tristesse, bondit d'euphorie). Ses images ne changent pas : c'est
  * le mouvement, la couleur et ce qui flotte autour qui le disent (`figurine-qui-parle.tsx`).
  */
-export const SENTIMENTS = [
+export const VISAGES_FIGURINE = [
   { cle: "joie", emoji: "😄", nom: "La joie", court: "Joie", dit: "pleine de joie" },
   { cle: "colere", emoji: "😠", nom: "La colère", court: "Colère", dit: "en colère" },
   { cle: "tristesse", emoji: "😢", nom: "La tristesse", court: "Tristesse", dit: "un peu triste" },
@@ -69,6 +69,30 @@ export const SENTIMENTS = [
   // ou « amoureuse » : on ne devine pas le genre)
   { cle: "amour", emoji: "😍", nom: "L’amour", court: "Amour", dit: "les yeux en cœur" },
 ] as const;
+/** Ses sept visages (les expressions seules) : ceux du guide Pablito, et de « Surprends-moi ». */
+export type VisageFigurine = (typeof VISAGES_FIGURINE)[number]["cle"];
+
+/**
+ * 🙆 SES ATTITUDES (8 novembre 2026, l'étape 2 des « Trois façons de le dire » — l'ami du propriétaire : « Humour : elle
+ * rigole en douce ; Dramatique : elle se tient la tête ») : tout son corps parle — ses bras, ses mains, et le visage qui
+ * va avec. Comme un visage, deux images de SA figurine (bouche fermée, bouche ouverte), faites à la demande, une fois ;
+ * quand sa main cache sa bouche (`SANS_BOUCHE`), une seule image suffit. Rien sur le corps lui-même, rien de genré.
+ */
+export const ATTITUDES = [
+  { cle: "tete", emoji: "🤦", nom: "La tête dans les mains", court: "Oh non", dit: "la tête dans les mains" },
+  { cle: "endouce", emoji: "🤭", nom: "Le rire en douce", court: "En douce", dit: "qui rit en douce, la main devant la bouche" },
+  { cle: "bras", emoji: "🙅", nom: "Les bras croisés", court: "Bras croisés", dit: "les bras croisés, pas convaincue du tout" },
+  { cle: "victoire", emoji: "🙌", nom: "La victoire", court: "Victoire", dit: "les poings levés, victorieuse" },
+  { cle: "chut", emoji: "🤫", nom: "Le chut", court: "Chut", dit: "un doigt sur la bouche, l’air entendu" },
+  { cle: "coeur", emoji: "🫶", nom: "Le cœur avec les mains", court: "Cœur", dit: "qui fait un cœur avec ses mains" },
+] as const;
+export type Attitude = (typeof ATTITUDES)[number]["cle"];
+/** Ses attitudes où sa main cache sa bouche : la même image, bouche fermée ou ouverte. */
+export const SANS_BOUCHE: readonly Sentiment[] = ["endouce", "chut"];
+export const estAttitude = (x: unknown): x is Attitude => ATTITUDES.some((a) => a.cle === x);
+
+/** Tout ce que sa figurine peut jouer : ses visages, puis ses attitudes. */
+export const SENTIMENTS = [...VISAGES_FIGURINE, ...ATTITUDES] as const;
 /** Ceux que la table des messages connaît (sa colonne `sentiment`) : les autres sont rangés à côté du message, dans le seau. */
 export const SENTIMENTS_EN_BASE: readonly string[] = ["joie", "colere", "tristesse", "euphorie"];
 

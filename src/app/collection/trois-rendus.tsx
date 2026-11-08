@@ -7,7 +7,7 @@
  *   · « Ce que tu veux exprimer » : six intentions, FACULTATIVES — sans phrase, un toucher en propose une (un autre
  *     toucher : la suivante) ; avec une phrase, elles orientent les visages ;
  *   · « ✨ Trois façons de le dire » : trois vignettes, dessinées par le même code que la vidéo (`apercuRendu`) — 😂 la BD,
- *     🎭 le cinéma, 🌀 l'affiche —, chacune avec SON visage de la figurine. Les règles tout de suite ; le petit modèle de
+ *     🎭 le cinéma, 🌀 l'affiche —, chacune avec SON visage de la figurine (ou son attitude : tout son corps parle). Les règles tout de suite ; le petit modèle de
  *     texte les remplace quand il répond (une pause dans la frappe) ; « 🎲 Trois autres » fait tourner les visages et les
  *     couleurs. Un toucher : son mème prendra ce graphisme, et sa figurine ce visage (un visage pas encore fait se fait
  *     alors, comme dans « Visage ») ; un autre toucher sur la même : sans graphisme, comme avant. Celle qu'il a choisie
@@ -17,7 +17,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { apercuRendu } from "@/lib/direct/meme";
-import { sentimentDe, type Expressions, type Sentiment } from "@/lib/direct/ma-figurine";
+import { estAttitude, sentimentDe, type Expressions, type Sentiment } from "@/lib/direct/ma-figurine";
 import { INTENTIONS, STYLES_RENDU, motPour, rendusLocaux, type CleIntention, type Rendu } from "@/lib/direct/rendus";
 
 const memeRendu = (a: Rendu | null, b: Rendu | null) => Boolean(a && b && a.style === b.style && a.visage === b.visage && a.teinte === b.teinte && a.cadrage === b.cadrage);
@@ -128,7 +128,7 @@ export function TroisRendus({
                 >
                   <span className="tr-cadre">
                     <Vignette r={r} texte={t} image={imageDe(r.visage)} emoji={v?.emoji ?? ""} />
-                    {aFaire && <i className="tr-nouvelle">✨ nouvelle tête</i>}
+                    {aFaire && <i className="tr-nouvelle">{estAttitude(r.visage) ? "✨ nouvelle attitude" : "✨ nouvelle tête"}</i>}
                     {pris && (
                       <i className="tr-coche" aria-hidden="true">
                         ✓
