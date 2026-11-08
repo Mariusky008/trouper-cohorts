@@ -1556,6 +1556,60 @@ la vidéo du mème, et sans vidéo, sa figurine qui se tient la tête). La fabri
 pas branché dans les essais) a été vérifiée à part, avec un faux moteur : « Oh non », deux appels (la pose, puis la
 bouche) ; « En douce », un seul.
 
+### 9.0 sedecitricies 🎙️ Le talkie-walkie des figurines : l'onglet « Proches » (8 novembre, étapes 1 à 4)
+
+Le propriétaire et son ami, après en avoir parlé (une maquette, puis deux retours) : « laisser un message à quelqu'un,
+et la mascotte agit comme traducteur visuel de ce que j'aurais dit oralement ». Pas d'appels : des messages. « Ne
+transformez pas ClikMe en une application de messagerie classique » : c'est une petite pièce de théâtre entre deux
+figurines. La règle est dans `lib/direct/talkie.ts` ; le serveur, `talkie-serveur.ts` ; la route, `/api/direct/proches` ;
+l'écran, `app/collection/proches.tsx`.
+
+- **« Proches » remplace « Moi » dans le menu** ; « Moi » (sa carte, sa figurine du mois, son téléphone, ses réglages)
+  est sous son prénom, en haut (`#moi` et `#personnage` y mènent toujours). La pastille de « Proches » : ses messages
+  non lus.
+- **Ses proches, vivants** : leurs figurines qui respirent, « 2 messages », « Là maintenant », la dernière chose dite,
+  « 🎙️ Lui parler ». Ceux qui l'ont ajouté sans qu'il les ait ajoutés : « L'ajouter aussi ». Ceux qu'il a ajoutés et qui
+  ne l'ont pas encore fait : « En attente ». **On ne se parle qu'entre proches dans les deux sens** (`ajoute-par.json`
+  dit qui l'a ajouté). Ses proches arrivent par le duo, par le profil d'« Autour », et par **son lien**
+  (`/collection?proche=<clé>` : « Léa veut être ton proche » → « Ajouter Léa »). Un proche se désigne toujours par sa
+  clé de profil, jamais par son identifiant.
+- **Lui parler** : il touche le micro et parle naturellement, 20 secondes au plus ; sa figurine l'écoute (sa bouche suit
+  le volume de sa voix). Puis **« Ta figurine a compris ça »** : sa voix part à la transcription (`whisper-1`, en
+  français, ses phrases datées — `OPENAI_TALKIE_API_KEY` / `OPENAI_TALKIE_BASE_URL` / `OPENAI_TALKIE_MODEL`, sinon la clé
+  du moteur d'image), découpée en deux à quatre répliques ; le petit modèle de texte de « Surprends-moi » propose **trois
+  têtes** pour chacune (« je suis mort » : le fou rire, l'épuisement, le choc), parmi celles qu'il peut jouer ; sans lui,
+  des règles (ses mots). La première est prise d'office, un toucher la change, « Autre » montre toutes les siennes ;
+  « ▶ Voir ce que ça donne » ; **rien ne part sans « Envoyer à Léa »**. Rien n'est gardé avant. Sans transcription :
+  une seule réplique, sans texte, il choisit la tête. Ses mots passent le filtre (`motInterdit`).
+- **Ses premières têtes** (`TETES_DE_DEPART` : la joie, le fou rire, la colère, la tête dans les mains) se font dès son
+  premier message, une fois : les propositions ne prennent que celles-ci et celles qu'il a déjà — jamais une tête qui
+  ferait fabriquer des images à chaque message. Tant qu'une tête n'est pas faite, elle la joue en bougeant (son émoji).
+- **Chez l'autre** : « 🎙️ Zoé t'a parlé ! » (une notification, 30 par jour au plus) ; le lien ouvre leur conversation. Sa
+  figurine le dit : sa voix, sa bouche, **la tête de chaque réplique au bon moment** (`onTemps` de `FigurineQuiParle`),
+  les sous-titres. **La scène** : leurs deux figurines face à face, celle qui parle s'avance ; ▶ joue ses nouveaux
+  messages à la suite ; « Tout rejouer » ; « Juste le son » ; la liste des messages (un toucher en rejoue un) ;
+  « Lui répondre ». « ⋯ » : signaler son dernier message (il ne le voit plus ; `moderation/paroles/`), ou le retirer de
+  ses proches.
+- **« Là maintenant »** : ClikMe ouvert il y a moins de 2 min 30 (la page le dit toutes les minutes tant qu'elle est
+  visible). C'est le seul statut — jamais « vu il y a 20 min ». Il le coupe dans « Moi » (« Montrer à mes proches quand
+  je suis là »).
+- **Le seau** : un fichier par message (`fils/<a>_<b>/m/<instant>-<qui>-<id>.json`, pour qu'aucun ne se perde quand deux
+  partent en même temps), sa voix à côté (`fils/<a>_<b>/s/`). 100 messages et 40 transcriptions par jour et par personne.
+- **La mesure, chaque semaine** (`/admin/humain/memes`, sans migration : `clik_meme_evenement`, `t-<conversation>-<qui>`,
+  écarté des chiffres des mèmes) : messages envoyés, personnes qui ont parlé (et plusieurs fois dans la semaine),
+  messages écoutés, conversations (et d'au moins trois échanges), taux de réponse.
+
+**Pas encore** : l'étape 5, WhatsApp (sa figurine part à quelqu'un qui n'a pas ClikMe ; pour répondre, une figurine
+provisoire en un selfie) ; le « mode express » (toucher une tête pendant qu'il parle), en option ; « Écrire » dans la
+conversation (une voix le dit) ; les appels — pas avant longtemps.
+
+L'essai : `talkie.mjs` (Zoé et Léa proches, Nico d'un seul côté ; la route refuse ceux qui ne se sont pas ajoutés tous
+les deux, un son vide, une tête inconnue ; l'onglet, la pastille, les cartes ; la conversation et le message de Léa,
+écouté avec sa joie ; un faux micro, la fausse transcription, trois têtes par réplique, la seconde changée ; l'aperçu
+joue 🤦 puis 🤩 ; envoyé, rangé, Léa prévenue ; chez Léa, la figurine de Zoé fait chaque tête au bon moment ; « Juste
+le son » ; le signalement ; « L'ajouter aussi » ; « Là maintenant » coupé ; le lien de Léa ; la mesure, sans un
+identifiant).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

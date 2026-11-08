@@ -131,7 +131,7 @@ export const cheminDuo = (h: string) => `${h}/duo.json`;
 const DOSSIER_DEMO = "demo-proprio/v1";
 
 /** Ses expressions faites, en adresses signées. */
-async function expressionsSignees(supabase: Supabase, dossier: string, secondes = 3600): Promise<{ expressions: Expressions; complete: boolean }> {
+export async function expressionsSignees(supabase: Supabase, dossier: string, secondes = 3600): Promise<{ expressions: Expressions; complete: boolean }> {
   const noms = await depotDans(supabase, dossier).lister();
   const faites = expressionsDe(noms);
   const expressions: Expressions = {};
@@ -200,8 +200,8 @@ const essaisRestants = (f: Partial<Fabrique>) => Math.max(0, FABRICATIONS_PAR_JO
  * moteur : on fabrique la joie d'office, et chacun des autres la première fois qu'il le choisit
  * (`<habitant>/visages.json`).
  */
-const cheminVisages = (habitantId: string) => `${habitantId}/visages.json`;
-async function visagesVoulus(supabase: Supabase, habitantId: string): Promise<Sentiment[]> {
+export const cheminVisages = (habitantId: string) => `${habitantId}/visages.json`;
+export async function visagesVoulus(supabase: Supabase, habitantId: string): Promise<Sentiment[]> {
   const v = await lireJson<{ voulus?: unknown[] }>(supabase, cheminVisages(habitantId));
   const l = (Array.isArray(v.voulus) ? v.voulus : []).map((x) => sentimentValide(x)).filter((x): x is Sentiment => Boolean(x));
   return [...new Set<Sentiment>(["joie", ...l])];
@@ -618,6 +618,8 @@ export async function statsMemes(supabase: Supabase): Promise<StatsMemes> {
     if (s(e.message_id).startsWith("c-")) continue;
     // (ses réactions et ses gags, `r-<clé>` : comptés à part, `statsReactions`)
     if (s(e.message_id).startsWith("r-")) continue;
+    // (le talkie-walkie des proches, `t-<conversation>-<qui>` : `statsTalkie`)
+    if (s(e.message_id).startsWith("t-")) continue;
     const type = TYPES_EVENEMENT_MEME.find((x) => x === e.type);
     if (!type) continue;
     const quand = new Date(s(e.created_at));
@@ -881,11 +883,21 @@ export async function etatDuJour(supabase: Supabase, habitant: Habitant | null):
  * et leurs mèmes passent devant pour lui.
  */
 const cheminProches = (h: string) => `${h}/proches.json`;
+/** 🎙️ Ceux qui l'ont ajouté (le talkie-walkie : « Nico t'a ajouté — l'ajouter aussi ? », `talkie-serveur.ts`). */
+export const cheminAjoutePar = (h: string) => `${h}/ajoute-par.json`;
+async function marquerAjoutePar(supabase: Supabase, h: string, par: string, oui: boolean): Promise<void> {
+  const a = await lireJson<{ ids?: string[] }>(supabase, cheminAjoutePar(h));
+  const ids = (Array.isArray(a.ids) ? a.ids : []).map(s).filter((x) => x && x !== par);
+  await ecrireJson(supabase, cheminAjoutePar(h), { ids: (oui ? [...ids, par] : ids).slice(-200) });
+}
 export async function ajouterProche(supabase: Supabase, h: string, autre: string): Promise<boolean> {
   if (!h || !autre || h === autre) return false;
   const p = await lireJson<{ ids?: string[] }>(supabase, cheminProches(h));
   const ids = Array.isArray(p.ids) ? p.ids : [];
-  return ids.includes(autre) || ecrireJson(supabase, cheminProches(h), { ids: [...ids, autre].slice(-100) });
+  if (ids.includes(autre)) return true;
+  const ok = await ecrireJson(supabase, cheminProches(h), { ids: [...ids, autre].slice(-100) });
+  if (ok) await marquerAjoutePar(supabase, autre, h, true).catch(() => undefined);
+  return ok;
 }
 /** Il le retire de ses proches (et de ses amis des Rencontres d'avant, qui comptaient aussi). */
 export async function retirerProche(supabase: Supabase, h: string, autre: string): Promise<boolean> {
@@ -893,6 +905,7 @@ export async function retirerProche(supabase: Supabase, h: string, autre: string
   const [p, r] = await Promise.all([lireJson<{ ids?: string[] }>(supabase, cheminProches(h)), lireJson<Record<string, unknown>>(supabase, `${h}/rencontres.json`)]);
   const ids = Array.isArray(p.ids) ? p.ids : [];
   let ok = !ids.includes(autre) || (await ecrireJson(supabase, cheminProches(h), { ids: ids.filter((x) => x !== autre) }));
+  await marquerAjoutePar(supabase, autre, h, false).catch(() => undefined);
   const amis = Array.isArray(r.amis) ? (r.amis as unknown[]).map(s) : [];
   if (amis.includes(autre)) ok = (await ecrireJson(supabase, `${h}/rencontres.json`, { ...r, amis: amis.filter((x) => x !== autre) })) && ok;
   return ok;

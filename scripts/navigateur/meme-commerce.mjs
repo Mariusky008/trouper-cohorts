@@ -87,7 +87,7 @@ await nina.goto(`${BASE}/collection#decouvrir`, { waitUntil: "networkidle" });
 await nina.waitForSelector("#o-decouvrir .dv-carte", { timeout: 60000 });
 await fermerPablito(nina, "#o-decouvrir");
 const menu = await texte(nina, ".mc-nav");
-ok((await nina.locator(".mc-nav button").count()) === 5 && /Découvrir.*Autour.*Créer.*Mes mèmes.*Moi/.test(menu) && (await nina.locator(".mc-nav button.pris").innerText()).includes("Découvrir"), `le menu en bas : cinq onglets, « Créer » au milieu (${menu})`);
+ok((await nina.locator(".mc-nav button").count()) === 5 && /Découvrir.*Autour.*Créer.*Mes mèmes.*Proches/.test(menu) && (await nina.locator(".mc-nav button.pris").innerText()).includes("Découvrir"), `le menu en bas : cinq onglets, « Créer » au milieu (${menu})`);
 const carte = await texte(nina, "#o-decouvrir .dv-carte");
 // (le lot 2 : la même carte que les gens — son nom, un toucher : sa page ; ni bandeau, ni gros bouton rose)
 ok(carte.includes("Chez Bergine") && carte.includes("aujourd’hui") && !carte.includes("Voir sa page") && (await nina.locator(`#o-decouvrir a.dv-nom[href="/meme/${id}/voir"]`).count()) === 1 && (await nina.locator("#o-decouvrir .dv-voir").count()) === 0, `son mème, dans « Découvrir » : la même carte que les gens, son nom mène à sa page (${carte.slice(0, 90)})`);

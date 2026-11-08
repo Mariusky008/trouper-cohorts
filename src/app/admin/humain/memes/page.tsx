@@ -10,6 +10,7 @@ import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { parcoursPremierMeme, statsMemes, type EvenementMeme } from "@/lib/direct/ma-figurine-serveur";
 import { statsReactions } from "@/lib/direct/mes-reactions-serveur";
 import { etatNotifications } from "@/lib/direct/appli-collection-serveur";
+import { statsTalkie } from "@/lib/direct/talkie-serveur";
 import { GAGS, REACTIONS } from "@/lib/direct/mes-reactions";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +38,7 @@ const carte: CSSProperties = { padding: 14, borderRadius: 12, background: "#f6f6
 export default async function PageMemes() {
   if (!(await isCurrentUserAdmin())) redirect("/admin");
   const supabase = createAdminClient();
-  const [s, p, rx, nf] = await Promise.all([statsMemes(supabase), parcoursPremierMeme(supabase), statsReactions(supabase), etatNotifications(supabase)]);
+  const [s, p, rx, nf, tk] = await Promise.all([statsMemes(supabase), parcoursPremierMeme(supabase), statsReactions(supabase), etatNotifications(supabase), statsTalkie(supabase)]);
   const totalRx = (o: Record<string, number>) => Object.values(o).reduce((a, b) => a + b, 0);
   const enMoinsDUneMinute = p.delais.filter((d) => d <= 60).length;
   const k7 = s.sept.cree ? s.sept.nouveau / s.sept.cree : 0;
@@ -112,6 +113,29 @@ export default async function PageMemes() {
                     </small>
                     <b style={{ fontSize: 22 }}>{rx.sept[x.cle] ?? 0}</b>
                     <small style={{ color: "#888" }}>30 jours : {rx.trente[x.cle] ?? 0}</small>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          {/* 🎙️ LE TALKIE-WALKIE DES PROCHES (8 novembre 2026) : ce qu'on regarde chaque semaine */}
+          {tk.ok && (
+            <>
+              <h2 style={{ margin: "26px 0 4px", fontSize: 18 }}>🎙️ Le talkie-walkie des proches, sur 7 jours</h2>
+              <p style={{ margin: "0 0 10px", color: "#555" }}>Des messages qui partent, des proches qui répondent, des conversations qui durent : c’est ce qui dit si l’onglet « Proches » tient.</p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8 }} data-talkie="">
+                {[
+                  { n: "Messages envoyés", v: String(tk.envoyes) },
+                  { n: "Personnes qui ont parlé", v: String(tk.expediteurs) },
+                  { n: "… plusieurs fois dans la semaine", v: String(tk.expediteursPlusieurs) },
+                  { n: "Messages écoutés", v: String(tk.vus) },
+                  { n: "Conversations", v: String(tk.conversations) },
+                  { n: "… d’au moins trois échanges", v: String(tk.conversationsTroisEchanges) },
+                  { n: "Taux de réponse", v: tk.envoyes ? `${tk.tauxReponse} %` : "—" },
+                ].map((x) => (
+                  <div key={x.n} style={carte}>
+                    <small style={{ color: "#666" }}>{x.n}</small>
+                    <b style={{ fontSize: 22 }}>{x.v}</b>
                   </div>
                 ))}
               </div>

@@ -48,6 +48,8 @@ type Props = {
   onFin?: () => void;
   /** Elle parle / elle se tait. */
   onJoue?: (joue: boolean) => void;
+  /** 🎙️ Où en est sa voix (en secondes), à chaque image : le talkie-walkie change sa tête au bon moment. */
+  onTemps?: (t: number) => void;
   className?: string;
   /** Ce qu'elle ressent (rien : son visage de tous les jours). */
   sentiment?: Sentiment | null;
@@ -66,7 +68,7 @@ type Fenetre = Window & { webkitAudioContext?: typeof AudioContext };
 /** Un silence d'un instant : joué au toucher, il ouvre le son pour la suite (iPhone). */
 const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
 
-export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = "▶ Écouter", onFin, onJoue, className, sentiment, rejoue = 0, decoupe, danse = false, rythme = 0, ref }: Props) {
+export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = "▶ Écouter", onFin, onJoue, onTemps, className, sentiment, rejoue = 0, decoupe, danse = false, rythme = 0, ref }: Props) {
   const boite = useRef<HTMLDivElement>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
   const contexte = useRef<AudioContext | null>(null);
@@ -75,6 +77,13 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
   const raf = useRef(0);
   const pic = useRef(0);
   const tour = useRef(0);
+  // (la lecture continue d'une image à l'autre avec la fonction de son premier tour : le dernier `onTemps` est ici)
+  const surTemps = useRef(onTemps);
+  const surFin = useRef(onFin);
+  useEffect(() => {
+    surTemps.current = onTemps;
+    surFin.current = onFin;
+  }, [onTemps, onFin]);
   const [joue, setJoue] = useState(false);
   const [charge, setCharge] = useState(false);
   const [ennui, setEnnui] = useState("");
@@ -144,6 +153,7 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
       ouverte = !a.paused && Math.floor(a.currentTime * 7) % 2 === 0;
     }
     bouche(ouverte && !a.paused);
+    surTemps.current?.(a.currentTime);
     if (!a.paused && !a.ended) raf.current = requestAnimationFrame(animer);
   }
 
@@ -156,7 +166,7 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
       marquer("lecture", `fini ${a.duration.toFixed(1)} s`);
       setJoue(false);
       bouche(false);
-      onFin?.();
+      surFin.current?.();
     };
     a.onpause = () => {
       setJoue(false);

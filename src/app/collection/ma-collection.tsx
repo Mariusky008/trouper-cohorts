@@ -12,11 +12,13 @@
  *      depuis le 7 novembre 2026, « le studio et ses tiroirs » (sa figurine toujours en vue, deux onglets, son mème dans
  *      une feuille) ; « Ne perds jamais ta figurine » est un cadenas doré, ici, en haut à côté de son prénom ;
  *   📥 MES MÈMES — ce que ses mèmes deviennent : vus, les réponses en duo, ceux qu'il a reçus (`mes-memes.tsx`) ;
- *   🃏 MOI — sa carte de personnage, la question du jour (`personnage.tsx`), et sa figurine du mois, qui se mérite en 10
- *      jours sur ClikMe (`figurine-du-mois.tsx`).
+ *   🎙️ PROCHES — le talkie-walkie des figurines (`proches.tsx`, 8 novembre 2026) : leurs figurines, « Lui parler », la
+ *      conversation en petite pièce de théâtre. Il a pris la place de « Moi » dans le menu ;
+ *   🃏 MOI — sous son prénom, en haut : sa carte de personnage, la question du jour (`personnage.tsx`), sa figurine du
+ *      mois, qui se mérite en 10 jours sur ClikMe (`figurine-du-mois.tsx`), ses réglages.
  * « Ce mois-ci » et l'album des commerçants sont partis de l'appli (les cartes de fidélité commencées restent sur la page
  * de chaque commerçant, `/f/<slug>`) ; ses figurines du mois sont devenues des LOOKS de son studio.
- * Chaque onglet a son adresse (`#decouvrir`, `#autour`, `#figurine`, `#memes`, `#personnage`), et les anciens liens
+ * Chaque onglet a son adresse (`#decouvrir`, `#autour`, `#figurine`, `#memes`, `#proches`, `#personnage`), et les anciens liens
  * retombent sur le bon (`#creer` → « Créer », `#mois` → sa figurine du mois, dans « Moi », `#album` → « Mes mèmes »).
  * 📲 LE LOT 3 : l'appli sur l'écran d'accueil et le mème du jour à 11 h 30 (`mon-telephone.tsx`) — `#jour` mène au mème
  * du jour (la notification), `#installer` ouvre le geste à faire (iPhone, après le rechargement avec son jeton).
@@ -24,7 +26,9 @@
  * dans la ville, sur une carte (`autour.tsx`, `#autour`). PUIS « RENCONTRES » EST EFFACÉ (le même jour, sa réponse :
  * « effacer ») : l'épisode du jour, les personnages, les membres, les impressions, les cartes souvenirs. Ses anciennes
  * adresses (`#rencontre`, le lien d'un ami `?ami=`) ouvrent « Créer » ; sa figurine du mois est dans « Moi ».
- * Un onglet ne se charge qu'à sa première ouverture, puis il reste là.
+ * Un onglet ne se charge qu'à sa première ouverture, puis il reste là. 🟢 Tant que la page est visible, elle dit au
+ * serveur « il est là » toutes les minutes (« Là maintenant » chez ses proches, s'il le veut) et apprend ses messages non
+ * lus (la pastille de « Proches »).
  */
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -40,20 +44,21 @@ import { STYLES_MES_REACTIONS } from "./mes-reactions";
 import { STYLES_THEME_DU_JOUR } from "./theme-du-jour";
 import { FeuilleInstaller, MonTelephone, STYLES_MON_TELEPHONE } from "./mon-telephone";
 import { Autour, STYLES_AUTOUR } from "./autour";
+import { MaPresence, Proches, STYLES_PROCHES } from "./proches";
 import { capterLaProposition, lierSiBesoin, ouvrirInstallation } from "@/lib/direct/appli-collection";
 import type { EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
-/** Le menu du bas : cinq boutons, « Créer » au milieu. */
+/** Le menu du bas : cinq boutons, « Créer » au milieu ; « Proches » a pris la place de « Moi » (8 novembre 2026). */
 const MENU = [
   { cle: "decouvrir", nom: "Découvrir" },
   { cle: "autour", nom: "Autour" },
   { cle: "figurine", nom: "Créer" },
   { cle: "memes", nom: "Mes mèmes" },
-  { cle: "personnage", nom: "Moi" },
+  { cle: "proches", nom: "Proches" },
 ] as const;
 type Onglet = (typeof MENU)[number]["cle"];
-/** Les vues : les onglets du menu. */
-type Vue = Onglet;
+/** Les vues : les onglets du menu, et « Moi » (sous son prénom, en haut). */
+type Vue = Onglet | "personnage";
 /** Les adresses qui mènent à une vue (et, pour certaines, à un endroit dedans). */
 const ALIAS: Record<string, Vue> = {
   decouvrir: "decouvrir",
@@ -76,6 +81,10 @@ const ALIAS: Record<string, Vue> = {
   "ou-gagner": "personnage",
   memes: "memes",
   album: "memes",
+  // (🎙️ le talkie-walkie : la notification « Léa t'a parlé ! » et le lien d'un proche y mènent)
+  proches: "proches",
+  parler: "proches",
+  presence: "personnage",
 };
 
 export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: string }[] }) {
@@ -88,6 +97,8 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
   // 🔒 « NE PERDS JAMAIS TA FIGURINE » (7 novembre 2026, l'avis d'un ami) : un cadenas doré, en haut à côté de son prénom,
   // tant que son adresse ne la protège pas ; il ouvre une feuille (null : jamais ouverte, rien n'y est encore monté)
   const [proteger, setProteger] = useState<boolean | null>(null);
+  // 🎙️ ses messages non lus (la pastille de « Proches »)
+  const [nonLus, setNonLus] = useState(0);
   // (stable : la fabrication rappelle le serveur dans un effet qui en dépend)
   const poserEtat = useCallback((e: EtatMaFigurine) => setEtat(e), []);
 
@@ -158,10 +169,31 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
   const onglet = vue;
   const compte = charge ? Boolean(etat?.compte) : null;
   const prete = etat?.etape === "prete";
+
+  // 🟢 « LÀ MAINTENANT » : toutes les minutes, tant que la page est visible — et ses messages non lus
+  useEffect(() => {
+    if (!compte || !prete) return;
+    let fini = false;
+    const battre = () => {
+      if (document.visibilityState !== "visible") return;
+      fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "la" }) })
+        .then((r) => r.json())
+        .then((j: { nonLus?: number }) => !fini && typeof j.nonLus === "number" && setNonLus(j.nonLus))
+        .catch(() => undefined);
+    };
+    battre();
+    const t = window.setInterval(battre, 60_000);
+    document.addEventListener("visibilitychange", battre);
+    return () => {
+      fini = true;
+      window.clearInterval(t);
+      document.removeEventListener("visibilitychange", battre);
+    };
+  }, [compte, prete]);
   // ce qui attend dans chaque onglet (un point qui pulse)
   const pastilles: Partial<Record<Onglet, string>> = {
     ...(charge && !prete && etat?.etape !== "fabrication" ? { figurine: "!" } : {}),
-    ...(compte && aCarte === false ? { personnage: "!" } : {}),
+    ...(nonLus > 0 ? { proches: nonLus > 9 ? "9+" : String(nonLus) } : {}),
   };
 
   return (
@@ -171,7 +203,21 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
           Clik<b>Me</b>
         </Link>
         <span className="mc-droite">
-          <span className="mc-moi">{etat?.prenom ? `🎭 ${etat.prenom}` : "🎭 Ta figurine qui parle"}</span>
+          {/* 🃏 « MOI », SOUS SON PRÉNOM (8 novembre 2026 : « Proches » a pris sa place dans le menu) */}
+          {compte ? (
+            <button type="button" className={`mc-moi${vue === "personnage" ? " pris" : ""}`} aria-label="Moi : ta carte, tes réglages" aria-current={vue === "personnage" ? "page" : undefined} onClick={() => aller("personnage")}>
+              {prete && etat?.neutre ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={etat.neutre} alt="" draggable={false} />
+              ) : (
+                <span aria-hidden="true">🎭</span>
+              )}
+              {etat?.prenom || "Moi"}
+              {aCarte === false && <i aria-hidden="true">!</i>}
+            </button>
+          ) : (
+            <span className="mc-moi">🎭 Ta figurine qui parle</span>
+          )}
           {prete && etat && !etat.protegee && (
             <button type="button" className="mc-cadenas" aria-label="Sauvegarder ma figurine : ne la perds jamais" onClick={() => setProteger(true)}>
               <span aria-hidden="true">🔒</span>
@@ -220,6 +266,17 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
               {compte && <MaFigurineDuMois />}
               {/* 📱 l'appli sur son écran d'accueil, et le mème du jour à 11 h 30 (il le coupe ici) — le lot 3 */}
               {compte && <MonTelephone />}
+              {/* 🟢 « Là maintenant » chez ses proches : il le coupe ici */}
+              {compte && prete && <MaPresence />}
+            </OngletVisible.Provider>
+          </section>
+        )}
+
+        {/* 🎙️ PROCHES : le talkie-walkie des figurines */}
+        {ouverts.has("proches") && (
+          <section className="mc-onglet" id="o-proches" hidden={vue !== "proches"} aria-label="Proches">
+            <OngletVisible.Provider value={vue === "proches"}>
+              <Proches compte={compte} prete={prete} allerA={allerA} onNonLus={setNonLus} />
             </OngletVisible.Provider>
           </section>
         )}
@@ -256,18 +313,18 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
               ) : (
                 <IconeOnglet cle={o.cle} />
               )}
-              {pastilles[o.cle] && <i className={pastilles[o.cle] === "!" || pastilles[o.cle] === "1" ? "pulse" : ""}>{pastilles[o.cle]}</i>}
+              {pastilles[o.cle] && <i className={pastilles[o.cle] === "!" || pastilles[o.cle] === "1" || o.cle === "proches" ? "pulse" : ""}>{pastilles[o.cle]}</i>}
             </span>
             <small>{o.nom}</small>
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES}</style>
     </main>
   );
 }
 
-/** Les icônes du menu, dessinées pour ClikMe (une flamme, une épingle, un « + » sur son ressort, une pile de mèmes, une carte). */
+/** Les icônes du menu, dessinées pour ClikMe (une flamme, une épingle, un « + » sur son ressort, une pile de mèmes, deux personnages). */
 function IconeOnglet({ cle }: { cle: Onglet }) {
   const trait = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" } as const;
   return (
@@ -282,10 +339,13 @@ function IconeOnglet({ cle }: { cle: Onglet }) {
           <path d="M12 21c-4 0-6.5-2.7-6.5-6.2 0-3.6 2.6-5.4 3.6-8.8.4 1.9 1.4 3 2.6 3.6.3-2.6 1.4-5 3.3-6.6-.2 2.9 1.2 4.6 2.3 6.2 1 1.4 1.7 2.8 1.7 4.8C19 18.2 16.2 21 12 21z" {...trait} />
           <path d="M12 21c-1.7 0-2.8-1.1-2.8-2.7 0-1.8 1.6-2.6 2.1-4.3 1 .8 3.5 2.2 3.5 4.3 0 1.6-1.1 2.7-2.8 2.7z" {...trait} />
         </>
-      ) : cle === "personnage" ? (
+      ) : cle === "proches" ? (
         <>
-          <rect x="4.5" y="3" width="15" height="18" rx="3" {...trait} />
-          <path d="M12 7.6l1.3 2.7 2.9.4-2.1 2 .5 2.9-2.6-1.4-2.6 1.4.5-2.9-2.1-2 2.9-.4z" {...trait} />
+          {/* deux personnages, l'un devant l'autre */}
+          <circle cx="9" cy="8" r="3.4" {...trait} />
+          <path d="M2.8 20a6.2 6.2 0 0 1 12.4 0" {...trait} />
+          <circle cx="17" cy="9" r="2.5" {...trait} />
+          <path d="M16.2 14.4a5 5 0 0 1 5.3 5.1" {...trait} />
         </>
       ) : cle === "autour" ? (
         <>
@@ -315,6 +375,10 @@ body{background:#12060F}
 .mc-logo{font-size:19px;font-weight:900;color:#FFF4E6;text-decoration:none;letter-spacing:-.02em}
 .mc-logo b{color:#FF2E9A}
 .mc-moi{min-width:0;overflow:hidden;text-overflow:ellipsis;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.08);font-size:13px;font-weight:700;color:#D9C3CB;white-space:nowrap}
+button.mc-moi{position:relative;display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:3px 13px 3px 4px;border:0;font:inherit;font-size:14px;font-weight:800;color:#FFF4E6;overflow:visible;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button.mc-moi.pris{background:linear-gradient(135deg,rgba(255,46,154,.32),rgba(242,196,107,.22))}
+button.mc-moi img,button.mc-moi > span{flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;object-fit:cover;object-position:50% 16%;background:#FF2E9A;font-size:16px}
+button.mc-moi i{position:absolute;right:-3px;top:-4px;display:grid;place-items:center;min-width:16px;height:16px;border-radius:999px;background:#F2C46B;color:#2A0F1F;font-style:normal;font-size:10px;font-weight:900}
 .mc-droite{display:flex;align-items:center;gap:8px;min-width:0}
 /* 🔒 le cadenas doré : sa figurine n'est pas encore protégée par son adresse */
 .mc-cadenas{flex:none;display:inline-flex;align-items:center;gap:5px;padding:5px 11px 5px 8px;border-radius:999px;border:1px solid rgba(242,196,107,.65);background:linear-gradient(135deg,rgba(242,196,107,.24),rgba(255,122,89,.12));color:#FFE7B8;font:inherit;cursor:pointer;box-shadow:0 0 16px -6px rgba(242,196,107,.85);-webkit-tap-highlight-color:transparent}
