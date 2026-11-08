@@ -44,6 +44,8 @@ import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE, type FigurineHandle } from
 import { Guide, GuideDit, OngletVisible, STYLES_GUIDE, useVoixPablito } from "./guide";
 import { lancerMusiqueDanse } from "@/lib/direct/musique-danse";
 import { fabriquerMeme, memePossible } from "@/lib/direct/meme";
+import { motPour, type Rendu } from "@/lib/direct/rendus";
+import { TroisRendus } from "./trois-rendus";
 import { PREMIER_MEME, memesDuMoment, type MemePret } from "@/lib/direct/memes-prets";
 import type { Surprise } from "@/lib/direct/meme-surprise";
 import { createClient } from "@/lib/supabase/client";
@@ -340,6 +342,11 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   }
   const [sentiment, setSentiment] = useState<Sentiment | null>(null);
   const [danse, setDanse] = useState(false);
+  // 🎬 TROIS FAÇONS DE LE DIRE (8 novembre 2026, `trois-rendus.tsx`) : l'interprétation qu'il a choisie — son graphisme
+  // (la BD, le cinéma, l'affiche) ; son visage, c'est `sentiment` (le choix le pose). Il vaut pour la phrase qu'il
+  // disait : une autre phrase, un autre mème (rien de choisi en douce, qu'on ne verrait plus)
+  const [renduPris, setRenduPris] = useState<{ r: Rendu; texte: string } | null>(null);
+  const rendu = renduPris && renduPris.texte === texte.trim() ? renduPris.r : null;
   // 🗓️ SES LOOKS (7 novembre 2026 : « on devrait pouvoir utiliser celle qu'on veut pour l'envoyer en faisant dire quelque
   // chose ») : ses figurines du mois, qui parlent dans ses mèmes. `look` : celui qu'il a pris ("" : sa figurine de tous
   // les jours) ; `lookCours` : celui qui apprend à parler (le moteur lui ouvre la bouche, une fois) ; `lookVoulu` : celui
@@ -595,7 +602,14 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
     }, 30);
   }
 
-  const cleEnvoi = (s: Son | null) => (s ? `${s.cle}|${sentiment ?? ""}|${danse ? "danse" : ""}|${look}` : "");
+  const cleEnvoi = (s: Son | null) => (s ? `${s.cle}|${sentiment ?? ""}|${danse ? "danse" : ""}|${look}|${rendu ? `${rendu.style}-${rendu.teinte}-${rendu.cadrage}` : ""}` : "");
+  /** 🎬 Une interprétation : son graphisme, et le visage qui va avec (sa figurine du mois laisse place à la sienne). */
+  function choisirRendu(r: Rendu | null) {
+    setRenduPris(r ? { r, texte: texte.trim() } : null);
+    if (!r) return;
+    if (sonLook) setLook("");
+    choisirVisage(r.visage);
+  }
 
   // ✍️ son texte, lu par la voix choisie : fabriqué au toucher, joué dès qu'il arrive
   function ecouterTexte(dit?: string) {
@@ -706,6 +720,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
       ...(s.texte ? { texte: s.texte, voix: s.voix } : {}),
       ...(reponse ? { repondA: reponse.id } : {}),
       ...(sonLook ? { look: sonLook.mois } : {}),
+      ...(rendu && !reponse && s.texte ? { rendu: rendu.style } : {}),
     });
     const lien = `${window.location.origin}${j.lien}`;
     const id = String(j.lien).split("/").pop() ?? "";
@@ -759,6 +774,8 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
         surProgres: (p) => setMeme((x) => (x && x.etat === "fabrication" ? { ...x, p } : x)),
         // 💬 EN DUO : sa figurine à lui en haut, qui parle d'abord ; la sienne en bas, qui répond
         ...(reponse ? { duo: { images: reponse.images, son: reponse.son, texte: reponse.texte, prenom: reponse.prenom, moi: etat.prenom } } : {}),
+        // 🎬 son interprétation : la BD, le cinéma, l'affiche (pas en duo ; avec ses mots)
+        ...(rendu && !reponse && son.texte ? { rendu: { style: rendu.style, cadrage: rendu.cadrage, onomatopee: rendu.onomatopee, mot: motPour(son.texte, rendu.mot), teinte: rendu.teinte } } : {}),
       });
       // la vidéo part au seau (directement), puis elle est rangée avec le message
       const a = await demander({ action: "meme-envoi", id, type: m.type });
@@ -1188,6 +1205,8 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
                   {texte.length} / {TEXTE_MAX}
                 </small>
               </label>
+              {/* 🎬 TROIS FAÇONS DE LE DIRE : ses intentions (facultatives), et trois interprétations de sa phrase */}
+              {!reponse && etat.neutre && <TroisRendus texte={texte} expressions={etat.expressions} neutre={etat.neutre} choisi={rendu} onChoisir={choisirRendu} onIdee={(t) => setTexte(t.slice(0, TEXTE_MAX))} />}
               {voix && saVoix ? (
                 voixOuvertes ? (
                   <ChoixVoix

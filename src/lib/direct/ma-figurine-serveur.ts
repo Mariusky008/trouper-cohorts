@@ -54,6 +54,7 @@ import {
   type Expressions,
   type MessageFigurine,
 } from "./ma-figurine";
+import { renduGarde } from "./rendus";
 import { expressionsCompletes, expressionsDe, fabriquerUnTour, type Depot } from "./figurine-expressions-serveur";
 import { adresseMasquee } from "./connaitre";
 import { lireLeTexte, voixBranchee } from "./voix-figurine-serveur";
@@ -502,6 +503,8 @@ export async function enregistrerMessage(
   repondA?: unknown,
   /** 🗓️ Son look (une figurine du mois qui parle déjà) : c'est elle qui parle dans ce message. */
   look?: unknown,
+  /** 🎬 Son graphisme (`rendus.ts` : bd, cinema, affiche) — gardé à côté, pour savoir lesquels plaisent. */
+  rendu?: unknown,
   // (`auteurDeLOrigine` : en duo, l'auteur du mème auquel il répond — à prévenir : `appli-collection-serveur.ts`)
 ): Promise<{ id?: string; error?: string; auteurDeLOrigine?: string }> {
   const m = /^data:(audio\/(?:webm|ogg|mp4|mpeg|x-m4a|aac|wav))(?:;[^,]*)?;base64,(.+)$/i.exec(s(son));
@@ -538,6 +541,7 @@ export async function enregistrerMessage(
     ...(danseValide(danse) ? { danse: true } : {}),
     ...(repond ? { repondA: repond } : {}),
     ...(sonLook ? { look: sonLook } : {}),
+    ...(renduGarde(rendu) && !repond ? { rendu: renduGarde(rendu) } : {}),
   };
   if (Object.keys(aCote).length && !(await ecrireJson(supabase, `${habitant.id}/m-${id}.json`, aCote))) return { error: "Ton message n’est pas parti. Réessaie dans un instant." };
   const t = texteValide(texte);

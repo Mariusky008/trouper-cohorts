@@ -1470,6 +1470,45 @@ L'essai : `meme-du-jour.mjs` (une page par mème, de la hauteur de l'écran ; un
 thème en haut des réponses, les réactions au-dessus du menu ; « Tu as tout vu » ; « Revoir depuis le début »). Les
 autres essais de « Découvrir » passent sans changement (`meme-commerce`, `ma-figurine`, `appli-notif`).
 
+### 9.0 quattuordecitricies 🎬 Le retour du 8 novembre, lot D : trois façons de le dire
+
+Le constat de l'ami du propriétaire : les mèmes se ressemblent tous, et dans la maquette, les trois propositions ne
+changeaient que par le fond — la figurine gardait la même tête. Une interprétation doit changer **le visage, le
+cadrage et le graphisme**, en accord avec la phrase ; et **la catégorie est une aide, pas une obligation**.
+
+- **La phrase d'abord.** Dans « Créer » (« 💬 Fais-la parler »), sous sa phrase : « Ce que tu veux exprimer », six
+  intentions **facultatives** — 😂 Faire rire, 😍 Émotion, 🙄 Réagir, 💪 Affirmer, 🤫 Sous-entendre, 🎉 Célébrer. Sans
+  phrase, un toucher en propose une (« J'ai eu mon permis !!! ») et un autre toucher la suivante ; avec une phrase,
+  l'intention ne fait qu'orienter les visages.
+- **« ✨ Trois façons de le dire »** : trois vignettes, dessinées par **le même code que la vidéo** (`apercuRendu`,
+  dans `meme.ts`) — ce qu'on voit, c'est ce qui partira :
+  - 😂 **Humour, la BD** : une case penchée sur une page tramée, la bulle où ses mots s'écrivent au fil de sa voix (le
+    mot fort en rose), l'onomatopée qui éclate (« HAHA ! », « PFF… », « BAM ! ») ;
+  - 🎭 **Dramatique, le cinéma** : un gros plan sur son visage qui avance doucement, la pénombre, les bandes noires,
+    « CLIKME PRÉSENTE », le mot fort en géant quand il le dit, la phrase en sous-titre ;
+  - 🌀 **Décalé, l'affiche** : deux couleurs franches en diagonale, sa figurine en polaroïd, ses mots en très gros qui
+    tombent un à un, le dernier en étiquette rose.
+- **Chacune avec SON visage** de la figurine (parmi les sept : joie, colère, tristesse, euphorie, rire, grimace,
+  amour). Les règles (`lib/direct/rendus.ts`) répondent tout de suite ; un petit modèle de texte
+  (`rendus-serveur.ts`, les mêmes réglages que « 🎲 Surprends-moi », 60 appels par personne et par jour) les remplace
+  après une pause dans la frappe : il ne lit que la phrase, jamais le prénom. « 🎲 Trois autres » fait tourner les
+  visages et les couleurs, sans rappeler le modèle.
+- **Un toucher choisit** : sa figurine prend ce visage (un visage pas encore fait — « ✨ nouvelle tête » — se fait
+  alors, comme dans « Visage »), et son mème prendra ce graphisme. Un autre toucher : le mème simple, comme avant.
+  Rien n'est choisi d'office. Celle qu'il a choisie reste à sa place quand « Trois autres » change les deux autres ;
+  son choix vaut pour SA phrase (une autre phrase : plus rien de choisi, et le modèle la relit). Les mèmes à deux et
+  ceux des commerçants gardent leur propre mise en page.
+- **La mesure** : le graphisme choisi est gardé à côté du message (`rendu` : `bd`, `cinema` ou `affiche`).
+
+Plus tard : les **attitudes** (se tenir la tête, rigoler en douce…) — il faudra de nouvelles images de la figurine.
+
+L'essai : `trois-rendus.mjs` (la route : trois visages, le modèle ne lit que la phrase, « Trois autres » sans le
+modèle ; l'écran : six intentions, trois vignettes toutes différentes, le cinéma et ses bandes noires, « Dramatique »
+choisi → la tête de la tristesse et un mème fabriqué en cinéma ; « Célébrer » sans phrase en propose une, puis la
+suivante ; une autre phrase, plus rien de choisi ; « Trois autres » garde celle qui est choisie ; un second toucher
+pour revenir au mème simple). Les autres essais de « Créer » passent
+sans changement (`ma-figurine`, `personnage`, `meme-du-jour`, `autour`…).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

@@ -21,9 +21,15 @@
  * ses mots défilent ; à la fin, son nom (`fin`) au lieu de « Crée ton mème ». Jamais de voix fabriquée : sa voix à
  * lui, enregistrée, ou la musique.
  *
+ * 🎬 TROIS FAÇONS DE LE DIRE (8 novembre 2026, `rendus.ts`) : avec `rendu`, le mème prend le graphisme choisi — 😂 la
+ * BD (sa case, la bulle où ses mots s'écrivent, l'onomatopée), 🎭 le cinéma (le gros plan dans la pénombre, le mot fort
+ * en géant, le sous-titre), 🌀 l'affiche (ses mots énormes, un par un ; sa figurine collée comme une photo). Son visage,
+ * lui, est dans ses images. `apercuRendu` en dessine une image fixe (les trois vignettes du choix).
+ *
  * FICHIER NAVIGATEUR.
  */
 import { musiqueDanse } from "./musique-danse";
+import type { Rendu } from "./rendus";
 
 export const MEME_L = 720;
 export const MEME_H = 1280;
@@ -125,9 +131,15 @@ type Scene = {
   env: number[];
   duree: number;
   sous: Mot[][];
+  /** Ses mots, un à un, posés sur sa voix. */
+  mots: Mot[];
   emoji: string;
   danse: boolean;
   police: string;
+  /** 🎬 Son graphisme (la BD, le cinéma, l'affiche) ; `trame` : les points de la BD ; `apercu` : une image fixe. */
+  rendu?: RenduMeme;
+  trame?: CanvasPattern | null;
+  apercu?: boolean;
   /** 🏪 Ce qu'annonce un commerçant (en haut), et la fin à son nom. */
   annonce?: AnnonceMeme;
   fin?: FinMeme;
@@ -395,8 +407,547 @@ function dessinerDuo(g: CanvasRenderingContext2D, S: Scene, T: number): void {
   laFin(g, S.police, T - (debutVoix(S) + S.duree + 0.15));
 }
 
+// ─── 🎬 TROIS FAÇONS DE LE DIRE (`rendus.ts`) : la BD, le cinéma, l'affiche ────────────────────────────────────
+// (8 novembre 2026 : « la même figurine et la même phrase peuvent donner plusieurs créations très différentes » — et c'est
+// d'abord SON visage qui change, choisi avec le graphisme ; ici, le graphisme, le cadrage, et ses mots qui arrivent au
+// fil de sa voix)
+
+/** Ce que le mème reçoit de l'interprétation choisie (son visage, lui, est dans ses images). */
+export type RenduMeme = Pick<Rendu, "style" | "cadrage" | "onomatopee" | "mot" | "teinte">;
+
+const PAL_BD = [
+  ["#FFE14D", "#FF2E9A"],
+  ["#7FE3FF", "#FF7A59"],
+  ["#FFA6D2", "#6B2CF5"],
+];
+const PAL_CINEMA = [
+  ["rgba(255,46,154,.5)", "#FF64B9"],
+  ["rgba(77,124,254,.5)", "#8FB2FF"],
+  ["rgba(255,154,61,.5)", "#FFB36B"],
+];
+const PAL_AFFICHE = [
+  ["#C6FF3D", "#6B2CF5"],
+  ["#2DE1C2", "#FF5A36"],
+  ["#FFE14D", "#1C1CFF"],
+];
+const EMOJI = `"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+const deg = (d: number) => (d * Math.PI) / 180;
+
+/** Son image dans une case, couvrante ; en gros plan, son visage (le haut de l'image) agrandi — sans jamais de vide. */
+function figurineDansCase(g: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, l: number, h: number, gros: boolean, echelle = 1, angle = 0): void {
+  const iw = img.naturalWidth || 1;
+  const ih = img.naturalHeight || 1;
+  // (la case toujours couverte ; en gros plan, son visage — à peu près la moitié de la largeur de l'image, vers 38 % de
+  //  sa hauteur — en remplit presque la largeur : dans une case haute, couvrir suffit déjà)
+  const couvre = Math.max(l / iw, h / ih);
+  const base = (gros ? Math.max(couvre, (1.6 * l) / iw) : couvre) * echelle;
+  const dw = iw * base;
+  const dh = ih * base;
+  let px = x + l / 2 - dw * 0.5;
+  let py = y + h / 2 - dh * (gros ? 0.38 : 0.44);
+  px = Math.min(x, Math.max(x + l - dw, px));
+  py = Math.min(y, Math.max(y + h - dh, py));
+  g.save();
+  g.beginPath();
+  g.rect(x, y, l, h);
+  g.clip();
+  g.translate(x + l / 2, y + h / 2);
+  g.rotate(angle);
+  g.translate(-(x + l / 2), -(y + h / 2));
+  g.drawImage(img, px, py, dw, dh);
+  g.restore();
+}
+
+/** Ses mots rangés en lignes qui tiennent dans `largeur` ; la taille descend jusqu'à `lignesMax`. */
+function enLignes(g: CanvasRenderingContext2D, mots: string[], police: string, taille: number, largeur: number, lignesMax: number, min = 26): { taille: number; lignes: number[][] } {
+  for (let t = taille; t >= min; t -= 2) {
+    g.font = `900 ${t}px ${police}`;
+    const espace = g.measureText(" ").width;
+    const lignes: number[][] = [[]];
+    let l = 0;
+    let deborde = false;
+    mots.forEach((m, i) => {
+      const w = g.measureText(m).width;
+      if (w > largeur) deborde = true;
+      if (l && l + espace + w > largeur) {
+        lignes.push([]);
+        l = 0;
+      }
+      lignes[lignes.length - 1].push(i);
+      l += (l ? espace : 0) + w;
+    });
+    if (!deborde && lignes.length <= lignesMax) return { taille: t, lignes };
+  }
+  g.font = `900 ${min}px ${police}`;
+  return { taille: min, lignes: [mots.map((_, i) => i)] };
+}
+
+/** Le moment où un mot est dit (depuis le début de sa voix) ; dans un aperçu, tout est déjà dit. */
+const ditA = (S: Scene, i: number) => (S.apercu ? -1 : (S.mots[i]?.de ?? 0));
+/** Le mot fort est-il celui-ci ? (sans sa ponctuation, sans accents) */
+const plat = (m: string) =>
+  m
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^\p{L}\p{N}]/gu, "");
+const estFort = (S: Scene, m: string) => Boolean(S.rendu?.mot) && plat(m) === plat(S.rendu!.mot);
+
+/** Une étoile d'onomatopée (l'éclat de la BD). */
+function eclat(g: CanvasRenderingContext2D, r: number, pointes = 14): void {
+  g.beginPath();
+  for (let k = 0; k < pointes * 2; k++) {
+    const a = (Math.PI * k) / pointes - Math.PI / 2;
+    const rr = k % 2 ? r * 0.62 : r * (k % 4 === 0 ? 1 : 0.88);
+    g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+  }
+  g.closePath();
+}
+
+/** 😂 HUMOUR, LA BD : la page tramée, les rayons, sa case ; la bulle où ses mots s'écrivent ; l'onomatopée qui claque. */
+function dessinerBD(g: CanvasRenderingContext2D, S: Scene, T: number): void {
+  const W = MEME_L;
+  const H = MEME_H;
+  const R = S.rendu!;
+  const [fond, vif] = PAL_BD[R.teinte % 3];
+  const t = T - INTRO;
+  const amp = S.apercu ? 0 : forceA(S.env, S.duree, t);
+  const img = amp > 0.28 ? S.p : S.n;
+  g.fillStyle = fond;
+  g.fillRect(0, 0, W, H);
+  if (S.trame) {
+    g.fillStyle = S.trame;
+    g.fillRect(0, 0, W, H);
+  }
+  // les rayons, derrière la case
+  g.save();
+  g.strokeStyle = "rgba(18,6,15,.13)";
+  g.lineWidth = 7;
+  g.lineCap = "round";
+  for (let k = 0; k < 24; k++) {
+    const a = deg(k * 15 + (S.apercu ? 0 : T * 6));
+    g.beginPath();
+    g.moveTo(W / 2 + Math.cos(a) * 330, 770 + Math.sin(a) * 330);
+    g.lineTo(W / 2 + Math.cos(a) * 1200, 770 + Math.sin(a) * 1200);
+    g.stroke();
+  }
+  g.restore();
+  // la case, avec sa figurine (elle arrive d'un coup, puis bouge sur sa voix)
+  const arrivee = S.apercu ? 1 : T < INTRO ? 1.22 - 0.22 * rebond(T / INTRO) : 1;
+  const danse = S.danse && T >= INTRO && !S.apercu ? Math.abs(Math.sin((Math.PI * (T - INTRO)) / 0.6)) : 0;
+  g.save();
+  g.translate(W / 2, 770);
+  g.rotate(deg(-1.5));
+  g.scale(arrivee, arrivee);
+  g.translate(-W / 2, -770);
+  g.fillStyle = "#12060F";
+  g.fillRect(62, 374, 624, 800);
+  figurineDansCase(g, img, 48, 360, 624, 800, R.cadrage === "gros-plan", 1 + amp * 0.035 + danse * 0.03, deg(Math.sin(T * 7.5) * amp * 1.6));
+  g.lineWidth = 12;
+  g.strokeStyle = "#12060F";
+  g.strokeRect(48, 360, 624, 800);
+  g.restore();
+  // la bulle : ses mots s'y écrivent au fil de sa voix
+  const mots = S.mots.map((m) => m.mot.toUpperCase());
+  if (mots.length) {
+    const { taille, lignes } = enLignes(g, mots, S.police, 66, 580, 4, 32);
+    const pas = taille * 1.08;
+    const hb = lignes.length * pas + 64;
+    const yb = 46;
+    g.save();
+    g.fillStyle = "#12060F";
+    g.beginPath();
+    if (typeof g.roundRect === "function") g.roundRect(48, yb + 12, 648, hb, 46);
+    else g.rect(48, yb + 12, 648, hb);
+    g.fill();
+    g.fillStyle = "#FFFFFF";
+    g.strokeStyle = "#12060F";
+    g.lineWidth = 10;
+    g.beginPath();
+    if (typeof g.roundRect === "function") g.roundRect(36, yb, 648, hb, 46);
+    else g.rect(36, yb, 648, hb);
+    g.fill();
+    g.stroke();
+    // la queue de la bulle, vers la case
+    g.beginPath();
+    g.moveTo(190, yb + hb - 6);
+    g.lineTo(150, yb + hb + 64);
+    g.lineTo(250, yb + hb - 6);
+    g.closePath();
+    g.fill();
+    g.beginPath();
+    g.moveTo(190, yb + hb - 1);
+    g.lineTo(150, yb + hb + 64);
+    g.lineTo(250, yb + hb - 1);
+    g.stroke();
+    g.font = `900 ${taille}px ${S.police}`;
+    g.textBaseline = "middle";
+    g.textAlign = "left";
+    const espace = g.measureText(" ").width;
+    lignes.forEach((ligne, li) => {
+      const total = ligne.reduce((n, i, j) => n + g.measureText(mots[i]).width + (j ? espace : 0), 0);
+      let x = 36 + 324 - total / 2;
+      const y = yb + 32 + pas * li + pas / 2;
+      for (const i of ligne) {
+        const w = g.measureText(mots[i]).width;
+        if (t >= ditA(S, i) - 0.02) {
+          g.fillStyle = estFort(S, mots[i]) ? "#FF2E9A" : "#12060F";
+          g.fillText(mots[i], x, y);
+        }
+        x += w + espace;
+      }
+    });
+    g.restore();
+  }
+  // l'onomatopée : elle claque quand sa phrase se termine
+  const tOno = S.apercu ? 1 : (t - S.duree * 0.6) / 0.3;
+  if (R.onomatopee && tOno > 0) {
+    const e = S.apercu ? 1 : rebond(tOno);
+    g.save();
+    g.translate(530, 1060);
+    g.rotate(deg(-10));
+    g.scale(e, e);
+    eclat(g, 150);
+    g.fillStyle = vif;
+    g.fill();
+    g.lineWidth = 10;
+    g.strokeStyle = "#12060F";
+    g.lineJoin = "round";
+    g.stroke();
+    let to = 64;
+    g.font = `900 ${to}px ${S.police}`;
+    while (g.measureText(R.onomatopee).width > 230 && to > 30) {
+      to -= 2;
+      g.font = `900 ${to}px ${S.police}`;
+    }
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.lineWidth = to * 0.24;
+    g.strokeText(R.onomatopee, 0, 4);
+    g.fillStyle = "#FFFFFF";
+    g.fillText(R.onomatopee, 0, 4);
+    g.restore();
+  }
+  etiquette(g, S.police, 70, 1088, [
+    { t: "Clik", c: "#FFF4E6" },
+    { t: "Me", c: "#FF2E9A" },
+  ], 28);
+}
+
+/** 🎭 DRAMATIQUE, LE CINÉMA : le gros plan dans la pénombre (qui avance doucement), les bandes noires ; le mot fort en
+ *  géant quand il le dit ; sa phrase en sous-titre, dans la bande du bas. */
+function dessinerCinema(g: CanvasRenderingContext2D, S: Scene, T: number): void {
+  const W = MEME_L;
+  const H = MEME_H;
+  const R = S.rendu!;
+  const [lueur, accent] = PAL_CINEMA[R.teinte % 3];
+  const t = T - INTRO;
+  const amp = S.apercu ? 0 : forceA(S.env, S.duree, t);
+  const img = amp > 0.28 ? S.p : S.n;
+  const avance = S.apercu ? 0.03 : cl(T / Math.max(1, dureeTotale(S))) * 0.09;
+  g.fillStyle = "#050206";
+  g.fillRect(0, 0, W, H);
+  figurineDansCase(g, img, 0, 0, W, H, R.cadrage === "gros-plan", 1 + avance + amp * 0.02, deg(Math.sin(T * 6) * amp * 0.8));
+  // l'étalonnage : une teinte, puis la pénombre autour de son visage
+  g.save();
+  g.globalCompositeOperation = "soft-light";
+  g.fillStyle = lueur;
+  g.fillRect(0, 0, W, H);
+  g.restore();
+  const v = g.createRadialGradient(W / 2, H * 0.4, 160, W / 2, H * 0.42, 900);
+  v.addColorStop(0, "rgba(5,2,6,0)");
+  v.addColorStop(0.55, "rgba(5,2,6,.35)");
+  v.addColorStop(1, "rgba(5,2,6,.95)");
+  g.fillStyle = v;
+  g.fillRect(0, 0, W, H);
+  // les bandes noires
+  g.fillStyle = "#000000";
+  g.fillRect(0, 0, W, 150);
+  g.fillRect(0, H - 270, W, 270);
+  // « CLIKME PRÉSENTE », comme au générique ; l'emoji de ce qu'elle ressent
+  g.save();
+  g.font = `800 24px ${S.police}`;
+  g.fillStyle = "#C9B8C2";
+  g.textBaseline = "middle";
+  let x = 40;
+  for (const c of "CLIKME PRÉSENTE") {
+    g.fillText(c, x, 78);
+    x += g.measureText(c).width + 7;
+  }
+  if (S.emoji) {
+    g.font = `64px ${EMOJI}`;
+    g.textAlign = "right";
+    g.fillText(S.emoji, W - 34, 80);
+  }
+  g.restore();
+  // le mot fort, en géant, quand il est dit
+  const mots = S.mots.map((m) => m.mot);
+  const iFort = mots.findIndex((m) => estFort(S, m));
+  const quand = S.apercu ? -1 : iFort >= 0 ? (S.mots[iFort]?.de ?? 0) : S.duree * 0.5;
+  if (R.mot && t >= quand) {
+    const e = S.apercu ? 1 : sortie((t - quand) / 0.5);
+    let taille = 170;
+    g.font = `900 ${taille}px ${S.police}`;
+    while (g.measureText(R.mot).width > W - 60 && taille > 60) {
+      taille -= 4;
+      g.font = `900 ${taille}px ${S.police}`;
+    }
+    g.save();
+    g.globalAlpha = e;
+    g.translate(W / 2, H - 300);
+    g.scale(0.92 + 0.08 * e, 0.92 + 0.08 * e);
+    g.textAlign = "center";
+    g.textBaseline = "alphabetic";
+    g.shadowColor = accent;
+    g.shadowBlur = 44;
+    g.fillStyle = accent;
+    g.fillText(R.mot, 0, 0);
+    g.shadowBlur = 0;
+    g.fillText(R.mot, 0, 0);
+    g.restore();
+  }
+  // sa phrase, en sous-titre (le paquet du moment ; dans un aperçu, toute la phrase)
+  g.save();
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.fillStyle = "#F3EAEE";
+  const serif = `italic 600 44px Georgia, "Times New Roman", serif`;
+  g.font = serif;
+  const morceaux = S.apercu ? [S.mots] : [S.sous.find((p) => t >= p[0].de - 0.05 && t < p[p.length - 1].a + 0.3) ?? []];
+  const phrase = morceaux[0].map((m) => m.mot);
+  if (phrase.length) {
+    const lignes: string[] = [];
+    let ligne = "";
+    for (const m of phrase) {
+      const essai = ligne ? `${ligne} ${m}` : m;
+      if (ligne && g.measureText(essai).width > W - 90) {
+        lignes.push(ligne);
+        ligne = m;
+      } else ligne = essai;
+    }
+    if (ligne) lignes.push(ligne);
+    const vues = lignes.slice(0, 3);
+    vues.forEach((l, k) => g.fillText(k === 0 && S.apercu ? `« ${l}` : l, W / 2, H - 135 + (k - (vues.length - 1) / 2) * 54));
+  }
+  g.restore();
+}
+
+/** 🌀 DÉCALÉ, L'AFFICHE : deux couleurs vives, des étoiles ; sa phrase en lettres énormes, un mot après l'autre ; sa
+ *  figurine collée comme une photo ; l'emoji en badge. */
+function dessinerAffiche(g: CanvasRenderingContext2D, S: Scene, T: number): void {
+  const W = MEME_L;
+  const H = MEME_H;
+  const R = S.rendu!;
+  const [a, b] = PAL_AFFICHE[R.teinte % 3];
+  const t = T - INTRO;
+  const amp = S.apercu ? 0 : forceA(S.env, S.duree, t);
+  const img = amp > 0.28 ? S.p : S.n;
+  g.fillStyle = a;
+  g.fillRect(0, 0, W, H);
+  g.fillStyle = b;
+  g.beginPath();
+  g.moveTo(0, H * 0.64);
+  g.lineTo(W, H * 0.47);
+  g.lineTo(W, H);
+  g.lineTo(0, H);
+  g.closePath();
+  g.fill();
+  // des étoiles
+  const etoile = (x: number, y: number, r: number, c: string, rot: number) => {
+    g.save();
+    g.translate(x, y);
+    g.rotate(rot);
+    g.fillStyle = c;
+    g.beginPath();
+    for (let k = 0; k < 8; k++) {
+      const rr = k % 2 ? r * 0.22 : r;
+      const an = (Math.PI * k) / 4;
+      g.lineTo(Math.cos(an) * rr, Math.sin(an) * rr);
+    }
+    g.closePath();
+    g.fill();
+    g.restore();
+  };
+  const tourne = S.apercu ? 0 : T * 0.8;
+  etoile(640, 640, 46, "#FFFFFF", tourne);
+  etoile(70, 720, 30, "#12060F", -tourne);
+  etoile(330, 40, 28, "#12060F", tourne);
+  // sa figurine, collée comme une photo (elle penche, et bouge sur sa voix)
+  const arrivee = S.apercu ? 1 : T < INTRO ? 1.3 - 0.3 * rebond(T / INTRO) : 1;
+  const danse = S.danse && T >= INTRO && !S.apercu ? Math.sin((Math.PI * (T - INTRO)) / 0.6) : 0;
+  g.save();
+  g.translate(468, 910);
+  g.rotate(deg(6 + danse * 4 + Math.sin(T * 7.5) * amp * 2));
+  g.scale(arrivee, arrivee);
+  g.fillStyle = "#12060F";
+  g.fillRect(-210 + 16, -290 + 18, 420, 580);
+  g.fillStyle = "#FFFFFF";
+  g.fillRect(-210, -290, 420, 580);
+  figurineDansCase(g, img, -188, -268, 376, 536, R.cadrage === "gros-plan", 1 + amp * 0.03);
+  g.restore();
+  // sa phrase, en lettres énormes : un mot après l'autre, au fil de sa voix
+  const mots = S.mots.map((m) => m.mot.toUpperCase());
+  if (mots.length) {
+    const { taille, lignes } = enLignes(g, mots, S.police, 112, 610, 5, 40);
+    g.save();
+    g.translate(46, 150);
+    g.rotate(deg(-5));
+    g.font = `900 ${taille}px ${S.police}`;
+    g.textBaseline = "alphabetic";
+    g.textAlign = "left";
+    const espace = g.measureText(" ").width * 1.1;
+    const dernier = mots.length - 1;
+    lignes.forEach((ligne, li) => {
+      let x = 0;
+      const y = taille * 0.86 + li * taille * 1.02;
+      for (const i of ligne) {
+        const w = g.measureText(mots[i]).width;
+        const quand = ditA(S, i);
+        if (t >= quand - 0.02) {
+          const e = S.apercu ? 1 : rebond((t - quand + 0.02) / 0.25);
+          g.save();
+          g.translate(x + w / 2, y - taille * 0.35);
+          g.scale(e, e);
+          g.translate(-(x + w / 2), -(y - taille * 0.35));
+          if (i === dernier || estFort(S, mots[i])) {
+            // le dernier mot : une étiquette rose, de travers
+            g.save();
+            g.translate(x + w / 2, y - taille * 0.35);
+            g.rotate(deg(4));
+            g.fillStyle = "#12060F";
+            g.fillRect(-w / 2 - 14 + 9, -taille * 0.62 + 10, w + 28, taille * 1.08);
+            g.fillStyle = "#FF2E9A";
+            g.fillRect(-w / 2 - 14, -taille * 0.62, w + 28, taille * 1.08);
+            g.fillStyle = "#FFFFFF";
+            g.fillText(mots[i], -w / 2, taille * 0.34);
+            g.restore();
+          } else {
+            const noir = i % 2 === 0;
+            g.fillStyle = noir ? "#FFFFFF" : "#12060F";
+            g.fillText(mots[i], x + 6, y + 6);
+            g.fillStyle = noir ? "#12060F" : "#FFFFFF";
+            g.fillText(mots[i], x, y);
+          }
+          g.restore();
+        }
+        x += w + espace;
+      }
+    });
+    g.restore();
+  }
+  // l'emoji, en badge
+  if (S.emoji) {
+    g.save();
+    g.translate(140, 1090);
+    g.rotate(deg(-12 + (S.apercu ? 0 : Math.sin(T * 3) * 6)));
+    g.fillStyle = "#12060F";
+    g.beginPath();
+    g.arc(10, 12, 92, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = "#FFFFFF";
+    g.beginPath();
+    g.arc(0, 0, 92, 0, Math.PI * 2);
+    g.fill();
+    g.lineWidth = 10;
+    g.strokeStyle = "#12060F";
+    g.stroke();
+    g.font = `104px ${EMOJI}`;
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.fillText(S.emoji, 0, 6);
+    g.restore();
+  }
+  // le petit « ClikMe », en ruban
+  g.save();
+  g.translate(44, 1218);
+  g.rotate(deg(-3));
+  g.fillStyle = "#12060F";
+  g.fillRect(0, -30, 170, 56);
+  g.font = `900 30px ${S.police}`;
+  g.textBaseline = "middle";
+  g.fillStyle = "#FFF4E6";
+  g.fillText("Clik", 20, 0);
+  g.fillStyle = "#FF2E9A";
+  g.fillText("Me", 20 + g.measureText("Clik").width, 0);
+  g.restore();
+}
+
+function dessinerRendu(g: CanvasRenderingContext2D, S: Scene, T: number): void {
+  const st = S.rendu!.style;
+  if (st === "cinema") dessinerCinema(g, S, T);
+  else if (st === "affiche") dessinerAffiche(g, S, T);
+  else dessinerBD(g, S, T);
+  if (S.apercu) return;
+  // le flash de l'arrivée ; la fin
+  if (T < 0.25) {
+    g.fillStyle = `rgba(255,255,255,${0.85 * (1 - T / 0.25)})`;
+    g.fillRect(0, 0, MEME_L, MEME_H);
+  }
+  laFin(g, S.police, T - (INTRO + S.duree + 0.15), S.fin);
+}
+
+/** La trame de la BD (des points), une fois. */
+function laTrame(g: CanvasRenderingContext2D): CanvasPattern | null {
+  const c = document.createElement("canvas");
+  c.width = 22;
+  c.height = 22;
+  const x = c.getContext("2d");
+  if (!x) return null;
+  x.fillStyle = "rgba(18,6,15,.16)";
+  x.beginPath();
+  x.arc(11, 11, 3.8, 0, Math.PI * 2);
+  x.fill();
+  return g.createPattern(c, "repeat");
+}
+
+const apercus = new Map<string, Promise<HTMLImageElement>>();
+/** Une image pour les aperçus (gardée : les trois vignettes et leurs retours la reprennent). */
+function imageApercu(url: string): Promise<HTMLImageElement> {
+  let p = apercus.get(url);
+  if (!p) {
+    p = image(url);
+    p.catch(() => apercus.delete(url));
+    if (apercus.size > 24) apercus.delete(apercus.keys().next().value as string);
+    apercus.set(url, p);
+  }
+  return p;
+}
+
+/**
+ * 🖼️ L'APERÇU D'UNE INTERPRÉTATION : une image fixe du mème, toute sa phrase écrite, dessinée par le même code que la
+ * vidéo (ce qu'il choisit, c'est ce qu'il aura). `toile` : 360 × 640 (la moitié du mème).
+ */
+export async function apercuRendu(toile: HTMLCanvasElement, o: { image: string; rendu: RenduMeme; texte: string; emoji?: string }): Promise<void> {
+  const img = await imageApercu(o.image);
+  toile.width = MEME_L / 2;
+  toile.height = MEME_H / 2;
+  const g = toile.getContext("2d");
+  if (!g) return;
+  const police = `${getComputedStyle(document.body).fontFamily || "system-ui"}, "Arial Black", sans-serif`;
+  const mots = motsDuTexte(o.texte, 1);
+  const S: Scene = {
+    n: img,
+    p: img,
+    fond: "#E0218A",
+    env: [0],
+    duree: 1,
+    sous: paquets(mots),
+    mots,
+    emoji: o.emoji ?? "",
+    danse: false,
+    police,
+    rendu: o.rendu,
+    trame: laTrame(g),
+    apercu: true,
+  };
+  g.setTransform(0.5, 0, 0, 0.5, 0, 0);
+  dessinerRendu(g, S, INTRO + 0.5);
+  g.setTransform(1, 0, 0, 1, 0, 0);
+}
+
 function dessiner(g: CanvasRenderingContext2D, S: Scene, T: number): void {
   if (S.duo) return dessinerDuo(g, S, T);
+  if (S.rendu && !S.annonce) return dessinerRendu(g, S, T);
   const W = MEME_L;
   const H = MEME_H;
   const t = T - INTRO; // le temps de sa voix
@@ -495,6 +1046,8 @@ export async function fabriquerMeme(o: {
   surProgres?: (p: number) => void;
   /** 💬 En duo : le mème auquel il répond (ses images, sa voix, ses mots, son prénom) ; `moi` : son prénom à lui. */
   duo?: { images: { n: string; p: string }; son: string; texte?: string; prenom: string; moi: string };
+  /** 🎬 L'interprétation choisie (son graphisme) : pas en duo, ni pour un commerçant. */
+  rendu?: RenduMeme;
 }): Promise<Meme> {
   const { ctx, toile } = o;
   if (!memePossible()) throw new Error("Ce téléphone ne sait pas fabriquer de vidéo.");
@@ -518,13 +1071,17 @@ export async function fabriquerMeme(o: {
   ]);
   const duree = voix.duration;
   const police = `${getComputedStyle(document.body).fontFamily || "system-ui"}, "Arial Black", sans-serif`;
+  const mots = motsDuTexte(o.texte ?? "", duree);
+  const rendu = o.rendu && !o.duo && !o.annonce ? o.rendu : undefined;
   const S: Scene = {
     n,
     p,
     fond: couleurDuFond(n),
     env: enveloppe(voix),
     duree,
-    sous: paquets(motsDuTexte(o.texte ?? "", duree)),
+    sous: paquets(mots),
+    mots,
+    ...(rendu ? { rendu, trame: laTrame(g) } : {}),
     emoji: o.emoji ?? "",
     danse: Boolean(o.danse) || sansVoix,
     police,

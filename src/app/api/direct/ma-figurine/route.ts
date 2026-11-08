@@ -15,8 +15,10 @@
 // POST { action: "mois" } : sa figurine du mois, méritée (10 jours), fabriquée une fois → { mois } (`enCours` : rappeler).
 // POST { action: "look-parle", look: "AAAA-MM" } : ce look (une figurine du mois) apprend à parler (sa bouche ouverte) → { mois }.
 // GET ?memes=1&recus=<id,id…> : « Mes mèmes » — les siens, les réponses en duo qu'on lui a faites, ceux qu'il a reçus.
-// POST { action: "message", son: data:audio…, duree, commerces: [liens], sentiment?, texte?, voix?, danse?, repondA?, look? } : un
-//   message de sa figurine (ou d'un de ses looks) → { id, lien }.
+// POST { action: "message", son: data:audio…, duree, commerces: [liens], sentiment?, texte?, voix?, danse?, repondA?, look?, rendu? } :
+//   un message de sa figurine (ou d'un de ses looks) → { id, lien } ; `rendu` : son graphisme (bd, cinema, affiche).
+// POST { action: "rendus", texte, intention?, tour? } → { rendus, par } : 🎬 trois façons de dire sa phrase (`rendus.ts`) —
+//   le visage, le cadrage, le graphisme ; `tour` (« 🎲 Trois autres ») : les règles font tourner les visages.
 // POST { action: "meme-envoi", id, type } → { seau, chemin, jeton } : où envoyer la vidéo de son mème (`meme.ts`) ;
 //      { action: "meme-pose", id, type } : elle est arrivée → rangée à côté du message.
 // GET ?repondre=<id> : le mème auquel il répond, en duo (ses images, sa voix, ses mots, son prénom).
@@ -70,6 +72,7 @@ import {
   signalerMessage,
 } from "@/lib/direct/ma-figurine-serveur";
 import { surprendre } from "@/lib/direct/meme-surprise-serveur";
+import { interpreter } from "@/lib/direct/rendus-serveur";
 import { fabriquerPose, mesReactions, noterEnvoiReaction } from "@/lib/direct/mes-reactions-serveur";
 import { reagir } from "@/lib/direct/reactions-memes-serveur";
 import { effacerMonMeme } from "@/lib/direct/moderation-serveur";
@@ -252,6 +255,12 @@ export async function POST(request: Request) {
     const ok = await noterEnvoiReaction(supabase, p.cle);
     return NextResponse.json(ok ? { ok: true } : { error: "Cette réaction n’existe pas." }, { status: ok ? 200 : 400 });
   }
+  // 🎬 trois façons de dire sa phrase
+  if (p?.action === "rendus") {
+    const r = await interpreter(supabase, moi, p.texte, p.intention, p.tour);
+    if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
+    return NextResponse.json({ ok: true, rendus: r.rendus, par: r.par }, { headers: sansCache });
+  }
   // 🎲 « Surprends-moi ! » : ClikMe écrit son mème (il le lit, puis le choisit — ou en demande un autre)
   if (p?.action === "surprise") {
     const r = await surprendre(supabase, moi, p.sauf, p.theme);
@@ -264,7 +273,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true }, { headers: sansCache });
   }
   if (p?.action === "message") {
-    const r = await enregistrerMessage(supabase, moi, p.son, p.duree, p.commerces, p.sentiment, p.texte, p.voix, p.danse, p.repondA, p.look);
+    const r = await enregistrerMessage(supabase, moi, p.son, p.duree, p.commerces, p.sentiment, p.texte, p.voix, p.danse, p.repondA, p.look, p.rendu);
     if (!r.id) return NextResponse.json({ error: r.error }, { status: 400 });
     // ↩️ « Sam t'a répondu en duo ! » : à l'auteur du mème, après la réponse (jamais bloquant)
     const auteur = r.auteurDeLOrigine;

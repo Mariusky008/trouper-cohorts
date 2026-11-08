@@ -638,6 +638,19 @@ http
         const q = JSON.parse((await corps(req)).toString() || "{}");
         const consigne = String(q.messages?.[0]?.content ?? "");
         consignesIA.push(consigne);
+        // 🎬 « Trois façons de le dire » : rire en BD, tristesse au cinéma, grimace en affiche ; le mot fort, le dernier
+        if (consigne.includes("TROIS INTERPRÉTATIONS")) {
+          const phrase = (/« (.+) »\n\nRéponds/.exec(consigne)?.[1] ?? "").trim();
+          const mot = (phrase.split(/\s+/).pop() ?? "").replace(/[^\p{L}\p{N}]/gu, "");
+          // (une intention donnée : les visages qu'elle suggère ; sinon, toujours les mêmes)
+          const [a, b, c] = /visages qui vont bien : ([a-z]+), ([a-z]+), ([a-z]+)\)/.exec(consigne)?.slice(1) ?? ["rire", "tristesse", "grimace"];
+          const rendus = [
+            { style: "bd", visage: a, onomatopee: "HAHA !", mot },
+            { style: "cinema", visage: b, mot },
+            { style: "affiche", visage: c, mot },
+          ];
+          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ rendus }) } }] });
+        }
         const m = /propose un apéro/.test(consigne)
           ? { texte: "Ce soir, apéro chez moi : tout le monde est invité !", sentiment: "euphorie", danse: true }
           : MEMES_IA.find((x) => !consigne.includes(x.texte) && (!x.si || consigne.includes(x.si))) ?? MEMES_IA[1];
