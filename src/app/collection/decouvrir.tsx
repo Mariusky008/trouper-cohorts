@@ -12,6 +12,12 @@
  *   · 😂 ❤️ 🔥 sous chaque mème : une réaction par personne (il la change, ou la retire), un compte seulement ;
  *   · chaque vidéo joue toute seule, en silence, quand on la voit (un toucher : le son) ; « 📲 Partager ».
  * La liste se recharge à chaque fois qu'il ouvre l'onglet.
+ *
+ * 8 NOVEMBRE 2026, LE SWIPE (le propriétaire : « ça serait mieux un système de swipe plutôt que scroller vers le bas,
+ * non ? » — oui) : une page par mème, en plein écran, et on glisse vers le haut pour le suivant, comme dans les
+ * applis de vidéos. La première page : le mème du jour ; puis ses réponses (une fois la sienne postée) ; puis le fil ;
+ * à la fin, « Tu as tout vu ». Le document « s'aimante » à chaque page (`scroll-snap`, seulement quand « Découvrir »
+ * est ouvert) ; 😂 ❤️ 🔥, « Répondre » et « Partager » sont dans la colonne de droite, le nom en bas à gauche.
  */
 import { useContext, useEffect, useRef, useState } from "react";
 import type { MemeCommerce } from "@/lib/direct/memes-commerces";
@@ -74,7 +80,8 @@ function Reactions({ reac, onReagir, actif }: { reac?: ReacMeme; onReagir: (r: C
 }
 
 /** Un mème du fil : il joue quand on le voit (en silence), s'arrête quand on passe ; un toucher : le son. */
-function MemeDuFil({ e, actif, compte, onRetire, onReagir }: { e: Element; actif: boolean; compte: boolean; onRetire: (id: string) => void; onReagir: (e: Element, r: CleReac | null) => void }) {
+// (`badge` : en haut de la page — « 🔥 le thème du jour » sur ses réponses, « voici ceux d'ailleurs »)
+function MemeDuFil({ e, actif, compte, badge, onRetire, onReagir }: { e: Element; actif: boolean; compte: boolean; badge?: string; onRetire: (id: string) => void; onReagir: (e: Element, r: CleReac | null) => void }) {
   const video = useRef<HTMLVideoElement>(null);
   const [muet, setMuet] = useState(true);
   const [partage, setPartage] = useState("");
@@ -122,6 +129,11 @@ function MemeDuFil({ e, actif, compte, onRetire, onReagir }: { e: Element; actif
   return (
     <li className={`dv-carte${e.genre === "client" ? " client" : " commerce"}${e.genre === "client" && e.m.ami ? " ami" : ""}`}>
       <div className="dv-video">
+        {/* (le mème en entier — ses mots vont jusqu'aux bords — ; autour, sa propre image, floutée) */}
+        {m.image && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="dv-fond" src={m.image} alt="" aria-hidden="true" loading="lazy" />
+        )}
         <video
           ref={video}
           src={m.video}
@@ -138,10 +150,11 @@ function MemeDuFil({ e, actif, compte, onRetire, onReagir }: { e: Element; actif
             void v.play().catch(() => undefined);
           }}
         />
-        <span className="dv-son" aria-hidden="true">
-          {muet ? "🔇" : "🔊"}
-        </span>
       </div>
+      <span className="dv-son" aria-hidden="true">
+        {muet ? "🔇" : "🔊"}
+      </span>
+      {badge && <span className="dv-badge">{badge}</span>}
       <div className="dv-bas">
         {e.genre === "commerce" ? (
           // LA MÊME CARTE QUE LES GENS : son nom (un toucher : sa page, compté), rien qui fasse pub
@@ -174,18 +187,23 @@ function MemeDuFil({ e, actif, compte, onRetire, onReagir }: { e: Element; actif
             </small>
           </span>
         )}
+      </div>
+      {/* LA COLONNE DE DROITE : 😂 ❤️ 🔥, répondre, partager */}
+      <div className="dv-rail">
+        <Reactions reac={reac} actif={compte} onReagir={(r) => onReagir(e, r)} />
         <span className="dv-actions">
           {e.genre === "client" && !e.m.moi && (
             <a className="dv-repondre" href={`/figurine/${m.id}/repondre`}>
-              ↩️ Répondre
+              <span aria-hidden="true">↩️</span>
+              <small>Répondre</small>
             </a>
           )}
           <button type="button" className="dv-partager" onClick={partager} aria-label="Partager ce mème">
-            {partage || "📲"}
+            <span aria-hidden="true">📲</span>
+            <small>{partage || "Partager"}</small>
           </button>
         </span>
       </div>
-      <Reactions reac={reac} actif={compte} onReagir={(r) => onReagir(e, r)} />
     </li>
   );
 }
@@ -256,19 +274,18 @@ export function Decouvrir({ allerA }: { allerA: (o: string) => void }) {
   const retirer = (id: string) =>
     setFil((f) => (f ? { ...f, publics: f.publics.filter((m) => m.id !== id), jour: f.jour ? { ...f.jour, reponses: f.jour.reponses.filter((m) => m.id !== id) } : f.jour } : f));
   const jour = fil?.jour ?? null;
+  // (ses réponses, une fois la sienne postée : les pages juste après le mème du jour)
+  const reponsesJour = jour?.repondu ? jour.reponses : [];
+  const nPages = reponsesJour.length + elements.length;
   return (
     <div className="dv">
-      <header className="og-tete">
-        <small>DÉCOUVRIR</small>
-        <h2>Les mèmes du jour près de chez toi</h2>
-      </header>
       <GuideDit
         cle="pablito-decouvrir-2"
         popup
         repliques={[
           { t: "Chaque jour, un mème du jour : le même thème pour tout le monde 🔥", v: "euphorie" },
           { t: "Réponds avec ta figurine… et tu verras les réponses des gens de ta ville !", v: "joie" },
-          { t: "Un mème te plaît ? 😂 ❤️ 🔥, ou réponds-lui en duo 📲", v: "joie", apres: "louche" },
+          { t: "Glisse vers le haut pour le mème suivant. Il te plaît ? 😂 ❤️ 🔥, ou réponds-lui en duo 📲", v: "joie", apres: "louche" },
         ]}
       />
       {panne && <p className="mc-vide">Le fil n’a pas pu s’afficher. Réessaie dans un instant.</p>}
@@ -278,42 +295,57 @@ export function Decouvrir({ allerA }: { allerA: (o: string) => void }) {
         </div>
       )}
 
-      {/* 🔥 LE MÈME DU JOUR : tu postes ta réponse, puis tu vois celles des autres */}
+      {/* 🔥 LA PREMIÈRE PAGE : LE MÈME DU JOUR — tu postes ta réponse, puis tu vois celles des autres */}
       {jour && (
-        <section className="dv-jour" id="jour" aria-label="Le mème du jour">
-          <small className="tj-label">🔥 LE MÈME DU JOUR</small>
-          <b className="tj-titre">
-            <span aria-hidden="true">{jour.theme.emoji}</span> {jour.theme.titre}
-          </b>
-          <span className="tj-chiffres">{chiffresDuJour(jour)}</span>
-          {!fil?.compte ? (
-            <button type="button" className="tj-go" onClick={() => allerA("figurine")}>
-              📸 Crée ta figurine pour répondre
-            </button>
-          ) : !jour.repondu ? (
-            <>
-              <button
-                type="button"
-                className="tj-go"
-                onClick={() => {
-                  allerA("figurine");
-                  window.setTimeout(() => repondreAuJour(jour), 200);
-                }}
-              >
-                🔥 Je réponds avec ma figurine
+        <section className="dv-diapo dv-jour" id="jour" aria-label="Le mème du jour">
+          <header className="og-tete">
+            <small>DÉCOUVRIR</small>
+            <h2>Les mèmes du jour près de chez toi</h2>
+          </header>
+          <div className="dv-jour-carte">
+            <small className="tj-label">🔥 LE MÈME DU JOUR</small>
+            <span className="dv-jour-emoji" aria-hidden="true">
+              {jour.theme.emoji}
+            </span>
+            <b className="tj-titre">{jour.theme.titre}</b>
+            <span className="tj-chiffres">{chiffresDuJour(jour)}</span>
+            {!fil?.compte ? (
+              <button type="button" className="tj-go" onClick={() => allerA("figurine")}>
+                📸 Crée ta figurine pour répondre
               </button>
-              {jour.n > 0 && <p className="dv-flou">👀 Réponds, et tu verras les réponses de {nomVille(jour.ville) || "ta ville"}.</p>}
-            </>
-          ) : jour.reponses.length ? (
-            <ul className="dv-fil dv-fil-jour">
-              {jour.reponses.map((m) => (
-                <MemeDuFil key={`jour-${m.id}`} e={{ genre: "client", m }} actif={visible} compte={Boolean(fil?.compte)} onRetire={retirer} onReagir={reagir} />
-              ))}
-            </ul>
-          ) : null}
-          {/* 🔔 le lot 3 : sa réponse postée (ou l'appli tout juste posée sur son iPhone), « je te préviens demain ? » */}
-          {fil?.compte && <InviterAppli apres="jour" repondu={jour.repondu} />}
+            ) : !jour.repondu ? (
+              <>
+                <button
+                  type="button"
+                  className="tj-go"
+                  onClick={() => {
+                    allerA("figurine");
+                    window.setTimeout(() => repondreAuJour(jour), 200);
+                  }}
+                >
+                  🔥 Je réponds avec ma figurine
+                </button>
+                {jour.n > 0 && <p className="dv-flou">👀 Réponds, et tu verras les réponses de {nomVille(jour.ville) || "ta ville"}.</p>}
+              </>
+            ) : (
+              <p className="dv-repondu">✓ Tu as répondu{reponsesJour.length ? ` : glisse pour voir ${reponsesJour.length > 1 ? `les ${reponsesJour.length} réponses` : "la réponse"}` : "."}</p>
+            )}
+            {/* 🔔 le lot 3 : sa réponse postée (ou l'appli tout juste posée sur son iPhone), « je te préviens demain ? » */}
+            {fil?.compte && <InviterAppli apres="jour" repondu={jour.repondu} />}
+          </div>
+          {nPages > 0 && (
+            <span className="dv-glisse" aria-hidden="true">
+              <i>⌃</i> Glisse vers le haut
+            </span>
+          )}
         </section>
+      )}
+      {reponsesJour.length > 0 && jour && (
+        <ul className="dv-fil dv-fil-jour" aria-label="Les réponses au mème du jour">
+          {reponsesJour.map((m) => (
+            <MemeDuFil key={`jour-${m.id}`} e={{ genre: "client", m }} badge={`🔥 ${jour.theme.titre}`} actif={visible} compte={Boolean(fil?.compte)} onRetire={retirer} onReagir={reagir} />
+          ))}
+        </ul>
       )}
 
       {fil && !elements.length && !jour && (
@@ -326,19 +358,38 @@ export function Decouvrir({ allerA }: { allerA: (o: string) => void }) {
           </button>
         </section>
       )}
+      {/* LE FIL : une page par mème */}
       {elements.length > 0 && (
-        <>
-          <b className="dv-sous">Le fil</b>
-          {dAilleurs && <p className="dv-note">Rien encore dans ta ville aujourd’hui : voici ceux d’ailleurs.</p>}
-          <ul className="dv-fil">
-            {elements.map((e) => (
-              <MemeDuFil key={`${e.genre}-${e.m.id}`} e={e} actif={visible} compte={Boolean(fil?.compte)} onRetire={retirer} onReagir={reagir} />
-            ))}
-          </ul>
-        </>
+        <ul className="dv-fil" aria-label="Le fil">
+          {elements.map((e, k) => (
+            <MemeDuFil
+              key={`${e.genre}-${e.m.id}`}
+              e={e}
+              badge={k === 0 && dAilleurs ? "Rien encore dans ta ville aujourd’hui : voici ceux d’ailleurs" : undefined}
+              actif={visible}
+              compte={Boolean(fil?.compte)}
+              onRetire={retirer}
+              onReagir={reagir}
+            />
+          ))}
+        </ul>
+      )}
+      {/* 🎉 LA DERNIÈRE PAGE */}
+      {nPages > 0 && (
+        <section className="dv-diapo dv-fin" aria-label="Tu as tout vu">
+          <span aria-hidden="true">🎉</span>
+          <b>Tu as tout vu pour aujourd’hui</b>
+          <p>Demain, un nouveau mème du jour 🔥 En attendant, fais rire ta ville avec le tien.</p>
+          <button type="button" className="tj-go" onClick={() => allerA("figurine")}>
+            🎭 Faire mon mème
+          </button>
+          <button type="button" className="dv-revoir" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+            ⌃ Revoir depuis le début
+          </button>
+        </section>
       )}
       {message && (
-        <p className="tf-erreur" role="alert">
+        <p className="tf-erreur dv-message" role="alert">
           {message}
         </p>
       )}
@@ -347,30 +398,60 @@ export function Decouvrir({ allerA }: { allerA: (o: string) => void }) {
 }
 
 export const STYLES_DECOUVRIR = `
-.dv{display:flex;flex-direction:column;gap:6px}
-.dv-note{margin:6px 0 0;font-size:13px;color:#D9C3CB}
-.dv-sous{margin-top:14px;font-size:15px;font-weight:900}
-.dv-jour{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:10px;padding:16px;border-radius:24px;background:radial-gradient(100% 90% at 0% 0%,rgba(255,122,89,.32),transparent 60%),radial-gradient(90% 80% at 100% 100%,rgba(255,46,154,.28),transparent 60%),rgba(255,255,255,.05);border:1.5px solid rgba(255,122,89,.55)}
-.dv-jour .dv-fil{width:100%}
-.dv-flou{margin:4px 0 0;font-size:13px;color:#E8D3DC}
-.dv-fil{display:flex;flex-direction:column;gap:22px;margin:14px 0 0;padding:0;list-style:none}
-.dv-carte{display:flex;flex-direction:column;gap:8px}
-.dv-video{position:relative;width:100%;max-width:440px;margin:0 auto;aspect-ratio:9/16;max-height:72dvh;border-radius:26px;overflow:hidden;background:#1E0918;box-shadow:0 26px 50px -24px rgba(0,0,0,.95)}
-.dv-carte.ami .dv-video{box-shadow:0 0 0 2px rgba(127,240,196,.6),0 26px 50px -24px rgba(0,0,0,.95)}
-.dv-video video{display:block;width:100%;height:100%;object-fit:cover;cursor:pointer}
-.dv-son{position:absolute;right:12px;bottom:12px;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.55);font-size:17px;pointer-events:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-.dv-bas{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;max-width:440px;margin:0 auto}
-.dv-qui{display:flex;flex-direction:column;gap:1px;min-width:0}
+.dv{display:flex;flex-direction:column}
+/* LE SWIPE : une page par mème, de la hauteur de l'écran ; le document s'aimante à chacune (quand « Découvrir » est ouvert) */
+html:has(#o-decouvrir:not([hidden]) .dv-diapo){scroll-snap-type:y mandatory}
+.dv-diapo,.dv-fil>.dv-carte{position:relative;box-sizing:border-box;height:100dvh;margin:0 -16px;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden}
+.dv-fil{margin:0;padding:0;list-style:none}
+/* 🔥 la première page : le mème du jour */
+.dv-jour{display:flex;flex-direction:column;height:auto;min-height:100dvh;padding:calc(70px + env(safe-area-inset-top)) 20px calc(130px + env(safe-area-inset-bottom));overflow:visible;
+  background:radial-gradient(90% 50% at 10% 25%,rgba(255,122,89,.42),transparent 65%),radial-gradient(90% 50% at 90% 80%,rgba(255,46,154,.4),transparent 65%),#16070F}
+.dv-jour-carte{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;max-width:420px;margin:auto;text-align:center}
+.dv-jour-emoji{font-size:88px;line-height:1;filter:drop-shadow(0 16px 26px rgba(255,46,154,.6));animation:dv-flotte 3.2s ease-in-out infinite}
+.dv-jour .tj-titre{font-size:30px;line-height:1.08;letter-spacing:-.02em}
+.dv-jour .tj-chiffres{font-size:14px}
+.dv-jour .tj-go{max-width:360px}
+.dv-flou,.dv-repondu{margin:4px 0 0;font-size:13.5px;color:#E8D3DC}
+.dv-repondu{font-weight:800;color:#7FF0C4}
+.dv-jour .ct-invite{width:100%;box-sizing:border-box;text-align:left}
+.dv-glisse{position:absolute;left:0;right:0;bottom:calc(104px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:0;font-size:13px;font-weight:800;color:#FFD9EB;animation:dv-glisse 1.8s ease-in-out infinite;pointer-events:none}
+.dv-glisse i{font-style:normal;font-size:22px;line-height:.8}
+/* un mème : la vidéo sur toute la page ; le nom en bas à gauche ; la colonne de droite */
+.dv-carte{background:#0B0409}
+.dv-video{position:absolute;inset:0}
+.dv-video{overflow:hidden}
+.dv-fond{position:absolute;inset:-40px;width:calc(100% + 80px);height:calc(100% + 80px);object-fit:cover;filter:blur(28px) brightness(.5) saturate(1.2);transform:translateZ(0)}
+.dv-video video{position:relative;display:block;width:100%;height:100%;object-fit:contain;cursor:pointer}
+.dv-carte::before{content:"";position:absolute;left:0;right:0;top:0;z-index:1;height:150px;background:linear-gradient(180deg,rgba(11,4,9,.65),rgba(11,4,9,0));pointer-events:none}
+.dv-carte::after{content:"";position:absolute;left:0;right:0;bottom:0;z-index:1;height:50%;background:linear-gradient(180deg,rgba(11,4,9,0),rgba(11,4,9,.5) 45%,rgba(11,4,9,.92));pointer-events:none}
+.dv-carte.ami .dv-video{box-shadow:inset 0 0 0 3px rgba(127,240,196,.55)}
+.dv-son{position:absolute;right:14px;top:calc(70px + env(safe-area-inset-top));z-index:2;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.5);font-size:17px;pointer-events:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.dv-badge{position:absolute;left:14px;top:calc(72px + env(safe-area-inset-top));z-index:2;max-width:calc(100% - 84px);box-sizing:border-box;padding:6px 12px;border-radius:999px;background:rgba(18,6,15,.72);font-size:12.5px;font-weight:800;line-height:1.3;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.dv-bas{position:absolute;left:16px;right:84px;bottom:calc(112px + env(safe-area-inset-bottom));z-index:2;display:flex;flex-direction:column;gap:2px;text-shadow:0 1px 8px rgba(0,0,0,.7)}
+.dv-qui{display:flex;flex-direction:column;gap:2px;min-width:0}
 .dv-nom{color:inherit;text-decoration:none}
-.dv-qui b{font-size:16.5px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dv-qui small{font-size:12.5px;color:#D9C3CB}
-.dv-signaler{padding:0;border:0;background:none;color:#8D7580;font:inherit;font-size:12px;text-decoration:underline;cursor:pointer}
-.dv-actions{display:flex;align-items:center;gap:8px;flex:none}
-.dv-repondre{padding:9px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#FFF4E6;font-size:13px;font-weight:800;text-decoration:none;white-space:nowrap}
-.dv-partager{min-width:42px;height:42px;padding:0 10px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#FFF4E6;font:inherit;font-size:16px;font-weight:800;cursor:pointer}
-.dv-reacs{display:flex;gap:8px;width:100%;max-width:440px;margin:0 auto}
-.dv-reac{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#FFF4E6;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
-.dv-reac span{font-size:17px;line-height:1}
-.dv-reac.pris{border-color:#FF2E9A;background:rgba(255,46,154,.2)}
-.dv-reac:disabled{opacity:.55;cursor:default}
+.dv-qui b{font-size:18px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dv-qui small{font-size:13px;color:#F1DDE6}
+.dv-signaler{padding:0;border:0;background:none;color:#CDB6C1;font:inherit;font-size:12.5px;text-decoration:underline;cursor:pointer}
+.dv-rail{position:absolute;right:10px;bottom:calc(108px + env(safe-area-inset-bottom));z-index:2;display:flex;flex-direction:column;align-items:center;gap:12px}
+.dv-reacs,.dv-actions{display:flex;flex-direction:column;align-items:center;gap:10px}
+.dv-reac,.dv-repondre,.dv-partager{display:flex;flex-direction:column;align-items:center;gap:3px;width:58px;padding:0;border:0;background:none;color:#fff;font:inherit;text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dv-reac span,.dv-repondre span,.dv-partager span{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;background:rgba(18,6,15,.55);font-size:23px;line-height:1;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:transform .2s cubic-bezier(.2,1.6,.4,1),background .2s}
+.dv-reac b,.dv-repondre small,.dv-partager small{max-width:64px;font-size:11.5px;font-weight:900;line-height:1.1;text-align:center;text-shadow:0 1px 6px rgba(0,0,0,.8)}
+.dv-reac.pris span{background:rgba(255,46,154,.85);box-shadow:0 0 0 2px #FF2E9A,0 8px 22px -6px rgba(255,46,154,.95);transform:scale(1.1)}
+.dv-reac:active span,.dv-repondre:active span,.dv-partager:active span{transform:scale(.9)}
+.dv-reac:disabled{opacity:.6;cursor:default}
+/* 🎉 la dernière page */
+.dv-fin{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:calc(70px + env(safe-area-inset-top)) 24px calc(130px + env(safe-area-inset-bottom));text-align:center;background:radial-gradient(80% 45% at 50% 42%,rgba(255,46,154,.32),transparent 70%),#12060F}
+.dv-fin>span{font-size:64px;line-height:1}
+.dv-fin b{font-size:24px;font-weight:900}
+.dv-fin p{margin:0 0 6px;max-width:320px;color:#E8D3DC}
+.dv-fin .tj-go{max-width:320px}
+.dv-revoir{padding:10px;border:0;background:none;color:#FFD9EB;font:inherit;font-weight:800;cursor:pointer}
+.dv-message{position:fixed;left:16px;right:16px;top:calc(70px + env(safe-area-inset-top));z-index:30;margin:0}
+@media (min-width:860px){
+  .dv-diapo,.dv-fil>.dv-carte{max-width:480px;margin:0 auto}
+}
+@keyframes dv-glisse{0%,100%{transform:translateY(0);opacity:.75}50%{transform:translateY(-8px);opacity:1}}
+@keyframes dv-flotte{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
 `;

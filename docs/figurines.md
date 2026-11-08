@@ -1449,6 +1449,27 @@ Les essais : `essai-autour-route.mjs` (« la gare » : celle de Dax, pas celle d
 carte : les deux ; trop court : rien) et `autour.mjs` (le lieu refait, « à la une » qui passe au plus aimé, le mur, « Juste
 à côté », « Continuer », le dépôt clair, « la gare » de bout en bout : la carte, l'épingle, le dépôt, la zone).
 
+### 9.0 tredecitricies 👆 Le retour du 8 novembre, lot C : « Découvrir » en swipe
+
+Ses mots : « page “Découvrir”, ça serait mieux un système de swipe plutôt que scroller vers le bas, non ? » — oui.
+
+- **Une page par mème, en plein écran** ; un geste vers le haut, le suivant — comme dans les applis de vidéos. Le
+  document « s'aimante » à chaque page (`scroll-snap`, seulement quand « Découvrir » est ouvert), et une page à la
+  fois (`scroll-snap-stop`) : on ne saute jamais un mème.
+- **La première page : le mème du jour** — son emoji en grand, le thème, les chiffres, « 🔥 Je réponds avec ma
+  figurine » ; « ⌃ Glisse vers le haut ». Une fois sa réponse postée : « ✓ Tu as répondu : glisse pour voir les N
+  réponses », et ces réponses sont les pages suivantes (« 🔥 le thème » en haut de chacune) ; puis le fil (les gens de
+  sa ville, les commerçants dosés) ; à la fin, **« 🎉 Tu as tout vu pour aujourd'hui »** : « 🎭 Faire mon mème »,
+  « ⌃ Revoir depuis le début ».
+- **Sur chaque page** : le nom en bas à gauche (« 👯 Proche · aujourd'hui · Signaler ») ; à droite, la colonne 😂 ❤️ 🔥
+  (avec leurs comptes), « ↩️ Répondre », « 📲 Partager » — au-dessus du menu. La vidéo joue quand on la voit ; un
+  toucher, le son. **Le mème en entier** (720 × 1280 : ses mots vont jusqu'aux bords, rogner l'écran les couperait),
+  et autour, sa propre image floutée.
+
+L'essai : `meme-du-jour.mjs` (une page par mème, de la hauteur de l'écran ; un geste, une page — pas entre deux ; le
+thème en haut des réponses, les réactions au-dessus du menu ; « Tu as tout vu » ; « Revoir depuis le début »). Les
+autres essais de « Découvrir » passent sans changement (`meme-commerce`, `ma-figurine`, `appli-notif`).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

@@ -8,7 +8,8 @@
 // les réponses, la sienne d'abord, et « 5 réponses à Dax ». Hugo répond aussi : la sienne, puis Léa (une proche, de ses
 // Rencontres), puis les autres. Il réagit : 😂, puis ❤️ (une seule à la fois), et 🔥 au commerçant. Léa voit ❤️ 1 dans
 // « Mes mèmes ». Sans compte : « Crée ta figurine pour répondre », et pas de réaction. Rien ne déborde, jamais le mot
-// interdit.
+// interdit. Le swipe (8 novembre) : une page par mème, de la hauteur de l'écran ; un geste vers le haut, la page
+// suivante (pas entre deux) ; à la fin, « Tu as tout vu », et « Revoir depuis le début ».
 import fs from "node:fs";
 import { BASE, D, F, fermerPablito, lancer, repondreFenetre } from "./commun.mjs";
 
@@ -159,6 +160,53 @@ await hugo.waitForSelector("#o-decouvrir .dv-fil-jour .dv-carte", { timeout: 600
 ok((await texte(hugo, "#o-decouvrir .dv-fil-jour .dv-carte:nth-child(2) .dv-reac.pris")) === "❤️ 1", "rechargé : ❤️ 1, la sienne");
 ok((await debordement(hugo)) <= 0 && !/exemple/i.test(await texte(hugo, "#o-decouvrir")), "« Découvrir » ne déborde pas, sans le mot interdit");
 await hugo.screenshot({ path: `${D}/meme-du-jour-3-reponses.png` });
+
+// ═══ 👆 LE SWIPE (8 novembre) : UNE PAGE PAR MÈME, EN PLEIN ÉCRAN ; ON GLISSE VERS LE HAUT POUR LE SUIVANT ═══
+await hugo.evaluate(() => window.scrollTo(0, 0));
+await hugo.waitForTimeout(600);
+const pagesDe = (p) =>
+  p.evaluate(() => {
+    const l = [...document.querySelectorAll("#o-decouvrir .dv-diapo, #o-decouvrir .dv-fil > .dv-carte")];
+    return {
+      hauts: l.map((e) => Math.round(e.getBoundingClientRect().top + window.scrollY)),
+      hauteurs: [...new Set(l.slice(1).map((e) => Math.round(e.getBoundingClientRect().height)))],
+      fin: l.at(-1)?.classList.contains("dv-fin") ?? false,
+      aimant: getComputedStyle(document.documentElement).scrollSnapType,
+      ecran: window.innerHeight,
+      y: Math.round(window.scrollY),
+    };
+  });
+const pages = await pagesDe(hugo);
+ok(pages.aimant.includes("mandatory") && pages.hauteurs.length === 1 && pages.hauteurs[0] === pages.ecran && pages.fin && pages.hauts.length >= 9, `une page par mème, de la hauteur de l'écran (${pages.hauts.length} pages de ${pages.hauteurs.join("/")} px), et une page de fin`);
+ok(pages.y === pages.hauts[0], `au départ : la page du mème du jour (${pages.y} / ${pages.hauts[0]})`);
+/** Glisser vers le haut (la molette, comme un doigt qui passe la moitié de l'écran) : la page suivante, et pas entre deux. */
+async function glisser(p) {
+  await p.mouse.move(195, 420);
+  await p.mouse.wheel(0, 520);
+  await p.waitForTimeout(1200);
+  const { y, hauts } = await pagesDe(p);
+  return hauts.indexOf(y);
+}
+const apres1 = await glisser(hugo);
+const apres2 = await glisser(hugo);
+ok(apres1 === 1 && apres2 === 2, `un geste, une page : la 2ᵉ, puis la 3ᵉ (${apres1 + 1}, ${apres2 + 1})`);
+const vue = await hugo.evaluate(() => {
+  const c = document.querySelectorAll("#o-decouvrir .dv-fil-jour > .dv-carte")[1];
+  const r = c?.getBoundingClientRect();
+  const rail = c?.querySelector(".dv-rail")?.getBoundingClientRect();
+  const nav = document.querySelector(".mc-nav")?.getBoundingClientRect();
+  return { haut: Math.round(r?.top ?? -1), badge: c?.querySelector(".dv-badge")?.textContent ?? "", railAuDessus: Boolean(rail && nav && rail.bottom <= nav.top) };
+});
+ok(vue.haut === 0 && vue.badge.startsWith("🔥") && vue.railAuDessus, `la page tient l'écran, « ${vue.badge} » en haut, 😂 ❤️ 🔥 au-dessus du menu`);
+await hugo.screenshot({ path: `${D}/meme-du-jour-4-swipe.png` });
+// la dernière page : « Tu as tout vu », et « Revoir depuis le début »
+await hugo.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+await hugo.waitForTimeout(1200);
+ok((await texte(hugo, "#o-decouvrir .dv-fin")).includes("Tu as tout vu pour aujourd’hui"), "à la fin : « 🎉 Tu as tout vu pour aujourd’hui »");
+await hugo.screenshot({ path: `${D}/meme-du-jour-5-fin.png` });
+await hugo.locator("#o-decouvrir .dv-revoir").click();
+await hugo.waitForTimeout(1500);
+ok((await pagesDe(hugo)).y === pages.hauts[0], "« Revoir depuis le début » : le mème du jour");
 
 // ═══ LÉA, DANS « MES MÈMES » : ❤️ 1 ═══
 await lea.goto(`${BASE}/collection?v=${Date.now()}#memes`, { waitUntil: "networkidle" });
