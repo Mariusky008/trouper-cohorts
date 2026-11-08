@@ -3,7 +3,9 @@
  * expressions du visage de la figurine, et pas un décor ». À partir de SA figurine (bouche fermée), le moteur d'OpenAI
  * en fidélité haute (celui qui recopie le visage) fait, pour chaque sentiment (`SENTIMENTS`), son visage bouche
  * fermée (`<sentiment>-n`) ; puis, à partir de celle-ci, la même bouche ouverte (`<sentiment>-p`), pour qu'elle
- * parle sans que rien d'autre ne bouge. Huit images, une seule fois par figurine.
+ * parle sans que rien d'autre ne bouge. Deux images par visage, une seule fois par figurine. Ses ATTITUDES (8 novembre
+ * 2026, `ATTITUDES`) se font de même, sauf que ses bras et ses mains bougent aussi (`GARDER_POSE`) ; quand sa main cache
+ * sa bouche (`SANS_BOUCHE`), la même image sert pour parler.
  *
  * EN DEUX TOURS, pour tenir dans le temps d'une requête : d'abord les visages qui manquent (en même temps), puis leurs
  * bouches ouvertes. La page rappelle tant qu'il en manque (`fabriquerUnTour`).
@@ -17,7 +19,7 @@
  */
 import sharp from "sharp";
 import { moteurRefuse, moteursDImage, noterRefus } from "./moteur-image";
-import { SENTIMENTS, type Expressions, type Sentiment } from "./ma-figurine";
+import { SANS_BOUCHE, SENTIMENTS, VISAGES_FIGURINE, estAttitude, type Expressions, type Sentiment } from "./ma-figurine";
 
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 const L = 1024;
@@ -40,6 +42,13 @@ const VISAGES: Record<Sentiment, string> = {
   rire: "a big burst of LAUGHTER: eyes squeezed shut into happy crescents, cheeks pushed up, head slightly tilted back, a wide laughing mouth",
   grimace: "a funny GRIMACE: tongue sticking out, one eye squeezed shut, nose wrinkled, eyebrows going in opposite directions — a playful clown face",
   amour: "being head over heels IN LOVE: dreamy, adoring eyes sparkling with little heart-shaped highlights, rosy blushing cheeks, eyebrows softly raised, a tender, sweet smile — lovestruck and adorable",
+  // 🙆 ses attitudes : la pose ET le visage qui va avec (`ATTITUDES`)
+  tete: "comic DESPAIR, HOLDING ITS HEAD IN BOTH HANDS: both palms pressed against the sides of its head, eyes wide open, eyebrows raised high, mouth open in a dismayed « oh no! »",
+  endouce: "SECRET GIGGLING: one hand covering its mouth, eyes squeezed into happy crescents, cheeks pushed up, shoulders slightly hunched, as if trying hard not to burst out laughing",
+  bras: "an UNIMPRESSED, deadpan attitude with its ARMS FIRMLY CROSSED over its chest: one eyebrow raised, eyelids half lowered, mouth flat and slightly twisted to one side",
+  victoire: "a TRIUMPHANT VICTORY pose: both fists raised up on each side of its head, a huge open-mouthed triumphant grin, eyes shining",
+  chut: "a knowing « SHH »: one index finger pressed against its closed lips, eyes glancing sideways with a sly, mischievous look, one eyebrow raised",
+  coeur: "tender love, MAKING A HEART SHAPE WITH BOTH HANDS in front of its chest: a warm sweet smile, soft happy eyes, cheeks slightly blushing",
 };
 
 const GARDER =
@@ -47,8 +56,16 @@ const GARDER =
   "the same spring and base, the same rendering style and materials, the same lighting, the same background, the same camera framing: the figurine stays at exactly the same place and size in the image. " +
   "No text, nothing added.";
 
+/** Une attitude : ses bras et ses mains bougent aussi — tout le reste ne bouge pas, et elle reste entière dans l'image. */
+const GARDER_POSE =
+  "Keep EVERYTHING ELSE EXACTLY IDENTICAL: the same person and identity, the same face shape, the same hair, the same outfit and accessories, " +
+  "the same spring and base, the same rendering style and materials, the same lighting, the same background, the same camera framing: the figurine stays at exactly the same place and size in the image, " +
+  "and stays ENTIRELY inside the image (hands, arms and head included, nothing cut off). Only its arms, hands and face change. No text, nothing added.";
+
 const consigneVisage = (x: Sentiment) =>
-  `This is a collectible bobblehead figurine. Change ONLY its facial expression to ${VISAGES[x]}. The expression must be strong and readable at a glance, on THIS face (it must still be clearly the same person). ${GARDER}`;
+  estAttitude(x)
+    ? `This is a collectible bobblehead figurine. Change ONLY its pose and facial expression to ${VISAGES[x]}. The attitude must be strong and readable at a glance, with THIS face (it must still be clearly the same person). ${GARDER_POSE}`
+    : `This is a collectible bobblehead figurine. Change ONLY its facial expression to ${VISAGES[x]}. The expression must be strong and readable at a glance, on THIS face (it must still be clearly the same person). ${GARDER}`;
 /** Une grimace de Pablito, le guide de « Ma collection » (`guide-serveur.ts`) : il louche… */
 export const consigneGrimace = (visage: string) =>
   `This is a collectible bobblehead figurine. Change ONLY its facial expression to ${visage}. It must be funny and readable at a glance, on THIS face (it must still be clearly the same person). ${GARDER}`;
@@ -58,9 +75,25 @@ export const consigneBoucheNeutre = () =>
 /** 🗓️ La bouche ouverte d'un look (sa figurine du mois, dans sa tenue et son expression du mois) : pour qu'il parle. */
 export const consigneBoucheLook = (expression: string) =>
   `This is a collectible bobblehead figurine, dressed up, with ${expression || "a warm, happy expression"}. Change ONLY its mouth: open it as if the figurine is in the middle of saying a word, keeping the same expression on the rest of the face (eyes, eyebrows, cheeks). ${GARDER}`;
+/** Ce qu'elle a déjà, pour lui ouvrir la bouche (une attitude : sa pose ; sans bouche visible, rien à faire). */
+const DEJA: Record<Sentiment, string> = {
+  colere: "an angry expression",
+  tristesse: "a sad expression",
+  euphorie: "a euphoric expression",
+  rire: "a laughing expression",
+  grimace: "a funny grimacing expression",
+  joie: "a joyful expression",
+  amour: "a lovestruck expression",
+  tete: "its head held in both hands, in comic despair",
+  endouce: "one hand covering its mouth, giggling",
+  bras: "its arms crossed and an unimpressed look",
+  victoire: "both fists raised in a triumphant victory pose",
+  chut: "one finger on its lips",
+  coeur: "its hands making a heart shape, smiling tenderly",
+};
 const consigneBouche = (x: Sentiment) =>
-  `This is a collectible bobblehead figurine with a ${({ colere: "angry", tristesse: "sad", euphorie: "euphoric", rire: "laughing", grimace: "funny grimacing", joie: "joyful", amour: "lovestruck" } as Record<Sentiment, string>)[x]} expression. ` +
-  `Change ONLY its mouth: open it as if the figurine is in the middle of saying a word, keeping the same expression on the rest of the face (eyes, eyebrows, cheeks). ${GARDER}`;
+  `This is a collectible bobblehead figurine with ${DEJA[x]}. ` +
+  `Change ONLY its mouth: open it as if the figurine is in the middle of saying a word, keeping the same ${estAttitude(x) ? "pose, the same arms and hands, and the same " : ""}expression on the rest of the face (eyes, eyebrows, cheeks). ${GARDER}`;
 
 // ─── le cadre ───────────────────────────────────────────────────────────────────────────────────
 type Cadre = { left: number; top: number; width: number; height: number; w0: number; h0: number };
@@ -168,7 +201,9 @@ export function expressionsDe(noms: string[]): Expressions {
   for (const { cle } of SENTIMENTS) if (noms.includes(`${cle}-n.webp`) && noms.includes(`${cle}-p.webp`)) e[cle] = { n: `${cle}-n.webp`, p: `${cle}-p.webp` };
   return e;
 }
-export const expressionsCompletes = (e: Expressions, quels: readonly Sentiment[] = SENTIMENTS.map((x) => x.cle)) => quels.every((cle) => Boolean(e[cle]));
+/** (par défaut, ses sept visages : le guide Pablito et la démonstration n'ont pas d'attitudes) */
+const SEPT_VISAGES: readonly Sentiment[] = VISAGES_FIGURINE.map((x) => x.cle);
+export const expressionsCompletes = (e: Expressions, quels: readonly Sentiment[] = SEPT_VISAGES) => quels.every((cle) => Boolean(e[cle]));
 
 /**
  * UN TOUR DE FABRICATION : les visages qui manquent (bouche fermée), sinon leurs bouches ouvertes. Un verrou (quatre
@@ -178,8 +213,8 @@ export async function fabriquerUnTour(
   depot: Depot,
   source: Buffer,
   avant: number,
-  /** Les visages à faire (ses options ouvertes) ; tous par défaut (la démonstration). */
-  quels: readonly Sentiment[] = SENTIMENTS.map((x) => x.cle),
+  /** Les visages à faire (ceux qu'il a voulus) ; les sept visages par défaut (le guide, la démonstration). */
+  quels: readonly Sentiment[] = SEPT_VISAGES,
 ): Promise<{ complete: boolean; enCours?: boolean; erreur?: string }> {
   let noms = await depot.lister();
   if (expressionsCompletes(expressionsDe(noms), quels)) return { complete: true };
@@ -200,7 +235,10 @@ export async function fabriquerUnTour(
         visages.map(async (x) => {
           const r = await editer(png, consigneVisage(x), avant);
           if (!Buffer.isBuffer(r)) return void erreurs.push(r.erreur);
-          await depot.ecrire(`${x}-n.webp`, await reprendre(r, cadre), "image/webp");
+          const image = await reprendre(r, cadre);
+          await depot.ecrire(`${x}-n.webp`, image, "image/webp");
+          // (sa main cache sa bouche : la même image pour parler — une image de moins à payer)
+          if (SANS_BOUCHE.includes(x)) await depot.ecrire(`${x}-p.webp`, image, "image/webp");
         }),
       );
     } else {

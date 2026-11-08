@@ -3,9 +3,10 @@
  * directement coder ») : les mèmes se ressemblaient tous (le rose, la figurine, ses sous-titres). On ne choisit plus
  * une situation (un décor) : on écrit sa phrase, et ClikMe en propose TROIS INTERPRÉTATIONS, qui changent vraiment —
  *
- *   · LE VISAGE de la figurine, d'abord (c'est elle, la star) : parmi ses sept expressions (`SENTIMENTS`), celle qui
- *     raconte l'interprétation — « J'avais dit que je ne sortirais pas ce soir… » : elle rit en douce (humour), se
- *     désole d'avoir encore craqué (dramatique), grimace (décalé) ;
+ *   · LE VISAGE de la figurine, d'abord (c'est elle, la star) : parmi ses sept expressions et ses six attitudes
+ *     (`SENTIMENTS` : tout son corps parle — l'étape 2, le même jour), celle qui raconte l'interprétation — « J'avais
+ *     dit que je ne sortirais pas ce soir… » : elle rit en douce, la main devant la bouche (humour), se tient la tête
+ *     (dramatique), grimace (décalé) ;
  *   · LE CADRAGE : en entier, ou le visage en gros plan ;
  *   · LE GRAPHISME : 😂 HUMOUR, la BD (une case, une bulle, une onomatopée, la trame) ; 🎭 DRAMATIQUE, le cinéma
  *     (le gros plan dans la pénombre, les bandes noires, un mot en géant, la phrase en sous-titre) ; 🌀 DÉCALÉ,
@@ -40,15 +41,17 @@ export const styleDe = (x: unknown) => STYLES_RENDU.find((v) => v.cle === x) ?? 
 export type CleIntention = "rire" | "emotion" | "reagir" | "affirmer" | "sous-entendre" | "celebrer";
 /**
  * 🧭 CE QU'IL VEUT EXPRIMER — une aide : ses idées (sans genre, rien sur le corps, la santé, l'alcool : les règles de
- * « Surprends-moi »), et les trois visages qui vont avec (humour, dramatique, décalé), puis l'onomatopée de la BD.
+ * « Surprends-moi »), et les trois visages qui vont avec (humour, dramatique, décalé), puis l'onomatopée de la BD. Les
+ * attitudes où les bras parlent (bras croisés, victoire, cœur) vont à la BD et à l'affiche, qui la montrent en entier ;
+ * le cinéma, en gros plan, garde le visage (et les mains près de la tête).
  */
 export const INTENTIONS: readonly { cle: CleIntention; emoji: string; nom: string; idees: readonly string[]; visages: readonly [Sentiment, Sentiment, Sentiment]; onomatopee: string }[] = [
-  { cle: "rire", emoji: "😂", nom: "Faire rire", idees: ["J’avais dit que je ne sortirais pas ce soir…", "Je devais me coucher tôt. Il est 2 h.", "Moi devant le frigo à minuit"], visages: ["rire", "tristesse", "grimace"], onomatopee: "HAHA !" },
-  { cle: "emotion", emoji: "😍", nom: "Émotion", idees: ["Vous m’avez trop manqué", "Merci d’être là, vraiment", "Ce moment, je le garde"], visages: ["joie", "amour", "euphorie"], onomatopee: "OOOH !" },
-  { cle: "reagir", emoji: "🙄", nom: "Réagir", idees: ["Encore une réunion qui aurait pu être un mail", "Il est 8 h et il pleut déjà", "Qui a fini le café ?"], visages: ["grimace", "colere", "euphorie"], onomatopee: "PFF…" },
-  { cle: "affirmer", emoji: "💪", nom: "Affirmer", idees: ["Lundi, je commence le sport. Pour de vrai.", "Cette année, c’est mon année", "Et je l’ai fait sans aide !"], visages: ["joie", "colere", "euphorie"], onomatopee: "BAM !" },
-  { cle: "sous-entendre", emoji: "🤫", nom: "Sous-entendre", idees: ["Je dis ça, je dis rien…", "Certains se reconnaîtront", "Suivez mon regard…"], visages: ["grimace", "colere", "rire"], onomatopee: "HUM HUM…" },
-  { cle: "celebrer", emoji: "🎉", nom: "Célébrer", idees: ["J’ai eu mon permis !!!", "Joyeux anniversaire maman", "On a gagné !"], visages: ["euphorie", "amour", "grimace"], onomatopee: "YES !" },
+  { cle: "rire", emoji: "😂", nom: "Faire rire", idees: ["J’avais dit que je ne sortirais pas ce soir…", "Je devais me coucher tôt. Il est 2 h.", "Moi devant le frigo à minuit"], visages: ["endouce", "tete", "grimace"], onomatopee: "HAHA !" },
+  { cle: "emotion", emoji: "😍", nom: "Émotion", idees: ["Vous m’avez trop manqué", "Merci d’être là, vraiment", "Ce moment, je le garde"], visages: ["joie", "amour", "coeur"], onomatopee: "OOOH !" },
+  { cle: "reagir", emoji: "🙄", nom: "Réagir", idees: ["Encore une réunion qui aurait pu être un mail", "Il est 8 h et il pleut déjà", "Qui a fini le café ?"], visages: ["bras", "tete", "grimace"], onomatopee: "PFF…" },
+  { cle: "affirmer", emoji: "💪", nom: "Affirmer", idees: ["Lundi, je commence le sport. Pour de vrai.", "Cette année, c’est mon année", "Et je l’ai fait sans aide !"], visages: ["victoire", "colere", "euphorie"], onomatopee: "BAM !" },
+  { cle: "sous-entendre", emoji: "🤫", nom: "Sous-entendre", idees: ["Je dis ça, je dis rien…", "Certains se reconnaîtront", "Suivez mon regard…"], visages: ["chut", "colere", "bras"], onomatopee: "HUM HUM…" },
+  { cle: "celebrer", emoji: "🎉", nom: "Célébrer", idees: ["J’ai eu mon permis !!!", "Joyeux anniversaire maman", "On a gagné !"], visages: ["euphorie", "amour", "victoire"], onomatopee: "YES !" },
 ];
 export const intentionValide = (x: unknown): CleIntention | null => (INTENTIONS.some((v) => v.cle === x) ? (x as CleIntention) : null);
 
@@ -98,6 +101,12 @@ const PROCHES: Record<Sentiment, readonly Sentiment[]> = {
   rire: ["rire", "joie", "euphorie"],
   grimace: ["grimace", "rire", "euphorie"],
   amour: ["amour", "joie"],
+  tete: ["tete", "tristesse", "colere"],
+  endouce: ["endouce", "rire", "joie"],
+  bras: ["bras", "colere", "grimace"],
+  victoire: ["victoire", "euphorie", "joie"],
+  chut: ["chut", "grimace", "rire"],
+  coeur: ["coeur", "amour", "joie"],
 };
 
 /** Un petit nombre tiré de la phrase : la même phrase garde les mêmes couleurs (rien ne saute entre deux affichages). */

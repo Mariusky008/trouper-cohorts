@@ -79,7 +79,8 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 | #105 | Le retour du 8 novembre, lot A : « Créer » sans premiers pas ni mème du jour ; 🗑️ effacer un mème ; la bonne tête sur les vignettes ; de vraies fenêtres à la place de celles du navigateur — `docs/figurines.md`, 9.0 undecitricies |
 | #105 | Le retour du 8 novembre, lot B : « Autour » — chercher « la gare » (la carte y va, on y dépose), le lieu refait (à la une, le mur, « Juste à côté », « Continuer »), le dépôt clair (le mème choisi en grand, « Ton mème apparaîtra ici ») — `docs/figurines.md`, 9.0 duodecitricies |
 | #106 | Le retour du 8 novembre, lot C : « Découvrir » en swipe plein écran (une page par mème, le mème du jour d'abord, « Tu as tout vu ») — `docs/figurines.md`, 9.0 tredecitricies |
-| (cette PR) | Le retour du 8 novembre, lot D : « ✨ Trois façons de le dire » — sous sa phrase, six intentions facultatives (sans phrase, elles en proposent une) ; trois vignettes 😂 BD, 🎭 cinéma, 🌀 affiche, chacune avec SON visage de la figurine et son cadrage, choisies par un petit modèle de texte (les règles d'abord) ; un toucher : le mème part dans ce graphisme — `docs/figurines.md`, 9.0 quattuordecitricies |
+| #107 | Le retour du 8 novembre, lot D : « ✨ Trois façons de le dire » — sous sa phrase, six intentions facultatives (sans phrase, elles en proposent une) ; trois vignettes 😂 BD, 🎭 cinéma, 🌀 affiche, chacune avec SON visage de la figurine et son cadrage, choisies par un petit modèle de texte (les règles d'abord) ; un toucher : le mème part dans ce graphisme — `docs/figurines.md`, 9.0 quattuordecitricies |
+| (cette PR) | Les attitudes de la figurine (l'étape 2 des « Trois façons de le dire ») : 🤦 la tête dans les mains, 🤭 le rire en douce, 🙅 les bras croisés, 🙌 la victoire, 🤫 le chut, 🫶 le cœur — fabriquées à la demande comme ses visages ; une rangée « Son attitude » dans le tiroir « Visage » ; proposées par les trois façons de le dire — `docs/figurines.md`, 9.0 quindecitricies |
 
 Après #94, l'essai `appli-notif.mjs` a échoué sur `main` : la CI tournait entre 11 h et midi (heure de Paris), et
 l'appel « sans forcer » de l'essai avait vraiment fait l'envoi. Ce n'est pas un défaut de l'appli. L'essai le fait
@@ -310,9 +311,10 @@ l'effacement de sa photo d'origine après la fabrication ne sont pas faits ; ne 
   l'admin (`cheminAdmin`, `lib/admin-guard.ts`). Le prix : pendant une panne de Supabase, l'admin dit « connexion
   requise ». L'essai : `scripts/essai-admin-garde-route.mjs`.
 - **Le point 5 d'« Autour », fin** : la réponse du commerçant depuis son comptoir (pas commencée).
-- **Les attitudes de la figurine** (l'étape 2 des « Trois façons de le dire ») : se tenir la tête, rigoler en douce,
-  bras croisés… — quatre à six poses, qui demandent de nouvelles images de chaque figurine. Le visage, le cadrage et le
-  graphisme varient déjà (`docs/figurines.md`, 9.0 quattuordecitricies).
+- **Les attitudes de la figurine : faites** (`docs/figurines.md`, 9.0 quindecitricies). À regarder sur de vraies
+  figurines, une fois en ligne : que le moteur garde bien la personne quand ses bras bougent, et qu'elle reste entière
+  dans l'image (la victoire, les poings levés). Si une attitude rate trop souvent, on retouche sa consigne
+  (`figurine-expressions-serveur.ts`).
 - **La page personnalité « double numérique »** (la figurine répond aux questions des visiteurs) : le propriétaire a dit
   « on verra plus tard ». Avis donné : commencer par des questions toutes faites, puis une boîte à questions validées
   par l'utilisateur. La voix est réservée aux réponses qu'il valide (à confirmer avec lui).

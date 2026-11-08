@@ -147,7 +147,7 @@ await p.locator(".tr-intentions button", { hasText: "Célébrer" }).click();
 ok((await p.locator(".tf-moi .tf-texte textarea").inputValue()) === "J’ai eu mon permis !!!", "sans phrase, « 🎉 Célébrer » en propose une");
 await p.waitForTimeout(2200);
 const fete = await etiquettes();
-ok(fete[0].includes("Euphorie") && fete[1].includes("Amour") && fete[2].includes("Grimace"), `ses visages suivent l'intention (${fete.join(" | ")})`);
+ok(fete[0].includes("Euphorie") && fete[1].includes("Amour") && fete[2].includes("Victoire"), `ses visages (et une attitude) suivent l'intention (${fete.join(" | ")})`);
 ok((await p.locator(".tr-rendu.pris").count()) === 0, "une autre phrase : plus rien de choisi (le choix valait pour l'autre)");
 await p.locator(".tr-intentions button", { hasText: "Célébrer" }).click();
 ok((await p.locator(".tf-moi .tf-texte textarea").inputValue()) === "Joyeux anniversaire maman", "un autre toucher : l'idée suivante");

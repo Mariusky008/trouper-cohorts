@@ -25,6 +25,7 @@
 import { useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   ATTESTATION_AGE,
+  ATTITUDES,
   REFUS_AGE,
   DUREE_MAX_MESSAGE,
   PRENOM_MAX,
@@ -32,7 +33,9 @@ import {
   TEXTE_MAX,
   UNIVERS_MAX,
   VOIX_DE_BASE,
+  VISAGES_FIGURINE,
   VOIX_FIGURINE,
+  estAttitude,
   sentimentDe,
   voixValide,
   type CleVoix,
@@ -174,12 +177,14 @@ function dureeDe(url: string): Promise<number> {
  * Ce qu'elle ressent : tous ses visages, ouverts dès le départ (le lot 3 — plus de cadenas). Un visage que le moteur
  * est en train de faire (« cours ») ne se choisit pas encore : il le dit (6 novembre 2026 : « toute la carte bouge
  * parce que l'expression n'est pas prête : prévenir qu'elle est en cours de création, et ne pas laisser cliquer ») ;
- * un visage pas encore fait (« creer ») porte une étincelle : le toucher le fait fabriquer.
+ * un visage pas encore fait (« creer ») porte une étincelle : le toucher le fait fabriquer. 🙆 SES ATTITUDES (8 novembre
+ * 2026) : la même chose, dans leur propre rangée (`attitudes`) — un seul choix pour les deux.
  */
-function ChoixExpression({ valeur, onChoix, etats = {} }: { valeur: Sentiment | null; onChoix: (s: Sentiment | null) => void; etats?: Partial<Record<Sentiment, "cours" | "creer">> }) {
+function ChoixExpression({ valeur, onChoix, etats = {}, attitudes = false }: { valeur: Sentiment | null; onChoix: (s: Sentiment | null) => void; etats?: Partial<Record<Sentiment, "cours" | "creer">>; attitudes?: boolean }) {
+  const liste: readonly { cle: Sentiment | null; emoji: string; court: string }[] = attitudes ? ATTITUDES : [{ cle: null, emoji: "🙂", court: "Normal" }, ...VISAGES_FIGURINE];
   return (
-    <div className="tf-expr" role="radiogroup" aria-label="Ce qu’elle ressent">
-      {[{ cle: null, emoji: "🙂", court: "Normal" }, ...SENTIMENTS].map((x) => {
+    <div className={attitudes ? "tf-att" : "tf-expr"} role="radiogroup" aria-label={attitudes ? "Son attitude" : "Ce qu’elle ressent"}>
+      {liste.map((x) => {
         const e = x.cle ? etats[x.cle] : undefined;
         return (
           <button
@@ -973,9 +978,12 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
                   <>
                     <b className="tf-q tf-q-visage">Son visage</b>
                     <ChoixExpression valeur={sentiment} onChoix={choisirVisage} etats={etatsVisages} />
+                    <b className="tf-q tf-q-visage">Son attitude</b>
+                    <ChoixExpression valeur={sentiment} onChoix={choisirVisage} etats={etatsVisages} attitudes />
                     {enCreation.size > 0 && (
                       <p className="tf-note" role="status">
-                        🎭 Ta figurine apprend {enCreation.size > 1 ? "ces visages" : "ce visage"}… une minute environ : {enCreation.size > 1 ? "ils s’afficheront" : "il s’affichera"} tout seul.
+                        🎭 Ta figurine apprend{" "}
+                        {enCreation.size > 1 ? "tout ça" : [...enCreation].some(estAttitude) ? "cette attitude" : "ce visage"}… une minute environ : {enCreation.size > 1 ? "ça s’affichera tout seul" : [...enCreation].some(estAttitude) ? "elle s’affichera toute seule" : "il s’affichera tout seul"}.
                       </p>
                     )}
                   </>
@@ -1870,12 +1878,12 @@ export const STYLES_MA_FIGURINE =
 .tf > *{min-width:0}
 .tf-scene{display:flex;flex-direction:column;align-items:center;gap:14px}
 .tf-fig .fqp-fig{width:min(300px,76vw);border-radius:30px;box-shadow:0 30px 60px -24px rgba(0,0,0,.95),0 0 0 1px rgba(255,255,255,.08)}
-.tf-expr{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;width:100%;max-width:420px}
+.tf-expr,.tf-att{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;width:100%;max-width:420px}
 .tf-danse{padding:9px 16px;border-radius:999px;border:1.5px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);color:#FFF4E6;font:inherit;font-size:14px;font-weight:900;cursor:pointer}
 .tf-danse.pris{border-color:#F2C46B;background:rgba(242,196,107,.2)}
-.tf-expr button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px 7px;border-radius:16px;border:0;background:rgba(255,255,255,.07);color:#E8D3DC;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;transition:transform .15s,background .2s,color .2s}
-.tf-expr button span{font-size:26px;line-height:1.1}
-.tf-expr button.pris{background:#FFF4E6;color:#2A0F1F;transform:translateY(-2px)}
+.tf-expr button,.tf-att button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px 7px;border-radius:16px;border:0;background:rgba(255,255,255,.07);color:#E8D3DC;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;transition:transform .15s,background .2s,color .2s}
+.tf-expr button span,.tf-att button span{font-size:26px;line-height:1.1}
+.tf-expr button.pris,.tf-att button.pris{background:#FFF4E6;color:#2A0F1F;transform:translateY(-2px)}
 .tf-panneau{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:24px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
 .tf-q{font-size:13px;font-weight:900;letter-spacing:.02em;color:#F2C46B}
 .tf-q small{font-weight:700;color:#A88E99}
@@ -1926,8 +1934,8 @@ export const STYLES_MA_FIGURINE =
 .tf-messages ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:6px}
 .tf-messages li{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:#A88E99}
 .tf-messages a{color:#FFF4E6;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tf-expr button,.tf-voix button{position:relative}
-.tf-expr button.ferme,.tf-voix button.ferme{opacity:.55;filter:grayscale(.6)}
+.tf-expr button,.tf-voix button,.tf-att button{position:relative}
+.tf-expr button.ferme,.tf-voix button.ferme,.tf-att button.ferme{opacity:.55;filter:grayscale(.6)}
 .tf-modes button.ferme{opacity:.6}
 .tf-cadenas{position:absolute;right:3px;top:2px;font-style:normal;font-size:11px}
 .tf-nudge{margin:0;padding:9px 14px;border-radius:14px;background:rgba(242,196,107,.14);border:1px solid rgba(242,196,107,.45);font-size:13px;line-height:1.4;text-align:center;color:#FFE7B8;animation:tf-vu .4s cubic-bezier(.2,1.5,.4,1)}
@@ -2009,13 +2017,13 @@ export const STYLES_MA_FIGURINE =
 .tf-refaire{flex-direction:column;align-items:stretch;width:100%;max-width:420px;box-sizing:border-box;padding:14px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
 .tf-refaire > b{font-size:15px}
 .tf-q-visage{align-self:flex-start;margin:4px 0 -6px}
-.tf-scene .tf-expr{display:flex;gap:8px;max-width:100%;padding:6px 2px 10px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
-.tf-scene .tf-expr::-webkit-scrollbar{display:none}
-.tf-scene .tf-expr button{flex:none;width:74px;min-height:72px;scroll-snap-align:start;justify-content:center;border-radius:20px}
-.tf-scene .tf-expr button span{font-size:28px}
-.tf-expr button.cours{cursor:default;color:#F2C46B;background:rgba(242,196,107,.08)}
-.tf-expr button.cours span{opacity:.45;filter:grayscale(.5)}
-.tf-expr button.cours::after{content:"";position:absolute;inset:4px;border-radius:16px;border:2px solid transparent;border-top-color:#F2C46B;border-right-color:rgba(242,196,107,.35);animation:tf-tourne 1s linear infinite}
+.tf-scene .tf-expr,.tf-scene .tf-att{display:flex;gap:8px;max-width:100%;padding:6px 2px 10px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
+.tf-scene .tf-expr::-webkit-scrollbar,.tf-scene .tf-att::-webkit-scrollbar{display:none}
+.tf-scene .tf-expr button,.tf-scene .tf-att button{flex:none;width:74px;min-height:72px;scroll-snap-align:start;justify-content:center;border-radius:20px}
+.tf-scene .tf-expr button span,.tf-scene .tf-att button span{font-size:28px}
+.tf-expr button.cours,.tf-att button.cours{cursor:default;color:#F2C46B;background:rgba(242,196,107,.08)}
+.tf-expr button.cours span,.tf-att button.cours span{opacity:.45;filter:grayscale(.5)}
+.tf-expr button.cours::after,.tf-att button.cours::after{content:"";position:absolute;inset:4px;border-radius:16px;border:2px solid transparent;border-top-color:#F2C46B;border-right-color:rgba(242,196,107,.35);animation:tf-tourne 1s linear infinite}
 .tf-expr-cours{font-style:normal;font-size:9.5px;font-weight:800;line-height:1.1}
 .tf-expr-neuf{position:absolute;top:4px;right:6px;font-style:normal;font-size:12px}
 .tf-scene .tf-note{margin:0;padding:8px 12px;border-radius:14px;background:rgba(242,196,107,.1);font-size:12.5px;color:#FFE7B8}

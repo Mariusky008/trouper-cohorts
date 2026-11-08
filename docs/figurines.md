@@ -1500,7 +1500,7 @@ cadrage et le graphisme**, en accord avec la phrase ; et **la catégorie est une
   ceux des commerçants gardent leur propre mise en page.
 - **La mesure** : le graphisme choisi est gardé à côté du message (`rendu` : `bd`, `cinema` ou `affiche`).
 
-Plus tard : les **attitudes** (se tenir la tête, rigoler en douce…) — il faudra de nouvelles images de la figurine.
+Les **attitudes** (se tenir la tête, rigoler en douce…) ont suivi le même jour : 9.0 quindecitricies.
 
 L'essai : `trois-rendus.mjs` (la route : trois visages, le modèle ne lit que la phrase, « Trois autres » sans le
 modèle ; l'écran : six intentions, trois vignettes toutes différentes, le cinéma et ses bandes noires, « Dramatique »
@@ -1508,6 +1508,53 @@ choisi → la tête de la tristesse et un mème fabriqué en cinéma ; « Célé
 suivante ; une autre phrase, plus rien de choisi ; « Trois autres » garde celle qui est choisie ; un second toucher
 pour revenir au mème simple). Les autres essais de « Créer » passent
 sans changement (`ma-figurine`, `personnage`, `meme-du-jour`, `autour`…).
+
+### 9.0 quindecitricies 🙆 Ses attitudes : tout son corps parle (8 novembre, l'étape 2)
+
+L'étape 2 des « Trois façons de le dire » : l'ami du propriétaire voulait aussi l'**attitude** (« Humour : elle
+rigole en douce ; Dramatique : elle se tient la tête »). Six attitudes (`ATTITUDES`, dans `lib/direct/ma-figurine.ts`),
+chacune avec le visage qui va avec :
+
+| | Attitude | À l'écran |
+|---|---|---|
+| 🤦 | la tête dans les mains | « Oh non » |
+| 🤭 | le rire en douce, la main devant la bouche | « En douce » |
+| 🙅 | les bras croisés, pas convaincue du tout | « Bras croisés » |
+| 🙌 | les poings levés, victorieuse | « Victoire » |
+| 🤫 | un doigt sur la bouche, l'air entendu | « Chut » |
+| 🫶 | un cœur avec les mains | « Cœur » |
+
+- **Comme un visage** : deux images de SA figurine (bouche fermée, bouche ouverte), faites par le moteur d'image à la
+  demande — au premier toucher —, une seule fois, et rangées avec ses visages. La consigne laisse bouger ses bras et
+  ses mains, et seulement eux (`GARDER_POSE`) : la même personne, la même tenue, le même cadre, et elle reste entière
+  dans l'image. Quand sa main cache sa bouche (le rire en douce, le chut), **une seule image** sert pour parler : un
+  appel au moteur de moins. Au plus dix images par figurine, pour les six.
+- **Dans le tiroir « Visage »** : ses huit visages, puis une rangée « Son attitude » ; un seul choix pour les deux. Une
+  attitude pas encore faite porte l'étincelle ✨ ; touchée, elle se fabrique (« Ta figurine apprend cette attitude… »).
+- **Dans « Trois façons de le dire »** : les intentions proposent des attitudes là où elles racontent le mieux — les
+  bras (croisés, victoire, cœur) en BD et sur l'affiche, qui la montrent en entier ; le cinéma, en gros plan, garde le
+  visage et les mains près de la tête :
+
+  | Intention | 😂 BD | 🎭 Cinéma | 🌀 Affiche |
+  |---|---|---|---|
+  | Faire rire | 🤭 en douce | 🤦 oh non | 😜 grimace |
+  | Émotion | 😄 joie | 😍 amour | 🫶 cœur |
+  | Réagir | 🙅 bras croisés | 🤦 oh non | 😜 grimace |
+  | Affirmer | 🙌 victoire | 😠 colère | 🤩 euphorie |
+  | Sous-entendre | 🤫 chut | 😠 colère | 🙅 bras croisés |
+  | Célébrer | 🤩 euphorie | 😍 amour | 🙌 victoire |
+
+  Le petit modèle de texte les connaît aussi, et reçoit en indice celles de l'intention choisie. Une attitude pas encore
+  faite : « ✨ nouvelle attitude » sur sa vignette.
+- **Partout ailleurs, rien à changer** : une attitude voyage comme un visage (le message la garde à côté de lui, la
+  page de celui qui le reçoit, la vidéo du mème). Le guide Pablito et « 🎲 Surprends-moi » restent à leurs sept visages.
+
+L'essai : `attitudes.mjs` (la route : « Faire rire » propose le rire en douce, la tête dans les mains, la grimace, et
+la fausse IA connaît les attitudes ; le tiroir : huit visages, puis six attitudes, « Oh non » → son image ; les trois
+façons avec leurs attitudes ; la BD choisie → elle rit en douce, gardé à côté du message ; chez celui qui le reçoit,
+la vidéo du mème, et sans vidéo, sa figurine qui se tient la tête). La fabrication elle-même (le moteur d'image n'est
+pas branché dans les essais) a été vérifiée à part, avec un faux moteur : « Oh non », deux appels (la pose, puis la
+bouche) ; « En douce », un seul.
 
 ### 9.1 L'idée en une phrase
 

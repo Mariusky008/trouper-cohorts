@@ -13,7 +13,7 @@
  */
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "./habitant";
-import { sentimentValide, texteValide, SENTIMENTS } from "./ma-figurine";
+import { sentimentValide, texteValide, VISAGES_FIGURINE } from "./ma-figurine";
 import { motInterdit } from "./mots-interdits";
 import { GOUTS, reponsesEnMots, reponsesValides, type CleGout, type Fiche, type Reponses } from "./personnage";
 import { cheminCarte, ecrire, lire, type Gardee } from "./personnage-serveur";
@@ -72,7 +72,7 @@ function consigne(c: Carte, sauf: readonly string[], theme: Theme | null): strin
     sauf.length ? `\nDéjà proposés (ne les répète pas, change d'idée) :\n${sauf.map((t) => `- ${t}`).join("\n")}` : "",
     "",
     "Réponds en JSON, exactement :",
-    `{"texte": le mème, "sentiment": le visage qui va avec, l'un de ${SENTIMENTS.map((x) => x.cle).join(", ")}, "danse": true si le mème donne envie de danser, sinon false}`,
+    `{"texte": le mème, "sentiment": le visage qui va avec, l'un de ${VISAGES_FIGURINE.map((x) => x.cle).join(", ")}, "danse": true si le mème donne envie de danser, sinon false}`,
   ]
     .filter((l) => l !== "")
     .join("\n");

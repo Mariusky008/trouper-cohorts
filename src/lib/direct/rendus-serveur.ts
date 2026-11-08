@@ -33,7 +33,7 @@ function consigne(texte: string, intention: CleIntention | null): string {
     "1. « bd » — HUMOUR, en case de bande dessinée, avec une bulle et une onomatopée ;",
     "2. « cinema » — DRAMATIQUE, en gros plan de cinéma, dans la pénombre ;",
     "3. « affiche » — DÉCALÉ, en affiche aux couleurs vives, presque absurde.",
-    "Pour chacune, choisis le VISAGE de la figurine qui raconte cette interprétation-là (c'est elle, la star : les trois visages doivent être différents), parmi :",
+    "Pour chacune, choisis le VISAGE de la figurine qui raconte cette interprétation-là (c'est elle, la star : les trois visages doivent être différents) — une expression, ou une ATTITUDE où tout son corps parle (les bras et les mains : elles se voient en entier en BD et sur l'affiche ; le cinéma est un gros plan sur le visage) —, parmi :",
     SENTIMENTS.map((x) => `${x.cle} (${x.dit})`).join(", ") + ", ou neutre.",
     "Ajoute, pour la BD, une ONOMATOPÉE courte en majuscules (2 à 12 signes : « HAHA ! », « PFF… », « BAM ! »), et pour chacune le MOT de la phrase à écrire en géant (un seul mot, recopié tel quel de la phrase).",
     i ? `Ce qu'elle veut exprimer : ${i.nom.toLowerCase()} (des visages qui vont bien : ${i.visages.join(", ")}).` : "",

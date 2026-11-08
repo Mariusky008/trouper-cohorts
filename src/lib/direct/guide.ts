@@ -20,7 +20,7 @@
  * `VERSION_GUIDE` — ses visages et ses tenues se refont alors d'eux-mêmes, dans un nouveau dossier.
  */
 import { EDITIONS_DATEES } from "./collection";
-import { IMAGES_DEMO, SENTIMENTS, type Sentiment } from "./ma-figurine";
+import { IMAGES_DEMO, VISAGES_FIGURINE, type VisageFigurine } from "./ma-figurine";
 
 export const VERSION_GUIDE = 1;
 /** Son nom (au-dessus de ses bulles). */
@@ -56,14 +56,15 @@ export const SONS_PABLITO: Record<string, string> = Object.fromEntries([
 ]);
 
 /** Ses visages : celui de tous les jours, ses quatre sentiments, et sa grimace (il louche, la bouche fermée). */
-export type Visage = "neutre" | Sentiment | "louche";
-export const VISAGES: readonly Visage[] = ["neutre", ...SENTIMENTS.map((x) => x.cle), "louche"];
+// (ses visages seulement : les attitudes de « Ma figurine », Pablito ne les a pas)
+export type Visage = "neutre" | VisageFigurine | "louche";
+export const VISAGES: readonly Visage[] = ["neutre", ...VISAGES_FIGURINE.map((x) => x.cle), "louche"];
 
 const CLES_EDITIONS = new Set(EDITIONS_DATEES.map((e) => e.cle));
 /** Les noms que sert la route : `joie-n`, `joie-p`… ; `louche-n` ; `seule` ; `edition-noel`… */
 export function nomGuideValide(nom: string): boolean {
   const m = /^([a-z]+)-([np])$/.exec(nom);
-  if (m && SENTIMENTS.some((x) => x.cle === m[1])) return true;
+  if (m && VISAGES_FIGURINE.some((x) => x.cle === m[1])) return true;
   if (nom === "louche-n" || nom === "seule") return true;
   const e = /^edition-([a-z-]+)$/.exec(nom);
   return Boolean(e && CLES_EDITIONS.has(e[1]));
