@@ -31,6 +31,13 @@ jobs:
       - run: npm install --no-audit --no-fund
       - name: Types
         run: npx tsc --noEmit -p .
+      - name: L'épisode, sans téléphone (la réserve, la note, le plan, ses vidéos déjà tournées)
+        run: node scripts/verifier-episode.mjs
+      - name: Lint de l'épisode
+        run: >-
+          npx eslint
+          src/app/autour-de-moi/assistante/episode-comptoir.tsx
+          src/lib/direct/episode.ts src/lib/direct/episode-session.ts src/lib/direct/episode-montage.ts src/lib/direct/episode-videos.ts
       - name: Lint de l'échange
         run: >-
           npx eslint

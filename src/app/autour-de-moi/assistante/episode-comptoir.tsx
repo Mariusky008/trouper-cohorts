@@ -14,11 +14,18 @@
  * font quand le produit existe ; l'épisode, AVANT de commencer à le fabriquer.
  * C'est donc un bouton à part au comptoir, pas un troisième choix au moment de
  * publier.
+ *
+ * 🎞️ OU SES VIDÉOS DÉJÀ TOURNÉES (8 novembre 2026, le propriétaire : « déposer une
+ * ou plusieurs vidéos que j'ai déjà prises […] avoir le meilleur des moments de ces
+ * vidéos en un seul épisode ») : « J'ai déjà mes vidéos », il les range dans l'ordre
+ * de sa fabrication, et le téléphone les regarde en accéléré, garde les meilleurs
+ * moments, puis monte l'épisode comme après une session (`episode-videos.ts`).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import type { FamilleDouble } from "@/lib/direct/double-metiers";
-import { SESSION_MAX_S, SESSION_MIN_S, enDuree, prochainEpisode, retenirEpisode, texteDeLEpisode } from "@/lib/direct/episode";
+import { SESSION_MAX_S, SESSION_MIN_S, VIDEOS_MAX, VIDEOS_MIN_S, enDuree, ordreDesVideos, prochainEpisode, retenirEpisode, texteDeLEpisode } from "@/lib/direct/episode";
+import { lireVideo, preparerLecteurs, tournageDesVideos } from "@/lib/direct/episode-videos";
 import { SessionEpisode, type EtatSession, type Tournage } from "@/lib/direct/episode-session";
 import { monterEpisode } from "@/lib/direct/episode-montage";
 import { familleDeLaVideoPour } from "@/lib/direct/famille-video";
@@ -30,7 +37,9 @@ import { imageDeLaVideo, monterReel } from "@/lib/direct/reel-montage";
 /** Un Reel Instagram ou Facebook : 90 secondes au plus (`REEL_MAX_S` dans `lib/reseaux/intermediaire.ts`, côté serveur). */
 const REEL_MAX_S = 90;
 
-type Etape = "intro" | "cadre" | "session" | "montage" | "pret" | "publie";
+type Etape = "intro" | "videos" | "cadre" | "session" | "montage" | "pret" | "publie";
+/** 🎞️ Une vidéo déjà tournée qu'il dépose : sa durée et sa petite image arrivent quand elle est lue. */
+type VideoDeposee = { id: string; fichier: File; nom: string; duree: number; affiche: string; lue: boolean; erreur?: string };
 type Veille = { release: () => Promise<void> };
 type FilmPret = Film & { url: string };
 
@@ -180,6 +189,11 @@ export function EpisodeComptoir({
   /** 🎞️ Son Reel de 10 s (avec sa famille) : il part sur ses réseaux à la place de la bande-annonce. */
   const [reel, setReel] = useState<FilmPret | null>(null);
   const [envoi, setEnvoi] = useState<{ etat: "en-cours" } | { etat: "fini"; ok: boolean; message: string } | null>(null);
+  /** 🎞️ Ses vidéos déjà tournées, dans l'ordre de sa fabrication. */
+  const [videos, setVideos] = useState<VideoDeposee[]>([]);
+  /** D'où vient son tournage : le téléphone posé, ou ses vidéos (où revenir si on arrête). */
+  const depuis = useRef<"camera" | "videos">("camera");
+  const affiches = useRef<string[]>([]);
 
   const video = useRef<HTMLVideoElement>(null);
   const toile = useRef<HTMLCanvasElement>(null);
@@ -218,6 +232,7 @@ export function EpisodeComptoir({
       veille.current?.release().catch(() => {});
       son.current?.close().catch(() => {});
       films.current.forEach((f) => URL.revokeObjectURL(f.url));
+      affiches.current.forEach((u) => URL.revokeObjectURL(u));
     },
     [],
   );
@@ -259,6 +274,7 @@ export function EpisodeComptoir({
 
   const placer = async () => {
     setErreur("");
+    depuis.current = "camera";
     setEtape("cadre");
     try {
       await brancher(camera);
@@ -286,6 +302,91 @@ export function EpisodeComptoir({
     }
   };
   const nomCamera = cameras.find((c) => c.id === camera)?.nom ?? "";
+
+  /* ─── 🎞️ SES VIDÉOS DÉJÀ TOURNÉES ─── */
+  /** Il en choisit : rangées dans l'ordre de leurs dates (sinon celui où il les a prises), puis lues une à une. */
+  const ajouterVideos = async (liste: FileList | null) => {
+    setErreur("");
+    const pris = Array.from(liste ?? []).filter((f) => f.type.startsWith("video/") || /\.(mp4|mov|m4v|webm|3gp)$/i.test(f.name));
+    if (!pris.length) return;
+    const place = Math.max(0, VIDEOS_MAX - videos.length);
+    if (pris.length > place) setErreur(`${VIDEOS_MAX} vidéos au plus : j’ai pris les ${place} premières.`);
+    const rangees = ordreDesVideos(pris.map((f) => f.lastModified))
+      .map((i) => pris[i])
+      .slice(0, place)
+      .map((f, k) => ({ id: `${Date.now()}-${k}-${f.name}`, fichier: f, nom: f.name, duree: 0, affiche: "", lue: false }));
+    if (!rangees.length) return;
+    setVideos((v) => [...v, ...rangees]);
+    setEtape("videos");
+    for (const r of rangees) {
+      const info = await lireVideo(r.fichier);
+      if (info.affiche) affiches.current.push(info.affiche);
+      setVideos((v) => v.map((x) => (x.id === r.id ? { ...x, duree: info.duree, affiche: info.affiche, lue: true, ...(info.erreur ? { erreur: info.erreur } : {}) } : x)));
+    }
+  };
+  const deplacer = (i: number, d: -1 | 1) =>
+    setVideos((v) => {
+      const j = i + d;
+      if (j < 0 || j >= v.length) return v;
+      const l = [...v];
+      [l[i], l[j]] = [l[j], l[i]];
+      return l;
+    });
+  const retirer = (i: number) => setVideos((v) => v.filter((_, k) => k !== i));
+  const bonnes = videos.filter((v) => v.lue && !v.erreur && v.duree > 0);
+  const total = bonnes.reduce((s, v) => s + v.duree, 0);
+  const enLecture = videos.some((v) => !v.lue);
+
+  /** « Faire mon épisode » : le son et les lecteurs naissent ICI, dans le toucher ; puis regarder, découper, monter. */
+  const faireEpisode = async () => {
+    setErreur("");
+    if (total < VIDEOS_MIN_S) return setErreur(`Il me faut au moins ${VIDEOS_MIN_S} secondes de vidéo.`);
+    if (total > SESSION_MAX_S) return setErreur("Une heure de vidéo au plus : retires-en une.");
+    try {
+      son.current?.close().catch(() => {});
+      son.current = new AudioContext();
+      void son.current.resume().catch(() => {});
+    } catch {
+      son.current = null;
+    }
+    if (!son.current) return setErreur("Ce téléphone ne sait pas monter de vidéo ici.");
+    const lecteurs = preparerLecteurs(
+      bonnes.map((v) => v.fichier),
+      son.current,
+    );
+    depuis.current = "videos";
+    tournage.current = null;
+    void garderAllume();
+    setEtape("montage");
+    setMontage({ quoi: "Tes vidéos", p: 0, mot: "Je regarde tes vidéos en accéléré…" });
+    const ctl = new AbortController();
+    arret.current = ctl;
+    // (arrêté puis relancé : ce qui reste du premier ne touche plus à l'écran du second)
+    const courant = () => arret.current === ctl && !ctl.signal.aborted;
+    try {
+      const t = await tournageDesVideos({
+        videos: bonnes.map((v) => ({ duree: v.duree })),
+        lecteurs,
+        plansReel: REEL.plansMax,
+        apercu: toile.current,
+        surEtape: (mot, p) => setMontage({ quoi: "Tes vidéos", p, mot }),
+        signal: ctl.signal,
+      });
+      lecteurs.liberer();
+      if (!courant()) return;
+      if (t.morceaux.length < 2) throw new Error("je n’ai pas réussi à découper tes vidéos sur ce téléphone");
+      tournage.current = t;
+      await monter(t, sonAtelier);
+    } catch (e) {
+      lecteurs.liberer();
+      if (!courant()) return;
+      setMontage(null);
+      veille.current?.release().catch(() => {});
+      veille.current = null;
+      setErreur(`Tes vidéos n’ont pas pu être préparées : ${(e as Error)?.message ?? "erreur inconnue"}.`);
+      setEtape("videos");
+    }
+  };
 
   const demarrer = () => {
     if (!flux.current || !video.current) return;
@@ -542,7 +643,7 @@ export function EpisodeComptoir({
               <b>
                 l’épisode {serie.numero} de ta série {serie.saison}
               </b>
-              .
+              . Tu as déjà filmé ? Dépose tes vidéos : j’en garde le meilleur.
             </p>
           </section>
           <label className="ep-champ">
@@ -568,6 +669,94 @@ export function EpisodeComptoir({
           </ul>
           <button type="button" className="cz-go grand" disabled={!produit.trim()} onClick={() => void placer()}>
             📷 Placer mon téléphone <s aria-hidden="true">→</s>
+          </button>
+          {/* 🎞️ OU SES VIDÉOS DÉJÀ TOURNÉES : une ou plusieurs, de son téléphone */}
+          <label className={`cz-second ep-deposer${produit.trim() ? "" : " off"}`} aria-disabled={!produit.trim()}>
+            🎞️ J’ai déjà mes vidéos
+            <input
+              type="file"
+              accept="video/*"
+              multiple
+              disabled={!produit.trim()}
+              onChange={(e) => {
+                void ajouterVideos(e.target.files);
+                e.target.value = "";
+              }}
+            />
+          </label>
+          {videos.length > 0 && (
+            <button type="button" className="cz-second" onClick={() => setEtape("videos")}>
+              Revoir mes {videos.length} vidéo{videos.length > 1 ? "s" : ""} →
+            </button>
+          )}
+        </div>
+      )}
+
+      {etape === "videos" && (
+        <div className="ep-corps">
+          <section className="ep-videos-tete">
+            <h2>Tes vidéos</h2>
+            <p>Range-les dans l’ordre de ta fabrication : la fin de la dernière, c’est ton produit fini, la révélation de l’épisode.</p>
+          </section>
+          <ol className="ep-videos">
+            {videos.map((v, i) => (
+              <li key={v.id} className={v.erreur ? "ko" : undefined}>
+                <span className="ep-vignette">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {v.affiche ? <img src={v.affiche} alt="" /> : <i aria-hidden="true">🎞️</i>}
+                  <b>{i + 1}</b>
+                </span>
+                <span className="ep-video-t">
+                  <b>{v.nom}</b>
+                  <small>{v.erreur ?? (v.lue ? enHorloge(v.duree) : "Je la lis…")}</small>
+                </span>
+                <span className="ep-video-ordre">
+                  <button type="button" aria-label={`Monter la vidéo ${i + 1}`} disabled={i === 0} onClick={() => deplacer(i, -1)}>
+                    ↑
+                  </button>
+                  <button type="button" aria-label={`Descendre la vidéo ${i + 1}`} disabled={i === videos.length - 1} onClick={() => deplacer(i, 1)}>
+                    ↓
+                  </button>
+                  <button type="button" aria-label={`Retirer la vidéo ${i + 1}`} onClick={() => retirer(i)}>
+                    ✕
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ol>
+          {videos.length < VIDEOS_MAX && (
+            <label className="cz-second ep-deposer">
+              ＋ Ajouter une vidéo
+              <input
+                type="file"
+                accept="video/*"
+                multiple
+                onChange={(e) => {
+                  void ajouterVideos(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          )}
+          <p className="ep-total">
+            {bonnes.length ? (
+              <>
+                En tout : <b>{enHorloge(total)}</b> de vidéo.{" "}
+                {total >= VIDEOS_MIN_S ? "J’en garde les meilleurs moments." : `Il m’en faut ${VIDEOS_MIN_S} secondes au moins.`}
+              </>
+            ) : enLecture ? (
+              "Je lis tes vidéos…"
+            ) : (
+              "Ajoute une vidéo."
+            )}
+          </p>
+          {erreur && <p className="ep-erreur">{erreur}</p>}
+          <button type="button" className="cz-go grand" disabled={enLecture || total < VIDEOS_MIN_S} onClick={() => void faireEpisode()}>
+            🎬 Faire mon épisode
+          </button>
+          <p className="ep-ou">Je les regarde en accéléré, je garde les meilleurs moments, puis je monte ton épisode sous tes yeux. Tes vidéos restent sur ton téléphone.</p>
+          <button type="button" className="cz-second" onClick={() => (setErreur(""), setEtape("intro"))}>
+            ‹ Revenir
           </button>
         </div>
       )}
@@ -637,7 +826,7 @@ export function EpisodeComptoir({
         </span>
         <small>Garde l’écran allumé jusqu’au bout.</small>
         {etape === "montage" && (
-          <button type="button" className="cz-second" onClick={() => (arret.current?.abort(), setEtape("pret"))}>
+          <button type="button" className="cz-second" onClick={() => (arret.current?.abort(), setEtape(!tournage.current && depuis.current === "videos" ? "videos" : "pret"))}>
             Arrêter le montage
           </button>
         )}
@@ -697,7 +886,7 @@ export function EpisodeComptoir({
             )
           )}
           <button type="button" className="cz-second" onClick={recommencer}>
-            Recommencer une session
+            {depuis.current === "videos" ? "Recommencer" : "Recommencer une session"}
           </button>
         </div>
       )}
@@ -774,6 +963,27 @@ const STYLES = `
 .ep-film video{display:block;width:100%;aspect-ratio:9/16;border-radius:16px;background:#000;}
 .ep-film figcaption{margin-top:6px;font-size:13px;font-weight:700;color:var(--ambre);text-align:center;}
 .ep-ou{margin:-4px 0 0;text-align:center;font-size:13px;color:var(--gris);}
+.ep-deposer{position:relative;display:flex;align-items:center;justify-content:center;gap:6px;min-height:46px;box-sizing:border-box;color:var(--creme);font-weight:800;cursor:pointer;}
+.ep-deposer input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;}
+.ep-deposer.off{opacity:.45;cursor:default;}
+.ep-deposer.off input{cursor:default;}
+.ep-videos-tete h2{margin:0;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:22px;}
+.ep-videos-tete p{margin:4px 0 0;font-size:14px;line-height:1.4;color:var(--gris);}
+.ep-videos{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;}
+.ep-videos li{display:flex;align-items:center;gap:12px;padding:8px;border-radius:18px;background:var(--nappe);border:1px solid var(--trait);}
+.ep-videos li.ko{border-color:rgba(245,162,58,.6);}
+.ep-vignette{position:relative;flex:none;display:grid;place-items:center;width:58px;height:78px;border-radius:12px;overflow:hidden;background:#000;font-size:22px;}
+.ep-vignette img{width:100%;height:100%;object-fit:cover;}
+.ep-vignette b{position:absolute;left:4px;top:4px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--rose);color:#fff;font-size:12px;font-weight:900;}
+.ep-video-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.ep-video-t b{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ep-video-t small{font-size:13px;color:var(--gris);font-variant-numeric:tabular-nums;}
+.ep-videos li.ko .ep-video-t small{color:var(--ambre);}
+.ep-video-ordre{flex:none;display:flex;gap:4px;}
+.ep-video-ordre button{width:36px;height:40px;border-radius:12px;border:1px solid var(--trait);background:var(--nappe2);color:var(--creme);font-size:16px;font-weight:800;}
+.ep-video-ordre button:disabled{opacity:.3;}
+.ep-total{margin:0;font-size:14.5px;line-height:1.4;text-align:center;}
+.ep-total b{color:var(--ambre);}
 .ep-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;}
 .ep-actions .cz-second{text-decoration:none;color:var(--creme);}
 .ep-bravo{align-items:center;text-align:center;justify-content:center;}

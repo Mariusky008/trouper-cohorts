@@ -81,6 +81,35 @@ verifier(E.noter(noir) < E.noter(mains) / 3, `le noir (${E.noter(noir)}) ne vaut
 verifier(E.noter(secousse) < E.noter(mains), `la secousse (${E.noter(secousse)}) vaut moins que les mains qui travaillent`);
 verifier(E.noter(vide) === 0, "un morceau sans mesure vaut zéro");
 
+// 🎞️ SES VIDÉOS DÉJÀ TOURNÉES : des morceaux de 6 s bout à bout, l'ordre, et seulement ce que les films prendront
+const f = E.fenetresDe(13.667);
+verifier(f.length === 3 && f[0].de === 0 && f[1].de === 6 && Math.abs(f[2].duree - 1.667) < 0.01, `une vidéo de 13,7 s : trois morceaux (${f.map((x) => `${x.de}+${x.duree}`).join(", ")})`);
+verifier(E.fenetresDe(6.6).length === 1 && E.fenetresDe(1.2).length === 0 && E.fenetresDe(Infinity).length === 0, "un bout de moins de 1,5 s ne fait pas un morceau ; une durée inconnue, rien");
+verifier(E.ordreDesVideos([3_000_000, 1_000_000, 2_000_000]).join() === "1,2,0", "ses vidéos dans l'ordre de leurs dates");
+verifier(E.ordreDesVideos([1_000_000, 1_000_400, 1_000_200]).join() === "0,1,2", "toutes datées du même moment (le téléphone les a datées en les donnant) : l'ordre où il les a choisies");
+for (const minutes of [0.5, 3, 20]) {
+  const S = minutes * 60;
+  const r = new E.Reserve();
+  const acc = new E.Accelere();
+  let n = 0;
+  for (let t = 0; t + E.MORCEAU_S <= S; t += E.MORCEAU_S) {
+    r.ajouter({ n: n++, debut: t, duree: E.MORCEAU_S, score: Math.abs(Math.sin(n * 1.3)) });
+    for (let i = t; i < t + E.MORCEAU_S; i += 0.25) if (acc.aPrendre(i)) acc.ajouter({ t: i });
+  }
+  const l = r.liste();
+  const images = acc.images.map((i) => i.t);
+  const ks = E.morceauxADecouper({ morceaux: l, images, session: S, plansReel: 3 });
+  const ep = E.planDuMontage({ morceaux: l, images, session: S, genre: "episode" }).flatMap((b) => (b.k === undefined ? [] : [b.k]));
+  verifier(
+    ks.includes(l.length - 1) && ep.every((k) => ks.includes(k)) && ks.length <= Math.max(8, l.length) && ks.every((k, i) => i === 0 || k > ks[i - 1]),
+    `${minutes} min de vidéos : ${ks.length} morceaux à découper sur ${l.length} gardés (l'épisode, la bande-annonce, le Reel, la révélation)`,
+  );
+  // le montage refait son plan avec les seuls morceaux découpés : il tient toujours
+  const decoupes = ks.map((k) => l[k]);
+  const plan = E.planDuMontage({ morceaux: decoupes, images, session: S, genre: "episode" });
+  verifier(plan.length >= 3 && plan[plan.length - 2].genre === "revelation", `${minutes} min de vidéos : l'épisode se monte avec les morceaux découpés (${plan.length} blocs)`);
+}
+
 verifier(E.texteDeLEpisode(2026, 1, "x".repeat(200), "12 €").length <= 140, "le titre dans Le Direct tient en 140 signes");
 verifier(E.texteDeLEpisode(2026, 3, "Le fraisier", "32 €") === "🎬 Saison 2026 · Épisode 3 : Le fraisier · 32 €", "« 🎬 Saison 2026 · Épisode 3 : Le fraisier · 32 € »");
 verifier(E.prochainEpisode("x").numero === 1, "sans mémoire, c'est l'épisode 1");
