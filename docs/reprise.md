@@ -78,7 +78,8 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 | #104 | 🔐 La faille des routes admin fermée : seule une session vérifiée par Supabase compte ; deux routes admin sans garde gardées ; leurs redirections restent dans l'admin (`scripts/essai-admin-garde-route.mjs`) |
 | #105 | Le retour du 8 novembre, lot A : « Créer » sans premiers pas ni mème du jour ; 🗑️ effacer un mème ; la bonne tête sur les vignettes ; de vraies fenêtres à la place de celles du navigateur — `docs/figurines.md`, 9.0 undecitricies |
 | #105 | Le retour du 8 novembre, lot B : « Autour » — chercher « la gare » (la carte y va, on y dépose), le lieu refait (à la une, le mur, « Juste à côté », « Continuer »), le dépôt clair (le mème choisi en grand, « Ton mème apparaîtra ici ») — `docs/figurines.md`, 9.0 duodecitricies |
-| (cette PR) | Le retour du 8 novembre, lot C : « Découvrir » en swipe plein écran (une page par mème, le mème du jour d'abord, « Tu as tout vu ») — `docs/figurines.md`, 9.0 tredecitricies |
+| #106 | Le retour du 8 novembre, lot C : « Découvrir » en swipe plein écran (une page par mème, le mème du jour d'abord, « Tu as tout vu ») — `docs/figurines.md`, 9.0 tredecitricies |
+| (cette PR) | Le retour du 8 novembre, lot D : « ✨ Trois façons de le dire » — sous sa phrase, six intentions facultatives (sans phrase, elles en proposent une) ; trois vignettes 😂 BD, 🎭 cinéma, 🌀 affiche, chacune avec SON visage de la figurine et son cadrage, choisies par un petit modèle de texte (les règles d'abord) ; un toucher : le mème part dans ce graphisme — `docs/figurines.md`, 9.0 quattuordecitricies |
 
 Après #94, l'essai `appli-notif.mjs` a échoué sur `main` : la CI tournait entre 11 h et midi (heure de Paris), et
 l'appel « sans forcer » de l'essai avait vraiment fait l'envoi. Ce n'est pas un défaut de l'appli. L'essai le fait
@@ -309,6 +310,9 @@ l'effacement de sa photo d'origine après la fabrication ne sont pas faits ; ne 
   l'admin (`cheminAdmin`, `lib/admin-guard.ts`). Le prix : pendant une panne de Supabase, l'admin dit « connexion
   requise ». L'essai : `scripts/essai-admin-garde-route.mjs`.
 - **Le point 5 d'« Autour », fin** : la réponse du commerçant depuis son comptoir (pas commencée).
+- **Les attitudes de la figurine** (l'étape 2 des « Trois façons de le dire ») : se tenir la tête, rigoler en douce,
+  bras croisés… — quatre à six poses, qui demandent de nouvelles images de chaque figurine. Le visage, le cadrage et le
+  graphisme varient déjà (`docs/figurines.md`, 9.0 quattuordecitricies).
 - **La page personnalité « double numérique »** (la figurine répond aux questions des visiteurs) : le propriétaire a dit
   « on verra plus tard ». Avis donné : commencer par des questions toutes faites, puis une boîte à questions validées
   par l'utilisateur. La voix est réservée aux réponses qu'il valide (à confirmer avec lui).
