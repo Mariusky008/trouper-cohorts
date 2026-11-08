@@ -12,7 +12,7 @@
 // des lieux. Sans figurine : on l'invite à la créer. `#rencontre` ouvre « Créer » (« Rencontres » est effacé). Rien ne déborde, jamais
 // le mot interdit, aucune erreur dans la page.
 import fs from "node:fs";
-import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer, repondreFenetre } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
@@ -220,9 +220,8 @@ await sam.locator("section.atr-deposer .atr-miens .atr-vignette", { hasText: "Je
 await sam.locator("section.atr-deposer input[aria-label='Un petit mot']").fill("Moi aussi, il m’a reconnu !");
 await sam.screenshot({ path: `${D}/autour-5-repondre.png`, fullPage: false });
 // 🔞 Sam n'a pas encore déclaré son âge : à son premier dépôt, on le lui demande, une fois (puis le geste repart)
-let questionAge = "";
-sam.once("dialog", (d) => (questionAge = d.message())); // (ses boîtes de dialogue sont acceptées : `tel`)
 await sam.locator("section.atr-deposer .atr-bas .atr-rose").click();
+const questionAge = await repondreFenetre(sam);
 await sam.waitForSelector(".atr-publie h2", { timeout: 15000 });
 ok((await texte(sam, ".atr-publie")).includes("C’est publié !"), "« C'est publié ! »");
 ok(/« Autour »/.test(questionAge) && /15 ans ou plus \?/.test(questionAge) && (await (await fetch(`${STOCK}/figurines-clients/${SAM.id}/majeur.json`)).json().catch(() => null))?.age === 15, `son âge lui a été demandé, une fois, puis noté (${questionAge.slice(0, 50)})`);
@@ -267,6 +266,7 @@ ok((await sam.locator(".atr-lieu-tete.photo").count()) === 0 && (await texte(sam
 await sam.locator(".atr-decouvrir").click();
 await sam.waitForSelector(".atr-swipe .atr-mcarte:not(.dessous)", { timeout: 15000 });
 await sam.locator(".atr-swipe-haut .atr-fermer[aria-label='Signaler ce mème']").click();
+await repondreFenetre(sam);
 await sam.waitForSelector(".atr-toast", { timeout: 10000 });
 const boulangerie = await voir(SAM, `?lieu=${BOULANGERIE}`);
 ok((await texte(sam, ".atr-toast")).includes("signalé") && !(boulangerie.memes ?? []).some((m) => m.id === "ecranhugo002"), "⋯ Signaler (deux touchers) : le mème disparaît");

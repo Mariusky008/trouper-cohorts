@@ -11,7 +11,7 @@
  * FICHIER SERVEUR.
  */
 import type { createAdminClient } from "@/lib/supabase/admin";
-import { memeAModerer, retirerDeLaVille } from "@/lib/direct/ma-figurine-serveur";
+import { SEAU_FIGURINES, lireJson, memeAModerer, retirerDeLaVille } from "@/lib/direct/ma-figurine-serveur";
 import { depotPourModeration, retirerDepot } from "@/lib/direct/autour-serveur";
 import { nomVille } from "@/lib/direct/theme-du-jour";
 
@@ -59,4 +59,25 @@ export async function modererMeme(supabase: Supabase, id: string, geste: unknown
     .update(geste === "remettre" ? { signale_le: null } : { retire_le: new Date().toISOString() })
     .eq("id", m.id);
   return error ? { error: "Pas enregistré." } : {};
+}
+
+/**
+ * 🗑️ IL EFFACE SON MÈME (« Mes mèmes », 8 novembre 2026 : « il faut que je puisse effacer un mème que je ne veux
+ * plus ») : comme « Retirer pour de bon » — il quitte la carte d'« Autour », « Découvrir » et le mème du jour, et son
+ * lien ne mène plus à rien —, et sa vidéo et sa voix sont effacées du seau. Seulement le sien.
+ */
+export async function effacerMonMeme(supabase: Supabase, h: string, id: unknown): Promise<{ error?: string }> {
+  const m = await memeAModerer(supabase, s(id));
+  if (!m || !h || m.h !== h) return { error: "Ce mème n’est pas le tien." };
+  const [{ data: ligne }, aCote] = await Promise.all([
+    supabase.from("clik_figurine_message").select("son").eq("id", m.id).maybeSingle(),
+    lireJson<{ meme: string }>(supabase, `${h}/m-${m.id}.json`),
+  ]);
+  await Promise.all([retirerDepot(supabase, m.h, m.id), retirerDeLaVille(supabase, m)]);
+  const { error } = await supabase.from("clik_figurine_message").update({ retire_le: new Date().toISOString() }).eq("id", m.id);
+  if (error) return { error: "Pas effacé. Réessaie dans un instant." };
+  // (sa vidéo et sa voix : seulement les siennes, dans son dossier)
+  const fichiers = [s((ligne as Ligne | null)?.son), s(aCote.meme)].filter((c) => c.startsWith(`${h}/`));
+  if (fichiers.length) await supabase.storage.from(SEAU_FIGURINES).remove(fichiers);
+  return {};
 }

@@ -14,9 +14,10 @@
 // accord, demandé) : Hugo, de Dax, le voit et peut lui répondre ; jamais un duo ; elle le retire quand elle veut.
 // L'amie le signale : il ne s'affiche plus, sa voix non plus, ni dans « Découvrir ». Rien ne déborde, jamais le mot interdit.
 import fs from "node:fs";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import sharp from "sharp";
-import { BASE, D, F, fermerPablito, lancer, recus, telephone } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer, recus, repondreFenetre, telephone } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const A = { id: "ffffffff-0000-4000-8000-000000000041", slug: "comptoir-des-fantomes-dax", nom: "Le Comptoir des Fantômes" };
@@ -123,13 +124,10 @@ await fetch(`${F}/clik_ma_figurine?habitant_id=eq.${HUGO.id}`, {
   body: JSON.stringify({ neutre: `${HUGO.id}/neutre-essai.webp`, parle: `${HUGO.id}/parle-essai.webp`, prete_le: new Date().toISOString() }),
 });
 await hugo.reload({ waitUntil: "networkidle" });
-await hugo.waitForSelector(".tf-moi .tf-options", { timeout: 30000 });
+await hugo.waitForSelector(".tf-moi .tf-onglets", { timeout: 30000 });
 ok((await hugo.locator(".mc-nav-figurine .mc-nav-ico img").count()) === 1, "« Créer », dans le menu : SA figurine, dans le gros bouton rond");
-const opts = await texte(hugo, ".tf-options");
-ok(/Tes premiers pas 1\/6/.test(opts) && opts.includes("Prochain :") && !/cadeau|cadenas|achat|Encore/i.test(opts), `ses premiers pas, repliés : une ligne et son prochain pas (${opts.slice(0, 160)})`);
-await hugo.locator(".tf-options summary").click();
-const kdo = await texte(hugo, ".tf-kdo");
-ok((await hugo.locator(".tf-moi .tf-kdo li.faite").count()) === 1 && (await texte(hugo, ".tf-kdo li.faite")).includes("Créer ta figurine") && kdo.includes("Répondre en duo à un mème") && !/commerçant/i.test(kdo), "une étape franchie (sa figurine) ; plus d'étape « commerçant » : « Répondre en duo à un mème »");
+// 👣 « Tes premiers pas » a quitté la page (8 novembre 2026 : « on peut supprimer cette section maintenant »)
+ok((await hugo.locator(".tf-options, .tf-kdo").count()) === 0 && !/premiers pas/i.test(await texte(hugo, "#o-figurine")), "plus de « Tes premiers pas » dans « Créer »");
 // 🗂️ LE STUDIO ET SES TIROIRS (7 novembre 2026) : ses visages dans le tiroir « Visage », la danse et les gags dans « Animer »
 ok((await hugo.locator(".tf-moi .tf-tiroir").count()) === 0 && (await hugo.locator(".tf-moi .tf-gestes button").allInnerTexts()).map((x) => x.replace(/[^\p{L}\s]/gu, "").trim()).join("|") === "Visage|Animer", "sous sa figurine, ses gestes : « Visage », « Animer » (les tiroirs sont fermés)");
 await hugo.locator(".tf-moi .tf-g-visage").click();
@@ -538,6 +536,10 @@ ok((await hugo.locator(".tf-reponse").count()) === 0, "sa réponse partie : son 
 ok((await hugo.locator(".tf-meme-pret .tf-public").count()) === 0, "un duo : pas de « Découvrir » (il montre aussi la figurine de Léa)");
 ok((await api(hugo, { action: "rien" })).statut === 400 && (await hugo.evaluate(async () => (await (await fetch("/api/direct/ma-figurine")).json()).etat.etapes)).includes("duo"), "👣 une étape franchie : « Répondre en duo à un mème »");
 // 📥 « MES MÈMES » (à la place de l'album) : Léa voit qui lui a répondu, et ses mèmes vus
+// (son visage de joie est fait, maintenant : sa vignette le montre — 8 novembre 2026, « j'ai toujours la même tête »)
+const [figLea] = await lire("clik_ma_figurine", `habitant_id=eq.${LEA.id}`);
+const dossierLea = `${LEA.id}/expr-${createHash("sha1").update(figLea.neutre).digest("hex").slice(0, 16)}`;
+await fetch(`${STOCK}/figurines-clients/${dossierLea}/joie-n.webp`, { method: "POST", headers: { "content-type": "image/webp" }, body: fs.readFileSync("public/direct/double/pied/salut-1.webp") });
 await lea.goto(`${BASE}/collection?v=${Date.now()}#album`, { waitUntil: "networkidle" });
 await lea.waitForSelector("#o-memes .mm-reponses .mm-carte", { timeout: 30000 });
 await fermerPablito(lea, "#o-memes");
@@ -551,6 +553,8 @@ ok(
   (await lea.locator(`#o-memes .mm-bloc:not(.mm-reponses) a.mm-image[href="/figurine/${id}"]`).count()) === 1 && /👀 \d+ vues?/.test(mmLea) && mmLea.includes("↩️ 1 réponse"),
   "ses mèmes : vus combien de fois, et la réponse",
 );
+const vignette = await lea.locator(`#o-memes .mm-bloc:not(.mm-reponses) a.mm-image[href="/figurine/${id}"] img`).getAttribute("src");
+ok(vignette?.includes(`${dossierLea}/joie-n.webp`), `sa vignette : sa tête de ce mème-là, la joie (${vignette?.split("?")[0].slice(-60)})`);
 ok((await debordement(lea)) <= 0 && !/exemple/i.test(mmLea), "« Mes mèmes » ne déborde pas, sans le mot interdit");
 await lea.screenshot({ path: `${D}/ma-figurine-3c-mes-memes.png`, fullPage: true });
 // l'amie (sans compte) a ouvert le mème de Léa : il l'attend dans « Reçus » (même téléphone, un autre onglet)
@@ -565,26 +569,18 @@ const publicsDe = (p) => p.evaluate(async () => (await (await fetch("/api/direct
 ok((await publicsDe(hugo)).every((m) => m.id !== id), "par défaut, son mème reste entre elle et ceux à qui elle l'envoie");
 const bascule = lea.locator(`#o-memes .mm-bloc:not(.mm-reponses) .mm-public`);
 ok((await bascule.count()) === 1 && (await bascule.innerText()).includes("Montrer dans Découvrir"), "« 🌍 Montrer dans Découvrir » : un geste à elle");
-let accord = "";
-lea.once("dialog", (d) => {
-  accord = d.message();
-  void d.dismiss();
-});
+// (son accord, dans une fenêtre de ClikMe : elle dit « Pas maintenant »)
 await bascule.click();
+const accord = await repondreFenetre(lea, false);
 await lea.waitForTimeout(500);
 ok(/visible par les gens de ta ville/.test(accord) && /retirer quand tu veux/.test(accord) && !(await fetch(`${STOCK}/figurines-clients/${LEA.id}/m-${id}.json`).then((r) => r.json())).public, "on lui demande d'abord son accord ; « Annuler » : rien ne bouge");
 // 🔞 elle avait sa figurine avant qu'on demande l'âge : la première fois, on le lui demande (puis le geste repart)
 await fetch(`${STOCK}/figurines-clients`, { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ prefixes: [`${LEA.id}/majeur.json`] }) });
 const refusAge = await api(lea, { action: "public", id, public: true });
 ok(refusAge.statut === 403 && refusAge.age === true, `sans son âge déclaré, pas de « Découvrir » (${refusAge.statut}, ${refusAge.error})`);
-const questions = [];
-lea.on("dialog", (d) => {
-  questions.push(d.message());
-  void d.accept();
-});
 await bascule.click();
+const questions = [await repondreFenetre(lea), await repondreFenetre(lea)];
 await lea.waitForSelector("#o-memes .mm-public.pris", { timeout: 15000 });
-lea.removeAllListeners("dialog");
 ok(questions.length === 2 && /15 ans ou plus \?/.test(questions[1]) && (await (await fetch(`${STOCK}/figurines-clients/${LEA.id}/majeur.json`)).json().catch(() => null))?.age === 15, `son accord, puis son âge, une fois (${questions[1]?.slice(0, 60)})`);
 const coteP = await (await fetch(`${STOCK}/figurines-clients/${LEA.id}/m-${id}.json`)).json().catch(() => ({}));
 ok(coteP.public?.ville === "dax" && (await fetch(`${STOCK}/figurines-clients/publics/dax/${coteP.public.jour}/${id}.json`)).status === 200, `« D'accord » : son mème va dans « Découvrir », pour les gens de Dax (${JSON.stringify(coteP.public)})`);
@@ -604,6 +600,21 @@ await hugo.screenshot({ path: `${D}/ma-figurine-3e-decouvrir.png` });
 const duoPublic = await api(hugo, { action: "public", id: idDuo, public: true });
 ok(duoPublic.statut === 400 && /duo/.test(duoPublic.error ?? ""), `un duo ne va pas dans « Découvrir » (${duoPublic.error})`);
 ok((await api(hugo, { action: "public", id, public: true })).statut === 404, "le mème d'un autre : non");
+// 🗑️ HUGO EFFACE SON DUO (« Mes mèmes », 8 novembre 2026) : une fenêtre de ClikMe le lui demande ; il disparaît partout
+ok((await api(lea, { action: "effacer", id: idDuo })).statut === 400 && !(await lire("clik_figurine_message", `id=eq.${idDuo}`))[0]?.retire_le, "le mème d'un autre ne s'efface pas");
+await hugo.goto(`${BASE}/collection?v=${Date.now()}#memes`, { waitUntil: "networkidle" });
+await fermerPablito(hugo, "#o-memes");
+const carteDuo = hugo.locator(`#o-memes .mm-carte:has(a.mm-image[href="/figurine/${idDuo}"])`);
+await carteDuo.waitFor({ timeout: 30000 });
+await carteDuo.locator(".mm-effacer").click();
+const questionEffacer = await repondreFenetre(hugo);
+await hugo.waitForFunction((i) => !document.querySelector(`#o-memes a.mm-image[href="/figurine/${i}"]`), idDuo, { timeout: 15000 });
+const [duoEfface] = await lire("clik_figurine_message", `id=eq.${idDuo}`);
+const videoDuo = await fetch(`${STOCK}/figurines-clients/${coteDuo.meme}`);
+ok(
+  questionEffacer.includes("Effacer ce mème ?") && Boolean(duoEfface?.retire_le) && videoDuo.status !== 200 && (await fetch(`${BASE}/figurine/${idDuo}`)).status === 404,
+  `🗑️ il efface son duo : la fenêtre le lui demande, il quitte « Mes mèmes », sa vidéo est effacée, son lien ne mène plus à rien (${videoDuo.status})`,
+);
 ok((await publicsDe(amie)).length === 0, "sans compte (sans ville) : pas de mèmes des gens");
 // elle le retire : il quitte « Découvrir » tout de suite ; puis le remet
 ok((await api(lea, { action: "public", id, public: false })).public === false && (await fetch(`${STOCK}/figurines-clients/publics/dax/${coteP.public.jour}/${id}.json`)).status === 404 && (await publicsDe(hugo)).every((m) => m.id !== id), "elle le retire : il quitte « Découvrir » tout de suite");
@@ -663,8 +674,8 @@ const [apres] = await lire("clik_figurine_message", `id=eq.${sansMeme.id}`);
 ok(apres?.ecoutes === 1, `une écoute comptée (${apres?.ecoutes})`);
 
 // ═══ ELLE LE SIGNALE ═══
-amie.on("dialog", (d) => d.accept());
 await amie.locator(".mr-signaler").click();
+ok((await repondreFenetre(amie)).includes("Signaler ce mème ?"), "« Signaler ce mème ? » : une fenêtre de ClikMe, plus celle du navigateur");
 await amie.waitForSelector(".mr-signale", { timeout: 15000 });
 await amie.reload({ waitUntil: "networkidle" });
 ok((await texte(amie, ".mr")).includes("Ce mème a été signalé") && (await amie.locator(".mr-meme video, .fqp").count()) === 0, "signalé : il ne s'affiche plus");

@@ -33,6 +33,18 @@ export async function fermerPablito(p, ici = "") {
   await p.waitForTimeout(250);
   return true;
 }
+/**
+ * 🪟 LES FENÊTRES DE CLIKME (`app/collection/fenetre.tsx`, à la place de `window.confirm` depuis le 8 novembre 2026) :
+ * attend la prochaine, lit ce qu'elle dit, et répond (`oui` : le bouton du geste ; sinon « Annuler »). Rend son texte.
+ */
+export async function repondreFenetre(p, oui = true) {
+  const f = p.locator(".fen[role=alertdialog]").last();
+  await f.waitFor({ state: "visible", timeout: 15000 });
+  const dit = (await f.innerText()).replace(/\s+/g, " ").trim();
+  await f.locator(oui ? ".fen-oui" : ".fen-non").click();
+  await f.waitFor({ state: "detached", timeout: 5000 });
+  return dit;
+}
 export const lancer = (options = {}) => chromium.launch({ ...(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}), ...options });
 
 /**

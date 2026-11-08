@@ -1392,6 +1392,32 @@ ouvre « Ne perds jamais ta figurine » ; son mème monte dans la feuille, « Po
 revoir » la rouvre ; « Échap » la ferme) ; `mes-reactions.mjs` (`#reactions` ouvre l'onglet ; « Animer » → « Le prout »
 ouvre l'onglet, le prout choisi).
 
+### 9.0 undecitricies 🧹 Le retour du 8 novembre, lot A : alléger, effacer, la bonne tête, de vraies fenêtres
+
+Le propriétaire a repris l'appli page par page (huit points). Le lot A :
+
+- **« Créer » s'allège encore** : « 👣 Tes premiers pas » est parti (« on peut supprimer cette section maintenant ») ;
+  la carte du **mème du jour** aussi (« ça parasite la page, et on l'a déjà dans Découvrir ») — elle vit dans
+  « Découvrir », `#jour` y mène (la notification de 11 h 30 aussi), avec l'invitation « je te préviens demain ? ».
+  (Le studio lit seulement la ville du jour, pour « Poster sur le fil de Dax ».)
+- **🗑️ Effacer un mème** (« Mes mèmes ») : une poubelle sur chacun des siens ; une fenêtre le lui redemande ; il
+  quitte tout — « Découvrir », le mème du jour, la carte d'« Autour » —, son lien ne mène plus à rien, sa vidéo et sa
+  voix sont effacées du seau (`effacerMonMeme`, `moderation-serveur.ts` ; la route `ma-figurine`, `action: "effacer"`,
+  seulement le sien).
+- **🎭 La bonne tête sur chaque vignette** (« j'ai toujours la même tête sur tous mes mèmes ») : son look, sinon le
+  visage qu'il avait choisi pour ce mème (la joie, la colère…), sinon sa figurine (`apercuMeme`, donc « Mes mèmes »,
+  « Découvrir » et « Autour » à la fois).
+- **🪟 De vraies fenêtres** (« plein de boîtes d'information en haut des écrans, pas designées ») : `window.confirm`
+  (« www.clikme.fr indique… ») est remplacé partout dans l'appli par une fenêtre de ClikMe, en bas de l'écran
+  (`fenetre.tsx` : `demanderOui`, `accordPublic`, `signalerOui`) — l'accord pour « Découvrir », l'âge, signaler,
+  effacer. Les essais y répondent avec `repondreFenetre` (`scripts/navigateur/commun.mjs`). (Restent celles de
+  l'admin, qui ne sont pas l'appli.)
+
+Les essais : `ma-figurine.mjs` (plus de premiers pas ; la vignette montre la joie ; Hugo efface son duo — la fenêtre,
+la vidéo effacée, le lien en 404 — et Léa ne peut pas effacer celui d'un autre ; l'accord et l'âge dans les fenêtres),
+`meme-du-jour.mjs` (« Créer » ne répète plus le mème du jour ; `#jour` ouvre « Découvrir »), `appli-notif.mjs`,
+`autour.mjs`, `personnage.mjs`.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

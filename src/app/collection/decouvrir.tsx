@@ -20,6 +20,8 @@ import { REACS, type CleReac, type ReacMeme } from "@/lib/direct/reactions-memes
 import { nomVille, type EtatDuJour } from "@/lib/direct/theme-du-jour";
 import { GuideDit, OngletVisible } from "./guide";
 import { chiffresDuJour, repondreAuJour } from "./theme-du-jour";
+import { signalerOui } from "./fenetre";
+import { InviterAppli } from "./mon-telephone";
 
 type Commerce = MemeCommerce & { reac?: ReacMeme };
 /** Un élément du fil : le mème d'un commerçant, ou celui d'un habitant de sa ville (qui l'a choisi). */
@@ -112,7 +114,7 @@ function MemeDuFil({ e, actif, compte, onRetire, onReagir }: { e: Element; actif
     }
   }
   async function signaler() {
-    if (!window.confirm("Signaler ce mème ? Il ne s’affichera plus.")) return;
+    if (!(await signalerOui())) return;
     const r = await poster("/api/direct/ma-figurine", { action: "signaler", id: m.id }).catch(() => null);
     if (r?.ok) onRetire(m.id);
   }
@@ -278,7 +280,7 @@ export function Decouvrir({ allerA }: { allerA: (o: string) => void }) {
 
       {/* 🔥 LE MÈME DU JOUR : tu postes ta réponse, puis tu vois celles des autres */}
       {jour && (
-        <section className="dv-jour" aria-label="Le mème du jour">
+        <section className="dv-jour" id="jour" aria-label="Le mème du jour">
           <small className="tj-label">🔥 LE MÈME DU JOUR</small>
           <b className="tj-titre">
             <span aria-hidden="true">{jour.theme.emoji}</span> {jour.theme.titre}
@@ -309,6 +311,8 @@ export function Decouvrir({ allerA }: { allerA: (o: string) => void }) {
               ))}
             </ul>
           ) : null}
+          {/* 🔔 le lot 3 : sa réponse postée (ou l'appli tout juste posée sur son iPhone), « je te préviens demain ? » */}
+          {fil?.compte && <InviterAppli apres="jour" repondu={jour.repondu} />}
         </section>
       )}
 

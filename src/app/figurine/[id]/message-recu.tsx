@@ -19,6 +19,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CLE_MEMES_RECUS, type MessageFigurine } from "@/lib/direct/ma-figurine";
 import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE, type FigurineHandle } from "@/app/collection/figurine-qui-parle";
+import { signalerOui } from "@/app/collection/fenetre";
 
 /** La vidéo du mème : tout de suite, en boucle ; le son dès qu'on peut (au premier toucher, sinon). Aussi celle d'un commerçant (`/m/<id>`). */
 export function MemeVideo({ src, affiche }: { src: string; affiche?: string }) {
@@ -173,7 +174,7 @@ export function MessageRecu({ message: m }: { message: MessageFigurine }) {
   }, [id]);
 
   async function signaler() {
-    if (m.signale || !window.confirm("Signaler ce mème ? Il ne s’affichera plus.")) return;
+    if (m.signale || !(await signalerOui())) return;
     setEnvoi(true);
     const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "signaler", id: m.id }) }).catch(() => null);
     setEnvoi(false);

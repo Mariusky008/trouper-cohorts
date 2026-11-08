@@ -5,11 +5,13 @@
  *
  * FICHIER NAVIGATEUR.
  */
-import { QUESTION_AGE } from "@/lib/direct/ma-figurine";
+import { AGE_POURQUOI, AGE_TITRE } from "@/lib/direct/ma-figurine";
+import { demanderOui } from "./fenetre";
 
 /** `true` s'il a déclaré avoir l'âge (et que c'est noté). */
 export async function demanderSonAge(): Promise<boolean> {
-  if (!window.confirm(QUESTION_AGE)) return false;
+  // (une fenêtre de ClikMe, plus celle du navigateur : 8 novembre 2026)
+  if (!(await demanderOui({ emoji: "🔞", titre: AGE_TITRE, texte: AGE_POURQUOI, oui: "Oui, j’ai l’âge", non: "Non" }))) return false;
   try {
     const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "majeur" }) });
     return r.ok;

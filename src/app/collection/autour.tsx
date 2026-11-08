@@ -25,6 +25,7 @@ import { REFUS_AGE, type MonMeme } from "@/lib/direct/ma-figurine";
 import { demanderSonAge } from "./age";
 import { EVT_VERS_AUTOUR, garderLeDepot, oublierLeDepot, reprendreLeDepot, type DepotEnCours } from "./depot-autour";
 import { versLeStudio } from "./vers-le-studio";
+import { signalerOui } from "./fenetre";
 
 type Vue =
   | { t: "carte" }
@@ -405,7 +406,7 @@ function Swipe({ id, depart, ville, compte, onFermer, onRepondre, onProfil }: { 
     }
   };
   const signaler = async () => {
-    if (!c || !window.confirm("Signaler ce mème ? Il disparaît le temps qu’on le regarde.")) return;
+    if (!c || !(await signalerOui())) return;
     await poster("/api/direct/ma-figurine", { action: "signaler", id: c.id });
     setMot("Merci : ce mème est signalé.");
     partir(-1);

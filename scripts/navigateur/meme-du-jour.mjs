@@ -10,7 +10,7 @@
 // « Mes mèmes ». Sans compte : « Crée ta figurine pour répondre », et pas de réaction. Rien ne déborde, jamais le mot
 // interdit.
 import fs from "node:fs";
-import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer, repondreFenetre } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const jour = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(new Date());
@@ -78,13 +78,17 @@ const api = (p, corps) =>
     return { statut: r.status, ...(await r.json().catch(() => ({}))) };
   }, corps);
 
-// ═══ HUGO : LE MÈME DU JOUR EN HAUT DE « CRÉER » ET DE « DÉCOUVRIR » ═══
+// ═══ HUGO : LE MÈME DU JOUR EN HAUT DE « DÉCOUVRIR » (il a quitté « Créer » le 8 novembre 2026) ═══
 const hugo = await tel(HUGO);
 await hugo.goto(`${BASE}/collection#figurine`, { waitUntil: "networkidle" });
 await fermerPablito(hugo, "#o-figurine");
-await hugo.waitForSelector("#o-figurine .tj .tj-titre", { timeout: 60000 });
-const titre = await texte(hugo, "#o-figurine .tj-titre");
-ok(titre.length > 5 && (await texte(hugo, "#o-figurine .tj-chiffres")) === "Sois parmi les premiers à répondre" && (await hugo.locator("#o-figurine .tj-go").count()) === 1, `en haut de « Créer » : le mème du jour (${titre}), « Sois parmi les premiers » (4 réponses : pas de chiffre)`);
+await hugo.waitForSelector("#o-figurine .tf-onglets", { timeout: 60000 });
+ok((await hugo.locator("#o-figurine .tj, #o-figurine #jour").count()) === 0, "« Créer » ne répète plus le mème du jour (il est dans « Découvrir »)");
+await hugo.goto(`${BASE}/collection#jour`, { waitUntil: "networkidle" });
+await fermerPablito(hugo, "#o-decouvrir");
+await hugo.waitForSelector("#o-decouvrir #jour .tj-titre", { timeout: 60000 });
+const titre = await texte(hugo, "#o-decouvrir #jour .tj-titre");
+ok(titre.length > 5 && (await texte(hugo, "#o-decouvrir #jour .tj-chiffres")) === "Sois parmi les premiers à répondre" && (await hugo.locator("#o-decouvrir #jour .tj-go").count()) === 1 && (await hugo.locator(".mc-nav button.pris").innerText()).includes("Découvrir"), `« #jour » (la notification) ouvre « Découvrir » : le mème du jour (${titre}), « Sois parmi les premiers » (4 réponses : pas de chiffre)`);
 await hugo.goto(`${BASE}/collection#decouvrir`, { waitUntil: "networkidle" });
 await fermerPablito(hugo, "#o-decouvrir");
 await hugo.waitForSelector("#o-decouvrir .dv-jour", { timeout: 60000 });
@@ -92,12 +96,13 @@ ok((await texte(hugo, "#o-decouvrir .dv-jour .tj-titre")) === titre && (await hu
 ok((await hugo.locator("#o-decouvrir .dv-carte.commerce").count()) === 1 && (await hugo.locator("#o-decouvrir .dv-carte.client").count()) === 0, "le fil : deux commerçants, un seul montré (au plus un sur cinq) ; les réponses du jour n'y sont pas deux fois");
 await hugo.screenshot({ path: `${D}/meme-du-jour-1-hugo.png` });
 
-// ═══ LÉA RÉPOND DEPUIS « CRÉER » ═══
+// ═══ LÉA RÉPOND DEPUIS « DÉCOUVRIR » : le studio s'ouvre sur le thème ═══
 const lea = await tel(LEA);
-await lea.goto(`${BASE}/collection#figurine`, { waitUntil: "networkidle" });
+await lea.goto(`${BASE}/collection#decouvrir`, { waitUntil: "networkidle" });
+await fermerPablito(lea, "#o-decouvrir");
+await lea.waitForSelector("#o-decouvrir #jour .tj-go", { timeout: 60000 });
+await lea.locator("#o-decouvrir #jour .tj-go").click();
 await fermerPablito(lea, "#o-figurine");
-await lea.waitForSelector("#o-figurine .tj-go", { timeout: 60000 });
-await lea.locator("#o-figurine .tj-go").click();
 await lea.waitForSelector("#theme-du-jour .tf-theme-idees button", { timeout: 15000 });
 const idees = (await lea.locator("#theme-du-jour .tf-theme-idees button").allInnerTexts()).map((x) => x.replace(/^💡\s*/, "").trim());
 ok((await texte(lea, "#theme-du-jour")).includes(titre) && idees.length === 3, `le studio s'ouvre sur le thème, et trois idées (${idees[0]})`);
@@ -115,12 +120,8 @@ await lea.waitForSelector(".tf-meme-pret video", { timeout: 90000 });
 const poster = await texte(lea, ".tf-poster-jour");
 ok(poster === "🔥 Poster ma réponse (visible par les gens de Dax)" && (await lea.locator(".tf-meme-pret .tf-public").count()) === 0, `son mème est prêt : « ${poster} » (l'accord est sur le bouton)`);
 // 🔞 sa figurine date d'avant la question de l'âge : la première fois, on le lui demande (puis le geste repart)
-let questionAge = "";
-lea.once("dialog", (d) => {
-  questionAge = d.message();
-  void d.accept();
-});
 await lea.locator(".tf-poster-jour").click();
+const questionAge = await repondreFenetre(lea);
 await lea.waitForSelector(".tf-postee", { timeout: 15000 });
 const idLea = (await lea.locator(".tf-adresse").inputValue()).split("/").pop();
 ok(/15 ans ou plus \?/.test(questionAge) && (await existe("figurines-clients", `${LEA.id}/majeur.json`)), `son âge, demandé une fois, puis noté (${questionAge.slice(0, 50)})`);

@@ -11,6 +11,7 @@
  */
 import { useEffect, useState } from "react";
 import { REPONSE_JOUR_MAX, type ChoseSue, type QuestionVue, type Savoir } from "@/lib/direct/connaitre";
+import { demanderOui } from "./fenetre";
 
 async function poster(corps: Record<string, unknown>) {
   const r = await fetch("/api/direct/connaitre", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
@@ -115,7 +116,7 @@ export function CeQueTaFigurineSait() {
   }, [ouvertures]);
   if (!savoir) return null;
   async function oublier(corps: Record<string, unknown>, question: string) {
-    if (!window.confirm(question)) return;
+    if (!(await demanderOui({ emoji: "🧠", titre: question, oui: "Effacer", danger: true }))) return;
     setErreur("");
     try {
       const j = await poster(corps);

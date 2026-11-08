@@ -250,11 +250,15 @@ export type MemePublic = ApercuMeme & { villeSlug: string; ami?: boolean; moi?: 
 export const AGE_MINIMUM = 15;
 export const ATTESTATION_AGE = `J’ai ${AGE_MINIMUM} ans ou plus.`;
 export const ERREUR_AGE = `La figurine est réservée aux ${AGE_MINIMUM} ans et plus : coche « J’ai ${AGE_MINIMUM} ans ou plus ».`;
-export const QUESTION_AGE = `Les mèmes montrés dans la ville (« Autour », « Découvrir ») sont réservés aux ${AGE_MINIMUM} ans et plus. Tu as ${AGE_MINIMUM} ans ou plus ?`;
+/** La question de l'âge (`app/collection/age.ts`), dans une fenêtre de ClikMe : son titre, puis pourquoi. */
+export const AGE_TITRE = `Tu as ${AGE_MINIMUM} ans ou plus ?`;
+export const AGE_POURQUOI = `Les mèmes montrés dans la ville (« Autour », « Découvrir ») sont réservés aux ${AGE_MINIMUM} ans et plus.`;
+export const QUESTION_AGE = `${AGE_POURQUOI} ${AGE_TITRE}`;
 export const REFUS_AGE = `Réservé aux ${AGE_MINIMUM} ans et plus.`;
 export const SANS_AGE_TEXTE = `Les mèmes montrés dans la ville sont réservés aux ${AGE_MINIMUM} ans et plus : confirme ton âge.`;
 /** Ce qu'on lui dit avant qu'il le montre : qui le verra, quoi, et qu'il peut le retirer. */
-export const ACCORD_PUBLIC = "Ton mème — ta figurine, ta voix, tes mots et ton prénom — sera visible par les gens de ta ville dans « Découvrir ». Tu pourras le retirer quand tu veux. D’accord ?";
+export const ACCORD_PUBLIC_TEXTE = "Ton mème — ta figurine, ta voix, tes mots et ton prénom — sera visible par les gens de ta ville dans « Découvrir ». Tu pourras le retirer quand tu veux.";
+export const ACCORD_PUBLIC = `${ACCORD_PUBLIC_TEXTE} D’accord ?`;
 export type ReponseAMonMeme = ApercuMeme & { a: string; aTexte?: string };
 export type MesMemes = { envoyes: MonMeme[]; reponses: ReponseAMonMeme[]; recus: ApercuMeme[] };
 /** Ce qu'on garde, sur le téléphone, des mèmes qu'il a reçus (ouverts) : leur numéro, les plus récents d'abord. */

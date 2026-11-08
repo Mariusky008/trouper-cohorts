@@ -61,8 +61,8 @@ const ALIAS: Record<string, Vue> = {
   moi: "personnage",
   figurine: "figurine",
   creer: "figurine",
-  // (🔥 le mème du jour, en haut de « Créer » : là où mène la notification de 11 h 30)
-  jour: "figurine",
+  // (🔥 le mème du jour, dans « Découvrir » : là où mène la notification de 11 h 30 — il a quitté « Créer » le 8 novembre 2026)
+  jour: "decouvrir",
   // (⚡ ses réactions, en haut de « Créer » : là où l'app installée pourra s'ouvrir)
   reactions: "figurine",
   personnage: "personnage",
