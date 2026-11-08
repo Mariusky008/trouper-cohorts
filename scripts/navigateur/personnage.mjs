@@ -9,7 +9,7 @@
 // « RENCONTRES » EST EFFACÉ (7 novembre 2026, le propriétaire : « effacer ») : cet essai remplace
 // `personnage-rencontre.mjs`. On vérifie aussi que « Rencontres » n'existe plus : ni dans le menu, ni à son adresse
 // (`#rencontre` et le lien d'un ami ouvrent « Créer »), ni sa route (`/api/direct/rencontre`). Rien ne déborde.
-import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer, repondreFenetre } from "./commun.mjs";
 
 const A = { id: "ffffffff-0000-4000-8000-000000000041", slug: "comptoir-des-fantomes-dax", nom: "Le Comptoir des Fantômes" };
 const LEA = { id: "dddddddd-0000-4000-8000-000000000051", jeton: "jeton-lea-0000000000000001" };
@@ -131,11 +131,12 @@ const nAvant = await lea.locator("#o-personnage .cn-choses li").count();
 const savoirTxt = await texte(lea, "#o-personnage .cn-savoir");
 ok(nAvant >= 3 && savoirTxt.includes("Ta carte") && savoirTxt.includes("je cuisine pour mes amis") && savoirTxt.includes("Question du jour"), `ce que sa figurine sait d'elle : sa carte, ses réponses d'aujourd'hui et d'avant (${nAvant} : ${savoirTxt.slice(0, 260)})`);
 // (effacer demande confirmation : « Effacer ceci ? », « Tout effacer ? » — elle dit oui)
-lea.on("dialog", (d) => void d.accept());
 await lea.locator("#o-personnage .cn-choses li button").first().click();
+ok((await repondreFenetre(lea)).includes("Effacer ceci ?"), "« Effacer ceci ? » : une fenêtre de ClikMe");
 await lea.waitForFunction((n) => document.querySelectorAll("#o-personnage .cn-choses li").length === n - 1, nAvant, { timeout: 15000 });
 ok(true, "elle efface une chose : elle disparaît");
 await lea.locator("#o-personnage .cn-tout").click();
+await repondreFenetre(lea);
 await lea.waitForFunction(() => document.querySelectorAll("#o-personnage .cn-choses li").length === 0, null, { timeout: 15000 });
 const apresTout = await api(lea, "/api/direct/connaitre?savoir=1");
 const carnetVide = await lireSeau(`${LEA.id}/rencontres.json`);

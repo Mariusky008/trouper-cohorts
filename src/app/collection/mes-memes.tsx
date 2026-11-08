@@ -8,10 +8,12 @@
  *   · 📥 REÇUS : ceux qu'il a ouverts sur ce téléphone (`CLE_MEMES_RECUS`, noté par la page du mème) — y répondre quand
  *     il veut.
  * Une raison de revenir : voir ce que ses mèmes sont devenus. La liste se recharge à chaque fois qu'il ouvre l'onglet.
+ * 🗑️ Il efface un des siens (8 novembre 2026) : une fenêtre de ClikMe le lui redemande (`fenetre.tsx`), puis il quitte tout.
  */
 import { useContext, useEffect, useState, type ReactNode } from "react";
-import { ACCORD_PUBLIC, CLE_MEMES_RECUS, MEMES_VUS, REFUS_AGE, type ApercuMeme, type MesMemes, type MonMeme } from "@/lib/direct/ma-figurine";
+import { CLE_MEMES_RECUS, MEMES_VUS, REFUS_AGE, type ApercuMeme, type MesMemes, type MonMeme } from "@/lib/direct/ma-figurine";
 import { demanderSonAge } from "./age";
+import { accordPublic, demanderOui } from "./fenetre";
 import { GuideDit, OngletVisible } from "./guide";
 
 function idsRecus(): string[] {
@@ -85,7 +87,7 @@ export function MesMemes({ compte, allerA }: { compte: boolean | null; allerA: (
   /** 🌍 Le montrer dans « Découvrir » (son accord, demandé à chaque fois) — ou le retirer. */
   async function basculerPublic(m: MonMeme) {
     setErreur("");
-    if (!m.public && !window.confirm(ACCORD_PUBLIC)) return;
+    if (!m.public && !(await accordPublic())) return;
     const basculer = async () => {
       const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "public", id: m.id, public: !m.public }) }).catch(() => null);
       return { ok: Boolean(r?.ok), ...((await r?.json().catch(() => ({}))) as { public?: boolean; error?: string; age?: boolean } | undefined) };
@@ -98,6 +100,22 @@ export function MesMemes({ compte, allerA }: { compte: boolean | null; allerA: (
     }
     if (!j.ok) return setErreur(j.error || "Ça n’a pas marché. Réessaie.");
     setMemes((x) => (x ? { ...x, envoyes: x.envoyes.map((e) => (e.id === m.id ? { ...e, public: Boolean(j.public) } : e)) } : x));
+  }
+
+  /** 🗑️ Il efface un de ses mèmes (8 novembre 2026) : partout, et pour de bon — on le lui dit avant. */
+  async function effacer(m: MonMeme) {
+    setErreur("");
+    const oui = await demanderOui({
+      emoji: "🗑️",
+      titre: "Effacer ce mème ?",
+      texte: "Il disparaît partout — « Découvrir », « Autour » — et son lien ne mènera plus à rien. C’est pour de bon.",
+      oui: "Effacer",
+      danger: true,
+    });
+    if (!oui) return;
+    const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "effacer", id: m.id }) }).catch(() => null);
+    if (!r?.ok) return setErreur(((await r?.json().catch(() => ({}))) as { error?: string } | undefined)?.error || "Pas effacé. Réessaie dans un instant.");
+    setMemes((x) => (x ? { ...x, envoyes: x.envoyes.filter((e) => e.id !== m.id) } : x));
   }
 
   const vide = memes && !memes.envoyes.length && !memes.reponses.length && !memes.recus.length;
@@ -167,6 +185,9 @@ export function MesMemes({ compte, allerA }: { compte: boolean | null; allerA: (
           <ul className="mm-grille">
             {memes.envoyes.map((m) => (
               <Vignette key={m.id} m={m}>
+                <button type="button" className="mm-effacer" aria-label="Effacer ce mème" onClick={() => void effacer(m)}>
+                  🗑️
+                </button>
                 <span className="mm-chiffres">
                   <span>👀 {pluriel(m.vues, "vue")}</span>
                   {m.reponses > 0 && <span className="fort">↩️ {pluriel(m.reponses, "réponse")}</span>}
@@ -229,7 +250,8 @@ export const STYLES_MES_MEMES = `
 .mm-bloc{margin-top:22px}
 .mm-bloc h3{margin:0 0 12px;font-size:19px;font-weight:900}
 .mm-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0;padding:0;list-style:none}
-.mm-carte{display:flex;flex-direction:column;gap:6px;min-width:0}
+.mm-carte{position:relative;display:flex;flex-direction:column;gap:6px;min-width:0}
+.mm-effacer{position:absolute;top:8px;left:8px;z-index:2;display:grid;place-items:center;width:34px;height:34px;padding:0;border-radius:50%;border:0;background:rgba(18,6,15,.72);color:#fff;font-size:15px;line-height:1;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 6px 14px -6px rgba(0,0,0,.9),inset 0 0 0 1px rgba(255,255,255,.14)}
 .mm-image{position:relative;display:block;aspect-ratio:9/13;border-radius:20px;overflow:hidden;background:#2a0f1f;box-shadow:0 18px 30px -18px rgba(0,0,0,.95);border:1.5px solid rgba(255,255,255,.1)}
 .mm-image img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 25%}
 .mm-play{position:absolute;right:8px;top:8px;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-style:normal;font-size:12px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}

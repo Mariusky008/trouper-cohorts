@@ -678,10 +678,16 @@ async function apercuMeme(supabase: Supabase, id: string, cache: Cache, ligne?: 
   if (!r || r.signale_le) return null;
   const h = s(r.habitant_id);
   if (!cache.has(h)) cache.set(h, lireLigne(supabase, h).then((x) => x.ligne));
-  const [f, aCote] = await Promise.all([cache.get(h)!, lireJson<{ look: string; meme: string; repondA: string; public: Partial<Public> }>(supabase, `${h}/m-${s(r.id)}.json`)]);
+  const [f, aCote] = await Promise.all([cache.get(h)!, lireJson<{ look: string; meme: string; repondA: string; public: Partial<Public>; sentiment: string }>(supabase, `${h}/m-${s(r.id)}.json`)]);
   if (!f || !s(f.neutre)) return null;
   const look = lookValide(aCote.look);
-  const [image, video] = await Promise.all([signer(supabase, look ? cheminImageDuLook(h, look) : s(f.neutre)), s(aCote.meme) ? signer(supabase, s(aCote.meme)) : Promise.resolve("")]);
+  // 🎭 SA TÊTE DANS CE MÈME (8 novembre 2026 : « j'ai toujours la même tête sur tous mes mèmes, alors que j'y ai des
+  // expressions différentes ») : son look ; sinon le visage qu'il avait choisi (la joie, la colère…) ; sinon sa figurine
+  const sentiment = look ? null : (sentimentValide(r.sentiment) ?? sentimentValide(aCote.sentiment));
+  const visage = look ? cheminImageDuLook(h, look) : sentiment ? `${dossierExpressions(h, s(f.neutre))}/${sentiment}-n.webp` : s(f.neutre);
+  const [image0, video] = await Promise.all([signer(supabase, visage), s(aCote.meme) ? signer(supabase, s(aCote.meme)) : Promise.resolve("")]);
+  // (ce visage n'existe plus — sa figurine refaite depuis — : sa figurine de tous les jours)
+  const image = image0 || (visage !== s(f.neutre) ? await signer(supabase, s(f.neutre)) : "");
   if (!image) return null;
   return {
     h,

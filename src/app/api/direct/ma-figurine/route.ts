@@ -33,6 +33,7 @@
 // POST { action: "surprise", sauf?: [textes] } : 🎲 « Surprends-moi ! » — un mème écrit par ClikMe d'après sa carte de
 //      personnage (`meme-surprise.ts`) ; rien n'est dit ni envoyé : il le choisit d'abord.
 // POST { action: "signaler", id } : celui qui a reçu un message le signale (pas besoin d'être quelqu'un).
+// 🗑️ POST { action: "effacer", id } : il efface un de SES mèmes (« Mes mèmes ») — partout, et sa vidéo et sa voix.
 // 📲 POST { action: "appli-jeton" } → { jeton } : il va poser ClikMe sur son écran d'accueil (iPhone) ; la page se recharge
 //      sur `?appli=<jeton>`. POST { action: "appli-lier", jeton } (sans compte) : l'appli s'ouvre pour la première fois,
 //      le jeton pose le cookie de SA figurine (`appli-collection-serveur.ts`).
@@ -71,6 +72,7 @@ import {
 import { surprendre } from "@/lib/direct/meme-surprise-serveur";
 import { fabriquerPose, mesReactions, noterEnvoiReaction } from "@/lib/direct/mes-reactions-serveur";
 import { reagir } from "@/lib/direct/reactions-memes-serveur";
+import { effacerMonMeme } from "@/lib/direct/moderation-serveur";
 import { fabriquerFigurineDuMois, fabriquerParleDuLook, mesFigurinesDuMois } from "@/lib/direct/figurine-du-mois-serveur";
 
 export const dynamic = "force-dynamic";
@@ -221,6 +223,11 @@ export async function POST(request: Request) {
   if (p?.action === "majeur") {
     await confirmerSonAge(supabase, moi.id);
     return NextResponse.json({ ok: true }, { headers: sansCache });
+  }
+  // 🗑️ il efface un de SES mèmes (« Mes mèmes ») : partout, et pour de bon
+  if (p?.action === "effacer") {
+    const r = await effacerMonMeme(supabase, moi.id, p.id);
+    return NextResponse.json(r.error ? { error: r.error } : { ok: true }, { status: r.error ? 400 : 200, headers: sansCache });
   }
   // 🌍 son mème dans « Découvrir » (son accord), ou retiré
   if (p?.action === "public") {

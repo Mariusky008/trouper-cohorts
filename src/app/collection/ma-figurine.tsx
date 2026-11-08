@@ -9,8 +9,8 @@
  * UN SEUL ÉCRAN, UN SEUL GESTE : la figurine en grand ; dessous, ce qu'elle ressent (SON visage change) ; puis ce
  * qu'elle dit — un texte lu par une voix au choix, ou sa propre voix — ; « Écouter » ; « Envoyer » (WhatsApp d'abord).
  *   · `StudioMoi` : la sienne, quand elle est prête (son visage de joie se fabrique tout seul ; les autres, à la
- *     demande) ; tout y est ouvert dès le départ (5 novembre 2026, le lot 3) — `MesOptions` n'est plus qu'une liste de
- *     « premiers pas », sans cadenas : la progression, c'est sa figurine du mois (`figurine-du-mois.tsx`) ;
+ *     demande) ; tout y est ouvert dès le départ (5 novembre 2026, le lot 3) ; la progression, c'est sa figurine du
+ *     mois (`figurine-du-mois.tsx`) — « Tes premiers pas » et le mème du jour ont quitté la page le 8 novembre 2026 ;
  *   · `OngletFigurine` : l'onglet entier — l'accueil du guide, la figurine du patron de ClikMe (`guide.tsx`), la quête
  *     `EnvoiPhoto` (« Crée ta figurine », dès le départ, sans compte), `FabricationAuto` (le moteur la fabrique, le guide raconte),
  *     `Annonce` (sans moteur : ClikMe la fait à la main). La démonstration qu'on faisait parler (`StudioDemo`) est
@@ -24,7 +24,6 @@
  */
 import { useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
-  ACCORD_PUBLIC,
   ATTESTATION_AGE,
   REFUS_AGE,
   DUREE_MAX_MESSAGE,
@@ -49,7 +48,6 @@ import { PREMIER_MEME, memesDuMoment, type MemePret } from "@/lib/direct/memes-p
 import type { Surprise } from "@/lib/direct/meme-surprise";
 import { createClient } from "@/lib/supabase/client";
 import { SONS_PABLITO } from "@/lib/direct/guide";
-import { ETAPES, prochaineEtape } from "@/lib/direct/etapes";
 import { ProtegerFigurine } from "./connaitre";
 import { demanderSonAge } from "./age";
 import { ApercuDuMois, useMois } from "./figurine-du-mois";
@@ -57,7 +55,7 @@ import { EVT_VERS_LE_STUDIO, prendreVersLeStudio, type PourAutour, type VersLeSt
 import { oublierLeDepot, revenirAuDepot } from "./depot-autour";
 import { moisEnClair, type FigurineDuMois } from "@/lib/direct/figurine-du-mois";
 import { EVT_GAG, MesReactions } from "./mes-reactions";
-import { CarteMemeDuJour } from "./theme-du-jour";
+import { accordPublic } from "./fenetre";
 import { InviterAppli } from "./mon-telephone";
 import { nomVille, themeDuJour, type Theme } from "@/lib/direct/theme-du-jour";
 import { GAGS, type CleGag } from "@/lib/direct/mes-reactions";
@@ -221,49 +219,6 @@ function ChoixVoix({ valeur, onChoix, desactive }: { valeur: CleVoix; onChoix: (
   );
 }
 
-/**
- * 🎁 SES CADEAUX DE CLIKME (`etapes.ts`) : les étapes à franchir dans l'app (cochées), et ses options — la n-ième
- * s'ouvre au n-ième cadeau ; la prochaine brille. Plus aucun achat (5 novembre 2026 : « ça ressemble trop à de
- * l'achat forcé »).
- */
-export function MesOptions({ etapes }: { cadeaux?: number; etapes: readonly string[] }) {
-  // 👣 TES PREMIERS PAS (5 novembre 2026, le lot 3 : « tout ouvrir dès le départ ») — plus aucun cadenas : les étapes
-  // guident le nouveau venu, sans rien bloquer ; la progression, c'est sa figurine du mois. Repliés (6 novembre 2026 :
-  // « c'est très compact, ça en devient confus ») : une ligne, et son prochain pas.
-  const prochaine = prochaineEtape(etapes);
-  if (!prochaine) return null;
-  const faites = ETAPES.filter((e) => etapes.includes(e.cle)).length;
-  return (
-    <details className="tf-options" aria-label="Tes premiers pas">
-      <summary>
-        <span aria-hidden="true">👣</span> Tes premiers pas{" "}
-        <em>
-          {faites}/{ETAPES.length}
-        </em>
-        <small>
-          Prochain : {prochaine.emoji} {prochaine.titre}
-        </small>
-      </summary>
-      <ul className="tf-kdo" aria-label="Tes étapes">
-        {ETAPES.map((e) => {
-          const faite = etapes.includes(e.cle);
-          return (
-            <li key={e.cle} className={faite ? "faite" : e.cle === prochaine.cle ? "suivante" : ""}>
-              <span aria-hidden="true">{faite ? "✅" : e.emoji}</span> {e.titre}
-            </li>
-          );
-        })}
-      </ul>
-      <p className="tf-options-dit">
-        Ton prochain pas :{" "}
-        <a href={`#${prochaine.onglet}`}>
-          {prochaine.emoji} {prochaine.titre}
-        </a>
-      </p>
-    </details>
-  );
-}
-
 // ─── l'envoi : WhatsApp d'abord ─────────────────────────────────────────────────────────────────
 /** Le lien est prêt : WhatsApp en grand, puis « Partager… », SMS, copier ; et ce que l'autre verra. */
 export function PanneauEnvoi({ lien, texte, titre = "Ton message est prêt ✓" }: { lien: string; texte: string; titre?: string }) {
@@ -327,8 +282,19 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const [tiroir, setTiroir] = useState<"visage" | "animer" | "refaire" | null>(null);
   const [feuille, setFeuille] = useState(false);
   const [copie, setCopie] = useState(false);
-  // (sa ville, pour « Poster sur le fil de Dax » : celle du mème du jour)
+  // (sa ville, pour « Poster sur le fil de Dax » : celle du mème du jour — 8 novembre 2026 : sa carte a quitté « Créer »,
+  // elle est dans « Découvrir » ; on ne lit plus que sa ville)
   const [villeJour, setVilleJour] = useState("");
+  useEffect(() => {
+    let fini = false;
+    void fetch("/api/direct/ma-figurine?jour=1", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { jour?: { ville?: string } } | null) => !fini && j?.jour?.ville && setVilleJour(j.jour.ville))
+      .catch(() => undefined);
+    return () => {
+      fini = true;
+    };
+  }, []);
   const scene = useRef<HTMLDivElement>(null);
   const [univers, setUnivers] = useState(etat0.univers ?? "");
   // (tout est ouvert dès le départ, le lot 3 : ses visages, ses voix, sa propre voix, le cadre doré)
@@ -591,12 +557,11 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
     return () => window.removeEventListener(EVT_VERS_LE_STUDIO, ecoute);
   }, []);
 
-  // 🗂️ L'ADRESSE CHOISIT L'ONGLET : `#reactions` (ses réactions), `#jour` (le mème du jour, là où mène la notification)
+  // 🗂️ L'ADRESSE CHOISIT L'ONGLET : `#reactions` (ses réactions)
   useEffect(() => {
     const lire = (e?: Event) => {
       const ancre = (e as CustomEvent<string> | undefined)?.detail ?? window.location.hash.slice(1);
       if (ancre === "reactions") setVue("reactions");
-      else if (ancre === "jour") setVue("parler");
     };
     window.addEventListener("hashchange", lire);
     window.addEventListener(EVT_ANCRE, lire);
@@ -852,7 +817,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   async function basculerPublic() {
     if (!envoye || !meme) return;
     setErreur("");
-    if (!meme.public && !window.confirm(ACCORD_PUBLIC)) return;
+    if (!meme.public && !(await accordPublic())) return;
     const basculer = () => demander({ action: "public", id: envoye.id, public: !meme.public }) as Promise<Reponse & { public?: boolean }>;
     try {
       let j: Reponse & { public?: boolean };
@@ -1083,10 +1048,6 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
             </button>
           </div>
         )}
-        {/* 🔥 LE MÈME DU JOUR, EN UNE LIGNE (caché quand son mème est déjà pour quelque chose : un duo, le thème, un lieu) */}
-        <div className="tf-jour" hidden={Boolean(reponse || themeJour || pourAutour)}>
-          <CarteMemeDuJour compacte onJour={(j) => setVilleJour(j.ville)} />
-        </div>
         <div className="tf-panneau">
           {etat.voixTexte && (
             <div className="tf-modes" role="tablist" aria-label="Comment elle parle">
@@ -1312,10 +1273,9 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
         <MesReactions />
       </div>
 
-      {/* 👣 EN BAS, REPLIÉS : sa figurine du mois, ses premiers pas */}
+      {/* 🗓️ EN BAS : sa figurine du mois, en une ligne (« Tes premiers pas » est parti le 8 novembre 2026) */}
       <div className="tf-replis">
         <ApercuDuMois />
-        <MesOptions cadeaux={etat.cadeaux} etapes={etat.etapes} />
       </div>
 
       {/* 🎭 SON MÈME, DANS UNE FEUILLE QUI MONTE : il s'y fabrique sous ses yeux, puis « Ton mème est prêt ✅ » — le
@@ -1957,25 +1917,6 @@ export const STYLES_MA_FIGURINE =
 .tf-refaire{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
 .tf-refaire button{padding:9px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#FFF4E6;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
 .tf-fig.tf-or .fqp-fig{box-shadow:0 0 0 4px #F2C46B,0 0 40px rgba(255,214,120,.55),0 30px 60px -24px rgba(0,0,0,.95)}
-.tf-options{min-width:0;display:flex;flex-direction:column;gap:8px;margin-top:6px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}
-.tf-options ol{display:flex;gap:6px;max-width:100%;margin:0;padding:0 0 4px;list-style:none;overflow-x:auto;scrollbar-width:none}
-.tf-options ol::-webkit-scrollbar{display:none}
-.tf-options li{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;width:86px;padding:9px 4px 8px;border-radius:16px;text-align:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
-.tf-options li > span{font-size:22px;line-height:1.1}
-.tf-options li b{font-size:11.5px;line-height:1.15}
-.tf-options li small{font-size:10.5px;font-weight:800;color:#A88E99}
-.tf-options li.ouverte{background:rgba(61,226,166,.1);border-color:rgba(61,226,166,.45)}
-.tf-options li.ouverte small{color:#7FF0C4}
-.tf-options li.suivante{border:1.5px solid #F2C46B;box-shadow:0 0 18px -4px rgba(242,196,107,.7);animation:ab-pouls 2s ease-in-out infinite}
-.tf-options li.suivante small{color:#F2C46B}
-.tf-options li.fermee{opacity:.55}
-.tf-options-dit{margin:0;font-size:13px;line-height:1.4;color:#D9C3CB}
-.tf-kdo{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
-.tf-options .tf-kdo li{flex:0 1 auto;max-width:100%;min-width:0;display:inline-flex;flex-direction:row;align-items:center;gap:5px;width:auto;padding:5px 11px 5px 8px;border-radius:999px;text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:12px;font-weight:800;line-height:1.25;color:#D9C3CB;opacity:1;animation:none;box-shadow:none}
-.tf-options .tf-kdo li span{font-size:14px}
-.tf-options .tf-kdo li.faite{background:rgba(61,226,166,.1);border-color:rgba(61,226,166,.45);color:#BFF7E2}
-.tf-options .tf-kdo li.suivante{border-color:#F2C46B;color:#FFF4E6;box-shadow:0 0 14px -4px rgba(242,196,107,.7)}
-.tf-options-dit a{color:#FF9FD2;font-weight:900}
 .tf-fab{display:flex;flex-direction:column;align-items:center;gap:12px;padding:22px 18px;border-radius:24px;text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(242,196,107,.35)}
 .tf-fab ol{display:grid;gap:6px;margin:0;padding:0;list-style:none;text-align:left}
 .tf-fab li{font-size:14px;color:#A88E99}
@@ -2022,7 +1963,6 @@ export const STYLES_MA_FIGURINE =
 .og-go{display:block;padding:15px 20px;border-radius:999px;background:#FF2E9A;color:#fff;font-size:16px;font-weight:900;text-align:center;text-decoration:none;box-shadow:0 12px 26px -12px rgba(255,46,154,.95)}
 .og-pouvoirs{margin-top:22px}
 .og-pouvoirs h2{margin:0 0 6px;font-size:20px;font-weight:900}
-.og-pouvoirs .tf-options{margin-top:0;padding-top:0;border-top:0}
 .mqd + .tf-quete{margin-top:20px}
 @keyframes tf-vu{from{transform:scale(.96)}}
 @keyframes tf-pouls{0%,100%{box-shadow:0 0 0 0 rgba(242,196,107,.6)}50%{box-shadow:0 0 0 7px rgba(242,196,107,0)}}
@@ -2075,15 +2015,12 @@ export const STYLES_MA_FIGURINE =
 .tf-voix-choisie em{font-style:normal;font-weight:800;color:#FF9FD2;margin-left:4px}
 .tf-replis{display:flex;flex-direction:column;gap:8px}
 .tf-replis details{border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
-.tf-replis .tf-options{display:block;margin:0;padding:0 14px;border-top:0}
 .tf-replis summary{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:13px 0;list-style:none;cursor:pointer;font-size:14.5px;font-weight:900;color:#FFF4E6}
 .tf-replis summary::-webkit-details-marker{display:none}
 .tf-replis summary::after{content:"›";margin-left:auto;font-size:20px;line-height:1;color:#A88E99;transition:transform .2s}
 .tf-replis details[open] summary::after{transform:rotate(90deg)}
 .tf-replis summary em{font-style:normal;padding:1px 8px;border-radius:999px;background:rgba(255,46,154,.2);color:#FFC8E6;font-size:12px}
 .tf-replis summary small{order:3;flex-basis:100%;font-size:12.5px;font-weight:700;color:#A88E99}
-.tf-replis .tf-kdo{padding-bottom:10px}
-.tf-replis .tf-options-dit{padding-bottom:14px}
 .tf-replis .tf-messages{padding:0 14px}
 .tf-replis .tf-messages summary{padding:13px 0;font-size:14.5px;color:#FFF4E6}
 .tf-replis .tf-messages ul{padding-bottom:12px}
@@ -2149,7 +2086,7 @@ export const STYLES_MA_FIGURINE =
    chacun leur tiroir, deux onglets, son mème dans une feuille qui monte ; en bas, repliés, sa figurine du mois et ses
    premiers pas ─── */
 .tf-moi{gap:14px}
-.tf-parler[hidden],.tf-reactions[hidden],.tf-jour[hidden]{display:none}
+.tf-parler[hidden],.tf-reactions[hidden]{display:none}
 .tf-moi .tf-scene{position:sticky;top:51px;z-index:4;gap:0;margin:-14px -16px 0;padding:8px 16px 12px;background:linear-gradient(180deg,rgba(28,10,23,.97),rgba(22,8,18,.95));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 16px 24px -20px rgba(0,0,0,.95)}
 .tf-moi .tf-fig .fqp-fig{width:min(200px,52vw);width:clamp(150px,24dvh,214px);transition:width .3s cubic-bezier(.2,.9,.3,1)}
 .tf-moi:has(.tf-texte textarea:focus) .tf-fig .fqp-fig{width:clamp(96px,13dvh,130px)}
@@ -2193,7 +2130,6 @@ export const STYLES_MA_FIGURINE =
 .tf-replis .fm-apercu b{font-size:13.5px}
 .tf-replis .fm-apercu small{font-size:11.5px}
 .tf-replis .fm-apercu .fm-jours i{height:5px}
-.tf-replis .tf-options summary{padding:10px 0}
 /* (le haut de l'onglet visé reste visible sous sa figurine) */
 .tf-moi [id]{scroll-margin-top:calc(clamp(150px,24dvh,214px) * 4 / 3 + 110px)}
 /* 🪟 une feuille qui monte, en bas de l'écran */

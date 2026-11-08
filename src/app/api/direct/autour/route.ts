@@ -4,6 +4,7 @@
 // GET ?ville=<slug>                 → { ville, lieux, derniers } : la carte (sans ville : la sienne)
 // GET ?lieu=<id>&ville=<slug>        → { lieu, memes } : les mèmes d'un lieu, pour le swipe
 // GET ?profil=<clé>                  → { profil } : un créateur (ses mèmes déposés pour tout le monde)
+// GET ?chercher=<texte>&lat=&lng=     → { endroits } : 🔎 un endroit de la ville (la gare, une rue…), près du centre de la carte
 // POST { action: "deposer", meme, lieu? | ici?: { lat, lng }, qui, mot?, nomLieu?, reponseA? } → { lieu }
 //      (« ici » : sa position, arrondie en une zone d'environ 500 m ; elle n'est gardée nulle part telle quelle)
 // POST { action: "retirer", meme }
@@ -15,6 +16,7 @@ import { habitantCourant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
 import { carteDe, deposer, devenirProche, memesDuLieu, profilDe, retirer } from "@/lib/direct/autour-serveur";
 import { prevenirDUneReponse } from "@/lib/direct/appli-collection-serveur";
+import { chercherEndroits } from "@/lib/direct/geocodeur-serveur";
 
 export const dynamic = "force-dynamic";
 const sansCache = { "cache-control": "no-store" };
@@ -23,6 +25,8 @@ export async function GET(request: Request) {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
   const q = new URL(request.url).searchParams;
+  // 🔎 un endroit de la ville, pour y aller sur la carte (et y déposer, s'il veut)
+  if (q.has("chercher")) return NextResponse.json({ ok: true, endroits: await chercherEndroits(q.get("chercher"), { lat: q.get("lat"), lng: q.get("lng") }) }, { headers: sansCache });
   const profil = q.get("profil");
   if (profil) {
     const p = await profilDe(supabase, profil, moi);

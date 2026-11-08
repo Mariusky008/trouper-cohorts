@@ -1392,6 +1392,63 @@ ouvre « Ne perds jamais ta figurine » ; son mème monte dans la feuille, « Po
 revoir » la rouvre ; « Échap » la ferme) ; `mes-reactions.mjs` (`#reactions` ouvre l'onglet ; « Animer » → « Le prout »
 ouvre l'onglet, le prout choisi).
 
+### 9.0 undecitricies 🧹 Le retour du 8 novembre, lot A : alléger, effacer, la bonne tête, de vraies fenêtres
+
+Le propriétaire a repris l'appli page par page (huit points). Le lot A :
+
+- **« Créer » s'allège encore** : « 👣 Tes premiers pas » est parti (« on peut supprimer cette section maintenant ») ;
+  la carte du **mème du jour** aussi (« ça parasite la page, et on l'a déjà dans Découvrir ») — elle vit dans
+  « Découvrir », `#jour` y mène (la notification de 11 h 30 aussi), avec l'invitation « je te préviens demain ? ».
+  (Le studio lit seulement la ville du jour, pour « Poster sur le fil de Dax ».)
+- **🗑️ Effacer un mème** (« Mes mèmes ») : une poubelle sur chacun des siens ; une fenêtre le lui redemande ; il
+  quitte tout — « Découvrir », le mème du jour, la carte d'« Autour » —, son lien ne mène plus à rien, sa vidéo et sa
+  voix sont effacées du seau (`effacerMonMeme`, `moderation-serveur.ts` ; la route `ma-figurine`, `action: "effacer"`,
+  seulement le sien).
+- **🎭 La bonne tête sur chaque vignette** (« j'ai toujours la même tête sur tous mes mèmes ») : son look, sinon le
+  visage qu'il avait choisi pour ce mème (la joie, la colère…), sinon sa figurine (`apercuMeme`, donc « Mes mèmes »,
+  « Découvrir » et « Autour » à la fois).
+- **🪟 De vraies fenêtres** (« plein de boîtes d'information en haut des écrans, pas designées ») : `window.confirm`
+  (« www.clikme.fr indique… ») est remplacé partout dans l'appli par une fenêtre de ClikMe, en bas de l'écran
+  (`fenetre.tsx` : `demanderOui`, `accordPublic`, `signalerOui`) — l'accord pour « Découvrir », l'âge, signaler,
+  effacer. Les essais y répondent avec `repondreFenetre` (`scripts/navigateur/commun.mjs`). (Restent celles de
+  l'admin, qui ne sont pas l'appli.)
+
+Les essais : `ma-figurine.mjs` (plus de premiers pas ; la vignette montre la joie ; Hugo efface son duo — la fenêtre,
+la vidéo effacée, le lien en 404 — et Léa ne peut pas effacer celui d'un autre ; l'accord et l'âge dans les fenêtres),
+`meme-du-jour.mjs` (« Créer » ne répète plus le mème du jour ; `#jour` ouvre « Découvrir »), `appli-notif.mjs`,
+`autour.mjs`, `personnage.mjs`.
+
+### 9.0 duodecitricies 📍 Le retour du 8 novembre, lot B : « Autour »
+
+Ses mots : « j'ai tapé “la gare”, la carte n'a pas bougé » ; « quand je clique sur un de mes mèmes, il faut que ce
+soit beaucoup plus clair qu'on a choisi ce mème » ; « je mets “chez moi” et ça marche, mais ça n'indique aucun lieu » ;
+et la page du lieu, « vraiment très mauvais UX : il faut qu'elle soit complètement wow et addictive, qu'on veuille y
+revenir et découvrir plus de mèmes du lieu ».
+
+- **🔎 Chercher n'importe quel endroit** : la recherche trouve toujours les lieux de ClikMe (« Sur ClikMe »), et
+  maintenant les endroits de la ville (« Sur la carte » : la gare, une rue, un parc). Un toucher : la carte y vole, une
+  épingle à son nom, et en bas « 📍 Gare de Dax · ＋ Déposer ici ». Le géocodeur : Photon (OpenStreetMap, komoot),
+  gratuit et sans clé, appelé par le serveur (`lib/direct/geocodeur-serveur.ts`, `GET /api/direct/autour?chercher=`),
+  penché vers le centre de la carte et gardé à 25 km ; `GEOCODEUR_URL` le remplace (les essais : un faux, dans le faux
+  Supabase — rien ne part chez komoot). Y déposer en fait une **zone** « quelque part par ici » (environ 500 m), au nom
+  de l'endroit (jamais un numéro de rue) : jamais l'endroit exact.
+- **📍 Le lieu refait** : en haut, sa photo, son nom, ses chiffres (les mèmes, les ❤️, la distance) et les visages de
+  ceux qui y ont déposé ; **« à la une »** : son mème le plus aimé (sinon le dernier), qui joue tout de suite, en grand ;
+  « ▶ Découvrir les N mèmes » ; la conversation du moment ; **le mur** de tous ses mèmes (un toucher : le swipe part de
+  celui-là ; « NOUVEAU » sur ceux du jour) ; **« 📍 Juste à côté »** : les lieux voisins qui ont des mèmes, du plus près
+  au plus loin. À la fin du swipe, « Tu as tout vu ici 🎉 » propose **« 📍 Continuer »** vers le plus proche : la boucle.
+  Sans mème : « ✨ Personne n'a encore déposé de mème ici — le premier, ce sera le tien ? ».
+- **＋ Le dépôt, clair** : « Où ? » se cherche aussi (les lieux de ClikMe et les endroits de la ville). Dès qu'il a
+  choisi — un lieu, un endroit, ou « Ailleurs, là où je suis » —, une petite carte montre **« 📍 Ton mème apparaîtra
+  ici »** (une épingle pour un lieu, le cercle « quelque part par ici » pour une zone), et le bouton dit « Publier · Gare
+  de Dax ». **Le mème choisi se voit en grand**, qui joue, « ✓ Ton mème » ; dans la rangée, il est coché et les autres
+  pâlissent. « Publier » sans lieu : « Choisis d'abord où le déposer… », et l'écran remonte à « Où ? ».
+- Sur la carte, un lieu qui a des mèmes n'est plus jamais caché sous un lieu vide.
+
+Les essais : `essai-autour-route.mjs` (« la gare » : celle de Dax, pas celle de Bordeaux, trop loin ; sans centre de
+carte : les deux ; trop court : rien) et `autour.mjs` (le lieu refait, « à la une » qui passe au plus aimé, le mur, « Juste
+à côté », « Continuer », le dépôt clair, « la gare » de bout en bout : la carte, l'épingle, le dépôt, la zone).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

@@ -11,8 +11,13 @@
 // une zone, gardée nulle part telle quelle. Il signale un mème : il disparaît. Sans carte (tuiles refusées) : la liste
 // des lieux. Sans figurine : on l'invite à la créer. `#rencontre` ouvre « Créer » (« Rencontres » est effacé). Rien ne déborde, jamais
 // le mot interdit, aucune erreur dans la page.
+//
+// 8 novembre 2026 (le retour du propriétaire) : le lieu refait (à la une, qui joue ; ceux qui y ont déposé ; le mur de
+// ses mèmes ; « 📍 Juste à côté ») ; à la fin du swipe, « Continuer » vers le lieu voisin ; au dépôt, le mème choisi en
+// grand et coché, les autres pâlis, et une petite carte « Ton mème apparaîtra ici » ; 🔎 « la gare » : un endroit de la
+// ville (le faux géocodeur), la carte y va, on y dépose — une zone « quelque part par ici », jamais l'endroit exact.
 import fs from "node:fs";
-import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer, repondreFenetre } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
@@ -61,6 +66,7 @@ await meme(HUGO.id, "ecranhugo001", "Et moi alors ?");
 await meme(HUGO.id, "ecranhugo002", "Le croissant du matin");
 await meme(SAM.id, "ecransam0001", "Je passais par là");
 await meme(SAM.id, "ecransam0002", "Ma ville, mes règles");
+await meme(SAM.id, "ecransam0003", "Le train de 8 h");
 
 /** La route, comme le téléphone de quelqu'un. */
 const route = async (qui, corps) => {
@@ -147,9 +153,22 @@ const ouvrirBistrot = async () => {
   await sam.waitForSelector(".atr-lieu h2:has-text('Le Petit Bistrot')", { timeout: 15000 });
 };
 await ouvrirBistrot();
-await sam.waitForSelector(".atr-lieu .atr-eventail img", { timeout: 15000 });
+await sam.waitForSelector(".atr-lieu .atr-une video", { timeout: 15000 });
 const lieuTexte = await texte(sam, ".atr-lieu");
-ok(lieuTexte.includes("3 mèmes déposés ici") && lieuTexte.includes("Découvrir les 3 mèmes") && lieuTexte.includes("La conversation du moment"), "le lieu : « 3 mèmes déposés ici », l'éventail, « ▶ Découvrir », la conversation du moment");
+ok(lieuTexte.includes("3 mèmes déposés ici") && lieuTexte.includes("Découvrir les 3 mèmes") && lieuTexte.includes("La conversation du moment"), "le lieu : « 3 mèmes déposés ici », « ▶ Découvrir les 3 mèmes », la conversation du moment");
+const lieuRefait = await sam.evaluate(() => ({
+  une: document.querySelector(".atr-une-titre")?.textContent ?? "",
+  joue: Boolean(document.querySelector(".atr-une video")?.autoplay),
+  visages: document.querySelectorAll(".atr-visages img").length,
+  auteurs: document.querySelector(".atr-auteurs small")?.textContent ?? "",
+  mur: document.querySelectorAll(".atr-mur .atr-mur-carte").length,
+  neufs: document.querySelectorAll(".atr-mur .atr-neuf").length,
+  voisins: [...document.querySelectorAll(".atr-voisin b")].map((b) => b.textContent),
+}));
+ok(lieuRefait.une.includes("Le dernier déposé ici") && lieuRefait.joue, `« à la une » : son dernier mème, qui joue tout de suite (${lieuRefait.une})`);
+ok(lieuRefait.visages === 2 && /Léa|Hugo/.test(lieuRefait.auteurs) && lieuRefait.auteurs.includes("y ont déposé un mème"), `ceux qui y ont déposé, leurs visages (${lieuRefait.auteurs})`);
+ok(lieuRefait.mur === 3 && lieuRefait.neufs === 3 && lieuTexte.includes("Tous les mèmes d’ici"), "le mur : ses trois mèmes, « NOUVEAU » sur ceux du jour");
+ok(lieuTexte.includes("Juste à côté") && lieuRefait.voisins.includes("Boulangerie du Marché") && lieuRefait.voisins.includes("Soirée chez Max"), `« 📍 Juste à côté » : les lieux voisins qui ont des mèmes (${lieuRefait.voisins.join(", ")})`);
 await sam.waitForFunction(() => document.querySelector(".atr-lieu-tete.photo img")?.complete, null, { timeout: 10000 }).catch(() => null);
 await sam.waitForTimeout(400); // (son entrée animée)
 const tete = await sam.evaluate(() => {
@@ -160,6 +179,12 @@ const tete = await sam.evaluate(() => {
 ok(tete.photo > 0 && tete.l === 390 && Math.round(tete.t) === 0, `🖼️ en haut de sa page : la photo du Petit Bistrot, sur toute la largeur (${JSON.stringify(tete)})`);
 ok(!/★|étoile|avis|horaire|ouvert/i.test(lieuTexte), "ni étoiles, ni avis, ni horaires : pas une fiche de plan");
 await sam.screenshot({ path: `${D}/autour-2-lieu.png` });
+await sam.screenshot({ path: `${D}/autour-2b-lieu-entier.png`, fullPage: true });
+// (la page entière : la section défile, pas le document)
+await sam.evaluate(() => document.querySelector(".atr-lieu")?.scrollTo(0, 99999));
+await sam.waitForTimeout(300);
+await sam.screenshot({ path: `${D}/autour-2c-lieu-bas.png` });
+await sam.evaluate(() => document.querySelector(".atr-lieu")?.scrollTo(0, 0));
 
 // ═══ LE SWIPE ═══
 const lieuAvant = await voir(SAM, `?lieu=${BISTROT}`);
@@ -205,14 +230,23 @@ await sam.locator("section.atr-deposer .atr-titre .atr-fermer").click();
 await sam.waitForSelector(".atr-lieu > .atr-fermer", { timeout: 10000 });
 await sam.locator(".atr-lieu > .atr-fermer").click();
 
-// ═══ SAM RÉPOND AVEC SA FIGURINE ═══
+// ═══ LE MUR : UN TOUCHER, LE SWIPE À PARTIR DE CE MÈME ; « À LA UNE » : LE PLUS AIMÉ ═══
 await ouvrirBistrot();
+await sam.waitForSelector(".atr-lieu .atr-mur-carte", { timeout: 15000 });
+ok(/le plus aimé ici/i.test(await texte(sam, ".atr-une-titre")) && (await texte(sam, ".atr-une-bas b")) === lieuAvant.memes[0].prenom, `il a aimé un mème : « 🔥 Le plus aimé ici » passe à la une (${await texte(sam, ".atr-une-bas b")})`);
+await sam.locator(".atr-mur-carte", { hasText: "Moi devant la vitrine" }).click();
+await sam.waitForSelector(".atr-swipe .atr-mcarte:not(.dessous) video", { timeout: 15000 });
+ok((await sam.locator(".atr-mcarte:not(.dessous) video").getAttribute("src")).includes("ecranlea0002") && (await texte(sam, ".atr-num")) === "1 / 3", "un toucher sur le mur : le swipe part de ce mème-là");
+await sam.locator(".atr-swipe-haut .atr-fermer[aria-label='Fermer']").click();
+await sam.waitForSelector(".atr-lieu .atr-decouvrir", { timeout: 10000 });
+
+// ═══ SAM RÉPOND AVEC SA FIGURINE ═══
 await sam.locator(".atr-decouvrir").click();
 await sam.waitForSelector(".atr-swipe .atr-mcarte:not(.dessous)", { timeout: 15000 });
 await sam.locator(".atr-rond.repondre").click();
 await sam.waitForSelector("section.atr-deposer .atr-miens .atr-vignette", { timeout: 15000 });
 ok((await texte(sam, "section.atr-deposer h2")) === "Répondre avec ma figurine" && (await texte(sam, "section.atr-deposer .atr-choix.pris")).includes("Le Petit Bistrot") && (await sam.locator("section.atr-deposer .atr-ailleurs").count()) === 0, "« Répondre avec ma figurine » : au même endroit");
-ok((await sam.locator("section.atr-deposer .atr-miens .atr-vignette").count()) === 2 && (await sam.locator(".atr-qui-voit [role=radio]").count()) === 3, "ses deux mèmes ; qui le voit : tout le monde, ses proches, lui seul");
+ok((await sam.locator("section.atr-deposer .atr-miens .atr-vignette").count()) === 3 && (await sam.locator(".atr-qui-voit [role=radio]").count()) === 3, "ses trois mèmes ; qui le voit : tout le monde, ses proches, lui seul");
 await sam.waitForTimeout(400); // (son entrée animée)
 const ecran = await sam.locator("section.atr-deposer").boundingBox();
 ok(ecran && Math.round(ecran.y) === 0 && Math.round(ecran.height) === 844 && ecran.width === 390, `l'écran du dépôt prend tout l'écran, au-dessus de la carte (${JSON.stringify(ecran)})`);
@@ -220,9 +254,8 @@ await sam.locator("section.atr-deposer .atr-miens .atr-vignette", { hasText: "Je
 await sam.locator("section.atr-deposer input[aria-label='Un petit mot']").fill("Moi aussi, il m’a reconnu !");
 await sam.screenshot({ path: `${D}/autour-5-repondre.png`, fullPage: false });
 // 🔞 Sam n'a pas encore déclaré son âge : à son premier dépôt, on le lui demande, une fois (puis le geste repart)
-let questionAge = "";
-sam.once("dialog", (d) => (questionAge = d.message())); // (ses boîtes de dialogue sont acceptées : `tel`)
 await sam.locator("section.atr-deposer .atr-bas .atr-rose").click();
+const questionAge = await repondreFenetre(sam);
 await sam.waitForSelector(".atr-publie h2", { timeout: 15000 });
 ok((await texte(sam, ".atr-publie")).includes("C’est publié !"), "« C'est publié ! »");
 ok(/« Autour »/.test(questionAge) && /15 ans ou plus \?/.test(questionAge) && (await (await fetch(`${STOCK}/figurines-clients/${SAM.id}/majeur.json`)).json().catch(() => null))?.age === 15, `son âge lui a été demandé, une fois, puis noté (${questionAge.slice(0, 50)})`);
@@ -238,9 +271,30 @@ await sam.locator(".atr-lieu > .atr-fermer").click();
 await sam.locator(".atr-actions .atr-poser").click();
 await sam.waitForSelector("section.atr-deposer .atr-miens .atr-vignette", { timeout: 15000 });
 ok((await texte(sam, "section.atr-deposer h2")) === "Déposer mon mème" && (await sam.locator("section.atr-deposer .atr-lieux .atr-choix").count()) === 2, "« Déposer mon mème » : les commerces tout près");
+// « Publier » sans dire où : on le lui dit clairement
+await sam.locator("section.atr-deposer .atr-bas .atr-rose").click();
+ok((await texte(sam, "section.atr-deposer .atr-erreur")).includes("Choisis d’abord où le déposer") && (await sam.locator(".atr-publie").count()) === 0, "« Publier » sans lieu : « Choisis d’abord où le déposer… »");
 await sam.locator("section.atr-deposer .atr-ailleurs").click();
 await sam.locator("section.atr-deposer input[aria-label='Le petit nom de l’endroit']").fill("Les Arènes");
 await sam.locator("section.atr-deposer .atr-miens .atr-vignette", { hasText: "Ma ville, mes règles" }).click();
+// 📍 OÙ IL APPARAÎTRA ; LE MÈME CHOISI, BIEN CLAIR
+await sam.waitForSelector("section.atr-deposer .atr-ou", { timeout: 10000 });
+await sam.waitForTimeout(400); // (les autres pâlissent)
+const depot = await sam.evaluate(() => ({
+  ou: document.querySelector(".atr-ou")?.innerText.replace(/\s+/g, " ") ?? "",
+  carte: Boolean(document.querySelector(".atr-ou .auc-apercu")),
+  grand: document.querySelector(".atr-choisi")?.innerText.replace(/\s+/g, " ") ?? "",
+  video: Boolean(document.querySelector(".atr-choisi video")),
+  coches: document.querySelectorAll(".atr-miens .atr-vignette.pris .atr-coche").length,
+  pales: [...document.querySelectorAll(".atr-miens .atr-vignette:not(.pris)")].map((e) => Number(getComputedStyle(e).opacity)),
+  publier: document.querySelector(".atr-deposer .atr-bas .atr-rose")?.textContent ?? "",
+}));
+ok(depot.ou.includes("Ton mème apparaîtra ici") && depot.ou.includes("Les Arènes") && depot.ou.includes("quelque part par ici") && depot.carte && depot.publier.includes("Publier · Les Arènes"), `📍 où il apparaîtra : une petite carte, « Les Arènes », « quelque part par ici » (${depot.ou.slice(0, 90)})`);
+ok(/ma ville, mes règles/i.test(depot.grand) && depot.grand.includes("✓ Ton mème") && depot.video && depot.coches === 1 && depot.pales.length === 2 && depot.pales.every((o) => o < 0.6), `le mème choisi : en grand, qui joue, coché ; les autres pâlis (${JSON.stringify({ coches: depot.coches, pales: depot.pales })})`);
+await sam.screenshot({ path: `${D}/autour-6a-depot.png` });
+await sam.evaluate(() => document.querySelector(".atr-deposer")?.scrollTo(0, document.querySelector(".atr-choisi")?.offsetTop - 120));
+await sam.waitForTimeout(300);
+await sam.screenshot({ path: `${D}/autour-6b-depot-meme.png` });
 await sam.locator("section.atr-deposer .atr-bas .atr-rose").click();
 await sam.waitForSelector(".atr-publie h2", { timeout: 15000 });
 const carteSam = await voir(SAM);
@@ -267,11 +321,59 @@ ok((await sam.locator(".atr-lieu-tete.photo").count()) === 0 && (await texte(sam
 await sam.locator(".atr-decouvrir").click();
 await sam.waitForSelector(".atr-swipe .atr-mcarte:not(.dessous)", { timeout: 15000 });
 await sam.locator(".atr-swipe-haut .atr-fermer[aria-label='Signaler ce mème']").click();
+await repondreFenetre(sam);
 await sam.waitForSelector(".atr-toast", { timeout: 10000 });
 const boulangerie = await voir(SAM, `?lieu=${BOULANGERIE}`);
 ok((await texte(sam, ".atr-toast")).includes("signalé") && !(boulangerie.memes ?? []).some((m) => m.id === "ecranhugo002"), "⋯ Signaler (deux touchers) : le mème disparaît");
-await sam.locator(".atr-swipe-haut .atr-fermer[aria-label='Fermer']").click();
+// TOUT VU ICI : « 📍 Continuer » vers le lieu le plus proche qui a des mèmes
+await sam.waitForSelector(".atr-fin .atr-continuer", { timeout: 10000 });
+ok((await texte(sam, ".atr-continuer")).includes("Continuer : Le Petit Bistrot"), `tout vu ici : « ${await texte(sam, ".atr-continuer")} »`);
+await sam.screenshot({ path: `${D}/autour-6c-continuer.png` });
+await sam.locator(".atr-continuer").click();
+await sam.waitForSelector(".atr-lieu h2:has-text('Le Petit Bistrot')", { timeout: 15000 });
+ok(true, "« Continuer » : le lieu voisin s'ouvre");
 await sam.locator(".atr-lieu > .atr-fermer").click();
+
+// ═══ 🔎 « LA GARE » : N'IMPORTE QUEL ENDROIT DE LA VILLE — LA CARTE Y VA, ET ON Y DÉPOSE ═══
+await sam.locator(".atr-recherche input").fill("la gare");
+await sam.waitForSelector(".atr-trouves .atr-endroit", { timeout: 10000 });
+const trouvesGare = await texte(sam, ".atr-trouves");
+ok(/sur la carte/i.test(trouvesGare) && trouvesGare.includes("Gare de Dax") && !trouvesGare.includes("Saint-Jean"), `« la gare » : la gare de Dax (pas celle de Bordeaux, trop loin) — « ${trouvesGare} »`);
+await sam.screenshot({ path: `${D}/autour-7a-chercher.png` });
+await sam.locator(".atr-trouves .atr-endroit", { hasText: "Gare de Dax" }).click();
+await sam.waitForSelector(".atr-cible", { timeout: 5000 });
+ok((await texte(sam, ".atr-cible")).includes("Gare de Dax") && (await texte(sam, ".atr-cible-deposer")) === "＋ Déposer ici" && (await sam.locator(".atr-actions").count()) === 0 && (await sam.inputValue(".atr-recherche input")) === "", "la carte y va : « 📍 Gare de Dax », « ＋ Déposer ici »");
+if (carteChargee) {
+  await sam.waitForSelector(".auc-cible", { timeout: 5000 });
+  await sam.waitForTimeout(2500); // (la carte vole jusqu'à la gare)
+  const pin = await sam.locator(".auc-cible").boundingBox();
+  ok((await texte(sam, ".auc-cible")) === "Gare de Dax" && pin && pin.y > 120 && pin.y + pin.height < 844 - 370, `son épingle, au milieu de ce qu'on voit de la carte (${JSON.stringify(pin)})`);
+}
+await sam.screenshot({ path: `${D}/autour-7b-gare.png` });
+await sam.locator(".atr-cible-deposer").click();
+await sam.waitForSelector("section.atr-deposer .atr-ou", { timeout: 15000 });
+ok((await texte(sam, "section.atr-deposer .atr-endroit-pris")).includes("Gare de Dax") && (await texte(sam, "section.atr-deposer .atr-ou")).includes("Gare de Dax"), "« ＋ Déposer ici » : le dépôt s'ouvre sur la gare, sa petite carte");
+// (le dépôt cherche aussi : « gare », encore)
+await sam.locator("section.atr-deposer .atr-chercher-ou input").fill("gare");
+await sam.waitForSelector("section.atr-deposer .atr-lieux .atr-endroit", { timeout: 10000 });
+await sam.locator("section.atr-deposer .atr-lieux .atr-endroit", { hasText: "Gare de Dax" }).click();
+await sam.waitForSelector("section.atr-deposer .atr-endroit-pris", { timeout: 5000 });
+await sam.locator("section.atr-deposer .atr-miens .atr-vignette", { hasText: "Le train de 8 h" }).click();
+await sam.screenshot({ path: `${D}/autour-7c-depot-gare.png` });
+await sam.evaluate(() => document.querySelector(".atr-deposer")?.scrollTo(0, 0));
+await sam.waitForTimeout(800); // (la petite carte se dessine)
+await sam.screenshot({ path: `${D}/autour-7d-ou-gare.png` });
+await sam.locator("section.atr-deposer .atr-bas .atr-rose").click();
+await sam.waitForSelector(".atr-publie h2", { timeout: 15000 });
+const PAS = { lat: 0.0045, lng: 0.0062 };
+const zoneGare = `z-${Math.floor(43.72085 / PAS.lat)}_${Math.floor(-1.04861 / PAS.lng)}`;
+const carteGare = await voir(SAM);
+const gare = carteGare.lieux.find((l) => l.nom === "Gare de Dax");
+ok(gare?.type === "zone" && gare.id === zoneGare && gare.lat !== 43.72085 && !JSON.stringify(carteGare).includes("43.72085"), `déposé à la gare : une zone « quelque part par ici » (${gare?.id}), jamais l'endroit exact`);
+await sam.locator(".atr-publie .atr-lien").click();
+await sam.waitForSelector(".atr-actions .atr-poser", { timeout: 10000 });
+ok((await sam.locator(".atr-cible").count()) === 0, "publié : la carte retrouve ses boutons");
+if (carteChargee) await sam.waitForSelector(`.auc-zone:has-text("Gare de Dax")`, { timeout: 15000 });
 
 // ═══ LÉA RÉPOND « AVEC SA TÊTE » : UN NOUVEAU MÈME, FAIT AU STUDIO POUR CE LIEU, PUIS DÉPOSÉ LÀ-BAS ═══
 const lea = await tel(LEA);
