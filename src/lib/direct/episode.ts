@@ -270,6 +270,66 @@ export function planDuMontage(o: { morceaux: MorceauNote[]; images: number[]; se
   return construire([]);
 }
 
+/* ═══ SES VIDÉOS DÉJÀ TOURNÉES ══════════════════════════════════════════════ */
+/*
+ * 8 novembre 2026, le propriétaire : « je voudrais pouvoir déposer une ou plusieurs vidéos que j'ai déjà prises,
+ * pour qu'il en fasse mon épisode […] avoir le meilleur des moments de ces vidéos en un seul épisode ». Ses vidéos,
+ * mises bout à bout dans l'ordre de sa fabrication, font une session comme une autre : on les découpe en morceaux de
+ * `MORCEAU_S` secondes, notés comme ceux du téléphone posé, et le montage n'y voit aucune différence
+ * (`episode-videos.ts`).
+ */
+
+/** Ses vidéos ensemble : 15 secondes au moins (trois petites vidéos suffisent), une heure au plus (`SESSION_MAX_S`). */
+export const VIDEOS_MIN_S = 15;
+/** Dix vidéos au plus. */
+export const VIDEOS_MAX = 10;
+
+/** Les morceaux d'une vidéo, bout à bout ; le dernier, plus court, s'il dure 1,5 s au moins (comme en session). */
+export function fenetresDe(duree: number): { de: number; duree: number }[] {
+  const l: { de: number; duree: number }[] = [];
+  if (!Number.isFinite(duree) || duree <= 0) return l;
+  for (let de = 0; de < duree - 0.01; de += MORCEAU_S) {
+    const d = Math.min(MORCEAU_S, duree - de);
+    if (d >= 1.5) l.push({ de: Math.round(de * 1000) / 1000, duree: Math.round(d * 1000) / 1000 });
+  }
+  return l;
+}
+
+/**
+ * L'ORDRE DE SES VIDÉOS : celui de leurs dates — sauf si elles portent toutes la même à quelques secondes près (le
+ * téléphone les a datées au moment de les donner) : alors l'ordre où il les a choisies. Des indices.
+ */
+export function ordreDesVideos(dates: number[]): number[] {
+  const i = dates.map((_, k) => k);
+  const valides = dates.filter((d) => Number.isFinite(d) && d > 0);
+  if (valides.length < dates.length || dates.length < 2 || Math.max(...dates) - Math.min(...dates) < 10_000) return i;
+  return i.sort((a, b) => dates[a] - dates[b] || a - b);
+}
+
+/**
+ * CE QU'ON DÉCOUPE : seulement les morceaux que les films prendront — l'épisode, la bande-annonce, les `plansReel`
+ * meilleurs gestes du Reel —, et toujours le dernier (la révélation). Le reste n'est jamais découpé : découper se
+ * fait en vrai, une seconde de vidéo par seconde. Des indices dans `morceaux`, dans l'ordre.
+ */
+export function morceauxADecouper(o: { morceaux: MorceauNote[]; images: number[]; session: number; plansReel: number }): number[] {
+  const n = o.morceaux.length;
+  if (!n) return [];
+  const pris = new Set<number>([n - 1]);
+  for (const genre of ["episode", "bande"] as const) {
+    for (const b of planDuMontage({ morceaux: o.morceaux, images: o.images, session: o.session, genre })) {
+      if (b.genre === "moment" || b.genre === "revelation") pris.add(b.k);
+    }
+  }
+  o.morceaux
+    .map((m, k) => ({ ...m, k }))
+    .slice(0, -1)
+    .filter((m) => m.duree >= 1.4)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, o.plansReel)
+    .forEach((m) => pris.add(m.k));
+  return [...pris].sort((a, b) => a - b);
+}
+
 /* ═══ SA SÉRIE : SAISON ET NUMÉRO ═══════════════════════════════════════════ */
 
 const cleSerie = (commerce: string) => `clikme-episodes:${commerce}`;

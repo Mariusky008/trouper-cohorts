@@ -279,6 +279,15 @@ Suite à l'analyse du testeur sur la vidéo elle-même :
    répond à la main avec ses réponses toutes prêtes. FAIT. La réponse automatique reste à faire quand le volume le
    demandera. Le Reel du film photo et de l'épisode : FAIT (30 octobre) — ses photos ou ses meilleurs gestes en
    plans ; pour l'épisode, il remplace la bande-annonce sur ses réseaux.
+   **L'épisode à partir de ses vidéos déjà tournées : FAIT (8 novembre 2026)** — le propriétaire : « je n'ai que
+   l'option de placer mon portable ; je voudrais pouvoir déposer une ou plusieurs vidéos que j'ai déjà prises […]
+   avoir le meilleur des moments de ces vidéos en un seul épisode ». « 🎞️ J'ai déjà mes vidéos » (1 à 10 vidéos,
+   15 s à 1 h en tout), rangées dans l'ordre de sa fabrication (la fin de la dernière = la révélation). Le téléphone
+   les regarde en accéléré (×4, sans le son : ce qui bouge et la lumière, la même note que la session), garde les
+   meilleurs morceaux de 6 s répartis sur toutes ses vidéos, ne découpe EN VRAI (avec le son) que ceux que les films
+   prendront (`morceauxADecouper`), puis le montage de l'épisode et du Reel reste le même. Rien n'est envoyé avant
+   « Publier ». Sur iPhone, le son d'une vidéo ne joue qu'après un geste : les lecteurs sont lancés dans le toucher
+   « Faire mon épisode » (`preparerLecteurs`), sinon le morceau part sans son. Code : `src/lib/direct/episode-videos.ts`.
 4. **FAIT — La ligne « Envoie ça à la personne avec qui tu viens ce midi 👇 »** dans le texte de publication que ClikMe
    écrit déjà (les envois en message privé comptent beaucoup pour toucher de nouveaux gens).
 5. **À ne pas faire** : inventer l'accroche ou une offre au nom du commerçant (« On t'offre le dessert si… ») — les
