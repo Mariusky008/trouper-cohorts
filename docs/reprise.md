@@ -76,7 +76,7 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 | #102 | « Autour » : les lieux publics nommés, placés par l'admin sur la vraie carte (`/admin/humain/lieux-publics`) |
 | #103 | « Créer » refait, « le studio et ses tiroirs » (l'avis d'un ami) : sa figurine toujours en vue, Visage / Animer / La refaire, deux onglets, son mème dans une feuille, le cadenas doré — `docs/figurines.md`, 9.0 decitricies |
 | #104 | 🔐 La faille des routes admin fermée : seule une session vérifiée par Supabase compte ; deux routes admin sans garde gardées ; leurs redirections restent dans l'admin (`scripts/essai-admin-garde-route.mjs`) |
-| #105 | Le retour du 8 novembre, lot A : « Créer » sans premiers pas ni mème du jour ; 🗑️ effacer un mème ; la bonne tête sur les vignettes ; de vraies fenêtres à la place de celles du navigateur — `docs/figurines.md`, 9.0 undecitricies |
+| (cette PR) | Le retour du 8 novembre, lot A : « Créer » sans premiers pas ni mème du jour ; 🗑️ effacer un mème ; la bonne tête sur les vignettes ; de vraies fenêtres à la place de celles du navigateur — `docs/figurines.md`, 9.0 undecitricies |
 | (cette PR) | Le retour du 8 novembre, lot B : « Autour » — chercher « la gare » (la carte y va, on y dépose), le lieu refait (à la une, le mur, « Juste à côté », « Continuer »), le dépôt clair (le mème choisi en grand, « Ton mème apparaîtra ici ») — `docs/figurines.md`, 9.0 duodecitricies |
 
 Après #94, l'essai `appli-notif.mjs` a échoué sur `main` : la CI tournait entre 11 h et midi (heure de Paris), et
