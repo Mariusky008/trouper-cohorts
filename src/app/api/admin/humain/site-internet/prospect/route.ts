@@ -8,14 +8,18 @@
 // - delete    : suppression de la fiche
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { cheminAdmin, isCurrentUserAdmin } from "@/lib/admin-guard";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  // 🔐 Réservé à l'admin (7 novembre 2026 : cette route n'avait AUCUNE garde — n'importe qui pouvait la poster ; le middleware ne garde pas `/api/admin`).
+  if (!(await isCurrentUserAdmin())) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   const formData = await req.formData();
   const id = String(formData.get("id") || "").trim();
   const action = String(formData.get("action") || "").trim();
-  const redirectTo = String(formData.get("redirect") || "/admin/humain/site-internet");
+  // (un chemin de l'admin, jamais un autre site)
+  const redirectTo = cheminAdmin(formData.get("redirect"), "/admin/humain/site-internet");
 
   if (!id || !action) {
     return NextResponse.json({ error: "id et action requis" }, { status: 400 });

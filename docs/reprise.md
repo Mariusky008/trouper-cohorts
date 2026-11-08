@@ -74,7 +74,8 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 | #100 | La modération des mèmes signalés (vus comme les gens les ont vus ; retirés de la carte aussi) |
 | #101 | « Hugo t'a répondu ! » : la notification des réponses, et son interrupteur dans « Moi » |
 | #102 | « Autour » : les lieux publics nommés, placés par l'admin sur la vraie carte (`/admin/humain/lieux-publics`) |
-| (cette PR) | « Créer » refait, « le studio et ses tiroirs » (l'avis d'un ami) : sa figurine toujours en vue, Visage / Animer / La refaire, deux onglets, son mème dans une feuille, le cadenas doré — `docs/figurines.md`, 9.0 decitricies |
+| #103 | « Créer » refait, « le studio et ses tiroirs » (l'avis d'un ami) : sa figurine toujours en vue, Visage / Animer / La refaire, deux onglets, son mème dans une feuille, le cadenas doré — `docs/figurines.md`, 9.0 decitricies |
+| (cette PR) | 🔐 La faille des routes admin fermée : seule une session vérifiée par Supabase compte ; deux routes admin sans garde gardées ; leurs redirections restent dans l'admin (`scripts/essai-admin-garde-route.mjs`) |
 
 Après #94, l'essai `appli-notif.mjs` a échoué sur `main` : la CI tournait entre 11 h et midi (heure de Paris), et
 l'appel « sans forcer » de l'essai avait vraiment fait l'envoi. Ce n'est pas un défaut de l'appli. L'essai le fait
@@ -295,12 +296,15 @@ l'effacement de sa photo d'origine après la fabrication ne sont pas faits ; ne 
 
 ## 5. Les autres sujets en attente
 
-- **⚠️ Une faille repérée le 7 novembre, pas encore corrigée (à faire sur l'accord du propriétaire)** :
-  `getServerUserIdWithProxyFallback` (`src/lib/supabase/server.ts`), qui sert à `isCurrentUserAdmin`, se rabat, quand
-  Supabase ne vérifie pas la session, sur `getSession()` puis sur le `sub` du cookie — sans en vérifier la signature.
-  Les routes `/api/admin/*` (que le middleware ne garde pas) accepteraient donc un cookie fabriqué portant l'identifiant
-  d'un administrateur. Correction proposée : ne croire que `getUser()` (vérifié) ; le prix : « accès refusé » le temps
-  d'une panne de Supabase.
+- **✅ La faille des routes admin est fermée (8 novembre, sur l'accord du propriétaire)** :
+  `getServerUserIdWithProxyFallback` (`src/lib/supabase/server.ts`), qui sert à toutes les gardes admin, ne croit plus
+  que deux sources vérifiées : l'en-tête que pose le middleware après `getUser()`, et `getUser()` lui-même. Les replis
+  sur `getSession()` et sur le `sub` du cookie (sans signature vérifiée) sont partis : un cookie fabriqué portant
+  l'identifiant d'un administrateur ouvrait `/api/admin/*` et la page `/admin`. Deux routes n'avaient **aucune** garde
+  (`/api/admin/rejoindre/prospect`, `/api/admin/humain/site-internet/prospect` : n'importe qui pouvait supprimer une
+  fiche de commerce, en faire un client, libérer un emplacement) ; elles sont gardées, et leur redirection reste dans
+  l'admin (`cheminAdmin`, `lib/admin-guard.ts`). Le prix : pendant une panne de Supabase, l'admin dit « connexion
+  requise ». L'essai : `scripts/essai-admin-garde-route.mjs`.
 - **Le point 5 d'« Autour », fin** : la réponse du commerçant depuis son comptoir (pas commencée).
 - **La page personnalité « double numérique »** (la figurine répond aux questions des visiteurs) : le propriétaire a dit
   « on verra plus tard ». Avis donné : commencer par des questions toutes faites, puis une boîte à questions validées
