@@ -73,6 +73,8 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
 | #99 | « Autour » : répondre avec sa tête ; le profil (ajouter en proche, lui répondre ; « Mes proches » suit la liste de l'auteur) ; la photo du lieu |
 | #100 | La modération des mèmes signalés (vus comme les gens les ont vus ; retirés de la carte aussi) |
 | #101 | « Hugo t'a répondu ! » : la notification des réponses, et son interrupteur dans « Moi » |
+| #102 | « Autour » : les lieux publics nommés, placés par l'admin sur la vraie carte (`/admin/humain/lieux-publics`) |
+| (cette PR) | « Créer » refait, « le studio et ses tiroirs » (l'avis d'un ami) : sa figurine toujours en vue, Visage / Animer / La refaire, deux onglets, son mème dans une feuille, le cadenas doré — `docs/figurines.md`, 9.0 decitricies |
 
 Après #94, l'essai `appli-notif.mjs` a échoué sur `main` : la CI tournait entre 11 h et midi (heure de Paris), et
 l'appel « sans forcer » de l'essai avait vraiment fait l'envoi. Ce n'est pas un défaut de l'appli. L'essai le fait

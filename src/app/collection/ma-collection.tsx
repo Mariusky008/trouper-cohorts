@@ -9,6 +9,8 @@
  *   🔥 DÉCOUVRIR — les mèmes du jour des commerçants de sa ville (`decouvrir.tsx`) ;
  *   📍 AUTOUR — les mèmes laissés dans la ville, sur une carte (`autour.tsx`) ; il a pris la place de 💬 RENCONTRES ;
  *   🎭 CRÉER, au milieu, en gros — sa figurine qui parle (`ma-figurine.tsx`) : ses looks, ses mèmes prêts, le duo ;
+ *      depuis le 7 novembre 2026, « le studio et ses tiroirs » (sa figurine toujours en vue, deux onglets, son mème dans
+ *      une feuille) ; « Ne perds jamais ta figurine » est un cadenas doré, ici, en haut à côté de son prénom ;
  *   📥 MES MÈMES — ce que ses mèmes deviennent : vus, les réponses en duo, ceux qu'il a reçus (`mes-memes.tsx`) ;
  *   🃏 MOI — sa carte de personnage, la question du jour (`personnage.tsx`), et sa figurine du mois, qui se mérite en 10
  *      jours sur ClikMe (`figurine-du-mois.tsx`).
@@ -26,10 +28,10 @@
  */
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { OngletFigurine, STYLES_MA_FIGURINE } from "./ma-figurine";
+import { EVT_ANCRE, Feuille, OngletFigurine, STYLES_MA_FIGURINE } from "./ma-figurine";
 import { OngletVisible } from "./guide";
 import { MonPersonnage, STYLES_PERSONNAGE } from "./personnage";
-import { STYLES_CONNAITRE } from "./connaitre";
+import { ProtegerFigurine, STYLES_CONNAITRE } from "./connaitre";
 import { MaFigurineDuMois, STYLES_FIGURINE_DU_MOIS } from "./figurine-du-mois";
 import { MesMemes, STYLES_MES_MEMES } from "./mes-memes";
 import { Decouvrir, STYLES_DECOUVRIR } from "./decouvrir";
@@ -82,6 +84,9 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
   const [ouverts, setOuverts] = useState<Set<Vue>>(() => new Set(["figurine"]));
   // (sa carte faite ou refaite : le menu sait s'il en a une)
   const [aCarte, setACarte] = useState<boolean | null>(null);
+  // 🔒 « NE PERDS JAMAIS TA FIGURINE » (7 novembre 2026, l'avis d'un ami) : un cadenas doré, en haut à côté de son prénom,
+  // tant que son adresse ne la protège pas ; il ouvre une feuille (null : jamais ouverte, rien n'y est encore monté)
+  const [proteger, setProteger] = useState<boolean | null>(null);
   // (stable : la fabrication rappelle le serveur dans un effet qui en dépend)
   const poserEtat = useCallback((e: EtatMaFigurine) => setEtat(e), []);
 
@@ -116,6 +121,8 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
     } catch {
       /* rien */
     }
+    // (l'onglet suit : « #reactions » ouvre ses réactions, dans le studio)
+    window.dispatchEvent(new CustomEvent<string>(EVT_ANCRE, { detail: ancre ?? v }));
     // (un endroit dedans : il peut arriver un peu après, le temps que l'onglet se charge)
     let essais = 0;
     const defiler = () => {
@@ -162,7 +169,15 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
         <Link className="mc-logo" href="/">
           Clik<b>Me</b>
         </Link>
-        <span className="mc-moi">{etat?.prenom ? `🎭 ${etat.prenom}` : "🎭 Ta figurine qui parle"}</span>
+        <span className="mc-droite">
+          <span className="mc-moi">{etat?.prenom ? `🎭 ${etat.prenom}` : "🎭 Ta figurine qui parle"}</span>
+          {prete && etat && !etat.protegee && (
+            <button type="button" className="mc-cadenas" aria-label="Sauvegarder ma figurine : ne la perds jamais" onClick={() => setProteger(true)}>
+              <span aria-hidden="true">🔒</span>
+              <small>Sauvegarder</small>
+            </button>
+          )}
+        </span>
       </header>
 
       <div className="mc-onglets">
@@ -217,6 +232,13 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
           </section>
         )}
       </div>
+
+      {/* 🔒 son adresse protège sa figurine : un code suffit pour la retrouver sur un autre téléphone */}
+      {prete && proteger !== null && (
+        <Feuille ouverte={proteger} onFermer={() => setProteger(false)} titre="Ne perds jamais ta figurine" className="mc-feuille-proteger">
+          <ProtegerFigurine mode="proteger" protegee={etat?.protegee} onFait={(a) => setEtat((e) => (e ? { ...e, protegee: a } : e))} />
+        </Feuille>
+      )}
 
       {/* 📲 « Comment la mettre sur ton écran d'accueil » (ouverte par « Installer ») */}
       <FeuilleInstaller />
@@ -292,6 +314,14 @@ body{background:#12060F}
 .mc-logo{font-size:19px;font-weight:900;color:#FFF4E6;text-decoration:none;letter-spacing:-.02em}
 .mc-logo b{color:#FF2E9A}
 .mc-moi{min-width:0;overflow:hidden;text-overflow:ellipsis;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.08);font-size:13px;font-weight:700;color:#D9C3CB;white-space:nowrap}
+.mc-droite{display:flex;align-items:center;gap:8px;min-width:0}
+/* 🔒 le cadenas doré : sa figurine n'est pas encore protégée par son adresse */
+.mc-cadenas{flex:none;display:inline-flex;align-items:center;gap:5px;padding:5px 11px 5px 8px;border-radius:999px;border:1px solid rgba(242,196,107,.65);background:linear-gradient(135deg,rgba(242,196,107,.24),rgba(255,122,89,.12));color:#FFE7B8;font:inherit;cursor:pointer;box-shadow:0 0 16px -6px rgba(242,196,107,.85);-webkit-tap-highlight-color:transparent}
+.mc-cadenas span{font-size:14px;line-height:1}
+.mc-cadenas small{font-size:12px;font-weight:900}
+@media (max-width:359px){.mc-cadenas small{display:none}}
+.mc-feuille-proteger .cn-proteger{padding:2px 0 4px;border:0;background:none}
+.mc-feuille-proteger .cn-proteger > b{padding-right:40px;font-size:19px}
 .mc-onglets{padding:14px 16px 0}
 .mc-onglet{animation:mc-entre .35s cubic-bezier(.2,.9,.3,1)}
 .mc-onglet[hidden]{display:none}

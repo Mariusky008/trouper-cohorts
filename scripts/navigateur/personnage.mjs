@@ -92,7 +92,8 @@ ok(insulte.statut === 422, "une phrase fétiche insultante : refusée");
 await lea.screenshot({ path: `${D}/personnage-1-carte.png`, fullPage: true });
 
 // SA CARTE PARTAGÉE
-await lea.locator("#o-personnage .mp-sienne .mp-bouton").click();
+// (« 📲 Partager ma carte » : le bouton de sa carte — la question du jour, plus bas, a aussi son « OK » les jours de réponse libre)
+await lea.locator("#o-personnage .mp-sienne .mp-texte > .mp-bouton").click();
 await lea.waitForSelector("#o-personnage .tf-wa", { timeout: 15000 });
 const lienCarte = await lea.locator("#o-personnage .tf-adresse").inputValue();
 ok(/\/carte\/[a-z0-9]{12}$/.test(lienCarte) && decodeURIComponent((await lea.locator("#o-personnage .tf-wa").getAttribute("href")) ?? "").includes("Découvre mon personnage ClikMe"), `son lien de carte, sur WhatsApp (${lienCarte})`);

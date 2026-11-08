@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * ⚡ MES RÉACTIONS (en haut de « Créer ») — voir `lib/direct/mes-reactions.ts`. Sa tête à la place des emojis et des GIF :
+ * ⚡ MES RÉACTIONS (l'onglet « ⚡ Réactions & gags » du studio, dans « Créer », depuis le 7 novembre 2026 ; avant, en haut
+ * de la page) — voir `lib/direct/mes-reactions.ts`. Sa tête à la place des emojis et des GIF :
  *   · LES RÉACTIONS : une grille de stickers (MDR, « Sérieusement ? », Bravo…). Un toucher : la feuille de partage du
  *     téléphone, tout de suite (les stickers sont dessinés d'avance : rien n'attend). La première fois, sa figurine
  *     « prend la pose » (le moteur d'image, environ une minute ; « ✨ Tout préparer » les fait toutes) ; en attendant,
@@ -17,6 +18,8 @@ import { dureeGag, fabriquerGag } from "@/lib/direct/gag";
 import { memePossible } from "@/lib/direct/meme";
 
 type Fichier = { url: string; fichier: File };
+/** 💥 Un gag demandé d'ailleurs (le tiroir « Animer » du studio) : il est choisi ici, prêt à partir. */
+export const EVT_GAG = "clikme-gag";
 const police = () => getComputedStyle(document.body).getPropertyValue("--font-clikme").trim() || "system-ui, sans-serif";
 const poster = (corps: Record<string, unknown>) =>
   fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) }).then(async (r) => ({ ok: r.ok, ...((await r.json().catch(() => ({}))) as { url?: string; enCours?: boolean; error?: string }) }));
@@ -127,6 +130,15 @@ export function MesReactions() {
     void prendreLaPose("seule");
     void prendreLaPose(v);
   }
+  // (un gag choisi dans le tiroir « Animer » du studio ; l'écoute suit chaque rendu : elle connaît ses poses du moment)
+  useEffect(() => {
+    const ecoute = (e: Event) => {
+      const g = (e as CustomEvent<CleGag>).detail;
+      if (GAGS.some((x) => x.cle === g)) choisirGag(g);
+    };
+    window.addEventListener(EVT_GAG, ecoute);
+    return () => window.removeEventListener(EVT_GAG, ecoute);
+  });
   async function lancer() {
     if (!gag || !etat || !toile.current) return;
     // (le son s'ouvre DANS le toucher : sur iPhone, c'est maintenant ou jamais)
@@ -163,8 +175,8 @@ export function MesReactions() {
   const tetePrepare = leGag ? enPose.includes("seule") || enPose.includes(leGag.visage) : false;
   return (
     <section className="rx" id="reactions" aria-label="Mes réactions">
+      {/* (son titre, « ⚡ Réactions & gags », est l'onglet du studio) */}
       <header className="rx-tete">
-        <b>⚡ Mes réactions</b>
         <small>Ta tête à la place des emojis : un toucher, c’est envoyé.</small>
       </header>
       <div className="rx-grille">
@@ -191,7 +203,9 @@ export function MesReactions() {
         </p>
       )}
 
-      <b className="rx-sous">💥 Gags</b>
+      <b className="rx-sous" id="gags">
+        💥 Gags
+      </b>
       <div className="rx-gags" role="group" aria-label="Les gags">
         {GAGS.map((g) => (
           <button key={g.cle} type="button" className={`rx-gag${gag === g.cle ? " pris" : ""}`} aria-pressed={gag === g.cle} onClick={() => choisirGag(g.cle)}>
