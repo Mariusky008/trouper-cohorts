@@ -10,6 +10,15 @@ export async function isCurrentUserAdmin(): Promise<boolean> {
 }
 
 /**
+ * Où revenir après un formulaire de l'admin (le champ `redirect`) : un chemin de l'admin, jamais un autre site
+ * (« https://ailleurs… », « //ailleurs… ») — sinon, `parDefaut`. (7 novembre 2026 : deux routes renvoyaient n'importe où.)
+ */
+export function cheminAdmin(demande: unknown, parDefaut: string): string {
+  const s = String(demande ?? "").trim();
+  return /^\/admin(?:[/?#]|$)/.test(s) && !/[\\\s]/.test(s) ? s : parDefaut;
+}
+
+/**
  * Trois états, et la différence compte.
  *
  * `isCurrentUserAdmin()` répond par un seul booléen : « pas admin ». L'écran qui
