@@ -24,7 +24,7 @@ import type { MemeCommerce } from "@/lib/direct/memes-commerces";
 import type { MemePublic } from "@/lib/direct/ma-figurine";
 import { REACS, type CleReac, type ReacMeme } from "@/lib/direct/reactions-memes";
 import { nomVille, type EtatDuJour } from "@/lib/direct/theme-du-jour";
-import { GuideDit, OngletVisible } from "./guide";
+import { OngletVisible } from "./guide";
 import { chiffresDuJour, repondreAuJour } from "./theme-du-jour";
 import { signalerOui } from "./fenetre";
 import { InviterAppli } from "./mon-telephone";
@@ -279,15 +279,7 @@ export function Decouvrir({ allerA }: { allerA: (o: string) => void }) {
   const nPages = reponsesJour.length + elements.length;
   return (
     <div className="dv">
-      <GuideDit
-        cle="pablito-decouvrir-2"
-        popup
-        repliques={[
-          { t: "Chaque jour, un mème du jour : le même thème pour tout le monde 🔥", v: "euphorie" },
-          { t: "Réponds avec ta figurine… et tu verras les réponses des gens de ta ville !", v: "joie" },
-          { t: "Glisse vers le haut pour le mème suivant. Il te plaît ? 😂 ❤️ 🔥, ou réponds-lui en duo 📲", v: "joie", apres: "louche" },
-        ]}
-      />
+      {/* (9 novembre 2026 : Pablito explique « Découvrir » dans la visite, sous le logo — plus de fenêtre ici) */}
       {panne && <p className="mc-vide">Le fil n’a pas pu s’afficher. Réessaie dans un instant.</p>}
       {!fil && !panne && (
         <div className="mc-attente" aria-label="Chargement">

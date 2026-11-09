@@ -195,25 +195,20 @@ ok((await texte(vide, ".fm-premier")).includes("Sois le tout premier fantôme de
 ok((await texte(vide, ".fm-cages")).includes("Je passe aujourd’hui"), "chez un artisan, on passe");
 await vide.screenshot({ path: `${D}/famille-4-vide.png` });
 
-// ═══ MA COLLECTION, SANS FIGURINE : Pablito (la figurine du patron de ClikMe) arrive en fenêtre la première fois, puis se
-// range dans un petit bouton ═══
+// ═══ MA COLLECTION, SANS FIGURINE : Pablito (la figurine du patron de ClikMe) dit bienvenue la première fois, une seule
+// fois ; ensuite, le logo ouvre la visite (le tuto, 9 novembre 2026) ═══
 await vide.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
-await vide.waitForSelector("#o-figurine .pb-voile .mqd", { timeout: 30000 });
+await vide.waitForSelector(".tu .tu-carte", { timeout: 30000 });
 const accueilVide = await texte(vide, "#o-figurine");
-ok(
-  /Pablito/i.test(await texte(vide, "#o-figurine .pb-voile .mqd-bulle")) && (await vide.locator('#o-figurine .pb-voile[role="dialog"]').count()) === 1,
-  "la première fois : Pablito arrive en fenêtre (« Salut ! Moi, c’est Pablito ! »)",
-);
+ok(/Pablito/i.test(await texte(vide, ".tu-texte")) && (await vide.locator('.tu[role="dialog"]').count()) === 1, "la première fois : Pablito dit bienvenue (« Salut ! Moi, c’est Pablito… »)");
 ok(accueilVide.includes("Crée ta figurine") && (await vide.locator("#creer .tf-prenom-photo").count()) === 1, "sans compte : la quête « Crée ta figurine » (son prénom demandé)");
-ok((await vide.locator("#o-figurine .mqd .mq img.mq-i").count()) === 2 && (await vide.locator(".mqd svg").count()) === 0, "le guide est sa figurine (bouche fermée, bouche ouverte), plus un personnage dessiné");
-await fermerPablito(vide, "#o-figurine");
-ok((await vide.locator(".pb-voile").count()) === 0 && (await texte(vide, "#o-figurine .mqd-revoir")).includes("Pablito"), "fermée : un petit bouton « Pablito t’explique »");
-await vide.locator("#o-figurine .mqd-revoir").click();
-ok((await vide.locator("#o-figurine .pb-voile").count()) === 1, "qui la rouvre");
-await fermerPablito(vide, "#o-figurine");
+ok((await vide.locator(".tu .mq img.mq-i").count()) === 2 && (await vide.locator(".tu-carte svg").count()) === 0, "le guide est sa figurine (bouche fermée, bouche ouverte), plus un personnage dessiné");
+ok(await fermerPablito(vide), "« Passer » la ferme");
+ok((await vide.locator(".tu, .pb-voile, .mqd-revoir").count()) === 0 && (await vide.locator(".mc-logo .mc-logo-point").count()) === 1, "fermée : plus rien dans la page, un point rose sur le logo");
 await vide.reload({ waitUntil: "networkidle" });
-await vide.waitForSelector("#o-figurine .mqd-revoir", { timeout: 30000 });
-ok((await vide.locator(".pb-voile").count()) === 0, "revenu : plus de fenêtre, le petit bouton");
+await vide.waitForSelector("main.mc[data-charge]", { timeout: 30000 });
+await vide.waitForTimeout(500);
+ok((await vide.locator(".tu, .pb-voile").count()) === 0, "revenu : plus de bienvenue (une seule fois sur ce téléphone)");
 ok((await vide.locator(".tf-demo").count()) === 0, "plus de démonstration");
 ok((await debordement(vide)) <= 0 && !/exemple/i.test(accueilVide), "la page sans figurine ne déborde pas, sans le mot interdit");
 await vide.screenshot({ path: `${D}/famille-9-collection-vide.png`, fullPage: true });

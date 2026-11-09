@@ -30,7 +30,7 @@ import {
   type Reponses,
 } from "@/lib/direct/personnage";
 import { PanneauEnvoi } from "./ma-figurine";
-import { FigurineGuide, Guide, GuideDit, useVoixPablito, type Visage } from "./guide";
+import { FigurineGuide, Guide, useVoixPablito, type Visage } from "./guide";
 import { SONS_PABLITO } from "@/lib/direct/guide";
 import { CeQueTaFigurineSait, QuestionDuJour } from "./connaitre";
 
@@ -356,18 +356,11 @@ export function MonPersonnage({
     return (
       <div className="mp">
         {tete}
-        <GuideDit
-          cle="perso-sans-compte"
-          popup
-          repliques={[
-            { t: "Ta carte de personnage t’attend 🃏", v: "joie" },
-            { t: "Sept questions, et je devine qui tu es. Mais d’abord : crée ta figurine, c’est elle qui sera sur ta carte !", v: "neutre" },
-          ]}
-        >
-          <button type="button" className="og-go" onClick={() => allerA?.("figurine")}>
-            📸 Créer ma figurine
-          </button>
-        </GuideDit>
+        {/* (9 novembre 2026 : Pablito n'ouvre plus de fenêtre ici — il explique « Moi » dans la visite, sous le logo) */}
+        <p className="mp-intro">Ta carte de personnage t’attend : sept questions, et Pablito devine qui tu es. Mais d’abord, ta figurine : c’est elle qui sera sur ta carte.</p>
+        <button type="button" className="og-go" onClick={() => allerA?.("figurine")}>
+          📸 Créer ma figurine
+        </button>
         <CartePerso silhouette retournable={false} />
       </div>
     );
@@ -489,19 +482,11 @@ export function MonPersonnage({
     return (
       <div className="mp">
         {tete}
-        <GuideDit
-          cle="perso-intro"
-          popup
-          repliques={[
-            { t: "Et toi, quel personnage es-tu ? 🔮", v: "euphorie" },
-            { t: "Réponds vite, sans réfléchir : sept questions, et je devine. Ta carte se construit sous tes yeux.", v: "neutre" },
-            { t: "Ensuite, à chaque étape que tu franchis dans ClikMe, je t’offre un cadeau : ton niveau et tes caractéristiques montent 🎁", v: "joie" },
-          ]}
-        >
-          <button type="button" className="og-go mp-lancer" onClick={() => setEtape({ q: 0 })}>
-            🎲 Lancer le test · 30 secondes
-          </button>
-        </GuideDit>
+        {/* (9 novembre 2026 : plus de fenêtre de Pablito — il explique « Moi » dans la visite, sous le logo) */}
+        <p className="mp-intro">Réponds vite, sans réfléchir : sept questions, et ta carte se construit sous tes yeux. Ensuite, chaque étape franchie dans ClikMe fait monter ton niveau 🎁</p>
+        <button type="button" className="og-go mp-lancer" onClick={() => setEtape({ q: 0 })}>
+          🎲 Lancer le test · 30 secondes
+        </button>
         <CartePerso silhouette retournable={false} />
       </div>
     );
@@ -595,6 +580,7 @@ export const STYLES_PERSONNAGE = `
 .pc-confettis{position:fixed;inset:0;z-index:30;pointer-events:none;overflow:hidden}
 .pc-confettis i{position:absolute;top:-12px;width:9px;height:14px;border-radius:2px;animation:pc-tombe linear var(--d) forwards}
 .mp{display:flex;flex-direction:column;gap:16px}
+.mp-intro{margin:-4px 0 0;font-size:14.5px;line-height:1.45;color:#E4D3DB}
 .mp > *{min-width:0}
 .mp-grille{display:grid;gap:18px;align-items:start}
 .mp-texte{display:flex;flex-direction:column;gap:12px}

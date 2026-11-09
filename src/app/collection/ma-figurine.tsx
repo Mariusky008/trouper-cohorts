@@ -44,7 +44,7 @@ import {
 } from "@/lib/direct/ma-figurine";
 import { reduireImage } from "@/lib/direct/reduire-image";
 import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE, type FigurineHandle } from "./figurine-qui-parle";
-import { Guide, GuideDit, OngletVisible, STYLES_GUIDE, useVoixPablito } from "./guide";
+import { Guide, OngletVisible, STYLES_GUIDE, useVoixPablito } from "./guide";
 import { lancerMusiqueDanse } from "@/lib/direct/musique-danse";
 import { fabriquerMeme, memePossible } from "@/lib/direct/meme";
 import { motPour, type Rendu } from "@/lib/direct/rendus";
@@ -1873,24 +1873,7 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
   if (etat.etape === "bientot") return <Annonce titre="Ta figurine arrive très bientôt 🛠️">Reviens ici dans quelques jours pour envoyer ta photo.</Annonce>;
   return (
     <>
-      {/* SES MOTS (5 novembre 2026, du patron : « orienter directement les avantages, comme ceci ») */}
-      <GuideDit
-        cle="pablito-accueil"
-        popup
-        actionDehors={false}
-        repliques={[
-          { t: "Salut ! Moi, c’est Pablito !", v: "joie", apres: "louche" },
-          { t: "Ici, tu vas créer TA figurine, à partir de ton visage. C’est gratuit et ça prend 1 minute !", v: "neutre" },
-          { t: "Elle pourra parler à ta place, changer d’expression, danser, rire et faire des grimaces. Bref, elle te ressemble… en plus drôle !", v: "rire", apres: "grimace" },
-          { t: "Et après ? Tu peux lui faire dire et faire faire ce que tu veux, et l’envoyer à tes amis.", v: "joie" },
-          // (les bulles 5 à 7 parlaient de « Rencontres », effacé le 7 novembre 2026 : la dernière garde SON enregistrement)
-          { t: "Allez, à toi de jouer !", v: "joie", apres: "louche", son: "/collection/pablito/accueil-8.mp3" },
-        ]}
-      >
-        <a className="og-go" href="#creer">
-          📸 Je crée ma figurine
-        </a>
-      </GuideDit>
+      {/* (9 novembre 2026 : l'accueil de Pablito est devenu la bienvenue du tuto, `tuto.tsx`, ouverte une seule fois) */}
       <EnvoiPhoto etat={etat} villes={villes} onEnvoye={onEtat} />
       {/* 🔎 elle existe déjà sur un autre téléphone : un code à six chiffres la retrouve (lot 2) */}
       {!etat.compte && <ProtegerFigurine mode="retrouver" />}

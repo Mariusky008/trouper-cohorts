@@ -73,18 +73,26 @@ const api = (p, corps) =>
 // ═══ HUGO (une figurine du mois) : L’ACCUEIL DE PABLITO, LE MENU EN BAS, « CRÉE TA FIGURINE » ═══
 const hugo = await tel(HUGO);
 await hugo.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
-await hugo.waitForSelector("#o-figurine .pb-voile .mqd", { timeout: 60000 });
+await hugo.waitForSelector(".tu .tu-carte", { timeout: 60000 });
 const menu = await texte(hugo, ".mc-nav");
 ok((await hugo.locator(".mc-nav button").count()) === 5 && /Découvrir.*Autour.*Créer.*Mes mèmes.*Proches/.test(menu) && !/Ce mois-ci|Album|Rencontres|Moi/.test(menu), `le menu en bas : Découvrir · Autour · Créer · Mes mèmes · Proches (${menu})`);
 ok((await hugo.locator(".mc-barre button.mc-moi").count()) === 1, "« Moi » est en haut, sous son prénom");
-ok((await hugo.locator("#o-figurine .mqd .mq").count()) === 1 && /Pablito/i.test(await texte(hugo, "#o-figurine .mqd-bulle")), "Pablito, la figurine du patron de ClikMe, l'accueille en fenêtre");
-ok((await texte(hugo, "#o-figurine .pb-voile")).includes("Je crée ma figurine"), "dans la fenêtre : « Je crée ma figurine »");
+// 👋 LA BIENVENUE DU TUTO (9 novembre 2026, à la place de l'ancienne fenêtre de Pablito) : ses trois bulles, puis « Je crée ma figurine »
+ok((await hugo.locator(".tu .tu-pablito .mq").count()) === 1 && /Pablito/i.test(await texte(hugo, ".tu-texte")), "Pablito, la figurine du patron de ClikMe, lui dit bonjour");
 await hugo.screenshot({ path: `${D}/ma-figurine-0-pablito.png` });
-await hugo.locator('#o-figurine .pb-voile a.og-go[href="#creer"]').click();
-ok((await hugo.locator(".pb-voile").count()) === 0, "« Je crée ma figurine » ferme la fenêtre");
+for (let k = 0; k < 2; k++) {
+  // (la bulle finit de s'écrire, puis « Suivant »)
+  await hugo.waitForFunction(() => !document.querySelector(".tu .tu-curseur"), null, { timeout: 15000 });
+  await hugo.locator(".tu .tu-suivant").click();
+}
+await hugo.waitForSelector(".tu .tu-creer", { timeout: 10000 });
+ok((await texte(hugo, ".tu-texte")).includes("Touche ici") && (await hugo.locator('.tu[data-lumiere="oui"]').count()) === 1, "sa troisième bulle montre le logo (« Touche ici, quand tu veux »)");
+await hugo.locator(".tu .tu-creer").click();
+ok((await hugo.locator(".tu").count()) === 0, "« Je crée ma figurine » ferme la bienvenue");
+ok((await hugo.locator(".pb-voile, .mqd-revoir").count()) === 0, "plus aucune fenêtre de Pablito dans la page, plus de petit bouton");
 ok((await hugo.locator(".tf-demo, .tf-la-tienne").count()) === 0, "plus de démonstration à faire parler");
 // DÈS LE DÉPART : la quête « Crée ta figurine »
-ok((await hugo.locator("#creer.tf-quete").count()) === 1 && (await texte(hugo, "#creer")).includes("Crée ta figurine") && (await hugo.locator("#o-figurine .mqd-revoir").count()) === 1, "Hugo peut créer la sienne dès maintenant (Pablito rangé dans son petit bouton)");
+ok((await hugo.locator("#creer.tf-quete").count()) === 1 && (await texte(hugo, "#creer")).includes("Crée ta figurine"), "Hugo peut créer la sienne dès maintenant");
 ok(
   (await hugo.locator("#creer .tf-prenom-photo, #creer .tf-ville").count()) === 0 && (await hugo.locator("#creer .tf-etapes li").count()) === 3 && (await hugo.locator("#creer .tf-univers").count()) === 1,
   "il a un compte et un prénom : on ne les lui redemande pas (sa photo, ce qui lui ressemble — facultatif —, son accord)",

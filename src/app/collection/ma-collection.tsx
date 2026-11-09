@@ -44,6 +44,7 @@ import { STYLES_THEME_DU_JOUR } from "./theme-du-jour";
 import { FeuilleInstaller, MonTelephone, STYLES_MON_TELEPHONE } from "./mon-telephone";
 import { Autour, STYLES_AUTOUR } from "./autour";
 import { MaPresence, Proches, STYLES_PROCHES } from "./proches";
+import { BienvenueTuto, PageEnVisite, STYLES_TUTO, VisiteTuto, ecrireTuto, lireTuto, pageTuto, type PageTuto } from "./tuto";
 import { capterLaProposition, lierSiBesoin, ouvrirInstallation } from "@/lib/direct/appli-collection";
 import type { EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
@@ -100,6 +101,17 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
   const [nonLus, setNonLus] = useState(0);
   // (stable : la fabrication rappelle le serveur dans un effet qui en dépend)
   const poserEtat = useCallback((e: EtatMaFigurine) => setEtat(e), []);
+  // 🧭 LE TUTO (`tuto.tsx`, 9 novembre 2026) : ce que ce téléphone a déjà vu (la bienvenue, la visite, les pages
+  // visitées — lu dans le navigateur, montré une fois la page chargée) ; ce qui est ouvert : la visite, ou une page
+  const [souvenir, setSouvenir] = useState(lireTuto);
+  const [tuto, setTuto] = useState<null | "visite" | PageTuto>(null);
+  const retenir = useCallback((m: (s: ReturnType<typeof lireTuto>) => ReturnType<typeof lireTuto>) => {
+    setSouvenir((s) => {
+      const n = m(s);
+      ecrireTuto(n);
+      return n;
+    });
+  }, []);
 
   useEffect(() => {
     let fini = false;
@@ -155,6 +167,25 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
     if (v) aller(v, o, false, true);
   }, [aller]);
 
+  // 🧭 LE TUTO : le logo ouvre la visite (le point rose s'en va) ; une page : on y va, Pablito la montre
+  const ouvrirVisite = () => {
+    if (!souvenir.visite) retenir((s) => ({ ...s, visite: true }));
+    setTuto("visite");
+  };
+  const visiterPage = useCallback((p: PageTuto) => {
+    aller(pageTuto(p).vue, undefined, false, true);
+    setTuto(p);
+  }, [aller]);
+  const pageVue = useCallback((p: PageTuto) => retenir((s) => (s.vues.includes(p) ? s : { ...s, vues: [...s.vues, p] })), [retenir]);
+  const fermerTuto = useCallback(() => setTuto(null), []);
+  const finirBienvenue = useCallback(() => retenir((s) => ({ ...s, bienvenue: true })), [retenir]);
+  // (« Retour » pendant la visite d'une page : elle s'arrête, et la page reste)
+  useEffect(() => {
+    if (!tuto || tuto === "visite") return;
+    window.addEventListener("popstate", fermerTuto);
+    return () => window.removeEventListener("popstate", fermerTuto);
+  }, [tuto, fermerTuto]);
+
   // l'adresse décide de la vue (à l'arrivée, et quand un lien de la page change l'ancre)
   useEffect(() => {
     const lire = () => {
@@ -201,12 +232,16 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
     ...(nonLus > 0 ? { proches: nonLus > 9 ? "9+" : String(nonLus) } : {}),
   };
 
+  // 👋 la bienvenue : à la toute première arrivée (pas encore de figurine, ni en fabrication), une fois sur ce téléphone
+  const bienvenue = charge && Boolean(etat) && etat?.etape !== "prete" && etat?.etape !== "fabrication" && !souvenir.bienvenue && tuto === null;
   return (
-    <main className="mc">
+    <main className="mc" data-charge={charge ? "" : undefined}>
       <header className="mc-barre">
-        {/* (le logo reste dans l'appli : il ramenait à l'accueil du site, clikme.fr) */}
-        <button type="button" className="mc-logo" aria-label="ClikMe : revenir à « Créer »" onClick={() => aller("figurine", undefined, false, true)}>
+        {/* 🧭 LE LOGO OUVRE LA VISITE (9 novembre 2026 : « quand je clique sur le logo, je devrais avoir un tuto des pages
+            et des fonctionnalités ») ; un point rose tant qu'il ne l'a jamais ouverte */}
+        <button type="button" className="mc-logo" aria-label={`La visite de ClikMe${charge && !souvenir.visite ? " (nouveau)" : ""}`} onClick={ouvrirVisite}>
           Clik<b>Me</b>
+          {charge && !souvenir.visite && <i className="mc-logo-point" aria-hidden="true" />}
         </button>
         <span className="mc-droite">
           {/* 🃏 « MOI », SOUS SON PRÉNOM (8 novembre 2026 : « Proches » a pris sa place dans le menu) */}
@@ -307,6 +342,23 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
       {/* 📲 « Comment la mettre sur ton écran d'accueil » (ouverte par « Installer ») */}
       <FeuilleInstaller />
 
+      {/* 🧭 LE TUTO : la visite (sous le logo), Pablito sur une page, la bienvenue */}
+      {charge && (
+        <Feuille ouverte={tuto === "visite"} onFermer={fermerTuto} titre="La visite" className="mc-feuille-visite">
+          <VisiteTuto ouverte={tuto === "visite"} vues={souvenir.vues} icone={(p) => <IconeOnglet cle={p === "creer" ? "figurine" : p === "moi" ? "personnage" : p} />} onPage={visiterPage} />
+        </Feuille>
+      )}
+      {tuto && tuto !== "visite" && <PageEnVisite key={tuto} page={tuto} onVue={pageVue} onSuivante={visiterPage} onFermer={fermerTuto} />}
+      {bienvenue && (
+        <BienvenueTuto
+          onFini={finirBienvenue}
+          onCreer={() => {
+            finirBienvenue();
+            allerA("creer");
+          }}
+        />
+      )}
+
       {/* LE MENU, EN BAS (6 novembre 2026 : « il faut qu'on voie en un coup d'œil qu'on est différent ») : un dock qui flotte ;
           « Créer », le cœur de l'app, en gros bouton rond au milieu, avec SA figurine dedans (7 novembre 2026) */}
       <nav className="mc-nav" aria-label="ClikMe">
@@ -325,17 +377,26 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_TUTO}</style>
     </main>
   );
 }
 
-/** Les icônes du menu, dessinées pour ClikMe (une flamme, une épingle, un « + » sur son ressort, une pile de mèmes, deux personnages). */
-function IconeOnglet({ cle }: { cle: Onglet }) {
+/**
+ * Les icônes du menu, dessinées pour ClikMe (une flamme, une épingle, un « + » sur son ressort, une pile de mèmes, deux
+ * personnages) ; et « Moi » (une carte de personnage), pour la visite.
+ */
+function IconeOnglet({ cle }: { cle: Vue }) {
   const trait = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" } as const;
   return (
     <svg viewBox="0 0 24 24" width="24" height="24">
-      {cle === "figurine" ? (
+      {cle === "personnage" ? (
+        <>
+          <rect x="5" y="3" width="14" height="18" rx="2.5" {...trait} />
+          <circle cx="12" cy="10" r="3" {...trait} />
+          <path d="M8.5 17a4 4 0 0 1 7 0" {...trait} />
+        </>
+      ) : cle === "figurine" ? (
         <>
           <path d="M12 4.5v9M7.5 9h9" {...trait} />
           <path d="M8.5 16.6h7M10 16.6l-1 1.3 6 1.2-6 1.2" {...trait} />
@@ -378,7 +439,9 @@ const STYLES_MC = `
 body{background:#12060F}
 .mc-barre{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;
   background:rgba(18,6,15,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
-.mc-logo{padding:0;border:0;background:none;font:inherit;font-size:19px;font-weight:900;color:#FFF4E6;text-decoration:none;letter-spacing:-.02em;cursor:pointer}
+.mc-logo{position:relative;padding:0;border:0;background:none;font:inherit;font-size:19px;font-weight:900;color:#FFF4E6;text-decoration:none;letter-spacing:-.02em;cursor:pointer}
+.mc-logo-point{position:absolute;top:1px;right:-11px;width:9px;height:9px;border-radius:50%;background:#FF2E9A;box-shadow:0 0 0 3px #1E0C18;animation:mc-pastille 1.6s ease-in-out infinite}
+.mc-feuille-visite .tf-feuille-corps{max-height:calc(100dvh - 40px);overflow-y:auto}
 .mc-logo b{color:#FF2E9A}
 .mc-moi{min-width:0;overflow:hidden;text-overflow:ellipsis;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.08);font-size:13px;font-weight:700;color:#D9C3CB;white-space:nowrap}
 button.mc-moi{position:relative;display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:3px 13px 3px 4px;border:0;font:inherit;font-size:14px;font-weight:800;color:#FFF4E6;overflow:visible;cursor:pointer;-webkit-tap-highlight-color:transparent}

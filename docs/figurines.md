@@ -1649,6 +1649,35 @@ pas ; Karim, sans compte : il écoute 🤦 puis 😂, son selfie, deux cases, so
 sa figurine se fabrique, « C'est parti ! » ; proches, leur conversation, Zoé prévenue, « Nouveau, grâce à toi » ; Zoé
 devant son propre lien ; Léa, qui a déjà sa figurine ; trois liens par jour ; un lien de plus de trente jours s'efface).
 
+### 9.0 duodevicies 🧭 Le tuto : Pablito fait visiter, sous le logo (9 novembre)
+
+Le propriétaire : « quand je clique sur le logo ClikMe, je devrais avoir plutôt un tuto des pages et des
+fonctionnalités ; tous les Pablito qui expliquent par page, comme ça ils peuvent disparaître des pages et libérer un peu
+de place » ; puis : « la première fois, juste un message de bienvenue ; pour tout le reste : si tu as besoin de plus
+d'infos, tu pourras toujours cliquer ici ». La maquette (le canvas « Le tuto ») et chaque bulle sont validées le même
+jour ; sa voix est enregistrée par lui (`public/collection/pablito/tuto-*.mp3`, la liste : `TUTO_ENREGISTRES` dans
+`lib/direct/guide.ts` ; une bulle pas encore enregistrée s'écrit sans voix — manque « Je te fais visiter ? »).
+
+- **La bienvenue** (`app/collection/tuto.tsx`) : à la toute première arrivée (pas encore de figurine), une seule fois sur
+  ce téléphone, trois bulles ; à la troisième, la lumière se pose sur le logo (« Besoin de plus d'infos sur les
+  fonctionnalités ? Touche ici, quand tu veux : je te fais visiter. ») ; puis « 📸 Je crée ma figurine ».
+- **Plus aucune fenêtre dans les pages** : l'accueil de « Créer », « Découvrir », « Mes mèmes » et les deux de « Moi »
+  sont partis, avec leurs boutons « Pablito t'explique » (« Lancer le test » et « Créer ma figurine » restent dans la
+  page de « Moi »). Restent sa voix pendant la fabrication de la figurine et les questions du test : elles accompagnent
+  ce qu'on fait.
+- **Le logo ouvre la visite** : une carte par page (Créer, Découvrir, Autour, Mes mèmes, Proches, Moi), « ✓ Vue » une
+  fois visitée, « Tout visiter » puis « Continuer la visite » ; un point rose sur le logo jusqu'à la première ouverture.
+- **Une page : sur la vraie page.** L'écran s'assombrit, sauf ce dont il parle (cherché dans la page, sans cesse : elle
+  se charge, défile ; rien à montrer — une page vide — : la bulle parle sans lumière ; la carte d'« Autour », trop
+  grande, sous un voile léger). « Suivant », « Passer », « Échap » ; à la fin, « La suite : <la page d'après> » ou
+  « C'est compris » (la page est alors « Vue »). « Retour » pendant une page arrête la visite.
+- **Retenu sur le téléphone** : `clikme-tuto-bienvenue`, `clikme-tuto-visite`, `clikme-tuto-vues` (qui avait vu l'ancien
+  accueil de Pablito n'a pas la bienvenue).
+
+L'essai : `tuto.mjs` (un nouveau venu : ses trois bulles et leurs voix, la lumière sur le logo, « Je crée ma figurine »,
+une seule fois ; Inès, qui a sa figurine : le point rose, la visite et ses six pages, « Créer » montrée bouton par bouton,
+la suite sur « Découvrir », « Échap », « Créer » vue, « Retour » qui arrête, plus aucune fenêtre dans les pages).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
