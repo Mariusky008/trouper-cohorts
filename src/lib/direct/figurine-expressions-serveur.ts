@@ -158,6 +158,17 @@ export function limite(corps: string, apres: string | null): { credit: boolean; 
   return { credit, attente: Math.round(Math.min(30, Math.max(2, secondes)) * 1000) };
 }
 
+/** Ce que le moteur a répondu, en clair : « code (type) — message » ; sinon son texte. */
+export function raisonDuMoteur(corps: string): string {
+  try {
+    const e = (JSON.parse(corps) as { error?: { code?: string; type?: string; message?: string } }).error;
+    if (e) return [e.code, e.type && e.type !== e.code ? `(${e.type})` : "", e.message ? `— ${e.message}` : ""].filter(Boolean).join(" ");
+  } catch {
+    /* (pas du JSON) */
+  }
+  return corps;
+}
+
 export async function editer(image: Buffer, consigne: string, avant: number, fidelite: "high" | "low" = "high", plus: Record<string, string> = {}): Promise<Buffer | { erreur: string; detail?: string }> {
   const cle = s(process.env.OPENAI_API_KEY);
   if (!cle) return { erreur: "Le moteur d'image n'est pas branché ici." };
@@ -209,8 +220,9 @@ export async function editer(image: Buffer, consigne: string, avant: number, fid
         break;
       }
       console.error("[expressions] refus du moteur", JSON.stringify({ modele: liste[m], statut: r.status, pourquoi: txt.slice(0, 300) }));
-      // (`detail` : la raison du moteur, pour l'admin — jamais montrée à l'écran)
-      const detail = `${liste[m]} : ${txt.slice(0, 240)}`;
+      // (`detail` : la raison du moteur, pour l'admin — jamais montrée à l'écran ; son code d'abord, en entier : coupé, il
+      // ne disait plus que « credit_ba… », 9 novembre 2026)
+      const detail = `${liste[m]} : ${raisonDuMoteur(txt)}`.slice(0, 280);
       if (trop?.credit) return { erreur: "La fabrication des figurines est en pause de notre côté. Réessaie un peu plus tard.", detail: `(plus de crédit chez le moteur) ${detail}` };
       if (trop) return { erreur: "Beaucoup de figurines se fabriquent en ce moment : réessaie dans une minute.", detail };
       return { erreur: derniere, detail };

@@ -1656,7 +1656,7 @@ fonctionnalités ; tous les Pablito qui expliquent par page, comme ça ils peuve
 de place » ; puis : « la première fois, juste un message de bienvenue ; pour tout le reste : si tu as besoin de plus
 d'infos, tu pourras toujours cliquer ici ». La maquette (le canvas « Le tuto ») et chaque bulle sont validées le même
 jour ; sa voix est enregistrée par lui (`public/collection/pablito/tuto-*.mp3`, la liste : `TUTO_ENREGISTRES` dans
-`lib/direct/guide.ts` ; une bulle pas encore enregistrée s'écrit sans voix — manque « Je te fais visiter ? »).
+`lib/direct/guide.ts` ; toutes enregistrées ; une bulle à venir s'écrirait sans voix).
 
 - **La bienvenue** (`app/collection/tuto.tsx`) : à la toute première arrivée (pas encore de figurine), une seule fois sur
   ce téléphone, trois bulles ; à la troisième, la lumière se pose sur le logo (« Besoin de plus d'infos sur les
