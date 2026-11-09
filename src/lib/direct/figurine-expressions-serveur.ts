@@ -142,6 +142,22 @@ export async function reprendre(rendu: Buffer, cadre: Cadre): Promise<Buffer> {
  * Une image demandée au moteur, à partir d'une image (format 2:3). Fidélité haute par défaut (elle recopie l'image :
  * ses expressions, sa bouche ouverte) ; basse pour la figurine d'un client (le moteur la redessine, comme ChatGPT).
  */
+/**
+ * 🚦 UN 429 DU MOTEUR : plus de crédit (`credit` : `insufficient_quota`, rien ne sert d'attendre), ou trop de demandes
+ * dans la minute (`attente` : ce qu'il demande, entre 2 et 30 secondes).
+ */
+export function limite(corps: string, apres: string | null): { credit: boolean; attente: number } {
+  let code = "";
+  try {
+    code = String((JSON.parse(corps) as { error?: { code?: string; type?: string } }).error?.code ?? "");
+  } catch {
+    /* (pas du JSON : on lit le texte) */
+  }
+  const credit = code === "insufficient_quota" || /insufficient_quota|exceeded your current quota|billing/i.test(corps);
+  const secondes = Number(apres) || Number(/try again in ([\d.]+)\s*s/i.exec(corps)?.[1]) || 10;
+  return { credit, attente: Math.round(Math.min(30, Math.max(2, secondes)) * 1000) };
+}
+
 export async function editer(image: Buffer, consigne: string, avant: number, fidelite: "high" | "low" = "high", plus: Record<string, string> = {}): Promise<Buffer | { erreur: string; detail?: string }> {
   const cle = s(process.env.OPENAI_API_KEY);
   if (!cle) return { erreur: "Le moteur d'image n'est pas branché ici." };
@@ -180,13 +196,24 @@ export async function editer(image: Buffer, consigne: string, avant: number, fid
           continue;
         }
       }
+      // 🚦 429 (9 novembre 2026, au téléphone du patron : « Le moteur d'image a répondu 429 », à chaque essai) : soit le
+      // compte du moteur n'a plus de crédit (`insufficient_quota` : rien à faire d'ici, le patron recharge), soit trop
+      // d'images demandées dans la minute — on attend ce qu'il demande, s'il reste le temps d'une image, et on rejoue
+      const trop = r.status === 429 ? limite(txt, r.headers.get("retry-after")) : null;
+      if (trop && !trop.credit && avant - Date.now() - trop.attente > 90_000) {
+        await new Promise((ok) => setTimeout(ok, trop.attente));
+        continue;
+      }
       if (m < liste.length - 1 && moteurRefuse(r.status, txt)) {
         noterRefus(liste[m]);
         break;
       }
       console.error("[expressions] refus du moteur", JSON.stringify({ modele: liste[m], statut: r.status, pourquoi: txt.slice(0, 300) }));
       // (`detail` : la raison du moteur, pour l'admin — jamais montrée à l'écran)
-      return { erreur: derniere, detail: `${liste[m]} : ${txt.slice(0, 240)}` };
+      const detail = `${liste[m]} : ${txt.slice(0, 240)}`;
+      if (trop?.credit) return { erreur: "La fabrication des figurines est en pause de notre côté. Réessaie un peu plus tard.", detail: `(plus de crédit chez le moteur) ${detail}` };
+      if (trop) return { erreur: "Beaucoup de figurines se fabriquent en ce moment : réessaie dans une minute.", detail };
+      return { erreur: derniere, detail };
     }
   }
   return { erreur: derniere };

@@ -103,6 +103,41 @@ export function useVoixPablito(son: string | undefined, actif = true): boolean {
 }
 
 /**
+ * 🎙️ SA VOIX POUR UNE BULLE (le tuto, `tuto.tsx`) : elle part quand la bulle arrive (la bulle est remontée à chaque
+ * nouvelle, avec une `key`). Refusée par le téléphone (on n'a pas encore touché la page) : `bloque`, et `rejouer` la
+ * fait entendre au premier toucher.
+ */
+export function useVoixBulle(son: string | undefined, actif = true): { parle: boolean; bloque: boolean; rejouer: () => void } {
+  const [joue, setJoue] = useState(false);
+  const [bloque, setBloque] = useState(false);
+  useEffect(() => {
+    if (!son || !actif) return;
+    const a = lecteurPablito();
+    let fini = false;
+    a.onplaying = () => {
+      setJoue(true);
+      setBloque(false);
+    };
+    a.onpause = a.onended = () => setJoue(false);
+    a.src = son;
+    a.play().catch((e: unknown) => {
+      if (!fini && (e as { name?: string })?.name === "NotAllowedError") setBloque(true);
+    });
+    return () => {
+      fini = true;
+      lacher(a);
+    };
+  }, [son, actif]);
+  const rejouer = () => {
+    if (!son) return;
+    const a = lecteurPablito();
+    if (!a.src.endsWith(son)) a.src = son;
+    void a.play().catch(() => undefined);
+  };
+  return { parle: Boolean(son && actif && joue), bloque: Boolean(son && actif && bloque), rejouer };
+}
+
+/**
  * Une bulle : son texte, le visage qu'il fait en la disant (`v`, `neutre` si rien n'est dit), celui qu'il fait une fois
  * dite (`apres` : « il sourit… puis louche »), et son enregistrement (`son` ; sinon `SONS_PABLITO`, s'il y en a un).
  */

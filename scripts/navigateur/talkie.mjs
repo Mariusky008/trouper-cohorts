@@ -220,9 +220,13 @@ await zoe.waitForSelector(".pr-plein .pr-fil li", { timeout: 30000 });
 await zoe.goBack();
 await zoe.waitForSelector(".pr-plein", { state: "detached", timeout: 10000 }).catch(() => null);
 ok((await zoe.locator(".pr-plein").count()) === 0 && new URL(zoe.url()).pathname === "/collection" && (await texte(zoe, ".mc-nav button.pris")).includes("Proches"), `« Retour » referme la conversation, sans quitter « Proches » (${zoe.url()})`);
+// (le logo ouvre la visite, depuis le tuto du 9 novembre 2026 : on la referme)
 await zoe.locator(".mc-barre .mc-logo").click();
+await zoe.waitForSelector(".mc-feuille-visite.ouverte", { timeout: 10000 }).catch(() => null);
+ok(new URL(zoe.url()).pathname === "/collection" && (await zoe.locator(".mc-feuille-visite.ouverte .tu-page").count()) === 6, `le logo ouvre la visite, dans l'appli (${zoe.url()})`);
+await zoe.keyboard.press("Escape");
+await zoe.locator(".mc-nav-figurine").click();
 await zoe.waitForFunction(() => document.querySelector(".mc-nav button.pris")?.className.includes("mc-nav-figurine"), null, { timeout: 10000 }).catch(() => null);
-ok(new URL(zoe.url()).pathname === "/collection" && (await zoe.locator(".mc-nav button.pris.mc-nav-figurine").count()) === 1, `le logo ramène à « Créer », dans l'appli (${zoe.url()})`);
 await zoe.goBack();
 await zoe.waitForFunction(() => document.querySelector(".mc-nav button.pris")?.className.includes("mc-nav-proches"), null, { timeout: 10000 }).catch(() => null);
 ok(new URL(zoe.url()).pathname === "/collection" && (await zoe.locator(".mc-nav button.pris.mc-nav-proches").count()) === 1, `puis « Retour » : de nouveau « Proches », pas l'accueil du site (${zoe.url()})`);

@@ -19,18 +19,21 @@ const pw = await import(process.env.PLAYWRIGHT_MODULE ?? "playwright");
 const { chromium } = pw.default ?? pw;
 /** `options` : ce qu'un essai ajoute au lancement (`args`, un faux micro…). */
 /**
- * PABLITO ARRIVE EN FENÊTRE, LA PREMIÈRE FOIS (`app/collection/guide.tsx`) : on la ferme avant de toucher la page.
- * Rend `true` s'il y en avait une.
+ * PABLITO DIT BIENVENUE, À LA TOUTE PREMIÈRE ARRIVÉE (`app/collection/tuto.tsx`, 9 novembre 2026 : les pages n'ouvrent
+ * plus de fenêtre d'elles-mêmes) : on attend que la page sache s'il le faut, et on « passe » avant de toucher la page.
+ * Rend `true` s'il y en avait une. (`ici` : l'onglet, du temps où chaque page avait sa fenêtre — il ne sert plus.)
  */
+// eslint-disable-next-line no-unused-vars
 export async function fermerPablito(p, ici = "") {
-  const croix = p.locator(`${ici} .pb-voile .pb-fermer`.trim()).first();
   try {
-    await croix.waitFor({ state: "visible", timeout: 8000 });
+    await p.locator("main.mc[data-charge]").waitFor({ state: "attached", timeout: 8000 });
   } catch {
     return false;
   }
-  await croix.click();
-  await p.waitForTimeout(250);
+  const passer = p.locator(".tu .tu-passer").first();
+  if (!(await passer.count())) return false;
+  await passer.click();
+  await p.locator(".tu").first().waitFor({ state: "detached", timeout: 5000 }).catch(() => null);
   return true;
 }
 /**
@@ -41,8 +44,11 @@ export async function repondreFenetre(p, oui = true) {
   const f = p.locator(".fen[role=alertdialog]").last();
   await f.waitFor({ state: "visible", timeout: 15000 });
   const dit = (await f.innerText()).replace(/\s+/g, " ").trim();
+  // (CETTE fenêtre-là, pas « la dernière » : la question suivante peut s'ouvrir aussitôt, et l'essai l'aurait prise pour
+  // celle-ci, qui ne disparaît jamais — 9 novembre 2026)
+  const celleCi = await f.elementHandle();
   await f.locator(oui ? ".fen-oui" : ".fen-non").click();
-  await f.waitFor({ state: "detached", timeout: 5000 });
+  await p.waitForFunction((el) => !el.isConnected, celleCi, { timeout: 5000 });
   return dit;
 }
 export const lancer = (options = {}) => chromium.launch({ ...(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}), ...options });

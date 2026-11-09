@@ -14,7 +14,7 @@ import { useContext, useEffect, useState, type ReactNode } from "react";
 import { CLE_MEMES_RECUS, MEMES_VUS, REFUS_AGE, type ApercuMeme, type MesMemes, type MonMeme } from "@/lib/direct/ma-figurine";
 import { demanderSonAge } from "./age";
 import { accordPublic, demanderOui } from "./fenetre";
-import { GuideDit, OngletVisible } from "./guide";
+import { OngletVisible } from "./guide";
 
 function idsRecus(): string[] {
   try {
@@ -125,15 +125,7 @@ export function MesMemes({ compte, allerA }: { compte: boolean | null; allerA: (
         <small>MES MÈMES</small>
         <h2>Ce que tes mèmes deviennent</h2>
       </header>
-      <GuideDit
-        cle="pablito-memes"
-        popup
-        repliques={[
-          { t: "Ici, tous tes mèmes ! 🎭", v: "joie" },
-          { t: "Tu vois combien de fois ils ont été vus… et qui t’a répondu en duo 👀", v: "euphorie" },
-          { t: "Les mèmes que tu reçois t’attendent ici aussi : réponds-leur quand tu veux ↩️", v: "joie", apres: "louche" },
-        ]}
-      />
+      {/* (9 novembre 2026 : Pablito explique « Mes mèmes » dans la visite, sous le logo — plus de fenêtre ici) */}
       {panne && <p className="mc-vide">Tes mèmes n’ont pas pu s’afficher. Réessaie dans un instant.</p>}
       {!memes && !panne && (
         <div className="mc-attente" aria-label="Chargement">

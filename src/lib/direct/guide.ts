@@ -35,6 +35,20 @@ export const NOM_GUIDE = "Pablito";
  * (`apres`), elle vient quand il se tait.
  */
 const voix = (cle: string, fichier: string) => [cle, `/collection/pablito/${fichier}.mp3`] as const;
+/**
+ * Les bulles du tuto déjà enregistrées (`public/collection/pablito/<nom>.mp3`), reçues du patron le 9 novembre 2026 ;
+ * manque encore celle de la visite (`tuto-visite-1` : « Je te fais visiter ? »).
+ */
+const enSerie = (page: string, n: number) => Array.from({ length: n }, (_, k) => `tuto-${page}-${k + 1}`);
+export const TUTO_ENREGISTRES = [
+  ...enSerie("bienvenue", 3),
+  ...enSerie("creer", 4),
+  ...enSerie("decouvrir", 3),
+  ...enSerie("autour", 3),
+  ...enSerie("memes", 2),
+  ...enSerie("proches", 3),
+  ...enSerie("moi", 2),
+];
 export const SONS_PABLITO: Record<string, string> = Object.fromEntries([
   // L'ACCUEIL (reçues du patron le 5 novembre 2026) : ses quatre premières bulles ; les 5 à 7 parlaient de « Rencontres »,
   // effacé le 7 novembre 2026 ; la dernière (« Allez, à toi de jouer ! », `accueil-8`) porte son enregistrement elle-même
@@ -49,6 +63,10 @@ export const SONS_PABLITO: Record<string, string> = Object.fromEntries([
   voix("album-vide-2", "album-vide-2"),
   // LE TEST DE PERSONNAGE : il pose chaque question (sa clé), puis « ce que tu aimes », puis il écrit la fiche
   ...["elan", "ton", "jeu", "sort", "tete", "gout", "rythme", "gouts", "etoiles"].map((q) => voix(`pablito-quiz-${q}`, `quiz-${q}`)),
+  // 🧭 LE TUTO (`app/collection/tuto.tsx`, 9 novembre 2026 : ses textes validés par le patron) : la bienvenue (reçue le
+  // jour même) ; les bulles de la visite s'ajoutent ici une à une, à mesure qu'elles arrivent (`tuto-<page>-<n>`, la
+  // page : visite, creer, decouvrir, autour, memes, proches, moi) — une bulle sans enregistrement s'écrit sans voix
+  ...TUTO_ENREGISTRES.map((nom) => voix(nom, nom)),
   // PENDANT QUE SA FIGURINE SE FABRIQUE : ce qu'il raconte (dans l'ordre), et « Oups… »
   // (la 1ʳᵉ disait « joli sourire » — sur la photo, on ne sourit pas toujours : réenregistrée le 5 novembre 2026)
   ...[1, 2, 3, 4].map((k) => voix(`pablito-fabrication-${k}`, `fabrication-${k}`)),
