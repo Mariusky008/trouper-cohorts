@@ -219,10 +219,14 @@ export async function editer(image: Buffer, consigne: string, avant: number, fid
         noterRefus(liste[m]);
         break;
       }
-      console.error("[expressions] refus du moteur", JSON.stringify({ modele: liste[m], statut: r.status, pourquoi: txt.slice(0, 300) }));
+      // 🧾 À QUI LE MOTEUR FACTURE (9 novembre 2026 : « plus de crédit » avec la clé de ClikMe, quand le Playground du même
+      // compte, avec 8 €, faisait ses images) : l'organisation et le projet que la clé désigne, et le numéro de la demande
+      // (pour le support d'OpenAI) — à comparer avec Settings › Organization › General, sur platform.openai.com
+      const facture = ["openai-organization", "openai-project", "x-request-id"].map((h) => r.headers.get(h)).filter(Boolean).join(" · ");
+      console.error("[expressions] refus du moteur", JSON.stringify({ modele: liste[m], statut: r.status, facture, pourquoi: txt.slice(0, 300) }));
       // (`detail` : la raison du moteur, pour l'admin — jamais montrée à l'écran ; son code d'abord, en entier : coupé, il
       // ne disait plus que « credit_ba… », 9 novembre 2026)
-      const detail = `${liste[m]} : ${raisonDuMoteur(txt)}`.slice(0, 280);
+      const detail = `${liste[m]}${facture ? ` [${facture}]` : ""} : ${raisonDuMoteur(txt)}`.slice(0, 300);
       if (trop?.credit) return { erreur: "La fabrication des figurines est en pause de notre côté. Réessaie un peu plus tard.", detail: `(plus de crédit chez le moteur) ${detail}` };
       if (trop) return { erreur: "Beaucoup de figurines se fabriquent en ce moment : réessaie dans une minute.", detail };
       return { erreur: derniere, detail };
