@@ -93,6 +93,26 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
   const [pret, setPret] = useState<{ url: string; pour: string; reste: number } | null>(null);
   const [lienCopie, setLienCopie] = useState(false);
 
+  // (« Retour », sur le téléphone, referme la conversation au lieu de quitter ClikMe : elle prend une page d'historique)
+  const ouvrir = useCallback((x: { cle: string; parler: boolean }) => {
+    try {
+      window.history.pushState({ clikmeFil: true }, "");
+    } catch {
+      /* rien */
+    }
+    setOuvert(x);
+  }, []);
+  const fermer = useCallback(() => {
+    if ((window.history.state as { clikmeFil?: boolean } | null)?.clikmeFil) window.history.back();
+    else setOuvert(null);
+  }, []);
+  useEffect(() => {
+    if (!ouvert) return;
+    const retour = () => setOuvert(null);
+    window.addEventListener("popstate", retour);
+    return () => window.removeEventListener("popstate", retour);
+  }, [ouvert]);
+
   const charger = useCallback(async () => {
     try {
       const r = await fetch(ROUTE, { cache: "no-store" });
@@ -130,7 +150,7 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
       /* rien */
     }
     let fini = false;
-    if (parler) void Promise.resolve().then(() => !fini && setOuvert({ cle: parler, parler: false }));
+    if (parler) void Promise.resolve().then(() => !fini && ouvrir({ cle: parler, parler: false }));
     if (proche)
       void fetch(`/api/direct/autour?profil=${proche}`, { cache: "no-store" })
         .then((r) => r.json())
@@ -144,7 +164,7 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
     return () => {
       fini = true;
     };
-  }, [compte, prete]);
+  }, [compte, prete, ouvrir]);
 
   async function ajouter(cle: string, apres?: () => void) {
     setGeste(cle);
@@ -253,7 +273,7 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
         <div className="pr-grille">
           {proches.map((p, i) => (
             <article key={p.cle} className={`pr-carte lien-${p.lien}${p.nonLus ? " nouveau" : ""}${p.la ? " la" : ""}`} data-cle={p.cle}>
-              <button type="button" className="pr-mini" disabled={p.lien !== "proches"} aria-label={`Ta conversation avec ${p.prenom}`} onClick={() => setOuvert({ cle: p.cle, parler: false })}>
+              <button type="button" className="pr-mini" disabled={p.lien !== "proches"} aria-label={`Ta conversation avec ${p.prenom}`} onClick={() => ouvrir({ cle: p.cle, parler: false })}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.image} alt={`La figurine de ${p.prenom}`} draggable={false} style={{ animationDelay: `${(-0.7 * i).toFixed(1)}s` }} />
                 {p.nonLus > 0 && <span className="pr-bulle">{p.nonLus === 1 ? "1 message" : `${p.nonLus} messages`}</span>}
@@ -270,7 +290,7 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
                 <b>{p.prenom}</b>
                 <span className={`pr-dernier${p.nonLus ? " chaud" : ""}`}>{ligneDe(p)}</span>
                 {p.lien === "proches" ? (
-                  <button type="button" className={`pr-lui-parler${p.nonLus ? " chaud" : ""}`} onClick={() => setOuvert({ cle: p.cle, parler: true })}>
+                  <button type="button" className={`pr-lui-parler${p.nonLus ? " chaud" : ""}`} onClick={() => ouvrir({ cle: p.cle, parler: true })}>
                     <IconeMicro />
                     Lui parler
                   </button>
@@ -362,7 +382,7 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
       )}
 
       {/* (posée sur la page entière : elle couvre le menu, quoi que fassent les onglets) */}
-      {ouvert && createPortal(<Conversation key={ouvert.cle} cle={ouvert.cle} parler={ouvert.parler} onFermer={() => setOuvert(null)} />, document.body)}
+      {ouvert && createPortal(<Conversation key={ouvert.cle} cle={ouvert.cle} parler={ouvert.parler} onFermer={fermer} />, document.body)}
 
       {invite && (
         <Feuille ouverte={inviteOuverte} onFermer={() => setInviteOuverte(false)} titre={`Le lien de ${invite.prenom}`} className="pr-feuille">

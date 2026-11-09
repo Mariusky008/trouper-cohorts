@@ -596,6 +596,33 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
       window.removeEventListener("keydown", echap);
     };
   }, [tiroir]);
+  // (9 novembre 2026, le propriétaire : « quand je clique sur “Son attitude”, ça ne fonctionne pas ; le menu du bas en
+  // cache une partie » — le bas du tiroir passait sous le menu, et le toucher tombait sur lui. Le tiroir ouvert passe
+  // désormais par-dessus le menu, et s'arrête au bas de l'écran : ce qui dépasse se fait défiler dedans.)
+  useEffect(() => {
+    if (!tiroir) return;
+    const ajuster = () => {
+      const el = document.getElementById("tf-tiroir");
+      if (el) el.style.maxHeight = `${Math.max(180, Math.round(window.innerHeight - el.getBoundingClientRect().top - 12))}px`;
+    };
+    // (la page se remet en place un peu après un changement de taille : on mesure à l'image suivante, puis encore)
+    let image = window.requestAnimationFrame(ajuster);
+    let plusTard = 0;
+    const apres = () => {
+      window.cancelAnimationFrame(image);
+      window.clearTimeout(plusTard);
+      image = window.requestAnimationFrame(ajuster);
+      plusTard = window.setTimeout(ajuster, 250);
+    };
+    window.addEventListener("resize", apres);
+    window.addEventListener("scroll", ajuster, { passive: true });
+    return () => {
+      window.cancelAnimationFrame(image);
+      window.clearTimeout(plusTard);
+      window.removeEventListener("resize", apres);
+      window.removeEventListener("scroll", ajuster);
+    };
+  }, [tiroir]);
   const basculerTiroir = (t: "visage" | "animer" | "refaire") => setTiroir((x) => (x === t ? null : t));
   /** 💥 Un gag (« Animer ») : il se fait dans l'onglet « Réactions & gags », déjà choisi. */
   function allerAuGag(g: CleGag) {
@@ -1428,6 +1455,9 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
   const [univers, setUnivers] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState("");
+  // (9 novembre 2026, le propriétaire : « sur mobile, on n'a pas le réflexe de faire défiler vers le bas pour cocher les
+  // cases et donner vie à sa figurine » — sa photo choisie, la page descend toute seule vers la suite)
+  const suite = useRef<HTMLLIElement>(null);
   const demandePrenom = !etat.prenom;
   const demandeVille = !etat.compte && villes.length > 1;
   const sansVille = !etat.compte && villes.length > 0 && !ville;
@@ -1438,6 +1468,7 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
     if (!f) return;
     try {
       setPhoto(await reduireImage(f, 1600));
+      window.setTimeout(() => suite.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
     } catch {
       setErreur("Cette photo n’a pas pu être lue. Essaie une autre photo.");
     }
@@ -1498,7 +1529,7 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
           </div>
         </li>
         {(demandePrenom || demandeVille) && (
-          <li className={etapes[1] ? "fait" : photo ? "maintenant" : ""}>
+          <li className={etapes[1] ? "fait" : photo ? "maintenant" : ""} ref={suite}>
             <span className="tf-num">{etapes[1] ? "✓" : ++n}</span>
             <div>
               <b>Toi</b>
@@ -1526,7 +1557,7 @@ export function EnvoiPhoto({ etat, villes = [], onEnvoye }: { etat: EtatMaFiguri
             </div>
           </li>
         )}
-        <li className={univers.trim() ? "fait" : ""}>
+        <li className={univers.trim() ? "fait" : ""} ref={demandePrenom || demandeVille ? undefined : suite}>
           <span className="tf-num">{univers.trim() ? "✓" : "✨"}</span>
           <div>
             <b>Ce qui te ressemble</b>
@@ -1584,6 +1615,7 @@ const PENDANT = [
  * en premier (une idée, « 🎲 Surprends-moi ! », ou ses mots) et sa voix ; « ▶ L'écouter » : sa voix le lit, et c'est
  * gardé. Dès qu'elle apparaît : « 🎭 Créer mon premier mème ». Rien n'est envoyé ici.
  */
+// (9 novembre 2026 : plus montré pendant la fabrication — « l'écran est trop chargé sur mobile » ; gardé s'il revient)
 export function PremierMemePendant({ etat }: { etat: EtatMaFigurine }) {
   const [deja] = useState<PremierMeme | null>(() => lirePremierMeme());
   const [texte, setTexte] = useState(deja?.texte ?? PREMIER_MEME);
@@ -1802,7 +1834,6 @@ export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat
             <li className={pas === 2 ? "maintenant" : ""}>🗣️ On lui apprend à parler</li>
           </ol>
           <p className="tf-note">Deux minutes environ. Tu peux rester ici : elle apparaît toute seule.</p>
-          <PremierMemePendant etat={etat} />
         </>
       )}
     </div>
@@ -1837,10 +1868,7 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
     return etat.auto ? (
       <FabricationAuto etat={etat} onEtat={onEtat} />
     ) : (
-      <>
-        <Annonce titre="On fabrique ta figurine 🛠️">Ta photo est bien arrivée. Ta figurine sera ici dans quelques jours : tu pourras la faire parler et l’envoyer à tes proches.</Annonce>
-        <PremierMemePendant etat={etat} />
-      </>
+      <Annonce titre="On fabrique ta figurine 🛠️">Ta photo est bien arrivée. Ta figurine sera ici dans quelques jours : tu pourras la faire parler et l’envoyer à tes proches.</Annonce>
     );
   if (etat.etape === "bientot") return <Annonce titre="Ta figurine arrive très bientôt 🛠️">Reviens ici dans quelques jours pour envoyer ta photo.</Annonce>;
   return (
@@ -1964,6 +1992,7 @@ export const STYLES_MA_FIGURINE =
 .tf-quete-jauge i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#FF2E9A,#F2C46B);transition:width .5s cubic-bezier(.2,1.2,.4,1)}
 .tf-etapes{display:grid;gap:10px;margin:0;padding:0;list-style:none}
 .tf-etapes li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;padding:12px;border-radius:18px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.08);transition:border-color .3s,background .3s}
+.tf-etapes li{scroll-margin-top:72px}
 .tf-etapes li.maintenant{border-color:rgba(242,196,107,.7);background:rgba(242,196,107,.08)}
 .tf-etapes li.fait{border-color:rgba(61,226,166,.45)}
 .tf-etapes li > div{display:flex;flex-direction:column;gap:8px;min-width:0}
@@ -2114,6 +2143,7 @@ export const STYLES_MA_FIGURINE =
    premiers pas ─── */
 .tf-moi{gap:14px}
 .tf-parler[hidden],.tf-reactions[hidden]{display:none}
+.tf-moi .tf-scene.ouvert{z-index:25}
 .tf-moi .tf-scene{position:sticky;top:51px;z-index:4;gap:0;margin:-14px -16px 0;padding:8px 16px 12px;background:linear-gradient(180deg,rgba(28,10,23,.97),rgba(22,8,18,.95));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 16px 24px -20px rgba(0,0,0,.95)}
 .tf-moi .tf-fig .fqp-fig{width:min(200px,52vw);width:clamp(150px,24dvh,214px);transition:width .3s cubic-bezier(.2,.9,.3,1)}
 .tf-moi:has(.tf-texte textarea:focus) .tf-fig .fqp-fig{width:clamp(96px,13dvh,130px)}
@@ -2129,6 +2159,9 @@ export const STYLES_MA_FIGURINE =
 .tf-tiroir .tf-q{color:#F2C46B}
 .tf-tiroir .tf-q-visage{align-self:auto;margin:0}
 .tf-tiroir .tf-expr,.tf-tiroir .tf-looks{padding:4px 2px 6px}
+/* (ses visages et ses attitudes, tous en vue — à l'ordinateur, une rangée qui défile de côté ne se fait pas défiler) */
+.tf-scene .tf-tiroir .tf-expr,.tf-scene .tf-tiroir .tf-att{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px;overflow:visible;-webkit-mask-image:none;mask-image:none}
+.tf-scene .tf-tiroir .tf-expr button,.tf-scene .tf-tiroir .tf-att button{width:auto}
 .tf-tiroir .tf-danse{display:flex;align-items:center;gap:12px;width:auto;padding:11px 14px;border-radius:18px;border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#FFF4E6;text-align:left}
 .tf-tiroir .tf-danse > span:first-child{font-size:28px;line-height:1}
 .tf-tiroir .tf-danse > span:last-child{display:flex;flex-direction:column;gap:1px}
