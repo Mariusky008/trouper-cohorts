@@ -1700,6 +1700,37 @@ chère), au format 1024 × 1536 — sa figurine, sa bouche ouverte, puis sa joie
 
 Les figurines des commerçants (`figurine-pro-serveur.ts`, `FIGURINE_QUALITE`) ne changent pas.
 
+### 9.0 vicies 🛠️ L'atelier de Pablito : patienter avec le sourire (9 novembre)
+
+Le propriétaire : « lorsqu'on appuie sur une émotion, une expression… qui n'est pas encore faite, une pop-up pour dire :
+en cours de fabrication, et une fois faite elle sera à vous pour toujours. Elle doit être vraiment marrante et sympa à
+regarder : c'est un peu long, il faut arriver à les faire patienter avec le sourire. » (La joie n'étant plus faite
+d'avance — 9.0 undevicies —, la première attente arrive plus tôt.)
+
+- **Où** : un visage ou une attitude pas encore faits (l'étincelle ✨), touchés dans le tiroir « Visage » — ou demandés
+  par un mème prêt, une des trois façons de le dire. Un visage déjà à l'atelier (il tourne) se touche aussi : la fenêtre
+  se rouvre, sa barre où elle en était (`app/collection/atelier.tsx`, `AtelierPablito`).
+- **À l'atelier** : « 🛠️ À l'atelier — Pablito fabrique ta tête « Joie » » (« ton attitude « Victoire » ») ; Pablito
+  s'entraîne à faire sa tête (il passe d'une grimace à l'autre), ses outils tournent autour de lui (🔨 🎨 ✏️ 🪄) ; ce
+  qu'il fait s'écrit, une phrase toutes les 4,5 s (« Je sors la pâte à modeler… », « Je m'entraîne à faire ta tête devant
+  le miroir 🪞 », « Je vérifie que c'est bien toi… Oui, c'est bien toi. », « Pause café de l'artiste ☕ Deux secondes,
+  promis. »…, puis, si c'est plus long, « Ça arrive, ça arrive… 🥁 ») ; une barre rayée qui avance vite puis ralentit, et
+  ne touche le bout que quand c'est prêt ; « Environ une minute ». **On peut le chatouiller** (« Psst… touche-le, pendant
+  qu'il travaille 😏 ») : il rit, et il râle (« Hé ! Ça chatouille ! », « Arrête, je vais rater ton sourcil ! », « Encore
+  une fois et je te dessine une moustache. »…). « 💝 Une fois faite, elle est à toi **pour toujours** : plus jamais
+  d'attente pour celle-là. » « Je fais autre chose en attendant » la ferme (le tiroir reste ouvert) : la fabrication
+  continue, et sa tête s'affichera toute seule.
+- **Tadaaa** : « Ta tête « Joie » est prête ! », sa nouvelle tête — la sienne — qui saute dans la fenêtre, des
+  confettis, le tampon « À toi pour toujours » ; « 😄 Je l'essaie ! » : elle se joue en haut, sous ses yeux.
+- **Un pépin** : Pablito tout triste, « Oups, petit pépin à l'atelier », et ce que le serveur a dit (« La fabrication des
+  figurines est en pause de notre côté… »).
+- **Sans voix** : Pablito ne parle qu'avec les enregistrements du propriétaire, et il n'y en a pas pour l'atelier.
+
+L'essai : il faut le moteur d'image pour qu'un visage soit « à créer », et la CI n'en a pas — l'atelier a été vu en vrai
+sur l'appli construite, branchée sur un faux moteur qui met 12 s par image (« Joie » à créer, l'atelier, la
+chatouille, les phrases et la barre qui avancent, fermé puis rouvert, « Tadaaa », « Je l'essaie ! », puis le moteur à
+court de crédit : le pépin).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
