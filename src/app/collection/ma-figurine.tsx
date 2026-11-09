@@ -1119,7 +1119,7 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
 
           {ecrit ? (
             <>
-              {texte === PREMIER_MEME && !reponse && <p className="tf-premier">🎁 Ton premier mème est déjà écrit : {voix ? "écoute-le, et partage-le !" : "choisis sa voix, écoute, partage !"}</p>}
+              {texte === PREMIER_MEME && !reponse && <p className="tf-premier">🎁 Ton premier mème est déjà écrit : {voix ? "touche « Créer mon mème », et partage-le !" : "choisis sa voix, puis touche « Créer mon mème » !"}</p>}
               <label className="tf-texte">
                 <textarea
                   value={texte}
