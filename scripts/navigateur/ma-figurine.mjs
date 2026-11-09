@@ -137,40 +137,44 @@ await hugo.waitForSelector(".tf-moi .tf-onglets", { timeout: 30000 });
 ok((await hugo.locator(".mc-nav-figurine .mc-nav-ico img").count()) === 1, "« Créer », dans le menu : SA figurine, dans le gros bouton rond");
 // 👣 « Tes premiers pas » a quitté la page (8 novembre 2026 : « on peut supprimer cette section maintenant »)
 ok((await hugo.locator(".tf-options, .tf-kdo").count()) === 0 && !/premiers pas/i.test(await texte(hugo, "#o-figurine")), "plus de « Tes premiers pas » dans « Créer »");
-// 🗂️ LE STUDIO ET SES TIROIRS (7 novembre 2026) : ses visages dans le tiroir « Visage », la danse et les gags dans « Animer »
-ok((await hugo.locator(".tf-moi .tf-tiroir").count()) === 0 && (await hugo.locator(".tf-moi .tf-gestes button").allInnerTexts()).map((x) => x.replace(/[^\p{L}\s]/gu, "").trim()).join("|") === "Visage|Animer", "sous sa figurine, ses gestes : « Visage », « Animer » (les tiroirs sont fermés)");
-await hugo.locator(".tf-moi .tf-g-visage").click();
-const huitVisages = (await hugo.locator(".tf-moi .tf-tiroir .tf-expr button").count()) === 8 && (await hugo.locator(".tf-moi .tf-expr button.ferme, .tf-moi .tf-voix button.ferme").count()) === 0;
-await hugo.locator(".tf-moi .tf-g-animer").click();
-const gags = await hugo.locator(".tf-moi .tf-tiroir-gags button").allInnerTexts();
-const animer = (await hugo.locator(".tf-moi .tf-tiroir .tf-danse").count()) === 1 && (await hugo.locator(".tf-moi .tf-expr").count()) === 0 && gags.length === 4 && gags[0].includes("Le prout");
-await hugo.screenshot({ path: `${D}/ma-figurine-0a-animer.png` });
-await hugo.locator(".tf-moi .tf-g-visage").click();
-ok(huitVisages && animer, `tout est ouvert dès le départ : huit visages (« Visage »), la danse et les gags (« Animer » : ${gags.map((x) => x.replace(/\s+/g, " ")).join(", ")})`);
-await hugo.locator(".tf-moi .tf-expr button", { hasText: "Tristesse" }).click();
+// 🧭 « CRÉER » EN TROIS ÉTAPES (9 novembre 2026, un ami du patron : « on s'y perd, on ne sait pas à quoi servent les
+// boutons ») : sous sa figurine, plus de gestes — ① ce qu'elle dit, ② comment elle le dit, ③ sa voix, puis « Créer mon mème »
+ok((await hugo.locator(".tf-moi .tf-gestes, .tf-moi .tf-tiroir, .tf-moi .tf-g-visage, .tf-moi .tf-g-animer").count()) === 0 && (await texte(hugo, ".tf-moi .tf-hero-dit")).includes("ton mème en direct"), "sous sa figurine, plus de gestes : « Elle montre ton mème en direct »");
+const etapes = (await hugo.locator(".tf-moi .tf-etape .tf-etape-quoi b").allInnerTexts()).join("|");
+ok(etapes === "Ce qu’elle dit|Comment elle le dit|Sa voix" && (await hugo.locator(".tf-moi .tf-etape .tf-etape-n").allInnerTexts()).join("") === "123", `trois étapes numérotées (${etapes})`);
+await hugo.locator(".tf-moi .tf-sa-tete").click();
+await hugo.waitForSelector(".tf-feuille-tete.ouverte", { timeout: 5000 });
+const huitVisages = (await hugo.locator(".tf-feuille-tete .tf-expr button").count()) === 8 && (await hugo.locator(".tf-feuille-tete .tf-att button").count()) === 6 && (await hugo.locator(".tf-moi .tf-expr button.ferme, .tf-moi .tf-voix button.ferme").count()) === 0;
+await hugo.screenshot({ path: `${D}/ma-figurine-0a-son-visage.png` });
+ok(huitVisages && (await texte(hugo, ".tf-feuille-tete .tf-feuille-titre")).includes("Son visage, au choix"), "« Ou je choisis son visage moi-même » : une feuille, ses huit humeurs et ses six attitudes, tout ouvert");
+await hugo.locator(".tf-feuille-tete .tf-expr button", { hasText: "Tristesse" }).click();
 ok((await hugo.locator(".tf-moi .fqp").getAttribute("data-sentiment")) === "tristesse" && (await hugo.locator(".tf-nudge").count()) === 0, "la tristesse se choisit tout de suite (plus de cadeau à attendre)");
+await hugo.locator(".tf-feuille-tete .tf-garder").click();
+await hugo.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), null, { timeout: 5000 });
+ok((await texte(hugo, ".tf-moi .tf-sa-tete-dit")).includes("Tristesse"), "« C’est bon, je garde ce visage » : la feuille se ferme, l'étape ② le rappelle");
+ok((await hugo.locator(".tf-moi .tf-etape-3 .tf-danse[role=switch]").count()) === 1 && (await hugo.locator("#tf-reactions .rx-gag").count()) === 4, "la danse est à l'étape ③ (« Elle danse en parlant ») ; les gags, dans « Répondre vite »");
 // 🗓️ SA FIGURINE DU MOIS, EN UNE LIGNE (lot 3) : ses jours sur ClikMe ce mois-ci (aujourd'hui compte déjà, ou presque)
 const apercu = await texte(hugo, "#o-figurine .fm-apercu");
 ok(/Ta figurine de \p{L}+/u.test(apercu) && /[01]\/10 jours sur ClikMe/.test(apercu) && (await hugo.locator("#o-figurine .fm-apercu .fm-jours i").count()) === 10, `où en est sa figurine du mois (${apercu})`);
 ok((await debordement(hugo)) <= 0, "sa figurine et ses options ne débordent pas");
 await hugo.screenshot({ path: `${D}/ma-figurine-0b-options.png`, fullPage: true });
-// un toucher ailleurs (un coin vide de la barre du haut ; son prénom, lui, ouvre « Moi ») : le tiroir se referme
-await hugo.locator(".mc-barre").click({ position: { x: 4, y: 4 } });
-ok((await hugo.locator(".tf-moi .tf-tiroir").count()) === 0, "un toucher ailleurs : le tiroir se referme");
-ok((await hugo.locator("#o-figurine .og-tete").count()) === 0 && (await hugo.locator(".tf-onglets [role=tab]").allInnerTexts()).join("|") === "💬 Fais-la parler|⚡ Réactions & gags" && (await hugo.locator(".tf-onglets [aria-selected=true]").innerText()).includes("Fais-la parler"), "deux onglets : « 💬 Fais-la parler » (ouvert) et « ⚡ Réactions & gags »");
-ok((await hugo.locator("#tf-reactions[hidden] #reactions").count()) === 1 && (await hugo.locator("#tf-parler:not([hidden]) .tf-texte textarea").count()) === 1, "ses réactions attendent dans leur onglet ; « Fais-la parler » : son texte");
-// (la page descend : sa figurine reste en vue, sous la barre du haut)
+ok((await hugo.locator("#o-figurine .og-tete").count()) === 0 && (await hugo.locator(".tf-onglets [role=tab]").allInnerTexts()).join("|") === "💬 Faire un mème|⚡ Répondre vite" && (await hugo.locator(".tf-onglets [aria-selected=true]").innerText()).includes("Faire un mème"), "deux onglets, nommés par ce qu'on veut faire : « 💬 Faire un mème » (ouvert) et « ⚡ Répondre vite »");
+ok((await hugo.locator("#tf-reactions[hidden] #reactions").count()) === 1 && (await hugo.locator("#tf-parler:not([hidden]) .tf-texte textarea").count()) === 1, "ses réactions attendent dans leur onglet ; « Faire un mème » : sa phrase");
+// (la page descend : sa figurine se fait vignette, juste sous la barre du haut — l'ami : « qu'elle s'amenuise »)
 await hugo.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-await hugo.waitForTimeout(400);
+await hugo.waitForSelector(".tf-mini", { timeout: 5000 });
 const descendu = await hugo.evaluate(() => window.scrollY);
-const enVue = await hugo.locator(".tf-moi .tf-hero .fqp-fig").boundingBox();
+const mini = await hugo.locator(".tf-mini").boundingBox();
 const barre = await hugo.locator(".mc-barre").boundingBox();
-ok(descendu > 100 && enVue && barre && enVue.y >= barre.y + barre.height - 1 && enVue.y < barre.height + 40, `la page descend (${Math.round(descendu)} px) : sa figurine reste en vue, juste sous la barre (${Math.round(enVue?.y ?? -1)} px)`);
+ok(descendu > 100 && mini && barre && Math.abs(mini.y - (barre.y + barre.height)) <= 2 && mini.height <= 60, `la page descend (${Math.round(descendu)} px) : sa figurine se fait vignette, juste sous la barre (${Math.round(mini?.y ?? -1)} px, ${Math.round(mini?.height ?? -1)} px de haut)`);
+ok((await texte(hugo, ".tf-mini")).includes("Ton mème") && (await texte(hugo, ".tf-mini")).includes("Tristesse"), `la vignette rappelle ce qu'il a choisi (${await texte(hugo, ".tf-mini")})`);
 await hugo.screenshot({ path: `${D}/ma-figurine-0b2-en-bas.png` });
-await hugo.evaluate(() => window.scrollTo(0, 0));
+await hugo.locator(".tf-mini").click();
+await hugo.waitForFunction(() => window.scrollY < 40 && !document.querySelector(".tf-mini"), null, { timeout: 8000 });
+ok(true, "un toucher sur la vignette : la page remonte, sa figurine en grand");
 // ⚡ l'autre onglet : ses réactions et ses gags
 await hugo.locator("#tf-o-reactions").click();
-ok((await hugo.locator("#tf-reactions:not([hidden]) #reactions").count()) === 1 && (await hugo.locator("#tf-parler[hidden]").count()) === 1, "⚡ « Réactions & gags » : ses réactions, à la place de « Fais-la parler »");
+ok((await hugo.locator("#tf-reactions:not([hidden]) #reactions").count()) === 1 && (await hugo.locator("#tf-parler[hidden]").count()) === 1, "⚡ « Répondre vite » : ses réactions, à la place de « Faire un mème »");
 await hugo.locator("#tf-o-parler").click();
 // 🔒 le cadenas doré, à côté de son prénom : sa figurine n'est pas encore protégée
 ok((await texte(hugo, ".mc-barre .mc-cadenas")).includes("Sauvegarder") && (await hugo.locator(".mc-barre .mc-cadenas").getAttribute("aria-label")).includes("ne la perds jamais"), "🔒 en haut, un cadenas doré : « Sauvegarder »");
@@ -240,11 +244,13 @@ ok(
   (await hugo.locator(".tf-looks button").count()) === 2 && (await texte(hugo, ".tf-looks button.pris")).includes("Novembre") === mois.endsWith("-11") && hero?.includes(`/mois/${mois}`),
   `son look du mois est pris : c'est elle qui parle (${await texte(hugo, ".tf-looks button.pris")}, ${hero?.slice(-60)})`,
 );
-ok((await hugo.locator(".tf-moi .tf-expr").count()) === 0 && (await texte(hugo, ".tf-scene .tf-note")).includes("Son visage du mois"), "avec un look : son visage du mois (plus de choix d'expression)");
+ok((await hugo.locator(".tf-feuille-tete.ouverte").count()) === 1 && (await hugo.locator(".tf-moi .tf-expr").count()) === 0 && (await texte(hugo, ".tf-feuille-tete .tf-note")).includes("Son visage du mois"), "avec un look : son visage du mois (la feuille « Son visage » s'ouvre ; plus de choix d'expression)");
 await hugo.screenshot({ path: `${D}/ma-figurine-0e-look.png`, fullPage: true });
 // le look de tous les jours revient d'un toucher
 await hugo.locator(".tf-looks button").first().click();
 ok((await hugo.locator(".tf-moi .tf-expr").count()) === 1, "« De tous les jours » : ses expressions reviennent");
+await hugo.locator(".tf-feuille-tete .tf-garder").click();
+await hugo.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), null, { timeout: 5000 });
 ok((await texte(hugo, "#o-figurine .fm-apercu")).includes("est arrivée"), "dans « Créer » : sa figurine du mois est arrivée (un toucher la prend)");
 
 // ═══ UN VISITEUR SANS COMPTE : SA PHOTO LUI OUVRE SON COMPTE (son prénom, sa ville) ═══
@@ -339,43 +345,46 @@ await fetch(`${F}/clik_ma_figurine?habitant_id=eq.${LEA.id}`, {
 // ═══ LÉA FAIT PARLER SA FIGURINE : UN TEXTE, LU PAR LA VOIX QU'ELLE CHOISIT ═══
 await lea.reload({ waitUntil: "networkidle" });
 await lea.waitForSelector(".tf-moi .tf-texte textarea", { timeout: 30000 });
-ok((await texte(lea, ".tf-onglets [aria-selected=true]")).includes("Fais-la parler"), "sa figurine est là : fais-la parler");
+ok((await texte(lea, ".tf-onglets [aria-selected=true]")).includes("Faire un mème"), "sa figurine est là : faire un mème");
 await lea.locator(".mc-barre .mc-cadenas").click();
 await lea.waitForSelector(".tf-feuille.ouverte .cn-proteger", { timeout: 10000 });
 ok((await texte(lea, ".tf-feuille.ouverte .cn-proteger")).includes("Ne perds jamais ta figurine"), "🔐 le cadenas doré : son adresse peut protéger sa figurine (un code pour la retrouver)");
 await lea.screenshot({ path: `${D}/ma-figurine-1-cadenas.png` });
 await lea.locator(".tf-feuille.ouverte .tf-feuille-fermer").click();
 await lea.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), null, { timeout: 5000 });
-await lea.locator(".tf-moi .tf-g-visage").click();
-ok((await lea.locator(".tf-moi .tf-expr button").count()) === 8 && (await lea.locator(".tf-moi .tf-expr button.ferme").count()) === 0, "huit visages à lui donner, tous ouverts (dont le fou rire, la grimace et l'amour)");
+await lea.locator(".tf-moi .tf-sa-tete").click();
+await lea.waitForSelector(".tf-feuille-tete.ouverte", { timeout: 5000 });
+ok((await lea.locator(".tf-feuille-tete .tf-expr button").count()) === 8 && (await lea.locator(".tf-moi .tf-expr button.ferme").count()) === 0, "huit visages à lui donner, tous ouverts (dont le fou rire, la grimace et l'amour)");
 // 😍 L'AMOUR (7 novembre 2026) : son visage amoureux est demandé, et des cœurs montent autour d'elle en attendant
-await lea.locator(".tf-moi .tf-expr button", { hasText: "Amour" }).click();
+await lea.locator(".tf-feuille-tete .tf-expr button", { hasText: "Amour" }).click();
 ok((await lea.locator(".tf-moi .fqp").getAttribute("data-sentiment")) === "amour" && (await lea.locator(".tf-moi .fqp-coeurs i").count()) === 3, "😍 l'amour : des cœurs montent autour d'elle");
 await lea.screenshot({ path: `${D}/ma-figurine-1a-amour.png` });
-await lea.locator(".tf-moi .tf-expr button", { hasText: "Fou rire" }).click();
+await lea.locator(".tf-feuille-tete .tf-expr button", { hasText: "Fou rire" }).click();
 ok((await lea.locator(".tf-moi .fqp").getAttribute("data-sentiment")) === "rire", "le fou rire");
-await lea.locator(".tf-moi .tf-g-animer").click();
-await lea.locator(".tf-moi .tf-danse").click();
-ok((await lea.locator(".tf-moi .fqp.danse .fqp-notes").count()) === 1 && (await texte(lea, ".tf-moi .tf-g-animer")).includes("Elle danse"), "🕺 elle danse (des notes de musique autour ; « Animer » le dit)");
-await lea.locator(".tf-moi .tf-g-visage").click();
-await lea.locator(".tf-moi .tf-expr button", { hasText: "Joie" }).click();
+await lea.locator(".tf-feuille-tete .tf-expr button", { hasText: "Joie" }).click();
 ok((await lea.locator(".tf-moi .fqp").getAttribute("data-sentiment")) === "joie" && (await lea.locator(".tf-moi .fqp-badge").count()) === 1, "elle choisit la joie : sa figurine la montre (son visage de joie n'est pas encore fait : elle bouge)");
+await lea.locator(".tf-feuille-tete .tf-garder").click();
+await lea.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), null, { timeout: 5000 });
+// 🕺 ELLE DANSE EN PARLANT : l'interrupteur de l'étape ③ (« Animer » est parti, 9 novembre 2026)
+await lea.locator(".tf-moi .tf-etape-3 .tf-danse").click();
+ok((await lea.locator(".tf-moi .fqp.danse .fqp-notes").count()) === 1 && (await lea.locator(".tf-moi .tf-etape-3 .tf-danse").getAttribute("aria-checked")) === "true", "🕺 elle danse en parlant (des notes de musique autour ; l'interrupteur de l'étape ③)");
 await lea.locator(".tf-texte textarea").fill("Coucou Camille ! On se voit ce soir ?");
 // SA VOIX : demandée une fois (« une voix d'homme ou de femme ? »), jamais devinée ; gardée
 ok((await lea.locator(".tf-moi .tf-quelle-voix").count()) === 1 && (await lea.locator(".tf-moi .tf-ecouter").isDisabled()), "sa voix : on lui demande (homme ou femme ?) avant d'écouter");
+await lea.locator(".tf-moi .tf-envoyer").click();
+ok((await texte(lea, ".tf-moi .tf-erreur")).includes("Choisis d’abord sa voix"), "« Créer mon mème » sans voix : on lui dit de la choisir, à l'étape ③");
 await lea.locator(".tf-moi .tf-quelle-voix button", { hasText: "voix de femme" }).click();
 ok((await lea.locator(".tf-moi .tf-voix button.pris").innerText()).includes("Douce"), "une voix de femme : « Douce »");
 await lea.locator(".tf-moi .tf-voix button", { hasText: "Chaleureuse" }).click();
 await lea.waitForTimeout(600);
 ok((await lea.evaluate(async () => (await (await fetch("/api/direct/ma-figurine", { cache: "no-store" })).json()).etat?.maVoix)) === "chaleureuse", "sa voix est gardée (ce sera la sienne la prochaine fois)");
-await lea.locator(".tf-moi .tf-ecouter").click();
-await lea.waitForSelector(".tf-envoyer", { timeout: 30000 });
-ok((await lea.locator(".tf-cites").count()) === 0 && (await texte(lea, ".tf-envoyer")).includes("Créer mon mème"), "« 🎭 Créer mon mème » (plus de commerces à cocher : le mème, rien d'autre)");
+const leBouton = await texte(lea, ".tf-envoyer");
+ok((await lea.locator(".tf-cites").count()) === 0 && leBouton.includes("🎬 Créer mon mème") && leBouton.includes("Une vidéo à envoyer où tu veux"), `le but, écrit sur le bouton : « ${leBouton} » (plus de commerces à cocher)`);
 await lea.screenshot({ path: `${D}/ma-figurine-1-message.png`, fullPage: true });
-// 🎭 SON MÈME : la vidéo se fabrique sous ses yeux, puis part au seau
+// 🎭 SON MÈME : plus besoin d'« Écouter » d'abord — sa phrase est lue par sa voix, puis la vidéo se fabrique sous ses yeux
 await lea.locator(".tf-envoyer").click();
-await lea.waitForSelector(".tf-meme-toile.visible", { timeout: 20000 });
-ok(true, "son mème se fabrique sous ses yeux");
+await lea.waitForSelector(".tf-meme-toile.visible", { timeout: 30000 });
+ok(true, "sans « Écouter » d'abord : sa phrase est lue par sa voix, et son mème se fabrique sous ses yeux");
 await lea.waitForTimeout(1800);
 await lea.locator(".tf-meme-toile").screenshot({ path: `${D}/ma-figurine-1b-meme.png` });
 await lea.waitForSelector(".tf-meme-pret video", { timeout: 90000 });
@@ -409,14 +418,14 @@ await lea.keyboard.press("Escape");
 await lea.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), null, { timeout: 5000 });
 
 // ═══ ET AVEC SA PROPRE VOIX ═══
-await lea.locator(".tf-modes button", { hasText: "Ma voix" }).click();
-ok((await lea.locator(".tf-envoi").count()) === 0, "sa voix à elle : le message lu ne repart pas tel quel");
+await lea.locator(".tf-modes button", { hasText: "Avec ma voix" }).click();
+ok((await lea.locator(".tf-envoyer").isDisabled()) && (await texte(lea, ".tf-etape-3 .tf-etape-quoi b")) === "Elle danse ?", "avec sa voix à elle : le message lu ne repart pas tel quel (rien à créer avant d'avoir enregistré) ; l'étape ③ : « Elle danse ? »");
 await lea.locator(".tf-micro").click();
 await lea.waitForSelector(".tf-temps", { timeout: 15000 });
 await lea.waitForTimeout(2600);
 ok(/● [12] s \/ 15 s/.test(await texte(lea, ".tf-temps")), `le compteur tourne (${await texte(lea, ".tf-temps")})`);
 await lea.locator(".tf-stop").click();
-await lea.waitForSelector(".tf-envoyer", { timeout: 15000 });
+await lea.waitForSelector(".tf-envoyer:not([disabled])", { timeout: 15000 });
 ok((await lea.locator(".tf-moi .tf-ecouter").count()) === 1, "elle peut s'écouter, puis en faire un mème");
 
 // ═══ UNE AMIE L'OUVRE : LE MÈME JOUE TOUT DE SUITE ═══
@@ -450,12 +459,21 @@ await hugo.waitForSelector(".tf-moi .tf-reponse", { timeout: 30000 });
 ok((await texte(hugo, ".tf-reponse")).includes("Tu réponds à Léa") && (await texte(hugo, ".tf-reponse")).includes("Coucou Camille"), "« ↩️ Tu réponds à Léa » : son mème, et ses mots");
 // 🎁 SON PREMIER MÈME, DÉJÀ ÉCRIT ; ✨ LES MÈMES PRÊTS
 ok((await hugo.locator(".tf-texte textarea").inputValue()).startsWith("Salut ! C’est moi… en figurine") && (await hugo.locator(".tf-premier").count()) === 0, "son premier mème est déjà écrit (le conseil se tait quand il répond)");
-const prets = await hugo.locator(".tf-prets button:not(.tf-surprends)").allInnerTexts();
-ok(prets.length >= 8 && prets[0].includes("Le mème du jour") && prets.some((x) => x.includes("Joyeux anniversaire")) && prets.some((x) => x.includes("Bravo")), `les mèmes prêts : le mème du jour d'abord, puis les occasions (${prets.slice(0, 4).join(" · ")}…)`);
+// 🎲 « PAS D'IDÉE ? » (9 novembre 2026) : toutes les aides dans une feuille — Surprends-moi, le mème du jour, les phrases
+ok((await hugo.locator("#tf-parler .tf-prets, #tf-parler .tf-surprends").count()) === 0, "les aides ne s'étalent plus dans la page");
+await hugo.locator(".tf-pas-idee").click();
+await hugo.waitForSelector(".tf-feuille-idee.ouverte", { timeout: 5000 });
+const prets = await hugo.locator(".tf-feuille-idee .tf-prets button").allInnerTexts();
+const aides = (await hugo.locator(".tf-feuille-idee .tf-idee").allInnerTexts()).map((x) => x.replace(/\s+/g, " "));
+ok(aides.length === 2 && aides[0].includes("Surprends-moi") && aides[1].includes("Le mème du jour") && prets.length >= 8 && prets.some((x) => x.includes("Joyeux anniversaire")) && prets.some((x) => x.includes("Bravo")), `« 🎲 Pas d’idée ? » : Surprends-moi, le mème du jour, puis les phrases toutes prêtes (${prets.slice(0, 4).join(" · ")}…)`);
+await hugo.screenshot({ path: `${D}/ma-figurine-3-pas-idee.png` });
+await hugo.locator(".tf-feuille-idee .tf-feuille-fermer").click();
+await hugo.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), null, { timeout: 5000 });
 await hugo.locator(".tf-quelle-voix button", { hasText: "voix d’homme" }).click();
 
 // ═══ 🎲 « SURPRENDS-MOI ! » : CLIKME ÉCRIT SON MÈME (d'après sa carte de personnage) ; rien n'est dit sans lui ═══
-ok((await hugo.locator(".tf-prets button").first().innerText()).includes("Surprends-moi"), "« 🎲 Surprends-moi ! » en tête des mèmes prêts");
+await hugo.locator(".tf-pas-idee").click();
+await hugo.waitForSelector(".tf-feuille-idee.ouverte", { timeout: 5000 });
 const avantSurprise = await hugo.locator(".tf-texte textarea").inputValue();
 const voixDites = [];
 hugo.on("request", (r) => r.method() === "POST" && r.url().endsWith("/api/direct/ma-figurine") && /"action":"voix"/.test(r.postData() ?? "") && voixDites.push(r.postData()));
@@ -490,10 +508,12 @@ const consignes = await (await fetch(F.replace("/rest/v1", "/__ia"))).json();
 const consigne = consignes.at(-1) ?? "";
 ok(surprise3.includes("Les chiens du quartier") && (await hugo.locator(".tf-surprise-carte").count()) === 0, `avec sa carte : l'IA l'écrit d'après lui (les animaux) — « ${surprise3} »`);
 ok(/animaux/.test(consigne) && /Agis tout de suite|agis tout de suite/.test(consigne) && /On n’est jamais trop curieux/.test(consigne) && !/Hugo/.test(consigne) && /Ne devine JAMAIS le genre/.test(consigne) && /l'alcool/.test(consigne), "la consigne : sa carte (ses goûts, ses réponses, sa phrase), jamais son prénom ; ni genre deviné, ni alcool");
-// « C'est moi ✓ » : le texte est écrit, son visage choisi, et sa figurine le dit
+// « C'est moi ✓ » : le texte est écrit, son visage choisi, et sa figurine le dit (la feuille se ferme)
+const luParSaVoix = hugo.waitForResponse((r) => r.url().endsWith("/api/direct/ma-figurine") && /"action":"voix"/.test(r.request().postData() ?? ""), { timeout: 30000 });
 await hugo.locator(".tf-surprise-oui").click();
-await hugo.waitForSelector(".tf-envoyer", { timeout: 30000 });
-ok((await hugo.locator(".tf-texte textarea").inputValue()) === surprise3 && (await hugo.locator(".tf-surprise").count()) === 0 && voixDites.length === 1, "« C’est moi ✓ » : le texte est à lui, et sa figurine le dit (sa voix, une seule fois)");
+await luParSaVoix;
+await hugo.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), null, { timeout: 5000 });
+ok((await hugo.locator(".tf-texte textarea").inputValue()) === surprise3 && (await hugo.locator(".tf-surprise").count()) === 0 && voixDites.length === 1, "« C’est moi ✓ » : la feuille se ferme, le texte est à lui, et sa figurine le dit (sa voix, une seule fois)");
 // l'IA dérape (de l'alcool) : écartée, une réplique de la réserve à la place ; et un plafond par jour
 const derape = await api(hugo, { action: "surprise", sauf: ["Essai : propose un apéro"] });
 ok(derape.statut === 200 && derape.par === "local" && derape.carte === true && !/ap[ée]ro/i.test(derape.texte), `l'IA parle d'alcool : écartée, la réserve à la place (« ${derape.texte} »)`);
@@ -507,9 +527,12 @@ ok((await debordement(hugo)) <= 0 && !/exemple/i.test(await texte(hugo, "#o-figu
 // 🔔 Léa a les notifications (un faux téléphone) : elle saura qu'on lui a répondu
 const telLea = telephone("lea-figurine");
 ok((await api(lea, { action: "notif", abonnement: telLea.abonnement })).statut === 200, "Léa allume les notifications (un faux téléphone)");
-await hugo.locator(".tf-prets button", { hasText: "Bravo" }).click();
-ok((await hugo.locator(".tf-texte textarea").inputValue()).startsWith("Bravo ! Quelle classe."), "un toucher sur « Bravo » : le texte est écrit, et elle le dit");
-await hugo.waitForSelector(".tf-envoyer", { timeout: 30000 });
+await hugo.locator(".tf-pas-idee").click();
+await hugo.waitForSelector(".tf-feuille-idee.ouverte", { timeout: 5000 });
+const bravoLu = hugo.waitForResponse((r) => r.url().endsWith("/api/direct/ma-figurine") && /"action":"voix"/.test(r.request().postData() ?? ""), { timeout: 30000 });
+await hugo.locator(".tf-feuille-idee .tf-prets button", { hasText: "Bravo" }).click();
+await bravoLu;
+ok((await hugo.locator(".tf-texte textarea").inputValue()).startsWith("Bravo ! Quelle classe.") && (await hugo.locator(".tf-feuille.ouverte").count()) === 0, "un toucher sur « Bravo » : la feuille se ferme, le texte est écrit, et elle le dit");
 await hugo.locator(".tf-envoyer").click();
 await hugo.waitForSelector(".tf-meme-toile.visible", { timeout: 20000 });
 await hugo.waitForTimeout(1500);
@@ -682,9 +705,8 @@ ${[0, 1, 2, 3, 4, 5, 6].map((k) => `<rect x="132" y="${318 + k * 10}" width="36"
 const fig = await sharp(Buffer.from(dessin)).webp().toBuffer();
 for (const nom of ["neutre", "parle"]) await fetch(`${STOCK}/figurines-clients/${LEA.id}/${nom}-essai.webp`, { method: "POST", headers: { "content-type": "image/webp" }, body: fig });
 await lea.goto(`${BASE}/collection?v=${Date.now()}#figurine`, { waitUntil: "networkidle" });
-await lea.waitForSelector(".tf-moi .tf-g-animer", { timeout: 30000 });
-await lea.locator(".tf-moi .tf-g-animer").click();
-await lea.locator(".tf-moi .tf-danse").click();
+await lea.waitForSelector(".tf-moi .tf-etape-3 .tf-danse", { timeout: 30000 });
+await lea.locator(".tf-moi .tf-etape-3 .tf-danse").click();
 await lea.waitForFunction(() => document.querySelector(".tf-moi .fqp")?.getAttribute("data-danse") === "ressort", null, { timeout: 15000 }).catch(() => null);
 const bandes = await lea.evaluate(() => {
   const st = getComputedStyle(document.querySelector(".tf-moi .fqp-fig"));
@@ -698,6 +720,12 @@ ok(
 );
 await lea.locator(".tf-moi .fqp-fig").screenshot({ path: `${D}/ma-figurine-4-danse.png` });
 
+// 🔁 « REFAIRE MA FIGURINE » : dans « Moi » (9 novembre 2026 : elle a quitté le dessous de sa figurine, dans « Créer »)
+await lea.goto(`${BASE}/collection?v=${Date.now()}#moi`, { waitUntil: "networkidle" });
+await lea.waitForSelector("#o-personnage .rf-tete", { timeout: 30000 });
+ok((await lea.locator("#o-figurine .tf-refaire-lien").count()) === 0 && (await texte(lea, "#o-personnage .rf-tete")).includes("Refaire ma figurine"), "« 🔁 Refaire ma figurine » est dans « Moi », plus sous sa figurine");
+await lea.locator("#o-personnage .rf-tete").click();
+ok((await lea.locator("#o-personnage .rf-photo").count()) === 1 && (await lea.locator("#o-personnage .rf-univers input").count()) === 1, "dépliée : « ce qui te ressemble », et « 📸 Avec une autre photo »");
 // 🎨 CE QUI LUI RESSEMBLE, REVU EN LA REFAISANT (son métier) : gardé pour la nouvelle (ici, une autre photo : sans moteur d'image)
 const refaite = await lea.evaluate(async () => (await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "refaire", autrePhoto: true, univers: "Artisan" }) })).status);
 const univers2 = await (await fetch(`${STOCK}/figurines-clients/${LEA.id}/univers.json`)).json().catch(() => null);

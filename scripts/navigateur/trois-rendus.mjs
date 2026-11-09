@@ -2,8 +2,8 @@
 // Supabase et sa fausse IA de texte — jamais la vraie base.
 //
 // Zoé a sa figurine, et trois visages déjà faits (le fou rire, la tristesse, la grimace) en plus de la joie. Dans
-// « Créer », elle écrit « J’avais dit que je ne sortirais pas ce soir… » : trois vignettes arrivent — 😂 Humour (la BD),
-// 🎭 Dramatique (le cinéma), 🌀 Décalé (l'affiche) —, chacune avec UN AUTRE VISAGE de sa figurine (elle rit en douce, se
+// « Créer », elle écrit « J’avais dit que je ne sortirais pas ce soir… » : trois vignettes arrivent — 😂 En BD, 🎭 En film,
+// 🌀 En affiche (« Humour », « Dramatique », « Décalé » jusqu'au 9 novembre 2026) —, chacune avec UN AUTRE VISAGE de sa figurine (elle rit en douce, se
 // désole, grimace), dessinées par le même code que la vidéo. La fausse IA a bien lu sa phrase (et rien d'autre). Elle
 // choisit « Dramatique » : sa figurine prend la tête de la tristesse ; son mème se fabrique EN CINÉMA (les bandes noires
 // de la vidéo le disent), et son graphisme est gardé à côté du message (la mesure). Les intentions sont une aide :
@@ -72,14 +72,15 @@ ok((await route({ action: "rendus", texte: "" })).statut === 400, "sans phrase :
 await p.goto(`${BASE}/collection?v=${Date.now()}#figurine`, { waitUntil: "networkidle" });
 await p.waitForSelector(".tf-moi .tf-texte textarea", { timeout: 60000 });
 await fermerPablito(p, "#o-figurine");
-ok((await p.locator(".tr-intentions button").count()) === 6 && (await texte(".tr-q")).length > 0, "ce qu'elle veut exprimer : six intentions, facultatives");
+// (9 novembre 2026 : l'étape ② « Comment elle le dit » porte le titre — « Choisis le ton : je te propose trois mèmes. »)
+ok((await p.locator(".tf-etape-2 .tr-intentions button").count()) === 6 && (await texte(".tf-etape-2 .tf-etape-quoi")).includes("Choisis le ton : je te propose trois mèmes."), "l'étape ② « Comment elle le dit » : choisis le ton (six tons, facultatifs)");
 await p.locator(".tf-moi .tf-texte textarea").fill(PHRASE);
 await p.waitForFunction(() => document.querySelectorAll(".tr-choix .tr-rendu").length === 3, null, { timeout: 15000 });
 // (la fausse IA répond après une pause dans la frappe : les mêmes visages que les règles, ici)
 await p.waitForTimeout(2200);
 const trois = await etiquettes();
 ok(
-  trois[0].includes("Humour") && trois[0].includes("Fou rire") && trois[1].includes("Dramatique") && trois[1].includes("Tristesse") && trois[2].includes("Décalé") && trois[2].includes("Grimace"),
+  trois[0].includes("En BD") && trois[0].includes("Fou rire") && trois[1].includes("En film") && trois[1].includes("Tristesse") && trois[2].includes("En affiche") && trois[2].includes("Grimace"),
   `trois vignettes, trois visages : ${trois.join(" | ")}`,
 );
 // les trois vignettes sont dessinées, et ne se ressemblent pas
@@ -109,13 +110,11 @@ ok(dessins[1].coin.every((c) => c < 20), `🎭 le cinéma : la bande noire, en h
 await p.locator(".tr").scrollIntoViewIfNeeded();
 await p.screenshot({ path: `${D}/trois-rendus-1-choix.png` });
 
-// ═══ ELLE CHOISIT « DRAMATIQUE » ═══
+// ═══ ELLE CHOISIT « EN FILM » ═══
 await p.locator(".tr-choix .tr-rendu").nth(1).click();
 await p.waitForSelector(".tr-rendu.pris", { timeout: 5000 });
-ok((await p.locator(".tr-rendu.pris").count()) === 1 && (await texte(".tr-rendu.pris")).includes("Dramatique") && (await texte(".tf-g-visage")).includes("😢"), "« Dramatique » choisi : sa figurine prend la tête de la tristesse");
+ok((await p.locator(".tr-rendu.pris").count()) === 1 && (await texte(".tr-rendu.pris")).includes("En film") && (await texte(".tf-sa-tete-dit")).includes("😢"), "« En film » choisi : sa figurine prend la tête de la tristesse");
 await p.locator(".tf-moi .tf-quelle-voix button", { hasText: "voix de femme" }).click();
-await p.locator(".tf-moi .tf-ecouter").click();
-await p.waitForSelector(".tf-envoyer", { timeout: 30000 });
 await p.locator(".tf-envoyer").click();
 await p.waitForSelector(".tf-meme-pret video", { timeout: 90000 });
 // la vidéo : en cinéma (les bandes noires, en haut et en bas)
@@ -138,7 +137,8 @@ const [msg] = await lire("clik_figurine_message", `habitant_id=eq.${ZOE.id}&orde
 const aCote = await (await fetch(`${STOCK}/figurines-clients/${ZOE.id}/m-${msg?.id}.json`)).json().catch(() => ({}));
 ok(msg?.sentiment === "tristesse" && aCote.rendu === "cinema" && String(aCote.meme ?? "").includes(msg.id), `son graphisme gardé à côté du message (la mesure) : ${aCote.rendu}, la tête : ${msg?.sentiment}`);
 await p.screenshot({ path: `${D}/trois-rendus-2-meme.png` });
-await p.locator(".tf-feuille .tf-feuille-fermer, .tf-feuille [aria-label='Fermer']").first().click().catch(() => undefined);
+await p.locator(".tf-feuille.ouverte .tf-feuille-fermer").click();
+await p.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), null, { timeout: 5000 });
 await p.waitForTimeout(400);
 
 // ═══ LES INTENTIONS : UNE AIDE ═══
@@ -159,7 +159,7 @@ ok(autres.join("|") !== fete.join("|"), `« 🎲 Trois autres » : d'autres visa
 await p.locator(".tf-moi .tf-texte textarea").fill(PHRASE);
 await p.waitForTimeout(2200);
 const avant = await etiquettes();
-ok((await p.locator(".tr-rendu.pris").count()) === 1 && (await p.locator(".tr-rendu").nth(1).getAttribute("class")).includes("pris"), `sa phrase revient : « Dramatique » de nouveau choisi (${avant.join(" | ")})`);
+ok((await p.locator(".tr-rendu.pris").count()) === 1 && (await p.locator(".tr-rendu").nth(1).getAttribute("class")).includes("pris"), `sa phrase revient : « En film » de nouveau choisi (${avant.join(" | ")})`);
 await p.locator(".tr-autres").click();
 await p.waitForTimeout(300);
 const apres = await etiquettes();

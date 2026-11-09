@@ -1,8 +1,10 @@
 "use client";
 
 /**
- * 🎬 TROIS FAÇONS DE LE DIRE — dans « Créer » (« 💬 Fais-la parler »), sous sa phrase (8 novembre 2026 ; la règle :
- * `lib/direct/rendus.ts`).
+ * 🎬 TROIS FAÇONS DE LE DIRE — dans « Créer » (« 💬 Faire un mème »), l'étape ② « Comment elle le dit » (8 novembre
+ * 2026 ; la règle : `lib/direct/rendus.ts`). Depuis le 9 novembre 2026 (la page refaite en trois étapes), l'étape porte
+ * le titre (« Choisis le ton : je te propose trois mèmes. ») : ici, les tons, puis les trois mèmes — « En BD », « En
+ * film », « En affiche » (`FACONS`).
  *
  *   · « Ce que tu veux exprimer » : six intentions, FACULTATIVES — sans phrase, un toucher en propose une (un autre
  *     toucher : la suivante) ; avec une phrase, elles orientent les visages ;
@@ -19,6 +21,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { apercuRendu } from "@/lib/direct/meme";
 import { estAttitude, sentimentDe, type Expressions, type Sentiment } from "@/lib/direct/ma-figurine";
 import { INTENTIONS, STYLES_RENDU, motPour, rendusLocaux, type CleIntention, type Rendu } from "@/lib/direct/rendus";
+
+/** Le nom de chaque façon, sous sa vignette : ce qu'on obtient (9 novembre 2026). */
+export const FACONS: Record<string, string> = { bd: "En BD", cinema: "En film", affiche: "En affiche" };
 
 const memeRendu = (a: Rendu | null, b: Rendu | null) => Boolean(a && b && a.style === b.style && a.visage === b.visage && a.teinte === b.teinte && a.cadrage === b.cadrage);
 
@@ -95,7 +100,6 @@ export function TroisRendus({
   const imageDe = (v: Sentiment | null) => (v ? (expressions?.[v]?.n ?? "") : "") || neutre;
   return (
     <div className="tr" role="group" aria-label="Trois façons de le dire">
-      <span className="tr-q">{t ? "Ce que tu veux exprimer" : "Pas d’idée ? Ce que tu veux exprimer"}</span>
       <div className="tr-intentions">
         {INTENTIONS.map((i) => (
           <button key={i.cle} type="button" className={intention === i.cle ? "pris" : undefined} aria-pressed={intention === i.cle} onClick={() => prendreIntention(i.cle)}>
@@ -106,7 +110,6 @@ export function TroisRendus({
       {rendus.length === 3 && (
         <>
           <span className="tr-tete">
-            <b>✨ Trois façons de le dire</b>
             <button type="button" className="tr-autres" onClick={() => setTours({ cle, n: tour + 1 })}>
               🎲 Trois autres
             </button>
@@ -136,7 +139,7 @@ export function TroisRendus({
                     )}
                   </span>
                   <b>
-                    {st.emoji} {st.nom}
+                    {st.emoji} {FACONS[r.style] ?? st.nom}
                   </b>
                   <small>{v ? `${v.emoji} ${v.court}` : "🙂 Normal"}</small>
                 </button>
@@ -157,7 +160,7 @@ export const STYLES_TROIS_RENDUS = `
 .tr-intentions::-webkit-scrollbar{display:none}
 .tr-intentions button{flex:none;display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:999px;border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#FFF4E6;font:inherit;font-size:12.5px;font-weight:800;white-space:nowrap;cursor:pointer}
 .tr-intentions button.pris{border-color:#FF2E9A;background:rgba(255,46,154,.2)}
-.tr-tete{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}
+.tr-tete{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:2px}
 .tr-tete b{font-size:15px;font-weight:900}
 .tr-autres{flex:none;padding:6px 11px;border-radius:999px;border:1.5px solid rgba(242,196,107,.6);background:rgba(242,196,107,.12);color:#FFE7B8;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
 .tr-choix{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}

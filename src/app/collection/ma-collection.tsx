@@ -31,7 +31,7 @@
  * lus (la pastille de « Proches »).
  */
 import { useCallback, useEffect, useState } from "react";
-import { EVT_ANCRE, Feuille, OngletFigurine, STYLES_MA_FIGURINE } from "./ma-figurine";
+import { EVT_ANCRE, Feuille, OngletFigurine, RefaireMaFigurine, STYLES_MA_FIGURINE } from "./ma-figurine";
 import { STYLES_TROIS_RENDUS } from "./trois-rendus";
 import { OngletVisible } from "./guide";
 import { MonPersonnage, STYLES_PERSONNAGE } from "./personnage";
@@ -307,6 +307,8 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
               {compte && <MaFigurineDuMois />}
               {/* 📱 l'appli sur son écran d'accueil, et le mème du jour à 11 h 30 (il le coupe ici) — le lot 3 */}
               {compte && <MonTelephone />}
+              {/* 🔁 la refaire (9 novembre 2026 : elle a quitté le dessous de sa figurine, dans « Créer ») ; faite, on va la voir */}
+              {compte && prete && etat && <RefaireMaFigurine etat={etat} onEtat={poserEtat} onFait={() => allerA("figurine")} />}
               {/* 🟢 « Là maintenant » chez ses proches : il le coupe ici */}
               {compte && prete && <MaPresence />}
             </OngletVisible.Provider>

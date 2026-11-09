@@ -3,8 +3,8 @@
 // Un nouveau venu : Pablito lui dit bienvenue, une seule fois (trois bulles, sa voix enregistrée ; la troisième met la
 // lumière sur le logo : « Touche ici, quand tu veux »), puis « Je crée ma figurine ». Les pages n'ouvrent plus aucune
 // fenêtre d'elles-mêmes. Inès, qui a sa figurine : pas de bienvenue ; un point rose sur le logo ; le logo ouvre la
-// visite (six pages) ; « Créer » : Pablito la montre sur la vraie page, la lumière passe de sa phrase à « Visage »,
-// aux intentions, à « Animer » ; « La suite : Découvrir » ; « Échap » arrête ; « Créer » est « Vue » ; « Retour »
+// visite (six pages) ; « Créer » : Pablito la montre sur la vraie page, la lumière suit ses trois étapes (9 novembre
+// 2026) — sa phrase, les tons et les trois façons, « son visage moi-même », sa voix et « Créer mon mème » ; « La suite : Découvrir » ; « Échap » arrête ; « Créer » est « Vue » ; « Retour »
 // pendant une page arrête la visite. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
 import fs from "node:fs";
 import { BASE, D, F, lancer } from "./commun.mjs";
@@ -115,21 +115,24 @@ await ines.screenshot({ path: `${D}/tuto-3-visite.png` });
 await ines.locator('.mc-feuille-visite .tu-page[data-page="creer"]').click();
 await ines.waitForSelector('.tu[data-rang="1"]', { timeout: 10000 });
 await ecrite(ines);
-const phrase = await eclaire(ines, "#o-figurine #tf-parler .tf-texte");
-ok((await texte(ines, ".tu-qui")).toLowerCase().includes("créer") && (await texte(ines, ".tu-texte")).startsWith("Ici, tu fais parler ta figurine") && phrase.ok, `1 / 4 : la lumière sur sa phrase (lumière ${phrase.l}, phrase ${phrase.e})`);
+const phrase = await eclaire(ines, "#o-figurine .tf-etape-1");
+ok((await texte(ines, ".tu-qui")).toLowerCase().includes("créer") && (await texte(ines, ".tu-texte")).startsWith("Ici, tu fais parler ta figurine") && phrase.ok && ines.sons.includes("/collection/pablito/tuto-creer-1.mp3"), `1 / 4 : la lumière sur l'étape ①, ce qu'elle dit (lumière ${phrase.l}, étape ${phrase.e})`);
 ok((await ines.locator(".mc-feuille-visite.ouverte").count()) === 0, "la feuille de la visite s'est rangée");
 await ines.screenshot({ path: `${D}/tuto-4-creer-phrase.png` });
 await suivant(ines);
-const visage = await eclaire(ines, "#o-figurine .tf-g-visage");
-ok((await texte(ines, ".tu-texte")).startsWith("« Visage »") && visage.ok && visage.serre, `2 / 4 : la lumière passe sur « Visage » (lumière ${visage.l}, bouton ${visage.e})`);
-await ines.screenshot({ path: `${D}/tuto-5-creer-visage.png` });
-await suivant(ines);
 const intentions = await eclaire(ines, "#o-figurine .tr-intentions");
-ok((await texte(ines, ".tu-texte")).startsWith("Pas d’idée ?") && intentions.ok, `3 / 4 : sur ce que tu veux exprimer (lumière ${intentions.l}, intentions ${intentions.e})`);
+ok((await texte(ines, ".tu-texte")).startsWith("Pas d’idée ?") && intentions.ok && ines.sons.includes("/collection/pablito/tuto-creer-3.mp3"), `2 / 4 : l'étape ②, le ton et les trois façons (lumière ${intentions.l}, tons ${intentions.e} ; sa voix, celle de la bulle « Pas d'idée ? »)`);
 await suivant(ines);
-const animer = await eclaire(ines, "#o-figurine .tf-g-animer");
-ok((await texte(ines, ".tu-texte")).startsWith("« Animer »") && animer.ok && animer.serre, `4 / 4 : sur « Animer » (lumière ${animer.l}, bouton ${animer.e})`);
+const visage = await eclaire(ines, "#o-figurine .tf-sa-tete");
+ok((await texte(ines, ".tu-texte")).startsWith("« Visage »") && visage.ok && visage.serre && ines.sons.includes("/collection/pablito/tuto-creer-2.mp3"), `3 / 4 : « son visage moi-même » (lumière ${visage.l}, lien ${visage.e} ; sa voix, celle de « Visage »)`);
+await ines.screenshot({ path: `${D}/tuto-5-creer-visage.png` });
+const avantLaDerniere = ines.sons.length;
+await suivant(ines);
+const voixEtBut = await eclaire(ines, "#o-figurine .tf-etape-3");
+const leBut = await eclaire(ines, "#o-figurine .tf-envoi");
+ok((await texte(ines, ".tu-texte")).includes("« Créer mon mème »") && voixEtBut.ok && leBut.ok, `4 / 4 : sa voix, puis « Créer mon mème » (lumière ${voixEtBut.l})`);
 await ecrite(ines);
+ok(ines.sons.length === avantLaDerniere && !ines.sons.some((s) => s.includes("tuto-creer-4")), "la dernière bulle, réécrite, s'écrit sans voix en attendant son enregistrement (jamais l'ancienne, qui parlait d'« Animer »)");
 ok((await texte(ines, ".tu .tu-fin")).includes("La suite : Découvrir") && (await texte(ines, ".tu .tu-fin")).includes("C’est compris"), "à la fin : « La suite : Découvrir », ou « C'est compris »");
 ok((await debordement(ines)) <= 0 && (await sansMotInterdit(ines)), "la visite de « Créer » ne déborde pas, sans le mot interdit");
 await ines.screenshot({ path: `${D}/tuto-6-creer-fin.png` });
