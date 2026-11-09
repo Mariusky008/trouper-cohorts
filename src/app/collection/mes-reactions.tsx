@@ -1,15 +1,18 @@
 "use client";
 
 /**
- * ⚡ MES RÉACTIONS (l'onglet « ⚡ Réactions & gags » du studio, dans « Créer », depuis le 7 novembre 2026 ; avant, en haut
- * de la page) — voir `lib/direct/mes-reactions.ts`. Sa tête à la place des emojis et des GIF :
+ * ⚡ MES RÉACTIONS (l'onglet « ⚡ Répondre vite » du studio, dans « Créer » — « Réactions & gags » jusqu'au 9 novembre
+ * 2026, quand la page a été refaite en trois étapes ; avant le 7 novembre, en haut de la page) — voir
+ * `lib/direct/mes-reactions.ts`. Sa tête à la place des emojis et des GIF :
  *   · LES RÉACTIONS : une grille de stickers (MDR, « Sérieusement ? », Bravo…). Un toucher : la feuille de partage du
  *     téléphone, tout de suite (les stickers sont dessinés d'avance : rien n'attend). La première fois, sa figurine
  *     « prend la pose » (le moteur d'image, environ une minute ; « ✨ Tout préparer » les fait toutes) ; en attendant,
  *     sa figurine de tous les jours et l'emoji.
  *   · 💥 LES GAGS : le prout (et sa jauge d'intensité), l'éternuement, elle s'endort, le hoquet — une petite vidéo qui se
  *     fabrique sous ses yeux, avec ses bruitages ; puis « 📲 Envoyer ».
- * Chaque envoi est compté (la mesure).
+ * Chaque envoi est compté (la mesure). LE TOUCHER SE VOIT (9 novembre 2026, l'ami du propriétaire : « prévois un petit
+ * retour visuel rapide, pour confirmer que le tap a fonctionné ») : la tuile saute, et un bandeau dit « « Mort de rire »
+ * est prêt ! Choisis à qui l'envoyer » — puis « est parti ! » une fois envoyé.
  */
 import { useEffect, useRef, useState } from "react";
 import { GAGS, INTENSITES, REACTIONS, type CleGag, type ClePose, type CleReaction, type MesReactions as Etat } from "@/lib/direct/mes-reactions";
@@ -24,16 +27,16 @@ const police = () => getComputedStyle(document.body).getPropertyValue("--font-cl
 const poster = (corps: Record<string, unknown>) =>
   fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) }).then(async (r) => ({ ok: r.ok, ...((await r.json().catch(() => ({}))) as { url?: string; enCours?: boolean; error?: string }) }));
 
-/** Le partage du téléphone (WhatsApp…), sinon le fichier enregistré. */
-async function envoyer(f: Fichier, cle: string, dire: (m: string) => void) {
+/** Le partage du téléphone (WhatsApp…), sinon le fichier enregistré. `"parti"`, `"enregistre"`, ou `"ferme"` (il a renoncé). */
+async function envoyer(f: Fichier, cle: string, dire: (m: string) => void): Promise<"parti" | "enregistre" | "ferme"> {
   try {
     if (typeof navigator.canShare === "function" && navigator.canShare({ files: [f.fichier] })) {
       await navigator.share({ files: [f.fichier] });
       void poster({ action: "reaction-envoi", cle }).catch(() => undefined);
-      return;
+      return "parti";
     }
   } catch {
-    return; /* il a fermé la feuille de partage */
+    return "ferme"; /* il a fermé la feuille de partage */
   }
   const a = document.createElement("a");
   a.href = f.url;
@@ -41,6 +44,7 @@ async function envoyer(f: Fichier, cle: string, dire: (m: string) => void) {
   a.click();
   void poster({ action: "reaction-envoi", cle }).catch(() => undefined);
   dire("Enregistré ✓ Envoie-le où tu veux.");
+  return "enregistre";
 }
 
 export function MesReactions() {
@@ -48,6 +52,8 @@ export function MesReactions() {
   const [stickers, setStickers] = useState<Partial<Record<CleReaction, Fichier & { detouree: boolean }>>>({});
   const [enPose, setEnPose] = useState<ClePose[]>([]);
   const [message, setMessage] = useState("");
+  // (le toucher se voit : la tuile qui saute, et son bandeau)
+  const [partie, setPartie] = useState<{ cle: CleReaction; texte: string } | null>(null);
   const [gag, setGag] = useState<CleGag | null>(null);
   const [intensite, setIntensite] = useState(3);
   const [video, setVideo] = useState<(Fichier & { cle: CleGag }) | null>(null);
@@ -116,7 +122,14 @@ export function MesReactions() {
     const st = stickers[cle];
     // la première fois (et si le moteur est là) : elle prend la pose ; ensuite, un toucher l'envoie
     if (etat?.moteur && !etat.poses[cle]) return void prendreLaPose(cle);
-    if (st) void envoyer(st, cle, setMessage);
+    if (!st) return;
+    const r = REACTIONS.find((x) => x.cle === cle)!;
+    setPartie({ cle, texte: `${r.emoji} « ${r.nom} » est prêt ! Choisis à qui l’envoyer.` });
+    // (le bandeau dit la suite : parti, ou enregistré sur le téléphone ; la feuille de partage fermée : il s'en va)
+    void envoyer(st, cle, () => undefined).then((fin) => {
+      if (fin !== "ferme") setPartie({ cle, texte: fin === "parti" ? `✓ « ${r.nom} » est parti !` : `✓ « ${r.nom} » est enregistré : envoie-le où tu veux.` });
+      window.setTimeout(() => setPartie((p) => (p?.cle === cle ? null : p)), fin === "ferme" ? 0 : 2400);
+    });
   }
   const aPreparer = etat?.moteur ? REACTIONS.filter((r) => !etat.poses[r.cle] && !enPose.includes(r.cle)) : [];
 
@@ -130,7 +143,8 @@ export function MesReactions() {
     void prendreLaPose("seule");
     void prendreLaPose(v);
   }
-  // (un gag choisi dans le tiroir « Animer » du studio ; l'écoute suit chaque rendu : elle connaît ses poses du moment)
+  // (un gag demandé d'ailleurs — le tiroir « Animer » du studio, jusqu'au 9 novembre 2026 ; l'écoute suit chaque rendu :
+  // elle connaît ses poses du moment)
   useEffect(() => {
     const ecoute = (e: Event) => {
       const g = (e as CustomEvent<CleGag>).detail;
@@ -175,9 +189,10 @@ export function MesReactions() {
   const tetePrepare = leGag ? enPose.includes("seule") || enPose.includes(leGag.visage) : false;
   return (
     <section className="rx" id="reactions" aria-label="Mes réactions">
-      {/* (son titre, « ⚡ Réactions & gags », est l'onglet du studio) */}
+      {/* (l'onglet du studio dit ce qu'on fait ici : « ⚡ Répondre vite » ; le titre dit ce qu'on y gagne) */}
       <header className="rx-tete">
-        <small>Ta tête à la place des emojis : un toucher, c’est envoyé.</small>
+        <b>Ta tête à la place des emojis</b>
+        <small>Un toucher, c’est envoyé : dans WhatsApp, à un proche, où tu veux.</small>
       </header>
       <div className="rx-grille">
         {REACTIONS.map((r) => {
@@ -185,7 +200,7 @@ export function MesReactions() {
           const vraie = Boolean(etat.poses[r.cle]);
           const cours = enPose.includes(r.cle);
           return (
-            <button key={r.cle} type="button" className={`rx-tuile${vraie ? " vraie" : ""}${cours ? " cours" : ""}`} onClick={() => toucher(r.cle)} disabled={cours || !st} aria-label={r.nom}>
+            <button key={r.cle} type="button" className={`rx-tuile${vraie ? " vraie" : ""}${cours ? " cours" : ""}${partie?.cle === r.cle ? " partie" : ""}`} onClick={() => toucher(r.cle)} disabled={cours || !st} aria-label={r.nom}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {st ? <img src={st.url} alt="" /> : <span className="rx-vide" aria-hidden="true">{r.emoji}</span>}
               <span className="rx-nom">{cours ? "⏳ elle prend la pose…" : r.nom}</span>
@@ -204,8 +219,9 @@ export function MesReactions() {
       )}
 
       <b className="rx-sous" id="gags">
-        💥 Gags
+        💥 Un gag, en petite vidéo
       </b>
+      <small className="rx-sous-dit">Pour détendre une conversation.</small>
       <div className="rx-gags" role="group" aria-label="Les gags">
         {GAGS.map((g) => (
           <button key={g.cle} type="button" className={`rx-gag${gag === g.cle ? " pris" : ""}`} aria-pressed={gag === g.cle} onClick={() => choisirGag(g.cle)}>
@@ -252,6 +268,11 @@ export function MesReactions() {
           {message}
         </p>
       )}
+      {partie && (
+        <p className="rx-bandeau" role="status" key={partie.texte}>
+          {partie.texte}
+        </p>
+      )}
     </section>
   );
 }
@@ -274,6 +295,11 @@ export const STYLES_MES_REACTIONS = `
 .rx-note{margin:0;font-size:12.5px;color:#D9C3CB}
 .rx-note button{padding:0;border:0;background:none;color:#F2C46B;font:inherit;font-weight:900;text-decoration:underline;cursor:pointer}
 .rx-sous{margin-top:4px;font-size:15px;font-weight:900}
+.rx-sous-dit{margin-top:-8px;font-size:12.5px;color:#D9C3CB}
+.rx-tuile.partie{animation:rx-saute .45s cubic-bezier(.2,1.6,.4,1);box-shadow:0 0 0 3px #FF2E9A}
+.rx-bandeau{position:fixed;left:16px;right:16px;bottom:calc(98px + env(safe-area-inset-bottom));z-index:35;max-width:420px;margin:0 auto;padding:12px 16px;border-radius:18px;background:#FFF4E6;color:#2A0F1F;font-size:14px;font-weight:800;line-height:1.35;box-shadow:0 16px 30px -12px rgba(0,0,0,.9);animation:rx-bandeau .25s ease-out}
+@keyframes rx-saute{40%{transform:scale(1.12)}}
+@keyframes rx-bandeau{from{transform:translateY(16px);opacity:0}}
 .rx-gags{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .rx-gag{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 2px;border-radius:16px;border:1.5px solid rgba(255,255,255,.12);background:rgba(0,0,0,.2);color:#FFF4E6;font:inherit;font-size:11px;font-weight:800;line-height:1.15;cursor:pointer}
 .rx-gag span{font-size:28px;line-height:1}
@@ -292,5 +318,5 @@ export const STYLES_MES_REACTIONS = `
 .rx-refaire{width:100%;padding:11px 16px;border-radius:999px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#FFF4E6;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
 .rx-message{margin:0;font-size:13px;font-weight:800;color:#7FF0C4}
 @keyframes rx-pose{from{transform:scale(.96)}to{transform:scale(1.02)}}
-@media (prefers-reduced-motion:reduce){.rx-tuile.cours img{animation:none}}
+@media (prefers-reduced-motion:reduce){.rx-tuile.cours img,.rx-tuile.partie,.rx-bandeau{animation:none}}
 `;

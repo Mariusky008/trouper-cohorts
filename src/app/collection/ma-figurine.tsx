@@ -17,10 +17,14 @@
  *     partie le 5 novembre 2026 : « elle ne sert plus à rien maintenant ».
  * La règle est dans `lib/direct/ma-figurine.ts`.
  *
- * 🗂️ LE STUDIO ET SES TIROIRS (7 novembre 2026, l'avis d'un ami : « l'onglet Créer est très mal architecturé ») : sa
- * figurine reste en vue en haut, avec trois gestes qui ouvrent chacun leur tiroir (Visage, Animer, La refaire) ; deux
- * onglets, « 💬 Fais-la parler » et « ⚡ Réactions & gags » ; son mème prêt monte dans une `Feuille`. Voir
- * `docs/figurines.md`, 9.0 decitricies.
+ * 🧭 « CRÉER » EN TROIS ÉTAPES (9 novembre 2026, un ami du propriétaire : « on a beaucoup d'options, on s'y perd, on ne
+ * sait pas à quoi elles servent ») : en haut, sa figurine seule — l'aperçu de son mème, qui se fait vignette quand on
+ * fait défiler (`tf-mini`) ; deux onglets nommés par ce qu'on veut faire, « 💬 Faire un mème » et « ⚡ Répondre vite » ;
+ * le mème en trois étapes numérotées — ① ce qu'elle dit (« 🎲 Pas d'idée ? » ouvre les aides, dans une `Feuille`), ②
+ * comment elle le dit (les trois façons ; « son visage, au choix » dans une `Feuille`), ③ sa voix, et « Elle danse en
+ * parlant » — ; puis « 🎬 Créer mon mème ». « Visage », « Animer » et « La refaire » ont quitté le dessous de la
+ * figurine (les gags sont dans « Répondre vite », « La refaire » dans « Moi » : `RefaireMaFigurine`). Voir
+ * `docs/figurines.md`, 9.0 unvicies (avant : les tiroirs, 9.0 decitricies).
  */
 import { useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
@@ -48,8 +52,8 @@ import { Guide, OngletVisible, STYLES_GUIDE, useVoixPablito } from "./guide";
 import { AtelierPablito, type Atelier } from "./atelier";
 import { lancerMusiqueDanse } from "@/lib/direct/musique-danse";
 import { fabriquerMeme, memePossible } from "@/lib/direct/meme";
-import { motPour, type Rendu } from "@/lib/direct/rendus";
-import { TroisRendus } from "./trois-rendus";
+import { STYLES_RENDU, motPour, type Rendu } from "@/lib/direct/rendus";
+import { FACONS, TroisRendus } from "./trois-rendus";
 import { PREMIER_MEME, memesDuMoment, type MemePret } from "@/lib/direct/memes-prets";
 import type { Surprise } from "@/lib/direct/meme-surprise";
 import { createClient } from "@/lib/supabase/client";
@@ -60,11 +64,10 @@ import { ApercuDuMois, useMois } from "./figurine-du-mois";
 import { EVT_VERS_LE_STUDIO, prendreVersLeStudio, type PourAutour, type VersLeStudio } from "./vers-le-studio";
 import { oublierLeDepot, revenirAuDepot } from "./depot-autour";
 import { moisEnClair, type FigurineDuMois } from "@/lib/direct/figurine-du-mois";
-import { EVT_GAG, MesReactions } from "./mes-reactions";
+import { MesReactions } from "./mes-reactions";
 import { accordPublic } from "./fenetre";
 import { InviterAppli } from "./mon-telephone";
 import { nomVille, themeDuJour, type Theme } from "@/lib/direct/theme-du-jour";
-import { GAGS, type CleGag } from "@/lib/direct/mes-reactions";
 
 type Reponse = { error?: string; etat?: EtatMaFigurine; lien?: string; son?: string; enCours?: boolean };
 
@@ -79,7 +82,8 @@ export const EVT_ANCRE = "clikme-ancre";
 export function Feuille({ ouverte, onFermer, titre, className = "", children }: { ouverte: boolean; onFermer: () => void; titre: string; className?: string; children: ReactNode }) {
   useEffect(() => {
     if (!ouverte) return;
-    const echap = (e: KeyboardEvent) => e.key === "Escape" && onFermer();
+    // (l'atelier de Pablito, par-dessus, se ferme d'abord : la feuille reste)
+    const echap = (e: KeyboardEvent) => e.key === "Escape" && !document.querySelector(".atl-voile") && onFermer();
     window.addEventListener("keydown", echap);
     return () => window.removeEventListener("keydown", echap);
   }, [ouverte, onFermer]);
@@ -173,6 +177,22 @@ function dureeDe(url: string): Promise<number> {
 }
 
 // ─── ce qu'elle ressent : son visage ────────────────────────────────────────────────────────────
+
+/** 🧭 L'en-tête d'une étape (9 novembre 2026) : son numéro, ce qu'on y fait, à quoi ça sert ; à droite, un geste. */
+function EnteteEtape({ n, id, titre, dit, children }: { n: number; id: string; titre: string; dit: string; children?: ReactNode }) {
+  return (
+    <div className="tf-etape-tete">
+      <span className="tf-etape-n" aria-hidden="true">
+        {n}
+      </span>
+      <span className="tf-etape-quoi">
+        <b id={id}>{titre}</b>
+        <small>{dit}</small>
+      </span>
+      {children}
+    </div>
+  );
+}
 
 /**
  * Ce qu'elle ressent : tous ses visages, ouverts dès le départ (le lot 3 — plus de cadenas). Un visage que le moteur
@@ -279,15 +299,17 @@ const TYPES_SON = ["audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/webm;codecs
 /** Le son prêt à partir : l'adresse à jouer, ce qui part au serveur, sa durée, et d'où il vient (pour ne pas le refaire). */
 type Son = { url: string; data: string; duree: number; cle: string; texte?: string; voix?: CleVoix };
 
-export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEtat?: (e: EtatMaFigurine) => void }) {
+export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: EtatMaFigurine) => void }) {
   const fig = useRef<FigurineHandle>(null);
   const [etat, setEtat] = useState(etat0);
   const [mode, setMode] = useState<"ecrire" | "voix">(etat0.voixTexte ? "ecrire" : "voix");
-  // 🗂️ LE STUDIO ET SES TIROIRS (7 novembre 2026, l'avis d'un ami : « l'onglet Créer est très mal architecturé ») : sa
-  // figurine reste en haut, avec trois gestes — chacun ouvre son tiroir (`tiroir`) ; dessous, deux onglets (`vue`) ;
-  // son mème prêt monte dans une feuille, en bas de l'écran (`feuille`)
+  // 🧭 EN TROIS ÉTAPES (9 novembre 2026) : sa figurine en haut, deux onglets (`vue`) ; deux feuilles qui montent —
+  // « Pas d'idée ? » (`feuilleIdee`) et son visage, au choix (`feuilleTete`) — ; son mème prêt, dans la sienne (`feuille`)
   const [vue, setVue] = useState<"parler" | "reactions">(() => (typeof window !== "undefined" && window.location.hash === "#reactions" ? "reactions" : "parler"));
-  const [tiroir, setTiroir] = useState<"visage" | "animer" | "refaire" | null>(null);
+  const [feuilleIdee, setFeuilleIdee] = useState(false);
+  const [feuilleTete, setFeuilleTete] = useState(false);
+  // (sa figurine est sortie de l'écran par le haut : sa vignette prend le relais, sous la barre du haut)
+  const [mini, setMini] = useState<number | null>(null);
   const [feuille, setFeuille] = useState(false);
   const [copie, setCopie] = useState(false);
   // (sa ville, pour « Poster sur le fil de Dax » : celle du mème du jour — 8 novembre 2026 : sa carte a quitté « Créer »,
@@ -304,7 +326,6 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
     };
   }, []);
   const scene = useRef<HTMLDivElement>(null);
-  const [univers, setUnivers] = useState(etat0.univers ?? "");
   // (tout est ouvert dès le départ, le lot 3 : ses visages, ses voix, sa propre voix, le cadre doré)
   const or = true;
   // 🎁 SON PREMIER MÈME : préparé pendant la fabrication (son texte, lu par sa voix), sinon déjà écrit (« le premier
@@ -556,8 +577,8 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
       }
       if (typeof x.look === "string") {
         setLookVoulu(x.look);
-        // (son look s'affiche dans le tiroir « Visage », ouvert)
-        setTiroir("visage");
+        // (son look s'affiche dans la feuille « Son visage », ouverte)
+        setFeuilleTete(true);
       }
       if (typeof x.theme === "string" && x.theme === themeDuJour().cle) {
         setVue("parler");
@@ -599,60 +620,17 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
       window.removeEventListener(EVT_ANCRE, lire);
     };
   }, []);
-  // (un tiroir se referme d'un toucher ailleurs, ou avec « Échap » ; la feuille aussi)
+  // 🖼️ SA VIGNETTE (9 novembre 2026, l'ami : « que la figurine s'amenuise quand on fait défiler, pour laisser la place
+  // aux choix et au bouton ») : sa figurine sort de l'écran par le haut — sa vignette apparaît sous la barre du haut, avec
+  // ce qu'il a choisi ; un toucher remonte. (Sur un grand écran, sa figurine reste à gauche : pas de vignette.)
   useEffect(() => {
-    if (!tiroir) return;
-    // (l'atelier de Pablito, par-dessus, n'est pas « ailleurs » : le fermer laisse le tiroir ouvert)
-    const atelierOuvert = (cible?: EventTarget | null) => Boolean(document.querySelector(".atl-voile")) && (!cible || Boolean((cible as Element).closest?.(".atl-voile")));
-    const dehors = (e: PointerEvent) => {
-      if (atelierOuvert(e.target)) return;
-      if (scene.current && !scene.current.contains(e.target as Node)) setTiroir(null);
-    };
-    const echap = (e: KeyboardEvent) => e.key === "Escape" && !atelierOuvert() && setTiroir(null);
-    document.addEventListener("pointerdown", dehors);
-    window.addEventListener("keydown", echap);
-    return () => {
-      document.removeEventListener("pointerdown", dehors);
-      window.removeEventListener("keydown", echap);
-    };
-  }, [tiroir]);
-  // (9 novembre 2026, le propriétaire : « quand je clique sur “Son attitude”, ça ne fonctionne pas ; le menu du bas en
-  // cache une partie » — le bas du tiroir passait sous le menu, et le toucher tombait sur lui. Le tiroir ouvert passe
-  // désormais par-dessus le menu, et s'arrête au bas de l'écran : ce qui dépasse se fait défiler dedans.)
-  useEffect(() => {
-    if (!tiroir) return;
-    const ajuster = () => {
-      const el = document.getElementById("tf-tiroir");
-      if (el) el.style.maxHeight = `${Math.max(180, Math.round(window.innerHeight - el.getBoundingClientRect().top - 12))}px`;
-    };
-    // (la page se remet en place un peu après un changement de taille : on mesure à l'image suivante, puis encore)
-    let image = window.requestAnimationFrame(ajuster);
-    let plusTard = 0;
-    const apres = () => {
-      window.cancelAnimationFrame(image);
-      window.clearTimeout(plusTard);
-      image = window.requestAnimationFrame(ajuster);
-      plusTard = window.setTimeout(ajuster, 250);
-    };
-    window.addEventListener("resize", apres);
-    window.addEventListener("scroll", ajuster, { passive: true });
-    return () => {
-      window.cancelAnimationFrame(image);
-      window.clearTimeout(plusTard);
-      window.removeEventListener("resize", apres);
-      window.removeEventListener("scroll", ajuster);
-    };
-  }, [tiroir]);
-  const basculerTiroir = (t: "visage" | "animer" | "refaire") => setTiroir((x) => (x === t ? null : t));
-  /** 💥 Un gag (« Animer ») : il se fait dans l'onglet « Réactions & gags », déjà choisi. */
-  function allerAuGag(g: CleGag) {
-    setTiroir(null);
-    setVue("reactions");
-    window.setTimeout(() => {
-      window.dispatchEvent(new CustomEvent<CleGag>(EVT_GAG, { detail: g }));
-      window.setTimeout(() => document.getElementById("gags")?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
-    }, 30);
-  }
+    const el = scene.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const haut = () => Math.round(document.querySelector(".mc-barre")?.getBoundingClientRect().bottom ?? 0);
+    const o = new IntersectionObserver(([e]) => setMini(e && !e.isIntersecting && e.boundingClientRect.top < 0 ? haut() : null), { rootMargin: `-${haut() + 8}px 0px 0px 0px` });
+    o.observe(el);
+    return () => o.disconnect();
+  }, []);
 
   const cleEnvoi = (s: Son | null) => (s ? `${s.cle}|${sentiment ?? ""}|${danse ? "danse" : ""}|${look}|${rendu ? `${rendu.style}-${rendu.teinte}-${rendu.cadrage}` : ""}` : "");
   /** 🎬 Une interprétation : son graphisme, et le visage qui va avec (sa figurine du mois laisse place à la sienne). */
@@ -754,6 +732,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   }
   function cEstMoi() {
     if (!surprise) return;
+    setFeuilleIdee(false);
     choisirPret({ cle: "surprise", emoji: "🎲", nom: "Surprends-moi", texte: surprise.texte, sentiment: surprise.sentiment, danse: surprise.danse });
     setSurprise(null);
   }
@@ -788,13 +767,18 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
    * au seau, et il la partage TELLE QUELLE (la feuille de partage du téléphone : WhatsApp la montre et la rejoue). Un
    * téléphone qui ne sait pas faire de vidéo : le lien seul (la page joue sa figurine).
    */
-  async function creerMeme() {
-    if (!son) return;
-    const cle = cleEnvoi(son);
-    // (le son s'ouvre DANS le toucher : sur iPhone, c'est maintenant ou jamais)
+  /** (le son s'ouvre DANS le toucher : sur iPhone, c'est maintenant ou jamais) */
+  function ouvrirLeSon(): AudioContext | null {
     const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     const ctx = memePossible() && AC ? new AC() : null;
     void ctx?.resume().catch(() => undefined);
+    return ctx;
+  }
+  async function creerMeme(leSon: Son | null = son, ouvert?: AudioContext | null) {
+    if (!leSon) return;
+    const son = leSon;
+    const cle = cleEnvoi(son);
+    const ctx = ouvert === undefined ? ouvrirLeSon() : ouvert;
     setEnvoi(true);
     setErreur("");
     try {
@@ -847,6 +831,38 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
       setErreur((e as Error).message);
       setMeme((x) => (x?.cle === cle && x.etat === "fabrication" ? { cle, etat: "sans" } : x));
     } finally {
+      setEnvoi(false);
+      void ctx?.close().catch(() => undefined);
+    }
+  }
+
+  /**
+   * 🎬 « CRÉER MON MÈME », LE BOUTON DU BAS (9 novembre 2026 : il dit ce qu'on obtient) : plus besoin d'« Écouter »
+   * d'abord — sa phrase est lue par sa voix s'il ne l'a pas encore entendue, puis son mème se fabrique. Avec sa propre
+   * voix : celle qu'il a enregistrée.
+   */
+  async function creerMonMeme() {
+    setErreur("");
+    if (mode !== "ecrire" || !etat.voixTexte) return void creerMeme();
+    const t = texte.trim();
+    if (!t) return setErreur("Écris d’abord ce qu’elle doit dire, à l’étape ①.");
+    if (!voix) {
+      setErreur("Choisis d’abord sa voix, à l’étape ③.");
+      document.getElementById("tf-e3")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    const cle = `${voix}|${t}`;
+    if (son?.cle === cle) return void creerMeme();
+    const ctx = ouvrirLeSon();
+    setEnvoi(true);
+    try {
+      const j = await demander({ action: "voix", texte: t, voix });
+      if (!j.son) throw new Error("La voix n’a pas pu lire ce texte.");
+      const s: Son = { url: j.son, data: j.son, duree: await dureeDe(j.son), cle, texte: t, voix };
+      setSon(s);
+      await creerMeme(s, ctx);
+    } catch (e) {
+      setErreur((e as Error).message);
       setEnvoi(false);
       void ctx?.close().catch(() => undefined);
     }
@@ -918,21 +934,42 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const partageFichier = typeof navigator !== "undefined" && Boolean(meme?.fichier) && typeof navigator.canShare === "function" && navigator.canShare({ files: [meme!.fichier!] });
 
   const saVoix = voix ? VOIX_FIGURINE.find((v) => v.cle === voix) : null;
-  const peutRefaire = (etat.refaire ?? 0) > 0;
-  // (plus de « La refaire » aujourd'hui : son tiroir se ferme)
-  const leTiroir = tiroir === "refaire" && !peutRefaire ? null : tiroir;
-  // (« Visage » montre ce qu'elle a : son look ou son visage ; un point qui tourne quand un visage ou un look se prépare)
-  const emojiVisage = sonLook ? sonLook.edition.emoji : sentiment ? (sentimentDe(sentiment)?.emoji ?? "🙂") : "🙂";
+  // (il écrit sa phrase, lue par une voix ; sinon, c'est sa propre voix)
+  const ecrit = mode === "ecrire" && Boolean(etat.voixTexte);
+  // (son visage : son look, ou ce qu'elle ressent ; un point qui tourne quand un visage ou un look se prépare)
+  const sonVisage = sonLook ? `${sonLook.edition.emoji} ${sonLook.edition.nom}` : sentiment ? `${sentimentDe(sentiment)?.emoji ?? ""} ${sentimentDe(sentiment)?.court ?? ""}` : "";
   const sePrepare = enCreation.size > 0 || Boolean(lookCours);
-  // (son mème du moment : celui qu'il vient de faire avec ce texte et ces réglages)
-  const memeIci = son && meme?.cle === cleEnvoi(son) ? meme : null;
+  // (son mème du moment : celui qu'il vient de faire avec CETTE phrase, CETTE voix et ces réglages)
+  const sonAJour = Boolean(son && (ecrit ? son.texte === texte.trim() && son.voix === voix : !son.texte));
+  const memeIci = son && sonAJour && meme?.cle === cleEnvoi(son) ? meme : null;
   const saVille = nomVille(themeJour?.ville || villeJour) || "ta ville";
+  // 🖼️ sa vignette : sa tête du moment, et ce qu'il a choisi, en une ligne
+  const imageMini = sonLook?.image || (sentiment ? etat.expressions?.[sentiment]?.n : "") || etat.neutre || "";
+  const faconPrise = rendu ? STYLES_RENDU.find((s) => s.cle === rendu.style) : null;
+  const choix = [
+    sonVisage,
+    faconPrise ? `${faconPrise.emoji} ${(FACONS[faconPrise.cle] ?? faconPrise.nom).toLowerCase()}` : "",
+    ecrit ? (saVoix ? `${saVoix.emoji} ${saVoix.nom}` : "") : son && !son.texte ? "🎙️ ta voix" : "",
+    danse ? "🕺 elle danse" : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  // 🎲 « Pas d'idée ? » : le mème du jour à part, les phrases toutes prêtes ensemble ; choisir ferme la feuille
+  const pretDuJour = prets.find((m) => m.cle === "du-jour") ?? null;
+  const phrasesPretes = prets.filter((m) => m.cle !== "du-jour");
+  function prendreUnPret(m: MemePret) {
+    setFeuilleIdee(false);
+    choisirPret(m);
+  }
+  const chevron = (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m9 6 6 6-6 6" />
+    </svg>
+  );
 
-  // 🗂️ LE STUDIO ET SES TIROIRS (7 novembre 2026, l'avis d'un ami : « réduire la charge cognitive, supprimer le scroll
-  // vertical excessif ») : sa figurine, toujours en vue en haut, et ses trois gestes (Visage, Animer, La refaire), qui
-  // ouvrent chacun leur tiroir par-dessus la page ; deux onglets — « 💬 Fais-la parler » (le mème du jour, son texte, sa
-  // voix, « Créer mon mème ») et « ⚡ Réactions & gags » ; son mème prêt monte dans une feuille, en bas de l'écran ; tout
-  // en bas, repliés, sa figurine du mois et ses premiers pas
+  // 🧭 « CRÉER » EN TROIS ÉTAPES (9 novembre 2026, voir l'en-tête du fichier) : sa figurine, l'aperçu de son mème, en
+  // haut ; deux onglets ; ① ce qu'elle dit, ② comment elle le dit, ③ sa voix ; « 🎬 Créer mon mème » ; deux feuilles
+  // (« Pas d'idée ? », son visage au choix) ; son mème prêt monte dans la sienne ; tout en bas, sa figurine du mois
   return (
     <div className="tf tf-moi">
       {atelier && visible && (
@@ -946,7 +983,7 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
           }}
         />
       )}
-      <div className={`tf-scene${leTiroir ? " ouvert" : ""}`} ref={scene}>
+      <div className="tf-scene" ref={scene}>
         <div className="tf-hero">
           <FigurineQuiParle
             key={sonLook ? `look-${sonLook.mois}` : "moi"}
@@ -962,165 +999,34 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
             className={`tf-fig${or ? " tf-or" : ""}`}
           />
         </div>
-        <div className="tf-gestes" role="toolbar" aria-label="Ta figurine">
-          <button type="button" className={`tf-g-visage${leTiroir === "visage" ? " pris" : ""}`} aria-expanded={leTiroir === "visage"} aria-controls="tf-tiroir" onClick={() => basculerTiroir("visage")}>
-            <span aria-hidden="true">{emojiVisage}</span>
-            Visage
-            {sePrepare && <i className="tf-g-cours" aria-label="en préparation" />}
-          </button>
-          <button
-            type="button"
-            className={`tf-g-animer${leTiroir === "animer" ? " pris" : ""}${danse ? " danse" : ""}`}
-            aria-expanded={leTiroir === "animer"}
-            aria-controls="tf-tiroir"
-            onClick={() => basculerTiroir("animer")}
-          >
-            <span aria-hidden="true">{danse ? "🕺" : "💫"}</span>
-            {danse ? "Elle danse" : "Animer"}
-          </button>
-          {peutRefaire && (
-            <button type="button" className={`tf-refaire-lien${leTiroir === "refaire" ? " pris" : ""}`} aria-expanded={leTiroir === "refaire"} aria-controls="tf-tiroir" onClick={() => basculerTiroir("refaire")}>
-              <span aria-hidden="true">🔁</span>
-              La refaire
-            </button>
-          )}
-        </div>
-        {leTiroir && (
-          <div className={`tf-tiroir tf-tiroir-${leTiroir}`} id="tf-tiroir" role="group" aria-label={leTiroir === "visage" ? "Son visage" : leTiroir === "animer" ? "L’animer" : "La refaire"}>
-            <button type="button" className="tf-tiroir-fermer" aria-label="Fermer" onClick={() => setTiroir(null)}>
-              ✕
-            </button>
-            {leTiroir === "visage" ? (
-              <>
-                {/* 🗓️ SES LOOKS : ses figurines du mois, qui parlent dans ses mèmes */}
-                {looks.length > 0 && (
-                  <>
-                    <b className="tf-q tf-q-visage">Son look</b>
-                    <div className="tf-looks" role="radiogroup" aria-label="Son look">
-                      <button type="button" role="radio" aria-checked={!sonLook} className={!sonLook ? "pris" : ""} onClick={() => choisirLook("")}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={etat.neutre} alt="" />
-                        <span>De tous les jours</span>
-                      </button>
-                      {looks.map((l) => {
-                        const cours = lookCours === l.mois;
-                        const nom = moisEnClair(l.mois).replace(/\s\d{4}$/, "");
-                        return (
-                          <button
-                            key={l.mois}
-                            type="button"
-                            role="radio"
-                            aria-checked={sonLook?.mois === l.mois}
-                            className={`${sonLook?.mois === l.mois ? "pris" : ""}${cours ? " cours" : ""}`}
-                            disabled={cours}
-                            aria-label={cours ? `${nom} : il apprend à parler` : `${nom}, ${l.edition.nom}`}
-                            onClick={() => choisirLook(l.mois)}
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={l.image} alt="" />
-                            <span>
-                              {l.edition.emoji} {nom.charAt(0).toUpperCase() + nom.slice(1)}
-                            </span>
-                            {cours && <em>il apprend à parler…</em>}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-                {sonLook ? (
-                  <p className="tf-note">
-                    🗓️ Son visage du mois : <b>{sonLook.expression}</b>. Pour changer d’expression, reprends ta figurine de tous les jours.
-                  </p>
-                ) : (
-                  <>
-                    <b className="tf-q tf-q-visage">Son visage</b>
-                    <ChoixExpression valeur={sentiment} onChoix={choisirVisage} etats={etatsVisages} />
-                    <b className="tf-q tf-q-visage">Son attitude</b>
-                    <ChoixExpression valeur={sentiment} onChoix={choisirVisage} etats={etatsVisages} attitudes />
-                    {enCreation.size > 0 && (
-                      <p className="tf-note" role="status">
-                        🎭 Ta figurine apprend{" "}
-                        {enCreation.size > 1 ? "tout ça" : [...enCreation].some(estAttitude) ? "cette attitude" : "ce visage"}… une minute environ : {enCreation.size > 1 ? "ça s’affichera tout seul" : [...enCreation].some(estAttitude) ? "elle s’affichera toute seule" : "il s’affichera tout seul"}.
-                      </p>
-                    )}
-                  </>
-                )}
-                {lookCours && (
-                  <p className="tf-note" role="status">
-                    🗓️ Ton look apprend à parler… une minute environ : il s’affichera tout seul.
-                  </p>
-                )}
-              </>
-            ) : leTiroir === "animer" ? (
-              <>
-                {/* 🕺 ELLE DANSE, EN MUSIQUE (et dans son mème) ; 💥 LES GAGS, une petite vidéo à part */}
-                <button type="button" className={`tf-danse${danse ? " pris" : ""}`} aria-pressed={danse} onClick={basculerDanse}>
-                  <span aria-hidden="true">{danse ? "⏹" : "🕺"}</span>
-                  <span>
-                    <b>{danse ? "Stop" : "Danser"}</b>
-                    <small>{danse ? "Elle danse dans ton mème, en musique" : "En musique, et dans ton mème"}</small>
-                  </span>
-                </button>
-                <b className="tf-q">💥 Un gag, en petite vidéo</b>
-                <span className="tf-tiroir-gags">
-                  {GAGS.map((g) => (
-                    <button key={g.cle} type="button" onClick={() => allerAuGag(g.cle)}>
-                      <span aria-hidden="true">{g.emoji}</span>
-                      {g.nom}
-                    </button>
-                  ))}
-                </span>
-              </>
-            ) : (
-              <div className="tf-refaire">
-                <b>Elle ne te ressemble pas ?</b>
-                <label className="tf-refaire-univers">
-                  <span>Ce qui te ressemble : ton métier ou ta passion (facultatif)</span>
-                  <input className="tf-univers" value={univers} maxLength={UNIVERS_MAX} onChange={(e) => setUnivers(e.target.value)} placeholder="Artisan, boulangère, fan de vélo…" />
-                </label>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      const j = await demander({ action: "refaire", univers: univers.trim() });
-                      if (j.etat) onEtat?.(j.etat);
-                    } catch (e) {
-                      setErreur((e as Error).message);
-                    }
-                  }}
-                >
-                  🔁 Une nouvelle, avec la même photo ({etat.refaire} aujourd’hui)
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      const j = await demander({ action: "refaire", autrePhoto: true, univers: univers.trim() });
-                      if (j.etat) onEtat?.(j.etat);
-                    } catch (e) {
-                      setErreur((e as Error).message);
-                    }
-                  }}
-                >
-                  📸 Avec une autre photo
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+        <small className="tf-hero-dit">Elle montre ton mème en direct</small>
       </div>
+      {/* 🖼️ SA VIGNETTE, quand sa figurine est sortie de l'écran par le haut : un toucher remonte */}
+      {mini !== null && visible && vue === "parler" && (
+        <button type="button" className="tf-mini" style={{ top: `${mini}px` }} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Revoir ta figurine en grand">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imageMini} alt="" />
+          <span>
+            <b>Ton mème</b>
+            {choix ? ` · ${choix}` : ""}
+          </span>
+          {sePrepare && <i className="tf-g-cours" aria-label="en préparation" />}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="m18 15-6-6-6 6" />
+          </svg>
+        </button>
+      )}
 
-      <div className="tf-onglets" role="tablist" aria-label="Que créer ?">
+      <div className="tf-onglets" role="tablist" aria-label="Ce que tu veux faire">
         <button type="button" role="tab" id="tf-o-parler" aria-selected={vue === "parler"} aria-controls="tf-parler" className={vue === "parler" ? "pris" : ""} onClick={() => setVue("parler")}>
-          💬 Fais-la parler
+          💬 Faire un mème
         </button>
         <button type="button" role="tab" id="tf-o-reactions" aria-selected={vue === "reactions"} aria-controls="tf-reactions" className={vue === "reactions" ? "pris" : ""} onClick={() => setVue("reactions")}>
-          ⚡ Réactions &amp; gags
+          ⚡ Répondre vite
         </button>
       </div>
 
-      {/* 💬 FAIS-LA PARLER */}
+      {/* 💬 FAIRE UN MÈME, EN TROIS ÉTAPES */}
       <div className="tf-parler" id="tf-parler" role="tabpanel" aria-labelledby="tf-o-parler" hidden={vue !== "parler"}>
         {premierPret && premier && (
           <div className="tf-revele" role="status">
@@ -1131,131 +1037,88 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
             </button>
           </div>
         )}
-        <div className="tf-panneau">
+        {/* 💬 IL RÉPOND À UN MÈME : son mème sera un duo */}
+        {reponse && (
+          <div className="tf-reponse" role="status">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={reponse.images.n} alt="" />
+            <span>
+              <b>↩️ Tu réponds à {reponse.prenom || "ce mème"}</b>
+              {reponse.texte && <small>« {reponse.texte} »</small>}
+              <em>Ton mème sera un duo : sa figurine parle, puis la tienne lui répond.</em>
+            </span>
+            <button
+              type="button"
+              aria-label="Ne pas répondre à ce mème"
+              onClick={() => {
+                oublierLaReponse();
+                setReponse(null);
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+        {/* 🔥 IL RÉPOND AU MÈME DU JOUR : le thème, et trois idées (un toucher : elle le dit) */}
+        {themeJour && (
+          <div className="tf-theme" id="theme-du-jour" role="group" aria-label="Le mème du jour">
+            <span className="tf-theme-tete">
+              <b>
+                🔥 Le mème du jour : {themeJour.theme.emoji} {themeJour.theme.titre}
+              </b>
+              <button type="button" aria-label="Ne pas répondre au mème du jour" onClick={() => setThemeJour(null)}>
+                ✕
+              </button>
+            </span>
+            {mode === "ecrire" && etat.voixTexte && (
+              <span className="tf-theme-idees">
+                {themeJour.theme.idees.map((t, k) => (
+                  <button key={k} type="button" className={texte === t ? "pris" : undefined} onClick={() => choisirPret({ cle: `idee-${k}`, emoji: "💡", nom: "", texte: t, sentiment: "joie" })}>
+                    💡 {t}
+                  </button>
+                ))}
+              </span>
+            )}
+          </div>
+        )}
+        {/* 📍 SON MÈME POUR UN LIEU D'« AUTOUR » : sa tête, sa phrase (ou « 🎲 Surprends-moi ! »), puis il le dépose là-bas */}
+        {pourAutour && (
+          <div className="tf-theme tf-pour-autour" id="pour-autour" role="group" aria-label="Ton mème pour « Autour »">
+            <span className="tf-theme-tete">
+              <b>
+                {pourAutour.reponse ? "↩️ Ta réponse" : "📍 Ton mème"} {pourAutour.nom ? `pour ${pourAutour.emoji || "📍"} ${pourAutour.nom}` : "pour « Autour »"}
+              </b>
+              <button
+                type="button"
+                aria-label="Ne plus le faire pour « Autour »"
+                onClick={() => {
+                  setPourAutour(null);
+                  oublierLeDepot();
+                }}
+              >
+                ✕
+              </button>
+            </span>
+            <small>Choisis ta tête, écris ta phrase ou « 🎲 Surprends-moi ! » : ton mème prêt, tu le déposes là-bas.</small>
+          </div>
+        )}
+
+        {/* ① CE QU'ELLE DIT */}
+        <section className="tf-etape tf-etape-1" aria-labelledby="tf-e1">
+          <EnteteEtape n={1} id="tf-e1" titre="Ce qu’elle dit" dit="Ta phrase, ou ta voix : c’est elle qui la dira." />
           {etat.voixTexte && (
             <div className="tf-modes" role="tablist" aria-label="Comment elle parle">
               <button type="button" role="tab" aria-selected={mode === "ecrire"} className={mode === "ecrire" ? "pris" : ""} onClick={() => setMode("ecrire")}>
                 ✍️ J’écris
               </button>
               <button type="button" role="tab" aria-selected={mode === "voix"} className={mode === "voix" ? "pris" : ""} onClick={() => setMode("voix")}>
-                🎙️ Ma voix
+                🎙️ Avec ma voix
               </button>
             </div>
           )}
 
-          {/* 💬 IL RÉPOND À UN MÈME : son mème sera un duo */}
-          {reponse && (
-            <div className="tf-reponse" role="status">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={reponse.images.n} alt="" />
-              <span>
-                <b>↩️ Tu réponds à {reponse.prenom || "ce mème"}</b>
-                {reponse.texte && <small>« {reponse.texte} »</small>}
-                <em>Ton mème sera un duo : sa figurine parle, puis la tienne lui répond.</em>
-              </span>
-              <button
-                type="button"
-                aria-label="Ne pas répondre à ce mème"
-                onClick={() => {
-                  oublierLaReponse();
-                  setReponse(null);
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          )}
-          {/* 🔥 IL RÉPOND AU MÈME DU JOUR : le thème, et trois idées (un toucher : elle le dit) */}
-          {themeJour && (
-            <div className="tf-theme" id="theme-du-jour" role="group" aria-label="Le mème du jour">
-              <span className="tf-theme-tete">
-                <b>
-                  🔥 Le mème du jour : {themeJour.theme.emoji} {themeJour.theme.titre}
-                </b>
-                <button type="button" aria-label="Ne pas répondre au mème du jour" onClick={() => setThemeJour(null)}>
-                  ✕
-                </button>
-              </span>
-              {mode === "ecrire" && etat.voixTexte && (
-                <span className="tf-theme-idees">
-                  {themeJour.theme.idees.map((t, k) => (
-                    <button key={k} type="button" className={texte === t ? "pris" : undefined} onClick={() => choisirPret({ cle: `idee-${k}`, emoji: "💡", nom: "", texte: t, sentiment: "joie" })}>
-                      💡 {t}
-                    </button>
-                  ))}
-                </span>
-              )}
-            </div>
-          )}
-          {/* 📍 SON MÈME POUR UN LIEU D'« AUTOUR » : sa tête, sa phrase (ou « 🎲 Surprends-moi ! »), puis il le dépose là-bas */}
-          {pourAutour && (
-            <div className="tf-theme tf-pour-autour" id="pour-autour" role="group" aria-label="Ton mème pour « Autour »">
-              <span className="tf-theme-tete">
-                <b>
-                  {pourAutour.reponse ? "↩️ Ta réponse" : "📍 Ton mème"} {pourAutour.nom ? `pour ${pourAutour.emoji || "📍"} ${pourAutour.nom}` : "pour « Autour »"}
-                </b>
-                <button
-                  type="button"
-                  aria-label="Ne plus le faire pour « Autour »"
-                  onClick={() => {
-                    setPourAutour(null);
-                    oublierLeDepot();
-                  }}
-                >
-                  ✕
-                </button>
-              </span>
-              <small>Choisis ta tête, écris ta phrase ou « 🎲 Surprends-moi ! » : ton mème prêt, tu le déposes là-bas.</small>
-            </div>
-          )}
-          {mode === "ecrire" && etat.voixTexte ? (
+          {ecrit ? (
             <>
-              {/* ✨ LES MÈMES PRÊTS : un toucher, et elle le dit */}
-              <div className="tf-prets" role="group" aria-label="Des mèmes prêts à partir">
-                <button type="button" className={`tf-surprends${surpriseCharge ? " tourne" : ""}`} onClick={surprendreMoi} aria-busy={surpriseCharge}>
-                  <span aria-hidden="true">🎲</span> Surprends-moi !
-                </button>
-                {prets.map((m) => (
-                  <button key={m.cle} type="button" className={`${m.cle === "du-jour" ? "du-jour" : ""}${texte === m.texte ? " pris" : ""}`.trim() || undefined} onClick={() => choisirPret(m)}>
-                    <span aria-hidden="true">{m.emoji}</span> {m.nom}
-                  </button>
-                ))}
-              </div>
-              {/* 🎲 CE QUE CLIKME A ÉCRIT POUR LUI : il le lit ; sa figurine ne le dit que s'il le choisit */}
-              {(surprise || surpriseCharge) && (
-                <div className="tf-surprise" role="status" aria-live="polite">
-                  {!surprise ? (
-                    <p className="tf-surprise-attente">
-                      <span aria-hidden="true">🎲</span> ClikMe t’écrit un mème…
-                    </p>
-                  ) : (
-                    <>
-                      <small>🎲 ClikMe l’a écrit pour toi{surprise.carte ? ", d’après ta carte" : ""}</small>
-                      <p className="tf-surprise-texte">« {surprise.texte} »</p>
-                      <span className="tf-surprise-humeur">
-                        {sentimentDe(surprise.sentiment)?.emoji} {sentimentDe(surprise.sentiment)?.court}
-                        {surprise.danse ? " · 🕺 elle danse" : ""}
-                      </span>
-                      <span className="tf-surprise-boutons">
-                        <button type="button" className="tf-surprise-encore" disabled={surpriseCharge} onClick={surprendreMoi}>
-                          {surpriseCharge ? "🎲 …" : "🎲 Encore"}
-                        </button>
-                        <button type="button" className="tf-surprise-oui" disabled={surpriseCharge} onClick={cEstMoi}>
-                          C’est moi ✓
-                        </button>
-                      </span>
-                      {!surprise.carte && (
-                        <a className="tf-surprise-carte" href="#personnage">
-                          🃏 Fais ta carte de personnage : tes surprises te ressembleront
-                        </a>
-                      )}
-                      <button type="button" className="tf-surprise-fermer" aria-label="Fermer" onClick={() => setSurprise(null)}>
-                        ✕
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
               {texte === PREMIER_MEME && !reponse && <p className="tf-premier">🎁 Ton premier mème est déjà écrit : {voix ? "écoute-le, et partage-le !" : "choisis sa voix, écoute, partage !"}</p>}
               <label className="tf-texte">
                 <textarea
@@ -1264,43 +1127,18 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
                   rows={3}
                   placeholder="Coucou ! On se voit ce soir ?"
                   onChange={(e) => setTexte(e.target.value)}
-                  onFocus={() => setTiroir(null)}
                   aria-label="Ce qu’elle doit dire"
                 />
                 <small>
                   {texte.length} / {TEXTE_MAX}
                 </small>
               </label>
-              {/* 🎬 TROIS FAÇONS DE LE DIRE : ses intentions (facultatives), et trois interprétations de sa phrase */}
-              {!reponse && etat.neutre && <TroisRendus texte={texte} expressions={etat.expressions} neutre={etat.neutre} choisi={rendu} onChoisir={choisirRendu} onIdee={(t) => setTexte(t.slice(0, TEXTE_MAX))} />}
-              {voix && saVoix ? (
-                voixOuvertes ? (
-                  <ChoixVoix
-                    valeur={voix}
-                    onChoix={(v) => {
-                      choisirVoix(v);
-                    }}
-                  />
-                ) : (
-                  <button type="button" className="tf-voix-choisie" onClick={() => setVoixOuvertes(true)}>
-                    <span aria-hidden="true">{saVoix.emoji}</span> Voix : <b>{saVoix.nom}</b> <em>changer</em>
-                  </button>
-                )
-              ) : (
-                <div className="tf-quelle-voix" role="group" aria-label="Sa voix">
-                  <b>Ta figurine parle avec…</b>
-                  <span>
-                    <button type="button" onClick={() => choisirVoix(VOIX_DE_BASE.homme)}>
-                      👨 Une voix d’homme
-                    </button>
-                    <button type="button" onClick={() => choisirVoix(VOIX_DE_BASE.femme)}>
-                      👩 Une voix de femme
-                    </button>
-                  </span>
-                </div>
-              )}
-              <button type="button" className="tf-ecouter" onClick={() => ecouterTexte()} disabled={parle || !texte.trim() || !voix}>
-                {parle ? "🔊 Elle parle…" : "▶ Écouter"}
+              <button type="button" className="tf-pas-idee" onClick={() => setFeuilleIdee(true)}>
+                <span>
+                  <b>🎲 Pas d’idée ?</b>
+                  <small>Je t’en propose une, ou des phrases toutes prêtes</small>
+                </span>
+                {chevron}
               </button>
             </>
           ) : enreg ? (
@@ -1330,28 +1168,230 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
               </div>
             </>
           )}
+        </section>
 
-          {/* 🎭 « CRÉER MON MÈME » ; il est fait : la feuille le remontre */}
-          {son && (mode === "voix" ? !son.texte : son.texte === texte.trim() && son.voix === voix) && (
-            <div className="tf-envoi">
-              {memeIci ? (
-                <button type="button" className="tf-revoir" onClick={() => setFeuille(true)}>
-                  {memeIci.etat === "fabrication" ? `🎬 Ton mème se fabrique… ${Math.round((memeIci.p ?? 0) * 100)} %` : "✅ Ton mème est prêt · le revoir"}
-                </button>
-              ) : (
-                <button type="button" className="tf-envoyer" onClick={creerMeme} disabled={envoi}>
-                  {envoi ? "Un instant…" : "🎭 Créer mon mème"}
-                </button>
-              )}
-            </div>
+        {/* ② COMMENT ELLE LE DIT : le ton et trois mèmes proposés ; ou son visage, choisi par lui */}
+        <section className="tf-etape tf-etape-2" aria-labelledby="tf-e2">
+          <EnteteEtape n={2} id="tf-e2" titre="Comment elle le dit" dit={ecrit && !reponse ? "Choisis le ton : je te propose trois mèmes." : "Ce qu’elle ressent pendant qu’elle parle."} />
+          {ecrit && !reponse && etat.neutre && <TroisRendus texte={texte} expressions={etat.expressions} neutre={etat.neutre} choisi={rendu} onChoisir={choisirRendu} onIdee={(t) => setTexte(t.slice(0, TEXTE_MAX))} />}
+          <button type="button" className="tf-sa-tete" onClick={() => setFeuilleTete(true)}>
+            🎭 {ecrit && !reponse ? "Ou je choisis son visage moi-même" : "Je choisis son visage"}
+            {chevron}
+          </button>
+          {(sonVisage || sePrepare) && (
+            <small className="tf-sa-tete-dit" role="status">
+              {sonVisage ? `Son visage : ${sonVisage}` : ""}
+              {sePrepare ? `${sonVisage ? " · " : ""}🛠️ un visage se prépare…` : ""}
+            </small>
           )}
-          {erreur && !feuille && (
-            <p className="tf-erreur" role="alert">
-              {erreur}
-            </p>
+        </section>
+
+        {/* ③ SA VOIX (et elle danse, si on veut) */}
+        <section className="tf-etape tf-etape-3" aria-labelledby="tf-e3">
+          <EnteteEtape n={3} id="tf-e3" titre={ecrit ? "Sa voix" : "Elle danse ?"} dit={ecrit ? "Celle qui lira ta phrase." : "En musique, dans ton mème."}>
+            {ecrit && (
+              <button type="button" className="tf-ecouter" onClick={() => ecouterTexte()} disabled={parle || !texte.trim() || !voix}>
+                {parle ? "🔊 Elle parle…" : "▶ Écouter"}
+              </button>
+            )}
+          </EnteteEtape>
+          {ecrit && (
+            <>
+              {voix && saVoix ? (
+                voixOuvertes ? (
+                  <ChoixVoix
+                    valeur={voix}
+                    onChoix={(v) => {
+                      choisirVoix(v);
+                    }}
+                  />
+                ) : (
+                  <button type="button" className="tf-voix-choisie" onClick={() => setVoixOuvertes(true)}>
+                    <span aria-hidden="true">{saVoix.emoji}</span> Voix : <b>{saVoix.nom}</b> <em>changer</em>
+                  </button>
+                )
+              ) : (
+                <div className="tf-quelle-voix" role="group" aria-label="Sa voix">
+                  <span>
+                    <button type="button" onClick={() => choisirVoix(VOIX_DE_BASE.homme)}>
+                      👨 Voix d’homme
+                    </button>
+                    <button type="button" onClick={() => choisirVoix(VOIX_DE_BASE.femme)}>
+                      👩 Voix de femme
+                    </button>
+                  </span>
+                </div>
+              )}
+            </>
+          )}
+          <span className="tf-danse-ligne">
+            <span>
+              <b>🕺 Elle danse en parlant</b>
+              <small>En musique, et dans ton mème</small>
+            </span>
+            <button type="button" role="switch" aria-checked={danse} aria-label="Elle danse en parlant" className={`tf-danse${danse ? " pris" : ""}`} onClick={basculerDanse}>
+              <i />
+            </button>
+          </span>
+        </section>
+
+        {/* 🎬 LE BUT, ÉCRIT SUR LE BOUTON ; son mème est fait : la feuille le remontre */}
+        <div className="tf-envoi">
+          {memeIci ? (
+            <button type="button" className="tf-revoir" onClick={() => setFeuille(true)}>
+              {memeIci.etat === "fabrication" ? `🎬 Ton mème se fabrique… ${Math.round((memeIci.p ?? 0) * 100)} %` : "✅ Ton mème est prêt · le revoir"}
+            </button>
+          ) : (
+            <button type="button" className="tf-envoyer" onClick={() => void creerMonMeme()} disabled={envoi || (ecrit ? !texte.trim() : !son || Boolean(son.texte))}>
+              <b>{envoi ? "Un instant…" : "🎬 Créer mon mème"}</b>
+              <small>Une vidéo à envoyer où tu veux</small>
+            </button>
           )}
         </div>
+        {erreur && !feuille && (
+          <p className="tf-erreur" role="alert">
+            {erreur}
+          </p>
+        )}
       </div>
+
+      {/* 🎲 « PAS D'IDÉE ? » : toutes les aides au même endroit — choisir remplit sa phrase */}
+      <Feuille ouverte={feuilleIdee} onFermer={() => setFeuilleIdee(false)} titre="Pas d’idée ?" className="tf-feuille-idee">
+        <b className="tf-feuille-titre">🎲 Pas d’idée ?</b>
+        <small className="tf-feuille-dit">Choisis : ça remplit ta phrase, et tu peux tout changer après.</small>
+        <button type="button" className={`tf-idee tf-surprends${surpriseCharge ? " tourne" : ""}`} onClick={surprendreMoi} aria-busy={surpriseCharge}>
+          <span aria-hidden="true">🎲</span>
+          <span>
+            <b>Surprends-moi</b>
+            <small>Une phrase drôle, inventée pour toi</small>
+          </span>
+        </button>
+        {/* 🎲 CE QUE CLIKME A ÉCRIT POUR LUI : il le lit ; sa figurine ne le dit que s'il le choisit */}
+        {(surprise || surpriseCharge) && (
+          <div className="tf-surprise" role="status" aria-live="polite">
+            {!surprise ? (
+              <p className="tf-surprise-attente">
+                <span aria-hidden="true">🎲</span> ClikMe t’écrit un mème…
+              </p>
+            ) : (
+              <>
+                <small>🎲 ClikMe l’a écrit pour toi{surprise.carte ? ", d’après ta carte" : ""}</small>
+                <p className="tf-surprise-texte">« {surprise.texte} »</p>
+                <span className="tf-surprise-humeur">
+                  {sentimentDe(surprise.sentiment)?.emoji} {sentimentDe(surprise.sentiment)?.court}
+                  {surprise.danse ? " · 🕺 elle danse" : ""}
+                </span>
+                <span className="tf-surprise-boutons">
+                  <button type="button" className="tf-surprise-encore" disabled={surpriseCharge} onClick={surprendreMoi}>
+                    {surpriseCharge ? "🎲 …" : "🎲 Encore"}
+                  </button>
+                  <button type="button" className="tf-surprise-oui" disabled={surpriseCharge} onClick={cEstMoi}>
+                    C’est moi ✓
+                  </button>
+                </span>
+                {!surprise.carte && (
+                  <a className="tf-surprise-carte" href="#personnage">
+                    🃏 Fais ta carte de personnage : tes surprises te ressembleront
+                  </a>
+                )}
+                <button type="button" className="tf-surprise-fermer" aria-label="Fermer" onClick={() => setSurprise(null)}>
+                  ✕
+                </button>
+              </>
+            )}
+          </div>
+        )}
+        {pretDuJour && (
+          <button type="button" className="tf-idee du-jour" onClick={() => prendreUnPret(pretDuJour)}>
+            <span aria-hidden="true">🔥</span>
+            <span>
+              <b>Le mème du jour</b>
+              <small>Le même thème pour toute ta ville, aujourd’hui</small>
+            </span>
+          </button>
+        )}
+        <b className="tf-q">Des phrases toutes prêtes</b>
+        <div className="tf-prets" role="group" aria-label="Des phrases toutes prêtes">
+          {phrasesPretes.map((m) => (
+            <button key={m.cle} type="button" className={texte === m.texte ? "pris" : undefined} onClick={() => prendreUnPret(m)}>
+              <span aria-hidden="true">{m.emoji}</span> {m.nom}
+            </button>
+          ))}
+        </div>
+      </Feuille>
+
+      {/* 🎭 SON VISAGE, AU CHOIX : son look, ses humeurs, ses attitudes (un visage pas encore fait : l'atelier de Pablito) */}
+      <Feuille ouverte={feuilleTete} onFermer={() => setFeuilleTete(false)} titre="Son visage, au choix" className="tf-feuille-tete">
+        <b className="tf-feuille-titre">🎭 Son visage, au choix</b>
+        <small className="tf-feuille-dit">Ce qu’elle ressent pendant qu’elle parle.</small>
+        {/* 🗓️ SES LOOKS : ses figurines du mois, qui parlent dans ses mèmes */}
+        {looks.length > 0 && (
+          <>
+            <b className="tf-q tf-q-visage">Son look</b>
+            <div className="tf-looks" role="radiogroup" aria-label="Son look">
+              <button type="button" role="radio" aria-checked={!sonLook} className={!sonLook ? "pris" : ""} onClick={() => choisirLook("")}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={etat.neutre} alt="" />
+                <span>De tous les jours</span>
+              </button>
+              {looks.map((l) => {
+                const cours = lookCours === l.mois;
+                const nom = moisEnClair(l.mois).replace(/\s\d{4}$/, "");
+                return (
+                  <button
+                    key={l.mois}
+                    type="button"
+                    role="radio"
+                    aria-checked={sonLook?.mois === l.mois}
+                    className={`${sonLook?.mois === l.mois ? "pris" : ""}${cours ? " cours" : ""}`}
+                    disabled={cours}
+                    aria-label={cours ? `${nom} : il apprend à parler` : `${nom}, ${l.edition.nom}`}
+                    onClick={() => choisirLook(l.mois)}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={l.image} alt="" />
+                    <span>
+                      {l.edition.emoji} {nom.charAt(0).toUpperCase() + nom.slice(1)}
+                    </span>
+                    {cours && <em>il apprend à parler…</em>}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+        {sonLook ? (
+          <p className="tf-note">
+            🗓️ Son visage du mois : <b>{sonLook.expression}</b>. Pour changer d’expression, reprends ta figurine de tous les jours.
+          </p>
+        ) : (
+          <>
+            <b className="tf-q tf-q-visage">Son humeur</b>
+            <ChoixExpression valeur={sentiment} onChoix={choisirVisage} etats={etatsVisages} />
+            <b className="tf-q tf-q-visage">Son attitude</b>
+            <ChoixExpression valeur={sentiment} onChoix={choisirVisage} etats={etatsVisages} attitudes />
+            {enCreation.size > 0 && (
+              <p className="tf-note" role="status">
+                🎭 Ta figurine apprend{" "}
+                {enCreation.size > 1 ? "tout ça" : [...enCreation].some(estAttitude) ? "cette attitude" : "ce visage"}… une minute environ : {enCreation.size > 1 ? "ça s’affichera tout seul" : [...enCreation].some(estAttitude) ? "elle s’affichera toute seule" : "il s’affichera tout seul"}.
+              </p>
+            )}
+          </>
+        )}
+        {lookCours && (
+          <p className="tf-note" role="status">
+            🗓️ Ton look apprend à parler… une minute environ : il s’affichera tout seul.
+          </p>
+        )}
+        {etat.auto !== false && Object.keys(etatsVisages).length > 0 && (
+          <p className="tf-note tf-note-atelier">
+            ✨ Pas encore fait : Pablito le fabrique en une minute environ, et il est à toi <b>pour toujours</b>.
+          </p>
+        )}
+        <button type="button" className="tf-garder" onClick={() => setFeuilleTete(false)}>
+          C’est bon, je garde ce visage
+        </button>
+      </Feuille>
 
       {/* ⚡ SES RÉACTIONS ET SES GAGS */}
       <div className="tf-reactions" id="tf-reactions" role="tabpanel" aria-labelledby="tf-o-reactions" hidden={vue !== "reactions"}>
@@ -1754,6 +1794,75 @@ export function PremierMemePendant({ etat }: { etat: EtatMaFigurine }) {
   );
 }
 
+/**
+ * 🔁 « REFAIRE MA FIGURINE » (9 novembre 2026 : elle quitte le dessous de sa figurine, dans « Créer », pour « Moi », avec
+ * ses réglages) : elle ne lui ressemble pas — une nouvelle avec la même photo (3 par jour, le moteur d'image), ou une
+ * autre photo ; « ce qui lui ressemble » (son métier, sa passion) habille la nouvelle. `onFait` : on va la voir se faire.
+ */
+export function RefaireMaFigurine({ etat, onEtat, onFait }: { etat: EtatMaFigurine; onEtat: (e: EtatMaFigurine) => void; onFait?: () => void }) {
+  const [ouvert, setOuvert] = useState(false);
+  const [univers, setUnivers] = useState(etat.univers ?? "");
+  const [erreur, setErreur] = useState("");
+  if (etat.etape !== "prete") return null;
+  const restants = etat.refaire ?? 0;
+  async function refaire(autrePhoto: boolean) {
+    setErreur("");
+    try {
+      const j = await demander({ action: "refaire", univers: univers.trim(), ...(autrePhoto ? { autrePhoto: true } : {}) });
+      if (j.etat) onEtat(j.etat);
+      onFait?.();
+    } catch (e) {
+      setErreur((e as Error).message);
+    }
+  }
+  return (
+    <section className="rf" aria-label="Refaire ma figurine">
+      <style>{STYLES_REFAIRE}</style>
+      <button type="button" className="rf-tete" aria-expanded={ouvert} onClick={() => setOuvert((o) => !o)}>
+        <span aria-hidden="true">🔁</span>
+        <span>
+          <b>Refaire ma figurine</b>
+          <small>Elle ne te ressemble pas ? Une nouvelle, ou une autre photo.</small>
+        </span>
+      </button>
+      {ouvert && (
+        <div className="rf-corps">
+          <label className="rf-univers">
+            <span>Ce qui te ressemble : ton métier ou ta passion (facultatif)</span>
+            <input value={univers} maxLength={UNIVERS_MAX} onChange={(e) => setUnivers(e.target.value)} placeholder="Artisan, boulangère, fan de vélo…" />
+          </label>
+          {restants > 0 && (
+            <button type="button" className="rf-meme" onClick={() => void refaire(false)}>
+              🔁 Une nouvelle, avec la même photo ({restants} aujourd’hui)
+            </button>
+          )}
+          <button type="button" className="rf-photo" onClick={() => void refaire(true)}>
+            📸 Avec une autre photo
+          </button>
+          {erreur && (
+            <p className="rf-erreur" role="alert">
+              {erreur}
+            </p>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+const STYLES_REFAIRE = `
+.rf{display:flex;flex-direction:column;gap:10px;margin:14px 0 0;padding:14px 16px;border-radius:24px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.rf-tete{display:flex;align-items:center;gap:12px;width:100%;padding:0;border:0;background:none;color:#FFF4E6;font:inherit;text-align:left;cursor:pointer}
+.rf-tete > span:first-child{font-size:24px;line-height:1}
+.rf-tete > span:last-child{display:flex;flex-direction:column;gap:2px}
+.rf-tete b{font-size:15px;font-weight:900}
+.rf-tete small{font-size:12.5px;color:#CDB4C0}
+.rf-corps{display:flex;flex-direction:column;gap:8px}
+.rf-univers{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#D9C3CB}
+.rf-univers input{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.15);background:rgba(0,0,0,.25);color:#FFF4E6;font:inherit;font-size:16px}
+.rf-corps button{padding:13px 14px;border-radius:999px;border:1.5px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#FFF4E6;font:inherit;font-size:14.5px;font-weight:800;cursor:pointer}
+.rf-erreur{margin:0;font-size:13px;color:#FF9C9C}
+`;
+
 export function FabricationAuto({ etat, onEtat }: { etat: EtatMaFigurine; onEtat: (e: EtatMaFigurine) => void }) {
   const boite = useRef<HTMLDivElement>(null);
   const [erreur, setErreur] = useState("");
@@ -2152,42 +2261,69 @@ export const STYLES_MA_FIGURINE =
 .tf-premier{margin:0;padding:8px 12px;border-radius:14px;background:rgba(127,240,196,.1);border:1px solid rgba(127,240,196,.35);font-size:13px;font-weight:700;color:#BFF7E2}
 @keyframes tf-tourne{to{transform:rotate(360deg)}}
 @keyframes tf-bat{0%,100%{transform:scale(1)}15%{transform:scale(1.07)}}
-/* ─── 7 novembre 2026 : LE STUDIO ET SES TIROIRS (l'avis d'un ami) — sa figurine toujours en vue, trois gestes qui ouvrent
-   chacun leur tiroir, deux onglets, son mème dans une feuille qui monte ; en bas, repliés, sa figurine du mois et ses
-   premiers pas ─── */
+/* ─── 9 novembre 2026 : « CRÉER » EN TROIS ÉTAPES (l'avis d'un ami) — sa figurine en haut, l'aperçu de son mème ; sa
+   vignette quand elle sort de l'écran ; deux onglets ; trois étapes numérotées ; « Créer mon mème » ; deux feuilles ─── */
 .tf-moi{gap:14px}
 .tf-parler[hidden],.tf-reactions[hidden]{display:none}
-.tf-moi .tf-scene.ouvert{z-index:25}
-.tf-moi .tf-scene{position:sticky;top:51px;z-index:4;gap:0;margin:-14px -16px 0;padding:8px 16px 12px;background:linear-gradient(180deg,rgba(28,10,23,.97),rgba(22,8,18,.95));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 16px 24px -20px rgba(0,0,0,.95)}
+.tf-moi .tf-scene{position:relative;gap:4px;margin:-14px -16px 0;padding:8px 16px 4px}
 .tf-moi .tf-fig .fqp-fig{width:min(200px,52vw);width:clamp(150px,24dvh,214px);transition:width .3s cubic-bezier(.2,.9,.3,1)}
 .tf-moi:has(.tf-texte textarea:focus) .tf-fig .fqp-fig{width:clamp(96px,13dvh,130px)}
-.tf-moi .tf-gestes{margin-top:-20px;gap:8px}
-.tf-moi .tf-gestes button{position:relative;gap:6px;padding:10px 15px;font-size:14px;background:rgba(30,10,24,.88);color:#FFF4E6;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 12px 26px -10px rgba(0,0,0,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-.tf-moi .tf-gestes button.pris{background:#FFF4E6;color:#2A0F1F;box-shadow:0 12px 26px -10px rgba(0,0,0,.9)}
-.tf-moi .tf-gestes .tf-g-animer.danse:not(.pris){background:linear-gradient(135deg,#FF2E9A,#F2C46B);color:#fff;box-shadow:0 12px 26px -10px rgba(255,46,154,.9);animation:tf-bat .6s ease-in-out infinite}
+.tf-hero-dit{font-size:12px;font-weight:700;color:#B49AA8}
+/* sa vignette : sous la barre du haut, quand sa figurine est sortie de l'écran */
+.tf-mini{position:fixed;left:0;right:0;z-index:30;display:flex;align-items:center;gap:10px;height:56px;padding:0 14px 0 10px;box-sizing:border-box;border:0;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(18,6,15,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:#E8D3DC;font:inherit;text-align:left;cursor:pointer;animation:tf-mini .22s ease-out}
+.tf-mini img{flex:none;width:40px;height:40px;border-radius:12px;object-fit:cover;object-position:50% 12%;background:#FF2E9A;box-shadow:0 0 0 2px rgba(242,196,107,.55)}
+.tf-mini span{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:13px;font-weight:700}
+.tf-mini span b{color:#FFF4E6}
+.tf-mini .tf-g-cours{position:static;flex:none}
 .tf-g-cours{position:absolute;top:-4px;right:-4px;width:14px;height:14px;box-sizing:border-box;border-radius:50%;border:2.5px solid rgba(242,196,107,.25);border-top-color:#F2C46B;animation:tf-tourne 1s linear infinite}
-/* ses tiroirs : par-dessus la page, sous ses trois gestes */
-.tf-tiroir{position:absolute;left:10px;right:10px;top:calc(100% - 6px);z-index:2;display:flex;flex-direction:column;gap:8px;max-height:52dvh;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;padding:14px 14px 12px;border-radius:22px;background:rgba(42,14,34,.98);border:1px solid rgba(255,255,255,.14);box-shadow:0 26px 50px -14px rgba(0,0,0,.95);text-align:left;animation:tf-tiroir .22s cubic-bezier(.2,.9,.3,1)}
-.tf-tiroir > :nth-child(2){margin-right:36px}
-.tf-tiroir-fermer{position:absolute;top:9px;right:9px;width:30px;height:30px;border-radius:50%;border:0;background:rgba(255,255,255,.09);color:#FFF4E6;font:inherit;font-size:13px;cursor:pointer}
-.tf-tiroir .tf-q{color:#F2C46B}
-.tf-tiroir .tf-q-visage{align-self:auto;margin:0}
-.tf-tiroir .tf-expr,.tf-tiroir .tf-looks{padding:4px 2px 6px}
-/* (ses visages et ses attitudes, tous en vue — à l'ordinateur, une rangée qui défile de côté ne se fait pas défiler) */
-.tf-scene .tf-tiroir .tf-expr,.tf-scene .tf-tiroir .tf-att{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px;overflow:visible;-webkit-mask-image:none;mask-image:none}
-.tf-scene .tf-tiroir .tf-expr button,.tf-scene .tf-tiroir .tf-att button{width:auto}
-.tf-tiroir .tf-danse{display:flex;align-items:center;gap:12px;width:auto;padding:11px 14px;border-radius:18px;border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#FFF4E6;text-align:left}
-.tf-tiroir .tf-danse > span:first-child{font-size:28px;line-height:1}
-.tf-tiroir .tf-danse > span:last-child{display:flex;flex-direction:column;gap:1px}
-.tf-tiroir .tf-danse b{font-size:16px;font-weight:900}
-.tf-tiroir .tf-danse small{font-size:12px;font-weight:700;color:#D9C3CB}
-.tf-tiroir .tf-danse.pris{border-color:transparent;background:linear-gradient(135deg,rgba(255,46,154,.4),rgba(242,196,107,.28))}
-.tf-tiroir-gags{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-.tf-tiroir-gags button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:9px 2px;border-radius:16px;border:1.5px solid rgba(255,255,255,.12);background:rgba(0,0,0,.22);color:#FFF4E6;font:inherit;font-size:11px;font-weight:800;line-height:1.15;cursor:pointer}
-.tf-tiroir-gags button span{font-size:26px;line-height:1}
-.tf-tiroir .tf-refaire{max-width:none;padding:0;border:0;background:none}
-.tf-tiroir .tf-refaire > b{padding-right:36px}
-@keyframes tf-tiroir{from{transform:translateY(-6px) scale(.98)}}
+@keyframes tf-mini{from{transform:translateY(-100%)}}
+/* trois étapes : une carte chacune, son numéro, ce qu'on y fait, à quoi ça sert */
+.tf-etape{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:24px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);min-width:0}
+.tf-etape-tete{display:flex;align-items:center;gap:10px}
+.tf-etape-n{display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:50%;background:#FF2E9A;color:#fff;font-size:15px;font-weight:900}
+.tf-etape-quoi{display:flex;flex-direction:column;flex:1;min-width:0}
+.tf-etape-quoi b{font-size:17px;font-weight:900;line-height:1.2}
+.tf-etape-quoi small{font-size:12.5px;line-height:1.35;color:#CDB4C0}
+.tf-etape-tete .tf-ecouter{flex:none;padding:9px 14px;font-size:13.5px;box-shadow:none;background:rgba(255,46,154,.18);color:#FFD1E8;border:1.5px solid rgba(255,46,154,.55)}
+.tf-etape > .tf-modes{align-self:stretch}
+.tf-etape > .tf-modes button{padding:9px 10px;font-size:13.5px}
+.tf-pas-idee{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:11px 14px;border-radius:16px;border:1px solid rgba(242,196,107,.35);background:rgba(242,196,107,.1);color:#F2C46B;font:inherit;text-align:left;cursor:pointer}
+.tf-pas-idee span{display:flex;flex-direction:column;gap:1px}
+.tf-pas-idee b{font-size:14.5px;font-weight:900}
+.tf-pas-idee small{font-size:12px;color:#E5D2B0}
+/* « Ou je choisis son visage moi-même » : un lien, pas une vignette de plus */
+.tf-sa-tete{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 4px;border:0;background:none;color:#F2C46B;font:inherit;font-size:14px;font-weight:800;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.tf-sa-tete-dit{margin-top:-6px;font-size:12.5px;color:#D9C3CB}
+.tf-etape .tf-quelle-voix{padding:0;border:0;background:none}
+/* elle danse en parlant : un interrupteur */
+.tf-danse-ligne{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:4px}
+.tf-danse-ligne > span{display:flex;flex-direction:column;gap:1px}
+.tf-danse-ligne b{font-size:14.5px;font-weight:800}
+.tf-danse-ligne small{font-size:12px;color:#B49AA8}
+.tf-danse{position:relative;flex:none;width:52px;height:30px;padding:0;border:0;border-radius:999px;background:rgba(255,255,255,.16);cursor:pointer;transition:background .2s}
+.tf-danse i{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#FFF4E6;box-shadow:0 2px 6px rgba(0,0,0,.5);transition:transform .2s}
+.tf-danse.pris{background:linear-gradient(135deg,#FF2E9A,#F2C46B)}
+.tf-danse.pris i{transform:translateX(22px)}
+/* le but, écrit sur le bouton */
+.tf-moi .tf-envoi{margin-top:0;padding-top:0;border-top:0}
+.tf-envoi .tf-envoyer{display:flex;flex-direction:column;align-items:center;gap:1px;padding:13px 18px;background:linear-gradient(135deg,#FF2E9A,#FF7A59)}
+.tf-envoi .tf-envoyer b{font-size:17px;font-weight:900}
+.tf-envoi .tf-envoyer small{font-size:12px;font-weight:600;opacity:.92}
+/* les deux feuilles : « Pas d'idée ? », son visage au choix */
+.tf-feuille-idee .tf-feuille-corps,.tf-feuille-tete .tf-feuille-corps{display:flex;flex-direction:column;gap:10px}
+.tf-feuille-titre{padding-right:44px;font-size:20px;font-weight:900}
+.tf-feuille-dit{margin-top:-6px;font-size:13px;line-height:1.4;color:#CDB4C0}
+.tf-idee{display:flex;align-items:center;gap:12px;width:100%;padding:14px;border-radius:20px;border:1.5px solid rgba(255,46,154,.5);background:linear-gradient(135deg,rgba(255,46,154,.26),rgba(255,122,89,.16));color:#FFF4E6;font:inherit;text-align:left;cursor:pointer}
+.tf-idee > span:first-child{font-size:28px;line-height:1}
+.tf-idee > span:last-child{display:flex;flex-direction:column;gap:1px}
+.tf-idee b{font-size:15.5px;font-weight:900}
+.tf-idee small{font-size:12.5px;color:#F0DCE5}
+.tf-idee.du-jour{border-color:rgba(242,196,107,.45);background:rgba(242,196,107,.1)}
+.tf-idee.tourne > span:first-child{animation:tf-tourne 1s linear infinite}
+.tf-feuille-idee .tf-prets{flex-wrap:wrap;margin:0;padding:0;overflow:visible}
+.tf-feuille-tete .tf-note{margin:0;padding:8px 12px;border-radius:14px;background:rgba(242,196,107,.1);font-size:12.5px;color:#FFE7B8;text-align:left}
+.tf-feuille-tete .tf-note-atelier b{color:#F2C46B}
+.tf-garder{margin-top:4px;padding:14px 18px;border:0;border-radius:999px;background:linear-gradient(135deg,#FF2E9A,#FF7A59);color:#fff;font:inherit;font-size:15.5px;font-weight:900;cursor:pointer}
 /* deux onglets */
 .tf-onglets{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
 .tf-onglets button{min-width:0;padding:11px 4px;border:0;border-radius:999px;background:none;color:#D9C3CB;font:inherit;font-size:14px;font-weight:900;white-space:nowrap;cursor:pointer;transition:background .2s,color .2s}
@@ -2204,8 +2340,8 @@ export const STYLES_MA_FIGURINE =
 .tf-replis .fm-apercu b{font-size:13.5px}
 .tf-replis .fm-apercu small{font-size:11.5px}
 .tf-replis .fm-apercu .fm-jours i{height:5px}
-/* (le haut de l'onglet visé reste visible sous sa figurine) */
-.tf-moi [id]{scroll-margin-top:calc(clamp(150px,24dvh,214px) * 4 / 3 + 110px)}
+/* (le haut de l'endroit visé reste visible sous la barre du haut et sa vignette) */
+.tf-moi [id]{scroll-margin-top:128px}
 /* 🪟 une feuille qui monte, en bas de l'écran */
 .tf-feuille{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;justify-content:flex-end;visibility:hidden;pointer-events:none;transition:visibility 0s .35s}
 .tf-feuille.ouverte{visibility:visible;pointer-events:auto;transition:none}
@@ -2228,13 +2364,14 @@ export const STYLES_MA_FIGURINE =
 .tf-meme-pret .tf-public{width:100%;padding:15px 16px;border:0;border-radius:999px;background:linear-gradient(135deg,#FF7A59,#FF2E9A);color:#fff;font-size:16px;font-weight:900;box-shadow:0 12px 26px -12px rgba(255,46,154,.95)}
 .tf-meme-pret .tf-public.pris{padding:11px 14px;border:1px solid rgba(61,226,166,.6);background:rgba(61,226,166,.12);color:#9BF2CF;font-size:14px;box-shadow:none}
 .tf-public-dit{margin-top:-4px;font-size:12px;line-height:1.35;color:#A88E99;text-align:center}
-@media (prefers-reduced-motion:reduce){.tf-tiroir,.tf-feuille-corps,.tf-moi .tf-fig .fqp-fig,.tf-g-cours,.tf-moi .tf-gestes .tf-g-animer.danse{animation:none;transition:none}}
+@media (prefers-reduced-motion:reduce){.tf-feuille-corps,.tf-moi .tf-fig .fqp-fig,.tf-g-cours,.tf-mini,.tf-idee.tourne > span:first-child,.tf-danse,.tf-danse i{animation:none;transition:none}}
 @media (min-width:860px){
   .tf-moi{grid-template-columns:minmax(0,5fr) minmax(0,6fr);column-gap:40px;align-items:start}
   .tf-moi > *{grid-column:2}
-  .tf-moi .tf-scene{grid-column:1;grid-row:1/span 6;top:84px;margin:0;padding:0 0 12px;background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .tf-moi .tf-scene{position:sticky;grid-column:1;grid-row:1/span 6;top:84px;margin:0;padding:0 0 12px}
+  .tf-mini{display:none}
   .tf-moi .tf-fig .fqp-fig,.tf-moi:has(.tf-texte textarea:focus) .tf-fig .fqp-fig{width:min(340px,30vw)}
-  .tf-moi .tf-panneau{padding:20px}
+  .tf-moi .tf-etape{padding:18px}
   .tf-moi [id]{scroll-margin-top:96px}
   .tf-feuille-corps{margin-bottom:24px;border-radius:28px}
 }

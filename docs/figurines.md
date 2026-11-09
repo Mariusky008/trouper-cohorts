@@ -1707,7 +1707,7 @@ en cours de fabrication, et une fois faite elle sera à vous pour toujours. Elle
 regarder : c'est un peu long, il faut arriver à les faire patienter avec le sourire. » (La joie n'étant plus faite
 d'avance — 9.0 undevicies —, la première attente arrive plus tôt.)
 
-- **Où** : un visage ou une attitude pas encore faits (l'étincelle ✨), touchés dans le tiroir « Visage » — ou demandés
+- **Où** : un visage ou une attitude pas encore faits (l'étincelle ✨), touchés dans la feuille « Son visage, au choix » (le tiroir « Visage » avant 9.0 unvicies) — ou demandés
   par un mème prêt, une des trois façons de le dire. Un visage déjà à l'atelier (il tourne) se touche aussi : la fenêtre
   se rouvre, sa barre où elle en était (`app/collection/atelier.tsx`, `AtelierPablito`).
 - **À l'atelier** : « 🛠️ À l'atelier — Pablito fabrique ta tête « Joie » » (« ton attitude « Victoire » ») ; Pablito
@@ -1718,7 +1718,7 @@ d'avance — 9.0 undevicies —, la première attente arrive plus tôt.)
   ne touche le bout que quand c'est prêt ; « Environ une minute ». **On peut le chatouiller** (« Psst… touche-le, pendant
   qu'il travaille 😏 ») : il rit, et il râle (« Hé ! Ça chatouille ! », « Arrête, je vais rater ton sourcil ! », « Encore
   une fois et je te dessine une moustache. »…). « 💝 Une fois faite, elle est à toi **pour toujours** : plus jamais
-  d'attente pour celle-là. » « Je fais autre chose en attendant » la ferme (le tiroir reste ouvert) : la fabrication
+  d'attente pour celle-là. » « Je fais autre chose en attendant » la ferme (la feuille reste ouverte) : la fabrication
   continue, et sa tête s'affichera toute seule.
 - **Tadaaa** : « Ta tête « Joie » est prête ! », sa nouvelle tête — la sienne — qui saute dans la fenêtre, des
   confettis, le tampon « À toi pour toujours » ; « 😄 Je l'essaie ! » : elle se joue en haut, sous ses yeux.
@@ -1730,6 +1730,57 @@ L'essai : il faut le moteur d'image pour qu'un visage soit « à créer », et l
 sur l'appli construite, branchée sur un faux moteur qui met 12 s par image (« Joie » à créer, l'atelier, la
 chatouille, les phrases et la barre qui avancent, fermé puis rouvert, « Tadaaa », « Je l'essaie ! », puis le moteur à
 court de crédit : le pépin).
+
+### 9.0 unvicies 🪜 « Créer » en trois étapes (9 novembre)
+
+L'ami du propriétaire, devant la page « Créer » : trop de boutons côte à côte (🎲 Surprends-moi, 🔥 le mème du jour, dix
+phrases, ✨ trois façons, les tiroirs « Visage », « Animer », « La refaire »…), et on ne voit pas **à quoi elle sert**. Sa
+proposition, reprise dans la maquette (le canevas « Créer »), puis ses trois derniers ajustements : l'en-tête qui se fait
+mince en défilant, « je choisis moi-même » en lien bien à part, et un retour tout de suite quand on touche une réaction.
+Rien n'est retiré : tout est rangé (`app/collection/ma-figurine.tsx`).
+
+- **En haut** : sa figurine, et dessous « Elle montre ton mème en direct ». Au téléphone, elle ne reste plus collée en
+  haut : quand elle sort de l'écran, une **vignette** se glisse juste sous la barre du haut — sa figurine en petit,
+  « Ton mème · 😢 Tristesse · 👩 … » (ce qu'il a choisi, sur une ligne), un point qui tourne si un visage se prépare ; un
+  toucher et la page remonte (`.tf-mini`, un `IntersectionObserver`). À l'ordinateur, la colonne de gauche reste collée,
+  sans vignette.
+- **Deux onglets, nommés par ce qu'on veut faire** : « 💬 Faire un mème » (au lieu de « Fais-la parler ») et « ⚡ Répondre
+  vite » (au lieu de « Réactions & gags »).
+- **① Ce qu'elle dit** — « Ta phrase, ou ta voix : c'est elle qui la dira. » : « ✍️ J'écris · 🎙️ Avec ma voix », sa
+  phrase, puis **un seul bouton** « 🎲 Pas d'idée ? — Je t'en propose une, ou des phrases toutes prêtes ». Il ouvre une
+  feuille : « Choisis : ça remplit ta phrase, et tu peux tout changer après. », 🎲 Surprends-moi (« Une phrase drôle,
+  inventée pour toi » ; sa carte surprise s'affiche dans la feuille), 🔥 Le mème du jour (« Le même thème pour toute ta
+  ville, aujourd'hui »), et « Des phrases toutes prêtes » (les dix du jour). Un toucher sur une phrase : la feuille se
+  ferme, la phrase est écrite. Le premier mème déjà écrit (« 🎁 ») reste, la première fois.
+- **② Comment elle le dit** — « Choisis le ton : je te propose trois mèmes. » : les six tons (facultatifs), puis les
+  trois vignettes, nommées par leur façon : « 😂 En BD · 🎭 En film · 🌀 En affiche » (`FACONS`, `trois-rendus.tsx`) ;
+  « 🎲 Trois autres » reste. Dessous, en lien doré souligné, bien à part : « 🎭 Ou je choisis son visage moi-même ». Il
+  ouvre la feuille « 🎭 Son visage, au choix — Ce qu'elle ressent pendant qu'elle parle. » : son look, « Son humeur » (les
+  huit visages), « Son attitude » (les six), la note de l'atelier, et « C'est bon, je garde ce visage ». Ce qu'il a pris
+  s'écrit sous le lien (« 😢 Tristesse », « 🤦 Oh non »).
+- **③ Sa voix** — « Celle qui lira ta phrase. » : « 👨 Voix d'homme · 👩 Voix de femme » (puis les voix, comme avant),
+  « ▶ Écouter » en petit dans l'en-tête de l'étape, et « 🕺 Elle danse en parlant » (un interrupteur ; « En musique, et
+  dans ton mème »). Avec sa propre voix, l'étape s'appelle « Elle danse ? » et ne garde que la danse.
+- **Le but, écrit sur le bouton** : « 🎬 Créer mon mème — Une vidéo à envoyer où tu veux ». Plus besoin d'avoir écouté
+  avant : le bouton fait lire la phrase si elle ne l'a pas encore été, puis fabrique le mème (`creerMonMeme`). Sans
+  phrase : « Écris d'abord ce qu'elle doit dire, à l'étape ①. » ; sans voix : « Choisis d'abord sa voix, à l'étape ③. »
+  (et la page descend jusqu'à l'étape ③). Le mème prêt : « ✅ Ton mème est prêt · le revoir ».
+- **⚡ Répondre vite** : « Ta tête à la place des emojis — Un toucher, c'est envoyé : dans WhatsApp, à un proche, où tu
+  veux. » ; les gags (ils étaient dans le tiroir « Animer ») : « 💥 Un gag, en petite vidéo — Pour détendre une
+  conversation. ». **Un toucher se voit tout de suite** : la case saute, et un bandeau monte en bas — « 😂 « Mort de
+  rire » est prêt ! Choisis à qui l'envoyer. », puis « ✓ « Mort de rire » est parti ! » (ou « est enregistré : envoie-le
+  où tu veux. ») ; fermé sans rien choisir, il s'efface (`mes-reactions.tsx`).
+- **« Refaire ma figurine »** quitte « Créer » : elle est dans « Moi », repliée (« Elle ne te ressemble pas ? Une
+  nouvelle, ou une autre photo. »), avec son métier ou sa passion et les mêmes deux chemins qu'avant
+  (`RefaireMaFigurine`).
+- **Le tuto de « Créer »** suit les étapes : ① (`tuto-creer-1`), « Pas d'idée ? Choisis ce que tu veux dire… » sur l'étape
+  ② (`tuto-creer-3`), « Visage » sur le lien « je choisis moi-même » (`tuto-creer-2`), puis une bulle nouvelle sur
+  l'étape ③ et le bouton : « Choisis sa voix, fais-la danser si tu veux… puis touche « Créer mon mème » : il part où tu
+  veux. » — **à enregistrer** (`tuto-creer-4b`) ; d'ici là, elle s'écrit sans voix (une bulle peut nommer son son :
+  `EtapeTuto.son`).
+
+Les essais : `ma-figurine.mjs` (les trois étapes, la vignette, les deux feuilles, le bouton sans écoute, la danse,
+« Refaire » dans « Moi »), `attitudes.mjs`, `trois-rendus.mjs`, `mes-reactions.mjs` (le bandeau), `tuto.mjs`.
 
 ### 9.1 L'idée en une phrase
 
