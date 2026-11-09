@@ -30,7 +30,6 @@
  * serveur « il est là » toutes les minutes (« Là maintenant » chez ses proches, s'il le veut) et apprend ses messages non
  * lus (la pastille de « Proches »).
  */
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { EVT_ANCRE, Feuille, OngletFigurine, STYLES_MA_FIGURINE } from "./ma-figurine";
 import { STYLES_TROIS_RENDUS } from "./trois-rendus";
@@ -124,12 +123,18 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
     };
   }, []);
 
-  /** Ouvre une vue ; `ancre` : un endroit dedans (« creer », « mois »). */
-  const aller = useCallback((v: Vue, ancre?: string, garderDefilement = false) => {
+  /**
+   * Ouvre une vue ; `ancre` : un endroit dedans (« creer », « mois »). `pousser` : un geste de lui (le menu, un lien
+   * de la page) — une page de plus dans l'historique : « Retour » le ramène à l'onglet d'avant, au lieu de quitter
+   * ClikMe (9 novembre 2026 : « quand je reviens en arrière, je me retrouve sur la page d'accueil clikme.fr »).
+   */
+  const aller = useCallback((v: Vue, ancre?: string, garderDefilement = false, pousser = false) => {
     setVue(v);
     setOuverts((o) => (o.has(v) ? o : new Set([...o, v])));
     try {
-      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${ancre ?? v}`);
+      const adresse = `${window.location.pathname}${window.location.search}#${ancre ?? v}`;
+      if (pousser && window.location.hash !== `#${ancre ?? v}`) window.history.pushState(null, "", adresse);
+      else window.history.replaceState(null, "", adresse);
     } catch {
       /* rien */
     }
@@ -147,7 +152,7 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
   }, []);
   const allerA = useCallback((o: string) => {
     const v = ALIAS[o];
-    if (v) aller(v, o);
+    if (v) aller(v, o, false, true);
   }, [aller]);
 
   // l'adresse décide de la vue (à l'arrivée, et quand un lien de la page change l'ancre)
@@ -199,13 +204,14 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
   return (
     <main className="mc">
       <header className="mc-barre">
-        <Link className="mc-logo" href="/">
+        {/* (le logo reste dans l'appli : il ramenait à l'accueil du site, clikme.fr) */}
+        <button type="button" className="mc-logo" aria-label="ClikMe : revenir à « Créer »" onClick={() => aller("figurine", undefined, false, true)}>
           Clik<b>Me</b>
-        </Link>
+        </button>
         <span className="mc-droite">
           {/* 🃏 « MOI », SOUS SON PRÉNOM (8 novembre 2026 : « Proches » a pris sa place dans le menu) */}
           {compte ? (
-            <button type="button" className={`mc-moi${vue === "personnage" ? " pris" : ""}`} aria-label="Moi : ta carte, tes réglages" aria-current={vue === "personnage" ? "page" : undefined} onClick={() => aller("personnage")}>
+            <button type="button" className={`mc-moi${vue === "personnage" ? " pris" : ""}`} aria-label="Moi : ta carte, tes réglages" aria-current={vue === "personnage" ? "page" : undefined} onClick={() => aller("personnage", undefined, false, true)}>
               {prete && etat?.neutre ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={etat.neutre} alt="" draggable={false} />
@@ -305,7 +311,7 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
           « Créer », le cœur de l'app, en gros bouton rond au milieu, avec SA figurine dedans (7 novembre 2026) */}
       <nav className="mc-nav" aria-label="ClikMe">
         {MENU.map((o) => (
-          <button key={o.cle} type="button" className={`mc-nav-${o.cle}${onglet === o.cle ? " pris" : ""}`} aria-current={onglet === o.cle ? "page" : undefined} onClick={() => aller(o.cle)}>
+          <button key={o.cle} type="button" className={`mc-nav-${o.cle}${onglet === o.cle ? " pris" : ""}`} aria-current={onglet === o.cle ? "page" : undefined} onClick={() => aller(o.cle, undefined, false, true)}>
             <span className="mc-nav-ico" aria-hidden="true">
               {o.cle === "figurine" && prete && etat?.neutre ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -372,7 +378,7 @@ const STYLES_MC = `
 body{background:#12060F}
 .mc-barre{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;
   background:rgba(18,6,15,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
-.mc-logo{font-size:19px;font-weight:900;color:#FFF4E6;text-decoration:none;letter-spacing:-.02em}
+.mc-logo{padding:0;border:0;background:none;font:inherit;font-size:19px;font-weight:900;color:#FFF4E6;text-decoration:none;letter-spacing:-.02em;cursor:pointer}
 .mc-logo b{color:#FF2E9A}
 .mc-moi{min-width:0;overflow:hidden;text-overflow:ellipsis;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.08);font-size:13px;font-weight:700;color:#D9C3CB;white-space:nowrap}
 button.mc-moi{position:relative;display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:3px 13px 3px 4px;border:0;font:inherit;font-size:14px;font-weight:800;color:#FFF4E6;overflow:visible;cursor:pointer;-webkit-tap-highlight-color:transparent}

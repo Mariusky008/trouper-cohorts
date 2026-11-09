@@ -214,6 +214,19 @@ ok(parole && parole.title.includes("🎙️ Zoé") && parole.url === `/collectio
 await zoe.locator(".pr-plein .pr-retour").click();
 await zoe.waitForSelector(".pr-plein", { state: "detached", timeout: 10000 });
 
+// ═══ « RETOUR » DU TÉLÉPHONE, ET LE LOGO : ON RESTE DANS CLIKME ═══
+await zoe.locator(`#o-proches .pr-carte[data-cle="${LEA.cle}"] .pr-mini`).click();
+await zoe.waitForSelector(".pr-plein .pr-fil li", { timeout: 30000 });
+await zoe.goBack();
+await zoe.waitForSelector(".pr-plein", { state: "detached", timeout: 10000 }).catch(() => null);
+ok((await zoe.locator(".pr-plein").count()) === 0 && new URL(zoe.url()).pathname === "/collection" && (await texte(zoe, ".mc-nav button.pris")).includes("Proches"), `« Retour » referme la conversation, sans quitter « Proches » (${zoe.url()})`);
+await zoe.locator(".mc-barre .mc-logo").click();
+await zoe.waitForFunction(() => document.querySelector(".mc-nav button.pris")?.className.includes("mc-nav-figurine"), null, { timeout: 10000 }).catch(() => null);
+ok(new URL(zoe.url()).pathname === "/collection" && (await zoe.locator(".mc-nav button.pris.mc-nav-figurine").count()) === 1, `le logo ramène à « Créer », dans l'appli (${zoe.url()})`);
+await zoe.goBack();
+await zoe.waitForFunction(() => document.querySelector(".mc-nav button.pris")?.className.includes("mc-nav-proches"), null, { timeout: 10000 }).catch(() => null);
+ok(new URL(zoe.url()).pathname === "/collection" && (await zoe.locator(".mc-nav button.pris.mc-nav-proches").count()) === 1, `puis « Retour » : de nouveau « Proches », pas l'accueil du site (${zoe.url()})`);
+
 // ═══ LÉA OUVRE LA NOTIFICATION : LA CONVERSATION, LE MESSAGE DE ZOÉ ═══
 const lea = await tel(LEA);
 await lea.goto(`${BASE}${parole?.url ?? `/collection?parler=${ZOE.cle}#proches`}`, { waitUntil: "networkidle" });

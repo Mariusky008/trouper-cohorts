@@ -11,7 +11,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
-import { figurinesClients } from "@/lib/direct/ma-figurine-serveur";
+import { erreursDeFabrication, figurinesClients } from "@/lib/direct/ma-figurine-serveur";
 import { memesSignales } from "@/lib/direct/moderation-serveur";
 import { FicheFigurine, MessageSignale } from "./fiches";
 
@@ -23,7 +23,7 @@ const date = (iso: string) => (iso ? new Date(iso).toLocaleDateString("fr-FR", {
 export default async function PageFigurinesClients() {
   if (!(await isCurrentUserAdmin())) redirect("/admin");
   const supabase = createAdminClient();
-  const [{ ok, figurines }, signales] = await Promise.all([figurinesClients(supabase), memesSignales(supabase)]);
+  const [{ ok, figurines }, signales, erreurs] = await Promise.all([figurinesClients(supabase), memesSignales(supabase), erreursDeFabrication(supabase)]);
   const aFaire = figurines.filter((f) => !f.prete && f.photo && !f.refus);
   return (
     <main style={{ maxWidth: 980, margin: "0 auto", padding: "24px 16px 60px", fontFamily: "system-ui, sans-serif", color: "#1d1d1f" }}>
@@ -42,6 +42,29 @@ export default async function PageFigurinesClients() {
         </p>
       ) : (
         <>
+          {/* 🩺 ce que le moteur (ou la page) a répondu quand une figurine n'a pas pu être faite */}
+          <h2 style={{ marginTop: 28 }} id="erreurs">
+            Fabrications ratées ({erreurs.length})
+          </h2>
+          {erreurs.length === 0 ? (
+            <p style={{ color: "#555" }}>Aucune.</p>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }} data-erreurs="">
+              <tbody>
+                {erreurs.map((e, i) => (
+                  <tr key={i} style={{ borderTop: "1px solid #eee" }}>
+                    <td style={{ padding: "6px 8px", whiteSpace: "nowrap", color: "#666" }}>{new Date(e.le).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })}</td>
+                    <td style={{ padding: "6px 8px", color: "#666" }}>{e.qui}…</td>
+                    <td style={{ padding: "6px 8px" }}>
+                      {e.erreur}
+                      {e.detail && <small style={{ display: "block", marginTop: 2, color: "#8a2d2d", wordBreak: "break-word" }}>{e.detail}</small>}
+                    </td>
+                    <td style={{ padding: "6px 8px", color: "#666" }}>{e.statut}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
           <h2 style={{ marginTop: 28 }}>À fabriquer ({aFaire.length})</h2>
           {figurines.length === 0 && <p style={{ color: "#555" }}>Personne n’a encore atteint 10 figurines.</p>}
           <div style={{ display: "grid", gap: 14 }}>

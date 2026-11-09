@@ -142,7 +142,7 @@ export async function reprendre(rendu: Buffer, cadre: Cadre): Promise<Buffer> {
  * Une image demandée au moteur, à partir d'une image (format 2:3). Fidélité haute par défaut (elle recopie l'image :
  * ses expressions, sa bouche ouverte) ; basse pour la figurine d'un client (le moteur la redessine, comme ChatGPT).
  */
-export async function editer(image: Buffer, consigne: string, avant: number, fidelite: "high" | "low" = "high", plus: Record<string, string> = {}): Promise<Buffer | { erreur: string }> {
+export async function editer(image: Buffer, consigne: string, avant: number, fidelite: "high" | "low" = "high", plus: Record<string, string> = {}): Promise<Buffer | { erreur: string; detail?: string }> {
   const cle = s(process.env.OPENAI_API_KEY);
   if (!cle) return { erreur: "Le moteur d'image n'est pas branché ici." };
   const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
@@ -163,8 +163,8 @@ export async function editer(image: Buffer, consigne: string, avant: number, fid
       let r: Response;
       try {
         r = await fetch(`${base}/v1/images/edits`, { method: "POST", headers: { authorization: `Bearer ${cle}` }, body: forme, signal: AbortSignal.timeout(reste - 8_000) });
-      } catch {
-        return { erreur: "Le moteur d'image a mis trop de temps." };
+      } catch (e) {
+        return { erreur: "Le moteur d'image a mis trop de temps.", detail: `${liste[m]} : ${(e as Error)?.name ?? ""} ${(e as Error)?.message ?? ""} (après ${Math.round((reste - (avant - Date.now())) / 1000)} s)`.slice(0, 240) };
       }
       if (r.ok) {
         const b64 = ((await r.json().catch(() => null)) as { data?: { b64_json?: string }[] } | null)?.data?.[0]?.b64_json;
@@ -185,7 +185,8 @@ export async function editer(image: Buffer, consigne: string, avant: number, fid
         break;
       }
       console.error("[expressions] refus du moteur", JSON.stringify({ modele: liste[m], statut: r.status, pourquoi: txt.slice(0, 300) }));
-      return { erreur: derniere };
+      // (`detail` : la raison du moteur, pour l'admin — jamais montrée à l'écran)
+      return { erreur: derniere, detail: `${liste[m]} : ${txt.slice(0, 240)}` };
     }
   }
   return { erreur: derniere };

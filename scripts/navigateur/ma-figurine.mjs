@@ -266,23 +266,11 @@ ok(ageZoe?.age === 15 && ageZoe.le, `son âge déclaré est noté (${JSON.string
 const sansVille = await fetch(`${BASE}/api/direct/ma-figurine`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "photo", photo: "data:image/png;base64,AAAA", accord: true, ville: "atlantide" }) });
 ok(sansVille.status === 400, "une ville sans commerce ClikMe : pas de compte");
 
-// ═══ ⏱️ EN ATTENDANT SA FIGURINE : ZOÉ PRÉPARE SON PREMIER MÈME (son texte, sa voix) ═══
-await neuf.waitForSelector(".tf-pendant", { timeout: 15000 });
-ok((await texte(neuf, ".tf-pendant")).includes("En attendant : ton premier mème") && (await neuf.locator(".tf-pendant textarea").inputValue()).startsWith("Salut ! C’est moi"), "pendant la fabrication : son premier mème, déjà écrit");
-await neuf.locator(".tf-pendant .tf-prets button:not(.tf-surprends)").first().click();
-ok((await neuf.locator(".tf-pendant textarea").inputValue()) !== "" && !(await neuf.locator(".tf-pendant textarea").inputValue()).startsWith("Salut ! C’est moi"), "une idée d'un toucher (le mème du jour)");
-const premierTexte = "Coucou ! Ma figurine arrive, prépare-toi.";
-await neuf.locator(".tf-pendant textarea").fill(premierTexte);
-ok((await neuf.locator(".tf-pendant .tf-ecouter").isDisabled()) && (await neuf.locator(".tf-pendant .tf-quelle-voix").count()) === 1, "sa voix : on lui demande (homme ou femme ?) avant d'écouter");
-await neuf.locator(".tf-pendant .tf-quelle-voix button", { hasText: "voix de femme" }).click();
-await neuf.locator(".tf-pendant .tf-ecouter").click();
-await neuf.waitForSelector(".tf-pendant-pret", { timeout: 30000 });
-const garde = await neuf.evaluate(() => JSON.parse(localStorage.getItem("clikme-premier-meme-v1") ?? "null"));
-ok(garde?.texte === premierTexte && garde.voix === "douce" && String(garde.son).startsWith("data:audio"), "« ▶ L'écouter » : sa voix le lit pendant la fabrication, et il est gardé sur son téléphone");
-ok((await neuf.evaluate(async () => (await (await fetch("/api/direct/ma-figurine", { cache: "no-store" })).json()).etat?.maVoix)) === "douce", "sa voix est gardée pour le studio");
-ok((await debordement(neuf)) <= 0 && !/exemple/i.test(await texte(neuf, ".tf-pendant")), "le panneau d'attente ne déborde pas, sans le mot interdit");
+// ═══ ⏱️ PENDANT LA FABRICATION : UN ÉCRAN SIMPLE (9 novembre 2026, le propriétaire : « l'écran est trop chargé ») ═══
+ok((await neuf.locator(".tf-pendant").count()) === 0 && (await texte(neuf, ".tf-annonce")).includes("On fabrique ta figurine"), "pendant la fabrication : « On fabrique ta figurine », sans rien de plus à préparer");
+ok((await debordement(neuf)) <= 0, "l'attente ne déborde pas");
 await neuf.screenshot({ path: `${D}/ma-figurine-0f-attente.png`, fullPage: true });
-// 🎉 SA FIGURINE APPARAÎT : « 🎭 Créer mon premier mème », un toucher
+// 🎉 SA FIGURINE APPARAÎT : son studio
 for (const [nom, src] of [
   ["neutre", "public/direct/double/pied/salut-1.webp"],
   ["parle", "public/direct/double/parle-1.webp"],
@@ -295,18 +283,10 @@ await fetch(`${F}/clik_ma_figurine?habitant_id=eq.${zoe.id}`, {
   body: JSON.stringify({ neutre: `${zoe.id}/neutre-essai.webp`, parle: `${zoe.id}/parle-essai.webp`, prete_le: new Date().toISOString() }),
 });
 await neuf.reload({ waitUntil: "networkidle" });
-const revele = Date.now();
 await fermerPablito(neuf, "#o-figurine");
-await neuf.waitForSelector(".tf-revele", { timeout: 30000 });
-ok((await texte(neuf, ".tf-revele")).includes("La voilà ! Ton premier mème est prêt.") && (await texte(neuf, ".tf-revele")).includes(premierTexte), "à la révélation : son premier mème est prêt, juste sous sa figurine");
+await neuf.waitForSelector(".tf-moi .fqp", { timeout: 30000 });
+ok((await neuf.locator(".tf-revele").count()) === 0, "sa figurine apparaît : son studio, prêt pour son premier mème");
 await neuf.screenshot({ path: `${D}/ma-figurine-0g-revele.png` });
-await neuf.locator(".tf-revele-go").click();
-await neuf.waitForSelector(".tf-meme-pret video", { timeout: 90000 });
-const enSecondes = Math.round((Date.now() - revele) / 1000);
-const [premierMsg] = (await lire("clik_figurine_message", `habitant_id=eq.${zoe.id}`)) ?? [];
-ok(premierMsg?.texte === premierTexte && premierMsg?.voix === "douce", `un toucher : son premier mème est fait, avec son texte et sa voix (${premierMsg?.texte})`);
-ok(enSecondes <= 60, `le premier mème en moins d'une minute après la révélation (${enSecondes} s)`);
-ok((await neuf.evaluate(() => localStorage.getItem("clikme-premier-meme-v1"))) === null && (await neuf.locator(".tf-revele").count()) === 0, "parti : celui qu'elle avait préparé n'attend plus");
 
 // ═══ LÉA : SA PHOTO ═══
 const lea = await tel(LEA);

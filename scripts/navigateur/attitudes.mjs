@@ -74,6 +74,27 @@ ok(
   (await p.locator(".tf-moi .tf-expr button").count()) === 8 && attitudes.length === 6 && ["Oh non", "En douce", "Bras croisés", "Victoire", "Chut", "Cœur"].every((a, k) => attitudes[k].includes(a)),
   `deux rangées : ses huit visages, puis « Son attitude » (${attitudes.join(" · ")})`,
 );
+// (9 novembre 2026 : « quand je clique sur “Son attitude”, ça ne fonctionne pas » — le menu du bas couvrait le tiroir,
+// et l'ordinateur ne pouvait pas défiler de côté.) Chaque bouton, une fois amené à l'écran, est bien sous le doigt.
+const sousLeDoigt = () =>
+  p.evaluate(() =>
+    [...document.querySelectorAll(".tf-moi .tf-tiroir .tf-expr button, .tf-moi .tf-tiroir .tf-att button")]
+      .filter((x) => {
+        x.scrollIntoView({ block: "nearest", inline: "nearest" });
+        const r = x.getBoundingClientRect();
+        return !x.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+      })
+      .map((x) => x.textContent.trim()),
+  );
+const cachesTel = await sousLeDoigt();
+ok(cachesTel.length === 0, `au téléphone : les quatorze boutons du tiroir se touchent, rien sous le menu du bas (${cachesTel.join(", ") || "aucun caché"})`);
+await p.setViewportSize({ width: 1280, height: 800 });
+await p.waitForTimeout(400);
+const deCote = await p.evaluate(() => [...document.querySelectorAll(".tf-moi .tf-tiroir .tf-expr, .tf-moi .tf-tiroir .tf-att")].map((x) => x.scrollWidth - x.clientWidth));
+const cachesOrdi = await sousLeDoigt();
+ok(deCote.length === 2 && deCote.every((d) => d <= 1) && cachesOrdi.length === 0, `à l'ordinateur : toutes les têtes et attitudes à l'écran, sans défiler de côté (${deCote.join(", ")} ; ${cachesOrdi.join(", ") || "aucun caché"})`);
+await p.setViewportSize({ width: 390, height: 844 });
+await p.waitForTimeout(400);
 await p.locator(".tf-moi .tf-att button", { hasText: "Oh non" }).click();
 await p.waitForTimeout(500);
 const tient = await p.evaluate(() => {
