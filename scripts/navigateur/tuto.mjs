@@ -106,6 +106,8 @@ const pages = await ines.locator(".mc-feuille-visite .tu-page").evaluateAll((l) 
 ok(pages.join(",") === "creer,decouvrir,autour,memes,proches,moi", `la visite : six pages (${pages.join(", ")})`);
 ok((await texte(ines, ".mc-feuille-visite")).includes("Je te fais visiter ? Touche une page : je te la montre sur place.") && (await texte(ines, ".tu-som-progres")).includes("0 page vue sur 6"), "sa bulle, et « 0 page vue sur 6 »");
 ok((await ines.locator(".mc-logo .mc-logo-point").count()) === 0 && (await ines.evaluate(() => localStorage.getItem("clikme-tuto-visite"))) === "1", "ouverte une fois : le point rose s'en va");
+await ines.waitForTimeout(400);
+ok(ines.sons.includes("/collection/pablito/tuto-visite-1.mp3"), `sa voix : « Je te fais visiter ? » (${ines.sons.join(", ")})`);
 ok((await debordement(ines)) <= 0 && (await sansMotInterdit(ines)), "la visite ne déborde pas, sans le mot interdit");
 await ines.screenshot({ path: `${D}/tuto-3-visite.png` });
 

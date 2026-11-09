@@ -36,12 +36,13 @@ export const NOM_GUIDE = "Pablito";
  */
 const voix = (cle: string, fichier: string) => [cle, `/collection/pablito/${fichier}.mp3`] as const;
 /**
- * Les bulles du tuto déjà enregistrées (`public/collection/pablito/<nom>.mp3`), reçues du patron le 9 novembre 2026 ;
- * manque encore celle de la visite (`tuto-visite-1` : « Je te fais visiter ? »).
+ * Les bulles du tuto déjà enregistrées (`public/collection/pablito/<nom>.mp3`), reçues du patron le 9 novembre 2026 :
+ * toutes (la dernière, celle de la visite, « Je te fais visiter ? », dans l'après-midi).
  */
 const enSerie = (page: string, n: number) => Array.from({ length: n }, (_, k) => `tuto-${page}-${k + 1}`);
 export const TUTO_ENREGISTRES = [
   ...enSerie("bienvenue", 3),
+  "tuto-visite-1",
   ...enSerie("creer", 4),
   ...enSerie("decouvrir", 3),
   ...enSerie("autour", 3),
