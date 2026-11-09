@@ -368,6 +368,7 @@ figurines » à attendre.
 - **Celui qui reçoit** : « Et toi ? » mène à « Crée ta figurine ».
 
 **Coût à surveiller** : une figurine, c'est 2 images du moteur (plus 2 par visage ouvert) ; le plafond du jour le tient.
+(Le 9 novembre, la joie faite d'office l'avait portée à 4 : voir 9.0 undevicies.)
 
 ### 9.0 septies Sa carte de personnage, et la rencontre du jour (4 novembre, la nuit) — construit
 
@@ -1677,6 +1678,27 @@ jour ; sa voix est enregistrée par lui (`public/collection/pablito/tuto-*.mp3`,
 L'essai : `tuto.mjs` (un nouveau venu : ses trois bulles et leurs voix, la lumière sur le logo, « Je crée ma figurine »,
 une seule fois ; Inès, qui a sa figurine : le point rose, la visite et ses six pages, « Créer » montrée bouton par bouton,
 la suite sur « Découvrir », « Échap », « Créer » vue, « Retour » qui arrête, plus aucune fenêtre dans les pages).
+
+### 9.0 undevicies 💶 Le prix d'une figurine (9 novembre)
+
+Le propriétaire : « j'ai l'impression que ça coûte très cher : en faisant 3 ou 4 créations, j'en ai eu pour 50
+centimes ». Le compte était juste : une figurine, c'était 4 images du moteur, toutes en qualité « high » (la plus
+chère), au format 1024 × 1536 — sa figurine, sa bouche ouverte, puis sa joie fermée et ouverte, faites d'office.
+
+- **Sa joie n'est plus faite d'avance** (`visagesVoulus`, `lib/direct/ma-figurine-serveur.ts`) : comme les autres
+  visages, elle se fabrique la première fois qu'il la choisit (ou qu'un mème prêt, une des trois façons de le dire, la
+  demande). Une figurine, c'est 2 images ; qui s'arrête à la création n'en paie plus que 2.
+- **La qualité « high » pour l'image qui crée, seulement** (`qualiteFigurine`, `qualiteSuite`,
+  `lib/direct/figurine-expressions-serveur.ts`) : sa figurine à partir de sa photo (la ressemblance s'y joue) et sa
+  figurine du mois (une nouvelle tenue). Tout ce qui part d'une figurine déjà dessinée et n'en change que le visage, la
+  bouche ou les bras — sa bouche ouverte, ses visages, ses attitudes, ses réactions, la bouche de son look — passe en
+  « medium » : environ quatre fois moins cher, et montré à 900 pixels au plus.
+- **Réglages** : `FIGURINE_QUALITE` (l'image qui crée, `high` par défaut), `FIGURINE_QUALITE_SUITE` (le reste, `medium`
+  par défaut ; `high` pour revenir à l'ancien prix si la bouche ouverte, en parlant, se distinguait trop de sa figurine).
+- **Le prix d'une figurine, en images « high »** : 4 avant ; 1 « high » + 1 « medium » maintenant (environ 1,25), soit
+  à peu près 70 % de moins. Le vrai prix se lit dans l'Usage du compte OpenAI, modèle par modèle.
+
+Les figurines des commerçants (`figurine-pro-serveur.ts`, `FIGURINE_QUALITE`) ne changent pas.
 
 ### 9.1 L'idée en une phrase
 

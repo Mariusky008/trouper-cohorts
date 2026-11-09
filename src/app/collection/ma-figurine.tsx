@@ -390,8 +390,8 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const [veut, setVeut] = useState<{ s: Sentiment | null; n: number }>({ s: null, n: 0 });
   const micro = useRef<{ rec: MediaRecorder; flux: MediaStream; t0: number; minuteur: number } | null>(null);
 
-  // 🎭 SES EXPRESSIONS : le moteur d'image les fait (deux tours ; la page attend en arrière-plan) — la joie d'office,
-  // et chaque autre visage la première fois qu'il le choisit (`veut`)
+  // 🎭 SES EXPRESSIONS : le moteur d'image les fait (deux tours ; la page attend en arrière-plan) — chaque visage la
+  // première fois qu'il le choisit (`veut`), la joie aussi (9 novembre 2026 : plus rien d'office, voir `visagesVoulus`)
   useEffect(() => {
     if (!etat0.expressionsAFaire && !veut.s) return;
     let fini = false;

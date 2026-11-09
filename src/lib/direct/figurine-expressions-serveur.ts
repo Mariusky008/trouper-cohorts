@@ -139,10 +139,6 @@ export async function reprendre(rendu: Buffer, cadre: Cadre): Promise<Buffer> {
 
 // ─── le moteur ──────────────────────────────────────────────────────────────────────────────────
 /**
- * Une image demandée au moteur, à partir d'une image (format 2:3). Fidélité haute par défaut (elle recopie l'image :
- * ses expressions, sa bouche ouverte) ; basse pour la figurine d'un client (le moteur la redessine, comme ChatGPT).
- */
-/**
  * 🚦 UN 429 DU MOTEUR : plus de crédit (`credit` : `insufficient_quota`, rien ne sert d'attendre), ou trop de demandes
  * dans la minute (`attente` : ce qu'il demande, entre 2 et 30 secondes).
  */
@@ -169,6 +165,23 @@ export function raisonDuMoteur(corps: string): string {
   return corps;
 }
 
+/**
+ * 💶 LA QUALITÉ DEMANDÉE AU MOTEUR (9 novembre 2026, le propriétaire : « en faisant 3 ou 4 créations, j'en ai eu pour 50
+ * centimes ») : c'est elle qui fait le prix d'une image — en « medium », environ quatre fois moins qu'en « high ».
+ *   · `qualiteFigurine` (« high ») : l'image qui CRÉE — sa figurine à partir de sa photo (la ressemblance s'y joue), sa
+ *     figurine du mois dans une nouvelle tenue. `FIGURINE_QUALITE` pour la changer.
+ *   · `qualiteSuite` (« medium ») : tout ce qui part d'une figurine déjà dessinée et n'en change que le visage, la bouche
+ *     ou les bras — sa bouche ouverte, ses visages, ses attitudes, ses réactions —, montré à 900 pixels au plus.
+ *     `FIGURINE_QUALITE_SUITE=high` pour revenir à l'ancien prix.
+ */
+export const qualiteFigurine = () => s(process.env.FIGURINE_QUALITE) || "high";
+export const qualiteSuite = () => s(process.env.FIGURINE_QUALITE_SUITE) || "medium";
+
+/**
+ * Une image demandée au moteur, à partir d'une image (format 2:3). Fidélité haute par défaut (elle recopie l'image :
+ * ses expressions, sa bouche ouverte). Qualité `qualiteSuite` par défaut : l'image qui crée passe `{ quality:
+ * qualiteFigurine() }` dans `plus`.
+ */
 export async function editer(image: Buffer, consigne: string, avant: number, fidelite: "high" | "low" = "high", plus: Record<string, string> = {}): Promise<Buffer | { erreur: string; detail?: string }> {
   const cle = s(process.env.OPENAI_API_KEY);
   if (!cle) return { erreur: "Le moteur d'image n'est pas branché ici." };
@@ -177,7 +190,7 @@ export async function editer(image: Buffer, consigne: string, avant: number, fid
   let derniere = "Le moteur d'image n'a pas répondu.";
   for (let m = 0; m < liste.length; m++) {
     // (`plus` : un réglage de plus — `background: "transparent"` pour ses réactions détourées)
-    const reglages: Record<string, string> = { size: `${L}x${H}`, quality: s(process.env.FIGURINE_QUALITE) || "high", input_fidelity: fidelite, output_format: "png", ...plus };
+    const reglages: Record<string, string> = { size: `${L}x${H}`, quality: qualiteSuite(), input_fidelity: fidelite, output_format: "png", ...plus };
     for (let essai = 0; essai < 4; essai++) {
       const reste = avant - Date.now();
       if (reste < 15_000) return { erreur: "Le temps de la requête est passé." };
