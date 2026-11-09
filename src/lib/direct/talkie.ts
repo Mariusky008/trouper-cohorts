@@ -43,10 +43,11 @@ export type FigurineVue = { prenom: string; neutre: string; parle: string; expre
 /**
  * Un proche, dans l'onglet : sa clé (jamais son identifiant), son prénom, sa figurine, s'il est là, ses messages non
  * lus, la dernière chose dite. `lien` : « proches » (ils se sont ajoutés tous les deux : ils se parlent), « attend »
- * (il l'a ajouté, pas encore l'inverse), « ajoute » (on l'a ajouté : « L'ajouter aussi »).
+ * (il l'a ajouté, pas encore l'inverse), « ajoute » (on l'a ajouté : « L'ajouter aussi »). `venu` : il a fait sa
+ * figurine pour lui répondre, venu par son lien WhatsApp (« Nouveau sur ClikMe », une semaine).
  */
 export type LienProche = "proches" | "attend" | "ajoute";
-export type ProcheVivant = { cle: string; prenom: string; image: string; la: boolean; nonLus: number; lien: LienProche; dernier?: { texte: string; le: string; moi: boolean } };
+export type ProcheVivant = { cle: string; prenom: string; image: string; la: boolean; nonLus: number; lien: LienProche; dernier?: { texte: string; le: string; moi: boolean }; venu?: boolean };
 /** La conversation avec un proche. */
 export type Fil = { cle: string; lui: FigurineVue; moi: FigurineVue; la: boolean; messages: MessageFil[] };
 
@@ -162,3 +163,37 @@ export function repliqueA(r: readonly Replique[], t: number): Replique | null {
   if (!r.length) return null;
   return r.find((x) => t >= x.de && t < x.a) ?? (t >= r[r.length - 1].a ? r[r.length - 1] : r[0]);
 }
+
+// ─── 📲 L'ÉTAPE 5 : UN MESSAGE PAR WHATSAPP, À QUELQU'UN QUI N'A PAS CLIKME (`/t/<id>`) ───────────────────────────
+/**
+ * Il parle comme à un proche ; le message part en LIEN (le partage du téléphone, rien à régler chez Meta). Celui qui
+ * l'ouvre entend sa figurine sans rien installer ; pour répondre, il fait la sienne en un selfie (sa réponse se dit
+ * pendant qu'elle se fabrique) — et ils deviennent proches. Trois liens par jour (chaque réponse fait fabriquer une
+ * figurine) ; un lien s'efface au bout de trente jours.
+ */
+export const LIENS_PAR_JOUR = 3;
+export const LIEN_JOURS = 30;
+/** Les personnes qui peuvent répondre à un même lien (et devenir ses proches) : un lien qui circule trop loin s'arrête là. */
+export const REPONSES_PAR_LIEN = 5;
+export const idLienValide = (x: unknown): string | null => (typeof x === "string" && /^[a-z0-9]{12}$/.test(x) ? x : null);
+/** Qui regarde le lien : son auteur ; quelqu'un sans compte ; un compte sans photo ; une figurine en fabrication ; prête. */
+export type VisiteurLien = "auteur" | "sans" | "photo" | "fabrication" | "prete";
+/** Le message d'un lien, tel que la page le montre. `cle` : la clé de profil de son auteur (leur conversation, ensuite). */
+export type LienVu = {
+  id: string;
+  de: FigurineVue;
+  cle: string;
+  pour: string;
+  le: string;
+  duree: number;
+  son: string;
+  repliques: Replique[];
+  expire: string;
+  visiteur: VisiteurLien;
+  /** Sa figurine, prête : de quoi répondre tout de suite. */
+  moi?: FigurineVue;
+  /** Il a déjà répondu (il peut encore : leur conversation continue). */
+  repondu?: boolean;
+};
+/** Le texte qui part avec le lien, dans WhatsApp. */
+export const texteDuLien = (pour: string) => `${pour ? `${pour}, é` : "É"}coute ce que ma figurine a à te dire 😄`;

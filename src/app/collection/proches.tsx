@@ -23,7 +23,7 @@ import { demanderOui } from "./fenetre";
 import { FigurineQuiParle, type FigurineHandle } from "./figurine-qui-parle";
 import { OngletVisible } from "./guide";
 import { sentimentDe, type Sentiment } from "@/lib/direct/ma-figurine";
-import { PAROLE_MAX_S, PAROLE_MIN_S, cleValide, repliqueA, texteDuMessage, type Fil, type MessageFil, type ProcheVivant, type Replique, type RepliqueProposee } from "@/lib/direct/talkie";
+import { PAROLE_MAX_S, PAROLE_MIN_S, cleValide, repliqueA, texteDuLien, texteDuMessage, type Fil, type FigurineVue, type MessageFil, type ProcheVivant, type Replique, type RepliqueProposee } from "@/lib/direct/talkie";
 
 type Reponse = { ok?: boolean; error?: string };
 const ROUTE = "/api/direct/proches";
@@ -37,7 +37,7 @@ async function demander<T>(corps: Record<string, unknown>): Promise<T> {
 const message = (e: unknown) => (e instanceof Error && e.message ? e.message : "Ça n’a pas marché. Réessaie.");
 
 /** « à l'instant », « il y a 5 min », « hier »… */
-function depuis(le: string): string {
+export function depuis(le: string): string {
   const ms = Date.now() - Date.parse(le);
   if (!Number.isFinite(ms)) return "";
   const min = Math.round(ms / 60_000);
@@ -88,6 +88,10 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
   const [inviteOuverte, setInviteOuverte] = useState(false);
   const [copie, setCopie] = useState(false);
   const [geste, setGeste] = useState("");
+  // 📲 par WhatsApp : sa figurine (pour lui parler), puis le lien prêt à partir
+  const [whatsapp, setWhatsapp] = useState<FigurineVue | null>(null);
+  const [pret, setPret] = useState<{ url: string; pour: string; reste: number } | null>(null);
+  const [lienCopie, setLienCopie] = useState(false);
 
   const charger = useCallback(async () => {
     try {
@@ -152,6 +156,32 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
       setErreur(message(e));
     } finally {
       setGeste("");
+    }
+  }
+
+  /** 📲 « Lui parler par WhatsApp » : sa figurine, puis l'écran pour lui parler (comme à un proche). */
+  async function parlerParWhatsApp() {
+    setGeste("whatsapp");
+    setErreur("");
+    try {
+      const r = await fetch(`${ROUTE}?moi=1`, { cache: "no-store" });
+      const j = (await r.json().catch(() => ({}))) as { moi?: FigurineVue } & Reponse;
+      if (!j.moi) throw new Error(j.error || "Ta figurine ne s’est pas chargée. Réessaie.");
+      setWhatsapp(j.moi);
+    } catch (e) {
+      setErreur(message(e));
+    } finally {
+      setGeste("");
+    }
+  }
+  const lienWhatsApp = (x: { url: string; pour: string }) => `https://wa.me/?text=${encodeURIComponent(`${texteDuLien(x.pour)} ${x.url}`)}`;
+  async function copierLeLien(x: { url: string; pour: string }) {
+    try {
+      await navigator.clipboard.writeText(`${texteDuLien(x.pour)} ${x.url}`);
+      setLienCopie(true);
+      window.setTimeout(() => setLienCopie(false), 2500);
+    } catch {
+      window.prompt("Ton lien :", x.url);
     }
   }
 
@@ -233,6 +263,8 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
                     Là maintenant
                   </span>
                 )}
+                {/* (il a fait sa figurine pour lui répondre, venu par son lien WhatsApp) */}
+                {p.venu && <span className="pr-venu">Nouveau, grâce à toi</span>}
               </button>
               <div className="pr-pied">
                 <b>{p.prenom}</b>
@@ -260,6 +292,25 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
         </p>
       )}
 
+      {/* 📲 À QUELQU'UN QUI N'A PAS CLIKME : sa figurine lui arrive par WhatsApp ; pour répondre, il fait la sienne */}
+      {donnees && (
+        <div className="pr-wa">
+          <span className="pr-wa-ico" aria-hidden="true">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12a8 8 0 0 1-11.8 7L4 20.5l1.5-4.8A8 8 0 1 1 21 12z" />
+              <path d="M12 8.5v5M9.5 11h5" />
+            </svg>
+          </span>
+          <span className="pr-wa-texte">
+            <b>Quelqu’un n’a pas ClikMe ?</b>
+            <span>Ta figurine lui arrive par WhatsApp. Pour te répondre, il suffit d’un selfie : sa figurine est prête en une minute.</span>
+            <button type="button" className="pr-bouton clair" disabled={geste === "whatsapp"} onClick={() => void parlerParWhatsApp()}>
+              {geste === "whatsapp" ? "…" : "🎙️ Lui parler par WhatsApp"}
+            </button>
+          </span>
+        </div>
+      )}
+
       {/* 🔗 son lien : ceux qui l'ouvrent peuvent l'ajouter */}
       {donnees?.cle && (
         <div className="pr-lien">
@@ -269,6 +320,45 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
             {copie ? "Lien copié ✓" : "🔗 Envoyer mon lien"}
           </button>
         </div>
+      )}
+
+      {/* 📲 il lui parle (par WhatsApp) : l'écran de toujours ; son message devient un lien */}
+      {whatsapp &&
+        createPortal(
+          <Parler
+            lui={null}
+            moi={whatsapp}
+            boutonEnvoyer="Envoyer par WhatsApp"
+            onFermer={() => setWhatsapp(null)}
+            envoyer={async (p) => {
+              const j = await demander<{ url: string; reste: number }>({ action: "lien-creer", son: p.son, duree: p.duree, repliques: p.repliques, pour: p.pour });
+              setWhatsapp(null);
+              setPret({ url: new URL(j.url, window.location.origin).toString(), pour: p.pour, reste: Number(j.reste) || 0 });
+            }}
+          />,
+          document.body,
+        )}
+      {pret && (
+        <Feuille ouverte onFermer={() => setPret(null)} titre="Ton message est prêt" className="pr-feuille">
+          <div className="pr-pret" data-url={pret.url}>
+            <b>Ton message est prêt !</b>
+            <p>Sur WhatsApp, ta figurine {pret.pour ? `parle à ${pret.pour}` : "lui parle"} sans rien installer. Pour te répondre, un selfie suffit : vous deviendrez proches.</p>
+            <a className="pr-bouton grand" href={lienWhatsApp(pret)} target="_blank" rel="noopener noreferrer">
+              L’envoyer sur WhatsApp
+            </a>
+            <div className="pr-pret-autres">
+              <button type="button" onClick={() => void copierLeLien(pret)}>
+                {lienCopie ? "Lien copié ✓" : "Copier le lien"}
+              </button>
+              {typeof navigator !== "undefined" && "share" in navigator && (
+                <button type="button" onClick={() => void navigator.share({ text: texteDuLien(pret.pour), url: pret.url }).catch(() => undefined)}>
+                  Une autre appli
+                </button>
+              )}
+            </div>
+            <small>{pret.reste > 0 ? `Encore ${pret.reste} aujourd’hui par WhatsApp.` : "C’était le dernier d’aujourd’hui par WhatsApp."} Le lien s’efface dans 30 jours.</small>
+          </div>
+        </Feuille>
       )}
 
       {/* (posée sur la page entière : elle couvre le menu, quoi que fassent les onglets) */}
@@ -299,7 +389,7 @@ function ligneDe(p: ProcheVivant): string {
   if (p.lien === "ajoute") return `Veut te parler : ajoute ${p.prenom} aussi.`;
   if (p.lien === "attend") return `En attente : ${p.prenom} doit t’ajouter aussi.`;
   if (!p.dernier) return "Pas encore de message : dis-lui bonjour 👋";
-  const dit = p.dernier.texte ? `« ${p.dernier.texte.length > 60 ? `${p.dernier.texte.slice(0, 58)}…` : p.dernier.texte} »` : "🎙️ un message";
+  const dit = p.dernier.texte ? `« ${p.dernier.texte.length > 46 ? `${p.dernier.texte.slice(0, 44).trimEnd()}…` : p.dernier.texte} »` : "🎙️ un message";
   return `${p.dernier.moi ? "Toi : " : "T’a parlé : "}${dit} · ${depuis(p.dernier.le)}`;
 }
 
@@ -595,10 +685,13 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
 
       {enregistrer && (
         <Parler
-          fil={fil}
+          lui={fil.lui}
+          moi={fil.moi}
+          boutonEnvoyer={`Envoyer à ${fil.lui.prenom}`}
           onFermer={() => setEnregistrer(false)}
-          onEnvoye={(x) => {
-            setFil((f) => (f ? { ...f, messages: [...f.messages.map((y) => ({ ...y, nouveau: false })), x] } : f));
+          envoyer={async (p) => {
+            const j = await demander<{ message: MessageFil }>({ action: "envoyer", cle: fil.cle, son: p.son, duree: p.duree, repliques: p.repliques });
+            setFil((f) => (f ? { ...f, messages: [...f.messages.map((y) => ({ ...y, nouveau: false })), j.message] } : f));
             setVue(fil.messages.length);
             setIr(0);
             setEnregistrer(false);
@@ -625,7 +718,35 @@ const TYPES_SON = ["audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/webm;codecs
 type Enregistrement = { url: string; data: string; duree: number };
 type Compris = { repliques: RepliqueProposee[]; dispo: Sentiment[]; transcrit: boolean };
 
-function Parler({ fil, onFermer, onEnvoye }: { fil: Fil; onFermer: () => void; onEnvoye: (m: MessageFil) => void }) {
+/** Ce qui part : sa voix, ses répliques (les têtes qu'il a choisies) ; `pour` : le prénom tapé (par WhatsApp). */
+export type EnvoiParole = { son: string; duree: number; repliques: Replique[]; pour: string };
+
+/**
+ * 🎙️ LUI PARLER — il touche le micro, il parle ; puis « Ta figurine a compris ça » ; puis il envoie. Pour un proche
+ * (`lui`), pour quelqu'un qui n'a pas ClikMe (`lui` absent : « Son prénom », « Envoyer par WhatsApp »), ou pour celui
+ * qui répond à un lien pendant que sa figurine se fabrique (`moi` absent : son selfie à l'écran ; `attendreMoi` la rend
+ * quand elle est prête — ce qu'il a dit attend, puis elle comprend).
+ */
+export function Parler({
+  lui,
+  moi,
+  attendreMoi,
+  photoAttente,
+  envoyer: envoyerParole,
+  boutonEnvoyer,
+  onFermer,
+}: {
+  lui: { prenom: string; neutre: string } | null;
+  moi: FigurineVue | null;
+  attendreMoi?: () => Promise<FigurineVue>;
+  photoAttente?: string;
+  envoyer: (p: EnvoiParole) => Promise<void>;
+  boutonEnvoyer: string;
+  onFermer: () => void;
+}) {
+  const [maFig, setMaFig] = useState<FigurineVue | null>(moi);
+  const [pour, setPour] = useState("");
+  const [bloque, setBloque] = useState(false);
   const [etape, setEtape] = useState<"pret" | "micro" | "comprend" | "choisir" | "envoi">("pret");
   const [secondes, setSecondes] = useState(0);
   const [erreur, setErreur] = useState("");
@@ -643,7 +764,17 @@ function Parler({ fil, onFermer, onEnvoye }: { fil: Fil; onFermer: () => void; o
   useEffect(() => {
     comprisRef.current = compris;
   }, [compris]);
-  const prenom = fil.lui.prenom;
+  const prenom = lui?.prenom ?? "";
+  const aQui = prenom || "ton ami";
+
+  // (la page ne défile pas dessous)
+  useEffect(() => {
+    const avant = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = avant;
+    };
+  }, []);
 
   // (il s'en va : le micro s'éteint)
   useEffect(
@@ -667,7 +798,7 @@ function Parler({ fil, onFermer, onEnvoye }: { fil: Fil; onFermer: () => void; o
     try {
       flux = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
     } catch {
-      return setErreur(`Autorise le micro pour parler à ${prenom}.`);
+      return setErreur(`Autorise le micro pour parler à ${aQui}.`);
     }
     const type = typeof MediaRecorder !== "undefined" ? TYPES_SON.find((t) => MediaRecorder.isTypeSupported?.(t)) : undefined;
     let rec: MediaRecorder;
@@ -763,6 +894,19 @@ function Parler({ fil, onFermer, onEnvoye }: { fil: Fil; onFermer: () => void; o
   /** 🧠 « Ta figurine a compris ça » : ses phrases, et trois têtes pour chacune (la première d'office). */
   async function comprendre(e: Enregistrement) {
     setEnreg(e);
+    setBloque(false);
+    setErreur("");
+    setEtape("comprend");
+    // (sa figurine se fabrique encore : ce qu'il a dit attend qu'elle soit prête)
+    if (!maFig && attendreMoi) {
+      try {
+        setMaFig(await attendreMoi());
+      } catch (x) {
+        setErreur(message(x));
+        setBloque(true);
+        return;
+      }
+    }
     try {
       const j = await demander<{ repliques?: RepliqueProposee[]; dispo?: Sentiment[]; transcrit?: boolean }>({ action: "comprendre", son: e.data, duree: e.duree });
       const repliques = Array.isArray(j.repliques) && j.repliques.length ? j.repliques : [{ de: 0, a: e.duree, texte: "", propositions: [] }];
@@ -800,15 +944,8 @@ function Parler({ fil, onFermer, onEnvoye }: { fil: Fil; onFermer: () => void; o
     setEtape("envoi");
     setErreur("");
     try {
-      const j = await demander<{ message: MessageFil }>({
-        action: "envoyer",
-        cle: fil.cle,
-        son: enreg.data,
-        duree: enreg.duree,
-        repliques: compris.repliques.map((r, i) => ({ de: r.de, a: r.a, texte: r.texte, tete: choix[i] ?? null })),
-      });
+      await envoyerParole({ son: enreg.data, duree: enreg.duree, repliques: compris.repliques.map((r, i) => ({ de: r.de, a: r.a, texte: r.texte, tete: choix[i] ?? null })), pour: pour.trim() });
       fabriquerMesTetes();
-      onEnvoye(j.message);
     } catch (x) {
       setErreur(message(x));
       setEtape("choisir");
@@ -825,22 +962,25 @@ function Parler({ fil, onFermer, onEnvoye }: { fil: Fil; onFermer: () => void; o
 
   const haut = (
     <header className="pr-haut">
-      <button type="button" className="pr-retour" aria-label={compris ? "Recommencer" : `Revenir à ta conversation avec ${prenom}`} onClick={compris ? recommencer : onFermer}>
+      <button type="button" className="pr-retour" aria-label={compris ? "Recommencer" : "Revenir"} onClick={compris ? recommencer : onFermer}>
         <IconeRetour />
       </button>
-      <span className="pr-avatar">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={fil.lui.neutre} alt="" draggable={false} />
-      </span>
+      {lui && (
+        <span className="pr-avatar">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={lui.neutre} alt="" draggable={false} />
+        </span>
+      )}
       {compris ? (
         <span className="pr-qui">
           <b>Ta figurine a compris ça</b>
-          <small>Avant d’envoyer à {prenom}</small>
+          <small>{lui ? `Avant d’envoyer à ${prenom}` : "Avant de l’envoyer par WhatsApp"}</small>
         </span>
       ) : (
         <>
           <span className="pr-qui">
-            <b>À {prenom}</b>
+            <b>{lui ? `À ${prenom}` : "Par WhatsApp"}</b>
+            {!lui && <small>À quelqu’un qui n’a pas ClikMe</small>}
           </span>
           <small className="pr-max">20 s au plus</small>
         </>
@@ -849,16 +989,16 @@ function Parler({ fil, onFermer, onEnvoye }: { fil: Fil; onFermer: () => void; o
   );
 
   // ─── « Ta figurine a compris ça » ───
-  if (compris && enreg && (etape === "choisir" || etape === "envoi")) {
+  if (compris && enreg && maFig && (etape === "choisir" || etape === "envoi")) {
     const r = compris.repliques[Math.min(ir, compris.repliques.length - 1)];
     const t = choix[Math.min(ir, choix.length - 1)] ?? null;
     const s = sentimentDe(t);
     return (
-      <div className="pr-plein pr-parler" role="dialog" aria-modal="true" aria-label={`Ton message à ${prenom}`}>
+      <div className="pr-plein pr-parler" role="dialog" aria-modal="true" aria-label={`Ton message à ${aQui}`}>
         {haut}
         <section className="pr-scene seule" aria-label="L’aperçu" data-replique={ir} data-tete={t ?? ""}>
           <div className="pr-parleur">
-            <FigurineQuiParle ref={fig} neutre={fil.moi.neutre} parle={fil.moi.parle} expressions={fil.moi.expressions} sentiment={t} onTemps={surTemps} onJoue={setJoue} className="pr-fqp" />
+            <FigurineQuiParle ref={fig} neutre={maFig.neutre} parle={maFig.parle} expressions={maFig.expressions} sentiment={t} onTemps={surTemps} onJoue={setJoue} className="pr-fqp" />
           </div>
           {s && (
             <span className="pr-badge" aria-label={`Sa tête : ${s.court}`}>
@@ -880,6 +1020,15 @@ function Parler({ fil, onFermer, onEnvoye }: { fil: Fil; onFermer: () => void; o
             {joue ? "⏸ Pause" : `▶ Voir ce que ça donne · ${mmss(enreg.duree)}`}
           </button>
         </section>
+        {/* (par WhatsApp : son prénom, que sa page affiche — « Karim, Zoé t'a laissé un message ») */}
+        {!lui && (
+          <label className="pr-pour">
+            <span>
+              Son prénom <small>· facultatif, il s’affiche chez lui</small>
+            </span>
+            <input type="text" value={pour} maxLength={30} autoComplete="off" onChange={(e) => setPour(e.target.value)} />
+          </label>
+        )}
         <h3 className="pr-titre">Ce qu’elle va jouer</h3>
         {!compris.transcrit && <p className="pr-note">Je n’ai pas pu écrire ce que tu as dit : choisis juste sa tête.</p>}
         <ol className="pr-choix">
@@ -927,7 +1076,7 @@ function Parler({ fil, onFermer, onEnvoye }: { fil: Fil; onFermer: () => void; o
         )}
         <div className="pr-bas colonne">
           <button type="button" className="pr-bouton grand" disabled={etape === "envoi"} onClick={() => void envoyer()}>
-            {etape === "envoi" ? "Envoi…" : `Envoyer à ${prenom}`}
+            {etape === "envoi" ? "Envoi…" : boutonEnvoyer}
           </button>
           <button type="button" className="pr-recommencer" disabled={etape === "envoi"} onClick={recommencer}>
             Recommencer
@@ -940,18 +1089,29 @@ function Parler({ fil, onFermer, onEnvoye }: { fil: Fil; onFermer: () => void; o
   // ─── il parle ───
   const ecoute = etape === "micro";
   return (
-    <div className="pr-plein pr-parler" role="dialog" aria-modal="true" aria-label={`Parler à ${prenom}`}>
+    <div className="pr-plein pr-parler" role="dialog" aria-modal="true" aria-label={`Parler à ${aQui}`}>
       {haut}
       <section className="pr-micro-scene" aria-label="Ta figurine">
-        <div className={`pr-moi-fig${ecoute ? " ecoute" : ""}`} ref={bouche}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="n" src={fil.moi.neutre} alt="Ta figurine, qui t’écoute" draggable={false} />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="p" src={fil.moi.parle} alt="" draggable={false} />
-        </div>
+        {maFig ? (
+          <div className={`pr-moi-fig${ecoute ? " ecoute" : ""}`} ref={bouche}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="n" src={maFig.neutre} alt="Ta figurine, qui t’écoute" draggable={false} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="p" src={maFig.parle} alt="" draggable={false} />
+          </div>
+        ) : (
+          /* sa figurine se fabrique : son selfie, et le temps qui passe */
+          <div className="pr-attente-fig" ref={bouche}>
+            <span className="pr-attente-rond" aria-hidden="true" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {photoAttente ? <img src={photoAttente} alt="Ton selfie" draggable={false} /> : <i aria-hidden="true" />}
+            <b>Ta figurine arrive…</b>
+            <small>Environ une minute. Dis ta réponse en attendant.</small>
+          </div>
+        )}
         <span className="pr-etat">
           <i className={ecoute ? "rouge" : ""} />
-          {ecoute ? "Je t’écoute" : etape === "comprend" ? "Ta figurine réfléchit…" : "Prête"}
+          {ecoute ? "Je t’écoute" : etape === "comprend" ? (maFig ? "Ta figurine réfléchit…" : "Ta figurine se termine…") : maFig ? "Prête" : "Elle se fabrique"}
         </span>
       </section>
       {ecoute && (
@@ -964,12 +1124,25 @@ function Parler({ fil, onFermer, onEnvoye }: { fil: Fil; onFermer: () => void; o
         </div>
       )}
       <p className="pr-consigne">
-        {etape === "comprend" ? "Elle écrit ce que tu as dit, et choisit ses têtes…" : ecoute ? "Parle naturellement. Touche encore pour finir." : `Parle naturellement, comme à ${prenom} en vrai : ta figurine fera les têtes.`}
+        {etape === "comprend"
+          ? maFig
+            ? "Elle écrit ce que tu as dit, et choisit ses têtes…"
+            : "Ce que tu as dit attend ta figurine : encore un petit moment."
+          : ecoute
+            ? "Parle naturellement. Touche encore pour finir."
+            : maFig
+              ? `Parle naturellement, comme à ${aQui} en vrai : ta figurine fera les têtes.`
+              : `Pendant qu’elle se fabrique, dis ta réponse à ${aQui} : parle naturellement.`}
       </p>
       {erreur && (
         <p className="pr-erreur" role="alert">
           {erreur}
         </p>
+      )}
+      {bloque && enreg && (
+        <button type="button" className="pr-bouton clair pr-reessayer" onClick={() => void comprendre(enreg)}>
+          Réessayer
+        </button>
       )}
       <div className="pr-bas colonne">
         <button type="button" className={`pr-micro${ecoute ? " actif" : ""}`} disabled={etape === "comprend"} aria-label={ecoute ? "Finir" : "Parler"} onClick={() => (ecoute ? arreter() : void commencer())}>
@@ -1031,6 +1204,29 @@ export const STYLES_PROCHES = `
 .pr-lien b{font-size:14.5px;font-weight:800}
 .pr-lien span{font-size:12.5px;line-height:1.4;color:#CDB4C0}
 .pr-erreur{margin:0;font-size:13px;color:#FFB4B4;text-align:center}
+.pr-venu{position:absolute;left:9px;bottom:9px;padding:4px 8px;border-radius:999px;background:#F2C46B;color:#2A0F1F;font-size:10.5px;font-weight:800}
+.pr-la + .pr-venu,.pr-mini .pr-la ~ .pr-venu{bottom:36px}
+.pr-wa{display:flex;align-items:flex-start;gap:12px;padding:14px;border-radius:22px;background:#2A1422;border:1.5px solid rgba(242,196,107,.45)}
+.pr-wa-ico{display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:50%;background:#FF2E9A;color:#fff}
+.pr-wa-texte{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}
+.pr-wa-texte b{font-size:14.5px;font-weight:800}
+.pr-wa-texte > span{font-size:12.5px;line-height:1.4;color:#CDB4C0}
+.pr-pret{display:flex;flex-direction:column;align-items:center;gap:10px;padding:4px 2px 6px;text-align:center}
+.pr-pret b{font-size:20px;font-weight:900}
+.pr-pret p{margin:0;font-size:13.5px;line-height:1.45;color:#D9C3CB}
+.pr-pret a.pr-bouton{text-decoration:none}
+.pr-pret-autres{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.pr-pret-autres button{height:42px;padding:0 16px;border:1.5px solid rgba(255,255,255,.2);border-radius:999px;background:none;color:#FFF4E6;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer}
+.pr-pret small{font-size:12px;color:#B49AA8}
+.pr-pour{display:flex;flex-direction:column;gap:6px;margin:2px 2px 0;font-size:12.5px;font-weight:800;color:#CDB4C0}
+.pr-pour small{font-weight:600;color:#B49AA8}
+.pr-pour input{height:46px;padding:0 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.16);background:#22101B;color:#FFF4E6;font:inherit;font-size:15px;font-weight:700;box-sizing:border-box}
+.pr-reessayer{align-self:center}
+.pr-attente-fig{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.pr-attente-fig img,.pr-attente-fig > i{display:block;width:150px;height:150px;border-radius:50%;object-fit:cover;background:#3A1A30;box-shadow:0 0 0 6px rgba(242,196,107,.2)}
+.pr-attente-rond{position:absolute;top:-8px;left:50%;width:166px;height:166px;margin-left:-83px;border-radius:50%;border:4px solid rgba(242,196,107,.25);border-top-color:#F2C46B;box-sizing:border-box;animation:pr-tourne 1.6s linear infinite}
+.pr-attente-fig b{margin-top:10px;font-size:16px;font-weight:900}
+.pr-attente-fig small{font-size:12.5px;color:#CDB4C0}
 .pr-invite{display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px 4px 8px;text-align:center}
 .pr-invite img{width:150px;aspect-ratio:3/4;object-fit:cover;object-position:50% 22%;border-radius:22px;box-shadow:0 18px 36px -16px rgba(0,0,0,.9)}
 .pr-invite b{font-size:19px;font-weight:900}

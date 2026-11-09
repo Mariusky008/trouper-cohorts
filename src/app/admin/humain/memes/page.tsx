@@ -132,6 +132,10 @@ export default async function PageMemes() {
                   { n: "Conversations", v: String(tk.conversations) },
                   { n: "… d’au moins trois échanges", v: String(tk.conversationsTroisEchanges) },
                   { n: "Taux de réponse", v: tk.envoyes ? `${tk.tauxReponse} %` : "—" },
+                  { n: "📲 Liens WhatsApp envoyés", v: String(tk.liens) },
+                  { n: "… ouverts", v: String(tk.liensOuverts) },
+                  { n: "… figurines faites pour répondre", v: String(tk.liensFigurines) },
+                  { n: "… réponses", v: String(tk.liensReponses) },
                 ].map((x) => (
                   <div key={x.n} style={carte}>
                     <small style={{ color: "#666" }}>{x.n}</small>

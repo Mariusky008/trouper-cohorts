@@ -1610,6 +1610,45 @@ joue 🤦 puis 🤩 ; envoyé, rangé, Léa prévenue ; chez Léa, la figurine d
 le son » ; le signalement ; « L'ajouter aussi » ; « Là maintenant » coupé ; le lien de Léa ; la mesure, sans un
 identifiant).
 
+### 9.0 septendecitricies 📲 Le talkie-walkie par WhatsApp : l'étape 5 (9 novembre)
+
+Un message de figurine à quelqu'un qui n'a pas ClikMe, et la façon la plus simple de lui répondre (la maquette « L'étape
+5 », validée par le propriétaire : « ok on passe au code de l'étape 5 »). Le moteur du bouche-à-oreille : chaque message
+est une invitation, faite par un ami. Rien à régler chez Meta : c'est un lien, partagé par le téléphone (`wa.me`).
+
+- **Chez celui qui l'envoie** (« Proches ») : « Quelqu'un n'a pas ClikMe ? — 🎙️ Lui parler par WhatsApp ». Il parle
+  comme à un proche (`Parler`, le même écran), « Ta figurine a compris ça », **son prénom** (facultatif : « Karim, Zoé
+  t'a laissé un message »), « Envoyer par WhatsApp » ; puis « Ton message est prêt ! » : « L'envoyer sur WhatsApp »
+  (le texte « Karim, écoute ce que ma figurine a à te dire 😄 » et le lien), « Copier le lien », « Une autre appli ».
+  **Trois liens par jour** (chaque réponse fait fabriquer une figurine).
+- **Le lien** (`clikme.fr/t/<id>`, `app/t/[id]`) : l'aperçu dans WhatsApp montre sa figurine et « 🎙️ Zoé t'a laissé un
+  message avec sa figurine » ; la page la fait parler sans rien installer (sa voix, la tête de chaque réplique au bon
+  moment, les sous-titres). Privé (seul qui a le lien le voit), jamais dans les moteurs de recherche, **effacé au bout
+  de trente jours** (à la première lecture d'après ; sa voix reste si quelqu'un a répondu : elle ouvre leur
+  conversation). Son auteur y voit « C'est ton message » (et le renvoie).
+- **Répondre, sans compte** : « Réponds-lui avec ta figurine » → son selfie, son prénom, deux cases obligatoires (« C'est
+  bien moi », « 15 ans ou plus ») ; son compte s'ouvre (`ma-figurine`, « photo », avec `lien` : dans la ville de qui
+  lui a écrit) et **sa figurine se fabrique PENDANT qu'il dit sa réponse** (son selfie à l'écran, « Ta figurine
+  arrive… ») : quand elle est prête, ce qu'il a dit est compris (« Ta figurine a compris ça », ses premières têtes) ;
+  « Envoyer à Zoé ». Qui a déjà sa figurine répond tout de suite.
+- **Ils deviennent proches** (répondre vaut accord) : le message d'origine ouvre leur conversation, sa réponse suit ;
+  « C'est parti ! », « Ne perds jamais ta figurine » (son e-mail, s'il veut : le compte vient après), « Ouvrir ClikMe »
+  (leur conversation). L'auteur est prévenu : « 🎙️ Karim t'a répondu avec sa figurine ! — Sa toute première » ; sa
+  carte dit « Nouveau, grâce à toi » une semaine. **Cinq personnes au plus** peuvent répondre à un même lien (et
+  devenir ses proches) : un lien qui circule trop loin s'arrête là.
+- **Le seau** : `liens/<id>.json` et sa voix ; `<habitant>/liens-jour.json` ; `<habitant>/provisoire.json` (son compte
+  est né d'un lien) ; `<habitant>/venus.json` (ceux que ses liens ont fait venir).
+- **La mesure** (`w-<lien>` dans `clik_meme_evenement`, sur `/admin/humain/memes`) : liens envoyés, ouverts (pas par
+  un robot d'aperçu, pas par son auteur), figurines commencées pour répondre, réponses.
+
+**Pas encore, à décider** : effacer au bout de trente jours les comptes nés d'un lien et jamais sauvegardés (ils sont
+marqués ; rien ne les efface encore, et l'écran ne le promet pas).
+
+L'essai : `talkie-whatsapp.mjs` (Zoé l'envoie par WhatsApp — le lien prêt, wa.me ; l'aperçu, et le robot qui ne compte
+pas ; Karim, sans compte : il écoute 🤦 puis 😂, son selfie, deux cases, son compte à Dax, sa réponse dite pendant que
+sa figurine se fabrique, « C'est parti ! » ; proches, leur conversation, Zoé prévenue, « Nouveau, grâce à toi » ; Zoé
+devant son propre lien ; Léa, qui a déjà sa figurine ; trois liens par jour ; un lien de plus de trente jours s'efface).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

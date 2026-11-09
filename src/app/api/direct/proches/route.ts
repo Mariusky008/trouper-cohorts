@@ -4,6 +4,7 @@
 //                                          maintenant », ses non-lus, la dernière chose dite) ; s'il se montre « là » ;
 //                                          sa clé (son lien : `/collection?proche=<clé>`)
 // GET ?presence=1                       → { presence } (« Moi »)
+// GET ?moi=1                            → { moi } : sa figurine, de quoi la faire parler (« Envoyer par WhatsApp »)
 // GET ?fil=<clé>                        → { fil } : sa conversation avec ce proche (ils se sont ajoutés tous les deux)
 // POST { action: "la" }                 → { nonLus } : 🟢 ClikMe est ouvert (toutes les minutes, page visible)
 // POST { action: "comprendre", son, duree } → { repliques, par, transcrit, dispo } : « Ta figurine a compris ça » — ses phrases,
@@ -12,11 +13,31 @@
 // POST { action: "presence", oui }      → { presence } : « Montrer à mes proches quand je suis là »
 // POST { action: "proche", cle, oui }   → { ok } : « L'ajouter aussi » (ou le retirer de ses proches)
 // POST { action: "signaler", cle, id }  → { ok } : 🚩 un message qu'il ne veut plus voir (l'équipe le regarde)
+// 📲 L'ÉTAPE 5, PAR WHATSAPP :
+// POST { action: "lien-creer", son, duree, repliques, pour? } → { id, url, reste } : son message, en lien (`/t/<id>`),
+//      pour quelqu'un qui n'a pas ClikMe (trois par jour)
+// POST { action: "lien-repondre", id, son, duree, repliques } → { message, cle } : il répond au lien avec sa figurine ;
+//      ils deviennent proches, l'auteur est prévenu. (Sa figurine, s'il n'en a pas : `ma-figurine`, « photo », avec `lien`.)
 // Un proche se désigne toujours par sa clé de profil, jamais par son identifiant.
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { changerProche, choisirPresence, comprendre, envoyerParole, filAvec, maCle, maPresence, marquerLa, mesProchesVivants, prevenirDeLaParole, signalerParole } from "@/lib/direct/talkie-serveur";
+import {
+  changerProche,
+  choisirPresence,
+  comprendre,
+  creerLien,
+  envoyerParole,
+  filAvec,
+  maCle,
+  maFigurineVue,
+  maPresence,
+  marquerLa,
+  mesProchesVivants,
+  prevenirDeLaParole,
+  repondreAuLien,
+  signalerParole,
+} from "@/lib/direct/talkie-serveur";
 
 export const dynamic = "force-dynamic";
 // (comprendre : la transcription, puis les têtes proposées)
@@ -31,6 +52,10 @@ export async function GET(request: Request) {
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 403 });
   const q = new URL(request.url).searchParams;
   if (q.get("presence")) return NextResponse.json({ ok: true, presence: await maPresence(supabase, moi) }, { headers: sansCache });
+  if (q.get("moi")) {
+    const f = await maFigurineVue(supabase, moi);
+    return f ? NextResponse.json({ ok: true, moi: f }, { headers: sansCache }) : NextResponse.json({ error: "Ta figurine n’est pas encore prête." }, { status: 400 });
+  }
   const fil = q.get("fil");
   if (fil) {
     const r = await filAvec(supabase, moi, fil);
@@ -59,6 +84,19 @@ export async function POST(request: Request) {
     const a = r.aPrevenir;
     if (a) after(() => prevenirDeLaParole(supabase, moi, a));
     return NextResponse.json({ ok: true, message: r.message }, { headers: sansCache });
+  }
+  // 📲 par WhatsApp : son message en lien ; la réponse de celui qui l'a reçu
+  if (p?.action === "lien-creer") {
+    const r = await creerLien(supabase, moi, p.son, p.duree, p.repliques, p.pour);
+    if (!r.id) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
+    return NextResponse.json({ ok: true, id: r.id, url: r.url, reste: r.reste }, { headers: sansCache });
+  }
+  if (p?.action === "lien-repondre") {
+    const r = await repondreAuLien(supabase, moi, p.id, p.son, p.duree, p.repliques);
+    if (!r.message) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
+    const a = r.aPrevenir;
+    if (a) after(() => prevenirDeLaParole(supabase, moi, a));
+    return NextResponse.json({ ok: true, message: r.message, cle: r.cle }, { headers: sansCache });
   }
   if (p?.action === "presence") return NextResponse.json({ ok: true, ...(await choisirPresence(supabase, moi, p.oui)) }, { headers: sansCache });
   if (p?.action === "proche" || p?.action === "signaler") {
