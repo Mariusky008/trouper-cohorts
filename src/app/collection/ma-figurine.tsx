@@ -45,6 +45,7 @@ import {
 import { reduireImage } from "@/lib/direct/reduire-image";
 import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE, type FigurineHandle } from "./figurine-qui-parle";
 import { Guide, OngletVisible, STYLES_GUIDE, useVoixPablito } from "./guide";
+import { AtelierPablito, type Atelier } from "./atelier";
 import { lancerMusiqueDanse } from "@/lib/direct/musique-danse";
 import { fabriquerMeme, memePossible } from "@/lib/direct/meme";
 import { motPour, type Rendu } from "@/lib/direct/rendus";
@@ -176,7 +177,8 @@ function dureeDe(url: string): Promise<number> {
 /**
  * Ce qu'elle ressent : tous ses visages, ouverts dès le départ (le lot 3 — plus de cadenas). Un visage que le moteur
  * est en train de faire (« cours ») ne se choisit pas encore : il le dit (6 novembre 2026 : « toute la carte bouge
- * parce que l'expression n'est pas prête : prévenir qu'elle est en cours de création, et ne pas laisser cliquer ») ;
+ * parce que l'expression n'est pas prête : prévenir qu'elle est en cours de création, et ne pas laisser cliquer ») —
+ * le toucher rouvre l'atelier de Pablito, où il se fabrique (9 novembre 2026, `atelier.tsx`) ;
  * un visage pas encore fait (« creer ») porte une étincelle : le toucher le fait fabriquer. 🙆 SES ATTITUDES (8 novembre
  * 2026) : la même chose, dans leur propre rangée (`attitudes`) — un seul choix pour les deux.
  */
@@ -193,7 +195,6 @@ function ChoixExpression({ valeur, onChoix, etats = {}, attitudes = false }: { v
             role="radio"
             aria-checked={valeur === x.cle}
             className={`${valeur === x.cle ? "pris" : ""}${e ? ` ${e}` : ""}`}
-            disabled={e === "cours"}
             aria-label={e === "cours" ? `${x.court} : en création` : e === "creer" ? `${x.court} : à créer` : x.court}
             onClick={() => onChoix(x.cle)}
           >
@@ -388,10 +389,13 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   const [expressionsEnCours, setExpressionsEnCours] = useState(Boolean(etat0.expressionsAFaire));
   // (le visage qu'il vient de choisir et qui n'est pas encore fait : le moteur le fait à la demande)
   const [veut, setVeut] = useState<{ s: Sentiment | null; n: number }>({ s: null, n: 0 });
+  // 🛠️ l'atelier de Pablito ouvert (ce qu'il fabrique), et quand chaque visage y est entré
+  const [atelier, setAtelier] = useState<Atelier | null>(null);
+  const debutsAtelier = useRef<Partial<Record<Sentiment, number>>>({});
   const micro = useRef<{ rec: MediaRecorder; flux: MediaStream; t0: number; minuteur: number } | null>(null);
 
-  // 🎭 SES EXPRESSIONS : le moteur d'image les fait (deux tours ; la page attend en arrière-plan) — la joie d'office,
-  // et chaque autre visage la première fois qu'il le choisit (`veut`)
+  // 🎭 SES EXPRESSIONS : le moteur d'image les fait (deux tours ; la page attend en arrière-plan) — chaque visage la
+  // première fois qu'il le choisit (`veut`), la joie aussi (9 novembre 2026 : plus rien d'office, voir `visagesVoulus`)
   useEffect(() => {
     if (!etat0.expressionsAFaire && !veut.s) return;
     let fini = false;
@@ -401,9 +405,12 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
           const j = await demander({ action: "expressions", ...(veut.s ? { veut: veut.s } : {}) });
           if (fini) return;
           if (j.etat) setEtat(j.etat);
+          // (un pépin : l'atelier ouvert le dit)
+          if (j.error && !j.enCours) setAtelier((a) => (a && !a.erreur ? { ...a, erreur: j.error } : a));
           if (!j.etat?.expressionsAFaire || (j.error && !j.enCours)) break;
           if (j.enCours) await new Promise((ok) => window.setTimeout(ok, 30_000));
         } catch {
+          if (!fini) setAtelier((a) => (a && !a.erreur ? { ...a, erreur: "La connexion a lâché. Réessaie dans un moment." } : a));
           break;
         }
       }
@@ -467,9 +474,19 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   }
   function choisirVisage(s: Sentiment | null) {
     if (s && etatsVisages[s] === "creer") {
+      // 🛠️ L'ATELIER DE PABLITO (`atelier.tsx`) : il le fabrique sous ses yeux, et le fait patienter avec le sourire
+      const debut = Date.now();
+      debutsAtelier.current[s] = debut;
+      setAtelier({ quoi: s, debut, ouvert: debut });
       setExpressionsEnCours(true);
       setVeut((v) => ({ s, n: v.n + 1 }));
       setAttendu(s);
+      return;
+    }
+    // (un visage déjà à l'atelier : la fenêtre se rouvre, sa barre où elle en était)
+    if (s && etatsVisages[s] === "cours") {
+      const ouvert = Date.now();
+      setAtelier({ quoi: s, debut: debutsAtelier.current[s] ?? ouvert, ouvert });
       return;
     }
     setSentiment(s);
@@ -585,10 +602,13 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   // (un tiroir se referme d'un toucher ailleurs, ou avec « Échap » ; la feuille aussi)
   useEffect(() => {
     if (!tiroir) return;
+    // (l'atelier de Pablito, par-dessus, n'est pas « ailleurs » : le fermer laisse le tiroir ouvert)
+    const atelierOuvert = (cible?: EventTarget | null) => Boolean(document.querySelector(".atl-voile")) && (!cible || Boolean((cible as Element).closest?.(".atl-voile")));
     const dehors = (e: PointerEvent) => {
+      if (atelierOuvert(e.target)) return;
       if (scene.current && !scene.current.contains(e.target as Node)) setTiroir(null);
     };
-    const echap = (e: KeyboardEvent) => e.key === "Escape" && setTiroir(null);
+    const echap = (e: KeyboardEvent) => e.key === "Escape" && !atelierOuvert() && setTiroir(null);
     document.addEventListener("pointerdown", dehors);
     window.addEventListener("keydown", echap);
     return () => {
@@ -915,6 +935,17 @@ export function StudioMoi({ etat: etat0, onEtat }: { etat: EtatMaFigurine; onEta
   // en bas, repliés, sa figurine du mois et ses premiers pas
   return (
     <div className="tf tf-moi">
+      {atelier && visible && (
+        <AtelierPablito
+          atelier={atelier}
+          image={etat.expressions?.[atelier.quoi]?.n}
+          onFermer={() => {
+            // (sa nouvelle tête est prête : elle se joue en haut, sous ses yeux)
+            if (etat.expressions?.[atelier.quoi]) setRejoue((n) => n + 1);
+            setAtelier(null);
+          }}
+        />
+      )}
       <div className={`tf-scene${leTiroir ? " ouvert" : ""}`} ref={scene}>
         <div className="tf-hero">
           <FigurineQuiParle
@@ -2033,7 +2064,7 @@ export const STYLES_MA_FIGURINE =
 .tf-scene .tf-expr::-webkit-scrollbar,.tf-scene .tf-att::-webkit-scrollbar{display:none}
 .tf-scene .tf-expr button,.tf-scene .tf-att button{flex:none;width:74px;min-height:72px;scroll-snap-align:start;justify-content:center;border-radius:20px}
 .tf-scene .tf-expr button span,.tf-scene .tf-att button span{font-size:28px}
-.tf-expr button.cours,.tf-att button.cours{cursor:default;color:#F2C46B;background:rgba(242,196,107,.08)}
+.tf-expr button.cours,.tf-att button.cours{color:#F2C46B;background:rgba(242,196,107,.08)}
 .tf-expr button.cours span,.tf-att button.cours span{opacity:.45;filter:grayscale(.5)}
 .tf-expr button.cours::after,.tf-att button.cours::after{content:"";position:absolute;inset:4px;border-radius:16px;border:2px solid transparent;border-top-color:#F2C46B;border-right-color:rgba(242,196,107,.35);animation:tf-tourne 1s linear infinite}
 .tf-expr-cours{font-style:normal;font-size:9.5px;font-weight:800;line-height:1.1}

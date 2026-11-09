@@ -11,7 +11,9 @@
  * La page rappelle tant que ce n'est pas fini. Un verrou (quatre minutes) empêche deux fabrications en même temps.
  *
  * CE QUE ÇA COÛTE, TENU : 3 fabrications par personne et par jour (« Refaire »), et `FIGURINE_CLIENTS_JOUR` (100)
- * nouvelles figurines par jour pour tout ClikMe. Sans `OPENAI_API_KEY`, rien ne se fabrique : ClikMe la fait à la
+ * nouvelles figurines par jour pour tout ClikMe. Deux images par figurine, et plus rien d'office ensuite (9 novembre
+ * 2026 : sa joie n'est plus faite d'avance — `visagesVoulus`) : la première en qualité haute, la bouche ouverte en
+ * « medium » (`qualiteSuite`). Sans `OPENAI_API_KEY`, rien ne se fabrique : ClikMe la fait à la
  * main depuis l'admin, comme avant.
  *
  * FICHIER SERVEUR. Le stockage est donné par l'appelant (`Depot`, le dossier de cette fabrication).
@@ -19,7 +21,7 @@
 import sharp from "sharp";
 import { consigneFigurineClient } from "./figurine-pro";
 import { decrireTraits } from "./figurine-pro-serveur";
-import { consigneBoucheNeutre, editer, poserAuFormat, reprendre, type Depot } from "./figurine-expressions-serveur";
+import { consigneBoucheNeutre, editer, poserAuFormat, qualiteFigurine, reprendre, type Depot } from "./figurine-expressions-serveur";
 
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 
@@ -71,7 +73,8 @@ export async function fabriquerUnPas(depot: Depot, photo: Buffer, avant: number,
       // EN FIDÉLITÉ HAUTE AU VISAGE (6 novembre 2026 : en basse, « c'est joli mais ça ne me ressemble plus du tout ») ;
       // c'est la consigne qui la rend dessin animé, et caricature SES traits (`consigneFigurineClient`) —
       // `FIGURINE_CLIENT_FIDELITE=low` pour revenir à la basse (le 5 novembre : « encore plus réaliste qu'avant »)
-      const r = await editer(png, consigneFigurineClient(traits, univers), avant, s(process.env.FIGURINE_CLIENT_FIDELITE) === "low" ? "low" : "high");
+      // (la seule image en qualité haute : c'est ici que la ressemblance se joue — `qualiteFigurine`)
+      const r = await editer(png, consigneFigurineClient(traits, univers), avant, s(process.env.FIGURINE_CLIENT_FIDELITE) === "low" ? "low" : "high", { quality: qualiteFigurine() });
       if (!Buffer.isBuffer(r)) return { fini: false, erreur: r.erreur, detail: r.detail, nouvelle };
       const webp = await sharp(r).resize({ width: 900, withoutEnlargement: true }).webp({ quality: 88 }).toBuffer();
       if (!(await depot.ecrire(NOM_NEUTRE, webp, "image/webp"))) return { fini: false, erreur: "Ta figurine n'a pas pu être rangée.", nouvelle };

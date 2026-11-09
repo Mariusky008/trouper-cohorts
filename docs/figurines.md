@@ -368,6 +368,7 @@ figurines » à attendre.
 - **Celui qui reçoit** : « Et toi ? » mène à « Crée ta figurine ».
 
 **Coût à surveiller** : une figurine, c'est 2 images du moteur (plus 2 par visage ouvert) ; le plafond du jour le tient.
+(Le 9 novembre, la joie faite d'office l'avait portée à 4 : voir 9.0 undevicies.)
 
 ### 9.0 septies Sa carte de personnage, et la rencontre du jour (4 novembre, la nuit) — construit
 
@@ -1677,6 +1678,58 @@ jour ; sa voix est enregistrée par lui (`public/collection/pablito/tuto-*.mp3`,
 L'essai : `tuto.mjs` (un nouveau venu : ses trois bulles et leurs voix, la lumière sur le logo, « Je crée ma figurine »,
 une seule fois ; Inès, qui a sa figurine : le point rose, la visite et ses six pages, « Créer » montrée bouton par bouton,
 la suite sur « Découvrir », « Échap », « Créer » vue, « Retour » qui arrête, plus aucune fenêtre dans les pages).
+
+### 9.0 undevicies 💶 Le prix d'une figurine (9 novembre)
+
+Le propriétaire : « j'ai l'impression que ça coûte très cher : en faisant 3 ou 4 créations, j'en ai eu pour 50
+centimes ». Le compte était juste : une figurine, c'était 4 images du moteur, toutes en qualité « high » (la plus
+chère), au format 1024 × 1536 — sa figurine, sa bouche ouverte, puis sa joie fermée et ouverte, faites d'office.
+
+- **Sa joie n'est plus faite d'avance** (`visagesVoulus`, `lib/direct/ma-figurine-serveur.ts`) : comme les autres
+  visages, elle se fabrique la première fois qu'il la choisit (ou qu'un mème prêt, une des trois façons de le dire, la
+  demande). Une figurine, c'est 2 images ; qui s'arrête à la création n'en paie plus que 2.
+- **La qualité « high » pour l'image qui crée, seulement** (`qualiteFigurine`, `qualiteSuite`,
+  `lib/direct/figurine-expressions-serveur.ts`) : sa figurine à partir de sa photo (la ressemblance s'y joue) et sa
+  figurine du mois (une nouvelle tenue). Tout ce qui part d'une figurine déjà dessinée et n'en change que le visage, la
+  bouche ou les bras — sa bouche ouverte, ses visages, ses attitudes, ses réactions, la bouche de son look — passe en
+  « medium » : environ quatre fois moins cher, et montré à 900 pixels au plus.
+- **Réglages** : `FIGURINE_QUALITE` (l'image qui crée, `high` par défaut), `FIGURINE_QUALITE_SUITE` (le reste, `medium`
+  par défaut ; `high` pour revenir à l'ancien prix si la bouche ouverte, en parlant, se distinguait trop de sa figurine).
+- **Le prix d'une figurine, en images « high »** : 4 avant ; 1 « high » + 1 « medium » maintenant (environ 1,25), soit
+  à peu près 70 % de moins. Le vrai prix se lit dans l'Usage du compte OpenAI, modèle par modèle.
+
+Les figurines des commerçants (`figurine-pro-serveur.ts`, `FIGURINE_QUALITE`) ne changent pas.
+
+### 9.0 vicies 🛠️ L'atelier de Pablito : patienter avec le sourire (9 novembre)
+
+Le propriétaire : « lorsqu'on appuie sur une émotion, une expression… qui n'est pas encore faite, une pop-up pour dire :
+en cours de fabrication, et une fois faite elle sera à vous pour toujours. Elle doit être vraiment marrante et sympa à
+regarder : c'est un peu long, il faut arriver à les faire patienter avec le sourire. » (La joie n'étant plus faite
+d'avance — 9.0 undevicies —, la première attente arrive plus tôt.)
+
+- **Où** : un visage ou une attitude pas encore faits (l'étincelle ✨), touchés dans le tiroir « Visage » — ou demandés
+  par un mème prêt, une des trois façons de le dire. Un visage déjà à l'atelier (il tourne) se touche aussi : la fenêtre
+  se rouvre, sa barre où elle en était (`app/collection/atelier.tsx`, `AtelierPablito`).
+- **À l'atelier** : « 🛠️ À l'atelier — Pablito fabrique ta tête « Joie » » (« ton attitude « Victoire » ») ; Pablito
+  s'entraîne à faire sa tête (il passe d'une grimace à l'autre), ses outils tournent autour de lui (🔨 🎨 ✏️ 🪄) ; ce
+  qu'il fait s'écrit, une phrase toutes les 4,5 s (« Je sors la pâte à modeler… », « Je m'entraîne à faire ta tête devant
+  le miroir 🪞 », « Je vérifie que c'est bien toi… Oui, c'est bien toi. », « Pause café de l'artiste ☕ Deux secondes,
+  promis. »…, puis, si c'est plus long, « Ça arrive, ça arrive… 🥁 ») ; une barre rayée qui avance vite puis ralentit, et
+  ne touche le bout que quand c'est prêt ; « Environ une minute ». **On peut le chatouiller** (« Psst… touche-le, pendant
+  qu'il travaille 😏 ») : il rit, et il râle (« Hé ! Ça chatouille ! », « Arrête, je vais rater ton sourcil ! », « Encore
+  une fois et je te dessine une moustache. »…). « 💝 Une fois faite, elle est à toi **pour toujours** : plus jamais
+  d'attente pour celle-là. » « Je fais autre chose en attendant » la ferme (le tiroir reste ouvert) : la fabrication
+  continue, et sa tête s'affichera toute seule.
+- **Tadaaa** : « Ta tête « Joie » est prête ! », sa nouvelle tête — la sienne — qui saute dans la fenêtre, des
+  confettis, le tampon « À toi pour toujours » ; « 😄 Je l'essaie ! » : elle se joue en haut, sous ses yeux.
+- **Un pépin** : Pablito tout triste, « Oups, petit pépin à l'atelier », et ce que le serveur a dit (« La fabrication des
+  figurines est en pause de notre côté… »).
+- **Sans voix** : Pablito ne parle qu'avec les enregistrements du propriétaire, et il n'y en a pas pour l'atelier.
+
+L'essai : il faut le moteur d'image pour qu'un visage soit « à créer », et la CI n'en a pas — l'atelier a été vu en vrai
+sur l'appli construite, branchée sur un faux moteur qui met 12 s par image (« Joie » à créer, l'atelier, la
+chatouille, les phrases et la barre qui avancent, fermé puis rouvert, « Tadaaa », « Je l'essaie ! », puis le moteur à
+court de crédit : le pépin).
 
 ### 9.1 L'idée en une phrase
 

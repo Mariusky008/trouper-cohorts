@@ -12,7 +12,7 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "./habitant";
 import { motInterdit } from "./mots-interdits";
 import { TENUES_EDITION } from "./figurine-pro";
-import { consigneBoucheLook, editer, poserAuFormat, reprendre } from "./figurine-expressions-serveur";
+import { consigneBoucheLook, editer, poserAuFormat, qualiteFigurine, reprendre } from "./figurine-expressions-serveur";
 import { moteurBranche } from "./ma-figurine-fabrique-serveur";
 import { SEAU_FIGURINES, cheminImageDuLook, cheminParleDuLook, deposer, ecrireJson, lireJson, lireLigne, signer, telecharger } from "./ma-figurine-serveur";
 import { joursDePresence } from "./etapes-serveur";
@@ -174,7 +174,8 @@ export async function fabriquerFigurineDuMois(supabase: Supabase, habitant: Habi
     let parMoteur = false;
     if (moteurBranche()) {
       const { png, cadre } = await poserAuFormat(neutre);
-      const r = await editer(png, consigneDuMois(edition.nom, TENUES_EDITION[edition.cle] ?? "", expression.en), avant);
+      // (une nouvelle tenue : elle se crée, en qualité haute ; sa bouche ouverte, ensuite, en « medium » — `qualiteSuite`)
+      const r = await editer(png, consigneDuMois(edition.nom, TENUES_EDITION[edition.cle] ?? "", expression.en), avant, "high", { quality: qualiteFigurine() });
       if (!Buffer.isBuffer(r)) return { error: r.erreur, statut: 502 };
       image = await reprendre(r, cadre);
       parMoteur = true;

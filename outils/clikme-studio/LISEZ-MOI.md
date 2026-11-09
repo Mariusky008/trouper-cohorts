@@ -558,7 +558,8 @@ réseaux reçoivent le film entier.
 - **Dans le Studio**, au choix « Avec ta figurine ? » : s'il en a plusieurs, « Laquelle ? » — toute sa collection,
   celle du moment choisie d'office.
 - Réglages (variables d'environnement, toutes facultatives) : `OPENAI_API_KEY` (sans elle, la fabrication répond
-  « pas encore branchée »), `OPENAI_IMAGE_MODEL` (impose un moteur), `FIGURINE_QUALITE` (`high` par défaut),
+  « pas encore branchée »), `OPENAI_IMAGE_MODEL` (impose un moteur), `FIGURINE_QUALITE` (`high` par défaut ; pour la figurine d'un client, seule
+  l'image qui crée — ses visages, sa bouche ouverte et ses réactions suivent `FIGURINE_QUALITE_SUITE`, `medium` par défaut),
   `FIGURINE_FIDELITES` (les fidélités d'OpenAI, `high,high` par défaut), `FIGURINE_GEMINI_API_KEY` (la voie Gemini, pour les figurines
   seules ; sinon `GEMINI_API_KEY`, qui fait aussi passer à Gemini l'essayage, les couvertures, l'essai de vitrine et
   le dressing — le 4 novembre 2026, le serveur n'avait aucune clé Gemini : Gemini n'avait jamais fait une proposition),

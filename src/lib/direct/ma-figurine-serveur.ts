@@ -197,14 +197,15 @@ const essaisRestants = (f: Partial<Fabrique>) => Math.max(0, FABRICATIONS_PAR_JO
 
 /**
  * 🎭 SES VISAGES, FAITS À LA DEMANDE (le lot 3 : tout est ouvert dès le départ) — chaque visage coûte deux images au
- * moteur : on fabrique la joie d'office, et chacun des autres la première fois qu'il le choisit
- * (`<habitant>/visages.json`).
+ * moteur : chacun se fabrique la première fois qu'il le choisit (`<habitant>/visages.json`). LA JOIE AUSSI, depuis le
+ * 9 novembre 2026 (« 3 ou 4 créations, 50 centimes ») : faite d'office, elle doublait le prix de chaque figurine — deux
+ * images de plus, payées aussi par ceux qui ne vont jamais plus loin que la création.
  */
 export const cheminVisages = (habitantId: string) => `${habitantId}/visages.json`;
 export async function visagesVoulus(supabase: Supabase, habitantId: string): Promise<Sentiment[]> {
   const v = await lireJson<{ voulus?: unknown[] }>(supabase, cheminVisages(habitantId));
   const l = (Array.isArray(v.voulus) ? v.voulus : []).map((x) => sentimentValide(x)).filter((x): x is Sentiment => Boolean(x));
-  return [...new Set<Sentiment>(["joie", ...l])];
+  return [...new Set<Sentiment>(l)];
 }
 
 export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | null): Promise<EtatMaFigurine> {
