@@ -39,8 +39,12 @@
  *     parfait dans 100 % des cas ». Ce nom désigne le moteur que ChatGPT
  *     utilise, et il suit ChatGPT quand ChatGPT change — on n'aura pas à
  *     revenir ici au prochain modèle.
- *   · PUIS LES DEUX IMAGES 2.5, la détaillée avant la rapide : une coupe se
- *     juge sur la mèche, et la route a cinq minutes devant elle.
+ *   · PUIS LES IMAGES 2.6 (9 novembre 2026 : « gpt-image-2.6-sunburst » fait
+ *     ses images dans le Playground du compte de ClikMe, le jour où
+ *     `chatgpt-image-latest` y refusait faute de crédit), puis LES DEUX 2.5,
+ *     la détaillée avant la rapide : une coupe se juge sur la mèche, et la
+ *     route a cinq minutes devant elle. (Un nom absent du catalogue du compte
+ *     n'est jamais essayé.)
  *   · PUIS 2, 1.5 et enfin 1, du plus récent au plus ancien.
  *
  * `gpt-image-1-mini` N'Y EST PAS. C'est un modèle d'économie ; on ne l'essaie
@@ -48,6 +52,8 @@
  */
 export const PREFERENCE = [
   "chatgpt-image-latest",
+  "gpt-image-2.6-sunburst",
+  "gpt-image-2.6-flare",
   "gpt-image-2.5-sunburst",
   "gpt-image-2.5-flare",
   "gpt-image-2",
