@@ -279,7 +279,7 @@ async function noterErreurFabrication(supabase: Supabase, h: string, erreur: str
     console.error("[ma-figurine] fabrication ratée", JSON.stringify({ qui: h.slice(0, 8), erreur, statut, detail }));
     const f = await lireJson<{ l?: ErreurFabrication[] }>(supabase, CHEMIN_ERREURS_FABRICATION);
     const l = Array.isArray(f.l) ? f.l : [];
-    const e: ErreurFabrication = { le: new Date().toISOString(), qui: h.slice(0, 8), erreur: erreur.slice(0, 300), statut, ...(detail ? { detail: detail.slice(0, 300) } : {}) };
+    const e: ErreurFabrication = { le: new Date().toISOString(), qui: h.slice(0, 8), erreur: erreur.slice(0, 300), statut, ...(detail ? { detail: detail.slice(0, 420) } : {}) };
     await ecrireJson(supabase, CHEMIN_ERREURS_FABRICATION, { l: [...l, e].slice(-50) });
   } catch {
     /* le relevé ne bloque jamais */
