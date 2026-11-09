@@ -444,6 +444,8 @@ await sansCarte.screenshot({ path: `${D}/autour-7-sans-carte.png` });
 // ═══ SANS FIGURINE ═══
 const inconnu = await tel(null);
 await inconnu.goto(`${BASE}/collection?v=${Date.now()}#autour`, { waitUntil: "networkidle" });
+// (sa toute première arrivée : Pablito lui dit bienvenue, une fois — le tuto)
+await fermerPablito(inconnu);
 await inconnu.waitForSelector(".atr-invite", { timeout: 30000 });
 ok((await texte(inconnu, ".atr-invite")).includes("Crée ta figurine") && (await texte(inconnu, ".atr-haut")).includes("dans ta ville"), "sans figurine : on l'invite à la créer");
 await inconnu.locator(".atr-actions .atr-poser").click();
