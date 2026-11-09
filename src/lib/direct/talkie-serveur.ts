@@ -31,7 +31,7 @@ import type { Habitant } from "./habitant";
 import { cleProfil } from "./autour-serveur";
 import { prevenirDUneParole } from "./appli-collection-serveur";
 import { expressionsDe } from "./figurine-expressions-serveur";
-import { SENTIMENTS, sentimentValide, type Sentiment } from "./ma-figurine";
+import { SENTIMENTS, prenomValide, sentimentValide, type Sentiment } from "./ma-figurine";
 import {
   SEAU_FIGURINES,
   ajouterProche,
@@ -51,10 +51,14 @@ import {
 } from "./ma-figurine-serveur";
 import { motInterdit } from "./mots-interdits";
 import {
+  LIENS_PAR_JOUR,
+  LIEN_JOURS,
   PAROLE_MAX_S,
+  REPONSES_PAR_LIEN,
   PAROLE_MIN_S,
   TETES_DE_DEPART,
   cleValide,
+  idLienValide,
   decouperEnRepliques,
   proposerParRegles,
   repliquesValides,
@@ -63,10 +67,12 @@ import {
   type Fil,
   type FigurineVue,
   type LienProche,
+  type LienVu,
   type MessageFil,
   type ProcheVivant,
   type Replique,
   type RepliqueProposee,
+  type VisiteurLien,
 } from "./talkie";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -123,7 +129,7 @@ async function seParlent(supabase: Supabase, a: string, b: string): Promise<bool
 }
 
 /** Sa figurine, de quoi la faire parler (ses têtes faites, si on les demande). `null` : pas encore de figurine. */
-async function figurineVue(supabase: Supabase, h: string, avecTetes: boolean): Promise<FigurineVue | null> {
+export async function figurineVue(supabase: Supabase, h: string, avecTetes: boolean): Promise<FigurineVue | null> {
   const { ligne } = await lireLigne(supabase, h);
   if (!ligne?.prete_le || !s(ligne.neutre)) return null;
   const [neutre, parle, expr] = await Promise.all([
@@ -188,7 +194,12 @@ export async function choisirPresence(supabase: Supabase, moi: Habitant, oui: un
  * plus récents.
  */
 export async function mesProchesVivants(supabase: Supabase, moi: Habitant): Promise<ProcheVivant[]> {
-  const [miens, ajoute, lus] = await Promise.all([prochesDe(supabase, moi.id), lireJson<{ ids?: string[] }>(supabase, cheminAjoutePar(moi.id)), lireJson<Record<string, number>>(supabase, cheminLus(moi.id))]);
+  const [miens, ajoute, lus, venus] = await Promise.all([
+    prochesDe(supabase, moi.id),
+    lireJson<{ ids?: string[] }>(supabase, cheminAjoutePar(moi.id)),
+    lireJson<Record<string, number>>(supabase, cheminLus(moi.id)),
+    lireJson<Record<string, string>>(supabase, cheminVenus(moi.id)),
+  ]);
   const candidats: { h: string; lien: LienProche }[] = [...miens].filter((h) => h !== moi.id).map((h) => ({ h, lien: "attend" as LienProche }));
   for (const h of (Array.isArray(ajoute.ids) ? ajoute.ids : []).map(s)) if (h && h !== moi.id && !miens.has(h)) candidats.push({ h, lien: "ajoute" });
   const moi8 = qui8(moi.id);
@@ -211,7 +222,8 @@ export async function mesProchesVivants(supabase: Supabase, moi: Habitant): Prom
         }
       }
       const la = lien === "proches" ? await estLa(supabase, h) : false;
-      return { cle, prenom: f.prenom || "Ton proche", image: f.neutre, la, nonLus, lien, ...(dernier ? { dernier } : {}) };
+      const venu = lien === "proches" && Date.now() - (Date.parse(s(venus[h])) || 0) < 7 * 86_400_000;
+      return { cle, prenom: f.prenom || "Ton proche", image: f.neutre, la, nonLus, lien, ...(dernier ? { dernier } : {}), ...(venu ? { venu: true } : {}) };
     }),
   );
   const rang = (p: ProcheVivant) => (p.lien === "proches" ? 0 : p.lien === "ajoute" ? 1 : 2);
@@ -417,7 +429,7 @@ export async function envoyerParole(
   son: unknown,
   duree: unknown,
   repliques: unknown,
-): Promise<{ message?: MessageFil; aPrevenir?: { pour: string; prenom: string; url: string; cle: string }; error?: string; statut?: number }> {
+): Promise<{ message?: MessageFil; aPrevenir?: APrevenir; error?: string; statut?: number }> {
   const h = await hDeCle(supabase, cle);
   if (!h) return { error: "Ce proche n’existe pas.", statut: 404 };
   if (!(await seParlent(supabase, moi.id, h))) return { error: "Vous pourrez vous parler quand vous vous serez ajoutés tous les deux.", statut: 403 };
@@ -446,10 +458,7 @@ export async function envoyerParole(
   const dernier = avant[avant.length - 1];
   await noter(supabase, pair, moi.id, "cree");
   if (dernier && dernier.de8 !== qui8(moi.id)) await noter(supabase, pair, moi.id, "reponse");
-  // ses premières têtes : à faire, une fois (la page les fabrique ensuite, comme ses autres visages)
-  const voulus = await visagesVoulus(supabase, moi.id);
-  const manquent = TETES_DE_DEPART.filter((x) => !voulus.includes(x));
-  if (manquent.length) await ecrireJson(supabase, cheminVisages(moi.id), { voulus: [...voulus, ...manquent] });
+  await demanderTetesDeDepart(supabase, moi.id);
   const { ligne } = await lireLigne(supabase, moi.id);
   const maCle = await poserProfil(supabase, moi.id);
   return {
@@ -458,9 +467,184 @@ export async function envoyerParole(
   };
 }
 
+/** Ses premières têtes : à faire, une fois (la page les fabrique ensuite, comme ses autres visages). */
+async function demanderTetesDeDepart(supabase: Supabase, h: string): Promise<void> {
+  const voulus = await visagesVoulus(supabase, h);
+  const manquent = TETES_DE_DEPART.filter((x) => !voulus.includes(x));
+  if (manquent.length) await ecrireJson(supabase, cheminVisages(h), { voulus: [...voulus, ...manquent] });
+}
+
+type APrevenir = { pour: string; prenom: string; url: string; cle: string; facon?: "parle" | "repond" | "premiere" };
 /** 🔔 « Léa t'a parlé ! » (après l'envoi, jamais bloquant). */
-export async function prevenirDeLaParole(supabase: Supabase, moi: Habitant, p: { pour: string; prenom: string; url: string; cle: string }): Promise<void> {
-  await prevenirDUneParole(supabase, p.pour, moi.id, p.prenom, { url: p.url, cle: p.cle }).catch(() => undefined);
+export async function prevenirDeLaParole(supabase: Supabase, moi: Habitant, p: APrevenir): Promise<void> {
+  await prevenirDUneParole(supabase, p.pour, moi.id, p.prenom, { url: p.url, cle: p.cle, facon: p.facon }).catch(() => undefined);
+}
+
+// ─── 📲 l'étape 5 : un message par WhatsApp, à quelqu'un qui n'a pas ClikMe ─────────────────────────
+/*
+ * LE SEAU : `liens/<id>.json` = le message (son auteur, le prénom de celui à qui il l'envoie, sa voix, ses répliques,
+ * sa ville — celle du compte de qui répond sans en avoir) ; `liens/<id>.<ext>` = sa voix. Effacé au bout de trente
+ * jours, à la première lecture d'après (sa voix reste si quelqu'un a répondu : elle ouvre leur conversation).
+ * `<habitant>/liens-jour.json` : ses liens du jour (trois). `<habitant>/provisoire.json` = { le, lien } : son compte est
+ * né d'un lien (pas encore sauvegardé). `<habitant>/venus.json` = { <qui>: le } : ceux que ses liens ont fait venir.
+ * LA MESURE : `w-<lien>` dans `clik_meme_evenement` — « cree », « vu » (ouvert), « nouveau » (une figurine commencée
+ * pour répondre), « reponse ».
+ */
+const cheminLien = (id: string) => `liens/${id}.json`;
+const cheminSonLien = (id: string, ext: string) => `liens/${id}.${ext}`;
+const cheminLiensJour = (h: string) => `${h}/liens-jour.json`;
+export const cheminProvisoire = (h: string) => `${h}/provisoire.json`;
+const cheminVenus = (h: string) => `${h}/venus.json`;
+type FicheLien = { id: string; de: string; pour: string; le: string; duree: number; son: string; type: string; repliques: Replique[]; ville: string; reponses?: string[] };
+
+async function noterLien(supabase: Supabase, id: string, type: "cree" | "vu" | "nouveau" | "reponse"): Promise<void> {
+  try {
+    await supabase.from("clik_meme_evenement").insert({ message_id: `w-${id}`, type });
+  } catch {
+    /* la mesure ne bloque jamais */
+  }
+}
+
+/** Le lien, s'il existe encore (au-delà de trente jours, il s'efface). */
+async function ficheLien(supabase: Supabase, id: unknown): Promise<FicheLien | null> {
+  const i = idLienValide(id);
+  if (!i) return null;
+  const f = await lireJson<Partial<FicheLien>>(supabase, cheminLien(i));
+  if (!s(f.id) || !s(f.de) || !s(f.son)) return null;
+  if (Date.now() - (Date.parse(s(f.le)) || 0) > LIEN_JOURS * 86_400_000) {
+    const effacer = [cheminLien(i), ...((f.reponses ?? []).length ? [] : [s(f.son)])];
+    await supabase.storage.from(SEAU_FIGURINES).remove(effacer).then(
+      () => undefined,
+      () => undefined,
+    );
+    return null;
+  }
+  return { ...(f as FicheLien), pour: s(f.pour), ville: s(f.ville), reponses: Array.isArray(f.reponses) ? f.reponses.map(s) : [] };
+}
+
+/** 🎭 Sa figurine, de quoi la faire parler (« Envoyer par WhatsApp »). */
+export const maFigurineVue = (supabase: Supabase, moi: Habitant) => figurineVue(supabase, moi.id, true);
+
+/**
+ * 📲 IL L'ENVOIE PAR WHATSAPP : sa voix et ses répliques deviennent un lien (`/t/<id>`), pour quelqu'un qui n'a pas
+ * ClikMe (`pour` : son prénom, facultatif, que la page affiche). Trois par jour.
+ */
+export async function creerLien(
+  supabase: Supabase,
+  moi: Habitant,
+  son: unknown,
+  duree: unknown,
+  repliques: unknown,
+  pour: unknown,
+): Promise<{ id?: string; url?: string; reste?: number; error?: string; statut?: number }> {
+  const { ligne } = await lireLigne(supabase, moi.id);
+  if (!ligne?.prete_le || !s(ligne.neutre)) return { error: "Ta figurine n’est pas encore prête.", statut: 400 };
+  const v = sonDe(son);
+  const d = dureeValide(duree);
+  if (!v || d == null) return { error: "Ton message n’est pas parti : réenregistre-le (20 secondes au plus).", statut: 400 };
+  const r = repliquesValides(repliques, d);
+  if (!r) return { error: "Ton message n’est pas parti : réessaie.", statut: 400 };
+  const p = prenomValide(pour);
+  if (r.some((x) => x.texte && motInterdit(x.texte)) || (p && motInterdit(p))) return { error: "Ça, ta figurine ne le dit pas. Réessaie autrement 🙂", statut: 422 };
+  const jour = jourParis();
+  const c = await lireJson<{ jour?: string; n?: number }>(supabase, cheminLiensJour(moi.id));
+  const n = c.jour === jour ? Number(c.n) || 0 : 0;
+  if (n >= LIENS_PAR_JOUR) return { error: `${LIENS_PAR_JOUR} messages par WhatsApp par jour : reviens demain.`, statut: 429 };
+  const id = randomUUID().replace(/-/g, "").slice(0, 12);
+  const chemin = cheminSonLien(id, v.ext);
+  if (!(await deposer(supabase, chemin, v.octets, v.type))) return { error: "Ton message n’est pas parti. Réessaie dans un instant.", statut: 502 };
+  const fiche: FicheLien = { id, de: moi.id, pour: p, le: new Date().toISOString(), duree: d, son: chemin, type: v.type, repliques: r, ville: s(moi.villeSlug), reponses: [] };
+  if (!(await ecrireJson(supabase, cheminLien(id), fiche))) return { error: "Ton message n’est pas parti. Réessaie dans un instant.", statut: 502 };
+  await Promise.all([ecrireJson(supabase, cheminLiensJour(moi.id), { jour, n: n + 1 }), noterLien(supabase, id, "cree"), demanderTetesDeDepart(supabase, moi.id), poserProfil(supabase, moi.id)]);
+  return { id, url: `/t/${id}`, reste: LIENS_PAR_JOUR - n - 1 };
+}
+
+/** 👀 Le lien, pour sa page : la figurine de son auteur, sa voix, ses répliques — et qui le regarde. */
+export async function lireLien(supabase: Supabase, id: unknown, visiteur: Habitant | null): Promise<LienVu | null> {
+  const f = await ficheLien(supabase, id);
+  if (!f) return null;
+  const [de, son, cle] = await Promise.all([figurineVue(supabase, f.de, true), signer(supabase, f.son, 7200), poserProfil(supabase, f.de)]);
+  if (!de || !son) return null;
+  let qui: VisiteurLien = "sans";
+  let moi: FigurineVue | null = null;
+  if (visiteur?.id === f.de) qui = "auteur";
+  else if (visiteur) {
+    const { ligne } = await lireLigne(supabase, visiteur.id);
+    if (ligne?.prete_le && s(ligne.neutre)) {
+      moi = await figurineVue(supabase, visiteur.id, true);
+      qui = moi ? "prete" : "fabrication";
+    } else qui = ligne && s(ligne.photo) && !s(ligne.refus) ? "fabrication" : "photo";
+  }
+  return {
+    id: f.id,
+    de,
+    cle,
+    pour: f.pour,
+    le: f.le,
+    duree: Number(f.duree) || 0,
+    son,
+    repliques: repliquesValides(f.repliques, Number(f.duree)) ?? [],
+    expire: new Date((Date.parse(f.le) || Date.now()) + LIEN_JOURS * 86_400_000).toISOString(),
+    visiteur: qui,
+    ...(moi ? { moi } : {}),
+    ...(visiteur && (f.reponses ?? []).includes(visiteur.id) ? { repondu: true } : {}),
+  };
+}
+/** 📈 Le lien ouvert (par quelqu'un d'autre que son auteur, et pas par un robot qui fabrique l'aperçu). */
+export const noterLienOuvert = (supabase: Supabase, id: string) => noterLien(supabase, id, "vu");
+/** La ville du compte de celui qui répond sans en avoir : celle de l'auteur du lien. */
+export const villeDuLien = async (supabase: Supabase, id: unknown) => s((await ficheLien(supabase, id))?.ville);
+/**
+ * 🌱 SON COMPTE EST NÉ D'UN LIEN (sa photo, pour répondre) : il est marqué (pas encore sauvegardé), et la figurine
+ * commencée se compte.
+ */
+export async function noterFigurineParLien(supabase: Supabase, moi: Habitant, id: unknown): Promise<void> {
+  const f = await ficheLien(supabase, id);
+  if (!f || f.de === moi.id) return;
+  await Promise.all([ecrireJson(supabase, cheminProvisoire(moi.id), { le: new Date().toISOString(), lien: f.id }), noterLien(supabase, f.id, "nouveau")]);
+}
+
+/**
+ * ↩️ IL RÉPOND AU LIEN, AVEC SA FIGURINE : répondre vaut accord — ils deviennent proches (dans les deux sens) ; le
+ * message d'origine ouvre leur conversation (une fois), sa réponse suit ; l'auteur est prévenu (« Karim t'a répondu
+ * avec sa figurine ! » — « sa toute première » s'il vient de la faire pour lui).
+ */
+export async function repondreAuLien(
+  supabase: Supabase,
+  moi: Habitant,
+  id: unknown,
+  son: unknown,
+  duree: unknown,
+  repliques: unknown,
+): Promise<{ message?: MessageFil; cle?: string; aPrevenir?: APrevenir; error?: string; statut?: number }> {
+  const f = await ficheLien(supabase, id);
+  if (!f) return { error: "Ce message s’est effacé.", statut: 404 };
+  if (f.de === moi.id) return { error: "C’est ton propre message 🙂", statut: 400 };
+  const { ligne } = await lireLigne(supabase, moi.id);
+  if (!ligne?.prete_le || !s(ligne.neutre)) return { error: "Ta figurine n’est pas encore prête.", statut: 400 };
+  const d = dureeValide(duree);
+  if (!sonDe(son) || d == null || !repliquesValides(repliques, d)) return { error: "Ta réponse n’est pas partie : réenregistre-la (20 secondes au plus).", statut: 400 };
+  const deja = (f.reponses ?? []).includes(moi.id);
+  // (un lien qui a circulé trop loin : pas d'inconnus en plus parmi ses proches)
+  if (!deja && (f.reponses ?? []).length >= REPONSES_PAR_LIEN) return { error: "Ce message a déjà reçu assez de réponses.", statut: 403 };
+  const [a, b] = await Promise.all([ajouterProche(supabase, moi.id, f.de), ajouterProche(supabase, f.de, moi.id)]);
+  if (!a || !b) return { error: "Ta réponse n’est pas partie. Réessaie dans un instant.", statut: 502 };
+  if (!deja) {
+    const pair = pairDe(moi.id, f.de);
+    const origine: Fiche = { id: f.id, de: f.de, le: f.le, duree: Number(f.duree) || 0, son: f.son, type: f.type, repliques: f.repliques };
+    await ecrireJson(supabase, `${dossierMessages(pair)}/${nomMessage(Date.parse(f.le) || Date.now(), f.de, f.id)}`, origine);
+  }
+  const cleDe = await poserProfil(supabase, f.de);
+  const r = await envoyerParole(supabase, moi, cleDe, son, duree, repliques);
+  if (!r.message) return { error: r.error, statut: r.statut };
+  const venu = s((await lireJson<{ lien?: string }>(supabase, cheminProvisoire(moi.id))).lien) === f.id;
+  const venus = venu ? await lireJson<Record<string, string>>(supabase, cheminVenus(f.de)) : {};
+  await Promise.all([
+    ecrireJson(supabase, cheminLien(f.id), { ...f, reponses: [...new Set([...(f.reponses ?? []), moi.id])] }),
+    deja ? Promise.resolve() : noterLien(supabase, f.id, "reponse"),
+    venu && !venus[moi.id] ? ecrireJson(supabase, cheminVenus(f.de), { ...venus, [moi.id]: new Date().toISOString() }) : Promise.resolve(true),
+  ]);
+  return { message: r.message, cle: cleDe, ...(r.aPrevenir ? { aPrevenir: { ...r.aPrevenir, facon: venu ? "premiere" : "repond" } } : {}) };
 }
 
 /** 🚩 Il signale un message : il ne le voit plus, et l'équipe le regarde. */
@@ -491,13 +675,20 @@ export type StatsTalkie = {
   reponses: number;
   vus: number;
   tauxReponse: number;
+  /** 📲 Les liens WhatsApp : envoyés, ouverts, figurines commencées pour répondre, réponses. */
+  liens: number;
+  liensOuverts: number;
+  liensFigurines: number;
+  liensReponses: number;
 };
 /** 📈 Les sept derniers jours du talkie-walkie (la page `/admin/humain/memes`). */
 export async function statsTalkie(supabase: Supabase): Promise<StatsTalkie> {
   const depuis = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const { data, error } = await supabase.from("clik_meme_evenement").select("message_id, type").ilike("message_id", "t-%").gte("created_at", depuis).limit(50_000);
-  const vide: StatsTalkie = { ok: !error, envoyes: 0, expediteurs: 0, conversations: 0, conversationsTroisEchanges: 0, expediteursPlusieurs: 0, reponses: 0, vus: 0, tauxReponse: 0 };
+  const vide: StatsTalkie = { ok: !error, envoyes: 0, expediteurs: 0, conversations: 0, conversationsTroisEchanges: 0, expediteursPlusieurs: 0, reponses: 0, vus: 0, tauxReponse: 0, liens: 0, liensOuverts: 0, liensFigurines: 0, liensReponses: 0 };
   if (error) return vide;
+  const { data: w } = await supabase.from("clik_meme_evenement").select("message_id, type").ilike("message_id", "w-%").gte("created_at", depuis).limit(50_000);
+  const parType = (t: string) => ((Array.isArray(w) ? w : []) as { type?: string }[]).filter((e) => e.type === t).length;
   const parExpediteur = new Map<string, number>();
   const parConversation = new Map<string, { n: number; qui: Set<string> }>();
   let reponses = 0;
@@ -526,5 +717,9 @@ export async function statsTalkie(supabase: Supabase): Promise<StatsTalkie> {
     vus,
     // (chaque conversation : des tours de parole ; tous ont eu leur réponse, sauf le dernier)
     tauxReponse: reponses + parConversation.size ? Math.round((reponses / (reponses + parConversation.size)) * 100) : 0,
+    liens: parType("cree"),
+    liensOuverts: parType("vu"),
+    liensFigurines: parType("nouveau"),
+    liensReponses: parType("reponse"),
   };
 }

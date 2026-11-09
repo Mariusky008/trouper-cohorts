@@ -237,9 +237,13 @@ export async function prevenirDUneReponse(supabase: Supabase, auteur: string, de
   return issues.includes("ok") ? "envoye" : "rien";
 }
 
-/** 🎙️ « Léa t'a parlé ! » : un proche lui a laissé un message avec sa figurine (le talkie-walkie, `talkie-serveur.ts`). */
-export function notifParole(prenom: string, url: string, cle: string): Notif {
+/**
+ * 🎙️ « Léa t'a parlé ! » : un proche lui a laissé un message avec sa figurine (le talkie-walkie, `talkie-serveur.ts`).
+ * `facon` : « repond » — quelqu'un répond à son lien WhatsApp ; « premiere » — avec la figurine qu'il vient de faire.
+ */
+export function notifParole(prenom: string, url: string, cle: string, facon: "parle" | "repond" | "premiere" = "parle"): Notif {
   const qui = prenom.trim() || "Un proche";
+  if (facon !== "parle") return { titre: `🎙️ ${qui} t’a répondu avec sa figurine !`, corps: facon === "premiere" ? "Sa toute première. Viens l’écouter 👂" : "Viens l’écouter 👂", url, tag: `parole-${cle}` };
   return { titre: `🎙️ ${qui} t’a parlé !`, corps: "Sa figurine a un message pour toi. Viens l’écouter 👂", url, tag: `parole-${cle}` };
 }
 const PAROLES_PAR_JOUR = 30;
@@ -248,7 +252,7 @@ const PAROLES_PAR_JOUR = 30;
  * 🎙️ PRÉVENIR QU'UN PROCHE LUI A PARLÉ — s'il a les notifications ; jamais à soi-même ; trente par jour au plus (une
  * seule à la fois par proche : `tag`). Appelé après l'envoi, jamais bloquant.
  */
-export async function prevenirDUneParole(supabase: Supabase, pour: string, deQui: string, prenom: string, o: { url: string; cle: string }): Promise<"envoye" | "rien"> {
+export async function prevenirDUneParole(supabase: Supabase, pour: string, deQui: string, prenom: string, o: { url: string; cle: string; facon?: "parle" | "repond" | "premiere" }): Promise<"envoye" | "rien"> {
   if (!pour || !deQui || pour === deQui || !vapid()) return "rien";
   const f = await lireJson<FicheAbonne>(supabase, cheminAbonne(pour));
   const abs = sesAbonnements(f);
@@ -257,7 +261,7 @@ export async function prevenirDUneParole(supabase: Supabase, pour: string, deQui
   const n = Number((await lireJson<{ n?: number }>(supabase, compte)).n) || 0;
   if (n >= PAROLES_PAR_JOUR) return "rien";
   await ecrireJson(supabase, compte, { n: n + 1 });
-  const notif = notifParole(prenom, o.url, o.cle);
+  const notif = notifParole(prenom, o.url, o.cle, o.facon);
   const issues = await Promise.all(abs.map((ab) => envoyer(ab, notif)));
   const morts = abs.filter((_, i) => issues[i] === "mort");
   if (morts.length) {

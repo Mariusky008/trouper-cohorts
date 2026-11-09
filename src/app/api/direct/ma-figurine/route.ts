@@ -1,9 +1,10 @@
 // 🗣️ SA PROPRE FIGURINE (`lib/direct/ma-figurine.ts`).
 //
 // GET : où il en est (sa photo, sa figurine, ses expressions, ses options, ses messages). Sans cookie : « photo ».
-// POST { action: "photo", photo: data:image…, accord: true, majeur: true, prenom?, ville?, univers? } : sa photo — dès le
+// POST { action: "photo", photo: data:image…, accord: true, majeur: true, prenom?, ville?, univers?, lien? } : sa photo — dès le
 //   départ (sans compte, on lui en ouvre un dans `ville`, une ville des commerces ClikMe) ; le moteur fabrique ensuite sa
-//   figurine. `majeur` : 🔞 « J'ai 15 ans ou plus » (`AGE_MINIMUM`), sans quoi rien ne part.
+//   figurine. `majeur` : 🔞 « J'ai 15 ans ou plus » (`AGE_MINIMUM`), sans quoi rien ne part. `lien` : 📲 il répond à un
+//   message reçu par WhatsApp (`/t/<id>`) — son compte s'ouvre dans la ville de celui qui le lui a envoyé.
 // POST { action: "fabriquer" } : un pas de fabrication de sa figurine (le moteur) → l'état (`enCours` : rappeler).
 // POST { action: "refaire", autrePhoto?, univers? } : une nouvelle figurine (même photo), ou retour à la photo ; `univers` :
 //       ce qui lui ressemble (son métier, sa passion), revu en la refaisant.
@@ -72,6 +73,7 @@ import {
   signalerMessage,
 } from "@/lib/direct/ma-figurine-serveur";
 import { surprendre } from "@/lib/direct/meme-surprise-serveur";
+import { noterFigurineParLien, villeDuLien } from "@/lib/direct/talkie-serveur";
 import { interpreter } from "@/lib/direct/rendus-serveur";
 import { fabriquerPose, mesReactions, noterEnvoiReaction } from "@/lib/direct/mes-reactions-serveur";
 import { reagir } from "@/lib/direct/reactions-memes-serveur";
@@ -137,17 +139,21 @@ export async function POST(request: Request) {
   if (p?.action === "photo") {
     // DÈS LE DÉPART : sans compte, sa photo lui en ouvre un — dans une ville où ClikMe a des commerces
     let moi = await habitantCourant(supabase);
+    const nouveau = !moi;
     if (!moi) {
       if (p.accord !== true) return NextResponse.json({ error: "Coche « C’est bien moi sur la photo »." }, { status: 400 });
       // 🔞 réservée aux 15 ans et plus (`AGE_MINIMUM`) : pas de compte ouvert sans cette case
       if (p.majeur !== true) return NextResponse.json({ error: ERREUR_AGE }, { status: 400 });
-      const ville = villeSlug(String(p.ville ?? ""));
+      // (📲 sans ville choisie, celle de qui lui a envoyé son message par WhatsApp)
+      const ville = villeSlug(String(p.ville ?? "")) || (p.lien ? await villeDuLien(supabase, p.lien) : "");
       if (!ville || !(await villeOuverte(supabase, ville))) return NextResponse.json({ error: "Choisis ta ville." }, { status: 400 });
       moi = await assurerHabitant(supabase, ville);
       if (!moi) return NextResponse.json({ error: "Ton compte n’a pas pu s’ouvrir. Réessaie dans un instant." }, { status: 502 });
     }
     const r = await envoyerPhoto(supabase, moi, p.photo, p.accord, p.prenom, p.univers, p.majeur);
     if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
+    // 🌱 son compte est né d'un lien WhatsApp : marqué, et compté
+    if (nouveau && p.lien) await noterFigurineParLien(supabase, moi, p.lien);
     return NextResponse.json({ ok: true, etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
   }
   // 📲 l'appli s'ouvre pour la première fois sur son écran d'accueil, avec son jeton : le cookie de SA figurine
