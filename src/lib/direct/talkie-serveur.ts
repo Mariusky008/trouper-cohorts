@@ -559,6 +559,14 @@ export async function creerLien(
   return { id, url: `/t/${id}`, reste: LIENS_PAR_JOUR - n - 1 };
 }
 
+/** 🖼️ L'aperçu du lien (dans WhatsApp) : le prénom de son auteur, sa figurine, à qui il parle — rien d'autre. */
+export async function apercuDuLien(supabase: Supabase, id: unknown): Promise<{ prenom: string; neutre: string; pour: string } | null> {
+  const f = await ficheLien(supabase, id);
+  if (!f) return null;
+  const de = await figurineVue(supabase, f.de, false);
+  return de ? { prenom: de.prenom, neutre: de.neutre, pour: s(f.pour) } : null;
+}
+
 /** 👀 Le lien, pour sa page : la figurine de son auteur, sa voix, ses répliques — et qui le regarde. */
 export async function lireLien(supabase: Supabase, id: unknown, visiteur: Habitant | null): Promise<LienVu | null> {
   const f = await ficheLien(supabase, id);

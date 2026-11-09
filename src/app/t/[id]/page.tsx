@@ -24,14 +24,18 @@ const charger = cache(async (id: string) => {
 });
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const l = await charger((await params).id);
-  const titre = l ? `🎙️ ${l.de.prenom} t’a laissé un message avec sa figurine` : "Un message ClikMe";
-  const description = l ? "Écoute-la, et réponds-lui avec la tienne." : "Ce message s’est effacé.";
+  const id = (await params).id;
+  const l = await charger(id);
+  const titre = l ? `🎙️ ${l.de.prenom} t’a laissé un message` : "Un message ClikMe";
+  const description = l ? "Touche pour écouter sa figurine, puis réponds avec la tienne." : "Ce message s’est effacé.";
+  // (son aperçu : une vraie carte, en JPEG, à une adresse qui ne change pas — `apercu/route.tsx`)
+  const image = { url: `/t/${encodeURIComponent(id)}/apercu`, width: 1200, height: 630, type: "image/jpeg", alt: titre };
   return {
     title: titre,
     description,
     robots: { index: false, follow: false },
-    openGraph: { title: titre, description, type: "website", ...(l ? { images: [{ url: l.de.neutre }] } : {}) },
+    openGraph: { title: titre, description, type: "website", images: [image] },
+    twitter: { card: "summary_large_image", title: titre, description, images: [image.url] },
   };
 }
 

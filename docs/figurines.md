@@ -1621,9 +1621,10 @@ est une invitation, faite par un ami. Rien à régler chez Meta : c'est un lien,
   comme à un proche (`Parler`, le même écran), « Ta figurine a compris ça », **son prénom** (facultatif : « Karim, Zoé
   t'a laissé un message »), « Envoyer par WhatsApp » ; puis « Ton message est prêt ! » : « L'envoyer sur WhatsApp »
   (le texte « Karim, écoute ce que ma figurine a à te dire 😄 » et le lien), « Copier le lien », « Une autre appli ».
+  (Depuis 9.0 duovicies : au téléphone, sa vidéo, et d'autres mots.)
   **Trois liens par jour** (chaque réponse fait fabriquer une figurine).
 - **Le lien** (`clikme.fr/t/<id>`, `app/t/[id]`) : l'aperçu dans WhatsApp montre sa figurine et « 🎙️ Zoé t'a laissé un
-  message avec sa figurine » ; la page la fait parler sans rien installer (sa voix, la tête de chaque réplique au bon
+  message avec sa figurine » (une vraie carte depuis 9.0 duovicies) ; la page la fait parler sans rien installer (sa voix, la tête de chaque réplique au bon
   moment, les sous-titres). Privé (seul qui a le lien le voit), jamais dans les moteurs de recherche, **effacé au bout
   de trente jours** (à la première lecture d'après ; sa voix reste si quelqu'un a répondu : elle ouvre leur
   conversation). Son auteur y voit « C'est ton message » (et le renvoie).
@@ -1781,6 +1782,42 @@ Rien n'est retiré : tout est rangé (`app/collection/ma-figurine.tsx`).
 
 Les essais : `ma-figurine.mjs` (les trois étapes, la vignette, les deux feuilles, le bouton sans écoute, la danse,
 « Refaire » dans « Moi »), `attitudes.mjs`, `trois-rendus.mjs`, `mes-reactions.mjs` (le bandeau), `tuto.mjs`.
+
+### 9.0 duovicies 🎬 Le message par WhatsApp, en vidéo (9 novembre)
+
+Le propriétaire, devant le message reçu (une carte grise, sans image, « Écoute ce que ma figurine a à te dire 😄 » et le
+lien) : « le message que quelqu'un reçoit n'est pas du tout encourageant ou beau, ça ne donne pas envie de cliquer
+dessus. Et il n'y a aucun moyen que le message reçu sur WhatsApp s'ouvre directement sur WhatsApp au lieu que ce soit un
+lien ? » Une page ne s'ouvre jamais dans WhatsApp : un lien ouvre le navigateur. Une vidéo, si — elle se joue dans la
+conversation. Proposé, puis « oui ».
+
+- **Sa vidéo, dans WhatsApp** (au téléphone qui sait partager un fichier : `navigator.canShare({ files })`) : dès que
+  le lien est prêt, sa figurine qui dit son message devient une vidéo — sa voix, **la tête de chaque réplique au bon
+  moment**, ses mots posés sur le temps de leur réplique ; en haut « 🎙️ Un message pour Karim — de Zoé », à la fin
+  « 💬 Réponds-moi avec ta figurine — clikme.fr » (`fabriquerMeme`, l'option `repliques` de `lib/direct/meme.ts`). Elle
+  se fabrique sous ses yeux, sans bruit (il vient de s'entendre), le temps de son message : « 🎬 Ta vidéo se
+  prépare… 42 % », puis « 📲 L'envoyer en vidéo sur WhatsApp » (le partage du téléphone : un second toucher, le
+  téléphone l'exige). Sa légende : « 🎙️ Karim, je t'ai laissé un message avec ma figurine ! Réponds-moi avec la
+  tienne 👉 <le lien> » (`texteAvecVideo`) : le lien ne sert plus qu'à répondre. Puis « C'est parti ! » (« La
+  renvoyer »). « Envoyer le lien seulement » et « Copier le lien » restent. La vidéo ne quitte pas son téléphone (elle
+  n'est rangée nulle part). Le son s'ouvre pendant qu'il touche « Envoyer par WhatsApp » (sinon elle serait muette).
+- **Sans partage de fichier** (un ordinateur), ou si la vidéo rate (« La vidéo n'a pas pu se faire : envoie le lien… ») :
+  le lien, comme avant.
+- **Le texte du lien** : « Karim ! 🎙️ Ma figurine a un message pour toi, écoute 👇 » (`texteDuLien`).
+- **Son aperçu, une vraie carte** (`app/t/[id]/apercu/route.tsx`, l'`og:image`) : l'image d'avant était sa figurine en
+  .webp derrière une adresse signée d'une heure — WhatsApp ne la montrait pas. Maintenant une carte 1200 × 630, en JPEG
+  léger (quelques dizaines de ko), à une adresse qui ne change pas : « ClikMe · pour Karim », « **Zoé** t'a laissé un
+  message avec sa figurine », « ▶ Écouter son message », sa figurine en grand (recadrée sur sa tête) avec un micro et
+  un gros ▶. Titre : « 🎙️ Zoé t'a laissé un message » ; texte : « Touche pour écouter sa figurine, puis réponds avec la
+  tienne. » Un lien effacé : la même carte, sans figurine (« Ce message s'est effacé »).
+
+**À savoir** : WhatsApp lui-même ne s'essaie pas d'ici. Sur certains iPhone, la légende d'une vidéo partagée peut
+arriver à part, ou pas du tout : à vérifier sur un vrai téléphone. Un aperçu déjà vu, WhatsApp le garde en mémoire : les
+liens d'avant ce changement gardent leur carte grise.
+
+L'essai : `talkie-whatsapp.mjs` (le texte du lien ; la carte de l'aperçu : 1200 × 630, JPEG, moins de 300 ko, et celle
+d'un lien inconnu ; un téléphone qui sait partager une vidéo — son partage imité : sa vidéo se fabrique sous ses yeux,
+« L'envoyer en vidéo sur WhatsApp », le partage reçoit une vidéo MP4 et sa légende, « C'est parti ! »).
 
 ### 9.1 L'idée en une phrase
 

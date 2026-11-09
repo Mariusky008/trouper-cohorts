@@ -23,7 +23,8 @@ import { demanderOui } from "./fenetre";
 import { FigurineQuiParle, type FigurineHandle } from "./figurine-qui-parle";
 import { OngletVisible } from "./guide";
 import { sentimentDe, type Sentiment } from "@/lib/direct/ma-figurine";
-import { PAROLE_MAX_S, PAROLE_MIN_S, cleValide, repliqueA, texteDuLien, texteDuMessage, type Fil, type FigurineVue, type MessageFil, type ProcheVivant, type Replique, type RepliqueProposee } from "@/lib/direct/talkie";
+import { fabriquerMeme, memePossible } from "@/lib/direct/meme";
+import { PAROLE_MAX_S, PAROLE_MIN_S, cleValide, repliqueA, texteAvecVideo, texteDuLien, texteDuMessage, type Fil, type FigurineVue, type MessageFil, type ProcheVivant, type Replique, type RepliqueProposee } from "@/lib/direct/talkie";
 
 type Reponse = { ok?: boolean; error?: string };
 const ROUTE = "/api/direct/proches";
@@ -90,7 +91,7 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
   const [geste, setGeste] = useState("");
   // 📲 par WhatsApp : sa figurine (pour lui parler), puis le lien prêt à partir
   const [whatsapp, setWhatsapp] = useState<FigurineVue | null>(null);
-  const [pret, setPret] = useState<{ url: string; pour: string; reste: number } | null>(null);
+  const [pret, setPret] = useState<MessagePret | null>(null);
   const [lienCopie, setLienCopie] = useState(false);
 
   // (« Retour », sur le téléphone, referme la conversation au lieu de quitter ClikMe : elle prend une page d'historique)
@@ -351,33 +352,23 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
             boutonEnvoyer="Envoyer par WhatsApp"
             onFermer={() => setWhatsapp(null)}
             envoyer={async (p) => {
-              const j = await demander<{ url: string; reste: number }>({ action: "lien-creer", son: p.son, duree: p.duree, repliques: p.repliques, pour: p.pour });
-              setWhatsapp(null);
-              setPret({ url: new URL(j.url, window.location.origin).toString(), pour: p.pour, reste: Number(j.reste) || 0 });
+              // (🎬 sa vidéo se fabrique ensuite : le son s'ouvre ici, pendant qu'il touche « Envoyer »)
+              const ctx = partageVideoPossible() ? ouvrirLeSon() : null;
+              try {
+                const j = await demander<{ url: string; reste: number }>({ action: "lien-creer", son: p.son, duree: p.duree, repliques: p.repliques, pour: p.pour });
+                setPret({ url: new URL(j.url, window.location.origin).toString(), pour: p.pour, reste: Number(j.reste) || 0, parole: p, moi: whatsapp, ctx });
+                setWhatsapp(null);
+              } catch (e) {
+                void ctx?.close().catch(() => undefined);
+                throw e;
+              }
             }}
           />,
           document.body,
         )}
       {pret && (
         <Feuille ouverte onFermer={() => setPret(null)} titre="Ton message est prêt" className="pr-feuille">
-          <div className="pr-pret" data-url={pret.url}>
-            <b>Ton message est prêt !</b>
-            <p>Sur WhatsApp, ta figurine {pret.pour ? `parle à ${pret.pour}` : "lui parle"} sans rien installer. Pour te répondre, un selfie suffit : vous deviendrez proches.</p>
-            <a className="pr-bouton grand" href={lienWhatsApp(pret)} target="_blank" rel="noopener noreferrer">
-              L’envoyer sur WhatsApp
-            </a>
-            <div className="pr-pret-autres">
-              <button type="button" onClick={() => void copierLeLien(pret)}>
-                {lienCopie ? "Lien copié ✓" : "Copier le lien"}
-              </button>
-              {typeof navigator !== "undefined" && "share" in navigator && (
-                <button type="button" onClick={() => void navigator.share({ text: texteDuLien(pret.pour), url: pret.url }).catch(() => undefined)}>
-                  Une autre appli
-                </button>
-              )}
-            </div>
-            <small>{pret.reste > 0 ? `Encore ${pret.reste} aujourd’hui par WhatsApp.` : "C’était le dernier d’aujourd’hui par WhatsApp."} Le lien s’efface dans 30 jours.</small>
-          </div>
+          <LeMessagePret key={pret.url} pret={pret} lienWhatsApp={lienWhatsApp(pret)} copie={lienCopie} onCopier={() => void copierLeLien(pret)} />
         </Feuille>
       )}
 
@@ -1186,6 +1177,150 @@ export function Parler({
   );
 }
 
+// ─── 📲 « TON MESSAGE EST PRÊT » : SA VIDÉO DANS WHATSAPP, OU SON LIEN ───────────────────────────────────────────────
+/**
+ * Le 9 novembre 2026, le patron, devant le message reçu (un lien, sans image) : « ça ne donne pas envie de cliquer. Il
+ * n'y a aucun moyen que ça s'ouvre directement dans WhatsApp ? » Une page ne s'ouvre jamais dans WhatsApp ; une vidéo,
+ * si. Au téléphone, sa figurine qui dit son message (sa voix, la tête de chaque réplique, ses mots) devient une vidéo —
+ * fabriquée dès que le lien est prêt, sous ses yeux —, et le partage du téléphone l'envoie : elle se joue dans la
+ * conversation, et le lien, dans sa légende, ne sert plus qu'à répondre. Sans partage de fichier (un ordinateur) ou si
+ * la vidéo rate : le lien, comme avant (son aperçu : `app/t/[id]/apercu`).
+ */
+type MessagePret = { url: string; pour: string; reste: number; parole?: EnvoiParole; moi?: FigurineVue | null; ctx?: AudioContext | null };
+
+/** Le son du téléphone, ouvert pendant un toucher (sinon la vidéo serait muette). */
+function ouvrirLeSon(): AudioContext | null {
+  if (typeof window === "undefined" || !memePossible()) return null;
+  const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  const ctx = AC ? new AC() : null;
+  void ctx?.resume().catch(() => undefined);
+  return ctx;
+}
+/** Ce téléphone sait-il donner une vidéo à WhatsApp (le partage de fichiers) ? */
+function partageVideoPossible(): boolean {
+  try {
+    return typeof navigator !== "undefined" && typeof navigator.share === "function" && typeof navigator.canShare === "function" && navigator.canShare({ files: [new File([new Uint8Array(1)], "message-clikme.mp4", { type: "video/mp4" })] });
+  } catch {
+    return false;
+  }
+}
+
+/** (une vidéo par message : le double passage des effets, en développement, n'en fabrique pas deux) */
+const videosCommencees = new WeakSet<AudioContext>();
+
+function LeMessagePret({ pret, lienWhatsApp, copie, onCopier }: { pret: MessagePret; lienWhatsApp: string; copie: boolean; onCopier: () => void }) {
+  const { parole, moi, ctx } = pret;
+  const toile = useRef<HTMLCanvasElement>(null);
+  // (en vidéo dès l'ouverture, quand ce téléphone sait la donner à WhatsApp : pas d'éclair du lien avant)
+  const [voulue] = useState(() => Boolean(parole && moi && ctx) && partageVideoPossible());
+  const [video, setVideo] = useState<{ etat: "fabrication"; p: number } | { etat: "prete"; fichier: File; url: string } | { etat: "ratee" } | null>(voulue ? { etat: "fabrication", p: 0 } : null);
+  const [partie, setPartie] = useState(false);
+  const vivant = useRef(true);
+  const adresse = useRef("");
+  useEffect(() => {
+    vivant.current = true;
+    return () => {
+      vivant.current = false;
+      if (adresse.current) URL.revokeObjectURL(adresse.current);
+      adresse.current = "";
+    };
+  }, []);
+
+  // 🎬 sa vidéo se fabrique tout de suite, sous ses yeux (sans bruit : il vient de s'entendre)
+  useEffect(() => {
+    if (!voulue || !parole || !moi || !ctx || !toile.current || videosCommencees.has(ctx)) return;
+    videosCommencees.add(ctx);
+    const tete = (t: Sentiment | null) => (t && moi.expressions[t]) || { n: moi.neutre, p: moi.parle };
+    fabriquerMeme({
+      ctx,
+      toile: toile.current,
+      images: { n: moi.neutre, p: moi.parle },
+      son: parole.son,
+      repliques: parole.repliques.map((r) => ({ de: r.de, a: r.a, texte: r.texte, images: tete(r.tete), emoji: r.tete ? (sentimentDe(r.tete)?.emoji ?? "") : "" })),
+      annonce: { emoji: "🎙️", titre: parole.pour ? `Un message pour ${parole.pour}` : "Un message pour toi", nom: `de ${moi.prenom}` },
+      fin: { emoji: "💬", titre: "Réponds-moi avec ta figurine", sous: "clikme.fr" },
+      surProgres: (p) => {
+        if (vivant.current) setVideo((x) => (x?.etat === "fabrication" ? { etat: "fabrication", p } : x));
+      },
+    })
+      .then((m) => {
+        if (!vivant.current) return;
+        adresse.current = URL.createObjectURL(m.blob);
+        const ext = m.type.includes("mp4") ? "mp4" : "webm";
+        setVideo({ etat: "prete", fichier: new File([m.blob], `message-clikme.${ext}`, { type: m.type }), url: adresse.current });
+      })
+      .catch(() => {
+        if (vivant.current) setVideo({ etat: "ratee" });
+      })
+      .finally(() => void ctx.close().catch(() => undefined));
+  }, [voulue, parole, moi, ctx]);
+
+  async function envoyerLaVideo() {
+    if (video?.etat !== "prete") return;
+    try {
+      await navigator.share({ files: [video.fichier], text: texteAvecVideo(pret.pour, pret.url) });
+      setPartie(true);
+    } catch (e) {
+      if ((e as Error)?.name !== "AbortError") setVideo({ etat: "ratee" });
+    }
+  }
+
+  const enVideo = video !== null && video.etat !== "ratee";
+  const autre = typeof navigator !== "undefined" && "share" in navigator;
+  return (
+    <div className="pr-pret" data-url={pret.url} data-video={video?.etat ?? ""}>
+      <b>{partie ? "C’est parti !" : "Ton message est prêt !"}</b>
+      {/* (une seule toile, toujours là : la vidéo s'y dessine ; cachée quand c'est le lien) */}
+      <div className={`pr-video${video?.etat === "prete" ? " prete" : ""}`} hidden={!enVideo}>
+        {video?.etat === "prete" ? <video src={video.url} playsInline muted loop autoPlay aria-label="Ta vidéo" /> : null}
+        <canvas ref={toile} aria-hidden="true" />
+        {video?.etat === "fabrication" && (
+          <span className="pr-video-cours">
+            <i style={{ width: `${Math.round(video.p * 100)}%` }} />
+          </span>
+        )}
+      </div>
+      {enVideo ? (
+        <>
+          <p>
+            Ta figurine dit ton message en vidéo, <strong>directement dans WhatsApp</strong>. Pour te répondre, {pret.pour ? `${pret.pour} touche le lien : un selfie suffit,` : "un toucher sur le lien et un selfie suffisent :"} et vous deviendrez proches.
+          </p>
+          <button type="button" className="pr-bouton grand" disabled={video.etat !== "prete"} onClick={() => void envoyerLaVideo()}>
+            {video.etat === "prete" ? (partie ? "📲 La renvoyer" : "📲 L’envoyer en vidéo sur WhatsApp") : `🎬 Ta vidéo se prépare… ${Math.round(video.p * 100)} %`}
+          </button>
+          <div className="pr-pret-autres">
+            <a href={lienWhatsApp} target="_blank" rel="noopener noreferrer">
+              Envoyer le lien seulement
+            </a>
+            <button type="button" onClick={onCopier}>
+              {copie ? "Lien copié ✓" : "Copier le lien"}
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          {video?.etat === "ratee" && <p className="pr-pret-rate">La vidéo n’a pas pu se faire : envoie le lien, ta figurine parlera dès qu’on le touche.</p>}
+          <p>Sur WhatsApp, ta figurine {pret.pour ? `parle à ${pret.pour}` : "lui parle"} sans rien installer. Pour te répondre, un selfie suffit : vous deviendrez proches.</p>
+          <a className="pr-bouton grand" href={lienWhatsApp} target="_blank" rel="noopener noreferrer">
+            L’envoyer sur WhatsApp
+          </a>
+          <div className="pr-pret-autres">
+            <button type="button" onClick={onCopier}>
+              {copie ? "Lien copié ✓" : "Copier le lien"}
+            </button>
+            {autre && (
+              <button type="button" onClick={() => void navigator.share({ text: texteDuLien(pret.pour), url: pret.url }).catch(() => undefined)}>
+                Une autre appli
+              </button>
+            )}
+          </div>
+        </>
+      )}
+      <small>{pret.reste > 0 ? `Encore ${pret.reste} aujourd’hui par WhatsApp.` : "C’était le dernier d’aujourd’hui par WhatsApp."} Le lien s’efface dans 30 jours.</small>
+    </div>
+  );
+}
+
 export const STYLES_PROCHES = `
 .pr{display:flex;flex-direction:column;gap:14px}
 .pr-tete h2{margin:0;font-size:28px;font-weight:900;line-height:1.15;letter-spacing:-.02em}
@@ -1238,6 +1373,15 @@ export const STYLES_PROCHES = `
 .pr-pret-autres{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .pr-pret-autres button{height:42px;padding:0 16px;border:1.5px solid rgba(255,255,255,.2);border-radius:999px;background:none;color:#FFF4E6;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer}
 .pr-pret small{font-size:12px;color:#B49AA8}
+.pr-pret-autres a{display:inline-flex;align-items:center;height:42px;padding:0 16px;border:1.5px solid rgba(255,255,255,.2);border-radius:999px;color:#FFF4E6;font-size:13.5px;font-weight:800;text-decoration:none}
+.pr-pret strong{color:#FFF4E6}
+.pr-pret-rate{padding:8px 12px;border-radius:14px;background:rgba(255,46,154,.12);color:#FFD3E8 !important}
+.pr-video[hidden]{display:none}
+.pr-video{position:relative;width:132px;aspect-ratio:9/16;border-radius:18px;overflow:hidden;background:#22101B;box-shadow:0 0 0 3px rgba(242,196,107,.55),0 16px 30px -14px rgba(255,46,154,.8)}
+.pr-video canvas,.pr-video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.pr-video.prete canvas{visibility:hidden}
+.pr-video-cours{position:absolute;left:10px;right:10px;bottom:10px;height:6px;border-radius:999px;background:rgba(0,0,0,.45);overflow:hidden}
+.pr-video-cours i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#FF2E9A,#FF7A59);transition:width .25s}
 .pr-pour{display:flex;flex-direction:column;gap:6px;margin:2px 2px 0;font-size:12.5px;font-weight:800;color:#CDB4C0}
 .pr-pour small{font-weight:600;color:#B49AA8}
 .pr-pour input{height:46px;padding:0 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.16);background:#22101B;color:#FFF4E6;font:inherit;font-size:15px;font-weight:700;box-sizing:border-box}

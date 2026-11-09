@@ -1048,6 +1048,11 @@ export async function fabriquerMeme(o: {
   duo?: { images: { n: string; p: string }; son: string; texte?: string; prenom: string; moi: string };
   /** 🎬 L'interprétation choisie (son graphisme) : pas en duo, ni pour un commerçant. */
   rendu?: RenduMeme;
+  /**
+   * 🎙️ Un message du talkie, réplique par réplique (`de`/`a` : en secondes de sa voix) : sa tête et son emoji changent à
+   * chaque réplique, et ses mots se posent sur le temps de leur réplique (au lieu de `images`, `texte` et `emoji`).
+   */
+  repliques?: { de: number; a: number; texte: string; images: { n: string; p: string }; emoji: string }[];
 }): Promise<Meme> {
   const { ctx, toile } = o;
   if (!memePossible()) throw new Error("Ce téléphone ne sait pas fabriquer de vidéo.");
@@ -1062,6 +1067,16 @@ export async function fabriquerMeme(o: {
   // (sans voix : un silence, le temps de lire ses mots — et la musique, qu'elle danse)
   const sansVoix = !o.son;
   const silence = () => Promise.resolve(ctx.createBuffer(1, Math.max(1, Math.round(ctx.sampleRate * dureeSansVoix(o.texte ?? ""))), ctx.sampleRate));
+  // (🎙️ ses têtes, réplique par réplique : chaque image une seule fois)
+  const charges = new Map<string, Promise<HTMLImageElement>>();
+  const uneFois = (u: string) => {
+    let x = charges.get(u);
+    if (!x) charges.set(u, (x = image(u)));
+    return x;
+  };
+  const tetes = o.repliques?.length
+    ? await Promise.all(o.repliques.map(async (r) => ({ de: r.de, a: r.a, emoji: r.emoji, n: await uneFois(r.images.n), p: await uneFois(r.images.p) })))
+    : null;
   const [n, p, voix, musique, duo] = await Promise.all([
     image(o.images.n),
     image(o.images.p),
@@ -1071,7 +1086,9 @@ export async function fabriquerMeme(o: {
   ]);
   const duree = voix.duration;
   const police = `${getComputedStyle(document.body).fontFamily || "system-ui"}, "Arial Black", sans-serif`;
-  const mots = motsDuTexte(o.texte ?? "", duree);
+  const mots = o.repliques?.length
+    ? o.repliques.flatMap((r) => motsDuTexte(r.texte, Math.max(0, Math.min(duree, r.a) - r.de)).map((m) => ({ mot: m.mot, de: m.de + r.de, a: m.a + r.de })))
+    : motsDuTexte(o.texte ?? "", duree);
   const rendu = o.rendu && !o.duo && !o.annonce ? o.rendu : undefined;
   const S: Scene = {
     n,
@@ -1140,6 +1157,16 @@ export async function fabriquerMeme(o: {
     if (e.data.size) morceaux.push(e.data);
   };
   const arret = new Promise<void>((ok) => (rec.onstop = () => ok()));
+  // (🎙️ la tête et l'emoji de la réplique en cours, au temps de sa voix)
+  const poser = (T: number) => {
+    if (!tetes) return;
+    const t = T - debutVoix(S);
+    const x = tetes.find((r) => t >= r.de && t < r.a) ?? (t >= tetes[tetes.length - 1].a ? tetes[tetes.length - 1] : tetes[0]);
+    S.n = x.n;
+    S.p = x.p;
+    S.emoji = x.emoji;
+  };
+  poser(0);
   dessiner(g, S, 0);
   const debut = ctx.currentTime + 0.15;
   premiere?.start(debut + INTRO);
@@ -1150,6 +1177,7 @@ export async function fabriquerMeme(o: {
     await new Promise<void>((ok) => {
       const pas = () => {
         const T = Math.max(0, ctx.currentTime - debut);
+        poser(T);
         dessiner(g, S, T);
         o.surProgres?.(Math.min(1, T / total));
         if (T >= total) ok();
@@ -1165,7 +1193,7 @@ export async function fabriquerMeme(o: {
         /* déjà fini */
       }
     if (rec.state !== "inactive") rec.stop();
-    for (const i of [n, p, ...(duo ? [duo[0], duo[1]] : [])]) URL.revokeObjectURL(i.src);
+    for (const i of [n, p, ...(duo ? [duo[0], duo[1]] : []), ...(tetes ?? []).flatMap((r) => [r.n, r.p])]) URL.revokeObjectURL(i.src);
   }
   await arret;
   const type = (rec.mimeType || format || "video/webm").split(";")[0];
