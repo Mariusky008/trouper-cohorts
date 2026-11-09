@@ -51,6 +51,23 @@ export async function repondreFenetre(p, oui = true) {
   await p.waitForFunction((el) => !el.isConnected, celleCi, { timeout: 5000 });
   return dit;
 }
+/**
+ * 🎙️ PARLER AU MOINS `n` SECONDES (le talkie-walkie, `app/collection/proches.tsx`) : on attend que SON minuteur, qui part
+ * avec le vrai début de l'enregistrement, en soit là — pas un temps fixe à l'aveugle. (9 novembre 2026 : une CI chargée
+ * démarrait l'enregistrement tard, la voix ne couvrait plus la seconde phrase de la fausse transcription, de 1,7 à
+ * 3,4 s, et sa tête 😂 ne venait jamais.)
+ */
+export async function parlerAuMoins(p, n = 4) {
+  await p.waitForFunction(
+    (min) => {
+      const [m, s] = (document.querySelector(".pr-plein.pr-parler .pr-temps b")?.textContent ?? "").split(":").map(Number);
+      return m * 60 + s >= min;
+    },
+    n,
+    { timeout: 30000 },
+  );
+  await p.waitForTimeout(400);
+}
 export const lancer = (options = {}) => chromium.launch({ ...(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}), ...options });
 
 /**

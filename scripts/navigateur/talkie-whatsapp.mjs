@@ -15,7 +15,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { BASE, D, F, fermerPablito, lancer, recus, telephone } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer, parlerAuMoins, recus, telephone } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
@@ -114,7 +114,7 @@ await zoe.waitForSelector(".pr-plein.pr-parler .pr-micro", { timeout: 15000 });
 ok((await texte(zoe, ".pr-plein.pr-parler .pr-qui")).includes("Par WhatsApp") && (await zoe.locator(".pr-plein.pr-parler .pr-moi-fig").count()) === 1, "« Par WhatsApp, à quelqu'un qui n'a pas ClikMe » : sa figurine l'écoute");
 await zoe.locator(".pr-plein.pr-parler .pr-micro").click();
 await zoe.waitForSelector(".pr-plein.pr-parler .pr-temps", { timeout: 15000 });
-await zoe.waitForTimeout(3800);
+await parlerAuMoins(zoe);
 await zoe.locator(".pr-plein.pr-parler .pr-micro").click();
 await zoe.waitForSelector(".pr-plein.pr-parler .pr-choix li", { timeout: 30000 });
 ok((await zoe.locator(".pr-plein.pr-parler .pr-choix li").count()) === 2 && (await zoe.locator(".pr-plein.pr-parler .pr-pour input").count()) === 1, "« Ta figurine a compris ça » : ses deux phrases, et « Son prénom »");
@@ -168,7 +168,7 @@ await capture(karim, "5-attente");
 // il dit sa réponse pendant qu'elle se fabrique
 await karim.locator(".pr-plein.pr-parler .pr-micro").click();
 await karim.waitForSelector(".pr-plein.pr-parler .pr-temps", { timeout: 15000 });
-await karim.waitForTimeout(3800);
+await parlerAuMoins(karim);
 await karim.locator(".pr-plein.pr-parler .pr-micro").click();
 await karim.waitForFunction(() => document.querySelector(".pr-plein.pr-parler .pr-consigne")?.textContent?.includes("attend ta figurine"), null, { timeout: 15000 }).catch(() => null);
 ok((await texte(karim, ".pr-plein.pr-parler .pr-consigne")).includes("Ce que tu as dit attend ta figurine"), "il a parlé : ce qu'il a dit attend sa figurine");

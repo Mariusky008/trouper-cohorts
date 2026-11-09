@@ -14,7 +14,7 @@
 // toucher aux chiffres des mèmes. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
 import crypto from "node:crypto";
 import fs from "node:fs";
-import { BASE, D, F, fermerPablito, lancer, recus, repondreFenetre, telephone } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer, parlerAuMoins, recus, repondreFenetre, telephone } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
@@ -160,7 +160,7 @@ ok((await texte(zoe, ".pr-plein.pr-parler .pr-qui")).includes("À Léa") && (awa
 await zoe.locator(".pr-plein.pr-parler .pr-micro").click();
 await zoe.waitForSelector(".pr-plein.pr-parler .pr-temps", { timeout: 15000 });
 ok((await texte(zoe, ".pr-plein.pr-parler .pr-etat")).includes("Je t’écoute"), "elle parle : « Je t'écoute », le temps qui passe");
-await zoe.waitForTimeout(3800);
+await parlerAuMoins(zoe);
 await zoe.locator(".pr-plein.pr-parler .pr-micro").click();
 await zoe.waitForSelector(".pr-plein.pr-parler .pr-choix li", { timeout: 30000 });
 const ia = await (await fetch(`${F.replace("/rest/v1", "")}/__ia`)).json();
