@@ -99,9 +99,17 @@ export function choisirDansLeCatalogue(ids: readonly string[]): string[] {
  * supported for this model » parle d'un modèle mais refuse un champ — la route
  * le retire et rejoue, voir `parOpenAI`. Ici, seul un refus qui porte sur le
  * modèle lui-même fait changer de moteur.
+ *
+ * LE CRÉDIT AUSSI (9 novembre 2026). « chatgpt-image-latest » répondait 429
+ * « You have no credits remaining » (`insufficient_quota`) à chaque figurine,
+ * quand le même compte, avec ses dollars, faisait des images avec
+ * gpt-image-1-mini dans le Playground : ce modèle-là ne puise pas dans le même
+ * crédit. On descend donc au suivant. Un 429 « trop de demandes dans la
+ * minute », lui, n'est pas un refus : on attend, voir `editer`.
  */
 export function moteurRefuse(statut: number, corps: string): boolean {
   if (statut === 403 || statut === 404) return true;
+  if (statut === 429) return /insufficient_quota|no credits remaining|exceeded your current quota/i.test(corps);
   if (statut !== 400) return false;
   try {
     const e = (JSON.parse(corps) as { error?: { code?: string; param?: string } }).error;
