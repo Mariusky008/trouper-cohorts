@@ -55,7 +55,10 @@ export default async function PageFigurinesClients() {
                   <tr key={i} style={{ borderTop: "1px solid #eee" }}>
                     <td style={{ padding: "6px 8px", whiteSpace: "nowrap", color: "#666" }}>{new Date(e.le).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })}</td>
                     <td style={{ padding: "6px 8px", color: "#666" }}>{e.qui}…</td>
-                    <td style={{ padding: "6px 8px" }}>{e.erreur}</td>
+                    <td style={{ padding: "6px 8px" }}>
+                      {e.erreur}
+                      {e.detail && <small style={{ display: "block", marginTop: 2, color: "#8a2d2d", wordBreak: "break-word" }}>{e.detail}</small>}
+                    </td>
                     <td style={{ padding: "6px 8px", color: "#666" }}>{e.statut}</td>
                   </tr>
                 ))}

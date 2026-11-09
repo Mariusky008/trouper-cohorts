@@ -267,22 +267,20 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
 }
 
 /**
- * 🛠️ UN PAS DE FABRICATION DE SA FIGURINE (le moteur d'image) : sa figurine, puis sa bouche ouverte ; à la fin, elle
- * est prête. Sans moteur branché : rien (ClikMe la fait à la main, depuis l'admin).
- */
-/**
  * 🩺 LES DERNIÈRES FABRICATIONS RATÉES (9 novembre 2026, le propriétaire : « sur mobile, “Oups, ça n'a pas marché” —
- * même avec d'autres photos ») : ce que le moteur ou la page a répondu, gardé pour l'admin (`/admin/humain/figurines-
- * clients`) — sans photo, sans identifiant (ses huit premiers signes).
+ * même avec d'autres photos ») : ce que la page a montré, et ce que le moteur a répondu (`detail` : sa raison, jamais
+ * montrée à l'écran), gardé pour l'admin (`/admin/humain/figurines-clients#erreurs`) — sans photo, sans identifiant
+ * (ses huit premiers signes).
  */
 const CHEMIN_ERREURS_FABRICATION = "fabrication/erreurs.json";
-export type ErreurFabrication = { le: string; qui: string; erreur: string; statut: number };
-async function noterErreurFabrication(supabase: Supabase, h: string, erreur: string, statut: number): Promise<void> {
+export type ErreurFabrication = { le: string; qui: string; erreur: string; statut: number; detail?: string };
+async function noterErreurFabrication(supabase: Supabase, h: string, erreur: string, statut: number, detail = ""): Promise<void> {
   try {
-    console.error("[ma-figurine] fabrication ratée", JSON.stringify({ qui: h.slice(0, 8), erreur, statut }));
+    console.error("[ma-figurine] fabrication ratée", JSON.stringify({ qui: h.slice(0, 8), erreur, statut, detail }));
     const f = await lireJson<{ l?: ErreurFabrication[] }>(supabase, CHEMIN_ERREURS_FABRICATION);
     const l = Array.isArray(f.l) ? f.l : [];
-    await ecrireJson(supabase, CHEMIN_ERREURS_FABRICATION, { l: [...l, { le: new Date().toISOString(), qui: h.slice(0, 8), erreur: erreur.slice(0, 300), statut }].slice(-50) });
+    const e: ErreurFabrication = { le: new Date().toISOString(), qui: h.slice(0, 8), erreur: erreur.slice(0, 300), statut, ...(detail ? { detail: detail.slice(0, 300) } : {}) };
+    await ecrireJson(supabase, CHEMIN_ERREURS_FABRICATION, { l: [...l, e].slice(-50) });
   } catch {
     /* le relevé ne bloque jamais */
   }
@@ -292,12 +290,16 @@ export async function erreursDeFabrication(supabase: Supabase): Promise<ErreurFa
   return (Array.isArray(f.l) ? f.l : []).slice().reverse();
 }
 
+/**
+ * 🛠️ UN PAS DE FABRICATION DE SA FIGURINE (le moteur d'image) : sa figurine, puis sa bouche ouverte ; à la fin, elle
+ * est prête. Sans moteur branché : rien (ClikMe la fait à la main, depuis l'admin).
+ */
 export async function fabriquerMaFigurine(supabase: Supabase, habitant: Habitant, avant: number): Promise<{ error?: string; enCours?: boolean; statut?: number }> {
-  const r = await unPasDeSaFigurine(supabase, habitant, avant);
-  if (r.error) await noterErreurFabrication(supabase, habitant.id, r.error, r.statut ?? 400);
+  const { detail, ...r } = await unPasDeSaFigurine(supabase, habitant, avant);
+  if (r.error) await noterErreurFabrication(supabase, habitant.id, r.error, r.statut ?? 400, detail);
   return r;
 }
-async function unPasDeSaFigurine(supabase: Supabase, habitant: Habitant, avant: number): Promise<{ error?: string; enCours?: boolean; statut?: number }> {
+async function unPasDeSaFigurine(supabase: Supabase, habitant: Habitant, avant: number): Promise<{ error?: string; enCours?: boolean; statut?: number; detail?: string }> {
   if (!moteurBranche()) return {};
   const { ok, ligne } = await lireLigne(supabase, habitant.id);
   if (!ok || !ligne || !s(ligne.photo) || s(ligne.refus)) return { error: "Envoie d’abord ta photo.", statut: 400 };
@@ -322,7 +324,7 @@ async function unPasDeSaFigurine(supabase: Supabase, habitant: Habitant, avant: 
     const compte = await lireJson<{ n: number }>(supabase, tous);
     await ecrireJson(supabase, tous, { n: (compte.n ?? 0) + 1 });
   }
-  if (r.erreur) return { error: r.erreur, statut: 502 };
+  if (r.erreur) return { error: r.erreur, statut: 502, ...(r.detail ? { detail: r.detail } : {}) };
   if (r.enCours || !r.fini) return { enCours: true };
   const maintenant = new Date().toISOString();
   const { error } = await supabase

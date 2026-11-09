@@ -32,7 +32,8 @@ export const NOM_PARLE = "fig-p.webp";
 const VERROU = "verrou.json";
 const DUREE_VERROU = 4 * 60_000;
 
-export type PasFabrique = { fini: boolean; enCours?: boolean; erreur?: string; nouvelle?: boolean };
+/** (`detail` : ce que le moteur a répondu, pour le relevé des fabrications ratées de l'admin) */
+export type PasFabrique = { fini: boolean; enCours?: boolean; erreur?: string; detail?: string; nouvelle?: boolean };
 
 /**
  * UN PAS DE FABRICATION : sa figurine si elle manque, puis sa bouche ouverte (dans la même requête s'il reste le
@@ -71,7 +72,7 @@ export async function fabriquerUnPas(depot: Depot, photo: Buffer, avant: number,
       // c'est la consigne qui la rend dessin animé, et caricature SES traits (`consigneFigurineClient`) —
       // `FIGURINE_CLIENT_FIDELITE=low` pour revenir à la basse (le 5 novembre : « encore plus réaliste qu'avant »)
       const r = await editer(png, consigneFigurineClient(traits, univers), avant, s(process.env.FIGURINE_CLIENT_FIDELITE) === "low" ? "low" : "high");
-      if (!Buffer.isBuffer(r)) return { fini: false, erreur: r.erreur, nouvelle };
+      if (!Buffer.isBuffer(r)) return { fini: false, erreur: r.erreur, detail: r.detail, nouvelle };
       const webp = await sharp(r).resize({ width: 900, withoutEnlargement: true }).webp({ quality: 88 }).toBuffer();
       if (!(await depot.ecrire(NOM_NEUTRE, webp, "image/webp"))) return { fini: false, erreur: "Ta figurine n'a pas pu être rangée.", nouvelle };
       noms = [...noms, NOM_NEUTRE];
@@ -83,7 +84,7 @@ export async function fabriquerUnPas(depot: Depot, photo: Buffer, avant: number,
     if (!neutre) return { fini: false, erreur: "Ta figurine est introuvable.", nouvelle };
     const { png, cadre } = await poserAuFormat(neutre);
     const r = await editer(png, consigneBoucheNeutre(), avant);
-    if (!Buffer.isBuffer(r)) return { fini: false, erreur: r.erreur, nouvelle };
+    if (!Buffer.isBuffer(r)) return { fini: false, erreur: r.erreur, detail: `(la bouche ouverte) ${r.detail ?? ""}`.trim(), nouvelle };
     if (!(await depot.ecrire(NOM_PARLE, await reprendre(r, cadre), "image/webp"))) return { fini: false, erreur: "Ta figurine n'a pas pu être rangée.", nouvelle };
     return { fini: true, nouvelle };
   } finally {
