@@ -195,5 +195,10 @@ export type LienVu = {
   /** Il a déjà répondu (il peut encore : leur conversation continue). */
   repondu?: boolean;
 };
-/** Le texte qui part avec le lien, dans WhatsApp. */
-export const texteDuLien = (pour: string) => `${pour ? `${pour}, é` : "É"}coute ce que ma figurine a à te dire 😄`;
+/**
+ * Le texte qui part avec le lien, dans WhatsApp (le lien seul : son aperçu montre sa figurine et ▶). Le 9 novembre
+ * 2026, le patron : « le message n'est pas du tout encourageant ou beau, ça ne donne pas envie de cliquer ».
+ */
+export const texteDuLien = (pour: string) => `${pour ? `${pour} ! ` : ""}🎙️ Ma figurine a un message pour toi, écoute 👇`;
+/** La légende de la vidéo (sa figurine qui dit son message se joue dans WhatsApp) : le lien ne sert plus qu'à répondre. */
+export const texteAvecVideo = (pour: string, url: string) => `🎙️ ${pour ? `${pour}, je` : "Je"} t’ai laissé un message avec ma figurine ! Réponds-moi avec la tienne 👉 ${url}`;

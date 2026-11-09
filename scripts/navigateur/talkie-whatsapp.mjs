@@ -10,8 +10,9 @@
 // Supabase) ; quand elle est prête, elle a compris ; il envoie. « C'est parti ! » : ils sont proches, le message de Zoé
 // ouvre leur conversation, Zoé est prévenue (« Karim t'a répondu avec sa figurine ! — Sa toute première »), et voit sa
 // carte « Nouveau, grâce à toi ». Zoé ouvre son propre lien : « C'est ton message ». Trois liens par jour. Un lien de plus
-// de trente jours s'efface. Léa, qui a déjà sa figurine, répond sans selfie. La mesure (`w-…`). Rien ne déborde, jamais
-// le mot interdit, aucune erreur dans la page.
+// de trente jours s'efface. Léa, qui a déjà sa figurine, répond sans selfie. La mesure (`w-…`). L'aperçu du lien : une
+// vraie carte (JPEG, 1200 × 630). Un téléphone qui sait partager une vidéo : Léa envoie sa figurine EN VIDÉO (le partage
+// imité reçoit la vidéo et sa légende). Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -125,7 +126,7 @@ await zoe.waitForSelector(".tf-feuille.ouverte .pr-pret", { timeout: 30000 });
 const url = await zoe.locator(".tf-feuille.ouverte .pr-pret").getAttribute("data-url");
 const wa = await zoe.locator(".tf-feuille.ouverte .pr-pret a.pr-bouton").getAttribute("href");
 const ID = /\/t\/([a-z0-9]{12})$/.exec(url ?? "")?.[1] ?? "";
-ok(Boolean(ID) && wa?.startsWith("https://wa.me/?text=") && decodeURIComponent(wa.split("text=")[1]).includes(`Karim, écoute ce que ma figurine a à te dire 😄 ${url}`), `« Ton message est prêt » : « L'envoyer sur WhatsApp » (${decodeURIComponent(wa?.split("text=")[1] ?? "")})`);
+ok(Boolean(ID) && wa?.startsWith("https://wa.me/?text=") && decodeURIComponent(wa.split("text=")[1]).includes(`Karim ! 🎙️ Ma figurine a un message pour toi, écoute 👇 ${url}`), `« Ton message est prêt » : « L'envoyer sur WhatsApp » (${decodeURIComponent(wa?.split("text=")[1] ?? "")})`);
 ok((await texte(zoe, ".tf-feuille.ouverte .pr-pret")).includes("Encore 2 aujourd’hui"), "trois par jour : encore deux");
 await capture(zoe, "2-pret");
 const fiche = await lireStock(`liens/${ID}.json`);
@@ -133,7 +134,17 @@ ok(fiche?.de === ZOE.id && fiche.pour === "Karim" && fiche.ville === "dax" && fi
 
 // ═══ L'APERÇU DU LIEN (le robot de WhatsApp) : il ne compte pas ═══
 const apercu = await (await fetch(`${BASE}/t/${ID}`, { headers: { "user-agent": "WhatsApp/2.24.1 A" } })).text();
-ok(apercu.includes('property="og:title" content="🎙️ Zoé t’a laissé un message avec sa figurine"') && /property="og:image" content="[^"]+neutre-essai/.test(apercu), "l'aperçu du lien : « 🎙️ Zoé t'a laissé un message avec sa figurine », et sa figurine");
+ok(apercu.includes('property="og:title" content="🎙️ Zoé t’a laissé un message"') && apercu.includes("Touche pour écouter sa figurine, puis réponds avec la tienne."), "l'aperçu du lien : « 🎙️ Zoé t'a laissé un message — Touche pour écouter sa figurine, puis réponds avec la tienne. »");
+// (9 novembre 2026 : « ça ne donne pas envie de cliquer » — l'aperçu n'avait pas d'image ; maintenant une vraie carte, en JPEG)
+const ogImage = /property="og:image" content="([^"]+)"/.exec(apercu)?.[1] ?? "";
+const carte = ogImage ? await fetch(ogImage.replace(/^https?:\/\/[^/]+/, BASE), { headers: { "user-agent": "WhatsApp/2.24.1 A" } }) : null;
+const octets = carte?.ok ? Buffer.from(await carte.arrayBuffer()) : Buffer.alloc(0);
+const { default: sharp } = await import("sharp");
+const dims = octets.length ? await sharp(octets).metadata().catch(() => ({})) : {};
+if (octets.length) fs.writeFileSync(`${D}/talkie-whatsapp-2b-apercu.jpg`, octets);
+ok(ogImage.endsWith(`/t/${ID}/apercu`) && carte?.headers.get("content-type") === "image/jpeg" && dims.width === 1200 && dims.height === 630 && octets.length < 300_000, `son image : une carte de 1200 × 630, en JPEG léger (${dims.width}×${dims.height}, ${Math.round(octets.length / 1024)} ko)`);
+const carteVide = await fetch(`${BASE}/t/inconnu00001/apercu`);
+ok(carteVide.status === 200 && carteVide.headers.get("content-type") === "image/jpeg", "un lien inconnu : la même carte, sans figurine");
 ok((await evenements(ID)).join(",") === "cree", "le robot de l'aperçu ne compte pas comme une ouverture");
 
 // ═══ KARIM, SANS CLIKME, OUVRE LE LIEN ═══
@@ -251,6 +262,55 @@ await json(`liens/${VIEUX}.json`, { ...fiche, id: VIEUX, son: `liens/${VIEUX}.mp
 await karim.goto(`${BASE}/t/${VIEUX}`, { waitUntil: "networkidle" });
 const restent = await liste("liens");
 ok((await texte(karim, ".pt-fini h1")) === "Ce message s’est effacé" && !restent.some((x) => x.startsWith(VIEUX)) && restent.some((x) => x.startsWith(ID)), "un lien de plus de trente jours s'efface (sa voix aussi) ; les autres restent");
+
+// ═══ UN TÉLÉPHONE QUI SAIT PARTAGER UNE VIDÉO : SA FIGURINE, EN VIDÉO, DANS WHATSAPP ═══
+// (9 novembre 2026, le patron : « il n'y a aucun moyen que ça s'ouvre directement dans WhatsApp ? » — une vidéo, si.
+// Le partage du téléphone est imité : on garde ce qu'il reçoit.)
+const telVideo = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE, isMobile: true, hasTouch: true });
+await telVideo.addCookies([{ name: "clikme_habitant", value: LEA.jeton, url: BASE }]);
+await telVideo.addInitScript(() => {
+  window.__partages = [];
+  navigator.canShare = (d) => Boolean(d && d.files && d.files.length);
+  navigator.share = async (d) => {
+    window.__partages.push({ text: d.text ?? "", url: d.url ?? "", files: [...(d.files ?? [])].map((f) => ({ name: f.name, type: f.type, size: f.size })) });
+  };
+});
+const leaVideo = await telVideo.newPage();
+leaVideo.on("pageerror", (e) => erreurs.push(`Léa (vidéo) : ${String(e)}`));
+await leaVideo.goto(`${BASE}/collection?v=${Date.now()}#proches`, { waitUntil: "networkidle" });
+await fermerPablito(leaVideo);
+await leaVideo.waitForSelector("#o-proches .pr-wa .pr-bouton", { timeout: 60000 });
+await leaVideo.locator("#o-proches .pr-wa .pr-bouton").click();
+await leaVideo.waitForSelector(".pr-plein.pr-parler .pr-micro", { timeout: 15000 });
+await leaVideo.locator(".pr-plein.pr-parler .pr-micro").click();
+await leaVideo.waitForSelector(".pr-plein.pr-parler .pr-temps", { timeout: 15000 });
+await parlerAuMoins(leaVideo);
+await leaVideo.locator(".pr-plein.pr-parler .pr-micro").click();
+await leaVideo.waitForSelector(".pr-plein.pr-parler .pr-choix li", { timeout: 30000 });
+await leaVideo.locator(".pr-plein.pr-parler .pr-pour input").fill("Nina");
+await leaVideo.locator(".pr-plein.pr-parler .pr-bas .pr-bouton").click();
+await leaVideo.waitForSelector('.tf-feuille.ouverte .pr-pret[data-video="fabrication"] .pr-video canvas', { timeout: 30000 });
+await leaVideo.waitForTimeout(1200);
+ok((await texte(leaVideo, ".tf-feuille.ouverte .pr-pret .pr-bouton")).startsWith("🎬 Ta vidéo se prépare…") && (await leaVideo.locator(".tf-feuille.ouverte .pr-pret .pr-bouton").isDisabled()), "« Ton message est prêt ! » : sa vidéo se fabrique tout de suite, sous ses yeux (« 🎬 Ta vidéo se prépare… »)");
+await capture(leaVideo, "7-video-fabrication");
+await leaVideo.waitForSelector('.tf-feuille.ouverte .pr-pret[data-video="prete"] .pr-video video', { timeout: 60000 });
+const urlVideo = await leaVideo.locator(".tf-feuille.ouverte .pr-pret").getAttribute("data-url");
+ok(
+  (await texte(leaVideo, ".tf-feuille.ouverte .pr-pret .pr-bouton")) === "📲 L’envoyer en vidéo sur WhatsApp" && (await texte(leaVideo, ".tf-feuille.ouverte .pr-pret")).includes("directement dans WhatsApp"),
+  "sa vidéo est prête : « 📲 L'envoyer en vidéo sur WhatsApp » — elle se jouera directement dans WhatsApp",
+);
+const lienSeul = await leaVideo.locator(".tf-feuille.ouverte .pr-pret-autres a").getAttribute("href");
+ok(decodeURIComponent(lienSeul?.split("text=")[1] ?? "").includes(`Nina ! 🎙️ Ma figurine a un message pour toi, écoute 👇 ${urlVideo}`), "« Envoyer le lien seulement » reste là");
+await capture(leaVideo, "8-video-prete");
+await leaVideo.locator(".tf-feuille.ouverte .pr-pret .pr-bouton").click();
+await leaVideo.waitForFunction(() => window.__partages.length === 1, null, { timeout: 5000 }).catch(() => undefined);
+const [partage] = await leaVideo.evaluate(() => window.__partages);
+ok(
+  partage?.files.length === 1 && /^video\/(mp4|webm)$/.test(partage.files[0].type) && partage.files[0].size > 20_000 && partage.text === `🎙️ Nina, je t’ai laissé un message avec ma figurine ! Réponds-moi avec la tienne 👉 ${urlVideo}`,
+  `le partage reçoit sa vidéo (${partage?.files[0]?.type}, ${Math.round((partage?.files[0]?.size ?? 0) / 1024)} ko) et sa légende : « ${partage?.text} »`,
+);
+ok((await texte(leaVideo, ".tf-feuille.ouverte .pr-pret b")) === "C’est parti !" && (await texte(leaVideo, ".tf-feuille.ouverte .pr-pret .pr-bouton")) === "📲 La renvoyer", "« C'est parti ! » (et « La renvoyer »)");
+ok((await debordement(leaVideo)) <= 1 && (await sansMotInterdit(leaVideo)), "rien ne déborde, sans le mot interdit (la vidéo)");
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` : ${erreurs.join(" | ")}` : ""}`);
 await b.close();
