@@ -44,8 +44,11 @@ export async function repondreFenetre(p, oui = true) {
   const f = p.locator(".fen[role=alertdialog]").last();
   await f.waitFor({ state: "visible", timeout: 15000 });
   const dit = (await f.innerText()).replace(/\s+/g, " ").trim();
+  // (CETTE fenêtre-là, pas « la dernière » : la question suivante peut s'ouvrir aussitôt, et l'essai l'aurait prise pour
+  // celle-ci, qui ne disparaît jamais — 9 novembre 2026)
+  const celleCi = await f.elementHandle();
   await f.locator(oui ? ".fen-oui" : ".fen-non").click();
-  await f.waitFor({ state: "detached", timeout: 5000 });
+  await p.waitForFunction((el) => !el.isConnected, celleCi, { timeout: 5000 });
   return dit;
 }
 export const lancer = (options = {}) => chromium.launch({ ...(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}), ...options });

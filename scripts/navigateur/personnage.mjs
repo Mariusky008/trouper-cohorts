@@ -59,6 +59,8 @@ const api = (p, url, corps) =>
 // ═══ LÉA : LE QUESTIONNAIRE, SA CARTE ═══
 const lea = await tel(LEA);
 await lea.goto(`${BASE}/collection?v=${Date.now()}#personnage`, { waitUntil: "networkidle" });
+// (pas encore de figurine : Pablito lui dit bienvenue, une fois)
+await fermerPablito(lea);
 await lea.waitForSelector("#o-personnage .mp-lancer", { timeout: 60000 });
 ok((await texte(lea, "#o-personnage")).includes("Quel personnage es-tu") && (await lea.locator("#o-personnage .pc.silhouette").count()) === 1, "« Moi » : la carte mystère, et « Lancer le test »");
 await lea.locator("#o-personnage .mp-lancer").first().click();
