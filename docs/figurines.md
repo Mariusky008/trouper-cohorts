@@ -1851,6 +1851,12 @@ choix au départ** (les deux onglets « Faire un mème · Répondre vite » le f
 - **Le tuto** ouvre l'étape dont il parle (une bulle peut demander à la page de montrer quelque chose :
   `EtapeTuto.ouvrir`, l'événement `EVT_TUTO_OUVRIR`).
 - Les essais ouvrent une étape comme on le fait au doigt (`etapeCreer` dans `scripts/navigateur/commun.mjs`).
+- **« Ta figurine du mois » quitte le bas de « Créer »** (le propriétaire, le même jour : « elle encombre et prend de la
+  place sur cette section ») : sa progression se suit dans « Moi » (`MaFigurineDuMois`), et quand elle est arrivée, son
+  look se prend dans « Son visage, au choix » (`ApercuDuMois` est parti).
+- **Rien ne dépasse de l'écran quand une étape glisse** : en arrivant de côté, elle débordait de 17 px le temps de son
+  animation (la page pouvait bouger de côté ; l'essai `appli-notif` l'a vu en CI). `.tf-moi` coupe ce qui dépasse
+  (`overflow-x: clip`, qui garde le bas collé au-dessus du menu) ; `ma-figurine.mjs` le mesure pendant le glissement.
 
 ### 9.1 L'idée en une phrase
 

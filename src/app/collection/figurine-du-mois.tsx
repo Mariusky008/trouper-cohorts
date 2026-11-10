@@ -2,8 +2,8 @@
 
 /**
  * 🗓️ SA FIGURINE DU MOIS, À L'ÉCRAN (`lib/direct/figurine-du-mois.ts`, le lot 3) :
- *   · `ApercuDuMois` : dans « Créer », où il en est (3/10 jours), un lien vers sa progression (dans « Moi ») ;
- *     arrivée, un toucher la prend comme look ;
+ *   · (`ApercuDuMois`, sa ligne en bas de « Créer », est partie le 10 novembre 2026 — le propriétaire : « elle encombre
+ *     et prend de la place » ; sa figurine du mois se suit dans « Moi », et son look se prend dans « Son visage, au choix ») ;
  *   · `MaFigurineDuMois` : dans « Moi », sous sa carte (elle se mérite en 10 jours sur ClikMe dans le mois ; c'étaient 10
  *     jours de rencontres, dans « Rencontres », jusqu'à ce qu'il parte le 7 novembre 2026), la progression, la
  *     fabrication quand elle est méritée, puis la révélation — sa tenue du mois, son visage du mois, sa phrase du mois —
@@ -51,37 +51,6 @@ function Jours({ f }: { f: FigurineDuMois }) {
         <i key={k} className={k < f.jours ? "vecu" : ""} />
       ))}
     </span>
-  );
-}
-
-/** Dans « Ma figurine » : où il en est, en une ligne. */
-export function ApercuDuMois() {
-  const [m] = useMois();
-  if (!m) return null;
-  const f = m.courante;
-  const nom = moisEnClair(f.mois).replace(/\s\d{4}$/, "");
-  // ARRIVÉE : un toucher, et c'est elle qui parle dans son prochain mème (son look du mois)
-  if (f.etat === "prete")
-    return (
-      <button type="button" className="fm-apercu" onClick={() => versLeStudio({ look: f.mois })}>
-        <span aria-hidden="true">{f.edition.emoji}</span>
-        <span>
-          <b>Ta figurine de {nom} est arrivée !</b>
-          <small>Touche-la : c’est elle qui parlera dans ton prochain mème</small>
-        </span>
-        <em>Prendre ›</em>
-      </button>
-    );
-  return (
-    <a className="fm-apercu" href="#mois">
-      <span aria-hidden="true">{f.edition.emoji}</span>
-      <span>
-        <b>Ta figurine de {nom}</b>
-        <Jours f={f} />
-        <small>{`${Math.min(f.jours, f.objectif)}/${f.objectif} jours sur ClikMe : un nouveau look pour tes mèmes`}</small>
-      </span>
-      <em>Voir ›</em>
-    </a>
   );
 }
 
@@ -206,12 +175,6 @@ export function MaFigurineDuMois() {
 
 export const STYLES_FIGURINE_DU_MOIS = `
 .fm{margin-top:14px}
-.fm-apercu{display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;padding:12px 14px;border-radius:20px;background:rgba(242,196,107,.1);border:1.5px solid rgba(242,196,107,.45);color:#FFF4E6;font:inherit;text-align:left;text-decoration:none;cursor:pointer}
-.fm-apercu > span:first-child{font-size:28px}
-.fm-apercu > span:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
-.fm-apercu b{font-size:14.5px;font-weight:900}
-.fm-apercu small{font-size:12px;color:#D9C3CB}
-.fm-apercu em{font-style:normal;font-size:13px;font-weight:900;color:#F2C46B}
 .fm-jours{display:flex;gap:4px}
 .fm-jours i{flex:1;max-width:22px;height:8px;border-radius:999px;background:rgba(255,255,255,.14)}
 .fm-jours i.vecu{background:linear-gradient(90deg,#FF2E9A,#F2C46B)}
