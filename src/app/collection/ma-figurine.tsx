@@ -1145,7 +1145,7 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
         <nav className="tf-pas" aria-label="Les étapes de ton mème">
           {(
             [
-              [1, "Ce qu’elle dit"],
+              [1, ecrit ? "Sa phrase" : "Ta voix"],
               [2, "Le ton"],
               [3, ecrit ? "Sa voix" : "La danse"],
             ] as const
@@ -1305,7 +1305,7 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
           )}
           {etape < 3 ? (
             <button type="button" className="tf-suivant" onClick={() => versEtape(etape === 1 ? 2 : 3)} disabled={!premiereFaite}>
-              {etape === 2 && !rendu && !sonVisage ? "Suivant, sans rien choisir ➔" : "Suivant ➔"}
+              {etape === 2 && !rendu && !sonVisage ? "Passer ➔" : "Suivant ➔"}
             </button>
           ) : memeIci ? (
             <button type="button" className="tf-revoir" onClick={() => setFeuille(true)}>
@@ -2336,7 +2336,7 @@ export const STYLES_MA_FIGURINE =
 .tf-moi{gap:14px}
 .tf-parler[hidden],.tf-reactions[hidden]{display:none}
 .tf-moi .tf-scene{position:relative;gap:4px;margin:-14px -16px 0;padding:8px 16px 4px}
-.tf-moi .tf-fig .fqp-fig{width:min(200px,52vw);width:clamp(150px,24dvh,214px);transition:width .3s cubic-bezier(.2,.9,.3,1)}
+.tf-moi .tf-fig .fqp-fig{width:min(180px,46vw);width:clamp(124px,19dvh,190px);transition:width .3s cubic-bezier(.2,.9,.3,1)}
 .tf-moi:has(.tf-texte textarea:focus) .tf-fig .fqp-fig{width:clamp(96px,13dvh,130px)}
 .tf-hero-dit{font-size:12px;font-weight:700;color:#B49AA8}
 /* sa vignette : sous la barre du haut, quand sa figurine est sortie de l'écran */

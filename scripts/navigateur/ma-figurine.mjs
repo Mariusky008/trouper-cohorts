@@ -146,7 +146,7 @@ ok(etapes === "Ce qu’elle dit|Comment elle le dit|Sa voix" && (await hugo.loca
 // la barre 1 · 2 · 3, « Suivant » en bas
 const pas = (await hugo.locator(".tf-moi .tf-pas button").allInnerTexts()).map((x) => x.replace(/\s+/g, " ").trim()).join(" | ");
 ok(
-  pas === "1 Ce qu’elle dit | 2 Le ton | 3 Sa voix" && (await hugo.locator(".tf-moi .tf-etape:not([hidden])").count()) === 1 && (await hugo.locator(".tf-moi .tf-etape-1:not([hidden])").count()) === 1 && (await hugo.locator('.tf-moi .tf-pas button[aria-current="step"]').innerText()).includes("Ce qu’elle dit"),
+  pas === "1 Sa phrase | 2 Le ton | 3 Sa voix" && (await hugo.locator(".tf-moi .tf-etape:not([hidden])").count()) === 1 && (await hugo.locator(".tf-moi .tf-etape-1:not([hidden])").count()) === 1 && (await hugo.locator('.tf-moi .tf-pas button[aria-current="step"]').innerText()).includes("Sa phrase"),
   `une seule étape à l'écran, la ①, et la barre des étapes (${pas})`,
 );
 ok((await texte(hugo, ".tf-moi .tf-suite .tf-suivant")) === "Suivant ➔" && (await hugo.locator(".tf-moi .tf-suite .tf-retour, .tf-moi .tf-suite .tf-envoyer").count()) === 0, "en bas : « Suivant ➔ » (pas encore de « Retour », ni de « Créer mon mème »)");
@@ -157,8 +157,8 @@ await hugo.locator(".tf-moi .tf-texte textarea").fill(sa);
 await hugo.locator(".tf-moi .tf-suite .tf-suivant").click();
 await hugo.locator(".tf-moi .tf-etape-2:not([hidden])").waitFor({ state: "visible", timeout: 5000 });
 ok(
-  (await hugo.locator(".tf-moi .tf-etape:not([hidden])").count()) === 1 && (await hugo.locator(".tf-moi .tf-pas button:nth-child(1)").innerText()).includes("✓") && (await texte(hugo, ".tf-moi .tf-suite .tf-suivant")) === "Suivant, sans rien choisir ➔" && (await hugo.locator(".tf-moi .tf-suite .tf-retour").count()) === 1,
-  "« Suivant ➔ » : l'étape ② glisse à la place de la ①, cochée ✓ ; elle est facultative (« Suivant, sans rien choisir ➔ ») ; « ‹ Retour »",
+  (await hugo.locator(".tf-moi .tf-etape:not([hidden])").count()) === 1 && (await hugo.locator(".tf-moi .tf-pas button:nth-child(1)").innerText()).includes("✓") && (await texte(hugo, ".tf-moi .tf-suite .tf-suivant")) === "Passer ➔" && (await hugo.locator(".tf-moi .tf-suite .tf-retour").count()) === 1,
+  "« Suivant ➔ » : l'étape ② glisse à la place de la ①, cochée ✓ ; elle est facultative (« Passer ➔ ») ; « ‹ Retour »",
 );
 await hugo.screenshot({ path: `${D}/ma-figurine-0a1-etape-2.png` });
 await hugo.locator(".tf-moi .tf-sa-tete").click();
@@ -196,6 +196,8 @@ ok((await hugo.locator("#tf-reactions[hidden] #reactions").count()) === 1 && (aw
 // (la page descend : sa figurine se fait vignette, juste sous la barre du haut — l'ami : « qu'elle s'amenuise »)
 await hugo.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
 await hugo.waitForSelector(".tf-mini", { timeout: 5000 });
+// (elle glisse depuis le haut : on la mesure arrivée)
+await hugo.waitForTimeout(400);
 const descendu = await hugo.evaluate(() => window.scrollY);
 const mini = await hugo.locator(".tf-mini").boundingBox();
 const barre = await hugo.locator(".mc-barre").boundingBox();
@@ -458,7 +460,7 @@ await lea.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), 
 await etapeCreer(lea, 1);
 await lea.locator(".tf-modes button", { hasText: "Avec ma voix" }).click();
 ok(
-  (await lea.locator(".tf-moi .tf-suite .tf-suivant").isDisabled()) && (await lea.evaluate(() => document.querySelector(".tf-moi .tf-etape-3 .tf-etape-quoi b")?.textContent)) === "Elle danse ?" && (await texte(lea, ".tf-moi .tf-pas button:nth-child(3)")).includes("La danse"),
+  (await lea.locator(".tf-moi .tf-suite .tf-suivant").isDisabled()) && (await lea.evaluate(() => document.querySelector(".tf-moi .tf-etape-3 .tf-etape-quoi b")?.textContent)) === "Elle danse ?" && (await texte(lea, ".tf-moi .tf-pas button:nth-child(3)")).includes("La danse") && (await texte(lea, ".tf-moi .tf-pas button:nth-child(1)")).includes("Ta voix"),
   "avec sa voix à elle : le message lu ne repart pas tel quel (pas de suite avant d'avoir enregistré) ; l'étape ③ : « Elle danse ? »",
 );
 await lea.locator(".tf-micro").click();
@@ -750,6 +752,9 @@ const fig = await sharp(Buffer.from(dessin)).webp().toBuffer();
 for (const nom of ["neutre", "parle"]) await fetch(`${STOCK}/figurines-clients/${LEA.id}/${nom}-essai.webp`, { method: "POST", headers: { "content-type": "image/webp" }, body: fig });
 await lea.goto(`${BASE}/collection?v=${Date.now()}#figurine`, { waitUntil: "networkidle" });
 await lea.waitForSelector(".tf-moi .tf-pas", { timeout: 30000 });
+// (écran par écran : la ③ s'ouvre quand elle a dit quelque chose)
+await etapeCreer(lea, 1);
+await lea.locator(".tf-moi .tf-texte textarea").fill("Je danse sur mon ressort !");
 await etapeCreer(lea, 3);
 await lea.waitForSelector(".tf-moi .tf-etape-3 .tf-danse", { timeout: 30000 });
 await lea.locator(".tf-moi .tf-etape-3 .tf-danse").click();

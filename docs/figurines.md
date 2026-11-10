@@ -1838,12 +1838,12 @@ juste un écran, on valide une action, alors un autre écran arrive ? » (et la 
 choix au départ** (les deux onglets « Faire un mème · Répondre vite » le font déjà : on arrive sur l'étape ①), et
 **« Répondre vite » ne change pas** (c'est déjà un seul écran, un toucher envoie).
 
-- **Sa figurine reste en haut** (l'aperçu en direct de son mème) ; dessous, **une seule étape** à l'écran (`etape`), qui
+- **Sa figurine reste en haut** (l'aperçu en direct de son mème, un peu plus petite qu'avant : la place pour l'étape) ; dessous, **une seule étape** à l'écran (`etape`), qui
   glisse du bon côté quand on avance ou qu'on revient.
-- **La barre des étapes** : « 1 Ce qu'elle dit · 2 Le ton · 3 Sa voix » (avec sa propre voix : « 3 La danse ») ; celle
+- **La barre des étapes** : « 1 Sa phrase · 2 Le ton · 3 Sa voix » (avec sa propre voix : « 1 Ta voix · … · 3 La danse ») ; celle
   à l'écran en rose, celles faites cochées ✓ ; un toucher rouvre une étape (on saute la ② quand on veut).
-- **En bas, toujours à portée** (collé au-dessus du menu) : « Suivant ➔ » ; à la ②, « ‹ Retour » et « Suivant, sans
-  rien choisir ➔ » (elle est **facultative** : son titre le dit, « Facultatif : choisis le ton, je te propose trois
+- **En bas, toujours à portée** (collé au-dessus du menu) : « Suivant ➔ » ; à la ②, « ‹ Retour » et « Passer ➔ » (elle
+  est **facultative** : son titre le dit, « Facultatif : choisis le ton, je te propose trois
   mèmes. ») ; à la ③, « ‹ Retour » et « 🎬 Créer mon mème ». On ne passe la ① qu'avec une phrase, ou sa voix enregistrée.
 - Le contenu des étapes ne change pas (9.0 unvicies) : ① sa phrase et « 🎲 Pas d'idée ? » ; ② le ton, les trois façons,
   « Ou je choisis son visage moi-même » ; ③ sa voix et « Elle danse en parlant ». « Créer mon mème » sans phrase ramène
