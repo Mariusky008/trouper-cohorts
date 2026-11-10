@@ -1034,7 +1034,12 @@ export async function adresseEnvoiMeme(supabase: Supabase, habitant: Habitant, i
 }
 
 /** Le mème est arrivé (sa vidéo est dans le seau, pas trop lourde) : il est rangé à côté du message. */
-export async function poserMeme(supabase: Supabase, habitant: Habitant, id: unknown, type: unknown): Promise<{ ok?: boolean; error?: string; statut?: number }> {
+/**
+ * La vidéo de son mème est arrivée : elle est rangée à côté du message. `reglages` (10 novembre 2026, « Créer » sur un
+ * seul écran) : sa version (la BD, le film, l'affiche — `null` : la vidéo simple), la danse et sa tête, choisies sur son
+ * mème prêt ; une autre version refait la vidéo, à la même place, et les réglages suivent.
+ */
+export async function poserMeme(supabase: Supabase, habitant: Habitant, id: unknown, type: unknown, reglages?: unknown): Promise<{ ok?: boolean; error?: string; statut?: number }> {
   const r = await ligneMessage(supabase, s(id));
   if (!r || s(r.habitant_id) !== habitant.id) return { error: "Ce message n’est pas le tien.", statut: 404 };
   const ext = extMeme(type);
@@ -1049,8 +1054,23 @@ export async function poserMeme(supabase: Supabase, habitant: Habitant, id: unkn
     return { error: "Ton mème est trop long.", statut: 413 };
   }
   const chemin = `${s(r.habitant_id)}/m-${s(r.id)}.json`;
-  const aCote = await lireJson<Record<string, unknown>>(supabase, chemin);
-  if (!(await ecrireJson(supabase, chemin, { ...aCote, meme: cheminMeme(habitant.id, s(r.id), ext), memeType: ext === "mp4" ? "video/mp4" : "video/webm" })))
+  const { rendu: avantRendu, danse: avantDanse, ...aCote } = await lireJson<Record<string, unknown>>(supabase, chemin);
+  // (sans réglages : ceux du message restent ; avec : sa version et la danse, telles qu'il les a choisies — jamais une
+  // version pour un duo)
+  const g = reglages && typeof reglages === "object" ? (reglages as { rendu?: unknown; danse?: unknown; sentiment?: unknown }) : null;
+  const rendu = g ? (aCote.repondA ? null : renduGarde(g.rendu)) : renduGarde(avantRendu);
+  const danse = g ? danseValide(g.danse) : avantDanse === true;
+  // (sa version a pris une autre tête : le message la prend aussi — sa vignette, dans « Mes mèmes », la montre. Les quatre
+  // premiers visages vont dans la table ; les autres, à côté du message)
+  if (g && "sentiment" in g) {
+    const humeur = sentimentValide(g.sentiment);
+    const enBase = humeur && SENTIMENTS_EN_BASE.includes(humeur) ? humeur : null;
+    if ((sentimentValide(r.sentiment) ?? null) !== enBase) await supabase.from("clik_figurine_message").update({ sentiment: enBase }).eq("id", s(r.id));
+    delete aCote.sentiment;
+    if (humeur && !enBase) aCote.sentiment = humeur;
+  }
+  const range = { ...aCote, ...(rendu ? { rendu } : {}), ...(danse ? { danse: true } : {}), meme: cheminMeme(habitant.id, s(r.id), ext), memeType: ext === "mp4" ? "video/mp4" : "video/webm" };
+  if (!(await ecrireJson(supabase, chemin, range)))
     return { error: "Ton mème n’a pas pu être rangé.", statut: 502 };
   return { ok: true };
 }

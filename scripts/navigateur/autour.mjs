@@ -17,7 +17,7 @@
 // grand et coché, les autres pâlis, et une petite carte « Ton mème apparaîtra ici » ; 🔎 « la gare » : un endroit de la
 // ville (le faux géocodeur), la carte y va, on y dépose — une zone « quelque part par ici », jamais l'endroit exact.
 import fs from "node:fs";
-import { BASE, D, F, etapeCreer, fermerPablito, lancer, repondreFenetre } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer, repondreFenetre } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
@@ -395,18 +395,14 @@ await lea.locator("section.atr-deposer .atr-nouveau").click();
 await lea.waitForSelector("#o-figurine:not([hidden]) #pour-autour", { timeout: 30000 });
 await fermerPablito(lea, "#o-figurine");
 const bandeau = await texte(lea, "#pour-autour");
-ok(bandeau.includes("↩️ Ta réponse pour") && bandeau.includes("Le Petit Bistrot") && bandeau.includes("Surprends-moi"), `le studio s'ouvre pour ce lieu : « ${bandeau.slice(0, 60)} »`);
-ok((await lea.locator(".tf-moi .tf-surprends").count()) === 1, "sa tête, sa phrase, ou « 🎲 Surprends-moi ! »");
+ok(bandeau.includes("↩️ Ta réponse pour") && bandeau.includes("Le Petit Bistrot") && bandeau.includes("Pas d’idée ?"), `le studio s'ouvre pour ce lieu : « ${bandeau.slice(0, 60)} »`);
+ok((await lea.locator(".tf-moi .tf-pas-idee").count()) === 1 && (await lea.locator(".tf-feuille-idee .tf-surprends").count()) === 1, "sa tête, sa phrase, ou « 🎲 Pas d’idée ? » (« Surprends-moi » est dedans)");
 await lea.locator(".tf-moi .tf-texte textarea").fill("Même pas peur du chef !");
-await etapeCreer(lea, 3);
-await lea.locator(".tf-moi .tf-quelle-voix button", { hasText: "voix de femme" }).click();
-await lea.locator(".tf-moi .tf-ecouter").click();
-await lea.waitForSelector(".tf-envoyer", { timeout: 30000 });
 await lea.locator(".tf-envoyer").click();
 await lea.waitForSelector(".tf-meme-pret .tf-vers-autour", { timeout: 90000 });
 const versAutour = await texte(lea, ".tf-vers-autour");
 ok(versAutour.includes("Répondre avec ce mème") && versAutour.includes("Le Petit Bistrot") && (await lea.locator(".tf-meme-pret .tf-public").count()) === 0, `son mème prêt : « ${versAutour} »`);
-const idNouveau = (await lea.locator(".tf-adresse").inputValue()).split("/").pop();
+const idNouveau = (await lea.locator(".tf-meme-pret .tf-copier").getAttribute("data-lien")).split("/").pop();
 await lea.screenshot({ path: `${D}/autour-8-sa-tete.png`, fullPage: true });
 await lea.locator(".tf-vers-autour").click();
 // retour au dépôt : le nouveau mème choisi, son petit mot et « Mes proches » gardés

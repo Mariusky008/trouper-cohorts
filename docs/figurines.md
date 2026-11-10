@@ -1858,6 +1858,49 @@ choix au départ** (les deux onglets « Faire un mème · Répondre vite » le f
   animation (la page pouvait bouger de côté ; l'essai `appli-notif` l'a vu en CI). `.tf-moi` coupe ce qui dépasse
   (`overflow-x: clip`, qui garde le bas collé au-dessus du menu) ; `ma-figurine.mjs` le mesure pendant le glissement.
 
+### 9.0 quattervicies ✏️ « Créer » sur un seul écran (10 novembre)
+
+Le propriétaire, après 9.0 tervicies, avec sa maquette (« ClikMe — Créer, nouvelle version ») : « que penses-tu plutôt
+de ce flow pour la page “Créer”, afin de simplifier, qu'on ait tout sur un écran sans scroller, et moins de
+distraction ? ». Retenu, avec ses réponses à nos questions :
+
+- **La voix : sa propre voix, ou que de l'écrit.** « L'idée, c'est justement que la personne comprenne : soit elle
+  enregistre sa propre voix, soit c'est que de l'écrit, parce que la voix d'un autre, c'est trop étrange. » Dans
+  « Créer », plus aucune voix de synthèse : plus de choix de voix (homme, femme), plus d'« Écouter » ni de lecture d'une
+  phrase prête ou de « Surprends-moi ». **Un mème écrit** a ses mots en grand, et sa figurine danse en musique
+  (`fabriquerMeme` sans `son`, 4 à 12 s selon la longueur : `dureeSansVoix`) ; au serveur part un silence (un WAV
+  8 kHz, `silenceWav`), pour que le message garde sa forme. **Avec sa voix** : il s'enregistre (15 s au plus).
+- **Un seul écran**, de haut en bas : sa figurine **« En direct »**, avec **sa bulle** (ce qu'elle va dire, au fil de
+  la frappe) et **le nom de sa tête** dessous ; la rangée **« Son visage »** (ses looks du mois, « Normal », ses sept
+  humeurs, puis ses six attitudes : une vignette chacun, qui glisse ; à l'ordinateur, sur deux lignes) ; **« Ce qu'elle
+  dit »** (sa phrase, « 🎙️ Avec ma voix » / « ✍️ Plutôt l'écrire », « 🎲 Pas d'idée ? », le compteur) ; **« 🎬 Créer
+  mon mème »** ; puis un lien, **« ⚡ Ou réagir en un toucher : ta tête à la place des emojis »**, qui ouvre ses
+  réactions et ses gags dans une feuille (`MesReactions` ; `#reactions` l'ouvre aussi). Plus d'onglets, plus d'étapes,
+  plus de vignette qui suit en défilant.
+- **Sa figurine se fait plus petite sur un petit téléphone** (« ok ») : sa hauteur suit celle de l'écran
+  (`--tf-haut`), pour que tout tienne entre la barre du haut et le menu. Mesuré : un iPhone 14 (dans l'appli comme dans
+  Safari, avec ses barres), un grand iPhone, un Android, un iPhone SE dans l'appli. Seul l'iPhone SE dans Safari, avec
+  ses barres, défile encore un peu.
+- **Les bandeaux restent** (« ok ») : répondre à un mème (en duo), le mème du jour, un lieu d'« Autour ».
+- **« Ton mème est prêt », dans une feuille** : la vidéo, et **« Sa version » à côté** (pour un mème écrit) — la
+  vidéo simple, en BD, en film, en affiche (`TroisRendus`, dessinées d'après sa phrase ; « 🎲 Trois autres »). Un
+  toucher : **son mème se refait sous ses yeux, à la même place** (le même message, le même lien : la vidéo est
+  renvoyée au seau par-dessus l'autre), avec la tête de cette version si elle est faite. **« Une petite animation
+  addictive »** (« ok ») : le clap qui claque, ce que fait l'équipe (« Silence… on tourne ! », « Pablito ajoute des
+  paillettes »…), la barre qui brille, le cadre qui pulse ; et une étincelle quand elle est prête. **Avec sa voix** :
+  pas de version, mais **« 🕺 Elle danse en parlant »**, un interrupteur, qui refait le mème en dansant. Puis :
+  « 📲 Partager » (la vidéo telle quelle), 🔗 son lien, ⬇️ la vidéo ; « 🌍 Poster sur le fil de Dax » ; **« ✏️ Changer la
+  phrase »** (« ok ») ramène à « Créer », sa phrase sous le doigt.
+- **Le serveur** : `meme-pose` reçoit les réglages du mème refait (`reglages : { rendu, danse, sentiment }`) — sa
+  version, la danse et sa tête sont gardées à côté du message (et sa tête dans la table, pour la vignette de « Mes
+  mèmes »).
+- **Le tuto** suit l'écran : ce qu'elle dit, la rangée de ses visages, « Pas d'idée ? », puis « Créer mon mème » et
+  « Réagir » ; la dernière bulle est réécrite, en attendant son enregistrement (`tuto-creer-4c`, sans voix d'ici là).
+  Les bulles n'ouvrent plus d'étape (`EVT_TUTO_OUVRIR` est parti).
+- Partis avec les étapes : « Son visage, au choix » (la feuille), les tons (« Faire rire »…, encore connus du serveur),
+  le premier mème lu d'avance pendant la fabrication (`PremierMemePendant`, plus montré depuis le 9 novembre), et
+  `etapeCreer` dans les essais.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

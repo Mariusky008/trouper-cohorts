@@ -21,7 +21,8 @@
 // POST { action: "rendus", texte, intention?, tour? } → { rendus, par } : 🎬 trois façons de dire sa phrase (`rendus.ts`) —
 //   le visage, le cadrage, le graphisme ; `tour` (« 🎲 Trois autres ») : les règles font tourner les visages.
 // POST { action: "meme-envoi", id, type } → { seau, chemin, jeton } : où envoyer la vidéo de son mème (`meme.ts`) ;
-//      { action: "meme-pose", id, type } : elle est arrivée → rangée à côté du message.
+//      { action: "meme-pose", id, type, reglages?: { rendu, danse, sentiment } } : elle est arrivée → rangée à côté du
+//      message (avec sa version, la danse et sa tête, choisies sur son mème prêt : une autre version la refait, à la même place).
 // GET ?repondre=<id> : le mème auquel il répond, en duo (ses images, sa voix, ses mots, son prénom).
 // POST { action: "meme-evenement", type: "partage"|"nouveau", id } : un geste autour d'un mème (la mesure).
 // POST { action: "public", id, public: true|false } : son mème dans « Découvrir », pour les gens de sa ville (son accord),
@@ -274,7 +275,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, ...r.surprise }, { headers: sansCache });
   }
   if (p?.action === "meme-pose") {
-    const r = await poserMeme(supabase, moi, p.id, p.type);
+    const r = await poserMeme(supabase, moi, p.id, p.type, p.reglages);
     if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
     return NextResponse.json({ ok: true }, { headers: sansCache });
   }

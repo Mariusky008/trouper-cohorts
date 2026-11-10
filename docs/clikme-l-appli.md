@@ -1,12 +1,12 @@
 # ClikMe, l'appli en bref
 
-*À jour au 10 novembre 2026. Pour quelqu'un qui découvre l'appli : ce qu'elle fait, écran par écran, et pourquoi.*
+*À jour au 10 novembre 2026 (« Créer » sur un seul écran). Pour quelqu'un qui découvre l'appli : ce qu'elle fait, écran par écran, et pourquoi.*
 
 ## En une phrase
 
-**Ta figurine, faite à partir d'un selfie, parle à ta place.** Tu lui fais dire une phrase (lue par une voix, ou par
-ta propre voix), elle prend la bonne tête, et ça devient une petite vidéo, un « mème », que tu envoies où tu veux ou
-que tu laisses dans ta ville.
+**Ta figurine, faite à partir d'un selfie, parle à ta place.** Tu lui fais dire une phrase (écrite en grand, ou dite
+avec ta propre voix), elle prend la bonne tête, et ça devient une petite vidéo, un « mème », que tu envoies où tu veux
+ou que tu laisses dans ta ville.
 
 L'appli se lance à Dax : les mèmes des gens et des commerçants de la ville se croisent dans un fil et sur une carte.
 
@@ -15,8 +15,8 @@ L'appli se lance à Dax : les mèmes des gens et des commerçants de la ville se
 - **Un selfie, deux cases** (« C'est bien moi sur la photo », « J'ai 15 ans ou plus »). Pas de compte à créer, pas
   d'e-mail.
 - En une minute environ, ClikMe fabrique **ta figurine** : toi, en personnage sur un ressort.
-- Pendant ce temps, ton **premier mème est déjà écrit**. Il n'y a plus qu'à choisir une voix et à le créer.
-- Ses têtes (huit humeurs, six attitudes) se fabriquent à la demande. La première fois, **Pablito** (le guide de
+- Ton **premier mème est déjà écrit**. Il n'y a plus qu'à le créer.
+- Ses têtes (sept humeurs, six attitudes) se fabriquent à la demande. La première fois, **Pablito** (le guide de
   l'appli) part à l'atelier et tu le regardes travailler. Ensuite, la tête est à toi pour toujours.
 - **Le cadenas doré**, en haut : ton adresse e-mail protège ta figurine. Un code suffit pour la retrouver sur un
   autre téléphone. C'est facultatif.
@@ -29,27 +29,29 @@ avec ta figurine dedans. « Moi » est en haut, sous ton prénom.
 
 ### ✏️ Créer : faire un mème
 
-En haut, ta figurine montre ton mème en direct. Deux onglets : **« 💬 Faire un mème »** et **« ⚡ Répondre vite »**.
+**Tout tient sur un seul écran**, sans faire défiler :
 
-**Faire un mème se fait écran par écran**, une question à la fois, avec « Suivant ➔ » et « ‹ Retour » toujours en
-bas :
-
-1. **Sa phrase** : tu l'écris, ou tu la dis avec ta voix (15 secondes au plus). Tu n'as pas d'idée ?
-   « 🎲 Pas d'idée ? » propose trois choses :
+1. **En haut, ta figurine « En direct »**, avec une bulle : elle montre ce qu'elle va dire, au fil de ce que tu écris.
+   Le nom de sa tête est écrit dessous (« 🙂 Normal », « 😂 Fou rire »…).
+2. **« Son visage »** : une rangée de petites vignettes qui glisse. Ses humeurs (joie, fou rire, tristesse…), puis ses
+   attitudes (la tête dans les mains, bras croisés, victorieux…). Un toucher, et ta figurine la prend.
+3. **« Ce qu'elle dit »** : tu écris sa phrase, **ou tu la dis avec ta voix** (« 🎙️ Avec ma voix », 15 secondes au
+   plus). Jamais la voix de quelqu'un d'autre : soit tes mots écrits en grand (ta figurine danse en musique), soit ta
+   propre voix. Tu n'as pas d'idée ? « 🎲 Pas d'idée ? » propose trois choses :
    - « Surprends-moi » : une phrase drôle, écrite pour toi d'après ta carte de personnage ;
    - le mème du jour ;
    - des phrases toutes prêtes (lundi matin, joyeux anniversaire…).
-2. **Le ton** (facultatif, « Passer ➔ ») : faire rire, émotion, réagir… L'appli te propose alors trois versions de
-   ton mème : **en BD, en film ou en affiche**. Tu peux aussi choisir toi-même sa tête : son humeur (joie, fou rire,
-   tristesse…) ou son attitude (la tête dans les mains, bras croisés, victorieux…).
-3. **Sa voix** : une voix d'homme ou de femme (quatre en tout), et si tu veux, **« Elle danse en parlant »**. Puis
-   **« 🎬 Créer mon mème »**.
+4. **« 🎬 Créer mon mème »**.
 
-La vidéo se fabrique sous tes yeux en quelques secondes. Ensuite, tu peux :
-- la partager (WhatsApp, Instagram…) ou l'enregistrer ;
-- la poster sur le fil de ta ville, seulement si tu le décides.
+La vidéo se fabrique sous tes yeux, avec une petite animation (le clap, Pablito qui ajoute des paillettes…). Quand
+elle est prête :
+- **« Sa version »**, à côté de la vidéo : la vidéo simple, **en BD, en film ou en affiche**. Un toucher, et ton mème se
+  refait dans ce style. Avec ta voix, à la place : **« Elle danse en parlant »** ;
+- tu la partages (WhatsApp, Instagram…) ou tu l'enregistres ;
+- tu la postes sur le fil de ta ville, seulement si tu le décides ;
+- « ✏️ Changer la phrase » te ramène à ta phrase.
 
-**Répondre vite**, c'est « ta tête à la place des emojis » :
+Sous le bouton, **« ⚡ Ou réagir en un toucher : ta tête à la place des emojis »** :
 - huit réactions (mort de rire, bravo, choqué, bisou…), avec ta tête dessus ;
 - quatre petits gags en vidéo (le prout, l'éternuement, elle s'endort, le hoquet).
 
@@ -124,8 +126,8 @@ Dans l'appli, on croise **leurs mèmes dans Découvrir** et **leurs lieux sur la
 - **15 ans et plus** pour avoir sa figurine.
 - **Les voix** :
   - Pablito et les voix de l'appli sont de vraies voix, enregistrées ;
-  - la seule voix de synthèse est celle qui lit le texte que tu écris pour ta propre figurine ;
-  - ou c'est ta propre voix.
+  - ton mème parle avec **ta propre voix**, ou il est **écrit** (tes mots en grand) : jamais la voix de quelqu'un
+    d'autre, ni une voix de synthèse.
 - **Rien d'alcoolisé** (loi Évin), et une modération des mèmes signalés.
 - **Rien n'est publié sans toi** : un mème ne va sur le fil de ta ville que si tu le décides.
 
@@ -133,7 +135,7 @@ Dans l'appli, on croise **leurs mèmes dans Découvrir** et **leurs lieux sur la
 
 Ce qui a bougé ces derniers jours, et où un regard neuf compte le plus :
 
-- **Créer, écran par écran** (10 novembre) : est-ce que les trois étapes sont claires ? Est-ce qu'on sait à chaque
-  instant quoi faire ?
+- **Créer, sur un seul écran** (10 novembre) : est-ce qu'on comprend tout de suite quoi faire ? Est-ce que « Sa
+  version », sur le mème prêt, donne envie d'essayer la BD, le film, l'affiche ?
 - **Le message WhatsApp en vidéo** : est-ce que ça donne envie de répondre ?
 - **Découvrir et Autour** : est-ce qu'on comprend tout de suite la différence entre le fil et la carte ?

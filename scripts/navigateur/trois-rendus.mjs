@@ -1,18 +1,17 @@
 // 🎬 TROIS FAÇONS DE LE DIRE (8 novembre 2026, `lib/direct/rendus.ts`, `app/collection/trois-rendus.tsx`), contre le faux
 // Supabase et sa fausse IA de texte — jamais la vraie base.
 //
-// Zoé a sa figurine, et trois visages déjà faits (le fou rire, la tristesse, la grimace) en plus de la joie. Dans
-// « Créer », elle écrit « J’avais dit que je ne sortirais pas ce soir… » : trois vignettes arrivent — 😂 En BD, 🎭 En film,
-// 🌀 En affiche (« Humour », « Dramatique », « Décalé » jusqu'au 9 novembre 2026) —, chacune avec UN AUTRE VISAGE de sa figurine (elle rit en douce, se
-// désole, grimace), dessinées par le même code que la vidéo. La fausse IA a bien lu sa phrase (et rien d'autre). Elle
-// choisit « Dramatique » : sa figurine prend la tête de la tristesse ; son mème se fabrique EN CINÉMA (les bandes noires
-// de la vidéo le disent), et son graphisme est gardé à côté du message (la mesure). Les intentions sont une aide :
-// « 🎉 Célébrer », sans phrase, en propose une (un autre toucher : la suivante) ; « 🎲 Trois autres » fait tourner les
-// visages ; un toucher sur la vignette choisie revient au mème simple. Rien ne déborde, jamais le mot interdit, aucune
-// erreur dans la page.
+// Zoé a sa figurine, et trois visages déjà faits (le fou rire, la tristesse, la grimace) en plus de la joie. Par la route,
+// la fausse IA lit sa phrase (et rien d'autre). Dans « Créer » (un seul écran depuis le 10 novembre 2026), elle écrit
+// « J’avais dit que je ne sortirais pas ce soir… » et crée son mème ; sur son mème prêt, « Sa version », à côté de la
+// vidéo : la vidéo simple, puis 😂 En BD, 🎭 En film, 🌀 En affiche, chacune avec UN AUTRE VISAGE de sa figurine,
+// dessinées par le même code que la vidéo. Elle choisit « En film » : son mème se refait À LA MÊME PLACE, EN CINÉMA (les
+// bandes noires de la vidéo le disent), sa figurine prend la tête de la tristesse, et son graphisme est gardé à côté du
+// message (la mesure). « 🎲 Trois autres » garde celle qu'elle a choisie ; « Vidéo » revient au mème simple ; une autre
+// phrase repart de la vidéo. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
 import fs from "node:fs";
 import { createHash } from "node:crypto";
-import { BASE, D, F, etapeCreer, fermerPablito, lancer } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const IA = F.replace("/rest/v1", "/__ia");
@@ -48,7 +47,7 @@ await ctx.addCookies([{ name: "clikme_habitant", value: ZOE.jeton, url: BASE }])
 const p = await ctx.newPage();
 p.on("pageerror", (e) => erreurs.push(String(e)));
 const texte = async (sel) => (await p.locator(sel).first().innerText({ timeout: 15000 }).catch(() => "")).replace(/\s+/g, " ").trim();
-const etiquettes = async () => (await p.locator(".tr-choix .tr-rendu").allInnerTexts()).map((x) => x.replace(/\s+/g, " ").trim());
+const etiquettes = async () => p.locator(".tf-feuille-meme .tr-rendu:not(.tr-video)").evaluateAll((l) => l.map((b) => b.getAttribute("aria-label")));
 
 // ═══ PAR LA ROUTE : SA PHRASE, LUE PAR LA FAUSSE IA ═══
 const route = async (corps) => {
@@ -68,28 +67,28 @@ const r2 = await route({ action: "rendus", texte: PHRASE, tour: 1 });
 ok(r2.statut === 200 && r2.par === "regles" && r2.rendus?.[0].visage !== r1.rendus?.[0].visage, `« 🎲 Trois autres » : les visages tournent, sans rappeler l'IA (${r2.rendus?.map((r) => r.visage).join(", ")})`);
 ok((await route({ action: "rendus", texte: "" })).statut === 400, "sans phrase : rien");
 
-// ═══ DANS « CRÉER » ═══
+// ═══ DANS « CRÉER » : SA PHRASE, SON MÈME — PUIS « SA VERSION », À CÔTÉ DE LA VIDÉO (10 novembre 2026 : « Créer » sur un
+// seul écran ; avant, l'étape ② « Le ton ») ═══
 await p.goto(`${BASE}/collection?v=${Date.now()}#figurine`, { waitUntil: "networkidle" });
 await p.waitForSelector(".tf-moi .tf-texte textarea", { timeout: 60000 });
 await fermerPablito(p, "#o-figurine");
-// (9 novembre 2026 : l'étape ② « Comment elle le dit » porte le titre — « Facultatif : choisis le ton, je te propose trois mèmes. »)
-await etapeCreer(p, 2);
-ok((await p.locator(".tf-etape-2 .tr-intentions button").count()) === 6 && (await texte(".tf-etape-2 .tf-etape-quoi")).includes("choisis le ton, je te propose trois mèmes."), "l'étape ② « Comment elle le dit » : choisis le ton (six tons, facultatifs)");
-await etapeCreer(p, 1);
+ok((await p.locator(".tf-moi .tr, .tr-intentions").count()) === 0, "plus de tons à choisir avant : sa phrase, puis « Créer mon mème »");
 await p.locator(".tf-moi .tf-texte textarea").fill(PHRASE);
-await etapeCreer(p, 2);
-await p.waitForFunction(() => document.querySelectorAll(".tr-choix .tr-rendu").length === 3, null, { timeout: 15000 });
-// (la fausse IA répond après une pause dans la frappe : les mêmes visages que les règles, ici)
-await p.waitForTimeout(2200);
+await p.locator(".tf-envoyer").click();
+await p.waitForSelector(".tf-feuille-meme .tf-meme-pret video", { timeout: 90000 });
+await p.waitForFunction(() => document.querySelectorAll(".tf-feuille-meme .tr-rendu").length === 4, null, { timeout: 15000 });
+// (la fausse IA répond après une petite pause : les mêmes visages que les règles, ici)
+await p.waitForTimeout(1500);
 const trois = await etiquettes();
 ok(
-  trois[0].includes("En BD") && trois[0].includes("Fou rire") && trois[1].includes("En film") && trois[1].includes("Tristesse") && trois[2].includes("En affiche") && trois[2].includes("Grimace"),
-  `trois vignettes, trois visages : ${trois.join(" | ")}`,
+  trois[0].startsWith("En BD") && trois[0].includes("pliée de rire") && trois[1].startsWith("En film") && trois[1].includes("triste") && trois[2].startsWith("En affiche") && trois[2].includes("grimace"),
+  `« Sa version » : trois vignettes, trois visages (${trois.join(" | ")})`,
 );
+ok((await p.locator(".tf-feuille-meme .tr-video.pris").count()) === 1 && (await texte(".tf-feuille-meme .tr-video")).includes("Vidéo"), "d'abord la vidéo simple, prise");
 // les trois vignettes sont dessinées, et ne se ressemblent pas
 await p.waitForTimeout(800);
 const dessins = await p.evaluate(() =>
-  [...document.querySelectorAll(".tr-toile")].map((c) => {
+  [...document.querySelectorAll(".tf-feuille-meme .tr-toile")].map((c) => {
     const g = c.getContext("2d");
     const d = g.getImageData(0, 0, c.width, c.height).data;
     let r = 0;
@@ -110,17 +109,14 @@ const dessins = await p.evaluate(() =>
 const differents = new Set(dessins.map((x) => x.moy.join(","))).size === 3;
 ok(dessins.length === 3 && dessins.every((x) => x.l === 360 && x.moy.some((c) => c > 10)) && differents, `dessinées par le code de la vidéo, toutes différentes (${dessins.map((x) => x.moy.join("/")).join(" · ")})`);
 ok(dessins[1].coin.every((c) => c < 20), `🎭 le cinéma : la bande noire, en haut (${dessins[1].coin.join(",")})`);
-await p.locator(".tr").scrollIntoViewIfNeeded();
 await p.screenshot({ path: `${D}/trois-rendus-1-choix.png` });
 
-// ═══ ELLE CHOISIT « EN FILM » ═══
-await p.locator(".tr-choix .tr-rendu").nth(1).click();
-await p.waitForSelector(".tr-rendu.pris", { timeout: 5000 });
-ok((await p.locator(".tr-rendu.pris").count()) === 1 && (await texte(".tr-rendu.pris")).includes("En film") && (await texte(".tf-sa-tete-dit")).includes("😢"), "« En film » choisi : sa figurine prend la tête de la tristesse");
-await etapeCreer(p, 3);
-await p.locator(".tf-moi .tf-quelle-voix button", { hasText: "voix de femme" }).click();
-await p.locator(".tf-envoyer").click();
-await p.waitForSelector(".tf-meme-pret video", { timeout: 90000 });
+// ═══ ELLE CHOISIT « EN FILM » : SON MÈME SE REFAIT, À LA MÊME PLACE ═══
+const [msg0] = await lire("clik_figurine_message", `habitant_id=eq.${ZOE.id}&order=created_at.desc&limit=1`);
+await p.locator(".tf-feuille-meme .tr-rendu.tr-cinema").click();
+await p.waitForSelector(".tf-feuille-meme .tf-meme-cours", { timeout: 10000 });
+await p.waitForSelector(".tf-feuille-meme .tf-meme-pret video", { timeout: 90000 });
+ok((await p.locator(".tf-feuille-meme .tr-rendu.pris").count()) === 1 && (await p.locator(".tf-feuille-meme .tr-cinema.pris").count()) === 1 && (await p.locator('.tf-moi .fqp[data-sentiment="tristesse"]').count()) === 1 && (await texte(".tf-moi .tf-tete-nom")).includes("😢"), "« En film » choisi : son mème se refait, et sa figurine prend la tête de la tristesse");
 // la vidéo : en cinéma (les bandes noires, en haut et en bas)
 const image = await p.evaluate(async () => {
   const v = document.querySelector(".tf-meme-pret video");
@@ -136,46 +132,34 @@ const image = await p.evaluate(async () => {
   const px = (x, y) => [...g.getImageData(Math.round(x * c.width), Math.round(y * c.height), 1, 1).data].slice(0, 3);
   return { haut: px(0.5, 0.04), bas: px(0.1, 0.97), l: c.width, h: c.height };
 });
-ok(image.l > 0 && image.haut.every((c) => c < 24) && image.bas.every((c) => c < 24), `son mème, fabriqué en cinéma : les bandes noires (${JSON.stringify(image)})`);
-const [msg] = await lire("clik_figurine_message", `habitant_id=eq.${ZOE.id}&order=created_at.desc&limit=1`);
+ok(image.l > 0 && image.haut.every((c) => c < 24) && image.bas.every((c) => c < 24), `son mème, refait en cinéma : les bandes noires (${JSON.stringify(image)})`);
+const lesSiens = await lire("clik_figurine_message", `habitant_id=eq.${ZOE.id}`);
+const [msg] = await lire("clik_figurine_message", `id=eq.${msg0?.id}`);
 const aCote = await (await fetch(`${STOCK}/figurines-clients/${ZOE.id}/m-${msg?.id}.json`)).json().catch(() => ({}));
-ok(msg?.sentiment === "tristesse" && aCote.rendu === "cinema" && String(aCote.meme ?? "").includes(msg.id), `son graphisme gardé à côté du message (la mesure) : ${aCote.rendu}, la tête : ${msg?.sentiment}`);
+ok(lesSiens.length === 1 && msg?.sentiment === "tristesse" && aCote.rendu === "cinema" && String(aCote.meme ?? "").includes(msg.id), `le même message (pas un de plus) : son graphisme gardé à côté (la mesure), et sa tête (${aCote.rendu}, ${msg?.sentiment})`);
 await p.screenshot({ path: `${D}/trois-rendus-2-meme.png` });
-await p.locator(".tf-feuille.ouverte .tf-feuille-fermer").click();
-await p.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), null, { timeout: 5000 });
-await p.waitForTimeout(400);
 
-// ═══ LES INTENTIONS : UNE AIDE ═══
-// (10 novembre 2026, écran par écran : l'étape ② ne s'ouvre qu'avec une phrase — ici, une des idées de « Célébrer »)
-await etapeCreer(p, 1);
-await p.locator(".tf-moi .tf-texte textarea").fill("Joyeux anniversaire maman");
-await etapeCreer(p, 2);
-await p.locator(".tr-intentions button", { hasText: "Célébrer" }).click();
-ok((await p.locator(".tf-moi .tf-texte textarea").inputValue()) === "J’ai eu mon permis !!!", "sur une de ses idées, « 🎉 Célébrer » en propose une");
-await p.waitForTimeout(2200);
-const fete = await etiquettes();
-ok(fete[0].includes("Euphorie") && fete[1].includes("Amour") && fete[2].includes("Victoire"), `ses visages (et une attitude) suivent l'intention (${fete.join(" | ")})`);
-ok((await p.locator(".tr-rendu.pris").count()) === 0, "une autre phrase : plus rien de choisi (le choix valait pour l'autre)");
-await p.locator(".tr-intentions button", { hasText: "Célébrer" }).click();
-ok((await p.locator(".tf-moi .tf-texte textarea").inputValue()) === "Joyeux anniversaire maman", "un autre toucher : l'idée suivante");
-await p.locator(".tr-autres").click();
-await p.waitForTimeout(300);
-const autres = await etiquettes();
-ok(autres.join("|") !== fete.join("|"), `« 🎲 Trois autres » : d'autres visages, d'autres couleurs (${autres.join(" | ")})`);
-// sa phrase revient : son choix aussi ; « Trois autres » le garde à sa place, et change les deux autres
-await etapeCreer(p, 1);
-await p.locator(".tf-moi .tf-texte textarea").fill(PHRASE);
-await etapeCreer(p, 2);
-await p.waitForTimeout(2200);
+// ═══ « 🎲 TROIS AUTRES » : CELLE QU'ELLE A CHOISIE RESTE À SA PLACE, LES AUTRES CHANGENT ═══
 const avant = await etiquettes();
-ok((await p.locator(".tr-rendu.pris").count()) === 1 && (await p.locator(".tr-rendu").nth(1).getAttribute("class")).includes("pris"), `sa phrase revient : « En film » de nouveau choisi (${avant.join(" | ")})`);
-await p.locator(".tr-autres").click();
+await p.locator(".tf-feuille-meme .tr-autres").click();
 await p.waitForTimeout(300);
 const apres = await etiquettes();
-ok(apres[1] === avant[1] && (await p.locator(".tr-rendu").nth(1).getAttribute("class")).includes("pris") && (apres[0] !== avant[0] || apres[2] !== avant[2]), `« Trois autres » : celle qu'il a choisie reste, les autres changent (${apres.join(" | ")})`);
-// un toucher sur la vignette choisie : retour au mème simple
-await p.locator(".tr-rendu.pris").click();
-ok((await p.locator(".tr-rendu.pris").count()) === 0 && (await texte(".tr-note")).includes("Touche celle qui te plaît"), "un toucher sur celle qui est choisie : le mème simple, comme avant");
+ok(apres[1] === avant[1] && (await p.locator(".tf-feuille-meme .tr-cinema.pris").count()) === 1 && (apres[0] !== avant[0] || apres[2] !== avant[2]), `« Trois autres » : celle qu'elle a choisie reste, les autres changent (${apres.join(" | ")})`);
+// la vidéo simple, de nouveau
+await p.locator(".tf-feuille-meme .tr-video").click();
+await p.waitForSelector(".tf-feuille-meme .tf-meme-cours", { timeout: 10000 });
+await p.waitForSelector(".tf-feuille-meme .tf-meme-pret video", { timeout: 90000 });
+const aCote2 = await (await fetch(`${STOCK}/figurines-clients/${ZOE.id}/m-${msg?.id}.json`)).json().catch(() => ({}));
+ok((await p.locator(".tf-feuille-meme .tr-video.pris").count()) === 1 && !aCote2.rendu, "« Vidéo » : le mème simple, comme avant (son graphisme n'est plus gardé)");
+
+// ═══ UNE AUTRE PHRASE : SA VERSION REPART DE LA VIDÉO ═══
+await p.locator(".tf-feuille.ouverte .tf-changer").click();
+await p.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), null, { timeout: 5000 });
+await p.locator(".tf-moi .tf-texte textarea").fill("Joyeux anniversaire maman");
+await p.locator(".tf-envoyer").click();
+await p.waitForSelector(".tf-feuille-meme .tf-meme-pret video", { timeout: 90000 });
+ok((await p.locator(".tf-feuille-meme .tr-video.pris").count()) === 1 && (await lire("clik_figurine_message", `habitant_id=eq.${ZOE.id}`)).length === 2, "une autre phrase : un autre mème, sa version repart de la vidéo simple");
+await p.keyboard.press("Escape");
 
 ok((await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0 && !/exemple/i.test(await p.evaluate(() => document.body.innerText)), "rien ne déborde, sans le mot interdit");
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.slice(0, 3).join(" | ")})` : ""}`);
