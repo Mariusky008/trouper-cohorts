@@ -11,7 +11,7 @@
 // interdit. Le swipe (8 novembre) : une page par mème, de la hauteur de l'écran ; un geste vers le haut, la page
 // suivante (pas entre deux) ; à la fin, « Tu as tout vu », et « Revoir depuis le début ».
 import fs from "node:fs";
-import { BASE, D, F, etapeCreer, fermerPablito, lancer, repondreFenetre } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer, repondreFenetre } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const jour = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(new Date());
@@ -83,7 +83,7 @@ const api = (p, corps) =>
 const hugo = await tel(HUGO);
 await hugo.goto(`${BASE}/collection#figurine`, { waitUntil: "networkidle" });
 await fermerPablito(hugo, "#o-figurine");
-await hugo.waitForSelector("#o-figurine .tf-onglets", { timeout: 60000 });
+await hugo.waitForSelector("#o-figurine .tf-dit", { timeout: 60000 });
 ok((await hugo.locator("#o-figurine .tj, #o-figurine #jour").count()) === 0, "« Créer » ne répète plus le mème du jour (il est dans « Découvrir »)");
 await hugo.goto(`${BASE}/collection#jour`, { waitUntil: "networkidle" });
 await fermerPablito(hugo, "#o-decouvrir");
@@ -113,10 +113,6 @@ const surprise = await api(lea, { action: "surprise", theme: etatJour?.theme?.cl
 ok(surprise.statut === 200 && idees.includes(surprise.texte), `« 🎲 Surprends-moi ! » répond au thème du jour (${surprise.texte})`);
 await lea.locator("#theme-du-jour .tf-theme-idees button").first().click();
 ok((await lea.locator(".tf-moi .tf-texte textarea").inputValue()) === idees[0], "un toucher sur une idée : le texte est écrit");
-await etapeCreer(lea, 3);
-await lea.locator(".tf-moi .tf-quelle-voix button", { hasText: "voix de femme" }).click();
-await lea.locator(".tf-moi .tf-ecouter").click();
-await lea.waitForSelector(".tf-envoyer", { timeout: 30000 });
 await lea.locator(".tf-envoyer").click();
 await lea.waitForSelector(".tf-meme-pret video", { timeout: 90000 });
 const poster = await texte(lea, ".tf-poster-jour");
@@ -125,7 +121,7 @@ ok(poster === "🔥 Poster ma réponse (visible par les gens de Dax)" && (await 
 await lea.locator(".tf-poster-jour").click();
 const questionAge = await repondreFenetre(lea);
 await lea.waitForSelector(".tf-postee", { timeout: 15000 });
-const idLea = (await lea.locator(".tf-adresse").inputValue()).split("/").pop();
+const idLea = (await lea.locator(".tf-meme-pret .tf-copier").getAttribute("data-lien")).split("/").pop();
 ok(/15 ans ou plus \?/.test(questionAge) && (await existe("figurines-clients", `${LEA.id}/majeur.json`)), `son âge, demandé une fois, puis noté (${questionAge.slice(0, 50)})`);
 ok((await texte(lea, ".tf-postee")).includes("Ta réponse est postée") && (await existe("figurines-clients", `du-jour/dax/${jour}/${idLea}.json`)) && (await existe("figurines-clients", `${LEA.id}/du-jour/${jour}.json`)), "postée : sa fiche du jour, à Dax");
 await lea.screenshot({ path: `${D}/meme-du-jour-2-lea-postee.png`, fullPage: true });

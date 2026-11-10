@@ -37,18 +37,6 @@ export async function fermerPablito(p, ici = "") {
   return true;
 }
 /**
- * 🪜 « CRÉER », ÉCRAN PAR ÉCRAN (10 novembre 2026) : une seule étape à la fois. Ouvre l'étape `n` (1, 2 ou 3) d'un
- * toucher sur sa pastille, si elle n'est pas déjà à l'écran — comme on le fait au doigt.
- */
-export async function etapeCreer(p, n) {
-  const pastille = p.locator(`.tf-moi .tf-pas button:nth-child(${n})`);
-  await pastille.waitFor({ state: "visible", timeout: 15000 });
-  if ((await pastille.getAttribute("aria-current")) === "step") return;
-  await pastille.click();
-  await p.locator(`.tf-moi .tf-etape-${n}:not([hidden])`).waitFor({ state: "visible", timeout: 5000 });
-  await p.waitForTimeout(350);
-}
-/**
  * 🪟 LES FENÊTRES DE CLIKME (`app/collection/fenetre.tsx`, à la place de `window.confirm` depuis le 8 novembre 2026) :
  * attend la prochaine, lit ce qu'elle dit, et répond (`oui` : le bouton du geste ; sinon « Annuler »). Rend son texte.
  */

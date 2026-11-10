@@ -3,16 +3,16 @@
 // fausse IA de texte — jamais la vraie base, jamais le moteur d'image (ses images sont déposées d'avance, comme s'il les
 // avait faites).
 //
-// Inès a sa figurine, et deux attitudes déjà faites : la tête dans les mains, le rire en douce. Dans « Créer », le tiroir
-// « Visage » a désormais deux rangées : ses huit visages, puis « Son attitude » (six). « 🤦 Oh non » : sa figurine se
-// tient la tête. Puis elle écrit sa phrase et choisit « 😂 Faire rire » : les trois façons de le dire proposent le rire en
-// douce (la BD), la tête dans les mains (le cinéma), la grimace (l'affiche) — la fausse IA a reçu ces attitudes en indice.
-// Elle prend la BD : sa figurine rit en douce, son mème part en BD, son attitude est gardée à côté du message (la
-// colonne de la table ne connaît que quatre sentiments) ; et chez celui qui le reçoit, c'est bien elle qui rit en douce.
+// Inès a sa figurine, et deux attitudes déjà faites : la tête dans les mains, le rire en douce. Par la route, « 😂 Faire
+// rire » propose le rire en douce (la BD), la tête dans les mains (le cinéma), la grimace (l'affiche) — la fausse IA a
+// reçu ces attitudes en indice. Dans « Créer » (un seul écran depuis le 10 novembre 2026), la rangée « Son visage » : ses
+// huit humeurs, puis ses six attitudes. « 🤦 Oh non » : sa figurine se tient la tête ; son mème part avec son attitude,
+// gardée à côté du message (la colonne de la table ne connaît que quatre sentiments) ; « Sa version » : en BD, il se
+// refait à la même place ; et chez celui qui le reçoit, c'est bien elle qui se tient la tête.
 // Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
 import fs from "node:fs";
 import { createHash } from "node:crypto";
-import { BASE, D, F, etapeCreer, fermerPablito, lancer } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const IA = F.replace("/rest/v1", "/__ia");
@@ -48,7 +48,6 @@ await ctx.addCookies([{ name: "clikme_habitant", value: INES.jeton, url: BASE }]
 const p = await ctx.newPage();
 p.on("pageerror", (e) => erreurs.push(String(e)));
 const texte = async (sel) => (await p.locator(sel).first().innerText({ timeout: 15000 }).catch(() => "")).replace(/\s+/g, " ").trim();
-const etiquettes = async () => (await p.locator(".tr-choix .tr-rendu").allInnerTexts()).map((x) => x.replace(/\s+/g, " ").trim());
 
 // ═══ PAR LA ROUTE : « FAIRE RIRE », AVEC SES ATTITUDES ═══
 const route = async (corps) => {
@@ -63,25 +62,19 @@ ok(/ATTITUDE/.test(laConsigne) && /tete \(la tête dans les mains\)/.test(laCons
 const r2 = await route({ action: "rendus", texte: PHRASE, intention: "rire", tour: 1 });
 ok(r2.statut === 200 && r2.par === "regles" && r2.rendus?.every((r, k) => r.visage !== r1.rendus?.[k]?.visage), `« 🎲 Trois autres » : les attitudes tournent aussi (${r2.rendus?.map((r) => r.visage).join(", ")})`);
 
-// ═══ LA FEUILLE « SON VISAGE, AU CHOIX » : SES VISAGES, PUIS SES ATTITUDES (le tiroir « Visage » jusqu'au 9 novembre 2026) ═══
+// ═══ « SON VISAGE » : UNE RANGÉE — SES HUMEURS, PUIS SES ATTITUDES (10 novembre 2026 : « Créer » sur un seul écran ; avant,
+// une feuille, et le tiroir « Visage » jusqu'au 9 novembre) ═══
 await p.goto(`${BASE}/collection?v=${Date.now()}#figurine`, { waitUntil: "networkidle" });
 await p.waitForSelector(".tf-moi .tf-texte textarea", { timeout: 60000 });
 await fermerPablito(p, "#o-figurine");
-await etapeCreer(p, 2);
-await p.locator(".tf-moi .tf-sa-tete").click();
-await p.waitForSelector(".tf-feuille-tete.ouverte .tf-att", { timeout: 10000 });
-// (la feuille monte du bas : on mesure une fois arrivée)
-await p.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running" || a.effect?.getTiming().iterations === Infinity), null, { timeout: 5000 });
-const attitudes = (await p.locator(".tf-moi .tf-att button").allInnerTexts()).map((x) => x.replace(/\s+/g, " ").trim());
-ok(
-  (await p.locator(".tf-moi .tf-expr button").count()) === 8 && attitudes.length === 6 && ["Oh non", "En douce", "Bras croisés", "Victoire", "Chut", "Cœur"].every((a, k) => attitudes[k].includes(a)),
-  `deux rangées : ses huit visages, puis « Son attitude » (${attitudes.join(" · ")})`,
-);
+const noms = (await p.locator(".tf-moi .tf-v[data-cle] .tf-v-nom").allInnerTexts()).map((x) => x.trim());
+const attitudes = noms.slice(-6);
+ok(noms.length === 14 && noms[0] === "Normal" && ["Oh non", "En douce", "Bras croisés", "Victoire", "Chut", "Cœur"].every((a, k) => attitudes[k].includes(a)), `une rangée : « Normal », ses sept humeurs, puis ses six attitudes (${attitudes.join(" · ")})`);
 // (9 novembre 2026 : « quand je clique sur “Son attitude”, ça ne fonctionne pas » — le menu du bas couvrait le tiroir,
-// et l'ordinateur ne pouvait pas défiler de côté.) Chaque bouton, une fois amené à l'écran, est bien sous le doigt.
+// et l'ordinateur ne pouvait pas défiler de côté.) Chaque vignette, une fois amenée à l'écran, est bien sous le doigt.
 const sousLeDoigt = () =>
   p.evaluate(() =>
-    [...document.querySelectorAll(".tf-feuille-tete .tf-expr button, .tf-feuille-tete .tf-att button")]
+    [...document.querySelectorAll(".tf-moi .tf-v")]
       .filter((x) => {
         x.scrollIntoView({ block: "nearest", inline: "nearest" });
         const r = x.getBoundingClientRect();
@@ -90,53 +83,45 @@ const sousLeDoigt = () =>
       .map((x) => x.textContent.trim()),
   );
 const cachesTel = await sousLeDoigt();
-ok(cachesTel.length === 0, `au téléphone : les quatorze boutons de la feuille se touchent, rien sous le menu du bas (${cachesTel.join(", ") || "aucun caché"})`);
+ok(cachesTel.length === 0, `au téléphone : ses quatorze vignettes se touchent (la rangée glisse), rien sous le menu du bas (${cachesTel.join(", ") || "aucune cachée"})`);
 await p.setViewportSize({ width: 1280, height: 800 });
 await p.waitForTimeout(400);
-const deCote = await p.evaluate(() => [...document.querySelectorAll(".tf-feuille-tete .tf-expr, .tf-feuille-tete .tf-att")].map((x) => x.scrollWidth - x.clientWidth));
+const deCote = await p.evaluate(() => [...document.querySelectorAll(".tf-moi .tf-rangee")].map((x) => x.scrollWidth - x.clientWidth));
 const cachesOrdi = await sousLeDoigt();
-ok(deCote.length === 2 && deCote.every((d) => d <= 1) && cachesOrdi.length === 0, `à l'ordinateur : toutes les têtes et attitudes à l'écran, sans défiler de côté (${deCote.join(", ")} ; ${cachesOrdi.join(", ") || "aucun caché"})`);
+ok(deCote.length === 1 && deCote.every((d) => d <= 1) && cachesOrdi.length === 0, `à l'ordinateur : toutes les têtes et attitudes à l'écran, sans défiler de côté (${deCote.join(", ")} ; ${cachesOrdi.join(", ") || "aucune cachée"})`);
 await p.setViewportSize({ width: 390, height: 844 });
 await p.waitForTimeout(400);
-await p.locator(".tf-feuille-tete .tf-att button", { hasText: "Oh non" }).click();
+await p.locator('.tf-moi .tf-v[data-cle="tete"]').click();
 await p.waitForTimeout(500);
 const tient = await p.evaluate(() => {
   const f = document.querySelector('.tf-moi [data-visage="tete"]');
   return { la: Boolean(f), img: [...(f?.querySelectorAll("img") ?? [])].some((i) => /tete-n\.webp/.test(i.src) && i.naturalWidth > 0) };
 });
 ok(
-  tient.la && tient.img && (await texte(".tf-sa-tete-dit")).includes("🤦") && (await p.locator(".tf-moi .tf-att button.pris").count()) === 1 && (await p.locator(".tf-moi .tf-expr button.pris").count()) === 0,
-  "« 🤦 Oh non » : sa figurine se tient la tête (son image, et un seul choix pour les deux rangées)",
+  tient.la && tient.img && (await texte(".tf-moi .tf-tete-nom")).includes("🤦") && (await p.locator(".tf-moi .tf-v[aria-checked=true]").count()) === 1 && (await p.locator('.tf-moi .tf-v[data-cle="tete"][aria-checked=true]').count()) === 1,
+  "« 🤦 Oh non » : sa figurine se tient la tête (son image, son nom dessous, et un seul choix pour toute la rangée)",
 );
 await p.screenshot({ path: `${D}/attitudes-1-son-visage.png` });
-await p.locator(".tf-feuille-tete .tf-garder").click();
-await p.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), null, { timeout: 5000 });
 
-// ═══ « FAIRE RIRE » : LES TROIS FAÇONS, AVEC SES ATTITUDES ═══
-await etapeCreer(p, 1);
+// ═══ SON MÈME, AVEC SON ATTITUDE ; PUIS « SA VERSION » (la BD, le film, l'affiche), SUR SON MÈME PRÊT ═══
 await p.locator(".tf-moi .tf-texte textarea").fill(PHRASE);
-await etapeCreer(p, 2);
-await p.locator(".tr-intentions button", { hasText: "Faire rire" }).click();
-await p.waitForFunction(() => document.querySelectorAll(".tr-choix .tr-rendu").length === 3, null, { timeout: 15000 });
-await p.waitForTimeout(2200);
-const trois = await etiquettes();
-ok(trois[0].includes("En BD") && trois[0].includes("En douce") && trois[1].includes("En film") && trois[1].includes("Oh non") && trois[2].includes("En affiche") && trois[2].includes("Grimace"), `trois façons, trois corps : ${trois.join(" | ")}`);
-ok((await p.locator(".tr-nouvelle").count()) === 1 && (await texte(".tr-rendu:nth-child(3) .tr-nouvelle")).includes("nouvelle tête"), "la grimace pas encore faite : « ✨ nouvelle tête » (les deux attitudes, elles, sont prêtes)");
-await p.locator(".tr").scrollIntoViewIfNeeded();
-await p.screenshot({ path: `${D}/attitudes-2-trois-facons.png` });
-
-// ═══ ELLE PREND LA BD : ELLE RIT EN DOUCE ═══
-await p.locator(".tr-choix .tr-rendu").nth(0).click();
-await p.waitForSelector(".tr-rendu.pris", { timeout: 5000 });
-ok((await texte(".tf-sa-tete-dit")).includes("🤭") && (await p.locator('.tf-moi [data-visage="endouce"]').count()) > 0, "« En BD » choisi : sa figurine rit en douce, la main devant la bouche");
-await etapeCreer(p, 3);
-await p.locator(".tf-moi .tf-quelle-voix button", { hasText: "voix de femme" }).click();
 await p.locator(".tf-envoyer").click();
 await p.waitForSelector(".tf-meme-pret video", { timeout: 90000 });
 const [msg] = await lire("clik_figurine_message", `habitant_id=eq.${INES.id}&order=created_at.desc&limit=1`);
 const aCote = await (await fetch(`${STOCK}/figurines-clients/${INES.id}/m-${msg?.id}.json`)).json().catch(() => ({}));
-ok(msg?.id && !msg.sentiment && aCote.sentiment === "endouce" && aCote.rendu === "bd" && String(aCote.meme ?? "").includes(msg.id), `son attitude gardée à côté du message : ${aCote.sentiment}, en ${aCote.rendu}`);
+ok(msg?.id && !msg.sentiment && aCote.sentiment === "tete" && !aCote.rendu && String(aCote.meme ?? "").includes(msg.id), `son attitude gardée à côté du message (la table ne connaît que quatre sentiments) : ${aCote.sentiment}`);
+await p.waitForFunction(() => document.querySelectorAll(".tf-feuille-meme .tr-rendu").length === 4, null, { timeout: 15000 });
+await p.waitForTimeout(1200);
+const trois = (await p.locator(".tf-feuille-meme .tr-rendu:not(.tr-video)").evaluateAll((l) => l.map((b) => b.getAttribute("aria-label")))).join(" | ");
+ok(/^En BD : .+ \| En film : .+ \| En affiche : .+$/.test(trois), `ses trois versions, chacune avec sa tête : ${trois}`);
+await p.screenshot({ path: `${D}/attitudes-2-trois-facons.png` });
+await p.locator(".tf-feuille-meme .tr-rendu.tr-bd").click();
+await p.waitForSelector(".tf-feuille-meme .tf-meme-cours", { timeout: 10000 });
+await p.waitForSelector(".tf-feuille-meme .tf-meme-pret video", { timeout: 90000 });
+const aCote2 = await (await fetch(`${STOCK}/figurines-clients/${INES.id}/m-${msg?.id}.json`)).json().catch(() => ({}));
+ok(aCote2.rendu === "bd" && aCote2.sentiment === "tete" && aCote2.meme === aCote.meme && (await p.locator('.tf-moi [data-visage="tete"]').count()) > 0, `« En BD » : son mème se refait en BD, à la même place ; sa tête (pas encore faite, celle de la BD) ne change pas la sienne (${aCote2.rendu}, ${aCote2.sentiment})`);
 await p.screenshot({ path: `${D}/attitudes-3-meme.png` });
+await p.keyboard.press("Escape");
 
 // ═══ CHEZ CELUI QUI LE REÇOIT ═══
 // son mème : la vidéo (fabriquée avec son attitude)
