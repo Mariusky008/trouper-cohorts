@@ -46,8 +46,8 @@ export const PAGES_TUTO: { cle: PageTuto; vue: VueTuto; nom: string; dit: string
     nom: "Créer",
     dit: "Fais parler ta figurine : sa tête, ta phrase ou ta voix, puis sa version.",
     etapes: [
-      // (10 novembre 2026, « Créer » sur un seul écran : les bulles suivent l'écran ; la dernière est réécrite, en attendant
-      // son enregistrement : `tuto-creer-4c` — sans lui, elle s'écrit sans voix)
+      // (10 novembre 2026, « Créer » sur un seul écran : les bulles suivent l'écran ; la dernière est réécrite, et
+      // enregistrée par le patron le même jour : `tuto-creer-4c`)
       { t: "Ici, tu fais parler ta figurine. Écris ta phrase, ou dis-la avec ta voix.", v: "joie", cible: ["#o-figurine .tf-dit"] },
       { t: "« Visage » : choisis l’émotion que tu veux faire passer… ou l’attitude : la tête dans les mains, bras croisés, victorieux…", v: "euphorie", cible: ["#o-figurine .tf-visages"] },
       { t: "Pas d’idée ? Choisis ce que tu veux dire, et je te propose trois façons : en BD, en film ou en affiche.", v: "joie", cible: ["#o-figurine .tf-pas-idee"], sinon: ["#o-figurine .tf-dit"] },
