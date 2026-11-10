@@ -155,6 +155,17 @@ await hugo.locator(".tf-moi .tf-texte textarea").fill("");
 ok((await hugo.locator(".tf-moi .tf-suite .tf-suivant").isDisabled()) && (await hugo.locator(".tf-moi .tf-pas button:nth-child(3)").isDisabled()), "sans phrase, on ne passe pas à la suite");
 await hugo.locator(".tf-moi .tf-texte textarea").fill(sa);
 await hugo.locator(".tf-moi .tf-suite .tf-suivant").click();
+// (elle glisse depuis la droite : pendant qu'elle arrive, rien ne dépasse de l'écran — l'essai « appli-notif » l'a vu)
+const pendant = await hugo.evaluate(async () => {
+  let max = 0;
+  const t0 = performance.now();
+  while (performance.now() - t0 < 400) {
+    max = Math.max(max, document.documentElement.scrollWidth - window.innerWidth);
+    await new Promise((ok) => requestAnimationFrame(ok));
+  }
+  return max;
+});
+ok(pendant <= 0, `pendant que l'étape glisse, rien ne dépasse de l'écran (${pendant} px)`);
 await hugo.locator(".tf-moi .tf-etape-2:not([hidden])").waitFor({ state: "visible", timeout: 5000 });
 ok(
   (await hugo.locator(".tf-moi .tf-etape:not([hidden])").count()) === 1 && (await hugo.locator(".tf-moi .tf-pas button:nth-child(1)").innerText()).includes("✓") && (await texte(hugo, ".tf-moi .tf-suite .tf-suivant")) === "Passer ➔" && (await hugo.locator(".tf-moi .tf-suite .tf-retour").count()) === 1,

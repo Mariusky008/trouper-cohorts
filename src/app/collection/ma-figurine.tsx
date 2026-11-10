@@ -2317,7 +2317,9 @@ export const STYLES_MA_FIGURINE =
 @keyframes tf-bat{0%,100%{transform:scale(1)}15%{transform:scale(1.07)}}
 /* ─── 9 novembre 2026 : « CRÉER » EN TROIS ÉTAPES (l'avis d'un ami) — sa figurine en haut, l'aperçu de son mème ; sa
    vignette quand elle sort de l'écran ; deux onglets ; trois étapes numérotées ; « Créer mon mème » ; deux feuilles ─── */
-.tf-moi{gap:14px}
+/* (une étape glisse depuis le côté : rien ne doit dépasser de l'écran pendant qu'elle arrive — « clip », pas « hidden »,
+   pour garder le bas collé au-dessus du menu) */
+.tf-moi{gap:14px;overflow-x:clip}
 .tf-parler[hidden],.tf-reactions[hidden]{display:none}
 .tf-moi .tf-scene{position:relative;gap:4px;margin:-14px -16px 0;padding:8px 16px 4px}
 .tf-moi .tf-fig .fqp-fig{width:min(180px,46vw);width:clamp(124px,19dvh,190px);transition:width .3s cubic-bezier(.2,.9,.3,1)}
