@@ -270,8 +270,10 @@ const telVideo = await b.newContext({ viewport: { width: 390, height: 844 }, dev
 await telVideo.addCookies([{ name: "clikme_habitant", value: LEA.jeton, url: BASE }]);
 await telVideo.addInitScript(() => {
   window.__partages = [];
+  window.__fichiers = [];
   navigator.canShare = (d) => Boolean(d && d.files && d.files.length);
   navigator.share = async (d) => {
+    window.__fichiers.push(...(d.files ?? []));
     window.__partages.push({ text: d.text ?? "", url: d.url ?? "", files: [...(d.files ?? [])].map((f) => ({ name: f.name, type: f.type, size: f.size })) });
   };
 });
@@ -309,6 +311,16 @@ ok(
   partage?.files.length === 1 && /^video\/(mp4|webm)$/.test(partage.files[0].type) && partage.files[0].size > 20_000 && partage.text === `🎙️ Nina, je t’ai laissé un message avec ma figurine ! Réponds-moi avec la tienne 👉 ${urlVideo}`,
   `le partage reçoit sa vidéo (${partage?.files[0]?.type}, ${Math.round((partage?.files[0]?.size ?? 0) / 1024)} ko) et sa légende : « ${partage?.text} »`,
 );
+// (la vidéo partagée, gardée avec les captures : sa première image est la vignette que WhatsApp montre)
+const videoPartagee = await leaVideo.evaluate(async () => {
+  const f = window.__fichiers[0];
+  if (!f) return null;
+  const o = new Uint8Array(await f.arrayBuffer());
+  let b = "";
+  for (let k = 0; k < o.length; k += 0x8000) b += String.fromCharCode(...o.subarray(k, k + 0x8000));
+  return { type: f.type, b64: btoa(b) };
+});
+if (videoPartagee) fs.writeFileSync(`${D}/talkie-whatsapp-9-video.${videoPartagee.type.includes("mp4") ? "mp4" : "webm"}`, Buffer.from(videoPartagee.b64, "base64"));
 ok((await texte(leaVideo, ".tf-feuille.ouverte .pr-pret b")) === "C’est parti !" && (await texte(leaVideo, ".tf-feuille.ouverte .pr-pret .pr-bouton")) === "📲 La renvoyer", "« C'est parti ! » (et « La renvoyer »)");
 ok((await debordement(leaVideo)) <= 1 && (await sansMotInterdit(leaVideo)), "rien ne déborde, sans le mot interdit (la vidéo)");
 

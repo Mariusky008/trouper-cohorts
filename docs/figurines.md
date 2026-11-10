@@ -1811,6 +1811,16 @@ conversation. Proposé, puis « oui ».
   un gros ▶. Titre : « 🎙️ Zoé t'a laissé un message » ; texte : « Touche pour écouter sa figurine, puis réponds avec la
   tienne. » Un lien effacé : la même carte, sans figurine (« Ce message s'est effacé »).
 
+**Le 10 novembre, l'essai sur son iPhone** : « les textes sortent de leur espace, ils sont superposés et cachent le
+visage » ; « la vidéo est sous un voile blanc transparent, on ne voit pas la figurine en entier » (sa vignette, dans la
+conversation). Le bandeau d'annonce des commerçants (penché, qui arrive en rebond) débordait du cadre et tombait sur son
+visage, l'emoji par-dessus ; et la première image de la vidéo — celle dont WhatsApp fait la vignette — était le flash
+blanc de l'arrivée, sur une figurine zoomée. Le message a maintenant **sa propre mise en page** (`message` dans
+`fabriquerMeme`, `leMessage`) : un bandeau droit et immobile, « 🎙️ Message de Zoé », « pour Karim » dessous, centré à la
+main et rétréci jusqu'à tenir ; sa figurine un peu plus petite et plus bas (entière, son visage au milieu) ; l'emoji à
+côté de son visage ; ses mots sur son corps (aux trois quarts de la hauteur : au-dessus de la légende que WhatsApp pose
+sur le bas) ; **ni zoom ni flash** : la première image est nette et complète.
+
 **À savoir** : WhatsApp lui-même ne s'essaie pas d'ici. Sur certains iPhone, la légende d'une vidéo partagée peut
 arriver à part, ou pas du tout : à vérifier sur un vrai téléphone. Un aperçu déjà vu, WhatsApp le garde en mémoire : les
 liens d'avant ce changement gardent leur carte grise.
