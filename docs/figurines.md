@@ -1895,7 +1895,7 @@ distraction ? ». Retenu, avec ses réponses à nos questions :
   version, la danse et sa tête sont gardées à côté du message (et sa tête dans la table, pour la vignette de « Mes
   mèmes »).
 - **Le tuto** suit l'écran : ce qu'elle dit, la rangée de ses visages, « Pas d'idée ? », puis « Créer mon mème » et
-  « Réagir » ; la dernière bulle est réécrite, en attendant son enregistrement (`tuto-creer-4c`, sans voix d'ici là).
+  « Réagir » ; la dernière bulle est réécrite, et enregistrée par le propriétaire le même jour (`tuto-creer-4c`).
   Les bulles n'ouvrent plus d'étape (`EVT_TUTO_OUVRIR` est parti).
 - Partis avec les étapes : « Son visage, au choix » (la feuille), les tons (« Faire rire »…, encore connus du serveur),
   le premier mème lu d'avance pendant la fabrication (`PremierMemePendant`, plus montré depuis le 9 novembre), et
