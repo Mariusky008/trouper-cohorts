@@ -11,7 +11,7 @@
 // interdit. Le swipe (8 novembre) : une page par mème, de la hauteur de l'écran ; un geste vers le haut, la page
 // suivante (pas entre deux) ; à la fin, « Tu as tout vu », et « Revoir depuis le début ».
 import fs from "node:fs";
-import { BASE, D, F, fermerPablito, lancer, repondreFenetre } from "./commun.mjs";
+import { BASE, D, F, etapeCreer, fermerPablito, lancer, repondreFenetre } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const jour = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(new Date());
@@ -113,6 +113,7 @@ const surprise = await api(lea, { action: "surprise", theme: etatJour?.theme?.cl
 ok(surprise.statut === 200 && idees.includes(surprise.texte), `« 🎲 Surprends-moi ! » répond au thème du jour (${surprise.texte})`);
 await lea.locator("#theme-du-jour .tf-theme-idees button").first().click();
 ok((await lea.locator(".tf-moi .tf-texte textarea").inputValue()) === idees[0], "un toucher sur une idée : le texte est écrit");
+await etapeCreer(lea, 3);
 await lea.locator(".tf-moi .tf-quelle-voix button", { hasText: "voix de femme" }).click();
 await lea.locator(".tf-moi .tf-ecouter").click();
 await lea.waitForSelector(".tf-envoyer", { timeout: 30000 });

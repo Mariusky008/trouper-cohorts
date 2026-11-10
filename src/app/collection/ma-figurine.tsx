@@ -25,6 +25,13 @@
  * parlant » — ; puis « 🎬 Créer mon mème ». « Visage », « Animer » et « La refaire » ont quitté le dessous de la
  * figurine (les gags sont dans « Répondre vite », « La refaire » dans « Moi » : `RefaireMaFigurine`). Voir
  * `docs/figurines.md`, 9.0 unvicies (avant : les tiroirs, 9.0 decitricies).
+ *
+ * 🪜 ÉCRAN PAR ÉCRAN (10 novembre 2026, le propriétaire : « c'est encore très confus quand on fait défiler ; ne
+ * faudrait-il pas un seul écran, on valide une action, alors un autre écran arrive ? ») : une seule étape à l'écran
+ * (`etape`), sous sa figurine ; la barre « 1 Ce qu'elle dit · 2 Le ton · 3 Sa voix » (une étape faite se rouvre d'un
+ * toucher) ; en bas, toujours à portée, « Suivant ➔ » et « ‹ Retour » ; à la ③, « 🎬 Créer mon mème ». La ② est
+ * facultative ; on ne passe la ① qu'avec une phrase (ou sa voix enregistrée). Le tuto ouvre l'étape dont il parle
+ * (`EVT_TUTO_OUVRIR`). Voir `docs/figurines.md`, 9.0 tervicies.
  */
 import { useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
@@ -65,6 +72,7 @@ import { EVT_VERS_LE_STUDIO, prendreVersLeStudio, type PourAutour, type VersLeSt
 import { oublierLeDepot, revenirAuDepot } from "./depot-autour";
 import { moisEnClair, type FigurineDuMois } from "@/lib/direct/figurine-du-mois";
 import { MesReactions } from "./mes-reactions";
+import { EVT_TUTO_OUVRIR } from "./tuto";
 import { accordPublic } from "./fenetre";
 import { InviterAppli } from "./mon-telephone";
 import { nomVille, themeDuJour, type Theme } from "@/lib/direct/theme-du-jour";
@@ -308,6 +316,22 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
   const [vue, setVue] = useState<"parler" | "reactions">(() => (typeof window !== "undefined" && window.location.hash === "#reactions" ? "reactions" : "parler"));
   const [feuilleIdee, setFeuilleIdee] = useState(false);
   const [feuilleTete, setFeuilleTete] = useState(false);
+  // 🪜 ÉCRAN PAR ÉCRAN (10 novembre 2026 : « ne voir qu'une section après l'autre ») : l'étape à l'écran, et d'où l'on
+  // vient (pour qu'elle glisse du bon côté)
+  const [etape, setEtape] = useState<1 | 2 | 3>(1);
+  const [sens, setSens] = useState<"avant" | "arriere">("avant");
+  // (le tuto de Pablito montre une étape : elle s'ouvre)
+  useEffect(() => {
+    const ouvrir = (e: Event) => {
+      const m = /^creer-([123])$/.exec(String((e as CustomEvent<string>).detail ?? ""));
+      if (!m) return;
+      setVue("parler");
+      setSens("avant");
+      setEtape(Number(m[1]) as 1 | 2 | 3);
+    };
+    window.addEventListener(EVT_TUTO_OUVRIR, ouvrir);
+    return () => window.removeEventListener(EVT_TUTO_OUVRIR, ouvrir);
+  }, []);
   // (sa figurine est sortie de l'écran par le haut : sa vignette prend le relais, sous la barre du haut)
   const [mini, setMini] = useState<number | null>(null);
   const [feuille, setFeuille] = useState(false);
@@ -841,16 +865,28 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
    * d'abord — sa phrase est lue par sa voix s'il ne l'a pas encore entendue, puis son mème se fabrique. Avec sa propre
    * voix : celle qu'il a enregistrée.
    */
+  /** 🪜 Vers une étape : en avant, il faut avoir dit quelque chose (l'étape ② est facultative) ; sa figurine reste en vue. */
+  function versEtape(n: 1 | 2 | 3) {
+    if (n > 1 && !premiereFaite) {
+      setEtape(1);
+      setErreur(ecrit ? "Écris d’abord ce qu’elle doit dire." : "Enregistre d’abord ta voix.");
+      return;
+    }
+    setErreur("");
+    setSens(n >= etape ? "avant" : "arriere");
+    setEtape(n);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   async function creerMonMeme() {
     setErreur("");
     if (mode !== "ecrire" || !etat.voixTexte) return void creerMeme();
     const t = texte.trim();
-    if (!t) return setErreur("Écris d’abord ce qu’elle doit dire, à l’étape ①.");
-    if (!voix) {
-      setErreur("Choisis d’abord sa voix, à l’étape ③.");
-      document.getElementById("tf-e3")?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
+    if (!t) {
+      versEtape(1);
+      return setErreur("Écris d’abord ce qu’elle doit dire.");
     }
+    if (!voix) return setErreur("Choisis d’abord sa voix, juste au-dessus.");
     const cle = `${voix}|${t}`;
     if (son?.cle === cle) return void creerMeme();
     const ctx = ouvrirLeSon();
@@ -936,6 +972,8 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
   const saVoix = voix ? VOIX_FIGURINE.find((v) => v.cle === voix) : null;
   // (il écrit sa phrase, lue par une voix ; sinon, c'est sa propre voix)
   const ecrit = mode === "ecrire" && Boolean(etat.voixTexte);
+  // (l'étape ① est faite : sa phrase est écrite, ou sa voix enregistrée)
+  const premiereFaite = ecrit ? Boolean(texte.trim()) : Boolean(son && !son.texte) && !enreg;
   // (son visage : son look, ou ce qu'elle ressent ; un point qui tourne quand un visage ou un look se prépare)
   const sonVisage = sonLook ? `${sonLook.edition.emoji} ${sonLook.edition.nom}` : sentiment ? `${sentimentDe(sentiment)?.emoji ?? ""} ${sentimentDe(sentiment)?.court ?? ""}` : "";
   const sePrepare = enCreation.size > 0 || Boolean(lookCours);
@@ -1103,8 +1141,31 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
           </div>
         )}
 
+        {/* 🪜 LES TROIS ÉTAPES, UNE À LA FOIS : où il en est ; une étape faite se rouvre d'un toucher */}
+        <nav className="tf-pas" aria-label="Les étapes de ton mème">
+          {(
+            [
+              [1, "Ce qu’elle dit"],
+              [2, "Le ton"],
+              [3, ecrit ? "Sa voix" : "La danse"],
+            ] as const
+          ).map(([n, nom]) => (
+            <button
+              key={n}
+              type="button"
+              className={`${etape === n ? "pris" : ""}${n < etape ? " fait" : ""}`}
+              aria-current={etape === n ? "step" : undefined}
+              disabled={n > 1 && !premiereFaite}
+              onClick={() => versEtape(n)}
+            >
+              <i aria-hidden="true">{n < etape ? "✓" : n}</i>
+              <span>{nom}</span>
+            </button>
+          ))}
+        </nav>
+
         {/* ① CE QU'ELLE DIT */}
-        <section className="tf-etape tf-etape-1" aria-labelledby="tf-e1">
+        <section className="tf-etape tf-etape-1" aria-labelledby="tf-e1" hidden={etape !== 1} data-sens={sens}>
           <EnteteEtape n={1} id="tf-e1" titre="Ce qu’elle dit" dit="Ta phrase, ou ta voix : c’est elle qui la dira." />
           {etat.voixTexte && (
             <div className="tf-modes" role="tablist" aria-label="Comment elle parle">
@@ -1171,8 +1232,8 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
         </section>
 
         {/* ② COMMENT ELLE LE DIT : le ton et trois mèmes proposés ; ou son visage, choisi par lui */}
-        <section className="tf-etape tf-etape-2" aria-labelledby="tf-e2">
-          <EnteteEtape n={2} id="tf-e2" titre="Comment elle le dit" dit={ecrit && !reponse ? "Choisis le ton : je te propose trois mèmes." : "Ce qu’elle ressent pendant qu’elle parle."} />
+        <section className="tf-etape tf-etape-2" aria-labelledby="tf-e2" hidden={etape !== 2} data-sens={sens}>
+          <EnteteEtape n={2} id="tf-e2" titre="Comment elle le dit" dit={ecrit && !reponse ? "Facultatif : choisis le ton, je te propose trois mèmes." : "Facultatif : ce qu’elle ressent pendant qu’elle parle."} />
           {ecrit && !reponse && etat.neutre && <TroisRendus texte={texte} expressions={etat.expressions} neutre={etat.neutre} choisi={rendu} onChoisir={choisirRendu} onIdee={(t) => setTexte(t.slice(0, TEXTE_MAX))} />}
           <button type="button" className="tf-sa-tete" onClick={() => setFeuilleTete(true)}>
             🎭 {ecrit && !reponse ? "Ou je choisis son visage moi-même" : "Je choisis son visage"}
@@ -1187,7 +1248,7 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
         </section>
 
         {/* ③ SA VOIX (et elle danse, si on veut) */}
-        <section className="tf-etape tf-etape-3" aria-labelledby="tf-e3">
+        <section className="tf-etape tf-etape-3" aria-labelledby="tf-e3" hidden={etape !== 3} data-sens={sens}>
           <EnteteEtape n={3} id="tf-e3" titre={ecrit ? "Sa voix" : "Elle danse ?"} dit={ecrit ? "Celle qui lira ta phrase." : "En musique, dans ton mème."}>
             {ecrit && (
               <button type="button" className="tf-ecouter" onClick={() => ecouterTexte()} disabled={parle || !texte.trim() || !voix}>
@@ -1235,9 +1296,18 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
           </span>
         </section>
 
-        {/* 🎬 LE BUT, ÉCRIT SUR LE BOUTON ; son mème est fait : la feuille le remontre */}
-        <div className="tf-envoi">
-          {memeIci ? (
+        {/* 🪜 EN BAS, TOUJOURS À PORTÉE : « Suivant », « Retour » ; à la dernière étape, le but, écrit sur le bouton */}
+        <div className={`tf-suite${etape === 3 ? " tf-envoi" : ""}`}>
+          {etape > 1 && (
+            <button type="button" className="tf-retour" onClick={() => versEtape(etape === 3 ? 2 : 1)} aria-label="Retour à l’étape d’avant">
+              ‹ Retour
+            </button>
+          )}
+          {etape < 3 ? (
+            <button type="button" className="tf-suivant" onClick={() => versEtape(etape === 1 ? 2 : 3)} disabled={!premiereFaite}>
+              {etape === 2 && !rendu && !sonVisage ? "Suivant, sans rien choisir ➔" : "Suivant ➔"}
+            </button>
+          ) : memeIci ? (
             <button type="button" className="tf-revoir" onClick={() => setFeuille(true)}>
               {memeIci.etat === "fabrication" ? `🎬 Ton mème se fabrique… ${Math.round((memeIci.p ?? 0) * 100)} %` : "✅ Ton mème est prêt · le revoir"}
             </button>
@@ -2309,6 +2379,28 @@ export const STYLES_MA_FIGURINE =
 .tf-envoi .tf-envoyer{display:flex;flex-direction:column;align-items:center;gap:1px;padding:13px 18px;background:linear-gradient(135deg,#FF2E9A,#FF7A59)}
 .tf-envoi .tf-envoyer b{font-size:17px;font-weight:900}
 .tf-envoi .tf-envoyer small{font-size:12px;font-weight:600;opacity:.92}
+/* 🪜 écran par écran : la barre des étapes, une étape à la fois (elle glisse du bon côté), le bas toujours à portée */
+.tf-pas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.tf-pas button{position:relative;display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;height:40px;padding:0 8px;border:0;border-radius:999px;background:rgba(255,255,255,.05);color:#9C8290;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tf-pas button i{display:grid;place-items:center;flex:none;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.12);font-style:normal;font-size:12px;font-weight:900;color:#E8D3DC}
+.tf-pas button span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.tf-pas button.pris{background:rgba(255,46,154,.16);color:#FFF4E6;box-shadow:inset 0 0 0 1.5px rgba(255,46,154,.65)}
+.tf-pas button.pris i{background:#FF2E9A;color:#fff}
+.tf-pas button.fait{color:#E8D3DC}
+.tf-pas button.fait i{background:#7CE0C3;color:#12060F}
+.tf-pas button:disabled{opacity:.45;cursor:default}
+.tf-etape[hidden]{display:none}
+.tf-etape:not([hidden]){animation:tf-entre .3s cubic-bezier(.2,.8,.2,1)}
+.tf-etape[data-sens="arriere"]:not([hidden]){animation-name:tf-entre-g}
+@keyframes tf-entre{from{opacity:0;transform:translateX(32px)}}
+@keyframes tf-entre-g{from{opacity:0;transform:translateX(-32px)}}
+@media (prefers-reduced-motion:reduce){.tf-etape:not([hidden]){animation:none}}
+.tf-moi .tf-suite{position:sticky;bottom:calc(98px + env(safe-area-inset-bottom));z-index:6;display:flex;flex-direction:row;align-items:stretch;gap:10px;margin:0;padding:10px 0 6px;border-top:0;background:linear-gradient(180deg,rgba(18,6,15,0),rgba(18,6,15,.94) 32%)}
+.tf-suite > button{min-height:56px}
+.tf-retour{flex:none;padding:0 16px;border:1.5px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(18,6,15,.7);color:#FFF4E6;font:inherit;font-size:14px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tf-suivant{flex:1;min-width:0;padding:0 18px;border:0;border-radius:999px;background:linear-gradient(135deg,#FF2E9A,#FF7A59);color:#fff;font:inherit;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 14px 30px -12px rgba(255,46,154,.9);-webkit-tap-highlight-color:transparent}
+.tf-suivant:disabled{opacity:.45;box-shadow:none;cursor:default}
+.tf-suite .tf-envoyer,.tf-suite .tf-revoir{flex:1;min-width:0}
 /* les deux feuilles : « Pas d'idée ? », son visage au choix */
 .tf-feuille-idee .tf-feuille-corps,.tf-feuille-tete .tf-feuille-corps{display:flex;flex-direction:column;gap:10px}
 .tf-feuille-titre{padding-right:44px;font-size:20px;font-weight:900}

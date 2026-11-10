@@ -121,7 +121,7 @@ ok((await ines.locator(".mc-feuille-visite.ouverte").count()) === 0, "la feuille
 await ines.screenshot({ path: `${D}/tuto-4-creer-phrase.png` });
 await suivant(ines);
 const intentions = await eclaire(ines, "#o-figurine .tr-intentions");
-ok((await texte(ines, ".tu-texte")).startsWith("Pas d’idée ?") && intentions.ok && ines.sons.includes("/collection/pablito/tuto-creer-3.mp3"), `2 / 4 : l'étape ②, le ton et les trois façons (lumière ${intentions.l}, tons ${intentions.e} ; sa voix, celle de la bulle « Pas d'idée ? »)`);
+ok((await texte(ines, ".tu-texte")).startsWith("Pas d’idée ?") && intentions.ok && (await ines.locator("#o-figurine .tf-etape-2:not([hidden])").count()) === 1 && ines.sons.includes("/collection/pablito/tuto-creer-3.mp3"), `2 / 4 : l'étape ②, le ton et les trois façons (lumière ${intentions.l}, tons ${intentions.e} ; sa voix, celle de la bulle « Pas d'idée ? »)`);
 await suivant(ines);
 const visage = await eclaire(ines, "#o-figurine .tf-sa-tete");
 ok((await texte(ines, ".tu-texte")).startsWith("« Visage »") && visage.ok && visage.serre && ines.sons.includes("/collection/pablito/tuto-creer-2.mp3"), `3 / 4 : « son visage moi-même » (lumière ${visage.l}, lien ${visage.e} ; sa voix, celle de « Visage »)`);

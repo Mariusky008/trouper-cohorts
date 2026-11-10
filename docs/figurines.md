@@ -1829,6 +1829,29 @@ L'essai : `talkie-whatsapp.mjs` (le texte du lien ; la carte de l'aperçu : 1200
 d'un lien inconnu ; un téléphone qui sait partager une vidéo — son partage imité : sa vidéo se fabrique sous ses yeux,
 « L'envoyer en vidéo sur WhatsApp », le partage reçoit une vidéo MP4 et sa légende, « C'est parti ! »).
 
+### 9.0 tervicies 🪜 « Créer » écran par écran (10 novembre)
+
+Le propriétaire, après 9.0 unvicies : « c'est mieux, mais j'aurais quand même aimé qu'on ne voie qu'une section après
+l'autre… c'est encore très confus, tous ces écrans quand on fait défiler vers le bas : ne faudrait-il pas qu'il y ait
+juste un écran, on valide une action, alors un autre écran arrive ? » (et la réflexion de son ami : une seule question
+à l'écran, l'effet « tunnel magique », plus de bouton caché en bas). Retenu, avec deux ajustements : **pas d'écran de
+choix au départ** (les deux onglets « Faire un mème · Répondre vite » le font déjà : on arrive sur l'étape ①), et
+**« Répondre vite » ne change pas** (c'est déjà un seul écran, un toucher envoie).
+
+- **Sa figurine reste en haut** (l'aperçu en direct de son mème) ; dessous, **une seule étape** à l'écran (`etape`), qui
+  glisse du bon côté quand on avance ou qu'on revient.
+- **La barre des étapes** : « 1 Ce qu'elle dit · 2 Le ton · 3 Sa voix » (avec sa propre voix : « 3 La danse ») ; celle
+  à l'écran en rose, celles faites cochées ✓ ; un toucher rouvre une étape (on saute la ② quand on veut).
+- **En bas, toujours à portée** (collé au-dessus du menu) : « Suivant ➔ » ; à la ②, « ‹ Retour » et « Suivant, sans
+  rien choisir ➔ » (elle est **facultative** : son titre le dit, « Facultatif : choisis le ton, je te propose trois
+  mèmes. ») ; à la ③, « ‹ Retour » et « 🎬 Créer mon mème ». On ne passe la ① qu'avec une phrase, ou sa voix enregistrée.
+- Le contenu des étapes ne change pas (9.0 unvicies) : ① sa phrase et « 🎲 Pas d'idée ? » ; ② le ton, les trois façons,
+  « Ou je choisis son visage moi-même » ; ③ sa voix et « Elle danse en parlant ». « Créer mon mème » sans phrase ramène
+  à la ①.
+- **Le tuto** ouvre l'étape dont il parle (une bulle peut demander à la page de montrer quelque chose :
+  `EtapeTuto.ouvrir`, l'événement `EVT_TUTO_OUVRIR`).
+- Les essais ouvrent une étape comme on le fait au doigt (`etapeCreer` dans `scripts/navigateur/commun.mjs`).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

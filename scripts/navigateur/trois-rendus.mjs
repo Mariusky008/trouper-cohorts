@@ -12,7 +12,7 @@
 // erreur dans la page.
 import fs from "node:fs";
 import { createHash } from "node:crypto";
-import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
+import { BASE, D, F, etapeCreer, fermerPablito, lancer } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const IA = F.replace("/rest/v1", "/__ia");
@@ -72,9 +72,12 @@ ok((await route({ action: "rendus", texte: "" })).statut === 400, "sans phrase :
 await p.goto(`${BASE}/collection?v=${Date.now()}#figurine`, { waitUntil: "networkidle" });
 await p.waitForSelector(".tf-moi .tf-texte textarea", { timeout: 60000 });
 await fermerPablito(p, "#o-figurine");
-// (9 novembre 2026 : l'étape ② « Comment elle le dit » porte le titre — « Choisis le ton : je te propose trois mèmes. »)
-ok((await p.locator(".tf-etape-2 .tr-intentions button").count()) === 6 && (await texte(".tf-etape-2 .tf-etape-quoi")).includes("Choisis le ton : je te propose trois mèmes."), "l'étape ② « Comment elle le dit » : choisis le ton (six tons, facultatifs)");
+// (9 novembre 2026 : l'étape ② « Comment elle le dit » porte le titre — « Facultatif : choisis le ton, je te propose trois mèmes. »)
+await etapeCreer(p, 2);
+ok((await p.locator(".tf-etape-2 .tr-intentions button").count()) === 6 && (await texte(".tf-etape-2 .tf-etape-quoi")).includes("choisis le ton, je te propose trois mèmes."), "l'étape ② « Comment elle le dit » : choisis le ton (six tons, facultatifs)");
+await etapeCreer(p, 1);
 await p.locator(".tf-moi .tf-texte textarea").fill(PHRASE);
+await etapeCreer(p, 2);
 await p.waitForFunction(() => document.querySelectorAll(".tr-choix .tr-rendu").length === 3, null, { timeout: 15000 });
 // (la fausse IA répond après une pause dans la frappe : les mêmes visages que les règles, ici)
 await p.waitForTimeout(2200);
@@ -114,6 +117,7 @@ await p.screenshot({ path: `${D}/trois-rendus-1-choix.png` });
 await p.locator(".tr-choix .tr-rendu").nth(1).click();
 await p.waitForSelector(".tr-rendu.pris", { timeout: 5000 });
 ok((await p.locator(".tr-rendu.pris").count()) === 1 && (await texte(".tr-rendu.pris")).includes("En film") && (await texte(".tf-sa-tete-dit")).includes("😢"), "« En film » choisi : sa figurine prend la tête de la tristesse");
+await etapeCreer(p, 3);
 await p.locator(".tf-moi .tf-quelle-voix button", { hasText: "voix de femme" }).click();
 await p.locator(".tf-envoyer").click();
 await p.waitForSelector(".tf-meme-pret video", { timeout: 90000 });
@@ -142,9 +146,12 @@ await p.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), nu
 await p.waitForTimeout(400);
 
 // ═══ LES INTENTIONS : UNE AIDE ═══
-await p.locator(".tf-moi .tf-texte textarea").fill("");
+// (10 novembre 2026, écran par écran : l'étape ② ne s'ouvre qu'avec une phrase — ici, une des idées de « Célébrer »)
+await etapeCreer(p, 1);
+await p.locator(".tf-moi .tf-texte textarea").fill("Joyeux anniversaire maman");
+await etapeCreer(p, 2);
 await p.locator(".tr-intentions button", { hasText: "Célébrer" }).click();
-ok((await p.locator(".tf-moi .tf-texte textarea").inputValue()) === "J’ai eu mon permis !!!", "sans phrase, « 🎉 Célébrer » en propose une");
+ok((await p.locator(".tf-moi .tf-texte textarea").inputValue()) === "J’ai eu mon permis !!!", "sur une de ses idées, « 🎉 Célébrer » en propose une");
 await p.waitForTimeout(2200);
 const fete = await etiquettes();
 ok(fete[0].includes("Euphorie") && fete[1].includes("Amour") && fete[2].includes("Victoire"), `ses visages (et une attitude) suivent l'intention (${fete.join(" | ")})`);
@@ -156,7 +163,9 @@ await p.waitForTimeout(300);
 const autres = await etiquettes();
 ok(autres.join("|") !== fete.join("|"), `« 🎲 Trois autres » : d'autres visages, d'autres couleurs (${autres.join(" | ")})`);
 // sa phrase revient : son choix aussi ; « Trois autres » le garde à sa place, et change les deux autres
+await etapeCreer(p, 1);
 await p.locator(".tf-moi .tf-texte textarea").fill(PHRASE);
+await etapeCreer(p, 2);
 await p.waitForTimeout(2200);
 const avant = await etiquettes();
 ok((await p.locator(".tr-rendu.pris").count()) === 1 && (await p.locator(".tr-rendu").nth(1).getAttribute("class")).includes("pris"), `sa phrase revient : « En film » de nouveau choisi (${avant.join(" | ")})`);

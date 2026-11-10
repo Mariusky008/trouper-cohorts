@@ -12,7 +12,7 @@
 // Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
 import fs from "node:fs";
 import { createHash } from "node:crypto";
-import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
+import { BASE, D, F, etapeCreer, fermerPablito, lancer } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const IA = F.replace("/rest/v1", "/__ia");
@@ -67,6 +67,7 @@ ok(r2.statut === 200 && r2.par === "regles" && r2.rendus?.every((r, k) => r.visa
 await p.goto(`${BASE}/collection?v=${Date.now()}#figurine`, { waitUntil: "networkidle" });
 await p.waitForSelector(".tf-moi .tf-texte textarea", { timeout: 60000 });
 await fermerPablito(p, "#o-figurine");
+await etapeCreer(p, 2);
 await p.locator(".tf-moi .tf-sa-tete").click();
 await p.waitForSelector(".tf-feuille-tete.ouverte .tf-att", { timeout: 10000 });
 // (la feuille monte du bas : on mesure une fois arrivée)
@@ -112,7 +113,9 @@ await p.locator(".tf-feuille-tete .tf-garder").click();
 await p.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), null, { timeout: 5000 });
 
 // ═══ « FAIRE RIRE » : LES TROIS FAÇONS, AVEC SES ATTITUDES ═══
+await etapeCreer(p, 1);
 await p.locator(".tf-moi .tf-texte textarea").fill(PHRASE);
+await etapeCreer(p, 2);
 await p.locator(".tr-intentions button", { hasText: "Faire rire" }).click();
 await p.waitForFunction(() => document.querySelectorAll(".tr-choix .tr-rendu").length === 3, null, { timeout: 15000 });
 await p.waitForTimeout(2200);
@@ -126,6 +129,7 @@ await p.screenshot({ path: `${D}/attitudes-2-trois-facons.png` });
 await p.locator(".tr-choix .tr-rendu").nth(0).click();
 await p.waitForSelector(".tr-rendu.pris", { timeout: 5000 });
 ok((await texte(".tf-sa-tete-dit")).includes("🤭") && (await p.locator('.tf-moi [data-visage="endouce"]').count()) > 0, "« En BD » choisi : sa figurine rit en douce, la main devant la bouche");
+await etapeCreer(p, 3);
 await p.locator(".tf-moi .tf-quelle-voix button", { hasText: "voix de femme" }).click();
 await p.locator(".tf-envoyer").click();
 await p.waitForSelector(".tf-meme-pret video", { timeout: 90000 });
