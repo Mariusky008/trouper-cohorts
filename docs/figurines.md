@@ -1811,6 +1811,16 @@ conversation. Proposé, puis « oui ».
   un gros ▶. Titre : « 🎙️ Zoé t'a laissé un message » ; texte : « Touche pour écouter sa figurine, puis réponds avec la
   tienne. » Un lien effacé : la même carte, sans figurine (« Ce message s'est effacé »).
 
+**Le 10 novembre, l'essai sur son iPhone** : « les textes sortent de leur espace, ils sont superposés et cachent le
+visage » ; « la vidéo est sous un voile blanc transparent, on ne voit pas la figurine en entier » (sa vignette, dans la
+conversation). Le bandeau d'annonce des commerçants (penché, qui arrive en rebond) débordait du cadre et tombait sur son
+visage, l'emoji par-dessus ; et la première image de la vidéo — celle dont WhatsApp fait la vignette — était le flash
+blanc de l'arrivée, sur une figurine zoomée. Le message a maintenant **sa propre mise en page** (`message` dans
+`fabriquerMeme`, `leMessage`) : un bandeau droit et immobile, « 🎙️ Message de Zoé », « pour Karim » dessous, centré à la
+main et rétréci jusqu'à tenir ; sa figurine un peu plus petite et plus bas (entière, son visage au milieu) ; l'emoji à
+côté de son visage ; ses mots sur son corps (aux trois quarts de la hauteur : au-dessus de la légende que WhatsApp pose
+sur le bas) ; **ni zoom ni flash** : la première image est nette et complète.
+
 **À savoir** : WhatsApp lui-même ne s'essaie pas d'ici. Sur certains iPhone, la légende d'une vidéo partagée peut
 arriver à part, ou pas du tout : à vérifier sur un vrai téléphone. Un aperçu déjà vu, WhatsApp le garde en mémoire : les
 liens d'avant ce changement gardent leur carte grise.
@@ -1818,6 +1828,29 @@ liens d'avant ce changement gardent leur carte grise.
 L'essai : `talkie-whatsapp.mjs` (le texte du lien ; la carte de l'aperçu : 1200 × 630, JPEG, moins de 300 ko, et celle
 d'un lien inconnu ; un téléphone qui sait partager une vidéo — son partage imité : sa vidéo se fabrique sous ses yeux,
 « L'envoyer en vidéo sur WhatsApp », le partage reçoit une vidéo MP4 et sa légende, « C'est parti ! »).
+
+### 9.0 tervicies 🪜 « Créer » écran par écran (10 novembre)
+
+Le propriétaire, après 9.0 unvicies : « c'est mieux, mais j'aurais quand même aimé qu'on ne voie qu'une section après
+l'autre… c'est encore très confus, tous ces écrans quand on fait défiler vers le bas : ne faudrait-il pas qu'il y ait
+juste un écran, on valide une action, alors un autre écran arrive ? » (et la réflexion de son ami : une seule question
+à l'écran, l'effet « tunnel magique », plus de bouton caché en bas). Retenu, avec deux ajustements : **pas d'écran de
+choix au départ** (les deux onglets « Faire un mème · Répondre vite » le font déjà : on arrive sur l'étape ①), et
+**« Répondre vite » ne change pas** (c'est déjà un seul écran, un toucher envoie).
+
+- **Sa figurine reste en haut** (l'aperçu en direct de son mème, un peu plus petite qu'avant : la place pour l'étape) ; dessous, **une seule étape** à l'écran (`etape`), qui
+  glisse du bon côté quand on avance ou qu'on revient.
+- **La barre des étapes** : « 1 Sa phrase · 2 Le ton · 3 Sa voix » (avec sa propre voix : « 1 Ta voix · … · 3 La danse ») ; celle
+  à l'écran en rose, celles faites cochées ✓ ; un toucher rouvre une étape (on saute la ② quand on veut).
+- **En bas, toujours à portée** (collé au-dessus du menu) : « Suivant ➔ » ; à la ②, « ‹ Retour » et « Passer ➔ » (elle
+  est **facultative** : son titre le dit, « Facultatif : choisis le ton, je te propose trois
+  mèmes. ») ; à la ③, « ‹ Retour » et « 🎬 Créer mon mème ». On ne passe la ① qu'avec une phrase, ou sa voix enregistrée.
+- Le contenu des étapes ne change pas (9.0 unvicies) : ① sa phrase et « 🎲 Pas d'idée ? » ; ② le ton, les trois façons,
+  « Ou je choisis son visage moi-même » ; ③ sa voix et « Elle danse en parlant ». « Créer mon mème » sans phrase ramène
+  à la ①.
+- **Le tuto** ouvre l'étape dont il parle (une bulle peut demander à la page de montrer quelque chose :
+  `EtapeTuto.ouvrir`, l'événement `EVT_TUTO_OUVRIR`).
+- Les essais ouvrent une étape comme on le fait au doigt (`etapeCreer` dans `scripts/navigateur/commun.mjs`).
 
 ### 9.1 L'idée en une phrase
 

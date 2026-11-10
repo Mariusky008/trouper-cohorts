@@ -1237,7 +1237,7 @@ function LeMessagePret({ pret, lienWhatsApp, copie, onCopier }: { pret: MessageP
       images: { n: moi.neutre, p: moi.parle },
       son: parole.son,
       repliques: parole.repliques.map((r) => ({ de: r.de, a: r.a, texte: r.texte, images: tete(r.tete), emoji: r.tete ? (sentimentDe(r.tete)?.emoji ?? "") : "" })),
-      annonce: { emoji: "🎙️", titre: parole.pour ? `Un message pour ${parole.pour}` : "Un message pour toi", nom: `de ${moi.prenom}` },
+      message: { de: moi.prenom, pour: parole.pour },
       fin: { emoji: "💬", titre: "Réponds-moi avec ta figurine", sous: "clikme.fr" },
       surProgres: (p) => {
         if (vivant.current) setVideo((x) => (x?.etat === "fabrication" ? { etat: "fabrication", p } : x));

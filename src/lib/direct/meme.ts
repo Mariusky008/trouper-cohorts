@@ -143,6 +143,8 @@ type Scene = {
   /** 🏪 Ce qu'annonce un commerçant (en haut), et la fin à son nom. */
   annonce?: AnnonceMeme;
   fin?: FinMeme;
+  /** 🎙️ Un message du talkie, envoyé en vidéo par WhatsApp : qui l'envoie, à qui (sa mise en page à lui). */
+  message?: MessageMeme;
   /** 💬 En duo : celui à qui il répond (en haut, il parle d'abord), et leurs deux prénoms. */
   duo?: { n: HTMLImageElement; p: HTMLImageElement; fond: string; env: number[]; duree: number; sous: Mot[][]; prenom: string; moi: string };
 };
@@ -235,6 +237,75 @@ function etiquette(g: CanvasRenderingContext2D, police: string, x: number, y: nu
 export type AnnonceMeme = { emoji: string; titre: string; nom: string };
 /** La fin, autrement que « Crée ton mème » (un commerçant : son nom, sa ville). */
 export type FinMeme = { emoji: string; titre: string; sous: string };
+
+/** 🎙️ Un message du talkie : qui l'envoie, à qui. */
+export type MessageMeme = { de: string; pour: string };
+/**
+ * (sa figurine, un peu plus petite et plus bas : le bandeau en haut, son visage au milieu — WhatsApp coupe le haut et le
+ * bas de sa vignette —, ses mots sur son corps, au-dessus de la légende que WhatsApp pose sur le bas de la vidéo)
+ */
+const MESSAGE = { echelle: 0.8, decalage: 50, sousTitres: 0.73 };
+
+/**
+ * 🎙️ LE BANDEAU D'UN MESSAGE ENVOYÉ PAR WHATSAPP : « 🎙️ Message de Marius », « pour Karim » — droit, posé dès la
+ * première image (WhatsApp en fait la vignette de la vidéo), au-dessus de son visage. Le 10 novembre 2026, sur un
+ * iPhone, le bandeau d'annonce (penché, en rebond) sortait du cadre et cachait son visage : ici, rien ne bouge, l'emoji
+ * est dessiné à part et la ligne est centrée à la main, rétrécie jusqu'à tenir.
+ */
+function leMessage(g: CanvasRenderingContext2D, police: string, m: MessageMeme): void {
+  const W = MEME_L;
+  const EMOJI = 52;
+  const ecart = 14;
+  const texte = `Message de ${m.de}`.trim();
+  let taille = 48;
+  g.save();
+  g.textAlign = "left";
+  g.textBaseline = "middle";
+  g.font = `900 ${taille}px ${police}`;
+  while (EMOJI + ecart + g.measureText(texte).width > W - 150 && taille > 26) {
+    taille -= 2;
+    g.font = `900 ${taille}px ${police}`;
+  }
+  const lt = Math.min(g.measureText(texte).width, W - 150 - EMOJI - ecart);
+  const l = EMOJI + ecart + lt + 64;
+  const h = 96;
+  const x = (W - l) / 2;
+  const y = 104;
+  g.fillStyle = "rgba(18,6,15,.35)";
+  g.beginPath();
+  if (typeof g.roundRect === "function") g.roundRect(x + 4, y + 8, l, h, h / 2);
+  else g.rect(x + 4, y + 8, l, h);
+  g.fill();
+  g.fillStyle = "#FFF4E6";
+  g.beginPath();
+  if (typeof g.roundRect === "function") g.roundRect(x, y, l, h, h / 2);
+  else g.rect(x, y, l, h);
+  g.fill();
+  g.font = `${EMOJI}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+  g.fillText("🎙️", x + 32, y + h / 2 + 2);
+  g.font = `900 ${taille}px ${police}`;
+  g.fillStyle = "#2A0F1F";
+  g.fillText(texte, x + 32 + EMOJI + ecart, y + h / 2 + 3, lt);
+  // à qui : dessous, en blanc cerné
+  if (m.pour) {
+    const pour = `pour ${m.pour}`;
+    let tp = 40;
+    g.font = `900 ${tp}px ${police}`;
+    while (g.measureText(pour).width > W - 160 && tp > 24) {
+      tp -= 2;
+      g.font = `900 ${tp}px ${police}`;
+    }
+    const lp = Math.min(g.measureText(pour).width, W - 160);
+    const xp = (W - lp) / 2;
+    g.lineJoin = "round";
+    g.lineWidth = tp * 0.26;
+    g.strokeStyle = "#12060F";
+    g.strokeText(pour, xp, y + h + tp * 0.95, lp);
+    g.fillStyle = "#FFFFFF";
+    g.fillText(pour, xp, y + h + tp * 0.95, lp);
+  }
+  g.restore();
+}
 
 /** L'annonce, en haut : un grand bandeau qui arrive en rebond, et le nom du commerce dessous. */
 function lAnnonce(g: CanvasRenderingContext2D, police: string, a: AnnonceMeme, T: number): void {
@@ -957,22 +1028,23 @@ function dessiner(g: CanvasRenderingContext2D, S: Scene, T: number): void {
   g.fillStyle = S.fond;
   g.fillRect(0, 0, W, H);
   // ─── sa figurine, plein cadre : elle arrive d'un coup, puis bouge sur sa voix (et danse) ───
-  const arrivee = T < INTRO ? 1.35 - 0.35 * rebond(T / INTRO) : 1;
+  // (🎙️ un message par WhatsApp : sa première image est la vignette de la vidéo — ni zoom ni flash, elle est entière)
+  const arrivee = T < INTRO && !S.message ? 1.35 - 0.35 * rebond(T / INTRO) : 1;
   const danse = S.danse && T >= INTRO ? Math.abs(Math.sin((Math.PI * (T - INTRO)) / 0.6)) : 0;
   const echelle = arrivee * (1.04 + amp * 0.03 + danse * 0.025);
   const angle = (Math.sin(T * 7.5) * amp * 1.6 + (S.danse ? Math.sin((Math.PI * (T - INTRO)) / 1.2) * 3 : 0)) * (Math.PI / 180);
   const iw = img.naturalWidth;
   const ih = img.naturalHeight;
-  const base = Math.max(W / iw, H / ih);
+  const base = Math.max(W / iw, H / ih) * (S.message ? MESSAGE.echelle : 1);
   g.save();
   // (pivot : le bas du cadre, au milieu — là où est son socle)
-  g.translate(W / 2, H * 0.94 - danse * 18);
+  g.translate(W / 2, H * 0.94 - danse * 18 + (S.message ? MESSAGE.decalage : 0));
   g.rotate(angle);
   g.scale(echelle, echelle);
   g.drawImage(img, (-iw * base) / 2, -ih * base * 0.94, iw * base, ih * base);
   g.restore();
   // le flash de l'arrivée
-  if (T < 0.25) {
+  if (T < 0.25 && !S.message) {
     g.fillStyle = `rgba(255,255,255,${0.85 * (1 - T / 0.25)})`;
     g.fillRect(0, 0, W, H);
   }
@@ -980,10 +1052,12 @@ function dessiner(g: CanvasRenderingContext2D, S: Scene, T: number): void {
   if (S.emoji && T > INTRO * 0.6) {
     const e = rebond((T - INTRO * 0.6) / 0.4);
     g.save();
-    g.translate(W - 120, 230);
+    // (🎙️ un message : à côté de son visage, sous le bandeau — jamais dessus)
+    if (S.message) g.translate(W - 86, H * 0.42);
+    else g.translate(W - 120, 230);
     g.rotate((Math.sin(T * 4) * 10 * Math.PI) / 180);
     g.scale(e, e);
-    g.font = `120px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+    g.font = `${S.message ? 92 : 120}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
     g.textAlign = "center";
     g.textBaseline = "middle";
     g.fillText(S.emoji, 0, 0);
@@ -998,8 +1072,10 @@ function dessiner(g: CanvasRenderingContext2D, S: Scene, T: number): void {
   ]);
   // ─── 🏪 ce qu'annonce un commerçant ───
   if (S.annonce) lAnnonce(g, S.police, S.annonce, T);
-  // ─── ses mots, façon TikTok ───
-  sousTitres(g, S.police, S.sous, t, S.duree, H * 0.78);
+  // ─── 🎙️ un message par WhatsApp : qui l'envoie, à qui ───
+  if (S.message) leMessage(g, S.police, S.message);
+  // ─── ses mots, façon TikTok (🎙️ un message : plus haut — WhatsApp pose sa légende sur le bas de la vidéo) ───
+  sousTitres(g, S.police, S.sous, t, S.duree, H * (S.message ? MESSAGE.sousTitres : 0.78));
   // ─── la fin : « Crée ton mème » (ou son nom) ───
   laFin(g, S.police, T - (INTRO + S.duree + 0.15), S.fin);
 }
@@ -1053,6 +1129,8 @@ export async function fabriquerMeme(o: {
    * chaque réplique, et ses mots se posent sur le temps de leur réplique (au lieu de `images`, `texte` et `emoji`).
    */
   repliques?: { de: number; a: number; texte: string; images: { n: string; p: string }; emoji: string }[];
+  /** 🎙️ Un message envoyé en vidéo par WhatsApp : son bandeau (qui, à qui) et sa mise en page (`leMessage`). */
+  message?: MessageMeme;
 }): Promise<Meme> {
   const { ctx, toile } = o;
   if (!memePossible()) throw new Error("Ce téléphone ne sait pas fabriquer de vidéo.");
@@ -1089,7 +1167,7 @@ export async function fabriquerMeme(o: {
   const mots = o.repliques?.length
     ? o.repliques.flatMap((r) => motsDuTexte(r.texte, Math.max(0, Math.min(duree, r.a) - r.de)).map((m) => ({ mot: m.mot, de: m.de + r.de, a: m.a + r.de })))
     : motsDuTexte(o.texte ?? "", duree);
-  const rendu = o.rendu && !o.duo && !o.annonce ? o.rendu : undefined;
+  const rendu = o.rendu && !o.duo && !o.annonce && !o.message ? o.rendu : undefined;
   const S: Scene = {
     n,
     p,
@@ -1103,6 +1181,7 @@ export async function fabriquerMeme(o: {
     danse: Boolean(o.danse) || sansVoix,
     police,
     ...(o.annonce ? { annonce: o.annonce } : {}),
+    ...(o.message ? { message: o.message } : {}),
     ...(o.fin ? { fin: o.fin } : {}),
     ...(duo && o.duo
       ? {

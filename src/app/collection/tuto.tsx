@@ -27,7 +27,10 @@ export type PageTuto = "creer" | "decouvrir" | "autour" | "memes" | "proches" | 
 export type VueTuto = "figurine" | "decouvrir" | "autour" | "memes" | "proches" | "personnage";
 /** (`son` : l'enregistrement de cette bulle, s'il n'est pas « tuto-<page>-<rang> » — une bulle déplacée, ou réécrite et
  * pas encore enregistrée : elle s'écrit alors sans voix) */
-export type EtapeTuto = { t: string; v: Visage; cible?: string[]; sinon?: string[]; son?: string };
+/** `ouvrir` : ce que la page doit montrer avant (« creer-2 » : l'étape ② de « Créer », écran par écran). */
+export type EtapeTuto = { t: string; v: Visage; cible?: string[]; sinon?: string[]; son?: string; ouvrir?: string };
+/** L'événement qui demande à la page de montrer ce dont parle la bulle (`EtapeTuto.ouvrir`). */
+export const EVT_TUTO_OUVRIR = "clikme-tuto-ouvrir";
 
 /** 👋 La bienvenue : trois bulles, la dernière montre le logo. */
 export const BIENVENUE: EtapeTuto[] = [
@@ -48,10 +51,10 @@ export const PAGES_TUTO: { cle: PageTuto; vue: VueTuto; nom: string; dit: string
     etapes: [
       // (9 novembre 2026, « Créer » en trois étapes : « Visage » et « Animer » ont quitté le dessous de la figurine — les
       // bulles suivent les étapes ; la dernière est réécrite, en attendant son enregistrement : `tuto-creer-4b`)
-      { t: "Ici, tu fais parler ta figurine. Écris ta phrase, ou dis-la avec ta voix.", v: "joie", cible: ["#o-figurine .tf-etape-1"], sinon: ["#o-figurine #creer"] },
-      { t: "Pas d’idée ? Choisis ce que tu veux dire, et je te propose trois façons : en BD, en film ou en affiche.", v: "joie", cible: ["#o-figurine .tr-intentions", "#o-figurine .tr-choix"], sinon: ["#o-figurine .tf-etape-2"], son: "tuto-creer-3" },
-      { t: "« Visage » : choisis l’émotion que tu veux faire passer… ou l’attitude : la tête dans les mains, bras croisés, victorieux…", v: "euphorie", cible: ["#o-figurine .tf-sa-tete"], son: "tuto-creer-2" },
-      { t: "Choisis sa voix, fais-la danser si tu veux… puis touche « Créer mon mème » : il part où tu veux.", v: "rire", cible: ["#o-figurine .tf-etape-3", "#o-figurine .tf-envoi"], son: "tuto-creer-4b" },
+      { t: "Ici, tu fais parler ta figurine. Écris ta phrase, ou dis-la avec ta voix.", v: "joie", cible: ["#o-figurine .tf-etape-1"], sinon: ["#o-figurine #creer"], ouvrir: "creer-1" },
+      { t: "Pas d’idée ? Choisis ce que tu veux dire, et je te propose trois façons : en BD, en film ou en affiche.", v: "joie", cible: ["#o-figurine .tr-intentions", "#o-figurine .tr-choix"], sinon: ["#o-figurine .tf-etape-2"], son: "tuto-creer-3", ouvrir: "creer-2" },
+      { t: "« Visage » : choisis l’émotion que tu veux faire passer… ou l’attitude : la tête dans les mains, bras croisés, victorieux…", v: "euphorie", cible: ["#o-figurine .tf-sa-tete"], son: "tuto-creer-2", ouvrir: "creer-2" },
+      { t: "Choisis sa voix, fais-la danser si tu veux… puis touche « Créer mon mème » : il part où tu veux.", v: "rire", cible: ["#o-figurine .tf-etape-3", "#o-figurine .tf-envoi"], son: "tuto-creer-4b", ouvrir: "creer-3" },
     ],
   },
   {
@@ -215,6 +218,8 @@ function Pas({
 
   // la lumière : cherchée tout de suite, puis sans cesse (un onglet qui se charge, une page qui défile)
   useEffect(() => {
+    // (ce dont il parle est peut-être caché : la page le montre d'abord — « Créer », écran par écran)
+    if (etape.ouvrir) window.dispatchEvent(new CustomEvent(EVT_TUTO_OUVRIR, { detail: etape.ouvrir }));
     if (!etape.cible?.length) return;
     let amene = false;
     const mesurer = () => {

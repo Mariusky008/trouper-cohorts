@@ -17,7 +17,7 @@
 // grand et coché, les autres pâlis, et une petite carte « Ton mème apparaîtra ici » ; 🔎 « la gare » : un endroit de la
 // ville (le faux géocodeur), la carte y va, on y dépose — une zone « quelque part par ici », jamais l'endroit exact.
 import fs from "node:fs";
-import { BASE, D, F, fermerPablito, lancer, repondreFenetre } from "./commun.mjs";
+import { BASE, D, F, etapeCreer, fermerPablito, lancer, repondreFenetre } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
@@ -398,6 +398,7 @@ const bandeau = await texte(lea, "#pour-autour");
 ok(bandeau.includes("↩️ Ta réponse pour") && bandeau.includes("Le Petit Bistrot") && bandeau.includes("Surprends-moi"), `le studio s'ouvre pour ce lieu : « ${bandeau.slice(0, 60)} »`);
 ok((await lea.locator(".tf-moi .tf-surprends").count()) === 1, "sa tête, sa phrase, ou « 🎲 Surprends-moi ! »");
 await lea.locator(".tf-moi .tf-texte textarea").fill("Même pas peur du chef !");
+await etapeCreer(lea, 3);
 await lea.locator(".tf-moi .tf-quelle-voix button", { hasText: "voix de femme" }).click();
 await lea.locator(".tf-moi .tf-ecouter").click();
 await lea.waitForSelector(".tf-envoyer", { timeout: 30000 });
