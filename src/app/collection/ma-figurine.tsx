@@ -67,7 +67,7 @@ import { createClient } from "@/lib/supabase/client";
 import { SONS_PABLITO } from "@/lib/direct/guide";
 import { ProtegerFigurine } from "./connaitre";
 import { demanderSonAge } from "./age";
-import { ApercuDuMois, useMois } from "./figurine-du-mois";
+import { useMois } from "./figurine-du-mois";
 import { EVT_VERS_LE_STUDIO, prendreVersLeStudio, type PourAutour, type VersLeStudio } from "./vers-le-studio";
 import { oublierLeDepot, revenirAuDepot } from "./depot-autour";
 import { moisEnClair, type FigurineDuMois } from "@/lib/direct/figurine-du-mois";
@@ -1468,11 +1468,6 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
         <MesReactions />
       </div>
 
-      {/* 🗓️ EN BAS : sa figurine du mois, en une ligne (« Tes premiers pas » est parti le 8 novembre 2026) */}
-      <div className="tf-replis">
-        <ApercuDuMois />
-      </div>
-
       {/* 🎭 SON MÈME, DANS UNE FEUILLE QUI MONTE : il s'y fabrique sous ses yeux, puis « Ton mème est prêt ✅ » — le
           partager (la vidéo telle quelle), son lien, la vidéo ; et le geste qui compte : le poster sur le fil de sa ville
           (ou sa réponse au mème du jour, ou le déposer dans « Autour ») */}
@@ -2262,17 +2257,6 @@ export const STYLES_MA_FIGURINE =
 .tf-voix-choisie{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.22);color:#D9C3CB;font:inherit;font-size:13.5px;cursor:pointer}
 .tf-voix-choisie b{color:#FFF4E6}
 .tf-voix-choisie em{font-style:normal;font-weight:800;color:#FF9FD2;margin-left:4px}
-.tf-replis{display:flex;flex-direction:column;gap:8px}
-.tf-replis details{border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
-.tf-replis summary{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:13px 0;list-style:none;cursor:pointer;font-size:14.5px;font-weight:900;color:#FFF4E6}
-.tf-replis summary::-webkit-details-marker{display:none}
-.tf-replis summary::after{content:"›";margin-left:auto;font-size:20px;line-height:1;color:#A88E99;transition:transform .2s}
-.tf-replis details[open] summary::after{transform:rotate(90deg)}
-.tf-replis summary em{font-style:normal;padding:1px 8px;border-radius:999px;background:rgba(255,46,154,.2);color:#FFC8E6;font-size:12px}
-.tf-replis summary small{order:3;flex-basis:100%;font-size:12.5px;font-weight:700;color:#A88E99}
-.tf-replis .tf-messages{padding:0 14px}
-.tf-replis .tf-messages summary{padding:13px 0;font-size:14.5px;color:#FFF4E6}
-.tf-replis .tf-messages ul{padding-bottom:12px}
 .tf-meme-toile{display:none;width:min(260px,70vw);aspect-ratio:9/16;height:auto;margin:4px auto 0;border-radius:22px;background:#1E0918;box-shadow:0 0 0 3px #F2C46B,0 24px 44px -18px rgba(0,0,0,.95)}
 .tf-meme-toile.visible{display:block;animation:tf-vu .4s cubic-bezier(.2,1.5,.4,1)}
 .tf-meme-cours{display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0}
@@ -2426,12 +2410,6 @@ export const STYLES_MA_FIGURINE =
 .tf-panneau > .tf-modes button{padding:8px 14px;font-size:13px}
 .tf-revoir{padding:14px 18px;border-radius:999px;border:1.5px solid rgba(61,226,166,.55);background:rgba(61,226,166,.12);color:#BFF7E2;font:inherit;font-size:15px;font-weight:900;cursor:pointer}
 /* en bas, repliés */
-.tf-moi .tf-replis{gap:8px}
-.tf-replis .fm-apercu{gap:10px;padding:9px 12px;border-radius:18px}
-.tf-replis .fm-apercu > span:first-child{font-size:22px}
-.tf-replis .fm-apercu b{font-size:13.5px}
-.tf-replis .fm-apercu small{font-size:11.5px}
-.tf-replis .fm-apercu .fm-jours i{height:5px}
 /* (le haut de l'endroit visé reste visible sous la barre du haut et sa vignette) */
 .tf-moi [id]{scroll-margin-top:128px}
 /* 🪟 une feuille qui monte, en bas de l'écran */

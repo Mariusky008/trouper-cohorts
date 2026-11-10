@@ -186,14 +186,16 @@ await hugo.locator(".tf-moi .tf-pas button:nth-child(3)").click();
 await hugo.locator(".tf-moi .tf-etape-3:not([hidden])").waitFor({ state: "visible", timeout: 5000 });
 ok(true, "« ‹ Retour » ramène à la ②, la barre rouvre la ① ; et saute à la ③ quand sa phrase est écrite (la ② est facultative)");
 await etapeCreer(hugo, 1);
-// 🗓️ SA FIGURINE DU MOIS, EN UNE LIGNE (lot 3) : ses jours sur ClikMe ce mois-ci (aujourd'hui compte déjà, ou presque)
-const apercu = await texte(hugo, "#o-figurine .fm-apercu");
-ok(/Ta figurine de \p{L}+/u.test(apercu) && /[01]\/10 jours sur ClikMe/.test(apercu) && (await hugo.locator("#o-figurine .fm-apercu .fm-jours i").count()) === 10, `où en est sa figurine du mois (${apercu})`);
+// 🗓️ SA FIGURINE DU MOIS a quitté « Créer » (10 novembre 2026 : « elle encombre et prend de la place ») : elle se suit
+// dans « Moi », et son look se prend dans « Son visage, au choix »
+ok((await hugo.locator("#o-figurine .fm-apercu, #o-figurine .tf-replis").count()) === 0 && !/Ta figurine de \p{L}+/u.test(await texte(hugo, "#o-figurine")), "« Ta figurine du mois » n'encombre plus « Créer »");
 ok((await debordement(hugo)) <= 0, "sa figurine et ses options ne débordent pas");
 await hugo.screenshot({ path: `${D}/ma-figurine-0b-options.png`, fullPage: true });
 ok((await hugo.locator("#o-figurine .og-tete").count()) === 0 && (await hugo.locator(".tf-onglets [role=tab]").allInnerTexts()).join("|") === "💬 Faire un mème|⚡ Répondre vite" && (await hugo.locator(".tf-onglets [aria-selected=true]").innerText()).includes("Faire un mème"), "deux onglets, nommés par ce qu'on veut faire : « 💬 Faire un mème » (ouvert) et « ⚡ Répondre vite »");
 ok((await hugo.locator("#tf-reactions[hidden] #reactions").count()) === 1 && (await hugo.locator("#tf-parler:not([hidden]) .tf-texte textarea").count()) === 1, "ses réactions attendent dans leur onglet ; « Faire un mème » : sa phrase");
-// (la page descend : sa figurine se fait vignette, juste sous la barre du haut — l'ami : « qu'elle s'amenuise »)
+// (la page descend : sa figurine se fait vignette, juste sous la barre du haut — l'ami : « qu'elle s'amenuise » ; à
+// l'étape ②, la plus longue : ses trois mèmes proposés)
+await etapeCreer(hugo, 2);
 await hugo.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
 await hugo.waitForSelector(".tf-mini", { timeout: 5000 });
 // (elle glisse depuis le haut : on la mesure arrivée)
@@ -207,6 +209,7 @@ await hugo.screenshot({ path: `${D}/ma-figurine-0b2-en-bas.png` });
 await hugo.locator(".tf-mini").click();
 await hugo.waitForFunction(() => window.scrollY < 40 && !document.querySelector(".tf-mini"), null, { timeout: 8000 });
 ok(true, "un toucher sur la vignette : la page remonte, sa figurine en grand");
+await etapeCreer(hugo, 1);
 // ⚡ l'autre onglet : ses réactions et ses gags
 await hugo.locator("#tf-o-reactions").click();
 ok((await hugo.locator("#tf-reactions:not([hidden]) #reactions").count()) === 1 && (await hugo.locator("#tf-parler[hidden]").count()) === 1, "⚡ « Répondre vite » : ses réactions, à la place de « Faire un mème »");
@@ -286,7 +289,6 @@ await hugo.locator(".tf-looks button").first().click();
 ok((await hugo.locator(".tf-moi .tf-expr").count()) === 1, "« De tous les jours » : ses expressions reviennent");
 await hugo.locator(".tf-feuille-tete .tf-garder").click();
 await hugo.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), null, { timeout: 5000 });
-ok((await texte(hugo, "#o-figurine .fm-apercu")).includes("est arrivée"), "dans « Créer » : sa figurine du mois est arrivée (un toucher la prend)");
 
 // ═══ UN VISITEUR SANS COMPTE : SA PHOTO LUI OUVRE SON COMPTE (son prénom, sa ville) ═══
 const neuf = await tel(null);
