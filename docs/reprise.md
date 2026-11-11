@@ -43,8 +43,12 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
   - **À regarder avec le propriétaire** : les vrais mots écrits par le modèle (le ton, la longueur), sur ses propres
     proches ; l'heure de l'envoi du matin (8 h 40) ; et si l'envoi doit passer en plusieurs fois quand il y aura
     beaucoup d'abonnés (aujourd'hui : 50 secondes, puis il s'arrête).
-- **La suite** : le verdict du propriétaire (ses 👍 / 👎 et ses notes sur la page d'essais), écrit dans la feuille
-  de route (lot 0), puis le lot 1 (le socle) et le lot 2 (la nouvelle figurine) avec les consignes retenues. Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les
+- **Le premier verdict** (feuille de route, lot 0) : la figurine recopiait la photo (il veut la tête re-sculptée,
+  en caricature de collection) ; les univers doivent ressembler à un film d'animation riche et magique ; la scène de
+  deux figurines doit être mise en scène par le moteur, pas composée dans le téléphone. **La deuxième série est sur la
+  page.**
+- **La suite** : son verdict sur la deuxième série, écrit dans la feuille de route (lot 0), puis le lot 1 (le socle)
+  et le lot 2 (la nouvelle figurine) avec les consignes retenues. Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les
   essais tournent dans l'appli en ligne, il les regarde sur son iPhone.
 - **Un piège de vocabulaire** : dans le code d'aujourd'hui, « univers » désigne le métier ou la passion qui habille la
   figurine (`<habitant>/univers.json`, `universValide`). Le nouvel univers se range dans `<habitant>/monde/`.
