@@ -355,6 +355,44 @@ chaque essai.
 
 **On a réussi si** le propriétaire dit « oui, c'est ça » devant une figurine, un univers, et les deux ensemble.
 
+**Où on en est (11 novembre 2026).** Le propriétaire a donné quatre selfies de volontaires d'accord et du crédit
+OpenAI. **Étape 1 construite** : la page d'essais `/admin/humain/univers-essais` (lien « Univers : les essais du lot 0 »
+dans l'admin), réservée à l'administrateur :
+
+- **les personnes** : un repère, un selfie (réduit dans le téléphone), et la case « cette personne est d'accord »
+  sans laquelle rien ne part. Le selfie reste dans le seau privé (`essais-univers/`), jamais dans le dépôt de code ;
+  « Effacer cette personne » emporte son selfie et toutes ses images. Ses traits sont décrits comme aujourd'hui ;
+- **sa figurine, en trois variantes** (`univers-essais.ts`) : « Collection, détourée » (la cible : une figurine de
+  collection réaliste, assise dans un petit fauteuil, jambes croisées, ses propres vêtements en vrai tissu, de vrais
+  cheveux, la tête à 45 % de la hauteur, lèvres fermées, fond transparent), « Collection, en photo » (la même,
+  photographiée sur une table, pour juger l'objet) et « Plus douce » (une finition de figurine d'artiste, pour voir si
+  le réalisme flatte assez). Une consigne neuve, en anglais ; les anciennes ne changent pas ;
+- **la constance**, sur une figurine qu'il a aimée : bouche ouverte, joie, fou rire, colère, debout (sans fauteuil) ;
+- **pour chaque image** : le moteur, la qualité, la durée, les jetons, la consigne mot pour mot, **👍 / 👎 et une
+  note** — ce qui fera le verdict écrit ;
+- les images se font **après la réponse** (la page se met à jour toute seule, le téléphone peut se mettre en veille) ;
+  150 images par jour au plus. Le moteur : celui des figurines (`OPENAI_API_KEY`), qualité `ESSAIS_QUALITE` (« high »).
+
+**Étape 2, construite** (sur la même page, section « Les univers ») :
+
+- **trois fiches d'essai** inventées, très différentes (« L'atelier sur la mer », « La serre aux disques », « Le toit
+  aux étoiles »), et « Ma fiche » (il écrit la sienne) ;
+- **trois directions de style** : « Diorama miniature » (un monde fait main, photographié de près : la continuité de
+  la figurine), « Pièce miniature » (une pièce de maison de poupée haut de gamme), « Monde peint » (3D peinte, plus
+  conte). Le décor : une image 9:16 **sans figurine**, la caméra à hauteur de figurine, une scène dégagée en bas pour
+  deux fauteuils, la lumière de gauche ; dessiné d'après la consigne seule ;
+- **le style** (une fiche, en trois directions) et **la variété** (une direction, sur les trois fiches) ;
+- **la retouche** d'un décor (« davantage de nature » d'office, ou ce qu'il écrit) : le même décor, une chose change ;
+- **la scène, composée dans le téléphone** (rien n'est généré) : le décor, une ou deux figurines détourées posées sur
+  la scène avec leur ombre, leur taille, face à face ; **le mouvement** : la respiration, le hochement, la parole (sa
+  « bouche ouverte » alterne, si la constance l'a faite) ;
+- **la vedette** : la même chose faite par le moteur (il pose la figurine dans le décor), pour comparer composer et
+  générer ;
+- **la vraie 3D** : une note sur la page (des outils externes, ses comptes d'essai, aucune clé chez nous).
+
+**Ce qui reste du lot 0** : ses essais sur son iPhone, ses avis, puis le verdict écrit de chaque essai (et les coûts
+relevés) dans cette section ; les consignes retenues deviennent celles du lot 2.
+
 ### Lot 1 — Le socle
 
 Invisible pour les utilisateurs. Les deux fiches, leur rangement, leurs versions, la signature de chaque image, le

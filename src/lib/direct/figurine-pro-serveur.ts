@@ -290,7 +290,7 @@ export async function detourerSurFondUni(img: Buffer): Promise<Buffer> {
 }
 
 /** Un fond déjà transparent ? Les quatre coins le disent. */
-async function dejaTransparente(img: Buffer): Promise<boolean> {
+export async function dejaTransparente(img: Buffer): Promise<boolean> {
   const { data, info } = await sharp(img).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width: w, height: h } = info;
   const coins = [0, w - 1, (h - 1) * w, h * w - 1];
