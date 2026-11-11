@@ -68,7 +68,35 @@ export async function parlerAuMoins(p, n = 4) {
   );
   await p.waitForTimeout(400);
 }
-export const lancer = (options = {}) => chromium.launch({ ...(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}), ...options });
+/**
+ * Le navigateur des essais. ☀️ La feuille du matin (« Comment tu te sens aujourd'hui ? », `app/collection/rituel.tsx`)
+ * s'ouvre à la première ouverture du jour, par-dessus tout : ici, chaque téléphone l'a déjà passée aujourd'hui — sauf
+ * avec `{ humeur: true }` (l'essai du rituel, `rituel.mjs`).
+ */
+export async function lancer({ humeur = false, ...options } = {}) {
+  const b = await chromium.launch({ ...(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}), ...options });
+  if (humeur) return b;
+  const passer = () => {
+    try {
+      window.localStorage.setItem("clikme-humeur-passee", new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Paris" }));
+    } catch {
+      /* rien */
+    }
+  };
+  const nouveau = b.newContext.bind(b);
+  b.newContext = async (o) => {
+    const ctx = await nouveau(o);
+    await ctx.addInitScript(passer);
+    return ctx;
+  };
+  const page = b.newPage.bind(b);
+  b.newPage = async (o) => {
+    const p = await page(o);
+    await p.context().addInitScript(passer);
+    return p;
+  };
+  return b;
+}
 
 /**
  * 🔔 UN FAUX TÉLÉPHONE ABONNÉ AUX NOTIFICATIONS, au faux service du faux Supabase (`PUSH_ESSAI_ORIGINE`) : sa clé, son

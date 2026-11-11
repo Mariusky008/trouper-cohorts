@@ -434,7 +434,9 @@ que leurs propriétaires aient à le faire ; et après chaque conversation entre
 petit mot final à l'autre, qui clôt la journée d'après ce qui a été dit. L'idée : éveiller la curiosité et relancer la
 conversation. »
 
-**Proposé, à confirmer par le propriétaire (section 13).** Il peut se construire **tout de suite, sur l'appli
+**Accepté par le propriétaire le 11 novembre 2026 (« oui pour tout, on commence le lot R maintenant »). Le lot R1
+(l'humeur du jour, et ce que les figurines en disent) est construit (`docs/figurines.md`, 9.0 quinvicies ☀️) ; le lot
+R2 (le mot de la fin) est à faire.** Il se construit **tout de suite, sur l'appli
 d'aujourd'hui** (l'onglet « Proches »), en parallèle du lot 0, puis passer dans l'univers au lot 5. Tout ce dont il a
 besoin existe déjà : les visages de la figurine (sept humeurs, six attitudes, faits une fois à la demande), les proches,
 les paroles transcrites du talkie-walkie, les notifications, la carte de personnage (qui donne à chaque figurine sa
@@ -453,7 +455,8 @@ façon de parler), la petite scène des deux figurines face à face.
 - Les figurines de trois de ses proches au plus (ceux à qui il parle le plus) lui laissent chacune un mot, écrit par
   l'IA dans le style de chaque figurine. Le mot porte sur l'humeur, et rien d'autre.
 - Il les trouve en haut de sa page, et en haut de la conversation avec chaque proche. Une notification au plus par
-  jour : « 3 figurines ont réagi à ton humeur 👀 ».
+  jour : « 3 figurines ont réagi à ton humeur 👀 » (construit sans elle en R1 : il est dans l'appli quand elles
+  écrivent ; elle viendra avec la notification du matin, en R2).
 
 **3. Le mot de la fin.**
 - Chaque soir, pour chaque paire de proches qui se sont parlé dans la journée, leurs deux figurines échangent deux
@@ -580,11 +583,9 @@ Rien ne bloque le lot 0. À décider en chemin :
 4. La règle « chez qui ? » du lot 5.
 5. Le modèle de la conversation, sur lecture, au lot 3.
 6. Ce que voit un inconnu de mon univers, par défaut : proposé, « mes proches seulement ».
-7. **Le rituel du jour (lot R)** :
-   - le construire maintenant sur l'appli d'aujourd'hui, en parallèle du lot 0 (proposé), ou attendre l'univers ;
-   - le mot de la fin le soir, découvert le lendemain matin (proposé), ou juste après chaque échange ;
-   - qui réagit à mon humeur : les figurines de trois proches au plus (proposé), ou de tous ;
-   - celui dont la figurine parle voit ses mots, peut les effacer et peut tout couper (proposé).
+7. ~~**Le rituel du jour (lot R)**~~ — tranché le 11 novembre 2026, « oui pour tout » : construit maintenant sur
+   l'appli d'aujourd'hui ; le mot de la fin la nuit, découvert le matin ; trois figurines au plus réagissent ; celui
+   dont la figurine parle voit ses mots, les efface, peut tout couper.
 
 ## 14. Les mots
 

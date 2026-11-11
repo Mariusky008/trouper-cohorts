@@ -1,4 +1,4 @@
-# Reprise — où on en est, et ce qu'il reste à faire (11 novembre 2026 : le chantier « Univers » s'ouvre, la feuille de route attend l'accord du propriétaire)
+# Reprise — où on en est, et ce qu'il reste à faire (11 novembre 2026 : le chantier « Univers » s'ouvre ; le rituel du jour, lot R1, est construit)
 
 Pour la session qui reprend si celle-ci s'arrête. **Mettre ce fichier à jour à chaque étape terminée** (et le dire au
 propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'un autre chantier (la démo humaine).
@@ -9,7 +9,9 @@ Le propriétaire a donné une nouvelle ambition à ClikMe : **chacun a sa figuri
 autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. Le plan est dans
 `docs/univers/feuille-de-route.md` : **le lire en entier avant de toucher au code**.
 
-- **Où on en est** : la feuille de route est écrite et **attend son accord**. Aucun développement n'a commencé.
+- **Où on en est** : la feuille de route est écrite. Le propriétaire a dit « oui pour tout, on commence le lot R
+  maintenant » : **le lot R1 (l'humeur du jour, et le mot des figurines sur cette humeur) est construit**, sur l'appli
+  d'aujourd'hui (`docs/figurines.md`, 9.0 quinvicies ☀️). Le lot 0 (les essais de style) n'a pas commencé.
 - **Ce qui est décidé** (le détail : section 2 de la feuille de route) :
   - plus de ressort ni de socle : la figurine est assise dans un fauteuil, dans le style de sa photo de référence
     (`docs/univers/references/`) ; les anciennes consignes restent dans le code, éteintes ;
@@ -21,7 +23,19 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
   - l'appli d'aujourd'hui est gardée et rhabillée.
 - **Une précision du propriétaire, le même jour : le rituel du jour** (le lot R de la feuille de route) : l'humeur du
   jour choisie parmi ses visages, ce que les figurines de ses proches en disent (écrit par l'IA, signalé comme tel), et
-  le mot de la fin que deux figurines se laissent après une journée de conversation. Proposé, à confirmer (section 13).
+  le mot de la fin que deux figurines se laissent après une journée de conversation. **Accepté** (« oui pour tout »),
+  avec nos propositions : le mot de la fin s'écrit la nuit et se découvre le matin ; trois figurines au plus
+  réagissent ; celui dont la figurine parle voit tout, efface, et peut la faire taire ; toujours « écrit par la
+  figurine de … · IA ».
+  - **R1, construit** : `app/collection/rituel.tsx`, `lib/direct/rituel.ts`, `rituel-serveur.ts`,
+    `app/api/direct/rituel`, l'essai `scripts/navigateur/rituel.mjs`. Les autres essais navigateur passent la feuille
+    du matin d'office (`lancer()` dans `scripts/navigateur/commun.mjs`).
+  - **R2, à faire** : le mot de la fin. Chaque nuit (une tâche planifiée, comme le mème du jour), pour chaque paire de
+    proches qui se sont parlé dans la journée : deux courtes répliques, une par figurine, tirées de ce qu'ils se sont
+    dit ce jour-là (les répliques transcrites du talkie-walkie, `fils/<paire>/m/`), qui finissent sur une relance ;
+    rien quand le sujet est sensible ou que quelqu'un va mal. Le matin : « Cette nuit, vos figurines se sont parlé »,
+    la petite scène des deux figurines, leurs mots en bulles, « Lui répondre » ; et la notification du matin (une par
+    jour au plus), qui peut aussi dire « 3 figurines ont réagi à ton humeur 👀 ».
 - **La suite, dès son accord** : le lot 0, les essais de style. Les sessions de travail n'ont pas de clé de moteur
   d'image (l'accès à OpenAI y est bloqué) : les essais tournent dans l'appli en ligne, depuis une page d'essais à
   créer dans l'admin, que le propriétaire regarde sur son iPhone.
@@ -31,7 +45,7 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
 ## 1. Lire d'abord
 
 1. `CLAUDE.md` (racine) : les règles communes.
-2. `docs/figurines.md`, section 9.0 (de « duovicies » à « novotricies ») : tout ce qui a été fait sur « Ma figurine »,
+2. `docs/figurines.md`, section 9.0 (de « duovicies » à « quinvicies ☀️ ») : tout ce qui a été fait sur « Ma figurine »,
    les mèmes, « Découvrir », le mème du jour, l'appli et la notification de 11 h 30, « Autour de moi », « Rencontres »
    effacé, la figurine réservée aux 15 ans et plus.
 3. Ce fichier, en entier.

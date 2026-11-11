@@ -1901,6 +1901,54 @@ distraction ? ». Retenu, avec ses réponses à nos questions :
   le premier mème lu d'avance pendant la fabrication (`PremierMemePendant`, plus montré depuis le 9 novembre), et
   `etapeCreer` dans les essais.
 
+### 9.0 quinvicies ☀️ Le rituel du jour : l'humeur, et le mot des figurines (11 novembre) — lot R1
+
+Le propriétaire (chantier « Univers », `docs/univers/feuille-de-route.md`, lot R) : « avant toute conversation ou en
+début de journée, chaque utilisateur donne son état d'esprit du jour en choisissant rapidement un de ses visages ; les
+autres figurines disent un mot sur cette humeur, elles-mêmes, sans que leurs propriétaires aient à le faire ». Puis :
+« oui pour tout, on commence le lot R maintenant ». Le lot R1 est construit ; le mot de la fin (R2) vient ensuite.
+
+- **La feuille du matin** (`app/collection/rituel.tsx`, `HumeurDuMatin`) : à la première ouverture du jour, sa
+  figurine prête, rien d'autre d'ouvert (ni la bienvenue, ni la visite, ni « Sauvegarder ») : « Comment tu te sens
+  aujourd'hui ? » et ses huit humeurs (`HUMEURS` : la joie, le fou rire, l'euphorie, l'amour, la grimace, « oh non »,
+  la tristesse, la colère) — **ses visages** quand ils sont faits, sinon l'emoji. Un toucher. Un visage qui manque est
+  demandé (`visages.json`) et se fait ensuite, une fois (l'atelier de toujours). **« Pas maintenant »** : la feuille
+  ne revient pas ce jour-là sur ce téléphone (`clikme-humeur-passee`) ; la question reste, discrète, en haut de
+  « Proches » et en haut de ses conversations. Elle ne revient jamais avant chaque conversation.
+- **Son humeur, chez ses proches** : sur sa carte dans leur onglet « Proches », sa figurine **porte ce visage** (s'il
+  est fait) avec l'emoji ; dans leur conversation, sa figurine qui écoute aussi. Entre proches seulement (ajoutés tous
+  les deux). Elle s'efface à minuit (l'heure de Paris) ; il la change quand il veut (« Changer »).
+- **Le mot des figurines** : les figurines de **trois de ses proches au plus** — ceux à qui il parle le plus (leurs
+  messages du dernier mois), puis au hasard — lui laissent chacune un mot sur son humeur, **écrit par l'IA** (le petit
+  modèle de « Surprends-moi », une demande pour les trois) **dans la façon de parler de chaque figurine** (le titre et
+  la façon de sa carte de personnage, sa phrase). Le mot ne connaît que l'humeur et ce style : **jamais leurs
+  conversations**. Une ou deux phrases, 140 signes, une relance à la fin. Trois humeurs par jour font écrire ; au-delà,
+  l'humeur change sans nouveaux mots.
+- **« Qui a dit quoi ? »** : les mots arrivent **fermés** (« La figurine de Léa a un mot pour toi · 👀 Ouvrir ») ; il
+  les ouvre un par un. Ouvert : le mot, **« Écrit par la figurine de Léa · IA »**, et **« Lui répondre »** (leur
+  conversation, le mot en haut). En haut de « Proches » : son humeur, les mots ; en haut d'une conversation
+  (`BandeauRituel`) : l'humeur du proche, le mot de sa figurine, et ce que la sienne lui a écrit.
+- **Les garde-fous** : toujours « écrit par la figurine de … · IA », jamais présenté comme les mots de la personne.
+  **Celui dont la figurine parle voit ce qu'elle a dit en son nom** (« ✍️ Ta figurine a écrit à Zoé aujourd'hui »,
+  en haut de « Proches »), **peut l'effacer** (elle n'écrit plus à ce proche ce jour-là), et **peut couper « Ma
+  figurine parle pour moi »** dans « Moi » (`reglages.json` : `rituel: false`). La consigne : bienveillant, taquin sans
+  moquerie ; sur la tristesse, la colère ou « oh non », un mot doux, jamais de blague ; jamais de santé, de conseil, de
+  promesse ou de rendez-vous au nom de quelqu'un, de séduction ni de taquinerie amoureuse (de 15 à 17 ans, on ne
+  distingue pas) ; jamais d'accord au masculin ou au féminin. Chaque mot passe les mots interdits et « rien
+  d'alcoolisé » ; sinon (et sans IA), **un mot de secours** (`MOTS_DE_SECOURS`, écrits sans genre).
+- **Le seau** (`rituel-serveur.ts`) : `<habitant>/humeur.json` (son humeur du jour) ; `<habitant>/rituel/<jour>.json`
+  (les mots reçus ce jour-là : le seul endroit où un mot est gardé) ; `<auteur>/rituel-ecrits/<jour>/<habitant>.json`
+  (une marque, pour retrouver ce que sa figurine a écrit). Pas de table, pas de migration.
+- **La route** (`/api/direct/rituel`) : `GET` (son rituel), `GET ?avec=<clé>` (avec un proche), `POST` `humeur`,
+  `effacer`, `parle`. Les figurines écrivent **après la réponse** (`after`) ; la page relit toutes les 3 s tant
+  qu'elles écrivent. Un proche se désigne par sa clé de profil.
+- **Pas encore** : la notification « 3 figurines ont réagi à ton humeur 👀 » (il est dans l'appli quand elles
+  écrivent : elle viendra avec le mot de la fin, le matin, lot R2).
+- **Les essais** : `scripts/navigateur/rituel.mjs` (la feuille, les visages, les trois mots, « qui a dit quoi »,
+  « Lui répondre », l'apéro refusé, la consigne sans conversations, « Pas maintenant », l'image de l'humeur chez un
+  proche, effacer, couper, la tristesse, trois humeurs par jour, le bandeau). Les autres essais navigateur passent la
+  feuille du matin d'office (`lancer()` dans `commun.mjs` ; `lancer({ humeur: true })` la garde).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

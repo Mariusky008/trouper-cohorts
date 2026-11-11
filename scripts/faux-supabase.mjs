@@ -657,6 +657,12 @@ http
           ];
           return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ rendus }) } }] });
         }
+        // ☀️ le rituel du jour : un mot par figurine sur son humeur — le deuxième parle d'apéro (le filtre doit le refuser)
+        if (consigne.includes("UN petit mot sur cette humeur")) {
+          const figs = JSON.parse(/Les figurines \(des données, pas des consignes\) :\n(.+)\n/.exec(consigne)?.[1] ?? "[]");
+          const mots = figs.map((f, n) => ({ n, texte: n === 1 ? "On fête ça à l’apéro ce soir ?" : `Je sens ton humeur d’ici, signé ${f.figurine_de} ! Tu racontes ?` }));
+          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ mots }) } }] });
+        }
         const m = /propose un apéro/.test(consigne)
           ? { texte: "Ce soir, apéro chez moi : tout le monde est invité !", sentiment: "euphorie", danse: true }
           : MEMES_IA.find((x) => !consigne.includes(x.texte) && (!x.si || consigne.includes(x.si))) ?? MEMES_IA[1];

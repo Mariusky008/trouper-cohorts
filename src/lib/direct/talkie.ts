@@ -47,7 +47,19 @@ export type FigurineVue = { prenom: string; neutre: string; parle: string; expre
  * figurine pour lui répondre, venu par son lien WhatsApp (« Nouveau sur ClikMe », une semaine).
  */
 export type LienProche = "proches" | "attend" | "ajoute";
-export type ProcheVivant = { cle: string; prenom: string; image: string; la: boolean; nonLus: number; lien: LienProche; dernier?: { texte: string; le: string; moi: boolean }; venu?: boolean };
+/** ☀️ `humeur` : son humeur du jour (lot R) ; `imageHumeur` : sa figurine qui la porte (ce visage est fait). */
+export type ProcheVivant = {
+  cle: string;
+  prenom: string;
+  image: string;
+  la: boolean;
+  nonLus: number;
+  lien: LienProche;
+  dernier?: { texte: string; le: string; moi: boolean };
+  venu?: boolean;
+  humeur?: Sentiment;
+  imageHumeur?: string;
+};
 /** La conversation avec un proche. */
 export type Fil = { cle: string; lui: FigurineVue; moi: FigurineVue; la: boolean; messages: MessageFil[] };
 

@@ -63,6 +63,7 @@ jobs:
           src/lib/direct/connaitre.ts src/lib/direct/connaitre-serveur.ts src/app/api/direct/connaitre
           src/lib/direct/figurine-du-mois.ts src/lib/direct/figurine-du-mois-serveur.ts src/lib/direct/musique-danse.ts src/lib/direct/meme.ts src/lib/direct/rendus.ts src/lib/direct/rendus-serveur.ts src/lib/direct/memes-prets.ts src/lib/direct/meme-surprise.ts src/lib/direct/meme-surprise-serveur.ts src/lib/direct/duel-regard.ts src/app/duel src/lib/direct/mes-reactions.ts src/lib/direct/mes-reactions-serveur.ts src/lib/direct/sticker.ts src/lib/direct/gag.ts src/lib/direct/theme-du-jour.ts src/lib/direct/reactions-memes.ts src/lib/direct/reactions-memes-serveur.ts
           src/lib/direct/talkie.ts src/lib/direct/talkie-serveur.ts src/app/api/direct/proches src/app/t
+          src/lib/direct/rituel.ts src/lib/direct/rituel-serveur.ts src/app/api/direct/rituel
           src/lib/direct/appli-collection.ts src/lib/direct/appli-collection-serveur.ts src/app/api/cron/meme-du-jour src/app/api/cron/meme-du-jour-ete src/lib/direct/autour.ts src/lib/direct/autour-serveur.ts src/lib/direct/geocodeur-serveur.ts src/app/api/direct/autour src/lib/direct/moderation-serveur.ts src/app/admin/humain/figurines-clients src/app/admin/humain/lieux-publics src/app/api/admin/direct/lieux-publics
           src/lib/direct/memes-commerces.ts src/lib/direct/memes-commerces-serveur.ts src/app/meme src/app/api/direct/memes-commerces src/app/api/site-internet/pro/meme src/app/autour-de-moi/assistante/meme-comptoir.tsx
 
