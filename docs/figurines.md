@@ -1942,12 +1942,49 @@ autres figurines disent un mot sur cette humeur, elles-mêmes, sans que leurs pr
 - **La route** (`/api/direct/rituel`) : `GET` (son rituel), `GET ?avec=<clé>` (avec un proche), `POST` `humeur`,
   `effacer`, `parle`. Les figurines écrivent **après la réponse** (`after`) ; la page relit toutes les 3 s tant
   qu'elles écrivent. Un proche se désigne par sa clé de profil.
-- **Pas encore** : la notification « 3 figurines ont réagi à ton humeur 👀 » (il est dans l'appli quand elles
-  écrivent : elle viendra avec le mot de la fin, le matin, lot R2).
+- **Pas de notification pour ces mots** : il est dans l'appli quand elles écrivent. Celle du matin (lot R2, 9.0
+  sexvicies) dit le mot de la fin.
 - **Les essais** : `scripts/navigateur/rituel.mjs` (la feuille, les visages, les trois mots, « qui a dit quoi »,
   « Lui répondre », l'apéro refusé, la consigne sans conversations, « Pas maintenant », l'image de l'humeur chez un
   proche, effacer, couper, la tristesse, trois humeurs par jour, le bandeau). Les autres essais navigateur passent la
   feuille du matin d'office (`lancer()` dans `commun.mjs` ; `lancer({ humeur: true })` la garde).
+
+### 9.0 sexvicies 🌙 Le mot de la fin : ce que les figurines se sont dit cette nuit (11 novembre) — lot R2
+
+Le propriétaire (lot R) : « après chaque conversation entre deux personnes, chaque figurine laisse un petit mot final
+qui clôt la journée en fonction de ce qui a été dit, ou en début de journée avec ce qui aura été dit la veille ; l'idée
+étant d'éveiller la curiosité pour voir ce que les figurines se sont dit, et de relancer la conversation ». Retenu (et
+accepté) : **le lendemain matin**, pas après chaque message (une conversation n'a pas de fin nette ; une fois par jour,
+c'est rare donc attendu, et cela fait un rituel du matin).
+
+- **Quand** : deux proches (ajoutés tous les deux) se sont parlé hier, **chacun au moins un message**. Ce matin, à la
+  première ouverture de l'un des deux (`GET /api/direct/rituel` : la préparation part après la réponse, la page relit
+  toutes les 3 s), ou par **l'envoi du matin** (vers 8 h 40 à Paris), leurs deux figurines se laissent **une réplique
+  chacune** : celle de qui a parlé le premier commence, l'autre répond, et ça finit sur une relance. Une fois par
+  paire et par jour (`fils/<paire>/fin/<jour>.json`), un verrou évite de payer deux fois.
+- **Ce que le modèle lit** : leurs messages d'hier (les répliques transcrites du talkie-walkie, trente au plus) et la
+  façon de parler de chaque figurine (sa carte de personnage) — **jamais** leurs messages d'un autre jour, ni leurs
+  conversations avec d'autres.
+- **Pas de mot de la fin** quand : l'un des deux a coupé « Ma figurine parle pour moi » ; un message de ce jour-là a
+  été signalé ; ils n'ont rien dit d'écrit (pas de transcription) ; le sujet est sensible ou que quelqu'un va mal (la
+  santé, une maladie, un deuil, une grande tristesse, une dispute, l'argent, la sexualité, la violence, le
+  harcèlement : le modèle répond `sensible`) ; une réplique ne passe pas les mots interdits ou « rien d'alcoolisé ».
+  Sans modèle de texte : rien (pas de mot de secours : un mot de la fin sans leurs mots ne voudrait rien dire).
+- **À l'écran** (`LesMotsDeLaFin`) : **« 🌙 Cette nuit, vos figurines se sont parlé »**, en haut de la feuille du
+  matin et de « Proches » — fermé (« Ta figurine et celle de Léa se sont laissé un dernier mot · 👀 Voir »), puis
+  leurs deux répliques face à face, en bulles, « D'après ce que vous vous êtes dit hier · écrit par vos figurines ·
+  IA », **« Lui répondre »** et **« Effacer »** (il part pour les deux, et ne revient pas). En haut de leur
+  conversation aussi (`BandeauRituel`).
+- **L'envoi du matin** (`/api/cron/rituel-matin`, 7 h 40 UTC l'hiver ; `rituel-matin-ete`, 6 h 40 UTC l'été ; celle
+  qui ne tombe pas dans l'heure de 8 h à Paris ne fait rien) : pour chaque abonné aux notifications, ses mots de la fin
+  sont préparés ; s'il en a, **« 🌙 Cette nuit, vos figurines se sont parlé »** — « Ta figurine et celle de Léa se
+  sont laissé un dernier mot. Viens voir 👀 » (une par jour au plus, `notif/matin/<habitant>/<jour>.json`). Une
+  fonction a une minute : passé 50 secondes, l'envoi s'arrête (les autres trouvent leurs mots en ouvrant ClikMe). Une
+  fois par jour (`notif/matins/<jour>.json`) ; `?force=1` pour les essais.
+- **Le coût** : une petite demande de texte par paire de proches qui se sont parlé, par jour.
+- **Les essais** : `scripts/navigateur/rituel.mjs` (hier : Léa et Zoé ; Eva malade ; Sam seul) — le mot préparé à
+  la première ouverture, Léa d'abord, la consigne sans autre jour ni autre conversation, « sensible », l'écran fermé
+  puis ouvert, le bandeau, l'envoi du matin (une fois), effacer.
 
 ### 9.1 L'idée en une phrase
 

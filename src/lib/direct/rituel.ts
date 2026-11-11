@@ -37,13 +37,35 @@ export type QuiRituel = { cle: string; prenom: string; image: string };
 export type MotRecu = { id: string; de: QuiRituel; texte: string; le: string; humeur: Sentiment };
 /** Un mot que SA figurine a écrit en son nom, à un proche. */
 export type MotEcrit = { id: string; pour: QuiRituel; texte: string; le: string; humeur: Sentiment };
-/** Tout le rituel du jour, pour sa page. `attente` : les figurines sont en train d'écrire. `parle` : « Ma figurine parle pour moi ». */
-export type EtatRituel = { jour: string; humeur: Sentiment | null; mots: MotRecu[]; ecrits: MotEcrit[]; attente: boolean; parle: boolean; proches: number };
-/** Le rituel avec un proche, en haut de leur conversation. */
-export type RituelAvec = { jour: string; sienne: Sentiment | null; mienne: Sentiment | null; pourLui: MotEcrit | null; pourMoi: MotRecu | null };
+/**
+ * 🌙 LE MOT DE LA FIN (lot R2) : hier, deux proches se sont parlé (chacun au moins un message) ; ce matin, leurs deux
+ * figurines se laissent une réplique chacune, tirée de ce qu'ils se sont dit ce jour-là, qui finit sur une relance.
+ * `mots` : dans l'ordre (la figurine de celui qui a parlé le premier commence) ; `moi` : la mienne.
+ */
+export type FinVue = { cle: string; jour: string; lui: QuiRituel; moi: QuiRituel; mots: { moi: boolean; texte: string }[] };
+/** La longueur d'une réplique du mot de la fin. */
+export const FIN_MAX = 120;
+
+/**
+ * Tout le rituel du jour, pour sa page. `attente` : les figurines sont en train d'écrire. `parle` : « Ma figurine parle
+ * pour moi ». `fins` : les mots de la fin de cette nuit (d'hier) ; `finsAttente` : elles les écrivent.
+ */
+export type EtatRituel = {
+  jour: string;
+  humeur: Sentiment | null;
+  mots: MotRecu[];
+  ecrits: MotEcrit[];
+  attente: boolean;
+  parle: boolean;
+  proches: number;
+  fins: FinVue[];
+  finsAttente: boolean;
+};
+/** Le rituel avec un proche, en haut de leur conversation (et leur mot de la fin de cette nuit). */
+export type RituelAvec = { jour: string; sienne: Sentiment | null; mienne: Sentiment | null; pourLui: MotEcrit | null; pourMoi: MotRecu | null; fin: FinVue | null };
 
 /** Un mot relu : une ou deux phrases, sans retour à la ligne, coupé proprement. */
-export function motPropre(x: unknown): string {
+export function motPropre(x: unknown, max = MOT_MAX): string {
   const t = (typeof x === "string" ? x : "")
     .replace(/[\r\n\t]+/g, " ")
     .replace(/\s+/g, " ")
@@ -52,8 +74,8 @@ export function motPropre(x: unknown): string {
     // (l'espace fine insécable avant « ? ! : ; » : le signe ne part jamais seul à la ligne)
     .replace(/\s*([?!:;]+)/g, "\u202f$1")
     .replace(/^\u202f/, "");
-  if (t.length <= MOT_MAX) return t;
-  const coupe = t.slice(0, MOT_MAX);
+  if (t.length <= max) return t;
+  const coupe = t.slice(0, max);
   const fin = Math.max(coupe.lastIndexOf(". "), coupe.lastIndexOf("! "), coupe.lastIndexOf("? "));
   return fin > 40 ? coupe.slice(0, fin + 1).trim() : `${coupe.slice(0, coupe.lastIndexOf(" ")).trim()}…`;
 }

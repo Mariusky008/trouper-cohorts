@@ -272,6 +272,40 @@ export async function prevenirDUneParole(supabase: Supabase, pour: string, deQui
   return issues.includes("ok") ? "envoye" : "rien";
 }
 
+/** 🔔 LES HABITANTS ABONNÉS AUX NOTIFICATIONS (leurs identifiants) : pour l'envoi du matin (`rituel-serveur.ts`). */
+export async function habitantsAbonnes(supabase: Supabase): Promise<string[]> {
+  const ids: string[] = [];
+  for (let debut = 0; debut < 50_000; debut += 1000) {
+    const { data } = await supabase.storage.from(SEAU_FIGURINES).list(DOSSIER_ABONNES, { limit: 1000, offset: debut });
+    const lot = (Array.isArray(data) ? data : []) as { name?: string }[];
+    ids.push(...lot.map((x) => /^([0-9a-f-]{36})\.json$/.exec(s(x.name))?.[1] ?? "").filter(Boolean));
+    if (lot.length < 1000) break;
+  }
+  return ids;
+}
+
+/**
+ * 🔔 UNE NOTIFICATION À UN HABITANT, UNE FOIS PAR JOUR POUR CE GENRE (`notif/<genre>/<habitant>/<jour>.json`) — s'il a
+ * les notifications ; ses téléphones qui ne répondent plus s'effacent.
+ */
+export async function prevenirUneFoisParJour(supabase: Supabase, pour: string, genre: string, notif: Notif): Promise<"envoye" | "rien"> {
+  if (!pour || !/^[a-z-]+$/.test(genre) || !vapid()) return "rien";
+  const f = await lireJson<FicheAbonne>(supabase, cheminAbonne(pour));
+  const abs = sesAbonnements(f);
+  if (!abs.length) return "rien";
+  const marque = `notif/${genre}/${pour}/${jourParis()}.json`;
+  if (await telecharger(supabase, marque)) return "rien";
+  await ecrireJson(supabase, marque, { le: new Date().toISOString() });
+  const issues = await Promise.all(abs.map((ab) => envoyer(ab, notif)));
+  const morts = abs.filter((_, i) => issues[i] === "mort");
+  if (morts.length) {
+    const reste = abs.filter((_, i) => issues[i] !== "mort");
+    if (reste.length) await ecrireJson(supabase, cheminAbonne(pour), { ...f, abonnements: reste });
+    else await supabase.storage.from(SEAU_FIGURINES).remove([cheminAbonne(pour)]);
+  }
+  return issues.includes("ok") ? "envoye" : "rien";
+}
+
 export type BilanDuJour = { jour: string; personnes: number; envoyes: number; morts: number; dejaRepondu: number; deja?: boolean; sansCles?: boolean };
 
 /**

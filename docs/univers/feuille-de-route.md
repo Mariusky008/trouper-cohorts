@@ -435,8 +435,8 @@ petit mot final à l'autre, qui clôt la journée d'après ce qui a été dit. L
 conversation. »
 
 **Accepté par le propriétaire le 11 novembre 2026 (« oui pour tout, on commence le lot R maintenant »). Le lot R1
-(l'humeur du jour, et ce que les figurines en disent) est construit (`docs/figurines.md`, 9.0 quinvicies ☀️) ; le lot
-R2 (le mot de la fin) est à faire.** Il se construit **tout de suite, sur l'appli
+(l'humeur du jour, et ce que les figurines en disent) est construit (`docs/figurines.md`, 9.0 quinvicies ☀️), le lot
+R2 (le mot de la fin) aussi (9.0 sexvicies 🌙).** Il se construit **tout de suite, sur l'appli
 d'aujourd'hui** (l'onglet « Proches »), en parallèle du lot 0, puis passer dans l'univers au lot 5. Tout ce dont il a
 besoin existe déjà : les visages de la figurine (sept humeurs, six attitudes, faits une fois à la demande), les proches,
 les paroles transcrites du talkie-walkie, les notifications, la carte de personnage (qui donne à chaque figurine sa
@@ -455,12 +455,13 @@ façon de parler), la petite scène des deux figurines face à face.
 - Les figurines de trois de ses proches au plus (ceux à qui il parle le plus) lui laissent chacune un mot, écrit par
   l'IA dans le style de chaque figurine. Le mot porte sur l'humeur, et rien d'autre.
 - Il les trouve en haut de sa page, et en haut de la conversation avec chaque proche. Une notification au plus par
-  jour : « 3 figurines ont réagi à ton humeur 👀 » (construit sans elle en R1 : il est dans l'appli quand elles
-  écrivent ; elle viendra avec la notification du matin, en R2).
+  jour : « 3 figurines ont réagi à ton humeur 👀 » (construit sans elle : il est dans l'appli quand elles écrivent ;
+  la notification du matin dit le mot de la fin).
 
 **3. Le mot de la fin.**
-- Chaque soir, pour chaque paire de proches qui se sont parlé dans la journée, leurs deux figurines échangent deux
-  courtes répliques, une chacune, tirées de ce que les deux personnes se sont dit, et qui finissent sur une relance.
+- Pour chaque paire de proches qui se sont parlé dans la journée, leurs deux figurines échangent deux courtes
+  répliques, une chacune, tirées de ce que les deux personnes se sont dit, et qui finissent sur une relance. (Construit
+  ainsi : elles s'écrivent le matin, à la première ouverture de l'un des deux ou par l'envoi de 8 h 40.)
 - Elles se découvrent **le lendemain matin**, avec l'humeur du jour : « Cette nuit, vos figurines se sont parlé ». La
   petite scène des deux figurines face à face, leurs mots écrits dans des bulles, et « Lui répondre ».
 - Pourquoi le soir plutôt qu'après chaque échange : les messages arrivent à toute heure, une conversation n'a pas de

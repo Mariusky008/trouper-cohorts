@@ -12,10 +12,16 @@
 // « Ta figurine a écrit à Zoé » : il lit le mot écrit en son nom, l'efface ; puis il coupe « Ma figurine parle pour
 // moi » dans « Moi ». Zoé change d'humeur (la tristesse : un mot doux) — Nico ne lui écrit plus ; trois humeurs par
 // jour font écrire, pas plus. Léa choisit la sienne : en haut de leur conversation, chez Zoé, l'humeur de Léa, le mot de
-// chaque figurine. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
+// chaque figurine.
+// 🌙 LE MOT DE LA FIN (lot R2) : hier, Léa et Zoé se sont parlé (le match) ; Eva aussi, mais elle était malade (un
+// sujet sensible : pas de mot) ; Sam seul a parlé (pas d'échange : pas de mot). Ce matin, à la première ouverture, leur
+// mot de la fin se prépare : « 🌙 Cette nuit, vos figurines se sont parlé », fermé, puis leurs deux répliques (celle de
+// Léa d'abord : elle avait parlé la première), tirées de leurs messages d'hier et de rien d'autre ; en haut de leur
+// conversation aussi. L'envoi du matin (forcé) : « 🌙 Cette nuit, vos figurines se sont parlé », une fois. Léa
+// l'efface : il part pour les deux. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
 import crypto from "node:crypto";
 import fs from "node:fs";
-import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer, recus, telephone } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
@@ -102,6 +108,25 @@ const ok = (c, m) => {
   console.log(c ? "  ok  " : "ÉCHEC ", m);
 };
 
+// ─── 🌙 hier : Léa et Zoé ont parlé du match ; Eva était malade ; Sam a parlé seul ───
+const qui8 = (h) => crypto.createHash("sha256").update(`clikme-talkie:qui:${h}`).digest("hex").slice(0, 8);
+const hierTs = Date.now() - 86_400_000;
+let rang = 0;
+async function hier(de, a, texte) {
+  const pair = [de.id, a.id].sort().join("_");
+  const ts = hierTs + rang++ * 60_000;
+  const id = `hier${String(rang).padStart(4, "0")}`;
+  const fiche = { id, de: de.id, le: new Date(ts).toISOString(), duree: 2, son: `fils/${pair}/s/${id}.mp3`, type: "audio/mpeg", repliques: [{ de: 0, a: 2, texte, tete: null }] };
+  await json(`fils/${pair}/m/${String(ts).padStart(13, "0")}-${qui8(de.id)}-${id}.json`, fiche);
+}
+await hier(LEA, ZOE, "Tu as vu le match hier soir ?");
+await hier(ZOE, LEA, "Oui, quelle fin incroyable !");
+await hier(EVA, ZOE, "Je suis malade depuis ce matin");
+await hier(ZOE, EVA, "Repose-toi bien");
+await hier(SAM, ZOE, "Coucou, tu es là ?");
+const pairDe = (x, y) => [x.id, y.id].sort().join("_");
+const hierJour = new Date(hierTs).toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
+
 // ─── avant : Léa et Zoé se parlent souvent ; Nico une fois ───
 ok((await parler(LEA, ZOE, "Tu viens ce soir ?")).statut === 200 && (await parler(ZOE, LEA, "Oui !")).statut === 200 && (await parler(LEA, ZOE, "Top")).statut === 200, "Léa et Zoé se parlent (trois messages)");
 ok((await parler(NICO, ZOE, "Salut Zoé")).statut === 200, "Nico lui a parlé une fois");
@@ -109,6 +134,28 @@ const vide = await voir(ZOE);
 ok(vide.statut === 200 && vide.jour === jour && vide.humeur === null && vide.mots?.length === 0 && vide.parle === true && vide.proches === 6, `au réveil : pas d'humeur, pas de mot, sa figurine parle pour elle (${JSON.stringify({ h: vide.humeur, p: vide.proches })})`);
 ok((await route(ZOE, { action: "humeur", visage: "nimporte" })).statut === 400 && (await route(ZOE, { action: "humeur", visage: "endouce" })).statut === 400, "une humeur qui n'existe pas (ou une attitude) : refusée");
 ok((await voir(ZOE, `?avec=${MAX.cle}`)).statut === 403 && (await voir(ZOE, `?avec=${"0".repeat(16)}`)).statut === 404, "le rituel avec Max (il ne l'a pas ajoutée) : rien ; une clé inconnue non plus");
+
+// ═══ 🌙 LE MOT DE LA FIN : il se prépare à la première ouverture du jour ═══
+ok(Array.isArray(vide.fins) && vide.fins.length === 0 && vide.finsAttente === true, "à la première ouverture : pas encore de mot de la fin, il se prépare");
+let rFins = vide;
+for (let k = 0; k < 40 && rFins.finsAttente; k++) {
+  await new Promise((r) => setTimeout(r, 500));
+  rFins = await voir(ZOE);
+}
+const finLea = rFins.fins?.[0];
+ok(
+  rFins.fins?.length === 1 && finLea?.cle === LEA.cle && finLea.jour === hierJour && finLea.mots?.length === 2 && finLea.mots[0].moi === false && finLea.mots[1].moi === true,
+  `un mot de la fin, avec Léa (elle avait parlé la première : sa figurine commence) — ni Eva, ni Sam (${JSON.stringify(rFins.fins?.map((f) => f.lui.prenom))})`,
+);
+ok(plat(finLea?.mots?.[0]?.texte).includes("« Tu as vu le") && finLea.lui.prenom === "Léa" && finLea.moi.prenom === "Zoé" && !JSON.stringify({ ...finLea, lui: null, moi: null }).includes(LEA.id), "tiré de leurs messages d'hier ; les figurines par leur clé");
+const consigneFin = (await (await fetch(`${F.replace("/rest/v1", "")}/__ia`)).json()).filter((c) => c.includes("UN MOT DE LA FIN"));
+ok(
+  consigneFin.some((c) => c.includes("Tu as vu le match") && c.includes("quelle fin incroyable") && !c.includes("Tu viens ce soir") && !c.includes("malade")) && consigneFin.some((c) => c.includes("malade")),
+  "la consigne : leurs messages d'hier, et rien d'autre (ni ceux d'aujourd'hui, ni ceux d'Eva)",
+);
+ok((await lireStock(`fils/${pairDe(ZOE, EVA)}/fin/${hierJour}.json`))?.rien === "sensible" && !(await lireStock(`fils/${pairDe(ZOE, SAM)}/fin/${hierJour}.json`)), "Eva était malade : pas de mot (sensible) ; Sam a parlé seul : pas de mot");
+const finChezLea = await voir(LEA);
+ok(finChezLea.fins?.length === 1 && finChezLea.fins[0].cle === ZOE.cle && finChezLea.fins[0].mots[0].moi === true, "chez Léa aussi (sa figurine commence)");
 
 const b = await lancer({ humeur: true, args: ["--autoplay-policy=no-user-gesture-required"] });
 const erreurs = [];
@@ -138,7 +185,17 @@ ok(
   `ses huit visages : le fou rire et la joie sont les siens, les autres en emoji (${visages.map((v) => `${v.h}${v.img ? "*" : ""}`).join(" ")})`,
 );
 ok((await debordement(zoe)) <= 0 && (await sansMotInterdit(zoe)), "la feuille ne déborde pas, sans le mot interdit");
+await zoe.waitForSelector(`.rt-feuille .rt-fin[data-fin="${LEA.cle}"] .rt-fin-ferme`, { timeout: 15000 }).catch(() => null);
+ok((await texte(zoe, ".rt-feuille .rt-fins")).includes("🌙 Cette nuit, vos figurines se sont parlé") && (await texte(zoe, ".rt-feuille .rt-fin")).includes("Ta figurine et celle de Léa"), "en haut de la feuille : « 🌙 Cette nuit, vos figurines se sont parlé », fermé");
 await capture(zoe, "1-matin");
+await zoe.locator(`.rt-feuille .rt-fin[data-fin="${LEA.cle}"] .rt-fin-ferme`).click();
+await zoe.waitForSelector(".rt-feuille .rt-fin.ouvert .rt-replique", { timeout: 5000 }).catch(() => null);
+const repliques = await zoe.locator(".rt-feuille .rt-fin.ouvert .rt-replique").evaluateAll((l) => l.map((x) => ({ moi: x.classList.contains("moi"), t: x.textContent.replace(/\s+/g, " ").trim() })));
+ok(
+  repliques.length === 2 && !repliques[0].moi && repliques[0].t.includes("La figurine de Léa") && repliques[1].moi && repliques[1].t.includes("Ta figurine") && (await texte(zoe, ".rt-feuille .rt-fin.ouvert")).includes("écrit par vos figurines · IA"),
+  `ouvert : leurs deux répliques, face à face, « écrit par vos figurines · IA » (${repliques.map((r) => r.t.slice(0, 40)).join(" | ")})`,
+);
+await capture(zoe, "1b-fin");
 await zoe.locator('.rt-feuille .rt-visages button[data-humeur="rire"]').click();
 await zoe.waitForFunction(() => /Ton humeur : 😂 Fou rire/.test(document.querySelector(".rt-feuille .rt-question")?.textContent ?? ""), null, { timeout: 15000 }).catch(() => null);
 ok((await texte(zoe, ".rt-feuille .rt-question")).includes("Fou rire"), "un toucher : « Ton humeur : 😂 Fou rire »");
@@ -243,7 +300,7 @@ const deZoe = rLea.mots.find((m) => m.de.cle === ZOE.cle);
 ok(Boolean(deZoe), "la figurine de Zoé lui a laissé un mot");
 const avec = await voir(ZOE, `?avec=${LEA.cle}`);
 ok(
-  avec.statut === 200 && avec.avec?.sienne === "joie" && avec.avec?.mienne === "rire" && avec.avec?.pourLui?.texte === deZoe?.texte && avec.avec?.pourMoi?.de.cle === LEA.cle && !JSON.stringify({ ...avec.avec, pourMoi: { ...avec.avec?.pourMoi, de: null }, pourLui: { ...avec.avec?.pourLui, pour: null } }).includes(LEA.id),
+  avec.statut === 200 && avec.avec?.sienne === "joie" && avec.avec?.mienne === "rire" && avec.avec?.pourLui?.texte === deZoe?.texte && avec.avec?.pourMoi?.de.cle === LEA.cle && !JSON.stringify({ ...avec.avec, pourMoi: { ...avec.avec?.pourMoi, de: null }, pourLui: { ...avec.avec?.pourLui, pour: null }, fin: { ...avec.avec?.fin, lui: null, moi: null } }).includes(LEA.id),
   `le rituel avec Léa : leurs deux humeurs, le mot de chaque figurine à l'autre (${JSON.stringify({ ...avec.avec, pourMoi: avec.avec?.pourMoi?.de.prenom, pourLui: avec.avec?.pourLui?.texte })})`,
 );
 await zoe.locator(`#o-proches .pr-carte[data-cle="${LEA.cle}"] .pr-mini`).click();
@@ -253,8 +310,30 @@ ok(
   bandeau.includes("Léa aujourd’hui : 😄 Joie") && bandeau.includes("La figurine de Léa t’a écrit · IA") && bandeau.includes("Ta figurine lui a écrit · IA") && !bandeau.includes("ton humeur du jour"),
   `en haut de leur conversation : l'humeur de Léa, le mot de chaque figurine (${bandeau})`,
 );
+ok(bandeau.includes("🌙 Cette nuit, vos figurines se sont dit · IA") && bandeau.includes("Sa figurine : Hier, c’était"), "et leur mot de la fin de cette nuit");
 ok((await debordement(zoe)) <= 0 && (await sansMotInterdit(zoe)), "la conversation ne déborde pas, sans le mot interdit");
 await capture(zoe, "8-bandeau");
+
+// ═══ 🔔 L'ENVOI DU MATIN, PUIS LÉA EFFACE LEUR MOT DE LA FIN ═══
+const telZoe = telephone("zoe-matin");
+await json(`notif/abonnes/${ZOE.id}.json`, { h: ZOE.id, ville: "dax", abonnements: [telZoe.abonnement], le: new Date().toISOString() });
+const matin = await (await fetch(`${BASE}/api/cron/rituel-matin?force=1`)).json();
+ok(matin.ok && matin.personnes === 1 && matin.fins === 1 && matin.envoyes === 1, `l'envoi du matin : Zoé a un mot de la fin, elle est prévenue (${JSON.stringify(matin)})`);
+let notifsMatin = [];
+for (let k = 0; k < 20 && !notifsMatin.length; k++) {
+  notifsMatin = await recus(telZoe);
+  await new Promise((r) => setTimeout(r, 300));
+}
+ok(
+  notifsMatin.length === 1 && notifsMatin[0].title === "🌙 Cette nuit, vos figurines se sont parlé" && notifsMatin[0].body === "Ta figurine et celle de Léa se sont laissé un dernier mot. Viens voir 👀" && notifsMatin[0].url === "/collection#proches",
+  `« ${notifsMatin[0]?.title} » — « ${notifsMatin[0]?.body} »`,
+);
+const encore = await (await fetch(`${BASE}/api/cron/rituel-matin?force=1`)).json();
+ok(encore.envoyes === 0 && (await recus(telZoe)).length === 1, "une fois par jour, pas deux");
+ok((await route(LEA, { action: "effacer-fin", cle: ZOE.cle })).statut === 200, "Léa efface leur mot de la fin");
+const apresFin = await voir(ZOE);
+ok(apresFin.fins?.length === 0 && (await voir(ZOE, `?avec=${LEA.cle}`)).avec?.fin === null && (await lireStock(`fils/${pairDe(ZOE, LEA)}/fin/${hierJour}.json`))?.efface === LEA.id, "il part pour les deux (et ne revient pas)");
+ok((await route(LEA, { action: "effacer-fin", cle: "0".repeat(16) })).statut === 404, "effacer chez un inconnu : rien");
 
 // ═══ ET RIEN D'AUTRE ═══
 ok((await fetch(`${BASE}/api/direct/rituel`)).status === 403, "sans figurine : rien");

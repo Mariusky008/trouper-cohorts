@@ -9,21 +9,28 @@
  *     ont laissés — fermés, à ouvrir un par un (qui a dit quoi ?), avec « Lui répondre » — et ce que SA figurine a
  *     écrit en son nom (« Effacer ») ;
  *   · EN HAUT D'UNE CONVERSATION (`BandeauRituel`) : leurs deux humeurs, et le mot de chaque figurine à l'autre ;
- *   · DANS « MOI » (`MaFigurineParle`) : « Ma figurine parle pour moi ».
+ *   · DANS « MOI » (`MaFigurineParle`) : « Ma figurine parle pour moi » ;
+ *   · 🌙 LE MOT DE LA FIN (lot R2, `LesMotsDeLaFin`) : « Cette nuit, vos figurines se sont parlé » — fermé, à ouvrir ;
+ *     leurs deux répliques face à face, « Lui répondre », « Effacer » ; dans la feuille du matin, en haut de « Proches »
+ *     et en haut de leur conversation.
  * Un mot est toujours dit « écrit par la figurine de Léa · IA » : jamais présenté comme les mots de Léa.
  */
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { Feuille } from "./ma-figurine";
 import { jourParis } from "@/lib/jour-paris";
 import type { Sentiment } from "@/lib/direct/ma-figurine";
-import { HUMEURS, humeurDe, type EtatRituel, type MotEcrit, type MotRecu, type RituelAvec } from "@/lib/direct/rituel";
+import { HUMEURS, humeurDe, type EtatRituel, type FinVue, type MotEcrit, type MotRecu, type RituelAvec } from "@/lib/direct/rituel";
 import type { FigurineVue } from "@/lib/direct/talkie";
 
 type Reponse = { ok?: boolean; error?: string };
 const ROUTE = "/api/direct/rituel";
 
 async function demander<T>(corps: Record<string, unknown>): Promise<T> {
-  const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
+  const r = await fetch(ROUTE, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(corps),
+  });
   const j = (await r.json().catch(() => ({}))) as T & Reponse;
   if (!r.ok || j.error) throw new Error(j.error || "Ça n’a pas marché. Réessaie.");
   return j;
@@ -74,7 +81,17 @@ export function chargerRituel(): Promise<EtatRituel | null> {
     .then(async (r) => {
       const j = (await r.json().catch(() => ({}))) as Partial<EtatRituel> & Reponse;
       if (!r.ok || !j.jour) return etat;
-      const x: EtatRituel = { jour: j.jour, humeur: j.humeur ?? null, mots: j.mots ?? [], ecrits: j.ecrits ?? [], attente: Boolean(j.attente), parle: j.parle !== false, proches: Number(j.proches) || 0 };
+      const x: EtatRituel = {
+        jour: j.jour,
+        humeur: j.humeur ?? null,
+        mots: j.mots ?? [],
+        ecrits: j.ecrits ?? [],
+        attente: Boolean(j.attente),
+        parle: j.parle !== false,
+        proches: Number(j.proches) || 0,
+        fins: j.fins ?? [],
+        finsAttente: Boolean(j.finsAttente),
+      };
       poser(x);
       return x;
     })
@@ -85,7 +102,11 @@ export function chargerRituel(): Promise<EtatRituel | null> {
   return enVol;
 }
 function useRituel(): EtatRituel | null {
-  return useSyncExternalStore(sAbonner, () => etat, () => null);
+  return useSyncExternalStore(
+    sAbonner,
+    () => etat,
+    () => null,
+  );
 }
 /** Les mots qu'il a déjà ouverts, sur ce téléphone (la feuille du matin et le haut de « Proches » les partagent). */
 let ouverts: string[] | null = null;
@@ -157,8 +178,16 @@ export function fabriquerMesTetes() {
   void (async () => {
     try {
       for (let k = 0; k < 4; k++) {
-        const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "expressions" }) });
-        const j = (await r.json().catch(() => ({}))) as { error?: string; enCours?: boolean; etat?: { expressionsAFaire?: boolean } };
+        const r = await fetch("/api/direct/ma-figurine", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "expressions" }),
+        });
+        const j = (await r.json().catch(() => ({}))) as {
+          error?: string;
+          enCours?: boolean;
+          etat?: { expressionsAFaire?: boolean };
+        };
         if (!j.etat?.expressionsAFaire || (j.error && !j.enCours)) break;
         if (j.enCours) await new Promise((ok) => window.setTimeout(ok, 30_000));
       }
@@ -174,8 +203,16 @@ export function fabriquerMesTetes() {
 
 /** Il choisit son humeur : le serveur la garde ; les figurines de ses proches écrivent ; son visage se fait s'il manque. */
 async function choisir(visage: Sentiment): Promise<void> {
-  const j = await demander<{ humeur: Sentiment; ecrire: boolean }>({ action: "humeur", visage });
-  if (etat) poser({ ...etat, humeur: j.humeur, ...(j.ecrire ? { mots: [], attente: true } : {}) });
+  const j = await demander<{ humeur: Sentiment; ecrire: boolean }>({
+    action: "humeur",
+    visage,
+  });
+  if (etat)
+    poser({
+      ...etat,
+      humeur: j.humeur,
+      ...(j.ecrire ? { mots: [], attente: true } : {}),
+    });
   void chargerRituel();
   const f = await chargerMaFigurine();
   if (f && !f.expressions[visage]) fabriquerMesTetes();
@@ -225,7 +262,7 @@ export function HumeurDuMatin({ actif, onRepondre }: { actif: boolean; onRepondr
   const [vue, setVue] = useState(false);
   const [erreur, setErreur] = useState("");
   const [envoi, setEnvoi] = useState(false);
-  useAttente(ouverte && Boolean(r?.attente));
+  useAttente(ouverte && Boolean(r?.attente || r?.finsAttente));
 
   useEffect(() => {
     if (!actif || vue) return;
@@ -261,6 +298,8 @@ export function HumeurDuMatin({ actif, onRepondre }: { actif: boolean; onRepondr
   return (
     <Feuille ouverte={ouverte} onFermer={passer} titre="Ton humeur du jour" className="rt-feuille">
       <div className="rt-matin" data-humeur={r.humeur ?? ""}>
+        {/* 🌙 ce que sa figurine et celles de ses proches se sont dit cette nuit */}
+        <LesMotsDeLaFin fins={r.fins} onRepondre={(cle) => (setOuverte(false), onRepondre(cle))} />
         {!r.humeur ? (
           <>
             <b className="rt-question">Comment tu te sens aujourd’hui ?</b>
@@ -308,12 +347,22 @@ function MotsDesFigurines({ r, onRepondre }: { r: EtatRituel; onRepondre: (cle: 
     );
   }
   if (!r.mots.length) {
-    return <p className="rt-aide">{r.proches ? "Pas de mot pour l’instant : les figurines de tes proches écrivent quand leur figurine est prête." : "Quand tu auras des proches sur ClikMe, leurs figurines te laisseront un mot sur ton humeur."}</p>;
+    return (
+      <p className="rt-aide">
+        {r.proches
+          ? "Pas de mot pour l’instant : les figurines de tes proches écrivent quand leur figurine est prête."
+          : "Quand tu auras des proches sur ClikMe, leurs figurines te laisseront un mot sur ton humeur."}
+      </p>
+    );
   }
   const fermes = r.mots.filter((m) => !ouverts.includes(m.id)).length;
   return (
     <div className="rt-mots">
-      <p className="rt-compte">{fermes ? `👀 ${r.mots.length === 1 ? "Une figurine a" : `${r.mots.length} figurines ont`} réagi à ton humeur. Qui a dit quoi ?` : `${r.mots.length === 1 ? "Le mot" : "Les mots"} sur ton humeur`}</p>
+      <p className="rt-compte">
+        {fermes
+          ? `👀 ${r.mots.length === 1 ? "Une figurine a" : `${r.mots.length} figurines ont`} réagi à ton humeur. Qui a dit quoi ?`
+          : `${r.mots.length === 1 ? "Le mot" : "Les mots"} sur ton humeur`}
+      </p>
       <ul>
         {r.mots.map((m) => (
           <Mot key={m.id} m={m} ouvert={ouverts.includes(m.id)} onOuvrir={() => ouvrirMot(m.id)} onRepondre={() => onRepondre(m.de.cle)} />
@@ -406,7 +455,7 @@ export function MonHumeur({ visible, onRepondre }: { visible: boolean; onRepondr
   const [changer, setChanger] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState("");
-  useAttente(visible && Boolean(r?.attente));
+  useAttente(visible && Boolean(r?.attente || r?.finsAttente));
   useEffect(() => {
     if (visible) void chargerRituel();
   }, [visible]);
@@ -426,32 +475,112 @@ export function MonHumeur({ visible, onRepondre }: { visible: boolean; onRepondr
   }
   const h = humeurDe(r.humeur);
   return (
-    <section className="rt-bloc" aria-label="Ton humeur du jour" data-humeur={r.humeur ?? ""}>
-      {!r.humeur || changer ? (
-        <>
-          <b className="rt-bloc-titre">{r.humeur ? "Ton humeur a changé ?" : "☀️ Ton humeur du jour ?"}</b>
-          <ChoixHumeur choisie={r.humeur} onChoisi={(v) => void surChoix(v)} petit />
-        </>
-      ) : (
-        <>
-          <div className="rt-bloc-haut">
-            <b className="rt-bloc-titre">
-              Ton humeur : {h?.emoji} {h?.court}
-            </b>
-            <button type="button" className="rt-changer" onClick={() => setChanger(true)}>
-              Changer
-            </button>
-          </div>
-          <MotsDesFigurines r={r} onRepondre={onRepondre} />
-        </>
+    <>
+      {r.fins.length > 0 && (
+        <section className="rt-bloc rt-nuit" aria-label="Cette nuit, vos figurines se sont parlé">
+          <LesMotsDeLaFin fins={r.fins} onRepondre={onRepondre} />
+        </section>
       )}
-      <CeQueMaFigurineADit ecrits={r.ecrits} />
-      {erreur && (
-        <p className="pr-erreur" role="alert">
-          {erreur}
-        </p>
-      )}
-    </section>
+      <section className="rt-bloc" aria-label="Ton humeur du jour" data-humeur={r.humeur ?? ""}>
+        {!r.humeur || changer ? (
+          <>
+            <b className="rt-bloc-titre">{r.humeur ? "Ton humeur a changé ?" : "☀️ Ton humeur du jour ?"}</b>
+            <ChoixHumeur choisie={r.humeur} onChoisi={(v) => void surChoix(v)} petit />
+          </>
+        ) : (
+          <>
+            <div className="rt-bloc-haut">
+              <b className="rt-bloc-titre">
+                Ton humeur : {h?.emoji} {h?.court}
+              </b>
+              <button type="button" className="rt-changer" onClick={() => setChanger(true)}>
+                Changer
+              </button>
+            </div>
+            <MotsDesFigurines r={r} onRepondre={onRepondre} />
+          </>
+        )}
+        <CeQueMaFigurineADit ecrits={r.ecrits} />
+        {erreur && (
+          <p className="pr-erreur" role="alert">
+            {erreur}
+          </p>
+        )}
+      </section>
+    </>
+  );
+}
+
+// ─── 🌙 le mot de la fin ──────────────────────────────────────────────────────────────────────────
+/** 🌙 « Cette nuit, vos figurines se sont parlé » : fermé, il l'ouvre ; leurs deux répliques, face à face. */
+function LesMotsDeLaFin({ fins, onRepondre }: { fins: FinVue[]; onRepondre: (cle: string) => void }) {
+  const ouverts = useOuverts();
+  const [geste, setGeste] = useState("");
+  if (!fins.length) return null;
+  async function effacer(f: FinVue) {
+    setGeste(f.cle);
+    try {
+      await demander({ action: "effacer-fin", cle: f.cle });
+      if (etat) poser({ ...etat, fins: etat.fins.filter((x) => x.cle !== f.cle) });
+    } catch {
+      /* il réessaiera */
+    } finally {
+      setGeste("");
+    }
+  }
+  return (
+    <div className="rt-fins">
+      <b className="rt-fins-titre">🌙 Cette nuit, vos figurines se sont parlé</b>
+      <ul>
+        {fins.map((f) => {
+          const id = `fin-${f.cle}-${f.jour}`;
+          const ouvert = ouverts.includes(id);
+          return (
+            <li key={f.cle} className={`rt-fin${ouvert ? " ouvert" : ""}`} data-fin={f.cle}>
+              {ouvert ? (
+                <>
+                  {f.mots.map((m, i) => {
+                    const qui = m.moi ? f.moi : f.lui;
+                    return (
+                      <p key={i} className={`rt-replique${m.moi ? " moi" : ""}`}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={qui.image} alt="" draggable={false} />
+                        <span>
+                          <small>{m.moi ? "Ta figurine" : `La figurine de ${qui.prenom}`}</small>
+                          <q>{m.texte}</q>
+                        </span>
+                      </p>
+                    );
+                  })}
+                  <small className="rt-fin-note">D’après ce que vous vous êtes dit hier · écrit par vos figurines · IA</small>
+                  <span className="rt-fin-gestes">
+                    <button type="button" className="rt-repondre" onClick={() => onRepondre(f.cle)}>
+                      Lui répondre
+                    </button>
+                    <button type="button" className="rt-effacer" disabled={geste === f.cle} onClick={() => void effacer(f)}>
+                      {geste === f.cle ? "…" : "Effacer"}
+                    </button>
+                  </span>
+                </>
+              ) : (
+                <button type="button" className="rt-fin-ferme" onClick={() => ouvrirMot(id)} aria-label={`Voir ce que ta figurine et celle de ${f.lui.prenom} se sont dit`}>
+                  <span className="rt-duo" aria-hidden="true">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={f.lui.image} alt="" draggable={false} />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={f.moi.image} alt="" draggable={false} />
+                  </span>
+                  <span>
+                    <b>Ta figurine et celle de {f.lui.prenom}</b>
+                    <span>se sont laissé un dernier mot · 👀 Voir</span>
+                  </span>
+                </button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
@@ -494,12 +623,26 @@ export function BandeauRituel({ avec, prenom, onAvec }: { avec: RituelAvec | nul
       setEnvoi(false);
     }
   }
-  if (!sienne && !avec.pourMoi && !avec.pourLui && avec.mienne) return null;
+  if (!sienne && !avec.pourMoi && !avec.pourLui && !avec.fin && avec.mienne) return null;
   return (
     <div className="rt-bandeau" data-sienne={avec.sienne ?? ""}>
+      {/* 🌙 leur mot de la fin de cette nuit */}
+      {avec.fin && (
+        <div className="rt-pour rt-fin-bandeau">
+          <small>🌙 Cette nuit, vos figurines se sont dit · IA</small>
+          {avec.fin.mots.map((m, i) => (
+            <q key={i} className={m.moi ? "moi" : ""}>
+              {m.moi ? "Ta figurine" : `Sa figurine`} : {m.texte}
+            </q>
+          ))}
+        </div>
+      )}
       {sienne && (
         <p className="rt-sienne">
-          {prenom} aujourd’hui : <b>{sienne.emoji} {sienne.court}</b>
+          {prenom} aujourd’hui :{" "}
+          <b>
+            {sienne.emoji} {sienne.court}
+          </b>
         </p>
       )}
       {avec.pourMoi && (
@@ -623,5 +766,32 @@ export const STYLES_RITUEL = `
 .rt-reglage button.oui{background:#FF2E9A}
 .rt-reglage button i{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:left .2s}
 .rt-reglage button.oui i{left:23px}
-@media (prefers-reduced-motion:reduce){.rt-points i,.rt-mot.ouvert{animation:none}}
+.rt-nuit{background:linear-gradient(160deg,#1E1638,#160A1C 75%);border-color:rgba(170,160,255,.4)}
+.rt-fins{display:flex;flex-direction:column;gap:8px}
+.rt-fins-titre{font-size:16px;font-weight:900}
+.rt-fins ul{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.rt-fin{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:18px;background:rgba(255,255,255,.05);border:1.5px solid rgba(170,160,255,.35)}
+.rt-fin.ouvert{animation:rt-ouvre .35s ease-out}
+.rt-fin-ferme{display:flex;align-items:center;gap:12px;width:100%;padding:0;border:0;background:none;color:#FFF4E6;font:inherit;text-align:left;cursor:pointer}
+.rt-fin-ferme > span:last-child{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rt-fin-ferme b{font-size:14.5px;font-weight:800}
+.rt-fin-ferme > span:last-child > span{font-size:12.5px;font-weight:700;color:#C9C2FF}
+.rt-duo{position:relative;flex:none;width:76px;height:52px}
+.rt-duo img{position:absolute;top:0;width:48px;height:52px;border-radius:14px;object-fit:cover;object-position:50% 18%;background:#3A1A30;box-shadow:0 4px 10px rgba(0,0,0,.4)}
+.rt-duo img:first-child{left:0}
+.rt-duo img:last-child{right:0;transform:scaleX(-1)}
+.rt-replique{display:flex;align-items:flex-end;gap:8px;margin:0}
+.rt-replique.moi{flex-direction:row-reverse;text-align:right}
+.rt-replique img{flex:none;width:44px;height:44px;border-radius:12px;object-fit:cover;object-position:50% 18%;background:#3A1A30}
+.rt-replique.moi img{transform:scaleX(-1)}
+.rt-replique > span{display:flex;flex-direction:column;gap:3px;max-width:78%;padding:8px 11px;border-radius:16px 16px 16px 4px;background:#2E2448}
+.rt-replique.moi > span{border-radius:16px 16px 4px 16px;background:#3A1A30;align-items:flex-end}
+.rt-replique small{font-size:10.5px;font-weight:800;color:#C9C2FF}
+.rt-replique q{font-size:14px;line-height:1.4;font-weight:700;quotes:"« " " »"}
+.rt-fin-note{font-size:11px;color:#B49AA8}
+.rt-fin-gestes{display:flex;align-items:center;gap:8px}
+.rt-fin-bandeau{gap:3px}
+.rt-fin-bandeau q{quotes:none;font-weight:600;color:#E8D3DC}
+.rt-fin-bandeau q.moi{color:#FFF4E6}
+@media (prefers-reduced-motion:reduce){.rt-points i,.rt-mot.ouvert,.rt-fin.ouvert{animation:none}}
 `;

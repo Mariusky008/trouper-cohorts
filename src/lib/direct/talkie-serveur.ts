@@ -89,7 +89,7 @@ const MESSAGES_LUS = 40;
 // ─── les chemins ──────────────────────────────────────────────────────────────────────────────────
 const court = (x: string, n: number) => createHash("sha256").update(`clikme-talkie:${x}`).digest("hex").slice(0, n);
 /** Qui l'a dit, dans le nom d'un message (8 signes tirés de son identifiant, jamais l'identifiant). */
-const qui8 = (h: string) => court(`qui:${h}`, 8);
+export const qui8 = (h: string) => court(`qui:${h}`, 8);
 export const pairDe = (a: string, b: string) => [a, b].sort().join("_");
 const dossierMessages = (pair: string) => `fils/${pair}/m`;
 const nomMessage = (ts: number, de: string, id: string) => `${String(ts).padStart(13, "0")}-${qui8(de)}-${id}.json`;
@@ -163,6 +163,23 @@ export async function nomsDuFil(supabase: Supabase, pair: string) {
     .map((f) => lireNom(s(f.name)))
     .filter((x): x is NonNullable<ReturnType<typeof lireNom>> => Boolean(x))
     .sort((a, b) => a.ts - b.ts);
+}
+
+/**
+ * 🌙 CE QU'ILS SE SONT DIT CE JOUR-LÀ (le mot de la fin, `rituel-serveur.ts`) : leurs messages de ce jour (l'heure de
+ * Paris), du premier au dernier, avec leurs mots transcrits ; trente au plus (les derniers).
+ */
+export async function parolesDuJour(supabase: Supabase, pair: string, jour: string): Promise<{ id: string; de: string; texte: string; ts: number }[]> {
+  const noms = (await nomsDuFil(supabase, pair)).filter((n) => jourParis(new Date(n.ts)) === jour).slice(-30);
+  const fiches = await Promise.all(noms.map((n) => lireJson<Fiche>(supabase, `${dossierMessages(pair)}/${n.nom}`)));
+  return fiches
+    .map((f, i) => ({ id: s(f.id), de: s(f.de), texte: texteDuMessage(repliquesValides(f.repliques, Number(f.duree)) ?? []), ts: noms[i].ts }))
+    .filter((x) => x.id && x.de);
+}
+/** Les messages qu'il a signalés (il ne les voit plus). */
+export async function parolesCachees(supabase: Supabase, h: string): Promise<Set<string>> {
+  const c = await lireJson<{ ids?: string[] }>(supabase, cheminCaches(h));
+  return new Set((Array.isArray(c.ids) ? c.ids : []).map(s));
 }
 
 // ─── « là maintenant » ────────────────────────────────────────────────────────────────────────────
