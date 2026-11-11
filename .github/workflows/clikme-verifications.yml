@@ -63,6 +63,7 @@ jobs:
           src/lib/direct/connaitre.ts src/lib/direct/connaitre-serveur.ts src/app/api/direct/connaitre
           src/lib/direct/figurine-du-mois.ts src/lib/direct/figurine-du-mois-serveur.ts src/lib/direct/musique-danse.ts src/lib/direct/meme.ts src/lib/direct/rendus.ts src/lib/direct/rendus-serveur.ts src/lib/direct/memes-prets.ts src/lib/direct/meme-surprise.ts src/lib/direct/meme-surprise-serveur.ts src/lib/direct/duel-regard.ts src/app/duel src/lib/direct/mes-reactions.ts src/lib/direct/mes-reactions-serveur.ts src/lib/direct/sticker.ts src/lib/direct/gag.ts src/lib/direct/theme-du-jour.ts src/lib/direct/reactions-memes.ts src/lib/direct/reactions-memes-serveur.ts
           src/lib/direct/talkie.ts src/lib/direct/talkie-serveur.ts src/app/api/direct/proches src/app/t
+          src/lib/direct/rituel.ts src/lib/direct/rituel-serveur.ts src/app/api/direct/rituel src/app/api/cron/rituel-matin src/app/api/cron/rituel-matin-ete
           src/lib/direct/appli-collection.ts src/lib/direct/appli-collection-serveur.ts src/app/api/cron/meme-du-jour src/app/api/cron/meme-du-jour-ete src/lib/direct/autour.ts src/lib/direct/autour-serveur.ts src/lib/direct/geocodeur-serveur.ts src/app/api/direct/autour src/lib/direct/moderation-serveur.ts src/app/admin/humain/figurines-clients src/app/admin/humain/lieux-publics src/app/api/admin/direct/lieux-publics
           src/lib/direct/memes-commerces.ts src/lib/direct/memes-commerces-serveur.ts src/app/meme src/app/api/direct/memes-commerces src/app/api/site-internet/pro/meme src/app/autour-de-moi/assistante/meme-comptoir.tsx
 
@@ -134,9 +135,12 @@ jobs:
           cache: npm
       - run: npm install --no-audit --no-fund
       - name: Playwright et Chromium
+        # (11 novembre 2026 : les dépôts Ubuntu ne répondaient plus pendant des heures, et l'installation des polices
+        # faisait tomber toute la suite ; la machine de GitHub a déjà ce qu'il faut à Chrome : on installe alors le
+        # navigateur seul)
         run: |
           npm install --no-save --no-audit --no-fund playwright@1.56.1
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium || npx playwright install chromium
       - name: Des clés de notification, pour les essais seulement
         run: node -e "const k=require('web-push').generateVAPIDKeys();console.log('NEXT_PUBLIC_VAPID_PUBLIC_KEY='+k.publicKey);console.log('VAPID_PRIVATE_KEY='+k.privateKey)" >> "$GITHUB_ENV"
       - name: Construire l'app
