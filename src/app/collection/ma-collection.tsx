@@ -6,7 +6,8 @@
  * « “où les gagner”, ce n'est pas clair du tout »). Une seule question pour chaque écran : est-ce qu'il aide à faire un
  * mème, ou donne une raison d'en envoyer un ? Le menu en bas, comme les applis de vidéos que tout le monde connaît
  * (l'étape 2, le même jour : « Découvrir » est arrivé) :
- *   🔥 DÉCOUVRIR — les mèmes du jour des commerçants de sa ville (`decouvrir.tsx`) ;
+ *   🔥 DÉCOUVRIR — les mèmes du jour des commerçants de sa ville (`decouvrir.tsx`) ; depuis le 11 novembre 2026, « Mon vœu »
+ *      et la mission du jour en tête (`voeu.tsx`) — l'appli s'ouvre là, une fois son premier mème fait ;
  *   📍 AUTOUR — les mèmes laissés dans la ville, sur une carte (`autour.tsx`) ; il a pris la place de 💬 RENCONTRES ;
  *   🎭 CRÉER, au milieu, en gros — sa figurine qui parle (`ma-figurine.tsx`) : ses looks, ses mèmes prêts, le duo ;
  *      depuis le 7 novembre 2026, « le studio et ses tiroirs » (sa figurine toujours en vue, deux onglets, son mème dans
@@ -30,7 +31,7 @@
  * serveur « il est là » toutes les minutes (« Là maintenant » chez ses proches, s'il le veut) et apprend ses messages non
  * lus (la pastille de « Proches »).
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { EVT_ANCRE, Feuille, OngletFigurine, RefaireMaFigurine, STYLES_MA_FIGURINE } from "./ma-figurine";
 import { STYLES_TROIS_RENDUS } from "./trois-rendus";
 import { OngletVisible } from "./guide";
@@ -39,6 +40,7 @@ import { ProtegerFigurine, STYLES_CONNAITRE } from "./connaitre";
 import { MaFigurineDuMois, STYLES_FIGURINE_DU_MOIS } from "./figurine-du-mois";
 import { MesMemes, STYLES_MES_MEMES } from "./mes-memes";
 import { Decouvrir, STYLES_DECOUVRIR } from "./decouvrir";
+import { STYLES_VOEU } from "./voeu";
 import { STYLES_MES_REACTIONS } from "./mes-reactions";
 import { STYLES_THEME_DU_JOUR } from "./theme-du-jour";
 import { FeuilleInstaller, MonTelephone, STYLES_MON_TELEPHONE } from "./mon-telephone";
@@ -70,6 +72,9 @@ const ALIAS: Record<string, Vue> = {
   creer: "figurine",
   // (🔥 le mème du jour, dans « Découvrir » : là où mène la notification de 11 h 30 — il a quitté « Créer » le 8 novembre 2026)
   jour: "decouvrir",
+  // (✨ « Mon vœu » et la mission du jour : les premières pages de « Découvrir », 11 novembre 2026)
+  voeu: "decouvrir",
+  mission: "decouvrir",
   // (⚡ ses réactions, en haut de « Créer » : là où l'app installée pourra s'ouvrir)
   reactions: "figurine",
   personnage: "personnage",
@@ -167,6 +172,16 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
     const v = ALIAS[o];
     if (v) aller(v, o, false, true);
   }, [aller]);
+
+  // ✨ L'APPLI S'OUVRE SUR « DÉCOUVRIR » (11 novembre 2026, « Mon vœu ») : sa mission du jour, son vœu — quand aucune
+  // adresse ne mène ailleurs, et qu'il a déjà fait son premier mème (avant : « Créer », pour faire sa figurine, la voir
+  // apparaître, et faire ce premier mème)
+  const premiereArrivee = useRef(true);
+  useEffect(() => {
+    if (!charge || !premiereArrivee.current) return;
+    premiereArrivee.current = false;
+    if (etat?.etape === "prete" && etat.messages.length > 0 && !window.location.hash && !new URLSearchParams(window.location.search).get("ami")) aller("decouvrir");
+  }, [charge, etat, aller]);
 
   // 🧭 LE TUTO : le logo ouvre la visite (le point rose s'en va) ; une page : on y va, Pablito la montre
   const ouvrirVisite = () => {
@@ -391,7 +406,7 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_RITUEL + STYLES_TUTO}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_VOEU + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_RITUEL + STYLES_TUTO}</style>
     </main>
   );
 }

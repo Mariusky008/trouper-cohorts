@@ -1986,6 +1986,91 @@ c'est rare donc attendu, et cela fait un rituel du matin).
   la première ouverture, Léa d'abord, la consigne sans autre jour ni autre conversation, « sensible », l'écran fermé
   puis ouvert, le bandeau, l'envoi du matin (une fois), effacer.
 
+### 9.0 septvicies ✨ « Mon vœu » dans « Découvrir » : le lot 1 (11 novembre)
+
+Le propriétaire veut remplacer la « Question du jour » par **« Réalise mon vœu »** : je dépose un vœu avec ma figurine
+(une petite envie concrète, qu'une personne de ma ville pourrait m'aider à réaliser) ; chaque jour, des gens le
+découvrent et me répondent avec leur figurine ; quelqu'un peut m'aider. Son ingénieur a imaginé le parcours (un brief
+et des maquettes : la journée en deux rendez-vous, déposer son vœu, la mission, « Je peux aider », les réponses du soir,
+« Exaucé »). Nos questions, et ses réponses :
+
+- **Où ?** « Je pensais que c'était plutôt dans l'onglet Découvrir que Mon vœu se passait » : pas d'onglet à part,
+  « Mes mèmes » reste. Les **premières pages de « Découvrir »** : la rangée de bulles (la sienne d'abord : son vœu,
+  « 6 j » ; ou « + Ton vœu » — puis les réponses, un anneau rose tant qu'il ne les a pas vues, « AIDE » pour une aide)
+  et **« Ta mission du jour 0/3 »** (les trois vœux en petit, « Encourager · 1 minute ») ; puis **les trois vœux de la
+  mission, en plein écran** ; puis **« Mission accomplie »** ; puis le mème du jour et les mèmes, comme avant.
+  **L'appli s'ouvre sur « Découvrir »** quand aucune adresse ne mène ailleurs, une fois son premier mème fait (avant :
+  « Créer », pour faire sa figurine, la voir apparaître, et ce premier mème).
+- **Les têtes** : « réutiliser ses visages ». On encourage avec **ses visages déjà faits** (son euphorie pour
+  « J'y crois ! », sa joie pour « Trop bien », sa victoire pour « Courage », son rire pour « Moi aussi ! ») et un mot en
+  sticker ; un visage pas encore fait : sa figurine de tous les jours, et l'emoji. Jamais de nouvelle pose à fabriquer
+  (`TETES_ENCOURAGER`, `lib/direct/voeu.ts`).
+- **Les réponses** : « au fil de la journée, avec une notification à 19 h » — elles arrivent au fil de la journée
+  (fait) ; la notification de 19 h est pour le lot 2.
+- **« +3 personnes demain »** devient **« Ton vœu passe en premier demain »** (« oui ») : 3 encouragements par personne
+  et par jour ne peuvent pas donner 3 personnes de plus à chacun quand presque tout le monde a un vœu. L'auteur qui a
+  fait sa mission hier passe avant les autres (à égalité d'encouragements).
+- **Où on lance** : « je ne lance pas à Dax, mais partout ». La distribution se fait **par ville** ; quand la ville n'a
+  plus de vœu à montrer, **les vœux qui peuvent être exaucés de loin** (Apprendre, Un conseil, Mon projet) viennent
+  d'ailleurs ; ceux où il faut être là (Bouger, Sortir, Du monde, Coup de main) restent dans leur ville.
+  **L'inscription, elle, reste ouverte seulement aux villes des commerces ClikMe : l'ouvrir partout est un chantier à
+  part, à ne pas faire sans l'accord du propriétaire.**
+- **La tuile « Surprise »** (« ce que tu penses être le mieux ») : l'IA de « Surprends-moi » écrit un vœu d'après sa
+  carte de personnage (ses réponses, ses goûts, sa phrase fétiche ; relu : 80 caractères, ni coordonnées, ni alcool, ni
+  mot interdit) ; sans carte, ou sans IA, un vœu tout prêt au hasard (`voeuSurprise`, 20 tirages par jour dont 6 par
+  l'IA, `<habitant>/voeu-surprises.json`).
+- **Quand toute la ville a vu un vœu** (pas de réponse : notre choix) : il voyage plus loin s'il peut être exaucé de
+  loin ; la reformulation proposée par Pablito est pour le lot 3.
+- **Jamais de voix de synthèse** : une aide est une phrase écrite (dans la bulle de sa figurine), ou **sa** voix (20 s
+  au plus, transcrite : refusée si elle donne des coordonnées).
+- **L'âge** : l'appli ne savait que « 15 ans ou plus ». La première fois, **« As-tu 18 ans ou plus ? »** (une fois ; un
+  « non » ne se change pas en « oui » ; `adulte` dans `<habitant>/majeur.json`, que `confirmerSonAge` garde désormais
+  quand il refait sa figurine). **Les 15-17 ans ne croisent que les vœux des 15-17 ans**, et n'ont pas « Du monde ».
+
+**Ce que fait le lot 1** :
+
+- **« Fais un vœu »** (sa bulle, sans vœu ; une feuille) : sa figurine dit son vœu dans sa bulle, au fil de la frappe ;
+  « ★ Un seul vœu à la fois » ; **huit tuiles** (Bouger, Apprendre, Du monde, Coup de main, Un conseil, Mon projet,
+  Sortir, Surprise) : un toucher, un vœu tout prêt (`VOEUX_PRETS`) ; retouchée, un autre ; s'il a écrit le sien, la
+  tuile dit seulement de quoi il s'agit (il en faut une : elle décide si le vœu voyage) ; 90 caractères ; « ✨ Publier
+  mon vœu — Les premiers le découvrent dès aujourd'hui ».
+- **La mission** : trois vœux par jour, **choisis la première fois qu'il l'ouvre** (puis les mêmes toute la journée ;
+  moins de trois si personne n'a de vœu à lui montrer). Parmi les vœux en route de sa tranche d'âge, pas les siens,
+  jamais déjà vus par lui, ni signalés, ni d'une personne qu'il a bloquée ou signalée (ou qui l'a fait) : sa ville
+  d'abord, puis ceux de loin ; dans l'ordre, **les moins encouragés aujourd'hui** (personne ne reste à zéro), les moins
+  montrés aujourd'hui, ceux dont l'auteur a fait sa mission hier, ceux qui vont avec ses goûts (sa carte de
+  personnage), les plus anciens ; un vœu par auteur. Chaque vœu, **en plein écran** : la figurine de l'autre le dit
+  (le fond suit la catégorie), « Son vœu, jour 6 », la catégorie ; **« Encourage Léa avec ta tête »** (quatre têtes) ;
+  **« Passer »** ; **« ✋ Je peux aider »** ; « Léa ne saura jamais que tu as passé · Signaler ». Sa tête se pose sur la
+  scène avec son mot, puis le vœu suivant vient tout seul.
+- **« Je peux aider »** (une feuille) : « Ta figurine dit à Hugo : » ; trois phrases toutes prêtes pour sa catégorie
+  (`PHRASES_AIDE`), « ✏️ Écrire la mienne » (140 caractères), « 🎙️ Ou dis-le avec ta voix » ; « Envoyer ma figurine ».
+- **« Mission accomplie »** : la série (« 6 jours d'affilée »), « Demain, ton vœu passe en premier » (ou « Fais un
+  vœu : demain, il passera en premier »), « Voir mon vœu ». La série est la flamme 🔥 en haut de « Découvrir ».
+- **Sa page « Mon vœu »** (sa bulle ; une feuille) : son vœu (✏️ pour le reformuler), « 6 jours en route » (sans compter
+  ses pauses ; le reformuler ne remet jamais le compteur à zéro), combien l'ont découvert, **« 11 figurines croient en
+  ton vœu »** et leurs têtes, **ses réponses** (jamais ceux qui ont passé) ; **« Faire évoluer mon vœu »** : le
+  reformuler, le mettre en pause (plus personne ne le reçoit), en faire un autre (l'ancien s'arrête), l'annuler.
+- **Une réponse, en grand** (un toucher sur une bulle) : sa tête, son mot en sticker, sa phrase, sa voix ; elles
+  défilent ; l'auteur peut signaler une aide (elle ne s'affiche plus, et ils ne se croiseront plus).
+- **Jamais de coordonnées** (`coordonneesDans`) : ni numéro, ni courriel, ni lien, ni pseudo de réseau, ni adresse —
+  dans un vœu, une aide écrite ou dite ; ni alcool (loi Évin), ni mot interdit. **Signaler un vœu** le retire de la
+  distribution le temps qu'on le regarde (`signale_le`).
+
+**Le code** : la règle et les textes, `src/lib/direct/voeu.ts` ; le serveur, `src/lib/direct/voeu-serveur.ts` ; la
+route, `/api/direct/voeu` ; l'écran, `src/app/collection/voeu.tsx` (dans `decouvrir.tsx`) ; les tables, la migration
+`supabase/migrations/20261111090000_clik_voeu.sql` (`clik_voeu`, `clik_voeu_vue` : un vœu montré à une personne et ce
+qu'elle en a fait, une seule fois par vœu et par personne ; `clik_voeu_serie`) — **à appliquer à la main dans
+l'éditeur SQL de Supabase** ; tant qu'elle ne l'est pas, « Découvrir » reste comme avant. L'essai :
+`scripts/navigateur/voeu.mjs`.
+
+**La suite** : le lot 2 — les réponses du soir en plein écran (stories), répondre avec sa tête, « Lui répondre avec ma
+figurine » (accepter une aide : ils deviennent proches), les notifications (la mission avec le mème du jour, les
+réponses à 19 h), la série partout ; le lot 3 — « Exaucé » (la fête, le merci, le mème de la victoire, les compteurs,
+la carte de personnage, « Mes vœux » dans « Moi »), la reformulation proposée après cinq jours sans aide, et le retrait
+de la question du jour (après avoir changé la source de la phrase du mois et de l'étape qui s'en servent). Et une
+bulle du tuto pour « Mon vœu », à enregistrer par le propriétaire.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

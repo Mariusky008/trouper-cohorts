@@ -78,6 +78,8 @@ const menu = await texte(hugo, ".mc-nav");
 ok((await hugo.locator(".mc-nav button").count()) === 5 && /Découvrir.*Autour.*Créer.*Mes mèmes.*Proches/.test(menu) && !/Ce mois-ci|Album|Rencontres|Moi/.test(menu), `le menu en bas : Découvrir · Autour · Créer · Mes mèmes · Proches (${menu})`);
 ok((await hugo.locator(".mc-barre button.mc-moi").count()) === 1, "« Moi » est en haut, sous son prénom");
 // 👋 LA BIENVENUE DU TUTO (9 novembre 2026, à la place de l'ancienne fenêtre de Pablito) : ses trois bulles, puis « Je crée ma figurine »
+// (la bulle s'écrit lettre à lettre : on attend qu'elle ait dit son nom)
+await hugo.waitForFunction(() => /Pablito/i.test(document.querySelector(".tu-texte")?.textContent ?? ""), null, { timeout: 15000 }).catch(() => null);
 ok((await hugo.locator(".tu .tu-pablito .mq").count()) === 1 && /Pablito/i.test(await texte(hugo, ".tu-texte")), "Pablito, la figurine du patron de ClikMe, lui dit bonjour");
 await hugo.screenshot({ path: `${D}/ma-figurine-0-pablito.png` });
 for (let k = 0; k < 2; k++) {

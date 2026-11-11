@@ -65,6 +65,7 @@ jobs:
           src/lib/direct/talkie.ts src/lib/direct/talkie-serveur.ts src/app/api/direct/proches src/app/t
           src/lib/direct/rituel.ts src/lib/direct/rituel-serveur.ts src/app/api/direct/rituel src/app/api/cron/rituel-matin src/app/api/cron/rituel-matin-ete
           src/lib/direct/univers-essais.ts src/lib/direct/univers-essais-serveur.ts src/app/admin/humain/univers-essais src/app/api/admin/direct/univers-essais
+          src/lib/direct/voeu.ts src/lib/direct/voeu-serveur.ts src/app/api/direct/voeu
           src/lib/direct/appli-collection.ts src/lib/direct/appli-collection-serveur.ts src/app/api/cron/meme-du-jour src/app/api/cron/meme-du-jour-ete src/lib/direct/autour.ts src/lib/direct/autour-serveur.ts src/lib/direct/geocodeur-serveur.ts src/app/api/direct/autour src/lib/direct/moderation-serveur.ts src/app/admin/humain/figurines-clients src/app/admin/humain/lieux-publics src/app/api/admin/direct/lieux-publics
           src/lib/direct/memes-commerces.ts src/lib/direct/memes-commerces-serveur.ts src/app/meme src/app/api/direct/memes-commerces src/app/api/site-internet/pro/meme src/app/autour-de-moi/assistante/meme-comptoir.tsx
 

@@ -13,6 +13,9 @@
  *   · chaque vidéo joue toute seule, en silence, quand on la voit (un toucher : le son) ; « 📲 Partager ».
  * La liste se recharge à chaque fois qu'il ouvre l'onglet.
  *
+ * 11 NOVEMBRE 2026, « MON VŒU » (`voeu.tsx`) : les premières pages — sa bulle, les réponses à son vœu, sa mission du
+ * jour (trois vœux à encourager, en plein écran), « Mission accomplie » — puis le mème du jour et le fil.
+ *
  * 8 NOVEMBRE 2026, LE SWIPE (le propriétaire : « ça serait mieux un système de swipe plutôt que scroller vers le bas,
  * non ? » — oui) : une page par mème, en plein écran, et on glisse vers le haut pour le suivant, comme dans les
  * applis de vidéos. La première page : le mème du jour ; puis ses réponses (une fois la sienne postée) ; puis le fil ;
@@ -28,6 +31,7 @@ import { OngletVisible } from "./guide";
 import { chiffresDuJour, repondreAuJour } from "./theme-du-jour";
 import { signalerOui } from "./fenetre";
 import { InviterAppli } from "./mon-telephone";
+import { MonVoeuDansDecouvrir } from "./voeu";
 
 type Commerce = MemeCommerce & { reac?: ReacMeme };
 /** Un élément du fil : le mème d'un commerçant, ou celui d'un habitant de sa ville (qui l'a choisi). */
@@ -280,6 +284,8 @@ export function Decouvrir({ allerA }: { allerA: (o: string) => void }) {
   return (
     <div className="dv">
       {/* (9 novembre 2026 : Pablito explique « Découvrir » dans la visite, sous le logo — plus de fenêtre ici) */}
+      {/* ✨ LES PREMIÈRES PAGES : MON VŒU ET LA MISSION DU JOUR (`voeu.tsx`, 11 novembre 2026) */}
+      <MonVoeuDansDecouvrir allerA={allerA} />
       {panne && <p className="mc-vide">Le fil n’a pas pu s’afficher. Réessaie dans un instant.</p>}
       {!fil && !panne && (
         <div className="mc-attente" aria-label="Chargement">
