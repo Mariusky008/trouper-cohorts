@@ -22,6 +22,8 @@ import { Feuille } from "./ma-figurine";
 import { demanderOui } from "./fenetre";
 import { FigurineQuiParle, type FigurineHandle } from "./figurine-qui-parle";
 import { OngletVisible } from "./guide";
+import { BandeauRituel, MonHumeur, fabriquerMesTetes, useConversationDemandee, useRituelAvec } from "./rituel";
+import { humeurDe } from "@/lib/direct/rituel";
 import { sentimentDe, type Sentiment } from "@/lib/direct/ma-figurine";
 import { fabriquerMeme, memePossible } from "@/lib/direct/meme";
 import { PAROLE_MAX_S, PAROLE_MIN_S, cleValide, repliqueA, texteAvecVideo, texteDuLien, texteDuMessage, type Fil, type FigurineVue, type MessageFil, type ProcheVivant, type Replique, type RepliqueProposee } from "@/lib/direct/talkie";
@@ -54,27 +56,6 @@ const heure = (le: string) => {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 };
 const mmss = (s: number) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.floor(Math.max(0, s) % 60)).padStart(2, "0")}`;
-
-/** 🎭 Ses premières têtes, après son premier message : le moteur les fait (en arrière-plan, une fois). */
-let tetesEnCours = false;
-function fabriquerMesTetes() {
-  if (tetesEnCours) return;
-  tetesEnCours = true;
-  void (async () => {
-    try {
-      for (let k = 0; k < 4; k++) {
-        const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "expressions" }) });
-        const j = (await r.json().catch(() => ({}))) as { error?: string; enCours?: boolean; etat?: { expressionsAFaire?: boolean } };
-        if (!j.etat?.expressionsAFaire || (j.error && !j.enCours)) break;
-        if (j.enCours) await new Promise((ok) => window.setTimeout(ok, 30_000));
-      }
-    } catch {
-      /* elles se feront la prochaine fois */
-    } finally {
-      tetesEnCours = false;
-    }
-  })();
-}
 
 // ─── l'onglet ─────────────────────────────────────────────────────────────────────────────────────
 type Donnees = { proches: ProcheVivant[]; presence: boolean; cle: string };
@@ -166,6 +147,10 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
       fini = true;
     };
   }, [compte, prete, ouvrir]);
+
+  // ☀️ « Lui répondre », sous le mot de sa figurine (la feuille du matin) : leur conversation
+  const ouvrirFil = useCallback((cle: string) => ouvrir({ cle, parler: false }), [ouvrir]);
+  useConversationDemandee(ouvrirFil, Boolean(compte && prete));
 
   async function ajouter(cle: string, apres?: () => void) {
     setGeste(cle);
@@ -259,6 +244,8 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
   return (
     <div className="pr">
       {tete}
+      {/* ☀️ son humeur du jour, et ce que les figurines de ses proches en disent (lot R) */}
+      <MonHumeur visible={visible} onRepondre={ouvrirFil} />
       {!donnees && !erreur && (
         <div className="mc-attente">
           <i />
@@ -276,7 +263,13 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
             <article key={p.cle} className={`pr-carte lien-${p.lien}${p.nonLus ? " nouveau" : ""}${p.la ? " la" : ""}`} data-cle={p.cle}>
               <button type="button" className="pr-mini" disabled={p.lien !== "proches"} aria-label={`Ta conversation avec ${p.prenom}`} onClick={() => ouvrir({ cle: p.cle, parler: false })}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.image} alt={`La figurine de ${p.prenom}`} draggable={false} style={{ animationDelay: `${(-0.7 * i).toFixed(1)}s` }} />
+                <img src={p.imageHumeur || p.image} alt={`La figurine de ${p.prenom}`} draggable={false} style={{ animationDelay: `${(-0.7 * i).toFixed(1)}s` }} />
+                {/* ☀️ son humeur du jour : sa figurine la porte */}
+                {p.humeur && (
+                  <span className="pr-humeur" aria-label={`Son humeur du jour : ${humeurDe(p.humeur)?.court ?? ""}`}>
+                    {humeurDe(p.humeur)?.emoji}
+                  </span>
+                )}
                 {p.nonLus > 0 && <span className="pr-bulle">{p.nonLus === 1 ? "1 message" : `${p.nonLus} messages`}</span>}
                 {p.la && (
                   <span className="pr-la">
@@ -466,6 +459,8 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
   const vueRef = useRef(-1);
   const irRef = useRef(0);
   const suite = useRef(false);
+  // ☀️ leurs humeurs du jour, et le mot de chaque figurine à l'autre (lot R)
+  const [avec, setAvec] = useRituelAvec(cle);
 
   useEffect(() => {
     let fini = false;
@@ -581,6 +576,10 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
   const rep = m ? m.repliques[Math.min(ir, m.repliques.length - 1)] : undefined;
   const tete = rep?.tete ?? null;
   const s = sentimentDe(tete);
+  // (celle qui écoute porte son humeur du jour, si ce visage est fait)
+  const humeurEcoute = m?.moi ? avec?.sienne : avec?.mienne;
+  const imageEcoute = (humeurEcoute && ecoute.expressions[humeurEcoute]?.n) || ecoute.neutre;
+  const avatar = (avec?.sienne && fil.lui.expressions[avec.sienne]?.n) || fil.lui.neutre;
 
   return (
     <div className="pr-plein" role="dialog" aria-modal="true" aria-label={`Ta conversation avec ${fil.lui.prenom}`}>
@@ -590,7 +589,7 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
         </button>
         <span className={`pr-avatar${fil.la ? " la" : ""}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={fil.lui.neutre} alt="" draggable={false} />
+          <img src={avatar} alt="" draggable={false} />
         </span>
         <span className="pr-qui">
           <b>{fil.lui.prenom}</b>
@@ -611,13 +610,15 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
         )}
       </header>
 
+      <BandeauRituel avec={avec} prenom={fil.lui.prenom} onAvec={setAvec} />
+
       {/* la scène : leurs deux figurines face à face ; celle qui parle s'avance */}
       <section className={`pr-scene${m?.moi ? " moi" : ""}${joue ? " joue" : ""}`} aria-label="La scène" data-message={m?.id ?? ""} data-replique={m ? ir : ""} data-tete={tete ?? ""}>
         <div className="pr-parleur">
           <FigurineQuiParle ref={fig} neutre={parleur.neutre} parle={parleur.parle} expressions={parleur.expressions} sentiment={tete} onTemps={surTemps} onFin={surFin} onJoue={setJoue} className="pr-fqp" />
         </div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="pr-ecoute" src={ecoute.neutre} alt={m?.moi ? `La figurine de ${fil.lui.prenom}, qui écoute` : "Ta figurine, qui écoute"} draggable={false} />
+        <img className="pr-ecoute" src={imageEcoute} alt={m?.moi ? `La figurine de ${fil.lui.prenom}, qui écoute` : "Ta figurine, qui écoute"} draggable={false} />
         {s && (
           <span className="pr-badge" aria-label={`Sa tête : ${s.court}`}>
             <span aria-hidden="true">{s.emoji}</span>
@@ -1359,6 +1360,7 @@ export const STYLES_PROCHES = `
 .pr-lien b{font-size:14.5px;font-weight:800}
 .pr-lien span{font-size:12.5px;line-height:1.4;color:#CDB4C0}
 .pr-erreur{margin:0;font-size:13px;color:#FFB4B4;text-align:center}
+.pr-humeur{position:absolute;right:8px;top:8px;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:rgba(18,6,15,.78);font-size:19px;box-shadow:0 4px 10px rgba(0,0,0,.35)}
 .pr-venu{position:absolute;left:9px;bottom:9px;padding:4px 8px;border-radius:999px;background:#F2C46B;color:#2A0F1F;font-size:10.5px;font-weight:800}
 .pr-la + .pr-venu,.pr-mini .pr-la ~ .pr-venu{bottom:36px}
 .pr-wa{display:flex;align-items:flex-start;gap:12px;padding:14px;border-radius:22px;background:#2A1422;border:1.5px solid rgba(242,196,107,.45)}

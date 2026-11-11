@@ -50,6 +50,7 @@ import {
   visagesVoulus,
 } from "./ma-figurine-serveur";
 import { motInterdit } from "./mots-interdits";
+import { humeurValide } from "./rituel";
 import {
   LIENS_PAR_JOUR,
   LIEN_JOURS,
@@ -88,8 +89,8 @@ const MESSAGES_LUS = 40;
 // ─── les chemins ──────────────────────────────────────────────────────────────────────────────────
 const court = (x: string, n: number) => createHash("sha256").update(`clikme-talkie:${x}`).digest("hex").slice(0, n);
 /** Qui l'a dit, dans le nom d'un message (8 signes tirés de son identifiant, jamais l'identifiant). */
-const qui8 = (h: string) => court(`qui:${h}`, 8);
-const pairDe = (a: string, b: string) => [a, b].sort().join("_");
+export const qui8 = (h: string) => court(`qui:${h}`, 8);
+export const pairDe = (a: string, b: string) => [a, b].sort().join("_");
 const dossierMessages = (pair: string) => `fils/${pair}/m`;
 const nomMessage = (ts: number, de: string, id: string) => `${String(ts).padStart(13, "0")}-${qui8(de)}-${id}.json`;
 const lireNom = (n: string) => {
@@ -99,7 +100,9 @@ const lireNom = (n: string) => {
 const cheminSon = (pair: string, id: string, ext: string) => `fils/${pair}/s/${id}.${ext}`;
 const cheminLus = (h: string) => `${h}/fils-lus.json`;
 const cheminLa = (h: string) => `${h}/la.json`;
-const cheminReglages = (h: string) => `${h}/reglages.json`;
+export const cheminReglages = (h: string) => `${h}/reglages.json`;
+/** ☀️ Son humeur du jour (`rituel-serveur.ts`) : { jour, visage, le, ecrites }. */
+export const cheminHumeur = (h: string) => `${h}/humeur.json`;
 const cheminCaches = (h: string) => `${h}/paroles-cachees.json`;
 const cheminCompteur = (h: string) => `${h}/talkie-jour.json`;
 
@@ -107,7 +110,7 @@ type Fiche = { id: string; de: string; le: string; duree: number; son: string; t
 
 // ─── qui est qui ──────────────────────────────────────────────────────────────────────────────────
 /** Sa clé de profil se retrouve : la fiche `profils/<clé>.json` est posée s'il n'en avait pas (« Autour » le fait aussi). */
-async function poserProfil(supabase: Supabase, h: string): Promise<string> {
+export async function poserProfil(supabase: Supabase, h: string): Promise<string> {
   const cle = cleProfil(h);
   const f = await lireJson<{ h?: string }>(supabase, `profils/${cle}.json`);
   if (s(f.h) !== h) await ecrireJson(supabase, `profils/${cle}.json`, { h });
@@ -115,14 +118,14 @@ async function poserProfil(supabase: Supabase, h: string): Promise<string> {
 }
 /** Sa clé de profil (son lien de proche : `/collection?proche=<clé>`). */
 export const maCle = (supabase: Supabase, moi: Habitant) => poserProfil(supabase, moi.id);
-async function hDeCle(supabase: Supabase, cle: unknown): Promise<string | null> {
+export async function hDeCle(supabase: Supabase, cle: unknown): Promise<string | null> {
   const c = cleValide(cle);
   if (!c) return null;
   const h = s((await lireJson<{ h?: string }>(supabase, `profils/${c}.json`)).h);
   return h && cleProfil(h) === c ? h : null;
 }
 /** Ils se sont ajoutés tous les deux (sinon, pas de conversation). */
-async function seParlent(supabase: Supabase, a: string, b: string): Promise<boolean> {
+export async function seParlent(supabase: Supabase, a: string, b: string): Promise<boolean> {
   if (!a || !b || a === b) return false;
   const [pa, pb] = await Promise.all([prochesDe(supabase, a), prochesDe(supabase, b)]);
   return pa.has(b) && pb.has(a);
@@ -141,12 +144,42 @@ export async function figurineVue(supabase: Supabase, h: string, avecTetes: bool
   return { prenom: s(ligne.prenom) || "Ton proche", neutre, parle: parle || neutre, expressions: expr?.expressions ?? {} };
 }
 
-async function nomsDuFil(supabase: Supabase, pair: string) {
+/** ☀️ Son humeur du jour (lot R : elle s'efface à minuit, l'heure de Paris). */
+export async function humeurDuJour(supabase: Supabase, h: string): Promise<Sentiment | null> {
+  const x = await lireJson<{ jour?: string; visage?: string }>(supabase, cheminHumeur(h));
+  return x.jour === jourParis() ? humeurValide(x.visage) : null;
+}
+/** Sa figurine qui porte son humeur (ce visage, bouche fermée) ; rien s'il n'est pas encore fait. */
+export async function imageDeSonHumeur(supabase: Supabase, h: string, humeur: Sentiment): Promise<string> {
+  const { ligne } = await lireLigne(supabase, h);
+  if (!ligne?.prete_le || !s(ligne.neutre)) return "";
+  return signer(supabase, `${dossierExpressions(h, s(ligne.neutre))}/${humeur}-n.webp`, 3600);
+}
+
+/** Les messages d'une conversation (leurs noms : quand, de qui), du plus ancien au plus récent. */
+export async function nomsDuFil(supabase: Supabase, pair: string) {
   const { data } = await supabase.storage.from(SEAU_FIGURINES).list(dossierMessages(pair), { limit: 1000 });
   return ((Array.isArray(data) ? data : []) as { name?: string }[])
     .map((f) => lireNom(s(f.name)))
     .filter((x): x is NonNullable<ReturnType<typeof lireNom>> => Boolean(x))
     .sort((a, b) => a.ts - b.ts);
+}
+
+/**
+ * 🌙 CE QU'ILS SE SONT DIT CE JOUR-LÀ (le mot de la fin, `rituel-serveur.ts`) : leurs messages de ce jour (l'heure de
+ * Paris), du premier au dernier, avec leurs mots transcrits ; trente au plus (les derniers).
+ */
+export async function parolesDuJour(supabase: Supabase, pair: string, jour: string): Promise<{ id: string; de: string; texte: string; ts: number }[]> {
+  const noms = (await nomsDuFil(supabase, pair)).filter((n) => jourParis(new Date(n.ts)) === jour).slice(-30);
+  const fiches = await Promise.all(noms.map((n) => lireJson<Fiche>(supabase, `${dossierMessages(pair)}/${n.nom}`)));
+  return fiches
+    .map((f, i) => ({ id: s(f.id), de: s(f.de), texte: texteDuMessage(repliquesValides(f.repliques, Number(f.duree)) ?? []), ts: noms[i].ts }))
+    .filter((x) => x.id && x.de);
+}
+/** Les messages qu'il a signalés (il ne les voit plus). */
+export async function parolesCachees(supabase: Supabase, h: string): Promise<Set<string>> {
+  const c = await lireJson<{ ids?: string[] }>(supabase, cheminCaches(h));
+  return new Set((Array.isArray(c.ids) ? c.ids : []).map(s));
 }
 
 // ─── « là maintenant » ────────────────────────────────────────────────────────────────────────────
@@ -223,7 +256,21 @@ export async function mesProchesVivants(supabase: Supabase, moi: Habitant): Prom
       }
       const la = lien === "proches" ? await estLa(supabase, h) : false;
       const venu = lien === "proches" && Date.now() - (Date.parse(s(venus[h])) || 0) < 7 * 86_400_000;
-      return { cle, prenom: f.prenom || "Ton proche", image: f.neutre, la, nonLus, lien, ...(dernier ? { dernier } : {}), ...(venu ? { venu: true } : {}) };
+      // ☀️ son humeur du jour : seulement entre proches ; sa figurine la porte si ce visage est fait
+      const humeur = lien === "proches" ? await humeurDuJour(supabase, h) : null;
+      const imageHumeur = humeur ? await imageDeSonHumeur(supabase, h, humeur) : "";
+      return {
+        cle,
+        prenom: f.prenom || "Ton proche",
+        image: f.neutre,
+        la,
+        nonLus,
+        lien,
+        ...(dernier ? { dernier } : {}),
+        ...(venu ? { venu: true } : {}),
+        ...(humeur ? { humeur } : {}),
+        ...(imageHumeur ? { imageHumeur } : {}),
+      };
     }),
   );
   const rang = (p: ProcheVivant) => (p.lien === "proches" ? 0 : p.lien === "ajoute" ? 1 : 2);

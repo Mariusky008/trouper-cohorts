@@ -80,6 +80,14 @@
     {
       "path": "/api/cron/meme-du-jour-ete",
       "schedule": "30 9 * * *"
+    },
+    {
+      "path": "/api/cron/rituel-matin",
+      "schedule": "40 7 * * *"
+    },
+    {
+      "path": "/api/cron/rituel-matin-ete",
+      "schedule": "40 6 * * *"
     }
   ]
 }

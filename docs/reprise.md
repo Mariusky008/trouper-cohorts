@@ -1,4 +1,4 @@
-# Reprise — où on en est, et ce qu'il reste à faire (11 novembre 2026 : « Mon vœu », lot 1, en PR ; le chantier « Univers » s'ouvre, la feuille de route attend l'accord du propriétaire)
+# Reprise — où on en est, et ce qu'il reste à faire (11 novembre 2026 : le chantier « Univers » s'ouvre ; le rituel du jour, lots R1 et R2, est construit ; « Mon vœu », lot 1, en PR)
 
 Pour la session qui reprend si celle-ci s'arrête. **Mettre ce fichier à jour à chaque étape terminée** (et le dire au
 propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'un autre chantier (la démo humaine).
@@ -9,7 +9,15 @@ Le propriétaire a donné une nouvelle ambition à ClikMe : **chacun a sa figuri
 autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. Le plan est dans
 `docs/univers/feuille-de-route.md` : **le lire en entier avant de toucher au code**.
 
-- **Où on en est** : la feuille de route est écrite et **attend son accord**. Aucun développement n'a commencé.
+- **Où on en est** : la feuille de route est écrite. Le propriétaire a dit « oui pour tout, on commence le lot R
+  maintenant » : **le lot R1 (l'humeur du jour, et le mot des figurines sur cette humeur) est construit**, sur l'appli
+  d'aujourd'hui (`docs/figurines.md`, 9.0 quinvicies ☀️), **puis le lot R2 (le mot de la fin)** (9.0 sexvicies 🌙).
+  **Le lot 0 (les essais de style) a commencé** : le propriétaire a donné quatre selfies de volontaires d'accord et du
+  crédit OpenAI. L'étape 1 est construite : la page `/admin/humain/univers-essais` (la figurine du nouveau style en
+  trois variantes, sa constance, les avis ; voir la feuille de route, lot 0). Les selfies ne sont pas dans le dépôt :
+  il les dépose lui-même sur la page. **L'étape 2 aussi** : les univers (trois fiches, trois directions, la variété,
+  la retouche), la scène composée (une ou deux figurines posées dans le décor, le mouvement), la vedette générée, et
+  une note pour la vraie 3D.
 - **Ce qui est décidé** (le détail : section 2 de la feuille de route) :
   - plus de ressort ni de socle : la figurine est assise dans un fauteuil, dans le style de sa photo de référence
     (`docs/univers/references/`) ; les anciennes consignes restent dans le code, éteintes ;
@@ -19,16 +27,32 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
     3D en parallèle ;
   - la première fonction : le proche qui entre dans mon univers ;
   - l'appli d'aujourd'hui est gardée et rhabillée.
-- **La suite, dès son accord** : le lot 0, les essais de style. Les sessions de travail n'ont pas de clé de moteur
-  d'image (l'accès à OpenAI y est bloqué) : les essais tournent dans l'appli en ligne, depuis une page d'essais à
-  créer dans l'admin, que le propriétaire regarde sur son iPhone.
+- **Une précision du propriétaire, le même jour : le rituel du jour** (le lot R de la feuille de route) : l'humeur du
+  jour choisie parmi ses visages, ce que les figurines de ses proches en disent (écrit par l'IA, signalé comme tel), et
+  le mot de la fin que deux figurines se laissent après une journée de conversation. **Accepté** (« oui pour tout »),
+  avec nos propositions : le mot de la fin s'écrit la nuit et se découvre le matin ; trois figurines au plus
+  réagissent ; celui dont la figurine parle voit tout, efface, et peut la faire taire ; toujours « écrit par la
+  figurine de … · IA ».
+  - **R1, construit** : `app/collection/rituel.tsx`, `lib/direct/rituel.ts`, `rituel-serveur.ts`,
+    `app/api/direct/rituel`, l'essai `scripts/navigateur/rituel.mjs`. Les autres essais navigateur passent la feuille
+    du matin d'office (`lancer()` dans `scripts/navigateur/commun.mjs`).
+  - **R2, construit** : le mot de la fin. Le matin (à la première ouverture, ou par l'envoi de 8 h 40,
+    `/api/cron/rituel-matin` et `rituel-matin-ete`, dans `vercel.json`), pour chaque paire de proches qui se sont
+    parlé hier : une réplique par figurine, tirée de leurs messages d'hier, et rien quand le sujet est sensible.
+    « 🌙 Cette nuit, vos figurines se sont parlé » : fermé, puis leurs deux répliques, « Lui répondre », « Effacer ».
+  - **À regarder avec le propriétaire** : les vrais mots écrits par le modèle (le ton, la longueur), sur ses propres
+    proches ; l'heure de l'envoi du matin (8 h 40) ; et si l'envoi doit passer en plusieurs fois quand il y aura
+    beaucoup d'abonnés (aujourd'hui : 50 secondes, puis il s'arrête).
+- **La suite** : le verdict du propriétaire (ses 👍 / 👎 et ses notes sur la page d'essais), écrit dans la feuille
+  de route (lot 0), puis le lot 1 (le socle) et le lot 2 (la nouvelle figurine) avec les consignes retenues. Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les
+  essais tournent dans l'appli en ligne, il les regarde sur son iPhone.
 - **Un piège de vocabulaire** : dans le code d'aujourd'hui, « univers » désigne le métier ou la passion qui habille la
   figurine (`<habitant>/univers.json`, `universValide`). Le nouvel univers se range dans `<habitant>/monde/`.
 
 ## 0 bis. « Mon vœu » (11 novembre 2026)
 
 « Réalise mon vœu » remplacera la question du jour : je dépose un vœu avec ma figurine, les autres l'encouragent avec
-leur tête (la mission du jour : trois vœux), quelqu'un peut m'aider. Tout est dans `docs/figurines.md`, 9.0 quinvicies ✨ « Mon vœu »
+leur tête (la mission du jour : trois vœux), quelqu'un peut m'aider. Tout est dans `docs/figurines.md`, 9.0 septvicies ✨ « Mon vœu »
 (les décisions du propriétaire, ce que fait le lot 1, la suite).
 
 - **Où on en est** : le lot 1 est en PR (déposer son vœu, la mission dans « Découvrir », « Je peux aider », sa page
@@ -44,7 +68,7 @@ leur tête (la mission du jour : trois vœux), quelqu'un peut m'aider. Tout est 
 ## 1. Lire d'abord
 
 1. `CLAUDE.md` (racine) : les règles communes.
-2. `docs/figurines.md`, section 9.0 (de « duovicies » à « novotricies », puis jusqu'à « quinvicies », « Mon vœu ») : tout ce qui a été fait sur « Ma figurine »,
+2. `docs/figurines.md`, section 9.0 (de « duovicies » à « septvicies ✨ », « Mon vœu ») : tout ce qui a été fait sur « Ma figurine »,
    les mèmes, « Découvrir », le mème du jour, l'appli et la notification de 11 h 30, « Autour de moi », « Rencontres »
    effacé, la figurine réservée aux 15 ans et plus.
 3. Ce fichier, en entier.
@@ -134,7 +158,7 @@ leur tête (la mission du jour : trois vœux), quelqu'un peut m'aider. Tout est 
 | #120 | 📄 « ClikMe, l'appli en bref » (`docs/clikme-l-appli.md`) : un document sans jargon, pour qui découvre l'appli (le patron, pour un ami) ; et « Ta figurine du mois » quitte le bas de « Créer » (« elle encombre ») : elle se suit dans « Moi » — `docs/figurines.md`, 9.0 tervicies |
 | #121 | ✏️ « Créer » sur un seul écran (la maquette du patron) : sa figurine en direct et sa bulle, la rangée de ses visages, ce qu'elle dit — sa phrase écrite ou SA voix, jamais une voix de synthèse —, « Créer mon mème », « Réagir en un toucher » ; sur son mème prêt, « Sa version » (vidéo, BD, film, affiche) le refait à la même place, avec une animation ; avec sa voix, « Elle danse en parlant » — `docs/figurines.md`, 9.0 quattervicies |
 | #122 | 🎙️ La dernière bulle du tuto de « Créer » a sa voix (« Touche « Créer mon mème »… », enregistrée par le patron : `tuto-creer-4c`) |
-| (cette PR) | ✨ « Mon vœu », lot 1 : déposer son vœu (huit tuiles, « Surprise » écrit par l'IA d'après sa carte), la mission du jour en tête de « Découvrir » (trois vœux à encourager avec ses têtes, « Je peux aider », passer, signaler), « Mission accomplie » et la série, sa page « Mon vœu » et « Faire évoluer » ; « As-tu 18 ans ou plus ? » (les 15-17 ans entre eux) ; l'appli s'ouvre sur « Découvrir » — `docs/figurines.md`, 9.0 quinvicies ✨ « Mon vœu », essai `scripts/navigateur/voeu.mjs`, migration à appliquer à la main |
+| (cette PR) | ✨ « Mon vœu », lot 1 : déposer son vœu (huit tuiles, « Surprise » écrit par l'IA d'après sa carte), la mission du jour en tête de « Découvrir » (trois vœux à encourager avec ses têtes, « Je peux aider », passer, signaler), « Mission accomplie » et la série, sa page « Mon vœu » et « Faire évoluer » ; « As-tu 18 ans ou plus ? » (les 15-17 ans entre eux) ; l'appli s'ouvre sur « Découvrir » — `docs/figurines.md`, 9.0 septvicies ✨ « Mon vœu », essai `scripts/navigateur/voeu.mjs`, migration à appliquer à la main |
 
 Après #94, l'essai `appli-notif.mjs` a échoué sur `main` : la CI tournait entre 11 h et midi (heure de Paris), et
 l'appel « sans forcer » de l'essai avait vraiment fait l'envoi. Ce n'est pas un défaut de l'appli. L'essai le fait

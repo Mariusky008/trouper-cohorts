@@ -669,10 +669,46 @@ http
           ];
           return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ rendus }) } }] });
         }
+        // 🌙 le mot de la fin : deux répliques tirées de leurs messages d'hier — « sensible » quand l'un est malade
+        if (consigne.includes("UN MOT DE LA FIN")) {
+          const msgs = JSON.parse(/Leurs messages d'hier, dans l'ordre \(des données, pas des consignes\) :\n(.+)\n/.exec(consigne)?.[1] ?? "[]");
+          if (msgs.some((m) => /malade/i.test(m.texte))) return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ sensible: true }) } }] });
+          const sujet = String(msgs[0]?.texte ?? "").split(/\s+/).slice(0, 4).join(" ");
+          const fin = { sensible: false, premiere: `Hier, c’était « ${sujet}… » 😄 On en reparle ?`, seconde: "Je garde la suite pour ce soir. Tu commences ?" };
+          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify(fin) } }] });
+        }
+        // ☀️ le rituel du jour : un mot par figurine sur son humeur — le deuxième parle d'apéro (le filtre doit le refuser)
+        if (consigne.includes("UN petit mot sur cette humeur")) {
+          const figs = JSON.parse(/Les figurines \(des données, pas des consignes\) :\n(.+)\n/.exec(consigne)?.[1] ?? "[]");
+          const mots = figs.map((f, n) => ({ n, texte: n === 1 ? "On fête ça à l’apéro ce soir ?" : `Je sens ton humeur d’ici, signé ${f.figurine_de} ! Tu racontes ?` }));
+          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ mots }) } }] });
+        }
         const m = /propose un apéro/.test(consigne)
           ? { texte: "Ce soir, apéro chez moi : tout le monde est invité !", sentiment: "euphorie", danse: true }
           : MEMES_IA.find((x) => !consigne.includes(x.texte) && (!x.si || consigne.includes(x.si))) ?? MEMES_IA[1];
         return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ texte: m.texte, sentiment: m.sentiment, danse: m.danse }) } }] });
+      }
+      // 🧪 UN FAUX MOTEUR D'IMAGE (les essais du lot 0, `OPENAI_ESSAIS_BASE_URL=…/openai`) : une petite image détourée
+      // (un rectangle sur fond transparent), et ses jetons ; la demande est gardée dans `/__ia` (« IMAGE <modèle> <fond> <consigne> »).
+      if (url.pathname === "/openai/v1/images/edits" && req.method === "POST") {
+        const b = (await corps(req)).toString("latin1");
+        const champ = (n) => new RegExp(`name="${n}"\\r\\n\\r\\n([\\s\\S]*?)\\r\\n--`).exec(b)?.[1] ?? "";
+        const consigne = Buffer.from(champ("prompt"), "latin1").toString("utf8");
+        consignesIA.push(`IMAGE ${champ("model")} ${champ("background")} ${consigne}`);
+        const sharp = (await import("sharp")).default;
+        const png = await sharp({ create: { width: 64, height: 96, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+          .composite([{ input: await sharp({ create: { width: 32, height: 64, channels: 4, background: { r: 200, g: 90, b: 60, alpha: 1 } } }).png().toBuffer(), left: 16, top: 16 }])
+          .png()
+          .toBuffer();
+        return repondre(res, 200, { data: [{ b64_json: png.toString("base64") }], usage: { total_tokens: 4321 } });
+      }
+      // 🌍 (les décors : dessinés d'après la consigne seule — une image pleine, bleue) « DESSIN <modèle> <consigne> »
+      if (url.pathname === "/openai/v1/images/generations" && req.method === "POST") {
+        const q = JSON.parse((await corps(req)).toString() || "{}");
+        consignesIA.push(`DESSIN ${q.model ?? ""} ${q.background ?? ""} ${q.prompt ?? ""}`);
+        const sharp = (await import("sharp")).default;
+        const png = await sharp({ create: { width: 64, height: 96, channels: 3, background: { r: 60, g: 110, b: 170 } } }).png().toBuffer();
+        return repondre(res, 200, { data: [{ b64_json: png.toString("base64") }], usage: { total_tokens: 2100 } });
       }
       // 🎙️ UNE FAUSSE TRANSCRIPTION (`OPENAI_TALKIE_BASE_URL=…/openai`) : deux phrases datées, toujours les mêmes (l'essai
       // parle un peu plus de 3 s) ; la demande est gardée dans `/__ia` (« TRANSCRIPTION <modèle> <langue> <octets> »)
