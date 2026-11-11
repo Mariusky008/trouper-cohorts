@@ -390,8 +390,35 @@ dans l'admin), réservée à l'administrateur :
   générer ;
 - **la vraie 3D** : une note sur la page (des outils externes, ses comptes d'essai, aucune clé chez nous).
 
-**Ce qui reste du lot 0** : ses essais sur son iPhone, ses avis, puis le verdict écrit de chaque essai (et les coûts
-relevés) dans cette section ; les consignes retenues deviennent celles du lot 2.
+**Le premier verdict du propriétaire (11 novembre 2026, sur ses volontaires Marius et Claire).**
+
+- **La figurine** : « quasi à l'identique de la photo, avec juste un plus petit corps » — le moteur recopiait le
+  visage (la consigne demandait de le garder « exactement », en réglage fidèle). Il voulait **la tête retravaillée**,
+  comme la figurine qu'il a montrée : une caricature sculptée, les cheveux en volume, une vraie expression, un doigt
+  sur la joue. Le moteur a rendu en 37 à 42 secondes, 2 900 jetons environ par image (`gpt-image-2.6-sunburst`, haute
+  qualité). Deux images de Claire ne s'affichaient pas : des adresses signées ratées (corrigé : par petits groupes, un
+  second essai, et « recharger »).
+- **Les univers** : « je n'imaginais pas vraiment les univers comme ceux-là ». Ce qu'il imagine : un décor de **film
+  d'animation**, riche, plein d'objets personnels, éclairé comme au cinéma, avec une touche de magie (une
+  bibliothèque-tour, une constellation de lumière, des échelles, un tableau des Pyrénées, un mouton…).
+- **Le face-à-face composé dans le téléphone** (deux figurines détourées posées sur le décor) : « ne fonctionne pas du
+  tout » — il faut une **mise en scène travaillée et naturelle** : les deux figurines qui interagissent dans le lieu
+  (l'une debout qui raconte, l'autre dans son fauteuil qui rit), avec leurs bulles par-dessus. Dans le style grosse
+  tête et petit corps.
+
+**La deuxième série** (même page) : la tête **re-sculptée, jamais recopiée** (caricature d'environ 25 %, finition de
+résine peinte, une expression et une pose qui ont du caractère), en trois variantes (détourée « fidèle », détourée
+« libre », en situation sur un socle en bois) ; des univers de **film d'animation** (« magique », « chaleureux »,
+« grandiose ») ; et **la scène mise en scène par le moteur** (le décor, une ou deux figurines, la situation qu'il
+écrit ; deux bulles posées par-dessus pour juger le rendu). La scène composée dans le téléphone est retirée.
+
+**Ce que ça change dans le plan (à confirmer sur la deuxième série)** : la section 4.5 disait « composer d'abord,
+générer rarement ». Pour la rencontre de deux figurines, la composition ne suffit pas : **la scène d'une rencontre est
+générée une fois** (une image, 4 à 6 centimes avec trois images en entrée), puis l'appli l'anime légèrement (les
+bulles, la voix, la lumière). Le décor seul et la figurine seule restent des références, faites une fois.
+
+**Ce qui reste du lot 0** : la deuxième série sur son iPhone, ses avis, puis le verdict écrit de chaque essai (et les
+coûts relevés) dans cette section ; les consignes retenues deviennent celles du lot 2.
 
 ### Lot 1 — Le socle
 

@@ -689,12 +689,12 @@ http
         return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ texte: m.texte, sentiment: m.sentiment, danse: m.danse }) } }] });
       }
       // 🧪 UN FAUX MOTEUR D'IMAGE (les essais du lot 0, `OPENAI_ESSAIS_BASE_URL=…/openai`) : une petite image détourée
-      // (un rectangle sur fond transparent), et ses jetons ; la demande est gardée dans `/__ia` (« IMAGE <modèle> <fond> <consigne> »).
+      // (un rectangle sur fond transparent), et ses jetons ; la demande est gardée dans `/__ia` (« IMAGE <modèle> <fond> <fidélité> <consigne> »).
       if (url.pathname === "/openai/v1/images/edits" && req.method === "POST") {
         const b = (await corps(req)).toString("latin1");
         const champ = (n) => new RegExp(`name="${n}"\\r\\n\\r\\n([\\s\\S]*?)\\r\\n--`).exec(b)?.[1] ?? "";
         const consigne = Buffer.from(champ("prompt"), "latin1").toString("utf8");
-        consignesIA.push(`IMAGE ${champ("model")} ${champ("background")} ${consigne}`);
+        consignesIA.push(`IMAGE ${champ("model")} ${champ("background")} ${champ("input_fidelity")} ${consigne}`);
         const sharp = (await import("sharp")).default;
         const png = await sharp({ create: { width: 64, height: 96, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
           .composite([{ input: await sharp({ create: { width: 32, height: 64, channels: 4, background: { r: 200, g: 90, b: 60, alpha: 1 } } }).png().toBuffer(), left: 16, top: 16 }])
