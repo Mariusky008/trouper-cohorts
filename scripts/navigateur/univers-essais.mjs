@@ -196,7 +196,9 @@ ok(sjson?.source === d1 && sjson.figurines?.length === 2 && sjson.personnes?.inc
 const carteScene = colonne.locator(".ue-scene-generee").first();
 await carteScene.locator('input[name="bulle-1"]').fill("Tu as vu ce coucher de soleil ?");
 await carteScene.locator('input[name="bulle-2"]').fill("On ne s’en lasse pas !");
-ok((await carteScene.locator(".ue-bulle.b1").innerText()) === "Tu as vu ce coucher de soleil ?" && (await carteScene.locator(".ue-bulle").count()) === 2, "deux bulles se posent par-dessus (rien n'est généré)");
+// (une espace fine insécable avant « ? » et « ! », comme dans un livre)
+const b1Lu = await carteScene.locator(".ue-bulle.b1").innerText();
+ok(b1Lu === "Tu as vu ce coucher de soleil ?" && (await carteScene.locator(".ue-bulle").count()) === 2, `deux bulles se posent par-dessus, l'espace fine avant « ? » (rien n'est généré) — ${JSON.stringify(b1Lu)}`);
 ok((await debordement()) <= 0 && (await sansMotInterdit()), "les univers et la scène ne débordent pas, sans le mot interdit");
 await carteScene.scrollIntoViewIfNeeded();
 await p.screenshot({ path: `${D}/univers-essais-4-scene.png` });
