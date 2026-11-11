@@ -19,6 +19,9 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
     3D en parallèle ;
   - la première fonction : le proche qui entre dans mon univers ;
   - l'appli d'aujourd'hui est gardée et rhabillée.
+- **Une précision du propriétaire, le même jour : le rituel du jour** (le lot R de la feuille de route) : l'humeur du
+  jour choisie parmi ses visages, ce que les figurines de ses proches en disent (écrit par l'IA, signalé comme tel), et
+  le mot de la fin que deux figurines se laissent après une journée de conversation. Proposé, à confirmer (section 13).
 - **La suite, dès son accord** : le lot 0, les essais de style. Les sessions de travail n'ont pas de clé de moteur
   d'image (l'accès à OpenAI y est bloqué) : les essais tournent dans l'appli en ligne, depuis une page d'essais à
   créer dans l'admin, que le propriétaire regarde sur son iPhone.

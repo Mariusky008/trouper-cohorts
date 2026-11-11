@@ -33,6 +33,7 @@ rien et il n'y a pas d'attente. On ne **génère** une image que pour les grands
 | 5 | Le premier usage : le message dans l'univers, le proche qui entre | moyen |
 | 6 | Les visites et les souvenirs | moyen |
 | 7 | L'appli d'aujourd'hui rhabillée : les mèmes dans l'univers, le menu | gros |
+| R | Le rituel du jour : l'humeur du jour, ce que les figurines en disent, ce qu'elles se sont dit (précision du 11 novembre) | moyen |
 | Plus tard | Réalise mon vœu, la figurine dans un lieu réel, les univers des commerçants, les appels | |
 
 Les lots 0 à 4 font l'inscription complète. Leur durée dépend surtout des essais de rendu et des retours du
@@ -425,12 +426,72 @@ choisi dans une liste, un petit mot), qui n'apparaît que si le propriétaire l'
 Voir la section 8. Les mèmes se jouent dans l'univers. « Découvrir » montre les figurines chez elles. Le menu change.
 La carte de personnage laisse la place à la conversation. La figurine du mois devient la saison de l'univers.
 
+### Lot R — Le rituel du jour (précision du propriétaire, 11 novembre 2026)
+
+Le propriétaire : « avant toute conversation ou en début de journée, chaque utilisateur donne son état d'esprit du jour
+en choisissant rapidement un de ses visages ; les autres figurines disent un mot sur cette humeur, elles-mêmes, sans
+que leurs propriétaires aient à le faire ; et après chaque conversation entre deux personnes, chaque figurine laisse un
+petit mot final à l'autre, qui clôt la journée d'après ce qui a été dit. L'idée : éveiller la curiosité et relancer la
+conversation. »
+
+**Proposé, à confirmer par le propriétaire (section 13).** Il peut se construire **tout de suite, sur l'appli
+d'aujourd'hui** (l'onglet « Proches »), en parallèle du lot 0, puis passer dans l'univers au lot 5. Tout ce dont il a
+besoin existe déjà : les visages de la figurine (sept humeurs, six attitudes, faits une fois à la demande), les proches,
+les paroles transcrites du talkie-walkie, les notifications, la carte de personnage (qui donne à chaque figurine sa
+façon de parler), la petite scène des deux figurines face à face.
+
+**1. L'humeur du jour.**
+- À la première ouverture du jour : « Comment tu te sens aujourd'hui ? » et la rangée de ses visages. Un toucher.
+  « Passer » est possible ; la question revient, discrète, au-dessus de son premier message du jour. Elle ne bloque
+  jamais rien, et ne revient pas avant chaque conversation (ce serait pénible).
+- Ce visage devient son humeur du jour : sa figurine le porte toute la journée, chez ses proches et dans ses messages.
+  Plus tard, l'ambiance de son univers peut suivre (la lumière, le ciel), sans rien générer.
+- Visible par ses proches seulement. Il la change quand il veut ; elle s'efface à minuit.
+- Un visage qui n'est pas encore fait part à l'atelier de Pablito (une fois, environ 2 centimes).
+
+**2. Ce que les figurines disent de son humeur.**
+- Les figurines de trois de ses proches au plus (ceux à qui il parle le plus) lui laissent chacune un mot, écrit par
+  l'IA dans le style de chaque figurine. Le mot porte sur l'humeur, et rien d'autre.
+- Il les trouve en haut de sa page, et en haut de la conversation avec chaque proche. Une notification au plus par
+  jour : « 3 figurines ont réagi à ton humeur 👀 ».
+
+**3. Le mot de la fin.**
+- Chaque soir, pour chaque paire de proches qui se sont parlé dans la journée, leurs deux figurines échangent deux
+  courtes répliques, une chacune, tirées de ce que les deux personnes se sont dit, et qui finissent sur une relance.
+- Elles se découvrent **le lendemain matin**, avec l'humeur du jour : « Cette nuit, vos figurines se sont parlé ». La
+  petite scène des deux figurines face à face, leurs mots écrits dans des bulles, et « Lui répondre ».
+- Pourquoi le soir plutôt qu'après chaque échange : les messages arrivent à toute heure, une conversation n'a pas de
+  fin nette ; une fois par jour, c'est rare donc attendu ; et cela fait un rituel du matin qui ramène dans l'appli.
+  C'est aussi la leçon de « Rencontres » : quand les figurines parlent trop, cela ennuie.
+
+**Les garde-fous.**
+- **Toujours dit** : « écrit par la figurine de Hugo (IA) ». Jamais présenté comme les mots de Hugo. La loi européenne
+  sur l'IA demande de signaler clairement un texte écrit par une IA.
+- **Celui dont la figurine parle voit ce qu'elle a dit en son nom**, peut effacer un mot, et peut couper « Ma figurine
+  parle pour moi » dans « Moi ».
+- **Le ton** : bienveillant, taquin sans moquerie. Sur une humeur triste ou en colère, jamais de blague : un mot doux.
+  Jamais de conseil, jamais de santé.
+- **Rien d'autre que ce qu'il faut** : un mot sur l'humeur ne connaît que l'humeur et la façon de parler de la
+  figurine. Le mot de la fin ne se sert que de ce que les deux se sont dit ce jour-là, jamais de leurs conversations
+  avec d'autres ni de la conversation de l'univers.
+- **Pas de mot de la fin** quand la conversation touche un sujet sensible, ou quand quelqu'un va mal.
+- **De 15 à 17 ans** : aucune taquinerie amoureuse.
+- **Entre proches seulement** (qui se sont ajoutés tous les deux). Les mots interdits et rien d'alcoolisé, comme
+  partout. Pas de voix : des mots écrits.
+
+**Le coût** : quelques dixièmes de centime par personne active et par jour (de courts textes) ; les visages, une fois.
+
+**On a réussi si** les gens choisissent leur humeur le matin, ouvrent ce que les figurines ont dit, et répondent
+ensuite à leur proche.
+
 ### Plus tard (préparé, pas construit)
 
 - **Réalise mon vœu** : la figurine met en scène un souhait, dans son univers. Une image générée, gardée.
 - **La figurine dans un lieu réel** : la suite d'« Autour ». Elle apparaît dans la photo du lieu.
 - **Les univers des commerçants** : leur boutique devient leur univers, fait à partir de leur vitrine. On le visite, on
   y laisse un souvenir.
+- **Le rituel du jour dans l'univers** : la figurine du proche vient dire son mot sur mon humeur chez moi, dans son
+  fauteuil.
 - **Les appels** : les vraies voix des deux personnes, leurs figurines dans le même univers, la bouche qui suit le
   volume de la voix.
 - **La vraie 3D**, si l'essai du lot 0 est concluant.
@@ -471,6 +532,7 @@ confirmer au lot 0, sur la facture.**
 - **À l'usage** : les messages, les visites et les mèmes se composent, donc ne coûtent rien en IA. Un vœu ou un lieu
   réel : 4 à 8 centimes.
 - **Pour 1 000 inscrits** : 200 à 400 €.
+- **Le rituel du jour** (lot R) : quelques dixièmes de centime par personne active et par jour.
 - **Le lot 0** : quelques euros d'images d'essai.
 
 ## 10. Ce qu'on prépare sans le construire
@@ -518,6 +580,11 @@ Rien ne bloque le lot 0. À décider en chemin :
 4. La règle « chez qui ? » du lot 5.
 5. Le modèle de la conversation, sur lecture, au lot 3.
 6. Ce que voit un inconnu de mon univers, par défaut : proposé, « mes proches seulement ».
+7. **Le rituel du jour (lot R)** :
+   - le construire maintenant sur l'appli d'aujourd'hui, en parallèle du lot 0 (proposé), ou attendre l'univers ;
+   - le mot de la fin le soir, découvert le lendemain matin (proposé), ou juste après chaque échange ;
+   - qui réagit à mon humeur : les figurines de trois proches au plus (proposé), ou de tous ;
+   - celui dont la figurine parle voit ses mots, peut les effacer et peut tout couper (proposé).
 
 ## 14. Les mots
 
