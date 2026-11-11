@@ -2,7 +2,20 @@
 
 // 🧪 LA PAGE D'ESSAIS DU LOT 0, À L'ÉCRAN — voir `page.tsx` et `lib/direct/univers-essais.ts`.
 import { useCallback, useEffect, useState } from "react";
-import { VARIANTES_CONSTANCE, VARIANTES_FIGURINE, nomDeVariante, type EtatEssais, type PersonneEssai, type ResultatEssai } from "@/lib/direct/univers-essais";
+import {
+  DIRECTIONS_UNIVERS,
+  FICHES_UNIVERS,
+  FICHE_MAX,
+  RETOUCHE_MAX,
+  RETOUCHE_PAR_DEFAUT,
+  VARIANTES_CONSTANCE,
+  VARIANTES_FIGURINE,
+  nomDeFiche,
+  nomDeVariante,
+  type EtatEssais,
+  type PersonneEssai,
+  type ResultatEssai,
+} from "@/lib/direct/univers-essais";
 
 const ROUTE = "/api/admin/direct/univers-essais";
 type Reponse = { ok?: boolean; error?: string };
@@ -106,8 +119,11 @@ export function EssaisUnivers() {
       <AjouterPersonne onAjoutee={charger} />
 
       {etat.personnes.map((p) => (
-        <Personne key={p.id} p={p} resultats={etat.resultats.filter((r) => r.personne === p.id)} geste={geste} faire={faire} />
+        <Personne key={p.id} p={p} resultats={etat.resultats.filter((r) => r.personne === p.id && r.type !== "vedette")} geste={geste} faire={faire} />
       ))}
+
+      <LesUnivers etat={etat} geste={geste} faire={faire} />
+      <NotesTroisD />
       <style>{STYLES}</style>
     </div>
   );
@@ -239,6 +255,8 @@ function Resultat({ r, geste, faire, petit = false }: { r: ResultatEssai; geste:
         )}
       </div>
       <b>{nomDeVariante(r.variante)}</b>
+      {r.fiche && r.type === "univers" && <small>{nomDeFiche(r.fiche)}</small>}
+      {r.retouche && <small className="ue-gris">« {r.retouche} »</small>}
       {!petit && variante && <small className="ue-gris">{variante.dit}</small>}
       {r.etat === "fait" && (
         <small className="ue-meta">
@@ -247,10 +265,20 @@ function Resultat({ r, geste, faire, petit = false }: { r: ResultatEssai; geste:
       )}
       {r.etat !== "en-cours" && (
         <div className="ue-avis">
-          <button type="button" aria-pressed={r.avis === "oui"} className={r.avis === "oui" ? "pris" : ""} onClick={() => void faire(`avis-${r.id}`, { action: "avis", id: r.id, avis: r.avis === "oui" ? null : "oui", note })}>
+          <button
+            type="button"
+            aria-pressed={r.avis === "oui"}
+            className={r.avis === "oui" ? "pris" : ""}
+            onClick={() => void faire(`avis-${r.id}`, { action: "avis", id: r.id, avis: r.avis === "oui" ? null : "oui", note })}
+          >
             👍
           </button>
-          <button type="button" aria-pressed={r.avis === "non"} className={r.avis === "non" ? "pris" : ""} onClick={() => void faire(`avis-${r.id}`, { action: "avis", id: r.id, avis: r.avis === "non" ? null : "non", note })}>
+          <button
+            type="button"
+            aria-pressed={r.avis === "non"}
+            className={r.avis === "non" ? "pris" : ""}
+            onClick={() => void faire(`avis-${r.id}`, { action: "avis", id: r.id, avis: r.avis === "non" ? null : "non", note })}
+          >
             👎
           </button>
           <button type="button" className="ue-effacer" onClick={() => window.confirm("Effacer cette image ?") && void faire(`eff-${r.id}`, { action: "effacer", id: r.id })}>
@@ -279,6 +307,271 @@ function Resultat({ r, geste, faire, petit = false }: { r: ResultatEssai; geste:
         <pre>{r.consigne}</pre>
       </details>
     </article>
+  );
+}
+
+// ─── l'étape 2 : les univers ──────────────────────────────────────────────────────────────────────
+type Faire = (cle: string, corps: Record<string, unknown>) => Promise<void>;
+
+/** Les figurines détourées (prêtes à poser dans un décor). */
+const detourees = (l: ResultatEssai[]) => l.filter((r) => r.etat === "fait" && r.image && ((r.type === "figurine" && r.variante !== "collection-photo") || r.type === "constance"));
+
+function LesUnivers({ etat, geste, faire }: { etat: EtatEssais; geste: string; faire: Faire }) {
+  const [fiche, setFiche] = useState<string>(FICHES_UNIVERS[0].cle);
+  const [texte, setTexte] = useState("");
+  const [direction, setDirection] = useState<string>(DIRECTIONS_UNIVERS[0].cle);
+  const [scene, setScene] = useState("");
+  const decors = etat.resultats.filter((r) => r.type === "univers");
+  const figurines = detourees(etat.resultats);
+  const nomDe = (r: ResultatEssai) => `${etat.personnes.find((p) => p.id === r.personne)?.nom ?? "?"} · ${nomDeVariante(r.variante)}`;
+  return (
+    <section className="ue-univers" aria-label="Les univers">
+      <h2>Les univers</h2>
+      <p className="ue-gris">
+        Le décor d’un univers, sans figurine : une scène dégagée en bas, pour deux fauteuils. D’abord le style (une fiche, trois directions), puis la variété (la direction choisie, sur trois fiches
+        très différentes). Ensuite : une retouche, la figurine posée dedans (« La scène », composée dans le téléphone, sans rien générer), et la même par le moteur (« La vedette »), pour comparer.
+      </p>
+      <div className="ue-choix" role="radiogroup" aria-label="La fiche">
+        {[...FICHES_UNIVERS.map((f) => ({ cle: f.cle as string, nom: f.nom })), { cle: "perso", nom: "Ma fiche" }].map((f) => (
+          <button key={f.cle} type="button" role="radio" aria-checked={fiche === f.cle} className={fiche === f.cle ? "pris" : ""} data-fiche={f.cle} onClick={() => setFiche(f.cle)}>
+            {f.nom}
+          </button>
+        ))}
+      </div>
+      {fiche === "perso" ? (
+        <textarea
+          className="ue-note"
+          name="fiche"
+          rows={4}
+          maxLength={FICHE_MAX}
+          placeholder="Le lieu, en quelques phrases : ce qu’on y voit, ce qu’on y fait, la lumière…"
+          value={texte}
+          onChange={(e) => setTexte(e.target.value)}
+        />
+      ) : (
+        <small className="ue-gris">{FICHES_UNIVERS.find((f) => f.cle === fiche)?.fiche}</small>
+      )}
+      <button
+        type="button"
+        className="ue-bouton"
+        disabled={geste === "dirs"}
+        onClick={() => void faire("dirs", { action: "univers", fiches: [fiche], directions: DIRECTIONS_UNIVERS.map((d) => d.cle), texte })}
+      >
+        {geste === "dirs" ? "…" : `🎨 Le style : cette fiche, en ${DIRECTIONS_UNIVERS.length} directions`}
+      </button>
+      <div className="ue-choix" role="radiogroup" aria-label="La direction">
+        {DIRECTIONS_UNIVERS.map((d) => (
+          <button key={d.cle} type="button" role="radio" aria-checked={direction === d.cle} className={direction === d.cle ? "pris" : ""} data-direction={d.cle} onClick={() => setDirection(d.cle)}>
+            {d.nom}
+          </button>
+        ))}
+      </div>
+      <small className="ue-gris">{DIRECTIONS_UNIVERS.find((d) => d.cle === direction)?.dit}</small>
+      <button
+        type="button"
+        className="ue-bouton clair"
+        disabled={geste === "variete"}
+        onClick={() => void faire("variete", { action: "univers", fiches: FICHES_UNIVERS.map((f) => f.cle), directions: [direction] })}
+      >
+        {geste === "variete" ? "…" : `🌍 La variété : cette direction, sur les ${FICHES_UNIVERS.length} fiches`}
+      </button>
+
+      {decors.length > 0 && (
+        <div className="ue-grille">
+          {decors.map((d) => (
+            <div key={d.id} className="ue-colonne">
+              <Resultat r={d} geste={geste} faire={faire} />
+              {d.etat === "fait" && (
+                <GestesDuDecor d={d} figurines={figurines} nomDe={nomDe} geste={geste} faire={faire} onScene={() => setScene(scene === d.id ? "" : d.id)} ouverte={scene === d.id} />
+              )}
+              {scene === d.id && d.image && <Scene decor={d.image} figurines={figurines} tous={etat.resultats} nomDe={nomDe} />}
+              {etat.resultats.some((x) => x.source === d.id) && (
+                <div className="ue-constance" aria-label="Ses retouches et ses vedettes">
+                  {etat.resultats
+                    .filter((x) => x.source === d.id)
+                    .map((x) => (
+                      <div key={x.id} className="ue-colonne">
+                        <Resultat r={x} geste={geste} faire={faire} petit />
+                        {x.type === "retouche" && x.etat === "fait" && (
+                          <button type="button" className="ue-mini" onClick={() => setScene(scene === x.id ? "" : x.id)}>
+                            🎬 La scène
+                          </button>
+                        )}
+                        {scene === x.id && x.image && <Scene decor={x.image} figurines={figurines} tous={etat.resultats} nomDe={nomDe} />}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function GestesDuDecor({
+  d,
+  figurines,
+  nomDe,
+  geste,
+  faire,
+  onScene,
+  ouverte,
+}: {
+  d: ResultatEssai;
+  figurines: ResultatEssai[];
+  nomDe: (r: ResultatEssai) => string;
+  geste: string;
+  faire: Faire;
+  onScene: () => void;
+  ouverte: boolean;
+}) {
+  const [retouche, setRetouche] = useState(RETOUCHE_PAR_DEFAUT);
+  const [fig, setFig] = useState("");
+  const choisie = fig || figurines[0]?.id || "";
+  return (
+    <div className="ue-decor-gestes">
+      <button type="button" className="ue-bouton" aria-expanded={ouverte} onClick={onScene}>
+        🎬 La scène : la figurine posée dedans
+      </button>
+      <label>
+        ✏️ Retouche
+        <input type="text" name="retouche" value={retouche} maxLength={RETOUCHE_MAX} onChange={(e) => setRetouche(e.target.value)} />
+      </label>
+      <button type="button" className="ue-bouton clair" disabled={geste === `ret-${d.id}`} onClick={() => void faire(`ret-${d.id}`, { action: "retouche", decor: d.id, texte: retouche })}>
+        {geste === `ret-${d.id}` ? "…" : "Retoucher ce décor"}
+      </button>
+      {figurines.length > 0 && (
+        <>
+          <label>
+            ⭐ La vedette (le moteur pose la figurine)
+            <select name="vedette" value={choisie} onChange={(e) => setFig(e.target.value)}>
+              {figurines.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {nomDe(f)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            className="ue-bouton clair"
+            disabled={!choisie || geste === `ved-${d.id}`}
+            onClick={() => void faire(`ved-${d.id}`, { action: "vedette", decor: d.id, figurine: choisie })}
+          >
+            {geste === `ved-${d.id}` ? "…" : "Générer la vedette"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * 🎬 LA SCÈNE, COMPOSÉE DANS LE TÉLÉPHONE (rien n'est généré) : le décor, une ou deux figurines posées sur la scène,
+ * leur ombre ; leur taille ; et le mouvement — la respiration, le hochement, la parole (sa « bouche ouverte », si la
+ * constance l'a faite).
+ */
+function Scene({ decor, figurines, tous, nomDe }: { decor: string; figurines: ResultatEssai[]; tous: ResultatEssai[]; nomDe: (r: ResultatEssai) => string }) {
+  // (d'office : une figurine qui a sa « bouche ouverte », pour que la parole se voie)
+  const [a, setA] = useState(() => (figurines.find((f) => tous.some((x) => x.source === f.id && x.variante === "parle" && x.etat === "fait")) ?? figurines[0])?.id ?? "");
+  const [b, setB] = useState("");
+  const [taille, setTaille] = useState(34);
+  const [respire, setRespire] = useState(true);
+  const [hoche, setHoche] = useState(false);
+  const [parle, setParle] = useState(false);
+  const [face, setFace] = useState(true);
+  const [ouverte, setOuverte] = useState(false);
+  useEffect(() => {
+    if (!parle) return;
+    const t = window.setInterval(() => setOuverte((x) => !x), 170);
+    return () => window.clearInterval(t);
+  }, [parle]);
+  const image = (id: string) => {
+    const f = tous.find((x) => x.id === id);
+    if (!f?.image) return "";
+    const p = tous.find((x) => x.source === id && x.variante === "parle" && x.etat === "fait")?.image;
+    return parle && ouverte && p ? p : f.image;
+  };
+  // (une figurine effacée entre-temps n'est plus sur la scène)
+  const acteurs = [a, b].filter((id) => id && tous.some((x) => x.id === id && x.image));
+  if (!figurines.length) return <p className="ue-gris">Faites d’abord une figurine détourée (plus haut), pour la poser ici.</p>;
+  return (
+    <div className="ue-scene-bloc" data-scene>
+      <div className={`ue-scene${respire ? " respire" : ""}${hoche ? " hoche" : ""}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="ue-scene-decor" src={decor} alt="Le décor" />
+        {acteurs.map((id, i) => {
+          const x = acteurs.length === 2 ? (i === 0 ? 31 : 69) : 50;
+          return (
+            <div key={`${id}-${i}`} className="ue-acteur" style={{ left: `${x}%`, height: `${taille}%` }} data-acteur={id}>
+              <i className="ue-ombre" />
+              <div className="ue-bouge" style={{ animationDelay: `${-0.8 * i}s` }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={image(id)} alt={nomDe(tous.find((f) => f.id === id) as ResultatEssai)} style={face && i === 1 ? { transform: "scaleX(-1)" } : undefined} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="ue-scene-reglages">
+        <label>
+          Figurine 1
+          <select value={a} onChange={(e) => setA(e.target.value)} name="acteur-1">
+            {figurines.map((f) => (
+              <option key={f.id} value={f.id}>
+                {nomDe(f)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Figurine 2
+          <select value={b} onChange={(e) => setB(e.target.value)} name="acteur-2">
+            <option value="">(aucune)</option>
+            {figurines.map((f) => (
+              <option key={f.id} value={f.id}>
+                {nomDe(f)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Taille : {taille} % de la hauteur
+          <input type="range" min={15} max={70} value={taille} onChange={(e) => setTaille(Number(e.target.value))} name="taille" />
+        </label>
+        <span className="ue-cases">
+          <label>
+            <input type="checkbox" checked={respire} onChange={(e) => setRespire(e.target.checked)} /> Respiration
+          </label>
+          <label>
+            <input type="checkbox" checked={hoche} onChange={(e) => setHoche(e.target.checked)} /> Hochement
+          </label>
+          <label>
+            <input type="checkbox" checked={parle} onChange={(e) => setParle(e.target.checked)} name="parle" /> Parole
+          </label>
+          <label>
+            <input type="checkbox" checked={face} onChange={(e) => setFace(e.target.checked)} /> Face à face
+          </label>
+        </span>
+        <small className="ue-gris">La parole alterne avec sa « bouche ouverte », si la constance l’a faite. Dans l’appli, la bouche suivra la voix.</small>
+      </div>
+    </div>
+  );
+}
+
+/** 🧊 L'essai de vraie 3D : sur des outils externes, avec les comptes d'essai du propriétaire (aucune clé ici). */
+function NotesTroisD() {
+  return (
+    <section className="ue-univers" aria-label="La vraie 3D">
+      <h2>La vraie 3D</h2>
+      <p className="ue-gris">
+        Cet essai se fait hors de ClikMe, sur des outils qui fabriquent un modèle 3D à partir d’une image (comme Meshy, Tripo ou Rodin). Créez un compte d’essai sur deux ou trois d’entre eux, ouvrez
+        une figurine détourée en grand (toucher l’image, puis l’enregistrer), déposez-la, et notez ici, dans l’avis de cette figurine, ce que vous en pensez : la ressemblance, les cheveux, les
+        vêtements, le temps et le prix. Aucune clé ne passe par ClikMe ni par la conversation.
+      </p>
+    </section>
   );
 }
 
@@ -323,4 +616,31 @@ const STYLES = `
 .ue-constance{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .ue-resultat.petit{padding:6px}
 .ue-resultat.petit b{font-size:13px}
+.ue-univers{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid #e5e5ea;border-radius:14px;background:#fff}
+.ue-univers h2{margin:0;font-size:19px}
+.ue-univers > p{margin:0;font-size:14px;line-height:1.45}
+.ue-choix{display:flex;flex-wrap:wrap;gap:6px}
+.ue-choix button{min-height:40px;padding:0 12px;border:1px solid #d1d1d6;border-radius:999px;background:#fff;font:inherit;font-size:14px;cursor:pointer}
+.ue-choix button.pris{background:#1d1d1f;border-color:#1d1d1f;color:#fff}
+.ue-decor-gestes{display:flex;flex-direction:column;gap:6px}
+.ue-decor-gestes label{display:flex;flex-direction:column;gap:4px;font-size:13px}
+.ue-decor-gestes input,.ue-decor-gestes select,.ue-scene-reglages select{padding:8px;border:1px solid #c7c7cc;border-radius:10px;font:inherit;font-size:14px;max-width:100%}
+.ue-mini{min-height:34px;border:1px solid #d1d1d6;border-radius:10px;background:#fff;font:inherit;font-size:13px;cursor:pointer}
+.ue-scene-bloc{display:flex;flex-direction:column;gap:8px}
+.ue-scene{position:relative;width:100%;aspect-ratio:2/3;border-radius:12px;overflow:hidden;background:#222}
+.ue-scene-decor{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ue-acteur{position:absolute;bottom:7%;transform:translateX(-50%);aspect-ratio:2/3;display:flex;align-items:flex-end;justify-content:center}
+.ue-ombre{position:absolute;left:12%;right:12%;bottom:-2%;height:9%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.45),rgba(0,0,0,0));filter:blur(2px)}
+.ue-bouge{position:relative;width:100%;height:100%;transform-origin:50% 100%}
+.ue-bouge img{width:100%;height:100%;object-fit:contain;object-position:50% 100%;filter:drop-shadow(-3px 4px 4px rgba(0,0,0,.25))}
+.ue-scene.respire .ue-bouge{animation:ue-respire 3.2s ease-in-out infinite}
+.ue-scene.hoche .ue-bouge{animation:ue-hoche 2.4s ease-in-out infinite}
+.ue-scene.respire.hoche .ue-bouge{animation:ue-respire 3.2s ease-in-out infinite,ue-hoche 2.4s ease-in-out infinite}
+@keyframes ue-respire{0%,100%{scale:1 1}50%{scale:1.006 1.016}}
+@keyframes ue-hoche{0%,100%{rotate:0deg}25%{rotate:-1.6deg}75%{rotate:1.2deg}}
+.ue-scene-reglages{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.ue-scene-reglages label{display:flex;flex-direction:column;gap:3px}
+.ue-cases{display:flex;flex-wrap:wrap;gap:10px}
+.ue-cases label{flex-direction:row !important;align-items:center;gap:4px !important}
+@media (prefers-reduced-motion:reduce){.ue-bouge{animation:none !important}}
 `;

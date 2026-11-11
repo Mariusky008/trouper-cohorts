@@ -25,13 +25,23 @@ import { traitsEnMots, type Traits } from "./figurine-pro";
 import { SEAU_FIGURINES, deposer, ecrireJson, lireJson, signer, telecharger } from "./ma-figurine-serveur";
 import { moteurRefuse, moteursDImage, noterRefus } from "./moteur-image";
 import {
+  FICHES_UNIVERS,
+  FICHE_MAX,
   IMAGES_PAR_JOUR,
   NOM_MAX,
   NOTE_MAX,
+  RETOUCHE_MAX,
+  RETOUCHE_PAR_DEFAUT,
   consigneConstance,
+  consigneDecor,
   consigneFigurineCollection,
+  consigneRetouche,
+  consigneVedette,
+  directionUnivers,
+  ficheUnivers,
   varianteConstance,
   varianteFigurine,
+  type DirectionUnivers,
   type EtatEssais,
   type PersonneEssai,
   type ResultatEssai,
@@ -94,7 +104,7 @@ export async function etatEssais(supabase: Supabase): Promise<EtatEssais> {
         .filter((n) => /^[a-z0-9]{12}\.json$/.test(n))
         .map(async (n): Promise<ResultatEssai | null> => {
           const r = await lireJson<ResultatEssai>(supabase, `${DOSSIER}/resultats/${n}`);
-          if (!r.id || !r.personne) return null;
+          if (!r.id || (!r.personne && r.type !== "univers" && r.type !== "retouche")) return null;
           const perimee = r.etat === "en-cours" && Date.now() - (Date.parse(s(r.le)) || 0) > PERIMEE_MS;
           return {
             ...(r as ResultatEssai),
@@ -175,7 +185,21 @@ async function reserver(supabase: Supabase, n: number): Promise<boolean> {
   return true;
 }
 
-type Demande = { id: string; personne: string; type: "figurine" | "constance"; variante: string; source?: string; consigne: string; entree: string };
+type Demande = {
+  id: string;
+  personne: string;
+  type: ResultatEssai["type"];
+  variante: string;
+  source?: string;
+  fiche?: string;
+  figurine?: string;
+  retouche?: string;
+  consigne: string;
+  /** les images données au moteur (aucune : il dessine d'après la consigne seule) */
+  entrees: string[];
+  /** une figurine détourée (fond transparent), ou une image pleine (un décor, une photo) */
+  transparent: boolean;
+};
 
 /**
  * 🧸 LA FIGURINE D'UNE PERSONNE, dans les variantes demandées (toutes par défaut) : les fiches « en cours » tout de
@@ -191,7 +215,7 @@ export async function demanderFigurines(supabase: Supabase, personne: unknown, v
   const vs = [...new Set(l)];
   if (!vs.length) return { error: "Choisissez une variante.", statut: 400 };
   if (!(await reserver(supabase, vs.length))) return { error: `Assez d’images pour aujourd’hui (${IMAGES_PAR_JOUR}).`, statut: 429 };
-  const demandes = vs.map((v) => ({ id: nouvelId(), personne: p, type: "figurine" as const, variante: v, consigne: consigneFigurineCollection(v, f.traits ?? null), entree: cheminSelfie(p) }));
+  const demandes: Demande[] = vs.map((v) => ({ id: nouvelId(), personne: p, type: "figurine", variante: v, consigne: consigneFigurineCollection(v, f.traits ?? null), entrees: [cheminSelfie(p)], transparent: v !== "collection-photo" }));
   await Promise.all(demandes.map((d) => poserEnCours(supabase, d)));
   return { demandes };
 }
@@ -206,7 +230,7 @@ export async function demanderConstance(supabase: Supabase, source: unknown, var
   const vs = [...new Set(l)];
   if (!vs.length) return { error: "Choisissez une variante.", statut: 400 };
   if (!(await reserver(supabase, vs.length))) return { error: `Assez d’images pour aujourd’hui (${IMAGES_PAR_JOUR}).`, statut: 429 };
-  const demandes = vs.map((v) => ({ id: nouvelId(), personne: src.personne as string, type: "constance" as const, variante: v, source: sid, consigne: consigneConstance(v), entree: cheminImage(sid) }));
+  const demandes: Demande[] = vs.map((v) => ({ id: nouvelId(), personne: src.personne as string, type: "constance", variante: v, source: sid, consigne: consigneConstance(v), entrees: [cheminImage(sid)], transparent: true }));
   await Promise.all(demandes.map((d) => poserEnCours(supabase, d)));
   return { demandes };
 }
@@ -218,6 +242,9 @@ function poserEnCours(supabase: Supabase, d: Demande) {
     type: d.type,
     variante: d.variante,
     ...(d.source ? { source: d.source } : {}),
+    ...(d.fiche ? { fiche: d.fiche } : {}),
+    ...(d.figurine ? { figurine: d.figurine } : {}),
+    ...(d.retouche ? { retouche: d.retouche } : {}),
     etat: "en-cours",
     qualite: qualite(),
     taille: "1024x1536",
@@ -236,11 +263,10 @@ export async function fabriquer(supabase: Supabase, demandes: Demande[]): Promis
 async function fabriquerUne(supabase: Supabase, d: Demande, avant: number): Promise<void> {
   const r = await lireJson<ResultatEssai>(supabase, cheminResultat(d.id));
   const finir = (x: Partial<ResultatEssai>) => ecrireJson(supabase, cheminResultat(d.id), { ...r, ...x });
-  const entree = await telecharger(supabase, d.entree);
-  if (!entree) return void (await finir({ etat: "erreur", erreur: "L’image de départ est introuvable." }));
+  const entrees = await Promise.all(d.entrees.map((c) => telecharger(supabase, c)));
+  if (entrees.some((x) => !x)) return void (await finir({ etat: "erreur", erreur: "L’image de départ est introuvable." }));
   const t0 = Date.now();
-  const transparent = !(d.type === "figurine" && d.variante === "collection-photo");
-  const rendu = await demanderAuMoteur({ image: entree, consigne: d.consigne, transparent, avant });
+  const rendu = await demanderAuMoteur({ images: entrees as Buffer[], consigne: d.consigne, transparent: d.transparent, avant });
   const dureeS = Math.round((Date.now() - t0) / 100) / 10;
   if ("erreur" in rendu) return void (await finir({ etat: "erreur", erreur: rendu.erreur, dureeS }));
   if (!(await deposer(supabase, cheminImage(d.id), rendu.png, "image/png"))) return void (await finir({ etat: "erreur", erreur: "L’image n’a pas pu être rangée.", dureeS }));
@@ -248,37 +274,48 @@ async function fabriquerUne(supabase: Supabase, d: Demande, avant: number): Prom
 }
 
 /**
- * UNE IMAGE DEMANDÉE AU MOTEUR, à partir d'une image (`/v1/images/edits`) : les replis de moteur (un modèle refusé :
- * le suivant) et de réglages (un réglage inconnu : on le retire et on rejoue), comme pour les figurines d'aujourd'hui.
+ * UNE IMAGE DEMANDÉE AU MOTEUR — à partir d'images (`/v1/images/edits`), ou d'après la consigne seule
+ * (`/v1/images/generations`, un décor) : les replis de moteur (un modèle refusé : le suivant) et de réglages (un réglage
+ * inconnu : on le retire et on rejoue), comme pour les figurines d'aujourd'hui.
  */
-async function demanderAuMoteur(o: { image: Buffer; consigne: string; transparent: boolean; avant: number }): Promise<{ png: Buffer; modele: string; jetons?: number } | { erreur: string }> {
+async function demanderAuMoteur(o: { images: Buffer[]; consigne: string; transparent: boolean; avant: number }): Promise<{ png: Buffer; modele: string; jetons?: number } | { erreur: string }> {
   const k = cle();
   if (!k) return { erreur: "Le moteur d’image n’est pas branché ici." };
   const b = base();
   const { liste } = await moteursDImage(k, b);
-  const image = await sharp(o.image).png().toBuffer();
+  const images = await Promise.all(o.images.map((x) => sharp(x).png().toBuffer()));
+  const dessin = images.length === 0;
   let derniere = "Le moteur d’image n’a pas répondu.";
   for (let m = 0; m < liste.length; m++) {
     const modele = liste[m];
     const reglages: Record<string, string> = {
       size: "1024x1536",
       quality: qualite(),
-      input_fidelity: "high",
+      ...(dessin ? {} : { input_fidelity: "high" }),
       ...(o.transparent ? { background: "transparent" } : {}),
       output_format: "png",
     };
     for (let essai = 0; essai < 4; essai++) {
-      const forme = new FormData();
-      forme.append("model", modele);
-      forme.append("prompt", o.consigne);
-      forme.append("n", "1");
-      for (const [c, v] of Object.entries(reglages)) forme.append(c, v);
-      forme.append("image[]", new File([new Uint8Array(image)], "image.png", { type: "image/png" }));
       const reste = o.avant - Date.now();
       if (reste < 15_000) return { erreur: "Trop long : la fonction allait s’arrêter. Relancez." };
       let r: Response;
       try {
-        r = await fetch(`${b}/v1/images/edits`, { method: "POST", headers: { authorization: `Bearer ${k}` }, body: forme, signal: AbortSignal.timeout(reste - 5_000) });
+        if (dessin) {
+          r = await fetch(`${b}/v1/images/generations`, {
+            method: "POST",
+            headers: { authorization: `Bearer ${k}`, "content-type": "application/json" },
+            body: JSON.stringify({ model: modele, prompt: o.consigne, n: 1, ...reglages }),
+            signal: AbortSignal.timeout(reste - 5_000),
+          });
+        } else {
+          const forme = new FormData();
+          forme.append("model", modele);
+          forme.append("prompt", o.consigne);
+          forme.append("n", "1");
+          for (const [c, v] of Object.entries(reglages)) forme.append(c, v);
+          images.forEach((x, i) => forme.append("image[]", new File([new Uint8Array(x)], `image-${i + 1}.png`, { type: "image/png" })));
+          r = await fetch(`${b}/v1/images/edits`, { method: "POST", headers: { authorization: `Bearer ${k}` }, body: forme, signal: AbortSignal.timeout(reste - 5_000) });
+        }
       } catch {
         return { erreur: "Le moteur n’a pas répondu à temps. Relancez." };
       }
@@ -315,6 +352,61 @@ async function demanderAuMoteur(o: { image: Buffer; consigne: string; transparen
     }
   }
   return { erreur: derniere };
+}
+
+// ─── l'étape 2 : les univers ──────────────────────────────────────────────────────────────────────
+/**
+ * 🌍 DES DÉCORS : des fiches (les trois d'essai, ou « Ma fiche », son texte) × des directions de style. Neuf au plus.
+ * Ni personne, ni selfie : le décor est dessiné d'après la consigne seule.
+ */
+export async function demanderUnivers(supabase: Supabase, fiches: unknown, directions: unknown, texte: unknown): Promise<{ demandes?: Demande[]; error?: string; statut?: number }> {
+  if (!moteurBranche()) return { error: "Le moteur d’image n’est pas branché ici (OPENAI_API_KEY).", statut: 503 };
+  const perso = s(texte).replace(/\s+/g, " ").slice(0, FICHE_MAX);
+  const fs = [...new Set((Array.isArray(fiches) ? fiches : []).map((x): string => (x === "perso" ? "perso" : (ficheUnivers(x) ?? ""))).filter(Boolean))];
+  if (fs.includes("perso") && perso.length < 20) return { error: "Écrivez votre fiche (quelques phrases sur le lieu).", statut: 400 };
+  const ds = [...new Set((Array.isArray(directions) ? directions : []).map(directionUnivers).filter((x): x is DirectionUnivers => Boolean(x)))];
+  if (!fs.length || !ds.length) return { error: "Choisissez une fiche et une direction.", statut: 400 };
+  const paires = fs.flatMap((f) => ds.map((d) => [f, d] as const)).slice(0, 9);
+  if (!(await reserver(supabase, paires.length))) return { error: `Assez d’images pour aujourd’hui (${IMAGES_PAR_JOUR}).`, statut: 429 };
+  const texteDe = (f: string) => (f === "perso" ? perso : (FICHES_UNIVERS.find((x) => x.cle === f)?.fiche ?? ""));
+  const demandes: Demande[] = paires.map(([f, d]) => ({ id: nouvelId(), personne: "", type: "univers", variante: d, fiche: f, consigne: consigneDecor(texteDe(f), d), entrees: [], transparent: false }));
+  await Promise.all(demandes.map((d) => poserEnCours(supabase, d)));
+  return { demandes };
+}
+
+/** Un décor fini (un univers, ou sa retouche). */
+async function decorFini(supabase: Supabase, id: unknown): Promise<ResultatEssai | null> {
+  const d = idValide(id);
+  const r = d ? await lireJson<ResultatEssai>(supabase, cheminResultat(d)) : {};
+  return r.id && r.etat === "fait" && (r.type === "univers" || r.type === "retouche") ? (r as ResultatEssai) : null;
+}
+
+/** ✏️ UNE RETOUCHE d'un décor (« davantage de nature » par défaut) : le reste doit tenir. */
+export async function demanderRetouche(supabase: Supabase, decor: unknown, texte: unknown): Promise<{ demandes?: Demande[]; error?: string; statut?: number }> {
+  const d = await decorFini(supabase, decor);
+  if (!d) return { error: "Ce décor n’existe pas (ou n’est pas fini).", statut: 404 };
+  if (!moteurBranche()) return { error: "Le moteur d’image n’est pas branché ici (OPENAI_API_KEY).", statut: 503 };
+  const retouche = s(texte).replace(/\s+/g, " ").slice(0, RETOUCHE_MAX) || RETOUCHE_PAR_DEFAUT;
+  if (!(await reserver(supabase, 1))) return { error: `Assez d’images pour aujourd’hui (${IMAGES_PAR_JOUR}).`, statut: 429 };
+  const demandes: Demande[] = [{ id: nouvelId(), personne: "", type: "retouche", variante: "retouche", source: d.id, fiche: d.fiche, retouche, consigne: consigneRetouche(retouche), entrees: [cheminImage(d.id)], transparent: false }];
+  await poserEnCours(supabase, demandes[0]);
+  return { demandes };
+}
+
+/** ⭐ LA VEDETTE : le moteur pose une figurine détourée dans un décor (à comparer à la scène composée). */
+export async function demanderVedette(supabase: Supabase, decor: unknown, figurine: unknown): Promise<{ demandes?: Demande[]; error?: string; statut?: number }> {
+  const d = await decorFini(supabase, decor);
+  if (!d) return { error: "Ce décor n’existe pas (ou n’est pas fini).", statut: 404 };
+  const fid = idValide(figurine);
+  const f = fid ? await lireJson<ResultatEssai>(supabase, cheminResultat(fid)) : {};
+  if (!fid || !f.id || f.etat !== "fait" || (f.type !== "figurine" && f.type !== "constance") || f.variante === "collection-photo") return { error: "Choisissez une figurine détourée.", statut: 400 };
+  if (!moteurBranche()) return { error: "Le moteur d’image n’est pas branché ici (OPENAI_API_KEY).", statut: 503 };
+  if (!(await reserver(supabase, 1))) return { error: `Assez d’images pour aujourd’hui (${IMAGES_PAR_JOUR}).`, statut: 429 };
+  const demandes: Demande[] = [
+    { id: nouvelId(), personne: s(f.personne), type: "vedette", variante: "vedette", source: d.id, fiche: d.fiche, figurine: fid, consigne: consigneVedette(), entrees: [cheminImage(d.id), cheminImage(fid)], transparent: false },
+  ];
+  await poserEnCours(supabase, demandes[0]);
+  return { demandes };
 }
 
 // ─── l'avis du propriétaire ───────────────────────────────────────────────────────────────────────

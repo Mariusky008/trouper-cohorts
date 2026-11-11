@@ -690,6 +690,14 @@ http
           .toBuffer();
         return repondre(res, 200, { data: [{ b64_json: png.toString("base64") }], usage: { total_tokens: 4321 } });
       }
+      // 🌍 (les décors : dessinés d'après la consigne seule — une image pleine, bleue) « DESSIN <modèle> <consigne> »
+      if (url.pathname === "/openai/v1/images/generations" && req.method === "POST") {
+        const q = JSON.parse((await corps(req)).toString() || "{}");
+        consignesIA.push(`DESSIN ${q.model ?? ""} ${q.background ?? ""} ${q.prompt ?? ""}`);
+        const sharp = (await import("sharp")).default;
+        const png = await sharp({ create: { width: 64, height: 96, channels: 3, background: { r: 60, g: 110, b: 170 } } }).png().toBuffer();
+        return repondre(res, 200, { data: [{ b64_json: png.toString("base64") }], usage: { total_tokens: 2100 } });
+      }
       // 🎙️ UNE FAUSSE TRANSCRIPTION (`OPENAI_TALKIE_BASE_URL=…/openai`) : deux phrases datées, toujours les mêmes (l'essai
       // parle un peu plus de 3 s) ; la demande est gardée dans `/__ia` (« TRANSCRIPTION <modèle> <langue> <octets> »)
       if (url.pathname === "/openai/v1/audio/transcriptions" && req.method === "POST") {

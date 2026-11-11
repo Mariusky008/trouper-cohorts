@@ -7,7 +7,12 @@
 // variantes, faites après la réponse (la page se met à jour seule) — détourées, sauf « en photo » ; la consigne dit le
 // nouveau style (une figurine de collection réaliste, assise dans son fauteuil, lèvres fermées). 👍 et une note. « La
 // constance » sur l'une : cinq images (bouche ouverte, trois visages, debout — sans fauteuil). Le compteur du jour. Une
-// image s'efface ; la personne s'efface avec tout. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
+// image s'efface ; la personne s'efface avec tout.
+// L'ÉTAPE 2, LES UNIVERS : une fiche en trois directions (des décors sans figurine, dessinés d'après la consigne seule) ;
+// la variété (une direction sur les trois fiches) ; « Ma fiche » trop courte, refusée ; une retouche (« davantage de
+// nature ») ; la vedette (le moteur pose la figurine dans le décor) ; « La scène », composée dans le téléphone : une
+// figurine, puis deux, la respiration, la parole (sa bouche ouverte). Effacer la personne emporte sa vedette, pas les
+// décors. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
 import { BASE, D, F, lancer } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
@@ -138,6 +143,67 @@ ok((await lireStock(`essais-univers/jours/${jour}.json`))?.n === 8, "le compteur
 ok((await debordement()) <= 0 && (await sansMotInterdit()), "la page ne déborde pas sur un iPhone, sans le mot interdit");
 await capture("3-constance");
 
+// ═══ L'ÉTAPE 2 : LES UNIVERS ═══
+const univ = p.locator(".ue-univers").first();
+await univ.locator(".ue-bouton").first().click();
+await p.waitForFunction(() => document.querySelectorAll('.ue-univers .ue-colonne > .ue-resultat[data-etat="fait"]').length === 3, null, { timeout: 60000 }).catch(() => null);
+const decors = await univ.locator(".ue-grille > .ue-colonne > .ue-resultat").evaluateAll((l) => l.map((x) => ({ id: x.dataset.resultat, v: x.dataset.variante, etat: x.dataset.etat, t: x.textContent })));
+ok(decors.length === 3 && decors.every((d) => d.etat === "fait" && d.t.includes("L’atelier sur la mer")) && decors.map((d) => d.v).sort().join() === "diorama,maquette,peint", `le style : une fiche, trois directions (${decors.map((d) => d.v).join(", ")})`);
+const dessins = (await (await fetch(`${FAUX}/__ia`)).json()).filter((c) => c.startsWith("DESSIN "));
+ok(
+  dessins.length === 3 &&
+    dessins.every((c) => c.includes("NO figurine") && c.includes("clear, flat floor area") && c.includes("seaside workshop") && !c.startsWith("DESSIN chatgpt-image-latest transparent")) &&
+    dessins.some((c) => c.includes("macro lens")) &&
+    dessins.some((c) => c.includes("dollhouse")) &&
+    dessins.some((c) => c.includes("painted 3D")),
+  "les consignes : sans figurine, une scène dégagée en bas, la fiche, chaque direction ; dessinés d'après la consigne seule",
+);
+await univ.locator('[data-direction="maquette"]').click();
+await univ.locator(".ue-bouton.clair").first().click();
+await p.waitForFunction(() => document.querySelectorAll('.ue-univers .ue-grille > .ue-colonne > .ue-resultat[data-etat="fait"]').length === 6, null, { timeout: 60000 }).catch(() => null);
+const variete = (await (await fetch(`${FAUX}/__ia`)).json()).filter((c) => c.startsWith("DESSIN ")).slice(3);
+ok(variete.length === 3 && variete.every((c) => c.includes("dollhouse")) && ["seaside workshop", "tropical greenhouse", "city rooftop"].every((f) => variete.some((c) => c.includes(f))), "la variété : la direction choisie, sur les trois fiches");
+await univ.locator('[data-fiche="perso"]').click();
+await univ.locator("textarea[name=fiche]").fill("Trop court");
+await univ.locator(".ue-bouton").first().click();
+await p.waitForSelector(".ue > .ue-erreur", { timeout: 10000 }).catch(() => null);
+ok((await texte(".ue > .ue-erreur")).includes("Écrivez votre fiche"), "« Ma fiche » trop courte : refusée");
+// la retouche
+const d1 = decors[0].id;
+const colonne = univ.locator(".ue-grille > .ue-colonne").filter({ has: p.locator(`.ue-resultat[data-resultat="${d1}"]`) });
+await colonne.locator(".ue-decor-gestes .ue-bouton.clair").first().click();
+await p.waitForFunction((id) => [...document.querySelectorAll(".ue-constance .ue-resultat")].some((x) => x.dataset.variante === "retouche" && x.dataset.etat === "fait"), d1, { timeout: 60000 }).catch(() => null);
+const retouche = (await (await fetch(`${FAUX}/__ia`)).json()).filter((c) => c.startsWith("IMAGE ") && c.includes("THE SAME DECOR")).pop() ?? "";
+ok(retouche.includes("davantage de nature") && !retouche.startsWith("IMAGE chatgpt-image-latest transparent"), "la retouche : le même décor, « davantage de nature »");
+// la vedette
+await colonne.locator(".ue-decor-gestes .ue-bouton.clair").nth(1).click();
+await p.waitForFunction(() => [...document.querySelectorAll(".ue-constance .ue-resultat")].some((x) => x.dataset.variante === "vedette" && x.dataset.etat === "fait"), null, { timeout: 60000 }).catch(() => null);
+const vedette = (await (await fetch(`${FAUX}/__ia`)).json()).filter((c) => c.startsWith("IMAGE ") && c.includes("Place EXACTLY this figurine")).pop() ?? "";
+const vid = await colonne.locator('.ue-constance .ue-resultat[data-variante="vedette"]').first().getAttribute("data-resultat");
+const vjson = vid ? await lireStock(`essais-univers/resultats/${vid}.json`) : null;
+ok(Boolean(vedette) && vjson?.source === d1 && Boolean(vjson.figurine) && vjson.personne === pid, "la vedette : le moteur pose la figurine dans le décor (elle appartient à la personne)");
+// la scène, composée dans le téléphone
+await colonne.locator(".ue-decor-gestes .ue-bouton").first().click();
+await p.waitForSelector(".ue-scene .ue-acteur img", { timeout: 10000 }).catch(() => null);
+ok((await p.locator(".ue-scene .ue-acteur").count()) === 1 && (await p.locator(".ue-scene .ue-scene-decor").count()) === 1, "la scène : le décor, et la figurine posée sur la scène");
+const respire = await p.locator(".ue-scene .ue-bouge").first().evaluate((x) => getComputedStyle(x).animationName);
+ok(/ue-respire/.test(respire), `elle respire (${respire})`);
+const choix2 = await p.locator('.ue-scene-bloc select[name="acteur-2"] option').evaluateAll((l) => l.map((o) => o.value).filter(Boolean));
+await p.locator('.ue-scene-bloc select[name="acteur-2"]').selectOption(choix2[1] ?? choix2[0]);
+ok((await p.locator(".ue-scene .ue-acteur").count()) === 2, "deux figurines, face à face");
+const src0 = await p.locator(".ue-scene .ue-acteur img").first().getAttribute("src");
+await p.locator('.ue-scene-bloc input[name="parle"]').check();
+let changeDImage = false;
+for (let k = 0; k < 12 && !changeDImage; k++) {
+  await p.waitForTimeout(100);
+  changeDImage = (await p.locator(".ue-scene .ue-acteur img").first().getAttribute("src")) !== src0;
+}
+ok(changeDImage, "la parole : sa bouche ouverte alterne avec l'autre");
+ok((await debordement()) <= 0 && (await sansMotInterdit()), "les univers et la scène ne débordent pas, sans le mot interdit");
+await p.locator(".ue-scene").scrollIntoViewIfNeeded();
+await p.screenshot({ path: `${D}/univers-essais-4-scene.png` });
+ok((await lireStock(`essais-univers/jours/${jour}.json`))?.n === 16, "le compteur du jour : seize images");
+
 // ═══ EFFACER ═══
 const r3 = faites.find((r) => r.v === "collection-douce");
 await p.locator(`.ue-resultat[data-resultat="${r3.id}"] .ue-effacer`).click();
@@ -145,8 +211,10 @@ await p.waitForFunction((id) => !document.querySelector(`.ue-resultat[data-resul
 ok((await p.locator(`.ue-resultat[data-resultat="${r3.id}"]`).count()) === 0 && !(await existe(`essais-univers/resultats/${r3.id}.png`)), "une image s'efface");
 await p.locator(".ue-personne .ue-gestes .ue-bouton.clair").click();
 await p.waitForFunction(() => !document.querySelector(".ue-personne"), null, { timeout: 10000 }).catch(() => null);
-const restes = [...(await liste("essais-univers/personnes")), ...(await liste("essais-univers/resultats"))];
-ok((await p.locator(".ue-personne").count()) === 0 && restes.length === 0, `la personne s'efface, avec son selfie et toutes ses images (${restes.length} restes)`);
+const restesP = await liste("essais-univers/personnes");
+const restesR = (await liste("essais-univers/resultats")).filter((n) => n.endsWith(".json"));
+const siens = (await Promise.all(restesR.map((n) => lireStock(`essais-univers/resultats/${n}`)))).filter((r) => r?.personne === pid);
+ok((await p.locator(".ue-personne").count()) === 0 && restesP.length === 0 && siens.length === 0 && restesR.length === 7, `la personne s'efface, avec son selfie et toutes ses images, sa vedette comprise ; les décors restent (${restesR.length})`);
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.join(" | ")})` : ""}`);
 await b.close();

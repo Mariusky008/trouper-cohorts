@@ -6,6 +6,9 @@
 //                                                     traits sont décrits après la réponse
 // POST { action: "figurine", personne, variantes? } → { ids } : sa figurine du nouveau style, les variantes demandées
 // POST { action: "constance", source, variantes? }  → { ids } : la même figurine, une chose qui change
+// POST { action: "univers", fiches, directions, texte? } → { ids } : des décors (sans figurine) : fiches × directions
+// POST { action: "retouche", decor, texte? }        → { ids } : le même décor, une chose qui change
+// POST { action: "vedette", decor, figurine }       → { ids } : le moteur pose la figurine dans le décor
 // POST { action: "avis", id, avis, note }           → { ok } : 👍 / 👎 et une note
 // POST { action: "effacer", id }                    → { ok } : une image
 // POST { action: "effacer-personne", id }           → { ok } : une personne, son selfie et toutes ses images
@@ -18,6 +21,9 @@ import {
   decrireSesTraits,
   demanderConstance,
   demanderFigurines,
+  demanderRetouche,
+  demanderUnivers,
+  demanderVedette,
   donnerAvis,
   effacerPersonne,
   effacerResultat,
@@ -50,8 +56,17 @@ export async function POST(request: Request) {
     if (id) after(() => decrireSesTraits(supabase, id).catch(() => undefined));
     return repondre(r, { id });
   }
-  if (p?.action === "figurine" || p?.action === "constance") {
-    const r = p.action === "figurine" ? await demanderFigurines(supabase, p.personne, p.variantes) : await demanderConstance(supabase, p.source, p.variantes);
+  if (p?.action === "figurine" || p?.action === "constance" || p?.action === "univers" || p?.action === "retouche" || p?.action === "vedette") {
+    const r =
+      p.action === "figurine"
+        ? await demanderFigurines(supabase, p.personne, p.variantes)
+        : p.action === "constance"
+          ? await demanderConstance(supabase, p.source, p.variantes)
+          : p.action === "univers"
+            ? await demanderUnivers(supabase, p.fiches, p.directions, p.texte)
+            : p.action === "retouche"
+              ? await demanderRetouche(supabase, p.decor, p.texte)
+              : await demanderVedette(supabase, p.decor, p.figurine);
     const demandes = r.demandes;
     if (demandes?.length) after(() => fabriquer(supabase, demandes).catch(() => undefined));
     return repondre(r, { ids: demandes?.map((d) => d.id) ?? [] });

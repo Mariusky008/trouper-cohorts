@@ -21,7 +21,8 @@ export default async function PageEssaisUnivers() {
       <p style={{ margin: 0, color: "#555", lineHeight: 1.45 }}>
         La figurine du nouveau style : une figurine de collection réaliste, assise dans son fauteuil. Ajoutez le selfie d’une personne qui est d’accord,
         lancez sa figurine (trois variantes), donnez votre avis sur chacune ; puis, sur celle que vous préférez, la constance : bouche ouverte, trois
-        visages, debout. Les images se font en une à deux minutes : la page se met à jour toute seule.
+        visages, debout. Plus bas, les univers : leurs décors, la scène où la figurine s’assoit, son mouvement. Les images se font en une à deux minutes : la
+        page se met à jour toute seule.
       </p>
       <EssaisUnivers />
     </main>
