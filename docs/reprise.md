@@ -1,7 +1,29 @@
-# Reprise — où on en est, et ce qu'il reste à faire (7 novembre 2026, après le lot B d'« Autour de moi », l'effacement de « Rencontres » et l'âge de 15 ans)
+# Reprise — où on en est, et ce qu'il reste à faire (11 novembre 2026 : le chantier « Univers » s'ouvre, la feuille de route attend l'accord du propriétaire)
 
 Pour la session qui reprend si celle-ci s'arrête. **Mettre ce fichier à jour à chaque étape terminée** (et le dire au
 propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'un autre chantier (la démo humaine).
+
+## 0. Le chantier qui s'ouvre : « Univers » (11 novembre 2026)
+
+Le propriétaire a donné une nouvelle ambition à ClikMe : **chacun a sa figurine et son univers personnel, et les
+autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. Le plan est dans
+`docs/univers/feuille-de-route.md` : **le lire en entier avant de toucher au code**.
+
+- **Où on en est** : la feuille de route est écrite et **attend son accord**. Aucun développement n'a commencé.
+- **Ce qui est décidé** (le détail : section 2 de la feuille de route) :
+  - plus de ressort ni de socle : la figurine est assise dans un fauteuil, dans le style de sa photo de référence
+    (`docs/univers/references/`) ; les anciennes consignes restent dans le code, éteintes ;
+  - l'ordre de l'inscription : la figurine, la conversation, l'univers, puis le premier message ;
+  - la conversation est libre, **à l'écrit, et on peut dicter** : pas de voix de synthèse ;
+  - la solution mixte (on compose les scènes à partir d'images de référence, on génère rarement), et un essai de vraie
+    3D en parallèle ;
+  - la première fonction : le proche qui entre dans mon univers ;
+  - l'appli d'aujourd'hui est gardée et rhabillée.
+- **La suite, dès son accord** : le lot 0, les essais de style. Les sessions de travail n'ont pas de clé de moteur
+  d'image (l'accès à OpenAI y est bloqué) : les essais tournent dans l'appli en ligne, depuis une page d'essais à
+  créer dans l'admin, que le propriétaire regarde sur son iPhone.
+- **Un piège de vocabulaire** : dans le code d'aujourd'hui, « univers » désigne le métier ou la passion qui habille la
+  figurine (`<habitant>/univers.json`, `universValide`). Le nouvel univers se range dans `<habitant>/monde/`.
 
 ## 1. Lire d'abord
 
@@ -10,6 +32,7 @@ propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'u
    les mèmes, « Découvrir », le mème du jour, l'appli et la notification de 11 h 30, « Autour de moi », « Rencontres »
    effacé, la figurine réservée aux 15 ans et plus.
 3. Ce fichier, en entier.
+4. Pour le chantier « Univers » : `docs/univers/vision.md`, puis `docs/univers/feuille-de-route.md`.
 
 ## 2. La façon de travailler (celle de cette session)
 

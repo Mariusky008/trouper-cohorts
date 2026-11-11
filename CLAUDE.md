@@ -11,6 +11,10 @@ figurine, faite à partir d'un selfie)**, lisez d'abord `outils/clikme-studio/LI
 **Si vous reprenez le travail d'une autre session** (l'appli `/collection` : mèmes, mème du jour, notifications, et
 le chantier « Autour de moi »), lisez d'abord `docs/reprise.md` : où on en est, et ce qu'il reste à faire.
 
+**Si vous travaillez sur le chantier « Univers »** (la nouvelle figurine assise, la conversation, l'univers personnel
+de chacun, les visites), lisez d'abord `docs/univers/vision.md` (les textes du propriétaire), puis
+`docs/univers/feuille-de-route.md` (les décisions, l'architecture, les lots).
+
 Règles communes :
 
 - On travaille en français.
