@@ -282,7 +282,7 @@ export async function filAvec(supabase: Supabase, moi: Habitant, cle: unknown): 
 // ─── comprendre ce qu'il a dit ────────────────────────────────────────────────────────────────────
 const SON = /^data:(audio\/(?:webm|ogg|mp4|mpeg|x-m4a|aac|wav))(?:;[^,]*)?;base64,(.+)$/i;
 const EXT: Record<string, string> = { "audio/webm": "webm", "audio/ogg": "ogg", "audio/mp4": "mp4", "audio/mpeg": "mp3", "audio/x-m4a": "m4a", "audio/aac": "m4a", "audio/wav": "wav" };
-function sonDe(x: unknown): { type: string; ext: string; octets: Buffer } | null {
+export function sonDe(x: unknown): { type: string; ext: string; octets: Buffer } | null {
   const m = SON.exec(s(x));
   if (!m) return null;
   const type = m[1].toLowerCase();
@@ -296,7 +296,7 @@ const dureeValide = (x: unknown) => {
 
 const voixBranchee = () => Boolean(s(process.env.OPENAI_TALKIE_API_KEY) || s(process.env.OPENAI_API_KEY));
 /** La transcription, découpée en phrases datées. `null` : pas de transcription. */
-async function transcrire(son: { type: string; ext: string; octets: Buffer }, duree: number): Promise<{ start: number; end: number; text: string }[] | null> {
+export async function transcrire(son: { type: string; ext: string; octets: Buffer }, duree: number): Promise<{ start: number; end: number; text: string }[] | null> {
   const cle = s(process.env.OPENAI_TALKIE_API_KEY) || s(process.env.OPENAI_API_KEY);
   if (!cle) return null;
   const base = s(process.env.OPENAI_TALKIE_BASE_URL) || s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";

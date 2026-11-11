@@ -187,7 +187,9 @@ export async function aConfirmeSonAge(supabase: Supabase, habitantId: string): P
   return Boolean(s((await lireJson<{ le?: string }>(supabase, cheminMajeur(habitantId))).le));
 }
 export async function confirmerSonAge(supabase: Supabase, habitantId: string): Promise<void> {
-  await ecrireJson(supabase, cheminMajeur(habitantId), { le: new Date().toISOString(), age: AGE_MINIMUM });
+  // (sans effacer ce qu'il a dit d'autre : ses 18 ans, pour « Mon vœu », `voeu-serveur.ts`)
+  const avant = await lireJson<Record<string, unknown>>(supabase, cheminMajeur(habitantId));
+  await ecrireJson(supabase, cheminMajeur(habitantId), { ...avant, le: new Date().toISOString(), age: AGE_MINIMUM });
 }
 /** Ce que le serveur répond à qui n'a pas dit son âge, quand il veut montrer un mème dans la ville (« Autour », « Découvrir »). */
 export const SANS_AGE = { error: SANS_AGE_TEXTE, statut: 403, age: true } as const;

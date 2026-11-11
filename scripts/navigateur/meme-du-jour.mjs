@@ -159,14 +159,16 @@ ok((await debordement(hugo)) <= 0 && !/exemple/i.test(await texte(hugo, "#o-deco
 await hugo.screenshot({ path: `${D}/meme-du-jour-3-reponses.png` });
 
 // ═══ 👆 LE SWIPE (8 novembre) : UNE PAGE PAR MÈME, EN PLEIN ÉCRAN ; ON GLISSE VERS LE HAUT POUR LE SUIVANT ═══
-await hugo.evaluate(() => window.scrollTo(0, 0));
+// (depuis le 11 novembre 2026, « Mon vœu » et la mission du jour sont les premières pages : on part du mème du jour)
+await hugo.evaluate(() => document.getElementById("jour")?.scrollIntoView());
 await hugo.waitForTimeout(600);
 const pagesDe = (p) =>
   p.evaluate(() => {
     const l = [...document.querySelectorAll("#o-decouvrir .dv-diapo, #o-decouvrir .dv-fil > .dv-carte")];
     return {
       hauts: l.map((e) => Math.round(e.getBoundingClientRect().top + window.scrollY)),
-      hauteurs: [...new Set(l.slice(1).map((e) => Math.round(e.getBoundingClientRect().height)))],
+      jour: l.findIndex((e) => e.id === "jour"),
+      hauteurs: [...new Set(l.filter((e) => !e.matches(".vx-accueil, .dv-jour")).map((e) => Math.round(e.getBoundingClientRect().height)))],
       fin: l.at(-1)?.classList.contains("dv-fin") ?? false,
       aimant: getComputedStyle(document.documentElement).scrollSnapType,
       ecran: window.innerHeight,
@@ -175,7 +177,7 @@ const pagesDe = (p) =>
   });
 const pages = await pagesDe(hugo);
 ok(pages.aimant.includes("mandatory") && pages.hauteurs.length === 1 && pages.hauteurs[0] === pages.ecran && pages.fin && pages.hauts.length >= 9, `une page par mème, de la hauteur de l'écran (${pages.hauts.length} pages de ${pages.hauteurs.join("/")} px), et une page de fin`);
-ok(pages.y === pages.hauts[0], `au départ : la page du mème du jour (${pages.y} / ${pages.hauts[0]})`);
+ok(pages.jour >= 0 && pages.y === pages.hauts[pages.jour], `au départ : la page du mème du jour (${pages.y} / ${pages.hauts[pages.jour]})`);
 /** Glisser vers le haut (la molette, comme un doigt qui passe la moitié de l'écran) : la page suivante, et pas entre deux. */
 async function glisser(p) {
   await p.mouse.move(195, 420);
@@ -186,7 +188,7 @@ async function glisser(p) {
 }
 const apres1 = await glisser(hugo);
 const apres2 = await glisser(hugo);
-ok(apres1 === 1 && apres2 === 2, `un geste, une page : la 2ᵉ, puis la 3ᵉ (${apres1 + 1}, ${apres2 + 1})`);
+ok(apres1 === pages.jour + 1 && apres2 === pages.jour + 2, `un geste, une page : la suivante, puis encore la suivante (${apres1 - pages.jour}, ${apres2 - pages.jour})`);
 const vue = await hugo.evaluate(() => {
   const c = document.querySelectorAll("#o-decouvrir .dv-fil-jour > .dv-carte")[1];
   const r = c?.getBoundingClientRect();
@@ -203,7 +205,7 @@ ok((await texte(hugo, "#o-decouvrir .dv-fin")).includes("Tu as tout vu pour aujo
 await hugo.screenshot({ path: `${D}/meme-du-jour-5-fin.png` });
 await hugo.locator("#o-decouvrir .dv-revoir").click();
 await hugo.waitForTimeout(1500);
-ok((await pagesDe(hugo)).y === pages.hauts[0], "« Revoir depuis le début » : le mème du jour");
+ok((await pagesDe(hugo)).y === pages.hauts[0], "« Revoir depuis le début » : la première page (son vœu, sa mission)");
 
 // ═══ LÉA, DANS « MES MÈMES » : ❤️ 1 ═══
 await lea.goto(`${BASE}/collection?v=${Date.now()}#memes`, { waitUntil: "networkidle" });

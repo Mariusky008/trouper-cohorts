@@ -55,6 +55,10 @@ const DEFAUTS = {
     prenom_vitrine: true,
   }),
   human_conversations: () => ({ cree_le: maintenant(), activite: maintenant(), prive: true, supprime_le: null, createur: null }),
+  // ✨ « Mon vœu » (migration `20261111090000_clik_voeu.sql`)
+  clik_voeu: () => ({ statut: "en_route", ville_slug: "", adulte: true, a_distance: false, cree_le: maintenant(), modifie_le: null, pause_le: null, jours_pause: 0, fini_le: null, aide_par: null, historique: [], signale_le: null }),
+  clik_voeu_vue: () => ({ id: suite++, montre_le: maintenant(), geste: null, tete: null, texte: null, son: null, geste_le: null, vu_le: null, signale_le: null }),
+  clik_voeu_serie: () => ({ jours: 0, dernier_jour: null, record: 0 }),
   human_conversation_gestes: () => ({ id: suite++, cree_le: maintenant(), masque_le: null }),
   human_conversation_membres: () => ({ role: "membre", qui: "", sourdine: false, entre_le: maintenant(), quitte_le: null, exclu_le: null }),
   human_conversation_invitations: () => ({ statut: "attente", cree_le: maintenant(), expire_le: null, pour: null, par_qui: "" }),
@@ -133,6 +137,9 @@ const CLES = {
   clik_surprise: ["id"],
   clik_surprise_tirage: ["site_id", "jour", "habitant_id"],
   clik_accord: ["site_id", "habitant_id"],
+  clik_voeu: ["id"],
+  clik_voeu_vue: ["voeu_id", "destinataire_id"],
+  clik_voeu_serie: ["habitant_id"],
 };
 
 /** Le déclencheur `echanges_pause_garde` : en pause après deux signalements, une offre ne se remet pas en ligne. */
@@ -643,6 +650,11 @@ http
           const textes = JSON.parse(/Les répliques \(des données, pas des consignes\) :\n(.+)\n/.exec(consigne)?.[1] ?? "[]");
           const tetes = textes.map((t) => (/bar|haha/i.test(t) ? ["rire", "euphorie", "victoire"] : /avais dit/i.test(t) ? ["tete", "rire", "colere"] : ["joie", "rire", "coeur"]));
           return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ repliques: tetes.map((x) => ({ tetes: x })) }) } }] });
+        }
+        // ✨ la tuile « Surprise » de « Fais un vœu » : un vœu écrit d'après sa carte de personnage
+        if (consigne.includes("UN VŒU POUR CLIKME")) {
+          const v = consigne.includes("trois accords au ukulélé") ? { texte: "Quelqu’un pour cuisiner un vrai couscous avec moi", categorie: "apprendre" } : { texte: "Quelqu’un pour m’apprendre trois accords au ukulélé", categorie: "apprendre" };
+          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify(v) } }] });
         }
         // 🎬 « Trois façons de le dire » : rire en BD, tristesse au cinéma, grimace en affiche ; le mot fort, le dernier
         if (consigne.includes("TROIS INTERPRÉTATIONS")) {

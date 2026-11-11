@@ -57,8 +57,18 @@ Sous le bouton, **« ⚡ Ou réagir en un toucher : ta tête à la place des emo
 
 Un toucher, et c'est prêt à envoyer.
 
-### 🔥 Découvrir : le fil de ta ville
+### 🔥 Découvrir : ton vœu, ta mission, le fil de ta ville
 
+Une fois ton premier mème fait, **l'appli s'ouvre ici**.
+
+- **✨ Mon vœu** (la première page) : une petite envie qu'une personne de ta ville pourrait t'aider à réaliser
+  (« Quelqu'un pour courir avec moi le dimanche matin »). Ta figurine le dit aux autres. Un seul vœu à la fois ; tu
+  peux le reformuler, le mettre en pause, en faire un autre. En haut, une rangée de bulles : la tienne d'abord, puis
+  les gens qui t'ont répondu (« AIDE » quand quelqu'un propose son aide).
+- **🎯 Ta mission du jour** : trois vœux des autres à encourager, en une minute. Tu réponds **avec ta tête** (tes
+  visages déjà faits, et un mot en sticker : « J'Y CROIS ! »), tu proposes ton aide (une phrase toute prête, ou ta
+  voix), ou tu passes ton tour (l'autre ne le saura jamais). Mission faite : ton vœu passe en premier le lendemain, et
+  ta série (🔥) prend un jour.
 - **En plein écran, on glisse vers le haut** pour voir les mèmes des gens de ta ville, et ceux des commerçants.
 - **Le mème du jour** : un même thème pour toute la ville, chaque jour. Une notification le rappelle vers 11 h 30.
 - **On réagit d'un toucher** (😂 ❤️ 🔥), **ou on répond en duo** : ta figurine à côté de la sienne, dans la même vidéo.
@@ -110,6 +120,7 @@ parle qu'avec des voix enregistrées, jamais avec une voix de synthèse.
 
 ## 4. Pourquoi on revient
 
+- **Ta mission du jour** (trois vœux à encourager) et **les réponses à ton vœu**.
 - **Le mème du jour**, chaque jour, vers 11 h 30.
 - **Les réponses** : « Hugo t'a répondu ! ».
 - **La figurine du mois**, qui se mérite en dix jours.
@@ -123,7 +134,8 @@ Dans l'appli, on croise **leurs mèmes dans Découvrir** et **leurs lieux sur la
 
 ## 6. Les règles qu'on s'est fixées
 
-- **15 ans et plus** pour avoir sa figurine.
+- **15 ans et plus** pour avoir sa figurine ; les 15-17 ans ne croisent que les vœux des 15-17 ans.
+- **Jamais de numéro ni d'adresse** dans un vœu ou une aide : on se parle par ses figurines.
 - **Les voix** :
   - Pablito et les voix de l'appli sont de vraies voix, enregistrées ;
   - ton mème parle avec **ta propre voix**, ou il est **écrit** (tes mots en grand) : jamais la voix de quelqu'un
@@ -135,6 +147,8 @@ Dans l'appli, on croise **leurs mèmes dans Découvrir** et **leurs lieux sur la
 
 Ce qui a bougé ces derniers jours, et où un regard neuf compte le plus :
 
+- **Mon vœu** (11 novembre) : est-ce qu'on a envie d'en faire un ? La mission du jour se fait-elle vraiment en une
+  minute ?
 - **Créer, sur un seul écran** (10 novembre) : est-ce qu'on comprend tout de suite quoi faire ? Est-ce que « Sa
   version », sur le mème prêt, donne envie d'essayer la BD, le film, l'affiche ?
 - **Le message WhatsApp en vidéo** : est-ce que ça donne envie de répondre ?
