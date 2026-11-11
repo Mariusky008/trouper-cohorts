@@ -12,7 +12,10 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
 - **Où on en est** : la feuille de route est écrite. Le propriétaire a dit « oui pour tout, on commence le lot R
   maintenant » : **le lot R1 (l'humeur du jour, et le mot des figurines sur cette humeur) est construit**, sur l'appli
   d'aujourd'hui (`docs/figurines.md`, 9.0 quinvicies ☀️), **puis le lot R2 (le mot de la fin)** (9.0 sexvicies 🌙).
-  Le lot 0 (les essais de style) n'a pas commencé.
+  **Le lot 0 (les essais de style) a commencé** : le propriétaire a donné quatre selfies de volontaires d'accord et du
+  crédit OpenAI. L'étape 1 est construite : la page `/admin/humain/univers-essais` (la figurine du nouveau style en
+  trois variantes, sa constance, les avis ; voir la feuille de route, lot 0). Les selfies ne sont pas dans le dépôt :
+  il les dépose lui-même sur la page. **L'étape 2** (les univers, la composition, le mouvement) est la suite.
 - **Ce qui est décidé** (le détail : section 2 de la feuille de route) :
   - plus de ressort ni de socle : la figurine est assise dans un fauteuil, dans le style de sa photo de référence
     (`docs/univers/references/`) ; les anciennes consignes restent dans le code, éteintes ;
@@ -38,9 +41,9 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
   - **À regarder avec le propriétaire** : les vrais mots écrits par le modèle (le ton, la longueur), sur ses propres
     proches ; l'heure de l'envoi du matin (8 h 40) ; et si l'envoi doit passer en plusieurs fois quand il y aura
     beaucoup d'abonnés (aujourd'hui : 50 secondes, puis il s'arrête).
-- **La suite, dès son accord** : le lot 0, les essais de style. Les sessions de travail n'ont pas de clé de moteur
-  d'image (l'accès à OpenAI y est bloqué) : les essais tournent dans l'appli en ligne, depuis une page d'essais à
-  créer dans l'admin, que le propriétaire regarde sur son iPhone.
+- **La suite** : le verdict du propriétaire sur les figurines (ses 👍 / 👎 et ses notes sur la page d'essais), puis
+  l'étape 2 du lot 0. Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les
+  essais tournent dans l'appli en ligne, il les regarde sur son iPhone.
 - **Un piège de vocabulaire** : dans le code d'aujourd'hui, « univers » désigne le métier ou la passion qui habille la
   figurine (`<habitant>/univers.json`, `universValide`). Le nouvel univers se range dans `<habitant>/monde/`.
 

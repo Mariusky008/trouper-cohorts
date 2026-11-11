@@ -355,6 +355,27 @@ chaque essai.
 
 **On a réussi si** le propriétaire dit « oui, c'est ça » devant une figurine, un univers, et les deux ensemble.
 
+**Où on en est (11 novembre 2026).** Le propriétaire a donné quatre selfies de volontaires d'accord et du crédit
+OpenAI. **Étape 1 construite** : la page d'essais `/admin/humain/univers-essais` (lien « Univers : les essais du lot 0 »
+dans l'admin), réservée à l'administrateur :
+
+- **les personnes** : un repère, un selfie (réduit dans le téléphone), et la case « cette personne est d'accord »
+  sans laquelle rien ne part. Le selfie reste dans le seau privé (`essais-univers/`), jamais dans le dépôt de code ;
+  « Effacer cette personne » emporte son selfie et toutes ses images. Ses traits sont décrits comme aujourd'hui ;
+- **sa figurine, en trois variantes** (`univers-essais.ts`) : « Collection, détourée » (la cible : une figurine de
+  collection réaliste, assise dans un petit fauteuil, jambes croisées, ses propres vêtements en vrai tissu, de vrais
+  cheveux, la tête à 45 % de la hauteur, lèvres fermées, fond transparent), « Collection, en photo » (la même,
+  photographiée sur une table, pour juger l'objet) et « Plus douce » (une finition de figurine d'artiste, pour voir si
+  le réalisme flatte assez). Une consigne neuve, en anglais ; les anciennes ne changent pas ;
+- **la constance**, sur une figurine qu'il a aimée : bouche ouverte, joie, fou rire, colère, debout (sans fauteuil) ;
+- **pour chaque image** : le moteur, la qualité, la durée, les jetons, la consigne mot pour mot, **👍 / 👎 et une
+  note** — ce qui fera le verdict écrit ;
+- les images se font **après la réponse** (la page se met à jour toute seule, le téléphone peut se mettre en veille) ;
+  150 images par jour au plus. Le moteur : celui des figurines (`OPENAI_API_KEY`), qualité `ESSAIS_QUALITE` (« high »).
+
+**Étape 2, à faire** : les univers (trois directions de style sur une fiche d'essai, la variété, la retouche), la
+figurine posée dans le décor puis deux figurines, le mouvement, et les notes pour l'essai de vraie 3D.
+
 ### Lot 1 — Le socle
 
 Invisible pour les utilisateurs. Les deux fiches, leur rangement, leurs versions, la signature de chaque image, le
