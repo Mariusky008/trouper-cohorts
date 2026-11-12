@@ -211,6 +211,10 @@ export type ReponseVoeu = {
   son?: string;
   le: string;
   vue: boolean;
+  /** une aide : il lui a répondu avec sa figurine (ils sont devenus proches), ou « Pas pour moi » (l'autre ne le sait pas) */
+  decision?: "accepte" | "refuse";
+  /** (acceptée : la clé de son profil, pour ouvrir leur conversation dans « Proches ») */
+  cle?: string;
 };
 /** Un vœu à encourager (une carte de la mission). */
 export type CarteVoeu = {
@@ -222,6 +226,10 @@ export type CarteVoeu = {
   jours: number;
   figurine: string;
   geste: "" | "encourage" | "aide" | "passe";
+  /** sa ville, quand ce n'est pas la sienne (« Vevey ») */
+  ville?: string;
+  /** un vœu « sur place » d'une autre ville : on l'encourage avec sa tête, on ne peut pas y aider (12 novembre 2026) */
+  loin?: boolean;
 };
 export type Mission = { jour: string; cartes: CarteVoeu[]; faite: boolean; serie: number };
 export type EtatVoeu = {

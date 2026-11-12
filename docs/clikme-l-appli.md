@@ -63,8 +63,9 @@ Une fois ton premier mème fait, **l'appli s'ouvre ici**.
 
 - **✨ Mon vœu** (la première page) : une petite envie qu'une personne de ta ville pourrait t'aider à réaliser
   (« Quelqu'un pour courir avec moi le dimanche matin »). Ta figurine le dit aux autres. Un seul vœu à la fois ; tu
-  peux le reformuler, le mettre en pause, en faire un autre. En haut, une rangée de bulles : la tienne d'abord, puis
-  les gens qui t'ont répondu (« AIDE » quand quelqu'un propose son aide).
+  peux le reformuler, le mettre en pause, en faire un autre. En haut, ton vœu en grand, puis les gens qui t'ont répondu.
+  Quand quelqu'un propose son aide (« ✋ Marius peut t'aider »), tu lui réponds avec ta figurine : vous devenez proches,
+  et vous continuez dans Proches, avec vos figurines. Ou « Pas pour moi » : il ne le saura pas.
 - **🎯 Ta mission du jour** : trois vœux des autres à encourager, en une minute. Tu réponds **avec ta tête** (tes
   visages déjà faits, et un mot en sticker : « J'Y CROIS ! »), tu proposes ton aide (une phrase toute prête, ou ta
   voix), ou tu passes ton tour (l'autre ne le saura jamais). Mission faite : ton vœu passe en premier le lendemain, et
