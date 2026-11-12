@@ -4,9 +4,11 @@
 // Réservé au propriétaire. Léa a sa figurine du nouveau style (lot 2) et la fiche de son univers (lot 3), sans image :
 // « Créer mon univers » — le décor d'après SA fiche (« Film, chaleureux », sans figurine, dessiné d'après la consigne
 // seule), puis les places (sans modèle qui voit : celles d'attente), puis l'image vedette (son décor et sa figurine,
-// la scène validée au lot 0) ; chaque image signée, dans sa version. Une retouche avec ses mots : une version 2, le
-// même décor où une seule chose change ; d'alcool : refusée. Revenir à la version d'avant : une version 3, ses images
-// d'avant, rien refait. Trois retouches offertes, puis une par jour. Sam n'a pas encore d'univers.
+// la scène validée au lot 0) ; chaque image signée, dans sa version. Son fauteuil prend les couleurs de son monde (lot
+// 4b) : une version 2 de sa figurine, refaisable mot pour mot, sa bouche ouverte refaite, debout gardée ; l'image
+// vedette avec lui. Une retouche avec ses mots : une version 2, le même décor où une seule chose change (le fauteuil,
+// lui, ne se refait pas) ; d'alcool : refusée. Revenir à la version d'avant : une version 3, ses images d'avant, rien
+// refait. Trois retouches offertes, puis une par jour. Sam n'a encore ni figurine ni univers.
 //
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI)
@@ -102,9 +104,11 @@ const attendre = async (qui, condition, ms = 40000) => {
 // ═══ RÉSERVÉ AU PROPRIÉTAIRE ═══
 ok((await appeler(LEA, null, `clikme_habitant=${LEA.jeton}`)).statut === 403 && (await appeler(LEA, { action: "creer" }, `clikme_habitant=${LEA.jeton}`)).statut === 403, "réservé au propriétaire");
 const s0 = await appeler(SAM);
-ok(s0.etape === "sans-fiche" && (await appeler(SAM, { action: "creer" })).statut === 400, "Sam n'a pas encore parlé avec Pablito : rien à créer");
+ok(s0.etape === "sans-fiche" && !s0.figurine && (await appeler(SAM, { action: "creer" })).statut === 400, "Sam n'a encore ni figurine ni univers : rien à créer (l'accueil le mène à sa figurine)");
 
 // ═══ LA CRÉATION ═══
+const FAUTEUIL = "Change ONLY the armchair";
+const fauteuilsAvant = (await ia()).filter((c) => c.includes(FAUTEUIL)).length;
 const e0 = await appeler(LEA);
 ok(e0.etape === "a-creer" && e0.proposition.startsWith("Je t'imagine") && /^http/.test(e0.figurine?.assise ?? "") && e0.retouches.restantes === 3, "Léa : son univers est prêt à être créé ; sa figurine ; trois retouches offertes");
 const c1 = await appeler(LEA, { action: "creer" });
@@ -117,10 +121,25 @@ const decor = images.find((c) => c.startsWith("DESSIN ") && c.includes("Create t
 ok(Boolean(decor) && decor.includes("no magic, just charm") && decor.includes("un établi couvert d'outils") && decor.includes("la mer reste au fond") && decor.includes("NO figurine"), "le décor : « Film, chaleureux », d'après SA fiche, sans figurine, dessiné d'après la consigne seule");
 const vedette = images.find((c) => c.startsWith("IMAGE ") && c.includes("IMAGE 2 is a collectible caricature figurine"));
 ok(Boolean(vedette) && vedette.includes("bienvenue dans mon univers") && vedette.includes("Do NOT turn them into normal-proportioned people"), "l'image vedette : son décor et sa figurine, chez elle");
+
+// ═══ SON FAUTEUIL AUX COULEURS DE SON MONDE (lot 4b) ═══
+const fauteuils = images.filter((c) => c.startsWith("IMAGE ") && c.includes(FAUTEUIL)).slice(fauteuilsAvant);
+ok(fauteuils.length === 1 && fauteuils[0].includes("#e8b06a") && fauteuils[0].includes("#2f5d73") && fauteuils[0].includes("transparent") && fauteuils[0].includes("Do not redraw the person"), "son fauteuil refait aux couleurs de son monde (sa palette), la figurine inchangée, détourée");
+const p2 = await lire(`${LEA.id}/perso/fiche.json`);
+const assise2 = p2?.references?.assise;
+ok(
+  p2?.version === 2 && p2.fauteuil?.de === "univers" && p2.fauteuil.couleurs.join() === "#e8b06a,#2f5d73,#f3ead9" && Boolean(p2.validee_le) && assise2?.chemin !== `${P1}/assise.png` && assise2?.signature?.entrees?.join() === `${P1}/assise.png`,
+  "une version 2 de sa figurine, toujours validée : son fauteuil aux couleurs de son monde, son image refaite d'après celle d'avant",
+);
+ok(p2?.references?.debout?.chemin === `${P1}/debout.png` && p2?.references?.assise_parle?.chemin === `${LEA.id}/perso/v2/assise_parle.png` && p2.references.assise_parle.signature?.entrees?.join() === assise2?.chemin, "debout (sans fauteuil) gardée ; sa bouche ouverte refaite d'après la nouvelle");
+const admin = await (await fetch(`${BASE}/api/admin/direct/fiches?h=${LEA.id}`, { headers: { cookie: COOKIE_ADMIN } })).json();
+ok(admin?.perso?.refaisables?.assise === true && admin.perso.refaisables.assise_parle === true, "refaisable mot pour mot : la consigne du fauteuil se redonne à partir de la fiche");
+ok(e1.fauteuil?.version === 2 && /^http/.test(e1.fauteuil.avant ?? "") && /^http/.test(e1.figurine?.parle ?? ""), "« Ton fauteuil a pris les couleurs de ton monde » : son image d'avant, pour la montrer");
+
 const f1 = await lire(`${LEA.id}/monde/fiche.json`);
 ok(
-  f1?.version === 1 && f1.references.decor?.chemin === `${LEA.id}/monde/v1/decor.png` && f1.references.decor.signature?.entrees?.length === 0 && f1.references.vedette?.signature?.entrees?.join() === `${LEA.id}/monde/v1/decor.png,${P1}/assise.png`,
-  "chaque image signée, dans sa version (le décor : rien en entrée ; la vedette : son décor et sa figurine)",
+  f1?.version === 1 && f1.references.decor?.chemin === `${LEA.id}/monde/v1/decor.png` && f1.references.decor.signature?.entrees?.length === 0 && f1.references.vedette?.signature?.entrees?.join() === `${LEA.id}/monde/v1/decor.png,${assise2?.chemin}`,
+  "chaque image signée, dans sa version (le décor : rien en entrée ; la vedette : son décor et sa figurine, dans son nouveau fauteuil)",
 );
 ok((await appeler(LEA, { action: "creer" })).statut === 409, "un univers créé ne se recrée pas : il se retouche");
 
@@ -131,6 +150,7 @@ ok(r2.statut === 200 && r2.version === 2, "une retouche avec ses mots : une vers
 const e2 = await attendre(LEA, (e) => e.etape === "decouverte" && e.version === 2 && e.vedette);
 const retouche = (await ia()).find((c) => c.startsWith("IMAGE ") && c.includes("THE SAME DECOR"));
 ok(e2.version === 2 && e2.retouches.restantes === 2 && e2.avant === 1 && Boolean(retouche) && retouche.includes("Davantage de nature"), "le même décor, une seule chose change ; encore deux retouches ; la version d'avant existe");
+ok((await ia()).filter((c) => c.includes(FAUTEUIL)).length === fauteuilsAvant + 1 && (await lire(`${LEA.id}/perso/fiche.json`))?.version === 2, "une retouche ne refait pas son fauteuil : il a déjà les couleurs de son monde");
 const f2 = await lire(`${LEA.id}/monde/fiche.json`);
 ok(f2?.retouches?.join() === "Davantage de nature" && f2.references.decor?.chemin === `${LEA.id}/monde/v2/decor.png` && f2.references.decor.signature?.entrees?.join() === `${LEA.id}/monde/v1/decor.png`, "la version 2 : sa retouche, son décor (fait sur celui d'avant)");
 const r3 = await appeler(LEA, { action: "revenir" });

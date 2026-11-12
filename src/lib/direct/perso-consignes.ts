@@ -12,6 +12,7 @@
  * EN ANGLAIS (c'est là que le moteur est le plus précis). FICHIER PUR.
  */
 import { traitsEnMots, type Traits } from "./figurine-pro";
+import type { Fauteuil } from "./perso";
 
 const TETE = (traits?: Traits | null) => {
   const vus = traitsEnMots(traits).filter((l) => !l.startsWith("- Son expression") && !l.includes("lunettes"));
@@ -81,6 +82,22 @@ export function consigneMemeFigurine(variante: ChangementFigurine): string {
   return [
     `IMAGE 1 is a finished collectible figurine of a real person. Make a new image of EXACTLY THE SAME FIGURINE: the same person, the same face and likeness, the same hair, the same clothes, colours and materials, ${variante === "debout" ? "" : "the same armchair, "}the same size, framing and light.`,
     `Change ONLY this: ${CHANGEMENTS[variante]}`,
+    "",
+    ...FOND_TRANSPARENT,
+    "",
+    ...CONTRAINTES(false),
+  ].join("\n");
+}
+
+/**
+ * 🪑 SON FAUTEUIL AUX COULEURS DE SON MONDE (lot 4b), fait sur son image « assise » (IMAGE 1) : la figurine ne change
+ * pas, seul le fauteuil prend les couleurs de son univers. Redonnée à partir de la fiche seule (son `fauteuil`).
+ */
+export function consigneFauteuil(f: Fauteuil): string {
+  const [tissu, coussin = tissu, details = coussin] = f.couleurs;
+  return [
+    "IMAGE 1 is a finished collectible caricature figurine of a real person, seated in its armchair. Make a new image of EXACTLY THE SAME FIGURINE: the same person, the same face and likeness, the same expression, the same hair, the same clothes, the same pose, the same size, framing and light, the same painted-resin finish. Do not redraw the person.",
+    `Change ONLY the armchair (${f.description}): it now takes the colours of their world — the upholstery in the colour ${tissu}, a soft cushion and the piping in the colour ${coussin}, small details (buttons, a stitched trim) in the colour ${details}; the little wooden feet stay natural wood, in a tone that goes with these colours. Real miniature fabric with a visible texture, never flat paint. The same shape and size of armchair, in the same place.`,
     "",
     ...FOND_TRANSPARENT,
     "",

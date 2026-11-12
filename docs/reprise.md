@@ -70,8 +70,11 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
 - **Le lot 4a (la création de son univers) est construit à l'adresse d'essai** `/univers/monde` : le décor d'après sa
   fiche, les places, l'image vedette, la découverte (la brume, sa figurine chez elle), les clés, les retouches,
   revenir en arrière. Détail : `docs/figurines.md`, 9.0 untricies.
-- **La suite** : son avis sur le parcours complet (figurine, conversation, univers) ; le lot 4b (le fauteuil aux
-  couleurs de l'univers, « Mon univers » écran d'accueil) ; puis le feu vert pour tout le monde (les figurines
+- **Le lot 4b est construit à l'adresse d'essai** : son fauteuil aux couleurs de son univers (pendant la création),
+  et **« Mon univers », l'accueil, à `/univers`** (le menu de demain ; sinon l'étape où il en est : c'est l'adresse
+  unique du parcours). Détail : `docs/figurines.md`, 9.0 duotricies 🪑.
+- **La suite** : son avis sur le parcours complet (figurine, conversation, univers, accueil) ; puis le feu vert pour
+  tout le monde (les figurines
   d'aujourd'hui refaites, Pablito au nouveau style, les visages du nouveau style) ; puis le lot 5 (le proche qui entre). Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les essais
   tournent dans l'appli en ligne, il les regarde sur son iPhone.
 - **Un piège de vocabulaire** : dans le code d'aujourd'hui, « univers » désigne le métier ou la passion qui habille la

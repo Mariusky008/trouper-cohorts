@@ -8,12 +8,19 @@
  *   · LA DÉCOUVERTE, en plein écran : la brume se lève (la première fois), sa figurine est chez elle, assise à sa place,
  *     avec son ombre ; « Fais-la parler » ; l'image vedette, à partager ; « 🔑 Les clés de ton univers » : il touche un
  *     objet et voit pourquoi il est là (« tu m'as dit : … » ou « j'ai imaginé : … ») ; les retouches avec ses mots
- *     (trois offertes, puis une par jour) ; revenir à la version d'avant.
+ *     (trois offertes, puis une par jour) ; revenir à la version d'avant ;
+ *   · 🪑 SON FAUTEUIL a pris les couleurs de son monde (lot 4b) : avant, après, une fois ;
+ *   · 🎵 UNE MUSIQUE D'AMBIANCE (`musique-univers.ts`, composée dans le téléphone), lancée par « Créer mon univers » ou
+ *     une retouche (le son ne démarre que dans un toucher), et le bouton 🎵 pour la mettre ou la couper ;
+ *   · « MON UNIVERS », L'ACCUEIL (`accueil`, à `/univers`, lot 4b) : son univers en grand, et le menu de demain
+ *     (Découvrir · Autour · Créer · Proches · Mon univers) ; tant qu'il n'est pas créé, l'étape où il en est (sa
+ *     figurine, la conversation avec Pablito, la création).
  *
  * FICHIER NAVIGATEUR.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { imageVisage } from "@/lib/direct/guide";
+import { lancerMusiqueUnivers, musiqueCoupee, type MusiqueUnivers } from "@/lib/direct/musique-univers";
 import { IDEES_RETOUCHE_UNIVERS, RETOUCHE_UNIVERS_MAX, type CleUnivers, type EtatUnivers } from "@/lib/direct/univers-creation";
 
 const ROUTE = "/api/direct/univers";
@@ -26,14 +33,14 @@ async function demander<T>(corps: Record<string, unknown>): Promise<T> {
 }
 const message = (e: unknown) => (e instanceof Error && e.message ? e.message : "Ça n’a pas marché. Réessaie.");
 /** (la brume ne se lève qu'une fois par version : ce téléphone s'en souvient) */
-const dejaVu = (v: number) => {
+const dejaVu = (v: number | string) => {
   try {
     return window.localStorage.getItem(`univers-vu-${v}`) === "1";
   } catch {
     return false;
   }
 };
-const marquerVu = (v: number) => {
+const marquerVu = (v: number | string) => {
   try {
     window.localStorage.setItem(`univers-vu-${v}`, "1");
   } catch {
@@ -41,10 +48,33 @@ const marquerVu = (v: number) => {
   }
 };
 
-export function Monde() {
+/** Le menu de demain (`docs/univers/feuille-de-route.md`, section 8) : les onglets d'aujourd'hui, et « Mon univers ». */
+const MENU_DE_DEMAIN = [
+  { ico: "🔥", nom: "Découvrir", href: "/collection#decouvrir" },
+  { ico: "📍", nom: "Autour", href: "/collection#autour" },
+  { ico: "✏️", nom: "Créer", href: "/collection#figurine" },
+  { ico: "👯", nom: "Proches", href: "/collection#proches" },
+  { ico: "🏡", nom: "Mon univers", href: "/univers" },
+] as const;
+
+export function Monde({ accueil = false }: { accueil?: boolean }) {
   const [etat, setEtat] = useState<EtatUnivers | null>(null);
   const [erreur, setErreur] = useState("");
   const [occupe, setOccupe] = useState(false);
+  // 🎵 la musique d'ambiance : lancée dans un toucher, arrêtée en quittant la page
+  const musique = useRef<MusiqueUnivers | null>(null);
+  const [enMusique, setEnMusique] = useState(false);
+  const mettreLaMusique = useCallback((auto = false) => {
+    if (musique.current || (auto && musiqueCoupee())) return;
+    musique.current = lancerMusiqueUnivers();
+    setEnMusique(true);
+  }, []);
+  const couperLaMusique = useCallback(() => {
+    musique.current?.arreter();
+    musique.current = null;
+    setEnMusique(false);
+  }, []);
+  useEffect(() => () => musique.current?.arreter(), []);
   const charger = useCallback(async () => {
     try {
       const r = await fetch(ROUTE, { cache: "no-store" });
@@ -80,9 +110,20 @@ export function Monde() {
   }
   const [c1, c2, c3] = etat?.palette?.length === 3 ? etat.palette : ["#f6d9a8", "#e7b77a", "#7a4b2a"];
   return (
-    <main className="um" data-etape={etat?.etape ?? "chargement"} style={{ ["--c1" as string]: c1, ["--c2" as string]: c2, ["--c3" as string]: c3 }}>
+    <main className={`um${accueil ? " accueil" : ""}`} data-etape={etat?.etape ?? "chargement"} style={{ ["--c1" as string]: c1, ["--c2" as string]: c2, ["--c3" as string]: c3 }}>
+      {accueil && etat?.etape === "decouverte" && <h1 className="um-entete">Mon univers</h1>}
       {!etat ? (
         <p className="um-centre">{erreur || "Un instant…"}</p>
+      ) : etat.etape === "sans-fiche" && !etat.figurine ? (
+        <section className="um-carte">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="um-pablito" src={imageVisage("joie", "n")} alt="" />
+          <p className="um-titre">Ton univers commence par toi</p>
+          <p className="um-doux">D’abord ta figurine, assise dans son fauteuil. Ensuite, on imagine ton univers ensemble.</p>
+          <a className="um-bouton" href="/univers/figurine">
+            Créer ma figurine
+          </a>
+        </section>
       ) : etat.etape === "sans-fiche" ? (
         <section className="um-carte">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -100,7 +141,15 @@ export function Monde() {
           <p className="um-titre">Ton univers est prêt à être créé ✨</p>
           {etat.proposition && <p className="um-texte">{etat.proposition}</p>}
           {etat.erreur && <p className="um-erreur">{etat.erreur}</p>}
-          <button type="button" className="um-bouton" disabled={occupe || !etat.branche} onClick={() => void faire({ action: "creer" })}>
+          <button
+            type="button"
+            className="um-bouton"
+            disabled={occupe || !etat.branche}
+            onClick={() => {
+              mettreLaMusique(true);
+              void faire({ action: "creer" });
+            }}
+          >
             {occupe ? "…" : etat.erreur ? "Relancer la création" : "Créer mon univers"}
           </button>
           {!etat.branche && <p className="um-doux">Le moteur d’image n’est pas branché ici.</p>}
@@ -108,12 +157,38 @@ export function Monde() {
       ) : etat.etape === "creation" ? (
         <Chantier etat={etat} />
       ) : (
-        <Decouverte etat={etat} occupe={occupe} faire={faire} />
+        <Decouverte etat={etat} occupe={occupe} faire={faire} enRetouche={() => mettreLaMusique(true)} />
+      )}
+      {(etat?.etape === "creation" || etat?.etape === "decouverte") && (
+        <button
+          type="button"
+          className={`um-musique${enMusique ? " joue" : ""}`}
+          aria-pressed={enMusique}
+          aria-label={enMusique ? "Couper la musique" : "Mettre la musique"}
+          onClick={() => (enMusique ? couperLaMusique() : mettreLaMusique())}
+        >
+          <span>{enMusique ? "🎵" : "🔇"}</span>
+        </button>
       )}
       {erreur && etat && (
         <p className="um-erreur" role="alert">
           {erreur}
         </p>
+      )}
+      {!accueil && etat?.etape === "decouverte" && (
+        <a className="um-lien" href="/univers">
+          🏡 Mon univers, l’accueil de demain
+        </a>
+      )}
+      {accueil && (
+        <nav className="um-menu" aria-label="Menu">
+          {MENU_DE_DEMAIN.map((m) => (
+            <a key={m.nom} href={m.href} className={m.href === "/univers" ? "pris" : ""} aria-current={m.href === "/univers" ? "page" : undefined}>
+              <span aria-hidden="true">{m.ico}</span>
+              <small>{m.nom}</small>
+            </a>
+          ))}
+        </nav>
       )}
       <style>{STYLES}</style>
     </main>
@@ -124,6 +199,7 @@ export function Monde() {
 const ETAPES = [
   { cle: "decor", dit: "Je dessine ton décor" },
   { cle: "places", dit: "Je choisis où tu t’assois" },
+  { cle: "fauteuil", dit: "Je refais ton fauteuil à tes couleurs" },
   { cle: "vedette", dit: "Je t’installe chez toi" },
 ] as const;
 const PHRASES = ["Je pose les murs, la lumière…", "J’ajoute tes objets, un par un.", "Un coup de pinceau doré 🎨", "Je règle la lumière, comme au cinéma.", "On y est presque !"];
@@ -134,7 +210,9 @@ function Chantier({ etat }: { etat: EtatUnivers }) {
     const i = window.setInterval(() => setT(Date.now() - debut), 500);
     return () => window.clearInterval(i);
   }, []);
-  const ici = ETAPES.findIndex((e) => e.cle === etat.creation?.etape);
+  // (une retouche ne refait pas son fauteuil : il a déjà les couleurs de son monde)
+  const etapes = etat.creation?.retouche ? ETAPES.filter((e) => e.cle !== "fauteuil") : ETAPES;
+  const ici = etapes.findIndex((e) => e.cle === etat.creation?.etape);
   return (
     <section className="um-carte" aria-label="Pablito construit ton univers" aria-busy="true">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -142,7 +220,7 @@ function Chantier({ etat }: { etat: EtatUnivers }) {
       <p className="um-titre">{etat.creation?.retouche ? "Pablito retouche ton univers" : "Pablito construit ton univers"}</p>
       {etat.creation?.retouche && <p className="um-doux">« {etat.creation.retouche} »</p>}
       <ol className="um-etapes">
-        {ETAPES.map((e, i) => (
+        {etapes.map((e, i) => (
           <li key={e.cle} className={i < ici ? "fait" : i === ici ? "ici" : ""}>
             {i < ici ? "✓ " : i === ici ? "… " : ""}
             {e.dit}
@@ -158,7 +236,9 @@ function Chantier({ etat }: { etat: EtatUnivers }) {
 }
 
 // ─── la découverte ────────────────────────────────────────────────────────────────────────────────
-function Decouverte({ etat, occupe, faire }: { etat: EtatUnivers; occupe: boolean; faire: (c: Record<string, unknown>) => Promise<boolean> }) {
+/** La hauteur de sa figurine chez elle, en % de la scène. */
+const TAILLE_FIGURINE = 40;
+function Decouverte({ etat, occupe, faire, enRetouche }: { etat: EtatUnivers; occupe: boolean; faire: (c: Record<string, unknown>) => Promise<boolean>; enRetouche: () => void }) {
   const [vue, setVue] = useState<"chez-moi" | "vedette">("chez-moi");
   const [cles, setCles] = useState(false);
   const [cle, setCle] = useState<CleUnivers | null>(null);
@@ -192,6 +272,9 @@ function Decouverte({ etat, occupe, faire }: { etat: EtatUnivers; occupe: boolea
     };
   }, [parle]);
   const hote = etat.scene?.places.find((p) => p.id === "hote") ?? { x: 0.36, y: 0.8, echelle: 1 };
+  // (sa taille chez elle : 40 % de la hauteur de la scène, à peine nuancée par sa place — le propriétaire, le 12
+  // novembre, sur son univers : « je suis tout petit » ; c'était 26 %)
+  const taille = TAILLE_FIGURINE * Math.min(1.15, Math.max(0.9, hote.echelle));
   const figurine = bouche && etat.figurine?.parle ? etat.figurine.parle : etat.figurine?.assise;
   const partager = useRef(false);
   async function partagerVedette() {
@@ -209,6 +292,14 @@ function Decouverte({ etat, occupe, faire }: { etat: EtatUnivers; occupe: boolea
     }
   }
   const avecZone = etat.cles.filter((c) => c.zone);
+  // (🪑 son fauteuil a pris les couleurs de son monde : montré une fois, jusqu'à ce qu'il le ferme)
+  const [fauteuilVu, setFauteuilVu] = useState(true);
+  const versionFauteuil = etat.fauteuil?.version ?? 0;
+  useEffect(() => {
+    if (!versionFauteuil) return;
+    const t = window.setTimeout(() => setFauteuilVu(dejaVu(`fauteuil-${versionFauteuil}`)), 0);
+    return () => window.clearTimeout(t);
+  }, [versionFauteuil]);
   return (
     <section className="um-decouverte" aria-label="Ton univers">
       <div className="um-onglets" role="tablist">
@@ -225,7 +316,7 @@ function Decouverte({ etat, occupe, faire }: { etat: EtatUnivers; occupe: boolea
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="um-decor" src={vue === "vedette" && etat.vedette ? etat.vedette : etat.decor} alt={vue === "vedette" ? "Ta figurine chez elle" : "Ton univers"} />
         {vue === "chez-moi" && figurine && (
-          <span className="um-place" style={{ left: `${hote.x * 100}%`, top: `${hote.y * 100}%`, height: `${26 * hote.echelle}%` }}>
+          <span className="um-place" style={{ left: `${hote.x * 100}%`, top: `${Math.max(hote.y, taille / 100 + 0.04) * 100}%`, height: `${taille}%` }}>
             <span className="um-ombre" aria-hidden="true" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className="um-figurine" src={figurine} alt="Ta figurine, chez elle" />
@@ -245,6 +336,32 @@ function Decouverte({ etat, occupe, faire }: { etat: EtatUnivers; occupe: boolea
           ))}
         {brume && <span className="um-brume" aria-hidden="true" />}
       </div>
+      {!fauteuilVu && etat.fauteuil && vue === "chez-moi" && etat.figurine && (
+        <div className="um-fauteuil" role="status">
+          <span className="um-avant-apres">
+            {etat.fauteuil.avant && (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={etat.fauteuil.avant} alt="Ton fauteuil de départ" />
+                <span aria-hidden="true">→</span>
+              </>
+            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={etat.figurine.assise} alt="Ton fauteuil aux couleurs de ton monde" />
+          </span>
+          <b>🪑 Ton fauteuil a pris les couleurs de ton monde</b>
+          <button
+            type="button"
+            className="um-lien"
+            onClick={() => {
+              marquerVu(`fauteuil-${versionFauteuil}`);
+              setFauteuilVu(true);
+            }}
+          >
+            Il me plaît !
+          </button>
+        </div>
+      )}
       {cle && (
         <div className="um-cle" role="dialog" aria-label={cle.quoi}>
           <b>{cle.quoi}</b>
@@ -315,6 +432,7 @@ function Decouverte({ etat, occupe, faire }: { etat: EtatUnivers; occupe: boolea
             disabled={occupe || mots.trim().length < 3}
             onClick={() => {
               setRetouche(false);
+              enRetouche();
               void faire({ action: "retoucher", texte: mots }).then((ok) => ok && setMots(""));
             }}
           >
@@ -359,6 +477,20 @@ const STYLES = `
 .um-ombre{position:absolute;bottom:-4%;left:10%;width:80%;height:12%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.45),rgba(0,0,0,0))}
 .um-point{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:3px solid #fff;background:rgba(43,26,12,.55);animation:um-pulse 1.4s infinite}
 .um-brume{position:absolute;inset:0;background:radial-gradient(circle at 50% 60%,rgba(255,255,255,.2),rgba(255,248,236,.98) 70%);animation:um-brume 2.8s ease-out forwards;pointer-events:none}
+.um.accueil{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+.um-entete{margin:0;font-size:24px;font-weight:900;letter-spacing:-.01em}
+.um-menu{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:20;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));max-width:540px;margin:0 auto;padding:7px 6px 6px;border-radius:26px;background:rgba(43,26,12,.92);box-shadow:0 14px 34px -12px rgba(0,0,0,.7)}
+.um-menu a{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;padding:4px 0;color:#d9c3a5;text-decoration:none;font-size:20px}
+.um-menu a small{font-size:11px;font-weight:800;white-space:nowrap}
+.um-menu a.pris{color:#fff6e6}
+.um-menu a.pris span{transform:translateY(-2px)}
+.um-musique{position:fixed;top:calc(10px + env(safe-area-inset-top));right:12px;z-index:21;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,250,240,.8);font-size:20px;box-shadow:0 4px 12px rgba(43,26,12,.25)}
+.um-musique span{display:inline-block}
+.um-musique.joue span{animation:um-note 2.4s ease-in-out infinite}
+@keyframes um-note{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.um-fauteuil{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 14px;border-radius:16px;background:rgba(255,253,248,.95);box-shadow:0 6px 18px rgba(43,26,12,.2);text-align:center}
+.um-avant-apres{display:flex;align-items:center;gap:10px;font-size:22px}
+.um-avant-apres img{width:84px;height:110px;object-fit:contain}
 .um-cle{padding:12px 14px;border-radius:16px;background:rgba(255,253,248,.97);box-shadow:0 6px 18px rgba(43,26,12,.2)}
 .um-cle p{margin:6px 0 0;line-height:1.4}
 .um-gestes{display:flex;flex-direction:column;gap:8px}

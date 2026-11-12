@@ -124,5 +124,11 @@ verifier(rendue && rendue.rendu.signature.moteur === "gpt-image", "une rencontre
 verifier(S.quiJoue(sc).join() === `${A},${B}`, "qui joue dans la scène");
 verifier([7, 12, 19, 23, 3].map(S.momentDe).join() === "matin,midi,soir,nuit,nuit", "le moment de la journée suit l'heure");
 
+// 🪑 son fauteuil aux couleurs de son monde (lot 4b)
+const auxCouleurs = P.fauteuilAuxCouleurs(["#E8B06A", "rouge", "#2f5d73", "#f3ead9", "#111111"]);
+verifier(auxCouleurs?.de === "univers" && auxCouleurs.couleurs.join() === "#e8b06a,#2f5d73,#f3ead9" && auxCouleurs.description === P.FAUTEUIL_DE_DEPART.description, "le fauteuil aux couleurs de son monde : le même fauteuil, trois couleurs vérifiées au plus");
+verifier(P.fauteuilAuxCouleurs([]) === null && P.fauteuilAuxCouleurs(["bleu"]) === null, "sans couleur : pas de fauteuil refait");
+verifier(P.fichePersoValide({ ...fiche, fauteuil: auxCouleurs })?.fauteuil?.de === "univers", "la fiche garde son fauteuil aux couleurs de son monde");
+
 console.log(fautes ? `\n${fautes} faute(s), ${bons} juste(s)` : `les fiches tiennent ✓ (${bons} vérifications)`);
 process.exit(fautes ? 1 : 0);
