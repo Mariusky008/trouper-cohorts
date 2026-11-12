@@ -2,15 +2,15 @@
 
 /**
  * 🧠 MIEUX LE CONNAÎTRE, À L'ÉCRAN (`lib/direct/connaitre.ts`, le lot 2) :
- *   · `QuestionDuJour` : dans « Moi », une question drôle, un toucher ou trois mots (le petit mot du jour, qui annonçait
- *     la rencontre du jour, est parti avec « Rencontres » le 7 novembre 2026) ;
+ *   · (la question du jour, dans « Moi », a laissé sa place à « Mes vœux » le 12 novembre 2026 — `voeu.tsx` ; ce
+ *     qu'il y avait répondu reste ci-dessous, sa figurine s'en souvient) ;
  *   · `CeQueTaFigurineSait` : dans « Personnage », tout ce qu'elle a retenu de lui — il voit, il efface ;
  *   · `ProtegerFigurine` : son adresse protège sa figurine (un code à six chiffres) — depuis le 7 novembre 2026, dans
  *     la feuille du cadenas doré, en haut à côté de son prénom (`ma-collection.tsx`) ; sur un autre téléphone, le même
  *     code la retrouve (« Créer », avant sa figurine).
  */
 import { useEffect, useState } from "react";
-import { REPONSE_JOUR_MAX, type ChoseSue, type QuestionVue, type Savoir } from "@/lib/direct/connaitre";
+import { type ChoseSue, type Savoir } from "@/lib/direct/connaitre";
 import { demanderOui } from "./fenetre";
 
 async function poster(corps: Record<string, unknown>) {
@@ -20,77 +20,6 @@ async function poster(corps: Record<string, unknown>) {
   return j;
 }
 const quand = (le: string) => new Date(le).toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
-
-/** ❓ La question du jour : un toucher (à choix) ou trois mots ; sa figurine s'en souviendra. */
-export function QuestionDuJour() {
-  const [q, setQ] = useState<QuestionVue | null>(null);
-  const [texte, setTexte] = useState("");
-  const [changer, setChanger] = useState(false);
-  const [envoi, setEnvoi] = useState(false);
-  const [erreur, setErreur] = useState("");
-  useEffect(() => {
-    let fini = false;
-    fetch("/api/direct/connaitre", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((j: { question?: QuestionVue }) => !fini && j.question && setQ(j.question))
-      .catch(() => undefined);
-    return () => {
-      fini = true;
-    };
-  }, []);
-  if (!q) return null;
-  async function repondre(t: string) {
-    if (!q) return;
-    setEnvoi(true);
-    setErreur("");
-    try {
-      const j = await poster({ action: "question", cle: q.cle, texte: t });
-      setQ(j.question as QuestionVue);
-      setChanger(false);
-      setTexte("");
-    } catch (e) {
-      setErreur((e as Error).message);
-    } finally {
-      setEnvoi(false);
-    }
-  }
-  const repondue = Boolean(q.reponse) && !changer;
-  return (
-    <section className="cn-question" aria-label="La question du jour">
-      <small>❓ LA QUESTION DU JOUR</small>
-      <b>{q.q}</b>
-      {repondue ? (
-        <>
-          <p className="cn-reponse">« {q.reponse} »</p>
-          <small className="cn-merci">✓ Ta figurine s’en souviendra.</small>
-          <button type="button" className="cn-lien" onClick={() => setChanger(true)}>
-            Changer ma réponse
-          </button>
-        </>
-      ) : q.choix ? (
-        <span className="cn-choix">
-          {q.choix.map((c) => (
-            <button key={c} type="button" onClick={() => repondre(c)} disabled={envoi} className={q.reponse === c ? "pris" : ""}>
-              {c}
-            </button>
-          ))}
-        </span>
-      ) : (
-        <span className="cn-libre">
-          <input value={texte} maxLength={REPONSE_JOUR_MAX} onChange={(e) => setTexte(e.target.value)} placeholder="En quelques mots…" aria-label="Ta réponse" />
-          <button type="button" className="mp-bouton" onClick={() => repondre(texte.trim())} disabled={envoi || !texte.trim()}>
-            {envoi ? "…" : "OK"}
-          </button>
-        </span>
-      )}
-      {erreur && (
-        <p className="tf-erreur" role="alert">
-          {erreur}
-        </p>
-      )}
-    </section>
-  );
-}
 
 const ETIQUETTES: Record<ChoseSue["type"], string> = { question: "❓ Question du jour", reponse: "🗨️ Et toi ?", verdict: "🪞 Sa phrase", revele: "✨ Ce qu’une rencontre a révélé" };
 
@@ -282,16 +211,9 @@ export function ProtegerFigurine({ mode, protegee, onFait }: { mode: "proteger" 
 }
 
 export const STYLES_CONNAITRE = `
-.cn-question > small{font-size:10.5px;font-weight:900;letter-spacing:.12em;color:#F2C46B}
-.cn-question{display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:24px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
-.cn-question > b{font-size:18px;line-height:1.25;font-weight:900}
-.cn-choix{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.cn-choix button{padding:12px 8px;border-radius:14px;border:1.5px solid rgba(255,255,255,.16);background:rgba(0,0,0,.2);color:#FFF4E6;font:inherit;font-size:14px;font-weight:800;cursor:pointer;text-align:left}
-.cn-choix button.pris{border-color:#FF2E9A;background:rgba(255,46,154,.16)}
-.cn-libre,.cn-ligne{display:flex;gap:8px;min-width:0}
-.cn-libre input,.cn-ligne input{flex:1;min-width:0;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:#FFF4E6;font:inherit;font-size:16px}
-.cn-libre .mp-bouton,.cn-ligne .mp-bouton{flex:none}
-.cn-reponse{margin:0;font-size:16px;font-weight:800;color:#FFF4E6}
+.cn-ligne{display:flex;gap:8px;min-width:0}
+.cn-ligne input{flex:1;min-width:0;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:#FFF4E6;font:inherit;font-size:16px}
+.cn-ligne .mp-bouton{flex:none}
 .cn-merci{font-size:12.5px;color:#BFF7E2}
 .cn-lien,.cn-retrouver-lien{align-self:flex-start;border:0;background:none;padding:0;color:#A8C8F0;font:inherit;font-size:13px;text-decoration:underline;cursor:pointer}
 .cn-retrouver-lien{align-self:center;margin:6px auto 0}

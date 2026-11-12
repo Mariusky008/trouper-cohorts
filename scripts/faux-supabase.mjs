@@ -651,6 +651,10 @@ http
           const tetes = textes.map((t) => (/bar|haha/i.test(t) ? ["rire", "euphorie", "victoire"] : /avais dit/i.test(t) ? ["tete", "rire", "colere"] : ["joie", "rire", "coeur"]));
           return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ repliques: tetes.map((x) => ({ tetes: x })) }) } }] });
         }
+        // 💡 « Mon vœu » : Pablito propose de le dire autrement (le lot 3)
+        if (consigne.includes("REFORMULE CE VŒU")) {
+          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ texte: "Apprendre trois accords de guitare, le samedi après-midi au parc" }) } }] });
+        }
         // ✨ la tuile « Surprise » de « Fais un vœu » : un vœu écrit d'après sa carte de personnage
         if (consigne.includes("UN VŒU POUR CLIKME")) {
           const v = consigne.includes("trois accords au ukulélé") ? { texte: "Quelqu’un pour cuisiner un vrai couscous avec moi", categorie: "apprendre" } : { texte: "Quelqu’un pour m’apprendre trois accords au ukulélé", categorie: "apprendre" };

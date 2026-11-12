@@ -121,6 +121,8 @@ export type CartePersonnage = {
   rang: "bronze" | "argent" | "or";
   /** Son lien de partage (`/carte/<id>`), s'il l'a partagée. */
   lien?: string;
+  /** 🌟 « A exaucé 2 vœux » (« Mon vœu », 12 novembre 2026) : les vœux qu'il a aidé à exaucer, s'il veut le montrer */
+  exauces?: number;
 };
 
 /** Ses réponses, propres : les sept, en « a » ou « b » ; sinon `null`. */

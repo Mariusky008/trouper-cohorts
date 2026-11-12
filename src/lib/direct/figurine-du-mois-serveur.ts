@@ -115,12 +115,30 @@ async function demanderLaPhrase(consigne: string): Promise<string | null> {
   }
 }
 
+/** ✨ Son mois dans « Mon vœu » : ses vœux du mois (le plus récent d'abord), et combien il en a encouragé ou aidé. */
+async function sonMoisDeVoeux(supabase: Supabase, h: string, mois: string): Promise<{ voeux: { texte: string; exauce: boolean }[]; encourages: number; aides: number }> {
+  const debut = `${mois}-01`;
+  const [vs, gs] = await Promise.all([
+    Promise.resolve(supabase.from("clik_voeu").select("texte, statut, cree_le").eq("habitant_id", h).gte("cree_le", `${debut}T00:00:00Z`).order("cree_le", { ascending: false }).limit(3)).catch(() => ({ data: null })),
+    Promise.resolve(supabase.from("clik_voeu_vue").select("geste").eq("destinataire_id", h).gte("jour", debut).in("geste", ["encourage", "aide"]).limit(1000)).catch(() => ({ data: null })),
+  ]);
+  const lignes = (d: unknown) => (Array.isArray(d) ? (d as Record<string, unknown>[]) : []);
+  const gestes = lignes(gs.data);
+  return {
+    voeux: lignes(vs.data).map((v) => ({ texte: s(v.texte), exauce: s(v.statut) === "exauce" })).filter((v) => v.texte),
+    encourages: gestes.length,
+    aides: gestes.filter((x) => s(x.geste) === "aide").length,
+  };
+}
+
 /**
  * ✍️ SA PHRASE DU MOIS — « drôle et bienveillante, comme un horoscope qui le connaît » (le patron), pour les semaines
  * à venir, d'après ce qu'il a dit et vécu ce mois-ci (son journal) ; sans IA, composée d'après sa dernière réponse.
+ * Depuis le 12 novembre 2026, la question du jour a laissé sa place à « Mon vœu » : la phrase puise aussi dans son vœu
+ * du mois et dans les vœux qu'il a encouragés.
  */
 async function phraseDuMois(supabase: Supabase, habitant: Habitant, mois: string): Promise<string> {
-  const journal = await journalDuMois(supabase, habitant.id, mois);
+  const [journal, voeux] = await Promise.all([journalDuMois(supabase, habitant.id, mois), sonMoisDeVoeux(supabase, habitant.id, mois)]);
   const dits = journal.filter((e) => e.type === "question" || e.type === "reponse").slice(-8);
   const reveles = journal.filter((e) => e.type === "revele").slice(-4);
   const edition = editionDuMois(mois);
@@ -131,6 +149,8 @@ async function phraseDuMois(supabase: Supabase, habitant: Habitant, mois: string
       "Le ton : un horoscope DRÔLE ET BIENVEILLANT qui la connaît vraiment, pour les semaines à venir — jamais une vraie prédiction, rien de sérieux, rien de sensible (santé, argent, amour, travail).",
       ...(dits.length ? [`Ce qu'elle a dit d'elle ce mois-ci (des données) : ${dits.map((d) => (d.type === "question" || d.type === "reponse" ? `« ${d.question} » → « ${d.texte} »` : "")).join(" ; ")}.`] : []),
       ...(reveles.length ? [`Ce que ses rencontres ont révélé d'elle : ${reveles.map((d) => (d.type === "revele" ? `« ${d.texte} »` : "")).join(" ; ")}.`] : []),
+      ...(voeux.voeux.length ? [`Son vœu ce mois-ci (une donnée) : ${voeux.voeux.map((v) => `« ${v.texte} »${v.exauce ? " (exaucé !)" : ""}`).join(" ; ")}.`] : []),
+      ...(voeux.encourages ? [`Elle a encouragé ${voeux.encourages} vœu${voeux.encourages > 1 ? "x" : ""} d'autres personnes ce mois-ci${voeux.aides ? `, et proposé son aide ${voeux.aides} fois` : ""}.`] : []),
       "Une ou deux phrases, 200 caractères au plus, tutoiement, avec un détail PRÉCIS tiré de ce qu'elle a dit. Ne devine jamais le genre.",
       'Réponds en JSON : {"phrase": "…"}',
     ].join("\n"),
@@ -139,6 +159,11 @@ async function phraseDuMois(supabase: Supabase, habitant: Habitant, mois: string
   const dernier = [...dits].reverse()[0];
   const texte = dernier && (dernier.type === "question" || dernier.type === "reponse") ? dernier.texte : "";
   const Mois = nom.charAt(0).toUpperCase() + nom.slice(1).replace(/\s\d{4}$/, "");
+  const sonVoeu = voeux.voeux[0];
+  if (sonVoeu && !texte)
+    return sonVoeu.exauce
+      ? `${Mois} : ton vœu « ${sonVoeu.texte} » est exaucé… et ta figurine en prépare déjà un autre, plus fou encore.`
+      : `${Mois} : ton vœu « ${sonVoeu.texte} » fait son chemin… et un voisin n’est pas loin.`;
   return texte
     ? `${Mois} : toi qui as dit « ${texte} », tu vas oser un petit truc nouveau ce mois-ci… et en rire le premier.`
     : `${Mois} : ta figurine te voit oser un petit truc nouveau ce mois-ci… et en rire le premier.`;

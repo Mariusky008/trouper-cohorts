@@ -22,6 +22,7 @@ import {
   TETES_ENCOURAGER,
   TETES_REPONDRE,
   TEXTE_VOEU_MAX,
+  JOURS_AVANT_REFORMULER,
   VOCAL_AIDE_MAX,
   VOEUX_PRETS,
   categorieDe,
@@ -29,6 +30,8 @@ import {
   type CarteVoeu,
   type CleCategorie,
   type EtatVoeu,
+  type FeteVoeu,
+  type MesVoeux as MesVoeuxEtat,
   type Mission,
   type ReponseVoeu,
   type RetourVoeu,
@@ -37,8 +40,25 @@ import { OngletVisible } from "./guide";
 import { Feuille } from "./ma-figurine";
 import { demanderOui } from "./fenetre";
 import { ouvrirConversation } from "./rituel";
+import { FigurineGuide } from "./guide";
+import { fabriquerMeme, memePossible } from "@/lib/direct/meme";
 
-type Reponse = { ok?: boolean; error?: string; etat?: EtatVoeu; mission?: Mission; phrases?: string[]; texte?: string; categorie?: CleCategorie; dixHuit?: boolean; cle?: string; prenom?: string };
+type Reponse = {
+  ok?: boolean;
+  error?: string;
+  etat?: EtatVoeu;
+  mission?: Mission;
+  phrases?: string[];
+  texte?: string;
+  categorie?: CleCategorie;
+  dixHuit?: boolean;
+  cle?: string;
+  prenom?: string;
+  fete?: FeteVoeu;
+  mes?: MesVoeuxEtat | null;
+  proposition?: string;
+  conseils?: string[];
+};
 async function demander(corps: Record<string, unknown>): Promise<Reponse> {
   const r = await fetch("/api/direct/voeu", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
   const j = (await r.json().catch(() => ({}))) as Reponse;
@@ -617,6 +637,341 @@ function Reponses({
   );
 }
 
+// ─── 🎉 « Il est exaucé ! » : grâce à qui ? ───────────────────────────────────────────────────────────────────────────
+function Exaucer({ ouverte, etat, onFermer, onFete }: { ouverte: boolean; etat: EtatVoeu; onFermer: () => void; onFete: (f: FeteVoeu, e?: EtatVoeu) => void }) {
+  const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState("");
+  const aides = etat.reponses.filter((r) => r.genre === "aide");
+  async function exaucer(par: number | "seul") {
+    if (envoi) return;
+    setEnvoi(true);
+    setErreur("");
+    try {
+      const j = await demander({ action: "exaucer", par });
+      if (j.fete) onFete(j.fete, j.etat);
+    } catch (e) {
+      setErreur((e as Error).message);
+    } finally {
+      setEnvoi(false);
+    }
+  }
+  return (
+    <Feuille ouverte={ouverte} onFermer={onFermer} titre="Il est exaucé" className="vx-feuille vx-exaucer">
+      <b className="tf-feuille-titre">🎉 Bravo ! Grâce à qui ?</b>
+      <p className="tf-feuille-dit">{aides.length ? "Qui t’a donné un coup de main gagne « A exaucé un vœu » sur sa carte, à son choix." : "Personne n’a encore proposé son aide : tu l’as exaucé toi-même ?"}</p>
+      <div className="vx-par">
+        {aides.map((r) => (
+          <button key={r.id} type="button" disabled={envoi} onClick={() => void exaucer(r.id)}>
+            <Im src={r.images?.n || r.tete} />
+            <span>
+              <b>{r.prenom}</b>
+              <small>{r.decision === "accepte" ? "Vous êtes proches" : (r.texte ?? "Une aide avec sa voix")}</small>
+            </span>
+          </button>
+        ))}
+        <button type="button" className="seul" disabled={envoi} onClick={() => void exaucer("seul")}>
+          <span aria-hidden="true">🙌</span>
+          <span>
+            <b>Par moi-même</b>
+            <small>Personne en particulier</small>
+          </span>
+        </button>
+      </div>
+      {erreur && <p className="tf-erreur">{erreur}</p>}
+    </Feuille>
+  );
+}
+
+// ─── 🎉 la fête (la maquette 5) ───────────────────────────────────────────────────────────────────────────────────────
+function Fete({ fete, moi, onFermer, onNouveau, onMerci }: { fete: FeteVoeu; moi: EtatVoeu["moi"]; onFermer: () => void; onNouveau: () => void; onMerci: (cle: string) => void }) {
+  const toile = useRef<HTMLCanvasElement>(null);
+  const [video, setVideo] = useState<{ url: string; blob: Blob; type: string } | null>(null);
+  const [progres, setProgres] = useState<number | null>(null);
+  const [erreur, setErreur] = useState("");
+  useEffect(() => {
+    const echap = (e: KeyboardEvent) => e.key === "Escape" && onFermer();
+    window.addEventListener("keydown", echap);
+    return () => window.removeEventListener("keydown", echap);
+  }, [onFermer]);
+  /** 🎬 Le mème de la victoire : sa figurine euphorique danse, « Mon vœu est exaucé ! » (sans voix : écrit). */
+  async function fabriquer() {
+    if (progres !== null || !moi?.fete || !toile.current) return;
+    const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!memePossible() || !AC) return setErreur("Ce téléphone ne sait pas fabriquer de vidéo.");
+    const ctx = new AC();
+    void ctx.resume().catch(() => undefined);
+    setErreur("");
+    setProgres(0);
+    try {
+      const m = await fabriquerMeme({ ctx, toile: toile.current, images: moi.fete, texte: `Mon vœu est exaucé ! « ${fete.texte} »`, emoji: "🎉", danse: true, surProgres: (p) => setProgres(Math.round(p * 100)) });
+      setVideo({ url: URL.createObjectURL(m.blob), blob: m.blob, type: m.type });
+    } catch (e) {
+      setErreur((e as Error).message);
+    } finally {
+      setProgres(null);
+      void ctx.close().catch(() => undefined);
+    }
+  }
+  async function partager() {
+    if (!video) return;
+    const fichier = new File([video.blob], `voeu-exauce.${video.type.includes("mp4") ? "mp4" : "webm"}`, { type: video.type });
+    try {
+      if (navigator.canShare?.({ files: [fichier] })) await navigator.share({ files: [fichier], text: `Mon vœu est exaucé ! 🎉 « ${fete.texte} »` });
+      else setErreur("Enregistre la vidéo, puis partage-la où tu veux.");
+    } catch {
+      /* (il a refermé le partage) */
+    }
+  }
+  const tetes = fete.tetes.slice(0, 12);
+  return (
+    <div className="vx-fete" role="dialog" aria-modal="true" aria-label="Vœu exaucé">
+      <header className="vx-fete-haut">
+        <button type="button" className="vx-story-fermer" aria-label="Fermer" onClick={onFermer}>
+          ✕
+        </button>
+        <small>VŒU EXAUCÉ</small>
+      </header>
+      <div className="vx-fete-scene" aria-hidden="true">
+        {Array.from({ length: 14 }, (_, k) => (
+          <i key={`c-${k}`} className="vx-confetti" style={{ left: `${(k * 37) % 100}%`, animationDelay: `${(k % 7) * 0.35}s`, background: ["#FF2E9A", "#F2C46B", "#7FF0C4", "#8C7CF7"][k % 4] }} />
+        ))}
+        {tetes.map((u, k) => (
+          <Im key={k} src={u} className="vx-fete-tete" alt="" />
+        ))}
+        <span className="vx-fete-moi">
+          {moi && <Im src={moi.fete?.n || moi.tetes.jycrois || moi.neutre} />}
+          <em>EXAUCÉ</em>
+        </span>
+      </div>
+      <b className="vx-fete-jours">
+        <span>{fete.jours}</span> {fete.jours > 1 ? "jours" : "jour"}
+      </b>
+      <p className="vx-fete-porte">
+        <b>{pluriel(fete.porte, "figurine a", "figurines ont")}</b> porté ton vœu
+      </p>
+      <p className="vx-fete-texte">« {fete.texte} »</p>
+      {fete.par && (
+        <div className="vx-fete-par">
+          <Im src={fete.par.tete} />
+          <span>
+            <b>Grâce à {fete.par.prenom}</b>
+            <small>{fete.par.prenom} gagne « A exaucé un vœu » sur sa carte, à son choix</small>
+          </span>
+          {fete.par.cle && (
+            <button type="button" onClick={() => onMerci(fete.par!.cle!)}>
+              Merci !
+            </button>
+          )}
+        </div>
+      )}
+      <canvas ref={toile} className="vx-fete-toile" aria-hidden="true" />
+      {video ? (
+        <div className="vx-fete-video">
+          <video src={video.url} controls playsInline autoPlay muted loop />
+          <div className="vx-boutons">
+            <a className="vx-second" href={video.url} download={`voeu-exauce.${video.type.includes("mp4") ? "mp4" : "webm"}`}>
+              ⬇️ Enregistrer
+            </a>
+            <button type="button" className="tj-go" onClick={() => void partager()}>
+              📲 Partager
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" className="tj-go vx-fete-partager" disabled={progres !== null || !moi?.fete} onClick={() => void fabriquer()}>
+          {progres !== null ? `Ta figurine prépare la fête… ${progres} %` : "📤 Partager le mème de la victoire"}
+        </button>
+      )}
+      <button type="button" className="vx-second vx-fete-nouveau" onClick={onNouveau}>
+        ⭐ Faire un nouveau vœu
+      </button>
+      {erreur && <p className="tf-erreur">{erreur}</p>}
+      <div className="vx-fete-compteurs">
+        <span>
+          <b>{fete.exauces}</b> {fete.exauces > 1 ? "vœux exaucés pour toi" : "vœu exaucé pour toi"}
+        </span>
+        <span>
+          <b>{fete.aides}</b> {fete.aides > 1 ? "vœux que tu as aidé à exaucer" : "vœu que tu as aidé à exaucer"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── 📒 « Mes vœux », dans « Moi » (la maquette « Mes vœux ») ────────────────────────────────────────────────────────
+export function MesVoeux({ allerA }: { allerA: (o: string) => void }) {
+  const visible = useContext(OngletVisible);
+  const [mes, setMes] = useState<MesVoeuxEtat | null>(null);
+  const [envoi, setEnvoi] = useState(false);
+  useEffect(() => {
+    if (!visible) return;
+    let fini = false;
+    fetch("/api/direct/voeu?mes=1", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j: Reponse) => !fini && setMes(j.mes ?? null))
+      .catch(() => undefined);
+    return () => {
+      fini = true;
+    };
+  }, [visible]);
+  if (!mes) return null;
+  const mois = (le?: string) => (le ? new Date(le).toLocaleDateString("fr-FR", { month: "long", timeZone: "Europe/Paris" }) : "");
+  async function montrer(oui: boolean) {
+    if (envoi || !mes) return;
+    setEnvoi(true);
+    setMes({ ...mes, montrer: oui });
+    const j = await demander({ action: "montrer", oui }).catch(() => null);
+    if (j?.mes) setMes(j.mes);
+    setEnvoi(false);
+  }
+  return (
+    <section className="vx-mes" aria-label="Mes vœux">
+      <h2 className="vx-mes-titre">✨ Mes vœux</h2>
+      {mes.voeux.length > 0 ? (
+        <ul className="vx-mes-liste">
+          {mes.voeux.map((v) => (
+            <li key={v.id} className={v.statut}>
+              <i aria-hidden="true">{v.statut === "exauce" ? "🎉" : v.statut === "pause" ? "⏸️" : "✨"}</i>
+              <span>
+                <b>{v.texte}</b>
+                <small>
+                  {v.statut === "exauce"
+                    ? `Exaucé en ${pluriel(v.jours, "jour", "jours")}${v.par ? `, grâce à ${v.par}` : ""} · ${mois(v.fini)}`
+                    : v.statut === "pause"
+                      ? `En pause depuis le jour ${v.jours}`
+                      : `${pluriel(v.jours, "jour", "jours")} en route`}
+                </small>
+              </span>
+              <em>{v.statut === "exauce" ? "EXAUCÉ" : v.statut === "pause" ? "EN PAUSE" : "EN ROUTE"}</em>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="vx-vide">Pas encore de vœu. Une envie ? Quelqu’un près de chez toi peut t’aider à la réaliser.</p>
+      )}
+      {mes.aides.n > 0 && (
+        <div className="vx-mes-aides">
+          <div className="vx-mes-aides-haut">
+            <span>
+              <b>🌟 Tu as aidé à exaucer {pluriel(mes.aides.n, "vœu", "vœux")}</b>
+              {mes.aides.prenoms.length > 0 && <small>Ceux de {mes.aides.prenoms.join(", ").replace(/, ([^,]*)$/, " et $1")}.</small>}
+            </span>
+            <span className="vx-visages" aria-hidden="true">
+              {mes.aides.tetes.map((u, k) => (
+                <Im key={k} src={u} />
+              ))}
+            </span>
+          </div>
+          <label className="vx-mes-montrer">
+            <span>Le montrer sur ta carte de personnage</span>
+            <button type="button" role="switch" aria-checked={mes.montrer} aria-label="Le montrer sur ta carte de personnage" className={`vx-switch${mes.montrer ? " oui" : ""}`} disabled={envoi} onClick={() => void montrer(!mes.montrer)}>
+              <i />
+            </button>
+          </label>
+        </div>
+      )}
+      <button type="button" className="tj-go vx-mes-nouveau" onClick={() => allerA("voeu")}>
+        ✨ {mes.voeux.some((v) => v.statut === "en_route" || v.statut === "pause") ? "Voir mon vœu" : "Faire un nouveau vœu"}
+      </button>
+      <p className="vx-note">Un seul vœu en route à la fois. Les vœux en pause ne comptent pas.</p>
+    </section>
+  );
+}
+
+// ─── 💡 Pablito propose de le dire autrement (en route depuis 5 jours, sans aide) ────────────────────────────────────
+function IdeeDePablito({ etat, onEtat }: { etat: EtatVoeu; onEtat: (e: EtatVoeu) => void }) {
+  const v = etat.voeu;
+  const cle = `clikme-voeu-garder-${v?.id ?? ""}`;
+  const [garde, setGarde] = useState(() => {
+    try {
+      return window.localStorage.getItem(cle) === new Date().toLocaleDateString("en-CA");
+    } catch {
+      return false;
+    }
+  });
+  const [idee, setIdee] = useState<{ proposition?: string; conseils: string[] } | null>(null);
+  const [charge, setCharge] = useState(false);
+  const [erreur, setErreur] = useState("");
+  if (!v || v.statut !== "en_route" || v.jours < JOURS_AVANT_REFORMULER || v.aides > 0 || garde) return null;
+  const garder = () => {
+    try {
+      window.localStorage.setItem(cle, new Date().toLocaleDateString("en-CA"));
+    } catch {
+      /* rien */
+    }
+    setGarde(true);
+  };
+  async function voir() {
+    setCharge(true);
+    setErreur("");
+    try {
+      const j = await demander({ action: "reformuler" });
+      setIdee({ proposition: j.proposition, conseils: j.conseils ?? [] });
+    } catch (e) {
+      setErreur((e as Error).message);
+    } finally {
+      setCharge(false);
+    }
+  }
+  async function utiliser(texte: string) {
+    setCharge(true);
+    setErreur("");
+    try {
+      const j = await demander({ action: "modifier", texte });
+      if (j.etat) onEtat(j.etat);
+      garder();
+    } catch (e) {
+      setErreur((e as Error).message);
+    } finally {
+      setCharge(false);
+    }
+  }
+  return (
+    <div className="vx-idee">
+      <div className="vx-idee-haut">
+        <FigurineGuide className="vx-idee-pablito" fixe />
+        <p>
+          <b>Pablito</b>
+          {idee ? (idee.proposition ? "Et si tu le disais comme ça ?" : "Quelques idées pour le rendre irrésistible :") : `Ton vœu n’a pas encore trouvé d’aide en ${v.jours} jours. Et si on le disait autrement ?`}
+        </p>
+      </div>
+      {idee?.proposition && <p className="vx-dit vx-idee-texte">{idee.proposition}</p>}
+      {idee && idee.conseils.length > 0 && (
+        <ul className="vx-idee-conseils">
+          {idee.conseils.map((c) => (
+            <li key={c}>💡 {c}</li>
+          ))}
+        </ul>
+      )}
+      {!idee ? (
+        <div className="vx-boutons">
+          <button type="button" className="vx-second" onClick={garder}>
+            Pas maintenant
+          </button>
+          <button type="button" className="tj-go" disabled={charge} onClick={() => void voir()}>
+            {charge ? "Pablito réfléchit…" : "💡 Voir son idée"}
+          </button>
+        </div>
+      ) : idee.proposition ? (
+        <div className="vx-boutons">
+          <button type="button" className="vx-second" onClick={garder}>
+            Garder le mien
+          </button>
+          <button type="button" className="tj-go" disabled={charge} onClick={() => void utiliser(idee.proposition!)}>
+            Utiliser celle-ci
+          </button>
+        </div>
+      ) : (
+        <button type="button" className="vx-second" onClick={garder}>
+          Merci Pablito
+        </button>
+      )}
+      {erreur && <p className="tf-erreur">{erreur}</p>}
+      <p className="vx-note">Reformulé, il repart chez des gens qui ne l’avaient pas encore vu. Le compteur continue.</p>
+    </div>
+  );
+}
+
 // ─── ↩️ les têtes qu'on lui a répondues, en grand ─────────────────────────────────────────────────────────────────────
 function Retours({ liste, depart, onFermer }: { liste: RetourVoeu[]; depart: number; onFermer: () => void }) {
   const [i, setI] = useState(depart);
@@ -638,7 +993,7 @@ function Retours({ liste, depart, onFermer }: { liste: RetourVoeu[]; depart: num
       <header className="vx-story-tete">
         <Im src={r.tete} />
         <span>
-          <b>{r.prenom} t’a répondu</b>
+          <b>{r.exauce ? `🎉 Grâce à toi, ${r.prenom} !` : `${r.prenom} t’a répondu`}</b>
           <small>{ilYA(r.le)}</small>
         </span>
         <button type="button" className="vx-story-fermer" aria-label="Fermer" onClick={onFermer}>
@@ -659,13 +1014,29 @@ function Retours({ liste, depart, onFermer }: { liste: RetourVoeu[]; depart: num
           <span className="vx-sticker">{r.mot}</span>
         </span>
       </div>
-      <small className="vx-story-pas">Sa figurine te répond, pour ta tête sur son vœu.</small>
+      <small className="vx-story-pas">{r.exauce ? "Son vœu est exaucé, grâce à ton aide : tu gagnes « A exaucé un vœu »." : "Sa figurine te répond, pour ta tête sur son vœu."}</small>
     </div>
   );
 }
 
 // ─── 🙂 la page de son vœu ───────────────────────────────────────────────────────────────────────────────────────────
-function PageMonVoeu({ ouverte, etat, onFermer, onEtat, onRemplacer, onOuvrir }: { ouverte: boolean; etat: EtatVoeu; onFermer: () => void; onEtat: (e: EtatVoeu) => void; onRemplacer: () => void; onOuvrir: (k: number) => void }) {
+function PageMonVoeu({
+  ouverte,
+  etat,
+  onFermer,
+  onEtat,
+  onRemplacer,
+  onOuvrir,
+  onExauce,
+}: {
+  ouverte: boolean;
+  etat: EtatVoeu;
+  onFermer: () => void;
+  onEtat: (e: EtatVoeu) => void;
+  onRemplacer: () => void;
+  onOuvrir: (k: number) => void;
+  onExauce: () => void;
+}) {
   const v = etat.voeu;
   const [evoluer, setEvoluer] = useState(false);
   const [edition, setEdition] = useState<string | null>(null);
@@ -770,6 +1141,11 @@ function PageMonVoeu({ ouverte, etat, onFermer, onEtat, onRemplacer, onOuvrir }:
             </button>
           ) : (
             <div className="vx-options">
+              {v.statut === "en_route" && (
+                <button type="button" className="vx-exauce-option" onClick={onExauce}>
+                  🎉 Il est exaucé ! <small>on fête ça, avec tous ceux qui y ont cru</small>
+                </button>
+              )}
               <button type="button" onClick={() => setEdition(v.texte)}>
                 ✏️ Le reformuler <small>le compteur continue</small>
               </button>
@@ -810,6 +1186,9 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
   const [message, setMessage] = useState("");
   // 👯 il vient de répondre à une aide : « Marius et toi, proches ! » (la maquette 4d)
   const [proche, setProche] = useState<{ cle: string; prenom: string; tete: string } | null>(null);
+  // 🎉 son vœu exaucé : grâce à qui, puis la fête
+  const [exaucer, setExaucer] = useState(false);
+  const [fete, setFete] = useState<FeteVoeu | null>(null);
   useEffect(() => {
     if (!visible) return;
     let fini = false;
@@ -991,6 +1370,7 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
                 <span className="vx-vues">{v.statut === "pause" ? "⏸️ En pause" : `👁 ${pluriel(v.vues, "vue", "vues")}`}</span>
               </button>
             )}
+            {v && <IdeeDePablito key={v.id} etat={etat} onEtat={setEtat} />}
             {!v && etat.adulte !== null && (
               <button type="button" className="vx-faire-un" onClick={() => setFaire("nouveau")}>
                 <span aria-hidden="true">✨</span>
@@ -1189,7 +1569,36 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
           setPage(false);
           setStory(k);
         }}
+        onExauce={() => {
+          setPage(false);
+          setExaucer(true);
+        }}
       />
+      <Exaucer
+        ouverte={exaucer}
+        etat={etat}
+        onFermer={() => setExaucer(false)}
+        onFete={(f, e) => {
+          setExaucer(false);
+          setFete(f);
+          if (e) setEtat(e);
+        }}
+      />
+      {fete && (
+        <Fete
+          fete={fete}
+          moi={etat.moi}
+          onFermer={() => setFete(null)}
+          onNouveau={() => {
+            setFete(null);
+            setFaire("nouveau");
+          }}
+          onMerci={(cle) => {
+            setFete(null);
+            parlerA(cle);
+          }}
+        />
+      )}
       {story !== null && (
         <Reponses
           key={story}
@@ -1274,6 +1683,75 @@ export const STYLES_VOEU = `
 .vx-aide-tete{flex:none;width:56px;height:56px;border-radius:16px;object-fit:cover;object-position:50% 14%;background:#FF2E9A}
 .vx-aide-carte .vx-dit{font-size:16px}
 .vx-aide-carte audio{width:100%;height:40px}
+.vx-exauce-option{background:linear-gradient(135deg,rgba(242,196,107,.25),rgba(255,46,154,.18)) !important;box-shadow:inset 0 0 0 1.5px rgba(242,196,107,.6)}
+.vx-par{display:flex;flex-direction:column;gap:8px}
+.vx-par button{display:flex;align-items:center;gap:12px;padding:10px 12px;border:0;border-radius:16px;background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);color:#FFF4E6;font:inherit;text-align:left;cursor:pointer}
+.vx-par img,.vx-par button>span:first-child[aria-hidden]{flex:none;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;object-fit:cover;object-position:50% 14%;background:#FF2E9A;font-size:24px}
+.vx-par span{display:flex;flex-direction:column;min-width:0}
+.vx-par b{font-size:15px;font-weight:900}
+.vx-par small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:#CDB4C0}
+.vx-fete{position:fixed;inset:0;z-index:46;display:flex;flex-direction:column;align-items:center;gap:8px;padding:calc(10px + env(safe-area-inset-top)) 18px calc(20px + env(safe-area-inset-bottom));box-sizing:border-box;overflow-y:auto;background:radial-gradient(80% 40% at 50% 26%,rgba(242,196,107,.35),transparent 70%),#1A0B12;color:#FFF4E6;text-align:center}
+.vx-fete-haut{position:relative;display:flex;align-items:center;justify-content:center;width:100%;min-height:44px}
+.vx-fete-haut .vx-story-fermer{position:absolute;left:0;top:2px;background:rgba(255,255,255,.1)}
+.vx-fete-haut small{font-size:12px;font-weight:900;letter-spacing:.14em;color:#F2C46B}
+.vx-fete-scene{position:relative;flex:none;width:min(86vw,330px);height:min(86vw,330px);border-radius:32px;background:radial-gradient(circle at 50% 50%,rgba(242,196,107,.45),rgba(60,30,10,.9) 70%);overflow:hidden}
+.vx-fete-tete{position:absolute;width:15%;height:15%;border-radius:50%;object-fit:cover;object-position:50% 14%;background:#3A1530;box-shadow:0 0 0 2px #F2C46B}
+.vx-fete-tete:nth-of-type(1){left:6%;top:10%}.vx-fete-tete:nth-of-type(2){left:40%;top:3%}.vx-fete-tete:nth-of-type(3){right:6%;top:10%}
+.vx-fete-tete:nth-of-type(4){right:3%;top:42%}.vx-fete-tete:nth-of-type(5){right:7%;bottom:10%}.vx-fete-tete:nth-of-type(6){left:42%;bottom:3%}
+.vx-fete-tete:nth-of-type(7){left:6%;bottom:10%}.vx-fete-tete:nth-of-type(8){left:3%;top:42%}.vx-fete-tete:nth-of-type(9){left:23%;top:4%}
+.vx-fete-tete:nth-of-type(10){right:23%;top:4%}.vx-fete-tete:nth-of-type(11){right:23%;bottom:3%}.vx-fete-tete:nth-of-type(12){left:23%;bottom:3%}
+.vx-fete-moi{position:absolute;left:50%;top:50%;width:48%;height:48%;transform:translate(-50%,-50%)}
+.vx-fete-moi img{width:100%;height:100%;border-radius:26px;object-fit:cover;object-position:50% 14%;background:#FF2E9A;box-shadow:0 0 0 4px #F2C46B,0 18px 40px -12px rgba(0,0,0,.8);animation:vx-pop .6s cubic-bezier(.2,1.6,.4,1) both}
+.vx-fete-moi em{position:absolute;right:-18%;top:-10%;padding:4px 10px;border-radius:8px;background:#F2C46B;color:#2A1220;font-style:normal;font-size:13px;font-weight:900;letter-spacing:.06em;transform:rotate(12deg)}
+.vx-confetti{position:absolute;top:-10px;width:8px;height:12px;border-radius:2px;animation:vx-tombe 2.6s linear infinite}
+.vx-fete-jours{display:flex;align-items:baseline;gap:6px;font-size:20px;font-weight:900}
+.vx-fete-jours span{font-size:48px;line-height:1;color:#F2C46B}
+.vx-fete-porte{margin:0;font-size:14px}
+.vx-fete-texte{margin:0;font-size:13px;color:#E8D3DC}
+.vx-fete-par{display:flex;align-items:center;gap:10px;width:100%;max-width:380px;box-sizing:border-box;padding:10px 12px;border-radius:18px;background:rgba(255,255,255,.07);text-align:left}
+.vx-fete-par img{flex:none;width:44px;height:44px;border-radius:50%;object-fit:cover;object-position:50% 14%;background:#7FF0C4}
+.vx-fete-par span{display:flex;flex-direction:column;flex:1;min-width:0}
+.vx-fete-par b{font-size:15px;font-weight:900}
+.vx-fete-par small{font-size:11.5px;color:#CDB4C0}
+.vx-fete-par button{flex:none;padding:9px 14px;border:0;border-radius:999px;background:#F2C46B;color:#2A1220;font:inherit;font-weight:900;cursor:pointer}
+.vx-fete .tj-go,.vx-fete .vx-second{width:100%;max-width:380px;box-sizing:border-box}
+.vx-fete-nouveau{border:1.5px solid #F2C46B !important;color:#FFE7B8 !important}
+.vx-fete-toile{display:none}
+.vx-fete-video{display:flex;flex-direction:column;gap:8px;width:100%;max-width:380px}
+.vx-fete-video video{width:100%;max-height:44vh;border-radius:18px;background:#000}
+.vx-fete-video a{display:grid;place-items:center;text-decoration:none}
+.vx-fete-compteurs{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:380px}
+.vx-fete-compteurs span{display:flex;align-items:center;gap:8px;padding:10px;border-radius:16px;background:rgba(255,255,255,.06);font-size:11.5px;font-weight:800;text-align:left}
+.vx-fete-compteurs b{font-size:24px;color:#F2C46B}
+.vx-mes{display:flex;flex-direction:column;gap:12px;margin:20px 0 0}
+.vx-mes-titre{margin:0;font-size:20px;font-weight:900}
+.vx-mes-liste{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.vx-mes-liste li{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:18px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.vx-mes-liste i{display:grid;place-items:center;flex:none;width:42px;height:42px;border-radius:14px;background:rgba(255,255,255,.08);font-style:normal;font-size:20px}
+.vx-mes-liste li.exauce i{background:rgba(242,196,107,.18)}
+.vx-mes-liste span{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.vx-mes-liste b{font-size:14px;font-weight:800;line-height:1.25}
+.vx-mes-liste small{font-size:11.5px;color:#B49AA8}
+.vx-mes-liste em{flex:none;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.1);color:#D9C3CB;font-style:normal;font-size:10.5px;font-weight:900;letter-spacing:.04em}
+.vx-mes-liste li.exauce em{background:rgba(242,196,107,.18);color:#FFE7B8}
+.vx-mes-aides{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:20px;background:linear-gradient(135deg,rgba(242,196,107,.16),rgba(255,46,154,.1));box-shadow:inset 0 0 0 1.5px rgba(242,196,107,.5)}
+.vx-mes-aides-haut{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.vx-mes-aides-haut>span:first-child{display:flex;flex-direction:column;gap:2px}
+.vx-mes-aides b{font-size:16px;font-weight:900}
+.vx-mes-aides small{font-size:12.5px;color:#FFE7B8}
+.vx-mes-montrer{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12.5px;color:#E8D3DC}
+.vx-switch{position:relative;flex:none;width:52px;height:30px;padding:0;border:0;border-radius:999px;background:rgba(255,255,255,.18);cursor:pointer;transition:background .2s}
+.vx-switch i{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#FFF4E6;box-shadow:0 2px 6px rgba(0,0,0,.5);transition:left .2s}
+.vx-switch.oui{background:linear-gradient(135deg,#FF2E9A,#F2C46B)}
+.vx-switch.oui i{left:25px}
+.vx-mes-nouveau{margin:0}
+.vx-idee{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:22px;background:rgba(127,240,196,.08);box-shadow:inset 0 0 0 1.5px rgba(127,240,196,.45)}
+.vx-idee-haut{display:flex;align-items:center;gap:12px}
+.vx-idee-pablito{flex:none;width:56px;height:56px}
+.vx-idee-haut p{display:flex;flex-direction:column;gap:2px;margin:0;font-size:14px;line-height:1.35}
+.vx-idee-haut b{font-size:12px;font-weight:900;letter-spacing:.06em;color:#7FF0C4;text-transform:uppercase}
+.vx-idee-texte{font-size:16px}
+.vx-idee-conseils{display:flex;flex-direction:column;gap:4px;margin:0;padding:0;list-style:none;font-size:13px;color:#E8D3DC}
 .vx-story-repondre{position:relative;z-index:2;display:flex;flex-direction:column;gap:6px}
 .vx-story-repondre>small{font-size:13px;font-weight:800;text-align:center}
 .vx-story-tetes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
@@ -1436,6 +1914,7 @@ export const STYLES_VOEU = `
 .vx-story-son{position:relative;z-index:2;width:100%}
 .vx-story-signaler{position:relative;z-index:2;align-self:center;color:#fff}
 .vx-cache{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@keyframes vx-tombe{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(360px) rotate(540deg)}}
 @keyframes vx-pop{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
 @keyframes vx-battre{0%,100%{box-shadow:0 0 0 0 rgba(255,46,154,.5)}50%{box-shadow:0 0 0 8px rgba(255,46,154,0)}}
 @media (min-width:860px){

@@ -32,7 +32,8 @@ import {
 import { PanneauEnvoi } from "./ma-figurine";
 import { FigurineGuide, Guide, useVoixPablito, type Visage } from "./guide";
 import { SONS_PABLITO } from "@/lib/direct/guide";
-import { CeQueTaFigurineSait, QuestionDuJour } from "./connaitre";
+import { CeQueTaFigurineSait } from "./connaitre";
+import { MesVoeux } from "./voeu";
 
 /** Le guide pose les questions : un visage différent à chaque fois (ses vraies expressions). */
 const VISAGES_QUIZ: Visage[] = ["joie", "neutre", "euphorie"];
@@ -99,6 +100,8 @@ export function CartePerso({ carte, silhouette = false, retournable = true }: { 
                   {!silhouette && <span className="pc-ici">Ta figurine ici</span>}
                 </>
               )}
+              {/* 🌟 « A exaucé 2 vœux » (« Mon vœu ») : s'il veut le montrer */}
+              {c?.exauces ? <span className="pc-exauce">🌟 A exaucé {c.exauces > 1 ? `${c.exauces} vœux` : "un vœu"}</span> : null}
               <span className="pc-titre">{c?.fiche.titre ?? "Personnage mystère"}</span>
             </div>
             <ul className="pc-carac">
@@ -488,6 +491,8 @@ export function MonPersonnage({
           🎲 Lancer le test · 30 secondes
         </button>
         <CartePerso silhouette retournable={false} />
+        {/* ✨ ses vœux, même sans carte */}
+        {allerA && <MesVoeux allerA={allerA} />}
       </div>
     );
 
@@ -534,9 +539,9 @@ export function MonPersonnage({
           )}
         </div>
       </div>
-      {/* ❓ LA QUESTION DU JOUR (lot 2 ; ici depuis le 6 novembre 2026 : « Rencontres » ne raconte plus que l'épisode) :
-          un toucher ou trois mots ; sa figurine s'en souviendra */}
-      <QuestionDuJour />
+      {/* ✨ MES VŒUX (« Mon vœu », 12 novembre 2026) : ils remplacent la question du jour, comme l'a voulu le propriétaire —
+          ses vœux, ceux qu'il a aidé à exaucer, et le montrer sur sa carte */}
+      {allerA && <MesVoeux allerA={allerA} />}
       {/* 🧠 CE QUE TA FIGURINE SAIT DE TOI (lot 2) : il voit tout, il efface */}
       <CeQueTaFigurineSait />
     </div>
@@ -557,6 +562,7 @@ export const STYLES_PERSONNAGE = `
 .pc-image .pc-clik{position:absolute;left:50%;bottom:4px;height:92%;width:auto;max-width:96%;transform:translateX(-50%);opacity:.42}
 .pc-ici{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);padding:6px 12px;border-radius:999px;background:rgba(255,244,230,.92);color:#2A0F1F;font-size:12.5px;font-weight:900;white-space:nowrap}
 .pc-image.figurine img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;object-position:50% 20%}
+.pc-exauce{position:absolute;left:8px;top:8px;z-index:2;padding:4px 9px;border-radius:999px;background:linear-gradient(135deg,#F2C46B,#FFE7B8);color:#2A1220;font-size:11.5px;font-weight:900;box-shadow:0 4px 12px -4px rgba(0,0,0,.6)}
 .pc-titre{position:absolute;left:8px;right:8px;bottom:8px;padding:6px 10px;border-radius:12px;background:rgba(18,6,15,.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);font-size:14px;font-weight:900;text-align:center;line-height:1.2}
 .pc-carac{display:grid;gap:5px;margin:0;padding:0;list-style:none}
 .pc-carac li{display:grid;grid-template-columns:20px 84px 1fr 26px;align-items:center;gap:6px;font-size:12.5px}

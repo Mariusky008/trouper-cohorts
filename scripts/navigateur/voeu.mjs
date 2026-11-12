@@ -13,6 +13,11 @@
 // LE LOT 2 (12 novembre 2026) : Léa répond à la tête d'Inès avec la sienne (« MERCI ! ») ; Inès le retrouve dans ses
 // bulles (« ↩️ ») ; la notification de 11 h 30 parle de la mission de Noa ; celle de 19 h annonce à Zoé l'aide de Noa,
 // à Max la tête de Noa, à Inès le merci de Léa — et leur lien (`#reponses`) ouvre tout cela en grand.
+// LE LOT 3 (12 novembre 2026) : Hugo dit « 🎉 Il est exaucé ! », grâce à Inès — la fête (ses jours, ceux qui y ont
+// cru), le mème de la victoire, « Merci ! » ouvre leur conversation ; son vœu passe dans « Mes vœux » (Moi). Inès
+// retrouve « VŒU EXAUCÉ ! » dans ses bulles, « 🌟 A exaucé un vœu » sur sa carte de personnage, et le retire d'un
+// interrupteur. Zoé l'exauce grâce à Noa : à 19 h, Noa l'apprend. Max, 10 jours sans aide : Pablito propose de le dire
+// autrement ; reformulé, il revient chez Jade, qui l'avait passé il y a 40 jours (celui d'Inès, pas reformulé, non).
 import crypto from "node:crypto";
 import fs from "node:fs";
 import { BASE, D, F, fermerPablito, lancer, recus, repondreFenetre, telephone } from "./commun.mjs";
@@ -405,8 +410,138 @@ await ines.screenshot({ path: `${D}/voeu-11-retour.png` });
 await ines.locator(".vx-story-retour .vx-story-fermer").click();
 ok((await texte(ines, "#voeu .vx-bulle.retour")).includes("Léa") && (await ines.locator("#voeu .vx-bulle.retour.neuve").count()) === 0 && (await lireStock(`${INES.id}/voeux/retours.json`))?.liste?.[0]?.vu === true, "sa bulle « ↩️ MERCI ! » reste, vue");
 
+// ═══ 🎉 LE LOT 3 : HUGO — « IL EST EXAUCÉ ! », GRÂCE À INÈS ═══
+await ouvrir(hugo, "#voeu");
+await hugo.locator("#voeu .vx-mon-voeu").click();
+await hugo.waitForSelector(".vx-page.ouverte", { timeout: 10000 });
+await hugo.locator(".vx-page .vx-evoluer").click();
+ok((await texte(hugo, ".vx-page .vx-options button")).startsWith("🎉 Il est exaucé !"), "« Faire évoluer » : « 🎉 Il est exaucé ! » en premier");
+await hugo.locator(".vx-page .vx-exauce-option").click();
+await hugo.waitForSelector(".vx-exaucer.ouverte .vx-par button", { timeout: 10000 });
+const parQui = (await hugo.locator(".vx-exaucer .vx-par button").allInnerTexts()).map((x) => x.replace(/\s+/g, " ").trim());
+ok(parQui.length === 2 && parQui[0].includes("Inès") && parQui[0].includes("Vous êtes proches") && parQui[1].includes("Par moi-même"), `« Bravo ! Grâce à qui ? » : Inès (proches), ou « Par moi-même » (${parQui.join(" · ")})`);
+await hugo.screenshot({ path: `${D}/voeu-12-grace-a-qui.png` });
+await hugo.locator(".vx-exaucer .vx-par button").first().click();
+await hugo.waitForSelector(".vx-fete", { timeout: 15000 });
+const feteJours = await texte(hugo, ".vx-fete-jours");
+const fetePar = await texte(hugo, ".vx-fete-par");
+ok(/^\d+ jours?$/.test(feteJours) && (await texte(hugo, ".vx-fete-porte")) === "1 figurine a porté ton vœu" && (await texte(hugo, ".vx-fete-texte")) === "« Apprendre trois accords de guitare »" && (await texte(hugo, ".vx-fete-moi em")) === "EXAUCÉ", `la fête (la maquette 5) : « ${feteJours} », « 1 figurine a porté ton vœu » (l'aide d'Inès), son vœu, « EXAUCÉ »`);
+ok(fetePar.includes("Grâce à Inès") && fetePar.includes("Inès gagne « A exaucé un vœu » sur sa carte") && (await hugo.locator(".vx-fete-par button").count()) === 1 && (await texte(hugo, ".vx-fete-compteurs")).includes("1 vœu exaucé pour toi"), `« Grâce à Inès », « Merci ! » (ils sont proches) ; les compteurs (${fetePar})`);
+const vHugo = (await lire("clik_voeu", "id=eq.voeuhugo0001"))[0];
+const aidesInes = await lireStock(`${INES.id}/voeux/aides-exaucees.json`);
+ok(vHugo?.statut === "exauce" && vHugo.aide_par === INES.id && Boolean(vHugo.fini_le) && aidesInes?.liste?.some((x) => x.voeu === "voeuhugo0001"), "son vœu est exaucé, grâce à Inès (elle le garde pour sa carte)");
+ok((await debordement(hugo)) <= 0, "la fête ne déborde pas");
+await hugo.screenshot({ path: `${D}/voeu-13-fete.png` });
+// 📤 le mème de la victoire : sa figurine euphorique, « Mon vœu est exaucé ! » (écrit, sans voix)
+await hugo.locator(".vx-fete-partager").click();
+await hugo.waitForSelector(".vx-fete-video video", { timeout: 90000 });
+const memeVictoire = await hugo.evaluate(() => ({ src: document.querySelector(".vx-fete-video video")?.getAttribute("src") ?? "", dl: document.querySelector(".vx-fete-video a[download]")?.getAttribute("download") ?? "" }));
+ok(memeVictoire.src.startsWith("blob:") && /^voeu-exauce\.(mp4|webm)$/.test(memeVictoire.dl) && (await hugo.locator(".vx-fete-video .tj-go").count()) === 1, `« 📤 Partager le mème de la victoire » : la vidéo, « Enregistrer », « Partager » (${memeVictoire.dl})`);
+await hugo.screenshot({ path: `${D}/voeu-14-meme-victoire.png` });
+// 💬 « Merci ! » : leur conversation, le micro prêt
+await hugo.locator(".vx-fete-par button").click();
+await hugo.waitForSelector(".pr-plein .pr-qui", { timeout: 30000 });
+ok((await hugo.locator(".vx-fete").count()) === 0 && (await texte(hugo, ".pr-plein .pr-qui")).includes("Inès") && (await hugo.locator(".pr-plein.pr-parler").count()) === 1, "« Merci ! » : la fête se ferme, sa conversation avec Inès s'ouvre, le micro prêt");
+await ouvrir(hugo, "#voeu");
+ok((await hugo.locator("#voeu .vx-mon-voeu").count()) === 0 && (await texte(hugo, "#voeu .vx-faire-un")).includes("Fais un vœu"), "sa première page : plus de vœu en route, « ✨ Fais un vœu »");
+// 📒 « Mes vœux », dans « Moi »
+await hugo.goto(`${BASE}/collection?v=${Date.now()}#personnage`, { waitUntil: "networkidle" });
+await fermerPablito(hugo, "#o-personnage");
+await hugo.waitForSelector("#o-personnage .vx-mes-liste li.exauce", { timeout: 30000 });
+const mesHugo = await texte(hugo, "#o-personnage .vx-mes-liste li.exauce");
+ok(mesHugo.includes("Apprendre trois accords de guitare") && mesHugo.includes("EXAUCÉ") && mesHugo.includes("grâce à Inès") && (await hugo.locator("#o-personnage .cn-question").count()) === 0, `« Mes vœux » (Moi) : son vœu, « EXAUCÉ », grâce à Inès (${mesHugo})`);
+await hugo.screenshot({ path: `${D}/voeu-15-mes-voeux.png`, fullPage: true });
+await hugo.locator("#o-personnage .vx-mes-nouveau").click();
+await hugo.waitForSelector("#o-decouvrir:not([hidden]) #voeu .vx-faire-un", { timeout: 15000 });
+ok((await hugo.locator(".mc-nav button.pris").innerText()).includes("Découvrir"), "« ✨ Faire un nouveau vœu » mène à « Découvrir »");
+
+// ═══ INÈS : « VŒU EXAUCÉ ! » DANS SES BULLES, LE BADGE SUR SA CARTE ═══
+const retourExauce = (await etat(ines)).retours[0];
+ok(retourExauce?.exauce === true && retourExauce.mot === "VŒU EXAUCÉ !" && retourExauce.prenom === "Hugo" && !retourExauce.vu, "Inès : un retour tout neuf, « VŒU EXAUCÉ ! », de Hugo");
+await ouvrir(ines, "#voeu");
+await ines.locator("#voeu .vx-bulle.retour.neuve").first().click();
+await ines.waitForSelector(".vx-story-retour", { timeout: 15000 });
+ok((await texte(ines, ".vx-story-retour .vx-sticker")) === "VŒU EXAUCÉ !" && (await texte(ines, ".vx-story-retour .vx-story-tete")).includes("Grâce à toi, Hugo !") && (await texte(ines, ".vx-story-retour .vx-story-pas")).includes("tu gagnes « A exaucé un vœu »"), "sa bulle s'ouvre en grand : « 🎉 Grâce à toi, Hugo ! », « VŒU EXAUCÉ ! »");
+await ines.screenshot({ path: `${D}/voeu-16-exauce-chez-ines.png` });
+await ines.locator(".vx-story-retour .vx-story-fermer").click();
+// 🌟 sa carte de personnage (faite avant) : « A exaucé un vœu »
+await json(`${INES.id}/personnage.json`, {
+  reponses: { elan: "a", ton: "a", jeu: "b", sort: "a", tete: "b", gout: "a", rythme: "b" },
+  gouts: ["cuisine"],
+  phrase: "",
+  fiche: { titre: "L’Étoile du quai", portrait: "Une figurine qui donne envie de sortir.", pouvoir: "Faire sourire", faiblesse: "Les crêpes", facon: "Toujours partante." },
+  par: "local",
+  le: new Date().toISOString(),
+});
+const carteInes = async () => ines.evaluate(async () => (await (await fetch("/api/direct/personnage", { cache: "no-store" })).json()).carte);
+ok((await carteInes())?.exauces === 1, "sa carte compte le vœu exaucé de Hugo");
+await ines.goto(`${BASE}/collection?v=${Date.now()}#personnage`, { waitUntil: "networkidle" });
+await fermerPablito(ines, "#o-personnage");
+await ines.waitForSelector("#o-personnage .pc-exauce", { timeout: 30000 });
+ok((await texte(ines, "#o-personnage .pc-exauce")) === "🌟 A exaucé un vœu", "« 🌟 A exaucé un vœu » sur sa carte");
+await ines.waitForSelector("#o-personnage .vx-mes-aides", { timeout: 30000 });
+const aidesTxt = await texte(ines, "#o-personnage .vx-mes-aides");
+ok(aidesTxt.includes("Tu as aidé à exaucer 1 vœu") && aidesTxt.includes("Ceux de Hugo.") && (await ines.locator("#o-personnage .vx-switch").getAttribute("aria-checked")) === "true" && (await texte(ines, "#o-personnage .vx-mes-liste")).includes("EN ROUTE"), `« Mes vœux » : le sien (en route), « Tu as aidé à exaucer 1 vœu », l'interrupteur allumé (${aidesTxt})`);
+await ines.screenshot({ path: `${D}/voeu-17-badge.png`, fullPage: true });
+await ines.locator("#o-personnage .vx-switch").click();
+await ines.waitForFunction(() => document.querySelector("#o-personnage .vx-switch")?.getAttribute("aria-checked") === "false" && !document.querySelector("#o-personnage .vx-switch")?.hasAttribute("disabled"), null, { timeout: 15000 });
+ok((await lireStock(`${INES.id}/voeux/montrer.json`))?.oui === false && !(await carteInes())?.exauces, "« Le montrer sur ta carte » éteint : sa carte ne le montre plus");
+await ines.goto(`${BASE}/collection?v=${Date.now()}#personnage`, { waitUntil: "networkidle" });
+await fermerPablito(ines, "#o-personnage");
+await ines.waitForSelector("#o-personnage .vx-mes-aides", { timeout: 30000 });
+ok((await ines.locator("#o-personnage .pc-exauce").count()) === 0 && (await ines.locator("#o-personnage .vx-switch").getAttribute("aria-checked")) === "false", "rechargée : plus de badge, l'interrupteur reste éteint");
+
+// ═══ ZOÉ L'EXAUCE GRÂCE À NOA : À 19 H, NOA L'APPREND ═══
+const aideNoa = (await etat(zoe)).reponses.find((r) => r.genre === "aide");
+const exZoe = await zoe.evaluate(async (par) => (await (await fetch("/api/direct/voeu", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "exaucer", par }) })).json()), aideNoa?.id);
+ok(exZoe.fete?.par?.prenom === "Noa" && !exZoe.fete.par.cle && exZoe.etat?.voeu === null, "Zoé l'exauce grâce à Noa (ils ne sont pas proches : pas de « Merci ! » qui ouvre une conversation)");
+await fetch(`${BASE}/api/cron/voeu-soir?force=1`);
+const soirNoa = (await recus(telNoa)).find((x) => x.tag === "voeu-soir");
+ok(soirNoa?.title === "🎉 Grâce à toi, le vœu de Zoé est exaucé !" && soirNoa.body === "Tu gagnes « A exaucé un vœu ». Viens voir 👀" && soirNoa.url === "/collection#reponses", `19 h, chez Noa : « ${soirNoa?.title} » — ${soirNoa?.body}`);
+// (Max ne peut pas dire qu'une simple tête l'a exaucé)
+const vueTeteNoa = (await etat(max)).reponses.find((r) => r.genre === "encourage")?.id;
+const exMax = await max.evaluate(async (par) => {
+  const r = await fetch("/api/direct/voeu", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "exaucer", par }) });
+  return { statut: r.status, ...(await r.json()) };
+}, vueTeteNoa);
+ok(exMax.statut === 400 && exMax.error === "Choisis qui t’a aidé.", `« grâce à » une tête, pas une aide : refusé (${exMax.error})`);
+
+// ═══ 💡 MAX, 10 JOURS SANS AIDE : PABLITO PROPOSE DE LE DIRE AUTREMENT ═══
+await ouvrir(max, "#voeu");
+await max.waitForSelector("#voeu .vx-idee", { timeout: 15000 });
+const idee0 = await texte(max, "#voeu .vx-idee");
+ok(/pablito/i.test(idee0) && /n’a pas encore trouvé d’aide en \d+ jours/.test(idee0) && (await texte(max, "#voeu .vx-idee .tj-go")) === "💡 Voir son idée", `Max : Pablito, « Ton vœu n'a pas encore trouvé d'aide… Et si on le disait autrement ? » (${idee0.slice(0, 110)})`);
+await max.locator("#voeu .vx-idee .tj-go").click();
+await max.waitForSelector("#voeu .vx-idee-texte", { timeout: 20000 });
+const proposition = await texte(max, "#voeu .vx-idee-texte");
+ok(proposition === "Apprendre trois accords de guitare, le samedi après-midi au parc" && (await max.locator("#voeu .vx-idee-conseils li").count()) >= 2, `son idée (« ${proposition} ») et ses conseils`);
+await max.screenshot({ path: `${D}/voeu-18-idee-pablito.png` });
+await max.locator("#voeu .vx-idee .tj-go").click();
+await max.waitForSelector("#voeu .vx-idee", { state: "detached", timeout: 15000 });
+const vMax = (await lire("clik_voeu", "id=eq.voeumax00001"))[0];
+ok(vMax?.texte === proposition && Boolean(vMax.modifie_le) && (await texte(max, "#voeu .vx-mon-voeu")).includes(proposition), "« Utiliser celle-ci » : son vœu est reformulé (le compteur continue)");
+
+// ═══ 🔁 REFORMULÉ, IL REVIENT CHEZ JADE, QUI L'AVAIT PASSÉ IL Y A 40 JOURS ═══
+const JADE = personne(9, "Jade", "dax");
+await semer("human_habitants", [{ id: JADE.id, device_token: JADE.jeton, prenom: JADE.prenom, ville_slug: JADE.ville }]);
+await deposer(`${JADE.id}/neutre-essai.webp`, figurine, "image/webp");
+await semer("clik_ma_figurine", [{ habitant_id: JADE.id, prenom: JADE.prenom, neutre: `${JADE.id}/neutre-essai.webp`, parle: `${JADE.id}/neutre-essai.webp`, prete_le: new Date().toISOString() }]);
+await json(`${JADE.id}/majeur.json`, { le: new Date().toISOString(), age: 15, adulte: true });
+const jourIl40 = il(40).slice(0, 10);
+await semer("clik_voeu_vue", [
+  { voeu_id: "voeumax00001", auteur_id: MAX.id, destinataire_id: JADE.id, jour: jourIl40, montre_le: il(40), geste: "passe", geste_le: il(40) },
+  { voeu_id: sonVoeuInes.id, auteur_id: INES.id, destinataire_id: JADE.id, jour: jourIl40, montre_le: il(40), geste: "passe", geste_le: il(40) },
+]);
+const jade = await tel(JADE);
+await ouvrir(jade, "#decouvrir");
+await jade.waitForSelector("#voeu .vx-minis small", { timeout: 20000 });
+const minisJade = await jade.locator("#voeu .vx-minis small").allInnerTexts();
+const vuesJade = await lire("clik_voeu_vue", `destinataire_id=eq.${JADE.id}`);
+const revue = vuesJade.find((x) => x.voeu_id === "voeumax00001");
+ok(minisJade.length === 1 && minisJade[0].startsWith("Apprendre trois accords de guitare, le samedi") && vuesJade.length === 2 && revue && !revue.geste && revue.jour !== jourIl40, `Jade : le vœu reformulé de Max revient (sa ligne d'il y a 40 jours repart de zéro) ; celui d'Inès, pas reformulé, non (${minisJade.join(" · ")})`);
+
 // ═══ PARTOUT : PAS D'ERREUR, RIEN QUI DÉBORDE, JAMAIS LE MOT INTERDIT ═══
-for (const [nom, p] of [["Inès", ines], ["Léa", lea], ["Hugo", hugo], ["Tom", tom], ["Sam", sam], ["Noa", noa]]) {
+for (const [nom, p] of [["Inès", ines], ["Léa", lea], ["Hugo", hugo], ["Tom", tom], ["Sam", sam], ["Noa", noa], ["Max", max], ["Jade", jade]]) {
   ok(p.err.length === 0, `${nom} : aucune erreur dans la page${p.err.length ? ` (${p.err[0]})` : ""}`);
   ok(!/exemple/i.test(await texte(p, "#o-decouvrir")), `${nom} : jamais le mot interdit dans « Découvrir »`);
 }

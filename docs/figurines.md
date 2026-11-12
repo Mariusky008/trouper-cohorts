@@ -1986,7 +1986,7 @@ c'est rare donc attendu, et cela fait un rituel du matin).
   la première ouverture, Léa d'abord, la consigne sans autre jour ni autre conversation, « sensible », l'écran fermé
   puis ouvert, le bandeau, l'envoi du matin (une fois), effacer.
 
-### 9.0 septvicies ✨ « Mon vœu » dans « Découvrir » : le lot 1 (11 novembre)
+### 9.0 septvicies ✨ « Mon vœu » dans « Découvrir » : les lots 1, 2 et 3 (11 et 12 novembre)
 
 Le propriétaire veut remplacer la « Question du jour » par **« Réalise mon vœu »** : je dépose un vœu avec ma figurine
 (une petite envie concrète, qu'une personne de ma ville pourrait m'aider à réaliser) ; chaque jour, des gens le
@@ -2114,10 +2114,45 @@ suite pour savoir comment ils vont s'entraider ») :
   prêt (la maquette 4c) : `ouvrirConversation(cle, true)` (`rituel.tsx`), qui ouvrait jusque-là la conversation seule.
 - **« N figurines croient en ton vœu »** compte aussi ceux qui l'aident.
 
-**La suite** : le lot 3 — « Exaucé » (la fête, le merci, le mème de la victoire, les compteurs, la carte de personnage,
-« Mes vœux » dans « Moi »), la reformulation proposée après cinq jours sans aide, et le retrait de la question du jour
-(après avoir changé la source de la phrase du mois et de l'étape qui s'en servent). Et une bulle du tuto pour « Mon
-vœu », à enregistrer par le propriétaire.
+**Le lot 3 (12 novembre, « Vas-y »)** — pas de nouvelle migration (les colonnes `fini_le` et `aide_par` étaient
+déjà là) :
+
+- **🎉 « Il est exaucé ! »** : en tête de « Faire évoluer » (sur sa page « Mon vœu », vœu en route). « Bravo ! Grâce à
+  qui ? » : ceux qui lui ont proposé leur aide (« Vous êtes proches » s'il a dit oui), ou « 🙌 Par moi-même »
+  (`exaucerVoeu` : `statut` « exauce », `fini_le`, `aide_par` = l'identifiant de celui qui a aidé, ou « seul »). Une
+  simple tête ne compte pas : seule une aide peut exaucer.
+- **La fête** (la maquette 5) : son visage d'euphorie (sa figurine s'il ne l'a pas encore fait) au milieu des têtes de
+  ceux qui y ont cru (12 au plus), des confettis, « EXAUCÉ » ; « 4 jours », « 1 figurine a porté ton vœu », son vœu ;
+  « Grâce à Inès — Inès gagne « A exaucé un vœu » sur sa carte, à son choix » et **« Merci ! »** quand ils sont proches
+  (leur conversation s'ouvre dans « Proches », le micro prêt) ; les compteurs (vœux exaucés pour lui, vœux qu'il a aidé
+  à exaucer) ; « ⭐ Faire un nouveau vœu ».
+- **📤 Le mème de la victoire** : `fabriquerMeme` (comme « Créer »), sa figurine euphorique qui danse, « Mon vœu est
+  exaucé ! « … » » ÉCRIT, avec 🎉 — sans voix, jamais de voix de synthèse. L'aperçu, « ⬇️ Enregistrer », « 📲
+  Partager ».
+- **Chez celui qui a aidé** : « VŒU EXAUCÉ ! » dans ses bulles, avec le visage d'euphorie de l'auteur ; en grand :
+  « 🎉 Grâce à toi, Hugo ! — Son vœu est exaucé, grâce à ton aide : tu gagnes « A exaucé un vœu ». » À 19 h : « 🎉
+  Grâce à toi, le vœu de Zoé est exaucé ! — Tu gagnes « A exaucé un vœu ». Viens voir 👀 ». Gardé dans
+  `<habitant>/voeux/aides-exaucees.json` (les 200 derniers).
+- **🌟 Sur sa carte de personnage** : « 🌟 A exaucé un vœu » (ou « N vœux »), aussi sur sa carte partagée — sauf s'il
+  l'éteint dans « Mes vœux » (« Le montrer sur ta carte de personnage », `<habitant>/voeux/montrer.json`).
+- **📒 « Mes vœux », dans « Moi »**, à la place de la question du jour (même sans carte de personnage) : ses vœux
+  (EXAUCÉ, en tant de jours, grâce à qui ; EN ROUTE ; EN PAUSE), « 🌟 Tu as aidé à exaucer N vœux — Ceux de Hugo et
+  Zoé » avec leurs têtes, l'interrupteur, « ✨ Faire un nouveau vœu » (ou « Voir mon vœu ») qui mène à « Découvrir ».
+  `GET /api/direct/voeu?mes=1`.
+- **💡 Pablito propose de le dire autrement** : un vœu en route depuis 5 jours, sans aucune aide — sous son vœu,
+  « Ton vœu n'a pas encore trouvé d'aide en 10 jours. Et si on le disait autrement ? » ; « 💡 Voir son idée » :
+  l'IA le reformule, plus concret (quand, où — un lieu public —, ce qu'on ferait ensemble), avec trois conseils selon
+  sa catégorie (cinq idées par jour au plus ; sans IA, les conseils seuls). « Utiliser celle-ci » (le compteur
+  continue) ou « Garder le mien » / « Pas maintenant » (la carte se tait jusqu'au lendemain, sur ce téléphone).
+- **🔁 Reformulé, il revient** chez ceux qui l'avaient passé (ou laissé sans geste) il y a plus de 30 jours : leur
+  ancienne ligne repart de zéro dans leur mission. Ceux qui l'ont encouragé ou aidé, non ; un vœu qui n'a pas été
+  reformulé, non plus.
+- **❓ La question du jour quitte « Moi »** (le composant est retiré ; ce que sa figurine en a retenu reste dans « Ce
+  que ta figurine sait de toi »). L'étape « Répondre à 3 questions du jour » devient **« ✨ Faire un vœu »** (le même
+  cadeau ; ceux qui avaient déjà répondu à 3 questions la gardent). La phrase de sa figurine du mois puise aussi dans
+  son vœu du mois et dans les vœux qu'il a encouragés ou aidés (`sonMoisDeVoeux`).
+
+**La suite** : une bulle du tuto pour « Mon vœu », à enregistrer par le propriétaire.
 
 ### 9.0 duodetricies 🗂️ Le socle « Univers » : la fiche de chaque figurine (12 novembre) — lot 1
 

@@ -17,6 +17,9 @@
 //      figurine » (ils deviennent proches : `cle` ouvre leur conversation) ou « Pas pour moi » (l'autre ne le saura pas).
 // POST { action: "repondre-tete", vue, tete } : 🙂 l'auteur répond à une réponse avec sa tête (merci, mdr, grave, tropbien).
 // POST { action: "retours-vus" } : ↩️ il a vu les têtes qu'on lui a répondues.
+// GET ?mes=1 → { mes } : 📒 « Mes vœux » (dans « Moi »). POST { action: "montrer", oui } : le montrer sur sa carte.
+// POST { action: "exaucer", par: <vue d'une aide> | "seul" } → { fete, etat } : 🎉 son vœu est exaucé.
+// POST { action: "reformuler" } → { proposition?, conseils } : 💡 Pablito propose de le dire autrement.
 // Toutes les réponses : `{ ok: true, etat }` (l'état à jour), sauf mention.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -25,6 +28,10 @@ import {
   direSesDixHuitAns,
   etatVoeu,
   annulerVoeu,
+  exaucerVoeu,
+  mesVoeux,
+  montrerSurLaCarte,
+  reformulerVoeu,
   gesteSurVoeu,
   marquerReponsesVues,
   marquerRetoursVus,
@@ -48,9 +55,13 @@ const erreur = (r: { error?: string; statut?: number } & Record<string, unknown>
   return NextResponse.json({ error, ...reste }, { status: statut ?? 400 });
 };
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
+  if (new URL(request.url).searchParams.get("mes")) {
+    const mes = moi ? await mesVoeux(supabase, moi) : null;
+    return NextResponse.json({ ok: true, mes }, { headers: sansCache });
+  }
   return NextResponse.json({ ok: true, etat: await etatVoeu(supabase, moi) }, { headers: sansCache });
 }
 
@@ -103,6 +114,19 @@ export async function POST(request: Request) {
       await marquerReponsesVues(supabase, moi);
       return NextResponse.json({ ok: true }, { headers: sansCache });
     }
+    case "exaucer": {
+      const r = await exaucerVoeu(supabase, moi, p.par);
+      if (r.error) return erreur(r);
+      return NextResponse.json({ ok: true, fete: r.fete, etat: await etatVoeu(supabase, moi) }, { headers: sansCache });
+    }
+    case "montrer": {
+      const r = await montrerSurLaCarte(supabase, moi, p.oui);
+      return r.error ? erreur(r) : NextResponse.json({ ok: true, mes: await mesVoeux(supabase, moi) }, { headers: sansCache });
+    }
+    case "reformuler": {
+      const r = await reformulerVoeu(supabase, moi);
+      return r.error ? erreur(r) : NextResponse.json({ ok: true, proposition: r.proposition, conseils: r.conseils }, { headers: sansCache });
+    }
     case "repondre-tete": {
       const r = await repondreAvecSaTete(supabase, moi, p.vue, p.tete);
       return r.error ? erreur(r) : etat();
@@ -116,7 +140,7 @@ export async function POST(request: Request) {
       if (r.error) return erreur(r);
       return NextResponse.json({ ok: true, cle: r.cle, prenom: r.prenom, etat: await etatVoeu(supabase, moi) }, { headers: sansCache });
     }
-        case "signaler-reponse": {
+    case "signaler-reponse": {
       const r = await signalerReponse(supabase, moi, p.vue);
       return r.error ? erreur(r) : etat();
     }
