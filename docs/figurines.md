@@ -2351,6 +2351,24 @@ d'aujourd'hui jusqu'à son feu vert.
 **La suite** : son avis sur tout le parcours, puis le feu vert pour tout le monde (l'accueil de `/collection` devient
 « Mon univers », les figurines d'aujourd'hui refaites, Pablito au nouveau style) ; puis le lot 5 (le proche qui entre).
 
+### 9.0 tretricies 🚪 Le proche qui entre chez moi (12 novembre) — lot 5a
+
+La règle « chez qui ? », tranchée par le propriétaire (« oui » aux trois) : **dans l'appli, chacun voit la conversation
+chez soi, l'autre lui rend visite** ; sur WhatsApp, elle se passe chez celui qui envoie ; en visite, chez celui qu'on
+visite.
+
+- **La conversation du talkie-walkie, jouée chez moi** (`proches.tsx`) : quand mon univers est créé, la scène est MON
+  DÉCOR (calé en bas, sur toute la largeur) ; ma figurine assise à ma place (`hote`), celle du proche qui entre (elle
+  glisse, puis s'assoit) à la place de l'invité (`invite`), tournée vers moi ; celle qui parle le fait avec sa voix, sa
+  bouche, les sous-titres ; ▶ en haut à gauche. Les figurines du nouveau style sont détourées (sans visages : ils ne
+  sont pas encore faits) ; celles d'aujourd'hui gardent leur cadre. Sans univers, la scène d'aujourd'hui.
+- **Le code** : `Fil.chezMoi` (le décor, les places) et `FigurineVue.assise` (`talkie.ts`) ; `chezLui`, `assiseDe`
+  (`talkie-serveur.ts`). Personne d'autre que moi ne voit mon décor dans ma conversation.
+- **L'essai** : `scripts/navigateur/talkie-chez-moi.mjs` (Marc a son univers, Inès non) ; `talkie.mjs` inchangé.
+
+**La suite (5b, 5c)** : la vidéo qui part sur WhatsApp, dans mon univers (le décor à la place du fond rose) ; le lien
+d'invitation qui ouvre mon univers, où ma figurine dit bonjour, et l'invité qui y répond.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

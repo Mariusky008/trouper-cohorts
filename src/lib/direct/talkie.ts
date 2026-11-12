@@ -39,7 +39,11 @@ export type RepliqueProposee = { de: number; a: number; texte: string; propositi
 /** Un message de la conversation (son son : une adresse signée). `nouveau` : il ne l'a pas encore vu. */
 export type MessageFil = { id: string; moi: boolean; le: string; duree: number; son: string; repliques: Replique[]; nouveau?: boolean };
 /** Une figurine, de quoi la faire parler : ses images de tous les jours, et ses têtes faites. */
-export type FigurineVue = { prenom: string; neutre: string; parle: string; expressions: Expressions };
+/**
+ * `assise` (chantier « Univers », lot 5) : sa figurine du nouveau style, détourée, assise dans son fauteuil (`n` bouche
+ * fermée, `p` ouverte), quand il l'a faite — c'est elle qui entre chez l'autre.
+ */
+export type FigurineVue = { prenom: string; neutre: string; parle: string; expressions: Expressions; assise?: { n: string; p: string } };
 /**
  * Un proche, dans l'onglet : sa clé (jamais son identifiant), son prénom, sa figurine, s'il est là, ses messages non
  * lus, la dernière chose dite. `lien` : « proches » (ils se sont ajoutés tous les deux : ils se parlent), « attend »
@@ -61,7 +65,14 @@ export type ProcheVivant = {
   imageHumeur?: string;
 };
 /** La conversation avec un proche. */
-export type Fil = { cle: string; lui: FigurineVue; moi: FigurineVue; la: boolean; messages: MessageFil[] };
+/** Une place de son univers (en fractions de son décor, 2:3), et la taille d'une figurine qui s'y assoit. */
+export type PlaceChezMoi = { x: number; y: number; echelle: number };
+/**
+ * 🏡 CHEZ MOI (chantier « Univers », lot 5 — la règle « chez qui ? », tranchée le 12 novembre 2026 : dans l'appli,
+ * chacun voit la conversation chez soi, l'autre lui rend visite) : son décor, sa place, celle de l'invité.
+ */
+export type ChezMoi = { decor: string; hote: PlaceChezMoi; invite: PlaceChezMoi };
+export type Fil = { cle: string; lui: FigurineVue; moi: FigurineVue; la: boolean; messages: MessageFil[]; chezMoi?: ChezMoi };
 
 export const cleValide = (x: unknown): string | null => (typeof x === "string" && /^[a-f0-9]{16}$/.test(x) ? x : null);
 export const texteDuMessage = (r: readonly Replique[]) =>

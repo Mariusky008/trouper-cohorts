@@ -50,6 +50,7 @@ import {
   visagesVoulus,
 } from "./ma-figurine-serveur";
 import { motInterdit } from "./mots-interdits";
+import { lireFicheMonde, lireFichePerso } from "./fiches-serveur";
 import { humeurValide } from "./rituel";
 import {
   LIENS_PAR_JOUR,
@@ -65,8 +66,10 @@ import {
   repliquesValides,
   tetesJouables,
   texteDuMessage,
+  type ChezMoi,
   type Fil,
   type FigurineVue,
+  type PlaceChezMoi,
   type LienProche,
   type LienVu,
   type MessageFil,
@@ -142,6 +145,29 @@ export async function figurineVue(supabase: Supabase, h: string, avecTetes: bool
   ]);
   if (!neutre) return null;
   return { prenom: s(ligne.prenom) || "Ton proche", neutre, parle: parle || neutre, expressions: expr?.expressions ?? {} };
+}
+
+/** 🪑 Sa figurine du nouveau style (« Univers », lot 2), assise, bouche fermée et ouverte ; `undefined` sans elle. */
+export async function assiseDe(supabase: Supabase, h: string): Promise<{ n: string; p: string } | undefined> {
+  const { fiche } = await lireFichePerso(supabase, h);
+  const a = fiche?.style === "collection-1" ? fiche.references.assise?.chemin : undefined;
+  if (!a) return undefined;
+  const p = fiche?.references.assise_parle?.chemin;
+  const [n, o] = await Promise.all([signer(supabase, a, 3600), p ? signer(supabase, p, 3600) : Promise.resolve("")]);
+  return n ? { n, p: o || n } : undefined;
+}
+
+/** 🏡 Chez lui (« Univers », lot 5) : son décor et ses places, quand son univers est créé ; `undefined` sinon. */
+export async function chezLui(supabase: Supabase, h: string): Promise<ChezMoi | undefined> {
+  const f = await lireFicheMonde(supabase, h);
+  if (!f?.references.decor) return undefined;
+  const decor = await signer(supabase, f.references.decor.chemin, 3600);
+  if (!decor) return undefined;
+  const place = (id: string, defaut: PlaceChezMoi): PlaceChezMoi => {
+    const p = f.scene.places.find((x) => x.id === id);
+    return p ? { x: p.x, y: p.y, echelle: p.echelle } : defaut;
+  };
+  return { decor, hote: place("hote", { x: 0.36, y: 0.8, echelle: 1 }), invite: place("invite", { x: 0.66, y: 0.82, echelle: 0.96 }) };
 }
 
 /** ☀️ Son humeur du jour (lot R : elle s'efface à minuit, l'heure de Paris). */
@@ -294,15 +320,21 @@ export async function filAvec(supabase: Supabase, moi: Habitant, cle: unknown): 
   if (!h) return { error: "Ce proche n’existe pas.", statut: 404 };
   if (!(await seParlent(supabase, moi.id, h))) return { error: "Vous pourrez vous parler quand vous vous serez ajoutés tous les deux.", statut: 403 };
   const pair = pairDe(moi.id, h);
-  const [lui, mienne, noms, lus, la, caches] = await Promise.all([
+  const [lui, mienne, noms, lus, la, caches, chezMoi, sonAssise, monAssise] = await Promise.all([
     figurineVue(supabase, h, true),
     figurineVue(supabase, moi.id, true),
     nomsDuFil(supabase, pair),
     lireJson<Record<string, number>>(supabase, cheminLus(moi.id)),
     estLa(supabase, h),
     lireJson<{ ids?: string[] }>(supabase, cheminCaches(moi.id)),
+    // 🏡 « Univers », lot 5 : la conversation se joue chez moi, quand mon univers est créé ; l'autre y entre
+    chezLui(supabase, moi.id).catch(() => undefined),
+    assiseDe(supabase, h).catch(() => undefined),
+    assiseDe(supabase, moi.id).catch(() => undefined),
   ]);
   if (!lui || !mienne) return { error: "Sa figurine n’est pas encore prête.", statut: 404 };
+  if (sonAssise) lui.assise = sonAssise;
+  if (monAssise) mienne.assise = monAssise;
   const cachees = new Set((Array.isArray(caches.ids) ? caches.ids : []).map(s));
   const vu = Number(lus[h]) || 0;
   const derniers = noms.slice(-MESSAGES_LUS);
@@ -323,7 +355,7 @@ export async function filAvec(supabase: Supabase, moi: Habitant, cle: unknown): 
     await ecrireJson(supabase, cheminLus(moi.id), { ...lus, [h]: Date.now() });
     await Promise.all(nouveaux.map(() => noter(supabase, pair, h, "vu")));
   }
-  return { fil: { cle: cleProfil(h), lui, moi: mienne, la, messages } };
+  return { fil: { cle: cleProfil(h), lui, moi: mienne, la, messages, ...(chezMoi ? { chezMoi } : {}) } };
 }
 
 // ─── comprendre ce qu'il a dit ────────────────────────────────────────────────────────────────────

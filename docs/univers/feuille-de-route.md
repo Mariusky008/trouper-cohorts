@@ -542,6 +542,11 @@ visite.
 
 **On a réussi si** les messages envoyés augmentent, et si les invités de WhatsApp créent leur univers.
 
+**Construit (12 novembre 2026) — 5a** ; le détail : `docs/figurines.md`, 9.0 tretricies 🚪. La conversation du
+talkie-walkie se joue chez moi quand mon univers est créé : mon décor, ma figurine à ma place, le proche qui entre et
+s'assoit à la place de l'invité, qui parle avec sa voix. **Reste** : 5b (la vidéo WhatsApp dans mon univers), 5c (le
+lien d'invitation qui ouvre mon univers ; l'invité y répond).
+
 ### Lot 6 — Les visites et les souvenirs
 
 Entrer dans l'univers d'un proche. « Frapper à la porte » : le propriétaire est prévenu. Laisser un souvenir (un objet

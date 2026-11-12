@@ -15,6 +15,9 @@
  *     « Lui répondre ».
  *   · SON LIEN (`/collection?proche=<clé>`) : celui qui l'ouvre peut l'ajouter. La notification (`?parler=<clé>`) ouvre
  *     leur conversation.
+ *   · 🏡 CHEZ MOI (chantier « Univers », lot 5 — « dans l'appli, chacun voit la conversation chez soi, l'autre lui rend
+ *     visite ») : quand son univers est créé, la scène est SON DÉCOR ; sa figurine assise à sa place, celle du proche
+ *     qui entre et s'assoit à la place de l'invité ; celle qui parle le fait avec sa voix, sa bouche, les sous-titres.
  */
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -26,7 +29,22 @@ import { BandeauRituel, MonHumeur, fabriquerMesTetes, useConversationDemandee, u
 import { humeurDe } from "@/lib/direct/rituel";
 import { sentimentDe, type Sentiment } from "@/lib/direct/ma-figurine";
 import { fabriquerMeme, memePossible } from "@/lib/direct/meme";
-import { PAROLE_MAX_S, PAROLE_MIN_S, cleValide, repliqueA, texteAvecVideo, texteDuLien, texteDuMessage, type Fil, type FigurineVue, type MessageFil, type ProcheVivant, type Replique, type RepliqueProposee } from "@/lib/direct/talkie";
+import {
+  PAROLE_MAX_S,
+  PAROLE_MIN_S,
+  cleValide,
+  repliqueA,
+  texteAvecVideo,
+  texteDuLien,
+  texteDuMessage,
+  type Fil,
+  type FigurineVue,
+  type MessageFil,
+  type PlaceChezMoi,
+  type ProcheVivant,
+  type Replique,
+  type RepliqueProposee,
+} from "@/lib/direct/talkie";
 
 type Reponse = { ok?: boolean; error?: string };
 const ROUTE = "/api/direct/proches";
@@ -581,6 +599,11 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
   const humeurEcoute = m?.moi ? avec?.sienne : avec?.mienne;
   const imageEcoute = (humeurEcoute && ecoute.expressions[humeurEcoute]?.n) || ecoute.neutre;
   const avatar = (avec?.sienne && fil.lui.expressions[avec.sienne]?.n) || fil.lui.neutre;
+  // 🏡 chez moi (« Univers », lot 5) : les figurines du nouveau style, assises (sans visages : ils ne sont pas encore faits)
+  const chez = fil.chezMoi;
+  const assiseDe = (f: FigurineVue) => (chez && f.assise ? f.assise : null);
+  const pParle = assiseDe(parleur);
+  const pEcoute = assiseDe(ecoute);
 
   return (
     <div className="pr-plein" role="dialog" aria-modal="true" aria-label={`Ta conversation avec ${fil.lui.prenom}`}>
@@ -613,13 +636,41 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
 
       <BandeauRituel avec={avec} prenom={fil.lui.prenom} onAvec={setAvec} />
 
-      {/* la scène : leurs deux figurines face à face ; celle qui parle s'avance */}
-      <section className={`pr-scene${m?.moi ? " moi" : ""}${joue ? " joue" : ""}`} aria-label="La scène" data-message={m?.id ?? ""} data-replique={m ? ir : ""} data-tete={tete ?? ""}>
-        <div className="pr-parleur">
-          <FigurineQuiParle ref={fig} neutre={parleur.neutre} parle={parleur.parle} expressions={parleur.expressions} sentiment={tete} onTemps={surTemps} onFin={surFin} onJoue={setJoue} className="pr-fqp" />
+      {/* la scène : leurs deux figurines face à face ; celle qui parle s'avance — chez moi, dans mon univers */}
+      <section
+        className={`pr-scene${chez ? " chez" : ""}${m?.moi ? " moi" : ""}${joue ? " joue" : ""}`}
+        aria-label={chez ? `Chez toi : ${fil.lui.prenom} est venu te voir` : "La scène"}
+        data-message={m?.id ?? ""}
+        data-replique={m ? ir : ""}
+        data-tete={tete ?? ""}
+      >
+        {chez && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="pr-decor" src={chez.decor} alt="" draggable={false} />
+        )}
+        <div className={`pr-parleur${pParle ? " assise" : ""}${chez && !m?.moi ? " invite" : ""}`} style={chez ? styleDePlace(m?.moi ? chez.hote : chez.invite, !m?.moi) : undefined}>
+          <FigurineQuiParle
+            ref={fig}
+            neutre={pParle?.n ?? parleur.neutre}
+            parle={pParle?.p ?? parleur.parle}
+            expressions={pParle ? {} : parleur.expressions}
+            decoupe={Boolean(pParle)}
+            sentiment={pParle ? null : tete}
+            onTemps={surTemps}
+            onFin={surFin}
+            onJoue={setJoue}
+            className="pr-fqp"
+          />
         </div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="pr-ecoute" src={imageEcoute} alt={m?.moi ? `La figurine de ${fil.lui.prenom}, qui écoute` : "Ta figurine, qui écoute"} draggable={false} />
+        {chez ? (
+          <span className={`pr-ecoute-chez${pEcoute ? " assise" : ""}${m?.moi ? " invite" : ""}`} style={styleDePlace(m?.moi ? chez.invite : chez.hote, Boolean(m?.moi))}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={pEcoute?.n ?? imageEcoute} alt={m?.moi ? `La figurine de ${fil.lui.prenom}, qui écoute` : "Ta figurine, qui écoute"} draggable={false} />
+          </span>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="pr-ecoute" src={imageEcoute} alt={m?.moi ? `La figurine de ${fil.lui.prenom}, qui écoute` : "Ta figurine, qui écoute"} draggable={false} />
+        )}
         {s && (
           <span className="pr-badge" aria-label={`Sa tête : ${s.court}`}>
             <span aria-hidden="true">{s.emoji}</span>
@@ -713,6 +764,21 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
       )}
     </div>
   );
+}
+
+/**
+ * 🏡 Une place de mon univers, dans la scène : le décor (2:3) est calé en bas de la scène, sur toute sa largeur ; la
+ * figurine s'y assoit (le bas de son image sur la place), à 36 % de la hauteur du décor. `invite` : tournée vers moi.
+ */
+const HAUTEUR_DECOR = 1.5; // (hauteur du décor / largeur de la scène)
+function styleDePlace(p: PlaceChezMoi, invite: boolean): React.CSSProperties {
+  const echelle = Math.min(1.15, Math.max(0.9, p.echelle));
+  return {
+    left: `${p.x * 100}%`,
+    bottom: `calc(100cqw * ${HAUTEUR_DECOR} * ${(1 - p.y).toFixed(4)})`,
+    height: `calc(100cqw * ${HAUTEUR_DECOR} * ${(0.36 * echelle).toFixed(4)})`,
+    ...(invite ? { ["--pr-sens" as string]: "-1" } : {}),
+  };
 }
 
 function IconeRetour() {
@@ -1437,6 +1503,21 @@ export const STYLES_PROCHES = `
 .pr-scene.moi .pr-ecoute{order:1;transform:none}
 .pr-scene.moi .pr-lire{right:auto;left:16px}
 .pr-scene.seule .pr-parleur{height:92%}
+.pr-scene.chez{container-type:inline-size;display:block;height:min(400px,50dvh);padding:0;background:#2b1a0c}
+.pr-scene.chez::after{height:22%;background:linear-gradient(180deg,transparent,rgba(20,10,4,.7))}
+.pr-decor{position:absolute;left:0;bottom:0;width:100%;aspect-ratio:2/3;object-fit:cover;pointer-events:none}
+.pr-scene.chez .pr-parleur,.pr-ecoute-chez{position:absolute;z-index:1;transform:translateX(-50%);aspect-ratio:2/3;display:flex;align-items:flex-end;justify-content:center;transition:left .5s cubic-bezier(.2,.9,.3,1),bottom .5s,height .5s}
+.pr-scene.chez.joue .pr-parleur{transform:translateX(-50%) translateY(-2%) scale(1.03)}
+.pr-scene.chez .pr-parleur.invite,.pr-ecoute-chez.invite{animation:pr-entre .9s cubic-bezier(.2,.9,.3,1) both}
+.pr-scene.chez .pr-fqp,.pr-scene.chez .pr-fqp .fqp-fig{height:100%;width:auto;max-width:none;aspect-ratio:2/3}
+.pr-scene.chez .pr-fqp .fqp-fig{background:none;box-shadow:none;border-radius:0;overflow:visible}
+.pr-scene.chez .pr-parleur:not(.assise) .fqp-fig,.pr-ecoute-chez:not(.assise) img{border-radius:16px;overflow:hidden;box-shadow:0 10px 22px rgba(0,0,0,.45)}
+.pr-scene.chez .pr-parleur:not(.assise) .fqp-fig{height:74%;margin-bottom:6%;aspect-ratio:3/4}
+.pr-ecoute-chez img{height:100%;width:auto;object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 10px 10px rgba(0,0,0,.4))}
+.pr-ecoute-chez:not(.assise) img{height:74%;margin-bottom:6%;aspect-ratio:3/4;object-fit:cover;object-position:50% 20%}
+.pr-scene.chez .pr-parleur.assise .fqp-fig img,.pr-ecoute-chez.assise img{transform:scaleX(var(--pr-sens,1))}
+.pr-scene.chez .pr-lire,.pr-scene.chez.moi .pr-lire{top:14px;left:14px;right:auto;bottom:auto;width:58px;height:58px}
+@keyframes pr-entre{from{opacity:0;translate:30% 0}to{opacity:1;translate:0 0}}
 .pr-badge{position:absolute;right:12px;top:12px;z-index:2;display:flex;flex-direction:column;align-items:center;padding:6px 9px 5px;border-radius:16px;background:#FFF4E6;color:#2A0F1F;box-shadow:0 8px 18px rgba(0,0,0,.35);animation:pr-badge .35s cubic-bezier(.2,1.6,.4,1)}
 .pr-badge span{font-size:26px;line-height:1}
 .pr-badge small{font-size:10px;font-weight:800}
