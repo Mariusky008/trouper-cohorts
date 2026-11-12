@@ -89,6 +89,17 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
 - **Un piège de vocabulaire** : dans le code d'aujourd'hui, « univers » désigne le métier ou la passion qui habille la
   figurine (`<habitant>/univers.json`, `universValide`). Le nouvel univers se range dans `<habitant>/monde/`.
 
+## 0 ter. Le rituel du jour, la suite : R3 et R4 (12 novembre 2026)
+
+Deux lots validés par le propriétaire (feuille de route « Univers », lot R, points 4 et 5) :
+
+- **R3, ma figurine me répond** : son humeur du matin choisie, SA figurine lui dit une phrase (écrite d'avance,
+  validée) et un geste utile la suit ; la veille, le 3114 au troisième jour difficile, « Ta semaine en visages » le
+  dimanche. **Construit, en PR** (`docs/figurines.md`, 9.0 octatricies ☀️).
+- **R4, la conversation vivante** : les figurines vivantes (silences, « il enregistre », réactions avec le corps), les
+  panneaux, puis l'aparté des deux figurines (IA, visible des deux, sans demande d'accord). **Pas commencé** ; il
+  touche `proches.tsx`, que la session « Univers » a aussi modifié : une seule session à la fois.
+
 ## 0 bis. « Mon vœu » (11 novembre 2026)
 
 « Réalise mon vœu » remplacera la question du jour : je dépose un vœu avec ma figurine, les autres l'encouragent avec

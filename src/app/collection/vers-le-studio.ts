@@ -12,7 +12,8 @@
 // (`autour` : 📍 son mème pour un lieu d'« Autour » — son nom, son emoji, et s'il répond à quelqu'un ; son dépôt l'attend :
 // `depot-autour.ts`)
 export type PourAutour = { nom?: string; emoji?: string; reponse?: boolean };
-export type VersLeStudio = { texte?: string; look?: string; theme?: string; ville?: string; autour?: PourAutour };
+// (`visage` : ☀️ « Ma tête du jour », un mème avec cette tête — son humeur du matin, lot R3 : ce visage déjà choisi)
+export type VersLeStudio = { texte?: string; look?: string; theme?: string; ville?: string; autour?: PourAutour; visage?: string };
 
 export const EVT_VERS_LE_STUDIO = "clikme-vers-le-studio";
 const CLE = "clikme-vers-le-studio-v1";
@@ -35,7 +36,7 @@ export function prendreVersLeStudio(): VersLeStudio | null {
     const brut = window.sessionStorage.getItem(CLE);
     window.sessionStorage.removeItem(CLE);
     const x = brut ? (JSON.parse(brut) as VersLeStudio) : null;
-    return x && (typeof x.texte === "string" || typeof x.look === "string" || typeof x.theme === "string" || (typeof x.autour === "object" && x.autour !== null)) ? x : null;
+    return x && (typeof x.texte === "string" || typeof x.look === "string" || typeof x.theme === "string" || typeof x.visage === "string" || (typeof x.autour === "object" && x.autour !== null)) ? x : null;
   } catch {
     return null;
   }
