@@ -13,7 +13,8 @@
  *
  * Ce fichier est partagé (la page et le serveur).
  */
-import { traitsEnMots, type Traits } from "./figurine-pro";
+import type { Traits } from "./figurine-pro";
+import { consigneMemeFigurine, consigneSculptee } from "./perso-consignes";
 
 /**
  * Les trois façons d'essayer la figurine, pour comparer — LA DEUXIÈME VERSION (11 novembre 2026, le propriétaire, sur
@@ -152,76 +153,11 @@ export const varianteConstance = (x: unknown): VarianteConstance | null => (VARI
 export const nomDeVariante = (x: string) =>
   [...VARIANTES_FIGURINE, ...VARIANTES_CONSTANCE, ...DIRECTIONS_UNIVERS, { cle: "retouche", nom: "Retouche" }, { cle: "scene", nom: "La scène" }, ...ANCIENNES].find((v) => v.cle === x)?.nom ?? x;
 
-// ─── les consignes ────────────────────────────────────────────────────────────────────────────────
-const TETE = (traits?: Traits | null) => {
-  const vus = traitsEnMots(traits).filter((l) => !l.startsWith("- Son expression") && !l.includes("lunettes"));
-  return [
-    "THE HEAD — RE-SCULPTED, NEVER COPIED:",
-    "- Do NOT paste or copy the face from the photo, nor its lighting, its framing or its exact expression. Sculpt the head from scratch, as the head of a figurine, keeping THEIR identity: the face shape, the jawline and chin, the nose, the eyes and their colour, the eyebrows, the mouth, their real age, the skin tone, the hairstyle and hair colour, the facial hair.",
-    ...(traits?.portrait ? [`- Who they are: ${traits.portrait.replace(/\.?$/, ".")}`] : []),
-    ...(vus.length ? ["- Their features as seen in the photo (written in French — follow them):", ...vus.map((l) => `  ${l}`)] : []),
-    `- A caricature by a skilled sculptor: exaggerate THEIR OWN most distinctive features by about 25 %${traits?.accentuer ? ` (in French, most striking first: ${traits.accentuer})` : ""} — more volume and movement in the hair, more character in the eyebrows and the expression. Never generic features that are not theirs. Friends must recognize them at first glance.`,
-    "- Painted-resin finish: lifelike painted skin with a subtle texture (painted stubble where they have some), glossy painted eyes with a catchlight, sculpted hair with visible strands and volume. The head is lit by the same light as the rest of the figurine: it is clearly a sculpted object, not a photograph.",
-    "- A characterful, slightly funny expression that suits them (a skeptical look, a knowing half-smile, a little pout, a raised eyebrow…), with CLOSED LIPS (the mouth is animated later).",
-    "- Glasses only if they wear some in the photo. Nothing on the head that is not in the photo.",
-  ];
-};
-
-const CORPS = (avecSocle: boolean) => [
-  "BODY AND POSE:",
-  "- A BIG head: about half of the figurine's total seated height. A small body with short arms and short legs, small expressive hands with five fingers each.",
-  "- Seated in a small, cosy upholstered armchair at the figurine's scale (soft felted fabric, a rounded shape, little wooden feet), legs crossed, with an attitude full of personality: one hand touching the cheek or the chin, the other arm resting on the armrest.",
-  "- Their own clothes from the photo (same colours and type of garment), in real miniature fabric — knit, denim, leather — with visible stitching; miniature sneakers or shoes.",
-  `- The whole figurine and the whole armchair${avecSocle ? " (and the display base)" : ""} are visible, centered, with a small margin. Nothing is cut off.`,
-];
-
-const RENDU = ["RENDER: a macro product photograph of a real, premium collectible object: soft warm studio light from the upper left, crisp details, a gentle contact shadow."];
-
-const FOND_TRANSPARENT = ["BACKGROUND: fully transparent (alpha channel) — only the figurine, its armchair and a soft contact shadow under it."];
-const EN_SITUATION = [
-  "SETTING: the armchair stands on a round, polished wooden display base, on a table in a softly lit living room with plants and a framed picture; the background is pleasantly out of focus (shallow depth of field).",
-];
-
-const CONTRAINTES = (avecSocle: boolean) => [`CONSTRAINTS: no text, no logo, no packaging, no box, no hand holding the figurine, no spring,${avecSocle ? "" : " no display base,"} no other character.`];
-
+// ─── les consignes (validées au lot 0 : elles vivent dans `perso-consignes.ts`, mot pour mot) ──────────────────
 /** 🧸 LA FIGURINE DU NOUVEAU STYLE, à partir de son selfie (IMAGE 1) : la tête re-sculptée en caricature de collection. */
-export function consigneFigurineCollection(variante: VarianteFigurine, traits?: Traits | null): string {
-  const socle = !estDetouree(variante);
-  return [
-    "Turn the person in IMAGE 1 into a premium COLLECTIBLE CARICATURE FIGURINE of themselves: a big-head figurine hand-sculpted and hand-painted by a top caricature sculptor. Their friends must recognize them at first glance — and it must clearly be a sculpted figurine, not a photo of their face.",
-    "",
-    ...TETE(traits),
-    "",
-    ...CORPS(socle),
-    "",
-    ...RENDU,
-    "",
-    ...(socle ? EN_SITUATION : FOND_TRANSPARENT),
-    "",
-    ...CONTRAINTES(socle),
-  ].join("\n");
-}
-
-const CHANGEMENTS: Record<VarianteConstance, string> = {
-  parle: "its mouth is now open as if in the middle of saying a word (a natural, medium opening, teeth slightly visible). Everything else stays identical, including the eyes, the eyebrows and the pose.",
-  joie: "its facial expression: a big, warm, happy smile, cheeks raised, eyes smiling. Same pose.",
-  rire: "its facial expression: laughing out loud, eyes squeezed shut with joy, mouth wide open, head slightly tilted back. Same pose.",
-  colere: "its facial expression: comically angry — eyebrows frowning hard, lips pursed, a little pout. Same pose.",
-  debout:
-    "its pose: it is now STANDING upright on its feet, with NO armchair, the full body visible from the top of the head to the shoes, arms relaxed, ready to walk. Same proportions (the big head, the small body), same clothes, same shoes.",
-};
-
+export const consigneFigurineCollection = (variante: VarianteFigurine, traits?: Traits | null): string => consigneSculptee(traits, !estDetouree(variante));
 /** 🔁 LA CONSTANCE : la même figurine (IMAGE 1), une seule chose change. */
-export function consigneConstance(variante: VarianteConstance): string {
-  return [
-    `IMAGE 1 is a finished collectible figurine of a real person. Make a new image of EXACTLY THE SAME FIGURINE: the same person, the same face and likeness, the same hair, the same clothes, colours and materials, ${variante === "debout" ? "" : "the same armchair, "}the same size, framing and light.`,
-    `Change ONLY this: ${CHANGEMENTS[variante]}`,
-    "",
-    ...FOND_TRANSPARENT,
-    "",
-    ...CONTRAINTES(false),
-  ].join("\n");
-}
+export const consigneConstance = (variante: VarianteConstance): string => consigneMemeFigurine(variante);
 
 // ─── l'étape 2 : les univers ──────────────────────────────────────────────────────────────────────
 const STYLE_DIRECTION: Record<DirectionUnivers, string> = {

@@ -24,7 +24,7 @@
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { consigneFigurineClient } from "./figurine-pro";
 import { consigneBoucheNeutre } from "./figurine-expressions-serveur";
-import { consigneConstance, consigneFigurineCollection } from "./univers-essais";
+import { consigneMemeFigurine, consigneRetoucheFigurine, consigneSculptee } from "./perso-consignes";
 import { universValide } from "./ma-figurine";
 import { dossierExpressions, ecrireJson, lireJson, lireLigne, signer } from "./ma-figurine-serveur";
 import { NOM_SIGNATURE_NEUTRE, NOM_SIGNATURE_PARLE, NOM_TRAITS } from "./ma-figurine-fabrique-serveur";
@@ -158,6 +158,21 @@ export async function validerFichePerso(supabase: Supabase, h: string): Promise<
 }
 
 /**
+ * 🧩 SES AUTRES IMAGES DE RÉFÉRENCE, faites après sa validation (bouche ouverte, debout) : ajoutées à la version en
+ * cours, sans en faire une nouvelle (rien de ce qu'il a validé ne change). Seulement les images de son style, jamais
+ * une qui y est déjà.
+ */
+export async function completerReferencesPerso(supabase: Supabase, h: string, version: number, refs: Record<string, Reference>): Promise<{ fiche?: FichePerso; error?: string }> {
+  const { fiche, origine } = await lireFichePerso(supabase, h);
+  if (!fiche || origine !== "rangee" || fiche.version !== version) return { error: "Sa fiche a changé entre-temps." };
+  const ajouts = Object.fromEntries(Object.entries(refs).filter(([nom]) => !fiche.references[nom]));
+  const complete = fichePersoValide({ ...fiche, references: { ...fiche.references, ...ajouts } });
+  if (!complete || !ficheEstASoi(complete, h)) return { error: "Cette fiche ne tient pas." };
+  const ok = (await ecrireJson(supabase, cheminFicheVersion(h, "perso", version), complete)) && (await ecrireJson(supabase, cheminFicheEnCours(h, "perso"), complete));
+  return ok ? { fiche: complete } : { error: "La fiche n'a pas pu être rangée." };
+}
+
+/**
  * ↩️ REVENIR À UNE VERSION : une nouvelle version, recopiée de celle-là (ses images ne sont pas refaites ; sa
  * validation est gardée). La version 0 de son personnage est sa figurine d'aujourd'hui.
  */
@@ -185,9 +200,10 @@ export function consigneAttendue(f: FichePerso, nom: string): string | null {
     if (nom === "parle") return consigneBoucheNeutre();
   }
   if (f.style === "collection-1") {
-    if (nom === "assise") return consigneFigurineCollection("sculptee", f.traits ?? null);
-    if (nom === "assise_parle") return consigneConstance("parle");
-    if (nom === "debout") return consigneConstance("debout");
+    // (retouchée avec ses mots : la consigne de son image est celle de sa dernière retouche, faite sur l'image d'avant)
+    if (nom === "assise") return f.retouches?.length ? consigneRetoucheFigurine(f.retouches[f.retouches.length - 1]) : consigneSculptee(f.traits ?? null);
+    if (nom === "assise_parle") return consigneMemeFigurine("parle");
+    if (nom === "debout") return consigneMemeFigurine("debout");
   }
   return null;
 }

@@ -2193,6 +2193,42 @@ une image**. Rien ne change à l'écran ; l'appli marche exactement comme avant.
 la découverte dans son fauteuil, les retouches avec ses mots, « C'est moi ! »), à une adresse d'essai réservée au
 propriétaire.
 
+### 9.0 undetricies 🧸 La nouvelle figurine, à l'adresse d'essai (12 novembre) — lot 2
+
+Les écrans 1 à 4 de l'inscription « Univers » (feuille de route, section 5), **d'abord réservés au propriétaire**
+(`/univers/figurine`, une session d'administrateur ; lien « Univers : la nouvelle figurine (essai) » dans l'admin) : les
+gens de Dax gardent leur figurine d'aujourd'hui jusqu'à son feu vert.
+
+- **Le selfie** : « Créons ta figurine ! », sa photo (réduite dans le téléphone), « C'est bien moi », « J'ai 15 ans ou
+  plus » (son âge est noté). Sans compte sur ce téléphone, un compte se pose (`assurerHabitant`). Chaque selfie est
+  rangé à part (`<habitant>/perso/selfie-<n>.jpg`).
+- **L'atelier** : Pablito essaie des têtes en sculptant, ce qu'il fait s'écrit, une barre avance ; la proposition se
+  fait **après la réponse** (une minute environ), l'écran relit toutes les trois secondes.
+- **La découverte** : « La voilà ! », sa figurine (la consigne validée au lot 0, « Sculptée, détourée » : la tête
+  re-sculptée, fond transparent, réglage fidèle) assise dans son fauteuil, sous une lumière chaude.
+- **Les retouches avec ses mots** : « ✏️ Retoucher », ses mots ou une idée toute prête (« Les cheveux plus courts »,
+  « Sans lunettes », « Un grand sourire »…) : une nouvelle proposition, faite sur la précédente (« la même figurine,
+  seule la chose demandée change » : `consigneRetoucheFigurine`) ; ni mots interdits, ni alcool. « Elle ne me
+  ressemble pas » : une nouvelle d'après le selfie. Ses essais en petit, on revient à l'un d'eux d'un toucher.
+  **Douze propositions par jour** au plus (`PROPOSITIONS_PAR_JOUR`), une à la fois.
+- **« C'est moi ! »** : son personnage maître est enregistré — une version validée de sa fiche (`collection-1`, sa
+  référence « assise » signée, ses traits, son fauteuil de départ, son selfie, ses retouches : refaisable à
+  l'identique) ; puis, après la réponse, **sa bouche ouverte et debout** (`consigneMemeFigurine`, qualité moyenne),
+  ajoutées à cette version. « Ta figurine est prête ! », « 🗣️ Fais-la parler », et la phrase du propriétaire :
+  « Maintenant, j'aimerais découvrir ce qui fait ton univers… » (la suite, au lot 3). « Refaire ma figurine » : un
+  nouveau selfie (la version validée reste).
+- **Le code** : `perso-consignes.ts` (les consignes validées, sorties de la page d'essais, mot pour mot),
+  `moteur-images-serveur.ts` (l'appel au moteur, partagé avec la page d'essais), `nouvelle-figurine.ts`,
+  `nouvelle-figurine-serveur.ts` (son brouillon `<habitant>/perso/brouillon.json`, ses images
+  `<habitant>/perso/images/`), `app/api/direct/nouvelle-figurine`, `app/univers/figurine`. Le moteur :
+  `OPENAI_PERSO_API_KEY` / `OPENAI_PERSO_BASE_URL` s'ils existent (le faux moteur des essais), sinon `OPENAI_API_KEY`.
+- **Le coût** : une image haute par proposition (3 à 4 centimes), deux moyennes après « C'est moi ! ».
+- **Les essais** : `scripts/essai-nouvelle-figurine-route.mjs` et `scripts/navigateur/nouvelle-figurine.mjs`.
+
+**Ce qui reste du lot 2** : son avis sur son iPhone ; puis le feu vert pour tout le monde (les figurines d'aujourd'hui
+refaites à la prochaine visite, Pablito au nouveau style), et les visages du nouveau style (faits à la demande, comme
+aujourd'hui).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

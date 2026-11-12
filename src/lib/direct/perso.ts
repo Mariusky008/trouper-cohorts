@@ -80,6 +80,11 @@ export type FichePerso = {
   visages?: { dossier: string };
   /** son selfie, s'il l'a laissé (pour refaire sa figurine dans un nouveau style) */
   photo?: { chemin: string; accord_le?: string };
+  /**
+   * ✏️ les retouches qu'il a demandées avec ses mots, dans l'ordre, pour arriver à son image « assise » (la dernière
+   * est la consigne de cette image : `consigneAttendue`, `fiches-serveur.ts`)
+   */
+  retouches?: string[];
   historique: Etape[];
 };
 
@@ -183,6 +188,8 @@ export function fichePersoValide(x: unknown): FichePerso | null {
   if (dossier) f.visages = { dossier };
   const photo = o.photo as Record<string, unknown> | undefined;
   if (cheminValide(photo?.chemin)) f.photo = { chemin: cheminValide(photo?.chemin), ...(date(photo?.accord_le) ? { accord_le: date(photo?.accord_le) } : {}) };
+  const retouches = textes(o.retouches, 10, 120);
+  if (retouches.length) f.retouches = retouches;
   return f;
 }
 

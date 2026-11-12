@@ -471,6 +471,13 @@ nouveau style.
 **On a réussi si** huit personnes sur dix se reconnaissent du premier coup, et si la figurine reste la même d'un visage
 à l'autre.
 
+**Construit, à l'adresse d'essai (12 novembre 2026)** — `/univers/figurine`, réservée au propriétaire ; le détail :
+`docs/figurines.md`, 9.0 undetricies. Le selfie et ses deux cases, l'atelier, la découverte dans son fauteuil, les
+retouches avec ses mots (une proposition chacune, faite sur la précédente), « Elle ne me ressemble pas », « C'est
+moi ! » (une version validée de sa fiche, puis sa bouche ouverte et debout). Douze propositions par jour au plus.
+**Reste** : son avis ; le feu vert pour tout le monde (les figurines d'aujourd'hui refaites à la prochaine visite,
+Pablito au nouveau style) ; les visages du nouveau style.
+
 ### Lot 3 — Étape 2 : la conversation
 
 Les écrans 5 à 7 : la transition, la conversation écrite avec la dictée, l'esquisse en direct, la proposition en trois

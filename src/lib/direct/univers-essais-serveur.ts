@@ -20,10 +20,10 @@ import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { jourParis } from "@/lib/jour-paris";
-import { decrireTraits, dejaTransparente, detourerSurFondUni, rogner } from "./figurine-pro-serveur";
+import { decrireTraits } from "./figurine-pro-serveur";
 import { traitsEnMots, type Traits } from "./figurine-pro";
 import { SEAU_FIGURINES, deposer, ecrireJson, lireJson, signer, telecharger } from "./ma-figurine-serveur";
-import { moteurRefuse, moteursDImage, noterRefus } from "./moteur-image";
+import { demanderUneImage } from "./moteur-images-serveur";
 import {
   FICHES_UNIVERS,
   FICHE_MAX,
@@ -315,86 +315,9 @@ async function fabriquerUne(supabase: Supabase, d: Demande, avant: number): Prom
   await finir({ etat: "fait", modele: rendu.modele, dureeS, ...(rendu.jetons ? { jetons: rendu.jetons } : {}) });
 }
 
-/**
- * UNE IMAGE DEMANDÉE AU MOTEUR — à partir d'images (`/v1/images/edits`), ou d'après la consigne seule
- * (`/v1/images/generations`, un décor) : les replis de moteur (un modèle refusé : le suivant) et de réglages (un réglage
- * inconnu : on le retire et on rejoue), comme pour les figurines d'aujourd'hui.
- */
-async function demanderAuMoteur(o: { images: Buffer[]; consigne: string; transparent: boolean; fidelite: "high" | "low"; avant: number }): Promise<{ png: Buffer; modele: string; jetons?: number } | { erreur: string }> {
-  const k = cle();
-  if (!k) return { erreur: "Le moteur d’image n’est pas branché ici." };
-  const b = base();
-  const { liste } = await moteursDImage(k, b);
-  const images = await Promise.all(o.images.map((x) => sharp(x).png().toBuffer()));
-  const dessin = images.length === 0;
-  let derniere = "Le moteur d’image n’a pas répondu.";
-  for (let m = 0; m < liste.length; m++) {
-    const modele = liste[m];
-    const reglages: Record<string, string> = {
-      size: "1024x1536",
-      quality: qualite(),
-      ...(dessin ? {} : { input_fidelity: o.fidelite }),
-      ...(o.transparent ? { background: "transparent" } : {}),
-      output_format: "png",
-    };
-    for (let essai = 0; essai < 4; essai++) {
-      const reste = o.avant - Date.now();
-      if (reste < 15_000) return { erreur: "Trop long : la fonction allait s’arrêter. Relancez." };
-      let r: Response;
-      try {
-        if (dessin) {
-          r = await fetch(`${b}/v1/images/generations`, {
-            method: "POST",
-            headers: { authorization: `Bearer ${k}`, "content-type": "application/json" },
-            body: JSON.stringify({ model: modele, prompt: o.consigne, n: 1, ...reglages }),
-            signal: AbortSignal.timeout(reste - 5_000),
-          });
-        } else {
-          const forme = new FormData();
-          forme.append("model", modele);
-          forme.append("prompt", o.consigne);
-          forme.append("n", "1");
-          for (const [c, v] of Object.entries(reglages)) forme.append(c, v);
-          images.forEach((x, i) => forme.append("image[]", new File([new Uint8Array(x)], `image-${i + 1}.png`, { type: "image/png" })));
-          r = await fetch(`${b}/v1/images/edits`, { method: "POST", headers: { authorization: `Bearer ${k}` }, body: forme, signal: AbortSignal.timeout(reste - 5_000) });
-        }
-      } catch {
-        return { erreur: "Le moteur n’a pas répondu à temps. Relancez." };
-      }
-      if (r.ok) {
-        const j = (await r.json().catch(() => null)) as { data?: { b64_json?: string }[]; usage?: { total_tokens?: number } } | null;
-        const b64 = j?.data?.[0]?.b64_json;
-        if (!b64) return { erreur: "Le moteur n’a pas rendu d’image." };
-        try {
-          let png: Buffer = Buffer.from(b64, "base64");
-          if (o.transparent) {
-            if (!(await dejaTransparente(png))) png = await detourerSurFondUni(png);
-            png = await rogner(png);
-          }
-          return { png, modele, ...(j?.usage?.total_tokens ? { jetons: j.usage.total_tokens } : {}) };
-        } catch {
-          return { erreur: "L’image rendue n’a pas pu être préparée." };
-        }
-      }
-      const txt = await r.text().catch(() => "");
-      derniere = `Le moteur a répondu ${r.status} : ${txt.slice(0, 160)}`;
-      if (r.status === 400) {
-        const inconnus = Object.keys(reglages).filter((c) => new RegExp(`(unknown|unsupported|unrecognized|not supported|invalid)[^.]{0,60}${c}|${c}[^.]{0,60}(unknown|unsupported|not supported|invalid)`, "i").test(txt));
-        if (inconnus.length) {
-          for (const c of inconnus) delete reglages[c];
-          continue;
-        }
-        if (/safety|rejected|moderation/i.test(txt)) return { erreur: `Refusé par le moteur (sécurité) : ${txt.slice(0, 160)}` };
-      }
-      if (m < liste.length - 1 && moteurRefuse(r.status, txt)) {
-        noterRefus(modele);
-        break;
-      }
-      return { erreur: derniere };
-    }
-  }
-  return { erreur: derniere };
-}
+/** (le moteur : `moteur-images-serveur.ts`, avec la clé et la qualité des essais) */
+const demanderAuMoteur = (o: { images: Buffer[]; consigne: string; transparent: boolean; fidelite: "high" | "low"; avant: number }) =>
+  demanderUneImage({ ...o, cle: cle(), base: base(), qualite: qualite() });
 
 // ─── l'étape 2 : les univers ──────────────────────────────────────────────────────────────────────
 /**
