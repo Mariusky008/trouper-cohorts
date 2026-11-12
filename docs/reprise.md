@@ -95,10 +95,11 @@ Deux lots validés par le propriétaire (feuille de route « Univers », lot R, 
 
 - **R3, ma figurine me répond** : son humeur du matin choisie, SA figurine lui dit une phrase (écrite d'avance,
   validée) et un geste utile la suit ; la veille, le 3114 au troisième jour difficile, « Ta semaine en visages » le
-  dimanche. **Construit, en PR** (`docs/figurines.md`, 9.0 octatricies ☀️).
-- **R4, la conversation vivante** : les figurines vivantes (silences, « il enregistre », réactions avec le corps), les
-  panneaux, puis l'aparté des deux figurines (IA, visible des deux, sans demande d'accord). **Pas commencé** ; il
-  touche `proches.tsx`, que la session « Univers » a aussi modifié : une seule session à la fois.
+  dimanche. **Fusionné** (#141 ; `docs/figurines.md`, 9.0 octatricies ☀️).
+- **R4, la conversation vivante** : les figurines vivantes (silences, « il prépare un message », réactions avec le
+  corps), les panneaux, et l'aparté des deux figurines (IA, visible des deux, sans demande d'accord). **Construit, en
+  PR** (`docs/figurines.md`, 9.0 novatricies 🎭) ; il touche `proches.tsx`, que la session « Univers » modifie aussi :
+  une seule session à la fois.
 
 ## 0 bis. « Mon vœu » (11 novembre 2026)
 

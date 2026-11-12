@@ -26,6 +26,8 @@ import { demanderOui } from "./fenetre";
 import { FigurineQuiParle, type FigurineHandle } from "./figurine-qui-parle";
 import { OngletVisible } from "./guide";
 import { BandeauRituel, MonHumeur, fabriquerMesTetes, useConversationDemandee, useRituelAvec } from "./rituel";
+import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
+import { postureDe, reactionDe, panneauDe, type AparteVue, type GesteFil, type Posture } from "@/lib/direct/vivant";
 import { humeurDe } from "@/lib/direct/rituel";
 import { sentimentDe, type Sentiment } from "@/lib/direct/ma-figurine";
 import { fabriquerMeme, memePossible } from "@/lib/direct/meme";
@@ -490,6 +492,94 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
 
   // (🎭 ses visages du nouveau style, faits : la conversation se relit — `tour`)
   const [tour, setTour] = useState(0);
+
+  // 🎭 LA CONVERSATION VIVANTE (lot R4a, `conversation-vivante.tsx`) : il prépare un message, les silences, les
+  // panneaux, les réactions avec le corps — et un message qui arrive pendant qu'elle est ouverte
+  const [activite, setActivite] = useState(() => Date.now());
+  const [maintenant, setMaintenant] = useState(() => Date.now());
+  const [sursaut, setSursaut] = useState(false);
+  const [anim, setAnim] = useState<Anim | null>(null);
+  // 🎭 l'aparté qui se joue dans la scène (lot R4b), neuf secondes
+  const [aparteJoue, setAparteJoue] = useState<AparteVue | null>(null);
+  const aparteFin = useRef(0);
+  const [panneaux, setPanneaux] = useState(false);
+  const [reagirA, setReagirA] = useState("");
+  const appui = useAppuiLong((id) => setReagirA(id));
+  const [astuce, setAstuce] = useState(() => {
+    try {
+      return window.localStorage.getItem("clikme-astuce-reagir") !== "1";
+    } catch {
+      return true;
+    }
+  });
+  const animFin = useRef(0);
+  const montrer = useCallback((qui: "moi" | "lui", geste: GesteFil) => {
+    window.clearTimeout(animFin.current);
+    setAnim((a) => ({ qui, geste, n: (a?.n ?? 0) + 1 }));
+    setActivite(Date.now());
+    animFin.current = window.setTimeout(() => setAnim(null), geste.type === "panneau" ? 4000 : 2200);
+  }, []);
+  const dernierConnu = fil?.messages.length ? Date.parse(fil.messages[fil.messages.length - 1].le) || 0 : 0;
+  const [vivant, ajouterGeste, retirerGeste, sansAparte] = useVivant(cle, dernierConnu, {
+    onNouveau: () => {
+      setTour((x) => x + 1);
+      setVue(-1);
+      setActivite(Date.now());
+      setSursaut(true);
+      window.setTimeout(() => setSursaut(false), 700);
+    },
+    onGestes: (g) => {
+      const d = g[g.length - 1];
+      if (d) montrer("lui", d);
+    },
+    onAparte: (a) => {
+      window.clearTimeout(aparteFin.current);
+      setAparteJoue(a);
+      setActivite(Date.now());
+      aparteFin.current = window.setTimeout(() => setAparteJoue(null), 11_000);
+    },
+  });
+  /** 🗑️ Il efface un aparté (pour les deux). */
+  async function effacerAparte(id: string) {
+    if (!fil) return;
+    try {
+      await demander({ action: "aparte-effacer", cle: fil.cle, id });
+      sansAparte(id);
+      if (aparteJoue?.id === id) setAparteJoue(null);
+    } catch (e) {
+      setErreur(message(e));
+    }
+  }
+  useEffect(() => {
+    const t = window.setInterval(() => setMaintenant(Date.now()), 2000);
+    return () => window.clearInterval(t);
+  }, []);
+  // ✍️ il prépare un message : sa figurine se penche chez l'autre (redit toutes les 5 s, et « fini » en refermant)
+  useEffect(() => {
+    if (!enregistrer) return;
+    const dire = (oui: boolean) =>
+      void fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "prepare", cle, oui }) }).catch(() => undefined);
+    dire(true);
+    const t = window.setInterval(() => dire(true), 5000);
+    return () => {
+      window.clearInterval(t);
+      dire(false);
+    };
+  }, [enregistrer, cle]);
+  /** 🪧👏 Son geste : sa figurine le fait tout de suite, il part ensuite (refusé, il s'en va). */
+  async function faireUnGeste(type: "panneau" | "reaction", quoi: string, idMessage?: string) {
+    if (!fil) return;
+    const provisoire: GesteFil = { id: `tmp-${Date.now()}`, moi: true, le: new Date().toISOString(), type, cle: quoi, ...(idMessage ? { message: idMessage } : {}) };
+    montrer("moi", provisoire);
+    ajouterGeste(provisoire);
+    try {
+      const j = await demander<{ geste: GesteFil }>({ action: "geste", cle: fil.cle, type, quoi, ...(idMessage ? { message: idMessage } : {}) });
+      ajouterGeste(j.geste);
+    } catch (e) {
+      retirerGeste(provisoire.id);
+      setErreur(message(e));
+    }
+  }
   useEffect(() => {
     let fini = false;
     fetch(`${ROUTE}?fil=${cle}`, { cache: "no-store" })
@@ -527,8 +617,8 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
   useEffect(() => {
     msgs.current = fil?.messages ?? [];
   }, [fil]);
-  // (la liste, en bas : les derniers messages en vue)
-  const nbMessages = fil?.messages.length ?? 0;
+  // (la liste, en bas : les derniers messages en vue — et les panneaux)
+  const nbMessages = (fil?.messages.length ?? 0) + (vivant?.gestes.filter((g) => g.type === "panneau").length ?? 0);
   useEffect(() => {
     const l = liste.current;
     if (l) l.scrollTop = l.scrollHeight;
@@ -553,6 +643,7 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
     irRef.current = 0;
     setVue(i);
     setIr(0);
+    setActivite(Date.now());
     void fig.current?.jouer(m.son);
   }, []);
   const surTemps = useCallback((t: number) => {
@@ -566,9 +657,15 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
   }, []);
   const surFin = useCallback(() => {
     const n = vueRef.current + 1;
+    setActivite(Date.now());
     if (suite.current && n < msgs.current.length) jouerMessage(n, true);
     else suite.current = false;
   }, [jouerMessage]);
+  // (stable : la figurine le rappelle à chaque changement de fonction — une nouvelle à chaque rendu remettrait le silence à zéro)
+  const surJoue = useCallback((j: boolean) => {
+    setJoue(j);
+    setActivite(Date.now());
+  }, []);
 
   async function retirer() {
     setMenu(false);
@@ -633,6 +730,34 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
   const assiseDe = (f: FigurineVue) => (chez && f.assise ? f.assise : null);
   const pParle = assiseDe(parleur);
   const pEcoute = assiseDe(ecoute);
+  // 🎭 les postures : il prépare un message (sa figurine se penche), le silence (selon leur humeur du jour), un geste
+  const gestes = vivant?.gestes ?? [];
+  const dernierGeste = gestes.length ? Date.parse(gestes[gestes.length - 1].le) || 0 : 0;
+  const silence = maintenant - Math.max(activite, dernierConnu, dernierGeste);
+  const luiPrepare = Boolean(vivant?.enregistre);
+  const postureLui: Posture | "prepare" = luiPrepare ? "prepare" : postureDe(avec?.sienne ?? null, silence);
+  const postureMoi: Posture = postureDe(avec?.mienne ?? null, silence);
+  const luiParle = !m?.moi;
+  const postureParleur = joue ? "calme" : luiParle ? postureLui : postureMoi;
+  const postureEcoute = luiParle ? postureMoi : postureLui;
+  const gesteDe = (qui: "moi" | "lui") => (anim?.qui === qui && anim.geste.type === "reaction" ? anim.geste.cle : undefined);
+  const gesteParleur = gesteDe(luiParle ? "lui" : "moi");
+  const gesteEcoute = gesteDe(luiParle ? "moi" : "lui");
+  const reactionsDe = (id: string) =>
+    gestes
+      .filter((g) => g.type === "reaction" && g.message === id)
+      .map((g) => reactionDe(g.cle)?.emoji ?? "")
+      .join("");
+  const elements: { le: string; x?: MessageFil; i: number; g?: GesteFil; a?: AparteVue }[] = [
+    ...fil.messages.map((x, i) => ({ le: x.le, x, i })),
+    ...gestes.filter((g) => g.type === "panneau").map((g) => ({ le: g.le, g, i: -1 })),
+    ...(vivant?.apartes ?? []).map((a) => ({ le: a.le, a, i: -1 })),
+  ].sort((a, b) => a.le.localeCompare(b.le));
+  const aparteDe = (qui: "moi" | "lui") => {
+    if (!aparteJoue) return null;
+    const k = aparteJoue.mots.findIndex((x) => x.moi === (qui === "moi"));
+    return k < 0 ? null : { texte: aparteJoue.mots[k].texte, second: k === 1, n: aparteJoue.id };
+  };
 
   return (
     <div className="pr-plein" role="dialog" aria-modal="true" aria-label={`Ta conversation avec ${fil.lui.prenom}`}>
@@ -667,7 +792,7 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
 
       {/* la scène : leurs deux figurines face à face ; celle qui parle s'avance — chez moi, dans mon univers */}
       <section
-        className={`pr-scene${chez ? " chez" : ""}${m?.moi ? " moi" : ""}${joue ? " joue" : ""}`}
+        className={`pr-scene${chez ? " chez" : ""}${m?.moi ? " moi" : ""}${joue ? " joue" : ""}${sursaut ? " pv-sursaut" : ""}`}
         aria-label={chez ? `Chez toi : ${fil.lui.prenom} est venu te voir` : "La scène"}
         data-message={m?.id ?? ""}
         data-replique={m ? ir : ""}
@@ -677,7 +802,12 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
           // eslint-disable-next-line @next/next/no-img-element
           <img className="pr-decor" src={chez.decor} alt="" draggable={false} />
         )}
-        <div className={`pr-parleur${pParle ? " assise" : ""}${chez && !m?.moi ? " invite" : ""}`} style={chez ? styleDePlace(m?.moi ? chez.hote : chez.invite, !m?.moi) : undefined}>
+        <div
+          className={`pr-parleur${pParle ? " assise" : ""}${chez && !m?.moi ? " invite" : ""}`}
+          style={chez ? styleDePlace(m?.moi ? chez.hote : chez.invite, !m?.moi) : undefined}
+          data-posture={postureParleur}
+          data-geste={gesteParleur}
+        >
           <FigurineQuiParle
             ref={fig}
             neutre={pParle?.n ?? parleur.neutre}
@@ -687,19 +817,34 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
             sentiment={pParle ? (tete && pParle.expressions?.[tete] ? tete : null) : tete}
             onTemps={surTemps}
             onFin={surFin}
-            onJoue={setJoue}
+            onJoue={surJoue}
             className="pr-fqp"
           />
         </div>
         {chez ? (
-          <span className={`pr-ecoute-chez${pEcoute ? " assise" : ""}${m?.moi ? " invite" : ""}`} style={styleDePlace(m?.moi ? chez.invite : chez.hote, Boolean(m?.moi))}>
+          <span
+            className={`pr-ecoute-chez${pEcoute ? " assise" : ""}${m?.moi ? " invite" : ""}`}
+            style={styleDePlace(m?.moi ? chez.invite : chez.hote, Boolean(m?.moi))}
+            data-posture={postureEcoute}
+            data-geste={gesteEcoute}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={pEcoute?.n ?? imageEcoute} alt={m?.moi ? `La figurine de ${fil.lui.prenom}, qui écoute` : "Ta figurine, qui écoute"} draggable={false} />
           </span>
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="pr-ecoute" src={imageEcoute} alt={m?.moi ? `La figurine de ${fil.lui.prenom}, qui écoute` : "Ta figurine, qui écoute"} draggable={false} />
+          <img
+            className="pr-ecoute"
+            src={imageEcoute}
+            alt={m?.moi ? `La figurine de ${fil.lui.prenom}, qui écoute` : "Ta figurine, qui écoute"}
+            draggable={false}
+            data-posture={postureEcoute}
+            data-geste={gesteEcoute}
+          />
         )}
+        {/* 🎭 par-dessus chaque figurine : « … », le panneau, l'éclat d'une réaction, les zZz */}
+        <Calque qui="lui" style={chez ? styleDePlace(chez.invite, true) : undefined} prepare={luiPrepare} anim={anim} posture={postureLui} aparte={aparteDe("lui")} />
+        <Calque qui="moi" style={chez ? styleDePlace(chez.hote, false) : undefined} prepare={false} anim={anim} posture={postureMoi} aparte={aparteDe("moi")} />
         {s && (
           <span className="pr-badge" aria-label={`Sa tête : ${s.court}`}>
             <span aria-hidden="true">{s.emoji}</span>
@@ -739,7 +884,39 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
       </div>
 
       <ol className="pr-fil" ref={liste} aria-label="Vos messages">
-        {fil.messages.map((x, i) => {
+        {elements.map(({ x, i, g, a }) => {
+          if (a) {
+            const mienne = a.mots.find((y) => y.moi)?.texte ?? "";
+            const sienne = a.mots.find((y) => !y.moi)?.texte ?? "";
+            return (
+              <li key={a.id} className="pv-aparte-fil">
+                <div>
+                  <b>🎭 VOS FIGURINES, EN APARTÉ · {heure(a.le)}</b>
+                  {a.mots.map((y, k) => (
+                    <p key={k}>
+                      <small>{y.moi ? "Ta figurine" : `Celle de ${fil.lui.prenom}`} :</small> « {y.moi ? mienne : sienne} »
+                    </p>
+                  ))}
+                  <span className="pv-aparte-bas">
+                    <small>Écrit par vos figurines · IA</small>
+                    <button type="button" onClick={() => void effacerAparte(a.id)}>
+                      Effacer
+                    </button>
+                  </span>
+                </div>
+              </li>
+            );
+          }
+          if (g || !x) {
+            const p = g ? panneauDe(g.cle) : null;
+            return p && g ? (
+              <li key={g.id} className={`pv-panneau-fil ${g.moi ? "moi" : "lui"}`}>
+                <span>
+                  🪧 « {p.texte} » <small>{heure(g.le)}</small>
+                </span>
+              </li>
+            ) : null;
+          }
           const qui = x.moi ? fil.moi : fil.lui;
           const t0 = x.repliques.find((r) => r.tete)?.tete;
           const img = (t0 && qui.expressions[t0]?.n) || qui.neutre;
@@ -747,7 +924,14 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
           const texte = texteDuMessage(x.repliques);
           return (
             <li key={x.id} className={x.moi ? "moi" : "lui"}>
-              <button type="button" className={`${i === iVue ? "vu" : ""}${x.nouveau ? " nouveau" : ""}`} onClick={() => jouerMessage(i, false)}>
+              <button
+                type="button"
+                className={`${i === iVue ? "vu" : ""}${x.nouveau ? " nouveau" : ""}`}
+                {...appui.props(x.id)}
+                onClick={() => {
+                  if (!appui.etaitLong()) jouerMessage(i, false);
+                }}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={img} alt="" draggable={false} />
                 <span>
@@ -756,6 +940,7 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
                     {emojis ? `${emojis} · ` : ""}
                     {mmss(x.duree)} · {heure(x.le)}
                     {x.nouveau ? " · nouveau" : ""}
+                    {reactionsDe(x.id) ? ` · ${reactionsDe(x.id)}` : ""}
                   </small>
                 </span>
               </button>
@@ -763,6 +948,7 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
           );
         })}
       </ol>
+      {astuce && fil.messages.length > 0 && <p className="pv-astuce">👆 Appui long sur un message : ta figurine réagit</p>}
       {erreur && (
         <p className="pr-erreur" role="alert">
           {erreur}
@@ -770,7 +956,10 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
       )}
 
       <div className="pr-bas">
-        <button type="button" className="pr-bouton grand" onClick={() => (fig.current?.arreter(), setEnregistrer(true))}>
+        <button type="button" className="pv-bouton-panneau" aria-label="Brandir un panneau" onClick={() => setPanneaux(true)}>
+          🪧
+        </button>
+        <button type="button" className="pr-bouton grand" onClick={() => (fig.current?.arreter(), setActivite(Date.now()), setEnregistrer(true))}>
           <IconeMicro />
           {fil.messages.length ? "Lui répondre" : "Lui parler"}
         </button>
@@ -787,10 +976,37 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
             setFil((f) => (f ? { ...f, messages: [...f.messages.map((y) => ({ ...y, nouveau: false })), j.message] } : f));
             setVue(fil.messages.length);
             setIr(0);
+            setActivite(Date.now());
             setEnregistrer(false);
           }}
         />
       )}
+      <FeuillePanneaux
+        ouverte={panneaux}
+        prenom={fil.lui.prenom}
+        onFermer={() => setPanneaux(false)}
+        onChoisi={(c) => {
+          setPanneaux(false);
+          void faireUnGeste("panneau", c);
+        }}
+      />
+      <FeuilleReactions
+        ouverte={Boolean(reagirA)}
+        onFermer={() => setReagirA("")}
+        onChoisi={(c) => {
+          const id = reagirA;
+          setReagirA("");
+          if (astuce) {
+            setAstuce(false);
+            try {
+              window.localStorage.setItem("clikme-astuce-reagir", "1");
+            } catch {
+              /* rien */
+            }
+          }
+          void faireUnGeste("reaction", c, id);
+        }}
+      />
     </div>
   );
 }

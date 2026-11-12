@@ -2483,6 +2483,49 @@ acceptée (« oui, tout est bien, vas-y ») : feuille de route, lot R, point 4.
   dimanche) ; `scripts/navigateur/humeur-reponse.mjs` (Léa et sa remontée, le studio et sa tête du jour ; Hugo et le
   3114, « Faire un vœu » ; Max et son vœu en route ; Zoé en haut de « Proches », « Je t'aime »).
 
+### 9.0 novatricies 🎭 La conversation vivante (12 novembre) — lots R4a et R4b
+
+Le propriétaire : « durant notre discussion entre proches, qu'est-ce qui va être différenciant, mis à part nos
+figurines qui parlent et qui bougent ? […] il faut qu'il y ait une utilité et du dynamisme dans cette scène » ; la
+proposition acceptée (« oui »), puis « on attaque le lot R4 » : feuille de route, lot R, point 5. Rien ne change à la
+façon de parler : la scène de leur conversation (`proches.tsx`) s'anime, et la conversation se relit d'elle-même.
+
+- **La conversation se relit toutes les 4 s** (page visible ; `GET /api/direct/proches?vivant=<clé>`,
+  `useVivant`) : s'il prépare un message, leurs gestes des sept derniers jours, l'heure de leur dernier message — un
+  message arrivé pendant qu'elle est ouverte : elle se relit, le montre, et leurs figurines sursautent.
+- **« Il prépare un message »** : quand l'autre ouvre « Lui répondre », sa figurine se penche vers la mienne, « … »
+  (la page le redit toutes les 5 s, `action: "prepare"` ; au-delà de 9 s sans nouvelles, c'est fini).
+- **Les silences** (`postureDe`, `vivant.ts`) : après 20 s, elles s'occupent (s'étirer, regarder leur téléphone) ;
+  après une minute, selon leur humeur du jour, elles se lèvent et dansent (joie, euphorie, fou rire, amour, grimace),
+  s'affalent (tristesse, « oh non »), croisent les bras 😤 (colère), ou continuent de s'occuper (pas d'humeur) ; après
+  trois minutes, elles s'endorment, zZz. Une parole, un geste, un message : le silence repart de zéro. (Les postures
+  passent par `rotate`/`translate`, qui s'ajoutent aux transformations de la scène sans les défaire.)
+- **Les réactions avec le corps** : un appui long (ou le clic droit) sur un message, six gestes — 👏 Applaudir, 😂 Mort
+  de rire, ❤️ Cœur, ✋ Check, 🤦 Se taper le front, 😮 Waouh ; sa figurine le fait tout de suite chez lui, chez l'autre
+  quelques secondes après ; l'emoji s'accroche au message. Une réaction par personne et par message (la nouvelle
+  remplace l'ancienne). L'astuce « 👆 Appui long sur un message : ta figurine réagit » s'en va à sa première réaction.
+- **Les panneaux** (🪧, à côté de « Lui répondre ») : « MDR » · « J'arrive ! » · « Rappelle-moi » · « Bravo ! » · « Pas
+  dispo 😴 » · « Je pense à toi » · « Merci ! » · « Ce soir ? » (validés). Sa figurine le brandit, chez les deux ; il
+  reste dans leur fil ; l'autre est prévenu (« 🪧 Zoé : « J'arrive ! » », les mêmes règles qu'une parole :
+  `prevenirDUneParole`, `panneau`). À l'ouverture, son dernier panneau des douze dernières heures se brandit encore.
+- **🎭 L'aparté (R4b)** : après un vrai échange (quatre messages au moins en un quart d'heure, des deux) et deux minutes
+  de silence, la relecture d'après prépare l'aparté (après la réponse, jamais bloquant ; un verrou d'une minute et
+  demie) : le petit modèle du mot de la fin écrit une réplique par figurine (90 signes), sur cet échange et rien
+  d'autre — celle de qui a parlé le premier commence. Visible des deux, sans demande d'accord (le propriétaire) ; leurs
+  deux bulles dans la scène (neuf secondes) et, dans leur fil, « 🎭 Vos figurines, en aparté », « Écrit par vos
+  figurines · IA », « Effacer » (pour les deux). Une fois par échange, une fois par heure et par paire, trois par jour.
+  Pas d'aparté si l'un des deux a coupé « Ma figurine parle pour moi », si un message de l'échange a été signalé, si le
+  sujet est sensible (le modèle le dit), si une réplique ne passe pas les mots interdits ou parle d'alcool. Jamais de
+  commentaire sur ce que l'un pense en secret, jamais d'accord au masculin ou au féminin.
+- **Le seau** (`vivant-serveur.ts`), pas de table, pas de migration : `fils/<paire>/gestes.json` (les 80 derniers
+  gestes), `fils/<paire>/prepare.json`, `fils/<paire>/apartes.json`, `<habitant>/gestes-jour.json` (300 gestes par
+  jour) — qui l'a fait : 8 signes tirés de son identifiant, jamais l'identifiant.
+- **Plus tard** : le résumé au retour (« Pendant ton absence, Léa t'a laissé 4 vocaux : … ») ; un panneau compté dans
+  les non-lus de « Proches » (aujourd'hui, la notification le dit) ; le lieu qui garde la mémoire (lot 6).
+- **L'essai** : `scripts/navigateur/conversation-vivante.mjs` (Léa et Zoé, chacune sur son téléphone : « … », « J'arrive
+  ! » et la notification, 👏 puis ❤️, un message qui arrive, le silence à l'horloge avancée — s'occuper, danser,
+  dormir ; l'aparté de Léa et Nico, une seule fois, effacé ; pas d'aparté avec Eva ni avec Sam ; les refus).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
