@@ -9,7 +9,8 @@
  *   · LA DÉCOUVERTE : sa figurine, assise dans son fauteuil, sous une lumière chaude (« Film, chaleureux ») — elle
  *     apparaît ; « C'est moi ! », « Retoucher » (avec ses mots, ou une idée toute prête), « Elle ne me ressemble pas » ;
  *     ses essais d'avant en petit (on revient à l'un d'eux d'un toucher) ;
- *   · VALIDÉE : « Ta figurine est prête ! », ses autres poses arrivent (bouche ouverte, debout), « Fais-la parler ».
+ *   · VALIDÉE : « Ta figurine est prête ! », ses autres poses arrivent (bouche ouverte, debout), « Fais-la parler » ;
+ *     « Découvrir ton univers » mène à la conversation avec Pablito (lot 3, `/univers/conversation`).
  *
  * Sans voix : Pablito ne parle qu'avec ses enregistrements, et il n'y en a pas encore pour cet écran.
  *
@@ -340,9 +341,9 @@ function Validee({ etat, onRefaire }: { etat: EtatNouvelleFigurine; onRefaire: (
         )
       )}
       <p className="nf-suite">Maintenant, j’aimerais découvrir ce qui fait ton univers…</p>
-      <button type="button" className="nf-bouton" disabled>
-        Ton univers : bientôt
-      </button>
+      <a className="nf-bouton nf-vers" href="/univers/conversation">
+        Découvrir ton univers
+      </a>
       <button type="button" className="nf-lien" onClick={onRefaire}>
         Refaire ma figurine
       </button>
@@ -368,6 +369,7 @@ const STYLES = `
 .nf-bouton{align-self:stretch;min-height:52px;border:0;border-radius:16px;background:#3a2412;color:#fff6e6;font-size:18px;font-weight:800;box-shadow:0 6px 16px rgba(58,36,18,.25)}
 .nf-bouton.clair{background:#fff8ec;color:#3a2412;box-shadow:none;border:2px solid #3a2412}
 .nf-bouton:disabled{opacity:.45}
+.nf-vers{display:flex;align-items:center;justify-content:center;text-decoration:none}
 .nf-lien{border:0;background:none;color:#6b4a2b;font-size:16px;text-decoration:underline;padding:8px}
 .nf-atelier{padding-top:5vh}
 .nf-pablito{position:relative;width:170px;height:200px}

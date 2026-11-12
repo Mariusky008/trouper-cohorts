@@ -475,8 +475,10 @@ nouveau style.
 `docs/figurines.md`, 9.0 undetricies. Le selfie et ses deux cases, l'atelier, la découverte dans son fauteuil, les
 retouches avec ses mots (une proposition chacune, faite sur la précédente), « Elle ne me ressemble pas », « C'est
 moi ! » (une version validée de sa fiche, puis sa bouche ouverte et debout). Douze propositions par jour au plus.
-**Reste** : son avis ; le feu vert pour tout le monde (les figurines d'aujourd'hui refaites à la prochaine visite,
-Pablito au nouveau style) ; les visages du nouveau style.
+**Son verdict (12 novembre 2026)** : « c'est bon, la figurine est ok » — sur sa propre figurine (la tête re-sculptée,
+reconnaissable, la main sur la joue, dans son fauteuil). **Reste** : le feu vert pour tout le monde (les figurines
+d'aujourd'hui refaites à la prochaine visite, Pablito au nouveau style), une fois le parcours complet (lots 3 et 4) à
+l'adresse d'essai ; les visages du nouveau style.
 
 ### Lot 3 — Étape 2 : la conversation
 
@@ -488,6 +490,20 @@ de personnage.
 
 **On a réussi si** le propriétaire et ses testeurs disent « on dirait qu'il m'a écouté », et si rien d'inventé ne
 passe dans la fiche.
+
+**Ses décisions (12 novembre 2026, « fais ce que tu penses être le mieux »)** : le message pour quelqu'un qui va mal
+est écrit avec les numéros officiels (le 3114, le 119, le 15 ou le 112), sans conseil ni analyse ; le modèle est le
+plus capable de ceux du compte OpenAI (`gpt-5.4`, réglable par `OPENAI_UNIVERS_MODEL`), le petit (`gpt-5.4-mini`) en
+secours, sans nouvelle clé ; Pablito écrit, sans voix — ses phrases fixes sont prêtes à être enregistrées un jour
+(`PHRASES_FIXES`, `conversation-univers.ts`).
+
+**Construit, à l'adresse d'essai (12 novembre 2026)** — `/univers/conversation`, réservée au propriétaire, après « C'est
+moi ! » (« Découvrir ton univers ») ; le détail : `docs/figurines.md`, 9.0 tricies. La transition ; la conversation
+écrite, la dictée ; l'esquisse (les couleurs de l'écran, les vignettes) ; les trois colonnes rangées à chaque échange
+(une chose « dite » porte sa phrase, vérifiée mot pour mot) ; « Voir ce que j'imagine » ; la proposition (retirer,
+corriger avec ses mots) ; « C'est mon univers ! » : la fiche de son univers, version 1. Les garde-fous : un sujet
+sensible n'est pas gardé ; quelqu'un qui va mal reçoit le message d'aide et les numéros, la conversation s'arrête de
+jouer ; tout s'efface. **Reste** : son avis, à la lecture d'une vraie conversation.
 
 ### Lot 4 — L'univers
 
@@ -684,7 +700,8 @@ Rien ne bloque le lot 0. À décider en chemin :
 3. ~~Le fauteuil~~ — tranché le 12 novembre 2026 : un fauteuil de départ à la création, refait aux couleurs de son
    univers une fois celui-ci créé (`FAUTEUIL_DE_DEPART`, `perso.ts`).
 4. La règle « chez qui ? » du lot 5.
-5. Le modèle de la conversation, sur lecture, au lot 3.
+5. ~~Le modèle de la conversation~~ — décidé le 12 novembre 2026 (délégué) : le plus capable du compte, le petit en
+   secours (`OPENAI_UNIVERS_MODEL`).
 6. Ce que voit un inconnu de mon univers, par défaut : proposé, « mes proches seulement ».
 7. ~~**Le rituel du jour (lot R)**~~ — tranché le 11 novembre 2026, « oui pour tout » : construit maintenant sur
    l'appli d'aujourd'hui ; le mot de la fin la nuit, découvert le matin ; trois figurines au plus réagissent ; celui

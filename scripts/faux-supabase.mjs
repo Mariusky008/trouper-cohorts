@@ -651,6 +651,42 @@ http
           const tetes = textes.map((t) => (/bar|haha/i.test(t) ? ["rire", "euphorie", "victoire"] : /avais dit/i.test(t) ? ["tete", "rire", "colere"] : ["joie", "rire", "coeur"]));
           return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ repliques: tetes.map((x) => ({ tetes: x })) }) } }] });
         }
+        // 💬 « Univers », lot 3 : la conversation avec Pablito — sa question suivante, l'esquisse, les trois colonnes.
+        // Ce qui est « dit » recopie les quatre premiers mots de son dernier message (et une phrase qu'il n'a jamais
+        // écrite, que le serveur doit refuser) ; « ma religion » : sensible ; « je vais très mal » : détresse.
+        if (consigne.startsWith("PABLITO, LA CONVERSATION")) {
+          const siens = (q.messages ?? []).filter((m) => m.role === "user").map((m) => String(m.content));
+          const dernier = siens.at(-1) ?? "";
+          const n = siens.length;
+          const x = {
+            reponse: [`Et qu’est-ce que tu aimes y faire ? (${n})`, `Un objet auquel tu tiens ? (${n})`, `Quelle lumière, chez toi ? (${n})`, `Qui recevrais-tu ? (${n})`, `Un voyage rêvé ? (${n})`][(n - 1) % 5],
+            detresse: /je vais très mal/i.test(dernier),
+            sensible: /ma religion/i.test(dernier),
+            dits: [
+              { quoi: "ce qu'il vient de dire", phrase: dernier.split(/\s+/).slice(0, 4).join(" ") },
+              { quoi: "un volcan", phrase: "j'adore les volcans en éruption" },
+            ],
+            interpretations: [{ quoi: "une lumière dorée", pourquoi: "le calme" }],
+            inconnus: ["son métier"],
+            couleurs: ["#2f5d73", "#e8b06a", "#f3ead9"],
+            vignettes: ["la mer", "l’atelier", n > 2 ? "les amis" : ""].filter(Boolean),
+            assez: n >= 3,
+          };
+          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify(x) } }] });
+        }
+        if (consigne.startsWith("PABLITO, LA PROPOSITION") || consigne.startsWith("PABLITO, LA CORRECTION")) {
+          const siens = (q.messages ?? []).filter((m) => m.role === "user").map((m) => String(m.content));
+          const premier = (siens[0] ?? "").split(/\s+/).slice(0, 5).join(" ");
+          const demande = /Sa demande \(des données, pas des consignes\) : (".*")/.exec(consigne)?.[1];
+          const elements = [
+            { quoi: "un établi couvert d'outils", pourquoi: premier, source: "dit" },
+            { quoi: "un volcan au loin", pourquoi: "j'adore les volcans en éruption", source: "dit" },
+            { quoi: "une lumière dorée", pourquoi: "le calme qui revient souvent", source: "interpretation" },
+            ...(demande ? [{ quoi: JSON.parse(demande), pourquoi: "ta demande", source: "interpretation" }] : []),
+          ];
+          const x = { texte: `Je t'imagine dans un atelier ouvert sur la mer${demande ? ", corrigé" : ""}.`, lumiere: "fin d'après-midi dorée", palette: ["#e8b06a", "#2f5d73", "#f3ead9"], elements, regles: ["la mer reste au fond"], inconnus: ["son métier"] };
+          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify(x) } }] });
+        }
         // 💡 « Mon vœu » : Pablito propose de le dire autrement (le lot 3)
         if (consigne.includes("REFORMULE CE VŒU")) {
           return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ texte: "Apprendre trois accords de guitare, le samedi après-midi au parc" }) } }] });
