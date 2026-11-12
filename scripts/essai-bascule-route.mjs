@@ -162,7 +162,7 @@ for (let i = 0; i < 40 && !pablito.length; i++) {
   await new Promise((r) => setTimeout(r, 500));
   pablito = (await ia()).slice(avantPablito).filter((c) => c.includes("seated in its armchair"));
 }
-ok(pablito.length >= 1 && !pablito.some((c) => /spring|ressort/i.test(c)), "ce qui manque se fait après la réponse, au nouveau style");
+ok(pablito.length >= 1 && pablito.every((c) => c.includes("IMAGE 1 is a finished collectible caricature figurine of a real person, seated in its armchair")), "ce qui manque se fait après la réponse, au nouveau style (sur sa figurine assise)");
 let p2 = await admin();
 for (let i = 0; i < 40 && !(p2.etat?.faites > p1.etat.faites); i++) {
   await new Promise((r) => setTimeout(r, 500));
