@@ -447,6 +447,19 @@ format d'une scène, les routes pour les lire et les écrire. Chaque figurine d'
 **On a réussi si** on peut refaire une image à l'identique à partir de la fiche, et si l'appli d'aujourd'hui marche
 exactement comme avant.
 
+**Construit (12 novembre 2026)** — le détail : `docs/figurines.md`, 9.0 duodetricies.
+
+- `perso.ts`, `monde.ts`, `scene.ts` : les trois formats, vérifiés à la lecture (ce qui ne tient pas est écarté,
+  jamais deviné) ; `fiches-serveur.ts` : le rangement, les versions, le retour à une version, la validation ;
+  `signature-serveur.ts` : la signature d'une image.
+- La version 0 se lit (rien n'est écrit pour les figurines d'aujourd'hui) ; depuis ce lot, leur fabrication garde
+  leurs traits et la signature de leurs deux images.
+- « Refaire à l'identique » : la consigne de chaque image se recalcule à partir de la fiche ; si c'est mot pour mot
+  celle de sa signature, elle est refaisable (le moteur, lui, ne rend jamais deux fois les mêmes pixels : c'est la
+  consigne, les réglages et les entrées qui sont garantis).
+- Routes : `GET /api/direct/perso` ; côté admin, `GET /api/admin/direct/fiches?h=…` et le retour à une version.
+- Essais : `scripts/verifier-fiches.mjs` (dans la CI, sans téléphone), `scripts/essai-fiches-route.mjs`.
+
 ### Lot 2 — Étape 1 : la nouvelle figurine
 
 Les écrans 1 à 4 de la section 5 : le selfie, la fabrication, la découverte, les retouches en mots, la validation. Le
@@ -661,7 +674,8 @@ Rien ne bloque le lot 0. À décider en chemin :
 
 1. ~~La direction de style des univers~~ — tranché le 12 novembre 2026 : « Film, chaleureux » (lot 0).
 2. La vraie 3D : pas essayée au lot 0, reportée.
-3. Le fauteuil : de départ puis aux couleurs de l'univers (proposé), ou le même pour tous.
+3. ~~Le fauteuil~~ — tranché le 12 novembre 2026 : un fauteuil de départ à la création, refait aux couleurs de son
+   univers une fois celui-ci créé (`FAUTEUIL_DE_DEPART`, `perso.ts`).
 4. La règle « chez qui ? » du lot 5.
 5. Le modèle de la conversation, sur lecture, au lot 3.
 6. Ce que voit un inconnu de mon univers, par défaut : proposé, « mes proches seulement ».

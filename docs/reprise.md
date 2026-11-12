@@ -1,4 +1,4 @@
-# Reprise — où on en est, et ce qu'il reste à faire (12 novembre 2026 : le lot 0 « Univers » est fermé, sur le verdict du propriétaire ; prochain : le lot 1, le socle)
+# Reprise — où on en est, et ce qu'il reste à faire (12 novembre 2026 : le lot 0 « Univers » est fermé ; le lot 1, le socle, est construit ; prochain : le lot 2, la nouvelle figurine)
 
 Pour la session qui reprend si celle-ci s'arrête. **Mettre ce fichier à jour à chaque étape terminée** (et le dire au
 propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'un autre chantier (la démo humaine).
@@ -52,10 +52,17 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
 - **Le verdict (12 novembre 2026) : le lot 0 est fermé** (le tableau : feuille de route, lot 0). La figurine :
   « Sculptée, détourée » (la tête re-sculptée, réglage fidèle) ; la constance : validée ; les univers : « Film,
   chaleureux » ; la scène générée par le moteur : validée ; la vraie 3D : reportée.
-- **La suite** : le lot 1 (le socle : la fiche du personnage, ses versions, la signature de chaque image ; les
-  figurines d'aujourd'hui en « version 0 »), puis le lot 2 (la nouvelle figurine, à une adresse d'essai réservée au
-  propriétaire) avec les consignes retenues. Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à
-  OpenAI y est bloqué) : les essais tournent dans l'appli en ligne, il les regarde sur son iPhone.
+- **Le lot 1 (le socle) est construit** (12 novembre 2026 ; le propriétaire : « oui, lot 1 puis lot 2 », et le
+  fauteuil « de départ, puis aux couleurs de son univers ») : `perso.ts`, `monde.ts`, `scene.ts` (les formats),
+  `fiches-serveur.ts` (rangement `<habitant>/perso/` et `<habitant>/monde/`, versions, retour, validation ; la
+  version 0 se lit dans `clik_ma_figurine`), `signature-serveur.ts` ; la fabrication d'aujourd'hui garde ses traits
+  et la signature de ses images ; `GET /api/direct/perso`, `/api/admin/direct/fiches`. Détail : `docs/figurines.md`,
+  9.0 duodetricies.
+- **La suite** : le lot 2 (la nouvelle figurine : selfie, fabrication « Sculptée, détourée » avec ses références
+  assise / bouche ouverte / debout, la découverte dans son fauteuil, les retouches avec ses mots, « C'est moi ! »),
+  à une adresse d'essai réservée au propriétaire ; les consignes validées quittent `univers-essais.ts` pour un module
+  à elles. Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les essais
+  tournent dans l'appli en ligne, il les regarde sur son iPhone.
 - **Un piège de vocabulaire** : dans le code d'aujourd'hui, « univers » désigne le métier ou la passion qui habille la
   figurine (`<habitant>/univers.json`, `universValide`). Le nouvel univers se range dans `<habitant>/monde/`.
 
