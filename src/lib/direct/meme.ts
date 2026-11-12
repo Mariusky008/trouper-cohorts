@@ -147,6 +147,8 @@ type Scene = {
   message?: MessageMeme;
   /** 💬 En duo : celui à qui il répond (en haut, il parle d'abord), et leurs deux prénoms. */
   duo?: { n: HTMLImageElement; p: HTMLImageElement; fond: string; env: number[]; duree: number; sous: Mot[][]; prenom: string; moi: string };
+  /** 🏡 Chez lui (« Univers », lot 5b) : son décor à la place du fond rose, et sa place (sa figurine, détourée, s'y assoit). */
+  decor?: { img: HTMLImageElement; x: number; y: number; echelle: number };
 };
 const PAUSE_DUO = 0.35;
 /** Quand commence sa voix à lui (en duo : après celle de l'autre). */
@@ -245,6 +247,8 @@ export type MessageMeme = { de: string; pour: string };
  * bas de sa vignette —, ses mots sur son corps, au-dessus de la légende que WhatsApp pose sur le bas de la vidéo)
  */
 const MESSAGE = { echelle: 0.8, decalage: 50, sousTitres: 0.73 };
+/** 🏡 La hauteur de sa figurine chez lui, en part de la hauteur de son décor (comme dans son univers, `monde.tsx`). */
+const TAILLE_CHEZ_LUI = 0.4;
 
 /**
  * 🎙️ LE BANDEAU D'UN MESSAGE ENVOYÉ PAR WHATSAPP : « 🎙️ Message de Marius », « pour Karim » — droit, posé dès la
@@ -1035,14 +1039,39 @@ function dessiner(g: CanvasRenderingContext2D, S: Scene, T: number): void {
   const angle = (Math.sin(T * 7.5) * amp * 1.6 + (S.danse ? Math.sin((Math.PI * (T - INTRO)) / 1.2) * 3 : 0)) * (Math.PI / 180);
   const iw = img.naturalWidth;
   const ih = img.naturalHeight;
-  const base = Math.max(W / iw, H / ih) * (S.message ? MESSAGE.echelle : 1);
-  g.save();
-  // (pivot : le bas du cadre, au milieu — là où est son socle)
-  g.translate(W / 2, H * 0.94 - danse * 18 + (S.message ? MESSAGE.decalage : 0));
-  g.rotate(angle);
-  g.scale(echelle, echelle);
-  g.drawImage(img, (-iw * base) / 2, -ih * base * 0.94, iw * base, ih * base);
-  g.restore();
+  if (S.decor) {
+    // ─── 🏡 chez lui : son décor (couvrant le cadre), sa figurine assise à sa place, avec son ombre ───
+    const d = S.decor.img;
+    const k = Math.max(W / d.naturalWidth, H / d.naturalHeight);
+    const dw = d.naturalWidth * k;
+    const dh = d.naturalHeight * k;
+    const ox = (W - dw) / 2;
+    const oy = (H - dh) / 2;
+    g.drawImage(d, ox, oy, dw, dh);
+    const px = ox + S.decor.x * dw;
+    const py = oy + S.decor.y * dh;
+    const fh = dh * TAILLE_CHEZ_LUI * Math.min(1.15, Math.max(0.9, S.decor.echelle));
+    const fw = (fh * iw) / ih;
+    g.save();
+    g.fillStyle = "rgba(0,0,0,.32)";
+    g.beginPath();
+    g.ellipse(px, py - fh * 0.02, fw * 0.36, fh * 0.045, 0, 0, Math.PI * 2);
+    g.fill();
+    g.translate(px, py - danse * 12);
+    g.rotate(angle);
+    g.scale(echelle / 1.04, echelle / 1.04);
+    g.drawImage(img, -fw / 2, -fh, fw, fh);
+    g.restore();
+  } else {
+    const base = Math.max(W / iw, H / ih) * (S.message ? MESSAGE.echelle : 1);
+    g.save();
+    // (pivot : le bas du cadre, au milieu — là où est son socle)
+    g.translate(W / 2, H * 0.94 - danse * 18 + (S.message ? MESSAGE.decalage : 0));
+    g.rotate(angle);
+    g.scale(echelle, echelle);
+    g.drawImage(img, (-iw * base) / 2, -ih * base * 0.94, iw * base, ih * base);
+    g.restore();
+  }
   // le flash de l'arrivée
   if (T < 0.25 && !S.message) {
     g.fillStyle = `rgba(255,255,255,${0.85 * (1 - T / 0.25)})`;
@@ -1074,8 +1103,9 @@ function dessiner(g: CanvasRenderingContext2D, S: Scene, T: number): void {
   if (S.annonce) lAnnonce(g, S.police, S.annonce, T);
   // ─── 🎙️ un message par WhatsApp : qui l'envoie, à qui ───
   if (S.message) leMessage(g, S.police, S.message);
-  // ─── ses mots, façon TikTok (🎙️ un message : plus haut — WhatsApp pose sa légende sur le bas de la vidéo) ───
-  sousTitres(g, S.police, S.sous, t, S.duree, H * (S.message ? MESSAGE.sousTitres : 0.78));
+  // ─── ses mots, façon TikTok (🎙️ un message : plus haut — WhatsApp pose sa légende sur le bas de la vidéo ; 🏡 chez
+  // lui : au-dessus de sa figurine, sa place est en bas) ───
+  sousTitres(g, S.police, S.sous, t, S.duree, H * (S.decor ? 0.34 : S.message ? MESSAGE.sousTitres : 0.78));
   // ─── la fin : « Crée ton mème » (ou son nom) ───
   laFin(g, S.police, T - (INTRO + S.duree + 0.15), S.fin);
 }
@@ -1131,6 +1161,11 @@ export async function fabriquerMeme(o: {
   repliques?: { de: number; a: number; texte: string; images: { n: string; p: string }; emoji: string }[];
   /** 🎙️ Un message envoyé en vidéo par WhatsApp : son bandeau (qui, à qui) et sa mise en page (`leMessage`). */
   message?: MessageMeme;
+  /**
+   * 🏡 Chez lui (« Univers », lot 5b — « sur WhatsApp, la conversation se passe chez celui qui envoie ») : son décor à
+   * la place du fond rose, et sa place ; `images` sont alors sa figurine détourée, assise. Pas en duo, ni avec un rendu.
+   */
+  chezMoi?: { decor: string; x: number; y: number; echelle: number };
 }): Promise<Meme> {
   const { ctx, toile } = o;
   if (!memePossible()) throw new Error("Ce téléphone ne sait pas fabriquer de vidéo.");
@@ -1155,12 +1190,14 @@ export async function fabriquerMeme(o: {
   const tetes = o.repliques?.length
     ? await Promise.all(o.repliques.map(async (r) => ({ de: r.de, a: r.a, emoji: r.emoji, n: await uneFois(r.images.n), p: await uneFois(r.images.p) })))
     : null;
-  const [n, p, voix, musique, duo] = await Promise.all([
+  const [n, p, voix, musique, duo, decor] = await Promise.all([
     image(o.images.n),
     image(o.images.p),
     o.son ? voixDe(o.son) : silence(),
     o.danse || sansVoix ? musiqueDanse(ctx.sampleRate).catch(() => null) : Promise.resolve(null),
     o.duo ? Promise.all([image(o.duo.images.n), image(o.duo.images.p), voixDe(o.duo.son)]) : Promise.resolve(null),
+    // (🏡 son décor ; s'il ne se charge pas, le fond d'aujourd'hui)
+    o.chezMoi && !o.duo ? image(o.chezMoi.decor).catch(() => null) : Promise.resolve(null),
   ]);
   const duree = voix.duration;
   const police = `${getComputedStyle(document.body).fontFamily || "system-ui"}, "Arial Black", sans-serif`;
@@ -1183,6 +1220,7 @@ export async function fabriquerMeme(o: {
     ...(o.annonce ? { annonce: o.annonce } : {}),
     ...(o.message ? { message: o.message } : {}),
     ...(o.fin ? { fin: o.fin } : {}),
+    ...(decor && o.chezMoi && !rendu ? { decor: { img: decor, x: o.chezMoi.x, y: o.chezMoi.y, echelle: o.chezMoi.echelle } } : {}),
     ...(duo && o.duo
       ? {
           duo: {

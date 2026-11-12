@@ -5,11 +5,12 @@
 // lui rend visite. Marc a son univers (son décor, ses places) et sa figurine du nouveau style, assise ; Inès a sa
 // figurine d'aujourd'hui, sans univers. Inès laisse un message à Marc. Chez Marc : la scène est SON DÉCOR, sa figurine
 // assise à sa place, celle d'Inès qui entre à la place de l'invité, et qui parle (sa voix, sa bouche, les
-// sous-titres). Chez Inès : la scène d'aujourd'hui (elle n'a pas d'univers). Rien ne déborde, jamais le mot interdit,
-// aucune erreur dans la page.
+// sous-titres). Chez Inès : la scène d'aujourd'hui (elle n'a pas d'univers). 🎬 Lot 5b — « sur WhatsApp, chez celui qui
+// envoie » : Marc parle à quelqu'un qui n'a pas ClikMe ; sa vidéo se fabrique chez lui (son décor à la place du fond
+// rose). Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
 import crypto from "node:crypto";
 import fs from "node:fs";
-import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer, parlerAuMoins } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
@@ -91,7 +92,7 @@ const r = await fetch(`${BASE}/api/direct/proches`, {
 });
 ok(r.status === 200, `Inès laisse un message à Marc (${r.status})`);
 
-const b = await lancer({ args: ["--autoplay-policy=no-user-gesture-required"] });
+const b = await lancer({ args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--autoplay-policy=no-user-gesture-required"] });
 const erreurs = [];
 async function tel(qui) {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE, isMobile: true, hasTouch: true });
@@ -135,6 +136,41 @@ await ines.goto(`${BASE}/collection?parler=${MARC.cle}#proches`, { waitUntil: "n
 await fermerPablito(ines);
 await ines.waitForSelector(".pr-plein .pr-scene", { timeout: 60000 });
 ok((await ines.locator(".pr-plein .pr-scene.chez").count()) === 0 && (await ines.locator(".pr-plein .pr-scene .pr-ecoute").count()) === 1, "chez Inès, sans univers : la scène d'aujourd'hui");
+
+// ═══ 🎬 MARC PARLE PAR WHATSAPP : LA VIDÉO SE PASSE CHEZ LUI ═══
+const ctxVideo = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, userAgent: IPHONE, isMobile: true, hasTouch: true });
+await ctxVideo.addCookies([{ name: "clikme_habitant", value: MARC.jeton, url: BASE }]);
+await ctxVideo.addInitScript(() => {
+  navigator.canShare = (d) => Boolean(d && d.files && d.files.length);
+  navigator.share = async () => undefined;
+});
+const video = await ctxVideo.newPage();
+video.on("pageerror", (e) => erreurs.push(`Marc (vidéo) : ${String(e)}`));
+await video.goto(`${BASE}/collection?v=${Date.now()}#proches`, { waitUntil: "networkidle" });
+await fermerPablito(video);
+await video.waitForSelector("#o-proches .pr-wa .pr-bouton", { timeout: 60000 });
+await video.locator("#o-proches .pr-wa .pr-bouton").click();
+await video.waitForSelector(".pr-plein.pr-parler .pr-micro", { timeout: 15000 });
+await video.locator(".pr-plein.pr-parler .pr-micro").click();
+await video.waitForSelector(".pr-plein.pr-parler .pr-temps", { timeout: 15000 });
+await parlerAuMoins(video);
+await video.locator(".pr-plein.pr-parler .pr-micro").click();
+await video.waitForSelector(".pr-plein.pr-parler .pr-choix li", { timeout: 30000 });
+await video.locator(".pr-plein.pr-parler .pr-pour input").fill("Nina");
+await video.locator(".pr-plein.pr-parler .pr-bas .pr-bouton").click();
+await video.waitForSelector('.tf-feuille.ouverte .pr-pret[data-video="fabrication"] .pr-video canvas', { timeout: 30000 });
+await video.waitForTimeout(2500);
+// (le bord gauche de la vidéo, à mi-hauteur : son décor, pas le rose ClikMe)
+const pixel = await video.evaluate(() => {
+  const c = document.querySelector(".tf-feuille.ouverte .pr-pret .pr-video canvas");
+  const d = c?.getContext("2d")?.getImageData(12, Math.round(c.height / 2), 1, 1).data;
+  return d ? [d[0], d[1], d[2]] : null;
+});
+const rose = pixel ? Math.abs(pixel[0] - 224) + Math.abs(pixel[1] - 33) + Math.abs(pixel[2] - 138) < 60 : true;
+ok(Boolean(pixel) && !rose, `sa vidéo WhatsApp se passe chez lui : son décor, pas le fond rose (${pixel?.join(",")})`);
+await video.locator(".tf-feuille.ouverte .pr-pret .pr-video").screenshot({ path: `${D}/talkie-chez-moi-2-video.png` }).catch(() => null);
+const prete = await video.waitForSelector('.tf-feuille.ouverte .pr-pret[data-video="prete"] .pr-video video', { timeout: 60000 }).then(() => true).catch(() => false);
+ok(prete, "sa vidéo est prête à partir sur WhatsApp");
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.join(" | ")})` : ""}`);
 await b.close();

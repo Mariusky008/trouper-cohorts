@@ -602,7 +602,15 @@ async function ficheLien(supabase: Supabase, id: unknown): Promise<FicheLien | n
 }
 
 /** 🎭 Sa figurine, de quoi la faire parler (« Envoyer par WhatsApp »). */
-export const maFigurineVue = (supabase: Supabase, moi: Habitant) => figurineVue(supabase, moi.id, true);
+/**
+ * Sa figurine à lui (le talkie par WhatsApp) ; 🏡 « Univers », lot 5b : sa figurine assise et son univers, quand il l'a
+ * créé — la vidéo qu'il envoie se passe chez lui.
+ */
+export async function maFigurineVue(supabase: Supabase, moi: Habitant): Promise<FigurineVue | null> {
+  const [f, assise, chez] = await Promise.all([figurineVue(supabase, moi.id, true), assiseDe(supabase, moi.id).catch(() => undefined), chezLui(supabase, moi.id).catch(() => undefined)]);
+  if (!f) return null;
+  return { ...f, ...(assise ? { assise } : {}), ...(assise && chez ? { chez } : {}) };
+}
 
 /**
  * 📲 IL L'ENVOIE PAR WHATSAPP : sa voix et ses répliques deviennent un lien (`/t/<id>`), pour quelqu'un qui n'a pas
