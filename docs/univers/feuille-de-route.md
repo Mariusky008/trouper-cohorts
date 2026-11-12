@@ -234,6 +234,10 @@ de suite.
 | Coût | Rien | 1 à 4 centimes l'image |
 | Attente | Aucune | 30 à 60 secondes |
 
+**La rencontre de deux figurines** fait exception (verdict du lot 0, 12 novembre 2026) : posées côte à côte dans le
+téléphone, elles avaient l'air collées. Sa scène est **générée une fois** par le moteur (le décor, les deux figurines,
+ce qu'elles font), gardée, puis animée légèrement (les bulles, la voix, la lumière).
+
 **La vie de la scène** vient de la composition : la respiration, le hochement de tête, la bouche qui suit la voix, le
 changement de visage, la lumière qui suit l'heure du téléphone. Aucune de ces animations ne passe par le moteur.
 
@@ -417,8 +421,20 @@ générer rarement ». Pour la rencontre de deux figurines, la composition ne su
 générée une fois** (une image, 4 à 6 centimes avec trois images en entrée), puis l'appli l'anime légèrement (les
 bulles, la voix, la lumière). Le décor seul et la figurine seule restent des références, faites une fois.
 
-**Ce qui reste du lot 0** : la deuxième série sur son iPhone, ses avis, puis le verdict écrit de chaque essai (et les
-coûts relevés) dans cette section ; les consignes retenues deviennent celles du lot 2.
+**Le verdict du propriétaire (12 novembre 2026, sur la deuxième série) : le lot 0 est fermé.**
+
+| Essai | Verdict | Ce que ça devient |
+|---|---|---|
+| Le style de la figurine | **« Sculptée, détourée »** : la tête re-sculptée en caricature de collection (environ 25 %), résine peinte, assise dans son fauteuil, fond transparent, le moteur en réglage « fidèle » (`input_fidelity: high`) | La consigne du lot 2 : `consigneFigurineCollection("sculptee", traits)` (`univers-essais.ts`) |
+| La constance | **Validée** : la même figurine bouche ouverte, en trois visages, debout | Ses références (assise, assise bouche ouverte, debout) et ses visages : `consigneConstance` |
+| Le style des univers | **« Film, chaleureux »** : un décor de film d'animation, sans magie, un lieu habité, doré, plein de charme, un espace accueillant devant | La charte des univers du lot 4 |
+| La scène | **Validée** : le moteur met en scène une ou deux figurines dans le décor, d'après une situation ; les bulles par-dessus | La rencontre de deux figurines est **générée une fois**, puis animée légèrement (section 4.5) |
+| La variété, la retouche | Pas d'avis à part | Revues au lot 4, sur de vrais univers |
+| La vraie 3D | Pas essayée | Reportée (« plus tard ») |
+| Les coûts | 37 à 42 secondes par image, environ 2 900 jetons en haute qualité, 3 à 4 centimes l'image d'après sa facture | Le budget de la section 9 tient |
+
+Les deux séries d'images restent sur la page d'essais : ce sont nos images de référence. La page reste ouverte pour
+essayer une consigne avant de la mettre dans l'appli.
 
 ### Lot 1 — Le socle
 
@@ -430,6 +446,19 @@ format d'une scène, les routes pour les lire et les écrire. Chaque figurine d'
 
 **On a réussi si** on peut refaire une image à l'identique à partir de la fiche, et si l'appli d'aujourd'hui marche
 exactement comme avant.
+
+**Construit (12 novembre 2026)** — le détail : `docs/figurines.md`, 9.0 duodetricies.
+
+- `perso.ts`, `monde.ts`, `scene.ts` : les trois formats, vérifiés à la lecture (ce qui ne tient pas est écarté,
+  jamais deviné) ; `fiches-serveur.ts` : le rangement, les versions, le retour à une version, la validation ;
+  `signature-serveur.ts` : la signature d'une image.
+- La version 0 se lit (rien n'est écrit pour les figurines d'aujourd'hui) ; depuis ce lot, leur fabrication garde
+  leurs traits et la signature de leurs deux images.
+- « Refaire à l'identique » : la consigne de chaque image se recalcule à partir de la fiche ; si c'est mot pour mot
+  celle de sa signature, elle est refaisable (le moteur, lui, ne rend jamais deux fois les mêmes pixels : c'est la
+  consigne, les réglages et les entrées qui sont garantis).
+- Routes : `GET /api/direct/perso` ; côté admin, `GET /api/admin/direct/fiches?h=…` et le retour à une version.
+- Essais : `scripts/verifier-fiches.mjs` (dans la CI, sans téléphone), `scripts/essai-fiches-route.mjs`.
 
 ### Lot 2 — Étape 1 : la nouvelle figurine
 
@@ -643,9 +672,10 @@ Le tableau du propriétaire, et ce qui y répond dans le socle :
 
 Rien ne bloque le lot 0. À décider en chemin :
 
-1. La direction de style des univers, sur les essais du lot 0.
-2. La vraie 3D, sur l'essai du lot 0.
-3. Le fauteuil : de départ puis aux couleurs de l'univers (proposé), ou le même pour tous.
+1. ~~La direction de style des univers~~ — tranché le 12 novembre 2026 : « Film, chaleureux » (lot 0).
+2. La vraie 3D : pas essayée au lot 0, reportée.
+3. ~~Le fauteuil~~ — tranché le 12 novembre 2026 : un fauteuil de départ à la création, refait aux couleurs de son
+   univers une fois celui-ci créé (`FAUTEUIL_DE_DEPART`, `perso.ts`).
 4. La règle « chez qui ? » du lot 5.
 5. Le modèle de la conversation, sur lecture, au lot 3.
 6. Ce que voit un inconnu de mon univers, par défaut : proposé, « mes proches seulement ».

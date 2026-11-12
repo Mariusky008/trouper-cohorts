@@ -12,7 +12,8 @@
 // décors sans figurine, dessinés d'après la consigne seule) ; la variété (une direction sur les trois fiches) ; « Ma
 // fiche » trop courte, refusée ; une retouche (« davantage de nature ») ; « La scène » : le moteur met en scène deux
 // figurines dans le décor, d'après une situation, et deux bulles se posent par-dessus. Effacer la personne emporte ses
-// scènes, pas les décors. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
+// scènes, pas les décors. Une page d'avant restée ouverte est priée de se recharger. Rien ne déborde, jamais le mot
+// interdit, aucune erreur dans la page.
 import { BASE, D, F, lancer } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
@@ -40,8 +41,10 @@ const session = {
 };
 const COOKIE_ADMIN = { name: "sb-127-auth-token", value: `base64-${b64(session)}` };
 const ROUTE = `${BASE}/api/admin/direct/univers-essais`;
+// (la version de la page, que chaque demande porte : celle que le serveur annonce)
+const VERSION = (await (await fetch(ROUTE, { headers: { cookie: `${COOKIE_ADMIN.name}=${COOKIE_ADMIN.value}` } })).json().catch(() => ({}))).version;
 const poster = (corps, cookie = `${COOKIE_ADMIN.name}=${COOKIE_ADMIN.value}`) =>
-  fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json", ...(cookie ? { cookie } : {}) }, body: JSON.stringify(corps) }).then(async (r) => ({ statut: r.status, ...(await r.json().catch(() => ({}))) }));
+  fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json", ...(cookie ? { cookie } : {}) }, body: JSON.stringify({ version: VERSION, ...corps }) }).then(async (r) => ({ statut: r.status, ...(await r.json().catch(() => ({}))) }));
 
 let echecs = 0;
 const ok = (c, m) => {
@@ -54,6 +57,10 @@ ok((await fetch(ROUTE)).status === 403 && (await poster({ action: "personne", no
 ok((await poster({ action: "personne", nom: "X", accord: true, photo: "data:image/png;base64,AAAA" }, "clikme_habitant=jeton-quelconque")).statut === 403, "un habitant non plus");
 ok((await poster({ action: "personne", nom: "Volontaire", accord: false, photo: "data:image/png;base64,AAAA" })).statut === 400, "sans l'accord coché : rien");
 ok((await poster({ action: "personne", nom: "Volontaire", accord: true, photo: "pas une image" })).statut === 400, "sans photo : rien");
+// (une page d'avant, restée ouverte : ses demandes n'ont pas la bonne version, le serveur la prie de se recharger)
+const ancienne = await poster({ action: "univers", fiches: ["atelier-mer"], directions: ["diorama"], version: undefined });
+const autre = await poster({ action: "univers", fiches: ["atelier-mer"], directions: ["magique"], version: 1 });
+ok(Number.isInteger(VERSION) && ancienne.statut === 409 && /rechargez-la/.test(ancienne.error ?? "") && autre.statut === 409, `une page d'avant restée ouverte : « rechargez-la » (${ancienne.statut}, ${autre.statut})`);
 
 const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
 const b = await lancer();
@@ -215,6 +222,18 @@ const restesP = await liste("essais-univers/personnes");
 const restesR = (await liste("essais-univers/resultats")).filter((n) => n.endsWith(".json"));
 const siens = (await Promise.all(restesR.map((n) => lireStock(`essais-univers/resultats/${n}`)))).filter((r) => r?.personne === pid || r?.personnes?.includes(pid));
 ok((await p.locator(".ue-personne").count()) === 0 && restesP.length === 0 && siens.length === 0 && restesR.length === 7, `la personne s'efface, avec son selfie et toutes ses images, ses scènes comprises ; les décors restent (${restesR.length})`);
+
+// ═══ LA PAGE N'EST PLUS À JOUR ═══ (le serveur annonce une autre version : un bandeau « Recharger la page »)
+ok((await p.locator(".ue-perimee").count()) === 0, "à jour : pas de bandeau");
+await p.route(ROUTE, async (route) => {
+  if (route.request().method() !== "GET") return route.continue();
+  const r = await route.fetch();
+  await route.fulfill({ response: r, json: { ...(await r.json()), version: VERSION + 1 } });
+});
+await p.reload({ waitUntil: "networkidle" });
+await p.waitForSelector(".ue-perimee", { timeout: 15000 }).catch(() => null);
+ok((await texte(".ue-perimee")).includes("mise à jour depuis que vous l’avez ouverte") && (await p.locator(".ue-perimee button").innerText()) === "Recharger la page", "la page n'est plus à jour : « Recharger la page »");
+await p.unroute(ROUTE);
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.join(" | ")})` : ""}`);
 await b.close();

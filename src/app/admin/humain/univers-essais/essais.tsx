@@ -13,6 +13,7 @@ import {
   SITUATION_UNE,
   VARIANTES_CONSTANCE,
   VARIANTES_FIGURINE,
+  VERSION_PAGE_ESSAIS,
   estDetouree,
   nomDeFiche,
   nomDeVariante,
@@ -26,8 +27,9 @@ const EVT_RECHARGER = "ue-recharger";
 const recharger = () => window.dispatchEvent(new Event(EVT_RECHARGER));
 type Reponse = { ok?: boolean; error?: string };
 
+/** (chaque demande dit la version de cette page : si le serveur a changé depuis, il répond « rechargez-la ») */
 async function demander<T>(corps: Record<string, unknown>): Promise<T> {
-  const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
+  const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...corps, version: VERSION_PAGE_ESSAIS }) });
   const j = (await r.json().catch(() => ({}))) as T & Reponse;
   if (!r.ok || j.error) throw new Error(j.error || "Ça n’a pas marché. Réessayez.");
   return j;
@@ -59,12 +61,15 @@ export function EssaisUnivers() {
   const [etat, setEtat] = useState<EtatEssais | null>(null);
   const [erreur, setErreur] = useState("");
   const [geste, setGeste] = useState("");
+  // (le serveur a changé depuis que la page est ouverte : ses boutons ne sont peut-être plus les bons)
+  const [perimee, setPerimee] = useState(false);
 
   const charger = useCallback(async () => {
     try {
       const r = await fetch(ROUTE, { cache: "no-store" });
-      const j = (await r.json().catch(() => ({}))) as Partial<EtatEssais> & Reponse;
+      const j = (await r.json().catch(() => ({}))) as Partial<EtatEssais> & Reponse & { version?: number };
       if (!r.ok) throw new Error(j.error || "La page ne s’est pas chargée.");
+      if (typeof j.version === "number" && j.version !== VERSION_PAGE_ESSAIS) setPerimee(true);
       setEtat({ personnes: j.personnes ?? [], resultats: j.resultats ?? [], imagesDuJour: Number(j.imagesDuJour) || 0, plafond: Number(j.plafond) || 0, branche: Boolean(j.branche) });
     } catch (e) {
       setErreur(message(e));
@@ -100,6 +105,7 @@ export function EssaisUnivers() {
       await charger();
     } catch (e) {
       setErreur(message(e));
+      void charger();
     } finally {
       setGeste("");
     }
@@ -116,6 +122,14 @@ export function EssaisUnivers() {
   const jetons = faites.reduce((n, r) => n + (r.jetons ?? 0), 0);
   return (
     <div className="ue">
+      {perimee && (
+        <p className="ue-perimee" role="alert">
+          Cette page a été mise à jour depuis que vous l’avez ouverte.
+          <button type="button" className="ue-bouton" onClick={() => window.location.reload()}>
+            Recharger la page
+          </button>
+        </p>
+      )}
       <section className="ue-bilan" aria-label="Le bilan">
         <span>
           <b>{etat.imagesDuJour}</b> / {etat.plafond} images aujourd’hui
@@ -576,6 +590,7 @@ const STYLES = `
 .ue-ko{color:#b3261e;font-weight:600}
 .ue-gris{color:#6e6e73}
 .ue-erreur{margin:0;padding:10px 12px;border-radius:10px;background:#fdecea;color:#8a1c14}
+.ue-perimee{position:sticky;top:8px;z-index:5;margin:0;padding:12px;border-radius:12px;background:#fff4d6;color:#5c4100;display:flex;flex-direction:column;gap:10px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
 .ue-ajout,.ue-personne{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid #e5e5ea;border-radius:14px;background:#fff}
 .ue-ajout h2,.ue-personne h2{margin:0;font-size:19px}
 .ue-ajout label{display:flex;flex-direction:column;gap:4px;font-size:14px}

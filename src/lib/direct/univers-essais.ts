@@ -136,6 +136,12 @@ export type ResultatEssai = {
 };
 export type EtatEssais = { personnes: PersonneEssai[]; resultats: ResultatEssai[]; imagesDuJour: number; plafond: number; branche: boolean };
 
+/** La version de la page d'essais. Chaque série qui change les boutons (variantes, directions…) l'augmente : une page
+ * restée ouverte d'avant (sur l'iPhone du propriétaire, le 12 novembre : « Diorama miniature » refusé) est alors priée
+ * de se recharger, au lieu d'envoyer des choix que le serveur ne connaît plus. */
+export const VERSION_PAGE_ESSAIS = 2;
+export const PAGE_PERIMEE = "Cette page a été mise à jour depuis que vous l’avez ouverte : rechargez-la (fermez l’onglet et rouvrez-le, ou tirez l’écran vers le bas).";
+
 /** Les images par jour, au plus (un double toucher ne doit pas coûter cher). */
 export const IMAGES_PAR_JOUR = 150;
 export const NOM_MAX = 40;
