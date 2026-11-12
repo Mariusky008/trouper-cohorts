@@ -222,6 +222,11 @@ export type EtatMaFigurine = {
   univers?: string;
   /** 🔐 Son adresse (à moitié cachée) protège sa figurine : un autre téléphone la retrouve avec un code (lot 2). */
   protegee?: string;
+  /**
+   * 🔀 L'interrupteur « Univers pour tous » allumé (`univers-pour-tous.ts`) : sa figurine se crée et se refait au nouveau
+   * style (`/univers/figurine`) ; `nouveauStyle` : celle de l'appli l'est déjà (le pont posé).
+   */
+  bascule?: { nouveauStyle: boolean };
 };
 
 /** Ce que voit celui qui reçoit un message (`/figurine/<id>`). */

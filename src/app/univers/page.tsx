@@ -3,7 +3,7 @@
 // n'est pas créé, l'étape où il en est (sa figurine, la conversation avec Pablito, la création). Les gens de Dax gardent
 // leur appli d'aujourd'hui jusqu'à son feu vert.
 import { redirect } from "next/navigation";
-import { isCurrentUserAdmin } from "@/lib/admin-guard";
+import { universPermis } from "@/lib/direct/univers-pour-tous";
 import { Monde } from "./monde/monde";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +12,6 @@ export const revalidate = 0;
 export const metadata = { title: "Mon univers — ClikMe" };
 
 export default async function PageMonUnivers() {
-  if (!(await isCurrentUserAdmin())) redirect("/admin");
+  if (!(await universPermis())) redirect("/admin");
   return <Monde accueil />;
 }

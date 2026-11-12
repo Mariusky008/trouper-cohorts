@@ -50,6 +50,7 @@
 // Un habitant n'est créé ici que par « photo » (son geste : « Créer ma figurine »).
 import { NextResponse, after } from "next/server";
 import { fabriquerVisagesPerso, visagesPersoVoulus } from "@/lib/direct/visages-perso-serveur";
+import { figurineDuNouveauStyle, poserLePont, visagesDuNouveauStyle } from "@/lib/direct/pont-univers-serveur";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant, habitantCourant, poserCookie } from "@/lib/direct/habitant";
 import { abonner, choisirLesReponses, couper, estAbonne, jetonAppli, lierAppli, prevenirDUneReponse, prevenuDesReponses } from "@/lib/direct/appli-collection-serveur";
@@ -121,6 +122,8 @@ export async function GET(request: Request) {
   if (new URL(request.url).searchParams.get("memes")) {
     return NextResponse.json({ ok: true, memes: await mesMemes(supabase, moi, new URL(request.url).searchParams.get("recus")) }, { headers: sansCache });
   }
+  // 🌉 (l'interrupteur « Univers pour tous » allumé) sa figurine du nouveau style devient celle de l'appli
+  if (moi) await poserLePont(supabase, moi).catch(() => false);
   return NextResponse.json({ ok: true, etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
 }
 
@@ -203,7 +206,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: !r.erreur, complete: r.complete, ...(r.enCours ? { enCours: true } : {}), ...(r.erreur ? { error: r.erreur } : {}) }, { headers: sansCache });
   }
   if (p?.action === "expressions") {
-    const r = await fabriquerSesExpressions(supabase, moi, avant, p.veut);
+    // (sa figurine du nouveau style : ses visages du nouveau style, dans le même dossier — jamais un visage de l'ancien)
+    const r = (await figurineDuNouveauStyle(supabase, moi.id)) ? await visagesDuNouveauStyle(supabase, moi.id, avant, p.veut) : await fabriquerSesExpressions(supabase, moi, avant, p.veut);
     return NextResponse.json({ ok: !r.error, ...(r.error ? { error: r.error } : {}), ...(r.enCours ? { enCours: true } : {}), etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
   }
   if (p?.action === "mois") {

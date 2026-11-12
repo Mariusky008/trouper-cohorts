@@ -142,6 +142,17 @@ export function consigneVisageAssise(x: Sentiment): string {
     ...CONTRAINTES(false),
   ].join("\n");
 }
+/** 🎭 Un visage décrit librement, sur son image « assise » (Pablito qui louche : `pablito-univers-serveur.ts`). */
+export function consigneVisageAssiseLibre(description: string): string {
+  return [
+    MEME_ASSISE(false),
+    `Change ONLY its facial expression: ${description}. Strong and readable at a glance, on THIS face — it must still be clearly the same person, a sculpted caricature, never a photograph.`,
+    "",
+    ...FOND_TRANSPARENT,
+    "",
+    ...CONTRAINTES(false),
+  ].join("\n");
+}
 /** 🗣️ La même, bouche ouverte (fait sur son visage) : pour qu'elle parle avec ce visage. */
 export function consigneBoucheAssise(x: Sentiment): string {
   const pose = ATTITUDE_ASSISE.includes(x);

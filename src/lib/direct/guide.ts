@@ -21,6 +21,7 @@
  */
 import { EDITIONS_DATEES } from "./collection";
 import { IMAGES_DEMO, VISAGES_FIGURINE, type VisageFigurine } from "./ma-figurine";
+import { UNIVERS_POUR_TOUS } from "./univers-interrupteur";
 
 export const VERSION_GUIDE = 1;
 /** Son nom (au-dessus de ses bulles). */
@@ -87,15 +88,27 @@ export function nomGuideValide(nom: string): boolean {
   const m = /^([a-z]+)-([np])$/.exec(nom);
   if (m && VISAGES_FIGURINE.some((x) => x.cle === m[1])) return true;
   if (nom === "louche-n" || nom === "seule") return true;
+  // (🧑 son image de tous les jours, servie elle aussi quand il passe au nouveau style : `pablito-univers-serveur.ts`)
+  if (nom === "neutre-n" || nom === "neutre-p") return true;
   const e = /^edition-([a-z-]+)$/.exec(nom);
   return Boolean(e && CLES_EDITIONS.has(e[1]));
 }
 
-const servie = (nom: string) => `/api/direct/guide/${nom}?v=${VERSION_GUIDE}`;
+// (🔀 l'interrupteur « Univers pour tous » allumé : Pablito passe au nouveau style — d'autres adresses, pour que rien de
+// gardé en route ne montre l'ancien)
+const servie = (nom: string) => `/api/direct/guide/${nom}?v=${VERSION_GUIDE}${UNIVERS_POUR_TOUS ? "u" : ""}`;
 
 /** Son portrait (avec son fond), dans un visage, bouche fermée (`n`) ou ouverte (`p`). */
 export const imageVisage = (v: Visage, bouche: "n" | "p") =>
-  v === "neutre" ? (bouche === "n" ? IMAGES_DEMO.neutre : IMAGES_DEMO.parle) : v === "louche" ? servie("louche-n") : servie(`${v}-${bouche}`);
+  v === "neutre"
+    ? UNIVERS_POUR_TOUS
+      ? servie(`neutre-${bouche}`)
+      : bouche === "n"
+        ? IMAGES_DEMO.neutre
+        : IMAGES_DEMO.parle
+    : v === "louche"
+      ? servie("louche-n")
+      : servie(`${v}-${bouche}`);
 
 /** Sa figurine seule (sans fond), dans la tenue d'une édition s'il y en a une. */
 export const imageFigurineGuide = (edition?: string | null) => servie(edition && CLES_EDITIONS.has(edition) ? `edition-${edition}` : "seule");

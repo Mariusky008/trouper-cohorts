@@ -6,6 +6,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { EssaisUnivers } from "./essais";
+import { PablitoAuNouveauStyle } from "./pablito";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -24,6 +25,7 @@ export default async function PageEssaisUnivers() {
         visages, debout. Plus bas, les univers : leurs décors, la scène où la figurine s’assoit, son mouvement. Les images se font en une à deux minutes : la
         page se met à jour toute seule.
       </p>
+      <PablitoAuNouveauStyle />
       <EssaisUnivers />
     </main>
   );

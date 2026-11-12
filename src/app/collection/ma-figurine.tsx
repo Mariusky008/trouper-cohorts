@@ -1511,6 +1511,8 @@ export function RefaireMaFigurine({ etat, onEtat, onFait }: { etat: EtatMaFiguri
   const [univers, setUnivers] = useState(etat.univers ?? "");
   const [erreur, setErreur] = useState("");
   if (etat.etape !== "prete") return null;
+  // 🔀 (l'interrupteur « Univers pour tous » allumé) elle se refait au nouveau style, à son adresse
+  if (etat.bascule) return <PeauNeuve nouveauStyle={etat.bascule.nouveauStyle} />;
   const restants = etat.refaire ?? 0;
   async function refaire(autrePhoto: boolean) {
     setErreur("");
@@ -1710,7 +1712,14 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
     );
   // (sa figurine prête : le studio, tout entier — le mème du jour, ses réactions et sa figurine du mois y sont rangés ;
   // « Ne perds jamais ta figurine » est devenu un cadenas doré, en haut, à côté de son prénom : `ma-collection.tsx`)
-  if (etat.etape === "prete" && etat.neutre && etat.parle) return <StudioMoi key={etat.neutre} etat={etat} onEtat={onEtat} />;
+  if (etat.etape === "prete" && etat.neutre && etat.parle)
+    return (
+      <>
+        {/* 🔀 (l'interrupteur allumé) sa figurine d'aujourd'hui : l'invitation à la refaire au nouveau style */}
+        {etat.bascule && !etat.bascule.nouveauStyle && <PeauNeuve nouveauStyle={false} enAvant />}
+        <StudioMoi key={etat.neutre} etat={etat} onEtat={onEtat} />
+      </>
+    );
   if (etat.etape === "fabrication")
     return etat.auto ? (
       <FabricationAuto etat={etat} onEtat={onEtat} />
@@ -1720,17 +1729,55 @@ export function OngletFigurine({ etat, villes, onEtat }: { etat: EtatMaFigurine 
   if (etat.etape === "bientot") return <Annonce titre="Ta figurine arrive très bientôt 🛠️">Reviens ici dans quelques jours pour envoyer ta photo.</Annonce>;
   return (
     <>
-      {/* (9 novembre 2026 : l'accueil de Pablito est devenu la bienvenue du tuto, `tuto.tsx`, ouverte une seule fois) */}
-      <EnvoiPhoto etat={etat} villes={villes} onEnvoye={onEtat} />
+      {/* (9 novembre 2026 : l'accueil de Pablito est devenu la bienvenue du tuto, `tuto.tsx`, ouverte une seule fois) ;
+          🔀 l'interrupteur allumé : sa figurine se crée au nouveau style, à son adresse */}
+      {etat.bascule ? <PeauNeuve nouveauStyle={false} premiere /> : <EnvoiPhoto etat={etat} villes={villes} onEnvoye={onEtat} />}
       {/* 🔎 elle existe déjà sur un autre téléphone : un code à six chiffres la retrouve (lot 2) */}
       {!etat.compte && <ProtegerFigurine mode="retrouver" />}
     </>
   );
 }
 
+/**
+ * ✨ SA FIGURINE AU NOUVEAU STYLE (la bascule « Univers pour tous ») : elle se crée (`premiere`), ou se refait, à
+ * `/univers/figurine` — assise dans son fauteuil, chez lui, dans son univers. `enAvant` : l'invitation, en haut de « Créer ».
+ */
+function PeauNeuve({ nouveauStyle, premiere = false, enAvant = false }: { nouveauStyle: boolean; premiere?: boolean; enAvant?: boolean }) {
+  return (
+    <section className={`pn${enAvant ? " pn-avant" : ""}`} aria-label={premiere ? "Crée ta figurine" : "Refaire ma figurine"}>
+      <span className="pn-ico" aria-hidden="true">
+        {premiere ? "🧸" : nouveauStyle ? "🔁" : "✨"}
+      </span>
+      <span className="pn-texte">
+        <b>{premiere ? "Crée ta figurine" : nouveauStyle ? "Refaire ma figurine" : "Ta figurine fait peau neuve"}</b>
+        <small>
+          {premiere
+            ? "Un selfie, et Pablito sculpte ta figurine de collection. Puis il t’imagine un univers rien qu’à toi."
+            : nouveauStyle
+              ? "Elle ne te ressemble pas ? Une retouche avec tes mots, ou un autre selfie."
+              : "Assise dans son fauteuil, chez toi, dans ton univers. Ta photo d’avant suffit."}
+        </small>
+      </span>
+      <a className="pn-bouton" href="/univers/figurine">
+        {premiere ? "Créer ma figurine" : nouveauStyle ? "La refaire" : "La refaire au nouveau style"}
+      </a>
+    </section>
+  );
+}
+const STYLES_PEAU_NEUVE = `
+.pn{display:grid;grid-template-columns:auto 1fr;gap:10px 12px;align-items:center;margin:14px 0 0;padding:16px;border-radius:24px;background:linear-gradient(135deg,rgba(255,46,154,.18),rgba(242,196,107,.14));border:1px solid rgba(242,196,107,.35)}
+.pn-avant{margin:0 0 16px}
+.pn-ico{font-size:30px;line-height:1}
+.pn-texte{display:flex;flex-direction:column;gap:3px;min-width:0}
+.pn-texte b{font-size:16px;font-weight:900}
+.pn-texte small{font-size:13px;line-height:1.4;color:#E9D5DD}
+.pn-bouton{grid-column:1 / -1;justify-self:stretch;padding:14px 18px;border-radius:999px;background:#FF2E9A;color:#fff;font-weight:900;font-size:16px;text-align:center;text-decoration:none;box-shadow:0 12px 26px -12px rgba(255,46,154,.95)}
+`;
+
 export const STYLES_MA_FIGURINE =
   STYLES_FIGURINE_QUI_PARLE +
   STYLES_GUIDE +
+  STYLES_PEAU_NEUVE +
   `
 .tf{display:grid;gap:18px}
 .tf > *{min-width:0}

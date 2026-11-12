@@ -62,6 +62,18 @@ const MENU = [
   { cle: "proches", nom: "Proches" },
 ] as const;
 type Onglet = (typeof MENU)[number]["cle"];
+/**
+ * 🏡 LE MENU DE DEMAIN (l'interrupteur « Univers pour tous » allumé, `lib/direct/univers-pour-tous.ts` ; la feuille de
+ * route « Univers », section 8) : Découvrir · Autour · Créer · Proches · Mon univers — « Mon univers » ouvre l'accueil
+ * (`/univers`) ; « Mes mèmes » y est rangé (et `#memes` mène toujours ici).
+ */
+const MENU_UNIVERS = [
+  { cle: "decouvrir", nom: "Découvrir" },
+  { cle: "autour", nom: "Autour" },
+  { cle: "figurine", nom: "Créer" },
+  { cle: "proches", nom: "Proches" },
+  { cle: "univers", nom: "Mon univers" },
+] as const;
 /** Les vues : les onglets du menu, et « Moi » (sous son prénom, en haut). */
 type Vue = Onglet | "personnage";
 /** Les adresses qui mènent à une vue (et, pour certaines, à un endroit dedans). */
@@ -97,7 +109,7 @@ const ALIAS: Record<string, Vue> = {
   presence: "personnage",
 };
 
-export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: string }[] }) {
+export function MaCollection({ villes = [], univers = false }: { villes?: { slug: string; nom: string }[]; univers?: boolean }) {
   const [etat, setEtat] = useState<EtatMaFigurine | null>(null);
   const [charge, setCharge] = useState(false);
   const [vue, setVue] = useState<Vue>("figurine");
@@ -184,8 +196,12 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
   useEffect(() => {
     if (!charge || !premiereArrivee.current) return;
     premiereArrivee.current = false;
-    if (etat?.etape === "prete" && etat.messages.length > 0 && !window.location.hash && !new URLSearchParams(window.location.search).get("ami")) aller("decouvrir");
-  }, [charge, etat, aller]);
+    const sansAdresse = !window.location.hash && !new URLSearchParams(window.location.search).get("ami");
+    // 🏡 (l'interrupteur « Univers pour tous » allumé) l'appli s'ouvre sur « Mon univers » — sauf pendant que sa figurine
+    // d'aujourd'hui se fabrique, ou juste avant d'installer l'appli (son jeton)
+    if (univers && sansAdresse && etat?.etape !== "fabrication" && !new URLSearchParams(window.location.search).get("appli")) return window.location.replace("/univers");
+    if (etat?.etape === "prete" && etat.messages.length > 0 && sansAdresse) aller("decouvrir");
+  }, [charge, etat, aller, univers]);
 
   // 🧭 LE TUTO : le logo ouvre la visite (le point rose s'en va) ; une page : on y va, Pablito la montre
   const ouvrirVisite = () => {
@@ -395,8 +411,14 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
       {/* LE MENU, EN BAS (6 novembre 2026 : « il faut qu'on voie en un coup d'œil qu'on est différent ») : un dock qui flotte ;
           « Créer », le cœur de l'app, en gros bouton rond au milieu, avec SA figurine dedans (7 novembre 2026) */}
       <nav className="mc-nav" aria-label="ClikMe">
-        {MENU.map((o) => (
-          <button key={o.cle} type="button" className={`mc-nav-${o.cle}${onglet === o.cle ? " pris" : ""}`} aria-current={onglet === o.cle ? "page" : undefined} onClick={() => aller(o.cle, undefined, false, true)}>
+        {(univers ? MENU_UNIVERS : MENU).map((o) => (
+          <button
+            key={o.cle}
+            type="button"
+            className={`mc-nav-${o.cle}${onglet === o.cle ? " pris" : ""}`}
+            aria-current={onglet === o.cle ? "page" : undefined}
+            onClick={() => (o.cle === "univers" ? window.location.assign("/univers") : aller(o.cle, undefined, false, true))}
+          >
             <span className="mc-nav-ico" aria-hidden="true">
               {o.cle === "figurine" && prete && etat?.neutre ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -404,7 +426,7 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
               ) : (
                 <IconeOnglet cle={o.cle} />
               )}
-              {pastilles[o.cle] && <i className={pastilles[o.cle] === "!" || pastilles[o.cle] === "1" || o.cle === "proches" ? "pulse" : ""}>{pastilles[o.cle]}</i>}
+              {o.cle !== "univers" && pastilles[o.cle] && <i className={pastilles[o.cle] === "!" || pastilles[o.cle] === "1" || o.cle === "proches" ? "pulse" : ""}>{pastilles[o.cle]}</i>}
             </span>
             <small>{o.nom}</small>
           </button>
@@ -419,7 +441,7 @@ export function MaCollection({ villes = [] }: { villes?: { slug: string; nom: st
  * Les icônes du menu, dessinées pour ClikMe (une flamme, une épingle, un « + » sur son ressort, une pile de mèmes, deux
  * personnages) ; et « Moi » (une carte de personnage), pour la visite.
  */
-function IconeOnglet({ cle }: { cle: Vue }) {
+function IconeOnglet({ cle }: { cle: Vue | "univers" }) {
   const trait = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" } as const;
   return (
     <svg viewBox="0 0 24 24" width="24" height="24">
@@ -428,6 +450,13 @@ function IconeOnglet({ cle }: { cle: Vue }) {
           <rect x="5" y="3" width="14" height="18" rx="2.5" {...trait} />
           <circle cx="12" cy="10" r="3" {...trait} />
           <path d="M8.5 17a4 4 0 0 1 7 0" {...trait} />
+        </>
+      ) : cle === "univers" ? (
+        <>
+          {/* une petite maison, un fauteuil dedans */}
+          <path d="M3.5 11.2 12 4l8.5 7.2" {...trait} />
+          <path d="M5.8 9.6V20h12.4V9.6" {...trait} />
+          <path d="M9.2 18.4v-3.2a1.2 1.2 0 0 1 1.2-1.2h3.2a1.2 1.2 0 0 1 1.2 1.2v3.2M8.6 15.6v2.8M15.4 15.6v2.8" {...trait} />
         </>
       ) : cle === "figurine" ? (
         <>

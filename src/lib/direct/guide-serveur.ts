@@ -37,11 +37,11 @@ export async function imageDuGuide(supabase: Supabase, nom: string): Promise<Buf
 }
 
 /** Sa grimace : il louche (après « Moi, c'est Pablito ! »). */
-const LOUCHE =
+export const LOUCHE =
   "a goofy CROSS-EYED clown face: both eyes turned inward, looking at the tip of his own nose, eyebrows raised high, a cheeky closed-mouth smile";
 
 /** Ses tenues, dans l'ordre où on les fait : celle du mois, puis les suivantes (l'année qui vient). */
-function ordreDesTenues(maintenant = new Date()): string[] {
+export function ordreDesTenues(maintenant = new Date()): string[] {
   const cles = EDITIONS_DATEES.map((e) => e.cle);
   const ici = editionsDuMoment(jourDe(maintenant)).maintenant?.cle;
   const k = Math.max(0, ici ? cles.indexOf(ici) : 0);

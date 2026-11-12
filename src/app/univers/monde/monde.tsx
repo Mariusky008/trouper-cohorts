@@ -207,6 +207,12 @@ export function Monde({ accueil = false }: { accueil?: boolean }) {
           🏡 Mon univers, l’accueil de demain
         </a>
       )}
+      {/* 📥 ses mèmes sont rangés dans « Mon univers » (le menu de demain n'a plus d'onglet « Mes mèmes ») */}
+      {accueil && etat?.etape === "decouverte" && (
+        <a className="um-lien" href="/collection#memes">
+          📥 Mes mèmes
+        </a>
+      )}
       {accueil && (
         <nav className="um-menu" aria-label="Menu">
           {MENU_DE_DEMAIN.map((m) => (

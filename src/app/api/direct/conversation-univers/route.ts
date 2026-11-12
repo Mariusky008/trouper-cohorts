@@ -14,7 +14,7 @@
 // POST { action: "effacer" }             → { ok } : la conversation s'efface
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isCurrentUserAdmin } from "@/lib/admin-guard";
+import { universPermis } from "@/lib/direct/univers-pour-tous";
 import { habitantCourant } from "@/lib/direct/habitant";
 import {
   commencer,
@@ -39,14 +39,14 @@ const sansCache = { "cache-control": "private, no-store" };
 const REFUS = { error: "Bientôt 🙂" };
 
 export async function GET() {
-  if (!(await isCurrentUserAdmin())) return NextResponse.json(REFUS, { status: 403 });
+  if (!(await universPermis())) return NextResponse.json(REFUS, { status: 403 });
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
   return NextResponse.json({ ok: true, ...(await etatConversation(supabase, moi?.id ?? null)) }, { headers: sansCache });
 }
 
 export async function POST(request: Request) {
-  if (!(await isCurrentUserAdmin())) return NextResponse.json(REFUS, { status: 403 });
+  if (!(await universPermis())) return NextResponse.json(REFUS, { status: 403 });
   const p = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);

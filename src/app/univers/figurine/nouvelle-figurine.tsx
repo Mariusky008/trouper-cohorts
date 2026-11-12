@@ -100,7 +100,7 @@ export function NouvelleFigurine() {
       {!etat ? (
         <p className="nf-centre">{erreur || "Un instant…"}</p>
       ) : etape === "selfie" ? (
-        <Selfie occupe={occupe} branche={etat.branche} onEnvoyer={(photo) => faire({ action: "selfie", photo, moi: true, age: true })} />
+        <Selfie occupe={occupe} branche={etat.branche} photoDAvant={etat.photoDAvant} onEnvoyer={(photo) => faire({ action: "selfie", photo, moi: true, age: true })} />
       ) : etape === "fabrication" ? (
         <Atelier key={etat.propositions[0]?.id} demande={etat.propositions[0]?.demande} />
       ) : etape === "decouverte" ? (
@@ -119,8 +119,10 @@ export function NouvelleFigurine() {
 }
 
 // ─── 1. le selfie ─────────────────────────────────────────────────────────────────────────────────
-function Selfie({ occupe, branche, onEnvoyer }: { occupe: boolean; branche: boolean; onEnvoyer: (photo: string) => void }) {
+function Selfie({ occupe, branche, photoDAvant, onEnvoyer }: { occupe: boolean; branche: boolean; photoDAvant?: string; onEnvoyer: (photo: string) => void }) {
   const [photo, setPhoto] = useState("");
+  // 🖼️ sa photo d'avant (celle de sa figurine d'aujourd'hui) : reprise telle quelle, sans nouveau selfie
+  const [dAvant, setDAvant] = useState(false);
   const [moi, setMoi] = useState(false);
   const [age, setAge] = useState(false);
   const [lecture, setLecture] = useState("");
@@ -128,21 +130,28 @@ function Selfie({ occupe, branche, onEnvoyer }: { occupe: boolean; branche: bool
     if (!f) return;
     setLecture("");
     try {
+      setDAvant(false);
       setPhoto(await photoReduite(f));
     } catch (e) {
       setLecture(message(e));
     }
   }
-  const pret = Boolean(photo) && moi && age && !occupe && branche;
+  const pret = (Boolean(photo) || dAvant) && moi && age && !occupe && branche;
+  const montree = dAvant ? photoDAvant : photo;
   return (
     <section className="nf-selfie" aria-label="Ton selfie">
       <h1>Créons ta figurine !</h1>
       <p className="nf-doux">Un selfie de face, bien éclairé, sans personne d’autre sur la photo. Pablito en sculpte ta figurine de collection.</p>
-      <label className={`nf-photo${photo ? " prise" : ""}`}>
+      <label className={`nf-photo${montree ? " prise" : ""}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {photo ? <img src={photo} alt="Ton selfie" /> : <span>📸 Mon selfie</span>}
+        {montree ? <img src={montree} alt="Ton selfie" /> : <span>📸 Mon selfie</span>}
         <input type="file" name="photo" accept="image/*" capture="user" onChange={(e) => void choisir(e.target.files?.[0])} />
       </label>
+      {photoDAvant && !dAvant && (
+        <button type="button" className="nf-lien" onClick={() => setDAvant(true)}>
+          🖼️ Reprendre ma photo d’avant
+        </button>
+      )}
       {lecture && <p className="nf-erreur">{lecture}</p>}
       <label className="nf-case">
         <input type="checkbox" name="moi" checked={moi} onChange={(e) => setMoi(e.target.checked)} /> C’est bien moi
@@ -150,7 +159,7 @@ function Selfie({ occupe, branche, onEnvoyer }: { occupe: boolean; branche: bool
       <label className="nf-case">
         <input type="checkbox" name="age" checked={age} onChange={(e) => setAge(e.target.checked)} /> J’ai 15 ans ou plus
       </label>
-      <button type="button" className="nf-bouton" disabled={!pret} onClick={() => onEnvoyer(photo)}>
+      <button type="button" className="nf-bouton" disabled={!pret} onClick={() => onEnvoyer(dAvant ? "avant" : photo)}>
         {occupe ? "…" : "Créer ma figurine"}
       </button>
       {!branche && <p className="nf-doux">Le moteur d’image n’est pas branché ici.</p>}

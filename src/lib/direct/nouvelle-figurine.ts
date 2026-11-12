@@ -39,6 +39,8 @@ export type EtatNouvelleFigurine = {
   restantes: number;
   /** le moteur d'image est branché */
   branche: boolean;
+  /** 🖼️ la photo de sa figurine d'aujourd'hui (signée), pour la refaire au nouveau style sans nouveau selfie */
+  photoDAvant?: string;
   /** son personnage maître, une fois validé : ses images de référence (assise, et bientôt bouche ouverte et debout) */
   figurine?: { version: number; images: Record<string, string>; enCours: boolean };
 };

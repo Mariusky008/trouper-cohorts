@@ -1,6 +1,6 @@
 // 🧸 LA NOUVELLE FIGURINE — chantier « Univers », lot 2 (`lib/direct/nouvelle-figurine.ts`,
 // `nouvelle-figurine-serveur.ts`). D'ABORD RÉSERVÉE AU PROPRIÉTAIRE (une session d'administrateur) : les gens de Dax
-// gardent leur figurine d'aujourd'hui jusqu'à son feu vert.
+// gardent leur figurine d'aujourd'hui jusqu'à son feu vert (l'interrupteur `univers-pour-tous.ts`).
 //
 // GET                                         → { etape, propositions, restantes, branche, figurine? }
 // POST { action: "selfie", photo, moi, age }  → { id } : son selfie (« C'est bien moi », « J'ai 15 ans ou plus ») ; sa
@@ -12,8 +12,9 @@
 // Les images se font après la réponse : l'écran relit toutes les trois secondes.
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isCurrentUserAdmin } from "@/lib/admin-guard";
+import { universPermis } from "@/lib/direct/univers-pour-tous";
 import { assurerHabitant, habitantCourant } from "@/lib/direct/habitant";
+import { poserLePont } from "@/lib/direct/pont-univers-serveur";
 import { envoyerSelfie, etatNouvelleFigurine, fabriquerProposition, fabriquerSesReferences, refaire, retoucher, valider } from "@/lib/direct/nouvelle-figurine-serveur";
 
 export const dynamic = "force-dynamic";
@@ -24,14 +25,14 @@ const sansCache = { "cache-control": "private, no-store" };
 const REFUS = { error: "Bientôt 🙂" };
 
 export async function GET() {
-  if (!(await isCurrentUserAdmin())) return NextResponse.json(REFUS, { status: 403 });
+  if (!(await universPermis())) return NextResponse.json(REFUS, { status: 403 });
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
   return NextResponse.json({ ok: true, ...(await etatNouvelleFigurine(supabase, moi?.id ?? null)) }, { headers: sansCache });
 }
 
 export async function POST(request: Request) {
-  if (!(await isCurrentUserAdmin())) return NextResponse.json(REFUS, { status: 403 });
+  if (!(await universPermis())) return NextResponse.json(REFUS, { status: 403 });
   const avant = Date.now() + maxDuration * 1000 - 20_000;
   const p = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const supabase = createAdminClient();
@@ -57,7 +58,8 @@ export async function POST(request: Request) {
   if (p?.action === "valider") {
     const r = await valider(supabase, moi.id, p.id);
     const version = r.version;
-    if (version) after(() => fabriquerSesReferences(supabase, moi.id, version, avant));
+    // (puis, l'interrupteur « Univers pour tous » allumé : elle devient sa figurine dans l'appli — `pont-univers-serveur.ts`)
+    if (version) after(() => fabriquerSesReferences(supabase, moi.id, version, avant).then(() => poserLePont(supabase, moi)).catch(() => undefined));
     return repondre(r, { version });
   }
   return NextResponse.json({ error: "Demande incomplète." }, { status: 400 });

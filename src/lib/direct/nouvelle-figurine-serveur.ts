@@ -24,7 +24,7 @@ import type { Traits } from "./figurine-pro";
 import { decrireTraits } from "./figurine-pro-serveur";
 import type { Habitant } from "./habitant";
 import { universValide } from "./ma-figurine";
-import { confirmerSonAge, deposer, ecrireJson, lireJson, signer, telecharger } from "./ma-figurine-serveur";
+import { confirmerSonAge, deposer, ecrireJson, lireJson, lireLigne, signer, telecharger } from "./ma-figurine-serveur";
 import { parleDAlcool } from "./meme-surprise";
 import { demanderUneImage } from "./moteur-images-serveur";
 import { motInterdit } from "./mots-interdits";
@@ -93,6 +93,17 @@ function imageEnvoyee(x: unknown): Buffer | null {
   return brut.length && brut.length <= 10 * 1024 * 1024 ? brut : null;
 }
 
+/**
+ * 🖼️ SA PHOTO D'AVANT (la bascule « Univers pour tous » : « figurines actuelles refaites ») : celui qui avait sa figurine
+ * d'aujourd'hui peut refaire la nouvelle d'après la photo qu'il avait envoyée (« C'est bien moi » et « 15 ans ou plus »
+ * cochés à nouveau) ; son chemin, s'il en a une.
+ */
+async function sonCheminDePhotoDAvant(supabase: Supabase, h: string): Promise<string> {
+  const { ok, ligne } = await lireLigne(supabase, h).catch(() => ({ ok: false, ligne: null }));
+  const chemin = ok ? s(ligne?.photo) : "";
+  return chemin.startsWith(`${h}/`) ? chemin : "";
+}
+
 // ─── où il en est ──────────────────────────────────────────────────────────────────────────────────
 export async function etatNouvelleFigurine(supabase: Supabase, h: string | null): Promise<EtatNouvelleFigurine> {
   const branche = moteurPersoBranche();
@@ -122,7 +133,11 @@ export async function etatNouvelleFigurine(supabase: Supabase, h: string | null)
     const enCours = Boolean(ref && ref.version === fiche.version && !ref.fini && !ref.erreur && Date.now() - (Date.parse(ref.le) || 0) < PERIMEE_MS);
     return { etape: "validee", propositions, restantes, branche, figurine: { version: fiche.version, images, enCours } };
   }
-  if (!b.selfie) return { ...vide, restantes };
+  if (!b.selfie) {
+    const avant = await sonCheminDePhotoDAvant(supabase, h);
+    const photoDAvant = avant ? await signer(supabase, avant).catch(() => "") : "";
+    return { ...vide, restantes, ...(photoDAvant ? { photoDAvant } : {}) };
+  }
   return { etape: propositions[0]?.etat === "en-cours" ? "fabrication" : "decouverte", propositions, restantes, branche };
 }
 
@@ -146,7 +161,9 @@ async function demanderProposition(supabase: Supabase, h: string, de: "selfie" |
 export async function envoyerSelfie(supabase: Supabase, habitant: Habitant, photo: unknown, moi: unknown, age: unknown): Promise<{ id?: string; error?: string; statut?: number }> {
   if (moi !== true) return { error: "Coche « C’est bien moi » : ta figurine, c’est toi.", statut: 400 };
   if (age !== true) return { error: "Il faut avoir 15 ans ou plus.", statut: 400 };
-  const brut = imageEnvoyee(photo);
+  // (« Reprendre ma photo d'avant » : celle de sa figurine d'aujourd'hui)
+  const photoDAvant = photo === "avant" ? await sonCheminDePhotoDAvant(supabase, habitant.id) : "";
+  const brut = photo === "avant" ? (photoDAvant ? await telecharger(supabase, photoDAvant) : null) : imageEnvoyee(photo);
   if (!brut) return { error: "Ce selfie ne s’ouvre pas. Reprends-le.", statut: 400 };
   let jpeg: Buffer;
   try {

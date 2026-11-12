@@ -576,8 +576,9 @@ La carte de personnage laisse la place à la conversation. La figurine du mois d
 se jouent dans son univers (son décor, sa figurine assise, ses visages du nouveau style) ; « Découvrir » : « 🏡 Les
 univers à visiter » (ceux ouverts à tout le monde). **La saison** (le propriétaire, le 12 novembre : « les deux ») :
 son décor du mois (fait à sa première visite du mois) et sa tenue du mois (méritée, au nouveau style, assise chez lui) ;
-le détail : 9.0 quadragies 🍂. **Reste** : le menu et la carte de personnage, avec le feu vert pour tout le monde
-(donné le 12 novembre).
+le détail : 9.0 quadragies 🍂. **La bascule** (le feu vert, donné le 12 novembre) : le menu de demain, l'arrivée sur
+« Mon univers », les figurines d'aujourd'hui refaites (avec la photo d'avant), Pablito au nouveau style — construits
+derrière un seul interrupteur, éteint (9.0 unquadragies 🔀). **Reste** : l'allumer ; la carte de personnage.
 
 ### Lot R — Le rituel du jour (précision du propriétaire, 11 novembre 2026)
 
