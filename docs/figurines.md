@@ -2431,6 +2431,22 @@ sympa de voir les univers des autres »).
   une retouche ne les efface pas). Les routes : `/api/direct/visites`. Dans « Proches » : « 🏡 Son univers ».
 - **Les essais** : `scripts/essai-visites-route.mjs`, `scripts/navigateur/visite-univers.mjs`.
 
+### 9.0 septatricies 🎬🏡 L'appli rhabillée, première partie (12 novembre) — lot 7
+
+Le propriétaire : « en attendant on peut faire […] le lot 7 ».
+
+- **Les mèmes se jouent dans son univers** (`ma-figurine.tsx`, `fabriquerEtPoser`) : quand il a son univers, son mème
+  se fabrique chez lui — son décor à la place du fond rose, sa figurine assise à sa place (à la taille relevée sur son
+  image vedette), le visage du nouveau style qu'il a choisi s'il est fait (`maFigurineVue`, `chezMoi` de `meme.ts`).
+  Pas avec un look (sa figurine du mois), ni en duo, ni avec une version BD, cinéma ou affiche : ceux-là restent comme
+  aujourd'hui.
+- **« Découvrir » montre les figurines chez elles** : après « Mon vœu », une page « 🏡 Les univers à visiter » — ceux
+  qu'on a ouverts à tout le monde (lot 6 ; l'index `univers/publics.json`, tenu par `choisirVisibilite`), leur figurine
+  chez elle (l'image vedette) ; un toucher, et on entre (`/univers/chez/<clé>`). Rien quand il n'y en a pas.
+- **La saison de l'univers** (la figurine du mois) : pas encore construite — à trancher avec le propriétaire (son
+  univers qui change avec le mois, ou sa figurine qui s'habille, chez elle).
+- **Les essais** : `scripts/navigateur/visite-univers.mjs` (« Découvrir » : Chez Marc).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

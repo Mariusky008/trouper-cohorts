@@ -83,6 +83,9 @@ export type MesVisites = {
   poses: SouvenirVu[];
 };
 
+/** 🏡 Un univers ouvert à tous, dans « Découvrir » (lot 7) : sa clé, son prénom, son image (sa figurine chez elle). */
+export type UniversPublic = { cle: string; prenom: string; image: string };
+
 /** Un petit mot propre : une ligne, sans caractères de contrôle ni chevrons, `MOT_SOUVENIR_MAX` au plus. */
 export const motDeSouvenir = (x: unknown): string =>
   String(x ?? "")

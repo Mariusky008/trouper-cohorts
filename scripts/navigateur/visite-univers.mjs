@@ -4,11 +4,12 @@
 // Inès, proche de Marc, entre chez lui : « Chez Marc », son décor, sa figurine, la sienne en visite ; « 🚪 Frapper à la
 // porte » ; « 🎁 Laisser un souvenir » (un bouquet, un mot) ; « 🔑 Les clés de son univers ». Marc, dans son univers :
 // « 🎁 Des souvenirs pour toi » — « Le poser chez moi » : le bouquet apparaît sur le sol de son décor ; « Qui est
-// passé » : Inès ; « Qui peut entrer chez moi ? » : « 🌍 Tout le monde » demande 18 ans ou plus. Rien ne déborde, jamais
-// le mot interdit, aucune erreur dans la page.
+// passé » : Inès ; « Qui peut entrer chez moi ? » : « 🌍 Tout le monde » demande 18 ans ou plus. 🏡 Lot 7 : dans
+// « Découvrir », Inès voit « Les univers à visiter » — « Chez Marc ». Rien ne déborde, jamais le mot interdit, aucune
+// erreur dans la page.
 import crypto from "node:crypto";
 import fs from "node:fs";
-import { BASE, D, F, lancer } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 
 let echecs = 0;
 const ok = (c, m) => {
@@ -134,6 +135,15 @@ await marc.waitForFunction(() => document.querySelector('.um-visibilite button[a
 ok((await texte(marc, '.um-visibilite button[aria-checked="true"]')).includes("Tout le monde"), "« Oui, j'ai 18 ans ou plus » : son univers est ouvert à tous");
 await marc.screenshot({ path: `${D}/visite-univers-2-chez-moi.png`, fullPage: true });
 ok((await debordement(marc)) <= 0 && (await sansMotInterdit(marc)), "chez lui : rien ne déborde, sans le mot interdit");
+
+// ═══ 🏡 « DÉCOUVRIR » : LES UNIVERS À VISITER (lot 7) ═══
+await ines.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "networkidle" });
+await fermerPablito(ines);
+await ines.waitForSelector(".dv-univers .dv-univers-carte", { timeout: 30000 }).catch(() => null);
+ok(
+  (await texte(ines, ".dv-univers")).includes("Les univers à visiter") && (await ines.locator(".dv-univers-carte", { hasText: "Chez Marc" }).getAttribute("href")) === `/univers/chez/${MARC.cle}`,
+  "« Découvrir » : « 🏡 Les univers à visiter » — Chez Marc, un toucher pour y entrer",
+);
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.join(" | ")})` : ""}`);
 await b.close();

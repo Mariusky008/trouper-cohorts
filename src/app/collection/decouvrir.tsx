@@ -21,6 +21,10 @@
  * applis de vidéos. La première page : le mème du jour ; puis ses réponses (une fois la sienne postée) ; puis le fil ;
  * à la fin, « Tu as tout vu ». Le document « s'aimante » à chaque page (`scroll-snap`, seulement quand « Découvrir »
  * est ouvert) ; 😂 ❤️ 🔥, « Répondre » et « Partager » sont dans la colonne de droite, le nom en bas à gauche.
+ *
+ * 12 NOVEMBRE 2026, « UNIVERS », LOT 7 : « Découvrir montre les figurines chez elles » — après « Mon vœu », une bande
+ * « 🏡 Les univers à visiter » : ceux que leurs habitants ont ouverts à tout le monde (lot 6), leur figurine chez elle ;
+ * un toucher, et on y entre (`/univers/chez/<clé>`). Rien quand il n'y en a pas.
  */
 import { useContext, useEffect, useRef, useState } from "react";
 import type { MemeCommerce } from "@/lib/direct/memes-commerces";
@@ -31,6 +35,7 @@ import { OngletVisible } from "./guide";
 import { chiffresDuJour, repondreAuJour } from "./theme-du-jour";
 import { signalerOui } from "./fenetre";
 import { InviterAppli } from "./mon-telephone";
+import type { UniversPublic } from "@/lib/direct/visites";
 import { MonVoeuDansDecouvrir } from "./voeu";
 
 type Commerce = MemeCommerce & { reac?: ReacMeme };
@@ -212,6 +217,40 @@ function MemeDuFil({ e, actif, compte, badge, onRetire, onReagir }: { e: Element
   );
 }
 
+/** 🏡 Les univers ouverts à tout le monde (lot 6) : leur figurine chez elle ; un toucher, et on y entre. */
+function UniversAVisiter({ visible }: { visible: boolean }) {
+  const [liste, setListe] = useState<UniversPublic[]>([]);
+  useEffect(() => {
+    if (!visible) return;
+    let fini = false;
+    fetch("/api/direct/visites?publics=1", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j: { publics?: UniversPublic[] }) => !fini && setListe(Array.isArray(j.publics) ? j.publics : []))
+      .catch(() => undefined);
+    return () => {
+      fini = true;
+    };
+  }, [visible]);
+  if (!liste.length) return null;
+  return (
+    <section className="dv-diapo dv-univers" id="univers" aria-label="Les univers à visiter">
+      <header className="og-tete">
+        <small>DÉCOUVRIR</small>
+        <h2>🏡 Les univers à visiter</h2>
+      </header>
+      <div className="dv-univers-liste">
+        {liste.map((u) => (
+          <a key={u.cle} href={`/univers/chez/${u.cle}`} className="dv-univers-carte">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={u.image} alt={`L’univers de ${u.prenom}`} loading="lazy" />
+            <small>Chez {u.prenom}</small>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function Decouvrir({ allerA }: { allerA: (o: string) => void }) {
   const visible = useContext(OngletVisible);
   const [fil, setFil] = useState<Fil | null>(null);
@@ -286,6 +325,8 @@ export function Decouvrir({ allerA }: { allerA: (o: string) => void }) {
       {/* (9 novembre 2026 : Pablito explique « Découvrir » dans la visite, sous le logo — plus de fenêtre ici) */}
       {/* ✨ LES PREMIÈRES PAGES : MON VŒU ET LA MISSION DU JOUR (`voeu.tsx`, 11 novembre 2026) */}
       <MonVoeuDansDecouvrir allerA={allerA} />
+      {/* 🏡 LES UNIVERS À VISITER (« Univers », lot 7) : ceux qui sont ouverts à tout le monde */}
+      <UniversAVisiter visible={visible} />
       {panne && <p className="mc-vide">Le fil n’a pas pu s’afficher. Réessaie dans un instant.</p>}
       {!fil && !panne && (
         <div className="mc-attente" aria-label="Chargement">
@@ -397,6 +438,11 @@ export function Decouvrir({ allerA }: { allerA: (o: string) => void }) {
 
 export const STYLES_DECOUVRIR = `
 .dv{display:flex;flex-direction:column}
+.dv-univers{display:flex;flex-direction:column;gap:12px;padding:72px 16px 96px}
+.dv-univers-liste{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;overflow-y:auto;min-height:0}
+.dv-univers-carte{display:flex;flex-direction:column;gap:4px;min-width:0;text-decoration:none;color:#FFF4E6}
+.dv-univers-carte img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:16px;box-shadow:0 10px 22px -10px rgba(0,0,0,.8)}
+.dv-univers-carte small{font-size:13px;font-weight:800}
 /* LE SWIPE : une page par mème, de la hauteur de l'écran ; le document s'aimante à chacune (quand « Découvrir » est ouvert) */
 html:has(#o-decouvrir:not([hidden]) .dv-diapo){scroll-snap-type:y mandatory}
 .dv-diapo,.dv-fil>.dv-carte{position:relative;box-sizing:border-box;height:100dvh;margin:0 -16px;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden}
