@@ -646,20 +646,32 @@ export async function creerLien(
   return { id, url: `/t/${id}`, reste: LIENS_PAR_JOUR - n - 1 };
 }
 
-/** 🖼️ L'aperçu du lien (dans WhatsApp) : le prénom de son auteur, sa figurine, à qui il parle — rien d'autre. */
-export async function apercuDuLien(supabase: Supabase, id: unknown): Promise<{ prenom: string; neutre: string; pour: string } | null> {
+/**
+ * 🖼️ L'aperçu du lien (dans WhatsApp) : le prénom de son auteur, sa figurine, à qui il parle — rien d'autre. 🏡
+ * « Univers », lot 5c : son image vedette (sa figurine chez elle), quand son univers est créé.
+ */
+export async function apercuDuLien(supabase: Supabase, id: unknown): Promise<{ prenom: string; neutre: string; pour: string; vedette?: string } | null> {
   const f = await ficheLien(supabase, id);
   if (!f) return null;
-  const de = await figurineVue(supabase, f.de, false);
-  return de ? { prenom: de.prenom, neutre: de.neutre, pour: s(f.pour) } : null;
+  const [de, monde] = await Promise.all([figurineVue(supabase, f.de, false), lireFicheMonde(supabase, f.de).catch(() => null)]);
+  const vedette = monde?.references.vedette ? await signer(supabase, monde.references.vedette.chemin, 600) : "";
+  return de ? { prenom: de.prenom, neutre: de.neutre, pour: s(f.pour), ...(vedette ? { vedette } : {}) } : null;
 }
 
 /** 👀 Le lien, pour sa page : la figurine de son auteur, sa voix, ses répliques — et qui le regarde. */
 export async function lireLien(supabase: Supabase, id: unknown, visiteur: Habitant | null): Promise<LienVu | null> {
   const f = await ficheLien(supabase, id);
   if (!f) return null;
-  const [de, son, cle] = await Promise.all([figurineVue(supabase, f.de, true), signer(supabase, f.son, 7200), poserProfil(supabase, f.de)]);
+  // (🏡 « Univers », lot 5c — « le lien d'invitation ouvre l'univers de celui qui invite » : sa figurine assise, chez lui)
+  const [de, son, cle, assise, chez] = await Promise.all([
+    figurineVue(supabase, f.de, true),
+    signer(supabase, f.son, 7200),
+    poserProfil(supabase, f.de),
+    assiseDe(supabase, f.de).catch(() => undefined),
+    chezLui(supabase, f.de).catch(() => undefined),
+  ]);
   if (!de || !son) return null;
+  if (assise && chez) Object.assign(de, { assise, chez });
   let qui: VisiteurLien = "sans";
   let moi: FigurineVue | null = null;
   if (visiteur?.id === f.de) qui = "auteur";

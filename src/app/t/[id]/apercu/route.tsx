@@ -27,13 +27,16 @@ const MICRO = svg(
   "0 0 24 24",
 );
 
-/** Sa figurine, recadrée sur le haut (sa tête) et convertie : WhatsApp et le dessin de la carte ne lisent pas le .webp. */
-async function figurine(adresse: string): Promise<string | null> {
+/**
+ * Sa figurine, recadrée sur le haut (sa tête) et convertie : WhatsApp et le dessin de la carte ne lisent pas le .webp.
+ * 🏡 Son image vedette (sa figurine chez elle, « Univers », lot 5c) : recadrée sur le bas, là où elle est assise.
+ */
+async function figurine(adresse: string, vedette = false): Promise<string | null> {
   try {
     const r = await fetch(adresse, { cache: "no-store" });
     if (!r.ok) return null;
     const png = await sharp(Buffer.from(await r.arrayBuffer()))
-      .resize(CADRE.l, CADRE.h, { fit: "cover", position: "top" })
+      .resize(CADRE.l, CADRE.h, { fit: "cover", position: vedette ? "bottom" : "top" })
       .png()
       .toBuffer();
     return `data:image/png;base64,${png.toString("base64")}`;
@@ -50,7 +53,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   } catch {
     l = null;
   }
-  const [image, polices] = await Promise.all([l ? figurine(l.neutre) : Promise.resolve(null), policesClikme()]);
+  const [image, polices] = await Promise.all([l ? (l.vedette ? figurine(l.vedette, true).then((x) => x ?? figurine(l.neutre)) : figurine(l.neutre)) : Promise.resolve(null), policesClikme()]);
   const prenom = l?.prenom || "";
   const grand = prenom.length > 11 ? 60 : 76;
 

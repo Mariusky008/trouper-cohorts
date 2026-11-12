@@ -7,7 +7,9 @@
 // assise à sa place, celle d'Inès qui entre à la place de l'invité, et qui parle (sa voix, sa bouche, les
 // sous-titres). Chez Inès : la scène d'aujourd'hui (elle n'a pas d'univers). 🎬 Lot 5b — « sur WhatsApp, chez celui qui
 // envoie » : Marc parle à quelqu'un qui n'a pas ClikMe ; sa vidéo se fabrique chez lui (son décor à la place du fond
-// rose). Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
+// rose). 🔗 Lot 5c — « le lien d'invitation ouvre l'univers de celui qui invite » : qui ouvre son lien est chez lui
+// (son décor, sa figurine, « 👋 Bienvenue chez moi ! ») ; l'aperçu du lien est une image ; Inès lui répond depuis le
+// lien : à la fin, leurs deux figurines chez lui. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
 import crypto from "node:crypto";
 import fs from "node:fs";
 import { BASE, D, F, fermerPablito, lancer, parlerAuMoins } from "./commun.mjs";
@@ -171,6 +173,39 @@ ok(Boolean(pixel) && !rose, `sa vidéo WhatsApp se passe chez lui : son décor, 
 await video.locator(".tf-feuille.ouverte .pr-pret .pr-video").screenshot({ path: `${D}/talkie-chez-moi-2-video.png` }).catch(() => null);
 const prete = await video.waitForSelector('.tf-feuille.ouverte .pr-pret[data-video="prete"] .pr-video video', { timeout: 60000 }).then(() => true).catch(() => false);
 ok(prete, "sa vidéo est prête à partir sur WhatsApp");
+const lien = await video.locator(".tf-feuille.ouverte .pr-pret").getAttribute("data-url");
+
+// ═══ 🔗 SON LIEN OUVRE SON UNIVERS ═══
+const inconnu = await (await b.newContext({ viewport: { width: 390, height: 844 }, userAgent: IPHONE, isMobile: true, hasTouch: true })).newPage();
+inconnu.on("pageerror", (e) => erreurs.push(`Inconnu : ${String(e)}`));
+await inconnu.goto(lien ?? `${BASE}/t/rien`, { waitUntil: "networkidle" });
+ok(
+  (await texte(inconnu, "h1")).includes("Marc t’accueille dans son univers") && (await inconnu.locator(".pt-scene.chez .pr-decor").count()) === 1 && (await inconnu.locator(".pt-scene.chez .pr-parleur.assise").count()) === 1,
+  `son lien ouvre son univers : son décor, sa figurine assise chez lui (${await texte(inconnu, "h1")})`,
+);
+ok((await texte(inconnu, ".pt-bonjour")).includes("Bienvenue chez moi"), "sa figurine dit bonjour : « 👋 Bienvenue chez moi ! »");
+ok((await debordement(inconnu)) <= 0 && (await sansMotInterdit(inconnu)), "la page du lien : rien ne déborde, sans le mot interdit");
+await inconnu.screenshot({ path: `${D}/talkie-chez-moi-3-lien.png` });
+const apercu = await fetch(`${lien}/apercu`);
+ok(apercu.status === 200 && (apercu.headers.get("content-type") ?? "").includes("image"), `l'aperçu du lien, dans WhatsApp : une image (${apercu.status})`);
+
+// ═══ INÈS LUI RÉPOND DEPUIS LE LIEN : LEURS DEUX FIGURINES CHEZ LUI ═══
+const ctxInes = await b.newContext({ viewport: { width: 390, height: 844 }, userAgent: IPHONE, isMobile: true, hasTouch: true });
+await ctxInes.addCookies([{ name: "clikme_habitant", value: INES.jeton, url: BASE }]);
+const inesLien = await ctxInes.newPage();
+inesLien.on("pageerror", (e) => erreurs.push(`Inès (lien) : ${String(e)}`));
+await inesLien.goto(lien ?? `${BASE}/t/rien`, { waitUntil: "networkidle" });
+await inesLien.locator(".pt-repondre").click();
+await inesLien.waitForSelector(".pr-plein.pr-parler .pr-micro", { timeout: 15000 });
+await inesLien.locator(".pr-plein.pr-parler .pr-micro").click();
+await inesLien.waitForSelector(".pr-plein.pr-parler .pr-temps", { timeout: 15000 });
+await parlerAuMoins(inesLien);
+await inesLien.locator(".pr-plein.pr-parler .pr-micro").click();
+await inesLien.waitForSelector(".pr-plein.pr-parler .pr-choix li", { timeout: 30000 });
+await inesLien.locator(".pr-plein.pr-parler .pr-bas .pr-bouton").click();
+await inesLien.waitForSelector(".pt-fini", { timeout: 30000 }).catch(() => null);
+ok((await inesLien.locator(".pt-chez-duo .pr-decor").count()) === 1 && (await inesLien.locator(".pt-chez-duo .pr-ecoute-chez").count()) === 2, "« C'est parti ! » : leurs deux figurines chez lui, la sienne à la place de l'invité");
+await inesLien.screenshot({ path: `${D}/talkie-chez-moi-4-reponse.png` });
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.join(" | ")})` : ""}`);
 await b.close();
