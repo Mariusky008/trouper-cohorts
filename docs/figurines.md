@@ -2152,6 +2152,13 @@ déjà là) :
   cadeau ; ceux qui avaient déjà répondu à 3 questions la gardent). La phrase de sa figurine du mois puise aussi dans
   son vœu du mois et dans les vœux qu'il a encouragés ou aidés (`sonMoisDeVoeux`).
 
+**Le 12 novembre, au premier essai de « Réponds avec ta tête »** (le propriétaire : « ça prend plusieurs secondes pour
+être sélectionné et rien ne se passe ensuite, on a l'impression d'être bloqué ») : le toucher attendait le serveur,
+qui recalculait tout « Mon vœu » avant de répondre, et rien ne bougeait après. Maintenant, sa tête se pose tout de
+suite sur la scène, avec son mot (« MERCI ! »), « ✓ Envoyé à Léa », puis la réponse suivante arrive d'elle-même (après
+la dernière, la story se ferme) ; l'envoi se fait derrière (`repondre-tete` ne renvoie plus l'état), et s'il échoue,
+la tête s'enlève et l'erreur s'affiche sur la page.
+
 **La suite** : une bulle du tuto pour « Mon vœu », à enregistrer par le propriétaire.
 
 ### 9.0 duodetricies 🗂️ Le socle « Univers » : la fiche de chaque figurine (12 novembre) — lot 1

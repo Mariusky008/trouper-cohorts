@@ -15,7 +15,8 @@
 // POST { action: "signaler-reponse", vue } : l'auteur signale une réponse (elle ne s'affiche plus).
 // POST { action: "aide-reponse", vue, oui } → { cle?, prenom?, etat } : ✋ il répond à une aide — « Lui répondre avec ma
 //      figurine » (ils deviennent proches : `cle` ouvre leur conversation) ou « Pas pour moi » (l'autre ne le saura pas).
-// POST { action: "repondre-tete", vue, tete } : 🙂 l'auteur répond à une réponse avec sa tête (merci, mdr, grave, tropbien).
+// POST { action: "repondre-tete", vue, tete } → { ok } : 🙂 l'auteur répond à une réponse avec sa tête (merci, mdr, grave,
+//      tropbien) ; l'écran l'a déjà posée, la route ne renvoie pas l'état.
 // POST { action: "retours-vus" } : ↩️ il a vu les têtes qu'on lui a répondues.
 // GET ?mes=1 → { mes } : 📒 « Mes vœux » (dans « Moi »). POST { action: "montrer", oui } : le montrer sur sa carte.
 // POST { action: "exaucer", par: <vue d'une aide> | "seul" } → { fete, etat } : 🎉 son vœu est exaucé.
@@ -128,8 +129,9 @@ export async function POST(request: Request) {
       return r.error ? erreur(r) : NextResponse.json({ ok: true, proposition: r.proposition, conseils: r.conseils }, { headers: sansCache });
     }
     case "repondre-tete": {
+      // (sans recalculer tout « Mon vœu » : l'écran l'a déjà posée — c'était plusieurs secondes d'attente)
       const r = await repondreAvecSaTete(supabase, moi, p.vue, p.tete);
-      return r.error ? erreur(r) : etat();
+      return r.error ? erreur(r) : NextResponse.json({ ok: true }, { headers: sansCache });
     }
     case "retours-vus": {
       await marquerRetoursVus(supabase, moi);

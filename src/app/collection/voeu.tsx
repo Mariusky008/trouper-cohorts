@@ -539,10 +539,12 @@ function Reponses({
   onSignaler: (r: ReponseVoeu) => void;
   onRepondre: (r: ReponseVoeu, oui: boolean) => void;
   onParler: (r: ReponseVoeu) => void;
-  onTete: (r: ReponseVoeu, tete: string) => Promise<boolean>;
+  onTete: (r: ReponseVoeu, tete: string) => void;
 }) {
   const [i, setI] = useState(depart ?? 0);
-  const [envoi, setEnvoi] = useState("");
+  // 🙂 sa tête vient de partir : elle se pose sur la scène, « Envoyé à Léa ✓ », puis la réponse suivante
+  const [envoye, setEnvoye] = useState<{ id: number; cle: string } | null>(null);
+  const minuteur = useRef(0);
   const r = depart === null ? null : liste[i];
   useEffect(() => {
     if (depart === null) return;
@@ -550,8 +552,22 @@ function Reponses({
     window.addEventListener("keydown", echap);
     return () => window.removeEventListener("keydown", echap);
   }, [depart, onFermer]);
+  useEffect(() => () => window.clearTimeout(minuteur.current), []);
   if (!r) return null;
-  const suivant = () => (i + 1 < liste.length ? setI(i + 1) : onFermer());
+  const arreter = () => {
+    window.clearTimeout(minuteur.current);
+    setEnvoye(null);
+  };
+  const suivant = () => {
+    arreter();
+    if (i + 1 < liste.length) setI(i + 1);
+    else onFermer();
+  };
+  const fermer = () => {
+    arreter();
+    onFermer();
+  };
+  const partie = envoye?.id === r.id ? TETES_REPONDRE.find((x) => x.cle === envoye.cle) : undefined;
   return (
     <div className="vx-story" role="dialog" aria-modal="true" aria-label={`La réponse de ${r.prenom}`}>
       <div className="vx-story-traits" aria-hidden="true">
@@ -565,17 +581,31 @@ function Reponses({
           <b>{r.prenom}</b>
           <small>{ilYA(r.le)}</small>
         </span>
-        <button type="button" className="vx-story-fermer" aria-label="Fermer" onClick={onFermer}>
+        <button type="button" className="vx-story-fermer" aria-label="Fermer" onClick={fermer}>
           ✕
         </button>
       </header>
-      <button type="button" className="vx-story-gauche" aria-label="La réponse d’avant" onClick={() => setI(Math.max(0, i - 1))} />
+      <button
+        type="button"
+        className="vx-story-gauche"
+        aria-label="La réponse d’avant"
+        onClick={() => {
+          arreter();
+          setI(Math.max(0, i - 1));
+        }}
+      />
       <button type="button" className="vx-story-droite" aria-label="La réponse suivante" onClick={suivant} />
       {r.texte && <p className="vx-dit vx-story-dit">{r.texte}</p>}
       <div className="vx-story-scene">
         <span className="vx-story-cadre">
           <Im src={r.tete} className="vx-story-fig" alt={`La figurine de ${r.prenom}`} />
           <span className={`vx-sticker${r.genre === "aide" ? " aide" : ""}`}>{r.genre === "aide" ? "✋ PEUT T’AIDER" : (r.mot ?? "J’Y CROIS !")}</span>
+          {partie && (
+            <span className="vx-story-envoi" key={partie.cle}>
+              {moi && <Im src={moi.tetes[partie.cle] || moi.neutre} />}
+              <em className="vx-sticker">{partie.mot}</em>
+            </span>
+          )}
         </span>
       </div>
       {r.son && <audio key={r.id} className="vx-story-son" src={r.son} autoPlay controls />}
@@ -603,19 +633,23 @@ function Reponses({
       {/* 🙂 RÉPONDS AVEC TA TÊTE (la maquette 4a) : à une tête qui t'encourage, tes visages déjà faits et un mot */}
       {r.genre === "encourage" && (
         <div className="vx-story-repondre">
-          <small>{r.merci ? `✓ Tu lui as répondu : ${TETES_REPONDRE.find((x) => x.cle === r.merci)?.mot ?? ""}` : "Réponds avec ta tête"}</small>
+          <small className={partie ? "vx-story-envoye" : ""}>
+            {partie ? `✓ Envoyé à ${r.prenom}` : r.merci ? `✓ Tu lui as répondu : ${TETES_REPONDRE.find((x) => x.cle === r.merci)?.mot ?? ""}` : "Réponds avec ta tête"}
+          </small>
           <div className="vx-story-tetes">
             {TETES_REPONDRE.map((x) => (
               <button
                 key={x.cle}
                 type="button"
                 className={r.merci === x.cle ? "pris" : ""}
-                disabled={Boolean(envoi)}
                 aria-label={`${x.nom} : lui répondre avec ma tête`}
-                onClick={async () => {
-                  setEnvoi(x.cle);
-                  await onTete(r, x.cle);
-                  setEnvoi("");
+                onClick={() => {
+                  // (tout de suite : l'envoi se fait derrière ; une erreur reviendrait sur la page)
+                  if (partie) return;
+                  window.clearTimeout(minuteur.current);
+                  onTete(r, x.cle);
+                  setEnvoye({ id: r.id, cle: x.cle });
+                  minuteur.current = window.setTimeout(suivant, 1400);
                 }}
               >
                 <span className="vx-tete-im">
@@ -1256,17 +1290,19 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
     setStory(Math.max(0, etat.reponses.findIndex((x) => x.id === r.id)));
     if (nouvelles.length) void voirLesReponses();
   };
-  /** 🙂 Il répond avec sa tête à une réponse (« Merci ! »…). */
-  async function repondreAvecSaTete(r: ReponseVoeu, tete: string): Promise<boolean> {
+  /**
+   * 🙂 Il répond avec sa tête à une réponse (« Merci ! »…) : posée tout de suite à l'écran, envoyée derrière (12 novembre
+   * 2026, le propriétaire : « ça prend plusieurs secondes et rien ne se passe ensuite ») ; refusée, elle s'enlève.
+   */
+  function repondreAvecSaTete(r: ReponseVoeu, tete: string) {
     setMessage("");
-    try {
-      const j = await demander({ action: "repondre-tete", vue: r.id, tete });
-      if (j.etat) setEtat(j.etat);
-      return true;
-    } catch (e) {
-      setMessage((e as Error).message);
-      return false;
-    }
+    const avant = r.merci;
+    const poser = (merci?: string) => setEtat((e) => (e ? { ...e, reponses: e.reponses.map((x) => (x.id === r.id ? { ...x, merci } : x)) } : e));
+    poser(tete);
+    demander({ action: "repondre-tete", vue: r.id, tete }).catch((e: Error) => {
+      poser(avant);
+      setMessage(e.message);
+    });
   }
   /** ↩️ Ses retours, en grand (le badge s'éteint). */
   function ouvrirRetour(k: number) {
@@ -1910,6 +1946,10 @@ export const STYLES_VOEU = `
 .vx-story-scene{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
 .vx-story-fig{display:block;width:min(78vw,340px);height:min(78vw,340px);border-radius:40px;object-fit:cover;object-position:50% 14%;background:#FF2E9A;box-shadow:0 24px 50px -20px rgba(0,0,0,.6)}
 .vx-story-cadre{position:relative;display:block}
+.vx-story-envoi{position:absolute;left:-14px;bottom:-22px;z-index:2;width:38%;animation:vx-pop .45s cubic-bezier(.2,1.6,.4,1) both}
+.vx-story-envoi img{display:block;width:100%;aspect-ratio:1;border-radius:24px;object-fit:cover;object-position:50% 14%;background:#FF2E9A;box-shadow:0 0 0 3px #fff,0 14px 30px -10px rgba(0,0,0,.6)}
+.vx-story-cadre .vx-story-envoi .vx-sticker{position:absolute;left:50%;right:auto;bottom:-12px;transform:translateX(-50%) rotate(-4deg);font-size:14px;font-style:normal;white-space:nowrap;animation:none}
+.vx-story-envoye{color:#BFF7E2}
 .vx-story-cadre .vx-sticker{position:absolute;right:-12px;bottom:-14px;font-size:20px;animation:vx-pop .45s .15s cubic-bezier(.2,1.6,.4,1) both}
 .vx-story-son{position:relative;z-index:2;width:100%}
 .vx-story-signaler{position:relative;z-index:2;align-self:center;color:#fff}
