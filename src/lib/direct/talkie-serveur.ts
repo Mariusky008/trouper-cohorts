@@ -31,7 +31,7 @@ import type { Habitant } from "./habitant";
 import { cleProfil } from "./autour-serveur";
 import { prevenirDUneParole } from "./appli-collection-serveur";
 import { expressionsDe } from "./figurine-expressions-serveur";
-import { SENTIMENTS, prenomValide, sentimentValide, type Sentiment } from "./ma-figurine";
+import { SENTIMENTS, prenomValide, sentimentValide, type Expressions, type Sentiment } from "./ma-figurine";
 import {
   SEAU_FIGURINES,
   ajouterProche,
@@ -148,13 +148,19 @@ export async function figurineVue(supabase: Supabase, h: string, avecTetes: bool
 }
 
 /** 🪑 Sa figurine du nouveau style (« Univers », lot 2), assise, bouche fermée et ouverte ; `undefined` sans elle. */
-export async function assiseDe(supabase: Supabase, h: string): Promise<{ n: string; p: string } | undefined> {
+export async function assiseDe(supabase: Supabase, h: string): Promise<{ n: string; p: string; expressions?: Expressions } | undefined> {
   const { fiche } = await lireFichePerso(supabase, h);
   const a = fiche?.style === "collection-1" ? fiche.references.assise?.chemin : undefined;
   if (!a) return undefined;
   const p = fiche?.references.assise_parle?.chemin;
-  const [n, o] = await Promise.all([signer(supabase, a, 3600), p ? signer(supabase, p, 3600) : Promise.resolve("")]);
-  return n ? { n, p: o || n } : undefined;
+  // (🎭 ses visages du nouveau style déjà faits, `visages-perso-serveur.ts`)
+  const [n, o, visages] = await Promise.all([
+    signer(supabase, a, 3600),
+    p ? signer(supabase, p, 3600) : Promise.resolve(""),
+    expressionsSignees(supabase, dossierExpressions(h, a), 3600).catch(() => null),
+  ]);
+  const expressions = visages?.expressions ?? {};
+  return n ? { n, p: o || n, ...(Object.keys(expressions).length ? { expressions } : {}) } : undefined;
 }
 
 /** 🏡 Chez lui (« Univers », lot 5) : son décor et ses places, quand son univers est créé ; `undefined` sinon. */
@@ -167,7 +173,7 @@ export async function chezLui(supabase: Supabase, h: string): Promise<ChezMoi | 
     const p = f.scene.places.find((x) => x.id === id);
     return p ? { x: p.x, y: p.y, echelle: p.echelle } : defaut;
   };
-  return { decor, hote: place("hote", { x: 0.36, y: 0.8, echelle: 1 }), invite: place("invite", { x: 0.66, y: 0.82, echelle: 0.96 }) };
+  return { decor, hote: place("hote", { x: 0.36, y: 0.8, echelle: 1 }), invite: place("invite", { x: 0.66, y: 0.82, echelle: 0.96 }), ...(f.scene.figurine ? { figurine: f.scene.figurine } : {}) };
 }
 
 /** ☀️ Son humeur du jour (lot R : elle s'efface à minuit, l'heure de Paris). */

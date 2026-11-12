@@ -12,6 +12,7 @@
  * EN ANGLAIS (c'est là que le moteur est le plus précis). FICHIER PUR.
  */
 import { traitsEnMots, type Traits } from "./figurine-pro";
+import type { Sentiment } from "./ma-figurine";
 import type { Fauteuil } from "./perso";
 
 const TETE = (traits?: Traits | null) => {
@@ -98,6 +99,55 @@ export function consigneFauteuil(f: Fauteuil): string {
   return [
     "IMAGE 1 is a finished collectible caricature figurine of a real person, seated in its armchair. Make a new image of EXACTLY THE SAME FIGURINE: the same person, the same face and likeness, the same expression, the same hair, the same clothes, the same pose, the same size, framing and light, the same painted-resin finish. Do not redraw the person.",
     `Change ONLY the armchair (${f.description}): it now takes the colours of their world — the upholstery in the colour ${tissu}, a soft cushion and the piping in the colour ${coussin}, small details (buttons, a stitched trim) in the colour ${details}; the little wooden feet stay natural wood, in a tone that goes with these colours. Real miniature fabric with a visible texture, never flat paint. The same shape and size of armchair, in the same place.`,
+    "",
+    ...FOND_TRANSPARENT,
+    "",
+    ...CONTRAINTES(false),
+  ].join("\n");
+}
+
+/**
+ * 🎭 SES VISAGES DU NOUVEAU STYLE (après le lot 5) — les mêmes sentiments que sa figurine d'aujourd'hui (`SENTIMENTS`,
+ * `ma-figurine.ts`), faits à partir de son image « assise » (IMAGE 1), détourée : la même figurine dans le même
+ * fauteuil ; seul son visage change (une attitude : ses bras et ses mains aussi). Puis, à partir du visage, la même
+ * bouche ouverte, pour qu'elle parle. EN ANGLAIS. Une consigne ajoutée ne change aucune des consignes validées.
+ */
+const VISAGES_ASSISE: Record<Sentiment, string> = {
+  joie: "radiant JOY: a big warm smile, cheeks raised, eyes slightly squinting with happiness, eyebrows relaxed and lifted",
+  colere: "clear ANGER: eyebrows sharply lowered and drawn together into a deep frown, eyes narrowed, lips pressed tight — a funny cartoon anger, but unmistakable",
+  tristesse: "deep SADNESS: inner eyebrows raised, eyes glossy and looking slightly down, the corners of the mouth turned down in a pout",
+  euphorie: "EUPHORIA: eyes wide open and sparkling, eyebrows very high, a huge open-mouthed grin of pure excitement",
+  rire: "a big burst of LAUGHTER: eyes squeezed shut into happy crescents, cheeks pushed up, head slightly tilted back, a wide laughing mouth",
+  grimace: "a funny GRIMACE: tongue sticking out, one eye squeezed shut, nose wrinkled, eyebrows going in opposite directions",
+  amour: "being head over heels IN LOVE: dreamy, adoring eyes with little heart-shaped highlights, rosy blushing cheeks, a tender, sweet smile",
+  tete: "comic DESPAIR, HOLDING ITS HEAD IN BOTH HANDS: both palms pressed against the sides of its head, eyes wide open, mouth open in a dismayed « oh no! »",
+  endouce: "SECRET GIGGLING: one hand covering its mouth, eyes squeezed into happy crescents, shoulders slightly hunched",
+  bras: "an UNIMPRESSED, deadpan attitude with its ARMS FIRMLY CROSSED over its chest: one eyebrow raised, eyelids half lowered, mouth flat",
+  victoire: "a TRIUMPHANT VICTORY pose: both fists raised up on each side of its head, a huge open-mouthed triumphant grin",
+  chut: "a knowing « SHH »: one index finger pressed against its closed lips, eyes glancing sideways with a sly look",
+  coeur: "tender love, MAKING A HEART SHAPE WITH BOTH HANDS in front of its chest: a warm sweet smile, soft happy eyes",
+};
+const ATTITUDE_ASSISE: readonly Sentiment[] = ["tete", "endouce", "bras", "victoire", "chut", "coeur"];
+const MEME_ASSISE = (pose: boolean) =>
+  `IMAGE 1 is a finished collectible caricature figurine of a real person, seated in its armchair. Make a new image of EXACTLY THE SAME FIGURINE: the same person and likeness, the same hair, the same clothes, the same armchair, ${pose ? "still seated in it" : "the same pose and arms"}, the same size, framing and light, the same painted-resin finish.`;
+/** 🎭 Un visage (ou une attitude) du nouveau style, fait sur son image « assise ». */
+export function consigneVisageAssise(x: Sentiment): string {
+  const pose = ATTITUDE_ASSISE.includes(x);
+  return [
+    MEME_ASSISE(pose),
+    `Change ONLY ${pose ? "its arms, its hands and its facial expression" : "its facial expression"}: ${VISAGES_ASSISE[x]}. Strong and readable at a glance, on THIS face — it must still be clearly the same person, a sculpted caricature, never a photograph.${pose ? " The whole figurine stays inside the image, hands included." : ""}`,
+    "",
+    ...FOND_TRANSPARENT,
+    "",
+    ...CONTRAINTES(false),
+  ].join("\n");
+}
+/** 🗣️ La même, bouche ouverte (fait sur son visage) : pour qu'elle parle avec ce visage. */
+export function consigneBoucheAssise(x: Sentiment): string {
+  const pose = ATTITUDE_ASSISE.includes(x);
+  return [
+    MEME_ASSISE(false),
+    `Change ONLY its mouth: open it as if the figurine is in the middle of saying a word, keeping the same ${pose ? "arms, hands and " : ""}expression on the rest of the face (eyes, eyebrows, cheeks).`,
     "",
     ...FOND_TRANSPARENT,
     "",

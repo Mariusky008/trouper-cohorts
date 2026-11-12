@@ -49,6 +49,7 @@
 // départ. Ses messages déjà envoyés s'ouvrent toujours, par `/figurine/<id>`.)
 // Un habitant n'est créé ici que par « photo » (son geste : « Créer ma figurine »).
 import { NextResponse, after } from "next/server";
+import { fabriquerVisagesPerso, visagesPersoVoulus } from "@/lib/direct/visages-perso-serveur";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant, habitantCourant, poserCookie } from "@/lib/direct/habitant";
 import { abonner, choisirLesReponses, couper, estAbonne, jetonAppli, lierAppli, prevenirDUneReponse, prevenuDesReponses } from "@/lib/direct/appli-collection-serveur";
@@ -195,6 +196,11 @@ export async function POST(request: Request) {
     const r = await refaireMaFigurine(supabase, moi, p.autrePhoto === true, p.univers);
     if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });
     return NextResponse.json({ ok: true, etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
+  }
+  // 🎭 ses visages du nouveau style (« Univers ») : un tour → { complete, enCours? } (la page rappelle)
+  if (p?.action === "visages-perso") {
+    const r = await fabriquerVisagesPerso(supabase, moi.id, avant, await visagesPersoVoulus(supabase, moi.id));
+    return NextResponse.json({ ok: !r.erreur, complete: r.complete, ...(r.enCours ? { enCours: true } : {}), ...(r.erreur ? { error: r.erreur } : {}) }, { headers: sansCache });
   }
   if (p?.action === "expressions") {
     const r = await fabriquerSesExpressions(supabase, moi, avant, p.veut);

@@ -124,6 +124,9 @@ verifier(rendue && rendue.rendu.signature.moteur === "gpt-image", "une rencontre
 verifier(S.quiJoue(sc).join() === `${A},${B}`, "qui joue dans la scène");
 verifier([7, 12, 19, 23, 3].map(S.momentDe).join() === "matin,midi,soir,nuit,nuit", "le moment de la journée suit l'heure");
 
+// 📏 sa figurine relevée sur l'image vedette (lot 4)
+verifier(M.figurineEnPlaceValide({ x: 0.4, y: 0.92, hauteur: 0.5 })?.hauteur === 0.5 && M.ficheMondeValide({ ...monde, scene: { ...monde.scene, figurine: { x: 0.4, y: 0.92, hauteur: 0.5 } } })?.scene.figurine?.y === 0.92, "sa figurine en place, gardée dans la scène");
+verifier(M.figurineEnPlaceValide({ x: 0.4, y: 0.3, hauteur: 0.5 }) === null && M.figurineEnPlaceValide({ x: 0.4, y: 0.9, hauteur: 0.05 }) === null && M.figurineEnPlaceValide({}) === null, "une mesure qui ne tient pas est oubliée");
 // 🪑 son fauteuil aux couleurs de son monde (lot 4b)
 const auxCouleurs = P.fauteuilAuxCouleurs(["#E8B06A", "rouge", "#2f5d73", "#f3ead9", "#111111"]);
 verifier(auxCouleurs?.de === "univers" && auxCouleurs.couleurs.join() === "#e8b06a,#2f5d73,#f3ead9" && auxCouleurs.description === P.FAUTEUIL_DE_DEPART.description, "le fauteuil aux couleurs de son monde : le même fauteuil, trois couleurs vérifiées au plus");

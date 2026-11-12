@@ -9,7 +9,9 @@
 // envoie » : Marc parle à quelqu'un qui n'a pas ClikMe ; sa vidéo se fabrique chez lui (son décor à la place du fond
 // rose). 🔗 Lot 5c — « le lien d'invitation ouvre l'univers de celui qui invite » : qui ouvre son lien est chez lui
 // (son décor, sa figurine, « 👋 Bienvenue chez moi ! ») ; l'aperçu du lien est une image ; Inès lui répond depuis le
-// lien : à la fin, leurs deux figurines chez lui. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
+// lien : à la fin, leurs deux figurines chez lui. 🎭 Ses visages du nouveau style : ses têtes de départ se font sur sa
+// figurine assise (détourée, dans son fauteuil), la conversation les reçoit. Rien ne déborde, jamais le mot interdit,
+// aucune erreur dans la page.
 import crypto from "node:crypto";
 import fs from "node:fs";
 import { BASE, D, F, fermerPablito, lancer, parlerAuMoins } from "./commun.mjs";
@@ -131,6 +133,21 @@ await marc.locator(`${scene} .pr-lire`).click();
 const joue = await marc.waitForFunction((sel) => document.querySelector(sel)?.classList.contains("joue"), scene, { timeout: 10000 }).then(() => true).catch(() => false);
 ok(joue && (await texte(marc, `${scene} .pr-sous-titre`)).includes("Je passe te voir ce soir"), "Inès parle chez Marc : sa voix, ses sous-titres");
 ok((await debordement(marc)) <= 0 && (await sansMotInterdit(marc)), "rien ne déborde, sans le mot interdit");
+
+// ═══ 🎭 SES VISAGES DU NOUVEAU STYLE ═══
+const dossierVisages = `${MARC.id}/expr-${crypto.createHash("sha1").update(`${P1}/assise.png`).digest("hex").slice(0, 16)}`;
+const listeVisages = async () =>
+  (await (await fetch(`${STOCK}/list/figurines-clients`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prefix: dossierVisages, limit: 100 }) })).json()).map((x) => x.name);
+let visages = [];
+for (let k = 0; k < 60 && !["joie", "rire", "colere", "tete"].every((t) => visages.includes(`${t}-n.webp`) && visages.includes(`${t}-p.webp`)); k++) {
+  await marc.waitForTimeout(1000);
+  visages = await listeVisages();
+}
+ok(["joie", "rire", "colere", "tete"].every((t) => visages.includes(`${t}-n.webp`) && visages.includes(`${t}-p.webp`)), `ses têtes de départ du nouveau style, faites sur sa figurine assise (${visages.filter((x) => x.endsWith(".webp")).length} images)`);
+const consignesIA = (await (await fetch(`${F.replace("/rest/v1", "")}/__ia`)).json()).filter((c) => typeof c === "string" && c.startsWith("IMAGE ") && c.includes("seated in its armchair") && c.includes("Change ONLY its"));
+ok(consignesIA.some((c) => c.includes(" transparent ")) && consignesIA.some((c) => c.includes("Change ONLY its mouth")), "le moteur : la même figurine dans son fauteuil, détourée ; puis sa bouche ouverte");
+const filMarc = await (await fetch(`${BASE}/api/direct/proches?fil=${INES.cle}`, { headers: { cookie: `clikme_habitant=${MARC.jeton}` } })).json();
+ok(Boolean(filMarc?.fil?.moi?.assise?.expressions?.joie?.n), "sa conversation reçoit ses visages du nouveau style");
 
 // ═══ CHEZ INÈS : PAS D'UNIVERS, LA SCÈNE D'AUJOURD'HUI ═══
 const ines = await tel(INES);

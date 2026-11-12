@@ -115,7 +115,7 @@ const proportion = await p.evaluate(() => {
   const scene = document.querySelector(".um-scene")?.getBoundingClientRect();
   return place && scene ? place.height / scene.height : 0;
 });
-ok(proportion >= 0.35 && proportion <= 0.5, `sa figurine est grande chez elle (${Math.round(proportion * 100)} % de la scène)`);
+ok(proportion >= 0.42 && proportion <= 0.6, `sa figurine est grande chez elle, au premier plan (${Math.round(proportion * 100)} % de la scène)`);
 await p.locator(".um-fauteuil .um-lien", { hasText: "Il me plaît" }).click();
 ok((await p.locator(".um-fauteuil").count()) === 0, "« Il me plaît ! » : l'annonce se range");
 await p.locator(".um-musique").click();

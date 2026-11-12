@@ -37,7 +37,23 @@ export type ElementMonde = {
 /** Une place : où une figurine s'assoit, à quelle taille (`echelle`), en fraction du décor. */
 export type PlaceMonde = { id: string; x: number; y: number; echelle: number };
 export const DIRECTIONS_LUMIERE = ["gauche", "droite", "haut", "face"] as const;
-export type SceneMonde = { sol: number; places: PlaceMonde[]; lumiere: { vient_de: (typeof DIRECTIONS_LUMIERE)[number]; couleur: string } };
+/**
+ * 📏 Sa figurine telle que le moteur l'a posée sur l'image vedette (relevée par un modèle qui voit, lot 4 — le
+ * propriétaire, le 12 novembre : « je suis encore petit par rapport aux proportions de la pièce, ça ne fait pas
+ * naturel ») : le milieu (`x`), le bas de son fauteuil (`y`), sa hauteur (`hauteur`), en fractions du décor. C'est elle
+ * qui place sa figurine chez elle, à la taille que la pièce demande.
+ */
+export type FigurineEnPlace = { x: number; y: number; hauteur: number };
+export type SceneMonde = { sol: number; places: PlaceMonde[]; lumiere: { vient_de: (typeof DIRECTIONS_LUMIERE)[number]; couleur: string }; figurine?: FigurineEnPlace };
+
+/** Sa figurine relevée sur l'image vedette, vérifiée (un milieu dans l'image, une hauteur plausible) ; `null` sinon. */
+export function figurineEnPlaceValide(x: unknown): FigurineEnPlace | null {
+  const o = (x ?? {}) as Record<string, unknown>;
+  const cx = typeof o.x === "number" && o.x >= 0.05 && o.x <= 0.95 ? o.x : null;
+  const y = typeof o.y === "number" && o.y >= 0.45 && o.y <= 1 ? o.y : null;
+  const hauteur = typeof o.hauteur === "number" && o.hauteur >= 0.15 && o.hauteur <= 0.85 ? o.hauteur : null;
+  return cx === null || y === null || hauteur === null || y - hauteur < 0 ? null : { x: cx, y, hauteur };
+}
 /** Qui peut entrer : tout le monde, mes proches, moi seul (« mes proches », par défaut : section 13 de la feuille de route). */
 export const VISIBILITES = ["tous", "proches", "moi"] as const;
 export type Visibilite = (typeof VISIBILITES)[number];
@@ -98,10 +114,12 @@ function sceneValide(x: unknown): SceneMonde {
     })
     .filter((p): p is PlaceMonde => Boolean(p))
     .slice(0, 6);
+  const figurine = figurineEnPlaceValide(o.figurine);
   return {
     sol: fraction(o.sol) ?? 0.78,
     places,
     lumiere: { vient_de: DIRECTIONS_LUMIERE.find((d) => d === l.vient_de) ?? "gauche", couleur: couleurValide(l.couleur) || "#ffd9a0" },
+    ...(figurine ? { figurine } : {}),
   };
 }
 

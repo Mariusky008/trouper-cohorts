@@ -88,6 +88,15 @@ export function Monde({ accueil = false }: { accueil?: boolean }) {
   useEffect(() => {
     void Promise.resolve().then(charger);
   }, [charger]);
+  // 📏 un univers créé avant le relevé de sa figurine sur l'image vedette : on le demande, une fois
+  const mesure = useRef(0);
+  useEffect(() => {
+    if (etat?.etape !== "decouverte" || !etat.vedette || etat.scene?.figurine || !etat.version || mesure.current === etat.version) return;
+    mesure.current = etat.version;
+    void demander({ action: "mesurer" })
+      .then(() => charger())
+      .catch(() => undefined);
+  }, [etat, charger]);
   const construit = etat?.etape === "creation";
   useEffect(() => {
     if (!construit) return;
@@ -236,8 +245,53 @@ function Chantier({ etat }: { etat: EtatUnivers }) {
 }
 
 // ─── la découverte ────────────────────────────────────────────────────────────────────────────────
-/** La hauteur de sa figurine chez elle, en % de la scène. */
-const TAILLE_FIGURINE = 40;
+/** La hauteur de sa figurine chez elle, sans relevé sur l'image vedette (en part de la scène) : au premier plan. */
+const TAILLE_FIGURINE = 0.5;
+
+/**
+ * 📏 Où est sa figurine dans son image (détourée : des bords transparents) : le haut et le bas de ce qui se voit, en
+ * fractions de l'image. Sans lecture possible, une marge d'usage.
+ */
+function useCadreVisible(src: string | undefined): { haut: number; bas: number } {
+  const [cadre, setCadre] = useState({ haut: 0.04, bas: 0.97 });
+  useEffect(() => {
+    if (!src) return;
+    let fini = false;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const h = 120;
+        const w = Math.max(1, Math.round((img.naturalWidth / Math.max(1, img.naturalHeight)) * h));
+        const c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        const g = c.getContext("2d", { willReadFrequently: true });
+        if (!g) return;
+        g.drawImage(img, 0, 0, w, h);
+        const d = g.getImageData(0, 0, w, h).data;
+        let haut = -1;
+        let bas = -1;
+        for (let y = 0; y < h; y++) {
+          let plein = false;
+          for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 40) plein = true;
+          if (plein) {
+            if (haut < 0) haut = y;
+            bas = y;
+          }
+        }
+        if (!fini && haut >= 0 && bas > haut) setCadre({ haut: haut / h, bas: (bas + 1) / h });
+      } catch {
+        // (une image qu'on ne peut pas lire : la marge d'usage)
+      }
+    };
+    img.src = src;
+    return () => {
+      fini = true;
+    };
+  }, [src]);
+  return cadre;
+}
 function Decouverte({ etat, occupe, faire, enRetouche }: { etat: EtatUnivers; occupe: boolean; faire: (c: Record<string, unknown>) => Promise<boolean>; enRetouche: () => void }) {
   const [vue, setVue] = useState<"chez-moi" | "vedette">("chez-moi");
   const [cles, setCles] = useState(false);
@@ -272,9 +326,20 @@ function Decouverte({ etat, occupe, faire, enRetouche }: { etat: EtatUnivers; oc
     };
   }, [parle]);
   const hote = etat.scene?.places.find((p) => p.id === "hote") ?? { x: 0.36, y: 0.8, echelle: 1 };
-  // (sa taille chez elle : 40 % de la hauteur de la scène, à peine nuancée par sa place — le propriétaire, le 12
-  // novembre, sur son univers : « je suis tout petit » ; c'était 26 %)
-  const taille = TAILLE_FIGURINE * Math.min(1.15, Math.max(0.9, hote.echelle));
+  // 📏 sa place et sa taille : celles que le moteur lui a données sur l'image vedette (relevées par un modèle qui voit),
+  // corrigées des bords transparents de son image ; sinon, plus grande et au premier plan (le propriétaire, le 12
+  // novembre : « je suis tout petit », puis « encore petit par rapport à la pièce, ça ne fait pas naturel »)
+  const cadre = useCadreVisible(etat.figurine?.assise);
+  const releve = etat.scene?.figurine;
+  const place = releve
+    ? (() => {
+        const boite = releve.hauteur / Math.max(0.3, cadre.bas - cadre.haut);
+        return { x: releve.x, bas: Math.min(1.08, releve.y + (1 - cadre.bas) * boite), hauteur: boite };
+      })()
+    : (() => {
+        const hauteur = TAILLE_FIGURINE * Math.min(1.15, Math.max(0.9, hote.echelle));
+        return { x: hote.x, bas: Math.max(hote.y, 0.9), hauteur };
+      })();
   const figurine = bouche && etat.figurine?.parle ? etat.figurine.parle : etat.figurine?.assise;
   const partager = useRef(false);
   async function partagerVedette() {
@@ -316,7 +381,7 @@ function Decouverte({ etat, occupe, faire, enRetouche }: { etat: EtatUnivers; oc
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="um-decor" src={vue === "vedette" && etat.vedette ? etat.vedette : etat.decor} alt={vue === "vedette" ? "Ta figurine chez elle" : "Ton univers"} />
         {vue === "chez-moi" && figurine && (
-          <span className="um-place" style={{ left: `${hote.x * 100}%`, top: `${Math.max(hote.y, taille / 100 + 0.04) * 100}%`, height: `${taille}%` }}>
+          <span className="um-place" data-releve={releve ? "oui" : ""} style={{ left: `${place.x * 100}%`, top: `${Math.max(place.bas, place.hauteur + 0.02) * 100}%`, height: `${place.hauteur * 100}%` }}>
             <span className="um-ombre" aria-hidden="true" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className="um-figurine" src={figurine} alt="Ta figurine, chez elle" />

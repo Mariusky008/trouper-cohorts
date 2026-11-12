@@ -26,8 +26,8 @@ import { regarderImage } from "./dressing-serveur";
 import { cheminImageVersion, completerMonde, completerReferencesPerso, enregistrerVersionMonde, enregistrerVersionPerso, lireFicheMonde, lireFichePerso, revenirAVersion } from "./fiches-serveur";
 import { deposer, ecrireJson, lireJson, signer, telecharger } from "./ma-figurine-serveur";
 import { parleDAlcool } from "./meme-surprise";
-import { DIRECTIONS_LUMIERE, type FicheMonde, type PlaceMonde, type SceneMonde } from "./monde";
-import { consigneDecorDuMonde, consigneRetoucheDecor, consigneVedette, questionPlaces } from "./monde-consignes";
+import { DIRECTIONS_LUMIERE, figurineEnPlaceValide, type FicheMonde, type PlaceMonde, type SceneMonde } from "./monde";
+import { consigneDecorDuMonde, consigneRetoucheDecor, consigneVedette, questionFigurineVedette, questionPlaces } from "./monde-consignes";
 import { demanderUneImage } from "./moteur-images-serveur";
 import { motInterdit } from "./mots-interdits";
 import { fauteuilAuxCouleurs, type Fauteuil, type FichePerso } from "./perso";
@@ -57,6 +57,8 @@ type Creation = {
   retouchesFaites?: number;
   jour?: string;
   retouchesDuJour?: number;
+  /** 📏 la version dont on a déjà essayé de relever sa figurine sur l'image vedette (une fois par version) */
+  mesure?: number;
 };
 const lireCreation = (supabase: Supabase, h: string) => lireJson<Creation>(supabase, cheminCreation(h));
 const ecrireCreation = (supabase: Supabase, h: string, c: Partial<Creation>) => ecrireJson(supabase, cheminCreation(h), c);
@@ -242,6 +244,45 @@ async function fauteuilDeSonMonde(supabase: Supabase, h: string, perso: FichePer
   return { fiche, bouche };
 }
 
+/**
+ * 📏 SA FIGURINE, À L'ÉCHELLE DE LA PIÈCE : un modèle qui voit relève sur l'image vedette (où le moteur l'a installée
+ * lui-même, naturellement) son milieu, le bas de son fauteuil et sa hauteur ; c'est là, et à cette taille, qu'elle
+ * s'assoit chez elle. Sans réponse qui tienne, rien ne change.
+ */
+async function mesurerSurLaVedette(supabase: Supabase, h: string, f: FicheMonde): Promise<FicheMonde | null> {
+  if (!f.references.vedette) return null;
+  const vedette = await telecharger(supabase, f.references.vedette.chemin);
+  if (!vedette) return null;
+  try {
+    const jpeg = await sharp(vedette).resize({ width: 768, height: 768, fit: "inside" }).jpeg({ quality: 82 }).toBuffer();
+    const vu = await Promise.race([
+      regarderImage({ type: "image/jpeg", donnees: jpeg.toString("base64") }, questionFigurineVedette()),
+      new Promise<{ erreur: string }>((ok) => setTimeout(() => ok({ erreur: "trop long" }), 40_000)),
+    ]);
+    if ("erreur" in vu) return null;
+    const bas = Number(vu.bas);
+    const haut = Number(vu.haut);
+    const figurine = figurineEnPlaceValide({ x: Number(vu.x), y: bas, hauteur: bas - haut });
+    if (!figurine) return null;
+    const ok = await completerMonde(supabase, h, f.version, { scene: { ...f.scene, figurine } });
+    return ok.fiche ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** 📏 Pour un univers déjà créé : sa figurine relevée sur l'image vedette, une fois par version. */
+export async function mesurerSaFigurine(supabase: Supabase, h: string): Promise<{ version?: number; error?: string; statut?: number }> {
+  const f = await lireFicheMonde(supabase, h);
+  if (!f?.references.vedette) return { error: "Rien à mesurer.", statut: 400 };
+  if (f.scene.figurine) return { version: f.version };
+  const c = await lireCreation(supabase, h);
+  if (c.mesure === f.version || enCours(c, f.version)) return { version: f.version };
+  await ecrireCreation(supabase, h, { ...c, mesure: f.version });
+  await mesurerSurLaVedette(supabase, h, f);
+  return { version: f.version };
+}
+
 /** 🛠️ Son univers se construit : le décor, les places, son fauteuil, l'image vedette — chaque étape complète la version. */
 export async function fabriquerUnivers(supabase: Supabase, h: string, version: number, avant: number): Promise<void> {
   const marquer = async (maj: Partial<Creation>) => {
@@ -311,7 +352,9 @@ export async function fabriquerUnivers(supabase: Supabase, h: string, version: n
         const chemin = cheminImageVersion(h, "monde", version, "vedette");
         if (await deposer(supabase, chemin, r.png, "image/png")) {
           const signature = signatureDe(r.png, { moteur: r.modele, consigne, reglages: r.reglages, fond: "opaque", entrees: [f.references.decor!.chemin, assise.chemin], debut, jetons: r.jetons });
-          await completerMonde(supabase, h, version, { references: { vedette: { chemin, signature } } });
+          const v = await completerMonde(supabase, h, version, { references: { vedette: { chemin, signature } } });
+          // (📏 sa figurine, à l'échelle de la pièce : relevée sur l'image vedette)
+          if (v.fiche) await mesurerSurLaVedette(supabase, h, v.fiche);
         }
       }
       // (sans vedette, la découverte se fait avec la figurine posée sur le décor)

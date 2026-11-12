@@ -142,6 +142,8 @@ ok(
   "chaque image signée, dans sa version (le décor : rien en entrée ; la vedette : son décor et sa figurine, dans son nouveau fauteuil)",
 );
 ok((await appeler(LEA, { action: "creer" })).statut === 409, "un univers créé ne se recrée pas : il se retouche");
+const m1 = await appeler(LEA, { action: "mesurer" });
+ok(m1.statut === 200 && m1.version === 1 && !(await appeler(LEA)).scene?.figurine && (await lire(`${LEA.id}/monde/creation.json`))?.mesure === 1, "📏 sa figurine relevée sur l'image vedette : demandée une fois (sans modèle qui voit, rien ne change)");
 
 // ═══ LES RETOUCHES ═══
 ok((await appeler(LEA, { action: "retoucher", texte: "un bar à cocktails" })).statut === 400 && (await appeler(LEA, { action: "retoucher", texte: "ok" })).statut === 400, "une retouche d'alcool, ou trop courte : refusée");

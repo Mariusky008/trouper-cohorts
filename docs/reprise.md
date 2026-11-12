@@ -77,6 +77,8 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
   univers quand il est créé (la règle « chez qui ? » tranchée : chacun chez soi). Détail : `docs/figurines.md`, 9.0
   tretricies 🚪. **5b et 5c aussi** : la vidéo WhatsApp se passe chez moi, le lien d'invitation ouvre mon univers et
   l'invité y répond (9.0 quattuortricies 🎬🔗). Le lot 5 est construit.
+- **Sa figurine à l'échelle de la pièce** (relevée sur l'image vedette) et **ses visages du nouveau style** (faits sur
+  sa figurine assise, à la demande) : `docs/figurines.md`, 9.0 duotricies 🪑 et 9.0 quinquatricies 🎭.
 - **La suite** : son avis sur le parcours complet (figurine, conversation, univers, accueil) ; puis le feu vert pour
   tout le monde (les figurines
   d'aujourd'hui refaites, Pablito au nouveau style, les visages du nouveau style) ; puis le lot 5 (le proche qui entre). Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les essais
