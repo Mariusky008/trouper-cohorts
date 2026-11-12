@@ -73,6 +73,9 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
 - **Le lot 4b est construit à l'adresse d'essai** : son fauteuil aux couleurs de son univers (pendant la création),
   et **« Mon univers », l'accueil, à `/univers`** (le menu de demain ; sinon l'étape où il en est : c'est l'adresse
   unique du parcours). Détail : `docs/figurines.md`, 9.0 duotricies 🪑.
+- **Le lot 5a (le proche qui entre chez moi) est construit** : la conversation du talkie-walkie se joue dans mon
+  univers quand il est créé (la règle « chez qui ? » tranchée : chacun chez soi). Détail : `docs/figurines.md`, 9.0
+  tretricies 🚪. Puis 5b (la vidéo WhatsApp dans mon univers) et 5c (le lien d'invitation).
 - **La suite** : son avis sur le parcours complet (figurine, conversation, univers, accueil) ; puis le feu vert pour
   tout le monde (les figurines
   d'aujourd'hui refaites, Pablito au nouveau style, les visages du nouveau style) ; puis le lot 5 (le proche qui entre). Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les essais
