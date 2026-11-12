@@ -315,6 +315,12 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
                 ) : (
                   <span className="pr-attente">En attente</span>
                 )}
+                {/* 🏡 son univers, s'il lui est ouvert (« Univers », lot 6) */}
+                {p.univers && (
+                  <a className="pr-univers" href={`/univers/chez/${p.cle}`}>
+                    🏡 Son univers
+                  </a>
+                )}
               </div>
             </article>
           ))}
@@ -1429,6 +1435,7 @@ export const STYLES_PROCHES = `
 .pr-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 @media (min-width:700px){.pr-grille{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (min-width:1000px){.pr-grille{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.pr-univers{display:block;margin-top:6px;padding:7px 10px;border-radius:12px;background:rgba(242,196,107,.16);color:#F2C46B;font-size:13px;font-weight:800;text-align:center;text-decoration:none}
 .pr-carte{display:flex;flex-direction:column;min-width:0;border-radius:24px;overflow:hidden;background:#22101B;border:1.5px solid rgba(255,255,255,.1)}
 .pr-carte.nouveau{border-color:rgba(255,46,154,.65);box-shadow:0 14px 30px -18px rgba(255,46,154,.9)}
 .pr-carte.la:not(.nouveau){border-color:rgba(61,220,132,.5)}

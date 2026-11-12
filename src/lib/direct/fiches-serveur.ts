@@ -180,12 +180,12 @@ export async function completerMonde(
   supabase: Supabase,
   h: string,
   version: number,
-  maj: { references?: FicheMonde["references"]; scene?: FicheMonde["scene"]; zones?: Record<string, [number, number, number, number]> },
+  maj: { references?: FicheMonde["references"]; scene?: FicheMonde["scene"]; zones?: Record<string, [number, number, number, number]>; visibilite?: FicheMonde["visibilite"] },
 ): Promise<{ fiche?: FicheMonde; error?: string }> {
   const f = await lireFicheMonde(supabase, h);
   if (!f || f.version !== version) return { error: "Son univers a changé entre-temps." };
   const elements = maj.zones ? f.elements.map((e) => (maj.zones?.[e.id] ? { ...e, zone: maj.zones[e.id] } : e)) : f.elements;
-  const complete = ficheMondeValide({ ...f, references: { ...f.references, ...(maj.references ?? {}) }, ...(maj.scene ? { scene: maj.scene } : {}), elements });
+  const complete = ficheMondeValide({ ...f, references: { ...f.references, ...(maj.references ?? {}) }, ...(maj.scene ? { scene: maj.scene } : {}), ...(maj.visibilite ? { visibilite: maj.visibilite } : {}), elements });
   if (!complete || !mondeEstASoi(complete, h)) return { error: "Cette fiche ne tient pas." };
   const ok = (await ecrireJson(supabase, cheminFicheVersion(h, "monde", version), complete)) && (await ecrireJson(supabase, cheminFicheEnCours(h, "monde"), complete));
   return ok ? { fiche: complete } : { error: "La fiche n'a pas pu être rangée." };

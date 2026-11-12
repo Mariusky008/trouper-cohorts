@@ -141,7 +141,7 @@ ok((await debordement()) <= 0 && (await sansMotInterdit()), "rien ne déborde, s
 ok((await p.locator(".um-fauteuil").count()) === 0, "après la retouche, son fauteuil n'est pas annoncé de nouveau");
 
 // ═══ « MON UNIVERS », L'ACCUEIL ═══
-const versAccueil = p.locator("a.um-lien", { hasText: "Mon univers" });
+const versAccueil = p.locator("a.um-lien", { hasText: "l’accueil de demain" });
 ok((await versAccueil.getAttribute("href")) === "/univers", "de son univers, le chemin vers l'accueil de demain");
 await p.goto(`${BASE}/univers`, { waitUntil: "networkidle" });
 await p.waitForSelector(".um-decouverte .um-decor", { timeout: 30000 }).catch(() => null);

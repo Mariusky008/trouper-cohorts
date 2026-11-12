@@ -291,6 +291,9 @@ export async function mesProchesVivants(supabase: Supabase, moi: Habitant): Prom
       // ☀️ son humeur du jour : seulement entre proches ; sa figurine la porte si ce visage est fait
       const humeur = lien === "proches" ? await humeurDuJour(supabase, h) : null;
       const imageHumeur = humeur ? await imageDeSonHumeur(supabase, h, humeur) : "";
+      // 🏡 son univers, s'il est créé et qu'il lui est ouvert (lot 6 : « moi » n'ouvre à personne ; « proches » aux proches)
+      const monde = await lireFicheMonde(supabase, h).catch(() => null);
+      const univers = Boolean(monde?.references.decor) && (monde?.visibilite === "tous" || (monde?.visibilite === "proches" && lien === "proches"));
       return {
         cle,
         prenom: f.prenom || "Ton proche",
@@ -302,6 +305,7 @@ export async function mesProchesVivants(supabase: Supabase, moi: Habitant): Prom
         ...(venu ? { venu: true } : {}),
         ...(humeur ? { humeur } : {}),
         ...(imageHumeur ? { imageHumeur } : {}),
+        ...(univers ? { univers: true } : {}),
       };
     }),
   );

@@ -10,6 +10,9 @@
  *     objet et voit pourquoi il est là (« tu m'as dit : … » ou « j'ai imaginé : … ») ; les retouches avec ses mots
  *     (trois offertes, puis une par jour) ; revenir à la version d'avant ;
  *   · 🪑 SON FAUTEUIL a pris les couleurs de son monde (lot 4b) : avant, après, une fois ;
+ *   · 🚪 LES VISITES ET LES SOUVENIRS (lot 6, `lib/direct/visites.ts`) : qui peut entrer chez moi (tout le monde — 18 ans
+ *     ou plus déclarés —, mes proches, moi seul), mon lien de visite, qui est passé, les souvenirs à accepter, ceux qui
+ *     sont posés (sur le sol de mon décor) ;
  *   · 🎵 UNE MUSIQUE D'AMBIANCE (`musique-univers.ts`, composée dans le téléphone), lancée par « Créer mon univers » ou
  *     une retouche (le son ne démarre que dans un toucher), et le bouton 🎵 pour la mettre ou la couper ;
  *   · « MON UNIVERS », L'ACCUEIL (`accueil`, à `/univers`, lot 4b) : son univers en grand, et le menu de demain
@@ -22,6 +25,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { imageVisage } from "@/lib/direct/guide";
 import { lancerMusiqueUnivers, musiqueCoupee, type MusiqueUnivers } from "@/lib/direct/musique-univers";
 import { IDEES_RETOUCHE_UNIVERS, RETOUCHE_UNIVERS_MAX, type CleUnivers, type EtatUnivers } from "@/lib/direct/univers-creation";
+import { VISIBILITES_DITES, objetDe, type MesVisites } from "@/lib/direct/visites";
+import type { Visibilite } from "@/lib/direct/monde";
 
 const ROUTE = "/api/direct/univers";
 
@@ -357,6 +362,20 @@ function Decouverte({ etat, occupe, faire, enRetouche }: { etat: EtatUnivers; oc
     }
   }
   const avecZone = etat.cles.filter((c) => c.zone);
+  // 🚪 mes visites (lot 6) : qui est passé, les souvenirs, qui peut entrer
+  const [visites, setVisites] = useState<MesVisites | null>(null);
+  const chargerVisites = useCallback(async () => {
+    try {
+      const r = await fetch("/api/direct/visites?moi=1", { cache: "no-store" });
+      const j = (await r.json().catch(() => ({}))) as { visites?: MesVisites };
+      if (j.visites) setVisites(j.visites);
+    } catch {
+      // (sans ses visites : son univers s'affiche quand même)
+    }
+  }, []);
+  useEffect(() => {
+    void Promise.resolve().then(chargerVisites);
+  }, [chargerVisites]);
   // (🪑 son fauteuil a pris les couleurs de son monde : montré une fois, jusqu'à ce qu'il le ferme)
   const [fauteuilVu, setFauteuilVu] = useState(true);
   const versionFauteuil = etat.fauteuil?.version ?? 0;
@@ -399,6 +418,14 @@ function Decouverte({ etat, occupe, faire, enRetouche }: { etat: EtatUnivers; oc
               onClick={() => setCle(c)}
             />
           ))}
+        {vue === "chez-moi" &&
+          visites?.poses.map((x) =>
+            typeof x.x === "number" && typeof x.y === "number" ? (
+              <span key={x.id} className="um-souvenir" style={{ left: `${x.x * 100}%`, top: `${x.y * 100}%` }} title={`${objetDe(x.objet)?.nom ?? ""}, de ${x.de}`}>
+                {objetDe(x.objet)?.emoji}
+              </span>
+            ) : null,
+          )}
         {brume && <span className="um-brume" aria-hidden="true" />}
       </div>
       {!fauteuilVu && etat.fauteuil && vue === "chez-moi" && etat.figurine && (
@@ -479,7 +506,7 @@ function Decouverte({ etat, occupe, faire, enRetouche }: { etat: EtatUnivers; oc
           )}
         </div>
       ) : (
-        <div className="um-retouche">
+        <div className="um-retouche" data-retouche="oui">
           <label>
             Qu’est-ce qu’on change ?
             <input type="text" name="retouche" maxLength={RETOUCHE_UNIVERS_MAX} placeholder="Dis-le avec tes mots" value={mots} onChange={(e) => setMots(e.target.value)} />
@@ -508,7 +535,169 @@ function Decouverte({ etat, occupe, faire, enRetouche }: { etat: EtatUnivers; oc
           </button>
         </div>
       )}
+      {visites && <MesVisitesBloc visites={visites} recharger={chargerVisites} />}
     </section>
+  );
+}
+
+// ─── 🚪 mes visites (lot 6) ───────────────────────────────────────────────────────────────────────
+async function posterVisite(corps: Record<string, unknown>): Promise<void> {
+  const r = await fetch("/api/direct/visites", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
+  const j = (await r.json().catch(() => ({}))) as { error?: string };
+  if (!r.ok || j.error) throw new Error(j.error || "Ça n’a pas marché. Réessaie.");
+}
+const quand = (le: string) => {
+  const d = new Date(le);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" });
+};
+function MesVisitesBloc({ visites, recharger }: { visites: MesVisites; recharger: () => Promise<void> }) {
+  const [erreur, setErreur] = useState("");
+  const [occupe, setOccupe] = useState(false);
+  const [adulte, setAdulte] = useState(false);
+  const [copie, setCopie] = useState(false);
+  async function faire(corps: Record<string, unknown>) {
+    setOccupe(true);
+    setErreur("");
+    try {
+      await posterVisite(corps);
+      await recharger();
+      setAdulte(false);
+    } catch (e) {
+      setErreur(message(e));
+    } finally {
+      setOccupe(false);
+    }
+  }
+  function choisir(v: Visibilite) {
+    if (v === "tous" && !visites.adulte) return setAdulte(true);
+    void faire({ action: "visibilite", visibilite: v });
+  }
+  const lien = typeof window === "undefined" ? `/univers/chez/${visites.cle}` : `${window.location.origin}/univers/chez/${visites.cle}`;
+  async function copier() {
+    try {
+      await navigator.clipboard.writeText(lien);
+      setCopie(true);
+    } catch {
+      // (pas de presse-papiers : le lien est affiché)
+    }
+  }
+  return (
+    <div className="um-visites" aria-label="Mes visites">
+      {visites.enAttente.length > 0 && (
+        <div className="um-bloc">
+          <b>🎁 Des souvenirs pour toi</b>
+          <ul className="um-liste">
+            {visites.enAttente.map((x) => (
+              <li key={x.id} className="um-souvenir-attente">
+                <span>
+                  <b>
+                    {objetDe(x.objet)?.emoji} {objetDe(x.objet)?.nom}
+                  </b>
+                  <small>
+                    de {x.de}
+                    {x.mot ? ` : « ${x.mot} »` : ""}
+                  </small>
+                </span>
+                <span className="um-choix">
+                  <button type="button" disabled={occupe} onClick={() => void faire({ action: "decider", id: x.id, oui: true })}>
+                    Le poser chez moi
+                  </button>
+                  <button type="button" className="non" disabled={occupe} onClick={() => void faire({ action: "decider", id: x.id, oui: false })}>
+                    Non merci
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div className="um-bloc">
+        <b>🚪 Qui est passé</b>
+        {visites.passes.length ? (
+          <ul className="um-passes">
+            {visites.passes.map((v, i) => (
+              <li key={`${v.prenom}-${v.le}-${i}`}>
+                {v.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={v.image} alt="" />
+                ) : (
+                  <span aria-hidden="true">🙂</span>
+                )}
+                <small>
+                  {v.prenom}
+                  <br />
+                  {quand(v.le)}
+                </small>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="um-petit">Personne pour l’instant. Envoie ton lien de visite à tes proches !</p>
+        )}
+      </div>
+      <div className="um-bloc">
+        <b>🔑 Qui peut entrer chez moi ?</b>
+        <div className="um-visibilite" role="radiogroup" aria-label="Qui peut entrer chez moi ?">
+          {(Object.keys(VISIBILITES_DITES) as Visibilite[]).map((v) => (
+            <button key={v} type="button" role="radio" aria-checked={visites.visibilite === v} className={visites.visibilite === v ? "pris" : ""} disabled={occupe} onClick={() => choisir(v)}>
+              <b>{VISIBILITES_DITES[v].titre}</b>
+              <small>{VISIBILITES_DITES[v].dit}</small>
+            </button>
+          ))}
+        </div>
+        {adulte && (
+          <div className="um-adulte" role="dialog" aria-label="18 ans ou plus">
+            <p>Pour ouvrir ton univers à tout le monde, il faut avoir 18 ans ou plus.</p>
+            <button type="button" className="um-bouton" disabled={occupe} onClick={() => void faire({ action: "visibilite", visibilite: "tous", adulte: true })}>
+              Oui, j’ai 18 ans ou plus
+            </button>
+            <button type="button" className="um-lien" onClick={() => setAdulte(false)}>
+              Annuler
+            </button>
+          </div>
+        )}
+        {visites.visibilite !== "moi" && (
+          <div className="um-lien-visite">
+            <button type="button" className="um-bouton clair" onClick={() => void copier()}>
+              {copie ? "✓ Lien copié" : "🔗 Copier mon lien de visite"}
+            </button>
+            <a className="um-lien" href={`/univers/chez/${visites.cle}`}>
+              👀 Voir mon univers comme mes visiteurs
+            </a>
+          </div>
+        )}
+      </div>
+      {visites.poses.length > 0 && (
+        <div className="um-bloc">
+          <b>🧺 Les souvenirs posés chez moi</b>
+          <ul className="um-liste">
+            {visites.poses.map((x) => (
+              <li key={x.id} className="um-souvenir-attente">
+                <span>
+                  <b>
+                    {objetDe(x.objet)?.emoji} {objetDe(x.objet)?.nom}
+                  </b>
+                  <small>
+                    de {x.de}
+                    {x.mot ? ` : « ${x.mot} »` : ""}
+                  </small>
+                </span>
+                <span className="um-choix">
+                  <button type="button" className="non" disabled={occupe} onClick={() => void faire({ action: "retirer", id: x.id })}>
+                    Retirer
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {erreur && (
+        <p className="um-erreur" role="alert">
+          {erreur}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -553,6 +742,25 @@ const STYLES = `
 .um-musique span{display:inline-block}
 .um-musique.joue span{animation:um-note 2.4s ease-in-out infinite}
 @keyframes um-note{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.um-souvenir{position:absolute;transform:translate(-50%,-100%);font-size:32px;filter:drop-shadow(0 4px 4px rgba(0,0,0,.35));pointer-events:none}
+.um-visites{display:flex;flex-direction:column;gap:12px}
+.um-bloc{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:16px;background:rgba(255,250,240,.88)}
+.um-passes{margin:0;padding:0;list-style:none;display:flex;gap:10px;overflow-x:auto}
+.um-passes li{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:64px;text-align:center}
+.um-passes img{width:56px;height:70px;object-fit:contain}
+.um-passes small{font-size:11px;color:#4a3017}
+.um-souvenir-attente{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:#fff6e6}
+.um-souvenir-attente > span:first-child{display:flex;flex-direction:column;gap:2px;min-width:0}
+.um-choix{display:flex;flex-direction:column;gap:4px}
+.um-choix button{border:0;border-radius:10px;padding:7px 10px;background:#2b1a0c;color:#fff6e6;font-weight:700;font-size:13px;white-space:nowrap}
+.um-choix button.non{background:transparent;color:#4a3017;text-decoration:underline}
+.um-visibilite{display:flex;flex-direction:column;gap:6px}
+.um-visibilite button{text-align:left;border:2px solid transparent;border-radius:12px;padding:8px 10px;background:#fff6e6;color:#2b1a0c;display:flex;flex-direction:column;gap:2px}
+.um-visibilite button.pris{border-color:#2b1a0c}
+.um-visibilite small{color:#5c4126}
+.um-adulte{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:12px;background:#fff1d6}
+.um-adulte p{margin:0}
+.um-lien-visite{display:flex;flex-direction:column;gap:6px}
 .um-fauteuil{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 14px;border-radius:16px;background:rgba(255,253,248,.95);box-shadow:0 6px 18px rgba(43,26,12,.2);text-align:center}
 .um-avant-apres{display:flex;align-items:center;gap:10px;font-size:22px}
 .um-avant-apres img{width:84px;height:110px;object-fit:contain}
