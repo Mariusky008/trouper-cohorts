@@ -641,9 +641,13 @@ export async function repondreAvecSaTete(supabase: Supabase, habitant: Habitant,
   const { data } = await supabase.from("clik_voeu_vue").select("*").eq("id", id).eq("auteur_id", habitant.id).limit(1);
   const l = lignes(data)[0];
   if (!l || !["encourage", "aide"].includes(s(l.geste)) || l.signale_le) return { error: "Cette réponse n’est plus là.", statut: 404 };
-  const { data: lv } = await supabase.from("clik_voeu").select("texte").eq("id", s(l.voeu_id)).limit(1);
   const lui = s(l.destinataire_id);
-  const [mercis, retours] = await Promise.all([lireJson<Record<string, string>>(supabase, cheminMercis(habitant.id, s(l.voeu_id))), lireJson<{ liste?: RetourGarde[] }>(supabase, cheminRetours(lui))]);
+  // (le texte du vœu et les deux fichiers d'un coup : moins d'attente au téléphone)
+  const [{ data: lv }, mercis, retours] = await Promise.all([
+    supabase.from("clik_voeu").select("texte").eq("id", s(l.voeu_id)).limit(1),
+    lireJson<Record<string, string>>(supabase, cheminMercis(habitant.id, s(l.voeu_id))),
+    lireJson<{ liste?: RetourGarde[] }>(supabase, cheminRetours(lui)),
+  ]);
   const liste = (Array.isArray(retours.liste) ? retours.liste : []).filter((x) => Number(x.vue) !== id);
   const ok = await Promise.all([
     ecrireJson(supabase, cheminMercis(habitant.id, s(l.voeu_id)), { ...mercis, [String(id)]: t.cle }),

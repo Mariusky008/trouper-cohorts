@@ -210,18 +210,31 @@ await lea.screenshot({ path: `${D}/voeu-8-reponse.png` });
 // 🙂 « Réponds avec ta tête » (la maquette 4a) : ses visages, quatre mots
 const tetesRep = (await lea.locator(".vx-story .vx-story-tetes button small").allInnerTexts()).map((x) => x.trim());
 ok(tetesRep.join("|") === "Merci !|Mort de rire|Grave|Trop bien" && (await texte(lea, ".vx-story .vx-story-repondre > small")) === "Réponds avec ta tête", `« Réponds avec ta tête » : ${tetesRep.join(" · ")}`);
+// (12 novembre 2026, le propriétaire : « ça prend plusieurs secondes pour être sélectionné et rien ne se passe ensuite » —
+// sa tête se pose tout de suite, « Envoyé à Inès ✓ », puis la réponse suivante : ici la seule, la story se ferme)
+const t0 = Date.now();
 await lea.locator(".vx-story .vx-story-tetes button").first().click();
-await lea.waitForFunction(() => document.querySelector(".vx-story .vx-story-repondre > small")?.textContent?.startsWith("✓"), null, { timeout: 10000 });
-const retoursInes = await lireStock(`${INES.id}/voeux/retours.json`);
-ok((await texte(lea, ".vx-story .vx-story-repondre > small")) === "✓ Tu lui as répondu : MERCI !" && retoursInes?.liste?.[0]?.tete === "merci" && retoursInes.liste[0].auteur === LEA.id, "« Merci ! » : « ✓ Tu lui as répondu : MERCI ! » — et Inès le reçoit (ses retours)");
+await lea.waitForSelector(".vx-story .vx-story-envoi .vx-sticker", { timeout: 2000 });
+const delai = Date.now() - t0;
+ok(delai < 800 && (await texte(lea, ".vx-story .vx-story-envoi .vx-sticker")) === "MERCI !" && (await texte(lea, ".vx-story .vx-story-repondre > small")) === "✓ Envoyé à Inès" && (await lea.locator(".vx-story .vx-story-tetes button.pris").count()) === 1, `« Merci ! » : tout de suite (${delai} ms), sa tête se pose sur la scène, « MERCI ! », « ✓ Envoyé à Inès »`);
 await lea.screenshot({ path: `${D}/voeu-8a-merci.png` });
-await lea.locator(".vx-story-fermer").click();
+await lea.waitForSelector(".vx-story", { state: "detached", timeout: 5000 });
+let retoursInes = null;
+for (let k = 0; k < 20 && retoursInes?.liste?.[0]?.tete !== "merci"; k++) {
+  retoursInes = await lireStock(`${INES.id}/voeux/retours.json`);
+  if (retoursInes?.liste?.[0]?.tete !== "merci") await lea.waitForTimeout(200);
+}
+ok(retoursInes?.liste?.[0]?.tete === "merci" && retoursInes.liste[0].auteur === LEA.id, "puis la story se ferme d'elle-même (c'était la seule réponse) — et Inès le reçoit (ses retours)");
 let nonVues = 1;
 for (let k = 0; k < 20 && nonVues; k++) {
   nonVues = (await etat(lea)).nonVues;
   if (nonVues) await lea.waitForTimeout(200);
 }
 ok(nonVues === 0 && (await lea.locator("#voeu .vx-bulle.neuve").count()) === 0, "vue : le badge s'éteint");
+await lea.locator("#voeu .vx-bulle", { hasText: "Inès" }).first().click();
+await lea.waitForSelector(".vx-story", { timeout: 10000 });
+ok((await texte(lea, ".vx-story .vx-story-repondre > small")) === "✓ Tu lui as répondu : MERCI !" && (await lea.locator(".vx-story .vx-story-envoi").count()) === 0, "rouverte : « ✓ Tu lui as répondu : MERCI ! »");
+await lea.locator(".vx-story-fermer").click();
 await lea.locator("#voeu .vx-mon-voeu").click();
 await lea.waitForSelector(".vx-page.ouverte .vx-reponses", { timeout: 10000 });
 const page = await texte(lea, ".vx-page");
