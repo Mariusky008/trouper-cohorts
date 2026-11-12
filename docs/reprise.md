@@ -79,6 +79,8 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
   l'invité y répond (9.0 quattuortricies 🎬🔗). Le lot 5 est construit.
 - **Sa figurine à l'échelle de la pièce** (relevée sur l'image vedette) et **ses visages du nouveau style** (faits sur
   sa figurine assise, à la demande) : `docs/figurines.md`, 9.0 duotricies 🪑 et 9.0 quinquatricies 🎭.
+- **Le lot 6 (les visites et les souvenirs) est construit** : `docs/figurines.md`, 9.0 sexatricies 🚪. Puis le lot 7
+  (l'appli rhabillée : les mèmes dans l'univers, « Découvrir » chez elles, la saison).
 - **La suite** : son avis sur le parcours complet (figurine, conversation, univers, accueil) ; puis le feu vert pour
   tout le monde (les figurines
   d'aujourd'hui refaites, Pablito au nouveau style, les visages du nouveau style) ; puis le lot 5 (le proche qui entre). Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les essais
@@ -92,7 +94,7 @@ Deux lots validés par le propriétaire (feuille de route « Univers », lot R, 
 
 - **R3, ma figurine me répond** : son humeur du matin choisie, SA figurine lui dit une phrase (écrite d'avance,
   validée) et un geste utile la suit ; la veille, le 3114 au troisième jour difficile, « Ta semaine en visages » le
-  dimanche. **Construit, en PR** (`docs/figurines.md`, 9.0 sexatricies ☀️).
+  dimanche. **Construit, en PR** (`docs/figurines.md`, 9.0 septatricies ☀️).
 - **R4, la conversation vivante** : les figurines vivantes (silences, « il enregistre », réactions avec le corps), les
   panneaux, puis l'aparté des deux figurines (IA, visible des deux, sans demande d'accord). **Pas commencé** ; il
   touche `proches.tsx`, que la session « Univers » a aussi modifié : une seule session à la fois.

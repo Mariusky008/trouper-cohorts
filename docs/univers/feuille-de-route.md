@@ -559,6 +559,14 @@ choisi dans une liste, un petit mot), qui n'apparaît que si le propriétaire l'
 
 **On a réussi si** les gens reviennent voir qui est passé.
 
+**Construit (12 novembre 2026)** ; le détail : `docs/figurines.md`, 9.0 sexatricies 🚪. Qui peut entrer : « tout le
+monde » (18 ans ou plus déclarés une fois — l'appli ne sait que « 15 ans ou plus »), « mes proches » (par défaut),
+« moi seul » ; ses clés et les souvenirs restent entre proches. `/univers/chez/<clé>` : la visite (sa figurine chez
+elle, la mienne qui entre), « 🚪 Frapper à la porte » (prévenu une fois par jour), « 🎁 Laisser un souvenir » (un objet,
+un mot ; trois en attente au plus ; ni alcool ni mots interdits), « 🚩 Signaler ». Chez soi : qui est passé, les
+souvenirs à accepter (posés sur le sol du décor), qui peut entrer, son lien de visite. Dans « Proches » : « 🏡 Son
+univers ».
+
 ### Lot 7 — L'appli d'aujourd'hui rhabillée
 
 Voir la section 8. Les mèmes se jouent dans l'univers. « Découvrir » montre les figurines chez elles. Le menu change.
@@ -644,7 +652,7 @@ vas-y »). Aujourd'hui, ce sont les figurines de ses proches qui lui écrivent, 
 - **Les phrases** : une dizaine par humeur, écrites d'avance et validées par le propriétaire (instantané, sans coût,
   sans risque) ; l'IA pourra les personnaliser plus tard, dans le style de sa carte de personnage.
 
-**Construit (12 novembre 2026)** — `docs/figurines.md`, 9.0 sexatricies ☀️. **Reste** : que sa figurine garde son
+**Construit (12 novembre 2026)** — `docs/figurines.md`, 9.0 septatricies ☀️. **Reste** : que sa figurine garde son
 humeur toute la journée dans son univers et dans les conversations (affalée, ou en train de danser) : avec le lot R4.
 
 **5. La conversation vivante — lot R4** (le propriétaire, le 12 novembre 2026 : « qu'est-ce qui va être différenciant,
@@ -767,7 +775,7 @@ Rien ne bloque le lot 0. À décider en chemin :
    chez celui qu'on visite.
 5. ~~Le modèle de la conversation~~ — décidé le 12 novembre 2026 (délégué) : le plus capable du compte, le petit en
    secours (`OPENAI_UNIVERS_MODEL`).
-6. Ce que voit un inconnu de mon univers, par défaut — le propriétaire, le 12 novembre 2026 : « pourquoi seulement
+6. ~~Ce que voit un inconnu de mon univers~~ — retenu en lançant le lot 6 (12 novembre 2026). Le propriétaire : « pourquoi seulement
    mes proches ? Ça pourrait être sympa de voir les univers des autres, ça ne risque rien ». Proposé en réponse, à
    confirmer au lot 6 : **son univers visible de tous** (le décor, sa figurine chez elle) ; **ses clés** (ses propres
    phrases, tirées de sa conversation avec Pablito) et **les souvenirs déposés** réservés à ses proches ; de 15 à 17

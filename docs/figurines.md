@@ -2411,7 +2411,27 @@ elle fait maintenant la tête de chaque réplique, comme sa figurine d'aujourd'h
 - **L'essai** : `scripts/navigateur/talkie-chez-moi.mjs` (ses têtes de départ faites sur sa figurine assise, la
   conversation qui les reçoit).
 
-### 9.0 sexatricies ☀️ Ma figurine me répond : l'humeur du matin (12 novembre) — lot R3
+### 9.0 sexatricies 🚪 Les visites et les souvenirs (12 novembre) — lot 6
+
+Le propriétaire : « en attendant on peut faire le lot 6 » (sa proposition de visibilité, reprise : « ça pourrait être
+sympa de voir les univers des autres »).
+
+- **Qui peut entrer** (`visites.ts`, `VISIBILITES_DITES`) : « 🌍 Tout le monde » (il faut avoir déclaré une fois 18 ans
+  ou plus : l'appli ne sait que « 15 ans ou plus » ; `<habitant>/adulte.json`), « 👯 Mes proches » (par défaut), « 🔒
+  Moi seul ». Ses clés (ses phrases) et les souvenirs restent toujours entre proches.
+- **La visite** (`/univers/chez/<clé>`, `visite.tsx`) : « Chez Marc » — son décor, sa figurine chez elle (relevée sur
+  son image vedette), la mienne qui entre à la place de l'invité ; « 🚪 Frapper à la porte » (une visite par jour ; il
+  est prévenu une fois par jour : « 🚪 Inès a frappé à ta porte ») ; entre proches, « 🔑 Les clés de son univers » et
+  « 🎁 Laisser un souvenir » (dix objets, un mot de 80 caractères ; ni alcool ni mots interdits ; trois en attente au
+  plus) ; « 🚩 Signaler » (`signalements/univers/<habitant>.json`). Fermé ou réservé : on le dit, simplement.
+- **Chez soi** (« Mon univers ») : « 🎁 Des souvenirs pour toi » (« Le poser chez moi » : il apparaît sur le sol de son
+  décor ; « Non merci » : l'autre ne le sait pas) ; « 🚪 Qui est passé » ; « 🔑 Qui peut entrer chez moi ? » ; son lien
+  de visite ; « Voir mon univers comme mes visiteurs » ; retirer un souvenir posé (douze au plus).
+- **Le seau** : `<habitant>/monde/visites.json`, `<habitant>/monde/souvenirs.json` (hors des versions de son univers :
+  une retouche ne les efface pas). Les routes : `/api/direct/visites`. Dans « Proches » : « 🏡 Son univers ».
+- **Les essais** : `scripts/essai-visites-route.mjs`, `scripts/navigateur/visite-univers.mjs`.
+
+### 9.0 septatricies ☀️ Ma figurine me répond : l'humeur du matin (12 novembre) — lot R3
 
 Le propriétaire : « quand je donne le matin ma mood, mon état d'esprit, avec une de mes figurines, est-ce qu'en fonction
 de ce que je donne on pourrait avoir quelque chose : notre figurine qui nous dirait quelque chose ? » ; la proposition
