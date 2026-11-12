@@ -8,19 +8,17 @@
 //     administratrice ; en ouvrant l'appli, sa figurine du nouveau style devient la sienne (`neutre` = son image assise,
 //     `parle` = sa bouche ouverte) ; ses visages se font au nouveau style, dans le même dossier ; Hugo, qui avait sa
 //     figurine d'aujourd'hui et vient de valider la nouvelle, la voit remplacée (son prénom gardé) ; Sam, sans figurine
-//     du nouveau style, ne change pas.
+//     du nouveau style, ne change pas — l'appli l'invite à la refaire, et il peut reprendre sa photo d'avant.
 //
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI ; ce script lance lui-même la seconde)
 //   node scripts/essai-bascule-route.mjs          (sur un faux Supabase tout neuf)
-import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
+import { lancerSecondeApp } from "./seconde-app.mjs";
 
 const F = "http://127.0.0.1:54321/rest/v1";
 const FAUX = F.replace("/rest/v1", "");
 const ETEINT = process.env.ESSAI_BASE || "http://localhost:3821";
-const PORT_ALLUME = 3822;
-const ALLUME = `http://localhost:${PORT_ALLUME}`;
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
 const deposer = (chemin, corps, type) => fetch(`${STOCK}/figurines-clients/${chemin}`, { method: "POST", headers: { "content-type": type }, body: corps });
@@ -36,26 +34,7 @@ const ok = (c, m) => {
 };
 
 // ─── la seconde app : l'interrupteur allumé ───
-const seconde = spawn("npx", ["next", "start", "-p", String(PORT_ALLUME)], { env: { ...process.env, CLIKME_UNIVERS_POUR_TOUS: "1" }, stdio: "ignore", detached: true });
-const arreter = () => {
-  try {
-    process.kill(-seconde.pid, "SIGTERM");
-  } catch {
-    /* déjà arrêtée */
-  }
-};
-process.on("exit", arreter);
-let prete = false;
-for (let i = 0; i < 60 && !prete; i++) {
-  prete = await fetch(`${ALLUME}/autour-de-moi/assistante`)
-    .then((r) => r.ok)
-    .catch(() => false);
-  if (!prete) await new Promise((r) => setTimeout(r, 1000));
-}
-if (!prete) {
-  console.log("ÉCHEC  la seconde app (l'interrupteur allumé) ne répond pas");
-  process.exit(1);
-}
+const { base: ALLUME, arreter } = await lancerSecondeApp();
 
 // ─── Léa (sa figurine du nouveau style seulement), Hugo (celle d'aujourd'hui, puis la nouvelle), Sam (celle d'aujourd'hui) ───
 const LEA = { id: "abababab-0000-4000-8000-000000000901", jeton: "jeton-lea-bascule-00000000001" };
@@ -138,6 +117,17 @@ ok(s1.etat?.etape === "prete" && (await ligne(SAM.id))?.neutre === `${SAM.id}/fi
 const avantSam = (await ia()).length;
 await appeler(ALLUME, SAM, "/api/direct/ma-figurine", { action: "expressions", veut: "colere" });
 ok((await ia()).slice(avantSam).every((c) => !c.includes("seated in its armchair")), "ses visages à lui restent ceux d'aujourd'hui");
+
+// ═══ ÉTAPE 2 : l'appli sait que sa figurine se fait au nouveau style ; la photo d'avant ═══
+ok(!e0.etat?.bascule && !h0.etat?.bascule, "éteint : l'appli ne parle pas du nouveau style");
+ok(e1.etat?.bascule?.nouveauStyle === true && s1.etat?.bascule?.nouveauStyle === false, "allumé : Léa est au nouveau style, Sam pas encore (l'invitation à la refaire)");
+ok((await appeler(ALLUME, { jeton: "inconnu-0000000000000000000" }, "/api/direct/ma-figurine")).etat?.bascule?.nouveauStyle === false, "allumé, sans compte : sa figurine se crée au nouveau style");
+await deposer(`${SAM.id}/photo.jpg`, PNG, "image/png");
+const ns = await appeler(ALLUME, SAM, "/api/direct/nouvelle-figurine");
+ok(ns.etape === "selfie" && decodeURIComponent(ns.photoDAvant ?? "").includes(`${SAM.id}/photo.jpg`), "🖼️ Sam peut reprendre sa photo d'avant");
+ok((await appeler(ALLUME, SAM, "/api/direct/nouvelle-figurine", { action: "selfie", photo: "avant", moi: true, age: false })).statut === 400, "sa photo d'avant : « 15 ans ou plus » toujours à cocher");
+const sf = await appeler(ALLUME, SAM, "/api/direct/nouvelle-figurine", { action: "selfie", photo: "avant", moi: true, age: true });
+ok(sf.statut === 200 && Boolean(sf.id), `sa figurine du nouveau style se sculpte d'après sa photo d'avant (${sf.id})`);
 
 arreter();
 console.log(echecs ? `\n${echecs} échec(s)` : "\nla bascule tient ✓");

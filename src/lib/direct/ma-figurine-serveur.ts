@@ -64,6 +64,7 @@ import { reactionsDe } from "./reactions-memes-serveur";
 import { themeDuJour, type EtatDuJour } from "./theme-du-jour";
 import { motInterdit } from "./mots-interdits";
 import { FABRICATIONS_PAR_JOUR, NOM_NEUTRE, NOM_PARLE, fabricationsParJourPourTous, fabriquerUnPas, moteurBranche } from "./ma-figurine-fabrique-serveur";
+import { universPourTous } from "./univers-pour-tous";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 type Ligne = Record<string, unknown>;
@@ -211,7 +212,7 @@ export async function visagesVoulus(supabase: Supabase, habitantId: string): Pro
 }
 
 export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | null): Promise<EtatMaFigurine> {
-  const vide: EtatMaFigurine = { total: 0, cadeaux: 0, etapes: [], etape: "photo", prenom: "", compte: false, auto: moteurBranche(), commerces: [], messages: [] };
+  const vide: EtatMaFigurine = { total: 0, cadeaux: 0, etapes: [], etape: "photo", prenom: "", compte: false, auto: moteurBranche(), commerces: [], messages: [], ...(universPourTous() ? { bascule: { nouveauStyle: false } } : {}) };
   if (!habitant) return vide;
   const [{ total, commerces }, prenom, { ok, ligne }] = await Promise.all([
     sesFigurines(supabase, habitant.id),
@@ -220,7 +221,17 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
   ]);
   // 🎁 SES CADEAUX DE CLIKME : ce qui ouvre ses options (plus ses achats)
   const { cadeaux, etapes } = await cadeauxDe(supabase, habitant.id, total);
-  const base: EtatMaFigurine = { ...vide, total, cadeaux, etapes, prenom, commerces, compte: true };
+  const base: EtatMaFigurine = {
+    ...vide,
+    total,
+    cadeaux,
+    etapes,
+    prenom,
+    commerces,
+    compte: true,
+    // 🔀 (l'interrupteur allumé : sa figurine se fait au nouveau style ; le pont pose `perso/v<n>/assise` dans sa ligne)
+    ...(universPourTous() ? { bascule: { nouveauStyle: /\/perso\/v\d+\//.test(s(ligne?.neutre)) } } : {}),
+  };
   const prete = Boolean(ligne?.prete_le && s(ligne?.neutre) && s(ligne?.parle));
   if (!ok) return { ...base, etape: "bientot" };
   if (!prete && (!ligne || !s(ligne.photo) || s(ligne.refus))) return { ...base, etape: "photo", ...(s(ligne?.refus) ? { refus: s(ligne?.refus) } : {}) };
