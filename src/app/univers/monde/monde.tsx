@@ -13,6 +13,8 @@
  *   · 🚪 LES VISITES ET LES SOUVENIRS (lot 6, `lib/direct/visites.ts`) : qui peut entrer chez moi (tout le monde — 18 ans
  *     ou plus déclarés —, mes proches, moi seul), mon lien de visite, qui est passé, les souvenirs à accepter, ceux qui
  *     sont posés (sur le sol de mon décor) ;
+ *   · 🍂 LA SAISON (lot 7) : son décor du mois (il se fait à sa première visite du mois : « Ton univers se pare pour
+ *     Noël… ») et sa tenue du mois (méritée) ; le thème du mois, en badge sur la scène ;
  *   · 🎵 UNE MUSIQUE D'AMBIANCE (`musique-univers.ts`, composée dans le téléphone), lancée par « Créer mon univers » ou
  *     une retouche (le son ne démarre que dans un toucher), et le bouton 🎵 pour la mettre ou la couper ;
  *   · « MON UNIVERS », L'ACCUEIL (`accueil`, à `/univers`, lot 4b) : son univers en grand, et le menu de demain
@@ -102,6 +104,17 @@ export function Monde({ accueil = false }: { accueil?: boolean }) {
       .then(() => charger())
       .catch(() => undefined);
   }, [etat, charger]);
+  // 🍂 son décor du mois se fait (après la réponse) : on relit, quelques fois
+  const saisonEnCours = etat?.etape === "decouverte" && Boolean(etat.saison?.enCours);
+  const relu = useRef(0);
+  useEffect(() => {
+    if (!saisonEnCours || relu.current >= 6) return;
+    const t = window.setTimeout(() => {
+      relu.current++;
+      void charger();
+    }, 25_000);
+    return () => window.clearTimeout(t);
+  }, [saisonEnCours, etat, charger]);
   const construit = etat?.etape === "creation";
   useEffect(() => {
     if (!construit) return;
@@ -426,6 +439,11 @@ function Decouverte({ etat, occupe, faire, enRetouche }: { etat: EtatUnivers; oc
               </span>
             ) : null,
           )}
+        {etat.saison && vue === "chez-moi" && (
+          <span className="um-saison" title={etat.saison.decor ? `Ton univers, version ${etat.saison.nom}` : undefined}>
+            {etat.saison.emoji} {etat.saison.nom}
+          </span>
+        )}
         {brume && <span className="um-brume" aria-hidden="true" />}
       </div>
       {!fauteuilVu && etat.fauteuil && vue === "chez-moi" && etat.figurine && (
@@ -453,6 +471,11 @@ function Decouverte({ etat, occupe, faire, enRetouche }: { etat: EtatUnivers; oc
             Il me plaît !
           </button>
         </div>
+      )}
+      {etat.saison?.enCours && (
+        <p className="um-petit" role="status">
+          {etat.saison.emoji} Ton univers se pare pour {etat.saison.nom}… Reviens dans un instant.
+        </p>
       )}
       {cle && (
         <div className="um-cle" role="dialog" aria-label={cle.quoi}>
@@ -742,6 +765,7 @@ const STYLES = `
 .um-musique span{display:inline-block}
 .um-musique.joue span{animation:um-note 2.4s ease-in-out infinite}
 @keyframes um-note{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.um-saison{position:absolute;left:10px;top:10px;padding:5px 10px;border-radius:999px;background:rgba(255,250,240,.85);color:#2b1a0c;font-size:13px;font-weight:800;pointer-events:none}
 .um-souvenir{position:absolute;transform:translate(-50%,-100%);font-size:32px;filter:drop-shadow(0 4px 4px rgba(0,0,0,.35));pointer-events:none}
 .um-visites{display:flex;flex-direction:column;gap:12px}
 .um-bloc{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:16px;background:rgba(255,250,240,.88)}

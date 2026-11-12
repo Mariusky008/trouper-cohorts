@@ -16,6 +16,9 @@ import { consigneBoucheLook, editer, poserAuFormat, qualiteFigurine, reprendre }
 import { moteurBranche } from "./ma-figurine-fabrique-serveur";
 import { SEAU_FIGURINES, cheminImageDuLook, cheminParleDuLook, deposer, ecrireJson, lireJson, lireLigne, signer, telecharger } from "./ma-figurine-serveur";
 import { joursDePresence } from "./etapes-serveur";
+import { lireFichePerso } from "./fiches-serveur";
+import { demanderUneImage } from "./moteur-images-serveur";
+import { consigneBoucheTenueAssise, consigneTenueAssise } from "./perso-consignes";
 import { journalDuMois } from "./journal-serveur";
 import { EXPRESSIONS_DU_MOIS, JOURS_POUR_LA_FIGURINE, editionDuMois, lookValide, moisEnClair, type FigurineDuMois, type MesFigurinesDuMois } from "./figurine-du-mois";
 
@@ -26,7 +29,8 @@ const cheminFiche = (h: string, mois: string) => `${h}/mois/${mois}.json`;
 const cheminImage = cheminImageDuLook;
 const cheminVerrou = (h: string, mois: string) => `${h}/mois/${mois}-verrou.json`;
 const cheminVerrouParle = (h: string, mois: string) => `${h}/mois/${mois}-p-verrou.json`;
-type Fiche = { mois: string; cle: string; expression: string; phrase: string; image: string; le: string; parMoteur: boolean };
+/** `style` : « collection-1 » quand elle est faite au nouveau style (sa figurine assise, détourée : elle s'assoit chez lui). */
+type Fiche = { mois: string; cle: string; expression: string; phrase: string; image: string; le: string; parMoteur: boolean; style?: string };
 
 async function vue(supabase: Supabase, f: Fiche, jours: number, parle = ""): Promise<FigurineDuMois> {
   const [image, p] = await Promise.all([signer(supabase, f.image, 3600), parle ? signer(supabase, parle, 3600) : Promise.resolve("")]);
@@ -191,10 +195,31 @@ export async function fabriquerFigurineDuMois(supabase: Supabase, habitant: Habi
   if (Date.now() - (Number(verrou.le) || 0) < 4 * 60_000) return { enCours: true };
   await ecrireJson(supabase, cheminVerrou(habitant.id, mois), { le: Date.now() });
   try {
-    const neutre = await telecharger(supabase, s(ligne.neutre));
-    if (!neutre) return { error: "Ta figurine est introuvable.", statut: 400 };
     const edition = editionDuMois(mois);
     const expression = EXPRESSIONS_DU_MOIS[edition.cle] ?? { dit: "", en: "a warm, happy smile" };
+    // 🍂 « UNIVERS » (lot 7) : sa figurine du nouveau style, habillée du mois, détourée — elle s'assoit chez lui
+    const { fiche: perso } = await lireFichePerso(supabase, habitant.id);
+    const assise = perso?.style === "collection-1" ? perso.references.assise?.chemin : undefined;
+    const cleMoteur = s(process.env.OPENAI_PERSO_API_KEY) || s(process.env.OPENAI_API_KEY);
+    if (assise && cleMoteur) {
+      const source = await telecharger(supabase, assise);
+      if (!source) return { error: "Ta figurine est introuvable.", statut: 400 };
+      const baseMoteur = s(process.env.OPENAI_PERSO_BASE_URL) || s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
+      const r = await demanderUneImage({ images: [source], consigne: consigneTenueAssise(edition.nom, TENUES_EDITION[edition.cle] ?? "", expression.en), transparent: true, fidelite: "high", avant, cle: cleMoteur, base: baseMoteur, qualite: "high" });
+      if ("erreur" in r) return { error: r.erreur, statut: 502 };
+      const image = await sharp(r.png).webp({ quality: 90, alphaQuality: 100 }).toBuffer();
+      if (!(await deposer(supabase, cheminImage(habitant.id, mois), image, "image/webp"))) return { error: "Ta figurine du mois n’a pas pu être rangée.", statut: 502 };
+      const phrase = await phraseDuMois(supabase, habitant, mois);
+      await ecrireJson(supabase, cheminFiche(habitant.id, mois), { mois, cle: edition.cle, expression: expression.dit, phrase, image: cheminImage(habitant.id, mois), le: new Date().toISOString(), parMoteur: true, style: "collection-1" } satisfies Fiche);
+      // (sa bouche ouverte, tout de suite s'il reste le temps)
+      if (avant - Date.now() > 120_000) {
+        const b = await demanderUneImage({ images: [r.png], consigne: consigneBoucheTenueAssise(expression.en), transparent: true, fidelite: "high", avant, cle: cleMoteur, base: baseMoteur, qualite: "medium" }).catch(() => null);
+        if (b && !("erreur" in b)) await deposer(supabase, cheminParleDuLook(habitant.id, mois), await sharp(b.png).webp({ quality: 90, alphaQuality: 100 }).toBuffer(), "image/webp");
+      }
+      return {};
+    }
+    const neutre = await telecharger(supabase, s(ligne.neutre));
+    if (!neutre) return { error: "Ta figurine est introuvable.", statut: 400 };
     let image = neutre;
     let parMoteur = false;
     if (moteurBranche()) {
@@ -224,7 +249,23 @@ export async function fabriquerFigurineDuMois(supabase: Supabase, habitant: Habi
 /** Sa bouche ouverte (le moteur ; sans moteur : la même image — il bouge, sans ouvrir la bouche). */
 async function boucheDuLook(supabase: Supabase, h: string, mois: string, image: Buffer, cle: string, avant: number): Promise<{ error?: string; statut?: number }> {
   let parle: Buffer;
-  if (moteurBranche()) {
+  // (🍂 sa tenue du mois au nouveau style : la même, détourée, bouche ouverte)
+  const style = (await lireJson<Fiche>(supabase, cheminFiche(h, mois))).style;
+  const cleMoteur = s(process.env.OPENAI_PERSO_API_KEY) || s(process.env.OPENAI_API_KEY);
+  if (style === "collection-1" && cleMoteur) {
+    const r = await demanderUneImage({
+      images: [image],
+      consigne: consigneBoucheTenueAssise(EXPRESSIONS_DU_MOIS[cle]?.en ?? ""),
+      transparent: true,
+      fidelite: "high",
+      avant,
+      cle: cleMoteur,
+      base: s(process.env.OPENAI_PERSO_BASE_URL) || s(process.env.OPENAI_BASE_URL) || "https://api.openai.com",
+      qualite: "medium",
+    });
+    if ("erreur" in r) return { error: r.erreur, statut: 502 };
+    parle = await sharp(r.png).webp({ quality: 90, alphaQuality: 100 }).toBuffer();
+  } else if (moteurBranche()) {
     const { png, cadre } = await poserAuFormat(image);
     const r = await editer(png, consigneBoucheLook(EXPRESSIONS_DU_MOIS[cle]?.en ?? ""), avant);
     if (!Buffer.isBuffer(r)) return { error: r.erreur, statut: 502 };

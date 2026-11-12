@@ -133,5 +133,17 @@ verifier(auxCouleurs?.de === "univers" && auxCouleurs.couleurs.join() === "#e8b0
 verifier(P.fauteuilAuxCouleurs([]) === null && P.fauteuilAuxCouleurs(["bleu"]) === null, "sans couleur : pas de fauteuil refait");
 verifier(P.fichePersoValide({ ...fiche, fauteuil: auxCouleurs })?.fauteuil?.de === "univers", "la fiche garde son fauteuil aux couleurs de son monde");
 
+// 🍂 la saison de son univers (lot 7) : chaque mois de l'année a sa touche, son décor reste le même lieu
+const MC = charger("monde-consignes");
+const PC = charger("perso-consignes");
+const FM = charger("figurine-du-mois");
+const mois = Array.from({ length: 12 }, (_, i) => FM.editionDuMois(`2026-${String(i + 1).padStart(2, "0")}`));
+verifier(mois.every((e) => (MC.TOUCHES_DE_SAISON[e.cle] ?? "").length > 20), `chaque mois a sa touche de saison (${mois.filter((e) => !MC.TOUCHES_DE_SAISON[e.cle]).map((e) => e.cle).join() || "tous"})`);
+const decorNoel = MC.consigneDecorDeSaison("Noël", MC.TOUCHES_DE_SAISON.noel);
+verifier(decorNoel.includes("very same decor") && decorNoel.includes("EMPTY") && decorNoel.includes("nothing alcoholic") && !decorNoel.includes("THE SAME DECOR"), "le décor du mois : le même lieu, l'espace devant libre, rien d'alcoolisé (et pas la consigne d'une retouche)");
+const tenue = PC.consigneTenueAssise("Noël", "un pull de Noël et un bonnet", "joyeux");
+verifier(tenue.includes("un pull de Noël") && tenue.includes("same armchair") && /transparent/i.test(tenue) && /alcoholic/i.test(tenue), "la tenue du mois : sur sa figurine assise, dans son fauteuil, fond transparent");
+verifier(PC.consigneBoucheTenueAssise("").includes("Change ONLY its mouth") && PC.consigneBoucheTenueAssise("").includes("the same expression"), "sa bouche du mois : seule la bouche change");
+
 console.log(fautes ? `\n${fautes} faute(s), ${bons} juste(s)` : `les fiches tiennent ✓ (${bons} vérifications)`);
 process.exit(fautes ? 1 : 0);

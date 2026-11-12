@@ -155,6 +155,33 @@ export function consigneBoucheAssise(x: Sentiment): string {
   ].join("\n");
 }
 
+/**
+ * 🗓️ SA TENUE DE SAISON (la figurine du mois, au nouveau style — lot 7, « la figurine du mois devient la saison de son
+ * univers ») : la même figurine dans le même fauteuil, habillée du thème du mois, avec l'expression du mois ; puis sa
+ * bouche ouverte. Fond transparent : elle s'assoit chez elle, dans son décor.
+ */
+export function consigneTenueAssise(nomEdition: string, tenue: string, expression: string): string {
+  return [
+    MEME_ASSISE(true),
+    `Dress it up for the theme « ${nomEdition} » with: ${tenue} (written in French). Accessories may be worn or held in the hands; it stays seated in the same armchair.`,
+    `Give it this facial expression: ${expression}. It must still be clearly the same person, a sculpted caricature, never a photograph. Nothing alcoholic.`,
+    "",
+    ...FOND_TRANSPARENT,
+    "",
+    ...CONTRAINTES(false),
+  ].join("\n");
+}
+export function consigneBoucheTenueAssise(expression: string): string {
+  return [
+    "IMAGE 1 is a finished collectible caricature figurine of a real person, dressed up for the season, seated in its armchair. Make a new image of EXACTLY THE SAME FIGURINE: the same person, the same outfit and accessories, the same armchair and pose, the same size, framing and light.",
+    `Change ONLY its mouth: open it as if the figurine is in the middle of saying a word, keeping ${expression || "the same expression"} on the rest of the face.`,
+    "",
+    ...FOND_TRANSPARENT,
+    "",
+    ...CONTRAINTES(false),
+  ].join("\n");
+}
+
 /** Une retouche, avec ses mots : au plus 120 caractères. */
 export const RETOUCHE_FIGURINE_MAX = 120;
 

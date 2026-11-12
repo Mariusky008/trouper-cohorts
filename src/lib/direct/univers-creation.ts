@@ -41,6 +41,11 @@ export type EtatUnivers = {
   figurine?: { assise: string; parle?: string };
   /** 🪑 son fauteuil a pris les couleurs de son monde (lot 4b) : la version de sa figurine, et son image d'avant */
   fauteuil?: { version: number; avant?: string };
+  /**
+   * 🍂 la saison de son univers (lot 7) : le thème du mois, son décor du mois (fait, ou en train de se faire) et sa
+   * tenue du mois (méritée, au nouveau style)
+   */
+  saison?: { nom: string; emoji: string; decor: boolean; enCours?: boolean; tenue: boolean };
   scene?: SceneMonde;
   proposition?: string;
   lumiere?: string;
