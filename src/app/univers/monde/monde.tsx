@@ -167,7 +167,7 @@ export function Monde({ accueil = false }: { accueil?: boolean }) {
           aria-label={enMusique ? "Couper la musique" : "Mettre la musique"}
           onClick={() => (enMusique ? couperLaMusique() : mettreLaMusique())}
         >
-          {enMusique ? "🎵" : "🔇"}
+          <span>{enMusique ? "🎵" : "🔇"}</span>
         </button>
       )}
       {erreur && etat && (
@@ -485,7 +485,8 @@ const STYLES = `
 .um-menu a.pris{color:#fff6e6}
 .um-menu a.pris span{transform:translateY(-2px)}
 .um-musique{position:fixed;top:calc(10px + env(safe-area-inset-top));right:12px;z-index:21;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,250,240,.8);font-size:20px;box-shadow:0 4px 12px rgba(43,26,12,.25)}
-.um-musique.joue{animation:um-note 2.4s ease-in-out infinite}
+.um-musique span{display:inline-block}
+.um-musique.joue span{animation:um-note 2.4s ease-in-out infinite}
 @keyframes um-note{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 .um-fauteuil{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 14px;border-radius:16px;background:rgba(255,253,248,.95);box-shadow:0 6px 18px rgba(43,26,12,.2);text-align:center}
 .um-avant-apres{display:flex;align-items:center;gap:10px;font-size:22px}

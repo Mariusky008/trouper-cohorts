@@ -711,10 +711,16 @@ Rien ne bloque le lot 0. À décider en chemin :
 2. La vraie 3D : pas essayée au lot 0, reportée.
 3. ~~Le fauteuil~~ — tranché le 12 novembre 2026 : un fauteuil de départ à la création, refait aux couleurs de son
    univers une fois celui-ci créé (`FAUTEUIL_DE_DEPART`, `perso.ts`).
-4. La règle « chez qui ? » du lot 5.
+4. ~~La règle « chez qui ? » du lot 5~~ — tranchée le 12 novembre 2026, « oui » aux trois : dans l'appli, chacun voit
+   la conversation chez soi, l'autre lui rend visite ; sur WhatsApp, elle se passe chez celui qui envoie ; en visite,
+   chez celui qu'on visite.
 5. ~~Le modèle de la conversation~~ — décidé le 12 novembre 2026 (délégué) : le plus capable du compte, le petit en
    secours (`OPENAI_UNIVERS_MODEL`).
-6. Ce que voit un inconnu de mon univers, par défaut : proposé, « mes proches seulement ».
+6. Ce que voit un inconnu de mon univers, par défaut — le propriétaire, le 12 novembre 2026 : « pourquoi seulement
+   mes proches ? Ça pourrait être sympa de voir les univers des autres, ça ne risque rien ». Proposé en réponse, à
+   confirmer au lot 6 : **son univers visible de tous** (le décor, sa figurine chez elle) ; **ses clés** (ses propres
+   phrases, tirées de sa conversation avec Pablito) et **les souvenirs déposés** réservés à ses proches ; de 15 à 17
+   ans, « mes proches » par défaut ; chacun peut choisir « mes proches » ou « moi seul ».
 7. ~~**Le rituel du jour (lot R)**~~ — tranché le 11 novembre 2026, « oui pour tout » : construit maintenant sur
    l'appli d'aujourd'hui ; le mot de la fin la nuit, découvert le matin ; trois figurines au plus réagissent ; celui
    dont la figurine parle voit ses mots, les efface, peut tout couper.
