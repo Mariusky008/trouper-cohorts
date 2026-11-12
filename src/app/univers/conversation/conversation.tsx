@@ -375,9 +375,9 @@ function Validee({ etat }: { etat: EtatConversation }) {
       <img className="cv-pablito-grand" src={imageVisage("euphorie", "n")} alt="" />
       <p className="cv-titre">{PHRASES_FIXES.validee}</p>
       {etat.proposition && <p className="cv-texte">{etat.proposition.texte}</p>}
-      <button type="button" className="cv-bouton" disabled>
-        La création de ton univers : bientôt
-      </button>
+      <a className="cv-bouton cv-vers" href="/univers/monde">
+        Créer mon univers
+      </a>
       <a className="cv-lien" href="/univers/figurine">
         Revoir ma figurine
       </a>
@@ -396,6 +396,7 @@ const STYLES = `
 .cv-bouton{min-height:52px;border:0;border-radius:16px;background:#2b1a0c;color:#fff6e6;font-size:18px;font-weight:800;box-shadow:0 6px 16px rgba(43,26,12,.25)}
 .cv-bouton.clair{background:rgba(255,250,240,.85);color:#2b1a0c;box-shadow:none;border:2px solid #2b1a0c}
 .cv-bouton:disabled{opacity:.45}
+.cv-vers{display:flex;align-items:center;justify-content:center;text-decoration:none}
 .cv-lien{align-self:center;border:0;background:none;color:#4a3017;font-size:16px;text-decoration:underline;padding:8px}
 .cv-lien.petit{font-size:13px;opacity:.75}
 .cv-duo{display:flex;align-items:flex-end;justify-content:center;gap:4px}

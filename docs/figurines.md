@@ -2279,6 +2279,40 @@ l'admin). Le propriétaire a délégué trois décisions (« fais ce que tu pens
 **La suite** : le lot 4 — la création de son univers (le décor « Film, chaleureux » d'après sa fiche, ses places relevées,
 la découverte avec sa figurine assise dedans, « les clés de ton univers »).
 
+### 9.0 untricies 🏡 Son univers, créé et découvert, à l'adresse d'essai (12 novembre) — lot 4a
+
+Les écrans 8 à 10 de l'inscription « Univers » (feuille de route, lot 4), réservés au propriétaire (`/univers/monde`,
+une session d'administrateur ; après « C'est mon univers ! », « Créer mon univers » ; lien dans l'admin).
+
+- **La création**, après la réponse, pour la version en cours de la fiche de son univers (lot 3) :
+  1. **le décor** d'après SA fiche (ce que Pablito a imaginé, les éléments, la lumière, les couleurs, les règles — des
+     données, jamais des consignes), dans le style validé au lot 0, « Film, chaleureux » (`STYLE_FILM_CHALEUREUX`),
+     sans figurine, une scène dégagée devant, la lumière de gauche (`consigneDecorDuMonde`) ;
+  2. **les places** : un modèle qui voit relève où sa figurine s'assoit (et un invité), d'où vient la lumière, et où est
+     chaque élément sur le décor (`questionPlaces`) ; sans lui, les places d'attente restent ;
+  3. **l'image vedette** : sa figurine (lot 2) chez elle, dans son décor, avec un sourire fier — la scène générée
+     validée au lot 0 (`consigneVedette`).
+  Chaque image est signée et rangée dans sa version (`<habitant>/monde/v<n>/decor.png`, `vedette.png`) ; Pablito
+  construit à l'écran (le décor, les places, « je t'installe chez toi »).
+- **La découverte**, en plein écran : la première fois, **la brume se lève** ; son décor, sa figurine assise à sa place
+  (sa taille, son ombre), « 🗣️ Fais-la parler » ; **« L'image à partager »** (l'image vedette), « 📤 Partager mon
+  univers » (le partage du téléphone).
+- **« 🔑 Les clés de ton univers »** : des points sur les objets (quand le modèle les a situés) et leur liste ; un toucher :
+  « Tu m'as dit : « … » » (sa phrase), ou « J'ai imaginé : … ».
+- **Les retouches avec ses mots** (des idées toutes prêtes : « Davantage de nature », « Plus de lumière »…) : une
+  nouvelle version, le même décor où une seule chose change (`consigneRetoucheDecor`), ses places et sa vedette
+  refaites ; **trois offertes, puis une par jour** ; ni mots interdits, ni alcool. **« Revenir à la version
+  d'avant »** : une nouvelle version, recopiée, sans rien refaire.
+- **Le code** : `monde-consignes.ts` (les consignes validées, sorties de la page d'essais, mot pour mot),
+  `univers-creation.ts`, `univers-creation-serveur.ts` (`<habitant>/monde/creation.json`), `app/api/direct/univers`,
+  `app/univers/monde` ; `completerMonde` (`fiches-serveur.ts`) ; la fiche de l'univers garde ses retouches.
+- **Le coût** : deux images hautes à la création (le décor, la vedette : 6 à 8 centimes) et un regard ; autant par
+  retouche.
+- **Les essais** : `scripts/essai-univers-route.mjs` et `scripts/navigateur/univers-monde.mjs`.
+
+**La suite (lot 4b)** : le fauteuil aux couleurs de son univers (« ton fauteuil a pris les couleurs de ton monde »), et
+« Mon univers » comme écran d'accueil.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

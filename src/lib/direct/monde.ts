@@ -59,6 +59,8 @@ export type FicheMonde = {
   references: { decor?: Reference; vedette?: Reference };
   visibilite: Visibilite;
   souvenirs: Souvenir[];
+  /** ✏️ les retouches qu'il a demandées avec ses mots, dans l'ordre (la dernière : celle de son décor) */
+  retouches?: string[];
   historique: Etape[];
 };
 
@@ -144,6 +146,8 @@ export function ficheMondeValide(x: unknown): FicheMonde | null {
     historique: etapesValides(o.historique),
   };
   if (date(o.validee_le)) f.validee_le = date(o.validee_le);
+  const retouches = textes(o.retouches, 10);
+  if (retouches.length) f.retouches = retouches;
   return f;
 }
 

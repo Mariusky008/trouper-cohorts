@@ -515,6 +515,13 @@ l'univers. « Mon univers » devient l'écran d'accueil.
 
 **On a réussi si** les gens partagent leur univers sans qu'on le leur demande.
 
+**Construit, à l'adresse d'essai (12 novembre 2026) — la première moitié (4a)** : `/univers/monde`, réservée au
+propriétaire ; le détail : `docs/figurines.md`, 9.0 untricies. La création (le décor d'après sa fiche, « Film,
+chaleureux » ; les places relevées par un modèle qui voit ; l'image vedette), la découverte en plein écran (la brume,
+sa figurine assise à sa place), « Les clés de ton univers », l'image vedette à partager, les retouches avec ses mots
+(trois offertes, puis une par jour), revenir à la version d'avant. **Reste (4b)** : le fauteuil aux couleurs de
+l'univers, « Mon univers » comme écran d'accueil.
+
 ### Lot 5 — Le premier usage : le proche qui entre
 
 - **Le message qui sort** (WhatsApp, lien) : la vidéo montre sa figurine dans **son** univers. C'est le moteur vidéo

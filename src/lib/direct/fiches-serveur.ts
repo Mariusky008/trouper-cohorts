@@ -173,6 +173,25 @@ export async function completerReferencesPerso(supabase: Supabase, h: string, ve
 }
 
 /**
+ * 🧩 SON UNIVERS, COMPLÉTÉ (lot 4) : son décor, son image vedette, ses places relevées sur le décor, où sont ses
+ * éléments — ajoutés à la version en cours, sans en faire une nouvelle (ce qu'il a validé ne change pas).
+ */
+export async function completerMonde(
+  supabase: Supabase,
+  h: string,
+  version: number,
+  maj: { references?: FicheMonde["references"]; scene?: FicheMonde["scene"]; zones?: Record<string, [number, number, number, number]> },
+): Promise<{ fiche?: FicheMonde; error?: string }> {
+  const f = await lireFicheMonde(supabase, h);
+  if (!f || f.version !== version) return { error: "Son univers a changé entre-temps." };
+  const elements = maj.zones ? f.elements.map((e) => (maj.zones?.[e.id] ? { ...e, zone: maj.zones[e.id] } : e)) : f.elements;
+  const complete = ficheMondeValide({ ...f, references: { ...f.references, ...(maj.references ?? {}) }, ...(maj.scene ? { scene: maj.scene } : {}), elements });
+  if (!complete || !mondeEstASoi(complete, h)) return { error: "Cette fiche ne tient pas." };
+  const ok = (await ecrireJson(supabase, cheminFicheVersion(h, "monde", version), complete)) && (await ecrireJson(supabase, cheminFicheEnCours(h, "monde"), complete));
+  return ok ? { fiche: complete } : { error: "La fiche n'a pas pu être rangée." };
+}
+
+/**
  * ↩️ REVENIR À UNE VERSION : une nouvelle version, recopiée de celle-là (ses images ne sont pas refaites ; sa
  * validation est gardée). La version 0 de son personnage est sa figurine d'aujourd'hui.
  */
