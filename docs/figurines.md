@@ -2229,6 +2229,49 @@ gens de Dax gardent leur figurine d'aujourd'hui jusqu'à son feu vert.
 refaites à la prochaine visite, Pablito au nouveau style), et les visages du nouveau style (faits à la demande, comme
 aujourd'hui).
 
+### 9.0 tricies 💬 La conversation avec Pablito, à l'adresse d'essai (12 novembre) — lot 3
+
+Les écrans 5 à 7 de l'inscription « Univers » (feuille de route, section 6), réservés au propriétaire
+(`/univers/conversation`, une session d'administrateur ; après « C'est moi ! », « Découvrir ton univers » ; lien dans
+l'admin). Le propriétaire a délégué trois décisions (« fais ce que tu penses être le mieux ») : voir plus bas.
+
+- **La transition** : Pablito, sa figurine, et ses trois phrases (« Ta figurine est prête ! Maintenant, j'aimerais
+  découvrir ce qui fait ton univers… », « une interprétation artistique… pas un diagnostic », « tu peux t'arrêter
+  quand tu veux »), « C'est parti ».
+- **La conversation, à l'écrit** : la première question est fixe (« raconte-moi un endroit où tu te sens vraiment
+  bien »), puis Pablito rebondit — une question à la fois, courte, jamais deux fois la même ; « Je préfère ne pas en
+  parler » d'un toucher. **🎙️ La dictée** : un toucher pour parler, un pour finir ; sa voix devient du texte (la
+  transcription du talkie-walkie), qu'il relit avant d'envoyer — rien n'est gardé du son. Pablito répond **après la
+  réponse** du serveur (les points qui écrivent), l'écran relit.
+- **L'esquisse** : à chaque échange, l'écran prend trois couleurs de son univers, des vignettes apparaissent (« la
+  mer », « l'atelier ») ; rien n'est généré.
+- **En coulisse, les trois colonnes** : ce qu'il a dit (avec SA phrase, retrouvée mot pour mot dans ses messages, au
+  moins trois mots — sinon c'est une interprétation), ce qu'on interprète (pourquoi), ce qu'on ne sait pas.
+- **La proposition** (« ✨ Voir ce que j'imagine », dès que Pablito a de quoi faire) : « Je t'imagine dans… » (un lieu,
+  jamais sa personnalité), la lumière et trois couleurs, « Ce que tu m'as dit » (sa phrase), « Ce que j'imagine »,
+  « Ce que je ne sais pas encore » ; il retire un élément, corrige avec ses mots (six fois au plus) ; **« C'est mon
+  univers ! »** : la fiche de son univers, version 1 (`monde.ts` : la proposition, l'ambiance, les éléments vérifiés une
+  dernière fois, deux places en attendant de les relever sur le décor, « mes proches » par défaut). Le lot 4 la met
+  en image.
+- **Les garde-fous** : jamais de diagnostic, jamais de vie amoureuse (il a peut-être 15 ans), ni de genre supposé ;
+  **un sujet sensible** (santé, religion, politique, orientation, origines, argent) : son message n'est pas gardé
+  (« gardé pour toi ») et ne repart jamais au modèle ; **quelqu'un qui va mal** (ses mots, ou le modèle le voit) : la
+  conversation s'arrête de jouer, le message d'aide de Pablito et les numéros, d'un toucher (le 3114, le 119, le 15 ou
+  le 112) ; il reprend quand il veut. Rien d'alcoolisé, aucune marque, aucune personne célèbre. « Effacer la
+  conversation » : rien n'en reste.
+- **Ses décisions déléguées** : le message d'aide (`MESSAGE_AIDE`, `NUMEROS_AIDE`) ; le modèle (`OPENAI_UNIVERS_MODEL`,
+  sinon `gpt-5.4`, et `gpt-5.4-mini` en secours ; la clé des textes de l'appli, sans nouvelle clé) ; Pablito sans voix,
+  ses phrases fixes prêtes à enregistrer (`PHRASES_FIXES`). Sans modèle : des questions de secours, pas de proposition.
+- **Le code** : `conversation-univers.ts`, `conversation-univers-serveur.ts` (`<habitant>/monde/conversation.json`),
+  `app/api/direct/conversation-univers`, `app/univers/conversation` ; `/admin/univers/figurine` et
+  `/admin/univers/conversation` mènent aux bonnes adresses (une adresse tapée de travers, le 12 novembre).
+- **Le coût** : une demande de texte par échange, et une par proposition ou correction (quelques centimes par
+  conversation).
+- **Les essais** : `scripts/essai-conversation-univers-route.mjs` et `scripts/navigateur/conversation-univers.mjs`.
+
+**La suite** : le lot 4 — la création de son univers (le décor « Film, chaleureux » d'après sa fiche, ses places relevées,
+la découverte avec sa figurine assise dedans, « les clés de ton univers »).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

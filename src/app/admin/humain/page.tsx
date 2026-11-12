@@ -87,6 +87,7 @@ export default async function AdminHumainPage() {
         { href: "/admin/humain/figurines-clients", label: "Les figurines des clients" },
         { href: "/admin/humain/univers-essais", label: "Univers : les essais du lot 0" },
         { href: "/univers/figurine", label: "Univers : la nouvelle figurine (essai)" },
+        { href: "/univers/conversation", label: "Univers : la conversation avec Pablito (essai)" },
         { href: "/admin/humain/memes", label: "Les mèmes : ça marche ?" },
         { href: "/admin/humain/lieux-publics", label: "Les lieux publics d’« Autour »" },
         { href: "/admin/humain/ville", label: "La ville · signalements" },
