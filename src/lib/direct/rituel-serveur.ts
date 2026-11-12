@@ -76,7 +76,7 @@ async function quiEst(supabase: Supabase, h: string): Promise<QuiRituel | null> 
 }
 
 /** « Ma figurine parle pour moi » : allumé d'office, il le coupe dans « Moi ». */
-async function parlePourLui(supabase: Supabase, h: string): Promise<boolean> {
+export async function parlePourLui(supabase: Supabase, h: string): Promise<boolean> {
   return (await lireJson<{ rituel?: boolean }>(supabase, cheminReglages(h))).rituel !== false;
 }
 
@@ -250,8 +250,8 @@ async function sesFigurinesDuJour(supabase: Supabase, h: string, sans: readonly 
   );
 }
 
-const iaBranchee = () => Boolean(s(process.env.OPENAI_MEME_API_KEY) || s(process.env.OPENAI_API_KEY));
-const motPasse = (t: string) => Boolean(t) && !motInterdit(t) && !parleDAlcool(t);
+export const iaBranchee = () => Boolean(s(process.env.OPENAI_MEME_API_KEY) || s(process.env.OPENAI_API_KEY));
+export const motPasse = (t: string) => Boolean(t) && !motInterdit(t) && !parleDAlcool(t);
 
 /** Un mot par figurine, écrit par le petit modèle de texte. `null` : pas de modèle (les mots de secours). */
 async function ecrireParLeModele(prenom: string, humeur: Sentiment, auteurs: Auteur[]): Promise<(string | null)[] | null> {
@@ -422,7 +422,7 @@ async function finParLeModele(premier: { prenom: string; style: string }, second
 }
 
 /** Sa façon de parler (sa carte de personnage), pour le modèle. */
-async function styleDe(supabase: Supabase, h: string): Promise<string> {
+export async function styleDe(supabase: Supabase, h: string): Promise<string> {
   const carte = await lire<Gardee>(supabase, cheminCarte(h));
   const f = carte?.fiche;
   return [s(f?.titre), s(f?.facon), s(carte?.phrase) ? `sa phrase : « ${s(carte?.phrase)} »` : ""].filter(Boolean).join(" — ").slice(0, 300);

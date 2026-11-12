@@ -135,7 +135,9 @@ parle qu'avec des voix enregistrées, jamais avec une voix de synthèse.
 - **Le mème du jour**, chaque jour, vers 11 h 30.
 - **Les réponses** : « Hugo t'a répondu ! ».
 - **La figurine du mois**, qui se mérite en dix jours.
-- **Les proches**, qui te parlent par leur figurine.
+- **Les proches**, qui te parlent par leur figurine — et leur conversation vit : sa figurine se penche quand il prépare
+  un message, brandit un panneau (« J'arrive ! »), applaudit ton message, danse ou s'endort dans les silences ; après
+  un vrai échange, vos deux figurines font un aparté (écrit par l'IA, vous le voyez tous les deux).
 - **Les messages WhatsApp**, qui font entrer de nouvelles personnes.
 
 ## 5. Et les commerçants ?

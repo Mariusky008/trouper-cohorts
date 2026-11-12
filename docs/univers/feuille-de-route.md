@@ -662,8 +662,9 @@ humeur toute la journée dans son univers et dans les conversations (affalée, o
 
 **5. La conversation vivante — lot R4** (le propriétaire, le 12 novembre 2026 : « qu'est-ce qui va être différenciant,
 mis à part nos figurines qui parlent et qui bougent ? Il faut qu'il y ait une utilité et du dynamisme dans cette
-scène » ; puis « oui » au premier lot proposé). **Prévu, pas construit** ; il touche la scène de la conversation
-(`proches.tsx`), qu'une seule session doit reprendre à la fois.
+scène » ; puis « oui » au premier lot proposé, et « on attaque le lot R4 »). **Construit (12 novembre 2026), R4a et
+R4b** — `docs/figurines.md`, 9.0 novatricies 🎭. Il touche la scène de la conversation (`proches.tsx`), qu'une seule
+session doit reprendre à la fois.
 - **R4a, sans IA — les figurines vivantes** : quand l'autre enregistre, sa figurine se penche, main levée, « … » ;
   pendant les silences, elles s'étirent, regardent leur téléphone (20 s), puis selon l'humeur du jour se lèvent et
   dansent (sur la musique de l'univers), s'affalent ou croisent les bras (1 min), puis s'endorment, zZz (3 min) ; un
