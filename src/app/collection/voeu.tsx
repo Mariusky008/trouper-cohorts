@@ -3,14 +3,15 @@
 /**
  * ✨ « MON VŒU » DANS « DÉCOUVRIR » (11 novembre 2026 — `lib/direct/voeu.ts` pour la règle ; le propriétaire : « je
  * pensais que c'était plutôt dans l'onglet Découvrir que Mon vœu se passait »). Les premières pages de Découvrir :
- *   · LA PREMIÈRE : la rangée de bulles — la sienne d'abord (son vœu, « 6 j » ; ou « + Ton vœu »), puis les réponses à
- *     son vœu (un anneau rose tant qu'il ne les a pas vues, « AIDE » pour une aide) — et « Ta mission du jour 0/3 » :
- *     les trois vœux à encourager, en petit, et « Encourager · 1 minute » ;
+ *   · LA PREMIÈRE : son vœu en grand (sa figurine le dit, « 6 jours en route », les vues ; sans vœu : « ✨ Fais un
+ *     vœu »), la rangée des réponses à son vœu (un anneau rose tant qu'il ne les a pas vues, « AIDE » pour une aide) — et
+ *     « Ta mission du jour 0/3 » : les trois vœux à encourager, en petit, et « Encourager · 1 minute » (personne d'autre
+ *     dans sa ville : « 📲 Inviter mes amis ») ;
  *   · LES TROIS VŒUX DE SA MISSION, en plein écran : la figurine de l'autre dit son vœu ; il l'encourage avec SES têtes
  *     déjà faites (un mot en sticker), propose son aide (une phrase écrite, ou SA voix), passe (l'autre ne le saura
  *     jamais), ou signale ;
  *   · « MISSION ACCOMPLIE » : la série (la flamme), « demain, ton vœu passe en premier » ;
- * puis le mème du jour et les mèmes, comme avant. Toucher sa bulle : « Fais un vœu », ou la page de son vœu (le compteur,
+ * puis le mème du jour et les mèmes, comme avant. Toucher son vœu : sa page (le compteur,
  * les têtes qui y croient, les réponses, « Faire évoluer »). Toucher une réponse : elle s'ouvre en grand.
  * Jamais de voix de synthèse : une aide est écrite (dans la bulle de sa figurine), ou dite avec SA voix.
  */
@@ -33,8 +34,9 @@ import {
 import { OngletVisible } from "./guide";
 import { Feuille } from "./ma-figurine";
 import { demanderOui } from "./fenetre";
+import { ouvrirConversation } from "./rituel";
 
-type Reponse = { ok?: boolean; error?: string; etat?: EtatVoeu; mission?: Mission; phrases?: string[]; texte?: string; categorie?: CleCategorie; dixHuit?: boolean };
+type Reponse = { ok?: boolean; error?: string; etat?: EtatVoeu; mission?: Mission; phrases?: string[]; texte?: string; categorie?: CleCategorie; dixHuit?: boolean; cle?: string; prenom?: string };
 async function demander(corps: Record<string, unknown>): Promise<Reponse> {
   const r = await fetch("/api/direct/voeu", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
   const j = (await r.json().catch(() => ({}))) as Reponse;
@@ -269,7 +271,7 @@ function JePeuxAider({ carte, moi, onFermer, onMission }: { carte: CarteVoeu | n
           <button type="button" className="tj-go vx-envoyer" disabled={!pret || envoi || micro.enreg} onClick={() => void envoyer()}>
             {envoi ? "Ta figurine part…" : "Envoyer ma figurine"}
           </button>
-          <p className="vx-note">{carte.prenom} la verra dans les réponses à son vœu. Jamais de numéro : vous vous parlez par vos figurines.</p>
+          <p className="vx-note">{carte.prenom} la verra dans les réponses à son vœu ; si {carte.prenom} te répond, vous devenez proches et continuez avec vos figurines. Jamais de numéro.</p>
         </>
       )}
     </Feuille>
@@ -308,7 +310,10 @@ function CarteMission({ c, k, mission, moi, onGeste, onAider }: { c: CarteVoeu; 
         <div className="vx-qui">
           <span>
             <b>{c.prenom}</b>
-            <small>Son vœu, jour {c.jours}</small>
+            <small>
+              Son vœu, jour {c.jours}
+              {c.ville ? ` · ${c.ville}` : ""}
+            </small>
           </span>
           {cat && (
             <em>
@@ -351,9 +356,14 @@ function CarteMission({ c, k, mission, moi, onGeste, onAider }: { c: CarteVoeu; 
         <button type="button" className="vx-second" disabled={envoi || Boolean(c.geste)} onClick={() => void geste("passe")}>
           Passer
         </button>
-        <button type="button" className="tj-go vx-aide" disabled={envoi || Boolean(c.geste)} onClick={() => onAider(c)}>
-          ✋ Je peux aider
-        </button>
+        {c.loin ? (
+          // (un vœu « sur place » d'une autre ville : on l'encourage d'ici, on ne peut pas y aider)
+          <span className="vx-loin">📍 Ce vœu se réalise à {c.ville || "une autre ville"} : encourage-le avec ta tête</span>
+        ) : (
+          <button type="button" className="tj-go vx-aide" disabled={envoi || (Boolean(c.geste) && c.geste !== "encourage")} onClick={() => onAider(c)}>
+            ✋ Je peux aider
+          </button>
+        )}
       </div>
       <p className="vx-note">
         {c.prenom} ne saura jamais que tu as passé ·{" "}
@@ -490,7 +500,7 @@ function FaisUnVoeu({ ouverte, remplacer, etat, onFermer, onEtat }: { ouverte: b
 }
 
 // ─── 🙂 une réponse, en grand (les réponses défilent) ────────────────────────────────────────────────────────────────
-function Reponses({ liste, depart, onFermer, onSignaler }: { liste: ReponseVoeu[]; depart: number | null; onFermer: () => void; onSignaler: (r: ReponseVoeu) => void }) {
+function Reponses({ liste, depart, onFermer, onSignaler, onRepondre, onParler }: { liste: ReponseVoeu[]; depart: number | null; onFermer: () => void; onSignaler: (r: ReponseVoeu) => void; onRepondre: (r: ReponseVoeu, oui: boolean) => void; onParler: (r: ReponseVoeu) => void }) {
   const [i, setI] = useState(depart ?? 0);
   const r = depart === null ? null : liste[i];
   useEffect(() => {
@@ -528,6 +538,27 @@ function Reponses({ liste, depart, onFermer, onSignaler }: { liste: ReponseVoeu[
         </span>
       </div>
       {r.son && <audio key={r.id} className="vx-story-son" src={r.son} autoPlay controls />}
+      {/* ✋ UNE AIDE : lui répondre avec sa figurine (ils deviennent proches), ou « Pas pour moi » (la maquette 4b) */}
+      {r.genre === "aide" && !r.decision && (
+        <div className="vx-story-gestes">
+          <button type="button" className="tj-go" onClick={() => onRepondre(r, true)}>
+            Lui répondre avec ma figurine
+          </button>
+          <button type="button" className="vx-second" onClick={() => onRepondre(r, false)}>
+            Pas pour moi
+          </button>
+          <small>Si tu lui réponds, vous devenez proches. Jamais de numéro.</small>
+        </div>
+      )}
+      {r.decision === "accepte" && (
+        <div className="vx-story-gestes">
+          <button type="button" className="tj-go" onClick={() => onParler(r)}>
+            🎙️ Parler à {r.prenom}
+          </button>
+          <small>✓ Vous êtes proches.</small>
+        </div>
+      )}
+      {r.decision === "refuse" && <small className="vx-story-pas">Pas pour toi : {r.prenom} ne le saura pas.</small>}
       {r.genre === "aide" && (
         <button type="button" className="vx-lien vx-story-signaler" onClick={() => onSignaler(r)}>
           Signaler
@@ -624,7 +655,7 @@ function PageMonVoeu({ ouverte, etat, onFermer, onEtat, onRemplacer, onOuvrir }:
                     <span>
                       <b>
                         {r.prenom}
-                        {r.genre === "aide" && <em>AIDE</em>}
+                        {r.genre === "aide" && <em>{r.decision === "accepte" ? "PROCHE" : "AIDE"}</em>}
                       </b>
                       <small>{r.texte ? r.texte : r.son ? "🎙️ Un message avec sa voix" : `${r.emoji ?? ""} ${r.mot ?? ""}`.trim()}</small>
                     </span>
@@ -680,6 +711,8 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
   const [aider, setAider] = useState<CarteVoeu | null>(null);
   const [story, setStory] = useState<number | null>(null);
   const [message, setMessage] = useState("");
+  // 👯 il vient de répondre à une aide : « Marius et toi, proches ! » (la maquette 4d)
+  const [proche, setProche] = useState<{ cle: string; prenom: string; tete: string } | null>(null);
   useEffect(() => {
     if (!visible) return;
     let fini = false;
@@ -699,6 +732,8 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
   const v = etat.voeu;
   const nouvelles = etat.reponses.filter((r) => !r.vue);
   const bulles = [...nouvelles, ...etat.reponses.filter((r) => r.vue)].slice(0, 12);
+  const aidesEnAttente = etat.reponses.filter((r) => r.genre === "aide" && !r.decision);
+  const aideEnAttente = aidesEnAttente[0] ?? null;
   const poserMission = (m: Mission) => setEtat((e) => (e ? { ...e, mission: m } : e));
   /** Son geste est parti : sa tête se voit un instant sur la scène, puis le vœu suivant (ou « Mission accomplie »). */
   const suivant = (m: Mission, attente: number) =>
@@ -729,7 +764,48 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
     setStory(Math.max(0, etat.reponses.findIndex((x) => x.id === r.id)));
     if (nouvelles.length) void voirLesReponses();
   };
-  /** Il a vu ses réponses : le badge s'éteint (ici tout de suite, et sur le serveur). */
+  /** ✋ Il répond à une aide : « Lui répondre avec ma figurine » (ils deviennent proches), ou « Pas pour moi ». */
+  async function repondreAide(r: ReponseVoeu, oui: boolean) {
+    setMessage("");
+    try {
+      const j = await demander({ action: "aide-reponse", vue: r.id, oui });
+      if (j.etat) setEtat(j.etat);
+      setStory(null);
+      setPage(false);
+      if (oui && j.cle) setProche({ cle: j.cle, prenom: j.prenom || r.prenom, tete: r.tete });
+    } catch (e) {
+      setMessage((e as Error).message);
+    }
+  }
+  /** 🎙️ Leur conversation, dans « Proches » (le talkie-walkie des figurines). */
+  function parlerA(cle: string) {
+    setProche(null);
+    setStory(null);
+    setPage(false);
+    allerA("proches");
+    ouvrirConversation(cle);
+  }
+  /** 📲 « Inviter mes amis » (sa mission est vide : personne d'autre n'a de vœu dans sa ville) — le partage du téléphone,
+   *  sinon le lien copié. */
+  async function inviter() {
+    const url = `${window.location.origin}/collection`;
+    const texte = "Sur ClikMe, on fait un vœu avec sa figurine, et on s’encourage. Fais le tien !";
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: "ClikMe", text: texte, url });
+      } catch {
+        /* (il a refermé le partage) */
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(`${texte} ${url}`);
+      setMessage("Lien copié : colle-le à tes amis.");
+    } catch {
+      setMessage(url);
+    }
+  }
+    /** Il a vu ses réponses : le badge s'éteint (ici tout de suite, et sur le serveur). */
   async function voirLesReponses() {
     setEtat((e) => (e ? { ...e, nonVues: 0, reponses: e.reponses.map((x) => ({ ...x, vue: true })) } : e));
     await demander({ action: "vues" }).catch(() => undefined);
@@ -743,7 +819,7 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
 
   return (
     <>
-      {/* ✨ LA PREMIÈRE PAGE : sa bulle, les réponses, la mission du jour */}
+      {/* ✨ LA PREMIÈRE PAGE : son vœu (en grand), les réponses, la mission du jour */}
       <section className="dv-diapo vx-accueil" id="voeu" aria-label="Mon vœu et ma mission du jour">
         <header className="vx-entete">
           <span className="og-tete">
@@ -769,28 +845,69 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
                 </button>
               </p>
             )}
-            <ul className="vx-bulles" aria-label="Ton vœu et ses réponses">
-              <li>
-                <button type="button" className={`vx-bulle vx-bulle-moi${v ? "" : " vide"}`} onClick={ouvrirMoi} aria-label={v ? `Mon vœu : ${v.texte}` : "Faire un vœu"}>
-                  <span className="vx-rond">
-                    {etat.moi && <Im src={etat.moi.neutre} />}
-                    <em>{v ? (v.statut === "pause" ? "⏸️" : `${v.jours} j`) : "+"}</em>
+            {/* ✨ SON VŒU, EN GRAND (la maquette 2 de l'ingénieur ; le 12 novembre 2026, le propriétaire : sa petite bulle
+                « 1 j » ne montrait pas son vœu) : sa figurine le dit ; un toucher, sa page */}
+            {v && (
+              <button type="button" className="vx-scene-moi vx-mon-voeu" onClick={ouvrirMoi} aria-label={`Mon vœu : ${v.texte}`}>
+                {etat.moi && <Im src={etat.moi.neutre} className="vx-moi-fig" />}
+                <span className="vx-dit">{v.texte}</span>
+                <span className="vx-compteur">
+                  <b>{v.jours}</b> {v.jours > 1 ? "jours en route" : "jour en route"}
+                </span>
+                <span className="vx-vues">{v.statut === "pause" ? "⏸️ En pause" : `👁 ${pluriel(v.vues, "vue", "vues")}`}</span>
+              </button>
+            )}
+            {!v && etat.adulte !== null && (
+              <button type="button" className="vx-faire-un" onClick={() => setFaire("nouveau")}>
+                <span aria-hidden="true">✨</span>
+                <span>
+                  <b>Fais un vœu</b>
+                  <small>Une envie ? Quelqu’un de {etat.ville || "ta ville"} peut t’aider à la réaliser.</small>
+                </span>
+              </button>
+            )}
+            {bulles.length > 0 && (
+              <ul className="vx-bulles" aria-label="Les réponses à ton vœu">
+                {bulles.map((r) => (
+                  <li key={r.id}>
+                    <button type="button" className={`vx-bulle${r.vue ? "" : " neuve"}${r.genre === "aide" ? " aide" : ""}`} onClick={() => ouvrirReponse(r)} aria-label={`La réponse de ${r.prenom}`}>
+                      <span className="vx-rond">
+                        <Im src={r.tete} />
+                        {(r.genre === "aide" || !r.vue) && <em>{r.genre === "aide" ? "AIDE" : "NEW"}</em>}
+                      </span>
+                      <small>{r.prenom}</small>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {/* ✋ QUELQU'UN PEUT L'AIDER (12 novembre 2026, le propriétaire : « il n'y a rien qui spécifie que quelqu'un
+                peut l'aider ») : la plus récente des aides auxquelles il n'a pas encore répondu, en grand */}
+            {aideEnAttente && (
+              <div className="vx-aide-carte">
+                <button type="button" className="vx-aide-haut" onClick={() => ouvrirReponse(aideEnAttente)}>
+                  <Im src={aideEnAttente.tete} className="vx-aide-tete" />
+                  <span>
+                    <b>✋ {aideEnAttente.prenom} peut t’aider</b>
+                    <small>{ilYA(aideEnAttente.le)}</small>
                   </span>
-                  <small>{v ? "Mon vœu" : "Ton vœu"}</small>
                 </button>
-              </li>
-              {bulles.map((r) => (
-                <li key={r.id}>
-                  <button type="button" className={`vx-bulle${r.vue ? "" : " neuve"}${r.genre === "aide" ? " aide" : ""}`} onClick={() => ouvrirReponse(r)} aria-label={`La réponse de ${r.prenom}`}>
-                    <span className="vx-rond">
-                      <Im src={r.tete} />
-                      {(r.genre === "aide" || !r.vue) && <em>{r.genre === "aide" ? "AIDE" : "NEW"}</em>}
-                    </span>
-                    <small>{r.prenom}</small>
+                {aideEnAttente.texte && <p className="vx-dit">{aideEnAttente.texte}</p>}
+                {aideEnAttente.son && <audio src={aideEnAttente.son} controls preload="none" />}
+                <div className="vx-boutons">
+                  <button type="button" className="vx-second" onClick={() => void repondreAide(aideEnAttente, false)}>
+                    Pas pour moi
                   </button>
-                </li>
-              ))}
-            </ul>
+                  <button type="button" className="tj-go" onClick={() => void repondreAide(aideEnAttente, true)}>
+                    Lui répondre avec ma figurine
+                  </button>
+                </div>
+                <p className="vx-note">
+                  Si tu lui réponds, vous devenez proches : vous continuez avec vos figurines. Jamais de numéro.
+                  {aidesEnAttente.length > 1 ? ` (${aidesEnAttente.length - 1} autre${aidesEnAttente.length > 2 ? "s" : ""} : touche leurs bulles.)` : ""}
+                </p>
+              </div>
+            )}
             {etat.adulte === null ? (
               <QuestionAge onEtat={setEtat} />
             ) : (
@@ -825,7 +942,15 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
                       )}
                     </>
                   ) : (
-                    <p>Personne n’a encore de vœu à te montrer aujourd’hui. {v ? "Le tien part chez les gens de " + (etat.ville || "ta ville") + "." : "Fais le premier !"}</p>
+                    <>
+                      <p className="vx-vide-mission">
+                        Pas encore d’autre vœu à {etat.ville || "ta ville"} aujourd’hui. Invite tes amis : leurs vœux arriveront ici
+                        {v ? ", et ils encourageront le tien." : "."}
+                      </p>
+                      <button type="button" className="tj-go vx-inviter" onClick={() => void inviter()}>
+                        📲 Inviter mes amis
+                      </button>
+                    </>
                   )}
                 </div>
               )
@@ -839,15 +964,6 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
                 </span>
                 <span>
                   <b>{pluriel(v.croient, "figurine croit", "figurines croient")}</b> en ton vœu
-                </span>
-              </button>
-            )}
-            {!v && etat.adulte !== null && (
-              <button type="button" className="vx-faire-un" onClick={() => setFaire("nouveau")}>
-                <span aria-hidden="true">✨</span>
-                <span>
-                  <b>Fais un vœu</b>
-                  <small>Une envie ? Quelqu’un de {etat.ville || "ta ville"} peut t’aider à la réaliser.</small>
                 </span>
               </button>
             )}
@@ -928,7 +1044,37 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
           setStory(k);
         }}
       />
-      {story !== null && <Reponses key={story} liste={etat.reponses} depart={story} onFermer={() => setStory(null)} onSignaler={(r) => void signalerReponse(r)} />}
+      {story !== null && (
+        <Reponses
+          key={story}
+          liste={etat.reponses}
+          depart={story}
+          onFermer={() => setStory(null)}
+          onSignaler={(r) => void signalerReponse(r)}
+          onRepondre={(r, oui) => void repondreAide(r, oui)}
+          onParler={(r) => r.cle && parlerA(r.cle)}
+        />
+      )}
+      {/* 👯 « Marius et toi, proches ! » (la maquette 4d) */}
+      <Feuille ouverte={proche !== null} onFermer={() => setProche(null)} titre="Vous êtes proches" className="vx-feuille vx-proches">
+        {proche && (
+          <>
+            <span className="vx-proches-tetes" aria-hidden="true">
+              {etat.moi && <Im src={etat.moi.neutre} />}
+              <i>★</i>
+              <Im src={proche.tete} />
+            </span>
+            <b className="vx-proches-titre">{proche.prenom} et toi, proches !</b>
+            <p className="tf-feuille-dit">Ta figurine peut lui parler dans « Proches », avec vos figurines. Jamais de numéro.</p>
+            <button type="button" className="tj-go" onClick={() => parlerA(proche.cle)}>
+              🎙️ Parler à {proche.prenom}
+            </button>
+            <button type="button" className="vx-second" onClick={() => setProche(null)}>
+              Plus tard
+            </button>
+          </>
+        )}
+      </Feuille>
     </>
   );
 }
@@ -951,11 +1097,7 @@ export const STYLES_VOEU = `
 .vx-rond img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 14%;background:#3A1530;box-shadow:0 0 0 2px #1A0914}
 .vx-bulle.neuve .vx-rond{background:linear-gradient(135deg,#FF2E9A,#FF7A59)}
 .vx-bulle.aide .vx-rond{background:linear-gradient(135deg,#FF2E9A,#F2C46B)}
-.vx-bulle-moi .vx-rond{background:linear-gradient(135deg,#F2C46B,#FFE7B8)}
-.vx-bulle-moi.vide .vx-rond img{opacity:.55}
 .vx-rond em{position:absolute;left:50%;bottom:-5px;transform:translateX(-50%);padding:1px 7px;border-radius:999px;background:#FF2E9A;color:#fff;font-style:normal;font-size:10px;font-weight:900;letter-spacing:.04em;white-space:nowrap;box-shadow:0 0 0 2px #1A0914}
-.vx-bulle-moi .vx-rond em{background:#F2C46B;color:#2A1220}
-.vx-bulle-moi.vide .vx-rond em{bottom:auto;top:50%;transform:translate(-50%,-50%);width:30px;height:30px;padding:0;display:grid;place-items:center;font-size:22px;line-height:1;border-radius:50%}
 .vx-bulle small{max-width:72px;font-size:12px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vx-mission{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:22px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
 .vx-mission-tete{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -971,6 +1113,31 @@ export const STYLES_VOEU = `
 .vx-minis small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:11.5px;font-weight:800;line-height:1.25}
 .vx-encourager{margin-top:2px}
 .vx-croient{display:flex;align-items:center;gap:10px;padding:0;border:0;background:none;color:#E8D3DC;font:inherit;font-size:13px;text-align:left;cursor:pointer}
+.vx-mon-voeu{width:100%;border:0;color:#FFF4E6;font:inherit;text-align:left;cursor:pointer}
+.vx-mon-voeu .vx-dit{display:block}
+.vx-mon-voeu .vx-compteur,.vx-mon-voeu .vx-vues{display:flex}
+.vx-vide-mission{line-height:1.45}
+.vx-aide-carte{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:22px;background:linear-gradient(135deg,rgba(255,46,154,.2),rgba(242,196,107,.12));box-shadow:inset 0 0 0 1.5px rgba(255,46,154,.6)}
+.vx-aide-haut{display:flex;align-items:center;gap:12px;padding:0;border:0;background:none;color:#FFF4E6;font:inherit;text-align:left;cursor:pointer}
+.vx-aide-haut span{display:flex;flex-direction:column}
+.vx-aide-haut b{font-size:17px;font-weight:900}
+.vx-aide-haut small{font-size:12px;color:#E8D3DC}
+.vx-aide-tete{flex:none;width:56px;height:56px;border-radius:16px;object-fit:cover;object-position:50% 14%;background:#FF2E9A}
+.vx-aide-carte .vx-dit{font-size:16px}
+.vx-aide-carte audio{width:100%;height:40px}
+.vx-story-gestes{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:8px}
+.vx-story-gestes .tj-go{margin:0}
+.vx-story-gestes .vx-second{width:100%;background:rgba(0,0,0,.18)}
+.vx-story-gestes small,.vx-story-pas{position:relative;z-index:2;font-size:12px;text-align:center;opacity:.9}
+.vx-proches .tf-feuille-corps{align-items:center;text-align:center}
+.vx-proches-tetes{display:flex;align-items:center;gap:0;margin:6px 0 4px}
+.vx-proches-tetes img{width:96px;height:96px;border-radius:26px;object-fit:cover;object-position:50% 14%;background:#FF2E9A;box-shadow:0 0 0 3px #1A0914}
+.vx-proches-tetes img:last-child{transform:rotate(6deg);margin-left:-14px}
+.vx-proches-tetes img:first-child{transform:rotate(-6deg)}
+.vx-proches-tetes i{position:relative;z-index:2;display:grid;place-items:center;width:40px;height:40px;margin:0 -20px;border-radius:50%;background:#F2C46B;color:#2A1220;font-style:normal;font-size:20px}
+.vx-proches-titre{font-size:24px;font-weight:900}
+.vx-proches .tj-go,.vx-proches .vx-second{width:100%}
+.vx-inviter{margin-top:2px}
 .vx-croient b{color:#FFF4E6}
 .vx-visages{display:flex;flex:none}
 .vx-visages img{width:30px;height:30px;margin-right:-8px;border-radius:50%;object-fit:cover;object-position:50% 16%;background:#3A1530;box-shadow:0 0 0 2px #1A0914}
@@ -1024,7 +1191,8 @@ export const STYLES_VOEU = `
 .vx-tetes small{font-size:11.5px;font-weight:800;white-space:nowrap}
 .vx-boutons{display:grid;grid-template-columns:auto 1fr;gap:10px}
 .vx-boutons .tj-go{margin:0}
-.vx-carte.faite .vx-tetes,.vx-carte.faite .vx-boutons{opacity:.45}
+.vx-loin{display:flex;align-items:center;padding:8px 14px;border-radius:18px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);font-size:12.5px;font-weight:700;line-height:1.3;color:#E8D3DC}
+.vx-carte.faite .vx-tetes,.vx-carte.faite .vx-boutons .vx-second,.vx-carte.faite .vx-loin,.vx-aide:disabled{opacity:.45}
 /* 🔥 mission accomplie */
 .vx-fini{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:calc(70px + env(safe-area-inset-top)) 22px calc(130px + env(safe-area-inset-bottom));text-align:center;background:radial-gradient(70% 40% at 50% 34%,rgba(255,122,89,.35),transparent 70%),#12060F}
 .vx-fini-flamme{font-size:84px;line-height:1;filter:drop-shadow(0 14px 28px rgba(255,122,89,.8));animation:dv-flotte 3s ease-in-out infinite}

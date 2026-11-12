@@ -13,6 +13,8 @@
 // POST { action: "surprise", sauf?: [textes] } → { texte, categorie, par } : 🎲 la tuile « Surprise ».
 // POST { action: "vues" } : il a vu ses réponses (le badge s'éteint).
 // POST { action: "signaler-reponse", vue } : l'auteur signale une réponse (elle ne s'affiche plus).
+// POST { action: "aide-reponse", vue, oui } → { cle?, prenom?, etat } : ✋ il répond à une aide — « Lui répondre avec ma
+//      figurine » (ils deviennent proches : `cle` ouvre leur conversation) ou « Pas pour moi » (l'autre ne le saura pas).
 // Toutes les réponses : `{ ok: true, etat }` (l'état à jour), sauf mention.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -27,6 +29,7 @@ import {
   pauseVoeu,
   phrasesPourAider,
   publierVoeu,
+  repondreAide,
   signalerReponse,
   voeuSurprise,
 } from "@/lib/direct/voeu-serveur";
@@ -96,7 +99,12 @@ export async function POST(request: Request) {
       await marquerReponsesVues(supabase, moi);
       return NextResponse.json({ ok: true }, { headers: sansCache });
     }
-    case "signaler-reponse": {
+    case "aide-reponse": {
+      const r = await repondreAide(supabase, moi, p.vue, p.oui);
+      if (r.error) return erreur(r);
+      return NextResponse.json({ ok: true, cle: r.cle, prenom: r.prenom, etat: await etatVoeu(supabase, moi) }, { headers: sansCache });
+    }
+        case "signaler-reponse": {
       const r = await signalerReponse(supabase, moi, p.vue);
       return r.error ? erreur(r) : etat();
     }

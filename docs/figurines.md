@@ -2064,8 +2064,32 @@ qu'elle en a fait, une seule fois par vœu et par personne ; `clik_voeu_serie`) 
 l'éditeur SQL de Supabase** ; tant qu'elle ne l'est pas, « Découvrir » reste comme avant. L'essai :
 `scripts/navigateur/voeu.mjs`.
 
-**La suite** : le lot 2 — les réponses du soir en plein écran (stories), répondre avec sa tête, « Lui répondre avec ma
-figurine » (accepter une aide : ils deviennent proches), les notifications (la mission avec le mème du jour, les
+**Le 12 novembre, après le premier essai du propriétaire** (à Bordeaux, seul : « une fois que j'ai fait mon vœu, j'ai
+cet écran » ; puis, avec deux comptes : « il n'y a rien qui spécifie que quelqu'un peut l'aider, et ensuite avoir la
+suite pour savoir comment ils vont s'entraider ») :
+
+- **Son vœu, en grand, en haut de la page** (la maquette 2) : sa figurine le dit, « 1 jour en route », les vues ; un
+  toucher, sa page. La petite bulle « 1 j » est partie ; la rangée de bulles ne montre plus que ses réponses. Sans vœu :
+  « ✨ Fais un vœu », en haut.
+- **La mission vide dit vrai** : « Pas encore d'autre vœu à Bordeaux aujourd'hui. Invite tes amis : leurs vœux
+  arriveront ici, et ils encourageront le tien », et **« 📲 Inviter mes amis »** (le partage du téléphone, sinon le lien
+  copié).
+- **Les vœux d'ailleurs, même ceux où il faut être là** (sa réponse : « oui, pour encourager ») : quand sa ville n'en a
+  pas assez, après ceux qui peuvent être exaucés de loin, viennent ceux de Bouger, Sortir, Coup de main, Du monde, d'une
+  autre ville — on les encourage avec sa tête ; « Je peux aider » cède la place à « 📍 Ce vœu se réalise à Vevey :
+  encourage-le avec ta tête » (et la route refuse une aide). Sa ville est écrite sur la carte (« Son vœu, jour 10 ·
+  Vevey »).
+- **« ✋ Marius peut t'aider »**, en grand sur la page de l'auteur, tant qu'il n'y a pas répondu : sa tête, sa phrase (ou
+  sa voix), **« Lui répondre avec ma figurine »** et **« Pas pour moi »** (aussi sur la réponse en grand, la maquette 4b).
+  Lui répondre : **ils deviennent proches** (chacun dans les proches de l'autre), « Marius et toi, proches ! » (la
+  maquette 4d), **« 🎙️ Parler à Marius »** ouvre leur conversation dans « Proches » — le talkie-walkie des figurines,
+  jamais un numéro. « Pas pour moi » : l'autre ne le saura jamais. Le choix est gardé dans
+  `<auteur>/voeux/aides-<vœu>.json` (pas de nouvelle migration).
+- **« Je peux aider » après sa tête** : le propriétaire avait encouragé d'abord, et l'aide ne s'ouvrait plus. L'aide
+  prend maintenant la place de sa tête (gardée), et l'auteur la voit comme une nouvelle réponse.
+
+**La suite** : le lot 2 — les réponses du soir en plein écran (stories), répondre avec sa tête, la réponse vocale dans la
+foulée d'« Lui répondre » (aujourd'hui : la conversation s'ouvre dans « Proches »), les notifications (la mission avec le mème du jour, les
 réponses à 19 h), la série partout ; le lot 3 — « Exaucé » (la fête, le merci, le mème de la victoire, les compteurs,
 la carte de personnage, « Mes vœux » dans « Moi »), la reformulation proposée après cinq jours sans aide, et le retrait
 de la question du jour (après avoir changé la source de la phrase du mois et de l'étape qui s'en servent). Et une

@@ -19,6 +19,10 @@ const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content
 const lire = async (t, q) => (await fetch(`${F}/${t}?${q}`)).json();
 const deposer = (chemin, corps, type) => fetch(`${STOCK}/figurines-clients/${chemin}`, { method: "POST", headers: { "content-type": type }, body: corps });
 const json = (chemin, x) => deposer(chemin, JSON.stringify(x), "application/json");
+const lireStock = async (chemin) => {
+  const r = await fetch(`${STOCK}/figurines-clients/${chemin}`);
+  return r.ok ? r.json().catch(() => null) : null;
+};
 
 const personne = (k, prenom, ville) => ({ id: `eeeeeeee-0000-4000-8000-0000000003${String(k).padStart(2, "0")}`, jeton: `jeton-voeu-${String(k).padStart(2, "0")}-000000000000`, prenom, ville });
 const LEA = personne(1, "Léa", "dax");
@@ -71,9 +75,10 @@ const texte = async (p, sel) => (await p.locator(sel).first().innerText({ timeou
 const debordement = (p) => p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 const etat = (p) => p.evaluate(async () => (await (await fetch("/api/direct/voeu", { cache: "no-store" })).json()).etat);
 const ouvrir = async (p, ancre = "") => {
-  await p.goto(`${BASE}/collection${ancre}`, { waitUntil: "networkidle" });
+  // (une adresse neuve à chaque fois : un simple changement d'ancre ne recharge pas la page)
+  await p.goto(`${BASE}/collection?v=${Date.now()}${ancre}`, { waitUntil: "networkidle" });
   await fermerPablito(p, "#o-decouvrir");
-  await p.waitForSelector("#o-decouvrir #voeu .vx-bulles", { timeout: 60000 });
+  await p.waitForSelector("#o-decouvrir #voeu .vx-entete", { timeout: 60000 });
 };
 /** La page de la carte `k` de la mission tient-elle l'écran ? */
 const enHaut = (p, id) => p.evaluate((i) => Math.abs(Math.round(document.getElementById(i)?.getBoundingClientRect().top ?? 999)) <= 2, id);
@@ -91,14 +96,14 @@ await ines.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
 await fermerPablito(ines);
 await ines.waitForSelector("#o-decouvrir #voeu .vx-age", { timeout: 60000 });
 ok(!(await ines.locator("#o-decouvrir").isHidden()) && (await ines.locator(".mc-nav button.pris").innerText()).includes("Découvrir") && (await ines.evaluate(() => location.hash)) === "#decouvrir", "son premier mème déjà fait, sans adresse : l'appli s'ouvre sur « Découvrir »");
-ok((await texte(ines, "#voeu .vx-bulle-moi")).includes("Ton vœu") && (await texte(ines, "#voeu .vx-bulle-moi em")) === "+", "sa bulle d'abord : « + Ton vœu »");
+ok((await ines.locator("#voeu .vx-mon-voeu").count()) === 0 && (await ines.locator("#voeu .vx-bulles").count()) === 0, "pas encore de vœu, ni de réponse");
 ok((await texte(ines, "#voeu .vx-age")).includes("As-tu 18 ans ou plus ?") && (await ines.locator("#voeu .vx-mission").count()) === 0, "avant sa première mission : « As-tu 18 ans ou plus ? » (une fois)");
 await ines.screenshot({ path: `${D}/voeu-1-age.png` });
 await ines.locator("#voeu .vx-age .tj-go").click();
 await ines.waitForSelector("#voeu .vx-mission", { timeout: 20000 });
 ok((await texte(ines, "#voeu .vx-mission-tete")) === "Ta mission du jour 0/3" && (await ines.locator("#voeu .vx-minis button").count()) === 3, "« Ta mission du jour 0/3 » : trois vœux, en petit");
 const minis = await ines.locator("#voeu .vx-minis small").allInnerTexts();
-ok(minis[0].startsWith("Quelqu’un pour courir") && minis[1].startsWith("Apprendre trois accords") && minis[2].startsWith("Des conseils pour lancer"), `sa ville d'abord (Léa, Hugo), puis un vœu de loin (Zoé) — jamais Max (sur place, à Vevey), jamais Tom (15-17 ans) : ${minis.map((x) => x.slice(0, 18)).join(" · ")}`);
+ok(minis[0].startsWith("Quelqu’un pour courir") && minis[1].startsWith("Apprendre trois accords") && minis[2].startsWith("Des conseils pour lancer"), `sa ville d'abord (Léa, Hugo), puis un vœu d'ailleurs qui peut être exaucé de loin (Zoé), avant Max (sur place, à Vevey) — jamais Tom (15-17 ans) : ${minis.map((x) => x.slice(0, 18)).join(" · ")}`);
 ok((await texte(ines, "#voeu .vx-faire-un")).includes("Quelqu’un de Dax peut t’aider"), "et « ✨ Fais un vœu » (sa ville nommée)");
 ok((await debordement(ines)) <= 0, "la première page ne déborde pas");
 await ines.screenshot({ path: `${D}/voeu-2-accueil.png` });
@@ -153,7 +158,7 @@ await ines.waitForTimeout(500);
 ok((await texte(ines, "#voeu .vx-mission-tete")) === "Ta mission du jour 3/3" && (await ines.locator("#voeu .vx-minis button.faite").count()) === 3 && (await ines.locator("#voeu .vx-encourager").count()) === 0 && (await texte(ines, "#voeu .vx-entete .vx-flamme")) === "🔥 1", "en haut : 3/3, les trois cochés, 🔥 1");
 
 // ═══ INÈS FAIT SON VŒU ═══
-await ines.locator("#voeu .vx-bulle-moi").click();
+await ines.locator("#voeu .vx-faire-un").click();
 await ines.waitForSelector(".vx-faire.ouverte .vx-tuiles", { timeout: 10000 });
 const tuiles = (await ines.locator(".vx-faire .vx-tuiles button").allInnerTexts()).map((x) => x.replace(/\s+/g, " ").trim());
 ok(tuiles.length === 8 && tuiles.join("|").includes("Du monde") && tuiles.at(-1).endsWith("Surprise"), `huit tuiles, dont « Surprise » (${tuiles.join(" · ")})`);
@@ -178,15 +183,16 @@ ok((await debordement(ines)) <= 0 && !/exemple/i.test(await texte(ines, ".vx-fai
 await ines.screenshot({ path: `${D}/voeu-7-faire.png` });
 await ines.locator(".vx-faire .vx-publier").click();
 await ines.waitForSelector(".vx-faire:not(.ouverte)", { state: "attached", timeout: 15000 });
-await ines.waitForFunction(() => document.querySelector("#voeu .vx-bulle-moi em")?.textContent === "1 j", null, { timeout: 15000 });
-ok((await texte(ines, "#voeu .vx-bulle-moi")).includes("Mon vœu"), "« ✨ Publier mon vœu » : sa bulle dit « 1 j », « Mon vœu »");
+await ines.waitForSelector("#voeu .vx-mon-voeu", { timeout: 15000 });
+const sonVoeu = await texte(ines, "#voeu .vx-mon-voeu");
+ok(sonVoeu.includes("au bord de l’Adour") && sonVoeu.includes("1 jour en route") && sonVoeu.includes("0 vue") && (await ines.locator("#voeu .vx-faire-un").count()) === 0, `« ✨ Publier mon vœu » : son vœu, en grand, en haut de la page — sa figurine le dit, « 1 jour en route », « 0 vue » (${sonVoeu})`);
 const [sien] = await lire("clik_voeu", `habitant_id=eq.${INES.id}`);
 ok(sien?.categorie === "bouger" && sien.ville_slug === "dax" && sien.adulte === true && sien.a_distance === false && sien.statut === "en_route", "son vœu : Bouger, à Dax, d'adulte, sur place, en route");
 
 // ═══ LÉA : LA TÊTE D'INÈS ═══
 const lea = await tel(LEA);
 await ouvrir(lea, "#decouvrir");
-ok((await texte(lea, "#voeu .vx-bulle-moi em")) === "6 j" && (await texte(lea, "#voeu .vx-ce-soir")).startsWith("1 nouvelle réponse"), "Léa : « 6 j » sur sa bulle, « 1 nouvelle réponse »");
+ok((await texte(lea, "#voeu .vx-mon-voeu .vx-compteur")) === "6 jours en route" && (await texte(lea, "#voeu .vx-ce-soir")).startsWith("1 nouvelle réponse"), "Léa : son vœu, « 6 jours en route », « 1 nouvelle réponse »");
 const bulleInes = lea.locator("#voeu .vx-bulle.neuve");
 ok((await bulleInes.count()) === 1 && (await texte(lea, "#voeu .vx-bulle.neuve")).includes("Inès") && (await texte(lea, "#voeu .vx-bulle.neuve em")) === "NEW", "la bulle d'Inès, un anneau rose, « NEW »");
 await bulleInes.click();
@@ -200,7 +206,7 @@ for (let k = 0; k < 20 && nonVues; k++) {
   if (nonVues) await lea.waitForTimeout(200);
 }
 ok(nonVues === 0 && (await lea.locator("#voeu .vx-bulle.neuve").count()) === 0, "vue : le badge s'éteint");
-await lea.locator("#voeu .vx-bulle-moi").click();
+await lea.locator("#voeu .vx-mon-voeu").click();
 await lea.waitForSelector(".vx-page.ouverte .vx-reponses", { timeout: 10000 });
 const page = await texte(lea, ".vx-page");
 ok(page.includes("Quelqu’un pour courir avec moi le dimanche matin") && page.includes("6 jours en route") && page.includes("1 vue") && page.includes("1 figurine croit en ton vœu") && page.includes("Inès"), "la page de son vœu : 6 jours en route, 1 vue, 1 figurine croit en ton vœu, la réponse d'Inès");
@@ -214,13 +220,13 @@ await lea.waitForFunction(() => document.querySelector(".vx-page .vx-scene-moi .
 ok((await texte(lea, ".vx-page .vx-compteur")) === "6 jours en route", "reformulé : « … aux Arènes », et le compteur continue (6 jours)");
 await lea.locator(".vx-page .vx-options button", { hasText: "Le mettre en pause" }).click();
 await lea.waitForSelector(".vx-page .vx-pause", { timeout: 10000 });
-ok((await texte(lea, "#voeu .vx-bulle-moi em")) === "⏸️" && (await lea.locator(".vx-page .vx-options button", { hasText: "Le reprendre" }).count()) === 1, "en pause : « ⏸️ » sur sa bulle, « ▶️ Le reprendre »");
+ok((await texte(lea, "#voeu .vx-mon-voeu .vx-vues")) === "⏸️ En pause" && (await lea.locator(".vx-page .vx-options button", { hasText: "Le reprendre" }).count()) === 1, "en pause : « ⏸️ En pause » sur son vœu, « ▶️ Le reprendre »");
 await lea.locator(".vx-page .vx-options button", { hasText: "Le reprendre" }).click();
 await lea.waitForSelector(".vx-page .vx-pause", { state: "detached", timeout: 10000 });
 await lea.locator(".vx-page .vx-options button", { hasText: "L’annuler" }).click();
 const qAnnuler = await repondreFenetre(lea, true);
-await lea.waitForFunction(() => document.querySelector("#voeu .vx-bulle-moi em")?.textContent === "+", null, { timeout: 10000 });
-ok(qAnnuler.includes("Annuler ton vœu") && (await lire("clik_voeu", "id=eq.voeulea00001"))[0]?.statut === "annule", "« 🗑️ L'annuler » (une question d'abord) : sa bulle redevient « + »");
+await lea.waitForSelector("#voeu .vx-faire-un", { timeout: 10000 });
+ok(qAnnuler.includes("Annuler ton vœu") && (await lire("clik_voeu", "id=eq.voeulea00001"))[0]?.statut === "annule" && (await lea.locator("#voeu .vx-mon-voeu").count()) === 0, "« 🗑️ L'annuler » (une question d'abord) : « ✨ Fais un vœu » revient à sa place");
 
 // ═══ HUGO : L'AIDE ; ZOÉ : RIEN (ELLE NE SAURA JAMAIS QU'INÈS A PASSÉ) ═══
 const hugo = await tel(HUGO);
@@ -229,6 +235,24 @@ ok((await texte(hugo, "#voeu .vx-bulle.aide em")) === "AIDE" && (await texte(hug
 await hugo.locator("#voeu .vx-bulle.aide").click();
 await hugo.waitForSelector(".vx-story", { timeout: 10000 });
 ok((await texte(hugo, ".vx-story .vx-story-dit")) === phrase && (await texte(hugo, ".vx-story .vx-sticker")) === "✋ PEUT T’AIDER", `l'aide en grand : « ${phrase} », « PEUT T'AIDER »`);
+ok((await hugo.locator(".vx-story .vx-story-gestes .tj-go").innerText()).includes("Lui répondre avec ma figurine") && (await hugo.locator(".vx-story .vx-story-gestes .vx-second").innerText()).includes("Pas pour moi"), "et deux boutons : « Lui répondre avec ma figurine », « Pas pour moi »");
+await hugo.locator(".vx-story-fermer").click();
+// ✋ en haut de sa page, en grand : « Inès peut t'aider » (12 novembre 2026, le propriétaire : « il n'y a rien qui
+// spécifie que quelqu'un peut l'aider, et ensuite avoir la suite pour savoir comment ils vont s'entraider »)
+const aideCarte = await texte(hugo, "#voeu .vx-aide-carte");
+ok(aideCarte.includes("✋ Inès peut t’aider") && aideCarte.includes(phrase) && aideCarte.includes("Lui répondre avec ma figurine") && aideCarte.includes("Pas pour moi") && aideCarte.includes("vous devenez proches"), `sa page : « ✋ Inès peut t'aider », sa phrase, et les deux boutons (${aideCarte.slice(0, 90)})`);
+await hugo.screenshot({ path: `${D}/voeu-8b-aide.png` });
+await hugo.locator("#voeu .vx-aide-carte .tj-go").click();
+await hugo.waitForSelector(".vx-proches.ouverte .vx-proches-titre", { timeout: 15000 });
+const prochesHugo = await lireStock(`${HUGO.id}/proches.json`);
+const prochesInes = await lireStock(`${INES.id}/proches.json`);
+ok((await texte(hugo, ".vx-proches .vx-proches-titre")) === "Inès et toi, proches !" && prochesHugo?.ids?.includes(INES.id) && prochesInes?.ids?.includes(HUGO.id), "« Lui répondre avec ma figurine » : « Inès et toi, proches ! » — chacun dans les proches de l'autre");
+await hugo.screenshot({ path: `${D}/voeu-8c-proches.png` });
+await hugo.locator(".vx-proches .tj-go").click();
+await hugo.waitForSelector(".pr-plein .pr-qui", { timeout: 30000 });
+ok(!(await hugo.locator("#o-proches").isHidden()) && (await texte(hugo, ".pr-plein .pr-qui")).includes("Inès"), "« 🎙️ Parler à Inès » : leur conversation s'ouvre dans « Proches », avec leurs figurines");
+await ouvrir(hugo, "#voeu");
+ok((await hugo.locator("#voeu .vx-aide-carte").count()) === 0 && (await etat(hugo)).reponses.find((r) => r.genre === "aide")?.decision === "accepte", "sa page : l'aide n'attend plus de réponse (« PROCHE » dans ses réponses)");
 const zoe = await tel(ZOE);
 await zoe.goto(`${BASE}/collection#voeu`, { waitUntil: "networkidle" });
 const ez = await etat(zoe);
@@ -241,12 +265,23 @@ await ouvrir(tom, "#decouvrir");
 await tom.locator("#voeu .vx-age .vx-second").click();
 const qTom = await repondreFenetre(tom, true);
 await tom.waitForSelector("#voeu .vx-mission", { timeout: 15000 });
-ok(qTom.includes("15 et 17 ans") && (await texte(tom, "#voeu .vx-mission")).includes("Personne n’a encore de vœu à te montrer") && (await tom.locator("#mission-0").count()) === 0, "Tom (15-17 ans, une question d'abord) : aucun vœu d'adulte à encourager");
+const videTom = await texte(tom, "#voeu .vx-mission");
+ok(qTom.includes("15 et 17 ans") && videTom.includes("Pas encore d’autre vœu à Dax aujourd’hui") && videTom.includes("ils encourageront le tien") && (await tom.locator("#voeu .vx-inviter").count()) === 1 && (await tom.locator("#mission-0").count()) === 0, `Tom (15-17 ans, une question d'abord) : aucun vœu d'adulte à encourager — « Invite tes amis », « 📲 Inviter mes amis » (${videTom})`);
+// 📲 « Inviter mes amis » : le partage du téléphone (ici, celui du navigateur, attrapé)
+await tom.evaluate(() => {
+  window.__partage = null;
+  navigator.share = async (d) => {
+    window.__partage = d;
+  };
+});
+await tom.locator("#voeu .vx-inviter").click();
+const partage = await tom.evaluate(() => window.__partage);
+ok(partage?.url?.endsWith("/collection") && partage.text.includes("on fait un vœu avec sa figurine"), `le partage : le lien de ClikMe, et « ${partage?.text} »`);
 const eTom = await etat(tom);
 ok(eTom.adulte === false && eTom.voeu?.texte?.includes("ollie"), "son âge est gardé ; son vœu à lui reste en route");
 const reponse = await tom.evaluate(async () => (await fetch("/api/direct/voeu", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "dix-huit", oui: true }) })).json());
 ok(reponse.etat?.adulte === false, "et un « non » ne se change pas en « oui »");
-await tom.locator("#voeu .vx-bulle-moi").click();
+await tom.locator("#voeu .vx-mon-voeu").click();
 await tom.waitForSelector(".vx-page.ouverte", { timeout: 10000 });
 await tom.locator(".vx-page .vx-evoluer").click();
 await tom.locator(".vx-page .vx-options button", { hasText: "En faire un autre" }).click();
@@ -260,15 +295,57 @@ await ouvrir(sam, "#decouvrir");
 const minisSam = await sam.locator("#voeu .vx-minis small").allInnerTexts();
 const kHugo = minisSam.findIndex((x) => x.startsWith("Apprendre trois accords"));
 ok(kHugo >= 0, `Sam reçoit le vœu de Hugo (${minisSam.map((x) => x.slice(0, 16)).join(" · ")})`);
+// 🙂 puis ✋ : Sam encourage le vœu d'Inès avec sa tête, puis propose aussi son aide (12 novembre 2026 : sa tête ne ferme
+// plus « Je peux aider »)
+const kInes = minisSam.findIndex((x) => x.includes("au bord de l’Adour"));
+await sam.evaluate((k) => document.getElementById(`mission-${k}`)?.scrollIntoView(), kInes);
+await sam.locator(`#mission-${kInes} .vx-tetes button`).nth(1).click();
+await sam.waitForSelector(`#mission-${kInes} .vx-pose .vx-sticker`, { timeout: 10000 });
+await sam.waitForTimeout(1300);
+await sam.evaluate((k) => document.getElementById(`mission-${k}`)?.scrollIntoView(), kInes);
+ok(!(await sam.locator(`#mission-${kInes} .vx-aide`).isDisabled()) && (await sam.locator(`#mission-${kInes} .vx-boutons .vx-second`).isDisabled()), "après sa tête, « Je peux aider » reste possible (« Passer », non)");
+await sam.locator(`#mission-${kInes} .vx-aide`).click();
+await sam.waitForSelector(".vx-aider.ouverte .vx-phrases button", { timeout: 10000 });
+await sam.locator(".vx-aider .vx-phrases button:not(.vx-libre)").nth(1).click();
+await sam.locator(".vx-aider .vx-envoyer").click();
+await sam.waitForSelector(".vx-aider:not(.ouverte)", { state: "attached", timeout: 10000 });
+const vueSam = (await lire("clik_voeu_vue", `destinataire_id=eq.${SAM.id}&auteur_id=eq.${INES.id}`))[0];
+ok(vueSam?.geste === "aide" && vueSam.tete === "tropbien" && !vueSam.vu_le, "son aide prend la place de sa tête (gardée), et Inès la verra comme une nouvelle réponse");
 await sam.evaluate((k) => document.getElementById(`mission-${k}`)?.scrollIntoView(), kHugo);
 await sam.locator(`#mission-${kHugo} .vx-note .vx-lien`).click();
 const qSignaler = await repondreFenetre(sam, true);
 await sam.waitForSelector(`#mission-${kHugo} .vx-pose-passe`, { timeout: 10000 });
 ok(qSignaler.includes("Signaler ce vœu") && Boolean((await lire("clik_voeu", "id=eq.voeuhugo0001"))[0]?.signale_le), "« Signaler » (une question d'abord) : le vœu de Hugo est mis de côté");
+// ✋ Inès : « Sam peut t'aider » — « Pas pour moi » (Sam ne le saura jamais)
+await ouvrir(ines, "#voeu");
+await ines.waitForSelector("#voeu .vx-aide-carte", { timeout: 15000 });
+ok((await texte(ines, "#voeu .vx-aide-carte")).includes("✋ Sam peut t’aider") && (await texte(ines, "#voeu .vx-bulle.aide em")) === "AIDE", "Inès : « ✋ Sam peut t'aider », et sa bulle « AIDE »");
+await ines.locator("#voeu .vx-aide-carte .vx-second").click();
+await ines.waitForSelector("#voeu .vx-aide-carte", { state: "detached", timeout: 10000 });
+const sonVoeuInes = (await lire("clik_voeu", `habitant_id=eq.${INES.id}`))[0];
+const decisionsInes = await lireStock(`${INES.id}/voeux/aides-${sonVoeuInes.id}.json`);
+ok(Object.values(decisionsInes ?? {}).some((d) => d.choix === "refuse") && !(await lireStock(`${SAM.id}/proches.json`))?.ids?.includes(INES.id), "« Pas pour moi » : l'aide n'attend plus ; ils ne deviennent pas proches (et Sam n'en sait rien)");
 const noa = await tel(NOA);
 await ouvrir(noa, "#decouvrir");
 const minisNoa = (await noa.locator("#voeu .vx-minis small").allInnerTexts()).join("|");
 ok(!minisNoa.includes("Apprendre trois accords") && minisNoa.includes("au bord de l’Adour"), `Noa ne le reçoit plus ; le vœu d'Inès, oui (${minisNoa.slice(0, 90)})`);
+// 📍 sa ville n'a plus assez de vœux : ceux d'ailleurs, même ceux où il faut être là (Max, à Vevey) — pour l'encourager
+// avec sa tête ; « Je peux aider » cède la place à « Ce vœu se réalise à Vevey » (12 novembre 2026)
+const kMax = (await noa.locator("#voeu .vx-minis small").allInnerTexts()).findIndex((x) => x.startsWith("Un partenaire de padel"));
+ok(kMax === 2, `sa ville (Inès), puis de loin (Zoé), puis Max, sur place à Vevey (${minisNoa.slice(0, 120)})`);
+await noa.evaluate((k) => document.getElementById(`mission-${k}`)?.scrollIntoView(), kMax);
+const carteMax = await texte(noa, `#mission-${kMax}`);
+ok(carteMax.includes("Son vœu, jour 10 · Vevey") && carteMax.includes("📍 Ce vœu se réalise à Vevey : encourage-le avec ta tête") && (await noa.locator(`#mission-${kMax} .vx-aide`).count()) === 0 && (await noa.locator(`#mission-${kMax} .vx-tetes button`).count()) === 4, "la carte de Max : « Son vœu, jour 10 · Vevey » ; ses quatre têtes ; pas de « Je peux aider », mais « 📍 Ce vœu se réalise à Vevey »");
+const vueMax = (await etat(noa)).mission.cartes[kMax].vue;
+const aideMax = await noa.evaluate(async (vue) => {
+  const r = await fetch("/api/direct/voeu", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "geste", vue, geste: "aide", texte: "Je viens avec toi !" }) });
+  return { statut: r.status, ...(await r.json()) };
+}, vueMax);
+ok(aideMax.statut === 400 && aideMax.error.includes("se réalise à Vevey"), `une aide quand même (par la route) : refusée (${aideMax.error})`);
+await noa.locator(`#mission-${kMax} .vx-tetes button`).nth(2).click();
+await noa.waitForSelector(`#mission-${kMax} .vx-pose .vx-sticker`, { timeout: 10000 });
+ok((await texte(noa, `#mission-${kMax} .vx-pose .vx-sticker`)) === "COURAGE !", "sa tête, oui : « COURAGE ! »");
+await noa.screenshot({ path: `${D}/voeu-10-loin.png` });
 
 // ═══ PARTOUT : PAS D'ERREUR, RIEN QUI DÉBORDE, JAMAIS LE MOT INTERDIT ═══
 for (const [nom, p] of [["Inès", ines], ["Léa", lea], ["Hugo", hugo], ["Tom", tom], ["Sam", sam], ["Noa", noa]]) {
