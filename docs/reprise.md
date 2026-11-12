@@ -1,4 +1,4 @@
-# Reprise — où on en est, et ce qu'il reste à faire (12 novembre 2026 : le lot 0 « Univers » est fermé ; le lot 1, le socle, est construit ; prochain : le lot 2, la nouvelle figurine)
+# Reprise — où on en est, et ce qu'il reste à faire (12 novembre 2026 : lots 0 et 1 « Univers » faits ; le lot 2, la nouvelle figurine, est à l'adresse d'essai du propriétaire)
 
 Pour la session qui reprend si celle-ci s'arrête. **Mettre ce fichier à jour à chaque étape terminée** (et le dire au
 propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'un autre chantier (la démo humaine).
@@ -58,10 +58,12 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
   version 0 se lit dans `clik_ma_figurine`), `signature-serveur.ts` ; la fabrication d'aujourd'hui garde ses traits
   et la signature de ses images ; `GET /api/direct/perso`, `/api/admin/direct/fiches`. Détail : `docs/figurines.md`,
   9.0 duodetricies.
-- **La suite** : le lot 2 (la nouvelle figurine : selfie, fabrication « Sculptée, détourée » avec ses références
-  assise / bouche ouverte / debout, la découverte dans son fauteuil, les retouches avec ses mots, « C'est moi ! »),
-  à une adresse d'essai réservée au propriétaire ; les consignes validées quittent `univers-essais.ts` pour un module
-  à elles. Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les essais
+- **Le lot 2 (la nouvelle figurine) est construit à l'adresse d'essai** `/univers/figurine`, réservée au propriétaire
+  (une session d'administrateur) : selfie, atelier, découverte dans son fauteuil, retouches avec ses mots, « C'est
+  moi ! » (sa fiche, puis bouche ouverte et debout). Les consignes validées vivent dans `perso-consignes.ts` ;
+  l'appel au moteur dans `moteur-images-serveur.ts`. Détail : `docs/figurines.md`, 9.0 undetricies.
+- **La suite** : son avis sur son iPhone ; puis le feu vert pour tout le monde (les figurines d'aujourd'hui refaites
+  à la prochaine visite, Pablito au nouveau style, les visages du nouveau style) ; puis le lot 3 (la conversation). Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les essais
   tournent dans l'appli en ligne, il les regarde sur son iPhone.
 - **Un piège de vocabulaire** : dans le code d'aujourd'hui, « univers » désigne le métier ou la passion qui habille la
   figurine (`<habitant>/univers.json`, `universValide`). Le nouvel univers se range dans `<habitant>/monde/`.
