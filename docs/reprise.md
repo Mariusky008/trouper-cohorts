@@ -1,4 +1,4 @@
-# Reprise — où on en est, et ce qu'il reste à faire (11 novembre 2026 : le chantier « Univers » s'ouvre ; le rituel du jour, lots R1 et R2, est construit ; « Mon vœu », lot 1, en PR)
+# Reprise — où on en est, et ce qu'il reste à faire (12 novembre 2026 : le lot 0 « Univers » est fermé, sur le verdict du propriétaire ; prochain : le lot 1, le socle)
 
 Pour la session qui reprend si celle-ci s'arrête. **Mettre ce fichier à jour à chaque étape terminée** (et le dire au
 propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'un autre chantier (la démo humaine).
@@ -49,9 +49,13 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
   page.** À chaque série qui change les boutons, augmenter `VERSION_PAGE_ESSAIS` (`lib/direct/univers-essais.ts`) :
   une page restée ouverte d'avant affiche alors « Recharger la page » au lieu d'envoyer des choix disparus (le 12
   novembre, « Diorama miniature » refusé sur l'iPhone du propriétaire).
-- **La suite** : son verdict sur la deuxième série, écrit dans la feuille de route (lot 0), puis le lot 1 (le socle)
-  et le lot 2 (la nouvelle figurine) avec les consignes retenues. Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les
-  essais tournent dans l'appli en ligne, il les regarde sur son iPhone.
+- **Le verdict (12 novembre 2026) : le lot 0 est fermé** (le tableau : feuille de route, lot 0). La figurine :
+  « Sculptée, détourée » (la tête re-sculptée, réglage fidèle) ; la constance : validée ; les univers : « Film,
+  chaleureux » ; la scène générée par le moteur : validée ; la vraie 3D : reportée.
+- **La suite** : le lot 1 (le socle : la fiche du personnage, ses versions, la signature de chaque image ; les
+  figurines d'aujourd'hui en « version 0 »), puis le lot 2 (la nouvelle figurine, à une adresse d'essai réservée au
+  propriétaire) avec les consignes retenues. Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à
+  OpenAI y est bloqué) : les essais tournent dans l'appli en ligne, il les regarde sur son iPhone.
 - **Un piège de vocabulaire** : dans le code d'aujourd'hui, « univers » désigne le métier ou la passion qui habille la
   figurine (`<habitant>/univers.json`, `universValide`). Le nouvel univers se range dans `<habitant>/monde/`.
 
