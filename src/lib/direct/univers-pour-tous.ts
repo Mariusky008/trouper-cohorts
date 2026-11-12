@@ -6,16 +6,18 @@
  *   · ÉTEINT : les adresses du chantier (`/univers`, `/univers/figurine`, `/univers/conversation`, `/univers/monde` et
  *     leurs routes) restent réservées au propriétaire (une session d'administrateur) ; l'appli d'aujourd'hui ne change pas.
  *   · ALLUMÉ : chacun y entre avec SA figurine (son cookie d'habitant) ; sa figurine du nouveau style devient celle de
- *     l'appli (`pont-univers-serveur.ts`) ; le menu de `/collection` change (« Mon univers »).
+ *     l'appli (`pont-univers-serveur.ts`) ; le menu de `/collection` change (« Mon univers ») ; Pablito passe au
+ *     nouveau style, une fois sa figurine adoptée depuis l'admin (`pablito-univers-serveur.ts`).
  *
  * Les essais l'allument avec `CLIKME_UNIVERS_POUR_TOUS=1` (la même variable, posée chez l'hébergeur, l'allumerait aussi).
  *
  * FICHIER SERVEUR.
  */
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
+import { UNIVERS_POUR_TOUS } from "./univers-interrupteur";
 
-/** L'interrupteur : `false` tant que le propriétaire n'a pas tout vu ; `true` dans la dernière PR. */
-export const UNIVERS_POUR_TOUS = false;
+/** L'interrupteur lui-même : `univers-interrupteur.ts` (`false` tant que le propriétaire n'a pas tout vu). */
+export { UNIVERS_POUR_TOUS };
 
 /** Allumé pour tout le monde ? */
 export const universPourTous = (): boolean => UNIVERS_POUR_TOUS || process.env.CLIKME_UNIVERS_POUR_TOUS === "1";

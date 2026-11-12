@@ -8,7 +8,8 @@
 //     administratrice ; en ouvrant l'appli, sa figurine du nouveau style devient la sienne (`neutre` = son image assise,
 //     `parle` = sa bouche ouverte) ; ses visages se font au nouveau style, dans le même dossier ; Hugo, qui avait sa
 //     figurine d'aujourd'hui et vient de valider la nouvelle, la voit remplacée (son prénom gardé) ; Sam, sans figurine
-//     du nouveau style, ne change pas — l'appli l'invite à la refaire, et il peut reprendre sa photo d'avant.
+//     du nouveau style, ne change pas — l'appli l'invite à la refaire, et il peut reprendre sa photo d'avant. Pablito :
+//     la figurine de Léa adoptée depuis l'admin, servie au nouveau style seulement l'interrupteur allumé.
 //
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI ; ce script lance lui-même la seconde)
@@ -128,6 +129,48 @@ ok(ns.etape === "selfie" && decodeURIComponent(ns.photoDAvant ?? "").includes(`$
 ok((await appeler(ALLUME, SAM, "/api/direct/nouvelle-figurine", { action: "selfie", photo: "avant", moi: true, age: false })).statut === 400, "sa photo d'avant : « 15 ans ou plus » toujours à cocher");
 const sf = await appeler(ALLUME, SAM, "/api/direct/nouvelle-figurine", { action: "selfie", photo: "avant", moi: true, age: true });
 ok(sf.statut === 200 && Boolean(sf.id), `sa figurine du nouveau style se sculpte d'après sa photo d'avant (${sf.id})`);
+
+// ═══ 🧑 PABLITO AU NOUVEAU STYLE : la figurine de Léa (ici, la propriétaire) adoptée depuis l'admin ═══
+const ADMIN = "00000000-0000-4000-8000-0000000ad001";
+await semer("admins", [{ user_id: ADMIN }]);
+const b64 = (x) => Buffer.from(JSON.stringify(x)).toString("base64url");
+const session = { access_token: "faux-admin", token_type: "bearer", expires_in: 86400, expires_at: Math.floor(Date.now() / 1000) + 86400, refresh_token: "faux", user: { id: ADMIN, aud: "authenticated", role: "authenticated", email: "admin@example.invalid", app_metadata: {}, user_metadata: {} } };
+const admin = async (corps) => {
+  const r = await fetch(`${ETEINT}/api/admin/direct/pablito`, { ...(corps ? { method: "POST", body: JSON.stringify(corps) } : {}), headers: { "content-type": "application/json", cookie: `sb-127-auth-token=base64-${b64(session)}; clikme_habitant=${LEA.jeton}` } });
+  return { statut: r.status, ...(await r.json().catch(() => ({}))) };
+};
+const image = async (base, nom) => {
+  const r = await fetch(`${base}/api/direct/guide/${nom}?v=1u`, { redirect: "manual" });
+  return { statut: r.status, type: r.headers.get("content-type") ?? "", cache: r.headers.get("cache-control") ?? "", lieu: r.headers.get("location") ?? "" };
+};
+ok((await fetch(`${ETEINT}/api/admin/direct/pablito`)).status === 403, "Pablito : l'admin seulement");
+const p0 = await admin();
+ok(p0.etat?.adopte === false && (await image(ALLUME, "neutre-n")).statut === 307, "pas encore adopté : Pablito reste celui d'aujourd'hui, même allumé");
+const p1 = await admin({ action: "adopter" });
+ok(p1.statut === 200 && p1.etat?.adopte === true && p1.repris >= 1 && p1.etat.faites >= 1, `adopté : sa figurine du nouveau style devient Pablito (${p1.repris} visage(s) repris, ${p1.etat?.faites} image(s))`);
+const i0 = await image(ETEINT, "neutre-n");
+const i1 = await image(ETEINT, "colere-n");
+ok(i0.statut === 307 && i0.lieu.includes("/collection/demo-neutre.webp") && i1.type !== "image/webp", "éteint : rien ne change, l'adoption attend l'interrupteur");
+const n1 = await image(ALLUME, "neutre-n");
+const c1 = await image(ALLUME, "colere-n");
+ok(n1.statut === 200 && n1.type === "image/webp" && c1.statut === 200 && c1.cache.includes("max-age=86400"), `allumé : Pablito assis, son visage en colère repris (${n1.statut}, ${c1.statut})`);
+const avantPablito = (await ia()).length;
+const m1 = await image(ALLUME, "louche-n");
+ok(m1.statut === 200 && m1.cache.includes("max-age=60"), "une image pas encore faite : sa figurine assise en attendant (gardée une minute)");
+let pablito = [];
+for (let i = 0; i < 40 && !pablito.length; i++) {
+  await new Promise((r) => setTimeout(r, 500));
+  pablito = (await ia()).slice(avantPablito).filter((c) => c.includes("seated in its armchair"));
+}
+ok(pablito.length >= 1 && !pablito.some((c) => /spring|ressort/i.test(c)), "ce qui manque se fait après la réponse, au nouveau style");
+let p2 = await admin();
+for (let i = 0; i < 40 && !(p2.etat?.faites > p1.etat.faites); i++) {
+  await new Promise((r) => setTimeout(r, 500));
+  p2 = await admin();
+}
+ok(p2.etat?.faites === p1.etat.faites + 1, `une image de plus (${p2.etat?.faites}/${p2.etat?.faites + (p2.etat?.aFaire?.length ?? 0)})`);
+const f1 = await admin({ action: "fabriquer" });
+ok(f1.statut === 200 && Boolean(f1.fait) && f1.etat?.faites === p2.etat.faites + 1, `« Faire l'image suivante » : ${f1.fait ?? "rien"} (${f1.etat?.faites} faites)`);
 
 arreter();
 console.log(echecs ? `\n${echecs} échec(s)` : "\nla bascule tient ✓");

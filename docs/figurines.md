@@ -2548,6 +2548,44 @@ Le propriétaire, à qui l'on proposait « son univers change avec le mois » ou
   tenue du mois de l'ancien style qui ne s'assoit pas, celle du nouveau qui s'assoit et parle),
   `scripts/verifier-fiches.mjs` (chaque mois a sa touche, les consignes).
 
+### 9.0 unquadragies 🔀 La bascule « Univers pour tous » (12 novembre) — derrière un seul interrupteur
+
+Le propriétaire : « Le feu vert pour ouvrir tout cela à tout le monde : nouvel accueil et nouveau menu, figurines
+actuelles refaites, Pablito au nouveau style : OUI ». Tout est construit derrière **un seul interrupteur**,
+`UNIVERS_POUR_TOUS` (`lib/direct/univers-interrupteur.ts`, lu par l'écran aussi ; le serveur : `univers-pour-tous.ts`),
+**éteint** ; on l'allume dans une dernière PR, une fois que le propriétaire a tout vu. Les essais l'allument avec
+`CLIKME_UNIVERS_POUR_TOUS=1`, sur une seconde app (`scripts/seconde-app.mjs`).
+
+- **Éteint (aujourd'hui)** : rien ne change ; le chantier reste à l'adresse d'essai, réservée au propriétaire.
+- **Allumé — les portes** : `/univers`, `/univers/figurine`, `/univers/conversation`, `/univers/monde` et leurs routes
+  s'ouvrent à chacun, avec SA figurine (son cookie d'habitant) (`universPermis`).
+- **Allumé — le pont** (`pont-univers-serveur.ts`) : sa figurine du nouveau style devient celle de l'appli — sa ligne
+  `clik_ma_figurine` reçoit `neutre` = son image assise, `parle` = sa bouche ouverte (en ouvrant l'appli, et dès que ses
+  images sont faites) ; son ancienne figurine reste rangée. Ses visages suivent sans rien copier (le même dossier,
+  `dossierExpressions(h, <image assise>)`) ; la route des visages passe la main au nouveau style
+  (`visagesDuNouveauStyle`) : jamais un visage de l'ancien style sur la nouvelle figurine.
+- **Allumé — le menu et l'arrivée** (`ma-collection.tsx`) : **Découvrir · Autour · Créer · Proches · Mon univers** ;
+  l'appli s'ouvre sur « Mon univers » (`/univers`) — sauf une adresse précise (`#proches`, une notification), pendant la
+  fabrication d'une figurine d'aujourd'hui, ou juste avant d'installer l'appli ; « 📥 Mes mèmes » est rangé dans
+  « Mon univers » (`#memes` y mène toujours).
+- **Allumé — les figurines refaites** : dans « Créer », celui qui a sa figurine d'aujourd'hui voit « ✨ Ta figurine fait
+  peau neuve — La refaire au nouveau style » ; un nouveau venu, « 🧸 Crée ta figurine » ; « Refaire ma figurine »
+  (dans « Moi ») mène au nouveau style (`PeauNeuve`, `ma-figurine.tsx` ; l'état porte `bascule.nouveauStyle`). À
+  `/univers/figurine`, « 🖼️ Reprendre ma photo d'avant » : la photo de sa figurine d'aujourd'hui, sans nouveau selfie
+  (« C'est bien moi » et « 15 ans ou plus » toujours à cocher).
+- **Pablito au nouveau style** (`pablito-univers-serveur.ts`) : Pablito, c'est la figurine du propriétaire ; il adopte
+  SA figurine du nouveau style d'un toucher, à `/admin/humain/univers-essais` (« 🧑 Pablito au nouveau style ») : ses deux
+  images assises deviennent celles de Pablito, ses visages déjà faits sont repris ; ses autres visages, sa grimace (il
+  louche) et ses tenues du mois se font ensuite, une image par passage, au nouveau style (environ 1 € en tout, une
+  fois) — ou d'un toucher (« Faire l'image suivante »). Servi par `/api/direct/guide/<nom>` seulement l'interrupteur
+  allumé ET adopté ; en attendant une image, sa figurine assise de tous les jours. Les adresses de ses images changent
+  avec l'interrupteur (`?v=1u`) : rien de gardé en route ne montre l'ancien.
+- **Les essais** : `scripts/essai-bascule-route.mjs` (les deux positions de l'interrupteur dans la même base : les portes,
+  le pont, les visages, Hugo et Sam, la photo d'avant, Pablito adopté et servi), `scripts/navigateur/bascule-univers.mjs`
+  (l'arrivée sur « Mon univers », le menu, « Ta figurine fait peau neuve », la photo d'avant, un nouveau venu).
+- **Reste, pour la dernière PR** : allumer (`UNIVERS_POUR_TOUS = true`), après que le propriétaire a adopté sa figurine
+  comme Pablito et vu le parcours ; les essais d'aujourd'hui qui supposent l'interrupteur éteint suivront.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
