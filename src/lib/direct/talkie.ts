@@ -63,6 +63,8 @@ export type ProcheVivant = {
   venu?: boolean;
   humeur?: Sentiment;
   imageHumeur?: string;
+  /** 🏡 son univers est créé et lui est ouvert (« Univers », lot 6) : « Son univers » */
+  univers?: boolean;
 };
 /** La conversation avec un proche. */
 /** Une place de son univers (en fractions de son décor, 2:3), et la taille d'une figurine qui s'y assoit. */
