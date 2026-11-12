@@ -572,6 +572,11 @@ univers ».
 Voir la section 8. Les mèmes se jouent dans l'univers. « Découvrir » montre les figurines chez elles. Le menu change.
 La carte de personnage laisse la place à la conversation. La figurine du mois devient la saison de l'univers.
 
+**Construit (12 novembre 2026), première partie** ; le détail : `docs/figurines.md`, 9.0 septatricies 🎬🏡. Les mèmes
+se jouent dans son univers (son décor, sa figurine assise, ses visages du nouveau style) ; « Découvrir » : « 🏡 Les
+univers à visiter » (ceux ouverts à tout le monde). **Reste** : la saison de l'univers (à trancher) ; le menu et la
+carte de personnage, avec le feu vert pour tout le monde.
+
 ### Lot R — Le rituel du jour (précision du propriétaire, 11 novembre 2026)
 
 Le propriétaire : « avant toute conversation ou en début de journée, chaque utilisateur donne son état d'esprit du jour
@@ -652,7 +657,7 @@ vas-y »). Aujourd'hui, ce sont les figurines de ses proches qui lui écrivent, 
 - **Les phrases** : une dizaine par humeur, écrites d'avance et validées par le propriétaire (instantané, sans coût,
   sans risque) ; l'IA pourra les personnaliser plus tard, dans le style de sa carte de personnage.
 
-**Construit (12 novembre 2026)** — `docs/figurines.md`, 9.0 septatricies ☀️. **Reste** : que sa figurine garde son
+**Construit (12 novembre 2026)** — `docs/figurines.md`, 9.0 octatricies ☀️. **Reste** : que sa figurine garde son
 humeur toute la journée dans son univers et dans les conversations (affalée, ou en train de danser) : avec le lot R4.
 
 **5. La conversation vivante — lot R4** (le propriétaire, le 12 novembre 2026 : « qu'est-ce qui va être différenciant,

@@ -23,7 +23,7 @@ import { parleDAlcool } from "./meme-surprise";
 import { VISIBILITES, type FicheMonde, type Visibilite } from "./monde";
 import { motInterdit } from "./mots-interdits";
 import { assiseDe, hDeCle, poserProfil, seParlent } from "./talkie-serveur";
-import { MOT_SOUVENIR_MAX, SOUVENIRS_EN_ATTENTE_MAX, SOUVENIRS_POSES_MAX, motDeSouvenir, objetValide, type MesVisites, type SouvenirVu, type VueVisite } from "./visites";
+import { MOT_SOUVENIR_MAX, SOUVENIRS_EN_ATTENTE_MAX, SOUVENIRS_POSES_MAX, motDeSouvenir, objetValide, type MesVisites, type SouvenirVu, type UniversPublic, type VueVisite } from "./visites";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -32,6 +32,8 @@ const cheminVisites = (h: string) => `${h}/monde/visites.json`;
 const cheminSouvenirs = (h: string) => `${h}/monde/souvenirs.json`;
 const cheminAdulte = (h: string) => `${h}/adulte.json`;
 const cheminSignalements = (h: string) => `signalements/univers/${h}.json`;
+/** 🏡 Les univers ouverts à tous (« Découvrir », lot 7) : { liste: [{ h, le }] } — les plus récents à la fin. */
+const CHEMIN_PUBLICS = "univers/publics.json";
 
 type Visite = { de: string; le: string };
 type Souvenir = { id: string; de: string; objet: string; mot?: string; le: string; accepte_le?: string; x?: number; y?: number };
@@ -245,7 +247,27 @@ export async function choisirVisibilite(supabase: Supabase, h: string, v: unknow
     await ecrireJson(supabase, cheminAdulte(h), { le: new Date().toISOString() });
   }
   const r = await completerMonde(supabase, h, f.version, { visibilite: choix });
-  return r.fiche ? { ok: true } : { error: r.error ?? "Ça n’a pas marché.", statut: 502 };
+  if (!r.fiche) return { error: r.error ?? "Ça n’a pas marché.", statut: 502 };
+  // (🏡 « Découvrir » : il y entre quand il ouvre son univers à tous, il en sort sinon)
+  const p = await lireJson<{ liste?: { h: string; le: string }[] }>(supabase, CHEMIN_PUBLICS);
+  const sans = (Array.isArray(p.liste) ? p.liste : []).filter((x) => s(x?.h) && x.h !== h);
+  await ecrireJson(supabase, CHEMIN_PUBLICS, { liste: choix === "tous" ? [...sans, { h, le: new Date().toISOString() }].slice(-500) : sans });
+  return { ok: true };
+}
+
+/** 🏡 Les univers ouverts à tous, les plus récents d'abord (« Découvrir », lot 7) : sa figurine chez elle. */
+export async function universPublics(supabase: Supabase, limite = 12): Promise<UniversPublic[]> {
+  const p = await lireJson<{ liste?: { h: string; le: string }[] }>(supabase, CHEMIN_PUBLICS);
+  const recents = (Array.isArray(p.liste) ? p.liste : []).filter((x) => s(x?.h)).slice(-limite * 2).reverse();
+  const vus = await Promise.all(
+    recents.map(async ({ h }): Promise<UniversPublic | null> => {
+      const f = await lireFicheMonde(supabase, h).catch(() => null);
+      if (!f?.references.decor || f.visibilite !== "tous") return null;
+      const [image, { prenom }, cle] = await Promise.all([signer(supabase, (f.references.vedette ?? f.references.decor).chemin, 3600), quiEst(supabase, h), poserProfil(supabase, h)]);
+      return image ? { cle, prenom, image } : null;
+    }),
+  );
+  return vus.filter((x): x is UniversPublic => Boolean(x)).slice(0, limite);
 }
 
 /** 🏡 Son univers est-il ouvert à ce proche ? (le bouton « Son univers » dans « Proches ») */

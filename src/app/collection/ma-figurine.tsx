@@ -49,6 +49,7 @@ import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE, type FigurineHandle } from
 import { Guide, OngletVisible, STYLES_GUIDE, useVoixPablito } from "./guide";
 import { AtelierPablito, type Atelier } from "./atelier";
 import { dureeSansVoix, fabriquerMeme, memePossible } from "@/lib/direct/meme";
+import type { FigurineVue } from "@/lib/direct/talkie";
 import { motPour, type Rendu } from "@/lib/direct/rendus";
 import { TroisRendus } from "./trois-rendus";
 import { PREMIER_MEME, memesDuMoment, type MemePret } from "@/lib/direct/memes-prets";
@@ -618,13 +619,30 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
     void ctx?.resume().catch(() => undefined);
     return ctx;
   }
+  /**
+   * 🏡 SON UNIVERS (« Univers », lot 7 : « les mèmes se jouent dans son univers, plus sur fond rose ») : sa figurine
+   * assise, ses visages du nouveau style, son décor et sa place (`maFigurineVue`) ; `null` sans univers. Lu une fois.
+   */
+  const sonUnivers = useRef<Promise<FigurineVue | null> | null>(null);
+  const chezLui = () =>
+    (sonUnivers.current ??= fetch("/api/direct/proches?moi=1", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j: { moi?: FigurineVue }) => (j.moi?.chez && j.moi.assise ? j.moi : null))
+      .catch(() => null));
   /** La vidéo, fabriquée avec ces réglages, envoyée au seau et rangée avec le message (une version de plus : la même place). */
   async function fabriquerEtPoser(s: Son, id: string, g: Reglages, ctx: AudioContext): Promise<void> {
     if (!toile.current) throw new Error("Ton mème n’a pas pu se fabriquer. Réessaie.");
-    // (son look, s'il en a pris un : sa figurine du mois, qui parle)
-    const visage =
-      sonLook?.image && sonLook.parle ? { n: sonLook.image, p: sonLook.parle } : g.sentiment && etat.expressions?.[g.sentiment] ? etat.expressions[g.sentiment]! : { n: etat.neutre!, p: etat.parle! };
     const avecRendu = g.rendu && !reponse && s.texte ? g.rendu : null;
+    // 🏡 chez lui (pas avec un look, ni en duo, ni avec une version BD/cinéma/affiche) : son décor, sa figurine assise
+    const chez = !sonLook && !reponse && !avecRendu ? await chezLui() : null;
+    // (son look, s'il en a pris un : sa figurine du mois, qui parle)
+    const visage = chez?.assise
+      ? (g.sentiment && chez.assise.expressions?.[g.sentiment]) || { n: chez.assise.n, p: chez.assise.p }
+      : sonLook?.image && sonLook.parle
+        ? { n: sonLook.image, p: sonLook.parle }
+        : g.sentiment && etat.expressions?.[g.sentiment]
+          ? etat.expressions[g.sentiment]!
+          : { n: etat.neutre!, p: etat.parle! };
     const m = await fabriquerMeme({
       ctx,
       toile: toile.current,
@@ -636,6 +654,7 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
       danse: g.danse,
       ecouter: true,
       surProgres: (p) => setMeme((x) => (x && x.etat === "fabrication" ? { ...x, p } : x)),
+      ...(chez?.chez ? { chezMoi: { decor: chez.chez.decor, ...chez.chez.hote, ...(chez.chez.figurine ?? {}) } } : {}),
       // 💬 EN DUO : sa figurine à lui en haut, qui parle d'abord ; la sienne en bas, qui répond
       ...(reponse ? { duo: { images: reponse.images, son: reponse.son, texte: reponse.texte, prenom: reponse.prenom, moi: etat.prenom } } : {}),
       // 🎬 sa version : la BD, le cinéma, l'affiche (pas en duo ; avec ses mots)

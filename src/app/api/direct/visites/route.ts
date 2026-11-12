@@ -2,6 +2,7 @@
 //
 // GET ?cle=<clé de profil>                        → { vue } : ce que voit celui qui entre (selon qui peut entrer)
 // GET ?moi=1                                       → { visites } : chez moi — qui est passé, les souvenirs, qui entre
+// GET ?publics=1                                   → { publics } : les univers ouverts à tous (« Découvrir », lot 7)
 // POST { action: "frapper", cle }                  → frapper à la porte (il est prévenu, une fois par jour)
 // POST { action: "souvenir", cle, objet, mot? }    → laisser un souvenir (ses proches seulement ; il l'accepte ou non)
 // POST { action: "signaler", cle }                 → signaler un univers (pour l'équipe)
@@ -11,7 +12,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { choisirVisibilite, deciderSouvenir, frapper, laisserSouvenir, mesVisites, retirerSouvenir, signalerUnivers, visiterUnivers } from "@/lib/direct/visites-serveur";
+import { choisirVisibilite, deciderSouvenir, frapper, laisserSouvenir, mesVisites, retirerSouvenir, signalerUnivers, universPublics, visiterUnivers } from "@/lib/direct/visites-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ export async function GET(request: Request) {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
   const q = new URL(request.url).searchParams;
+  if (q.get("publics")) return NextResponse.json({ ok: true, publics: await universPublics(supabase) }, { headers: sansCache });
   if (q.get("moi")) {
     if (!moi) return NextResponse.json(SANS_COMPTE, { status: 403 });
     const v = await mesVisites(supabase, moi.id);
